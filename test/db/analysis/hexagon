@@ -368,7 +368,7 @@ aar
 pd 8
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      ?       R14 = and(R5,##0x20)
 |       ,=< 0x00000004      [   loop0(0x8,R15)
 |       |   ; CODE XREFS from fcn.00000000 @ 0x4, 0x18
@@ -391,7 +391,7 @@ af
 pd 0xd
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      ?       P1 = !cmp.eq(R2,##0x0)
 |           0x00000004      ?       P1 = !cmp.eq(R1,R0)
 |           0x00000008      ?       R14 = or(R1,R0)
@@ -419,7 +419,7 @@ af
 pd 0x12
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      ?       immext(##0xc400)
 |           0x00000004      ?       R2 = memw(GP+##0xc420)
 |       ,=< 0x00000008      ?       if (cmp.eq(R2.new,#0x0)) jump:nt 0x40
@@ -450,7 +450,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             ; CALL XREF from sym.__libc_start_main @ 0x5e98
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 |           ; arg int argc @ r0
 |           0x00005110      ?       allocframe(SP,#0x8):raw
 EOF
@@ -467,7 +467,7 @@ EXPECT=<<EOF
           .---------------------------------------------------.
           |  0x5110                                           |
           |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
-          | int main (int argc, char **argv, char **envp);    |
+          | int main(int argc, char **argv, char **envp);     |
           | ; arg int argc @ r0                               |
           | ?   allocframe(SP,#0x8):raw                       |
           | [   R2 = add(FP,##-0x4)                           |
@@ -535,7 +535,7 @@ s sym.thread_join
 pd 12
 EOF
 EXPECT=<<EOF
-/ sym.thread_join ();
+/ sym.thread_join();
 |           0x00005200      ?       R1 = HTID
 |           0x00005204      ?       R3 = ##0x1
 |           0x00005208      [   R1 = asl(R3,R1)
@@ -564,7 +564,7 @@ s sym.sys_deinit_tls
 pd 11
 EOF
 EXPECT=<<EOF
-/ sym.sys_deinit_tls ();
+/ sym.sys_deinit_tls();
 |           0x00005344      ?       R2 = UGP
 |           0x00005348      /       immext(##0x1100)                   ; loc.CoreDump
 |           0x0000534c      |       R3 = memw(GP+##0x1110)             ; loc._TLSEnd
@@ -643,7 +643,7 @@ af
 pd 4
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      ?       immext(##0x1734a600)
 |       ,=< 0x00000004      ?       jump 0x1734a60c
 |       |   0x00000008      /       R2 = +mpyi(R0,##0x3c)

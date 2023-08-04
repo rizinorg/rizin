@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "sdb.h"
 #include <rz_project.h>
 #include <rz_util/rz_pj.h>
 
@@ -137,31 +138,6 @@ RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res)
 //
 // Changes from 8d54707ccf8b3492b999dfa42057da0847acb952:
 //	Added new global variables in "/core/analysis/vars"
-
-#if 0
-typedef struct {
-	RzList /*<char *>*/ *moved_keys; ///< deferred for deletion from the old sdb
-	Sdb *global_vars_db;
-} V3V4TypesCtx;
-
-bool v3_v4_types_foreach_cb(void *user, const char *k, const char *v) {
-	V3V4TypesCtx *ctx = user;
-	if (rz_str_startswith(k, "0x")) {
-		char name[32];
-		PJ *j = pj_new();
-		pj_o(j);
-		pj_ks(j, "name", rz_strf(name, "gvar_%s", k));
-		pj_ks(j, "type", v);
-		pj_ks(j, "addr", k);
-		// We don't have constraints for typelink here.
-		pj_end(j);
-		sdb_set(ctx->global_vars_db, k, pj_string(j), 0);
-		pj_free(j);
-		rz_list_push(ctx->moved_keys, strdup(k));
-	}
-	return true;
-}
-#endif
 
 RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res) {
 	Sdb *core_db;
@@ -332,7 +308,7 @@ RZ_API bool rz_project_migrate_v9_v10(RzProject *prj, RzSerializeResultInfo *res
 // --
 // Migration 10 -> 11
 //
-// Changes from <commit hash not yet known>
+// Changes from d9950f74792c1dfb565ac491cc7ef706b80e6044
 //   - Removed analysis.vars.stackname config var
 //   - In RzAnalysisVar JSON, "kind", "arg" and "delta" are removed. Instead, there is either a "stack"
 //     or a "reg" key, but never both.
@@ -467,6 +443,93 @@ RZ_API bool rz_project_migrate_v10_v11(RzProject *prj, RzSerializeResultInfo *re
 	return ret;
 }
 
+// --
+// Migration 11 -> 12
+//
+// Changes from 59f32b6db89c09c16fadbda6a098e326b73e03d8
+//   - Rename config var `asm.dwarf` to `asm.debuginfo`
+//   - Rename config var `asm.dwarf.abspath` to `asm.debuginfo.abspath`
+//   - Rename config var `asm.dwarf.file` to `asm.debuginfo.file`
+//   - Rename config var `asm.dwarf.lines` to `asm.debuginfo.lines`
+//
+
+static inline bool sdb_rename(Sdb *db, const char *old_key, const char *new_key) {
+	char *val = sdb_get(db, old_key, 0);
+	if (!val) {
+		return false;
+	}
+	sdb_unset(db, old_key, 0);
+	sdb_set_owned(db, new_key, val, 0);
+	return true;
+}
+
+RZ_API bool rz_project_migrate_v11_v12(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_rename(config_db, "asm.dwarf.abspath", "asm.debuginfo.abspath");
+	sdb_rename(config_db, "asm.dwarf.file", "asm.debuginfo.file");
+	sdb_rename(config_db, "asm.dwarf.lines", "asm.debuginfo.lines");
+	sdb_rename(config_db, "asm.dwarf", "asm.debuginfo");
+	return true;
+}
+
+// --
+// Migration 12 -> 13
+//
+// Changes from 366dfcfbf0ac2eb4c09c49b0a9e43117864750b7:
+//	Removed typelinks from "/core/analysis/typelinks"
+//	and converted into global variables in "/core/analysis/vars"
+
+typedef struct {
+	RzList /*<char *>*/ *moved_keys; ///< deferred for deletion from the old sdb
+	Sdb *global_vars_db;
+} V12V13TypesCtx;
+
+bool v12_v13_types_foreach_cb(void *user, const char *k, const char *v) {
+	V12V13TypesCtx *ctx = user;
+	if (rz_str_startswith(k, "0x")) {
+		char name[32];
+		PJ *j = pj_new();
+		pj_o(j);
+		pj_ks(j, "name", rz_strf(name, "gvar_%s", k));
+		pj_ks(j, "type", v);
+		pj_ks(j, "addr", k);
+		// We don't have constraints for typelink here.
+		pj_end(j);
+		sdb_set(ctx->global_vars_db, k, pj_string(j), 0);
+		pj_free(j);
+		rz_list_push(ctx->moved_keys, strdup(k));
+	}
+	return true;
+}
+
+RZ_API bool rz_project_migrate_v12_v13(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	sdb_ns(analysis_db, "vars", true);
+	V12V13TypesCtx ctx = {
+		.moved_keys = rz_list_newf(free),
+		.global_vars_db = sdb_ns(analysis_db, "vars", true)
+	};
+
+	if (!ctx.moved_keys || !ctx.global_vars_db) {
+		return false;
+	}
+	Sdb *typelinks_db = sdb_ns(analysis_db, "typelinks", true);
+	sdb_foreach(typelinks_db, v12_v13_types_foreach_cb, &ctx);
+	RzListIter *it;
+	char *s;
+	rz_list_foreach (ctx.moved_keys, it, s) {
+		sdb_unset(typelinks_db, s, 0);
+	}
+	rz_list_free(ctx.moved_keys);
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -477,7 +540,9 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v7_v8,
 	rz_project_migrate_v8_v9,
 	rz_project_migrate_v9_v10,
-	rz_project_migrate_v10_v11
+	rz_project_migrate_v10_v11,
+	rz_project_migrate_v11_v12,
+	rz_project_migrate_v12_v13
 };
 
 /// Migrate the given project to the current version in-place

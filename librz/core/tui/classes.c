@@ -21,7 +21,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 	RzListIter *iter;
 	RzBinClass *c, *cur = NULL;
 	RzBinSymbol *m, *mur = NULL;
-	RzBinField *f, *fur = NULL;
+	RzBinClassField *f, *fur = NULL;
 	int i = 0;
 	int skip = *idx - 10;
 	bool found = false;
@@ -195,7 +195,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 	int mode = 'c';
 	RzBinClass *cur = NULL;
 	RzBinSymbol *mur = NULL;
-	RzBinField *fur = NULL;
+	RzBinClassField *fur = NULL;
 	void *ptr;
 	int oldcur = 0;
 	char *grep = NULL;
@@ -214,7 +214,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 		ptr = show_class(core, mode, &index, cur, grep, list);
 		switch (mode) {
 		case 'f':
-			fur = (RzBinField *)ptr;
+			fur = (RzBinClassField *)ptr;
 			break;
 		case 'm':
 			mur = (RzBinSymbol *)ptr;

@@ -46,15 +46,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=endian tests: ?v
+NAME=endian tests: %v
 FILE==
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
 wx 01020304
-?v [$$]
+%v [$$]
 e cfg.bigendian=true
-?v [$$]
+%v [$$]
 EOF
 EXPECT=<<EOF
 0x4030201

@@ -1,8 +1,194 @@
+NAME=Printing il statements in various formats
+FILE=bins/elf/ppc/emulateme-ppc32be
+CMDS=<<EOF
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x100278 (seq (set res (| (var r1) (var r1))) (set r9 (var res)) empty)
+0x10027c (seq (set mstart (bv 8 0x20)) (set mstop (bv 8 0x3b)) (set m (bv 64 0x0)) (repeat (! (== (var mstart) (var mstop))) (seq (set m (| (var m) (>> (>> (bv 64 0x0) (bv 8 0x1) true) (var mstart) false))) (set mstart (mod (+ (var mstart) (bv 8 0x1)) (bv 8 0x40))))) (set m (| (var m) (>> (>> (bv 64 0x0) (bv 8 0x1) true) (var mstop) false))) (set mask (cast 32 false (var m))) empty (set result (& (let rotl32_x (cast 32 false (var r1)) (let rotl32_y (bv 8 0x0) (| (<< (var rotl32_x) (var rotl32_y) false) (>> (var rotl32_x) (- (bv 8 0x20) (cast 8 false (var rotl32_y))) false)))) (var mask))) (set r1 (var result)) empty)
+0x100280 (seq (set r0 (let v (bv 16 0x0) (ite (msb (var v)) (cast 32 (msb (var v)) (var v)) (cast 32 false (var v))))) empty)
+0x100284 (seq (storew 0 (+ (var r1) (let v (bv 16 0xfff0) (ite (msb (var v)) (cast 32 (msb (var v)) (var v)) (cast 32 false (var v))))) (cast 32 false (var r1))) (set r1 (+ (var r1) (let v (bv 16 0xfff0) (ite (msb (var v)) (cast 32 (msb (var v)) (var v)) (cast 32 false (var v)))))))
+0x100288 (set lr (cast 32 false (var r0)))
+-- pretty
+0x100278
+(seq
+  (set res
+    (|
+      (var r1)
+      (var r1)))
+  (set r9
+    (var res))
+  empty)
+0x10027c
+(seq
+  (set mstart
+    (bv 8 0x20))
+  (set mstop
+    (bv 8 0x3b))
+  (set m
+    (bv 64 0x0))
+  (repeat
+    (!
+      (==
+        (var mstart)
+        (var mstop)))
+    (seq
+      (set m
+        (|
+          (var m)
+          (>>
+            (>>
+              (bv 64 0x0)
+              (bv 8 0x1)
+              true)
+            (var mstart)
+            false)))
+      (set mstart
+        (mod
+          (+
+            (var mstart)
+            (bv 8 0x1))
+          (bv 8 0x40)))))
+  (set m
+    (|
+      (var m)
+      (>>
+        (>>
+          (bv 64 0x0)
+          (bv 8 0x1)
+          true)
+        (var mstop)
+        false)))
+  (set mask
+    (cast 32
+      false
+      (var m)))
+  empty
+  (set result
+    (&
+      (let rotl32_x
+        (cast 32
+          false
+          (var r1))
+        (let rotl32_y
+          (bv 8 0x0)
+          (|
+            (<<
+              (var rotl32_x)
+              (var rotl32_y)
+              false)
+            (>>
+              (var rotl32_x)
+              (-
+                (bv 8 0x20)
+                (cast 8
+                  false
+                  (var rotl32_y)))
+              false))))
+      (var mask)))
+  (set r1
+    (var result))
+  empty)
+0x100280
+(seq
+  (set r0
+    (let v
+      (bv 16 0x0)
+      (ite
+        (msb
+          (var v))
+        (cast 32
+          (msb
+            (var v))
+          (var v))
+        (cast 32
+          false
+          (var v)))))
+  empty)
+0x100284
+(seq
+  (storew 0
+    (+
+      (var r1)
+      (let v
+        (bv 16 0xfff0)
+        (ite
+          (msb
+            (var v))
+          (cast 32
+            (msb
+              (var v))
+            (var v))
+          (cast 32
+            false
+            (var v)))))
+    (cast 32
+      false
+      (var r1)))
+  (set r1
+    (+
+      (var r1)
+      (let v
+        (bv 16 0xfff0)
+        (ite
+          (msb
+            (var v))
+          (cast 32
+            (msb
+              (var v))
+            (var v))
+          (cast 32
+            false
+            (var v)))))))
+0x100288
+(set lr
+  (cast 32
+    false
+    (var r0)))
+-- graph
+                       .-------------.
+                       |  mr         |
+                       `-------------'
+                          v v v
+                          | | |
+                          | | '--------------.
+           .--------------' '.               |
+           |                 |               |
+           |                 |               |
+       .------------.    .-----------.   .----------.
+       |  set: res  |    |  set: r9  |   |  empty   |
+       `------------'    `-----------'   `----------'
+           v                 v
+           |                 |
+           '.                |
+            |               .'
+            |               |
+        .-----------.   .------------.
+        |  or       |   |  var: res  |
+        `-----------'   `------------'
+              v v
+              | |
+    .---------' |
+    |           '---.
+    |               |
+.-----------.   .-----------.
+|  var: r1  |   |  var: r1  |
+`-----------'   `-----------'
+EOF
+RUN
+
 NAME=emulateme-big-endian
 FILE=bins/elf/ppc/emulateme-ppc32be
 TIMEOUT=30
 CMDS=<<EOF
 s sym.decrypt
+e bin.str.enc=utf8
 ps @ obj.seckrit
 aezi
 o malloc://0x1000 0x400000
@@ -27,6 +213,7 @@ FILE=bins/elf/ppc/emulateme-ppc32le
 TIMEOUT=30
 CMDS=<<EOF
 s sym.decrypt
+e bin.str.enc=utf8
 ps @ obj.seckrit
 aezi
 o malloc://0x1000 0x400000

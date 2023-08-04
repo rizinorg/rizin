@@ -66,7 +66,6 @@ rz_util_files = [
   'rz_util/rz_base64.h',
   'rz_util/rz_base91.h',
   'rz_util/rz_big.h',
-  'rz_util/rz_bitmap.h',
   'rz_util/rz_bitvector.h',
   'rz_util/rz_buf.h',
   'rz_util/rz_debruijn.h',
@@ -108,6 +107,7 @@ rz_util_files = [
   'rz_util/rz_subprocess.h',
   'rz_util/rz_sys.h',
   'rz_util/rz_table.h',
+  'rz_util/rz_th_ht.h',
   'rz_util/rz_time.h',
   'rz_util/rz_tree.h',
   'rz_util/rz_uleb128.h',
@@ -127,6 +127,7 @@ rz_il_definitions_files = [
   'rz_il/definitions/sort.h',
   'rz_il/definitions/value.h',
   'rz_il/definitions/variable.h',
+  'rz_il/definitions/float.h',
 ]
 install_headers(rz_il_definitions_files, install_dir: join_paths(rizin_incdir, 'rz_il', 'definitions'))
 

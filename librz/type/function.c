@@ -32,7 +32,7 @@ RZ_API RZ_OWN RzCallable *rz_type_callable_new(RZ_NULLABLE const char *name) {
  */
 RZ_API RZ_OWN RzCallable *rz_type_callable_clone(RZ_BORROW RZ_NONNULL const RzCallable *callable) {
 	rz_return_val_if_fail(callable, NULL);
-	RzCallable *newcallable = RZ_NEW0(RzCallable);
+	RzCallable *newcallable = RZ_NEWCOPY(RzCallable, callable);
 	if (!newcallable) {
 		return NULL;
 	}
@@ -150,6 +150,21 @@ RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable)
 		return false;
 	}
 	ht_pp_insert(typedb->callables, callable->name, callable);
+	return true;
+}
+
+/**
+ * \brief Update RzCallable type in the types database
+ *
+ * \param typedb Type Database instance
+ * \param callable RzCallable type to save
+ */
+RZ_API bool rz_type_func_update(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
+	rz_return_val_if_fail(typedb && callable && callable->name, false);
+	if (!ht_pp_update(typedb->callables, callable->name, (void *)callable)) {
+		rz_type_callable_free(callable);
+		return false;
+	}
 	return true;
 }
 

@@ -5,6 +5,7 @@
 #include <rz_bin.h>
 #include <rz_type.h>
 #include <rz_util/rz_path.h>
+#include "test_config.h"
 #include "test_types.h"
 #include "../unit/minunit.h"
 
@@ -144,9 +145,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
-	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
-	free(types_dir);
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
 
 	RzBinOptions opt = { 0 };
 	rz_bin_options_init(&opt, 0, 0, 0, false);
@@ -172,12 +171,12 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	char *value = NULL;
 	check_kv("Mammal", "fcn");
 	check_kv("fcn.Mammal.addr", "0x401300");
-	check_kv("fcn.Mammal.sig", "void Mammal(struct Mammal * this);");
+	check_kv("fcn.Mammal.sig", "void Mammal(struct Mammal *this);");
 	check_kv("fcn.Dog::walk__.addr", "0x401380");
-	check_kv("fcn.Dog::walk__.sig", "int Dog::walk()(struct Dog * this);");
+	check_kv("fcn.Dog::walk__.sig", "int Dog::walk()(struct Dog *this);");
 	check_kv("fcn.Dog::walk__.name", "Dog::walk()");
-	check_kv("fcn.Mammal::walk__.vars", "this");
-	check_kv("fcn.Mammal::walk__.var.this", "b,-8,struct Mammal *");
+	check_kv("fcn.Mammal::walk__.args", "this");
+	check_kv("fcn.Mammal::walk__.arg.this", "b,-8,struct Mammal *");
 
 	check_kv("main", "fcn");
 	check_kv("fcn.main.addr", "0x401160");
@@ -242,7 +241,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	check_kv("main_tree_iterInorder", "fcn");
 	check_kv("fcn.main_tree_iterInorder.name", "main.tree.iterInorder");
 	check_kv("fcn.main_tree_iterInorder.addr", "0x491d90");
-	check_kv("fcn.main_tree_iterInorder.sig", "void main.tree.iterInorder(struct main.tree t,func(int) visit);");
+	check_kv("fcn.main_tree_iterInorder.sig", "void main.tree.iterInorder(struct main.tree t, func(int) visit);");
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	   don't check variable information and add it in the future */
@@ -302,11 +301,12 @@ static bool test_dwarf_function_parsing_rust(void) {
 	check_kv("fcn.main.var.numbers", "s,128,i32 [11]");
 	check_kv("fcn.main.var.strings", "s,312,&str [6]");
 	// check_kv ("fcn.main.vars", "numbers,arg0,arg0,strings,arg0,arg0"); Fix these collision by unique renaming in future
-	check_kv("fcn.lang_start_internal.sig", "isize lang_start_internal(&Fn<()> main,isize argc,u8 ** argv);");
+	check_kv("fcn.lang_start_internal.sig", "isize lang_start_internal(&Fn<()> main, isize argc, u8 **argv);");
 
 	check_kv("bubble_sort__str_", "fcn");
 	check_kv("bubble_sort_i32_", "fcn");
-	check_kv("fcn.bubble_sort_i32_.vars", "values,n,swapped,iter,__next,val,i");
+	check_kv("fcn.bubble_sort_i32_.args", "values");
+	check_kv("fcn.bubble_sort_i32_.vars", "n,swapped,iter,__next,val,i");
 	check_kv("fcn.bubble_sort_i32_.var.iter", "s,112,Range<usize>");
 	check_kv("fcn.bubble_sort_i32_.var.i", "s,176,usize");
 	check_kv("fcn.bubble_sort_i32_.name", "bubble_sort<i32>");

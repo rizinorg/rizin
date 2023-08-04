@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2023 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -66,51 +67,13 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bf->sdb;
 }
 
-static void free_rz_bin_class(void /*RzBinClass*/ *k) {
-	RzBinClass *bclass = (RzBinClass *)k;
-	if (bclass) {
-		rz_list_free(bclass->methods);
-		rz_list_free(bclass->fields);
-		free(bclass->name);
-		free(bclass->super);
-		free(bclass->visibility_str);
-		free(bclass);
-	}
-}
-
 static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
-	RzBinClass *bclass = NULL;
-	RzList *classes = NULL;
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
 	}
 
-	classes = rz_list_newf(free_rz_bin_class);
-	if (!classes) {
-		return NULL;
-	}
-
-	bclass = RZ_NEW0(RzBinClass);
-	if (!bclass) {
-		rz_list_free(classes);
-		return NULL;
-	}
-	rz_list_append(classes, bclass);
-
-	bclass->name = rz_bin_java_class_name(jclass);
-	bclass->super = rz_bin_java_class_super(jclass);
-	bclass->visibility = rz_bin_java_class_access_flags(jclass);
-	bclass->visibility_str = rz_bin_java_class_access_flags_readable(jclass, ACCESS_FLAG_MASK_ALL_NO_SUPER);
-
-	bclass->methods = rz_bin_java_class_methods_as_symbols(jclass);
-	bclass->fields = rz_bin_java_class_fields_as_binfields(jclass);
-	if (!bclass->methods || !bclass->fields) {
-		rz_list_free(classes);
-		return NULL;
-	}
-
-	return classes;
+	return rz_bin_java_class_as_classes(jclass);
 }
 
 static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
@@ -151,15 +114,6 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_list_join(list, tmp);
 	rz_list_free(tmp);
 	return list;
-}
-
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
-	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
-	if (!jclass) {
-		return NULL;
-	}
-
-	return rz_bin_java_class_fields_as_binfields(jclass);
 }
 
 static RzList /*<char *>*/ *libs(RzBinFile *bf) {
@@ -241,12 +195,11 @@ RzBinPlugin rz_bin_plugin_java = {
 	.entries = &entrypoints,
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
-	.symbols = symbols,
+	.symbols = &symbols,
 	.imports = &imports,
 	.strings = &strings,
 	.enrich_asm = &enrich_asm,
 	.info = &info,
-	.fields = fields,
 	.libs = libs,
 	.classes = classes,
 	.demangle_type = demangle_type,

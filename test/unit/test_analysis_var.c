@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_core.h>
+#include "test_config.h"
 #include "minunit.h"
 
 static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
@@ -98,7 +100,7 @@ bool test_rz_analysis_var() {
 	rz_analysis_var_storage_init_reg(&stor, "rax");
 	RzAnalysisVar *c = set_var_str(fcn, &stor, "int64_t", 8, "arg42");
 	mu_assert_notnull(c, "create a var");
-	mu_assert_true(rz_analysis_var_is_arg(c), "reg vars are always args");
+	mu_assert_false(rz_analysis_var_is_arg(c), "rz_analysis_var_is_arg based on call conversion");
 
 	// querying variables
 
@@ -289,6 +291,7 @@ bool test_rz_analysis_function_var_expr_for_reg_access_at() {
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 64, NULL);
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	fcn->bp_off = 8;
@@ -369,10 +372,43 @@ bool test_rz_analysis_function_var_expr_for_reg_access_at() {
 	mu_end;
 }
 
+bool test_rz_analysis_var_is_arg() {
+	RzCore *core = rz_core_new();
+	RzAnalysis *analysis = core->analysis;
+	rz_config_set(core->config, "analysis.arch", "x86");
+	rz_analysis_set_bits(core->analysis, 64);
+	rz_core_analysis_cc_init_by_path(core, TEST_BUILD_TYPES_DIR, NULL);
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	assert_sane(core->analysis);
+
+	RzAnalysisVarStorage stor = { 0 };
+	rz_analysis_var_storage_init_reg(&stor, "rdi");
+	RzAnalysisVar *var = set_var_str(fcn, &stor, "int64_t", 8, "arg0");
+	mu_assert_notnull(var, "create a var");
+	mu_assert_true(rz_analysis_var_is_arg(var), "rz_analysis_var_is_arg based on call conversion rdi");
+
+	rz_analysis_var_storage_init_reg(&stor, "r10");
+	var = set_var_str(fcn, &stor, "int64_t", 8, "arg10");
+	mu_assert_notnull(var, "create a var");
+	mu_assert_false(rz_analysis_var_is_arg(var), "rz_analysis_var_is_arg based on call conversion r10");
+
+	var = RZ_NEW0(RzAnalysisVar);
+	var->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
+	mu_assert_true(rz_analysis_var_is_arg(var), "rz_analysis_var_is_arg based on var->kind");
+	var->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
+	mu_assert_false(rz_analysis_var_is_arg(var), "rz_analysis_var_is_arg based on var->kind");
+	free(var);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_var);
 	mu_run_test(test_rz_analysis_function_get_stack_var_in);
 	mu_run_test(test_rz_analysis_function_var_expr_for_reg_access_at);
+	mu_run_test(test_rz_analysis_var_is_arg);
 	return tests_passed != tests_run;
 }
 

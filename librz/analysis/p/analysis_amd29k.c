@@ -295,7 +295,7 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	op->size = 4;
 	op->eob = false;
 
@@ -342,7 +342,7 @@ RzAnalysisPlugin rz_analysis_plugin_amd29k = {
 	.arch = "amd29k",
 	.bits = 32,
 	.archinfo = archinfo,
-	.op = &analop,
+	.op = &analyze_op,
 	.get_reg_profile = &get_reg_profile,
 };
 

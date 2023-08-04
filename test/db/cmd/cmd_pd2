@@ -56,7 +56,7 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 60; pd 2
-?e
+echo
 wx 906090; pd 3
 EOF
 EXPECT=<<EOF
@@ -76,7 +76,7 @@ e asm.bytes=false
 e asm.cmt.right=true
 pd 1 @ 0x000102e0
 pd 1 @ 0x000102e8
-?e
+echo
 e asm.cmt.right=false
 pd 1 @ 0x000102e0
 pd 1 @ 0x000102e8
@@ -106,7 +106,7 @@ afb+ 0x00560e67 0x00560eb1 297
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00560e67 ();
+/ fcn.00560e67();
 |       :   0x00560e67      push  esi
 |      ,==< 0x00560e68      jmp   0x560e7d
 ..
@@ -229,11 +229,11 @@ afb+ 0x00560e67 0x00560e7d 8 0x00560e96
 afb+ 0x00560e67 0x00560e96 7 0x00560eb1
 afb+ 0x00560e67 0x00560eb1 6
 pdf
-?e
+echo
 pdr.
 EOF
 EXPECT=<<EOF
-/ fcn.00560e67 ();
+/ fcn.00560e67();
 |       :   0x00560e67      56             push  esi
 |      ,==< 0x00560e68      e904000000     jmp   0x560e71
 ..
@@ -251,7 +251,7 @@ EXPECT=<<EOF
 |     ||:   0x00560eb1      5a             pop   edx
 \     ||`=< 0x00560eb2      e940c5edff     jmp   0x43d3f7
 
-/ fcn.00560e67 ();
+/ fcn.00560e67();
 | 0x00560e67      56             push  esi
 | 0x00560e68      e904000000     jmp   0x560e71
 | ----------- true: 0x00560e71
@@ -283,14 +283,14 @@ s 0x8174
 af
 e asm.cmt.right=true
 pdf
-?e
+echo
 e asm.cmt.right=false
 pdf
-?e
+echo
 agf
 EOF
 EXPECT=<<EOF
-/ fcn.00008174 (void *main, int argc);
+/ fcn.00008174(void *main, int argc);
 |           ; arg void *main @ r0
 |           ; arg int argc @ r1
 |           0x00008174      b80000eb       bl    sym.__libc_start_main ; lr=0x8178 -> 0xeb0002a4 ; pc=0x845c -> 0xe92d41f0
@@ -298,7 +298,7 @@ EXPECT=<<EOF
 \           0x00008178      a40200eb       bl    sym.abort             ; lr=0x817c -> 0xe92d4030 ; pc=0x8c10 -> 0xe59f62a0
 \                                                                      ; void abort(void)
 
-/ fcn.00008174 (void *main, int argc);
+/ fcn.00008174(void *main, int argc);
 |           ; arg void *main @ r0
 |           ; arg int argc @ r1
 |              ; lr=0x8178 -> 0xeb0002a4
@@ -312,7 +312,7 @@ EXPECT=<<EOF
 
 .--------------------------------------------------------.
 |  0x8174                                                |
-| fcn.00008174 (void *main, int argc);                   |
+| fcn.00008174(void *main, int argc);                    |
 | ; arg void *main @ r0                                  |
 | ; arg int argc @ r1                                    |
 |    ; lr=0x8178 -> 0xeb0002a4                           |
@@ -377,10 +377,10 @@ s sym.deregister_tm_clones
 aF
 s sym.deregister_tm_clones-1
 pd 3
-?e
+echo
 s sym.deregister_tm_clones+38
 pd 4
-?e
+echo
 s entry.fini0
 aF
 s entry.fini0+32
@@ -450,7 +450,7 @@ s main
 aF
 s 0x4233
 pd 9
-?e
+echo
 pdJ 9~{}
 EOF
 EXPECT=<<EOF
@@ -552,21 +552,19 @@ aa
 e asm.cmt.right=true
 pd 1 @ 0x080493b4
 pd 1 @ 0x080493ca
-?e
+echo
 e asm.cmt.right=false
 pd 1 @ 0x080493b4
 pd 1 @ 0x080493ca
 EOF
 EXPECT=<<EOF
 |           0x080493b4      call  0x80490b0                            ; sym.imp.strlen ; size_t strlen(const char *s)
-|           0x080493ca      call  0x80490e0                            ; sym.imp.QString::fromAscii_helper_char_const___int
-|                                                                      ; QString::fromAscii_helper(char const*, int)
+|           0x080493ca      call  0x80490e0                            ; method.QString.fromAscii_helper_char_const___int
 
 |           ; sym.imp.strlen
 |           ; size_t strlen(const char *s)
 |           0x080493b4      call 0x80490b0
-|           ; sym.imp.QString::fromAscii_helper_char_const___int
-|           ; QString::fromAscii_helper(char const*, int)
+|           ; method.QString.fromAscii_helper_char_const___int
 |           0x080493ca      call 0x80490e0
 EOF
 RUN
@@ -576,16 +574,16 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 e asm.bytes=false
 e asm.sub.names=true
-(pd_tests; e asm.sub.rel=true; pd 15; ?e; e asm.sub.rel=false; pd 1 @ 0x000041ee; pd 1 @ 0x00004225)
-(insn_tests; e scr.color=0; .(pd_tests); ?e; e scr.color=1; .(pd_tests))
+(pd_tests; e asm.sub.rel=true; pd 15; echo; e asm.sub.rel=false; pd 1 @ 0x000041ee; pd 1 @ 0x00004225)
+(insn_tests; e scr.color=0; .(pd_tests); echo; e scr.color=1; .(pd_tests))
 s 0x000041e0
 .(insn_tests)
-?e
+echo
 e io.cache=true
 wa "mov rdx, [rip + 0x17792]; mov rsi, [rip + 0x1d84b]" @ 0x000041e7
 wa "mov rdi, [rip + 0x147f6]" @ 0x00004225
 .(insn_tests)
-?e
+echo
 wx 483b1592770100483b354bd80100 @ 0x000041e7  # cmp rdx, [rip + 0x17792]; cmp rsi, [rip + 0x1d84b]
 wx 483b3df6470100 @ 0x00004225  # cmp rdi, [rip + 0x147f6]
 .(insn_tests)
@@ -784,7 +782,7 @@ aar
 (pdenc enc; e bin.str.enc=${enc}; pd 1)
 (pdstr bits; s `axt @ obj.utf${bits}be~[1]`; .(pdenc guess); .(pdenc utf${bits}le); .(pdenc utf${bits}be))
 .(pdstr 16)
-?e
+echo
 .(pdstr 32)
 EOF
 EXPECT=<<EOF
@@ -812,7 +810,7 @@ aar
 .(pdstr utf16be_bom)
 .(pdstr utf32le_bom)
 .(pdstr utf32be_bom)
-?e
+echo
 e asm.cmt.off=1
 .(pdstr utf32be_bom)
 e asm.cmt.off=off
@@ -839,10 +837,10 @@ e asm.offset=false
 e asm.comments=false
 s entry0 + 2
 pd 2
-?e
+echo
 s segment.LOAD0 + 83
 pd 4
-?e
+echo
 s entry0
 pd 3
 EOF
@@ -879,7 +877,7 @@ FILE=bins/pe/ConsoleApplication1.exe
 ARGS=-A
 CMDS=pdf
 EXPECT=<<EOF
-/ entry0 ();
+/ entry0();
 |       :   ; var int32_t var_24h @ stack - 0x24
 |       :   ; var int32_t var_19h @ stack - 0x19
 |       :   ; var int32_t var_4h @ stack - 0x4
@@ -899,7 +897,7 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- .text:
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 |           0x00001040      f30f1efa       endbr64                     ; [13] -r-x section size 389 named .text
 |           0x00001044      8005f52f0000.  add   byte [obj.array], 1   ; [0x4040:1]=0
 |       ,=< 0x0000104b      7403           je    0x1050
@@ -918,7 +916,7 @@ e scr.utf8.curvy=0
 s main
 aF
 pd 4 @ 0x104b
-?e
+echo
 e scr.utf8.curvy=1
 pd 4 @ 0x104b
 EOF
@@ -943,7 +941,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- fcn.0:
-/ entry0 ();
+/ entry0();
 |           0x00000019      get_local 0
 |           0x0000001b      f64.const 3.141590
 |           0x00000024      f64.add

@@ -130,7 +130,9 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeD
  * \param type RzBaseType pointer
  */
 RZ_API void rz_type_base_type_free(RzBaseType *type) {
-	rz_return_if_fail(type);
+	if (!type) {
+		return;
+	}
 	RZ_FREE(type->name);
 	rz_type_free(type->type);
 	type->type = NULL;
@@ -188,9 +190,28 @@ RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
  * \param typedb Type Database instance
  * \param type RzBaseType to save
  */
-RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type) {
-	rz_return_if_fail(typedb && type && type->name);
-	ht_pp_insert(typedb->types, type->name, (void *)type);
+RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) {
+	rz_return_val_if_fail(typedb && type && type->name, false);
+	if (!ht_pp_insert(typedb->types, type->name, (void *)type)) {
+		rz_type_base_type_free(type);
+		return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Updates the base type in the Types DB, frees the old one, frees the new one if it fails
+ *
+ * \param typedb Type Database instance
+ * \param type RzBaseType to save
+ */
+RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
+	rz_return_val_if_fail(typedb && type && type->name, false);
+	if (!ht_pp_update(typedb->types, type->name, (void *)type)) {
+		rz_type_base_type_free(type);
+		return false;
+	}
+	return true;
 }
 
 /**

@@ -10,12 +10,10 @@
 #if __WINDOWS__
 #include <windows.h>
 #define printf(...) rz_cons_win_printf(false, __VA_ARGS__)
-#define USE_UTF8    1
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <signal.h>
-#define USE_UTF8 1
 #endif
 
 static char *rz_line_nullstr = "";
@@ -25,6 +23,265 @@ typedef enum {
 	MINOR_BREAK,
 	MAJOR_BREAK
 } BreakMode;
+
+/**
+ * an entry of undo. it represents either a text insertion, deletion, or both.
+ * \see undo_add_entry
+ */
+struct rz_line_undo_entry_t {
+	int offset; ///< the beginning index of buffer edit.
+	char *deleted_text; ///< text to be deleted. null-terminated
+	int deleted_len; ///< the length of deleted text
+	char *inserted_text; ///< text to be inserted. null-terminated.
+	int inserted_len; ///< the length of inserted text.
+	bool continuous_next; ///< if true, redo function will continuously process the next entry.
+	bool continuous_prev; ///< if true, undo function will continuously process the previous entry.
+};
+
+static inline bool is_undo_entry_valid(const RzLineUndoEntry *e) {
+	if (!e) {
+		return false;
+	}
+	if (e->offset < 0) {
+		return false;
+	}
+	if (!e->deleted_len && !e->inserted_len) {
+		return false;
+	}
+	return true;
+}
+
+static void undo_entry_free(RzLineUndoEntry *e, void *user) {
+	(void)user;
+	RZ_FREE(e->deleted_text);
+	RZ_FREE(e->inserted_text);
+}
+
+static bool undo_reset(void) {
+	if (I.enable_vi_mode || I.hud) {
+		// Undo functionality does not yet support vi_mode.
+		return true;
+	}
+	if (I.undo_vec) {
+		rz_vector_free(I.undo_vec);
+	}
+	I.undo_cursor = 0;
+	I.undo_continue = false;
+	I.undo_vec = rz_vector_new(sizeof(RzLineUndoEntry), (RzVectorFree)undo_entry_free, NULL);
+	return !!I.undo_vec;
+}
+
+/* If possible, concatenate input characters according to the behavior of bash. (Others such as zsh don't do that) */
+static bool undo_concat_entry(const char *diff, const int diff_len) {
+	if (!I.undo_vec->len) {
+		return false;
+	}
+	// undo_vector has one or more entries.
+	if (I.undo_cursor != I.undo_vec->len) {
+		return false;
+	}
+	// cursor is at tail
+	RzLineUndoEntry *e = rz_vector_tail(I.undo_vec);
+	if (!is_undo_entry_valid(e)) {
+		// entry broken
+		undo_reset();
+		return false;
+	}
+	if (e->deleted_len || !e->inserted_len) {
+		// concat only works for inserted text, not deleted or replaced.
+		return false;
+	}
+	if (e->offset + e->inserted_len != I.buffer.index) {
+		return false;
+	}
+	if (e->inserted_len + diff_len > 20) {
+		return false;
+	}
+	e->inserted_text = rz_str_append(e->inserted_text, diff);
+	e->inserted_len += diff_len;
+	if (!e->inserted_text) {
+		// realloc broken
+		undo_reset();
+		return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Add an entry to undo vector.
+ * \param offset The beginning index of buffer edit
+ * \param deleted_text Text to be deleted. need to be allocated beforehand. Either deleted_text or inserted_text should be non-empty.
+ * \param inserted_text Text to be inserted. need to be allocated beforehand. Either deleted_text or inserted_text should be non-empty.
+ * \return true if success and false if failed. when failed, arg texts are freed.
+ * **/
+static bool undo_add_entry(int offset, RZ_OWN char *deleted_text, RZ_OWN char *inserted_text) {
+	if (I.enable_vi_mode || I.hud) {
+		// Undo functionality does not yet support vi_mode.
+		RZ_FREE(deleted_text);
+		RZ_FREE(inserted_text);
+		return false;
+	}
+	if (!I.undo_vec || I.undo_vec->len > RZ_LINE_UNDOSIZE) {
+		undo_reset();
+	}
+	RzLineUndoEntry new_entry = {
+		offset,
+		deleted_text,
+		deleted_text ? rz_str_nlen(deleted_text, RZ_LINE_BUFSIZE) : 0,
+		inserted_text,
+		inserted_text ? rz_str_nlen(inserted_text, RZ_LINE_BUFSIZE) : 0,
+		I.undo_continue,
+		false
+	};
+	if (!is_undo_entry_valid(&new_entry)) {
+		// new entry invalid
+		RZ_FREE(deleted_text);
+		RZ_FREE(inserted_text);
+		return false;
+	}
+	if (I.undo_vec->len) {
+		RzLineUndoEntry *prev_entry = rz_vector_tail(I.undo_vec);
+		if (I.undo_continue) {
+			new_entry.continuous_prev = prev_entry->continuous_next;
+		}
+	}
+	if (I.undo_cursor < I.undo_vec->len) {
+		// remove all entries after undo_cursor
+		for (int i = I.undo_cursor; i < I.undo_vec->len; ++i) {
+			// free entries to avoid memory leak
+			RzLineUndoEntry *e = rz_vector_index_ptr(I.undo_vec, i);
+			undo_entry_free(e, NULL);
+		}
+		rz_vector_remove_range(I.undo_vec, I.undo_cursor, I.undo_vec->len - I.undo_cursor, NULL);
+	}
+	rz_vector_push(I.undo_vec, &new_entry);
+	I.undo_cursor++;
+	return true;
+}
+
+/* To group several entries into one undo action, call undo_continuous_entries_begin/end before and after the sequence of operations. */
+static void undo_continuous_entries_begin() {
+	I.undo_continue = true;
+}
+static void undo_continuous_entries_end() {
+	I.undo_continue = false;
+	if (!I.undo_vec->len) {
+		return;
+	}
+	RzLineUndoEntry *e = rz_vector_tail(I.undo_vec);
+	// terminate
+	e->continuous_next = false;
+}
+
+static bool undo_nothing_to_do(bool is_redo) {
+	if (is_redo && I.undo_cursor == I.undo_vec->len) {
+		return true;
+	} else if (!is_redo && I.undo_cursor == 0) {
+		return true;
+	}
+	return false;
+}
+
+static void line_do(const bool is_redo) {
+	RzLineUndoEntry *e = NULL;
+	bool is_continuous;
+	if (!I.undo_vec) {
+		undo_reset();
+		return;
+	}
+	do {
+		char *deleting_text = NULL;
+		int deleting_len = 0;
+		char *inserting_text = NULL;
+		int inserting_len = 0;
+		int start, end;
+
+		if (undo_nothing_to_do(is_redo)) {
+			break;
+		}
+
+		// obtain entry and set is_continuous
+		if (!is_redo) {
+			// undo
+			e = rz_vector_index_ptr(I.undo_vec, I.undo_cursor - 1);
+			I.undo_cursor--;
+			is_continuous = e->continuous_prev;
+		} else {
+			// redo
+			e = rz_vector_index_ptr(I.undo_vec, I.undo_cursor);
+			I.undo_cursor++;
+			is_continuous = e->continuous_next;
+		}
+
+		if (!is_undo_entry_valid(e)) {
+			// undo_vec broken
+			undo_reset();
+			break;
+		}
+
+		// prepare text and length
+		if (!is_redo) {
+			// When undoing, we delete inserted text, and insert deleted text.
+			if (e->deleted_text) {
+				inserting_text = e->deleted_text;
+				inserting_len = e->deleted_len;
+			}
+			if (e->inserted_text) {
+				deleting_text = e->inserted_text;
+				deleting_len = e->inserted_len;
+			}
+		} else {
+			// When redoing, we insert inserted text, and delete deleted text.
+			if (e->deleted_text) {
+				deleting_text = e->deleted_text;
+				deleting_len = e->deleted_len;
+			}
+			if (e->inserted_text) {
+				inserting_text = e->inserted_text;
+				inserting_len = e->inserted_len;
+			}
+		}
+
+		// action
+		if (deleting_text) {
+			// delete text
+			start = e->offset;
+			end = e->offset + deleting_len;
+			if (start < 0 || end > I.buffer.length) {
+				undo_reset();
+				break;
+			}
+			memmove(I.buffer.data + start, I.buffer.data + end, I.buffer.length - end);
+			I.buffer.length -= deleting_len;
+			I.buffer.data[I.buffer.length] = '\0';
+			I.buffer.index = start;
+		}
+		if (inserting_text) {
+			// insert text
+			start = e->offset;
+			end = e->offset + inserting_len;
+			if (start < 0 || start > I.buffer.length) {
+				undo_reset();
+				break;
+			}
+			memmove(I.buffer.data + end, I.buffer.data + start, I.buffer.length - start);
+			memcpy(I.buffer.data + start, inserting_text, inserting_len);
+			I.buffer.length += inserting_len;
+			I.buffer.data[I.buffer.length] = '\0';
+			I.buffer.index = end;
+		}
+
+	} while (is_continuous);
+	return;
+}
+
+static void line_undo() {
+	line_do(false);
+}
+
+static void line_redo() {
+	line_do(true);
+}
 
 static inline bool is_word_break_char(char ch, bool mode) {
 	int i;
@@ -65,6 +322,7 @@ static void backward_kill_word(BreakMode mode) {
 	rz_line_clipboard_push(I.clipboard);
 	memmove(I.buffer.data + i, I.buffer.data + I.buffer.index,
 		I.buffer.length - I.buffer.index + 1);
+	undo_add_entry(i, rz_str_ndup(I.clipboard, len), NULL);
 	I.buffer.length = strlen(I.buffer.data);
 	I.buffer.index = i;
 }
@@ -82,6 +340,7 @@ static void kill_word(BreakMode mode) {
 	I.clipboard = rz_str_ndup(I.buffer.data + I.buffer.index, len);
 	rz_line_clipboard_push(I.clipboard);
 	memmove(I.buffer.data + I.buffer.index, I.buffer.data + i, I.buffer.length - i + 1);
+	undo_add_entry(i, rz_str_ndup(I.clipboard, len), NULL);
 	I.buffer.length -= len;
 }
 
@@ -93,6 +352,7 @@ static void paste(bool *enable_yank_pop) {
 		I.buffer.length += len;
 		memmove(cursor + len, cursor, dist);
 		memcpy(cursor, I.clipboard, len);
+		undo_add_entry(I.buffer.index, NULL, rz_str_ndup(I.clipboard, len));
 		I.buffer.index += len;
 		*enable_yank_pop = true;
 	}
@@ -117,10 +377,10 @@ static void unix_word_rubout(void) {
 		if (I.buffer.index > I.buffer.length) {
 			I.buffer.length = I.buffer.index;
 		}
-		len = I.buffer.index - i + 1;
-		free(I.clipboard);
+		len = I.buffer.index - i;
 		I.clipboard = rz_str_ndup(I.buffer.data + i, len);
 		rz_line_clipboard_push(I.clipboard);
+		undo_add_entry(i, rz_str_ndup(I.clipboard, len), NULL);
 		memmove(I.buffer.data + i,
 			I.buffer.data + I.buffer.index,
 			I.buffer.length - I.buffer.index + 1);
@@ -143,21 +403,24 @@ static int inithist(void) {
 }
 
 /* initialize history stuff */
-RZ_API int rz_line_dietline_init(void) {
+RZ_API bool rz_line_dietline_init(void) {
 	ZERO_FILL(I.completion);
 	if (!inithist()) {
+		return false;
+	}
+	if (!undo_reset()) {
 		return false;
 	}
 	I.echo = true;
 	return true;
 }
 
-#if USE_UTF8
-/* read utf8 char into 's', return the length in bytes */
-static int rz_line_readchar_utf8(ut8 *s, int slen) {
-	// TODO: add support for w32
+/* \brief Reads UTF-8 char into \p s with maximum expected bytelength \p maxlen
+ * \return The length in bytes
+ */
+static int rz_line_readchar_utf8(ut8 *s, int maxlen) {
 	ssize_t len, i;
-	if (slen < 1) {
+	if (maxlen < 1) {
 		return 0;
 	}
 	int ch = rz_cons_readchar();
@@ -165,11 +428,6 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 		return -1;
 	}
 	*s = ch;
-#if 0
-	if ((t = read (0, s, 1)) != 1) {
-		return t;
-	}
-#endif
 	*s = rz_cons_controlz(*s);
 	if (*s < 0x80) {
 		len = 1;
@@ -182,7 +440,7 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 	} else {
 		return -1;
 	}
-	if (len > slen) {
+	if (len > maxlen) {
 		return -1;
 	}
 	for (i = 1; i < len; i++) {
@@ -196,7 +454,6 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 	}
 	return len;
 }
-#endif
 
 RZ_API int rz_line_set_hist_callback(RzLine *line, RzLineHistoryUpCb up, RzLineHistoryDownCb down) {
 	line->cb_history_up = up;
@@ -569,10 +826,12 @@ static void selection_widget_select(void) {
 			I.buffer.index = I.buffer.length;
 			return;
 		}
+		char *del_text = strdup(I.buffer.data);
 		I.buffer.length = RZ_MIN(strlen(sel_widget->options[sel_widget->selection]), RZ_LINE_BUFSIZE - 1);
 		memcpy(I.buffer.data, sel_widget->options[sel_widget->selection], I.buffer.length);
 		I.buffer.data[I.buffer.length] = '\0';
 		I.buffer.index = I.buffer.length;
+		undo_add_entry(0, del_text, strdup(I.buffer.data));
 		selection_widget_erase();
 	}
 }
@@ -624,6 +883,16 @@ static void replace_buffer_text(RzLineBuffer *buf, size_t start, size_t end, con
 	}
 
 	size_t diff = end - start;
+	if (diff || s_len) {
+		char *del_text = rz_str_ndup(buf->data + start, diff);
+		char *ins_text = rz_str_ndup(s, s_len);
+		if (diff != s_len || rz_str_cmp(del_text, ins_text, diff)) {
+			undo_add_entry(start, del_text, ins_text);
+		} else {
+			RZ_FREE(del_text);
+			RZ_FREE(ins_text);
+		}
+	}
 	// FIXME: escape s
 	memmove(buf->data + start + s_len, buf->data + end, buf->length - end);
 	memmove(buf->data + start, s, s_len);
@@ -683,6 +952,7 @@ static void print_options(int argc, const char **argv) {
 
 RZ_API void rz_line_autocomplete(void) {
 	char *p;
+	char *del_text = NULL;
 	const char **argv = NULL;
 	int argc = 0, i, j, plen;
 	bool opt = false;
@@ -690,6 +960,7 @@ RZ_API void rz_line_autocomplete(void) {
 
 	if (I.ns_completion.run) {
 		RzLineNSCompletionResult *res = I.ns_completion.run(&I.buffer, I.prompt_type, I.ns_completion.run_user);
+		undo_continuous_entries_begin();
 		if (!res || rz_pvector_empty(&res->options)) {
 			// do nothing
 		} else if (rz_pvector_len(&res->options) == 1) {
@@ -699,6 +970,7 @@ RZ_API void rz_line_autocomplete(void) {
 			if (is_at_end && res->end_string) {
 				replace_buffer_text(&I.buffer, I.buffer.length, I.buffer.length, res->end_string);
 			}
+
 		} else {
 			// otherwise find maxcommonprefix, print it, and then print options
 			char *max_common_pfx = get_max_common_pfx(&res->options);
@@ -708,7 +980,7 @@ RZ_API void rz_line_autocomplete(void) {
 			rz_cons_printf("%s%s\n", I.prompt, I.buffer.data);
 			print_options(rz_pvector_len(&res->options), (const char **)rz_pvector_data(&res->options));
 		}
-
+		undo_continuous_entries_end();
 		rz_line_ns_completion_result_free(res);
 		return;
 	}
@@ -740,6 +1012,9 @@ RZ_API void rz_line_autocomplete(void) {
 	} else {
 		p = I.buffer.data; // XXX: removes current buffer
 		plen = sizeof(I.buffer.data);
+	}
+	if (plen) {
+		del_text = rz_str_ndup(I.buffer.data, I.buffer.length);
 	}
 	/* autocomplete */
 	if (argc == 1) {
@@ -804,6 +1079,12 @@ RZ_API void rz_line_autocomplete(void) {
 		}
 	}
 
+	if (rz_str_cmp(del_text, I.buffer.data, I.buffer.length)) {
+		undo_add_entry(0, del_text, rz_str_ndup(I.buffer.data, I.buffer.length));
+	} else {
+		RZ_FREE(del_text);
+	}
+
 	if (I.prompt_type != RZ_LINE_PROMPT_DEFAULT || cons->show_autocomplete_widget) {
 		selection_widget_update();
 		if (I.sel_widget) {
@@ -828,6 +1109,8 @@ static inline void rotate_kill_ring(bool *enable_yank_pop) {
 		return;
 	}
 	I.buffer.index -= strlen(rz_list_get_n(I.kill_ring, I.kill_ring_ptr));
+	undo_continuous_entries_begin();
+	undo_add_entry(I.buffer.index, rz_str_ndup(I.buffer.data + I.buffer.index, I.buffer.length - I.buffer.index), NULL);
 	I.buffer.data[I.buffer.index] = 0;
 	I.kill_ring_ptr -= 1;
 	if (I.kill_ring_ptr < 0) {
@@ -835,10 +1118,12 @@ static inline void rotate_kill_ring(bool *enable_yank_pop) {
 	}
 	I.clipboard = rz_list_get_n(I.kill_ring, I.kill_ring_ptr);
 	paste(enable_yank_pop);
+	undo_continuous_entries_end();
 }
 
 static inline void __delete_next_char(void) {
 	if (I.buffer.index < I.buffer.length) {
+		undo_add_entry(I.buffer.index, rz_str_ndup(I.buffer.data + I.buffer.index, 1), NULL);
 		int len = rz_str_utf8_charsize(I.buffer.data + I.buffer.index);
 		memmove(I.buffer.data + I.buffer.index,
 			I.buffer.data + I.buffer.index + len,
@@ -848,6 +1133,9 @@ static inline void __delete_next_char(void) {
 }
 
 static inline void __delete_prev_char(void) {
+	if (I.buffer.index > 0) {
+		undo_add_entry(I.buffer.index - 1, rz_str_ndup(I.buffer.data + I.buffer.index - 1, 1), NULL);
+	}
 	if (I.buffer.index < I.buffer.length) {
 		if (I.buffer.index > 0) {
 			size_t len = rz_str_utf8_charsize_prev(I.buffer.data + I.buffer.index, I.buffer.index);
@@ -871,6 +1159,9 @@ static inline void __delete_prev_char(void) {
 }
 
 static inline void delete_till_end(void) {
+	if (I.buffer.index < I.buffer.length) {
+		undo_add_entry(I.buffer.index, strdup(I.buffer.data + I.buffer.index), NULL);
+	}
 	I.buffer.data[I.buffer.index] = '\0';
 	I.buffer.length = I.buffer.index;
 	I.buffer.index = I.buffer.index > 0 ? I.buffer.index - 1 : 0;
@@ -1245,9 +1536,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	static int gcomp = 0;
 	static int gcomp_is_rev = true;
 	char buf[10];
-#if USE_UTF8
 	int utflen;
-#endif
 	int ch = 0, key, i = 0; /* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
@@ -1300,38 +1589,19 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				I.buffer.length = 0;
 			}
 		}
-#if USE_UTF8
 		utflen = rz_line_readchar_utf8((ut8 *)buf, sizeof(buf));
 		if (utflen < 1) {
 			rz_cons_break_pop();
 			return NULL;
 		}
 		buf[utflen] = 0;
-#else
-#if __WINDOWS__
-		{
-			int len = rz_line_readchar_win((ut8 *)buf, sizeof(buf));
-			if (len < 1) {
-				rz_cons_break_pop();
-				return NULL;
-			}
-			buf[len] = 0;
-		}
-#else
-		ch = rz_cons_readchar();
-		if (ch == -1) {
-			rz_cons_break_pop();
-			return NULL;
-		}
-		buf[0] = ch;
-#endif
-#endif
 		bool o_do_setup_match = I.history.do_setup_match;
 		I.history.do_setup_match = true;
 		if (I.echo) {
 			rz_cons_clear_line(0);
 		}
 		switch (*buf) {
+
 		case 0: // control-space
 			/* ignore atm */
 			break;
@@ -1363,6 +1633,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						I.buffer.index = I.buffer.length;
 						strncpy(I.buffer.data, tmp_ed_cmd, RZ_LINE_BUFSIZE - 1);
 						I.buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
+						undo_add_entry(0, NULL, strdup(tmp_ed_cmd));
 					} else {
 						I.buffer.length -= strlen(tmp_ed_cmd);
 					}
@@ -1399,6 +1670,9 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			}
 			break;
 		case 11: // ^K
+			if (I.buffer.index != I.buffer.length) {
+				undo_add_entry(I.buffer.index, strdup(I.buffer.data + I.buffer.index), NULL);
+			}
 			I.buffer.data[I.buffer.index] = '\0';
 			I.buffer.length = I.buffer.index;
 			break;
@@ -1433,6 +1707,9 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			free(I.clipboard);
 			I.clipboard = strdup(I.buffer.data);
 			rz_line_clipboard_push(I.clipboard);
+			if (I.buffer.length) {
+				undo_add_entry(0, strdup(I.clipboard), NULL);
+			}
 			I.buffer.data[0] = '\0';
 			I.buffer.length = 0;
 			I.buffer.index = 0;
@@ -1455,6 +1732,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						int len = strlen(txt);
 						I.buffer.length += len;
 						if (I.buffer.length < RZ_LINE_BUFSIZE) {
+							undo_add_entry(I.buffer.index, NULL, strdup(txt));
 							I.buffer.index = I.buffer.length;
 							strcat(I.buffer.data, txt);
 						} else {
@@ -1473,6 +1751,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			break;
 		case 24: // ^X
 			if (I.buffer.index > 0) {
+				undo_add_entry(0, rz_str_ndup(I.buffer.data, I.buffer.index), NULL);
 				strncpy(I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
 				I.buffer.length -= I.buffer.index;
 				I.buffer.index = 0;
@@ -1505,6 +1784,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					gcomp_idx--;
 				}
 			} else {
+				undo_reset();
 				I.history.do_setup_match = o_do_setup_match;
 				rz_line_hist_down();
 			}
@@ -1520,17 +1800,23 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			} else if (gcomp) {
 				gcomp_idx++;
 			} else {
+				undo_reset();
 				I.history.do_setup_match = o_do_setup_match;
 				rz_line_hist_up();
 			}
 			break;
+		case 31: // ^_ ctrl-/ or ctrl-_
+			if (!gcomp && !I.hud && !I.sel_widget) {
+				line_undo();
+			}
+			break;
 		case 27: // esc-5b-41-00-00 alt/meta key
 			buf[0] = rz_cons_readchar_timeout(50);
-			switch (buf[0]) {
+			switch ((signed char)buf[0]) {
 			case 127: // alt+bkspace
 				backward_kill_word(MINOR_BREAK);
 				break;
-			case 27: // escape key, goto vi mode
+			case -1: // escape key, goto vi mode
 				if (I.enable_vi_mode) {
 					if (I.hud) {
 						I.hud->vi = true;
@@ -1574,6 +1860,12 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				}
 				if (i >= I.buffer.length) {
 					I.buffer.index = I.buffer.length;
+				}
+				break;
+			case 63: // ^[? Meta-/
+			case 95: // ^[_ Meta-_
+				if (!gcomp && !I.hud && !I.sel_widget) {
+					line_redo();
 				}
 				break;
 			default:
@@ -1648,6 +1940,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						} else if (gcomp) {
 							gcomp_idx++;
 						} else {
+							undo_reset();
 							I.history.do_setup_match = o_do_setup_match;
 							if (rz_line_hist_up() == -1) {
 								rz_cons_break_pop();
@@ -1668,6 +1961,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 								gcomp_idx--;
 							}
 						} else {
+							undo_reset();
 							I.history.do_setup_match = o_do_setup_match;
 							if (rz_line_hist_down() == -1) {
 								rz_cons_break_pop();
@@ -1806,55 +2100,33 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				gcomp++;
 			}
 			{
-#if USE_UTF8
 				int size = utflen;
-#else
-				int size = 1;
-#endif
 				if (I.buffer.length + size >= RZ_LINE_BUFSIZE) {
 					break;
 				}
 			}
 			if (I.buffer.index < I.buffer.length) {
-#if USE_UTF8
 				if ((I.buffer.length + utflen) < sizeof(I.buffer.data)) {
 					I.buffer.length += utflen;
 					for (i = I.buffer.length; i > I.buffer.index; i--) {
 						I.buffer.data[i] = I.buffer.data[i - utflen];
 					}
 					memcpy(I.buffer.data + I.buffer.index, buf, utflen);
+					undo_add_entry(I.buffer.index, NULL, rz_str_ndup(buf, utflen));
 				}
-#else
-				for (i = ++I.buffer.length; i > I.buffer.index; i--) {
-					I.buffer.data[i] = I.buffer.data[i - 1];
-				}
-				I.buffer.data[I.buffer.index] = buf[0];
-#endif
 			} else {
-#if USE_UTF8
 				if ((I.buffer.length + utflen) < sizeof(I.buffer.data)) {
 					memcpy(I.buffer.data + I.buffer.length, buf, utflen);
 					I.buffer.length += utflen;
+					if (!undo_concat_entry(buf, utflen)) {
+						undo_add_entry(I.buffer.index, NULL, rz_str_ndup(buf, utflen));
+					}
 				}
 				I.buffer.data[I.buffer.length] = '\0';
-#else
-				I.buffer.data[I.buffer.length] = buf[0];
-				I.buffer.length++;
-				if (I.buffer.length > (RZ_LINE_BUFSIZE - 1)) {
-					I.buffer.length--;
-				}
-				I.buffer.data[I.buffer.length] = '\0';
-#endif
 			}
-#if USE_UTF8
 			if ((I.buffer.index + utflen) <= I.buffer.length) {
 				I.buffer.index += utflen;
 			}
-#else
-			if (I.buffer.index < I.buffer.length) {
-				I.buffer.index++;
-			}
-#endif
 			break;
 		}
 		if (I.sel_widget && I.buffer.length != prev_buflen) {
@@ -1898,6 +2170,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		}
 	}
 _end:
+	undo_reset();
 	rz_cons_break_pop();
 	rz_cons_set_raw(0);
 	rz_cons_enable_mouse(mouse_status);

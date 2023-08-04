@@ -89,7 +89,8 @@ RZ_API ut64 rz_num_math(RzNum *num, const char *str);
 RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str);
 RZ_API int rz_num_to_bits(char *out, ut64 num);
 RZ_API int rz_num_to_trits(char *out, ut64 num); // Rename this please
-RZ_API int rz_num_rand(int max);
+RZ_API ut32 rz_num_rand32(ut32 max);
+RZ_API ut64 rz_num_rand64(ut64 max);
 RZ_API void rz_num_irand(void);
 RZ_API ut64 rz_get_input_num_value(RzNum *num, const char *input_value);
 RZ_API bool rz_is_valid_input_num_value(RzNum *num, const char *input_value);

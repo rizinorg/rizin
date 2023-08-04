@@ -348,13 +348,39 @@ static inline bool can_be_ebcdic(const ut8 *buf, ut64 size) {
 }
 
 /**
- * \brief Look for strings in an RzBuffer.
- * \param buf Pointer to a raw buffer to scan
- * \param list Pointer to a list that will be populated with the found strings
- * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters
- * \param from Minimum address to scan
- * \param to Maximum address to scan
- * \param type Type of strings to search
+ * \brief Look for strings in a byte array, but returns only the first result.
+ *
+ * \param buf     Pointer to a raw buffer to scan
+ * \param opt     Pointer to a RzUtilStrScanOptions that specifies search parameters
+ * \param type    Type of strings to search
+ * \param output  Pointer to a RzDetectedString where to store the result.
+ *
+ * \return On success returns true, otherwise false.
+ */
+RZ_API bool rz_scan_strings_single_raw(RZ_NONNULL const ut8 *buf, ut64 size, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type, RZ_NONNULL RzDetectedString **output) {
+	rz_return_val_if_fail(buf && opt && output, false);
+
+	RzList *list = rz_list_newf((RzListFree)rz_detected_string_free);
+	if (!list) {
+		return false;
+	} else if (rz_scan_strings_raw(buf, list, opt, 0, size, type) > 0) {
+		*output = rz_list_pop_head(list);
+	}
+
+	rz_list_free(list);
+	return *output != NULL;
+}
+
+/**
+ * \brief Look for strings in a byte array.
+ *
+ * \param buf   Pointer to a raw buffer to scan
+ * \param list  Pointer to a list that will be populated with the found strings
+ * \param opt   Pointer to a RzUtilStrScanOptions that specifies search parameters
+ * \param from  Minimum address to scan
+ * \param to    Maximum address to scan
+ * \param type  Type of strings to search
+ *
  * \return Number of strings found
  *
  * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.

@@ -11,7 +11,7 @@ wa "mov eax, 0x1234;push eax"
 ds 2
 .arf
 ar esp
-?v [esp]
+%v [esp]
 EOF
 EXPECT=<<EOF
 esp = 0x00107ffc

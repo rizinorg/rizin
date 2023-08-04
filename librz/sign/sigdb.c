@@ -156,7 +156,7 @@ fail:
  * \return true if the signature entry was correctly added to the database, false otherwise
  */
 RZ_API bool rz_sign_sigdb_add_entry(RZ_NONNULL RzSigDb *db, RZ_NONNULL const RzSigDBEntry *entry) {
-	rz_return_val_if_fail(db && entry, NULL);
+	rz_return_val_if_fail(db && entry, false);
 	return ht_pu_insert(db->entries, entry, 1);
 }
 
@@ -182,7 +182,7 @@ static bool sigdb_move_entry(void *user, const void *k, const ut64 v) {
  * \return true if the databases were correctly merged, false otherwise
  */
 RZ_API bool rz_sign_sigdb_merge(RZ_NONNULL RzSigDb *db, RZ_NONNULL RzSigDb *db2) {
-	rz_return_val_if_fail(db && db2, NULL);
+	rz_return_val_if_fail(db && db2, false);
 	struct sigdb_move_data_t opt = {
 		.src = db2,
 		.dst = db,
@@ -294,7 +294,7 @@ static bool sigdb_to_list(void *user, const void *k, const ut64 v) {
 RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_sign_sigdb_list(RZ_NONNULL const RzSigDb *db) {
 	rz_return_val_if_fail(db, NULL);
 
-	RzList *res = rz_list_new();
+	RzList *res = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
 	if (!res) {
 		return NULL;
 	}

@@ -66,7 +66,9 @@ static void list(RzEgg *egg) {
 	}
 }
 
-static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
+static bool create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
+	bool ok = false;
+
 	RzBin *bin = rz_bin_new();
 	RzBinArchOptions opts;
 	RzBuffer *b;
@@ -75,15 +77,17 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	if (b) {
 		ut64 blen;
 		const ut8 *tmp = rz_buf_data(b, &blen);
-		if (write(1, tmp, blen) != blen) {
-			eprintf("Failed to write buffer\n");
+		if (write(1, tmp, blen) == blen) {
+			ok = true;
+		} else {
+			RZ_LOG_ERROR("rz-gg: rz-gg: failed to write buffer\n");
 		}
 		rz_buf_free(b);
 	} else {
-		eprintf("Cannot create binary for this format '%s'.\n", format);
+		RZ_LOG_ERROR("rz-gg: cannot create binary for this format '%s'.\n", format);
 	}
 	rz_bin_free(bin);
-	return 0;
+	return ok;
 }
 
 static int openfile(const char *f, int x) {
@@ -105,7 +109,7 @@ static int openfile(const char *f, int x) {
 	int r = ftruncate(fd, 0);
 #endif
 	if (r != 0) {
-		eprintf("Could not resize\n");
+		RZ_LOG_ERROR("rz-gg: could not resize\n");
 	}
 	close(1);
 	dup2(fd, 1);
@@ -164,10 +168,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			break;
 		case 'C':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
-				eprintf("Cannot open empty contents path\n");
-				free(sequence);
-				rz_egg_free(egg);
-				return 1;
+				RZ_LOG_ERROR("rz-gg: cannot open empty contents path\n");
+				goto fail;
 			}
 			contents = opt.arg;
 			break;
@@ -184,11 +186,13 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				if (len > 0) {
 					rz_egg_patch(egg, off, (const ut8 *)b, len);
 				} else {
-					eprintf("Invalid hexstr for -w\n");
+					RZ_LOG_ERROR("rz-gg: invalid hexstr for -w\n");
+					goto fail;
 				}
 				free(b);
 			} else {
-				eprintf("Missing colon in -w\n");
+				RZ_LOG_ERROR("rz-gg: missing colon in -w\n");
+				goto fail;
 			}
 			free(arg);
 		} break;
@@ -197,7 +201,10 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			ut64 n = rz_num_math(NULL, opt.arg);
 			// TODO: support big endian too
 			// (this is always little because rz_egg_setup is further below)
-			rz_egg_patch_num(egg, -1, n, c == 'N' ? 64 : 32);
+			if (!rz_egg_patch_num(egg, -1, n, c == 'N' ? 64 : 32)) {
+				RZ_LOG_ERROR("rz-gg: error patching num\n");
+				goto fail;
+			}
 			append = 1;
 		} break;
 		case 'd':
@@ -210,9 +217,13 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				n = rz_num_math(NULL, p + 1);
 				// TODO: support big endian too
 				// (this is always little because rz_egg_setup is further below)
-				rz_egg_patch_num(egg, off, n, c == 'D' ? 64 : 32);
+				if (!rz_egg_patch_num(egg, off, n, c == 'D' ? 64 : 32)) {
+					RZ_LOG_ERROR("rz-gg: error patching num\n");
+					goto fail;
+				}
 			} else {
-				eprintf("Missing colon in -%c\n", c);
+				RZ_LOG_ERROR("rz-gg: missing colon in -%c\n", c);
+				goto fail;
 			}
 		} break;
 		case 'S':
@@ -226,10 +237,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			break;
 		case 'I':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
-				eprintf("Cannot open empty include path\n");
-				free(sequence);
-				rz_egg_free(egg);
-				return 1;
+				RZ_LOG_ERROR("rz-gg: cannot open empty include path\n");
+				goto fail;
 			}
 			rz_egg_lang_include_path(egg, opt.arg);
 			break;
@@ -305,9 +314,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			sequence = strdup(opt.arg);
 			break;
 		default:
-			free(sequence);
-			rz_egg_free(egg);
-			return 1;
+			goto fail;
 		}
 	}
 
@@ -330,10 +337,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	// catch this first
 	if (get_offset) {
 		if (strncmp(sequence, "0x", 2)) {
-			eprintf("Need hex value with `0x' prefix e.g. 0x41414142\n");
-			free(sequence);
-			rz_egg_free(egg);
-			return 1;
+			RZ_LOG_ERROR("rz-gg: need hex value with `0x' prefix e.g. 0x41414142\n");
+			goto fail;
 		}
 
 		get_offset = rz_num_math(0, sequence);
@@ -348,7 +353,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	rz_egg_setup(egg, arch, bits, 0, os);
 	if (file) {
 		if (RZ_STR_ISEMPTY(file)) {
-			eprintf("Cannot open empty path\n");
+			RZ_LOG_ERROR("rz-gg: cannot open empty path\n");
 			goto fail;
 		}
 		if (!strcmp(file, "-")) {
@@ -364,7 +369,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			}
 		} else {
 			if (!rz_egg_load_file(egg, file)) {
-				eprintf("Cannot load file \"%s\"\n", file);
+				RZ_LOG_ERROR("rz-gg: cannot load file \"%s\"\n", file);
+				goto fail;
 			}
 		}
 	}
@@ -372,10 +378,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	// compile source code to assembly
 	if (!rz_egg_compile(egg)) {
 		if (!fmt) {
-			eprintf("rz_egg_compile: fail\n");
-			free(sequence);
-			rz_egg_free(egg);
-			return 1;
+			RZ_LOG_ERROR("rz-gg: rz_egg_compile: fail\n");
+			goto fail;
 		}
 	}
 
@@ -383,7 +387,10 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	if (str) {
 		int l = strlen(str);
 		if (l > 0) {
-			rz_egg_raw(egg, (const ut8 *)str, l);
+			if (!rz_egg_raw(egg, (const ut8 *)str, l)) {
+				RZ_LOG_ERROR("rz-gg: cannot append string\n");
+				goto fail;
+			}
 		}
 	}
 
@@ -394,7 +401,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		if (buf && l > 0) {
 			rz_egg_raw(egg, (const ut8 *)buf, (int)l);
 		} else {
-			eprintf("Error loading '%s'\n", contents);
+			RZ_LOG_ERROR("rz-gg: error loading '%s'\n", contents);
+			goto fail;
 		}
 		free(buf);
 	}
@@ -402,7 +410,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	// add shellcode
 	if (shellcode) {
 		if (!rz_egg_shellcode(egg, shellcode)) {
-			eprintf("Unknown shellcode '%s'\n", shellcode);
+			RZ_LOG_ERROR("rz-gg: unknown shellcode '%s'\n", shellcode);
 			goto fail;
 		}
 	}
@@ -413,12 +421,13 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		int len = rz_hex_str2bin(bytes, b);
 		if (len > 0) {
 			if (!rz_egg_raw(egg, b, len)) {
-				eprintf("Unknown '%s'\n", shellcode);
+				RZ_LOG_ERROR("rz-gg: unknown '%s'\n", shellcode);
 				free(b);
 				goto fail;
 			}
 		} else {
-			eprintf("Invalid hexpair string for -B\n");
+			RZ_LOG_ERROR("rz-gg: invalid hexpair string for -B\n");
+			goto fail;
 		}
 		free(b);
 		free(bytes);
@@ -443,7 +452,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			fd = openfile("a.out", ISEXEC);
 		}
 		if (fd == -1) {
-			eprintf("cannot open file '%s'\n", opt.arg);
+			RZ_LOG_ERROR("rz-gg: cannot open file '%s'\n", opt.arg);
 			goto fail;
 		}
 		close(fd);
@@ -451,31 +460,37 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	if (ofile) {
 		fd = openfile(ofile, ISEXEC);
 		if (fd == -1) {
-			eprintf("cannot open file '%s'\n", ofile);
+			RZ_LOG_ERROR("rz-gg: cannot open file '%s'\n", ofile);
 			goto fail;
 		}
 	}
 
 	// assemble to binary
 	if (!rz_egg_assemble(egg)) {
-		eprintf("rz_egg_assemble: invalid assembly\n");
+		RZ_LOG_ERROR("rz-gg: rz_egg_assemble: invalid assembly\n");
 		goto fail;
 	}
 	if (encoder) {
 		if (!rz_egg_encode(egg, encoder)) {
-			eprintf("Invalid encoder '%s'\n", encoder);
+			RZ_LOG_ERROR("rz-gg: invalid encoder '%s'\n", encoder);
 			goto fail;
 		}
 	}
 
 	// add padding
 	if (padding) {
-		rz_egg_padding(egg, padding);
+		if (!rz_egg_padding(egg, padding)) {
+			RZ_LOG_ERROR("rz-gg: cannot add padding\n");
+			goto fail;
+		}
 	}
 
 	// add pattern
 	if (pattern) {
-		rz_egg_pattern(egg, rz_num_math(NULL, pattern));
+		if (!rz_egg_pattern(egg, rz_num_math(NULL, pattern))) {
+			RZ_LOG_ERROR("rz-gg: cannot add pattern\n");
+			goto fail;
+		}
 	}
 
 	// apply patches
@@ -483,7 +498,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		egg->bin = rz_buf_new_with_bytes(NULL, 0);
 	}
 	if (!rz_egg_get_bin(egg)) {
-		eprintf("rz_egg_get_bin: invalid egg :(\n");
+		RZ_LOG_ERROR("rz-gg: rz_egg_get_bin: invalid egg :(\n");
 		goto fail;
 	}
 	rz_egg_finalize(egg);
@@ -508,12 +523,12 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			ut64 blen;
 			const ut8 *tmp = rz_buf_data(b, &blen);
 			if (write(1, tmp, blen) != blen) {
-				eprintf("Failed to write buffer\n");
+				RZ_LOG_ERROR("rz-gg: failed to write buffer\n");
 				goto fail;
 			}
 		} else {
 			if (!format) {
-				eprintf("No format specified\n");
+				RZ_LOG_ERROR("rz-gg: no format specified\n");
 				goto fail;
 			}
 			char *code = NULL;
@@ -554,10 +569,13 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				break;
 			case 'e': // ELF
 			case 'm': // MACH0
-				create(format, arch, bits, tmp, tmpsz);
+				if (!create(format, arch, bits, tmp, tmpsz)) {
+					RZ_LOG_ERROR("rz-gg: error in creating binary\n");
+					goto fail;
+				}
 				break;
 			default:
-				eprintf("unknown executable format (%s)\n", format);
+				RZ_LOG_ERROR("rz-gg: unknown executable format (%s)\n", format);
 				goto fail;
 			}
 		}

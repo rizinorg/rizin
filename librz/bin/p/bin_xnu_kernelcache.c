@@ -154,10 +154,10 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) 
 		goto beach;
 	}
 
-	RCFValueDict *prelink_info = NULL;
+	RzCFValueDict *prelink_info = NULL;
 	if (main_mach0->hdr.filetype != MH_FILESET && prelink_range->range.size) {
 		prelink_info = rz_cf_value_dict_parse(fbuf, prelink_range->range.offset,
-			prelink_range->range.size, RZ_CF_OPTION_SKIP_NSDATA);
+			prelink_range->range.size, RZ_CF_OPTION_SKIP_NSDATA | RZ_CF_OPTION_SUPPORT_IDREF);
 		if (!prelink_info) {
 			RZ_FREE(prelink_range);
 			RZ_FREE(obj);
@@ -282,12 +282,12 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * m
 }
 
 static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
-	RCFValueArray *kext_array = NULL;
+	RzCFValueArray *kext_array = NULL;
 	RzListIter *iter;
-	RCFKeyValue *item;
+	RzCFKeyValue *item;
 	rz_list_foreach (obj->prelink_info->pairs, iter, item) {
 		if (!strcmp(item->key, "_PrelinkInfoDictionary")) {
-			kext_array = (RCFValueArray *)item->value;
+			kext_array = (RzCFValueArray *)item->value;
 			break;
 		}
 	}
@@ -303,7 +303,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 
 	bool is_sorted = true;
 	RKext *prev_kext = NULL;
-	RCFValueDict *kext_item;
+	RzCFValueDict *kext_item;
 	rz_list_foreach (kext_array->values, iter, kext_item) {
 		RKext *kext = RZ_NEW0(RKext);
 		if (!kext) {
@@ -318,7 +318,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 				if (item->value->type != RZ_CF_STRING) {
 					break;
 				}
-				RCFValueString *type = (RCFValueString *)item->value;
+				RzCFValueString *type = (RzCFValueString *)item->value;
 				if (strcmp(type->value, "KEXT")) {
 					break;
 				}
@@ -328,7 +328,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 			if (!strcmp(item->key, "_PrelinkExecutableLoadAddr")) {
 				if (item->value->type == RZ_CF_INTEGER) {
 					kext_incomplete--;
-					kext->vaddr = ((RCFValueInteger *)item->value)->value;
+					kext->vaddr = ((RzCFValueInteger *)item->value)->value;
 					kext->range.offset = kext->vaddr - obj->pa2va_exec;
 				}
 			}
@@ -336,7 +336,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 			if (!strcmp(item->key, "_PrelinkExecutableSize")) {
 				kext_incomplete--;
 				if (item->value->type == RZ_CF_INTEGER) {
-					kext->range.size = ((RCFValueInteger *)item->value)->value;
+					kext->range.size = ((RzCFValueInteger *)item->value)->value;
 				} else {
 					kext->range.size = 0;
 				}
@@ -345,7 +345,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 			if (!strcmp(item->key, "_PrelinkKmodInfo")) {
 				if (item->value->type == RZ_CF_INTEGER) {
 					kext_incomplete--;
-					kext->mod_info = ((RCFValueInteger *)item->value)->value;
+					kext->mod_info = ((RzCFValueInteger *)item->value)->value;
 					kext->mod_info -= obj->pa2va_data;
 				}
 			}
@@ -353,7 +353,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 			if (!strcmp(item->key, "CFBundleIdentifier")) {
 				if (item->value->type == RZ_CF_STRING) {
 					kext_incomplete--;
-					kext->name = ((RCFValueString *)item->value)->value;
+					kext->name = ((RzCFValueString *)item->value)->value;
 				}
 			}
 		}
@@ -1264,25 +1264,6 @@ static void symbols_from_mach0(RzList /*<RzBinSymbol *>*/ *ret, struct MACH0_(ob
 		}
 		sym->name = strdup(symbols[i].name);
 		sym->vaddr = symbols[i].addr;
-		if (sym->name[0] == '_') {
-			char *dn = rz_bin_demangle(bf, sym->name, sym->name, sym->vaddr, false);
-			if (dn) {
-				sym->dname = dn;
-				char *p = strchr(dn, '.');
-				if (p) {
-					if (IS_UPPER(sym->name[0])) {
-						sym->classname = strdup(sym->name);
-						sym->classname[p - sym->name] = 0;
-					} else if (IS_UPPER(p[1])) {
-						sym->classname = strdup(p + 1);
-						p = strchr(sym->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
 		sym->forwarder = "NONE";
 		sym->bind = (symbols[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? "LOCAL" : "GLOBAL";
 		sym->type = "FUNC";
@@ -1303,6 +1284,10 @@ typedef struct _r_sysent {
 	ut16 sy_arg_bytes;
 } RSysEnt;
 
+/**
+ * Search for the struct sysent sysent[] array of xnu and assign names to all syscall
+ * handlers referenced by it.
+ */
 static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(obj->mach0))) {
@@ -1313,8 +1298,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 	RzSyscall *syscall = NULL;
 	ut8 *data_const = NULL;
 	ut64 data_const_offset = 0, data_const_size = 0, data_const_vaddr = 0;
-	int i = 0;
-	for (; !sections[i].last; i++) {
+	for (int i = 0; !sections[i].last; i++) {
 		if (strstr(sections[i].name, "__DATA_CONST.__const")) {
 			data_const_offset = sections[i].offset;
 			data_const_size = sections[i].size;
@@ -1337,7 +1321,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
-	while (cursor < end) {
+	while (cursor + sizeof(ut64) <= end) {
 		ut64 test = rz_read_le64(cursor);
 		if (test == enosys_addr) {
 			break;
@@ -1355,6 +1339,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 		ut64 x = rz_read_le64(cursor + 8);
 		ut64 y = rz_read_le64(cursor + 16);
 
+		// rewind by sizeof(struct sysent) until finding something that is definitely not a struct sysent
 		if (IS_KERNEL_ADDR(addr) &&
 			(x == 0 || IS_KERNEL_ADDR(x)) &&
 			(y != 0 && !IS_KERNEL_ADDR(y))) {
@@ -1381,7 +1366,6 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 	}
 	rz_syscall_setup(syscall, "arm", 64, NULL, "ios");
 	if (!syscall->db) {
-		rz_syscall_free(syscall);
 		goto beach;
 	}
 
@@ -1401,7 +1385,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 	sym->type = "OBJECT";
 	rz_list_append(syscalls, sym);
 
-	i = 1;
+	int i = 1;
 	cursor += 24;
 	int num_syscalls = sdb_count(syscall->db);
 	while (cursor < end && i < num_syscalls) {
@@ -1436,11 +1420,9 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 
 beach:
 	rz_syscall_free(syscall);
-	if (syscalls) {
-		rz_list_free(syscalls);
-	}
-	RZ_FREE(data_const);
-	RZ_FREE(sections);
+	rz_list_free(syscalls);
+	free(data_const);
+	free(sections);
 	return NULL;
 }
 
@@ -1517,7 +1499,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
-	while (cursor < end) {
+	while (cursor + sizeof(ut64) * 2 <= end) {
 		ut64 subs_p = K_PPTR(rz_read_le64(cursor));
 		if (subs_p < text_exec_vaddr || subs_p >= text_exec_vaddr + text_exec_size) {
 			cursor += 8;
@@ -1531,12 +1513,16 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 			continue;
 		}
 
+		ut8 *array_cursor = cursor + K_MIG_SUBSYSTEM_SIZE;
+		ut8 *end_array = array_cursor + n_routines * K_MIG_ROUTINE_SIZE;
+		if (end_array > end) {
+			cursor += 16;
+			continue;
+		}
 		ut64 *routines = (ut64 *)malloc(n_routines * sizeof(ut64));
 		if (!routines) {
 			goto beach;
 		}
-		ut8 *array_cursor = cursor + K_MIG_SUBSYSTEM_SIZE;
-		ut8 *end_array = array_cursor + n_routines * K_MIG_ROUTINE_SIZE;
 		bool is_consistent = true;
 		int idx = 0;
 		while (array_cursor < end_array) {
@@ -1649,6 +1635,10 @@ static void symbols_from_stubs(RzList /*<RzBinSymbol *>*/ *ret, HtPP *kernel_sym
 		ut64 target_addr = UT64_MAX;
 
 		while (!found && level-- > 0) {
+			if (addr_in_got < obj->pa2va_exec) {
+				// invalid addr
+				break;
+			}
 			ut64 offset_in_got = addr_in_got - obj->pa2va_exec;
 			ut64 addr;
 			if (rz_buf_read_at(obj->cache_buf, offset_in_got, (ut8 *)&addr, 8) < 8) {

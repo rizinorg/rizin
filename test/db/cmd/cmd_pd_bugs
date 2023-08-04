@@ -15,7 +15,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd arm cortex 0
+NAME=pd arm cortex-m 0
 FILE==
 ARGS=-a arm -b 16
 CMDS=wx 80f30988; pi 1
@@ -25,9 +25,9 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=pd arm cortex 1
+NAME=pd arm cortex-m 1
 FILE==
-ARGS=-a arm -b 16 -e asm.cpu=cortex
+ARGS=-a arm -b 16 -e asm.cpu=cortexm
 CMDS=wx 80f30988;pi 1
 EXPECT=<<EOF
 msr psp, r0
@@ -35,10 +35,10 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=pd arm cortex 2
+NAME=pd arm cortex-m 2
 FILE==
 ARGS=-a arm -b 16
-CMDS=e asm.cpu=cortex;wx 80f30988;pi 1
+CMDS=e asm.cpu=cortexm;wx 80f30988;pi 1
 EXPECT=<<EOF
 msr psp, r0
 EOF
@@ -194,7 +194,7 @@ e asm.lines.bb=1
 pd 2
 EOF
 EXPECT=<<EOF
-test ();
+test();
           0x00000000      0000           add   byte [rax], al
           0x00000002      0000           add   byte [rax], al
 EOF
@@ -212,7 +212,7 @@ e asm.lines.bb=0
 pd 2
 EOF
 EXPECT=<<EOF
-/ test ();
+/ test();
   0x00000000      0000           add   byte [rax], al
   0x00000002      0000           add   byte [rax], al
 EOF

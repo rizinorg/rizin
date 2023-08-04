@@ -46,7 +46,8 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
 	// disasm inverted
-	rz_mem_swapendian(bytes, buf, 4); // TODO handle thumb
+	ut32 newbuf = rz_swap_ut32(*(ut32 *)buf);
+	memcpy(bytes, &newbuf, 4); // TODO handle thumb
 
 	rz_strbuf_set(&op->buf_asm, "");
 	/* prepare disassembler */

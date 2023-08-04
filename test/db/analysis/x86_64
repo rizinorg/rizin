@@ -60,7 +60,7 @@ CMDS=<<EOF
 aaa
 s 0x4901
 afb~4901
-?e
+echo
 e asm.bytes=false
 s main+98
 pd 3
@@ -518,7 +518,7 @@ ar rsi=0x1111111111111111
 afvd
 EOF
 EXPECT=<<EOF
-/ fcn.00487350 ();
+/ fcn.00487350();
 | 0x00487350      8b8710030000   mov   eax, dword [rdi + 0x310]
 | 0x00487356      48b900000000.  movabs rcx, 0x200000000
 | 0x00487360      8d50ff         lea   edx, [rax - 1]
@@ -531,7 +531,7 @@ EXPECT=<<EOF
 | 0x0048737f      f605d2542300.  test  byte [0x006bc858], 0x40
 | 0x00487386      7525           jne   0x4873ad
 | ----------- true: 0x004873ad  false: 0x00487388
-| 0x00487388      f3c3           ret
+| 0x00487388      f3c3           repz  ret
 
 | 0x00487390      8b05ea4d2300   mov   eax, dword [0x006bc180]
 | 0x00487396      85c0           test  eax, eax
@@ -643,92 +643,6 @@ Type Info at 0x08048fac:
 
 EOF
 RUN
-
-NAME=aac on mips be
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-aac
-afl~?
-EOF
-EXPECT=<<EOF
-1268
-EOF
-RUN
-
-NAME=raw aac with maps (less because of wrong map address)
-FILE=bins/elf/analysis/mipsbe-busybox
-ARGS=-n -m 0x80000 -a mips -b32 -e cfg.bigendian=true
-CMDS=<<EOF
-aac
-afl~?
-EOF
-EXPECT=<<EOF
-4
-EOF
-RUN
-
-NAME=raw aac (using a PIC bin)
-FILE=bins/elf/libmagic.so
-CMDS=<<EOF
-aac
-afl~?
-EOF
-EXPECT=<<EOF
-199
-EOF
-RUN
-
-NAME=raw aac with maps (using a PIC bin)
-FILE=bins/elf/libmagic.so
-ARGS=-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false
-CMDS=<<EOF
-aac
-e search.in=io.maps
-afl~?
-EOF
-EXPECT=<<EOF
-94
-EOF
-RUN
-
-NAME=aav without vinfun
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-af @ 0x0040dea4
-e analysis.vinfun=false
-aav
-pd 1 @ 0x0040decc~?andi
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=aav with vinfun
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-af @ 0x0040dea4
-e analysis.vinfun=true
-aav
-pd 1 @ 0x0040decc~?dword
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=aav thumb detection
-FILE=bins/firmware/armthumb.bin
-ARGS=-aarm -b32
-CMDS=<<EOF
-aav
-fl
-EOF
-EXPECT=<<EOF
-0x0000000d 4 aav.0x0000000d
-EOF
-RUN
-
 
 NAME=sym is not fcn
 FILE=bins/mach0/mach0-i386
@@ -910,7 +824,7 @@ af
 pd 1~sym.call_gmon_start:0
 EOF
 EXPECT=<<EOF
-/ sym.call_gmon_start ();
+/ sym.call_gmon_start();
 EOF
 RUN
 
@@ -924,7 +838,7 @@ pd 1~sym.call_gmon_start:0
 EOF
 EXPECT=<<EOF
 name: sym.call_gmon_start
-/ sym.call_gmon_start ();
+/ sym.call_gmon_start();
 EOF
 RUN
 
@@ -1232,7 +1146,7 @@ s 0x00012740
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00012740 (int64_t arg1, int64_t arg2);
+/ fcn.00012740(int64_t arg1, int64_t arg2);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; var int64_t var_10h @ stack - 0x10
@@ -1265,13 +1179,13 @@ e asm.bytes=false
 s main
 af
 s sym.imp.puts
-?e
+echo
 pd 3
 EOF
 EXPECT=<<EOF
 
         ╎   ; CALL XREF from main @ 0x400406
-┌ int sym.imp.puts (const char *s);
+┌ int sym.imp.puts(const char *s);
 └       ╎   0x004003f0      jmp   qword [reloc.puts]                   ; [0x601018:8]=0x4003f6
         ╎   0x004003f6      push  0
         └─< 0x004003fb      jmp   sym..plt
@@ -1352,26 +1266,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-NAME=no string on cbz
-FILE=malloc://8096
-CMDS=<<EOF
-e asm.bytes=true
-e asm.arch=arm
-e asm.bits=64
-e cfg.bigendian=false
-e emu.str=true
-wv 0x52800015
-wv 0x340000b5 @ 4
-w hello @ 0x18
-pd 2
-EOF
-EXPECT=<<EOF
-            0x00000000      15008052       movz  w21, 0
-        ,=< 0x00000004      b5000034       cbz   w21, 0x18             ; likely
-EOF
-RUN
-
 NAME=Basic type Matching
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
@@ -1402,7 +1296,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- rip:
-/ fcn.14000b54c ();
+/ fcn.14000b54c();
 |           ; var DWORD dwCreationDisposition @ stack - 0x28
 |           ; var DWORD dwFlagsAndAttributes @ stack - 0x20
 |           ; var HANDLE hTemplateFile @ stack - 0x18
@@ -1484,18 +1378,6 @@ unsigned long request
 EOF
 RUN
 
-NAME=Function definition
-FILE=bins/elf/arm1.bin
-CMDS=<<EOF
-afr @ main
-s 0x000082cc
-pd 1~?*xmalloc
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=Function definition (autorename)
 FILE=bins/pe/hello-mingw32
 CMDS=<<EOF
@@ -1510,10 +1392,9 @@ RUN
 
 NAME=Function definition indirect calls
 FILE=bins/pe/msvcfindmain.exe
-BROKEN=1
 CMDS=<<EOF
 aaa
-pd 1 @ 0x004012c0 ~?DWORD
+pd 1 @ 0x004012c0 ~?dword
 EOF
 EXPECT=<<EOF
 1
@@ -1657,7 +1538,7 @@ EOF
 EXPECT=<<EOF
 fastcall
             ; CALL XREF from main @ 0x80484c7
-/ sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
+/ sym.fastcaslled(int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
 |           ; arg int32_t arg1 @ ecx
 |           ; arg int32_t arg2 @ edx
 |           ; var int32_t var_24h @ stack - 0x24
@@ -1704,7 +1585,7 @@ EOF
 EXPECT=<<EOF
 cdecl
             ; CALL XREF from main @ 0x80484db
-/ sym.nonfastcaslled (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h);
+/ sym.nonfastcaslled(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h);
 |           ; var int32_t var_14h @ stack - 0x14
 |           ; var int32_t var_10h @ stack - 0x10
 |           ; arg int32_t arg_4h @ stack + 0x4
@@ -1760,7 +1641,7 @@ afvn my_local var_20h
 pd 1
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 (int64_t arg1);
+/ fcn.00000000(int64_t arg1);
 |           ; arg int64_t arg1 @ rdi
 |           ; var int64_t my_local @ stack - 0x20
 |           0x00000000      0000           add   byte [rax], al
@@ -1948,7 +1829,7 @@ FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 aa
 s main
-?e
+echo
 afvR
 afvW
 EOF
@@ -2156,7 +2037,7 @@ EXPECT=<<EOF
       "opcode": "seq",
       "x": {
         "opcode": "set",
-        "dst": "rsp",
+        "dst": "final",
         "src": {
           "opcode": "-",
           "x": {
@@ -2171,75 +2052,96 @@ EXPECT=<<EOF
         }
       },
       "y": {
-        "opcode": "storew",
-        "mem": 0,
-        "key": {
-          "opcode": "+",
-          "x": {
+        "opcode": "seq",
+        "x": {
+          "opcode": "storew",
+          "mem": 0,
+          "key": {
             "opcode": "var",
-            "value": "rsp"
+            "value": "final"
           },
-          "y": {
-            "opcode": "bitv",
-            "bits": "0x0",
-            "len": 64
-          }
-        },
-        "value": {
-          "opcode": "cast",
           "value": {
-            "opcode": "|",
-            "x": {
-              "opcode": "<<",
+            "opcode": "cast",
+            "value": {
+              "opcode": "|",
               "x": {
-                "opcode": "|",
+                "opcode": "<<",
                 "x": {
-                  "opcode": "<<",
+                  "opcode": "|",
                   "x": {
-                    "opcode": "|",
+                    "opcode": "<<",
                     "x": {
-                      "opcode": "<<",
+                      "opcode": "|",
                       "x": {
-                        "opcode": "|",
+                        "opcode": "<<",
                         "x": {
-                          "opcode": "<<",
+                          "opcode": "|",
                           "x": {
-                            "opcode": "|",
+                            "opcode": "<<",
                             "x": {
-                              "opcode": "<<",
+                              "opcode": "|",
                               "x": {
-                                "opcode": "|",
+                                "opcode": "<<",
                                 "x": {
-                                  "opcode": "<<",
+                                  "opcode": "|",
                                   "x": {
-                                    "opcode": "|",
+                                    "opcode": "<<",
                                     "x": {
-                                      "opcode": "<<",
+                                      "opcode": "|",
                                       "x": {
-                                        "opcode": "|",
+                                        "opcode": "<<",
                                         "x": {
-                                          "opcode": "<<",
+                                          "opcode": "|",
                                           "x": {
-                                            "opcode": "|",
+                                            "opcode": "<<",
                                             "x": {
-                                              "opcode": "<<",
+                                              "opcode": "|",
                                               "x": {
-                                                "opcode": "|",
+                                                "opcode": "<<",
                                                 "x": {
-                                                  "opcode": "<<",
+                                                  "opcode": "|",
                                                   "x": {
-                                                    "opcode": "|",
+                                                    "opcode": "<<",
                                                     "x": {
-                                                      "opcode": "<<",
+                                                      "opcode": "|",
                                                       "x": {
-                                                        "opcode": "|",
+                                                        "opcode": "<<",
                                                         "x": {
-                                                          "opcode": "<<",
+                                                          "opcode": "|",
                                                           "x": {
-                                                            "opcode": "ite",
-                                                            "condition": {
+                                                            "opcode": "<<",
+                                                            "x": {
+                                                              "opcode": "ite",
+                                                              "condition": {
+                                                                "opcode": "bool",
+                                                                "value": false
+                                                              },
+                                                              "x": {
+                                                                "opcode": "bitv",
+                                                                "bits": "0x1",
+                                                                "len": 16
+                                                              },
+                                                              "y": {
+                                                                "opcode": "bitv",
+                                                                "bits": "0x0",
+                                                                "len": 16
+                                                              }
+                                                            },
+                                                            "y": {
+                                                              "opcode": "bitv",
+                                                              "bits": "0x1",
+                                                              "len": 16
+                                                            },
+                                                            "fill_bit": {
                                                               "opcode": "bool",
                                                               "value": false
+                                                            }
+                                                          },
+                                                          "y": {
+                                                            "opcode": "ite",
+                                                            "condition": {
+                                                              "opcode": "var",
+                                                              "value": "nt"
                                                             },
                                                             "x": {
                                                               "opcode": "bitv",
@@ -2251,330 +2153,312 @@ EXPECT=<<EOF
                                                               "bits": "0x0",
                                                               "len": 16
                                                             }
-                                                          },
-                                                          "y": {
-                                                            "opcode": "bitv",
-                                                            "bits": "0x1",
-                                                            "len": 16
-                                                          },
-                                                          "fill_bit": {
-                                                            "opcode": "bool",
-                                                            "value": false
                                                           }
                                                         },
                                                         "y": {
-                                                          "opcode": "ite",
-                                                          "condition": {
-                                                            "opcode": "var",
-                                                            "value": "nt"
-                                                          },
-                                                          "x": {
-                                                            "opcode": "bitv",
-                                                            "bits": "0x1",
-                                                            "len": 16
-                                                          },
-                                                          "y": {
-                                                            "opcode": "bitv",
-                                                            "bits": "0x0",
-                                                            "len": 16
-                                                          }
+                                                          "opcode": "bitv",
+                                                          "bits": "0x2",
+                                                          "len": 16
+                                                        },
+                                                        "fill_bit": {
+                                                          "opcode": "bool",
+                                                          "value": false
                                                         }
                                                       },
                                                       "y": {
                                                         "opcode": "bitv",
-                                                        "bits": "0x2",
+                                                        "bits": "0x3",
                                                         "len": 16
-                                                      },
-                                                      "fill_bit": {
-                                                        "opcode": "bool",
-                                                        "value": false
                                                       }
                                                     },
                                                     "y": {
                                                       "opcode": "bitv",
-                                                      "bits": "0x3",
+                                                      "bits": "0x1",
                                                       "len": 16
+                                                    },
+                                                    "fill_bit": {
+                                                      "opcode": "bool",
+                                                      "value": false
                                                     }
                                                   },
                                                   "y": {
-                                                    "opcode": "bitv",
-                                                    "bits": "0x1",
-                                                    "len": 16
-                                                  },
-                                                  "fill_bit": {
-                                                    "opcode": "bool",
-                                                    "value": false
+                                                    "opcode": "ite",
+                                                    "condition": {
+                                                      "opcode": "var",
+                                                      "value": "of"
+                                                    },
+                                                    "x": {
+                                                      "opcode": "bitv",
+                                                      "bits": "0x1",
+                                                      "len": 16
+                                                    },
+                                                    "y": {
+                                                      "opcode": "bitv",
+                                                      "bits": "0x0",
+                                                      "len": 16
+                                                    }
                                                   }
                                                 },
                                                 "y": {
-                                                  "opcode": "ite",
-                                                  "condition": {
-                                                    "opcode": "var",
-                                                    "value": "of"
-                                                  },
-                                                  "x": {
-                                                    "opcode": "bitv",
-                                                    "bits": "0x1",
-                                                    "len": 16
-                                                  },
-                                                  "y": {
-                                                    "opcode": "bitv",
-                                                    "bits": "0x0",
-                                                    "len": 16
-                                                  }
+                                                  "opcode": "bitv",
+                                                  "bits": "0x1",
+                                                  "len": 16
+                                                },
+                                                "fill_bit": {
+                                                  "opcode": "bool",
+                                                  "value": false
                                                 }
                                               },
                                               "y": {
-                                                "opcode": "bitv",
-                                                "bits": "0x1",
-                                                "len": 16
-                                              },
-                                              "fill_bit": {
-                                                "opcode": "bool",
-                                                "value": false
+                                                "opcode": "ite",
+                                                "condition": {
+                                                  "opcode": "var",
+                                                  "value": "df"
+                                                },
+                                                "x": {
+                                                  "opcode": "bitv",
+                                                  "bits": "0x1",
+                                                  "len": 16
+                                                },
+                                                "y": {
+                                                  "opcode": "bitv",
+                                                  "bits": "0x0",
+                                                  "len": 16
+                                                }
                                               }
                                             },
                                             "y": {
-                                              "opcode": "ite",
-                                              "condition": {
-                                                "opcode": "var",
-                                                "value": "df"
-                                              },
-                                              "x": {
-                                                "opcode": "bitv",
-                                                "bits": "0x1",
-                                                "len": 16
-                                              },
-                                              "y": {
-                                                "opcode": "bitv",
-                                                "bits": "0x0",
-                                                "len": 16
-                                              }
+                                              "opcode": "bitv",
+                                              "bits": "0x1",
+                                              "len": 16
+                                            },
+                                            "fill_bit": {
+                                              "opcode": "bool",
+                                              "value": false
                                             }
                                           },
                                           "y": {
-                                            "opcode": "bitv",
-                                            "bits": "0x1",
-                                            "len": 16
-                                          },
-                                          "fill_bit": {
-                                            "opcode": "bool",
-                                            "value": false
+                                            "opcode": "ite",
+                                            "condition": {
+                                              "opcode": "var",
+                                              "value": "if"
+                                            },
+                                            "x": {
+                                              "opcode": "bitv",
+                                              "bits": "0x1",
+                                              "len": 16
+                                            },
+                                            "y": {
+                                              "opcode": "bitv",
+                                              "bits": "0x0",
+                                              "len": 16
+                                            }
                                           }
                                         },
                                         "y": {
-                                          "opcode": "ite",
-                                          "condition": {
-                                            "opcode": "var",
-                                            "value": "if"
-                                          },
-                                          "x": {
-                                            "opcode": "bitv",
-                                            "bits": "0x1",
-                                            "len": 16
-                                          },
-                                          "y": {
-                                            "opcode": "bitv",
-                                            "bits": "0x0",
-                                            "len": 16
-                                          }
+                                          "opcode": "bitv",
+                                          "bits": "0x1",
+                                          "len": 16
+                                        },
+                                        "fill_bit": {
+                                          "opcode": "bool",
+                                          "value": false
                                         }
                                       },
                                       "y": {
-                                        "opcode": "bitv",
-                                        "bits": "0x1",
-                                        "len": 16
-                                      },
-                                      "fill_bit": {
-                                        "opcode": "bool",
-                                        "value": false
+                                        "opcode": "ite",
+                                        "condition": {
+                                          "opcode": "var",
+                                          "value": "tf"
+                                        },
+                                        "x": {
+                                          "opcode": "bitv",
+                                          "bits": "0x1",
+                                          "len": 16
+                                        },
+                                        "y": {
+                                          "opcode": "bitv",
+                                          "bits": "0x0",
+                                          "len": 16
+                                        }
                                       }
                                     },
                                     "y": {
-                                      "opcode": "ite",
-                                      "condition": {
-                                        "opcode": "var",
-                                        "value": "tf"
-                                      },
-                                      "x": {
-                                        "opcode": "bitv",
-                                        "bits": "0x1",
-                                        "len": 16
-                                      },
-                                      "y": {
-                                        "opcode": "bitv",
-                                        "bits": "0x0",
-                                        "len": 16
-                                      }
+                                      "opcode": "bitv",
+                                      "bits": "0x1",
+                                      "len": 16
+                                    },
+                                    "fill_bit": {
+                                      "opcode": "bool",
+                                      "value": false
                                     }
                                   },
                                   "y": {
-                                    "opcode": "bitv",
-                                    "bits": "0x1",
-                                    "len": 16
-                                  },
-                                  "fill_bit": {
-                                    "opcode": "bool",
-                                    "value": false
+                                    "opcode": "ite",
+                                    "condition": {
+                                      "opcode": "var",
+                                      "value": "zf"
+                                    },
+                                    "x": {
+                                      "opcode": "bitv",
+                                      "bits": "0x1",
+                                      "len": 16
+                                    },
+                                    "y": {
+                                      "opcode": "bitv",
+                                      "bits": "0x0",
+                                      "len": 16
+                                    }
                                   }
                                 },
                                 "y": {
-                                  "opcode": "ite",
-                                  "condition": {
-                                    "opcode": "var",
-                                    "value": "zf"
-                                  },
-                                  "x": {
-                                    "opcode": "bitv",
-                                    "bits": "0x1",
-                                    "len": 16
-                                  },
-                                  "y": {
-                                    "opcode": "bitv",
-                                    "bits": "0x0",
-                                    "len": 16
-                                  }
+                                  "opcode": "bitv",
+                                  "bits": "0x1",
+                                  "len": 16
+                                },
+                                "fill_bit": {
+                                  "opcode": "bool",
+                                  "value": false
                                 }
                               },
                               "y": {
-                                "opcode": "bitv",
-                                "bits": "0x1",
-                                "len": 16
-                              },
-                              "fill_bit": {
-                                "opcode": "bool",
-                                "value": false
+                                "opcode": "ite",
+                                "condition": {
+                                  "opcode": "var",
+                                  "value": "zf"
+                                },
+                                "x": {
+                                  "opcode": "bitv",
+                                  "bits": "0x1",
+                                  "len": 16
+                                },
+                                "y": {
+                                  "opcode": "bitv",
+                                  "bits": "0x0",
+                                  "len": 16
+                                }
                               }
                             },
                             "y": {
-                              "opcode": "ite",
-                              "condition": {
-                                "opcode": "var",
-                                "value": "zf"
-                              },
-                              "x": {
-                                "opcode": "bitv",
-                                "bits": "0x1",
-                                "len": 16
-                              },
-                              "y": {
-                                "opcode": "bitv",
-                                "bits": "0x0",
-                                "len": 16
-                              }
+                              "opcode": "bitv",
+                              "bits": "0x2",
+                              "len": 16
+                            },
+                            "fill_bit": {
+                              "opcode": "bool",
+                              "value": false
                             }
                           },
                           "y": {
-                            "opcode": "bitv",
-                            "bits": "0x2",
-                            "len": 16
-                          },
-                          "fill_bit": {
-                            "opcode": "bool",
-                            "value": false
+                            "opcode": "ite",
+                            "condition": {
+                              "opcode": "var",
+                              "value": "af"
+                            },
+                            "x": {
+                              "opcode": "bitv",
+                              "bits": "0x1",
+                              "len": 16
+                            },
+                            "y": {
+                              "opcode": "bitv",
+                              "bits": "0x0",
+                              "len": 16
+                            }
                           }
                         },
                         "y": {
-                          "opcode": "ite",
-                          "condition": {
-                            "opcode": "var",
-                            "value": "af"
-                          },
-                          "x": {
-                            "opcode": "bitv",
-                            "bits": "0x1",
-                            "len": 16
-                          },
-                          "y": {
-                            "opcode": "bitv",
-                            "bits": "0x0",
-                            "len": 16
-                          }
+                          "opcode": "bitv",
+                          "bits": "0x2",
+                          "len": 16
+                        },
+                        "fill_bit": {
+                          "opcode": "bool",
+                          "value": false
                         }
                       },
                       "y": {
-                        "opcode": "bitv",
-                        "bits": "0x2",
-                        "len": 16
-                      },
-                      "fill_bit": {
-                        "opcode": "bool",
-                        "value": false
+                        "opcode": "ite",
+                        "condition": {
+                          "opcode": "var",
+                          "value": "pf"
+                        },
+                        "x": {
+                          "opcode": "bitv",
+                          "bits": "0x1",
+                          "len": 16
+                        },
+                        "y": {
+                          "opcode": "bitv",
+                          "bits": "0x0",
+                          "len": 16
+                        }
                       }
                     },
                     "y": {
-                      "opcode": "ite",
-                      "condition": {
-                        "opcode": "var",
-                        "value": "pf"
-                      },
-                      "x": {
-                        "opcode": "bitv",
-                        "bits": "0x1",
-                        "len": 16
-                      },
-                      "y": {
-                        "opcode": "bitv",
-                        "bits": "0x0",
-                        "len": 16
-                      }
+                      "opcode": "bitv",
+                      "bits": "0x1",
+                      "len": 16
+                    },
+                    "fill_bit": {
+                      "opcode": "bool",
+                      "value": false
                     }
                   },
                   "y": {
                     "opcode": "bitv",
                     "bits": "0x1",
                     "len": 16
-                  },
-                  "fill_bit": {
-                    "opcode": "bool",
-                    "value": false
                   }
                 },
                 "y": {
                   "opcode": "bitv",
                   "bits": "0x1",
                   "len": 16
+                },
+                "fill_bit": {
+                  "opcode": "bool",
+                  "value": false
                 }
               },
               "y": {
-                "opcode": "bitv",
-                "bits": "0x1",
-                "len": 16
-              },
-              "fill_bit": {
-                "opcode": "bool",
-                "value": false
+                "opcode": "ite",
+                "condition": {
+                  "opcode": "var",
+                  "value": "cf"
+                },
+                "x": {
+                  "opcode": "bitv",
+                  "bits": "0x1",
+                  "len": 16
+                },
+                "y": {
+                  "opcode": "bitv",
+                  "bits": "0x0",
+                  "len": 16
+                }
               }
             },
-            "y": {
-              "opcode": "ite",
-              "condition": {
-                "opcode": "var",
-                "value": "cf"
-              },
-              "x": {
-                "opcode": "bitv",
-                "bits": "0x1",
-                "len": 16
-              },
-              "y": {
-                "opcode": "bitv",
-                "bits": "0x0",
-                "len": 16
-              }
+            "length": 16,
+            "fill": {
+              "opcode": "bool",
+              "value": false
             }
-          },
-          "length": 16,
-          "fill": {
-            "opcode": "bool",
-            "value": false
+          }
+        },
+        "y": {
+          "opcode": "set",
+          "dst": "rsp",
+          "src": {
+            "opcode": "var",
+            "value": "final"
           }
         }
       }
     },
     "sign": false,
     "prefix": 0,
-    "id": 591,
+    "id": 612,
     "opex": {
       "operands": [
         {
@@ -2768,7 +2652,7 @@ EOF
 EXPECT=<<EOF
 ; DATA XREF from entry0 @ +0xf
 ;-- __libc_csu_fini:
-0x00400730      f3c3           ret
+0x00400730      f3c3           repz  ret
 ; CODE XREF from sym.__do_global_ctors_aux @ +0x2d
 0x004007f0      4883eb08       sub   rbx, 8
 ; CALL XREF from section..fini @ +0x4
@@ -2792,12 +2676,12 @@ pd 1 @ 0x400610
 EOF
 EXPECT=<<EOF
   ; DATA XREF from entry0 @ 0x4005cf
-sym.__libc_csu_fini ();
-0x00400730      f3c3           ret
+sym.__libc_csu_fini();
+0x00400730      f3c3           repz  ret
 ; CODE XREF from sym.__do_global_ctors_aux @ 0x4007fd
 0x004007f0      4883eb08       sub   rbx, 8
   ; CALL XREF from sym._fini @ 0x40080c
-sym.__do_global_dtors_aux ();
+sym.__do_global_dtors_aux();
 0x00400610      55             push  rbp
 EOF
 RUN
@@ -2893,12 +2777,12 @@ e analysis.jmp.mid=false
 wx b8210000c1ebfdbb2c0000000000
 af
 afi
-?e
+echo
 afb
-?e
+echo
 e asm.bb.middle=true
 pdf
-?e
+echo
 e asm.bb.middle=false
 pdf
 EOF
@@ -2931,12 +2815,12 @@ args: 0
 0x00000000 0x00000004 00:0000 4 j 0x00000004
 0x00000004 0x00000007 00:0000 3 j 0x00000004
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |           ; CODE XREF from fcn.00000000 @ 0x5
 \       .-> 0x00000004      c1ebfd         shr   ebx, 0xfd
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 \       `=< 0x00000005      ebfd           jmp   4
 EOF
@@ -2951,13 +2835,13 @@ e asm.bits=64
 e analysis.nopskip=false
 e asm.bb.middle=true
 e analysis.jmp.mid=true
-(show_fcn bin; wx ${bin}; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bb.middle=true; pdf; ?e; e asm.bb.middle=false; pdf)
+(show_fcn bin; wx ${bin}; af-*; af; afi; echo; afb; echo; pdr; echo; agf; echo; e asm.bb.middle=true; pdf; echo; e asm.bb.middle=false; pdf)
 .(show_fcn b8210000c1ebfdbb2c000000cc)
-?e
+echo
 .(show_fcn b8210000c1ebfdbb2c000000ebf6)
-?e
+echo
 .(show_fcn b8210000c1ebfdbb2c000000ebf7)
-?e
+echo
 .(show_fcn 0f1f440000b8210000c1ebfdbb2c000000ebf0)
 EOF
 EXPECT=<<EOF
@@ -2989,7 +2873,7 @@ args: 0
 0x00000000 0x00000007 00:0000 7 j 0x00000004
 0x00000004 0x0000000d 00:0000 9
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      b8210000c1     mov   eax, 0xc1000021                 ; '!'
 | 0x00000005      ebfd           jmp   4
 | ----------- true: 0x00000004
@@ -3001,7 +2885,7 @@ args: 0
 
         .---------------------.
         |  0x0                |
-        | fcn.00000000 ();    |
+        | fcn.00000000();     |
         | ; '!'               |
         | mov eax, 0xc1000021 |
         | jmp 4               |
@@ -3019,14 +2903,14 @@ args: 0
 | int3                                |
 `-------------------------------------'
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |           ; CODE XREF from fcn.00000000 @ 0x5
 |       .-> 0x00000004      c1ebfd         shr   ebx, 0xfd
 |           0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
 \           0x0000000c      cc             int3
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |       `=< 0x00000005      ebfd           jmp   4
 |           0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
@@ -3060,7 +2944,7 @@ args: 0
 0x00000000 0x00000007 00:0000 7 j 0x00000004
 0x00000004 0x0000000e 00:0000 10 j 0x00000004
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      b8210000c1     mov   eax, 0xc1000021                 ; '!'
 | 0x00000005      ebfd           jmp   4
 | ----------- true: 0x00000004
@@ -3072,7 +2956,7 @@ args: 0
 
             .---------------------.
             |  0x0                |
-            | fcn.00000000 ();    |
+            | fcn.00000000();     |
             | ; '!'               |
             | mov eax, 0xc1000021 |
             | jmp 4               |
@@ -3098,14 +2982,14 @@ args: 0
 |    |
 `----'
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |           ; CODE XREFS from fcn.00000000 @ 0x5, 0xc
 |      ..-> 0x00000004      c1ebfd         shr   ebx, 0xfd
 |       :   0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
 \       `=< 0x0000000c      ebf6           jmp   4
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |      `==< 0x00000005      ebfd           jmp   4
 |       :   0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
@@ -3140,7 +3024,7 @@ args: 0
 0x00000004 0x0000000e 00:0000 10 j 0x00000005
 0x00000005 0x00000007 00:0000 2 j 0x00000004
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      b8210000c1     mov   eax, 0xc1000021                 ; '!'
 | ----------- true: 0x00000005
 | ; CODE XREF from fcn.00000000 @ 0x5
@@ -3154,7 +3038,7 @@ args: 0
 
          .---------------------.
          |  0x0                |
-         | fcn.00000000 ();    |
+         | fcn.00000000();     |
          | ; '!'               |
          | mov eax, 0xc1000021 |
          `---------------------'
@@ -3183,7 +3067,7 @@ args: 0
 |    |
 `----'
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |           ; CODE XREF from fcn.00000000 @ 0x5
 |       .-> 0x00000004  ~   c1ebfd         shr   ebx, 0xfd
@@ -3192,7 +3076,7 @@ args: 0
 |      :    0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
 \      `==< 0x0000000c      ebf7           jmp   5
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |       |   ; CODE XREF from fcn.00000000 @ 0xc
 |      .`=< 0x00000005      ebfd           jmp   4
@@ -3229,7 +3113,7 @@ args: 0
 0x00000005 0x0000000c 00:0000 7 j 0x00000009
 0x00000009 0x00000013 00:0000 10 j 0x00000003
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      0f1f440000     nop   dword [rax + rax]
 | ----------- true: 0x00000005
 | ; CODE XREF from fcn.00000000 @ 0x11
@@ -3246,7 +3130,7 @@ args: 0
 
          .-----------------------.
          |  0x0                  |
-         | fcn.00000000 ();      |
+         | fcn.00000000();       |
          | nop dword [rax + rax] |
          `-----------------------'
              v
@@ -3285,7 +3169,7 @@ args: 0
 |    |
 `----'
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000  ~   0f1f440000     nop   dword [rax + rax]
 |           ; CODE XREF from fcn.00000000 @ 0x11
 |       .-> 0x00000003      0000           add   byte [rax], al
@@ -3295,7 +3179,7 @@ args: 0
 |       :   0x0000000c      bb2c000000     mov   ebx, 0x2c             ; ','
 \       `=< 0x00000011      ebf0           jmp   3
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      0f1f440000     nop   dword [rax + rax]
 |       :   0x00000005      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |      `==< 0x0000000a      ebfd           jmp   9
@@ -3312,11 +3196,11 @@ e asm.bytes=true
 e asm.bits=64
 wx b821c10010ebf9
 s 3
-af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; pdf
-?e
+af; afi; echo; afb; echo; pdr; echo; agf; echo; pdf
+echo
 e asm.bb.middle=false
 pd 2 @ 0
-?e
+echo
 e asm.bb.middle=true
 pd 3 @ 0
 EOF
@@ -3354,7 +3238,7 @@ args: 0
 | ;-- (0x00000003) fcn.00000003:
 | 0x00000000  ~   b821c10010     mov   eax, 0x1000c121
 | ----------- true: 0x00000005
-/ fcn.00000003 ();
+/ fcn.00000003();
 | 0x00000003      0010           add   byte [rax], dl
 | ----------- true: 0x00000005
 | 0x00000005      ebf9           jmp   0
@@ -3364,7 +3248,7 @@ args: 0
 |    |
 |.-------------------------------------.   .--------------------.
 ||  0x0                                |   |  0x3               |
-|| ; CODE XREF from fcn.00000003 @ 0x5 |   | fcn.00000003 ();   |
+|| ; CODE XREF from fcn.00000003 @ 0x5 |   | fcn.00000003();    |
 || ;-- (0x00000003) fcn.00000003:      |   | add byte [rax], dl |
 || mov eax, 0x1000c121                 |   `--------------------'
 |`-------------------------------------'       v
@@ -3381,7 +3265,7 @@ args: 0
 |                                  |
 `----------------------------------'
 
-/ fcn.00000003 ();
+/ fcn.00000003();
 |           0x00000003      0010           add   byte [rax], dl
 |           0x00000005      ebf9           jmp   0
 
@@ -3392,7 +3276,7 @@ args: 0
 
 |           ; CODE XREF from fcn.00000003 @ 0x5
 |           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
-/ fcn.00000003 ();
+/ fcn.00000003();
 |           0x00000003      0010           add   byte [rax], dl
 |           0x00000005      ebf9           jmp   0
 EOF
@@ -3410,9 +3294,9 @@ af; af-*
 s 3
 af
 pdr
-?e
+echo
 agf
-?e
+echo
 afll
 EOF
 EXPECT=<<EOF
@@ -3420,7 +3304,7 @@ EXPECT=<<EOF
 | ;-- (0x00000003) fcn.00000003:
 | 0x00000000  ~   b821c10010     mov   eax, 0x1000c121
 | ----------- true: 0x00000005
-/ fcn.00000003 ();
+/ fcn.00000003();
 | 0x00000003      0010           add   byte [rax], dl
 | ----------- true: 0x00000005
 | 0x00000005      ebf9           jmp   0
@@ -3430,7 +3314,7 @@ EXPECT=<<EOF
 |    |
 |.-------------------------------------.   .--------------------.
 ||  0x0                                |   |  0x3               |
-|| ; CODE XREF from fcn.00000003 @ 0x5 |   | fcn.00000003 ();   |
+|| ; CODE XREF from fcn.00000003 @ 0x5 |   | fcn.00000003();    |
 || ;-- (0x00000003) fcn.00000003:      |   | add byte [rax], dl |
 || mov eax, 0x1000c121                 |   `--------------------'
 |`-------------------------------------'       v
@@ -3493,7 +3377,7 @@ mnemonic: push
 description: push word, doubleword or quadword onto the stack
 mask: ff
 prefix: 0
-id: 588
+id: 609
 bytes: 55
 refptr: 0
 size: 1
@@ -3501,7 +3385,7 @@ sign: false
 type: rpush
 cycles: 1
 esil: rbp,8,rsp,-,=[8],8,rsp,-=
-rzil: (seq (set rsp (- (var rsp) (bv 64 0x8))) (storew 0 (+ (var rsp) (bv 64 0x0)) (cast 64 false (var rbp))))
+rzil: (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (var rbp))) (set rsp (var final)))
 family: cpu
 stackop: inc
 stackptr: 8
@@ -4140,7 +4024,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.140001080 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+/ fcn.140001080(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
 |           ; arg int64_t arg1 @ rcx
 |           ; arg int64_t arg2 @ rdx
 |           ; arg int64_t arg3 @ r8
@@ -4235,7 +4119,7 @@ aa
 pd 19
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 (int64_t arg_3h, int64_t arg_4h);
+/ fcn.00000000(int64_t arg_3h, int64_t arg_4h);
 |           ; var int64_t var_13h @ stack - 0x13
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_4h @ stack - 0x4
@@ -4276,7 +4160,7 @@ aa
 pd 19
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 (int64_t arg_3h, int64_t arg_4h);
+/ fcn.00000000(int64_t arg_3h, int64_t arg_4h);
 |           ; var int64_t var_13h @ stack - 0x13
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_4h @ stack - 0x4
@@ -4425,8 +4309,8 @@ arg int64_t arg1 @ rdi
 arg int64_t arg3 @ rdx
 arg int64_t arg2 @ rsi
 void fcn.00010270(int64_t arg1, int64_t arg2, const char **s, int64_t arg4, int64_t arg5);
-var const char * s2 @ stack - 0xc8
-var void * s1 @ stack - 0xc0
+var const char *s2 @ stack - 0xc8
+var void *s1 @ stack - 0xc0
 var uint64_t var_b8h @ stack - 0xb8
 var int64_t var_b0h @ stack - 0xb0
 var int64_t var_a8h @ stack - 0xa8
@@ -4434,13 +4318,13 @@ var uint64_t var_98h @ stack - 0x98
 var int64_t var_94h @ stack - 0x94
 var int64_t var_90h @ stack - 0x90
 var int64_t var_88h @ stack - 0x88
-var const char ** var_80h @ stack - 0x80
+var const char **var_80h @ stack - 0x80
 var int64_t var_78h @ stack - 0x78
 var int64_t var_40h @ stack - 0x40
 arg int64_t arg5 @ r8
 arg int64_t arg4 @ rcx
 arg int64_t arg1 @ rdi
-arg const char ** s @ rdx
+arg const char **s @ rdx
 arg int64_t arg2 @ rsi
 EOF
 RUN

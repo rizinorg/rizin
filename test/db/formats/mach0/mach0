@@ -277,11 +277,12 @@ NAME=mach0 exports trie
 FILE=bins/mach0/Alamofire-stripped
 CMDS=<<EOF
 iE~_AlamofireVersionString?
-psz@ sym._AlamofireVersionString
+ps @ sym._AlamofireVersionString @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 1
 @(#)PROGRAM:Alamofire  PROJECT:Pods-1
+
 EOF
 RUN
 
@@ -349,10 +350,40 @@ ic
 EOF
 EXPECT=<<EOF
 0x000000010000b672
-address     min         max         name                       super 
----------------------------------------------------------------------
-0x1000115c0 0x100007f40 0x100008318 Chained_iOS.ViewController 
-0x100011608 0x1000083c4 0x1000089c4 Chained_iOS.AppDelegate    
-0x100011668 0x100009194 0x100009940 Chained_iOS.SceneDelegate  
+address     min         max         name                       super            
+--------------------------------------------------------------------------------
+0x1000115c0 0x100007f40 0x100008318 Chained_iOS.ViewController UIViewController
+0x100011608 0x1000083c4 0x1000089c4 Chained_iOS.AppDelegate    UIResponder
+0x100011668 0x100009194 0x100009940 Chained_iOS.SceneDelegate  UIResponder
+EOF
+RUN
+
+NAME=arm64_32, DYLD_CHAINED_PTR_32
+FILE=bins/mach0/arm64_32-fixups-nonptr
+CMDS=<<EOF
+i~machine
+pxr4 0x100 @ 0xc000
+EOF
+EXPECT=<<EOF
+machine  arm64_32
+0x0000c000 0x0000bf94  .... @ sym._some_struct 49044 0.__TEXT.__text section.0.__TEXT.__text,_myfunc,func.0000bf94 R X 'ret'
+0x0000c004 ..[ null bytes ]..   00000000 
+0x0000c078 0x00001234  4... 4660
+0x0000c07c 0x0000002a  *... 42 ascii ('*')
+0x0000c080 0x00000056  V... 86 ascii ('V')
+0x0000c084 0x0000bf98  .... 49048 0.__TEXT.__text _myotherfunc,func.0000bf98 R X 'ret'
+0x0000c088 ..[ null bytes ]..   00000000 
+EOF
+RUN
+
+NAME=mach-o platform recognition
+FILE=bins/mach0/hello-visionos-arm64
+CMDS=<<EOF
+i~^os
+i~^subsys
+EOF
+EXPECT=<<EOF
+os       darwin
+subsys   visionOS
 EOF
 RUN

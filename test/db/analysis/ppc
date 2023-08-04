@@ -1,9 +1,9 @@
 NAME=ppc-asserts
 FILE=bins/elf/powerpc-linux-gnu-symexec-palindrome
 CMDS=<<EOF
-%RZ_DEBUG_ASSERT=1
+env RZ_DEBUG_ASSERT=1
 aaa
-?e done
+echo done
 EOF
 EXPECT=<<EOF
 done
@@ -431,7 +431,7 @@ RUN
 NAME=ppc-elf entry0 name issue
 FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
-?e
+echo
 e asm.flags=true
 e asm.bytes=true
 pdq 1
@@ -457,21 +457,42 @@ b sym.imp.__libc_start_main
 EOF
 RUN
 
-NAME=ppc-update-suffix-esil
+NAME=ppc update suffix esil/rzil
 FILE=bins/elf/a6ppc.out
 CMDS=<<EOF
+echo ---- esil ----
 40ds
 ar r3
 ar r4
 10ds
 ar r3
 ar r4
+echo ---- rzil ----
+aezi
+# reset all modified registers.
+ar PC=0x100000d4
+ar r1=0
+ar r3=0
+ar r4=0
+ar r9=0
+aezs 40
+ar r3
+ar r4
+aezs 10
+ar r3
+ar r4
 EOF
 EXPECT=<<EOF
-r3 = 0x0000ffbf
-r4 = 0x10010107
-r3 = 0x0000ffc1
-r4 = 0x1001010a
+---- esil ----
+r3 = 0xffffffbf
+r4 = 0x10000107
+r3 = 0xffffffc1
+r4 = 0x1000010a
+---- rzil ----
+r3 = 0xffffffbf
+r4 = 0x10000107
+r3 = 0xffffffc1
+r4 = 0x1000010a
 EOF
 RUN
 
@@ -681,7 +702,7 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 594,
+    "id": 1072,
     "opex": {
       "operands": [
         {
@@ -721,7 +742,7 @@ e asm.bits=32
 e asm.cpu=vle
 e cfg.bigendian=true
 pd 10
-?e ensure that the endianness is kept
+echo ensure that the endianness is kept
 pd 10
 EOF
 EXPECT=<<EOF

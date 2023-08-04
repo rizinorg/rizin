@@ -263,6 +263,9 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 		case 'u': \
 			rz_pvector_push(row, rz_num_units(NULL, 32, va_arg(ap, ut64))); \
 			break; \
+		case 'f': \
+			rz_pvector_push(row, rz_str_newf("%8lf", va_arg(ap, double))); \
+			break; \
 		case 'x': \
 		case 'X': { \
 			ut64 n = va_arg(ap, ut64); \

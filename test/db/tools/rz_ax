@@ -354,7 +354,7 @@ RUN
 
 NAME=Python string '\x33\x44\x88'
 FILE==
-CMDS=echo "foo = '\x33\x44\x88'" | rz-ax -F
+CMDS=echo foo = "'\x33\x44\x88'" | rz-ax -F
 EXPECT=<<EOF
 334488
 EOF
@@ -399,7 +399,7 @@ RUN
 NAME=Timestamp GMT difference
 FILE==
 CMDS=<<EOF
-?v `!rz-ax -t "1234567890 GMT-1" | cut -d " " -f 4 | cut -d ":" -f 1` - `!rz-ax -t "1234567890 GMT-3" | cut -d " " -f 4 | cut -d ":" -f 1`
+%v `!rz-ax -t "1234567890 GMT-1" | cut -d " " -f 4 | cut -d ":" -f 1` - `!rz-ax -t "1234567890 GMT-3" | cut -d " " -f 4 | cut -d ":" -f 1`
 EOF
 EXPECT=<<EOF
 0x2

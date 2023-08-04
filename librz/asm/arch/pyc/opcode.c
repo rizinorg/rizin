@@ -145,6 +145,7 @@ static version_opcode version_op[] = {
 	{ "v3.9.10", opcode_39 },
 	{ "v3.9.11", opcode_39 },
 	{ "v3.9.12", opcode_39 },
+	{ "v3.10.0", opcode_310 },
 	{ NULL, NULL },
 };
 
@@ -188,6 +189,7 @@ pyc_opcodes *new_pyc_opcodes() {
 	if (!ret) {
 		return NULL;
 	}
+	ret->jump_use_instruction_offset = false;
 	ret->have_argument = 90;
 	ret->opcodes = malloc(sizeof(pyc_opcode_object) * 256);
 	if (!ret->opcodes) {

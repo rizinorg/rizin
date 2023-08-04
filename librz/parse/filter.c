@@ -510,15 +510,11 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 					swap = off & 0xffff;
 				} else {
 					if (off >> 32) {
-						rz_mem_swapendian((ut8 *)&swap, (const ut8 *)&off, sizeof(off));
+						swap = rz_swap_ut64(off);
 					} else if (off >> 16) {
-						ut32 port = 0;
-						rz_mem_swapendian((ut8 *)&port, (const ut8 *)&off, sizeof(port));
-						swap = port;
+						swap = rz_swap_ut32(off);
 					} else {
-						ut16 port = 0;
-						rz_mem_swapendian((ut8 *)&port, (const ut8 *)&off, sizeof(port));
-						swap = port;
+						swap = rz_swap_ut16(off);
 					}
 				}
 				snprintf(num, sizeof(num), "htons (%d)", (int)(swap & 0xFFFF));

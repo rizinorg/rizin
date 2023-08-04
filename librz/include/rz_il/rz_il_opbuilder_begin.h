@@ -35,6 +35,8 @@
 
 #include <rz_il/rz_il_opcodes.h>
 
+#define DUP(op) rz_il_op_pure_dup(op)
+
 #define ITE(c, t, f) rz_il_op_new_ite(c, t, f)
 
 #define UN(l, val)       rz_il_op_new_bitv_from_ut64(l, val)
@@ -52,6 +54,43 @@
 #define S32(val)   SN(32, val)
 #define S64(val)   SN(64, val)
 
+#define BV2F(fmt, bv)              rz_il_op_new_float(fmt, bv)
+#define F32(f32)                   rz_il_op_new_float_from_f32(f32)
+#define F64(f64)                   rz_il_op_new_float_from_f64(f64)
+#define F2BV(fl)                   rz_il_op_new_fbits(fl)
+#define IS_FINITE(fl)              rz_il_op_new_is_finite(fl)
+#define IS_FNAN(fl)                rz_il_op_new_is_nan(fl)
+#define IS_FINF(fl)                rz_il_op_new_is_inf(fl)
+#define IS_FZERO(fl)               rz_il_op_new_is_fzero(fl)
+#define IS_FNEG(fl)                rz_il_op_new_is_fneg(fl)
+#define IS_FPOS(fl)                rz_il_op_new_is_fpos(fl)
+#define FNEG(fl)                   rz_il_op_new_fneg(fl)
+#define FABS(fl)                   rz_il_op_new_fabs(fl)
+#define F2INT(l, rmode, fl)        rz_il_op_new_fcast_int(l, rmode, fl)
+#define F2SINT(l, rmode, fl)       rz_il_op_new_fcast_sint(l, rmode, fl)
+#define INT2F(fmt, rmode, bv)      rz_il_op_new_fcast_float(fmt, rmode, bv)
+#define SINT2F(fmt, rmode, bv)     rz_il_op_new_fcast_sfloat(fmt, rmode, bv)
+#define FCONVERT(fmt, rmode, fl)   rz_il_op_new_fconvert(fmt, rmode, fl)
+#define FLOATV16(bv)               rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_16, bv)
+#define FLOATV32(bv)               rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_32, bv)
+#define FLOATV64(bv)               rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_64, bv)
+#define FLOATV128(bv)              rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_128, bv)
+#define FSUCC(fl)                  rz_il_op_new_fsucc(fl)
+#define FPRED(fl)                  rz_il_op_new_fpred(fl)
+#define FORDER(flx, fly)           rz_il_op_new_forder(flx, fly)
+#define FROUND(rmode, fl)          rz_il_op_new_fround(rmode, fl)
+#define FSQRT(rmode, fl)           rz_il_op_new_fsqrt(rmode, fl)
+#define FADD(rmode, flx, fly)      rz_il_op_new_fadd(rmode, flx, fly)
+#define FSUB(rmode, flx, fly)      rz_il_op_new_fsub(rmode, flx, fly)
+#define FMUL(rmode, flx, fly)      rz_il_op_new_fmul(rmode, flx, fly)
+#define FDIV(rmode, flx, fly)      rz_il_op_new_fdiv(rmode, flx, fly)
+#define FMOD(rmode, flx, fly)      rz_il_op_new_fdiv(rmode, flx, fly)
+#define FPOW(rmode, flx, fly)      rz_il_op_new_fpow(rmode, flx, fly)
+#define FMAD(rmode, flx, fly, flz) rz_il_op_new_fmad(rmode, flx, fly, flz)
+
+// TODO: add `feq` as prime operator in fbasic
+// https://smtlib.cs.uiowa.edu/theories-FloatingPoint.shtml
+
 #define IL_FALSE  rz_il_op_new_b0()
 #define IL_TRUE   rz_il_op_new_b1()
 #define INV(x)    rz_il_op_new_bool_inv(x)
@@ -59,10 +98,12 @@
 #define AND(x, y) rz_il_op_new_bool_and(x, y)
 #define OR(x, y)  rz_il_op_new_bool_or(x, y)
 
+#define FNEQ(flx, fly) OR(FORDER(flx, fly), FORDER(DUP(flx), DUP(fly)))
+#define FEQ(flx, fly)  INV(FNEQ(flx, fly))
+
 #define UNSIGNED(n, x)    rz_il_op_new_unsigned(n, x)
 #define SIGNED(n, x)      rz_il_op_new_signed(n, x)
 #define APPEND(high, low) rz_il_op_new_append(high, low)
-#define DUP(op)           rz_il_op_pure_dup(op)
 
 #define ADD(x, y)          rz_il_op_new_add(x, y)
 #define SUB(x, y)          rz_il_op_new_sub(x, y)

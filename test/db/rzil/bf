@@ -1,3 +1,94 @@
+NAME=Printing il statements in various formats
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+e asm.arch=bf
+e analysis.arch=bf
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x0 (store 0 (var ptr) (+ (load 0 (var ptr)) (bv 8 0x1)))
+0x1 (store 0 (var ptr) (+ (load 0 (var ptr)) (bv 8 0x1)))
+0x2 (store 0 (var ptr) (+ (load 0 (var ptr)) (bv 8 0x1)))
+0x3 (store 0 (var ptr) (+ (load 0 (var ptr)) (bv 8 0x1)))
+0x4 (store 0 (var ptr) (+ (load 0 (var ptr)) (bv 8 0x1)))
+-- pretty
+0x0
+(store 0
+  (var ptr)
+  (+
+    (load 0
+      (var ptr))
+    (bv 8 0x1)))
+0x1
+(store 0
+  (var ptr)
+  (+
+    (load 0
+      (var ptr))
+    (bv 8 0x1)))
+0x2
+(store 0
+  (var ptr)
+  (+
+    (load 0
+      (var ptr))
+    (bv 8 0x1)))
+0x3
+(store 0
+  (var ptr)
+  (+
+    (load 0
+      (var ptr))
+    (bv 8 0x1)))
+0x4
+(store 0
+  (var ptr)
+  (+
+    (load 0
+      (var ptr))
+    (bv 8 0x1)))
+-- graph
+        .-------------.
+        |  inc [ptr]  |
+        `-------------'
+            v
+            |
+            |
+        .------------.
+        |  store: 0  |
+        `------------'
+              v v
+              | |
+    .---------' |
+    |           '-----.
+    |                 |
+.------------.    .-----------.
+|  var: ptr  |    |  add      |
+`------------'    `-----------'
+                        v v
+                        | |
+              .---------' |
+              |           '---.
+              |               |
+          .-----------.   .-------------.
+          |  load: 0  |   |  bv: 8 0x1  |
+          `-----------'   `-------------'
+              v
+              |
+             .'
+             |
+         .------------.
+         |  var: ptr  |
+         `------------'
+EOF
+RUN
+
 NAME=hello world
 FILE=bins/bf/hello-ok.bf
 ARGS=-eio.cache=1
@@ -1707,7 +1798,7 @@ FILE=bins/bf/2+5.bf
 CMDS=<<EOF
 e io.cache=1
 aezi
-aezsu $s; ?e
+aezsu $s; echo
 EOF
 EXPECT=<<EOF
 7
@@ -1721,13 +1812,13 @@ e io.cache=1
 w + @ 2
 aezi
 ara+
-aezsu $s; ?e
+aezsu $s; echo
 ar
-?e --- Reset everything ---
+echo --- Reset everything ---
 ara-
 wc-*
 ar
-aezsu $s; ?e
+aezsu $s; echo
 EOF
 EXPECT=<<EOF
 8

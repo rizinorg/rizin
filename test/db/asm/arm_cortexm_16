@@ -1,0 +1,2 @@
+d "mrs r0, primask" eff31080
+d "msr basepri, r3" 83f31188

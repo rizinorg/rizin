@@ -156,8 +156,11 @@ static int main_help(int line) {
 		char *system_magic = rz_path_system(RZ_SDB_MAGIC);
 		char *home_plugins = rz_path_home_prefix(RZ_PLUGINS);
 		char *system_plugins = rz_path_system(RZ_PLUGINS);
+		char *extra_plugins = rz_path_extra(RZ_PLUGINS);
 		char *system_sigdb = rz_path_system(RZ_SIGDB);
+		char *extra_sigdb = rz_path_extra(RZ_SIGDB);
 		char *dirPrefix = rz_path_prefix(NULL);
+		char *extra_prefix = rz_path_extra(NULL);
 		// clang-format off
 		printf(
 			"Scripts:\n"
@@ -168,6 +171,7 @@ static int main_help(int line) {
 			" binrc        %s (elf, elf64, mach0, ..)\n"
 			" RZ_USER_PLUGINS %s\n"
 			" RZ_LIBR_PLUGINS %s\n"
+			" RZ_EXTRA_PLUGINS %s\n"
 			"Environment:\n"
 			" RZ_DEBUG      if defined, show error messages and crash signal\n"
 			" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
@@ -177,23 +181,28 @@ static int main_help(int line) {
 			" RZ_RDATAHOME %s\n"
 			" RZ_VERSION   contains the current version of rizin\n"
 			"Paths:\n"
-			" RZ_PREFIX    %s\n"
-			" RZ_INCDIR    %s\n"
-			" RZ_LIBDIR    %s\n"
-			" RZ_SIGDB     %s\n"
-			" RZ_LIBEXT    " RZ_LIB_EXT "\n",
+			" RZ_PREFIX       %s\n"
+			" RZ_EXTRA_PREFIX %s\n"
+			" RZ_INCDIR       %s\n"
+			" RZ_LIBDIR       %s\n"
+			" RZ_SIGDB        %s\n"
+			" RZ_EXTRA_SIGDB  %s\n"
+			" RZ_LIBEXT       " RZ_LIB_EXT "\n",
 			system_rc,
 			home_rc, home_config_rc, home_config_rcdir,
 			binrc,
 			home_plugins,
 			system_plugins,
+			rz_str_get(extra_plugins),
 			system_magic,
 			home_rc,
 			datahome,
 			dirPrefix,
+			rz_str_get(extra_prefix),
 			incdir,
 			libdir,
-			system_sigdb);
+			system_sigdb,
+			rz_str_get(extra_sigdb));
 		// clang-format on
 		free(datahome);
 		free(incdir);
@@ -207,8 +216,11 @@ static int main_help(int line) {
 		free(system_magic);
 		free(home_plugins);
 		free(system_plugins);
+		free(extra_plugins);
 		free(system_sigdb);
+		free(extra_sigdb);
 		free(dirPrefix);
+		free(extra_prefix);
 	}
 	return 0;
 }
@@ -216,6 +228,7 @@ static int main_help(int line) {
 static int main_print_var(const char *var_name) {
 	int i = 0;
 	char *prefix = rz_path_prefix(NULL);
+	char *extra_prefix = rz_path_extra(NULL);
 	char *incdir = rz_path_incdir();
 	char *libdir = rz_path_libdir();
 	char *confighome = rz_path_home_config();
@@ -223,7 +236,9 @@ static int main_print_var(const char *var_name) {
 	char *cachehome = rz_path_home_cache();
 	char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
 	char *sigdbdir = rz_path_system(RZ_SIGDB);
+	char *extrasigdbdir = rz_path_extra(RZ_SIGDB);
 	char *plugins = rz_path_system(RZ_PLUGINS);
+	char *extraplugins = rz_path_extra(RZ_PLUGINS);
 	char *magicpath = rz_path_system(RZ_SDB_MAGIC);
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
 	struct rizin_var_t {
@@ -232,15 +247,18 @@ static int main_print_var(const char *var_name) {
 	} rz_vars[] = {
 		{ "RZ_VERSION", RZ_VERSION },
 		{ "RZ_PREFIX", prefix },
+		{ "RZ_EXTRA_PREFIX", rz_str_get(extra_prefix) },
 		{ "RZ_MAGICPATH", magicpath },
 		{ "RZ_INCDIR", incdir },
 		{ "RZ_LIBDIR", libdir },
 		{ "RZ_SIGDB", sigdbdir },
+		{ "RZ_EXTRA_SIGDB", rz_str_get(extrasigdbdir) },
 		{ "RZ_LIBEXT", RZ_LIB_EXT },
 		{ "RZ_RCONFIGHOME", confighome },
 		{ "RZ_RDATAHOME", datahome },
 		{ "RZ_RCACHEHOME", cachehome },
 		{ "RZ_LIBR_PLUGINS", plugins },
+		{ "RZ_EXTRA_PLUGINS", rz_str_get(extraplugins) },
 		{ "RZ_USER_PLUGINS", homeplugins },
 		{ "RZ_IS_PORTABLE", is_portable },
 		{ NULL, NULL }
@@ -270,8 +288,11 @@ static int main_print_var(const char *var_name) {
 	free(cachehome);
 	free(homeplugins);
 	free(sigdbdir);
+	free(extrasigdbdir);
+	free(extraplugins);
 	free(plugins);
 	free(magicpath);
+	free(extra_prefix);
 	free(prefix);
 	return 0;
 }
@@ -851,12 +872,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			return 1;
 		}
 		if (strstr(uri, "://")) {
-			rz_core_cmdf(r, "R+ %s", uri);
+			rz_core_rtr_add(r, uri);
 		} else {
 			argv[opt.ind] = rz_str_newf("http://%s/cmd/", argv[opt.ind]);
-			rz_core_cmdf(r, "R+ %s", argv[opt.ind]);
+			rz_core_rtr_add(r, argv[opt.ind]);
 		}
-		rz_core_cmd0(r, "R!=");
+		rz_core_rtr_enable(r, "0");
 		argv[opt.ind] = "-";
 	}
 
@@ -1221,7 +1242,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			const char *fstype = r->bin->cur->o->info->bclass;
 			rz_core_cmdf(r, "m /root %s @ 0", fstype);
 		}
-		rz_core_cmd0(r, "R!"); // initalize io subsystem
+		// initalize io subsystem
+		char *res = rz_io_system(r->io, NULL);
+		if (res) {
+			rz_cons_println(res);
+			free(res);
+		}
+
 		iod = r->io && fh ? rz_io_desc_get(r->io, fh->fd) : NULL;
 		if (mapaddr) {
 			rz_core_seek(r, mapaddr, true);
@@ -1348,10 +1375,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (do_analysis > 0) {
 		switch (do_analysis) {
-		case 1: rz_core_cmd0(r, "aa"); break;
-		case 2: rz_core_cmd0(r, "aaa"); break;
-		case 3: rz_core_cmd0(r, "aaaa"); break;
-		default: rz_core_cmd0(r, "aaaaa"); break;
+		case 1: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_SIMPLE); break;
+		case 2: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_DEEP); break;
+		case 3: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_EXPERIMENTAL); break;
+		default: rz_core_cmd_show_analysis_help(r); break;
 		}
 		rz_cons_flush();
 	}

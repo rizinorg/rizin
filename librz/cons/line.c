@@ -12,6 +12,13 @@ static void rz_line_nscompletion_init(RzLineNSCompletion *c) {
 	c->run_user = NULL;
 }
 
+static void undo_free(void) {
+	rz_vector_free(I.undo_vec);
+	I.undo_vec = NULL;
+	I.undo_cursor = 0;
+	I.undo_continue = false;
+}
+
 RZ_API RzLine *rz_line_singleton(void) {
 	return &rz_line_instance;
 }
@@ -44,6 +51,7 @@ RZ_API void rz_line_free(void) {
 	I.prompt = NULL;
 	rz_list_free(I.kill_ring);
 	rz_line_hist_free();
+	undo_free();
 	rz_line_completion_fini(&I.completion);
 }
 

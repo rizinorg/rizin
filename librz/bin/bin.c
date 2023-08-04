@@ -58,9 +58,11 @@ RZ_API RzBinXtrData *rz_bin_xtrdata_new(RzBuffer *buf, ut64 offset, ut64 size, u
 	return data;
 }
 
-RZ_API void rz_bin_xtrdata_free(void /*RzBinXtrData*/ *data_) {
+RZ_API void rz_bin_xtrdata_free(RZ_NULLABLE void /*RzBinXtrData*/ *data_) {
+	if (!data_) {
+		return;
+	}
 	RzBinXtrData *data = data_;
-	rz_return_if_fail(data);
 	if (data->metadata) {
 		free(data->metadata->libname);
 		free(data->metadata->arch);
@@ -86,15 +88,16 @@ RZ_API void rz_bin_arch_options_init(RzBinArchOptions *opt, const char *arch, in
 	opt->bits = bits ? bits : RZ_SYS_BITS;
 }
 
-RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash) {
-	if (fhash) {
-		RZ_FREE(fhash->type);
-		RZ_FREE(fhash->hex);
-		free(fhash);
+RZ_API void rz_bin_file_hash_free(RZ_NULLABLE RzBinFileHash *fhash) {
+	if (!fhash) {
+		return;
 	}
+	RZ_FREE(fhash->type);
+	RZ_FREE(fhash->hex);
+	free(fhash);
 }
 
-RZ_API void rz_bin_info_free(RzBinInfo *rb) {
+RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb) {
 	if (!rb) {
 		return;
 	}
@@ -128,30 +131,34 @@ RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o) {
 	RzBinImport *res = rz_mem_dup(o, sizeof(*o));
 	if (res) {
 		res->name = RZ_STR_DUP(o->name);
+		res->dname = RZ_STR_DUP(o->dname);
+		res->libname = RZ_STR_DUP(o->libname);
 		res->classname = RZ_STR_DUP(o->classname);
 		res->descriptor = RZ_STR_DUP(o->descriptor);
 	}
 	return res;
 }
 
-RZ_API void rz_bin_import_free(RzBinImport *imp) {
-	if (imp) {
-		RZ_FREE(imp->name);
-		RZ_FREE(imp->libname);
-		RZ_FREE(imp->classname);
-		RZ_FREE(imp->descriptor);
-		free(imp);
+RZ_API void rz_bin_import_free(RZ_NULLABLE RzBinImport *imp) {
+	if (!imp) {
+		return;
 	}
+	free(imp->name);
+	free(imp->dname);
+	free(imp->libname);
+	free(imp->classname);
+	free(imp->descriptor);
+	free(imp);
 }
 
-RZ_API void rz_bin_resource_free(RzBinResource *res) {
+RZ_API void rz_bin_resource_free(RZ_NULLABLE RzBinResource *res) {
 	if (!res) {
 		return;
 	}
-	RZ_FREE(res->name);
-	RZ_FREE(res->time);
-	RZ_FREE(res->type);
-	RZ_FREE(res->language);
+	free(res->name);
+	free(res->time);
+	free(res->type);
+	free(res->language);
 	free(res);
 }
 
@@ -172,7 +179,7 @@ RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) 
 	return sym;
 }
 
-RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
+RZ_API void rz_bin_symbol_free(RZ_NULLABLE RzBinSymbol *sym) {
 	if (!sym) {
 		return;
 	}
@@ -185,16 +192,27 @@ RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
 	free(sym);
 }
 
-RZ_API void rz_bin_reloc_free(RzBinReloc *reloc) {
+RZ_API void rz_bin_reloc_free(RZ_NULLABLE RzBinReloc *reloc) {
+	if (!reloc) {
+		return;
+	}
+	/**
+	 * TODO: leak in bin_elf, but it will cause double free in bin_pe if free here,
+	 * Because in the bin_elf implementation RzBinObject->imports and RzBinObject->relocs->imports
+	 * are two pieces of data, but they are linked to each other in bin_pe
+	 */
+	//	rz_bin_import_free(reloc->import);
+	//	rz_bin_symbol_free(reloc->symbol);
 	free(reloc);
 }
 
-RZ_API void rz_bin_string_free(void *_str) {
-	RzBinString *str = (RzBinString *)_str;
-	if (str) {
-		free(str->string);
-		free(str);
+RZ_API void rz_bin_string_free(RZ_NULLABLE void *_str) {
+	if (!_str) {
+		return;
 	}
+	RzBinString *str = (RzBinString *)_str;
+	free(str->string);
+	free(str);
 }
 
 RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
@@ -439,15 +457,15 @@ RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin)
 	rz_list_foreach_safe (bin->binfiles, it, tmp, bf) {
 		if (bf->curxtr == plugin) {
 			rz_bin_file_delete(bin, bf);
+			if (!plugin_fini(bin, plugin)) {
+				return false;
+			}
 		}
-	}
-	if (!plugin_fini(bin, plugin)) {
-		return false;
 	}
 	return rz_list_delete_data(bin->binxtrs, plugin);
 }
 
-RZ_API void rz_bin_free(RzBin *bin) {
+RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	if (!bin) {
 		return;
 	}
@@ -730,8 +748,6 @@ RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin) {
 RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf);
 
 RZ_API RzBin *rz_bin_new(void) {
-	int i;
-	RzBinXtrPlugin *static_xtr_plugin;
 	RzBin *bin = RZ_NEW0(RzBin);
 	if (!bin) {
 		return NULL;
@@ -752,7 +768,6 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0();
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->plugins = rz_list_new();
 	bin->minstrlen = 0;
 	bin->strpurge = NULL;
 	bin->strenc = NULL;
@@ -767,27 +782,11 @@ RZ_API RzBin *rz_bin_new(void) {
 
 	/* bin parsers */
 	bin->binfiles = rz_list_newf((RzListFree)rz_bin_file_free);
-	for (i = 0; i < RZ_ARRAY_SIZE(bin_static_plugins); i++) {
-		rz_bin_plugin_add(bin, bin_static_plugins[i]);
-	}
+	bin->plugins = rz_list_new_from_array((const void **)bin_static_plugins, RZ_ARRAY_SIZE(bin_static_plugins));
 	/* extractors */
-	bin->binxtrs = rz_list_new();
-	for (i = 0; i < RZ_ARRAY_SIZE(bin_xtr_static_plugins); i++) {
-		static_xtr_plugin = RZ_NEW0(RzBinXtrPlugin);
-		if (!static_xtr_plugin) {
-			goto trashbin_binxtrs;
-		}
-		*static_xtr_plugin = *bin_xtr_static_plugins[i];
-		if (!rz_bin_xtr_plugin_add(bin, static_xtr_plugin)) {
-			free(static_xtr_plugin);
-		}
-	}
+	bin->binxtrs = rz_list_new_from_array((const void **)bin_xtr_static_plugins, RZ_ARRAY_SIZE(bin_xtr_static_plugins));
 	return bin;
 
-trashbin_binxtrs:
-	rz_list_free(bin->binxtrs);
-	rz_list_free(bin->binfiles);
-	rz_id_storage_free(bin->ids);
 trashbin_event:
 	rz_event_free(bin->event);
 trashbin_constpool:
@@ -949,28 +948,57 @@ RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules) {
 /* RzBinField */
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named) {
 	RzBinField *ptr = RZ_NEW0(RzBinField);
-	if (ptr) {
-		ptr->name = strdup(name);
-		ptr->comment = (comment && *comment) ? strdup(comment) : NULL;
-		ptr->format = (format && *format) ? strdup(format) : NULL;
-		ptr->format_named = format_named;
-		ptr->paddr = paddr;
-		ptr->size = size;
-		//	ptr->visibility = any default visibility?
-		ptr->vaddr = vaddr;
+	if (!ptr) {
+		return NULL;
 	}
+
+	ptr->name = rz_str_new(name);
+	ptr->comment = rz_str_new(comment);
+	ptr->format = rz_str_new(format);
+	ptr->format_named = format_named;
+	ptr->paddr = paddr;
+	ptr->size = size;
+	ptr->vaddr = vaddr;
 	return ptr;
 }
 
-RZ_API void rz_bin_field_free(RzBinField *field) {
-	if (field) {
-		free(field->name);
-		free(field->visibility_str);
-		free(field->type);
-		free(field->comment);
-		free(field->format);
-		free(field);
+RZ_API void rz_bin_field_free(RZ_NULLABLE RzBinField *field) {
+	if (!field) {
+		return;
 	}
+	free(field->name);
+	free(field->type);
+	free(field->comment);
+	free(field->format);
+	free(field);
+}
+
+/* RzBinClassField */
+RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const char *name, const char *classname, const char *libname, const char *type) {
+	RzBinClassField *ptr = RZ_NEW0(RzBinClassField);
+	if (!ptr) {
+		return NULL;
+	}
+
+	ptr->vaddr = vaddr ? vaddr : UT64_MAX;
+	ptr->paddr = paddr;
+	ptr->name = rz_str_new(name);
+	ptr->classname = rz_str_new(classname);
+	ptr->libname = rz_str_new(libname);
+	ptr->type = rz_str_new(type);
+	return ptr;
+}
+
+RZ_API void rz_bin_class_field_free(RZ_NULLABLE RzBinClassField *field) {
+	if (!field) {
+		return;
+	}
+	free(field->name);
+	free(field->classname);
+	free(field->libname);
+	free(field->type);
+	free(field->visibility_str);
+	free(field);
 }
 
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
@@ -1024,7 +1052,7 @@ RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
-RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile) {
+RZ_API void rz_bin_virtual_file_free(RZ_NULLABLE RzBinVirtualFile *vfile) {
 	if (!vfile) {
 		return;
 	}
@@ -1035,7 +1063,7 @@ RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile) {
 	free(vfile);
 }
 
-RZ_API void rz_bin_map_free(RzBinMap *map) {
+RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map) {
 	if (!map) {
 		return;
 	}
@@ -1128,12 +1156,13 @@ RZ_API RzBinSection *rz_bin_section_new(const char *name) {
 	return s;
 }
 
-RZ_API void rz_bin_section_free(RzBinSection *bs) {
-	if (bs) {
-		free(bs->name);
-		free(bs->format);
-		free(bs);
+RZ_API void rz_bin_section_free(RZ_NULLABLE RzBinSection *bs) {
+	if (!bs) {
+		return;
 	}
+	free(bs->name);
+	free(bs->format);
+	free(bs);
 }
 
 static bool is_data_permission(ut32 permissions) {
@@ -1285,179 +1314,4 @@ RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONN
 		}
 	}
 	return NULL;
-}
-
-#if WITH_GPL
-static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
-	char *out = rz_demangler_cxx(symbol);
-	if (!out || !bf) {
-		return out;
-	}
-	char *sign = (char *)strchr(out, '(');
-	if (!sign) {
-		return out;
-	}
-
-	char *str = out;
-	char *ptr = NULL;
-	char *method_name = NULL;
-	for (;;) {
-		ptr = strstr(str, "::");
-		if (!ptr || ptr > sign) {
-			break;
-		}
-		method_name = ptr;
-		str = ptr + 1;
-	}
-
-	if (RZ_STR_ISEMPTY(method_name)) {
-		return out;
-	}
-
-	*method_name = 0;
-	RzBinSymbol *sym = rz_bin_file_add_method(bf, out, method_name + 2, 0);
-	if (sym) {
-		if (sym->vaddr != 0 && sym->vaddr != vaddr) {
-			RZ_LOG_INFO("Duplicated method found: %s\n", sym->name);
-		}
-		if (sym->vaddr == 0) {
-			sym->vaddr = vaddr;
-		}
-	}
-	*method_name = ':';
-	return out;
-}
-
-static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vaddr) {
-	char *str = NULL;
-	if (!(str = bin_demangle_cxx(binfile, symbol, vaddr))) {
-		return str;
-	}
-	free(str);
-	return rz_demangler_rust(symbol);
-}
-#endif
-
-/**
- * \brief Demangles a symbol based on the language or the RzBinFile data
- *
- * This function demangles a symbol based on the language or the RzBinFile data
- * When C++ or rust is selected as the language, it will add methods into the
- * RzBinFile structure based on the demangled symbol.
- * When libs is set to true, the demangled symbol will be appended to the
- * library name <libname>_<demangled symbol>.
- *
- * \param bf RzBinFile data to be used for demangling
- * \param language Language to be used for demanglind
- * \param symbol Symbol to be demangled
- * \param vaddr vaddr of the \p symbol to be demangled
- * \param libs Append the library name to the demangled symbol, if set to true
- * \return char* Demangled name of the \p symbol
- */
-RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const char *language, RZ_NULLABLE const char *symbol, ut64 vaddr, bool libs) {
-	if (RZ_STR_ISEMPTY(symbol)) {
-		return NULL;
-	}
-
-	RzBinLanguage type = RZ_BIN_LANGUAGE_UNKNOWN;
-	RzBin *bin = bf ? bf->rbin : NULL;
-	RzBinObject *o = bf ? bf->o : NULL;
-
-	if (!language && o && o->info && o->info->lang) {
-		language = o->info->lang;
-	}
-
-	RzListIter *iter;
-	const char *lib = NULL;
-	if (!strncmp(symbol, "reloc.", 6)) {
-		symbol += 6;
-	}
-	if (!strncmp(symbol, "sym.", 4)) {
-		symbol += 4;
-	}
-	if (!strncmp(symbol, "imp.", 4)) {
-		symbol += 4;
-	}
-	if (!strncmp(symbol, "target.", 7)) {
-		symbol += 7;
-	}
-	if (o) {
-		bool found = false;
-		rz_list_foreach (o->libs, iter, lib) {
-			size_t len = strlen(lib);
-			if (!rz_str_ncasecmp(symbol, lib, len)) {
-				symbol += len;
-				if (*symbol == '_') {
-					symbol++;
-				}
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			lib = NULL;
-		}
-		size_t len = bin ? strlen(bin->file) : 0;
-		if (bin && len > 0 && !rz_str_ncasecmp(symbol, bin->file, len)) {
-			lib = bin->file;
-			symbol += len;
-			if (*symbol == '_') {
-				symbol++;
-			}
-		}
-	}
-
-	if (RZ_STR_ISEMPTY(symbol)) {
-		return NULL;
-	}
-
-	if (!strncmp(symbol, "__", 2)) {
-		if (symbol[2] == 'T') {
-			type = RZ_BIN_LANGUAGE_SWIFT;
-		} else {
-			type = RZ_BIN_LANGUAGE_CXX;
-		}
-	}
-
-	if (type == RZ_BIN_LANGUAGE_UNKNOWN) {
-		type = rz_bin_language_to_id(language);
-		// ignore "with blocks"
-		type = RZ_BIN_LANGUAGE_MASK(type);
-		language = rz_bin_language_to_string(type);
-	}
-	if (!language) {
-		return NULL;
-	}
-	char *demangled = NULL;
-	switch (type) {
-	case RZ_BIN_LANGUAGE_UNKNOWN: return NULL;
-	case RZ_BIN_LANGUAGE_KOTLIN:
-		/* fall-thru */
-	case RZ_BIN_LANGUAGE_GROOVY:
-		/* fall-thru */
-	case RZ_BIN_LANGUAGE_DART:
-		/* fall-thru */
-	case RZ_BIN_LANGUAGE_JAVA: demangled = rz_demangler_java(symbol); break;
-	case RZ_BIN_LANGUAGE_OBJC: demangled = rz_demangler_objc(symbol); break;
-	case RZ_BIN_LANGUAGE_MSVC: demangled = rz_demangler_msvc(symbol); break;
-	case RZ_BIN_LANGUAGE_PASCAL: demangled = rz_demangler_pascal(symbol); break;
-#if WITH_GPL
-	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
-	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
-#else
-	case RZ_BIN_LANGUAGE_RUST: demangled = NULL; break;
-	case RZ_BIN_LANGUAGE_CXX: demangled = NULL; break;
-#endif
-	default:
-		if (bin) {
-			rz_demangler_resolve(bin->demangler, symbol, language, &demangled);
-		}
-		break;
-	}
-	if (libs && demangled && lib) {
-		char *d = rz_str_newf("%s_%s", lib, demangled);
-		free(demangled);
-		demangled = d;
-	}
-	return demangled;
 }

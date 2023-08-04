@@ -730,7 +730,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	}
 }
 
-static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	vle_t *instr = NULL;
 	vle_handle handle = { 0 };
 	op->size = 2;
@@ -914,7 +914,7 @@ static char *shrink(char *op) {
 	return op;
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1, obits = -1;
 	int n, ret;
@@ -929,7 +929,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		if (!a->big_endian) {
 			return -1;
 		}
-		ret = analop_vle(a, op, addr, buf, len, mask);
+		ret = analyze_op_vle(a, op, addr, buf, len, mask);
 		if (ret >= 0) {
 			return op->size;
 		}
@@ -988,10 +988,12 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 #endif
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 			op->sign = true;
+			/* 0b01 == equal
+			 * 0b10 == less than */
 			if (ARG(2)[0] == '\0') {
-				esilprintf(op, "%s,%s,-,0xff,&,cr0,=", ARG(1), ARG(0));
+				esilprintf(op, ",%s,%s,-,!,cr0,=,%s,%s,<,?{2,cr0,|=,}", ARG(1), ARG(0), ARG(1), ARG(0));
 			} else {
-				esilprintf(op, "%s,%s,-,0xff,&,%s,=", ARG(2), ARG(1), ARG(0));
+				esilprintf(op, ",%s,%s,-,!,%s,=,%s,%s,<,?{2,%s,|=,}", ARG(2), ARG(1), ARG(0), ARG(2), ARG(1), ARG(0));
 			}
 			break;
 		case PPC_INS_MFLR:
@@ -1239,7 +1241,10 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			break;
 		case PPC_INS_ADDI:
 			op->val = ((st16)IMM(2));
-			// fallthrough
+			op->sign = true;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+			esilprintf(op, "%" PFMT64d ",%s,+,%s,=", (st64)op->val, ARG(1), ARG(0));
+			break;
 		case PPC_INS_ADD:
 			op->sign = true;
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
@@ -1278,6 +1283,33 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			esilprintf(op, "pc,lr,=,ctr,pc,=");
 			break;
+#if CS_API_MAJOR > 4
+		case PPC_INS_BEQ:
+		case PPC_INS_BEQA:
+		case PPC_INS_BFA:
+		case PPC_INS_BGE:
+		case PPC_INS_BGEA:
+		case PPC_INS_BGT:
+		case PPC_INS_BGTA:
+		case PPC_INS_BLE:
+		case PPC_INS_BLEA:
+		case PPC_INS_BLT:
+		case PPC_INS_BLTA:
+		case PPC_INS_BNE:
+		case PPC_INS_BNEA:
+		case PPC_INS_BNG:
+		case PPC_INS_BNGA:
+		case PPC_INS_BNL:
+		case PPC_INS_BNLA:
+		case PPC_INS_BNS:
+		case PPC_INS_BNSA:
+		case PPC_INS_BNU:
+		case PPC_INS_BNUA:
+		case PPC_INS_BSO:
+		case PPC_INS_BSOA:
+		case PPC_INS_BUN:
+		case PPC_INS_BUNA:
+#endif
 		case PPC_INS_B:
 		case PPC_INS_BC:
 		case PPC_INS_BA:
@@ -1286,45 +1318,57 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			op->fail = addr + op->size;
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_LT:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "0x80,cr0,&,!,!,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "2,cr0,&,?{,%s,pc,=,},", ARG(0));
 				} else {
-					esilprintf(op, "0x80,%s,&,!,!,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "2,%s,&,?{,%s,pc,=,},", ARG(0), ARG(1));
 				}
 				break;
 			case PPC_BC_LE:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "0x80,cr0,&,!,!,cr0,!,|,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "3,cr0,&,?{,%s,pc,=,},", ARG(0));
 				} else {
-					esilprintf(op, "0x80,%s,&,!,!,0,%s,!,|,?{,%s,pc,=,},", ARG(0), ARG(0), ARG(1));
+					esilprintf(op, "3,%s,&,?{,%s,pc,=,},", ARG(0), ARG(1));
 				}
 				break;
 			case PPC_BC_EQ:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "cr0,!,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "1,cr0,&,?{,%s,pc,=,},", ARG(0));
 				} else {
-					esilprintf(op, "%s,!,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "1,%s,&,?{,%s,pc,=,},", ARG(0), ARG(1));
 				}
 				break;
 			case PPC_BC_GE:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "0x80,cr0,&,!,cr0,!,|,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "2,cr0,^,3,&,?{,%s,pc,=,},", ARG(0));
 				} else {
-					esilprintf(op, "0x80,%s,&,!,%s,!,|,?{,%s,pc,=,},", ARG(0), ARG(0), ARG(1));
+					esilprintf(op, "2,%s,^,3,&,?{,%s,pc,=,},", ARG(0), ARG(1));
 				}
 				break;
 			case PPC_BC_GT:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "0x80,cr0,&,!,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "2,cr0,&,!,?{,%s,pc,=,},", ARG(0));
 				} else {
-					esilprintf(op, "0x80,%s,&,!,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "2,%s,&,!,?{,%s,pc,=,},", ARG(0), ARG(1));
 				}
 				break;
 			case PPC_BC_NE:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "cr0,!,!,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "cr0,1,&,!,?{,%s,pc,=,},", ARG(0));
 				} else {
-					esilprintf(op, "%s,!,!,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "%s,1,&,!,?{,%s,pc,=,},", ARG(0), ARG(1));
 				}
 				break;
 			case PPC_BC_INVALID:
@@ -1430,45 +1474,57 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 				esilprintf(op, "lr,pc,=");
 				break;
 			case PPC_BC_LT:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "0x80,cr0,&,!,!,?{,lr,pc,=,},");
+					esilprintf(op, "2,cr0,&,?{,lr,pc,=,},");
 				} else {
-					esilprintf(op, "0x80,%s,&,!,!,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "2,%s,&,?{,lr,pc,=,},", ARG(0));
 				}
 				break;
 			case PPC_BC_LE:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "0x80,cr0,&,!,!,cr0,!,|,?{,lr,pc,=,},");
+					esilprintf(op, "3,cr0,&,?{,lr,pc,=,},");
 				} else {
-					esilprintf(op, "0x80,%s,&,!,!,0,%s,!,|,?{,lr,pc,=,},", ARG(0), ARG(0));
+					esilprintf(op, "3,%s,&,?{,lr,pc,=,},", ARG(0));
 				}
 				break;
 			case PPC_BC_EQ:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "cr0,!,?{,lr,pc,=,},");
+					esilprintf(op, "1,cr0,&,?{,lr,pc,=,},");
 				} else {
-					esilprintf(op, "%s,!,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "1,%s,&,?{,lr,pc,=,},", ARG(0));
 				}
 				break;
 			case PPC_BC_GE:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "0x80,cr0,&,!,cr0,!,|,?{,lr,pc,=,},");
+					esilprintf(op, "2,cr0,^,3,&,?{,lr,pc,=,},");
 				} else {
-					esilprintf(op, "0x80,%s,&,!,%s,!,|,?{,lr,pc,=,},", ARG(0), ARG(0));
+					esilprintf(op, "2,%s,^,3,&,?{,lr,pc,=,},", ARG(0));
 				}
 				break;
 			case PPC_BC_GT:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "0x80,cr0,&,!,?{,lr,pc,=,},");
+					esilprintf(op, "2,cr0,&,!,?{,lr,pc,=,},");
 				} else {
-					esilprintf(op, "0x80,%s,&,!,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "2,%s,&,!,?{,lr,pc,=,},", ARG(0));
 				}
 				break;
 			case PPC_BC_NE:
+				/* 0b01 == equal
+				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "cr0,!,!,?{,lr,pc,=,},");
+					esilprintf(op, "cr0,1,&,!,?{,lr,pc,=,},");
 				} else {
-					esilprintf(op, "%s,!,!,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "%s,1,&,!,?{,lr,pc,=,},", ARG(0));
 				}
 				break;
 			case PPC_BC_UN: // unordered
@@ -1656,7 +1712,7 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.bits = 32 | 64,
 	.archinfo = archinfo,
 	.preludes = analysis_preludes,
-	.op = &analop,
+	.op = &analyze_op,
 	.get_reg_profile = &get_reg_profile,
 	.il_config = il_config,
 };

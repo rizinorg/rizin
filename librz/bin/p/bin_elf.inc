@@ -193,7 +193,7 @@ static int check_buffer_aux(RzBuffer *buf) {
 #endif
 
 static bool load_buffer(RZ_UNUSED RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, RZ_UNUSED Sdb *sdb) {
-	rz_return_val_if_fail(obj, NULL);
+	rz_return_val_if_fail(obj, false);
 
 	ELFOBJ *bin = Elf_(rz_bin_elf_new_buf)(buf, &obj->opts);
 	if (!bin) {
@@ -407,12 +407,12 @@ static bool create_set_e_machine(RzBuffer *result, bool is_arm) {
 #endif
 }
 
-static bool create_set_ehdr(RzBuffer *result, bool is_arm) {
+static bool create_set_ehdr(RzBuffer *result, Elf_(Word) baddr, bool is_arm) {
 	return create_set_e_ident(result) &&
 		rz_buf_append_ut16(result, ET_EXEC) &&
 		create_set_e_machine(result, is_arm) &&
 		rz_buf_append_ut32(result, EV_CURRENT) &&
-		rz_buf_append_word(result, sizeof(Elf_(Ehdr)) + sizeof(Elf_(Phdr))) && // e_entry
+		rz_buf_append_word(result, baddr + sizeof(Elf_(Ehdr)) + sizeof(Elf_(Phdr))) && // e_entry
 		rz_buf_append_word(result, sizeof(Elf_(Ehdr))) && // e_phoff
 		rz_buf_append_word(result, 0) && // e_shoff
 		rz_buf_append_ut32(result, 0) && // e_flags
@@ -443,7 +443,7 @@ static bool create_set_phdr(RzBuffer *result, Elf_(Word) baddr, int codelen) {
 		rz_buf_append_ut32(result, length) && // p_filesz
 		rz_buf_append_ut32(result, length) && // p_memsz
 		rz_buf_append_ut32(result, PF_X | PF_R) && // p_flags
-		rz_buf_append_ut64(result, 0x1000); // p_align
+		rz_buf_append_ut32(result, 0x1000); // p_align
 #endif
 }
 
@@ -467,7 +467,7 @@ static RzBuffer *create_elf(RzBin *bin, const ut8 *code, int codelen, const ut8 
 	bool is_arm = !strcmp(opt->arch, "arm");
 	Elf_(Word) baddr = create_get_baddr(is_arm);
 
-	if (!create_set_ehdr(result, is_arm) ||
+	if (!create_set_ehdr(result, baddr, is_arm) ||
 		!create_set_phdr(result, baddr, codelen) ||
 		!rz_buf_append_bytes(result, code, codelen)) {
 		rz_buf_free(result);
@@ -1257,7 +1257,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	return r
 #define ADD(T, A) \
 	r->type = RZ_BIN_RELOC_##T; \
-	r->addend += A; \
+	r->addend += (A); \
 	r->additive = rel->mode == DT_RELA; \
 	return r
 
@@ -1385,7 +1385,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 #undef SET
 #undef ADD
 
-	free(r);
+	rz_bin_reloc_free(r);
 	return NULL;
 }
 
@@ -1598,6 +1598,9 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			break;
 		case PT_OPENBSD_BOOTDATA:
 			ptr->name = strdup("OPENBSD_BOOTDATA");
+			break;
+		case PT_OPENBSD_NOBTCFI:
+			ptr->name = strdup("OPENBSD_NOBTCFI");
 			break;
 		default:
 			if (ptr->size == 0 && ptr->vsize == 0) {
@@ -1869,6 +1872,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->big_endian = Elf_(rz_bin_elf_is_big_endian)(obj);
 	ret->has_va = Elf_(rz_bin_elf_has_va)(obj);
 	ret->has_nx = Elf_(rz_bin_elf_has_nx)(obj);
+	ret->has_nobtcfi = Elf_(rz_bin_elf_has_nobtcfi)(obj);
 	ret->intrp = Elf_(rz_bin_elf_get_intrp)(obj);
 	ret->compiler = Elf_(rz_bin_elf_get_compiler)(obj);
 	ret->dbg_info = 0;

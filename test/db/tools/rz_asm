@@ -388,7 +388,7 @@ RUN
 
 NAME=rz-asm -c
 FILE==
-CMDS=!rz-asm -a arm -b 16 -d -c cortex 0x80f30988
+CMDS=!rz-asm -a arm -b 16 -d -c cortexm 0x80f30988
 EXPECT=<<EOF
 msr psp, r0
 EOF
@@ -396,7 +396,7 @@ RUN
 
 NAME=rz-asm -A with -c and -o
 FILE==
-CMDS=!rz-asm -a arm -b 16 -A -o 0x1000 -c cortex 0x80f30988
+CMDS=!rz-asm -a arm -b 16 -A -o 0x1000 -c cortexm 0x80f30988
 EXPECT=<<EOF
 offset:   0x00001000
 bytes:    80f30988
@@ -582,7 +582,7 @@ NAME=rz-asm RzIL
 FILE=
 CMDS=<<EOF
 !rz-asm -a bf -I 3e
-?v $?
+%v $?
 EOF
 EXPECT=<<EOF
 (set ptr (+ (var ptr) (bv 64 0x1)))
@@ -595,7 +595,7 @@ NAME=rz-asm RzIL failure
 FILE=
 CMDS=<<EOF
 !rz-asm -a bf -I 00
-?v $?
+%v $?
 EOF
 EXPECT=<<EOF
 0x1

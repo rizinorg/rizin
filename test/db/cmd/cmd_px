@@ -156,14 +156,14 @@ e io.unalloc=true
 e scr.color=3
 e hex.comments=true
 .(dump)
-?e
+echo
 e scr.color=0
 .(dump)
-?e
+echo
 e hex.comments=false
 e io.unalloc.ch=?
 .(dump)
-?e
+echo
 e io.unalloc.ch=
 .(dump)
 EOF
@@ -218,7 +218,7 @@ NAME=pxr
 FILE=bins/elf/crackme
 CMDS=<<EOF
 pxr 48 @ 0x00600ae0
-?e ===
+echo ===
 pxr 24 @ 0x00600ae0+32
 EOF
 EXPECT=<<EOF

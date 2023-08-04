@@ -13,15 +13,6 @@
 #include "../asm/arch/8051/8051_disas.c"
 #include "../arch/8051/8051_il.h"
 
-typedef struct {
-	const char *name;
-	ut32 map_code;
-	ut32 map_idata;
-	ut32 map_sfr;
-	ut32 map_xdata;
-	ut32 map_pdata;
-} i8051_cpu_model;
-
 static const i8051_cpu_model cpu_models[] = {
 	{ .name = "8051-generic",
 		.map_code = 0,
@@ -60,27 +51,6 @@ static ut32 i8051_reg_read(RzReg *reg, const char *regname) {
 	}
 	return 0;
 }
-
-typedef struct {
-	RzIODesc *desc;
-	ut32 addr;
-	const char *name;
-} i8051_map_entry;
-
-static const int I8051_IDATA = 0;
-static const int I8051_SFR = 1;
-static const int I8051_XDATA = 2;
-
-static const i8051_map_entry init_mem_map[3] = {
-	{ NULL, UT32_MAX, "idata" },
-	{ NULL, UT32_MAX, "sfr" },
-	{ NULL, UT32_MAX, "xdata" }
-};
-
-typedef struct {
-	const i8051_cpu_model *cpu_curr_model;
-	i8051_map_entry mem_map[3];
-} i8051_plugin_context;
 
 static void map_cpu_memory(RzAnalysis *analysis, int entry, ut32 addr, ut32 size, bool force) {
 	i8051_plugin_context *ctx = analysis->plugin_data;
@@ -472,7 +442,7 @@ static void exi_rn(RzAnalysisOp *op, ut8 reg, const char *operation) {
 		alu_op(rn, aluop, flags); \
 		break;
 
-static void analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
+static void analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	rz_strbuf_init(&op->esil);
 	rz_strbuf_set(&op->esil, "");
 
@@ -1054,6 +1024,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r5	.8	5	0\n"
 		"gpr	r6	.8	6	0\n"
 		"gpr	r7	.8	7	0\n"
+		"gpr	acc	.8	8	0\n"
 		"gpr	a	.8	8	0\n"
 		"gpr	b	.8	9	0\n"
 		"gpr	dptr	.16	10	0\n"
@@ -1068,10 +1039,9 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"flg	n	.1	.101	0\n"
 		"flg	ac	.1	.102	0\n"
 		"flg	cy	.1	.103	0\n"
+		"flg	c	.1	.103	0\n"
 		"gpr	sp	.8	13	0\n"
 		"gpr	pc	.16	15	0\n"
-		// aliases
-		"flg	c	.1	.103	0\n"
 		// ---------------------------------------------------
 		// 8051 memory emulation control registers
 		// These registers map 8051 memory classes to r2's
@@ -1261,7 +1231,7 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		ut8 copy[3] = { 0, 0, 0 };
 		memcpy(copy, buf, len >= 3 ? 3 : len);
-		analop_esil(analysis, op, addr, copy);
+		analyze_op_esil(analysis, op, addr, copy);
 	}
 
 	if ((mask & RZ_ANALYSIS_OP_MASK_IL) && (analysis && buf && len > 0)) {
@@ -1279,6 +1249,11 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	return op->size;
 }
 
+static const i8051_map_entry init_mem_map[3] = {
+	{ NULL, UT32_MAX, "idata" },
+	{ NULL, UT32_MAX, "sfr" },
+	{ NULL, UT32_MAX, "xdata" }
+};
 static bool i8051_init(void **user) {
 	i8051_plugin_context *ctx = RZ_NEW0(i8051_plugin_context);
 	if (!ctx) {
@@ -1296,10 +1271,6 @@ static bool i8051_fini(void *user) {
 	return true;
 }
 
-static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
-	return rz_analysis_il_config_new(16, false, 16);
-}
-
 RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
@@ -1313,7 +1284,7 @@ RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.esil_fini = esil_i8051_fini,
 	.init = &i8051_init,
 	.fini = &i8051_fini,
-	.il_config = il_config,
+	.il_config = rz_8051_il_config,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -120,7 +120,7 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #include "native/reg.c" // x86 specific
 
 #endif
-static int rz_debug_native_step(RzDebug *dbg) {
+static bool rz_debug_native_step(RzDebug *dbg) {
 #if __APPLE__
 	return xnu_step(dbg);
 #elif __WINDOWS__
@@ -134,16 +134,13 @@ static int rz_debug_native_step(RzDebug *dbg) {
 	return true;
 #elif __linux__
 	return linux_step(dbg);
+#else
+	return false;
 #endif
-	return 0;
 }
 
 // return thread id
 static int rz_debug_native_attach(RzDebug *dbg, int pid) {
-#if 0
-	if (!dbg || pid == dbg->pid)
-		return dbg->tid;
-#endif
 #if __APPLE__
 	return xnu_attach(dbg, pid);
 #elif __WINDOWS__
@@ -567,12 +564,6 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 
 #undef MAXPID
 #define MAXPID 99999
-
-static RzList /*<void *>*/ *rz_debug_native_tids(RzDebug *dbg, int pid) {
-	printf("TODO: Threads: \n");
-	// T
-	return NULL;
-}
 
 static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
@@ -1670,7 +1661,6 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.select = &rz_debug_native_select,
 #endif
 	.pids = &rz_debug_native_pids,
-	.tids = &rz_debug_native_tids,
 	.threads = &rz_debug_native_threads,
 	.wait = &rz_debug_native_wait,
 	.kill = &rz_debug_native_kill,

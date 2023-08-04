@@ -16,7 +16,7 @@ const ARG_IDENTIFIER_BASE = choice(
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
   /\${[^\r\n $}]+}/,
-  /\\./
+  /\\./,
 );
 const SPEC_ARG_IDENTIFIER_BASE = choice(
   repeat1(noneOf(...SPEC_SPECIAL_CHARACTERS)),
@@ -24,7 +24,7 @@ const SPEC_ARG_IDENTIFIER_BASE = choice(
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
   /\${[^\r\n $}]+}/,
-  /\\./
+  /\\./,
 );
 const PF_DOT_ARG_IDENTIFIER_BASE = choice(
   repeat1(noneOf(...PF_DOT_SPECIAL_CHARACTERS)),
@@ -32,7 +32,7 @@ const PF_DOT_ARG_IDENTIFIER_BASE = choice(
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
   /\${[^\r\n $}]+}/,
-  /\\./
+  /\\./,
 );
 const PF_ARG_IDENTIFIER_BASE = choice(
   repeat1(noneOf(...PF_SPECIAL_CHARACTERS)),
@@ -40,7 +40,7 @@ const PF_ARG_IDENTIFIER_BASE = choice(
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
   /\${[^\r\n $}]+}/,
-  /\\./
+  /\\./,
 );
 
 module.exports = grammar({
@@ -65,7 +65,7 @@ module.exports = grammar({
       choice(
         seq(),
         seq(repeat($.stmt_delimiter)),
-        seq(repeat($.stmt_delimiter), $._statement, repeat(seq($.stmt_delimiter, optional($._statement))))
+        seq(repeat($.stmt_delimiter), $._statement, repeat(seq($.stmt_delimiter, optional($._statement)))),
       ),
     _statements_singleline: ($) =>
       prec(
@@ -73,8 +73,8 @@ module.exports = grammar({
         seq(
           repeat($.stmt_delimiter_singleline),
           $._statement,
-          repeat(seq($.stmt_delimiter_singleline, optional($._statement)))
-        )
+          repeat(seq($.stmt_delimiter_singleline, optional($._statement))),
+        ),
       ),
 
     _statement: ($) => choice($.redirect_stmt, $._simple_stmt),
@@ -92,7 +92,7 @@ module.exports = grammar({
         $._pipe_stmt,
         $.grep_stmt,
         $.legacy_quoted_stmt,
-        $._pf_stmts
+        $._pf_stmts,
       ),
 
     _tmp_stmt: ($) =>
@@ -112,7 +112,7 @@ module.exports = grammar({
         $.tmp_file_stmt,
         $.tmp_string_stmt,
         $.tmp_value_stmt,
-        $.tmp_hex_stmt
+        $.tmp_hex_stmt,
       ),
 
     _iter_stmt: ($) =>
@@ -140,7 +140,7 @@ module.exports = grammar({
         $.iter_iomap_stmt,
         $.iter_dbgmap_stmt,
         $.iter_register_stmt,
-        $.iter_step_stmt
+        $.iter_step_stmt,
       ),
 
     _pipe_stmt: ($) => choice($.html_disable_stmt, $.html_enable_stmt, $.pipe_stmt),
@@ -154,10 +154,10 @@ module.exports = grammar({
         choice(
           seq(
             repeat1(choice($.grep_specifier_identifier, $.cmd_substitution_arg)),
-            optional(alias(/[$]+/, $.grep_specifier_identifier))
+            optional(alias(/[$]+/, $.grep_specifier_identifier)),
           ),
-          alias(/[$]+/, $.grep_specifier_identifier)
-        )
+          alias(/[$]+/, $.grep_specifier_identifier),
+        ),
       ),
 
     html_disable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|")),
@@ -214,8 +214,8 @@ module.exports = grammar({
         1,
         choice(
           field("command", alias($.question_mark_identifier, $.cmd_identifier)),
-          field("command", alias($._help_stmt, $.cmd_identifier))
-        )
+          field("command", alias($._help_stmt, $.cmd_identifier)),
+        ),
       ),
     macro_body: ($) => seq(";", $._statement, repeat(seq(";", $._statement))),
     macro_name: ($) => /[A-Za-z0-9_\-\.]+/,
@@ -227,7 +227,6 @@ module.exports = grammar({
     arged_stmt: ($) =>
       choice(
         $._simple_arged_stmt,
-        $._math_arged_stmt,
         $._pointer_arged_stmt,
         $._macro_arged_stmt,
         $._system_stmt,
@@ -235,13 +234,13 @@ module.exports = grammar({
         $._env_stmt,
         $._pf_arged_stmt,
         $._last_stmt,
-        $._simple_arged_stmt_question
+        $._simple_arged_stmt_question,
       ),
 
     _macro_arged_stmt: ($) =>
       choice(
         field("command", alias(choice("(", "(-*", "(*"), $.cmd_identifier)),
-        seq(field("command", alias("(-", $.cmd_identifier)), field("args", $.args))
+        seq(field("command", alias("(-", $.cmd_identifier)), field("args", $.args)),
       ),
     _simple_arged_stmt_question: ($) =>
       prec.left(1, seq(field("command", alias($._help_stmt, $.cmd_identifier)), field("args", $.args))),
@@ -250,17 +249,15 @@ module.exports = grammar({
     _search_stmt: ($) =>
       prec.left(
         1,
-        seq(field("command", alias(/\/[A-Za-z0-9+!\/*]*/, $.cmd_identifier)), field("args", optional($.args)))
+        seq(field("command", alias(/\/[A-Za-z0-9+!\/*]*/, $.cmd_identifier)), field("args", optional($.args))),
       ),
-    _math_arged_stmt: ($) =>
-      prec.left(1, seq(field("command", alias($.question_mark_identifier, $.cmd_identifier)), field("args", $.args))),
     _pointer_arged_stmt: ($) =>
       prec.left(
         1,
         seq(
           field("command", alias($.pointer_identifier, $.cmd_identifier)),
-          field("args", alias($.eq_sep_args, $.args))
-        )
+          field("args", alias($.eq_sep_args, $.args)),
+        ),
       ),
     _system_stmt: ($) => prec.left(1, seq(field("command", $.system_identifier), optional(field("args", $.args)))),
     _interpret_stmt: ($) =>
@@ -270,19 +267,19 @@ module.exports = grammar({
           seq(field("command", alias(".", $.cmd_identifier)), field("args", $._simple_stmt)),
           seq(
             field("command", alias(/\.[\.:\-*]+/, $.cmd_identifier)),
-            optional(seq(/[ ]+/, field("args", optional($.args))))
+            optional(seq(/[ ]+/, field("args", optional($.args)))),
           ),
           seq(field("command", alias(/\.[ ]+/, $.cmd_identifier)), field("args", optional($.args))),
           seq(field("command", alias(/\.\.?\(/, $.cmd_identifier)), field("args", optional($.args)), ")"),
           seq(field("command", alias($._interpret_search_identifier, $.cmd_identifier)), field("args", $.args)),
-          prec.right(1, seq(field("args", $._simple_stmt), field("command", "|.")))
-        )
+          prec.right(1, seq(field("args", $._simple_stmt), field("command", "|."))),
+        ),
       ),
     _interpret_search_identifier: ($) => seq("./"),
     _pf_arged_stmt: ($) =>
       choice(
         seq(field("command", alias($.pf_dot_cmd_identifier, $.cmd_identifier))),
-        seq(field("command", alias("pfo", $.cmd_identifier)), field("args", $.args))
+        seq(field("command", alias("pfo", $.cmd_identifier)), field("args", $.args)),
       ),
     _pf_stmts: ($) =>
       prec.left(
@@ -295,13 +292,13 @@ module.exports = grammar({
           // pf.name [0|cnt]fmt
           alias($.pf_new_cmd, $.arged_stmt),
           // Cf [sz] [fmt]
-          alias($.Cf_cmd, $.arged_stmt)
+          alias($.Cf_cmd, $.arged_stmt),
           // pf., pfo fdf_name: will be handled as regular arged_stmt
-        )
+        ),
       ),
     Cf_cmd: ($) =>
       prec.left(
-        seq(field("command", alias("Cf", $.cmd_identifier)), optional(field("args", alias($._Cf_args, $.args))))
+        seq(field("command", alias("Cf", $.cmd_identifier)), optional(field("args", alias($._Cf_args, $.args)))),
       ),
     _Cf_args: ($) => seq($.arg, $.pf_args),
     pf_dot_cmd_identifier: ($) => "pf.",
@@ -310,7 +307,7 @@ module.exports = grammar({
       seq(
         field("command", alias($.pf_dot_cmd_identifier, $.cmd_identifier)),
         $._concat_pf_dot,
-        field("args", $.pf_new_args)
+        field("args", $.pf_new_args),
       ),
     pf_dot_cmd: ($) =>
       prec.left(
@@ -318,8 +315,8 @@ module.exports = grammar({
         seq(
           field("command", alias(choice($.pf_dot_cmd_identifier, $.pf_dot_full_cmd_identifier), $.cmd_identifier)),
           $._concat_pf_dot,
-          field("args", $.pf_dot_cmd_args)
-        )
+          field("args", $.pf_dot_cmd_args),
+        ),
       ),
     pf_cmd: ($) => seq(field("command", alias(/pf[*cjqs]?/, $.cmd_identifier)), field("args", $.pf_args)),
     pf_new_args: ($) => seq(alias($.pf_dot_arg, $.pf_arg), $.pf_args),
@@ -340,17 +337,17 @@ module.exports = grammar({
         1,
         seq(
           alias($.pf_dot_arg, $.pf_arg),
-          repeat(seq($._concat_pf_dot, ".", $._concat_pf_dot, alias($.pf_dot_arg, $.pf_arg)))
-        )
+          repeat(seq($._concat_pf_dot, ".", $._concat_pf_dot, alias($.pf_dot_arg, $.pf_arg))),
+        ),
       ),
     _env_stmt: ($) =>
       prec.left(
         seq(
           field("command", alias($._env_stmt_identifier, $.cmd_identifier)),
-          field("args", optional(alias($.eq_sep_args, $.args)))
-        )
+          field("args", optional(alias($.eq_sep_args, $.args))),
+        ),
       ),
-    _env_stmt_identifier: ($) => choice("%", "env"),
+    _env_stmt_identifier: ($) => "env",
     _last_stmt: ($) => seq(field("command", alias($.last_stmt_identifier, $.cmd_identifier))),
 
     last_stmt_identifier: ($) => choice(".", "..."),
@@ -367,7 +364,7 @@ module.exports = grammar({
     redirect_stmt: ($) =>
       prec.right(
         2,
-        seq(field("command", $._simple_stmt), field("redirect_operator", $._redirect_operator), field("arg", $.arg))
+        seq(field("command", $._simple_stmt), field("redirect_operator", $._redirect_operator), field("arg", $.arg)),
       ),
     _redirect_operator: ($) =>
       choice($.fdn_redirect_operator, $.fdn_append_operator, $.html_redirect_operator, $.html_append_operator),
@@ -384,7 +381,7 @@ module.exports = grammar({
         $.single_quoted_arg,
         $.cmd_substitution_arg,
         alias($._arg_with_paren, $.args),
-        alias(",", $.arg_identifier)
+        alias(",", $.arg_identifier),
       ),
     arg: ($) => choice($._arg, $.concatenation),
     args: ($) => prec.left(repeat1($.arg)),
@@ -397,7 +394,7 @@ module.exports = grammar({
         alias($._eq_sep_key_identifier, $.arg_identifier),
         $.double_quoted_arg,
         $.single_quoted_arg,
-        $.cmd_substitution_arg
+        $.cmd_substitution_arg,
       ),
     _eq_sep_key_concatenation: ($) =>
       prec.left(seq($._eq_sep_key_single, repeat1(seq($._eq_sep_concat, $._eq_sep_key_single)))),
@@ -409,9 +406,9 @@ module.exports = grammar({
             repeat1(noneOf(...SPECIAL_CHARACTERS_EQUAL)),
             /\$[^({]/,
             /\${[^\r\n $}]+}/,
-            escape(...SPECIAL_CHARACTERS_EQUAL)
-          )
-        )
+            escape(...SPECIAL_CHARACTERS_EQUAL),
+          ),
+        ),
       ),
     _eq_sep_val_concatenation: ($) => prec.left(1, seq($.arg, repeat1(seq($._eq_sep_concat, $.arg)))),
     _eq_sep_val: ($) => choice($._arg, alias($._eq_sep_val_concatenation, $.concatenation)),
@@ -424,7 +421,7 @@ module.exports = grammar({
       seq(
         '"',
         repeat(choice(token.immediate(prec(1, /[^\\"\n$`]+/)), /\$[^("]?/, /\\[\\"\n$`]?/, $.cmd_substitution_arg)),
-        '"'
+        '"',
       ),
     single_quoted_arg: ($) => seq("'", repeat(choice(token.immediate(prec(1, /[^\\'\n]+/)), /\\[\\'\n]?/)), "'"),
     cmd_substitution_arg: ($) =>

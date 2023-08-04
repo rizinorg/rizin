@@ -173,7 +173,7 @@ int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size);
 RzList /*<RzDebugDesc *>*/ *linux_desc_list(int pid);
 bool linux_stop_threads(RzDebug *dbg, int except);
 int linux_handle_signals(RzDebug *dbg, int tid);
-int linux_dbg_wait(RzDebug *dbg, int pid);
+RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid);
 char *linux_reg_profile(RzDebug *dbg);
 int match_pid(const void *pid_o, const void *th_o);
 

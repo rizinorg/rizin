@@ -35,7 +35,7 @@ RUN
 
 NAME=ELF: sym.main
 FILE=bins/elf/analysis/pie
-CMDS=?v sym.main
+CMDS=%v sym.main
 EXPECT=<<EOF
 0x5c5
 EOF
@@ -46,7 +46,7 @@ FILE=bins/elf/analysis/pie
 ARGS=-n
 CMDS=<<EOF
 oba
-?v sym.main
+%v sym.main
 e asm.arch=x86
 e asm.bits=32
 pi 5 @ sym.main
@@ -95,7 +95,7 @@ RUN
 NAME=ELF: Candypop, main detection
 FILE=bins/elf/analysis/candypop
 ARGS=-A
-CMDS=? main~?0x1235
+CMDS=% main~?0x1235
 EXPECT=<<EOF
 1
 EOF

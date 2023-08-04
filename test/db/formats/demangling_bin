@@ -17,12 +17,12 @@ EXPECT=<<EOF
 0x00001e24 0  stub helpers
 0x00002000 0 _pvars
 0x00002064 0 std::__ioinit
-0x00001dee 0 std::string::size() const
-0x00001df4 0 std::string::operator[](unsigned long) const
-0x00001dfa 0 std::ostream::operator<<(std::ostream& (*)(std::ostream&))
-0x00001e00 0 std::ios_base::Init::Init()
-0x00001e06 0 std::ios_base::Init::~Init()
-0x00001e12 0 std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
+0x00001dee 0 imp.std::string::size() const
+0x00001df4 0 imp.std::string::operator[](unsigned long) const
+0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
+0x00001e00 0 imp.std::ios_base::Init::Init()
+0x00001e06 0 imp.std::ios_base::Init::~Init()
+0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
 EOF
@@ -68,6 +68,42 @@ call sym.imp.puts
 EOF
 RUN
 
+NAME=bin.demangle=false and symbol
+FILE=bins/elf/demangle-test-cpp
+ARGS=-e bin.demangle=false
+CMDS=is~vector
+EXPECT=<<EOF
+46  0x000012fc 0x000012fc WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD2Ev
+47  0x00001a48 0x00001a48 WEAK   FUNC   51       _ZNSt12_Vector_baseIiSaIiEE11_M_allocateEm
+52  0x00001462 0x00001462 WEAK   FUNC   62       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC2Ev
+60  0x00001286 0x00001286 WEAK   FUNC   68       _ZNSt6vectorIiSaIiEED1Ev
+62  0x000012ca 0x000012ca WEAK   FUNC   49       _ZNSt6vectorIiSaIiEE9push_backEOi
+67  0x00001a08 0x00001a08 WEAK   FUNC   64       _ZN9__gnu_cxxmiIPiSt6vectorIiSaIiEEEENS_17__normal_iteratorIT_T0_E15difference_typeERKS8_SB_
+69  0x00001318 0x00001318 WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEEC1Ev
+70  0x000019c0 0x000019c0 WEAK   FUNC   72       _ZNSt6vectorIiSaIiEE5beginEv
+76  0x000013c8 0x000013c8 WEAK   FUNC   154      _ZNSt6vectorIiSaIiEE12emplace_backIJiEEEvDpOT_
+78  0x00001334 0x00001334 WEAK   FUNC   77       _ZNSt12_Vector_baseIiSaIiEED1Ev
+79  0x00001462 0x00001462 WEAK   FUNC   62       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC1Ev
+81  0x000018b6 0x000018b6 WEAK   FUNC   29       _ZN9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEEC2ERKS1_
+83  0x000012fc 0x000012fc WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD1Ev
+85  0x0000155e 0x0000155e WEAK   FUNC   76       _ZNSt6vectorIiSaIiEE3endEv
+86  0x000014bc 0x000014bc WEAK   FUNC   53       _ZNSt12_Vector_baseIiSaIiEE13_M_deallocateEPim
+87  0x00001286 0x00001286 WEAK   FUNC   68       _ZNSt6vectorIiSaIiEED2Ev
+99  0x00001334 0x00001334 WEAK   FUNC   77       _ZNSt12_Vector_baseIiSaIiEED2Ev
+100 0x00001c72 0x00001c72 WEAK   FUNC   14       _ZNKSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv
+103 0x00001b34 0x00001b34 WEAK   FUNC   34       _ZNKSt6vectorIiSaIiEE8max_sizeEv
+107 0x00001382 0x00001382 WEAK   FUNC   14       _ZNSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv
+113 0x00001a7c 0x00001a7c WEAK   FUNC   14       _ZNK9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEE4baseEv
+116 0x000018b6 0x000018b6 WEAK   FUNC   29       _ZN9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEEC1ERKS1_
+117 0x0000126a 0x0000126a WEAK   FUNC   27       _ZNSt6vectorIiSaIiEEC2Ev
+118 0x00001318 0x00001318 WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEEC2Ev
+122 0x000015aa 0x000015aa WEAK   FUNC   617      _ZNSt6vectorIiSaIiEE17_M_realloc_insertIJiEEEvN9__gnu_cxx17__normal_iteratorIPiS1_EEDpOT_
+128 0x000018d4 0x000018d4 WEAK   FUNC   236      _ZNKSt6vectorIiSaIiEE12_M_check_lenEmPKc
+129 0x0000126a 0x0000126a WEAK   FUNC   27       _ZNSt6vectorIiSaIiEEC1Ev
+144 0x00001b56 0x00001b56 WEAK   FUNC   35       _ZNKSt6vectorIiSaIiEE4sizeEv
+EOF
+RUN
+
 NAME=MSVC import symbol demangling
 FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
 CMDS=fl~+0x1004e0f4[2]
@@ -99,7 +135,7 @@ NAME=demangle in irj
 FILE=bins/elf/demangle-test-cpp
 CMDS=irj~{9}
 EXPECT=<<EOF
-{"name":"_ZSt20__throw_length_errorPKc","demname":"std::__throw_length_error(char const*)","type":"SET_64","vaddr":16424,"paddr":12328,"target_vaddr":16544,"is_ifunc":false}
+{"name":"_ZSt20__throw_length_errorPKc","demangled":"std::__throw_length_error(char const*)","type":"SET_64","vaddr":16424,"paddr":12328,"target_vaddr":16544,"is_ifunc":false}
 EOF
 RUN
 
@@ -120,35 +156,33 @@ e asm.bytes=false
 (pd_calls; pd 1 @ 0x0804921a; pd 1 @ 0x08049249; pd 1 @ 0x08049278)
 e asm.cmt.right=true
 .(pd_calls)
-?e
+echo
 e asm.cmt.right=false
 .(pd_calls)
-?e
+echo
 e asm.cmt.right=true
 aa
 .(pd_calls)
-?e
+echo
 e asm.demangle=false
 .(pd_calls)
 EOF
 EXPECT=<<EOF
             0x0804921a      call  sym.__x86.get_pc_thunk.si
-            0x08049249      call  method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-            0x08049278      call  sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+            0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
+            0x08049278      call  method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 
             0x0804921a      call sym.__x86.get_pc_thunk.si
-            ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-            0x08049249      call method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
-            ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
-            0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
-
-|           0x0804921a      call  sym.__x86.get_pc_thunk.si
-|           0x08049249      call  method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call  sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+            0x08049249      call method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
+            0x08049278      call method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 
 |           0x0804921a      call  sym.__x86.get_pc_thunk.si
 |           0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call  sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+|           0x08049278      call  method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+
+|           0x0804921a      call  sym.__x86.get_pc_thunk.si
+|           0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
+|           0x08049278      call  method.QLabel.QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 EOF
 RUN
 
@@ -161,52 +195,49 @@ aa
 s sym.__x86.get_pc_thunk.bx
 e asm.demangle=true
 pd 1
-?e
+echo
 agf
-?e
+echo
 e asm.demangle=false
 pd 1
-?e
+echo
 s 0x08049390
 e asm.demangle=true
 pd 1
-?e
+echo
 e asm.demangle=false
 pd 1
 EOF
 EXPECT=<<EOF
             ; CALL XREF from sym._init @ 0x8049008
-            ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349 ; method.QtPrivate::RefCount.deref
-            ; CALL XREF from QString::QString(char const*) @ 0x804939d ; method.QString.QString_char_const
-            ; CALL XREF from QString::~QString() @ 0x80493e5 ; method.QString._QString
+            ; CALL XREF from method.QtPrivate::RefCount.deref @ 0x8049349
+            ; CALL XREF from method.QString.QString_char_const @ 0x804939d
+            ; CALL XREF from method.QString._QString @ 0x80493e5
             ; CALL XREF from sym._fini @ 0x80495d4
-/ sym.__x86.get_pc_thunk.bx ();
+/ sym.__x86.get_pc_thunk.bx();
 |           0x08049140      mov   ebx, dword [esp]
 
-.--------------------------------------------------------------.
-|  0x8049140                                                   |
-|   ; CALL XREF from sym._init @ 0x8049008                     |
-|   ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349  |
-|     ; method.QtPrivate::RefCount.deref                       |
-|   ; CALL XREF from QString::QString(char const*) @ 0x804939d |
-|     ; method.QString.QString_char_const                      |
-|   ; CALL XREF from QString::~QString() @ 0x80493e5           |
-|     ; method.QString._QString                                |
-|   ; CALL XREF from sym._fini @ 0x80495d4                     |
-| sym.__x86.get_pc_thunk.bx ();                                |
-| mov ebx, dword [esp]                                         |
-| ret                                                          |
-`--------------------------------------------------------------'
+.------------------------------------------------------------------.
+|  0x8049140                                                       |
+|   ; CALL XREF from sym._init @ 0x8049008                         |
+|   ; CALL XREF from method.QtPrivate::RefCount.deref @ 0x8049349  |
+|   ; CALL XREF from method.QString.QString_char_const @ 0x804939d |
+|   ; CALL XREF from method.QString._QString @ 0x80493e5           |
+|   ; CALL XREF from sym._fini @ 0x80495d4                         |
+| sym.__x86.get_pc_thunk.bx();                                     |
+| mov ebx, dword [esp]                                             |
+| ret                                                              |
+`------------------------------------------------------------------'
 
             ; CALL XREF from sym._init @ 0x8049008
             ; CALL XREF from method.QtPrivate::RefCount.deref @ 0x8049349
             ; CALL XREF from method.QString.QString_char_const @ 0x804939d
             ; CALL XREF from method.QString._QString @ 0x80493e5
             ; CALL XREF from sym._fini @ 0x80495d4
-/ sym.__x86.get_pc_thunk.bx ();
+/ sym.__x86.get_pc_thunk.bx();
 |           0x08049140      mov   ebx, dword [esp]
 
-|           ; CODE XREFS from QtPrivate::RefCount::deref() @ 0x8049371, 0x804937e
+|           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
 |           0x08049390      mov   ebx, dword [var_8h]
 
 |           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
@@ -222,23 +253,23 @@ e asm.bytes=false
 aaa
 e asm.demangle=true
 pd 1 @ sym.imp._Unwind_Resume
-?e
+echo
 e asm.demangle=false
 pd 1 @ sym.imp._Unwind_Resume
 EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
-            ; CALL XREF from std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<char*, void>(char*, char*, std::allocator<char> const&) @ +0x66 ; sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const
-            ; CALL XREF from void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag) @ +0x116 ; sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag
-/ sym.imp._Unwind_Resume ();
+            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
+            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
+/ sym.imp._Unwind_Resume();
 \           0x00000f10      jmp   dword [ebx + 0x70]
 
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
             ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
             ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
-/ sym.imp._Unwind_Resume ();
+/ sym.imp._Unwind_Resume();
 \           0x00000f10      jmp   dword [ebx + 0x70]
 EOF
 RUN
@@ -247,11 +278,188 @@ NAME=rust function in file
 FILE=bins/elf/rust
 CMDS=<<EOF
 aa
-afl~example
+ic
 EOF
 EXPECT=<<EOF
-0x00002b30    2 15           sym._example::Foo_as_example::Bar_::bar::h26dc608664264fb6
-0x00002b40    1 31           sym.example::main::hf45903a20ef2ad21
+address    min        max        name                                                                                                                                                                                    super 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------- 0x00005c60 0x0001a8a0 <&'a T as core::fmt::Debug>::fmt                                                                                                                                                        
+---------- 0x000064b0 0x00016df0 <&'a T as core::fmt::Display>::fmt                                                                                                                                                      
+---------- 0x0000c3b0 0x0000c3b0 <&'a mut I as core::iter::iterator::Iterator>::next                                                                                                                                     
+---------- 0x0000c2c0 0x0000c2c0 <*mut T as core::fmt::Debug>::fmt                                                                                                                                                       
+---------- 0x00005c00 0x00005c00 <<Box<std::error::Error + core::marker::Send + core::marker::Sync + 'static> as core::convert::From<collections::string::String>>::from::StringError as core::fmt::Debug>::fmt          
+---------- 0x00005bd0 0x00005bd0 <<Box<std::error::Error + core::marker::Send + core::marker::Sync + 'static> as core::convert::From<collections::string::String>>::from::StringError as core::fmt::Display>::fmt        
+---------- 0x00005b90 0x00005b90 <<Box<std::error::Error + core::marker::Send + core::marker::Sync + 'static> as core::convert::From<collections::string::String>>::from::StringError as std::error::Error>::description 
+---------- 0x0000dcc0 0x0000e220 <T as core::any::Any>::get_type_id                                                                                                                                                      
+---------- 0x000051a0 0x000051a0 <alloc::arc::Arc<T>>::drop_slow                                                                                                                                                         
+---------- 0x0000d1e0 0x0000d7b0 <alloc::raw_vec::RawVec<T>>::double                                                                                                                                                     
+---------- ---------- ---------- <alloc::raw_vec::RawVec<T>>::shrink_to_fit::_MSG_FILE_LINE                                                                                                                              
+---------- 0x000060e0 0x000182a0 <char as core::char::CharExt>::encode_utf8                                                                                                                                              
+---------- ---------- ---------- <char as core::char::CharExt>::to_digit::_MSG_FILE_LINE                                                                                                                                 
+---------- 0x00014650 0x00014650 <collections::string::String as core::convert::From<&'a str>>::from                                                                                                                     
+---------- 0x0000e160 0x0000e160 <collections::string::String as core::fmt::Display>::fmt                                                                                                                                
+---------- 0x0000d290 0x0000d290 <collections::vec::Vec<T>>::into_boxed_slice                                                                                                                                            
+---------- 0x0000df40 0x0000f3c0 <collections::vec::Vec<T>>::reserve                                                                                                                                                     
+---------- 0x000183c0 0x000183c0 <core::cell::BorrowError as core::fmt::Debug>::fmt                                                                                                                                      
+---------- 0x00018400 0x00018400 <core::cell::BorrowMutError as core::fmt::Debug>::fmt                                                                                                                                   
+---------- 0x00019240 0x00019240 <core::fmt::Arguments<'a> as core::fmt::Display>::fmt                                                                                                                                   
+---------- 0x00005f50 0x00018110 <core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_char                                                                                                           
+---------- 0x00006090 0x00018250 <core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_fmt                                                                                                            
+---------- 0x00005f40 0x00018100 <core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str                                                                                                            
+---------- 0x00017ab0 0x00017ab0 <core::fmt::builders::PadAdapter<'a, 'b> as core::fmt::Write>::write_str                                                                                                                
+---------- 0x0001a750 0x0001a750 <core::num::ParseIntError as core::fmt::Debug>::fmt                                                                                                                                     
+---------- ---------- ---------- <core::option::Option<T>>::unwrap::_MSG_FILE_LINE                                                                                                                                       
+---------- 0x0001b020 0x0001b020 <core::str::Utf8Error as core::fmt::Debug>::fmt                                                                                                                                         
+---------- 0x00002b30 0x00002b30 <example::Foo as example::Bar>::bar                                                                                                                                                     
+---------- 0x0000d3c0 0x0000d3c0 <std::ffi::c_str::NulError as core::fmt::Debug>::fmt                                                                                                                                    
+---------- 0x00005d20 0x00005d20 <std::io::Write::write_fmt::Adaptor<'a, T> as core::fmt::Write>::write_str                                                                                                              
+---------- 0x00002c00 0x00002c00 <std::io::error::Error as core::fmt::Display>::fmt                                                                                                                                      
+---------- 0x0000e730 0x0000e730 <std::sync::once::Finish as core::ops::Drop>::drop                                                                                                                                      
+---------- ---------- ---------- <std::sync::once::Finish as core::ops::Drop>::drop::_FILE_LINE                                                                                                                          
+---------- 0x0000dba0 0x0000dba0 <std::sys::imp::os_str::Slice as core::fmt::Debug>::fmt                                                                                                                                 
+---------- 0x0000f030 0x0000f030 <std::sys_common::poison::PoisonError<T> as core::fmt::Debug>::fmt                                                                                                                      
+---------- 0x00004c80 0x00004c80 <std::thread::local::LocalKey<T>>::with                                                                                                                                                 
+---------- 0x00019310 0x00019310 <str as core::fmt::Debug>::fmt                                                                                                                                                          
+---------- 0x0001a1d0 0x0001a1d0 <str as core::fmt::Display>::fmt                                                                                                                                                        
+---------- 0x000149d0 0x000149d0 alloc::oom::default_oom_handler                                                                                                                                                         
+---------- ---------- ---------- alloc::oom::imp::OOM_HANDLER                                                                                                                                                            
+---------- 0x000149e0 0x000149e0 alloc::oom::imp::set_oom_handler                                                                                                                                                        
+---------- 0x000149c0 0x000149c0 alloc::oom::oom                                                                                                                                                                         
+---------- 0x00011b00 0x00011b00 collections::str::<impl collections::borrow::ToOwned for str>::to_owned                                                                                                                 
+---------- 0x000146e0 0x000146e0 collections::string::<impl core::convert::From<collections::string::String> for collections::vec::Vec<u8>>::from                                                                        
+---------- 0x00011b90 0x00011b90 collections::string::String::from_utf8_lossy                                                                                                                                            
+---------- 0x00019e30 0x00019e30 core::char_private::is_printable                                                                                                                                                        
+---------- 0x00019220 0x00019220 core::fmt::ArgumentV1::from_usize                                                                                                                                                       
+---------- 0x000177f0 0x000177f0 core::fmt::ArgumentV1::show_usize                                                                                                                                                       
+---------- 0x000192f0 0x000192f0 core::fmt::Formatter::alternate                                                                                                                                                         
+---------- 0x00015f00 0x00015f00 core::fmt::Formatter::pad                                                                                                                                                               
+---------- 0x00014f20 0x00014f20 core::fmt::Formatter::pad_integral                                                                                                                                                      
+---------- 0x000192a0 0x000192a0 core::fmt::Formatter::write_fmt                                                                                                                                                         
+---------- 0x00005eb0 0x00018070 core::fmt::Write::write_char                                                                                                                                                            
+---------- 0x00005ef0 0x000180b0 core::fmt::Write::write_fmt                                                                                                                                                             
+---------- 0x00018df0 0x00018df0 core::fmt::builders::DebugInner::entry                                                                                                                                                  
+---------- 0x00019110 0x00019110 core::fmt::builders::DebugList::entry                                                                                                                                                   
+---------- 0x00019130 0x00019130 core::fmt::builders::DebugList::finish                                                                                                                                                  
+---------- 0x000189a0 0x000189a0 core::fmt::builders::DebugStruct::field                                                                                                                                                 
+---------- 0x00017800 0x00017800 core::fmt::builders::DebugTuple::field                                                                                                                                                  
+---------- 0x00018cb0 0x00018cb0 core::fmt::builders::DebugTuple::finish                                                                                                                                                 
+---------- 0x00019090 0x00019090 core::fmt::builders::debug_list_new                                                                                                                                                     
+---------- 0x00018c40 0x00018c40 core::fmt::builders::debug_tuple_new                                                                                                                                                    
+---------- 0x0001aa80 0x0001aa80 core::fmt::num::<impl core::fmt::Debug for i32>::fmt                                                                                                                                    
+---------- 0x0001a980 0x0001a980 core::fmt::num::<impl core::fmt::Debug for u8>::fmt                                                                                                                                     
+---------- 0x0001b010 0x0001b010 core::fmt::num::<impl core::fmt::Debug for usize>::fmt                                                                                                                                  
+---------- 0x0001aa90 0x0001aa90 core::fmt::num::<impl core::fmt::Display for i32>::fmt                                                                                                                                  
+---------- 0x0001ad30 0x0001ad30 core::fmt::num::<impl core::fmt::Display for isize>::fmt                                                                                                                                
+---------- 0x0001a200 0x0001a200 core::fmt::num::<impl core::fmt::Display for u32>::fmt                                                                                                                                  
+---------- 0x00014c10 0x00014c10 core::fmt::num::<impl core::fmt::Display for usize>::fmt                                                                                                                                
+---------- 0x0001b170 0x0001b170 core::fmt::num::<impl core::fmt::LowerHex for usize>::fmt                                                                                                                               
+---------- 0x00016e10 0x00016e10 core::fmt::write                                                                                                                                                                        
+---------- 0x0001a720 0x0001a720 core::num::<impl core::str::FromStr for usize>::from_str                                                                                                                                
+---------- 0x0001a470 0x0001a470 core::num::from_str_radix                                                                                                                                                               
+---------- ---------- ---------- core::num::from_str_radix::_FILE_LINE                                                                                                                                                   
+---------- 0x0000f9a0 0x0000f9a0 core::ops::FnOnce::call_once                                                                                                                                                            
+---------- 0x00018440 0x00018440 core::option::expect_failed                                                                                                                                                             
+---------- ---------- ---------- core::option::expect_failed::_FILE_LINE                                                                                                                                                 
+---------- 0x00015e20 0x00015e20 core::panicking::panic                                                                                                                                                                  
+---------- 0x00014ba0 0x00014ba0 core::panicking::panic_bounds_check                                                                                                                                                     
+---------- 0x00014eb0 0x00014eb0 core::panicking::panic_fmt                                                                                                                                                              
+---------- 0x00005110 0x0000ef20 core::result::unwrap_failed                                                                                                                                                             
+---------- ---------- ---------- core::result::unwrap_failed::_FILE_LINE                                                                                                                                                 
+---------- ---------- ---------- core::result::unwrap_failed::__STATIC_FMTSTR                                                                                                                                            
+---------- 0x00014b30 0x00014b30 core::slice::slice_index_len_fail                                                                                                                                                       
+---------- ---------- ---------- core::slice::slice_index_len_fail::_FILE_LINE                                                                                                                                           
+---------- 0x00015e90 0x00015e90 core::slice::slice_index_order_fail                                                                                                                                                     
+---------- ---------- ---------- core::slice::slice_index_order_fail::_FILE_LINE                                                                                                                                         
+---------- ---------- ---------- core::str::UTF8_CHAR_WIDTH                                                                                                                                                              
+---------- 0x000184b0 0x000184b0 core::str::Utf8Error::valid_up_to                                                                                                                                                       
+---------- 0x000184c0 0x000184c0 core::str::from_utf8                                                                                                                                                                    
+---------- 0x00016b70 0x00016b70 core::str::slice_error_fail                                                                                                                                                             
+---------- ---------- ---------- core::str::slice_error_fail::_FILE_LINE                                                                                                                                                 
+---------- 0x00005630 0x00017aa0 drop                                                                                                                                                                                    
+---------- 0x00002b40 0x00002b40 example::main                                                                                                                                                                           
+---------- 0x00004720 0x00004720 std::env::_var_os                                                                                                                                                                       
+---------- 0x0000da60 0x0000da60 std::env::_var_os::{{closure}}                                                                                                                                                          
+---------- ---------- ---------- std::env::_var_os::{{closure}}::_FILE_LINE                                                                                                                                              
+---------- 0x00005ba0 0x00005ba0 std::error::Error::cause                                                                                                                                                                
+---------- 0x00005bb0 0x00005bb0 std::error::Error::type_id                                                                                                                                                              
+---------- 0x0000d880 0x0000d880 std::ffi::c_str::<impl core::convert::From<std::ffi::c_str::NulError> for std::io::error::Error>::from                                                                                  
+---------- 0x0000cc70 0x0000cc70 std::ffi::c_str::CString::from_vec_unchecked                                                                                                                                            
+---------- 0x00006200 0x00006200 std::io::Write::write_all                                                                                                                                                               
+---------- 0x00005750 0x00005750 std::io::Write::write_fmt                                                                                                                                                               
+---------- ---------- ---------- std::io::error::ErrorKind::as_str::_FILE_LINE                                                                                                                                           
+---------- 0x000056b0 0x000056b0 std::io::impls::<impl std::io::Write for &'a mut W>::flush                                                                                                                              
+---------- 0x00005640 0x00005640 std::io::impls::<impl std::io::Write for &'a mut W>::write                                                                                                                              
+---------- 0x000056c0 0x000056c0 std::io::impls::<impl std::io::Write for &'a mut W>::write_all                                                                                                                          
+---------- 0x000056f0 0x000056f0 std::io::impls::<impl std::io::Write for &'a mut W>::write_fmt                                                                                                                          
+---------- ---------- ---------- std::panicking::HOOK                                                                                                                                                                    
+---------- ---------- ---------- std::panicking::HOOK_LOCK                                                                                                                                                               
+---------- ---------- ---------- std::panicking::LOCAL_STDERR::__getit::__KEY                                                                                                                                            
+---------- 0x00002b90 0x00003240 std::panicking::begin_panic                                                                                                                                                             
+---------- 0x00003120 0x00003120 std::panicking::begin_panic_fmt                                                                                                                                                         
+---------- 0x000036b0 0x000036b0 std::panicking::default_hook                                                                                                                                                            
+---------- 0x00005290 0x00005290 std::panicking::default_hook::{{closure}}                                                                                                                                               
+---------- ---------- ---------- std::panicking::default_hook::{{closure}}::FIRST_PANIC                                                                                                                                  
+---------- 0x000032d0 0x000032d0 std::panicking::rust_panic_with_hook                                                                                                                                                    
+---------- 0x00011af0 0x00011af0 std::panicking::try::do_call                                                                                                                                                            
+---------- ---------- ---------- std::panicking::update_panic_count::PANIC_COUNT::__getit::__KEY                                                                                                                         
+---------- 0x00010390 0x00010390 std::rt::lang_start                                                                                                                                                                     
+---------- ---------- ---------- std::sync::condvar::Condvar::verify::_FILE_LINE                                                                                                                                         
+---------- 0x0000e240 0x0000e240 std::sync::once::Once::call_inner                                                                                                                                                       
+---------- ---------- ---------- std::sync::once::Once::call_inner::_FILE_LINE                                                                                                                                           
+---------- 0x0000f4e0 0x0000f4e0 std::sync::once::Once::call_once::{{closure}}                                                                                                                                           
+---------- 0x00004710 0x00004710 std::sys::imp::abort_internal                                                                                                                                                           
+---------- ---------- ---------- std::sys::imp::args::imp::GLOBAL_ARGS_PTR                                                                                                                                               
+---------- ---------- ---------- std::sys::imp::args::imp::LOCK                                                                                                                                                          
+---------- ---------- ---------- std::sys::imp::args::imp::init::_FILE_LINE                                                                                                                                              
+---------- 0x000064e0 0x000064e0 std::sys::imp::backtrace::tracing::imp::write                                                                                                                                           
+---------- ---------- ---------- std::sys::imp::backtrace::tracing::imp::write::LOCK                                                                                                                                     
+---------- 0x00006810 0x00006810 std::sys::imp::backtrace::tracing::imp::write::trace_fn                                                                                                                                 
+---------- 0x0000ce50 0x0000ce50 std::sys::imp::condvar::Condvar::init                                                                                                                                                   
+---------- ---------- ---------- std::sys::imp::condvar::Condvar::init::_FILE_LINE                                                                                                                                       
+---------- 0x00004ac0 0x000050a0 std::sys::imp::fast_thread_local::destroy_value                                                                                                                                         
+---------- 0x00004b20 0x00004b20 std::sys::imp::fast_thread_local::register_dtor_fallback                                                                                                                                
+---------- ---------- ---------- std::sys::imp::fast_thread_local::register_dtor_fallback::DTORS                                                                                                                         
+---------- 0x0000f1f0 0x0000f1f0 std::sys::imp::fast_thread_local::register_dtor_fallback::run_dtors                                                                                                                     
+---------- 0x00011230 0x00011230 std::sys::imp::init::oom_handler                                                                                                                                                        
+---------- ---------- ---------- std::sys::imp::init::reset_sigpipe::_FILE_LINE                                                                                                                                          
+---------- ---------- ---------- std::sys::imp::os::ENV_LOCK                                                                                                                                                             
+---------- 0x0000e030 0x0000e030 std::sys::imp::os::error_string                                                                                                                                                         
+---------- ---------- ---------- std::sys::imp::os::error_string::_FILE_LINE                                                                                                                                             
+---------- ---------- ---------- std::sys::imp::rwlock::RWLock::read::_FILE_LINE                                                                                                                                         
+---------- ---------- ---------- std::sys::imp::stack_overflow::imp::MAIN_ALTSTACK                                                                                                                                       
+---------- ---------- ---------- std::sys::imp::stack_overflow::imp::PAGE_SIZE                                                                                                                                           
+---------- ---------- ---------- std::sys::imp::stack_overflow::imp::get_stackp::_FILE_LINE                                                                                                                              
+---------- 0x00010220 0x00010220 std::sys::imp::stack_overflow::imp::make_handler                                                                                                                                        
+---------- 0x00011260 0x00011260 std::sys::imp::stack_overflow::imp::signal_handler                                                                                                                                      
+---------- ---------- ---------- std::sys::imp::thread::guard::get_stack_start::_FILE_LINE                                                                                                                               
+---------- ---------- ---------- std::sys::imp::thread::guard::init::_FILE_LINE                                                                                                                                          
+---------- ---------- ---------- std::sys::imp::thread_local::create::_FILE_LINE                                                                                                                                         
+---------- ---------- ---------- std::sys_common::at_exit_imp::LOCK                                                                                                                                                      
+---------- ---------- ---------- std::sys_common::at_exit_imp::QUEUE                                                                                                                                                     
+---------- ---------- ---------- std::sys_common::at_exit_imp::cleanup::_FILE_LINE                                                                                                                                       
+---------- ---------- ---------- std::sys_common::backtrace::log_enabled::ENABLED                                                                                                                                        
+---------- 0x00007d80 0x00007d80 std::sys_common::backtrace::output                                                                                                                                                      
+---------- ---------- ---------- std::sys_common::cleanup::CLEANUP                                                                                                                                                       
+---------- 0x00007d40 0x00007d40 std::sys_common::gnu::libbacktrace::print::error_cb                                                                                                                                     
+---------- ---------- ---------- std::sys_common::gnu::libbacktrace::print::init_state::STATE                                                                                                                            
+---------- 0x0000c240 0x0000c240 std::sys_common::gnu::libbacktrace::print::pcinfo_cb                                                                                                                                    
+---------- 0x00007d60 0x00007d60 std::sys_common::gnu::libbacktrace::print::syminfo_cb                                                                                                                                   
+---------- ---------- ---------- std::sys_common::thread_info::THREAD_INFO::__getit::__KEY                                                                                                                               
+---------- 0x0000fab0 0x0000fab0 std::sys_common::thread_info::set                                                                                                                                                       
+---------- ---------- ---------- std::sys_common::thread_info::set::{{closure}}::_FILE_LINE                                                                                                                              
+---------- 0x0000d520 0x0000d520 std::sys_common::thread_local::StaticKey::lazy_init                                                                                                                                     
+---------- ---------- ---------- std::sys_common::thread_local::StaticKey::lazy_init::_FILE_LINE                                                                                                                         
+---------- 0x00004650 0x00004650 std::sys_common::util::abort                                                                                                                                                            
+---------- 0x000035c0 0x000035c0 std::sys_common::util::dumb_print                                                                                                                                                       
+---------- 0x0000c6b0 0x0000c6b0 std::thread::Thread::new                                                                                                                                                                
+---------- 0x0000f060 0x0000f060 std::thread::Thread::unpark                                                                                                                                                             
+---------- ---------- ---------- std::thread::ThreadId::new::COUNTER                                                                                                                                                     
+---------- ---------- ---------- std::thread::ThreadId::new::GUARD                                                                                                                                                       
+---------- ---------- ---------- std::thread::ThreadId::new::_FILE_LINE                                                                                                                                                  
+---------- 0x0000e9b0 0x0000e9b0 std::thread::park                                                                                                                                                                       
+---------- 0x00014940 0x00014940 std_unicode::tables::general_category::N                                                                                                                                                
+---------- 0x00014700 0x00014700 std_unicode::tables::trie_lookup_range_table                                                                                                                                            
+---------- ---------- ---------- std_unicode::u_str::UTF8_CHAR_WIDTH                                                                                                                                                     
 EOF
 RUN
 
@@ -269,5 +477,68 @@ BROKEN=1
 CMDS=isq~0x004009e0
 EXPECT=<<EOF
 0x004009e0 16 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
+EOF
+RUN
+
+NAME=demangle c++ but simplified in session.
+FILE=bins/mach0/hellocxx-osx-i386
+CMDS=<<EOF
+isq~std:
+e bin.demangle.flags=simplify
+echo ====================
+isq~std:
+e bin.demangle=false
+echo ====================
+isq~_Z
+EOF
+EXPECT=<<EOF
+0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
+0x00002064 0 std::__ioinit
+0x00001dee 0 imp.std::string::size() const
+0x00001df4 0 imp.std::string::operator[](unsigned long) const
+0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
+0x00001e00 0 imp.std::ios_base::Init::Init()
+0x00001e06 0 imp.std::ios_base::Init::~Init()
+0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
+====================
+0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
+0x00002064 0 std::__ioinit
+0x00001dee 0 imp.std::string::size() const
+0x00001df4 0 imp.std::string::operator[](unsigned long) const
+0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
+0x00001e00 0 imp.std::ios_base::Init::Init()
+0x00001e06 0 imp.std::ios_base::Init::~Init()
+0x00001e12 0 imp.std::ostream& std::operator<< <std::char_traits<char> >(std::ostream&, char const*)
+====================
+0x00001d9a 0 __ZSt3minImERKT_S2_S2_
+0x00001ba0 0 __Z41__static_initialization_and_destruction_0ii
+0x00001c4e 0 __ZStL17__verify_groupingPKcmRKSs
+0x00002064 0 __ZStL8__ioinit
+0x00001dee 0 imp._ZNKSs4sizeEv
+0x00001df4 0 imp._ZNKSsixEm
+0x00001dfa 0 imp._ZNSolsEPFRSoS_E
+0x00001e00 0 imp._ZNSt8ios_base4InitC1Ev
+0x00001e06 0 imp._ZNSt8ios_base4InitD1Ev
+0x00001e12 0 imp._ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+EOF
+RUN
+
+NAME=demangle c++ but simplified before the session.
+FILE=bins/mach0/hellocxx-osx-i386
+ARGS=-e bin.demangle.flags=simplify
+CMDS=<<EOF
+ic
+EOF
+EXPECT=<<EOF
+address    min        max        name                     super 
+----------------------------------------------------------------
+---------- 0x00001c4e 0x00001c4e std                      
+---------- 0x00001e00 0x00001e06 std::ios_base::Init      
+---------- 0x00001dfa 0x00001dfa std::ostream             
+---------- 0x00001e12 ---------- std::ostream& std        
+---------- 0x00001dee 0x00001df4 std::string              
+---------- 0x00001d9a 0x00001d9a unsigned long const& std 
 EOF
 RUN

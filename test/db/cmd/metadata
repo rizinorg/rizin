@@ -295,45 +295,45 @@ s 0x380
 wx cafebabe00000032
 Cm 8 wwww
 Csl
-?e ----
+echo ----
 Cdl
-?e ----
+echo ----
 Chl
-?e ----
+echo ----
 Cfl
-?e ----
+echo ----
 CCl
-?e ----
+echo ----
 Cml
-?e ----
+echo ----
 C
-?e ----
+echo ----
 Csl*
-?e ----
+echo ----
 Cdl*
-?e ----
+echo ----
 Chl*
-?e ----
+echo ----
 Cfl*
-?e ----
+echo ----
 CCl*
-?e ----
+echo ----
 Cml*
-?e ----
+echo ----
 C*
-?e ----
+echo ----
 Cslj
-?e ----
+echo ----
 Cdlj
-?e ----
+echo ----
 Chlj
-?e ----
+echo ----
 Cflj
-?e ----
+echo ----
 CClj
-?e ----
+echo ----
 Cmlj
-?e ----
+echo ----
 Cj
 EOF
 EXPECT=<<EOF
@@ -578,10 +578,10 @@ CMDS=<<EOF
 s 0x100
 Cd 4 5
 Cdl
-?e ----
+echo ----
 Cd- 4 3
 Cdl
-?e ----
+echo ----
 s 0x10c
 Cd- 0 2
 Cdl
@@ -609,10 +609,10 @@ w abcd
 Csb 4
 Cf 8 xx
 C
-?e ----
+echo ----
 Cs-
 C
-?e ----
+echo ----
 Cf-
 C
 EOF
@@ -634,7 +634,7 @@ Csb 4
 Cf 8 xx
 CCu a string
 C
-?e ----
+echo ----
 C-
 C
 EOF
@@ -652,11 +652,11 @@ CMDS=<<EOF
 s 0x100
 Cd 4 1
 C*~Cd
-?e --1--
+echo --1--
 Cd 4 1
 Cd-
 C*~Cd
-?e --2--
+echo --2--
 Cd 4 1
 C-
 C*~Cd

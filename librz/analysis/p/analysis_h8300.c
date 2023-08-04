@@ -80,7 +80,7 @@ static void h8300_analysis_jsr(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
+static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	int ret = -1;
 	ut8 opcode = buf[0];
 	if (!op) {
@@ -577,7 +577,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	};
 
 	if (op->type != RZ_ANALYSIS_OP_TYPE_UNK) {
-		analop_esil(analysis, op, addr, buf);
+		analyze_op_esil(analysis, op, addr, buf);
 		return ret;
 	}
 	switch (opcode) {
@@ -670,7 +670,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		break;
 	};
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-		analop_esil(analysis, op, addr, buf);
+		analyze_op_esil(analysis, op, addr, buf);
 	}
 	return ret;
 }

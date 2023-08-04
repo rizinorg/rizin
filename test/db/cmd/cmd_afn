@@ -31,25 +31,25 @@ FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 aa
 fl @F:functions~483f4,48540
-?e --
+echo --
 fl @F:*~483f4,48540
 afn mymain @ 0x08048540
 afl. @ 0x08048540
-"?e The main flag shouldn't be renamed, it comes from bin:"
+echo "The main flag shouldn't be renamed, it comes from bin:"
 fl @F:functions~483f4,48540
-?e --
+echo --
 fl @F:*~483f4,48540
 afn myfunc @ 0x080483f4
 afl. @ 0x080483f4
-?e Here the flag is owned by the fcn and should be renamed:
+echo Here the flag is owned by the fcn and should be renamed:
 fl @F:functions~483f4,48540
-?e --
+echo --
 fl @F:*~483f4,48540
 f- myfunc
 afn createdflag @ 0x080483f4
-?e Non-existing flags should be created
+echo Non-existing flags should be created
 fl @F:functions~483f4,48540
-?e --
+echo --
 fl @F:*~483f4,48540
 EOF
 EXPECT=<<EOF

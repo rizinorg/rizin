@@ -167,14 +167,14 @@ af
 agf
 EOF
 EXPECT=<<EOF
-.------------------.
-|  0x0             |
-| fcn.00000000 (); |
-| push ebp         |
-| mov ebp, esp     |
-| pop ebp          |
-| ret              |
-`------------------'
+.-----------------.
+|  0x0            |
+| fcn.00000000(); |
+| push ebp        |
+| mov ebp, esp    |
+| pop ebp         |
+| ret             |
+`-----------------'
 EOF
 RUN
 
@@ -325,7 +325,7 @@ EOF
 EXPECT=<<EOF
 .--------------------------------------------.
 |  0x8049c                                   |
-| super_mario_fix ();                        |
+| super_mario_fix();                         |
 |    ; segment.ehdr                          |
 | lui v0, 8                                  |
 |    ; "\u00a2\u00a2\u00a2World" sym..rodata |
@@ -333,7 +333,7 @@ EXPECT=<<EOF
 `--------------------------------------------'
 .-----------------------------.
 |  0x8049c                    |
-| super_mario_fix ();         |
+| super_mario_fix();          |
 |    ; segment.ehdr           |
 | lui v0, 8                   |
 |    ; "...World" sym..rodata |

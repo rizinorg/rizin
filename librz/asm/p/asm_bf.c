@@ -2,45 +2,103 @@
 // SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_analysis.h>
 #include <rz_asm.h>
+
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
+	static RzPVector *pvec = NULL;
+	if (pvec) {
+		return pvec;
+	}
+
+	pvec = rz_pvector_new(rz_asm_token_pattern_free);
+
+	// Patterns get added here.
+	// Mnemonic pattern
+	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
+	pat->type = RZ_ASM_TOKEN_MNEMONIC;
+	pat->pattern = strdup(
+		"^(while|inc|dec|out|in|trap|nop|invalid|loop)");
+	rz_pvector_push(pvec, pat);
+
+	// ptr pattern
+	pat = RZ_NEW0(RzAsmTokenPattern);
+	pat->type = RZ_ASM_TOKEN_REGISTER;
+	pat->pattern = strdup(
+		"(ptr)");
+	rz_pvector_push(pvec, pat);
+
+	// reference pattern
+	pat = RZ_NEW0(RzAsmTokenPattern);
+	pat->type = RZ_ASM_TOKEN_OPERATOR;
+	pat->pattern = strdup(
+		"(\\[)|(\\])" // Matches a single bracket
+	);
+	rz_pvector_push(pvec, pat);
+
+	// Separator pattern
+	pat = RZ_NEW0(RzAsmTokenPattern);
+	pat->type = RZ_ASM_TOKEN_SEPARATOR;
+	pat->pattern = strdup(
+		"([[:blank:]]+)");
+	rz_pvector_push(pvec, pat);
+
+	return pvec;
+}
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = "invalid";
+	ut32 op_type;
 	switch (*buf) {
 	case '[':
+		op_type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		buf_asm = "while [ptr]";
 		break;
 	case ']':
+		op_type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		buf_asm = "loop";
 		break;
 	case '>':
+		op_type = RZ_ANALYSIS_OP_TYPE_ADD;
 		buf_asm = "inc ptr";
 		break;
 	case '<':
+		op_type = RZ_ANALYSIS_OP_TYPE_SUB;
 		buf_asm = "dec ptr";
 		break;
 	case '+':
+		op_type = RZ_ANALYSIS_OP_TYPE_ADD;
 		buf_asm = "inc [ptr]";
 		break;
 	case '-':
+		op_type = RZ_ANALYSIS_OP_TYPE_SUB;
 		buf_asm = "dec [ptr]";
 		break;
 	case ',':
+		op_type = RZ_ANALYSIS_OP_TYPE_STORE;
 		buf_asm = "in [ptr]";
 		break;
 	case '.':
+		op_type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		buf_asm = "out [ptr]";
 		break;
 	case 0xff:
 	case 0x00:
+		op_type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		buf_asm = "trap";
 		break;
 	default:
+		op_type = RZ_ANALYSIS_OP_TYPE_NOP;
 		buf_asm = "nop";
 		break;
 	}
 
 	rz_strbuf_set(&op->buf_asm, buf_asm);
+
+	RzPVector *token_patterns = get_token_patterns();
+	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, token_patterns);
+	op->asm_toks->op_type = op_type;
+
 	op->size = 1;
 	return op->size;
 }

@@ -6,10 +6,6 @@
 #include <capstone/capstone.h>
 #include <capstone/xcore.h>
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
-
 #define INSOP(n) insn->detail->xcore.operands[n]
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
@@ -54,7 +50,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free(pj);
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode = 0;
 	cs_insn *insn;
@@ -133,7 +129,7 @@ RzAnalysisPlugin rz_analysis_plugin_xcore_cs = {
 	.esil = false,
 	.arch = "xcore",
 	.bits = 32,
-	.op = &analop,
+	.op = &analyze_op,
 	//.set_reg_profile = &set_reg_profile,
 };
 

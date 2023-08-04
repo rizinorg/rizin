@@ -1,7 +1,7 @@
 NAME=cmd substitution
 FILE=malloc://1024
 CMDS=<<EOF
-?v $(?e 10)0
+%v $(echo 10)0
 EOF
 EXPECT=<<EOF
 0x64
@@ -11,7 +11,7 @@ RUN
 NAME=cmd substitution in @@s:
 FILE=malloc://1024
 CMDS=<<EOF
-s @@s:0x10 $(?e 0x20 4)
+s @@s:0x10 $(echo 0x20 4)
 EOF
 EXPECT=<<EOF
 0x10
@@ -26,7 +26,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 9091909190919090909090
 /x 90 @(2 6)
-/x 90 @($(?e 0 4))
+/x 90 @($(echo 0 4))
 EOF
 EXPECT=<<EOF
 0x00000002 hit0_0 90

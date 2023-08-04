@@ -436,6 +436,9 @@ RZ_IPI void rz_core_analysis_il_reinit(RzCore *core) {
 		// initialize the program counter with the current offset
 		rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, core->offset);
 		rz_core_reg_update_flags(core);
+
+		// sync back to il vm
+		rz_analysis_il_vm_sync_from_reg(core->analysis->il_vm, core->analysis->reg);
 	}
 }
 
@@ -475,9 +478,15 @@ RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 
 	case RZ_IL_TYPE_PURE_BOOL:
 		val = rz_il_value_new_bool(rz_il_bool_new(value != 0));
 		break;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		// TODO : ut64 value is enough for user input ?
+		// TODO : type is different with given value ?
+		RZ_LOG_ERROR("RzIL: Set float var from user input not supported yet");
+		return false;
 	}
 	if (val) {
 		rz_il_vm_set_global_var(vm->vm, var_name, val);
+		rz_analysis_il_vm_sync_to_reg(vm, core->analysis->reg);
 	}
 	return true;
 }
@@ -516,6 +525,25 @@ static void rzil_print_register_bitv(RzBitVector *number, ILPrint *p) {
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(p_tbl(p->ptr), "sss", p->name, "bitv", hex);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_ks(p_pj(p->ptr), p->name, hex);
+		break;
+	default:
+		rz_cons_printf("%s\n", hex);
+		break;
+	}
+	free(hex);
+}
+
+static void rzil_print_register_float(RzFloat *number, ILPrint *p) {
+	char *hex = rz_float_as_hex_string(number, true);
+	switch (p->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_strbuf_appendf(p_sb(p->ptr), " %s: %s", p->name, hex);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(p_tbl(p->ptr), "sss", p->name, "float", hex);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_ks(p_pj(p->ptr), p->name, hex);
@@ -577,6 +605,9 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 				break;
 			case RZ_IL_TYPE_PURE_BOOL:
 				rzil_print_register_bool(val->data.b->b, &p);
+				break;
+			case RZ_IL_TYPE_PURE_FLOAT:
+				rzil_print_register_float(val->data.f, &p);
 				break;
 			default:
 				rz_warn_if_reached();

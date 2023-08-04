@@ -634,7 +634,7 @@ RUN
 NAME=entry point and bin format - arduino
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
-?v $$
+%v $$
 i~arch[1]
 EOF
 EXPECT=<<EOF
@@ -646,7 +646,7 @@ RUN
 NAME=entry point and bin format - jumpy
 FILE=bins/firmware/jumpy.bin
 CMDS=<<EOF
-?v $$
+%v $$
 i~arch[1]
 EOF
 EXPECT=<<EOF
@@ -885,7 +885,7 @@ EOF
 EXPECT=<<EOF
   ; CALL XREF from fcn.00000662 @ 0x696
   ; CALL XREF from fcn.00000662 @ +0x92
-/ fcn.000005a2 ();
+/ fcn.000005a2();
 | 0x000005a2      cpi   r24, 0x05
 | 0x000005a4      breq  0x5d4
 | ----------- true: 0x000005d4  false: 0x000005a6

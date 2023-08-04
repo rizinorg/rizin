@@ -313,7 +313,7 @@ static RzType *parse_type_nest(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	if (!utype) {
 		return NULL;
 	}
-	char *name = rz_bin_pdb_get_type_name(utype);
+	const char *name = rz_bin_pdb_get_type_name(utype);
 	if (name) {
 		RzBaseType *b_type = rz_type_db_get_base_type(typedb, name);
 		if (b_type && b_type->type) {
@@ -334,7 +334,9 @@ static RzType *parse_type_nest(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	}
 	btype->name = name ? strdup(name) : create_type_name_from_offset(lf_nest->index);
 	btype->type = n_type;
-	rz_type_db_save_base_type(typedb, btype);
+	if (!rz_type_db_save_base_type(typedb, btype)) {
+		return NULL;
+	}
 	if (n_type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		return rz_type_clone(n_type);
 	}
@@ -476,7 +478,9 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 		base_type->type = typ;
 		base_type->name = strdup(typ->identifier.name);
 		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
-		rz_type_db_save_base_type(typedb, base_type);
+		if (!rz_type_db_save_base_type(typedb, base_type)) {
+			return NULL;
+		}
 
 		if (rz_bin_pdb_type_is_fwdref(type)) {
 			return rz_type_clone(base_type->type);
@@ -609,7 +613,9 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 		base_type->type = typ;
 		base_type->name = strdup(typ->identifier.name);
 		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
-		rz_type_db_save_base_type(typedb, base_type);
+		if (!rz_type_db_save_base_type(typedb, base_type)) {
+			return NULL;
+		}
 
 		if (rz_bin_pdb_type_is_fwdref(type)) {
 			return rz_type_clone(base_type->type);
@@ -722,7 +728,9 @@ static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 		base_type->size = rz_type_db_get_bitsize(typedb, btype);
 		base_type->type = btype;
 		base_type->attrs = RZ_TYPE_TYPECLASS_INVALID;
-		rz_type_db_save_base_type(typedb, base_type);
+		if (!rz_type_db_save_base_type(typedb, base_type)) {
+			return NULL;
+		}
 
 		if (rz_bin_pdb_type_is_fwdref(type)) {
 			return rz_type_clone(base_type->type);

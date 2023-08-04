@@ -19,7 +19,7 @@ static bool test_core_task(void) {
 	rz_config_set_i(core->config, "scr.interactive", 0);
 	rz_core_task_sync_begin(&core->tasks);
 
-	RzCoreTask *a = rz_core_cmd_task_new(core, "?e hello; ?e world; ?e from; ?e a; ?e task", NULL, NULL);
+	RzCoreTask *a = rz_core_cmd_task_new(core, "echo hello; echo world; echo from; echo a; echo task", NULL, NULL);
 	rz_core_task_enqueue(&core->tasks, a);
 
 	RzCoreTask *b = rz_core_function_task_new(core, my_function, (void *)(size_t)1337);
@@ -66,7 +66,7 @@ static bool test_core_task_finished_cb(void) {
 	rz_core_task_sync_begin(&core->tasks);
 
 	char *res_indir = NULL; // finished_cb puts the result in here too
-	RzCoreTask *a = rz_core_cmd_task_new(core, "?e amor; ?e vincit; ?e omnia", finished_cb, &res_indir);
+	RzCoreTask *a = rz_core_cmd_task_new(core, "echo amor; echo vincit; echo omnia", finished_cb, &res_indir);
 	rz_core_task_enqueue(&core->tasks, a);
 
 	rz_core_task_join(&core->tasks, rz_core_task_self(&core->tasks), a->id);

@@ -2,7 +2,7 @@ NAME=TriCore lea
 FILE=malloc://512
 CMDS=!rz-asm -a tricore -d d916606c
 EXPECT=<<EOF
-lea a6, [a1]-14944
+lea a6, [a1]#-0x3a60
 EOF
 RUN
 
@@ -10,7 +10,7 @@ NAME=TriCore sub
 FILE=malloc://512
 CMDS=!rz-asm -a tricore -d 200a
 EXPECT=<<EOF
-sub.a sp, 10
+sub.a sp, #0xa
 EOF
 RUN
 
@@ -19,9 +19,9 @@ FILE=malloc://512
 CMDS=!rz-asm -a tricore -d 0f0200007cb10880f8130200
 EXPECT=<<EOF
 sh d0, d2, d0
-jnz.a a11, 0x00000006
-ld.bu d0, [a15]8
-st.a [sp]76, a15
+jnz.a a11, #6
+ld.bu d0, [a15]#8
+st.a [sp]#0x13, a15
 mov d0, d0
 EOF
 RUN
@@ -31,9 +31,9 @@ FILE=malloc://512
 CMDS=!rz-asm -a tricore -d 0f0200007cb10880f8130200
 EXPECT=<<EOF
 sh d0, d2, d0
-jnz.a a11, 0x00000006
-ld.bu d0, [a15]8
-st.a [sp]76, a15
+jnz.a a11, #6
+ld.bu d0, [a15]#8
+st.a [sp]#0x13, a15
 mov d0, d0
 EOF
 RUN
@@ -97,20 +97,20 @@ gpr	d10	.32	104	0
 gpr	d11	.32	108	0
 gpr	e12	.64	112	0
 gpr	d12	.32	112	0
-gpr	d13	.32	114	0
-gpr	e14	.64	118	0
-gpr	d14	.32	118	0
-gpr	d15	.32	120	0
-gpr	PSW	.32	124	0
-gpr	PCXI	.32	128	0
-gpr	FCX	.32	132	0
-gpr	LCX	.32	136	0
-gpr	ISP	.32	140	0
-gpr	ICR	.32	144	0
-gpr	PIPN	.32	148	0
-gpr	BIV	.32	152	0
-gpr	BTV	.32	156	0
-gpr	pc	.32	160	0
+gpr	d13	.32	116	0
+gpr	e14	.64	120	0
+gpr	d14	.32	120	0
+gpr	d15	.32	124	0
+gpr	PSW	.32	128	0
+gpr	PCXI	.32	132	0
+gpr	FCX	.32	136	0
+gpr	LCX	.32	140	0
+gpr	ISP	.32	144	0
+gpr	ICR	.32	148	0
+gpr	PIPN	.32	152	0
+gpr	BIV	.32	156	0
+gpr	BTV	.32	160	0
+gpr	pc	.32	164	0
 
 EOF
 RUN
@@ -124,36 +124,36 @@ s 0x80000004
 pd 30
 EOF
 EXPECT=<<EOF
-            0x80000004      8c80           ld.h  d15, [a8]0            ; load half word
+            0x80000004      8c80           ld.h  d15, [a8]#0           ; load half word
             0x80000006      0000           nop                         ; nop operation
-            0x80000008      8c80           ld.h  d15, [a8]0            ; load half word
+            0x80000008      8c80           ld.h  d15, [a8]#0           ; load half word
             0x8000000a      0000           nop                         ; nop operation
-            0x8000000c      8c80           ld.h  d15, [a8]0            ; load half word
+            0x8000000c      8c80           ld.h  d15, [a8]#0           ; load half word
             0x8000000e      0000           nop                         ; nop operation
-            0x80000010      8c80           ld.h  d15, [a8]0            ; load half word
+            0x80000010      8c80           ld.h  d15, [a8]#0           ; load half word
             0x80000012      0000           nop                         ; nop operation
-            0x80000014      85f12000       ld.w  d1, 0xf0000020        ; load word
-            0x80000018      6f010400       jz.t  d1, 0, 0x80000020     ; jump if zero bit
-            0x8000001c      5d006800       jl    0x800000ec            ; jump and link
-            0x80000020      910000ad       movh.a sp, 53248            ; move high to address
-            0x80000024      d9aa6000       lea   sp, [sp]1056 <0xd0000420> ; load effective address
-            0x80000028      7b00000d       movh  d0, 53248             ; move high
-            0x8000002c      1b008200       addi  d0, d0, 2080          ; add immediate
-            0x80000030      cd80e20f       mtcr  #0xfe28, d0           ; move to core register
-            0x80000034      0d00c004       isync                       ; synchronize instructions
-            0x80000038      7b000008       movh  d0, 32768             ; move high
-            0x8000003c      1b003000       addi  d0, d0, 768           ; add immediate
-            0x80000040      cd40e20f       mtcr  #0xfe24, d0           ; move to core register
-            0x80000044      0d00c004       isync                       ; synchronize instructions
-            0x80000048      4d40e00f       mfcr  d0, #0xfe04           ; move from core register
-            0x8000004c      8ff04701       or    d0, d0, 127           ; bitwise or
-            0x80000050      8f00c801       andn  d0, d0, 128
-            0x80000054      cd40e00f       mtcr  #0xfe04, d0           ; move to core register
-            0x80000058      0d00c004       isync                       ; synchronize instructions
-            0x8000005c      4d40e00f       mfcr  d0, #0xfe04           ; move from core register
-            0x80000060      8f005001       or    d0, d0, 256           ; bitwise or
-            0x80000064      cd40e00f       mtcr  #0xfe04, d0           ; move to core register
-            0x80000068      0d00c004       isync                       ; synchronize instructions
+            0x80000014      85f12000       ld.w  d1, #0xf0000020       ; load word
+        ,=< 0x80000018      6f010400       jz.t  d1, 0, 0x80000020     ; jump if zero bit
+       ,==< 0x8000001c      5d006800       jl    0x800000ec            ; jump and link
+       |`-> 0x80000020      910000ad       movh.a sp, #0xd000          ; move high to address
+       |    0x80000024      d9aa6000       lea   sp, [sp]#0x420        ; load effective address
+       |    0x80000028      7b00000d       movh  d0, #0xd000           ; move high
+       |    0x8000002c      1b008200       addi  d0, d0, #0x820        ; add immediate
+       |    0x80000030      cd80e20f       mtcr  #-0x1d8, d0           ; move to core register
+       |    0x80000034      0d00c004       isync                       ; synchronize instructions
+       |    0x80000038      7b000008       movh  d0, #0x8000           ; move high
+       |    0x8000003c      1b003000       addi  d0, d0, #0x300        ; add immediate
+       |    0x80000040      cd40e20f       mtcr  #-0x1dc, d0           ; move to core register
+       |    0x80000044      0d00c004       isync                       ; synchronize instructions
+       |    0x80000048      4d40e00f       mfcr  d0, #0xfe04           ; move from core register
+       |    0x8000004c      8ff04701       or    d0, d0, #0x7f         ; bitwise or
+       |    0x80000050      8f00c801       andn  d0, d0, #0x80
+       |    0x80000054      cd40e00f       mtcr  #-0x1fc, d0           ; move to core register
+       |    0x80000058      0d00c004       isync                       ; synchronize instructions
+       |    0x8000005c      4d40e00f       mfcr  d0, #0xfe04           ; move from core register
+       |    0x80000060      8f005001       or    d0, d0, #0x100        ; bitwise or
+       |    0x80000064      cd40e00f       mtcr  #-0x1fc, d0           ; move to core register
+       |    0x80000068      0d00c004       isync                       ; synchronize instructions
 EOF
 RUN
 
@@ -190,5 +190,692 @@ PIPN = 0x00000000
 BIV = 0x00000000
 BTV = 0x00000000
 pc = 0x00000000
+EOF
+RUN
+
+NAME=tricore analysis elf
+FILE=bins/tricore/ASCLIN_UART_1_KIT_TC397_TFT_stripped.elf
+CMDS=<<EOF
+e asm.arch=tricore
+aaa
+afl
+pdf
+s 0x800842f0
+pdf
+EOF
+EXPECT=<<EOF
+0x80080020    1 10           entry0
+0x8008245a    1 6            fcn.8008245a
+0x80082564    1 12           fcn.80082564
+0x800842f0   13 486          fcn.800842f0
+0x80084158   13 408          fcn.80084158
+0x80083efe    1 430          fcn.80083efe
+0x80084d56    1 60           fcn.80084d56
+0x800830d8   42 3622         fcn.800830d8
+0x8008453e    7 300          fcn.8008453e
+0x800844d6    1 104          fcn.800844d6
+0x800858fe   30 900          fcn.800858fe
+0x8008807a    1 116          fcn.8008807a
+0x80087dce    9 366          fcn.80087dce
+0x800880ee    1 62           fcn.800880ee
+0x80087f3c    9 318          fcn.80087f3c
+0x80084e6a    1 46           fcn.80084e6a
+0x80084d92    8 216          fcn.80084d92
+0x80082d14    1 206          fcn.80082d14
+0x80082de2    1 84           fcn.80082de2
+0x8008466a    1 64           fcn.8008466a
+0x80087c68    5 202          fcn.80087c68
+0x8008812c    5 200          fcn.8008812c
+0x80084c90    7 120          fcn.80084c90
+0x800848c2   23 974          fcn.800848c2
+0x80086210    4 226          fcn.80086210
+0x800862f2    1 158          fcn.800862f2
+0x80085668    1 212          fcn.80085668
+0x80085600    3 104          fcn.80085600
+0x8008a19c   26 226          fcn.8008a19c
+0x8008a3da    3 22           fcn.8008a3da
+0x8008a73c    5 62           fcn.8008a73c
+0x80089fda    1 12           fcn.80089fda
+0x8008a280   12 282  -> 168  fcn.8008a280
+0x8008a06c   11 160  -> 158  fcn.8008a06c
+0x8008a112   18 138          fcn.8008a112
+0x80084828    1 38           fcn.80084828
+0x80084766    6 104          fcn.80084766
+0x8008484e    1 36           fcn.8008484e
+0x80084800    1 40           fcn.80084800
+0x80084d08    4 78           fcn.80084d08
+0x80084872    4 80           fcn.80084872
+0x80085e8c   30 900          fcn.80085e8c
+0x800840ac    9 172          fcn.800840ac
+0x800868b8   17 156          fcn.800868b8
+0x800867e0    8 216          fcn.800867e0
+0x80086598    8 216          fcn.80086598
+0x80086670   11 368          fcn.80086670
+0x800864ea    8 174          fcn.800864ea
+0x800846aa   10 188          fcn.800846aa
+0x800847ce    1 50           fcn.800847ce
+0x800895ae    2 1526 -> 80   fcn.800895ae
+0x800897f4   26 420          fcn.800897f4
+0x80089ba4   21 1078 -> 280  fcn.80089ba4
+0x8008573c    3 242          fcn.8008573c
+0x800854bc    5 162          fcn.800854bc
+0x8008582e    6 208          fcn.8008582e
+0x80085c82    3 256          fcn.80085c82
+0x8008555e    5 162          fcn.8008555e
+0x80085d82    6 266          fcn.80085d82
+0x8008977c    1 56           fcn.8008977c
+0x8008957e   10 1544 -> 126  fcn.8008957e
+0x80089ab0    4 64           fcn.80089ab0
+0x80089dc2   15 172          fcn.80089dc2
+0x80089e6e   20 166          fcn.80089e6e
+0x800897b4    1 64           fcn.800897b4
+0x80089bfa    3 38           fcn.80089bfa
+0x80089af0    8 72           fcn.80089af0
+0x80089998   19 280          fcn.80089998
+0x80087bb2    3 182          fcn.80087bb2
+0x80086390    8 346          fcn.80086390
+0x80087d32    5 156          fcn.80087d32
+0x800881f4    5 154          fcn.800881f4
+0x8008828e    3 136          fcn.8008828e
+0x80088316    3 136          fcn.80088316
+0x8008839e    3 148          fcn.8008839e
+0x80088432    3 148          fcn.80088432
+0x800884c6    3 136          fcn.800884c6
+0x8008854e    3 148          fcn.8008854e
+0x80086954  143 4702         fcn.80086954
+0x8008876e    3 124          fcn.8008876e
+0x800885e2    1 146          fcn.800885e2
+0x80088706    1 52           fcn.80088706
+0x800888de   25 422          fcn.800888de
+0x8008873a    1 52           fcn.8008873a
+0x80088674    1 146          fcn.80088674
+0x800887ea    8 244          fcn.800887ea
+0x80089c20   15 122          fcn.80089c20
+0x80089be0    3 26           fcn.80089be0
+0x800895e0   32 412          fcn.800895e0
+0x80089cb0   24 274          fcn.80089cb0
+0x8008a39c    3 38           fcn.8008a39c
+0x8008a3f0   20 156          fcn.8008a3f0
+0x8008a72c    5 16           fcn.8008a72c
+0x8008a4aa   16 170          fcn.8008a4aa
+0x8008a48c    4 30           fcn.8008a48c
+0x8008a3c2    4 20           fcn.8008a3c2
+0x8008a60a   14 124          fcn.8008a60a
+0x8008a554    3 30           fcn.8008a554
+0x8008a686    4 56           fcn.8008a686
+0x80089fe6    5 134          fcn.80089fe6
+0x8008a6be    6 78           fcn.8008a6be
+0x8008a70c    2 24   -> 18   fcn.8008a70c
+0x8008a790    1 10           fcn.8008a790
+0x8008a77a    4 38   -> 24   fcn.8008a77a
+0x8008a572   10 106          fcn.8008a572
+0x8008a724    1 6            fcn.8008a724
+0x8008a78c    1 4            fcn.8008a78c
+            ;-- section..start_tc0:
+            ;-- segment.LOAD6:
+/ entry0();
+|           0x80080020      movh.a a15, #0x8009                        ; [18] -r-x section size 12 named .start_tc0
+|           0x80080024      lea   a15, [a15]#-0x757c
+\           0x80080028      ji    a15
+            ; CALL XREF from section..text @ +0xc
+/ fcn.800842f0(int32_t arg5);
+|           ; arg int32_t arg5 @ a4
+|           0x800842f0      mov.aa a14, sp
+|           0x800842f2      sub.a sp, #0x68
+|           0x800842f4      st.a  [a14]#-0x64, a4                      ; arg5
+|           0x800842f8      mfcr  d15, #0xfe2c
+|           0x800842fc      st.w  [a14]#-8, d15
+|           0x80084300      ld.w  d15, [a14]#-8
+|           0x80084304      st.w  [a14]#-0x38, d15
+|           0x80084308      ld.w  d15, [a14]#-0x38
+|           0x8008430c      sh    d15, d15, #-0xf
+|           0x80084310      and   d15, #1
+|           0x80084312      and   d15, #0xff
+|           0x80084314      st.b  [a14]#-9, d15
+|           0x80084318      disable
+|           0x8008431c      nop
+|           0x8008431e      ld.bu d15, [a14]#-9
+|           0x80084322      st.b  [a14]#-0xa, d15
+|           0x80084326      movh  d15, #0xf000
+|           0x8008432a      addi  d15, d15, #0x1000
+|           0x8008432e      st.w  [a14]#-0x10, d15
+|           0x80084332      ld.w  d15, [a14]#-0x10
+|           0x80084336      mov.a a15, d15
+|           0x80084338      ld.w  d15, [a15]#0x10
+|           0x8008433a      mul.u e2, d15, #1
+|           0x8008433e      st.d  [a14]#-0x18, e2
+|           0x80084342      ld.w  d15, [a14]#-0x10
+|           0x80084346      mov.a a15, d15
+|           0x80084348      ld.w  d15, [a15]#0x2c
+|           0x8008434a      mul.u e2, d15, #1
+|           0x8008434e      mov   d5, d2
+|           0x80084350      mov   d4, #0
+|           0x80084352      ld.w  d15, [a14]#-0x18
+|           0x80084356      or    d15, d4
+|           0x80084358      st.w  [a14]#-0x18, d15
+|           0x8008435c      ld.w  d15, [a14]#-0x14
+|           0x80084360      or    d15, d5
+|           0x80084362      st.w  [a14]#-0x14, d15
+|           0x80084366      ld.d  e2, [a14]#-0x18
+|           0x8008436a      mov   d15, d2
+|           0x8008436c      st.w  [a14]#-0x20, d15
+|           0x80084370      mov   d15, #-1
+|           0x80084372      sh    d15, #-1
+|           0x80084374      and   d15, d3
+|           0x80084376      st.w  [a14]#-0x1c, d15
+|           0x8008437a      ld.b  d15, [a14]#-0xa
+|           0x8008437e      st.b  [a14]#-0x21, d15
+|           0x80084382      ld.bu d15, [a14]#-0x21
+|       ,=< 0x80084386      jz    d15, 0x8008438c
+|       |   0x80084388      enable
+|       `-> 0x8008438c      ld.d  e2, [a14]#-0x20
+|           0x80084390      ld.w  d15, [a14]#-0x64
+|           0x80084394      mov.a a15, d15
+|           0x80084396      st.d  [a15]#0x18, e2
+|           0x8008439a      ld.w  d15, [a14]#-0x64
+|           0x8008439e      mov.a a15, d15
+|           0x800843a0      ld.w  d15, [a15]#0x14
+|           0x800843a2      add   d2, d15, #1
+|           0x800843a4      ld.w  d15, [a14]#-0x64
+|           0x800843a8      mov   d3, d2
+|           0x800843aa      mov.a a15, d15
+|           0x800843ac      st.w  [a15]#0x14, d3                       ; 20
+|           0x800843ae      ld.w  d15, [a14]#-0x64
+|           0x800843b2      mov.a a15, d15
+|           0x800843b4      ld.w  d15, [a15]#4
+|           0x800843b6      st.w  [a14]#-0x28, d15
+|           0x800843ba      ld.w  d15, [a14]#-0x28
+|           0x800843be      st.w  [a14]#-0x2c, d15
+|           0x800843c2      ld.w  d15, [a14]#-0x2c
+|           0x800843c6      mov.a a15, d15
+|           0x800843c8      ld.h  d15, [a15]#4
+|           0x800843ca      eq    d15, d15, #0
+|           0x800843cc      and   d15, #0xff
+|       ,=< 0x800843ce      jnz   d15, 0x800844ca
+|       |   0x800843d0      ld.w  d15, [a14]#-0x64
+|       |   0x800843d4      mov.a a15, d15
+|       |   0x800843d6      ld.w  d15, [a15]#0x10
+|      ,==< 0x800843d8      jz    d15, 0x800843e0
+|     ,===< 0x800843da      jeq   d15, 1, 0x8008448a
+|    ,====< 0x800843de      j     0x800844d4
+|    ||`--> 0x800843e0      mov   d15, #0
+|    || |   0x800843e2      st.h  [a14]#-4, d15
+|    || |   0x800843e6      mov   d15, #0
+|    || |   0x800843e8      st.h  [a14]#-2, d15
+|    || |   0x800843ec      mov   d15, #0
+|    || |   0x800843ee      st.b  [a14]#-0x49, d15
+|    || |   0x800843f2      ld.w  d15, [a14]#-0x64
+|    || |   0x800843f6      mov.a a15, d15
+|    || |   0x800843f8      ld.w  d15, [a15]#4
+|    || |   0x800843fa      st.w  [a14]#-0x30, d15
+|    || |   0x800843fe      ld.w  d15, [a14]#-0x30
+|    || |   0x80084402      mov.a a15, d15
+|    || |   0x80084404      ld.h  d15, [a15]#4
+|    || |   0x80084406      st.h  [a14]#-4, d15
+|    || |   0x8008440a      ld.w  d15, [a14]#-0x64
+|    || |   0x8008440e      mov.a a15, d15
+|    || |   0x80084410      ld.w  d15, [a15]#0
+|    || |   0x80084412      st.w  [a14]#-0x34, d15
+|    || |   0x80084416      ld.w  d15, [a14]#-0x34
+|    || |   0x8008441a      mov.a a15, d15
+|    || |   0x8008441c      ld.w  d15, [a15]#0xc
+|    || |   0x8008441e      sh    d15, d15, #-0x10
+|    || |   0x80084422      and   d15, #0x1f
+|    || |   0x80084424      and   d15, #0xff
+|    || |   0x80084426      st.b  [a14]#-0x49, d15
+|    || |   0x8008442a      ld.bu d15, [a14]#-0x49
+|    || |   0x8008442e      extr.u d15, d15, #0, #0x10
+|    || |   0x80084432      rsub  d15, d15, #0x10
+|    || |   0x80084436      st.h  [a14]#-2, d15
+|    || |   0x8008443a      ld.hu d15, [a14]#-2
+|    || |   0x8008443e      ld.hu d2, [a14]#-4
+|    ||,==< 0x80084442      jge.u d2, d15, 0x8008444e
+|    ||||   0x80084446      ld.h  d15, [a14]#-4
+|    ||||   0x8008444a      st.h  [a14]#-2, d15
+|    ||`--> 0x8008444e      ld.w  d15, [a14]#-0x64
+|    || |   0x80084452      mov.a a15, d15
+|    || |   0x80084454      ld.w  d3, [a15]#4
+|    || |   0x80084456      ld.h  d15, [a14]#-2
+|    || |   0x8008445a      mov.d d4, a14
+|    || |   0x8008445c      addi  d2, d4, #-0x48
+|    || |   0x80084460      mov.a a4, d3
+|    || |   0x80084462      mov.a a5, d2
+|    || |   0x80084464      mov   d4, d15
+|    || |   0x80084466      mov   e6, #0
+|    || |   0x80084468      call  fcn.800858fe
+|    || |   0x8008446c      ld.w  d15, [a14]#-0x64
+|    || |   0x80084470      mov.a a15, d15
+|    || |   0x80084472      ld.w  d3, [a15]#0
+|    || |   0x80084474      ld.hu d15, [a14]#-2
+|    || |   0x80084478      mov.d d4, a14
+|    || |   0x8008447a      addi  d2, d4, #-0x48
+|    || |   0x8008447e      mov.a a4, d3
+|    || |   0x80084480      mov.a a5, d2
+|    || |   0x80084482      mov   d4, d15
+|    || |   0x80084484      call  fcn.80084d08
+|    ||,==< 0x80084488      j     0x800844c8
+|    |`---> 0x8008448a      ld.w  d15, [a14]#-0x64
+|    | ||   0x8008448e      mov.a a15, d15
+|    | ||   0x80084490      ld.w  d2, [a15]#4
+|    | ||   0x80084492      mov.d d3, a14
+|    | ||   0x80084494      addi  d15, d3, #-0x58
+|    | ||   0x80084498      mov.a a4, d2
+|    | ||   0x8008449a      mov.a a5, d15
+|    | ||   0x8008449c      mov   d4, #0xc
+|    | ||   0x800844a0      mov   e6, #0
+|    | ||   0x800844a2      call  fcn.800858fe
+|    | ||   0x800844a6      ld.bu d15, [a14]#-0x50
+|    | ||   0x800844aa      st.b  [a14]#-0x59, d15
+|    | ||   0x800844ae      ld.w  d15, [a14]#-0x64
+|    | ||   0x800844b2      mov.a a15, d15
+|    | ||   0x800844b4      ld.w  d2, [a15]#0
+|    | ||   0x800844b6      mov.d d3, a14
+|    | ||   0x800844b8      addi  d15, d3, #-0x59
+|    | ||   0x800844bc      mov.a a4, d2
+|    | ||   0x800844be      mov.a a5, d15
+|    | ||   0x800844c0      mov   d4, #1
+|    | ||   0x800844c2      call  fcn.80084d08
+|    | ||   0x800844c6      nop
+|    | ||   ; CODE XREF from fcn.800842f0 @ 0x80084488
+|    |,`--> 0x800844c8      j     0x800844d4
+|    || `-> 0x800844ca      ld.w  d15, [a14]#-0x64
+|    ||     0x800844ce      mov   d2, #0
+|    ||     0x800844d0      mov.a a15, d15
+|    ||     0x800844d2      st.b  [a15]#0xc, d2                        ; 12
+|    ||     ; CODE XREFS from fcn.800842f0 @ 0x800843de, 0x800844c8
+\    ``---> 0x800844d4      ret
+EOF
+RUN
+
+NAME=tricore analysis elf2
+FILE=bins/tricore/Blinky_LED_1_KIT_TC367_TFT.elf
+CMDS=<<EOF
+e asm.arch=tricore
+aaa
+afl
+s 0x80000200
+pdf
+EOF
+EXPECT=<<EOF
+0x80000744   14 76           fcn.80000744
+0x80000456    3 98           fcn.80000456
+0x80000e46    1 14           fcn.80000e46
+0x80000ce4    1 10           fcn.80000ce4
+0x80000d60    1 16           fcn.80000d60
+0x80000cee    1 10           fcn.80000cee
+0x80000dfe    1 10           fcn.80000dfe
+0x80000cf8    3 20           fcn.80000cf8
+0x80000d22    3 22           fcn.80000d22
+0x80000d4e    1 10           fcn.80000d4e
+0x80000d58    1 8            fcn.80000d58
+0x80000d70    1 10           fcn.80000d70
+0x80000e62    1 14           fcn.80000e62
+0x80000d0c    1 14           fcn.80000d0c
+0x80000d44    3 10           fcn.80000d44
+0x80000096    1 10           fcn.80000096
+0x800000c8    1 14           fcn.800000c8
+0x8000008c    1 10           fcn.8000008c
+0x8000007e    1 14           fcn.8000007e
+0x8000030a    1 16           fcn.8000030a
+0x800005b6    1 16           fcn.800005b6
+0x8000056e    7 56           fcn.8000056e
+0x800005d6    5 20           fcn.800005d6
+0x80000556    5 24           fcn.80000556
+0x800011a6    4 44           fcn.800011a6
+0x80000542    1 10           fcn.80000542
+0x80000518    1 16           fcn.80000518
+0x800004b8    1 22           fcn.800004b8
+0x800006bc    1 30           fcn.800006bc
+0x80000528    1 16           fcn.80000528
+0x800004f4    1 10           fcn.800004f4
+0x800004fe    1 10           fcn.800004fe
+0x80000538    1 10           fcn.80000538
+0x800005ea    7 40           fcn.800005ea
+0x80000612    1 10           fcn.80000612
+0x8000054c    3 10           fcn.8000054c
+0x80000c98    3 76           fcn.80000c98
+0x8000061c    7 160          fcn.8000061c
+0x80000e54    1 14           fcn.80000e54
+0x80000e08    5 34           fcn.80000e08
+0x80000e70    5 34           fcn.80000e70
+0x80000508    1 16           fcn.80000508
+0x800005c6    1 8            fcn.800005c6
+0x800004ce    1 18           fcn.800004ce
+0x800004e0    1 10           fcn.800004e0
+0x800005a6    1 16           fcn.800005a6
+0x800004ea    1 10           fcn.800004ea
+0x800005ce    1 8            fcn.800005ce
+0x80000d38    1 12           fcn.80000d38
+0x80000d1a    1 8            fcn.80000d1a
+0x80000df0    1 14           fcn.80000df0
+0x80000db4    1 8            fcn.80000db4
+0x80000ddc    3 20           fcn.80000ddc
+0x80000d7a    5 58           fcn.80000d7a
+0x80000dbc    5 32           fcn.80000dbc
+0x80001008    3 34           fcn.80001008
+0x8000104e    1 18           fcn.8000104e
+0x8000103c    1 10           fcn.8000103c
+0x8000102a    3 18           fcn.8000102a
+0x80000fc2    1 16           fcn.80000fc2
+0x80001046    1 8            fcn.80001046
+0x80000fee    1 26           fcn.80000fee
+0x80001064    1 14           fcn.80001064
+0x80001072    1 14           fcn.80001072
+0x80000fe0    1 14           fcn.80000fe0
+0x80000fd2    1 14           fcn.80000fd2
+0x8000132c    1 68           fcn.8000132c
+0x800012fe    1 46           fcn.800012fe
+0x800000b0    1 8            fcn.800000b0
+0x80001080    1 28           fcn.80001080
+0x80001162    1 6            fcn.80001162
+0x8000109c    1 26           fcn.8000109c
+0x80001168    1 6            fcn.80001168
+0x80001060    1 4            fcn.80001060
+0x800011d2    1 12           loc.800011d2
+0x800011de   39 288          fcn.800011de
+0x800010d4    1 28           fcn.800010d4
+0x800010b6    1 30           fcn.800010b6
+0x800000b8    1 14           fcn.800000b8
+0x800000a0    1 16           fcn.800000a0
+0x80000790   91 1288         fcn.80000790
+0x8000116e    3 56           fcn.8000116e
+0x80000e2a    1 16           fcn.80000e2a
+0x80000e3a    1 12           fcn.80000e3a
+0x80000286    1 14           fcn.80000286
+0x80000294    8 118          fcn.80000294
+0x80000060    1 30           fcn.80000060
+0x80000020    1 64           fcn.80000020
+0x80000200   11 134          fcn.80000200
+0x8030010c    1 16           fcn.8030010c
+0x800010f0    7 114          fcn.800010f0
+            ; CODE XREF from fcn.80000020 @ 0x8000005c
+            ;-- section..text.Bsp.waitTime:
+            ;-- segment.LOAD13:
+|- (loc) fcn.80000200();
+|           0x80000200      fcall fcn.8000008c                         ; [77] -r-x section size 134 named .text.Bsp.waitTime
+|           0x80000204      ne    d15, d4, d0
+|           0x80000208      or.ne d15, d5, d1
+|       ,=< 0x8000020c      jnz   d15, 0x80000218
+|       |   0x8000020e      fcall fcn.80000096
+|       |   0x80000212      ld.d  e2, [a15]#0
+|      ,==< 0x80000216      j     0x80000244
+|      |`-> 0x80000218      mfcr  d15, #0xfe2c
+|      |    0x8000021c      extr.u d15, d15, #0xf, #1
+|      |    0x80000220      ne    d15, d15, #0
+|      |    0x80000224      disable
+|      |    0x80000228      nop
+|      |    0x8000022a      fcall fcn.8000007e
+|      |    0x8000022e      ld.d  e2, [a15]#0
+|      |    0x80000232      and   d0, d2
+|      |    0x80000234      and   d1, d3
+|      |,=< 0x80000236      jz    d15, 0x8000023c
+|      ||   0x80000238      enable
+|      |`-> 0x8000023c      addx  d2, d0, d4
+|      |    0x80000240      addc  d3, d1, d5
+|      |    ; CODE XREF from fcn.80000200 @ 0x80000216
+|      `.-> 0x80000244      fcall fcn.8000008c
+|       :   0x80000248      ne    d15, d2, d0
+|       :   0x8000024c      or.ne d15, d3, d1
+|      ,==< 0x80000250      jz    d15, 0x80000282
+|      |:   0x80000252      mfcr  d15, #0xfe2c
+|      |:   0x80000256      extr.u d15, d15, #0xf, #1
+|      |:   0x8000025a      ne    d15, d15, #0
+|      |:   0x8000025e      disable
+|      |:   0x80000262      nop
+|      |:   0x80000264      fcall fcn.8000007e
+|      |:   0x80000268      ld.d  e4, [a15]#0
+|      |:   0x8000026c      and   d0, d4
+|      |:   0x8000026e      and   d1, d5
+|     ,===< 0x80000270      jz    d15, 0x80000276
+|     ||:   0x80000272      enable
+|     `---> 0x80000276      ge.u  d15, d0, d2
+|      |:   0x8000027a      and.eq d15, d1, d3
+|      |:   0x8000027e      or.lt d15, d3, d1
+|      ``=< 0x80000282      jz    d15, 0x80000244
+\           0x80000284      ret
+EOF
+RUN
+
+NAME=tricore analysis graph
+FILE=bins/elf/float_ex1/float_ex1_tricore_gcc
+CMDS=<<EOF
+e asm.arch=tricore
+aaa
+s sym.fn1
+aga
+agc
+agr
+agf
+EOF
+EXPECT=<<EOF
+.-----------.
+|  sym.fn1  |
+`-----------'
+                       .-----------.
+                       |  sym.fn1  |
+                       `-----------'
+                             v
+                             |
+      .----------------------|
+      |                   .--|
+      |                   |  '----------------.
+      |                   |                   |
+.--------------.    .---------------.   .--------------------.
+|  dbg.malloc  |    |  dbg.strncpy  |   |  dbg.__truncdfsf2  |
+`--------------'    `---------------'   `--------------------'
+.-----------.
+|  sym.fn1  |
+`-----------'
+                            .-----------------------------------------------------------------.
+                            |  0x800004ce                                                     |
+                            |   ; CALL XREF from main @ 0x80000642                            |
+                            | sym.fn1(size_t size, int32_t arg5, int32_t arg6, int32_t arg7); |
+                            | ; arg size_t size @ a0                                          |
+                            | ; arg int32_t arg5 @ a4                                         |
+                            | ; arg int32_t arg6 @ a5                                         |
+                            | ; arg int32_t arg7 @ a6                                         |
+                            | mov.aa a14, sp                                                  |
+                            | sub.a sp, #0x18                                                 |
+                            | st.w [a14]#-4, d4                                               |
+                            | ; arg5                                                          |
+                            | st.a [a14]#-8, a4                                               |
+                            | st.d [a14]#-0x10, e6                                            |
+                            | ; arg6                                                          |
+                            | st.a [a14]#-0x14, a5                                            |
+                            | ; arg7                                                          |
+                            | st.a [a14]#-0x18, a6                                            |
+                            | ld.w d15, [a14]#-0x14                                           |
+                            | jz d15, 0x800004f2                                              |
+                            `-----------------------------------------------------------------'
+                                    f t
+                                    | |
+                                    | '-----------------------------------.
+                                    '----.                                |
+                                         |                                |
+                                     .-----------------------.            |
+                                     |  0x800004ec           |            |
+                                     | ld.w d15, [a14]#-0x18 |            |
+                                     | jnz d15, 0x800004f6   |            |
+                                     `-----------------------'            |
+                                             f t                          |
+                                             | |                          |
+                                             | '--------------------.     |
+    .----------------------------------------'                      |     |
+    |                                                               | .---'
+    |                                                               | |
+.---------------------------------------------------------.   .--------------.
+|  0x800004f6                                             |   |  0x800004f2  |
+| mov d4, #0x14                                           |   | mov d15, #0  |
+| ; void *malloc(size_t size)                             |   | j 0x8000054c |
+| call dbg.malloc                                         |   `--------------'
+| mov.aa a15, a2                                          |       v
+| mov.d d15, a15                                          |       |
+| ld.a a15, [a14]#-0x18                                   |       |
+| st.w [a15]#0, d15                                       |       |
+| ld.a a15, [a14]#-0x18                                   |       |
+| ld.a a15, [a15]#0                                       |       |
+| ld.w d15, [a14]#-4                                      |       |
+| st.w [a15]#0, d15                                       |       |
+| ld.a a15, [a14]#-0x18                                   |       |
+| nop                                                     |       |
+| ld.w d15, [a15]#0                                       |       |
+| mov.a a15, d15                                          |       |
+| add.a a15, #4                                           |       |
+| mov d4, #5                                              |       |
+| ld.a a5, [a14]#-8                                       |       |
+| mov.aa a4, a15                                          |       |
+| ; char *strncpy(char *dest, const char *src, size_t  n) |       |
+| call dbg.strncpy                                        |       |
+| ld.a a15, [a14]#-0x18                                   |       |
+| ld.a a15, [a15]#0                                       |       |
+| ld.d e4, [a14]#-0x10                                    |       |
+| call dbg.__truncdfsf2                                   |       |
+| mov d15, d2                                             |       |
+| ; 12                                                    |       |
+| st.w [a15]#0xc, d15                                     |       |
+| ld.a a15, [a14]#-0x18                                   |       |
+| ld.a a15, [a15]#0                                       |       |
+| ld.w d15, [a14]#-0x14                                   |       |
+| ; 16                                                    |       |
+| st.w [a15]#0x10, d15                                    |       |
+| mov d15, #1                                             |       |
+`---------------------------------------------------------'       |
+    v                                                             |
+    |                                                             |
+    |                              .------------------------------'
+    '--------------------------------.
+                                   | |
+                             .---------------------------------------.
+                             |  0x8000054c                           |
+                             | ; CODE XREF from sym.fn1 @ 0x800004f4 |
+                             | mov d2, d15                           |
+                             | ret                                   |
+                             `---------------------------------------'
+EOF
+RUN
+
+NAME=tricore analysis disassemble fcn
+FILE=bins/elf/float_ex1/float_ex1_tricore_gcc
+CMDS=<<EOF
+e asm.arch=tricore
+aaa
+s sym.fn1
+pdr
+pdR
+pdsf
+afi
+EOF
+EXPECT=<<EOF
+  ; CALL XREF from main @ 0x80000642
+/ sym.fn1(size_t size, int32_t arg5, int32_t arg6, int32_t arg7);
+| ; arg size_t size @ a0
+| ; arg int32_t arg5 @ a4
+| ; arg int32_t arg6 @ a5
+| ; arg int32_t arg7 @ a6
+| 0x800004ce      mov.aa a14, sp
+| 0x800004d0      sub.a sp, #0x18
+| 0x800004d2      st.w  [a14]#-4, d4
+| 0x800004d6      st.a  [a14]#-8, a4                                   ; arg5
+| 0x800004da      st.d  [a14]#-0x10, e6
+| 0x800004de      st.a  [a14]#-0x14, a5                                ; arg6
+| 0x800004e2      st.a  [a14]#-0x18, a6                                ; arg7
+| 0x800004e6      ld.w  d15, [a14]#-0x14
+| 0x800004ea      jz    d15, 0x800004f2
+| ----------- true: 0x800004f2  false: 0x800004ec
+| 0x800004ec      ld.w  d15, [a14]#-0x18
+| 0x800004f0      jnz   d15, 0x800004f6
+| ----------- true: 0x800004f6  false: 0x800004f2
+| 0x800004f2      mov   d15, #0
+| 0x800004f4      j     0x8000054c
+| ----------- true: 0x8000054c
+| 0x800004f6      mov   d4, #0x14
+| 0x800004fa      call  dbg.malloc                                     ; void *malloc(size_t size)
+| 0x800004fe      mov.aa a15, a2
+| 0x80000500      mov.d d15, a15
+| 0x80000502      ld.a  a15, [a14]#-0x18
+| 0x80000506      st.w  [a15]#0, d15
+| 0x80000508      ld.a  a15, [a14]#-0x18
+| 0x8000050c      ld.a  a15, [a15]#0
+| 0x8000050e      ld.w  d15, [a14]#-4
+| 0x80000512      st.w  [a15]#0, d15
+| 0x80000514      ld.a  a15, [a14]#-0x18
+| 0x80000518      nop
+| 0x8000051a      ld.w  d15, [a15]#0
+| 0x8000051c      mov.a a15, d15
+| 0x8000051e      add.a a15, #4
+| 0x80000520      mov   d4, #5
+| 0x80000522      ld.a  a5, [a14]#-8
+| 0x80000526      mov.aa a4, a15
+| 0x80000528      call  dbg.strncpy                                    ; char *strncpy(char *dest, const char *src, size_t  n)
+| 0x8000052c      ld.a  a15, [a14]#-0x18
+| 0x80000530      ld.a  a15, [a15]#0
+| 0x80000532      ld.d  e4, [a14]#-0x10
+| 0x80000536      call  dbg.__truncdfsf2
+| 0x8000053a      mov   d15, d2
+| 0x8000053c      st.w  [a15]#0xc, d15                                 ; 12
+| 0x8000053e      ld.a  a15, [a14]#-0x18
+| 0x80000542      ld.a  a15, [a15]#0
+| 0x80000544      ld.w  d15, [a14]#-0x14
+| 0x80000548      st.w  [a15]#0x10, d15                                ; 16
+| 0x8000054a      mov   d15, #1
+| ----------- true: 0x8000054c
+| ; CODE XREF from sym.fn1 @ 0x800004f4
+| 0x8000054c      mov   d2, d15
+\ 0x8000054e      ret
+
+            ; CALL XREF from main @ 0x80000642
+/ sym.fn1(size_t size, int32_t arg5, int32_t arg6, int32_t arg7);
+|           ; arg size_t size @ a0
+|           ; arg int32_t arg5 @ a4
+|           ; arg int32_t arg6 @ a5
+|           ; arg int32_t arg7 @ a6
+|           0x800004ce      mov.aa a14, sp
+|           0x800004d0      sub.a sp, #0x18
+|           0x800004d2      st.w  [a14]#-4, d4
+|           0x800004d6      st.a  [a14]#-8, a4                         ; arg5
+|           0x800004da      st.d  [a14]#-0x10, e6
+|           0x800004de      st.a  [a14]#-0x14, a5                      ; arg6
+|           0x800004e2      st.a  [a14]#-0x18, a6                      ; arg7
+|           0x800004e6      ld.w  d15, [a14]#-0x14
+|       ,=< 0x800004ea      jz    d15, 0x800004f2
+|           0x800004ec      ld.w  d15, [a14]#-0x18
+|       ,=< 0x800004f0      jnz   d15, 0x800004f6
+|           0x800004f2      mov   d15, #0
+|       ,=< 0x800004f4      j     0x8000054c
+|           ; CODE XREF from sym.fn1 @ 0x800004f4
+|           0x8000054c      mov   d2, d15
+\           0x8000054e      ret
+0x800004d0 sub.a sp, #0x18 sub.a
+0x800004d6 arg5
+0x800004de arg6
+0x800004e2 arg7
+offset: 0x800004ce
+name: sym.fn1
+size: 130
+is-pure: true
+realsz: 130
+stackframe: 0
+call-convention: reg
+cyclomatic-cost: 0
+cyclomatic-complexity: 3
+loops: 0
+bits: 32
+type: sym
+num-bbs: 5
+edges: 6
+end-bbs: 1
+call-refs: 0x8000054c J 0x80000afc C 0x800011e0 C 0x80000728 C
+data-refs:
+code-xrefs: 0x800004f4 J 0x80000642 C
+noreturn: false
+in-degree: 2
+out-degree: 3
+data-xrefs:
+locals: 0
+args: 4
+arg size_t size @ a0
+arg int32_t arg5 @ a4
+arg int32_t arg6 @ a5
+arg int32_t arg7 @ a6
 EOF
 RUN

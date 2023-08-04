@@ -15,6 +15,50 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
+static bool init_pyc_cache(RzBinPycObj *pyc, RzBuffer *buf) {
+	RzList *shared = rz_list_newf((RzListFree)rz_list_free);
+	if (!shared) {
+		return false;
+	}
+	RzList *cobjs = rz_list_newf((RzListFree)free);
+	if (!cobjs) {
+		rz_list_free(shared);
+		return false;
+	}
+	pyc->interned_table = rz_list_newf((RzListFree)free);
+	if (!pyc->interned_table) {
+		rz_list_free(shared);
+		rz_list_free(cobjs);
+		return false;
+	}
+	rz_list_append(shared, cobjs);
+	rz_list_append(shared, pyc->interned_table);
+	pyc->shared = shared;
+	RzList *sections = rz_list_newf((RzListFree)free);
+	if (!sections) {
+		rz_list_free(shared);
+		return false;
+	}
+	pyc->sections_cache = sections;
+	RzList *symbols = rz_list_newf((RzListFree)free);
+	if (!symbols) {
+		rz_list_free(shared);
+		rz_list_free(sections);
+		return false;
+	}
+	pyc->symbols_cache = symbols;
+	RzList *strings = rz_list_newf((RzListFree)free);
+	if (!strings) {
+		rz_list_free(shared);
+		return false;
+	}
+	pyc->strings_cache = strings;
+
+	rz_buf_seek(buf, pyc->code_start_offset, RZ_BUF_SET);
+	pyc_get_sections_symbols(pyc, sections, symbols, cobjs, buf, pyc->version.magic);
+	return true;
+}
+
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	RzBinPycObj *ctx = RZ_NEW0(RzBinPycObj);
 	if (!ctx) {
@@ -53,6 +97,13 @@ static RzBinInfo *info(RzBinFile *arch) {
 	if (!ret) {
 		return NULL;
 	}
+
+	bool error = false;
+	bool is_before_py_36 = magic_int_within(ctx->version.magic, 0x9494, 0x0d16, &error);
+	if (error) {
+		return NULL;
+	}
+
 	ret->file = strdup(arch->file);
 	ret->type = rz_str_newf("Python %s byte-compiled file", ctx->version.version);
 	ret->bclass = strdup("Python byte-compiled file");
@@ -61,17 +112,14 @@ static RzBinInfo *info(RzBinFile *arch) {
 	ret->machine = rz_str_newf("Python %s VM (rev %s)", ctx->version.version,
 		ctx->version.revision);
 	ret->os = strdup("any");
-	ret->bits = version2double(ctx->version.version) < 3.6 ? 16 : 8;
+	ret->bits = is_before_py_36 ? 16 : 8;
 	ret->cpu = strdup(ctx->version.version); // pass version info in cpu, Asm plugin will get it
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *arch) {
-	RzBinPycObj *ctx = arch->o->bin_obj;
-	return ctx->sections_cache;
-}
-
 static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *arch) {
+	RzBinPycObj *pyc = arch->o->bin_obj;
+
 	RzList *entries = rz_list_newf((RzListFree)free);
 	if (!entries) {
 		return NULL;
@@ -86,6 +134,11 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *arch) {
 	addr->vaddr = entrypoint;
 	rz_buf_seek(arch->buf, entrypoint, RZ_IO_SEEK_SET);
 	rz_list_append(entries, addr);
+
+	if (!init_pyc_cache(pyc, arch->buf)) {
+		rz_list_free(entries);
+		return NULL;
+	}
 	return entries;
 }
 
@@ -93,42 +146,19 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *arch) {
+	RzBinPycObj *ctx = arch->o->bin_obj;
+	return ctx->sections_cache;
+}
+
 static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *arch) {
 	RzBinPycObj *pyc = arch->o->bin_obj;
-	RzList *shared = rz_list_newf((RzListFree)rz_list_free);
-	if (!shared) {
-		return NULL;
-	}
-	RzList *cobjs = rz_list_newf((RzListFree)free);
-	if (!cobjs) {
-		rz_list_free(shared);
-		return NULL;
-	}
-	pyc->interned_table = rz_list_newf((RzListFree)free);
-	if (!pyc->interned_table) {
-		rz_list_free(shared);
-		rz_list_free(cobjs);
-		return NULL;
-	}
-	rz_list_append(shared, cobjs);
-	rz_list_append(shared, pyc->interned_table);
-	pyc->shared = shared;
-	RzList *sections = rz_list_newf((RzListFree)free);
-	if (!sections) {
-		rz_list_free(shared);
-		return NULL;
-	}
-	RzList *symbols = rz_list_newf((RzListFree)free);
-	if (!symbols) {
-		rz_list_free(shared);
-		rz_list_free(sections);
-		return NULL;
-	}
-	RzBuffer *buffer = arch->buf;
-	rz_buf_seek(buffer, pyc->code_start_offset, RZ_BUF_SET);
-	pyc_get_sections_symbols(pyc, sections, symbols, cobjs, buffer, pyc->version.magic);
-	pyc->sections_cache = sections;
-	return symbols;
+	return pyc->symbols_cache;
+}
+
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	RzBinPycObj *pyc = bf->o->bin_obj;
+	return pyc->strings_cache;
 }
 
 static void destroy(RzBinFile *bf) {
@@ -148,6 +178,7 @@ RzBinPlugin rz_bin_plugin_pyc = {
 	.sections = &sections,
 	.baddr = &baddr,
 	.symbols = &symbols,
+	.strings = &strings,
 	.destroy = &destroy
 };
 

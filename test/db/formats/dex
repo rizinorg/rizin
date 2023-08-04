@@ -23,7 +23,7 @@ RUN
 NAME=Checking file size
 FILE=bins/dex/HelloSlack.dex
 CMDS=<<EOF
-?v $s
+%v $s
 iZ
 EOF
 EXPECT=<<EOF
@@ -34,7 +34,7 @@ RUN
 
 NAME=DEX: entrypoint
 FILE=bins/dex/HelloSlack.dex
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x1000001c0
 EOF
@@ -78,39 +78,39 @@ NAME=DEX Hello.dex classes (ic, icf & icm command)
 FILE=bins/dex/Hello.dex
 CMDS=<<EOF
 ic
-icf 'LHello;'
-icm 'LHello;'
+icf 'Hello'
+icm 'Hello'
 EOF
 EXPECT=<<EOF
-address    min         max         name    super              
---------------------------------------------------------------
-0x00000174 0x1000001a4 0x10000021e LHello; Ljava/lang/Object;
-address     index class   flags name type               
---------------------------------------------------------
-0x100000336 0     LHello; P     who  Ljava/lang/String;
-address     index class   flags name                        
-------------------------------------------------------------
-0x1000001a4 0     LHello; pC    <init>(Ljava/lang/String;)V
-0x1000001c0 1     LHello; sp    main([Ljava/lang/String;)V
-0x1000001e8 2     LHello; p     say()V
+address    min         max         name  super  
+------------------------------------------------
+0x00000174 0x1000001a4 0x10000021e Hello Object
+address     index class flags name type   
+------------------------------------------
+0x100000336 0     Hello P     who  String
+address     index class flags name                
+--------------------------------------------------
+0x1000001a4 0     Hello pC    void <init>(String)
+0x1000001c0 1     Hello sp    void main(String[])
+0x1000001e8 2     Hello p     void say()
 EOF
 RUN
 
 NAME=DEX Hello.dex single class (icf & icm LHello)
 FILE=bins/dex/Hello.dex
 CMDS=<<EOF
-icf 'LHello;'
-icm 'LHello;'
+icf 'Hello'
+icm 'Hello'
 EOF
 EXPECT=<<EOF
-address     index class   flags name type               
---------------------------------------------------------
-0x100000336 0     LHello; P     who  Ljava/lang/String;
-address     index class   flags name                        
-------------------------------------------------------------
-0x1000001a4 0     LHello; pC    <init>(Ljava/lang/String;)V
-0x1000001c0 1     LHello; sp    main([Ljava/lang/String;)V
-0x1000001e8 2     LHello; p     say()V
+address     index class flags name type   
+------------------------------------------
+0x100000336 0     Hello P     who  String
+address     index class flags name                
+--------------------------------------------------
+0x1000001a4 0     Hello pC    void <init>(String)
+0x1000001c0 1     Hello sp    void main(String[])
+0x1000001e8 2     Hello p     void say()
 EOF
 RUN
 
@@ -118,7 +118,7 @@ NAME=DEX Hello.dex classes quiet (icq command)
 FILE=bins/dex/Hello.dex
 CMDS=icq
 EXPECT=<<EOF
-0x00000174 [0x1000001a4 - 0x10000021e] LHello; Ljava/lang/Object;
+0x00000174 [0x1000001a4 - 0x10000021e] Hello Object
 EOF
 RUN
 
@@ -138,7 +138,7 @@ NAME=DEX Hello.dex method flags (r2 commands) (ic*)
 FILE=bins/dex/Hello.dex
 CMDS=ic*~main
 EXPECT=<<EOF
-"f method.public.static.LHello_.main__Ljava_lang_String__V @ 0x1000001c0"
+f method.public.static.Hello.void_main_String @ 0x1000001c0
 EOF
 RUN
 
@@ -155,14 +155,14 @@ EXPECT=<<EOF
 0x100000508 0 World worldVar2
 0x1000002f4 20 World void <init>()
 0x100000318 68 World void foo(int)
-0x00000000 0 java.lang.System imp.out
-0x8000000000 2 java.io.PrintStream imp.println(Ljava/lang/String;)V
-0x8000000002 2 java.lang.Integer imp.<init>(I)V
-0x8000000004 2 java.lang.Integer imp.toString()Ljava/lang/String;
-0x8000000006 2 java.lang.Object imp.<init>()V
-0x8000000008 2 java.lang.StringBuilder imp.<init>()V
-0x800000000a 2 java.lang.StringBuilder imp.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-0x800000000c 2 java.lang.StringBuilder imp.toString()Ljava/lang/String;
+---------- 0 java.lang.System imp.out
+0x8000000000 2 java.io.PrintStream imp.void println(String)
+0x8000000002 2 java.lang.Integer imp.void <init>(int)
+0x8000000004 2 java.lang.Integer imp.String toString()
+0x8000000006 2 java.lang.Object imp.void <init>()
+0x8000000008 2 java.lang.StringBuilder imp.void <init>()
+0x800000000a 2 java.lang.StringBuilder imp.StringBuilder append(String)
+0x800000000c 2 java.lang.StringBuilder imp.String toString()
 EOF
 RUN
 
@@ -171,22 +171,21 @@ FILE=bins/dex/HelloWorld.dex
 CMDS=fl
 EXPECT=<<EOF
 0x00000000 1460 section.file
-0x00000000 0 sym.Ljava_lang_System_.out
-0x000001e8 1 class.LHello
-0x00000208 1 class.LWorld
+0x000001e8 1 class.Hello
+0x00000208 1 class.World
 0x100000228 908 section.data
-0x100000238 20 sym.LHello_._init___V
-0x100000238 1 method.public.constructor.LHello_._init___V
+0x100000238 20 sym.Hello.void__init
+0x100000238 1 method.public.constructor.Hello.void__init
 0x10000025c 256 main
 0x10000025c 1 entry0
-0x10000025c 34 sym.LHello_.main__Ljava_lang_String__V
-0x10000025c 1 method.public.static.LHello_.main__Ljava_lang_String__V
-0x100000290 84 sym.LHello_.foo_I_V
-0x100000290 1 method.public.LHello_.foo_I_V
-0x1000002f4 20 sym.LWorld_._init___V
-0x1000002f4 1 method.public.constructor.LWorld_._init___V
-0x100000318 68 sym.LWorld_.foo_I_V
-0x100000318 1 method.public.LWorld_.foo_I_V
+0x10000025c 34 sym.Hello.void_main_String
+0x10000025c 1 method.public.static.Hello.void_main_String
+0x100000290 84 sym.Hello.void_foo_int
+0x100000290 1 method.public.Hello.void_foo_int
+0x1000002f4 20 sym.World.void__init
+0x1000002f4 1 method.public.constructor.World.void__init
+0x100000318 68 sym.World.void_foo_int
+0x100000318 1 method.public.World.void_foo_int
 0x100000372 6 str.init
 0x10000037a 6 str.Findus
 0x100000382 10 str.Hello.java
@@ -216,35 +215,36 @@ EXPECT=<<EOF
 0x1000004a1 8 str.world
 0x1000004ab 8 str.worldVar
 0x1000004b5 9 str.worldVar2
-0x1000004f0 0 sym.LHello_.localVar2
-0x1000004f2 0 sym.LHello_.localVar
-0x100000506 0 sym.LWorld_.worldVar
-0x100000508 0 sym.LWorld_.worldVar2
+0x1000004f0 0 sym.Hello.localVar2
+0x1000004f2 0 sym.Hello.localVar
+0x100000506 0 sym.World.worldVar
+0x100000508 0 sym.World.worldVar2
 0x8000000000 14 section.reloc_targets
-0x8000000000 2 sym.Ljava_io_PrintStream_.println_Ljava_lang_String__V
-0x8000000002 2 sym.Ljava_lang_Integer_._init__I_V
-0x8000000004 2 sym.Ljava_lang_Integer_.toString__Ljava_lang_String
-0x8000000006 2 sym.Ljava_lang_Object_._init___V
-0x8000000008 2 sym.Ljava_lang_StringBuilder_._init___V
-0x800000000a 2 sym.Ljava_lang_StringBuilder_.append_Ljava_lang_String__Ljava_lang_StringBuilder
-0x800000000c 2 sym.Ljava_lang_StringBuilder_.toString__Ljava_lang_String
+0x8000000000 2 sym.java.io.PrintStream.void_println_String
+0x8000000002 2 sym.Integer.void__init__int
+0x8000000004 2 sym.Integer.String_toString
+0x8000000006 2 sym.Object.void__init
+0x8000000008 2 sym.StringBuilder.void__init
+0x800000000a 2 sym.StringBuilder.StringBuilder_append_String
+0x800000000c 2 sym.StringBuilder.String_toString
 EOF
 RUN
 
 NAME=DEX HelloWorld.dex imports (ii command)
+ARGS=-e bin.demangle.flags=all
 FILE=bins/dex/HelloWorld.dex
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind type  lib       name                                       
+nth vaddr      bind type  lib                     name                         
 -------------------------------------------------------------------------------
-0   0x00000000 WEAK FIELD java.lang System.out
-1   ---------- WEAK FUNC  java.io   void PrintStream.println(String)
-2   ---------- WEAK FUNC  java.lang void Integer.<init>(int)
-3   ---------- WEAK FUNC  java.lang String Integer.toString()
-4   ---------- WEAK FUNC  java.lang void Object.<init>()
-5   ---------- WEAK FUNC  java.lang void StringBuilder.<init>()
-6   ---------- WEAK FUNC  java.lang StringBuilder StringBuilder.append(String)
-7   ---------- WEAK FUNC  java.lang String StringBuilder.toString()
+0   ---------- WEAK FIELD java.lang.System        out
+1   ---------- WEAK FUNC  java.io.PrintStream     void println(String)
+2   ---------- WEAK FUNC  java.lang.Integer       void <init>(int)
+3   ---------- WEAK FUNC  java.lang.Integer       String toString()
+4   ---------- WEAK FUNC  java.lang.Object        void <init>()
+5   ---------- WEAK FUNC  java.lang.StringBuilder void <init>()
+6   ---------- WEAK FUNC  java.lang.StringBuilder StringBuilder append(String)
+7   ---------- WEAK FUNC  java.lang.StringBuilder String toString()
 EOF
 RUN
 
@@ -290,11 +290,11 @@ BROKEN=1
 FILE=bins/dex/HelloWorld.dex
 CMDS=<<EOF
 ix
-?e --
+echo --
 ix.@0x000002f4
-?e --
+echo --
 ix.@0x00000318
-?e --
+echo --
 ix~?
 EOF
 EXPECT=<<EOF
@@ -475,11 +475,12 @@ EOF
 RUN
 
 NAME=DEX radare2installer.dex classes (is getProper)
+ARGS=-e bin.demangle.flags=all
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=ii~getProper
 EXPECT=<<EOF
-402 ---------- WEAK FUNC  java.lang                 String System.getProperty(String)
-403 ---------- WEAK FUNC  java.lang                 String System.getProperty(String, String)
+402 ---------- WEAK FUNC  java.lang.System                                 String getProperty(String)
+403 ---------- WEAK FUNC  java.lang.System                                 String getProperty(String, String)
 EOF
 RUN
 
@@ -1436,21 +1437,21 @@ RUN
 NAME=DEX radare2installer.dex classes
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=<<EOF
-icf 'Lcom/stericson/RootTools/Installer;'
-icm 'Lcom/stericson/RootTools/Installer;'
+icf 'com.stericson.RootTools.Installer'
+icm 'com.stericson.RootTools.Installer'
 EOF
 EXPECT=<<EOF
-address     index class                               flags name            type                      
-------------------------------------------------------------------------------------------------------
-0x10000a4b2 0     Lcom/stericson/RootTools/Installer; sPf   BOGUS_FILE_NAME Ljava/lang/String;
-0x10000a4b5 1     Lcom/stericson/RootTools/Installer; sPf   LOG_TAG         Ljava/lang/String;
-0x10000a4b7 2     Lcom/stericson/RootTools/Installer; P     context         Landroid/content/Context;
-0x10000a4ba 3     Lcom/stericson/RootTools/Installer; P     filesPath       Ljava/lang/String;
-address     index class                               flags name                                                  
-------------------------------------------------------------------------------------------------------------------
-0x100011410 0     Lcom/stericson/RootTools/Installer; pC    <init>(Landroid/content/Context;)V
-0x100011440 1     Lcom/stericson/RootTools/Installer; r     installBinary(ILjava/lang/String;Ljava/lang/String;)Z
-0x100011814 2     Lcom/stericson/RootTools/Installer; r     isBinaryInstalled(Ljava/lang/String;)Z
+address     index class                             flags name            type                    
+--------------------------------------------------------------------------------------------------
+0x10000a4b2 0     com.stericson.RootTools.Installer sPf   BOGUS_FILE_NAME String
+0x10000a4b5 1     com.stericson.RootTools.Installer sPf   LOG_TAG         String
+0x10000a4b7 2     com.stericson.RootTools.Installer P     context         android.content.Context
+0x10000a4ba 3     com.stericson.RootTools.Installer P     filesPath       String
+address     index class                             flags name                                       
+-----------------------------------------------------------------------------------------------------
+0x100011410 0     com.stericson.RootTools.Installer pC    void <init>(android.content.Context)
+0x100011440 1     com.stericson.RootTools.Installer r     boolean installBinary(int, String, String)
+0x100011814 2     com.stericson.RootTools.Installer r     boolean isBinaryInstalled(String)
 EOF
 RUN
 

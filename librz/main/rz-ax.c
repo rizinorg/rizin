@@ -82,7 +82,7 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 	}
 	if (has_flag(flags, RZ_AX_FLAG_SWAP_ENDIANNESS)) {
 		ut64 n2 = n;
-		rz_mem_swapendian((ut8 *)&n, (ut8 *)&n2, 8);
+		n = rz_swap_ut64(n2);
 		if (!(int)n) {
 			n >>= 32;
 		}

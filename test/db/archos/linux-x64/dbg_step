@@ -9,7 +9,7 @@ wx 90
 pi 1 # hack this shouldnt be here
 ds
 .dr*
-?v rip-a
+%v rip-a
 EOF
 EXPECT=<<EOF
 nop
@@ -33,10 +33,10 @@ FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
 dr rax=rip > /dev/null
-?vi rax-rip
+%vi rax-rip
 db @ rip
 dso
-?vi rax-rip~?^0$
+%vi rax-rip~?^0$
 EOF
 EXPECT=<<EOF
 0
@@ -270,7 +270,7 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
 dcu main
-?v $$
+%v $$
 EOF
 EXPECT=<<EOF
 0x400574
@@ -280,5 +280,30 @@ Continue[ a-zA-Z0-9]+
 EOF
 EXPECT_ERR=<<EOF
 Continue until 0x00400574
+EOF
+RUN
+
+NAME=seek follows after ds on 1-byte ins
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+e dbg.follow=1
+e asm.bytes=1
+dcu main
+dr r13=rip+1  # For Ubuntu 20.04
+pd 2
+s
+ds
+s
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- rax:
+            ;-- rip:
+            0x00400574      55             push  rbp
+            ;-- r13:
+            0x00400575      ff1425580960.  call  qword [loc.pnt_0]     ; 0x600958 ; "/\x05@"
+0x400574
+0x400575
 EOF
 RUN

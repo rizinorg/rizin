@@ -76,7 +76,7 @@ e asm.flags.real=false
 pd 1 @ 0x0800007c
 pd 1 @ 0x0800008c
 pd 1 @ 0x0800009f
-?e --
+echo --
 e asm.flags.real=true
 pd 1 @ 0x0800007c
 pd 1 @ 0x0800008c
@@ -98,7 +98,7 @@ FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
 ARGS=-e bin.relocs=false
 CMDS=<<EOF
 oml
-?e --
+echo --
 e asm.flags.real=false
 e asm.bytes=true
 fl @F:relocs
@@ -126,13 +126,13 @@ NAME=ELF: reloc flags
 FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
 CMDS=<<EOF
 oml
-?e --
+echo --
 e asm.flags.real=false
 fl @F:relocs
 pd 1 @ 0x08000079
 pd 1 @ 0x080000a2
 pd 1 @ reloc.target.strcmp
-?e --
+echo --
 e asm.flags.real=true
 fl @F:relocs
 pd 1 @ 0x08000079
@@ -258,19 +258,19 @@ mkdir .tmp
 cp bins/elf/analysis/filetime.c-clang-x64-O0.o .tmp/elf-reloc-patchee
 o+ .tmp/elf-reloc-patchee
 oml~vmap
-?e -- original
+echo -- original
 px 0x10 @ 0x0800006a
 px 0x10 @ 0x0800064d
-?e -- overwritten
+echo -- overwritten
 wx 424242424242424242424242424242 @ 0x0800006a
 w ulu-mulu @ 0x0800064d
 px 0x10 @ 0x0800006a
 px 0x10 @ 0x0800064a
-?e -- unloaded
+echo -- unloaded
 o--
 px 0x10 @ 0x0800006a
 px 0x10 @ 0x0800064a
-?e -- reloaded
+echo -- reloaded
 o+ .tmp/elf-reloc-patchee
 px 0x10 @ 0x0800006a
 px 0x10 @ 0x0800064a
@@ -313,9 +313,9 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- .text:
-/ sym.owGetPageLength.constprop.0 (int64_t arg1);
+/ sym.owGetPageLength.constprop.0(int64_t arg1);
 |           ; arg int64_t arg1 @ rdi
-|           0x08000040      movzx eax, byte [rdi]                      ; RELOC TARGET 32 .text @ 0x08000040 - 0x8004d08 ; arg1 [0m; [01] -r-x section size 6641 named .text
+|           0x08000040      movzx eax, byte [rdi]                      ; RELOC TARGET 32 .text @ 0x08000040 - 0x8004d08 ; arg1 ; [01] -r-x section size 6641 named .text
 |           0x08000043      and   eax, 0x7f                            ; 127
 |           0x08000046      sub   eax, 4
 |           0x08000049      cmp   al, 0x73                             ; 115

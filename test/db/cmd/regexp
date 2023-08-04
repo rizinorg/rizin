@@ -3,7 +3,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 w test
 w Test@ 444
-?e
+echo
 e search.in=block
 b 777
 /e /test/i
@@ -34,7 +34,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 w '"test123 ab"'
 w '"Test123 ab"' @ 444
-?e
+echo
 e search.in=block
 b 777
 "/e /t\wst\d\d\d\s\w\w/i"

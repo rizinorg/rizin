@@ -112,10 +112,15 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 		}
 	}
 #endif
-	ut32 *aligned_buf = (ut32 *)rz_malloc_aligned(len, sizeof(ut32));
+	/* A requirement to be multiple of sizeof(void *)
+	 * in case of posix_memalign() use under the hood */
+	ut8 alignment = RZ_MAX(sizeof(ut32), sizeof(void *));
+	ut32 *aligned_buf = (ut32 *)rz_malloc_aligned(len, alignment);
 	if (aligned_buf) {
 		int res = debug_os_read_at(io, RzIOPTRACE_PID(desc), (ut32 *)aligned_buf, len, addr);
-		memcpy(buf, aligned_buf, len);
+		if (res > 0) {
+			memcpy(buf, aligned_buf, len);
+		}
 		rz_free_aligned(aligned_buf);
 		return res;
 	}

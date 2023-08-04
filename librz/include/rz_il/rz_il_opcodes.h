@@ -40,6 +40,7 @@ typedef struct rz_il_op_pure_t RzILOpPure;
 
 typedef RzILOpPure RzILOpBool;
 typedef RzILOpPure RzILOpBitVector;
+typedef RzILOpPure RzILOpFloat;
 
 typedef struct rz_il_op_effect_t RzILOpEffect;
 
@@ -337,6 +338,180 @@ typedef struct rz_il_op_args_storew_t {
 	RzILOpBitVector *value; ///< value to store, arbitrary size
 } RzILOpArgsStoreW;
 
+/**
+ * \brief value for a float constant
+ * `float s x` interprets x as a floating-point number in format s.
+ * In BAP : `( 'r, 's ) format Float.t Value.sort -> 's bitv -> ( 'r, 's ) format float
+ */
+typedef struct rz_il_op_args_float_t {
+	RzFloatFormat r;
+	RzILOpBitVector *bv;
+} RzILOpArgsFloat;
+
+/**
+ * \brief op structure for unary without rmode
+ */
+struct rz_il_op_args_float_unary_t {
+	RzILOpFloat *f;
+};
+
+/**
+ * \brief opstructure for fbits : ( 'r, 's ) format float -> 's bitv
+ * fbits x is a bitvector representation of the floating-point number x.
+ */
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFbits;
+
+/**
+ * \brief op structure for 'f float -> bool
+ * [IS_FINITE] is_finite x holds if x represents a finite number.
+ * [IS_NAN] is_nan x holds if x represents a not-a-number (NaN).
+ * [IS_INF] is_inf x holds if x represents an infinite number.
+ * [IS_FZERO] is_fzero x holds if x represents a zero.
+ * [IS_FNEG] is_fpos x holds if x represents a positive number.
+ * [IS_FPOS] is_fneg x hold if x represents a negative number.
+ */
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFinite;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsNan;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsInf;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFzero;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFpos;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFneg;
+
+/**
+ * op structure for 'f float -> float
+ * [FNEG] fneg x is -x
+ * [FABS] fabs x is absolute value of x (|x|)
+ * [FSUCC] fsucc x is the least floating-point number representable in (sort x) that is greater than x.
+ * [FPRED] fpred x is the greatest floating-point number representable in (sort x) that is less than x.
+ */
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFneg;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFabs;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFsucc;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFpred;
+
+/**
+ * \brief op structure for cast to bv from float
+ * [FCAST_INT] `f_cast_int s rm x` returns an integer closest to x.
+ * [FCAST_SINT] `f_cast_sint s rm x` returns an integer closest to x.
+ */
+struct rz_il_op_args_float_cast_int_t {
+	ut32 length;
+	RzFloatRMode mode;
+	RzILOpFloat *f;
+};
+
+typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFCastint;
+typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFCastsint;
+
+/**
+ * \brief for cast to float from bv
+ * 'f Float.t Value.sort -> rmode -> 'a bitv -> 'f float
+ * [FCAST_FLOAT] `cast_float s rm x` is the closest to x floating-point number of sort x.
+ * 	note that : The bitvector x is interpreted as an unsigned integer in the two-complement form.
+ * [FCAST_SFLOAT] `cast_sfloat s rm x` is the closest to x floating-point number of sort x.
+ * 	note that : The bitvector x is interpreted as a signed integer in the two-complement form.
+ */
+struct rz_il_op_args_float_cast_float_t {
+	RzFloatFormat format;
+	RzFloatRMode mode;
+	RzILOpBitVector *bv;
+};
+
+typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastfloat;
+typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastsfloat;
+
+/**
+ * \brief convert between different float format
+ * 'f Float.t Value.sort -> rmode -> _ float -> 'f float
+ * [FCONVERT] `fconvert f r x` is the closest to x floating number in format f.
+ */
+struct rz_il_op_args_float_fconvert_t {
+	RzFloatFormat format;
+	RzFloatRMode mode;
+	RzILOpFloat *f;
+};
+typedef struct rz_il_op_args_float_fconvert_t RzILOpArgsFconvert;
+
+/**
+ * \brief op structure of requal
+ *  rmode -> rmode -> bool
+ * requal x y holds if rounding modes are equal.
+ */
+typedef struct rz_il_op_args_float_requal_t {
+	RzFloatRMode x;
+	RzFloatRMode y;
+} RzILOpArgsFrequal;
+
+/**
+ * \brief op structure of binary op without rmode
+ * ('float -> 'flaat -> bool)
+ * forder x y holds if floating-point number x is less than y.
+ */
+typedef struct rz_il_op_args_float_binop_t {
+	RzILOpFloat *x;
+	RzILOpFloat *y;
+} RzILOpArgsForder;
+
+/**
+ * \brief op structure for float operation (unary op with rmode)
+ * `rmode -> 'f float -> 'f float`
+ * [FROUND]
+ * [FSQRT] fsqrt m x returns the closest floating-point number to r, where r is such number that r*r is equal to x.
+ * [FRSQRT] reverse sqrt, rsqrt m x is the closest floating-point number to 1 / sqrt x.
+ */
+struct rz_il_op_args_float_alg_unop_t {
+	RzFloatRMode rmode;
+	RzILOpFloat *f;
+};
+typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFround;
+typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFsqrt;
+typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFrsqrt;
+
+/**
+ * \brief op structure for float basic arithmetic operations (binary op with rmode)
+ * rmode -> 'f float -> 'f float -> 'f float
+ * [FADD]
+ */
+struct rz_il_op_args_float_alg_binop_t {
+	RzFloatRMode rmode;
+	RzILOpFloat *x;
+	RzILOpFloat *y;
+};
+
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFadd;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFsub;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFmul;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFdiv;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFmod;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFhypot;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFpow;
+
+/**
+ * \brief op structure of ternary op in float
+ * rmode -> 'f float -> 'f float -> 'f float -> 'f float
+ */
+struct rz_il_op_args_float_alg_terop_t {
+	RzFloatRMode rmode;
+	RzILOpFloat *x;
+	RzILOpFloat *y;
+	RzILOpFloat *z;
+};
+typedef struct rz_il_op_args_float_alg_terop_t RzILOpArgsFmad;
+
+/**
+ * \brief op structure for some float binary op requiring `int`
+ * rmode -> 'f float -> 'a bitv -> 'f float
+ */
+struct rz_il_op_args_float_alg_hybrid_binop_t {
+	RzFloatRMode rmode;
+	RzILOpFloat *f;
+	RzILOpBitVector *n;
+};
+
+typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFrootn;
+typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFpown;
+typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFcompound;
+
 /////////////////////////////
 // Opcodes of type 'a pure //
 
@@ -378,6 +553,41 @@ typedef enum {
 	RZ_IL_OP_ULE,
 	RZ_IL_OP_CAST,
 	RZ_IL_OP_APPEND,
+
+	// RzILFloat
+	RZ_IL_OP_FLOAT,
+	RZ_IL_OP_FBITS,
+	RZ_IL_OP_IS_FINITE,
+	RZ_IL_OP_IS_NAN,
+	RZ_IL_OP_IS_INF,
+	RZ_IL_OP_IS_FZERO,
+	RZ_IL_OP_IS_FNEG,
+	RZ_IL_OP_IS_FPOS,
+	RZ_IL_OP_FNEG,
+	RZ_IL_OP_FABS,
+	RZ_IL_OP_FCAST_INT,
+	RZ_IL_OP_FCAST_SINT,
+	RZ_IL_OP_FCAST_FLOAT,
+	RZ_IL_OP_FCAST_SFLOAT,
+	RZ_IL_OP_FCONVERT,
+	RZ_IL_OP_FREQUAL,
+	RZ_IL_OP_FSUCC,
+	RZ_IL_OP_FPRED,
+	RZ_IL_OP_FORDER,
+	RZ_IL_OP_FROUND,
+	RZ_IL_OP_FSQRT,
+	RZ_IL_OP_FRSQRT,
+	RZ_IL_OP_FADD,
+	RZ_IL_OP_FSUB,
+	RZ_IL_OP_FMUL,
+	RZ_IL_OP_FDIV,
+	RZ_IL_OP_FMOD,
+	RZ_IL_OP_FHYPOT,
+	RZ_IL_OP_FPOW,
+	RZ_IL_OP_FMAD,
+	RZ_IL_OP_FROOTN,
+	RZ_IL_OP_FPOWN,
+	RZ_IL_OP_FCOMPOUND,
 	// ...
 
 	// Memory
@@ -434,6 +644,40 @@ struct rz_il_op_pure_t {
 
 		RzILOpArgsLoad load;
 		RzILOpArgsLoadW loadw;
+
+		RzILOpArgsFloat float_;
+		RzILOpArgsFbits fbits;
+		RzILOpArgsIsFinite is_finite;
+		RzILOpArgsIsNan is_nan;
+		RzILOpArgsIsInf is_inf;
+		RzILOpArgsIsFzero is_fzero;
+		RzILOpArgsIsFneg is_fneg;
+		RzILOpArgsIsFpos is_fpos;
+		RzILOpArgsFneg fneg;
+		RzILOpArgsFabs fabs;
+		RzILOpArgsFCastint fcast_int;
+		RzILOpArgsFCastsint fcast_sint;
+		RzILOpArgsFCastfloat fcast_float;
+		RzILOpArgsFCastsfloat fcast_sfloat;
+		RzILOpArgsFconvert fconvert;
+		RzILOpArgsFrequal frequal;
+		RzILOpArgsFsucc fsucc;
+		RzILOpArgsFpred fpred;
+		RzILOpArgsForder forder;
+		RzILOpArgsFround fround;
+		RzILOpArgsFsqrt fsqrt;
+		RzILOpArgsFrsqrt frsqrt;
+		RzILOpArgsFadd fadd;
+		RzILOpArgsFsub fsub;
+		RzILOpArgsFmul fmul;
+		RzILOpArgsFdiv fdiv;
+		RzILOpArgsFmod fmod;
+		RzILOpArgsFmad fmad;
+		RzILOpArgsFpow fpow;
+		RzILOpArgsFpown fpown;
+		RzILOpArgsFrootn frootn;
+		RzILOpArgsFcompound fcompound;
+		RzILOpArgsFhypot fhypot;
 	} op;
 };
 
@@ -488,6 +732,42 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *h
 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, ut32 n_bits);
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f32(float f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f64(double f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fbits(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_finite(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_nan(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_inf(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fzero(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fneg(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fpos(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fneg(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fabs(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_frequal(RzFloatRMode x, RzFloatRMode y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsucc(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpred(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_forder(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsub(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmul(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fdiv(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmod(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fhypot(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpow(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmad(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *z);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frootn(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpown(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
 
 ///////////////////////////////
 // Opcodes of type 'a effect //
@@ -544,8 +824,11 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzI
 // Printing/Export
 RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code);
 
-RZ_API void rz_il_op_pure_stringify(RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzStrBuf *sb);
-RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL RzStrBuf *sb);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_effect_graph(RZ_NONNULL RzILOpEffect *op, RZ_NULLABLE const char *name);
+
+RZ_API void rz_il_op_pure_stringify(RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzStrBuf *sb, bool pretty);
+RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL RzStrBuf *sb, bool pretty);
 
 RZ_API void rz_il_op_pure_json(RZ_NONNULL RzILOpPure *op, RZ_NONNULL PJ *pj);
 RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj);

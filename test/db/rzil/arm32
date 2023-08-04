@@ -1,3 +1,81 @@
+NAME=Printing il statements in various formats
+FILE=bins/elf/emulateme.arm32
+CMDS=<<EOF
+s sym.decrypt
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x10468 (seq (set sp (- (var sp) (bv 32 0x4))) (storew 0 (var sp) (var r11)))
+0x1046c (set r11 (+ (var sp) (bv 32 0x0)))
+0x10470 (set sp (- (var sp) (bv 32 0x1c)))
+0x10474 (storew 0 (- (var r11) (bv 32 0x18)) (var r0))
+0x10478 (set r3 (bv 32 0x0))
+-- pretty
+0x10468
+(seq
+  (set sp
+    (-
+      (var sp)
+      (bv 32 0x4)))
+  (storew 0
+    (var sp)
+    (var r11)))
+0x1046c
+(set r11
+  (+
+    (var sp)
+    (bv 32 0x0)))
+0x10470
+(set sp
+  (-
+    (var sp)
+    (bv 32 0x1c)))
+0x10474
+(storew 0
+  (-
+    (var r11)
+    (bv 32 0x18))
+  (var r0))
+0x10478
+(set r3
+  (bv 32 0x0))
+-- graph
+               .----------------------.
+               |  str fp, [sp, #-4]!  |
+               `----------------------'
+                     v v
+                     | |
+             .-------' |
+             |         '------------.
+             |                      |
+         .-----------.          .-------------.
+         |  set: sp  |          |  storew: 0  |
+         `-----------'          `-------------'
+             v                        v v
+             |                        | |
+             |               .--------' |
+             |               |          '----.
+             |               |               |
+         .-----------.   .-----------.   .------------.
+         |  sub      |   |  var: sp  |   |  var: r11  |
+         `-----------'   `-----------'   `------------'
+               v v
+               | |
+    .----------' |
+    |            '--.
+    |               |
+.-----------.   .--------------.
+|  var: sp  |   |  bv: 32 0x4  |
+`-----------'   `--------------'
+EOF
+RUN
+
 NAME=arm cmp
 FILE=malloc://0x100
 ARGS=-aarm -b32
@@ -5,15 +83,15 @@ CMDS=<<EOF
 wx 0f0053e3
 aezi
 ar r3=0
-?e -- 0x0 - 0xf
+echo -- 0x0 - 0xf
 aezs
 ar 1
-?e -- 0xf - 0xf
+echo -- 0xf - 0xf
 ar pc=0
 ar r3=0xf
 aezs
 ar 1
-?e -- 0x10 - 0xf
+echo -- 0x10 - 0xf
 ar pc=0
 ar r3=0x10
 aezs
@@ -81,34 +159,34 @@ wx 10f110e7
 aezi
 ar r0=42
 ar r1=5
-?e -- 42 / 5
+echo -- 42 / 5
 aezs
 ar r0
-?e -- 42 / 0
+echo -- 42 / 0
 ar pc=0
 ar r0=42
 ar r1=0
 aezs
 ar r0
-?e -- 0 / 0
+echo -- 0 / 0
 ar pc=0
 ar r0=0
 ar r1=0
 aezs
 ar r0
-?e -- -2^31 / -1
+echo -- -2^31 / -1
 ar pc=0
 ar r0=0x80000000
 ar r1=0xffffffff
 aezs
 ar r0
-?e -- -42 / 5
+echo -- -42 / 5
 ar pc=0
 ar r0=0xffffffd6
 ar r1=5
 aezs
 ar r0
-?e -- -42 / -5
+echo -- -42 / -5
 ar pc=0
 ar r0=0xffffffd6
 ar r1=0xfffffffb
@@ -139,34 +217,34 @@ wx 10f130e7
 aezi
 ar r0=42
 ar r1=5
-?e -- 42 / 5
+echo -- 42 / 5
 aezs
 ar r0
-?e -- 42 / 0
+echo -- 42 / 0
 ar pc=0
 ar r0=42
 ar r1=0
 aezs
 ar r0
-?e -- 0 / 0
+echo -- 0 / 0
 ar pc=0
 ar r0=0
 ar r1=0
 aezs
 ar r0
-?e -- -2^31 / -1
+echo -- -2^31 / -1
 ar pc=0
 ar r0=0x80000000
 ar r1=0xffffffff
 aezs
 ar r0
-?e -- -42 / 5
+echo -- -42 / 5
 ar pc=0
 ar r0=0xffffffd6
 ar r1=5
 aezs
 ar r0
-?e -- -42 / -5
+echo -- -42 / -5
 ar pc=0
 ar r0=0xffffffd6
 ar r1=0xfffffffb
@@ -190,3 +268,40 @@ EOF
 TIMEOUT=10
 RUN
 
+NAME=emulateme_vfp
+FILE=bins/elf/emulateme_vfp.arm32
+TIMEOUT=30
+CMDS=<<EOF
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+# `o` resets the cpu for analysis.cpu
+s main
+e asm.bits=32
+e asm.cpu=v8
+aezi
+e io.cache=1
+ar sp=0x41000
+aezsu 0x10548 # after vsub
+ar d7
+aezsu 0x10554 # after vmul
+ar d7
+aezs # after vadd
+ar d7
+aezs # after vcvt
+ar d16
+aezsu 0x1058c # before printf
+ar r2
+ar r3
+pxq 16 @ sp
+EOF
+EXPECT=<<EOF
+d7 = 0x370637bd40acccbc
+d7 = 0x383531a640acccbc
+d7 = 0x40accd1740acccbc
+d16 = 0x401599a2e0000000
+r2 = 0xa0000000
+r3 = 0x40159999
+0x00040fd0  0x3ee0c6f7a0000000  0x401599a2e0000000   .......>.......@
+EOF
+EXPECT_ERR=
+RUN

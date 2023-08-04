@@ -37,10 +37,9 @@ typedef struct rz_core_graph_hits_t {
 #define RZ_AGRAPH_MODE_NORMAL   0
 #define RZ_AGRAPH_MODE_OFFSET   1
 #define RZ_AGRAPH_MODE_MINI     2
-#define RZ_AGRAPH_MODE_TINY     3
-#define RZ_AGRAPH_MODE_SUMMARY  4
-#define RZ_AGRAPH_MODE_COMMENTS 5
-#define RZ_AGRAPH_MODE_MAX      6
+#define RZ_AGRAPH_MODE_SUMMARY  3
+#define RZ_AGRAPH_MODE_COMMENTS 4
+#define RZ_AGRAPH_MODE_MAX      5
 
 typedef void (*RzANodeCallback)(RzANode *n, void *user);
 typedef void (*RAEdgeCallback)(RzANode *from, RzANode *to, void *user);
@@ -56,11 +55,11 @@ typedef struct rz_ascii_graph_t {
 
 	int layout;
 	int is_instep;
-	bool is_tiny;
 	bool is_dis;
 	int edgemode;
 	int mode;
 	bool is_callgraph;
+	bool is_il;
 	bool is_interactive;
 	int zoom;
 	int movspeed;

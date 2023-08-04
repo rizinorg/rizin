@@ -141,6 +141,7 @@ static const struct {
 	{ "rar", RZ_SYS_ARCH_RAR },
 	{ "lm32", RZ_SYS_ARCH_LM32 },
 	{ "v850", RZ_SYS_ARCH_V850 },
+	{ "tricore", RZ_SYS_ARCH_TRICORE },
 	{ NULL, 0 }
 };
 
@@ -746,16 +747,9 @@ RZ_API bool rz_sys_mkdirp(const char *dir) {
 	return ret;
 }
 
-RZ_API void rz_sys_perror_str(const char *fun) {
-#if __UNIX__
-#pragma push_macro("perror")
-#undef perror
-	perror(fun);
-#pragma pop_macro("perror")
-#elif __WINDOWS__
+#if __WINDOWS__
+static char *sys_windows_error_msg(DWORD dw) {
 	LPTSTR lpMsgBuf;
-	DWORD dw = GetLastError();
-
 	if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 			    FORMAT_MESSAGE_FROM_SYSTEM |
 			    FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -764,17 +758,31 @@ RZ_API void rz_sys_perror_str(const char *fun) {
 		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		    (LPTSTR)&lpMsgBuf,
 		    0, NULL)) {
-		char *err = rz_sys_conv_win_to_utf8(lpMsgBuf);
-		if (err) {
-			eprintf("%s: (%#lx) %s%s", fun, dw, err,
-				rz_str_endswith(err, "\n") ? "" : "\n");
-			free(err);
-		}
+		char *message = rz_sys_conv_win_to_utf8(lpMsgBuf);
 		LocalFree(lpMsgBuf);
+		rz_str_trim_tail(message);
+		return message;
+	}
+	return NULL;
+}
+#endif /* __WINDOWS__ */
+
+RZ_API void rz_sys_perror_str(const char *fun) {
+#if __UNIX__
+#pragma push_macro("perror")
+#undef perror
+	perror(fun);
+#pragma pop_macro("perror")
+#elif __WINDOWS__
+	DWORD dw = GetLastError();
+	char *err = sys_windows_error_msg(dw);
+	if (err) {
+		eprintf("%s: (%#lx) %s\n", fun, dw, err);
+		free(err);
 	} else {
 		eprintf("%s\n", fun);
 	}
-#endif
+#endif /* __WINDOWS__ */
 }
 
 RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
@@ -1972,7 +1980,7 @@ RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname) {
 	} else {
 		libname_ = calloc(MAX_PATH, sizeof(TCHAR));
 		if (!libname_) {
-			RZ_LOG_ERROR("lib/rz_sys_dlopen: Failed to allocate memory.\n");
+			RZ_LOG_ERROR("rz_sys_dlopen: failed to allocate memory.\n");
 			return NULL;
 		}
 		if (!GetModuleFileName(NULL, libname_, MAX_PATH)) {
@@ -1982,7 +1990,10 @@ RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname) {
 	ret = LoadLibrary(libname_);
 	free(libname_);
 	if (!ret) {
-		RZ_LOG_ERROR("rz_sys_dlopen: error: %s\n", libname);
+		DWORD dw = GetLastError();
+		char *err = sys_windows_error_msg(dw);
+		RZ_LOG_ERROR("rz_sys_dlopen: error: %s (%s)\n", libname, err ? err : "unknown");
+		free(err);
 	}
 #endif
 #endif

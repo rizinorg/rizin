@@ -254,19 +254,19 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 			}
 			rz_asm_set_pc(core->rasm, addr);
 			if (mode == 'i') {
-				RzAnalysisOp analop = { 0 };
+				RzAnalysisOp aop = { 0 };
 				ut64 len = RZ_MIN(15, core->blocksize - idx);
-				if (rz_analysis_op(core->analysis, &analop, addr, buf + idx, len, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+				if (rz_analysis_op(core->analysis, &aop, addr, buf + idx, len, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
 					idx++; // TODO: honor mininstrsz
 					continue;
 				}
-				ut64 val = analop.val; // Referenced value
+				ut64 val = aop.val; // Referenced value
 
 				bool match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 
 				if (!match) {
 					for (size_t i = 0; i < 6; ++i) {
-						st64 v = analop.analysis_vals[i].imm;
+						st64 v = aop.analysis_vals[i].imm;
 						match = (v != ST64_MAX && v >= usrimm && v <= usrimm2);
 						if (match) {
 							break;
@@ -274,11 +274,11 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 					}
 				}
 				if (!match) {
-					ut64 val = analop.disp;
+					ut64 val = aop.disp;
 					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (!match) {
-					st64 val = analop.ptr;
+					st64 val = aop.ptr;
 					match = (val != ST64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (match) {
@@ -288,7 +288,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 						goto beach;
 					}
 					hit->addr = addr;
-					hit->len = analop.size; //  idx + len - tidx;
+					hit->len = aop.size; //  idx + len - tidx;
 					if (hit->len == -1) {
 						rz_core_asm_hit_free(hit);
 						goto beach;
@@ -302,18 +302,18 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 					rz_list_append(hits, hit);
 					continue;
 				}
-				rz_analysis_op_fini(&analop);
+				rz_analysis_op_fini(&aop);
 				idx++; // TODO: honor mininstrsz
 				continue;
 			} else if (mode == 'e') {
-				RzAnalysisOp analop = { 0 };
-				if (rz_analysis_op(core->analysis, &analop, addr, buf + idx, 15, RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
+				RzAnalysisOp aop = { 0 };
+				if (rz_analysis_op(core->analysis, &aop, addr, buf + idx, 15, RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 					idx++; // TODO: honor mininstrsz
 					continue;
 				}
-				// opsz = analop.size;
-				opst = strdup(rz_strbuf_get(&analop.esil));
-				rz_analysis_op_fini(&analop);
+				// opsz = aop.size;
+				opst = strdup(rz_strbuf_get(&aop.esil));
+				rz_analysis_op_fini(&aop);
 			} else {
 				if (!(len = rz_asm_disassemble(
 					      core->rasm, &op,

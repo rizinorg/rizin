@@ -14,22 +14,6 @@
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-static const char *help_msg_amper[] = {
-	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
-	"&", " <cmd>", "run <cmd> in a new background task",
-	"&t", " <cmd>", "run <cmd> in a new transient background task (auto-delete when it is finished)",
-	"&", "", "list all tasks",
-	"&j", "", "list all tasks (in JSON)",
-	"&=", " 3", "show output of task 3",
-	"&b", " 3", "break task 3",
-	"&-", " 1", "delete task #1 or schedule for deletion when it is finished",
-	"&", "-*", "delete all done tasks",
-	"&?", "", "show this help",
-	"&&", " 3", "wait until task 3 is finished",
-	"&&", "", "wait until all tasks are finished",
-	NULL
-};
-
 static const char *help_msg_at[] = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
 	"0", "", "alias for 's 0'",
@@ -158,7 +142,6 @@ static const char *help_msg_p[] = {
 	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
 	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
-	"pz", "[?] [len]", "print zoom view (see pz? for help)",
 	NULL
 };
 
@@ -263,23 +246,6 @@ static const char *help_detail2_pf[] = {
 	"pf", " eqew bigWord beef", "Swap endianness and print with given labels",
 	"pf", ".foo rr (eax)reg1 (eip)reg2", "Create object referencing to register values ",
 	"pf", " tt troll plop", "print time stamps with labels troll and plop",
-	NULL
-};
-
-static const char *help_msg_ps[] = {
-	"Usage:", "ps[bijqpsuwWxz+] [N]", "Print String",
-	"ps", "", "print string",
-	"ps+", "[j]", "print libc++ std::string (same-endian, ascii, zero-terminated)",
-	"psb", "", "print strings in current block",
-	"psi", "", "print string inside curseek",
-	"psj", "", "print string in JSON format",
-	"psp", "[j]", "print pascal string",
-	"pss", "", "print string in screen (wrap width)",
-	"psu", "[zj]", "print utf16 unicode (json)",
-	"psw", "[j]", "print 16bit wide little endian string",
-	"psW", "[j]", "print 32bit wide little endian string",
-	"psx", "", "show string with escaped chars",
-	"psz", "[j]", "print zero-terminated string",
 	NULL
 };
 
@@ -730,11 +696,6 @@ RZ_API void rz_core_set_asm_configs(RzCore *core, char *arch, ut32 bits, int seg
 	// XXX - this needs to be done here, because
 	// if arch == x86 and bits == 16, segoff automatically changes
 	rz_config_set_i(core->config, "asm.segoff", segoff);
-}
-
-static void helpCmdTasks(RzCore *core) {
-	// TODO: integrate with =h& and bg analysis/string/searches/..
-	rz_core_cmd_help(core, help_msg_amper);
 }
 
 static void print_format_help_help_help_help(RzCore *core) {
@@ -1709,7 +1670,7 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 			"Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).\n");
 		break;
 	case 's': // "x/s"
-		rz_core_cmdf(core, "psb %d @ 0x%" PFMT64x, count * size, addr);
+		rz_core_cmdf(core, "psb @! %d @ 0x%" PFMT64x, count * size, addr);
 		break;
 	case 'o': // "x/o"
 		rz_core_cmdf(core, "pxo %d @ 0x%" PFMT64x, count * size, addr);
@@ -2585,13 +2546,228 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 	}
 }
 
+static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_nil, ut32 offset, RzOutputMode mode) {
+	const ut8 *buffer = core->block + offset;
+	const ut32 length = core->blocksize - offset;
+	const char *enc_name = rz_config_get(core->config, "bin.str.enc");
+	RzStrEnc encoding = rz_str_enc_string_as_type(enc_name);
+	RzStrStringifyOpt opt = { 0 };
+
+	if (encoding == RZ_STRING_ENC_GUESS) {
+		encoding = rz_str_guess_encoding_from_buffer(buffer, length);
+	}
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		opt.buffer = buffer;
+		opt.length = length;
+		opt.encoding = encoding;
+		opt.stop_at_nil = stop_at_nil;
+		core_print_raw_buffer(&opt);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		print_json_string(core, buffer, length, encoding, stop_at_nil);
+		break;
+	default:
+		RZ_LOG_ERROR("core: unsupported output mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_string_auto_detect_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	bool stop_at_nil = !strcmp(argv[1], "null");
+	return core_auto_detect_and_print_string(core, stop_at_nil, 0, mode);
+}
+
+RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut32 bitness = (ut32)rz_config_get_i(core->config, "asm.bits");
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+
+	switch (bitness) {
+	case 32:
+		/* fall-thru */
+	case 64:
+		break;
+	default:
+		RZ_LOG_ERROR("core: %u bits are not supported by %s\n", bitness, argv[0]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut32 min_size = (bitness / 8) * 3;
+	if (core->blocksize < 2 || core->blocksize < min_size) {
+		RZ_LOG_ERROR("core: the block size is too small to read string (expected at least %u but got %u bytes).\n", core->blocksize, min_size);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
+	if (*core->block & 0x1) { // "long" string
+		const ut8 *ptr = core->block + (bitness / 8) * 2;
+		ut64 old_offset = core->offset;
+		ut64 new_offset = rz_read_ble(ptr, big_endian, bitness);
+
+		rz_core_seek(core, new_offset, SEEK_SET);
+		rz_core_block_read(core);
+
+		status = core_auto_detect_and_print_string(core, true, 0, mode);
+
+		rz_core_seek(core, old_offset, SEEK_SET);
+		rz_core_block_read(core);
+	} else {
+		status = core_auto_detect_and_print_string(core, true, 1, mode);
+	}
+
+	return status;
+}
+
+RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzListIter *it = NULL;
+	RzDetectedString *detected = NULL;
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = core->blocksize,
+		.max_uni_blocks = 4,
+		.min_str_length = core->bin->minstrlen,
+		.prefer_big_endian = false,
+	};
+
+	RzList *found = rz_list_newf((RzListFree)rz_detected_string_free);
+	if (!found) {
+		RZ_LOG_ERROR("core: failed to allocate RzList\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (rz_scan_strings_raw(core->block, found, &scan_opt, 0, core->blocksize, RZ_STRING_ENC_GUESS) < 0) {
+		rz_list_free(found);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_list_foreach (found, it, detected) {
+		ut64 address = core->offset + detected->addr;
+		if (mode != RZ_OUTPUT_MODE_QUIET) {
+			rz_print_offset(core->print, address, 0, 0, 0, 0, NULL);
+		}
+		rz_cons_memcat(detected->string, detected->size);
+		rz_cons_newline();
+	}
+
+	rz_list_free(found);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzDetectedString *detected = NULL;
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = core->blocksize,
+		.max_uni_blocks = 4,
+		.min_str_length = core->bin->minstrlen,
+		.prefer_big_endian = false,
+	};
+
+	RzList *found = rz_list_newf((RzListFree)rz_detected_string_free);
+	if (!found) {
+		RZ_LOG_ERROR("core: failed to allocate RzList\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (rz_scan_strings_raw(core->block, found, &scan_opt, 0, core->blocksize, RZ_STRING_ENC_GUESS) < 0) {
+		rz_list_free(found);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	detected = rz_list_first(found);
+	if (detected) {
+		rz_cons_memcat(detected->string, detected->size);
+		rz_cons_newline();
+	}
+
+	rz_list_free(found);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzStrStringifyOpt opt = { 0 };
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	ut64 string_len = 0;
+	ut32 offset = 0;
+
+	if (!strcmp(argv[1], "8")) {
+		string_len = (ut64)core->block[0];
+		offset = 1;
+	} else if (!strcmp(argv[1], "16")) {
+		string_len = rz_read_ble16(core->block, big_endian);
+		offset = 2;
+	} else if (!strcmp(argv[1], "32")) {
+		string_len = rz_read_ble32(core->block, big_endian);
+		offset = 4;
+	} else {
+		string_len = rz_read_ble64(core->block, big_endian);
+		offset = 8;
+	}
+
+	if (string_len < 1) {
+		RZ_LOG_ERROR("core: string length is zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if ((string_len + offset) > core->blocksize) {
+		RZ_LOG_ERROR("core: string length exceeds block size\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		opt.buffer = core->block + offset;
+		opt.length = string_len;
+		opt.encoding = RZ_STRING_ENC_8BIT;
+		opt.stop_at_nil = true;
+		core_print_raw_buffer(&opt);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		print_json_string(core, core->block + offset, string_len, RZ_STRING_ENC_8BIT, true);
+		break;
+	default:
+		RZ_LOG_ERROR("core: unsupported output mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_string_wrap_width_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	int h, w = rz_cons_get_size(&h);
+	int colwidth = rz_config_get_i(core->config, "hex.cols") * 2;
+	int width = (colwidth == 32) ? w : colwidth; // w;
+	ut64 blocksize = core->blocksize;
+
+	ut64 len = (h * w) / 3;
+	rz_core_block_size(core, len);
+
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = len;
+	opt.encoding = RZ_STRING_ENC_8BIT;
+	opt.wrap_at = width;
+	core_print_raw_buffer(&opt);
+	rz_core_block_size(core, blocksize);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_string_escaped_newlines_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = core->blocksize;
+	opt.encoding = RZ_STRING_ENC_8BIT;
+	opt.escape_nl = true;
+	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	char *str = rz_core_print_string_c_cpp(core);
 	if (!str) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println(str);
-	rz_free(str);
+	free(str);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2805,268 +2981,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_cons_printf("%s\n", res);
 				free(res);
 			}
-		}
-		break;
-	case 's': // "ps"
-		switch (input[1]) {
-		case '?': // "ps?"
-			rz_core_cmd_help(core, help_msg_ps);
-			break;
-		case 'j': // "psj"
-			if (l > 0) {
-				if (input[2] == ' ' && input[3]) {
-					len = rz_num_math(core->num, input + 3);
-					len = RZ_MIN(len, core->blocksize);
-				}
-				RzStrEnc enc = rz_str_guess_encoding_from_buffer(core->block, len);
-				print_json_string(core, core->block, len, enc, l != len);
-			}
-			break;
-		case 'i': // "psi"
-			if (l > 0) {
-				ut8 *buf = malloc(1024 + 1);
-				int delta = 512;
-				ut8 *p, *e, *b;
-				if (!buf) {
-					return 0;
-				}
-				buf[1024] = 0;
-				if (core->offset < delta) {
-					delta = core->offset;
-				}
-				p = buf + delta;
-				rz_io_read_at(core->io, core->offset - delta, buf, 1024);
-				for (b = p; b > buf; b--) {
-					if (!IS_PRINTABLE(*b)) {
-						b++;
-						break;
-					}
-				}
-				for (e = p; e < (buf + 1024); e++) {
-					if (!IS_PRINTABLE(*b)) {
-						*e = 0;
-						e--;
-						break;
-					}
-				}
-				rz_cons_strcat((const char *)b);
-				rz_cons_newline();
-				// rz_print_string (core->print, core->offset, b,
-				// (size_t)(e-b), 0);
-				free(buf);
-			}
-			break;
-		case 'x': // "psx"
-			if (l > 0) {
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = block;
-				opt.length = len;
-				opt.encoding = RZ_STRING_ENC_8BIT;
-				opt.escape_nl = true;
-				core_print_raw_buffer(&opt);
-			}
-			break;
-		case 'b': // "psb"
-			if (l > 0) {
-				int quiet = input[2] == 'q'; // "psbq"
-				char *s = malloc(core->blocksize + 1);
-				int i, j, hasnl = 0;
-				if (s) {
-					if (!quiet) {
-						rz_print_offset(core->print, core->offset, 0, 0, 0, 0, NULL);
-					}
-					// TODO: filter more chars?
-					for (i = j = 0; i < core->blocksize; i++) {
-						char ch = (char)block[i];
-						if (!ch) {
-							if (!hasnl) {
-								s[j] = 0;
-								if (*s) {
-									rz_cons_println(s);
-									if (!quiet) {
-										rz_print_offset(core->print, core->offset + i, 0, 0, 0, 0, NULL);
-									}
-								}
-								j = 0;
-								s[0] = 0;
-							}
-							hasnl = 1;
-							continue;
-						}
-						hasnl = 0;
-						if (IS_PRINTABLE(ch)) {
-							s[j++] = ch;
-						}
-					}
-					s[j] = 0;
-					rz_cons_print(s); // TODO: missing newline?
-					free(s);
-				}
-			}
-			break;
-		case 'z': // "psz"
-			if (l > 0) {
-				char *s = malloc(core->blocksize + 1);
-				int i, j;
-				if (s) {
-					// TODO: filter more chars?
-					for (i = j = 0; i < core->blocksize; i++) {
-						char ch = (char)core->block[i];
-						if (!ch) {
-							break;
-						}
-						if (IS_PRINTABLE(ch)) {
-							s[j++] = ch;
-						}
-					}
-					s[j] = '\0';
-					if (input[2] == 'j') { // pszj
-						print_json_string(core, (const ut8 *)s, j, RZ_STRING_ENC_8BIT, true);
-					} else {
-						rz_cons_println(s);
-					}
-					free(s);
-				}
-			}
-			break;
-		case 'p': // "psp"
-			if (l > 0) {
-				int mylen = core->block[0];
-				// TODO: add support for 2-4 byte length pascal strings
-				if (mylen < core->blocksize) {
-					if (input[2] == 'j') { // pspj
-						print_json_string(core, core->block + 1, mylen, RZ_STRING_ENC_8BIT, true);
-					} else {
-						RzStrStringifyOpt opt = { 0 };
-						opt.buffer = core->block + 1;
-						opt.length = mylen;
-						opt.encoding = RZ_STRING_ENC_8BIT;
-						opt.stop_at_nil = true;
-						core_print_raw_buffer(&opt);
-					}
-					core->num->value = mylen;
-				} else {
-					core->num->value = 0; // error
-				}
-			}
-			break;
-		case 'w': // "psw"
-			if (l > 0) {
-				if (input[2] == 'j') { // pswj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
-				} else {
-					RzStrStringifyOpt opt = { 0 };
-					opt.buffer = core->block;
-					opt.length = len;
-					opt.encoding = RZ_STRING_ENC_UTF16LE;
-					opt.stop_at_nil = true;
-					core_print_raw_buffer(&opt);
-				}
-			}
-			break;
-		case 'W': // "psW"
-			if (l > 0) {
-				if (input[2] == 'j') { // psWj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE, true);
-				} else {
-					RzStrStringifyOpt opt = { 0 };
-					opt.buffer = core->block;
-					opt.length = len;
-					opt.encoding = RZ_STRING_ENC_UTF32LE;
-					opt.stop_at_nil = true;
-					core_print_raw_buffer(&opt);
-				}
-			}
-			break;
-		case ' ': // "ps"
-		{
-			RzStrEnc enc = rz_str_guess_encoding_from_buffer(core->block, l);
-			RzStrStringifyOpt opt = { 0 };
-			opt.buffer = core->block;
-			opt.length = l;
-			opt.encoding = enc;
-			core_print_raw_buffer(&opt);
-		} break;
-		case 'u': // "psu"
-			if (l > 0) {
-				bool json = input[2] == 'j'; // "psuj"
-				if (input[2] == 'z') { // "psuz"
-					int i, z;
-					const char *p = (const char *)core->block;
-					for (i = 0, z = 0; i < len; i++) {
-						// looking for double zeros '\0\0'.
-						if (!p[i] && !z)
-							z = 1;
-						else if (!p[i] && z) {
-							len = i - 1;
-							break;
-						}
-					}
-					json = input[3] == 'j'; // "psuzj"
-				}
-				if (json) { // psuj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
-				} else {
-					char *str = rz_str_utf16_encode((const char *)core->block, len);
-					rz_cons_println(str);
-					free(str);
-				}
-			}
-			break;
-		case 's': // "pss"
-			if (l > 0) {
-				int h, w = rz_cons_get_size(&h);
-				int colwidth = rz_config_get_i(core->config, "hex.cols") * 2;
-				int width = (colwidth == 32) ? w : colwidth; // w;
-				int bs = core->blocksize;
-				if (len == bs) {
-					len = (h * w) / 3;
-					rz_core_block_size(core, len);
-				}
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = core->block;
-				opt.length = len;
-				opt.encoding = RZ_STRING_ENC_8BIT;
-				opt.wrap_at = width;
-				core_print_raw_buffer(&opt);
-				rz_core_block_size(core, bs);
-			}
-			break;
-		case '+': { // "ps+"
-			ut64 bitness = rz_config_get_i(core->config, "asm.bits");
-			if (bitness != 32 && bitness != 64) {
-				RZ_LOG_ERROR("core: %" PFMT64u " bits are not supported by this command\n", bitness);
-				break;
-			}
-			if (len < (bitness / 8) * 3) {
-				RZ_LOG_ERROR("Block size is too small to read string.\n");
-				break;
-			}
-			const bool json = input[2] == 'j'; // ps+j
-			if (*core->block & 0x1) { // "long" string
-				const ut8 *ptr = core->block + (bitness / 8) * 2;
-				rz_core_cmdf(core, "ps%c @ 0x%" PFMT64x, json ? 'j' : ' ', rz_read_ble(ptr, core->analysis->big_endian, bitness));
-			} else if (json) {
-				print_json_string(core, core->block + 1, len - 1, RZ_STRING_ENC_8BIT, true);
-			} else {
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = core->block + 1;
-				opt.length = len - 1;
-				opt.encoding = RZ_STRING_ENC_8BIT;
-				opt.stop_at_nil = true;
-				core_print_raw_buffer(&opt);
-			}
-		} break;
-		default:
-			if (l > 0) {
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = core->block;
-				opt.length = len;
-				opt.encoding = RZ_STRING_ENC_8BIT;
-				opt.stop_at_nil = true;
-				core_print_raw_buffer(&opt);
-			}
-			break;
 		}
 		break;
 	case 'm': // "pm"
@@ -3290,89 +3204,57 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int of
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 oldsize = core->blocksize;
-	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
-	if (len > oldsize) {
-		rz_core_block_size(core, len);
-	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16LE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
-		opt.length = len;
+		opt.length = core->blocksize;
 		opt.encoding = RZ_STRING_ENC_UTF16LE;
 		opt.stop_at_nil = true;
 		core_print_raw_buffer(&opt);
-	}
-	if (len > oldsize) {
-		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 oldsize = core->blocksize;
-	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
-	if (len > oldsize) {
-		rz_core_block_size(core, len);
-	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE, true);
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF32LE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
-		opt.length = len;
+		opt.length = core->blocksize;
 		opt.encoding = RZ_STRING_ENC_UTF32LE;
 		opt.stop_at_nil = true;
 		core_print_raw_buffer(&opt);
-	}
-	if (len > oldsize) {
-		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 oldsize = core->blocksize;
-	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
-	if (len > oldsize) {
-		rz_core_block_size(core, len);
-	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16BE, true);
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16BE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
-		opt.length = len;
+		opt.length = core->blocksize;
 		opt.encoding = RZ_STRING_ENC_UTF16BE;
 		opt.stop_at_nil = true;
 		core_print_raw_buffer(&opt);
-	}
-	if (len > oldsize) {
-		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 oldsize = core->blocksize;
-	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
-	if (len > oldsize) {
-		rz_core_block_size(core, len);
-	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32BE, true);
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF32BE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
-		opt.length = len;
+		opt.length = core->blocksize;
 		opt.encoding = RZ_STRING_ENC_UTF32BE;
 		opt.stop_at_nil = true;
 		core_print_raw_buffer(&opt);
-	}
-	if (len > oldsize) {
-		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -5532,46 +5414,51 @@ RZ_IPI RzCmdStatus rz_print_columns_disassembly_handler(RzCore *core, int argc, 
 		colwidth = 16;
 	}
 	int i, columns = w / colwidth;
-	int rows = h - 2;
-	int obsz = core->blocksize;
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	if (user_rows > 0) {
-		rows = user_rows;
+	int rows = user_rows > 0 ? user_rows : h - 2;
+
+	RzConfigHold *ch = rz_config_hold_new(core->config);
+	rz_config_hold_i(ch, "asm.offset", "asm.bytes", NULL);
+	if (rz_config_get_i(core->config, "asm.minicols")) {
+		rz_config_set_b(core->config, "asm.offset", false);
 	}
-	bool asm_minicols = rz_config_get_i(core->config, "asm.minicols");
-	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
-	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
-	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", "false");
-		// rz_config_set (core->config, "asm.bytes", "false");
-	}
-	rz_config_set(core->config, "asm.bytes", "false");
+	rz_config_set_b(core->config, "asm.bytes", false);
+
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
+	int pos_i = 0;
 	c->color = rz_config_get_i(core->config, "scr.color");
-	rz_core_block_size(core, rows * 32);
 	for (i = 0; i < columns; i++) {
 		(void)rz_cons_canvas_gotoxy(c, i * (w / columns), 0);
 		// TODO: Use the API directly
-		char *cmd = rz_str_newf("pdq %d @i:%d", rows, rows * i);
+		char *cmd = rz_str_newf("pdq %d @i:%d", rows, pos_i);
 		char *dis = rz_core_cmd_str(core, cmd);
-		rz_cons_canvas_write(c, dis);
+		if (dis) {
+			RzList *dis_lines = rz_str_split_duplist_n(dis, "\n", 0, false);
+			ut32 n_lines = rz_list_length(dis_lines);
+			rz_list_free(dis_lines);
+
+			// If the output contains more lines than expected, do not move
+			// forward the whole chunk as some data will be hidden.
+			if (n_lines > rows) {
+				pos_i -= (n_lines - rows - 1);
+			}
+
+			rz_cons_canvas_write(c, dis);
+		}
 		free(cmd);
 		free(dis);
+
+		pos_i += rows;
 	}
-	rz_core_block_size(core, obsz);
 	rz_core_seek(core, osek, true);
 
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
-	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", o_ao);
-		rz_config_set(core->config, "asm.bytes", o_ab);
-	}
-	rz_config_set(core->config, "asm.bytes", o_ab);
-	free(o_ao);
-	free(o_ab);
 	rz_cons_printf("\n");
+
+	rz_config_hold_restore(ch);
+	rz_config_hold_free(ch);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -5592,10 +5479,11 @@ RZ_IPI RzCmdStatus rz_print_columns_debug_handler(RzCore *core, int argc, const 
 	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
 	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
 	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", "false");
-		rz_config_set(core->config, "asm.bytes", "false");
+		// Set asm.offset and asm.bytes configs to false to avoid printing them
+		rz_config_set_b(core->config, "asm.offset", false);
+		rz_config_set_b(core->config, "asm.bytes", false);
 	}
-	rz_config_set(core->config, "asm.bytes", "false");
+	rz_config_set_b(core->config, "asm.bytes", false);
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
@@ -5637,18 +5525,20 @@ RZ_IPI RzCmdStatus rz_print_columns_debug_handler(RzCore *core, int argc, const 
 	return RZ_CMD_STATUS_OK;
 }
 
-static bool print_hexdump_columns(RzCore *core, int user_rows, const char *xcmd) {
+static bool print_hexdump_columns(RzCore *core, int user_rows, bool has_header, const char *xcmd) {
 	int h, w = rz_cons_get_size(&h);
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
 	int colwidth = hex_cols * 5;
 	int i, columns = w / (colwidth * 0.9);
-	int rows = h - 2;
+	int rows = user_rows > 0 ? user_rows : h - 2;
+
+	RzConfigHold *ch = rz_config_hold_new(core->config);
+	rz_config_hold_i(ch, "hex.cols", NULL);
 	rz_config_set_i(core->config, "hex.cols", colwidth / 5);
-	if (user_rows > 0) {
-		// Add one more line for the hexdump header
-		rows = user_rows + 1;
-	}
-	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
+
+	// Add one more line for the hexdump header
+	int canvas_rows = rows + (has_header ? 1 : 0);
+	RzConsCanvas *c = rz_cons_canvas_new(w, canvas_rows);
 	if (!c) {
 		RZ_LOG_ERROR("core: Couldn't allocate a canvas with %d rows\n", rows);
 		rz_config_set_i(core->config, "hex.cols", hex_cols);
@@ -5666,38 +5556,57 @@ static bool print_hexdump_columns(RzCore *core, int user_rows, const char *xcmd)
 		char *cmd = rz_str_newf("%s %d @ %" PFMT64u, xcmd, bsize, tsek);
 		char *dis = rz_core_cmd_str(core, cmd);
 		if (dis) {
+			RzList *dis_lines = rz_str_split_duplist_n(dis, "\n", 0, false);
+			// Count the lines do not contain actual data and handle them for
+			// the next column
+			RzListIter *it;
+			char *line;
+			int i = 0, diff_lines = 0;
+			rz_list_foreach (dis_lines, it, line) {
+				if (line[0] == ' ' && i < canvas_rows) {
+					diff_lines++;
+				}
+				i++;
+			}
+			rz_list_free(dis_lines);
+			if (!UT64_MUL_OVFCHK(diff_lines, hex_cols)) {
+				tsek -= diff_lines * hex_cols;
+			}
+
 			rz_cons_canvas_write(c, dis);
 			free(dis);
 		}
 		free(cmd);
-		tsek += bsize - 32;
+		tsek += bsize;
 	}
 
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
-	rz_config_set_i(core->config, "hex.cols", hex_cols);
 	rz_cons_printf("\n");
+
+	rz_config_hold_restore(ch);
+	rz_config_hold_free(ch);
 	return true;
 }
 
 RZ_IPI RzCmdStatus rz_print_columns_hex_annotated_handler(RzCore *core, int argc, const char **argv) {
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	return bool2status(print_hexdump_columns(core, user_rows, "pxa"));
+	return bool2status(print_hexdump_columns(core, user_rows, true, "pxa"));
 }
 
 RZ_IPI RzCmdStatus rz_print_columns_hex_op_colored_handler(RzCore *core, int argc, const char **argv) {
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	return bool2status(print_hexdump_columns(core, user_rows, "pxAl"));
+	return bool2status(print_hexdump_columns(core, user_rows, false, "pxAl"));
 }
 
 RZ_IPI RzCmdStatus rz_print_columns_hex_handler(RzCore *core, int argc, const char **argv) {
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	return bool2status(print_hexdump_columns(core, user_rows, "px"));
+	return bool2status(print_hexdump_columns(core, user_rows, true, "px"));
 }
 
 RZ_IPI RzCmdStatus rz_print_columns_hex_words_handler(RzCore *core, int argc, const char **argv) {
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	return bool2status(print_hexdump_columns(core, user_rows, "pxw"));
+	return bool2status(print_hexdump_columns(core, user_rows, false, "pxw"));
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_d_handler(RzCore *core, int argc, const char **argv) {
@@ -5980,6 +5889,132 @@ static bool print_histogram(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, 
 	return true;
 }
 
+static void showcursor(RzCore *core, int x) {
+	if (!x) {
+		int wheel = rz_config_get_i(core->config, "scr.wheel");
+		if (wheel) {
+			rz_cons_enable_mouse(true);
+		}
+	} else {
+		rz_cons_enable_mouse(false);
+	}
+	rz_cons_show_cursor(x);
+}
+
+static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned char *data, RZ_NONNULL CoreBlockRange *brange) {
+	if (!rz_cons_is_interactive()) {
+		RZ_LOG_ERROR("core: visual mode requires scr.interactive=true.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzConsCanvas *can;
+	bool exit_histogram = false, is_error = false;
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	if (!hc) {
+		return false;
+	}
+	rz_config_hold_i(hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
+
+	int h, w = rz_cons_get_size(&h);
+	can = rz_cons_canvas_new(w, h);
+	if (!can) {
+		w = 80;
+		h = 25;
+		can = rz_cons_canvas_new(w, h);
+		if (!can) {
+			RZ_LOG_ERROR("core: cannot create RzCons.canvas context. Invalid screen "
+				     "size? See scr.columns + scr.rows\n");
+			rz_config_hold_restore(hc);
+			rz_config_hold_free(hc);
+			return false;
+		}
+	}
+	can->color = rz_config_get_i(core->config, "scr.color");
+
+	RzHistogramOptions *opts = rz_histogram_options_new();
+	if (!opts) {
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
+		rz_cons_canvas_free(can);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	opts->unicode = rz_config_get_b(core->config, "scr.utf8");
+	opts->thinline = !rz_config_get_b(core->config, "scr.hist.block");
+	opts->legend = false;
+	opts->offset = rz_config_get_b(core->config, "hex.offset");
+	opts->offpos = brange->from;
+	opts->cursor = false;
+	opts->curpos = 0;
+	opts->color = rz_config_get_i(core->config, "scr.color");
+	opts->pal = &core->cons->context->pal;
+	RzHistogramInteractive *hist = rz_histogram_interactive_new(can, opts);
+	hist->size = brange->nblocks;
+	if (!hist) {
+		rz_histogram_options_free(hist->opts);
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
+		rz_cons_canvas_free(can);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	int okey, key;
+	while (!exit_histogram && !is_error && !rz_cons_is_breaked()) {
+		showcursor(core, false);
+		w = rz_cons_get_size(&h);
+		rz_cons_canvas_resize(hist->can, w, h);
+		hist->w = w;
+		hist->h = h;
+		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data);
+		rz_cons_canvas_write(hist->can, str->ptr);
+		rz_cons_canvas_print_region(hist->can);
+		rz_cons_newline();
+		rz_cons_visual_flush();
+		okey = rz_cons_readchar();
+		key = rz_cons_arrow_to_hjkl(okey);
+		switch (key) {
+		case '?':
+			rz_cons_clear00();
+			rz_cons_printf("Visual Ascii Art graph keybindings:\n"
+				       " +/-    - zoom in/out\n"
+				       " hl    	- move left and right\n"
+				       " q      - back to Visual mode\n");
+			rz_cons_less();
+			rz_cons_any_key(NULL);
+			break;
+		case 'h':
+			hist->barnumber = (hist->barnumber > 0) ? (hist->barnumber - 1) : (brange->nblocks - 1);
+			break;
+		case 'l':
+			hist->barnumber = (hist->barnumber == brange->nblocks - 1) ? (0) : (hist->barnumber + 1);
+			break;
+		case '+':
+			rz_histogram_interactive_zoom_in(hist);
+			break;
+		case '-':
+			rz_histogram_interactive_zoom_out(hist);
+			break;
+		case 'q':
+		case 'Q':
+		case ' ':
+			exit_histogram = true;
+			break;
+		default:
+			break;
+		}
+		rz_cons_clear00();
+	}
+	rz_cons_break_pop();
+	core->cons->event_resize = NULL;
+	core->cons->event_data = NULL;
+	core->keep_asmqjmps = false;
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
+	rz_histogram_interactive_free(hist);
+	rz_cons_show_cursor(true);
+	rz_cons_enable_mouse(false);
+
+	return RZ_CMD_STATUS_OK;
+}
+
 static CoreBlockRange *parse_args_calculate_range(RzCore *core, int argc, const char **argv) {
 	int nblocks = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
 	ut64 totalsize = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
@@ -5991,31 +6026,46 @@ static CoreBlockRange *parse_args_calculate_range(RzCore *core, int argc, const 
 	return brange;
 }
 
-static RzCmdStatus print_histogram_bytes(RzCore *core, int argc, const char **argv, bool vertical) {
+static RzCmdStatus print_histogram_bytes(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
 	rz_io_read_at(core->io, core->offset, data, brange->nblocks);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(brange);
+	free(data);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_bytes(core, argc, argv, true);
+	return print_histogram_bytes(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_bytes(core, argc, argv, false);
+	return print_histogram_bytes(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_bytes(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6034,26 +6084,331 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 		data[i] = (ut8)(255 * rz_hash_entropy_fraction(tmp, brange->blocksize));
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
 	return RZ_CMD_STATUS_OK;
 }
 
+static bool print_rising_and_falling_entropy_table(RzCore *core, RzCmdStateOutput *state, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+	bool resetFlag = 1;
+	st8 lastEdge = 0;
+	RzTable *t = state->d.t;
+	RzTableColumnType *n = rz_table_type("number");
+	RzTableColumnType *s = rz_table_type("string");
+	rz_table_add_column(t, n, "addr", 0);
+	rz_table_add_column(t, n, "index", 0);
+	rz_table_add_column(t, s, "edge_type", 0);
+	rz_table_add_column(t, n, "entropy_value", 0);
+	for (int i = 0; i < brange->nblocks; i++) {
+		ut64 off = brange->from + (brange->blocksize * (i));
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize))
+			return false;
+		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
+		// reseting flag if goes above falling threshold and below rising threshold
+		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
+			resetFlag = 1;
+		} else if (resetFlag == 0 && lastEdge == 1 && data < risingthreshold) {
+			resetFlag = 1;
+		}
+		// if reset flag is true
+		// than if entopy goes above threshold printing rising entropy edge
+		// and if entropy goes below threshold printing falling entropy edge
+		if (resetFlag == 1 && data >= risingthreshold) {
+			// rising edge print
+			resetFlag = 0;
+			lastEdge = 1;
+			rz_table_add_rowf(t, "xnsf", off, i, "rising entropy edge", data);
+		} else if (resetFlag == 1 && data <= fallingthreshold) {
+			// falling edge print
+			resetFlag = 0;
+			lastEdge = 0;
+			rz_table_add_rowf(t, "xnsf", off, i, "falling entropy edge", data);
+		}
+	}
+	return true;
+}
+
+static bool print_rising_and_falling_entropy_JSON(RzCore *core, RzCmdStateOutput *state, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+	bool resetFlag = 1;
+	st8 lastEdge = 0;
+	PJ *pj = state->d.pj;
+	pj_a(pj);
+	for (int i = 0; i < brange->nblocks; i++) {
+		ut64 off = brange->from + (brange->blocksize * (i));
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize))
+			return false;
+		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
+		// reseting flag if goes above falling threshold and below rising threshold
+		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
+			resetFlag = 1;
+		} else if (resetFlag == 0 && lastEdge == 1 && data < risingthreshold) {
+			resetFlag = 1;
+		}
+		// if reset flag is true
+		// than if entopy goes above threshold printing rising entropy edge
+		// and if entropy goes below threshold printing falling entropy edge
+		if (resetFlag == 1 && data >= risingthreshold) {
+			// rising edge print
+			resetFlag = 0;
+			lastEdge = 1;
+			pj_o(pj);
+			pj_kn(pj, "addr", off);
+			pj_kn(pj, "index", i);
+			pj_ks(pj, "edge_type", "rising entropy edge");
+			pj_kd(pj, "entropy_value", data);
+			pj_end(pj);
+		} else if (resetFlag == 1 && data <= fallingthreshold) {
+			// falling edge print
+			resetFlag = 0;
+			lastEdge = 0;
+			pj_o(pj);
+			pj_kn(pj, "addr", off);
+			pj_kn(pj, "index", i);
+			pj_ks(pj, "edge_type", "falling entropy edge");
+			pj_kd(pj, "entropy_value", data);
+			pj_end(pj);
+		}
+	}
+	pj_end(pj);
+	return true;
+}
+
+static bool print_rising_and_falling_entropy_quiet(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		return false;
+	}
+	bool resetFlag = 1;
+	st8 lastEdge = 0;
+	for (int i = 0; i < brange->nblocks; i++) {
+		ut64 off = brange->from + (brange->blocksize * (i));
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+			rz_strbuf_free(buf);
+			return false;
+		}
+		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
+		// reseting flag if goes above falling threshold and below rising threshold
+		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
+			resetFlag = 1;
+		} else if (resetFlag == 0 && lastEdge == 1 && data < risingthreshold) {
+			resetFlag = 1;
+		}
+		// if reset flag is true
+		// than if entopy goes above threshold printing rising entropy edge
+		// and if entropy goes below threshold printing falling entropy edge
+		if (resetFlag == 1 && data >= risingthreshold) {
+			// rising edge print
+			resetFlag = 0;
+			lastEdge = 1;
+			rz_strbuf_appendf(buf, "0x%08" PFMT64x "\n", off);
+		} else if (resetFlag == 1 && data <= fallingthreshold) {
+			// falling edge print
+			resetFlag = 0;
+			lastEdge = 0;
+			rz_strbuf_appendf(buf, "0x%08" PFMT64x "\n", off);
+		}
+	}
+	char *res = rz_strbuf_drain(buf);
+	rz_cons_print(res);
+	free(res);
+	return true;
+}
+
+static bool print_rising_and_falling_entropy_standard(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		return false;
+	}
+	bool resetFlag = 1;
+	st8 lastEdge = 0;
+	for (int i = 0; i < brange->nblocks; i++) {
+		ut64 off = brange->from + (brange->blocksize * (i));
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+			rz_strbuf_free(buf);
+			return false;
+		}
+		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
+		// reseting flag if goes above falling threshold and below rising threshold
+		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
+			resetFlag = 1;
+		} else if (resetFlag == 0 && lastEdge == 1 && data < risingthreshold) {
+			resetFlag = 1;
+		}
+		// if reset flag is true
+		// than if entopy goes above threshold printing rising entropy edge
+		// and if entropy goes below threshold printing falling entropy edge
+		if (resetFlag == 1 && data >= risingthreshold) {
+			// rising edge print
+			resetFlag = 0;
+			lastEdge = 1;
+			rz_strbuf_appendf(buf, "0x%08" PFMT64x " Rising entropy edge\n", off);
+		} else if (resetFlag == 1 && data <= fallingthreshold) {
+			// falling edge print
+			resetFlag = 0;
+			lastEdge = 0;
+			rz_strbuf_appendf(buf, "0x%08" PFMT64x " Falling entropy edge\n", off);
+		}
+	}
+	char *res = rz_strbuf_drain(buf);
+	rz_cons_print(res);
+	free(res);
+	return true;
+}
+
+static bool print_rising_and_falling_entropy_long(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		return false;
+	}
+	bool resetFlag = 1;
+	st8 lastEdge = 0;
+	for (int i = 0; i < brange->nblocks; i++) {
+		ut64 off = brange->from + (brange->blocksize * (i));
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+			rz_strbuf_free(buf);
+			return false;
+		}
+		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
+		// reseting flag if goes above falling threshold and below rising threshold
+		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
+			resetFlag = 1;
+		} else if (resetFlag == 0 && lastEdge == 1 && data < risingthreshold) {
+			resetFlag = 1;
+		}
+		// if reset flag is true
+		// than if entopy goes above threshold printing rising entropy edge
+		// and if entropy goes below threshold printing falling entropy edge
+		if (resetFlag == 1 && data >= risingthreshold) {
+			// rising edge print
+			resetFlag = 0;
+			lastEdge = 1;
+			rz_strbuf_appendf(buf, "0x%08" PFMT64x " ", off);
+			rz_strbuf_appendf(buf, "%03x Rising entropy edge (%8lf)\n", i, data);
+		} else if (resetFlag == 1 && data <= fallingthreshold) {
+			// falling edge print
+			resetFlag = 0;
+			lastEdge = 0;
+			rz_strbuf_appendf(buf, "0x%08" PFMT64x " ", off);
+			rz_strbuf_appendf(buf, "%03x Falling entropy edge (%8lf)\n", i, data);
+		}
+	}
+	char *res = rz_strbuf_drain(buf);
+	rz_cons_print(res);
+	free(res);
+	return true;
+}
+
+static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	double risingthreshold = 0.95;
+	double fallingthreshold = 0.85;
+	if (argc >= 3) {
+		risingthreshold = rz_num_get_float(core->num, argv[1]);
+		fallingthreshold = rz_num_get_float(core->num, argv[2]);
+	}
+	if (fallingthreshold > risingthreshold) {
+		RZ_LOG_ERROR("falling threshold is greater than rising threshold");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (risingthreshold > 1) {
+		RZ_LOG_ERROR("threshold can't be greater than 1");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int nblocks = -1;
+	ut64 totalsize = UT64_MAX;
+	int skipblocks = -1;
+	CoreBlockRange *brange = calculate_blocks_range(core, 0, 0, totalsize, nblocks, skipblocks);
+	if (!brange) {
+		RZ_LOG_ERROR("Cannot calculate blocks range\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut8 *tmp = malloc(brange->blocksize);
+	if (!tmp) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		free(brange);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_TABLE:
+		if (!print_rising_and_falling_entropy_table(core, state, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		if (!print_rising_and_falling_entropy_JSON(core, state, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		if (!print_rising_and_falling_entropy_quiet(core, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		if (!print_rising_and_falling_entropy_standard(core, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		if (!print_rising_and_falling_entropy_long(core, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		break;
+	default:
+		rz_warn_if_reached();
+		free(tmp);
+		free(brange);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(tmp);
+	free(brange);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_print_equal_entropy_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_entropy(core, argc, argv, true);
+	return print_histogram_entropy(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_entropy_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_entropy(core, argc, argv, false);
+	return print_histogram_entropy(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_entropy_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_entropy(core, argc, argv, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return print_rising_and_falling_entropy(core, argc, argv, state);
+}
+
+static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6075,11 +6430,20 @@ static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **ar
 		}
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6087,14 +6451,18 @@ static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_m_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_marks(core, argc, argv, true);
+	return print_histogram_marks(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_m_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_marks(core, argc, argv, false);
+	return print_histogram_marks(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_m_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_marks(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6119,11 +6487,20 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 		data[i] = 256 * k / brange->blocksize;
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6131,14 +6508,18 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_0x00_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_0x00(core, argc, argv, true);
+	return print_histogram_0x00(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_0x00_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_0x00(core, argc, argv, false);
+	return print_histogram_0x00(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_0x00_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_0x00(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6163,11 +6544,20 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 		data[i] = 256 * k / brange->blocksize;
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6175,14 +6565,18 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_0xff_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_0xff(core, argc, argv, true);
+	return print_histogram_0xff(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_0xff_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_0xff(core, argc, argv, false);
+	return print_histogram_0xff(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_0xff_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_0xff(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6207,11 +6601,20 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 		data[i] = 256 * k / brange->blocksize;
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6219,14 +6622,18 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_printable_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_printable(core, argc, argv, true);
+	return print_histogram_printable(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_printable_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_printable(core, argc, argv, false);
+	return print_histogram_printable(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_printable_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_printable(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6260,11 +6667,20 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 		data[i] = 256 * k / brange->blocksize;
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		free(data);
-		free(brange);
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			free(data);
+			free(brange);
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6272,14 +6688,18 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_z_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_z(core, argc, argv, true);
+	return print_histogram_z(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_z_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_z(core, argc, argv, false);
+	return print_histogram_z(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_z_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_z(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6290,11 +6710,20 @@ static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **ar
 		RZ_LOG_ERROR("core: failed to access analysis stats");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6302,14 +6731,18 @@ static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_stats_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_stats(core, argc, argv, true);
+	return print_histogram_stats(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_stats_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_stats(core, argc, argv, false);
+	return print_histogram_stats(core, argc, argv, false, false);
 }
 
-static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **argv, CoreAnalysisHistogramType hist_type, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_stats_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_stats(core, argc, argv, false, true);
+}
+
+static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **argv, CoreAnalysisHistogramType hist_type, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6320,11 +6753,20 @@ static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **ar
 		RZ_LOG_ERROR("core: failed to access analyzed instructions for specified range");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate vertical histogram\n");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6332,43 +6774,63 @@ static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_bbs_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_call_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_jump_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_priv_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_invalid_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_bbs_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, false, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_call_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, false, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_jump_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, false, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_priv_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, false, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_invalid_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, false, false);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_bbs_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_call_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_jump_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_priv_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_invalid_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, false, true);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_two_handler(RzCore *core, int argc, const char **argv) {

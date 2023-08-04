@@ -913,7 +913,7 @@ pf.third w t1
 pf.second ?x (third)t s1
 pf.first ?q (second)s f1
 pf.first
-?e
+echo
 pfj.first~{}
 EOF
 EXPECT=<<EOF
@@ -972,12 +972,12 @@ pf.third ? (fourth)fo
 pf.second ? (third)t
 pf.start ?q (second)s f1
 pf.start
-?e
+echo
 pfj.start~{}
-?e
+echo
 pf.full ? (second)s
 pf.full
-?e
+echo
 pfj.full~{}
 EOF
 EXPECT=<<EOF

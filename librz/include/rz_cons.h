@@ -846,6 +846,20 @@ typedef struct rz_bar_options_t {
 	bool color; //<< Use colors
 } RzBarOptions;
 
+typedef struct rz_histogram_interactive_t {
+	RzConsCanvas *can;
+
+	int barnumber;
+	int size;
+	int zoom;
+	int movspeed;
+
+	int x, y;
+	int w, h;
+
+	RzHistogramOptions *opts;
+} RzHistogramInteractive;
+
 #ifdef RZ_API
 RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
 RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
@@ -1032,6 +1046,13 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch);
 /* Histograms */
 RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, ut32 width, ut32 height);
 RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, int width, int step);
+RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, const unsigned char *data);
+RZ_API RzHistogramOptions *rz_histogram_options_new();
+RZ_API void rz_histogram_options_free(RzHistogramOptions *histops);
+RZ_API RzHistogramInteractive *rz_histogram_interactive_new(RzConsCanvas *can, RzHistogramOptions *opts);
+RZ_API void rz_histogram_interactive_free(RzHistogramInteractive *hist);
+RZ_API void rz_histogram_interactive_zoom_in(RzHistogramInteractive *hist);
+RZ_API void rz_histogram_interactive_zoom_out(RzHistogramInteractive *hist);
 #endif
 
 /* Bars */
@@ -1042,6 +1063,7 @@ RZ_API RZ_OWN RzStrBuf *rz_rangebar(RZ_NONNULL RzBarOptions *opts, ut64 startA, 
 /* rz_line */
 #define RZ_LINE_BUFSIZE  4096
 #define RZ_LINE_HISTSIZE 256
+#define RZ_LINE_UNDOSIZE 512
 
 #define RZ_EDGES_X_INC 4
 
@@ -1137,11 +1159,14 @@ typedef char *(*RzLineEditorCb)(void *core, const char *str);
 typedef int (*RzLineHistoryUpCb)(RzLine *line);
 typedef int (*RzLineHistoryDownCb)(RzLine *line);
 
+typedef struct rz_line_undo_entry_t RzLineUndoEntry;
+
 struct rz_line_t {
 	RzLineCompletion completion;
 	RzLineNSCompletion ns_completion;
 	RzLineBuffer buffer;
 	RzLineHistory history;
+	RzVector /*<RzLineUndoEntry>*/ *undo_vec;
 	RzSelWidget *sel_widget;
 	/* callbacks */
 	RzLineHistoryUpCb cb_history_up;
@@ -1155,6 +1180,8 @@ struct rz_line_t {
 	char *prompt;
 	RzList /*<char *>*/ *kill_ring;
 	int kill_ring_ptr;
+	int undo_cursor;
+	bool undo_continue;
 	char *clipboard;
 	int disable;
 	void *user;
@@ -1181,7 +1208,7 @@ RZ_API RzLine *rz_line_singleton(void);
 RZ_API void rz_line_free(void);
 RZ_API RZ_OWN char *rz_line_get_prompt(void);
 RZ_API void rz_line_set_prompt(const char *prompt);
-RZ_API int rz_line_dietline_init(void);
+RZ_API bool rz_line_dietline_init(void);
 RZ_API void rz_line_clipboard_push(const char *str);
 RZ_API void rz_line_hist_free(void);
 RZ_API void rz_line_autocomplete(void);
@@ -1216,81 +1243,6 @@ RZ_API RZ_OWN char *rz_cons_prompt(RZ_NONNULL const char *str, RZ_NULLABLE const
 #define RZ_CONS_INVERT(x, y) (y ? (x ? Color_INVERT : Color_INVERT_RESET) : (x ? "[" : "]"))
 
 #endif
-
-typedef int (*RzPanelsMenuCallback)(void *user);
-typedef struct rz_panels_menu_item {
-	int n_sub, selectedIndex;
-	char *name;
-	struct rz_panels_menu_item **sub;
-	RzPanelsMenuCallback cb;
-	RzPanel *p;
-} RzPanelsMenuItem;
-
-typedef struct rz_panels_menu_t {
-	RzPanelsMenuItem *root;
-	RzPanelsMenuItem **history;
-	int depth;
-	int n_refresh;
-	RzPanel **refreshPanels;
-} RzPanelsMenu;
-
-typedef enum {
-	PANEL_MODE_DEFAULT,
-	PANEL_MODE_MENU,
-	PANEL_MODE_ZOOM,
-	PANEL_MODE_WINDOW,
-	PANEL_MODE_HELP
-} RzPanelsMode;
-
-typedef enum {
-	PANEL_LAYOUT_DEFAULT_STATIC = 0,
-	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
-} RzPanelsLayout;
-
-typedef struct {
-	RzStrBuf *data;
-	RzPanelPos pos;
-	int idx;
-	int offset;
-} RModal;
-
-typedef struct rz_panels_t {
-	RzConsCanvas *can;
-	RzPanel **panel;
-	int n_panels;
-	int columnWidth;
-	int curnode;
-	int mouse_orig_x;
-	int mouse_orig_y;
-	bool autoUpdate;
-	bool mouse_on_edge_x;
-	bool mouse_on_edge_y;
-	RzPanelsMenu *panels_menu;
-	Sdb *db;
-	Sdb *rotate_db;
-	Sdb *almighty_db;
-	HtPP *mht;
-	RzPanelsMode mode;
-	RzPanelsMode prevMode;
-	RzPanelsLayout layout;
-	char *name;
-} RzPanels;
-
-typedef enum {
-	DEFAULT,
-	ROTATE,
-	DEL,
-	QUIT,
-} RzPanelsRootState;
-
-typedef struct rz_panels_root_t {
-	int n_panels;
-	int cur_panels;
-	Sdb *pdc_caches;
-	Sdb *cur_pdc_cache;
-	RzPanels **panels;
-	RzPanelsRootState root_state;
-} RzPanelsRoot;
 
 #ifdef __sun
 static inline void cfmakeraw(struct termios *tm) {

@@ -299,6 +299,7 @@ bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_has_nobtcfi)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_entry_offset)(RZ_NONNULL ELFOBJ *bin);

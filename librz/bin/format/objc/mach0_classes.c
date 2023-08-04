@@ -190,9 +190,9 @@ static void copy_sym_name_with_namespace(char *class_name, char *read_name, RzBi
 }
 
 static int sort_by_offset(const void *_a, const void *_b) {
-	RzBinField *a = (RzBinField *)_a;
-	RzBinField *b = (RzBinField *)_b;
-	return a->offset - b->offset;
+	RzBinClassField *a = (RzBinClassField *)_a;
+	RzBinClassField *b = (RzBinClassField *)_b;
+	return a->paddr - b->paddr;
 }
 
 static bool read_sivarlist(struct MACH0_(SIVarList) * il, RzBuffer *buf, ut64 base, bool bigendian) {
@@ -219,7 +219,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 	int len;
 	bool bigendian;
 	mach0_ut ivar_offset;
-	RzBinField *field = NULL;
+	RzBinClassField *field = NULL;
 	ut8 offs[sizeof(mach0_ut)] = { 0 };
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
@@ -250,7 +250,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		if (!r) {
 			return;
 		}
-		field = RZ_NEW0(RzBinField);
+		field = rz_bin_class_field_new(UT64_MAX, UT64_MAX, NULL, klass->name, NULL, NULL);
 		memset(&i, '\0', sizeof(struct MACH0_(SIVar)));
 		if (r + left < r || r + sizeof(struct MACH0_(SIVar)) < r) {
 			goto error;
@@ -280,7 +280,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 				goto error;
 			}
 			ivar_offset = rz_read_ble(offs, bigendian, 8 * sizeof(mach0_ut));
-			field->offset = ivar_offset;
+			field->paddr = ivar_offset;
 		}
 		r = va2pa(i.name, NULL, &left, bf);
 		if (r) {
@@ -307,7 +307,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 				name[name_len] = 0;
 			}
 			// XXX the field name shouldnt contain the class name
-			field->name = rz_str_newf("%s::%s%s", klass->name, "(ivar)", name);
+			field->name = rz_str_newf("%s::(ivar)%s", klass->name, name);
 			RZ_FREE(name);
 		}
 
@@ -349,16 +349,11 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 	if (!rz_list_empty(klass->fields)) {
 		rz_list_sort(klass->fields, sort_by_offset);
 	}
-	RzBinField *isa_field = RZ_NEW0(RzBinField);
-	isa_field->name = strdup("isa");
-	isa_field->size = sizeof(mach0_ut);
-	isa_field->type = strdup("struct objc_class *");
-	isa_field->vaddr = 0;
-	isa_field->offset = 0;
-	rz_list_prepend(klass->fields, isa_field);
+	field = rz_bin_class_field_new(UT64_MAX, UT64_MAX, "isa", klass->name, NULL, "struct objc_class *");
+	rz_list_prepend(klass->fields, field);
 	return;
 error:
-	rz_bin_field_free(field);
+	rz_bin_class_field_free(field);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -370,7 +365,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 	char *name = NULL;
 	int len;
 	bool bigendian;
-	RzBinField *property = NULL;
+	RzBinClassField *property = NULL;
 	ut8 sopl[sizeof(struct MACH0_(SObjcPropertyList))] = { 0 };
 	ut8 sop[sizeof(struct MACH0_(SObjcProperty))] = { 0 };
 
@@ -415,7 +410,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 			return;
 		}
 
-		if (!(property = RZ_NEW0(RzBinField))) {
+		if (!(property = rz_bin_class_field_new(UT64_MAX, UT64_MAX, NULL, klass->name, NULL, NULL))) {
 			return;
 		}
 
@@ -465,8 +460,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 					goto error;
 				}
 			}
-			property->name = rz_str_newf("%s::%s%s", klass->name,
-				"(property)", name);
+			property->name = rz_str_newf("%s::(property)%s", klass->name, name);
 			RZ_FREE(name);
 		}
 #if 0
@@ -836,7 +830,7 @@ static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 				}
 				name[name_len] = 0;
 			}
-			class_name = rz_str_newf("%s::%s%s", klass->name, "(protocol)", name);
+			class_name = rz_str_newf("%s::(protocol)%s", klass->name, name);
 			RZ_FREE(name);
 		}
 
@@ -1162,9 +1156,7 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 	c.data = rz_read_ble(&sc[i], bigendian, 8 * sizeof(mach0_ut));
 
 	klass->addr = c.isa;
-	if (c.superclass) {
-		klass->super = get_class_name(c.superclass, bf, buf);
-	} else if (relocs) {
+	if (relocs) {
 		struct reloc_t reloc_at_class_addr;
 		reloc_at_class_addr.addr = p + sizeof(mach0_ut);
 		RzSkipListNode *found = rz_skiplist_find(relocs, &reloc_at_class_addr);
@@ -1177,6 +1169,8 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 				klass->super = strdup(target_class_name);
 			}
 		}
+	} else if (c.superclass) {
+		klass->super = get_class_name(c.superclass, bf, buf);
 	}
 	get_class_ro_t(RO_DATA_PTR(c.data), bf, buf, &is_meta_class, klass, oi);
 
@@ -1304,12 +1298,12 @@ RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cach
 			// RZ_LOG_ERROR("RzBinClass allocation error\n");
 			goto get_classes_error;
 		}
-		if (!(klass->methods = rz_list_new())) {
+		if (!(klass->methods = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 			// retain just for debug
-			// RZ_LOG_ERROR("RzList<RzBinField> allocation error\n");
+			// RZ_LOG_ERROR("RzList<RzBinClassField> allocation error\n");
 			goto get_classes_error;
 		}
-		if (!(klass->fields = rz_list_new())) {
+		if (!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
 			// retain just for debug
 			// RZ_LOG_ERROR("RzList<RzBinSymbol> allocation error\n");
 			goto get_classes_error;
@@ -1396,11 +1390,11 @@ static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuff
 		if (!(klass = RZ_NEW0(RzBinClass))) {
 			goto error;
 		}
-		if (!(klass->methods = rz_list_new())) {
+		if (!(klass->methods = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 			RZ_FREE(klass);
 			goto error;
 		}
-		if (!(klass->fields = rz_list_new())) {
+		if (!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
 			RZ_FREE(klass);
 			goto error;
 		}

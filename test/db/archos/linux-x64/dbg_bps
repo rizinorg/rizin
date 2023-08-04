@@ -89,7 +89,7 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 f+ times @ 5
-(times_stop;?e Loop `?vi times`;f+ times @ `?vi times-1`;?= times)
+(times_stop;echo Loop `%vi times`;f+ times @ `%vi times-1`;%= times)
 db @ 0x4000ce
 dbC .(times_stop) @ 0x4000ce
 dc
@@ -110,7 +110,7 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
-(break_rax;f+ reg_rax @ `drq rax`;f+ test @ `?vi reg_rax-0x31c0`;?= test)
+(break_rax;f+ reg_rax @ `drq rax`;f+ test @ `%vi reg_rax-0x31c0`;%= test)
 db @ 0x4000ce
 dbC .(break_rax) @ 0x4000ce
 dc
@@ -130,7 +130,7 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
-(trace_rax;dr rax;f+ reg_rax @ `drq rax`;f+ test @ `?vi reg_rax-0x0440`;?= test)
+(trace_rax;dr rax;f+ reg_rax @ `drq rax`;f+ test @ `%vi reg_rax-0x0440`;%= test)
 db @ 0x4000ce
 dbC .(trace_rax) @ 0x4000ce
 dc
@@ -232,7 +232,7 @@ dbil
 db @ main
 db @ main+1
 dbi- 1
-?e ----------
+echo ----------
 dbil~[0,2]
 dbi- 0
 dbil~[0,2]
@@ -264,7 +264,7 @@ NAME=read core->block on short move
 FILE=bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
-e scr.color=0 asm.offset=false asm.flags=false asm.functions=false asm.lines=false asm.fcn.size=false asm.comments=false asm.dwarf=false asm.indent=false
+e scr.color=0 asm.offset=false asm.flags=false asm.functions=false asm.lines=false asm.fcn.size=false asm.comments=false asm.debuginfo=false asm.indent=false
 dcu main
 pd 5
 dbH @i:2

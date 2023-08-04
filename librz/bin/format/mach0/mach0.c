@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -990,10 +991,9 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 	}
 	bin->thread.cmd = rz_read_ble32(&thc[0], bin->big_endian);
 	bin->thread.cmdsize = rz_read_ble32(&thc[4], bin->big_endian);
-	if (rz_buf_read_at(bin->b, off + sizeof(struct thread_command), tmp, 4) < 4) {
+	if (!rz_buf_read_ble32_at(bin->b, off + sizeof(struct thread_command), &flavor, bin->big_endian)) {
 		goto wrong_read;
 	}
-	flavor = rz_read_ble32(tmp, bin->big_endian);
 
 	if (off + sizeof(struct thread_command) + sizeof(flavor) > bin->size ||
 		off + sizeof(struct thread_command) + sizeof(flavor) + sizeof(ut32) > bin->size) {
@@ -1020,7 +1020,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
 				    (ut8 *)&bin->thread_state.x86_32, "16i", 1) == -1) {
-				bprintf("Error: read (thread state x86_32)\n");
+				RZ_LOG_ERROR("read thread state x86_32\n");
 				return false;
 			}
 			pc = bin->thread_state.x86_32.eip;
@@ -1034,7 +1034,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
 				    (ut8 *)&bin->thread_state.x86_64, "32l", 1) == -1) {
-				bprintf("Error: read (thread state x86_64)\n");
+				RZ_LOG_ERROR("read thread state x86_64\n");
 				return false;
 			}
 			pc = bin->thread_state.x86_64.rip;
@@ -1042,7 +1042,6 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			arw_ptr = (ut8 *)&bin->thread_state.x86_64;
 			arw_sz = sizeof(struct x86_thread_state64);
 			break;
-			// default: bprintf ("Unknown type\n");
 		}
 		break;
 	case CPU_TYPE_POWERPC:
@@ -1053,7 +1052,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
 				    (ut8 *)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1) == -1) {
-				bprintf("Error: read (thread state ppc_32)\n");
+				RZ_LOG_ERROR("read thread state ppc_32\n");
 				return false;
 			}
 			pc = bin->thread_state.ppc_32.srr0;
@@ -1066,7 +1065,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
 				    (ut8 *)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1) == -1) {
-				bprintf("Error: read (thread state ppc_64)\n");
+				RZ_LOG_ERROR("read thread state ppc_64\n");
 				return false;
 			}
 			pc = bin->thread_state.ppc_64.srr0;
@@ -1081,7 +1080,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		}
 		if (rz_buf_fread_at(bin->b, ptr_thread,
 			    (ut8 *)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1) == -1) {
-			bprintf("Error: read (thread state arm)\n");
+			RZ_LOG_ERROR("read thread state arm\n");
 			return false;
 		}
 		pc = bin->thread_state.arm_32.r15;
@@ -1094,17 +1093,17 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			return false;
 		}
 		if (rz_buf_fread_at(bin->b, ptr_thread,
-			    (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1) == -1) {
-			bprintf("Error: read (thread state arm)\n");
+			    (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "33L2I" : "33l2i", 1) == -1) {
+			RZ_LOG_ERROR("read thread state arm64\n");
 			return false;
 		}
-		pc = rz_read_be64(&bin->thread_state.arm_64.pc);
+		pc = bin->thread_state.arm_64.pc;
 		pc_offset = ptr_thread + rz_offsetof(struct arm_thread_state64, pc);
 		arw_ptr = (ut8 *)&bin->thread_state.arm_64;
 		arw_sz = sizeof(struct arm_thread_state64);
 		break;
 	default:
-		bprintf("Error: read (unknown thread state structure)\n");
+		RZ_LOG_ERROR("unknown thread state structure\n");
 		return false;
 	}
 
@@ -1433,273 +1432,6 @@ static const char *cmd_to_pf_definition(ut32 cmd) {
 	return NULL;
 }
 
-static const char *build_version_platform_to_string(ut32 platform) {
-	switch (platform) {
-	case 1:
-		return "macOS";
-	case 2:
-		return "iOS";
-	case 3:
-		return "tvOS";
-	case 4:
-		return "watchOS";
-	case 5:
-		return "bridgeOS";
-	case 6:
-		return "iOSmac";
-	case 7:
-		return "iOS Simulator";
-	case 8:
-		return "tvOS Simulator";
-	case 9:
-		return "watchOS Simulator";
-	default:
-		return "unknown";
-	}
-}
-
-static const char *build_version_tool_to_string(ut32 tool) {
-	switch (tool) {
-	case 1:
-		return "clang";
-	case 2:
-		return "swift";
-	case 3:
-		return "ld";
-	default:
-		return "unknown";
-	}
-}
-
-static bool read_dyld_chained_fixups_header(struct dyld_chained_fixups_header *header, RzBuffer *buf, ut64 base) {
-	ut64 offset = base;
-	return rz_buf_read_le32_offset(buf, &offset, &header->fixups_version) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->starts_offset) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->imports_offset) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->symbols_offset) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->imports_count) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->imports_format) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->symbols_format);
-}
-
-static bool read_dyld_chained_starts_in_segment(struct rz_dyld_chained_starts_in_segment *segment, RzBuffer *buf, ut64 base) {
-	ut64 offset = base;
-	return rz_buf_read_le32_offset(buf, &offset, &segment->size) &&
-		rz_buf_read_le16_offset(buf, &offset, &segment->page_size) &&
-		rz_buf_read_le16_offset(buf, &offset, &segment->pointer_format) &&
-		rz_buf_read_le64_offset(buf, &offset, &segment->segment_offset) &&
-		rz_buf_read_le32_offset(buf, &offset, &segment->max_valid_pointer) &&
-		rz_buf_read_le16_offset(buf, &offset, &segment->page_count);
-}
-
-static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 size) {
-	struct dyld_chained_fixups_header header;
-	if (size < sizeof(header)) {
-		return false;
-	}
-	if (!read_dyld_chained_fixups_header(&header, bin->b, offset)) {
-		return false;
-	}
-	if (header.fixups_version > 0) {
-		eprintf("Unsupported fixups version: %u\n", header.fixups_version);
-		return false;
-	}
-	ut64 starts_at = offset + header.starts_offset;
-	if (header.starts_offset > size) {
-		return false;
-	}
-	if (!rz_buf_read_le32_at(bin->b, starts_at, &bin->nchained_starts)) {
-		return false;
-	}
-	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, bin->nchained_starts);
-	if (!bin->chained_starts) {
-		return false;
-	}
-	ut64 cursor = starts_at + sizeof(ut32);
-	for (size_t i = 0; i < bin->nchained_starts; i++) {
-		ut32 seg_off;
-		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off) || !seg_off) {
-			cursor += sizeof(ut32);
-			continue;
-		}
-		if (i >= bin->nsegs) {
-			break;
-		}
-		struct rz_dyld_chained_starts_in_segment *cur_seg = RZ_NEW0(struct rz_dyld_chained_starts_in_segment);
-		if (!cur_seg) {
-			return false;
-		}
-		bin->chained_starts[i] = cur_seg;
-		if (!read_dyld_chained_starts_in_segment(cur_seg, bin->b, starts_at + seg_off)) {
-			return false;
-		}
-		if (cur_seg->page_count > 0) {
-			ut16 *page_start = RZ_NEWS0(ut16, cur_seg->page_count);
-			if (!page_start) {
-				cur_seg->page_count = 0;
-				return false;
-			}
-			ut64 offset_page = starts_at + seg_off + 22;
-			for (size_t j = 0; j < cur_seg->page_count; ++j) {
-				if (!rz_buf_read_le16_offset(bin->b, &offset_page, &page_start[j])) {
-					free(page_start);
-					return false;
-				}
-			}
-			cur_seg->page_start = page_start;
-		}
-		cursor += sizeof(ut32);
-	}
-	/* TODO: handle also imports, symbols and multiple starts (32-bit only) */
-	return true;
-}
-
-static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * bin) {
-	if (!bin->dyld_info) {
-		return false;
-	}
-	if (!bin->nsegs) {
-		return false;
-	}
-	bin->nchained_starts = bin->nsegs;
-	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, bin->nchained_starts);
-	if (!bin->chained_starts) {
-		return false;
-	}
-	size_t wordsize = get_word_size(bin);
-	ut8 *p = NULL;
-	size_t j, count, skip, bind_size;
-	int seg_idx = 0;
-	ut64 seg_off = 0;
-	bind_size = bin->dyld_info->bind_size;
-	if (!bind_size || bind_size < 1) {
-		return false;
-	}
-	if (bin->dyld_info->bind_off > bin->size) {
-		return false;
-	}
-	if (bin->dyld_info->bind_off + bind_size > bin->size) {
-		return false;
-	}
-	ut8 *opcodes = calloc(1, bind_size + 1);
-	if (!opcodes) {
-		return false;
-	}
-	if (rz_buf_read_at(bin->b, bin->dyld_info->bind_off, opcodes, bind_size) != bind_size) {
-		bprintf("Error: read (dyld_info bind) at 0x%08" PFMT64x "\n", (ut64)(size_t)bin->dyld_info->bind_off);
-		RZ_FREE(opcodes);
-		return false;
-	}
-	struct rz_dyld_chained_starts_in_segment *cur_seg = NULL;
-	size_t cur_seg_idx = 0;
-	ut8 *end;
-	bool done = false;
-	for (p = opcodes, end = opcodes + bind_size; !done && p < end;) {
-		ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
-		p++;
-		switch (op) {
-		case BIND_OPCODE_DONE:
-			done = true;
-			break;
-		case BIND_OPCODE_THREADED: {
-			switch (imm) {
-			case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
-				read_uleb128(&p, end);
-				break;
-			}
-			case BIND_SUBOPCODE_THREADED_APPLY: {
-				const size_t ps = 0x1000;
-				if (!cur_seg || cur_seg_idx != seg_idx) {
-					cur_seg_idx = seg_idx;
-					cur_seg = bin->chained_starts[seg_idx];
-					if (!cur_seg) {
-						cur_seg = RZ_NEW0(struct rz_dyld_chained_starts_in_segment);
-						if (!cur_seg) {
-							break;
-						}
-						bin->chained_starts[seg_idx] = cur_seg;
-						cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
-						cur_seg->page_size = ps;
-						cur_seg->page_count = ((bin->segs[seg_idx].vmsize + (ps - 1)) & ~(ps - 1)) / ps;
-						if (cur_seg->page_count > 0) {
-							cur_seg->page_start = RZ_NEWS0(ut16, cur_seg->page_count);
-							if (!cur_seg->page_start) {
-								cur_seg->page_count = 0;
-								break;
-							}
-							memset(cur_seg->page_start, 0xff, sizeof(ut16) * cur_seg->page_count);
-						}
-					}
-				}
-				if (cur_seg) {
-					ut32 page_index = (ut32)(seg_off / ps);
-					if (page_index < cur_seg->page_count) {
-						cur_seg->page_start[page_index] = seg_off & 0xfff;
-					}
-				}
-				break;
-			}
-			default:
-				bprintf("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
-			}
-			break;
-		}
-		case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
-		case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
-		case BIND_OPCODE_SET_TYPE_IMM:
-			break;
-		case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
-			read_uleb128(&p, end);
-			break;
-		case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
-			while (*p++ && p < end) {
-				/* empty loop */
-			}
-			break;
-		case BIND_OPCODE_SET_ADDEND_SLEB:
-			rz_sleb128((const ut8 **)&p, end);
-			break;
-		case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
-			seg_idx = imm;
-			if (seg_idx >= bin->nsegs) {
-				bprintf("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
-					" has unexistent segment %d\n",
-					seg_idx);
-				RZ_FREE(opcodes);
-				return false;
-			} else {
-				seg_off = read_uleb128(&p, end);
-			}
-			break;
-		case BIND_OPCODE_ADD_ADDR_ULEB:
-			seg_off += read_uleb128(&p, end);
-			break;
-		case BIND_OPCODE_DO_BIND:
-			break;
-		case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-			seg_off += read_uleb128(&p, end) + wordsize;
-			break;
-		case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
-			seg_off += (ut64)imm * (ut64)wordsize + wordsize;
-			break;
-		case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
-			count = read_uleb128(&p, end);
-			skip = read_uleb128(&p, end);
-			for (j = 0; j < count; j++) {
-				seg_off += skip + wordsize;
-			}
-			break;
-		default:
-			bprintf("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
-			RZ_FREE(opcodes);
-			return false;
-		}
-	}
-	RZ_FREE(opcodes);
-
-	return true;
-}
-
 static bool read_load_command(struct load_command *lc, RzBuffer *buf, ut64 base, bool big_endian) {
 	ut64 offset = base;
 	return rz_buf_read_ble32_offset(buf, &offset, &lc->cmd, big_endian) &&
@@ -1711,7 +1443,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 	bool is_first_thread = true;
 
 	bin->uuidn = 0;
-	bin->os = 0;
+	bin->platform = UT32_MAX;
 	bin->has_crypto = 0;
 	if (bin->hdr.sizeofcmds > bin->size) {
 		bprintf("Warning: chopping hdr.sizeofcmds\n");
@@ -1782,24 +1514,36 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		case LC_VERSION_MIN_MACOSX:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_macosx", 0);
-			bin->os = 1;
-			// set OS = osx
-			// bprintf ("[mach0] Requires OSX >= x\n");
+			if (bin->platform == UT32_MAX) {
+				bin->platform = MACH0_PLATFORM_MACOS;
+			}
 			break;
 		case LC_VERSION_MIN_IPHONEOS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_iphoneos", 0);
-			bin->os = 2;
-			// set OS = ios
-			// bprintf ("[mach0] Requires iOS >= x\n");
+			if (bin->platform == UT32_MAX) {
+				bin->platform = MACH0_PLATFORM_IOS;
+			}
 			break;
 		case LC_VERSION_MIN_TVOS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_tvos", 0);
-			bin->os = 4;
+			if (bin->platform == UT32_MAX) {
+				bin->platform = MACH0_PLATFORM_TVOS;
+			}
 			break;
 		case LC_VERSION_MIN_WATCHOS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_watchos", 0);
-			bin->os = 3;
+			if (bin->platform == UT32_MAX) {
+				bin->platform = MACH0_PLATFORM_WATCHOS;
+			}
 			break;
+		case LC_BUILD_VERSION: {
+			ut32 platform;
+			if (!rz_buf_read_le32_at(bin->b, off + 8, &platform)) {
+				break;
+			}
+			bin->platform = platform;
+			break;
+		}
 		case LC_UUID:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "uuid", 0);
 			{
@@ -2053,7 +1797,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 				if (bin->options.verbose) {
 					eprintf("chained fixups at 0x%x size %d\n", dataoff, datasize);
 				}
-				has_chained_fixups = parse_chained_fixups(bin, dataoff, datasize);
+				has_chained_fixups = MACH0_(parse_chained_fixups)(bin, dataoff, datasize);
 			}
 		} break;
 		}
@@ -2061,7 +1805,9 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 
 	if (!has_chained_fixups && bin->hdr.cputype == CPU_TYPE_ARM64 &&
 		(bin->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-		reconstruct_chained_fixup(bin);
+		// clang-format off
+		MACH0_(reconstruct_chained_fixups_from_threaded)(bin);
+		// clang-format on
 	}
 	return true;
 }
@@ -2094,7 +1840,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	free(mo->symtab);
 	free(mo->symstr);
 	free(mo->indirectsyms);
-	free(mo->imports_by_ord);
+	rz_pvector_fini(&mo->imports_by_ord);
 	if (mo->imports_by_name) {
 		ht_pp_free(mo->imports_by_name);
 	}
@@ -2106,15 +1852,17 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	free(mo->signature);
 	free(mo->intrp);
 	free(mo->compiler);
-	if (mo->chained_starts) {
-		for (i = 0; i < mo->nchained_starts; i++) {
-			if (mo->chained_starts[i]) {
-				free(mo->chained_starts[i]->page_start);
-				free(mo->chained_starts[i]);
+	struct mach0_chained_fixups_t *cf = &mo->chained_fixups;
+	if (cf->starts) {
+		for (i = 0; i < cf->starts_count; i++) {
+			if (cf->starts[i]) {
+				free(cf->starts[i]->page_start);
+				free(cf->starts[i]);
 			}
 		}
-		free(mo->chained_starts);
+		free(cf->starts);
 	}
+	rz_vector_fini(&cf->imports);
 	rz_pvector_free(mo->patchable_relocs);
 	rz_skiplist_free(mo->relocs);
 	rz_hash_free(mo->hash);
@@ -2140,6 +1888,7 @@ struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * op
 		bin->kv = sdb_new(NULL, "bin.mach0", 0);
 		bin->hash = rz_hash_new();
 		bin->size = rz_buf_size(bin->b);
+		rz_pvector_init(&bin->imports_by_ord, NULL);
 		if (options) {
 			bin->options = *options;
 		}
@@ -2274,7 +2023,7 @@ RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
 RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	if (bin->sections_cache) {
-		return bin->sections_cache;
+		return rz_list_clone(bin->sections_cache);
 	}
 	RzList *list = rz_list_newf((RzListFree)rz_bin_section_free);
 	size_t i, j;
@@ -2348,7 +2097,7 @@ RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 		}
 	}
 	bin->sections_cache = list;
-	return list;
+	return rz_list_clone(list);
 }
 
 char *MACH0_(section_type_to_string)(ut64 type) {
@@ -2947,54 +2696,67 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 	return symbols;
 }
 
-struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin) {
-	rz_return_val_if_fail(bin, NULL);
-
-	int i, j, idx, stridx;
-	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms) {
-		return NULL;
+static void imports_foreach_undefsym(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user) {
+	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms || bin->dysymtab.nundefsym > 0xfffff) {
+		return;
 	}
-
-	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
-		return NULL;
-	}
-
-	struct import_t *imports = calloc(bin->dysymtab.nundefsym + 1, sizeof(struct import_t));
-	if (!imports) {
-		return NULL;
-	}
-	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
-		idx = bin->dysymtab.iundefsym + i;
+	for (int i = 0; i < bin->dysymtab.nundefsym; i++) {
+		int idx = bin->dysymtab.iundefsym + i;
 		if (idx < 0 || idx >= bin->nsymtab) {
 			bprintf("WARNING: Imports index out of bounds. Ignoring relocs\n");
-			free(imports);
-			return NULL;
+			return;
 		}
-		stridx = bin->symtab[idx].n_strx;
+		int stridx = bin->symtab[idx].n_strx;
 		char *imp_name = MACH0_(get_name)(bin, stridx, false);
-		if (imp_name) {
-			rz_str_ncpy(imports[j].name, imp_name, RZ_BIN_MACH0_STRING_LENGTH);
-			free(imp_name);
-		} else {
-			// imports[j].name[0] = 0;
+		if (!imp_name) {
 			continue;
 		}
-		imports[j].ord = i;
-		imports[j++].last = 0;
+		cb(imp_name, i, user);
 	}
-	imports[j].last = 1;
+}
 
-	if (!bin->imports_by_ord_size) {
-		if (j > 0) {
-			bin->imports_by_ord_size = j;
-			bin->imports_by_ord = (RzBinImport **)calloc(j, sizeof(RzBinImport *));
-		} else {
-			bin->imports_by_ord_size = 0;
-			bin->imports_by_ord = NULL;
+static void imports_foreach_chained(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user) {
+	size_t ci_count = MACH0_(chained_imports_count)(bin);
+	for (size_t i = 0; i < ci_count; i++) {
+		struct MACH0_(chained_import_t) import;
+		if (!MACH0_(get_chained_import)(bin, i, &import)) {
+			continue;
 		}
+		char *name = MACH0_(chained_import_read_symbol_name)(bin, &import);
+		if (!name) {
+			continue;
+		}
+		cb(name, i, user);
 	}
+}
 
-	return imports;
+/**
+ * Iterate over all available imports
+ * Important: the name string passed to \p cb is not freed automatically and should either be moved
+ *            or freed by \p cb itself.
+ */
+void MACH0_(imports_foreach)(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user) {
+	rz_return_if_fail(bin && cb);
+	if (MACH0_(has_chained_fixups)(bin)) {
+		imports_foreach_chained(bin, cb, user);
+	} else {
+		imports_foreach_undefsym(bin, cb, user);
+	}
+}
+
+/**
+ * Upper bound for the number of items MACH0_(imports_foreach)() will emit
+ */
+size_t MACH0_(imports_count)(struct MACH0_(obj_t) * bin) {
+	if (MACH0_(has_chained_fixups)(bin)) {
+		return MACH0_(chained_imports_count)(bin);
+	} else {
+		if (bin->dysymtab.nundefsym > bin->nsymtab) {
+			RZ_LOG_ERROR("Invalid nundefsym value in LC_DYSYMTAB");
+			return 0;
+		}
+		return bin->dysymtab.nundefsym;
+	}
 }
 
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin) {
@@ -3125,226 +2887,23 @@ const char *MACH0_(get_intrp)(struct MACH0_(obj_t) * bin) {
 	return bin ? bin->intrp : NULL;
 }
 
-const char *MACH0_(get_os)(struct MACH0_(obj_t) * bin) {
-	if (bin) {
-		switch (bin->os) {
-		case 1: return "macos";
-		case 2: return "ios";
-		case 3: return "watchos";
-		case 4: return "tvos";
-		}
-	}
-	return "darwin";
+const char *MACH0_(get_platform)(struct MACH0_(obj_t) * bin) {
+	rz_return_val_if_fail(bin, "unknown");
+	return rz_mach0_platform_to_string(bin->platform);
 }
 
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) * hdr) {
-	const char *archstr = "unknown";
-	switch (hdr->cputype) {
-	case CPU_TYPE_VAX:
-		archstr = "vax";
-		break;
-	case CPU_TYPE_MC680x0:
-		archstr = "mc680x0";
-		break;
-	case CPU_TYPE_I386:
-	case CPU_TYPE_X86_64:
-		archstr = "x86";
-		break;
-	case CPU_TYPE_MC88000:
-		archstr = "mc88000";
-		break;
-	case CPU_TYPE_MC98000:
-		archstr = "mc98000";
-		break;
-	case CPU_TYPE_HPPA:
-		archstr = "hppa";
-		break;
-	case CPU_TYPE_ARM:
-	case CPU_TYPE_ARM64:
-	case CPU_TYPE_ARM64_32:
-		archstr = "arm";
-		break;
-	case CPU_TYPE_SPARC:
-		archstr = "sparc";
-		break;
-	case CPU_TYPE_MIPS:
-		archstr = "mips";
-		break;
-	case CPU_TYPE_I860:
-		archstr = "i860";
-		break;
-	case CPU_TYPE_POWERPC:
-	case CPU_TYPE_POWERPC64:
-		archstr = "ppc";
-		break;
-	default:
-		eprintf("Unknown arch %d\n", hdr->cputype);
-		break;
-	}
-	return archstr;
+	rz_return_val_if_fail(hdr, "unknown");
+	return rz_mach0_cputype_to_string(hdr->cputype);
 }
 
 const char *MACH0_(get_cputype)(struct MACH0_(obj_t) * bin) {
 	return bin ? MACH0_(get_cputype_from_hdr)(&bin->hdr) : "unknown";
 }
 
-static const char *cpusubtype_tostring(ut32 cputype, ut32 cpusubtype) {
-	switch (cputype) {
-	case CPU_TYPE_VAX:
-		switch (cpusubtype) {
-		case CPU_SUBTYPE_VAX_ALL: return "all";
-		case CPU_SUBTYPE_VAX780: return "vax780";
-		case CPU_SUBTYPE_VAX785: return "vax785";
-		case CPU_SUBTYPE_VAX750: return "vax750";
-		case CPU_SUBTYPE_VAX730: return "vax730";
-		case CPU_SUBTYPE_UVAXI: return "uvaxI";
-		case CPU_SUBTYPE_UVAXII: return "uvaxII";
-		case CPU_SUBTYPE_VAX8200: return "vax8200";
-		case CPU_SUBTYPE_VAX8500: return "vax8500";
-		case CPU_SUBTYPE_VAX8600: return "vax8600";
-		case CPU_SUBTYPE_VAX8650: return "vax8650";
-		case CPU_SUBTYPE_VAX8800: return "vax8800";
-		case CPU_SUBTYPE_UVAXIII: return "uvaxIII";
-		default: return "Unknown vax subtype";
-		}
-	case CPU_TYPE_MC680x0:
-		switch (cpusubtype) {
-		case CPU_SUBTYPE_MC68030: return "mc68030";
-		case CPU_SUBTYPE_MC68040: return "mc68040";
-		case CPU_SUBTYPE_MC68030_ONLY: return "mc68030 only";
-		default: return "Unknown mc680x0 subtype";
-		}
-	case CPU_TYPE_I386:
-		switch (cpusubtype) {
-		case CPU_SUBTYPE_386: return "386";
-		case CPU_SUBTYPE_486: return "486";
-		case CPU_SUBTYPE_486SX: return "486sx";
-		case CPU_SUBTYPE_PENT: return "Pentium";
-		case CPU_SUBTYPE_PENTPRO: return "Pentium Pro";
-		case CPU_SUBTYPE_PENTII_M3: return "Pentium 3 M3";
-		case CPU_SUBTYPE_PENTII_M5: return "Pentium 3 M5";
-		case CPU_SUBTYPE_CELERON: return "Celeron";
-		case CPU_SUBTYPE_CELERON_MOBILE: return "Celeron Mobile";
-		case CPU_SUBTYPE_PENTIUM_3: return "Pentium 3";
-		case CPU_SUBTYPE_PENTIUM_3_M: return "Pentium 3 M";
-		case CPU_SUBTYPE_PENTIUM_3_XEON: return "Pentium 3 Xeon";
-		case CPU_SUBTYPE_PENTIUM_M: return "Pentium Mobile";
-		case CPU_SUBTYPE_PENTIUM_4: return "Pentium 4";
-		case CPU_SUBTYPE_PENTIUM_4_M: return "Pentium 4 M";
-		case CPU_SUBTYPE_ITANIUM: return "Itanium";
-		case CPU_SUBTYPE_ITANIUM_2: return "Itanium 2";
-		case CPU_SUBTYPE_XEON: return "Xeon";
-		case CPU_SUBTYPE_XEON_MP: return "Xeon MP";
-		default: return "Unknown i386 subtype";
-		}
-	case CPU_TYPE_X86_64:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_X86_64_ALL: return "x86 64 all";
-		case CPU_SUBTYPE_X86_ARCH1: return "x86 arch 1";
-		default: return "Unknown x86 subtype";
-		}
-	case CPU_TYPE_MC88000:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_MC88000_ALL: return "all";
-		case CPU_SUBTYPE_MC88100: return "mc88100";
-		case CPU_SUBTYPE_MC88110: return "mc88110";
-		default: return "Unknown mc88000 subtype";
-		}
-	case CPU_TYPE_MC98000:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_MC98000_ALL: return "all";
-		case CPU_SUBTYPE_MC98601: return "mc98601";
-		default: return "Unknown mc98000 subtype";
-		}
-	case CPU_TYPE_HPPA:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_HPPA_7100: return "hppa7100";
-		case CPU_SUBTYPE_HPPA_7100LC: return "hppa7100LC";
-		default: return "Unknown hppa subtype";
-		}
-	case CPU_TYPE_ARM64:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_ARM64_ALL: return "all";
-		case CPU_SUBTYPE_ARM64_V8: return "arm64v8";
-		case CPU_SUBTYPE_ARM64E: return "arm64e";
-		default: return "Unknown arm64 subtype";
-		}
-	case CPU_TYPE_ARM:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_ARM_ALL:
-			return "all";
-		case CPU_SUBTYPE_ARM_V4T:
-			return "v4t";
-		case CPU_SUBTYPE_ARM_V5:
-			return "v5";
-		case CPU_SUBTYPE_ARM_V6:
-			return "v6";
-		case CPU_SUBTYPE_ARM_XSCALE:
-			return "xscale";
-		case CPU_SUBTYPE_ARM_V7:
-			return "v7";
-		case CPU_SUBTYPE_ARM_V7F:
-			return "v7f";
-		case CPU_SUBTYPE_ARM_V7S:
-			return "v7s";
-		case CPU_SUBTYPE_ARM_V7K:
-			return "v7k";
-		case CPU_SUBTYPE_ARM_V7M:
-			return "v7m";
-		case CPU_SUBTYPE_ARM_V7EM:
-			return "v7em";
-		default:
-			eprintf("Unknown arm subtype %d\n", cpusubtype & 0xff);
-			return "unknown arm subtype";
-		}
-	case CPU_TYPE_SPARC:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_SPARC_ALL: return "all";
-		default: return "Unknown sparc subtype";
-		}
-	case CPU_TYPE_MIPS:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_MIPS_ALL: return "all";
-		case CPU_SUBTYPE_MIPS_R2300: return "r2300";
-		case CPU_SUBTYPE_MIPS_R2600: return "r2600";
-		case CPU_SUBTYPE_MIPS_R2800: return "r2800";
-		case CPU_SUBTYPE_MIPS_R2000a: return "r2000a";
-		case CPU_SUBTYPE_MIPS_R2000: return "r2000";
-		case CPU_SUBTYPE_MIPS_R3000a: return "r3000a";
-		case CPU_SUBTYPE_MIPS_R3000: return "r3000";
-		default: return "Unknown mips subtype";
-		}
-	case CPU_TYPE_I860:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_I860_ALL: return "all";
-		case CPU_SUBTYPE_I860_860: return "860";
-		default: return "Unknown i860 subtype";
-		}
-	case CPU_TYPE_POWERPC:
-	case CPU_TYPE_POWERPC64:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_POWERPC_ALL: return "all";
-		case CPU_SUBTYPE_POWERPC_601: return "601";
-		case CPU_SUBTYPE_POWERPC_602: return "602";
-		case CPU_SUBTYPE_POWERPC_603: return "603";
-		case CPU_SUBTYPE_POWERPC_603e: return "603e";
-		case CPU_SUBTYPE_POWERPC_603ev: return "603ev";
-		case CPU_SUBTYPE_POWERPC_604: return "604";
-		case CPU_SUBTYPE_POWERPC_604e: return "604e";
-		case CPU_SUBTYPE_POWERPC_620: return "620";
-		case CPU_SUBTYPE_POWERPC_750: return "750";
-		case CPU_SUBTYPE_POWERPC_7400: return "7400";
-		case CPU_SUBTYPE_POWERPC_7450: return "7450";
-		case CPU_SUBTYPE_POWERPC_970: return "970";
-		default: return "Unknown ppc subtype";
-		}
-	}
-	return "Unknown cputype";
-}
-
 char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) * hdr) {
 	rz_return_val_if_fail(hdr, NULL);
-	return strdup(cpusubtype_tostring(hdr->cputype, hdr->cpusubtype));
+	return strdup(rz_mach0_cpusubtype_tostring(hdr->cputype, hdr->cpusubtype));
 }
 
 char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) * bin) {
@@ -3508,7 +3067,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			if (!rz_buf_read_le32_at(buf, addr, &platform)) {
 				break;
 			}
-			cb_printf("0x%08" PFMT64x "  platform    %s\n", pvaddr, build_version_platform_to_string(platform));
+			cb_printf("0x%08" PFMT64x "  platform    %s\n", pvaddr, rz_mach0_platform_to_string(platform));
 
 			ut16 minos1;
 			if (!rz_buf_read_le16_at(buf, addr + 6, &minos1)) {
@@ -3552,7 +3111,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 				if (!rz_buf_read_le32_at(buf, addr + off, &tool)) {
 					break;
 				}
-				cb_printf("0x%08" PFMT64x "  tool        %s\n", pvaddr + off, build_version_tool_to_string(tool));
+				cb_printf("0x%08" PFMT64x "  tool        %s\n", pvaddr + off, rz_mach0_build_version_tool_to_string(tool));
 
 				off += 4;
 				if (off >= (lcSize - 8)) {

@@ -208,6 +208,7 @@
 #define PT_OPENBSD_RANDOMIZE 0x65a3dbe6 /* Random data */
 #define PT_OPENBSD_WXNEEDED  0x65a3dbe7 /* Allowing writable/executable mapping */
 #define PT_OPENBSD_BOOTDATA  0x65a41be6 /* Boot time data */
+#define PT_OPENBSD_NOBTCFI   0x65a3dbe8 /* Branch Target Control Flow Integrity opt-out */
 #endif
 
 #endif // _INCLUDE_ELF_SPECS_H

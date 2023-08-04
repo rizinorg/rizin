@@ -187,48 +187,8 @@ struct arm_thread_state64 {
 	ut64 sp;
 	ut64 pc;
 	ut32 cpsr;
+	ut32 flags;
 };
-
-/* Cache header */
-
-struct cache_header {
-	char version[16];
-	ut32 baseaddroff; // mappingOffset
-	ut32 mappingCount;
-	ut32 startaddr;
-	ut32 numlibs;
-	ut64 dyldaddr;
-	ut64 codeSignatureOffset;
-	ut64 codeSignatureSize;
-	ut64 slideInfoOffset;
-	ut64 slideInfoSize;
-	ut64 localSymbolsOffset;
-	ut64 localSymbolsSize;
-};
-
-// dupe?
-typedef struct {
-	char magic[16];
-	uint32_t mappingOffset;
-	uint32_t mappingCount;
-	uint32_t imagesOffset;
-	uint32_t imagesCount;
-	uint64_t dyldBaseAddress;
-	uint64_t codeSignatureOffset;
-	uint64_t codeSignatureSize;
-	uint64_t slideInfoOffset;
-	uint64_t slideInfoSize;
-	uint64_t localSymbolsOffset;
-	uint64_t localSymbolsSize;
-	uint8_t uuid[16];
-	uint64_t cacheType;
-	uint32_t branchPoolsOffset;
-	uint32_t branchPoolsCount;
-	uint64_t accelerateInfoAddr;
-	uint64_t accelerateInfoSize;
-	uint64_t imagesTextOffset;
-	uint64_t imagesTextCount;
-} cache_hdr_t;
 
 typedef struct {
 	uint8_t uuid[16];

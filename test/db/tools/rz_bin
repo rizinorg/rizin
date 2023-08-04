@@ -98,7 +98,7 @@ RUN
 NAME=rz-bin -S, -SS, -rS and -rSS file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-%RZ_BIN_PREFIX=prixfixe
+env RZ_BIN_PREFIX=prixfixe
 !rz-bin -S ${RZ_FILE}
 !rz-bin -SS ${RZ_FILE}
 EOF
@@ -780,7 +780,7 @@ os       darwin
 cc       N/A
 pcalign  0
 rpath    N/A
-subsys   darwin
+subsys   macOS
 stripped false
 crypto   false
 havecode true
@@ -836,9 +836,9 @@ FILE=bins/java/test.class
 CMDS=!rz-bin -c ${RZ_FILE}
 EXPECT=<<EOF
 [Classes]
-address    min        max        name   super              
------------------------------------------------------------
-0x00000000 0x000008f9 0x00000bcd Ltest; groovy/lang/Script
+address    min        max        name super              
+---------------------------------------------------------
+0x00000000 0x000008f9 0x00000bcd test groovy.lang.Script
 
 EOF
 RUN
@@ -847,7 +847,7 @@ NAME=rz-bin -cq
 FILE=bins/java/test.class
 CMDS=!rz-bin -cq ${RZ_FILE}
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000bcd] Ltest; groovy/lang/Script
+0x00000000 [0x000008f9 - 0x00000bcd] test groovy.lang.Script
 EOF
 RUN
 
@@ -884,13 +884,13 @@ EOF
 EXPECT=<<EOF
 Language 'Invalid' is unsupported
 List of supported languages:
-java   LGPL3    deroad
-msvc   LGPL3    inisider
-objc   LGPL3    pancake
-pascal LGPL3    deroad
-c++    GPL-2    Free Software Foundation
-rust   LGPL3    pancake
-swift  MIT      pancake
+java   LGPL3        deroad
+msvc   LGPL3        inisider
+objc   LGPL3        pancake
+pascal LGPL3        deroad
+c++    GPL-2,LGPL3  FSF/deroad
+rust   LGPL3        Dhruv Maroo
+swift  MIT          pancake
 EOF
 RUN
 
@@ -1063,7 +1063,7 @@ NAME=rz-bin -Pj
 FILE=bins/pdb/minimal.pdb
 CMDS=<<EOF
 !rz-bin -Pj ${RZ_FILE}~{}
-?e
+echo
 EOF
 EXPECT=<<EOF
 {

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -217,25 +218,6 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		ptr->name = strdup((char *)syms[i].name);
 		ptr->is_imported = syms[i].is_imported;
-		if (ptr->name[0] == '_' && !ptr->is_imported) {
-			char *dn = rz_bin_demangle(bf, ptr->name, ptr->name, ptr->vaddr, false);
-			if (dn) {
-				ptr->dname = dn;
-				char *p = strchr(dn, '.');
-				if (p) {
-					if (IS_UPPER(ptr->name[0])) {
-						ptr->classname = strdup(ptr->name);
-						ptr->classname[p - ptr->name] = 0;
-					} else if (IS_UPPER(p[1])) {
-						ptr->classname = strdup(p + 1);
-						p = strchr(ptr->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
 		ptr->forwarder = "NONE";
 		ptr->bind = (syms[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? RZ_BIN_BIND_LOCAL_STR : RZ_BIN_BIND_GLOBAL_STR;
 		ptr->type = RZ_BIN_TYPE_FUNC_STR;
@@ -334,49 +316,64 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *i
 	return ptr;
 }
 
+typedef struct {
+	RzBin *bin;
+	struct MACH0_(obj_t) * obj;
+	RzList /*<RzBinImport *>*/ *imports_dst;
+} ImportsForeachCtx;
+
+static void imports_foreach_cb(char *name, int ord, void *user) {
+	ImportsForeachCtx *ctx = user;
+	RzBinImport *ptr = import_from_name(ctx->bin, name, NULL);
+	if (!ptr) {
+		free(name);
+		return;
+	}
+	ptr->ordinal = ord;
+	if (ptr->ordinal < rz_pvector_len(&ctx->obj->imports_by_ord)) {
+		rz_pvector_set(&ctx->obj->imports_by_ord, ptr->ordinal, ptr);
+	}
+	if (!strcmp(name, "__stack_chk_fail")) {
+		ctx->obj->has_canary = true;
+	}
+	if (!strcmp(name, "__asan_init") ||
+		!strcmp(name, "__tsan_init")) {
+		ctx->obj->has_sanitizers = true;
+	}
+	if (!strcmp(name, "_NSConcreteGlobalBlock")) {
+		ctx->obj->has_blocks_ext = true;
+	}
+	rz_list_append(ctx->imports_dst, ptr);
+	free(name);
+}
+
 static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinObject *obj = bf ? bf->o : NULL;
 	struct MACH0_(obj_t) *bin = bf ? bf->o->bin_obj : NULL;
-	const char *name;
-	RzBinImport *ptr = NULL;
-	int i;
-
 	if (!obj || !bin || !obj->bin_obj) {
-		return NULL;
-	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
-	struct import_t *imports = MACH0_(get_imports)(bf->o->bin_obj);
-	if (!ret || !imports) {
-		rz_list_free(ret);
-		free(imports);
 		return NULL;
 	}
 	bin->has_canary = false;
 	bin->has_retguard = -1;
 	bin->has_sanitizers = false;
 	bin->has_blocks_ext = false;
-	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = import_from_name(bf->rbin, imports[i].name, NULL))) {
-			break;
-		}
-		name = ptr->name;
-		ptr->ordinal = imports[i].ord;
-		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size) {
-			bin->imports_by_ord[ptr->ordinal] = ptr;
-		}
-		if (!strcmp(name, "__stack_chk_fail")) {
-			bin->has_canary = true;
-		}
-		if (!strcmp(name, "__asan_init") ||
-			!strcmp(name, "__tsan_init")) {
-			bin->has_sanitizers = true;
-		}
-		if (!strcmp(name, "_NSConcreteGlobalBlock")) {
-			bin->has_blocks_ext = true;
-		}
-		rz_list_append(ret, ptr);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
+		return NULL;
 	}
-	free(imports);
+	if (!rz_pvector_len(&bin->imports_by_ord)) {
+		size_t count = MACH0_(imports_count)(bin);
+		if (count) {
+			void **imp = rz_pvector_insert_range(&bin->imports_by_ord, 0, NULL, count);
+			if (imp) {
+				memset(imp, 0, sizeof(void *) * rz_pvector_len(&bin->imports_by_ord));
+			}
+		}
+	}
+	ImportsForeachCtx ctx = { bf->rbin, bin, ret };
+	// clang-format off
+	MACH0_(imports_foreach)(bin, imports_foreach_cb, &ctx);
+	// clang-format on
 	return ret;
 }
 
@@ -392,16 +389,15 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	}
 	ret->free = free;
 
-	RzSkipList *relocs;
-	if (!(relocs = MACH0_(get_relocs)(bf->o->bin_obj))) {
+	RzSkipList *relocs = MACH0_(get_relocs)(bf->o->bin_obj);
+	if (!relocs) {
 		return ret;
 	}
-
 	RzSkipListNode *it;
 	struct reloc_t *reloc;
 	rz_skiplist_foreach (relocs, it, reloc) {
-		RzBinReloc *ptr = NULL;
-		if (!(ptr = RZ_NEW0(RzBinReloc))) {
+		RzBinReloc *ptr = RZ_NEW0(RzBinReloc);
+		if (!ptr) {
 			break;
 		}
 		ptr->type = reloc->type;
@@ -413,10 +409,8 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 				break;
 			}
 			ptr->import = imp;
-		} else if (reloc->ord >= 0 && bin->imports_by_ord && reloc->ord < bin->imports_by_ord_size) {
-			ptr->import = bin->imports_by_ord[reloc->ord];
-		} else {
-			ptr->import = NULL;
+		} else if (reloc->ord >= 0 && reloc->ord < rz_pvector_len(&bin->imports_by_ord)) {
+			ptr->import = rz_pvector_at(&bin->imports_by_ord, reloc->ord);
 		}
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;
@@ -424,7 +418,6 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 		ptr->target_vaddr = reloc->target;
 		rz_list_append(ret, ptr);
 	}
-
 	return ret;
 }
 
@@ -475,8 +468,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->intrp = rz_str_dup(NULL, MACH0_(get_intrp)(bf->o->bin_obj));
 	ret->compiler = rz_str_dup(NULL, "");
 	ret->rclass = strdup("mach0");
-	ret->os = strdup(MACH0_(get_os)(bf->o->bin_obj));
-	ret->subsystem = strdup("darwin");
+	ret->os = strdup("darwin");
+	ret->subsystem = strdup(MACH0_(get_platform)(bf->o->bin_obj));
 	ret->arch = strdup(MACH0_(get_cputype)(bf->o->bin_obj));
 	ret->machine = MACH0_(get_cpusubtype)(bf->o->bin_obj);
 	ret->type = MACH0_(get_filetype)(bf->o->bin_obj);

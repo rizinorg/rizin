@@ -56,7 +56,7 @@ RUN
 
 NAME=section text start (not mapped)
 FILE=bins/elf/analysis/main_wrong_sect
-CMDS=?v section..text
+CMDS=%v section..text
 EXPECT=<<EOF
 0x410570
 EOF
@@ -180,5 +180,20 @@ FILE=bins/elf/analysis/no_sections.elf
 CMDS=iIj~{.stripped}
 EXPECT=<<EOF
 true
+EOF
+RUN
+
+NAME=OpenBSD nobtcfi
+FILE=bins/elf/openbsd-arm64-nobtcfi
+CMDS=<<EOF
+i~^nobtcfi
+ij~{.bin.nobtcfi}
+iSS~OPENBSD
+EOF
+EXPECT=<<EOF
+nobtcfi  true
+true
+0x00000b58 0x30  0x00020b58 0x30  0x8     -rw- OPENBSD_RANDOMIZE
+0x00000000 0x0   0x00000000 0x0   0x0     ---x OPENBSD_NOBTCFI
 EOF
 RUN

@@ -4,170 +4,13 @@
 #include <rz_bin.h>
 #include "i/private.h"
 
-static char *__hashify(char *s, ut64 vaddr) {
-	rz_return_val_if_fail(s, NULL);
-
-	char *os = s;
-	while (*s) {
-		if (!IS_PRINTABLE(*s)) {
-			if (vaddr && vaddr != UT64_MAX) {
-				char *ret = rz_str_newf("_%" PFMT64d, vaddr);
-				if (ret) {
-					free(os);
-				}
-				return ret;
-			}
-			ut32 hash = sdb_hash(s);
-			char *ret = rz_str_newf("%x", hash);
-			if (ret) {
-				free(os);
-			}
-			return ret;
-		}
-		s++;
-	}
-	return os;
-}
-
-// - name should be allocated on the heap
-RZ_API char *rz_bin_filter_name(RzBinFile *bf, HtPU *db, ut64 vaddr, char *name) {
-	rz_return_val_if_fail(db && name, NULL);
-
-	char *resname = name;
-	char *uname = rz_str_newf("%" PFMT64x ".%s", vaddr, name);
-	int count = 0;
-	HtPUKv *kv = ht_pu_find_kv(db, name, NULL);
-	if (kv) {
-		count = ++kv->value;
-	} else {
-		count = 1;
-		ht_pu_insert(db, name, 1ULL);
-	}
-
-	bool found;
-	ht_pu_find(db, uname, &found);
-	if (found) {
-		// TODO: symbol is dupped, so symbol can be removed!
-		free(uname);
-		return resname;
-	}
-
-	HtPUKv tmp = {
-		.key = uname,
-		.key_len = strlen(uname),
-		.value = 1ULL,
-		.value_len = sizeof(ut64)
-	};
-	ht_pu_insert_kv(db, &tmp, false);
-
-	if (vaddr) {
-		char *p = __hashify(resname, vaddr);
-		if (p) {
-			resname = p;
-		}
-	}
-	if (count > 1) {
-		char *p = rz_str_appendf(resname, "_%d", count - 1);
-		if (p) {
-			resname = p;
-		}
-
-		// two symbols at different addresses and same name
-		//	eprintf ("Symbol '%s' dupped!\n", sym->name);
-	}
-	return resname;
-}
-
-RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym) {
-	rz_return_if_fail(ht && sym && sym->name);
-	const char *name = sym->dname ? sym->dname : sym->name;
-
-	if (bf && bf->o && bf->o->lang && !sym->dname) {
-		char *dn = rz_bin_demangle(bf, NULL, name, sym->vaddr, false);
-		if (RZ_STR_ISNOTEMPTY(dn)) {
-			sym->dname = dn;
-			// extract class information from demangled symbol name
-			char *p = strchr(dn, '.');
-			if (p) {
-				if (IS_UPPER(*dn)) {
-					free(sym->classname);
-					sym->classname = strdup(dn);
-					sym->classname[p - dn] = 0;
-				} else if (IS_UPPER(p[1])) {
-					free(sym->classname);
-					sym->classname = strdup(p + 1);
-					p = strchr(sym->classname, '.');
-					if (p) {
-						*p = 0;
-					}
-				}
-			}
-		}
-	}
-
-	const char *uname = sdb_fmt("%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
-	bool res = ht_pp_insert(ht, uname, sym);
-	if (!res) {
-		return;
-	}
-	sym->dup_count = 0;
-
-	const char *oname = sdb_fmt("o.0.%c.%s", sym->is_imported ? 'i' : 's', name);
-	RzBinSymbol *prev_sym = ht_pp_find(ht, oname, NULL);
-	if (!prev_sym) {
-		if (!ht_pp_insert(ht, oname, sym)) {
-			RZ_LOG_WARN("Failed to insert dup_count in ht");
-			return;
-		}
-	} else {
-		sym->dup_count = prev_sym->dup_count + 1;
-		ht_pp_update(ht, oname, sym);
-	}
-}
-
-RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList /*<RzBinSymbol *>*/ *list) {
-	HtPP *ht = ht_pp_new0();
-	if (!ht) {
-		return;
-	}
-
-	RzListIter *iter;
-	RzBinSymbol *sym;
-	rz_list_foreach (list, iter, sym) {
-		if (sym && sym->name && *sym->name) {
-			rz_bin_filter_sym(bf, ht, sym->vaddr, sym);
-		}
-	}
-	ht_pp_free(ht);
-}
-
-RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList /*<RzBinSection *>*/ *list) {
-	RzBinSection *sec;
-	HtPU *db = ht_pu_new0();
-	RzListIter *iter;
-	rz_list_foreach (list, iter, sec) {
-		char *p = rz_bin_filter_name(bf, db, sec->vaddr, sec->name);
-		if (p) {
-			sec->name = p;
-		}
-	}
-	ht_pu_free(db);
-}
-
 static bool false_positive(const char *str) {
-	int i;
-	ut8 bo[0x100];
 	int up = 0;
 	int lo = 0;
 	int ot = 0;
-	int di = 0;
 	int ln = 0;
-	int sp = 0;
 	int nm = 0;
-	for (i = 0; i < 0x100; i++) {
-		bo[i] = 0;
-	}
-	for (i = 0; str[i]; i++) {
+	for (int i = 0; str[i]; i++) {
 		if (IS_DIGIT(str[i])) {
 			nm++;
 		} else if (str[i] >= 'a' && str[i] <= 'z') {
@@ -180,16 +23,7 @@ static bool false_positive(const char *str) {
 		if (str[i] == '\\') {
 			ot++;
 		}
-		if (str[i] == ' ') {
-			sp++;
-		}
-		bo[(ut8)str[i]] = 1;
 		ln++;
-	}
-	for (i = 0; i < 0x100; i++) {
-		if (bo[i]) {
-			di++;
-		}
 	}
 	if (ln > 2 && str[0] != '_') {
 		if (ln < 10) {

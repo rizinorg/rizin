@@ -90,7 +90,7 @@ RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 	}
 	hold = rz_config_hold_new(core->config);
 	rz_config_hold_s(hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
-		"asm.indent", "asm.bytes", "asm.comments", "asm.dwarf", "asm.usercomments", "asm.instr", NULL);
+		"asm.indent", "asm.bytes", "asm.comments", "asm.debuginfo", "asm.usercomments", "asm.instr", NULL);
 	if (for_graph) {
 		rz_config_set(core->config, "asm.hint.pos", "-2");
 		rz_config_set(core->config, "asm.lines", "false");
@@ -102,7 +102,7 @@ RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 	}
 	rz_config_set(core->config, "asm.cmt.col", "0");
 	rz_config_set(core->config, "asm.offset", "false");
-	rz_config_set(core->config, "asm.dwarf", "true");
+	rz_config_set(core->config, "asm.debuginfo", "true");
 	rz_config_set(core->config, "asm.bytes", "false");
 	rz_config_set(core->config, "asm.comments", "false");
 	rz_config_set(core->config, "asm.usercomments", "true");
@@ -450,6 +450,7 @@ RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const cha
 
 static int visual_help(RzCore *core) {
 	int ret = 0;
+	RzCoreVisual *visual = core->visual;
 	RzStrBuf *p, *q;
 repeat:
 	p = rz_strbuf_new(NULL);
@@ -467,7 +468,7 @@ repeat:
 		rz_strbuf_free(q);
 		return ret;
 	case '!':
-		rz_core_visual_panels_root(core, core->panels_root);
+		rz_core_visual_panels_root(core, visual->panels_root);
 		break;
 	case '?':
 		rz_core_visual_append_help(p, "Visual mode help", help_msg_visual);
@@ -2253,7 +2254,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_showcursor(core, false);
 		} break;
 		case '!':
-			rz_core_visual_panels_root(core, core->panels_root);
+			rz_core_visual_panels_root(core, visual->panels_root);
 			break;
 		case 'g':
 			rz_core_visual_showcursor(core, true);
@@ -3142,7 +3143,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 			// check dbg.follow here
 			int follow = (int)(st64)rz_config_get_i(core->config, "dbg.follow");
 			if (follow > 0) {
-				if ((curpc < core->offset) || (curpc > (core->offset + follow))) {
+				if ((curpc < core->offset) || (curpc >= (core->offset + follow))) {
 					rz_core_seek(core, curpc, true);
 				}
 			} else if (follow < 0) {
@@ -3716,7 +3717,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 
 			if (cmdvhex && *cmdvhex) {
 				rz_strf(debugstr,
-					"?0 ; f+ tmp ; sr %s @e: cfg.seek.silent=true ; %s ; ?1 ; %s ; ?1 ; "
+					"%%0 ; f+ tmp ; sr %s @e: cfg.seek.silent=true ; %s ; %%1 ; %s ; %%1 ; "
 					"s tmp @e: cfg.seek.silent=true ; f- tmp ; pd $r",
 					reg, cmdvhex,
 					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
@@ -3726,9 +3727,9 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 				const char sign = (delta < 0) ? '+' : '-';
 				const int absdelta = RZ_ABS(delta);
 				rz_strf(debugstr,
-					"diq ; ?0 ; f+ tmp ; sr %s @e: cfg.seek.silent=true ; %s %d @ $$%c%d;"
-					"?1 ; %s;"
-					"?1 ; s tmp @e: cfg.seek.silent=true ; f- tmp ; afal ; pd $r",
+					"diq ; %%0 ; f+ tmp ; sr %s @e: cfg.seek.silent=true ; %s %d @ $$%c%d;"
+					"%%1 ; %s;"
+					"%%1 ; s tmp @e: cfg.seek.silent=true ; f- tmp ; afal ; pd $r",
 					reg, pxa ? "pxa" : pxw, size, sign, absdelta,
 					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
 			}

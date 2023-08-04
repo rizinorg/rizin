@@ -17,7 +17,7 @@ mnemonic: mov
 description: moves data from src to dst
 mask: ffffffffffffff
 prefix: 0
-id: 449
+id: 460
 bytes: c745f400000000
 val: 0x00000000
 disp: 0xfffffffffffffff4
@@ -64,7 +64,7 @@ stackptr: 8
     },
     "sign": false,
     "prefix": 0,
-    "id": 449,
+    "id": 460,
     "opex": {
       "operands": [
         {
@@ -110,6 +110,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e asm.cpu=cortexA8
 wx 2f6c642d
 aoj~{[0].disasm}
 aoj~{[0].opex}
@@ -134,10 +135,10 @@ aam
 3
 cmova           conditional move - above/not below nor equal (cf=0 and zf=0)
 cmovae          conditional move - above or equal/not below/not carry (cf=0)
+movabs          absolute data moves
 movapd          move aligned packed double-fp values
 movaps          move aligned packed single-fp values
 vmovapd         move aligned packed double-precision floating-point values
 vmovaps         move aligned packed single-precision floating-point values
-movabs          absolute data moves
 EOF
 RUN

@@ -812,52 +812,98 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-  - name: psc
-    summary: Generate a C/C++ string
-    cname: print_string_c_cpp
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-    args: []
-  - name: psw
-    summary: Print buffer as a utf16le string
-    cname: print_utf16le
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
-  - name: psW
-    summary: Print buffer as a utf32le string
-    cname: print_utf32le
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
-  - name: psm
-    summary: Print buffer as a utf16be string
-    cname: print_utf16be
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
-  - name: psM
-    summary: Print buffer as a utf32be string
-    cname: print_utf32be
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
+  - name: ps
+    summary: Print string at the current offset
+    subcommands:
+      - name: ps
+        summary: Print the autodetected string at the current offset (not zero-terminated)
+        cname: print_string_auto_detect
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: delimiter
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "null"
+            choices: ["null", "block"]
+      - name: ps+
+        summary: Print libc++ std::string (same-endian, ascii, zero-terminated)
+        cname: print_string_as_libcpp_string
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psb
+        summary: Print all the strings in current block
+        cname: print_strings_current_block
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: psc
+        summary: Generate a C/C++ string
+        cname: print_string_c_cpp
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: psi
+        summary: Print the first string in the current block
+        cname: print_first_string_current_block
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: psp
+        summary: Print the pascal string at the current offset
+        cname: print_pascal_string
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: bits
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "8"
+            choices: ["8", "16", "32", "64"]
+      - name: pss
+        summary: Print string at the current offset in screen (wrap width)
+        cname: print_string_wrap_width
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: psm
+        summary: Print buffer as a utf16be string
+        cname: print_utf16be
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psM
+        summary: Print buffer as a utf32be string
+        cname: print_utf32be
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psn
+        summary: Print string with escaped new lines
+        cname: print_string_escaped_newlines
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psw
+        summary: Print buffer as a utf16le string
+        cname: print_utf16le
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psW
+        summary: Print buffer as a utf32le string
+        cname: print_utf32le
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
   - name: pv
     summary: Print bytes based on current bitness and endianness
     subcommands:
@@ -1401,6 +1447,28 @@ commands:
           - name: skip
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: p=r
+        summary: Print rising and falling entropy.
+        cname: print_rising_and_falling_entropy
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_TABLE
+        details:
+          - name: Default values
+            entries:
+              - text: ""
+                comment: "Default rising threshold is 0.95 and falling threshold is 0.85"
+        args:
+          - name: rising_threshold
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: falling_threshold
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: p=i
         summary: Show a vertical histogram of invalid instructions per each block
         cname: print_equal_invalid
@@ -1489,159 +1557,247 @@ commands:
               - name: skip
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
+          - name: p==v
+            summary: Show a visual horizontal histogram of bytes in current block
+            cname: print_equal_equal_visual
+            args: []
           - name: p==0
             summary: Show a horizontal histogram of 0x00 bytes per each block
-            cname: print_equal_equal_0x00
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==0
+                summary: Show a horizontal histogram of 0x00 bytes per each block
+                cname: print_equal_equal_0x00
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==0v
+                summary: Show a interactive horizontal histogram of 0x00 bytes per each block
+                cname: print_equal_equal_0x00_visual
+                args: []
           - name: p==F
             summary: Show a horizontal histogram of 0xFF bytes per each block
-            cname: print_equal_equal_0xff
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==F
+                summary: Show a horizontal histogram of 0xFF bytes per each block
+                cname: print_equal_equal_0xff
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==Fv
+                summary: Show a interactive horizontal histogram of 0xFF bytes per each block
+                cname: print_equal_equal_0xff_visual
+                args: []
           - name: p==a
             summary: Show a horizontal histogram of basic blocks per each block
-            cname: print_equal_equal_bbs
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==a
+                summary: Show a horizontal histogram of basic blocks per each block
+                cname: print_equal_equal_bbs
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==av
+                summary: Show a interactive horizontal histogram of basic blocks per each block
+                cname: print_equal_equal_bbs_visual
+                args: []
           - name: p==A
             summary: Show a horizontal histogram of statistical maps per each block
-            cname: print_equal_equal_stats
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==A
+                summary: Show a horizontal histogram of statistical maps per each block
+                cname: print_equal_equal_stats
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==Av
+                summary: Show a interactive horizontal histogram of statistical maps per each block
+                cname: print_equal_equal_stats_visual
+                args: []
           - name: p==c
             summary: Show a horizontal histogram of calls per each block
-            cname: print_equal_equal_call
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==c
+                summary: Show a horizontal histogram of calls per each block
+                cname: print_equal_equal_call
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==cv
+                summary: Show a interactive horizontal histogram of calls per each block
+                cname: print_equal_equal_call_visual
+                args: []
           - name: p==e
             summary: Show a horizontal histogram of entropy per each block
-            cname: print_equal_equal_entropy
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==e
+                summary: Show a horizontal histogram of entropy per each block
+                cname: print_equal_equal_entropy
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==ev
+                summary: Show a interactive horizontal histogram of entropy per each block
+                cname: print_equal_equal_entropy_visual
+                args: []
           - name: p==i
-            summary: Show a vertical histogram of invalid instructions per each block
-            cname: print_equal_equal_invalid
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            summary: Show a horizontal histogram of invalid instructions per each block
+            subcommands:
+              - name: p==i
+                summary: Show a horizontal histogram of invalid instructions per each block
+                cname: print_equal_equal_invalid
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==iv
+                summary: Show a interactive horizontal histogram of invalid instructions per each block
+                cname: print_equal_equal_invalid_visual
+                args: []
           - name: p==j
             summary: Show a horizontal histogram of jumps and conditional jumps per each block
-            cname: print_equal_equal_jump
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==j
+                summary: Show a horizontal histogram of jumps and conditional jumps per each block
+                cname: print_equal_equal_jump
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==jv
+                summary: Show a interactive horizontal histogram of jumps and conditional jumps per each block
+                cname: print_equal_equal_jump_visual
+                args: []
           - name: p==m
             summary: Show a horizontal histogram of number of flags and marks per each block
-            cname: print_equal_equal_m
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==m
+                summary: Show a horizontal histogram of number of flags and marks per each block
+                cname: print_equal_equal_m
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==mv
+                summary: Show a interactive horizontal histogram of number of flags and marks per each block
+                cname: print_equal_equal_m_visual
+                args: []
           - name: p==p
             summary: Show a horizontal histogram of printable bytes per each block
-            cname: print_equal_equal_printable
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            subcommands:
+              - name: p==p
+                summary: Show a horizontal histogram of printable bytes per each block
+                cname: print_equal_equal_printable
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==pv
+                summary: Show a interactive horizontal histogram of printable bytes per each block
+                cname: print_equal_equal_printable_visual
+                args: []
           - name: p==s
-            summary: Show a vertical histogram of syscalls and privileged instructions per each block
-            cname: print_equal_equal_priv
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            summary: Show a horizontal histogram of syscalls and privileged instructions per each block
+            subcommands:
+              - name: p==s
+                summary: Show a horizontal histogram of syscalls and privileged instructions per each block
+                cname: print_equal_equal_priv
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==sv
+                summary: Show a interactive horizontal histogram of syscalls and privileged instructions per each block
+                cname: print_equal_equal_priv_visual
+                args: []
           - name: p==z
-            summary: Show a vertical histogram of number of chars in strings per each block
-            cname: print_equal_equal_z
-            args:
-              - name: blocks
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: totalsize
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: skip
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            summary: Show a horizontal histogram of number of chars in strings per each block
+            subcommands:
+              - name: p==z
+                summary: Show a horizontal histogram of number of chars in strings per each block
+                cname: print_equal_equal_z
+                args:
+                  - name: blocks
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: totalsize
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: skip
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+              - name: p==zv
+                summary: Show a interactive horizontal histogram of number of chars in strings per each block
+                cname: print_equal_equal_z_visual
+                args: []

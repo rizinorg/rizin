@@ -25,26 +25,26 @@ Cv var_8h comment for var_8h
 Cv var_rax comment for var_rax
 
 pd 1 ~comment
-?e --
+echo --
 Cvr
 Cvr*
-?e --
+echo --
 Cvs
 Cvs*
-?e --
+echo --
 
 Cv- arg_8h
 pd 1 ~comment
-?e --
+echo --
 Cv- var_8h
 pd 1 ~comment
-?e --
+echo --
 Cv- var_rax
 pd 1 ~comment
-?e --
+echo --
 EOF
 EXPECT=<<EOF
-|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+|           ; var uint64_t var_rax @ rax    ; comment for var_rax
 |           ; var uint32_t var_8h @ stack - 0x8    ; comment for var_8h
 |           ; arg int arg_8h @ stack + 0x8    ; comment for arg_8h
 --
@@ -56,10 +56,10 @@ var_8h : comment for var_8h
 "Cvs arg_8h base64:Y29tbWVudCBmb3IgYXJnXzho @ 0x00000010"
 "Cvs var_8h base64:Y29tbWVudCBmb3IgdmFyXzho @ 0x00000010"
 --
-|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+|           ; var uint64_t var_rax @ rax    ; comment for var_rax
 |           ; var uint32_t var_8h @ stack - 0x8    ; comment for var_8h
 --
-|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+|           ; var uint64_t var_rax @ rax    ; comment for var_rax
 --
 --
 EOF

@@ -471,13 +471,11 @@ extern RzIOPlugin rz_io_plugin_winkd;
 extern RzIOPlugin rz_io_plugin_rzpipe;
 extern RzIOPlugin rz_io_plugin_rzweb;
 extern RzIOPlugin rz_io_plugin_qnx;
-extern RzIOPlugin rz_io_plugin_rzk;
 extern RzIOPlugin rz_io_plugin_tcp;
 extern RzIOPlugin rz_io_plugin_bochs;
 extern RzIOPlugin rz_io_plugin_null;
 extern RzIOPlugin rz_io_plugin_ar;
 extern RzIOPlugin rz_io_plugin_winedbg;
-extern RzIOPlugin rz_io_plugin_gprobe;
 extern RzIOPlugin rz_io_plugin_fd;
 
 #if __cplusplus

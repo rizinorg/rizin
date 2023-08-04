@@ -200,7 +200,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define ARG(x) (*str[x] != 0) ? str[x] : arg(handle, insn, str[x], x)
 
-static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = { { 0 } };
 	int i;
 
@@ -719,12 +719,10 @@ static void set_opdir(RzAnalysisOp *op) {
 	}
 }
 
-static int analop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	int n, ret, opsize = -1;
-	static csh hndl = 0;
-	static int omode = -1;
-	static int obits = 32;
-	cs_insn *insn;
+static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	int n = 0, opsize = -1;
+	csh hndl = 0;
+	cs_insn *insn = NULL;
 	int mode = analysis->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	if (analysis->cpu && *analysis->cpu) {
@@ -740,26 +738,29 @@ static int analop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 #endif
 		}
 	}
-	mode |= (analysis->bits == 64) ? CS_MODE_MIPS64 : CS_MODE_MIPS32;
-	if (mode != omode || analysis->bits != obits) {
-		cs_close(&hndl);
-		hndl = 0;
-		omode = mode;
-		obits = analysis->bits;
+	switch (analysis->bits) {
+	case 64:
+		mode |= CS_MODE_MIPS64;
+		break;
+	case 32:
+		mode |= CS_MODE_MIPS32;
+		break;
+	default:
+		return -1;
 	}
+
 	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
 	if (len < 4) {
 		return -1;
 	}
 	op->size = 4;
-	if (hndl == 0) {
-		ret = cs_open(CS_ARCH_MIPS, mode, &hndl);
-		if (ret != CS_ERR_OK) {
-			goto fin;
-		}
-		cs_option(hndl, CS_OPT_DETAIL, CS_OPT_ON);
+
+	if (cs_open(CS_ARCH_MIPS, mode, &hndl) != CS_ERR_OK) {
+		return -1;
 	}
+	cs_option(hndl, CS_OPT_DETAIL, CS_OPT_ON);
+
 	n = cs_disasm(hndl, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
@@ -1083,16 +1084,16 @@ beach:
 		opex(&op->opex, hndl, insn);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-		if (analop_esil(analysis, op, addr, buf, len, &hndl, insn) != 0) {
+		if (analyze_op_esil(analysis, op, addr, buf, len, &hndl, insn) != 0) {
 			rz_strbuf_fini(&op->esil);
 		}
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		op_fillval(analysis, op, &hndl, insn);
 	}
+
 	cs_free(insn, n);
-	// cs_close (&handle);
-fin:
+	cs_close(&hndl);
 	return opsize;
 }
 
@@ -1236,7 +1237,7 @@ RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 	.archinfo = archinfo,
 	.preludes = analysis_preludes,
 	.bits = 16 | 32 | 64,
-	.op = &analop,
+	.op = &analyze_op,
 };
 
 #ifndef RZ_PLUGIN_INCORE

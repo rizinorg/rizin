@@ -44,12 +44,12 @@ RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b) {
 
 static char *getFunctionName(RzCore *core, ut64 addr) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (bf && bf->o) {
-		RzBinSymbol *sym = ht_up_find(bf->o->addrzklassmethod, addr, NULL);
-		if (sym && sym->classname && sym->name) {
-			return rz_str_newf("method.%s.%s", sym->classname, sym->name);
-		}
+
+	RzBinSymbol *sym = bf && bf->o ? rz_bin_object_find_method_by_vaddr(bf->o, addr) : NULL;
+	if (sym && sym->classname && sym->name) {
+		return rz_str_newf("method.%s.%s", sym->classname, sym->name);
 	}
+
 	RzFlagItem *flag = rz_core_flag_get_by_spaces(core->flags, addr);
 	return (flag && flag->name) ? strdup(flag->name) : NULL;
 }
@@ -65,6 +65,7 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 	RzBin *bin = core->bin;
 	ut8 buffer[512] = { 0 };
 	bool ret = false;
+	bool big_endian = core->analysis->big_endian;
 	RzDetectedString *detected = NULL;
 
 	RzList *strings = rz_list_newf((RzListFree)rz_detected_string_free);
@@ -82,7 +83,7 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 		.buf_size = sizeof(buffer),
 		.max_uni_blocks = 4,
 		.min_str_length = min_str_length,
-		.prefer_big_endian = false,
+		.prefer_big_endian = big_endian,
 		.check_ascii_freq = bin->strseach_check_ascii_freq,
 	};
 
@@ -1590,21 +1591,6 @@ RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr) {
 	return true;
 }
 
-RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn) {
-	bool demangle = rz_config_get_i(core->config, "bin.demangle");
-	const char *lang = demangle ? rz_config_get(core->config, "bin.lang") : NULL;
-	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
-	char *name = strdup(fcn->name ? fcn->name : "");
-	if (demangle) {
-		char *tmp = rz_bin_demangle(core->bin->cur, lang, name, fcn->addr, keep_lib);
-		if (tmp) {
-			free(name);
-			name = tmp;
-		}
-	}
-	return name;
-}
-
 /**
  * \brief for a given function returns an RzList of all functions that were called in it
  */
@@ -2457,66 +2443,66 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	return true;
 }
 
-RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize) {
-	RzAnalysisData *d;
-	ut64 dstaddr = 0LL;
+/**
+ * \brief      Tries to detect the type of data at a given address and prints its contents.
+ *
+ * \param  core      The RzCore structure to use
+ * \param  addr      The address to analyze
+ * \param  count     The number of bytes to analyze
+ * \param  depth     The max depth for analyzing pointers
+ * \param  wordsize  The word size (when 0, the word size will be set to arch bits/8)
+ */
+RZ_API void rz_core_analysis_data(RZ_NONNULL RzCore *core, ut64 addr, ut32 count, ut32 depth, ut32 wordsize) {
+	rz_return_if_fail(core);
+
+	RzAnalysisData *d = NULL;
 	ut8 *buf = core->block;
-	int len = core->blocksize;
+	ut32 old_len = core->blocksize;
+	ut64 old_offset = core->offset;
 	int word = wordsize ? wordsize : core->rasm->bits / 8;
-	char *str;
-	int i, j;
-
-	count = RZ_MIN(count, len);
-	buf = malloc(len + 1);
-	if (!buf) {
-		return false;
-	}
-	memset(buf, 0xff, len);
-	rz_io_read_at(core->io, addr, buf, len);
-	buf[len - 1] = 0;
-
+	char *str = NULL;
 	RzConsPrintablePalette *pal = rz_config_get_i(core->config, "scr.color") ? &rz_cons_singleton()->context->pal : NULL;
-	for (i = j = 0; j < count; j++) {
-		if (i >= len) {
-			rz_io_read_at(core->io, addr + i, buf, len);
-			buf[len] = 0;
-			addr += i;
-			i = 0;
+
+	if (count > old_len) {
+		rz_core_block_size(core, count);
+	}
+	rz_core_seek(core, addr, true);
+
+	for (ut32 i = 0, j = 0; j < count; j++) {
+		d = rz_analysis_data(core->analysis, addr + i, buf + i, count - i, wordsize);
+		if (!d) {
+			i += word;
 			continue;
 		}
-		/* rz_analysis_data requires null-terminated buffer according to coverity */
-		/* but it should not.. so this must be fixed in analysis/data.c instead of */
-		/* null terminating here */
-		d = rz_analysis_data(core->analysis, addr + i, buf + i, len - i, wordsize);
-		str = rz_analysis_data_to_string(d, pal);
-		rz_cons_println(str);
 
-		if (d) {
-			switch (d->type) {
-			case RZ_ANALYSIS_DATA_TYPE_POINTER:
-				rz_cons_printf("`- ");
-				dstaddr = rz_mem_get_num(buf + i, word);
-				if (depth > 0) {
-					rz_core_analysis_data(core, dstaddr, 1, depth - 1, wordsize);
-				}
-				i += word;
-				break;
-			case RZ_ANALYSIS_DATA_TYPE_STRING:
-				buf[len - 1] = 0;
-				i += strlen((const char *)buf + i) + 1;
-				break;
-			default:
-				i += (d->len > 3) ? d->len : word;
-				break;
+		str = rz_analysis_data_to_string(d, pal);
+		if (RZ_STR_ISNOTEMPTY(str)) {
+			rz_cons_println(str);
+		}
+		switch (d->type) {
+		case RZ_ANALYSIS_DATA_INFO_TYPE_POINTER:
+			rz_cons_printf("`- ");
+			if (depth > 0) {
+				ut64 pointer = rz_mem_get_num(buf + i, word);
+				rz_core_analysis_data(core, pointer, 1, depth - 1, wordsize);
 			}
-		} else {
 			i += word;
+			break;
+		case RZ_ANALYSIS_DATA_INFO_TYPE_STRING:
+			i += d->len;
+			break;
+		default:
+			i += (d->len > 3) ? d->len : word;
+			break;
 		}
 		free(str);
 		rz_analysis_data_free(d);
 	}
-	free(buf);
-	return true;
+
+	if (count > old_len) {
+		rz_core_block_size(core, old_len);
+	}
+	rz_core_seek(core, old_offset, true);
 }
 
 struct block_flags_stat_t {
@@ -3028,9 +3014,7 @@ static int esilbreak_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, 
 static ut64 esilbreak_last_read = UT64_MAX;
 static ut64 esilbreak_last_data = UT64_MAX;
 
-static ut64 ntarget = UT64_MAX;
-
-// TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
+// TODO differentiate endian-aware mem_read with other reads
 static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RzCore *core = esil->analysis->coreb.core;
 	ut8 str[128];
@@ -3057,28 +3041,21 @@ static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len
 			break;
 		}
 		// TODO incorrect
-		bool validRef = false;
 		if (trace && myvalid(core->io, refptr)) {
-			if (ntarget == UT64_MAX || ntarget == refptr) {
+			str[0] = 0;
+			if (rz_io_read_at(core->io, refptr, str, sizeof(str)) < 1) {
+				// RZ_LOG_ERROR("core: invalid read\n");
 				str[0] = 0;
-				if (rz_io_read_at(core->io, refptr, str, sizeof(str)) < 1) {
-					// RZ_LOG_ERROR("core: invalid read\n");
-					str[0] = 0;
-					validRef = false;
-				} else {
-					rz_analysis_xrefs_set(core->analysis, esil->address, refptr, RZ_ANALYSIS_XREF_TYPE_DATA);
-					str[sizeof(str) - 1] = 0;
-					add_string_ref(core, esil->address, refptr);
-					esilbreak_last_data = UT64_MAX;
-					validRef = true;
-				}
+			} else {
+				rz_analysis_xrefs_set(core->analysis, esil->address, refptr, RZ_ANALYSIS_XREF_TYPE_DATA);
+				str[sizeof(str) - 1] = 0;
+				add_string_ref(core, esil->address, refptr);
+				esilbreak_last_data = UT64_MAX;
 			}
 		}
 
 		/** resolve ptr */
-		if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
-			rz_analysis_xrefs_set(core->analysis, esil->address, addr, RZ_ANALYSIS_XREF_TYPE_DATA);
-		}
+		rz_analysis_xrefs_set(core->analysis, esil->address, addr, RZ_ANALYSIS_XREF_TYPE_DATA);
 	}
 	return 0; // fallback
 }
@@ -3372,7 +3349,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		.shadow_store = fcn && fcn->cc ? rz_analysis_cc_shadow_store(core->analysis, fcn->cc) : 0
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
-	// this is necessary for the hook to read the id of analop
+	// this is necessary for the hook to read the id of RzAnalysisOp
 	ESIL->user = &ctx;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
@@ -3448,6 +3425,9 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 
 		rz_analysis_op_fini(&op);
 		rz_asm_set_pc(core->rasm, cur);
+		if (i >= iend) {
+			goto repeat;
+		}
 		rz_analysis_op(core->analysis, &op, cur, buf + i, iend - i, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT);
 		// if (op.type & 0x80000000 || op.type == 0) {
 		if (op.type == RZ_ANALYSIS_OP_TYPE_ILL || op.type == RZ_ANALYSIS_OP_TYPE_UNK) {
@@ -3706,9 +3686,10 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
 	bool vinfunr = rz_config_get_b(core->config, "analysis.vinfunrange");
 	bool analyze_strings = rz_config_get_b(core->config, "analysis.strings");
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
-	ut64 from = search_itv.addr, to = rz_itv_end(search_itv);
+	ut64 from = rz_itv_begin(search_itv), to = rz_itv_end(search_itv);
 	ut32 v32;
 	ut16 v16;
 	if (from >= to) {
@@ -3753,6 +3734,9 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 				continue;
 			}
 		}
+		if (size <= vsize) {
+			break;
+		}
 		for (i = 0; i <= (size - vsize); i++) {
 			void *v = (buf + i);
 			ut64 addr = from + i;
@@ -3769,21 +3753,21 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 			}
 			switch (vsize) {
 			case 1:
-				value = *(ut8 *)v;
+				value = rz_read_ble8(v);
 				match = (buf[i] >= vmin && buf[i] <= vmax);
 				break;
 			case 2:
-				v16 = rz_read_le16(v); // TODO: support big endian
+				v16 = rz_read_ble16(v, big_endian);
 				match = (v16 >= vmin && v16 <= vmax);
 				value = v16;
 				break;
 			case 4:
-				v32 = rz_read_le32(v); // TODO: support big endian
+				v32 = rz_read_ble32(v, big_endian);
 				match = (v32 >= vmin && v32 <= vmax);
 				value = v32;
 				break;
 			case 8:
-				v64 = rz_read_le64(v); // TODO: support big endian
+				v64 = rz_read_ble64(v, big_endian);
 				match = (v64 >= vmin && v64 <= vmax);
 				value = v64;
 				break;
@@ -4087,7 +4071,13 @@ RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char
 		RzFlagItem *flag = rz_flag_get(core->flags, fcn->name);
 		if (flag && flag->space && strcmp(flag->space->name, RZ_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
-			rz_flag_rename(core->flags, flag, name);
+			if (!rz_flag_rename(core->flags, flag, name)) {
+				// If the rename failed, it may be because there is already a flag with the target name
+				if (rz_flag_get(core->flags, name)) {
+					// If that is the case, just unset the old one to not leak it (e.g. leaving behind fcn.<offset>)
+					rz_flag_unset(core->flags, flag);
+				}
+			}
 		} else {
 			// No flag or not specific to the function, create a new one.
 			rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
@@ -4685,6 +4675,16 @@ static bool is_apple_target(RzCore *core) {
 	return bo ? strstr(bo->plugin->name, "mach") : false;
 }
 
+static void core_analysis_using_plugins(RzCore *core) {
+	RzListIter *it;
+	const RzCorePlugin *plugin;
+	rz_list_foreach (core->plugins, it, plugin) {
+		if (plugin->analysis) {
+			plugin->analysis(core);
+		}
+	}
+}
+
 /**
  * Runs all the steps of the deep analysis.
  *
@@ -4700,12 +4700,30 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool plugin_supports_esil = core->analysis->cur->esil;
+	bool is_apple = is_apple_target(core);
+
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		rz_core_notify_done(core, "Find function and symbol names from golang binaries");
 		if (rz_core_analysis_recover_golang_functions(core)) {
 			rz_core_analysis_resolve_golang_strings(core);
 		}
+		rz_core_task_yield(&core->tasks);
+		if (rz_cons_is_breaked()) {
+			return false;
+		}
 	}
+
+	if (is_apple) {
+		notify = "Recover all Objective-C selector stub names";
+		rz_core_notify_begin(core, "%s", notify);
+		rz_core_analysis_objc_stubs(core); // "aalos"
+		rz_core_notify_done(core, "%s", notify);
+		rz_core_task_yield(&core->tasks);
+		if (rz_cons_is_breaked()) {
+			return false;
+		}
+	}
+
 	rz_core_task_yield(&core->tasks);
 	if (!cfg_debug) {
 		if (dh_orig && strcmp(dh_orig, "esil")) {
@@ -4731,7 +4749,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	if (is_unknown_file(core)) {
+	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
 		notify = "find and analyze function preludes";
 		rz_core_notify_begin(core, "%s", notify);
 		(void)rz_core_search_preludes(core, false); // "aap"
@@ -4752,10 +4770,10 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	if (is_apple_target(core)) {
+	if (is_apple) {
 		notify = "Check for objc references";
 		rz_core_notify_begin(core, "%s", notify);
-		cmd_analysis_objc(core, true);
+		rz_core_analysis_objc_refs(core, true); // "aalor"
 		rz_core_notify_done(core, "%s", notify);
 	}
 	rz_core_task_yield(&core->tasks);
@@ -4886,6 +4904,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
 	}
 
+	core_analysis_using_plugins(core);
 	return true;
 }
 
@@ -4932,10 +4951,19 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_core_analysis_sigdb_list(RZ_NONNUL
 		free(system_sigdb);
 	}
 
+	if (rz_config_get_b(core->config, "flirt.sigdb.load.extra")) {
+		char *extra_sigdb = rz_path_extra(RZ_SIGDB);
+		analysis_sigdb_add(sigs, extra_sigdb, with_details);
+		free(extra_sigdb);
+	}
+
 	const char *user_sigdb = rz_config_get(core->config, "flirt.sigdb.path");
 	analysis_sigdb_add(sigs, user_sigdb, with_details);
 
-	return rz_sign_sigdb_list(sigs);
+	RzList *lst = rz_sign_sigdb_list(sigs);
+	sigs->entries->opt.freefn = NULL;
+	rz_sign_sigdb_free(sigs);
+	return lst;
 }
 
 /**
@@ -5069,7 +5097,27 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 	return true;
 }
 
-RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
+/**
+ * \brief Get the address of a stack variable.
+ *
+ * The address for stack backed variables is computed from the
+ * current base pointer register. Register backed variables will always
+ * return UT64_MAX.
+ *
+ * \param var Pointer to a \ref RzAnalysisVar.
+ */
+RZ_API ut64 rz_core_analysis_var_addr(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(core && var, UT64_MAX);
+	if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
+		// TODO: If bp is not available, we can also get the address from the sp
+		// through info available from rz_analysis_block_get_sp_at()
+		ut64 stack = rz_core_reg_getv_by_role_or_name(core, "BP");
+		return stack + var->fcn->bp_off + var->storage.stack_off;
+	}
+	return UT64_MAX;
+}
+
+RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	char *fmt = rz_type_as_format(analysis->typedb, var->type);
@@ -5095,7 +5143,7 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-		ut64 addr = rz_analysis_var_addr(var);
+		ut64 addr = rz_core_analysis_var_addr(core, var);
 		char *r;
 		if (usePxr) {
 			// TODO: convert to API
@@ -5463,7 +5511,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 			}
 			rz_core_notify_done(core, "Value from 0x%08" PFMT64x " to 0x%08" PFMT64x " (aav)", from, to);
 			rz_list_foreach (list, iter, map) {
-				ut64 begin = map->itv.addr;
+				ut64 begin = rz_itv_begin(map->itv);
 				ut64 end = rz_itv_end(map->itv);
 				if (rz_cons_is_breaked()) {
 					break;
@@ -5532,7 +5580,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 	sdb_free(db);
 }
 
-RZ_API void rz_core_analysis_cc_init(RzCore *core) {
+RZ_API void rz_core_analysis_cc_init_by_path(RzCore *core, RZ_NULLABLE const char *path, RZ_NULLABLE const char *homepath) {
 	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
 	Sdb *cc = core->analysis->sdb_cc;
 	if (!strcmp(analysis_arch, "null")) {
@@ -5541,14 +5589,10 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 		return;
 	}
 
-	int bits = core->analysis->bits;
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
-	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
 	char buf[40];
-	char *dbpath = rz_file_path_join(types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
-	char *dbhomepath = rz_file_path_join(home_types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
-	free(types_dir);
-	free(home_types_dir);
+	int bits = core->analysis->bits;
+	char *dbpath = rz_file_path_join(path ? path : "", rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
+	char *dbhomepath = rz_file_path_join(homepath ? homepath : "", rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
 
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp(cc->path, dbpath) || !strcmp(cc->path, dbhomepath))) {
@@ -5564,8 +5608,12 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 	}
 	if (rz_file_exists(dbhomepath)) {
 		sdb_concat_by_path(cc, dbhomepath);
+		free(cc->path);
 		cc->path = strdup(dbhomepath);
 	}
+	free(dbpath);
+	free(dbhomepath);
+
 	// same as "tcc `arcc`"
 	char *s = rz_reg_profile_to_cc(core->analysis->reg);
 	if (s && !rz_analysis_cc_set(core->analysis, s)) {
@@ -5574,11 +5622,17 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 		RZ_LOG_ERROR("core: cannot derive CC from reg profile.\n");
 	}
 	free(s);
-	if (sdb_isempty(core->analysis->sdb_cc)) {
+	if (sdb_isempty(cc)) {
 		RZ_LOG_WARN("core: missing calling conventions for '%s'. Deriving it from the regprofile.\n", analysis_arch);
 	}
-	free(dbpath);
-	free(dbhomepath);
+}
+
+RZ_API void rz_core_analysis_cc_init(RzCore *core) {
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
+	rz_core_analysis_cc_init_by_path(core, types_dir, home_types_dir);
+	free(types_dir);
+	free(home_types_dir);
 }
 
 /**
@@ -6392,4 +6446,100 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 		start_addr = rz_core_prevop_addr_heuristic(core, start_addr);
 	}
 	return start_addr;
+}
+
+/**
+ * \brief Check if core is debugging.
+ * \param core RzCore instance performing analysis.
+ * \return true if core is debugging, false otherwise.
+ * */
+RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore *core) {
+	return core && core->io && core->io->desc && core->io->desc->plugin && core->io->desc->plugin->isdbg;
+}
+
+/**
+ * \brief Perform auto analysis based on given analysis type.
+ * \param core RzCore instance that'll be used to perform the analysis.
+ * \param type Analysis type.
+ * */
+RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type) {
+	rz_return_if_fail(core);
+
+	ut64 old_offset = core->offset;
+	const char *notify = "Analyze all flags starting with sym. and entry0 (aa)";
+	rz_core_notify_begin(core, "%s", notify);
+	rz_cons_break_push(NULL, NULL);
+	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
+	rz_cons_break_timeout(timeout);
+	rz_core_analysis_all(core);
+	rz_core_notify_done(core, "%s", notify);
+	rz_core_task_yield(&core->tasks);
+
+	// set debugger only if is debugging
+	char *debugger = NULL;
+	if (rz_core_is_debugging(core)) {
+		debugger = core->dbg->cur ? strdup(core->dbg->cur->name) : strdup("esil");
+	}
+	rz_cons_clear_line(1);
+
+	// if type was simple only then don't proceed further
+	if (type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
+		goto finish;
+	}
+
+	// Run pending analysis immediately after analysis
+	// Usefull when running commands with ";" or via rizin -c,-i
+	rz_core_analysis_everything(core, type == RZ_CORE_ANALYSIS_EXPERIMENTAL, debugger);
+finish:
+	rz_core_seek(core, old_offset, true);
+	// XXX this shouldnt be called. flags muts be created wheen the function is registered
+	rz_core_analysis_flag_every_function(core);
+	rz_cons_break_pop();
+	RZ_FREE(debugger);
+}
+
+/**
+ * \brief Get string representation of RzAnalysisVar.
+ *
+ * \param core RzCore instance
+ * \param var RzAnalysisVar to be converted to string
+ */
+RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var) {
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return NULL;
+	}
+
+	bool color = rz_config_get_b(core->config, "scr.color");
+	bool color_arg = color && rz_config_get_b(core->config, "scr.color.args");
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
+
+	const char *pfx = rz_analysis_var_is_arg(var) ? "arg" : "var";
+	char *constr = rz_analysis_var_get_constraints_readable(var);
+	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+	rz_strbuf_appendf(sb, "%s%s %s%s%s%s %s%s%s%s@ ",
+		color_arg ? pal->func_var : "", pfx,
+		color_arg ? pal->func_var_type : "", vartype,
+		rz_str_endswith(vartype, "*") ? "" : " ",
+		var->name,
+		color_arg ? pal->func_var_addr : "",
+		constr ? " { " : "",
+		constr ? constr : "",
+		constr ? "} " : "");
+	free(vartype);
+	free(constr);
+
+	switch (var->storage.type) {
+	case RZ_ANALYSIS_VAR_STORAGE_REG: {
+		rz_strbuf_append(sb, var->storage.reg);
+		break;
+	}
+	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
+		const RzStackAddr off = var->storage.stack_off;
+		const char sign = off >= 0 ? '+' : '-';
+		rz_strbuf_appendf(sb, "stack %c 0x%" PFMT64x, sign, RZ_ABS(off));
+		break;
+	}
+	}
+	return rz_strbuf_drain(sb);
 }

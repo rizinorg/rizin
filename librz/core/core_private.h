@@ -35,7 +35,6 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, const char *id);
-RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name);
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
 RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name);
 RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core);
@@ -59,6 +58,8 @@ RZ_IPI void rz_core_meta_print_list_all(RzCore *core, int type, RzCmdStateOutput
 RZ_IPI void rz_core_meta_print_list_in_function(RzCore *core, int type, ut64 addr, RzCmdStateOutput *state);
 RZ_IPI void rz_core_meta_append(RzCore *core, const char *newcomment, RzAnalysisMetaType mtype, ut64 addr);
 RZ_IPI void rz_core_meta_editor(RzCore *core, RzAnalysisMetaType mtype, ut64 addr);
+
+RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input, RZ_BORROW PJ *pj);
 
 /* ctypes.c */
 // Enums
@@ -91,9 +92,6 @@ RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mod
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode);
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core);
-RZ_IPI void rz_core_types_link_print(RzCore *core, RzType *type, ut64 addr, RzOutputMode mode, PJ *pj);
-RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
@@ -264,6 +262,75 @@ typedef struct rz_core_visual_tab_t {
 	// TODO: cursor and such
 } RzCoreVisualTab;
 
+typedef int (*RzPanelsMenuCallback)(void *user);
+typedef struct rz_panels_menu_item {
+	int n_sub, selectedIndex;
+	char *name;
+	struct rz_panels_menu_item **sub;
+	RzPanelsMenuCallback cb;
+	RzPanel *p;
+} RzPanelsMenuItem;
+
+typedef struct rz_panels_menu_t {
+	RzPanelsMenuItem *root;
+	RzPanelsMenuItem **history;
+	int depth;
+	int n_refresh;
+	RzPanel **refreshPanels;
+} RzPanelsMenu;
+
+typedef enum {
+	PANEL_MODE_DEFAULT,
+	PANEL_MODE_MENU,
+	PANEL_MODE_ZOOM,
+	PANEL_MODE_WINDOW,
+	PANEL_MODE_HELP
+} RzPanelsMode;
+
+typedef enum {
+	PANEL_LAYOUT_DEFAULT_STATIC = 0,
+	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
+} RzPanelsLayout;
+
+typedef struct rz_panels_t {
+	RzConsCanvas *can;
+	RzPanel **panel;
+	int n_panels;
+	int columnWidth;
+	int curnode;
+	int mouse_orig_x;
+	int mouse_orig_y;
+	bool autoUpdate;
+	bool mouse_on_edge_x;
+	bool mouse_on_edge_y;
+	RzPanelsMenu *panels_menu;
+	Sdb *db;
+	Sdb *rotate_db;
+	Sdb *almighty_db;
+	HtPP *mht;
+	RzPanelsMode mode;
+	RzPanelsMode prevMode;
+	RzPanelsLayout layout;
+	char *name;
+	bool first_run;
+} RzPanels;
+
+typedef enum {
+	DEFAULT,
+	ROTATE,
+	DEL,
+	QUIT,
+} RzPanelsRootState;
+
+typedef struct rz_panels_root_t {
+	int n_panels;
+	int cur_panels;
+	Sdb *pdc_caches;
+	Sdb *cur_pdc_cache;
+	RzPanels **panels;
+	RzPanelsRootState root_state;
+} RzPanelsRoot;
+
 typedef struct rz_core_visual_t {
 	RzList /*<RzCoreVisualTab *>*/ *tabs;
 	int tab;
@@ -291,6 +358,9 @@ typedef struct rz_core_visual_t {
 	int current3format;
 	int current4format;
 	int current5format;
+	/* Panels */
+	RzPanelsRoot *panels_root;
+	RzPanels *panels;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();

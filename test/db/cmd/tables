@@ -76,17 +76,17 @@ flt:/head/10:/tail/4:space/cols/name
 flt:/page/2/10:sort/cols/space/size/name:name/sort/inc:fancy
 EOF
 EXPECT=<<EOF
-addr,size,space,name
-0x00400000,4132,segments,segment.LOAD0
-0x00400000,64,segments,segment.ehdr
-0x00400040,448,segments,segment.PHDR
-0x00400200,28,sections,section..interp
-0x00400200,28,segments,segment.INTERP
-0x0040021c,32,sections,section..note.ABI_tag
-0x0040021c,68,segments,segment.NOTE
-0x0040023c,36,sections,section..note.gnu.build_id
-0x00400260,56,sections,section..gnu.hash
-0x00400298,432,sections,section..dynsym
+addr,size,space,name,realname
+0x00400000,4132,segments,segment.LOAD0,segment.LOAD0
+0x00400000,64,segments,segment.ehdr,segment.ehdr
+0x00400040,448,segments,segment.PHDR,segment.PHDR
+0x00400200,28,sections,section..interp,section..interp
+0x00400200,28,segments,segment.INTERP,segment.INTERP
+0x0040021c,32,sections,section..note.ABI_tag,section..note.ABI_tag
+0x0040021c,68,segments,segment.NOTE,segment.NOTE
+0x0040023c,36,sections,section..note.gnu.build_id,section..note.gnu.build_id
+0x00400260,56,sections,section..gnu.hash,section..gnu.hash
+0x00400298,432,sections,section..dynsym,section..dynsym
 [
   {
     "addr": 6296136,
@@ -101,25 +101,25 @@ addr,size,space,name
     "name": "reloc.operator_delete_void"
   }
 ]
-space    name                                                                         
---------------------------------------------------------------------------------------
-classes  class.std::basic_ostream_char__std::char_traits_char_____std::endl_char__std
-classes  class.B
-classes  class.A
-classes  class.C
-segments segment.LOAD0
+space            name                  
+---------------------------------------
+sections         section..interp
+segments         segment.INTERP
+symbols.sections sym..interp
+sections         section..note.ABI_tag
+segments         segment.NOTE
 .------------------------------------------------------.
 | space            | size | name                       |
 )------------------------------------------------------(
-| sections         | 28   | section..interp            |
-| sections         | 32   | section..note.ABI_tag      |
+| sections         | 497  | section..dynstr            |
+| sections         | 432  | section..dynsym            |
+| sections         | 56   | section..gnu.hash          |
+| sections         | 36   | section..gnu.version       |
 | sections         | 36   | section..note.gnu.build_id |
-| segments         | 28   | segment.INTERP             |
-| segments         | 4132 | segment.LOAD0              |
 | segments         | 68   | segment.NOTE               |
-| segments         | 448  | segment.PHDR               |
-| segments         | 64   | segment.ehdr               |
-| symbols.sections | 0    | sym..interp                |
+| symbols.sections | 0    | sym..dynstr                |
+| symbols.sections | 0    | sym..dynsym                |
+| symbols.sections | 0    | sym..gnu.hash              |
 | symbols.sections | 0    | sym..note.ABI_tag          |
 | symbols.sections | 0    | sym..note.gnu.build_id     |
 `------------------------------------------------------'
@@ -180,11 +180,11 @@ NAME=tables gt/ge/lt/le
 FILE=bins/elf/ls
 CMDS=<<EOF
 omlt:size/ge/0x3480:size
-?e
+echo
 omlt:size/gt/0x3480:size/cols
-?e
+echo
 omlt:size/le/0x3480:size:quiet
-?e
+echo
 omlt:size/lt/0x3480:size/cols:quiet
 EOF
 EXPECT=<<EOF

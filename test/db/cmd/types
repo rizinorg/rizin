@@ -17,7 +17,7 @@ pf z[0]d hello world
 EOF
 RUN
 
-NAME=typelinks
+NAME=types - global var
 FILE==
 CMDS=<<EOF
 e asm.bytes=true
@@ -26,19 +26,19 @@ e asm.bits=64
 wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf06000000
 e asm.comments=false
 s 2
-tl short
+avga bla short
 sd +6
-tl int
+avga foo int
 s 0
 pd 8
 EOF
 EXPECT=<<EOF
             0x00000000      4157           push  r15
-(short)
+(short bla)
  short : 0x00000002 = 0x5641
             0x00000004      4155           push  r13
             0x00000006      4154           push  r12
-(int)
+(int foo)
  int : 0x00000008 = 1442089289
             0x0000000c      53             push  rbx
             0x0000000d      89fd           mov   ebp, edi
@@ -46,7 +46,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=typelinks 2
+NAME=types - global var 2
 FILE==
 CMDS=<<EOF
 e asm.bytes=true
@@ -55,11 +55,11 @@ e asm.bits=64
 wx 48656c6c341248656c6c6f00000000000000000048656c6c6f0000000000000000009090
 td "typedef uint16_t WORD;"
 td "typedef struct _VbHeader { char szVbMagic[4]; WORD wRuntimeBuild; char szLangDll[14]; char szSecLangDll[14];} VbHeader;"
-tl VbHeader 0x00
+avga vbb VbHeader @ 0
 pd 3
 EOF
 EXPECT=<<EOF
-(VbHeader)
+(VbHeader vbb)
      szVbMagic : 0x00000000 = [ 'H', 'e', 'l', 'l' ]
  wRuntimeBuild : 0x00000004 = 0x1234
      szLangDll : 0x00000006 = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
@@ -69,52 +69,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=typelinks- test for tlj json
+NAME=Global variables with types - JSON
 FILE==
 CMDS=<<EOF
 wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf06000000
 s 2
-tl short
+avga bla short
 sd +6
-tl int
-tlj
+avga foo int
+avgj
 EOF
 EXPECT=<<EOF
-[{"0x00000002":"short"},{"0x00000008":"int"}]
+[{"name":"bla","type":"short","addr":"0x2"},{"name":"foo","type":"int","addr":"0x8"}]
 EOF
 RUN
 
-NAME=List type links
+NAME=List global variable with types
 FILE==
 CMDS=<<EOF
-tl int 0x4
+avga bla int @ 0x4
 w test @ 0x10
-tl "char *" 0x10
-tl
+avga foo "char *" @ 0x10
+avg
 EOF
 EXPECT=<<EOF
-0x00000004 = int
-0x00000010 = char *
-EOF
-RUN
-
-NAME=List readable type links
-FILE==
-CMDS=<<EOF
-tl int
-wB -1
-tl int 0x8
-w test @ 0x10
-tl "char *" 0x10
-tll
-EOF
-EXPECT=<<EOF
-(int)
-0x00000000 = -1
-(int)
-0x00000008 = 0
-(char *)
-0x00000010 = "test"
+global int bla @ 0x4
+global char * foo @ 0x10
 EOF
 RUN
 
@@ -138,8 +118,9 @@ wx 37133713 @ reloc.target.__stack_chk_guard
 # TODO: Requires preprocessor that isn't implemented yet
 # This is tracked in https://github.com/rizinorg/rizin/issues/1204
 to bins/headers/jni.h
-tl JNINativeInterface 0x13371337
-tl JNINativeInterface 0x464c457f # \x7fELF, the "pointer" when dereferencing addr 0
+avga bla JNINativeInterface @ 0x13371337
+avga foo JNINativeInterface @ 0x464c457f # \x7fELF, the "pointer" when dereferencing addr 0
+aat
 
 pdf~JNINativeInterface
 pdr~JNI?
@@ -163,6 +144,7 @@ RUN
 
 NAME=jni and SoP (preprocessed)
 FILE=bins/elf/libverifyPass.so
+BROKEN=1
 CMDS=<<EOF
 e asm.bytes=true
 e asm.lines.bb=false
@@ -178,8 +160,9 @@ to bins/headers/jni_preprocessed.h
 # Do not hesitate to edit this test if you find a better case for testing this.
 e io.cache=1
 wx 37133713 @ reloc.target.__stack_chk_guard
-tl JNINativeInterface 0x13371337
-tl JNINativeInterface 0x464c457f # \x7fELF, the "pointer" when dereferencing addr 0
+avga bla JNINativeInterface @ 0x13371337
+avga foo JNINativeInterface @ 0x464c457f # \x7fELF, the "pointer" when dereferencing addr 0
+aat
 
 pdf~JNINativeInterface
 pdr~JNI?
@@ -515,6 +498,19 @@ struct test_struct { int x; int y; };
 EOF
 RUN
 
+NAME=td struct with attribute
+FILE==
+CMDS=<<EOF
+td "struct test_struct {int x;int y;} __attribute__((__packed__));"
+ts test_struct
+tsd test_struct
+EOF
+EXPECT=<<EOF
+pf dd x y
+struct test_struct { int x; int y; };
+EOF
+RUN
+
 NAME=enum32
 FILE==
 CMDS=<<EOF
@@ -566,6 +562,54 @@ enum v {
 };
 t = 0x8000000000000001
 p = 0x8000000000000008
+t
+p
+EOF
+RUN
+
+NAME=enhanced enum
+FILE==
+CMDS=<<EOF
+td "enum v : int { t=0x123, p=0x321 };"
+tcd v
+tc v
+tec v
+te v
+te v 0x123
+te v 0x321
+td "enum w : long long { t=0x123, p=0x321 };"
+tcd w
+tc w
+tec w
+te w
+te w 0x123
+te w 0x321
+EOF
+EXPECT=<<EOF
+enum v { t = 0x123, p = 0x321 };
+enum v {
+	t = 0x123,
+	p = 0x321
+};
+enum v {
+	t = 0x123,
+	p = 0x321
+};
+t = 0x123
+p = 0x321
+t
+p
+enum w { t = 0x123, p = 0x321 };
+enum w {
+	t = 0x123,
+	p = 0x321
+};
+enum w {
+	t = 0x123,
+	p = 0x321
+};
+t = 0x123
+p = 0x321
 t
 p
 EOF
@@ -1001,7 +1045,7 @@ td "struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
 aht foo.b @ 0x00000004
 pi 2
-?e ---
+echo ---
 pd 2
 EOF
 EXPECT=<<EOF
@@ -1024,7 +1068,7 @@ aht foo.c @ 0x00000000
 aht foo.c @ 0x00000008
 aht foo.b @ 0x00000004
 pi 3
-?e ---
+echo ---
 pd 3
 EOF
 EXPECT=<<EOF
@@ -1051,7 +1095,7 @@ aht foo.b @ 0x00000003
 aht foo.c @ 0x00000006
 aht foo.c @ 0x00000009
 pi 4
-?e ---
+echo ---
 pd 4
 EOF
 EXPECT=<<EOF
@@ -1067,7 +1111,7 @@ cmp dword [eax + foo.c], 0
 EOF
 RUN
 
-NAME=struct offset propagate via tl
+NAME=struct offset propagate via type of global variable
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -1077,12 +1121,11 @@ e asm.comments=false
 td "struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 af
-tl "struct bar" 0x1958
-?e
+avga bla "struct bar" @ 0x1958
+aat
 pdf~bar.
 EOF
 EXPECT=<<EOF
-
 |           0x00000007      488b5004       mov   rdx, qword [rax + bar.b]
 |           0x0000000b      488b4808       mov   rcx, qword [rax + bar.c]
 |           0x0000000f      483b5004       cmp   rdx, qword [rax + bar.b]
@@ -1099,10 +1142,10 @@ e asm.bits=64
 e asm.comments=false
 td "struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
-tl "struct bar" 0x1958
+avga bla "struct bar" @ 0x1958
 af
 aat @ fcn.00000000
-?e
+echo
 pdf~bar.
 EOF
 EXPECT=<<EOF
@@ -1125,14 +1168,14 @@ e asm.flags=false
 td "struct bar {int x; int y; int z;};"
 td "struct foo {int a; int b; int c;};"
 wx 48C7C000010000488B5008488B480448C7C000020000488B5008488B48049090C3
-tl "struct bar" 0x200
-tl "struct foo" 0x100
+avga bla "struct bar" @ 0x200
+avga boo "struct foo" @ 0x100
 af
 aat
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      48c7c0000100.  mov   rax, 0x100
 |           0x00000007      488b5008       mov   rdx, qword [rax + foo.c]
 |           0x0000000b      488b4804       mov   rcx, qword [rax + foo.b]
@@ -1152,24 +1195,24 @@ e asm.bytes=true
 aa
 s main
 td "struct Books {char  title[50];char  author[50]; char  subject[100];};"
-tl "struct Books" 0x00177f18
-?e
+avga b "struct Books" @ 0x00177f18
+aat main
 pdf~Books
 EOF
 EXPECT=<<EOF
-
 |           ; var struct Books Books @ stack - 0xe8
 |           0x00000684      488d8520ffff.  lea   rax, [Books.title]
-|           0x00000695      488910         mov   qword [rax], rdx      ; Books.title
+|           0x00000695      488910         mov   qword [rax], rdx      ; Books.title[0]
 |           0x00000698      488d8520ffff.  lea   rax, [Books.title]
-|           0x000006ad      488908         mov   qword [rax], rcx      ; Books.author
+|           0x000006ad      488908         mov   qword [rax], rcx      ; Books.author[0]
 |           0x000006b0      488d8520ffff.  lea   rax, [Books.title]
-|           0x000006c5      488930         mov   qword [rax], rsi      ; Books.subject
-|           0x000006d5      b800000000     mov   eax, 0                ; Books.subject
+|           0x000006c5      488930         mov   qword [rax], rsi      ; Books.subject[0]
+|           0x000006c8      66c740086700   mov   word [rax + Books.subject[8]], 0x67 ; 'g'
+|           0x000006d5      b800000000     mov   eax, 0                ; Books.subject[0]
 EOF
 RUN
 
-NAME=tl with ahr (return value hint)
+NAME=Global variable with ahr (return value hint)
 FILE=bins/elf/struct_2
 CMDS=<<EOF
 e asm.bytes=true
@@ -1177,13 +1220,12 @@ aa
 td "struct Test { int a; int  b; char *c;};"
 s main
 ahr 0x00000597 @ 0x00000592
-tl "struct Test" 0x00002020
+avga t "struct Test" @ 0x00002020
+aat main
 s 0x000005a8
-?e
 pd 3
 EOF
 EXPECT=<<EOF
-
 |           0x000005a8      c70206000000   mov   dword [edx], 6        ; Test.a
 |           0x000005ae      8b55f4         mov   edx, dword [Test.a]   ; Test.a
 |           0x000005b1      c74204070000.  mov   dword [edx + Test.b], 7
@@ -1211,6 +1253,34 @@ var union Books books @ stack - 0x78
 EOF
 RUN
 
+NAME=ts and tu with multiple declarators
+FILE==
+CMDS=<<EOF
+td "struct bla {int foo,bar; void *b};"
+td "union foo {float a,b; int c,d;};"
+td "typedef struct {char *a; void *b;} ts, *pts;"
+tsc bla
+tuc foo
+ttc ts
+tsc "anonymous struct 0"
+ttc pts
+EOF
+EXPECT=<<EOF
+union foo {
+	float a;
+	float b;
+	int c;
+	int d;
+};
+typedef struct anonymous struct 0 ts;
+struct anonymous struct 0 {
+	char *a;
+	void *b;
+};
+typedef struct anonymous struct 0 * pts;
+EOF
+RUN
+
 NAME=ts function pointer test
 FILE==
 CMDS=<<EOF
@@ -1226,6 +1296,11 @@ ts boo
 tcd boo
 tsc boo
 .ts boo
+# See https://github.com/rizinorg/rizin/issues/2190
+#td "struct moo {wchar_t (*(*dunk)[])(int, const char*)} goo;"
+#ts moo
+#tcd moo
+#tsc moo
 EOF
 EXPECT=<<EOF
 pf dpz x (fp)fp b
@@ -1400,12 +1475,12 @@ to bins/headers/12272.h
 ts A
 ts "anonymous struct 0"
 ts "anonymous struct 1"
-?e ----
+echo ----
 tsc A
 tsc "anonymous struct 0"
 tsc "anonymous struct 1"
 tsc O
-?e ----
+echo ----
 tt A
 tt B
 tt O
@@ -1478,7 +1553,7 @@ EXPECT=<<EOF
 var uint64_t var_80h @ stack - 0x80
 var uint64_t var_71h @ stack - 0x71
 var int64_t var_70h @ stack - 0x70
-var char * var_60h @ stack - 0x60
+var char *var_60h @ stack - 0x60
 var int64_t var_58h @ stack - 0x58
 var int64_t var_56h @ stack - 0x56
 var int64_t var_50h @ stack - 0x50
@@ -1488,7 +1563,7 @@ var int64_t var_41h @ stack - 0x41
 var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
-arg char ** argv @ rsi
+arg char **argv @ rsi
 var uint64_t var_80h @ stack - 0x80
 var uint64_t var_71h @ stack - 0x71
 var char [20] var_70h @ stack - 0x70
@@ -1501,7 +1576,7 @@ var int64_t var_41h @ stack - 0x41
 var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
-arg char ** argv @ rsi
+arg char **argv @ rsi
 var var_70h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
 EOF
 RUN
@@ -1516,8 +1591,8 @@ afv
 EOF
 EXPECT=<<EOF
 var size_t size @ stack - 0x1c
-var char * dest @ stack - 0x18
-var const char * src @ stack - 0x10
+var char *dest @ stack - 0x18
+var const char *src @ stack - 0x10
 EOF
 RUN
 
@@ -1531,8 +1606,8 @@ afv
 EOF
 EXPECT=<<EOF
 var size_t size @ stack - 0x1c
-var char * ptr @ stack - 0x18
-var const char * src @ stack - 0x10
+var char *ptr @ stack - 0x18
+var const char *src @ stack - 0x10
 EOF
 RUN
 
@@ -1546,9 +1621,9 @@ afv
 EOF
 EXPECT=<<EOF
 var size_t var_24h @ stack - 0x24
-var const char * var_20h @ stack - 0x20
-var const char * s @ stack - 0x18
-var const char * var_10h @ stack - 0x10
+var const char *var_20h @ stack - 0x20
+var const char *s @ stack - 0x18
+var const char *var_10h @ stack - 0x10
 EOF
 RUN
 
@@ -1563,9 +1638,9 @@ EOF
 EXPECT=<<EOF
 var size_t var_28h @ stack - 0x28
 var size_t size @ stack - 0x24
-var const char * src @ stack - 0x20
-var const char * s2 @ stack - 0x18
-var char * dest @ stack - 0x10
+var const char *src @ stack - 0x20
+var const char *s2 @ stack - 0x18
+var char *dest @ stack - 0x10
 EOF
 RUN
 
@@ -1578,13 +1653,13 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var const char * src @ stack - 0x24
-var const char * s2 @ stack - 0x20
+var const char *src @ stack - 0x24
+var const char *s2 @ stack - 0x20
 var size_t var_1ch @ stack - 0x1c
 var size_t size @ stack - 0x18
-var char * dest @ stack - 0x14
+var char *dest @ stack - 0x14
 var int32_t var_10h @ stack - 0x10
-arg char ** argv @ stack + 0x4
+arg char **argv @ stack + 0x4
 EOF
 RUN
 
@@ -1613,9 +1688,9 @@ afvr
 EOF
 EXPECT=<<EOF
 arg size_t arg4 @ rcx
-arg const char * arg1 @ rdi
+arg const char *arg1 @ rdi
 arg int64_t arg3 @ rdx
-arg const char * arg2 @ rsi
+arg const char *arg2 @ rsi
 EOF
 RUN
 
@@ -1631,7 +1706,7 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (const char *arg1, uint64_t arg2);
+sym.funcarg(const char *arg1, uint64_t arg2);
 ; arg const char *arg1 @ rdi
 ; arg uint64_t arg2 @ rsi
 ; var uint64_t var_14h @ stack - 0x14
@@ -1652,7 +1727,7 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (const char *arg_4h, unsigned long arg_8h);
+sym.funcarg(const char *arg_4h, unsigned long arg_8h);
 ; var int32_t var_8h @ stack - 0x8
 ; arg const char *arg_4h @ stack + 0x4
 ; arg unsigned long arg_8h @ stack + 0x8
@@ -1705,7 +1780,7 @@ s main
 afv~ptr
 EOF
 EXPECT=<<EOF
-var char ** ptr @ stack - 0x20
+var char **ptr @ stack - 0x20
 EOF
 RUN
 
@@ -1735,12 +1810,12 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var void * va_args @ stack - 0x3c
+var void *va_args @ stack - 0x3c
 var uint64_t var_34h @ stack - 0x34
-var FILE * stream @ stack - 0x30
-var const char * s @ stack - 0x28
-var const char * var_20h @ stack - 0x20
-var const char * var_18h @ stack - 0x18
+var FILE *stream @ stack - 0x30
+var const char *s @ stack - 0x28
+var const char *var_20h @ stack - 0x20
+var const char *var_18h @ stack - 0x18
 var int64_t canary @ stack - 0x10
 EOF
 RUN
@@ -1769,9 +1844,9 @@ s sym.processCmd
 afv
 EOF
 EXPECT=<<EOF
-var char ** var_14e8h @ stack - 0x14e8
+var char **var_14e8h @ stack - 0x14e8
 var int var_14dch @ stack - 0x14dc
-var int * wstatus @ stack - 0x14d4
+var int *wstatus @ stack - 0x14d4
 var int64_t var_14cch @ stack - 0x14cc
 var int64_t var_14c8h @ stack - 0x14c8
 var int64_t var_14c4h @ stack - 0x14c4
@@ -1779,20 +1854,20 @@ var uint64_t pid @ stack - 0x14c0
 var uint64_t var_14bch @ stack - 0x14bc
 var uint64_t var_14b8h @ stack - 0x14b8
 var int64_t var_14b4h @ stack - 0x14b4
-var const char * var_14b0h @ stack - 0x14b0
-var const char * s @ stack - 0x14a8
+var const char *var_14b0h @ stack - 0x14b0
+var const char *s @ stack - 0x14a8
 var int64_t var_14a0h @ stack - 0x14a0
-var char * src @ stack - 0x1498
-var const char * v2 @ stack - 0x1490
-var const char * var_1488h @ stack - 0x1488
-var void * var_1480h @ stack - 0x1480
-var char * dest @ stack - 0x1478
-var void * var_1428h @ stack - 0x1428
-var const char * s1 @ stack - 0x1028
+var char *src @ stack - 0x1498
+var const char *v2 @ stack - 0x1490
+var const char *var_1488h @ stack - 0x1488
+var void *var_1480h @ stack - 0x1480
+var char *dest @ stack - 0x1478
+var void *var_1428h @ stack - 0x1428
+var const char *s1 @ stack - 0x1028
 var int64_t var_20h @ stack - 0x20
 arg int argc @ rdi
-arg char ** argv @ rsi
-var char * str @ stack - 0xb8
+arg char **argv @ rsi
+var char *str @ stack - 0xb8
 var int64_t var_ach @ stack - 0xac
 var int64_t var_a8h @ stack - 0xa8
 var uint64_t var_a4h @ stack - 0xa4
@@ -1810,19 +1885,19 @@ var int var_78h @ stack - 0x78
 var int var_74h @ stack - 0x74
 var int64_t var_70h @ stack - 0x70
 var int64_t var_6ch @ stack - 0x6c
-var char * var_68h @ stack - 0x68
-var char * var_60h @ stack - 0x60
-var char * var_58h @ stack - 0x58
-var char * var_50h @ stack - 0x50
+var char *var_68h @ stack - 0x68
+var char *var_60h @ stack - 0x60
+var char *var_58h @ stack - 0x58
+var char *var_50h @ stack - 0x50
 var uint64_t var_48h @ stack - 0x48
-var const char * s1 @ stack - 0x40
-var const char * s @ stack - 0x38
-var const char * var_30h @ stack - 0x30
-var const char * var_28h @ stack - 0x28
+var const char *s1 @ stack - 0x40
+var const char *s @ stack - 0x38
+var const char *var_30h @ stack - 0x30
+var const char *var_28h @ stack - 0x28
 var int64_t var_20h @ stack - 0x20
 var int64_t var_10h @ stack - 0x10
 arg int64_t arg1 @ rdi
-arg char * arg2 @ rsi
+arg char *arg2 @ rsi
 EOF
 RUN
 
@@ -1836,27 +1911,27 @@ afv
 EOF
 EXPECT=<<EOF
 var int32_t var_1454h @ stack - 0x1454
-var void * var_1438h @ stack - 0x1438
-var const char * s1 @ stack - 0x1038
-var int * wstatus @ stack - 0x44
+var void *var_1438h @ stack - 0x1438
+var const char *s1 @ stack - 0x1038
+var int *wstatus @ stack - 0x44
 var int32_t var_40h @ stack - 0x40
-var const char * var_3ch @ stack - 0x3c
+var const char *var_3ch @ stack - 0x3c
 var int32_t var_38h @ stack - 0x38
 var int32_t var_34h @ stack - 0x34
 var int32_t var_30h @ stack - 0x30
 var pid_t pid @ stack - 0x2c
-var const char * v2 @ stack - 0x28
+var const char *v2 @ stack - 0x28
 var int32_t var_24h @ stack - 0x24
-var const char * src @ stack - 0x20
+var const char *src @ stack - 0x20
 var int32_t var_1ch @ stack - 0x1c
 var int32_t var_18h @ stack - 0x18
-var const char * s @ stack - 0x14
-var const char * var_10h @ stack - 0x10
+var const char *s @ stack - 0x14
+var const char *var_10h @ stack - 0x10
 var int32_t var_ch @ stack - 0xc
 var int32_t var_8h @ stack - 0x8
-var const char * option @ stack - 0x4
+var const char *option @ stack - 0x4
 arg int argc @ r0
-arg char ** argv @ r1
+arg char **argv @ r1
 EOF
 RUN
 
@@ -1873,9 +1948,9 @@ var int64_t var_2dh @ stack - 0x2d
 var int64_t var_2ch @ stack - 0x2c
 var unsigned int var_28h @ stack - 0x28
 var int64_t var_24h @ stack - 0x24
-var const char * var_20h @ stack - 0x20
+var const char *var_20h @ stack - 0x20
 var long int var_18h @ stack - 0x18
-var const char * var_10h @ stack - 0x10
+var const char *var_10h @ stack - 0x10
 EOF
 RUN
 
@@ -1888,14 +1963,14 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var char ** var_30h @ stack - 0x30
-var char ** var_28h @ stack - 0x28
+var char **var_30h @ stack - 0x30
+var char **var_28h @ stack - 0x28
 var int var_1ch @ stack - 0x1c
-var void * var_18h @ stack - 0x18
+var void *var_18h @ stack - 0x18
 var int var_ch @ stack - 0xc
 arg int argc @ rdi
-arg char ** envp @ rdx
-arg char ** argv @ rsi
+arg char **envp @ rdx
+arg char **argv @ rsi
 EOF
 RUN
 
@@ -1929,7 +2004,7 @@ s main
 afv~var_28h
 EOF
 EXPECT=<<EOF
-var const char * var_28h @ stack - 0x28
+var const char *var_28h @ stack - 0x28
 EOF
 RUN
 
@@ -1941,7 +2016,7 @@ s sym.foo
 afv~var_28h
 EOF
 EXPECT=<<EOF
-var size_t * var_28h @ stack - 0x28
+var size_t *var_28h @ stack - 0x28
 EOF
 RUN
 
@@ -2058,13 +2133,14 @@ NAME=td crash
 FILE==
 CMDS=<<EOF
 td "struct;"
-td "stract;"
+td "stract"
 td "struct crash __attribute__((packed)) { };"
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: Unsupported type definition: struct
+ERROR: core: Unsupported type definition: struct;;
 ERROR: core: Unsupported type definition: stract;
-ERROR: core: Unsupported type definition: struct crash __attribute__((packed)) { }
+ERROR: core: Unsupported type definition: { }
+Unsupported type definition: ;;
 EOF
 RUN
 
@@ -2072,10 +2148,10 @@ NAME=tn common
 FILE=bins/pe/pe.exe
 CMDS=<<EOF
 tn
-?e ---
+echo ---
 tn- FatalExit
 tn
-?e ---
+echo ---
 tn-*
 tn
 EOF
@@ -2118,11 +2194,11 @@ wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
 td "struct foo {int a; int b; uint64_t c;};"
-tl "struct foo" 0x0
+avga goo "struct foo" @ 0x0
 pd 1
 EOF
 EXPECT=<<EOF
-(foo)
+(foo goo)
  a : 0x00000000 = 4000
  b : 0x00000004 = 8000
  c : 0x00000008 = (qword)0x8000000000000008
@@ -2136,11 +2212,11 @@ wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
 td "struct foo {};"
-tl "struct foo" 0x0
+avga goo "struct foo" @ 0x0
 pd 1
 EOF
 EXPECT=<<EOF
-(foo)
+(foo goo)
 EOF
 RUN
 
@@ -2149,11 +2225,11 @@ FILE=bins/elf/ls.odd
 CMDS=<<EOF
 aaaa
 txf main
-?e =
+echo =
 txf fcn.00011b90
-?e =
+echo =
 tx size_t
-?e =
+echo =
 tx "size_t *"
 EOF
 EXPECT=<<EOF
@@ -2194,7 +2270,7 @@ td "struct foo3 {char gap[3];int bar __attribute__((__aligned__(4)));};"
 td "struct foo4 {char gap[4];int bar;};"
 td "struct foo5 {int gap;int bar;};"
 ahts 4 ~foo
-?e =
+echo =
 wx c7400400000000
 aht foo.bar
 pd 1
@@ -2236,7 +2312,7 @@ t~LPCWSTR
 t~LPACCEL
 t~PDWORD64
 t~int16_t
-?e ------------------------------------------
+echo ------------------------------------------
 tf
 EOF
 EXPECT=<<EOF

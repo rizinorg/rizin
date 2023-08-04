@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2023 svr <svr.work@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef LE_SPECS_H
@@ -6,12 +7,12 @@
 #include <rz_types.h>
 
 typedef enum {
-	UNUSED_ENTRY = 0,
-	ENTRY16,
-	CALLGATE,
-	ENTRY32,
-	FORWARDER,
-} LE_entry_bundle_type;
+	ENTRY_EMPTY = 0,
+	ENTRY_16 = 1,
+	ENTRY_CALLGATE = 2,
+	ENTRY_32 = 3,
+	ENTRY_FORWARDER = 4,
+} LE_entry_type;
 
 typedef enum {
 	LE_RT_POINTER = 1, /* mouse pointer shape */
@@ -39,53 +40,27 @@ typedef enum {
 
 // This bit signifies that additional information is contained in the linear EXE module
 // and will be used in the future for parameter type checking.
-#define ENTRY_PARAMETER_TYPING_PRESENT 0x80
-
-typedef struct LE_entry_bundle_header_s {
-	ut8 count;
-	ut8 type; /* LE_entry_bundle_type */
-	ut16 objnum; // This is the object number for the entries in this bundle.
-} LE_entry_bundle_header;
-
-#define ENTRY_EXPORTED         0x01
-#define ENTRY_PARAM_COUNT_MASK 0xF8
-
-typedef union LE_entry_bundle_entry_u {
-	struct {
-		ut8 flags; // First bit set if exported, mask with 0xF8 to get parameters count
-		ut16 offset; // This is the offset in the object for the entry point defined at this ordinal number.
-	} entry_16;
-	struct {
-		ut8 flags; // First bit set if exported, mask with 0xF8 to get parameters count
-		ut16 offset; // This is the offset in the object for the entry point defined at this ordinal number.
-		ut16 callgate_sel; // The callgate selector for references to ring 2 entry points.
-	} callgate;
-	struct {
-		ut8 flags; // First bit set if exported, mask with 0xF8 to get parameters count
-		ut32 offset; // This is the offset in the object for the entry point defined at this ordinal number.
-	} entry_32;
-	struct {
-		ut8 flags; // First bit set if import by ordinal
-		ut16 import_ord; // This is the index into the Import Module Name Table for this forwarder.
-		ut32 offset; // If import by ordinal, is the ordinal number into the Entry Table of the target module, else is the offset into the Procedure Names Table of the target module.
-	} forwarder;
-} LE_entry_bundle_entry;
+#define E_PARAM_TYPING_PRESENT 0x80
+#define E_EXPORTED             1
+#define E_SHARED               2
+#define E_PARAM_COUNT_SHIFT    3
+#define E_IMPORT_BY_ORD        1
 
 #define F_SOURCE_TYPE_MASK 0xF
 #define F_SOURCE_ALIAS     0x10
 #define F_SOURCE_LIST      0x20
 
 typedef enum {
-	BYTEFIXUP,
-	UNDEFINED1,
-	SELECTOR16,
-	POINTER32, // 16:16
-	UNDEFINED2,
-	OFFSET16,
-	POINTER48, // 16:32
-	OFFSET32,
-	SELFOFFSET32,
-} LE_fixup_source_type;
+	FIXUP_BYTE = 0,
+	FIXUP_UNDEF1 = 1,
+	FIXUP_SEL16 = 2,
+	FIXUP_SEL16_OFF16 = 3, // 16:16
+	FIXUP_UNDEF2 = 4,
+	FIXUP_OFF16 = 5,
+	FIXUP_SEL16_OFF32 = 6, // 16:32
+	FIXUP_OFF32 = 7,
+	FIXUP_REL32 = 8,
+} LE_fixup_type;
 
 #define F_TARGET_TYPE_MASK 0x3
 #define F_TARGET_ADDITIVE  0x4
@@ -96,16 +71,11 @@ typedef enum {
 #define F_TARGET_ORD8      0x80 // Else 16
 
 typedef enum {
-	INTERNAL,
-	IMPORTORD,
-	IMPORTNAME,
-	INTERNALENTRY
-} LE_fixup_record_type;
-
-typedef struct LE_fixup_record_header_s {
-	ut8 source;
-	ut8 target;
-} LE_fixup_record_header;
+	TARGET_INTERNAL = 0,
+	TARGET_IMPORT_ORDINAL = 1,
+	TARGET_IMPORT_NAME = 2,
+	TARGET_INTERNAL_ENTRY = 3,
+} LE_fixup_target_type;
 
 #define O_READABLE    1
 #define O_WRITABLE    1 << 1
@@ -125,46 +95,34 @@ typedef struct LE_fixup_record_header_s {
 #define O_CODE        1 << 14
 #define O_IO_PRIV     1 << 15
 
-typedef struct LE_object_entry_s {
-	ut32 virtual_size;
-	ut32 reloc_base_addr;
-	ut32 flags;
-	ut32 page_tbl_idx; // This specifies the number of the first object page table entry for this object
-	ut32 page_tbl_entries;
-	ut32 reserved;
-} LE_object_entry;
+typedef enum {
+	PAGE_LEGAL = 0,
+	PAGE_ITERATED = 1,
+	PAGE_INVALID = 2,
+	PAGE_ZEROED = 3,
+	PAGE_RANGE = 4,
+	PAGE_COMPRESSED = 5,
+} LE_page_type;
 
-#define P_LEGAL      0
-#define P_ITERATED   1
-#define P_INVALID    2
-#define P_ZEROED     3
-#define P_RANGE      4
-#define P_COMPRESSED 5
-
-typedef struct LE_object_page_entry_s {
-	ut32 offset; // 0 if zero-filled/invalid page (check flags)
-	ut16 size;
-	ut16 flags;
-} LE_object_page_entry;
-
-#define M_PP_LIB_INIT         1 << 2
-#define M_SYS_DLL             1 << 3 // No internal fixups
-#define M_INTERNAL_FIXUP      1 << 4
-#define M_EXTERNAL_FIXUP      1 << 5
-#define M_PM_WINDOWING_INCOMP 1 << 8 // Fullscreen only
-#define M_PM_WINDOWING_COMPAT 1 << 9
-#define M_USES_PM_WINDOWING   M_PM_WINDOWING_INCOMP | M_PM_WINDOWING_COMPAT
-#define M_NOT_LOADABLE        1 << 13
+#define M_SINGLE_DATA         1
+#define M_PP_LIB_INIT         4
+#define M_SYS_DLL             8 // No internal fixups
+#define M_INTERNAL_FIXUP      0x10
+#define M_EXTERNAL_FIXUP      0x20
+#define M_PM_WINDOWING_INCOMP 0x100 // Fullscreen only
+#define M_PM_WINDOWING_COMPAT 0x200
+#define M_USES_PM_WINDOWING   (M_PM_WINDOWING_INCOMP | M_PM_WINDOWING_COMPAT)
+#define M_NOT_LOADABLE        0x2000
 #define M_TYPE_MASK           0x38000
 #define M_TYPE_EXE            0
 #define M_TYPE_DLL            0x08000
 #define M_TYPE_PM_DLL         0x10000
 #define M_TYPE_PDD            0x20000 // Physical Device Driver
 #define M_TYPE_VDD            0x28000 // Virtual Device Driver
-#define M_MP_UNSAFE           1 << 19
-#define M_PP_LIB_TERM         1 << 30
+#define M_MP_UNSAFE           0x80000
+#define M_PP_LIB_TERM         0x40000000
 
-typedef struct LE_image_header_s { /* New 32-bit .EXE header */
+typedef struct LE_header_s { /* New 32-bit .EXE header */
 	ut8 magic[2]; /* Magic number MAGIC */
 	ut8 border; /* The byte ordering for the .EXE */
 	ut8 worder; /* The word ordering for the .EXE */
@@ -179,7 +137,10 @@ typedef struct LE_image_header_s { /* New 32-bit .EXE header */
 	ut32 stackobj; /* Object # for stack pointer */
 	ut32 esp; /* Extended stack pointer */
 	ut32 pagesize; /* .EXE page size */
-	ut32 pageshift; /* Page alignment shift in .EXE or Last Page Size (on LE only)*/
+	union {
+		ut32 pageshift; /* Page alignment shift unless LE */
+		ut32 le_last_page_size;
+	};
 	ut32 fixupsize; /* Fixup section size */
 	ut32 fixupsum; /* Fixup section checksum */
 	ut32 ldrsize; /* Loader section size */
@@ -212,5 +173,5 @@ typedef struct LE_image_header_s { /* New 32-bit .EXE header */
 	ut32 instdemand; /* Number of instance pages in demand load section of EXE file */
 	ut32 heapsize; /* Size of heap - for 16-bit apps */
 	ut32 stacksize; /* Size of stack */
-} LE_image_header;
+} LE_header;
 #endif

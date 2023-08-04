@@ -7,8 +7,8 @@
 #define NPF  5
 #define PIDX (RZ_ABS(((RzCoreVisual *)core->visual)->printidx % NPF))
 
-#define CMD_REGISTERS      "?== true `e cfg.debug`; ?! dr=; ?? ar=" // select dr= or ar= depending on cfg.debug
-#define CMD_REGISTERS_REFS "?== true `e cfg.debug`; ?! drr; ?? arr" // select drr or arr depending on cfg.debug
+#define CMD_REGISTERS      "%== true `e cfg.debug`; %! dr=; %% ar=" // select dr= or ar= depending on cfg.debug
+#define CMD_REGISTERS_REFS "%== true `e cfg.debug`; %! drr; %% arr" // select drr or arr depending on cfg.debug
 
 extern const char *printfmtSingle[NPF];
 extern const char *printfmtColumns[NPF];

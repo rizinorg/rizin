@@ -21,7 +21,7 @@ RUN
 
 NAME=3: thumb entry0
 FILE=bins/elf/analysis/thumb
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x82f0
 EOF
@@ -29,7 +29,7 @@ RUN
 
 NAME=thumb main
 FILE=bins/elf/analysis/thumb
-CMDS=?v sym.main
+CMDS=%v sym.main
 EXPECT=<<EOF
 0x8424
 EOF

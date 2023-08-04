@@ -160,6 +160,19 @@ RZ_API RZ_OWN char *rz_path_system(RZ_NULLABLE const char *path) {
 }
 
 /**
+ * \brief Return the full path of the given subpath \p path in the "extra prefix"
+ *
+ * Returns NULL if RZ_EXTRA_PREFIX is not defined or in case of errors.
+ * See RZ_EXTRA_PREFIX in rz_userconf.h for more info about it.
+ */
+RZ_API RZ_OWN char *rz_path_extra(RZ_NULLABLE const char *path) {
+	if (!RZ_EXTRA_PREFIX) {
+		return NULL;
+	}
+	return rz_file_path_join(RZ_EXTRA_PREFIX, path);
+}
+
+/**
  * \brief Return the system path of the global rizinrc file
  */
 RZ_API RZ_OWN char *rz_path_system_rc(void) {

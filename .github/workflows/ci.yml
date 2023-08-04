@@ -18,6 +18,11 @@ on:
       - stable
       - "release-*"
 
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
 jobs:
   changes:
     runs-on: ubuntu-22.04
@@ -40,7 +45,6 @@ jobs:
               - '.github/workflows/ci.yml'
               - 'test/**'
 
-  # TODO: build rz-bindings
   build-and-test:
     needs: changes
     name: ${{ matrix.name }}
@@ -59,7 +63,7 @@ jobs:
             linux-clang-tests-asan,
             linux-gcc-tests-codecov,
             capstone-v3,
-            capstone-next,
+            capstone-v4,
           ]
         include:
           - name: linux-meson-clang-tests
@@ -135,11 +139,21 @@ jobs:
             timeout: 45
             cflags: "-Wno-cpp"
             allow_failure: false
-          - name: capstone-next
+          - name: capstone-sys
             os: ubuntu-22.04
             build_system: meson
             compiler: gcc
-            meson_options: -Dbuildtype=release -Duse_capstone_version=next --werror
+            meson_options: -Dbuildtype=release -Duse_sys_capstone=enabled --werror
+            run_tests: false
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
+            timeout: 45
+            cflags: "-Wno-cpp"
+            allow_failure: false
+          - name: capstone-v4
+            os: ubuntu-22.04
+            build_system: meson
+            compiler: gcc
+            meson_options: -Dbuildtype=release -Duse_capstone_version=v4 --werror
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
@@ -169,7 +183,7 @@ jobs:
         run: brew install pkg-config
       - name: Install python and other dependencies
         if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-12' && matrix.enabled
-        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
         run: pip3 install --user meson ninja PyYAML
@@ -206,7 +220,7 @@ jobs:
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
             fi
           fi
-          meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
+          meson setup --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
         env:
           ASAN: ${{ matrix.asan }}
           CC: ${{ matrix.compiler }}
@@ -323,7 +337,7 @@ jobs:
         run: git clone https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build
-        run: meson --prefix=/usr build && ninja -C build
+        run: meson setup --prefix=/usr build && ninja -C build
         working-directory: rizin
       - name: Install
         run: ninja -C build install
@@ -362,6 +376,13 @@ jobs:
           echo "deb http://archive.debian.org/debian jessie main" > /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian-security jessie/updates main" >> /etc/apt/sources.list
           echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
+      - name: Fix containers (Stretch)
+        if: matrix.container == 'debian:stretch'
+        run: |
+          echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
+          echo "deb http://archive.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list
+          echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
+
       - name: Install tools
         run: apt-get update --yes --force-yes && apt-get install --yes --force-yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
       - name: Install Python source build dependencies
@@ -393,7 +414,7 @@ jobs:
         run: git clone https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build with Meson + Ninja
-        run: meson --prefix=/usr build && ninja -C build
+        run: meson setup --prefix=/usr build && ninja -C build
         working-directory: rizin
       - name: Install with Ninja
         run: ninja -C build install
@@ -439,7 +460,7 @@ jobs:
         run: git clone https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build with Meson + Ninja
-        run: meson --prefix=/usr -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror build && ninja -C build
+        run: meson setup --prefix=/usr -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror build && ninja -C build
         working-directory: rizin
         env:
           CFLAGS: -DASAN=1 -DRZ_ASSERT_STDOUT=1 -Wno-cpp
@@ -487,7 +508,7 @@ jobs:
         run: git clone https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build with Meson + Ninja
-        run: meson --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
+        run: meson setup --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
         working-directory: rizin
         env:
           CFLAGS: -Wno-cpp
@@ -522,7 +543,7 @@ jobs:
       - name: Compile with meson
         run: |
           mkdir -p ${HOME}/rizin-static
-          meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dinstall_sigdb=true -Dstatic_runtime=true -Dportable=true build
+          meson setup --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dinstall_sigdb=true -Dstatic_runtime=true -Dportable=true build
           ninja -C build && ninja -C build install
           tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
         working-directory: rizin
@@ -571,7 +592,7 @@ jobs:
       - name: Create archive
         run: |
           export PATH=${HOME}/.local/bin:${PATH}
-          meson build
+          meson setup build
           cd build
           meson dist --include-subprojects --no-tests
           ls -l meson-dist
@@ -601,7 +622,7 @@ jobs:
       - name: Install rizin
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
-          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+          meson setup --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
       - name: Check that installed rizin runs
         run: rizin -qcq /bin/ls
@@ -704,7 +725,7 @@ jobs:
         run: |
           export PATH=${HOME}/.local/bin:${PATH}
           sed -i 's@\${ANDROID_NDK}@'"${ANDROID_NDK}"'@' .github/meson-android-${{ matrix.name }}.ini
-          meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+          meson setup --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
           ninja -C build && ninja -C build install
       - name: Create rizin-android-${{ matrix.name }}.tar.gz
         run: |
@@ -730,17 +751,41 @@ jobs:
       - name: Compile & Install Rizin
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
-          meson --buildtype release --prefix=/usr build
+          meson setup --buildtype release --prefix=/usr build
           ninja -C build && sudo ninja -C build install
       - name: Compile C++ test
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
-          meson --prefix=/usr build-cpp-test ./test/unit/cpp
+          meson setup --prefix=/usr build-cpp-test ./test/unit/cpp
           meson compile -C build-cpp-test
       - name: Run C++ test
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
           meson test -C build-cpp-test --print-errorlogs
+
+  test-extra-prefix:
+    name: Test EXTRA_PREFIX works well
+    runs-on: ubuntu-22.04
+    if: contains(github.head_ref, 'dist') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
+      - name: Install meson and ninja
+        run: sudo pip3 install meson ninja PyYAML
+      - name: Compile & Install Rizin
+        run: |
+          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
+          meson --buildtype release --prefix=/usr -Dextra_prefix=/usr/local build
+          ninja -C build && sudo ninja -C build install
+      - name: Compile jsdec in EXTRA_PREFIX
+        run: |
+          git clone https://github.com/rizinorg/jsdec
+          cd jsdec/p && meson -Djsc_folder=".." --prefix=/usr/local build && meson compile -C build && sudo meson install -C build
+      - name: Test jsdec plugin is loaded from EXTRA_PREFIX
+        run: |
+          rizin -qc "Lc~jsdec"
 
   build-rzpipe:
     name: Build rizin rzpipe
@@ -762,7 +807,7 @@ jobs:
       - name: Install rizin
         run: |
           export PATH=$PATH:/usr/local/bin
-          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+          meson setup --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
       - name: Install rz-pipe-py
         run: |
@@ -785,20 +830,19 @@ jobs:
           mkdir rizin && pwd && ls -l
           tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
       - name: Install dependencies
-        run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+        run: |
+          sudo apt update
+          sudo apt-get --assume-yes install cmake swig pkg-config clang libclang-dev llvm wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
       - name: Install rizin
         run: |
           export PATH=$PATH:/usr/local/bin
-          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+          meson setup --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
       - name: Checkout rz-bindgen
         uses: actions/checkout@v3
         with:
           repository: rizinorg/rz-bindgen
           path: rz-bindgen
-      - name: Install dependencies
-        run: |
-          sudo apt install --assume-yes libclang-14-dev
       - name: Build rz-bindgen
         run: |
           meson setup --prefix=/usr -Dplugin=enabled build

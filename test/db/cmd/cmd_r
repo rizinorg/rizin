@@ -29,3 +29,35 @@ EXPECT=<<EOF
 {"size":7656}
 EOF
 RUN
+
+NAME=extend file
+FILE=
+CMDS=<<EOF
+o+ .tmp_r_file
+r
+w ABC
+r+ 3
+w ABC
+ps @! 3
+r 0x40
+r
+wb 4142434445
+r- 4
+ps @! 5
+o- `olt:uri/str/tmp_r_file:fd:quiet`
+o .tmp_r_file
+r
+o- `olt:uri/str/tmp_r_file:fd:quiet`
+rm .tmp_r_file
+EOF
+EXPECT=<<EOF
+0
+ABC
+64
+EABCD
+60
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Could not write 'ABC' at 0
+EOF
+RUN

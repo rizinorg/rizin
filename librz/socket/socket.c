@@ -251,7 +251,7 @@ RZ_API RzSocket *rz_socket_new(bool is_ssl) {
 
 RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout) {
 	// XXX TODO: dont use sockets, we can achieve the same with pipes
-	const int port = 2000 + rz_num_rand(2000);
+	const int port = 2000 + rz_num_rand32(2000);
 	int childPid = rz_sys_fork();
 	if (childPid == 0) {
 		char *a = rz_str_replace(strdup(cmd), "\\", "\\\\", true);
@@ -334,8 +334,6 @@ RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, i
 			return false;
 		}
 		for (rp = res; rp != NULL; rp = rp->ai_next) {
-			int flag = 1;
-
 			s->fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s->fd == -1) {
 				perror("socket");
@@ -349,13 +347,6 @@ RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, i
 
 			switch (proto) {
 			case RZ_SOCKET_PROTO_TCP:
-				ret = setsockopt(s->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
-				if (ret < 0) {
-					perror("setsockopt");
-					close(s->fd);
-					s->fd = -1;
-					continue;
-				}
 				ret = connect(s->fd, rp->ai_addr, rp->ai_addrlen);
 				break;
 			case RZ_SOCKET_PROTO_UDP:

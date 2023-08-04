@@ -1,0 +1,15 @@
+NAME=dbg.afvd
+FILE=bins/elf/struct64
+ARGS=-d -A
+CMDS=<<EOF
+aa
+dcu main
+ds 8
+afvt var_ch char
+afvd var_ch
+EOF
+REGEXP_FILTER_OUT=('.'\s*)
+EXPECT=<<EOF
+'a'
+EOF
+RUN

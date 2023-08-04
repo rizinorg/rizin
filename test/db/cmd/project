@@ -131,15 +131,15 @@ e asm.bytes=true
 f a_nice_refreshing_un-moisten @ 0x080483d8
 Ps .tmp_load_without_file.rzdb
 ol
-?e --
+echo --
 o--
 ol
 pdq 3 @ 0x080483d8
-?e --
+echo --
 Poo .tmp_load_without_file.rzdb
 rm .tmp_load_without_file.rzdb
 ol
-?e --
+echo --
 pdq 3 @ 0x080483d8
 EOF
 EXPECT=<<EOF
@@ -166,15 +166,15 @@ e asm.bytes=true
 f a_nice_refreshing_un-moisten @ 0x080483d8
 Ps .tmp_load_on_top_of_file.rzdb
 ol
-?e --
+echo --
 o--
 ol
 pdq 3 @ 0x080483d8
-?e --
+echo --
 o bins/elf/crackme0x00b
 Poo .tmp_load_on_top_of_file.rzdb
 rm .tmp_load_on_top_of_file.rzdb
-?e --
+echo --
 pdq 3 @ 0x080483d8
 EOF
 EXPECT=<<EOF
@@ -201,10 +201,10 @@ fr sym.main sym.renamedmain
 fl~?
 fl~main
 Ps .tmp_flags.rzdb
-?e --
+echo --
 o--
 fl
-?e --
+echo --
 Poo .tmp_flags.rzdb
 rm .tmp_flags.rzdb
 fl~?
@@ -236,14 +236,14 @@ e asm.indentspace
 e analysis.fcnprefix=myfunctions
 e analysis.fcnprefix
 Ps .tmp_config.rzdb
-?e --
+echo --
 e asm.describe=0
 e asm.describe
 e asm.indentspace=0
 e asm.indentspace
 e analysis.fcnprefix=fcn
 e analysis.fcnprefix
-?e --
+echo --
 Poo .tmp_config.rzdb
 rm .tmp_config.rzdb
 e asm.describe
@@ -290,10 +290,10 @@ af+ windowpane @ 0x100
 afb+ windowpane 0x100 0x30
 afl
 Ps .tmp_analysis.rzdb
-?e --
+echo --
 o--
 afl
-?e --
+echo --
 Poo .tmp_analysis.rzdb
 rm .tmp_analysis.rzdb
 afl
@@ -337,9 +337,9 @@ CMDS=<<EOF
 oml
 Ps .tmp_perms.rzdb
 o--
-?e --
+echo --
 oml
-?e --
+echo --
 Po .tmp_perms.rzdb
 oml
 rm .tmp_perms.rzdb
@@ -369,6 +369,8 @@ Detailed project load info:
   project migrated from version 8 to 9.
   project migrated from version 9 to 10.
   project migrated from version 10 to 11.
+  project migrated from version 11 to 12.
+  project migrated from version 12 to 13.
 EOF
 RUN
 
@@ -380,13 +382,13 @@ af Loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 ac Claaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaasssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 acm Claaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaasssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss Meeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeethod 0x100
 Ps .tmp_longkeys.rzdb
-?e --
+echo --
 o--
 ol
-?e --
+echo --
 Po .tmp_longkeys.rzdb
 rm .tmp_longkeys.rzdb
-?e --
+echo --
 afl
 acll
 EOF
@@ -396,9 +398,9 @@ EXPECT=<<EOF
 --
 0x08048464    1 1            Loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongname
 [Claaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaasssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss]
-nth name                                                                                                                                                                                                                                                                                                                              addr vt_offset type    
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1   Meeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeethod  0x100 -1        DEFAULT
+nth addr         vt_offset type    name                                                                                                                                                                                                                                                                                                                            
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1   0x00000100  ---------- DEFAULT Meeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeethod
 
 EOF
 EXPECT_ERR=<<EOF

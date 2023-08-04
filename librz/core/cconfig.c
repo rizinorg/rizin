@@ -1036,6 +1036,33 @@ static bool cb_binforce(void *user, void *data) {
 	return true;
 }
 
+static bool cb_bindemangle(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->bin->demangle = node->i_value;
+	return true;
+}
+
+static bool cb_bindemangle_flags(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (*node->value == '?') {
+		print_node_options(node);
+		return false;
+	}
+	if (!strcmp(node->value, "all")) {
+		rz_bin_demangle_with_flags(core->bin, RZ_DEMANGLER_FLAG_ENABLE_ALL);
+	} else if (!strcmp(node->value, "base")) {
+		rz_bin_demangle_with_flags(core->bin, RZ_DEMANGLER_FLAG_BASE);
+	} else if (!strcmp(node->value, "simplify")) {
+		rz_bin_demangle_with_flags(core->bin, RZ_DEMANGLER_FLAG_SIMPLIFY);
+	} else {
+		RZ_LOG_ERROR("config: invalid option for bin.demangle.flags\n");
+		return false;
+	}
+	return true;
+}
+
 static bool cb_asmsyntax(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2929,6 +2956,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	update_analysis_arch_options(core, n);
 	SETCB("analysis.cpu", RZ_SYS_ARCH, &cb_analysis_cpu, "Specify the analysis.cpu to use");
 	SETPREF("analysis.prelude", "", "Specify an hexpair to find preludes in code");
+	SETI("analysis.prelude.limit", 1024 * 1024 * 20, "Maximum size of the range to scan for preludes");
 	SETCB("analysis.recont", "false", &cb_analysis_recont, "End block after splitting a basic block instead of error"); // testing
 	SETCB("analysis.jmp.indir", "false", &cb_analysis_ijmp, "Follow the indirect jumps in function analysis"); // testing
 	SETI("analysis.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
@@ -3029,9 +3057,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETBPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETI("asm.indentspace", 2, "How many spaces to indent the code");
-	SETBPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
-	SETBPREF("asm.dwarf.abspath", "false", "Show absolute path in asm.dwarf");
-	SETBPREF("asm.dwarf.file", "true", "Show filename of asm.dwarf in pd");
+	SETBPREF("asm.debuginfo", "false", "Show debug information in disassembly");
+	SETBPREF("asm.debuginfo.abspath", "false", "Show absolute path from the debug information");
+	SETBPREF("asm.debuginfo.file", "true", "Show file name from the debug information in disassembly");
+	SETBPREF("asm.debuginfo.lines", "true", "Show source line information from debug metadata in disassembly");
 	SETBPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETBPREF("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETBPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
@@ -3177,8 +3206,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
-	SETBPREF("bin.demangle", "true", "Import demangled symbols from RzBin");
+	SETCB("bin.demangle", "true", &cb_bindemangle, "Demangles all symbols parsed via RzBin");
 	SETBPREF("bin.demangle.libs", "false", "Show library name on demangled symbols names");
+	n = NODECB("bin.demangle.flags", "base", &cb_bindemangle_flags);
+	SETDESC(n, "Sets the flags of the parsed symbols via RzBin");
+	SETOPTIONS(n, "base", "simplify", "all", NULL);
 	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETCB("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");
@@ -3330,7 +3362,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	} else {
 		rz_config_set_i(cfg, "dbg.follow", 32);
 	}
-	rz_config_desc(cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
+	rz_config_desc(cfg, "dbg.follow", "Follow program counter when pc >= core->offset + dbg.follow");
 	SETBPREF("dbg.rebase", "true", "Rebase analysis/meta/comments/flags when reopening file in debugger");
 	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
 	SETBPREF("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
@@ -3700,6 +3732,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETB("flirt.ignore.unknown", true, "When enabled, on FLIRT creation it will ignore any function starting with `fcn.`");
 	SETPREF("flirt.sigdb.path", "", "Additional user defined rizin sigdb location to load on the filesystem.");
 	SETB("flirt.sigdb.load.system", true, "Load signatures from the system path");
+	SETB("flirt.sigdb.load.extra", true, "Load signatures from the extra path");
 	SETB("flirt.sigdb.load.home", true, "Load signatures from the home path");
 
 	rz_config_lock(cfg, true);

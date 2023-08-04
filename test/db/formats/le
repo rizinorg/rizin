@@ -18,69 +18,10 @@ NAME=cdogs.exe sections
 FILE=bins/le/cdogs.exe
 CMDS=iS
 EXPECT=<<EOF
-paddr      size   vaddr      vsize  align perm name          type flags 
-------------------------------------------------------------------------
-0x0000d200 0x1000 0x00010000 0x1000 0x0   -r-x obj.1.page.0       
-0x0000e200 0x1000 0x00011000 0x1000 0x0   -r-x obj.1.page.1       
-0x0000f200 0x1000 0x00012000 0x1000 0x0   -r-x obj.1.page.2       
-0x00010200 0x1000 0x00013000 0x1000 0x0   -r-x obj.1.page.3       
-0x00011200 0x1000 0x00014000 0x1000 0x0   -r-x obj.1.page.4       
-0x00012200 0x1000 0x00015000 0x1000 0x0   -r-x obj.1.page.5       
-0x00013200 0x1000 0x00016000 0x1000 0x0   -r-x obj.1.page.6       
-0x00014200 0x1000 0x00017000 0x1000 0x0   -r-x obj.1.page.7       
-0x00015200 0x1000 0x00018000 0x1000 0x0   -r-x obj.1.page.8       
-0x00016200 0x1000 0x00019000 0x1000 0x0   -r-x obj.1.page.9       
-0x00017200 0x1000 0x0001a000 0x1000 0x0   -r-x obj.1.page.10      
-0x00018200 0x1000 0x0001b000 0x1000 0x0   -r-x obj.1.page.11      
-0x00019200 0x1000 0x0001c000 0x1000 0x0   -r-x obj.1.page.12      
-0x0001a200 0x1000 0x0001d000 0x1000 0x0   -r-x obj.1.page.13      
-0x0001b200 0x1000 0x0001e000 0x1000 0x0   -r-x obj.1.page.14      
-0x0001c200 0x1000 0x0001f000 0x1000 0x0   -r-x obj.1.page.15      
-0x0001d200 0x1000 0x00020000 0x1000 0x0   -r-x obj.1.page.16      
-0x0001e200 0x1000 0x00021000 0x1000 0x0   -r-x obj.1.page.17      
-0x0001f200 0x1000 0x00022000 0x1000 0x0   -r-x obj.1.page.18      
-0x00020200 0x1000 0x00023000 0x1000 0x0   -r-x obj.1.page.19      
-0x00021200 0x1000 0x00024000 0x1000 0x0   -r-x obj.1.page.20      
-0x00022200 0x1000 0x00025000 0x1000 0x0   -r-x obj.1.page.21      
-0x00023200 0x1000 0x00026000 0x1000 0x0   -r-x obj.1.page.22      
-0x00024200 0x1000 0x00027000 0x1000 0x0   -r-x obj.1.page.23      
-0x00025200 0x1000 0x00028000 0x1000 0x0   -r-x obj.1.page.24      
-0x00026200 0x1000 0x00029000 0x1000 0x0   -r-x obj.1.page.25      
-0x00027200 0x1000 0x0002a000 0x1000 0x0   -r-x obj.1.page.26      
-0x00028200 0x1000 0x0002b000 0x1000 0x0   -r-x obj.1.page.27      
-0x00029200 0x1000 0x0002c000 0x1000 0x0   -r-x obj.1.page.28      
-0x0002a200 0x1000 0x0002d000 0x1000 0x0   -r-x obj.1.page.29      
-0x0002b200 0x1000 0x0002e000 0x1000 0x0   -r-x obj.1.page.30      
-0x0002c200 0x1000 0x0002f000 0x1000 0x0   -r-x obj.1.page.31      
-0x0002d200 0x1000 0x00030000 0x1000 0x0   -r-x obj.1.page.32      
-0x0002e200 0x1000 0x00031000 0x1000 0x0   -r-x obj.1.page.33      
-0x0002f200 0x1000 0x00032000 0x1000 0x0   -r-x obj.1.page.34      
-0x00030200 0x1000 0x00033000 0x1000 0x0   -r-x obj.1.page.35      
-0x00031200 0x1000 0x00034000 0x1000 0x0   -r-x obj.1.page.36      
-0x00032200 0x1000 0x00035000 0x1000 0x0   -r-x obj.1.page.37      
-0x00033200 0x1000 0x00036000 0x1000 0x0   -r-x obj.1.page.38      
-0x00034200 0x1000 0x00037000 0x1000 0x0   -r-x obj.1.page.39      
-0x00035200 0x1000 0x00038000 0x1000 0x0   -r-x obj.1.page.40      
-0x00036200 0x1000 0x00039000 0x1000 0x0   -r-x obj.1.page.41      
-0x00037200 0x1000 0x0003a000 0x1000 0x0   -r-x obj.1.page.42      
-0x00038200 0x1000 0x0003b000 0x1000 0x0   -r-x obj.1.page.43      
-0x00039200 0x1000 0x0003c000 0x1000 0x0   -r-x obj.1.page.44      
-0x0003a200 0x1000 0x00040000 0x1000 0x0   -rw- obj.2.page.0       
-0x0003b200 0x1000 0x00041000 0x1000 0x0   -rw- obj.2.page.1       
-0x0003c200 0x1000 0x00042000 0x1000 0x0   -rw- obj.2.page.2       
-0x0003d200 0x1000 0x00043000 0x1000 0x0   -rw- obj.2.page.3       
-0x0003e200 0x1000 0x00044000 0x1000 0x0   -rw- obj.2.page.4       
-0x0003f200 0x1000 0x00045000 0x1000 0x0   -rw- obj.2.page.5       
-0x00040200 0x1000 0x00046000 0x1000 0x0   -rw- obj.2.page.6       
-0x00041200 0x1000 0x00047000 0x1000 0x0   -rw- obj.2.page.7       
-0x00042200 0x1000 0x00048000 0x1000 0x0   -rw- obj.2.page.8       
-0x00043200 0x1000 0x00049000 0x1000 0x0   -rw- obj.2.page.9       
-0x00044200 0x1000 0x0004a000 0x1000 0x0   -rw- obj.2.page.10      
-0x00045200 0x1000 0x0004b000 0x1000 0x0   -rw- obj.2.page.11      
-0x00046200 0x1000 0x0004c000 0x1000 0x0   -rw- obj.2.page.12      
-0x00047200 0x1000 0x0004d000 0x1000 0x0   -rw- obj.2.page.13      
-0x00048200 0x1000 0x0004e000 0x1000 0x0   -rw- obj.2.page.14      
-0x00049200 0xd8c  0x0004f000 0x1000 0x0   -rw- obj.2.page.15      
+paddr      size    vaddr      vsize   align perm name   type flags 
+-------------------------------------------------------------------
+0x0000d200 0x2d000 0x00010000 0x2d000 0x0   -r-x obj1_1      
+0x0003a200 0xfd8c  0x00040000 0x26030 0x0   -rw- obj2_1      
 EOF
 RUN
 
@@ -155,7 +96,7 @@ cat $relocs~0x0004e~?
 cat $relocs~0x0004f~?
 EOF
 EXPECT=<<EOF
-5239
+5237
 151
 160
 102
@@ -199,9 +140,9 @@ EXPECT=<<EOF
 179
 103
 128
-158
+157
 128
-9
+8
 0
 0
 282
@@ -212,14 +153,14 @@ EXPECT=<<EOF
 0
 0
 95
-82
+81
 45
-7
+6
 0
 0
 381
 561
-590
+588
 EOF
 RUN
 
@@ -243,26 +184,12 @@ NAME=GCC.EXE sections
 FILE=bins/le/GCC.EXE
 CMDS=iS
 EXPECT=<<EOF
-paddr      size   vaddr      vsize     align perm name          type flags 
----------------------------------------------------------------------------
-0x00001000 0x1000 0x00010000 0x1000    0x0   -r-x obj.1.page.0       
-0x00002000 0x1000 0x00011000 0x1000    0x0   -r-x obj.1.page.1       
-0x00003000 0x1000 0x00012000 0x1000    0x0   -r-x obj.1.page.2       
-0x00004000 0x1000 0x00013000 0x1000    0x0   -r-x obj.1.page.3       
-0x00005000 0x1000 0x00014000 0x1000    0x0   -r-x obj.1.page.4       
-0x00006000 0x1000 0x00015000 0x1000    0x0   -r-x obj.1.page.5       
-0x00007000 0x1000 0x00016000 0x1000    0x0   -r-x obj.1.page.6       
-0x00008000 0x1000 0x00017000 0x1000    0x0   -r-x obj.1.page.7       
-0x00009000 0x1000 0x00018000 0x1000    0x0   -r-x obj.1.page.8       
-0x0000a000 0x1000 0x00019000 0x1000    0x0   -r-x obj.1.page.9       
-0x0000b000 0x1000 0x0001a000 0x1000    0x0   -r-x obj.1.page.10      
-0x0000c000 0x1000 0x0001b000 0x1000    0x0   -r-x obj.1.page.11      
-0x0000d000 0x1000 0x0001c000 0x1000    0x0   -r-x obj.1.page.12      
-0x0000e000 0x1000 0x0001d000 0x1000    0x0   -r-x obj.1.page.13      
-0x0000f000 0x1000 0x0001e000 0x1000    0x0   -r-x obj.1.page.14      
-0x00010000 0x1000 0x00020000 0x1000    0x0   -rw- obj.2.page.0       
-0x00000000 0x0    0x00030000 0x2000000 0x0   -rw- obj.3              
-0x00000000 0x0    0x02030000 0x800000  0x0   -rw- obj.4              
+paddr      size   vaddr      vsize     align perm name   type flags 
+--------------------------------------------------------------------
+0x00001000 0xf000 0x00010000 0xf000    0x0   -r-x obj1_1      
+0x00010000 0x1000 0x00020000 0x2804    0x0   -rw- obj2_1      
+0x00000000 0x0    0x00030000 0x2000000 0x0   -rw- obj3_1      
+0x00000000 0x0    0x02030000 0x800000  0x0   -rw- obj4_1      
 EOF
 RUN
 
@@ -270,19 +197,19 @@ NAME=GCC.EXE relocations
 FILE=bins/le/GCC.EXE
 CMDS=ir
 EXPECT=<<EOF
-vaddr      paddr      type   name         
-------------------------------------------
-0x00010006 0x00001006 SET_32 emx.1
-0x0001000d 0x0000100d SET_32 emx.2
-0x0001d210 0x0000e210 SET_32 doscalls.273
-0x0001d234 0x0000e234 SET_32 doscalls.253
-0x0001d266 0x0000e266 SET_32 doscalls.283
-0x0001d282 0x0000e282 SET_32 doscalls.229
-0x0001d2f2 0x0000e2f2 SET_32 doscalls.257
-0x0001d389 0x0000e389 SET_32 doscalls.282
-0x0001d39f 0x0000e39f SET_32 doscalls.257
-0x0001d3d9 0x0000e3d9 SET_32 doscalls.281
-0x0001d3f4 0x0000e3f4 SET_32 doscalls.257
+vaddr      paddr      target     type   name         
+-----------------------------------------------------
+0x00010006 0x00001006 0x02832000 SET_32 emx_1
+0x0001000d 0x0000100d 0x02832004 SET_32 emx_2
+0x0001d210 0x0000e210 0x02832008 SET_32 doscalls_273
+0x0001d234 0x0000e234 0x0283200c SET_32 doscalls_253
+0x0001d266 0x0000e266 0x02832010 SET_32 doscalls_283
+0x0001d282 0x0000e282 0x02832014 SET_32 doscalls_229
+0x0001d2f2 0x0000e2f2 0x02832018 SET_32 doscalls_257
+0x0001d389 0x0000e389 0x0283201c SET_32 doscalls_282
+0x0001d39f 0x0000e39f 0x02832018 SET_32 doscalls_257
+0x0001d3d9 0x0000e3d9 0x02832020 SET_32 doscalls_281
+0x0001d3f4 0x0000e3f4 0x02832018 SET_32 doscalls_257
 EOF
 RUN
 
@@ -310,6 +237,7 @@ FILE=bins/le/GNUGREP.DLL
 CMDS=ie:vaddr:quiet
 EXPECT=<<EOF
 0x00010000
+0x00010ddc
 EOF
 RUN
 
@@ -317,9 +245,50 @@ NAME=GNUGREP.DLL symbol
 FILE=bins/le/GNUGREP.DLL
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type size lib name     
---------------------------------------------------------
-1   0x00000000 0x00010ddc GLOBAL FUNC 0        grepmain
+nth paddr      vaddr      bind   type size lib name            
+---------------------------------------------------------------
+1   0x000023dc 0x00010ddc GLOBAL UNK  0        grepmain
+2   0x00000000 0x00043000 GLOBAL UNK  0        imp.EMXLIBC_513
+3   0x00000000 0x00043004 GLOBAL UNK  0        imp.emx_2
+4   0x00000000 0x00043008 GLOBAL UNK  0        imp.EMXLIBC_770
+5   0x00000000 0x0004300c GLOBAL UNK  0        imp.EMXLIBC_712
+6   0x00000000 0x00043010 GLOBAL UNK  0        imp.EMXLIBC_521
+7   0x00000000 0x00043014 GLOBAL UNK  0        imp.EMXLIBC_205
+8   0x00000000 0x00043018 GLOBAL UNK  0        imp.EMXLIBC_402
+9   0x00000000 0x0004301c GLOBAL UNK  0        imp.EMXLIBC_595
+10  0x00000000 0x00043020 GLOBAL UNK  0        imp.EMXLIBC_403
+11  0x00000000 0x00043024 GLOBAL UNK  0        imp.EMXLIBC_534
+12  0x00000000 0x00043028 GLOBAL UNK  0        imp.EMXLIBC_214
+13  0x00000000 0x0004302c GLOBAL UNK  0        imp.EMXLIBC_218
+14  0x00000000 0x00043030 GLOBAL UNK  0        imp.EMXLIBC_219
+15  0x00000000 0x00043034 GLOBAL UNK  0        imp.EMXLIBC_221
+16  0x00000000 0x00043038 GLOBAL UNK  0        imp.EMXLIBC_545
+17  0x00000000 0x0004303c GLOBAL UNK  0        imp.EMXLIBC_801
+18  0x00000000 0x00043040 GLOBAL UNK  0        imp.EMXLIBC_546
+19  0x00000000 0x00043044 GLOBAL UNK  0        imp.EMXLIBC_548
+20  0x00000000 0x00043048 GLOBAL UNK  0        imp.EMXLIBC_228
+21  0x00000000 0x0004304c GLOBAL UNK  0        imp.EMXLIBC_557
+22  0x00000000 0x00043050 GLOBAL UNK  0        imp.EMXLIBC_817
+23  0x00000000 0x00043054 GLOBAL UNK  0        imp.EMXLIBC_705
+24  0x00000000 0x00043058 GLOBAL UNK  0        imp.EMXLIBC_520
+25  0x00000000 0x0004305c GLOBAL UNK  0        imp.EMXLIBC_716
+26  0x00000000 0x00043060 GLOBAL UNK  0        imp.EMXLIBC_525
+27  0x00000000 0x00043064 GLOBAL UNK  0        imp.EMXLIBC_400
+28  0x00000000 0x00043068 GLOBAL UNK  0        imp.EMXLIBC_215
+29  0x00000000 0x0004306c GLOBAL UNK  0        imp.EMXLIBC_541
+30  0x00000000 0x00043070 GLOBAL UNK  0        imp.EMXLIBC_223
+31  0x00000000 0x00043074 GLOBAL UNK  0        imp.EMXLIBC_504
+32  0x00000000 0x00043078 GLOBAL UNK  0        imp.EMXLIBC_700
+33  0x00000000 0x0004307c GLOBAL UNK  0        imp.EMXLIBC_509
+34  0x00000000 0x00043080 GLOBAL UNK  0        imp.EMXLIBC_761
+35  0x00000000 0x00043084 GLOBAL UNK  0        imp.EMXLIBC_315
+36  0x00000000 0x00043088 GLOBAL UNK  0        imp.EMXLIBC_401
+37  0x00000000 0x0004308c GLOBAL UNK  0        imp.EMXLIBC_213
+38  0x00000000 0x00043090 GLOBAL UNK  0        imp.GNUREGEX_4
+39  0x00000000 0x00043094 GLOBAL UNK  0        imp.GNUREGEX_6
+40  0x00000000 0x00043098 GLOBAL UNK  0        imp.GNUREGEX_9
+41  0x00000000 0x0004309c GLOBAL UNK  0        imp.GNUREGEX_12
+42  0x00000000 0x000430a0 GLOBAL UNK  0        imp.EMXLIBC_207
 EOF
 RUN
 
@@ -327,19 +296,12 @@ NAME=GNUGREP.DLL sections
 FILE=bins/le/GNUGREP.DLL
 CMDS=iS
 EXPECT=<<EOF
-paddr      size   vaddr      vsize  align perm name         type flags 
------------------------------------------------------------------------
-0x00001600 0x1000 0x00010000 0x1000 0x0   -r-x obj.1.page.0      
-0x00002600 0x1000 0x00011000 0x1000 0x0   -r-x obj.1.page.1      
-0x00003600 0x1000 0x00012000 0x1000 0x0   -r-x obj.1.page.2      
-0x00004600 0x1000 0x00013000 0x1000 0x0   -r-x obj.1.page.3      
-0x00005600 0x1000 0x00014000 0x1000 0x0   -r-x obj.1.page.4      
-0x00006600 0x1000 0x00015000 0x1000 0x0   -r-x obj.1.page.5      
-0x00007600 0x1000 0x00016000 0x1000 0x0   -r-x obj.1.page.6      
-0x00008600 0xe00  0x00017000 0x1000 0x0   -r-x obj.1.page.7      
-0x00009400 0x200  0x00020000 0x1000 0x0   -r-x obj.2.page.0      
-0x00009600 0x200  0x00030000 0x1000 0x0   -r-x obj.3.page.0      
-0x00001400 0x200  0x00040000 0x1000 0x0   -rw- obj.4.page.0      
+paddr      size   vaddr      vsize  align perm name   type flags 
+-----------------------------------------------------------------
+0x00001600 0x7e00 0x00010000 0x8000 0x0   -r-x obj1_1      
+0x00009400 0x200  0x00020000 0x1000 0x0   -r-x obj2_1      
+0x00009600 0x200  0x00030000 0x1000 0x0   -r-x obj3_1      
+0x00001400 0x200  0x00040000 0x1000 0x0   -rw- obj4_1      
 EOF
 RUN
 
@@ -381,41 +343,71 @@ aac
 aflc
 EOF
 EXPECT=<<EOF
-802
+789
 EOF
 RUN
 
 NAME=LE: corkami cdogs.exe - entrypoint
-BROKEN=1
 FILE=bins/le/cdogs.exe
 CMDS=s
 EXPECT=<<EOF
-0x3bc
+0x26058
 EOF
 RUN
 
 NAME=LE: corkami cdogs.exe - pi 1
-BROKEN=1
 FILE=bins/le/cdogs.exe
 CMDS=pi 1
 EXPECT=<<EOF
-jmp 0x465
+jmp 0x260d0
 EOF
 RUN
 
-NAME=LE: cdogs.exe segments
-BROKEN=1
-FILE=bins/le/cdogs.exe
-CMDS=iS*
+NAME=DOSEXT.EXE open extender binary
+FILE=bins/le/DOSEXT.EXE
+CMDS=iH~header offset
 EXPECT=<<EOF
-fs sections
-S 0x00000060 0x00000060 0x00002930 0x00002930 seg_000 23
-f section.seg_000 10544 0x00000060
-f section_end.seg_000 1 0x00002990
-CC section 0 va=0x00000060 pa=0x00000060 sz=10544 vsz=10544 rwx=-rwx seg_000 @ 0x00000060
-S 0x00002990 0x00002990 0x00000402 0x00000402 seg_001 23
-f section.seg_001 1026 0x00002990
-f section_end.seg_001 1 0x00002d92
-CC section 1 va=0x00002990 pa=0x00002990 sz=1026 vsz=1026 rwx=-rwx seg_001 @ 0x00002990
+MZ header offset: 0x352a4
+LE header offset: 0x3803c
+EOF
+RUN
+
+NAME=hellolx.dll unpack iterated page
+FILE=bins/le/hellolx.dll
+CMDS=p8 12 @ 0x20004
+EXPECT=<<EOF
+68656c6c6f206c7820646c6c
+EOF
+RUN
+
+NAME=sdl.dll unpack compressed page
+FILE=bins/le/sdl.dll
+CMDS=p8 8 @ 0x20000
+EXPECT=<<EOF
+ccebfd9090909000
+EOF
+RUN
+
+NAME=sdl.dll 16:32 fixup
+FILE=bins/le/sdl.dll
+CMDS=p8 6 @ 0x1000B
+EXPECT=<<EOF
+595005000200
+EOF
+RUN
+
+NAME=sdl.dll 32 bit relative fixup
+FILE=bins/le/sdl.dll
+CMDS=p8 4 @ 0x202bd
+EXPECT=<<EOF
+3fad0500
+EOF
+RUN
+
+NAME=sdl.dll 32 bit absolute fixup
+FILE=bins/le/sdl.dll
+CMDS=p8 4 @ 0x20b32
+EXPECT=<<EOF
+69010600
 EOF
 RUN

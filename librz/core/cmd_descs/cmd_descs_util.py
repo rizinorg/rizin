@@ -51,6 +51,7 @@ def compute_cname(name):
                 " ": "_space_",
                 "(": "_oparen_",
                 ")": "_cparen_",
+                "%": "_perc_",
             }
         )
     )

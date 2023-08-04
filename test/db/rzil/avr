@@ -1,3 +1,110 @@
+NAME=Printing il statements in various formats
+FILE=bins/elf/avr-sbrx-rjmp.elf
+CMDS=<<EOF
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x0 (seq (storew 0 (- (cast 32 false (var sp)) (bv 32 0x3)) (bv 32 0x2)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x2)))
+0x2 (seq (storew 0 (- (cast 32 false (var sp)) (bv 32 0x3)) (bv 32 0x4)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x4)))
+0x4 (set r28 (cast 8 false (>> (var sp) (bv 32 0x8) false)))
+0x6 (set r29 (cast 8 false (var sp)))
+0x8 (set r24 (bv 8 0x1))
+-- pretty
+0x0
+(seq
+  (storew 0
+    (-
+      (cast 32
+        false
+        (var sp))
+      (bv 32 0x3))
+    (bv 32 0x2))
+  (set sp
+    (-
+      (var sp)
+      (bv 16 0x4)))
+  (jmp
+    (bv 32 0x2)))
+0x2
+(seq
+  (storew 0
+    (-
+      (cast 32
+        false
+        (var sp))
+      (bv 32 0x3))
+    (bv 32 0x4))
+  (set sp
+    (-
+      (var sp)
+      (bv 16 0x4)))
+  (jmp
+    (bv 32 0x4)))
+0x4
+(set r28
+  (cast 8
+    false
+    (>>
+      (var sp)
+      (bv 32 0x8)
+      false)))
+0x6
+(set r29
+  (cast 8
+    false
+    (var sp)))
+0x8
+(set r24
+  (bv 8 0x1))
+-- graph
+                                                  .-------------.
+                                                  |  rcall 0x2  |
+                                                  `-------------'
+                                                     v v v
+                                                     | | |
+                                                     | | '------------------.
+                              .----------------------' '--.                 |
+                              |                           |                 |
+                              |                           |                 |
+                          .-------------.             .-----------.     .----------.
+                          |  storew: 0  |             |  set: sp  |     |  jmp     |
+                          `-------------'             `-----------'     `----------'
+                                v v                       v                 v
+                                | |                       |                 |
+                      .---------' |                       |                 |
+                      |           '---.                   |                 |
+                      |               |                   |               .-'
+                      |               |                   |               |
+                  .-----------.   .--------------.    .-----------.   .--------------.
+                  |  sub      |   |  bv: 32 0x2  |    |  sub      |   |  bv: 32 0x2  |
+                  `-----------'   `--------------'    `-----------'   `--------------'
+                        v v                                 v v
+                        | |                                 | |
+           .------------' |                                 | |
+           |              '--.                              | |
+           |                 |                   .----------' |
+           |                 |                   |            '--.
+           |                 |                   |               |
+       .------------.    .--------------.    .-----------.   .--------------.
+       |  cast: 32  |    |  bv: 32 0x3  |    |  var: sp  |   |  bv: 16 0x4  |
+       `------------'    `--------------'    `-----------'   `--------------'
+             v v
+             | |
+    .--------' |
+    |          '----.
+    |               |
+.----------.    .-----------.
+|  false   |    |  var: sp  |
+`----------'    `-----------'
+EOF
+RUN
+
 NAME=fmul 1.5 * 1.25
 FILE=malloc://512
 CMDS=<<EOF
@@ -204,19 +311,19 @@ CMDS=<<EOF
 e asm.arch=avr
 wa "inc r1 ; swap r1 ; inc r1 ; swap r1 ; inc r1"
 aezi
-?e increase r1
+echo increase r1
 aezs
 ar r1
-?e swap nibbles
+echo swap nibbles
 aezs
 ar r1
-?e increase r1
+echo increase r1
 aezs
 ar r1
-?e swap nibbles
+echo swap nibbles
 aezs
 ar r1
-?e increase r1
+echo increase r1
 aezs
 ar r1
 EOF
@@ -246,9 +353,9 @@ wa "add r30, r16" @ 0x8
 wa "adc r31, r17" @ 0xa   
 aezi
 aezse 4~name
-?e add
+echo add
 aezse
-?e add with carry
+echo add with carry
 aezse
 EOF
 EXPECT=<<EOF
@@ -320,9 +427,9 @@ wa "lsl r17" @ 8
 # r16 /= 2
 wa "lsr r16" @ 10
 aezi
-?e Arithmetic Signed Shift Right
+echo Arithmetic Signed Shift Right
 aezse 4
-?e Logical Shift Left & Right
+echo Logical Shift Left & Right
 aezse 2
 EOF
 EXPECT=<<EOF
@@ -461,11 +568,11 @@ wa "and r17, r16" @ 20
 wa "pop r16" @ 22
 wa "ret" @ 24
 
-?e instructions
+echo instructions
 pdq 5
 pdq 5 @ 16
-?e
-?e initial machine status
+echo
+echo initial machine status
 px 16 @ 0x70
 aezi
 aezs 3
@@ -473,22 +580,22 @@ ar pc
 ar sp
 ar r16
 ar r17
-?e
-?e call subroutine & stack pointer
+echo
+echo call subroutine & stack pointer
 aezse 1
 ar pc
 ar sp
 px 16 @ 0x70
-?e
-?e execute subroutine
+echo
+echo execute subroutine
 aezs 4
 ar pc
 ar sp
 ar r16
 ar r17
 px 16 @ 0x70
-?e
-?e execute return
+echo
+echo execute return
 aezs
 ar pc
 ar sp

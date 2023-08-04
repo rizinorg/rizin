@@ -537,11 +537,11 @@ ARGS=-B0x4080000
 CMDS=<<EOF
 aae
 aav
-?e ------ reloc to string
+echo ------ reloc to string
 pd 1 @ 0x0408b884
-?e ------ string (reloc target of above)
+echo ------ string (reloc target of above)
 pd 1 @ 0x040af7c4
-?e ------ nice disassembly showing the string and xrefs
+echo ------ nice disassembly showing the string and xrefs
 pd 1 @ 0x0408b780
 axf @ 0x0408b780
 EOF
@@ -565,14 +565,14 @@ FILE=bins/bflt/busybox-m68k.bflt
 ARGS=-a m68k -e cfg.bigendian=true -B 0x41e40000
 CMDS=<<EOF
 i~format,os,subsys,PIE,endian
-?e ------ got relocs (begin)
+echo ------ got relocs (begin)
 ir~:0..10
 pv4 8 @ 0x41e6a8a0
-?e ------ got relocs (end)
+echo ------ got relocs (end)
 ir~0x41e6bf50
 ir~0x41e6bf54 # terminator here, should show nothing
 pv4 8 @ 0x41e6bf38
-?e ------ regular relocs
+echo ------ regular relocs
 ir~0x41e6c030
 pv4 @ 0x41e6c030
 EOF

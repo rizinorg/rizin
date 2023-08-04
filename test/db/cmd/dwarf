@@ -1390,14 +1390,14 @@ NAME="pdf dwarf invalid main for analysis not found (aa)"
 FILE=bins/src/dwarftest
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=true
+e asm.debuginfo=true
 e analysis.nopskip=true # if set to true it breaks the test
 aa
 pd 1 @ main
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 |           ; var int64_t var_ch @ stack - 0xc
 |           0x0040052d      55             push  rbp                   ; dwarftest.c:4
 EOF
@@ -1416,7 +1416,7 @@ BROKEN=1
 FILE=bins/elf/dwarf3_many_comp_units.elf 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pd 13 @ main
 EOF
@@ -1449,7 +1449,7 @@ BROKEN=1
 FILE=bins/elf/dwarf_rust_bubble 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pd 75 @ dbg.main
 EOF
@@ -1596,7 +1596,7 @@ BROKEN=1
 FILE=bins/elf/dwarf_rust_bubble 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pd 40 @  dbg.bubble_sort_i32
 EOF
@@ -1681,7 +1681,7 @@ BROKEN=1
 FILE=bins/elf/ppc64_sudoku_dwarf 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pdf @  dbg.init
 EOF
@@ -1717,7 +1717,7 @@ BROKEN=1
 FILE=bins/elf/ada_test_dwarf 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pdf @  dbg.main
 EOF
@@ -1765,20 +1765,20 @@ FILE=bins/efi/freepascal_test_dwarf
 CMDS=<<EOF
 e analysis.jmp.cref=true
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pd 20 @  dbg.palya
 EOF
 EXPECT=<<EOF
             ; CALL XREFS from dbg.$main @ 0x405237, 0x40542d, 0x405ba3, 0x406e29
             ;-- unit p$mozgkigyo palya(smallint,smallint):
-/ dbg.palya ();
+/ void dbg.palya(SmallInt mag, SmallInt szel);
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var SmallInt i @ stack - 0x1c
-|           ; var SmallInt szel @ stack - 0x18
-|           ; var SmallInt mag @ stack - 0x10
-|           0x00401980      55             push  rbp                   ; void palya(SmallInt mag,SmallInt szel);
+|           ; arg SmallInt szel @ stack - 0x18
+|           ; arg SmallInt mag @ stack - 0x10
+|           0x00401980      55             push  rbp                   ; void palya(SmallInt mag, SmallInt szel);
 |           0x00401981      4889e5         mov   rbp, rsp
 |           0x00401984      488d6424d0     lea   rsp, [rsp - 0x30]
 |           0x00401989      48895dd8       mov   qword [var_30h], rbx
@@ -1788,7 +1788,7 @@ EXPECT=<<EOF
 |           0x00401999      b801000000     mov   eax, 1
 |           0x0040199e      bf01000000     mov   edi, 1                ; int64_t arg2
 |           0x004019a3      89c6           mov   esi, eax              ; int64_t arg_8h
-|           0x004019a5      e8b6a10200     call  sym unit crt gotoxy(tcrtcoord,tcrtcoord) ; sym.unit_crt_gotoxy_tcrtcoord_tcrtcoord
+|           0x004019a5      e8b6a10200     call  sym.unit_crt_gotoxy_tcrtcoord_tcrtcoord
 |           0x004019aa      66448b65f0     mov   r12w, word [szel]
 |           0x004019af      66c745ec0100   mov   word [i], 1
 |           0x004019b5      66443b65ec     cmp   r12w, word [i]
@@ -1796,7 +1796,7 @@ EXPECT=<<EOF
 |       |   0x004019bc      66816dec0100   sub   word [i], 1
 |       |   0x004019c2      66666690       nop
 |       |   0x004019c6      6690           nop
-|       |   ; CODE XREF from unit p$mozgkigyo palya(smallint,smallint) @ 0x4019ff
+|       |   ; CODE XREF from dbg.palya @ 0x4019ff
 |       |   0x004019c8      668145ec0100   add   word [i], 1
 |       |   0x004019ce      e82d280200     call  sym.fpc_get_output
 EOF

@@ -11,9 +11,9 @@ address     min         max         name   super
 0x100001180 0x100000da0 0x100000e20 Person NSObject
 address     index class  flags name                   type                
 --------------------------------------------------------------------------
-0x00000000  0     Person       isa                    struct objc_class *
-0x100001178 1     Person       Person::(ivar)name     *
-0x00000000  2     Person       Person::(property)name 
+----------  0     Person       Person::(property)name 
+----------  1     Person       isa                    struct objc_class *
+0x100001178 2     Person       Person::(ivar)name     *
 address     index class  flags name     
 ----------------------------------------
 0x100000da0 0     Person       sayHello
@@ -53,15 +53,15 @@ address index class flags name type
 address     index class          flags name                    
 ---------------------------------------------------------------
 0x10000676c 0     ViewController       viewDidLoad
-0x1000067d0 1     ViewController       didReceiveMemoryWarning
-0x1000067bc 2     ViewController c     thisIsAClassMethod
+0x1000067bc 1     ViewController c     thisIsAClassMethod
+0x1000067d0 2     ViewController       didReceiveMemoryWarning
 0x100006820 3     ViewController c     andAnotherOne
 EOF
 RUN
 
 NAME=objc method flags (icj)
 FILE=bins/mach0/TestMethods
-CMDS=icj~{[0].methods[2].flags[0]}
+CMDS=icj~{[0].methods[1].flags[0]}
 EXPECT=<<EOF
 class
 EOF
@@ -71,7 +71,7 @@ NAME=objc method flags (ic*)
 FILE=bins/mach0/TestMethods
 CMDS=ic*~thisIsAClassMethod
 EXPECT=<<EOF
-"f method.class.ViewController.thisIsAClassMethod @ 0x1000067bc"
+f method.class.ViewController.thisIsAClassMethod @ 0x1000067bc
 EOF
 RUN
 
@@ -92,9 +92,9 @@ address    index class                                flags name
 EOF
 RUN
 
-NAME=infinite aalo
+NAME=infinite aalor
 FILE=bins/mach0/r2_hang_test
-CMDS=aalo
+CMDS=aalor
 EXPECT=
 RUN
 
@@ -109,16 +109,16 @@ address     min         max         name                                  super
 EOF
 RUN
 
-NAME=aalo hello-objc selrefs
+NAME=aalor hello-objc selrefs
 FILE=bins/mach0/hello-objc
 CMDS=<<EOF
 e analysis.jmp.cref=true
-aalo
+aalor
 axl~?
 axl~selref
 EOF
 EXPECT=<<EOF
-92
+94
               section.0.__TEXT.__text+20 0x100000db4 ->      DATA -> 0x100001150 section.14.__DATA.__objc_selrefs
                                  main+15 0x100000e5f ->      DATA -> 0x100001158 section.14.__DATA.__objc_selrefs+8
                                  main+45 0x100000e7d ->      DATA -> 0x100001160 section.14.__DATA.__objc_selrefs+16
@@ -129,12 +129,223 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=aalo hello-objc methods references
+NAME=aalor hello-objc methods references
 FILE=bins/mach0/hello-objc
-CMDS=aalo;axl~method
+CMDS=aalor;axl~method
 EXPECT=<<EOF
               section.0.__TEXT.__text+20 0x100000db4 ->      CODE -> 0x100000df0 method.Person.name
                                  main+45 0x100000e7d ->      CODE -> 0x100000e20 method.Person.setName:
                                 main+116 0x100000ec4 ->      CODE -> 0x100000e20 method.Person.setName:
+EOF
+RUN
+
+NAME=objc_stubs arm64e
+FILE=bins/mach0/hello-macos-arm64e-objc-stubs-stripped
+CMDS=<<EOF
+aalos
+fl@F:objc-stubs
+fl@F:objc-stubs@e:asm.flags.real=1
+EOF
+EXPECT=<<EOF
+0x100003d80 32 stub.objc_msgSend_methodWithOneArg:
+0x100003da0 32 stub.objc_msgSend_methodWithReturn
+0x100003dc0 32 stub.objc_msgSend_methodWithTwoArgs:secondArg:
+0x100003de0 32 stub.objc_msgSend_methodWithoutArgs
+0x100003d80 32 objc_msgSend$methodWithOneArg:
+0x100003da0 32 objc_msgSend$methodWithReturn
+0x100003dc0 32 objc_msgSend$methodWithTwoArgs:secondArg:
+0x100003de0 32 objc_msgSend$methodWithoutArgs
+EOF
+RUN
+
+NAME=objc_stubs arm64
+FILE=bins/mach0/hello-macos-arm64-objc-stubs-stripped
+CMDS=<<EOF
+aalos
+fl@F:objc-stubs
+fl@F:objc-stubs@e:asm.flags.real=1
+EOF
+EXPECT=<<EOF
+0x100003d80 32 stub.objc_msgSend_methodWithOneArg:
+0x100003da0 32 stub.objc_msgSend_methodWithReturn
+0x100003dc0 32 stub.objc_msgSend_methodWithTwoArgs:secondArg:
+0x100003de0 32 stub.objc_msgSend_methodWithoutArgs
+0x100003d80 32 objc_msgSend$methodWithOneArg:
+0x100003da0 32 objc_msgSend$methodWithReturn
+0x100003dc0 32 objc_msgSend$methodWithTwoArgs:secondArg:
+0x100003de0 32 objc_msgSend$methodWithoutArgs
+EOF
+RUN
+
+NAME=objc_stubs arm64 small
+FILE=bins/mach0/hello-macos-arm64-objc-stubs-small-stripped
+CMDS=<<EOF
+aalos
+fl@F:objc-stubs
+fl@F:objc-stubs@e:asm.flags.real=1
+EOF
+EXPECT=<<EOF
+0x100003dd8 12 stub.objc_msgSend_methodWithOneArg:
+0x100003de4 12 stub.objc_msgSend_methodWithReturn
+0x100003df0 12 stub.objc_msgSend_methodWithTwoArgs:secondArg:
+0x100003dfc 12 stub.objc_msgSend_methodWithoutArgs
+0x100003dd8 12 objc_msgSend$methodWithOneArg:
+0x100003de4 12 objc_msgSend$methodWithReturn
+0x100003df0 12 objc_msgSend$methodWithTwoArgs:secondArg:
+0x100003dfc 12 objc_msgSend$methodWithoutArgs
+EOF
+RUN
+
+NAME=objc_stubs arm64_32
+FILE=bins/mach0/hello-watchos-arm64_32-objc-stubs-stripped
+CMDS=<<EOF
+aalos
+fl@F:objc-stubs
+fl@F:objc-stubs@e:asm.flags.real=1
+EOF
+EXPECT=<<EOF
+0x0000bd80 32 stub.objc_msgSend_methodWithOneArg:
+0x0000bda0 32 stub.objc_msgSend_methodWithReturn
+0x0000bdc0 32 stub.objc_msgSend_methodWithTwoArgs:secondArg:
+0x0000bde0 32 stub.objc_msgSend_methodWithoutArgs
+0x0000bd80 32 objc_msgSend$methodWithOneArg:
+0x0000bda0 32 objc_msgSend$methodWithReturn
+0x0000bdc0 32 objc_msgSend$methodWithTwoArgs:secondArg:
+0x0000bde0 32 objc_msgSend$methodWithoutArgs
+EOF
+RUN
+
+NAME=objc_stubs arm64_32 small
+FILE=bins/mach0/hello-watchos-arm64_32-objc-stubs-small-stripped
+CMDS=<<EOF
+aalos
+fl@F:objc-stubs
+fl@F:objc-stubs@e:asm.flags.real=1
+EOF
+EXPECT=<<EOF
+0x0000bde8 12 stub.objc_msgSend_methodWithOneArg:
+0x0000bdf4 12 stub.objc_msgSend_methodWithReturn
+0x0000be00 12 stub.objc_msgSend_methodWithTwoArgs:secondArg:
+0x0000be0c 12 stub.objc_msgSend_methodWithoutArgs
+0x0000bde8 12 objc_msgSend$methodWithOneArg:
+0x0000bdf4 12 objc_msgSend$methodWithReturn
+0x0000be00 12 objc_msgSend$methodWithTwoArgs:secondArg:
+0x0000be0c 12 objc_msgSend$methodWithoutArgs
+EOF
+RUN
+
+NAME=objc_stubs x86_64
+FILE=bins/mach0/hello-macos-x86_64-objc-stubs-stripped
+CMDS=<<EOF
+aalos
+fl@F:objc-stubs
+fl@F:objc-stubs@e:asm.flags.real=1
+EOF
+EXPECT=<<EOF
+0x100003e50 13 stub.objc_msgSend_methodWithOneArg:
+0x100003e5d 13 stub.objc_msgSend_methodWithReturn
+0x100003e6a 13 stub.objc_msgSend_methodWithTwoArgs:secondArg:
+0x100003e77 13 stub.objc_msgSend_methodWithoutArgs
+0x100003e50 13 objc_msgSend$methodWithOneArg:
+0x100003e5d 13 objc_msgSend$methodWithReturn
+0x100003e6a 13 objc_msgSend$methodWithTwoArgs:secondArg:
+0x100003e77 13 objc_msgSend$methodWithoutArgs
+EOF
+RUN
+
+NAME=objc_stubs do not create if there are syms
+FILE=bins/mach0/hello-macos-arm64e-objc-stubs
+CMDS=<<EOF
+aalos
+fl@F:objc-stubs
+echo --
+fl@F:symbols~objc_msgSend
+EOF
+EXPECT=<<EOF
+--
+0x100003d80 0 sym._objc_msgSend_methodWithOneArg:
+0x100003da0 0 sym._objc_msgSend_methodWithReturn
+0x100003dc0 0 sym._objc_msgSend_methodWithTwoArgs:secondArg:
+0x100003de0 0 sym._objc_msgSend_methodWithoutArgs
+EOF
+RUN
+
+NAME=objc_stubs integrated in aaa
+FILE=bins/mach0/hello-macos-arm64-objc-stubs-stripped
+CMDS=<<EOF
+aaa
+pif @ main
+afl~msgSend
+echo -- clean function rename
+s 0x100003da0
+pdf
+EOF
+EXPECT=<<EOF
+sub sp, sp, 0x60
+stp x29, x30, [var_10h]
+add x29, sp, 0x50
+adrp x8, section.13.__DATA.__objc_const
+add x8, x8, 0x150
+str x8, [var_50h]
+stur w0, [var_14h]
+stur x1, [var_20h]
+bl sym.imp.objc_autoreleasePoolPush
+ldr x8, [var_50h]
+str x0, [var_40h]
+adrp x9, section.13.__DATA.__objc_const
+add x9, x9, 0x148
+stur x9, [var_28h]
+ldr x8, [x8, 8]
+ldur x0, [var_28h]
+blr x8
+stur w0, [var_2ch]
+adrp x0, reloc.NSLog
+add x0, x0, 0xa8
+bl sym.imp.NSLog
+adrp x8, section.13.__DATA.__objc_const
+ldr x0, [x8, 0xe8]
+bl sym.imp.objc_alloc_init
+ldr x1, [var_48h]
+str x0, [var_38h]
+ldr x0, [var_38h]
+bl stub.objc_msgSend_methodWithoutArgs
+ldr x1, [var_48h]
+ldr x0, [var_38h]
+mov w2, 0x7b
+bl stub.objc_msgSend_methodWithOneArg:
+ldr x1, [var_48h]
+ldr x0, [var_38h]
+ldur w3, [var_2ch]
+mov w2, 0x539
+bl stub.objc_msgSend_methodWithTwoArgs:secondArg:
+ldr x1, [var_48h]
+ldr x0, [var_38h]
+bl stub.objc_msgSend_methodWithReturn
+stur w0, [var_2ch]
+ldur w9, [var_2ch]
+mov x8, x9
+mov x9, sp
+str x8, [x9]
+adrp x0, reloc.NSLog
+add x0, x0, 0xc8
+bl sym.imp.NSLog
+ldr x0, [var_40h]
+bl sym.imp.objc_autoreleasePoolPop
+mov w0, 0
+ldp x29, x30, [var_10h]
+add sp, sp, 0x60
+ret
+0x100003de0    1 20           stub.objc_msgSend_methodWithoutArgs
+0x100003d80    1 20           stub.objc_msgSend_methodWithOneArg:
+0x100003dc0    1 20           stub.objc_msgSend_methodWithTwoArgs:secondArg:
+0x100003da0    1 20           stub.objc_msgSend_methodWithReturn
+-- clean function rename
+            ; CALL XREF from entry0 @ 0x100003d14
+/ stub.objc_msgSend_methodWithReturn();
+|           0x100003da0      adrp  x1, section.13.__DATA.__objc_const  ; 0x100008000
+|           0x100003da4      ldr   x1, [x1, 0xc8]                      ; [0x100003f3c:4]=0x6874656d ; "methodWithReturn"
+|           0x100003da8      adrp  x16, reloc.NSLog                    ; 0x100004000
+|           0x100003dac      ldr   x16, [x16, 0x20]                    ; [0x100004020:4]=0x10028 ; u"(\x01\x01"
+\           0x100003db0      br    x16
 EOF
 RUN

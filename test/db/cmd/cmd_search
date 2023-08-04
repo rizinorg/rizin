@@ -296,11 +296,11 @@ NAME=/ac mov ebx
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 /ac mov ebx
-?e --
+echo --
 /ac MoV ebX
-?e --
+echo --
 /acj mov ebx
-?e --
+echo --
 /acj MoV ebX
 EOF
 EXPECT=<<EOF
@@ -318,11 +318,11 @@ NAME=/aa mov ebx
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 /aa mov ebx
-?e --
+echo --
 /aa MoV ebX
-?e --
+echo --
 /aaj mov ebx
-?e --
+echo --
 /aaj MoV ebX
 EOF
 EXPECT=<<EOF
@@ -620,15 +620,98 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/v4 search 4 byte
+NAME=/v{2,4,8} value search LE
 FILE==
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
+e cfg.bigendian=false
+/v2 0x7856
+/v2 0x5678
 /v4 0x78563412
+/v4 0x12345678
+/v8 0x78563412ddccbbaa
+/v8 0xddccbbaa78563412
+/v8 0x12345678aabbccdd
 EOF
 EXPECT=<<EOF
-0x00000000 hit0_0 12345678
-0x0000000a hit0_1 12345678
+0x00000002 hit0_0 5678
+0x0000000c hit0_1 5678
+0x00000000 hit2_0 12345678
+0x0000000a hit2_1 12345678
+0x00000000 hit5_0 12345678aabbccdd
+EOF
+RUN
+
+NAME=/v{2,4,8} value search BE
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff12345678
+e cfg.bigendian=true
+/v2 0x7856
+/v2 0x5678
+/v4 0x78563412
+/v4 0x12345678
+/v8 0x78563412ddccbbaa
+/v8 0xddccbbaa78563412
+/v8 0x12345678aabbccdd
+EOF
+EXPECT=<<EOF
+0x00000002 hit0_0 5678
+0x0000000c hit0_1 5678
+0x00000000 hit2_0 12345678
+0x0000000a hit2_1 12345678
+0x00000000 hit5_0 12345678aabbccdd
+EOF
+RUN
+
+NAME=/V{2,4,8} value search in range LE
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff13345678
+e cfg.bigendian=false
+/V2 0x7854 0x7858
+echo ---
+/V2 0x5677 0x7854
+/V4 0x78563412 0x78563420
+echo ---
+/V4 0x12345678 0x20345678
+/V8 0x12345678aabbccdd 0x14345678aabbccdd
+EOF
+EXPECT=<<EOF
+0x2: 0x7856
+0xc: 0x7856
+---
+0x0: 0x78563412
+0xa: 0x78563413
+---
+0x7: 0x13ffeedd
+0x3: 0x13ffeeddccbbaa78
+EOF
+RUN
+
+NAME=/V{2,4,8} value search in range BE
+FILE==
+CMDS=<<EOF
+wx 0x12345678aabbccddeeff13345678
+e cfg.bigendian=true
+/V2 0x7854 0x7858
+echo ---
+/V2 0x5677 0x7854
+/V4 0x78563412 0x78563420
+echo ---
+/V4 0x12345670 0x20345678
+/V8 0x12345678aabbccdd 0x14345678aabbccdd
+EOF
+EXPECT=<<EOF
+---
+0x2: 0x5678
+0xc: 0x5678
+0xd: 0x7800
+---
+0x0: 0x12345678
+0xa: 0x13345678
+0x0: 0x12345678aabbccdd
+0xa: 0x1334567800000000
 EOF
 RUN
 
@@ -643,18 +726,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/v4 search 8 byte
-FILE==
-CMDS=<<EOF
-wx 0x12345678aabbccddeeff12345678
-/v4 0x78563412 0xddccbbaa
-EOF
-EXPECT=<<EOF
-0x00000000 hit0_0 12345678aabbccdd
-EOF
-RUN
-
-NAME=/V4j search 4 byte with json
+NAME=/V4j search 4 byte in range with json
 FILE==
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
@@ -1087,5 +1159,24 @@ rzil.step.events.write: enables/disables printing aezse write event
           asm.cmt.il: Show RzIL expressions as comments
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
+EOF
+RUN
+
+
+NAME=search wide string
+FILE==
+CMDS=<<EOF
+ww Hello World this is Rizin
+/w World
+/w world
+/wi world
+/wj World
+/wji world
+EOF
+EXPECT=<<EOF
+0x0000000c hit0_0 57006f0072006c006400
+0x0000000c hit2_0 57006f0072006c006400
+[{"offset":12,"type":"hexpair","data":"57006f0072006c006400"}]
+[{"offset":12,"type":"hexpair","data":"57006f0072006c006400"}]
 EOF
 RUN

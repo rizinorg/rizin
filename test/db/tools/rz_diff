@@ -267,7 +267,7 @@ digraph code {
 	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
 	node [fillcolor=gray style=filled shape=box];
 	edge [arrowhead="normal"];
-	"0x00401ae0" [fillcolor="yellow",color="black", fontname="Courier", label="--- fcn.00401ae0\l+++ fcn.00401af0\l@@ -1,4 +1,4 @@\l-fcn.00401ae0 (int64_t arg1, int64_t arg2);\l+fcn.00401af0 (int64_t arg1, int64_t arg2);\l      ; arg int64_t arg1 @ rdi\l      ; arg int64_t arg2 @ rsi\l      push  r12\l@@ -12,4 +12,4 @@\l      call  sym.imp.dcgettext\l      cmp   rax, rbp\l      mov   rbx, rax\l-     je    0x401b10\l+     je    0x401b20\l", URL="fcn.00401ae0/0x00401ae0"]
+	"0x00401ae0" [fillcolor="yellow",color="black", fontname="Courier", label="--- fcn.00401ae0\l+++ fcn.00401af0\l@@ -1,4 +1,4 @@\l-fcn.00401ae0(int64_t arg1, int64_t arg2);\l+fcn.00401af0(int64_t arg1, int64_t arg2);\l      ; arg int64_t arg1 @ rdi\l      ; arg int64_t arg2 @ rsi\l      push  r12\l@@ -12,4 +12,4 @@\l      call  sym.imp.dcgettext\l      cmp   rax, rbp\l      mov   rbx, rax\l-     je    0x401b10\l+     je    0x401b20\l", URL="fcn.00401ae0/0x00401ae0"]
 	"0x00401b01" [fillcolor="lightgray",color="black", fontname="Courier", label="     mov   rax, rbx\l     pop   rbx\l     pop   rbp\l     pop   r12\l     ret\l", URL="fcn.00401ae0/0x00401b01"]
 	"0x00401b10" [fillcolor="lightgray",color="black", fontname="Courier", label="--- fcn.00401ae0\l+++ fcn.00401af0\l@@ -1,5 +1,5 @@\l-     call  fcn.004038e0\l+     call  fcn.004038f0\l      movzx edx, byte [rax]\l      and   edx, 0xffffffdf\l      cmp   dl, 0x55\l-     jne   0x401b78\l+     jne   0x401b88\l", URL="fcn.00401ae0/0x00401b10"]
 	"0x00401b20" [fillcolor="lightgray",color="black", fontname="Courier", label="--- fcn.00401ae0\l+++ fcn.00401af0\l@@ -1,4 +1,4 @@\l      movzx edx, byte [rax + 1]\l      and   edx, 0xffffffdf\l      cmp   dl, 0x54\l-     jne   0x401b60\l+     jne   0x401b70\l", URL="fcn.00401ae0/0x00401b20"]
@@ -324,7 +324,7 @@ NAME=rz-diff graphs comparison with addresses JSON
 FILE==
 CMDS=!rz-diff -e analysis.jmp.cref=true -C -j -t graphs -0 0x401ae0 -1 0x401af0 bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
-{"source":{"name":"fcn.00401ae0","offset":4201184,"ninstr":73,"nargs":2,"nlocals":0,"size":242,"stack":24,"type":"fcn"},"match":{"name":"fcn.00401ae0","offset":4201184,"ninstr":73,"nargs":2,"nlocals":0,"size":242,"stack":24,"type":"fcn"},"result":[{"pair":{"source":{"address":4201184,"jump":4201232,"fail":4201217},"match":{"address":4201200,"jump":4201248,"fail":4201233}},"similarity":{"type":"PARTIAL","score":0.969697},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n-fcn.00401ae0 (int64_t arg1, int64_t arg2);\n+fcn.00401af0 (int64_t arg1, int64_t arg2);\n      ; arg int64_t arg1 @ rdi\n      ; arg int64_t arg2 @ rsi\n      push  r12\n@@ -12,4 +12,4 @@\n      call  sym.imp.dcgettext\n      cmp   rax, rbp\n      mov   rbx, rax\n-     je    0x401b10\n+     je    0x401b20\n"},{"pair":{"source":{"address":4201217},"match":{"address":4201233}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"     mov   rax, rbx\n     pop   rbx\n     pop   rbp\n     pop   r12\n     ret\n"},{"pair":{"source":{"address":4201232,"jump":4201336,"fail":4201248},"match":{"address":4201248,"jump":4201352,"fail":4201264}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,5 +1,5 @@\n-     call  fcn.004038e0\n+     call  fcn.004038f0\n      movzx edx, byte [rax]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x55\n-     jne   0x401b78\n+     jne   0x401b88\n"},{"pair":{"source":{"address":4201248,"jump":4201312,"fail":4201260},"match":{"address":4201264,"jump":4201328,"fail":4201276}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax + 1]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x54\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201260,"jump":4201312,"fail":4201272},"match":{"address":4201276,"jump":4201328,"fail":4201288}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax + 2]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x46\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201272,"jump":4201312,"fail":4201278},"match":{"address":4201288,"jump":4201328,"fail":4201294}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 3], 0x2d\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201278,"jump":4201312,"fail":4201284},"match":{"address":4201294,"jump":4201328,"fail":4201300}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 4], 0x38\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201284,"jump":4201312,"fail":4201290},"match":{"address":4201300,"jump":4201328,"fail":4201306}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 5], 0\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201290,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.894737},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,7 +-1,7 @@\n      cmp   byte [rbx], 0x60\n-     mov   eax, 0x404253\n-     mov   ebx, 0x404247\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmove rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":{"address":4201312,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.550000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,5 +1,5 @@\n-     cmp   r12d, 7\n-     mov   ebx, 0x40424b\n-     mov   eax, 0x40424d\n+     cmp   byte [rbx], 0x60\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmove rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":{"address":4201336,"jump":4201312,"fail":4201341},"match":{"address":4201352,"jump":4201328,"fail":4201357}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   dl, 0x47\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201341,"jump":4201312,"fail":4201353},"match":{"address":4201357,"jump":4201328,"fail":4201369}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax + 1]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x42\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201353,"jump":4201312,"fail":4201359},"match":{"address":4201369,"jump":4201328,"fail":4201375}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 2], 0x31\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201359,"jump":4201312,"fail":4201365},"match":{"address":4201375,"jump":4201328,"fail":4201381}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 3], 0x38\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201365,"jump":4201312,"fail":4201371},"match":{"address":4201381,"jump":4201328,"fail":4201387}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 4], 0x30\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201371,"jump":4201312,"fail":4201377},"match":{"address":4201387,"jump":4201328,"fail":4201393}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 5], 0x33\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201377,"jump":4201312,"fail":4201404},"match":{"address":4201393,"jump":4201328,"fail":4201420}},"similarity":{"type":"PARTIAL","score":0.962963},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -3,6 +3,6 @@\n      mov   edx, 0x30\n      mov   esi, str.GB18030\n      mov   rdi, rax\n-     call  fcn.00401a20\n+     call  fcn.00401a30\n      test  eax, eax\n-     je    0x401b60\n+     je    0x401b70\n"},{"pair":{"source":{"address":4201404,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.681818},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,7 +-1,7 @@\n      cmp   byte [rbx], 0x60\n-     mov   eax, 0x40424f\n-     mov   ebx, 0x404244\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmove rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":null,"match":{"address":4201328,"jump":4201233}},"similarity":{"type":"UNLIKE","score":0.000000},"opcodes":"     cmp   r12d, 7\n     mov   ebx, 0x40428b\n     mov   eax, 0x40428d\n     cmove rbx, rax\n     jmp   0x401b11\n"},{"pair":{"source":null,"match":{"address":4201420,"jump":4201233}},"similarity":{"type":"UNLIKE","score":0.000000},"opcodes":"     cmp   byte [rbx], 0x60\n     mov   eax, 0x40428f\n     mov   ebx, 0x404284\n     cmove rbx, rax\n     jmp   0x401b11\n"}]}
+{"source":{"name":"fcn.00401ae0","offset":4201184,"ninstr":73,"nargs":2,"nlocals":0,"size":242,"stack":24,"type":"fcn"},"match":{"name":"fcn.00401ae0","offset":4201184,"ninstr":73,"nargs":2,"nlocals":0,"size":242,"stack":24,"type":"fcn"},"result":[{"pair":{"source":{"address":4201184,"jump":4201232,"fail":4201217},"match":{"address":4201200,"jump":4201248,"fail":4201233}},"similarity":{"type":"PARTIAL","score":0.969697},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n-fcn.00401ae0(int64_t arg1, int64_t arg2);\n+fcn.00401af0(int64_t arg1, int64_t arg2);\n      ; arg int64_t arg1 @ rdi\n      ; arg int64_t arg2 @ rsi\n      push  r12\n@@ -12,4 +12,4 @@\n      call  sym.imp.dcgettext\n      cmp   rax, rbp\n      mov   rbx, rax\n-     je    0x401b10\n+     je    0x401b20\n"},{"pair":{"source":{"address":4201217},"match":{"address":4201233}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"     mov   rax, rbx\n     pop   rbx\n     pop   rbp\n     pop   r12\n     ret\n"},{"pair":{"source":{"address":4201232,"jump":4201336,"fail":4201248},"match":{"address":4201248,"jump":4201352,"fail":4201264}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,5 +1,5 @@\n-     call  fcn.004038e0\n+     call  fcn.004038f0\n      movzx edx, byte [rax]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x55\n-     jne   0x401b78\n+     jne   0x401b88\n"},{"pair":{"source":{"address":4201248,"jump":4201312,"fail":4201260},"match":{"address":4201264,"jump":4201328,"fail":4201276}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax + 1]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x54\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201260,"jump":4201312,"fail":4201272},"match":{"address":4201276,"jump":4201328,"fail":4201288}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax + 2]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x46\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201272,"jump":4201312,"fail":4201278},"match":{"address":4201288,"jump":4201328,"fail":4201294}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 3], 0x2d\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201278,"jump":4201312,"fail":4201284},"match":{"address":4201294,"jump":4201328,"fail":4201300}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 4], 0x38\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201284,"jump":4201312,"fail":4201290},"match":{"address":4201300,"jump":4201328,"fail":4201306}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 5], 0\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201290,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.894737},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,7 +-1,7 @@\n      cmp   byte [rbx], 0x60\n-     mov   eax, 0x404253\n-     mov   ebx, 0x404247\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmove rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":{"address":4201312,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.550000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,5 +1,5 @@\n-     cmp   r12d, 7\n-     mov   ebx, 0x40424b\n-     mov   eax, 0x40424d\n+     cmp   byte [rbx], 0x60\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmove rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":{"address":4201336,"jump":4201312,"fail":4201341},"match":{"address":4201352,"jump":4201328,"fail":4201357}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   dl, 0x47\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201341,"jump":4201312,"fail":4201353},"match":{"address":4201357,"jump":4201328,"fail":4201369}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax + 1]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x42\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201353,"jump":4201312,"fail":4201359},"match":{"address":4201369,"jump":4201328,"fail":4201375}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 2], 0x31\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201359,"jump":4201312,"fail":4201365},"match":{"address":4201375,"jump":4201328,"fail":4201381}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 3], 0x38\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201365,"jump":4201312,"fail":4201371},"match":{"address":4201381,"jump":4201328,"fail":4201387}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 4], 0x30\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201371,"jump":4201312,"fail":4201377},"match":{"address":4201387,"jump":4201328,"fail":4201393}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax + 5], 0x33\n-     jne   0x401b60\n+     jne   0x401b70\n"},{"pair":{"source":{"address":4201377,"jump":4201312,"fail":4201404},"match":{"address":4201393,"jump":4201328,"fail":4201420}},"similarity":{"type":"PARTIAL","score":0.962963},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -3,6 +3,6 @@\n      mov   edx, 0x30\n      mov   esi, str.GB18030\n      mov   rdi, rax\n-     call  fcn.00401a20\n+     call  fcn.00401a30\n      test  eax, eax\n-     je    0x401b60\n+     je    0x401b70\n"},{"pair":{"source":{"address":4201404,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.681818},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,7 +-1,7 @@\n      cmp   byte [rbx], 0x60\n-     mov   eax, 0x40424f\n-     mov   ebx, 0x404244\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmove rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":null,"match":{"address":4201328,"jump":4201233}},"similarity":{"type":"UNLIKE","score":0.000000},"opcodes":"     cmp   r12d, 7\n     mov   ebx, 0x40428b\n     mov   eax, 0x40428d\n     cmove rbx, rax\n     jmp   0x401b11\n"},{"pair":{"source":null,"match":{"address":4201420,"jump":4201233}},"similarity":{"type":"UNLIKE","score":0.000000},"opcodes":"     cmp   byte [rbx], 0x60\n     mov   eax, 0x40428f\n     mov   ebx, 0x404284\n     cmove rbx, rax\n     jmp   0x401b11\n"}]}
 EOF
 RUN
 
@@ -431,41 +431,109 @@ RUN
 
 NAME=rz-diff fields comparison
 FILE==
-CMDS=!rz-diff -C -t fields bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -t fields bins/mach0/test-arm32 bins/mach0/test-arm64
 EXPECT=<<EOF
---- bins/java/Main.java.11.class
-+++ bins/java/Hello.class
-@@ -1,0 +1,1 @@
-+Ljava/lang/String; who
+--- bins/mach0/test-arm32
++++ bins/mach0/test-arm64
+@@ --1,16 +-1,16 @@
+  header
+- load_command_0_LC_SEGMENT
++ load_command_0_LC_SEGMENT_64
+  load_command_10_LC_SOURCE_VERSION
+  load_command_11_LC_MAIN
+- load_command_12_LC_ENCRYPTION_INFO
++ load_command_12_LC_ENCRYPTION_INFO_64
+  load_command_13_LC_LOAD_DYLIB
+  load_command_14_LC_FUNCTION_STARTS
+  load_command_15_LC_DATA_IN_CODE
+- load_command_1_LC_SEGMENT
+- load_command_2_LC_SEGMENT
+- load_command_3_LC_SEGMENT
++ load_command_1_LC_SEGMENT_64
++ load_command_2_LC_SEGMENT_64
++ load_command_3_LC_SEGMENT_64
+  load_command_4_LC_DYLD_INFO_ONLY
+  load_command_5_LC_SYMTAB
+  load_command_6_LC_DYSYMTAB
+@@ -21,3 +21,4 @@
+  section_1
+  section_2
+  section_3
++ section_4
 
 EOF
 RUN
 
 NAME=rz-diff fields comparison JSON
 FILE==
-CMDS=!rz-diff -C -jt fields bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -jt fields bins/mach0/test-arm32 bins/mach0/test-arm64
 EXPECT=<<EOF
-{"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,0],"to":[1,1],"ops":[{"op":"insert","value":"Ljava/lang/String; who\n"}]}]}
+{"from":"bins/mach0/test-arm32","to":"bins/mach0/test-arm64","diff":[{"from":[-1,16],"to":[-1,16],"ops":[{"op":"equal","value":" header\n"},{"op":"delete","value":" load_command_0_LC_SEGMENT\n"},{"op":"insert","value":" load_command_0_LC_SEGMENT_64\n"},{"op":"equal","value":" load_command_10_LC_SOURCE_VERSION\n"},{"op":"equal","value":" load_command_11_LC_MAIN\n"},{"op":"delete","value":" load_command_12_LC_ENCRYPTION_INFO\n"},{"op":"insert","value":" load_command_12_LC_ENCRYPTION_INFO_64\n"},{"op":"equal","value":" load_command_13_LC_LOAD_DYLIB\n"},{"op":"equal","value":" load_command_14_LC_FUNCTION_STARTS\n"},{"op":"equal","value":" load_command_15_LC_DATA_IN_CODE\n"},{"op":"delete","value":" load_command_1_LC_SEGMENT\n"},{"op":"delete","value":" load_command_2_LC_SEGMENT\n"},{"op":"delete","value":" load_command_3_LC_SEGMENT\n"},{"op":"insert","value":" load_command_1_LC_SEGMENT_64\n"},{"op":"insert","value":" load_command_2_LC_SEGMENT_64\n"},{"op":"insert","value":" load_command_3_LC_SEGMENT_64\n"},{"op":"equal","value":" load_command_4_LC_DYLD_INFO_ONLY\n"},{"op":"equal","value":" load_command_5_LC_SYMTAB\n"},{"op":"equal","value":" load_command_6_LC_DYSYMTAB\n"}]},{"from":[21,3],"to":[21,4],"ops":[{"op":"equal","value":" section_1\n"},{"op":"equal","value":" section_2\n"},{"op":"equal","value":" section_3\n"},{"op":"insert","value":" section_4\n"}]}]}
 EOF
 RUN
 
 NAME=rz-diff fields comparison with addresses
 FILE==
-CMDS=!rz-diff -C -At fields bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -At fields bins/mach0/test-arm32 bins/mach0/test-arm64
 EXPECT=<<EOF
---- bins/java/Main.java.11.class
-+++ bins/java/Hello.class
-@@ -1,0 +1,1 @@
-+virt: 0x000000000000020b phys: 0x000000000000020b Ljava/lang/String; who
+--- bins/mach0/test-arm32
++++ bins/mach0/test-arm64
+@@ --1,25 +-1,26 @@
+ virt: 0x0000000000000000 phys: 0x0000000000000000          header
+-virt: 0x000000000000001c phys: 0x000000000000001c          load_command_0_LC_SEGMENT
+-virt: 0x0000000000000370 phys: 0x0000000000000370          load_command_10_LC_SOURCE_VERSION
+-virt: 0x0000000000000380 phys: 0x0000000000000380          load_command_11_LC_MAIN
+-virt: 0x0000000000000398 phys: 0x0000000000000398          load_command_12_LC_ENCRYPTION_INFO
+-virt: 0x00000000000003ac phys: 0x00000000000003ac          load_command_13_LC_LOAD_DYLIB
+-virt: 0x00000000000003e0 phys: 0x00000000000003e0          load_command_14_LC_FUNCTION_STARTS
+-virt: 0x00000000000003f0 phys: 0x00000000000003f0          load_command_15_LC_DATA_IN_CODE
+-virt: 0x0000000000000054 phys: 0x0000000000000054          load_command_1_LC_SEGMENT
+-virt: 0x000000000000019c phys: 0x000000000000019c          load_command_2_LC_SEGMENT
+-virt: 0x000000000000025c phys: 0x000000000000025c          load_command_3_LC_SEGMENT
+-virt: 0x0000000000000294 phys: 0x0000000000000294          load_command_4_LC_DYLD_INFO_ONLY
+-virt: 0x00000000000002c4 phys: 0x00000000000002c4          load_command_5_LC_SYMTAB
+-virt: 0x00000000000002dc phys: 0x00000000000002dc          load_command_6_LC_DYSYMTAB
+-virt: 0x000000000000032c phys: 0x000000000000032c          load_command_7_LC_LOAD_DYLINKER
+-virt: 0x0000000000000348 phys: 0x0000000000000348          load_command_8_LC_UUID
+-virt: 0x0000000000000360 phys: 0x0000000000000360          load_command_9_LC_VERSION_MIN_IPHONEOS
+-virt: 0x00000000000001d4 phys: 0x00000000000001d4          section_0
+-virt: 0x000000000000008c phys: 0x000000000000008c          section_0
+-virt: 0x0000000000000218 phys: 0x0000000000000218          section_1
+-virt: 0x00000000000000d0 phys: 0x00000000000000d0          section_1
+-virt: 0x0000000000000114 phys: 0x0000000000000114          section_2
+-virt: 0x0000000000000158 phys: 0x0000000000000158          section_3
++virt: 0x0000000000000020 phys: 0x0000000000000020          load_command_0_LC_SEGMENT_64
++virt: 0x0000000000000450 phys: 0x0000000000000450          load_command_10_LC_SOURCE_VERSION
++virt: 0x0000000000000460 phys: 0x0000000000000460          load_command_11_LC_MAIN
++virt: 0x0000000000000478 phys: 0x0000000000000478          load_command_12_LC_ENCRYPTION_INFO_64
++virt: 0x0000000000000490 phys: 0x0000000000000490          load_command_13_LC_LOAD_DYLIB
++virt: 0x00000000000004c8 phys: 0x00000000000004c8          load_command_14_LC_FUNCTION_STARTS
++virt: 0x00000000000004d8 phys: 0x00000000000004d8          load_command_15_LC_DATA_IN_CODE
++virt: 0x0000000000000068 phys: 0x0000000000000068          load_command_1_LC_SEGMENT_64
++virt: 0x0000000000000240 phys: 0x0000000000000240          load_command_2_LC_SEGMENT_64
++virt: 0x0000000000000328 phys: 0x0000000000000328          load_command_3_LC_SEGMENT_64
++virt: 0x0000000000000370 phys: 0x0000000000000370          load_command_4_LC_DYLD_INFO_ONLY
++virt: 0x00000000000003a0 phys: 0x00000000000003a0          load_command_5_LC_SYMTAB
++virt: 0x00000000000003b8 phys: 0x00000000000003b8          load_command_6_LC_DYSYMTAB
++virt: 0x0000000000000408 phys: 0x0000000000000408          load_command_7_LC_LOAD_DYLINKER
++virt: 0x0000000000000428 phys: 0x0000000000000428          load_command_8_LC_UUID
++virt: 0x0000000000000440 phys: 0x0000000000000440          load_command_9_LC_VERSION_MIN_IPHONEOS
++virt: 0x0000000000000288 phys: 0x0000000000000288          section_0
++virt: 0x00000000000000b0 phys: 0x00000000000000b0          section_0
++virt: 0x00000000000002d8 phys: 0x00000000000002d8          section_1
++virt: 0x0000000000000100 phys: 0x0000000000000100          section_1
++virt: 0x0000000000000150 phys: 0x0000000000000150          section_2
++virt: 0x00000000000001a0 phys: 0x00000000000001a0          section_3
++virt: 0x00000000000001f0 phys: 0x00000000000001f0          section_4
 
 EOF
 RUN
 
 NAME=rz-diff fields comparison with addresses JSON
 FILE==
-CMDS=!rz-diff -C -Ajt fields bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -Ajt fields bins/mach0/test-arm32 bins/mach0/test-arm64
 EXPECT=<<EOF
-{"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,0],"to":[1,1],"ops":[{"op":"insert","value":"virt: 0x000000000000020b phys: 0x000000000000020b Ljava/lang/String; who\n"}]}]}
+{"from":"bins/mach0/test-arm32","to":"bins/mach0/test-arm64","diff":[{"from":[-1,25],"to":[-1,26],"ops":[{"op":"equal","value":"virt: 0x0000000000000000 phys: 0x0000000000000000          header\n"},{"op":"delete","value":"virt: 0x000000000000001c phys: 0x000000000000001c          load_command_0_LC_SEGMENT\n"},{"op":"delete","value":"virt: 0x0000000000000370 phys: 0x0000000000000370          load_command_10_LC_SOURCE_VERSION\n"},{"op":"delete","value":"virt: 0x0000000000000380 phys: 0x0000000000000380          load_command_11_LC_MAIN\n"},{"op":"delete","value":"virt: 0x0000000000000398 phys: 0x0000000000000398          load_command_12_LC_ENCRYPTION_INFO\n"},{"op":"delete","value":"virt: 0x00000000000003ac phys: 0x00000000000003ac          load_command_13_LC_LOAD_DYLIB\n"},{"op":"delete","value":"virt: 0x00000000000003e0 phys: 0x00000000000003e0          load_command_14_LC_FUNCTION_STARTS\n"},{"op":"delete","value":"virt: 0x00000000000003f0 phys: 0x00000000000003f0          load_command_15_LC_DATA_IN_CODE\n"},{"op":"delete","value":"virt: 0x0000000000000054 phys: 0x0000000000000054          load_command_1_LC_SEGMENT\n"},{"op":"delete","value":"virt: 0x000000000000019c phys: 0x000000000000019c          load_command_2_LC_SEGMENT\n"},{"op":"delete","value":"virt: 0x000000000000025c phys: 0x000000000000025c          load_command_3_LC_SEGMENT\n"},{"op":"delete","value":"virt: 0x0000000000000294 phys: 0x0000000000000294          load_command_4_LC_DYLD_INFO_ONLY\n"},{"op":"delete","value":"virt: 0x00000000000002c4 phys: 0x00000000000002c4          load_command_5_LC_SYMTAB\n"},{"op":"delete","value":"virt: 0x00000000000002dc phys: 0x00000000000002dc          load_command_6_LC_DYSYMTAB\n"},{"op":"delete","value":"virt: 0x000000000000032c phys: 0x000000000000032c          load_command_7_LC_LOAD_DYLINKER\n"},{"op":"delete","value":"virt: 0x0000000000000348 phys: 0x0000000000000348          load_command_8_LC_UUID\n"},{"op":"delete","value":"virt: 0x0000000000000360 phys: 0x0000000000000360          load_command_9_LC_VERSION_MIN_IPHONEOS\n"},{"op":"delete","value":"virt: 0x00000000000001d4 phys: 0x00000000000001d4          section_0\n"},{"op":"delete","value":"virt: 0x000000000000008c phys: 0x000000000000008c          section_0\n"},{"op":"delete","value":"virt: 0x0000000000000218 phys: 0x0000000000000218          section_1\n"},{"op":"delete","value":"virt: 0x00000000000000d0 phys: 0x00000000000000d0          section_1\n"},{"op":"delete","value":"virt: 0x0000000000000114 phys: 0x0000000000000114          section_2\n"},{"op":"delete","value":"virt: 0x0000000000000158 phys: 0x0000000000000158          section_3\n"},{"op":"insert","value":"virt: 0x0000000000000020 phys: 0x0000000000000020          load_command_0_LC_SEGMENT_64\n"},{"op":"insert","value":"virt: 0x0000000000000450 phys: 0x0000000000000450          load_command_10_LC_SOURCE_VERSION\n"},{"op":"insert","value":"virt: 0x0000000000000460 phys: 0x0000000000000460          load_command_11_LC_MAIN\n"},{"op":"insert","value":"virt: 0x0000000000000478 phys: 0x0000000000000478          load_command_12_LC_ENCRYPTION_INFO_64\n"},{"op":"insert","value":"virt: 0x0000000000000490 phys: 0x0000000000000490          load_command_13_LC_LOAD_DYLIB\n"},{"op":"insert","value":"virt: 0x00000000000004c8 phys: 0x00000000000004c8          load_command_14_LC_FUNCTION_STARTS\n"},{"op":"insert","value":"virt: 0x00000000000004d8 phys: 0x00000000000004d8          load_command_15_LC_DATA_IN_CODE\n"},{"op":"insert","value":"virt: 0x0000000000000068 phys: 0x0000000000000068          load_command_1_LC_SEGMENT_64\n"},{"op":"insert","value":"virt: 0x0000000000000240 phys: 0x0000000000000240          load_command_2_LC_SEGMENT_64\n"},{"op":"insert","value":"virt: 0x0000000000000328 phys: 0x0000000000000328          load_command_3_LC_SEGMENT_64\n"},{"op":"insert","value":"virt: 0x0000000000000370 phys: 0x0000000000000370          load_command_4_LC_DYLD_INFO_ONLY\n"},{"op":"insert","value":"virt: 0x00000000000003a0 phys: 0x00000000000003a0          load_command_5_LC_SYMTAB\n"},{"op":"insert","value":"virt: 0x00000000000003b8 phys: 0x00000000000003b8          load_command_6_LC_DYSYMTAB\n"},{"op":"insert","value":"virt: 0x0000000000000408 phys: 0x0000000000000408          load_command_7_LC_LOAD_DYLINKER\n"},{"op":"insert","value":"virt: 0x0000000000000428 phys: 0x0000000000000428          load_command_8_LC_UUID\n"},{"op":"insert","value":"virt: 0x0000000000000440 phys: 0x0000000000000440          load_command_9_LC_VERSION_MIN_IPHONEOS\n"},{"op":"insert","value":"virt: 0x0000000000000288 phys: 0x0000000000000288          section_0\n"},{"op":"insert","value":"virt: 0x00000000000000b0 phys: 0x00000000000000b0          section_0\n"},{"op":"insert","value":"virt: 0x00000000000002d8 phys: 0x00000000000002d8          section_1\n"},{"op":"insert","value":"virt: 0x0000000000000100 phys: 0x0000000000000100          section_1\n"},{"op":"insert","value":"virt: 0x0000000000000150 phys: 0x0000000000000150          section_2\n"},{"op":"insert","value":"virt: 0x00000000000001a0 phys: 0x00000000000001a0          section_3\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0          section_4\n"}]}]}
 EOF
 RUN
 
@@ -578,23 +646,21 @@ CMDS=!rz-diff -C -t symbols bins/java/Main.java.11.class bins/java/Main.java.1.7
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.1.7.class
-@@ -1,13 +1,15 @@
-+java.lang.Object Ljava/lang/Object; <init>
- java.lang.Object Ljava/lang/Object; <init>
- java.io.FileReader Ljava/io/FileReader; <init>
- java.io.BufferedReader Ljava/io/BufferedReader; <init>
- Main LMain; LMain;.<init>
- Main LMain; LMain;.main
-+java.lang.StringBuilder Ljava/lang/StringBuilder; append
- java.io.BufferedReader Ljava/io/BufferedReader; close
- java.lang.System Ljava/lang/System; err
- java.io.PrintStream Ljava/io/PrintStream; format
--java.lang.invoke.StringConcatFactory Ljava/lang/invoke/StringConcatFactory; makeConcatWithConstants
- java.lang.System Ljava/lang/System; out
- java.lang.Exception Ljava/lang/Exception; printStackTrace
- java.io.PrintStream Ljava/io/PrintStream; println
- java.io.BufferedReader Ljava/io/BufferedReader; readLine
-+java.lang.StringBuilder Ljava/lang/StringBuilder; toString
+@@ -2,6 +2,9 @@
+ Main Main Main.<init>
+ Main Main Main.main
+ java.lang.Object Object Object.<init>
++java.lang.StringBuilder StringBuilder StringBuilder.<init>
++java.lang.StringBuilder StringBuilder StringBuilder.append
++java.lang.StringBuilder StringBuilder StringBuilder.toString
+ java.lang.System System System.err
+ java.lang.System System System.out
+ java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.<init>
+@@ -10,4 +13,3 @@
+ java.io.FileReader java.io.FileReader java.io.FileReader.<init>
+ java.io.PrintStream java.io.PrintStream java.io.PrintStream.format
+ java.io.PrintStream java.io.PrintStream java.io.PrintStream.println
+-java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory.makeConcatWithConstants
 
 EOF
 RUN
@@ -603,7 +669,7 @@ NAME=rz-diff symbols comparison JSON
 FILE==
 CMDS=!rz-diff -C -jt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
-{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"insert","value":"java.lang.Object Ljava/lang/Object; <init>\n"},{"op":"equal","value":"java.lang.Object Ljava/lang/Object; <init>\n"},{"op":"equal","value":"java.io.FileReader Ljava/io/FileReader; <init>\n"},{"op":"equal","value":"java.io.BufferedReader Ljava/io/BufferedReader; <init>\n"},{"op":"equal","value":"Main LMain; LMain;.<init>\n"},{"op":"equal","value":"Main LMain; LMain;.main\n"},{"op":"insert","value":"java.lang.StringBuilder Ljava/lang/StringBuilder; append\n"},{"op":"equal","value":"java.io.BufferedReader Ljava/io/BufferedReader; close\n"},{"op":"equal","value":"java.lang.System Ljava/lang/System; err\n"},{"op":"equal","value":"java.io.PrintStream Ljava/io/PrintStream; format\n"},{"op":"delete","value":"java.lang.invoke.StringConcatFactory Ljava/lang/invoke/StringConcatFactory; makeConcatWithConstants\n"},{"op":"equal","value":"java.lang.System Ljava/lang/System; out\n"},{"op":"equal","value":"java.lang.Exception Ljava/lang/Exception; printStackTrace\n"},{"op":"equal","value":"java.io.PrintStream Ljava/io/PrintStream; println\n"},{"op":"equal","value":"java.io.BufferedReader Ljava/io/BufferedReader; readLine\n"},{"op":"insert","value":"java.lang.StringBuilder Ljava/lang/StringBuilder; toString\n"}]}]}
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[2,6],"to":[2,9],"ops":[{"op":"equal","value":"Main Main Main.<init>\n"},{"op":"equal","value":"Main Main Main.main\n"},{"op":"equal","value":"java.lang.Object Object Object.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder StringBuilder StringBuilder.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder StringBuilder StringBuilder.append\n"},{"op":"insert","value":"java.lang.StringBuilder StringBuilder StringBuilder.toString\n"},{"op":"equal","value":"java.lang.System System System.err\n"},{"op":"equal","value":"java.lang.System System System.out\n"},{"op":"equal","value":"java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.<init>\n"}]},{"from":[10,4],"to":[13,3],"ops":[{"op":"equal","value":"java.io.FileReader java.io.FileReader java.io.FileReader.<init>\n"},{"op":"equal","value":"java.io.PrintStream java.io.PrintStream java.io.PrintStream.format\n"},{"op":"equal","value":"java.io.PrintStream java.io.PrintStream java.io.PrintStream.println\n"},{"op":"delete","value":"java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
 EOF
 RUN
 
@@ -614,28 +680,28 @@ EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.1.7.class
 @@ -1,13 +1,15 @@
- virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object Ljava/lang/Object; <init>
- virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader Ljava/io/FileReader; <init>
- virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader Ljava/io/BufferedReader; <init>
--virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main LMain; LMain;.<init>
--virt: 0x00000000000004cf phys: 0x00000000000004cf Main LMain; LMain;.main
--virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader Ljava/io/BufferedReader; close
--virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System Ljava/lang/System; err
--virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream Ljava/io/PrintStream; format
--virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory Ljava/lang/invoke/StringConcatFactory; makeConcatWithConstants
-+virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder Ljava/lang/StringBuilder; <init>
-+virt: 0x0000000000000383 phys: 0x0000000000000383 Main LMain; LMain;.<init>
-+virt: 0x00000000000003ae phys: 0x00000000000003ae Main LMain; LMain;.main
-+virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder Ljava/lang/StringBuilder; append
-+virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader Ljava/io/BufferedReader; close
-+virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System Ljava/lang/System; err
-+virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream Ljava/io/PrintStream; format
- virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System Ljava/lang/System; out
--virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception Ljava/lang/Exception; printStackTrace
-+virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception Ljava/lang/Exception; printStackTrace
- virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream Ljava/io/PrintStream; println
- virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader Ljava/io/BufferedReader; readLine
-+virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder Ljava/lang/StringBuilder; toString
+-virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception Exception Exception.printStackTrace
+-virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main Main Main.<init>
+-virt: 0x00000000000004cf phys: 0x00000000000004cf Main Main Main.main
++virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception Exception Exception.printStackTrace
++virt: 0x0000000000000383 phys: 0x0000000000000383 Main Main Main.<init>
++virt: 0x00000000000003ae phys: 0x00000000000003ae Main Main Main.main
+ virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object Object Object.<init>
+-virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System System System.err
++virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder StringBuilder StringBuilder.<init>
++virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder StringBuilder StringBuilder.append
++virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder StringBuilder StringBuilder.toString
++virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System System System.err
+ virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System System System.out
+ virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.<init>
+-virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.close
++virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.close
+ virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.readLine
+ virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader java.io.FileReader java.io.FileReader.<init>
+-virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream java.io.PrintStream java.io.PrintStream.format
++virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream java.io.PrintStream java.io.PrintStream.format
+ virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream java.io.PrintStream java.io.PrintStream.println
+-virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory.makeConcatWithConstants
 
 EOF
 RUN
@@ -644,7 +710,7 @@ NAME=rz-diff symbols comparison with addresses JSON
 FILE==
 CMDS=!rz-diff -C -Ajt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
-{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"equal","value":"virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object Ljava/lang/Object; <init>\n"},{"op":"equal","value":"virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader Ljava/io/FileReader; <init>\n"},{"op":"equal","value":"virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader Ljava/io/BufferedReader; <init>\n"},{"op":"delete","value":"virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main LMain; LMain;.<init>\n"},{"op":"delete","value":"virt: 0x00000000000004cf phys: 0x00000000000004cf Main LMain; LMain;.main\n"},{"op":"delete","value":"virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader Ljava/io/BufferedReader; close\n"},{"op":"delete","value":"virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System Ljava/lang/System; err\n"},{"op":"delete","value":"virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream Ljava/io/PrintStream; format\n"},{"op":"delete","value":"virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory Ljava/lang/invoke/StringConcatFactory; makeConcatWithConstants\n"},{"op":"insert","value":"virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder Ljava/lang/StringBuilder; <init>\n"},{"op":"insert","value":"virt: 0x0000000000000383 phys: 0x0000000000000383 Main LMain; LMain;.<init>\n"},{"op":"insert","value":"virt: 0x00000000000003ae phys: 0x00000000000003ae Main LMain; LMain;.main\n"},{"op":"insert","value":"virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder Ljava/lang/StringBuilder; append\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader Ljava/io/BufferedReader; close\n"},{"op":"insert","value":"virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System Ljava/lang/System; err\n"},{"op":"insert","value":"virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream Ljava/io/PrintStream; format\n"},{"op":"equal","value":"virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System Ljava/lang/System; out\n"},{"op":"delete","value":"virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception Ljava/lang/Exception; printStackTrace\n"},{"op":"insert","value":"virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception Ljava/lang/Exception; printStackTrace\n"},{"op":"equal","value":"virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream Ljava/io/PrintStream; println\n"},{"op":"equal","value":"virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader Ljava/io/BufferedReader; readLine\n"},{"op":"insert","value":"virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder Ljava/lang/StringBuilder; toString\n"}]}]}
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"delete","value":"virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception Exception Exception.printStackTrace\n"},{"op":"delete","value":"virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main Main Main.<init>\n"},{"op":"delete","value":"virt: 0x00000000000004cf phys: 0x00000000000004cf Main Main Main.main\n"},{"op":"insert","value":"virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception Exception Exception.printStackTrace\n"},{"op":"insert","value":"virt: 0x0000000000000383 phys: 0x0000000000000383 Main Main Main.<init>\n"},{"op":"insert","value":"virt: 0x00000000000003ae phys: 0x00000000000003ae Main Main Main.main\n"},{"op":"equal","value":"virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object Object Object.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System System System.err\n"},{"op":"insert","value":"virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder StringBuilder StringBuilder.<init>\n"},{"op":"insert","value":"virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder StringBuilder StringBuilder.append\n"},{"op":"insert","value":"virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder StringBuilder StringBuilder.toString\n"},{"op":"insert","value":"virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System System System.err\n"},{"op":"equal","value":"virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System System System.out\n"},{"op":"equal","value":"virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.close\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.close\n"},{"op":"equal","value":"virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.readLine\n"},{"op":"equal","value":"virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader java.io.FileReader java.io.FileReader.<init>\n"},{"op":"delete","value":"virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream java.io.PrintStream java.io.PrintStream.format\n"},{"op":"insert","value":"virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream java.io.PrintStream java.io.PrintStream.format\n"},{"op":"equal","value":"virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream java.io.PrintStream java.io.PrintStream.println\n"},{"op":"delete","value":"virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
 EOF
 RUN
 
@@ -668,7 +734,7 @@ EXPECT=<<EOF
 +Version: (59.0) Java SE 15
  Flags: (0x0021) public super
  Class: (#57) LMain;
- Super: (#2) java/lang/Object
+ Super: (#2) Ljava/lang/Object;
 
 EOF
 RUN
@@ -677,7 +743,7 @@ NAME=rz-diff command with one argument JSON
 FILE==
 CMDS=!rz-diff -C -j -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
 EXPECT=<<EOF
-{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.15.class","diff":[{"from":[1,4],"to":[1,4],"ops":[{"op":"delete","value":"Version: (55.0) Java SE 11\n"},{"op":"insert","value":"Version: (59.0) Java SE 15\n"},{"op":"equal","value":"Flags: (0x0021) public super\n"},{"op":"equal","value":"Class: (#57) LMain;\n"},{"op":"equal","value":"Super: (#2) java/lang/Object\n"}]}]}
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.15.class","diff":[{"from":[1,4],"to":[1,4],"ops":[{"op":"delete","value":"Version: (55.0) Java SE 11\n"},{"op":"insert","value":"Version: (59.0) Java SE 15\n"},{"op":"equal","value":"Flags: (0x0021) public super\n"},{"op":"equal","value":"Class: (#57) LMain;\n"},{"op":"equal","value":"Super: (#2) Ljava/lang/Object;\n"}]}]}
 EOF
 RUN
 

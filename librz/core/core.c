@@ -596,7 +596,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		if (ok) {
 			*ok = 1;
 		}
-		// TODO: group analop-dependant vars after a char, so i can filter
+		// TODO: group aop-dependant vars after a char, so i can filter
 		rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC);
 		rz_analysis_op_fini(&op); // we don't need strings or pointers, just values, which are not nullified in fini
 		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and rz_analysis_op_is_eob()
@@ -1352,11 +1352,9 @@ static void autocomplete_functions(RzCore *core, RzLineCompletion *completion, c
 	RzAnalysisFunction *fcn;
 	int n = strlen(str);
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		char *name = rz_core_analysis_fcn_name(core, fcn);
-		if (!strncmp(name, str, n)) {
-			rz_line_completion_push(completion, name);
+		if (fcn->name && !strncmp(fcn->name, str, n)) {
+			rz_line_completion_push(completion, fcn->name);
 		}
-		free(name);
 	}
 }
 
@@ -1751,35 +1749,24 @@ static void update_sdb(RzCore *core) {
 	}
 }
 
-#define MINLEN 1
-static int is_string(const ut8 *buf, int size, int *len) {
-	int i;
-	if (size < 1) {
-		return 0;
+static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding, bool big_endian) {
+	if (!buf || size < 1) {
+		return false;
 	}
-	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
-		*len = 1; // XXX: TODO: Measure wide string length
-		return 2; // is wide
+
+	RzUtilStrScanOptions opt = {
+		.buf_size = size,
+		.max_uni_blocks = 4,
+		.min_str_length = 4,
+		.prefer_big_endian = big_endian,
+		.check_ascii_freq = false,
+	};
+
+	if (rz_scan_strings_single_raw(buf, size, &opt, encoding, dstr) && (*dstr)->addr) {
+		rz_detected_string_free(*dstr);
+		*dstr = NULL;
 	}
-	for (i = 0; i < size; i++) {
-		if (!buf[i] && i > MINLEN) {
-			*len = i;
-			return 1;
-		}
-		if (buf[i] == 10 || buf[i] == 13 || buf[i] == 9) {
-			continue;
-		}
-		if (buf[i] < 32 || buf[i] > 127) {
-			// not ascii text
-			return 0;
-		}
-		if (!IS_PRINTABLE(buf[i])) {
-			*len = i;
-			return 0;
-		}
-	}
-	*len = i;
-	return 1;
+	return *dstr;
 }
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode) {
@@ -1832,6 +1819,7 @@ static char *getvalue(ut64 value, int bits) {
 */
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth) {
 	const int bits = core->rasm->bits;
+	const bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	rz_return_val_if_fail(core, NULL);
 	RzStrBuf *s = rz_strbuf_new(NULL);
 	if (pj) {
@@ -1998,7 +1986,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 			} else if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
 				ut8 buf[8];
 				if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-					ut64 n = rz_read_ble(buf, core->print->big_endian, bits);
+					ut64 n = rz_read_ble(buf, big_endian, bits);
 					rz_strbuf_appendf(s, "0x%" PFMT64x " ", n);
 				}
 			}
@@ -2008,40 +1996,26 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 		}
 	}
 	{
-		ut8 buf[128], widebuf[256];
+		ut8 buf[128];
+		RzStrEnc encoding = rz_str_enc_string_as_type(core->bin->strenc);
 		const char *c = rz_config_get_i(core->config, "scr.color") ? core->cons->context->pal.ai_ascii : "";
 		const char *cend = (c && *c) ? Color_RESET : "";
-		int len, r;
-		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-			buf[sizeof(buf) - 1] = 0;
-			switch (is_string(buf, sizeof(buf), &len)) {
-			case 1:
-				if (pj) {
-					pj_ks(pj, "string", (const char *)buf);
-				} else {
-					rz_strbuf_appendf(s, "%s%s%s ", c, buf, cend);
-				}
-				break;
-			case 2:
-				r = rz_utf8_encode_str((const RzRune *)buf, widebuf, sizeof(widebuf) - 1);
-				if (r == -1) {
-					RZ_LOG_ERROR("core: something was wrong with refs\n");
-				} else {
-					if (pj) {
-						pj_ks(pj, "string", (const char *)widebuf);
-					} else {
-						rz_strbuf_appendf(s, "%s%s%s ", c, widebuf, cend);
-					}
-				}
-				break;
+		RzDetectedString *dstr = NULL;
+		if (rz_io_read_at(core->io, value, buf, sizeof(buf)) &&
+			get_string(buf, sizeof(buf), &dstr, encoding, big_endian)) {
+			if (pj) {
+				pj_ks(pj, "string", dstr->string);
+			} else {
+				rz_strbuf_appendf(s, "%s%s%s ", c, dstr->string, cend);
 			}
+			rz_detected_string_free(dstr);
 		}
 	}
 	if ((type & RZ_ANALYSIS_ADDR_TYPE_READ) && !(type & RZ_ANALYSIS_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
 		ut8 buf[8];
 		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-			ut64 n = rz_read_ble(buf, core->print->big_endian, bits);
+			ut64 n = rz_read_ble(buf, big_endian, bits);
 			if (n != value) {
 				if (pj) {
 					pj_k(pj, "ref");

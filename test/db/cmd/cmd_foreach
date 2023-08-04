@@ -21,10 +21,10 @@ NAME=iter file lines
 FILE==
 CMDS=<<EOF
 rm .iter-file-lines.tmp
-?e 10 > .iter-file-lines.tmp
-?e 20 >> .iter-file-lines.tmp
-?e 30 >> .iter-file-lines.tmp
-?e 0xdeadbeef >> .iter-file-lines.tmp
+echo 10 > .iter-file-lines.tmp
+echo 20 >> .iter-file-lines.tmp
+echo 30 >> .iter-file-lines.tmp
+echo 0xdeadbeef >> .iter-file-lines.tmp
 s @@. .iter-file-lines.tmp
 rm .iter-file-lines.tmp
 EOF
@@ -83,7 +83,7 @@ RUN
 NAME=iter interpret
 FILE==
 CMDS=<<EOF
-s @@c:?e 10 20
+s @@c:echo 10 20
 EOF
 EXPECT=<<EOF
 0xa
@@ -94,7 +94,7 @@ RUN
 NAME=iter interpret offsetssizes
 FILE==
 CMDS=<<EOF
-(_;s;b)() @@@c:?e 10 1 20 2
+(_;s;b)() @@@c:echo 10 1 20 2
 EOF
 EXPECT=<<EOF
 0xa
@@ -111,7 +111,7 @@ CC hello
 CC world @ 0xdeadbeef
 CC hello_all @ 0xcafebabe
 CC. @@C
-?e
+echo
 CC. @@C:hello*
 EOF
 EXPECT=<<EOF
@@ -258,7 +258,7 @@ RUN
 NAME=iter string
 FILE=./bins/elf/hello_world
 CMDS=<<EOF
-psz @@iz
+ps @@iz
 EOF
 EXPECT=<<EOF
 Hello
@@ -273,7 +273,7 @@ f hello @ 0x30
 f world @ 0xdeadbeef
 f hello_all @ 0xcafebabe
 s @@f
-?e
+echo
 s @@f:hello*
 EOF
 EXPECT=<<EOF
@@ -390,7 +390,7 @@ RUN
 NAME=iter flags with newline
 FILE=bins/elf/ls
 CMDS=<<EOF
-(_;?v $$;?e)() @@f:reloc.std*
+(_;%v $$;echo)() @@f:reloc.std*
 EOF
 EXPECT=<<EOF
 0x22288

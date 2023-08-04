@@ -9,9 +9,9 @@ wx 00013fd6 # BLR x8
 ao~type[1]
 ao@ 0~type[1]
 /at call
-?e --
+echo --
 /at ucall
-?e --
+echo --
 /at rcall
 EOF
 EXPECT=<<EOF
@@ -81,7 +81,7 @@ NAME=ao mte irg addg
 FILE=bins/mach0/hello-mte
 CMDS=<<EOF
 ao@ 0x100007f10
-?e --
+echo --
 ao@ 0x100007f14
 EOF
 EXPECT=<<EOF
@@ -127,9 +127,9 @@ ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
 wx 91a0090c918201099ac813e8
 ao@ 0
-?e ---
+echo ---
 ao@ 4
-?e ---
+echo ---
 ao@ 8
 EOF
 EXPECT=<<EOF
@@ -187,11 +187,12 @@ EOF
 RUN
 
 NAME=Variable analysis with stp/preindexed str
-FILE==
+FILE=malloc://1024
 ARGS=-a arm -b 64
 CMDS=<<EOF
-wx f30f1ef8fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
+wx 00000000000000000000000000000000f30f1ef8fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
 aap
+s 0x10
 aaef
 afvx
 e asm.comments=0
@@ -201,23 +202,23 @@ pdf
 EOF
 EXPECT=<<EOF
 afvR
-   var_10h  0xc
-   var_20h  0x14
-    var_8h  0xc
+   var_10h  0x18,0x1c
+   var_20h  0x24
+    var_8h  0x1c
 afvW
-   var_10h  0x4
-   var_20h  0x0
-    var_8h  0x4
-/ fcn.00000000 ();
+   var_10h  0x14
+   var_20h  0x10
+    var_8h  0x14
+/ fcn.00000010();
 |           ; var int64_t var_20h @ stack - 0x20
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
-|           0x00000000     0 -= 32      str   x19, [var_20h]!
-|           0x00000004   -32            stp   x29, x30, [var_10h]
-|           0x00000008   -32            add   x29, var_10h
-|           0x0000000c   -32            ldp   x29, x30, [var_10h]
-|           0x00000010   -32            mov   x0, x19
-|           0x00000014   -32 += 32      ldr   x19, [sp], 0x20
-\           0x00000018     0            ret
+|           0x00000010     0 -= 32      str   x19, [var_20h]!
+|           0x00000014   -32            stp   x29, x30, [var_10h]
+|           0x00000018   -32            add   x29, sp, 0x10
+|           0x0000001c   -32            ldp   x29, x30, [var_10h]
+|           0x00000020   -32            mov   x0, x19
+|           0x00000024   -32 += 32      ldr   x19, [sp], 0x20
+\           0x00000028     0            ret
 EOF
 RUN

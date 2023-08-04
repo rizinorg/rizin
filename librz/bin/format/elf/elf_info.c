@@ -1005,6 +1005,11 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 			}
 
 			if (vernaux_entry.vna_other != versym) {
+
+				if (!vernaux_entry.vna_next) {
+					break;
+				}
+
 				vernaux_entry_offset += vernaux_entry.vna_next;
 				continue;
 			}
@@ -1024,6 +1029,10 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 			}
 
 			return true;
+		}
+
+		if (!verneed_entry.vn_next) {
+			break;
 		}
 
 		verneed_entry_offset += verneed_entry.vn_next;
@@ -1237,6 +1246,10 @@ static Sdb *get_verneed_entry_sdb(ELFOBJ *bin, Elf_(Verneed) verneed_entry, size
 		}
 
 		sdb_free(sdb_vernaux);
+
+		if (!vernaux_entry.vna_next) {
+			break;
+		}
 
 		vernaux_entry_offset += vernaux_entry.vna_next;
 	}
@@ -1749,6 +1762,18 @@ int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin) {
 	}
 
 	return RZ_BIN_ELF_NO_RELRO;
+}
+
+/**
+ * \brief Analyse if the elf binary was compiled with -Wl,-z,nobtcfi on OpenBSD
+ */
+bool Elf_(rz_bin_elf_has_nobtcfi)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, false);
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
+		return false;
+	}
+	RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_OPENBSD_NOBTCFI);
+	return segment && segment->is_valid;
 }
 
 /**

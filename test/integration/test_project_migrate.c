@@ -5,6 +5,8 @@
 #include <rz_project.h>
 
 #include "../unit/minunit.h"
+#include "rz_config.h"
+#include "sdb.h"
 
 /**
  * \file
@@ -312,17 +314,17 @@ static bool test_migrate_v10_v11_stack_vars_bp() {
 		"{\"name\":\"dbg.varfunc\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":24,\"ninstr\":14,"
 		"\"bp_frame\":true,\"bp_off\":8,\"bbs\":[4412],"
 		"\"vars\":["
-			"{\"name\":\"lightbulb\",\"type\":\"int\",\"accs\":["
-				"{\"off\":8,\"type\":\"w\",\"sp\":-16,\"reg\":\"rbp\"},"
-				"{\"off\":52,\"type\":\"r\",\"sp\":-16,\"reg\":\"rbp\"}],\"stack\":-24},"
-			"{\"name\":\"sun\",\"type\":\"int\",\"accs\":["
-				"{\"off\":15,\"type\":\"w\",\"sp\":-12,\"reg\":\"rbp\"},"
-				"{\"off\":49,\"type\":\"w\",\"sp\":-12,\"reg\":\"rbp\"}],\"stack\":-20},"
-			"{\"name\":\"last\",\"type\":\"int\",\"accs\":["
-				"{\"off\":22,\"type\":\"w\",\"sp\":-8,\"reg\":\"rbp\"}],\"stack\":-16},"
-			"{\"name\":\"chance\",\"type\":\"int\",\"accs\":["
-				"{\"off\":29,\"type\":\"w\",\"sp\":-4,\"reg\":\"rbp\"},"
-				"{\"off\":46,\"type\":\"r\",\"sp\":-4,\"reg\":\"rbp\"}],\"stack\":-12}"
+		"{\"name\":\"lightbulb\",\"type\":\"int\",\"accs\":["
+		"{\"off\":8,\"type\":\"w\",\"sp\":-16,\"reg\":\"rbp\"},"
+		"{\"off\":52,\"type\":\"r\",\"sp\":-16,\"reg\":\"rbp\"}],\"stack\":-24},"
+		"{\"name\":\"sun\",\"type\":\"int\",\"accs\":["
+		"{\"off\":15,\"type\":\"w\",\"sp\":-12,\"reg\":\"rbp\"},"
+		"{\"off\":49,\"type\":\"w\",\"sp\":-12,\"reg\":\"rbp\"}],\"stack\":-20},"
+		"{\"name\":\"last\",\"type\":\"int\",\"accs\":["
+		"{\"off\":22,\"type\":\"w\",\"sp\":-8,\"reg\":\"rbp\"}],\"stack\":-16},"
+		"{\"name\":\"chance\",\"type\":\"int\",\"accs\":["
+		"{\"off\":29,\"type\":\"w\",\"sp\":-4,\"reg\":\"rbp\"},"
+		"{\"off\":46,\"type\":\"r\",\"sp\":-4,\"reg\":\"rbp\"}],\"stack\":-12}"
 		"]}";
 	mu_assert_streq(val, varfunc_expect, "varfunc");
 
@@ -332,14 +334,14 @@ static bool test_migrate_v10_v11_stack_vars_bp() {
 		"{\"name\":\"dbg.main\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":24,\"ninstr\":15,"
 		"\"bp_frame\":true,\"bp_off\":8,\"bbs\":[4469],"
 		"\"vars\":["
-			"{\"name\":\"var_4h\",\"type\":\"int\",\"accs\":["
-				"{\"off\":8,\"type\":\"w\",\"sp\":-4,\"reg\":\"rbp\"}],\"stack\":-12},"
-			"{\"name\":\"var_10h\",\"type\":\"char **\",\"accs\":["
-				"{\"off\":11,\"type\":\"w\",\"sp\":-16,\"reg\":\"rbp\"}],\"stack\":-24},"
-			"{\"name\":\"argc\",\"type\":\"int\",\"reg\":\"rdi\",\"accs\":["
-				"{\"off\":8,\"type\":\"r\",\"reg\":\"rdi\"}]},"
-			"{\"name\":\"argv\",\"type\":\"char **\",\"reg\":\"rsi\",\"accs\":["
-				"{\"off\":11,\"type\":\"r\",\"reg\":\"rsi\"}]}"
+		"{\"name\":\"var_4h\",\"type\":\"int\",\"accs\":["
+		"{\"off\":8,\"type\":\"w\",\"sp\":-4,\"reg\":\"rbp\"}],\"stack\":-12},"
+		"{\"name\":\"var_10h\",\"type\":\"char **\",\"accs\":["
+		"{\"off\":11,\"type\":\"w\",\"sp\":-16,\"reg\":\"rbp\"}],\"stack\":-24},"
+		"{\"name\":\"argc\",\"type\":\"int\",\"reg\":\"rdi\",\"accs\":["
+		"{\"off\":8,\"type\":\"r\",\"reg\":\"rdi\"}]},"
+		"{\"name\":\"argv\",\"type\":\"char **\",\"reg\":\"rsi\",\"accs\":["
+		"{\"off\":11,\"type\":\"r\",\"reg\":\"rsi\"}]}"
 		"]}";
 	mu_assert_streq(val, main_expect, "main");
 
@@ -368,18 +370,18 @@ static bool test_migrate_v10_v11_stack_vars_sp() {
 		"{\"name\":\"sym.varfunc\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":16,\"ninstr\":12,"
 		"\"bp_frame\":true,\"bbs\":[4407],"
 		"\"vars\":["
-			"{\"name\":\"sun\",\"type\":\"int\",\"accs\":["
-				"{\"off\":11,\"type\":\"w\",\"sp\":4,\"reg\":\"rsp\"},"
-				"{\"off\":49,\"type\":\"w\",\"sp\":4,\"reg\":\"rsp\"}],"
-				"\"stack\":-12},"
-			"{\"name\":\"last\",\"type\":\"int\",\"accs\":["
-				"{\"off\":19,\"type\":\"w\",\"sp\":8,\"reg\":\"rsp\"}],"
-				"\"stack\":-8},"
-			"{\"name\":\"chance\",\"type\":\"int\",\"accs\":["
-				"{\"off\":27,\"type\":\"w\",\"sp\":12,\"reg\":\"rsp\"},"
-				"{\"off\":45,\"type\":\"r\",\"sp\":12,\"reg\":\"rsp\"}],"
-				"\"stack\":-4},"
-			"{\"name\":\"lightbulb\",\"type\":\"int\",\"stack\":-16}]}";
+		"{\"name\":\"sun\",\"type\":\"int\",\"accs\":["
+		"{\"off\":11,\"type\":\"w\",\"sp\":4,\"reg\":\"rsp\"},"
+		"{\"off\":49,\"type\":\"w\",\"sp\":4,\"reg\":\"rsp\"}],"
+		"\"stack\":-12},"
+		"{\"name\":\"last\",\"type\":\"int\",\"accs\":["
+		"{\"off\":19,\"type\":\"w\",\"sp\":8,\"reg\":\"rsp\"}],"
+		"\"stack\":-8},"
+		"{\"name\":\"chance\",\"type\":\"int\",\"accs\":["
+		"{\"off\":27,\"type\":\"w\",\"sp\":12,\"reg\":\"rsp\"},"
+		"{\"off\":45,\"type\":\"r\",\"sp\":12,\"reg\":\"rsp\"}],"
+		"\"stack\":-4},"
+		"{\"name\":\"lightbulb\",\"type\":\"int\",\"stack\":-16}]}";
 	mu_assert_streq(val, varfunc_expect, "varfunc");
 
 	// also some reg vars
@@ -387,14 +389,35 @@ static bool test_migrate_v10_v11_stack_vars_sp() {
 	const char *main_expect =
 		"{\"name\":\"main\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":24,\"ninstr\":13,"
 		"\"bp_frame\":true,\"bbs\":[4468],\"vars\":["
-			"{\"name\":\"var_ch\",\"type\":\"int64_t\",\"accs\":["
-				"{\"off\":4,\"type\":\"w\",\"sp\":12,\"reg\":\"rsp\"}],"
-				"\"stack\":-12},"
-			"{\"name\":\"argc\",\"type\":\"int\",\"reg\":\"rdi\",\"accs\":["
-				"{\"off\":4,\"type\":\"r\",\"reg\":\"rdi\"}]},"
-			"{\"name\":\"argv\",\"type\":\"char **\",\"reg\":\"rsi\",\"accs\":["
-				"{\"off\":8,\"type\":\"r\",\"reg\":\"rsi\"}]}]}";
+		"{\"name\":\"var_ch\",\"type\":\"int64_t\",\"accs\":["
+		"{\"off\":4,\"type\":\"w\",\"sp\":12,\"reg\":\"rsp\"}],"
+		"\"stack\":-12},"
+		"{\"name\":\"argc\",\"type\":\"int\",\"reg\":\"rdi\",\"accs\":["
+		"{\"off\":4,\"type\":\"r\",\"reg\":\"rdi\"}]},"
+		"{\"name\":\"argv\",\"type\":\"char **\",\"reg\":\"rsi\",\"accs\":["
+		"{\"off\":8,\"type\":\"r\",\"reg\":\"rsi\"}]}]}";
 	mu_assert_streq(val, main_expect, "main");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+static bool test_migrate_v2_v12() {
+	RzProject *prj = rz_project_load_file_raw("prj/v2-types-empty.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate(prj, 2, res);
+	mu_assert_true(s, "migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_notnull(config_db, "debug ns");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo", 0), "asm.debuginfo");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo.abspath", 0), "asm.debuginfo.abspath");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo.file", 0), "asm.debuginfo.file");
 
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
@@ -423,17 +446,17 @@ static bool test_migrate_v9_v10_v11_stack_vars_bp() {
 		"{\"name\":\"dbg.varfunc\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":8,\"maxstack\":24,\"ninstr\":14,"
 		"\"bp_frame\":true,\"bp_off\":8,\"bbs\":[4412],"
 		"\"vars\":["
-			"{\"name\":\"lightbulb\",\"type\":\"int\",\"accs\":["
-				"{\"off\":8,\"type\":\"w\",\"sp\":-16,\"reg\":\"rbp\"},"
-				"{\"off\":52,\"type\":\"r\",\"sp\":-16,\"reg\":\"rbp\"}],\"stack\":-24},"
-			"{\"name\":\"sun\",\"type\":\"int\",\"accs\":["
-				"{\"off\":15,\"type\":\"w\",\"sp\":-12,\"reg\":\"rbp\"},"
-				"{\"off\":49,\"type\":\"w\",\"sp\":-12,\"reg\":\"rbp\"}],\"stack\":-20},"
-			"{\"name\":\"last\",\"type\":\"int\",\"accs\":["
-				"{\"off\":22,\"type\":\"w\",\"sp\":-8,\"reg\":\"rbp\"}],\"stack\":-16},"
-			"{\"name\":\"chance\",\"type\":\"int\",\"accs\":["
-				"{\"off\":29,\"type\":\"w\",\"sp\":-4,\"reg\":\"rbp\"},"
-				"{\"off\":46,\"type\":\"r\",\"sp\":-4,\"reg\":\"rbp\"}],\"stack\":-12}"
+		"{\"name\":\"lightbulb\",\"type\":\"int\",\"accs\":["
+		"{\"off\":8,\"type\":\"w\",\"sp\":-16,\"reg\":\"rbp\"},"
+		"{\"off\":52,\"type\":\"r\",\"sp\":-16,\"reg\":\"rbp\"}],\"stack\":-24},"
+		"{\"name\":\"sun\",\"type\":\"int\",\"accs\":["
+		"{\"off\":15,\"type\":\"w\",\"sp\":-12,\"reg\":\"rbp\"},"
+		"{\"off\":49,\"type\":\"w\",\"sp\":-12,\"reg\":\"rbp\"}],\"stack\":-20},"
+		"{\"name\":\"last\",\"type\":\"int\",\"accs\":["
+		"{\"off\":22,\"type\":\"w\",\"sp\":-8,\"reg\":\"rbp\"}],\"stack\":-16},"
+		"{\"name\":\"chance\",\"type\":\"int\",\"accs\":["
+		"{\"off\":29,\"type\":\"w\",\"sp\":-4,\"reg\":\"rbp\"},"
+		"{\"off\":46,\"type\":\"r\",\"sp\":-4,\"reg\":\"rbp\"}],\"stack\":-12}"
 		"]}";
 	mu_assert_streq(val, varfunc_expect, "varfunc");
 
@@ -443,14 +466,14 @@ static bool test_migrate_v9_v10_v11_stack_vars_bp() {
 		"{\"name\":\"dbg.main\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":8,\"maxstack\":24,\"ninstr\":15,"
 		"\"bp_frame\":true,\"bp_off\":8,\"bbs\":[4469],"
 		"\"vars\":["
-			"{\"name\":\"var_4h\",\"type\":\"int\",\"accs\":["
-				"{\"off\":8,\"type\":\"w\",\"sp\":-4,\"reg\":\"rbp\"}],\"stack\":-12},"
-			"{\"name\":\"var_10h\",\"type\":\"char **\",\"accs\":["
-				"{\"off\":11,\"type\":\"w\",\"sp\":-16,\"reg\":\"rbp\"}],\"stack\":-24},"
-			"{\"name\":\"argc\",\"type\":\"int\",\"reg\":\"rdi\",\"accs\":["
-				"{\"off\":8,\"type\":\"r\",\"reg\":\"rdi\"}]},"
-			"{\"name\":\"argv\",\"type\":\"char **\",\"reg\":\"rsi\",\"accs\":["
-				"{\"off\":11,\"type\":\"r\",\"reg\":\"rsi\"}]}"
+		"{\"name\":\"var_4h\",\"type\":\"int\",\"accs\":["
+		"{\"off\":8,\"type\":\"w\",\"sp\":-4,\"reg\":\"rbp\"}],\"stack\":-12},"
+		"{\"name\":\"var_10h\",\"type\":\"char **\",\"accs\":["
+		"{\"off\":11,\"type\":\"w\",\"sp\":-16,\"reg\":\"rbp\"}],\"stack\":-24},"
+		"{\"name\":\"argc\",\"type\":\"int\",\"reg\":\"rdi\",\"accs\":["
+		"{\"off\":8,\"type\":\"r\",\"reg\":\"rdi\"}]},"
+		"{\"name\":\"argv\",\"type\":\"char **\",\"reg\":\"rsi\",\"accs\":["
+		"{\"off\":11,\"type\":\"r\",\"reg\":\"rsi\"}]}"
 		"]}";
 	mu_assert_streq(val, main_expect, "main");
 
@@ -479,18 +502,18 @@ static bool test_migrate_v9_v10_v11_stack_vars_sp() {
 		"{\"name\":\"sym.varfunc\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":16,\"ninstr\":12,"
 		"\"bp_frame\":true,\"bbs\":[4407],"
 		"\"vars\":["
-			"{\"name\":\"sun\",\"type\":\"int\",\"accs\":["
-				"{\"off\":11,\"type\":\"w\",\"sp\":4,\"reg\":\"rsp\"},"
-				"{\"off\":49,\"type\":\"w\",\"sp\":4,\"reg\":\"rsp\"}],"
-				"\"stack\":-12},"
-			"{\"name\":\"last\",\"type\":\"int\",\"accs\":["
-				"{\"off\":19,\"type\":\"w\",\"sp\":8,\"reg\":\"rsp\"}],"
-				"\"stack\":-8},"
-			"{\"name\":\"chance\",\"type\":\"int\",\"accs\":["
-				"{\"off\":27,\"type\":\"w\",\"sp\":12,\"reg\":\"rsp\"},"
-				"{\"off\":45,\"type\":\"r\",\"sp\":12,\"reg\":\"rsp\"}],"
-				"\"stack\":-4},"
-			"{\"name\":\"lightbulb\",\"type\":\"int\",\"stack\":-16}]}";
+		"{\"name\":\"sun\",\"type\":\"int\",\"accs\":["
+		"{\"off\":11,\"type\":\"w\",\"sp\":4,\"reg\":\"rsp\"},"
+		"{\"off\":49,\"type\":\"w\",\"sp\":4,\"reg\":\"rsp\"}],"
+		"\"stack\":-12},"
+		"{\"name\":\"last\",\"type\":\"int\",\"accs\":["
+		"{\"off\":19,\"type\":\"w\",\"sp\":8,\"reg\":\"rsp\"}],"
+		"\"stack\":-8},"
+		"{\"name\":\"chance\",\"type\":\"int\",\"accs\":["
+		"{\"off\":27,\"type\":\"w\",\"sp\":12,\"reg\":\"rsp\"},"
+		"{\"off\":45,\"type\":\"r\",\"sp\":12,\"reg\":\"rsp\"}],"
+		"\"stack\":-4},"
+		"{\"name\":\"lightbulb\",\"type\":\"int\",\"stack\":-16}]}";
 	mu_assert_streq(val, varfunc_expect, "varfunc");
 
 	// also some reg vars
@@ -498,13 +521,13 @@ static bool test_migrate_v9_v10_v11_stack_vars_sp() {
 	const char *main_expect =
 		"{\"name\":\"main\",\"bits\":64,\"type\":4,\"cc\":\"amd64\",\"stack\":-8,\"maxstack\":24,\"ninstr\":13,"
 		"\"bp_frame\":true,\"bbs\":[4468],\"vars\":["
-			"{\"name\":\"var_ch\",\"type\":\"int64_t\",\"accs\":["
-				"{\"off\":4,\"type\":\"w\",\"sp\":12,\"reg\":\"rsp\"}],"
-				"\"stack\":-12},"
-			"{\"name\":\"argc\",\"type\":\"int\",\"reg\":\"rdi\",\"accs\":["
-				"{\"off\":4,\"type\":\"r\",\"reg\":\"rdi\"}]},"
-			"{\"name\":\"argv\",\"type\":\"char **\",\"reg\":\"rsi\",\"accs\":["
-				"{\"off\":8,\"type\":\"r\",\"reg\":\"rsi\"}]}]}";
+		"{\"name\":\"var_ch\",\"type\":\"int64_t\",\"accs\":["
+		"{\"off\":4,\"type\":\"w\",\"sp\":12,\"reg\":\"rsp\"}],"
+		"\"stack\":-12},"
+		"{\"name\":\"argc\",\"type\":\"int\",\"reg\":\"rdi\",\"accs\":["
+		"{\"off\":4,\"type\":\"r\",\"reg\":\"rdi\"}]},"
+		"{\"name\":\"argv\",\"type\":\"char **\",\"reg\":\"rsi\",\"accs\":["
+		"{\"off\":8,\"type\":\"r\",\"reg\":\"rsi\"}]}]}";
 	mu_assert_streq(val, main_expect, "main");
 
 	rz_serialize_result_info_free(res);
@@ -534,7 +557,6 @@ static bool test_migrate_v9_v10_v11_stack_vars_sp() {
 		} \
 		rz_serialize_result_info_free(res); \
 	} while (0)
-
 
 static bool test_load_v1_noreturn() {
 	RzCore *core = rz_core_new();
@@ -578,11 +600,10 @@ static bool test_load_v2_typelink() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 2, "prj/v2-typelink-callables.rzdb");
 
-	mu_assert_true(rz_analysis_type_link_exists(core->analysis, 0x80484b0), "has typelink");
-	RzType *typelink = rz_analysis_type_link_at(core->analysis, 0x80484b0);
-	mu_assert_notnull(typelink, "has typelink");
-	mu_assert_eq(RZ_TYPE_KIND_POINTER, typelink->kind, "typelink is a pointer");
-	mu_assert_true(rz_type_atomic_str_eq(core->analysis->typedb, typelink->pointer.type, "char"), "typelink is char *");
+	RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, 0x80484b0);
+	mu_assert_notnull(gv, "typelink converted to a global var");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, gv->type->kind, "typelink is a pointer");
+	mu_assert_true(rz_type_atomic_str_eq(core->analysis->typedb, gv->type->pointer.type, "char"), "typelink is char *");
 
 	rz_core_free(core);
 	mu_end;
@@ -634,9 +655,9 @@ static bool test_load_v3_typelink() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 3, "prj/v3-typelink.rzdb");
 
-	RzType *tl = rz_analysis_type_link_at(core->analysis, 0x08048660);
-	mu_assert_notnull(tl, "typelink still exists");
-	mu_assert_streq_free(rz_type_as_string(core->analysis->typedb, tl), "uint32_t", "typelink");
+	RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, 0x08048660);
+	mu_assert_notnull(gv, "typelink converted to a global var");
+	mu_assert_streq_free(rz_type_as_string(core->analysis->typedb, gv->type), "uint32_t", "typelink");
 
 	rz_core_free(core);
 	mu_end;
@@ -827,6 +848,19 @@ static bool test_load_v9_v10_stack_vars_sp(int version, const char *prj_file) {
 	mu_end;
 }
 
+static bool test_load_v12() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 12, "prj/v12-types-empty.rzdb");
+
+	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo"), "asm.debuginfo");
+	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.abspath"), "asm.debuginfo.abspath");
+	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.file"), "asm.debuginfo.file");
+	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.lines"), "asm.debuginfo.lines");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -843,6 +877,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v10_v11_stack_vars_sp);
 	mu_run_test(test_migrate_v9_v10_v11_stack_vars_bp);
 	mu_run_test(test_migrate_v9_v10_v11_stack_vars_sp);
+	mu_run_test(test_migrate_v2_v12);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -860,6 +895,7 @@ int all_tests() {
 	mu_run_test(test_load_v9_v10_stack_vars_sp, 9, "prj/v9-sp-vars.rzdb");
 	mu_run_test(test_load_v9_v10_stack_vars_bp, 10, "prj/v10-bp-vars.rzdb");
 	mu_run_test(test_load_v9_v10_stack_vars_sp, 10, "prj/v10-sp-vars.rzdb");
+	mu_run_test(test_load_v12);
 	return tests_passed != tests_run;
 }
 

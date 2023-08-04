@@ -367,11 +367,9 @@ static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, c
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		char *name = rz_core_analysis_fcn_name(core, fcn);
-		if (!strncmp(name, s, len)) {
-			rz_line_ns_completion_result_add(res, name);
+		if (fcn->name && !strncmp(fcn->name, s, len)) {
+			rz_line_ns_completion_result_add(res, fcn->name);
 		}
-		free(name);
 	}
 }
 

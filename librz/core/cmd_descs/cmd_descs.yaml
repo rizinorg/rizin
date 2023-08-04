@@ -99,13 +99,6 @@ commands:
     cname: cmd_alias
     summary: Alias commands and strings
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: "%"
-    cname: env_percentage
-    summary: Get/set environment variables
-    args_str: "[<varname>[=<varvalue>]]"
-    args: cmd_shell_env
-    details: cmd_shell_env
-    handler: cmd_shell_env
   - name: "&"
     summary: Manage tasks
     subcommands: cmd_tasks
@@ -176,11 +169,11 @@ commands:
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
-  - name: "?"
-    cname: cmd_help
-    options: "[??]"
-    summary: Help or evaluate math expression
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: "%"
+    cname: cmd_math
+    summary: Math commands
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands: cmd_math
   - name: <
     cname: push_escaped
     summary: Push escaped string into the RzCons.readChar buffer
@@ -555,8 +548,11 @@ commands:
             arg_str: "~:-2.."
             comment: Show from the second-last line to the last line of 'i' output
           - text: i
-            arg_str: "~:0..3"
+            arg_str: "~:..3"
             comment: Show first three lines of 'i' output
+          - text: i
+            arg_str: "~:2..5"
+            comment: Show three lines of 'i' output starting from 2nd line
           - text: pd
             arg_str: "~mov"
             comment: Disasm and grep for mov

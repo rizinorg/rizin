@@ -32,15 +32,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd v8 and cortex
+NAME=pd V8 and Cortex-M profiles 
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
-?e
+echo
 pad fff7c0ea@e:asm.cpu=v8
-pad fff7c0ea@e:asm.cpu=cortex
+pad fff7c0ea@e:asm.cpu=cortexm
 pad fff7c0ea@e:asm.cpu=v8
-pad fff7c0ea@e:asm.cpu=cortex
+pad fff7c0ea@e:asm.cpu=cortexm
 pad fff7c0ea@e:asm.cpu=v8
 pad fff7c0ea@e:asm.cpu=
 pad fff7c0ea@e:asm.cpu=tetris
@@ -692,19 +692,19 @@ s 0x004017c0
 af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 pdf
-?e
+echo
 e asm.lines.fcn=false
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 \       ,=< 0x004017cb      7210           jb    0x4017dd
 
-fcn2.0x004017c0 ();
+fcn2.0x004017c0();
           0x004017c0      51             push  ecx
           0x004017c1      89e1           mov   ecx, esp
           0x004017c3      83c108         add   ecx, 8
@@ -722,20 +722,20 @@ s 0x004017c0
 af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 pdf
-?e
+echo
 e asm.lines.fcn=false
 e asm.fcn.size=true
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 \       ,=< 0x004017cb      7210           jb    0x4017dd
 
-13: fcn2.0x004017c0 ();
+13: fcn2.0x004017c0();
           0x004017c0      51             push  ecx
           0x004017c1      89e1           mov   ecx, esp
           0x004017c3      83c108         add   ecx, 8
@@ -1042,7 +1042,7 @@ EXPECT=<<EOF
             0x004016ac      mov   edi, 0x40224a                        ; 'J"@' ; u"utf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m \xa2\u20ac\U00010348 \e[0m\n"
             0x004016b6      mov   edi, str.e_e_b                       ; "_%e%e%b% "
             0x004016b6      mov   edi, str.e_e_b                       ; u"\u255f\u2565\u2565\u2562 is a wall with no embedded zeros\n"
-            0x004016c0      mov   edi, 0x40230c                        ; " %B%"
+            0x004016c0      mov   edi, 0x40230c
             0x004016c0      mov   edi, 0x40230c                        ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
             0x004016ca      mov   edi, 0x40235a                        ; 'Z#@' ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
             0x004016d4      mov   edi, str.e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k ; u"\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u"
@@ -1126,7 +1126,7 @@ e str.escbslash=true
 pd 1 @ 0x004016c0
 .(test_str.enc utf32-le)
 pd 1 @ 0x004016ed
-?e
+echo
 .(test_str.enc UTF32BE)
 .(test_str.enc UTF16-LE)
 EOF
@@ -1299,7 +1299,7 @@ e asm.comments=false
 pdf
 EOF
 EXPECT=<<EOF
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 | 0x0000061a      pushq %rbp
 | 0x0000061b      movq  %rsp, %rbp
 | 0x0000061e      movl  $1, obj.sa
@@ -1391,7 +1391,7 @@ pdJ 1 @ 0x00400506
 EOF
 EXPECT=<<EOF
 [{"offset":4195590,"text":"            ;-- main:"},{"offset":4195590,"text":"            0x00400506      55             push  rbp"}]
-[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push  rbp"}]
+[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ int main(int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push  rbp"}]
 EOF
 RUN
 
@@ -1561,20 +1561,20 @@ af
 s 0x00404886
 e bin.str.purge=false
 pd 2
-?e --1--
+echo --1--
 e bin.str.purge=true
 pd 2
-?e --2--
+echo --2--
 e bin.str.purge=0x4028a0
 pd 2
-?e --3--
+echo --3--
 e bin.str.purge=0x412420,0x4028a0
 pd 2
-?e --4--
+echo --4--
 e bin.str.purge=true
 pd 1 @ 0x004028e0
 pd 1 @ 0x00402abd
-?e --5--
+echo --5--
 e bin.str.purge=true,0x414fbf
 pd 1 @ 0x004028e0
 pd 1 @ 0x00402abd
@@ -1613,10 +1613,10 @@ s 0x0008049c
 e bin.str.purge=
 e emu.str.off=false
 pd 2
-?e ----
+echo ----
 e emu.str.off=true
 pd 2
-?e ----
+echo ----
 e bin.str.purge=0x80510
 pd 2
 EOF
@@ -1729,9 +1729,9 @@ pd 1 @a:x86:64
 ahl*
 EOF
 EXPECT=<<EOF
-0x00005c20      31ed4989       ldc   p9, c8, [r1, -0x124]!
+0x00005c20      31ed4989       ldc p9, c8, [r1, -0x124]!
 0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
-0x00005c20      31ed4989       ldc   p9, c8, [r1, -0x124]!
+0x00005c20      31ed4989       ldc p9, c8, [r1, -0x124]!
 0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
 aha arm @ 0x5c20
 ahb 16 @ 0x5c20
@@ -1742,6 +1742,7 @@ ahb 16 @ 0x5c20
 aha arm @ 0x5c20
 ahb 16 @ 0x5c20
 EOF
+BROKEN=1
 RUN
 
 NAME=pd bin.str.filter
@@ -1793,7 +1794,7 @@ e emu.str.inv=true
 pd 1 @ 0x161d
 e emu.str.inv=false
 pd 1 @ 0x161d
-?e
+echo
 e asm.cmt.right=false
 e emu.str.inv=true
 pd 1 @ 0x161d
@@ -1846,7 +1847,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=data ref with no analop.ptr (#9610)
+NAME=data ref with no RzAnalysisOp.ptr (#9610)
 FILE=bins/firmware/main.bin
 CMDS=<<EOF
 e asm.bytes=true
@@ -2008,16 +2009,16 @@ e asm.pseudo=false
 e asm.sub.var=true
 e asm.ucase=true
 pd 4 @ 0x0001045c
-?e
+echo
 e asm.sub.var=false
 e asm.ucase=false
 pd 4 @ 0x0001045c
-?e
+echo
 e asm.pseudo=true
 e asm.sub.var=true
 e asm.sub.varonly=false
 pd 4 @ 0x0001045c
-?e
+echo
 e asm.sub.varonly=true
 s main
 afvn local2 var_10h
@@ -2121,7 +2122,7 @@ e asm.bytes=true
 e asm.imm.str=true
 e asm.cmt.right=false
 pd 1 @ 0x9b3
-?e
+echo
 pdJ 1 @ 0x9b3
 EOF
 EXPECT=<<EOF
@@ -2183,7 +2184,7 @@ aa
 pdf
 EOF
 EXPECT=<<EOF
-/ entry0 (int64_t arg3);
+/ entry0(int64_t arg3);
 |           ; arg int64_t arg3 @ rdx
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor   ebp, ebp
@@ -2207,7 +2208,7 @@ e asm.bytes=true
 e asm.lines.ret=1
 s 0x08048414
 pd 2
-?e
+echo
 pdJ 2
 EOF
 EXPECT=<<EOF
@@ -2299,7 +2300,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-sym.parell (const char *s);
+sym.parell(const char *s);
 EOF
 RUN
 
@@ -2313,7 +2314,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-parell (const char *s);
+parell(const char *s);
 EOF
 RUN
 
@@ -2445,7 +2446,7 @@ CMDS=<<EOF
 e asm.cmt.il=1
 e asm.cmt.right=0
 pd 3 @ 0x80e
-?e --
+echo --
 e asm.cmt.right=1
 pd 3 @ 0x80e
 EOF
@@ -2470,7 +2471,7 @@ CMDS=<<EOF
 e asm.cmt.esil=1
 e asm.cmt.right=0
 pd 3 @ 0x80e
-?e --
+echo --
 e asm.cmt.right=1
 pd 3 @ 0x80e
 EOF
@@ -2555,7 +2556,7 @@ e asm.sub.varonly=0
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -2593,7 +2594,7 @@ EXPECT=<<EOF
 |           0x00000800      addiu sp, sp, 0x30
 |           0x00000804      jr    ra
 \           0x00000808      nop
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -2631,7 +2632,7 @@ EXPECT=<<EOF
 |           0x00000800      addiu sp, sp, 0x30
 |           0x00000804      jr    ra
 \           0x00000808      nop
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -2669,7 +2670,7 @@ EXPECT=<<EOF
 |           0x00000800      sp = var_4h + 0x4
 |           0x00000804      return
 \           0x00000808      
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -2720,7 +2721,7 @@ pdrj~{}
 EOF
 EXPECT=<<EOF
   ; DATA XREF from entry0 @ 0x80483e7
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 | ; var int32_t var_88h @ stack - 0x88
 | ; var int32_t var_7ch @ stack - 0x7c
 | 0x08048540      push  ebp

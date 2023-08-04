@@ -6,9 +6,10 @@ option('local', type: 'combo', choices: ['enabled', 'disabled', 'absolute', 'aut
 option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
 option('subprojects_check', type: 'boolean', value: true, description: 'Check if git subprojects are up-to-date. Might be useful to disable this when developing on a different subproject version')
 option('portable', type: 'boolean', value: false, description: 'Make rizin installation moveable, by using relative paths instead of absolute ones')
+option('extra_prefix', type: 'string', value: '', description: 'Extra load path prefix (absolute path) for plugins, sdb, sigdb, etc.')
 
 option('rizin_wwwroot', type: 'string', value: '', description: 'Install path for www files')
-option('rizin_sdb', type: 'string', value: '', description: '')
+option('rizin_sdb', type: 'string', value: '', description: 'Install path for all SDB files')
 option('rizin_sigdb', type: 'string', value: '', description: 'Install path for sigdb files')
 option('rizin_themes', type: 'string', value: '', description: 'Install path for themes (colors, etc.)')
 option('rizin_fortunes', type: 'string', value: '', description: 'Install path for fortunes displayed when starting')
@@ -19,7 +20,7 @@ option('rizin_bindings', type: 'string', value: '', description: 'Path where riz
 
 option('checks_level', type: 'integer', value: 9999, description: 'Value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL). By default its value depends on buildtype (2 on debug, 1 on release).')
 option('use_sys_capstone', type: 'feature', value: 'disabled')
-option('use_capstone_version', type: 'combo', choices: ['v3', 'v4', 'next', 'bundled'], value: 'bundled', description: 'Specify which version of capstone to use')
+option('use_capstone_version', type: 'combo', choices: ['v3', 'v4', 'v5', 'next'], value: 'next', description: 'Specify which version of capstone to use')
 option('use_sys_magic', type: 'feature', value: 'disabled')
 option('use_sys_libzip', type: 'feature', value: 'disabled')
 option('use_sys_libzip_openssl', type: 'boolean', value: false, description: 'Whether to use or not system openssl dependency to build libzip')

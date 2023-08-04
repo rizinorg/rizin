@@ -846,41 +846,26 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 	} else {
 		return UT32_MAX;
 	}
-
-	ut8 flip[4];
-	rz_write_le32(flip, data);
-	return rz_read_be32(flip);
+	return rz_swap_ut32(data);
 }
 
-static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
-	ut64 at = 0LL;
-	ut32 data = k;
-	if (op->operands[0].type == ARM_GPR) {
-		data |= encode1reg(op);
-	} else {
+static ut32 adrp(ArmOp *op, ut64 addr) { //, int reg, ut64 dst) {
+	ut32 data = 0x90000000;
+	if (op->operands[0].type != ARM_GPR) {
 		RZ_LOG_ERROR("assembler: arm64: adrp: invalid assembly. valid usage: adrp x0, addr\n");
 		return UT32_MAX;
 	}
-	if (op->operands[1].type == ARM_CONSTANT) {
-		// XXX what about negative values?
-		at = op->operands[1].immediate - addr;
-		at /= 4;
-	} else {
+	data |= op->operands[0].reg & 0x1f;
+	if (op->operands[1].type != ARM_CONSTANT) {
 		RZ_LOG_ERROR("assembler: arm64: adrp: invalid assembly. valid usage: adrp x0, addr\n");
 		return UT32_MAX;
 	}
-	ut8 b0 = at;
-	ut8 b1 = (at >> 3) & 0xff;
-
-#if 0
-	ut8 b2 = (at >> (8 + 7)) & 0xff;
-	data += b0 << 29;
-	data += b1 << 16;
-	data += b2 << 24;
-#endif
-	data += b0 << 16;
-	data += b1 << 8;
-	return data;
+	ut64 imm = op->operands[1].immediate & ~0xfff;
+	imm -= addr & ~0xfff;
+	imm >>= 12;
+	data |= (imm & 3) << 29;
+	data |= ((imm >> 2) & rz_num_bitmask(19)) << 5;
+	return rz_swap_ut32(data);
 }
 
 static ut32 adr(ArmOp *op, int addr) {
@@ -1025,7 +1010,6 @@ static bool parseOperands(char *str, ArmOp *op) {
 	int operand = 0;
 	char *token = t;
 	char *x;
-	int imm_count = 0;
 	int mem_opt = 0;
 	int msr_op_index = 0;
 	size_t index_bound = strcspn(t, "]");
@@ -1071,7 +1055,6 @@ static bool parseOperands(char *str, ArmOp *op) {
 					op->operands_count++;
 					op->operands[operand].type = ARM_CONSTANT;
 					op->operands[operand].immediate = msr_const[msr_op_index].val;
-					imm_count++;
 					break;
 				}
 			}
@@ -1268,7 +1251,6 @@ static bool parseOperands(char *str, ArmOp *op) {
 			op->operands[operand].type = ARM_CONSTANT;
 			op->operands[operand].immediate = rz_num_math(NULL, token + 1);
 			op->operands[operand].preindex = token - t < index_bound;
-			imm_count++;
 			break;
 		case '-':
 			op->operands[operand].sign = -1;
@@ -1278,7 +1260,6 @@ static bool parseOperands(char *str, ArmOp *op) {
 			op->operands[operand].type = ARM_CONSTANT;
 			op->operands[operand].immediate = rz_num_math(NULL, token);
 			op->operands[operand].preindex = token - t < index_bound;
-			imm_count++;
 			break;
 		}
 		token = next;
@@ -1396,8 +1377,8 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = arithmetic(&ops, 0x11);
 	} else if (!strncmp(str, "adr x", 5)) { // w
 		*op = adr(&ops, addr);
-	} else if (!strncmp(str, "adrp x", 6)) {
-		*op = adrp(&ops, addr, 0x00000090);
+	} else if (!strncmp(str, "adrp ", 5)) {
+		*op = adrp(&ops, addr);
 	} else if (!strncmp(str, "neg", 3)) {
 		*op = neg(&ops);
 	} else if (!strcmp(str, "isb")) {

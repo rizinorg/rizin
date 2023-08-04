@@ -1213,7 +1213,7 @@ repeat:
 #if DEBUGGER
 		/// if the plugin is not compiled link fails, so better do runtime linking
 		/// until this code gets fixed
-		static bool (*linux_attach_new_process)(RzDebug * dbg, int pid) = NULL;
+		static bool (*linux_attach_new_process)(RzDebug *dbg, int pid) = NULL;
 		if (!linux_attach_new_process) {
 			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
 		}
@@ -1702,11 +1702,11 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 	rz_debug_map_sync(dbg);
 	char *abspath = rz_sys_pid_to_path(pid);
 #if !__WINDOWS__
-	if (!abspath) {
+	if (!abspath && file) {
 		abspath = rz_file_abspath(file);
 	}
 #endif
-	if (!abspath) {
+	if (!abspath && file) {
 		abspath = strdup(file);
 	}
 	if (abspath) {

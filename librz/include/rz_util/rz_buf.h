@@ -210,6 +210,7 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 DEFINE_RZ_BUF_READ_BLE(16)
 DEFINE_RZ_BUF_READ_BLE(32)
 DEFINE_RZ_BUF_READ_BLE(64)
+DEFINE_RZ_BUF_READ_BLE(128)
 
 /**
  * \brief Write a big endian or little endian ut16 at the specified address or cursor in the buffer.
@@ -222,6 +223,7 @@ DEFINE_RZ_BUF_READ_BLE(64)
 DEFINE_RZ_BUF_WRITE_BLE(16)
 DEFINE_RZ_BUF_WRITE_BLE(32)
 DEFINE_RZ_BUF_WRITE_BLE(64)
+DEFINE_RZ_BUF_WRITE_BLE(128)
 
 #define DEFINE_RZ_BUF_READ_OFFSET_BLE(size) \
 	static inline bool rz_buf_read_ble##size##_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut##size *result, bool big_endian) { \
@@ -235,7 +237,7 @@ DEFINE_RZ_BUF_WRITE_BLE(64)
 
 static inline bool rz_buf_read_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut8 *result, size_t size) {
 	rz_return_val_if_fail(b && offset && result, false);
-	if (rz_buf_read_at(b, *offset, result, size) != size) {
+	if (rz_buf_read_at(b, *offset, result, size) != (st64)size) {
 		return false;
 	}
 	*offset += size;
@@ -254,7 +256,7 @@ static inline bool rz_buf_read_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOU
 
 static inline bool rz_buf_write_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL ut8 *result, size_t size) {
 	rz_return_val_if_fail(b && offset && result, false);
-	if (rz_buf_write_at(b, *offset, result, size) != size) {
+	if (rz_buf_write_at(b, *offset, result, size) != (st64)size) {
 		return false;
 	}
 	*offset += size;

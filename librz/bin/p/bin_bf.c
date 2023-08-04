@@ -19,7 +19,7 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return NULL;
+	return rz_list_newf((RzListFree)rz_bin_string_free);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {

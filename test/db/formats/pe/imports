@@ -3,7 +3,7 @@ FILE=bins/pe/imports.exe
 CMDS=<<EOF
 ii
 is
-?v sym.imp.msvcrt.dll_printf
+%v sym.imp.msvcrt.dll_printf
 EOF
 EXPECT=<<EOF
 nth vaddr      bind type lib          name        

@@ -94,8 +94,7 @@ typedef enum {
 	RZ_CORE_WRITE_OP_SHIFT_RIGHT, ///< Write the shift right of existing byte and argument value
 } RzCoreWriteOp;
 
-typedef bool (*RzCorePluginInit)(RzCore *core);
-typedef bool (*RzCorePluginFini)(RzCore *core);
+typedef bool (*RzCorePluginCallback)(RzCore *core);
 
 typedef struct rz_core_plugin_t {
 	const char *name;
@@ -103,8 +102,9 @@ typedef struct rz_core_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	RzCorePluginInit init;
-	RzCorePluginFini fini;
+	RzCorePluginCallback init; ///< Is called when the plugin is loaded by rizin
+	RzCorePluginCallback fini; ///< Is called when the plugin is unloaded by rizin
+	RzCorePluginCallback analysis; ///< Is called when automatic analysis is performed.
 } RzCorePlugin;
 
 typedef struct rz_core_rtr_host_t RzCoreRtrHost;
@@ -279,8 +279,6 @@ struct rz_core_t {
 	RzEgg *egg;
 	RzCrypto *crypto;
 	RzAGraph *graph;
-	RzPanelsRoot *panels_root;
-	RzPanels *panels;
 	char *cmdqueue;
 	char *lastcmd;
 	bool is_lastcmd;
@@ -494,11 +492,12 @@ RZ_API char *rz_core_add_asmqjmp(RzCore *core, ut64 addr);
 
 RZ_API void rz_core_analysis_type_init(RzCore *core);
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth);
-RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn);
-RZ_API bool cmd_analysis_objc(RzCore *core, bool auto_analysis);
+RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction *fcn);
+RZ_API bool rz_core_analysis_objc_refs(RzCore *core, bool auto_analysis);
+RZ_API void rz_core_analysis_objc_stubs(RzCore *core);
+RZ_API void rz_core_analysis_cc_init_by_path(RzCore *core, RZ_NULLABLE const char *path, RZ_NULLABLE const char *homepath);
 RZ_API void rz_core_analysis_cc_init(RzCore *core);
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
-RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr);
 RZ_API RZ_OWN char *rz_core_types_as_c(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, bool multiline);
 RZ_API RZ_OWN char *rz_core_types_as_c_all(RZ_NONNULL RzCore *core, bool multiline);
 
@@ -617,10 +616,11 @@ RZ_API bool rz_core_yank_hud_path(RzCore *core, const char *input, int dir);
 RZ_API bool rz_core_yank_file(RzCore *core, ut64 len, ut64 addr, const char *filename);
 RZ_API bool rz_core_yank_file_all(RzCore *core, const char *filename);
 
-#define RZ_CORE_LOADLIBS_ENV    1
-#define RZ_CORE_LOADLIBS_HOME   2
-#define RZ_CORE_LOADLIBS_SYSTEM 4
-#define RZ_CORE_LOADLIBS_CONFIG 8
+#define RZ_CORE_LOADLIBS_ENV    (1 << 0)
+#define RZ_CORE_LOADLIBS_HOME   (1 << 1)
+#define RZ_CORE_LOADLIBS_SYSTEM (1 << 2)
+#define RZ_CORE_LOADLIBS_CONFIG (1 << 3)
+#define RZ_CORE_LOADLIBS_EXTRA  (1 << 4)
 #define RZ_CORE_LOADLIBS_ALL    UT32_MAX
 
 RZ_API void rz_core_loadlibs_init(RzCore *core);
@@ -680,6 +680,16 @@ typedef struct rz_core_analysis_name_t {
 	ut64 offset;
 } RzCoreAnalysisName;
 
+/**
+ *  Defines the level of analysis performed by
+ * `rz_core_perform_auto_analysis`
+ * */
+typedef enum {
+	RZ_CORE_ANALYSIS_SIMPLE, ///< aa
+	RZ_CORE_ANALYSIS_DEEP, ///< aaa
+	RZ_CORE_ANALYSIS_EXPERIMENTAL, ///< aaaa
+} RzCoreAnalysisType;
+
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
 RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, bool verbose);
@@ -689,7 +699,7 @@ RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, RzCmdStateOutp
 RZ_API void rz_core_analysis_hint_list_print(RzAnalysis *a, RzCmdStateOutput *state);
 RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode);
 RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut64 to);
-RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize);
+RZ_API void rz_core_analysis_data(RZ_NONNULL RzCore *core, ut64 addr, ut32 count, ut32 depth, ut32 wordsize);
 RZ_API void rz_core_analysis_resolve_jumps(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, size_t nbytes);
 RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
@@ -701,7 +711,6 @@ RZ_API void rz_core_analysis_function_strings_print(RZ_NONNULL RzCore *core, RZ_
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
 RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core);
 RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core);
-RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
 RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
@@ -716,6 +725,9 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL const char *struct_member);
 RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
+
+RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type);
 
 RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
@@ -732,7 +744,6 @@ RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
  */
 typedef enum {
 	RZ_CORE_GRAPH_FORMAT_VISUAL = 0,
-	RZ_CORE_GRAPH_FORMAT_TINY,
 	RZ_CORE_GRAPH_FORMAT_SDB,
 	RZ_CORE_GRAPH_FORMAT_GML,
 	RZ_CORE_GRAPH_FORMAT_DOT,
@@ -757,6 +768,7 @@ typedef enum {
 	RZ_CORE_GRAPH_TYPE_XREF, ///< Cross-references graph
 	RZ_CORE_GRAPH_TYPE_CUSTOM, ///< Custom graph
 	RZ_CORE_GRAPH_TYPE_NORMAL, ///< Normal graph
+	RZ_CORE_GRAPH_TYPE_IL, ///< RzIL graph
 	RZ_CORE_GRAPH_TYPE_UNK ///< Unknown graph
 } RzCoreGraphType;
 
@@ -767,6 +779,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_importxrefs(RZ_NONN
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_callgraph(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function(RzCore *core, ut64 addr);
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_line(RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCoreGraphType type, ut64 addr);
 
 RZ_API RzCoreGraphFormat rz_core_graph_format_from_string(RZ_NULLABLE const char *x);
@@ -867,7 +880,7 @@ RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd);
 RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name);
 RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *file_uri, ut64 base_addr);
-RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr);
+RZ_API bool rz_core_bin_rebase(RZ_NONNULL RzCore *core, ut64 baddr);
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API bool rz_core_binfiles_print(RzCore *core, RzCmdStateOutput *state);
 RZ_API bool rz_core_binfiles_delete(RzCore *core, RzBinFile *bf);
@@ -877,8 +890,6 @@ RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSource
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);
 
 RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s);
-RZ_API void rz_core_sym_name_init(RZ_NONNULL RzCore *r, RZ_OUT RzBinSymNames *sn, RZ_NONNULL RzBinSymbol *sym, RZ_NULLABLE const char *lang);
-RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *sn);
 
 // bin_dwarf
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);
@@ -962,7 +973,7 @@ RZ_API int rz_core_bin_update_arch_bits(RzCore *r);
 RZ_API RZ_OWN char *rz_core_bin_class_build_flag_name(RZ_NONNULL RzBinClass *cls);
 RZ_API RZ_OWN char *rz_core_bin_super_build_flag_name(RZ_NONNULL RzBinClass *cls);
 RZ_API RZ_OWN char *rz_core_bin_method_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinSymbol *meth);
-RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinField *field);
+RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinClassField *field);
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode);
 RZ_API RZ_OWN char *rz_core_bin_pdb_get_filename(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filename);
@@ -1265,6 +1276,17 @@ RZ_API bool rz_platform_index_add_flags_comments(RzCore *core);
 typedef bool (*RzCmdRegSync)(RzCore *core, RzRegisterType type, bool write);
 RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *name, ut64 val);
 RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter);
+
+RZ_API void rz_core_cmd_show_analysis_help(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_rtr_enable(RZ_NONNULL RzCore *core, const char *cmdremote);
+
+RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var);
+RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var, bool add_name);
+
+RZ_API ut64 rz_core_analysis_var_addr(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var);
+
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NONNULL RzBinSymbol *symbol, bool demangle);
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names);
 
 #endif
 

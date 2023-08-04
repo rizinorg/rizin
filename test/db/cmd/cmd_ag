@@ -69,7 +69,6 @@ agi d
 agi g
 agi j
 agi k
-agi t
 EOF
 EXPECT=<<EOF
 .--------------.
@@ -341,10 +340,6 @@ agraph.nodes.sym.imp.strlen.w=0x14
 agraph.nodes.sym.imp.strlen.x=0x69
 agraph.nodes.sym.imp.strlen.y=0x7f
 agraph.w=0x11d
-
-
-() ()   () ()()()() () () () ()  ()
-()      () ()()       () ()    ()
 EOF
 RUN
 
@@ -360,7 +355,6 @@ aga gml
 aga json
 aga json_disasm
 aga sdb
-aga tiny
 EOF
 EXPECT=<<EOF
 .----------.
@@ -402,7 +396,6 @@ agraph.nodes.entry0.w=0xc
 agraph.nodes.entry0.x=0x13
 agraph.nodes.entry0.y=0
 agraph.w=0xc
-()
 EOF
 RUN
 
@@ -418,7 +411,6 @@ agA gml
 agA json
 agA json_disasm
 agA sdb
-agA tiny
 EOF
 EXPECT=<<EOF
 .----------.    .----------------------------.    .--------------------------.    .-----------------------------.   .--------------------------.    .---------------.   .-----------------------.   .-------------.   .-----------------------.   .-----------.   .------------------.    .------------------.    .------------------.    .------------------.    .----------------.    .----------------.    .-------------.
@@ -707,8 +699,6 @@ agraph.nodes.sym.register_tm_clones.w=0x1c
 agraph.nodes.sym.register_tm_clones.x=0x32
 agraph.nodes.sym.register_tm_clones.y=0xb4
 agraph.w=0x19d
-()()  ()  ()  ()  () () ()() ()() () () () () () ()
-           ()               ()()
 EOF
 RUN
 
@@ -723,7 +713,6 @@ agc gml
 agc json
 agc json_disasm
 agc sdb
-agc tiny
 EOF
 EXPECT=<<EOF
         .----------.
@@ -787,8 +776,6 @@ agraph.nodes.reloc.__libc_start_main.w=0x1d
 agraph.nodes.reloc.__libc_start_main.x=0xb
 agraph.nodes.reloc.__libc_start_main.y=0x7
 agraph.w=0x1d
- ()
-()
 EOF
 RUN
 
@@ -803,7 +790,6 @@ agf gml
 agf json
 agf json_disasm
 agf sdb
-agf tiny
 EOF
 EXPECT=<<EOF
 .-----------------------------------------------------------------------.
@@ -812,7 +798,7 @@ EXPECT=<<EOF
 |   ;-- section..text:                                                  |
 |   ;-- .text:                                                          |
 |   ;-- _start:                                                         |
-| entry0 (int64_t arg3);                                                |
+| entry0(int64_t arg3);                                                 |
 | ; arg int64_t arg3 @ rdx                                              |
 | xor ebp, ebp                                                          |
 | ; arg3                                                                |
@@ -833,7 +819,7 @@ EXPECT=<<EOF
 | ; "X\x10 "                                                            |
 | call qword [reloc.__libc_start_main]                                  |
 `-----------------------------------------------------------------------'
-agn "0x6a0" base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAgKGludDY0X3QgYXJnMyk7CjsgYXJnIGludDY0X3QgYXJnMyBAIHJkeAp4b3IgZWJwLCBlYnAKOyBhcmczCm1vdiByOSwgcmR4CnBvcCByc2kKbW92IHJkeCwgcnNwCmFuZCByc3AsIDB4ZmZmZmZmZmZmZmZmZmZmMApwdXNoIHJheApwdXNoIHJzcAo7IDB4OGMwCmxlYSByOCwgW3N5bS5fX2xpYmNfY3N1X2ZpbmldCjsgMHg4NTAKOyAiQVdBVkFceDg5XHhmZkFVQVRMXHg4ZCUuXHgwNSAiCmxlYSByY3gsIFtzeW0uX19saWJjX2NzdV9pbml0XQo7IDB4N2FhCmxlYSByZGksIFttYWluXQo7IFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbjo4XT0weDIwMTA1OCByZWxvYy50YXJnZXQuX19saWJjX3N0YXJ0X21haW4KOyAiWFx4MTAgIgpjYWxsIHF3b3JkIFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbl0=
+agn "0x6a0" base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAoaW50NjRfdCBhcmczKTsKOyBhcmcgaW50NjRfdCBhcmczIEAgcmR4CnhvciBlYnAsIGVicAo7IGFyZzMKbW92IHI5LCByZHgKcG9wIHJzaQptb3YgcmR4LCByc3AKYW5kIHJzcCwgMHhmZmZmZmZmZmZmZmZmZmYwCnB1c2ggcmF4CnB1c2ggcnNwCjsgMHg4YzAKbGVhIHI4LCBbc3ltLl9fbGliY19jc3VfZmluaV0KOyAweDg1MAo7ICJBV0FWQVx4ODlceGZmQVVBVExceDhkJS5ceDA1ICIKbGVhIHJjeCwgW3N5bS5fX2xpYmNfY3N1X2luaXRdCjsgMHg3YWEKbGVhIHJkaSwgW21haW5dCjsgW3JlbG9jLl9fbGliY19zdGFydF9tYWluOjhdPTB4MjAxMDU4IHJlbG9jLnRhcmdldC5fX2xpYmNfc3RhcnRfbWFpbgo7ICJYXHgxMCAiCmNhbGwgcXdvcmQgW3JlbG9jLl9fbGliY19zdGFydF9tYWluXQ==
 digraph code {
 rankdir=LR;
 outputorder=edgesfirst
@@ -844,7 +830,7 @@ node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
   ;-- section..text:
   ;-- .text:
   ;-- _start:
-entry0 (int64_t arg3);
+entry0(int64_t arg3);
 ; arg int64_t arg3 @ rdx
 xor ebp, ebp
 ; arg3
@@ -876,21 +862,20 @@ directed 1
     label  "0x6a0"
   ]
 ]
-{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0 (int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\x10 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
-{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0 (int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\x10 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0(int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\x10 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0(int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\x10 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
 agraph.color_box=G1swbQ==
 agraph.delta_x=0xb
 agraph.delta_y=0x1
 agraph.h=0x1e
 agraph.is_callgraph=false
 agraph.nodes=0x6a0
-agraph.nodes.0x6a0.body=base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAgKGludDY0X3QgYXJnMyk7CjsgYXJnIGludDY0X3QgYXJnMyBAIHJkeAp4b3IgZWJwLCBlYnAKOyBhcmczCm1vdiByOSwgcmR4CnBvcCByc2kKbW92IHJkeCwgcnNwCmFuZCByc3AsIDB4ZmZmZmZmZmZmZmZmZmZmMApwdXNoIHJheApwdXNoIHJzcAo7IDB4OGMwCmxlYSByOCwgW3N5bS5fX2xpYmNfY3N1X2ZpbmldCjsgMHg4NTAKOyAiQVdBVkFceDg5XHhmZkFVQVRMXHg4ZCUuXHgwNSAiCmxlYSByY3gsIFtzeW0uX19saWJjX2NzdV9pbml0XQo7IDB4N2FhCmxlYSByZGksIFttYWluXQo7IFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbjo4XT0weDIwMTA1OCByZWxvYy50YXJnZXQuX19saWJjX3N0YXJ0X21haW4KOyAiWFx4MTAgIgpjYWxsIHF3b3JkIFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbl0=
+agraph.nodes.0x6a0.body=base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAoaW50NjRfdCBhcmczKTsKOyBhcmcgaW50NjRfdCBhcmczIEAgcmR4CnhvciBlYnAsIGVicAo7IGFyZzMKbW92IHI5LCByZHgKcG9wIHJzaQptb3YgcmR4LCByc3AKYW5kIHJzcCwgMHhmZmZmZmZmZmZmZmZmZmYwCnB1c2ggcmF4CnB1c2ggcnNwCjsgMHg4YzAKbGVhIHI4LCBbc3ltLl9fbGliY19jc3VfZmluaV0KOyAweDg1MAo7ICJBV0FWQVx4ODlceGZmQVVBVExceDhkJS5ceDA1ICIKbGVhIHJjeCwgW3N5bS5fX2xpYmNfY3N1X2luaXRdCjsgMHg3YWEKbGVhIHJkaSwgW21haW5dCjsgW3JlbG9jLl9fbGliY19zdGFydF9tYWluOjhdPTB4MjAxMDU4IHJlbG9jLnRhcmdldC5fX2xpYmNfc3RhcnRfbWFpbgo7ICJYXHgxMCAiCmNhbGwgcXdvcmQgW3JlbG9jLl9fbGliY19zdGFydF9tYWluXQ==
 agraph.nodes.0x6a0.h=0x1b
 agraph.nodes.0x6a0.w=0x49
 agraph.nodes.0x6a0.x=0
 agraph.nodes.0x6a0.y=0xb
 agraph.w=0x49
-()
 EOF
 RUN
 
@@ -905,7 +890,6 @@ agr gml
 agr json
 agr json_disasm
 agr sdb
-agr tiny
 EOF
 EXPECT=<<EOF
 .----------.
@@ -944,7 +928,6 @@ agraph.nodes.entry0.w=0xc
 agraph.nodes.entry0.x=0x13
 agraph.nodes.entry0.y=0
 agraph.w=0xc
-()
 EOF
 RUN
 
@@ -960,7 +943,6 @@ agx gml
 agx json
 agx json_disasm
 agx sdb
-agx tiny
 EOF
 EXPECT=<<EOF
 .--------------.    .--------------.
@@ -1043,10 +1025,6 @@ agraph.nodes.sym.imp.strlen.w=0x14
 agraph.nodes.sym.imp.strlen.x=0xf
 agraph.nodes.sym.imp.strlen.y=0x8
 agraph.w=0x24
-
-
-() ()
- ()
 EOF
 RUN
 
@@ -1062,7 +1040,6 @@ agl gml
 agl json
 agl json_disasm
 agl sdb
-agl tiny
 EOF
 EXPECT=<<EOF
      .-----------.
@@ -1159,9 +1136,6 @@ agraph.nodes.0x844.w=0xd
 agraph.nodes.0x844.x=0x13
 agraph.nodes.0x844.y=0x10
 agraph.w=0x12
- ()
-()
- ()
 EOF
 RUN
 
@@ -1177,7 +1151,6 @@ ags gml
 ags json
 ags json_disasm
 ags sdb
-ags tiny
 EOF
 EXPECT=<<EOF
      .-----------.
@@ -1274,8 +1247,5 @@ agraph.nodes.0x844.w=0xd
 agraph.nodes.0x844.x=0x13
 agraph.nodes.0x844.y=0x10
 agraph.w=0x12
- ()
-()
- ()
 EOF
 RUN

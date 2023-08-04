@@ -335,6 +335,7 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 	ut8 *keyword = NULL;
 	const char *prelude = rz_config_get(core->config, "analysis.prelude");
 	const char *where = rz_config_get(core->config, "analysis.in");
+	ut64 limit = rz_config_get_i(core->config, "analysis.prelude.limit");
 
 	RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, where, "search");
 	RzList *arch_preludes = NULL;
@@ -368,6 +369,12 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 		}
 		from = p->itv.addr;
 		to = rz_itv_end(p->itv);
+		if ((to - from) >= limit) {
+			RZ_LOG_WARN("aap: search interval (from 0x%" PFMT64x
+				    " to 0x%" PFMT64x ") exeeds analysis.prelude.limit (0x%" PFMT64x "), skipping it.\n",
+				from, to, limit);
+			continue;
+		}
 		if (keyword && keyword_length > 0) {
 			ret = rz_core_search_prelude(core, from, to, keyword, keyword_length, NULL, 0);
 		} else {
@@ -1126,7 +1133,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 	RzListIter *iter;
 	RzList *ropList = NULL;
 	unsigned int size = 0;
-	RzAnalysisOp analop = RZ_EMPTY;
+	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp asmop;
 	Sdb *db = NULL;
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
@@ -1156,20 +1163,20 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
 			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
-			rz_analysis_op(core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
+			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
 			size += hit->len;
-			if (analop.type != RZ_ANALYSIS_OP_TYPE_RET) {
-				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&analop.esil));
+			if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
+				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
 				rz_list_append(ropList, (void *)opstr_n);
 			}
 			pj_o(pj);
 			pj_kN(pj, "offset", hit->addr);
 			pj_ki(pj, "size", hit->len);
 			pj_ks(pj, "opcode", rz_asm_op_get_asm(&asmop));
-			pj_ks(pj, "type", rz_analysis_optype_to_string(analop.type));
+			pj_ks(pj, "type", rz_analysis_optype_to_string(aop.type));
 			pj_end(pj);
 			free(buf);
-			rz_analysis_op_fini(&analop);
+			rz_analysis_op_fini(&aop);
 		}
 		pj_end(pj);
 		if (db && hit) {
@@ -1194,24 +1201,24 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
 			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
-			rz_analysis_op(core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
+			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
 			size += hit->len;
-			const char *opstr = RZ_STRBUF_SAFEGET(&analop.esil);
-			if (analop.type != RZ_ANALYSIS_OP_TYPE_RET) {
+			const char *opstr = RZ_STRBUF_SAFEGET(&aop.esil);
+			if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
 				rz_list_append(ropList, rz_str_newf(" %s", opstr));
 			}
 			if (esil) {
 				rz_cons_printf("%s\n", opstr);
 			} else if (colorize) {
 				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asmop.asm_toks);
 				rz_cons_printf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
 				rz_strbuf_free(colored_asm);
 			} else {
 				rz_cons_printf(" %s;", rz_asm_op_get_asm(&asmop));
 			}
 			free(buf);
-			rz_analysis_op_fini(&analop);
+			rz_analysis_op_fini(&aop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RzCoreAsmHit *)hitlist->head->data)->addr;
@@ -1236,16 +1243,16 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
 			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
-			rz_analysis_op(core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
+			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
 			size += hit->len;
-			if (analop.type != RZ_ANALYSIS_OP_TYPE_RET) {
-				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&analop.esil));
+			if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
+				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
 				rz_list_append(ropList, (void *)opstr_n);
 			}
 			char *asm_op_hex = rz_asm_op_get_hex(&asmop);
 			if (colorize) {
 				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asmop.asm_toks);
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
 						hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET, comment);
@@ -1265,7 +1272,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 			}
 			free(asm_op_hex);
 			free(buf);
-			rz_analysis_op_fini(&analop);
+			rz_analysis_op_fini(&aop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RzCoreAsmHit *)hitlist->head->data)->addr;
@@ -2846,7 +2853,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 	RzList *boundaries = rz_core_get_boundaries_prot(core, -1, search_in, "search");
 	RzListIter *iter;
 	RzIOMap *map;
-	RzAnalysisOp analop;
+	RzAnalysisOp aop;
 	ut64 at;
 	rz_list_foreach (boundaries, iter, map) {
 		ut64 map_begin = map->itv.addr;
@@ -2858,12 +2865,12 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 		}
 		(void)rz_io_read_at(core->io, map_begin, buf, map_size);
 		for (at = map->itv.addr; at + 24 < map_end; at += 1) {
-			rz_analysis_op(core->analysis, &analop, at, buf + (at - map_begin), 24, RZ_ANALYSIS_OP_MASK_HINT);
-			if (at == analop.jump) {
+			rz_analysis_op(core->analysis, &aop, at, buf + (at - map_begin), 24, RZ_ANALYSIS_OP_MASK_HINT);
+			if (at == aop.jump) {
 				rz_cons_printf("0x%08" PFMT64x "\n", at);
 			}
-			at += analop.size;
-			rz_analysis_op_fini(&analop);
+			at += aop.size;
+			rz_analysis_op_fini(&aop);
 		}
 		free(buf);
 	}
@@ -3531,7 +3538,7 @@ reread:
 			RZ_LOG_ERROR("core: Invalid keyword\n");
 			break;
 		}
-		// fallthrough
+		break;
 	case 'i': // "/i"
 		if (input[param_offset - 1] != ' ') {
 			RZ_LOG_ERROR("core: Missing ' ' after /i\n");
@@ -3548,16 +3555,6 @@ reread:
 	case ' ': // "/ " search string
 		inp = strdup(input + 1 + ignorecase + (param.outmode == RZ_MODE_JSON ? 1 : 0));
 		len = rz_str_unescape(inp);
-#if 0
-		if (!json) {
-			eprintf ("Searching %d byte(s) from 0x%08"PFMT64x " to 0x%08"PFMT64x ": ",
-					len, search_itv.addr, rz_itv_end (search_itv));
-			for (i = 0; i < len; i++) {
-				eprintf ("%02x ", (ut8) inp[i]);
-			}
-			eprintf ("\n");
-		}
-#endif
 		rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 		rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 		{

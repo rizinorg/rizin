@@ -101,7 +101,7 @@ BROKEN=1
 CMDS=<<EOF
 s sym.imp.write
 af
-?v $FS
+%v $FS
 EOF
 EXPECT=<<EOF
 before:
@@ -126,7 +126,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.register_tm_clones ();
+/ sym.register_tm_clones();
 |           0x08048410      mov   eax, obj.completed.6891
 |           0x08048415      sub   eax, obj.completed.6891
 |           0x0804841a      sar   eax, 2
@@ -161,28 +161,28 @@ af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
-?e
+echo
 af-
 af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 6 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
-?e
+echo
 afb+ 0x4017c0 0x4017c0 11 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
 EOF
 EXPECT=<<EOF
 size: 13
 0x004017c0 0x004017cd 00:0000 13 j 0x004017dd f 0x004017cd
 
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
@@ -192,7 +192,7 @@ size: 13
 size: 6
 0x004017c0 0x004017c6 00:0000 6 j 0x004017dd f 0x004017cd
 
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 \           0x004017c3      83c108         add   ecx, 8
@@ -200,7 +200,7 @@ size: 6
 size: 11
 0x004017c0 0x004017cb 00:0000 11 j 0x004017dd f 0x004017cd
 
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
@@ -218,30 +218,30 @@ af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 9 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
-?e
+echo
 pdr
-?e
+echo
 afb+ 0x4017c0 0x4017c0 12 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
-?e
+echo
 pdr
 EOF
 EXPECT=<<EOF
 size: 9
 0x004017c0 0x004017c9 00:0000 9 j 0x004017dd f 0x004017cd
 
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
 ..
 
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 | 0x004017c0      51             push  ecx
 | 0x004017c1      89e1           mov   ecx, esp
 | 0x004017c3      83c108         add   ecx, 8
@@ -252,14 +252,14 @@ size: 9
 size: 12
 0x004017c0 0x004017cc 00:0000 12 j 0x004017dd f 0x004017cd
 
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 ..
 
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 | 0x004017c0      51             push  ecx
 | 0x004017c1      89e1           mov   ecx, esp
 | 0x004017c3      83c108         add   ecx, 8
@@ -421,10 +421,10 @@ f sym.b @ 8
 e asm.flags.real=0
 af @@f
 afl
-?e --
+echo --
 af- @@f
 afl
-?e --
+echo --
 e asm.flags.real=1
 af @@f
 afl

@@ -116,7 +116,7 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	ut64 addr = rz_analysis_var_addr(var);
+	ut64 addr = rz_core_analysis_var_addr(core, var);
 	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
@@ -167,7 +167,9 @@ static void types_xrefs(RzCore *core, const char *typestr) {
 				break;
 			}
 		}
+		rz_list_free(uniq);
 	}
+	rz_type_free(type);
 }
 
 static void types_xrefs_summary(RzCore *core) {
@@ -187,6 +189,7 @@ static void types_xrefs_summary(RzCore *core) {
 			}
 			free(str);
 		}
+		rz_list_free(uniq);
 	}
 }
 
@@ -225,6 +228,7 @@ static void types_xrefs_graph(RzCore *core) {
 			rz_cons_printf("age %s %s\n", typestr, fcn->name);
 			free(typestr);
 		}
+		rz_list_free(uniq);
 	}
 }
 
@@ -466,34 +470,6 @@ RZ_IPI RzCmdStatus rz_type_function_cc_handler(RzCore *core, int argc, const cha
 		}
 		rz_cons_println(cc);
 	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_link_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	const char *name = argc > 1 ? argv[1] : NULL;
-	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
-	if (name) {
-		rz_core_types_link(core, name, addr);
-	} else {
-		rz_core_types_link_print_all(core, mode);
-	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_link_show_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = rz_num_math(core->num, argv[1]);
-	rz_core_types_link_show(core, addr);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_link_del_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = rz_num_math(core->num, argv[1]);
-	rz_analysis_type_unlink(core->analysis, addr);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_link_del_all_handler(RzCore *core, int argc, const char **argv) {
-	rz_analysis_type_unlink_all(core->analysis);
 	return RZ_CMD_STATUS_OK;
 }
 

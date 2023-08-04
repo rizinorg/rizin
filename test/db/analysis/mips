@@ -222,7 +222,7 @@ aa 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-fcn.00000000 ();
+fcn.00000000();
 0x00000000      0800040c   jal   0x100020
 0x00000004      00000000   nop
 0x00000008      00000000   nop
@@ -253,7 +253,7 @@ pd 10
 afl
 EOF
 EXPECT=<<EOF
-fcn.80100000 ();
+fcn.80100000();
 0x80100000      0800040c   jal   fcn.80100020
 0x80100004      00000000   nop
 0x80100008      00000000   nop
@@ -263,7 +263,7 @@ fcn.80100000 ();
 0x80100018      40040408   j     0x80101100
 0x8010001c      00000000   nop
   ; CALL XREF from fcn.80100000 @ 0x80100000
-fcn.80100020 ();
+fcn.80100020();
 0x80100020      0800e003   jr    ra
 0x80100024      00000000   nop
 0x80100000    1 32           fcn.80100000
@@ -289,7 +289,7 @@ af 2>/dev/null
 pdf
 EOF
 EXPECT=<<EOF
-fcn.80100000 ();
+fcn.80100000();
 0x80100000      0800e003   jr    ra
 0x80100004      0a184400   movz  v1, v0, a0
 EOF
@@ -309,7 +309,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-fcn.00000000 ();
+fcn.00000000();
           0x00000000      0800e003   jr    ra
           0x00000004      0a184400   movz  v1, v0, a0
 EOF
@@ -335,7 +335,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-fcn.80100000 ();
+fcn.80100000();
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      01000010   b     0x80100010
@@ -368,7 +368,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-fcn.80100000 ();
+fcn.80100000();
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      01000010   b     0x80100010
@@ -400,7 +400,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-fcn.80100000 ();
+fcn.80100000();
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      00000000   nop
@@ -432,7 +432,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-fcn.80100000 ();
+fcn.80100000();
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      00000000   nop
@@ -471,7 +471,7 @@ EOF
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
-fcn.8060b500 (int32_t arg1, int32_t arg2);
+fcn.8060b500(int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b500      002e0500   sll   a1, a1, 0x18
@@ -494,7 +494,7 @@ fcn.8060b500 (int32_t arg1, int32_t arg2);
 0x8060b544      21100000   move  v0, zero
 0x8060b548      0800e003   jr    ra
 0x8060b54c      00000000   nop
-fcn.8060b550 (int32_t arg1, int32_t arg2);
+fcn.8060b550(int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b550      0000a290   lbu   v0, (a1)
@@ -507,7 +507,7 @@ fcn.8060b550 (int32_t arg1, int32_t arg2);
 0x8060b56c      0800e003   jr    ra
 0x8060b570      000080a0   sb    zero, (a0)
 0x8060b574      00000000   nop
-fcn.8060b578 ();
+fcn.8060b578();
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal   fcn.8060b550
 0x8060b580      00000000   nop
@@ -607,7 +607,7 @@ EOF
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
-fcn.8060b500 (int32_t arg1, int32_t arg2);
+fcn.8060b500(int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b500      002e0500   sll   a1, a1, 0x18
@@ -630,7 +630,7 @@ fcn.8060b500 (int32_t arg1, int32_t arg2);
 0x8060b544      21100000   move  v0, zero
 0x8060b548      0800e003   jr    ra
 0x8060b54c      00000000   nop
-fcn.8060b550 (int32_t arg1, int32_t arg2);
+fcn.8060b550(int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b550      0000a290   lbu   v0, (a1)
@@ -643,7 +643,7 @@ fcn.8060b550 (int32_t arg1, int32_t arg2);
 0x8060b56c      0800e003   jr    ra
 0x8060b570      000080a0   sb    zero, (a0)
 0x8060b574      00000000   nop
-fcn.8060b578 ();
+fcn.8060b578();
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal   fcn.8060b550
 0x8060b580      00000000   nop
@@ -678,7 +678,7 @@ EOF
 EXPECT=<<EOF
   0x8060b4f8      00000000   nop
   0x8060b4fc      00000000   nop
-/ fcn.8060b500 (int32_t arg1, int32_t arg2);
+/ fcn.8060b500(int32_t arg1, int32_t arg2);
 | ; arg int32_t arg1 @ a0
 | ; arg int32_t arg2 @ a1
 | 0x8060b500      002e0500   sll   a1, a1, 0x18
@@ -701,7 +701,7 @@ EXPECT=<<EOF
 | 0x8060b544      21100000   move  v0, zero
 | 0x8060b548      0800e003   jr    ra
 \ 0x8060b54c      00000000   nop
-/ fcn.8060b550 (int32_t arg1, int32_t arg2);
+/ fcn.8060b550(int32_t arg1, int32_t arg2);
 | ; arg int32_t arg1 @ a0
 | ; arg int32_t arg2 @ a1
 | 0x8060b550      0000a290   lbu   v0, (a1)
@@ -714,7 +714,7 @@ EXPECT=<<EOF
 | 0x8060b56c      0800e003   jr    ra
 \ 0x8060b570      000080a0   sb    zero, (a0)
   0x8060b574      00000000   nop
-/ fcn.8060b578 ();
+/ fcn.8060b578();
 | 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 | 0x8060b57c      542d180c   jal   fcn.8060b550
 | 0x8060b580      00000000   nop
@@ -801,7 +801,7 @@ pdf
 afvx
 EOF
 EXPECT=<<EOF
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -855,5 +855,54 @@ afvW
    var_14h  0x7c0,0x7ec
    var_10h  0x7c8
     var_ch  0x7d0
+EOF
+RUN
+
+NAME=aav without vinfun
+FILE=bins/elf/analysis/mipsbe-busybox
+CMDS=<<EOF
+af @ 0x0040eb60
+e analysis.vinfun=false
+aav
+pd 1 @ 0x0040ec8c~?jr
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=aav with vinfun
+FILE=bins/elf/analysis/mipsbe-busybox
+CMDS=<<EOF
+af @ 0x0040eb60
+e analysis.vinfun=true
+aav
+pd 1 @ 0x0040ec8c~?dword
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=aac on mips BE
+FILE=bins/elf/analysis/mipsbe-busybox
+CMDS=<<EOF
+aac
+afl~?
+EOF
+EXPECT=<<EOF
+1268
+EOF
+RUN
+
+NAME=raw aac with maps (less because of wrong map address)
+FILE=bins/elf/analysis/mipsbe-busybox
+ARGS=-n -m 0x80000 -a mips -b32 -e cfg.bigendian=true
+CMDS=<<EOF
+aac
+afl~?
+EOF
+EXPECT=<<EOF
+4
 EOF
 RUN

@@ -53,8 +53,10 @@ asm_plugins_list = [
   'xap',
   'xcore_cs',
 ]
-if capstone_dep.version().split('.')[0].to_int() > 4
+
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   asm_plugins_list += 'riscv_cs'
+  asm_plugins_list += 'tricore'
 endif
 
 if get_option('use_gpl')
@@ -67,7 +69,6 @@ if get_option('use_gpl')
     'nios2',
     'riscv',
     'sparc_gnu',
-    'tricore',
     'vax',
     'xtensa',
     'z80',
@@ -207,6 +208,7 @@ rz_asm_sources = [
   'arch/pyc/opcode_37.c',
   'arch/pyc/opcode_38.c',
   'arch/pyc/opcode_39.c',
+  'arch/pyc/opcode_310.c',
   'arch/pyc/opcode_3x.c',
   'arch/pyc/opcode_analysis.c',
   'arch/pyc/opcode_arg_fmt.c',
@@ -233,8 +235,9 @@ rz_asm_sources = [
   'arch/z80/z80.c',
 ]
 
-if capstone_dep.version().split('.')[0].to_int() > 4
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   rz_asm_sources += 'p/asm_riscv_cs.c'
+  rz_asm_sources += 'p/asm_tricore_cs.c'
 endif
 
 if get_option('use_gpl')
@@ -261,9 +264,6 @@ if get_option('use_gpl')
     #'arch/riscv/riscv.c',
     'arch/sparc/gnu/sparc-dis.c',
     'arch/sparc/gnu/sparc-opc.c',
-    'arch/tricore/gnu/cpu-tricore.c',
-    'arch/tricore/gnu/tricore-dis.c',
-    'arch/tricore/gnu/tricore-opc.c',
     'arch/vax/vax-dis.c',
     'arch/xtensa/gnu/elf32-xtensa.c',
     'arch/xtensa/gnu/xtensa-dis.c',
@@ -279,7 +279,6 @@ if get_option('use_gpl')
     'p/asm_nios2.c',
     'p/asm_riscv.c',
     'p/asm_sparc_gnu.c',
-    'p/asm_tricore.c',
     'p/asm_vax.c',
     'p/asm_xtensa.c',
     'p/asm_z80.c',
@@ -302,7 +301,8 @@ rz_asm_inc = [
     'arch/cr16',
     'arch/8051',
     'arch/v810',
-    'arch/or1k'
+    'arch/or1k',
+    'arch/tricore',
   )
 ]
 

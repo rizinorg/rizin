@@ -155,7 +155,7 @@ static inline const char *rz_str_word_get_next0(const char *str) {
 	return str + strlen(str) + 1;
 }
 RZ_API const char *rz_str_word_get0(const char *str, int idx);
-RZ_API char *rz_str_word_get_first(const char *string);
+RZ_API RZ_OWN char *rz_str_skip_separator_chars(RZ_NONNULL const char *string);
 RZ_API void rz_str_trim(RZ_NONNULL RZ_INOUT char *str);
 RZ_API void rz_str_trim_char(RZ_NONNULL RZ_INOUT char *str, const char c);
 RZ_API char *rz_str_trim_dup(const char *str);

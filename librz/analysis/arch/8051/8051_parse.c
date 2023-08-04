@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 imbillow <billow.fun@gmail.com>
+// SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "8051_il.h"
@@ -55,7 +55,7 @@ static I8051OpAddressing *addressing_bit(ut8 addr) {
 	return addressing_addr(I8051_ADDRESSING_BIT, addr);
 }
 
-static I8051OpAddressing *addressing_register(I8051Registers reg) {
+static I8051OpAddressing *addressing_register(I8051Register reg) {
 	I8051OpAddressing *a = RZ_NEW0(I8051OpAddressing);
 	if (!a) {
 		return NULL;
@@ -66,10 +66,10 @@ static I8051OpAddressing *addressing_register(I8051Registers reg) {
 }
 
 static inline I8051OpAddressing *addressing_register_a() {
-	return addressing_register(I8051_A);
+	return addressing_register(I8051_ACC);
 }
 
-static inline I8051OpAddressing *addressing_indexed(I8051Registers reg) {
+static inline I8051OpAddressing *addressing_indexed(I8051Register reg) {
 	I8051OpAddressing *a = RZ_NEW0(I8051OpAddressing);
 	if (!a) {
 		return NULL;
@@ -134,14 +134,14 @@ static I8051OpAddressing *addressing_pattern11(const ut8 *buf) {
  *
  * 0x04 #data
  * 0x05 iram addr
- * 0x06-0x07 @(R0|R1)
+ * 0x06-0x07 \@(R0|R1)
  * 0x08-0x0f R0-R7
  */
 static I8051OpAddressing *addressing_pattern1_imm(const ut8 *buf) {
 	ut8 lo = buf[0] & 0x0f;
 	if (lo == 0x4) {
 		return addressing_immediate(buf[1]);
-	} else if (lo >= 0x5 && lo <= 0xf) {
+	} else if (lo >= 0x5) {
 		return addressing_pattern1(buf);
 	}
 	RZ_LOG_DEBUG("invalid addressing pattern 1_imm")
@@ -157,7 +157,7 @@ static I8051OpAddressing *addressing_pattern1_imm(const ut8 *buf) {
  * 0x03      iram addr, #data
  * 0x04      A, #data
  * 0x05      A, iram addr
- * 0x06-0x07 A, @R0/@R1
+ * 0x06-0x07 A, \@R0/\@R1
  * 0x08-0x0f A, R0-R7
  */
 static bool addressing_pattern2(I8051Op *op, const ut8 *buf) {
@@ -168,20 +168,25 @@ static bool addressing_pattern2(I8051Op *op, const ut8 *buf) {
 	if (lo < 0x2) {
 		return false;
 	}
-
-	if (lo >= 0x02 && lo <= 0x03) {
+	switch (lo) {
+	case 0x2: {
 		op->argv[0] = addressing_direct(buf[1]);
-		if (lo == 0x02) {
-			op->len = 2;
-			op->argv[1] = addressing_register_a();
-		} else {
-			op->len = 3;
-			op->argv[1] = addressing_immediate(buf[2]);
-		}
-	} else {
+		op->argv[1] = addressing_register_a();
+		op->len = 2;
+		break;
+	}
+	case 0x3: {
+		op->argv[0] = addressing_direct(buf[1]);
+		op->argv[1] = addressing_immediate(buf[2]);
+		op->len = 3;
+		break;
+	}
+	default: {
 		op->argv[0] = addressing_register_a();
 		op->argv[1] = addressing_pattern1_imm(buf);
 		op->len = lo >= 0x6 ? 1 : 2;
+		break;
+	}
 	}
 	return true;
 }
@@ -381,16 +386,37 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
 		switch (hi) {
 		case 0x70: {
-			op->argv[0] = lo == 0x4 ? addressing_register_a()
-						: addressing_pattern1(buf);
-			op->argv[1] = addressing_immediate(buf[1]);
-			op->len = lo == 0x5 ? 3 : 2;
+			switch (lo) {
+			case 4: {
+				op->argv[0] = addressing_register_a();
+				op->argv[1] = addressing_immediate(buf[1]);
+				op->len = 2;
+				break;
+			}
+			case 5: {
+				op->argv[0] = addressing_direct(buf[1]);
+				op->argv[1] = addressing_immediate(buf[2]);
+				op->len = 3;
+				break;
+			}
+			default: {
+				op->argv[0] = addressing_pattern1(buf);
+				op->argv[1] = addressing_immediate(buf[1]);
+				op->len = 2;
+				break;
+			}
+			}
 			break;
 		}
 		case 0x80: {
 			op->argv[0] = addressing_direct(buf[1]);
-			op->argv[1] = lo == 0x5 ? addressing_direct(buf[2]) : addressing_pattern1(buf);
-			op->len = lo == 0x5 ? 3 : 2;
+			if (lo == 0x5) {
+				op->argv[1] = addressing_direct(buf[2]);
+				op->len = 3;
+			} else {
+				op->argv[1] = addressing_pattern1(buf);
+				op->len = 2;
+			}
 			break;
 		}
 		case 0x90: {
@@ -418,12 +444,12 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 			break;
 		}
 		case 0xa0: {
-			if (lo >= 0x5) {
-				op->argv[0] = addressing_pattern1(buf);
-				op->argv[1] = addressing_direct(buf[1]);
-			} else if (lo == 0x2) {
+			if (lo == 0x2) {
 				op->argv[0] = addressing_register(I8051_CY);
 				op->argv[1] = addressing_bit(buf[1]);
+			} else if (lo >= 0x6) {
+				op->argv[0] = addressing_pattern1(buf);
+				op->argv[1] = addressing_direct(buf[1]);
 			}
 			op->len = 2;
 			break;
@@ -495,7 +521,8 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 	}
 
 	for (int i = 0; i < op->argc; ++i) {
-		op->argv[i]->pc = pc;
+		op->argv[i]->op = op;
+		op->argv[i]->ctx = (i8051_plugin_context *)analysis->plugin_data;
 	}
 
 	return op;

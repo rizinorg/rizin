@@ -12,9 +12,9 @@ b 64
 w hello world
 y 5
 yy @ 6
-psz
+ps
 yy 4 @ 0xB
-psz
+ps
 EOF
 EXPECT=<<EOF
 hello hello
@@ -32,7 +32,7 @@ y 20
 y;
 y 0
 y 0
-?e ok
+echo ok
 EOF
 EXPECT=<<EOF
 0x00000000 20 0000000000000000000000000000000000000000
@@ -44,7 +44,7 @@ NAME=yank-segfault3
 FILE==
 CMDS=<<EOF
 y #
-?e ok
+echo ok
 EOF
 EXPECT=<<EOF
 ok
@@ -56,7 +56,7 @@ FILE==
 CMDS=<<EOF
 y -5
 y -5
-?e ok
+echo ok
 EOF
 EXPECT=<<EOF
 ok

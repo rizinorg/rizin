@@ -1,0 +1,17 @@
+default.cc=reg
+
+reg=cc
+cc.reg.arg0=d4
+cc.reg.arg1=d5
+cc.reg.arg2=d6
+cc.reg.arg3=d7
+cc.reg.arg4=a4
+cc.reg.arg5=a5
+cc.reg.arg6=a6
+cc.reg.arg7=a7
+cc.reg.argn=stack
+cc.reg.ret=d2
+
+stack=cc
+cc.stack.argn=stack
+cc.stack.ret=d2

@@ -2,7 +2,7 @@ NAME=fatmach0 string location
 FILE=bins/mach0/BatteryLife
 CMDS=<<EOF
 s str.batteryLevel
-ps
+ps @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 batteryLevel
@@ -42,7 +42,7 @@ NAME=fatmach0 arm32 string location
 FILE=bins/mach0/BatteryLife.arm_32.0
 CMDS=<<EOF
 s str.batteryLevel
-ps
+ps @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 batteryLevel
@@ -97,7 +97,7 @@ RUN
 
 NAME=fatmach0 entry0
 FILE=bins/mach0/fatmach0-3true
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -114,7 +114,7 @@ RUN
 NAME=fatmach0 entry1
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x1f44
 EOF
@@ -159,7 +159,7 @@ RUN
 NAME=fatmach0 entry2
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a ppc -b 32
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x1f64
 EOF
@@ -254,11 +254,11 @@ icf SceneDelegate
 icm SceneDelegate
 EOF
 EXPECT=<<EOF
-address     min         max         name           super 
----------------------------------------------------------
-0x100009298 0x100001e90 0x100001e90 ViewController 
-0x1000092c0 0x100001ee4 0x1000020a4 AppDelegate    
-0x100009310 0x1000021d0 0x100002494 SceneDelegate  
+address     min         max         name           super            
+--------------------------------------------------------------------
+0x100009298 0x100001e90 0x100001e90 ViewController UIViewController
+0x1000092c0 0x100001ee4 0x1000020a4 AppDelegate    UIResponder
+0x100009310 0x1000021d0 0x100002494 SceneDelegate  UIResponder
 address index class flags name type 
 ------------------------------------
 address     index class          flags name        
@@ -266,11 +266,11 @@ address     index class          flags name
 0x100001e90 0     ViewController       viewDidLoad
 address    index class       flags name                                    type 
 --------------------------------------------------------------------------------
-0x00000000 0     AppDelegate       AppDelegate::(property)window           
-0x00000000 1     AppDelegate       AppDelegate::(property)hash             
-0x00000000 2     AppDelegate       AppDelegate::(property)superclass       
-0x00000000 3     AppDelegate       AppDelegate::(property)description      
-0x00000000 4     AppDelegate       AppDelegate::(property)debugDescription 
+---------- 0     AppDelegate       AppDelegate::(property)debugDescription 
+---------- 1     AppDelegate       AppDelegate::(property)description      
+---------- 2     AppDelegate       AppDelegate::(property)hash             
+---------- 3     AppDelegate       AppDelegate::(property)superclass       
+---------- 4     AppDelegate       AppDelegate::(property)window           
 address     index class       flags name                                                        
 ------------------------------------------------------------------------------------------------
 0x100001ee4 0     AppDelegate       application:didFinishLaunchingWithOptions:
@@ -278,13 +278,13 @@ address     index class       flags name
 0x1000020a4 2     AppDelegate       application:didDiscardSceneSessions:
 address     index class         flags name                                      type                
 ----------------------------------------------------------------------------------------------------
-0x00000000  0     SceneDelegate       isa                                       struct objc_class *
-0x100009268 1     SceneDelegate       SceneDelegate::(ivar)_window              @"UIWindow"
-0x00000000  2     SceneDelegate       SceneDelegate::(property)window           
-0x00000000  3     SceneDelegate       SceneDelegate::(property)hash             
-0x00000000  4     SceneDelegate       SceneDelegate::(property)superclass       
-0x00000000  5     SceneDelegate       SceneDelegate::(property)description      
-0x00000000  6     SceneDelegate       SceneDelegate::(property)debugDescription 
+----------  0     SceneDelegate       SceneDelegate::(property)debugDescription 
+----------  1     SceneDelegate       SceneDelegate::(property)description      
+----------  2     SceneDelegate       SceneDelegate::(property)hash             
+----------  3     SceneDelegate       SceneDelegate::(property)superclass       
+----------  4     SceneDelegate       SceneDelegate::(property)window           
+----------  5     SceneDelegate       isa                                       struct objc_class *
+0x100009268 6     SceneDelegate       SceneDelegate::(ivar)_window              @"UIWindow"
 address     index class         flags name                                
 --------------------------------------------------------------------------
 0x1000021d0 0     SceneDelegate       scene:willConnectToSession:options:

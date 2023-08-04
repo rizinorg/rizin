@@ -1137,11 +1137,10 @@ RZ_API st64 rz_buf_read_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT 
 		return -1;
 	}
 
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return -1;
+	st64 result = -1;
+	if (rz_buf_seek(b, addr, RZ_BUF_SET) >= 0) {
+		result = rz_buf_read(b, buf, len);
 	}
-
-	st64 result = rz_buf_read(b, buf, len);
 
 	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
 		return -1;
@@ -1359,7 +1358,7 @@ RZ_API st64 rz_buf_uleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL ut64 *value) 
 		}
 		used++;
 		slice = byte & 0x7f;
-		if ((shift >= 63 && slice != 0) || ((slice << shift) >> shift) != slice) {
+		if (shift >= 64 || (shift == 63 && slice > 1ULL) || ((slice << shift) >> shift) != slice) {
 			// uleb128 too big for ut64
 			return -1;
 		}

@@ -222,9 +222,10 @@ RZ_API RzBuffer *rz_xnu_kernelcache_new_patched_buf(RzXNUKernelCacheObj *obj) {
 		return NULL;
 	}
 
-	if (obj->mach0->chained_starts) {
-		MACH0_(rebase_buffer)
-		(obj->mach0, r);
+	if (MACH0_(has_chained_fixups)(obj->mach0)) {
+		// clang-format off
+		MACH0_(patch_chained_fixups)(obj->mach0, r);
+		// clang-format on
 	} else if (obj->rebase_info) {
 		rebase_buffer(obj, r);
 	}
@@ -235,5 +236,5 @@ RZ_API RzBuffer *rz_xnu_kernelcache_new_patched_buf(RzXNUKernelCacheObj *obj) {
 }
 
 RZ_API bool rz_xnu_kernelcache_needs_rebasing(RzXNUKernelCacheObj *obj) {
-	return obj->rebase_info || obj->mach0->chained_starts;
+	return obj->rebase_info || obj->mach0->chained_fixups.starts;
 }

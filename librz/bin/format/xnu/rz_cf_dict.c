@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2023 Siguza <siguza@siguza.net>
 // SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -18,57 +20,69 @@ typedef enum {
 	RZ_CF_STATE_IN_KEY,
 	RZ_CF_STATE_IN_SCALAR,
 	RZ_CF_STATE_IN_IGNORE,
-} RCFParsePhase;
+	RZ_CF_STATE_IN_ATTR_ID,
+	RZ_CF_STATE_IN_ATTR_IDREF
+} RzCFParsePhase;
 
-typedef struct _RCFParseState {
-	RCFParsePhase phase;
+typedef enum {
+	RZ_CF_ID_STATE_NONE,
+	RZ_CF_ID_STATE_SET,
+	RZ_CF_ID_STATE_REF,
+} RzCFIDState;
+
+typedef struct rz_cf_parse_state {
+	RzCFParsePhase phase;
+	RzCFIDState idstate;
+	ut32 id;
 	char *key;
-	RCFValueType value_type;
-	RCFValueDict *dict;
-	RCFValueArray *array;
-} RCFParseState;
+	RzCFValueType value_type;
+	RzCFValueDict *dict;
+	RzCFValueArray *array;
+} RzCFParseState;
 
-static RCFParseState *rz_cf_parse_state_new(RCFParsePhase phase);
-static void rz_cf_parse_state_free(RCFParseState *state);
+static RzCFParseState *rz_cf_parse_state_new(RzCFParsePhase phase);
+static void rz_cf_parse_state_free(RzCFParseState *state);
 
-static RCFKeyValue *rz_cf_key_value_new(char *key, RCFValue *value);
-static void rz_cf_key_value_free(RCFKeyValue *key_value);
+static RzCFKeyValue *rz_cf_key_value_new(char *key, RzCFValue *value);
+static void rz_cf_key_value_free(RzCFKeyValue *key_value);
 
-static RCFValueDict *rz_cf_value_dict_new(void);
-static void rz_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value);
-static void rz_cf_value_dict_print(RCFValueDict *dict);
+static RzCFValueDict *rz_cf_value_dict_new(void);
+static void rz_cf_value_dict_add(RzCFValueDict *dict, RzCFKeyValue *key_value);
+static void rz_cf_value_dict_print(RzCFValueDict *dict);
 
-static RCFValueArray *rz_cf_value_array_new(void);
-static void rz_cf_value_array_free(RCFValueArray *array);
-static void rz_cf_value_array_add(RCFValueArray *array, RCFValue *value);
-static void rz_cf_value_array_print(RCFValueArray *dict);
+static RzCFValueArray *rz_cf_value_array_new(void);
+static void rz_cf_value_array_free(RzCFValueArray *array);
+static void rz_cf_value_array_add(RzCFValueArray *array, RzCFValue *value);
+static void rz_cf_value_array_print(RzCFValueArray *dict);
 
-static RCFValueString *rz_cf_value_string_new(char *string);
-static void rz_cf_value_string_free(RCFValueString *string);
-static void rz_cf_value_string_print(RCFValueString *string);
+static RzCFValueString *rz_cf_value_string_new(char *string);
+static void rz_cf_value_string_free(RzCFValueString *string);
+static void rz_cf_value_string_print(RzCFValueString *string);
 
-static RCFValueInteger *rz_cf_value_integer_new(char *string);
-static void rz_cf_value_integer_free(RCFValueInteger *integer);
-static void rz_cf_value_integer_print(RCFValueInteger *integer);
+static RzCFValueInteger *rz_cf_value_integer_new(char *string);
+static void rz_cf_value_integer_free(RzCFValueInteger *integer);
+static void rz_cf_value_integer_print(RzCFValueInteger *integer);
 
-static RCFValueData *rz_cf_value_data_new(char *string);
-static void rz_cf_value_data_free(RCFValueData *data);
-static void rz_cf_value_data_print(RCFValueData *data);
+static RzCFValueData *rz_cf_value_data_new(char *string);
+static void rz_cf_value_data_free(RzCFValueData *data);
+static void rz_cf_value_data_print(RzCFValueData *data);
 
-static RCFValueNULL *rz_cf_value_null_new(void);
-static void rz_cf_value_null_free(RCFValueNULL *null);
-static void rz_cf_value_null_print(RCFValueNULL *null);
+static RzCFValueNULL *rz_cf_value_null_new(void);
+static void rz_cf_value_null_free(RzCFValueNULL *null);
+static void rz_cf_value_null_print(RzCFValueNULL *null);
 
-static RCFValueBool *rz_cf_value_bool_new(bool value);
-static void rz_cf_value_bool_free(RCFValueBool *bool_value);
-static void rz_cf_value_bool_print(RCFValueBool *bool_value);
+static RzCFValueBool *rz_cf_value_bool_new(bool value);
+static void rz_cf_value_bool_free(RzCFValueBool *bool_value);
+static void rz_cf_value_bool_print(RzCFValueBool *bool_value);
 
-static void rz_cf_value_free(RCFValue *value);
+static RzCFValue *rz_cf_value_clone(RzCFValue *value);
+static void rz_cf_value_free(RzCFValue *value);
 
-RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size, int options) {
-	RCFValueDict *result = NULL;
+RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size, int options) {
+	RzList *idlist = NULL;
+	RzCFValueDict *result = NULL;
 	yxml_t x;
-	int i, depth = 0;
+	int i;
 	char *content = NULL;
 
 	void *xml_buf = malloc(XMLBUFSIZE);
@@ -81,6 +95,13 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 	RzList *stack = rz_list_newf((RzListFree)&rz_cf_parse_state_free);
 	if (!stack) {
 		goto beach;
+	}
+
+	if (options & RZ_CF_OPTION_SUPPORT_IDREF) {
+		idlist = rz_list_new();
+		if (!idlist) {
+			goto beach;
+		}
 	}
 
 	rz_list_push(stack, rz_cf_parse_state_new(RZ_CF_STATE_ROOT));
@@ -101,8 +122,8 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 
 		switch (r) {
 		case YXML_ELEMSTART: {
-			RCFParseState *state = (RCFParseState *)rz_list_get_top(stack);
-			RCFParseState *next_state = NULL;
+			RzCFParseState *state = (RzCFParseState *)rz_list_get_top(stack);
+			RzCFParseState *next_state = NULL;
 
 			if (!strcmp(x.elem, "dict")) {
 				next_state = rz_cf_parse_state_new(RZ_CF_STATE_IN_DICT);
@@ -164,13 +185,11 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 				RZ_LOG_ERROR("Missing next state for elem: %s phase: %d\n", x.elem, state->phase);
 				break;
 			}
-			depth++;
-
 			break;
 		}
 		case YXML_ELEMEND: {
-			RCFParseState *state = (RCFParseState *)rz_list_pop(stack);
-			RCFParseState *next_state = (RCFParseState *)rz_list_get_top(stack);
+			RzCFParseState *state = (RzCFParseState *)rz_list_pop(stack);
+			RzCFParseState *next_state = (RzCFParseState *)rz_list_get_top(stack);
 			if (!state || !next_state) {
 				goto beach;
 			}
@@ -195,53 +214,91 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 			}
 
 			if (state->phase != RZ_CF_STATE_IN_KEY) {
-				RCFValue *value = NULL;
+				RzCFValue *value = NULL;
 
-				switch (state->phase) {
-				case RZ_CF_STATE_IN_DICT:
-					value = (RCFValue *)state->dict;
-					break;
-				case RZ_CF_STATE_IN_ARRAY:
-					value = (RCFValue *)state->array;
-					break;
-				case RZ_CF_STATE_IN_SCALAR:
-					if (!content && state->value_type != RZ_CF_FALSE && state->value_type != RZ_CF_TRUE) {
-						value = (RCFValue *)rz_cf_value_null_new();
-					} else {
-						switch (state->value_type) {
-						case RZ_CF_STRING:
-							value = (RCFValue *)rz_cf_value_string_new(content);
-							break;
-						case RZ_CF_INTEGER:
-							value = (RCFValue *)rz_cf_value_integer_new(content);
-							RZ_FREE(content);
-							break;
-						case RZ_CF_DATA:
-							value = (RCFValue *)rz_cf_value_data_new(content);
-							RZ_FREE(content);
-							break;
-						case RZ_CF_TRUE:
-							value = (RCFValue *)rz_cf_value_bool_new(true);
-							break;
-						case RZ_CF_FALSE:
-							value = (RCFValue *)rz_cf_value_bool_new(false);
-							break;
-						default:
-							break;
+				if (idlist && state->idstate == RZ_CF_ID_STATE_REF) {
+					value = rz_list_get_n(idlist, (int)state->id);
+					if (!value) {
+						RZ_LOG_ERROR("Missing value for IDREF %" PFMT32u, state->id);
+						goto beach;
+					}
+					if (state->phase == RZ_CF_STATE_IN_DICT) {
+						if (rz_list_length(state->dict->pairs) != 0) {
+							RZ_LOG_ERROR("Dict with IDREF already has elements");
+							goto beach;
+						}
+						rz_cf_value_dict_free(state->dict);
+						state->dict = NULL;
+					} else if (state->phase == RZ_CF_STATE_IN_ARRAY) {
+						if (rz_list_length(state->dict->pairs) != 0) {
+							RZ_LOG_ERROR("Array with IDREF already has elements");
+							goto beach;
+						}
+						rz_cf_value_array_free(state->array);
+						state->array = NULL;
+					} else if (state->phase == RZ_CF_STATE_IN_SCALAR && content) {
+						RZ_LOG_ERROR("Element with IDREF already has content");
+						goto beach;
+					}
+					value = rz_cf_value_clone(value);
+					if (!value) {
+						goto beach;
+					}
+				} else {
+					switch (state->phase) {
+					case RZ_CF_STATE_IN_DICT:
+						value = (RzCFValue *)state->dict;
+						break;
+					case RZ_CF_STATE_IN_ARRAY:
+						value = (RzCFValue *)state->array;
+						break;
+					case RZ_CF_STATE_IN_SCALAR:
+						if (!content && state->value_type != RZ_CF_FALSE && state->value_type != RZ_CF_TRUE) {
+							value = (RzCFValue *)rz_cf_value_null_new();
+						} else {
+							switch (state->value_type) {
+							case RZ_CF_STRING:
+								value = (RzCFValue *)rz_cf_value_string_new(content);
+								break;
+							case RZ_CF_INTEGER:
+								value = (RzCFValue *)rz_cf_value_integer_new(content);
+								RZ_FREE(content);
+								break;
+							case RZ_CF_DATA:
+								value = (RzCFValue *)rz_cf_value_data_new(content);
+								RZ_FREE(content);
+								break;
+							case RZ_CF_TRUE:
+								value = (RzCFValue *)rz_cf_value_bool_new(true);
+								break;
+							case RZ_CF_FALSE:
+								value = (RzCFValue *)rz_cf_value_bool_new(false);
+								break;
+							default:
+								break;
+							}
+						}
+						break;
+					default:
+						break;
+					}
+
+					if (idlist && state->idstate == RZ_CF_ID_STATE_SET) {
+						if (value) {
+							rz_list_insert(idlist, state->id, value);
+						} else {
+							RZ_LOG_WARN("Missing value for ID %" PFMT32u, state->id);
 						}
 					}
-					break;
-				default:
-					break;
 				}
 
 				if (next_state->phase == RZ_CF_STATE_IN_DICT) {
 					if (value) {
-						RCFKeyValue *key_value = rz_cf_key_value_new(next_state->key, value);
+						RzCFKeyValue *key_value = rz_cf_key_value_new(next_state->key, value);
 						rz_cf_value_dict_add(next_state->dict, key_value);
 					} else if (state->phase != RZ_CF_STATE_IN_IGNORE) {
 						RZ_LOG_ERROR("Missing value for key %s\n", next_state->key);
-						rz_cf_value_free((RCFValue *)value);
+						rz_cf_value_free((RzCFValue *)value);
 						goto beach;
 					}
 				} else if (next_state->phase == RZ_CF_STATE_IN_ARRAY) {
@@ -249,19 +306,18 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 						rz_cf_value_array_add(next_state->array, value);
 					} else if (state->phase != RZ_CF_STATE_IN_IGNORE) {
 						RZ_LOG_ERROR("Missing value for array\n");
-						rz_cf_value_free((RCFValue *)value);
+						rz_cf_value_free((RzCFValue *)value);
 						goto beach;
 					}
 				}
 			}
 
-			depth--;
 			content = NULL;
 			rz_cf_parse_state_free(state);
 			break;
 		}
 		case YXML_CONTENT: {
-			RCFParseState *state = (RCFParseState *)rz_list_get_top(stack);
+			RzCFParseState *state = (RzCFParseState *)rz_list_get_top(stack);
 			if (state->phase == RZ_CF_STATE_IN_IGNORE) {
 				break;
 			}
@@ -269,6 +325,58 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 				content = rz_str_new(x.data);
 			} else {
 				content = rz_str_append(content, x.data);
+			}
+			break;
+		}
+		case YXML_ATTRSTART: {
+			if (idlist) {
+				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				if (state->phase != RZ_CF_STATE_IN_DICT && state->phase != RZ_CF_STATE_IN_ARRAY && state->phase != RZ_CF_STATE_IN_SCALAR) {
+					break;
+				}
+				RzCFParsePhase next_phase;
+				if (!strcmp(x.attr, "ID")) {
+					next_phase = RZ_CF_STATE_IN_ATTR_ID;
+				} else if (!strcmp(x.attr, "IDREF")) {
+					next_phase = RZ_CF_STATE_IN_ATTR_IDREF;
+				} else {
+					break;
+				}
+				if (state->idstate != RZ_CF_ID_STATE_NONE) {
+					RZ_LOG_ERROR("Cannot have ID and IDREF on the same element");
+					goto beach;
+				}
+				RzCFParseState *next_state = rz_cf_parse_state_new(next_phase);
+				if (!next_state) {
+					goto beach;
+				}
+				rz_list_push(stack, next_state);
+			}
+			break;
+		}
+		case YXML_ATTRVAL: {
+			if (idlist) {
+				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				if (state->phase != RZ_CF_STATE_IN_ATTR_ID && state->phase != RZ_CF_STATE_IN_ATTR_IDREF) {
+					break;
+				}
+				content = rz_str_append(content, x.data);
+			}
+			break;
+		}
+		case YXML_ATTREND: {
+			if (idlist) {
+				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				if (state->phase != RZ_CF_STATE_IN_ATTR_ID && state->phase != RZ_CF_STATE_IN_ATTR_IDREF) {
+					break;
+				}
+				rz_list_pop(stack);
+				RzCFParseState *next_state = (RzCFParseState *)rz_list_last(stack);
+				next_state->id = (ut32)rz_num_get(NULL, content);
+				next_state->idstate = state->phase == RZ_CF_STATE_IN_ATTR_ID ? RZ_CF_ID_STATE_SET : RZ_CF_ID_STATE_REF;
+				RZ_FREE(content);
+				content = NULL;
+				rz_cf_parse_state_free(state);
 			}
 			break;
 		}
@@ -288,29 +396,29 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 
 beach:
 	RZ_FREE(xml_buf);
-	if (stack) {
-		rz_list_free(stack);
-	}
+	rz_list_free(stack);
+	rz_list_free(idlist);
+	free(content);
 
 	return result;
 }
 
-static RCFParseState *rz_cf_parse_state_new(RCFParsePhase phase) {
-	RCFParseState *state = RZ_NEW0(RCFParseState);
+static RzCFParseState *rz_cf_parse_state_new(RzCFParsePhase phase) {
+	RzCFParseState *state = RZ_NEW0(RzCFParseState);
 	if (state) {
 		state->phase = phase;
 	}
 	return state;
 }
 
-static void rz_cf_parse_state_free(RCFParseState *state) {
+static void rz_cf_parse_state_free(RzCFParseState *state) {
 	if (state) {
 		RZ_FREE(state);
 	}
 }
 
-static RCFKeyValue *rz_cf_key_value_new(char *key, RCFValue *value) {
-	RCFKeyValue *key_value = RZ_NEW0(RCFKeyValue);
+static RzCFKeyValue *rz_cf_key_value_new(char *key, RzCFValue *value) {
+	RzCFKeyValue *key_value = RZ_NEW0(RzCFKeyValue);
 	if (!key_value) {
 		return NULL;
 	}
@@ -321,7 +429,7 @@ static RCFKeyValue *rz_cf_key_value_new(char *key, RCFValue *value) {
 	return key_value;
 }
 
-static void rz_cf_key_value_free(RCFKeyValue *key_value) {
+static void rz_cf_key_value_free(RzCFKeyValue *key_value) {
 	if (!key_value) {
 		return;
 	}
@@ -337,8 +445,8 @@ static void rz_cf_key_value_free(RCFKeyValue *key_value) {
 	RZ_FREE(key_value);
 }
 
-static RCFValueDict *rz_cf_value_dict_new(void) {
-	RCFValueDict *dict = RZ_NEW0(RCFValueDict);
+static RzCFValueDict *rz_cf_value_dict_new(void) {
+	RzCFValueDict *dict = RZ_NEW0(RzCFValueDict);
 	if (!dict) {
 		return NULL;
 	}
@@ -349,7 +457,7 @@ static RCFValueDict *rz_cf_value_dict_new(void) {
 	return dict;
 }
 
-RZ_API void rz_cf_value_dict_free(RCFValueDict *dict) {
+RZ_API void rz_cf_value_dict_free(RzCFValueDict *dict) {
 	rz_return_if_fail(dict);
 
 	if (dict->pairs) {
@@ -360,7 +468,7 @@ RZ_API void rz_cf_value_dict_free(RCFValueDict *dict) {
 	RZ_FREE(dict);
 }
 
-static void rz_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value) {
+static void rz_cf_value_dict_add(RzCFValueDict *dict, RzCFKeyValue *key_value) {
 	if (!dict || !dict->pairs) {
 		return;
 	}
@@ -368,9 +476,9 @@ static void rz_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value) {
 	rz_list_push(dict->pairs, key_value);
 }
 
-static void rz_cf_value_dict_print(RCFValueDict *dict) {
+static void rz_cf_value_dict_print(RzCFValueDict *dict) {
 	RzListIter *iter;
-	RCFKeyValue *key_value;
+	RzCFKeyValue *key_value;
 	int length = rz_list_length(dict->pairs);
 	int i = 0;
 	printf("{");
@@ -384,8 +492,8 @@ static void rz_cf_value_dict_print(RCFValueDict *dict) {
 	printf("}");
 }
 
-static RCFValueArray *rz_cf_value_array_new(void) {
-	RCFValueArray *array = RZ_NEW0(RCFValueArray);
+static RzCFValueArray *rz_cf_value_array_new(void) {
+	RzCFValueArray *array = RZ_NEW0(RzCFValueArray);
 	if (!array) {
 		return NULL;
 	}
@@ -396,7 +504,7 @@ static RCFValueArray *rz_cf_value_array_new(void) {
 	return array;
 }
 
-static void rz_cf_value_array_free(RCFValueArray *array) {
+static void rz_cf_value_array_free(RzCFValueArray *array) {
 	if (!array) {
 		return;
 	}
@@ -410,7 +518,7 @@ static void rz_cf_value_array_free(RCFValueArray *array) {
 	RZ_FREE(array);
 }
 
-static void rz_cf_value_array_add(RCFValueArray *array, RCFValue *value) {
+static void rz_cf_value_array_add(RzCFValueArray *array, RzCFValue *value) {
 	if (!array || !array->values) {
 		return;
 	}
@@ -418,9 +526,9 @@ static void rz_cf_value_array_add(RCFValueArray *array, RCFValue *value) {
 	rz_list_push(array->values, value);
 }
 
-static void rz_cf_value_array_print(RCFValueArray *array) {
+static void rz_cf_value_array_print(RzCFValueArray *array) {
 	RzListIter *iter;
-	RCFValue *value;
+	RzCFValue *value;
 	int length = rz_list_length(array->values);
 	int i = 0;
 	printf("[");
@@ -433,8 +541,8 @@ static void rz_cf_value_array_print(RCFValueArray *array) {
 	printf("]");
 }
 
-static RCFValueString *rz_cf_value_string_new(char *string) {
-	RCFValueString *value_string = RZ_NEW0(RCFValueString);
+static RzCFValueString *rz_cf_value_string_new(char *string) {
+	RzCFValueString *value_string = RZ_NEW0(RzCFValueString);
 	if (!value_string) {
 		return NULL;
 	}
@@ -445,7 +553,7 @@ static RCFValueString *rz_cf_value_string_new(char *string) {
 	return value_string;
 }
 
-static void rz_cf_value_string_free(RCFValueString *string) {
+static void rz_cf_value_string_free(RzCFValueString *string) {
 	if (!string) {
 		return;
 	}
@@ -458,15 +566,15 @@ static void rz_cf_value_string_free(RCFValueString *string) {
 	RZ_FREE(string);
 }
 
-static void rz_cf_value_string_print(RCFValueString *string) {
+static void rz_cf_value_string_print(RzCFValueString *string) {
 	char *escaped = strdup(string->value);
 	escaped = rz_str_replace(escaped, "\"", "\\\"", 1);
 	printf("\"%s\"", escaped);
 	RZ_FREE(escaped);
 }
 
-static RCFValueInteger *rz_cf_value_integer_new(char *string) {
-	RCFValueInteger *integer = RZ_NEW0(RCFValueInteger);
+static RzCFValueInteger *rz_cf_value_integer_new(char *string) {
+	RzCFValueInteger *integer = RZ_NEW0(RzCFValueInteger);
 	if (!integer) {
 		return NULL;
 	}
@@ -477,7 +585,7 @@ static RCFValueInteger *rz_cf_value_integer_new(char *string) {
 	return integer;
 }
 
-static void rz_cf_value_integer_free(RCFValueInteger *integer) {
+static void rz_cf_value_integer_free(RzCFValueInteger *integer) {
 	if (!integer) {
 		return;
 	}
@@ -486,12 +594,12 @@ static void rz_cf_value_integer_free(RCFValueInteger *integer) {
 	RZ_FREE(integer);
 }
 
-static void rz_cf_value_integer_print(RCFValueInteger *integer) {
+static void rz_cf_value_integer_print(RzCFValueInteger *integer) {
 	printf("%llu", integer->value);
 }
 
-static RCFValueData *rz_cf_value_data_new(char *string) {
-	RCFValueData *data = RZ_NEW0(RCFValueData);
+static RzCFValueData *rz_cf_value_data_new(char *string) {
+	RzCFValueData *data = RZ_NEW0(RzCFValueData);
 	if (!data) {
 		return NULL;
 	}
@@ -511,7 +619,7 @@ static RCFValueData *rz_cf_value_data_new(char *string) {
 	return data;
 }
 
-static void rz_cf_value_data_free(RCFValueData *data) {
+static void rz_cf_value_data_free(RzCFValueData *data) {
 	if (!data) {
 		return;
 	}
@@ -525,12 +633,12 @@ static void rz_cf_value_data_free(RCFValueData *data) {
 	RZ_FREE(data);
 }
 
-static void rz_cf_value_data_print(RCFValueData *data) {
+static void rz_cf_value_data_print(RzCFValueData *data) {
 	printf("\"...\"");
 }
 
-static RCFValueNULL *rz_cf_value_null_new(void) {
-	RCFValueNULL *null = RZ_NEW0(RCFValueNULL);
+static RzCFValueNULL *rz_cf_value_null_new(void) {
+	RzCFValueNULL *null = RZ_NEW0(RzCFValueNULL);
 	if (!null) {
 		return NULL;
 	}
@@ -540,7 +648,7 @@ static RCFValueNULL *rz_cf_value_null_new(void) {
 	return null;
 }
 
-static void rz_cf_value_null_free(RCFValueNULL *null) {
+static void rz_cf_value_null_free(RzCFValueNULL *null) {
 	if (!null) {
 		return;
 	}
@@ -549,12 +657,12 @@ static void rz_cf_value_null_free(RCFValueNULL *null) {
 	RZ_FREE(null);
 }
 
-static void rz_cf_value_null_print(RCFValueNULL *null) {
+static void rz_cf_value_null_print(RzCFValueNULL *null) {
 	printf("null");
 }
 
-static RCFValueBool *rz_cf_value_bool_new(bool value) {
-	RCFValueBool *bool_value = RZ_NEW0(RCFValueBool);
+static RzCFValueBool *rz_cf_value_bool_new(bool value) {
+	RzCFValueBool *bool_value = RZ_NEW0(RzCFValueBool);
 	if (!bool_value) {
 		return NULL;
 	}
@@ -563,80 +671,184 @@ static RCFValueBool *rz_cf_value_bool_new(bool value) {
 	return bool_value;
 }
 
-static void rz_cf_value_bool_free(RCFValueBool *bool_value) {
+static void rz_cf_value_bool_free(RzCFValueBool *bool_value) {
 	if (bool_value) {
 		bool_value->type = RZ_CF_INVALID;
 		RZ_FREE(bool_value);
 	}
 }
 
-static void rz_cf_value_bool_print(RCFValueBool *bool_value) {
+static void rz_cf_value_bool_print(RzCFValueBool *bool_value) {
 	if (bool_value->type == RZ_CF_TRUE) {
 		printf("true");
 	} else {
 		printf("false");
 	}
 }
-static void rz_cf_value_free(RCFValue *value) {
+
+static RzCFValue *rz_cf_value_clone(RzCFValue *value) {
+	if (!value) {
+		return NULL;
+	}
+
+	RzCFValue *copy = NULL;
+
+	switch (value->type) {
+	case RZ_CF_DICT: {
+		RzCFValueDict *dict = rz_cf_value_dict_new();
+		if (dict) {
+			copy = (RzCFValue *)dict;
+			RzListIter *iter;
+			RzCFKeyValue *item;
+			rz_list_foreach (((RzCFValueDict *)value)->pairs, iter, item) {
+				char *key = rz_str_new(item->key);
+				if (key) {
+					RzCFValue *clone = rz_cf_value_clone(item->value);
+					if (clone) {
+						RzCFKeyValue *pair = rz_cf_key_value_new(key, clone);
+						if (pair) {
+							rz_cf_value_dict_add(dict, pair);
+						}
+						rz_cf_value_free(clone);
+					}
+					RZ_FREE(key);
+				}
+				rz_cf_value_dict_free(dict);
+				copy = NULL;
+				break;
+			}
+		}
+		break;
+	}
+	case RZ_CF_ARRAY: {
+		RzCFValueArray *array = rz_cf_value_array_new();
+		if (array) {
+			copy = (RzCFValue *)array;
+			RzListIter *iter;
+			RzCFValue *item;
+			rz_list_foreach (((RzCFValueArray *)value)->values, iter, item) {
+				RzCFValue *clone = rz_cf_value_clone(item);
+				if (clone) {
+					rz_cf_value_array_add(array, clone);
+					continue;
+				}
+				rz_cf_value_array_free(array);
+				copy = NULL;
+				break;
+			}
+		}
+		break;
+	}
+	case RZ_CF_STRING: {
+		RzCFValueString *string = RZ_NEW0(RzCFValueString);
+		if (string) {
+			string->value = rz_str_new(((RzCFValueString *)value)->value);
+			if (string->value) {
+				copy = (RzCFValue *)string;
+			} else {
+				RZ_FREE(string);
+			}
+		}
+		break;
+	}
+	case RZ_CF_INTEGER: {
+		RzCFValueInteger *integer = RZ_NEW0(RzCFValueInteger);
+		if (integer) {
+			integer->value = ((RzCFValueInteger *)value)->value;
+			copy = (RzCFValue *)integer;
+		}
+		break;
+	}
+	case RZ_CF_DATA: {
+		RzCFValueData *data = RZ_NEW0(RzCFValueData);
+		if (data) {
+			data->value = rz_buf_new_with_buf(((RzCFValueData *)value)->value);
+			if (data->value) {
+				copy = (RzCFValue *)data;
+			} else {
+				RZ_FREE(data);
+			}
+		}
+		break;
+	}
+	case RZ_CF_NULL:
+		copy = (RzCFValue *)(RZ_NEW0(RzCFValueNULL));
+		break;
+	case RZ_CF_TRUE:
+	case RZ_CF_FALSE:
+		copy = (RzCFValue *)(RZ_NEW0(RzCFValueBool));
+		break;
+	default:
+		break;
+	}
+
+	if (copy) {
+		copy->type = value->type;
+	}
+
+	return copy;
+}
+
+static void rz_cf_value_free(RzCFValue *value) {
 	if (!value) {
 		return;
 	}
 
 	switch (value->type) {
 	case RZ_CF_DICT:
-		rz_cf_value_dict_free((RCFValueDict *)value);
+		rz_cf_value_dict_free((RzCFValueDict *)value);
 		break;
 	case RZ_CF_ARRAY:
-		rz_cf_value_array_free((RCFValueArray *)value);
+		rz_cf_value_array_free((RzCFValueArray *)value);
 		break;
 	case RZ_CF_STRING:
-		rz_cf_value_string_free((RCFValueString *)value);
+		rz_cf_value_string_free((RzCFValueString *)value);
 		break;
 	case RZ_CF_INTEGER:
-		rz_cf_value_integer_free((RCFValueInteger *)value);
+		rz_cf_value_integer_free((RzCFValueInteger *)value);
 		break;
 	case RZ_CF_DATA:
-		rz_cf_value_data_free((RCFValueData *)value);
+		rz_cf_value_data_free((RzCFValueData *)value);
 		break;
 	case RZ_CF_NULL:
-		rz_cf_value_null_free((RCFValueNULL *)value);
+		rz_cf_value_null_free((RzCFValueNULL *)value);
 		break;
 	case RZ_CF_TRUE:
 	case RZ_CF_FALSE:
-		rz_cf_value_bool_free((RCFValueBool *)value);
+		rz_cf_value_bool_free((RzCFValueBool *)value);
 		break;
 	default:
 		break;
 	}
 }
 
-RZ_API void rz_cf_value_print(RCFValue *value) {
+RZ_API void rz_cf_value_print(RzCFValue *value) {
 	if (!value) {
 		return;
 	}
 
 	switch (value->type) {
 	case RZ_CF_DICT:
-		rz_cf_value_dict_print((RCFValueDict *)value);
+		rz_cf_value_dict_print((RzCFValueDict *)value);
 		break;
 	case RZ_CF_ARRAY:
-		rz_cf_value_array_print((RCFValueArray *)value);
+		rz_cf_value_array_print((RzCFValueArray *)value);
 		break;
 	case RZ_CF_STRING:
-		rz_cf_value_string_print((RCFValueString *)value);
+		rz_cf_value_string_print((RzCFValueString *)value);
 		break;
 	case RZ_CF_INTEGER:
-		rz_cf_value_integer_print((RCFValueInteger *)value);
+		rz_cf_value_integer_print((RzCFValueInteger *)value);
 		break;
 	case RZ_CF_DATA:
-		rz_cf_value_data_print((RCFValueData *)value);
+		rz_cf_value_data_print((RzCFValueData *)value);
 		break;
 	case RZ_CF_NULL:
-		rz_cf_value_null_print((RCFValueNULL *)value);
+		rz_cf_value_null_print((RzCFValueNULL *)value);
 		break;
 	case RZ_CF_TRUE:
 	case RZ_CF_FALSE:
-		rz_cf_value_bool_print((RCFValueBool *)value);
+		rz_cf_value_bool_print((RzCFValueBool *)value);
 		break;
 	default:
 		break;

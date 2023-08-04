@@ -16,6 +16,7 @@ extern "C" {
 typedef union {
 	RzBitVector *bv;
 	RzILBool *b;
+	RzFloat *f;
 } RzValUnion;
 
 /**
@@ -28,6 +29,7 @@ typedef struct rz_il_val_t {
 
 RZ_API RZ_OWN RzILVal *rz_il_value_new_bitv(RZ_NONNULL RzBitVector *bv);
 RZ_API RZ_OWN RzILVal *rz_il_value_new_bool(RZ_NONNULL RzILBool *b);
+RZ_API RZ_OWN RzILVal *rz_il_value_new_float(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzILVal *rz_il_value_new_zero_of(RzILSortPure sort);
 RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL const RzILVal *val);
 RZ_API void rz_il_value_free(RZ_NULLABLE RzILVal *val);

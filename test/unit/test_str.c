@@ -175,9 +175,9 @@ bool test_rz_str_case_nstr(void) {
 	const char *substr = "sq";
 	const char *substr_case = "Sq";
 	mu_assert_null(rz_str_case_nstr(str, substr, 5), "not contain");
-	mu_assert_eq(rz_str_case_nstr(str, substr, 8), str + 6, "contain");
+	mu_assert_ptreq(rz_str_case_nstr(str, substr, 8), str + 6, "contain");
 	mu_assert_null(rz_str_case_nstr(str, substr_case, 6), "not contain (ignore case)");
-	mu_assert_eq(rz_str_case_nstr(str, substr_case, 8), str + 6, "contain (ignore case)");
+	mu_assert_ptreq(rz_str_case_nstr(str, substr_case, 8), str + 6, "contain (ignore case)");
 	mu_end;
 }
 
@@ -725,14 +725,14 @@ bool test_rz_str_strchr(void) {
 	const char *e = "xx\xe1";
 	const char *f = "xx\xe1gg";
 
-	mu_assert_eq(rz_str_strchr(a, "z"), a + 1, "Simple search.");
-	mu_assert_eq(rz_str_strchr(a, "a"), NULL, "Simple search. Char not present.");
-	mu_assert_eq(rz_str_strchr(b, "🍍"), b, "Simple UTF-8 search.");
-	mu_assert_eq(rz_str_strchr(b, "x"), NULL, "Simple UTF-8 search. Char not present.");
-	mu_assert_eq(rz_str_strchr(c, "🍍"), c + 2, "Simple UTF-8 search. UTF-8 char within string.");
-	mu_assert_eq(rz_str_strchr(d, "g"), d + 3, "Non printable character in string.");
-	mu_assert_eq(rz_str_strchr(e, "🍍"), NULL, "Start UTF-8 byte present, but string terminates afterwards.");
-	mu_assert_eq(rz_str_strchr(f, "🍍"), NULL, "Start UTF-8 byte present, but invalid chars follow.");
+	mu_assert_ptreq(rz_str_strchr(a, "z"), a + 1, "Simple search.");
+	mu_assert_ptreq(rz_str_strchr(a, "a"), NULL, "Simple search. Char not present.");
+	mu_assert_ptreq(rz_str_strchr(b, "🍍"), b, "Simple UTF-8 search.");
+	mu_assert_ptreq(rz_str_strchr(b, "x"), NULL, "Simple UTF-8 search. Char not present.");
+	mu_assert_ptreq(rz_str_strchr(c, "🍍"), c + 2, "Simple UTF-8 search. UTF-8 char within string.");
+	mu_assert_ptreq(rz_str_strchr(d, "g"), d + 3, "Non printable character in string.");
+	mu_assert_ptreq(rz_str_strchr(e, "🍍"), NULL, "Start UTF-8 byte present, but string terminates afterwards.");
+	mu_assert_ptreq(rz_str_strchr(f, "🍍"), NULL, "Start UTF-8 byte present, but invalid chars follow.");
 
 	mu_end;
 }

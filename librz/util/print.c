@@ -1480,6 +1480,5 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 		rz_strbuf_append_n(out, bw_str + tok->start, tok->len);
 		rz_strbuf_append(out, reset);
 	}
-	rz_strbuf_append(out, "\0");
 	return out;
 }

@@ -56,7 +56,7 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
 oml
-?e
+echo
 ood > /dev/null
 oml
 EOF
@@ -76,14 +76,14 @@ db @ main+3
 ood > $_
 dc # should hit the first breakpoint
 .drf
-?v eip-main
+%v eip-main
 ood > $_
 dc # should hit the first breakpoint
 .drf
-?v eip-main
+%v eip-main
 dc # should hit the the second breakpoint
 .drf
-?v eip-main
+%v eip-main
 EOF
 EXPECT=<<EOF
 0x0
@@ -108,12 +108,12 @@ RUN
 
 NAME=ood check for ptrace errors
 FILE=bins/elf/analysis/x86-helloworld-gcc
-ARGS=-e log.level=5
+ARGS=-e log.level=4
 CMDS=<<EOF
 ood
 EOF
 REGEXP_FILTER_ERR=([a-zA-Z-]+\s+)
 EXPECT_ERR=<<EOF
-Process with PID File -helloworld-gcc  reopened in read-write mode
+Process with PID File -helloworld-gcc reopened in read-write mode
 EOF
 RUN

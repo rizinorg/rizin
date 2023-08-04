@@ -98,18 +98,9 @@ RZ_API RzCrypto *rz_crypto_new(void) {
 		goto rz_crypto_new_bad;
 	}
 
-	cry->plugins = rz_list_new();
+	cry->plugins = rz_list_new_from_array((const void **)crypto_static_plugins, RZ_ARRAY_SIZE(crypto_static_plugins));
 	if (!cry->plugins) {
 		goto rz_crypto_new_bad;
-	}
-
-	for (ut32 i = 0; i < RZ_ARRAY_SIZE(crypto_static_plugins); i++) {
-		RzCryptoPlugin *p = RZ_NEW0(RzCryptoPlugin);
-		if (!p) {
-			goto rz_crypto_new_bad;
-		}
-		memcpy(p, crypto_static_plugins[i], sizeof(RzCryptoPlugin));
-		rz_crypto_plugin_add(cry, p);
 	}
 	return cry;
 

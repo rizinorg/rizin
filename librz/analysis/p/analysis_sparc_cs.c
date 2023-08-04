@@ -6,10 +6,6 @@
 #include <capstone/capstone.h>
 #include <capstone/sparc.h>
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
-
 #define INSOP(n) insn->detail->sparc.operands[n]
 #define INSCC    insn->detail->sparc.cc
 
@@ -100,7 +96,7 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -217,23 +213,27 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		case SPARC_INS_FB:
 			switch (INSOP(0).type) {
 			case SPARC_OP_REG:
-				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-				op->delay = 1;
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP(1).imm;
 				}
 				if (INSCC != SPARC_CC_ICC_A) { // always
 					op->fail = addr + 8;
+					op->delay = 1;
+					op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+				} else {
+					op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				}
 				break;
 			case SPARC_OP_IMM:
-				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-				op->delay = 1;
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP(0).imm;
 				}
 				if (INSCC != SPARC_CC_ICC_A) { // always
 					op->fail = addr + 8;
+					op->delay = 1;
+					op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+				} else {
+					op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				}
 				break;
 			default:
@@ -406,7 +406,7 @@ RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 	.arch = "sparc",
 	.bits = 32 | 64,
 	.archinfo = archinfo,
-	.op = &analop,
+	.op = &analyze_op,
 	.get_reg_profile = &get_reg_profile,
 };
 

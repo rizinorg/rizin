@@ -128,9 +128,9 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 			rz_cons_pal_random();
 			break;
 		case '.':
-			rcolor.r = rz_num_rand(0xff);
-			rcolor.g = rz_num_rand(0xff);
-			rcolor.b = rz_num_rand(0xff);
+			rcolor.r = rz_num_rand32(0xff);
+			rcolor.g = rz_num_rand32(0xff);
+			rcolor.b = rz_num_rand32(0xff);
 			break;
 		case 'c':
 			rz_line_set_prompt("Preview command> ");

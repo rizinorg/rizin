@@ -43,13 +43,13 @@ typedef const char *(*RzPrintColorFor)(void *user, ut64 addr, bool verbose);
 typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, int mode);
 
 typedef enum {
-	RZ_ASM_TOKEN_UNKNOWN = 0, //< Does not fit to any token below.
-	RZ_ASM_TOKEN_MNEMONIC, //< Asm mnemonics like: mov, push, lea...
-	RZ_ASM_TOKEN_OPERATOR, //< Arithmetic operators: +,-,<< etc.
-	RZ_ASM_TOKEN_NUMBER, //< Numbers
-	RZ_ASM_TOKEN_REGISTER, //< Registers
-	RZ_ASM_TOKEN_SEPARATOR, //< Brackets, comma etc.
-	RZ_ASM_TOKEN_META, //< Meta information (e.g Hexagon packet prefix, ARM & Hexagon number prefix).
+	RZ_ASM_TOKEN_UNKNOWN = 0, ///< Does not fit to any token below.
+	RZ_ASM_TOKEN_MNEMONIC, ///< Asm mnemonics like: mov, push, lea...
+	RZ_ASM_TOKEN_OPERATOR, ///< Arithmetic operators: +,-,<< etc.
+	RZ_ASM_TOKEN_NUMBER, ///< Numbers
+	RZ_ASM_TOKEN_REGISTER, ///< Registers
+	RZ_ASM_TOKEN_SEPARATOR, ///< Brackets, comma etc.
+	RZ_ASM_TOKEN_META, ///< Meta information (e.g Hexagon packet prefix, ARM & Hexagon number prefix).
 
 	RZ_ASM_TOKEN_LAST,
 } RzAsmTokenType;
@@ -58,21 +58,21 @@ typedef enum {
  *  \brief A token of an asm string holding meta data.
  */
 typedef struct {
-	size_t start; //< byte-offset into `str` where this token starts. Must be exactly at a utf-8 codepoint boundary.
-	size_t len; //< `str` length of token in bytes.
+	size_t start; ///< byte-offset into `str` where this token starts. Must be exactly at a utf-8 codepoint boundary.
+	size_t len; ///< `str` length of token in bytes.
 	RzAsmTokenType type;
 	union {
-		ut64 number; //< Number of RZ_ASM_TOKEN_NUMBER
+		ut64 number; ///< Number of RZ_ASM_TOKEN_NUMBER
 	} val;
 } RzAsmToken;
 
 /**
- * \brief An tokenized asm string.
+ * \brief A tokenized asm string.
  */
 typedef struct {
 	ut32 op_type; ///< RzAnalysisOpType. Mnemonic color depends on this.
-	RzStrBuf *str; //< Contains the raw asm string
-	RzVector /*<RzAsmToken>*/ *tokens; //< Contains only the tokenization meta-info without strings, ordered by start for log2(n) access
+	RzStrBuf *str; ///< Contains the raw asm string
+	RzVector /*<RzAsmToken>*/ *tokens; ///< Contains only the tokenization meta-info without strings, ordered by start for log2(n) access
 } RzAsmTokenString;
 
 typedef struct {
@@ -84,9 +84,9 @@ typedef struct {
  * \brief Pattern for a asm string token.
  */
 typedef struct {
-	RzAsmTokenType type; //< Asm token type.
-	char *pattern; //< The regex pattern describing the tokens.
-	RzRegex *regex; //< Compiled regex pattern.
+	RzAsmTokenType type; ///< Asm token type.
+	char *pattern; ///< The regex pattern describing the tokens.
+	RzRegex *regex; ///< Compiled regex pattern.
 } RzAsmTokenPattern;
 
 /**
@@ -94,8 +94,8 @@ typedef struct {
  *
  */
 typedef struct {
-	bool reset_bg; // Reset the background color?
-	ut64 hl_addr; // Address which should be highlighted. Usually the function address.
+	bool reset_bg; ///< Reset the background color?
+	ut64 hl_addr; ///< Address which should be highlighted. Usually the function address.
 } RzPrintAsmColorOpts;
 
 typedef struct rz_print_zoom_t {

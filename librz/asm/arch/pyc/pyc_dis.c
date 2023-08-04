@@ -48,7 +48,7 @@ int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList /*<pyc_code_object 
 			}
 			const char *arg = parse_arg(&ops->opcodes[op], oparg, names, consts, varnames, freevars, cellvars, ops->opcode_arg_fmt);
 			if (arg != NULL) {
-				rz_strbuf_appendf(&opstruct->buf_asm, "%20s", arg);
+				rz_strbuf_setf(&opstruct->buf_asm, "%-22s%s", name, arg);
 				free((char *)arg);
 			}
 		} else if (ops->bits == 8) {

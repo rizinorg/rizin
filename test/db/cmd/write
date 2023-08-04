@@ -341,13 +341,13 @@ CMDS=<<EOF
 e io.va=0
 e io.pcache=true
 s 0
-ps 2
+ps @! 2
 wx 9090
 p8 2
 e io.pcache=0
 sd +1
 s 0
-ps 2
+ps @! 2
 EOF
 EXPECT=<<EOF
 MZ
@@ -363,9 +363,9 @@ w 0123456789abcde
 w a\57b\0
 w 1\0532\0 @ 0x4
 w 0\1741\0 @ 0x8
-ps
-ps @ 0x4
-ps @ 0x8
+ps @e:bin.str.enc=utf8
+ps @ 0x4 @e:bin.str.enc=utf8
+ps @ 0x8 @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 a/b
@@ -426,7 +426,7 @@ FILE=malloc://1024
 NAME=address after wxs at tmpseek
 CMDS=<<EOF
 2 wx 9090 @ 8 @e:cfg.wseek=true
-?vi $$
+%vi $$
 EOF
 EXPECT=<<EOF
 0
@@ -467,7 +467,7 @@ wx 00000000
 afv # check var was deleted
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      0000           add   byte [rax], al
 | 0x00000002      7502           jne   6
 | ----------- true: 0x00000006  false: 0x00000004
@@ -476,7 +476,7 @@ EXPECT=<<EOF
 | 0x00000006      0000           add   byte [rax], al
 \ 0x00000008      c3             ret
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      0000           add   byte [rax], al
 | 0x00000002      7502           jne   6
 | ----------- true: 0x00000006  false: 0x00000004
@@ -486,7 +486,7 @@ EXPECT=<<EOF
 | ----------- true: 0x00000008
 \ 0x00000008      c3             ret
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | ; var int64_t var_4h @ stack - 0x4
 | 0x00000000      488b45fc       mov   rax, qword [var_4h]
 | 0x00000004      7502           jne   8
@@ -495,7 +495,7 @@ EXPECT=<<EOF
 | ----------- true: 0x00000008
 \ 0x00000008      c3             ret
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | ; var int64_t test @ stack - 0x4
 | 0x00000000      488b45fc       mov   rax, qword [test]
 | 0x00000004      75fa           jne   fcn.00000000
@@ -520,7 +520,7 @@ wx e802
 pdr
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      e802000000     call  7
 | 0x00000005      7502           jne   9
 | ----------- true: 0x00000009  false: 0x00000007
@@ -529,7 +529,7 @@ EXPECT=<<EOF
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
 
-/ fcn.00000000 (int64_t arg_2h);
+/ fcn.00000000(int64_t arg_2h);
 | ; arg int64_t arg_2h @ stack + 0x2
 | 0x00000000      7507           jne   9
 | ----------- true: 0x00000009  false: 0x00000002
@@ -540,7 +540,7 @@ EXPECT=<<EOF
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
 
-/ fcn.00000000 (int64_t arg_2h);
+/ fcn.00000000(int64_t arg_2h);
 | ; arg int64_t arg_2h @ stack + 0x2
 | 0x00000000      e802000000     call  7
 | 0x00000005      7502           jne   9
@@ -566,13 +566,13 @@ wa "add byte [rax], bl"
 pdr
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      0000           add   byte [rax], al
 | 0x00000002      c3             ret
 
 \ 0x00000004      c3             ret
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      0018           add   byte [rax], bl
 | 0x00000002      c3             ret
 
@@ -597,7 +597,7 @@ wx eb040000eb02 @ 4
 pdr
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      eb04           jmp   6
 | ----------- true: 0x00000006
 | 0x00000002      eb02           jmp   6
@@ -607,7 +607,7 @@ EXPECT=<<EOF
 | ----------- true: 0x00000002  false: 0x00000008
 \ 0x00000008      c3             ret
 
-/ fcn.00000000 ();
+/ fcn.00000000();
 | 0x00000000      eb02           jmp   4
 | ----------- true: 0x00000004
 | ; CODE XREF from fcn.00000000 @ 

@@ -32,21 +32,6 @@
 #define RZ_MODE_CLASSDUMP 0x040
 #define RZ_MODE_EQUAL     0x080
 
-/**
- * \brief Enum to describe the way data are printed
- */
-typedef enum {
-	RZ_OUTPUT_MODE_STANDARD = 1 << 0,
-	RZ_OUTPUT_MODE_JSON = 1 << 1,
-	RZ_OUTPUT_MODE_RIZIN = 1 << 2,
-	RZ_OUTPUT_MODE_QUIET = 1 << 3,
-	RZ_OUTPUT_MODE_SDB = 1 << 4,
-	RZ_OUTPUT_MODE_LONG = 1 << 5,
-	RZ_OUTPUT_MODE_LONG_JSON = 1 << 6,
-	RZ_OUTPUT_MODE_TABLE = 1 << 7,
-	RZ_OUTPUT_MODE_QUIETEST = 1 << 8,
-} RzOutputMode;
-
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written */
@@ -285,7 +270,7 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #define RZ_NEW(x)        (x *)malloc(sizeof(x))
 #define RZ_NEWCOPY(x, y) (x *)rz_new_copy(sizeof(x), y)
 
-static inline void *rz_new_copy(int size, void *data) {
+static inline void *rz_new_copy(int size, const void *data) {
 	void *a = malloc(size);
 	if (a) {
 		memcpy(a, data, size);
@@ -563,7 +548,8 @@ typedef enum {
 	RZ_SYS_ARCH_HPPA,
 	RZ_SYS_ARCH_V810,
 	RZ_SYS_ARCH_LM32,
-	RZ_SYS_ARCH_RISCV
+	RZ_SYS_ARCH_RISCV,
+	RZ_SYS_ARCH_TRICORE,
 } RzSysArch;
 
 /* os */

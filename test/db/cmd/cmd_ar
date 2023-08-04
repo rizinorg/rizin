@@ -6,31 +6,31 @@ e asm.bits=64
 # assignment with or without spaces
 ar rax = 0x1337
 ar rbx=12648430
-?e -- default selection
+echo -- default selection
 ar
-?e -- json
+echo -- json
 arj
-?e -- assignment commands
+echo -- assignment commands
 ar*
-?e -- table
+echo -- table
 art
-?e -- columns
+echo -- columns
 ar=
 ar rbp=-1
 ar rip=-1
 ar=
-?e -- single reg filter
+echo -- single reg filter
 ar rax
-?e -- quiet single reg
+echo -- quiet single reg
 arq rax
-?e -- register roles
+echo -- register roles
 ar PC
 ar SP
-?e -- specific size filter
+echo -- specific size filter
 ar 16
-?e -- type filter
+echo -- type filter
 ar drx
-?e -- all
+echo -- all
 ar all
 EOF
 EXPECT=<<EOF
@@ -401,42 +401,42 @@ ar rax=0x1337
 ar dr0=0xc0ffee
 araS
 arab gpr
-?e -- default should be gpr too:
+echo -- default should be gpr too:
 arab
-?e --
+echo --
 arab drx
-?e -- push
+echo -- push
 ara+
 araS
 arab gpr
-?e -- change
+echo -- change
 ar rax = 0x4242
 arab gpr
-?e --
+echo --
 arab drx
-?e -- pop
+echo -- pop
 ara-
 araS
 arab gpr
-?e --
+echo --
 arab drx
-?e -- zero just gpr
+echo -- zero just gpr
 ara0 gpr
 arab gpr
-?e --
+echo --
 arab drx
-?e -- all zero
+echo -- all zero
 ara0
 arab gpr
-?e --
+echo --
 arab drx
-?e --
+echo --
 araw 4242 gpr
 arab gpr
-?e --
+echo --
 araw 1337
 arab gpr
-?e -- no overflow
+echo -- no overflow
 araw ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 arab gpr
 EOF
@@ -588,15 +588,15 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 arf
-?e --
+echo --
 .arf
 fsl
 fl
-?e --
+echo --
 arf-
-?e --------
+echo --------
 arf rax
-?e --
+echo --
 arf- rax
 EOF
 EXPECT=<<EOF
@@ -623,6 +623,7 @@ fss-
 --
     0 * classes
    18 * registers
+    0 * relocs
     0 * sections
     0 * segments
     0 * symbols
@@ -926,9 +927,9 @@ aras
 ar rax = 0x1337
 ar rcx = 0x4321
 ard
-?e --
+echo --
 aro
-?e -- with filter
+echo -- with filter
 aro rcx
 EOF
 EXPECT=<<EOF
@@ -966,15 +967,15 @@ FILE=
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-?e -- initial flags
+echo -- initial flags
 fl
-?e --
+echo --
 ar rax=0x1234
 fl
-?e --
+echo --
 ar rbx=0x4321
 fl
-?e --
+echo --
 ara0
 fl
 EOF

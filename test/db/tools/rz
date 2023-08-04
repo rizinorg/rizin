@@ -88,9 +88,9 @@ RUN
 NAME=rizin shortcut
 FILE==
 CMDS=<<EOF
-?q `!!rizin -h~Usage?`
-?+ ?vi $?
-?! ?e `!!rizin.bat -h~Usage?`
+%q `!!rizin -h~Usage?`
+%+ %vi $?
+%! echo `!!rizin.bat -h~Usage?`
 EOF
 EXPECT=<<EOF
 1
@@ -147,7 +147,7 @@ NAME=rizin project with explicit file
 FILE==
 CMDS=<<EOF
 !rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
-?e Same project, different file
+echo Same project, different file
 !rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "ol; pdq 3 @ easy" bins/elf/ioli/crackme0x01
 !rm .crackme.rzdb
 EOF
@@ -159,7 +159,7 @@ Same project, different file
 0x080483fe   easy:
 0x080483fe                 29c4  sub esp, eax
 0x08048400       c7042428850408  mov dword [esp], str.IOLI_Crackme_Level_0x01
-0x08048407           e810ffffff  call sym.imp.printf
+0x08048407           e810ffffff  call sym.imp.printf_0x804831c
 EOF
 RUN
 
@@ -167,7 +167,7 @@ NAME=rizin project with implicit file
 FILE==
 CMDS=<<EOF
 !rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00
-?e Reload project including file
+echo Reload project including file
 !rizin -escr.utf8=0 -escr.color=0 -easm.bytes=1 -escr.interactive=0 -N -p .crackme2.rzdb -Qc "pdq 3 @ easy"
 !rm .crackme2.rzdb
 EOF
@@ -214,7 +214,7 @@ RUN
 
 NAME=read from stdin
 FILE=--
-CMDS=?e \r\n | rizin -N -e scr.color=0 -qc "px 16" -
+CMDS=echo \r\n | rizin -N -e scr.color=0 -qc "px 16" -
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  0d0a 0aff ffff ffff ffff ffff ffff ffff  ................

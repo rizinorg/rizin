@@ -245,7 +245,7 @@ static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
 	if (il_op) {
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
-		rz_il_op_effect_stringify(il_op, &sb);
+		rz_il_op_effect_stringify(il_op, &sb, false);
 		printf("%s\n", rz_strbuf_get(&sb));
 		fflush(stdout); // to appear before validation report
 		rz_strbuf_fini(&sb);
@@ -492,10 +492,15 @@ static void __load_plugins(RzAsmState *as) {
 
 	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
 	char *sysplugindir = rz_path_system(RZ_PLUGINS);
+	char *extraplugindir = rz_path_extra(RZ_PLUGINS);
 	rz_lib_opendir(as->l, homeplugindir, false);
 	rz_lib_opendir(as->l, sysplugindir, false);
+	if (extraplugindir) {
+		rz_lib_opendir(as->l, extraplugindir, false);
+	}
 	free(homeplugindir);
 	free(sysplugindir);
+	free(extraplugindir);
 
 	free(tmp);
 	free(path);

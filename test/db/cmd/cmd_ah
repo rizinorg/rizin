@@ -3,10 +3,10 @@ FILE==
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
-?e before:
+echo before:
 ahl
 ah- @ 0x10
-?e after:
+echo after:
 ahl
 EOF
 EXPECT=<<EOF
@@ -23,10 +23,10 @@ FILE==
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
-?e before:
+echo before:
 ahl
 ah- @ 0x10
-?e after:
+echo after:
 ahl
 EOF
 EXPECT=<<EOF
@@ -58,16 +58,16 @@ ahS jz
 aho call
 
 ahi 0x4321 @ 0x0815
-?e all:
+echo all:
 ahl
-?e --
-?e at 0x1337:
+echo --
+echo at 0x1337:
 ahl. @ 0x1337
-?e --
-?e at 0xdeadbeef
+echo --
+echo at 0xdeadbeef
 ahl. @ 0xdeadbeef
-?e --
-?e at 0x42
+echo --
+echo at 0x42
 ahl. @ 0x42
 EOF
 EXPECT=<<EOF
@@ -105,10 +105,10 @@ ahS jz
 aho call
 
 ahi 0x4321 @ 0x0815
-?e all:
+echo all:
 ahl*
-?e --
-?e at 0x1337:
+echo --
+echo at 0x1337:
 ahl.* @ 0x1337
 EOF
 EXPECT=<<EOF
@@ -167,10 +167,10 @@ ahS jz
 aho call
 
 ahi 0x4321 @ 0x0815
-?e all:
+echo all:
 ahlj
-?e --
-?e at 0x1337:
+echo --
+echo at 0x1337:
 ahl.j @ 0x1337
 EOF
 EXPECT=<<EOF
@@ -211,21 +211,21 @@ FILE==
 CMDS=<<EOF
 aha arm @ 0x42
 aha 0 @ 0x84
-?e -- all
+echo -- all
 ahl
-?e -- all json
+echo -- all json
 ahlj
-?e -- all cmd
+echo -- all cmd
 ahl*
-?e -- before hints
+echo -- before hints
 ahl. @ 0
-?e -- at first
+echo -- at first
 ahl. @ 0x42
-?e -- between hints
+echo -- between hints
 ahl. @ 0x60
-?e -- at second
+echo -- at second
 ahl. @ 0x84
-?e -- after second
+echo -- after second
 ahl. @ 0x100
 EOF
 EXPECT=<<EOF
@@ -254,21 +254,21 @@ FILE==
 CMDS=<<EOF
 ahb 16 @ 0x42
 ahb 0 @ 0x84
-?e -- all
+echo -- all
 ahl
-?e -- all json
+echo -- all json
 ahlj
-?e -- all cmd
+echo -- all cmd
 ahl*
-?e -- before hints
+echo -- before hints
 ahl. @ 0
-?e -- at first
+echo -- at first
 ahl. @ 0x42
-?e -- between hints
+echo -- between hints
 ahl. @ 0x60
-?e -- at second
+echo -- at second
 ahl. @ 0x84
-?e -- after second
+echo -- after second
 ahl. @ 0x100
 EOF
 EXPECT=<<EOF

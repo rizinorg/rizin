@@ -1377,6 +1377,36 @@ bool test_rz_buf_fwd_scan(void) {
 	mu_end;
 }
 
+bool test_rz_buf_negative(bool use_slice) {
+	// Tests for reading around the high boundary of a 64bit address space
+	// This is unfortunately currently not fully supported due to st64 being used
+	// in many places where negative values indicate failure.
+	// But at attempted read at such a high address should at least not break the
+	// buffer and further reads should continue to succeed.
+	RzBuffer *orig = rz_buf_new_with_bytes((ut8 *)"ABCD", 4);
+	RzBuffer *b = use_slice ? rz_buf_new_slice(orig, 0, 100) : orig;
+
+	ut8 buf[8];
+	st64 r = rz_buf_read_at(b, 0xFFFFFFFFFFFF0000ULL, buf, sizeof(buf));
+	mu_assert_eq(r, -1, "high read failure");
+
+	// Due to read_at temporarily having to set and reset the seek,
+	// a high read is prone to break the seek state.
+	// So check if the buffer is still functional.
+
+	r = rz_buf_read_at(b, 1, buf, sizeof(buf));
+	mu_assert_eq(r, 3, "low read after high read succeeded");
+	mu_assert_eq(strncmp((const char *)buf, "BCD", 3), 0, "low read result");
+
+	// Add more tests here when full 64bit spaces are supported in RzBuffer
+
+	if (use_slice) {
+		rz_buf_free(b);
+	}
+	rz_buf_free(orig);
+	mu_end;
+}
+
 int all_tests() {
 	time_t seed = time(0);
 	printf("Jamie Seed: %llu\n", (unsigned long long)seed);
@@ -1415,6 +1445,8 @@ int all_tests() {
 	mu_run_test(test_rz_buf_whole_buf);
 	mu_run_test(test_rz_buf_whole_buf_alloc);
 	mu_run_test(test_rz_buf_fwd_scan);
+	mu_run_test(test_rz_buf_negative, false);
+	mu_run_test(test_rz_buf_negative, true);
 	return tests_passed != tests_run;
 }
 

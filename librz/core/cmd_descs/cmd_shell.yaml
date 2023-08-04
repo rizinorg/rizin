@@ -4,6 +4,10 @@
 name: cmd_shell
 type: RZ_CMD_DESC_TYPE_GROUP
 commands:
+  - name: ascii
+    summary: Print ASCII table
+    cname: cmd_shell_ascii_table
+    args: []
   - name: date
     summary: Get current date
     cname: cmd_shell_date
@@ -30,12 +34,12 @@ commands:
     details:
       - name: Examples
         entries:
-          - text: "%"
+          - text: "env"
             comment: List all environment variables
-          - text: "%"
+          - text: "env"
             arg_str: "SHELL"
             comment: Print value of SHELL variable
-          - text: "%"
+          - text: "env"
             arg_str: "TMPDIR=/tmp"
             comment: Set TMPDIR to "/tmp"
           - text: "env"
@@ -74,10 +78,26 @@ commands:
   - name: ls
     cname: cmd_shell_ls
     summary: List files and directories
+    args_str: " [-e -q -l -j] <dir/file>"
     args:
-      - name: arg
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: e
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: q
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: l
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: j
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: path
+        type: RZ_CMD_ARG_TYPE_FILE
         optional: true
   - name: rm
     cname: cmd_shell_rm
@@ -109,9 +129,18 @@ commands:
     summary: Display a line of text
     cname: cmd_shell_echo
     args:
-      - name: argument
+      - name: strs
         type: RZ_CMD_ARG_TYPE_STRING
         flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+  - name: clippy
+    summary: echo but with a comic
+    cname: cmd_shell_clippy
+    args:
+      - name: strs
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
   - name: cp
     summary: Copy <src> file to <dst>
     cname: cmd_shell_cp
@@ -171,6 +200,10 @@ commands:
     cname: cmd_shell_cls
     handler: cmd_shell_clear
     args: []
+  - name: flush
+    summary: Flush console
+    cname: cmd_shell_flush
+    args: []
   - name: which
     cname: cmd_shell_which
     summary: Which shell command
@@ -187,3 +220,42 @@ commands:
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_STRING
+  - name: ver
+    summary: Show version information
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: ver
+        summary: Show version info
+        cname: show_version_info
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_JSON
+      - name: vernum
+        summary: Show numeric version
+        cname: show_version_numeric
+        args: []
+      - name: vermajor
+        summary: Show major version
+        cname: show_version_major
+        args: []
+      - name: verminor
+        summary: Show minor version
+        cname: show_version_minor
+        args: []
+      - name: verpatch
+        summary: Show patch version
+        cname: show_version_patch
+        args: []
+  - name: time
+    summary: Calculate time taken to run a command
+    cname: calculate_command_time
+    args:
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+  - name: inittime
+    summary: Print init time values
+    cname: print_init_time_values
+    args: []

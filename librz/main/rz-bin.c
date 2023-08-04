@@ -621,9 +621,9 @@ static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) 
 	}
 }
 
-static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
+static bool print_demangler_info(const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, void *user) {
 	(void)user;
-	printf("%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
+	printf("%-6s %-12s %s\n", plugin->language, plugin->license, plugin->author);
 	return true;
 }
 
@@ -702,6 +702,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
 		char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
 		char *plugindir = rz_path_system(RZ_PLUGINS);
+		char *extraplugindir = rz_path_extra(RZ_PLUGINS);
 		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
 			&lib_demangler_cb, &lib_demangler_dt, bin->demangler);
@@ -716,8 +717,12 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 		rz_lib_opendir(l, homeplugindir, false);
 		rz_lib_opendir(l, plugindir, false);
+		if (extraplugindir) {
+			rz_lib_opendir(l, extraplugindir, false);
+		}
 		free(homeplugindir);
 		free(plugindir);
+		free(extraplugindir);
 		free(path);
 		rz_lib_free(l);
 	}
@@ -989,13 +994,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_core_fini(&core);
 			return 1;
 		}
+		RzDemanglerFlag dflags = rz_demangler_get_flags(bin->demangler);
 		if (!strcmp(file, "-")) {
 			for (;;) {
 				file = stdin_gets(false);
 				if (!file || !*file) {
 					break;
 				}
-				res = rz_demangler_plugin_demangle(plugin, file);
+				res = rz_demangler_plugin_demangle(plugin, file, dflags);
 				if (RZ_STR_ISNOTEMPTY(res)) {
 					printf("%s\n", res);
 					ret_num = 0;
@@ -1007,7 +1013,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			stdin_gets(true);
 		} else {
-			res = rz_demangler_plugin_demangle(plugin, file);
+			res = rz_demangler_plugin_demangle(plugin, file, dflags);
 			if (RZ_STR_ISNOTEMPTY(res)) {
 				printf("%s\n", res);
 				ret_num = 0;

@@ -2,36 +2,26 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_util.h>
 
-#define MINLEN 1
-static int is_string(const ut8 *buf, int size, int *len) {
-	int i;
-	if (size < 1) {
-		return 0;
+static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding, bool big_endian) {
+	if (!buf || size < 1) {
+		return false;
 	}
-	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
-		*len = 1; // XXX: TODO: Measure wide string length
-		return 2; // is wide
+
+	RzUtilStrScanOptions opt = {
+		.buf_size = size,
+		.max_uni_blocks = 4,
+		.min_str_length = 4,
+		.prefer_big_endian = big_endian,
+		.check_ascii_freq = false,
+	};
+
+	if (rz_scan_strings_single_raw(buf, size, &opt, encoding, dstr) && (*dstr)->addr) {
+		rz_detected_string_free(*dstr);
+		*dstr = NULL;
 	}
-	for (i = 0; i < size; i++) {
-		if (!buf[i] && i > MINLEN) {
-			*len = i;
-			return 1;
-		}
-		if (buf[i] == 10 || buf[i] == 13 || buf[i] == 9) {
-			continue;
-		}
-		if (buf[i] < 32 || buf[i] > 127) {
-			// not ascii text
-			return 0;
-		}
-		if (!IS_PRINTABLE(buf[i])) {
-			*len = i;
-			return 0;
-		}
-	}
-	*len = i;
-	return 1;
+	return *dstr;
 }
 
 static int is_number(const ut8 *buf, int size) {
@@ -54,7 +44,6 @@ static int is_invalid(const ut8 *buf, int size) {
 	return (!memcmp(buf, "\xff\xff\xff\xff\xff\xff\xff\xff", size)) ? 1 : 0;
 }
 
-#define USE_IS_VALID_OFFSET 1
 static ut64 is_pointer(RzAnalysis *analysis, const ut8 *buf, int size) {
 	ut64 n;
 	ut8 buf2[32];
@@ -66,23 +55,8 @@ static ut64 is_pointer(RzAnalysis *analysis, const ut8 *buf, int size) {
 	if (!n) {
 		return 1; // null pointer
 	}
-#if USE_IS_VALID_OFFSET
 	int r = iob->is_valid_offset(iob->io, n, 0);
 	return r ? n : 0LL;
-#else
-	// optimization to ignore very low and very high pointers
-	// this makes disasm 5x faster, but can result in some false positives
-	// we should compare with current offset, to avoid
-	// short/long references. and discard invalid ones
-	if (n < 0x1000)
-		return 0; // probably wrong
-	if (n > 0xffffffffffffLL)
-		return 0; // probably wrong
-
-	if (iob->read_at(iob->io, n, buf2, size) != size)
-		return 0;
-	return is_invalid(buf2, size) ? 0 : n;
-#endif
 }
 
 static bool is_bin(const ut8 *buf, int size) {
@@ -102,8 +76,8 @@ static bool is_bin(const ut8 *buf, int size) {
 // TODO: add is_flag, is comment?
 
 RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalette *pal) {
-	int i, len, mallocsz = 1024;
-	ut32 n32;
+	int i = 0, len = 0, mallocsz = 1024;
+	ut32 n32 = 0;
 
 	if (!d) {
 		return NULL;
@@ -134,17 +108,14 @@ RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalett
 	}
 	rz_strbuf_append(sb, "  ");
 	switch (d->type) {
-	case RZ_ANALYSIS_DATA_TYPE_STRING:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_STRING:
 		if (pal) {
 			rz_strbuf_appendf(sb, "%sstring \"%s\"" Color_RESET, pal->comment, d->str);
 		} else {
 			rz_strbuf_appendf(sb, "string \"%s\"", d->str);
 		}
 		break;
-	case RZ_ANALYSIS_DATA_TYPE_WIDE_STRING:
-		rz_strbuf_append(sb, "wide string");
-		break;
-	case RZ_ANALYSIS_DATA_TYPE_NUMBER:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_NUMBER:
 		if (pal) {
 			const char *k = pal->num;
 			if (n32 == d->ptr) {
@@ -162,7 +133,7 @@ RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalett
 			}
 		}
 		break;
-	case RZ_ANALYSIS_DATA_TYPE_POINTER:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_POINTER:
 		rz_strbuf_append(sb, "pointer ");
 		if (pal) {
 			const char *k = pal->offset;
@@ -171,23 +142,23 @@ RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalett
 			rz_strbuf_appendf(sb, " 0x%08" PFMT64x, d->ptr);
 		}
 		break;
-	case RZ_ANALYSIS_DATA_TYPE_INVALID:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_INVALID:
 		if (pal) {
 			rz_strbuf_appendf(sb, "%sinvalid" Color_RESET, pal->invalid);
 		} else {
 			rz_strbuf_append(sb, "invalid");
 		}
 		break;
-	case RZ_ANALYSIS_DATA_TYPE_HEADER:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_HEADER:
 		rz_strbuf_append(sb, "header");
 		break;
-	case RZ_ANALYSIS_DATA_TYPE_SEQUENCE:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_SEQUENCE:
 		rz_strbuf_append(sb, "sequence");
 		break;
-	case RZ_ANALYSIS_DATA_TYPE_PATTERN:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_PATTERN:
 		rz_strbuf_append(sb, "pattern");
 		break;
-	case RZ_ANALYSIS_DATA_TYPE_UNKNOWN:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_UNKNOWN:
 		if (pal) {
 			rz_strbuf_appendf(sb, "%sunknown" Color_RESET, pal->invalid);
 		} else {
@@ -205,42 +176,26 @@ RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalett
 	return rz_strbuf_drain(sb);
 }
 
-RZ_API RzAnalysisData *rz_analysis_data_new_string(ut64 addr, const char *p, int len, int type) {
+static RzAnalysisData *rz_analysis_data_new_string(ut64 addr, const ut8 *buf, RzDetectedString *dstr) {
 	RzAnalysisData *ad = RZ_NEW0(RzAnalysisData);
 	if (!ad) {
 		return NULL;
 	}
-	ad->str = NULL;
 	ad->addr = addr;
-	ad->type = type;
-	if (len == 0) {
-		len = strlen(p);
+	ad->type = RZ_ANALYSIS_DATA_INFO_TYPE_STRING;
+	ad->buf = malloc(dstr->size);
+	if (!ad->buf) {
+		rz_analysis_data_free(ad);
+		RZ_LOG_ERROR("Cannot allocate %d byte(s)\n", dstr->size);
+		return NULL;
 	}
-
-	if (type == RZ_ANALYSIS_DATA_TYPE_WIDE_STRING) {
-		/* TODO: add support for wide strings */
-	} else {
-		ad->str = malloc(len + 1);
-		if (!ad->str) {
-			rz_analysis_data_free(ad);
-			return NULL;
-		}
-		memcpy(ad->str, p, len);
-		ad->str[len] = 0;
-		ad->buf = malloc(len + 1);
-		if (!ad->buf) {
-			rz_analysis_data_free(ad);
-			RZ_LOG_ERROR("Cannot allocate %d byte(s)\n", len + 1);
-			return NULL;
-		}
-		memcpy(ad->buf, ad->str, len + 1);
-		ad->len = len + 1; // string length + \x00
-	}
-	ad->ptr = 0L;
+	memcpy(ad->buf, buf, dstr->size);
+	RZ_PTR_MOVE(ad->str, dstr->string);
+	ad->len = dstr->size;
 	return ad;
 }
 
-RZ_API RzAnalysisData *rz_analysis_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
+RZ_API RzAnalysisData *rz_analysis_data_new(ut64 addr, RzAnalysisDataInfoType type, ut64 n, const ut8 *buf, int len) {
 	RzAnalysisData *ad = RZ_NEW0(RzAnalysisData);
 	int l = RZ_MIN(len, 8);
 	if (!ad) {
@@ -259,8 +214,8 @@ RZ_API RzAnalysisData *rz_analysis_data_new(ut64 addr, int type, ut64 n, const u
 	ad->type = type;
 	ad->str = NULL;
 	switch (type) {
-	case RZ_ANALYSIS_DATA_TYPE_PATTERN:
-	case RZ_ANALYSIS_DATA_TYPE_SEQUENCE:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_PATTERN:
+	case RZ_ANALYSIS_DATA_INFO_TYPE_SEQUENCE:
 		ad->len = len;
 		break;
 	default:
@@ -270,35 +225,51 @@ RZ_API RzAnalysisData *rz_analysis_data_new(ut64 addr, int type, ut64 n, const u
 	return ad;
 }
 
-RZ_API void rz_analysis_data_free(RzAnalysisData *d) {
-	if (d) {
-		if (d->buf != (ut8 *)&(d->sbuf)) {
-			free(d->buf);
-		}
-		free(d->str);
-		free(d);
+RZ_API void rz_analysis_data_free(RZ_NULLABLE RzAnalysisData *d) {
+	if (!d) {
+		return;
 	}
+	if (d->buf != (ut8 *)&(d->sbuf)) {
+		free(d->buf);
+	}
+	free(d->str);
+	free(d);
 }
 
-RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *analysis, ut64 addr, const ut8 *buf, int size, int wordsize) {
+/**
+ * \brief      Tries to detect the type of data in a give buffer.
+ *
+ * \param      analysis  The RzAnalysis structure to use
+ * \param[in]  addr      The address at which the buffer is located
+ * \param[in]  buf       The buffer to analyze
+ * \param[in]  size      The size of the buffer (requires to be at least 4 bytes)
+ * \param[in]  wordsize  The word size (when 0 it will be set to arch bits/8)
+ *
+ * \return     On success a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, size_t size, int wordsize) {
+	rz_return_val_if_fail(analysis && buf, NULL);
+
 	ut64 dst = 0;
-	int n, nsize = 0;
+	RzDetectedString *dstr = NULL;
+	bool big_endian = analysis->big_endian;
+	RzStrEnc encoding = analysis->binb.bin ? rz_str_enc_string_as_type(analysis->binb.bin->strenc) : RZ_STRING_ENC_GUESS;
+	int n = 0;
 	int bits = analysis->bits;
-	int word = wordsize ? wordsize : RZ_MIN(8, bits / 8);
+	int word = wordsize > 0 ? wordsize : RZ_MIN(8, bits / 8);
 
 	if (size < 4) {
 		return NULL;
-	}
-	if (size >= word && is_invalid(buf, word)) {
-		return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_TYPE_INVALID, -1, buf, word);
+	} else if (size >= word && is_invalid(buf, word)) {
+		return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_INVALID, -1, buf, word);
 	}
 	{
-		int i, len = RZ_MIN(size, 64);
+		size_t len = RZ_MIN(size, 64);
 		int is_pattern = 0;
 		int is_sequence = 0;
 		char ch = buf[0];
 		char ch2 = ch + 1;
-		for (i = 1; i < len; i++) {
+		for (size_t i = 1; i < len; i++) {
 			if (ch2 == buf[i]) {
 				ch2++;
 				is_sequence++;
@@ -310,77 +281,85 @@ RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *analysis, ut64 addr, const u
 			}
 		}
 		if (is_sequence > len - 2) {
-			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_TYPE_SEQUENCE, -1,
+			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_SEQUENCE, -1,
 				buf, is_sequence);
 		}
 		if (is_pattern > len - 2) {
-			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_TYPE_PATTERN, -1,
+			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_PATTERN, -1,
 				buf, is_pattern);
 		}
 	}
 	if (size >= word && is_null(buf, word)) {
-		return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_TYPE_NULL, -1, buf, word);
+		return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_NULL, -1, buf, word);
 	}
 	if (is_bin(buf, size)) {
-		return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_TYPE_HEADER, -1, buf, word);
+		return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_HEADER, -1, buf, word);
 	}
 	if (size >= word) {
 		dst = is_pointer(analysis, buf, word);
 		if (dst) {
-			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_TYPE_POINTER, dst, buf, word);
+			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_POINTER, dst, buf, word);
 		}
 	}
-	switch (is_string(buf, size, &nsize)) {
-	case 1: return rz_analysis_data_new_string(addr, (const char *)buf, nsize, RZ_ANALYSIS_DATA_TYPE_STRING);
-	case 2: return rz_analysis_data_new_string(addr, (const char *)buf, nsize, RZ_ANALYSIS_DATA_TYPE_WIDE_STRING);
+	if (get_string(buf, size, &dstr, encoding, big_endian)) {
+		RzAnalysisData *ad = rz_analysis_data_new_string(addr, buf, dstr);
+		rz_detected_string_free(dstr);
+		return ad;
 	}
 	if (size >= word) {
 		n = is_number(buf, word);
 		if (n) {
-			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_TYPE_NUMBER, n, buf, word);
+			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_NUMBER, n, buf, word);
 		}
 	}
-	return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_TYPE_UNKNOWN, dst, buf, RZ_MIN(word, size));
+	return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_UNKNOWN, dst, buf, RZ_MIN(word, size));
 }
 
-RZ_API const char *rz_analysis_data_kind(RzAnalysis *a, ut64 addr, const ut8 *buf, int len) {
-	int inv = 0;
-	int unk = 0;
-	int str = 0;
-	int num = 0;
-	int i, j;
-	RzAnalysisData *data;
-	int word = a->bits / 8;
-	for (i = j = 0; i < len; j++) {
+/**
+ * \brief      Describes the type of data hold by the given buffer
+ *
+ * \param      a     The RzAnalysis structure to use
+ * \param[in]  addr  The address at which the buffer is located
+ * \param[in]  buf   The buffer to analyze
+ * \param[in]  len   The length of the buffer
+ *
+ * \return     The data kind.
+ */
+RZ_API RzAnalysisDataKind rz_analysis_data_kind(RZ_NONNULL RzAnalysis *a, ut64 addr, RZ_NONNULL const ut8 *buf, size_t len) {
+	rz_return_val_if_fail(a && buf, RZ_ANALYSIS_DATA_KIND_UNKNOWN);
+
+	size_t inv = 0;
+	size_t unk = 0;
+	size_t str = 0;
+	size_t num = 0;
+	size_t j = 0;
+	size_t word = a->bits / 8;
+	for (size_t i = 0; i < len; j++) {
 		if (str && !buf[i]) {
 			str++;
 		}
-		data = rz_analysis_data(a, addr + i, buf + i, len - i, 0);
+		RzAnalysisData *data = rz_analysis_data(a, addr + i, buf + i, len - i, 0);
 		if (!data) {
 			i += word;
 			continue;
 		}
 		switch (data->type) {
-		case RZ_ANALYSIS_DATA_TYPE_INVALID:
+		case RZ_ANALYSIS_DATA_INFO_TYPE_INVALID:
 			inv++;
 			i += word;
 			break;
-		case RZ_ANALYSIS_DATA_TYPE_NUMBER:
+		case RZ_ANALYSIS_DATA_INFO_TYPE_NUMBER:
 			if (data->ptr > 1000) {
 				num++;
 			}
 			i += word;
 			break;
-		case RZ_ANALYSIS_DATA_TYPE_UNKNOWN:
+		case RZ_ANALYSIS_DATA_INFO_TYPE_UNKNOWN:
 			unk++;
 			i += word;
 			break;
-		case RZ_ANALYSIS_DATA_TYPE_STRING:
-			if (data->len > 0) {
-				i += data->len;
-			} else {
-				i += word;
-			}
+		case RZ_ANALYSIS_DATA_INFO_TYPE_STRING:
+			i += data->len;
 			str++;
 			break;
 		default:
@@ -389,21 +368,15 @@ RZ_API const char *rz_analysis_data_kind(RzAnalysis *a, ut64 addr, const ut8 *bu
 		rz_analysis_data_free(data);
 	}
 	if (j < 1) {
-		return "unknown";
+		return RZ_ANALYSIS_DATA_KIND_UNKNOWN;
+	} else if ((inv * 100 / j) > 60) {
+		return RZ_ANALYSIS_DATA_KIND_INVALID;
+	} else if ((unk * 100 / j) > 60 || (num * 100 / j) > 60) {
+		return RZ_ANALYSIS_DATA_KIND_CODE;
+	} else if ((str * 100 / j) > 40) {
+		return RZ_ANALYSIS_DATA_KIND_STRING;
 	}
-	if ((inv * 100 / j) > 60) {
-		return "invalid";
-	}
-	if ((unk * 100 / j) > 60) {
-		return "code";
-	}
-	if ((num * 100 / j) > 60) {
-		return "code";
-	}
-	if ((str * 100 / j) > 40) {
-		return "text";
-	}
-	return "data";
+	return RZ_ANALYSIS_DATA_KIND_DATA;
 }
 
 RZ_API const char *rz_analysis_datatype_to_string(RzAnalysisDataType t) {

@@ -72,13 +72,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wx e9010f;?v $l
+NAME=wx e9010f;%v $l
 FILE==
 CMDS=<<EOF
 wx e9010f
 e asm.arch=x86
 e asm.bits=16
-?vi $l
+%vi $l
 pi 1
 ao 1~size[1]
 EOF

@@ -48,6 +48,10 @@ void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 		*type = RZ_IL_TYPE_PURE_BITVECTOR;
 		ret = rz_bv_dup(val->data.bv);
 		break;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		*type = RZ_IL_TYPE_PURE_FLOAT;
+		ret = rz_float_dup(val->data.f);
+		break;
 	default:
 		break;
 	}
@@ -74,7 +78,7 @@ void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILTypePure 
 }
 
 bool rz_il_handler_effect_unimplemented(RzILVM *vm, RzILOpEffect *op) {
-	rz_return_val_if_fail(vm && op, NULL);
+	rz_return_val_if_fail(vm && op, false);
 	RZ_LOG_ERROR("RzIL: unimplemented op handler (%d).\n", (int)op->code);
 	return false;
 }

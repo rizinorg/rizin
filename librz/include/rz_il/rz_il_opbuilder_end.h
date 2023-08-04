@@ -3,6 +3,7 @@
 #error rz_il_opbuilder_end.h included without rz_il_opbuilder_begin.h before
 #endif
 
+#undef DUP
 #undef ITE
 
 #undef UN
@@ -20,6 +21,42 @@
 #undef S32
 #undef S64
 
+#undef BV2F
+#undef F32
+#undef F64
+#undef F2BV
+#undef IS_FINITE
+#undef IS_FNAN
+#undef IS_FINF
+#undef IS_FZERO
+#undef IS_FNEG
+#undef IS_FPOS
+#undef FNEG
+#undef FABS
+#undef F2INT
+#undef F2SINT
+#undef INT2F
+#undef SINT2F
+#undef FCONVERT
+#undef FLOATV16
+#undef FLOATV32
+#undef FLOATV64
+#undef FLOATV128
+#undef FSUCC
+#undef FPRED
+#undef FORDER
+#undef FROUND
+#undef FSQRT
+#undef FADD
+#undef FSUB
+#undef FMUL
+#undef FDIV
+#undef FMOD
+#undef FPOW
+#undef FMAD
+#undef FNEQ
+#undef FEQ
+
 #undef IL_FALSE
 #undef IL_TRUE
 #undef INV
@@ -29,7 +66,6 @@
 #undef UNSIGNED
 #undef SIGNED
 #undef APPEND
-#undef DUP
 
 #undef ADD
 #undef SUB

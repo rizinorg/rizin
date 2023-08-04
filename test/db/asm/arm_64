@@ -42,6 +42,8 @@ a "eon w0, w13, w20" a001344a
 a "eon x0, x13, x20" a00134ca
 a "eon x0, x13, x20, ror 15" a03df4ca
 a "adrp x5, 0x0" 05000090
+ad "adrp x0, 0x11341000" e07fff90 0x12345678
+ad "adrp x0, 0x18343000" e0ff02d0 0x12345678
 a "add x0, x1, x2" 2000028b
 a "add x0, xzr, x30" e0031e8b
 a "b 0x0" 00000014
@@ -428,7 +430,7 @@ d "add w1, w2, w2, lsl 10" 4128020b 0x0 (set x1 (cast 64 false (+ (cast 32 false
 d "add w1, w2, w2, lsr 12" 4130420b 0x0 (set x1 (cast 64 false (+ (cast 32 false (var x2)) (>> (cast 32 false (var x2)) (bv 6 0xc) false))))
 d "add w1, w2, w2, asr 31" 417c820b 0x0 (set x1 (cast 64 false (+ (cast 32 false (var x2)) (>> (cast 32 false (var x2)) (bv 6 0x1f) (msb (cast 32 false (var x2)))))))
 d "adr x2, 0x10042" 02020050 0x10000 (set x2 (bv 64 0x10042))
-d "adrp x2, 0x4000" 020000b0 0x3210 (set x2 (bv 64 0x4000))
+ad "adrp x2, 0x4000" 020000b0 0x3210 (set x2 (bv 64 0x4000))
 d "and x1, x2, x3" 4100038a 0x0 (set x1 (& (var x2) (var x3)))
 d "and w1, w2, w3" 4100030a 0x0 (set x1 (cast 64 false (& (cast 32 false (var x2)) (cast 32 false (var x3)))))
 d "ands x1, x2, x3" 410003ea 0x0 (seq (set x1 (& (var x2) (var x3))) (set zf (is_zero (var x1))) (set nf (msb (var x1))) (set cf false) (set vf false))
@@ -607,19 +609,19 @@ d "mov w3, wsp" e3030011 0x0 (set x3 (cast 64 false (cast 32 false (var sp))))
 
 # Capstone v4 disassembles these as "movn" even though "mov" would be the preferred disassembly
 # according to the reference manual. Below are the variants for capstone v5.
-d "movn x1, 0x3" 61008092 0x0 (set x1 (bv 64 0xfffffffffffffffc))
-d "movn w1, 0x123" 61248012 0x0 (set x1 (cast 64 false (bv 32 0xfffffedc)))
-d "movn x1, 0x123, lsl 32" 6124c092 0x0 (set x1 (bv 64 0xfffffedcffffffff))
-d "movn w1, 0x123, lsl 16" 6124a012 0x0 (set x1 (cast 64 false (bv 32 0xfedcffff)))
-d "movz x1, 0x2a" 410580d2 0x0 (set x1 (bv 64 0x2a))
-d "movz w1, 0x2a" 41058052 0x0 (set x1 (cast 64 false (bv 32 0x2a)))
+# d "movn x1, 0x3" 61008092 0x0 (set x1 (bv 64 0xfffffffffffffffc))
+# d "movn w1, 0x123" 61248012 0x0 (set x1 (cast 64 false (bv 32 0xfffffedc)))
+# d "movn x1, 0x123, lsl 32" 6124c092 0x0 (set x1 (bv 64 0xfffffedcffffffff))
+# d "movn w1, 0x123, lsl 16" 6124a012 0x0 (set x1 (cast 64 false (bv 32 0xfedcffff)))
+# d "movz x1, 0x2a" 410580d2 0x0 (set x1 (bv 64 0x2a))
+# d "movz w1, 0x2a" 41058052 0x0 (set x1 (cast 64 false (bv 32 0x2a)))
 # Capstone v5 variants (these are better, so switch to this once v5 is used in CI)
-# d "mov x1, -4" 61008092 0x0 (set x1 (bv 64 0xfffffffffffffffc))
-# d "mov w1, -0x124" 61248012 0x0 (set x1 (cast 64 false (bv 32 0xfffffedc)))
-# d "mov x1, -0x12300000001" 6124c092 0x0 (set x1 (bv 64 0xfffffedcffffffff))
-# d "mov w1, -0x1230001" 6124a012 0x0 (set x1 (cast 64 false (bv 32 0xfedcffff)))
-# d "mov x1, 0x2a" 410580d2 0x0 (set x1 (bv 64 0x2a))
-# d "mov w1, 0x2a" 41058052 0x0 (set x1 (cast 64 false (bv 32 0x2a)))
+d "mov x1, -4" 61008092 0x0 (set x1 (bv 64 0xfffffffffffffffc))
+d "mov w1, -0x124" 61248012 0x0 (set x1 (cast 64 false (bv 32 0xfffffedc)))
+d "mov x1, -0x12300000001" 6124c092 0x0 (set x1 (bv 64 0xfffffedcffffffff))
+d "mov w1, -0x1230001" 6124a012 0x0 (set x1 (cast 64 false (bv 32 0xfedcffff)))
+d "mov x1, 0x2a" 410580d2 0x0 (set x1 (bv 64 0x2a))
+d "mov w1, 0x2a" 41058052 0x0 (set x1 (cast 64 false (bv 32 0x2a)))
 
 d "mov x2, x3" e20303aa 0x0 (set x2 (var x3))
 d "mov w2, w3" e203032a 0x0 (set x2 (cast 64 false (cast 32 false (var x3))))

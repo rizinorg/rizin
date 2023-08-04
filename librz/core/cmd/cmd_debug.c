@@ -24,14 +24,6 @@
 		} \
 	} while (0)
 
-static const char *help_msg_dcs[] = {
-	"Usage:", "dcs", " Continue until syscall",
-	"dcs", "", "Continue until next syscall",
-	"dcs [str]", "", "Continue until next call to the 'str' syscall",
-	"dcs", "*", "Trace all syscalls, a la strace",
-	NULL
-};
-
 static const char *help_msg_dcu[] = {
 	"Usage:", "dcu", " Continue until address",
 	"dcu.", "", "Alias for dcu $$ (continue until current address",
@@ -495,7 +487,7 @@ static bool step_line(RzCore *core, int times) {
 }
 
 static void cmd_debug_backtrace(RzCore *core, ut64 len) {
-	RzAnalysisOp analop;
+	RzAnalysisOp aop;
 	ut64 addr;
 	if (!len) {
 		rz_bp_traptrace_list(core->dbg->bp);
@@ -523,8 +515,8 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			rz_io_read_at(core->io, addr, buf, 32); // XXX longer opcodes?
-			rz_analysis_op(core->analysis, &analop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
-		} while (rz_bp_traptrace_at(core->dbg->bp, addr, analop.size));
+			rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+		} while (rz_bp_traptrace_at(core->dbg->bp, addr, aop.size));
 		rz_bp_traptrace_enable(core->dbg->bp, false);
 	}
 }
@@ -2520,24 +2512,17 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_traptrace_handler(RzCore *core, int arg
 }
 
 // dcs
-RZ_IPI int rz_cmd_debug_continue_syscall(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_syscall_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-	switch (input[0]) {
-	case '*':
-		cmd_debug_cont_syscall(core, "-1");
-		break;
-	case ' ':
-		cmd_debug_cont_syscall(core, input + 2);
-		break;
-	case '\0':
+	if (argc > 1) {
+		if (!strcmp(argv[1], "*")) {
+			cmd_debug_cont_syscall(core, "-1");
+		} else {
+			cmd_debug_cont_syscall(core, argv[1]);
+		}
+	} else {
 		cmd_debug_cont_syscall(core, NULL);
-		break;
-	default:
-	case '?':
-		rz_core_cmd_help(core, help_msg_dcs);
-		break;
 	}
 	rz_cons_break_pop();
 	rz_core_dbg_follow_seek_register(core);
@@ -2802,16 +2787,16 @@ RZ_IPI RzCmdStatus rz_debug_info_handler(RzCore *core, int argc, const char **ar
 			if (rdi->usr) {
 				rz_cons_printf("usr=%s\n", rdi->usr);
 			}
-			if (rdi->exe && *rdi->exe) {
+			if (RZ_STR_ISNOTEMPTY(rdi->exe)) {
 				rz_cons_printf("exe=%s\n", rdi->exe);
 			}
-			if (rdi->cmdline && *rdi->cmdline) {
+			if (RZ_STR_ISNOTEMPTY(rdi->cmdline)) {
 				rz_cons_printf("cmdline=%s\n", rdi->cmdline);
 			}
-			if (rdi->cwd && *rdi->cwd) {
+			if (RZ_STR_ISNOTEMPTY(rdi->cwd)) {
 				rz_cons_printf("cwd=%s\n", rdi->cwd);
 			}
-			if (rdi->kernel_stack && *rdi->kernel_stack) {
+			if (RZ_STR_ISNOTEMPTY(rdi->kernel_stack)) {
 				rz_cons_printf("kernel_stack=\n%s\n", rdi->kernel_stack);
 			}
 		}
@@ -2845,21 +2830,24 @@ RZ_IPI RzCmdStatus rz_debug_info_handler(RzCore *core, int argc, const char **ar
 			pj_ks(pj, "inbp", rz_str_bool(core->dbg->reason.bp_addr));
 			pj_kn(pj, "baddr", rz_debug_get_baddr(core->dbg, NULL));
 			pj_kn(pj, "stopaddr", core->dbg->stopaddr);
-			pj_kn(pj, "pid", rdi->pid);
-			pj_kn(pj, "tid", rdi->tid);
-			pj_kn(pj, "uid", rdi->uid);
-			pj_kn(pj, "gid", rdi->gid);
-			if (rdi->usr) {
+			pj_kN(pj, "pid", rdi->pid);
+			pj_kN(pj, "tid", rdi->tid);
+			pj_kN(pj, "uid", rdi->uid);
+			pj_kN(pj, "gid", rdi->gid);
+			if (RZ_STR_ISNOTEMPTY(rdi->usr)) {
 				pj_ks(pj, "usr", rdi->usr);
 			}
-			if (rdi->exe) {
+			if (RZ_STR_ISNOTEMPTY(rdi->exe)) {
 				pj_ks(pj, "exe", rdi->exe);
 			}
-			if (rdi->cmdline) {
+			if (RZ_STR_ISNOTEMPTY(rdi->cmdline)) {
 				pj_ks(pj, "cmdline", rdi->cmdline);
 			}
-			if (rdi->cwd) {
+			if (RZ_STR_ISNOTEMPTY(rdi->cwd)) {
 				pj_ks(pj, "cwd", rdi->cwd);
+			}
+			if (RZ_STR_ISNOTEMPTY(rdi->kernel_stack)) {
+				pj_ks(pj, "kernel_stack", rdi->kernel_stack);
 			}
 		}
 		pj_kn(pj, "stopreason", stop);

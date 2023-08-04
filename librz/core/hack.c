@@ -27,7 +27,7 @@ RZ_API void rz_core_hack_help(const RzCore *core) {
 	rz_core_cmd_help(core, help_msg);
 }
 
-RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp *analop) {
+RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp *aop) {
 	if (!strcmp(op, "nop")) {
 		rz_core_write_hexpair(core, core->offset, "0000");
 	} else if (!strcmp(op, "ret2")) {
@@ -45,7 +45,7 @@ RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp
 	return true;
 }
 
-RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp *analop) {
+RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp *aop) {
 	if (!strcmp(op, "nop")) {
 		rz_core_write_hexpair(core, core->offset, "1f2003d5");
 	} else if (!strcmp(op, "ret")) {
@@ -67,14 +67,14 @@ RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp 
 	return true;
 }
 
-RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *analop) {
+RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *aop) {
 	const int bits = core->rasm->bits;
 	const ut8 *b = core->block;
 
 	if (!strcmp(op, "nop")) {
 		const int nopsize = (bits == 16) ? 2 : 4;
 		const char *nopcode = (bits == 16) ? "00bf" : "0000a0e1";
-		const int len = analop->size;
+		const int len = aop->size;
 		char *str;
 		int i;
 
@@ -185,9 +185,9 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 	return true;
 }
 
-RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *analop) {
+RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *aop) {
 	const ut8 *b = core->block;
-	int i, size = analop->size;
+	int i, size = aop->size;
 	if (!strcmp(op, "nop")) {
 		if (size * 2 + 1 < size) {
 			return false;
@@ -268,7 +268,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 	// TODO: op should not be an unstructered string
 	// TODO: asm/analysis plugins should provide the operations, instead of doing this here
-	bool (*hack)(RzCore * core, const char *op, const RzAnalysisOp *analop) = NULL;
+	bool (*hack)(RzCore *core, const char *op, const RzAnalysisOp *aop) = NULL;
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
 	const int asmbits = core->rasm->bits;
 
@@ -289,12 +289,12 @@ RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 		RZ_LOG_ERROR("core: hack: write hacks are only supported on x86 arch\n");
 	}
 	if (hack) {
-		RzAnalysisOp analop;
-		if (rz_analysis_op(core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
+		RzAnalysisOp aop;
+		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			RZ_LOG_ERROR("core: hack: analysis op fail\n");
 			return false;
 		}
-		return hack(core, op, &analop);
+		return hack(core, op, &aop);
 	}
 	return false;
 }

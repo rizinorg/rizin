@@ -34,8 +34,8 @@ RUN
 NAME=seek far offset
 FILE==
 CMDS=<<EOF
-s 0x7fffff8000b54000 ; ?v $$
-s 0x8fffff8000b54000 ; ?v $$
+s 0x7fffff8000b54000 ; %v $$
+s 0x8fffff8000b54000 ; %v $$
 EOF
 EXPECT=<<EOF
 0x7fffff8000b54000
@@ -60,8 +60,8 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 4883c668
-s 0; so   ; ?v $$
-s 0; so 1 ; ?v $$
+s 0; so   ; %v $$
+s 0; so 1 ; %v $$
 EOF
 EXPECT=<<EOF
 0x4
@@ -125,11 +125,11 @@ CMDS=<<EOF
 s 0x100
 s
 sh*
-?e
+echo
 s 0x200
 s
 sh*
-?e
+echo
 s 0x300 @e:cfg.seek.silent=true
 s
 sh*
@@ -161,11 +161,11 @@ ar ebx=0x300
 s 0x100
 s
 sh*
-?e
+echo
 sr eax
 s
 sh*
-?e
+echo
 sr ebx @e:cfg.seek.silent=true
 s
 sh*
@@ -190,7 +190,7 @@ RUN
 NAME=so -N, pd -N
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
-(test_so_pd addr; e asm.bytes=true; ?e; ?e --- From ${addr} ---; ?e; ?e -- 1 --; s ${addr}; pd -1; so -1; s; pd 1; ?e; ?e -- 2 --; s ${addr}; pd -2; so -2; s; pd 2)
+(test_so_pd addr; e asm.bytes=true; echo; echo --- From ${addr} ---; echo; echo -- 1 --; s ${addr}; pd -1; so -1; s; pd 1; echo; echo -- 2 --; s ${addr}; pd -2; so -2; s; pd 2)
 .(test_so_pd 0x0)  # Special case
 .(test_so_pd 0x401000)
 s 0x560e67
@@ -326,7 +326,7 @@ NAME=relative tmp seek
 FILE==
 CMDS=<<EOF
 s 0x10
-?v $$ @ +0x10
+%v $$ @ +0x10
 EOF
 EXPECT=<<EOF
 0x20
@@ -340,7 +340,7 @@ s 0x543a0
 af
 sd +3
 sb
-?v $$
+%v $$
 EOF
 EXPECT=<<EOF
 0x543a0

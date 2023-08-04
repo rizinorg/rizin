@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=ar short with space
-FILE=ar://bins/ar/filetable_spaces.a// s_spaces
+FILE=ar://bins/ar/filetable_spaces.a//_s_spaces
 CMDS=x 16
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -50,7 +50,7 @@ EOF
 RUN
 
 NAME=ar long with space
-FILE=ar://bins/ar/filetable_spaces.a// longgggggggggggggggggspaces
+FILE=ar://bins/ar/filetable_spaces.a//_longgggggggggggggggggspaces_
 CMDS=x 16
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -274,5 +274,56 @@ nth paddr      vaddr      bind   type   size lib name
 123 ---------- ---------- GLOBAL NOTYPE 0        imp.r_list_append
 125 ---------- ---------- GLOBAL NOTYPE 0        imp.r_str_startswith
 126 ---------- ---------- GLOBAL NOTYPE 0        imp.strtoull
+EOF
+RUN
+
+NAME=Open all object in the win archive file.
+FILE=ar://bins/ar/fpu.lib
+CMDS=<<EOF
+ol~ar://
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x0000024f ar://bins/ar/fpu.lib//FpuXexpY.obj
+ 4 - r-x 0x000001b3 ar://bins/ar/fpu.lib//FpuTrunc.obj
+ 5 - r-x 0x000001e7 ar://bins/ar/fpu.lib//FpuTexpX.obj
+ 6 - r-x 0x00000278 ar://bins/ar/fpu.lib//FpuTanh.obj
+ 7 - r-x 0x000001cb ar://bins/ar/fpu.lib//FpuTan.obj
+ 8 - r-x 0x00000239 ar://bins/ar/fpu.lib//FpuSub.obj
+ 9 - r-x 0x000004a2 ar://bins/ar/fpu.lib//FpuState.obj
+10 - r-x 0x000001d2 ar://bins/ar/fpu.lib//FpuSqrt.obj
+11 - r-x 0x000001b2 ar://bins/ar/fpu.lib//FpuSize.obj
+12 - r-x 0x000001ce ar://bins/ar/fpu.lib//FpuSinh.obj
+13 - r-x 0x000001cb ar://bins/ar/fpu.lib//FpuSin.obj
+14 - r-x 0x000001b3 ar://bins/ar/fpu.lib//FpuRound.obj
+15 - r-x 0x00000239 ar://bins/ar/fpu.lib//FpuMul.obj
+16 - r-x 0x000001d6 ar://bins/ar/fpu.lib//FpuLogx.obj
+17 - r-x 0x000001d5 ar://bins/ar/fpu.lib//FpuLnx.obj
+18 - r-x 0x000003a3 ar://bins/ar/fpu.lib//FpuFLtoA.obj
+19 - r-x 0x00000195 ar://bins/ar/fpu.lib//FpuExam.obj
+20 - r-x 0x000001e7 ar://bins/ar/fpu.lib//FpuEexpX.obj
+21 - r-x 0x00000243 ar://bins/ar/fpu.lib//FpuDiv.obj
+22 - r-x 0x000001cc ar://bins/ar/fpu.lib//FpuCosh.obj
+23 - r-x 0x000001c9 ar://bins/ar/fpu.lib//FpuCos.obj
+24 - r-x 0x0000022c ar://bins/ar/fpu.lib//FpuComp.obj
+25 - r-x 0x0000018b ar://bins/ar/fpu.lib//FpuChs.obj
+26 - r-x 0x0000031b ar://bins/ar/fpu.lib//FpuAtoFL.obj
+27 - r-x 0x000001ab ar://bins/ar/fpu.lib//FpuArctanh.obj
+28 - r-x 0x000001b8 ar://bins/ar/fpu.lib//FpuArctan.obj
+29 - r-x 0x000001c1 ar://bins/ar/fpu.lib//FpuArcsinh.obj
+30 - r-x 0x000001c0 ar://bins/ar/fpu.lib//FpuArcsin.obj
+31 - r-x 0x000001b9 ar://bins/ar/fpu.lib//FpuArccosh.obj
+32 - r-x 0x000001b0 ar://bins/ar/fpu.lib//FpuArccos.obj
+33 - r-x 0x00000239 ar://bins/ar/fpu.lib//FpuAdd.obj
+34 - r-x 0x0000018b ar://bins/ar/fpu.lib//FpuAbs.obj
+EOF
+RUN
+
+NAME=Open only one object in the win archive file.
+FILE=ar://bins/ar/ucrtd.osmode.lib//d_/os/obj/x86fre/minkernel/crts/ucrt/src/appcrt/dll/osmode_debug_public/../not_callable_by_os/objfre/i386/clog10l.obj
+CMDS=<<EOF
+ol
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x000000b4 d_/os/obj/x86fre/minkernel/crts/ucrt/src/appcrt/dll/osmode_debug_public/../not_callable_by_os/objfre/i386/clog10l.obj
 EOF
 RUN

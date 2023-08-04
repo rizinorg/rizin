@@ -8,12 +8,12 @@ s 0x560e67
 af
 e asm.bb.middle=true
 pD 0x560eb3-$$
-?e
+echo
 e asm.bb.middle=false
 pD 0x560eb3-$$
 EOF
 EXPECT=<<EOF
-/ fcn.00560e67 (int32_t arg_4h, int32_t arg_7fbf5070h);
+/ fcn.00560e67(int32_t arg_4h, int32_t arg_7fbf5070h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -49,7 +49,7 @@ EXPECT=<<EOF
 |      ||   0x00560eb1      pop   edx
 |      ||   0x00560eb2      pop   eax
 
-/ fcn.00560e67 (int32_t arg_4h, int32_t arg_7fbf5070h);
+/ fcn.00560e67(int32_t arg_4h, int32_t arg_7fbf5070h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -90,19 +90,19 @@ e analysis.nopskip=false
 e analysis.jmp.mid=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
-?e
-?e ----1----
-?e
+echo
+echo ----1----
+echo
 e asm.bb.middle=true
 pDj 19~{}
-?e
-?e ----2----
-?e
+echo
+echo ----2----
+echo
 e asm.bb.middle=false
 pDj 19~{}
-?e
-?e ----3----
-?e
+echo
+echo ----3----
+echo
 e asm.bb.middle=true
 pdfj~{}
 EOF
@@ -530,7 +530,7 @@ wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
 pdq 6
-?e
+echo
 e asm.bb.middle=false
 pdq 6
 EOF
@@ -564,7 +564,7 @@ wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
 pif
-?e
+echo
 e asm.bb.middle=false
 pif
 EOF
@@ -595,20 +595,20 @@ e asm.bb.middle=true
 e asm.flags.middle=2
 f sym.dummy @ 0x560e7d
 pd 2 @ 0x560e7a
-?e
+echo
 fm 0x560e7c @ sym.dummy
 pd 3 @ 0x560e7a
-?e
+echo
 fm 0x560e96 @ sym.dummy
 pd 2 @ 0x560e95
-?e
+echo
 fm 0x560e97 @ sym.dummy
 pd 3 @ 0x560e95
-?e
+echo
 e asm.bb.middle=false
 f sym.real @ 0x00560e95
 pd 3 @ 0x560e95
-?e
+echo
 pd 3 @ 0x560e95 @e:scr.color=1
 EOF
 EXPECT=<<EOF
@@ -618,7 +618,7 @@ EXPECT=<<EOF
 
             0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
             ;-- sym.dummy:
-            0x00560e7c      96             xchg  eax, esi
+            0x00560e7c      96             xchg  esi, eax
 |           0x00560e7d      5e             pop   esi
 
             0x00560e95  ~   ba0f31e914     mov   edx, 0x14e9310f

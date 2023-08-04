@@ -110,6 +110,114 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=p=r
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=r
+EOF
+EXPECT=<<EOF
+0x00000000 Falling entropy edge
+EOF
+RUN
+
+NAME=p=r 0.73 0.06
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=r 0.73 0.06
+EOF
+EXPECT=<<EOF
+0x00010a00 Rising entropy edge
+0x00017200 Rising entropy edge
+0x00017f00 Rising entropy edge
+0x0004a800 Rising entropy edge
+0x0005f000 Rising entropy edge
+0x00063d00 Falling entropy edge
+0x00064000 Falling entropy edge
+0x0006cd00 Falling entropy edge
+0x00070200 Rising entropy edge
+0x00073200 Falling entropy edge
+0x00074300 Falling entropy edge
+EOF
+RUN
+
+NAME=p=rj 0.73 0.06
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=rj 0.73 0.06
+EOF
+EXPECT=<<EOF
+[{"addr":68096,"index":266,"edge_type":"rising entropy edge","entropy_value":0.730819},{"addr":94720,"index":370,"edge_type":"rising entropy edge","entropy_value":0.730736},{"addr":98048,"index":383,"edge_type":"rising entropy edge","entropy_value":0.733761},{"addr":305152,"index":1192,"edge_type":"rising entropy edge","entropy_value":0.730632},{"addr":389120,"index":1520,"edge_type":"rising entropy edge","entropy_value":0.757028},{"addr":408832,"index":1597,"edge_type":"falling entropy edge","entropy_value":0.042506},{"addr":409600,"index":1600,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":445696,"index":1741,"edge_type":"falling entropy edge","entropy_value":0.058047},{"addr":459264,"index":1794,"edge_type":"rising entropy edge","entropy_value":0.760109},{"addr":471552,"index":1842,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":475904,"index":1859,"edge_type":"falling entropy edge","entropy_value":0.024685}]
+EOF
+RUN
+
+NAME=p=rq 0.73 0.06
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=rq 0.73 0.06
+EOF
+EXPECT=<<EOF
+0x00010a00
+0x00017200
+0x00017f00
+0x0004a800
+0x0005f000
+0x00063d00
+0x00064000
+0x0006cd00
+0x00070200
+0x00073200
+0x00074300
+EOF
+RUN
+
+NAME=p=rl 0.73 0.06
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=rl 0.73 0.06
+EOF
+EXPECT=<<EOF
+0x00010a00 10a Rising entropy edge (0.730819)
+0x00017200 172 Rising entropy edge (0.730736)
+0x00017f00 17f Rising entropy edge (0.733761)
+0x0004a800 4a8 Rising entropy edge (0.730632)
+0x0005f000 5f0 Rising entropy edge (0.757028)
+0x00063d00 63d Falling entropy edge (0.042506)
+0x00064000 640 Falling entropy edge (0.000000)
+0x0006cd00 6cd Falling entropy edge (0.058047)
+0x00070200 702 Rising entropy edge (0.760109)
+0x00073200 732 Falling entropy edge (0.000000)
+0x00074300 743 Falling entropy edge (0.024685)
+EOF
+RUN
+
+NAME=p=rt 0.73 0.06
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=rt 0.73 0.06
+EOF
+EXPECT=<<EOF
+addr    index edge_type            entropy_value 
+-------------------------------------------------
+0x10a00 266   rising entropy edge  0.730819
+0x17200 370   rising entropy edge  0.730736
+0x17f00 383   rising entropy edge  0.733761
+0x4a800 1192  rising entropy edge  0.730632
+0x5f000 1520  rising entropy edge  0.757028
+0x63d00 1597  falling entropy edge 0.042506
+0x64000 1600  falling entropy edge 0.000000
+0x6cd00 1741  falling entropy edge 0.058047
+0x70200 1794  rising entropy edge  0.760109
+0x73200 1842  falling entropy edge 0.000000
+0x74300 1859  falling entropy edge 0.024685
+EOF
+RUN
+
 NAME=p=p 5
 FILE=bins/elf/arm1.bin
 ARGS=-n
@@ -696,14 +804,14 @@ CMDS=<<EOF
 e io.unalloc=true
 e scr.color=0
 .(print)
-?e
+echo
 e io.unalloc.ch=-
 .(print)
-?e
+echo
 e scr.color=3
 e io.unalloc.ch=
 .(print)
-?e
+echo
 e io.unalloc.ch=?
 .(print)
 EOF

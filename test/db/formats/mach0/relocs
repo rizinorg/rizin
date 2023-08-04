@@ -4,15 +4,15 @@ CMDS=<<EOF
 i~arch
 i~type
 ir
-?e --
+echo --
 ol
 oml
 pd 4 @ 0x0000d008
-?e -- x86 UNSIGNED reloc
+echo -- x86 UNSIGNED reloc
 s 0x00001338
 p8 8
 pxr 8
-?e -- x86 BRANCH reloc
+echo -- x86 BRANCH reloc
 s 0x00000d9d
 pi 1
 p8 5
@@ -115,7 +115,7 @@ vaddr      paddr      target     type    name
 0x000012a8 0x000012a8 0x0000d298 UNKNOWN IORegistryEntry::setProperty(char const*, OSObject*)
 0x000012b0 0x000012b0 0x0000d2a0 UNKNOWN IORegistryEntry::setProperty(char const*, char const*)
 0x000012b8 0x000012b8 0x0000d2a8 UNKNOWN IORegistryEntry::setProperty(char const*, bool)
-0x000012c0 0x000012c0 0x0000d2b0 UNKNOWN IORegistryEntry::setProperty(char const*, unsigned long long, unsigned int)
+0x000012c0 0x000012c0 0x0000d2b0 UNKNOWN IORegistryEntry::setProperty(char const*, uint64_t, unsigned int)
 0x000012c8 0x000012c8 0x0000d2b8 UNKNOWN IORegistryEntry::setProperty(char const*, void*, unsigned int)
 0x000012d0 0x000012d0 0x0000d2c0 UNKNOWN IORegistryEntry::removeProperty(OSSymbol const*)
 0x000012d8 0x000012d8 0x0000d2c8 UNKNOWN IORegistryEntry::removeProperty(OSString const*)
@@ -165,7 +165,7 @@ vaddr      paddr      target     type    name
 0x00001438 0x00001438 0x0000d428 UNKNOWN IOService::requestTerminate(IOService*, unsigned int)
 0x00001440 0x00001440 0x0000d430 UNKNOWN IOService::willTerminate(IOService*, unsigned int)
 0x00001448 0x00001448 0x0000d438 UNKNOWN IOService::didTerminate(IOService*, unsigned int, bool*)
-0x00001450 0x00001450 0x0000d440 UNKNOWN IOService::nextIdleTimeout(unsigned long long, unsigned long long, unsigned int)
+0x00001450 0x00001450 0x0000d440 UNKNOWN IOService::nextIdleTimeout(uint64_t, uint64_t, unsigned int)
 0x00001458 0x00001458 0x0000d448 UNKNOWN IOService::systemWillShutdown(unsigned int)
 0x00001460 0x00001460 0x0000d450 UNKNOWN IOService::copyClientWithCategory(OSSymbol const*)
 0x00001468 0x00001468 0x0000d458 UNKNOWN IOService::configureReport(IOReportChannelList*, unsigned int, void*, void*)
@@ -339,7 +339,7 @@ vaddr      paddr      target     type    name
             0x0000d020      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSObject::operator delete(void*, unsigned long)
 -- x86 UNSIGNED reloc
 28d3000000000000
-0x00001338 0x000000000000d328   (....... @ method.IOService.serializeProperties_OSSerialize___const 54056 IOService::serializeProperties(OSSerialize*) const R 0x0
+0x00001338 0x000000000000d328   (....... @ reloc.IOService::serializeProperties_OSSerialize___const 54056 IOService::serializeProperties(OSSerialize*) const R 0x0
 -- x86 BRANCH reloc
 call reloc.target.IOLog
 e89ec20000
@@ -353,15 +353,15 @@ CMDS=<<EOF
 i~arch
 i~type
 ir
-?e --
+echo --
 ol
 oml
 pd 4 @ 0x0000d008
-?e -- x86 UNSIGNED reloc
+echo -- x86 UNSIGNED reloc
 s 0x00001338
 p8 8
 pxr 8
-?e -- x86 BRANCH reloc
+echo -- x86 BRANCH reloc
 s 0x00000d9d
 pi 1
 p8 5
@@ -464,7 +464,7 @@ vaddr      paddr      target     type    name
 0x000012a8 0x000012a8 0x0000d298 UNKNOWN IORegistryEntry::setProperty(char const*, OSObject*)
 0x000012b0 0x000012b0 0x0000d2a0 UNKNOWN IORegistryEntry::setProperty(char const*, char const*)
 0x000012b8 0x000012b8 0x0000d2a8 UNKNOWN IORegistryEntry::setProperty(char const*, bool)
-0x000012c0 0x000012c0 0x0000d2b0 UNKNOWN IORegistryEntry::setProperty(char const*, unsigned long long, unsigned int)
+0x000012c0 0x000012c0 0x0000d2b0 UNKNOWN IORegistryEntry::setProperty(char const*, uint64_t, unsigned int)
 0x000012c8 0x000012c8 0x0000d2b8 UNKNOWN IORegistryEntry::setProperty(char const*, void*, unsigned int)
 0x000012d0 0x000012d0 0x0000d2c0 UNKNOWN IORegistryEntry::removeProperty(OSSymbol const*)
 0x000012d8 0x000012d8 0x0000d2c8 UNKNOWN IORegistryEntry::removeProperty(OSString const*)
@@ -514,7 +514,7 @@ vaddr      paddr      target     type    name
 0x00001438 0x00001438 0x0000d428 UNKNOWN IOService::requestTerminate(IOService*, unsigned int)
 0x00001440 0x00001440 0x0000d430 UNKNOWN IOService::willTerminate(IOService*, unsigned int)
 0x00001448 0x00001448 0x0000d438 UNKNOWN IOService::didTerminate(IOService*, unsigned int, bool*)
-0x00001450 0x00001450 0x0000d440 UNKNOWN IOService::nextIdleTimeout(unsigned long long, unsigned long long, unsigned int)
+0x00001450 0x00001450 0x0000d440 UNKNOWN IOService::nextIdleTimeout(uint64_t, uint64_t, unsigned int)
 0x00001458 0x00001458 0x0000d448 UNKNOWN IOService::systemWillShutdown(unsigned int)
 0x00001460 0x00001460 0x0000d450 UNKNOWN IOService::copyClientWithCategory(OSSymbol const*)
 0x00001468 0x00001468 0x0000d458 UNKNOWN IOService::configureReport(IOReportChannelList*, unsigned int, void*, void*)
@@ -689,7 +689,7 @@ vaddr      paddr      target     type    name
             0x0000d020      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSObject::operator delete(void*, unsigned long)
 -- x86 UNSIGNED reloc
 28d3000000000000
-0x00001338 0x000000000000d328   (....... @ method.IOService.serializeProperties_OSSerialize___const 54056 IOService::serializeProperties(OSSerialize*) const R 0x0
+0x00001338 0x000000000000d328   (....... @ reloc.IOService::serializeProperties_OSSerialize___const 54056 IOService::serializeProperties(OSSerialize*) const R 0x0
 -- x86 BRANCH reloc
 call reloc.target.IOLog
 e89ec20000
@@ -702,10 +702,10 @@ CMDS=<<EOF
 i~arch
 i~type
 ir
-?e --
+echo --
 ol
 oml
-?e -- arm64 reloc
+echo -- arm64 reloc
 s 0x0000c000
 p8 8
 pxr 8
@@ -809,7 +809,7 @@ vaddr      paddr      target     type    name
 0x0000c308 0x0000c308 0x0001c2c8 UNKNOWN IORegistryEntry::setProperty(char const*, OSObject*)
 0x0000c310 0x0000c310 0x0001c2d0 UNKNOWN IORegistryEntry::setProperty(char const*, char const*)
 0x0000c318 0x0000c318 0x0001c2d8 UNKNOWN IORegistryEntry::setProperty(char const*, bool)
-0x0000c320 0x0000c320 0x0001c2e0 UNKNOWN IORegistryEntry::setProperty(char const*, unsigned long long, unsigned int)
+0x0000c320 0x0000c320 0x0001c2e0 UNKNOWN IORegistryEntry::setProperty(char const*, uint64_t, unsigned int)
 0x0000c328 0x0000c328 0x0001c2e8 UNKNOWN IORegistryEntry::setProperty(char const*, void*, unsigned int)
 0x0000c330 0x0000c330 0x0001c2f0 UNKNOWN IORegistryEntry::removeProperty(OSSymbol const*)
 0x0000c338 0x0000c338 0x0001c2f8 UNKNOWN IORegistryEntry::removeProperty(OSString const*)
@@ -859,7 +859,7 @@ vaddr      paddr      target     type    name
 0x0000c498 0x0000c498 0x0001c458 UNKNOWN IOService::requestTerminate(IOService*, unsigned int)
 0x0000c4a0 0x0000c4a0 0x0001c460 UNKNOWN IOService::willTerminate(IOService*, unsigned int)
 0x0000c4a8 0x0000c4a8 0x0001c468 UNKNOWN IOService::didTerminate(IOService*, unsigned int, bool*)
-0x0000c4b0 0x0000c4b0 0x0001c470 UNKNOWN IOService::nextIdleTimeout(unsigned long long, unsigned long long, unsigned int)
+0x0000c4b0 0x0000c4b0 0x0001c470 UNKNOWN IOService::nextIdleTimeout(uint64_t, uint64_t, unsigned int)
 0x0000c4b8 0x0000c4b8 0x0001c478 UNKNOWN IOService::systemWillShutdown(unsigned int)
 0x0000c4c0 0x0000c4c0 0x0001c480 UNKNOWN IOService::copyClientWithCategory(OSSymbol const*)
 0x0000c4c8 0x0000c4c8 0x0001c488 UNKNOWN IOService::configureReport(IOReportChannelList*, unsigned int, void*, void*)
@@ -1046,10 +1046,10 @@ CMDS=<<EOF
 i~arch
 i~type
 ir
-?e --
+echo --
 ol
 oml
-?e -- arm64 reloc
+echo -- arm64 reloc
 s 0x0000c000
 p8 8
 pxr 8
@@ -1153,7 +1153,7 @@ vaddr      paddr      target     type    name
 0x0000c308 0x0000c308 0x0001c2c8 UNKNOWN IORegistryEntry::setProperty(char const*, OSObject*)
 0x0000c310 0x0000c310 0x0001c2d0 UNKNOWN IORegistryEntry::setProperty(char const*, char const*)
 0x0000c318 0x0000c318 0x0001c2d8 UNKNOWN IORegistryEntry::setProperty(char const*, bool)
-0x0000c320 0x0000c320 0x0001c2e0 UNKNOWN IORegistryEntry::setProperty(char const*, unsigned long long, unsigned int)
+0x0000c320 0x0000c320 0x0001c2e0 UNKNOWN IORegistryEntry::setProperty(char const*, uint64_t, unsigned int)
 0x0000c328 0x0000c328 0x0001c2e8 UNKNOWN IORegistryEntry::setProperty(char const*, void*, unsigned int)
 0x0000c330 0x0000c330 0x0001c2f0 UNKNOWN IORegistryEntry::removeProperty(OSSymbol const*)
 0x0000c338 0x0000c338 0x0001c2f8 UNKNOWN IORegistryEntry::removeProperty(OSString const*)
@@ -1203,7 +1203,7 @@ vaddr      paddr      target     type    name
 0x0000c498 0x0000c498 0x0001c458 UNKNOWN IOService::requestTerminate(IOService*, unsigned int)
 0x0000c4a0 0x0000c4a0 0x0001c460 UNKNOWN IOService::willTerminate(IOService*, unsigned int)
 0x0000c4a8 0x0000c4a8 0x0001c468 UNKNOWN IOService::didTerminate(IOService*, unsigned int, bool*)
-0x0000c4b0 0x0000c4b0 0x0001c470 UNKNOWN IOService::nextIdleTimeout(unsigned long long, unsigned long long, unsigned int)
+0x0000c4b0 0x0000c4b0 0x0001c470 UNKNOWN IOService::nextIdleTimeout(uint64_t, uint64_t, unsigned int)
 0x0000c4b8 0x0000c4b8 0x0001c478 UNKNOWN IOService::systemWillShutdown(unsigned int)
 0x0000c4c0 0x0000c4c0 0x0001c480 UNKNOWN IOService::copyClientWithCategory(OSSymbol const*)
 0x0000c4c8 0x0000c4c8 0x0001c488 UNKNOWN IOService::configureReport(IOReportChannelList*, unsigned int, void*, void*)
@@ -1390,7 +1390,7 @@ CMDS=<<EOF
 i~arch
 i~type
 ir
-?e --
+echo --
 ol
 oml
 EOF
@@ -1398,8 +1398,12 @@ EXPECT=<<EOF
 arch     arm
 type     Kernel extension bundle file
 bintype  mach0
-vaddr paddr type name 
-----------------------
+vaddr      paddr      type   name 
+----------------------------------
+0x000080b4 0x000080b4 SET_64 
+0x000080bc 0x000080bc SET_64 
+0x0000c000 0x0000c000 SET_64 
+0x0000e008 0x0000e008 SET_64 
 --
  3 * r-x 0x0001e290 bins/mach0/IOKitTest-arm64e.kext/Contents/MacOS/IOKitTest
  4 - r-x 0x0001e290 vfile://0/patched
@@ -1417,10 +1421,10 @@ CMDS=<<EOF
 i~arch
 i~type
 ir
-?e --
+echo --
 ol
 oml
-?e --
+echo --
 s 0x00004074
 p8 8
 pxr 8

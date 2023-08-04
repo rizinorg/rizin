@@ -22,7 +22,8 @@ extern "C" {
 
 typedef enum {
 	RZ_IL_TYPE_PURE_BOOL,
-	RZ_IL_TYPE_PURE_BITVECTOR
+	RZ_IL_TYPE_PURE_BITVECTOR,
+	RZ_IL_TYPE_PURE_FLOAT,
 } RzILTypePure;
 
 typedef struct rz_il_sort_pure_t {
@@ -31,6 +32,9 @@ typedef struct rz_il_sort_pure_t {
 		struct {
 			ut32 length;
 		} bv;
+		struct {
+			RzFloatFormat format;
+		} f;
 	} props;
 } RzILSortPure;
 
@@ -58,6 +62,15 @@ static inline RzILSortPure rz_il_sort_pure_bv(ut32 length) {
 		{ { 0 } },
 	};
 	r.props.bv.length = length;
+	return r;
+}
+
+static inline RzILSortPure rz_il_sort_pure_float(RzFloatFormat format) {
+	RzILSortPure r = {
+		RZ_IL_TYPE_PURE_FLOAT,
+		{ { 0 } },
+	};
+	r.props.f.format = format;
 	return r;
 }
 

@@ -1,8 +1,8 @@
 NAME=arm - elf - main detection
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
-?v main
-?v sym.main
+%v main
+%v sym.main
 EOF
 EXPECT=<<EOF
 0x50c
@@ -32,6 +32,7 @@ push {r7, lr}
 add ip, pc, 0, 12
 push {r3, lr}
 add ip, pc, 0, 12
+movs r0, r0
 EOF
 RUN
 
@@ -508,7 +509,7 @@ NAME=x86 - pdj 4
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 pdj 4~{}
-?e
+echo
 EOF
 EXPECT=<<EOF
 [

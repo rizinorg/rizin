@@ -29,6 +29,10 @@ commands:
             summary: Analyze all function calls to imports
             cname: analyze_all_function_calls_to_imports
             args: []
+      - name: aaC
+        summary: Analysis classes from RzBin
+        cname: analysis_recover_all_classes_from_bin
+        args: []
       - name: aad
         summary: Analyze data references to code
         cname: analyze_all_data_references_to_code
@@ -95,12 +99,16 @@ commands:
         summary: Language specific analysis commands
         subcommands:
           - name: aalg
-            summary: Recovers and analyze all Golang functions and strings
+            summary: Recover and analyze all Golang functions and strings
             cname: recover_all_golang_functions_strings
             args: []
-          - name: aalo
-            summary: Analyze all Objective-C references
+          - name: aalor
+            summary: Analyze all Objective-C references from selector usages to their implementations
             cname: analyze_all_objc_references
+            args: []
+          - name: aalos
+            summary: Recover all Objective-C selector stub names (__objc_stubs section contents)
+            cname: analyze_all_objc_stubs
             args: []
       - name: aan
         summary: Automatic rename functions commands
@@ -1015,8 +1023,6 @@ commands:
             comment: "json formatted disassembly"
           - text: "sdb"
             comment: "SDB key-value"
-          - text: "tiny"
-            comment: "Tiny ascii art"
           - text: "interactive"
             comment: "Interactive ascii art"
     subcommands:
@@ -1103,6 +1109,14 @@ commands:
       - name: agx
         summary: Cross-references graph
         cname: analysis_graph_xrefs
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agI
+        summary: RzIL graph of the instruction at the current offset.
+        cname: analysis_graph_il
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
@@ -1523,8 +1537,6 @@ commands:
             args:
               - name: var_name
                 type: RZ_CMD_ARG_TYPE_STRING
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
               - name: type
                 type: RZ_CMD_ARG_TYPE_ANY_TYPE
           - name: avgd
@@ -2200,6 +2212,23 @@ commands:
           - name: n_instructions
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+      - name: aoi
+        summary: Print the RzIL of next N instructions
+        subcommands:
+          - name: aoi
+            summary: Print the RzIL of next N instructions
+            cname: analyze_n_ins_il
+            args:
+              - name: n_instructions
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: aoip
+            summary: Pretty print the RzIL of next N instructions
+            cname: analyze_n_ins_il_pretty
+            args:
+              - name: n_instructions
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
       - name: aod
         summary: Describe opcode for asm.arch
         cname: analyze_opcode

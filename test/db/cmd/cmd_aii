@@ -23,7 +23,7 @@ aii pigs
 aii dogs
 aii sheep
 aii
-?e -
+echo -
 aii-
 EOF
 EXPECT=<<EOF

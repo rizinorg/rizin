@@ -17,6 +17,7 @@
 static const char *regs_bound_32[] = {
 	"lr", "sp",
 	"qf", "vf", "cf", "zf", "nf", "gef",
+	"fpscr",
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12",
 	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
 	"d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31",
@@ -89,6 +90,41 @@ static ut32 reg_bits(arm_reg reg) {
 	return 32;
 }
 
+static bool is_vec_signed(arm_vectordata_type vec_type) {
+	switch (vec_type) {
+	case ARM_VECTORDATA_S8:
+	case ARM_VECTORDATA_S16:
+	case ARM_VECTORDATA_S32:
+	case ARM_VECTORDATA_S64:
+	case ARM_VECTORDATA_I8:
+	case ARM_VECTORDATA_I16:
+	case ARM_VECTORDATA_I32:
+	case ARM_VECTORDATA_I64:
+		return true;
+	case ARM_VECTORDATA_U8:
+	case ARM_VECTORDATA_U16:
+	case ARM_VECTORDATA_U32:
+	case ARM_VECTORDATA_U64:
+		return false;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+static bool is_core_reg(arm_reg reg) {
+	if (reg >= ARM_REG_S0 && reg <= ARM_REG_S31) {
+		return false;
+	}
+	if (reg >= ARM_REG_D0 && reg <= ARM_REG_D31) {
+		return false;
+	}
+	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
+		return false;
+	}
+	return true;
+}
+
 /**
  * IL to read the given capstone reg
  */
@@ -101,8 +137,97 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 		RzILOpBitVector *var = VARG(reg_var_name(ARM_REG_D0 + idx / 2));
 		return UNSIGNED(32, idx % 2 ? SHIFTR0(var, UN(7, 32)) : var);
 	}
+	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
+		ut32 low_dr_idx = (reg - ARM_REG_Q0) << 1;
+		ut32 high_dr_idx = low_dr_idx + 1;
+		RzILOpBitVector *low_var = VARG(reg_var_name(ARM_REG_D0 + low_dr_idx));
+		RzILOpBitVector *high_var = VARG(reg_var_name(ARM_REG_D0 + high_dr_idx));
+		return APPEND(high_var, low_var);
+	}
+
 	const char *var = reg_var_name(reg);
 	return var ? VARG(var) : NULL;
+}
+
+/**
+ * Return IL of bitvector store in register lane
+ * The length of such bitv is `data_size`
+ */
+static RzILOpBitVector *read_reg_lane(arm_reg reg, ut32 lane, ut32 data_size) {
+	if (is_core_reg(reg)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	ut32 shift_dist = lane * data_size;
+	RzILOpBitVector *reg_val = read_reg(0, reg);
+	return UNSIGNED(data_size, SHIFTR0(reg_val, UN(8, shift_dist)));
+}
+
+/**
+ * Return the data width of given data type
+ * note: Those data_type which contains 2 type (F16.F64, F32.F16)
+ * is out of the scope of this function
+ */
+static inline ut32 arm_data_width(arm_vectordata_type vec_type) {
+	switch (vec_type) {
+	case ARM_VECTORDATA_I32:
+	case ARM_VECTORDATA_U32:
+	case ARM_VECTORDATA_S32:
+	case ARM_VECTORDATA_F32:
+		return 32;
+	case ARM_VECTORDATA_I8:
+	case ARM_VECTORDATA_U8:
+	case ARM_VECTORDATA_S8:
+		return 8;
+	case ARM_VECTORDATA_I16:
+	case ARM_VECTORDATA_S16:
+	case ARM_VECTORDATA_U16:
+		return 16;
+	case ARM_VECTORDATA_I64:
+	case ARM_VECTORDATA_F64:
+	case ARM_VECTORDATA_U64:
+	case ARM_VECTORDATA_S64:
+		return 64;
+	case ARM_VECTORDATA_INVALID:
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+static inline RzFloatFormat dt2fmt(arm_vectordata_type type) {
+	switch (type) {
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16:
+		return RZ_FLOAT_IEEE754_BIN_16;
+#endif
+	case ARM_VECTORDATA_F32:
+		return RZ_FLOAT_IEEE754_BIN_32;
+	case ARM_VECTORDATA_F64:
+		return RZ_FLOAT_IEEE754_BIN_64;
+	default:
+		return RZ_FLOAT_UNK;
+	}
+}
+
+static inline RzFloatFormat cvtdt2fmt(arm_vectordata_type type, bool choose_src) {
+	switch (type) {
+	case ARM_VECTORDATA_F16F64:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_64 : RZ_FLOAT_IEEE754_BIN_16;
+	case ARM_VECTORDATA_F64F16:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_16 : RZ_FLOAT_IEEE754_BIN_64;
+	case ARM_VECTORDATA_F32F16:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_16 : RZ_FLOAT_IEEE754_BIN_32;
+	case ARM_VECTORDATA_F16F32:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_32 : RZ_FLOAT_IEEE754_BIN_16;
+	case ARM_VECTORDATA_F64F32:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_32 : RZ_FLOAT_IEEE754_BIN_64;
+	case ARM_VECTORDATA_F32F64:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_64 : RZ_FLOAT_IEEE754_BIN_32;
+	default:
+		return RZ_FLOAT_UNK;
+	}
 }
 
 #define PC(addr, is_thumb)      (addr + (is_thumb ? 4 : 8))
@@ -110,6 +235,17 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 #define REG_VAL(id)             read_reg(PC(insn->address, is_thumb), id)
 #define REG(n)                  REG_VAL(REGID(n))
 #define MEMBASE(x)              REG_VAL(insn->detail->arm.operands[x].mem.base)
+#define DT_WIDTH(insn)          arm_data_width(insn->detail->arm.vector_data)
+#define REG_WIDTH(n)            reg_bits(REGID(n))
+#define VVEC_SIZE(insn)         insn->detail->arm.vector_size
+#define VVEC_DT(insn)           insn->detail->arm.vector_data
+#define FROM_FMT(dt)            cvtdt2fmt(dt, true)
+#define TO_FMT(dt)              cvtdt2fmt(dt, false)
+#if CS_API_MAJOR > 3
+// clang-format off
+#define NEON_LANE(n)            insn->detail->arm.operands[n].neon_lane
+// clang-format on
+#endif
 
 /**
  * IL to write the given capstone reg
@@ -125,6 +261,15 @@ static RzILOpEffect *write_reg(arm_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector *v
 			v = SHIFTL0(v, UN(6, 32));
 		}
 		return SETG(reg_var_name(dreg), LOGOR(masked, v));
+	}
+	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
+		arm_reg low_reg = ARM_REG_D0 + ((reg - ARM_REG_Q0) << 1);
+		arm_reg high_reg = low_reg + 1;
+		RzILOpBitVector *low_val = UNSIGNED(64, v);
+		RzILOpBitVector *high_val = UNSIGNED(64, SHIFTR0(DUP(v), UN(8, 64)));
+		return SEQ2(
+			SETG(reg_var_name(low_reg), low_val),
+			SETG(reg_var_name(high_reg), high_val));
 	}
 	const char *var = reg_var_name(reg);
 	if (!var) {
@@ -187,7 +332,8 @@ static bool is_reg_shift(arm_shifter type) {
 	}
 }
 
-static RZ_NULLABLE RzILOpBitVector *shift(RzILOpBitVector *val, RZ_NULLABLE RzILOpBool **carry_out, arm_shifter type, RZ_OWN RzILOpBitVector *dist) {
+static RZ_NULLABLE RzILOpBitVector *
+shift(RzILOpBitVector *val, RZ_NULLABLE RzILOpBool **carry_out, arm_shifter type, RZ_OWN RzILOpBitVector *dist) {
 	switch (type) {
 	case ARM_SFT_ASR:
 	case ARM_SFT_ASR_REG:
@@ -253,6 +399,102 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm_op *op, 
 }
 
 /**
+ * Replicate given value to `dreg_width` length
+ * Note the ownership of `val` will be transfered
+ */
+static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RZ_OWN RzILOpBitVector *val) {
+	ut32 repeat_times = dreg_width / val_width;
+	if (dreg_width % val_width != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpBitVector *ext_val = UNSIGNED(dreg_width, val);
+	RzILOpBitVector *rep_val = ext_val;
+	for (int i = 0; i < repeat_times - 1; ++i) {
+		rep_val = LOGOR(rep_val, SHIFTL0(DUP(ext_val), UN(8, val_width * i)));
+	}
+
+	return rep_val;
+}
+
+/**
+ * For VFP/NEON instruction immediate value
+ * <imm> in Arm ref manual: "A constant of the type specified by <dt>.
+ * This constant is replicated enough times to fill the destination register.
+ */
+static RzILOpBitVector *repeated_imm(ut32 imm_width, ut32 dreg_width, ut32 imm) {
+	ut64 final_imm = 0;
+	ut32 repeat_times = dreg_width / imm_width;
+	ut64 tmp = imm;
+
+	if (dreg_width == 128) {
+		// for <Qd> registers
+		ut64 imm_low = tmp;
+		ut64 imm_high = tmp;
+
+		for (int i = 0; i < repeat_times / 2 - 1; ++i) {
+			imm_low += tmp;
+			imm_high += tmp;
+			tmp <<= imm_width;
+		}
+
+		return (APPEND(UN(64, imm_high), UN(64, imm_low)));
+	}
+
+	// for <Dd> and <Sd>
+	final_imm = tmp;
+	for (int i = 0; i < repeat_times - 1; ++i) {
+		final_imm += tmp;
+		tmp <<= imm_width;
+	}
+
+	return UN(dreg_width, final_imm);
+}
+
+/**
+ * Get immediate value operand
+ * \param insn instruction
+ * \param n operand number
+ * \param carry_out carryout value, NULL if ignore
+ * \return return immediate value as ut32
+ */
+static ut32 get_imm(cs_insn *insn, int n, RZ_NULLABLE RzILOpBool **carry_out) {
+	if (carry_out) {
+		*carry_out = NULL;
+	}
+	if (ISFPIMM(n)) {
+		float fpimm = FPIMM(n);
+		RzFloat *f = rz_float_new_from_f32(fpimm);
+		ut32 hex_imm = rz_bv_to_ut32(f->s);
+		rz_float_free(f);
+		return hex_imm;
+	}
+	cs_arm_op *op = &insn->detail->arm.operands[n];
+	ut32 imm = IMM(n);
+	if (op->shift.type == ARM_SFT_INVALID && ISIMM(n + 1)) {
+		// sometimes capstone encoded the shift like this, see also comment below
+		ut32 ror = IMM(n + 1);
+		imm = (imm >> ror) | (imm << (32 - ror));
+	}
+
+	if (carry_out) {
+		// Some "movs"s leave c alone, some set it to the highest bit of the result.
+		// Determining which one it is from capstone's info is tricky:
+		// Arm defines that it is set when the imm12's rotate value is not 0.
+		// This is the case when:
+		// * capstone disassembles to something like "movs r0, 0, 2", giving us an explicit third operand
+		// * capstone disassembles to something like "movs r0, 0x4000000" without the third operand,
+		//   but we can see that the value is larger than 8 bits, so there must be a shift.
+		if (ISIMM(n + 1) || imm > 0xff) {
+			*carry_out = (imm & (1ul << 31)) ? IL_TRUE : IL_FALSE;
+		}
+	}
+
+	return imm;
+}
+
+/**
  * IL to retrieve the value of the \p n -th arg of \p insn
  * \p carry_out filled with the carry value of NULL if it does not change
  */
@@ -279,24 +521,7 @@ static RzILOpBitVector *arg(cs_insn *insn, bool is_thumb, int n, RZ_NULLABLE RzI
 		return r ? shift(r, carry_out, op->shift.type, dist) : NULL;
 	}
 	case ARM_OP_IMM: {
-		ut32 imm = IMM(n);
-		if (op->shift.type == ARM_SFT_INVALID && ISIMM(n + 1)) {
-			// sometimes capstone encoded the shift like this, see also comment below
-			ut32 ror = IMM(n + 1);
-			imm = (imm >> ror) | (imm << (32 - ror));
-		}
-		if (carry_out) {
-			// Some "movs"s leave c alone, some set it to the highest bit of the result.
-			// Determining which one it is from capstone's info is tricky:
-			// Arm defines that it is set when the imm12's rotate value is not 0.
-			// This is the case when:
-			// * capstone disassembles to something like "movs r0, 0, 2", giving us an explicit third operand
-			// * capstone disassembles to something like "movs r0, 0x4000000" without the third operand,
-			//   but we can see that the value is larger than 8 bits, so there must be a shift.
-			if (ISIMM(n + 1) || imm > 0xff) {
-				*carry_out = (imm & (1ul << 31)) ? IL_TRUE : IL_FALSE;
-			}
-		}
+		ut32 imm = get_imm(insn, n, carry_out);
 		return U32(imm);
 	}
 	case ARM_OP_MEM: {
@@ -482,7 +707,9 @@ static RzILOpEffect *add_sub(cs_insn *insn, bool is_thumb) {
 		// alias for adr
 		return adr(insn, is_thumb);
 	}
-	bool is_sub = insn->id == ARM_INS_SUB || insn->id == ARM_INS_SUBW || insn->id == ARM_INS_RSB || insn->id == ARM_INS_RSC || insn->id == ARM_INS_SBC;
+	bool is_sub =
+		insn->id == ARM_INS_SUB || insn->id == ARM_INS_SUBW || insn->id == ARM_INS_RSB || insn->id == ARM_INS_RSC ||
+		insn->id == ARM_INS_SBC;
 	RzILOpBitVector *a = ARG(OPCOUNT() > 2 ? 1 : 0);
 	RzILOpBitVector *b = ARG(OPCOUNT() > 2 ? 2 : 1);
 	if (insn->id == ARM_INS_RSB || insn->id == ARM_INS_RSC) {
@@ -564,7 +791,8 @@ static RzILOpEffect *mul(cs_insn *insn, bool is_thumb) {
 static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 	bool is_double = insn->id == ARM_INS_LDRD || insn->id == ARM_INS_LDREXD;
 	size_t mem_idx = is_double ? 2 : 1;
-	if (!ISREG(0) || !ISMEM(mem_idx) || (is_double && (!ISREG(1) || REGID(0) == ARM_REG_PC || REGID(1) == ARM_REG_PC))) {
+	if (!ISREG(0) || !ISMEM(mem_idx) ||
+		(is_double && (!ISREG(1) || REGID(0) == ARM_REG_PC || REGID(1) == ARM_REG_PC))) {
 		return NULL;
 	}
 	RzILOpBitVector *addr;
@@ -875,13 +1103,15 @@ static RzILOpEffect *uxt(cs_insn *insn, bool is_thumb) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
-	bool is_add = insn->id == ARM_INS_UXTAB || insn->id == ARM_INS_UXTAH || insn->id == ARM_INS_SXTAB || insn->id == ARM_INS_SXTAH;
+	bool is_add = insn->id == ARM_INS_UXTAB || insn->id == ARM_INS_UXTAH || insn->id == ARM_INS_SXTAB ||
+		insn->id == ARM_INS_SXTAH;
 	RzILOpBitVector *src = ARG(is_add ? 2 : 1);
 	if (!src) {
 		return NULL;
 	}
 	ut32 src_bits =
-		insn->id == ARM_INS_UXTH || insn->id == ARM_INS_UXTAH || insn->id == ARM_INS_SXTH || insn->id == ARM_INS_SXTAH
+		insn->id == ARM_INS_UXTH || insn->id == ARM_INS_UXTAH || insn->id == ARM_INS_SXTH ||
+			insn->id == ARM_INS_SXTAH
 		? 16
 		: 8;
 	RzILOpBitVector *val = UNSIGNED(src_bits, src);
@@ -1140,6 +1370,7 @@ static void label_svc(RzILVM *vm, RzILOpEffect *op) {
 }
 
 #if CS_API_MAJOR > 3
+
 /**
  * Capstone: ARM_INS_HVC
  * ARM: hvc
@@ -1147,6 +1378,7 @@ static void label_svc(RzILVM *vm, RzILOpEffect *op) {
 static RzILOpEffect *hvc(cs_insn *insn, bool is_thumb) {
 	return GOTO("hvc");
 }
+
 #endif
 
 static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
@@ -1329,7 +1561,9 @@ static RzILOpEffect *pkhbt(cs_insn *insn, bool is_thumb) {
  * \p min minimal value of the range to saturate into
  * \p min maximal value of the range to saturate into
  */
-static RzILOpEffect *saturate_signed_to_range(const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q, st64 min, st64 max) {
+static RzILOpEffect *
+saturate_signed_to_range(const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q, st64 min,
+	st64 max) {
 	return SEQ2(
 		SETL("er", val),
 		BRANCH(SGT(VARL("er"), SN(ext_bits, max)),
@@ -1339,7 +1573,8 @@ static RzILOpEffect *saturate_signed_to_range(const char *dst, ut32 bits, RzILOp
 				SETL(dst, UNSIGNED(bits, VARL("er"))))));
 }
 
-static RzILOpEffect *saturate_signed(bool to_signed, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
+static RzILOpEffect *
+saturate_signed(bool to_signed, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
 	st64 max = to_signed ? (1ull << (bits - 1)) - 1 : (1ull << bits) - 1;
 	st64 min = to_signed ? -max - 1 : 0;
 	return saturate_signed_to_range(dst, bits, val, ext_bits, set_q, min, max);
@@ -1352,7 +1587,8 @@ static RzILOpEffect *saturate_signed(bool to_signed, const char *dst, ut32 bits,
  * \p val value to saturate, of \p ext_bits bits
  * \p set_q whether to set the q flag on saturation
  */
-static RzILOpEffect *saturate_unsigned(bool is_sub, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
+static RzILOpEffect *
+saturate_unsigned(bool is_sub, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
 	ut64 max = (1ull << bits) - 1;
 	ut64 min = 0;
 	return SEQ2(
@@ -1362,7 +1598,8 @@ static RzILOpEffect *saturate_unsigned(bool is_sub, const char *dst, ut32 bits, 
 			SETL(dst, UNSIGNED(bits, VARL("er")))));
 }
 
-static RzILOpEffect *saturate(bool sign, bool is_sub, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
+static RzILOpEffect *
+saturate(bool sign, bool is_sub, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
 	return sign
 		? saturate_signed(true, dst, bits, val, ext_bits, set_q)
 		: saturate_unsigned(is_sub, dst, bits, val, ext_bits, set_q);
@@ -1469,8 +1706,9 @@ static RzILOpEffect *qadd16(cs_insn *insn, bool is_thumb) {
 	if (!eff) {
 		return NULL;
 	}
-	bool is_signed = insn->id == ARM_INS_QADD16 || insn->id == ARM_INS_QSUB16 || insn->id == ARM_INS_QASX || insn->id == ARM_INS_QSAX;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	bool is_signed = insn->id == ARM_INS_QADD16 || insn->id == ARM_INS_QSUB16 || insn->id == ARM_INS_QASX ||
+		insn->id == ARM_INS_QSAX;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	RzILOpBitVector *al = cast(17, UNSIGNED(16, a));
 	RzILOpBitVector *ah = cast(17, UNSIGNED(16, SHIFTR0(DUP(a), UN(5, 16))));
 	RzILOpBitVector *bl = cast(17, UNSIGNED(16, b));
@@ -1506,7 +1744,8 @@ static RzILOpEffect *qadd16(cs_insn *insn, bool is_thumb) {
 		h = ADD(ah, bh);
 		break;
 	}
-	return SEQ3(saturate(is_signed, l_sub, "rl", 16, l, 17, false), saturate(is_signed, h_sub, "rh", 16, h, 17, false), eff);
+	return SEQ3(saturate(is_signed, l_sub, "rl", 16, l, 17, false), saturate(is_signed, h_sub, "rh", 16, h, 17, false),
+		eff);
 }
 
 /**
@@ -1530,7 +1769,7 @@ static RzILOpEffect *qadd8(cs_insn *insn, bool is_thumb) {
 	}
 	bool is_signed = insn->id == ARM_INS_QADD8 || insn->id == ARM_INS_QSUB8;
 	bool is_sub = insn->id == ARM_INS_QSUB8 || insn->id == ARM_INS_UQSUB8;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	return SEQ5(
 		saturate(is_signed, is_sub, "rb0", 8,
 			is_sub
@@ -1539,18 +1778,24 @@ static RzILOpEffect *qadd8(cs_insn *insn, bool is_thumb) {
 			9, false),
 		saturate(is_signed, is_sub, "rb1", 8,
 			is_sub
-				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 8)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 8)))))
-				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 8)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 8))))),
+				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 8)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 8)))))
+				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 8)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 8))))),
 			9, false),
 		saturate(is_signed, is_sub, "rb2", 8,
 			is_sub
-				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 16)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 16)))))
-				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 16)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 16))))),
+				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 16)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 16)))))
+				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 16)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 16))))),
 			9, false),
 		saturate(is_signed, is_sub, "rb3", 8,
 			is_sub
-				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 24)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24)))))
-				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 24)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24))))),
+				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 24)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24)))))
+				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 24)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24))))),
 			9, false),
 		eff);
 }
@@ -1615,7 +1860,8 @@ static RzILOpEffect *revsh(cs_insn *insn, bool is_thumb) {
 	if (!v) {
 		return NULL;
 	}
-	return write_reg(REGID(0), LET("r", APPEND(UNSIGNED(8, v), UNSIGNED(8, SHIFTR0(DUP(v), UN(5, 8)))), SIGNED(32, VARLP("r"))));
+	return write_reg(REGID(0),
+		LET("r", APPEND(UNSIGNED(8, v), UNSIGNED(8, SHIFTR0(DUP(v), UN(5, 8)))), SIGNED(32, VARLP("r"))));
 }
 
 /**
@@ -1679,7 +1925,7 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	bool is_signed = insn->id == ARM_INS_SADD16 || insn->id == ARM_INS_SHADD16 || insn->id == ARM_INS_SASX ||
 		insn->id == ARM_INS_SSAX || insn->id == ARM_INS_SHASX || insn->id == ARM_INS_SHSAX ||
 		insn->id == ARM_INS_SSUB16 || insn->id == ARM_INS_SHSUB16;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	al = cast(17, al);
 	ah = cast(17, ah);
 	bl = cast(17, bl);
@@ -1728,7 +1974,8 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	}
 	bool set_ge = !halve;
 	RzILOpBitVector *res = halve
-		? APPEND(UNSIGNED(16, SHIFTRA(VARL("res1"), UN(4, 1))), UNSIGNED(16, SHIFTRA(VARL("res0"), UN(4, 1))))
+		? APPEND(UNSIGNED(16, SHIFTRA(VARL("res1"), UN(4, 1))),
+			  UNSIGNED(16, SHIFTRA(VARL("res0"), UN(4, 1))))
 		: APPEND(UNSIGNED(16, VARL("res1")), UNSIGNED(16, VARL("res0")));
 	RzILOpEffect *eff = write_reg(REGID(0), res);
 	if (!eff) {
@@ -1800,11 +2047,12 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 		break;
 	}
 	bool set_ge = !halve;
-	bool is_signed = insn->id == ARM_INS_SADD8 || insn->id == ARM_INS_SHADD8 || insn->id == ARM_INS_SSUB8 || insn->id == ARM_INS_SHSUB8;
+	bool is_signed = insn->id == ARM_INS_SADD8 || insn->id == ARM_INS_SHADD8 || insn->id == ARM_INS_SSUB8 ||
+		insn->id == ARM_INS_SHSUB8;
 	if (set_ge) {
 		// Retroactively patch the ops to extend to 8 before the calculation because this is needed for ge
 		// Note: add/sub members here use the same structure, so using just `.add` is fine.
-		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 		r0->op.add.x = cast(9, r0->op.add.x);
 		r0->op.add.y = cast(9, r0->op.add.y);
 		r1->op.add.x = cast(9, r1->op.add.x);
@@ -1881,9 +2129,13 @@ static RzILOpEffect *sel(cs_insn *insn, bool is_thumb) {
 		APPEND(
 			APPEND(
 				UNSIGNED(8, SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 3))), b, a), UN(5, 24))),
-				UNSIGNED(8, SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 2))), DUP(b), DUP(a)), UN(5, 16)))),
+				UNSIGNED(8,
+					SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 2))), DUP(b), DUP(a)),
+						UN(5, 16)))),
 			APPEND(
-				UNSIGNED(8, SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 1))), DUP(b), DUP(a)), UN(5, 8))),
+				UNSIGNED(8,
+					SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 1))), DUP(b), DUP(a)),
+						UN(5, 8))),
 				UNSIGNED(8, ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1))), DUP(b), DUP(a))))));
 }
 
@@ -2003,7 +2255,8 @@ static RzILOpEffect *umull(cs_insn *insn, bool is_thumb) {
 }
 
 static RzILOpBitVector *absdiff(RzILOpBitVector *a, RzILOpBitVector *b) {
-	return LET("a", a, LET("b", b, ITE(ULE(VARLP("a"), VARLP("b")), SUB(VARLP("b"), VARLP("a")), SUB(VARLP("a"), VARLP("b")))));
+	return LET("a", a,
+		LET("b", b, ITE(ULE(VARLP("a"), VARLP("b")), SUB(VARLP("b"), VARLP("a")), SUB(VARLP("a"), VARLP("b")))));
 }
 
 /**
@@ -2068,7 +2321,8 @@ static RzILOpEffect *smlabb(cs_insn *insn, bool is_thumb) {
 	b = UNSIGNED(16, b);
 	RzILOpBitVector *product;
 	ut32 extend_bits;
-	if (insn->id == ARM_INS_SMLAD || insn->id == ARM_INS_SMLADX || insn->id == ARM_INS_SMLSD || insn->id == ARM_INS_SMLSDX) {
+	if (insn->id == ARM_INS_SMLAD || insn->id == ARM_INS_SMLADX || insn->id == ARM_INS_SMLSD ||
+		insn->id == ARM_INS_SMLSDX) {
 		extend_bits = 34; // need more bits for the larger range that can be reached here
 		RzILOpBitVector *ah = SIGNED(extend_bits, UNSIGNED(16, SHIFTR0(DUP(ra), UN(5, 16))));
 		RzILOpBitVector *bh = SIGNED(extend_bits, UNSIGNED(16, exchange_b ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))));
@@ -2141,7 +2395,8 @@ static RzILOpEffect *smlal(cs_insn *insn, bool is_thumb) {
 		b = SIGNED(64, b);
 	}
 	RzILOpBitVector *product;
-	if (insn->id == ARM_INS_SMLALD || insn->id == ARM_INS_SMLALDX || insn->id == ARM_INS_SMLSLD || insn->id == ARM_INS_SMLSLDX) {
+	if (insn->id == ARM_INS_SMLALD || insn->id == ARM_INS_SMLALDX || insn->id == ARM_INS_SMLSLD ||
+		insn->id == ARM_INS_SMLSLDX) {
 		RzILOpBitVector *ah = SIGNED(64, UNSIGNED(16, SHIFTR0(DUP(ra), UN(5, 16))));
 		RzILOpBitVector *bh = SIGNED(64, UNSIGNED(16, exchange_b ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))));
 		product = insn->id == ARM_INS_SMLSLD || insn->id == ARM_INS_SMLSLDX
@@ -2296,7 +2551,8 @@ static RzILOpEffect *smulbb(cs_insn *insn, bool is_thumb) {
 		res = SUB(res,
 			MUL(
 				SIGNED(32, UNSIGNED(16, SHIFTR0(DUP(ra), UN(5, 16)))),
-				SIGNED(32, UNSIGNED(16, insn->id == ARM_INS_SMUSDX ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))))));
+				SIGNED(32,
+					UNSIGNED(16, insn->id == ARM_INS_SMUSDX ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))))));
 	}
 	return write_reg(REGID(0), res);
 }
@@ -2314,20 +2570,1443 @@ static RzILOpEffect *tbb(cs_insn *insn, bool is_thumb) {
 	return JMP(ADD(U32(PC(insn->address, is_thumb)), SHIFTL0(UNSIGNED(32, off), UN(5, 1))));
 }
 
+static RzILOpEffect *write_reg_lane(arm_reg reg, ut32 lane, ut32 vec_size, RzILOpBitVector *v) {
+	ut32 reg_size = reg_bits(reg);
+	ut32 offset = vec_size * lane;
+
+	// up bound is reg_bits(<Qd>)
+	if (offset + vec_size > 128) {
+		return NULL;
+	}
+
+	RzILOpBitVector *sft_val = SHIFTL0(UNSIGNED(reg_size, v), UN(8, offset));
+	return write_reg(reg, sft_val);
+}
+
+/**
+ * For Extend Instruction Set
+ * TODO: Split to a seperate file and include before arm lifter
+ * VFP and NEON
+ */
+
+#if CS_API_MAJOR > 3
 /**
  * Capstone: ARM_INS_VMOV
  * ARM: vmov
  */
 static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
-	if (OPCOUNT() != 2 || !ISREG(0) || !ISREG(1)) {
-		// for now, only support vmov rt, rn
+	if (OPCOUNT() < 2 || !ISREG(0) || (!ISIMM(1) && !ISREG(1))) {
 		return NULL;
 	}
+
+	// vmov for immediate must be unconditional
+	// vmov.<dt> <Qd>, or vmov.<dt> <Dd>
+	// vmov.F32 <Sd>, or vmov.F64 <Qd>
+	if (ISIMM(1)) {
+		// possible : I8, I16, I32, I64, F32 for Q/D register
+		// possible : F32 for S register
+		// possible : F64 for D register
+		ut32 imm_width = DT_WIDTH(insn);
+		if (!imm_width) {
+			return NULL;
+		}
+		ut32 reg_width = REG_WIDTH(0);
+		if (reg_width < imm_width) {
+			return NULL;
+		}
+
+		ut32 imm = get_imm(insn, 1, NULL);
+		RzILOpBitVector *imm_bv = repeated_imm(imm_width, reg_width, imm);
+		if (!imm_bv) {
+			return NULL;
+		}
+
+		// vmvn Dd, imm
+		if (insn->id == ARM_INS_VMVN) {
+			imm_bv = LOGNOT(imm_bv);
+		}
+
+		return write_reg(REGID(0), imm_bv);
+	}
+
+	// 2 core registers and 1 double-word register
+	if (OPCOUNT() == 3) {
+		if (!is_core_reg(REGID(0))) {
+			// vmov <Dm> <Rt1> <Rt2>, Dm[low] = Rt1, Dm[high] = Rt2
+			RzILOpBitVector *rt1_val = REG(1);
+			RzILOpBitVector *rt2_val = REG(2);
+			if (!rt1_val || !rt2_val) {
+				return NULL;
+			}
+			return write_reg(REGID(0), APPEND(rt2_val, rt1_val));
+		}
+		// vmov <Rt1> <Rt2> <Dm>, Rt1 = Dm[low], Rt2 = Dm[high]
+		RzILOpBitVector *reg_val = REG(2);
+		if (!reg_val) {
+			return NULL;
+		}
+		RzILOpBitVector *rt1_val = UNSIGNED(32, DUP(reg_val));
+		RzILOpBitVector *rt2_val = UNSIGNED(32, SHIFTR0(reg_val, UN(8, 32)));
+		return SEQ2(write_reg(REGID(0), rt1_val),
+			write_reg(REGID(1), rt2_val));
+	}
+
+	// 2 core registers and 2 single-word registers
+	// vmov <Sm1> <Sm2> <Rt1> <Rt2>
+	// vmov <Rt1> <Rt2> <Sm1> <Sm2>
+	if (OPCOUNT() == 4) {
+		RzILOpBitVector *rt1_val = REG(2);
+		RzILOpBitVector *rt2_val = REG(3);
+		if (!rt1_val || !rt2_val) {
+			return NULL;
+		}
+		return SEQ2(write_reg(REGID(0), rt1_val),
+			write_reg(REGID(1), rt2_val));
+	}
+
+	// core register to scalar
+	if (NEON_LANE(0) != -1 && !is_core_reg(REGID(0)) && is_core_reg(REGID(1))) {
+		// vmov.<vec_size> <Dd>[lane], <Rt>
+		// <Dd>[lane] = <Rt>{vecsize - 1 : 0}
+		if (!VVEC_SIZE(insn) || NEON_LANE(0) == -1) {
+			return NULL;
+		}
+		RzILOpBitVector *rt_val = UNSIGNED(VVEC_SIZE(insn), REG(1));
+		return write_reg_lane(REGID(0), NEON_LANE(0), VVEC_SIZE(insn), rt_val);
+	}
+
+	// scalar to core register
+	if (NEON_LANE(1) != -1 && !is_core_reg(REGID(1)) && is_core_reg(REGID(0))) {
+		// vmov.<dt> <Rt> <Dd>[lane]
+		// <Rt> = extend_to_32(<Dd>[lane], lane has size of dt)
+		// unsigned/signed extend is specified by <dt> in capstone
+		if (VVEC_DT(insn) == ARM_VECTORDATA_INVALID) {
+			return NULL;
+		}
+		bool use_zero_ext = true;
+		if (VVEC_DT(insn) == ARM_VECTORDATA_S8 || VVEC_DT(insn) == ARM_VECTORDATA_S16) {
+			use_zero_ext = false;
+		}
+		RzILOpBitVector *lane_val = read_reg_lane(REGID(1), NEON_LANE(1), DT_WIDTH(insn));
+		RzILOpBitVector *ext_lane_val = use_zero_ext ? UNSIGNED(32, lane_val) : SIGNED(32, lane_val);
+		return write_reg(REGID(0), ext_lane_val);
+	}
+
+	// 1. vmov rd, rn
+	// 2. core register and single-word register
 	RzILOpBitVector *val = ARG(1);
 	if (!val) {
 		return NULL;
 	}
+
+	// vmvn Qd, Qn
+	if (insn->id == ARM_INS_VMVN) {
+		val = LOGNOT(val);
+	}
+
 	return write_reg(REGID(0), val);
+}
+#endif
+
+/**
+ * Capstone: ARM_INS_VMRS
+ * ARM: vmrs
+ * read extension/NEON system register into core register
+ */
+static RzILOpEffect *vmrs(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || !ISREG(1)) {
+		return NULL;
+	}
+
+	// VMRS <Rt>, FPSCR only
+	if (REGID(1) != ARM_REG_FPSCR) {
+		return NULL;
+	}
+
+	// if <Rt> is APSR, transfer to flags
+	if (REGID(0) == ARM_REG_APSR_NZCV) {
+		RzILOpBitVector *val = VARG("fpscr");
+		return SEQ4(
+			SETG("nf", INV(IS_ZERO(LOGAND(val, U32(1ul << 31))))),
+			SETG("zf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 30))))),
+			SETG("cf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 29))))),
+			SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 28))))));
+	}
+
+	if (is_core_reg(REGID(0)) && REGID(0) != ARM_REG_PC) {
+		return write_reg(REGID(0), VARG("fpscr"));
+	}
+
+	return NULL;
+}
+
+/**
+ * Capstone: ARM_INS_VMSR
+ * ARM: vmsr
+ * write core register value into extension/NEON system register
+ */
+static RzILOpEffect *vmsr(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || REGID(0) != ARM_REG_FPSCR) {
+		return NULL;
+	}
+
+	RzILOpBitVector *val;
+	if (REGID(1) == ARM_REG_CPSR || REGID(1) == ARM_REG_SPSR || REGID(1) == ARM_REG_APSR) {
+		val = LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
+			LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
+				LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
+					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
+						LOGOR(ITE(VARG("qf"), U32(1ul << 27), U32(0)),
+							SHIFTL0(UNSIGNED(32, VARG("gef")), UN(5, 16)))))));
+	} else if (REGID(1) == ARM_REG_APSR_NZCV) {
+		val = LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
+			LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
+				LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
+					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
+						U32(0)))));
+	} else {
+		val = ARG(1);
+	}
+
+	return SETG("fpscr", val);
+}
+
+/**
+ * Capstone: ARM_INS_VAND, ARM_INS_VORR, ARM_INS_VORN, ARM_INS_VEOR, ARM_INS_VBIC,
+ * vand, vorr, vorn, veor, vbic
+ */
+static RzILOpEffect *vbitwise(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || OPCOUNT() < 2) {
+		return NULL;
+	}
+
+	// has following types:
+	// 1. bitwise_op <dst>, #imm
+	// 2. bitwise_op <dst>, <src1>, <src2>
+	RzILOpBitVector *src_a = ARG(OPCOUNT() - 2);
+	RzILOpBitVector *src_b;
+
+	// pseudo-instruction VAND(imm) disassembly produces VBIC(imm)
+	// pseudo-instruction VORN(imm) disassembly produces VORR(imm)
+	if ((insn->id == ARM_INS_VBIC || insn->id == ARM_INS_VORR) && ISIMM(OPCOUNT() - 1)) {
+		ut32 imm = get_imm(insn, OPCOUNT() - 1, NULL);
+		src_b = repeated_imm(DT_WIDTH(insn), REG_WIDTH(0), imm);
+	} else {
+		src_b = REG(OPCOUNT() - 1);
+	}
+
+	if (!src_a || !src_b) {
+		rz_il_op_pure_free(src_a);
+		rz_il_op_pure_free(src_b);
+		return NULL;
+	}
+
+	RzILOpBitVector *res;
+	switch (insn->id) {
+	case ARM_INS_VAND:
+		res = LOGAND(src_a, src_b);
+		break;
+	case ARM_INS_VORR:
+		res = LOGOR(src_a, src_b);
+		break;
+	case ARM_INS_VORN:
+		res = LOGOR(src_a, LOGNOT(src_b));
+		break;
+	case ARM_INS_VEOR:
+		res = LOGXOR(src_a, src_b);
+		break;
+	case ARM_INS_VBIC:
+		res = LOGAND(src_a, LOGNOT(src_b));
+		break;
+	default:
+		rz_il_op_pure_free(src_a);
+		rz_il_op_pure_free(src_b);
+		return NULL;
+	}
+
+	return write_reg(REGID(0), res);
+}
+
+/**
+ * Capstone: ARM_INS_VBIT, ARM_INS_VBIF, ARM_INS_VBSL
+ * ARM: vbit, vbif, vbsl
+ */
+static RzILOpEffect *vbit_insert(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || OPCOUNT() < 3) {
+		return NULL;
+	}
+
+	// v<op> <Qd>, <Qn>, <Qm>
+	// v<op> <Dd>, <Dn>, <Dm>
+	RzILOpBitVector *d = REG(0);
+	RzILOpBitVector *n = REG(1);
+	RzILOpBitVector *m = REG(2);
+
+	if (!d || !n || !m) {
+		rz_il_op_pure_free(d);
+		rz_il_op_pure_free(n);
+		rz_il_op_pure_free(m);
+		return NULL;
+	}
+
+	RzILOpBitVector *res;
+	switch (insn->id) {
+	case ARM_INS_VBIF:
+		// Rd = (d and m) or (n and not(m))
+		res = LOGOR(LOGAND(d, m), LOGAND(n, LOGNOT(DUP(m))));
+		break;
+	case ARM_INS_VBIT:
+		// Rd = (n and m) or (d and not(m))
+		res = LOGOR(LOGAND(n, m), LOGAND(d, LOGNOT(DUP(m))));
+		break;
+	case ARM_INS_VBSL:
+		// Rd = (n and d) or (m and not(d))
+		res = LOGOR(LOGAND(n, d), LOGAND(m, LOGNOT(DUP(d))));
+		break;
+	default:
+		rz_il_op_pure_free(d);
+		rz_il_op_pure_free(n);
+		rz_il_op_pure_free(m);
+		return NULL;
+	}
+
+	return write_reg(REGID(0), res);
+}
+
+/**
+ * Capstone: ARM_INS_VCEQ, ARM_INS_VCGE, ARM_INS_VCGT, ARM_INS_VCLE, ARM_INS_VCLT
+ * ARM_INS_VACGE, ARM_INS_VACGT
+ * ARM: vceq, vcge, vcgt, vcle, vclt, vacge, vacgt, [pseudo: vacle, vaclt]
+ */
+static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) && OPCOUNT() < 3) {
+		return NULL;
+	}
+
+	if (VVEC_DT(insn) == ARM_VECTORDATA_F32) {
+		ut32 vec_size = 32;
+		RzILOpEffect *eff = EMPTY();
+		for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
+			RzILOpFloat *l_elem = BV2F(RZ_FLOAT_IEEE754_BIN_32,
+				read_reg_lane(REGID(1), i, vec_size));
+			RzILOpFloat *r_elem = ISIMM(2) ? F32(0.0f) : BV2F(RZ_FLOAT_IEEE754_BIN_32, read_reg_lane(REGID(2), i, vec_size));
+			RzILOpBool *cond;
+			switch (insn->id) {
+			case ARM_INS_VCEQ:
+				cond = FEQ(l_elem, r_elem);
+				break;
+			case ARM_INS_VCGE:
+				cond = INV(FORDER(l_elem, r_elem));
+				break;
+			case ARM_INS_VCGT:
+				cond = FORDER(r_elem, l_elem);
+				break;
+			case ARM_INS_VCLE:
+				cond = INV(FORDER(r_elem, l_elem));
+				break;
+			case ARM_INS_VCLT:
+				cond = FORDER(l_elem, r_elem);
+				break;
+			case ARM_INS_VACGE:
+				cond = INV(FORDER(FABS(l_elem), FABS(r_elem)));
+				break;
+			case ARM_INS_VACGT:
+				cond = FORDER(FABS(r_elem), FABS(l_elem));
+				break;
+			default:
+				cond = NULL;
+				rz_il_op_pure_free(l_elem);
+				rz_il_op_pure_free(r_elem);
+				rz_il_op_effect_free(eff);
+				return NULL;
+			}
+
+			eff = SEQ2(eff,
+				write_reg_lane(REGID(0), i, vec_size,
+					ITE(cond, LOGNOT(UN(vec_size, 0)), UN(vec_size, 0))));
+		}
+		return eff;
+	}
+
+	// for integer number
+	ut32 vec_size = DT_WIDTH(insn);
+	RzILOpEffect *eff = EMPTY();
+	for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
+		RzILOpBitVector *l_elem = read_reg_lane(REGID(1), i, vec_size);
+		RzILOpBitVector *r_elem = ISIMM(2) ? UN(vec_size, 0) : read_reg_lane(REGID(2), i, vec_size);
+
+		RzILOpBool *cond;
+		bool as_signed = is_vec_signed(VVEC_DT(insn));
+		switch (insn->id) {
+		case ARM_INS_VCEQ:
+			cond = EQ(l_elem, r_elem);
+			break;
+		case ARM_INS_VCGE:
+			cond = as_signed ? SGE(l_elem, r_elem) : UGE(l_elem, r_elem);
+			break;
+		case ARM_INS_VCGT:
+			cond = as_signed ? SGT(l_elem, r_elem) : UGT(l_elem, r_elem);
+			break;
+		case ARM_INS_VCLE:
+			cond = as_signed ? SLE(l_elem, r_elem) : ULE(l_elem, r_elem);
+			break;
+		case ARM_INS_VCLT:
+			cond = as_signed ? SLT(l_elem, r_elem) : SLE(l_elem, r_elem);
+			break;
+		default:
+			cond = NULL;
+			rz_il_op_pure_free(l_elem);
+			rz_il_op_pure_free(r_elem);
+			rz_il_op_effect_free(eff);
+			return NULL;
+		}
+
+		eff = SEQ2(eff,
+			write_reg_lane(REGID(0), i, vec_size,
+				ITE(cond, LOGNOT(UN(vec_size, 0)), UN(vec_size, 0))));
+	}
+
+	return eff;
+}
+
+static RzILOpEffect *vtst(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 3) {
+		return NULL;
+	}
+
+	// vtst <Vd>, <Vn>, <Vm>
+	// for each lane:
+	// Vd = iszero((n and m)) ? zero : not(zero)
+	ut32 vec_size = VVEC_SIZE(insn);
+	RzILOpEffect *eff = EMPTY();
+	for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
+		RzILOpBitVector *n = read_reg_lane(REGID(1), i, vec_size);
+		RzILOpBitVector *m = read_reg_lane(REGID(2), i, vec_size);
+		RzILOpBitVector *d = ITE(IS_ZERO(LOGAND(n, m)),
+			UN(vec_size, 0),
+			LOGNOT(UN(vec_size, 0)));
+		eff = SEQ2(eff,
+			write_reg_lane(REGID(0), i, vec_size, d));
+	}
+
+	return eff;
+}
+
+static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	ut32 regs = 0;
+	bool wback = insn->detail->arm.writeback;
+	bool use_rm_as_wback_offset = false;
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
+
+	// vldn {list}, [Rn], Rm
+	if (!ISMEM(rm_idx)) {
+		regs = OPCOUNT() - 2;
+		use_rm_as_wback_offset = true;
+	} else {
+		// vldn {list}, [Rn]
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+
+	// mem_idx
+	rn_idx = regs;
+
+	// assert list_size % n == 0
+	// assert they were all Dn
+	ut32 n_groups = regs / group_sz;
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
+	ut32 lanes = 64 / elem_bits;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
+
+	RzILOpEffect *wback_eff = NULL;
+	RzILOpEffect *eff = EMPTY();
+	RzILOpBitVector *addr = ARG(rn_idx);
+
+	for (int i = 0; i < n_groups; ++i) {
+		for (int j = 0; j < lanes; ++j) {
+			RzILOpBitVector *data0, *data1, *data2, *data3;
+			ut32 vreg_idx = i * group_sz;
+			switch (group_sz) {
+			case 1:
+				data0 = LOADW(elem_bits, addr);
+				eff = SEQ2(eff,
+					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0));
+				break;
+			case 2:
+				data0 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				data1 = LOADW(elem_bits, addr);
+				eff = SEQ3(eff,
+					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
+					write_reg_lane(REGID(vreg_idx + 1), j, elem_bits, data1));
+				break;
+			case 3:
+				data0 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				data1 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				data2 = LOADW(elem_bits, addr);
+				eff = SEQ4(eff,
+					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
+					write_reg_lane(REGID(vreg_idx + 1), j, elem_bits, data1),
+					write_reg_lane(REGID(vreg_idx + 2), j, elem_bits, data2));
+				break;
+			case 4:
+				data0 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				data1 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				data2 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				data3 = LOADW(elem_bits, addr);
+				eff = SEQ5(eff,
+					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
+					write_reg_lane(REGID(vreg_idx + 1), j, elem_bits, data1),
+					write_reg_lane(REGID(vreg_idx + 2), j, elem_bits, data2),
+					write_reg_lane(REGID(vreg_idx + 3), j, elem_bits, data3));
+				break;
+			default:
+				rz_warn_if_reached();
+				return NULL;
+			}
+			addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		}
+	}
+
+	// free last address inc op
+	rz_il_op_pure_free(addr);
+
+	// update Rn
+	// if write_back then Rn = Rn + (if use_rm then Rm else 8 * regs)
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
+	} else {
+		wback_eff = EMPTY();
+	}
+
+	return SEQ2(eff, wback_eff);
+}
+
+#if CS_API_MAJOR > 3
+static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	bool use_rm = false;
+	ut32 regs; // number of regs in {list}
+
+	if (!ISMEM(rm_idx)) {
+		use_rm = true;
+		regs = OPCOUNT() - 2;
+	} else {
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+	rn_idx = regs;
+
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
+	if (group_sz != regs) {
+		return NULL;
+	}
+
+	RzILOpBitVector *data0, *data1, *data2, *data3;
+	RzILOpEffect *eff;
+	RzILOpBitVector *addr = ARG(rn_idx);
+	ut32 vreg_idx = 0;
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
+
+	// vld1/vld2/vld3/vld4, max(lane_size) == 4 Bytes
+	if (group_sz > 4 || elem_bytes > 4) {
+		return NULL;
+	}
+
+	unsigned char lane = NEON_LANE(0);
+	switch (group_sz) {
+	case 1:
+		data0 = LOADW(elem_bits, addr);
+		eff = write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0);
+		break;
+	case 2:
+		data0 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data1 = LOADW(elem_bits, addr);
+		eff = SEQ2(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1));
+		break;
+	case 3:
+		data0 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data1 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data2 = LOADW(elem_bits, addr);
+		eff = SEQ3(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1),
+			write_reg_lane(REGID(vreg_idx + 2), lane, elem_bits, data2));
+		break;
+	case 4:
+		data0 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data1 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data2 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data3 = LOADW(elem_bits, addr);
+		eff = SEQ4(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1),
+			write_reg_lane(REGID(vreg_idx + 2), lane, elem_bits, data2),
+			write_reg_lane(REGID(vreg_idx + 3), lane, elem_bits, data3));
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	bool wback = insn->detail->arm.writeback;
+	RzILOpEffect *wback_eff;
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
+	} else {
+		wback_eff = EMPTY();
+	}
+
+	return SEQ2(eff, wback_eff);
+}
+#endif
+
+static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	bool use_rm = false;
+	ut32 regs; // number of regs in {list}
+
+	if (!ISMEM(rm_idx)) {
+		use_rm = true;
+		regs = OPCOUNT() - 2;
+	} else {
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+	rn_idx = regs;
+
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
+	if (group_sz != regs) {
+		return NULL;
+	}
+
+	RzILOpBitVector *data0 = NULL, *data1 = NULL, *data2 = NULL, *data3 = NULL;
+	RzILOpEffect *eff = NULL;
+	RzILOpBitVector *addr = ARG(rn_idx);
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
+
+	// vld1/vld2/vld3/vld4, max(lane_size) == 4 Bytes
+	if (group_sz > 4 || elem_bytes > 4) {
+		return NULL;
+	}
+
+	ut32 dreg_size = 64;
+	switch (group_sz) {
+	case 1:
+		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		eff = write_reg(REGID(0), DUP(data0));
+		if (regs == 2) {
+			eff = write_reg(REGID(1), data0);
+		}
+		break;
+	case 2:
+		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		eff = SEQ2(write_reg(REGID(0), data0),
+			write_reg(REGID(1), data1));
+		break;
+	case 3:
+		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data2 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		eff = SEQ3(write_reg(REGID(0), data0),
+			write_reg(REGID(1), data1),
+			write_reg(REGID(2), data2));
+		break;
+	case 4:
+		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data2 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		data3 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		eff = SEQ4(write_reg(REGID(0), data0),
+			write_reg(REGID(1), data1),
+			write_reg(REGID(2), data2),
+			write_reg(REGID(3), data3));
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	bool wback = insn->detail->arm.writeback;
+	RzILOpEffect *wback_eff;
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
+	} else {
+		wback_eff = EMPTY();
+	}
+
+	return SEQ2(eff, wback_eff);
+}
+
+static RzILOpEffect *vldn(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2 || !ISREG(0)) {
+		return NULL;
+	}
+
+#if CS_API_MAJOR > 3
+	// to single lane
+	if (NEON_LANE(0) != -1) {
+		return vldn_single_lane(insn, is_thumb);
+	}
+#endif
+
+	// TODO: capstone cannot distinguish details of the following instructions
+	// vld3.8 {d0, d1, d2}, [r0] (f420040f)
+	// vld3.8 {d0[], d1[], d2[]}, [r0] (f4a00e0f)
+	bool all_lane = (insn->bytes[2] & 0x0C) == 0x0C;
+	return all_lane ? vldn_all_lane(insn, is_thumb) : vldn_multiple_elem(insn, is_thumb);
+}
+
+static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	ut32 regs = 0;
+	bool wback = insn->detail->arm.writeback;
+	bool use_rm_as_wback_offset = false;
+	ut32 group_sz = insn->id - ARM_INS_VST1 + 1;
+
+	// vldn {list}, [Rn], Rm
+	if (!ISMEM(rm_idx)) {
+		regs = OPCOUNT() - 2;
+		use_rm_as_wback_offset = true;
+	} else {
+		// vldn {list}, [Rn]
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+
+	// mem_idx
+	rn_idx = regs;
+
+	// assert list_size % n == 0
+	// assert they were all Dn
+	ut32 n_groups = regs / group_sz;
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
+	ut32 lanes = 64 / elem_bits;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
+
+	RzILOpEffect *wback_eff = NULL;
+	RzILOpEffect *eff = EMPTY(), *eff_ = NULL, *eff__ = NULL;
+	RzILOpBitVector *addr = ARG(rn_idx);
+
+	for (int i = 0; i < n_groups; ++i) {
+		for (int j = 0; j < lanes; ++j) {
+			RzILOpBitVector *data0, *data1, *data2, *data3;
+			ut32 vreg_idx = i * group_sz;
+			switch (group_sz) {
+			case 1:
+				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
+				eff = SEQ2(eff, STOREW(addr, data0));
+				break;
+			case 2:
+				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
+				data1 = read_reg_lane(REGID(vreg_idx + 1), j, elem_bits);
+				eff = SEQ2(eff, STOREW(addr, data0));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				eff = SEQ2(eff, STOREW(addr, data1));
+				break;
+			case 3:
+				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
+				data1 = read_reg_lane(REGID(vreg_idx + 1), j, elem_bits);
+				data2 = read_reg_lane(REGID(vreg_idx + 2), j, elem_bits);
+				eff = SEQ2(eff, STOREW(addr, data0));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				eff_ = STOREW(addr, data1);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				eff = SEQ3(eff, eff_, STOREW(addr, data2));
+				break;
+			case 4:
+				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
+				data1 = read_reg_lane(REGID(vreg_idx + 1), j, elem_bits);
+				data2 = read_reg_lane(REGID(vreg_idx + 2), j, elem_bits);
+				data3 = read_reg_lane(REGID(vreg_idx + 3), j, elem_bits);
+				eff = SEQ2(eff, STOREW(addr, data0));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				eff_ = STOREW(addr, data1);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				eff__ = STOREW(addr, data2);
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+				eff = SEQ4(eff, eff_, eff__, STOREW(addr, data3));
+				break;
+			default:
+				rz_warn_if_reached();
+				return NULL;
+			}
+			addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		}
+	}
+
+	// free last address inc op
+	rz_il_op_pure_free(addr);
+
+	// update Rn
+	// if write_back then Rn = Rn + (if use_rm then Rm else 8 * regs)
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
+	} else {
+		wback_eff = EMPTY();
+	}
+
+	return SEQ2(eff, wback_eff);
+}
+
+#if CS_API_MAJOR > 3
+static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	bool use_rm = false;
+	ut32 regs; // number of regs in {list}
+
+	if (!ISMEM(rm_idx)) {
+		use_rm = true;
+		regs = OPCOUNT() - 2;
+	} else {
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+	rn_idx = regs;
+
+	ut32 group_sz = insn->id - ARM_INS_VST1 + 1;
+	if (group_sz != regs) {
+		return NULL;
+	}
+
+	RzILOpBitVector *data0, *data1, *data2, *data3;
+	RzILOpEffect *eff, *eff_, *eff__;
+	RzILOpBitVector *addr = ARG(rn_idx);
+	ut32 vreg_idx = 0;
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
+
+	if (group_sz > 4 || elem_bytes > 4) {
+		return NULL;
+	}
+
+	unsigned char lane = NEON_LANE(0);
+	switch (group_sz) {
+	case 1:
+		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
+		eff = STOREW(addr, data0);
+		break;
+	case 2:
+		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
+		data1 = read_reg_lane(REGID(vreg_idx + 1), lane, elem_bits);
+		eff = STOREW(addr, data0);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		eff = SEQ2(eff, STOREW(addr, data1));
+		break;
+	case 3:
+		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
+		data1 = read_reg_lane(REGID(vreg_idx + 1), lane, elem_bits);
+		data2 = read_reg_lane(REGID(vreg_idx + 2), lane, elem_bits);
+		eff = STOREW(addr, data0);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		eff_ = STOREW(addr, data1);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		eff = SEQ3(eff, eff_, STOREW(addr, data2));
+		break;
+	case 4:
+		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
+		data1 = read_reg_lane(REGID(vreg_idx + 1), lane, elem_bits);
+		data2 = read_reg_lane(REGID(vreg_idx + 2), lane, elem_bits);
+		data3 = read_reg_lane(REGID(vreg_idx + 3), lane, elem_bits);
+		eff = STOREW(addr, data0);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		eff_ = STOREW(addr, data1);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		eff__ = STOREW(addr, data2);
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
+		eff = SEQ4(eff, eff_, eff__, STOREW(addr, data3));
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	bool wback = insn->detail->arm.writeback;
+	RzILOpEffect *wback_eff;
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
+	} else {
+		wback_eff = EMPTY();
+	}
+
+	return SEQ2(eff, wback_eff);
+}
+#endif
+
+static RzILOpEffect *vstn(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2 || !ISREG(0)) {
+		return NULL;
+	}
+
+#if CS_API_MAJOR > 3
+	if (NEON_LANE(0) != -1) {
+		return vstn_from_single_lane(insn, is_thumb);
+	}
+#endif
+
+	return vstn_multiple_elem(insn, is_thumb);
+}
+
+static RzILOpEffect *try_as_float_cvt(cs_insn *insn, bool is_thumb, bool *success) {
+	RzFloatFormat from_fmt, to_fmt;
+	from_fmt = FROM_FMT(VVEC_DT(insn));
+	to_fmt = TO_FMT(VVEC_DT(insn));
+	if (from_fmt == RZ_FLOAT_UNK || to_fmt == RZ_FLOAT_UNK) {
+		*success = false;
+		return NULL;
+	}
+
+	// note that the ARM manual didn't specify rounding mode
+	// VFP operation for single and double
+	if (from_fmt == RZ_FLOAT_IEEE754_BIN_64 || to_fmt == RZ_FLOAT_IEEE754_BIN_64) {
+		*success = true;
+		return write_reg(REGID(0), F2BV(FCONVERT(to_fmt, RZ_FLOAT_RMODE_RNE, BV2F(from_fmt, REG(1)))));
+	}
+
+	// NEON vcvt for f16 and f32
+	// Qn have 4 f32, Dn have 4 f16
+	ut32 elem_n = 4;
+	ut32 from_elem_sz = rz_float_get_format_info(from_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
+	ut32 to_elem_sz = rz_float_get_format_info(to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
+
+	RzILOpEffect *eff = EMPTY();
+	for (int i = 0; i < elem_n; ++i) {
+		RzILOpFloat *from_val = BV2F(from_fmt, read_reg_lane(REGID(1), i, from_elem_sz));
+		eff = SEQ2(eff,
+			write_reg_lane(REGID(0), i, to_elem_sz,
+				F2BV(FCONVERT(to_fmt, RZ_FLOAT_RMODE_RNE, from_val))));
+	}
+
+	*success = true;
+	return eff;
+}
+
+static inline ut32 cvt_isize(arm_vectordata_type type, bool *is_signed) {
+	switch (type) {
+	case ARM_VECTORDATA_F32S32:
+	case ARM_VECTORDATA_F64S32:
+	case ARM_VECTORDATA_S32F32:
+	case ARM_VECTORDATA_S32F64:
+		*is_signed = true;
+		return 32;
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16U32:
+#endif
+	case ARM_VECTORDATA_F32U32:
+	case ARM_VECTORDATA_F64U32:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_U32F16:
+#endif
+	case ARM_VECTORDATA_U32F32:
+	case ARM_VECTORDATA_U32F64:
+		*is_signed = false;
+		return 32;
+	case ARM_VECTORDATA_F32S16:
+	case ARM_VECTORDATA_F64S16:
+	case ARM_VECTORDATA_S16F32:
+	case ARM_VECTORDATA_S16F64:
+		*is_signed = true;
+		return 16;
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16U16:
+#endif
+	case ARM_VECTORDATA_F32U16:
+	case ARM_VECTORDATA_F64U16:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_U16F16:
+#endif
+	case ARM_VECTORDATA_U16F32:
+	case ARM_VECTORDATA_U16F64:
+		*is_signed = false;
+		return 16;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success) {
+	bool is_f2i = false;
+	bool is_signed = false;
+
+	RzFloatFormat from_fmt = FROM_FMT(VVEC_DT(insn));
+	RzFloatFormat to_fmt = TO_FMT(VVEC_DT(insn));
+	ut32 bv_sz;
+	if (from_fmt == RZ_FLOAT_UNK && to_fmt == RZ_FLOAT_UNK) {
+		return NULL;
+	}
+
+	is_f2i = from_fmt == RZ_FLOAT_UNK ? false : true;
+	bv_sz = cvt_isize(VVEC_DT(insn), &is_signed);
+	ut32 fl_sz = rz_float_get_format_info(is_f2i ? from_fmt : to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
+
+	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+		// vfp
+		// VCVT.F64.S32/U32 <Dd>, <Sm>
+		// VCVT.F32.S32/U32 <Sd>, <Sm>
+		RzILOpBitVector *from_val;
+		if (is_f2i) {
+			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+						       BV2F(from_fmt, REG(1)))
+					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+						       BV2F(from_fmt, REG(1)));
+		} else {
+			from_val = is_signed ? F2BV(SINT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
+						       REG(1)))
+					     : F2BV(INT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
+						       REG(1)));
+		}
+
+		return write_reg(REGID(0), from_val);
+	}
+
+	RzILOpEffect *eff = EMPTY();
+	for (int i = 0; i < REG_WIDTH(0) / bv_sz; ++i) {
+		RzILOpBitVector *from_val;
+		if (is_f2i) {
+			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+						       BV2F(from_fmt,
+							       read_reg_lane(REGID(1), i, fl_sz)))
+					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+						       BV2F(from_fmt,
+							       read_reg_lane(REGID(1), i, fl_sz)));
+		} else {
+			from_val = is_signed ? F2BV(SINT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
+						       read_reg_lane(REGID(1), i, bv_sz)))
+					     : F2BV(INT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
+						       read_reg_lane(REGID(1), i, bv_sz)));
+		}
+		eff = SEQ2(eff, write_reg_lane(REGID(0), i, bv_sz, from_val));
+	}
+
+	return eff;
+}
+
+static RzILOpEffect *vcvt(cs_insn *insn, bool is_thumb) {
+	if (VVEC_DT(insn) == ARM_VECTORDATA_INVALID || OPCOUNT() < 2) {
+		return NULL;
+	}
+
+	bool success = false;
+	RzILOpEffect *eff = NULL;
+	// vcvt between floats (advanced SIMD and VFP)
+	// F16 <-> F32 (NEON) , F32 <-> F64 (VFP)
+	eff = try_as_float_cvt(insn, is_thumb, &success);
+	if (success) {
+		return eff;
+	}
+
+	// vcvt between integer and float
+	eff = try_as_int_cvt(insn, is_thumb, &success);
+	if (success) {
+		return eff;
+	}
+
+	// vcvt between fix-point and float-point
+	// currently could not find a way to process fixed point value
+	return NULL;
+}
+
+#if CS_API_MAJOR > 3
+static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		return NULL;
+	}
+
+	ut32 elem_bits = VVEC_SIZE(insn);
+	RzILOpEffect *eff = EMPTY();
+
+	// 1. vdup <Vd> <Vn>[x], duplicate scalar
+	// 2. vdup <Vd> <Rn>, duplicate Rn bits to Vd
+	bool is_dup_lane = NEON_LANE(1) != -1;
+
+	for (int i = 0; i < reg_bits(REGID(0)) / elem_bits; ++i) {
+		RzILOpBitVector *scalar = is_dup_lane ? read_reg_lane(REGID(1), NEON_LANE(1), elem_bits) : UNSIGNED(elem_bits, REG(1));
+		eff = SEQ2(eff,
+			write_reg_lane(REGID(0), i, elem_bits, scalar));
+	}
+
+	return eff;
+}
+#endif
+
+static RzILOpEffect *vext(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// vext.8 <Vm>, <Vn>, <Vd>, #imm
+	// vext.16, vext.32 are pseudo instruction of vext.8
+	// objdump disasm them to vext.8 <Vm>, <Vn>, <Vd>, #imm * x
+	// but capstone parse it as .16 and .32
+	ut32 vec_bits = VVEC_SIZE(insn);
+	ut32 imm = get_imm(insn, OPCOUNT() - 1, NULL);
+
+	// (vec_bits * imm < reg_bits(Vd)) === True, else invalid in capstone
+	ut32 shift_dist = imm * vec_bits;
+	if (shift_dist >= reg_bits(REGID(0))) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// <Vm:Vn>(start_bits: start_bits+reg_bits(Vd))
+	return write_reg(REGID(0),
+		UNSIGNED(reg_bits(REGID(0)),
+			SHIFTR0(APPEND(REG(2), REG(1)),
+				UN(8, shift_dist))));
+}
+
+static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (REGID(0) == REGID(1)) {
+		// UNKNOWN behavior
+		rz_warn_if_reached();
+		return EMPTY();
+	}
+
+	ut32 reg_sz = REG_WIDTH(0);
+	ut32 vec_bits = VVEC_SIZE(insn);
+	ut32 tmp_bits = reg_sz * 2;
+	ut32 lanes = reg_sz / vec_bits;
+	if (reg_sz % vec_bits != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// Assume Vd: A7, A6, A5, A4, A3, A2, A1, A0
+	// Assume Vm: B7, B6, B5, B4, B3, B2, B1, B0
+	// After interleave:
+	// Vd: B3, A3, ... B1, A0
+	// Vm: B7, A7, ... B4, A4
+	RzILOpBitVector *interleaved_val = UN(tmp_bits, 0);
+	for (ut32 i = 0; i < lanes; ++i) {
+		RzILOpBitVector *d = UNSIGNED(tmp_bits, read_reg_lane(REGID(0), i, vec_bits));
+		RzILOpBitVector *m = UNSIGNED(tmp_bits, read_reg_lane(REGID(1), i, vec_bits));
+		interleaved_val = LOGOR(interleaved_val,
+			SHIFTL0(LOGOR(SHIFTL0(m, UN(8, vec_bits)), d),
+				UN(32, vec_bits * 2)));
+	}
+
+	return SEQ2(write_reg(REGID(0), UNSIGNED(reg_sz, DUP(interleaved_val))),
+		write_reg(REGID(1), UNSIGNED(reg_sz, SHIFTR0(interleaved_val, UN(8, vec_bits)))));
+}
+
+static RzILOpEffect *vunzip(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (REGID(0) == REGID(1)) {
+		// UNKNOWN behavior
+		rz_warn_if_reached();
+		return EMPTY();
+	}
+
+	ut32 reg_sz = REG_WIDTH(0);
+	ut32 vec_bits = VVEC_SIZE(insn);
+	ut32 lanes = reg_sz / vec_bits;
+	if (reg_sz % vec_bits != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// Assume Vd: A7, A6, A5, A4, A3, A2, A1, A0
+	// Assume Vm: B7, B6, B5, B4, B3, B2, B1, B0
+	// After interleave:
+	// Vd: B6, B4, B2, B0, A6, A4, A2, A0 (even)
+	// Vm: B7, B5, B3, B1, A7, A5, A3, A1 (odd)
+	RzILOpBitVector *deinterleave_d = UN(reg_sz, 0);
+	RzILOpBitVector *deinterleave_m = UN(reg_sz, 0);
+	for (ut32 i = 0; i < lanes; ++i) {
+		RzILOpBitVector *d_lane = UNSIGNED(reg_sz, read_reg_lane(REGID(0), i, vec_bits));
+		RzILOpBitVector *m_lane = UNSIGNED(reg_sz, read_reg_lane(REGID(1), i, vec_bits));
+
+		// construct (Bn, 0, 0, 0, An)
+		ut32 lane_shift_dist = i / 2 * vec_bits;
+		d_lane = SHIFTL0(d_lane, UN(8, lane_shift_dist));
+		m_lane = SHIFTL0(SHIFTL0(m_lane, UN(8, lane_shift_dist)), UN(8, reg_sz / 2));
+
+		if (i % 2 == 0) {
+			// even
+			deinterleave_d = LOGOR(deinterleave_d, LOGOR(d_lane, m_lane));
+		} else {
+			// odd
+			deinterleave_m = LOGOR(deinterleave_m, LOGOR(d_lane, m_lane));
+		}
+	}
+
+	return SEQ2(write_reg(REGID(0), deinterleave_d),
+		write_reg(REGID(1), deinterleave_m));
+}
+
+static RzILOpEffect *vswp(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (REGID(0) == REGID(1)) {
+		// UNKNOWN
+		rz_warn_if_reached();
+		return EMPTY();
+	}
+
+	RzILOpBitVector *d_val = REG(0);
+	RzILOpBitVector *m_val = REG(1);
+	return SEQ2(write_reg(REGID(0), m_val),
+		write_reg(REGID(1), d_val));
+}
+
+static RzILOpEffect *vadd(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 3) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// TODO: vaddhn, vaddl, vaddw
+	// determine format of float to interpret
+	arm_vectordata_type dt = VVEC_DT(insn);
+	RzFloatFormat fmt = dt2fmt(dt);
+	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
+
+	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+		// VFP
+		return write_reg(REGID(0),
+			F2BV(FADD(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, REG(1)),
+				BV2F(fmt, REG(2)))));
+	}
+
+	ut32 elem_bits = DT_WIDTH(insn);
+	ut32 lanes = reg_bits(REGID(0)) / elem_bits;
+	if (reg_bits(REGID(0)) % elem_bits != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpEffect *eff = EMPTY();
+	for (int i = 0; i < lanes; ++i) {
+		RzILOpBitVector *a = read_reg_lane(REGID(1), i, elem_bits);
+		RzILOpBitVector *b = read_reg_lane(REGID(2), i, elem_bits);
+
+		RzILOpBitVector *sum = NULL;
+		if (is_float_vec) {
+			sum = F2BV(FADD(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, a),
+				BV2F(fmt, b)));
+		} else {
+			sum = ADD(a, b);
+		}
+
+		eff = SEQ2(eff, write_reg_lane(REGID(0), i, elem_bits, sum));
+	}
+
+	return eff;
+}
+
+static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 3) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// TODO: vsubl, vsubw, vsubhn
+	// determine format of float to interpret
+	arm_vectordata_type dt = VVEC_DT(insn);
+	RzFloatFormat fmt = dt2fmt(dt);
+	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
+
+	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+		// VFP
+		return write_reg(REGID(0),
+			F2BV(FSUB(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, REG(1)),
+				BV2F(fmt, REG(2)))));
+	}
+
+	ut32 elem_bits = DT_WIDTH(insn);
+	ut32 lanes = reg_bits(REGID(0)) / elem_bits;
+	if (reg_bits(REGID(0)) % elem_bits != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpEffect *eff = EMPTY();
+	for (int i = 0; i < lanes; ++i) {
+		RzILOpBitVector *a = read_reg_lane(REGID(1), i, elem_bits);
+		RzILOpBitVector *b = read_reg_lane(REGID(2), i, elem_bits);
+
+		RzILOpBitVector *sum = NULL;
+		if (is_float_vec) {
+			sum = F2BV(FSUB(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, a),
+				BV2F(fmt, b)));
+		} else {
+			sum = SUB(a, b);
+		}
+
+		eff = SEQ2(eff, write_reg_lane(REGID(0), i, elem_bits, sum));
+	}
+
+	return eff;
+}
+
+static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 3) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// determine format of float to interpret
+	arm_vectordata_type dt = VVEC_DT(insn);
+	RzFloatFormat fmt = dt2fmt(dt);
+
+	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+		// VFP fmul
+		return write_reg(REGID(0),
+			F2BV(FMUL(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, REG(1)),
+				BV2F(fmt, REG(2)))));
+	}
+
+	// not implemented
+	return EMPTY();
+}
+
+static RzILOpEffect *vldr(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || !ISMEM(1)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpBitVector *addr;
+	size_t mem_idx = 1;
+	cs_arm_op *memop = &insn->detail->arm.operands[mem_idx];
+	if (memop->mem.base == ARM_REG_PC) {
+		// LDR (literal) is different in the sense that it aligns the pc value:
+		addr = arg_mem(U32(PCALIGN(insn->address, is_thumb) + MEMDISP(mem_idx)), memop, NULL);
+	} else {
+		addr = ARG(mem_idx);
+	}
+	if (!addr) {
+		return NULL;
+	}
+
+	RzILOpBitVector *data = LOADW(reg_bits(REGID(0)), addr);
+	return write_reg(REGID(0), data);
+}
+
+static RzILOpEffect *vstr(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || !ISMEM(1)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	size_t mem_idx = 1;
+	RzILOpBitVector *addr = ARG(mem_idx);
+	if (!addr) {
+		return NULL;
+	}
+
+	RzILOpBitVector *val = REG(0);
+	if (!val) {
+		rz_il_op_pure_free(addr);
+		return NULL;
+	}
+
+	return STOREW(addr, val);
+}
+
+static RzILOpEffect *vcmp(cs_insn *insn, bool is_thumb) {
+	// VFP only
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpFloat *l = NULL;
+	RzILOpFloat *r = NULL;
+	RzFloatFormat fmt = dt2fmt(VVEC_DT(insn));
+	if (ISIMM(1)) {
+		ut64 imm = get_imm(insn, 1, NULL);
+		if (imm != 0) {
+			// only #0 is allowed in vcmp
+			rz_warn_if_reached();
+			return NULL;
+		}
+
+		r = fmt == RZ_FLOAT_IEEE754_BIN_32 ? F32(0) : F64(0);
+	} else {
+		r = BV2F(fmt, REG(1));
+	}
+	l = BV2F(fmt, REG(0));
+
+	// only NZCV flag will change, ignore carry and overflow for float
+	RzILOpBool *is_neg = FORDER(DUP(l), DUP(r));
+	RzILOpBool *is_zero = FEQ(l, r);
+	RzILOpBitVector *res = LOGOR(
+		SHIFTL0(BOOL_TO_BV(is_neg, 32), UN(8, 31)),
+		SHIFTL0(BOOL_TO_BV(is_zero, 32), UN(8, 30)));
+
+	return SETG("fpscr", res);
+}
+
+static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
+	// implement vabs for VFP now.
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (insn->detail->groups[0] == ARM_GRP_NEON) {
+		// not implement
+		return NULL;
+	}
+
+	RzFloatFormat fmt = dt2fmt(VVEC_DT(insn));
+	RzILOpFloat *abs_val = FABS(BV2F(fmt, REG(1)));
+	return write_reg(REGID(0), F2BV(abs_val));
 }
 
 /**
@@ -2361,7 +4040,7 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_PLDW:
 	case ARM_INS_PLI:
 	case ARM_INS_YIELD:
-	// barriers/synchronization
+		// barriers/synchronization
 	case ARM_INS_DMB:
 	case ARM_INS_DSB:
 	case ARM_INS_ISB:
@@ -2376,6 +4055,9 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_BLX:
 		return bl(insn, is_thumb);
 	case ARM_INS_MOV:
+#if CS_API_MAJOR > 4
+	case ARM_INS_MOVS:
+#endif
 	case ARM_INS_MOVW:
 	case ARM_INS_LSL:
 	case ARM_INS_LSR:
@@ -2636,9 +4318,88 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VLDMDB:
 	case ARM_INS_VPOP:
 		return ldm(insn, is_thumb);
+#if CS_API_MAJOR > 4
+	case ARM_INS_VMOVL:
+	case ARM_INS_VMOVN:
+	case ARM_INS_VMOVX:
+#endif
+#if CS_API_MAJOR > 3
 	case ARM_INS_VMOV:
+	case ARM_INS_VMVN:
 		return vmov(insn, is_thumb);
-
+#endif
+	case ARM_INS_VMSR:
+		return vmsr(insn, is_thumb);
+	case ARM_INS_VMRS:
+		return vmrs(insn, is_thumb);
+	// NEON (advanced SIMD)
+	case ARM_INS_VAND:
+	case ARM_INS_VBIC:
+	case ARM_INS_VORR:
+	case ARM_INS_VORN:
+	case ARM_INS_VEOR:
+		return vbitwise(insn, is_thumb);
+	case ARM_INS_VBIT:
+	case ARM_INS_VBIF:
+	case ARM_INS_VBSL:
+		return vbit_insert(insn, is_thumb);
+	case ARM_INS_VACGT:
+	case ARM_INS_VACGE:
+	case ARM_INS_VCEQ:
+	case ARM_INS_VCGE:
+	case ARM_INS_VCGT:
+	case ARM_INS_VCLE:
+	case ARM_INS_VCLT:
+		return vec_cmp(insn, is_thumb);
+	case ARM_INS_VTST:
+		return vtst(insn, is_thumb);
+	case ARM_INS_VLD1:
+	case ARM_INS_VLD2:
+	case ARM_INS_VLD3:
+	case ARM_INS_VLD4:
+		return vldn(insn, is_thumb);
+	case ARM_INS_VST1:
+	case ARM_INS_VST2:
+	case ARM_INS_VST3:
+	case ARM_INS_VST4:
+		return vstn(insn, is_thumb);
+	case ARM_INS_VCVT:
+#if CS_API_MAJOR > 4
+	case ARM_INS_VCVTA:
+	case ARM_INS_VCVTB:
+	case ARM_INS_VCVTM:
+	case ARM_INS_VCVTN:
+	case ARM_INS_VCVTP:
+	case ARM_INS_VCVTR:
+	case ARM_INS_VCVTT:
+#endif
+		return vcvt(insn, is_thumb);
+#if CS_API_MAJOR > 3
+	case ARM_INS_VDUP:
+		return vdup(insn, is_thumb);
+#endif
+	case ARM_INS_VEXT:
+		return vext(insn, is_thumb);
+	case ARM_INS_VZIP:
+		return vzip(insn, is_thumb);
+	case ARM_INS_VUZP:
+		return vunzip(insn, is_thumb);
+	case ARM_INS_VSWP:
+		return vswp(insn, is_thumb);
+	case ARM_INS_VADD:
+		return vadd(insn, is_thumb);
+	case ARM_INS_VSUB:
+		return vsub(insn, is_thumb);
+	case ARM_INS_VMUL:
+		return vmul(insn, is_thumb);
+	case ARM_INS_VLDR:
+		return vldr(insn, is_thumb);
+	case ARM_INS_VSTR:
+		return vstr(insn, is_thumb);
+	case ARM_INS_VABS:
+		return vabs(insn, is_thumb);
+	case ARM_INS_VCMP:
+		return vcmp(insn, is_thumb);
 	default:
 		return NULL;
 	}

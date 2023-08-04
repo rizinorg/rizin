@@ -209,7 +209,7 @@ ARGS=-nn
 CMDS=<<EOF
 e io.va=0
 pf.elf_header @ elf_header
-?e
+echo
 pfj.elf_header @ elf_header ~{}
 EOF
 EXPECT=<<EOF
@@ -395,11 +395,11 @@ CMDS=<<EOF
 pfo elf32
 pf? elf_header
 pfs.elf_header
-?e
+echo
 wz `pf? elf_header`
-(pfelf num; pf.elf_header${num} {${num}}`psz`; pf? elf_header${num}; pfs.elf_header${num})
+(pfelf num; pf.elf_header${num} {${num}}`ps`; pf? elf_header${num}; pfs.elf_header${num})
 .(pfelf 1)
-?e
+echo
 .(pfelf 2)
 EOF
 EXPECT=<<EOF

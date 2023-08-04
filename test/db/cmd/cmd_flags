@@ -2,8 +2,8 @@ NAME=fe
 FILE==
 CMDS=<<EOF
 f foo @ 123
-fe foo;?? ?e hello
-fe bar;?? ?e world
+fe foo;%% echo hello
+fe bar;%% echo world
 EOF
 EXPECT=<<EOF
 hello
@@ -201,7 +201,7 @@ f bloh 0x00000003 @ 0x00000002
 flj
 EOF
 EXPECT=<<EOF
-[{"name":"bloh","size":3,"offset":2},{"name":"blah","size":10,"offset":11}]
+[{"name":"bloh","realname":"bloh","size":3,"offset":2},{"name":"blah","realname":"blah","size":10,"offset":11}]
 EOF
 RUN
 
@@ -209,7 +209,7 @@ NAME=flj shows demangled symbols
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
 aaa
-flj~{241}
+flj~{214}
 EOF
 EXPECT=<<EOF
 {"name":"reloc.operator_delete_void","realname":"operator delete(void*)","size":8,"offset":16432}
@@ -321,7 +321,7 @@ aaa
 f. blah
 f.l
 s 0
-?e outside
+echo outside
 f.
 EOF
 EXPECT=<<EOF
@@ -338,9 +338,9 @@ af
 f. patata
 f.lj
 s 0
-?e outside
+echo outside
 f.l
-?e all
+echo all
 f.l*j
 EOF
 EXPECT=<<EOF
@@ -429,7 +429,7 @@ f+ skutter 1 @ 12
 flj
 EOF
 EXPECT=<<EOF
-[{"name":"cat","size":1,"offset":0},{"name":"rimmer","size":12,"offset":0},{"name":"skutter","size":1,"offset":12},{"name":"lister","size":32,"offset":666},{"name":"kryten","size":32,"offset":666}]
+[{"name":"cat","realname":"cat","size":1,"offset":0},{"name":"rimmer","realname":"rimmer","size":12,"offset":0},{"name":"skutter","realname":"skutter","size":1,"offset":12},{"name":"lister","realname":"lister","size":32,"offset":666},{"name":"kryten","realname":"kryten","size":32,"offset":666}]
 EOF
 RUN
 
@@ -438,7 +438,7 @@ FILE==
 CMDS=<<EOF
 fa foo bar+3
 f bar @ 3
-?v foo
+%v foo
 EOF
 EXPECT=<<EOF
 0x6
@@ -449,7 +449,7 @@ NAME=flag alias infinite check
 FILE==
 CMDS=<<EOF
 fa foo foo+3
-?v foo
+%v foo
 EOF
 EXPECT=<<EOF
 0x3
@@ -510,7 +510,7 @@ FILE=bins/elf/ifunc_rel64
 CMDS=fl~obj._IO_helper_jumps
 EXPECT=<<EOF
 0x0049ad40 168 obj._IO_helper_jumps
-0x0049b680 168 obj._IO_helper_jumps_1
+0x0049b680 168 obj._IO_helper_jumps_0x49b680
 EOF
 RUN
 
@@ -545,7 +545,7 @@ fs *
 f direct2 1 0x00000010 base64:ImJhc2U2NCBhcm1vcmVkIg==
 fs *
 f indirect 1 0x00000020 base64:d29ya3MgdG9v
-[{"name":"direct1","size":1,"offset":0,"comment":"verbatim"},{"name":"direct2","size":1,"offset":16,"comment":"\"base64 armored\""},{"name":"indirect","size":1,"offset":32,"comment":"works too"}]
+[{"name":"direct1","realname":"direct1","size":1,"offset":0,"comment":"verbatim"},{"name":"direct2","realname":"direct2","size":1,"offset":16,"comment":"\"base64 armored\""},{"name":"indirect","realname":"indirect","size":1,"offset":32,"comment":"works too"}]
 EOF
 RUN
 
@@ -638,6 +638,36 @@ EXPECT=<<EOF
 [{"name":"bla","from":0,"to":0}]
 bla ~
 bla ~
+EOF
+RUN
+
+NAME=flag list at
+FILE==
+CMDS=<<EOF
+f blah 0x0000000a @ 0x0000000b
+f bloh 0x00000003 @ 0x00000002
+fl. @ 0x0000000b
+fl.j @ 0x0000000b
+fl.t @ 0x0000000b
+fl.q @ 0x0000000b
+fl. @ 0x00000002
+fl.j @ 0x00000002
+fl.t @ 0x00000002
+fl.q @ 0x00000002
+EOF
+EXPECT=<<EOF
+0x0000000b 10 blah
+[{"name":"blah","realname":"blah","size":10,"offset":11}]
+addr       size space name realname 
+------------------------------------
+0x0000000b 10         blah blah
+blah
+0x00000002 3 bloh
+[{"name":"bloh","realname":"bloh","size":3,"offset":2}]
+addr       size space name realname 
+------------------------------------
+0x00000002 3          bloh bloh
+bloh
 EOF
 RUN
 

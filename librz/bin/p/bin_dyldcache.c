@@ -111,7 +111,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	ret->file = strdup(bf->file);
 	ret->bclass = strdup("dyldcache");
-	ret->os = strdup("Darwin"); // TODO: actual OS info is available. See the platform member of struct dyld_cache_header in dyld source.
+	ret->os = strdup(rz_dyldcache_get_platform_str(cache));
 	if (strstr(cache->hdr->magic, "x86_64")) {
 		ret->arch = strdup("x86");
 		ret->bits = 64;
@@ -121,7 +121,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	ret->machine = strdup(ret->arch);
 	ret->subsystem = strdup("xnu");
-	ret->type = strdup("library-cache");
+	ret->guid = rz_hex_bin2strdup((ut8 *)cache->hdr->uuid, sizeof(cache->hdr->uuid));
+	ret->type = strdup(rz_dyldcache_get_type_str(cache));
 	ret->has_va = true;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
@@ -515,6 +516,21 @@ static void header(RzBinFile *bf) {
 	}
 
 	pj_o(pj);
+
+	pj_k(pj, "version");
+	RzDyldCacheHeaderVersion ver = rz_dyldcache_header_version(cache->hdr);
+	switch (ver) {
+	case RZ_DYLD_CACHE_HEADER_BEFORE_940:
+		pj_s(pj, "<940");
+		break;
+	case RZ_DYLD_CACHE_HEADER_940_OR_AFTER:
+		pj_s(pj, "940");
+		break;
+	case RZ_DYLD_CACHE_HEADER_1042_1_OR_AFTER:
+		pj_s(pj, "1042.1");
+		break;
+	}
+
 	pj_k(pj, "header");
 	pj_o(pj);
 	pj_ks(pj, "magic", cache->hdr->magic);
@@ -535,10 +551,73 @@ static void header(RzBinFile *bf) {
 	pj_ks(pj, "cacheType", (cache->hdr->cacheType == 0) ? "development" : "production");
 	pj_kn(pj, "branchPoolsOffset", cache->hdr->branchPoolsOffset);
 	pj_kn(pj, "branchPoolsCount", cache->hdr->branchPoolsCount);
-	pj_kn(pj, "accelerateInfoAddr", cache->hdr->accelerateInfoAddr + slide);
-	pj_kn(pj, "accelerateInfoSize", cache->hdr->accelerateInfoSize);
+	if (rz_dyldcache_header_may_have_accel(cache->hdr)) {
+		pj_kn(pj, "accelerateInfoAddr", cache->hdr->accelerateInfoAddr + slide);
+		pj_kn(pj, "accelerateInfoSize", cache->hdr->accelerateInfoSize);
+	} else {
+		pj_kn(pj, "dyldInCacheMH", cache->hdr->dyldInCacheMH);
+		pj_kn(pj, "dyldInCacheEntry", cache->hdr->dyldInCacheEntry);
+	}
 	pj_kn(pj, "imagesTextOffset", cache->hdr->imagesTextOffset);
 	pj_kn(pj, "imagesTextCount", cache->hdr->imagesTextCount);
+	pj_kn(pj, "patchInfoAddr", cache->hdr->patchInfoAddr);
+	pj_kn(pj, "patchInfoSize", cache->hdr->patchInfoSize);
+	pj_kn(pj, "otherImageGroupAddrUnused", cache->hdr->otherImageGroupAddrUnused);
+	pj_kn(pj, "otherImageGroupSizeUnused", cache->hdr->otherImageGroupSizeUnused);
+	pj_kn(pj, "progClosuresAddr", cache->hdr->progClosuresAddr);
+	pj_kn(pj, "progClosuresSize", cache->hdr->progClosuresSize);
+	pj_kn(pj, "progClosuresTrieAddr", cache->hdr->progClosuresTrieAddr);
+	pj_kn(pj, "progClosuresTrieSize", cache->hdr->progClosuresTrieSize);
+	pj_kn(pj, "platform", cache->hdr->platform);
+	pj_kn(pj, "formatVersion", cache->hdr->formatVersion);
+	pj_kn(pj, "dylibsExpectedOnDisk", cache->hdr->dylibsExpectedOnDisk);
+	pj_kn(pj, "simulator", cache->hdr->simulator);
+	pj_kn(pj, "locallyBuiltCache", cache->hdr->locallyBuiltCache);
+	pj_kn(pj, "builtFromChainedFixups", cache->hdr->builtFromChainedFixups);
+	pj_kn(pj, "padding", cache->hdr->padding);
+	pj_kn(pj, "sharedRegionStart", cache->hdr->sharedRegionStart);
+	pj_kn(pj, "sharedRegionSize", cache->hdr->sharedRegionSize);
+	pj_kn(pj, "maxSlide", cache->hdr->maxSlide);
+	pj_kn(pj, "dylibsImageArrayAddr", cache->hdr->dylibsImageArrayAddr);
+	pj_kn(pj, "dylibsImageArraySize", cache->hdr->dylibsImageArraySize);
+	pj_kn(pj, "dylibsTrieAddr", cache->hdr->dylibsTrieAddr);
+	pj_kn(pj, "dylibsTrieSize", cache->hdr->dylibsTrieSize);
+	pj_kn(pj, "otherImageArrayAddr", cache->hdr->otherImageArrayAddr);
+	pj_kn(pj, "otherImageArraySize", cache->hdr->otherImageArraySize);
+	pj_kn(pj, "otherTrieAddr", cache->hdr->otherTrieAddr);
+	pj_kn(pj, "otherTrieSize", cache->hdr->otherTrieSize);
+	pj_kn(pj, "mappingWithSlideOffset", cache->hdr->mappingWithSlideOffset);
+	pj_kn(pj, "mappingWithSlideCount", cache->hdr->mappingWithSlideCount);
+	if (ver >= RZ_DYLD_CACHE_HEADER_940_OR_AFTER) {
+		pj_kn(pj, "dylibsPBLStateArrayAddrUnused", cache->hdr->dylibsPBLStateArrayAddrUnused);
+		pj_kn(pj, "dylibsPBLSetAddr", cache->hdr->dylibsPBLSetAddr);
+		pj_kn(pj, "programsPBLSetPoolAddr", cache->hdr->programsPBLSetPoolAddr);
+		pj_kn(pj, "programsPBLSetPoolSize", cache->hdr->programsPBLSetPoolSize);
+		pj_kn(pj, "programTrieAddr", cache->hdr->programTrieAddr);
+		pj_kn(pj, "programTrieSize", cache->hdr->programTrieSize);
+		pj_kn(pj, "osVersion", cache->hdr->osVersion);
+		pj_kn(pj, "altPlatform", cache->hdr->altPlatform);
+		pj_kn(pj, "altOsVersion", cache->hdr->altOsVersion);
+		pj_kn(pj, "swiftOptsOffset", cache->hdr->swiftOptsOffset);
+		pj_kn(pj, "swiftOptsSize", cache->hdr->swiftOptsSize);
+		pj_kn(pj, "subCacheArrayOffset", cache->hdr->subCacheArrayOffset);
+		pj_kn(pj, "subCacheArrayCount", cache->hdr->subCacheArrayCount);
+		rz_hex_bin2str(cache->hdr->symbolFileUUID, sizeof(cache->hdr->symbolFileUUID), uuidstr);
+		pj_ks(pj, "symbolFileUUID", uuidstr);
+		pj_kn(pj, "rosettaReadOnlyAddr", cache->hdr->rosettaReadOnlyAddr);
+		pj_kn(pj, "rosettaReadOnlySize", cache->hdr->rosettaReadOnlySize);
+		pj_kn(pj, "rosettaReadWriteAddr", cache->hdr->rosettaReadWriteAddr);
+		pj_kn(pj, "rosettaReadWriteSize", cache->hdr->rosettaReadWriteSize);
+	}
+	if (ver >= RZ_DYLD_CACHE_HEADER_1042_1_OR_AFTER) {
+		pj_kn(pj, "cacheSubType", cache->hdr->cacheSubType);
+		pj_kn(pj, "objcOptsOffset", cache->hdr->objcOptsOffset);
+		pj_kn(pj, "objcOptsSize", cache->hdr->objcOptsSize);
+		pj_kn(pj, "cacheAtlasOffset", cache->hdr->cacheAtlasOffset);
+		pj_kn(pj, "cacheAtlasSize", cache->hdr->cacheAtlasSize);
+		pj_kn(pj, "dynamicDataOffset", cache->hdr->dynamicDataOffset);
+		pj_kn(pj, "dynamicDataMaxSize", cache->hdr->dynamicDataMaxSize);
+	}
 	pj_end(pj);
 
 	if (cache->accel) {

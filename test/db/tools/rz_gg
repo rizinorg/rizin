@@ -21,7 +21,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -142,7 +142,7 @@ NAME=rz-gg empty file
 FILE==
 CMDS=!rz-gg ""
 EXPECT_ERR=<<EOF
-Cannot open empty path
+ERROR: rz-gg: cannot open empty path
 EOF
 RUN
 
@@ -150,7 +150,7 @@ NAME=rz-gg empty include
 FILE=bins/other/rz-gg/hi.c
 CMDS=!rz-gg -I "" bins/other/rz-gg/hi.c
 EXPECT_ERR=<<EOF
-Cannot open empty include path
+ERROR: rz-gg: cannot open empty include path
 EOF
 RUN
 
@@ -158,13 +158,13 @@ NAME=rz-gg empty contents
 FILE=bins/other/rz-gg/hi.c
 CMDS=!rz-gg -C "" bins/other/rz-gg/hi.c
 EXPECT_ERR=<<EOF
-Cannot open empty contents path
+ERROR: rz-gg: cannot open empty contents path
 EOF
 RUN
 
 NAME=rz-gg debruijn sequence 1
 FILE==
-CMDS=!rz-gg -r -P 2; ?e
+CMDS=!rz-gg -r -P 2; echo
 EXPECT=<<EOF
 AA
 EOF
@@ -172,7 +172,7 @@ RUN
 
 NAME=rz-gg debruijn sequence 2
 FILE==
-CMDS=!rz-gg -P 2 -r; ?e
+CMDS=!rz-gg -P 2 -r; echo
 EXPECT=<<EOF
 AA
 EOF
@@ -201,7 +201,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -286,7 +286,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -371,7 +371,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -458,7 +458,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -503,11 +503,22 @@ EOF
 RUN
 
 NAME=rz-gg -k darwin -a x86 -b 32 simple_cmp.r
-BROKEN=1
 FILE==
 CMDS=!rz-gg -k darwin -a x86 -b 32 bins/other/rz-gg/simple_cmp.r
+BROKEN=1
 EXPECT=<<EOF
 5589e581ec80000000c745086869210ac7450c00000000c74510000000008d4508898504000000bb00000000bb01000000899d05000000bb00000000bb02000000899d06000000ff7504583b45067f226a04ff75046a018b1c248b4c24048b542408b80400000050cd8083c40483c40ceb1b6a008b1c24b80100000050cd8083c40483c40481c4800000005dc3ebe3
+EOF
+RUN
+
+NAME=rz-gg -k darwin -a x86 -b 32 simple_cmp.r
+FILE==
+CMDS=<<EOF
+!rz-gg -k darwin -a x86 -b 32 -o /dev/null bins/other/rz-gg/simple_cmp.r
+%v $?
+EOF
+EXPECT=<<EOF
+0x0
 EOF
 RUN
 
@@ -543,7 +554,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -588,9 +599,9 @@ EOF
 RUN
 
 NAME=rz-gg -k darwin -a x86 -b 64 simple_cmp.r
-BROKEN=1
 FILE==
 CMDS=!rz-gg -k darwin -a x86 -b 64 bins/other/rz-gg/simple_cmp.r
+BROKEN=1
 EXPECT=<<EOF
 554889e54881ec80000000c745106869210ac7451400000000c7451800000000488d45104889850800000048c7c70000000048c7c7010000004889bd0900000048c7c70000000048c7c7020000004889bd0a000000488b45085058483b450a7f3248c7c00400000050488b45085048c7c00100000050488b3c24488b742408488b54241048c7c0040000000f054883c418eb2248c7c00000000050488b3c2448c7c0010000000f054883c4084881c4800000005dc3ebdc
 EOF
@@ -628,7 +639,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 

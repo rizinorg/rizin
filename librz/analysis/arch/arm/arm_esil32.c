@@ -62,8 +62,8 @@ static unsigned int regsize32(cs_insn *insn, int n) {
 // return postfix
 RZ_IPI const char *rz_arm_cs_esil_prefix_cond(RzAnalysisOp *op, int cond_type) {
 	const char *close_cond[2];
-	close_cond[0] = "\0";
-	close_cond[1] = ",}\0";
+	close_cond[0] = "";
+	close_cond[1] = ",}";
 	int close_type = 0;
 	switch (cond_type) {
 	case ARM_CC_EQ:
@@ -138,11 +138,19 @@ static const char *arg(RzAnalysis *a, csh *handle, cs_insn *insn, char *buf, int
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
 		if (ISSHIFTED(n)) {
-			sprintf(buf, "%u,%s,%s",
-				LSHIFT2(n),
-				rz_str_get_null(cs_reg_name(*handle,
-					insn->detail->arm.operands[n].reg)),
-				DECODE_SHIFT(n));
+			if (SHIFTTYPEREG(n)) {
+				sprintf(buf, "%s,%s,%s",
+					cs_reg_name(*handle, LSHIFT2(n)),
+					rz_str_get_null(cs_reg_name(*handle,
+						insn->detail->arm.operands[n].reg)),
+					DECODE_SHIFT(n));
+			} else {
+				sprintf(buf, "%u,%s,%s",
+					LSHIFT2(n),
+					rz_str_get_null(cs_reg_name(*handle,
+						insn->detail->arm.operands[n].reg)),
+					DECODE_SHIFT(n));
+			}
 		} else {
 			sprintf(buf, "%s",
 				rz_str_get_null(cs_reg_name(*handle,
@@ -602,11 +610,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			}
 		}
 		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
-			if (ISIMM(2)) { // e.g. 'str r2, [r3], 4
+			if (ISIMM(2) && str_ldr_bytes != 8) { // e.g. 'str r2, [r3], 4
 				rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%d,%s,+=",
 					REG(0), MEMBASE(1), str_ldr_bytes, IMM(2), MEMBASE(1));
-			}
-			if (ISREG(2)) { // e.g. 'str r2, [r3], r1
+			} else if (str_ldr_bytes != 8) {
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
 					switch (SHIFTTYPE(2)) {
 					case ARM_SFT_LSL:
@@ -652,11 +659,12 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					if (ISSHIFTED(2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
-						rz_strbuf_appendf(&op->esil, "%s,%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,%s,+,0xffffffff,&,=[4]",
-							REG(0), MEMINDEX(2), MEMBASE(2), REG(1), MEMINDEX(2), MEMBASE(2));
+						rz_strbuf_appendf(&op->esil, "%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
+							REG(0), MEMBASE(2), REG(1), MEMBASE(2));
 						if (insn->detail->arm.writeback) {
-							rz_strbuf_appendf(&op->esil, ",%s,%s,+,%s,=",
-								MEMINDEX(2), MEMBASE(2), MEMBASE(2));
+							const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
+							rz_strbuf_appendf(&op->esil, ",%s,%s,%c=",
+								MEMINDEX(2), MEMBASE(2), sign);
 						}
 					}
 				}

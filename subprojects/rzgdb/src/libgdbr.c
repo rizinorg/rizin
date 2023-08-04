@@ -118,6 +118,9 @@ char *gdbr_get_reg_profile(int arch, int bits) {
 	case RZ_SYS_ARCH_V850:
 #include "reg/v850.h"
 		break;
+	case RZ_SYS_ARCH_TRICORE:
+#include "reg/tricore.h"
+		break;
 	}
 	return NULL;
 }

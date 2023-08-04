@@ -4,7 +4,7 @@ CMDS=<<EOF
 i
 is
 iS
-iH
+iH~{}
 oml
 pi 4@ sym._what_is_cool
 EOF
@@ -17,7 +17,7 @@ mode     r-x
 format   dyldcache
 iorw     false
 block    0x100
-type     library-cache
+type     production
 arch     arm
 cpu      N/A
 baddr    0x180000000
@@ -30,14 +30,14 @@ compiler N/A
 dbg_file N/A
 endian   LE
 hdr.csum N/A
-guid     N/A
+guid     857bce1a017e34649909d58ee21cf8dc
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     c
 machine  arm
 maxopsz  4
 minopsz  4
-os       Darwin
+os       macOS
 cc       N/A
 pcalign  4
 rpath    N/A
@@ -66,7 +66,90 @@ paddr      size vaddr       vsize align perm name                               
 0x00004fb0 0x50 0x180004fb0 0x50  0x0   -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
 0x00008fa0 0x18 0x180008fa0 0x18  0x0   -r-x lib_libb-1.0.dylib.0.__TEXT.__text             
 0x00008fb8 0x48 0x180008fb8 0x48  0x0   -r-x lib_libb-1.0.dylib.1.__TEXT.__unwind_info      
-{"header":{"magic":"dyld_v1   arm64","mappingOffset":320,"mappingCount":3,"imagesOffset":656,"imagesCount":2,"dyldBaseAddress":0,"codeSignatureOffset":196608,"codeSignatureSize":16384,"slideInfoOffset":0,"slideInfoSize":0,"localSymbolsOffset":0,"localSymbolsSize":0,"uuid":"857bce1a017e34649909d58ee21cf8dc","cacheType":"production","branchPoolsOffset":0,"branchPoolsCount":0,"accelerateInfoAddr":0,"accelerateInfoSize":0,"imagesTextOffset":720,"imagesTextCount":2},"slideInfo":[{"start":98304,"end":114688,"version":2,"slide":0,"page_starts_count":4,"page_extras_count":0,"delta_mask":72056494526300160,"value_mask":18374687579183251455,"value_add":0,"delta_shift":38,"page_size":4096}],"images":[{"uuid":"ccbf29d455693a1592314e14d41a542a","address":6442455040,"textSegmentSize":16384,"path":"/usr/lib/liba-1.0.dylib","name":"liba-1.0.dylib"},{"uuid":"60d2f3d644a2391087503a56a3d8ff07","address":6442471424,"textSegmentSize":16384,"path":"/usr/lib/libb-1.0.dylib","name":"libb-1.0.dylib"}]}
+{
+  "version": "<940",
+  "header": {
+    "magic": "dyld_v1   arm64",
+    "mappingOffset": 320,
+    "mappingCount": 3,
+    "imagesOffset": 656,
+    "imagesCount": 2,
+    "dyldBaseAddress": 0,
+    "codeSignatureOffset": 196608,
+    "codeSignatureSize": 16384,
+    "slideInfoOffset": 0,
+    "slideInfoSize": 0,
+    "localSymbolsOffset": 0,
+    "localSymbolsSize": 0,
+    "uuid": "857bce1a017e34649909d58ee21cf8dc",
+    "cacheType": "production",
+    "branchPoolsOffset": 0,
+    "branchPoolsCount": 0,
+    "accelerateInfoAddr": 0,
+    "accelerateInfoSize": 0,
+    "imagesTextOffset": 720,
+    "imagesTextCount": 2,
+    "patchInfoAddr": 6509723956,
+    "patchInfoSize": 80,
+    "otherImageGroupAddrUnused": 0,
+    "otherImageGroupSizeUnused": 0,
+    "progClosuresAddr": 6509740032,
+    "progClosuresSize": 0,
+    "progClosuresTrieAddr": 6509740032,
+    "progClosuresTrieSize": 8,
+    "platform": 1,
+    "formatVersion": 10,
+    "dylibsExpectedOnDisk": 0,
+    "simulator": 0,
+    "locallyBuiltCache": 1,
+    "builtFromChainedFixups": 0,
+    "padding": 0,
+    "sharedRegionStart": 6442450944,
+    "sharedRegionSize": 4294967296,
+    "maxSlide": 2147385344,
+    "dylibsImageArrayAddr": 6509723648,
+    "dylibsImageArraySize": 240,
+    "dylibsTrieAddr": 6509723888,
+    "dylibsTrieSize": 68,
+    "otherImageArrayAddr": 0,
+    "otherImageArraySize": 0,
+    "otherTrieAddr": 0,
+    "otherTrieSize": 0,
+    "mappingWithSlideOffset": 488,
+    "mappingWithSlideCount": 3
+  },
+  "slideInfo": [
+    {
+      "start": 98304,
+      "end": 114688,
+      "version": 2,
+      "slide": 0,
+      "page_starts_count": 4,
+      "page_extras_count": 0,
+      "delta_mask": 72056494526300160,
+      "value_mask": 18374687579183251455,
+      "value_add": 0,
+      "delta_shift": 38,
+      "page_size": 4096
+    }
+  ],
+  "images": [
+    {
+      "uuid": "ccbf29d455693a1592314e14d41a542a",
+      "address": 6442455040,
+      "textSegmentSize": 16384,
+      "path": "/usr/lib/liba-1.0.dylib",
+      "name": "liba-1.0.dylib"
+    },
+    {
+      "uuid": "60d2f3d644a2391087503a56a3d8ff07",
+      "address": 6442471424,
+      "textSegmentSize": 16384,
+      "path": "/usr/lib/libb-1.0.dylib",
+      "name": "libb-1.0.dylib"
+    }
+  ]
+}
  1 fd: 4 +0x00000000 0x180000000 - 0x180017fff r-x vmap.cache_map.0
  2 fd: 4 +0x00018000 0x182018000 - 0x18201bfff r-- vmap.cache_map.1
  3 fd: 4 +0x0001c000 0x18401c000 - 0x18402ffff r-- vmap.cache_map.2
@@ -85,7 +168,7 @@ o bins/dyldcache/dyld_shared_cache_arm64-macOS
 i
 is
 iS
-iH
+iH~{}
 oml
 pi 4@ sym._what_is_cool
 EOF
@@ -98,7 +181,7 @@ mode     r-x
 format   dyldcache
 iorw     false
 block    0x100
-type     library-cache
+type     production
 arch     arm
 cpu      N/A
 baddr    0x180000000
@@ -111,14 +194,14 @@ compiler N/A
 dbg_file N/A
 endian   LE
 hdr.csum N/A
-guid     N/A
+guid     857bce1a017e34649909d58ee21cf8dc
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     c
 machine  arm
 maxopsz  4
 minopsz  4
-os       Darwin
+os       macOS
 cc       N/A
 pcalign  4
 rpath    N/A
@@ -144,7 +227,90 @@ paddr      size vaddr       vsize align perm name                               
 0x00004f60 0x48 0x180004f60 0x48  0x0   -r-x lib_liba-1.0.dylib.0.__TEXT.__text             
 0x00004fa8 0x6  0x180004fa8 0x6   0x0   -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring          
 0x00004fb0 0x50 0x180004fb0 0x50  0x0   -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info      
-{"header":{"magic":"dyld_v1   arm64","mappingOffset":320,"mappingCount":3,"imagesOffset":656,"imagesCount":2,"dyldBaseAddress":0,"codeSignatureOffset":196608,"codeSignatureSize":16384,"slideInfoOffset":0,"slideInfoSize":0,"localSymbolsOffset":0,"localSymbolsSize":0,"uuid":"857bce1a017e34649909d58ee21cf8dc","cacheType":"production","branchPoolsOffset":0,"branchPoolsCount":0,"accelerateInfoAddr":0,"accelerateInfoSize":0,"imagesTextOffset":720,"imagesTextCount":2},"slideInfo":[{"start":98304,"end":114688,"version":2,"slide":0,"page_starts_count":4,"page_extras_count":0,"delta_mask":72056494526300160,"value_mask":18374687579183251455,"value_add":0,"delta_shift":38,"page_size":4096}],"images":[{"uuid":"ccbf29d455693a1592314e14d41a542a","address":6442455040,"textSegmentSize":16384,"path":"/usr/lib/liba-1.0.dylib","name":"liba-1.0.dylib"},{"uuid":"60d2f3d644a2391087503a56a3d8ff07","address":6442471424,"textSegmentSize":16384,"path":"/usr/lib/libb-1.0.dylib","name":"libb-1.0.dylib"}]}
+{
+  "version": "<940",
+  "header": {
+    "magic": "dyld_v1   arm64",
+    "mappingOffset": 320,
+    "mappingCount": 3,
+    "imagesOffset": 656,
+    "imagesCount": 2,
+    "dyldBaseAddress": 0,
+    "codeSignatureOffset": 196608,
+    "codeSignatureSize": 16384,
+    "slideInfoOffset": 0,
+    "slideInfoSize": 0,
+    "localSymbolsOffset": 0,
+    "localSymbolsSize": 0,
+    "uuid": "857bce1a017e34649909d58ee21cf8dc",
+    "cacheType": "production",
+    "branchPoolsOffset": 0,
+    "branchPoolsCount": 0,
+    "accelerateInfoAddr": 0,
+    "accelerateInfoSize": 0,
+    "imagesTextOffset": 720,
+    "imagesTextCount": 2,
+    "patchInfoAddr": 6509723956,
+    "patchInfoSize": 80,
+    "otherImageGroupAddrUnused": 0,
+    "otherImageGroupSizeUnused": 0,
+    "progClosuresAddr": 6509740032,
+    "progClosuresSize": 0,
+    "progClosuresTrieAddr": 6509740032,
+    "progClosuresTrieSize": 8,
+    "platform": 1,
+    "formatVersion": 10,
+    "dylibsExpectedOnDisk": 0,
+    "simulator": 0,
+    "locallyBuiltCache": 1,
+    "builtFromChainedFixups": 0,
+    "padding": 0,
+    "sharedRegionStart": 6442450944,
+    "sharedRegionSize": 4294967296,
+    "maxSlide": 2147385344,
+    "dylibsImageArrayAddr": 6509723648,
+    "dylibsImageArraySize": 240,
+    "dylibsTrieAddr": 6509723888,
+    "dylibsTrieSize": 68,
+    "otherImageArrayAddr": 0,
+    "otherImageArraySize": 0,
+    "otherTrieAddr": 0,
+    "otherTrieSize": 0,
+    "mappingWithSlideOffset": 488,
+    "mappingWithSlideCount": 3
+  },
+  "slideInfo": [
+    {
+      "start": 98304,
+      "end": 114688,
+      "version": 2,
+      "slide": 0,
+      "page_starts_count": 4,
+      "page_extras_count": 0,
+      "delta_mask": 72056494526300160,
+      "value_mask": 18374687579183251455,
+      "value_add": 0,
+      "delta_shift": 38,
+      "page_size": 4096
+    }
+  ],
+  "images": [
+    {
+      "uuid": "ccbf29d455693a1592314e14d41a542a",
+      "address": 6442455040,
+      "textSegmentSize": 16384,
+      "path": "/usr/lib/liba-1.0.dylib",
+      "name": "liba-1.0.dylib"
+    },
+    {
+      "uuid": "60d2f3d644a2391087503a56a3d8ff07",
+      "address": 6442471424,
+      "textSegmentSize": 16384,
+      "path": "/usr/lib/libb-1.0.dylib",
+      "name": "libb-1.0.dylib"
+    }
+  ]
+}
  1 fd: 4 +0x00000000 0x180000000 - 0x180017fff r-x vmap.cache_map.0
  2 fd: 4 +0x00018000 0x182018000 - 0x18201bfff r-- vmap.cache_map.1
  3 fd: 4 +0x0001c000 0x18401c000 - 0x18402ffff r-- vmap.cache_map.2
@@ -159,13 +325,13 @@ NAME=dyldcache arm64 with objc
 FILE=bins/dyldcache/dyld_shared_cache_arm64-macOS-objc
 CMDS=<<EOF
 i
-?e --
+echo --
 ic
 icf Test
 icm Test
 icf __NSUnrecognizedTaggedPointer
 icm __NSUnrecognizedTaggedPointer
-?e --
+echo --
 pxr 8 @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist
 EOF
 EXPECT=<<EOF
@@ -177,7 +343,7 @@ mode     r-x
 format   dyldcache
 iorw     false
 block    0x100
-type     library-cache
+type     production
 arch     arm
 cpu      N/A
 baddr    0x180000000
@@ -190,14 +356,14 @@ compiler N/A
 dbg_file N/A
 endian   LE
 hdr.csum N/A
-guid     N/A
+guid     0051c062211e3a669af7d590307d245c
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     objc
 machine  arm
 maxopsz  4
 minopsz  4
-os       Darwin
+os       macOS
 cc       N/A
 pcalign  4
 rpath    N/A
@@ -223,19 +389,18 @@ address     min         max         name                          super
 0x18206a0a0 0x18003aa98 0x18003ab98 Protocol                      NSObject
 0x18206a140 0x18003e8dc 0x18003e8e4 __NSUnrecognizedTaggedPointer NSObject
 0x18206a0f0 0x18003cfc4 0x18003d788 NSObject                      NSObject
-0x00000000  0x180014f94 0x180014f98 std                           
 address     index class flags name                  type                
 ------------------------------------------------------------------------
-0x00000000  0     Test        isa                   struct objc_class *
+----------  0     Test        isa                   struct objc_class *
 0x182068038 1     Test        Test::(ivar)someField i
 address     index class flags name                         
 -----------------------------------------------------------
 0x1800189f8 0     Test        init
-0x180018a58 1     Test        methodWithoutArgs
-0x180018ab0 2     Test        methodWithOneArg:
-0x180018b0c 3     Test        methodWithTwoArgs:secondArg:
-0x180018b90 4     Test        methodWithReturn
-0x180018a1c 5     Test  c     someStaticMethod
+0x180018a1c 1     Test  c     someStaticMethod
+0x180018a58 2     Test        methodWithoutArgs
+0x180018ab0 3     Test        methodWithOneArg:
+0x180018b0c 4     Test        methodWithTwoArgs:secondArg:
+0x180018b90 5     Test        methodWithReturn
 address index class flags name type 
 ------------------------------------
 address     index class                         flags name        
@@ -244,7 +409,7 @@ address     index class                         flags name
 0x18003e8e0 1     __NSUnrecognizedTaggedPointer       release
 0x18003e8e4 2     __NSUnrecognizedTaggedPointer       autorelease
 --
-0x182064028 0x0000000182068068   h....... @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist 6476431464 lib_libhello-1.0.dylib.17.__DATA.__objc_data _OBJC_CLASS_$_Test R 0x182068040
+0x182064028 0x0000000182068068   h....... @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist 6476431464 lib_libhello-1.0.dylib.17.__DATA.__objc_data class Test R 0x182068040
 EOF
 RUN
 
@@ -252,13 +417,13 @@ NAME=dyldcache arm64e with objc
 FILE=bins/dyldcache/dyld_shared_cache_arm64e-macOS-objc
 CMDS=<<EOF
 i
-?e --
+echo --
 ic
 icf Test
 icm Test
 icf NSObject
 icm NSObject
-?e --
+echo --
 pxr 8 @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist
 EOF
 EXPECT=<<EOF
@@ -270,7 +435,7 @@ mode     r-x
 format   dyldcache
 iorw     false
 block    0x100
-type     library-cache
+type     production
 arch     arm
 cpu      N/A
 baddr    0x180000000
@@ -283,14 +448,14 @@ compiler N/A
 dbg_file N/A
 endian   LE
 hdr.csum N/A
-guid     N/A
+guid     b3d4bd16c88a378c961fcfefb34344b9
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     objc
 machine  arm
 maxopsz  4
 minopsz  4
-os       Darwin
+os       macOS
 cc       N/A
 pcalign  4
 rpath    N/A
@@ -316,113 +481,112 @@ address     min         max         name                          super
 0x184079110 0x18003e244 0x18003e3b4 Protocol                      NSObject
 0x1840791b0 0x180042ac8 0x180042ad0 __NSUnrecognizedTaggedPointer NSObject
 0x184079160 0x180040eb8 0x180042ac4 NSObject                      NSObject
-0x00000000  0x180014f94 0x180014f98 std                           
 address     index class flags name                  type                
 ------------------------------------------------------------------------
-0x00000000  0     Test        isa                   struct objc_class *
+----------  0     Test        isa                   struct objc_class *
 0x18206c038 1     Test        Test::(ivar)someField i
 address     index class flags name                         
 -----------------------------------------------------------
 0x180018a14 0     Test        init
-0x180018a78 1     Test        methodWithoutArgs
-0x180018ad4 2     Test        methodWithOneArg:
-0x180018b34 3     Test        methodWithTwoArgs:secondArg:
-0x180018bbc 4     Test        methodWithReturn
-0x180018a38 5     Test  c     someStaticMethod
+0x180018a38 1     Test  c     someStaticMethod
+0x180018a78 2     Test        methodWithoutArgs
+0x180018ad4 3     Test        methodWithOneArg:
+0x180018b34 4     Test        methodWithTwoArgs:secondArg:
+0x180018bbc 5     Test        methodWithReturn
 address     index class    flags name                                 type                
 ------------------------------------------------------------------------------------------
-0x00000000  0     NSObject       isa                                  struct objc_class *
-0x18206d1c4 1     NSObject       NSObject::(ivar)isa                  #
-0x00000000  2     NSObject       NSObject::(property)hash             
-0x00000000  3     NSObject       NSObject::(property)superclass       
-0x00000000  4     NSObject       NSObject::(property)description      
-0x00000000  5     NSObject       NSObject::(property)debugDescription 
+0x18206d1c4 0     NSObject       NSObject::(ivar)isa                  #
+----------  1     NSObject       NSObject::(property)debugDescription 
+----------  2     NSObject       NSObject::(property)description      
+----------  3     NSObject       NSObject::(property)hash             
+----------  4     NSObject       NSObject::(property)superclass       
+----------  5     NSObject       isa                                  struct objc_class *
 address     index class    flags name                                   
 ------------------------------------------------------------------------
-0x18004144c 0     NSObject       init
-0x180042658 1     NSObject       retain
-0x180041adc 2     NSObject       release
-0x1800415d4 3     NSObject       autorelease
-0x18004233c 4     NSObject       _tryRetain
-0x180042280 5     NSObject       _isDeallocating
-0x180041450 6     NSObject       retainCount
-0x18004225c 7     NSObject       allowsWeakReference
-0x180042250 8     NSObject       retainWeakReference
-0x180042ac4 9     NSObject       self
-0x180042a74 10    NSObject       class
-0x180042974 11    NSObject       isKindOfClass:
-0x180042928 12    NSObject       respondsToSelector:
-0x180042894 13    NSObject       isEqual:
-0x1800428a0 14    NSObject       hash
-0x18004142c 15    NSObject       copy
-0x180042a20 16    NSObject       superclass
-0x180042670 17    NSObject       description
-0x180042664 18    NSObject       debugDescription
-0x1800427b4 19    NSObject       performSelector:
-0x180042754 20    NSObject       performSelector:withObject:
-0x1800426ec 21    NSObject       performSelector:withObject:withObject:
-0x180042884 22    NSObject       isProxy
-0x1800429ec 23    NSObject       isMemberOfClass:
-0x1800428a4 24    NSObject       conformsToProtocol:
-0x18004143c 25    NSObject       zone
-0x18004288c 26    NSObject       isFault
-0x180042848 27    NSObject       methodForSelector:
-0x180042804 28    NSObject       doesNotRecognizeSelector:
-0x1800426d4 29    NSObject       methodSignatureForSelector:
-0x180042680 30    NSObject       forwardInvocation:
-0x180042678 31    NSObject       forwardingTargetForSelector:
-0x180041444 32    NSObject       dealloc
-0x18004141c 33    NSObject       mutableCopy
-0x180041440 34    NSObject       finalize
-0x180040ed0 35    NSObject c     init
-0x180041418 36    NSObject c     initialize
-0x180040f10 37    NSObject c     retain
-0x180040eec 38    NSObject c     release
-0x180040ee8 39    NSObject c     autorelease
-0x180040f08 40    NSObject c     _tryRetain
-0x180040f00 41    NSObject c     _isDeallocating
-0x180040ee0 42    NSObject c     retainCount
-0x180040ef8 43    NSObject c     allowsWeakReference
-0x180040ef0 44    NSObject c     retainWeakReference
-0x180040f14 45    NSObject c     new
-0x180041414 46    NSObject c     self
-0x180041410 47    NSObject c     class
-0x180041370 48    NSObject c     isKindOfClass:
-0x180041284 49    NSObject c     respondsToSelector:
-0x180041160 50    NSObject c     resolveInstanceMethod:
-0x180041168 51    NSObject c     resolveClassMethod:
-0x180040ed8 52    NSObject c     alloc
-0x180040ed4 53    NSObject c     allocWithZone:
-0x1800411f8 54    NSObject c     isEqual:
-0x180041204 55    NSObject c     hash
-0x180040ec0 56    NSObject c     copyWithZone:
-0x180040eb8 57    NSObject c     mutableCopyWithZone:
-0x180040ec4 58    NSObject c     copy
-0x1800413d8 59    NSObject c     superclass
-0x180040f70 60    NSObject c     description
-0x180040f64 61    NSObject c     debugDescription
-0x1800410cc 62    NSObject c     performSelector:
-0x18004106c 63    NSObject c     performSelector:withObject:
-0x180041004 64    NSObject c     performSelector:withObject:withObject:
-0x1800411e8 65    NSObject c     isProxy
-0x1800413c4 66    NSObject c     isMemberOfClass:
-0x180041208 67    NSObject c     conformsToProtocol:
-0x180040ec8 68    NSObject c     zone
-0x180041320 69    NSObject c     isSubclassOfClass:
-0x1800412a4 70    NSObject c     isAncestorOfObject:
-0x180041294 71    NSObject c     instancesRespondToSelector:
-0x1800411f0 72    NSObject c     isFault
-0x1800411ac 73    NSObject c     instanceMethodForSelector:
-0x180041170 74    NSObject c     methodForSelector:
-0x18004111c 75    NSObject c     doesNotRecognizeSelector:
-0x180040fec 76    NSObject c     instanceMethodSignatureForSelector:
-0x180040fd4 77    NSObject c     methodSignatureForSelector:
-0x180040f80 78    NSObject c     forwardInvocation:
-0x180040f78 79    NSObject c     forwardingTargetForSelector:
-0x180040ecc 80    NSObject c     dealloc
-0x180040ebc 81    NSObject c     mutableCopy
+0x180040eb8 0     NSObject c     mutableCopyWithZone:
+0x180040ebc 1     NSObject c     mutableCopy
+0x180040ec0 2     NSObject c     copyWithZone:
+0x180040ec4 3     NSObject c     copy
+0x180040ec8 4     NSObject c     zone
+0x180040ecc 5     NSObject c     dealloc
+0x180040ed0 6     NSObject c     init
+0x180040ed4 7     NSObject c     allocWithZone:
+0x180040ed8 8     NSObject c     alloc
+0x180040ee0 9     NSObject c     retainCount
+0x180040ee8 10    NSObject c     autorelease
+0x180040eec 11    NSObject c     release
+0x180040ef0 12    NSObject c     retainWeakReference
+0x180040ef8 13    NSObject c     allowsWeakReference
+0x180040f00 14    NSObject c     _isDeallocating
+0x180040f08 15    NSObject c     _tryRetain
+0x180040f10 16    NSObject c     retain
+0x180040f14 17    NSObject c     new
+0x180040f64 18    NSObject c     debugDescription
+0x180040f70 19    NSObject c     description
+0x180040f78 20    NSObject c     forwardingTargetForSelector:
+0x180040f80 21    NSObject c     forwardInvocation:
+0x180040fd4 22    NSObject c     methodSignatureForSelector:
+0x180040fec 23    NSObject c     instanceMethodSignatureForSelector:
+0x180041004 24    NSObject c     performSelector:withObject:withObject:
+0x18004106c 25    NSObject c     performSelector:withObject:
+0x1800410cc 26    NSObject c     performSelector:
+0x18004111c 27    NSObject c     doesNotRecognizeSelector:
+0x180041160 28    NSObject c     resolveInstanceMethod:
+0x180041168 29    NSObject c     resolveClassMethod:
+0x180041170 30    NSObject c     methodForSelector:
+0x1800411ac 31    NSObject c     instanceMethodForSelector:
+0x1800411e8 32    NSObject c     isProxy
+0x1800411f0 33    NSObject c     isFault
+0x1800411f8 34    NSObject c     isEqual:
+0x180041204 35    NSObject c     hash
+0x180041208 36    NSObject c     conformsToProtocol:
+0x180041284 37    NSObject c     respondsToSelector:
+0x180041294 38    NSObject c     instancesRespondToSelector:
+0x1800412a4 39    NSObject c     isAncestorOfObject:
+0x180041320 40    NSObject c     isSubclassOfClass:
+0x180041370 41    NSObject c     isKindOfClass:
+0x1800413c4 42    NSObject c     isMemberOfClass:
+0x1800413d8 43    NSObject c     superclass
+0x180041410 44    NSObject c     class
+0x180041414 45    NSObject c     self
+0x180041418 46    NSObject c     initialize
+0x18004141c 47    NSObject       mutableCopy
+0x18004142c 48    NSObject       copy
+0x18004143c 49    NSObject       zone
+0x180041440 50    NSObject       finalize
+0x180041444 51    NSObject       dealloc
+0x18004144c 52    NSObject       init
+0x180041450 53    NSObject       retainCount
+0x1800415d4 54    NSObject       autorelease
+0x180041adc 55    NSObject       release
+0x180042250 56    NSObject       retainWeakReference
+0x18004225c 57    NSObject       allowsWeakReference
+0x180042280 58    NSObject       _isDeallocating
+0x18004233c 59    NSObject       _tryRetain
+0x180042658 60    NSObject       retain
+0x180042664 61    NSObject       debugDescription
+0x180042670 62    NSObject       description
+0x180042678 63    NSObject       forwardingTargetForSelector:
+0x180042680 64    NSObject       forwardInvocation:
+0x1800426d4 65    NSObject       methodSignatureForSelector:
+0x1800426ec 66    NSObject       performSelector:withObject:withObject:
+0x180042754 67    NSObject       performSelector:withObject:
+0x1800427b4 68    NSObject       performSelector:
+0x180042804 69    NSObject       doesNotRecognizeSelector:
+0x180042848 70    NSObject       methodForSelector:
+0x180042884 71    NSObject       isProxy
+0x18004288c 72    NSObject       isFault
+0x180042894 73    NSObject       isEqual:
+0x1800428a0 74    NSObject       hash
+0x1800428a4 75    NSObject       conformsToProtocol:
+0x180042928 76    NSObject       respondsToSelector:
+0x180042974 77    NSObject       isKindOfClass:
+0x1800429ec 78    NSObject       isMemberOfClass:
+0x180042a20 79    NSObject       superclass
+0x180042a74 80    NSObject       class
+0x180042ac4 81    NSObject       self
 --
-0x182068000 0x0000000184078028   (....... @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist 6510051368 lib_libhello-1.0.dylib.18.__AUTH.__objc_data _OBJC_CLASS_$_Test R 0x184078000
+0x182068000 0x0000000184078028   (....... @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist 6510051368 lib_libhello-1.0.dylib.18.__AUTH.__objc_data class Test R 0x184078000
 EOF
 RUN
 
@@ -433,5 +597,191 @@ aaa
 q
 EOF
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=dyldcache 1042.1 header
+FILE=bins/dyldcache/dyld_shared_cache_arm64-macOS-1042.1
+CMDS=<<EOF
+i
+is
+iS
+iH~{}
+oml
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/dyldcache/dyld_shared_cache_arm64-macOS-1042.1
+size     0x20000
+humansz  128K
+mode     r-x
+format   dyldcache
+iorw     false
+block    0x100
+type     development
+arch     arm
+cpu      N/A
+baddr    0x180000000
+binsz    0x00020000
+bintype  N/A
+bits     64
+retguard false
+class    dyldcache
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     c0a042e3c0db394caa455cd7e767643f
+intrp    N/A
+laddr    0x00000000
+lang     c++
+machine  arm
+maxopsz  4
+minopsz  4
+os       macOS
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   xnu
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+nth paddr      vaddr       bind   type size lib name                      
+--------------------------------------------------------------------------
+0   0x00007fb4 0x180007fb4 GLOBAL FUNC 0        _i_am_libSystem
+0   0x0000bfb0 0x18000bfb0 GLOBAL FUNC 0        _say_hello
+0   0x0000ff38 0x18000ff38 GLOBAL FUNC 0        dyld3::entryVectorForDyld
+1   0x0000ff34 0x18000ff34 GLOBAL FUNC 0        _i_am_libdyld
+0   0x00013fb4 0x180013fb4 GLOBAL FUNC 0        _i_am_libsystem_kernel
+paddr      size vaddr       vsize align perm name                                                 type flags 
+-------------------------------------------------------------------------------------------------------------
+0x00007fb4 0x4  0x180007fb4 0x4   0x0   -r-x lib_libSystem.B.dylib.0.__TEXT.__text                     
+0x00007fb8 0x48 0x180007fb8 0x48  0x0   -r-x lib_libSystem.B.dylib.1.__TEXT.__unwind_info              
+0x0000bfb0 0x8  0x18000bfb0 0x8   0x0   -r-x lib_libhello.dylib.0.__TEXT.__text                        
+0x0000bfb8 0x48 0x18000bfb8 0x48  0x0   -r-x lib_libhello.dylib.1.__TEXT.__unwind_info                 
+0x0000ff34 0x4  0x18000ff34 0x4   0x0   -r-x system_libdyld.dylib.0.__TEXT.__text                      
+0x0000ff38 0x80 0x18000ff38 0x80  0x0   -r-x system_libdyld.dylib.1.__TEXT.__const                     
+0x0000ffb8 0x48 0x18000ffb8 0x48  0x0   -r-x system_libdyld.dylib.2.__TEXT.__unwind_info               
+0x00013fb4 0x4  0x180013fb4 0x4   0x0   -r-x system_libsystem_kernel.dylib.0.__TEXT.__text             
+0x00013fb8 0x48 0x180013fb8 0x48  0x0   -r-x system_libsystem_kernel.dylib.1.__TEXT.__unwind_info      
+{
+  "version": "1042.1",
+  "header": {
+    "magic": "dyld_v1   arm64",
+    "mappingOffset": 512,
+    "mappingCount": 2,
+    "imagesOffset": 736,
+    "imagesCount": 4,
+    "dyldBaseAddress": 0,
+    "codeSignatureOffset": 114688,
+    "codeSignatureSize": 16384,
+    "slideInfoOffset": 0,
+    "slideInfoSize": 0,
+    "localSymbolsOffset": 0,
+    "localSymbolsSize": 0,
+    "uuid": "c0a042e3c0db394caa455cd7e767643f",
+    "cacheType": "development",
+    "branchPoolsOffset": 0,
+    "branchPoolsCount": 0,
+    "dyldInCacheMH": 0,
+    "dyldInCacheEntry": 0,
+    "imagesTextOffset": 864,
+    "imagesTextCount": 4,
+    "patchInfoAddr": 6442532976,
+    "patchInfoSize": 264,
+    "otherImageGroupAddrUnused": 0,
+    "otherImageGroupSizeUnused": 0,
+    "progClosuresAddr": 0,
+    "progClosuresSize": 0,
+    "progClosuresTrieAddr": 0,
+    "progClosuresTrieSize": 0,
+    "platform": 1,
+    "formatVersion": 0,
+    "dylibsExpectedOnDisk": 0,
+    "simulator": 0,
+    "locallyBuiltCache": 1,
+    "builtFromChainedFixups": 0,
+    "padding": 0,
+    "sharedRegionStart": 6442450944,
+    "sharedRegionSize": 131072,
+    "maxSlide": 2147401728,
+    "dylibsImageArrayAddr": 0,
+    "dylibsImageArraySize": 0,
+    "dylibsTrieAddr": 6442532864,
+    "dylibsTrieSize": 112,
+    "otherImageArrayAddr": 0,
+    "otherImageArraySize": 0,
+    "otherTrieAddr": 0,
+    "otherTrieSize": 0,
+    "mappingWithSlideOffset": 624,
+    "mappingWithSlideCount": 2,
+    "dylibsPBLStateArrayAddrUnused": 0,
+    "dylibsPBLSetAddr": 6442533240,
+    "programsPBLSetPoolAddr": 6442534280,
+    "programsPBLSetPoolSize": 16384,
+    "programTrieAddr": 6442550664,
+    "programTrieSize": 88,
+    "osVersion": 851968,
+    "altPlatform": 0,
+    "altOsVersion": 0,
+    "swiftOptsOffset": 0,
+    "swiftOptsSize": 0,
+    "subCacheArrayOffset": 992,
+    "subCacheArrayCount": 0,
+    "symbolFileUUID": "00000000000000000000000000000000",
+    "rosettaReadOnlyAddr": 0,
+    "rosettaReadOnlySize": 0,
+    "rosettaReadWriteAddr": 0,
+    "rosettaReadWriteSize": 0,
+    "cacheSubType": 0,
+    "objcOptsOffset": 0,
+    "objcOptsSize": 0,
+    "cacheAtlasOffset": 0,
+    "cacheAtlasSize": 0,
+    "dynamicDataOffset": 114688,
+    "dynamicDataMaxSize": 16384
+  },
+  "images": [
+    {
+      "uuid": "e0a310e1c61e3b289c5df43f04e71a44",
+      "address": 6442467328,
+      "textSegmentSize": 16384,
+      "path": "/usr/lib/libSystem.B.dylib",
+      "name": "libSystem.B.dylib"
+    },
+    {
+      "uuid": "f2c8e54bd02937e69928edd8b4bbec63",
+      "address": 6442483712,
+      "textSegmentSize": 16384,
+      "path": "/usr/lib/libhello.dylib",
+      "name": "libhello.dylib"
+    },
+    {
+      "uuid": "439351ae77ca308ebf1da32729a79709",
+      "address": 6442500096,
+      "textSegmentSize": 16384,
+      "path": "/usr/lib/system/libdyld.dylib",
+      "name": "libdyld.dylib"
+    },
+    {
+      "uuid": "4ce071b5dd373397aca699d517bdb6e7",
+      "address": 6442516480,
+      "textSegmentSize": 16384,
+      "path": "/usr/lib/system/libsystem_kernel.dylib",
+      "name": "libsystem_kernel.dylib"
+    }
+  ]
+}
+ 1 fd: 3 +0x00000000 0x180000000 - 0x180013fff r-x fmap.cache_map.0
+ 2 fd: 3 +0x00014000 0x180014000 - 0x18001bfff r-- fmap.cache_map.1
 EOF
 RUN

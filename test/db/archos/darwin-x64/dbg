@@ -58,7 +58,7 @@ FILE=bins/mach0/hello-objc-osx
 ARGS=-d
 CMDS=<<EOF
 fl@F:maps~hello
-?e --
+echo --
 dm*~hello,fss
 EOF
 EXPECT=<<EOF
@@ -83,7 +83,7 @@ dcu main
 3 ds
 dr rip
 dr rdi
-ps @ rdi
+ps @e:bin.str.enc=utf8 @ rdi
 EOF
 EXPECT=<<EOF
 rip = 0x0000000100000f17
@@ -104,7 +104,7 @@ db @ main
 db @ 0x100000f17
 dc
 dr rip
-?e --
+echo --
 dc
 dr rip
 dr rdi
@@ -130,11 +130,11 @@ db @ main + 20
 db @ main + 24
 dc
 dr rip
-?e --
+echo --
 dc
 dr rip
 dr rax
-?e --
+echo --
 dc
 dr rip
 dr rax
@@ -166,11 +166,11 @@ db @ main + 61
 db @ main + 67
 dc
 dr rip
-?e --
+echo --
 dc
 dr rip
 dr rax
-?e --
+echo --
 dc
 dr rip
 dr rax

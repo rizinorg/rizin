@@ -121,7 +121,7 @@ CMDS=<<EOF
 e cfg.bigendian=false
 aeim
 "ae 0x69686766,0x00100000,=[4]"
-psz @ 0x00100000
+ps @ 0x00100000
 EOF
 EXPECT=<<EOF
 fghi
@@ -135,7 +135,7 @@ CMDS=<<EOF
 e cfg.bigendian=true
 aeim
 "ae 0x69686766,0x00100000,=[4]"
-psz @ 0x00100000
+ps @ 0x00100000
 EOF
 EXPECT=<<EOF
 ihgf
@@ -149,7 +149,7 @@ CMDS=<<EOF
 e cfg.bigendian=true
 aeim
 "ae 0x69686766,0x00100000,=[4]"
-psz @0x00100000
+ps @0x00100000
 EOF
 EXPECT=<<EOF
 ihgf

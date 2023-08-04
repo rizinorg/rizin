@@ -324,6 +324,47 @@ bool test_line_kill_word(void) {
 	mu_end;
 }
 
+bool test_line_undo(void) {
+	RzCons *cons = rz_cons_new();
+	// Make test reproducible everywhere
+	cons->force_columns = 80;
+	cons->force_rows = 23;
+	rz_line_free();
+	RzLine *line = rz_line_new();
+	cons->line = line;
+
+	// write 20 chars and undo once
+	char input_concat[] = "01234567890123456789\x1f\n";
+	rz_cons_readpush(input_concat, sizeof(input_concat));
+	rz_line_readline();
+	mu_assert_eq(line->buffer.length, 0, "concatenated string should get cleared");
+	mu_assert_eq(line->buffer.index, 0, "index is 0");
+
+	// write a string, delete, then undo('\x1f') twice
+	char input_undo[] = "0123\x17\x1f\x1f\n";
+	rz_cons_readpush(input_undo, sizeof(input_undo));
+	rz_line_readline();
+	mu_assert_eq(line->buffer.index, 0, "index is at 0");
+	mu_assert_eq(line->buffer.length, 0, "legth is 0");
+
+	// write a string, undo('\x1f') and redo('\x1b\x3f')
+	char input_redo[] = "pDF\x1f\x1b\x3f\n";
+	rz_cons_readpush(input_redo, sizeof(input_redo));
+	rz_line_readline();
+	mu_assert_streq(line->buffer.data, "pDF", "redo not working");
+
+	// run completion (example of replacing and continuous operation).
+	line->ns_completion.run = onecompletion_run;
+	// now "pd" has been confirmed to be completed to "pdf ". undo will turn it to previous state replacing the texts.
+	const char input_undo_group[] = "pd\t\x1f\n";
+	rz_cons_readpush(input_undo_group, sizeof(input_undo_group));
+	rz_line_readline();
+	mu_assert_streq(line->buffer.data, "pd", "undo group operations not working");
+
+	rz_cons_free();
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_cons);
 	mu_run_test(test_cons_to_html);
@@ -331,6 +372,7 @@ bool all_tests() {
 	mu_run_test(test_line_onecompletion);
 	mu_run_test(test_line_multicompletion);
 	mu_run_test(test_line_kill_word);
+	mu_run_test(test_line_undo);
 	return tests_passed != tests_run;
 }
 

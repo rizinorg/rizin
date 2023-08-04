@@ -10988,10 +10988,6 @@
     "named": false
   },
   {
-    "type": "%",
-    "named": false
-  },
-  {
     "type": "'",
     "named": false
   },
@@ -11205,10 +11201,6 @@
   },
   {
     "type": "`",
-    "named": false
-  },
-  {
-    "type": "env",
     "named": false
   },
   {

@@ -18,7 +18,7 @@ for fname in FILENAMES:
         print("Shared buffer size 0x{0:x}".format(data_size))
         print("-------------")
 
-        rzp = rzpipe.open("shm://{0:s}/{1:d}".format(shm.name, data_size))
+        rzp = rzpipe.open("shm://{0:s}/{1:d}".format(shm.name, data_size), flags=["-N"])
         rzp.cmd("e scr.color=0")
         rzp.cmd("e scr.utf8=false")
         rzp.cmd("e scr.interactive=false")

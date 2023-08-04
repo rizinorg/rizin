@@ -370,6 +370,9 @@ static int process_group_2(RzAsm *a, ut8 *data, const Opcode *op) {
 	if (immediate > 255 || immediate < -128) {
 		RZ_LOG_ERROR("assembler: x86.nz: %s: the immediate value exceeds bounds (imm > 255 or imm < -128)\n", op->mnemonic);
 		return -1;
+	} else if (!strcmp(op->mnemonic, "rcl") && !immediate) {
+		// `rcl mem [reg]` is an alias for `rcl mem [reg], 1`
+		immediate = 1;
 	}
 
 	if (op->operands[0].type & (OT_DWORD | OT_QWORD)) {

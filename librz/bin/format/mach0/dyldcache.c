@@ -16,7 +16,10 @@ static RzDyldLocSym *rz_dyld_locsym_new(RzDyldCache *cache);
  * \param magic zero-terminated string from the beginning of some file
  */
 RZ_API bool rz_dyldcache_check_magic(const char *magic) {
-	return !strcmp(magic, "dyld_v1   arm64") || !strcmp(magic, "dyld_v1  arm64e") || !strcmp(magic, "dyld_v1  x86_64") || !strcmp(magic, "dyld_v1 x86_64h");
+	return !strncmp(magic, "dyld_v1   arm64", 16) ||
+		!strncmp(magic, "dyld_v1  arm64e", 16) ||
+		!strncmp(magic, "dyld_v1  x86_64", 16) ||
+		!strncmp(magic, "dyld_v1 x86_64h", 16);
 }
 
 static ut64 va2pa(uint64_t addr, ut32 n_maps, cache_map_t *maps, RzBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
@@ -49,33 +52,173 @@ static void free_bin(RzDyldBinImage *bin) {
 	free(bin);
 }
 
-static cache_hdr_t *read_cache_header(RzBuffer *cache_buf, ut64 offset) {
+static RzDyldCacheHeader *read_cache_header(RzBuffer *cache_buf, ut64 offset) {
 	if (!cache_buf) {
 		return NULL;
 	}
 
-	cache_hdr_t *hdr = RZ_NEW0(cache_hdr_t);
+	RzDyldCacheHeader *hdr = RZ_NEW0(RzDyldCacheHeader);
 	if (!hdr) {
 		return NULL;
 	}
 
-	ut64 size = sizeof(cache_hdr_t);
-	if (rz_buf_fread_at(cache_buf, offset, (ut8 *)hdr, "16c4i7l16clii4l", 1) != size) {
-		free(hdr);
-		return NULL;
-	}
-	if (!rz_dyldcache_check_magic(hdr->magic)) {
-		free(hdr);
-		return NULL;
+	ut64 cur = offset;
+	if (!rz_buf_read_offset(cache_buf, &cur, (ut8 *)hdr->magic, sizeof(hdr->magic)) ||
+		!rz_dyldcache_check_magic(hdr->magic) ||
+		!rz_buf_read_le32_offset(cache_buf, &cur, &hdr->mappingOffset) ||
+		!rz_buf_read_le32_offset(cache_buf, &cur, &hdr->mappingCount) ||
+		!rz_buf_read_le32_offset(cache_buf, &cur, &hdr->imagesOffset) ||
+		!rz_buf_read_le32_offset(cache_buf, &cur, &hdr->imagesCount) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->dyldBaseAddress) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->codeSignatureOffset) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->codeSignatureSize) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->slideInfoOffset) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->slideInfoSize) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->localSymbolsOffset) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->localSymbolsSize) ||
+		!rz_buf_read_offset(cache_buf, &cur, hdr->uuid, sizeof(hdr->uuid)) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->cacheType) ||
+		!rz_buf_read_le32_offset(cache_buf, &cur, &hdr->branchPoolsOffset) ||
+		!rz_buf_read_le32_offset(cache_buf, &cur, &hdr->branchPoolsCount) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->accelerateInfoAddr) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->accelerateInfoSize) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->imagesTextOffset) ||
+		!rz_buf_read_le64_offset(cache_buf, &cur, &hdr->imagesTextCount)) {
+		goto fail;
 	}
 
-	if (!hdr->imagesCount && !hdr->imagesOffset) {
-		if (!rz_buf_read_le32_at(cache_buf, 0x1c0 + offset, &hdr->imagesOffset) || !rz_buf_read_le32_at(cache_buf, 0x1c4 + offset, &hdr->imagesCount)) {
-			free(hdr);
-			return NULL;
-		}
+	// Size of the header was continuously expanded during versions as newer fields got added.
+	// There is no dedicated header size stored in the file, but in practice the mappingOffset is
+	// directly after the header, so we use this as an indicator on how far we may read.
+	ut64 hdr_end_offset = offset + hdr->mappingOffset;
+#define READ_OR_FINISH(bits, dst) \
+	do { \
+		if (cur + bits / 8 > hdr_end_offset || !rz_buf_read_le##bits##_offset(cache_buf, &cur, dst)) { \
+			goto finish; \
+		} \
+	} while (0)
+	READ_OR_FINISH(64, &hdr->patchInfoAddr);
+	READ_OR_FINISH(64, &hdr->patchInfoSize);
+	READ_OR_FINISH(64, &hdr->otherImageGroupAddrUnused);
+	READ_OR_FINISH(64, &hdr->otherImageGroupSizeUnused);
+	READ_OR_FINISH(64, &hdr->progClosuresAddr);
+	READ_OR_FINISH(64, &hdr->progClosuresSize);
+	READ_OR_FINISH(64, &hdr->progClosuresTrieAddr);
+	READ_OR_FINISH(64, &hdr->progClosuresTrieSize);
+	READ_OR_FINISH(32, &hdr->platform);
+
+	ut32 flags;
+	READ_OR_FINISH(32, &flags);
+	hdr->formatVersion = flags & rz_num_bitmask(8);
+	flags >>= 8;
+	hdr->dylibsExpectedOnDisk = flags & 1;
+	flags >>= 1;
+	hdr->simulator = flags & 1;
+	flags >>= 1;
+	hdr->locallyBuiltCache = flags & 1;
+	flags >>= 1;
+	hdr->builtFromChainedFixups = flags & 1;
+	flags >>= 1;
+	hdr->padding = flags;
+
+	READ_OR_FINISH(64, &hdr->sharedRegionStart);
+	READ_OR_FINISH(64, &hdr->sharedRegionSize);
+	READ_OR_FINISH(64, &hdr->maxSlide);
+	READ_OR_FINISH(64, &hdr->dylibsImageArrayAddr);
+	READ_OR_FINISH(64, &hdr->dylibsImageArraySize);
+	READ_OR_FINISH(64, &hdr->dylibsTrieAddr);
+	READ_OR_FINISH(64, &hdr->dylibsTrieSize);
+	READ_OR_FINISH(64, &hdr->otherImageArrayAddr);
+	READ_OR_FINISH(64, &hdr->otherImageArraySize);
+	READ_OR_FINISH(64, &hdr->otherTrieAddr);
+	READ_OR_FINISH(64, &hdr->otherTrieSize);
+	READ_OR_FINISH(32, &hdr->mappingWithSlideOffset);
+	READ_OR_FINISH(32, &hdr->mappingWithSlideCount);
+
+	READ_OR_FINISH(64, &hdr->dylibsPBLStateArrayAddrUnused);
+	READ_OR_FINISH(64, &hdr->dylibsPBLSetAddr);
+	READ_OR_FINISH(64, &hdr->programsPBLSetPoolAddr);
+	READ_OR_FINISH(64, &hdr->programsPBLSetPoolSize);
+	READ_OR_FINISH(64, &hdr->programTrieAddr);
+	READ_OR_FINISH(32, &hdr->programTrieSize);
+	READ_OR_FINISH(32, &hdr->osVersion);
+	READ_OR_FINISH(32, &hdr->altPlatform);
+	READ_OR_FINISH(32, &hdr->altOsVersion);
+	READ_OR_FINISH(64, &hdr->swiftOptsOffset);
+	READ_OR_FINISH(64, &hdr->swiftOptsSize);
+	READ_OR_FINISH(32, &hdr->subCacheArrayOffset);
+	READ_OR_FINISH(32, &hdr->subCacheArrayCount);
+
+	if (cur + sizeof(hdr->symbolFileUUID) > hdr_end_offset ||
+		!rz_buf_read_offset(cache_buf, &cur, hdr->symbolFileUUID, sizeof(hdr->symbolFileUUID))) {
+		goto finish;
 	}
+
+	READ_OR_FINISH(64, &hdr->rosettaReadOnlyAddr);
+	READ_OR_FINISH(64, &hdr->rosettaReadOnlySize);
+	READ_OR_FINISH(64, &hdr->rosettaReadWriteAddr);
+	READ_OR_FINISH(64, &hdr->rosettaReadWriteSize);
+
+	// This intentionally overrides the imagesOffset/imagesCount above as these
+	// two fields were moved down here in dyld-940:
+	READ_OR_FINISH(32, &hdr->imagesOffset);
+	READ_OR_FINISH(32, &hdr->imagesCount);
+
+	READ_OR_FINISH(32, &hdr->cacheSubType);
+	cur += 4; // 8-alignment/padding
+	READ_OR_FINISH(64, &hdr->objcOptsOffset);
+	READ_OR_FINISH(64, &hdr->objcOptsSize);
+	READ_OR_FINISH(64, &hdr->cacheAtlasOffset);
+	READ_OR_FINISH(64, &hdr->cacheAtlasSize);
+	READ_OR_FINISH(64, &hdr->dynamicDataOffset);
+	READ_OR_FINISH(64, &hdr->dynamicDataMaxSize);
+
+#undef READ_OR_FINISH
+finish:
 	return hdr;
+fail:
+	free(hdr);
+	return NULL;
+}
+
+RZ_API RZ_NONNULL const char *rz_dyldcache_get_platform_str(RzDyldCache *cache) {
+	switch (cache->hdr->platform) {
+	case 1:
+		return "macOS";
+	case 2:
+		return "iOS";
+	case 3:
+		return "tvOS";
+	case 4:
+		return "watchOS";
+	case 5:
+		return "bridgeOS";
+	case 6:
+		return "iOSMac";
+	case 7:
+		return "iOS_simulator";
+	case 8:
+		return "tvOS_simulator";
+	case 9:
+		return "watchOS_simulator";
+	case 10:
+		return "driverKit";
+	default:
+		return "darwin"; // unknown
+	}
+}
+
+RZ_API RZ_NONNULL const char *rz_dyldcache_get_type_str(RzDyldCache *cache) {
+	switch (cache->hdr->cacheType) {
+	case 0:
+		return "development";
+	case 1:
+		return "production";
+	case 2:
+		return "multi-cache";
+	default:
+		return "unknown";
+	}
 }
 
 #define SHIFT_MAYBE(x) \
@@ -90,7 +233,7 @@ static void populate_cache_headers(RzDyldCache *cache) {
 		return;
 	}
 
-	cache_hdr_t *h;
+	RzDyldCacheHeader *h;
 	ut64 offsets[MAX_N_HDR];
 	ut64 offset = 0;
 	do {
@@ -119,7 +262,7 @@ static void populate_cache_headers(RzDyldCache *cache) {
 		goto beach;
 	}
 
-	cache->hdr = RZ_NEWS0(cache_hdr_t, cache->n_hdr);
+	cache->hdr = RZ_NEWS0(RzDyldCacheHeader, cache->n_hdr);
 	if (!cache->hdr) {
 		cache->n_hdr = 0;
 		goto beach;
@@ -136,12 +279,12 @@ static void populate_cache_headers(RzDyldCache *cache) {
 
 	ut32 i = 0;
 	RzListIter *iter;
-	cache_hdr_t *item;
+	RzDyldCacheHeader *item;
 	rz_list_foreach (hdrs, iter, item) {
 		if (i >= cache->n_hdr) {
 			break;
 		}
-		memcpy(&cache->hdr[i++], item, sizeof(cache_hdr_t));
+		memcpy(&cache->hdr[i++], item, sizeof(RzDyldCacheHeader));
 	}
 
 beach:
@@ -157,7 +300,7 @@ static void populate_cache_maps(RzDyldCache *cache) {
 	ut32 n_maps = 0;
 	ut64 max_count = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
-		cache_hdr_t *hdr = &cache->hdr[i];
+		RzDyldCacheHeader *hdr = &cache->hdr[i];
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
 			continue;
 		}
@@ -181,7 +324,7 @@ static void populate_cache_maps(RzDyldCache *cache) {
 	ut32 last_idx = UT32_MAX;
 	ut64 max_address = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
-		cache_hdr_t *hdr = &cache->hdr[i];
+		RzDyldCacheHeader *hdr = &cache->hdr[i];
 		cache->maps_index[i] = next_map;
 
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
@@ -213,8 +356,8 @@ static void populate_cache_maps(RzDyldCache *cache) {
 	}
 }
 
-static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps) {
-	if (!cache_buf || !hdr || !hdr->accelerateInfoSize || !hdr->accelerateInfoAddr) {
+static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, RzDyldCacheHeader *hdr, cache_map_t *maps) {
+	if (!cache_buf || !hdr || !rz_dyldcache_header_may_have_accel(hdr) || !hdr->accelerateInfoSize || !hdr->accelerateInfoAddr) {
 		return NULL;
 	}
 
@@ -315,7 +458,7 @@ beach:
 	return result;
 }
 
-static cache_img_t *read_cache_images(RzBuffer *cache_buf, cache_hdr_t *hdr, ut64 hdr_offset) {
+static cache_img_t *read_cache_images(RzBuffer *cache_buf, RzDyldCacheHeader *hdr, ut64 hdr_offset) {
 	if (!cache_buf || !hdr) {
 		return NULL;
 	}
@@ -385,7 +528,7 @@ static void match_bin_entries(RzDyldCache *cache, void *entries) {
 	RZ_FREE(imgs);
 }
 
-static cache_imgxtr_t *read_cache_imgextra(RzBuffer *cache_buf, cache_hdr_t *hdr, cache_accel_t *accel) {
+static cache_imgxtr_t *read_cache_imgextra(RzBuffer *cache_buf, RzDyldCacheHeader *hdr, cache_accel_t *accel) {
 	if (!cache_buf || !hdr || !hdr->imagesCount || !accel || !accel->imageExtrasCount || !accel->imagesExtrasOffset) {
 		return NULL;
 	}
@@ -418,7 +561,7 @@ static int string_contains(const void *a, const void *b) {
 	return !strstr((const char *)a, (const char *)b);
 }
 
-static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
+static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, RzDyldCacheHeader *hdr) {
 	HtPU *path_to_idx = ht_pu_new0();
 	if (!path_to_idx) {
 		return NULL;
@@ -510,7 +653,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 
 	ut32 i;
 	for (i = 0; i < cache->n_hdr; i++) {
-		cache_hdr_t *hdr = &cache->hdr[i];
+		RzDyldCacheHeader *hdr = &cache->hdr[i];
 		ut64 hdr_offset = cache->hdr_offset[i];
 		ut64 symbols_off = cache->symbols_off_base - hdr_offset;
 		ut32 maps_index = cache->maps_index[i];
@@ -519,18 +662,19 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 			goto next;
 		}
 
-		ut32 j;
-		ut16 *depArray = NULL;
+		ut16 *dep_array = NULL;
 		cache_imgxtr_t *extras = NULL;
 		if (target_libs) {
 			HtPU *path_to_idx = NULL;
+			size_t dep_array_count = 0;
 			if (cache->accel) {
-				depArray = RZ_NEWS0(ut16, cache->accel->depListCount);
-				if (!depArray) {
+				dep_array_count = cache->accel->depListCount;
+				dep_array = RZ_NEWS0(ut16, dep_array_count);
+				if (!dep_array) {
 					goto next;
 				}
 
-				if (rz_buf_fread_at(cache->buf, cache->accel->depListOffset, (ut8 *)depArray, "s", cache->accel->depListCount) != cache->accel->depListCount * 2) {
+				if (rz_buf_fread_at(cache->buf, cache->accel->depListOffset, (ut8 *)dep_array, "s", dep_array_count) != dep_array_count * 2) {
 					goto next;
 				}
 
@@ -542,7 +686,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 				path_to_idx = create_path_to_index(cache->buf, img, hdr);
 			}
 
-			for (j = 0; j < hdr->imagesCount; j++) {
+			for (ut32 j = 0; j < hdr->imagesCount; j++) {
 				bool printing = !deps[j];
 				char *lib_name = get_lib_name(cache->buf, &img[j]);
 				if (!lib_name) {
@@ -561,10 +705,20 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 				RZ_FREE(lib_name);
 				deps[j]++;
 
-				if (extras && depArray) {
-					ut32 k;
-					for (k = extras[j].dependentsStartArrayIndex; depArray[k] != 0xffff; k++) {
-						ut16 dep_index = depArray[k] & 0x7fff;
+				if (extras && dep_array) {
+					for (ut32 k = extras[j].dependentsStartArrayIndex;; k++) {
+						if (k >= dep_array_count) {
+							RZ_LOG_ERROR("dyldcache: depList overflow\n");
+							break;
+						}
+						if (dep_array[k] == 0xffff) {
+							break;
+						}
+						ut16 dep_index = dep_array[k] & 0x7fff;
+						if (dep_index >= cache->hdr->imagesCount) {
+							RZ_LOG_ERROR("dyldcache: depList contents overflow\n");
+							break;
+						}
 						deps[dep_index]++;
 
 						char *dep_name = get_lib_name(cache->buf, &img[dep_index]);
@@ -582,11 +736,11 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 			}
 
 			ht_pu_free(path_to_idx);
-			RZ_FREE(depArray);
+			RZ_FREE(dep_array);
 			RZ_FREE(extras);
 		}
 
-		for (j = 0; j < hdr->imagesCount; j++) {
+		for (ut32 j = 0; j < hdr->imagesCount; j++) {
 			if (deps && !deps[j]) {
 				continue;
 			}
@@ -640,7 +794,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 			}
 		}
 	next:
-		RZ_FREE(depArray);
+		RZ_FREE(dep_array);
 		RZ_FREE(extras);
 		RZ_FREE(img);
 	}
@@ -1259,7 +1413,7 @@ static RzDyldLocSym *rz_dyld_locsym_new(RzDyldCache *cache) {
 
 	ut32 i;
 	for (i = 0; i < cache->n_hdr; i++) {
-		cache_hdr_t *hdr = &cache->hdr[i];
+		RzDyldCacheHeader *hdr = &cache->hdr[i];
 		if (!hdr || !hdr->localSymbolsSize || !hdr->localSymbolsOffset) {
 			continue;
 		}

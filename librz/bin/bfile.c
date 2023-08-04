@@ -8,17 +8,6 @@
 #include <rz_util/rz_log.h>
 #include "i/private.h"
 
-static RzBinClass *__getClass(RzBinFile *bf, const char *name) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->classes_ht && name, NULL);
-	return ht_pp_find(bf->o->classes_ht, name, NULL);
-}
-
-static RzBinSymbol *__getMethod(RzBinFile *bf, const char *klass, const char *method) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->methods_ht && klass && method, NULL);
-	const char *name = sdb_fmt("%s::%s", klass, method);
-	return ht_pp_find(bf->o->methods_ht, name, NULL);
-}
-
 RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, bool steal_ptr) {
 	ut32 bf_id;
 	if (!rz_id_pool_grab_id(bin->ids->pool, &bf_id)) {
@@ -498,69 +487,16 @@ RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin, R
 	return prev_hashes;
 }
 
-RZ_IPI RzBinClass *rz_bin_class_new(const char *name, const char *super, int view) {
-	rz_return_val_if_fail(name, NULL);
-	RzBinClass *c = RZ_NEW0(RzBinClass);
-	if (c) {
-		c->name = strdup(name);
-		c->super = super ? strdup(super) : NULL;
-		c->methods = rz_list_new();
-		c->fields = rz_list_new();
-		c->visibility = view;
+RZ_API void rz_bin_class_free(RZ_NULLABLE RzBinClass *k) {
+	if (!k) {
+		return;
 	}
-	return c;
-}
-
-RZ_IPI void rz_bin_class_free(RzBinClass *k) {
-	if (k && k->name) {
-		free(k->name);
-		free(k->super);
-		rz_list_free(k->methods);
-		rz_list_free(k->fields);
-		free(k->visibility_str);
-		free(k);
-	}
-}
-
-RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *bf, const char *name, const char *super, int view) {
-	rz_return_val_if_fail(name && bf && bf->o, NULL);
-	RzBinClass *c = __getClass(bf, name);
-	if (c) {
-		if (super) {
-			free(c->super);
-			c->super = strdup(super);
-		}
-		return c;
-	}
-	c = rz_bin_class_new(name, super, view);
-	if (c) {
-		// XXX. no need for a list, the ht is iterable too
-		c->index = rz_list_length(bf->o->classes);
-		rz_list_append(bf->o->classes, c);
-		ht_pp_insert(bf->o->classes_ht, name, c);
-	}
-	return c;
-}
-
-RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *klass, const char *method, int nargs) {
-	rz_return_val_if_fail(bf, NULL);
-
-	RzBinClass *c = rz_bin_file_add_class(bf, klass, NULL, 0);
-	if (!c) {
-		RZ_LOG_ERROR("Cannot allocate RzBinClass for '%s'\n", klass);
-		return NULL;
-	}
-	RzBinSymbol *sym = __getMethod(bf, klass, method);
-	if (!sym) {
-		sym = RZ_NEW0(RzBinSymbol);
-		if (sym) {
-			sym->name = strdup(method);
-			rz_list_append(c->methods, sym);
-			const char *name = sdb_fmt("%s::%s", klass, method);
-			ht_pp_insert(bf->o->methods_ht, name, sym);
-		}
-	}
-	return sym;
+	free(k->name);
+	free(k->super);
+	rz_list_free(k->methods);
+	rz_list_free(k->fields);
+	free(k->visibility_str);
+	free(k);
 }
 
 RZ_API RzList /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf) {

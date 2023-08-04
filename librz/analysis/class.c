@@ -596,18 +596,6 @@ static RzAnalysisClassErr rz_analysis_class_add_attr_unique(RzAnalysis *analysis
 // ---- METHODS ----
 // Format: addr,vtable_offset
 
-static int symbol_method_sort_by_addr(const void *x, const void *y) {
-	RzBinSymbol *a = (RzBinSymbol *)x;
-	RzBinSymbol *b = (RzBinSymbol *)y;
-	if (a->vaddr > b->vaddr) {
-		return 1;
-	}
-	if (a->vaddr < b->vaddr) {
-		return -1;
-	}
-	return 0;
-}
-
 static char *flagname_method(const char *class_name, const char *meth_name) {
 	if (rz_str_startswith(meth_name, "method.")) {
 		return rz_str_new(meth_name);
@@ -615,7 +603,10 @@ static char *flagname_method(const char *class_name, const char *meth_name) {
 	return flagname_attr("method", class_name, meth_name);
 }
 
-RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth) {
+RZ_API void rz_analysis_class_method_fini(RZ_NULLABLE RzAnalysisMethod *meth) {
+	if (!meth) {
+		return;
+	}
 	free(meth->name);
 	free(meth->real_name);
 }
@@ -623,19 +614,21 @@ RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth) {
 RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *cls, RzList /*<RzBinSymbol *>*/ *methods) {
 	RzListIter *iter_method;
 	RzBinSymbol *sym;
-	rz_list_sort(methods, &symbol_method_sort_by_addr);
 	rz_list_foreach (methods, iter_method, sym) {
 		if (!rz_analysis_class_method_exists(analysis, cls->name, sym->name)) {
 			// detect constructor or destructor but not implemented
 			// Temporarily set to default
-			RzAnalysisMethod method;
+			RzAnalysisMethod method = { 0 };
 			method.addr = sym->vaddr;
 			method.vtable_offset = -1;
 			RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, sym->vaddr);
 			char *method_name = rz_str_new(sym->name);
 			rz_str_split(method_name, '(');
 			method.name = fcn ? rz_str_new(fcn->name) : rz_str_new(method_name);
-			method.real_name = method_name;
+			// this replace is required due SDB using commas to split the stored data.
+			// some c++ function names might have templates like foo<char, int>()
+			// which breaks the decoding from the SDB data
+			method.real_name = rz_str_replace(method_name, ",", "#_#", 1);
 			method.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT;
 			rz_analysis_class_method_set(analysis, cls->name, &method);
 			rz_analysis_class_method_fini(&method);
@@ -727,6 +720,10 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, con
 	sdb_anext(cur, NULL);
 
 	meth->real_name = rz_str_new(cur);
+	// this replace is required due SDB using commas to split the stored data.
+	// some c++ function names might have templates like foo<char, int>()
+	// which breaks the decoding from the SDB data
+	meth->real_name = rz_str_replace(meth->real_name, "#_#", ",", 1);
 
 	free(content);
 

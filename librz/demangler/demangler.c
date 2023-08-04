@@ -9,22 +9,29 @@
 #include <config.h>
 
 #define DEFINE_DEMANGLER_PLUGIN(name, lang, lic, auth, handler) \
+	static char *handler##_cast(const char *symbol, RzDemanglerFlag flags) { \
+		return handler(symbol, (RzDemangleOpts)flags); \
+	} \
 	RZ_API RzDemanglerPlugin rz_demangler_plugin_##name = { \
 		.language = lang, \
 		.license = lic, \
 		.author = auth, \
-		.demangle = &handler, \
+		.demangle = &handler##_cast, \
 	}
 
 #if WITH_GPL
-DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2", "Free Software Foundation", libdemangle_handler_cxx);
-// rust demangler requires the cpp one.
-DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "pancake", libdemangle_handler_rust);
-#endif
+// cpp demangler contains GPL2 code and LGPL3 for delphi
+DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2,LGPL3", "FSF/deroad", libdemangle_handler_cxx);
+#else
+// cpp demangler contain only the LGPL3 for delphi
+DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "LGPL3", "deroad", libdemangle_handler_cxx);
+#endif /* WITH_GPL */
+
 #if WITH_SWIFT_DEMANGLER
 DEFINE_DEMANGLER_PLUGIN(swift, "swift", "MIT", "pancake", libdemangle_handler_swift);
 #endif
 
+DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "Dhruv Maroo", libdemangle_handler_rust);
 DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_java);
 DEFINE_DEMANGLER_PLUGIN(msvc, "msvc", "LGPL3", "inisider", libdemangle_handler_msvc);
 DEFINE_DEMANGLER_PLUGIN(objc, "objc", "LGPL3", "pancake", libdemangle_handler_objc);
@@ -35,53 +42,45 @@ static RzDemanglerPlugin *demangler_static_plugins[] = { RZ_DEMANGLER_STATIC_PLU
 RZ_LIB_VERSION(rz_demangler);
 
 /**
- * \brief Demangles java symbols
+ * \brief Demangles Java symbols
  */
-RZ_API RZ_OWN char *rz_demangler_java(RZ_NULLABLE const char *symbol) {
-	return libdemangle_handler_java(symbol);
+RZ_API RZ_OWN char *rz_demangler_java(RZ_NULLABLE const char *symbol, RzDemanglerFlag flags) {
+	return libdemangle_handler_java(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles c++ symbols
+ * \brief Demangles C++ symbols
  */
-RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol) {
-#if WITH_GPL
-	return libdemangle_handler_cxx(symbol);
-#else
-	return NULL;
-#endif
+RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
+	return libdemangle_handler_cxx(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles objc symbols
+ * \brief Demangles Objective C/C++ symbols
  */
-RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol) {
-	return libdemangle_handler_objc(symbol);
+RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
+	return libdemangle_handler_objc(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles pascal symbols
+ * \brief Demangles Pascal symbols
  */
-RZ_API RZ_OWN char *rz_demangler_pascal(RZ_NONNULL const char *symbol) {
-	return libdemangle_handler_pascal(symbol);
+RZ_API RZ_OWN char *rz_demangler_pascal(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
+	return libdemangle_handler_pascal(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles rust symbols
+ * \brief Demangles Rust symbols
  */
-RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol) {
-#if WITH_GPL
-	return libdemangle_handler_rust(symbol);
-#else
-	return NULL;
-#endif
+RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
+	return libdemangle_handler_rust(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles microsft vc symbols
+ * \brief Demangles Microsoft VC symbols
  */
-RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol) {
-	return libdemangle_handler_msvc(symbol);
+RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
+	return libdemangle_handler_msvc(symbol, (RzDemangleOpts)flags);
 }
 
 /**
@@ -110,8 +109,8 @@ RZ_API RZ_OWN RzDemangler *rz_demangler_new(void) {
 			RZ_LOG_WARN("rz_demangler: failed to add '%s' plugin at index %u", lang, i);
 		}
 	}
-
 	dem->plugins = plugins;
+	dem->flags = RZ_DEMANGLER_FLAG_BASE;
 	return dem;
 }
 
@@ -127,6 +126,22 @@ RZ_API void rz_demangler_free(RZ_NULLABLE RzDemangler *dem) {
 }
 
 /**
+ * \brief Sets the demangler flags.
+ */
+RZ_API void rz_demangler_set_flags(RZ_NONNULL RzDemangler *demangler, RzDemanglerFlag flags) {
+	rz_return_if_fail(demangler);
+	demangler->flags = flags;
+}
+
+/**
+ * \brief Gets the demangler flags.
+ */
+RZ_API RzDemanglerFlag rz_demangler_get_flags(RZ_NONNULL RzDemangler *demangler) {
+	rz_return_val_if_fail(demangler, RZ_DEMANGLER_FLAG_BASE);
+	return demangler->flags;
+}
+
+/**
  * \brief Iterates over the plugin list
  *
  * Iterates over the plugin list and passes a RzDemanglerPlugin pointer
@@ -139,7 +154,7 @@ RZ_API void rz_demangler_plugin_iterate(RZ_NONNULL RzDemangler *dem, RZ_NONNULL 
 	RzListIter *it;
 
 	rz_list_foreach (dem->plugins, it, plugin) {
-		if (!iter(plugin, data)) {
+		if (!iter(plugin, dem->flags, data)) {
 			break;
 		}
 	}
@@ -212,7 +227,7 @@ RZ_API bool rz_demangler_resolve(RZ_NONNULL RzDemangler *dem, RZ_NULLABLE const 
 
 	rz_list_foreach (dem->plugins, it, plugin) {
 		if (!strcmp(plugin->language, language)) {
-			*output = plugin->demangle(symbol);
+			*output = plugin->demangle(symbol, dem->flags);
 			return true;
 		}
 	}

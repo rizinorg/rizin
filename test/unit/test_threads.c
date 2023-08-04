@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2023 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_th.h>
@@ -81,9 +81,153 @@ bool test_thread_queue(void) {
 	mu_end;
 }
 
+bool test_thread_ht(void) {
+	bool v_boolean = false;
+	const char *element = NULL;
+
+	RzThreadHtPP *ht = rz_th_ht_pp_new0();
+	mu_assert_notnull(ht, "rz_th_ht_pp_new0() null check");
+
+	v_boolean = true;
+	element = (const char *)rz_th_ht_pp_find(ht, "not found", &v_boolean);
+	mu_assert_false(v_boolean, "the search must say not found");
+	mu_assert_null(element, "the search must return NULL");
+
+	v_boolean = rz_th_ht_pp_insert(ht, "foo", "bar");
+	mu_assert_true(v_boolean, "the insert must succeed");
+
+	v_boolean = false;
+	element = (const char *)rz_th_ht_pp_find(ht, "foo", &v_boolean);
+	mu_assert_true(v_boolean, "the search must say found");
+	mu_assert_notnull(element, "the search must NOT return NULL");
+	mu_assert_streq(element, "bar", "expecting to find 'bar' when searching for 'foo'");
+
+	element = (const char *)rz_th_ht_pp_find(ht, "foo", NULL);
+	mu_assert_notnull(element, "the search must NOT return NULL");
+	mu_assert_streq(element, "bar", "expecting to find 'bar' when searching for 'foo'");
+
+	v_boolean = rz_th_ht_pp_delete(ht, "not found");
+	mu_assert_false(v_boolean, "the delete must fail");
+
+	v_boolean = rz_th_ht_pp_delete(ht, "foo");
+	mu_assert_true(v_boolean, "the delete must succeed");
+
+	v_boolean = true;
+	element = (const char *)rz_th_ht_pp_find(ht, "foo", &v_boolean);
+	mu_assert_false(v_boolean, "the search must say not found");
+	mu_assert_null(element, "the search must return NULL");
+
+	rz_th_ht_pp_free(ht);
+	mu_end;
+}
+
+void thread_set_bool_arg(bool *value, bool *user) {
+	*value = true;
+	*user = true;
+}
+
+bool test_thread_iterator_list(void) {
+	bool bool0 = false;
+	bool bool1 = false;
+	bool bool2 = false;
+	bool bool3 = false;
+	bool bool4 = false;
+	bool bool_user = false;
+
+	// test empty list
+	RzList *list = rz_list_new();
+	mu_assert_notnull(list, "rz_list_new() null check");
+	bool res = rz_th_iterate_list(list, (RzThreadIterator)thread_set_bool_arg, 1, NULL);
+	mu_assert_true(res, "list is empty and must return true");
+
+	rz_list_append(list, &bool0);
+	rz_list_append(list, &bool1);
+	rz_list_append(list, &bool2);
+	rz_list_append(list, &bool3);
+	rz_list_append(list, &bool4);
+
+	// test values are accessed
+	res = rz_th_iterate_list(list, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_POOL_ALL_CORES, &bool_user);
+	mu_assert_true(res, "list is not empty and must return true");
+	mu_assert_true(bool_user, "bool_user must be true");
+	mu_assert_true(bool0, "bool0 must be true");
+	mu_assert_true(bool1, "bool1 must be true");
+	mu_assert_true(bool2, "bool2 must be true");
+	mu_assert_true(bool3, "bool3 must be true");
+	mu_assert_true(bool4, "bool4 must be true");
+
+	// test skip null pointers
+	rz_list_free(list);
+	list = rz_list_new();
+	mu_assert_notnull(list, "rz_list_new() null check");
+
+	bool_user = false;
+	rz_list_append(list, NULL);
+	rz_list_append(list, NULL);
+	rz_list_append(list, NULL);
+	rz_list_append(list, NULL);
+	rz_list_append(list, NULL);
+	res = rz_th_iterate_list(list, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_POOL_ALL_CORES, &bool_user);
+	mu_assert_true(res, "pvec is not empty and must return true");
+	mu_assert_false(bool_user, "bool_user must be false");
+
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_thread_iterator_pvec(void) {
+	bool bool0 = false;
+	bool bool1 = false;
+	bool bool2 = false;
+	bool bool3 = false;
+	bool bool4 = false;
+	bool bool_user = false;
+
+	// test empty pvec
+	RzPVector *pvec = rz_pvector_new(NULL);
+	mu_assert_notnull(pvec, "rz_pvector_new() null check");
+	rz_pvector_reserve(pvec, 5);
+
+	bool res = rz_th_iterate_pvector(pvec, (RzThreadIterator)thread_set_bool_arg, 1, NULL);
+	mu_assert_true(res, "pvec is empty and must return true");
+
+	rz_pvector_push(pvec, &bool0);
+	rz_pvector_push(pvec, &bool1);
+	rz_pvector_push(pvec, &bool2);
+	rz_pvector_push(pvec, &bool3);
+	rz_pvector_push(pvec, &bool4);
+
+	// test values are accessed
+	res = rz_th_iterate_pvector(pvec, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_POOL_ALL_CORES, &bool_user);
+	mu_assert_true(res, "pvec is not empty and must return true");
+	mu_assert_true(bool_user, "bool_user must be true");
+	mu_assert_true(bool0, "bool0 must be true");
+	mu_assert_true(bool1, "bool1 must be true");
+	mu_assert_true(bool2, "bool2 must be true");
+	mu_assert_true(bool3, "bool3 must be true");
+	mu_assert_true(bool4, "bool4 must be true");
+
+	// test skip null pointers
+	bool_user = false;
+	rz_pvector_set(pvec, 0, NULL);
+	rz_pvector_set(pvec, 1, NULL);
+	rz_pvector_set(pvec, 2, NULL);
+	rz_pvector_set(pvec, 3, NULL);
+	rz_pvector_set(pvec, 4, NULL);
+	res = rz_th_iterate_pvector(pvec, (RzThreadIterator)thread_set_bool_arg, RZ_THREAD_POOL_ALL_CORES, &bool_user);
+	mu_assert_true(res, "pvec is not empty and must return true");
+	mu_assert_false(bool_user, "bool_user must be false");
+
+	rz_pvector_free(pvec);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_thread_pool_cores);
 	mu_run_test(test_thread_queue);
+	mu_run_test(test_thread_ht);
+	mu_run_test(test_thread_iterator_list);
+	mu_run_test(test_thread_iterator_pvec);
 	return tests_passed != tests_run;
 }
 

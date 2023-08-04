@@ -639,7 +639,7 @@ RZ_API char *rz_file_slurp_random_line_count(const char *file, int *line) {
 			if (str[i] == '\n') {
 				// here rand doesn't have any security implication
 				//  https://www.securecoding.cert.org/confluence/display/c/MSC30-C.+Do+not+use+the+rand()+function+for+generating+pseudorandom+numbers
-				if (!(rz_num_rand((++(*line))))) {
+				if (!(rz_num_rand32((++(*line))))) {
 					selection = (*line - 1); /* The line we want. */
 				}
 			}
@@ -1028,7 +1028,7 @@ RZ_API void *rz_file_mmap_resize(RzMmap *m, ut64 newsize) {
 		_close(m->fd);
 	}
 #elif __UNIX__
-	if (m->buf && munmap(m->buf, m->len) != 0) {
+	if (m->buf && m->len != 0 && munmap(m->buf, m->len) != 0) {
 		return NULL;
 	}
 #endif
@@ -1314,6 +1314,9 @@ RZ_API RzList /*<char *>*/ *rz_file_globsearch(const char *_globbed_path, int ma
 RZ_API RZ_OWN char *rz_file_path_join(RZ_NONNULL const char *s1, RZ_NULLABLE const char *s2) {
 	rz_return_val_if_fail(s1, NULL);
 
+	if (s1[0] == 0) {
+		return strdup(s2);
+	}
 	if (!s2) {
 		return strdup(s1);
 	}

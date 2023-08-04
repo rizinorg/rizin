@@ -1,3 +1,19 @@
+NAME=pyc load version310
+FILE=bins/pyc/py310.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.10.0 VM (rev bfb376ffcc4260feb9bf1b9a110559b1ff31da80)
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc load version39
 FILE=bins/pyc/py39.pyc
 CMDS=<<EOF
@@ -94,19 +110,41 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc 3.9 sections
-FILE=bins/pyc/py37.pyc
+NAME=pyc 3.10 sections
+FILE=bins/pyc/py310.pyc
 CMDS=<<EOF
 iS~Bat
 EOF
 EXPECT=<<EOF
-0x00001f0d 0x2a  0x00001f0d 0x2a  0x0   ---- module_.Bat                     
-0x00001f5f 0xa   0x00001f5f 0xa   0x0   ---- module_.Bat.__init              
-0x00001fca 0x8   0x00001fca 0x8   0x0   ---- module_.Bat.say                 
-0x00002037 0x4   0x00002037 0x4   0x0   ---- module_.Bat.sonar               
-0x00002103 0x1c  0x00002103 0x1c  0x0   ---- module_.Batman                  
-0x00002143 0x44  0x00002143 0x44  0x0   ---- module_.Batman.__init           
-0x00002235 0x4   0x00002235 0x4   0x0   ---- module_.Batman.sing             
+0x0000201d 0x2a  0x0000201d 0x2a  0x0   ---- module_.Bat                     
+0x00002073 0x0   0x00002073 0x0   0x0   ---- module_.Bat.__init              
+0x000020da 0x8   0x000020da 0x8   0x0   ---- module_.Bat.say                 
+0x00002144 0x0   0x00002144 0x0   0x0   ---- module_.Bat.sonar               
+0x0000220e 0x1c  0x0000220e 0x1c  0x0   ---- module_.Batman                  
+0x00002252 0x48  0x00002252 0x48  0x0   ---- module_.Batman.__init           
+0x00002356 0x0   0x00002356 0x0   0x0   ---- module_.Batman.sing             
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.9 sections
+FILE=bins/pyc/py39.pyc
+CMDS=<<EOF
+iS~Bat
+EOF
+EXPECT=<<EOF
+0x00001fdf 0x2a  0x00001fdf 0x2a  0x0   ---- module_.Bat                     
+0x00002035 0xa   0x00002035 0xa   0x0   ---- module_.Bat.__init              
+0x000020a6 0x8   0x000020a6 0x8   0x0   ---- module_.Bat.say                 
+0x00002110 0x4   0x00002110 0x4   0x0   ---- module_.Bat.sonar               
+0x000021de 0x1c  0x000021de 0x1c  0x0   ---- module_.Batman                  
+0x00002222 0x48  0x00002222 0x48  0x0   ---- module_.Batman.__init           
+0x00002326 0x4   0x00002326 0x4   0x0   ---- module_.Batman.sing             
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\ \(0\)
@@ -164,6 +202,70 @@ free_object (0)
 EOF
 RUN
 
+NAME=pyc 3.10 disasm
+FILE=bins/pyc/py310.pyc
+CMDS=<<EOF
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000002e      LOAD_CONST             Multiline strings can be written
+    using three "s, and are often used
+    as documentation. ; [00] ---- section size 3292 named module
+            0x00000030      STORE_NAME            __doc__
+            0x00000032      NOP
+            0x00000034      NOP
+            0x00000036      NOP
+            0x00000038      NOP
+            0x0000003a      NOP
+            0x0000003c      NOP
+            0x0000003e      NOP
+            0x00000040      NOP
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.10 disasm
+FILE=bins/pyc/py310.pyc
+CMDS=<<EOF
+s 0x00001eb3
+pd 16
+EOF
+EXPECT=<<EOF
+            ;-- section.module_.Superhero.boast:
+            ;-- <module>.Superhero.boast:
+            0x00001eb3      LOAD_FAST             self                 ; [29] ---- section size 32 named module_.Superhero.boast
+            0x00001eb5      LOAD_ATTR             superpowers
+            0x00001eb7      GET_ITER
+      ,,.-> 0x00001eb9      FOR_ITER              10
+      `---> 0x00001ebb      STORE_FAST            power
+       |:   0x00001ebd      LOAD_GLOBAL           print
+       |:   0x00001ebf      LOAD_CONST            I wield the power of {pow}!
+       |:   0x00001ec1      LOAD_ATTR             format
+       |:   0x00001ec3      LOAD_FAST             power
+       |:   0x00001ec5      LOAD_CONST            (pow)
+       |:   0x00001ec7      CALL_FUNCTION_KW      1 total positional and keyword args
+       |:   0x00001ec9      CALL_FUNCTION         1
+       |:   0x00001ecb      POP_TOP
+       |`=< 0x00001ecd      JUMP_ABSOLUTE         3
+       `--> 0x00001ecf      LOAD_CONST            None
+            0x00001ed1      RETURN_VALUE
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc 3.9 disasm
 FILE=bins/pyc/py39.pyc
 CMDS=<<EOF
@@ -173,18 +275,52 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.module:
             ;-- <module>:
-            0x0000002e      LOAD_CONST Multiline strings can be written
+            0x0000002e      LOAD_CONST             Multiline strings can be written
     using three "s, and are often used
     as documentation. ; [00] ---- section size 3248 named module
-            0x00000030      STORE_NAME             __doc__
-            0x00000032      LOAD_CONST                True
-        ,=< 0x00000034      JUMP_IF_FALSE_OR_POP                  10
-        |   0x00000036      LOAD_CONST               False
+            0x00000030      STORE_NAME            __doc__
+            0x00000032      LOAD_CONST            True
+        ,=< 0x00000034      JUMP_IF_FALSE_OR_POP  10
+        |   0x00000036      LOAD_CONST            False
         `-> 0x00000038      POP_TOP
-            0x0000003a      LOAD_CONST               False
-        ,=< 0x0000003c      JUMP_IF_TRUE_OR_POP                  18
-        |   0x0000003e      LOAD_CONST                True
+            0x0000003a      LOAD_CONST            False
+        ,=< 0x0000003c      JUMP_IF_TRUE_OR_POP   18
+        |   0x0000003e      LOAD_CONST            True
         `-> 0x00000040      POP_TOP
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.9 disasm
+FILE=bins/pyc/py39.pyc
+CMDS=<<EOF
+s 0x00001e79
+pd 16
+EOF
+EXPECT=<<EOF
+            ;-- section.module_.Superhero.boast:
+            ;-- <module>.Superhero.boast:
+            0x00001e79      LOAD_FAST             self                 ; [29] ---- section size 32 named module_.Superhero.boast
+            0x00001e7b      LOAD_ATTR             superpowers
+            0x00001e7d      GET_ITER
+      ,,.-> 0x00001e7f      FOR_ITER              20
+      `---> 0x00001e81      STORE_FAST            power
+       |:   0x00001e83      LOAD_GLOBAL           print
+       |:   0x00001e85      LOAD_CONST            I wield the power of {pow}!
+       |:   0x00001e87      LOAD_ATTR             format
+       |:   0x00001e89      LOAD_FAST             power
+       |:   0x00001e8b      LOAD_CONST            (pow)
+       |:   0x00001e8d      CALL_FUNCTION_KW      1 total positional and keyword args
+       |:   0x00001e8f      CALL_FUNCTION         1
+       |:   0x00001e91      POP_TOP
+       |`=< 0x00001e93      JUMP_ABSOLUTE         6
+       `--> 0x00001e95      LOAD_CONST            None
+            0x00001e97      RETURN_VALUE
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\ \(0\)
@@ -203,17 +339,17 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.module:
             ;-- <module>:
-            0x0000002a      LOAD_CONST Multiline strings can be written
+            0x0000002a      LOAD_CONST             Multiline strings can be written
     using three "s, and are often used
     as documentation. ; [00] ---- section size 3218 named module
-            0x0000002c      STORE_NAME             __doc__
-            0x0000002e      LOAD_CONST                True
-        ,=< 0x00000030      JUMP_IF_FALSE_OR_POP                  10
-        |   0x00000032      LOAD_CONST               False
+            0x0000002c      STORE_NAME            __doc__
+            0x0000002e      LOAD_CONST            True
+        ,=< 0x00000030      JUMP_IF_FALSE_OR_POP  10
+        |   0x00000032      LOAD_CONST            False
         `-> 0x00000034      POP_TOP
-            0x00000036      LOAD_CONST               False
-        ,=< 0x00000038      JUMP_IF_TRUE_OR_POP                  18
-        |   0x0000003a      LOAD_CONST                True
+            0x00000036      LOAD_CONST            False
+        ,=< 0x00000038      JUMP_IF_TRUE_OR_POP   18
+        |   0x0000003a      LOAD_CONST            True
         `-> 0x0000003c      POP_TOP
 EOF
 REGEXP_FILTER_ERR=<<EOF
@@ -249,16 +385,16 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.module:
             ;-- <module>:
-            0x0000001e      LOAD_CONSTCodeObject(hello_world) from hello.py ; [00] ---- section size 25 named module
+            0x0000001e      LOAD_CONST            CodeObject(hello_world) from hello.py ; [00] ---- section size 25 named module
             0x00000021      MAKE_FUNCTION
-            0x00000024      STORE_NAME         hello_world
-            0x00000027      LOAD_CONST             'world'
+            0x00000024      STORE_NAME            hello_world
+            0x00000027      LOAD_CONST            'world'
             0x0000002a      PRINT_ITEM
             0x0000002b      PRINT_NEWLINE
-            0x0000002c      LOAD_NAME         hello_world
-            0x0000002f      CALL_FUNCTION0 positional, 0 named
+            0x0000002c      LOAD_NAME             hello_world
+            0x0000002f      CALL_FUNCTION         0 positional, 0 named
             0x00000032      POP_TOP
-            0x00000033      LOAD_CONST                None
+            0x00000033      LOAD_CONST            None
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\ \(0\)
@@ -278,17 +414,17 @@ EOF
 EXPECT=<<EOF
             ;-- section.module:
             ;-- <module>:
-/ entry0 ();
-|           0x0000001e      LOAD_CONSTCodeObject(hello_world) from hello.py ; [00] ---- section size 25 named module
+/ entry0();
+|           0x0000001e      LOAD_CONST            CodeObject(hello_world) from hello.py ; [00] ---- section size 25 named module
 |           0x00000021      MAKE_FUNCTION
-|           0x00000024      STORE_NAME         hello_world
-|           0x00000027      LOAD_CONST             'world'
+|           0x00000024      STORE_NAME            hello_world
+|           0x00000027      LOAD_CONST            'world'
 |           0x0000002a      PRINT_ITEM
 |           0x0000002b      PRINT_NEWLINE
-|           0x0000002c      LOAD_NAME         hello_world
-|           0x0000002f      CALL_FUNCTION0 positional, 0 named
+|           0x0000002c      LOAD_NAME             hello_world
+|           0x0000002f      CALL_FUNCTION         0 positional, 0 named
 |           0x00000032      POP_TOP
-|           0x00000033      LOAD_CONST                None
+|           0x00000033      LOAD_CONST            None
 \           0x00000036      RETURN_VALUE
 EOF
 REGEXP_FILTER_ERR=<<EOF

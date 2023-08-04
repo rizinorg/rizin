@@ -258,7 +258,7 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char 
 	rz_return_if_fail(typedb && typedb->types && typedb->formats);
 
 	// A workaround to fix loading incorrectly detected MacOS binaries
-	if (os && RZ_STR_ISNOTEMPTY(os) && !strcmp(os, "darwin")) {
+	if (RZ_STR_ISNOTEMPTY(os) && !strcmp(os, "darwin")) {
 		os = "macos";
 	}
 
@@ -1184,7 +1184,7 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
 		newtype->kind = type->kind;
 		newtype->identifier.kind = type->identifier.kind;
 		newtype->identifier.is_const = type->identifier.is_const;
-		newtype->identifier.name = strdup(type->identifier.name);
+		newtype->identifier.name = rz_str_new(type->identifier.name);
 		break;
 	case RZ_TYPE_KIND_ARRAY:
 		newtype->kind = RZ_TYPE_KIND_ARRAY;

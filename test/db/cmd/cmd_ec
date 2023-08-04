@@ -113,7 +113,7 @@ CMDS=<<EOF
 e scr.color=1
 ecd
 ec
-?e
+echo
 eco bright
 ec
 EOF

@@ -33,7 +33,7 @@ wx 010203
 i~^size[1]
 w hello world
 i~^size[1]
-psz
+ps
 o--
 !rm ${RZ_FILE}
 EOF

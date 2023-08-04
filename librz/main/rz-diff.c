@@ -760,10 +760,10 @@ static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 /**************************************** symbols ***************************************/
 
 static ut32 symbol_hash_addr(const RzBinSymbol *elem) {
-	ut32 hash = rz_diff_hash_data((const ut8 *)elem->name, strlen(elem->name));
-	hash ^= rz_diff_hash_data((const ut8 *)elem->dname, strlen(elem->dname));
-	hash ^= rz_diff_hash_data((const ut8 *)elem->libname, strlen(elem->libname));
-	hash ^= rz_diff_hash_data((const ut8 *)elem->classname, strlen(elem->classname));
+	ut32 hash = rz_diff_hash_data((const ut8 *)elem->name, elem->name ? strlen(elem->name) : 0);
+	hash ^= rz_diff_hash_data((const ut8 *)elem->dname, elem->dname ? strlen(elem->dname) : 0);
+	hash ^= rz_diff_hash_data((const ut8 *)elem->libname, elem->libname ? strlen(elem->libname) : 0);
+	hash ^= rz_diff_hash_data((const ut8 *)elem->classname, elem->classname ? strlen(elem->classname) : 0);
 	hash ^= (ut32)(elem->vaddr >> 32);
 	hash ^= (ut32)elem->vaddr;
 	hash ^= (ut32)(elem->paddr >> 32);

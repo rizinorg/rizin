@@ -1,21 +1,45 @@
 NAME=macOS arm64
 FILE=bins/mach0/hello-macos-arm64
 CMDS=<<EOF
+ir
 oml
-?e --
-?e regular got
+echo --
+echo regular got
 pxQ 0x28 @ 0x100008000
-?e --
-?e cstring
+echo --
+echo cstring
 px 0x18 @ 0x100004008
-?e --
-?e local fcn ptr (auth, !bind)
+echo --
+echo local fcn ptr (auth, !bind)
 pxr 0x18 @ sym._fcns
-?e --
-?e global (!auth, bind)
+echo --
+echo global (!auth, bind)
 px 8 @ reloc._objc_empty_cache
 EOF
 EXPECT=<<EOF
+vaddr       paddr      type   name                             
+---------------------------------------------------------------
+0x00000000  0x00000000 SET_64 NSObject
+0x100004000 0x00004000 SET_64 dyld_stub_binder
+0x100004008 0x00004008 SET_64 __CFConstantStringClassReference
+0x100004010 0x00004010 SET_64 objc_alloc_init
+0x100004018 0x00004018 SET_64 objc_autoreleasePoolPop
+0x100004020 0x00004020 SET_64 objc_autoreleasePoolPush
+0x100004028 0x00004028 SET_64 __CFConstantStringClassReference
+0x100004048 0x00004048 SET_64 __CFConstantStringClassReference
+0x100004068 0x00004068 SET_64 __CFConstantStringClassReference
+0x100004088 0x00004088 SET_64 __CFConstantStringClassReference
+0x1000040a8 0x000040a8 SET_64 __CFConstantStringClassReference
+0x100008000 0x00008000 SET_64 NSLog
+0x100008008 0x00008008 SET_64 objc_alloc_init
+0x100008010 0x00008010 SET_64 objc_autoreleasePoolPop
+0x100008018 0x00008018 SET_64 objc_autoreleasePoolPush
+0x100008020 0x00008020 SET_64 objc_msgSend
+0x100008120 0x00008120 SET_64 NSObject
+0x100008128 0x00008128 SET_64 NSObject
+0x100008130 0x00008130 SET_64 _objc_empty_cache
+0x100008150 0x00008150 SET_64 NSObject
+0x100008158 0x00008158 SET_64 _objc_empty_cache
  1 fd: 3 +0x00000000 0x100000000 * 0x100003fff r-x fmap.__TEXT
  2 fd: 3 +0x00004000 0x100004000 - 0x100007fff r-- fmap.__DATA_CONST
  3 fd: 3 +0x00008000 0x100008000 - 0x10000bfff r-- fmap.__DATA
@@ -47,36 +71,83 @@ RUN
 NAME=macOS arm64e with BIND_OPCODE_THREADED
 FILE=bins/mach0/hello-macos-arm64e
 CMDS=<<EOF
+ir
 oml
-?e --
-?e __auth_got (auth, bind)
+echo --
+echo __auth_got (auth, bind)
 pxQ 0x28 @ 0x100004000
-?e --
-?e cstring (!auth, !bind)
+echo --
+echo cstring (!auth, !bind)
 px 0x18 @ 0x100004028
-?e --
-?e local fcn ptr (auth, !bind)
+echo --
+echo local fcn ptr (auth, !bind)
 pxr 0x18 @ sym._fcns
-?e --
-?e global (!auth, bind)
+echo --
+echo global (!auth, bind)
 px 8 @ reloc._objc_empty_cache
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x100000000 * 0x100003fff r-x fmap.__TEXT
- 2 fd: 4 +0x00004000 0x100004000 - 0x100007fff r-- vmap.__DATA_CONST
- 3 fd: 4 +0x00008000 0x100008000 - 0x10000bfff r-- vmap.__DATA
- 4 fd: 3 +0x0000c000 0x10000c000 - 0x10000ffff r-- fmap.__LINKEDIT
+vaddr       paddr      target      type   name                             
+---------------------------------------------------------------------------
+0x100004000 0x00004000 0x100010008 SET_64 NSLog
+0x100004008 0x00004008 0x100010010 SET_64 objc_alloc_init
+0x100004010 0x00004010 0x100010018 SET_64 objc_autoreleasePoolPop
+0x100004018 0x00004018 0x100010020 SET_64 objc_autoreleasePoolPush
+0x100004020 0x00004020 0x100010028 SET_64 objc_msgSend
+0x100004028 0x00004028 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004038 0x00004038 0x00000000  SET_64 
+0x100004048 0x00004048 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004058 0x00004058 0x00000000  SET_64 
+0x100004068 0x00004068 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004078 0x00004078 0x00000000  SET_64 
+0x100004088 0x00004088 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004098 0x00004098 0x00000000  SET_64 
+0x1000040a8 0x000040a8 0x100010030 SET_64 __CFConstantStringClassReference
+0x1000040b8 0x000040b8 0x00000000  SET_64 
+0x1000040c8 0x000040c8 0x100010030 SET_64 __CFConstantStringClassReference
+0x1000040d8 0x000040d8 0x00000000  SET_64 
+0x1000040e8 0x000040e8 0x00000000  SET_64 
+0x100008018 0x00008018 0x00000000  SET_64 
+0x100008020 0x00008020 0x00000000  SET_64 
+0x100008050 0x00008050 0x00000000  SET_64 
+0x100008058 0x00008058 0x00000000  SET_64 
+0x100008060 0x00008060 0x00000000  SET_64 
+0x100008088 0x00008088 0x00000000  SET_64 
+0x100008090 0x00008090 0x00000000  SET_64 
+0x1000080a0 0x000080a0 0x00000000  SET_64 
+0x1000080b8 0x000080b8 0x00000000  SET_64 
+0x1000080c0 0x000080c0 0x00000000  SET_64 
+0x1000080c8 0x000080c8 0x00000000  SET_64 
+0x1000080d0 0x000080d0 0x00000000  SET_64 
+0x1000080d8 0x000080d8 0x00000000  SET_64 
+0x1000080e0 0x000080e0 0x00000000  SET_64 
+0x1000080e8 0x000080e8 0x00000000  SET_64 
+0x1000080f8 0x000080f8 0x100010038 SET_64 NSObject
+0x100008100 0x00008100 0x100010038 SET_64 NSObject
+0x100008108 0x00008108 0x100010040 SET_64 _objc_empty_cache
+0x100008118 0x00008118 0x00000000  SET_64 
+0x100008120 0x00008120 0x00000000  SET_64 
+0x100008128 0x00008128 0x100010048 SET_64 NSObject
+0x100008130 0x00008130 0x100010040 SET_64 _objc_empty_cache
+0x100008140 0x00008140 0x00000000  SET_64 
+0x100008158 0x00008158 0x00000000  SET_64 
+0x100008160 0x00008160 0x00000000  SET_64 
+ 1 fd: 4 +0x00000000 0x100010008 - 0x100010087 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x100000000 * 0x100003fff r-x fmap.__TEXT
+ 3 fd: 5 +0x00004000 0x100004000 - 0x100007fff r-- vmap.__DATA_CONST
+ 4 fd: 5 +0x00008000 0x100008000 - 0x10000bfff r-- vmap.__DATA
+ 5 fd: 3 +0x0000c000 0x10000c000 - 0x10000ffff r-- fmap.__LINKEDIT
 --
 __auth_got (auth, bind)
-0x100004000 0xc009000000000000
-0x100004008 0xc009000000000005
-0x100004010 0xc009000000000006
-0x100004018 0xc009000000000007
-0x100004020 0xc009000000000008
+0x100004000 0x0000000100010008 reloc.target.NSLog
+0x100004008 0x0000000100010010 reloc.target.objc_alloc_init
+0x100004010 0x0000000100010018 reloc.target.objc_autoreleasePoolPop
+0x100004018 0x0000000100010020 reloc.target.objc_autoreleasePoolPush
+0x100004020 0x0000000100010028 reloc.target.objc_msgSend
 --
 cstring (!auth, !bind)
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x100004028  0100 0000 e16a 15c0 c807 0000 0000 0000  .....j..........
+0x100004028  3000 0100 0100 0000 c807 0000 0000 0000  0...............
 0x100004038  643e 0000 0100 0000                      d>......
 --
 local fcn ptr (auth, !bind)
@@ -86,13 +157,14 @@ local fcn ptr (auth, !bind)
 --
 global (!auth, bind)
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x100008108  0400 0000 0000 1040                      .......@
+0x100008108  4000 0100 0100 0000                      @.......
 EOF
 RUN
 
 NAME=macOS arm64 with DYLD_CHAINED_PTR_64_OFFSET
 FILE=bins/mach0/hello-macos-arm64-chained
 CMDS=<<EOF
+ir
 p8 8 @ 0x100004028
 p8 8 @ 0x100004038
 pxr 8 @ 0x100004038
@@ -101,23 +173,68 @@ icm
 icf
 EOF
 EXPECT=<<EOF
-0500000000002080
+vaddr       paddr      target      type   name                             
+---------------------------------------------------------------------------
+0x100004000 0x00004000 0x100010008 SET_64 NSLog
+0x100004008 0x00004008 0x100010010 SET_64 objc_alloc_init
+0x100004010 0x00004010 0x100010018 SET_64 objc_autoreleasePoolPop
+0x100004018 0x00004018 0x100010020 SET_64 objc_autoreleasePoolPush
+0x100004020 0x00004020 0x100010028 SET_64 objc_msgSend
+0x100004028 0x00004028 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004038 0x00004038 0x00000000  SET_64 
+0x100004048 0x00004048 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004058 0x00004058 0x00000000  SET_64 
+0x100004068 0x00004068 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004078 0x00004078 0x00000000  SET_64 
+0x100004088 0x00004088 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004098 0x00004098 0x00000000  SET_64 
+0x1000040a8 0x000040a8 0x100010030 SET_64 __CFConstantStringClassReference
+0x1000040b8 0x000040b8 0x00000000  SET_64 
+0x1000040c8 0x000040c8 0x100010030 SET_64 __CFConstantStringClassReference
+0x1000040d8 0x000040d8 0x00000000  SET_64 
+0x1000040e8 0x000040e8 0x00000000  SET_64 
+0x100008018 0x00008018 0x00000000  SET_64 
+0x100008020 0x00008020 0x00000000  SET_64 
+0x100008050 0x00008050 0x00000000  SET_64 
+0x100008058 0x00008058 0x00000000  SET_64 
+0x100008060 0x00008060 0x00000000  SET_64 
+0x100008088 0x00008088 0x00000000  SET_64 
+0x100008090 0x00008090 0x00000000  SET_64 
+0x1000080a0 0x000080a0 0x00000000  SET_64 
+0x1000080b8 0x000080b8 0x00000000  SET_64 
+0x1000080c0 0x000080c0 0x00000000  SET_64 
+0x1000080c8 0x000080c8 0x00000000  SET_64 
+0x1000080d0 0x000080d0 0x00000000  SET_64 
+0x1000080d8 0x000080d8 0x00000000  SET_64 
+0x1000080e0 0x000080e0 0x00000000  SET_64 
+0x1000080e8 0x000080e8 0x00000000  SET_64 
+0x1000080f8 0x000080f8 0x100010038 SET_64 NSObject
+0x100008100 0x00008100 0x100010038 SET_64 NSObject
+0x100008108 0x00008108 0x100010040 SET_64 _objc_empty_cache
+0x100008118 0x00008118 0x00000000  SET_64 
+0x100008120 0x00008120 0x00000000  SET_64 
+0x100008128 0x00008128 0x100010048 SET_64 NSObject
+0x100008130 0x00008130 0x100010040 SET_64 _objc_empty_cache
+0x100008140 0x00008140 0x00000000  SET_64 
+0x100008158 0x00008158 0x00000000  SET_64 
+0x100008160 0x00008160 0x00000000  SET_64 
+3000010001000000
 643e000001000000
 0x100004038 0x0000000100003e64   d>...... 4294983268 3.__TEXT.__cstring str.static_method_called,section.3.__TEXT.__cstring R X 'invalid' static method called
-address     min         max         name super 
------------------------------------------------
-0x1000080f8 0x100003a7c 0x100003be0 Test 
+address     min         max         name super    
+--------------------------------------------------
+0x1000080f8 0x100003a7c 0x100003be0 Test NSObject
 address     index class flags name                         
 -----------------------------------------------------------
 0x100003a7c 0     Test        init
-0x100003acc 1     Test        methodWithoutArgs
-0x100003b18 2     Test        methodWithOneArg:
-0x100003b68 3     Test        methodWithTwoArgs:secondArg:
-0x100003be0 4     Test        methodWithReturn
-0x100003aa0 5     Test  c     someStaticMethod
+0x100003aa0 1     Test  c     someStaticMethod
+0x100003acc 2     Test        methodWithoutArgs
+0x100003b18 3     Test        methodWithOneArg:
+0x100003b68 4     Test        methodWithTwoArgs:secondArg:
+0x100003be0 5     Test        methodWithReturn
 address     index class flags name                  type                
 ------------------------------------------------------------------------
-0x00000000  0     Test        isa                   struct objc_class *
+----------  0     Test        isa                   struct objc_class *
 0x1000080f0 1     Test        Test::(ivar)someField i
 EOF
 RUN
@@ -125,6 +242,7 @@ RUN
 NAME=macOS arm64e with DYLD_CHAINED_PTR_ARM64E_USERLAND24
 FILE=bins/mach0/hello-macos-arm64e-userland24 
 CMDS=<<EOF
+ir
 p8 8 @ 0x100004020
 p8 8 @ 0x100008020
 p8 8 @ 0x1000080c8
@@ -133,23 +251,68 @@ icm
 icf
 EOF
 EXPECT=<<EOF
-04000000000009c0
+vaddr       paddr      target      type   name                             
+---------------------------------------------------------------------------
+0x100004000 0x00004000 0x100010008 SET_64 NSLog
+0x100004008 0x00004008 0x100010010 SET_64 objc_alloc_init
+0x100004010 0x00004010 0x100010018 SET_64 objc_autoreleasePoolPop
+0x100004018 0x00004018 0x100010020 SET_64 objc_autoreleasePoolPush
+0x100004020 0x00004020 0x100010028 SET_64 objc_msgSend
+0x100004028 0x00004028 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004038 0x00004038 0x00000000  SET_64 
+0x100004048 0x00004048 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004058 0x00004058 0x00000000  SET_64 
+0x100004068 0x00004068 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004078 0x00004078 0x00000000  SET_64 
+0x100004088 0x00004088 0x100010030 SET_64 __CFConstantStringClassReference
+0x100004098 0x00004098 0x00000000  SET_64 
+0x1000040a8 0x000040a8 0x100010030 SET_64 __CFConstantStringClassReference
+0x1000040b8 0x000040b8 0x00000000  SET_64 
+0x1000040c8 0x000040c8 0x100010030 SET_64 __CFConstantStringClassReference
+0x1000040d8 0x000040d8 0x00000000  SET_64 
+0x1000040e8 0x000040e8 0x00000000  SET_64 
+0x100008018 0x00008018 0x00000000  SET_64 
+0x100008020 0x00008020 0x00000000  SET_64 
+0x100008050 0x00008050 0x00000000  SET_64 
+0x100008058 0x00008058 0x00000000  SET_64 
+0x100008060 0x00008060 0x00000000  SET_64 
+0x100008088 0x00008088 0x00000000  SET_64 
+0x100008090 0x00008090 0x00000000  SET_64 
+0x1000080a0 0x000080a0 0x00000000  SET_64 
+0x1000080b8 0x000080b8 0x00000000  SET_64 
+0x1000080c0 0x000080c0 0x00000000  SET_64 
+0x1000080c8 0x000080c8 0x00000000  SET_64 
+0x1000080d0 0x000080d0 0x00000000  SET_64 
+0x1000080d8 0x000080d8 0x00000000  SET_64 
+0x1000080e0 0x000080e0 0x00000000  SET_64 
+0x1000080e8 0x000080e8 0x00000000  SET_64 
+0x1000080f8 0x000080f8 0x100010038 SET_64 NSObject
+0x100008100 0x00008100 0x100010038 SET_64 NSObject
+0x100008108 0x00008108 0x100010040 SET_64 _objc_empty_cache
+0x100008118 0x00008118 0x00000000  SET_64 
+0x100008120 0x00008120 0x00000000  SET_64 
+0x100008128 0x00008128 0x100010048 SET_64 NSObject
+0x100008130 0x00008130 0x100010040 SET_64 _objc_empty_cache
+0x100008140 0x00008140 0x00000000  SET_64 
+0x100008158 0x00008158 0x00000000  SET_64 
+0x100008160 0x00008160 0x00000000  SET_64 
+2800010001000000
 083e000001000000
 033f000001000000
-address     min         max         name super 
------------------------------------------------
-0x1000080f8 0x100003a4c 0x100003bc0 Test 
+address     min         max         name super    
+--------------------------------------------------
+0x1000080f8 0x100003a4c 0x100003bc0 Test NSObject
 address     index class flags name                         
 -----------------------------------------------------------
 0x100003a4c 0     Test        init
-0x100003aa0 1     Test        methodWithoutArgs
-0x100003af0 2     Test        methodWithOneArg:
-0x100003b44 3     Test        methodWithTwoArgs:secondArg:
-0x100003bc0 4     Test        methodWithReturn
-0x100003a70 5     Test  c     someStaticMethod
+0x100003a70 1     Test  c     someStaticMethod
+0x100003aa0 2     Test        methodWithoutArgs
+0x100003af0 3     Test        methodWithOneArg:
+0x100003b44 4     Test        methodWithTwoArgs:secondArg:
+0x100003bc0 5     Test        methodWithReturn
 address     index class flags name                  type                
 ------------------------------------------------------------------------
-0x00000000  0     Test        isa                   struct objc_class *
+----------  0     Test        isa                   struct objc_class *
 0x1000080f0 1     Test        Test::(ivar)someField i
 EOF
 RUN

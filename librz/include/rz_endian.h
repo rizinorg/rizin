@@ -127,6 +127,28 @@ static inline void rz_write_at_be64(void *dest, ut64 val, size_t offset) {
 	rz_write_be64(d, val);
 }
 
+static inline ut128 rz_read_be128(const void *src) {
+	ut128 val;
+	val.High = rz_read_be64(src);
+	val.Low = rz_read_at_be64(src, sizeof(ut64));
+	return val;
+}
+
+static inline ut128 rz_read_at_be128(const void *src, size_t offset) {
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_be128(s);
+}
+
+static inline void rz_write_be128(void *dest, ut128 val) {
+	rz_write_be64(dest, val.High);
+	rz_write_at_be64(dest, val.Low, sizeof(ut64));
+}
+
+static inline void rz_write_at_be128(void *dest, ut128 val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	rz_write_be128(d, val);
+}
+
 static inline float rz_read_be_float(const void *src) {
 	union {
 		ut32 bits;
@@ -283,6 +305,28 @@ static inline void rz_write_le64(void *dest, ut64 val) {
 static inline void rz_write_at_le64(void *dest, ut64 val, size_t offset) {
 	ut8 *d = (ut8 *)dest + offset;
 	rz_write_le64(d, val);
+}
+
+static inline ut128 rz_read_le128(const void *src) {
+	ut128 val;
+	val.High = rz_read_at_le64(src, sizeof(ut64));
+	val.Low = rz_read_le64(src);
+	return val;
+}
+
+static inline ut128 rz_read_at_le128(const void *src, size_t offset) {
+	const ut8 *s = ((const ut8 *)src) + offset;
+	return rz_read_le128(s);
+}
+
+static inline void rz_write_le128(void *dest, ut128 val) {
+	rz_write_le64(dest, val.Low);
+	rz_write_at_le64(dest, val.High, sizeof(ut64));
+}
+
+static inline void rz_write_at_le128(void *dest, ut128 val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	rz_write_le128(d, val);
 }
 
 static inline float rz_read_le_float(const void *src) {
@@ -503,6 +547,10 @@ static inline ut64 rz_read_ble64(const void *src, bool big_endian) {
 	return big_endian ? rz_read_be64(src) : rz_read_le64(src);
 }
 
+static inline ut128 rz_read_ble128(const void *src, bool big_endian) {
+	return big_endian ? rz_read_be128(src) : rz_read_le128(src);
+}
+
 static inline float rz_read_ble_float(const void *src, bool big_endian) {
 	return big_endian ? rz_read_be_float(src) : rz_read_le_float(src);
 }
@@ -560,6 +608,10 @@ static inline void rz_write_ble32(void *dest, ut32 val, bool big_endian) {
 
 static inline void rz_write_ble64(void *dest, ut64 val, bool big_endian) {
 	big_endian ? rz_write_be64(dest, val) : rz_write_le64(dest, val);
+}
+
+static inline void rz_write_ble128(void *dest, ut128 val, bool big_endian) {
+	big_endian ? rz_write_be128(dest, val) : rz_write_le128(dest, val);
 }
 
 static inline void rz_write_ble(void *dst, ut64 val, bool big_endian, int size) {

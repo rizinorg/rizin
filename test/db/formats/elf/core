@@ -46,7 +46,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.cmt.right=true
 pd 1 @ 0x7ffe70f68000
-?e
+echo
 e asm.cmt.right=false
 pd 1 @ 0x7ffe70f68000
 EOF
@@ -305,5 +305,6 @@ r13 = 0x7ea8c4e8
 r14 = 0x76e60718
 r15 = 0x00010420
 cpsr = 0x60000010
+fpscr = 0x00000000
 EOF
 RUN

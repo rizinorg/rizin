@@ -563,7 +563,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	bool overlapped = false;
 	RzAnalysisOp op = { 0 };
 	int oplen, idx = 0;
-	int lea_cnt = 0;
 	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
 	bool varset = false;
 	struct {
@@ -947,7 +946,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					: op.dst && op.dst->reg
 					? strdup(op.dst->reg->name)
 					: NULL;
-				lea_cnt++;
 				rz_list_append(analysis->leaddrs, pair);
 			}
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
@@ -1378,14 +1376,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail, sp);
 					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 					if (overlapped) {
-						goto analopfinish;
+						goto analyzeopfinish;
 					}
 				}
 				if (rz_analysis_noreturn_at(analysis, op.jump) || op.eob) {
-					goto analopfinish;
+					goto analyzeopfinish;
 				}
 			} else {
-			analopfinish:
+			analyzeopfinish:
 				if (op.type == RZ_ANALYSIS_OP_TYPE_RJMP) {
 					gotoBeach(RZ_ANALYSIS_RET_NOP);
 				} else {
@@ -1720,6 +1718,9 @@ RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in_bounds(RzAnalysis
 	return ret;
 }
 
+/**
+ * \brief Returns function if exists given the \p name
+ */
 RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const char *name) {
 	bool found = false;
 	RzAnalysisFunction *f = ht_pp_find(a->ht_name_fun, name, &found);
@@ -1762,6 +1763,9 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 	return true;
 }
 
+/**
+ * \brief Returns the amount of loops located in the \p fcn function
+ */
 RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
@@ -1777,13 +1781,19 @@ RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
 	return loops;
 }
 
-RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
-	/*
-	CC = E - N + 2P
-	E = the number of edges of the graph.
-	N = the number of nodes of the graph.
-	P = the number of connected components (exit nodes).
+/**
+ * \brief Returns cyclomatic complexity of the function
+ *
+ * It calculated using this formula:
+ *
+ * CC = E - N + 2P
+ * where
+ * E is the number of edges of the graph.
+ * N is the number of nodes of the graph.
+ * P is the number of connected components (exit nodes).
+ *
  */
+RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 	RzAnalysis *analysis = fcn->analysis;
 	int E = 0, N = 0, P = 0;
 	RzListIter *iter;
@@ -1876,6 +1886,12 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	return pj_drain(pj);
 }
 
+/**
+ * \brief Returns type signature (prototype) of the function
+ *
+ * If the type is presented in the type database it uses it,
+ * otherwise it tries to derive the type from the analysis data
+ */
 RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunction *function) {
 	rz_return_val_if_fail(function, NULL);
 	RzAnalysis *a = function->analysis;
@@ -2101,6 +2117,9 @@ RZ_API int rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NU
 	return edges;
 }
 
+/**
+ * \brief Returns if the function pure - accesses any external resources or not
+ */
 RZ_API bool rz_analysis_function_purity(RzAnalysisFunction *fcn) {
 	if (fcn->has_changed) {
 		HtUP *ht = ht_up_new(NULL, NULL, NULL);
@@ -2192,6 +2211,11 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 	}
 }
 
+/**
+ *  \brief This function checks whether any operation in a given function may change BP
+ *
+ *  Excludes pattern like "mov bp, sp" and "pop sp, bp" for saving stack pointer value
+ */
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn) {
 	rz_return_if_fail(fcn);
 	__analysis_fcn_check_bp_use(fcn->analysis, fcn);
@@ -2409,7 +2433,7 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
  * \brief Returns vector of all function arguments
  *
  * \param a RzAnalysis instance
- * \param f Function
+ * \param fcn Function
  */
 RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	if (!a || !fcn) {
@@ -2469,12 +2493,69 @@ cleanup:
 	return args;
 }
 
+/**
+ * \brief Returns vector of all function variables without arguments
+ *
+ * \param a RzAnalysis instance
+ * \param fcn Function
+ */
+RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_vars(RZ_NONNULL RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(a && fcn, NULL);
+	RzAnalysisVar *var;
+	void **it;
+	RzPVector *vars = rz_pvector_new(NULL);
+	if (!vars) {
+		return NULL;
+	}
+	rz_pvector_foreach (&fcn->vars, it) {
+		var = *it;
+		if (!rz_analysis_var_is_arg(var)) {
+			rz_pvector_push(vars, var);
+		}
+	}
+	return vars;
+}
+
+/**
+ * \brief Gets the argument given its index
+ *
+ * \param analysis RzAnalysis instance
+ * \param f Function to update
+ */
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_arg_idx(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *f, size_t index) {
+	rz_return_val_if_fail(analysis && f, NULL);
+	int argnum = rz_analysis_function_get_arg_count(analysis, f);
+	if (argnum < 1) {
+		return NULL;
+	}
+	if (index >= argnum) {
+		RZ_LOG_VERBOSE("Function %s has less arguments (%d) than requested (%zu)\n",
+			f->name, argnum, index);
+	}
+	RzPVector *args = rz_analysis_function_args(analysis, f);
+	if (!args) {
+		RZ_LOG_VERBOSE("Function %s has no arguments\n", f->name);
+		return NULL;
+	}
+	if (rz_pvector_len(args) < index) {
+		RZ_LOG_VERBOSE("Function %s has less arguments (%zu) than requested (%zu)\n",
+			f->name, rz_pvector_len(args), index);
+		return NULL;
+	}
+	return rz_pvector_at(args, index);
+}
+
 static int typecmp(const void *a, const void *b) {
 	const RzType *t1 = a;
 	const RzType *t2 = b;
 	return !rz_types_equal(t1, t2);
 }
 
+/**
+ * \brief Returns vector of all unique types used in a function
+ *
+ * Accounts for all types used in both arguments and variables, excluding return value type
+ */
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzList *type_used = rz_list_new();
 	void **it;

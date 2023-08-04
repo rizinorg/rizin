@@ -38,6 +38,15 @@ RZ_API int rz_mem_eq(const ut8 *a, const ut8 *b, int len) {
 	return true;
 }
 
+RZ_API bool rz_mem_eq_masked(const ut8 *a, const ut8 *b, const ut8 *mask, size_t size) {
+	for (size_t i = 0; i < size; i++) {
+		if ((a[i] & mask[i]) != (b[i] & mask[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 RZ_API void rz_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
 	int i = 0, j;
 	while (i < dsize) {
@@ -53,27 +62,6 @@ RZ_API void *rz_mem_copy(void *dest, size_t dmax, const void *src, size_t smax) 
 	}
 	rz_return_val_if_fail(dest && src, NULL);
 	return memcpy(dest, src, (smax < dmax) ? smax : dmax);
-}
-
-RZ_API int rz_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
-	ut8 *mdest = malloc(len);
-	if (!mdest) {
-		return -1;
-	}
-	ut8 *morig = malloc(len);
-	if (!morig) {
-		free(mdest);
-		return -1;
-	}
-	int i;
-	for (i = 0; i < len; i++) {
-		mdest[i] = dest[i] & mask[i];
-		morig[i] = orig[i] & mask[i];
-	}
-	int ret = memcmp(mdest, morig, len);
-	free(mdest);
-	free(morig);
-	return ret;
 }
 
 RZ_API void rz_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
@@ -186,52 +174,7 @@ RZ_API int rz_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 	return true;
 }
 
-// This function unconditionally swaps endian of size bytes of orig -> dest
-// TODO: Remove completely
-RZ_API void rz_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
-	ut8 buffer[8];
-	switch (size) {
-	case 1:
-		*dest = *orig;
-		break;
-	case 2:
-		*buffer = *orig;
-		dest[0] = orig[1];
-		dest[1] = buffer[0];
-		break;
-	case 3:
-		*buffer = *orig;
-		dest[0] = orig[2];
-		dest[1] = orig[1];
-		dest[2] = buffer[0];
-		break;
-	case 4:
-		memcpy(buffer, orig, 4);
-		dest[0] = buffer[3];
-		dest[1] = buffer[2];
-		dest[2] = buffer[1];
-		dest[3] = buffer[0];
-		break;
-	case 8:
-		memcpy(buffer, orig, 8);
-		dest[0] = buffer[7];
-		dest[1] = buffer[6];
-		dest[2] = buffer[5];
-		dest[3] = buffer[4];
-		dest[4] = buffer[3];
-		dest[5] = buffer[2];
-		dest[6] = buffer[1];
-		dest[7] = buffer[0];
-		break;
-	default:
-		if (dest != orig) {
-			memmove(dest, orig, size);
-		}
-	}
-}
-
-// RZ_DOC rz_mem_mem: Finds the needle of nlen size into the haystack of hlen size
-// RZ_UNIT printf("%s\n", rz_mem_mem("food is pure lame", 20, "is", 2));
+/* \brief Finds the \p needle of \p nlen size into the \p haystack of \p hlen size */
 RZ_API const ut8 *rz_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
 	int i, until = hlen - nlen + 1;
 	if (hlen < 1 || nlen < 1) {
@@ -341,14 +284,6 @@ RZ_API bool rz_mem_is_zero(const ut8 *b, int l) {
 		}
 	}
 	return true;
-}
-
-RZ_API void *rz_mem_alloc(int sz) {
-	return calloc(sz, 1);
-}
-
-RZ_API void rz_mem_free(void *p) {
-	free(p);
 }
 
 RZ_API void rz_mem_memzero(void *dst, size_t l) {

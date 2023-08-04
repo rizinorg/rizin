@@ -59,7 +59,7 @@ RZ_IPI bool rz_core_visual_hud(RzCore *core) {
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core) {
 	RzListIter *iter, *iter2;
 	RzBinClass *c;
-	RzBinField *f;
+	RzBinClassField *f;
 	RzBinSymbol *m;
 	ut64 addr;
 	char *res;

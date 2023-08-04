@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: '0 18 * * 2,4' # Bi-weekly at 18:00 UTC on Tuesday and Thursday
 
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
 jobs:
   latest:
     runs-on: ubuntu-22.04
@@ -34,7 +39,7 @@ jobs:
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       - name: Meson
-        run: meson build
+        run: meson setup build
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       - name: Build with cov-build

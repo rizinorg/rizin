@@ -4,8 +4,9 @@
 #ifndef RZ_CF_DICT_H
 #define RZ_CF_DICT_H
 
-#define RZ_CF_OPTION_NONE        0
-#define RZ_CF_OPTION_SKIP_NSDATA 1
+#define RZ_CF_OPTION_NONE          0
+#define RZ_CF_OPTION_SKIP_NSDATA   1
+#define RZ_CF_OPTION_SUPPORT_IDREF 2
 
 typedef enum {
 	RZ_CF_INVALID,
@@ -17,52 +18,52 @@ typedef enum {
 	RZ_CF_NULL,
 	RZ_CF_TRUE,
 	RZ_CF_FALSE
-} RCFValueType;
+} RzCFValueType;
 
-typedef struct _CFValue {
-	RCFValueType type;
-} RCFValue;
+typedef struct rz_cf_Value {
+	RzCFValueType type;
+} RzCFValue;
 
-typedef struct _CFKeyValue {
+typedef struct rz_cf_KeyValue {
 	char *key;
-	RCFValue *value;
-} RCFKeyValue;
+	RzCFValue *value;
+} RzCFKeyValue;
 
-typedef struct _CFValueDict {
-	RCFValueType type;
-	RzList /*<RCFKeyValue *>*/ *pairs;
-} RCFValueDict;
+typedef struct rz_cf_value_dict {
+	RzCFValueType type;
+	RzList /*<RzCFKeyValue *>*/ *pairs;
+} RzCFValueDict;
 
-typedef struct _CFValueArray {
-	RCFValueType type;
-	RzList /*<RCFValue *>*/ *values;
-} RCFValueArray;
+typedef struct rz_cf_value_array {
+	RzCFValueType type;
+	RzList /*<RzCFValue *>*/ *values;
+} RzCFValueArray;
 
-typedef struct _CFValueString {
-	RCFValueType type;
+typedef struct rz_cf_value_string {
+	RzCFValueType type;
 	char *value;
-} RCFValueString;
+} RzCFValueString;
 
-typedef struct _CFValueInteger {
-	RCFValueType type;
+typedef struct rz_cf_value_integer {
+	RzCFValueType type;
 	ut64 value;
-} RCFValueInteger;
+} RzCFValueInteger;
 
-typedef struct _CFValueData {
-	RCFValueType type;
+typedef struct rz_cf_value_data {
+	RzCFValueType type;
 	RzBuffer *value;
-} RCFValueData;
+} RzCFValueData;
 
-typedef struct _CFValueBool {
-	RCFValueType type;
-} RCFValueBool;
+typedef struct rz_cf_value_bool {
+	RzCFValueType type;
+} RzCFValueBool;
 
-typedef struct _CFValueNULL {
-	RCFValueType type;
-} RCFValueNULL;
+typedef struct rz_cf_value_null {
+	RzCFValueType type;
+} RzCFValueNULL;
 
-RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size, int options);
-RZ_API void rz_cf_value_dict_free(RCFValueDict *dict);
-RZ_API void rz_cf_value_print(RCFValue *value);
+RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size, int options);
+RZ_API void rz_cf_value_dict_free(RzCFValueDict *dict);
+RZ_API void rz_cf_value_print(RzCFValue *value);
 
 #endif

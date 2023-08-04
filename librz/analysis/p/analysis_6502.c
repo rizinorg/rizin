@@ -412,6 +412,17 @@ static void _6502_analysis_esil_flags(RzAnalysisOp *op, ut8 data0) {
 	rz_strbuf_setf(&op->esil, "%d,%c,=", enabled, flag);
 }
 
+static char *_6502_op_mnemonic(snes_op_t *op) {
+	if (!op->name) {
+		return NULL;
+	}
+	const char *end = strchr(op->name, ' ');
+	if (!end) {
+		return strdup(op->name);
+	}
+	return rz_str_ndup(op->name, end - op->name);
+}
+
 static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	char addrbuf[64];
 	const int buffsize = sizeof(addrbuf) - 1;
@@ -419,10 +430,13 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		return -1;
 	}
 
-	op->size = snes_op_get_size(1, 1, &snes_op[data[0]]); // snes-arch is similar to nes/6502
+	snes_op_t *sop = &snes_op[data[0]];
+
+	op->size = snes_op_get_size(1, 1, sop); // snes-arch is similar to nes/6502
 	op->addr = addr;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->id = data[0];
+	op->mnemonic = (mask & RZ_ANALYSIS_OP_MASK_DISASM) ? _6502_op_mnemonic(sop) : NULL;
 	rz_strbuf_init(&op->esil);
 	_6502ILAddr il_addr = { 0 };
 	_6502ILAddr *il_addr_ptr = (mask & RZ_ANALYSIS_OP_MASK_IL) ? &il_addr : NULL;

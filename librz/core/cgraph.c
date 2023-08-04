@@ -22,9 +22,7 @@ static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzG
 		return;
 	}
 
-	char *me = rz_core_analysis_fcn_name(core, fcn);
-	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
-	RZ_FREE(me);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
 	if (!curr_node) {
 		return;
 	}
@@ -77,9 +75,7 @@ static void core_graph_coderef(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*
 		return;
 	}
 
-	char *me = rz_core_analysis_fcn_name(core, fcn);
-	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
-	RZ_FREE(me);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
 	if (!curr_node) {
 		return;
 	}
@@ -189,9 +185,7 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*
 		return;
 	}
 
-	char *me = rz_core_analysis_fcn_name(core, fcn);
-	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
-	RZ_FREE(me);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
 	if (!curr_node) {
 		return;
 	}
@@ -334,12 +328,12 @@ static RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function_bbs(RZ_NON
 		goto fail;
 	}
 
-	rz_config_hold_i(hc, "asm.lines", "asm.lines.fcn", "asm.bytes", "asm.dwarf", "asm.offset", "asm.marks",
+	rz_config_hold_i(hc, "asm.lines", "asm.lines.fcn", "asm.bytes", "asm.debuginfo", "asm.offset", "asm.marks",
 		"asm.cmt.right", "asm.cmt.col", "asm.bb.middle", NULL);
 	rz_config_set_i(core->config, "asm.lines", 0);
 	rz_config_set_i(core->config, "asm.lines.fcn", 0);
 	rz_config_set_i(core->config, "asm.bytes", 0);
-	rz_config_set_i(core->config, "asm.dwarf", 0);
+	rz_config_set_i(core->config, "asm.debuginfo", 0);
 	rz_config_set_i(core->config, "asm.offset", 0);
 	rz_config_set_i(core->config, "asm.marks", 0);
 	rz_config_set_i(core->config, "asm.cmt.right", 0);
@@ -464,6 +458,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCor
 	case RZ_CORE_GRAPH_TYPE_NORMAL:
 		graph = rz_core_graph_normal(core, addr);
 		break;
+	case RZ_CORE_GRAPH_TYPE_IL:
+		graph = rz_core_graph_il(core, addr);
+		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF:
 	default:
 		rz_warn_if_reached();
@@ -492,8 +489,6 @@ RZ_API RzCoreGraphFormat rz_core_graph_format_from_string(RZ_NULLABLE const char
 		return RZ_CORE_GRAPH_FORMAT_JSON;
 	} else if (strcmp(x, "sdb") == 0 || short_opt == 'k') {
 		return RZ_CORE_GRAPH_FORMAT_SDB;
-	} else if (strcmp(x, "tiny") == 0 || short_opt == 't') {
-		return RZ_CORE_GRAPH_FORMAT_TINY;
 	} else if (strcmp(x, "interactive") == 0 || short_opt == 'v') {
 		return RZ_CORE_GRAPH_FORMAT_VISUAL;
 	}
@@ -538,7 +533,6 @@ RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGrap
 	char *string = NULL;
 	switch (format) {
 	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
-	case RZ_CORE_GRAPH_FORMAT_TINY:
 	case RZ_CORE_GRAPH_FORMAT_VISUAL:
 	case RZ_CORE_GRAPH_FORMAT_SDB: {
 		rz_core_agraph_reset(core);
@@ -582,8 +576,10 @@ RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, R
 	if (!g) {
 		return false;
 	}
+	bool is_il = type == RZ_CORE_GRAPH_TYPE_IL;
 	core->graph->is_callgraph = type == RZ_CORE_GRAPH_TYPE_FUNCALL;
-	rz_core_graph_print_graph(core, g, format, true);
+	core->graph->is_il = is_il;
+	rz_core_graph_print_graph(core, g, format, !is_il);
 	rz_graph_free(g);
 	return true;
 }
@@ -705,7 +701,7 @@ RZ_API RZ_OWN char *rz_core_graph_to_sdb_str(RZ_NONNULL RzCore *core, RZ_NONNULL
  * \brief Convert \p graph to an image, and write it to \p filename.
  */
 RZ_API bool rz_core_graph_write_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL const char *filename) {
-	rz_return_val_if_fail(core && graph && filename, NULL);
+	rz_return_val_if_fail(core && graph && filename, false);
 	char *dot_text = rz_core_graph_to_dot_str(core, graph);
 	if (!dot_text) {
 		return false;
@@ -727,4 +723,30 @@ RZ_API bool rz_core_graph_write(RZ_NONNULL RzCore *core, ut64 addr, RzCoreGraphT
 	rz_core_graph_write_graph(core, graph, path);
 	rz_graph_free(graph);
 	return true;
+}
+
+/**
+ * \brief Get the graph of the function references from \p addr (UT64_MAX for all).
+ */
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
+
+	RzAnalysisOp op;
+	RzGraph *graph = NULL;
+	ut64 old_offset = core->offset;
+	RzAnalysisOpMask flags = RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL;
+	if (addr != old_offset) {
+		rz_core_seek(core, addr, true);
+	}
+
+	rz_analysis_op_init(&op);
+	if (rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, flags) > 0) {
+		graph = rz_il_op_effect_graph(op.il_op, op.mnemonic);
+	}
+	rz_analysis_op_fini(&op);
+
+	if (addr != old_offset) {
+		rz_core_seek(core, old_offset, true);
+	}
+	return graph;
 }

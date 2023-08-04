@@ -1,8 +1,11 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2023 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "class_bin.h"
 #include "class_private.h"
+
+#define startswith(a, b) (!strncmp(a, b, strlen(b)))
 
 #define ACCESS_FLAG_MASK_SRC (ACCESS_FLAG_PUBLIC | ACCESS_FLAG_PRIVATE | ACCESS_FLAG_PROTECTED | ACCESS_FLAG_STATIC | ACCESS_FLAG_FINAL)
 
@@ -386,10 +389,10 @@ RZ_API RZ_BORROW const char *rz_bin_java_class_language(RZ_NONNULL RzBinJavaClas
 				continue;
 			}
 			string = java_constant_pool_stringify(cpool);
-			if (string && !strncmp(string, "kotlin/jvm", 10)) {
+			if (string && startswith(string, "kotlin/jvm")) {
 				language = "kotlin";
 				break;
-			} else if (string && !strncmp(string, "org/codehaus/groovy/runtime", 27)) {
+			} else if (string && startswith(string, "org/codehaus/groovy/runtime")) {
 				language = "groovy";
 				break;
 			}
@@ -471,7 +474,13 @@ RZ_API RZ_OWN char *rz_bin_java_class_super(RZ_NONNULL RzBinJavaClass *bin) {
 		RZ_LOG_ERROR("java bin: unknown super name at constant pool index %u\n", bin->this_class);
 		return strdup("unknown_super");
 	}
-	return java_class_constant_pool_stringify_at(bin, index);
+	char *tmp = java_class_constant_pool_stringify_at(bin, index);
+	if (!tmp) {
+		return NULL;
+	}
+	char *class_name = rz_str_newf("L%s;", tmp);
+	free(tmp);
+	return class_name;
 }
 
 RZ_API ut32 rz_bin_java_class_access_flags(RZ_NONNULL RzBinJavaClass *bin) {
@@ -732,7 +741,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 	}
 
 	tmp = rz_bin_java_class_name(bin);
-	dem = rz_demangler_java(tmp);
+	dem = rz_demangler_java(tmp, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 	if (dem) {
 		rz_strbuf_appendf(sb, " %s", dem);
 		RZ_FREE(dem);
@@ -744,7 +753,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 
 	if (bin->access_flags & ACCESS_FLAG_SUPER) {
 		tmp = rz_bin_java_class_super(bin);
-		if (strcmp(tmp, "java/lang/Object") != 0) {
+		if (strcmp(tmp, "Ljava/lang/Object;") != 0) {
 			rz_str_replace_char(tmp, '/', '.');
 			rz_strbuf_appendf(sb, " extends %s", tmp);
 		}
@@ -764,7 +773,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 				break;
 			}
 			tmp = java_class_constant_pool_stringify_at(bin, index);
-			if ((dem = rz_demangler_java(tmp))) {
+			if ((dem = rz_demangler_java(tmp, RZ_DEMANGLER_FLAG_ENABLE_ALL))) {
 				free(tmp);
 				tmp = dem;
 			}
@@ -814,7 +823,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 			free(desc);
 			free(name);
 
-			dem = rz_demangler_java(tmp);
+			dem = rz_demangler_java(tmp, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 			if (!dem) {
 				rz_strbuf_append(sb, tmp);
 			} else {
@@ -1046,6 +1055,37 @@ static char *add_class_name_to_name(char *name, char *classname) {
 	return strdup(name);
 }
 
+static char *demangle_java_and_free(char *mangled) {
+	if (!mangled) {
+		return NULL;
+	}
+	if (startswith(mangled, "unknown_")) {
+		return mangled;
+	}
+	char *demangled = rz_demangler_java(mangled, RZ_DEMANGLER_FLAG_ENABLE_ALL);
+	free(mangled);
+	return demangled;
+}
+
+static void set_lib_and_class_name(char *mangled, char **out_class, char **out_lib) {
+	if (!mangled) {
+		return;
+	}
+	bool is_java_lang = startswith(mangled, "Ljava/lang");
+
+	char *object = demangle_java_and_free(mangled);
+	if (!object) {
+		return;
+	}
+
+	*out_class = object;
+	if (is_java_lang && !startswith(object, "java.lang")) {
+		*out_lib = rz_str_newf("java.lang.%s", object);
+	} else {
+		*out_lib = strdup(object);
+	}
+}
+
 /**
  * \brief Returns a RzList<RzBinSymbol*> containing the class methods
  */
@@ -1096,8 +1136,8 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_methods_as_symbols(R
 				desc = strdup("(?)V");
 			}
 
-			symbol->classname = rz_bin_java_class_name(bin);
-			symbol->dname = rz_str_newf("%s%s", method_name, desc);
+			set_lib_and_class_name(rz_bin_java_class_name(bin), &symbol->classname, &symbol->libname);
+			symbol->dname = demangle_java_and_free(rz_str_newf("%s%s", method_name, desc));
 			symbol->name = add_class_name_to_name(method_name, symbol->classname);
 			symbol->size = size;
 			symbol->bind = java_method_is_global(method) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
@@ -1105,7 +1145,6 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_methods_as_symbols(R
 			symbol->ordinal = rz_list_length(list);
 			symbol->visibility = method->access_flags;
 			symbol->visibility_str = java_method_access_flags_readable(method);
-			symbol->libname = rz_demangler_java(symbol->classname);
 			symbol->method_flags = java_access_flags_to_bin_flags(method->access_flags);
 			free(desc);
 			free(method_name);
@@ -1255,8 +1294,10 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_fields_as_symbols(RZ
 				free(field_name);
 				continue;
 			}
-			symbol->classname = rz_bin_java_class_name(bin);
+
+			set_lib_and_class_name(rz_bin_java_class_name(bin), &symbol->classname, &symbol->libname);
 			symbol->name = add_class_name_to_name(field_name, symbol->classname);
+			symbol->dname = rz_demangler_java(symbol->name, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 			symbol->size = 0;
 			symbol->bind = java_field_is_global(field) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 			symbol->type = RZ_BIN_TYPE_OBJECT_STR;
@@ -1272,12 +1313,12 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_fields_as_symbols(RZ
 }
 
 /**
- * \brief Returns a RzList<RzBinField*> containing the class fields
+ * \brief Returns a RzList<RzBinClassField*> containing the class fields
  */
-RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf((RzListFree)rz_bin_field_free);
+	RzList *list = rz_list_newf((RzListFree)rz_bin_class_field_free);
 	if (!list) {
 		return NULL;
 	}
@@ -1299,11 +1340,14 @@ RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_java_class_fields_as_binfields(R
 			if (!name) {
 				continue;
 			}
-			RzBinField *bf = rz_bin_field_new(field->offset, field->offset, 0, name, NULL, NULL, false);
+
+			char *ftype = demangle_java_and_free(java_class_constant_pool_stringify_at(bin, field->descriptor_index));
+			RzBinClassField *bf = rz_bin_class_field_new(field->offset, field->offset, name, NULL, NULL, ftype);
+			free(ftype);
 			if (bf) {
+				set_lib_and_class_name(rz_bin_java_class_name(bin), &bf->classname, &bf->libname);
 				bf->visibility = field->access_flags;
 				bf->flags = java_access_flags_to_bin_flags(field->access_flags);
-				bf->type = java_class_constant_pool_stringify_at(bin, field->descriptor_index);
 				rz_list_append(list, bf);
 			}
 			free(name);
@@ -1440,7 +1484,6 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbol
 		return NULL;
 	}
 	char *method_name, *classname;
-	bool is_main;
 	ut16 class_index, name_and_type_index, name_index, descriptor_index, class_name_index;
 	if (bin->constant_pool) {
 		for (ut32 i = 0; i < bin->constant_pool_count; ++i) {
@@ -1479,22 +1522,26 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbol
 			if (!method_name) {
 				method_name = strdup("unknown_method");
 			}
-			is_main = !strcmp(method_name, "main");
+
 			classname = java_class_constant_pool_stringify_at(bin, class_name_index);
+			if (!classname) {
+				classname = strdup("unknown_class");
+			}
+
+			set_lib_and_class_name(rz_str_newf("L%s;", classname), &symbol->classname, &symbol->libname);
 			symbol->name = add_class_name_to_name(method_name, symbol->classname);
 			if (desc[0] == '(') {
 				symbol->dname = rz_str_newf("%s%s", method_name, desc);
 			} else {
 				symbol->dname = strdup(method_name);
 			}
-			symbol->classname = rz_str_newf("L%s;", classname);
-			symbol->libname = classname;
-			rz_str_replace_ch(symbol->libname, '/', '.', 1);
+			symbol->dname = demangle_java_and_free(symbol->dname);
 			symbol->bind = RZ_BIN_BIND_IMPORT_STR;
-			symbol->type = is_main ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
+			symbol->type = !strcmp(method_name, "main") ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
 			symbol->ordinal = i;
 			symbol->is_imported = true;
 			free(desc);
+			free(classname);
 			free(method_name);
 			rz_list_append(list, symbol);
 		}
@@ -1546,26 +1593,19 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_import
 			RzBinImport *import = RZ_NEW0(RzBinImport);
 			if (!import) {
 				rz_warn_if_reached();
+				free(object);
 				continue;
 			}
 
-			char *class_name = (char *)rz_str_rchr(object, NULL, '/');
-			if (class_name) {
-				class_name[0] = 0;
-				class_name++;
-			}
-			rz_str_replace_ch(object, '/', '.', 1);
-
-			import->classname = strdup(class_name ? class_name : object);
-			import->libname = class_name ? strdup(object) : NULL;
+			set_lib_and_class_name(rz_str_newf("L%s;", object), &import->classname, &import->libname);
 			import->name = java_class_constant_pool_stringify_at(bin, name_index);
 			is_main = import->name && !strcmp(import->name, "main");
 			import->bind = is_main ? RZ_BIN_BIND_GLOBAL_STR : NULL;
 			import->type = is_main ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
 			import->descriptor = java_class_constant_pool_stringify_at(bin, descriptor_index);
 			import->ordinal = i;
-			free(object);
 			rz_list_append(imports, import);
+			free(object);
 		}
 	}
 
@@ -1575,24 +1615,31 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_import
 				continue;
 			}
 
-			RzBinImport *import = RZ_NEW0(RzBinImport);
-			if (!import) {
-				rz_warn_if_reached();
-				continue;
-			}
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &class_index, NULL) != 1) {
 				RZ_LOG_ERROR("java bin: can't resolve interface with constant pool index %u\n", i);
-				rz_bin_import_free(import);
 				continue;
 			}
 
-			import->classname = java_class_constant_pool_stringify_at(bin, class_index);
+			char *object = java_class_constant_pool_stringify_at(bin, class_index);
+			if (!object) {
+				continue;
+			}
+
+			RzBinImport *import = RZ_NEW0(RzBinImport);
+			if (!import) {
+				rz_warn_if_reached();
+				free(object);
+				continue;
+			}
+
+			set_lib_and_class_name(rz_str_newf("L%s;", object), &import->classname, &import->libname);
 			import->name = strdup("*");
 			import->bind = RZ_BIN_BIND_WEAK_STR;
 			import->type = RZ_BIN_TYPE_IFACE_STR;
 			import->ordinal = i;
 			rz_list_append(imports, import);
+			free(object);
 		}
 	}
 
@@ -1629,7 +1676,7 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RZ_NONNULL RzBinJavaClass *bin,
 				rtext = rz_bin_java_class_const_pool_resolve_index(bin, i);
 			}
 			if (rtext) {
-				char *dem = rz_demangler_java(rtext);
+				char *dem = rz_demangler_java(rtext, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 				if (dem) {
 					free(rtext);
 					rtext = dem;
@@ -1952,4 +1999,38 @@ RZ_API void rz_bin_java_class_interfaces_as_json(RZ_NONNULL RzBinJavaClass *bin,
 		}
 	}
 	pj_end(j);
+}
+
+/**
+ * \brief Returns a RzList<RzBinClass*> containing only the class of the bin
+ */
+RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL RzBinJavaClass *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
+	RzBinClass *bclass = NULL;
+	RzList *list = rz_list_newf((RzListFree)rz_bin_class_free);
+	if (!list) {
+		return NULL;
+	}
+
+	bclass = RZ_NEW0(RzBinClass);
+	if (!bclass) {
+		rz_list_free(list);
+		return NULL;
+	}
+	rz_list_append(list, bclass);
+
+	bclass->name = demangle_java_and_free(rz_bin_java_class_name(bin));
+	bclass->super = demangle_java_and_free(rz_bin_java_class_super(bin));
+	bclass->visibility = rz_bin_java_class_access_flags(bin);
+	bclass->visibility_str = rz_bin_java_class_access_flags_readable(bin, ACCESS_FLAG_MASK_ALL_NO_SUPER);
+
+	bclass->methods = rz_bin_java_class_methods_as_symbols(bin);
+	bclass->fields = rz_bin_java_class_fields_as_binfields(bin);
+	if (!bclass->methods || !bclass->fields) {
+		rz_list_free(list);
+		return NULL;
+	}
+
+	return list;
 }

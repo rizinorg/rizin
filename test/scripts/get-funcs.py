@@ -1,6 +1,6 @@
 import rzpipe
 
-rzp = rzpipe.open()
+rzp = rzpipe.open(flags=["-N"])
 rzp.cmd("aa")
 print("\nFunction names:")
 for func in rzp.cmdj("aflj"):

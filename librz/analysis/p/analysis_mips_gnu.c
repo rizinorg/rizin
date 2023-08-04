@@ -742,7 +742,7 @@ static const char *mips_reg_decode(ut32 reg_num) {
 	return NULL;
 }
 
-static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, gnu_insn *insn) {
+static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, gnu_insn *insn) {
 
 	switch (insn->id) {
 	case MIPS_INS_NOP:
@@ -1574,7 +1574,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-		if (analop_esil(analysis, op, addr, &insn)) {
+		if (analyze_op_esil(analysis, op, addr, &insn)) {
 			rz_strbuf_fini(&op->esil);
 		}
 	}
@@ -1767,7 +1767,7 @@ static char *mips_get_reg_profile(RzAnalysis *analysis) {
 		/* extra */
 		"gpr	pc	.64	272	0\n";
 #endif
-		return strdup(p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

@@ -12,7 +12,7 @@
  *
  * \param  bstr  The RzBinString to decode
  */
-RZ_API void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
+RZ_IPI void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
 	rz_return_if_fail(bstr);
 
 	char *decoded = bstr->string;
@@ -36,22 +36,14 @@ RZ_API void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
 	bstr->type = RZ_STRING_ENC_BASE64;
 }
 
-static void bin_object_decode_all_base64_strings(RzList /*<RzBinString *>*/ *strings) {
-	rz_return_if_fail(strings);
-
-	RzBinString *bstr;
-	RzListIter *iter;
-	rz_list_foreach (strings, iter, bstr) {
-		rz_bin_string_decode_base64(bstr);
+RZ_API void rz_bin_mem_free(RZ_NULLABLE void *data) {
+	if (!data) {
+		return;
 	}
-}
-
-RZ_API void rz_bin_mem_free(void *data) {
 	RzBinMem *mem = (RzBinMem *)data;
-	if (mem && mem->mirrors) {
+	if (mem->mirrors) {
 		mem->mirrors->free = rz_bin_mem_free;
 		rz_list_free(mem->mirrors);
-		mem->mirrors = NULL;
 	}
 	free(mem);
 }
@@ -190,88 +182,294 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 		return;
 	}
 	free(o->regstate);
+	ht_pp_free(o->glue_to_class_field);
+	ht_pp_free(o->glue_to_class_method);
+	ht_pp_free(o->name_to_class_object);
+	ht_pp_free(o->import_name_symbols);
+	ht_up_free(o->vaddr_to_class_method);
 	rz_bin_info_free(o->info);
-	ht_up_free(o->addrzklassmethod);
+	rz_bin_reloc_storage_free(o->relocs);
+	rz_bin_source_line_info_free(o->lines);
+	rz_bin_string_database_free(o->strings);
+	rz_list_free(o->classes);
 	rz_list_free(o->entries);
-	rz_list_free(o->maps);
-	rz_list_free(o->vfiles);
 	rz_list_free(o->fields);
 	rz_list_free(o->imports);
 	rz_list_free(o->libs);
-	rz_bin_reloc_storage_free(o->relocs);
-	rz_list_free(o->sections);
-	rz_bin_string_database_free(o->strings);
-	ht_pp_free(o->import_name_symbols);
-	rz_list_free(o->symbols);
-	rz_list_free(o->classes);
-	ht_pp_free(o->classes_ht);
-	ht_pp_free(o->methods_ht);
-	rz_bin_source_line_info_free(o->lines);
+	rz_list_free(o->maps);
 	rz_list_free(o->mem);
+	rz_list_free(o->sections);
+	rz_list_free(o->symbols);
+	rz_list_free(o->vfiles);
+	rz_list_free(o->resources);
 	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
 	}
 	free(o);
 }
 
-static char *swiftField(const char *dn, const char *cn) {
-	if (!dn || !cn) {
+/**
+ * \brief      Find a class based on the given name
+ *
+ * \param      o       The RzBinObject to search into
+ * \param[in]  name    The class name
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_BORROW RzBinClass *rz_bin_object_find_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(o && name, NULL);
+	return ht_pp_find(o->name_to_class_object, name, NULL);
+}
+
+static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *super, ut64 address) {
+	RzBinClass *c = RZ_NEW0(RzBinClass);
+	if (!c) {
 		return NULL;
 	}
 
-	char *p = strstr(dn, ".getter_");
-	if (!p) {
-		p = strstr(dn, ".setter_");
-		if (!p) {
-			p = strstr(dn, ".method_");
-		}
-	}
-	if (p) {
-		char *q = strstr(dn, cn);
-		if (q && q[strlen(cn)] == '.') {
-			q = strdup(q + strlen(cn) + 1);
-			char *r = strchr(q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
-	}
-	return NULL;
+	c->name = strdup(name);
+	c->super = rz_str_new(super);
+	c->methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	c->fields = rz_list_newf((RzListFree)rz_bin_class_field_free);
+	c->addr = address;
+	return c;
 }
 
-static RzList /*<RzBinClass *>*/ *classes_from_symbols(RzBinFile *bf) {
-	RzBinSymbol *sym;
-	RzListIter *iter;
-	rz_list_foreach (bf->o->symbols, iter, sym) {
-		if (!sym->name || sym->name[0] != '_') {
-			continue;
-		}
-		const char *cn = sym->classname;
-		if (cn) {
-			RzBinClass *c = rz_bin_file_add_class(bf, sym->classname, NULL, 0);
-			if (!c) {
-				continue;
-			}
-			// swift specific
-			char *dn = sym->dname;
-			char *fn = swiftField(dn, cn);
-			if (fn) {
-				RzBinField *f = rz_bin_field_new(sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL, false);
-				rz_list_append(c->fields, f);
-				free(fn);
-			} else {
-				char *mn = strstr(dn, "..");
-				if (!mn) {
-					mn = strstr(dn, cn);
-					if (mn && mn[strlen(cn)] == '.') {
-						rz_list_append(c->methods, sym);
-					}
-				}
-			}
-		}
+RZ_IPI int rz_bin_compare_class(RzBinClass *a, RzBinClass *b) {
+	st64 ret = 0;
+	if (a->name && b->name && (ret = strcmp(a->name, b->name))) {
+		return ret;
 	}
-	return bf->o->classes;
+	return a->addr - b->addr;
+}
+
+RZ_IPI int rz_bin_compare_method(RzBinSymbol *a, RzBinSymbol *b) {
+	st64 ret = 0;
+	if ((ret = a->vaddr - b->vaddr)) {
+		return ret;
+	} else if ((ret = a->paddr - b->paddr)) {
+		return ret;
+	} else if (a->classname && b->classname && (ret = strcmp(a->classname, b->classname))) {
+		return ret;
+	} else if (a->name && b->name && (ret = strcmp(a->name, b->name))) {
+		return ret;
+	}
+	return 0;
+}
+
+RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b) {
+	st64 ret = 0;
+	if ((ret = a->vaddr - b->vaddr)) {
+		return ret;
+	} else if ((ret = a->paddr - b->paddr)) {
+		return ret;
+	} else if (a->classname && b->classname && (ret = strcmp(a->classname, b->classname))) {
+		return ret;
+	} else if (a->name && b->name && (ret = strcmp(a->name, b->name))) {
+		return ret;
+	}
+	return 0;
+}
+
+/**
+ * \brief      Tries to add a new class unless its name is found and returns it.
+ *
+ * \param      o      The RzBinObject to add a new class into
+ * \param[in]  name   The name name of the class
+ * \param[in]  super  The super class name of the new class
+ * \param[in]  vaddr  The virtual address of the objc class metadata.
+ *
+ * \return     On success returns a valid pointer, otherwise returns NULL.
+ */
+RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name, RZ_NULLABLE const char *super, ut64 vaddr) {
+	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzBinClass *oclass = ht_pp_find(o->name_to_class_object, name, NULL);
+	if (oclass) {
+		if (super && !oclass->super) {
+			oclass->super = strdup(super);
+		}
+		if (oclass->addr == UT64_MAX) {
+			oclass->addr = vaddr;
+		}
+		return oclass;
+	}
+
+	oclass = bin_class_new(o, name, super, vaddr);
+	if (!oclass) {
+		return NULL;
+	}
+
+	if (!o->classes->sorted) {
+		rz_list_sort(o->classes, (RzListComparator)rz_bin_compare_class);
+	}
+	rz_list_add_sorted(o->classes, oclass, (RzListComparator)rz_bin_compare_class);
+	ht_pp_insert(o->name_to_class_object, name, oclass);
+	return oclass;
+}
+
+/**
+ * \brief      Find a method based on the class name, method name and its virtual address
+ *
+ * \param      o       The RzBinObject to search into
+ * \param[in]  klass   The class name
+ * \param[in]  method  The method name
+ * \param[in]  vaddr   The virtual address of the method
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RzBinSymbol *rz_bin_object_find_method(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *method) {
+	rz_return_val_if_fail(o && klass && method, NULL);
+	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method);
+	if (!key) {
+		return NULL;
+	}
+	RzBinSymbol *sym = (RzBinSymbol *)ht_pp_find(o->glue_to_class_method, key, NULL);
+	free(key);
+	return sym;
+}
+
+/**
+ * \brief      Find a method based on the given virtual address
+ *
+ * \param      o       The RzBinObject to search into
+ * \param[in]  vaddr   The virtual address of the method
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RzBinSymbol *rz_bin_object_find_method_by_vaddr(RZ_NONNULL RzBinObject *o, ut64 vaddr) {
+	rz_return_val_if_fail(o, NULL);
+	return (RzBinSymbol *)ht_up_find(o->vaddr_to_class_method, vaddr, NULL);
+}
+
+/**
+ * \brief      Adds a new class method to a given RzBinObject
+ *
+ * This function adds methods to an existing class, if the class
+ * is not known, then is added and then the method is linked to
+ * the new class.
+ *
+ * \param      o       The RzBinObject to add the new method to
+ * \param[in]  klass   The class name
+ * \param[in]  method  The method name
+ * \param[in]  paddr   The method paddr
+ * \param[in]  vaddr   The method vaddr
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *method, ut64 paddr, ut64 vaddr) {
+	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(klass) && RZ_STR_ISNOTEMPTY(method), NULL);
+	RzBinSymbol *symbol = NULL;
+	RzBinClass *c = NULL;
+
+	if ((symbol = rz_bin_object_find_method(o, klass, method))) {
+		if (symbol->paddr == UT64_MAX && paddr != UT64_MAX) {
+			symbol->paddr = paddr;
+		}
+		if (symbol->vaddr == UT64_MAX && vaddr != UT64_MAX) {
+			symbol->vaddr = vaddr;
+		}
+		return symbol;
+	}
+
+	if (!(c = rz_bin_object_add_class(o, klass, NULL, UT64_MAX))) {
+		return NULL;
+	}
+
+	symbol = rz_bin_symbol_new(method, paddr, vaddr);
+	if (!symbol) {
+		return NULL;
+	}
+	symbol->classname = rz_str_new(klass);
+
+	if (!c->methods->sorted) {
+		rz_list_sort(c->methods, (RzListComparator)rz_bin_compare_method);
+	}
+	rz_list_add_sorted(c->methods, symbol, (RzListComparator)rz_bin_compare_method);
+
+	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method);
+	if (key) {
+		ht_pp_insert(o->glue_to_class_method, key, symbol);
+		free(key);
+	}
+
+	if (symbol->vaddr != UT64_MAX) {
+		ht_up_insert(o->vaddr_to_class_method, symbol->vaddr, symbol);
+	}
+
+	return symbol;
+}
+
+/**
+ * \brief      Find a field based on the class name, field name and its virtual address
+ *
+ * \param      o      The RzBinObject to search into
+ * \param[in]  klass  The class name
+ * \param[in]  field  The field name
+ * \param[in]  vaddr  The virtual address of the field
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RzBinClassField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *field) {
+	rz_return_val_if_fail(o && klass && field, NULL);
+	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, field);
+	if (!key) {
+		return NULL;
+	}
+	RzBinClassField *sym = (RzBinClassField *)ht_pp_find(o->glue_to_class_field, key, NULL);
+	free(key);
+	return sym;
+}
+
+/**
+ * \brief      Adds a new class field to a given RzBinObject
+ *
+ * This function adds fields to an existing class; if the class
+ * is not known, then is created and then the field is linked to
+ * the new class.
+ *
+ * \param      o      The RzBinObject to add the new field to
+ * \param[in]  klass  The class name
+ * \param[in]  name   The field name
+ * \param[in]  paddr  The field paddr
+ * \param[in]  vaddr  The field vaddr
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *name, ut64 paddr, ut64 vaddr) {
+	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(klass) && RZ_STR_ISNOTEMPTY(name), NULL);
+	RzBinClassField *field = NULL;
+	RzBinClass *c = NULL;
+
+	if ((field = rz_bin_object_find_field(o, klass, name))) {
+		if (field->paddr == UT64_MAX) {
+			field->paddr = paddr;
+		}
+		if (field->vaddr == UT64_MAX) {
+			field->vaddr = vaddr;
+		}
+		return field;
+	}
+
+	if (!(c = rz_bin_object_add_class(o, klass, NULL, UT64_MAX))) {
+		return NULL;
+	}
+
+	field = rz_bin_class_field_new(paddr, vaddr, name, klass, NULL, NULL);
+	if (!field) {
+		return NULL;
+	}
+
+	if (!c->fields->sorted) {
+		rz_list_sort(c->fields, (RzListComparator)rz_bin_compare_class_field);
+	}
+	rz_list_add_sorted(c->fields, field, (RzListComparator)rz_bin_compare_class_field);
+	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name);
+	if (key) {
+		ht_pp_insert(o->glue_to_class_field, key, field);
+		free(key);
+	}
+	return field;
 }
 
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
@@ -290,9 +488,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	o->obj_size = (bytes_sz >= sz + offset) ? sz : 0;
 	o->boffset = offset;
 	o->regstate = NULL;
-	o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
-	o->classes_ht = ht_pp_new0();
-	o->methods_ht = ht_pp_new0();
 	o->baddr_shift = 0;
 	o->plugin = plugin;
 
@@ -316,7 +511,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	// extracted from a set of bytes in the file
 	rz_bin_file_set_obj(bf->rbin, bf, o);
 	rz_bin_set_baddr(bf->rbin, o->opts.baseaddr);
-	rz_bin_object_set_items(bf, o);
+	rz_bin_object_process_plugin_data(bf, o);
 
 	if (!bf->rbin->sdb) {
 		return o;
@@ -332,258 +527,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	bf->sdb->refs++;
 
 	return o;
-}
-
-static void filter_classes(RzBinFile *bf, RzList /*<RzBinClass *>*/ *list) {
-	HtPU *db = ht_pu_new0();
-	HtPP *ht = ht_pp_new0();
-	RzListIter *iter, *iter2;
-	RzBinClass *cls;
-	RzBinSymbol *sym;
-	rz_list_foreach (list, iter, cls) {
-		if (!cls->name) {
-			continue;
-		}
-		int namepad_len = strlen(cls->name) + 32;
-		char *namepad = malloc(namepad_len + 1);
-		if (!namepad) {
-			RZ_LOG_ERROR("Cannot allocate %d byte(s)\n", namepad_len);
-			break;
-		}
-
-		strcpy(namepad, cls->name);
-		char *p = rz_bin_filter_name(bf, db, cls->index, namepad);
-		if (p) {
-			namepad = p;
-		}
-		free(cls->name);
-		cls->name = namepad;
-		rz_list_foreach (cls->methods, iter2, sym) {
-			if (sym->name) {
-				rz_bin_filter_sym(bf, ht, sym->vaddr, sym);
-			}
-		}
-	}
-	ht_pu_free(db);
-	ht_pp_free(ht);
-}
-
-static void rz_bin_object_rebuild_classes_ht(RzBinObject *o) {
-	ht_pp_free(o->classes_ht);
-	ht_pp_free(o->methods_ht);
-	o->classes_ht = ht_pp_new0();
-	o->methods_ht = ht_pp_new0();
-
-	RzListIter *it, *it2;
-	RzBinClass *klass;
-	RzBinSymbol *method;
-	rz_list_foreach (o->classes, it, klass) {
-		if (klass->name) {
-			ht_pp_insert(o->classes_ht, klass->name, klass);
-
-			rz_list_foreach (klass->methods, it2, method) {
-				const char *name = sdb_fmt("%s::%s", klass->name, method->name);
-				ht_pp_insert(o->methods_ht, name, method);
-			}
-		}
-	}
-}
-
-RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
-	rz_return_val_if_fail(bf && o && o->plugin, false);
-
-	RzBin *bin = bf->rbin;
-	RzBinPlugin *p = o->plugin;
-	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
-	bf->o = o;
-
-	if (p->file_type) {
-		int type = p->file_type(bf);
-		if (type == RZ_BIN_TYPE_CORE) {
-			if (p->regstate) {
-				o->regstate = p->regstate(bf);
-			}
-		}
-	}
-
-	if (p->boffset) {
-		o->boffset = p->boffset(bf);
-	}
-	// XXX: no way to get info from xtr pluginz?
-	// Note, object size can not be set from here due to potential
-	// inconsistencies
-	if (p->size) {
-		o->size = p->size(bf);
-	}
-	// XXX this is expensive because is O(n^n)
-	if (p->binsym) {
-		for (size_t i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
-			o->binsym[i] = p->binsym(bf, i);
-			if (o->binsym[i]) {
-				o->binsym[i]->paddr += o->opts.loadaddr;
-			}
-		}
-	}
-	if (p->entries) {
-		o->entries = p->entries(bf);
-		REBASE_PADDR(o, o->entries, RzBinAddr);
-	}
-	if (p->virtual_files) {
-		o->vfiles = p->virtual_files(bf);
-	}
-	if (p->maps) {
-		o->maps = p->maps(bf);
-		if (o->maps) {
-			REBASE_PADDR(o, o->maps, RzBinMap);
-		}
-	}
-	if (p->fields) {
-		o->fields = p->fields(bf);
-		if (o->fields) {
-			rz_warn_if_fail(o->fields->free);
-			REBASE_PADDR(o, o->fields, RzBinField);
-		}
-	}
-	if (p->imports) {
-		rz_list_free(o->imports);
-		o->imports = p->imports(bf);
-		if (o->imports) {
-			rz_warn_if_fail(o->imports->free);
-		}
-	}
-	if (p->symbols) {
-		o->symbols = p->symbols(bf);
-		if (o->symbols) {
-			REBASE_PADDR(o, o->symbols, RzBinSymbol);
-			if (bin->filter) {
-				rz_bin_filter_symbols(bf, o->symbols);
-			}
-			o->import_name_symbols = ht_pp_new0();
-			if (o->import_name_symbols) {
-				RzBinSymbol *sym;
-				RzListIter *it;
-				rz_list_foreach (o->symbols, it, sym) {
-					if (!sym->is_imported || !sym->name || !*sym->name) {
-						continue;
-					}
-					ht_pp_insert(o->import_name_symbols, sym->name, sym);
-				}
-			}
-		}
-	}
-	if (p->libs) {
-		o->libs = p->libs(bf);
-	}
-	if (p->sections) {
-		// XXX sections are populated by call to size
-		if (!o->sections) {
-			o->sections = p->sections(bf);
-		}
-		REBASE_PADDR(o, o->sections, RzBinSection);
-		if (bin->filter) {
-			rz_bin_filter_sections(bf, o->sections);
-		}
-	}
-
-	o->info = p->info ? p->info(bf) : NULL;
-
-	if (bin->filter_rules & (RZ_BIN_REQ_RELOCS | RZ_BIN_REQ_IMPORTS)) {
-		if (p->relocs) {
-			RzList *l = p->relocs(bf);
-			if (l) {
-				REBASE_PADDR(o, l, RzBinReloc);
-				o->relocs = rz_bin_reloc_storage_new(l);
-			}
-		}
-	}
-	if (bin->filter_rules & RZ_BIN_REQ_STRINGS) {
-		RzList *strings;
-		if (p->strings) {
-			strings = p->strings(bf);
-		} else {
-			// when a bin plugin does not provide it's own strings
-			// we always take all the strings found in the binary
-			// the method also converts the paddrs to vaddrs
-			strings = rz_bin_file_strings(bf, minlen, true);
-		}
-
-		if (bin->debase64) {
-			bin_object_decode_all_base64_strings(strings);
-		}
-		REBASE_PADDR(o, strings, RzBinString);
-
-		// RzBinStrDb becomes the owner of the RzList strings
-		o->strings = rz_bin_string_database_new(strings);
-	}
-
-	if (o->info && RZ_STR_ISEMPTY(o->info->compiler)) {
-		free(o->info->compiler);
-		o->info->compiler = rz_bin_file_golang_compiler(bf);
-		if (o->info->compiler) {
-			o->info->lang = "go";
-		}
-	}
-
-	o->lang = rz_bin_language_detect(bf);
-
-	if (bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) {
-		if (p->classes) {
-			RzList *classes = p->classes(bf);
-			if (classes) {
-				// XXX we should probably merge them instead
-				rz_list_free(o->classes);
-				o->classes = classes;
-				rz_bin_object_rebuild_classes_ht(o);
-			}
-
-			if (o->lang == RZ_BIN_LANGUAGE_SWIFT) {
-				o->classes = classes_from_symbols(bf);
-			}
-		} else {
-			RzList *classes = classes_from_symbols(bf);
-			if (classes) {
-				o->classes = classes;
-			}
-		}
-
-		if (bin->filter) {
-			filter_classes(bf, o->classes);
-		}
-
-		// cache addr=class+method
-		if (o->classes) {
-			RzList *klasses = o->classes;
-			RzListIter *iter, *iter2;
-			RzBinClass *klass;
-			RzBinSymbol *method;
-			if (!o->addrzklassmethod) {
-				// this is slow. must be optimized, but at least its cached
-				o->addrzklassmethod = ht_up_new0();
-				rz_list_foreach (klasses, iter, klass) {
-					rz_list_foreach (klass->methods, iter2, method) {
-						ht_up_insert(o->addrzklassmethod, method->vaddr, method);
-					}
-				}
-			}
-		}
-	}
-	if (p->lines) {
-		o->lines = p->lines(bf);
-	}
-	if (p->get_sdb) {
-		Sdb *new_kv = p->get_sdb(bf);
-		if (new_kv != o->kv) {
-			sdb_free(o->kv);
-		}
-		o->kv = new_kv;
-	}
-	if (p->mem) {
-		o->mem = p->mem(bf);
-	}
-	if (p->resources) {
-		o->resources = p->resources(bf);
-	}
-	return true;
 }
 
 RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
@@ -832,34 +775,6 @@ RZ_API const RzList /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL Rz
 RZ_API const RzList /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->resources;
-}
-
-/**
- * \brief Remove all previously identified strings in the binary object and scan it again for strings.
- */
-RZ_API bool rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *obj) {
-	rz_return_val_if_fail(bin && bf && obj, false);
-	RZ_FREE_CUSTOM(obj->strings, rz_bin_string_database_free);
-
-	RzList *strings = NULL;
-	RzBinPlugin *plugin = obj->plugin;
-	if (plugin && plugin->strings) {
-		strings = plugin->strings(bf);
-	} else {
-		// when a bin plugin does not provide it's own strings
-		// we always take all the strings found in the binary
-		// the method also converts the paddrs to vaddrs
-		strings = rz_bin_file_strings(bf, bin->minstrlen, true);
-	}
-
-	if (bin->debase64) {
-		bin_object_decode_all_base64_strings(strings);
-	}
-	REBASE_PADDR(obj, strings, RzBinString);
-
-	// RzBinStrDb becomes the owner of the RzList strings
-	obj->strings = rz_bin_string_database_new(strings);
-	return obj->strings != NULL;
 }
 
 /**

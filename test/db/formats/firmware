@@ -27,7 +27,7 @@ NAME=ljmp follow
 FILE=bins/firmware/bios_64k.bin
 CMDS=<<EOF
 s $j
-? $$
+% $$
 EOF
 EXPECT=<<EOF
 int32   1048490

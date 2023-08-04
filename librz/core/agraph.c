@@ -118,10 +118,6 @@ static bool is_mini(const RzAGraph *g) {
 	return g->mode == RZ_AGRAPH_MODE_MINI;
 }
 
-static bool is_tiny(const RzAGraph *g) {
-	return g->is_tiny || g->mode == RZ_AGRAPH_MODE_TINY;
-}
-
 static bool is_summary(const RzAGraph *g) {
 	return g->mode == RZ_AGRAPH_MODE_SUMMARY;
 }
@@ -318,17 +314,6 @@ static void mini_RzANode_print(const RzAGraph *g, const RzANode *n, int cur, boo
 		W(title);
 	}
 	return;
-}
-
-static void tiny_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
-	G(n->x, n->y);
-	RzCons *cons = rz_cons_singleton();
-	char *circle = cons->use_utf8 ? UTF_CIRCLE : "()";
-	if (cur) {
-		W("##");
-	} else {
-		W(circle);
-	}
 }
 
 static inline char *get_node_color(int cur) {
@@ -2018,9 +2003,6 @@ static void set_layout(RzAGraph *g) {
 				RzANode *n = get_anode(g->layers[i].nodes[j]);
 				if (n) {
 					n->x -= n->w / 2;
-					if (g->is_tiny) {
-						n->x /= 8;
-					}
 				}
 			}
 		}
@@ -2033,9 +2015,6 @@ static void set_layout(RzAGraph *g) {
 			tmp_y = g->layers[0].gap; // TODO: XXX: set properly
 			for (k = 1; k <= i; k++) {
 				tmp_y += g->layers[k - 1].height + g->layers[k].gap + 3; // XXX: should be 4?
-			}
-			if (g->is_tiny) {
-				tmp_y = i;
 			}
 			for (j = 0; j < g->layers[i].n_nodes; j++) {
 				RzANode *n = get_anode(g->layers[i].nodes[j]);
@@ -2713,9 +2692,7 @@ static void agraph_print_node(const RzAGraph *g, RzANode *n) {
 	}
 	const int cur = g->curnode && get_anode(g->curnode) == n;
 	const bool isMini = is_mini(g);
-	if (g->is_tiny) {
-		tiny_RzANode_print(g, n, cur);
-	} else if (isMini || n->is_mini) {
+	if (isMini || n->is_mini) {
 		mini_RzANode_print(g, n, cur, isMini);
 	} else {
 		normal_RzANode_print(g, n, cur);
@@ -2774,11 +2751,6 @@ static void agraph_print_edges_simple(RzAGraph *g) {
 			int sx = n->w / 2;
 			int sy = n->h;
 			int sx2 = n2->w / 2;
-			if (g->is_tiny) {
-				sx = 0;
-				sy = 0;
-				sx2 = 0;
-			}
 			// TODO: better alignments here
 			rz_cons_canvas_line(g->can,
 				n->x + sx, n->y + sy,
@@ -2906,7 +2878,7 @@ static void agraph_print_edges(RzAGraph *g) {
 			}
 
 			style.dot_style = DOT_STYLE_NORMAL;
-			if (many || parent_many) {
+			if (many || parent_many || g->is_il) {
 				style.color = LINE_UNCJMP;
 			} else {
 				switch (out_nth) {
@@ -3118,12 +3090,8 @@ static void agraph_toggle_callgraph(RzAGraph *g) {
 
 static void agraph_set_zoom(RzAGraph *g, int v) {
 	if (v >= -10) {
-		g->is_tiny = false;
 		if (v == 0) {
 			g->mode = RZ_AGRAPH_MODE_MINI;
-		} else if (v < 0) {
-			g->mode = RZ_AGRAPH_MODE_TINY;
-			g->is_tiny = true;
 		} else {
 			g->mode = RZ_AGRAPH_MODE_NORMAL;
 		}
@@ -3163,10 +3131,6 @@ static void follow_nth(RzAGraph *g, int nth) {
 static void move_current_node(RzAGraph *g, int xdiff, int ydiff) {
 	RzANode *n = get_anode(g->curnode);
 	if (n) {
-		if (is_tiny(g)) {
-			xdiff = NORMALIZE_MOV(xdiff);
-			ydiff = NORMALIZE_MOV(ydiff);
-		}
 		n->x += xdiff;
 		n->y += ydiff;
 	}
@@ -3203,14 +3167,6 @@ static void agraph_merge_child(RzAGraph *g, int idx) {
 	// agraph_update_seek (g, get_anode (g->curnode), false);
 }
 #endif
-
-static void agraph_toggle_tiny(RzAGraph *g) {
-	g->is_tiny = !g->is_tiny;
-	g->need_update_dim = 1;
-	agraph_refresh(rz_cons_singleton()->event_data);
-	agraph_set_layout((RzAGraph *)g);
-	// remove_dummy_nodes (g);
-}
 
 static void agraph_toggle_mini(RzAGraph *g) {
 	RzANode *n = get_anode(g->curnode);
@@ -3438,6 +3394,7 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalysi
 	if (g->title && *g->title) {
 		g->can->sy++;
 	}
+
 	agraph_print_edges(g);
 	agraph_print_nodes(g);
 	if (g->title && *g->title) {
@@ -3445,9 +3402,7 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalysi
 	}
 	/* print the graph title */
 	(void)G(-g->can->sx, -g->can->sy);
-	if (!g->is_tiny) {
-		W(g->title);
-	}
+	W(g->title);
 	if (is_interactive && g->title) {
 		int title_len = strlen(g->title);
 		rz_cons_canvas_fill(g->can, -g->can->sx + title_len, -g->can->sy,
@@ -3584,6 +3539,7 @@ static HtPPOptions nodes_opt = {
 
 static void agraph_init(RzAGraph *g) {
 	g->is_callgraph = false;
+	g->is_il = false;
 	g->is_instep = false;
 	g->need_reload_nodes = true;
 	g->show_node_titles = true;
@@ -3722,7 +3678,7 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 	res->offset = UT64_MAX;
 	res->shortcut_w = 0;
 	res->gnode = rz_graph_add_node(g->graph, res);
-	if (RZ_STR_ISNOTEMPTY(res->title)) {
+	if (RZ_STR_ISNOTEMPTY(res->title) && !g->is_il) {
 		ht_pp_update(g->nodes, res->title, res);
 		char *s, *estr, *b;
 		size_t len;
@@ -4102,6 +4058,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	RzAnalysisFunction *fcn = NULL;
 	const char *key_s;
 	RzConsCanvas *can, *o_can = NULL;
+	RzCoreVisual *visual = core->visual;
 	bool graph_allocated = false;
 	int movspeed;
 	int ret, invscroll;
@@ -4144,7 +4101,6 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			rz_config_hold_free(hc);
 			return false;
 		}
-		g->is_tiny = is_interactive == 2;
 		g->layout = rz_config_get_i(core->config, "graph.layout");
 		g->dummy = rz_config_get_i(core->config, "graph.dummy");
 		g->show_node_titles = rz_config_get_i(core->config, "graph.ntitles");
@@ -4154,7 +4110,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	g->can = can;
 	g->movspeed = rz_config_get_i(core->config, "graph.scroll");
 	g->show_node_titles = rz_config_get_i(core->config, "graph.ntitles");
-	g->show_node_body = rz_config_get_i(core->config, "graph.body");
+	g->show_node_body = rz_config_get_b(core->config, "graph.body");
 	g->on_curnode_change = (RzANodeCallback)seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = rz_config_get_i(core->config, "graph.edges");
@@ -4380,7 +4336,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 		case '?':
 			rz_cons_clear00();
 			rz_cons_printf("Visual Ascii Art graph keybindings:\n"
-				       " :e cmd.gprompt = agft   - show tinygraph in one side\n"
+				       " :e cmd.gprompt = agf   - show graph in one side\n"
 				       " +/-/0        - zoom in/out/default\n"
 				       " ;            - add comment in current basic block\n"
 				       " . (dot)      - center graph to the current node\n"
@@ -4430,7 +4386,6 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				       " V            - toggle basicblock / call graphs\n"
 				       " w            - toggle between movements speed 1 and graph.scroll\n"
 				       " x/X          - jump to xref/ref\n"
-				       " Y            - toggle tiny graph\n"
 				       " z            - toggle node folding\n"
 				       " Z            - toggle basic block folding");
 			rz_cons_less();
@@ -4532,7 +4487,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			get_bbupdate(g, core, fcn);
 			break;
 		case '!':
-			rz_core_visual_panels_root(core, core->panels_root);
+			rz_core_visual_panels_root(core, visual->panels_root);
 			break;
 		case '\'':
 			if (fcn) {
@@ -4602,10 +4557,6 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case 'N':
 			rz_core_seek_prev(core, rz_config_get(core->config, "scr.nkey"), true);
-			break;
-		case 'Y':
-			agraph_toggle_tiny(g);
-			agraph_update_seek(g, get_anode(g->curnode), true);
 			break;
 		case 'z':
 			agraph_toggle_mini(g);
@@ -4903,7 +4854,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
  * \return Success
  */
 RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail) {
-	rz_return_val_if_fail(ag && g, NULL);
+	rz_return_val_if_fail(ag && g, false);
 	ag->need_reload_nodes = false;
 	// Cache lookup to build edges
 	HtPPOptions pointer_options = { 0 };

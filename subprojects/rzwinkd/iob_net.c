@@ -365,7 +365,7 @@ static bool _sendResponsePacket(iobnet_t *obj, const ut8 *pokedata) {
 	memcpy(resbuf + 2, pokedata + 10, 32);
 	// Generate 32 bytes random Host Key
 	for (i = 0; i < 32; i++) {
-		int rand = rz_num_rand(0xFF);
+		int rand = rz_num_rand32(0xFF);
 		resbuf[i + 34] = rand & 0xFF;
 	}
 

@@ -28,10 +28,6 @@ call = 4
 #define HAVE_CSGRP_PRIVILEGE 0
 #endif
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
-
 #define opexprintf(op, fmt, ...) rz_strbuf_setf(&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n)                 insn->detail->x86.operands[n]
 #define INSOPS                   insn->detail->x86.op_count
@@ -291,29 +287,29 @@ static char *getarg(struct Getarg *gop, int n, int set, char *setop, int sel, ut
 
 		if (index) {
 			if (scale > 1) {
-				snprintf(buf_, BUF_SZ, "%s%s,%d,*,", out, index, scale);
+				rz_strf(buf_, "%s%s,%d,*,", out, index, scale);
 			} else {
-				snprintf(buf_, BUF_SZ, "%s%s,", out, index);
+				rz_strf(buf_, "%s%s,", out, index);
 			}
 			strncpy(out, buf_, BUF_SZ);
 			component_count++;
 		}
 
 		if (base) {
-			snprintf(buf_, BUF_SZ, "%s%s,", out, base);
+			rz_strf(buf_, "%s%s,", out, base);
 			strncpy(out, buf_, BUF_SZ);
 			component_count++;
 		}
 
 		if (component_count > 1) {
 			if (component_count > 2) {
-				snprintf(buf_, BUF_SZ, "%s+,", out);
+				rz_strf(buf_, "%s+,", out);
 				strncpy(out, buf_, BUF_SZ);
 			}
 			if (disp < 0) {
-				snprintf(buf_, BUF_SZ, "%s-", out);
+				rz_strf(buf_, "%s-", out);
 			} else {
-				snprintf(buf_, BUF_SZ, "%s+", out);
+				rz_strf(buf_, "%s+", out);
 			}
 			strncpy(out, buf_, BUF_SZ);
 		} else {
@@ -327,13 +323,13 @@ static char *getarg(struct Getarg *gop, int n, int set, char *setop, int sel, ut
 		// set = 2 is reserved for lea, where the operand is a memory address,
 		// but the corresponding memory is not loaded.
 		if (set == 1) {
-			snprintf(buf_, BUF_SZ, "%s,%s=[%d]", out, setarg, op.size == 10 ? 8 : op.size);
+			rz_strf(buf_, "%s,%s=[%d]", out, setarg, op.size == 10 ? 8 : op.size);
 			strncpy(out, buf_, BUF_SZ);
 		} else if (set == 0) {
 			if (!*out) {
 				strcpy(out, "0");
 			}
-			snprintf(buf_, BUF_SZ, "%s,[%d]", out, op.size == 10 ? 8 : op.size);
+			rz_strf(buf_, "%s,[%d]", out, op.size == 10 ? 8 : op.size);
 			strncpy(out, buf_, BUF_SZ);
 		}
 		out[BUF_SZ - 1] = 0;
@@ -741,6 +737,13 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				src, width, dst, width, width, src, width,
 				dst, width, src, width, dst);
 		}
+		break;
+	// comiss
+	case X86_INS_COMISS:
+	case X86_INS_UCOMISS:
+	case X86_INS_VCOMISS:
+	case X86_INS_VUCOMISS:
+		op->type = RZ_ANALYSIS_OP_TYPE_SIMD | RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	// mov
 	case X86_INS_MOVSS:
@@ -2863,6 +2866,12 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 				op->jump = (seg << a->seggrn) + off;
 			} else {
 				op->jump = INSOP(0).imm;
+				if (a->bits == 16) {
+					// https://github.com/capstone-engine/capstone/issues/111
+					// according to the x86 manual: the upper two bytes of the EIP register are cleared.
+					op->jump &= UT16_MAX;
+					op->jump |= (UT64_16U & addr);
+				}
 			}
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op->cycles = CYCLE_JMP;
@@ -3150,7 +3159,7 @@ static inline int select_mode(RzAnalysis *a) {
 	}
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	X86CSContext *ctx = (X86CSContext *)a->plugin_data;
 
 	int mode = select_mode(a);
@@ -3223,9 +3232,10 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			// x86 RzIL uplifting
 			X86ILIns x86_il_ins = {
 				.structure = &ctx->insn->detail->x86,
-				.mnem = ctx->insn->id
+				.mnem = ctx->insn->id,
+				.ins_size = op->size
 			};
-			rz_x86_il_opcode(a, op, addr, &x86_il_ins);
+			rz_x86_il_opcode(a, op, addr + op->size, &x86_il_ins);
 		}
 
 		// #if X86_GRP_PRIVILEGE>0
@@ -3776,7 +3786,7 @@ RzAnalysisPlugin rz_analysis_plugin_x86_cs = {
 	.license = "BSD",
 	.arch = "x86",
 	.bits = 16 | 32 | 64,
-	.op = &analop,
+	.op = &analyze_op,
 	.preludes = analysis_preludes,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,

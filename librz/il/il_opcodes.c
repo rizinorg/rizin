@@ -170,12 +170,12 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv(RZ_NONNULL RzBitVector *value) 
  *
  *  value is a bitvector constant.
  */
-RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number) {
 	RzBitVector *value = rz_bv_new_from_ut64(length, number);
 	if (!value) {
 		return NULL;
 	}
-	RzILOpBool *ret = RZ_NEW0(RzILOpBool);
+	RzILOpBitVector *ret = RZ_NEW0(RzILOpBitVector);
 	if (!ret) {
 		rz_bv_free(value);
 		return NULL;
@@ -190,12 +190,12 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number) 
  *
  *  value is a bitvector constant.
  */
-RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) {
 	RzBitVector *value = rz_bv_new_from_st64(length, number);
 	if (!value) {
 		return NULL;
 	}
-	RzILOpBool *ret = RZ_NEW0(RzILOpBool);
+	RzILOpBitVector *ret = RZ_NEW0(RzILOpBitVector);
 	if (!ret) {
 		rz_bv_free(value);
 		return NULL;
@@ -752,6 +752,277 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzI
 	return ret;
 }
 
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *bv) {
+	rz_return_val_if_fail(bv, NULL);
+	RzILOpFloat *ret;
+	RzFloatFormat r = format;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOAT, RzILOpArgsFloat, float_, r, bv);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f32(float f) {
+	RzFloat *value = rz_float_new_from_f32(f);
+	if (!value) {
+		return NULL;
+	}
+	RzILOpFloat *ret = RZ_NEW0(RzILOpFloat);
+	if (!ret) {
+		rz_float_free(value);
+		return NULL;
+	}
+
+	ret->code = RZ_IL_OP_FLOAT;
+	ret->op.float_.bv = rz_il_op_new_bitv(value->s);
+	ret->op.float_.r = value->r;
+	free(value);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f64(double f) {
+	RzFloat *value = rz_float_new_from_f64(f);
+	if (!value) {
+		return NULL;
+	}
+	RzILOpFloat *ret = RZ_NEW0(RzILOpFloat);
+	if (!ret) {
+		rz_float_free(value);
+		return NULL;
+	}
+
+	ret->code = RZ_IL_OP_FLOAT;
+	ret->op.float_.bv = rz_il_op_new_bitv(value->s);
+	ret->op.float_.r = value->r;
+	free(value);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fbits(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBitVector *ret;
+	rz_il_op_new_1(BitVector, RZ_IL_OP_FBITS, RzILOpArgsFbits, fbits, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_finite(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_1(Bool, RZ_IL_OP_IS_FINITE, RzILOpArgsIsFinite, is_finite, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_nan(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_1(Bool, RZ_IL_OP_IS_NAN, RzILOpArgsIsNan, is_nan, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_inf(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_1(Bool, RZ_IL_OP_IS_INF, RzILOpArgsIsInf, is_inf, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fzero(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_1(Bool, RZ_IL_OP_IS_FZERO, RzILOpArgsIsFzero, is_fzero, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fneg(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_1(Bool, RZ_IL_OP_IS_FNEG, RzILOpArgsIsFneg, is_fneg, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fpos(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_1(Bool, RZ_IL_OP_IS_FPOS, RzILOpArgsIsFpos, is_fpos, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fneg(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_1(Float, RZ_IL_OP_FNEG, RzILOpArgsFneg, is_fneg, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fabs(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_1(Float, RZ_IL_OP_FABS, RzILOpArgsFabs, fneg, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBitVector *ret;
+	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_INT, RzILOpArgsFCastint, fcast_int, length, mode, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpBitVector *ret;
+	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_SINT, RzILOpArgsFCastsint, fcast_sint, length, mode, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv) {
+	rz_return_val_if_fail(bv, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FCAST_FLOAT, RzILOpArgsFCastfloat, fcast_float, format, mode, bv);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv) {
+	rz_return_val_if_fail(bv, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FCAST_SFLOAT, RzILOpArgsFCastsfloat, fcast_sfloat, format, mode, bv);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FCONVERT, RzILOpArgsFconvert, fconvert, format, mode, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_frequal(RzFloatRMode x, RzFloatRMode y) {
+	RzILOpBool *ret;
+	rz_il_op_new_2(Bool, RZ_IL_OP_FREQUAL, RzILOpArgsFrequal, frequal, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsucc(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_1(Float, RZ_IL_OP_FSUCC, RzILOpArgsFsucc, fsucc, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpred(RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_1(Float, RZ_IL_OP_FPRED, RzILOpArgsFpred, fpred, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_forder(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FORDER, RzILOpArgsForder, forder, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FROUND, RzILOpArgsFround, fround, rmode, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FSQRT, RzILOpArgsFsqrt, fsqrt, rmode, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FRSQRT, RzILOpArgsFrsqrt, frsqrt, rmode, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FADD, RzILOpArgsFadd, fadd, rmode, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsub(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FSUB, RzILOpArgsFsub, fsub, rmode, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmul(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FMUL, RzILOpArgsFmul, fmul, rmode, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fdiv(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FDIV, RzILOpArgsFdiv, fdiv, rmode, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmod(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FMOD, RzILOpArgsFmod, fmod, rmode, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fhypot(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FHYPOT, RzILOpArgsFhypot, fhypot, rmode, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpow(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FPOW, RzILOpArgsFpow, fpow, rmode, x, y);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmad(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *z) {
+	rz_return_val_if_fail(x && y && z, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_0(Float, RZ_IL_OP_FMAD);
+	ret->op.fmad.rmode = rmode;
+	ret->op.fmad.x = x;
+	ret->op.fmad.y = y;
+	ret->op.fmad.z = z;
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frootn(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f, RZ_NONNULL RzILOpBitVector *n) {
+	rz_return_val_if_fail(f && n, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FROOTN, RzILOpArgsFrootn, frootn, rmode, n, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpown(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f, RZ_NONNULL RzILOpBitVector *n) {
+	rz_return_val_if_fail(f && n, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FPOWN, RzILOpArgsFpown, fpown, rmode, n, f);
+	return ret;
+}
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f, RZ_NONNULL RzILOpBitVector *n) {
+	rz_return_val_if_fail(f && n, NULL);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FCOMPOUND, RzILOpArgsFcompound, fcompound, rmode, n, f);
+	return ret;
+}
+
 #undef rz_il_op_new_0
 #undef rz_il_op_new_1
 #undef rz_il_op_new_2
@@ -794,6 +1065,16 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 			rz_il_op_pure_free(r->op.arg.m2); \
 			return NULL; \
 		} \
+	} while (0);
+#define CONST_CP1(arg, m0) \
+	do { \
+		r->op.arg.m0 = op->op.arg.m0; \
+	} while (0);
+
+#define CONST_CP2(arg, m0, m1) \
+	do { \
+		r->op.arg.m0 = op->op.arg.m0; \
+		r->op.arg.m1 = op->op.arg.m1; \
 	} while (0);
 	r->code = op->code;
 	switch (op->code) {
@@ -902,6 +1183,125 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		r->op.loadw.mem = op->op.loadw.mem;
 		r->op.loadw.n_bits = op->op.loadw.n_bits;
 		DUP_OP1(loadw, key);
+		break;
+	case RZ_IL_OP_FLOAT:
+		r->op.float_.r = op->op.float_.r;
+		DUP_OP1(float_, bv);
+		break;
+	case RZ_IL_OP_FBITS:
+		DUP_OP1(fbits, f);
+		break;
+	case RZ_IL_OP_IS_FINITE:
+		DUP_OP1(is_finite, f);
+		break;
+	case RZ_IL_OP_IS_NAN:
+		DUP_OP1(is_nan, f);
+		break;
+	case RZ_IL_OP_IS_INF:
+		DUP_OP1(is_inf, f);
+		break;
+	case RZ_IL_OP_IS_FZERO:
+		DUP_OP1(is_fzero, f);
+		break;
+	case RZ_IL_OP_IS_FNEG:
+		DUP_OP1(is_fneg, f);
+		break;
+	case RZ_IL_OP_IS_FPOS:
+		DUP_OP1(is_fpos, f);
+		break;
+	case RZ_IL_OP_FNEG:
+		DUP_OP1(fneg, f);
+		break;
+	case RZ_IL_OP_FABS:
+		DUP_OP1(fabs, f);
+		break;
+	case RZ_IL_OP_FCAST_INT:
+		CONST_CP2(fcast_int, length, mode);
+		DUP_OP1(fcast_int, f);
+		break;
+	case RZ_IL_OP_FCAST_SINT:
+		CONST_CP2(fcast_sint, length, mode);
+		DUP_OP1(fcast_sint, f);
+		break;
+	case RZ_IL_OP_FCAST_FLOAT:
+		CONST_CP2(fcast_float, format, mode);
+		DUP_OP1(fcast_float, bv);
+		break;
+	case RZ_IL_OP_FCAST_SFLOAT:
+		CONST_CP2(fcast_sfloat, format, mode);
+		DUP_OP1(fcast_sfloat, bv);
+		break;
+	case RZ_IL_OP_FCONVERT:
+		CONST_CP2(fconvert, format, mode);
+		DUP_OP1(fconvert, f);
+		break;
+	case RZ_IL_OP_FREQUAL:
+		CONST_CP2(frequal, x, y);
+		break;
+	case RZ_IL_OP_FSUCC:
+		DUP_OP1(fsucc, f);
+		break;
+	case RZ_IL_OP_FPRED:
+		DUP_OP1(fpred, f);
+		break;
+	case RZ_IL_OP_FORDER:
+		DUP_OP2(forder, x, y);
+		break;
+	case RZ_IL_OP_FROUND:
+		CONST_CP1(fround, rmode);
+		DUP_OP1(fround, f);
+		break;
+	case RZ_IL_OP_FSQRT:
+		CONST_CP1(fsqrt, rmode);
+		DUP_OP1(fsqrt, f);
+		break;
+	case RZ_IL_OP_FRSQRT:
+		CONST_CP1(frsqrt, rmode);
+		DUP_OP1(frsqrt, f);
+		break;
+	case RZ_IL_OP_FADD:
+		CONST_CP1(fadd, rmode);
+		DUP_OP2(fadd, x, y);
+		break;
+	case RZ_IL_OP_FSUB:
+		CONST_CP1(fsub, rmode);
+		DUP_OP2(fsub, x, y);
+		break;
+	case RZ_IL_OP_FMUL:
+		CONST_CP1(fmul, rmode);
+		DUP_OP2(fmul, x, y);
+		break;
+	case RZ_IL_OP_FDIV:
+		CONST_CP1(fdiv, rmode);
+		DUP_OP2(fdiv, x, y);
+		break;
+	case RZ_IL_OP_FMOD:
+		CONST_CP1(fmod, rmode);
+		DUP_OP2(fmod, x, y);
+		break;
+	case RZ_IL_OP_FHYPOT:
+		CONST_CP1(fhypot, rmode);
+		DUP_OP2(fhypot, x, y);
+		break;
+	case RZ_IL_OP_FPOW:
+		CONST_CP1(fpow, rmode);
+		DUP_OP2(fpow, x, y);
+		break;
+	case RZ_IL_OP_FMAD:
+		CONST_CP1(fmad, rmode);
+		DUP_OP3(fmad, x, y, z);
+		break;
+	case RZ_IL_OP_FROOTN:
+		CONST_CP1(frootn, rmode);
+		DUP_OP2(frootn, f, n);
+		break;
+	case RZ_IL_OP_FPOWN:
+		CONST_CP1(fpown, rmode);
+		DUP_OP2(fpown, f, n);
+		break;
+	case RZ_IL_OP_FCOMPOUND:
+		CONST_CP1(fcompound, rmode);
+		DUP_OP2(fcompound, f, n);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -1024,6 +1424,60 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		break;
 	case RZ_IL_OP_LOADW:
 		rz_il_op_free_1(pure, loadw, key);
+		break;
+	case RZ_IL_OP_FLOAT:
+		rz_il_op_free_1(pure, float_, bv);
+		break;
+	case RZ_IL_OP_FBITS:
+	case RZ_IL_OP_IS_FINITE:
+	case RZ_IL_OP_IS_NAN:
+	case RZ_IL_OP_IS_INF:
+	case RZ_IL_OP_IS_FZERO:
+	case RZ_IL_OP_IS_FNEG:
+	case RZ_IL_OP_IS_FPOS:
+	case RZ_IL_OP_FNEG:
+	case RZ_IL_OP_FABS:
+		rz_il_op_free_1(pure, fabs, f);
+		break;
+	case RZ_IL_OP_FSUCC:
+	case RZ_IL_OP_FPRED:
+		rz_il_op_free_1(pure, fpred, f);
+		break;
+	case RZ_IL_OP_FCAST_INT:
+	case RZ_IL_OP_FCAST_SINT:
+	case RZ_IL_OP_FCONVERT:
+		rz_il_op_free_1(pure, fconvert, f);
+		break;
+	case RZ_IL_OP_FCAST_FLOAT:
+	case RZ_IL_OP_FCAST_SFLOAT:
+		rz_il_op_free_1(pure, fcast_sfloat, bv);
+		break;
+	case RZ_IL_OP_FREQUAL:
+		break;
+	case RZ_IL_OP_FORDER:
+		rz_il_op_free_2(pure, forder, x, y);
+		break;
+	case RZ_IL_OP_FROUND:
+	case RZ_IL_OP_FSQRT:
+	case RZ_IL_OP_FRSQRT:
+		rz_il_op_free_1(pure, fsqrt, f);
+		break;
+	case RZ_IL_OP_FADD:
+	case RZ_IL_OP_FSUB:
+	case RZ_IL_OP_FMUL:
+	case RZ_IL_OP_FDIV:
+	case RZ_IL_OP_FMOD:
+	case RZ_IL_OP_FHYPOT:
+	case RZ_IL_OP_FPOW:
+		rz_il_op_free_2(pure, fpow, x, y);
+		break;
+	case RZ_IL_OP_FMAD:
+		rz_il_op_free_3(pure, fmad, x, y, z);
+		break;
+	case RZ_IL_OP_FROOTN:
+	case RZ_IL_OP_FPOWN:
+	case RZ_IL_OP_FCOMPOUND:
+		rz_il_op_free_2(pure, fcompound, f, n);
 		break;
 	default:
 		rz_warn_if_reached();

@@ -94,7 +94,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40048d
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 |           ; var int64_t var_ch @ stack - 0xc
 |           0x00400566      55             push  rbp
 |           0x00400567      4889e5         mov   rbp, rsp
@@ -130,11 +130,11 @@ NAME=noreturn propagation
 FILE=bins/elf/noreturn
 CMDS=<<EOF
 aa
-?e -- before --
+echo -- before --
 afb@ sym.might_not_return
 tn 0x00001050 # TODO: this should be done automatically
 aanr
-?e -- after --
+echo -- after --
 afb@ sym.might_not_return
 EOF
 EXPECT=<<EOF

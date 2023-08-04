@@ -30,7 +30,7 @@ typedef struct rz_xnu_kernelcache_parsed_pointer_t {
 typedef struct rz_xnu_kernelcache_obj_t {
 	RzBuffer *cache_buf;
 	RzBuffer *patched_buf;
-	RCFValueDict *prelink_info;
+	RzCFValueDict *prelink_info;
 	ut64 pa2va_exec;
 	ut64 pa2va_data;
 	struct _RKextIndex *kexts;

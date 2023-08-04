@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -59,12 +60,6 @@ struct symbol_t {
 	bool last;
 };
 
-struct import_t {
-	char name[RZ_BIN_MACH0_STRING_LENGTH];
-	int ord;
-	int last;
-};
-
 struct reloc_t {
 	ut64 offset;
 	ut64 addr;
@@ -73,8 +68,9 @@ struct reloc_t {
 	int ord;
 	int last;
 	char name[256];
-	bool external;
-	bool pc_relative;
+	bool external : 1,
+		pc_relative : 1,
+		chained : 1;
 	ut8 size;
 	ut64 target;
 };
@@ -114,6 +110,43 @@ struct MACH0_(opts_t) {
 	bool patch_relocs;
 };
 
+/**
+ * Info parsed from struct dyld_chained_fixups_header and descendants, or synthesized from BIND_OPCODE_THREADED
+ */
+struct mach0_chained_fixups_t {
+	struct rz_dyld_chained_starts_in_segment **starts;
+	ut32 starts_count;
+	enum dyld_chained_import_format imports_format;
+	RzVector /*<void>*/ imports; // contained type is dynamically specified by imports_format above
+	ut64 symbols_base_paddr; ///< base addr of all string referenced name_offset in dyld_chained_import* structs
+};
+
+/**
+ * Generic, but not size-optimized container for info contained in any dyld_chained_import* struct
+ */
+struct MACH0_(chained_import_t) {
+	st32 lib_ordinal;
+	bool weak_import;
+	ut32 name_offset;
+	const char *name; ///< if non-null, this is the name, otherwise name_offset should be used
+	st64 addend;
+};
+
+/**
+ * Info about a single chained fixup
+ */
+struct mach0_chained_fixup_t {
+	ut64 paddr;
+	ut32 size; ///< bytes
+	ut64 result; ///< value to write
+	bool is_bind;
+	ut64 addend;
+	ut32 bind_ordinal; ///< if is_bind, the ordinal of the chained import
+};
+
+typedef void (*mach0_import_foreach_cb)(RZ_NONNULL RZ_OWN char *name, int ord, void *user);
+typedef void (*mach0_chained_fixup_foreach_cb)(struct mach0_chained_fixup_t *fixup, void *user);
+
 struct MACH0_(obj_t) {
 	struct MACH0_(opts_t) options;
 	struct MACH0_(mach_header) hdr;
@@ -121,8 +154,7 @@ struct MACH0_(obj_t) {
 	char *intrp;
 	char *compiler;
 	int nsegs;
-	struct rz_dyld_chained_starts_in_segment **chained_starts;
-	ut32 nchained_starts;
+	struct mach0_chained_fixups_t chained_fixups;
 	struct MACH0_(section) * sects;
 	int nsects;
 	struct MACH0_(nlist) * symtab;
@@ -133,9 +165,12 @@ struct MACH0_(obj_t) {
 	ut32 *indirectsyms;
 	int nindirectsyms;
 
-	RzBinImport **imports_by_ord;
-	size_t imports_by_ord_size;
-	HtPP *imports_by_name;
+	/**
+	 * Imports by ordinal from chained imports or undefined symbols, depending on MACH0_(has_chained_fixups)()
+	 */
+	RzPVector /*<RzBinImport *>*/ imports_by_ord;
+
+	HtPP *imports_by_name; ///< other imports created only by name
 
 	struct dysymtab_command dysymtab;
 	struct load_command main_cmd;
@@ -162,7 +197,7 @@ struct MACH0_(obj_t) {
 	bool big_endian;
 	const char *file;
 	RzBuffer *b;
-	int os;
+	ut32 platform; ///< MACH0_PLATFORM_*, or an unknown value from the bin, or UT32_MAX if not determined
 	Sdb *kv;
 	int has_crypto;
 	int has_canary;
@@ -179,7 +214,7 @@ struct MACH0_(obj_t) {
 	ut64 main_addr;
 
 	RzList /*<RzBinSection *>*/ *sections_cache;
-	RzSkipList *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
+	RzSkipList /* struct reloc_t * */ *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
 	bool relocs_parsed; ///< whether relocs have already been parsed and relocs is filled (or NULL on error)
 	bool reloc_targets_map_base_calculated;
 	bool relocs_patched;
@@ -204,8 +239,9 @@ RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf);
 RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
-struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin);
-RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
+void MACH0_(imports_foreach)(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user);
+size_t MACH0_(imports_count)(struct MACH0_(obj_t) * bin);
+RZ_BORROW RzSkipList /* struct reloc_t * */ *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin);
 struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) * bin);
@@ -215,7 +251,7 @@ bool MACH0_(is_big_endian)(struct MACH0_(obj_t) * bin);
 bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin);
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_intrp)(struct MACH0_(obj_t) * bin);
-const char *MACH0_(get_os)(struct MACH0_(obj_t) * bin);
+const char *MACH0_(get_platform)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_cputype)(struct MACH0_(obj_t) * bin);
 char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) * bin);
 char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) * hdr);
@@ -231,13 +267,30 @@ RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, boo
 RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);
 RZ_API ut64 MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * bin, ut64 addr);
 
-RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst);
-RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj);
-RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index);
+RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset, ut32 size);
+RZ_IPI void MACH0_(reconstruct_chained_fixups_from_threaded)(struct MACH0_(obj_t) * bin);
+RZ_API bool MACH0_(has_chained_fixups)(struct MACH0_(obj_t) * obj);
+RZ_API bool MACH0_(segment_has_chained_fixups)(struct MACH0_(obj_t) * obj, size_t seg_index);
+RZ_API void MACH0_(patch_chained_fixups)(struct MACH0_(obj_t) * obj, RzBuffer *dst);
+RZ_API void MACH0_(chained_fixups_foreach)(struct MACH0_(obj_t) * obj, mach0_chained_fixup_foreach_cb cb, void *user);
+RZ_API size_t MACH0_(chained_imports_count)(struct MACH0_(obj_t) * obj);
+RZ_API bool MACH0_(get_chained_import)(struct MACH0_(obj_t) * obj, ut32 ordinal, struct MACH0_(chained_import_t) * dst);
+RZ_API RZ_OWN char *MACH0_(chained_import_read_symbol_name)(struct MACH0_(obj_t) * obj, struct MACH0_(chained_import_t) * imp);
+RZ_API RZ_OWN char *MACH0_(read_chained_symbol)(struct MACH0_(obj_t) * obj, ut32 name_offset);
 
 RZ_API bool MACH0_(needs_reloc_patching)(struct MACH0_(obj_t) * obj);
+RZ_API ut64 MACH0_(reloc_target_size)(struct MACH0_(obj_t) * obj);
 RZ_API ut64 MACH0_(reloc_targets_vfile_size)(struct MACH0_(obj_t) * obj);
 RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
 RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
+
+typedef void (*BindOpcodesThreadedTableSizeCb)(ut64 table_size, void *user);
+typedef void (*BindOpcodesBindCb)(ut64 paddr, ut64 vaddr, st64 addend, ut8 rel_type, int lib_ord, int sym_ord, const char *sym_name, void *user);
+typedef void (*BindOpcodesThreadedApplyCb)(int seg_idx, ut64 seg_off, void *user);
+RZ_API void MACH0_(bind_opcodes_foreach)(struct MACH0_(obj_t) * bin,
+	RZ_NONNULL BindOpcodesThreadedTableSizeCb threaded_table_size_cb,
+	RZ_NULLABLE BindOpcodesBindCb do_bind_cb,
+	RZ_NONNULL BindOpcodesThreadedApplyCb threaded_apply_cb,
+	void *user);
 
 #endif

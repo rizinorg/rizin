@@ -7,7 +7,7 @@
 #include "core_private.h"
 #include "core_private_base.h"
 
-static bool core_file_do_load_for_debug(RzCore *r, ut64 loadaddr, const char *filenameuri);
+static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri);
 static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
 static RzCoreFile *core_file_new(RzCore *core, int fd) {
@@ -302,7 +302,8 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	int bits = core->rasm->bits;
 	char *bin_abspath = rz_file_abspath(binpath);
 	char *escaped_path = rz_str_arg_escape(bin_abspath);
-	char *newfile = rz_str_newf("dbg://%s %s", escaped_path, args);
+	char *newfile = RZ_STR_ISEMPTY(args) ? rz_str_newf("dbg://%s", escaped_path)
+					     : rz_str_newf("dbg://%s %s", escaped_path, args);
 	desc->uri = newfile;
 	desc->referer = NULL;
 	rz_config_set_i(core->config, "asm.bits", bits);
@@ -422,8 +423,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		rz_core_file_set_by_file(core, file);
 		ofile = NULL;
 		odesc = NULL;
-		//	core->file = file;
-		RZ_LOG_ERROR("File %s reopened in %s mode\n", path,
+		RZ_LOG_WARN("File %s reopened in %s mode\n", path,
 			(perm & RZ_PERM_W) ? "read-write" : "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
@@ -818,18 +818,23 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	return ret;
 }
 
-RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
-	if (!core || !core->bin || !core->bin->cur) {
-		return 0;
-	}
+/**
+ * \brief      Rebase the current RzBinFile and its RzBinObject
+ *
+ * \param[in]  RzCore  The RzCore structure to use
+ * \param[in]  baddr   The new base address
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_core_bin_rebase(RZ_NONNULL RzCore *core, ut64 baddr) {
+	rz_return_val_if_fail(core && core->bin && core->bin->cur, false);
 	if (baddr == UT64_MAX) {
-		return 0;
+		return false;
 	}
 	RzBinFile *bf = core->bin->cur;
 	bf->o->opts.baseaddr = baddr;
 	bf->o->opts.loadaddr = baddr;
-	rz_bin_object_set_items(bf, bf->o);
-	return 1;
+	return rz_bin_object_process_plugin_data(bf, bf->o);
 }
 
 static void load_scripts_for(RzCore *core, const char *name) {
@@ -1024,7 +1029,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 					rz_config_set_i(r->config, "io.va", 0);
 				}
 				// workaround to map correctly malloc:// and raw binaries
-				if (rz_io_desc_is_dbg(desc) || (!obj->maps || !va)) {
+				if (rz_io_desc_is_dbg(desc) || (rz_list_empty(obj->maps) || !va)) {
 					rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 				}
 				RzBinInfo *info = obj->info;

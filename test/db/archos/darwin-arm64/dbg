@@ -58,7 +58,7 @@ FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
 CMDS=<<EOF
 fl@F:maps~hello~[1-]
-?e --
+echo --
 dm*~hello~[0-2]
 EOF
 EXPECT=<<EOF
@@ -82,7 +82,7 @@ dcu main
 5 ds
 dr pc
 dr x8
-?e --
+echo --
 ds
 dr pc
 dr x8
@@ -111,11 +111,11 @@ db @ main + 20
 db @ main + 24
 dc
 dr pc
-?e --
+echo --
 dc
 dr pc
 dr x8
-?e --
+echo --
 dc
 dr pc
 dr x8
@@ -170,11 +170,11 @@ db @ main + 20
 db @ main + 24
 dc
 dr pc
-?e --
+echo --
 dc
 dr pc
 dr x8
-?e --
+echo --
 dc
 dr pc
 dr x8
