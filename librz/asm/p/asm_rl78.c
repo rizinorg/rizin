@@ -17,12 +17,14 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
         size_t bytes_read;
         rl78_dis(&instr, &bytes_read, buf, len);
 
-        RzStrBuf instr_strbuf;
-        if (rl78_instr_to_string(&instr_strbuf, &instr)) {
-                rz_strbuf_copy(&op->buf_asm, &instr_strbuf);
+        RzStrBuf *instr_strbuf = rz_strbuf_new("");
+        if (rl78_instr_to_string(instr_strbuf, &instr)) {
+                rz_strbuf_copy(&op->buf_asm, instr_strbuf);
         } else {
                 rz_strbuf_set(&op->buf_asm, "(invalid)");
         }
+
+        rz_strbuf_free(instr_strbuf);
 
         return bytes_read;
 }

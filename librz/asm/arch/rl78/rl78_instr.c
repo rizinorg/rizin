@@ -107,15 +107,15 @@ bool rl78_instr_to_string(RzStrBuf RZ_OUT *dst, const RL78Instr RZ_BORROW *instr
                               false);
 
         if (has_op0 && has_op1) {
-                rz_strf(dst->buf, "%s %s, %s",
+                rz_strbuf_appendf(dst, "%s %s, %s",
                          RL78_STRINGS_OPERATIONS[instr->operation],
                          buf_op0.buf, buf_op1.buf);
         } else if (has_op0) {
-                rz_strf(dst->buf, "%s %s",
+                rz_strbuf_appendf(dst, "%s %s",
                          RL78_STRINGS_OPERATIONS[instr->operation],
                          buf_op0.buf);
         } else {
-                rz_strf(dst->buf, "%s",
+                rz_strbuf_appendf(dst, "%s",
                          RL78_STRINGS_OPERATIONS[instr->operation]);
         }
 

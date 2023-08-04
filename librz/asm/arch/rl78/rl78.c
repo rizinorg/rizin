@@ -35,7 +35,6 @@ bool rl78_dis(RL78Instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
                 byte = buf[next_byte_p++];
         }
 
-        // special cases
         if (next_byte_p + 1 < buf_len) {
                 // MULHU, MULH...
                 if (byte == 0xCE && buf[next_byte_p] == 0xFB) {
