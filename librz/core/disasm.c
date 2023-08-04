@@ -11,6 +11,7 @@
 #include "core_private.h"
 #include "rz_analysis.h"
 #include <rz_util/rz_strbuf.h>
+#include <librz/asm/arch/tricore/tricore.h>
 
 #define HASRETRY      1
 #define HAVE_LOCALS   1
@@ -331,11 +332,12 @@ static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx);
 static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refaddr);
-static char *ds_sub_jumps(RzDisasmState *ds, char *str);
+static void ds_opstr_sub_jumps(RzDisasmState *ds);
 static void ds_start_line_highlight(RzDisasmState *ds);
 static void ds_end_line_highlight(RzDisasmState *ds);
 static bool line_highlighted(RzDisasmState *ds);
 static int ds_print_shortcut(RzDisasmState *ds, ut64 addr, int pos);
+static void ds_asmop_fixup(RzDisasmState *ds);
 
 #define theme_printf(kwd, fmt, ...) rz_cons_printf("%s" fmt "%s", COLOR(ds, kwd), __VA_ARGS__, COLOR_RESET(ds))
 #define theme_print(kwd, x) \
@@ -885,9 +887,29 @@ static void __replaceImports(RzDisasmState *ds) {
 	}
 }
 
+static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
+	bool colorize_asm = print_color && ds->show_color && ds->colorop;
+	if (!colorize_asm)
+		return;
+
+	RzCore *core = ds->core;
+	core->print->colorize_opts.reset_bg = line_highlighted(ds);
+	char *source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
+	RzStrBuf *bw_asm = rz_strbuf_new(source);
+	RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
+	free(param);
+	rz_strbuf_free(bw_asm);
+	if (!colored_asm) {
+		return;
+	}
+	source = rz_strbuf_drain(colored_asm);
+	free(ds->opstr);
+	ds->opstr = source;
+}
+
 static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	RzCore *core = ds->core;
-	bool colorize_asm = print_color && ds->show_color && ds->colorop;
 
 	if (ds->use_esil) {
 		free(ds->opstr);
@@ -980,7 +1002,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		}
 	}
 
-	ds->opstr = ds_sub_jumps(ds, ds->opstr);
+	ds_opstr_sub_jumps(ds);
 	if (ds->immtrim) {
 		char *res = rz_parse_immtrim(ds->opstr);
 		if (res) {
@@ -1015,25 +1037,10 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 				core->parser->subrel_addr = sub_address;
 			}
 		}
-		char *source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
-		if (colorize_asm) {
-			core->print->colorize_opts.reset_bg = line_highlighted(ds);
-			RzStrBuf *bw_asm = rz_strbuf_new(source);
-			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
-			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
-			free(param);
-			rz_strbuf_free(bw_asm);
-			if (!colored_asm) {
-				return;
-			}
-			source = rz_strbuf_drain(colored_asm);
-		} else {
-			source = strdup(source);
-		}
 
-		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, source,
+		ds_opstr_try_colorize(ds, print_color);
+		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, ds->opstr,
 			ds->str, sizeof(ds->str), core->print->big_endian);
-		RZ_FREE(source);
 		// subvar depends on filter
 		if (ds->subvar) {
 			// HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
@@ -1058,24 +1065,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		free(ds->opstr);
 		ds->opstr = strdup(ds->str);
 	} else {
-		char *source;
-		if (colorize_asm) {
-			core->print->colorize_opts.reset_bg = line_highlighted(ds);
-			RzStrBuf *bw_asm = rz_strbuf_new(ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop));
-			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
-			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
-			free(param);
-			rz_strbuf_free(bw_asm);
-			if (!colored_asm) {
-				return;
-			}
-			source = rz_strbuf_drain(colored_asm);
-		} else {
-			source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
-		}
-
-		free(ds->opstr);
-		ds->opstr = source;
+		ds_opstr_try_colorize(ds, print_color);
 	}
 	rz_str_trim_char(ds->opstr, '\n');
 	// updates ds->opstr
@@ -2378,6 +2368,7 @@ static int ds_disassemble(RzDisasmState *ds, ut8 *buf, int len) {
 	}
 	rz_asm_op_fini(&ds->asmop);
 	ret = rz_asm_disassemble(core->rasm, &ds->asmop, buf, len);
+	ds_asmop_fixup(ds);
 	if (ds->asmop.size < 1) {
 		ds->asmop.size = 1;
 	}
@@ -4853,32 +4844,33 @@ static void ds_print_as_string(RzDisasmState *ds) {
 }
 
 static char *_find_next_number(char *op) {
+	if (!op) {
+		return NULL;
+	}
 	char *p = op;
-	if (p) {
-		while (*p) {
-			// look for start of next separator or ANSI sequence
-			while (*p && !IS_SEPARATOR(*p) && *p != 0x1b) {
+	while (*p) {
+		// look for start of next separator or ANSI sequence
+		while (*p && !IS_SEPARATOR(*p) && *p != 0x1b) {
+			p++;
+		}
+		if (*p == 0x1b) {
+			// skip to end of ANSI sequence (lower or uppercase char)
+			while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) {
 				p++;
 			}
-			if (*p == 0x1b) {
-				// skip to end of ANSI sequence (lower or uppercase char)
-				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) {
-					p++;
-				}
-				if (*p) {
-					p++;
-				}
+			if (*p) {
+				p++;
 			}
-			if (IS_SEPARATOR(*p)) {
-				// skip to end of separator
-				while (*p && IS_SEPARATOR(*p)) {
-					p++;
-				}
+		}
+		if (IS_SEPARATOR(*p)) {
+			// skip to end of separator
+			while (*p && IS_SEPARATOR(*p)) {
+				p++;
 			}
-			if (IS_DIGIT(*p)) {
-				// we found the start of the next number
-				return p;
-			}
+		}
+		if (IS_DIGIT(*p)) {
+			// we found the start of the next number
+			return p;
 		}
 	}
 	return NULL;
@@ -4915,14 +4907,56 @@ static bool set_jump_realname(RzDisasmState *ds, ut64 addr, const char **kw, con
 	return true;
 }
 
+/**
+ * \brief Remove '#' from the asm string
+ * \param op RzAsmOp instance
+ */
+void rz_asm_op_tricore_fixup(RzAsmOp *op, RzAsmTriCoreState *state) {
+	if (!op->asm_toks) {
+		return;
+	}
+	char *asmstr = rz_asm_op_get_asm(op);
+
+	RzAsmToken *token = NULL;
+	rz_vector_foreach(op->asm_toks->tokens, token) {
+		char *p = asmstr + token->start;
+		if (token->type != RZ_ASM_TOKEN_SEPARATOR ||
+			rz_str_cmp("#", p, token->len) != 0) {
+			continue;
+		}
+
+		for (size_t i = 0; i < token->len; i++) {
+			*p = -1;
+		}
+	}
+	rz_str_remove_char(asmstr, -1);
+	rz_asm_op_set_asm(op, asmstr);
+	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, state->token_patterns);
+}
+
+static void ds_asmop_fixup(RzDisasmState *ds) {
+	int optype = ds->analysis_op.type & 0xFFFF;
+	switch (optype) {
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+		break;
+	default:
+		return;
+	}
+	if (rz_str_cmp(ds->core->rasm->cur->arch, "tricore", -1) == 0) {
+		rz_asm_op_tricore_fixup(&ds->asmop, ds->core->rasm->plugin_data);
+	}
+}
+
 // TODO: this should be moved into rz_parse
-static char *ds_sub_jumps(RzDisasmState *ds, char *str) {
+static void ds_opstr_sub_jumps(RzDisasmState *ds) {
 	RzAnalysis *analysis = ds->core->analysis;
 	RzFlag *f = ds->core->flags;
 	const char *name = NULL;
 	const char *kw = "";
 	if (!ds->subjmp || !analysis) {
-		return str;
+		return;
 	}
 	int optype = ds->analysis_op.type & 0xFFFF;
 	switch (optype) {
@@ -4931,10 +4965,10 @@ static char *ds_sub_jumps(RzDisasmState *ds, char *str) {
 	case RZ_ANALYSIS_OP_TYPE_CALL:
 		break;
 	default:
-		return str;
+		return;
 	}
-	ut64 addr = ds->analysis_op.jump;
 
+	ut64 addr = ds->analysis_op.jump;
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, addr);
 	if (fcn) {
 		if (!set_jump_realname(ds, addr, &kw, &name)) {
@@ -4973,7 +5007,7 @@ static char *ds_sub_jumps(RzDisasmState *ds, char *str) {
 	if (name) {
 		char *nptr, *ptr;
 		ut64 numval;
-		ptr = str;
+		ptr = ds->opstr;
 		while ((nptr = _find_next_number(ptr))) {
 			ptr = nptr;
 			numval = rz_num_get(NULL, ptr);
@@ -4985,7 +5019,7 @@ static char *ds_sub_jumps(RzDisasmState *ds, char *str) {
 				if (kwname) {
 					char *numstr = rz_str_ndup(ptr, nptr - ptr);
 					if (numstr) {
-						str = rz_str_replace(str, numstr, kwname, 0);
+						ds->opstr = rz_str_replace(ds->opstr, numstr, kwname, 0);
 						free(numstr);
 					}
 					free(kwname);
@@ -4994,7 +5028,6 @@ static char *ds_sub_jumps(RzDisasmState *ds, char *str) {
 			}
 		}
 	}
-	return str;
 }
 
 static bool line_highlighted(RzDisasmState *ds) {

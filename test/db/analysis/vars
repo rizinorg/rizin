@@ -1053,7 +1053,7 @@ int feraiseexcept(int excepts);
 var Ppvoidfn newfuns @ a12
 var size_t inc @ d15
 void dbg._Atrealloc();
-            ; CALL XREF from sym.atexit @ +0x30
+            ; CALL XREF from dbg.atexit @ 0x80001a4c
             ; CALL XREF from dbg._Atexit @ 0x800033b8
             ;-- _Atrealloc:
 / int dbg._Atrealloc();
@@ -1086,13 +1086,13 @@ EXPECT=<<EOF
 |           0x800004de      st.a  [a14]#-0x14, a5
 |           0x800004e2      st.a  [a14]#-0x18, a6
 |           0x800004e6      ld.w  d15, [a14]#-0x14
-|       ,=< 0x800004ea      jz    d15, #0x800004f2
+|       ,=< 0x800004ea      jz    d15, 0x800004f2
 |       |   0x800004ec      ld.w  d15, [a14]#-0x18
-|      ,==< 0x800004f0      jnz   d15, #0x800004f6
+|      ,==< 0x800004f0      jnz   d15, 0x800004f6
 |      |`-> 0x800004f2      mov   d15, #0
-|      |,=< 0x800004f4      j     #0x8000054c
+|      |,=< 0x800004f4      j     0x8000054c
 |      `--> 0x800004f6      mov   d4, #0x14
-|       |   0x800004fa      call  #0x80000afc
+|       |   0x800004fa      call  dbg.malloc
 |       |   0x800004fe      mov.aa a15, a2
 |       |   0x80000500      mov.d d15, a15
 |       |   0x80000502      ld.a  a15, [a14]#-0x18
@@ -1109,11 +1109,11 @@ EXPECT=<<EOF
 |       |   0x80000520      mov   d4, #5
 |       |   0x80000522      ld.a  a5, [a14]#-8
 |       |   0x80000526      mov.aa a4, a15
-|       |   0x80000528      call  #0x800011e0
+|       |   0x80000528      call  dbg.strncpy
 |       |   0x8000052c      ld.a  a15, [a14]#-0x18
 |       |   0x80000530      ld.a  a15, [a15]#0
 |       |   0x80000532      ld.d  e4, [a14]#-0x10
-|       |   0x80000536      call  #0x80000728
+|       |   0x80000536      call  dbg.__truncdfsf2
 |       |   0x8000053a      mov   d15, d2
 |       |   0x8000053c      st.w  [a15]#0xc, d15
 |       |   0x8000053e      ld.a  a15, [a14]#-0x18
@@ -1246,7 +1246,7 @@ int feraiseexcept(int excepts);
 var Ppvoidfn newfuns @ a12
 var size_t inc @ d15
 void dbg._Atrealloc();
-            ; CALL XREF from sym.atexit @ +0x30
+            ; CALL XREF from dbg.atexit @ 0x80001a4c
             ; CALL XREF from dbg._Atexit @ 0x800033b8
             ;-- _Atrealloc:
 / int dbg._Atrealloc();

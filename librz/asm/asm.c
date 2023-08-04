@@ -1451,6 +1451,24 @@ static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
 	return 0;
 }
 
+static const char *token_str(RzAsmToken *t) {
+	static const char *token_strings[] = {
+		[RZ_ASM_TOKEN_MNEMONIC] = "MNEMONIC", ///< Asm mnemonics like: mov, push, lea...
+		[RZ_ASM_TOKEN_OPERATOR] = "OPERATOR", ///< Arithmetic operators: +,-,<< etc.
+		[RZ_ASM_TOKEN_NUMBER] = "NUMBER", ///< Numbers
+		[RZ_ASM_TOKEN_REGISTER] = "REGISTER", ///< Registers
+		[RZ_ASM_TOKEN_SEPARATOR] = "SEPARATOR", ///< Brackets, comma etc.
+		[RZ_ASM_TOKEN_META] = "META", ///< Meta information (e.g Hexagon packet prefix, ARM & Hexagon number prefix).
+	};
+	if (!t) {
+		return NULL;
+	}
+	if (t->type < RZ_ASM_TOKEN_MNEMONIC || t->type > RZ_ASM_TOKEN_META) {
+		return "UNKNOWN";
+	}
+	return token_strings[t->type];
+}
+
 /**
  * \brief Checks a token string if any token in it overlaps with another or a part of the asm string is not covered.
  * It prints a warning if this is the case.
@@ -1484,8 +1502,8 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 			error = true;
 		} else {
 			RZ_LOG_WARN("i = %" PFMT32d ", Part of asm string is not covered by a token."
-				    " Empty range between token %" PFMT32d ":%" PFMT32d " and token %" PFMT32d ":%" PFMT32d "\n",
-				i, pi, pj, ci, cj);
+				    " Empty range between token[%s] %" PFMT32d ":%" PFMT32d " and token[%s] %" PFMT32d ":%" PFMT32d "\n",
+				i, token_str(prev), pi, pj, token_str(cur), ci, cj);
 			error = true;
 		}
 		i = cur->start + cur->len;
