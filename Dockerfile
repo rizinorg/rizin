@@ -30,7 +30,7 @@
 # $ rizin -d /bin/true
 #
 
-FROM debian:10
+FROM debian:12
 
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
@@ -85,7 +85,7 @@ RUN git clone --recurse-submodules -b "$RZ_GHIDRA_VERSION" https://github.com/ri
 WORKDIR /tmp/rz-ghidra
 RUN cmake -DCMAKE_PREFIX_PATH=/tmp/rizin-install/usr -DCMAKE_INSTALL_PREFIX=/usr -B build && cmake --build build && DESTDIR=/tmp/rizin-install cmake --build build --target install
 
-FROM debian:10
+FROM debian:12
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
 ENV RZ_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
 ENV RZ_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
