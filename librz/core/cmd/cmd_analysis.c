@@ -5544,7 +5544,7 @@ static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, 
 	rz_cons_newline();
 }
 
-static void core_analysis_bytes_il(RzCore *core, const ut8 *buf, int len, int nops, bool pretty) {
+RZ_API void rz_core_analysis_bytes_il(RzCore *core, const ut8 *buf, int len, int nops, bool pretty) {
 	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;
 	const char *il_stmt = NULL;
 	const char delim = pretty ? '\n' : ' ';
@@ -5591,7 +5591,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_il_handler(RzCore *core, int argc, const cha
 		}
 	}
 
-	core_analysis_bytes_il(core, core->block, core->blocksize, count, false);
+	rz_core_analysis_bytes_il(core, core->block, core->blocksize, count, false);
 
 	if (obs != core->blocksize) {
 		rz_core_block_size(core, obs);
@@ -5615,7 +5615,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_il_pretty_handler(RzCore *core, int argc, co
 		}
 	}
 
-	core_analysis_bytes_il(core, core->block, core->blocksize, count, true);
+	rz_core_analysis_bytes_il(core, core->block, core->blocksize, count, true);
 
 	if (obs != core->blocksize) {
 		rz_core_block_size(core, obs);

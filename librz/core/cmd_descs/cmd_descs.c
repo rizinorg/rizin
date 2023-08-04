@@ -13353,6 +13353,14 @@ static const RzCmdDescHelp print_instructions_function_help = {
 	.args = print_instructions_function_args,
 };
 
+static const RzCmdDescArg print_function_rzil_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_function_rzil_help = {
+	.summary = "Print the RzIL of the function",
+	.args = print_function_rzil_args,
+};
+
 static const RzCmdDescHelp pp_help = {
 	.summary = "Print patterns",
 };
@@ -21207,6 +21215,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(pI_cd);
 	RzCmdDesc *print_instructions_function_cd = rz_cmd_desc_argv_new(core->rcmd, pI_cd, "pIf", rz_print_instructions_function_handler, &print_instructions_function_help);
 	rz_warn_if_fail(print_instructions_function_cd);
+
+	RzCmdDesc *print_function_rzil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "plf", rz_print_function_rzil_handler, &print_function_rzil_help);
+	rz_warn_if_fail(print_function_rzil_cd);
 
 	RzCmdDesc *pp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pp", NULL, NULL, &pp_help);
 	rz_warn_if_fail(pp_cd);
