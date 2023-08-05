@@ -591,6 +591,10 @@ commands:
         summary: Print all instructions at the current function
         cname: print_instructions_function
         args: []
+  - name: plf
+    summary: Print the RzIL of the function
+    cname: print_function_rzil
+    args: []
   - name: pp
     summary: Print patterns
     subcommands:
