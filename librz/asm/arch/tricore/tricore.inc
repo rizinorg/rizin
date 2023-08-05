@@ -53,3 +53,26 @@ static inline st32 tricore_get_op_imm(cs_insn *insn, int idx) {
 static inline ut8 tricore_op_count(cs_insn *insn) {
 	return insn->detail->tricore.op_count;
 }
+
+static inline csh tricore_setup_cs_handle(const char *cpu, const char *features) {
+	static csh handle = 0;
+	static cs_mode omode = CS_MODE_TRICORE_162;
+
+	cs_mode mode = tricore_cpu_to_cs_mode(cpu);
+	if (mode != omode) {
+		cs_close(&handle);
+		handle = 0;
+		omode = mode;
+	}
+
+	if (handle == 0) {
+		cs_err err = cs_open(CS_ARCH_TRICORE, mode, &handle);
+		if (err) {
+			RZ_LOG_ERROR("Failed on cs_open() with error returned: %u\n", err);
+			return 0;
+		}
+		cs_option(handle, CS_OPT_DETAIL,
+			RZ_STR_ISNOTEMPTY(features) || features == NULL ? CS_OPT_ON : CS_OPT_OFF);
+	}
+	return handle;
+}

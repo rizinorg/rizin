@@ -33,32 +33,22 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		return -1;
 	}
 
-	csh handle;
-	cs_insn *insn;
-	cs_mode mode = tricore_cpu_to_cs_mode(a->cpu);
-	cs_err err = cs_open(CS_ARCH_TRICORE, mode, &handle);
-	if (err) {
-		RZ_LOG_ERROR("Failed on cs_open() with error returned: %u\n", err);
+	csh handle = tricore_setup_cs_handle(a->cpu, a->features);
+	if (handle == 0) {
 		return -1;
 	}
-	cs_option(handle, CS_OPT_DETAIL, RZ_STR_ISNOTEMPTY(a->features) ? CS_OPT_ON : CS_OPT_OFF);
 
+	cs_insn *insn = NULL;
 	unsigned count = cs_disasm(handle, buf, len, a->pc, 1, &insn);
 	if (count <= 0) {
-		cs_close(&handle);
 		return -1;
 	}
 
+	op->size = insn->size;
 	char *asmstr = rz_str_newf("%s%s%s", insn->mnemonic,
 		RZ_STR_ISNOTEMPTY(insn->op_str) ? " " : "", insn->op_str);
 	rz_asm_op_set_asm(op, asmstr);
-	op->size = insn->size;
-
-	RzAsmTriCoreState *state = get_state();
-	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, state->token_patterns);
-
 	free(asmstr);
-	cs_close(&handle);
 	cs_free(insn, count);
 	return op->size;
 }

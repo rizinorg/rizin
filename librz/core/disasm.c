@@ -4912,24 +4912,8 @@ static bool set_jump_realname(RzDisasmState *ds, ut64 addr, const char **kw, con
  * \param op RzAsmOp instance
  */
 void rz_asm_op_tricore_fixup(RzAsmOp *op, RzAsmTriCoreState *state) {
-	if (!op->asm_toks) {
-		return;
-	}
 	char *asmstr = rz_asm_op_get_asm(op);
-
-	RzAsmToken *token = NULL;
-	rz_vector_foreach(op->asm_toks->tokens, token) {
-		char *p = asmstr + token->start;
-		if (token->type != RZ_ASM_TOKEN_SEPARATOR ||
-			rz_str_cmp("#", p, token->len) != 0) {
-			continue;
-		}
-
-		for (size_t i = 0; i < token->len; i++) {
-			*p = -1;
-		}
-	}
-	rz_str_remove_char(asmstr, -1);
+	rz_str_remove_char(asmstr, '#');
 	rz_asm_op_set_asm(op, asmstr);
 	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, state->token_patterns);
 }

@@ -96,24 +96,13 @@ rz_analysis_tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *da
 		return -1;
 	}
 
-	static csh handle = 0;
-	static cs_mode omode = CS_MODE_TRICORE_162;
-	cs_insn *insn;
-	cs_mode mode = tricore_cpu_to_cs_mode(a->cpu);
-	if (mode != omode) {
-		cs_close(&handle);
-		handle = 0;
-		omode = mode;
-	}
-
-	cs_err err = cs_open(CS_ARCH_TRICORE, mode, &handle);
-	if (err) {
-		RZ_LOG_ERROR("Failed on cs_open() with error returned: %u\n", err);
+	csh handle = tricore_setup_cs_handle(a->cpu, NULL);
+	if (handle == 0) {
 		return -1;
 	}
-	cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 
 	op->size = 2;
+	cs_insn *insn = NULL;
 	ut32 count = cs_disasm(handle, (const ut8 *)data, len, addr, 1, &insn);
 	if (count <= 0) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
