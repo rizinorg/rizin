@@ -5545,17 +5545,17 @@ static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, 
 }
 
 /**
- * \brief Parse and print \p len bytes and \p nops
- *      instructions RzIL of data in \p buf, restricted by
- *      \p len and \p nops at the same time
+ * \brief Parse and print \p len bytes and \p num_ops
+ *      RzIL instructions of data in \p buf, restricted by
+ *      \p len and \p num_ops at the same time
  *
  * \param core RzCore
- * \param buf Store the source to be parsed and printed
- * \param len Maximum length read from \p buf
- * \param nops Maximum number of instruction, set 0 to disable this
+ * \param buf Buffer holding the instruction bytes.
+ * \param len Maximum length read from \p buf in bytes.
+ * \param num_ops Maximum number of instruction, set to 0 to disable it (only use \p len).
  * \param pretty Pretty-printing
  */
-RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops, bool pretty) {
+RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, ut32 num_ops, bool pretty) {
 	rz_return_if_fail(core && buf);
 	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;
 	const char *il_stmt = NULL;
@@ -5563,7 +5563,7 @@ RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 	RzAnalysisOp op;
 	RzStrBuf sb;
 
-	for (size_t i = 0, idx = 0; idx < len && (!nops || (nops && i < nops)); i++) {
+	for (size_t i = 0, idx = 0; idx < len && (!num_ops || (num_ops && i < num_ops)); i++) {
 		ut64 addr = core->offset + idx;
 
 		rz_analysis_op_init(&op);
