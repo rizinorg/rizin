@@ -3968,7 +3968,6 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const char **argv) {
-
 	ut64 oldoff = core->offset;
 	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
 	if (rz_list_empty(list)) {
