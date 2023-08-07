@@ -1863,6 +1863,8 @@ RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_print_instructions_handler(RzCore *core, int argc, const char **argv);
 // "pIf"
 RZ_IPI RzCmdStatus rz_print_instructions_function_handler(RzCore *core, int argc, const char **argv);
+// "plf"
+RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const char **argv);
 // "pp0"
 RZ_IPI RzCmdStatus rz_print_pattern0_handler(RzCore *core, int argc, const char **argv);
 // "pp1"

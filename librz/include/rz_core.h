@@ -495,6 +495,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API bool rz_core_analysis_objc_refs(RzCore *core, bool auto_analysis);
 RZ_API void rz_core_analysis_objc_stubs(RzCore *core);
+RZ_API void rz_core_analysis_cc_init_by_path(RzCore *core, RZ_NULLABLE const char *path, RZ_NULLABLE const char *homepath);
 RZ_API void rz_core_analysis_cc_init(RzCore *core);
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 RZ_API RZ_OWN char *rz_core_types_as_c(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, bool multiline);
@@ -1286,6 +1287,8 @@ RZ_API ut64 rz_core_analysis_var_addr(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnal
 
 RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NONNULL RzBinSymbol *symbol, bool demangle);
 RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names);
+
+RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, ut32 num_ops, bool pretty);
 
 #endif
 

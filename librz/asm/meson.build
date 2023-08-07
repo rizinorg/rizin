@@ -301,7 +301,8 @@ rz_asm_inc = [
     'arch/cr16',
     'arch/8051',
     'arch/v810',
-    'arch/or1k'
+    'arch/or1k',
+    'arch/tricore',
   )
 ]
 

@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_core.h>
+#include "test_config.h"
 #include "minunit.h"
 
 static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
@@ -290,6 +291,7 @@ bool test_rz_analysis_function_var_expr_for_reg_access_at() {
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 64, NULL);
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	fcn->bp_off = 8;
@@ -375,7 +377,7 @@ bool test_rz_analysis_var_is_arg() {
 	RzAnalysis *analysis = core->analysis;
 	rz_config_set(core->config, "analysis.arch", "x86");
 	rz_analysis_set_bits(core->analysis, 64);
-	rz_core_analysis_cc_init(core);
+	rz_core_analysis_cc_init_by_path(core, TEST_BUILD_TYPES_DIR, NULL);
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	assert_sane(core->analysis);

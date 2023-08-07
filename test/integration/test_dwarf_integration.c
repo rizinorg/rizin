@@ -5,6 +5,7 @@
 #include <rz_bin.h>
 #include <rz_type.h>
 #include <rz_util/rz_path.h>
+#include "test_config.h"
 #include "test_types.h"
 #include "../unit/minunit.h"
 
@@ -144,9 +145,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
-	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
-	free(types_dir);
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
 
 	RzBinOptions opt = { 0 };
 	rz_bin_options_init(&opt, 0, 0, 0, false);
