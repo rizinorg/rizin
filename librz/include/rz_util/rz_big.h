@@ -1,7 +1,7 @@
 #ifndef RZ_BIG_H
 #define RZ_BIG_H
 
-#include "../rz_types.h"
+#include "<rz_types.h>"
 
 #ifdef __cplusplus
 extern "C" {

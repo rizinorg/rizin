@@ -2,12 +2,31 @@
 #define RZ_NUM_H
 
 #include <rz_list.h>
+#include <rz_big.h>
+#include <rz_bitvector.h>
 
 #define RZ_NUMCALC_STRSZ 1024
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+	RZ_NUM_KIND_SIMPLE, //< simple numbers, fit into ut64
+	RZ_NUM_KIND_BIG, //< big numbers, using RzNumBig
+	RZ_NUM_KIND_BITVECTOR, //< bit vectors, using rz_bitvector
+	RZ_NUM_KIND_FLOAT, //< real numbers, using RzFloat with bitvector underneath
+} RzNumKind;
+
+typedef struct {
+	union {
+		ut64 n;
+		RzNumBig b;
+		RzBitvector bv;
+		RzFloat f;
+	} val;
+	RzNumKind kind;
+} RzNumValue;
 
 typedef struct {
 	double d;
