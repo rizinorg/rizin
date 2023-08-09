@@ -3600,7 +3600,8 @@ RZ_IPI RzCmdStatus rz_print_hexdump_oct_handler(RzCore *core, int argc, const ch
 
 #define CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(name, type) \
 	RZ_IPI RzCmdStatus name(RzCore *core, int argc, const char **argv) { \
-		char *code = rz_lang_byte_array(core->block, core->blocksize, type); \
+        const int size = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize; \
+		char *code = rz_lang_byte_array(core->block, size, core->blocksize_max, type); \
 		if (RZ_STR_ISNOTEMPTY(code)) { \
 			rz_cons_println(code); \
 		} \
@@ -3612,7 +3613,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_oct_handler(RzCore *core, int argc, const ch
 #define CMD_PRINT_BYTE_ARRAY_HANDLER_ENDIAN(name, type) \
 	RZ_IPI RzCmdStatus name(RzCore *core, int argc, const char **argv) { \
 		bool big_endian = rz_config_get_b(core->config, "cfg.bigendian"); \
-		char *code = rz_lang_byte_array(core->block, core->blocksize, big_endian ? type##_BE : type##_LE); \
+		char *code = rz_lang_byte_array(core->block, core->blocksize, core->blocksize, big_endian ? type##_BE : type##_LE); \
 		if (RZ_STR_ISNOTEMPTY(code)) { \
 			rz_cons_println(code); \
 		} \
@@ -3620,6 +3621,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_oct_handler(RzCore *core, int argc, const ch
 		free(code); \
 		return result; \
 	}
+
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_rizin_handler, RZ_LANG_BYTE_ARRAY_RIZIN);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_asm_handler, RZ_LANG_BYTE_ARRAY_ASM);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_bash_handler, RZ_LANG_BYTE_ARRAY_BASH);
@@ -3642,7 +3644,8 @@ CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_yara_handler, RZ_LAN
 
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_with_inst_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_block_read(core);
-	char *code = rz_core_print_bytes_with_inst(core, core->block, core->offset, (int)core->blocksize);
+    const int size = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize; \
+	char *code = rz_core_print_bytes_with_inst(core, core->block, core->offset, size);
 	if (!code) {
 		return RZ_CMD_STATUS_ERROR;
 	}

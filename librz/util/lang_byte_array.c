@@ -223,10 +223,24 @@ static void lang_byte_array_yara(RzStrBuf *sb, const ut8 *buffer, size_t size) {
  *
  * \return On success returns a string, otherwise NULL
  */
-RZ_API RZ_OWN char *rz_lang_byte_array(RZ_NONNULL const ut8 *buffer, size_t size, RzLangByteArrayType type) {
+RZ_API RZ_OWN char *rz_lang_byte_array(RZ_NONNULL const ut8 *buffer, size_t size, const ut32 size_max, RzLangByteArrayType type) {
 	rz_return_val_if_fail(buffer, NULL);
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
+
+	if(size == 0) {
+		RZ_LOG_ERROR("Length may not be 0\n");
+		return rz_strbuf_drain_nofree(&sb);
+	}
+
+	if(size < 0) {
+		size *= -1;
+	}
+
+	if(size > size_max) {
+		RZ_LOG_ERROR("Length exceeds max size (%u)\n", size_max);
+		return rz_strbuf_drain_nofree(&sb);
+	}
 
 	if (size == 0) {
 		return rz_strbuf_drain_nofree(&sb);

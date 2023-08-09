@@ -536,12 +536,14 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			const ut8 *tmp = rz_buf_data(b, &tmpsz);
 			switch (*format) {
 			case 'c':
-				code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_C_CPP_BYTES);
+                // FIXME: This function now takes in a max length. Figure out, what length to path at this point
+                code = rz_lang_byte_array(tmp, tmpsz, tmpsz, RZ_LANG_BYTE_ARRAY_BASH);
 				printf("%s\n", code);
 				free(code);
 				break;
 			case 'j': // json
-				code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_JSON);
+                // FIXME: This function now takes in a max length. Figure out, what length to path at this point
+                code = rz_lang_byte_array(tmp, tmpsz, tmpsz, RZ_LANG_BYTE_ARRAY_JSON);
 				printf("%s\n", code);
 				free(code);
 				break;
@@ -562,7 +564,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				break;
 			case 'p': // PE
 				if (strlen(format) >= 2 && format[1] == 'y') { // Python
-					code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_PYTHON);
+                    // FIXME: Figure out, how to handle this properly...
+					code = rz_lang_byte_array(tmp, tmpsz, tmpsz, RZ_LANG_BYTE_ARRAY_PYTHON);
 					printf("%s\n", code);
 					free(code);
 				}
