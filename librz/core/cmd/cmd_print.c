@@ -3600,15 +3600,15 @@ RZ_IPI RzCmdStatus rz_print_hexdump_oct_handler(RzCore *core, int argc, const ch
 
 #define CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(name, type) \
 	RZ_IPI RzCmdStatus name(RzCore *core, int argc, const char **argv) { \
-        const int size = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize; \
-        if(size > core->blocksize_max) { \
-            RZ_LOG_ERROR("Size exceeds max size (%u)\n", core->blocksize_max); \
-            return RZ_CMD_STATUS_ERROR; \
-        } \
-        if(size <= 0) {\
-            RZ_LOG_ERROR("Size must be greater 0"); \
-            return RZ_CMD_STATUS_ERROR; \
-        }\
+		const int size = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize; \
+		if (size > core->blocksize_max) { \
+			RZ_LOG_ERROR("Size exceeds max size (%u)\n", core->blocksize_max); \
+			return RZ_CMD_STATUS_ERROR; \
+		} \
+		if (size <= 0) { \
+			RZ_LOG_ERROR("Size must be greater 0"); \
+			return RZ_CMD_STATUS_ERROR; \
+		} \
 		char *code = rz_lang_byte_array(core->block, size, type); \
 		if (RZ_STR_ISNOTEMPTY(code)) { \
 			rz_cons_println(code); \
@@ -3652,11 +3652,11 @@ CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_yara_handler, RZ_LAN
 
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_with_inst_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_block_read(core);
-    const int size = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
-    if(size <= 0) {
-        RZ_LOG_ERROR("Size must be greater 0\n");
-        return RZ_CMD_STATUS_ERROR;
-    }
+	const int size = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (size <= 0) {
+		RZ_LOG_ERROR("Size must be greater 0\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	char *code = rz_core_print_bytes_with_inst(core, core->block, core->offset, size);
 	if (!code) {
 		return RZ_CMD_STATUS_ERROR;

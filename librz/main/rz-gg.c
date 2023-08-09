@@ -536,12 +536,12 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			const ut8 *tmp = rz_buf_data(b, &tmpsz);
 			switch (*format) {
 			case 'c':
-                code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_BASH);
+				code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_BASH);
 				printf("%s\n", code);
 				free(code);
 				break;
 			case 'j': // json
-                code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_JSON);
+				code = rz_lang_byte_array(tmp, tmpsz, RZ_LANG_BYTE_ARRAY_JSON);
 				printf("%s\n", code);
 				free(code);
 				break;
