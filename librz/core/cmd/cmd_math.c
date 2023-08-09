@@ -166,10 +166,10 @@ RZ_IPI RzCmdStatus rz_set_active_tab_next_handler(RzCore *core, int argc, const 
 
 RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, const char **argv) {
 	const char *lowlimit = argv[1];
-	ut64 low = (ut32)rz_num_math(core->num, lowlimit);
+	ut64 low = rz_num_math(core->num, lowlimit);
 
 	const char *uplimit = argv[2];
-	ut64 high = (ut32)rz_num_math(core->num, uplimit);
+	ut64 high = rz_num_math(core->num, uplimit);
 
 	if (low >= high) {
 		RZ_LOG_ERROR("core : Invalid arguments passed to %s : low-limit shouldn't be more then high-limit", argv[0]);
