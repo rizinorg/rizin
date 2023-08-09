@@ -530,7 +530,6 @@ static bool le_load_header(rz_bin_le_obj_t *bin) {
 		!rz_buf_read_le32_offset(bin->buf, &off, &bin->header->instdemand) ||
 		!rz_buf_read_le32_offset(bin->buf, &off, &bin->header->heapsize) ||
 		!rz_buf_read_le32_offset(bin->buf, &off, &bin->header->stacksize)) {
-		free(bin->header);
 		return false;
 	}
 
