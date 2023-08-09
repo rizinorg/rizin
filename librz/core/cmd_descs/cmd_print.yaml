@@ -75,9 +75,9 @@ commands:
         entries:
           - text: "pch @! 64 @e:cfg.bigendian=true"
             comment: "Generate a C 32 bits array in big endian format, using 64 bytes"
-          - text: "pcp @! 1024"
+          - text: "pcp 1024"
             comment: "Generate a Python byte array of size 1024"
-          - text: "pcj @! 10"
+          - text: "pcj 10"
             comment: "Generate a JSON bytes array of size 10"
     subcommands:
       - name: pc
@@ -191,7 +191,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pc*
-        summary: Generate a rizin commands for writing the byte array..
+        summary: Generate a rizin commands for writing the byte array.
         cname: cmd_print_byte_array_rizin
         args:
           - name: N

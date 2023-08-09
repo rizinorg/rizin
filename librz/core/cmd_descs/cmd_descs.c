@@ -12557,8 +12557,8 @@ static const RzCmdDescDetailEntry cmd_print_byte_array_Useful_space_modifiers_de
 
 static const RzCmdDescDetailEntry cmd_print_byte_array_Example_space_of_space_usages_detail_entries[] = {
 	{ .text = "pch @! 64 @e:cfg.bigendian=true", .arg_str = NULL, .comment = "Generate a C 32 bits array in big endian format, using 64 bytes" },
-	{ .text = "pcp @! 1024", .arg_str = NULL, .comment = "Generate a Python byte array of size 1024" },
-	{ .text = "pcj @! 10", .arg_str = NULL, .comment = "Generate a JSON bytes array of size 10" },
+	{ .text = "pcp 1024", .arg_str = NULL, .comment = "Generate a Python byte array of size 1024" },
+	{ .text = "pcj 10", .arg_str = NULL, .comment = "Generate a JSON bytes array of size 10" },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_print_byte_array_details[] = {
@@ -12581,7 +12581,7 @@ static const RzCmdDescArg cmd_print_byte_array_c_cpp_bytes_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_c_cpp_bytes_help = {
-	.summary = "Generate a C/C++ byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a C/C++ byte array.",
 	.args = cmd_print_byte_array_c_cpp_bytes_args,
 };
 
@@ -12635,7 +12635,7 @@ static const RzCmdDescArg cmd_print_byte_array_with_inst_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_with_inst_help = {
-	.summary = "Generate a byte array in GAS assembly with instructions in comments. Provide an argument to only print <N> bytes",
+	.summary = "Generate a byte array in GAS assembly with instructions in comments.",
 	.args = cmd_print_byte_array_with_inst_args,
 };
 
@@ -12650,7 +12650,7 @@ static const RzCmdDescArg cmd_print_byte_array_bash_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_bash_help = {
-	.summary = "Generate a bash script with the byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a bash script with the byte array.",
 	.args = cmd_print_byte_array_bash_args,
 };
 
@@ -12665,7 +12665,7 @@ static const RzCmdDescArg cmd_print_byte_array_golang_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_golang_help = {
-	.summary = "Generate a Golang byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a Golang byte array.",
 	.args = cmd_print_byte_array_golang_args,
 };
 
@@ -12680,7 +12680,7 @@ static const RzCmdDescArg cmd_print_byte_array_java_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_java_help = {
-	.summary = "Generate a Java byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a Java byte array.",
 	.args = cmd_print_byte_array_java_args,
 };
 
@@ -12695,7 +12695,7 @@ static const RzCmdDescArg cmd_print_byte_array_json_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_json_help = {
-	.summary = "Generate a JSON byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a JSON byte array.",
 	.args = cmd_print_byte_array_json_args,
 };
 
@@ -12710,7 +12710,7 @@ static const RzCmdDescArg cmd_print_byte_array_kotlin_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_kotlin_help = {
-	.summary = "Generate a Kotlin byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a Kotlin byte array.",
 	.args = cmd_print_byte_array_kotlin_args,
 };
 
@@ -12725,7 +12725,7 @@ static const RzCmdDescArg cmd_print_byte_array_nodejs_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_nodejs_help = {
-	.summary = "Generate a NodeJS buffer. Provide an argument to only print <N> bytes",
+	.summary = "Generate a NodeJS buffer.",
 	.args = cmd_print_byte_array_nodejs_args,
 };
 
@@ -12740,7 +12740,7 @@ static const RzCmdDescArg cmd_print_byte_array_objc_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_objc_help = {
-	.summary = "Generate a Objective-C/C++ byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a Objective-C/C++ byte array.",
 	.args = cmd_print_byte_array_objc_args,
 };
 
@@ -12755,7 +12755,7 @@ static const RzCmdDescArg cmd_print_byte_array_python_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_python_help = {
-	.summary = "Generate a Python byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a Python byte array.",
 	.args = cmd_print_byte_array_python_args,
 };
 
@@ -12770,7 +12770,7 @@ static const RzCmdDescArg cmd_print_byte_array_rust_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_rust_help = {
-	.summary = "Generate a Rust byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a Rust byte array.",
 	.args = cmd_print_byte_array_rust_args,
 };
 
@@ -12785,7 +12785,7 @@ static const RzCmdDescArg cmd_print_byte_array_swift_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_swift_help = {
-	.summary = "Generate a Swift byte array. Provide an argument to only print <N> bytes",
+	.summary = "Generate a Swift byte array.",
 	.args = cmd_print_byte_array_swift_args,
 };
 
@@ -12800,7 +12800,7 @@ static const RzCmdDescArg cmd_print_byte_array_yara_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_yara_help = {
-	.summary = "Generate a Yara match pattern. Provide an argument to only print <N> bytes",
+	.summary = "Generate a Yara match pattern.",
 	.args = cmd_print_byte_array_yara_args,
 };
 
@@ -12815,7 +12815,7 @@ static const RzCmdDescArg cmd_print_byte_array_rizin_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_rizin_help = {
-	.summary = "Generate a rizin commands for writing the byte array. Provide an argument to only print <N> bytes.",
+	.summary = "Generate a rizin commands for writing the byte array.",
 	.args = cmd_print_byte_array_rizin_args,
 };
 
