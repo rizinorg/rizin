@@ -781,7 +781,8 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 	case TRICORE_INS_MSUBS_U:
 	case TRICORE_INS_MSUBM_U:
 	case TRICORE_INS_MSUBMS_U: {
-		op->type = RZ_ANALYSIS_OP_TYPE_SUB;		cs_tricore_op *op0 = tricore_get_op(insn, 0);
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		cs_tricore_op *op0 = tricore_get_op(insn, 0);
 		if (tricore_op_count(insn) >= 2) {
 			cs_tricore_op *op1 = tricore_get_op(insn, 1);
 			if (op1->type == TRICORE_OP_IMM) {
