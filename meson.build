@@ -402,6 +402,7 @@ foreach it : ccs
   message('IS_IOS: @0@'.format(is_ios))
 
   foreach item : [
+      ['arc4random', '#include <stdlib.h>', []],
       ['arc4random_uniform', '#include <stdlib.h>', []],
       ['explicit_bzero', '#include <string.h>', []],
       ['explicit_memset', '#include <string.h>', []],
