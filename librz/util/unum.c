@@ -40,8 +40,17 @@ static ut32 rz_rand32(ut32 mod) {
 }
 
 static ut64 rz_rand64(ut64 mod) {
-#if HAVE_ARC4RANDOM_UNIFORM
-	return (ut64)arc4random_uniform(mod) << 32 | (ut64)arc4random_uniform(mod);
+#if HAVE_ARC4RANDOM_UNIFORM && HAVE_ARC4RANDOM
+	if (mod <= UT32_MAX) {
+		return (ut64)arc4random_uniform(mod);
+	}
+	ut64 high_mod = mod >> 32;
+	ut64 value;
+	do {
+		value = (ut64)arc4random_uniform(high_mod) << 32 | (ut64)arc4random();
+	} while (value >= mod);
+
+	return value;
 #else
 	return ((ut64)rand() << 32 | (ut64)rand()) % mod;
 #endif
