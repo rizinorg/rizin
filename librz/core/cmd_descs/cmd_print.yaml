@@ -149,7 +149,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: pcn
-        summary: Generate a lenodeJS buffer.
+        summary: Generate a NodeJS buffer.
         cname: cmd_print_byte_array_nodejs
         args:
           - name: len
