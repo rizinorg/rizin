@@ -12725,7 +12725,7 @@ static const RzCmdDescArg cmd_print_byte_array_nodejs_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_nodejs_help = {
-	.summary = "Generate a lenodeJS buffer.",
+	.summary = "Generate a NodeJS buffer.",
 	.args = cmd_print_byte_array_nodejs_args,
 };
 
