@@ -565,6 +565,21 @@ static const RzCmdDescArg hex_of_assembly_args[2];
 static const RzCmdDescArg esil_of_assembly_args[2];
 static const RzCmdDescArg assembly_of_hex_args[2];
 static const RzCmdDescArg esil_of_hex_args[2];
+static const RzCmdDescArg cmd_print_byte_array_c_cpp_bytes_args[2];
+static const RzCmdDescArg cmd_print_byte_array_asm_args[2];
+static const RzCmdDescArg cmd_print_byte_array_with_inst_args[2];
+static const RzCmdDescArg cmd_print_byte_array_bash_args[2];
+static const RzCmdDescArg cmd_print_byte_array_golang_args[2];
+static const RzCmdDescArg cmd_print_byte_array_java_args[2];
+static const RzCmdDescArg cmd_print_byte_array_json_args[2];
+static const RzCmdDescArg cmd_print_byte_array_kotlin_args[2];
+static const RzCmdDescArg cmd_print_byte_array_nodejs_args[2];
+static const RzCmdDescArg cmd_print_byte_array_objc_args[2];
+static const RzCmdDescArg cmd_print_byte_array_python_args[2];
+static const RzCmdDescArg cmd_print_byte_array_rust_args[2];
+static const RzCmdDescArg cmd_print_byte_array_swift_args[2];
+static const RzCmdDescArg cmd_print_byte_array_yara_args[2];
+static const RzCmdDescArg cmd_print_byte_array_rizin_args[2];
 static const RzCmdDescArg cmd_disassembly_n_bytes_args[2];
 static const RzCmdDescArg print_columns_disassembly_args[2];
 static const RzCmdDescArg print_columns_debug_args[2];
@@ -12542,8 +12557,8 @@ static const RzCmdDescDetailEntry cmd_print_byte_array_Useful_space_modifiers_de
 
 static const RzCmdDescDetailEntry cmd_print_byte_array_Example_space_of_space_usages_detail_entries[] = {
 	{ .text = "pch @! 64 @e:cfg.bigendian=true", .arg_str = NULL, .comment = "Generate a C 32 bits array in big endian format, using 64 bytes" },
-	{ .text = "pcp @! 1024", .arg_str = NULL, .comment = "Generate a Python byte array of size 1024" },
-	{ .text = "pcj @! 10", .arg_str = NULL, .comment = "Generate a JSON bytes array of size 10" },
+	{ .text = "pcp 1024", .arg_str = NULL, .comment = "Generate a Python byte array of size 1024" },
+	{ .text = "pcj 10", .arg_str = NULL, .comment = "Generate a JSON bytes array of size 10" },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_print_byte_array_details[] = {
@@ -12556,6 +12571,13 @@ static const RzCmdDescHelp cmd_print_byte_array_help = {
 	.details = cmd_print_byte_array_details,
 };
 static const RzCmdDescArg cmd_print_byte_array_c_cpp_bytes_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_c_cpp_bytes_help = {
@@ -12588,6 +12610,13 @@ static const RzCmdDescHelp cmd_print_byte_array_c_cpp_double_word_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_asm_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_asm_help = {
@@ -12596,14 +12625,28 @@ static const RzCmdDescHelp cmd_print_byte_array_asm_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_with_inst_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_with_inst_help = {
-	.summary = "Generate a byte array in GAS assembly with instructions in comments",
+	.summary = "Generate a byte array in GAS assembly with instructions in comments.",
 	.args = cmd_print_byte_array_with_inst_args,
 };
 
 static const RzCmdDescArg cmd_print_byte_array_bash_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_bash_help = {
@@ -12612,6 +12655,13 @@ static const RzCmdDescHelp cmd_print_byte_array_bash_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_golang_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_golang_help = {
@@ -12620,6 +12670,13 @@ static const RzCmdDescHelp cmd_print_byte_array_golang_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_java_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_java_help = {
@@ -12628,6 +12685,13 @@ static const RzCmdDescHelp cmd_print_byte_array_java_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_json_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_json_help = {
@@ -12636,6 +12700,13 @@ static const RzCmdDescHelp cmd_print_byte_array_json_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_kotlin_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_kotlin_help = {
@@ -12644,6 +12715,13 @@ static const RzCmdDescHelp cmd_print_byte_array_kotlin_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_nodejs_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_nodejs_help = {
@@ -12652,6 +12730,13 @@ static const RzCmdDescHelp cmd_print_byte_array_nodejs_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_objc_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_objc_help = {
@@ -12660,6 +12745,13 @@ static const RzCmdDescHelp cmd_print_byte_array_objc_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_python_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_python_help = {
@@ -12668,6 +12760,13 @@ static const RzCmdDescHelp cmd_print_byte_array_python_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_rust_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_rust_help = {
@@ -12676,6 +12775,13 @@ static const RzCmdDescHelp cmd_print_byte_array_rust_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_swift_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_swift_help = {
@@ -12684,6 +12790,13 @@ static const RzCmdDescHelp cmd_print_byte_array_swift_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_yara_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_yara_help = {
@@ -12692,6 +12805,13 @@ static const RzCmdDescHelp cmd_print_byte_array_yara_help = {
 };
 
 static const RzCmdDescArg cmd_print_byte_array_rizin_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_rizin_help = {
@@ -12719,7 +12839,7 @@ static const RzCmdDescHelp pC_help = {
 };
 static const RzCmdDescArg print_columns_disassembly_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12728,13 +12848,13 @@ static const RzCmdDescArg print_columns_disassembly_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_disassembly_help = {
-	.summary = "Print <N> lines of instructions disassembly in columns",
+	.summary = "Print <len> lines of instructions disassembly in columns",
 	.args = print_columns_disassembly_args,
 };
 
 static const RzCmdDescArg print_columns_debug_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12743,13 +12863,13 @@ static const RzCmdDescArg print_columns_debug_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_debug_help = {
-	.summary = "Print <N> lines of the debug registers and stack in columns",
+	.summary = "Print <len> lines of the debug registers and stack in columns",
 	.args = print_columns_debug_args,
 };
 
 static const RzCmdDescArg print_columns_hex_annotated_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12758,13 +12878,13 @@ static const RzCmdDescArg print_columns_hex_annotated_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_hex_annotated_help = {
-	.summary = "Print <N> lines of annotated hexdump in columns",
+	.summary = "Print <len> lines of annotated hexdump in columns",
 	.args = print_columns_hex_annotated_args,
 };
 
 static const RzCmdDescArg print_columns_hex_op_colored_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12773,13 +12893,13 @@ static const RzCmdDescArg print_columns_hex_op_colored_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_hex_op_colored_help = {
-	.summary = "Print <N> lines of op analysis color map in columns",
+	.summary = "Print <len> lines of op analysis color map in columns",
 	.args = print_columns_hex_op_colored_args,
 };
 
 static const RzCmdDescArg print_columns_hex_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12788,13 +12908,13 @@ static const RzCmdDescArg print_columns_hex_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_hex_help = {
-	.summary = "Print <N> lines of hexdump in columns",
+	.summary = "Print <len> lines of hexdump in columns",
 	.args = print_columns_hex_args,
 };
 
 static const RzCmdDescArg print_columns_hex_words_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12803,7 +12923,7 @@ static const RzCmdDescArg print_columns_hex_words_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_hex_words_help = {
-	.summary = "Print <N> lines of 4-byte integer hexdump in columns",
+	.summary = "Print <len> lines of 4-byte integer hexdump in columns",
 	.args = print_columns_hex_words_args,
 };
 
