@@ -96,24 +96,13 @@ rz_analysis_tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *da
 		return -1;
 	}
 
-	static csh handle = 0;
-	static cs_mode omode = CS_MODE_TRICORE_162;
-	cs_insn *insn;
-	cs_mode mode = tricore_cpu_to_cs_mode(a->cpu);
-	if (mode != omode) {
-		cs_close(&handle);
-		handle = 0;
-		omode = mode;
-	}
-
-	cs_err err = cs_open(CS_ARCH_TRICORE, mode, &handle);
-	if (err) {
-		RZ_LOG_ERROR("Failed on cs_open() with error returned: %u\n", err);
+	csh handle = tricore_setup_cs_handle(a->cpu, NULL);
+	if (handle == 0) {
 		return -1;
 	}
-	cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 
 	op->size = 2;
+	cs_insn *insn = NULL;
 	ut32 count = cs_disasm(handle, (const ut8 *)data, len, addr, 1, &insn);
 	if (count <= 0) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -414,10 +403,16 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 	case TRICORE_INS_ADDS_BU:
 	case TRICORE_INS_ADDS_U: {
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		if (insn->detail->tricore.op_count == 2) {
+		if (tricore_op_count(insn) >= 2) {
 			cs_tricore_op *op1 = tricore_get_op(insn, 1);
 			if (op1->type == TRICORE_OP_IMM) {
 				op->val = op1->imm;
+
+				cs_tricore_op *op0 = tricore_get_op(insn, 0);
+				if (op0->type == TRICORE_OP_REG && op0->reg == TRICORE_REG_SP) {
+					op->stackop = RZ_ANALYSIS_STACK_INC;
+					op->stackptr = op1->imm;
+				}
 			}
 		}
 		break;
@@ -788,14 +783,16 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 	case TRICORE_INS_MSUBMS_U: {
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		cs_tricore_op *op0 = tricore_get_op(insn, 0);
-		if (op0->type == TRICORE_OP_REG && op0->reg == TRICORE_REG_SP) {
-			op->stackop = RZ_ANALYSIS_STACK_INC;
-			op->stackptr = -tricore_get_op_imm(insn, 1);
-		}
-		if (insn->detail->tricore.op_count == 2) {
+		if (tricore_op_count(insn) >= 2) {
 			cs_tricore_op *op1 = tricore_get_op(insn, 1);
 			if (op1->type == TRICORE_OP_IMM) {
 				op->val = op1->imm;
+
+				cs_tricore_op *op1 = tricore_get_op(insn, 1);
+				if (op0->type == TRICORE_OP_REG && op0->reg == TRICORE_REG_SP) {
+					op->stackop = RZ_ANALYSIS_STACK_INC;
+					op->stackptr = -op1->imm;
+				}
 			}
 		}
 		break;
