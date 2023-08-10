@@ -3653,6 +3653,10 @@ CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_yara_handler, RZ_LAN
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_with_inst_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_block_read(core);
 	const int size = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+    if(size > core->blocksize_max) {
+			RZ_LOG_ERROR("Size exceeds max size (%u)\n", core->blocksize_max);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	if (size <= 0) {
 		RZ_LOG_ERROR("Size must be greater 0\n");
 		return RZ_CMD_STATUS_ERROR;

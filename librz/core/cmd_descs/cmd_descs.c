@@ -12839,7 +12839,7 @@ static const RzCmdDescHelp pC_help = {
 };
 static const RzCmdDescArg print_columns_disassembly_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12848,13 +12848,13 @@ static const RzCmdDescArg print_columns_disassembly_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_disassembly_help = {
-	.summary = "Print <N> lines of instructions disassembly in columns",
+	.summary = "Print <len> lines of instructions disassembly in columns",
 	.args = print_columns_disassembly_args,
 };
 
 static const RzCmdDescArg print_columns_debug_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12863,13 +12863,13 @@ static const RzCmdDescArg print_columns_debug_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_debug_help = {
-	.summary = "Print <N> lines of the debug registers and stack in columns",
+	.summary = "Print <len> lines of the debug registers and stack in columns",
 	.args = print_columns_debug_args,
 };
 
 static const RzCmdDescArg print_columns_hex_annotated_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12878,13 +12878,13 @@ static const RzCmdDescArg print_columns_hex_annotated_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_hex_annotated_help = {
-	.summary = "Print <N> lines of annotated hexdump in columns",
+	.summary = "Print <len> lines of annotated hexdump in columns",
 	.args = print_columns_hex_annotated_args,
 };
 
 static const RzCmdDescArg print_columns_hex_op_colored_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12893,13 +12893,13 @@ static const RzCmdDescArg print_columns_hex_op_colored_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_hex_op_colored_help = {
-	.summary = "Print <N> lines of op analysis color map in columns",
+	.summary = "Print <len> lines of op analysis color map in columns",
 	.args = print_columns_hex_op_colored_args,
 };
 
 static const RzCmdDescArg print_columns_hex_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12908,13 +12908,13 @@ static const RzCmdDescArg print_columns_hex_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_hex_help = {
-	.summary = "Print <N> lines of hexdump in columns",
+	.summary = "Print <len> lines of hexdump in columns",
 	.args = print_columns_hex_args,
 };
 
 static const RzCmdDescArg print_columns_hex_words_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12923,7 +12923,7 @@ static const RzCmdDescArg print_columns_hex_words_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_columns_hex_words_help = {
-	.summary = "Print <N> lines of 4-byte integer hexdump in columns",
+	.summary = "Print <len> lines of 4-byte integer hexdump in columns",
 	.args = print_columns_hex_words_args,
 };
 
