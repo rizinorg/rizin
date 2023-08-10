@@ -20,7 +20,7 @@ Look at [install instructions](https://rizin.re/install/) on our web page.
 
 Use `meson` to compile and install Rizin. Please make sure to get an updated
 `meson` (e.g. get it with `pip install meson` if your system does not provide
-one that is at least version 0.55.0).
+one that is at least version `0.55.0`).
 
 Clone this repository:
 ```
@@ -29,9 +29,9 @@ $ git clone https://github.com/rizinorg/rizin
 
 Then compile and install with:
 ```
-$ meson build
-$ ninja -C build
-$ sudo ninja -C build install
+$ meson setup build
+$ meson compile -C build
+$ sudo meson install -C build
 ```
 
 Now you can use `rizin`:
