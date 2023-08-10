@@ -889,23 +889,24 @@ static void __replaceImports(RzDisasmState *ds) {
 
 static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
 	bool colorize_asm = print_color && ds->show_color && ds->colorop;
-	if (!colorize_asm)
+	if (!colorize_asm) {
 		return;
-
+	}
 	RzCore *core = ds->core;
+	RzStrBuf bw_asm;
+	rz_strbuf_init(&bw_asm);
+	rz_strbuf_set(&bw_asm, ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop));
 	core->print->colorize_opts.reset_bg = line_highlighted(ds);
-	char *source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
-	RzStrBuf *bw_asm = rz_strbuf_new(source);
 	RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
-	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&bw_asm, core->print, param, ds->asmop.asm_toks);
 	free(param);
-	rz_strbuf_free(bw_asm);
+	rz_strbuf_fini(&bw_asm);
 	if (!colored_asm) {
 		return;
 	}
-	source = rz_strbuf_drain(colored_asm);
+	char *new_opstr = rz_strbuf_drain(colored_asm);
 	free(ds->opstr);
-	ds->opstr = source;
+	ds->opstr = new_opstr;
 }
 
 static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
@@ -4912,24 +4913,8 @@ static bool set_jump_realname(RzDisasmState *ds, ut64 addr, const char **kw, con
  * \param op RzAsmOp instance
  */
 void rz_asm_op_tricore_fixup(RzAsmOp *op, RzAsmTriCoreState *state) {
-	if (!op->asm_toks) {
-		return;
-	}
 	char *asmstr = rz_asm_op_get_asm(op);
-
-	RzAsmToken *token = NULL;
-	rz_vector_foreach(op->asm_toks->tokens, token) {
-		char *p = asmstr + token->start;
-		if (token->type != RZ_ASM_TOKEN_SEPARATOR ||
-			rz_str_cmp("#", p, token->len) != 0) {
-			continue;
-		}
-
-		for (size_t i = 0; i < token->len; i++) {
-			*p = -1;
-		}
-	}
-	rz_str_remove_char(asmstr, -1);
+	rz_str_remove_char(asmstr, '#');
 	rz_asm_op_set_asm(op, asmstr);
 	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, state->token_patterns);
 }
