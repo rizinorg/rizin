@@ -12572,7 +12572,7 @@ static const RzCmdDescHelp cmd_print_byte_array_help = {
 };
 static const RzCmdDescArg cmd_print_byte_array_c_cpp_bytes_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12611,7 +12611,7 @@ static const RzCmdDescHelp cmd_print_byte_array_c_cpp_double_word_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_asm_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12626,7 +12626,7 @@ static const RzCmdDescHelp cmd_print_byte_array_asm_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_with_inst_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12641,7 +12641,7 @@ static const RzCmdDescHelp cmd_print_byte_array_with_inst_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_bash_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12656,7 +12656,7 @@ static const RzCmdDescHelp cmd_print_byte_array_bash_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_golang_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12671,7 +12671,7 @@ static const RzCmdDescHelp cmd_print_byte_array_golang_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_java_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12686,7 +12686,7 @@ static const RzCmdDescHelp cmd_print_byte_array_java_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_json_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12701,7 +12701,7 @@ static const RzCmdDescHelp cmd_print_byte_array_json_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_kotlin_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12716,7 +12716,7 @@ static const RzCmdDescHelp cmd_print_byte_array_kotlin_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_nodejs_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12725,13 +12725,13 @@ static const RzCmdDescArg cmd_print_byte_array_nodejs_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_byte_array_nodejs_help = {
-	.summary = "Generate a NodeJS buffer.",
+	.summary = "Generate a lenodeJS buffer.",
 	.args = cmd_print_byte_array_nodejs_args,
 };
 
 static const RzCmdDescArg cmd_print_byte_array_objc_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12746,7 +12746,7 @@ static const RzCmdDescHelp cmd_print_byte_array_objc_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_python_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12761,7 +12761,7 @@ static const RzCmdDescHelp cmd_print_byte_array_python_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_rust_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12776,7 +12776,7 @@ static const RzCmdDescHelp cmd_print_byte_array_rust_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_swift_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12791,7 +12791,7 @@ static const RzCmdDescHelp cmd_print_byte_array_swift_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_yara_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -12806,7 +12806,7 @@ static const RzCmdDescHelp cmd_print_byte_array_yara_help = {
 
 static const RzCmdDescArg cmd_print_byte_array_rizin_args[] = {
 	{
-		.name = "N",
+		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
