@@ -217,20 +217,6 @@ RZ_API char *rz_num_units(char *buf, size_t len, ut64 num) {
 	return buf;
 }
 
-RZ_API const char *rz_num_get_name(RzNum *num, ut64 n) {
-	if (num->cb_from_value) {
-		int ok = 0;
-		const char *msg = num->cb_from_value(num, n, &ok);
-		if (msg && *msg) {
-			return msg;
-		}
-		if (ok) {
-			return msg;
-		}
-	}
-	return NULL;
-}
-
 static void error(RzNum *num, const char *err_str) {
 	if (num) {
 		num->nc.errors++;

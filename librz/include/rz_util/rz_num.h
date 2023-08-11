@@ -78,7 +78,6 @@ RZ_API ut64 rz_num_calc(RzNum *num, const char *str, const char **err);
 RZ_API const char *rz_num_calc_index(RzNum *num, const char *p);
 RZ_API int rz_num_is_valid_input(RzNum *num, const char *input_value);
 RZ_API ut64 rz_num_get_input_value(RzNum *num, const char *input_value);
-RZ_API const char *rz_num_get_name(RzNum *num, ut64 n);
 RZ_API char *rz_num_as_string(RzNum *___, ut64 n, bool printable_only);
 RZ_API ut64 rz_num_tail(RzNum *num, ut64 addr, const char *hex);
 RZ_API ut64 rz_num_tail_base(RzNum *num, ut64 addr, ut64 off);
