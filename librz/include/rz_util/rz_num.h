@@ -95,7 +95,6 @@ RZ_API void rz_num_irand(void);
 RZ_API ut64 rz_get_input_num_value(RzNum *num, const char *input_value);
 RZ_API bool rz_is_valid_input_num_value(RzNum *num, const char *input_value);
 RZ_API int rz_num_between(RzNum *num, const char *input_value);
-RZ_API bool rz_num_is_op(const char c);
 RZ_API int rz_num_str_len(const char *str);
 RZ_API int rz_num_str_split(char *str);
 RZ_API RzList /*<char *>*/ *rz_num_str_split_list(char *str);
