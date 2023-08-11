@@ -907,14 +907,6 @@ RZ_API void *rz_num_dup(ut64 n) {
 	return (void *)hn;
 }
 
-RZ_API double rz_num_cos(double a) {
-	return cos(a);
-}
-
-RZ_API double rz_num_sin(double a) {
-	return sin(a);
-}
-
 /**
  * \brief Convert the base suffix to the numeric value
  */
