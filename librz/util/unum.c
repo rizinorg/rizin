@@ -508,17 +508,6 @@ RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
 	return ret;
 }
 
-/**
- * \brief Check if given string represents a float value or not.
- *
- * \param num RzNum instance.
- * \param str Numerical value.
- * \return Non zero value if float, 0 otherwise.
- **/
-RZ_API int rz_num_is_float(RzNum *num, const char *str) {
-	return (IS_DIGIT(*str) && (strchr(str, '.') || str[strlen(str) - 1] == 'f'));
-}
-
 RZ_API double rz_num_get_float(RzNum *num, const char *str) {
 	double d = 0.0f;
 	(void)sscanf(str, "%lf", &d);
@@ -831,7 +820,7 @@ RZ_API int rz_num_between(RzNum *num, const char *input_value) {
 	return num->value = RZ_BETWEEN(ns[0], ns[1], ns[2]);
 }
 
-RZ_API bool rz_num_is_op(const char c) {
+static bool char_is_op(const char c) {
 	return c == '/' || c == '+' || c == '-' || c == '*' ||
 		c == '%' || c == '&' || c == '^' || c == '|';
 }
@@ -846,7 +835,7 @@ RZ_API int rz_num_str_len(const char *str) {
 	while (str[i] != '\0') {
 		switch (st) {
 		case 0: // number
-			while (!rz_num_is_op(str[i]) && str[i] != ' ' && str[i] != '\0') {
+			while (!char_is_op(str[i]) && str[i] != ' ' && str[i] != '\0') {
 				i++;
 				if (str[i] == '(') {
 					i += rz_num_str_len(str + i);
@@ -859,7 +848,7 @@ RZ_API int rz_num_str_len(const char *str) {
 			while (str[i] != '\0' && str[i] == ' ') {
 				i++;
 			}
-			if (!rz_num_is_op(str[i])) {
+			if (!char_is_op(str[i])) {
 				return len;
 			}
 			if (str[i] == ')') {
