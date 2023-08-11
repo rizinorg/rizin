@@ -568,13 +568,6 @@ RZ_API int rz_num_to_trits(char *out, ut64 num) {
 	return true;
 }
 
-RZ_API ut64 rz_num_chs(int cylinder, int head, int sector, int sectorsize) {
-	if (sectorsize < 1) {
-		sectorsize = 512;
-	}
-	return (ut64)cylinder * (ut64)head * (ut64)sector * (ut64)sectorsize;
-}
-
 RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 	char *lgt, *t, *p, *s = strdup(str);
 	int res = 0;

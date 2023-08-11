@@ -76,7 +76,6 @@ RZ_API char *rz_num_units(char *buf, size_t len, ut64 number);
 RZ_API int rz_num_conditional(RzNum *num, const char *str);
 RZ_API ut64 rz_num_calc(RzNum *num, const char *str, const char **err);
 RZ_API const char *rz_num_calc_index(RzNum *num, const char *p);
-RZ_API ut64 rz_num_chs(int cylinder, int head, int sector, int sectorsize);
 RZ_API int rz_num_is_valid_input(RzNum *num, const char *input_value);
 RZ_API ut64 rz_num_get_input_value(RzNum *num, const char *input_value);
 RZ_API const char *rz_num_get_name(RzNum *num, ut64 n);
