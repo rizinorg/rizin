@@ -2261,7 +2261,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 			}
 		}
 
-		if (flag->realname) {
+		if (ds->core->flags->realnames && flag->realname) {
 			if (!strncmp(flag->name, "switch.", 7)) {
 				rz_cons_printf(FLAG_PREFIX "switch");
 			} else if (!strncmp(flag->name, "case.", 5)) {
@@ -2349,7 +2349,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 			}
 		} else {
 			if (outline) {
-				rz_cons_printf("%s", flag->name);
+				rz_cons_printf(FLAG_PREFIX "%s", flag->name);
 			} else {
 				rz_cons_printf("%s%s", comma, flag->name);
 			}
