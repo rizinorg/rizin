@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <math.h> /* for ceill */
 #include <rz_util.h>
-#define RZ_NUM_USE_CALC 1
 
 static ut64 rz_num_tailff(RzNum *num, const char *hex);
 
@@ -235,9 +234,6 @@ RZ_API const char *rz_num_get_name(RzNum *num, ut64 n) {
 static void error(RzNum *num, const char *err_str) {
 	if (num) {
 		num->nc.errors++;
-#if 0
-		num->nc.calc_err = err_str;
-#endif
 	}
 }
 
@@ -468,13 +464,6 @@ RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
 			}
 			break;
 		default:
-#if 0
-			// sscanf (str, "%"PFMT64d"%n", &ret, &chars_read);
-// 32bit chop
-#if __WINDOWS__
-			ret = _strtoui64 (str, &endptr, 10);
-#endif
-#endif
 			errno = 0;
 			ret = strtoull(str, &endptr, 10);
 			if (errno == ERANGE) {
@@ -492,41 +481,6 @@ RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
 	return ret;
 }
 
-#if !RZ_NUM_USE_CALC
-static ut64 rz_num_op(RzNum *num, char op, ut64 a, ut64 b) {
-	switch (op) {
-	case '+': return a + b;
-	case '-': return a - b;
-	case '*': return a * b;
-	case '/':
-		if (!b && num)
-			num->dbz = 1;
-		return b ? a / b : 0;
-	case '&': return a & b;
-	case '|': return a | b;
-	case '^': return a ^ b;
-	}
-	return b;
-}
-
-RZ_API static ut64 rz_num_math_internal(RzNum *num, char *s) {
-	ut64 ret = 0LL;
-	char *p = s;
-	int i, nop, op = 0;
-	for (i = 0; s[i]; i++) {
-		if (rz_num_is_op(s[i])) {
-			nop = s[i];
-			s[i] = '\0';
-			ret = rz_num_op(num, op, ret, rz_num_get(num, p));
-			op = s[i] = nop;
-			p = s + i + 1;
-			break;
-		}
-	}
-	return rz_num_op(op, ret, rz_num_get(num, p));
-}
-#endif /* !RZ_NUM_USE_CALC */
-
 /**
  * \brief Compute an numerical expression.
  *
@@ -535,7 +489,6 @@ RZ_API static ut64 rz_num_math_internal(RzNum *num, char *s) {
  * \return Evaluated expression's value.
  **/
 RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
-#if RZ_NUM_USE_CALC
 	ut64 ret;
 	const char *err = NULL;
 	if (!str || !*str) {
@@ -553,61 +506,6 @@ RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
 		num->value = ret;
 	}
 	return ret;
-#else
-	ut64 ret = 0LL;
-	char op = '+';
-	int len;
-	char *p, *s, *os;
-	char *group;
-	if (!str)
-		return 0LL;
-
-	len = strlen(str) + 1;
-	os = malloc(len + 1);
-
-	s = os;
-	memcpy(s, str, len);
-	for (; *s == ' '; s++)
-		;
-	p = s;
-
-	do {
-		group = strchr(p, '(');
-		if (group) {
-			group[0] = '\0';
-			ret = rz_num_op(op, ret, rz_num_math_internal(num, p));
-			for (; p < group; p += 1) {
-				if (rz_num_is_op(*p)) {
-					op = *p;
-					break;
-				}
-			}
-			group[0] = '(';
-			p = group + 1;
-			if (rz_str_delta(p, '(', ')') < 0) {
-				char *p2 = strchr(p, '(');
-				if (p2 != NULL) {
-					*p2 = '\0';
-					ret = rz_num_op(op, ret, rz_num_math_internal(num, p));
-					ret = rz_num_op(op, ret, rz_num_math(num, p2 + 1));
-					p = p2 + 1;
-					continue;
-				}
-				eprintf("something really bad has happened! can't find '('\n");
-			} else {
-				ret = rz_num_op(op, ret, rz_num_math_internal(num, p));
-			}
-		} else {
-			ret = rz_num_op(op, ret, rz_num_math_internal(num, p));
-		}
-	} while (0);
-
-	if (num) {
-		num->value = ret;
-	}
-	free(os);
-	return ret;
-#endif
 }
 
 /**
