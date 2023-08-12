@@ -9,6 +9,8 @@ blake3_files = [
   'c' / 'blake3.c',
 ]
 
+# Meson simd module is not used on purpose because it is unstable and not supported in muon
+
 blake3_simd = []
 
 simd_avx2 = '''
@@ -19,12 +21,12 @@ simd_avx2 = '''
 int main (int argc, char *argv[]) { __m256i add0 = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0); return 0; }
 '''
 
-simd_avx512 = '''
+simd_avx512vl = '''
 #if defined(_MSC_VER)
 #include <intrin.h>
 #endif
 #include <immintrin.h>
-int main (int argc, char *argv[]) { __m256i add0 = _mm256_setr_epi64x(0, 1, 2, 3); return 0; }
+int main (int argc, char *argv[]) { __m128i v = _mm_ror_epi32(_mm_set_epi32(3, 2, 1, 0), 5); return 0; }
 '''
 
 simd_sse2 = '''
@@ -53,24 +55,24 @@ int main (int argc, char *argv[]) { uint32x4_t three = set1_128(3); return 0; }
 # msvc can't just compile assembly so we use the intrins directly
 # https://github.com/mesonbuild/meson/issues/9889
 win_msvc_asm = [
-  ['c' / 'blake3_avx2.c',   '-DBLAKE3_NO_AVX2',   'avx2',   simd_avx2,   ['/arch:AVX2']],
-  ['c' / 'blake3_avx512.c', '-DBLAKE3_NO_AVX512', 'avx512', simd_avx512, ['/arch:AVX512']],
-  ['c' / 'blake3_sse2.c',   '-DBLAKE3_NO_SSE2',   'sse2',   simd_sse2,   []], # sse2 extensions are enabled by default
-  ['c' / 'blake3_sse41.c',  '-DBLAKE3_NO_SSE41',  'sse41',  simd_sse41,  []], # sse41 extensions are enabled by default
+  ['c' / 'blake3_avx2.c',   '-DBLAKE3_NO_AVX2',   'avx2',     simd_avx2,     ['/arch:AVX2']],
+  ['c' / 'blake3_avx512.c', '-DBLAKE3_NO_AVX512', 'avx512vl', simd_avx512vl, ['/arch:AVX512']],
+  ['c' / 'blake3_sse2.c',   '-DBLAKE3_NO_SSE2',   'sse2',     simd_sse2,     []], # sse2 extensions are enabled by default
+  ['c' / 'blake3_sse41.c',  '-DBLAKE3_NO_SSE41',  'sse41',    simd_sse41,    []], # sse41 extensions are enabled by default
 ]
 
 win_gnu_asm = [
-  ['c' / 'blake3_avx2_x86-64_windows_gnu.S',   '-DBLAKE3_NO_AVX2',   'avx2',   simd_avx2,   ['-mavx2']],
-  ['c' / 'blake3_avx512_x86-64_windows_gnu.S', '-DBLAKE3_NO_AVX512', 'avx512', simd_avx512, ['-mavx512f', '-mavx512vl']],
-  ['c' / 'blake3_sse2_x86-64_windows_gnu.S',   '-DBLAKE3_NO_SSE2',   'sse2',   simd_sse2,   ['-msse2']],
-  ['c' / 'blake3_sse41_x86-64_windows_gnu.S',  '-DBLAKE3_NO_SSE41',  'sse41',  simd_sse41,  ['-msse4.1']],
+  ['c' / 'blake3_avx2_x86-64_windows_gnu.S',   '-DBLAKE3_NO_AVX2',   'avx2',     simd_avx2,     ['-mavx2']],
+  ['c' / 'blake3_avx512_x86-64_windows_gnu.S', '-DBLAKE3_NO_AVX512', 'avx512vl', simd_avx512vl, ['-mavx512f', '-mavx512vl']],
+  ['c' / 'blake3_sse2_x86-64_windows_gnu.S',   '-DBLAKE3_NO_SSE2',   'sse2',     simd_sse2,     ['-msse2']],
+  ['c' / 'blake3_sse41_x86-64_windows_gnu.S',  '-DBLAKE3_NO_SSE41',  'sse41',    simd_sse41,    ['-msse4.1']],
 ]
 
 unix_asm = [
-  ['c' / 'blake3_avx2_x86-64_unix.S',   '-DBLAKE3_NO_AVX2',   'avx2',   simd_avx2,   ['-mavx2']],
-  ['c' / 'blake3_avx512_x86-64_unix.S', '-DBLAKE3_NO_AVX512', 'avx512', simd_avx512, ['-mavx512f', '-mavx512vl']],
-  ['c' / 'blake3_sse2_x86-64_unix.S',   '-DBLAKE3_NO_SSE2',   'sse2',   simd_sse2,   ['-msse2']],
-  ['c' / 'blake3_sse41_x86-64_unix.S',  '-DBLAKE3_NO_SSE41',  'sse41',  simd_sse41,  ['-msse4.1']],
+  ['c' / 'blake3_avx2_x86-64_unix.S',   '-DBLAKE3_NO_AVX2',   'avx2',     simd_avx2,     ['-mavx2']],
+  ['c' / 'blake3_avx512_x86-64_unix.S', '-DBLAKE3_NO_AVX512', 'avx512vl', simd_avx512vl, ['-mavx512f', '-mavx512vl']],
+  ['c' / 'blake3_sse2_x86-64_unix.S',   '-DBLAKE3_NO_SSE2',   'sse2',     simd_sse2,     ['-msse2']],
+  ['c' / 'blake3_sse41_x86-64_unix.S',  '-DBLAKE3_NO_SSE41',  'sse41',    simd_sse41,    ['-msse4.1']],
 ]
 
 is_x64 = target_machine.cpu_family() == 'x86_64'
@@ -110,17 +112,21 @@ else
   endforeach
 endif
 
+blake3_libs = []
 foreach it : blake3_simd
   file = it[0]
-  flag = it[1]
+  disable_flag = it[1]
   name = it[2]
   code = it[3]
   args = it[4]
   has_extension = cc.compiles(code, args: args, name: name)
   if has_extension
-    blake3_files += file
+    # https://github.com/mesonbuild/meson/issues/1367
+    # Individual static libraries are needed to avoid passing the simd flags to the C files,
+    # which would make functions like memset() use potentially unsupported instructions at runtime.
+    blake3_libs += static_library('blake3_' + name, file, c_args: args)
   else
-    add_project_arguments(flag, language: 'c')
+    add_project_arguments(disable_flag, language: 'c')
   endif
 endforeach
 
@@ -130,6 +136,7 @@ blake3_inc = [
 
 blake3 = static_library('blake3', blake3_files,
   dependencies: [],
+  link_with: blake3_libs,
   include_directories: blake3_inc,
   implicit_include_directories: false
 )
