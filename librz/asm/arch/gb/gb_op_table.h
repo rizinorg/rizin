@@ -7,6 +7,21 @@
 #define ARG_16   8
 #define GB_IO    16 //	Most io (Joypad, Sound, Screen ...)
 
+typedef enum {
+	GB_REG_A,
+	GB_REG_B,
+	GB_REG_C,
+	GB_REG_D,
+	GB_REG_E,
+	GB_REG_H,
+	GB_REG_L,
+	GB_REG_AF,
+	GB_REG_BC,
+	GB_REG_DE,
+	GB_REG_HL,
+	GB_REG_SP
+} gb_reg;
+
 typedef struct {
 	const char *name;
 	const int type;

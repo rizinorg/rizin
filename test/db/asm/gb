@@ -298,7 +298,7 @@ d "ld b, d" 42
 d "ld b, e" 43
 d "ld b, h" 44
 d "ld b, l" 45
-d "ld bc, 0x0000" 010000
+d "ld bc, 0x1234" 013412 0x0 (seq (set b (bv 8 0x12)) (set c (bv 8 0x34)))
 d "ld c, 0x00" 0e00
 d "ld c, [hl]" 4e
 d "ld c, a" 4f
@@ -317,7 +317,7 @@ d "ld d, d" 52
 d "ld d, e" 53
 d "ld d, h" 54
 d "ld d, l" 55
-d "ld de, 0x0000" 110000
+d "ld de, 0x1234" 113412 0x0 (seq (set d (bv 8 0x12)) (set e (bv 8 0x34)))
 d "ld e, 0x00" 1e00
 d "ld e, [hl]" 5e
 d "ld e, a" 5f
@@ -336,7 +336,7 @@ d "ld h, d" 62
 d "ld h, e" 63
 d "ld h, h" 64
 d "ld h, l" 65
-d "ld hl, 0x0000" 210000
+ad "ld hl, 0xc3a0" 21a0c3 0x0 (seq (set h (bv 8 0xc3)) (set l (bv 8 0xa0)))
 d "ld hl, sp + 0x00" f800
 d "ld l, 0x00" 2e00
 d "ld l, [hl]" 6e
@@ -347,13 +347,13 @@ d "ld l, d" 6a
 d "ld l, e" 6b
 d "ld l, h" 6c
 d "ld l, l" 6d
-d "ld sp, 0x0000" 310000
+ad "ld sp, 0xc3a0" 31a0c3 0x0 (set sp (bv 16 0xc3a0))
 d "ld sp, hl" f9
 d "ldd [hl], a" 32
 d "ldd a, [hl]" 3a
 d "ldi [hl], a" 22
 d "ldi a, [hl]" 2a
-d "nop" 00
+d "nop" 00 0x0 nop
 d "or 0x00" f600
 d "or [hl]" b6
 d "or a" b7
@@ -610,9 +610,7 @@ d "xor d" aa
 d "xor e" ab
 d "xor h" ac
 d "xor l" ad
-a "ld hl, 0xc3a0" 21a0c3
 a "ld bc, 0x188" 018801
-a "ld sp, 0xc3a0" 31a0c3
 a "ld de, 0x188" 118801
 a "call 0x36e0" cde036
 a "ld b, [hl]" 46

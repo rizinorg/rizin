@@ -10,6 +10,60 @@
 #include <string.h>
 #include "gb_op_table.h"
 
+static ut32 gb_reg_bits(gb_reg reg) {
+	switch (reg) {
+	case GB_REG_A:
+	case GB_REG_B:
+	case GB_REG_C:
+	case GB_REG_D:
+	case GB_REG_E:
+	case GB_REG_H:
+	case GB_REG_L:
+		return 8;
+	case GB_REG_AF:
+	case GB_REG_BC:
+	case GB_REG_DE:
+	case GB_REG_HL:
+	case GB_REG_SP:
+		return 16;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+static const char *gb_reg_name(gb_reg reg) {
+	switch (reg) {
+	case GB_REG_A:
+		return "a";
+	case GB_REG_B:
+		return "b";
+	case GB_REG_C:
+		return "c";
+	case GB_REG_D:
+		return "d";
+	case GB_REG_E:
+		return "e";
+	case GB_REG_H:
+		return "h";
+	case GB_REG_L:
+		return "l";
+	case GB_REG_AF:
+		return "af";
+	case GB_REG_BC:
+		return "bc";
+	case GB_REG_DE:
+		return "de";
+	case GB_REG_HL:
+		return "hl";
+	case GB_REG_SP:
+		return "sp";
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+}
+
 static int gbOpLength(int gboptype) {
 	switch (gboptype) {
 	case GB_8BIT:
