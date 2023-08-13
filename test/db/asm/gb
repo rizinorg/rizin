@@ -111,33 +111,34 @@ d "cp h" bc
 d "cp l" bd
 d "cpl" 2f
 d "daa" 27
-d "dec [hl]" 35
-d "dec a" 3d
-d "dec b" 05
-d "dec bc" 0b
-d "dec c" 0d
-d "dec d" 15
-d "dec de" 1b
-d "dec e" 1d
-d "dec h" 25
-d "dec hl" 2b
-d "dec l" 2d
-d "dec sp" 3b
+d "dec [hl]" 35 0x0 (seq (set v (- (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N true) (set H (is_zero (cast 4 false (var v)))))
+d "dec a" 3d 0x0 (seq (set a (+ (var a) (bv 8 0x1))) (set Z (is_zero (var a))) (set N true) (set H (is_zero (cast 4 false (var a)))))
+d "dec b" 05 0x0 (seq (set b (+ (var b) (bv 8 0x1))) (set Z (is_zero (var b))) (set N true) (set H (is_zero (cast 4 false (var b)))))
+d "dec bc" 0b 0x0 (seq (set b (ite (is_zero (var c)) (- (var b) (bv 8 0x1)) (var b))) (set c (- (var c) (bv 8 0x1))))
+d "dec c" 0d 0x0 (seq (set c (+ (var c) (bv 8 0x1))) (set Z (is_zero (var c))) (set N true) (set H (is_zero (cast 4 false (var c)))))
+d "dec d" 15 0x0 (seq (set d (+ (var d) (bv 8 0x1))) (set Z (is_zero (var d))) (set N true) (set H (is_zero (cast 4 false (var d)))))
+d "dec de" 1b 0x0 (seq (set d (ite (is_zero (var e)) (- (var d) (bv 8 0x1)) (var d))) (set e (- (var e) (bv 8 0x1))))
+d "dec e" 1d 0x0 (seq (set e (+ (var e) (bv 8 0x1))) (set Z (is_zero (var e))) (set N true) (set H (is_zero (cast 4 false (var e)))))
+d "dec h" 25 0x0 (seq (set h (+ (var h) (bv 8 0x1))) (set Z (is_zero (var h))) (set N true) (set H (is_zero (cast 4 false (var h)))))
+d "dec hl" 2b 0x0 (seq (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
+d "dec l" 2d 0x0 (seq (set l (+ (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (set N true) (set H (is_zero (cast 4 false (var l)))))
+d "dec sp" 3b 0x0 (set sp (- (var sp) (bv 16 0x1)))
 d "di" f3
 d "ei" fb
 d "halt" 76
-d "inc [hl]" 34
-d "inc a" 3c
-d "inc b" 04
-d "inc bc" 03
-d "inc c" 0c
-d "inc d" 14
-d "inc de" 13
-d "inc e" 1c
-d "inc h" 24
-d "inc hl" 23
-d "inc l" 2c
-d "inc sp" 33
+d "inc [hl]" 34 0x0 (seq (set v (+ (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N false) (set H (is_zero (cast 4 false (var v)))))
+d "inc [hl]" 34 0x30000 (seq (set v (+ (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N false) (set H (is_zero (cast 4 false (var v)))))
+d "inc a" 3c 0x0 (seq (set a (+ (var a) (bv 8 0x1))) (set Z (is_zero (var a))) (set N false) (set H (is_zero (cast 4 false (var a)))))
+d "inc b" 04 0x0 (seq (set b (+ (var b) (bv 8 0x1))) (set Z (is_zero (var b))) (set N false) (set H (is_zero (cast 4 false (var b)))))
+d "inc bc" 03 0x0 (seq (set c (+ (var c) (bv 8 0x1))) (set b (ite (is_zero (var c)) (+ (var b) (bv 8 0x1)) (var b))))
+d "inc c" 0c 0x0 (seq (set c (+ (var c) (bv 8 0x1))) (set Z (is_zero (var c))) (set N false) (set H (is_zero (cast 4 false (var c)))))
+d "inc d" 14 0x0 (seq (set d (+ (var d) (bv 8 0x1))) (set Z (is_zero (var d))) (set N false) (set H (is_zero (cast 4 false (var d)))))
+d "inc de" 13 0x0 (seq (set e (+ (var e) (bv 8 0x1))) (set d (ite (is_zero (var e)) (+ (var d) (bv 8 0x1)) (var d))))
+d "inc e" 1c 0x0 (seq (set e (+ (var e) (bv 8 0x1))) (set Z (is_zero (var e))) (set N false) (set H (is_zero (cast 4 false (var e)))))
+d "inc h" 24 0x0 (seq (set h (+ (var h) (bv 8 0x1))) (set Z (is_zero (var h))) (set N false) (set H (is_zero (cast 4 false (var h)))))
+d "inc hl" 23 0x0 (seq (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
+d "inc l" 2c 0x0 (seq (set l (+ (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (set N false) (set H (is_zero (cast 4 false (var l)))))
+d "inc sp" 33 0x0 (set sp (+ (var sp) (bv 16 0x1)))
 d "jp 0x0000" c30000
 d "jp C, 0x0000" da0000
 d "jp Z, 0x0000" ca0000
@@ -349,7 +350,7 @@ d "ld l, e" 6b
 d "ld l, h" 6c
 d "ld l, l" 6d
 ad "ld sp, 0xc3a0" 31a0c3 0x0 (set sp (bv 16 0xc3a0))
-d "ld sp, hl" f9
+d "ld sp, hl" f9 0x0 (set sp (append (var h) (var l)))
 d "ldd [hl], a" 32
 d "ldd a, [hl]" 3a
 d "ldi [hl], a" 22

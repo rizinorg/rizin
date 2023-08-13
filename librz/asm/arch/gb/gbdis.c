@@ -32,6 +32,40 @@ static ut32 gb_reg_bits(gb_reg reg) {
 	}
 }
 
+/**
+ * Get the register that forms the lower part of \p reg (which must be BC, DE or HL)
+ */
+static gb_reg gb_reg_lower(gb_reg reg) {
+	switch (reg) {
+	case GB_REG_BC:
+		return GB_REG_C;
+	case GB_REG_DE:
+		return GB_REG_E;
+	case GB_REG_HL:
+		return GB_REG_L;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+/**
+ * Get the register that forms the higher part of \p reg (which must be BC, DE or HL)
+ */
+static gb_reg gb_reg_higher(gb_reg reg) {
+	switch (reg) {
+	case GB_REG_BC:
+		return GB_REG_B;
+	case GB_REG_DE:
+		return GB_REG_D;
+	case GB_REG_HL:
+		return GB_REG_H;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
 static const char *gb_reg_name(gb_reg reg) {
 	switch (reg) {
 	case GB_REG_A:

@@ -24,6 +24,25 @@
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+/**
+ * Resolve the given 16-bit \p target_addr16 to the memory space that Rizin uses.
+ *
+ * Because Gameboy uses bank switching, where one part of memory may be switched to
+ * different rom parts at runtime, but we still want to be able to see the entire code
+ * all the time, Rizin flattens out the ROM over a 32-bit space.
+ *
+ * TODO: polish these docs
+ */
+
+static RzILOpBitVector *gb_il_resolve_addr_data(ut64 op_addr, RzILOpBitVector *target_addr16) {
+	(void)op_addr;
+	return target_addr16;
+}
+
+static RzILOpBitVector *gb_il_resolve_addr_code(ut64 op_addr, RzILOpBitVector *target_addr16) {
+	return APPEND(U16((op_addr >> 16) & 0xffff), target_addr16);
+}
+
 /*
  * Calculate the carry of a \p carry_bits addition of \p a and \b, where \p a and \b are of size \p src_bits
  * Example:
@@ -47,7 +66,7 @@ static RzILOpBool *gb_il_carry(RzILOpBitVector *a, RzILOpBitVector *b, ut32 src_
 /**
  * \p val must be of size gb_reg_bits(dst)
  */
-static RzILOpEffect *gb_il_assign_reg(gb_reg dst, RzILOpBitVector *val) {
+static RzILOpEffect *gb_il_write_reg(gb_reg dst, RzILOpBitVector *val) {
 	gb_reg h, l;
 	switch (dst) {
 	case GB_REG_A:
@@ -64,31 +83,40 @@ static RzILOpEffect *gb_il_assign_reg(gb_reg dst, RzILOpBitVector *val) {
 		rz_warn_if_reached();
 		return NULL;
 	case GB_REG_BC:
-		h = GB_REG_B;
-		l = GB_REG_C;
-		break;
 	case GB_REG_DE:
-		h = GB_REG_D;
-		l = GB_REG_E;
-		break;
 	case GB_REG_HL:
-		h = GB_REG_H;
-		l = GB_REG_L;
-		break;
+		return SEQ2(
+			SETG(gb_reg_name(gb_reg_higher(dst)), UNSIGNED(8, SHIFTR0(val, UN(4, 8)))),
+			SETG(gb_reg_name(gb_reg_lower(dst)), UNSIGNED(8, DUP(val))));
 	default:
 		rz_warn_if_reached();
 		return NULL;
 	}
-	return SEQ2(
-		SETG(gb_reg_name(h), UNSIGNED(8, SHIFTR0(val, UN(4, 8)))),
-		SETG(gb_reg_name(l), UNSIGNED(8, DUP(val))));
+}
+
+static RzILOpBitVector *gb_il_read_reg(gb_reg reg) {
+	if (gb_reg_bits(reg) == 8 || reg == GB_REG_SP) {
+		return VARG(gb_reg_name(reg));
+	}
+	switch (reg) {
+	case GB_REG_AF:
+	case GB_REG_BC:
+	case GB_REG_DE:
+	case GB_REG_HL:
+		return APPEND(
+			VARG(gb_reg_name(gb_reg_higher(reg))),
+			VARG(gb_reg_name(gb_reg_lower(reg))));
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
 }
 
 static RzILOpEffect *gb_il_mov_imm(gb_reg dst, ut16 imm) {
 	if (gb_reg_bits(dst) == 8) {
-		return gb_il_assign_reg(dst, U8(imm & 0xff));
+		return gb_il_write_reg(dst, U8(imm & 0xff));
 	}
-	// do not use gb_il_assign_reg for 16-bit to avoid unnecessary 16-bit casting of the constant value
+	// do not use gb_il_write_reg for 16-bit to avoid unnecessary 16-bit casting of the constant value
 	gb_reg h, l;
 	switch (dst) {
 	case GB_REG_SP:
@@ -116,11 +144,56 @@ static RzILOpEffect *gb_il_mov_imm(gb_reg dst, ut16 imm) {
 
 static RzILOpEffect *gb_il_mov_hl_sp(st8 imm) {
 	return SEQ5(
-		gb_il_assign_reg(GB_REG_HL, imm < 0 ? SUB(VARG("sp"), U16(-imm)) : ADD(VARG("sp"), U16(imm))),
+		gb_il_write_reg(GB_REG_HL, imm < 0 ? SUB(VARG("sp"), U16(-imm)) : ADD(VARG("sp"), U16(imm))),
 		SETG("Z", IL_FALSE),
 		SETG("N", IL_FALSE),
 		SETG("H", gb_il_carry(VARG("sp"), U16((ut8)imm), 16, 4)),
 		SETG("C", gb_il_carry(VARG("sp"), U16((ut8)imm), 16, 8)));
+}
+
+static RzILOpEffect *gb_il_mov_sp_hl() {
+	return SETG("sp", APPEND(VARG("h"), VARG("l")));
+}
+
+static RzILOpEffect *gb_il_inc(gb_reg reg, bool dec) {
+	if (gb_reg_bits(reg) == 8) {
+		RzILOpBitVector *r = VARG(gb_reg_name(reg));
+		return SEQ4(
+			SETG(gb_reg_name(reg), ADD(r, U8(1))),
+			SETG("Z", IS_ZERO(DUP(r))),
+			SETG("N", dec ? IL_TRUE : IL_FALSE),
+			SETG("H", IS_ZERO(UNSIGNED(4, DUP(r)))));
+	}
+	if (reg == GB_REG_SP) {
+		return SETG("sp", dec ? SUB(VARG("sp"), U16(1)) : ADD(VARG("sp"), U16(1)));
+	}
+	gb_reg h = gb_reg_higher(reg);
+	gb_reg l = gb_reg_lower(reg);
+	if (dec) {
+		return SEQ2(
+			SETG(gb_reg_name(h),
+				ITE(IS_ZERO(VARG(gb_reg_name(l))),
+					SUB(VARG(gb_reg_name(h)), U8(1)),
+					VARG(gb_reg_name(h)))),
+			SETG(gb_reg_name(l),
+				SUB(VARG(gb_reg_name(l)), U8(1))));
+	}
+	return SEQ2(
+		SETG(gb_reg_name(l),
+			ADD(VARG(gb_reg_name(l)), U8(1))),
+		SETG(gb_reg_name(h),
+			ITE(IS_ZERO(VARG(gb_reg_name(l))),
+				ADD(VARG(gb_reg_name(h)), U8(1)),
+				VARG(gb_reg_name(h)))));
+}
+
+static RzILOpEffect *gb_il_inc_hl_mem(bool dec, ut64 op_addr) {
+	return SEQ5(
+		SETL("v", (dec ? rz_il_op_new_sub : rz_il_op_new_add)(LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL))), U8(1))),
+		STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)), VARL("v")),
+		SETG("Z", IS_ZERO(VARL("v"))),
+		SETG("N", dec ? IL_TRUE : IL_FALSE),
+		SETG("H", IS_ZERO(UNSIGNED(4, VARL("v")))));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
