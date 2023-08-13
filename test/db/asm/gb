@@ -219,7 +219,7 @@ d "ld [hl], d" 72
 d "ld [hl], e" 73
 d "ld [hl], h" 74
 d "ld [hl], l" 75
-d "ld a, 0x00" 3e00
+ad "ld a, 0x63" 3e63 0x0 (set a (bv 8 0x63))
 d "ld a, [0x0000]" fa0000
 d "ld a, [0xff00 + c]" f2
 d "ld a, [rP1]" f000
@@ -289,7 +289,7 @@ d "ld a, d" 7a
 d "ld a, e" 7b
 d "ld a, h" 7c
 d "ld a, l" 7d
-d "ld b, 0x00" 0600
+d "ld b, 0x42" 0642 0x0 (set b (bv 8 0x42))
 d "ld b, [hl]" 46
 d "ld b, a" 47
 d "ld b, b" 40
@@ -299,7 +299,7 @@ d "ld b, e" 43
 d "ld b, h" 44
 d "ld b, l" 45
 d "ld bc, 0x1234" 013412 0x0 (seq (set b (bv 8 0x12)) (set c (bv 8 0x34)))
-d "ld c, 0x00" 0e00
+d "ld c, 0x42" 0e42 0x0 (set c (bv 8 0x42))
 d "ld c, [hl]" 4e
 d "ld c, a" 4f
 d "ld c, b" 48
@@ -308,7 +308,7 @@ d "ld c, d" 4a
 d "ld c, e" 4b
 d "ld c, h" 4c
 d "ld c, l" 4d
-d "ld d, 0x00" 1600
+d "ld d, 0x42" 1642 0x0 (set d (bv 8 0x42))
 d "ld d, [hl]" 56
 d "ld d, a" 57
 d "ld d, b" 50
@@ -318,7 +318,7 @@ d "ld d, e" 53
 d "ld d, h" 54
 d "ld d, l" 55
 d "ld de, 0x1234" 113412 0x0 (seq (set d (bv 8 0x12)) (set e (bv 8 0x34)))
-d "ld e, 0x00" 1e00
+d "ld e, 0x42" 1e42 0x0 (set e (bv 8 0x42))
 d "ld e, [hl]" 5e
 d "ld e, a" 5f
 d "ld e, b" 58
@@ -327,7 +327,7 @@ d "ld e, d" 5a
 d "ld e, e" 5b
 d "ld e, h" 5c
 d "ld e, l" 5d
-d "ld h, 0x00" 2600
+d "ld h, 0x42" 2642 0x0 (set h (bv 8 0x42))
 d "ld h, [hl]" 66
 d "ld h, a" 67
 d "ld h, b" 60
@@ -338,7 +338,7 @@ d "ld h, h" 64
 d "ld h, l" 65
 ad "ld hl, 0xc3a0" 21a0c3 0x0 (seq (set h (bv 8 0xc3)) (set l (bv 8 0xa0)))
 d "ld hl, sp + 0x00" f800
-d "ld l, 0x00" 2e00
+d "ld l, 0x42" 2e42 0x0 (set l (bv 8 0x42))
 d "ld l, [hl]" 6e
 d "ld l, a" 6f
 d "ld l, b" 68
@@ -615,5 +615,4 @@ a "ld de, 0x188" 118801
 a "call 0x36e0" cde036
 a "ld b, [hl]" 46
 a "ld [hl], a" 77
-a "ld a, 0x63" 3e63
 a "rlc [hl]" cb06

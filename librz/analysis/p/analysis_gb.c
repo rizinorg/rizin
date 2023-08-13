@@ -19,9 +19,24 @@
 #include <gb_makros.h>
 #include <gb.h>
 
+// lookup tables for disassembly
 static const char *regs_1[] = { "Z", "N", "H", "C" };
-static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "hl", "a" };
-static gb_reg regs_16[] = { GB_REG_BC, GB_REG_DE, GB_REG_HL, GB_REG_SP };
+static gb_reg regs_8[] = {
+	GB_REG_B,
+	GB_REG_C,
+	GB_REG_D,
+	GB_REG_E,
+	GB_REG_H,
+	GB_REG_L,
+	GB_REG_HL,
+	GB_REG_A
+};
+static gb_reg regs_16[] = {
+	GB_REG_BC,
+	GB_REG_DE,
+	GB_REG_HL,
+	GB_REG_SP
+};
 static const char *regs_16_alt[] = { "bc", "de", "hl", "af" };
 
 static ut8 gb_op_calljump(RzAnalysis *a, RzAnalysisOp *op, const ut8 *data, ut64 addr) {
@@ -131,11 +146,12 @@ static inline void gb_analysis_id(RzAnalysis *analysis, RzAnalysisOp *op, const 
 				rz_strbuf_setf(&op->esil, "1,%s,-=", reg_name);
 			}
 		} else {
-			op->dst->reg = rz_reg_get(analysis->reg, regs_8[data >> 3], RZ_REG_TYPE_GPR);
+			const char *reg_name = gb_reg_name(regs_8[data >> 3]);
+			op->dst->reg = rz_reg_get(analysis->reg, reg_name, RZ_REG_TYPE_GPR);
 			if (op->type == RZ_ANALYSIS_OP_TYPE_ADD) {
-				rz_strbuf_setf(&op->esil, "1,%s,+=,3,$c,H,:=,$z,Z,:=,0,N,:=", regs_8[data >> 3]);
+				rz_strbuf_setf(&op->esil, "1,%s,+=,3,$c,H,:=,$z,Z,:=,0,N,:=", reg_name);
 			} else {
-				rz_strbuf_setf(&op->esil, "1,%s,-=,4,$b,H,:=,$z,Z,:=,1,N,:=", regs_8[data >> 3]);
+				rz_strbuf_setf(&op->esil, "1,%s,-=,4,$b,H,:=,$z,Z,:=,1,N,:=", reg_name);
 			}
 		}
 	}
@@ -164,33 +180,32 @@ static inline void gb_analysis_add_sp(RzReg *reg, RzAnalysisOp *op, const ut8 da
 }
 
 static void gb_analysis_mov_imm(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
-	op->dst = rz_analysis_value_new();
-	op->src[0] = rz_analysis_value_new();
 	gb_reg regid;
 	ut16 imm;
 	if (data[0] & 1) {
 		// 16-bit dst reg
 		regid = regs_16[data[0] >> 4];
-		const char *reg_name = gb_reg_name(regid);
-		op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 		imm = GB_SOFTCAST(data[1], data[2]);
-		op->src[0]->imm = imm;
-		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			rz_strbuf_setf(&op->esil, "0x%04" PFMT64x ",%s,=", op->src[0]->imm, reg_name);
-		}
-		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			op->il_op = gb_il_mov_imm(regid, imm);
-		}
 	} else {
 		// 8-bit dst reg
-		op->dst->reg = rz_reg_get(reg, regs_8[data[0] >> 3], RZ_REG_TYPE_GPR);
-		op->src[0]->imm = data[1];
-		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,=", op->src[0]->imm, regs_8[data[0] >> 3]);
-		}
+		regid = regs_8[data[0] >> 3];
+		imm = data[1];
 	}
+	const char *reg_name = gb_reg_name(regid);
+	op->dst = rz_analysis_value_new();
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
+	op->src[0] = rz_analysis_value_new();
+	op->src[0]->imm = data[1];
 	op->src[0]->absolute = true;
 	op->val = op->src[0]->imm;
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		rz_strbuf_setf(&op->esil,
+			gb_reg_bits(regid) == 16 ? "0x%04" PFMT64x ",%s,=" : "0x%02" PFMT64x ",%s,=",
+			(ut64)imm, reg_name);
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_mov_imm(regid, imm);
+	}
 }
 
 static inline void gb_analysis_mov_sp_hl(RzReg *reg, RzAnalysisOp *op) {
@@ -219,9 +234,11 @@ static inline void gb_analysis_mov_hl_sp(RzReg *reg, RzAnalysisOp *op, const ut8
 static void gb_analysis_mov_reg(RzReg *reg, RzAnalysisOp *op, const ut8 data) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
-	op->dst->reg = rz_reg_get(reg, regs_8[(data / 8) - 8], RZ_REG_TYPE_GPR);
-	op->src[0]->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
-	rz_strbuf_setf(&op->esil, "%s,%s,=", regs_8[data & 7], regs_8[(data / 8) - 8]);
+	const char *dst_reg = gb_reg_name(regs_8[(data / 8) - 8]);
+	const char *src_reg = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, dst_reg, RZ_REG_TYPE_GPR);
+	op->src[0]->reg = rz_reg_get(reg, src_reg, RZ_REG_TYPE_GPR);
+	rz_strbuf_setf(&op->esil, "%s,%s,=", src_reg, dst_reg);
 }
 
 static inline void gb_analysis_mov_ime(RzReg *reg, RzAnalysisOp *op, const ut8 data) {
@@ -247,7 +264,7 @@ static inline void gb_analysis_mov_scf(RzReg *reg, RzAnalysisOp *op) {
 static inline void gb_analysis_xor_cpl(RzReg *reg, RzAnalysisOp *op) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
-	op->dst->reg = rz_reg_get(reg, regs_8[7], RZ_REG_TYPE_GPR);
+	op->dst->reg = rz_reg_get(reg, gb_reg_name(GB_REG_A), RZ_REG_TYPE_GPR);
 	op->src[0]->imm = 0xff;
 	rz_strbuf_set(&op->esil, "0xff,a,^=,1,N,:=,1,H,:=");
 }
@@ -303,11 +320,12 @@ static inline void gb_analysis_and_res(RzAnalysis *analysis, RzAnalysisOp *op, c
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = ((~(0x1 << ((data >> 3) & 7))) & 0xff);
 	op->dst->memref = ((data & 7) == 6);
-	op->dst->reg = rz_reg_get(analysis->reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(analysis->reg, reg_name, RZ_REG_TYPE_GPR);
 	if (op->dst->memref) {
-		rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,[1],&,%s,=[1]", op->src[0]->imm, regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,[1],&,%s,=[1]", op->src[0]->imm, reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,&=", op->src[0]->imm, regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,&=", op->src[0]->imm, reg_name);
 	}
 }
 
@@ -316,11 +334,12 @@ static inline void gb_analysis_and_bit(RzReg *reg, RzAnalysisOp *op, const ut8 d
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1 << ((data >> 3) & 7);
 	op->dst->memref = ((data & 7) == 6);
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	if (op->dst->memref) {
-		rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,[1],&,0,==,$z,Z,:=,0,N,:=,1,H,:=", op->src[0]->imm, regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,[1],&,0,==,$z,Z,:=,0,N,:=,1,H,:=", op->src[0]->imm, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,&,0,==,$z,Z,:=,0,N,:=,1,H,:=", op->src[0]->imm, regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,&,0,==,$z,Z,:=,0,N,:=,1,H,:=", op->src[0]->imm, reg_name);
 	}
 }
 
@@ -329,11 +348,12 @@ static inline void gb_analysis_or_set(RzAnalysis *analysis, RzAnalysisOp *op, co
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = (data >> 3) & 7;
 	op->dst->memref = ((data & 7) == 6);
-	op->dst->reg = rz_reg_get(analysis->reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(analysis->reg, reg_name, RZ_REG_TYPE_GPR);
 	if (op->dst->memref) {
-		rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,[1],|,%s,=[1]", op->src[0]->imm, regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,[1],|,%s,=[1]", op->src[0]->imm, reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,|=", op->src[0]->imm, regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "0x%02" PFMT64x ",%s,|=", op->src[0]->imm, reg_name);
 	}
 }
 
@@ -341,28 +361,29 @@ static void gb_analysis_xoaasc(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, "a", RZ_REG_TYPE_GPR);
-	op->src[0]->reg = rz_reg_get(reg, regs_8[data[0] & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data[0] & 7]);
+	op->src[0]->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	op->src[0]->memref = ((data[0] & 7) == 6);
 	switch (op->type) {
 	case RZ_ANALYSIS_OP_TYPE_XOR:
 		if (op->src[0]->memref) {
-			rz_strbuf_setf(&op->esil, "%s,[1],a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_8[data[0] & 7]);
+			rz_strbuf_setf(&op->esil, "%s,[1],a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", reg_name);
 		} else {
-			rz_strbuf_setf(&op->esil, "%s,a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_8[data[0] & 7]);
+			rz_strbuf_setf(&op->esil, "%s,a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", reg_name);
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_OR:
 		if (op->src[0]->memref) {
-			rz_strbuf_setf(&op->esil, "%s,[1],a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_8[data[0] & 7]);
+			rz_strbuf_setf(&op->esil, "%s,[1],a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", reg_name);
 		} else {
-			rz_strbuf_setf(&op->esil, "%s,a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_8[data[0] & 7]);
+			rz_strbuf_setf(&op->esil, "%s,a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", reg_name);
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_AND:
 		if (op->src[0]->memref) {
-			rz_strbuf_setf(&op->esil, "%s,[1],a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", regs_8[data[0] & 7]);
+			rz_strbuf_setf(&op->esil, "%s,[1],a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", reg_name);
 		} else {
-			rz_strbuf_setf(&op->esil, "%s,a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", regs_8[data[0] & 7]);
+			rz_strbuf_setf(&op->esil, "%s,a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", reg_name);
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_ADD:
@@ -370,17 +391,17 @@ static void gb_analysis_xoaasc(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 			if (data[0] > 0x87) {
 				op->src[1] = rz_analysis_value_new();
 				op->src[1]->reg = rz_reg_get(reg, "C", RZ_REG_TYPE_GPR);
-				rz_strbuf_setf(&op->esil, "C,%s,[1],+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_8[data[0] & 7]);
+				rz_strbuf_setf(&op->esil, "C,%s,[1],+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", reg_name);
 			} else {
-				rz_strbuf_setf(&op->esil, "%s,[1],a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_8[data[0] & 7]);
+				rz_strbuf_setf(&op->esil, "%s,[1],a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", reg_name);
 			}
 		} else {
 			if (data[0] > 0x87) {
 				op->src[1] = rz_analysis_value_new();
 				op->src[1]->reg = rz_reg_get(reg, "C", RZ_REG_TYPE_GPR);
-				rz_strbuf_setf(&op->esil, "C,%s,+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_8[data[0] & 7]);
+				rz_strbuf_setf(&op->esil, "C,%s,+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", reg_name);
 			} else {
-				rz_strbuf_setf(&op->esil, "%s,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_8[data[0] & 7]);
+				rz_strbuf_setf(&op->esil, "%s,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", reg_name);
 			}
 		}
 		break;
@@ -389,25 +410,25 @@ static void gb_analysis_xoaasc(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 			if (data[0] > 0x97) {
 				op->src[1] = rz_analysis_value_new();
 				op->src[1]->reg = rz_reg_get(reg, "C", RZ_REG_TYPE_GPR);
-				rz_strbuf_setf(&op->esil, "C,%s,[1],+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_8[data[0] & 7]);
+				rz_strbuf_setf(&op->esil, "C,%s,[1],+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", reg_name);
 			} else {
-				rz_strbuf_setf(&op->esil, "%s,[1],a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_8[data[0] & 7]);
+				rz_strbuf_setf(&op->esil, "%s,[1],a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", reg_name);
 			}
 		} else {
 			if (data[0] > 0x97) {
 				op->src[1] = rz_analysis_value_new();
 				op->src[1]->reg = rz_reg_get(reg, "C", RZ_REG_TYPE_GPR);
-				rz_strbuf_setf(&op->esil, "C,%s,+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_8[data[0] & 7]);
+				rz_strbuf_setf(&op->esil, "C,%s,+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", reg_name);
 			} else {
-				rz_strbuf_setf(&op->esil, "%s,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_8[data[0] & 7]);
+				rz_strbuf_setf(&op->esil, "%s,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", reg_name);
 			}
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CMP:
 		if (op->src[0]->memref) {
-			rz_strbuf_setf(&op->esil, "%s,[1],a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_8[data[0] & 7]);
+			rz_strbuf_setf(&op->esil, "%s,[1],a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", reg_name);
 		} else {
-			rz_strbuf_setf(&op->esil, "%s,a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_8[data[0] & 7]);
+			rz_strbuf_setf(&op->esil, "%s,a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", reg_name);
 		}
 		break;
 	default:
@@ -466,8 +487,9 @@ static inline void gb_analysis_load_hl(RzReg *reg, RzAnalysisOp *op, const ut8 d
 	op->src[0]->reg = rz_reg_get(reg, "hl", RZ_REG_TYPE_GPR);
 	op->src[0]->memref = 1;
 	op->src[0]->absolute = true;
-	op->dst->reg = rz_reg_get(reg, regs_8[((data & 0x38) >> 3)], RZ_REG_TYPE_GPR);
-	rz_strbuf_setf(&op->esil, "hl,[1],%s,=", regs_8[((data & 0x38) >> 3)]);
+	const char *reg_name = gb_reg_name(regs_8[((data & 0x38) >> 3)]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
+	rz_strbuf_setf(&op->esil, "hl,[1],%s,=", reg_name);
 	if (data == 0x3a) {
 		rz_strbuf_append(&op->esil, ",1,hl,-=");
 	}
@@ -521,8 +543,9 @@ static inline void gb_analysis_store_hl(RzReg *reg, RzAnalysisOp *op, const ut8 
 		op->src[0]->imm = data[1];
 		rz_strbuf_setf(&op->esil, "0x%02x,hl,=[1]", data[1]);
 	} else {
-		op->src[0]->reg = rz_reg_get(reg, regs_8[data[0] & 0x07], RZ_REG_TYPE_GPR);
-		rz_strbuf_setf(&op->esil, "%s,hl,=[1]", regs_8[data[0] & 0x07]);
+		const char *reg_name = gb_reg_name(regs_8[data[0] & 0x07]);
+		op->src[0]->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
+		rz_strbuf_setf(&op->esil, "%s,hl,=[1]", reg_name);
 	}
 	if (data[0] == 0x32) {
 		rz_strbuf_set(&op->esil, "a,hl,=[1],1,hl,-=");
@@ -569,12 +592,13 @@ static inline void gb_analysis_cb_swap(RzReg *reg, RzAnalysisOp *op, const ut8 d
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 4;
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
 		op->dst->memref = 1;
-		rz_strbuf_setf(&op->esil, "4,%s,[1],>>,4,%s,[1],<<,|,%s,=[1],$z,Z,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "4,%s,[1],>>,4,%s,[1],<<,|,%s,=[1],$z,Z,:=", reg_name, reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "4,%s,>>,4,%s,<<,|,%s,=,$z,Z,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "4,%s,>>,4,%s,<<,|,%s,=,$z,Z,:=", reg_name, reg_name, reg_name);
 	}
 }
 
@@ -582,12 +606,13 @@ static inline void gb_analysis_cb_rlc(RzReg *reg, RzAnalysisOp *op, const ut8 da
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
 		op->dst->memref = 1;
-		rz_strbuf_setf(&op->esil, "7,%s,[1],>>,1,&,C,:=,1,%s,[1],<<,C,|,%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "7,%s,[1],>>,1,&,C,:=,1,%s,[1],<<,C,|,%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "1,%s,<<=,7,$c,C,:=,C,%s,|=,$z,Z,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,<<=,7,$c,C,:=,C,%s,|=,$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name);
 	}
 }
 
@@ -595,12 +620,13 @@ static inline void gb_analysis_cb_rl(RzReg *reg, RzAnalysisOp *op, const ut8 dat
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
 		op->dst->memref = 1;
-		rz_strbuf_setf(&op->esil, "1,%s,<<,C,|,%s,=[1],7,$c,C,:=,$z,Z,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,<<,C,|,%s,=[1],7,$c,C,:=,$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "1,%s,<<,C,|,%s,=,7,$c,C,:=,$z,Z,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,<<,C,|,%s,=,7,$c,C,:=,$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name);
 	}
 }
 
@@ -608,12 +634,13 @@ static inline void gb_analysis_cb_rrc(RzReg *reg, RzAnalysisOp *op, const ut8 da
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
 		op->dst->memref = 1;
-		rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,:=,1,%s,[1],>>,7,C,<<,|,%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,:=,1,%s,[1],>>,7,C,<<,|,%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "1,%s,&,C,:=,1,%s,>>,7,C,<<,|,%s,=,$z,Z,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,&,C,:=,1,%s,>>,7,C,<<,|,%s,=,$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name, reg_name);
 	}
 }
 
@@ -621,12 +648,13 @@ static inline void gb_analysis_cb_rr(RzReg *reg, RzAnalysisOp *op, const ut8 dat
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
 		op->dst->memref = 1;
-		rz_strbuf_setf(&op->esil, "1,%s,[1],&,H,:=,1,%s,[1],>>,7,C,<<,|,%s,=[1],H,C,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,[1],&,H,:=,1,%s,[1],>>,7,C,<<,|,%s,=[1],H,C,:=,0,H,:=,0,N,:=", reg_name, reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "1,%s,&,H,:=,1,%s,>>,7,C,<<,|,%s,=,H,C,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]); // HACK
+		rz_strbuf_setf(&op->esil, "1,%s,&,H,:=,1,%s,>>,7,C,<<,|,%s,=,H,C,:=,0,H,:=,0,N,:=", reg_name, reg_name, reg_name); // HACK
 	}
 }
 
@@ -635,12 +663,13 @@ static inline void gb_analysis_cb_sla(RzReg *reg, RzAnalysisOp *op, const ut8 da
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	op->dst->memref = ((data & 7) == 6);
 	if (op->dst->memref) {
-		rz_strbuf_setf(&op->esil, "1,%s,[1],<<,%s,=[1],7,$c,C,:=,%s,[1],%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,[1],<<,%s,=[1],7,$c,C,:=,%s,[1],%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name, reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "1,%s,<<=,7,$c,C,:=,%s,%s,=,$z,Z,:=,0,H,:=0,N,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]); // %s,%s,= is a HACK for $z
+		rz_strbuf_setf(&op->esil, "1,%s,<<=,7,$c,C,:=,%s,%s,=,$z,Z,:=,0,H,:=0,N,:=", reg_name, reg_name, reg_name); // %s,%s,= is a HACK for $z
 	}
 }
 
@@ -648,12 +677,13 @@ static inline void gb_analysis_cb_sra(RzReg *reg, RzAnalysisOp *op, const ut8 da
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	op->dst->memref = ((data & 7) == 6);
 	if (op->dst->memref) {
-		rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,:=,0x80,%s,[1],&,1,%s,[1],>>,|,%s,=[1],$z,Z,:=,0,N,:=,0,H,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]); // spaguesil
+		rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,:=,0x80,%s,[1],&,1,%s,[1],>>,|,%s,=[1],$z,Z,:=,0,N,:=,0,H,:=", reg_name, reg_name, reg_name, reg_name); // spaguesil
 	} else {
-		rz_strbuf_setf(&op->esil, "1,%s,&,C,:=,0x80,%s,&,1,%s,>>,|,%s,=,$z,Z,:=,0,N,:=,0,H,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,&,C,:=,0x80,%s,&,1,%s,>>,|,%s,=,$z,Z,:=,0,N,:=,0,H,:=", reg_name, reg_name, reg_name, reg_name);
 	}
 }
 
@@ -661,12 +691,13 @@ static inline void gb_analysis_cb_srl(RzReg *reg, RzAnalysisOp *op, const ut8 da
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
-	op->dst->reg = rz_reg_get(reg, regs_8[data & 7], RZ_REG_TYPE_GPR);
+	const char *reg_name = gb_reg_name(regs_8[data & 7]);
+	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	op->dst->memref = ((data & 7) == 6);
 	if (op->dst->memref) {
-		rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,:=,1,%s,[1],>>,%s,=[1],$z,Z,:=,0,N,:=,0,H,:=", regs_8[data & 7], regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,:=,1,%s,[1],>>,%s,=[1],$z,Z,:=,0,N,:=,0,H,:=", reg_name, reg_name, reg_name);
 	} else {
-		rz_strbuf_setf(&op->esil, "1,%s,&,C,:=,1,%s,>>=,$z,Z,:=,0,N,:=,0,H,:=", regs_8[data & 7], regs_8[data & 7]);
+		rz_strbuf_setf(&op->esil, "1,%s,&,C,:=,1,%s,>>=,$z,Z,:=,0,N,:=,0,H,:=", reg_name, reg_name);
 	}
 }
 
