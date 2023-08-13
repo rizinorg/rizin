@@ -216,19 +216,24 @@ static inline void gb_analysis_mov_sp_hl(RzReg *reg, RzAnalysisOp *op) {
 	rz_strbuf_set(&op->esil, "hl,sp,=");
 }
 
-static inline void gb_analysis_mov_hl_sp(RzReg *reg, RzAnalysisOp *op, const ut8 data) {
+static inline void gb_analysis_mov_hl_sp(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[1] = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, gb_reg_name(GB_REG_HL), RZ_REG_TYPE_GPR);
 	op->src[0]->reg = rz_reg_get(reg, gb_reg_name(GB_REG_SP), RZ_REG_TYPE_GPR);
 	op->src[1]->imm = (st8)data;
-	if (data < 128) {
-		rz_strbuf_setf(&op->esil, "0x%02x,sp,+,hl,=", data);
-	} else {
-		rz_strbuf_setf(&op->esil, "0x%02x,sp,-,hl,=", 0 - (st8)data);
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		if (data < 128) {
+			rz_strbuf_setf(&op->esil, "0x%02x,sp,+,hl,=", data);
+		} else {
+			rz_strbuf_setf(&op->esil, "0x%02x,sp,-,hl,=", 0 - (st8)data);
+		}
+		rz_strbuf_append(&op->esil, ",0,Z,=,0,N,:=");
 	}
-	rz_strbuf_append(&op->esil, ",0,Z,=,0,N,:=");
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_mov_hl_sp(data);
+	}
 }
 
 static void gb_analysis_mov_reg(RzReg *reg, RzAnalysisOp *op, const ut8 data) {
@@ -795,7 +800,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case 0xf8:
-		gb_analysis_mov_hl_sp(analysis->reg, op, data[1]);
+		gb_analysis_mov_hl_sp(mask, analysis->reg, op, data[1]);
 		op->cycles = 12;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->type2 = RZ_ANALYSIS_OP_TYPE_ADD;

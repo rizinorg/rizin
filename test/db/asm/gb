@@ -337,7 +337,8 @@ d "ld h, e" 63
 d "ld h, h" 64
 d "ld h, l" 65
 ad "ld hl, 0xc3a0" 21a0c3 0x0 (seq (set h (bv 8 0xc3)) (set l (bv 8 0xa0)))
-d "ld hl, sp + 0x00" f800
+d "ld hl, sp + 0x42" f842 0x0 (seq (set h (cast 8 false (>> (+ (var sp) (bv 16 0x42)) (bv 4 0x8) false))) (set l (cast 8 false (+ (var sp) (bv 16 0x42)))) (set Z false) (set N false) (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0x42) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0x42) (bv 16 0xff))) (bv 16 0xff)))))
+d "ld hl, sp + 0xf2" f8f2 0x0 (seq (set h (cast 8 false (>> (- (var sp) (bv 16 0xe)) (bv 4 0x8) false))) (set l (cast 8 false (- (var sp) (bv 16 0xe)))) (set Z false) (set N false) (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0xf2) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0xf2) (bv 16 0xff))) (bv 16 0xff)))))
 d "ld l, 0x42" 2e42 0x0 (set l (bv 8 0x42))
 d "ld l, [hl]" 6e
 d "ld l, a" 6f
