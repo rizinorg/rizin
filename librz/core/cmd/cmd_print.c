@@ -2804,8 +2804,8 @@ RZ_IPI RzCmdStatus rz_assembly_of_hex_handler(RzCore *core, int argc, const char
 		return RZ_CMD_STATUS_ERROR;
 	}
 	char *buf = rz_core_assembly_of_hex(core, hex, len);
+	free(hex);
 	if (!buf) {
-		free(hex);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_print(buf);
