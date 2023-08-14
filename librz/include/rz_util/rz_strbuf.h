@@ -12,7 +12,6 @@ typedef struct {
 	size_t len; // string length in chars or binary buffer size
 	char *ptr; // ptr replacing buf in case strlen > sizeof(buf)
 	size_t ptrlen; // string length + 1 or binary buffer size
-	bool weakref; // ptr is not owned
 } RzStrBuf;
 
 #define RZ_STRBUF_SAFEGET(sb) (rz_strbuf_get(sb) ? rz_strbuf_get(sb) : "")
@@ -40,7 +39,6 @@ RZ_API bool rz_strbuf_copy(RzStrBuf *dst, RzStrBuf *src);
 RZ_API bool rz_strbuf_equals(RzStrBuf *sa, RzStrBuf *sb);
 RZ_API bool rz_strbuf_reserve(RzStrBuf *sb, size_t len);
 RZ_API bool rz_strbuf_is_empty(RzStrBuf *sb);
-RZ_API bool rz_strbuf_setptr(RzStrBuf *sb, char *p, int l);
 
 #ifdef __cplusplus
 }
