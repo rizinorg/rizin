@@ -112,22 +112,28 @@ else
   endforeach
 endif
 
-blake3_libs = []
+blake3_lib_defs = []
 foreach it : blake3_simd
-  file = it[0]
   disable_flag = it[1]
   name = it[2]
   code = it[3]
   args = it[4]
   has_extension = cc.compiles(code, args: args, name: name)
   if has_extension
-    # https://github.com/mesonbuild/meson/issues/1367
-    # Individual static libraries are needed to avoid passing the simd flags to the C files,
-    # which would make functions like memset() use potentially unsupported instructions at runtime.
-    blake3_libs += static_library('blake3_' + name, file, c_args: args)
+    blake3_lib_defs += [it]
   else
     add_project_arguments(disable_flag, language: 'c')
   endif
+endforeach
+
+# This must not happen inside the loop above because add_project_arguments() calls must precede any
+# build target declaration.
+blake3_libs = []
+foreach it : blake3_lib_defs
+    # https://github.com/mesonbuild/meson/issues/1367
+    # Individual static libraries are needed to avoid passing the simd flags to the C files,
+    # which would make functions like memset() use potentially unsupported instructions at runtime.
+    blake3_libs += static_library('blake3_' + it[2], it[0], c_args: it[4])
 endforeach
 
 blake3_inc = [
