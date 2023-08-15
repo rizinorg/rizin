@@ -16,7 +16,7 @@ extern const char *printfmtColumns[NPF];
 // to print the stack in the debugger view
 #define PRINT_HEX_FORMATS 10
 #define PRINT_3_FORMATS   2
-#define PRINT_4_FORMATS   7
+#define PRINT_4_FORMATS   5
 #define PRINT_5_FORMATS   8
 
 extern const char *printHexFormats[PRINT_HEX_FORMATS];

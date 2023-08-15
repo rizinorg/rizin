@@ -42,7 +42,7 @@ const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled 
 };
 
 const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "prc=a", "pxAv", "pxx", "p=e $r-2", "pk 64"
+	"prc", "pxA", "pxx", "p=e $r-2", "pk 64"
 };
 
 const char *print5Formats[PRINT_5_FORMATS] = {
