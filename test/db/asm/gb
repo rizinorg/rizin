@@ -153,66 +153,66 @@ d "jr nZ, 0x00" 2000
 d "ld [0x1234], a" ea3412 0x0 (store 0 (bv 16 0x1234) (var a))
 d "ld [0x1234], sp" 083412 0x0 (storew 0 (bv 16 0x1234) (var sp))
 d "ld [0xff00 + c], a" e2 0x0 (store 0 (append (bv 8 0xff) (var c)) (var a))
-d "ld [rP1], a" e000
-d "ld [rSB], a" e001
-d "ld [rSC], a" e002
-d "ld [rDIV], a" e004
-d "ld [rTIMA], a" e005
-d "ld [rTMA], a" e006
-d "ld [rTAC], a" e007
-d "ld [rIF], a" e00f
-d "ld [rAUD1SWEEP], a" e010
-d "ld [rAUD1LEN], a" e011
-d "ld [rAUD1ENV], a" e012
-d "ld [rAUD1LOW], a" e013
-d "ld [rAUD1HIGH], a" e014
-d "ld [rAUD2LEN], a" e016
-d "ld [rAUD2ENV], a" e017
-d "ld [rAUD2LOW], a" e018
-d "ld [rAUD2HIGH], a" e019
-d "ld [rAUD3ENA], a" e01a
-d "ld [rAUD3LEN], a" e01b
-d "ld [rAUD3LEVEL], a" e01c
-d "ld [rAUD3LOW], a" e01d
-d "ld [rAUD3HIGH], a" e01e
-d "ld [rAUD4LEN], a" e020
-d "ld [rAUD4ENV], a" e021
-d "ld [rAUD4POLY], a" e022
-d "ld [rAUD4GO], a" e023
-d "ld [rAUDVOL], a" e024
-d "ld [rAUDTERM], a" e025
-d "ld [rAUDENA], a" e026
-d "ld [rPCM12], a" e076
-d "ld [rPCM34], a" e077
-d "ld [rLCDC], a" e040
-d "ld [rSTAT], a" e041
-d "ld [rSCY], a" e042
-d "ld [rSCX], a" e043
-d "ld [rLY], a" e044
-d "ld [rLYC], a" e045
-d "ld [rDMA], a" e046
-d "ld [rBGP], a" e047
-d "ld [rOBP0], a" e048
-d "ld [rOBP1], a" e049
-d "ld [rWY], a" e04a
-d "ld [rWX], a" e04b
-d "ld [rKEY1], a" e04d
-d "ld [rVBK], a" e04f
-d "ld [rHDMA1], a" e051
-d "ld [rHDMA2], a" e052
-d "ld [rHDMA3], a" e053
-d "ld [rHDMA4], a" e054
-d "ld [rHDMA5], a" e055
-d "ld [rRP], a" e056
-d "ld [rBCPS], a" e068
-d "ld [rBCPD], a" e069
-d "ld [rOCPS], a" e06a
-d "ld [rOCPD], a" e06b
-d "ld [rSVBK], a" e070
-d "ld [rIE], a" e0ff
+d "ld [rP1], a" e000 0x0 (store 0 (bv 16 0xff00) (var a))
+d "ld [rSB], a" e001 0x0 (store 0 (bv 16 0xff01) (var a))
+d "ld [rSC], a" e002 0x0 (store 0 (bv 16 0xff02) (var a))
+d "ld [rDIV], a" e004 0x0 (store 0 (bv 16 0xff04) (var a))
+d "ld [rTIMA], a" e005 0x0 (store 0 (bv 16 0xff05) (var a))
+d "ld [rTMA], a" e006 0x0 (store 0 (bv 16 0xff06) (var a))
+d "ld [rTAC], a" e007 0x0 (store 0 (bv 16 0xff07) (var a))
+d "ld [rIF], a" e00f 0x0 (store 0 (bv 16 0xff0f) (var a))
+d "ld [rAUD1SWEEP], a" e010 0x0 (store 0 (bv 16 0xff10) (var a))
+d "ld [rAUD1LEN], a" e011 0x0 (store 0 (bv 16 0xff11) (var a))
+d "ld [rAUD1ENV], a" e012 0x0 (store 0 (bv 16 0xff12) (var a))
+d "ld [rAUD1LOW], a" e013 0x0 (store 0 (bv 16 0xff13) (var a))
+d "ld [rAUD1HIGH], a" e014 0x0 (store 0 (bv 16 0xff14) (var a))
+d "ld [rAUD2LEN], a" e016 0x0 (store 0 (bv 16 0xff16) (var a))
+d "ld [rAUD2ENV], a" e017 0x0 (store 0 (bv 16 0xff17) (var a))
+d "ld [rAUD2LOW], a" e018 0x0 (store 0 (bv 16 0xff18) (var a))
+d "ld [rAUD2HIGH], a" e019 0x0 (store 0 (bv 16 0xff19) (var a))
+d "ld [rAUD3ENA], a" e01a 0x0 (store 0 (bv 16 0xff1a) (var a))
+d "ld [rAUD3LEN], a" e01b 0x0 (store 0 (bv 16 0xff1b) (var a))
+d "ld [rAUD3LEVEL], a" e01c 0x0 (store 0 (bv 16 0xff1c) (var a))
+d "ld [rAUD3LOW], a" e01d 0x0 (store 0 (bv 16 0xff1d) (var a))
+d "ld [rAUD3HIGH], a" e01e 0x0 (store 0 (bv 16 0xff1e) (var a))
+d "ld [rAUD4LEN], a" e020 0x0 (store 0 (bv 16 0xff20) (var a))
+d "ld [rAUD4ENV], a" e021 0x0 (store 0 (bv 16 0xff21) (var a))
+d "ld [rAUD4POLY], a" e022 0x0 (store 0 (bv 16 0xff22) (var a))
+d "ld [rAUD4GO], a" e023 0x0 (store 0 (bv 16 0xff23) (var a))
+d "ld [rAUDVOL], a" e024 0x0 (store 0 (bv 16 0xff24) (var a))
+d "ld [rAUDTERM], a" e025 0x0 (store 0 (bv 16 0xff25) (var a))
+d "ld [rAUDENA], a" e026 0x0 (store 0 (bv 16 0xff26) (var a))
+d "ld [rPCM12], a" e076 0x0 (store 0 (bv 16 0xff76) (var a))
+d "ld [rPCM34], a" e077 0x0 (store 0 (bv 16 0xff77) (var a))
+d "ld [rLCDC], a" e040 0x0 (store 0 (bv 16 0xff40) (var a))
+d "ld [rSTAT], a" e041 0x0 (store 0 (bv 16 0xff41) (var a))
+d "ld [rSCY], a" e042 0x0 (store 0 (bv 16 0xff42) (var a))
+d "ld [rSCX], a" e043 0x0 (store 0 (bv 16 0xff43) (var a))
+d "ld [rLY], a" e044 0x0 (store 0 (bv 16 0xff44) (var a))
+d "ld [rLYC], a" e045 0x0 (store 0 (bv 16 0xff45) (var a))
+d "ld [rDMA], a" e046 0x0 (store 0 (bv 16 0xff46) (var a))
+d "ld [rBGP], a" e047 0x0 (store 0 (bv 16 0xff47) (var a))
+d "ld [rOBP0], a" e048 0x0 (store 0 (bv 16 0xff48) (var a))
+d "ld [rOBP1], a" e049 0x0 (store 0 (bv 16 0xff49) (var a))
+d "ld [rWY], a" e04a 0x0 (store 0 (bv 16 0xff4a) (var a))
+d "ld [rWX], a" e04b 0x0 (store 0 (bv 16 0xff4b) (var a))
+d "ld [rKEY1], a" e04d 0x0 (store 0 (bv 16 0xff4d) (var a))
+d "ld [rVBK], a" e04f 0x0 (store 0 (bv 16 0xff4f) (var a))
+d "ld [rHDMA1], a" e051 0x0 (store 0 (bv 16 0xff51) (var a))
+d "ld [rHDMA2], a" e052 0x0 (store 0 (bv 16 0xff52) (var a))
+d "ld [rHDMA3], a" e053 0x0 (store 0 (bv 16 0xff53) (var a))
+d "ld [rHDMA4], a" e054 0x0 (store 0 (bv 16 0xff54) (var a))
+d "ld [rHDMA5], a" e055 0x0 (store 0 (bv 16 0xff55) (var a))
+d "ld [rRP], a" e056 0x0 (store 0 (bv 16 0xff56) (var a))
+d "ld [rBCPS], a" e068 0x0 (store 0 (bv 16 0xff68) (var a))
+d "ld [rBCPD], a" e069 0x0 (store 0 (bv 16 0xff69) (var a))
+d "ld [rOCPS], a" e06a 0x0 (store 0 (bv 16 0xff6a) (var a))
+d "ld [rOCPD], a" e06b 0x0 (store 0 (bv 16 0xff6b) (var a))
+d "ld [rSVBK], a" e070 0x0 (store 0 (bv 16 0xff70) (var a))
+d "ld [rIE], a" e0ff 0x0 (store 0 (bv 16 0xffff) (var a))
 d "ld [bc], a" 02 0x0 (store 0 (append (var b) (var c)) (var a))
 d "ld [de], a" 12 0x0 (store 0 (append (var d) (var e)) (var a))
-d "ld [hl], 0x42" 3642
+d "ld [hl], 0x42" 3642 0x0 (store 0 (append (var h) (var l)) (bv 8 0x42))
 ad "ld [hl], a" 77 0x0 (store 0 (append (var h) (var l)) (var a))
 d "ld [hl], b" 70 0x0 (store 0 (append (var h) (var l)) (var b))
 d "ld [hl], c" 71 0x0 (store 0 (append (var h) (var l)) (var c))
@@ -283,72 +283,72 @@ d "ld a, [rIE]" f0ff
 d "ld a, [bc]" 0a
 d "ld a, [de]" 1a
 d "ld a, [hl]" 7e
-d "ld a, a" 7f
-d "ld a, b" 78
-d "ld a, c" 79
-d "ld a, d" 7a
-d "ld a, e" 7b
-d "ld a, h" 7c
-d "ld a, l" 7d
+d "ld a, a" 7f 0x0 nop
+d "ld a, b" 78 0x0 (set a (var b))
+d "ld a, c" 79 0x0 (set a (var c))
+d "ld a, d" 7a 0x0 (set a (var d))
+d "ld a, e" 7b 0x0 (set a (var e))
+d "ld a, h" 7c 0x0 (set a (var h))
+d "ld a, l" 7d 0x0 (set a (var l))
 d "ld b, 0x42" 0642 0x0 (set b (bv 8 0x42))
 d "ld b, [hl]" 46
-d "ld b, a" 47
-d "ld b, b" 40
-d "ld b, c" 41
-d "ld b, d" 42
-d "ld b, e" 43
-d "ld b, h" 44
-d "ld b, l" 45
+d "ld b, a" 47 0x0 (set b (var a))
+d "ld b, b" 40 0x0 nop
+d "ld b, c" 41 0x0 (set b (var c))
+d "ld b, d" 42 0x0 (set b (var d))
+d "ld b, e" 43 0x0 (set b (var e))
+d "ld b, h" 44 0x0 (set b (var h))
+d "ld b, l" 45 0x0 (set b (var l))
 d "ld bc, 0x1234" 013412 0x0 (seq (set b (bv 8 0x12)) (set c (bv 8 0x34)))
 d "ld c, 0x42" 0e42 0x0 (set c (bv 8 0x42))
 d "ld c, [hl]" 4e
-d "ld c, a" 4f
-d "ld c, b" 48
-d "ld c, c" 49
-d "ld c, d" 4a
-d "ld c, e" 4b
-d "ld c, h" 4c
-d "ld c, l" 4d
+d "ld c, a" 4f 0x0 (set c (var a))
+d "ld c, b" 48 0x0 (set c (var b))
+d "ld c, c" 49 0x0 nop
+d "ld c, d" 4a 0x0 (set c (var d))
+d "ld c, e" 4b 0x0 (set c (var e))
+d "ld c, h" 4c 0x0 (set c (var h))
+d "ld c, l" 4d 0x0 (set c (var l))
 d "ld d, 0x42" 1642 0x0 (set d (bv 8 0x42))
 d "ld d, [hl]" 56
-d "ld d, a" 57
-d "ld d, b" 50
-d "ld d, c" 51
-d "ld d, d" 52
-d "ld d, e" 53
-d "ld d, h" 54
-d "ld d, l" 55
+d "ld d, a" 57 0x0 (set d (var a))
+d "ld d, b" 50 0x0 (set d (var b))
+d "ld d, c" 51 0x0 (set d (var c))
+d "ld d, d" 52 0x0 nop
+d "ld d, e" 53 0x0 (set d (var e))
+d "ld d, h" 54 0x0 (set d (var h))
+d "ld d, l" 55 0x0 (set d (var l))
 d "ld de, 0x1234" 113412 0x0 (seq (set d (bv 8 0x12)) (set e (bv 8 0x34)))
 d "ld e, 0x42" 1e42 0x0 (set e (bv 8 0x42))
 d "ld e, [hl]" 5e
-d "ld e, a" 5f
-d "ld e, b" 58
-d "ld e, c" 59
-d "ld e, d" 5a
-d "ld e, e" 5b
-d "ld e, h" 5c
-d "ld e, l" 5d
+d "ld e, a" 5f 0x0 (set e (var a))
+d "ld e, b" 58 0x0 (set e (var b))
+d "ld e, c" 59 0x0 (set e (var c))
+d "ld e, d" 5a 0x0 (set e (var d))
+d "ld e, e" 5b 0x0 nop
+d "ld e, h" 5c 0x0 (set e (var h))
+d "ld e, l" 5d 0x0 (set e (var l))
 d "ld h, 0x42" 2642 0x0 (set h (bv 8 0x42))
 d "ld h, [hl]" 66
-d "ld h, a" 67
-d "ld h, b" 60
-d "ld h, c" 61
-d "ld h, d" 62
-d "ld h, e" 63
-d "ld h, h" 64
-d "ld h, l" 65
+d "ld h, a" 67 0x0 (set h (var a))
+d "ld h, b" 60 0x0 (set h (var b))
+d "ld h, c" 61 0x0 (set h (var c))
+d "ld h, d" 62 0x0 (set h (var d))
+d "ld h, e" 63 0x0 (set h (var e))
+d "ld h, h" 64 0x0 nop
+d "ld h, l" 65 0x0 (set h (var l))
 ad "ld hl, 0xc3a0" 21a0c3 0x0 (seq (set h (bv 8 0xc3)) (set l (bv 8 0xa0)))
 d "ld hl, sp + 0x42" f842 0x0 (seq (set h (cast 8 false (>> (+ (var sp) (bv 16 0x42)) (bv 4 0x8) false))) (set l (cast 8 false (+ (var sp) (bv 16 0x42)))) (set Z false) (set N false) (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0x42) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0x42) (bv 16 0xff))) (bv 16 0xff)))))
 d "ld hl, sp + 0xf2" f8f2 0x0 (seq (set h (cast 8 false (>> (- (var sp) (bv 16 0xe)) (bv 4 0x8) false))) (set l (cast 8 false (- (var sp) (bv 16 0xe)))) (set Z false) (set N false) (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0xf2) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0xf2) (bv 16 0xff))) (bv 16 0xff)))))
 d "ld l, 0x42" 2e42 0x0 (set l (bv 8 0x42))
 d "ld l, [hl]" 6e
-d "ld l, a" 6f
-d "ld l, b" 68
-d "ld l, c" 69
-d "ld l, d" 6a
-d "ld l, e" 6b
-d "ld l, h" 6c
-d "ld l, l" 6d
+d "ld l, a" 6f 0x0 (set l (var a))
+d "ld l, b" 68 0x0 (set l (var b))
+d "ld l, c" 69 0x0 (set l (var c))
+d "ld l, d" 6a 0x0 (set l (var d))
+d "ld l, e" 6b 0x0 (set l (var e))
+d "ld l, h" 6c 0x0 (set l (var h))
+d "ld l, l" 6d 0x0 nop
 ad "ld sp, 0xc3a0" 31a0c3 0x0 (set sp (bv 16 0xc3a0))
 d "ld sp, hl" f9 0x0 (set sp (append (var h) (var l)))
 d "ldd [hl], a" 32 0x0 (seq (store 0 (append (var h) (var l)) (var a)) (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))

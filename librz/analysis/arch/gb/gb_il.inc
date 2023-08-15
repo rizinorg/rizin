@@ -154,6 +154,10 @@ static RzILOpEffect *gb_il_mov_sp_hl() {
 	return SETG("sp", APPEND(VARG("h"), VARG("l")));
 }
 
+static RzILOpEffect *gb_il_mov_mov(gb_reg dst, gb_reg src) {
+	return gb_il_write_reg(dst, gb_il_read_reg(src));
+}
+
 static RzILOpEffect *gb_il_inc(gb_reg reg, bool dec) {
 	if (gb_reg_bits(reg) == 8) {
 		RzILOpBitVector *r = VARG(gb_reg_name(reg));
@@ -214,6 +218,10 @@ static RzILOpEffect *gb_il_store_reg_reg(gb_reg dst_reg, bool inc, bool dec, gb_
 		r = SEQ2(r, gb_il_inc(dst_reg, dec));
 	}
 	return r;
+}
+
+static RzILOpEffect *gb_il_store_reg_imm(gb_reg dst_reg, ut8 imm, ut64 op_addr) {
+	return STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(dst_reg)), U8(imm));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

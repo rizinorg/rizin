@@ -256,14 +256,21 @@ static inline void gb_analysis_mov_hl_sp(RzAnalysisOpMask mask, RzReg *reg, RzAn
 	}
 }
 
-static void gb_analysis_mov_reg(RzReg *reg, RzAnalysisOp *op, const ut8 data) {
+static void gb_analysis_mov_reg(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
-	const char *dst_reg = gb_reg_name(regs_8[(data / 8) - 8]);
-	const char *src_reg = gb_reg_name(regs_8[data & 7]);
+	gb_reg dst_regid = regs_8[(data / 8) - 8];
+	const char *dst_reg = gb_reg_name(dst_regid);
+	gb_reg src_regid = regs_8[data & 7];
+	const char *src_reg = gb_reg_name(src_regid);
 	op->dst->reg = rz_reg_get(reg, dst_reg, RZ_REG_TYPE_GPR);
 	op->src[0]->reg = rz_reg_get(reg, src_reg, RZ_REG_TYPE_GPR);
-	rz_strbuf_setf(&op->esil, "%s,%s,=", src_reg, dst_reg);
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		rz_strbuf_setf(&op->esil, "%s,%s,=", src_reg, dst_reg);
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_mov_mov(dst_regid, src_regid);
+	}
 }
 
 static inline void gb_analysis_mov_ime(RzReg *reg, RzAnalysisOp *op, const ut8 data) {
@@ -566,7 +573,12 @@ static inline void gb_analysis_store_hl(RzAnalysisOpMask mask, RzReg *reg, RzAna
 	op->src[0]->absolute = true;
 	if (data[0] == 0x36) {
 		op->src[0]->imm = data[1];
-		rz_strbuf_setf(&op->esil, "0x%02x,hl,=[1]", data[1]);
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_setf(&op->esil, "0x%02x,hl,=[1]", data[1]);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_store_reg_imm(GB_REG_HL, data[1], op->addr);
+		}
 		return;
 	}
 	bool inc = data[0] == 0x22;
@@ -607,10 +619,17 @@ static void gb_analysis_store(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *o
 		}
 		break;
 	}
-	case 0xe0:
-		op->dst->base = 0xff00 + data[1];
-		rz_strbuf_setf(&op->esil, "a,0x%04" PFMT64x ",=[1]", op->dst->base);
+	case 0xe0: {
+		ut16 dst_addr = 0xff00 + data[1];
+		op->dst->base = dst_addr;
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_setf(&op->esil, "a,0x%04" PFMT64x ",=[1]", (ut64)dst_addr);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_store_imm_a(dst_addr, op->addr);
+		}
 		break;
+	}
 	case 0xe2:
 		op->dst->base = 0xff00;
 		op->dst->regdelta = rz_reg_get(reg, "c", RZ_REG_TYPE_GPR);
@@ -973,7 +992,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x7b:
 	case 0x7c:
 	case 0x7d:
-		gb_analysis_mov_reg(analysis->reg, op, data[0]);
+		gb_analysis_mov_reg(mask, analysis->reg, op, data[0]);
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV; // LD
 		break;
