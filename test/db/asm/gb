@@ -150,9 +150,9 @@ d "jr C, 0x00" 3800
 d "jr Z, 0x00" 2800
 d "jr nC, 0x00" 3000
 d "jr nZ, 0x00" 2000
-d "ld [0x0000], a" ea0000
-d "ld [0x0000], sp" 080000
-d "ld [0xff00 + c], a" e2
+d "ld [0x1234], a" ea3412 0x0 (store 0 (bv 16 0x1234) (var a))
+d "ld [0x1234], sp" 083412 0x0 (storew 0 (bv 16 0x1234) (var sp))
+d "ld [0xff00 + c], a" e2 0x0 (store 0 (append (bv 8 0xff) (var c)) (var a))
 d "ld [rP1], a" e000
 d "ld [rSB], a" e001
 d "ld [rSC], a" e002
@@ -210,16 +210,16 @@ d "ld [rOCPS], a" e06a
 d "ld [rOCPD], a" e06b
 d "ld [rSVBK], a" e070
 d "ld [rIE], a" e0ff
-d "ld [bc], a" 02
-d "ld [de], a" 12
-d "ld [hl], 0x00" 3600
-d "ld [hl], a" 77
-d "ld [hl], b" 70
-d "ld [hl], c" 71
-d "ld [hl], d" 72
-d "ld [hl], e" 73
-d "ld [hl], h" 74
-d "ld [hl], l" 75
+d "ld [bc], a" 02 0x0 (store 0 (append (var b) (var c)) (var a))
+d "ld [de], a" 12 0x0 (store 0 (append (var d) (var e)) (var a))
+d "ld [hl], 0x42" 3642
+ad "ld [hl], a" 77 0x0 (store 0 (append (var h) (var l)) (var a))
+d "ld [hl], b" 70 0x0 (store 0 (append (var h) (var l)) (var b))
+d "ld [hl], c" 71 0x0 (store 0 (append (var h) (var l)) (var c))
+d "ld [hl], d" 72 0x0 (store 0 (append (var h) (var l)) (var d))
+d "ld [hl], e" 73 0x0 (store 0 (append (var h) (var l)) (var e))
+d "ld [hl], h" 74 0x0 (store 0 (append (var h) (var l)) (var h))
+d "ld [hl], l" 75 0x0 (store 0 (append (var h) (var l)) (var l))
 ad "ld a, 0x63" 3e63 0x0 (set a (bv 8 0x63))
 d "ld a, [0x0000]" fa0000
 d "ld a, [0xff00 + c]" f2
@@ -351,9 +351,9 @@ d "ld l, h" 6c
 d "ld l, l" 6d
 ad "ld sp, 0xc3a0" 31a0c3 0x0 (set sp (bv 16 0xc3a0))
 d "ld sp, hl" f9 0x0 (set sp (append (var h) (var l)))
-d "ldd [hl], a" 32
+d "ldd [hl], a" 32 0x0 (seq (store 0 (append (var h) (var l)) (var a)) (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
 d "ldd a, [hl]" 3a
-d "ldi [hl], a" 22
+d "ldi [hl], a" 22 0x0 (seq (store 0 (append (var h) (var l)) (var a)) (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
 d "ldi a, [hl]" 2a
 d "nop" 00 0x0 nop
 d "or 0x00" f600
@@ -616,5 +616,4 @@ a "ld bc, 0x188" 018801
 a "ld de, 0x188" 118801
 a "call 0x36e0" cde036
 a "ld b, [hl]" 46
-a "ld [hl], a" 77
 a "rlc [hl]" cb06

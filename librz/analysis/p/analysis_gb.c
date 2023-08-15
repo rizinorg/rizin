@@ -558,7 +558,7 @@ static inline void gb_analysis_load(RzReg *reg, RzAnalysisOp *op, const ut8 *dat
 	}
 }
 
-static inline void gb_analysis_store_hl(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
+static inline void gb_analysis_store_hl(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, "hl", RZ_REG_TYPE_GPR);
@@ -567,31 +567,46 @@ static inline void gb_analysis_store_hl(RzReg *reg, RzAnalysisOp *op, const ut8 
 	if (data[0] == 0x36) {
 		op->src[0]->imm = data[1];
 		rz_strbuf_setf(&op->esil, "0x%02x,hl,=[1]", data[1]);
-	} else {
-		const char *reg_name = gb_reg_name(regs_8[data[0] & 0x07]);
-		op->src[0]->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
-		rz_strbuf_setf(&op->esil, "%s,hl,=[1]", reg_name);
+		return;
 	}
-	if (data[0] == 0x32) {
-		rz_strbuf_set(&op->esil, "a,hl,=[1],1,hl,-=");
+	bool inc = data[0] == 0x22;
+	bool dec = data[0] == 0x32;
+	gb_reg regid = inc || dec ? GB_REG_A : regs_8[data[0] & 0x07];
+	const char *reg_name = gb_reg_name(regid);
+	op->src[0]->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		if (dec) {
+			rz_strbuf_set(&op->esil, "a,hl,=[1],1,hl,-=");
+		} else if (inc) {
+			rz_strbuf_set(&op->esil, "a,hl,=[1],1,hl,+=");
+		} else {
+			rz_strbuf_setf(&op->esil, "%s,hl,=[1]", reg_name);
+		}
 	}
-	if (data[0] == 0x22) {
-		rz_strbuf_set(&op->esil, "a,hl,=[1],1,hl,+=");
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_store_reg_reg(GB_REG_HL, inc, dec, regid, op->addr);
 	}
 }
 
-static void gb_analysis_store(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
+static void gb_analysis_store(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->dst->memref = 1;
 	op->src[0]->reg = rz_reg_get(reg, "a", RZ_REG_TYPE_GPR);
 	switch (data[0]) {
-	case 0x08:
+	case 0x08: {
+		ut16 dst_addr = GB_SOFTCAST(data[1], data[2]);
 		op->dst->memref = 2;
-		op->dst->base = GB_SOFTCAST(data[1], data[2]);
+		op->dst->base = dst_addr;
 		op->src[0]->reg = rz_reg_get(reg, "sp", RZ_REG_TYPE_GPR);
-		rz_strbuf_setf(&op->esil, "sp,0x%04" PFMT64x ",=[2]", op->dst->base);
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_setf(&op->esil, "sp,0x%04" PFMT64x ",=[2]", op->dst->base);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_store_imm_sp(dst_addr, op->addr);
+		}
 		break;
+	}
 	case 0xe0:
 		op->dst->base = 0xff00 + data[1];
 		rz_strbuf_setf(&op->esil, "a,0x%04" PFMT64x ",=[1]", op->dst->base);
@@ -599,16 +614,34 @@ static void gb_analysis_store(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 	case 0xe2:
 		op->dst->base = 0xff00;
 		op->dst->regdelta = rz_reg_get(reg, "c", RZ_REG_TYPE_GPR);
-		rz_strbuf_set(&op->esil, "a,0xff00,c,+,=[1]");
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_set(&op->esil, "a,0xff00,c,+,=[1]");
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_store_reg_reg(GB_REG_C, false, false, GB_REG_A, op->addr);
+		}
 		break;
-	case 0xea:
-		op->dst->base = GB_SOFTCAST(data[1], data[2]);
-		rz_strbuf_setf(&op->esil, "a,0x%04" PFMT64x ",=[1]", op->dst->base);
+	case 0xea: {
+		ut16 dst_addr = GB_SOFTCAST(data[1], data[2]);
+		op->dst->base = dst_addr;
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_setf(&op->esil, "a,0x%04" PFMT64x ",=[1]", op->dst->base);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_store_imm_a(dst_addr, op->addr);
+		}
 		break;
+	}
 	default: {
-		const char *reg_name = gb_reg_name(regs_16[(data[0] & 0xf0) >> 4]);
+		gb_reg regid = regs_16[(data[0] & 0xf0) >> 4];
+		const char *reg_name = gb_reg_name(regid);
 		op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
-		rz_strbuf_setf(&op->esil, "a,%s,=[1]", reg_name);
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_setf(&op->esil, "a,%s,=[1]", reg_name);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_store_reg_reg(regid, false, false, GB_REG_A, op->addr);
+		}
 	}
 	}
 }
@@ -866,21 +899,16 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		gb_analysis_id(mask, analysis, op, data[0]);
 		break;
 	case 0xea:
-		meta_gb_bankswitch_cmt(analysis, addr, GB_SOFTCAST(data[1], data[2]));
-		gb_analysis_store(analysis->reg, op, data);
-		op->cycles = 16;
-		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		break;
 	case 0x08:
 		meta_gb_bankswitch_cmt(analysis, addr, GB_SOFTCAST(data[1], data[2]));
-		gb_analysis_store(analysis->reg, op, data);
-		op->cycles = 20;
+		gb_analysis_store(mask, analysis->reg, op, data);
+		op->cycles = data[0] == 0xea ? 16 : 20;
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case 0x02:
 	case 0x12:
 	case 0xe2:
-		gb_analysis_store(analysis->reg, op, data);
+		gb_analysis_store(mask, analysis->reg, op, data);
 		op->cycles = 8;
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
@@ -894,12 +922,12 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x74:
 	case 0x75:
 	case 0x77:
-		gb_analysis_store_hl(analysis->reg, op, data);
+		gb_analysis_store_hl(mask, analysis->reg, op, data);
 		op->cycles = 8;
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE; // LD
 		break;
 	case 0xe0:
-		gb_analysis_store(analysis->reg, op, data);
+		gb_analysis_store(mask, analysis->reg, op, data);
 		op->cycles = 12;
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;

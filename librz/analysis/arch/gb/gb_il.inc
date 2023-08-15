@@ -67,7 +67,6 @@ static RzILOpBool *gb_il_carry(RzILOpBitVector *a, RzILOpBitVector *b, ut32 src_
  * \p val must be of size gb_reg_bits(dst)
  */
 static RzILOpEffect *gb_il_write_reg(gb_reg dst, RzILOpBitVector *val) {
-	gb_reg h, l;
 	switch (dst) {
 	case GB_REG_A:
 	case GB_REG_B:
@@ -194,6 +193,27 @@ static RzILOpEffect *gb_il_inc_hl_mem(bool dec, ut64 op_addr) {
 		SETG("Z", IS_ZERO(VARL("v"))),
 		SETG("N", dec ? IL_TRUE : IL_FALSE),
 		SETG("H", IS_ZERO(UNSIGNED(4, VARL("v")))));
+}
+
+static RzILOpEffect *gb_il_store_imm_a(ut16 dst_addr, ut64 op_addr) {
+	return STORE(gb_il_resolve_addr_data(op_addr, U16(dst_addr)), VARG("a"));
+}
+
+static RzILOpEffect *gb_il_store_imm_sp(ut16 dst_addr, ut64 op_addr) {
+	return STOREW(gb_il_resolve_addr_data(op_addr, U16(dst_addr)), VARG("sp"));
+}
+
+static RzILOpEffect *gb_il_store_reg_reg(gb_reg dst_reg, bool inc, bool dec, gb_reg src_reg, ut64 op_addr) {
+	rz_return_val_if_fail(!(inc && dec), NULL);
+	RzILOpBitVector *dst_addr = gb_il_read_reg(dst_reg);
+	if (dst_reg == GB_REG_C) {
+		dst_addr = APPEND(U8(0xff), dst_addr);
+	}
+	RzILOpEffect *r = STORE(gb_il_resolve_addr_data(op_addr, dst_addr), gb_il_read_reg(src_reg));
+	if (inc || dec) {
+		r = SEQ2(r, gb_il_inc(dst_reg, dec));
+	}
+	return r;
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
