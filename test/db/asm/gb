@@ -222,7 +222,7 @@ d "ld [hl], h" 74 0x0 (store 0 (append (var h) (var l)) (var h))
 d "ld [hl], l" 75 0x0 (store 0 (append (var h) (var l)) (var l))
 ad "ld a, 0x63" 3e63 0x0 (set a (bv 8 0x63))
 d "ld a, [0x0000]" fa0000
-d "ld a, [0xff00 + c]" f2
+d "ld a, [0xff00 + c]" f2 0x0 (set a (load 0 (append (bv 8 0xff) (var c))))
 d "ld a, [rP1]" f000
 d "ld a, [rSB]" f001
 d "ld a, [rSC]" f002
@@ -280,9 +280,9 @@ d "ld a, [rOCPS]" f06a
 d "ld a, [rOCPD]" f06b
 d "ld a, [rSVBK]" f070
 d "ld a, [rIE]" f0ff
-d "ld a, [bc]" 0a
-d "ld a, [de]" 1a
-d "ld a, [hl]" 7e
+d "ld a, [bc]" 0a 0x0 (set a (load 0 (append (var b) (var c))))
+d "ld a, [de]" 1a 0x0 (set a (load 0 (append (var d) (var e))))
+d "ld a, [hl]" 7e 0x0 (set a (load 0 (append (var h) (var l))))
 d "ld a, a" 7f 0x0 nop
 d "ld a, b" 78 0x0 (set a (var b))
 d "ld a, c" 79 0x0 (set a (var c))
@@ -291,7 +291,7 @@ d "ld a, e" 7b 0x0 (set a (var e))
 d "ld a, h" 7c 0x0 (set a (var h))
 d "ld a, l" 7d 0x0 (set a (var l))
 d "ld b, 0x42" 0642 0x0 (set b (bv 8 0x42))
-d "ld b, [hl]" 46
+ad "ld b, [hl]" 46 0x0 (set b (load 0 (append (var h) (var l))))
 d "ld b, a" 47 0x0 (set b (var a))
 d "ld b, b" 40 0x0 nop
 d "ld b, c" 41 0x0 (set b (var c))
@@ -301,7 +301,7 @@ d "ld b, h" 44 0x0 (set b (var h))
 d "ld b, l" 45 0x0 (set b (var l))
 d "ld bc, 0x1234" 013412 0x0 (seq (set b (bv 8 0x12)) (set c (bv 8 0x34)))
 d "ld c, 0x42" 0e42 0x0 (set c (bv 8 0x42))
-d "ld c, [hl]" 4e
+d "ld c, [hl]" 4e 0x0 (set c (load 0 (append (var h) (var l))))
 d "ld c, a" 4f 0x0 (set c (var a))
 d "ld c, b" 48 0x0 (set c (var b))
 d "ld c, c" 49 0x0 nop
@@ -310,7 +310,7 @@ d "ld c, e" 4b 0x0 (set c (var e))
 d "ld c, h" 4c 0x0 (set c (var h))
 d "ld c, l" 4d 0x0 (set c (var l))
 d "ld d, 0x42" 1642 0x0 (set d (bv 8 0x42))
-d "ld d, [hl]" 56
+d "ld d, [hl]" 56 0x0 (set d (load 0 (append (var h) (var l))))
 d "ld d, a" 57 0x0 (set d (var a))
 d "ld d, b" 50 0x0 (set d (var b))
 d "ld d, c" 51 0x0 (set d (var c))
@@ -320,7 +320,7 @@ d "ld d, h" 54 0x0 (set d (var h))
 d "ld d, l" 55 0x0 (set d (var l))
 d "ld de, 0x1234" 113412 0x0 (seq (set d (bv 8 0x12)) (set e (bv 8 0x34)))
 d "ld e, 0x42" 1e42 0x0 (set e (bv 8 0x42))
-d "ld e, [hl]" 5e
+d "ld e, [hl]" 5e 0x0 (set e (load 0 (append (var h) (var l))))
 d "ld e, a" 5f 0x0 (set e (var a))
 d "ld e, b" 58 0x0 (set e (var b))
 d "ld e, c" 59 0x0 (set e (var c))
@@ -329,7 +329,7 @@ d "ld e, e" 5b 0x0 nop
 d "ld e, h" 5c 0x0 (set e (var h))
 d "ld e, l" 5d 0x0 (set e (var l))
 d "ld h, 0x42" 2642 0x0 (set h (bv 8 0x42))
-d "ld h, [hl]" 66
+d "ld h, [hl]" 66 0x0 (set h (load 0 (append (var h) (var l))))
 d "ld h, a" 67 0x0 (set h (var a))
 d "ld h, b" 60 0x0 (set h (var b))
 d "ld h, c" 61 0x0 (set h (var c))
@@ -341,7 +341,7 @@ ad "ld hl, 0xc3a0" 21a0c3 0x0 (seq (set h (bv 8 0xc3)) (set l (bv 8 0xa0)))
 d "ld hl, sp + 0x42" f842 0x0 (seq (set h (cast 8 false (>> (+ (var sp) (bv 16 0x42)) (bv 4 0x8) false))) (set l (cast 8 false (+ (var sp) (bv 16 0x42)))) (set Z false) (set N false) (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0x42) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0x42) (bv 16 0xff))) (bv 16 0xff)))))
 d "ld hl, sp + 0xf2" f8f2 0x0 (seq (set h (cast 8 false (>> (- (var sp) (bv 16 0xe)) (bv 4 0x8) false))) (set l (cast 8 false (- (var sp) (bv 16 0xe)))) (set Z false) (set N false) (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0xf2) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0xf2) (bv 16 0xff))) (bv 16 0xff)))))
 d "ld l, 0x42" 2e42 0x0 (set l (bv 8 0x42))
-d "ld l, [hl]" 6e
+d "ld l, [hl]" 6e 0x0 (set l (load 0 (append (var h) (var l))))
 d "ld l, a" 6f 0x0 (set l (var a))
 d "ld l, b" 68 0x0 (set l (var b))
 d "ld l, c" 69 0x0 (set l (var c))
@@ -352,9 +352,9 @@ d "ld l, l" 6d 0x0 nop
 ad "ld sp, 0xc3a0" 31a0c3 0x0 (set sp (bv 16 0xc3a0))
 d "ld sp, hl" f9 0x0 (set sp (append (var h) (var l)))
 d "ldd [hl], a" 32 0x0 (seq (store 0 (append (var h) (var l)) (var a)) (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
-d "ldd a, [hl]" 3a
+d "ldd a, [hl]" 3a 0x0 (seq (set a (load 0 (append (var h) (var l)))) (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
 d "ldi [hl], a" 22 0x0 (seq (store 0 (append (var h) (var l)) (var a)) (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
-d "ldi a, [hl]" 2a
+d "ldi a, [hl]" 2a 0x0 (seq (set a (load 0 (append (var h) (var l)))) (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
 d "nop" 00 0x0 nop
 d "or 0x00" f600
 d "or [hl]" b6
@@ -615,5 +615,4 @@ d "xor l" ad
 a "ld bc, 0x188" 018801
 a "ld de, 0x188" 118801
 a "call 0x36e0" cde036
-a "ld b, [hl]" 46
 a "rlc [hl]" cb06

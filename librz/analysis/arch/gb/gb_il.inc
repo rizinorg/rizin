@@ -207,13 +207,22 @@ static RzILOpEffect *gb_il_store_imm_sp(ut16 dst_addr, ut64 op_addr) {
 	return STOREW(gb_il_resolve_addr_data(op_addr, U16(dst_addr)), VARG("sp"));
 }
 
+/**
+ * Resolve the indirect address pointed to by a register for load/store ops
+ *   ld a, [<reg>]
+ *   ld [<reg>], a
+ */
+static RzILOpBitVector *load_store_reg_addr(gb_reg reg, ut64 op_addr) {
+	RzILOpBitVector *addr = gb_il_read_reg(reg);
+	if (reg == GB_REG_C) {
+		addr = APPEND(U8(0xff), addr);
+	}
+	return gb_il_resolve_addr_data(op_addr, addr);
+}
+
 static RzILOpEffect *gb_il_store_reg_reg(gb_reg dst_reg, bool inc, bool dec, gb_reg src_reg, ut64 op_addr) {
 	rz_return_val_if_fail(!(inc && dec), NULL);
-	RzILOpBitVector *dst_addr = gb_il_read_reg(dst_reg);
-	if (dst_reg == GB_REG_C) {
-		dst_addr = APPEND(U8(0xff), dst_addr);
-	}
-	RzILOpEffect *r = STORE(gb_il_resolve_addr_data(op_addr, dst_addr), gb_il_read_reg(src_reg));
+	RzILOpEffect *r = STORE(load_store_reg_addr(dst_reg, op_addr), gb_il_read_reg(src_reg));
 	if (inc || dec) {
 		r = SEQ2(r, gb_il_inc(dst_reg, dec));
 	}
@@ -222,6 +231,15 @@ static RzILOpEffect *gb_il_store_reg_reg(gb_reg dst_reg, bool inc, bool dec, gb_
 
 static RzILOpEffect *gb_il_store_reg_imm(gb_reg dst_reg, ut8 imm, ut64 op_addr) {
 	return STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(dst_reg)), U8(imm));
+}
+
+static RzILOpEffect *gb_il_load_reg_reg(gb_reg dst_reg, gb_reg src_reg, bool inc, bool dec, ut64 op_addr) {
+	rz_return_val_if_fail(!(inc && dec), NULL);
+	RzILOpEffect *r = gb_il_write_reg(dst_reg, LOAD(load_store_reg_addr(src_reg, op_addr)));
+	if (inc || dec) {
+		r = SEQ2(r, gb_il_inc(src_reg, dec));
+	}
+	return r;
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
