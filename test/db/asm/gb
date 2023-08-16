@@ -1,25 +1,25 @@
 d "adc 0x00" ce00
 d "adc [hl]" 8e
-d "adc a" 8f
-d "adc b" 88
-d "adc c" 89
-d "adc d" 8a
-d "adc e" 8b
-d "adc h" 8c
-d "adc l" 8d
+d "adc a" 8f 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var a) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var a)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var a) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set Z (is_zero (var a))) (set N false))
+d "adc b" 88 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var b) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var b)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var b) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set Z (is_zero (var a))) (set N false))
+d "adc c" 89 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var c) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var c)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var c) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set Z (is_zero (var a))) (set N false))
+d "adc d" 8a 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var d) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var d)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var d) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set Z (is_zero (var a))) (set N false))
+d "adc e" 8b 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var e) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var e)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var e) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set Z (is_zero (var a))) (set N false))
+d "adc h" 8c 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var h) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var h)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var h) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set Z (is_zero (var a))) (set N false))
+d "adc l" 8d 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var l) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var l)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var l) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set Z (is_zero (var a))) (set N false))
 d "add 0x00" c600
 d "add [hl]" 86
-d "add a" 87
-d "add b" 80
-d "add c" 81
-d "add d" 82
-d "add e" 83
-d "add h" 84
+d "add a" 87 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var a) (bv 8 0xf))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (cast 9 false (var a))))) (set a (+ (var a) (var a))) (set Z (is_zero (var a))) (set N false))
+d "add b" 80 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var b) (bv 8 0xf))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (cast 9 false (var b))))) (set a (+ (var a) (var b))) (set Z (is_zero (var a))) (set N false))
+d "add c" 81 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var c) (bv 8 0xf))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (cast 9 false (var c))))) (set a (+ (var a) (var c))) (set Z (is_zero (var a))) (set N false))
+d "add d" 82 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var d) (bv 8 0xf))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (cast 9 false (var d))))) (set a (+ (var a) (var d))) (set Z (is_zero (var a))) (set N false))
+d "add e" 83 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var e) (bv 8 0xf))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (cast 9 false (var e))))) (set a (+ (var a) (var e))) (set Z (is_zero (var a))) (set N false))
+d "add h" 84 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var h) (bv 8 0xf))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (cast 9 false (var h))))) (set a (+ (var a) (var h))) (set Z (is_zero (var a))) (set N false))
 d "add hl, bc" 09
 d "add hl, de" 19
 d "add hl, hl" 29
 d "add hl, sp" 39
-d "add l" 85
+d "add l" 85 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var l) (bv 8 0xf))) (bv 8 0xf)))) (set C (msb (+ (cast 9 false (var a)) (cast 9 false (var l))))) (set a (+ (var a) (var l))) (set Z (is_zero (var a))) (set N false))
 d "add sp, 0x00" e800
 d "and 0x00" e600
 d "and [hl]" a6

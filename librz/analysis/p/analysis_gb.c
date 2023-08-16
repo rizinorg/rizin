@@ -389,11 +389,12 @@ static inline void gb_analysis_or_set(RzAnalysis *analysis, RzAnalysisOp *op, co
 	}
 }
 
-static void gb_analysis_xoaasc(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
+static void gb_analysis_xoaasc(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, "a", RZ_REG_TYPE_GPR);
-	const char *reg_name = gb_reg_name(regs_8[data[0] & 7]);
+	gb_reg src_regid = regs_8[data[0] & 7];
+	const char *reg_name = gb_reg_name(src_regid);
 	op->src[0]->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	op->src[0]->memref = ((data[0] & 7) == 6);
 	switch (op->type) {
@@ -428,12 +429,18 @@ static void gb_analysis_xoaasc(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 				rz_strbuf_setf(&op->esil, "%s,[1],a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", reg_name);
 			}
 		} else {
-			if (data[0] > 0x87) {
+			bool with_carry = data[0] > 0x87;
+			if (with_carry) {
 				op->src[1] = rz_analysis_value_new();
 				op->src[1]->reg = rz_reg_get(reg, "C", RZ_REG_TYPE_GPR);
-				rz_strbuf_setf(&op->esil, "C,%s,+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", reg_name);
-			} else {
+				if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+					rz_strbuf_setf(&op->esil, "C,%s,+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", reg_name);
+				}
+			} else if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				rz_strbuf_setf(&op->esil, "%s,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", reg_name);
+			}
+			if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+				op->il_op = gb_il_add(GB_REG_A, src_regid, with_carry);
 			}
 		}
 		break;
@@ -1074,7 +1081,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x8f:
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		break;
 	case 0x09:
 	case 0x19:
@@ -1087,7 +1094,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x86:
 	case 0x8e:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		op->cycles = 8;
 		break;
 	case 0xc6:
@@ -1117,12 +1124,12 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x9f:
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		break;
 	case 0x96:
 	case 0x9e:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		op->cycles = 8;
 		break;
 	case 0xd6:
@@ -1140,7 +1147,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0xa7:
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		break;
 	case 0xe6:
 		op->cycles = 8;
@@ -1149,7 +1156,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case 0xa6:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		op->cycles = 8;
 		break;
 	case 0x07: // rlca
@@ -1191,7 +1198,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0xaf:
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		break;
 	case 0xee:
 		op->cycles = 8;
@@ -1200,7 +1207,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case 0xae:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		op->cycles = 8;
 		break;
 	case 0xb0:
@@ -1212,7 +1219,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0xb7:
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		break;
 	case 0xf6:
 		op->cycles = 8;
@@ -1221,7 +1228,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case 0xb6:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		op->cycles = 8;
 		break;
 	case 0xb8:
@@ -1233,7 +1240,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0xbf:
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		break;
 	case 0xfe:
 		op->cycles = 8;
@@ -1242,7 +1249,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case 0xbe:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		gb_analysis_xoaasc(analysis->reg, op, data);
+		gb_analysis_xoaasc(mask, analysis->reg, op, data);
 		op->cycles = 8;
 		break;
 	case 0xc0:

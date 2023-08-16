@@ -44,21 +44,27 @@ static RzILOpBitVector *gb_il_resolve_addr_code(ut64 op_addr, RzILOpBitVector *t
 }
 
 /*
- * Calculate the carry of a \p carry_bits addition of \p a and \b, where \p a and \b are of size \p src_bits
+ * Calculate the carry of a \p carry_bits addition of \p a, \p b and optinally C, where \p a, \p b are of size \p src_bits
  * Example:
  *   gb_il_carry(a, b, 16, 8)
  * calculates:
  *   (a & 0xff) + (b & 0xff) > 0xff
  */
-static RzILOpBool *gb_il_carry(RzILOpBitVector *a, RzILOpBitVector *b, ut32 src_bits, ut32 carry_bits) {
-	ut64 mask = rz_num_bitmask(carry_bits);
+static RzILOpBool *gb_il_carry(RzILOpBitVector *a, RzILOpBitVector *b, bool carry_in, ut32 src_bits, ut32 carry_bits) {
 	if (carry_bits >= src_bits) {
 		src_bits = carry_bits + 1;
 		a = UNSIGNED(carry_bits + 1, a);
 		b = UNSIGNED(carry_bits + 1, b);
-	} else {
-		a = LOGAND(a, UN(src_bits, mask));
-		b = LOGAND(b, UN(src_bits, mask));
+		if (carry_in) {
+			b = ADD(b, ITE(VARG("C"), UN(carry_bits + 1, 1), UN(carry_bits + 1, 0)));
+		}
+		return MSB(ADD(a, b));
+	}
+	ut64 mask = rz_num_bitmask(carry_bits);
+	a = LOGAND(a, UN(src_bits, mask));
+	b = LOGAND(b, UN(src_bits, mask));
+	if (carry_in) {
+		b = ADD(b, ITE(VARG("C"), UN(src_bits, 1), UN(src_bits, 0)));
 	}
 	return UGT(ADD(a, b), UN(src_bits, mask));
 }
@@ -146,8 +152,8 @@ static RzILOpEffect *gb_il_mov_hl_sp(st8 imm) {
 		gb_il_write_reg(GB_REG_HL, imm < 0 ? SUB(VARG("sp"), U16(-imm)) : ADD(VARG("sp"), U16(imm))),
 		SETG("Z", IL_FALSE),
 		SETG("N", IL_FALSE),
-		SETG("H", gb_il_carry(VARG("sp"), U16((ut8)imm), 16, 4)),
-		SETG("C", gb_il_carry(VARG("sp"), U16((ut8)imm), 16, 8)));
+		SETG("H", gb_il_carry(VARG("sp"), U16((ut8)imm), false, 16, 4)),
+		SETG("C", gb_il_carry(VARG("sp"), U16((ut8)imm), false, 16, 8)));
 }
 
 static RzILOpEffect *gb_il_mov_sp_hl() {
@@ -244,6 +250,17 @@ static RzILOpEffect *gb_il_load_reg_reg(gb_reg dst_reg, gb_reg src_reg, bool inc
 
 static RzILOpEffect *gb_il_load_a_imm(ut16 src_addr, ut64 op_addr) {
 	return SETG("a", LOAD(gb_il_resolve_addr_data(op_addr, U16(src_addr))));
+}
+
+static RzILOpEffect *gb_il_add(gb_reg dst_reg, gb_reg src_reg, bool carry_in) {
+	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
+	RzILOpBitVector *src = gb_il_read_reg(src_reg);
+	return SEQ5(
+		SETG("H", gb_il_carry(dst, src, carry_in, 8, 4)),
+		SETG("C", gb_il_carry(DUP(dst), DUP(src), carry_in, 8, 8)),
+		gb_il_write_reg(dst_reg, ADD(DUP(dst), carry_in ? ADD(DUP(src), ITE(VARG("C"), U8(1), U8(0))) : DUP(src))),
+		SETG("Z", IS_ZERO(DUP(dst))),
+		SETG("N", IL_FALSE));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
