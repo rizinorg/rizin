@@ -543,12 +543,17 @@ static inline void gb_analysis_load(RzAnalysisOpMask mask, RzReg *reg, RzAnalysi
 	op->dst->reg = rz_reg_get(reg, "a", RZ_REG_TYPE_GPR);
 	op->src[0]->memref = 1;
 	switch (data[0]) {
-	case 0xf0:
-		op->src[0]->base = 0xff00 + data[1];
+	case 0xf0: {
+		ut16 addr = 0xff00 + data[1];
+		op->src[0]->base = addr;
 		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			rz_strbuf_setf(&op->esil, "0x%04" PFMT64x ",[1],a,=", op->src[0]->base);
+			rz_strbuf_setf(&op->esil, "0x%04" PFMT64x ",[1],a,=", (ut64)addr);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_load_a_imm(addr, op->addr);
 		}
 		break;
+	}
 	case 0xf2:
 		op->src[0]->base = 0xff00;
 		op->src[0]->regdelta = rz_reg_get(reg, "c", RZ_REG_TYPE_GPR);
@@ -559,17 +564,24 @@ static inline void gb_analysis_load(RzAnalysisOpMask mask, RzReg *reg, RzAnalysi
 			op->il_op = gb_il_load_reg_reg(GB_REG_A, GB_REG_C, false, false, op->addr);
 		}
 		break;
-	case 0xfa:
-		op->src[0]->base = GB_SOFTCAST(data[1], data[2]);
+	case 0xfa: {
+		ut16 addr = GB_SOFTCAST(data[1], data[2]);
+		op->src[0]->base = addr;
 		if (op->src[0]->base < 0x4000) {
 			op->ptr = op->src[0]->base;
 		} else {
-			if (op->addr > 0x3fff && op->src[0]->base < 0x8000) { /* hack */
+			if (op->addr > 0x3fff && op->src[0]->base < 0x8000) { /* hack */ // TODO: add this to RzIL?
 				op->ptr = op->src[0]->base + (op->addr & 0xffffffffffff0000LL);
 			}
 		}
-		rz_strbuf_setf(&op->esil, "0x%04" PFMT64x ",[1],a,=", op->src[0]->base);
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_setf(&op->esil, "0x%04" PFMT64x ",[1],a,=", (ut64)addr);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_load_a_imm(addr, op->addr);
+		}
 		break;
+	}
 	default: {
 		gb_reg regid = regs_16[(data[0] & 0xf0) >> 4];
 		const char *reg_name = gb_reg_name(regid);

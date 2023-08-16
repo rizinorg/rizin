@@ -242,4 +242,8 @@ static RzILOpEffect *gb_il_load_reg_reg(gb_reg dst_reg, gb_reg src_reg, bool inc
 	return r;
 }
 
+static RzILOpEffect *gb_il_load_a_imm(ut16 src_addr, ut64 op_addr) {
+	return SETG("a", LOAD(gb_il_resolve_addr_data(op_addr, U16(src_addr))));
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>

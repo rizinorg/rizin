@@ -221,65 +221,65 @@ d "ld [hl], e" 73 0x0 (store 0 (append (var h) (var l)) (var e))
 d "ld [hl], h" 74 0x0 (store 0 (append (var h) (var l)) (var h))
 d "ld [hl], l" 75 0x0 (store 0 (append (var h) (var l)) (var l))
 ad "ld a, 0x63" 3e63 0x0 (set a (bv 8 0x63))
-d "ld a, [0x0000]" fa0000
+d "ld a, [0x1234]" fa3412 0x0 (set a (load 0 (bv 16 0x1234)))
 d "ld a, [0xff00 + c]" f2 0x0 (set a (load 0 (append (bv 8 0xff) (var c))))
-d "ld a, [rP1]" f000
-d "ld a, [rSB]" f001
-d "ld a, [rSC]" f002
-d "ld a, [rDIV]" f004
-d "ld a, [rTIMA]" f005
-d "ld a, [rTMA]" f006
-d "ld a, [rTAC]" f007
-d "ld a, [rIF]" f00f
-d "ld a, [rAUD1SWEEP]" f010
-d "ld a, [rAUD1LEN]" f011
-d "ld a, [rAUD1ENV]" f012
-d "ld a, [rAUD1LOW]" f013
-d "ld a, [rAUD1HIGH]" f014
-d "ld a, [rAUD2LEN]" f016
-d "ld a, [rAUD2ENV]" f017
-d "ld a, [rAUD2LOW]" f018
-d "ld a, [rAUD2HIGH]" f019
-d "ld a, [rAUD3ENA]" f01a
-d "ld a, [rAUD3LEN]" f01b
-d "ld a, [rAUD3LEVEL]" f01c
-d "ld a, [rAUD3LOW]" f01d
-d "ld a, [rAUD3HIGH]" f01e
-d "ld a, [rAUD4LEN]" f020
-d "ld a, [rAUD4ENV]" f021
-d "ld a, [rAUD4POLY]" f022
-d "ld a, [rAUD4GO]" f023
-d "ld a, [rAUDVOL]" f024
-d "ld a, [rAUDTERM]" f025
-d "ld a, [rAUDENA]" f026
-d "ld a, [rPCM12]" f076
-d "ld a, [rPCM34]" f077
-d "ld a, [rLCDC]" f040
-d "ld a, [rSTAT]" f041
-d "ld a, [rSCY]" f042
-d "ld a, [rSCX]" f043
-d "ld a, [rLY]" f044
-d "ld a, [rLYC]" f045
-d "ld a, [rDMA]" f046
-d "ld a, [rBGP]" f047
-d "ld a, [rOBP0]" f048
-d "ld a, [rOBP1]" f049
-d "ld a, [rWY]" f04a
-d "ld a, [rWX]" f04b
-d "ld a, [rKEY1]" f04d
-d "ld a, [rVBK]" f04f
-d "ld a, [rHDMA1]" f051
-d "ld a, [rHDMA2]" f052
-d "ld a, [rHDMA3]" f053
-d "ld a, [rHDMA4]" f054
-d "ld a, [rHDMA5]" f055
-d "ld a, [rRP]" f056
-d "ld a, [rBCPS]" f068
-d "ld a, [rBCPD]" f069
-d "ld a, [rOCPS]" f06a
-d "ld a, [rOCPD]" f06b
-d "ld a, [rSVBK]" f070
-d "ld a, [rIE]" f0ff
+d "ld a, [rP1]" f000 0x0 (set a (load 0 (bv 16 0xff00)))
+d "ld a, [rSB]" f001 0x0 (set a (load 0 (bv 16 0xff01)))
+d "ld a, [rSC]" f002 0x0 (set a (load 0 (bv 16 0xff02)))
+d "ld a, [rDIV]" f004 0x0 (set a (load 0 (bv 16 0xff04)))
+d "ld a, [rTIMA]" f005 0x0 (set a (load 0 (bv 16 0xff05)))
+d "ld a, [rTMA]" f006 0x0 (set a (load 0 (bv 16 0xff06)))
+d "ld a, [rTAC]" f007 0x0 (set a (load 0 (bv 16 0xff07)))
+d "ld a, [rIF]" f00f 0x0 (set a (load 0 (bv 16 0xff0f)))
+d "ld a, [rAUD1SWEEP]" f010 0x0 (set a (load 0 (bv 16 0xff10)))
+d "ld a, [rAUD1LEN]" f011 0x0 (set a (load 0 (bv 16 0xff11)))
+d "ld a, [rAUD1ENV]" f012 0x0 (set a (load 0 (bv 16 0xff12)))
+d "ld a, [rAUD1LOW]" f013 0x0 (set a (load 0 (bv 16 0xff13)))
+d "ld a, [rAUD1HIGH]" f014 0x0 (set a (load 0 (bv 16 0xff14)))
+d "ld a, [rAUD2LEN]" f016 0x0 (set a (load 0 (bv 16 0xff16)))
+d "ld a, [rAUD2ENV]" f017 0x0 (set a (load 0 (bv 16 0xff17)))
+d "ld a, [rAUD2LOW]" f018 0x0 (set a (load 0 (bv 16 0xff18)))
+d "ld a, [rAUD2HIGH]" f019 0x0 (set a (load 0 (bv 16 0xff19)))
+d "ld a, [rAUD3ENA]" f01a 0x0 (set a (load 0 (bv 16 0xff1a)))
+d "ld a, [rAUD3LEN]" f01b 0x0 (set a (load 0 (bv 16 0xff1b)))
+d "ld a, [rAUD3LEVEL]" f01c 0x0 (set a (load 0 (bv 16 0xff1c)))
+d "ld a, [rAUD3LOW]" f01d 0x0 (set a (load 0 (bv 16 0xff1d)))
+d "ld a, [rAUD3HIGH]" f01e 0x0 (set a (load 0 (bv 16 0xff1e)))
+d "ld a, [rAUD4LEN]" f020 0x0 (set a (load 0 (bv 16 0xff20)))
+d "ld a, [rAUD4ENV]" f021 0x0 (set a (load 0 (bv 16 0xff21)))
+d "ld a, [rAUD4POLY]" f022 0x0 (set a (load 0 (bv 16 0xff22)))
+d "ld a, [rAUD4GO]" f023 0x0 (set a (load 0 (bv 16 0xff23)))
+d "ld a, [rAUDVOL]" f024 0x0 (set a (load 0 (bv 16 0xff24)))
+d "ld a, [rAUDTERM]" f025 0x0 (set a (load 0 (bv 16 0xff25)))
+d "ld a, [rAUDENA]" f026 0x0 (set a (load 0 (bv 16 0xff26)))
+d "ld a, [rPCM12]" f076 0x0 (set a (load 0 (bv 16 0xff76)))
+d "ld a, [rPCM34]" f077 0x0 (set a (load 0 (bv 16 0xff77)))
+d "ld a, [rLCDC]" f040 0x0 (set a (load 0 (bv 16 0xff40)))
+d "ld a, [rSTAT]" f041 0x0 (set a (load 0 (bv 16 0xff41)))
+d "ld a, [rSCY]" f042 0x0 (set a (load 0 (bv 16 0xff42)))
+d "ld a, [rSCX]" f043 0x0 (set a (load 0 (bv 16 0xff43)))
+d "ld a, [rLY]" f044 0x0 (set a (load 0 (bv 16 0xff44)))
+d "ld a, [rLYC]" f045 0x0 (set a (load 0 (bv 16 0xff45)))
+d "ld a, [rDMA]" f046 0x0 (set a (load 0 (bv 16 0xff46)))
+d "ld a, [rBGP]" f047 0x0 (set a (load 0 (bv 16 0xff47)))
+d "ld a, [rOBP0]" f048 0x0 (set a (load 0 (bv 16 0xff48)))
+d "ld a, [rOBP1]" f049 0x0 (set a (load 0 (bv 16 0xff49)))
+d "ld a, [rWY]" f04a 0x0 (set a (load 0 (bv 16 0xff4a)))
+d "ld a, [rWX]" f04b 0x0 (set a (load 0 (bv 16 0xff4b)))
+d "ld a, [rKEY1]" f04d 0x0 (set a (load 0 (bv 16 0xff4d)))
+d "ld a, [rVBK]" f04f 0x0 (set a (load 0 (bv 16 0xff4f)))
+d "ld a, [rHDMA1]" f051 0x0 (set a (load 0 (bv 16 0xff51)))
+d "ld a, [rHDMA2]" f052 0x0 (set a (load 0 (bv 16 0xff52)))
+d "ld a, [rHDMA3]" f053 0x0 (set a (load 0 (bv 16 0xff53)))
+d "ld a, [rHDMA4]" f054 0x0 (set a (load 0 (bv 16 0xff54)))
+d "ld a, [rHDMA5]" f055 0x0 (set a (load 0 (bv 16 0xff55)))
+d "ld a, [rRP]" f056 0x0 (set a (load 0 (bv 16 0xff56)))
+d "ld a, [rBCPS]" f068 0x0 (set a (load 0 (bv 16 0xff68)))
+d "ld a, [rBCPD]" f069 0x0 (set a (load 0 (bv 16 0xff69)))
+d "ld a, [rOCPS]" f06a 0x0 (set a (load 0 (bv 16 0xff6a)))
+d "ld a, [rOCPD]" f06b 0x0 (set a (load 0 (bv 16 0xff6b)))
+d "ld a, [rSVBK]" f070 0x0 (set a (load 0 (bv 16 0xff70)))
+d "ld a, [rIE]" f0ff 0x0 (set a (load 0 (bv 16 0xffff)))
 d "ld a, [bc]" 0a 0x0 (set a (load 0 (append (var b) (var c))))
 d "ld a, [de]" 1a 0x0 (set a (load 0 (append (var d) (var e))))
 d "ld a, [hl]" 7e 0x0 (set a (load 0 (append (var h) (var l))))
