@@ -3142,6 +3142,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.var.access", "false", "Show accesses of local variables");
 	SETBPREF("asm.sub.var", "true", "Substitute variables in disassembly");
 	SETI("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
+	SETI("asm.var.fold", 0, "Fold same-typed variables (0, 1, 2)");
 	SETBPREF("asm.sub.varonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETBPREF("asm.sub.reg", "false", "Substitute register names with their associated role name (drp~=)");
 	SETBPREF("asm.sub.rel", "true", "Substitute pc relative expressions in disasm");
