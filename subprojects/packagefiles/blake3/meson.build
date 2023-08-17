@@ -79,7 +79,9 @@ is_x64 = target_machine.cpu_family() == 'x86_64'
 is_arm = target_machine.cpu_family() == 'aarch64'
 has_intrins = cc.has_header('immintrin.h')
 
+has_simd = false
 if has_intrins and is_arm
+  has_simd = true
   has_neon = cc.compiles(simd_neon, args: [], name: 'neon')
   if has_neon
     blake3_files += 'c' / 'blake3_neon.c'
@@ -88,17 +90,22 @@ if has_intrins and is_arm
     add_project_arguments('-DBLAKE3_USE_NEON=0', language: 'c')
   endif
 elif has_intrins and is_x64
+  has_simd = true
   if target_machine.system() == 'windows'
     if cc.get_id() == 'msvc'
       blake3_simd = win_msvc_asm
     else # gcc or clang
       blake3_simd = win_gnu_asm
     endif
-  else # unix only
+  elif cc.compiles(files('unix_syntax_check.S')[0], args: [], name: 'asm_syntax') # unix only, check if the compiler supports the used asm syntax
     blake3_simd = unix_asm
+  else
+    has_simd = false
   endif
   add_project_arguments('-DBLAKE3_USE_NEON=0', language: 'c')
-else
+endif
+
+if not has_simd
   # since we do not support SIMD we just use the portable code.
   blake3_flags = [
     '-DBLAKE3_NO_SSE2',
