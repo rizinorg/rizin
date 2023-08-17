@@ -4013,9 +4013,7 @@ RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const 
 	}
 
 	ut64 size = end - start;
-	if (size > old_blocksize) {
-		rz_core_block_size(core, size);
-	}
+	rz_core_block_size(core, size);
 	rz_core_seek(core, start, true);
 	rz_core_analysis_bytes_il(core, core->block, size, 0, false);
 	rz_core_block_size(core, old_blocksize);
