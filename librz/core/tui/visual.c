@@ -298,7 +298,7 @@ static const char *help_msg_visual[] = {
 	"mK/'K", "mark/go to Key (any key)",
 	"n/N", "seek next/prev function/flag/hit (scr.nkey)",
 	"g", "go/seek to given offset (g[g/G]<enter> to seek begin/end of file)",
-	"O", "toggle asm.pseudo and asm.esil",
+	"o/O", "rotate between different formats (next/prev)",
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to rizin shell",
 	"r", "toggle call/jmp/lea hints",
