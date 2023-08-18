@@ -481,7 +481,7 @@ RZ_API bool rz_core_write_seq_at(RzCore *core, ut64 addr, ut64 from, ut64 to, ut
 RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
-RZ_API void rz_core_help_vars_print(RzCore *core);
+RZ_DEPRECATE RZ_API void rz_core_help_vars_print(RzCore *core);
 RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, RZ_OUT RZ_BORROW RZ_NONNULL ut64 *prev_addr);
 RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs);
 RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size);
@@ -1078,7 +1078,7 @@ typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
 RZ_API char *rz_str_widget_list(void *user, RzList /*<void *>*/ *list, int rows, int cur, PrintItemCallback cb);
 /* help */
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]);
-RZ_API const char **rz_core_help_vars_get(RzCore *core);
+RZ_DEPRECATE RZ_API const char **rz_core_help_vars_get(RzCore *core);
 
 /* analysis stats */
 

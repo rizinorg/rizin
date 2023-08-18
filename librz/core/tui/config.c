@@ -10,6 +10,7 @@
 #include <rz_asm.h>
 #include <rz_util/rz_print.h>
 #include <rz_util/rz_strbuf.h>
+#include <cmd_descs.h>
 
 static void config_visual_hit_i(RzCore *core, const char *name, int delta) {
 	struct rz_config_node_t *node;
@@ -189,7 +190,7 @@ RZ_IPI void rz_core_visual_config(RzCore *core) {
 			option = _option;
 			break;
 		case '$':
-			rz_core_help_vars_print(core);
+			rz_list_rizin_vars_handler(core, 0, NULL);
 			rz_cons_any_key(NULL);
 			break;
 		case '*':

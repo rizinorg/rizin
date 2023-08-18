@@ -108,6 +108,7 @@ static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
 static const RzCmdDescArg calculate_expr_args[2];
+static const RzCmdDescArg list_rizin_vars_args[2];
 static const RzCmdDescArg generate_random_number_args[3];
 static const RzCmdDescArg print_binary_args[2];
 static const RzCmdDescArg base64_encode_args[2];
@@ -1481,6 +1482,22 @@ static const RzCmdDescArg calculate_expr_args[] = {
 static const RzCmdDescHelp calculate_expr_help = {
 	.summary = "Evaluate given numerical expression",
 	.args = calculate_expr_args,
+};
+
+static const RzCmdDescArg list_rizin_vars_args[] = {
+	{
+		.name = "var",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp list_rizin_vars_help = {
+	.summary = "Print Rizin variables and their values",
+	.details_cb = rz_cmd_math_help_vars_details_cb,
+	.args = list_rizin_vars_args,
 };
 
 static const RzCmdDescArg set_active_tab_zero_args[] = {
@@ -18724,6 +18741,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_math_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "%", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_calculate_expr_handler, &calculate_expr_help, &cmd_math_help);
 	rz_warn_if_fail(cmd_math_cd);
+	RzCmdDesc *list_rizin_vars_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%$", rz_list_rizin_vars_handler, &list_rizin_vars_help);
+	rz_warn_if_fail(list_rizin_vars_cd);
+
 	RzCmdDesc *set_active_tab_zero_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%0", rz_set_active_tab_zero_handler, &set_active_tab_zero_help);
 	rz_warn_if_fail(set_active_tab_zero_cd);
 
