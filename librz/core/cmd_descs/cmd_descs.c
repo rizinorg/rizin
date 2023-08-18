@@ -11504,6 +11504,14 @@ static const RzCmdDescHelp plugins_core_print_help = {
 	.args = plugins_core_print_args,
 };
 
+static const RzCmdDescArg plugins_crypto_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_crypto_print_help = {
+	.summary = "List the crypto plugins",
+	.args = plugins_crypto_print_args,
+};
+
 static const RzCmdDescArg plugins_debug_print_args[] = {
 	{
 		.name = "handler",
@@ -20923,6 +20931,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *plugins_core_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_core_print_handler, &plugins_core_print_help);
 	rz_warn_if_fail(plugins_core_print_cd);
+
+	RzCmdDesc *plugins_crypto_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "LC", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_crypto_print_handler, &plugins_crypto_print_help);
+	rz_warn_if_fail(plugins_crypto_print_cd);
 
 	RzCmdDesc *plugins_debug_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Ld", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_debug_print_handler, &plugins_debug_print_help);
 	rz_warn_if_fail(plugins_debug_print_cd);
