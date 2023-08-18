@@ -174,10 +174,9 @@ RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const char *algo)
 	return false;
 }
 
-RZ_API bool rz_crypto_set_key(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *key, int keylen, int mode, int direction) {
-	rz_return_val_if_fail(cry && key, false);
+RZ_API bool rz_crypto_set_key(RZ_NULLABLE RzCrypto *cry, RZ_NULLABLE const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen < 0) {
-		keylen = strlen((const char *)key);
+		keylen = key ? strlen((const char *)key) : 0;
 	}
 	if (!cry || !cry->h || !cry->h->set_key) {
 		return false;
@@ -185,19 +184,16 @@ RZ_API bool rz_crypto_set_key(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *ke
 	return cry->h->set_key(cry, key, keylen, mode, direction);
 }
 
-RZ_API bool rz_crypto_set_iv(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *iv, int ivlen) {
-	rz_return_val_if_fail(cry && iv, false);
+RZ_API bool rz_crypto_set_iv(RZ_NULLABLE RzCrypto *cry, RZ_NULLABLE const ut8 *iv, int ivlen) {
 	return (cry && cry->h && cry->h->set_iv) ? cry->h->set_iv(cry, iv, ivlen) : 0;
 }
 
 // return the number of bytes written in the output buffer
-RZ_API int rz_crypto_update(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len) {
-	rz_return_val_if_fail(cry && buf, false);
+RZ_API int rz_crypto_update(RZ_NULLABLE RzCrypto *cry, RZ_NULLABLE const ut8 *buf, int len) {
 	return (cry && cry->h && cry->h->update) ? cry->h->update(cry, buf, len) : 0;
 }
 
-RZ_API int rz_crypto_final(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len) {
-	rz_return_val_if_fail(cry && buf, false);
+RZ_API int rz_crypto_final(RZ_NULLABLE RzCrypto *cry, RZ_NULLABLE const ut8 *buf, int len) {
 	return (cry && cry->h && cry->h->final) ? cry->h->final(cry, buf, len) : 0;
 }
 
