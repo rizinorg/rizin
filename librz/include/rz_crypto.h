@@ -65,7 +65,7 @@ RZ_API bool rz_crypto_set_iv(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *iv,
 RZ_API int rz_crypto_update(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len);
 RZ_API int rz_crypto_final(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len);
 RZ_API int rz_crypto_append(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len);
-RZ_API RZ_BORROW const ut8 *rz_crypto_get_output(RZ_NONNULL RzCrypto *cry, int *size);
+RZ_API RZ_BORROW const ut8 *rz_crypto_get_output(RZ_NONNULL RzCrypto *cry, RZ_NULLABLE int *size);
 RZ_API RZ_BORROW const char *rz_crypto_name(const RzCryptoSelector bit);
 RZ_API RZ_BORROW const char *rz_crypto_codec_name(const RzCryptoSelector bit);
 RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCrypto *cry, size_t index);

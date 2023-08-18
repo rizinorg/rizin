@@ -152,7 +152,8 @@ RZ_API void rz_crypto_reset(RZ_NONNULL RzCrypto *cry) {
 	cry->output_len = 0;
 }
 
-RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, const char *algo) {
+RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const char *algo) {
+	rz_return_val_if_fail(cry && algo, false);
 	RzListIter *iter;
 	RzCryptoPlugin *h;
 	if (cry->h && cry->h->fini && !cry->h->fini(cry)) {
@@ -174,6 +175,7 @@ RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, const char *algo) {
 }
 
 RZ_API bool rz_crypto_set_key(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *key, int keylen, int mode, int direction) {
+	rz_return_val_if_fail(cry && key, false);
 	if (keylen < 0) {
 		keylen = strlen((const char *)key);
 	}
@@ -184,23 +186,24 @@ RZ_API bool rz_crypto_set_key(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *ke
 }
 
 RZ_API bool rz_crypto_set_iv(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *iv, int ivlen) {
+	rz_return_val_if_fail(cry && iv, false);
 	return (cry && cry->h && cry->h->set_iv) ? cry->h->set_iv(cry, iv, ivlen) : 0;
 }
 
 // return the number of bytes written in the output buffer
 RZ_API int rz_crypto_update(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry && buf, false);
 	return (cry && cry->h && cry->h->update) ? cry->h->update(cry, buf, len) : 0;
 }
 
 RZ_API int rz_crypto_final(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry && buf, false);
 	return (cry && cry->h && cry->h->final) ? cry->h->final(cry, buf, len) : 0;
 }
 
 // TODO: internal api?? used from plugins? TODO: use rz_buf here
 RZ_API int rz_crypto_append(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len) {
-	if (!cry || !buf) {
-		return -1;
-	}
+	rz_return_val_if_fail(cry && buf, -1);
 	if (cry->output_len + len > cry->output_size) {
 		cry->output_size += 4096 + len;
 		cry->output = realloc(cry->output, cry->output_size);
@@ -215,7 +218,8 @@ RZ_API int rz_crypto_append(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf,
 	return cry->output_len;
 }
 
-RZ_API RZ_BORROW const ut8 *rz_crypto_get_output(RzCrypto *cry, int *size) {
+RZ_API RZ_BORROW const ut8 *rz_crypto_get_output(RZ_NONNULL RzCrypto *cry, RZ_NULLABLE int *size) {
+	rz_return_val_if_fail(cry, NULL);
 	if (cry->output_size < 1 || !cry->output) {
 		if (size) {
 			*size = 0;
