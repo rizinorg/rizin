@@ -206,7 +206,7 @@ typedef struct {
 	bool show_fcnsize;
 	bool hinted_line;
 	int show_varsum;
-	int fold_var;
+	const char *fold_var;
 	int midflags;
 	bool midbb;
 	bool midcursor;
@@ -616,7 +616,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_fcnsize = rz_config_get_b(core->config, "asm.fcn.size");
 	ds->show_vars = rz_config_get_b(core->config, "asm.var");
 	ds->show_varsum = rz_config_get_i(core->config, "asm.var.summary");
-	ds->fold_var = rz_config_get_i(core->config, "asm.var.fold");
+	ds->fold_var = rz_config_get(core->config, "asm.var.fold");
 	ds->show_varaccess = rz_config_get_b(core->config, "asm.var.access");
 	ds->maxrefs = rz_config_get_i(core->config, "asm.xrefs.max");
 	ds->maxflags = rz_config_get_i(core->config, "asm.flags.limit");
@@ -1744,6 +1744,79 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 	ds_newline(ds);
 }
 
+/**
+ * \brief Fold same-typed variables, set by asm.var.fold
+ * \return the steps that original iter needs to go forward
+ **/
+static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnalysisVar *>*/ *iter) {
+	ut32 iter_mov = 0;
+	RzAnalysisVar *var = iter->data;
+	if (!strcmp(ds->fold_var, "none") || rz_analysis_var_is_arg(var)) {
+		return iter_mov;
+	}
+	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+	RzListIter *temp_it = iter->n;
+	ut32 same_type_cnt = 1;
+	while (temp_it) {
+		RzAnalysisVar *temp_var = temp_it->data;
+		if (!temp_var) {
+			break;
+		}
+		char *temp_vartype = rz_type_as_string(core->analysis->typedb, temp_var->type);
+		if (!temp_vartype) {
+			break;
+		}
+		if (strcmp(temp_vartype, vartype) || rz_analysis_var_is_arg(temp_var)) {
+			free(temp_vartype);
+			break;
+		}
+		same_type_cnt += 1;
+		free(temp_vartype);
+		temp_it = temp_it->n;
+	}
+
+	// fold if more than 3 same-typed variables
+	if (same_type_cnt < 3) {
+		free(vartype);
+		return iter_mov;
+	}
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	rz_strbuf_appendf(sb, "var %s [", vartype);
+	// fold_var = group -> group every three var
+	// fold_var = hide -> group the first two var with ellipsis in tail
+	ut32 group_num = strcmp(ds->fold_var, "group") ? 2 : 3;
+	while (iter_mov < group_num) {
+		RzAnalysisVar *temp_var = iter->data;
+		const RzStackAddr off = temp_var->storage.stack_off;
+		const char sign = off >= 0 ? '+' : '-';
+		rz_strbuf_appendf(sb, "%s @ stack %c 0x%" PFMT64x "; ", temp_var->name, sign, RZ_ABS(off));
+		iter_mov++;
+		iter = iter->n;
+	}
+	// remove extra "; " in tail
+	rz_strbuf_slice(sb, 0, sb->len - 2);
+	if (!strcmp(ds->fold_var, "hide")) {
+		// add ellipsis
+		rz_strbuf_append(sb, " ...");
+		// boost iter to proper position
+		while (iter_mov < same_type_cnt) {
+			iter_mov++;
+		}
+	}
+	rz_strbuf_append(sb, "]");
+
+	ds_begin_line(ds);
+	ds_pre_xrefs(ds, false);
+	rz_cons_printf("%s; ", COLOR_ARG(ds, func_var));
+	char *line = rz_strbuf_drain(sb);
+	rz_cons_print(line);
+	rz_cons_print(COLOR_RESET(ds));
+	ds_newline(ds);
+	free(line);
+	free(vartype);
+	return iter_mov;
+}
+
 static void ds_show_functions(RzDisasmState *ds) {
 	RzAnalysisFunction *f;
 	RzCore *core = ds->core;
@@ -1851,72 +1924,16 @@ static void ds_show_functions(RzDisasmState *ds) {
 			RzList *all_vars = vars_cache.regvars;
 			rz_list_join(all_vars, vars_cache.stackvars);
 			rz_list_foreach (all_vars, iter, var) {
-				if (ds->fold_var && !rz_analysis_var_is_arg(var)) {
-					char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-					RzListIter *temp_it = iter->n;
-					ut32 same_type_cnt = 1;
-					while (temp_it) {
-						RzAnalysisVar *temp_var = temp_it->data;
-						char *temp_vartype = rz_type_as_string(core->analysis->typedb, temp_var->type);
-						if (strcmp(temp_vartype, vartype) || rz_analysis_var_is_arg(temp_var)) {
-							free(temp_vartype);
-							break;
-						}
-						same_type_cnt += 1;
-						free(temp_vartype);
-						temp_it = temp_it->n;
+				// fold same-typed variables
+				ut32 iter_mov = fold_variables(core, ds, iter);
+				if (iter_mov > 0) {
+					int cnt = 0;
+					while (cnt++ < iter_mov - 1) {
+						iter = iter->n;
 					}
-
-					// fold if more than 3 same-typed variables
-					if (same_type_cnt >= 3) {
-						RzStrBuf *sb = rz_strbuf_new(NULL);
-						rz_strbuf_appendf(sb, "var %s [", vartype);
-						// fold_var = 1 -> group every three var
-						// fold_var = 2 -> group the first two var with ellipsis in tail
-						ut32 group_num = ds->fold_var == 2 ? 2 : 3, cnt = 0;
-						while (cnt < group_num) {
-							RzAnalysisVar *temp_var = iter->data;
-							const RzStackAddr off = temp_var->storage.stack_off;
-							const char sign = off >= 0 ? '+' : '-';
-							rz_strbuf_appendf(sb, "%s @ stack %c 0x%" PFMT64x "; ", temp_var->name, sign, RZ_ABS(off));
-							cnt++;
-							iter = iter->n;
-						}
-						// remove extra "; " in tail
-						rz_strbuf_slice(sb, 0, sb->len - 2);
-						if (ds->fold_var == 2) {
-							// add ellipsis for fold_var = 2
-							rz_strbuf_append(sb, " ...");
-							// boost iter to proper position
-							while (cnt < same_type_cnt) {
-								iter = iter->n;
-								cnt++;
-							}
-						}
-						rz_strbuf_append(sb, "]");
-
-						ds_begin_line(ds);
-						ds_pre_xrefs(ds, false);
-						rz_cons_printf("%s; ", COLOR_ARG(ds, func_var));
-						char *line = rz_strbuf_drain(sb);
-						rz_cons_print(line);
-						rz_cons_print(COLOR_RESET(ds));
-						ds_newline(ds);
-						free(line);
-
-						iter = iter->p;
-						continue;
-					}
-
-					free(vartype);
+					continue;
 				}
-
 				ds_begin_line(ds);
-				int idx;
-				idx = 12 - strlen(var->name);
-				if (idx < 0) {
-					idx = 0;
-				}
 				ds_pre_xrefs(ds, false);
 
 				if (ds->show_flgoff) {
