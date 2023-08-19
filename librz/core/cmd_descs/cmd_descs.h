@@ -91,6 +91,9 @@ RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "%"
 RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "%$"
+RZ_IPI RzCmdStatus rz_list_rizin_vars_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdDescDetail *rz_cmd_math_help_vars_details_cb(RzCore *core, int argc, const char **argv);
 // "%0"
 RZ_IPI RzCmdStatus rz_set_active_tab_zero_handler(RzCore *core, int argc, const char **argv);
 // "%1"
