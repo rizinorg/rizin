@@ -13,6 +13,14 @@ commands:
     args:
       - name: expr
         type: RZ_CMD_ARG_TYPE_STRING
+  - name: "%$"
+    summary: Print Rizin variables and their values
+    cname: list_rizin_vars
+    args:
+      - name: var
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    details_cb: rz_cmd_math_help_vars_details_cb
   - name: "%0"
     summary: Set first tab as the current active tab
     cname: set_active_tab_zero
