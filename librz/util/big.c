@@ -197,11 +197,82 @@ RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
 	return ret_str;
 }
 
+/**
+ * \brief Format a bignum as a lossless base-10 string.
+ *
+ * \param b Value to render.
+ * \return Owned decimal string (leading '-' for negatives, "0" for
+ *         zero), or NULL on allocation failure.
+ */
+RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b) {
+	rz_return_val_if_fail(b, NULL);
+
+	if (rz_big_is_zero(b)) {
+		return rz_str_dup("0");
+	}
+
+	// Divide an absolute-value copy so the loop ignores signs.
+	RzNumBig work, q, r, divisor;
+	rz_big_assign(&work, b);
+	work.sign = 1;
+
+	// 10^9 fits one ut32 word, so each remainder prints with "%09u".
+	rz_big_init(&divisor);
+	rz_big_from_int(&divisor, 1000000000);
+
+	// Size from the fixed width (bits/3 > bits*log10(2)) plus slack,
+	// so the maximal value still fits; emit 9 digits per iteration.
+	char chunks[(RZ_BIG_ARRAY_SIZE * RZ_BIG_WORD_SIZE * 8) / 3 + 16];
+	int pos = (int)sizeof(chunks);
+	chunks[--pos] = '\0';
+
+	while (!rz_big_is_zero(&work)) {
+		rz_big_init(&q);
+		rz_big_init(&r);
+		rz_big_divmod(&q, &r, &work, &divisor);
+		ut32 chunk = (ut32)rz_big_to_int(&r);
+		rz_big_assign(&work, &q);
+		// The most significant chunk (extracted last, when work hits
+		// zero) is unpadded; interior chunks need zero-padding.
+		char tmp[16];
+		int n = rz_big_is_zero(&work)
+			? snprintf(tmp, sizeof(tmp), "%u", (unsigned)chunk)
+			: snprintf(tmp, sizeof(tmp), "%09u", (unsigned)chunk);
+		if (n < 0 || n > pos) {
+			return NULL;
+		}
+		pos -= n;
+		memcpy(chunks + pos, tmp, (size_t)n);
+	}
+
+	const char *digits = chunks + pos;
+	return b->sign < 0 ? rz_str_newf("-%s", digits) : rz_str_dup(digits);
+}
+
 RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src) {
 	rz_return_if_fail(dst);
 	rz_return_if_fail(src);
 
 	memcpy(dst, src, sizeof(RzNumBig));
+}
+
+// Compare magnitudes |a| vs |b| ignoring sign: 1 if |a|>|b|, -1 if <, else
+// 0. The inner add/sub helpers operate on magnitudes (the caller factors
+// out the signs), so they must order operands by magnitude, not by the
+// signed rz_big_cmp() - otherwise a negative operand fed in by rz_big_add's
+// dispatch makes the magnitude subtraction borrow past zero.
+static int rz_big_cmp_mag(RzNumBig *a, RzNumBig *b) {
+	int i = RZ_BIG_ARRAY_SIZE;
+	do {
+		i -= 1;
+		if (a->array[i] > b->array[i]) {
+			return 1;
+		}
+		if (a->array[i] < b->array[i]) {
+			return -1;
+		}
+	} while (i != 0);
+	return 0;
 }
 
 static void rz_big_add_inner(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
@@ -221,7 +292,7 @@ static void rz_big_sub_inner(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	RZ_BIG_DTYPE_TMP tmp1;
 	RZ_BIG_DTYPE_TMP tmp2;
 	int borrow = 0;
-	int sign = rz_big_cmp(a, b);
+	int sign = rz_big_cmp_mag(a, b);
 	c->sign = (sign >= 0 ? 1 : -1);
 	if (sign < 0) {
 		tmp = a;
@@ -342,7 +413,7 @@ RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	rz_big_assign(tmp, denom); // tmp = denom = b
 	_lshift_one_bit(tmp); // tmp <= 1
 
-	while (rz_big_cmp(tmp, a) != 1) { // while (tmp <= a)
+	while (rz_big_cmp_mag(tmp, a) != 1) { // while (tmp <= |a|)
 		if ((denom->array[RZ_BIG_ARRAY_SIZE - 1] >> (RZ_BIG_WORD_SIZE * 8 - 1)) == 1) {
 			break; // Reach the max value
 		}
@@ -587,6 +658,53 @@ RZ_API void rz_big_powm(RzNumBig *c, RzNumBig *a, RzNumBig *b, RzNumBig *m) {
 
 	rz_big_free(bcopy);
 	rz_big_free(acopy);
+}
+
+/**
+ * \brief Non-modular exponentiation by squaring: c = a ^ b.
+ *
+ * A negative exponent yields zero, since an integer power with a
+ * negative exponent is not an integer. The caller must keep the
+ * result within the fixed bignum width; an oversized base/exponent
+ * silently overflows, as with every other rz_big operation.
+ *
+ * \param c Result (overwritten).
+ * \param a Base.
+ * \param b Exponent.
+ */
+RZ_API void rz_big_pow(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b) {
+	rz_return_if_fail(a && b && c);
+
+	if (b->sign < 0) {
+		rz_big_from_int(c, 0);
+		return;
+	}
+
+	RzNumBig *bcopy = rz_big_new();
+	RzNumBig *base = rz_big_new();
+	if (!bcopy || !base) {
+		rz_big_free(bcopy);
+		rz_big_free(base);
+		rz_big_from_int(c, 0);
+		return;
+	}
+	rz_big_assign(bcopy, b);
+	rz_big_assign(base, a);
+	rz_big_from_int(c, 1);
+
+	// Square-and-multiply, like rz_big_powm() without the reduction.
+	while (!rz_big_is_zero(bcopy)) {
+		if (rz_big_to_int(bcopy) % 2 == 1) {
+			rz_big_mul(c, c, base);
+		}
+		_rshift_one_bit(bcopy);
+		if (!rz_big_is_zero(bcopy)) {
+			rz_big_mul(base, base, base);
+		}
+	}
+
+	rz_big_free(bcopy);
+	rz_big_free(base);
 }
 
 RZ_API void rz_big_isqrt(RzNumBig *b, RzNumBig *a) {

@@ -41,6 +41,7 @@ RZ_API void rz_big_from_int(RzNumBig *b, st64 v);
 RZ_API st64 rz_big_to_int(RzNumBig *b);
 RZ_API void rz_big_from_hexstr(RzNumBig *b, const char *str);
 RZ_API char *rz_big_to_hexstr(RzNumBig *b);
+RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b); /* Lossless base-10 string */
 RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src);
 
 /* Basic arithmetic operations */
@@ -64,6 +65,7 @@ RZ_API int rz_big_is_zero(RzNumBig *a); /* For comparison with zero */
 RZ_API void rz_big_inc(RzNumBig *a); /* Increment: add one to n */
 RZ_API void rz_big_dec(RzNumBig *a); /* Decrement: subtract one from n */
 RZ_API void rz_big_powm(RzNumBig *c, RzNumBig *a, RzNumBig *b, RzNumBig *m); /* Calculate a^b -- e.g. 2^10 => 1024 */
+RZ_API void rz_big_pow(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b); /* Non-modular c = a^b */
 RZ_API void rz_big_isqrt(RzNumBig *c, RzNumBig *a); /* Integer square root -- e.g. isqrt(5) => 2*/
 
 #ifdef __cplusplus
