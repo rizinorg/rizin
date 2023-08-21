@@ -1932,3 +1932,56 @@ RZ_API RZ_OWN RzBitVector *rz_float_round_significant(bool sign, RzBitVector *si
 RZ_API RZ_OWN RzFloat *rz_float_round_bv_and_pack(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
 	return round_float_bv_new(sign, exp, sig, format, format, mode);
 }
+
+/**
+ * \brief Render a float format's width as a Unicode subscript string.
+ *
+ * Mirrors the bit-vector width subscript (rz_bv_width_subscript): the
+ * total bit width of \p format is rendered as Unicode subscript
+ * digits, with a leading "d" subscript marker for the decimal
+ * formats. For example IEEE-754 binary32 yields the subscript "32"
+ * and decimal64 yields "d64". This is the single source of truth for
+ * the float-format subscript shared by value formatting and the RzIL
+ * Unicode exporter.
+ *
+ * \param format The float format to annotate.
+ * \return A freshly-allocated, caller-owned string, or NULL on
+ *         allocation failure or an unknown format.
+ */
+RZ_API RZ_OWN char *rz_float_format_subscript(RzFloatFormat format) {
+	// The decimal formats are not fully implemented in RzFloat
+	// (rz_float_get_format_info returns 0 for them), so their widths
+	// are spelled out here; they render with a leading "d" marker.
+	ut32 total;
+	bool is_decimal = false;
+	switch (format) {
+	case RZ_FLOAT_IEEE754_DEC_64:
+		total = 64;
+		is_decimal = true;
+		break;
+	case RZ_FLOAT_IEEE754_DEC_128:
+		total = 128;
+		is_decimal = true;
+		break;
+	default:
+		total = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+		break;
+	}
+	if (!total) {
+		return NULL;
+	}
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	// Decimal formats carry a "d" marker (U+1D48 modifier letter
+	// small d) before the width to distinguish them from the binary
+	// formats, matching the RzIL Unicode exporter's notation.
+	if (is_decimal && !rz_strbuf_append(&sb, "\u1d48")) {
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	if (!rz_str_append_num_subscript(&sb, total)) {
+		rz_strbuf_fini(&sb);
+		return NULL;
+	}
+	return rz_strbuf_drain_nofree(&sb);
+}

@@ -6,8 +6,6 @@
 static bool il_op_pure_string_resolve(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb);
 static bool il_op_effect_string_resolve(RzILStringifyCtx *ctx, const RzILOpEffect *op, RzStrBuf *sb);
 
-static const char *const subscript_digits[10] = { "₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉" };
-
 #define UCD_ITE          "↠"
 #define UCD_LET          "="
 #define UCD_BOOL_FALSE   "⊥"
@@ -180,34 +178,25 @@ static const char *const subscript_digits[10] = { "₀", "₁", "₂", "₃", "�
 		return rz_strbuf_append(sb, ")"); \
 	} while (0);
 
-#define sym_with_float_format(x, y) \
-	(x) == RZ_FLOAT_IEEE754_BIN_32 ? y "₃₂" : (x) == RZ_FLOAT_IEEE754_BIN_64 ? y "₆₄" \
-		: (x) == RZ_FLOAT_IEEE754_BIN_80                                 ? y "₈₀" \
-		: (x) == RZ_FLOAT_IEEE754_BIN_128                                ? y "₁₂₈" \
-		: (x) == RZ_FLOAT_IEEE754_BIN_16                                 ? y "₁₆" \
-		: (x) == RZ_FLOAT_IEEE754_DEC_64                                 ? y "ᵈ₆₄" \
-		: (x) == RZ_FLOAT_IEEE754_DEC_128                                ? y "ᵈ₁₂₈" \
-										 : ""
-
-static bool append_ut32_glyph(RzStrBuf *sb, ut32 n, const char *const digits[10]) {
-	char buffer[32] = { 0 };
-	if (rz_strf(buffer, "%u", n) == NULL) {
-		return false;
+// Combine a prefix with the float format's Unicode width subscript,
+// via the shared RzUtil renderer (rz_float_format_subscript) so the
+// notation matches the rest of the codebase. Returns a caller-owned
+// string; the caller must free it.
+static char *sym_with_float_format(RzFloatFormat format, const char *prefix) {
+	char *sub = rz_float_format_subscript(format);
+	if (!sub) {
+		return NULL;
 	}
-
-	/* Each unicode superscript/subscript character is at most 3 bytes */
-	const size_t len = strlen(buffer);
-	for (size_t i = 0; i < len; ++i) {
-		int digit = buffer[i] - '0';
-		if (!rz_strbuf_append(sb, digits[digit])) {
-			return false;
-		}
-	}
-	return true;
+	char *out = rz_str_newf("%s%s", prefix, sub);
+	free(sub);
+	return out;
 }
 
+// Append a number as Unicode subscript digits, via the shared RzUtil
+// renderer so this exporter and the bit-vector / float value
+// formatters stay byte-for-byte identical.
 static bool append_subscript(RzStrBuf *sb, ut32 n) {
-	return append_ut32_glyph(sb, n, subscript_digits);
+	return rz_str_append_num_subscript(sb, n);
 }
 
 static bool il_opdmp_var(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
@@ -270,14 +259,15 @@ static bool il_opdmp_bitv(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf 
 	const RzILOpArgsBv *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value, false);
 	return_false_if_fail(num);
-	goto_if_fail(rz_strbuf_appendf(sb, "%s", num), fini);
-	goto_if_fail(append_subscript(sb, opx->value->len), fini);
+	// The hex value plus the width as a Unicode subscript, via the
+	// shared RzUtil formatter (also used by the RzNum value printer)
+	// so the two renderings of a bit-vector constant stay identical.
+	char *uni = rz_bv_as_unicode_string(opx->value, num);
 	free(num);
-	return true;
-
-fini:
-	free(num);
-	return false;
+	return_false_if_fail(uni);
+	bool ok = rz_strbuf_append(sb, uni);
+	free(uni);
+	return ok;
 }
 
 static bool il_opdmp_msb(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
@@ -380,8 +370,13 @@ static bool il_opdmp_float(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf
 	switch (opx->bv->code) {
 	default:
 		return il_op_pure_string_resolve(ctx, opx->bv, sb);
-	case RZ_IL_OP_BITV:
-		return il_opdmp_bitv_float(ctx, opx->bv, sb, sym_with_float_format(opx->r, ".f"));
+	case RZ_IL_OP_BITV: {
+		char *sym = sym_with_float_format(opx->r, ".f");
+		return_false_if_fail(sym);
+		bool ok = il_opdmp_bitv_float(ctx, opx->bv, sb, sym);
+		free(sym);
+		return ok;
+	}
 	}
 }
 
@@ -433,14 +428,28 @@ static bool il_opdmp_fcast_sint(RzILStringifyCtx *ctx, const RzILOpPure *op, RzS
 
 static bool il_opdmp_fcast_float(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsFCastfloat *opx = &op->op.fcast_float;
-	const char *sym = sym_with_float_format(opx->format, UCD_FCAST_FLOAT);
-	il_op_param_1_with_mode_format(sym, opx, bv, pure, mode, format);
+	char *sym = sym_with_float_format(opx->format, UCD_FCAST_FLOAT);
+	return_false_if_fail(sym);
+	bool ok = rz_strbuf_append(sb, "(") &&
+		il_op_pure_string_resolve(ctx, opx->bv, sb) &&
+		rz_strbuf_appendf(sb, " %s ", sym) &&
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode)) &&
+		rz_strbuf_append(sb, ")");
+	free(sym);
+	return ok;
 }
 
 static bool il_opdmp_fcast_sfloat(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsFCastsfloat *opx = &op->op.fcast_sfloat;
-	const char *sym = sym_with_float_format(opx->format, UCD_FCAST_SFLOAT);
-	il_op_param_1_with_mode_format(sym, opx, bv, pure, mode, format);
+	char *sym = sym_with_float_format(opx->format, UCD_FCAST_SFLOAT);
+	return_false_if_fail(sym);
+	bool ok = rz_strbuf_append(sb, "(") &&
+		il_op_pure_string_resolve(ctx, opx->bv, sb) &&
+		rz_strbuf_appendf(sb, " %s ", sym) &&
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode)) &&
+		rz_strbuf_append(sb, ")");
+	free(sym);
+	return ok;
 }
 
 static bool il_opdmp_fconvert(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
