@@ -203,6 +203,8 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 
                         operand->v0 = val;
 
+                        break;
+
                 default: // no need to get additional data (NONE, SYMBOL, ...)
                         break;
         }

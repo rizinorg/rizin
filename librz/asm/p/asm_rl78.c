@@ -14,8 +14,11 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
         RL78Instr instr = { 0 };
-        size_t bytes_read;
-        rl78_dis(&instr, &bytes_read, buf, len);
+        size_t bytes_read = 0;
+        if (!rl78_dis(&instr, &bytes_read, buf, len)) {
+            rz_strbuf_set(&op->buf_asm, "(invalid)");
+            return bytes_read;
+        }
 
         RzStrBuf *instr_strbuf = rz_strbuf_new("");
         if (rl78_instr_to_string(instr_strbuf, &instr)) {

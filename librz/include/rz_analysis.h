@@ -2406,6 +2406,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_ppc_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_propeller;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;
+extern RzAnalysisPlugin rz_analysis_plugin_rl78;
 extern RzAnalysisPlugin rz_analysis_plugin_rsp;
 extern RzAnalysisPlugin rz_analysis_plugin_sh;
 extern RzAnalysisPlugin rz_analysis_plugin_snes;
