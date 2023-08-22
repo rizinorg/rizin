@@ -21,6 +21,68 @@ RZ_API bool rz_num_is_hex_prefix(const char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
+/**
+ * \brief Classify the base prefix of a numeric literal.
+ *
+ * Only the prefix is inspected; whether any digits follow, and whether they
+ * are valid for the base, is left to the caller.
+ *
+ * \param p          The literal text, without a leading sign.
+ * \param base       If non-NULL, set to the base the prefix selects, 10 when there is none.
+ * \param prefix_len If non-NULL, set to the number of characters to skip to reach the digits.
+ *                   This is 0 for RZ_NUM_BASE_PREFIX_OCTAL_C, whose leading zero is itself
+ *                   an octal digit.
+ * \return The prefix kind.
+ */
+RZ_API RzNumBasePrefix rz_num_base_prefix(RZ_NONNULL const char *p, RZ_NULLABLE RZ_OUT ut32 *base,
+	RZ_NULLABLE RZ_OUT size_t *prefix_len) {
+	rz_return_val_if_fail(p, RZ_NUM_BASE_PREFIX_NONE);
+	RzNumBasePrefix kind = RZ_NUM_BASE_PREFIX_NONE;
+	ut32 b = 10;
+	size_t len = 0;
+	if (p[0] == '0') {
+		switch (p[1]) {
+		case 'x':
+		case 'X':
+			kind = RZ_NUM_BASE_PREFIX_HEX;
+			b = 16;
+			len = 2;
+			break;
+		case 'b':
+		case 'B':
+			kind = RZ_NUM_BASE_PREFIX_BINARY;
+			b = 2;
+			len = 2;
+			break;
+		case 'o':
+		case 'O':
+			kind = RZ_NUM_BASE_PREFIX_OCTAL;
+			b = 8;
+			len = 2;
+			break;
+		case 't':
+		case 'T':
+			kind = RZ_NUM_BASE_PREFIX_TERNARY;
+			b = 3;
+			len = 2;
+			break;
+		default:
+			if (IS_DIGIT(p[1])) {
+				kind = RZ_NUM_BASE_PREFIX_OCTAL_C;
+				b = 8;
+			}
+			break;
+		}
+	}
+	if (base) {
+		*base = b;
+	}
+	if (prefix_len) {
+		*prefix_len = len;
+	}
+	return kind;
+}
+
 static void rz_num_srand(int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
@@ -158,6 +220,10 @@ RZ_API RzNum *rz_num_new(RzNumCallback cb, RzNumCallback2 cb2, void *ptr) {
  * \param RzNum to be destroy.
  **/
 RZ_API void rz_num_free(RzNum *num) {
+	if (!num) {
+		return;
+	}
+	rz_num_value_store_free(num->expr_vars);
 	free(num);
 }
 
@@ -468,26 +534,107 @@ RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
 }
 
 /**
- * \brief Compute an numerical expression.
+ * \brief Compute a numerical expression yielding a ut64.
  *
  * \param num RzNum instance.
  * \param str Numerical expression.
  * \return Evaluated expression's value.
- **/
-RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
+ *
+ * The new tree-sitter-based parser (rz_num_math_value) is tried
+ * first. If the input fails to parse against the new grammar, the
+ * legacy rz_num_calc() path is used as a fallback so that any
+ * idiosyncratic input the old parser still accepts continues to
+ * work. Evaluation errors from the new path (e.g. division by zero,
+ * unknown function) are reported and stop further evaluation; they
+ * are deliberately NOT bridged to the legacy parser, since the two
+ * disagree on what counts as a meaningful error.
+ */
+RZ_API ut64 rz_num_math_ut64(RzNum *num, const char *str) {
 	ut64 ret;
 	const char *err = NULL;
 	if (!str || !*str) {
 		return 0LL;
 	}
-	// if (!str || !*str) return 0LL;
 	if (num) {
 		num->dbz = 0;
+		// The new evaluator does not use the legacy calc's error
+		// counter, but callers (e.g. the seek command) still test
+		// num->nc.errors to decide whether the expression evaluated
+		// cleanly. Reset it here so a stale count from an earlier
+		// legacy evaluation cannot make a successful parse look failed.
+		// The error paths below set it back on a genuine failure.
+		num->nc.errors = 0;
+		// Likewise expose the source expression through nc.calc_buf the
+		// way the legacy load_token() does, so a caller reporting a
+		// failure (again, the seek command) names the actual input
+		// rather than a stale or null buffer.
+		num->nc.calc_buf = str;
 	}
-	ret = rz_num_calc(num, str, &err);
-	if (err) {
-		eprintf("rz_num_calc error: (%s) in (%s)\n", err, str);
+
+	// Try the new parser first.
+	RzNumValue v;
+	rz_num_value_init(&v);
+	char *new_err = NULL;
+	bool ok = rz_num_math_value(num, str, &v, &new_err);
+	if (ok) {
+		// Project to ut64; num->fvalue mirrors the result's floating
+		// value (signed for integers) as the legacy path did, so the
+		// last-evaluated value is observable through both fields.
+		ret = rz_num_value_to_ut64(&v);
+		if (num) {
+			num->fvalue = rz_num_value_to_double(&v);
+		}
+		rz_num_value_fini(&v);
+		if (num) {
+			num->value = ret;
+		}
+		return ret;
 	}
+
+	// New parser failed. Dispatch on the error category v.err
+	// rather than text-matching the diagnostic.
+	//
+	//   * Parse error  -> retry through the legacy code path. Some
+	//     idiosyncratic input the old parser accepts may not yet
+	//     be implemented in the new grammar.
+	//   * Empty input  -> return 0 silently (legacy behaviour).
+	//   * Reserved-word "variable" (bare `mod`, `log`, `le`, `be`) ->
+	//     return 0 silently. Calling code outside the interactive
+	//     command path commonly tokenises input on whitespace and
+	//     hands each token to rz_num_math_ut64() individually; a
+	//     bare reserved word ought not to spam the error stream in
+	//     that case. Callers that want strict diagnostics should
+	//     use rz_num_math_value() directly, which carries the
+	//     RzNumError on the returned value.
+	//   * Any other evaluation error -> report and stop.
+	switch (v.err) {
+	case RZ_NUM_ERR_PARSE:
+		free(new_err);
+		ret = rz_num_calc(num, str, &err);
+		if (err) {
+			eprintf("rz_num_calc error: (%s) in (%s)\n", err, str);
+		}
+		break;
+	case RZ_NUM_ERR_EMPTY:
+	case RZ_NUM_ERR_RESERVED_WORD:
+		free(new_err);
+		ret = 0;
+		break;
+	default:
+		eprintf("rz_num_math error: (%s) in (%s)\n",
+			new_err ? new_err : "unknown", str);
+		free(new_err);
+		ret = 0;
+		// A genuine evaluation error (division by zero, uncomputable,
+		// ...). Signal it the way the legacy path does so callers that
+		// gate on num->nc.errors (e.g. `s <expr>`) do not act on the
+		// fallback 0.
+		if (num) {
+			num->nc.errors = 1;
+		}
+		break;
+	}
+	rz_num_value_fini(&v);
 	if (num) {
 		num->value = ret;
 	}
@@ -567,14 +714,14 @@ RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 		lgt = strchr(p, '<');
 		if (lgt) {
 			*lgt = 0;
-			a = rz_num_math(num, p);
+			a = rz_num_math_ut64(num, p);
 			if (lgt[1] == '=') {
-				b = rz_num_math(num, lgt + 2);
+				b = rz_num_math_ut64(num, lgt + 2);
 				if (a > b) {
 					goto fail;
 				}
 			} else {
-				b = rz_num_math(num, lgt + 1);
+				b = rz_num_math_ut64(num, lgt + 1);
 				if (a >= b) {
 					goto fail;
 				}
@@ -583,14 +730,14 @@ RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 			lgt = strchr(p, '>');
 			if (lgt) {
 				*lgt = 0;
-				a = rz_num_math(num, p);
+				a = rz_num_math_ut64(num, p);
 				if (lgt[1] == '=') {
-					b = rz_num_math(num, lgt + 2);
+					b = rz_num_math_ut64(num, lgt + 2);
 					if (a < b) {
 						goto fail;
 					}
 				} else {
-					b = rz_num_math(num, lgt + 1);
+					b = rz_num_math_ut64(num, lgt + 1);
 					if (a <= b) {
 						goto fail;
 					}
@@ -602,7 +749,7 @@ RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 					if (*lgt == '!') {
 						rz_str_replace_char(p, '!', ' ');
 						rz_str_replace_char(p, '=', '-');
-						n = rz_num_math(num, p);
+						n = rz_num_math_ut64(num, p);
 						if (!n) {
 							goto fail;
 						}
@@ -613,7 +760,7 @@ RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 					*lgt = ' ';
 				}
 				rz_str_replace_char(p, '=', '-');
-				n = rz_num_math(num, p);
+				n = rz_num_math_ut64(num, p);
 				if (n) {
 					goto fail;
 				}
@@ -628,12 +775,12 @@ fail:
 }
 
 RZ_API int rz_num_is_valid_input(RzNum *num, const char *input_value) {
-	ut64 value = input_value ? rz_num_math(num, input_value) : 0;
+	ut64 value = input_value ? rz_num_math_ut64(num, input_value) : 0;
 	return !(value == 0 && input_value && *input_value != '0') || !(value == 0 && input_value && *input_value != '@');
 }
 
 RZ_API ut64 rz_num_get_input_value(RzNum *num, const char *input_value) {
-	ut64 value = input_value ? rz_num_math(num, input_value) : 0;
+	ut64 value = input_value ? rz_num_math_ut64(num, input_value) : 0;
 	return value;
 }
 
@@ -690,12 +837,12 @@ RZ_API bool rz_is_valid_input_num_value(RzNum *num, const char *input_value) {
 	if (!input_value) {
 		return false;
 	}
-	ut64 value = rz_num_math(num, input_value);
+	ut64 value = rz_num_math_ut64(num, input_value);
 	return !(value == 0 && *input_value != '0');
 }
 
 RZ_API ut64 rz_get_input_num_value(RzNum *num, const char *str) {
-	return (str && *str) ? rz_num_math(num, str) : 0;
+	return (str && *str) ? rz_num_math_ut64(num, str) : 0;
 }
 
 static inline ut64 __nth_nibble(ut64 n, ut32 i) {
@@ -741,7 +888,7 @@ RZ_API ut64 rz_num_tail(RzNum *num, ut64 addr, const char *hex) {
 		strcpy(p, "0x");
 		strcpy(p + 2, hex);
 		if (isxdigit((ut8)hex[0])) {
-			n = rz_num_math(num, p);
+			n = rz_num_math_ut64(num, p);
 		} else {
 			eprintf("Invalid argument\n");
 			free(p);
@@ -792,7 +939,7 @@ RZ_API int rz_num_between(RzNum *num, const char *input_value) {
 		len = 3;
 	}
 	for (i = 0; i < len; i++) {
-		ns[i] = rz_num_math(num, rz_list_pop_head(nums));
+		ns[i] = rz_num_math_ut64(num, rz_list_pop_head(nums));
 	}
 	free(str);
 	rz_list_free(nums);
@@ -915,7 +1062,7 @@ RZ_API size_t rz_num_base_of_string(RzNum *num, RZ_NONNULL const char *str) {
 			break;
 		default:
 			// syscall
-			base = rz_num_math(num, str);
+			base = rz_num_math_ut64(num, str);
 		}
 	}
 	return base;

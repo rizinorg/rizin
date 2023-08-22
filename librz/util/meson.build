@@ -103,7 +103,25 @@ rz_util_common_sources = [
 ]
 rz_util_sources = rz_util_common_sources
 
-rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep, softfloat_dep] + platform_deps
+# The RzNum tree-sitter evaluator. It needs the tree-sitter runtime and
+# the generated math grammar, so it is kept apart from the common
+# sources: the regular library builds it (rz_util_sources below), but
+# the build-machine variant used only for sdb_gen does not (sdb_gen
+# never evaluates expressions), which keeps tree-sitter out of the
+# native toolchain. See the native block for the small shim that
+# satisfies unum.c's two references in that configuration.
+rz_util_evaluator_sources = [
+  'num/parser.c',
+  'num/evaluator.c',
+  'num/value_print.c',
+]
+rz_util_sources += rz_util_evaluator_sources
+
+# tree-sitter and the RzNum math grammar are pulled in so that the
+# rz_num_math_value() evaluator (introduced in a subsequent commit)
+# can drive a real grammar-based parser.
+math_parser_dep = dependency('rizin-math-parser')
+rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep, softfloat_dep, math_parser_dep] + platform_deps
 rz_util_public_deps = []
 rz_util_public_cmake_deps = []
 if zlib_dep.found()
@@ -187,7 +205,11 @@ if meson.is_cross_build()
     install_dir: rizin_incdir
   )
   rz_util_native_includes = [include_directories('.'), rz_util_includes]
-  rz_util_native_sources = rz_util_common_sources + ['big.c']
+  # No num/* here: the evaluator is replaced by native_shim.c,
+  # which provides the two entry points unum.c links against without
+  # pulling in tree-sitter. sdb_gen does not evaluate expressions, so the
+  # legacy calculator is all the native build ever needs.
+  rz_util_native_sources = rz_util_common_sources + ['big.c', 'num/native_shim.c']
 
   rz_util_native = static_library('rz_util_native', rz_util_native_sources, libsdb_sources,
     include_directories: rz_util_native_includes,
