@@ -1,0 +1,19 @@
+{
+  "name": "tree-sitter-rznum",
+  "description": "Tree-sitter grammar for the Rizin RzNum mathematical expression language.",
+  "license": "LGPL-3.0-only",
+  "version": "0.1.0",
+  "main": "bindings/node",
+  "keywords": [
+    "parsing",
+    "incremental",
+    "rizin",
+    "math"
+  ],
+  "scripts": {
+    "test": "tree-sitter test"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.0"
+  }
+}
