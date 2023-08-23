@@ -1,4 +1,4 @@
-.Dd December 28, 2020
+.Dd July 21, 2026
 .Dt RZ_AX 1
 .Os
 .Sh NAME
@@ -6,13 +6,17 @@
 .Nd rizin base converter
 .Sh SYNOPSIS
 .Nm rz-ax
-.Op Fl ebBdDeEfFhiIklLosStuvwx
+.Op Fl abBdDeEfFhHiIklLmnNopqrsStuvwWx
 .Op expr ...
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
 This command allows you to convert values between positive and
 negative integer, float, octal, binary, ternary, and hexadecimal values.
+It also evaluates arithmetic expressions written in the RzNum
+expression language - the same one used throughout Rizin - with
+operators, fixed-width bit-vectors, arbitrary-precision big numbers,
+and built-in functions.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl a
@@ -35,7 +39,12 @@ Floating point arithmetic (rz-ax -f 6.3+2.1)
 Read C strings from stdin and output in hexpairs.
 Useful to load shellcodes (rz-ax -F < shellcode.[c/py/js])
 .It Fl h
-Show usage help message
+Show the short help: the usage line and the option list
+.It Fl H
+Show the long help: everything in
+.Fl h
+plus the conversion table, expression examples, the operator list and the
+literal forms
 .It Fl i
 Dump stdin to C array in stdout (rz-ax -i < bytes)
 .It Fl I
@@ -65,7 +74,7 @@ Convert MS-DOS timestamp to string (rz-ax -m 0x12345678)
 .It Fl W
 Convert Win32 timestamp to string (rz-ax -W 1234567890)
 .It Fl u
-Convert given value to human readable units format (rz-ax -u 389289238 # 317.0M)
+Convert given value to human readable units format (rz-ax -u 389289238 # 371.3M)
 .It Fl v
 Show version information
 .It Fl w
@@ -75,59 +84,187 @@ Convert a string into a hash (rz-ax -x linux osx)
 .It Fl p
 Show position of set bits in the binary representation (rz-ax -p 0xb3)
 .El
-.Sh USAGE
-Force output mode (numeric base)
+.Sh OUTPUT BASE
+By default a bare literal written in a non-decimal base prints as decimal
+and everything else - decimal literals and every compound expression -
+prints as hexadecimal.
 .Pp
-  =f    floating point
+  $ rz-ax 3
+  0x3
+  $ rz-ax 0x12121212
+  303174162
+  $ rz-ax 0b1010
+  10
+  $ rz-ax 0x3+0b11+3
+  0x9
+.Pp
+Prefix an argument with
+.Cm =
+to force the output base for the arguments that follow it:
+.Pp
   =2    binary
   =3    ternary
   =8    octal
   =10   decimal
   =16   hexadecimal
 .Pp
-Available variable types are:
-.Pp
+.Fl d
+forces base 10 and
+.Fl k
+keeps the input base.
+.Sh CONVERSIONS
   int     \->  hex     rz-ax 10
   hex     \->  int     rz-ax 0xa
   \-int    \->  hex     rz-ax \-77
   \-hex    \->  int     rz-ax 0xffffffb3
   int     \->  bin     rz-ax b30
   int     \->  ternary rz-ax t42
-  ternary \->  int     rz-ax 1010dt
-  bin     \->  int     rz-ax 1010d
+  int     \->  oct     rz-ax Ox12 (O is a letter)
+  bin     \->  int     rz-ax 0b1010
+  oct     \->  int     rz-ax 0o17
+  ternary \->  int     rz-ax 0t212
   float   \->  hex     rz-ax 3.33f
   hex     \->  float   rz-ax Fx40551ed8
-  oct     \->  hex     rz-ax 35o
-  hex     \->  oct     rz-ax Ox12 (O is a letter)
-  bin     \->  hex     rz-ax 1100011b
   hex     \->  bin     rz-ax Bx63
-  ternary \->  hex     rz-ax 212t
-  hex     \->  ternary z-ax Tx23
-  raw     \->  hex     rz-ax -S < /binfile
-  hex     \->  raw     rz-ax -s 414141
+  hex     \->  ternary rz-ax Tx23
+  raw     \->  hex     rz-ax \-S < /binfile
+  hex     \->  raw     rz-ax \-s 414141
 .Pp
-With no arguments, rz-ax read values from stdin.
-You can pass one or more values as arguments.
+The trailing base suffixes (101b, 35o, 212t) are deprecated in favour of
+the 0b, 0o and 0t prefixes;
+.Nm
+still accepts them but prints a warning.
+.Sh EXPRESSION SYNTAX
+Arguments are evaluated in the RzNum expression language, the same one
+used by the rizin
+.Cm %
+command and by every command argument that takes a number.
+Quote an expression containing spaces so it stays a single argument;
+otherwise each argument is converted on its own.
 .Pp
-  $ rz-ax 33 0x41 0101b
+  $ rz-ax '3 * (10 + 2)'
+  0x24
+  $ rz-ax 10 0x20
+  0xa
+  32
+.Ss Operators
+Listed from highest to lowest precedence; the precedence matches C.
+.Pp
+  **                power (2**10); note ^ is XOR, not power
+  * / %             multiply, divide, modulo
+  sdiv smod         signed divide, signed modulo
+  + \-               add, subtract (unary \- negates)
+  << >>             logical shift left, right
+  sar               arithmetic (sign-extending) shift right
+  <<< >>>           rotate left, right
+  & | ^ ~           and, or, xor, not
+  < <= > >= == !=   comparisons, yielding 0 or 1
+  ?:                ternary (cond ? a : b)
+  ;                 sequence; the value is that of the last expression
+.Ss Literals
+  0x1f              hexadecimal
+  0o17              octal
+  0t212             ternary
+  0b1010            binary
+  017               C style octal (a leading zero before a digit)
+  3.5  1e3  0x1.8p3 floating point, including hex floats
+  4KiB 2MB          size units: KiB MiB GiB TiB PiB EiB and KB MB GB TB PB EB
+  "AB"              a string, taken as its bytes
+.Ss Bit-vectors
+A
+.Cm u
+suffix followed by a bit count makes a fixed-width bit-vector, which is
+printed with its width and bit pattern instead of as a plain number.
+Any width from 1 to 65536 is accepted.
+.Pp
+  $ rz-ax 8u7
+  hex     0x08
+  binary  0b0001000
+  width   7 bits
+  $ rz-ax 5u8+3u8
+  hex     0x08
+  binary  0b00001000
+  width   8 bits
+.Ss Big numbers
+A result that does not fit in 64 bits is promoted to an
+arbitrary-precision integer automatically; no suffix is needed.
+.Pp
+  $ rz-ax 2**64
+  decimal 18446744073709551616
+.Ss Functions
+  abs  ceil  clz  ctz  floor  gcd  len  ln  log  log10  log2
+  max  min  popcount  round  sqrt
+.Pp
+  $ rz-ax 'gcd(12,18)'
+  0x6
+  $ rz-ax 'popcount(0xff)'
+  0x8
+.Ss Variables
+An assignment binds a name for the rest of the expression.
+.Pp
+  $ rz-ax 'x=7;x*x'
+  0x31
+.Ss Typed address dereference
+When a host supplies an IO backend - inside rizin, not in standalone
+.Nm -
+a numeric address followed by a colon and a width reads memory at that
+address:
+.Pp
+  0x1234:le32       little-endian unsigned 32-bit
+  0xDEADBEEF:be64   big-endian unsigned 64-bit
+  0x1000:8          native-endian unsigned 8-bit
+  0x1000:s32        native-endian signed 32-bit
+  0x1000:lef32      little-endian 32-bit float
+  0x1000:f16        native-endian half-precision float
+.Pp
+The width is one of 8, 16, 32, 64 or 128 for integer reads and 16, 32 or
+64 for float reads;
+.Cm le
+or
+.Cm be
+selects the endianness and
+.Cm s
+marks a signed read.
+.Sh STANDARD INPUT
+With no argument,
+.Nm
+reads one expression per line from standard input.
+.Pp
+  $ printf '33\n0x41\n' | rz-ax
   0x21
   65
-  0x5
+.Sh EXIT STATUS
+.Nm
+exits 0 when every argument was converted, and 1 when any of them failed
+to parse or evaluate.
+A diagnostic naming the failure is printed on standard error.
 .Pp
-You can do 'unpack' hexpair encoded strings easily.
+  $ rz-ax 'nosuchthing'
+  rz-ax: cannot resolve 'nosuchthing'
+  $ echo $?
+  1
+.Sh EXAMPLES
+Unpack a hexpair encoded string:
 .Pp
   $ rz-ax \-s 41 42 43
   ABC
 .Pp
-And it supports some math operations.
+Get the byte encoding of a value:
 .Pp
-  $ rz-ax
-  0x5*101b+5
-  30
+  $ rz-ax \-N 0x1234
+  \ex34\ex12\ex00\ex00
 .Pp
-It is a very useful tool for scripting,
-so you can read floating point values,
-or get the integer offset of a jump or a stack delta when analyzing programs.
+Find which bits are set:
+.Pp
+  $ rz-ax \-p 0xb3
+  [0\-1]: 1
+  [4\-5]: 1
+  [7]: 1
+.Pp
+Convert a value to human readable units:
+.Pp
+  $ rz-ax \-u 389289238
+  371.3M
 .Sh SEE ALSO
 .Xr rizin 1 ,
 .Xr rz-asm 1 ,
