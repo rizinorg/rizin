@@ -733,9 +733,9 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 					break;
 				}
 				*ptr = 0;
-				return rz_core_reg_getv_by_role_or_name(core, bptr);
+				ut64 regval = rz_core_reg_getv_by_role_or_name(core, bptr);
 				free(bptr);
-				return 0; // UT64_MAX;
+				return regval;
 			} else {
 				int rows;
 				(void)rz_cons_get_size(&rows);

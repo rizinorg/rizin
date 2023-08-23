@@ -106,42 +106,55 @@ RZ_IPI RzCmdStatus rz_list_rizin_vars_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
-/**
- * \brief If \p pj is NULL then standard output will be displayed
- * If it's non-NULL then it's treated as a borrowed PJ and used and
- * printing will be done in JSON format and not standard one.
- * Hence the the third parameter decides in which format data will be displayed.
- *
- * \param core RzCore.
- * \param input Input mathematical expression.
- * \param pj Borrowed PJ if calculated value is to be printed in JSON format.
- * \return true on success, false otherwise.
- **/
-RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input, RZ_BORROW PJ *pj) {
-	rz_return_val_if_fail(core && input, false);
+// Render a non-ut64 result (float / bignum / bit-vector): JSON when pj is
+// set, otherwise the kind-aware pretty-printer.
+static void calc_expr_print_typed(RzCore *core, RZ_BORROW const RzNumValue *v, RZ_BORROW PJ *pj) {
+	if (pj) {
+		pj_o(pj);
+		char *one = rz_num_value_tostring(v);
+		if (one) {
+			pj_ks(pj, "value", one);
+			free(one);
+		}
+		const char *kind_name =
+			v->kind == RZ_NUM_KIND_FLOAT ? "float" : v->kind == RZ_NUM_KIND_BIG ? "big"
+			: v->kind == RZ_NUM_KIND_BITVECTOR                                  ? "bitvector"
+											    : "none";
+		pj_ks(pj, "kind", kind_name);
+		pj_end(pj);
+		return;
+	}
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return;
+	}
+	RzNumPrintOptions opts = {
+		.utf8 = rz_config_get_b(core->config, "scr.utf8")
+	};
+	rz_num_value_print_ex(v, &opts, sb);
+	char *block = rz_strbuf_drain(sb);
+	if (block) {
+		rz_cons_print(block);
+		free(block);
+	}
+}
 
+// Render a ut64 result in the established multi-line / JSON layout, keeping
+// the per-line keys ("hex", "octal", "segment", ...) stable for downstream
+// scripts and JSON consumers.
+static void calc_expr_print_ut64(RzCore *core, ut64 n, RZ_BORROW PJ *pj) {
 	char unit[8];
 	char number[128], out[128] = RZ_EMPTY;
 
-	ut64 n = rz_num_math(core->num, input);
-	if (core->num->dbz) {
-		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
-		core->num->dbz = 0;
-		return false;
-	}
-
-	/* decimal, hexa, octal */
 	ut32 s, a;
 	s = n >> 16 << 12;
 	a = n & 0x0fff;
 	rz_num_units(unit, sizeof(unit), n);
 
-	/* binary and floating point */
 	double d;
 	float f;
 	rz_str_bits64(out, n);
 	f = d = core->num->fvalue;
-	/* adjust sign for nan floats, different libcs are confused */
 	if (isnan(f) && signbit(f)) {
 		f = -f;
 	}
@@ -166,10 +179,9 @@ RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 		pj_ks(pj, "float", rz_strf(number, "%ff", f));
 		pj_ks(pj, "double", rz_strf(number, "%lf", d));
 		pj_ks(pj, "binary", rz_strf(number, "0b%s", out));
-		/* ternary */
 		rz_num_to_trits(out, n);
 		pj_ks(pj, "trits", rz_strf(number, "0t%s", out));
-
+		pj_ks(pj, "kind", "ut64");
 		pj_end(pj);
 	} else {
 		if (n >> 32) {
@@ -192,11 +204,62 @@ RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 		rz_cons_printf("float   %ff\n", f);
 		rz_cons_printf("double  %lf\n", d);
 		rz_cons_printf("binary  0b%s\n", out);
-		/* ternary*/
 		rz_num_to_trits(out, n);
 		rz_cons_printf("trits   0t%s\n", out);
 	}
+}
 
+/**
+ * \brief If \p pj is NULL then standard output will be displayed
+ * If it's non-NULL then it's treated as a borrowed PJ and used and
+ * printing will be done in JSON format and not standard one.
+ * Hence the the third parameter decides in which format data will be displayed.
+ *
+ * \param core RzCore.
+ * \param input Input mathematical expression.
+ * \param pj Borrowed PJ if calculated value is to be printed in JSON format.
+ * \return true on success, false otherwise.
+ **/
+RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input, RZ_BORROW PJ *pj) {
+	rz_return_val_if_fail(core && input, false);
+
+	// Route through rz_core_math() so that the same evaluator that
+	// rz-ax uses is shared with the shell, with full RzCore context
+	// (flags, special variables, built-in functions, bignum / float
+	// arithmetic). The legacy rz_num_math() path returned a saturating
+	// ut64 only - this picks up everything the new evaluator can
+	// produce.
+	RzNumValue v;
+	rz_num_value_init(&v);
+	char *err = NULL;
+	bool ok = rz_core_math(core, input, NULL, &v, &err);
+	if (!ok) {
+		// Surface the diagnostic. dbz is still detected by
+		// rz_core_math() and reflected on core->num so the
+		// existing post-call inspectors keep working.
+		if (v.err == RZ_NUM_ERR_DIV_ZERO) {
+			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
+			core->num->dbz = 0;
+		} else {
+			RZ_LOG_ERROR("core: %s\n", err ? err : "evaluation failed");
+		}
+		free(err);
+		rz_num_value_fini(&v);
+		return false;
+	}
+	free(err);
+
+	// For non-UT64 results, delegate display to the kind-aware
+	// pretty-printer; the legacy multi-line format below only
+	// makes sense for ut64.
+	if (v.kind != RZ_NUM_KIND_UT64) {
+		calc_expr_print_typed(core, &v, pj);
+		rz_num_value_fini(&v);
+		return true;
+	}
+
+	calc_expr_print_ut64(core, v.val.n, pj);
+	rz_num_value_fini(&v);
 	return true;
 }
 

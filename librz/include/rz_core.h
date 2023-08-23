@@ -685,6 +685,56 @@ RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzFlag *flags, ut64 addr);
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzFlag *flags, ut64 addr);
 
+/* cmath.c */
+
+/**
+ * \brief Optional configuration for rz_core_math().
+ *
+ * Defaults: timeout_ms == 0 means "no timeout".
+ */
+typedef struct rz_core_math_options_t {
+	ut64 timeout_ms; ///< wall-clock budget in ms, 0 = unlimited
+} RzCoreMathOptions;
+
+/**
+ * \brief Context-aware expression evaluator built on rz_num_math_value_ex.
+ *
+ * Resolves identifiers against the current core: flags from
+ * core->flags, special variables ($$, $$$, $b, $B, $F, ...) against
+ * the current offset and block size, built-in math functions (min,
+ * max, abs, popcount, plus unicode aliases like 'минимум' / 'максимум'),
+ * and bignum / float arithmetic. The grammar accepts an address-typed
+ * suffix (\`0x1000:le32\`) that the evaluator will read through
+ * core->io once full IO wiring lands; today the literal address is
+ * returned.
+ *
+ * \param core       The core whose context backs the evaluation. The
+ *                   flag table, offset, and block size come from
+ *                   here; the underlying rz_num callback is
+ *                   core->num.
+ * \param expr       The expression to evaluate. Must be non-NULL.
+ * \param options    Optional options (timeout). NULL == defaults.
+ * \param out_value  Out-parameter receiving the evaluated value.
+ *                   The caller must finalise it with
+ *                   rz_num_value_fini() when done.
+ * \param error_msg  Optional owned diagnostic string on failure.
+ * \return true on success, false on parse or evaluation error.
+ */
+RZ_API bool rz_core_math(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr,
+	RZ_NULLABLE const RzCoreMathOptions *options,
+	RZ_OUT RZ_NONNULL RzNumValue *out_value,
+	RZ_OUT RZ_NULLABLE char **error_msg);
+
+/**
+ * \brief Convenience wrapper around rz_core_math() that returns a ut64.
+ *
+ * Mirrors the semantics of rz_num_math_ut64(): non-UT64 kinds
+ * project (FLOAT truncates to integer, BIG truncates to low 64
+ * bits). Errors return 0 and set core->num->dbz when the cause was
+ * division by zero.
+ */
+RZ_API ut64 rz_core_math_ut64(RZ_NONNULL RzCore *core, RZ_NONNULL const char *expr);
+
 /* chash.c */
 RZ_API RzCmdStatus rz_core_hash_plugins_print(RZ_NONNULL RZ_BORROW RzHash *hash, RZ_OUT RzCmdStateOutput *state);
 
