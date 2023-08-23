@@ -168,10 +168,10 @@ static RzILOpEffect *gb_il_inc(gb_reg reg, bool dec) {
 	if (gb_reg_bits(reg) == 8) {
 		RzILOpBitVector *r = VARG(gb_reg_name(reg));
 		return SEQ4(
-			SETG(gb_reg_name(reg), ADD(r, U8(1))),
+			SETG(gb_reg_name(reg), dec ? SUB(r, U8(1)) : ADD(r, U8(1))),
 			SETG("Z", IS_ZERO(DUP(r))),
 			SETG("N", dec ? IL_TRUE : IL_FALSE),
-			SETG("H", IS_ZERO(UNSIGNED(4, DUP(r)))));
+			SETG("H", dec ? EQ(UNSIGNED(4, DUP(r)), UN(4, 0xf)) : IS_ZERO(UNSIGNED(4, DUP(r)))));
 	}
 	if (reg == GB_REG_SP) {
 		return SETG("sp", dec ? SUB(VARG("sp"), U16(1)) : ADD(VARG("sp"), U16(1)));
