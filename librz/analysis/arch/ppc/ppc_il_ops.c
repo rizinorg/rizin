@@ -402,10 +402,12 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 
 	// Instructions which set the OV bit are not supported in capstone.
 	// See: https://github.com/capstone-engine/capstone/issues/944
+	RzILOpPure *zero = UA(0);
 	RzILOpEffect *overflow = EMPTY();
-	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(res, zero, true, "cr0", mode) : EMPTY();
 	RzILOpEffect *set = SETG(rT, res);
 	RzILOpEffect *set_ops = SEQ3(SETL("a", a), SETL("b", b), c ? SETL("c", c) : EMPTY());
+	rz_il_op_pure_free(zero);
 	return SEQ5(set_ops, set, set_carry, overflow, update_cr0);
 }
 
