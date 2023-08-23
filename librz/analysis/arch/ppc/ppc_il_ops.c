@@ -523,7 +523,10 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		right = (id == PPC_INS_CMPDI) ? EXTEND(64, S16(imm)) : APPEND(U48(0), U16(imm));
 		break;
 	}
-	return ppc_cmp_set_cr(left, right, signed_cmp, crX, mode);
+	RzILOpEffect *ret = ppc_cmp_set_cr(left, right, signed_cmp, crX, mode);
+	rz_il_op_pure_free(left);
+	rz_il_op_pure_free(right);
+	return ret;
 }
 
 #if CS_API_MAJOR > 4
