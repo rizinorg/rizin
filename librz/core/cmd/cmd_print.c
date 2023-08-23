@@ -3988,6 +3988,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 
 RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const char **argv) {
 	ut64 oldoff = core->offset;
+	ut32 old_blocksize = core->blocksize;
 	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No function found in 0x%08" PFMT64x ".\n", core->offset);
@@ -4012,8 +4013,10 @@ RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const 
 	}
 
 	ut64 size = end - start;
+	rz_core_block_size(core, size);
 	rz_core_seek(core, start, true);
 	rz_core_analysis_bytes_il(core, core->block, size, 0, false);
+	rz_core_block_size(core, old_blocksize);
 	rz_core_seek(core, oldoff, true);
 	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;

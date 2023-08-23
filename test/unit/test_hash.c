@@ -41,6 +41,8 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "sha256", .expected = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
 	{ INDATA("password"), .algo = "sha384", .expected = "a8b64babd0aca91a59bdbb7761b421d4f2bb38280d3a75ba0f21f2bebc45583d446c598660c94ce680c47d19c30783a7" },
 	{ INDATA("password"), .algo = "sha512", .expected = "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86" },
+	{ INDATA("password"), .algo = "sm3", .expected = "08594e140bcc046e345325435218f67a85c38c63de6443b197b544d70ee62f26" },
+	{ INDATA("password"), .algo = "blake3", .expected = "7f2611ba158b6dcea4a69c229c303358c5e04493abeadee106a4bfa464d55787" },
 	{ INDATA("password"), .algo = "fletcher8", .expected = "76" },
 	{ INDATA("password"), .algo = "fletcher16", .expected = "7698" },
 	{ INDATA("password"), .algo = "fletcher32", .expected = "cda87d23" },

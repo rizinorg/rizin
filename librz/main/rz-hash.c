@@ -119,7 +119,7 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 	}
 
 	const RzCryptoPlugin *rcp;
-	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(i)); i++) {
+	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(ctx->rc, i)); i++) {
 		if (!strncmp("base", rcp->name, 4) || !strcmp("punycode", rcp->name)) {
 			snprintf(flags, sizeof(flags), "__ed__");
 		} else if (!strcmp("rol", rcp->name)) {

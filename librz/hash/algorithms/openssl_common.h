@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2023 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_OPENSSL_COMMON_H
@@ -9,21 +9,6 @@
 #include <openssl/sha.h>
 #include <openssl/md4.h>
 #include <openssl/md5.h>
-
-/*
-EVP_md2
-EVP_md5
-EVP_sha
-EVP_sha1
-EVP_dss
-EVP_dss1
-EVP_mdc2
-EVP_ripemd160
-EVP_sha224
-EVP_sha256
-EVP_sha384
-EVP_sha512
-*/
 
 #define rz_openssl_plugin_context_new(pluginname) \
 	static void *openssl_plugin_##pluginname##_context_new() { \

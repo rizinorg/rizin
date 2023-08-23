@@ -155,6 +155,7 @@ extern RzHashPlugin rz_hash_plugin_entropy;
 extern RzHashPlugin rz_hash_plugin_entropy_fract;
 extern RzHashPlugin rz_hash_plugin_blake3;
 extern RzHashPlugin rz_hash_plugin_ssdeep;
+extern RzHashPlugin rz_hash_plugin_sm3;
 
 #ifdef __cplusplus
 }
