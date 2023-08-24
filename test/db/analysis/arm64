@@ -24,6 +24,21 @@ call
 EOF
 RUN
 
+NAME=syscall
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.os=linux
+asn fstat
+asr 80
+EOF
+EXPECT=<<EOF
+80
+fstat
+EOF
+RUN
+
 NAME=noreturn errno
 FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
