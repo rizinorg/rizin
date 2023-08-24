@@ -2,7 +2,7 @@
 Echo with (double) quoted args
 ==============================
 
-?e "This;is.one@string"
+echo "This;is.one@string"
 
 ---
 
@@ -14,7 +14,7 @@ Echo with (double) quoted args
 Echo with (single) quoted args
 ==============================
 
-?e 'This;is.one@string'
+echo 'This;is.one@string'
 
 ---
 
@@ -27,7 +27,7 @@ Echo with (single) quoted args
 Legacy command - all quoted
 ===========================
 
-"?e This;is.one@string"
+"echo This;is.one@string"
 
 ---
 
@@ -39,7 +39,7 @@ Legacy command - all quoted
 Double quoted arg with cmd substitution
 =======================================
 
-?e "This is $(?e "a command")"
+echo "This is $(echo "a command")"
 
 ---
 
@@ -56,9 +56,9 @@ Double quoted arg with cmd substitution
 Quoted hash
 ==================
 
-?e "#"
-?e " #$(pdf)"
-?e '#'
+echo "#"
+echo " #$(pdf)"
+echo '#'
 
 ---
 
