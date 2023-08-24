@@ -87,16 +87,17 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-RzList /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct rz_bin_pe_import_t *imports = NULL;
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel;
-	RzList *ret, *relocs;
+	RzPVector *ret;
+	RzList *relocs;
 
 	imports = PE_(rz_bin_pe_get_imports)(pe_bin->bin);
-	ret = rz_list_new();
+	ret = rz_pvector_new(NULL);
 	relocs = rz_list_newf(free);
 
 	if (!imports || !ret || !relocs) {
@@ -117,7 +118,7 @@ RzList /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_md
 		ptr->bind = "NONE";
 		ptr->type = RZ_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = imports[i].ordinal;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 
 		if (!(rel = RZ_NEW0(RzBinReloc))) {
 			break;

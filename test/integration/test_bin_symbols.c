@@ -67,12 +67,14 @@ bool test_rz_bin_symbols(void) {
 		}
 	}
 	mu_assert_eq(matches, expected, "all checked symbols match");
-	
-	const RzList *imports = rz_bin_object_get_imports(obj);
+
+	const RzPVector *imports = rz_bin_object_get_imports(obj);
+	void **vec_it = NULL;
 	mu_assert_notnull(symbols, "mipsbe-ip imports");
 	matches = 0;
 	expected = RZ_ARRAY_SIZE(mipsbe_ip_imports) - 1;
-	rz_list_foreach (imports, it, sym) {
+	rz_pvector_foreach (imports, vec_it) {
+		sym = *vec_it;
 		for (int i = 0; i < expected; i++) {
 			if (sym && sym->name && !strcmp(sym->name, mipsbe_ip_imports[i].name)) {
 				matches++;
@@ -80,7 +82,7 @@ bool test_rz_bin_symbols(void) {
 		}
 	}
 	mu_assert_eq(matches, expected, "all checked imports match");
-	
+
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;

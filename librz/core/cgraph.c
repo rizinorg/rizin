@@ -153,9 +153,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_importxrefs(RZ_NONN
 	}
 
 	bool va = core->io->va || core->bin->is_debugger;
-	RzListIter *iter;
+	void **iter;
 	RzBinImport *imp;
-	rz_list_foreach (obj->imports, iter, imp) {
+	rz_pvector_foreach (obj->imports, iter) {
+		imp = *iter;
 		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(obj, imp);
 		ut64 addr = sym ? (va ? rz_bin_object_get_vaddr(obj, sym->paddr, sym->vaddr) : sym->paddr) : UT64_MAX;
 		if (addr && addr != UT64_MAX) {

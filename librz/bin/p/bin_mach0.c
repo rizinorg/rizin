@@ -319,7 +319,7 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *i
 typedef struct {
 	RzBin *bin;
 	struct MACH0_(obj_t) * obj;
-	RzList /*<RzBinImport *>*/ *imports_dst;
+	RzPVector /*<RzBinImport *>*/ *imports_dst;
 } ImportsForeachCtx;
 
 static void imports_foreach_cb(char *name, int ord, void *user) {
@@ -343,11 +343,11 @@ static void imports_foreach_cb(char *name, int ord, void *user) {
 	if (!strcmp(name, "_NSConcreteGlobalBlock")) {
 		ctx->obj->has_blocks_ext = true;
 	}
-	rz_list_append(ctx->imports_dst, ptr);
+	rz_pvector_push(ctx->imports_dst, ptr);
 	free(name);
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinObject *obj = bf ? bf->o : NULL;
 	struct MACH0_(obj_t) *bin = bf ? bf->o->bin_obj : NULL;
 	if (!obj || !bin || !obj->bin_obj) {
@@ -357,7 +357,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	bin->has_retguard = -1;
 	bin->has_sanitizers = false;
 	bin->has_blocks_ext = false;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}

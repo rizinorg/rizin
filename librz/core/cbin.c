@@ -1233,10 +1233,11 @@ RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va)
 	if (cdsz <= 0) {
 		return false;
 	}
-	RzListIter *iter;
+	void **iter;
 	RzBinImport *import;
-	RzList *imports = o->imports;
-	rz_list_foreach (imports, iter, import) {
+	RzPVector *imports = o->imports;
+	rz_pvector_foreach (imports, iter) {
+		import = *iter;
 		if (!import->libname || !strstr(import->libname, ".dll")) {
 			continue;
 		}
@@ -2034,16 +2035,17 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
-	const RzList *imports = rz_bin_object_get_imports(bf->o);
+	const RzPVector *imports = rz_bin_object_get_imports(bf->o);
 	RzBinObject *o = bf->o;
 	RzBinImport *import;
-	RzListIter *iter;
+	void **iter;
 	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
 
-	rz_list_foreach (imports, iter, import) {
+	rz_pvector_foreach (imports, iter) {
+		import = *iter;
 		if (!import->name) {
 			continue;
 		}
