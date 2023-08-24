@@ -402,10 +402,12 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 
 	// Instructions which set the OV bit are not supported in capstone.
 	// See: https://github.com/capstone-engine/capstone/issues/944
+	RzILOpPure *zero = UA(0);
 	RzILOpEffect *overflow = EMPTY();
-	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(res, UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(res, zero, true, "cr0", mode) : EMPTY();
 	RzILOpEffect *set = SETG(rT, res);
 	RzILOpEffect *set_ops = SEQ3(SETL("a", a), SETL("b", b), c ? SETL("c", c) : EMPTY());
+	rz_il_op_pure_free(zero);
 	return SEQ5(set_ops, set, set_carry, overflow, update_cr0);
 }
 
@@ -523,7 +525,10 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		right = (id == PPC_INS_CMPDI) ? EXTEND(64, S16(imm)) : APPEND(U48(0), U16(imm));
 		break;
 	}
-	return ppc_cmp_set_cr(left, right, signed_cmp, crX, mode);
+	RzILOpEffect *ret = ppc_cmp_set_cr(left, right, signed_cmp, crX, mode);
+	rz_il_op_pure_free(left);
+	rz_il_op_pure_free(right);
+	return ret;
 }
 
 #if CS_API_MAJOR > 4
@@ -689,8 +694,11 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	}
 
 	// WRITE
-	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(VARL("res"), UA(0), true, "cr0", mode) : EMPTY();
-	RzILOpEffect *set = SETG(rA, VARL("res"));
+	RzILOpPure *zero = UA(0);
+	RzILOpPure *old_res = VARL("res");
+	RzILOpEffect *update_cr0 = cr0 ? ppc_cmp_set_cr(old_res, zero, true, "cr0", mode) : EMPTY();
+	RzILOpEffect *set = SETG(rA, old_res);
+	rz_il_op_pure_free(zero);
 	return SEQ3(SETL("res", res), set, update_cr0);
 }
 
@@ -1194,11 +1202,14 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		into_rA = all_bits_set ? r : LOGAND(r, VARL("mask"));
 	}
 
-	update_cr0 = sets_cr0 ? ppc_cmp_set_cr(VARL("result"), UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpPure *zero = UA(0);
+	RzILOpPure *old_res = VARL("result");
+	update_cr0 = sets_cr0 ? ppc_cmp_set_cr(old_res, zero, true, "cr0", mode) : EMPTY();
 	set_mask = set_mask ? set_mask : EMPTY();
 	set_ca = set_ca ? set_ca : EMPTY();
+	rz_il_op_pure_free(zero);
 
-	return SEQ5(set_mask, set_ca, SETL("result", into_rA), SETG(rA, VARL("result")), update_cr0);
+	return SEQ5(set_mask, set_ca, SETL("result", into_rA), SETG(rA, old_res), update_cr0);
 }
 
 static RzILOpEffect *sys(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
