@@ -39,6 +39,68 @@ static bool test_rz_big_from_to_hexstr(void) {
 	mu_end;
 }
 
+static bool test_rz_big_to_decstr(void) {
+	RzNumBig *a = rz_big_new();
+	char *str;
+
+	// Trivial cases.
+	rz_big_from_int(a, 0);
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "0", "zero");
+
+	rz_big_from_int(a, 42);
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "42", "small positive");
+
+	rz_big_from_int(a, -42);
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "-42", "small negative");
+
+	// 2^64 = first value that does not fit in ut64.
+	rz_big_from_hexstr(a, "0x10000000000000000");
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "18446744073709551616", "2^64");
+
+	// Test interior zero chunks: 10^10 = 0x2540be400.
+	rz_big_from_hexstr(a, "0x2540be400");
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str, "10000000000", "10^10 interior chunk");
+
+	// 2^128 - 1, the largest 128-bit unsigned value.
+	rz_big_from_hexstr(a, "0xffffffffffffffffffffffffffffffff");
+	str = rz_big_to_decstr(a);
+	mu_assert_streq_free(str,
+		"340282366920938463463374607431768211455",
+		"2^128 - 1");
+
+	// Near the 4096-bit ceiling: 2^4095 is 1233 decimal digits. This
+	// is a regression test for the decstr chunk buffer, which was
+	// previously sized for a far smaller value and returned NULL for
+	// wide inputs.
+	{
+		RzNumBig *base = rz_big_new();
+		RzNumBig *exp = rz_big_new();
+		RzNumBig *res = rz_big_new();
+		rz_big_from_int(base, 2);
+		rz_big_from_int(exp, 4095);
+		rz_big_pow(res, base, exp);
+		str = rz_big_to_decstr(res);
+		mu_assert_notnull(str, "2^4095 decstr is not NULL");
+		mu_assert_eq((ut64)strlen(str), (ut64)1233,
+			"2^4095 has 1233 decimal digits");
+		// Spot-check the leading digits against the known value.
+		mu_assert_true(!strncmp(str, "52219444070657625334", 20),
+			"2^4095 leading digits");
+		free(str);
+		rz_big_free(base);
+		rz_big_free(exp);
+		rz_big_free(res);
+	}
+
+	rz_big_free(a);
+	mu_end;
+}
+
 static bool test_rz_big_assign(void) {
 	RzNumBig *a = rz_big_new();
 	RzNumBig *b = rz_big_new();
@@ -468,6 +530,54 @@ static bool test_rz_big_powm(void) {
 	mu_end;
 }
 
+static bool test_rz_big_pow(void) {
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
+	char *str;
+
+	// 2^10 = 1024
+	rz_big_from_int(a, 2);
+	rz_big_from_int(b, 10);
+	rz_big_pow(c, a, b);
+	mu_assert_eq(1024, rz_big_to_int(c), "2^10");
+
+	// x^0 = 1
+	rz_big_from_int(b, 0);
+	rz_big_pow(c, a, b);
+	mu_assert_eq(1, rz_big_to_int(c), "2^0");
+
+	// x^1 = x
+	rz_big_from_int(b, 1);
+	rz_big_pow(c, a, b);
+	mu_assert_eq(2, rz_big_to_int(c), "2^1");
+
+	// 2^64 exceeds ut64; check the exact decimal form.
+	rz_big_from_int(a, 2);
+	rz_big_from_int(b, 64);
+	rz_big_pow(c, a, b);
+	str = rz_big_to_decstr(c);
+	mu_assert_streq_free(str, "18446744073709551616", "2^64");
+
+	// 10^20 exact.
+	rz_big_from_int(a, 10);
+	rz_big_from_int(b, 20);
+	rz_big_pow(c, a, b);
+	str = rz_big_to_decstr(c);
+	mu_assert_streq_free(str, "100000000000000000000", "10^20");
+
+	// Negative exponent yields zero by definition.
+	rz_big_from_int(a, 2);
+	rz_big_from_int(b, -3);
+	rz_big_pow(c, a, b);
+	mu_assert_eq(0, rz_big_to_int(c), "negative exponent -> 0");
+
+	rz_big_free(a);
+	rz_big_free(b);
+	rz_big_free(c);
+	mu_end;
+}
+
 static bool test_rz_big_isqrt(void) {
 	RzNumBig *a = rz_big_new();
 	RzNumBig *c = rz_big_new();
@@ -514,6 +624,7 @@ static bool test_rz_big_isqrt(void) {
 static int all_tests(void) {
 	mu_run_test(test_rz_big_from_to_int);
 	mu_run_test(test_rz_big_from_to_hexstr);
+	mu_run_test(test_rz_big_to_decstr);
 	mu_run_test(test_rz_big_assign);
 	mu_run_test(test_rz_big_cmp);
 	mu_run_test(test_rz_big_add);
@@ -531,6 +642,7 @@ static int all_tests(void) {
 	mu_run_test(test_rz_big_lshift);
 	mu_run_test(test_rz_big_rshift);
 	mu_run_test(test_rz_big_powm);
+	mu_run_test(test_rz_big_pow);
 	mu_run_test(test_rz_big_isqrt);
 	return tests_passed != tests_run;
 }

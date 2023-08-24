@@ -260,7 +260,7 @@ NAME=rz-ax -e 0x00000401
 TOOL=rz-ax
 ARGS=-e 0x00000401
 EXPECT=<<EOF
-17039360
+0x1040000
 EOF
 RUN
 
@@ -640,5 +640,253 @@ FILE==
 CMDS=!echo 0xff | rz-ax
 EXPECT=<<EOF
 255
+EOF
+RUN
+
+NAME=rz-ax float kind
+TOOL=rz-ax
+ARGS=3.14159
+EXPECT=<<EOF
+float   3.14159
+scifmt  3.1415899999999999
+hex     0x400921f9f01b866e
+EOF
+RUN
+
+NAME=rz-ax bignum literal
+TOOL=rz-ax
+ARGS=0x10000000000000000
+EXPECT=<<EOF
+decimal 18446744073709551616
+hex     0x10000000000000000
+width   68 bits (approx)
+EOF
+RUN
+
+NAME=rz-ax exact power 2**100
+TOOL=rz-ax
+ARGS=2**100
+EXPECT=<<EOF
+decimal 1267650600228229401496703205376
+hex     0x10000000000000000000000000
+width   104 bits (approx)
+EOF
+RUN
+
+NAME=rz-ax exact power 10**30
+TOOL=rz-ax
+ARGS=10**30
+EXPECT=<<EOF
+decimal 1000000000000000000000000000000
+hex     0xc9f2c9cd04674edea40000000
+width   100 bits (approx)
+EOF
+RUN
+
+NAME=rz-ax builtin min
+TOOL=rz-ax
+ARGS=min(0x10,0x20)
+EXPECT=<<EOF
+0x10
+EOF
+RUN
+
+NAME=rz-ax builtin popcount
+TOOL=rz-ax
+ARGS=popcount(0xff)
+EXPECT=<<EOF
+0x8
+EOF
+RUN
+
+NAME=rz-ax unicode function minimum
+TOOL=rz-ax
+ARGS=минимум(5,10)
+EXPECT=<<EOF
+0x5
+EOF
+RUN
+
+NAME=rz-ax let binding read-back
+TOOL=rz-ax
+ARGS=(x=7)+x
+EXPECT=<<EOF
+0xe
+EOF
+RUN
+
+NAME=rz-ax bitvector literal
+TOOL=rz-ax
+ARGS=5u8
+EXPECT=<<EOF
+width   8 bits
+hex     0x05
+binary  0b00000101
+EOF
+RUN
+
+NAME=rz-ax bitvector wraparound
+TOOL=rz-ax
+ARGS=0xffu8+1u8
+EXPECT=<<EOF
+width   8 bits
+hex     0x00
+binary  0b00000000
+EOF
+RUN
+
+NAME=rz-ax unicode function Chinese max
+TOOL=rz-ax
+ARGS=最大(0x10,0x20)
+EXPECT=<<EOF
+0x20
+EOF
+RUN
+
+NAME=rz-ax unicode function Arabic abs
+TOOL=rz-ax
+ARGS=دالة(0xfffffffffffffffb)
+EXPECT=<<EOF
+0x5
+EOF
+RUN
+
+NAME=rz-ax unicode variable Greek
+TOOL=rz-ax
+ARGS=(σ=7)+σ
+EXPECT=<<EOF
+0xe
+EOF
+RUN
+
+NAME=rz-ax len bitvector
+TOOL=rz-ax
+ARGS=len(0xffu16)
+EXPECT=<<EOF
+0x10
+EOF
+RUN
+
+NAME=rz-ax sequence
+TOOL=rz-ax
+ARGS=x=10;y=20;x+y
+EXPECT=<<EOF
+0x1e
+EOF
+RUN
+
+NAME=rz-ax nested min max
+TOOL=rz-ax
+ARGS=max(min(10,20),min(5,15))
+EXPECT=<<EOF
+0xa
+EOF
+RUN
+
+NAME=rz-ax unicode nested functions
+TOOL=rz-ax
+ARGS=минимум(最大(3,9),7)
+EXPECT=<<EOF
+0x7
+EOF
+RUN
+
+NAME=rz-ax bignum power plus one
+TOOL=rz-ax
+ARGS=2**64+1
+EXPECT=<<EOF
+decimal 18446744073709551617
+hex     0x10000000000000001
+width   68 bits (approx)
+EOF
+RUN
+
+NAME=rz-ax popcount plus len
+TOOL=rz-ax
+ARGS=popcount(0xffff)+len(0xffu16)
+EXPECT=<<EOF
+0x20
+EOF
+RUN
+
+NAME=rz-ax unicode var and sigma
+TOOL=rz-ax
+ARGS=(σ=0xff)+Σ(σ)
+EXPECT=<<EOF
+0x107
+EOF
+RUN
+
+NAME=rz-ax len string in arithmetic
+TOOL=rz-ax
+ARGS=len("ABCD")/8+max(1,2)
+EXPECT=<<EOF
+0x6
+EOF
+RUN
+
+NAME=rz-ax bitvector xor width
+TOOL=rz-ax
+ARGS=0xdeadbeefu32^0xffffffffu32
+EXPECT=<<EOF
+hex     0x21524110
+binary  0b00100001010100100100000100010000
+width   32 bits
+EOF
+RUN
+
+NAME=rz-ax conditional
+TOOL=rz-ax
+ARGS=5>3?0xaa:0xbb
+EXPECT=<<EOF
+0xaa
+EOF
+RUN
+
+NAME=rz-ax conditional nested
+TOOL=rz-ax
+ARGS=0?1:0?2:3
+EXPECT=<<EOF
+0x3
+EOF
+RUN
+
+NAME=rz-ax bv rotate left
+TOOL=rz-ax
+ARGS=0x12u8<<<4
+EXPECT=<<EOF
+hex     0x21
+binary  0b00100001
+width   8 bits
+EOF
+RUN
+
+NAME=rz-ax bv power modular wrap
+TOOL=rz-ax
+ARGS=2u8**8u8
+EXPECT=<<EOF
+hex     0x00
+binary  0b00000000
+width   8 bits
+EOF
+RUN
+
+NAME=rz-ax bv signed division
+TOOL=rz-ax
+ARGS=0xffu8sdiv2u8
+EXPECT=<<EOF
+hex     0x00
+binary  0b00000000
+width   8 bits
+EOF
+RUN
+
+NAME=rz-ax bv arith shift right
+TOOL=rz-ax
+ARGS=0xfeu8sar1u8
+EXPECT=<<EOF
+hex     0xff
+binary  0b11111111
+width   8 bits
 EOF
 RUN

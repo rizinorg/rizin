@@ -472,3 +472,503 @@ EXPECT=<<EOF
 0xe859883a
 EOF
 RUN
+
+FILE=malloc://1024
+NAME=% bignum literal
+CMDS=<<EOF
+% 0x10000000000000000
+EOF
+EXPECT=<<EOF
+decimal 18446744073709551616
+hex     0x10000000000000000
+width   68 bits (approx)
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% exact integer power
+CMDS=<<EOF
+% 2 ** 100
+EOF
+EXPECT=<<EOF
+decimal 1267650600228229401496703205376
+hex     0x10000000000000000000000000
+width   104 bits (approx)
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% float power
+CMDS=<<EOF
+% 3.14159 ** 2
+EOF
+EXPECT=<<EOF
+float   9.86959
+scifmt  9.8695877280999991
+hex     0x4023bd3a9a4a6287
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% builtin min max
+CMDS=<<EOF
+% min(0x100, max(0x50, 0x80))
+EOF
+EXPECT=<<EOF
+int32   128
+uint32  128
+hex     0x80
+octal   0200
+unit    128
+segment 0000:0080
+string  "\x80"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b10000000
+trits   0t11202
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% unicode function minimum
+CMDS=<<EOF
+% минимум(0x100, 0x200)
+EOF
+EXPECT=<<EOF
+int32   256
+uint32  256
+hex     0x100
+octal   0400
+unit    256
+segment 0000:0100
+string  "\x01"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b0000000100000000
+trits   0t100111
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% let binding reassignment
+CMDS=<<EOF
+% (c = 1) + (c = 9) + c
+EOF
+EXPECT=<<EOF
+int32   19
+uint32  19
+hex     0x13
+octal   023
+unit    19
+segment 0000:0013
+string  "\x13"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00010011
+trits   0t201
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% crc32 default
+CMDS=<<EOF
+w AAAABBBBCCCCDDDD
+% crc(0, 16)
+EOF
+EXPECT=<<EOF
+int32   1501082128
+uint32  1501082128
+hex     0x5978b210
+octal   013136131020
+unit    1.4G
+segment 5978000:0210
+string  "\x10\xb2xY"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b01011001011110001011001000010000
+trits   0t10212121112212120101
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% crc width 16 selector
+CMDS=<<EOF
+w AAAABBBBCCCCDDDD
+% crc(0, 16, 16)
+EOF
+EXPECT=<<EOF
+int32   26619
+uint32  26619
+hex     0x67fb
+octal   063773
+unit    26.0K
+segment 0000:07fb
+string  "\xfbg"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b0110011111111011
+trits   0t1100111220
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% md5 digest
+CMDS=<<EOF
+w AAAABBBBCCCCDDDD
+% md5(0, 16)
+EOF
+EXPECT=<<EOF
+decimal 196160137941607695467225652873056001787
+hex     0x9393117fc22175732ea7042f33d89efb
+width   128 bits (approx)
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% sha256 digest
+CMDS=<<EOF
+w AAAABBBBCCCCDDDD
+% sha256(0, 16)
+EOF
+EXPECT=<<EOF
+decimal 46411692673025759693186424457495866733606273688990416351710414590085438416608
+hex     0x669c164f44198b43b7175ac0dff496fe43393717428747ccb44c294fbeaca6e0
+width   256 bits (approx)
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% entropy uniform data
+CMDS=<<EOF
+w AAAABBBBCCCCDDDD
+% entropy(0, 16)
+EOF
+EXPECT=<<EOF
+float   2
+scifmt  2
+hex     0x4000000000000000
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% division by zero
+CMDS=<<EOF
+% 1/0
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: core: RzNum ERROR: Division by Zero
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% bitvector arithmetic wraps at width
+CMDS=<<EOF
+e scr.utf8=false
+% 200u8 + 100u8
+EOF
+EXPECT=<<EOF
+hex     0x2c
+binary  0b00101100
+width   8 bits
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% bitvector multiply 16-bit
+CMDS=<<EOF
+e scr.utf8=false
+% 10u16 * 10u16
+EOF
+EXPECT=<<EOF
+hex     0x0064
+binary  0b0000000001100100
+width   16 bits
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% bitvector unicode rendering with scr.utf8
+CMDS=<<EOF
+e scr.utf8=true
+% 200u8 + 100u8
+EOF
+EXPECT=<<EOF
+hex     0x2c₈
+binary  00101100₈
+width   8 bits
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% bitvector ascii rendering without scr.utf8
+CMDS=<<EOF
+e scr.utf8=false
+% 200u8 + 100u8
+EOF
+EXPECT=<<EOF
+hex     0x2c
+binary  0b00101100
+width   8 bits
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% unicode function Chinese max
+CMDS=<<EOF
+% 最大(0x10, 0x20)
+EOF
+EXPECT=<<EOF
+int32   32
+uint32  32
+hex     0x20
+octal   040
+unit    32
+segment 0000:0020
+string  " "
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00100000
+trits   0t1012
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% unicode function Arabic abs
+CMDS=<<EOF
+% دالة(0xfffffffffffffffb)
+EOF
+EXPECT=<<EOF
+int32   5
+uint32  5
+hex     0x5
+octal   05
+unit    5
+segment 0000:0005
+string  "\x05"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00000101
+trits   0t12
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% unicode variable Chinese radius
+CMDS=<<EOF
+% (半径 = 5) * 半径
+EOF
+EXPECT=<<EOF
+int32   25
+uint32  25
+hex     0x19
+octal   031
+unit    25
+segment 0000:0019
+string  "\x19"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00011001
+trits   0t221
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% sequence semicolon
+CMDS=<<EOF
+% x = 10; y = 20; x + y
+EOF
+EXPECT=<<EOF
+int32   10
+uint32  10
+hex     0xa
+octal   012
+unit    10
+segment 0000:000a
+string  "\n"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00001010
+trits   0t101
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% signed division
+CMDS=<<EOF
+% 0xfffffffffffffffb sdiv 2
+EOF
+EXPECT=<<EOF
+int64   -2
+uint64  18446744073709551614
+hex     0xfffffffffffffffe
+octal   01777777777777777777776
+unit    16E
+segment fffff000:0ffe
+string  "\xfe\xff\xff\xff\xff\xff\xff\xff"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b1111111111111111111111111111111111111111111111111111111111111110
+trits   0t11112220022122120101211020120210210211212
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% arithmetic shift right
+CMDS=<<EOF
+% 0xffffffffffffff00 sar 4
+EOF
+EXPECT=<<EOF
+int64   -16
+uint64  18446744073709551600
+hex     0xfffffffffffffff0
+octal   01777777777777777777760
+unit    16E
+segment fffff000:0ff0
+string  "\xf0\xff\xff\xff\xff\xff\xff\xff"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b1111111111111111111111111111111111111111111111111111111111110000
+trits   0t11112220022122120101211020120210210211100
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% len of string bytes
+CMDS=<<EOF
+% len("ABCD") / 8
+EOF
+EXPECT=<<EOF
+int32   4
+uint32  4
+hex     0x4
+octal   04
+unit    4
+segment 0000:0004
+string  "\x04"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00000100
+trits   0t11
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% len of bitvector
+CMDS=<<EOF
+% len(0xffu16)
+EOF
+EXPECT=<<EOF
+int32   16
+uint32  16
+hex     0x10
+octal   020
+unit    16
+segment 0000:0010
+string  "\x10"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00010000
+trits   0t121
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% persistent variable across commands
+CMDS=<<EOF
+% bla = 0x100
+% bla + 5
+EOF
+EXPECT=<<EOF
+int32   256
+uint32  256
+hex     0x100
+octal   0400
+unit    256
+segment 0000:0100
+string  "\x01"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b0000000100000000
+trits   0t100111
+int32   261
+uint32  261
+hex     0x105
+octal   0405
+unit    261
+segment 0000:0105
+string  "\x05\x01"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b0000000100000101
+trits   0t100200
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% conditional truthy
+CMDS=<<EOF
+% 1 ? 0xaa : 0xbb
+EOF
+EXPECT=<<EOF
+int32   170
+uint32  170
+hex     0xaa
+octal   0252
+unit    170
+segment 0000:00aa
+string  "\xaa"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b10101010
+trits   0t20022
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% conditional comparison
+CMDS=<<EOF
+% 5 > 3 ? 100 : 200
+EOF
+EXPECT=<<EOF
+
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=% conditional short-circuit
+CMDS=<<EOF
+% 1 ? 42 : 1 / 0
+EOF
+EXPECT=<<EOF
+int32   42
+uint32  42
+hex     0x2a
+octal   052
+unit    42
+segment 0000:002a
+string  "*"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00101010
+trits   0t1120
+EOF
+RUN
