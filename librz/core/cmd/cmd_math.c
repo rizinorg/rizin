@@ -18,10 +18,71 @@ static const char *help_msg_greater_sign[] = {
 	NULL
 };
 
+struct rz_core_var {
+	const char *name;
+	const char *description;
+};
+
+struct rz_core_var core_vars[] = {
+	{ "$$", "here (current virtual seek)" },
+	{ "$$$", "current non-temporary virtual seek" },
+	{ "$?", "last comparison value" },
+	{ "$B", "base address (aligned lowest map address)" },
+	{ "$b", "block size" },
+	{ "$c", "get terminal width in character columns" },
+	{ "$Cn", "get nth call of function" },
+	{ "$D", "current debug map base address ?v $D @ rsp" },
+	{ "$DB", "same as dbg.baddr, progam base address" },
+	{ "$DD", "current debug map size" },
+	{ "$Dn", "get nth data reference in function" },
+	{ "$e", "1 if end of block, else 0" },
+	{ "$f", "jump fail address (e.g. jz 0x10 => next instruction)" },
+	{ "$F", "Same as $FB" },
+	{ "$Fb", "begin of basic block" },
+	{ "$FB", "begin of function" },
+	{ "$Fe", "end of basic block" },
+	{ "$FE", "end of function" },
+	{ "$Ff", "function false destination" },
+	{ "$Fi", "basic block instructions" },
+	{ "$FI", "function instructions" },
+	{ "$Fj", "function jump destination" },
+	{ "$fl", "flag length (size) at current address (fla; pD $l @ entry0)" },
+	{ "$FS", "function size (linear length)" },
+	{ "$Fs", "size of the current basic block" },
+	{ "$FSS", "function size (sum bb sizes)" },
+	{ "$j", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)" },
+	{ "$Ja", "get nth jump of function" },
+	{ "$l", "opcode length" },
+	{ "$M", "map address (lowest map address)" },
+	{ "$m", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)" },
+	{ "$MM", "map size (lowest map address)" },
+	{ "$O", "cursor here (current offset pointed by the cursor)" },
+	{ "$o", "here (current disk io offset)" },
+	{ "$p", "getpid()" },
+	{ "$P", "pid of children (only in debug)" },
+	{ "$r", "get console height (in rows, see $c for columns)" },
+	{ "$s", "file size" },
+	{ "$S", "section offset" },
+	{ "$SS", "section size" },
+	{ "$v", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)" },
+	{ "$w", "get word size, 4 if asm.bits=32, 8 if 64, ..." },
+	{ "$Xn", "get nth xref of function" },
+};
+
+struct rz_core_var help_core_vars[] = {
+	{ "flag", "offset of flag" },
+	{ "${ev}", "get value of eval <config variable <ev>" },
+	{ "$alias", "alias commands (simple macros)" },
+	{ "$e{flag}", "end of <flag> (flag->offset + flag->size)" },
+	{ "$k{kv}", "get value of an sdb query value" },
+	{ "$r{reg}", "get value of named register <reg>" },
+	{ "$s{flag}", "get size of <flag>" },
+};
+
 /**
  * \brief Returns all the $ variable names in a NULL-terminated arr
  */
-RZ_API const char **rz_core_help_vars_get(RzCore *core) {
+RZ_DEPRECATE RZ_API const char **rz_core_help_vars_get(RzCore *core) {
 	static const char *vars[] = {
 		"$$", "$$$", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 		"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
@@ -31,19 +92,25 @@ RZ_API const char **rz_core_help_vars_get(RzCore *core) {
 	return vars;
 }
 
-RZ_API void rz_core_help_vars_print(RzCore *core) {
-	int i = 0;
-	const char **vars = rz_core_help_vars_get(core);
+RZ_DEPRECATE RZ_API void rz_core_help_vars_print(RzCore *core) {
+	rz_list_rizin_vars_handler(core, 0, NULL);
+}
+
+RZ_IPI RzCmdStatus rz_list_rizin_vars_handler(RzCore *core, int argc, const char **argv) {
 	const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
-	while (vars[i]) {
-		const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
-		if (wideOffsets) {
-			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
-		} else {
-			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+	for (int i = 0; i < RZ_ARRAY_SIZE(core_vars); i++) {
+		struct rz_core_var *var = &core_vars[i];
+		if (argc > 1 && strcmp(argv[1], var->name)) {
+			continue;
 		}
-		i++;
+		const char *pad = rz_str_pad(' ', 6 - strlen(var->name));
+		if (wideOffsets) {
+			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
+		} else {
+			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
+		}
 	}
+	return RZ_CMD_STATUS_OK;
 }
 
 /**
@@ -166,10 +233,10 @@ RZ_IPI RzCmdStatus rz_set_active_tab_next_handler(RzCore *core, int argc, const 
 
 RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, const char **argv) {
 	const char *lowlimit = argv[1];
-	ut64 low = (ut32)rz_num_math(core->num, lowlimit);
+	ut64 low = rz_num_math(core->num, lowlimit);
 
 	const char *uplimit = argv[2];
-	ut64 high = (ut32)rz_num_math(core->num, uplimit);
+	ut64 high = rz_num_math(core->num, uplimit);
 
 	if (low >= high) {
 		RZ_LOG_ERROR("core : Invalid arguments passed to %s : low-limit shouldn't be more then high-limit", argv[0]);
@@ -394,9 +461,44 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_nonzero_handler(RzCore *core, i
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_show_help_vars_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_help_vars_print(core);
-	return RZ_CMD_STATUS_OK;
+RZ_IPI RzCmdDescDetail *rz_cmd_math_help_vars_details_cb(RzCore *core, int argc, const char **argv) {
+	RzCmdDescDetail *details = RZ_NEWS0(RzCmdDescDetail, 2);
+	if (!details) {
+		return NULL;
+	}
+	details[0].name = (const char *)strdup("Rizin variables");
+	if (!details->name) {
+		goto err;
+	}
+	RzCmdDescDetailEntry *entries = RZ_NEWS0(RzCmdDescDetailEntry, RZ_ARRAY_SIZE(core_vars) + RZ_ARRAY_SIZE(help_core_vars) + 1);
+	details[0].entries = (const RzCmdDescDetailEntry *)entries;
+	if (!entries) {
+		goto err;
+	}
+	int i;
+	for (i = 0; i < RZ_ARRAY_SIZE(core_vars); i++) {
+		struct rz_core_var *var = &core_vars[i];
+		entries[i].text = (char *)strdup(var->name);
+		entries[i].arg_str = strdup("");
+		entries[i].comment = strdup(var->description);
+		if (!entries[i].text || !entries[i].arg_str || !entries[i].comment) {
+			goto err;
+		}
+	}
+	for (int j = 0; j < RZ_ARRAY_SIZE(help_core_vars); j++, i++) {
+		struct rz_core_var *var = &help_core_vars[j];
+		entries[i].text = (char *)strdup(var->name);
+		entries[i].arg_str = strdup("");
+		entries[i].comment = strdup(var->description);
+		if (!entries[i].text || !entries[i].arg_str || !entries[i].comment) {
+			goto err;
+		}
+	}
+	details->entries = (const RzCmdDescDetailEntry *)entries;
+	return details;
+err:
+	rz_cmd_desc_details_free(details);
+	return NULL;
 }
 
 RZ_IPI RzCmdStatus rz_calculate_string_length_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

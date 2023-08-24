@@ -96,6 +96,7 @@ RZ_API int rz_reg_type_by_name(const char *str) {
 RZ_API void rz_reg_item_free(RzRegItem *item) {
 	free(item->name);
 	free(item->flags);
+	free(item->comment);
 	free(item);
 }
 

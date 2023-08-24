@@ -153,7 +153,7 @@ typedef struct rz_bin_reloc_formular_symbols_t {
 
 static RzBinInfo *info(RzBinFile *bf);
 static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin);
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf);
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf);
 
 struct special_symbol_translation {
 	RzBinSpecialSymbol symbol;
@@ -1669,7 +1669,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
@@ -1678,7 +1678,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzList *result = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *result = rz_pvector_new((RzPVectorFree)rz_bin_import_free);
 	if (!result) {
 		return NULL;
 	}
@@ -1687,11 +1687,11 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	rz_bin_elf_foreach_imports(bin, import) {
 		RzBinImport *tmp = convert_import(import);
 		if (!tmp) {
-			rz_list_free(result);
+			rz_pvector_free(result);
 			return NULL;
 		}
 
-		rz_list_append(result, tmp);
+		rz_pvector_push(result, tmp);
 	}
 
 	return result;
@@ -1788,17 +1788,21 @@ static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 
 static bool has_sanitizers(RzBinFile *bf) {
 	bool ret = false;
-	RzList *imports_list = imports(bf);
-	RzListIter *iter;
+	RzPVector *imports_vec = imports(bf);
+	if (!imports_vec) {
+		return ret;
+	}
+	void **iter;
 	RzBinImport *import;
-	rz_list_foreach (imports_list, iter, import) {
+	rz_pvector_foreach (imports_vec, iter) {
+		import = *iter;
 		if (strstr(import->name, "__sanitizer") ||
 			strstr(import->name, "__ubsan")) {
 			ret = true;
 			break;
 		}
 	}
-	rz_list_free(imports_list);
+	rz_pvector_free(imports_vec);
 	return ret;
 }
 

@@ -5793,10 +5793,12 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNU
 	RzAsmOp asmop;
 	int oplen = 0;
 	char disasm[512];
+	rz_asm_op_init(&asmop);
 	for (int i_ops = 0, i_offset = 0, i_delta = 0;
 		rz_disasm_check_end(nops, i_ops, len, i_delta * addrbytes);
 		i_ops++, i_offset += oplen, i_delta += oplen) {
 
+		rz_asm_op_fini(&asmop);
 		RzAnalysisBytes *ab = RZ_NEW0(RzAnalysisBytes);
 		if (!ab) {
 			rz_pvector_free(vec);
@@ -5893,6 +5895,7 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNU
 
 		ab->bytes = rz_asm_op_get_hex(&asmop);
 	}
+	rz_asm_op_fini(&asmop);
 	return vec;
 }
 

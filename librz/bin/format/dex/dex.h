@@ -212,7 +212,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex);
-RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzBinSpecialSymbol resolve);
 RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex);

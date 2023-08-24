@@ -60,7 +60,7 @@ typedef struct {
 typedef struct {
 	ut32 *strings;
 	RzList /*<RzBinSymbol *>*/ *methods_list;
-	RzList /*<RzBinImport *>*/ *imports_list;
+	RzPVector /*<RzBinImport *>*/ *imports_vec;
 	RZ_NULLABLE RzBuffer *decompressed; /// nso-only
 	void *header;
 } RzBinNXOObj;

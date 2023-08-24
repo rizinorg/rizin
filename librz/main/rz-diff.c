@@ -707,6 +707,12 @@ static const void *rz_diff_list_elem_at(const RzList /*<void *>*/ *array, ut32 i
 	return rz_list_get_n(array, index);
 }
 
+/**************************************** rzpvector ***************************************/
+
+static const void *rz_diff_pvector_elem_at(const RzPVector /*<void *>*/ *array, ut32 index) {
+	return rz_pvector_at(array, index);
+}
+
 /**************************************** imports ***************************************/
 
 static ut32 import_hash(const RzBinImport *elem) {
@@ -730,31 +736,31 @@ static int import_compare(const RzBinImport *a, const RzBinImport *b) {
 }
 
 static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, imports);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, imports);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, imports);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, imports);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)import_compare);
-	rz_list_sort(list_b, (RzListComparator)import_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)import_compare);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)import_compare);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)import_hash,
 		.compare = (RzDiffMethodCompare)import_compare,
 		.stringify = (RzDiffMethodStringify)import_stringify,
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** symbols ***************************************/

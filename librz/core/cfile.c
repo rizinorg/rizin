@@ -1081,8 +1081,11 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 		rz_config_set_b(r->config, "bin.at", true);
 		RZ_LOG_INFO("Linking imports...\n");
 		RzBinImport *imp;
-		RzList *imports = rz_bin_get_imports(r->bin);
-		rz_list_foreach (imports, iter, imp) {
+		RzBinObject *bin_obj = rz_bin_cur_object(r->bin);
+		const RzPVector *imports = rz_bin_object_get_imports(bin_obj);
+		void **vec_iter;
+		rz_pvector_foreach (imports, vec_iter) {
+			imp = *vec_iter;
 			char *name = rz_str_newf("sym.imp.%s", imp->name);
 			rz_name_filter(name + 8, strlen(name + 8) + 1, true);
 

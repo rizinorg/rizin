@@ -507,7 +507,10 @@ static void parse_relocs_from_indirect_syms(RzSkipList *dst, struct MACH0_(obj_t
 			break;
 		}
 		reloc->ord = j;
-		rz_skiplist_insert(dst, reloc);
+		RzSkipListNode *node = rz_skiplist_insert(dst, reloc);
+		if (node->data != reloc) {
+			free(reloc);
+		}
 	}
 }
 

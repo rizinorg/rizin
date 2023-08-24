@@ -355,10 +355,10 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	int i;
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -367,7 +367,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			RzBinImport *ptr = ht_up_find(obj->imp_ht, i, NULL);
 			if (ptr) {
-				rz_list_append(ret, ptr);
+				rz_pvector_push(ret, ptr);
 			}
 			i += obj->symbols[i].n_numaux;
 		}
