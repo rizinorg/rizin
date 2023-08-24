@@ -354,8 +354,8 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 	return true;
 }
 
-RzList /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
-	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
+RzPVector /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
+	RzPVector *imports = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
 	}
@@ -383,7 +383,7 @@ RzList /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 		name[sz] = '\0';
 		imp->name = name;
 		imp->ordinal = i + 1;
-		rz_list_append(imports, imp);
+		rz_pvector_push(imports, imp);
 		off += sz;
 	}
 	bin->imports = imports;

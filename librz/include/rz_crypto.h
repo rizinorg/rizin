@@ -54,21 +54,21 @@ typedef struct rz_crypto_plugin_t {
 typedef ut64 RzCryptoSelector;
 
 #ifdef RZ_API
-RZ_API bool rz_crypto_plugin_add(RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
-RZ_API bool rz_crypto_plugin_del(RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
-RZ_API RzCrypto *rz_crypto_new(void);
-RZ_API void rz_crypto_free(RzCrypto *cry);
-RZ_API void rz_crypto_reset(RzCrypto *cry);
-RZ_API bool rz_crypto_use(RzCrypto *cry, const char *algo);
-RZ_API bool rz_crypto_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
-RZ_API bool rz_crypto_set_iv(RzCrypto *cry, const ut8 *iv, int ivlen);
-RZ_API int rz_crypto_update(RzCrypto *cry, const ut8 *buf, int len);
-RZ_API int rz_crypto_final(RzCrypto *cry, const ut8 *buf, int len);
-RZ_API int rz_crypto_append(RzCrypto *cry, const ut8 *buf, int len);
-RZ_API const ut8 *rz_crypto_get_output(RzCrypto *cry, int *size);
-RZ_API const char *rz_crypto_name(const RzCryptoSelector bit);
-RZ_API const char *rz_crypto_codec_name(const RzCryptoSelector bit);
-RZ_API const RzCryptoPlugin *rz_crypto_plugin_by_index(size_t index);
+RZ_API bool rz_crypto_plugin_add(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
+RZ_API bool rz_crypto_plugin_del(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
+RZ_API RZ_OWN RzCrypto *rz_crypto_new(void);
+RZ_API void rz_crypto_free(RZ_NULLABLE RzCrypto *cry);
+RZ_API void rz_crypto_reset(RZ_NONNULL RzCrypto *cry);
+RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const char *algo);
+RZ_API bool rz_crypto_set_key(RZ_NULLABLE RzCrypto *cry, RZ_NULLABLE const ut8 *key, int keylen, int mode, int direction);
+RZ_API bool rz_crypto_set_iv(RZ_NULLABLE RzCrypto *cry, RZ_NULLABLE const ut8 *iv, int ivlen);
+RZ_API int rz_crypto_update(RZ_NULLABLE RzCrypto *cry, RZ_NULLABLE const ut8 *buf, int len);
+RZ_API int rz_crypto_final(RZ_NULLABLE RzCrypto *cry, RZ_NULLABLE const ut8 *buf, int len);
+RZ_API int rz_crypto_append(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const ut8 *buf, int len);
+RZ_API RZ_BORROW const ut8 *rz_crypto_get_output(RZ_NONNULL RzCrypto *cry, RZ_NULLABLE int *size);
+RZ_API RZ_BORROW const char *rz_crypto_name(const RzCryptoSelector bit);
+RZ_API RZ_BORROW const char *rz_crypto_codec_name(const RzCryptoSelector bit);
+RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCrypto *cry, size_t index);
 #endif
 
 /* plugin pointers */

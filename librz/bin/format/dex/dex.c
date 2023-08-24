@@ -1392,21 +1392,21 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 }
 
 /**
- * \brief Returns a RzList<RzBinImport*> containing the dex imports
+ * \brief Returns a RzPVector<RzBinImport*> containing the dex imports
  */
-RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexFieldId *field_id;
 	DexMethodId *method_id;
 	DexClassDef *class_def;
-	RzList *imports = NULL;
+	RzPVector *imports = NULL;
 	ut32 *class_ids = NULL;
 	void **vit;
 
 	ut32 n_classes = rz_pvector_len(dex->class_defs);
 	if (n_classes < 1) {
-		return rz_list_newf((RzListFree)rz_bin_import_free);
+		return rz_pvector_new((RzPVectorFree)rz_bin_import_free);
 	}
 
 	class_ids = RZ_NEWS0(ut32, n_classes);
@@ -1421,7 +1421,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 		j++;
 	}
 
-	imports = rz_list_newf((RzListFree)rz_bin_import_free);
+	imports = rz_pvector_new((RzPVectorFree)rz_bin_import_free);
 	if (!imports) {
 		free(class_ids);
 		return NULL;
@@ -1453,7 +1453,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 		import->type = RZ_BIN_TYPE_FIELD_STR;
 		import->ordinal = ordinal;
 
-		if (!rz_list_append(imports, import)) {
+		if (!rz_pvector_push(imports, import)) {
 			rz_bin_import_free(import);
 			break;
 		}
@@ -1487,7 +1487,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 		import->ordinal = ordinal;
 		free(name);
 
-		if (!rz_list_append(imports, import)) {
+		if (!rz_pvector_push(imports, import)) {
 			rz_bin_import_free(import);
 			break;
 		}

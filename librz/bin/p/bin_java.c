@@ -76,7 +76,7 @@ static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	return rz_bin_java_class_as_classes(jclass);
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;

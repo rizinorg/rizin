@@ -127,7 +127,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-14056
+14104
 EOF
 RUN
 

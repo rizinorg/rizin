@@ -22,6 +22,7 @@ RZ_API void rz_asm_op_fini(RzAsmOp *op) {
 	rz_strbuf_fini(&op->buf);
 	rz_strbuf_fini(&op->buf_asm);
 	rz_buf_fini(op->buf_inc);
+	rz_asm_token_string_free(op->asm_toks);
 }
 
 // accessors

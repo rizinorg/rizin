@@ -1,20 +1,28 @@
-project('zlib', 'c', version : '1.2.13', license : 'zlib')
+project('zlib', 'c', version : '1.3', license : 'zlib')
 
 cc = meson.get_compiler('c')
 
 link_args = []
 compile_args = []
-if cc.get_id() == 'msvc'
-  add_project_arguments('-D_CRT_SECURE_NO_DEPRECATE',
-    '-D_CRT_NONSTDC_NO_DEPRECATE', language : 'c')
-else
+if cc.get_argument_syntax() == 'msvc'
+  add_project_arguments(
+    '-D_CRT_SECURE_NO_DEPRECATE',
+    '-D_CRT_NONSTDC_NO_DEPRECATE',
+    language : 'c')
+elif cc.get_argument_syntax() == 'gcc'
   # Don't spam consumers of this wrap with these warnings
-  compile_args += cc.get_supported_arguments(['-Wno-implicit-fallthrough',
-                                              '-Wno-implicit-function-declaration'])
-  if cc.get_id() == 'gcc' and host_machine.system() != 'windows'
-    vflag = '-Wl,--version-script,@0@/zlib.map'.format(meson.current_source_dir())
-    link_args += [vflag]
+  compile_args += cc.get_supported_arguments('-Wno-implicit-fallthrough')
+  if host_machine.system() not in ['windows', 'darwin']
+    link_args += '-Wl,--version-script,@0@/zlib.map'.format(meson.current_source_dir())
   endif
+endif
+
+if cc.has_header('unistd.h')
+  compile_args += '-DHAVE_UNISTD_H'
+endif
+
+if cc.has_header('stdarg.h')
+  compile_args += '-DHAVE_STDARG_H'
 endif
 
 src = files([

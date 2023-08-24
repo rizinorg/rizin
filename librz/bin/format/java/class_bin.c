@@ -1551,12 +1551,12 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbol
 }
 
 /**
- * \brief Returns a RzList<RzBinImport*> containing the class const pool
+ * \brief Returns a RzPVector<RzBinImport*> containing the class const pool
  */
-RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *imports = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
 	}
@@ -1604,7 +1604,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_import
 			import->type = is_main ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
 			import->descriptor = java_class_constant_pool_stringify_at(bin, descriptor_index);
 			import->ordinal = i;
-			rz_list_append(imports, import);
+			rz_pvector_push(imports, import);
 			free(object);
 		}
 	}
@@ -1638,7 +1638,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_import
 			import->bind = RZ_BIN_BIND_WEAK_STR;
 			import->type = RZ_BIN_TYPE_IFACE_STR;
 			import->ordinal = i;
-			rz_list_append(imports, import);
+			rz_pvector_push(imports, import);
 			free(object);
 		}
 	}

@@ -33,13 +33,15 @@ bool test_rz_bin(void) {
 	mu_assert_eq(entry->vaddr, 0x8048360, "entry virtual address");
 	mu_assert_eq(entry->paddr, 0x360, "entry file offset");
 
-	const RzList *imports = rz_bin_object_get_imports(obj);
-	mu_assert_eq(rz_list_length(imports), 5, "rz_bin_object_get_imports");
+	const RzPVector *imports = rz_bin_object_get_imports(obj);
+	mu_assert_eq(rz_pvector_len(imports), 5, "rz_bin_object_get_imports");
 	const char *import_names[] = { "__libc_start_main", "printf", "scanf", "strcmp", "__gmon_start__" };
 	bool has_import_names[sizeof(import_names)] = { 0 };
 	RzBinImport *import;
 	RzListIter *it;
-	rz_list_foreach (imports, it, import) {
+	void **vec_it;
+	rz_pvector_foreach (imports, vec_it) {
+		import = *vec_it;
 		for (int i = 0; i < RZ_ARRAY_SIZE(import_names); ++i) {
 			if (!strcmp(import->name, import_names[i])) {
 				has_import_names[i] = true;

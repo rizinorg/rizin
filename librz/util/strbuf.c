@@ -103,7 +103,6 @@ RZ_API bool rz_strbuf_setbin(RzStrBuf *sb, const ut8 *s, size_t l) {
 		sb->buf[l] = 0;
 	}
 	sb->len = l;
-	sb->weakref = false;
 	return true;
 }
 
@@ -133,20 +132,6 @@ RZ_API bool rz_strbuf_slice(RZ_NONNULL RzStrBuf *sb, size_t from, size_t len) {
 	sb->len = len;
 	sb->ptrlen = len + 1;
 	s[len] = 0;
-	return true;
-}
-
-RZ_API bool rz_strbuf_setptr(RzStrBuf *sb, char *s, int len) {
-	rz_return_val_if_fail(sb, false);
-	if (len < 0) {
-		sb->len = strlen(s);
-		sb->ptrlen = sb->len + 1;
-	} else {
-		sb->ptrlen = len;
-		sb->len = len;
-	}
-	sb->ptr = s;
-	sb->weakref = true;
 	return true;
 }
 
@@ -229,10 +214,6 @@ RZ_API bool rz_strbuf_append(RzStrBuf *sb, const char *s) {
 RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 	rz_return_val_if_fail(sb && s, false);
 
-	if (sb->weakref) {
-		return false;
-	}
-
 	// fast path if no chars to append
 	if (l == 0) {
 		return true;
@@ -294,9 +275,6 @@ RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap) {
 
 	rz_return_val_if_fail(sb && fmt, false);
 
-	if (sb->weakref) {
-		return false;
-	}
 	va_copy(ap2, ap);
 	ret = vsnprintf(string, sizeof(string), fmt, ap);
 	if (ret >= sizeof(string)) {
@@ -332,11 +310,7 @@ RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, int *len) {
 }
 
 static inline char *drain(RzStrBuf *sb) {
-	return sb->ptr
-		? sb->weakref
-			? rz_mem_dup(sb->ptr, sb->ptrlen)
-			: sb->ptr
-		: strdup(sb->buf);
+	return sb->ptr ? sb->ptr : strdup(sb->buf);
 }
 
 RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb) {
@@ -363,7 +337,7 @@ RZ_API void rz_strbuf_free(RzStrBuf *sb) {
 }
 
 RZ_API void rz_strbuf_fini(RzStrBuf *sb) {
-	if (sb && !sb->weakref) {
+	if (sb) {
 		RZ_FREE(sb->ptr);
 		sb->ptr = NULL;
 		sb->len = 0;

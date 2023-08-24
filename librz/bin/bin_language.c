@@ -116,7 +116,9 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	}
 
 	if (is_macho || is_elf) {
-		rz_list_foreach (o->imports, iter, imp) {
+		void **vec_it;
+		rz_pvector_foreach (o->imports, vec_it) {
+			imp = *vec_it;
 			const char *name = imp->name;
 			if (!strcmp(name, "_NSConcreteGlobalBlock")) {
 				is_blocks = true;

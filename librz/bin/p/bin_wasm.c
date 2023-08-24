@@ -222,7 +222,7 @@ bad_alloc:
 	return NULL;
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *imports = NULL;
 	RzBinImport *ptr = NULL;
@@ -231,7 +231,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -264,12 +264,12 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 			ptr->type = "GLOBAL";
 			break;
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 bad_alloc:
 	rz_list_free(imports);
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 

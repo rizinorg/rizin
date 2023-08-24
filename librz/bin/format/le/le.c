@@ -216,7 +216,7 @@ static RZ_BORROW RzBinImport *le_add_bin_import(rz_bin_le_obj_t *bin, const LE_i
 	}
 	import->bind = RZ_BIN_BIND_GLOBAL_STR;
 	import->type = RZ_BIN_TYPE_UNKNOWN_STR;
-	CHECK(rz_list_append(bin->imports, import));
+	CHECK(rz_pvector_push(bin->imports, import));
 	import->ordinal = ++bin->reloc_targets_count;
 	return import;
 }
@@ -530,7 +530,6 @@ static bool le_load_header(rz_bin_le_obj_t *bin) {
 		!rz_buf_read_le32_offset(bin->buf, &off, &bin->header->instdemand) ||
 		!rz_buf_read_le32_offset(bin->buf, &off, &bin->header->heapsize) ||
 		!rz_buf_read_le32_offset(bin->buf, &off, &bin->header->stacksize)) {
-		free(bin->header);
 		return false;
 	}
 
@@ -1509,7 +1508,7 @@ static void rz_bin_le_free(rz_bin_le_obj_t *bin) {
 	rz_pvector_free(bin->imp_mod_names);
 	rz_list_free(bin->symbols);
 	rz_vector_free(bin->le_entries);
-	rz_list_free(bin->imports);
+	rz_pvector_free(bin->imports);
 	ht_pp_free(bin->le_import_ht);
 	rz_list_free(bin->le_relocs);
 	free(bin);
@@ -1553,7 +1552,7 @@ bool rz_bin_le_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *
 	err_ctx = ", unable to build maps.";
 	CHECK(bin->le_maps = le_create_maps(bin));
 	err_ctx = ", unable to load imports.";
-	CHECK(bin->imports = rz_list_newf((RzListFree)rz_bin_import_free));
+	CHECK(bin->imports = rz_pvector_new((RzListFree)rz_bin_import_free));
 	CHECK(bin->symbols = rz_list_newf((RzListFree)rz_bin_symbol_free));
 	CHECK(bin->imp_mod_names = le_load_import_mod_names(bin));
 	CHECK(bin->le_entries = le_load_entries(bin));
@@ -1571,13 +1570,13 @@ bool rz_bin_le_check_buffer(RzBuffer *b) {
 
 static void no_free(void *unused) {}
 
-RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_le_get_imports(RzBinFile *bf) {
+RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_le_get_imports(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
-	if (rz_list_empty(bin->imports)) {
+	if (rz_pvector_empty(bin->imports)) {
 		return NULL;
 	}
-	RzList *l = rz_list_clone(bin->imports);
-	l->free = no_free; // silence assertion, there's no need to delete imports
+	RzPVector *l = rz_pvector_clone(bin->imports);
+	l->v.free_user = no_free; // silence assertion, there's no need to delete imports
 	return l;
 }
 

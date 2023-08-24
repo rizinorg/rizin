@@ -21,7 +21,7 @@ EXPECT=<<EOF
 sh d0, d2, d0
 jnz.a a11, #6
 ld.bu d0, [a15]#8
-st.a [sp]#0x13, a15
+st.a [sp]#0x4c, a15
 mov d0, d0
 EOF
 RUN
@@ -33,7 +33,7 @@ EXPECT=<<EOF
 sh d0, d2, d0
 jnz.a a11, #6
 ld.bu d0, [a15]#8
-st.a [sp]#0x13, a15
+st.a [sp]#0x4c, a15
 mov d0, d0
 EOF
 RUN

@@ -2569,9 +2569,12 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 	{
 		RzBinImport *imp;
 		ut64 offorig = core->offset;
-		list = rz_bin_get_imports(core->bin);
+		RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
+		const RzPVector *imports = rz_bin_object_get_imports(bin_obj);
+		void **vec_iter = NULL;
 		RzList *lost = rz_list_newf(free);
-		rz_list_foreach (list, iter, imp) {
+		rz_pvector_foreach (imports, vec_iter) {
+			imp = *vec_iter;
 			char *impflag = rz_str_newf("sym.imp.%s", imp->name);
 			ut64 addr = rz_num_math(core->num, impflag);
 			ut64 *n = RZ_NEW(ut64);

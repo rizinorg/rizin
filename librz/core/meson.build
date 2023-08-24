@@ -23,6 +23,7 @@ rz_core_sources = [
   'cautocmpl.c',
   'cbin.c',
   'cconfig.c',
+  'ccrypto.c',
   'cdebug.c',
   'cdwarf.c',
   'cesil.c',

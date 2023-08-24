@@ -476,6 +476,19 @@ static void update_syscall_ns(RzCore *core) {
 	}
 }
 
+static bool cb_asm_varfold(void *core, void *node) {
+	char *choice[] = { "none", "group", "hide" };
+	RzConfigNode *n = node;
+	const char *user_choice = n->value;
+	for (int i = 0; i < sizeof(choice) / sizeof(choice[0]); i++) {
+		if (!strcmp(choice[i], user_choice)) {
+			return true;
+		}
+	}
+	RZ_LOG_ERROR("asm.var.fold: Invalid choice. Only support `none, group, hide`\n");
+	return false;
+}
+
 static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RzCore *core = (RzCore *)user;
@@ -3142,6 +3155,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.var.access", "false", "Show accesses of local variables");
 	SETBPREF("asm.sub.var", "true", "Substitute variables in disassembly");
 	SETI("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
+	n = NODECB("asm.var.fold", "none", &cb_asm_varfold);
+	SETDESC(n, "Fold same-typed variables (support none, group, hide)");
+	SETOPTIONS(n, "none", "group", "hide", NULL);
 	SETBPREF("asm.sub.varonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETBPREF("asm.sub.reg", "false", "Substitute register names with their associated role name (drp~=)");
 	SETBPREF("asm.sub.rel", "true", "Substitute pc relative expressions in disasm");
