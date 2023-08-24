@@ -1,6 +1,7 @@
 #ifndef RZ_BIN_H
 #define RZ_BIN_H
 
+#include "rz_vector.h"
 #include <rz_util.h>
 #include <rz_types.h>
 #include <rz_io.h>
@@ -268,7 +269,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<RzBinVirtualFile *>*/ *vfiles;
 	RzList /*<RzBinMap *>*/ *maps;
 	RzList /*<RzBinSection *>*/ *sections;
-	RzList /*<RzBinImport *>*/ *imports;
+	RzPVector /*<RzBinImport *>*/ *imports;
 	RzList /*<RzBinSymbol *>*/ *symbols;
 	RzList /*<RzBinResource *>*/ *resources;
 	/**
@@ -532,7 +533,7 @@ typedef struct rz_bin_plugin_t {
 	RzList /*<RzBinSection *>*/ *(*sections)(RzBinFile *bf);
 	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
 	RzList /*<RzBinSymbol *>*/ *(*symbols)(RzBinFile *bf);
-	RzList /*<RzBinImport *>*/ *(*imports)(RzBinFile *bf);
+	RzPVector /*<RzBinImport *>*/ *(*imports)(RzBinFile *bf);
 	RzList /*<RzBinString *>*/ *(*strings)(RzBinFile *bf);
 	RzBinInfo *(*info)(RzBinFile *bf);
 	RzList /*<RzBinField *>*/ *(*fields)(RzBinFile *bf);
@@ -919,7 +920,6 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFi
 // use RzBinFile instead
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinAddr *>*/ *rz_bin_get_entries(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinField *>*/ *rz_bin_get_fields(RZ_NONNULL RzBin *bin);
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinImport *>*/ *rz_bin_get_imports(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<char *>*/ *rz_bin_get_libs(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSection *>*/ *rz_bin_get_sections(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinClass *>*/ *rz_bin_get_classes(RZ_NONNULL RzBin *bin);
@@ -931,7 +931,7 @@ RZ_API RzList /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFi
 
 RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj);

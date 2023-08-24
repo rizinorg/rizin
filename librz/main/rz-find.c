@@ -226,8 +226,10 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 	if (ro->import || ro->symbol) {
 		RzBinFile *bf;
-		const RzList *symbols, *imports;
+		const RzList *symbols;
+		const RzPVector *imports;
 		RzListIter *iter, *it;
+		void **vec_it;
 		RzBinSymbol *symbol;
 		RzBinImport *import;
 		RzBin *bin = rz_bin_new();
@@ -254,7 +256,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				if (!kw) {
 					continue;
 				}
-				rz_list_foreach (imports, it, import) {
+				rz_pvector_foreach (imports, vec_it) {
+					import = *vec_it;
 					if (!strcmp(import->name, kw)) {
 						printf("ordinal: %d %s\n", import->ordinal, kw);
 					}

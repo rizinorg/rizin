@@ -409,7 +409,7 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzList *relocs = NULL;
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel = NULL;
@@ -419,7 +419,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -430,7 +430,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	}
 
 	if (!(relocs = rz_list_newf(free))) {
-		free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs = relocs;
@@ -451,7 +451,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
 		// index for the import. There is no point in exposing it.
 		// ptr->hint = imports[i].hint;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 
 		if (!(rel = RZ_NEW0(RzBinReloc))) {
 			break;
@@ -593,11 +593,11 @@ static bool is_vb6(RzBinFile *bf) {
 static int has_canary(RzBinFile *bf) {
 	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
-	RzListIter *iter;
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	if (bin) {
 		const RzList *relocs_list = bin->relocs;
 		RzBinReloc *rel;
+		RzListIter *iter;
 		if (relocs_list) {
 			rz_list_foreach (relocs_list, iter, rel) {
 				if (!strcmp(rel->import->name, "__security_init_cookie")) {
@@ -606,10 +606,12 @@ static int has_canary(RzBinFile *bf) {
 			}
 		}
 	} else { // rz_bin needs this as it will not initialise bin
-		const RzList *imports_list = imports(bf);
+		const RzPVector *imports_vec = imports(bf);
 		RzBinImport *imp;
-		if (imports_list) {
-			rz_list_foreach (imports_list, iter, imp) {
+		void **vec_it;
+		if (imports_vec) {
+			rz_pvector_foreach (imports_vec, vec_it) {
+				imp = *vec_it;
 				if (!strcmp(imp->name, "__security_init_cookie")) {
 					return true;
 				}
