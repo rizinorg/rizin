@@ -455,7 +455,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 	bool signed_cmp = false;
 
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	// weird bug on cmp/cmpl in capstone v5
 	if (id == PPC_INS_CMP) {
 		if (!strcmp(insn->mnemonic, "cmpw")) {
@@ -558,7 +558,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	return ret;
 }
 
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 // bug on xori in capstone v5
 static bool is_xnop(cs_insn *insn) {
 	return insn->id == PPC_INS_XNOP &&
@@ -570,7 +570,7 @@ static bool is_xnop(cs_insn *insn) {
 
 static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	if (is_xnop(insn)) {
 		return NOP();
 	}
@@ -621,7 +621,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		}
 		res = LOGOR(op0, op1);
 		break;
-#if CS_API_MAJOR == 5
+#if CS_NEXT_VERSION < 6
 		// bug on xori in capstone v5
 	case PPC_INS_XNOP:
 		op0 = VARG(rS);
@@ -1126,7 +1126,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	// M/NM/MI			Mask, AND with mask, mask insert
 
 // FIXME: With update to auto-sync ppc arch
-#if CS_API_MAJOR == 5 && CS_API_MINOR == 0
+#if CS_API_MAJOR == 5 && CS_API_MINOR == 0 && CS_NEXT_VERSION < 6
 	// weird bug on capstone v5.0
 	if (id == PPC_INS_CLRLDI && !strcmp(insn->mnemonic, "rldicl")) {
 		id = PPC_INS_RLDICL;
@@ -1379,7 +1379,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	// Everything is executed linear => Sync instructions are NOP()s.
 	case PPC_INS_ISYNC:
 	case PPC_INS_SYNC:
-#if CS_API_MAJOR < 6
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_LWSYNC:
 	case PPC_INS_MSYNC:
 	case PPC_INS_PTESYNC:
@@ -1509,7 +1509,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 #endif
 		lop = store_op(handle, insn, mode);
 		break;
-#if CS_API_MAJOR < 6
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_MR:
 #endif
 	case PPC_INS_AND:
@@ -1522,7 +1522,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_ORIS:
 	case PPC_INS_NAND:
 	case PPC_INS_NOR:
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 		// bug on xori in capstone v5
 	case PPC_INS_XNOP:
 #endif
@@ -1550,7 +1550,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 #endif
 		lop = bitwise_op(handle, insn, mode);
 		break;
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_CMP:
 	case PPC_INS_CMPI:
 	case PPC_INS_CMPL:
@@ -1612,7 +1612,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
 #endif
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BCDCFN:
 	case PPC_INS_BCDCFSQ:
 	case PPC_INS_BCDCFZ:
@@ -1779,7 +1779,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTSR:
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
-#if CS_API_MAJOR < 6
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_MFBR0:
 	case PPC_INS_MFBR1:
 	case PPC_INS_MFBR2:
@@ -1860,7 +1860,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CRNOR:
 	case PPC_INS_CROR:
 	case PPC_INS_CRORC:
-#if CS_API_MAJOR < 6
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_CRSET:
 	case PPC_INS_CRNOT:
 	case PPC_INS_CRMOVE:

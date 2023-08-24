@@ -428,7 +428,7 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTSR:
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
-#if CS_API_MAJOR < 6
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_MTCR:
 	case PPC_INS_MTBR0:
 	case PPC_INS_MTBR1:
@@ -713,7 +713,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		return IL_FALSE;
 		// For learning how the conditions of BCxxx branch instructions are
 		// formed see the Power ISA
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -930,7 +930,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 #endif
 		// EXTS(LI || 0b00)
 		// Branch to relative address
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -985,7 +985,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDNZLA:
 #endif
 		// EXTS(BD || 0b00)
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BGEL:
 	case PPC_INS_BGELA:
 #endif
@@ -1007,7 +1007,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 		}
 #endif
 		// Branch to LR
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQLR:
 	case PPC_INS_BEQLRL:
 	case PPC_INS_BLELR:
@@ -1030,7 +1030,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 		//  LR_0:61 || 0b00
 		return LOGAND(UA(-4), VARG("lr"));
 		// Branch to CTR
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQCTR:
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTR:
