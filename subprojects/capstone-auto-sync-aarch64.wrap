@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/Rot127/capstone.git
+revision = auto-sync-aarch64
+directory = capstone-auto-sync-aarch64
+depth = 1
+patch_directory = capstone-auto-sync-aarch64
