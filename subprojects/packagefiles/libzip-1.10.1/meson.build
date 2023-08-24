@@ -1,5 +1,5 @@
 project('libzip', 'c',
-  version: '1.10.0')
+  version: '1.10.1')
 
 py3_exe = import('python').find_installation()
 cc = meson.get_compiler('c')
