@@ -282,8 +282,8 @@ pdf
 EOF
 EXPECT=<<EOF
 sub sp, sp, 0x60
-stp x29, x30, [var_10h]
-add x29, sp, 0x50
+stp fp, lr, [var_10h]
+add fp, sp, 0x50
 adrp x8, section.13.__DATA.__objc_const
 add x8, x8, 0x150
 str x8, [var_50h]
@@ -332,7 +332,7 @@ bl sym.imp.NSLog
 ldr x0, [var_40h]
 bl sym.imp.objc_autoreleasePoolPop
 mov w0, 0
-ldp x29, x30, [var_10h]
+ldp fp, lr, [var_10h]
 add sp, sp, 0x60
 ret
 0x100003de0    1 20           stub.objc_msgSend_methodWithoutArgs

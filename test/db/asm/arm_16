@@ -62,7 +62,7 @@ d "adc.w r8, sb, sl, ror 31" 49ebfa78
 a "adc r8, r9, sl, rrx" 49eb3a08
 d "adc.w r8, sb, sl, rrx" 49eb3a08
 ad "pop {r0}" 01bc
-ad "pop {r0, r1}" 03bc
+ad "pop {r0, r1}" 03bc 0x0 (seq (set base (var sp)) (set r0 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set r1 (loadw 0 32 (+ (var base) (bv 32 0x4)))) (set sp (+ (var base) (bv 32 0x8))))
 a "pop {r0-r1}" 03bc
 a "pop {r0, r1, r2}" 07bc
 a "pop {r0-r2}" 07bc
@@ -578,7 +578,7 @@ d "pop.w {r3, r4, r5, r6, r7, r8, sb, sl, ip}" bde8f817
 a "pop {r3-r10, r12}" bde8f817
 d "pop.w {r2, sb, lr}" bde80442
 a "pop {r2, r9, lr}" bde80442
-ad "push {r3, r5}" 28b4
+ad "push {r3, r5}" 28b4 0x0 (seq (storew 0 (- (var sp) (bv 32 0x8)) (var r3)) (storew 0 (- (var sp) (bv 32 0x4)) (var r5)) (set sp (- (var sp) (bv 32 0x8))))
 ad "push {r6, lr}" 40b5
 d "push.w {r1, sl, fp, ip}" 2de9021c
 a "push {r1, r10-r12}" 2de9021c

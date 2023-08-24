@@ -408,7 +408,6 @@ afvW
 EOF
 RUN
 
-
 NAME=Variable access with misc registers (ARM)
 FILE==
 ARGS=-a arm -b 16
@@ -445,11 +444,11 @@ afvW
 |           ; arg int16_t arg1 @ r0
 |           ; arg int16_t arg2 @ r1
 |           ; arg int16_t arg3 @ r2
-|           ; var int16_t var_10h @ stack - 0x10
+|           ; var int32_t var_10h @ stack - 0x10
 |           ; var int8_t var_fh @ stack - 0xf
 |           ; var int16_t var_eh @ stack - 0xe
 |           ; var int32_t var_ch @ stack - 0xc
-|           ; var int16_t var_4h @ stack - 0x4
+|           ; var int32_t var_4h @ stack - 0x4
 |           0x00000000      80b4           push  {r7}
 |           0x00000002      83b0           sub   sp, 0xc
 |           0x00000004      00af           add   r7, var_10h

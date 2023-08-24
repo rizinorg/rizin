@@ -13,6 +13,23 @@ RZ_LIB_VERSION(rz_analysis);
 
 static RzAnalysisPlugin *analysis_static_plugins[] = { RZ_ANALYSIS_STATIC_PLUGINS };
 
+/**
+ * \brief Returns the default size byte width of memory access operations.
+ * The size is just a best guess.
+ *
+ * \param analysis The current RzAnalysis in use.
+ *
+ * \return The default width of a memory access in bytes.
+ */
+RZ_API ut32 rz_analysis_guessed_mem_access_width(RZ_NONNULL const RzAnalysis *analysis) {
+	if (analysis->bits == 16 && RZ_STR_EQ(analysis->cur->arch, "arm")) {
+		// Thumb access is usually 4 bytes of memory by default.
+		return 4;
+	}
+	// Best guess for variable size.
+	return analysis->bits / 8;
+}
+
 RZ_API void rz_analysis_set_limits(RzAnalysis *analysis, ut64 from, ut64 to) {
 	free(analysis->limit);
 	analysis->limit = RZ_NEW0(RzAnalysisRange);

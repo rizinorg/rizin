@@ -10,6 +10,8 @@
 // still required by core in lot of places
 #define USE_VARSUBS 0
 
+#define RZ_ANALYSIS_OP_INVALID_STACKPTR 0
+
 #include <rz_types.h>
 #include <rz_io.h>
 #include <rz_reg.h>
@@ -352,6 +354,7 @@ typedef enum {
 	RZ_ANALYSIS_STACK_NULL = 0,
 	RZ_ANALYSIS_STACK_NOP,
 	RZ_ANALYSIS_STACK_INC,
+	RZ_ANALYSIS_STACK_DEC,
 	RZ_ANALYSIS_STACK_GET,
 	RZ_ANALYSIS_STACK_SET,
 	RZ_ANALYSIS_STACK_RESET,
@@ -717,6 +720,8 @@ typedef enum rz_analysis_var_kind_t {
 	/* End enum */
 	RZ_ANALYSIS_VAR_KIND_END ///< Number of RzAnalysisVarKind enums
 } RzAnalysisVarKind;
+
+RZ_API ut32 rz_analysis_guessed_mem_access_width(RZ_NONNULL const RzAnalysis *analysis);
 
 typedef struct dwarf_variable_t {
 	ut64 offset; ///< DIE offset of the variable
