@@ -831,5 +831,10 @@ EXPECT=<<EOF
 QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
 Hello from RzIL!
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+ERROR: I128/U128 not supported
+ERROR: I128/U128 not supported
+ERROR: I128/U128 not supported
+ERROR: I128/U128 not supported
+EOF
 RUN

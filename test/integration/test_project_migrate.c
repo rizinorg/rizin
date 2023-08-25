@@ -861,6 +861,22 @@ static bool test_load_v12() {
 	mu_end;
 }
 
+static bool test_load_v14() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 14, "prj/v14-float_ex1_hightec.rzdb.gz");
+	RzAnalysisFunction *f = rz_analysis_get_function_byname(core->analysis, "dbg.printf");
+	mu_assert_notnull(f, "function");
+	mu_assert_eq(rz_pvector_len(&f->vars), 3, "vars count");
+	mu_assert_eq(rz_analysis_arg_count(f), 1, "args count");
+
+	RzAnalysisVar *v = rz_analysis_function_get_var_byname(f, "ans");
+	mu_assert_notnull(v, "var");
+	mu_assert_eq(v->storage.type, RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING, "var storage");
+	mu_assert_eq(v->storage.dw_var_off, 14178, "var storage dw_var_off");
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -896,6 +912,7 @@ int all_tests() {
 	mu_run_test(test_load_v9_v10_stack_vars_bp, 10, "prj/v10-bp-vars.rzdb");
 	mu_run_test(test_load_v9_v10_stack_vars_sp, 10, "prj/v10-sp-vars.rzdb");
 	mu_run_test(test_load_v12);
+	mu_run_test(test_load_v14);
 	return tests_passed != tests_run;
 }
 

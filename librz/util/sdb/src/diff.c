@@ -44,6 +44,7 @@ typedef struct sdb_diff_ctx_t {
 	Sdb *a;
 	Sdb *b;
 	bool equal;
+	VALUE_EQ_F eq;
 	SdbList *path;
 	SdbDiffCallback cb;
 	void *cb_user;
@@ -105,7 +106,8 @@ static bool sdb_diff_kv_cb(void *user, const char *k, const char *v) {
 		DIFF(ctx->ctx,
 			sdb_diff_report_kv(ctx->ctx, k, v, ctx->add);
 			, false);
-	} else if (!ctx->add && strcmp(v, other_val) != 0) {
+	} else if (!ctx->add &&
+		(ctx->ctx->eq ? !ctx->ctx->eq(v, other_val) : (strcmp(v, other_val) != 0))) {
 		DIFF(ctx->ctx,
 			sdb_diff_report_kv(ctx->ctx, k, v, false);
 			sdb_diff_report_kv(ctx->ctx, k, other_val, true);
@@ -157,10 +159,15 @@ static void sdb_diff_ctx(SdbDiffCtx *ctx) {
 }
 
 RZ_API bool sdb_diff(Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user) {
-	SdbDiffCtx ctx;
+	return sdb_diff_eq(a, b, NULL, cb, cb_user);
+}
+
+RZ_API bool sdb_diff_eq(Sdb *a, Sdb *b, VALUE_EQ_F eq, SdbDiffCallback cb, void *cb_user) {
+	SdbDiffCtx ctx = { 0 };
 	ctx.a = a;
 	ctx.b = b;
 	ctx.equal = true;
+	ctx.eq = eq;
 	ctx.cb = cb;
 	ctx.cb_user = cb_user;
 	ctx.path = ls_new();

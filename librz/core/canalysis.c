@@ -4247,22 +4247,9 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 
 			RzAnalysisFcnVarsCache cache;
 			rz_analysis_fcn_vars_cache_init(core->analysis, &cache, fcn);
-			int nargs = 0;
+			int nargs = rz_list_length(cache.arg_vars);
 			RzAnalysisVar *var;
-			rz_list_foreach (cache.regvars, iter, var) {
-				nargs++;
-				pj_o(j);
-				pj_ks(j, "name", var->name);
-				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-				pj_ks(j, "type", vartype);
-				pj_end(j);
-				free(vartype);
-			}
-			rz_list_foreach (cache.stackvars, iter, var) {
-				if (!rz_analysis_var_is_arg(var)) {
-					continue;
-				}
-				nargs++;
+			rz_list_foreach (cache.sorted_vars, iter, var) {
 				pj_o(j);
 				pj_ks(j, "name", var->name);
 				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
@@ -4862,11 +4849,10 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	rz_core_task_yield(&core->tasks);
 
 	// Apply DWARF function information
-	Sdb *dwarf_sdb = sdb_ns(core->analysis->sdb, "dwarf", 0);
-	if (dwarf_sdb) {
+	{
 		notify = "Integrate dwarf function information.";
 		rz_core_notify_begin(core, "%s", notify);
-		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
+		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags);
 		rz_core_notify_done(core, "%s", notify);
 	}
 
@@ -5155,6 +5141,8 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 		rz_strbuf_append(sb, r);
 		free(r);
 	} break;
+	default:
+		rz_strbuf_append(sb, "unimplemented");
 	}
 	free(fmt);
 	return rz_strbuf_drain(sb);
@@ -6531,18 +6519,6 @@ RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_N
 		constr ? "} " : "");
 	free(vartype);
 	free(constr);
-
-	switch (var->storage.type) {
-	case RZ_ANALYSIS_VAR_STORAGE_REG: {
-		rz_strbuf_append(sb, var->storage.reg);
-		break;
-	}
-	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-		const RzStackAddr off = var->storage.stack_off;
-		const char sign = off >= 0 ? '+' : '-';
-		rz_strbuf_appendf(sb, "stack %c 0x%" PFMT64x, sign, RZ_ABS(off));
-		break;
-	}
-	}
+	rz_analysis_var_storage_dump(core->analysis, sb, &var->storage);
 	return rz_strbuf_drain(sb);
 }

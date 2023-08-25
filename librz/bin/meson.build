@@ -86,7 +86,6 @@ rz_bin_sources = [
   'bobj_process_symbol.c',
   'bobj_process_reloc.c',
   'dbginfo.c',
-  'dwarf.c',
   'filter.c',
   'golang.c',
   'relocs_patch.c',
@@ -259,7 +258,24 @@ rz_bin_sources = [
   'pdb/pdb.c',
   'pdb/pdb_downloader.c',
   'pdb/stream_pe.c',
-  'pdb/tpi.c'
+  'pdb/tpi.c',
+
+  'dwarf/abbrev.c',
+  'dwarf/addr.c',
+  'dwarf/aranges.c',
+  'dwarf/attr.c',
+  'dwarf/block.c',
+  'dwarf/buf.c',
+  'dwarf/enum.c',
+  'dwarf/lists.c',
+  'dwarf/line.c',
+  'dwarf/loclists.c',
+  'dwarf/op.c',
+  'dwarf/rnglists.c',
+  'dwarf/unit.c',
+  'dwarf/value.c',
+  'dwarf/str.c',
+  'dwarf/dwarf.c',
 ]
 
 rz_bin_inc = [platform_inc, include_directories('format')]

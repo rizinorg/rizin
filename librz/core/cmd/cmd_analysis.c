@@ -2492,40 +2492,28 @@ static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 	if (!a || !b) {
 		return 0;
 	}
-	if (a->storage.type != b->storage.type) {
-		return a->storage.type - b->storage.type;
-	}
-	switch (a->storage.type) {
-	case RZ_ANALYSIS_VAR_STORAGE_STACK:
-		return a->storage.stack_off - b->storage.stack_off;
-	case RZ_ANALYSIS_VAR_STORAGE_REG:
-		return strcmp(a->storage.reg, b->storage.reg);
-	default:
-		rz_warn_if_reached();
-		return 0;
-	}
+	return rz_analysis_var_storage_cmp(&a->storage, &b->storage);
 }
 
-static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
-	RzAnalysisVar *var;
-	RzListIter *iter;
+static void var_list_show(RzCore *core,
+	RzAnalysisFunction *fcn,
+	RzCmdStateOutput *state,
+	RzList /*<RzAnalysisVar *>*/ *list) {
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(state->d.pj);
 	}
-	RzList *list = rz_analysis_var_list(fcn, kind);
-	if (!list) {
+	RzAnalysisVar *var;
+	RzListIter *iter;
+	if (!(list && rz_list_length(list) > 0)) {
 		goto fail;
 	}
 	rz_list_sort(list, (RzListComparator)var_comparator);
 	rz_list_foreach (list, iter, var) {
-		if (var->storage.type != kind) {
-			continue;
-		}
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_RIZIN: {
 			// we can't express all type info here :(
 			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-			switch (kind) {
+			switch (var->storage.type) {
 			case RZ_ANALYSIS_VAR_STORAGE_REG:
 				rz_cons_printf("afvr %s %s %s @ 0x%" PFMT64x "\n",
 					var->storage.reg, var->name, vartype, fcn->addr);
@@ -2543,29 +2531,16 @@ static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, R
 			break;
 		}
 		case RZ_OUTPUT_MODE_JSON: {
-			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "name", var->name);
 			pj_kb(state->d.pj, "arg", rz_analysis_var_is_arg(var));
+
+			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 			pj_ks(state->d.pj, "type", vartype);
-			pj_k(state->d.pj, "storage");
-			pj_o(state->d.pj);
-			switch (var->storage.type) {
-			case RZ_ANALYSIS_VAR_STORAGE_REG:
-				pj_ks(state->d.pj, "type", "reg");
-				pj_ks(state->d.pj, "reg", var->storage.reg);
-				break;
-			case RZ_ANALYSIS_VAR_STORAGE_STACK:
-				pj_ks(state->d.pj, "type", "stack");
-				pj_kN(state->d.pj, "stack_off", var->storage.stack_off);
-				break;
-			default:
-				rz_warn_if_reached();
-				break;
-			}
-			pj_end(state->d.pj);
-			pj_end(state->d.pj);
 			free(vartype);
+
+			rz_analysis_var_storage_dump_pj(state->d.pj, var, &var->storage);
+			pj_end(state->d.pj);
 			break;
 		}
 		default: {
@@ -2581,6 +2556,18 @@ fail:
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
+}
+
+static void core_analysis_var_list_show(
+	RzCore *core,
+	RzAnalysisFunction *fcn,
+	RzAnalysisVarStorageType kind,
+	RzCmdStateOutput *state) {
+	RzList *list = rz_analysis_var_list(fcn, kind);
+	if (!list) {
+		return;
+	}
+	var_list_show(core, fcn, state, list);
 	rz_list_free(list);
 }
 
@@ -2590,32 +2577,23 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	const char *bp = NULL;
 	switch (state->mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
 	case RZ_OUTPUT_MODE_STANDARD:
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN: {
-		bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
-		rz_cons_printf("f-fcnvar*\n");
-		void **it;
-		rz_pvector_foreach (&fcn->vars, it) {
-			RzAnalysisVar *var = *it;
-			if (var->storage.type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
-				continue;
-			}
-			rz_cons_printf("f fcnvar.%s @ %s%s%" PFMT64d "\n", var->name, bp,
-				var->storage.stack_off >= 0 ? "+" : "", var->storage.stack_off);
+		for (int i = 0; i <= RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING; ++i) {
+			core_analysis_var_list_show(core, fcn, i, state);
 		}
 		break;
-	}
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
-		pj_k(state->d.pj, "stack");
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
-		pj_k(state->d.pj, "reg");
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
+		for (int i = 0; i <= RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING; ++i) {
+			RzList *list = rz_analysis_var_list(fcn, i);
+			if (!(list && !rz_list_empty(list))) {
+				continue;
+			}
+			pj_k(state->d.pj, rz_analysis_var_storage_type_to_string(i));
+			var_list_show(core, fcn, state, list);
+		};
 		pj_end(state->d.pj);
 		break;
 	default:
@@ -2892,14 +2870,9 @@ static RzCmdStatus analysis_function_vars_getsetref(RzCore *core, RzAnalysisVarS
 
 	RzAnalysisVar *var = rz_analysis_function_get_var_at(fcn, stor);
 	if (!var) {
-		switch (stor->type) {
-		case RZ_ANALYSIS_VAR_STORAGE_REG:
-			RZ_LOG_ERROR("core: Cannot find variable for reg %s\n", stor->reg);
-			break;
-		case RZ_ANALYSIS_VAR_STORAGE_STACK:
-			RZ_LOG_ERROR("core: Cannot find variable with stack offset %" PFMT64d "\n", stor->stack_off);
-			break;
-		}
+		char *stor_str = rz_analysis_var_storage_to_string(core->analysis, stor);
+		RZ_LOG_ERROR("core: Cannot find variable with %s\n", stor_str);
+		free(stor_str);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
