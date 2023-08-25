@@ -125,6 +125,54 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeD
 }
 
 /**
+ * \brief Copy RzBaseType \p src into another RzBaseType \p dst
+ * \param dst the destination RzBaseType
+ * \param src the source RzBaseType
+ * \return true if the copy was successful, false otherwise
+ */
+RZ_API bool rz_base_type_clone_into(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzBaseType *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN RzBaseType *src) {
+	rz_return_val_if_fail(src && dst, false);
+	rz_mem_copy(dst, sizeof(RzBaseType), src, sizeof(RzBaseType));
+	dst->name = rz_str_new(src->name);
+	dst->type = src->type ? rz_type_clone(src->type) : NULL;
+
+	switch (src->kind) {
+	case RZ_BASE_TYPE_KIND_ENUM:
+		rz_vector_clone_into(&dst->enum_data.cases, &src->enum_data.cases);
+		break;
+	case RZ_BASE_TYPE_KIND_STRUCT:
+		rz_vector_clone_into(&dst->struct_data.members, &src->struct_data.members);
+		break;
+	case RZ_BASE_TYPE_KIND_UNION:
+		rz_vector_clone_into(&dst->union_data.members, &src->union_data.members);
+		break;
+	default: break;
+	}
+	return true;
+}
+
+/**
+ * \brief Copy the RzBaseType \p b and all its members
+ * \param b the RzBaseType to copy
+ * \return a copy of \p b
+ */
+RZ_API RZ_OWN RzBaseType *rz_base_type_clone(RZ_NULLABLE RZ_BORROW RzBaseType *b) {
+	if (!b) {
+		return NULL;
+	}
+	RzBaseType *type = RZ_NEW0(RzBaseType);
+	if (!type) {
+		return NULL;
+	}
+	if (!rz_base_type_clone_into(type, b)) {
+		return NULL;
+	}
+	return type;
+}
+
+/**
  * \brief Frees the RzBaseType instance and all of its members
  *
  * \param type RzBaseType pointer
