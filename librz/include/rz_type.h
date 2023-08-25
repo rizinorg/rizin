@@ -253,7 +253,10 @@ RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *dir_prefix);
 RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 
 // Base types
-
+RZ_API bool rz_base_type_clone_into(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzBaseType *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN RzBaseType *src);
+RZ_API RZ_OWN RzBaseType *rz_base_type_clone(RZ_NULLABLE RZ_BORROW RzBaseType *b);
 RZ_API void rz_type_base_type_free(RzBaseType *type);
 RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind);
 RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kind);
