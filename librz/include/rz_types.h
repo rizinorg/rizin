@@ -647,7 +647,7 @@ typedef int RzRef;
 #define rz_ref_init(x) x->RZ_REF_NAME = 1
 #define rz_unref(x, f) \
 	{ \
-		assert(x->RZ_REF_NAME > 0); \
+		rz_return_if_fail(x->RZ_REF_NAME > 0); \
 		if (!--(x->RZ_REF_NAME)) { \
 			f(x); \
 		} \
