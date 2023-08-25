@@ -67,6 +67,8 @@ typedef int (*RzStrRangeCallback)(void *, int);
 #define RZ_STR_ISEMPTY(x)    (!(x) || !*(x))
 #define RZ_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define RZ_STR_DUP(x)        ((x) ? strdup((x)) : NULL)
+#define RZ_STR_EQ(x, y)      (rz_str_cmp((x), (y), -1) == 0)
+#define RZ_STR_NE(x, y)      (rz_str_cmp((x), (y), -1) != 0)
 #define rz_str_array(x, y)   ((y >= 0 && y < (sizeof(x) / sizeof(*x))) ? x[y] : "")
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc);
 RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *enc);
@@ -273,6 +275,8 @@ typedef struct rz_str_stringify_opt_t {
 
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length);
+
+RZ_API const char *rz_str_indent(int indent);
 
 #ifdef __cplusplus
 }

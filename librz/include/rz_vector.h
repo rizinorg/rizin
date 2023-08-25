@@ -68,6 +68,10 @@ RZ_API void rz_vector_fini(RzVector *vec);
 // frees the vector and calls vec->free on every element if set.
 RZ_API void rz_vector_free(RzVector *vec);
 
+RZ_API bool rz_vector_clone_into(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN RzVector *src);
+
 RZ_API RzVector *rz_vector_clone(RzVector *vec);
 
 static inline bool rz_vector_empty(const RzVector *vec) {

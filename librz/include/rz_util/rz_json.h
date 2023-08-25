@@ -65,6 +65,8 @@ RZ_API const RzJson *rz_json_item(const RzJson *json, size_t idx); // get array 
 RZ_API const RzJson *rz_json_get_path(const RzJson *json, const char *path); // reach into an object by (simple) JSON path like [0].methods[1].flags[0]
 RZ_API void rz_json_to_pj(const RzJson *json, RZ_NONNULL PJ *pj, bool with_key);
 RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json, bool with_key); // shows the string representation of RzJson
+RZ_API bool rz_json_eq(RZ_NONNULL RZ_BORROW const RzJson *a, RZ_NONNULL RZ_BORROW const RzJson *b);
+RZ_API bool rz_json_string_eq(RZ_NONNULL RZ_BORROW const char *sa, RZ_NONNULL RZ_BORROW const char *sb);
 
 #ifdef __cplusplus
 }
