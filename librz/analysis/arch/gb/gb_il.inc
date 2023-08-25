@@ -43,6 +43,10 @@ static RzILOpBitVector *gb_il_resolve_addr_code(ut64 op_addr, RzILOpBitVector *t
 	return APPEND(U16((op_addr >> 16) & 0xffff), target_addr16);
 }
 
+static RzILOpBitVector *gb_il_addr_code_abs(ut64 addr) {
+	return U32(addr);
+}
+
 /*
  * Calculate the carry of a \p carry_bits addition of \p a, \p b and optinally C, where \p a, \p b are of size \p src_bits
  * Example:
@@ -261,6 +265,16 @@ static RzILOpEffect *gb_il_add(gb_reg dst_reg, gb_reg src_reg, bool carry_in) {
 		gb_il_write_reg(dst_reg, ADD(DUP(dst), carry_in ? ADD(DUP(src), ITE(VARG("C"), U8(1), U8(0))) : DUP(src))),
 		SETG("Z", IS_ZERO(DUP(dst))),
 		SETG("N", IL_FALSE));
+}
+
+// --
+
+static RzILOpEffect *gb_il_cjmp(ut64 dst, gb_flag cond_flag, bool neg) {
+	RzILOpBool *cond = VARG(gb_flag_name(cond_flag));
+	if (neg) {
+		return BRANCH(cond, NOP(), JMP(gb_il_addr_code_abs(dst)));
+	}
+	return BRANCH(cond, JMP(gb_il_addr_code_abs(dst)), NOP());
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

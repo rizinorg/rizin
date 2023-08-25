@@ -110,6 +110,34 @@ static inline void gb_analysis_esil_cjmp(RzAnalysisOp *op, const ut8 data) {
 	}
 }
 
+static inline void gb_analysis_cjmp(RzAnalysisOpMask mask, RzAnalysisOp *op, const ut8 data) {
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		gb_analysis_esil_cjmp(op, data);
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		gb_flag flag;
+		bool neg = false;
+		switch (data) {
+		case 0x20:
+			neg = true;
+			// fallthrough
+		case 0x28:
+			flag = GB_FLAG_Z;
+			break;
+		case 0x30:
+			neg = true;
+			// fallthrough
+		case 0x38:
+			flag = GB_FLAG_C;
+			break;
+		default:
+			rz_warn_if_reached();
+			return;
+		}
+		op->il_op = gb_il_cjmp(op->jump, flag, neg);
+	}
+}
+
 static inline void gb_analysis_esil_jmp(RzAnalysisOp *op) {
 	rz_strbuf_setf(&op->esil, "0x%" PFMT64x ",pc,:=", (op->jump & 0xffff));
 }
@@ -1345,7 +1373,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		gb_analysis_cond(analysis->reg, op, data[0]);
 		op->jump = addr + ilen + (st8)data[1];
 		op->fail = addr + ilen;
-		gb_analysis_esil_cjmp(op, data[0]);
+		gb_analysis_cjmp(mask, op, data[0]);
 		op->cycles = 12;
 		op->failcycles = 8;
 		op->eob = true;

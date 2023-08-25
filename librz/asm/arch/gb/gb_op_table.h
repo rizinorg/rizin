@@ -22,6 +22,13 @@ typedef enum {
 	GB_REG_SP
 } gb_reg;
 
+typedef enum {
+	GB_FLAG_Z,
+	GB_FLAG_N,
+	GB_FLAG_H,
+	GB_FLAG_C
+} gb_flag;
+
 typedef struct {
 	const char *name;
 	const int type;

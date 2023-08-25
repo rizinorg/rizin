@@ -112,16 +112,16 @@ d "cp l" bd
 d "cpl" 2f
 d "daa" 27
 d "dec [hl]" 35 0x0 (seq (set v (- (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N true) (set H (is_zero (cast 4 false (var v)))))
-d "dec a" 3d 0x0 (seq (set a (+ (var a) (bv 8 0x1))) (set Z (is_zero (var a))) (set N true) (set H (is_zero (cast 4 false (var a)))))
-d "dec b" 05 0x0 (seq (set b (+ (var b) (bv 8 0x1))) (set Z (is_zero (var b))) (set N true) (set H (is_zero (cast 4 false (var b)))))
+d "dec a" 3d 0x0 (seq (set a (- (var a) (bv 8 0x1))) (set Z (is_zero (var a))) (set N true) (set H (== (cast 4 false (var a)) (bv 4 0xf))))
+d "dec b" 05 0x0 (seq (set b (- (var b) (bv 8 0x1))) (set Z (is_zero (var b))) (set N true) (set H (== (cast 4 false (var b)) (bv 4 0xf))))
 d "dec bc" 0b 0x0 (seq (set b (ite (is_zero (var c)) (- (var b) (bv 8 0x1)) (var b))) (set c (- (var c) (bv 8 0x1))))
-d "dec c" 0d 0x0 (seq (set c (+ (var c) (bv 8 0x1))) (set Z (is_zero (var c))) (set N true) (set H (is_zero (cast 4 false (var c)))))
-d "dec d" 15 0x0 (seq (set d (+ (var d) (bv 8 0x1))) (set Z (is_zero (var d))) (set N true) (set H (is_zero (cast 4 false (var d)))))
+d "dec c" 0d 0x0 (seq (set c (- (var c) (bv 8 0x1))) (set Z (is_zero (var c))) (set N true) (set H (== (cast 4 false (var c)) (bv 4 0xf))))
+d "dec d" 15 0x0 (seq (set d (- (var d) (bv 8 0x1))) (set Z (is_zero (var d))) (set N true) (set H (== (cast 4 false (var d)) (bv 4 0xf))))
 d "dec de" 1b 0x0 (seq (set d (ite (is_zero (var e)) (- (var d) (bv 8 0x1)) (var d))) (set e (- (var e) (bv 8 0x1))))
-d "dec e" 1d 0x0 (seq (set e (+ (var e) (bv 8 0x1))) (set Z (is_zero (var e))) (set N true) (set H (is_zero (cast 4 false (var e)))))
-d "dec h" 25 0x0 (seq (set h (+ (var h) (bv 8 0x1))) (set Z (is_zero (var h))) (set N true) (set H (is_zero (cast 4 false (var h)))))
+d "dec e" 1d 0x0 (seq (set e (- (var e) (bv 8 0x1))) (set Z (is_zero (var e))) (set N true) (set H (== (cast 4 false (var e)) (bv 4 0xf))))
+d "dec h" 25 0x0 (seq (set h (- (var h) (bv 8 0x1))) (set Z (is_zero (var h))) (set N true) (set H (== (cast 4 false (var h)) (bv 4 0xf))))
 d "dec hl" 2b 0x0 (seq (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
-d "dec l" 2d 0x0 (seq (set l (+ (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (set N true) (set H (is_zero (cast 4 false (var l)))))
+d "dec l" 2d 0x0 (seq (set l (- (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (set N true) (set H (== (cast 4 false (var l)) (bv 4 0xf))))
 d "dec sp" 3b 0x0 (set sp (- (var sp) (bv 16 0x1)))
 d "di" f3
 d "ei" fb
@@ -146,10 +146,10 @@ d "jp hl" e9
 d "jp nC, 0x0000" d20000
 d "jp nZ, 0x0000" c20000
 d "jr 0x00" 1800
-d "jr C, 0x00" 3800
-d "jr Z, 0x00" 2800
-d "jr nC, 0x00" 3000
-d "jr nZ, 0x00" 2000
+d "jr C, 0x42" 3842 0x0 (branch (var C) (jmp (bv 32 0x44)) nop)
+d "jr Z, 0x42" 2842 0x0 (branch (var Z) (jmp (bv 32 0x44)) nop)
+d "jr nC, 0x42" 3042 0x0 (branch (var C) nop (jmp (bv 32 0x44)))
+d "jr nZ, 0x42" 2042 0x0 (branch (var Z) nop (jmp (bv 32 0x44)))
 d "ld [0x1234], a" ea3412 0x0 (store 0 (bv 16 0x1234) (var a))
 d "ld [0x1234], sp" 083412 0x0 (storew 0 (bv 16 0x1234) (var sp))
 d "ld [0xff00 + c], a" e2 0x0 (store 0 (append (bv 8 0xff) (var c)) (var a))

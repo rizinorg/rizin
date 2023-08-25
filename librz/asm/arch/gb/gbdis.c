@@ -98,6 +98,19 @@ static const char *gb_reg_name(gb_reg reg) {
 	}
 }
 
+static const char *gb_flag_name(gb_flag flag) {
+	switch (flag) {
+	case GB_FLAG_Z:
+		return "Z";
+	case GB_FLAG_N:
+		return "N";
+	case GB_FLAG_H:
+		return "H";
+	case GB_FLAG_C:
+		return "C";
+	}
+}
+
 static int gbOpLength(int gboptype) {
 	switch (gboptype) {
 	case GB_8BIT:
