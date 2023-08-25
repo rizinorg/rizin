@@ -4216,3 +4216,27 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 	}
 	return rz_strbuf_drain_nofree(&sb);
 }
+
+/**
+ * \brief Get the indent string
+ * \param indent indent level, max 9
+ * \return indent string
+ */
+RZ_API const char *rz_str_indent(int indent) {
+	static const char *indent_tbl[] = {
+		"",
+		"\t",
+		"\t\t",
+		"\t\t\t",
+		"\t\t\t\t",
+		"\t\t\t\t\t",
+		"\t\t\t\t\t\t",
+		"\t\t\t\t\t\t\t",
+		"\t\t\t\t\t\t\t\t",
+		"\t\t\t\t\t\t\t\t\t",
+	};
+	if (indent < 0 || indent >= RZ_ARRAY_SIZE(indent_tbl)) {
+		return "";
+	}
+	return indent_tbl[indent];
+}

@@ -79,7 +79,15 @@ RZ_API void rz_vector_free(RzVector *vec) {
 	}
 }
 
-static bool vector_clone(RzVector *dst, RzVector *src) {
+/**
+ * \brief Clone the contents of \p src into \p dst.
+ * \param dst The vector to clone into.
+ * \param src The vector to clone from.
+ * \return true on success, false on failure.
+ */
+RZ_API bool rz_vector_clone_into(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN RzVector *src) {
 	rz_return_val_if_fail(dst && src, false);
 	dst->capacity = src->capacity;
 	dst->len = src->len;
@@ -111,7 +119,7 @@ RZ_API RzVector *rz_vector_clone(RzVector *vec) {
 	if (!ret) {
 		return NULL;
 	}
-	if (!vector_clone(ret, vec)) {
+	if (!rz_vector_clone_into(ret, vec)) {
 		free(ret);
 		return NULL;
 	}

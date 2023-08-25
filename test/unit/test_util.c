@@ -40,8 +40,31 @@ bool test_file_slurp(void) {
 	mu_end;
 }
 
+#define test_leading_zeros_case(x, expect) \
+	mu_assert_eq(rz_bits_leading_zeros(x), expect, "should be " #expect)
+
+bool test_leading_zeros(void) {
+	test_leading_zeros_case(0ULL, 64);
+	test_leading_zeros_case(1ULL, 63);
+
+	test_leading_zeros_case(0xffffffffffffffffULL, 0);
+	test_leading_zeros_case(0xffffffffULL, 32);
+	test_leading_zeros_case(0x80000000ULL, 32);
+	test_leading_zeros_case(0x100000000ULL, 31);
+	test_leading_zeros_case(0x40000000ULL, 33);
+	test_leading_zeros_case(0x400000000ULL, 29);
+
+	test_leading_zeros_case(0x1000000000000, 15);
+	test_leading_zeros_case(0x800000000000, 16);
+	test_leading_zeros_case(0x400000000000, 17);
+	test_leading_zeros_case(0x200000000000, 18);
+	test_leading_zeros_case(0x100000000000, 19);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_file_slurp);
+	mu_run_test(test_leading_zeros);
 	return tests_passed != tests_run;
 }
 

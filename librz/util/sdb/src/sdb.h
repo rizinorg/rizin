@@ -60,6 +60,8 @@ extern char *strdup(const char *);
 #define SDB_LIST_UNSORTED 0
 #define SDB_LIST_SORTED   1
 
+typedef bool (*VALUE_EQ_F)(const char *, const char *);
+
 typedef struct sdb_t {
 	char *dir; // path+name
 	char *path;
@@ -147,6 +149,8 @@ typedef void (*SdbDiffCallback)(const SdbDiff *diff, void *user);
 // Returns true iff the contents of a and b are equal including contained namespaces
 // If cb is non-null, it will be called subsequently with differences.
 RZ_API bool sdb_diff(Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user);
+
+RZ_API bool sdb_diff_eq(Sdb *a, Sdb *b, VALUE_EQ_F eq, SdbDiffCallback cb, void *cb_user);
 
 // Gets a pointer to the value associated with `key`.
 RZ_API char *sdb_get(Sdb *, const char *key, ut32 *cas);

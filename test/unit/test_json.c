@@ -1293,6 +1293,37 @@ static int test_json(int test_number, char *input, int (*check)(RzJson *j)) {
 	mu_end;
 }
 
+static int test_json_eq() {
+	char *input1 = strdup("{\"foo\": \"bar\"}");
+	char *input2 = strdup("{\"foo\": \"bar\"}");
+	RzJson *json = rz_json_parse(input1);
+	RzJson *json2 = rz_json_parse(input2);
+	mu_assert_notnull(json, "parse failed");
+	mu_assert_notnull(json2, "parse failed");
+	mu_assert("jsons are not equal", rz_json_eq(json, json2));
+	free(input1);
+	free(input2);
+	rz_json_free(json);
+	rz_json_free(json2);
+
+	input1 = strdup("{\"foo\": \"bar\"}");
+	input2 = strdup("{\"foo\": \"baz\"}");
+	json = rz_json_parse(input1);
+	json2 = rz_json_parse(input2);
+	mu_assert_notnull(json, "parse failed");
+	mu_assert_notnull(json2, "parse failed");
+	mu_assert("jsons are equal", !rz_json_eq(json, json2));
+	free(input1);
+	free(input2);
+	rz_json_free(json);
+	rz_json_free(json2);
+
+	mu_assert("invalid JSON is not eq", !rz_json_string_eq("", ""));
+	mu_assert("JSON string is eq", rz_json_string_eq("{\"foo\": \"bar\",\n \"x\":1}", "{\"foo\": \"bar\", \"x\": 1}"));
+	mu_assert("JSON string is not eq", !rz_json_string_eq("{\"foo\": \"bar\",\n \"x\":1}", "{\"foo\": \"baz\", \"x\": 2}"));
+	mu_end;
+}
+
 static int all_tests(void) {
 	size_t i;
 	for (i = 1; i < sizeof(tests) / sizeof(tests[0]); i++) {
@@ -1302,6 +1333,7 @@ static int all_tests(void) {
 		mu_run_test_named(test_json, testname, i, input, tests[i].check);
 		free(input);
 	}
+	mu_run_test(test_json_eq);
 	return tests_passed != tests_run;
 }
 
