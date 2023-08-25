@@ -1,4 +1,4 @@
-.Dd  10, 2018
+.Dd  Aug 25, 2023
 .Dt RZ_DIFF 1
 .Sh NAME
 .Nm RZ_DIFF
@@ -14,40 +14,40 @@ rz-diff compares two files or binary programs and highlights the differences bet
 .Pp
 .Bl -tag -width Fl
 .It Fl A
-Compare virtual addresses from file0 with physical addresses in file1.
+compare virtual addresses from file0 with physical addresses in file1.
 .It Fl a Ar [arch]	
-Specify the architecture plugin to use for analysis (e.g., x86, arm).
+specify the architecture plugin to use for analysis (e.g., x86, arm).
 .It Fl b Ar [bits]
-Specify the register size for the chosen architecture (e.g., 16, 32, 64).
+specify the register size for the chosen architecture (e.g., 16, 32, 64).
 .It Fl B
-Run 'aaa' when loading the binary.
+run 'aaa' when loading the binary.
 .It Fl C
-Disable the use of colors in the output.
+disable the use of colors in the output.
 .It Fl d Ar [algo]
-Compute the edit distance between files using the chosen algorithm:
+compute the edit distance between files using the chosen algorithm:
                 myers | Eugene W. Myers' O(ND) algorithm (no substitution)
                 leven | Levenshtein O(N^2) algorithm (with substitution
-                ssdeep | Context triggered piecewise hashing comparison
+               ssdeep | Context triggered piecewise hashing comparison
 .It Fl e Ar [k=v]
 set an evaluable config variable.
 .It Fl H 
-Enable hexadecimal visual mode for comparing files in hexadecimal format.
+enable hexadecimal visual mode for comparing files in hexadecimal format.
 .It Fl h
-Display the help message.
+display the help message.
 .It Fl i 
-Use command line arguments instead of files (only for -d).
+use command line arguments instead of files (only for -d).
 .It Fl j
-Output the comparison results in JSON format.
+output the comparison results in JSON format.
 .It Fl q
-Generate quiet output with minimal information.
+generate quiet output with minimal information.
 .It Fl 0 Ar [cmd]
 input for file0 when option -t 'commands' is given.
 .It Fl 1 Ar [cmd]
 input for file1 when option -t 'commands' is given.
 .It Fl S Ar [WxH]
-Set the width and height of the terminal for visual mode.
+set the width and height of the terminal for visual mode.
 .It Fl t Ar [type]
-Compute the difference between two files based on the specified type:
+compute the difference between two files based on the specified type:
               bytes      | Compares raw bytes in the files (only for small files)
               lines      | Compares text files
               functions  | Compares functions found in the files
@@ -64,9 +64,15 @@ Compute the difference between two files based on the specified type:
               strings    | Compares strings found in the files
               symbols    | Compares symbols found in the files
 .It Fl T
-Show timestamp information in the output.
+show timestamp information in the output.
 .It Fl v
-Show version information for rz-diff.
+show version information for rz-diff.
+.Pp 
+palette colors can be changed by adding the following lines
+          inside the $HOME/.rizinrc file
+  ec diff.unknown blue   | offset color
+  ec diff.match   green  | match color
+  ec diff.unmatch red    | mismatch color	
 .Sh EXAMPLE
        Compare two binary files using the default settings:
               rz-diff file1.bin file2.bin
@@ -92,4 +98,3 @@ Show version information for rz-diff.
 pancake <pancake@nopcode.org>
 .It  
 Sohail  <sksohail.swaraj@gmail.com>
-

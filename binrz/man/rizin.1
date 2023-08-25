@@ -1,4 +1,4 @@
-.Dd 24 Aug, 2023
+.Dd Aug 25, 2023
 .Dt RIZIN 1
 .Sh NAME
 .Nm rizin
@@ -11,7 +11,7 @@
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl i Ar file
-.Op Fl s Ar addr
+.Op Fl s Ar addr	
 .Op Fl B Ar baddr
 .Op Fl m Ar maddr
 .Op Fl c Ar cmd
@@ -33,87 +33,94 @@ read file from stdin.
 .It -=
 perform R=! command to run all commands remotely
 .It Fl 0
-Print \\x00 after initialization and after every command executed.
+print \\x00 after initialization and after every command executed.
 .It Fl 2
 close stderr file descriptor (silent warning messages).
 .It Fl a Ar [arch]
-Set the assembly architecture.(x86, ppc, arm, mips, bf, java, ...).
+set the assembly architecture.(x86, ppc, arm, mips, bf, java, ...).
 .It Fl A
 run 'aaa' command before prompt or patch to analyze all referenced code.
 .It Fl b Ar [bits]
-Set the assembly bitness. (16, 32, 64).
+set the assembly bitness. (16, 32, 64).
 .It Fl B Ar [baddr]
-Set the base address for Position-Independent Executables (PIE).
+set the base address for Position-Independent Executables (PIE).
 .It Fl c Ar 'cmd..'
-Execute the specified Rizin command.
+execute the specified Rizin command.
 .It -C
-Specifies a file in the format "host:port" to run Rizin remotely through HTTP.
+specifies a file in the format "host:port" to run Rizin remotely through HTTP.
 .It Fl d
-Debug the executable 'file' or running process 'pid'.
+debug the executable 'file' or running process 'pid'.
 .It Fl D Ar [backend]
-Enable debug mode, setting the configuration variable 'cfg.debug=true'.
+enable debug mode, setting the configuration variable 'cfg.debug=true'.
 .It Fl e Ar k=v
-Evaluate the specified configuration variable.
+evaluate the specified configuration variable.
 .It Fl f
-Set block size to be equal to file size.
+set block size to be equal to file size.
 .It -F [binplugin]
-Forces the use of a specific rbin plugin.
+forces the use of a specific rbin plugin.
 .It Fl h, hh
-Shows help messages, with -hh showing detailed help.
-.It Fl H ([var])
-display variable.
+shows help messages, with -hh showing detailed help.
+.It Fl H
+prints information about the installation paths and configuration settings of Rizin. This option is useful for obtaining details about the installation location, directories, and various components of Rizin.
 .It Fl i Ar [file]
-Run the commands from the script file.
+run the commands from the script file.
 .It Fl I Ar [file]
-Run script file. Before the file is loaded.
+run script file. Before the file is loaded.
 .It Fl k Ar [OS/kern]
-Set the assembly operating system.
+set the assembly operating system.
 .It Fl l Ar [lib]
-Load the specified plugin file.
+load the specified plugin file.
 .It Fl L
-List supported IO plugins.
+list supported IO plugins.
 .It Fl m Ar [addr]
 map file at given address.
 .It Fl M
-Disable demangling.
+disable demangling.
 .It Fl n, nn
-Controls loading of RzBin info, with -nn only loading binary structures.
+controls loading of RzBin info, with -nn only loading binary structures.
 .It Fl N
-Do not load user settings/projects from ~/.rizinrc, ~/.config/rizin/rizinrc and the scripts inside .../rizinrc.d/ directory.
+disable user settings/projects from ~/.rizinrc, ~/.config/rizin/rizinrc and the scripts inside .../rizinrc.d/ directory.
 .It Fl NN
-Disables loading any scripts or plugins.
+disable loading any scripts or plugins.
 .It Fl q
-Quiet mode, suppresses prompt and quits after script execution.
+quiet mode, suppresses prompt and quits after script execution.
 .It Fl qq
-Quit before showing the prompt. Right after all the -e -c and -i arguments are evaluated.
+quit before showing the prompt. Right after all the -e -c and -i arguments are evaluated.
 .It Fl Q
-Same as q, but exiting without freeing RzCore, this produces leaks at exit time, but saves some precious ms to run the testsuite in fast mode.
+same as q, but exiting without freeing RzCore, this produces leaks at exit time, but saves some precious ms to run the testsuite in fast mode.
 .It Fl p Ar [prj]
-Set project file.
+set project file.
 .It Fl r Ar [rz-run]
-Specify dbg.profile rz-run profile to use when spawning a program for debugging.
+specify dbg.profile rz-run profile to use when spawning a program for debugging.
 .It Fl R Ar [rule]
-Specify custom rz-run directives without having to create a rz-run profile.
+specify custom rz-run directives without having to create a rz-run profile.
 .It Fl s Ar [addr]
-Start seeking at this address.
+start seeking at this address.
 .It Fl T
-Avoid computing the file hashes.
+avoid computing the file hashes.
 .It Fl u
-Set bin.filter=false to load rbin info without filtering names.
+set bin.filter=false to load rbin info without filtering names.
 .It Fl v
-Show version information and exit (Use -qv to get just the version number).
+show version information and exit (Use -qv to get just the version number).
 .It Fl V
-Show rizin library versions.
+show rizin library versions.
 .It Fl w
-Open in write mode.
+open in write mode.
 .It Fl x
-open file in write mode.
-.It Fl x
-Opens the file without the execute flag.
+open the file without the execute flag.
 .It Fl X
-Same as -e bin.usextr=false, do not use extract plugins, useful for dyldcache.
+same as -e bin.usextr=false, do not use extract plugins, useful for dyldcache.
 .It Fl z, zz
 do not load strings or load them even in raw.
+.Sh EXAMPLE
+       This will start rizin in analysis mode (-A) on the /bin/ls executable:
+              rizin -A /bin/ls
+
+       This will open the file /bin/ls in write mode, allowing you to make changes to the binary:
+              rizin -w /bin/ls
+
+       This starts rizin's debugger (-d) on /bin/ls and passes arguments "-l" and "/tmp" to the program for debugging:
+              rizin -d /bin/ls -l /tmp
 .El
 
 .Pp
