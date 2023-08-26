@@ -394,7 +394,7 @@ static const char *vas_name(CS_aarch64_vas() vas) {
 		return "1d";
 	case CS_AARCH64_VL_(1Q):
 		return "1q";
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR > 4 && CS_NEXT_VERSION < 6
 	case CS_AARCH64_VL_(1B):
 		return "8b";
 	case CS_AARCH64_VL_(4B):
@@ -537,7 +537,11 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 		if (op->vector_index != -1) {
 			pj_ki(pj, "vector_index", op->vector_index);
 		}
+#if CS_NEXT_VERSION < 6
 		if (op->vas != CS_AARCH64_VL_(INVALID)) {
+#else
+		if (op->vas != AArch64Layout_Invalid) {
+#endif
 			pj_ks(pj, "vas", vas_name(op->vas));
 		}
 #if CS_API_MAJOR == 4
@@ -551,10 +555,18 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->update_flags) {
 		pj_kb(pj, "update_flags", true);
 	}
+#if CS_NEXT_VERSION < 6
 	if (x->writeback) {
+#else
+	if (insn->detail->writeback) {
+#endif
 		pj_kb(pj, "writeback", true);
 	}
+#if CS_NEXT_VERSION < 6
 	if (x->cc != CS_AARCH64CC(_INVALID) && x->cc != CS_AARCH64CC(_AL) && x->cc != CS_AARCH64CC(_NV)) {
+#else
+	if (x->cc != CS_AARCH64CC(_AL) && x->cc != CS_AARCH64CC(_NV)) {
+#endif
 		pj_ks(pj, "cc", cc_name64(x->cc));
 	}
 	pj_end(pj);
@@ -616,6 +628,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	csh handle = ctx->handle;
 	ut64 addr = op->addr;
 
+#if CS_NEXT_VERSION < 6
 	/* grab family */
 	if (cs_insn_group(handle, insn, ARM64_GRP_CRYPTO)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
@@ -630,6 +643,22 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	} else {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 	}
+#else
+	/* grab family */
+	if (cs_insn_group(handle, insn, AArch64_FEATURE_HasAES)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
+	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasCRC)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
+	} else if (cs_insn_group(handle, insn, AArch64_GRP_PRIVILEGE)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasNEON)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasFPARMv8)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+	} else {
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
+	}
+#endif
 
 	op->cond = cond_cs2r2_64(insn->detail->CS_aarch64().cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
@@ -656,13 +685,15 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	case CS_AARCH64(_INS_PACDZB):
 	case CS_AARCH64(_INS_PACGA):
 	case CS_AARCH64(_INS_PACIA):
+	case CS_AARCH64(_INS_PACIB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_PACIA1716):
 	case CS_AARCH64(_INS_PACIASP):
 	case CS_AARCH64(_INS_PACIAZ):
-	case CS_AARCH64(_INS_PACIB):
 	case CS_AARCH64(_INS_PACIB1716):
 	case CS_AARCH64(_INS_PACIBSP):
 	case CS_AARCH64(_INS_PACIBZ):
+#endif
 	case CS_AARCH64(_INS_PACIZA):
 	case CS_AARCH64(_INS_PACIZB):
 	case CS_AARCH64(_INS_AUTDA):
@@ -670,18 +701,20 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	case CS_AARCH64(_INS_AUTDZA):
 	case CS_AARCH64(_INS_AUTDZB):
 	case CS_AARCH64(_INS_AUTIA):
+	case CS_AARCH64(_INS_AUTIB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_AUTIA1716):
 	case CS_AARCH64(_INS_AUTIASP):
 	case CS_AARCH64(_INS_AUTIAZ):
-	case CS_AARCH64(_INS_AUTIB):
 	case CS_AARCH64(_INS_AUTIB1716):
 	case CS_AARCH64(_INS_AUTIBSP):
 	case CS_AARCH64(_INS_AUTIBZ):
+	case CS_AARCH64(_INS_XPACLRI):
+#endif
 	case CS_AARCH64(_INS_AUTIZA):
 	case CS_AARCH64(_INS_AUTIZB):
 	case CS_AARCH64(_INS_XPACD):
 	case CS_AARCH64(_INS_XPACI):
-	case CS_AARCH64(_INS_XPACLRI):
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
 		break;
@@ -695,7 +728,10 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		op->ptr = IMM64(1);
 		break;
+	case CS_AARCH64(_INS_HINT):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_NOP):
+#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
@@ -757,8 +793,10 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		break;
 	case CS_AARCH64(_INS_CSEL):
 	case CS_AARCH64(_INS_FCSEL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_CSET):
 	case CS_AARCH64(_INS_CINC):
+#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		break;
 	case CS_AARCH64(_INS_MOV):
@@ -777,14 +815,16 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	case CS_AARCH64(_INS_SMOV):
 	case CS_AARCH64(_INS_UMOV):
 	case CS_AARCH64(_INS_FMOV):
+	case CS_AARCH64(_INS_UBFM):
+	case CS_AARCH64(_INS_BIC):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_SBFX):
 	case CS_AARCH64(_INS_UBFX):
-	case CS_AARCH64(_INS_UBFM):
 	case CS_AARCH64(_INS_SBFIZ):
 	case CS_AARCH64(_INS_UBFIZ):
-	case CS_AARCH64(_INS_BIC):
 	case CS_AARCH64(_INS_BFI):
 	case CS_AARCH64(_INS_BFXIL):
+#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case CS_AARCH64(_INS_MRS):
@@ -825,9 +865,11 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	case CS_AARCH64(_INS_DSB):
 	case CS_AARCH64(_INS_ISB):
 		op->family = RZ_ANALYSIS_OP_FAMILY_THREAD;
+#if CS_NEXT_VERSION < 6
 		// intentional fallthrough
 	case CS_AARCH64(_INS_IC): // instruction cache invalidate
 	case CS_AARCH64(_INS_DC): // data cache invalidate
+#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_SYNC; // or cache
 		break;
 	//  XXX unimplemented instructions
@@ -861,9 +903,11 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	case CS_AARCH64(_INS_FCMP):
 	case CS_AARCH64(_INS_CCMP):
 	case CS_AARCH64(_INS_CCMN):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_CMP):
 	case CS_AARCH64(_INS_CMN):
 	case CS_AARCH64(_INS_TST):
+#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	case CS_AARCH64(_INS_ROR):
