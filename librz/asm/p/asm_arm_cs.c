@@ -131,7 +131,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		rz_strbuf_set(&op->buf_asm, "");
 	}
 	if (!ctx->cd || mode != ctx->omode) {
-		ret = (a->bits == 64) ? cs_open(CS_ARCH_ARM64, mode, &ctx->cd) : cs_open(CS_ARCH_ARM, mode, &ctx->cd);
+		ret = (a->bits == 64) ? cs_open(CS_AARCH64pre(CS_ARCH_), mode, &ctx->cd) : cs_open(CS_ARCH_ARM, mode, &ctx->cd);
 		if (ret) {
 			ret = -1;
 			goto beach;
