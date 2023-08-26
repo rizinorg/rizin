@@ -279,6 +279,7 @@ NAME=Parse Golang 1.18 MIPS BE Strings
 FILE=bins/golang/go-re-sample-linux-mips
 CMDS=<<EOF
 aalg
+s main
 e asm.cmt.col=0
 pdr~"
 EOF
@@ -304,6 +305,7 @@ NAME=Parse Golang 1.18 MIPS LE Strings
 FILE=bins/golang/go-re-sample-linux-mipsle
 CMDS=<<EOF
 aalg
+s main
 e asm.cmt.col=0
 pdr~"
 EOF
@@ -329,6 +331,7 @@ NAME=Parse Golang 1.18 MIPS64 BE Strings
 FILE=bins/golang/go-re-sample-linux-mips64
 CMDS=<<EOF
 aalg
+s main
 e asm.cmt.col=0
 pdr~"
 EOF
@@ -354,6 +357,7 @@ NAME=Parse Golang 1.18 MIPS64 LE Strings
 FILE=bins/golang/go-re-sample-linux-mips64le
 CMDS=<<EOF
 aalg
+s main
 e asm.cmt.col=0
 pdr~"
 EOF
@@ -379,6 +383,7 @@ NAME=Parse Golang 1.18 PPC64 BE Strings
 FILE=bins/golang/go-re-sample-linux-ppc64
 CMDS=<<EOF
 aalg
+s main
 e asm.cmt.col=0
 pdr~"
 EOF
@@ -404,6 +409,7 @@ NAME=Parse Golang 1.18 PPC64 LE Strings
 FILE=bins/golang/go-re-sample-linux-ppc64le
 CMDS=<<EOF
 aalg
+s main
 e asm.cmt.col=0
 pdr~"
 EOF
@@ -429,6 +435,7 @@ NAME=Parse Golang 1.18 riscv64 Strings
 FILE=bins/golang/go-re-sample-linux-riscv64
 CMDS=<<EOF
 aalg
+s main
 e asm.cmt.col=0
 pdr~"
 EOF
