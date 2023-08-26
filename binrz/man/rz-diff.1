@@ -1,82 +1,87 @@
-.Dd Feb 10, 2018
+.Dd Aug 25, 2023
 .Dt RZ_DIFF 1
 .Sh NAME
 .Nm RZ_DIFF
-.Nd unified binary diffing utility
+.Nd Compare files and find binary differences.
 .Sh SYNOPSIS
 .Nm rz-diff
-.Op Fl AabcCdDhOrspxXvzZ
-.Op Fl t Ar 0-100
-.Op Fl g Ar sym
-.Op Fl S Ar algo
-.Ar file1
-.Ar file2
+.B rz-diff
+[\fIOPTIONS\fR]
+\fIfile0\fR
+\fIfile1\fR
 .Sh DESCRIPTION
-rz-diff implements many binary diffing algorithms for data and code.
+rz-diff compares two files or binary programs and highlights the differences between them. It supports diffing different aspects like raw bytes, text lines, functions, sections, strings, etc., based on the options used.
 .Pp
 .Bl -tag -width Fl
 .It Fl A
-Analyze binary after loading it with RzCore (see -C) and use -AA to run aaaa instead of aaa.
-.It Fl a
-Specify architecture (x86, arm, ..)
-.It Fl b
-Select register size bits for given arch
+compare virtual addresses from file0 with physical addresses in file1.
+.It Fl a Ar [arch]	
+specify the architecture plugin to use for analysis (e.g., x86, arm).
+.It Fl b Ar [bits]
+specify the register size for the chosen architecture (e.g., 16, 32, 64).
 .It Fl B
-Binary output (GDIFF format)
-.It Fl c
-Count number of differences.
+run 'aaa' when loading the binary.
 .It Fl C
-Code diffing using graphdiff algorithm. Output columns are: file-a-address, percentage of most similar function in B file | file-b-address. (Use with -A to analyze the binaries to find more functions)
-.It Fl d
-Use delta diffing (slower).
-.It Fl D
-Show disasm instead of hexpairs (honors -a arch and -b bits)
-.It Fl e [k=v]
-Specify eval config vars for all RzCore instances created.
-.It Fl g Ar sym | off1,off2
-Graph diff output of given symbol, or between two functions, at given offsets: one for each binary.
-.It Fl G [cmd]
-Run an rz command on every RzCore instance created
+disable the use of colors in the output.
+.It Fl d Ar [algo]
+compute the edit distance between files using the chosen algorithm:
+                myers | Eugene W. Myers' O(ND) algorithm (no substitution)
+                leven | Levenshtein O(N^2) algorithm (with substitution
+               ssdeep | Context triggered piecewise hashing comparison
+.It Fl e Ar [k=v]
+set an evaluable config variable.
+.It Fl H 
+enable hexadecimal visual mode for comparing files in hexadecimal format.
 .It Fl h
-Show usage help message.
-.It Fl i
-Compare the list of imports
-.It Fl m [mode]
-Specify the graph output mode
-.It Fl n
-Suppress address names (show only addresses) when code diffing.
-.It Fl O
-Do code diffing with opcode bytes only.
-.It Fl p
-Use physical addressing (io.va=0)
+display the help message.
+.It Fl i 
+use command line arguments instead of files (only for -d).
+.It Fl j
+output the comparison results in JSON format.
 .It Fl q
-Quiet mode: disable colors and reduce output
-.It Fl r
-Output in rizin commands as a binary patch.
-.It Fl x
-Show two column hexdump diffing.
-.It Fl X
-Show two column hexII diffing.
-.It Fl s
-Compute edit distance (no substitution, Eugene W. Myers' O(ND) diff algorithm) between two files.
-.It Fl ss
-Compute Levenshtein edit distance (substitution is allowed, O(N^2)) between two files.
-.It Fl S Ar [name, namelen, dist, size, ...]
-Specify which column of the code diffing algo use for diffing
-.It Fl t Ar 0\-100
-Choose matching threshold for binary code diffing
-.It Fl u
-Unified diff output
-.It Fl U
-Unified diff output using system\'s diff program
+generate quiet output with minimal information.
+.It Fl 0 Ar [cmd]
+input for file0 when option -t 'commands' is given.
+.It Fl 1 Ar [cmd]
+input for file1 when option -t 'commands' is given.
+.It Fl S Ar [WxH]
+set the width and height of the terminal for visual mode.
+.It Fl t Ar [type]
+compute the difference between two files based on the specified type:
+              bytes      | Compares raw bytes in the files (only for small files)
+              lines      | Compares text files
+              functions  | Compares functions found in the files
+              classes    | Compares classes found in the files
+              command    | Compares command output returned when executed in both files
+                         | Requires -0 <cmd>, -1 <cmd> is optional
+              entries    | Compares entries found in the files
+              fields     | Compares fields found in the files
+              graphs     | Compares 2 functions and outputs in graphviz/dot format
+                         | Requires -0 <fcn name|offset>, -1 <fcn name|offset> is optional
+              imports    | Compares imports found in the files
+              libraries  | Compares libraries found in the files
+              sections   | Compares sections found in the files
+              strings    | Compares strings found in the files
+              symbols    | Compares symbols found in the files
+.It Fl T
+show timestamp information in the output.
 .It Fl v
-Show version information.
-.It Fl V
-Be verbose sometimes
-.It Fl z
-Perform diff on extracted strings
-.It Fl Z
-Perform diff using zignatures instead of function list (NEW)
+show version information for rz-diff.
+.Pp 
+palette colors can be changed by adding the following lines
+          inside the $HOME/.rizinrc file
+  ec diff.unknown blue   | offset color
+  ec diff.match   green  | match color
+  ec diff.unmatch red    | mismatch color	
+.Sh EXAMPLE
+       Compare two binary files using the default settings:
+              rz-diff file1.bin file2.bin
+
+       Compare two text files and display the output in JSON format:
+              rz-diff -j -t lines file1.txt file2.txt
+
+       Compare two functions from an architecture plugin:
+              rz-diff -t graphs -0 function1 -1 function2 binary1 binary2
 .El
 .Sh SEE ALSO
 .Pp
@@ -91,3 +96,5 @@ Perform diff using zignatures instead of function list (NEW)
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>
+.It  
+Sohail  <sksohail.swaraj@gmail.com>
