@@ -475,7 +475,8 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			pj_ks(pj, "type", "cimm");
 			pj_kN(pj, "value", op->imm);
 			break;
-		case CS_AARCH64(_OP_PSTATE):
+#if CS_NEXT_VERSION < 6
+		case ARM64_OP_PSTATE:
 			pj_ks(pj, "type", "pstate");
 			switch (op->pstate) {
 			case ARM64_PSTATE_SPSEL:
@@ -491,18 +492,56 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 				pj_ki(pj, "value", op->pstate);
 			}
 			break;
-		case CS_AARCH64(_OP_SYS):
+		case ARM64_OP_SYS:
 			pj_ks(pj, "type", "sys");
 			pj_kn(pj, "value", (ut64)op->sys);
 			break;
-		case CS_AARCH64(_OP_PREFETCH):
+		case ARM64_OP_PREFETCH:
 			pj_ks(pj, "type", "prefetch");
 			pj_ki(pj, "value", op->prefetch - 1);
 			break;
-		case CS_AARCH64(_OP_BARRIER):
+		case ARM64_OP_BARRIER:
 			pj_ks(pj, "type", "prefetch");
 			pj_ki(pj, "value", op->barrier - 1);
 			break;
+#else
+		case AArch64_OP_SYSALIAS:
+			switch (op->sysop.sub_type) {
+			default:
+				pj_ks(pj, "type", "sys");
+				pj_kn(pj, "value", op->sysop.alias.raw_val);
+				break;
+			case AArch64_OP_PSTATEIMM0_1:
+				pj_ks(pj, "type", "pstate");
+				pj_ki(pj, "value", op->sysop.alias.pstateimm0_1);
+				break;
+			case AArch64_OP_PSTATEIMM0_15:
+				pj_ks(pj, "type", "pstate");
+				switch (op->sysop.alias.pstateimm0_15) {
+				case AArch64_PSTATEIMM0_15_SPSEL:
+					pj_ks(pj, "value", "spsel");
+					break;
+				case AArch64_PSTATEIMM0_15_DAIFSET:
+					pj_ks(pj, "value", "daifset");
+					break;
+				case AArch64_PSTATEIMM0_15_DAIFCLR:
+					pj_ks(pj, "value", "daifclr");
+					break;
+				default:
+					pj_ki(pj, "value", op->sysop.alias.pstateimm0_15);
+				}
+				break;
+			case AArch64_OP_PRFM:
+				pj_ks(pj, "type", "prefetch");
+				pj_ki(pj, "value", op->sysop.alias.prfm);
+				break;
+			case AArch64_OP_DB:
+				pj_ks(pj, "type", "prefetch");
+				pj_ki(pj, "value", op->sysop.alias.db);
+				break;
+			}
+			break;
+#endif
 		default:
 			pj_ks(pj, "type", "invalid");
 			break;
