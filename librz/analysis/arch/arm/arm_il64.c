@@ -650,9 +650,11 @@ static RzILOpEffect *bfm(cs_insn *insn) {
 	}
 	ut64 mask_base = rz_num_bitmask(IMM(3));
 	ut64 mask = mask_base << RZ_MIN(63, IMM(2));
+#if CS_NEXT_VERSION < 6
 	if (insn->id == CS_AARCH64(_INS_BFI)) {
 		return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask)), SHIFTL0(LOGAND(b, UN(bits, mask_base)), UN(6, IMM(2)))));
 	}
+#endif
 	// insn->id == CS_AARCH64(_INS_BFXIL)
 	return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask_base)), SHIFTR0(LOGAND(b, UN(bits, mask)), UN(6, IMM(2)))));
 }
@@ -811,7 +813,11 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 		rz_il_op_pure_free(b);
 		return NULL;
 	}
+#if CS_NEXT_VERSION < 6
 	bool is_neg = insn->id == CS_AARCH64(_INS_CMN) || insn->id == CS_AARCH64(_INS_CCMN);
+#else
+	bool is_neg = insn->id == CS_AARCH64(_INS_CCMN);
+#endif
 	RzILOpEffect *eff = SEQ6(
 		SETL("a", a),
 		SETL("b", b),
@@ -872,14 +878,18 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 		break;
 	case CS_AARCH64(_INS_CSINV):
 		invert_cond = true;
+#if CS_NEXT_VERSION < 6
 		// fallthrough
 	case CS_AARCH64(_INS_CINV):
+#endif
 		res = LOGNOT(src1);
 		break;
 	case CS_AARCH64(_INS_CSNEG):
 		invert_cond = true;
+#if CS_NEXT_VERSION < 6
 		// fallthrough
 	case CS_AARCH64(_INS_CNEG):
+#endif
 		res = NEG(src1);
 		break;
 	case CS_AARCH64(_INS_CSINC):
@@ -892,6 +902,7 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 	return write_reg(REGID(dst_idx), invert_cond ? ITE(c, src0, res) : ITE(c, res, src0));
 }
 
+#if CS_NEXT_VERSION < 6
 /**
  * Capstone: CS_AARCH64(_INS_CSET), CS_AARCH64(_INS_CSETM)
  * ARM: cset, csetm
@@ -907,6 +918,7 @@ static RzILOpEffect *cset(cs_insn *insn) {
 	ut32 bits = REGBITS(0);
 	return write_reg(REGID(0), ITE(c, SN(bits, insn->id == CS_AARCH64(_INS_CSETM) ? -1 : 1), SN(bits, 0)));
 }
+#endif
 
 /**
  * Capstone: CS_AARCH64(_INS_CLS)
@@ -1022,7 +1034,11 @@ static RzILOpEffect *load_effect(ut32 bits, bool is_signed, CS_aarch64_reg() dst
 }
 
 static RzILOpEffect *writeback(cs_insn *insn, size_t addr_op, RZ_BORROW RzILOpBitVector *addr) {
+#if CS_NEXT_VERSION < 6
 	if (!insn->detail->CS_aarch64().writeback || !is_xreg(MEMBASEID(addr_op))) {
+#else
+	if (!insn->detail->writeback || !is_xreg(MEMBASEID(addr_op))) {
+#endif
 		return NULL;
 	}
 	RzILOpBitVector *wbaddr = DUP(addr);
@@ -1318,8 +1334,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDCLRAB):
 	case CS_AARCH64(_INS_LDCLRALB):
 	case CS_AARCH64(_INS_LDCLRLB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STCLRB):
 	case CS_AARCH64(_INS_STCLRLB):
+#endif
 		op = OP_CLR;
 		loadsz = 8;
 		break;
@@ -1327,8 +1345,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDEORAB):
 	case CS_AARCH64(_INS_LDEORALB):
 	case CS_AARCH64(_INS_LDEORLB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STEORB):
 	case CS_AARCH64(_INS_STEORLB):
+#endif
 		op = OP_EOR;
 		loadsz = 8;
 		break;
@@ -1336,8 +1356,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSETAB):
 	case CS_AARCH64(_INS_LDSETALB):
 	case CS_AARCH64(_INS_LDSETLB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSETB):
 	case CS_AARCH64(_INS_STSETLB):
+#endif
 		op = OP_SET;
 		loadsz = 8;
 		break;
@@ -1345,8 +1367,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSMAXAB):
 	case CS_AARCH64(_INS_LDSMAXALB):
 	case CS_AARCH64(_INS_LDSMAXLB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSMAXB):
 	case CS_AARCH64(_INS_STSMAXLB):
+#endif
 		op = OP_SMAX;
 		loadsz = 8;
 		break;
@@ -1354,8 +1378,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSMINAB):
 	case CS_AARCH64(_INS_LDSMINALB):
 	case CS_AARCH64(_INS_LDSMINLB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSMINB):
 	case CS_AARCH64(_INS_STSMINLB):
+#endif
 		op = OP_SMIN;
 		loadsz = 8;
 		break;
@@ -1363,8 +1389,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDUMAXAB):
 	case CS_AARCH64(_INS_LDUMAXALB):
 	case CS_AARCH64(_INS_LDUMAXLB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STUMAXB):
 	case CS_AARCH64(_INS_STUMAXLB):
+#endif
 		op = OP_UMAX;
 		loadsz = 8;
 		break;
@@ -1372,8 +1400,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDUMINAB):
 	case CS_AARCH64(_INS_LDUMINALB):
 	case CS_AARCH64(_INS_LDUMINLB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STUMINB):
 	case CS_AARCH64(_INS_STUMINLB):
+#endif
 		op = OP_UMIN;
 		loadsz = 8;
 		break;
@@ -1381,8 +1411,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDADDAB):
 	case CS_AARCH64(_INS_LDADDALB):
 	case CS_AARCH64(_INS_LDADDLB):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STADDB):
 	case CS_AARCH64(_INS_STADDLB):
+#endif
 		loadsz = 8;
 		break;
 
@@ -1390,8 +1422,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDCLRAH):
 	case CS_AARCH64(_INS_LDCLRALH):
 	case CS_AARCH64(_INS_LDCLRLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STCLRH):
 	case CS_AARCH64(_INS_STCLRLH):
+#endif
 		op = OP_CLR;
 		loadsz = 16;
 		break;
@@ -1399,8 +1433,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDEORAH):
 	case CS_AARCH64(_INS_LDEORALH):
 	case CS_AARCH64(_INS_LDEORLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STEORH):
 	case CS_AARCH64(_INS_STEORLH):
+#endif
 		op = OP_EOR;
 		loadsz = 16;
 		break;
@@ -1408,8 +1444,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSETAH):
 	case CS_AARCH64(_INS_LDSETALH):
 	case CS_AARCH64(_INS_LDSETLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSETH):
 	case CS_AARCH64(_INS_STSETLH):
+#endif
 		op = OP_SET;
 		loadsz = 16;
 		break;
@@ -1417,8 +1455,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSMAXAH):
 	case CS_AARCH64(_INS_LDSMAXALH):
 	case CS_AARCH64(_INS_LDSMAXLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSMAXH):
 	case CS_AARCH64(_INS_STSMAXLH):
+#endif
 		op = OP_SMAX;
 		loadsz = 16;
 		break;
@@ -1426,8 +1466,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSMINAH):
 	case CS_AARCH64(_INS_LDSMINALH):
 	case CS_AARCH64(_INS_LDSMINLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSMINH):
 	case CS_AARCH64(_INS_STSMINLH):
+#endif
 		op = OP_SMIN;
 		loadsz = 16;
 		break;
@@ -1435,8 +1477,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDUMAXAH):
 	case CS_AARCH64(_INS_LDUMAXALH):
 	case CS_AARCH64(_INS_LDUMAXLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STUMAXH):
 	case CS_AARCH64(_INS_STUMAXLH):
+#endif
 		op = OP_UMAX;
 		loadsz = 16;
 		break;
@@ -1444,8 +1488,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDUMINAH):
 	case CS_AARCH64(_INS_LDUMINALH):
 	case CS_AARCH64(_INS_LDUMINLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STUMINH):
 	case CS_AARCH64(_INS_STUMINLH):
+#endif
 		op = OP_UMIN;
 		loadsz = 16;
 		break;
@@ -1453,8 +1499,10 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDADDAH):
 	case CS_AARCH64(_INS_LDADDALH):
 	case CS_AARCH64(_INS_LDADDLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STADDH):
 	case CS_AARCH64(_INS_STADDLH):
+#endif
 		loadsz = 16;
 		break;
 
@@ -1462,56 +1510,70 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	case CS_AARCH64(_INS_LDCLRA):
 	case CS_AARCH64(_INS_LDCLRAL):
 	case CS_AARCH64(_INS_LDCLRL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STCLR):
 	case CS_AARCH64(_INS_STCLRL):
+#endif
 		op = OP_CLR;
 		goto size_from_reg;
 	case CS_AARCH64(_INS_LDEOR):
 	case CS_AARCH64(_INS_LDEORA):
 	case CS_AARCH64(_INS_LDEORAL):
 	case CS_AARCH64(_INS_LDEORL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STEOR):
 	case CS_AARCH64(_INS_STEORL):
+#endif
 		op = OP_EOR;
 		goto size_from_reg;
 	case CS_AARCH64(_INS_LDSET):
 	case CS_AARCH64(_INS_LDSETA):
 	case CS_AARCH64(_INS_LDSETAL):
 	case CS_AARCH64(_INS_LDSETL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSET):
 	case CS_AARCH64(_INS_STSETL):
+#endif
 		op = OP_SET;
 		goto size_from_reg;
 	case CS_AARCH64(_INS_LDSMAX):
 	case CS_AARCH64(_INS_LDSMAXA):
 	case CS_AARCH64(_INS_LDSMAXAL):
 	case CS_AARCH64(_INS_LDSMAXL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSMAX):
 	case CS_AARCH64(_INS_STSMAXL):
+#endif
 		op = OP_SMAX;
 		goto size_from_reg;
 	case CS_AARCH64(_INS_LDSMIN):
 	case CS_AARCH64(_INS_LDSMINA):
 	case CS_AARCH64(_INS_LDSMINAL):
 	case CS_AARCH64(_INS_LDSMINL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSMIN):
 	case CS_AARCH64(_INS_STSMINL):
+#endif
 		op = OP_SMIN;
 		goto size_from_reg;
 	case CS_AARCH64(_INS_LDUMAX):
 	case CS_AARCH64(_INS_LDUMAXA):
 	case CS_AARCH64(_INS_LDUMAXAL):
 	case CS_AARCH64(_INS_LDUMAXL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STUMAX):
 	case CS_AARCH64(_INS_STUMAXL):
+#endif
 		op = OP_UMAX;
 		goto size_from_reg;
 	case CS_AARCH64(_INS_LDUMIN):
 	case CS_AARCH64(_INS_LDUMINA):
 	case CS_AARCH64(_INS_LDUMINAL):
 	case CS_AARCH64(_INS_LDUMINL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STUMIN):
 	case CS_AARCH64(_INS_STUMINL):
+#endif
 		op = OP_UMIN;
 		// fallthrough
 	size_from_reg:
@@ -1631,9 +1693,11 @@ static RzILOpEffect *mul(cs_insn *insn) {
 		return NULL;
 	}
 	RzILOpBitVector *res = MUL(ma, mb);
+#if CS_NEXT_VERSION < 6
 	if (insn->id == CS_AARCH64(_INS_MNEG)) {
 		res = NEG(res);
 	}
+#endif
 	return write_reg(REGID(0), res);
 }
 
@@ -1707,7 +1771,11 @@ static RzILOpEffect *movn(cs_insn *insn) {
  */
 static RzILOpEffect *msr(cs_insn *insn) {
 	CS_aarch64_op() *op = &insn->detail->CS_aarch64().operands[0];
-#if CS_API_MAJOR > 4
+#if CS_NEXT_VERSION >= 6
+	if (op->type != CS_AARCH64(_OP_SYSREG) || (ut64)op->sysop.reg.sysreg != (ut64)CS_AARCH64(_SYSREG_NZCV)) {
+		return NULL;
+	}
+#elif CS_API_MAJOR > 4 && CS_NEXT_VERSION < 6
 	if (op->type != CS_AARCH64(_OP_SYS) || (ut64)op->sys != (ut64)ARM64_SYSREG_NZCV) {
 		return NULL;
 	}
@@ -1763,6 +1831,7 @@ static RzILOpEffect *rmif(cs_insn *insn) {
 }
 #endif
 
+#if CS_NEXT_VERSION < 6
 /**
  * Capstone: CS_AARCH64(_INS_SBFX), CS_AARCH64(_INS_SBFIZ), CS_AARCH64(_INS_UBFX), CS_AARCH64(_INS_UBFIZ)
  * ARM: sbfx, sbfiz, ubfx, ubfiz
@@ -1792,6 +1861,7 @@ static RzILOpEffect *sbfx(cs_insn *insn) {
 	res = LET("res", res, is_signed ? SIGNED(bits, VARLP("res")) : UNSIGNED(bits, VARLP("res")));
 	return write_reg(REGID(0), res);
 }
+#endif
 
 /**
  * Capstone: CS_AARCH64(_INS_MRS)
@@ -1802,7 +1872,11 @@ static RzILOpEffect *mrs(cs_insn *insn) {
 		return NULL;
 	}
 	CS_aarch64_op() *op = &insn->detail->CS_aarch64().operands[1];
-#if CS_API_MAJOR > 4
+#if CS_NEXT_VERSION >= 6
+	if (op->type != CS_AARCH64(_OP_SYSREG) || (ut64)op->sysop.reg.sysreg != (ut64)CS_AARCH64(_SYSREG_NZCV)) {
+		return NULL;
+	}
+#elif CS_API_MAJOR > 4 && CS_NEXT_VERSION < 6
 	if (op->type != CS_AARCH64(_OP_SYS) || (ut64)op->sys != (ut64)ARM64_SYSREG_NZCV) {
 		return NULL;
 	}
@@ -1841,10 +1915,12 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 	case CS_AARCH64(_INS_NEGS):
 		res = NEG(val);
 		break;
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_NGC):
 	case CS_AARCH64(_INS_NGCS):
 		res = NEG(ADD(val, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1))));
 		break;
+#endif
 	default: // CS_AARCH64(_INS_MVN)
 		res = LOGNOT(val);
 		break;
@@ -1857,7 +1933,11 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 		return SEQ5(
 			SETL("b", DUP(val)),
 			set,
+#if CS_NEXT_VERSION < 6
 			SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->id == CS_AARCH64(_INS_NGC), bits)),
+#else
+			SETG("cf", sub_carry(UN(bits, 0), VARL("b"), false, bits)),
+#endif
 			SETG("vf", sub_overflow(UN(bits, 0), VARL("b"), REG(0))),
 			update_flags_zn(REG(0)));
 	}
@@ -2073,11 +2153,17 @@ static RzILOpEffect *smull(cs_insn *insn) {
 		rz_il_op_pure_free(y);
 		return NULL;
 	}
+#if CS_NEXT_VERSION < 6
 	bool is_signed = insn->id == CS_AARCH64(_INS_SMULL) || insn->id == CS_AARCH64(_INS_SMNEGL);
+#else
+	bool is_signed = insn->id == CS_AARCH64(_INS_SMULL);
+#endif
 	RzILOpBitVector *res = MUL(is_signed ? SIGNED(64, x) : UNSIGNED(64, x), is_signed ? SIGNED(64, y) : UNSIGNED(64, y));
+#if CS_NEXT_VERSION < 6
 	if (insn->id == CS_AARCH64(_INS_SMNEGL) || insn->id == CS_AARCH64(_INS_UMNEGL)) {
 		res = NEG(res);
 	}
+#endif
 	return write_reg(REGID(0), res);
 }
 
@@ -2218,6 +2304,7 @@ static RzILOpEffect *tbz(cs_insn *insn) {
 		: BRANCH(c, NULL, JMP(tgt));
 }
 
+#if CS_NEXT_VERSION < 6
 /**
  * Capstone: CS_AARCH64(_INS_TST)
  * ARM: tst
@@ -2233,6 +2320,7 @@ static RzILOpEffect *tst(cs_insn *insn) {
 	}
 	return update_flags_zn00(LOGAND(a, b));
 }
+#endif
 
 /**
  * Lift an AArch64 instruction to RzIL
@@ -2311,15 +2399,17 @@ static RzILOpEffect *tst(cs_insn *insn) {
  */
 RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	switch (insn->id) {
-	case CS_AARCH64(_INS_NOP):
 	case CS_AARCH64(_INS_HINT):
 	case CS_AARCH64(_INS_PRFM):
 	case CS_AARCH64(_INS_PRFUM):
+#if CS_NEXT_VERSION < 6
+	case CS_AARCH64(_INS_NOP):
 	case CS_AARCH64(_INS_SEV):
 	case CS_AARCH64(_INS_SEVL):
 	case CS_AARCH64(_INS_WFE):
 	case CS_AARCH64(_INS_WFI):
 	case CS_AARCH64(_INS_YIELD):
+#endif
 		return NOP();
 	case CS_AARCH64(_INS_ADD):
 	case CS_AARCH64(_INS_ADC):
@@ -2371,8 +2461,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 #endif
 		return bl(insn);
 	case CS_AARCH64(_INS_BFM):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_BFI):
 	case CS_AARCH64(_INS_BFXIL):
+#endif
 		return bfm(insn);
 	case CS_AARCH64(_INS_BIC):
 #if CS_API_MAJOR > 4
@@ -2402,8 +2494,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_CBZ):
 	case CS_AARCH64(_INS_CBNZ):
 		return cbz(insn);
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_CMP):
 	case CS_AARCH64(_INS_CMN):
+#endif
 	case CS_AARCH64(_INS_CCMP):
 	case CS_AARCH64(_INS_CCMN):
 		return cmp(insn);
@@ -2411,17 +2505,21 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_CFINV):
 		return SETG("cf", INV(VARG("cf")));
 #endif
-	case CS_AARCH64(_INS_CINC):
 	case CS_AARCH64(_INS_CSINC):
-	case CS_AARCH64(_INS_CINV):
 	case CS_AARCH64(_INS_CSINV):
-	case CS_AARCH64(_INS_CNEG):
 	case CS_AARCH64(_INS_CSNEG):
 	case CS_AARCH64(_INS_CSEL):
+#if CS_NEXT_VERSION < 6
+	case CS_AARCH64(_INS_CINC):
+	case CS_AARCH64(_INS_CINV):
+	case CS_AARCH64(_INS_CNEG):
+#endif
 		return csinc(insn);
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_CSET):
 	case CS_AARCH64(_INS_CSETM):
 		return cset(insn);
+#endif
 	case CS_AARCH64(_INS_CLS):
 		return cls(insn);
 	case CS_AARCH64(_INS_CLZ):
@@ -2494,12 +2592,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_LDADDAH):
 	case CS_AARCH64(_INS_LDADDALH):
 	case CS_AARCH64(_INS_LDADDLH):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STADD):
 	case CS_AARCH64(_INS_STADDL):
 	case CS_AARCH64(_INS_STADDB):
 	case CS_AARCH64(_INS_STADDLB):
 	case CS_AARCH64(_INS_STADDH):
 	case CS_AARCH64(_INS_STADDLH):
+#endif
 	case CS_AARCH64(_INS_LDCLRB):
 	case CS_AARCH64(_INS_LDCLRAB):
 	case CS_AARCH64(_INS_LDCLRALB):
@@ -2512,12 +2612,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_LDCLRA):
 	case CS_AARCH64(_INS_LDCLRAL):
 	case CS_AARCH64(_INS_LDCLRL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STCLR):
 	case CS_AARCH64(_INS_STCLRL):
 	case CS_AARCH64(_INS_STCLRB):
 	case CS_AARCH64(_INS_STCLRLB):
 	case CS_AARCH64(_INS_STCLRH):
 	case CS_AARCH64(_INS_STCLRLH):
+#endif
 	case CS_AARCH64(_INS_LDEORB):
 	case CS_AARCH64(_INS_LDEORAB):
 	case CS_AARCH64(_INS_LDEORALB):
@@ -2530,12 +2632,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_LDEORA):
 	case CS_AARCH64(_INS_LDEORAL):
 	case CS_AARCH64(_INS_LDEORL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STEOR):
 	case CS_AARCH64(_INS_STEORL):
 	case CS_AARCH64(_INS_STEORB):
 	case CS_AARCH64(_INS_STEORLB):
 	case CS_AARCH64(_INS_STEORH):
 	case CS_AARCH64(_INS_STEORLH):
+#endif
 	case CS_AARCH64(_INS_LDSETB):
 	case CS_AARCH64(_INS_LDSETAB):
 	case CS_AARCH64(_INS_LDSETALB):
@@ -2548,12 +2652,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSETA):
 	case CS_AARCH64(_INS_LDSETAL):
 	case CS_AARCH64(_INS_LDSETL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSET):
 	case CS_AARCH64(_INS_STSETL):
 	case CS_AARCH64(_INS_STSETB):
 	case CS_AARCH64(_INS_STSETLB):
 	case CS_AARCH64(_INS_STSETH):
 	case CS_AARCH64(_INS_STSETLH):
+#endif
 	case CS_AARCH64(_INS_LDSMAXB):
 	case CS_AARCH64(_INS_LDSMAXAB):
 	case CS_AARCH64(_INS_LDSMAXALB):
@@ -2566,12 +2672,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSMAXA):
 	case CS_AARCH64(_INS_LDSMAXAL):
 	case CS_AARCH64(_INS_LDSMAXL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSMAX):
 	case CS_AARCH64(_INS_STSMAXL):
 	case CS_AARCH64(_INS_STSMAXB):
 	case CS_AARCH64(_INS_STSMAXLB):
 	case CS_AARCH64(_INS_STSMAXH):
 	case CS_AARCH64(_INS_STSMAXLH):
+#endif
 	case CS_AARCH64(_INS_LDSMINB):
 	case CS_AARCH64(_INS_LDSMINAB):
 	case CS_AARCH64(_INS_LDSMINALB):
@@ -2584,12 +2692,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_LDSMINA):
 	case CS_AARCH64(_INS_LDSMINAL):
 	case CS_AARCH64(_INS_LDSMINL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STSMIN):
 	case CS_AARCH64(_INS_STSMINL):
 	case CS_AARCH64(_INS_STSMINB):
 	case CS_AARCH64(_INS_STSMINLB):
 	case CS_AARCH64(_INS_STSMINH):
 	case CS_AARCH64(_INS_STSMINLH):
+#endif
 	case CS_AARCH64(_INS_LDUMAXB):
 	case CS_AARCH64(_INS_LDUMAXAB):
 	case CS_AARCH64(_INS_LDUMAXALB):
@@ -2602,12 +2712,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_LDUMAXA):
 	case CS_AARCH64(_INS_LDUMAXAL):
 	case CS_AARCH64(_INS_LDUMAXL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STUMAX):
 	case CS_AARCH64(_INS_STUMAXL):
 	case CS_AARCH64(_INS_STUMAXB):
 	case CS_AARCH64(_INS_STUMAXLB):
 	case CS_AARCH64(_INS_STUMAXH):
 	case CS_AARCH64(_INS_STUMAXLH):
+#endif
 	case CS_AARCH64(_INS_LDUMINB):
 	case CS_AARCH64(_INS_LDUMINAB):
 	case CS_AARCH64(_INS_LDUMINALB):
@@ -2620,19 +2732,23 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_LDUMINA):
 	case CS_AARCH64(_INS_LDUMINAL):
 	case CS_AARCH64(_INS_LDUMINL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_STUMIN):
 	case CS_AARCH64(_INS_STUMINL):
 	case CS_AARCH64(_INS_STUMINB):
 	case CS_AARCH64(_INS_STUMINLB):
 	case CS_AARCH64(_INS_STUMINH):
 	case CS_AARCH64(_INS_STUMINLH):
+#endif
 		return ldadd(insn);
 #endif
 	case CS_AARCH64(_INS_MADD):
 	case CS_AARCH64(_INS_MSUB):
 		return madd(insn);
 	case CS_AARCH64(_INS_MUL):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_MNEG):
+#endif
 		return mul(insn);
 	case CS_AARCH64(_INS_MOV):
 	case CS_AARCH64(_INS_MOVZ):
@@ -2645,11 +2761,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		return msr(insn);
 	case CS_AARCH64(_INS_MRS):
 		return mrs(insn);
-	case CS_AARCH64(_INS_MVN):
 	case CS_AARCH64(_INS_NEG):
+#if CS_NEXT_VERSION < 6
+	case CS_AARCH64(_INS_MVN):
 	case CS_AARCH64(_INS_NGC):
 	case CS_AARCH64(_INS_NEGS):
 	case CS_AARCH64(_INS_NGCS):
+#endif
+#endif
 		return mvn(insn);
 	case CS_AARCH64(_INS_RBIT):
 		return rbit(insn);
@@ -2661,11 +2780,13 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_RMIF):
 		return rmif(insn);
 #endif
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_SBFIZ):
 	case CS_AARCH64(_INS_SBFX):
 	case CS_AARCH64(_INS_UBFIZ):
 	case CS_AARCH64(_INS_UBFX):
 		return sbfx(insn);
+#endif
 	case CS_AARCH64(_INS_SDIV):
 		return sdiv(insn);
 #if CS_API_MAJOR > 4
@@ -2679,9 +2800,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_UMSUBL):
 		return smaddl(insn);
 	case CS_AARCH64(_INS_SMULL):
-	case CS_AARCH64(_INS_SMNEGL):
 	case CS_AARCH64(_INS_UMULL):
+#if CS_NEXT_VERSION < 6
+	case CS_AARCH64(_INS_SMNEGL):
 	case CS_AARCH64(_INS_UMNEGL):
+#endif
 		return smull(insn);
 	case CS_AARCH64(_INS_SMULH):
 	case CS_AARCH64(_INS_UMULH):
@@ -2741,8 +2864,10 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_TBNZ):
 	case CS_AARCH64(_INS_TBZ):
 		return tbz(insn);
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_TST):
 		return tst(insn);
+#endif
 	case CS_AARCH64(_INS_UDIV):
 		return udiv(insn);
 	default:
