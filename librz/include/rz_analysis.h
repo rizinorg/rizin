@@ -731,14 +731,14 @@ typedef enum {
 } RzAnalysisVarOriginKind;
 
 static const char *RzAnalysisVarKind_strings[] = {
+	[RZ_ANALYSIS_VAR_KIND_INVALID] = "invalid",
 	[RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER] = "formal_parameter",
 	[RZ_ANALYSIS_VAR_KIND_VARIABLE] = "variable",
-	[RZ_ANALYSIS_VAR_KIND_INVALID] = "invalid",
 };
 
 static const char *RzAnalysisVarOriginKind_strings[] = {
-	[RZ_ANALYSIS_VAR_ORIGIN_DWARF] = "DWARF",
 	[RZ_ANALYSIS_VAR_ORIGIN_NONE] = "none",
+	[RZ_ANALYSIS_VAR_ORIGIN_DWARF] = "DWARF",
 };
 
 #define RZ_ANALYSIS_AS_STRING_IMPL(T, name, strings) \
@@ -751,10 +751,10 @@ static const char *RzAnalysisVarOriginKind_strings[] = {
 	static inline T rz_analysis_##name##_from_string(const char *s) { \
 		for (int i = 0; i < RZ_ARRAY_SIZE(strings); ++i) { \
 			if (RZ_STR_EQ(s, strings[i])) { \
-				return i; \
+				return (T)i; \
 			} \
 		} \
-		return 0; \
+		return (T)0; \
 	}
 
 RZ_ANALYSIS_AS_STRING_IMPL(RzAnalysisVarKind, var_kind, RzAnalysisVarKind_strings);
