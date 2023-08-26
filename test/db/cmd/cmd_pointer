@@ -40,6 +40,9 @@ wx ffffffffffffffff
 wx ffffffffffffffff
 *0+2=0xbeefdea0+0xd @e:asm.bits=32
 *0 @e:asm.bits=64
+wx efbeaddeffffffff
+*0+4=[0] @e:asm.bits=64
+*0 @e:asm.bits=64
 EOF
 EXPECT=<<EOF
 0xdeadbeefdeadbeef
@@ -48,6 +51,7 @@ EXPECT=<<EOF
 0xffffffffffffbeef
 0xffffffffffffffef
 0xffffbeefdeadffff
+0xdeadbeefdeadbeef
 EOF
 RUN
 

@@ -324,7 +324,7 @@ RZ_API ut8 *rz_reg_arena_dup(RzReg *reg, const ut8 *source) {
 
 RZ_API int rz_reg_arena_set_bytes(RzReg *reg, const char *str) {
 	str = rz_str_trim_head_ro(str);
-	int len = rz_hex_str_is_valid(str);
+	int len = rz_hex_str_is_valid(str, true);
 	if (len == -1) {
 		eprintf("Invalid input\n");
 		return -1;

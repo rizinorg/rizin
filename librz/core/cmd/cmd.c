@@ -929,7 +929,10 @@ static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char 
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (rz_str_startswith(value_arg, "0x")) {
+	if (rz_hex_str_is_valid(value_arg, false) > 0) {
+		// write a byte sequence
+		ok = rz_core_write_hexpair(core, addr, value_arg) > 0;
+	} else {
 		// write a numerical value
 		ut64 value = rz_num_math(core->num, value_arg);
 		if (core->num->nc.errors) {
@@ -938,9 +941,6 @@ static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char 
 		}
 
 		ok = rz_core_write_value_at(core, addr, value, core->rasm->bits / 8);
-	} else {
-		// write a byte sequence
-		ok = rz_core_write_hexpair(core, addr, value_arg) > 0;
 	}
 
 	return bool2status(ok);

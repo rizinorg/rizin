@@ -124,17 +124,15 @@ commands:
     cname: pointer
     summary: Pointer read/write data/values
     description: >
-      Read or write values at a given address. When the value starts with `0x`,
-      a 4-bytes value or 8-bytes value is written in the memory at address,
-      depending on the size of the value. When value does not start with `0x`
-      an hexstring with arbitrary length is expected and it is written starting
-      from the specified address.
-    args_str: "<addr>[=<0xvalue>|<hexstring>]"
+      Read or write values at a given address. When the value is a hexstring,
+      it is decoded and written as raw bytes. Otherwise, it is evaluated as an
+      expression and written using the current endianness and bitness settings.
+    args_str: "<addr>[=<expr>|<hexstring>]"
     args:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
       - name: value
-        type: RZ_CMD_ARG_TYPE_NUM
+        type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
     details:
       - name: Examples
@@ -144,7 +142,10 @@ commands:
             comment: write trap in entrypoint
           - text: "*"
             arg_str: "entry0+10=0x804800"
-            comment: write 0x804800 as a 4-byte value at 10 bytes from the entrypoint
+            comment: write 0x804800 with the current bitness, 10 bytes from the entrypoint
+          - text: "*"
+            arg_str: "$$=[entry0] @e:asm.bits=32"
+            comment: write the 32-bits value read at the entrypoint to the current offset
           - text: "*"
             arg_str: "entry0"
             comment: read the value contained at the entrypoint
