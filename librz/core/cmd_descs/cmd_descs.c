@@ -1102,7 +1102,8 @@ static const RzCmdDescHelp macros_call_multiple_help = {
 
 static const RzCmdDescDetailEntry pointer_Examples_detail_entries[] = {
 	{ .text = "*", .arg_str = "entry0=cc", .comment = "write trap in entrypoint" },
-	{ .text = "*", .arg_str = "entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
+	{ .text = "*", .arg_str = "entry0+10=0x804800", .comment = "write 0x804800 with the current bitness, 10 bytes from the entrypoint" },
+	{ .text = "*", .arg_str = "$$=[entry0] @e:asm.bits=32", .comment = "write the 32-bits value read at the entrypoint to the current offset" },
 	{ .text = "*", .arg_str = "entry0", .comment = "read the value contained at the entrypoint" },
 	{ 0 },
 };
@@ -1118,7 +1119,8 @@ static const RzCmdDescArg pointer_args[] = {
 	},
 	{
 		.name = "value",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -1126,8 +1128,8 @@ static const RzCmdDescArg pointer_args[] = {
 };
 static const RzCmdDescHelp pointer_help = {
 	.summary = "Pointer read/write data/values",
-	.description = "Read or write values at a given address. When the value starts with `0x`, a 4-bytes value or 8-bytes value is written in the memory at address, depending on the size of the value. When value does not start with `0x` an hexstring with arbitrary length is expected and it is written starting from the specified address.",
-	.args_str = "<addr>[=<0xvalue>|<hexstring>]",
+	.description = "Read or write values at a given address. When the value is a hexstring, it is decoded and written as raw bytes. Otherwise, it is evaluated as an expression and written using the current endianness and bitness settings.",
+	.args_str = "<addr>[=<expr>|<hexstring>]",
 	.details = pointer_details,
 	.args = pointer_args,
 };

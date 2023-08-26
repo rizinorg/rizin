@@ -921,18 +921,37 @@ static RzCmdStatus pointer_read(RzCore *core, const char *expr) {
 	return RZ_CMD_STATUS_OK;
 }
 
+static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char *value_arg) {
+	bool ok;
+	ut64 addr = rz_num_math(core->num, addr_arg);
+	if (core->num->nc.errors) {
+		RZ_LOG_ERROR("Could not convert address argument to number");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (rz_hex_str_is_valid(value_arg, false) > 0) {
+		// write a byte sequence
+		ok = rz_core_write_hexpair(core, addr, value_arg) > 0;
+	} else {
+		// write a numerical value
+		ut64 value = rz_num_math(core->num, value_arg);
+		if (core->num->nc.errors) {
+			RZ_LOG_ERROR("Could not convert value argument to number");
+			return RZ_CMD_STATUS_ERROR;
+		}
+
+		ok = rz_core_write_value_at(core, addr, value, core->rasm->bits / 8);
+	}
+
+	return bool2status(ok);
+}
+
 RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv) {
-	int ret;
 	switch (argc) {
 	case 2:
 		return pointer_read(core, argv[1]);
 	case 3:
-		if (rz_str_startswith(argv[2], "0x")) {
-			ret = rz_core_cmdf(core, "wv %s @ %s", argv[2], argv[1]);
-		} else {
-			ret = rz_core_cmdf(core, "wx %s @ %s", argv[2], argv[1]);
-		}
-		return rz_cmd_int2status(ret);
+		return pointer_write(core, argv[1], argv[2]);
 	default:
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
