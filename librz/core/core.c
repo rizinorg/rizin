@@ -576,21 +576,10 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		if (ok) {
 			*ok = 1;
 		}
-		ut8 buf[sizeof(ut64)] = RZ_EMPTY;
-		(void)rz_io_read_at(core->io, n, buf, RZ_MIN(sizeof(buf), refsz));
-		switch (refsz) {
-		case 8:
-			return rz_read_ble64(buf, core->print->big_endian);
-		case 4:
-			return rz_read_ble32(buf, core->print->big_endian);
-		case 2:
-			return rz_read_ble16(buf, core->print->big_endian);
-		case 1:
-			return rz_read_ble8(buf);
-		default:
-			RZ_LOG_ERROR("core: invalid reference size: %d (%s)\n", refsz, str);
+		if (!rz_io_read_i(core->io, n, &n, refsz, core->print->big_endian)) {
 			return 0LL;
 		}
+		return n;
 	} break;
 	case '$':
 		if (ok) {

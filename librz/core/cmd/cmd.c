@@ -908,12 +908,24 @@ RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **
 	return res;
 }
 
+static RzCmdStatus pointer_read(RzCore *core, const char *expr) {
+	ut64 n = rz_num_math(core->num, expr);
+	if (core->num->dbz) {
+		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_io_read_i(core->io, n, &n, core->rasm->bits / 8, core->print->big_endian)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("0x%" PFMT64x "\n", n);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv) {
 	int ret;
 	switch (argc) {
 	case 2:
-		ret = rz_core_cmdf(core, "?v [%s]", argv[1]);
-		return rz_cmd_int2status(ret);
+		return pointer_read(core, argv[1]);
 	case 3:
 		if (rz_str_startswith(argv[2], "0x")) {
 			ret = rz_core_cmdf(core, "wv %s @ %s", argv[2], argv[1]);
