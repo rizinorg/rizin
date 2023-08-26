@@ -18,7 +18,7 @@ RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, ARMCC_CondCode
 #else
 RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, arm_cc cond_type);
 #endif
-RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, arm64_cc cond_type);
+RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, CS_aarch64_cc() cond_type);
 
 RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb);
 RZ_IPI RzAnalysisILConfig *rz_arm_cs_32_il_config(bool big_endian);
