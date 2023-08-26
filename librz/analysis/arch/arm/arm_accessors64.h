@@ -24,6 +24,10 @@
 #define LSHIFT2_64(x) insn->detail->CS_aarch64().operands[x].shift.value
 #define OPCOUNT64()   insn->detail->CS_aarch64().op_count
 
-#define ISWRITEBACK64() (insn->detail->CS_aarch64().writeback == true)
+#if CS_NEXT_VERSION < 6
+#define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
+#else
+#define ISWRITEBACK64() (insn->detail->writeback == true)
+#endif
 #define ISPREINDEX64()  (((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64())))
 #define ISPOSTINDEX64() (((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64())))
