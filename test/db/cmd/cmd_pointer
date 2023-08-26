@@ -1,0 +1,18 @@
+NAME=pointer read
+FILE=malloc://1024
+CMDS=<<EOF
+wv8 0xdeadbeefdeadbeef
+*0
+*0 @e:asm.bits=64
+*0 @e:asm.bits=32
+*0 @e:asm.bits=16
+*0 @e:asm.arch=6502,asm.bits=8
+EOF
+EXPECT=<<EOF
+0xdeadbeefdeadbeef
+0xdeadbeefdeadbeef
+0xdeadbeef
+0xbeef
+0xef
+EOF
+RUN
