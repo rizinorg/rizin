@@ -364,7 +364,7 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, CS_aarch64_op()
  *               This is necessary for immediate operands for example.
  *               In any case, if a value is returned, its bitness is written back into this storage.
  */
-static RzILOpBitVector *arg(cs_insn *insn, size_t n, ut32 *bits_inout) {
+static RzILOpBitVector *arg(RZ_BORROW cs_insn *insn, size_t n, RZ_OUT ut32 *bits_inout) {
 	ut32 bits_requested = bits_inout ? *bits_inout : 0;
 	CS_aarch64_op() *op = &insn->detail->CS_aarch64().operands[n];
 	switch (op->type) {
