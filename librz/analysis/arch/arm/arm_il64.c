@@ -267,9 +267,9 @@ static RzILOpBitVector *adjust_unsigned(ut32 bits, RZ_OWN RzILOpBitVector *v) {
 	return v;
 }
 
-static RzILOpBitVector *extend(ut32 dst_bits, CS_aarch64_extender() ext, RZ_OWN RzILOpBitVector *v, ut32 v_bits) {
+static RzILOpBitVector *reg_extend(ut32 dst_bits, CS_aarch64_extender() ext, RZ_OWN RzILOpBitVector *reg, ut32 v_bits) {
 	bool is_signed = false;
-	ut32 src_bits;
+	ut32 src_bits = v_bits;
 	switch (ext) {
 	case CS_AARCH64(_EXT_SXTB):
 		is_signed = true;
@@ -300,15 +300,24 @@ static RzILOpBitVector *extend(ut32 dst_bits, CS_aarch64_extender() ext, RZ_OWN 
 		break;
 
 	default:
-		if (dst_bits == v_bits) {
-			return v;
-		} else {
-			return adjust_unsigned(dst_bits, v);
-		}
+		break;
 	}
-
-	v = adjust_unsigned(src_bits, v);
-	return is_signed ? SIGNED(dst_bits, v) : UNSIGNED(dst_bits, v);
+	if (dst_bits < src_bits && src_bits <= v_bits) {
+		// Just cast it down once.
+		if (reg->code == RZ_IL_OP_CAST) {
+			// Already a casted down register. Set new width.
+			reg->op.cast.length = dst_bits;
+			return reg;
+		}
+		return UNSIGNED(dst_bits, reg);
+	}
+	if (src_bits != v_bits) {
+		reg = adjust_unsigned(src_bits, reg);
+	}
+	if (dst_bits != src_bits) {
+		return is_signed ? SIGNED(dst_bits, reg) : UNSIGNED(dst_bits, reg);
+	}
+	return is_signed ? SIGNED(dst_bits, reg) : reg;
 }
 
 static RzILOpBitVector *apply_shift(CS_aarch64_shifter() sft, ut32 dist, RZ_OWN RzILOpBitVector *v) {
@@ -353,7 +362,7 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, CS_aarch64_op()
 		return base_plus_disp;
 	}
 	RzILOpBitVector *index = read_reg(op->mem.index);
-	index = extend(64, op->ext, index, reg_bits(op->mem.index));
+	index = reg_extend(64, op->ext, index, reg_bits(op->mem.index));
 	index = apply_shift(op->shift.type, op->shift.value, index);
 	return ADD(base_plus_disp, index);
 }
@@ -382,7 +391,7 @@ static RzILOpBitVector *arg(RZ_BORROW cs_insn *insn, size_t n, RZ_OUT ut32 *bits
 		if (!r) {
 			return NULL;
 		}
-		return apply_shift(op->shift.type, op->shift.value, extend(bits_requested, op->ext, r, REGBITS(n)));
+		return apply_shift(op->shift.type, op->shift.value, reg_extend(bits_requested, op->ext, r, REGBITS(n)));
 	}
 	case CS_AARCH64(_OP_IMM): {
 		if (!bits_requested) {
