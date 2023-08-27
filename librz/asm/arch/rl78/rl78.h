@@ -18,6 +18,6 @@
  * \return false if byte sequence does not represent a valid instruction
  */
 bool rl78_dis(RL78Instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
-              const ut8 *buf, size_t buf_len);
+	const ut8 *buf, size_t buf_len);
 
 #endif
