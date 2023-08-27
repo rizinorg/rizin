@@ -578,6 +578,18 @@ if not libzip_dep.found()
   libzip_dep = libzip_proj.get_variable('libzip_dep')
 endif
 
+# handle zstd dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'zstd', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+zstd_proj = subproject('zstd', default_options: [
+    'default_library=static',
+    'static_runtime=@0@'.format(is_static_build),
+])
+zstd_dep = zstd_proj.get_variable('libzstd_dep')
+
 # handle mpc dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'mpc', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
