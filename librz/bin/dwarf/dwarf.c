@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <zstd.h>
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 #include "../format/elf/elf.h"
@@ -45,19 +46,52 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 		}
 		bool is_64bit = binfile->o->info->bits == 64;
 		ut64 Elf_Chdr_size = is_64bit ? sizeof(Elf64_Chdr) : sizeof(Elf32_Chdr);
-		int dst_len = 0;
-		ut8 *uncompressed = NULL;
-		RZ_LOG_VERBOSE("Section %s is compressed\n", section->name);
-		if (section->type == ELFCOMPRESS_ZLIB) {
-			uncompressed = rz_inflate(
-				sh_buf + Elf_Chdr_size, (int)(len - Elf_Chdr_size), NULL, &dst_len);
-		} else if (section->type == ELFCOMPRESS_ZSTD) {
+		ut32 ch_type = ELFCOMPRESS_ZLIB;
+		ut32 ch_size = 0;
+		if (is_64bit) {
+			Elf64_Chdr *chdr = (Elf64_Chdr *)sh_buf;
+			ch_type = chdr->ch_type;
+			ch_size = chdr->ch_size;
+		} else {
+			Elf32_Chdr *chdr = (Elf32_Chdr *)sh_buf;
+			ch_type = chdr->ch_type;
+			ch_size = chdr->ch_size;
+		}
+		if (bf_bigendian(binfile)) {
+			ch_type = rz_swap_ut32(ch_type);
+			ch_size = rz_swap_ut32(ch_size);
 		}
 
-		if (!uncompressed || dst_len <= 0) {
+		const ut8 *src = sh_buf + Elf_Chdr_size;
+		ut64 src_len = len - Elf_Chdr_size;
+		ut64 uncompressed_len = 0;
+		ut8 *uncompressed = NULL;
+		RZ_LOG_VERBOSE("Section %s is compressed\n", section->name);
+		if (ch_type == ELFCOMPRESS_ZLIB) {
+			uncompressed = rz_inflate(
+				src, (int)src_len, NULL, (int *)&uncompressed_len);
+			if (uncompressed_len != ch_size) {
+				goto err;
+			}
+		} else if (ch_type == ELFCOMPRESS_ZSTD) {
+			uncompressed_len = ZSTD_getFrameContentSize(src, src_len);
+			if (uncompressed_len == ZSTD_CONTENTSIZE_UNKNOWN ||
+				uncompressed_len == ZSTD_CONTENTSIZE_ERROR || uncompressed_len != ch_size) {
+				goto err;
+			}
+			uncompressed = malloc(uncompressed_len);
+			if (ZSTD_isError(ZSTD_decompress(uncompressed, uncompressed_len, src, src_len))) {
+				free(uncompressed);
+				goto err;
+			}
+		} else {
+			RZ_LOG_WARN("Unsupported compression type: %d\n", ch_type);
+		}
+
+		if (!uncompressed || uncompressed_len <= 0) {
 			goto err;
 		}
-		buffer = rz_buf_new_with_pointers(uncompressed, dst_len, true);
+		buffer = rz_buf_new_with_pointers(uncompressed, uncompressed_len, true);
 		free(sh_buf);
 	} else {
 		buffer = rz_buf_new_slice(binfile->buf, section->paddr, len);
