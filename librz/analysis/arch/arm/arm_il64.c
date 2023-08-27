@@ -1831,12 +1831,11 @@ static RzILOpEffect *rmif(cs_insn *insn) {
 }
 #endif
 
-#if CS_NEXT_VERSION < 6
 /**
  * Capstone: CS_AARCH64(_INS_SBFX), CS_AARCH64(_INS_SBFIZ), CS_AARCH64(_INS_UBFX), CS_AARCH64(_INS_UBFIZ)
  * ARM: sbfx, sbfiz, ubfx, ubfiz
  */
-static RzILOpEffect *sbfx(cs_insn *insn) {
+static RzILOpEffect *usbfm(cs_insn *insn) {
 	if (!ISREG(0) || !ISIMM(2) || !ISIMM(3)) {
 		return NULL;
 	}
@@ -1851,6 +1850,7 @@ static RzILOpEffect *sbfx(cs_insn *insn) {
 	ut64 lsb = IMM(2);
 	ut64 width = IMM(3);
 	RzILOpBitVector *res;
+#if CS_NEXT_VERSION < 6
 	if (insn->id == CS_AARCH64(_INS_SBFIZ) || insn->id == CS_AARCH64(_INS_UBFIZ)) {
 		res = SHIFTL0(UNSIGNED(width + lsb, src), UN(6, lsb));
 	} else {
@@ -1858,10 +1858,18 @@ static RzILOpEffect *sbfx(cs_insn *insn) {
 		res = UNSIGNED(width, SHIFTR0(src, UN(6, lsb)));
 	}
 	bool is_signed = insn->id == CS_AARCH64(_INS_SBFX) || insn->id == CS_AARCH64(_INS_SBFIZ);
+#else
+	if (insn->alias_id == AArch64_INS_ALIAS_SBFIZ || insn->alias_id == AArch64_INS_ALIAS_UBFIZ) {
+		res = SHIFTL0(UNSIGNED(width + lsb, src), UN(6, lsb));
+	} else {
+		// SBFX, UBFX
+		res = UNSIGNED(width, SHIFTR0(src, UN(6, lsb)));
+	}
+	bool is_signed = insn->alias_id == AArch64_INS_ALIAS_SBFX || insn->alias_id == AArch64_INS_ALIAS_SBFIZ;
+#endif
 	res = LET("res", res, is_signed ? SIGNED(bits, VARLP("res")) : UNSIGNED(bits, VARLP("res")));
 	return write_reg(REGID(0), res);
 }
-#endif
 
 /**
  * Capstone: CS_AARCH64(_INS_MRS)
@@ -2780,13 +2788,15 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_RMIF):
 		return rmif(insn);
 #endif
+	case CS_AARCH64(_INS_SBFM):
+	case CS_AARCH64(_INS_UBFM):
 #if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_SBFIZ):
 	case CS_AARCH64(_INS_SBFX):
 	case CS_AARCH64(_INS_UBFIZ):
 	case CS_AARCH64(_INS_UBFX):
-		return sbfx(insn);
 #endif
+		return usbfm(insn);
 	case CS_AARCH64(_INS_SDIV):
 		return sdiv(insn);
 #if CS_API_MAJOR > 4
