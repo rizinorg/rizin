@@ -23,9 +23,7 @@ project('zstd',
     # so this isn't safe
     #'werror=true'
   ],
-  version: run_command(
-    find_program('GetZstdLibraryVersion.py'), 'lib/zstd.h',
-    check: true).stdout().strip(),
+  version: '1.5.5',
   meson_version: '>=0.50.0')
 
 cc = meson.get_compiler('c')
