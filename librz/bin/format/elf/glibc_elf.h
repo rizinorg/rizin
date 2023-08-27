@@ -507,6 +507,7 @@ typedef struct
 
 /* Legal values for ch_type (compression algorithm).  */
 #define ELFCOMPRESS_ZLIB   1 /* ZLIB/DEFLATE algorithm.  */
+#define ELFCOMPRESS_ZSTD   2 /* Zstd-compressed algorithm.  */
 #define ELFCOMPRESS_LOOS   0x60000000 /* Start of OS-specific.  */
 #define ELFCOMPRESS_HIOS   0x6fffffff /* End of OS-specific.  */
 #define ELFCOMPRESS_LOPROC 0x70000000 /* Start of processor-specific.  */

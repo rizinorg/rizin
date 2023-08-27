@@ -45,16 +45,19 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 		}
 		bool is_64bit = binfile->o->info->bits == 64;
 		ut64 Elf_Chdr_size = is_64bit ? sizeof(Elf64_Chdr) : sizeof(Elf32_Chdr);
-		RZ_LOG_WARN("Section %s is compressed\n", section->name);
-		if (section->type & ELFCOMPRESS_ZLIB) {
-			int dst_len = 0;
-			ut8 *uncompressed = rz_inflate(
+		int dst_len = 0;
+		ut8 *uncompressed = NULL;
+		RZ_LOG_VERBOSE("Section %s is compressed\n", section->name);
+		if (section->type == ELFCOMPRESS_ZLIB) {
+			uncompressed = rz_inflate(
 				sh_buf + Elf_Chdr_size, (int)(len - Elf_Chdr_size), NULL, &dst_len);
-			if (!uncompressed || dst_len <= 0) {
-				goto err;
-			}
-			buffer = rz_buf_new_with_pointers(uncompressed, dst_len, true);
+		} else if (section->type == ELFCOMPRESS_ZSTD) {
 		}
+
+		if (!uncompressed || dst_len <= 0) {
+			goto err;
+		}
+		buffer = rz_buf_new_with_pointers(uncompressed, dst_len, true);
 		free(sh_buf);
 	} else {
 		buffer = rz_buf_new_slice(binfile->buf, section->paddr, len);
