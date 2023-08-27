@@ -5,6 +5,7 @@
 
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
+#include "../format/elf/elf.h"
 
 RZ_IPI RzBinSection *get_section(RzBinFile *binfile, const char *sn) {
 	rz_return_val_if_fail(binfile && sn, NULL);
@@ -35,7 +36,35 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 		return NULL;
 	}
 	ut64 len = RZ_MIN(section->size, binfile->size - section->paddr);
-	return rz_buf_new_slice(binfile->buf, section->paddr, len);
+	RzBuffer *buffer = NULL;
+	ut8 *sh_buf = NULL;
+	if (section->flags & SHF_COMPRESSED) {
+		sh_buf = malloc(len);
+		if (rz_buf_read_at(binfile->buf, section->paddr, sh_buf, len) != len) {
+			goto err;
+		}
+		bool is_64bit = binfile->o->info->bits == 64;
+		ut64 Elf_Chdr_size = is_64bit ? sizeof(Elf64_Chdr) : sizeof(Elf32_Chdr);
+		RZ_LOG_WARN("Section %s is compressed\n", section->name);
+		if (section->type & ELFCOMPRESS_ZLIB) {
+			int dst_len = 0;
+			ut8 *uncompressed = rz_inflate(
+				sh_buf + Elf_Chdr_size, (int)(len - Elf_Chdr_size), NULL, &dst_len);
+			if (!uncompressed || dst_len <= 0) {
+				goto err;
+			}
+			buffer = rz_buf_new_with_pointers(uncompressed, dst_len, true);
+		}
+		free(sh_buf);
+	} else {
+		buffer = rz_buf_new_slice(binfile->buf, section->paddr, len);
+	}
+
+	return buffer;
+err:
+	free(sh_buf);
+	rz_buf_free(buffer);
+	return NULL;
 }
 
 RZ_IPI bool RzBinDwarfEncoding_from_file(RzBinDwarfEncoding *encoding, RzBinFile *bf) {
