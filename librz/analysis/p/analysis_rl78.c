@@ -211,7 +211,7 @@ static void populate_jump_fields(const RL78Instr *instr, size_t instr_size, ut64
                         break;
         }
 
-        if (instr->operation == RZ_ANALYSIS_OP_TYPE_CJMP) {
+        if (op->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
                 op->fail = addr + instr_size;
         }
 }
