@@ -98,7 +98,10 @@ RUN
 
 NAME=rizin -d no error
 FILE=--
-CMDS=!rizin -d -qc "" bins/elf/analysis/calls_x64
+CMDS=<<EOF
+envDISPLAY=:0
+!rizin -d -qc "" bins/elf/analysis/calls_x64
+EOF
 REGEXP_FILTER_ERR=ERROR.*
 EXPECT_ERR=
 RUN
