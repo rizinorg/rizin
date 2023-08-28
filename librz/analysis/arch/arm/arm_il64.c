@@ -911,7 +911,6 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 	return write_reg(REGID(dst_idx), invert_cond ? ITE(c, src0, res) : ITE(c, res, src0));
 }
 
-#if CS_NEXT_VERSION < 6
 /**
  * Capstone: CS_AARCH64(_INS_CSET), CS_AARCH64(_INS_CSETM)
  * ARM: cset, csetm
@@ -920,14 +919,27 @@ static RzILOpEffect *cset(cs_insn *insn) {
 	if (!ISREG(0) || !REGBITS(0)) {
 		return NULL;
 	}
-	RzILOpBool *c = cond(insn->detail->CS_aarch64().cc);
+	RzILOpBool *c = NULL;
+#if CS_NEXT_VERSION < 6
+	c = cond(insn->detail->CS_aarch64().cc);
+#else
+	if (insn->alias_id == AArch64_INS_ALIAS_CSET ||
+		insn->alias_id == AArch64_INS_ALIAS_CSETM) {
+		c = cond(AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64().cc));
+	} else {
+		c = cond(insn->detail->CS_aarch64().cc);
+	}
+#endif
 	if (!c) {
 		return NULL;
 	}
 	ut32 bits = REGBITS(0);
+#if CS_NEXT_VERSION < 6
 	return write_reg(REGID(0), ITE(c, SN(bits, insn->id == CS_AARCH64(_INS_CSETM) ? -1 : 1), SN(bits, 0)));
-}
+#else
+	return write_reg(REGID(0), ITE(c, SN(bits, insn->alias_id == AArch64_INS_ALIAS_CSETM ? -1 : 1), SN(bits, 0)));
 #endif
+}
 
 /**
  * Capstone: CS_AARCH64(_INS_CLS)
@@ -2549,6 +2561,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_CINC):
 	case CS_AARCH64(_INS_CINV):
 	case CS_AARCH64(_INS_CNEG):
+#else
+		if (insn->alias_id == AArch64_INS_ALIAS_CSET ||
+			insn->alias_id == AArch64_INS_ALIAS_CSETM) {
+			return cset(insn);
+		}
 #endif
 		return csinc(insn);
 #if CS_NEXT_VERSION < 6
