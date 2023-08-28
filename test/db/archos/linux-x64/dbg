@@ -95,3 +95,13 @@ EXPECT_ERR=<<EOF
 child received signal 9
 EOF
 RUN
+
+NAME=rizin -d no error from env
+FILE=--
+CMDS=<<EOF
+env DISPLAY=:0
+!rizin -d -qc "" bins/elf/analysis/calls_x64
+EOF
+REGEXP_FILTER_ERR=ERROR.*
+EXPECT_ERR=
+RUN

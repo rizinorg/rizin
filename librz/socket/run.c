@@ -163,12 +163,17 @@ static char *resolve_value(const char *src, size_t *result_len) {
 	if (src[0] == '\'' || src[0] == '"') {
 		delimiter = src[0];
 		if (src_len < 2 || src[src_len - 1] != delimiter) {
-			// the quoted string must have and end.
+			// the quoted string must have an end
 			RZ_LOG_ERROR("rz-run: missing `%c` at the end of the value `%s`\n", delimiter, src);
 			return NULL;
 		}
 		copy = rz_str_ndup(src + 1, src_len - 2);
 		src_len -= 2;
+		if (delimiter == '\'') {
+			// pass single-quoted string unaltered
+			copy_len = src_len;
+			goto end_resolve;
+		}
 	} else {
 		copy = strdup(src);
 	}
@@ -1410,7 +1415,7 @@ RZ_API char *rz_run_get_environ_profile(char **env) {
 			opt.esc_bslash = true;
 			v = rz_str_escape_8bit(v, true, &opt);
 			if (v) {
-				rz_strbuf_appendf(sb, "setenv=%s=\"%s\"\n", k, v);
+				rz_strbuf_appendf(sb, "setenv=%s='%s'\n", k, v);
 				free(v);
 			}
 		}
