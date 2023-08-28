@@ -588,7 +588,7 @@ zstd_proj = subproject('zstd', default_options: [
     'default_library=static',
     'static_runtime=@0@'.format(is_static_build),
 ])
-zstd_dep = zstd_proj.get_variable('libzstd_dep')
+libzstd_dep = zstd_proj.get_variable('libzstd_dep')
 
 # handle mpc dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'mpc', check: false)

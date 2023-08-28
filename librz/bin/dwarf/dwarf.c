@@ -45,22 +45,9 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 			goto err;
 		}
 		bool is_64bit = binfile->o->info->bits == 64;
+		bool bigendian = bf_bigendian(binfile);
 		ut64 Elf_Chdr_size = is_64bit ? sizeof(Elf64_Chdr) : sizeof(Elf32_Chdr);
-		ut32 ch_type = ELFCOMPRESS_ZLIB;
-		ut32 ch_size = 0;
-		if (is_64bit) {
-			Elf64_Chdr *chdr = (Elf64_Chdr *)sh_buf;
-			ch_type = chdr->ch_type;
-			ch_size = chdr->ch_size;
-		} else {
-			Elf32_Chdr *chdr = (Elf32_Chdr *)sh_buf;
-			ch_type = chdr->ch_type;
-			ch_size = chdr->ch_size;
-		}
-		if (bf_bigendian(binfile)) {
-			ch_type = rz_swap_ut32(ch_type);
-			ch_size = rz_swap_ut32(ch_size);
-		}
+		ut32 ch_type = rz_read_at_ble32(sh_buf, 0, bigendian);
 
 		const ut8 *src = sh_buf + Elf_Chdr_size;
 		ut64 src_len = len - Elf_Chdr_size;
@@ -70,13 +57,10 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 		if (ch_type == ELFCOMPRESS_ZLIB) {
 			uncompressed = rz_inflate(
 				src, (int)src_len, NULL, (int *)&uncompressed_len);
-			if (uncompressed_len != ch_size) {
-				goto err;
-			}
 		} else if (ch_type == ELFCOMPRESS_ZSTD) {
 			uncompressed_len = ZSTD_getFrameContentSize(src, src_len);
 			if (uncompressed_len == ZSTD_CONTENTSIZE_UNKNOWN ||
-				uncompressed_len == ZSTD_CONTENTSIZE_ERROR || uncompressed_len != ch_size) {
+				uncompressed_len == ZSTD_CONTENTSIZE_ERROR) {
 				goto err;
 			}
 			uncompressed = malloc(uncompressed_len);

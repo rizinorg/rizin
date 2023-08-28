@@ -14,14 +14,14 @@ project('zstd',
   default_options : [
     # There shouldn't be any need to force a C standard convention for zstd
     # but in case one would want that anyway, this can be done here.
-    'c_std=gnu99',
+    # 'c_std=gnu99',
     # c++11 standard is useful for pzstd
     # 'cpp_std=c++11',
-    'buildtype=release',
-    'warning_level=3',
+    # 'buildtype=release',
+    # 'warning_level=3',
     # -Wdocumentation does not actually pass, nor do the test binaries,
     # so this isn't safe
-    #'werror=true'
+    # 'werror=true'
   ],
   version: '1.5.5',
   meson_version: '>=0.50.0')
@@ -93,7 +93,7 @@ zlib_dep = dependency('zlib', required: feature_zlib)
 use_zlib = zlib_dep.found()
 lzma_dep = dependency('liblzma', required: feature_lzma)
 use_lzma = lzma_dep.found()
-lz4_dep = dependency('liblz4', required: feature_lz4)
+lz4_dep = dependency('lz4', required: feature_lz4)
 use_lz4 = lz4_dep.found()
 
 # =============================================================================
@@ -102,18 +102,7 @@ use_lz4 = lz4_dep.found()
 
 add_project_arguments('-DXXH_NAMESPACE=ZSTD_', language: ['c'])
 
-pzstd_warning_flags = []
-if [compiler_gcc, compiler_clang].contains(cc_id)
-  common_warning_flags = [ '-Wundef', '-Wshadow', '-Wcast-align', '-Wcast-qual' ]
-  pzstd_warning_flags = ['-Wno-shadow', '-Wno-deprecated-declarations']
-  if cc_id == compiler_clang
-    common_warning_flags += ['-Wconversion', '-Wno-sign-conversion', '-Wdocumentation']
-  endif
-  cc_compile_flags = cc.get_supported_arguments(common_warning_flags + ['-Wstrict-prototypes'])
-  cxx_compile_flags = cxx.get_supported_arguments(common_warning_flags)
-  add_project_arguments(cc_compile_flags, language : 'c')
-  add_project_arguments(cxx_compile_flags, language : 'cpp')
-elif cc_id == compiler_msvc
+if cc_id == compiler_msvc
   msvc_compile_flags = [ '/D_UNICODE', '/DUNICODE' ]
   if use_multi_thread
     msvc_compile_flags += '/MP'
