@@ -96,7 +96,7 @@ child received signal 9
 EOF
 RUN
 
-NAME=rizin -d no error
+NAME=rizin -d no error from env
 FILE=--
 CMDS=<<EOF
 env DISPLAY=:0
