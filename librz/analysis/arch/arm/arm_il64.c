@@ -1869,10 +1869,15 @@ static RzILOpEffect *usbfm(cs_insn *insn) {
 	bool is_signed = insn->id == CS_AARCH64(_INS_SBFX) || insn->id == CS_AARCH64(_INS_SBFIZ);
 #else
 	if (insn->alias_id == AArch64_INS_ALIAS_SBFIZ || insn->alias_id == AArch64_INS_ALIAS_UBFIZ) {
+		width += 1;
+		// TODO: modulo depends on N and SF bit. sf == 0 && N == 0 => mod 32.
+		lsb = -lsb % 64;
 		res = SHIFTL0(UNSIGNED(width + lsb, src), UN(6, lsb));
-	} else {
-		// SBFX, UBFX
+	} else if (insn->alias_id == AArch64_INS_ALIAS_SBFX || insn->alias_id == AArch64_INS_ALIAS_UBFX) {
+		width = width - lsb + 1;
 		res = UNSIGNED(width, SHIFTR0(src, UN(6, lsb)));
+	} else {
+		return NULL;
 	}
 	bool is_signed = insn->alias_id == AArch64_INS_ALIAS_SBFX || insn->alias_id == AArch64_INS_ALIAS_SBFIZ;
 #endif
