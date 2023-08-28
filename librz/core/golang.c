@@ -396,6 +396,24 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 	return num_syms;
 }
 
+static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
+	RzCore *core = (RzCore *)user;
+	rz_core_analysis_fcn(core, fi->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	return true;
+}
+
+/**
+ * \brief Analyse Golang symbols matching "sym.go.*"
+ * \param core RzCore Pointer
+ */
+static void analyse_golang_symbols(RzCore *core) {
+	const RzSpace *symbols = rz_flag_space_get(core->flags, RZ_FLAGS_FS_SYMBOLS);
+	if (!symbols) {
+		return;
+	}
+	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, analyse_golang_symgo_function, core);
+}
+
 /**
  * \brief      reads pclntab table in go binaries and recovers functions.
  * Follows the code https://github.com/golang/go/blob/master/src/debug/gosym/pclntab.go#L188
@@ -475,7 +493,7 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	if (num_syms) {
 		rz_core_notify_done(core, "Recovered %u symbols and saved them at sym.go.*", num_syms);
 		rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
-		rz_core_cmd0(core, "aF @@f:sym.go.*");
+		analyse_golang_symbols(core);
 		rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		return true;
 	}
