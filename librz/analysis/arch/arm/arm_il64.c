@@ -1720,11 +1720,13 @@ static RzILOpEffect *mov(cs_insn *insn) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
+#if CS_NEXT_VERSION < 6
 	if (ISIMM(1) && IMM(1) == 0 && !strcmp(insn->mnemonic, "movn")) {
 		// Capstone bug making 0000a012 indistinguishable from 0000a052
 		// https://github.com/capstone-engine/capstone/issues/1857
 		return movn(insn);
 	}
+#endif
 	ut32 bits = REGBITS(0);
 	if (!bits) {
 		return NULL;
@@ -2443,6 +2445,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_ADCS):
 	case CS_AARCH64(_INS_SBCS):
 #endif
+#if CS_NEXT_VERSION >= 6
+		if (insn->alias_id == AArch64_INS_ALIAS_MOV ||
+			insn->alias_id == AArch64_INS_ALIAS_MOVZ) {
+			return mov(insn);
+		}
+#endif
 		return add_sub(insn);
 	case CS_AARCH64(_INS_ADR):
 	case CS_AARCH64(_INS_ADRP):
@@ -2455,6 +2463,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_EON):
 	case CS_AARCH64(_INS_ORN):
 	case CS_AARCH64(_INS_ORR):
+#if CS_NEXT_VERSION >= 6
+		if (insn->alias_id == AArch64_INS_ALIAS_MOV ||
+			insn->alias_id == AArch64_INS_ALIAS_MOVZ) {
+			return mov(insn);
+		}
+#endif
 		return bitwise(insn);
 	case CS_AARCH64(_INS_ASR):
 	case CS_AARCH64(_INS_LSL):
