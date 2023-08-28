@@ -196,18 +196,20 @@ RZ_IPI RzCmdStatus rz_seek_base_handler(RzCore *core, int argc, const char **arg
 }
 
 RZ_IPI RzCmdStatus rz_seek_blocksize_backward_handler(RzCore *core, int argc, const char **argv) {
-	int n = 1;
-	if (argc == 2) {
-		n = rz_num_math(core->num, argv[1]);
+	int n = argc == 2 ? rz_num_math(core->num, argv[1]) : 1;
+	if (n < 1) {
+		RZ_LOG_ERROR("invalid argument: number is negative or zero\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
 	int delta = -core->blocksize / n;
 	return bool2cmdstatus(rz_core_seek_delta(core, delta, true));
 }
 
 RZ_IPI RzCmdStatus rz_seek_blocksize_forward_handler(RzCore *core, int argc, const char **argv) {
-	int n = 1;
-	if (argc == 2) {
-		n = rz_num_math(core->num, argv[1]);
+	int n = argc == 2 ? rz_num_math(core->num, argv[1]) : 1;
+	if (n < 1) {
+		RZ_LOG_ERROR("invalid argument: number is negative or zero\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
 	int delta = core->blocksize / n;
 	return bool2cmdstatus(rz_core_seek_delta(core, delta, true));
