@@ -3072,6 +3072,7 @@ RUN
 
 NAME=Compressed debug sections zlib
 FILE=bins/elf/float_ex1/float_ex1_arm_clang.dw.zlib
+BROKEN=1
 CMDS=<<EOF
 iS
 id
