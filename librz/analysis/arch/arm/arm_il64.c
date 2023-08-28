@@ -1883,13 +1883,24 @@ static RzILOpEffect *usbfm(cs_insn *insn) {
 	bool is_signed = insn->id == CS_AARCH64(_INS_SBFX) || insn->id == CS_AARCH64(_INS_SBFIZ);
 #else
 	if (insn->alias_id == AArch64_INS_ALIAS_SBFIZ || insn->alias_id == AArch64_INS_ALIAS_UBFIZ) {
+		// TODO: modulo usage depends on N and SF bit.
+		// sf == 0 && N == 0 => mod 32.
+		// sf == 1 && N == 1 => mod 64.
 		width += 1;
-		// TODO: modulo depends on N and SF bit. sf == 0 && N == 0 => mod 32.
 		lsb = -lsb % 64;
 		res = SHIFTL0(UNSIGNED(width + lsb, src), UN(6, lsb));
 	} else if (insn->alias_id == AArch64_INS_ALIAS_SBFX || insn->alias_id == AArch64_INS_ALIAS_UBFX) {
 		width = width - lsb + 1;
 		res = UNSIGNED(width, SHIFTR0(src, UN(6, lsb)));
+	} else if (insn->alias_id == AArch64_INS_ALIAS_LSL) {
+		// imms != 0x1f => mod 32
+		// imms != 0x3f => mod 64
+		ut32 m = IMM(3) != 0x1f ? 32 : 64;
+		return write_reg(REGID(0), SHIFTL0(src, UN(6, -IMM(2) % m)));
+	} else if (insn->alias_id == AArch64_INS_ALIAS_LSR) {
+		return write_reg(REGID(0), SHIFTR0(src, UN(6, IMM(2))));
+	} else if (insn->alias_id == AArch64_INS_ALIAS_ASR) {
+		return write_reg(REGID(0), SHIFTR(MSB(src), DUP(src), UN(6, IMM(2))));
 	} else {
 		return NULL;
 	}
