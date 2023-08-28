@@ -4392,6 +4392,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_stmt) {
 	if (!ts_node_is_null(arg)) {
 		arg_str = ts_node_handle_arg(state, node, arg, 1);
 	}
+	ut64 offorig = core->offset;
 	const RzSpace *flagspace = rz_flag_space_cur(core->flags);
 	RzFlagItem *flag;
 	RzListIter *iter;
@@ -4425,6 +4426,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_stmt) {
 
 err:
 	rz_list_free(match_flag_items);
+	rz_core_seek(core, offorig, true);
 	free(arg_str);
 	return ret;
 }
