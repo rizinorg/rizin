@@ -334,8 +334,16 @@ RZ_IPI RzCmdStatus rz_seek_begin_handler(RzCore *core, int argc, const char **ar
 
 RZ_IPI RzCmdStatus rz_seek_end_handler(RzCore *core, int argc, const char **argv) {
 	RzIOMap *map = rz_io_map_get(core->io, core->offset);
-	// XXX: this +2 is a hack. must fix gap between sections
-	ut64 addr = map ? map->itv.addr + map->itv.size + 2 : rz_io_fd_size(core->io, core->file->fd);
+	ut64 addr;
+	if (map) {
+		// XXX: this +2 is a hack. must fix gap between sections
+		addr = map->itv.addr + map->itv.size + 2;
+	} else {
+		if (!core->file) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		addr = rz_io_fd_size(core->io, core->file->fd);
+	}
 	return bool2cmdstatus(rz_core_seek_and_save(core, addr, true));
 }
 
