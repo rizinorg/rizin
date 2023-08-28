@@ -1510,6 +1510,7 @@ rz_bin_dwarf_expression_dump(
 	RZ_BORROW RZ_NONNULL RzStrBuf *str_buf,
 	RZ_BORROW RZ_NULLABLE const char *sep,
 	RZ_BORROW RZ_NULLABLE const char *indent) {
+	rz_return_if_fail(encoding && block && str_buf);
 	RzBuffer *buffer = RzBinDwarfBlock_as_buf(block);
 	RzVector *exprs = rz_bin_dwarf_expression_parse(buffer, encoding);
 	rz_buf_free(buffer);
