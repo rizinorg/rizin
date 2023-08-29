@@ -590,6 +590,15 @@ static RzILOpEffect *shift(cs_insn *insn) {
 	case CS_AARCH64(_INS_ROR):
 		res = LOGOR(SHIFTR0(a, b), SHIFTL0(DUP(a), NEG(DUP(b))));
 		break;
+#if CS_NEXT_VERSION >= 6
+	case AArch64_INS_EXTR:
+		if (insn->alias_id != AArch64_INS_ALIAS_ROR) {
+			return NULL;
+		}
+		b = ARG(3, &bits);
+		res = LOGOR(SHIFTR0(a, b), SHIFTL0(DUP(a), NEG(DUP(b))));
+		break;
+#endif
 	default: // CS_AARCH64(_INS_LSL)
 		res = SHIFTL0(a, b);
 		break;
@@ -2725,6 +2734,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_CLZ):
 		return clz(insn);
 	case CS_AARCH64(_INS_EXTR):
+#if CS_NEXT_VERSION >= 6
+		if (insn->alias_id == AArch64_INS_ALIAS_ROR) {
+			return shift(insn);
+		}
+#endif
 		return extr(insn);
 	case CS_AARCH64(_INS_HVC):
 		return hvc(insn);
