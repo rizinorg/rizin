@@ -4535,7 +4535,7 @@ bfd_boolean generic_core_file_matches_executable_p(bfd *core_bfd, bfd *exec_bfd)
 #ifdef DEBUG_BFD_SEND
 #undef BFD_SEND
 #define BFD_SEND(bfd, message, arglist) \
-	(((bfd) && (bfd)->xvec && (bfd)->xvec->message) ? ((*((bfd)->xvec->message))arglist) : (bfd_assert(__FILE__, __LINE__), NULL))
+	(((bfd) && (bfd)->xvec && (bfd)->xvec->message) ? ((*((bfd)->xvec->message))arglist) : (bfd_rz_return_if_fail(__FILE__, __LINE__), NULL))
 #endif
 #define BFD_SEND_FMT(bfd, message, arglist) \
 	(((bfd)->xvec->message[(int)((bfd)->format)])arglist)
@@ -4543,7 +4543,7 @@ bfd_boolean generic_core_file_matches_executable_p(bfd *core_bfd, bfd *exec_bfd)
 #ifdef DEBUG_BFD_SEND
 #undef BFD_SEND_FMT
 #define BFD_SEND_FMT(bfd, message, arglist) \
-	(((bfd) && (bfd)->xvec && (bfd)->xvec->message) ? (((bfd)->xvec->message[(int)((bfd)->format)])arglist) : (bfd_assert(__FILE__, __LINE__), NULL))
+	(((bfd) && (bfd)->xvec && (bfd)->xvec->message) ? (((bfd)->xvec->message[(int)((bfd)->format)])arglist) : (bfd_rz_return_if_fail(__FILE__, __LINE__), NULL))
 #endif
 
 enum bfd_flavour {
