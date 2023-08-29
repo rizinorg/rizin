@@ -5272,7 +5272,7 @@ bool __handle_console(RzCore *core, RzPanel *panel, const int key) {
 			if (!strcmp(cmd, "clear")) {
 				rz_cons_clear00();
 			} else {
-				rz_core_cmdf(core, "?e %s %s>>$console", prompt, cmd);
+				rz_core_cmdf(core, "echo %s %s>>$console", prompt, cmd);
 				rz_core_cmdf(core, "%s >>$console", cmd);
 			}
 		}

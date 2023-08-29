@@ -221,7 +221,7 @@ RZ_IPI void rz_core_visual_config(RzCore *core) {
 				       " q     - quit menu\n"
 				       " j/k   - down/up keys\n"
 				       " h/b   - go back\n"
-				       " $     - same as ?$ - show values of vars\n"
+				       " $     - same as %%$ - show values of vars\n"
 				       " e/' ' - edit/toggle current variable\n"
 				       " E     - edit variable with 'cfg.editor' (vi?)\n"
 				       " +/-   - increase/decrease numeric value (* and /, too)\n"

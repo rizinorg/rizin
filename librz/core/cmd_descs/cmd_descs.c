@@ -119,7 +119,6 @@ static const RzCmdDescArg print_djb2_hash_args[2];
 static const RzCmdDescArg print_bitstring_args[3];
 static const RzCmdDescArg eval_expr_print_octal_args[2];
 static const RzCmdDescArg num_to_units_args[2];
-static const RzCmdDescArg set_last_eval_expr_args[2];
 static const RzCmdDescArg show_value_args[2];
 static const RzCmdDescArg show_value_hex_args[2];
 static const RzCmdDescArg show_value_i1_args[2];
@@ -127,7 +126,7 @@ static const RzCmdDescArg show_value_i2_args[2];
 static const RzCmdDescArg show_value_i4_args[2];
 static const RzCmdDescArg show_value_i8_args[2];
 static const RzCmdDescArg show_value_int_args[2];
-static const RzCmdDescArg set_core_num_value_args[2];
+static const RzCmdDescArg set_last_eval_expr_args[2];
 static const RzCmdDescArg compare_and_set_core_num_value_args[3];
 static const RzCmdDescArg exec_cmd_if_core_num_value_positive_args[2];
 static const RzCmdDescArg exec_cmd_if_core_num_value_negative_args[2];
@@ -142,7 +141,8 @@ static const RzCmdDescArg generate_sequence_args[4];
 static const RzCmdDescArg phys2virt_args[2];
 static const RzCmdDescArg virt2phys_args[2];
 static const RzCmdDescArg yank_hud_file_args[2];
-static const RzCmdDescArg input_numerical_expr_args[2];
+static const RzCmdDescArg input_prompt_args[2];
+static const RzCmdDescArg input_prompt_echo_args[2];
 static const RzCmdDescArg input_yesno_no_args[2];
 static const RzCmdDescArg input_yesno_yes_args[2];
 static const RzCmdDescArg input_yank_hud_args[2];
@@ -1042,8 +1042,8 @@ static const RzCmdDescHelp tasks_wait_help = {
 
 static const RzCmdDescDetailEntry oparen__Examples_detail_entries[] = {
 	{ .text = "(", .arg_str = "", .comment = "List defined macros" },
-	{ .text = "(", .arg_str = "foo; ?e Disassemble 10 bytes at 0x10000; pd 10 @ 0x10000)", .comment = "Define a new macro 'foo', which executes `?` followed by `pd` when called." },
-	{ .text = "(", .arg_str = "foo a b; ?e Disassemble ${a} bytes at ${b}; pd ${a} @ ${b})", .comment = "Define a new macro 'foo' with two arguments. ${a}/${b} are replaced before execution." },
+	{ .text = "(", .arg_str = "foo; echo Disassemble 10 bytes at 0x10000; pd 10 @ 0x10000)", .comment = "Define a new macro 'foo', which executes `?` followed by `pd` when called." },
+	{ .text = "(", .arg_str = "foo a b; echo Disassemble ${a} bytes at ${b}; pd ${a} @ ${b})", .comment = "Define a new macro 'foo' with two arguments. ${a}/${b} are replaced before execution." },
 	{ .text = "(-", .arg_str = "foo", .comment = "Remove previously defined macro named 'foo'" },
 	{ 0 },
 };
@@ -1482,7 +1482,7 @@ static const RzCmdDescArg calculate_expr_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp calculate_expr_help = {
-	.summary = "Evaluate given numerical expression",
+	.summary = "Evaluate numerical expression <expr>",
 	.args = calculate_expr_args,
 };
 
@@ -1533,16 +1533,13 @@ static const RzCmdDescArg generate_random_number_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp generate_random_number_help = {
-	.summary = "Generate random number",
+	.summary = "Generate a random number between <lowlimit> and <uplimit>",
 	.args = generate_random_number_args,
 };
 
-static const RzCmdDescHelp perc_b_help = {
-	.summary = "Base64 encode/decode and print binary commands",
-};
 static const RzCmdDescArg print_binary_args[] = {
 	{
-		.name = "num",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
@@ -1550,7 +1547,7 @@ static const RzCmdDescArg print_binary_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_binary_help = {
-	.summary = "Print binary format",
+	.summary = "Print <expr> in binary format",
 	.args = print_binary_args,
 };
 
@@ -1564,15 +1561,15 @@ static const RzCmdDescDetail base64_encode_details[] = {
 };
 static const RzCmdDescArg base64_encode_args[] = {
 	{
-		.name = "strs",
+		.name = "str",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp base64_encode_help = {
-	.summary = "Base64 encode",
+	.summary = "Encode <str> in Base64",
 	.details = base64_encode_details,
 	.args = base64_encode_args,
 };
@@ -1587,15 +1584,15 @@ static const RzCmdDescDetail base64_decode_details[] = {
 };
 static const RzCmdDescArg base64_decode_args[] = {
 	{
-		.name = "b64strs",
+		.name = "str",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp base64_decode_help = {
-	.summary = "Base64 decode. Maximum input length = 4*(strlen(str)).",
+	.summary = "Decode <str> from Base64",
 	.details = base64_decode_details,
 	.args = base64_decode_args,
 };
@@ -1620,7 +1617,7 @@ static const RzCmdDescArg check_between_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp check_between_help = {
-	.summary = "Check if middle number is between the other two (first and last)",
+	.summary = "Check if <middle> number is between <first> and <last>",
 	.args = check_between_args,
 };
 
@@ -1659,15 +1656,15 @@ static const RzCmdDescDetail print_djb2_hash_details[] = {
 };
 static const RzCmdDescArg print_djb2_hash_args[] = {
 	{
-		.name = "strs",
+		.name = "<str>",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp print_djb2_hash_help = {
-	.summary = "Print hash value of given input",
+	.summary = "Print hash value of string <str>",
 	.details = print_djb2_hash_details,
 	.args = print_djb2_hash_args,
 };
@@ -1713,7 +1710,7 @@ static const RzCmdDescDetail eval_expr_print_octal_details[] = {
 };
 static const RzCmdDescArg eval_expr_print_octal_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
@@ -1721,14 +1718,14 @@ static const RzCmdDescArg eval_expr_print_octal_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp eval_expr_print_octal_help = {
-	.summary = "Evaluate expression and print value in octal.",
+	.summary = "Print <expr> in octal format",
 	.details = eval_expr_print_octal_details,
 	.args = eval_expr_print_octal_args,
 };
 
 static const RzCmdDescArg num_to_units_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
@@ -1736,31 +1733,8 @@ static const RzCmdDescArg num_to_units_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp num_to_units_help = {
-	.summary = "Convert evaluated numbers/expressions to K, M, G, T etc... units",
+	.summary = "Convert <expr> to K, M, G, T etc... units",
 	.args = num_to_units_args,
-};
-
-static const RzCmdDescDetailEntry set_last_eval_expr_Examples_detail_entries[] = {
-	{ .text = "%q", .arg_str = " 123", .comment = "This will set $?. Then commands like ??x can be used to do some task by checking whether $? holds positive value or not." },
-	{ 0 },
-};
-static const RzCmdDescDetail set_last_eval_expr_details[] = {
-	{ .name = "Examples", .entries = set_last_eval_expr_Examples_detail_entries },
-	{ 0 },
-};
-static const RzCmdDescArg set_last_eval_expr_args[] = {
-	{
-		.name = "input",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp set_last_eval_expr_help = {
-	.summary = "Update $? (last evaluated expression) without printing anything",
-	.details = set_last_eval_expr_details,
-	.args = set_last_eval_expr_args,
 };
 
 static const RzCmdDescHelp perc_v_help = {
@@ -1768,7 +1742,7 @@ static const RzCmdDescHelp perc_v_help = {
 };
 static const RzCmdDescArg show_value_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -1777,13 +1751,13 @@ static const RzCmdDescArg show_value_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp show_value_help = {
-	.summary = "Show last or currently evaluated expression",
+	.summary = "Show last expression ($?) or currently evaluated <expr>",
 	.args = show_value_args,
 };
 
 static const RzCmdDescArg show_value_hex_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -1792,13 +1766,13 @@ static const RzCmdDescArg show_value_hex_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp show_value_hex_help = {
-	.summary = "Show last or currently evaluated expression in hex",
+	.summary = "Show last expression ($?) or currently evaluated <expr> in hex",
 	.args = show_value_hex_args,
 };
 
 static const RzCmdDescArg show_value_i1_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -1807,13 +1781,13 @@ static const RzCmdDescArg show_value_i1_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp show_value_i1_help = {
-	.summary = "Show last or currently evaluated expression as 1 byte integer",
+	.summary = "Show last expression ($?) or currently evaluated <expr> as 1 byte integer",
 	.args = show_value_i1_args,
 };
 
 static const RzCmdDescArg show_value_i2_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -1822,13 +1796,13 @@ static const RzCmdDescArg show_value_i2_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp show_value_i2_help = {
-	.summary = "Show last or currently evaluated expression as 2 byte integer",
+	.summary = "Show last expression ($?) or currently evaluated <expr> as 2 bytes integer",
 	.args = show_value_i2_args,
 };
 
 static const RzCmdDescArg show_value_i4_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -1837,13 +1811,13 @@ static const RzCmdDescArg show_value_i4_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp show_value_i4_help = {
-	.summary = "Show last or currently evaluated expression as 4 byte integer",
+	.summary = "Show last expression ($?) or currently evaluated <expr> as 4 bytes integer",
 	.args = show_value_i4_args,
 };
 
 static const RzCmdDescArg show_value_i8_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -1852,13 +1826,13 @@ static const RzCmdDescArg show_value_i8_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp show_value_i8_help = {
-	.summary = "Show last or currently evaluated expression as 8 byte integer",
+	.summary = "Show last expression ($?) or currently evaluated <expr> as 8 bytes integer",
 	.args = show_value_i8_args,
 };
 
 static const RzCmdDescArg show_value_int_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -1867,22 +1841,31 @@ static const RzCmdDescArg show_value_int_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp show_value_int_help = {
-	.summary = "Show last or currently evaluated expression as integer",
+	.summary = "Show last expression ($?) or currently evaluated <expr> as integer",
 	.args = show_value_int_args,
 };
 
-static const RzCmdDescArg set_core_num_value_args[] = {
+static const RzCmdDescDetailEntry set_last_eval_expr_Examples_detail_entries[] = {
+	{ .text = "%q", .arg_str = " 123", .comment = "This will set $?. Then commands like %+, %-, etc. can be used to do some task by checking whether $? holds positive value or not." },
+	{ 0 },
+};
+static const RzCmdDescDetail set_last_eval_expr_details[] = {
+	{ .name = "Examples", .entries = set_last_eval_expr_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg set_last_eval_expr_args[] = {
 	{
-		.name = "input",
+		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp set_core_num_value_help = {
-	.summary = "Replace the value of last evalued expression with given value",
-	.args = set_core_num_value_args,
+static const RzCmdDescHelp set_last_eval_expr_help = {
+	.summary = "Update $? (last evaluated expression) with <expr>, without printing anything",
+	.details = set_last_eval_expr_details,
+	.args = set_last_eval_expr_args,
 };
 
 static const RzCmdDescDetailEntry compare_and_set_core_num_value_Examples_detail_entries[] = {
@@ -1908,7 +1891,7 @@ static const RzCmdDescArg compare_and_set_core_num_value_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp compare_and_set_core_num_value_help = {
-	.summary = "Compare two given strings and set $? register to cmp result",
+	.summary = "Compare strings <str1> and <str2> and set $? register to cmp result",
 	.details = compare_and_set_core_num_value_details,
 	.args = compare_and_set_core_num_value_args,
 };
@@ -1933,7 +1916,7 @@ static const RzCmdDescArg exec_cmd_if_core_num_value_positive_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp exec_cmd_if_core_num_value_positive_help = {
-	.summary = "Execute given command if $? register is greater than 0",
+	.summary = "Execute command <cmd> if $? register is greater than 0",
 	.details = exec_cmd_if_core_num_value_positive_details,
 	.args = exec_cmd_if_core_num_value_positive_args,
 };
@@ -1958,7 +1941,7 @@ static const RzCmdDescArg exec_cmd_if_core_num_value_negative_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp exec_cmd_if_core_num_value_negative_help = {
-	.summary = "Execute given command if $? register is less than 0",
+	.summary = "Execute command <cmd> if $? register is less than 0",
 	.details = exec_cmd_if_core_num_value_negative_details,
 	.args = exec_cmd_if_core_num_value_negative_args,
 };
@@ -1973,7 +1956,7 @@ static const RzCmdDescArg exec_cmd_if_core_num_value_zero_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp exec_cmd_if_core_num_value_zero_help = {
-	.summary = "Execute command if result of last numeric expression evaluation (related) command was 0",
+	.summary = "Execute command <cmd> if $? is 0",
 	.args = exec_cmd_if_core_num_value_zero_args,
 };
 
@@ -1987,7 +1970,7 @@ static const RzCmdDescArg exec_cmd_if_core_num_value_nonzero_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp exec_cmd_if_core_num_value_nonzero_help = {
-	.summary = "Execute command if result of last numeric expression evaluation (related) command was not 0",
+	.summary = "Execute command <cmd> if $? is not 0",
 	.args = exec_cmd_if_core_num_value_nonzero_args,
 };
 
@@ -2001,7 +1984,7 @@ static const RzCmdDescArg calculate_string_length_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp calculate_string_length_help = {
-	.summary = "Calculate length of string. Quite mode stores value in `$?` register.",
+	.summary = "Calculate length of string <str>. Quite mode stores value in `$?` register.",
 	.args = calculate_string_length_args,
 };
 
@@ -2015,7 +1998,7 @@ static const RzCmdDescArg calc_expr_show_hex_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp calc_expr_show_hex_help = {
-	.summary = "Show evaluated expression in hex",
+	.summary = "Show evaluated expression <expr> in hex",
 	.args = calc_expr_show_hex_args,
 };
 
@@ -2084,14 +2067,15 @@ static const RzCmdDescArg generate_sequence_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp generate_sequence_help = {
-	.summary = "Generate sequence of numbers (?s from to step)",
+	.summary = "Generate sequence of numbers from <start> to <stop> with <step> increments",
 	.args = generate_sequence_args,
 };
 
 static const RzCmdDescArg phys2virt_args[] = {
 	{
 		.name = "paddr",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -2105,7 +2089,8 @@ static const RzCmdDescHelp phys2virt_help = {
 static const RzCmdDescArg virt2phys_args[] = {
 	{
 		.name = "vaddr",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -2133,22 +2118,37 @@ static const RzCmdDescHelp yank_hud_file_help = {
 static const RzCmdDescHelp perc_i_help = {
 	.summary = "Input commands",
 };
-static const RzCmdDescArg input_numerical_expr_args[] = {
+static const RzCmdDescArg input_prompt_args[] = {
 	{
-		.name = "vaddr",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.name = "prompt",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp input_numerical_expr_help = {
-	.summary = "Input numerical expression and store in $? register",
-	.args = input_numerical_expr_args,
+static const RzCmdDescHelp input_prompt_help = {
+	.summary = "Input the <prompt> and save response in yank clipboard (`y` commands)",
+	.args = input_prompt_args,
+};
+
+static const RzCmdDescArg input_prompt_echo_args[] = {
+	{
+		.name = "prompt",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp input_prompt_echo_help = {
+	.summary = "Input the <prompt>, save response in yank clipboard (`y` commands), and print it",
+	.args = input_prompt_echo_args,
 };
 
 static const RzCmdDescArg input_yesno_no_args[] = {
 	{
-		.name = "opt",
+		.name = "question",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -2157,13 +2157,13 @@ static const RzCmdDescArg input_yesno_no_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp input_yesno_no_help = {
-	.summary = "Input YES/NO and store result in $? register",
+	.summary = "Input Yes/No <question> and store result in $? register (default No)",
 	.args = input_yesno_no_args,
 };
 
 static const RzCmdDescArg input_yesno_yes_args[] = {
 	{
-		.name = "opt",
+		.name = "question",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -2172,7 +2172,7 @@ static const RzCmdDescArg input_yesno_yes_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp input_yesno_yes_help = {
-	.summary = "Input YES/NO and store result in $? register",
+	.summary = "Input Yes/No <question> and store result in $? register (default Yes)",
 	.args = input_yesno_yes_args,
 };
 
@@ -2189,12 +2189,13 @@ static const RzCmdDescArg input_yank_hud_args[] = {
 		.name = "path",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp input_yank_hud_help = {
-	.summary = "Yank HUD path and store result in $? register",
+	.summary = "Interactive HUD mode to find files in <path>",
 	.args = input_yank_hud_args,
 };
 
@@ -2208,21 +2209,21 @@ static const RzCmdDescArg input_msg_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp input_msg_help = {
-	.summary = "Input message and display in console",
+	.summary = "Display <msg> in console and wait for key",
 	.args = input_msg_args,
 };
 
 static const RzCmdDescArg input_conditional_args[] = {
 	{
-		.name = "cond",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.name = "expr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp input_conditional_help = {
-	.summary = "Input conditional and store result in $? register",
+	.summary = "Evaluate <expr>, store result in $? register and print true if <expr> != 0, false otherwise",
 	.args = input_conditional_args,
 };
 
@@ -7388,7 +7389,7 @@ static const RzCmdDescHelp cmd_debug_command_bp_help = {
 };
 
 static const RzCmdDescDetailEntry cmd_debug_add_cond_bp_Usage_space_example_detail_entries[] = {
-	{ .text = "Example of a condition", .arg_str = NULL, .comment = "?v rax-0x0" },
+	{ .text = "Example of a condition", .arg_str = NULL, .comment = "%v rax-0x0" },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[] = {
@@ -18763,12 +18764,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *generate_random_number_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%r", rz_generate_random_number_handler, &generate_random_number_help);
 	rz_warn_if_fail(generate_random_number_cd);
 
-	RzCmdDesc *perc_b_cd = rz_cmd_desc_group_new(core->rcmd, cmd_math_cd, "%b", rz_print_binary_handler, &print_binary_help, &perc_b_help);
-	rz_warn_if_fail(perc_b_cd);
-	RzCmdDesc *base64_encode_cd = rz_cmd_desc_argv_new(core->rcmd, perc_b_cd, "%b64", rz_base64_encode_handler, &base64_encode_help);
+	RzCmdDesc *print_binary_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%b", rz_print_binary_handler, &print_binary_help);
+	rz_warn_if_fail(print_binary_cd);
+
+	RzCmdDesc *base64_encode_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%b64", rz_base64_encode_handler, &base64_encode_help);
 	rz_warn_if_fail(base64_encode_cd);
 
-	RzCmdDesc *base64_decode_cd = rz_cmd_desc_argv_new(core->rcmd, perc_b_cd, "%b64-", rz_base64_decode_handler, &base64_decode_help);
+	RzCmdDesc *base64_decode_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%b64-", rz_base64_decode_handler, &base64_decode_help);
 	rz_warn_if_fail(base64_decode_cd);
 
 	RzCmdDesc *check_between_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%btw", rz_check_between_handler, &check_between_help);
@@ -18788,9 +18790,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *num_to_units_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%u", rz_num_to_units_handler, &num_to_units_help);
 	rz_warn_if_fail(num_to_units_cd);
-
-	RzCmdDesc *set_last_eval_expr_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%q", rz_set_last_eval_expr_handler, &set_last_eval_expr_help);
-	rz_warn_if_fail(set_last_eval_expr_cd);
 
 	RzCmdDesc *perc_v_cd = rz_cmd_desc_group_new(core->rcmd, cmd_math_cd, "%v", rz_show_value_handler, &show_value_help, &perc_v_help);
 	rz_warn_if_fail(perc_v_cd);
@@ -18812,8 +18811,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *show_value_int_cd = rz_cmd_desc_argv_new(core->rcmd, perc_v_cd, "%vi", rz_show_value_int_handler, &show_value_int_help);
 	rz_warn_if_fail(show_value_int_cd);
 
-	RzCmdDesc *set_core_num_value_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%=", rz_set_core_num_value_handler, &set_core_num_value_help);
-	rz_warn_if_fail(set_core_num_value_cd);
+	RzCmdDesc *set_last_eval_expr_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%=", rz_set_last_eval_expr_handler, &set_last_eval_expr_help);
+	rz_warn_if_fail(set_last_eval_expr_cd);
 
 	RzCmdDesc *compare_and_set_core_num_value_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%==", rz_compare_and_set_core_num_value_handler, &compare_and_set_core_num_value_help);
 	rz_warn_if_fail(compare_and_set_core_num_value_cd);
@@ -18856,8 +18855,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *yank_hud_file_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%_", rz_yank_hud_file_handler, &yank_hud_file_help);
 	rz_warn_if_fail(yank_hud_file_cd);
 
-	RzCmdDesc *perc_i_cd = rz_cmd_desc_group_new(core->rcmd, cmd_math_cd, "%i", rz_input_numerical_expr_handler, &input_numerical_expr_help, &perc_i_help);
+	RzCmdDesc *perc_i_cd = rz_cmd_desc_group_new(core->rcmd, cmd_math_cd, "%i", rz_input_prompt_handler, &input_prompt_help, &perc_i_help);
 	rz_warn_if_fail(perc_i_cd);
+	RzCmdDesc *input_prompt_echo_cd = rz_cmd_desc_argv_new(core->rcmd, perc_i_cd, "%ie", rz_input_prompt_echo_handler, &input_prompt_echo_help);
+	rz_warn_if_fail(input_prompt_echo_cd);
+
 	RzCmdDesc *input_yesno_no_cd = rz_cmd_desc_argv_new(core->rcmd, perc_i_cd, "%in", rz_input_yesno_no_handler, &input_yesno_no_help);
 	rz_warn_if_fail(input_yesno_no_cd);
 

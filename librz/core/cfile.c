@@ -617,9 +617,9 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 	if (bp) {
 		bp->internal = true;
 #if __linux__
-		bp->data = rz_str_newf("?e %s: %s", mode, sym);
+		bp->data = rz_str_newf("echo %s: %s", mode, sym);
 #else
-		bp->data = rz_str_newf("?e %s: %s;ps@rdi", mode, sym);
+		bp->data = rz_str_newf("echo %s: %s;ps@rdi", mode, sym);
 #endif
 		return true;
 	}

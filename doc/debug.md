@@ -10,7 +10,7 @@ conditional breakpoints are implemented in the following way:
 1. ignore breakpoint at address `0x4000ce` for five times:
 
        f times=5
-       (dec_times,f times=`?vi times-1`,?= times)
+       (dec_times,f times=`%vi times-1`,?= times)
        db @ 0x4000ce
        dbC .(dec_times) @ 0x4000ce
        dc
@@ -18,7 +18,7 @@ conditional breakpoints are implemented in the following way:
 2. execute until rax==0x31c0 at address `0x4000ce`
 
        e cmd.hitinfo=0
-       (break_rax,f reg_rax=`dr rax`,f test=`?vi reg_rax-0x31c0`,?= test)
+       (break_rax,f reg_rax=`dr rax`,f test=`%vi reg_rax-0x31c0`,?= test)
        db @ 0x4000ce
        dbC .(break_rax) @ 0x4000ce
        dc

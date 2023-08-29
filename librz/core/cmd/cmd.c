@@ -1879,7 +1879,7 @@ next2:
 			if (ptr[1] == '!') {
 				str = rz_core_cmd_str_pipe(core, ptr + 1);
 			} else {
-				// Color disabled when doing backticks ?e `pi 1`
+				// Color disabled when doing backticks echo `pi 1`
 				int ocolor = rz_config_get_i(core->config, "scr.color");
 				rz_config_set_i(core->config, "scr.color", 0);
 				core->cmd_in_backticks = true;
