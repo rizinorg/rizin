@@ -2363,15 +2363,20 @@ static RzILOpEffect *tbz(cs_insn *insn) {
 		: BRANCH(c, NULL, JMP(tgt));
 }
 
-#if CS_NEXT_VERSION < 6
 /**
  * Capstone: CS_AARCH64(_INS_TST)
  * ARM: tst
  */
 static RzILOpEffect *tst(cs_insn *insn) {
 	ut32 bits = 0;
+#if CS_NEXT_VERSION < 6
 	RzILOpBitVector *a = ARG(0, &bits);
 	RzILOpBitVector *b = ARG(1, &bits);
+#else
+	// Operand 0 is the zero register the result is written to.
+	RzILOpBitVector *a = ARG(1, &bits);
+	RzILOpBitVector *b = ARG(2, &bits);
+#endif
 	if (!a || !b) {
 		rz_il_op_pure_free(a);
 		rz_il_op_pure_free(b);
@@ -2379,7 +2384,6 @@ static RzILOpEffect *tst(cs_insn *insn) {
 	}
 	return update_flags_zn00(LOGAND(a, b));
 }
-#endif
 
 /**
  * Lift an AArch64 instruction to RzIL
@@ -2502,6 +2506,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		if (insn->alias_id == AArch64_INS_ALIAS_MOV ||
 			insn->alias_id == AArch64_INS_ALIAS_MOVZ) {
 			return mov(insn);
+		} else if (insn->alias_id == AArch64_INS_ALIAS_TST) {
+			return tst(insn);
 		}
 #endif
 		return bitwise(insn);
