@@ -346,3 +346,19 @@ EXPECT=<<EOF
 0x543a0
 EOF
 RUN
+
+NAME=s-- and s++ with negative or zero argument
+FILE==
+CMDS=<<EOF
+s-- -1
+s++ -1
+s-- 0
+s++ 0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: invalid argument: number is negative or zero
+ERROR: invalid argument: number is negative or zero
+ERROR: invalid argument: number is negative or zero
+ERROR: invalid argument: number is negative or zero
+EOF
+RUN
