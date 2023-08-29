@@ -357,7 +357,7 @@ static RzILOpEffect *write_reg(CS_aarch64_reg() reg, RZ_OWN RZ_NONNULL RzILOpBit
 	return SETG(var, v);
 }
 
-static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, CS_aarch64_op() *op) {
+static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, CS_aarch64_op() * op) {
 	if (op->mem.index == CS_AARCH64(_REG_INVALID)) {
 		return base_plus_disp;
 	}
@@ -684,7 +684,7 @@ static RzILOpEffect *bfm(cs_insn *insn) {
 		ut64 mask_base = rz_num_bitmask(width);
 		ut64 mask = mask_base << RZ_MIN(63, lsb);
 		return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask)), SHIFTL0(LOGAND(b, UN(bits, mask_base)), UN(6, lsb))));
-	}	else if (insn->alias_id == AArch64_INS_ALIAS_BFXIL) {
+	} else if (insn->alias_id == AArch64_INS_ALIAS_BFXIL) {
 		width = width - lsb + 1;
 		ut64 mask_base = rz_num_bitmask(width);
 		ut64 mask = mask_base << RZ_MIN(63, lsb);
@@ -844,12 +844,12 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 	RzILOpBitVector *a = ARG(0, &bits);
 	RzILOpBitVector *b = ARG(1, &bits);
-	
+
 #else
 	RzILOpBitVector *a;
 	RzILOpBitVector *b;
 	if (insn->alias_id == AArch64_INS_ALIAS_CMP ||
-			insn->alias_id == AArch64_INS_ALIAS_CMN) {
+		insn->alias_id == AArch64_INS_ALIAS_CMN) {
 		// Reg at 0 is zero register
 		a = ARG(1, &bits);
 		b = ARG(2, &bits);
