@@ -800,11 +800,12 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		}
 		RzBinDwarfValue *value = rz_vector_index_ptr(&self->stack, len - operation.pick.index - 1);
 		ERR_IF_FAIL(value);
-		RzBinDwarfValue *clone = Value_clone(value);
-		if (!Evaluation_push(self, clone)) {
-			Value_free(clone);
+		RzBinDwarfValue clone = { 0 };
+		ERR_IF_FAIL(Value_clone_into(value, &clone));
+		if (!Evaluation_push(self, &clone)) {
+			Value_fini(&clone);
+			goto err;
 		}
-		free(clone);
 		break;
 	}
 	case OPERATION_KIND_SWAP: {

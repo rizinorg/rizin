@@ -1028,12 +1028,23 @@ RZ_IPI void Value_free(RzBinDwarfValue *self) {
 }
 
 RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self) {
-	rz_warn_if_fail(self);
-	RzBinDwarfValue *val = RZ_NEWCOPY(RzBinDwarfValue, self);
+	rz_return_val_if_fail(self, NULL);
+	RzBinDwarfValue *val = RZ_NEW(RzBinDwarfValue);
+	RET_NULL_IF_FAIL(val);
+	if (!Value_clone_into(self, val)) {
+		Value_free(val);
+		return NULL;
+	}
+	return val;
+}
+
+RZ_IPI bool Value_clone_into(RzBinDwarfValue *self, RzBinDwarfValue *val) {
+	rz_return_val_if_fail(self && val, false);
+	rz_mem_copy(val, sizeof(RzBinDwarfValue), self, sizeof(RzBinDwarfValue));
 	if (val->type == RzBinDwarfValueType_LOCATION) {
 		val->location = rz_bin_dwarf_location_clone(self->location);
 	}
-	return val;
+	return true;
 }
 
 static const char *Value_strings[] = {
