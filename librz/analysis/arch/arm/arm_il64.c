@@ -904,7 +904,8 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 #else
 	AArch64CC_CondCode cc;
 	if (insn->alias_id == AArch64_INS_ALIAS_CINV ||
-		insn->alias_id == AArch64_INS_ALIAS_CNEG) {
+		insn->alias_id == AArch64_INS_ALIAS_CNEG ||
+		insn->alias_id == AArch64_INS_ALIAS_CINC) {
 		cc = AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64().cc);
 	} else {
 		cc = insn->detail->CS_aarch64().cc;
@@ -956,7 +957,9 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 		break;
 #endif
 	case CS_AARCH64(_INS_CSINC):
-		invert_cond = true;
+		if (!insn->is_alias) {
+			invert_cond = true;
+		}
 		// fallthrough
 	default: // CS_AARCH64(_INS_CINC), CS_AARCH64(_INS_CSINC)
 		res = ADD(src1, UN(bits, 1));
