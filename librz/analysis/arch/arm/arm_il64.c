@@ -867,7 +867,18 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 	if (!src0) {
 		return NULL;
 	}
+#if CS_NEXT_VERSION < 6
 	RzILOpBool *c = cond(insn->detail->CS_aarch64().cc);
+#else
+	AArch64CC_CondCode cc;
+	if (insn->alias_id == AArch64_INS_ALIAS_CINV ||
+		insn->alias_id == AArch64_INS_ALIAS_CNEG) {
+		cc = AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64().cc);
+	} else {
+		cc = insn->detail->CS_aarch64().cc;
+	}
+	RzILOpBool *c = cond(cc);
+#endif
 	if (!c) {
 		// al/nv conditions, only possible in cs(inc|inv|neg)
 		return write_reg(REGID(dst_idx), src0);
@@ -885,22 +896,33 @@ static RzILOpEffect *csinc(cs_insn *insn) {
 		invert_cond = true;
 		res = src1;
 		break;
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_CSINV):
 		invert_cond = true;
-#if CS_NEXT_VERSION < 6
 		// fallthrough
 	case CS_AARCH64(_INS_CINV):
-#endif
 		res = LOGNOT(src1);
 		break;
 	case CS_AARCH64(_INS_CSNEG):
 		invert_cond = true;
-#if CS_NEXT_VERSION < 6
 		// fallthrough
 	case CS_AARCH64(_INS_CNEG):
-#endif
 		res = NEG(src1);
 		break;
+#else
+	case CS_AARCH64(_INS_CSINV):
+		if (!insn->is_alias) {
+			invert_cond = true;
+		}
+		res = LOGNOT(src1);
+		break;
+	case CS_AARCH64(_INS_CSNEG):
+		if (!insn->is_alias) {
+			invert_cond = true;
+		}
+		res = NEG(src1);
+		break;
+#endif
 	case CS_AARCH64(_INS_CSINC):
 		invert_cond = true;
 		// fallthrough
