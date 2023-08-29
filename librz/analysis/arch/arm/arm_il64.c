@@ -657,15 +657,32 @@ static RzILOpEffect *bfm(cs_insn *insn) {
 	if (!b) {
 		return NULL;
 	}
+#if CS_NEXT_VERSION < 6
 	ut64 mask_base = rz_num_bitmask(IMM(3));
 	ut64 mask = mask_base << RZ_MIN(63, IMM(2));
-#if CS_NEXT_VERSION < 6
 	if (insn->id == CS_AARCH64(_INS_BFI)) {
 		return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask)), SHIFTL0(LOGAND(b, UN(bits, mask_base)), UN(6, IMM(2)))));
 	}
-#endif
 	// insn->id == CS_AARCH64(_INS_BFXIL)
 	return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask_base)), SHIFTR0(LOGAND(b, UN(bits, mask)), UN(6, IMM(2)))));
+#else
+	ut64 lsb = IMM(2);
+	ut64 width = IMM(3);
+	if (insn->alias_id == AArch64_INS_ALIAS_BFI) {
+		width += 1;
+		// TODO Mod depends on (sf && N) bits
+		lsb = -lsb % 32;
+		ut64 mask_base = rz_num_bitmask(width);
+		ut64 mask = mask_base << RZ_MIN(63, lsb);
+		return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask)), SHIFTL0(LOGAND(b, UN(bits, mask_base)), UN(6, lsb))));
+	}	else if (insn->alias_id == AArch64_INS_ALIAS_BFXIL) {
+		width = width - lsb + 1;
+		ut64 mask_base = rz_num_bitmask(width);
+		ut64 mask = mask_base << RZ_MIN(63, lsb);
+		return write_reg(REGID(0), LOGOR(LOGAND(a, UN(bits, ~mask_base)), SHIFTR0(LOGAND(b, UN(bits, mask)), UN(6, lsb))));
+	}
+	return NULL;
+#endif
 }
 
 /**
