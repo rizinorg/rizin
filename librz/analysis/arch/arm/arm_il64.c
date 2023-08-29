@@ -832,8 +832,23 @@ static RzILOpEffect *cbz(cs_insn *insn) {
  */
 static RzILOpEffect *cmp(cs_insn *insn) {
 	ut32 bits = 0;
+#if CS_NEXT_VERSION < 6
 	RzILOpBitVector *a = ARG(0, &bits);
 	RzILOpBitVector *b = ARG(1, &bits);
+	
+#else
+	RzILOpBitVector *a;
+	RzILOpBitVector *b;
+	if (insn->alias_id == AArch64_INS_ALIAS_CMP ||
+			insn->alias_id == AArch64_INS_ALIAS_CMN) {
+		// Reg at 0 is zero register
+		a = ARG(1, &bits);
+		b = ARG(2, &bits);
+	} else {
+		a = ARG(0, &bits);
+		b = ARG(1, &bits);
+	}
+#endif
 	if (!a || !b) {
 		rz_il_op_pure_free(a);
 		rz_il_op_pure_free(b);
@@ -842,7 +857,7 @@ static RzILOpEffect *cmp(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 	bool is_neg = insn->id == CS_AARCH64(_INS_CMN) || insn->id == CS_AARCH64(_INS_CCMN);
 #else
-	bool is_neg = insn->id == CS_AARCH64(_INS_CCMN);
+	bool is_neg = insn->alias_id == AArch64_INS_ALIAS_CMN || insn->id == CS_AARCH64(_INS_CCMN);
 #endif
 	RzILOpEffect *eff = SEQ6(
 		SETL("a", a),
@@ -2549,6 +2564,9 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		if (insn->alias_id == AArch64_INS_ALIAS_MOV ||
 			insn->alias_id == AArch64_INS_ALIAS_MOVZ) {
 			return mov(insn);
+		} else if (insn->alias_id == AArch64_INS_ALIAS_CMP ||
+			insn->alias_id == AArch64_INS_ALIAS_CMN) {
+			return cmp(insn);
 		}
 #endif
 		return add_sub(insn);
