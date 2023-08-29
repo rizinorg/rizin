@@ -2356,6 +2356,7 @@ static RzILOpEffect *sxt(cs_insn *insn) {
 	}
 	ut32 bits;
 	bool is_signed = true;
+#if CS_NEXT_VERSION < 6
 	switch (insn->id) {
 	case CS_AARCH64(_INS_UXTB):
 		is_signed = false;
@@ -2373,6 +2374,27 @@ static RzILOpEffect *sxt(cs_insn *insn) {
 		bits = 32;
 		break;
 	}
+#else
+	switch (insn->alias_id) {
+	default:
+		return NULL;
+	case AArch64_INS_ALIAS_UXTB:
+		is_signed = false;
+		// fallthrough
+	case AArch64_INS_ALIAS_SXTB:
+		bits = 8;
+		break;
+	case AArch64_INS_ALIAS_UXTH:
+		is_signed = false;
+		// fallthrough
+	case AArch64_INS_ALIAS_SXTH:
+		bits = 16;
+		break;
+	case AArch64_INS_ALIAS_SXTW:
+		bits = 32;
+		break;
+	}
+#endif
 	RzILOpBitVector *src = ARG(1, &bits);
 	if (!src) {
 		return NULL;
@@ -2908,6 +2930,14 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_SBFX):
 	case CS_AARCH64(_INS_UBFIZ):
 	case CS_AARCH64(_INS_UBFX):
+#else
+		if (insn->alias_id == AArch64_INS_ALIAS_UXTH ||
+			insn->alias_id == AArch64_INS_ALIAS_UXTB ||
+			insn->alias_id == AArch64_INS_ALIAS_SXTH ||
+			insn->alias_id == AArch64_INS_ALIAS_SXTB ||
+			insn->alias_id == AArch64_INS_ALIAS_SXTW) {
+			return sxt(insn);
+		}
 #endif
 		return usbfm(insn);
 	case CS_AARCH64(_INS_SDIV):
