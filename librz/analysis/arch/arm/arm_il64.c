@@ -1743,7 +1743,19 @@ static RzILOpEffect *mov(cs_insn *insn) {
 	if (!bits) {
 		return NULL;
 	}
+#if CS_NEXT_VERSION < 6
 	RzILOpBitVector *src = ARG(1, &bits);
+#else
+	RzILOpBitVector *src = NULL;
+	if ((insn->alias_id == AArch64_INS_ALIAS_MOV || insn->alias_id == AArch64_INS_ALIAS_MOVZ) &&
+		(REGID(1) == AArch64_REG_XZR || REGID(1) == AArch64_REG_WZR)) {
+		// Sometimes regs are ORed with the zero register for the MOV alias.
+		// Sometimes not.
+		src = ARG(2, &bits);
+	} else {
+		src = ARG(1, &bits);
+	}
+#endif
 	if (!src) {
 		return NULL;
 	}
