@@ -2018,26 +2018,47 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 		return NULL;
 	}
 	ut32 bits = 0;
+#if CS_NEXT_VERSION < 6
 	RzILOpBitVector *val = ARG(1, &bits);
+#else
+	// Reg at 1 is zero register
+	RzILOpBitVector *val = ARG(2, &bits);
+#endif
 	if (!val) {
 		return NULL;
 	}
 	RzILOpBitVector *res;
+#if CS_NEXT_VERSION < 6
 	switch (insn->id) {
 	case CS_AARCH64(_INS_NEG):
 	case CS_AARCH64(_INS_NEGS):
 		res = NEG(val);
 		break;
-#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_NGC):
 	case CS_AARCH64(_INS_NGCS):
 		res = NEG(ADD(val, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1))));
 		break;
-#endif
 	default: // CS_AARCH64(_INS_MVN)
 		res = LOGNOT(val);
 		break;
 	}
+#else
+	switch (insn->alias_id) {
+	case AArch64_INS_ALIAS_NEG:
+	case AArch64_INS_ALIAS_NEGS:
+		res = NEG(val);
+		break;
+	case AArch64_INS_ALIAS_NGC:
+	case AArch64_INS_ALIAS_NGCS:
+		res = NEG(ADD(val, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1))));
+		break;
+	case AArch64_INS_ALIAS_MVN:
+		res = LOGNOT(val);
+		break;
+	default:
+		return NULL;
+	}
+#endif
 	RzILOpEffect *set = write_reg(REGID(0), res);
 	if (!set) {
 		return NULL;
@@ -2049,7 +2070,7 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 			SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->id == CS_AARCH64(_INS_NGC), bits)),
 #else
-			SETG("cf", sub_carry(UN(bits, 0), VARL("b"), false, bits)),
+			SETG("cf", sub_carry(UN(bits, 0), VARL("b"), insn->alias_id == AArch64_INS_ALIAS_NGC, bits)),
 #endif
 			SETG("vf", sub_overflow(UN(bits, 0), VARL("b"), REG(0))),
 			update_flags_zn(REG(0)));
@@ -2567,6 +2588,11 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 		} else if (insn->alias_id == AArch64_INS_ALIAS_CMP ||
 			insn->alias_id == AArch64_INS_ALIAS_CMN) {
 			return cmp(insn);
+		} else if (insn->alias_id == AArch64_INS_ALIAS_NEG ||
+			insn->alias_id == AArch64_INS_ALIAS_NGC ||
+			insn->alias_id == AArch64_INS_ALIAS_NEGS ||
+			insn->alias_id == AArch64_INS_ALIAS_NGCS) {
+			return mvn(insn);
 		}
 #endif
 		return add_sub(insn);
@@ -2587,6 +2613,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 			return mov(insn);
 		} else if (insn->alias_id == AArch64_INS_ALIAS_TST) {
 			return tst(insn);
+		} else if (insn->alias_id == AArch64_INS_ALIAS_MVN) {
+			return mvn(insn);
 		}
 #endif
 		return bitwise(insn);
