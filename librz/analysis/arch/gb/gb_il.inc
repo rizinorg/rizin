@@ -48,29 +48,30 @@ static RzILOpBitVector *gb_il_addr_code_abs(ut64 addr) {
 }
 
 /*
- * Calculate the carry of a \p carry_bits addition of \p a, \p b and optinally C, where \p a, \p b are of size \p src_bits
+ * Calculate the carry of a \p carry_bits addition (or subtraction) of \p a, \p b and optinally C, where \p a, \p b are of size \p src_bits
  * Example:
- *   gb_il_carry(a, b, 16, 8)
+ *   gb_il_carry(false, a, b, 16, 8)
  * calculates:
  *   (a & 0xff) + (b & 0xff) > 0xff
  */
-static RzILOpBool *gb_il_carry(RzILOpBitVector *a, RzILOpBitVector *b, bool carry_in, ut32 src_bits, ut32 carry_bits) {
+static RzILOpBool *gb_il_carry(bool sub, RzILOpBitVector *a, RzILOpBitVector *b, bool carry_in, ut32 src_bits, ut32 carry_bits) {
+	RzILOpBitVector *(*binop)(RzILOpBitVector *, RzILOpBitVector *) = sub ? rz_il_op_new_sub : rz_il_op_new_add;
 	if (carry_bits >= src_bits) {
 		src_bits = carry_bits + 1;
 		a = UNSIGNED(carry_bits + 1, a);
 		b = UNSIGNED(carry_bits + 1, b);
 		if (carry_in) {
-			b = ADD(b, ITE(VARG("C"), UN(carry_bits + 1, 1), UN(carry_bits + 1, 0)));
+			b = binop(b, ITE(VARG("C"), UN(carry_bits + 1, 1), UN(carry_bits + 1, 0)));
 		}
-		return MSB(ADD(a, b));
+		return MSB(binop(a, b));
 	}
 	ut64 mask = rz_num_bitmask(carry_bits);
 	a = LOGAND(a, UN(src_bits, mask));
 	b = LOGAND(b, UN(src_bits, mask));
 	if (carry_in) {
-		b = ADD(b, ITE(VARG("C"), UN(src_bits, 1), UN(src_bits, 0)));
+		b = binop(b, ITE(VARG("C"), UN(src_bits, 1), UN(src_bits, 0)));
 	}
-	return UGT(ADD(a, b), UN(src_bits, mask));
+	return UGT(binop(a, b), UN(src_bits, mask));
 }
 
 /**
@@ -156,8 +157,8 @@ static RzILOpEffect *gb_il_mov_hl_sp(st8 imm) {
 		gb_il_write_reg(GB_REG_HL, imm < 0 ? SUB(VARG("sp"), U16(-imm)) : ADD(VARG("sp"), U16(imm))),
 		SETG("Z", IL_FALSE),
 		SETG("N", IL_FALSE),
-		SETG("H", gb_il_carry(VARG("sp"), U16((ut8)imm), false, 16, 4)),
-		SETG("C", gb_il_carry(VARG("sp"), U16((ut8)imm), false, 16, 8)));
+		SETG("H", gb_il_carry(false, VARG("sp"), U16((ut8)imm), false, 16, 4)),
+		SETG("C", gb_il_carry(false, VARG("sp"), U16((ut8)imm), false, 16, 8)));
 }
 
 static RzILOpEffect *gb_il_mov_sp_hl() {
@@ -256,14 +257,85 @@ static RzILOpEffect *gb_il_load_a_imm(ut16 src_addr, ut64 op_addr) {
 	return SETG("a", LOAD(gb_il_resolve_addr_data(op_addr, U16(src_addr))));
 }
 
-static RzILOpEffect *gb_il_add(gb_reg dst_reg, gb_reg src_reg, bool carry_in) {
+static RzILOpEffect *gb_il_add(gb_reg dst_reg, RzILOpBitVector *src, bool carry_in) {
 	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
-	RzILOpBitVector *src = gb_il_read_reg(src_reg);
 	return SEQ5(
-		SETG("H", gb_il_carry(dst, src, carry_in, 8, 4)),
-		SETG("C", gb_il_carry(DUP(dst), DUP(src), carry_in, 8, 8)),
+		SETG("H", gb_il_carry(false, dst, src, carry_in, 8, 4)),
+		SETG("C", gb_il_carry(false, DUP(dst), DUP(src), carry_in, 8, 8)),
 		gb_il_write_reg(dst_reg, ADD(DUP(dst), carry_in ? ADD(DUP(src), ITE(VARG("C"), U8(1), U8(0))) : DUP(src))),
 		SETG("Z", IS_ZERO(DUP(dst))),
+		SETG("N", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_sub(gb_reg dst_reg, RzILOpBitVector *src, bool carry_in) {
+	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
+	return SEQ5(
+		SETG("H", gb_il_carry(true, dst, src, carry_in, 8, 4)),
+		SETG("C", gb_il_carry(true, DUP(dst), DUP(src), carry_in, 8, 8)),
+		gb_il_write_reg(dst_reg, SUB(DUP(dst), carry_in ? SUB(DUP(src), ITE(VARG("C"), U8(1), U8(0))) : DUP(src))),
+		SETG("Z", IS_ZERO(DUP(dst))),
+		SETG("N", IL_TRUE));
+}
+
+typedef enum {
+	GB_IL_BINOP_ADD,
+	GB_IL_BINOP_ADC,
+	GB_IL_BINOP_SUB,
+	GB_IL_BINOP_SBC,
+	GB_IL_BINOP_AND,
+	GB_IL_BINOP_XOR,
+	GB_IL_BINOP_OR
+} gb_il_binop;
+
+static RzILOpEffect *gb_il_binop_dispatch(gb_il_binop op, gb_reg dst_reg, RzILOpBitVector *src) {
+	switch (op) {
+	case GB_IL_BINOP_ADD:
+		return gb_il_add(dst_reg, src, false);
+	case GB_IL_BINOP_ADC:
+		return gb_il_add(dst_reg, src, true);
+	case GB_IL_BINOP_SUB:
+		return gb_il_sub(dst_reg, src, false);
+	case GB_IL_BINOP_SBC:
+		return gb_il_sub(dst_reg, src, true);
+	case GB_IL_BINOP_AND:
+	case GB_IL_BINOP_XOR:
+	case GB_IL_BINOP_OR:
+		// TODO
+		return NULL;
+	}
+}
+
+static RzILOpEffect *gb_il_binop_imm(gb_il_binop op, gb_reg dst_reg, ut8 imm) {
+	return gb_il_binop_dispatch(op, dst_reg, U8(imm));
+}
+
+static RzILOpEffect *gb_il_binop_reg(gb_il_binop op, gb_reg dst_reg, gb_reg src_reg) {
+	return gb_il_binop_dispatch(op, dst_reg, gb_il_read_reg(src_reg));
+}
+
+static RzILOpEffect *gb_il_binop_reg_memref(gb_il_binop op, gb_reg dst_reg, gb_reg src_reg, ut64 op_addr) {
+	return SEQ2(
+		SETL("src", LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(src_reg)))),
+		gb_il_binop_dispatch(op, dst_reg, VARL("src")));
+}
+
+static RzILOpEffect *gb_il_add_hl(gb_reg src_reg) {
+	RzILOpBitVector *dst = gb_il_read_reg(GB_REG_HL);
+	RzILOpBitVector *src = gb_il_read_reg(src_reg);
+	return SEQ4(
+		SETG("H", gb_il_carry(false, dst, src, false, 16, 12)),
+		SETG("C", gb_il_carry(false, DUP(dst), DUP(src), false, 16, 16)),
+		gb_il_write_reg(GB_REG_HL, ADD(DUP(dst), DUP(src))),
+		SETG("N", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_add_sp(st8 imm) {
+	RzILOpBitVector *dst = gb_il_read_reg(GB_REG_HL);
+	return SEQ5(
+		SETG("H", gb_il_carry(false, dst, S16(imm), false, 16, 4)),
+		SETG("C", gb_il_carry(false, DUP(dst), S16(imm), false, 16, 8)),
+		gb_il_write_reg(GB_REG_HL, imm < 0 ? SUB(DUP(dst), U16(-(st16)imm)) : ADD(DUP(dst), U16(imm))),
+		SETG("Z", IL_FALSE),
 		SETG("N", IL_FALSE));
 }
 
