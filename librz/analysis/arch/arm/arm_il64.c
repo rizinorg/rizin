@@ -1775,6 +1775,10 @@ static RzILOpEffect *mul(cs_insn *insn) {
 	if (insn->id == CS_AARCH64(_INS_MNEG)) {
 		res = NEG(res);
 	}
+#else
+	if (insn->alias_id == AArch64_INS_ALIAS_MNEG) {
+		res = NEG(res);
+	}
 #endif
 	return write_reg(REGID(0), res);
 }
@@ -2293,11 +2297,15 @@ static RzILOpEffect *smull(cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 	bool is_signed = insn->id == CS_AARCH64(_INS_SMULL) || insn->id == CS_AARCH64(_INS_SMNEGL);
 #else
-	bool is_signed = insn->id == CS_AARCH64(_INS_SMULL);
+	bool is_signed = insn->alias_id == AArch64_INS_ALIAS_SMULL || insn->alias_id == AArch64_INS_ALIAS_SMNEGL;
 #endif
 	RzILOpBitVector *res = MUL(is_signed ? SIGNED(64, x) : UNSIGNED(64, x), is_signed ? SIGNED(64, y) : UNSIGNED(64, y));
 #if CS_NEXT_VERSION < 6
 	if (insn->id == CS_AARCH64(_INS_SMNEGL) || insn->id == CS_AARCH64(_INS_UMNEGL)) {
+		res = NEG(res);
+	}
+#else
+	if (insn->alias_id == AArch64_INS_ALIAS_SMNEGL || insn->alias_id == AArch64_INS_ALIAS_UMNEGL) {
 		res = NEG(res);
 	}
 #endif
@@ -2936,6 +2944,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 #endif
 	case CS_AARCH64(_INS_MADD):
 	case CS_AARCH64(_INS_MSUB):
+#if CS_NEXT_VERSION >= 6
+		if (insn->alias_id == AArch64_INS_ALIAS_MUL ||
+			insn->alias_id == AArch64_INS_ALIAS_MNEG) {
+			return mul(insn);
+		}
+#endif
 		return madd(insn);
 	case CS_AARCH64(_INS_MUL):
 #if CS_NEXT_VERSION < 6
@@ -3000,6 +3014,12 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_SMSUBL):
 	case CS_AARCH64(_INS_UMADDL):
 	case CS_AARCH64(_INS_UMSUBL):
+		if (insn->alias_id == AArch64_INS_ALIAS_SMULL ||
+			insn->alias_id == AArch64_INS_ALIAS_UMULL ||
+			insn->alias_id == AArch64_INS_ALIAS_SMNEGL ||
+			insn->alias_id == AArch64_INS_ALIAS_UMNEGL) {
+			return smull(insn);
+		}
 		return smaddl(insn);
 	case CS_AARCH64(_INS_SMULL):
 	case CS_AARCH64(_INS_UMULL):
