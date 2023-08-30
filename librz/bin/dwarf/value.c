@@ -138,29 +138,25 @@ RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *bu
 	value->type = value_type;
 	switch (value_type) {
 	case RzBinDwarfValueType_I8:
-		U8_OR_RET_NULL(value->i8);
-		value->i8 = (st8)value->i8;
+		READ_OR(8, st8, value->i8, rz_buf_read8(buffer, &temp), return NULL);
 		break;
 	case RzBinDwarfValueType_U8:
 		U8_OR_RET_NULL(value->u8);
 		break;
 	case RzBinDwarfValueType_I16:
-		U_OR_RET_NULL(16, value->u16);
-		value->i16 = (st16)value->u16;
+		READ_T_OR(16, st16, value->i16, return NULL);
 		break;
 	case RzBinDwarfValueType_U16:
 		U_OR_RET_NULL(16, value->u16);
 		break;
 	case RzBinDwarfValueType_I32:
-		U_OR_RET_NULL(32, value->u32);
-		value->i32 = (st32)value->u32;
+		READ_T_OR(32, st32, value->i32, return NULL);
 		break;
 	case RzBinDwarfValueType_U32:
 		U_OR_RET_NULL(32, value->u32);
 		break;
 	case RzBinDwarfValueType_I64:
-		U_OR_RET_NULL(64, value->u64);
-		value->i64 = (st64)value->u64;
+		READ_T_OR(64, st64, value->i64, return NULL);
 		break;
 	case RzBinDwarfValueType_U64:
 		U_OR_RET_NULL(64, value->u64);
@@ -170,12 +166,10 @@ RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *bu
 		RZ_LOG_ERROR("I128/U128 not supported\n")
 		return NULL;
 	case RzBinDwarfValueType_F32:
-		U8_OR_RET_NULL(value->u32);
-		value->f32 = (float)value->u32;
+		READ_T_OR(32, float, value->f32, return NULL);
 		break;
 	case RzBinDwarfValueType_F64:
-		U8_OR_RET_NULL(value->u64);
-		value->f64 = (float)value->u64;
+		READ_T_OR(64, double, value->f64, return NULL);
 		break;
 	default:
 		free(value);

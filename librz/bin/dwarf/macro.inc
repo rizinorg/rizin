@@ -68,6 +68,17 @@
 	default: RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(X)); return false; \
 	}
 
+#define READ_OR(bit, T, out, F, E) \
+	do { \
+		ut##bit temp = { 0 }; \
+		if (!F) { \
+			E; \
+		} \
+		(out) = (T)temp; \
+	} while (0)
+
+#define READ_T_OR(bit, T, out, E) READ_OR(bit, T, out, rz_buf_read_ble##bit(buffer, &temp, big_endian), E)
+
 #define U8_OR_RET_NULL(out)     WRAP_U8(out, RET_NULL_IF_FAIL)
 #define U_OR_RET_NULL(X, out)   WRAP_U(X, out, RET_NULL_IF_FAIL)
 #define UX_OR_RET_NULL(X, out)  WRAP_UX(X, out, RET_NULL_IF_FAIL)
