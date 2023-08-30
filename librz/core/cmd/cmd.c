@@ -3694,6 +3694,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 err:
 	RZ_LOG_DEBUG("arged_stmt finished command: '%s'\n", command_str);
 	rz_cmd_parsed_args_free(pr_args);
+	free(command_extra_str);
 	free(command_str);
 	return res;
 }

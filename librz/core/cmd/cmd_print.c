@@ -2471,7 +2471,9 @@ static bool cmd_pxr(RzCore *core, int len, RzCmdStateOutput *state, int wordsize
 		}
 		core->print->cols = 1;
 		core->print->flags |= RZ_PRINT_FLAGS_REFS;
-		rz_strbuf_append(sb, rz_print_hexdump_str(core->print, core->offset, core->block, RZ_MIN(len, core->blocksize), wordsize * 8, bitsize / 8, 1));
+		char *hexdump_str = rz_print_hexdump_str(core->print, core->offset, core->block, RZ_MIN(len, core->blocksize), wordsize * 8, bitsize / 8, 1);
+		rz_strbuf_append(sb, hexdump_str);
+		free(hexdump_str);
 		core->print->flags &= ~RZ_PRINT_FLAGS_REFS;
 		core->print->cols = ocols;
 	} else {
