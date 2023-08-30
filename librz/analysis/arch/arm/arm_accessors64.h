@@ -29,5 +29,10 @@
 #else
 #define ISWRITEBACK64() (insn->detail->writeback == true)
 #endif
+#if CS_NEXT_VERSION < 6
 #define ISPREINDEX64()  (((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64())))
 #define ISPOSTINDEX64() (((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64())))
+#else
+#define ISPREINDEX64()  (!insn->detail->CS_aarch64().post_index)
+#define ISPOSTINDEX64() (insn->detail->CS_aarch64().post_index)
+#endif
