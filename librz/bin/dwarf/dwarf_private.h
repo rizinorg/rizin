@@ -115,6 +115,7 @@ RZ_IPI bool Value_ne(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask
 RZ_IPI void Value_fini(RzBinDwarfValue *self);
 RZ_IPI void Value_free(RzBinDwarfValue *self);
 RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self);
+RZ_IPI bool Value_clone_into(RzBinDwarfValue *self, RzBinDwarfValue *val);
 RZ_IPI void Value_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE DWARF_RegisterMapping dwarf_register_mapping,

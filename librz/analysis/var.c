@@ -393,22 +393,25 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 	return var;
 }
 
-static RzAnalysisVar *var_clean(RzAnalysisVar *var) {
+static bool var_clean(RzAnalysisVar *var) {
 	void **it;
 	RzPVector *removed = rz_pvector_new((RzPVectorFree)rz_analysis_var_delete);
 	rz_pvector_foreach (&var->fcn->vars, it) {
 		RzAnalysisVar *p = *it;
 		if (p->origin.kind == var->origin.kind) {
 			if (RZ_STR_EQ(p->name, var->name) && rz_analysis_var_storage_equals(&p->storage, &var->storage)) {
-				rz_analysis_var_free(var);
-				return NULL;
+				goto beach;
 			}
 		} else if (RZ_STR_EQ(p->name, var->name) || rz_analysis_var_storage_equals(&p->storage, &var->storage)) {
 			rz_pvector_push(removed, p);
 		}
 	}
 	rz_pvector_free(removed);
-	return var;
+	return true;
+beach:
+	rz_analysis_var_free(var);
+	rz_pvector_free(removed);
+	return false;
 }
 
 /**
