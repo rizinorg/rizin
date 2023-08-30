@@ -1431,11 +1431,10 @@ char *getcommapath(RzCore *core) {
 static void visual_comma(RzCore *core) {
 	bool mouse_state = __holdMouseState(core);
 	ut64 addr = core->offset + (core->print->cur_enabled ? core->print->cur : 0);
-	char *comment, *cwd, *cmtfile;
+	char *comment, *cmtfile;
 	const char *prev_cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
 	comment = prev_cmt ? strdup(prev_cmt) : NULL;
 	cmtfile = rz_str_between(comment, ",(", ")");
-	cwd = getcommapath(core);
 	if (!cmtfile) {
 		char *fn;
 		fn = rz_cons_input("<comment-file> ");
@@ -1454,11 +1453,13 @@ static void visual_comma(RzCore *core) {
 		free(fn);
 	}
 	if (cmtfile) {
+		char *cwd = getcommapath(core);
 		char *cwf = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, cmtfile);
 		char *odata = rz_file_slurp(cwf, NULL);
 		if (!odata) {
 			RZ_LOG_ERROR("core: Could not open '%s'.\n", cwf);
 			free(cwf);
+			free(cwd);
 			goto beach;
 		}
 		char *data = rz_core_editor(core, NULL, odata);
@@ -1466,10 +1467,12 @@ static void visual_comma(RzCore *core) {
 		free(data);
 		free(odata);
 		free(cwf);
+		free(cwd);
 	} else {
 		RZ_LOG_ERROR("core: No commafile found.\n");
 	}
 beach:
+	free(cmtfile);
 	free(comment);
 	rz_cons_enable_mouse(mouse_state && rz_config_get_b(core->config, "scr.wheel"));
 }

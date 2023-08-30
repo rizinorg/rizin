@@ -283,6 +283,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 		free(name);
 	}
 	rz_cmd_state_output_array_end(state);
+	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 
