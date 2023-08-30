@@ -1009,7 +1009,7 @@ static RzTypeStructMember *struct_member_parse(Context *ctx, RzBinDwarfDie *die,
 	rz_vector_foreach(&die->attrs, attr) {
 		switch (attr->name) {
 		case DW_AT_name:
-			name = rz_str_new(rz_bin_dwarf_attr_get_string(attr));
+			name = rz_bin_dwarf_attr_get_string(attr);
 			break;
 		case DW_AT_type:
 			type = type_parse_from_offset(ctx, attr->reference, &size);

@@ -3,29 +3,41 @@
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#define MEM_ZERO(T, x)       rz_mem_memzero((x), sizeof(T))
+#define MEM_CPY(T, dst, src) rz_mem_copy((dst), sizeof(T), (src), sizeof(T))
+
 #define OK_None \
 	do { \
 		*out = NULL; \
 		return true; \
 	} while (0)
 
-#define RET_VAL_IF_FAIL(x, val) \
+#define OK_OR(x, E) \
 	do { \
 		if (!(x)) { \
-			return (val); \
+			E; \
 		} \
 	} while (0)
 
-#define RET_FALSE_IF_FAIL(x) RET_VAL_IF_FAIL(x, false)
-#define RET_NULL_IF_FAIL(x)  RET_VAL_IF_FAIL(x, NULL)
-#define GOTO_IF_FAIL(x, label) \
+#define OK_OR_ERR(x, E) \
 	do { \
 		if (!(x)) { \
-			goto label; \
+			E; \
+			goto err; \
 		} \
 	} while (0)
 
-#define ERR_IF_FAIL(x) GOTO_IF_FAIL(x, err)
+#define AND_DO(x, E) \
+	do { \
+		if ((x)) { \
+			E; \
+		} \
+	} while (0)
+
+#define RET_FALSE_IF_FAIL(x)   OK_OR(x, return false)
+#define RET_NULL_IF_FAIL(x)    OK_OR(x, return NULL)
+#define GOTO_IF_FAIL(x, label) OK_OR(x, goto label)
+#define ERR_IF_FAIL(x)         OK_OR(x, goto err)
 
 #define WRAP_F(X, F, out, wrap) \
 	do { \

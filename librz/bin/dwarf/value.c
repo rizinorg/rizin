@@ -128,13 +128,10 @@ RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out)
 	return ValueType_from_encoding(encoding, byte_size, out);
 }
 
-RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian) {
-	RzBinDwarfValue *value = (RzBinDwarfValue *)malloc(sizeof(RzBinDwarfValue));
-	if (!value) {
-		// handle allocation error
-		return NULL;
-	}
+RZ_IPI bool Value_parse_into(
+	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian) {
 
+	RET_FALSE_IF_FAIL(value);
 	value->type = value_type;
 	switch (value_type) {
 	case RzBinDwarfValueType_I8:
@@ -172,11 +169,10 @@ RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *bu
 		READ_T_OR(64, double, value->f64, return NULL);
 		break;
 	default:
-		free(value);
-		return NULL;
+		return false;
 	}
 
-	return value;
+	return true;
 }
 
 RZ_IPI RzBinDwarfValue *Value_from_location(RzBinDwarfLocation *loc) {
@@ -1010,6 +1006,7 @@ RZ_IPI void Value_fini(RzBinDwarfValue *self) {
 	}
 	if (self->type == RzBinDwarfValueType_LOCATION) {
 		rz_bin_dwarf_location_free(self->location);
+		self->location = NULL;
 	}
 }
 
