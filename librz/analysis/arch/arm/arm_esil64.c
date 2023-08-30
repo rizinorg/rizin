@@ -273,6 +273,18 @@ static void arm64math(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 }
 
 #if CS_NEXT_VERSION >= 6
+static void cmp(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
+	// update esil, cpu flags
+	int bits = arm64_reg_width(REGID64(1));
+	if (ISIMM64(2)) {
+		rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", IMM64(2) << LSHIFT2_64(2), REG64(1), bits - 1, bits, bits - 1);
+	} else {
+		// cmp w10, w11
+		SHIFTED_REG64_APPEND(&op->esil, 2);
+		rz_strbuf_appendf(&op->esil, ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", REG64(1), bits - 1, bits, bits - 1);
+	}
+}
+
 static void bfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	ut64 lsb = IMM64(2);
 	ut64 width = IMM64(3);
@@ -871,6 +883,7 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case AArch64_INS_SUBS:
 		if (insn->alias_id != AArch64_INS_ALIAS_CMP &&
 			insn->alias_id != AArch64_INS_ALIAS_CMN) {
+			cmp(op, handle, insn);
 			break;
 		}
 		// update esil, cpu flags
@@ -901,6 +914,28 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case CS_AARCH64(_INS_CSINC): // csinc Wd, Wn, Wm --> Wd := (cond) ? Wn : (Wm+1)
 		rz_strbuf_appendf(&op->esil, "%s,}{,1,%s,+,},%s,=", REG64(1), REG64(2), REG64(0));
 		postfix = "";
+		break;
+#else
+	case CS_AARCH64(_INS_CSINC):
+		switch (insn->alias_id) {
+		default:
+			 // csinc Wd, Wn, Wm --> Wd := (cond) ? Wn : (Wm+1)
+			rz_strbuf_appendf(&op->esil, "%s,}{,1,%s,+,},%s,=", REG64(1), REG64(2), REG64(0));
+			postfix = "";
+			break;
+		case AArch64_INS_ALIAS_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
+			rz_strbuf_drain_nofree(&op->esil);
+			rz_arm64_cs_esil_prefix_cond(op, AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64().cc));
+			rz_strbuf_appendf(&op->esil, "1,}{,0,},%s,=", REG64(0));
+			postfix = "";
+			break;
+		case AArch64_INS_ALIAS_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
+			rz_strbuf_drain_nofree(&op->esil);
+			rz_arm64_cs_esil_prefix_cond(op, AArch64CC_getInvertedCondCode(insn->detail->CS_aarch64().cc));
+			rz_strbuf_appendf(&op->esil, "1,%s,+,}{,%s,},%s,=", REG64(1), REG64(1), REG64(0));
+			postfix = "";
+			break;
+		}
 		break;
 #endif
 	case CS_AARCH64(_INS_STXRB):
