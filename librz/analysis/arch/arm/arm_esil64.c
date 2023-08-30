@@ -612,7 +612,11 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						rz_strbuf_appendf(&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
 					} else {
+#if CS_NEXT_VERSION < 6
 						rz_strbuf_appendf(&op->esil, ",tmp,%" PFMT64d ",+,%s,=", IMM64(2), REG64(1));
+#else
+						rz_strbuf_appendf(&op->esil, ",tmp,%" PFMT64d ",+,%s,=", MEMDISP64(1), MEMBASE64(1));
+#endif
 					}
 				}
 			}
@@ -704,7 +708,11 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						rz_strbuf_appendf(&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
 					} else {
+#if CS_NEXT_VERSION < 6
 						rz_strbuf_appendf(&op->esil, ",tmp,%" PFMT64d ",+,%s,=", IMM64(2), REG64(1));
+#else
+						rz_strbuf_appendf(&op->esil, ",tmp,%" PFMT64d ",+,%s,=", MEMDISP64(1), MEMBASE64(1));
+#endif
 					}
 				}
 			}
@@ -853,7 +861,11 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						rz_strbuf_appendf(&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
 					} else {
+#if CS_NEXT_VERSION < 6
 						rz_strbuf_appendf(&op->esil, ",tmp,%" PFMT64d ",+,%s,=", IMM64(2), REG64(1));
+#else
+						rz_strbuf_appendf(&op->esil, ",tmp,%" PFMT64d ",+,%s,=", MEMDISP64(1), MEMBASE64(1));
+#endif
 					}
 				}
 			}
@@ -937,7 +949,11 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 				REG64(1), MEMBASE64(2), size, size);
 			// Post-index case
 		} else if (ISPOSTINDEX64()) {
+#if CS_NEXT_VERSION < 6
 			int val = IMM64(3);
+#else
+			int val = MEMDISP64(2);
+#endif
 			sign = val >= 0 ? '+' : '-';
 			abs = val >= 0 ? val : -val;
 			// "stp x4, x5, [x8], 0x10"
@@ -976,7 +992,11 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 				size, MEMBASE64(2), size, REG64(1));
 			// Post-index case
 		} else if (ISPOSTINDEX64()) {
+#if CS_NEXT_VERSION < 6
 			int val = IMM64(3);
+#else
+			int val = MEMDISP64(2);
+#endif
 			sign = val >= 0 ? '+' : '-';
 			abs = val >= 0 ? val : -val;
 			// ldp x4, x5, [x8], -0x10
