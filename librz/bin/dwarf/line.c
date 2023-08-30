@@ -266,7 +266,7 @@ RZ_IPI ut64 RzBinDwarfLineHeader_spec_op_advance_pc(const RzBinDwarfLineHeader *
 		return 0;
 	}
 	ut8 adj_opcode = RzBinDwarfLineHeader_adj_opcode(hdr, opcode);
-	int op_advance = adj_opcode / hdr->line_range;
+	ut64 op_advance = adj_opcode / hdr->line_range;
 	if (hdr->max_ops_per_inst == 1) {
 		return op_advance * hdr->min_inst_len;
 	}
