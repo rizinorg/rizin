@@ -350,12 +350,25 @@ static RzILOpEffect *gb_il_add_sp(st8 imm) {
 		SETG("N", IL_FALSE));
 }
 
-static RzILOpEffect *gb_il_rlc(gb_reg reg, bool set_z, ut64 op_addr) {
+static RzILOpEffect *gb_il_rot_c(gb_reg reg, bool right, bool set_z, ut64 op_addr) {
 	RzILOpBitVector *src = gb_il_read_reg(reg);
 	if (reg == GB_REG_HL) {
 		src = LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)));
 	}
-	RzILOpBitVector *res = SHIFTL(VARL("CC"), DUP(src), UN(3, 1));
+	RzILOpBitVector *res = (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARG("C"), DUP(src), UN(3, 1));
+	return SEQ4(
+		reg == GB_REG_HL ? STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)), res) : gb_il_write_reg(reg, res),
+		SETG("Z", set_z ? IS_ZERO(gb_il_read_reg(reg)) : IL_FALSE),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_rot(gb_reg reg, bool right, bool set_z, ut64 op_addr) {
+	RzILOpBitVector *src = gb_il_read_reg(reg);
+	if (reg == GB_REG_HL) {
+		src = LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)));
+	}
+	RzILOpBitVector *res = (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARL("CC"), DUP(src), UN(3, 1));
 	return SEQ6(
 		SETL("CC", VARG("C")),
 		SETG("C", MSB(src)),
