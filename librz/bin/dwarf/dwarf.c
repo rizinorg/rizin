@@ -65,8 +65,10 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	ut8 *uncompressed = NULL;
 	RZ_LOG_VERBOSE("Section %s is compressed\n", section->name);
 	if (ch_type == ELFCOMPRESS_ZLIB) {
+		int len;
 		uncompressed = rz_inflate(
-			src, (int)src_len, NULL, (int *)&uncompressed_len);
+			src, (int)src_len, NULL, &len);
+		uncompressed_len = len;
 	} else if (ch_type == ELFCOMPRESS_ZSTD) {
 		uncompressed_len = ZSTD_getFrameContentSize(src, src_len);
 		if (uncompressed_len == ZSTD_CONTENTSIZE_UNKNOWN) {
@@ -131,7 +133,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
 
 	if (opt->flags & RZ_BIN_DWARF_INFO && dw->abbrev) {
 		dw->info = rz_bin_dwarf_info_from_file(bf, dw->abbrev, dw->str);
-		if (rz_vector_len(&dw->info->units) > 0) {
+		if (dw->info && rz_vector_len(&dw->info->units) > 0) {
 			RzBinDwarfCompUnit *unit = rz_vector_head(&dw->info->units);
 			dw->encoding = unit->hdr.encoding;
 		}
