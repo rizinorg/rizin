@@ -373,6 +373,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 		char *key = rz_list_get_n(l, 0);
 		if (RZ_STR_ISEMPTY(key)) {
 			RZ_LOG_ERROR("core: No string specified before `=`. Make sure to use the format <key>=<value> without spaces.\n");
+			rz_list_free(l);
 			continue;
 		}
 
@@ -388,6 +389,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 			const char *v = rz_config_get(core->config, key);
 			if (!v) {
 				RZ_LOG_ERROR("core: Invalid config key '%s'\n", key);
+				rz_list_free(l);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_cons_printf("%s\n", v);
