@@ -1004,7 +1004,7 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		};
 		ERR_IF_FAIL(v.location);
 		memcpy(v.location, &loc, sizeof(RzBinDwarfLocation));
-		Evaluation_push(self, &v);
+		ERR_IF_FAIL(Evaluation_push(self, &v));
 		break;
 	}
 	case OPERATION_KIND_PIECE: {
