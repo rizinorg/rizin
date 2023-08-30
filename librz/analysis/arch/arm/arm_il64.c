@@ -405,6 +405,11 @@ static RzILOpBitVector *arg(RZ_BORROW cs_insn *insn, size_t n, RZ_OUT ut32 *bits
 	}
 	case CS_AARCH64(_OP_MEM): {
 		RzILOpBitVector *addr = MEMBASE(n);
+#if CS_NEXT_VERSION >= 6
+		if (ISPOSTINDEX64()) {
+			return addr;
+		}
+#endif
 		st64 disp = MEMDISP(n);
 		if (disp > 0) {
 			addr = ADD(addr, U64(disp));
@@ -1129,9 +1134,9 @@ static RzILOpEffect *writeback(cs_insn *insn, size_t addr_op, RZ_BORROW RzILOpBi
 		return NULL;
 	}
 	RzILOpBitVector *wbaddr = DUP(addr);
-	if (ISIMM(addr_op + 1)) {
+	if (ISPOSTINDEX64()) {
 		// post-index
-		st64 disp = IMM(addr_op + 1);
+		st64 disp = MEMDISP(addr_op);
 		if (disp > 0) {
 			wbaddr = ADD(wbaddr, U64(disp));
 		} else if (disp < 0) {
