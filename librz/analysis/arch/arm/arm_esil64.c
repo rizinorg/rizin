@@ -273,6 +273,29 @@ static void arm64math(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 }
 
 #if CS_NEXT_VERSION >= 6
+static void bfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
+	ut64 lsb = IMM64(2);
+	ut64 width = IMM64(3);
+	switch(insn->alias_id) {
+	default:
+		return;
+	case AArch64_INS_ALIAS_BFI: // bfi w8, w8, 2, 1
+		width += 1;
+		// TODO Mod depends on (sf && N) bits
+		lsb = -lsb % 32;
+		break;
+	case AArch64_INS_ALIAS_BFXIL:
+		width = width - lsb + 1;
+		break;
+	}
+	ut64 mask = rz_num_bitmask((ut8)width);
+	ut64 shift = lsb;
+	ut64 notmask = ~(mask << shift);
+	// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
+	rz_strbuf_setf(&op->esil, "%" PFMT64u ",%s,&,%" PFMT64u ",%" PFMT64u ",%s,&,<<,|,%s,=",
+		notmask, REG64(0), shift, mask, REG64(1), REG64(0));
+}
+
 static void subfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	ut64 lsb = IMM64(2);
 	ut64 width = IMM64(3);
@@ -1257,6 +1280,9 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 		}
 		break;
 #else
+	case AArch64_INS_BFM:
+		bfm(op, handle, insn);
+		break;
 	case AArch64_INS_UBFM:
 	case AArch64_INS_SBFM:
 		subfm(op, handle, insn);
