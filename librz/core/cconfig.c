@@ -3230,6 +3230,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETCB("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");
+	SETCB("bin.dbginfo.dwo_path", "", NULL, "Load split debug information (DWARF) file if available");
 	SETBPREF("bin.relocs", "true", "Load relocs information at startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for strings in bin plugins");
 	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for strings in bin plugins");

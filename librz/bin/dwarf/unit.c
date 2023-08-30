@@ -353,6 +353,25 @@ RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 	RzBinDwarfCompUnit *unit = NULL;
 	rz_vector_foreach(&info->units, unit) {
 		ht_up_insert(info->unit_by_offset, unit->offset, unit);
+		switch (unit->hdr.ut) {
+		case DW_UT_skeleton: {
+			RzBinDwarfDie *die = rz_vector_head(&unit->dies);
+			if (!die) {
+				RZ_LOG_ERROR("Invalid DW_UT_skeleton [0x%" PFMT64x "]\n", unit->offset);
+				break;
+			}
+			break;
+		}
+		case DW_UT_compile:
+		case DW_UT_type:
+		case DW_UT_partial:
+		case DW_UT_split_compile:
+		case DW_UT_split_type:
+		case DW_UT_lo_user:
+		case DW_UT_hi_user:
+		default: break;
+		}
+
 		RzBinDwarfDie *die = NULL;
 		rz_vector_foreach(&unit->dies, die) {
 			ht_up_insert(info->die_by_offset, die->offset, die); // optimization for further processing
@@ -372,9 +391,11 @@ err:
  */
 RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw,
+	bool is_dwo) {
 	rz_return_val_if_fail(bf && dw && dw->abbrev, NULL);
-	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_info");
+	RzBinEndianReader *reader = RzBinEndianReader_from_file(
+		bf, ".debug_info", is_dwo);
 	RET_NULL_IF_FAIL(reader);
 	return rz_bin_dwarf_info_from_buf(reader, dw);
 }

@@ -142,8 +142,9 @@ static RzBinDwarfFileEntry *FileEntry_parse_v5(
 			entry->size = rz_bin_dwarf_attr_udata(&attr);
 			break;
 		case DW_LNCT_MD5: {
-			const RzBinDwarfBlock *b = rz_bin_dwarf_attr_block(&attr);
-			memcpy(entry->md5, rz_bin_dwarf_block_data(b), 16);
+			rz_warn_if_fail(attr.form == DW_FORM_data16);
+			const ut128 data = attr.value.u128;
+			memcpy(entry->md5, &data, 16);
 			break;
 		}
 		default: rz_warn_if_reached(); break;
@@ -737,14 +738,15 @@ RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
  */
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw) {
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw,
+	bool is_dwo) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBinDwarfEncoding encoding_bf = { 0 };
 	if (!RzBinDwarfEncoding_from_file(&encoding_bf, bf)) {
 		return NULL;
 	}
 
-	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_line");
+	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_line", is_dwo);
 	RET_NULL_IF_FAIL(reader);
 	return Line_parse(reader, &encoding_bf, dw);
 }

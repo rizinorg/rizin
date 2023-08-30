@@ -192,7 +192,8 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
 
 		RzBinDwarfDie *die = NULL;
 		rz_vector_foreach(&unit->dies, die) {
-			rz_strbuf_appendf(sb, "<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ", die->offset, die->abbrev_code);
+			rz_strbuf_appendf(sb, "<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ",
+				die->offset, die->abbrev_code);
 
 			const char *tag_name = rz_bin_dwarf_tag(die->tag);
 			if (tag_name) {

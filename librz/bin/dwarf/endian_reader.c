@@ -1,29 +1,36 @@
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <zstd.h>
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
-#include <zstd.h>
 #include "../format/elf/elf.h"
 
-RZ_IPI RzBinSection *get_section(RzBinFile *binfile, const char *sn) {
+RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn, bool is_dwo) {
 	rz_return_val_if_fail(binfile && sn, NULL);
-	RzListIter *iter;
+	RzListIter *iter = NULL;
 	RzBinSection *section = NULL;
+	RzBinSection *result_section = NULL;
 	RzBinObject *o = binfile->o;
 	if (!o || !o->sections || RZ_STR_ISEMPTY(sn)) {
+		return NULL;
+	}
+	char *name = is_dwo ? rz_str_newf("%s.dwo", sn) : rz_str_new(sn);
+	if (!name) {
 		return NULL;
 	}
 	rz_list_foreach (o->sections, iter, section) {
 		if (!section->name) {
 			continue;
 		}
-		if (RZ_STR_EQ(section->name, sn) ||
-			rz_str_endswith(section->name, sn + 1)) {
-			return section;
+		if (RZ_STR_EQ(section->name, name) ||
+			rz_str_endswith(section->name, name + 1)) {
+			result_section = section;
+			break;
 		}
 	}
-	return NULL;
+	free(name);
+	return result_section;
 }
 
 typedef struct {
@@ -31,7 +38,7 @@ typedef struct {
 	ut8 gch_size[8]; /* unaligned 64-bit ELFDATAMSB integer */
 } Chdr_GNU;
 
-RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, RzBinSection *section) {
+RZ_IPI RzBuffer *rz_bin_dwarf_section_buf(RzBinFile *binfile, RzBinSection *section) {
 	rz_return_val_if_fail(binfile && section, NULL);
 	if (section->paddr >= binfile->size) {
 		return NULL;
@@ -106,7 +113,7 @@ err:
 	return NULL;
 }
 
-void add_relocations(
+static inline void add_relocations(
 	RzBinFile *bf,
 	HtUP *relocations,
 	RzBinSection *section) {
@@ -121,11 +128,11 @@ void add_relocations(
 	}
 }
 
-RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const char *sect_name) {
+RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const char *sect_name, bool is_dwo) {
 	rz_return_val_if_fail(binfile && sect_name, NULL);
-	RzBinSection *section = get_section(binfile, sect_name);
+	RzBinSection *section = rz_bin_dwarf_section_by_name(binfile, sect_name, is_dwo);
 	OK_OR(section, return NULL);
-	RzBuffer *buf = get_section_buf(binfile, section);
+	RzBuffer *buf = rz_bin_dwarf_section_buf(binfile, section);
 	OK_OR(buf, return NULL);
 
 	HtUP *relocations = ht_up_new0();
