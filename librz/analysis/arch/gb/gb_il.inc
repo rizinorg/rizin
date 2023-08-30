@@ -277,6 +277,16 @@ static RzILOpEffect *gb_il_sub(gb_reg dst_reg, RzILOpBitVector *src, bool carry_
 		SETG("N", IL_TRUE));
 }
 
+static RzILOpEffect *gb_il_and(gb_reg dst_reg, RzILOpBitVector *src) {
+	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
+	return SEQ5(
+		gb_il_write_reg(dst_reg, LOGAND(dst, src)),
+		SETG("Z", IS_ZERO(DUP(dst))),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_TRUE),
+		SETG("C", IL_FALSE));
+}
+
 typedef enum {
 	GB_IL_BINOP_ADD,
 	GB_IL_BINOP_ADC,
@@ -298,6 +308,7 @@ static RzILOpEffect *gb_il_binop_dispatch(gb_il_binop op, gb_reg dst_reg, RzILOp
 	case GB_IL_BINOP_SBC:
 		return gb_il_sub(dst_reg, src, true);
 	case GB_IL_BINOP_AND:
+		return gb_il_and(dst_reg, src);
 	case GB_IL_BINOP_XOR:
 	case GB_IL_BINOP_OR:
 		// TODO
@@ -337,6 +348,21 @@ static RzILOpEffect *gb_il_add_sp(st8 imm) {
 		gb_il_write_reg(GB_REG_HL, imm < 0 ? SUB(DUP(dst), U16(-(st16)imm)) : ADD(DUP(dst), U16(imm))),
 		SETG("Z", IL_FALSE),
 		SETG("N", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_rlc(gb_reg reg, bool set_z, ut64 op_addr) {
+	RzILOpBitVector *src = gb_il_read_reg(reg);
+	if (reg == GB_REG_HL) {
+		src = LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)));
+	}
+	RzILOpBitVector *res = SHIFTL(VARL("CC"), DUP(src), UN(3, 1));
+	return SEQ6(
+		SETL("CC", VARG("C")),
+		SETG("C", MSB(src)),
+		reg == GB_REG_HL ? STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)), res) : gb_il_write_reg(reg, res),
+		SETG("Z", set_z ? IS_ZERO(gb_il_read_reg(reg)) : IL_FALSE),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_FALSE));
 }
 
 // --
