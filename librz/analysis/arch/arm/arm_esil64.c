@@ -755,6 +755,23 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 		}
 		break;
 	}
+#if CS_NEXT_VERSION >= 6
+	case AArch64_INS_SUBS:
+		if (insn->alias_id != AArch64_INS_ALIAS_CMP &&
+			insn->alias_id != AArch64_INS_ALIAS_CMN) {
+			break;
+		}
+		// update esil, cpu flags
+		int bits = arm64_reg_width(REGID64(1));
+		if (ISIMM64(2)) {
+			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", IMM64(2) << LSHIFT2_64(2), REG64(1), bits - 1, bits, bits - 1);
+		} else {
+			// cmp w10, w11
+			SHIFTED_REG64_APPEND(&op->esil, 2);
+			rz_strbuf_appendf(&op->esil, ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", REG64(1), bits - 1, bits, bits - 1);
+		}
+		break;
+#endif
 	case CS_AARCH64(_INS_FCSEL):
 	case CS_AARCH64(_INS_CSEL): // csel Wd, Wn, Wm --> Wd := (cond) ? Wn : Wm
 		rz_strbuf_appendf(&op->esil, "%s,}{,%s,},%s,=", REG64(1), REG64(2), REG64(0));
