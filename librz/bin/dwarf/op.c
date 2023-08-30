@@ -1119,10 +1119,14 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 	case OPERATION_KIND_CONVERT: {
 		CHECK_DEFER;
 		RzBinDwarfValue *val = NULL;
-		ERR_IF_FAIL(Evaluation_pop(self, &val));
+		OK_OR(Evaluation_pop(self, &val), goto err);
 		RzBinDwarfValueType typ = ValueType_from_die(self, self->dw, operation.convert.base_type);
-		ERR_IF_FAIL(Value_convert(val, typ, self->addr_mask, val));
-		ERR_IF_FAIL(Evaluation_push(self, val));
+		OK_OR(Value_convert(val, typ, self->addr_mask, val), goto clean_val);
+		OK_OR(Evaluation_push(self, val), goto clean_val);
+		free(val);
+		break;
+	clean_val:
+		Value_free(val);
 		break;
 	}
 	case OPERATION_KIND_REINTERPRET: {
