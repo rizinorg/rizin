@@ -251,7 +251,7 @@ static bool RzBinDwarfCompUnit_parse(DebugInfo_Context *ctx) {
 
 		RzBinDwarfCompUnit unit = {
 			.offset = offset,
-			.hdr.unit_offset = unit.offset,
+			.hdr.unit_offset = offset,
 		};
 		if (RzBinDwarfCompUnit_init(&unit) < 0) {
 			goto cleanup;

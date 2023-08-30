@@ -1620,7 +1620,7 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		}
 		ctx.unit = unit;
 		for (RzBinDwarfDie *die = rz_vector_head(&unit->dies);
-			(ut8 *)die < (ut8 *)unit->dies.a + unit->dies.len * unit->dies.elem_size;
+			die && (ut8 *)die < (ut8 *)unit->dies.a + unit->dies.len * unit->dies.elem_size;
 			(die->sibling > die->offset)
 				? die = ht_up_find(dw->info->die_by_offset, die->sibling, NULL)
 				: ++die) {
