@@ -101,17 +101,17 @@ d "call C, 0x0000" dc0000
 d "call Z, 0x0000" cc0000
 d "call nC, 0x0000" d40000
 d "call nZ, 0x0000" c40000
-d "ccf" 3f
-d "cp 0x00" fe00
-d "cp [hl]" be
-d "cp a" bf
-d "cp b" b8
-d "cp c" b9
-d "cp d" ba
-d "cp e" bb
-d "cp h" bc
-d "cp l" bd
-d "cpl" 2f
+d "ccf" 3f 0x0 (set C (! (var C)))
+d "cp 0x42" fe42 0x0 (seq (set Z (== (var a) (bv 8 0x42))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (bv 8 0x42))) (! (== (cast 4 false (var a)) (cast 4 false (bv 8 0x42)))))) (set C (&& (ule (var a) (bv 8 0x42)) (! (== (var a) (bv 8 0x42))))))
+d "cp [hl]" be 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set Z (== (var a) (var src))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var src))) (! (== (cast 4 false (var a)) (cast 4 false (var src)))))) (set C (&& (ule (var a) (var src)) (! (== (var a) (var src))))))
+d "cp a" bf 0x0 (seq (set Z (== (var a) (var a))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var a))) (! (== (cast 4 false (var a)) (cast 4 false (var a)))))) (set C (&& (ule (var a) (var a)) (! (== (var a) (var a))))))
+d "cp b" b8 0x0 (seq (set Z (== (var a) (var b))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var b))) (! (== (cast 4 false (var a)) (cast 4 false (var b)))))) (set C (&& (ule (var a) (var b)) (! (== (var a) (var b))))))
+d "cp c" b9 0x0 (seq (set Z (== (var a) (var c))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var c))) (! (== (cast 4 false (var a)) (cast 4 false (var c)))))) (set C (&& (ule (var a) (var c)) (! (== (var a) (var c))))))
+d "cp d" ba 0x0 (seq (set Z (== (var a) (var d))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var d))) (! (== (cast 4 false (var a)) (cast 4 false (var d)))))) (set C (&& (ule (var a) (var d)) (! (== (var a) (var d))))))
+d "cp e" bb 0x0 (seq (set Z (== (var a) (var e))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var e))) (! (== (cast 4 false (var a)) (cast 4 false (var e)))))) (set C (&& (ule (var a) (var e)) (! (== (var a) (var e))))))
+d "cp h" bc 0x0 (seq (set Z (== (var a) (var h))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var h))) (! (== (cast 4 false (var a)) (cast 4 false (var h)))))) (set C (&& (ule (var a) (var h)) (! (== (var a) (var h))))))
+d "cp l" bd 0x0 (seq (set Z (== (var a) (var l))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var l))) (! (== (cast 4 false (var a)) (cast 4 false (var l)))))) (set C (&& (ule (var a) (var l)) (! (== (var a) (var l))))))
+d "cpl" 2f 0x0 (seq (set a (~ (var a))) (set N true) (set H true))
 d "daa" 27
 d "dec [hl]" 35 0x0 (seq (set v (- (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N true) (set H (is_zero (cast 4 false (var v)))))
 d "dec a" 3d 0x0 (seq (set a (- (var a) (bv 8 0x1))) (set Z (is_zero (var a))) (set N true) (set H (== (cast 4 false (var a)) (bv 4 0xf))))
@@ -358,15 +358,15 @@ d "ldd a, [hl]" 3a 0x0 (seq (set a (load 0 (append (var h) (var l)))) (set h (it
 d "ldi [hl], a" 22 0x0 (seq (store 0 (append (var h) (var l)) (var a)) (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
 d "ldi a, [hl]" 2a 0x0 (seq (set a (load 0 (append (var h) (var l)))) (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
 d "nop" 00 0x0 nop
-d "or 0x00" f600
-d "or [hl]" b6
-d "or a" b7
-d "or b" b0
-d "or c" b1
-d "or d" b2
-d "or e" b3
-d "or h" b4
-d "or l" b5
+d "or 0x42" f642 0x0 (seq (set a (| (var a) (bv 8 0x42))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or [hl]" b6 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set a (| (var a) (var src))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or a" b7 0x0 (seq (set a (| (var a) (var a))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or b" b0 0x0 (seq (set a (| (var a) (var b))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or c" b1 0x0 (seq (set a (| (var a) (var c))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or d" b2 0x0 (seq (set a (| (var a) (var d))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or e" b3 0x0 (seq (set a (| (var a) (var e))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or h" b4 0x0 (seq (set a (| (var a) (var h))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or l" b5 0x0 (seq (set a (| (var a) (var l))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
 d "pop af" f1
 d "pop bc" c1
 d "pop de" d1
@@ -605,15 +605,15 @@ d "swap d" cb32
 d "swap e" cb33
 d "swap h" cb34
 d "swap l" cb35
-d "xor 0x00" ee00
-d "xor [hl]" ae
-d "xor a" af
-d "xor b" a8
-d "xor c" a9
-d "xor d" aa
-d "xor e" ab
-d "xor h" ac
-d "xor l" ad
+d "xor 0x42" ee42 0x0 (seq (set a (^ (var a) (bv 8 0x42))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor [hl]" ae 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set a (^ (var a) (var src))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor a" af 0x0 (seq (set a (^ (var a) (var a))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor b" a8 0x0 (seq (set a (^ (var a) (var b))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor c" a9 0x0 (seq (set a (^ (var a) (var c))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor d" aa 0x0 (seq (set a (^ (var a) (var d))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor e" ab 0x0 (seq (set a (^ (var a) (var e))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor h" ac 0x0 (seq (set a (^ (var a) (var h))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor l" ad 0x0 (seq (set a (^ (var a) (var l))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
 a "ld bc, 0x188" 018801
 a "ld de, 0x188" 118801
 a "call 0x36e0" cde036

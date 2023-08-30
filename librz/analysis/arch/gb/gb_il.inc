@@ -287,6 +287,35 @@ static RzILOpEffect *gb_il_and(gb_reg dst_reg, RzILOpBitVector *src) {
 		SETG("C", IL_FALSE));
 }
 
+static RzILOpEffect *gb_il_xor(gb_reg dst_reg, RzILOpBitVector *src) {
+	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
+	return SEQ5(
+		gb_il_write_reg(dst_reg, LOGXOR(dst, src)),
+		SETG("Z", IS_ZERO(DUP(dst))),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_FALSE),
+		SETG("C", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_or(gb_reg dst_reg, RzILOpBitVector *src) {
+	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
+	return SEQ5(
+		gb_il_write_reg(dst_reg, LOGOR(dst, src)),
+		SETG("Z", IS_ZERO(DUP(dst))),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_FALSE),
+		SETG("C", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_cmp(gb_reg dst_reg, RzILOpBitVector *src) {
+	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
+	return SEQ4(
+		SETG("Z", EQ(dst, src)),
+		SETG("N", IL_TRUE),
+		SETG("H", ULT(UNSIGNED(4, DUP(dst)), UNSIGNED(4, DUP(src)))),
+		SETG("C", ULT(DUP(dst), DUP(src))));
+}
+
 typedef enum {
 	GB_IL_BINOP_ADD,
 	GB_IL_BINOP_ADC,
@@ -294,7 +323,8 @@ typedef enum {
 	GB_IL_BINOP_SBC,
 	GB_IL_BINOP_AND,
 	GB_IL_BINOP_XOR,
-	GB_IL_BINOP_OR
+	GB_IL_BINOP_OR,
+	GB_IL_BINOP_CMP
 } gb_il_binop;
 
 static RzILOpEffect *gb_il_binop_dispatch(gb_il_binop op, gb_reg dst_reg, RzILOpBitVector *src) {
@@ -310,9 +340,11 @@ static RzILOpEffect *gb_il_binop_dispatch(gb_il_binop op, gb_reg dst_reg, RzILOp
 	case GB_IL_BINOP_AND:
 		return gb_il_and(dst_reg, src);
 	case GB_IL_BINOP_XOR:
+		return gb_il_xor(dst_reg, src);
 	case GB_IL_BINOP_OR:
-		// TODO
-		return NULL;
+		return gb_il_or(dst_reg, src);
+	case GB_IL_BINOP_CMP:
+		return gb_il_cmp(dst_reg, src);
 	}
 }
 
@@ -376,6 +408,17 @@ static RzILOpEffect *gb_il_rot(gb_reg reg, bool right, bool set_z, ut64 op_addr)
 		SETG("Z", set_z ? IS_ZERO(gb_il_read_reg(reg)) : IL_FALSE),
 		SETG("N", IL_FALSE),
 		SETG("H", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_cpl() {
+	return SEQ3(
+		SETG("a", LOGNOT(VARG("a"))),
+		SETG("N", IL_TRUE),
+		SETG("H", IL_TRUE));
+}
+
+static RzILOpEffect *gb_il_ccf() {
+	return SETG("C", INV(VARG("C")));
 }
 
 // --
