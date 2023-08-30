@@ -113,6 +113,10 @@ if cc_id == compiler_msvc
   add_project_arguments(msvc_compile_flags, language: ['c', 'cpp'])
 endif
 
+# Use the safe way to access unaligned values as all other methods fail
+# on OpenBSD/sparc64 with gcc.
+add_project_arguments('-DMEM_FORCE_MEMORY_ACCESS=0', language: ['c', 'cpp'])
+
 # =============================================================================
 # Subdirs
 # =============================================================================
