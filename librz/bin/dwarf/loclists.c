@@ -238,8 +238,9 @@ static void RzBinDwarfLocList_free(RzBinDwarfLocList *self) {
 	free(self);
 }
 
-static bool RzBinDwarfLocList_parse(RzBinDwarfLocListTable *self,
-	RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfLocListsFormat format) {
+static bool RzBinDwarfLocList_parse(
+	RzBinDwarfLocListTable *self, RzBuffer *buffer,
+	RzBinDwarfEncoding *encoding, RzBinDwarfLocListsFormat format) {
 	rz_return_val_if_fail(self && buffer && encoding, false);
 	RzBinDwarfLocList *loclist = RZ_NEW0(RzBinDwarfLocList);
 	RET_FALSE_IF_FAIL(loclist);
@@ -256,11 +257,13 @@ static bool RzBinDwarfLocList_parse(RzBinDwarfLocListTable *self,
 			break;
 		}
 
-		if (!RzBinDwarfLocListTable_convert_raw(self, raw_entry, &entry)) {
-			RzBinDwarfLocationListEntry_free(entry);
-		}
-		if (entry) {
+		if (RzBinDwarfLocListTable_convert_raw(self, raw_entry, &entry)) {
+			if (!entry) {
+				continue;
+			}
 			ERR_IF_FAIL(rz_pvector_push(&loclist->entries, entry));
+		} else {
+			RzBinDwarfLocationListEntry_free(entry);
 		}
 		continue;
 	err:
