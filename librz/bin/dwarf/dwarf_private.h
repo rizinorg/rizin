@@ -27,6 +27,9 @@ typedef struct {
 	RzBinDwarfEncoding encoding;
 } DwAttrOption;
 
+typedef RzBinDwarfValue Value;
+typedef RzBinDwarfLocation Location;
+
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian);
 
 RZ_IPI bool RzBinDwarfBlock_move(RzBinDwarfBlock *self, RzBinDwarfBlock *out);
@@ -75,7 +78,8 @@ RZ_IPI void RzBinDwarfRngListTable_free(RzBinDwarfRngListTable *self);
 
 RZ_IPI bool ValueType_from_encoding(DW_ATE encoding, ut64 byte_size, RzBinDwarfValueType *out_type);
 RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out);
-RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian);
+RZ_IPI bool Value_parse_into(
+	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian);
 RZ_IPI RzBinDwarfValueType Value_type(RzBinDwarfValue *ptr);
 RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, ut64 addr_mask, ut64 *result);
 RZ_IPI bool Value_from_u64(RzBinDwarfValueType value_type, ut64 value, RzBinDwarfValue *result);

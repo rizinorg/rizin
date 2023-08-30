@@ -3,6 +3,9 @@
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#define MEM_ZERO(T, x)       rz_mem_memzero((x), sizeof(T))
+#define MEM_CPY(T, dst, src) rz_mem_copy((dst), sizeof(T), (src), sizeof(T))
+
 #define OK_None \
 	do { \
 		*out = NULL; \
@@ -12,6 +15,21 @@
 #define OK_OR(x, E) \
 	do { \
 		if (!(x)) { \
+			E; \
+		} \
+	} while (0)
+
+#define OK_OR_ERR(x, E) \
+	do { \
+		if (!(x)) { \
+			E; \
+			goto err; \
+		} \
+	} while (0)
+
+#define AND_DO(x, E) \
+	do { \
+		if ((x)) { \
 			E; \
 		} \
 	} while (0)
