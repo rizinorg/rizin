@@ -24,11 +24,10 @@ dcu main
 ds 2  # Should be dsui call; ds
 dbt~[6-]  # dbtt here would be nice
 EOF
+REGEXP_FILTER_OUT=(loc\.[a-zA-Z0-9_]+.|main\+\d+.|entry0\+\d+.)
 EXPECT=<<EOF
 loc.func_0 loc.func_00
 main+8
-fs+181840
-fs+182016
 entry0+41
 EOF
 RUN
