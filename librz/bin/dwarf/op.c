@@ -870,10 +870,15 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		RzBinDwarfValue *lhs = NULL;
 		ERR_IF_FAIL(Evaluation_pop(self, &lhs));
 		RzBinDwarfValue rhs = { 0 };
-		ERR_IF_FAIL(Value_from_u64(lhs->type, operation.plus_constant.value, &rhs));
-		ERR_IF_FAIL(Value_add(lhs, &rhs, self->addr_mask, lhs));
-		ERR_IF_FAIL(Evaluation_push(self, lhs));
+		GOTO_IF_FAIL(Value_from_u64(lhs->type, operation.plus_constant.value, &rhs),
+			clean_lhs);
+		GOTO_IF_FAIL(Value_add(lhs, &rhs, self->addr_mask, lhs), clean_lhs);
+		GOTO_IF_FAIL(Evaluation_push(self, lhs), clean_lhs);
+		free(lhs);
 		break;
+	clean_lhs:
+		Value_free(lhs);
+		goto err;
 	}
 	case OPERATION_KIND_SHL: BINARY_OP(Value_shl);
 	case OPERATION_KIND_SHR: BINARY_OP(Value_shr);
