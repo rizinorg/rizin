@@ -21,6 +21,11 @@ static int iscallret(RzDebug *dbg, ut64 addr) {
 					      && (buf[4] & 0x06) != 0x04))) { /* R/M not 10x */
 			return 1;
 		}
+		/* check for 7-byte CALL indirect (encoded by FF 14 25) */
+		(void)dbg->iob.read_at(dbg->iob.io, addr - 7, buf, 7);
+		if (!memcmp(buf, "\xff\x14\x25", 3)) {
+			return 1;
+		}
 		// IMMAMISSINGANYOP
 	} else {
 		RzAnalysisOp op;
