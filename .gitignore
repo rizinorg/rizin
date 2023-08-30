@@ -128,4 +128,5 @@ subprojects/libdemangle/
 subprojects/libmspack/
 subprojects/blake3/
 subprojects/xz-*/
+subprojects/zstd-*/
 dist/windows/Output
