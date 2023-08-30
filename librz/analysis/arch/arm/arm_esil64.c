@@ -272,6 +272,87 @@ static void arm64math(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
+#if CS_NEXT_VERSION >= 6
+static void subfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
+	ut64 lsb = IMM64(2);
+	ut64 width = IMM64(3);
+	if (insn->alias_id == AArch64_INS_ALIAS_SBFIZ) {
+		width += 1;
+		lsb = -lsb % 64;
+		rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%" PFMT64u ",&,~,<<,%s,=",
+			lsb, IMM64(3), REG64(1), rz_num_bitmask((ut8)width), REG64(0));
+	} else if (insn->alias_id == AArch64_INS_ALIAS_UBFIZ) {
+		width += 1;
+		lsb = -lsb % 64;
+		rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,%" PFMT64u ",&,<<,%s,=",
+			lsb, REG64(1), rz_num_bitmask((ut8)width), REG64(0));
+	} else if (insn->alias_id == AArch64_INS_ALIAS_SBFX) {
+		width = width - lsb + 1;
+		rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%" PFMT64d ",%" PFMT64u ",<<,&,>>,~,%s,=",
+			IMM64(3), IMM64(2), REG64(1), IMM64(2), rz_num_bitmask((ut8)IMM64(3)), REG64(0));
+	} else if (insn->alias_id == AArch64_INS_ALIAS_UBFX) {
+		width = width - lsb + 1;
+		rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,%" PFMT64d ",%" PFMT64u ",<<,&,>>,%s,=",
+			lsb, REG64(1), lsb, rz_num_bitmask((ut8)width), REG64(0));
+	} else if (insn->alias_id == AArch64_INS_ALIAS_LSL) {
+		// imms != 0x1f => mod 32
+		// imms != 0x3f => mod 64
+		ut32 m = IMM64(3) != 0x1f ? 32 : 64;
+		const char *r0 = REG64(0);
+		const char *r1 = REG64(1);
+		const int size = REGSIZE64(0) * 8;
+
+		if (ISREG64(2)) {
+			if (LSHIFT2_64(2) || EXT64(2)) {
+				SHIFTED_REG64_APPEND(&op->esil, 2);
+				rz_strbuf_appendf(&op->esil, ",%d,%%,%s,<<,%s,=", size, r1, r0);
+			} else {
+				const char *r2 = REG64(2);
+				rz_strbuf_setf(&op->esil, "%d,%s,%%,%s,<<,%s,=", size, r2, r1, r0);
+			}
+		} else {
+			ut64 i2 = IMM64(2) % m;
+			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,<<,%s,=", i2 % (ut64)size, r1, r0);
+		}
+	} else if (insn->alias_id == AArch64_INS_ALIAS_LSR) {
+		const char *r0 = REG64(0);
+		const char *r1 = REG64(1);
+		const int size = REGSIZE64(0) * 8;
+
+		if (ISREG64(2)) {
+			if (LSHIFT2_64(2) || EXT64(2)) {
+				SHIFTED_REG64_APPEND(&op->esil, 2);
+				rz_strbuf_appendf(&op->esil, ",%d,%%,%s,>>,%s,=", size, r1, r0);
+			} else {
+				const char *r2 = REG64(2);
+				rz_strbuf_setf(&op->esil, "%d,%s,%%,%s,>>,%s,=", size, r2, r1, r0);
+			}
+		} else {
+			ut64 i2 = IMM64(2);
+			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,>>,%s,=", i2 % (ut64)size, r1, r0);
+		}
+	} else if (insn->alias_id == AArch64_INS_ALIAS_ASR) {
+		const char *r0 = REG64(0);
+		const char *r1 = REG64(1);
+		const int size = REGSIZE64(0) * 8;
+
+		if (ISREG64(2)) {
+			if (LSHIFT2_64(2)) {
+				SHIFTED_REG64_APPEND(&op->esil, 2);
+				rz_strbuf_appendf(&op->esil, ",%d,%%,%s,>>>>,%s,=", size, r1, r0);
+			} else {
+				const char *r2 = REG64(2);
+				rz_strbuf_setf(&op->esil, "%d,%s,%%,%s,>>>>,%s,=", size, r2, r1, r0);
+			}
+		} else {
+			ut64 i2 = IMM64(2);
+			rz_strbuf_setf(&op->esil, "%" PFMT64d ",%s,>>>>,%s,=", i2 % (ut64)size, r1, r0);
+		}
+	}
+	return;
+}
+#endif
+
 RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	const char *postfix = NULL;
 
@@ -1174,6 +1255,11 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 			rz_strbuf_appendf(&op->esil, "%" PFMT64d ",%s,%" PFMT64d ",%" PFMT64u ",<<,&,>>,%s,=",
 				IMM64(2), REG64(1), IMM64(2), rz_num_bitmask((ut8)IMM64(3)), REG64(0));
 		}
+		break;
+#else
+	case AArch64_INS_UBFM:
+	case AArch64_INS_SBFM:
+		subfm(op, handle, insn);
 		break;
 #endif
 	case CS_AARCH64(_INS_NEG):
