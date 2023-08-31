@@ -130,6 +130,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
 	dw->addr = DebugAddr_from_file(bf);
 	dw->str = RzBinDwarfDebugStr_from_file(bf);
 	dw->big_endian = bf_bigendian(bf);
+	dw->str_offsets = RzBinDwarfDebugStrOffsets_from_file(bf);
 
 	if (opt->flags & RZ_BIN_DWARF_ABBREVS) {
 		dw->abbrev = rz_bin_dwarf_abbrev_from_file(bf);
@@ -139,7 +140,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
 	}
 
 	if (opt->flags & RZ_BIN_DWARF_INFO && dw->abbrev) {
-		dw->info = rz_bin_dwarf_info_from_file(bf, dw->abbrev, dw->str);
+		dw->info = rz_bin_dwarf_info_from_file(bf, dw);
 		if (dw->info && rz_vector_len(&dw->info->units) > 0) {
 			RzBinDwarfCompUnit *unit = rz_vector_head(&dw->info->units);
 			dw->encoding = unit->hdr.encoding;

@@ -69,7 +69,7 @@ static char *directory_parse_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, boo
 	RzBinDwarfFileEntryFormat *format = NULL;
 	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
-		DwAttrOption opt = {
+		AttrOption opt = {
 			.type = DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
 			.format = format,
 			.line_hdr = hdr,
@@ -93,7 +93,7 @@ static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(
 	RzBinDwarfFileEntryFormat *format = NULL;
 	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
-		DwAttrOption opt = {
+		AttrOption opt = {
 			.type = DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
 			.format = format,
 			.line_hdr = hdr,
@@ -136,7 +136,7 @@ err:
 }
 
 static bool RzBinDwarfFileEntry_parse_v4(RzBuffer *buffer, RzBinDwarfFileEntry *entry) {
-	entry->path_name = buf_get_string_not_empty(buffer);
+	entry->path_name = read_string_not_empty(buffer);
 	ERR_IF_FAIL(entry->path_name);
 	ULE128_OR_GOTO(entry->directory_index, err);
 	ULE128_OR_GOTO(entry->timestamp, err);
@@ -177,7 +177,7 @@ static bool RzBinDwarfLineHeader_parse_v5(RzBuffer *buffer, RzBinDwarfLineHeader
 
 static bool RzBinDwarfLineHeader_parse_v4(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
 	while (true) {
-		char *str = buf_get_string_not_empty(buffer);
+		char *str = read_string_not_empty(buffer);
 		if (!str) {
 			break;
 		}
@@ -293,7 +293,7 @@ static bool RzBinDwarfLineHeader_parse(
 	RzBinDwarfLineHeader_init(hdr);
 	hdr->offset = rz_buf_tell(buffer);
 	hdr->is_64bit = false;
-	RET_FALSE_IF_FAIL(buf_read_initial_length(
+	RET_FALSE_IF_FAIL(read_initial_length(
 		buffer, &hdr->is_64bit, &hdr->unit_length, big_endian));
 
 	U_OR_RET_FALSE(16, hdr->version);
@@ -314,7 +314,7 @@ static bool RzBinDwarfLineHeader_parse(
 		hdr->address_size = encoding.address_size;
 	}
 
-	RET_FALSE_IF_FAIL(buf_read_offset(buffer, &hdr->header_length, hdr->is_64bit, big_endian));
+	RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->header_length, hdr->is_64bit, big_endian));
 
 	U8_OR_RET_FALSE(hdr->min_inst_len);
 	if (hdr->min_inst_len == 0) {

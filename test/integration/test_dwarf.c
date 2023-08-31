@@ -768,13 +768,15 @@ bool test_dwarf4_multidir_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
+	RzBinDWARFOption dwopt = {};
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf, &dwopt);
+	mu_assert_notnull(dw, "DWARF");
+
 	RzBinDwarfDebugAbbrevs *da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	mu_assert_notnull(da, "abbrevs");
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 8, "abbrevs count");
 
-	RzBinDwarfDebugStr *debug_str = rz_bin_dwarf_str_from_file(bin->cur);
-
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_info_from_file(bin->cur, da, debug_str);
+	RzBinDwarfDebugInfo *info = dw->info;
 	mu_assert_notnull(info, "info");
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(

@@ -11,22 +11,22 @@
 typedef enum {
 	DW_ATTR_TYPE_DEF,
 	DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
-} DwAttrType;
+} AttrType;
 
 typedef struct {
-	DwAttrType type;
+	AttrType type;
 	union {
 		RzBinDwarfAttrDef *def;
 		RzBinDwarfFileEntryFormat *format;
 	};
 	union {
 		RzBinDwarfLineHeader *line_hdr;
-		RzBinDwarfCompUnitHdr *comp_unit_hdr;
+		RzBinDwarfCompUnit *cu;
 	};
-	RzBinDwarfDebugStr *debug_str;
+	RzBinDWARF *dw;
 	RzBinDwarfEncoding encoding;
 	bool big_endian;
-} DwAttrOption;
+} AttrOption;
 
 typedef RzBinDwarfValue Value;
 typedef RzBinDwarfLocation Location;
@@ -40,13 +40,13 @@ RZ_IPI RzBuffer *RzBinDwarfBlock_as_buf(const RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
 
-RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
-RZ_IPI bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian);
-RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block);
-RZ_IPI char *buf_get_string(RzBuffer *buffer);
-RZ_IPI char *buf_get_string_not_empty(RzBuffer *buffer);
+RZ_IPI bool read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
+RZ_IPI bool read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian);
+RZ_IPI bool read_block(RzBuffer *buffer, RzBinDwarfBlock *block);
+RZ_IPI char *read_string(RzBuffer *buffer);
+RZ_IPI char *read_string_not_empty(RzBuffer *buffer);
 
-RZ_IPI bool RzBinDwarfAttr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *opt);
+RZ_IPI bool RzBinDwarfAttr_parse(RzBuffer *buffer, RzBinDwarfAttr *attr, AttrOption *opt);
 RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *val);
 RZ_IPI char *RzBinDwarfAttr_to_string(RzBinDwarfAttr *attr);
 
@@ -166,7 +166,16 @@ RZ_IPI bool RzBinDwarfLineOp_run(RZ_NONNULL RZ_BORROW RzBinDwarfLineOp *op, RZ_N
 /// debug_str
 RZ_IPI void RzBinDwarfDebugStr_free(RzBinDwarfDebugStr *debug_str);
 RZ_IPI char *RzBinDwarfDebugStr_get(RzBinDwarfDebugStr *debug_str, ut64 offset);
+RZ_IPI void RzBinDwarfDebugStr_read_all(RzBinDwarfDebugStr *debug_str);
 RZ_IPI RzBinDwarfDebugStr *RzBinDwarfDebugStr_from_buf(RZ_NONNULL RZ_OWN RzBuffer *buffer);
 RZ_IPI RzBinDwarfDebugStr *RzBinDwarfDebugStr_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
+
+/// debug_str_offsets
+RZ_IPI void RzBinDwarfDebugStrOffsets_free(RzBinDwarfDebugStrOffsets *debug_str_offsets);
+RZ_IPI char *RzBinDwarfDebugStrOffsets_get(RzBinDwarfDebugStr *debug_str, RzBinDwarfDebugStrOffsets *debug_str_offsets, ut64 base, ut64 index);
+RZ_IPI RzBinDwarfDebugStrOffsets *RzBinDwarfDebugStrOffsets_from_buf(
+	RZ_NONNULL RZ_OWN RzBuffer *buffer, bool big_endian);
+RZ_IPI RzBinDwarfDebugStrOffsets *RzBinDwarfDebugStrOffsets_from_file(
+	RZ_NONNULL RZ_BORROW RzBinFile *bf);
 
 #endif

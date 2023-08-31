@@ -1091,7 +1091,7 @@ typedef struct {
 	ut64 length;
 	// A 4-byte unsigned offset into the .debug_abbrev section.
 	ut64 abbrev_offset;
-	DW_UT unit_type; // DWARF 5 addition
+	DW_UT ut; // DWARF 5 addition
 	ut8 dwo_id; // DWARF 5 addition
 	ut64 type_sig; // DWARF 5 addition
 	ut64 type_offset; // DWARF 5 addition
@@ -1119,6 +1119,7 @@ typedef struct rz_bin_dwarf_comp_unit_t {
 	const char *name;
 	const char *comp_dir;
 	const char *producer;
+	const char *dwo_name;
 	DW_LANG language;
 	ut64 low_pc;
 	ut64 high_pc;
@@ -1317,7 +1318,16 @@ typedef struct {
 typedef struct {
 	RzBuffer *buffer;
 	HtUP /*<ut64, const char* *>*/ *str_by_offset;
+	bool cached;
 } RzBinDwarfDebugStr;
+
+typedef struct {
+	RzBuffer *buffer;
+	RzBinDwarfEncoding encoding;
+	ut64 unit_length;
+	ut16 padding;
+	RzVector /*<ut64>*/ *str_offsets;
+} RzBinDwarfDebugStrOffsets;
 
 /// A raw address range from the `.debug_ranges` section.
 typedef struct {
@@ -1499,6 +1509,7 @@ typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfDebugAbbrevs *abbrev;
 	RzBinDwarfDebugAddr *addr;
 	RzBinDwarfDebugStr *str;
+	RzBinDwarfDebugStrOffsets *str_offsets;
 } RzBinDWARF;
 
 typedef enum {
@@ -1534,6 +1545,17 @@ RZ_API RZ_OWN RzBinDwarfDebugStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORRO
 RZ_API void rz_bin_dwarf_str_free(RzBinDwarfDebugStr *str);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfDebugStr *str, ut64 offset);
 
+/// .debug_str_offsets
+RZ_API RZ_OWN RzBinDwarfDebugStrOffsets *rz_bin_dwarf_str_offsets_from_buf(
+	RZ_NONNULL RZ_OWN RzBuffer *buffer, bool big_endian);
+RZ_API RZ_OWN RzBinDwarfDebugStrOffsets *rz_bin_dwarf_str_offsets_from_file(
+	RZ_NONNULL RZ_BORROW RzBinFile *bf);
+RZ_API void rz_bin_dwarf_str_offsets_free(RzBinDwarfDebugStrOffsets *str_offsets);
+RZ_API RZ_BORROW const char *rz_bin_dwarf_str_offsets_get(
+	RZ_NONNULL RZ_BORROW RzBinDwarfDebugStr *debug_str,
+	RZ_NONNULL RZ_BORROW RzBinDwarfDebugStrOffsets *debug_str_offsets,
+	ut64 base, ut64 index);
+
 /// .debug_aranges
 RZ_API RzBinDwarfARanges *rz_bin_dwarf_aranges_from_buf(
 	RZ_NONNULL RZ_OWN RzBuffer *buffer, bool big_endian);
@@ -1557,12 +1579,10 @@ RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_name(
 RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_buf(
 	RZ_OWN RZ_NONNULL RzBuffer *buffer,
 	bool big_endian,
-	RZ_BORROW RZ_NONNULL RzBinDwarfDebugAbbrevs *debug_abbrevs,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfDebugStr *debug_str);
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw);
 RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NONNULL RzBinDwarfDebugAbbrevs *debug_abbrevs,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfDebugStr *debug_str);
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw);
 
 RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfDebugInfo *info);
 RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(

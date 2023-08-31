@@ -8,7 +8,7 @@
  * \brief Read an "initial length" value, as specified by dwarf.
  * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
  */
-RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian) {
+RZ_IPI bool read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian) {
 	static const ut64 DWARF32_UNIT_LENGTH_MAX = 0xfffffff0;
 	static const ut64 DWARF64_UNIT_LENGTH_INI = 0xffffffff;
 	ut32 x32;
@@ -37,7 +37,7 @@ RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut6
  * \param is_64bit Format of the comp unit
  * \return ut64 Read value
  */
-RZ_IPI bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
+RZ_IPI bool read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
 	if (is_64bit) {
 		U_OR_RET_FALSE(64, *out);
 	} else {
@@ -46,7 +46,7 @@ RZ_IPI bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big
 	return true;
 }
 
-RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
+RZ_IPI bool read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
 	if (block->length == 0) {
 		return true;
 	}
@@ -63,7 +63,7 @@ RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
 	return rz_buf_read(buffer, block->data, block->length) == block->length;
 }
 
-RZ_IPI char *buf_get_string(RzBuffer *buffer) {
+RZ_IPI char *read_string(RzBuffer *buffer) {
 	st64 offset = (st64)rz_buf_tell(buffer);
 	RET_NULL_IF_FAIL(offset != -1);
 	char *x = rz_buf_get_string(buffer, offset);
@@ -73,8 +73,8 @@ RZ_IPI char *buf_get_string(RzBuffer *buffer) {
 	return x;
 }
 
-RZ_IPI char *buf_get_string_not_empty(RzBuffer *buffer) {
-	char *str = buf_get_string(buffer);
+RZ_IPI char *read_string_not_empty(RzBuffer *buffer) {
+	char *str = read_string(buffer);
 	if (RZ_STR_ISEMPTY(str)) {
 		RZ_FREE(str);
 	}

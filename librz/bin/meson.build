@@ -275,6 +275,7 @@ rz_bin_sources = [
   'dwarf/unit.c',
   'dwarf/value.c',
   'dwarf/str.c',
+  'dwarf/str_offsets.c',
   'dwarf/dwarf.c',
 ]
 

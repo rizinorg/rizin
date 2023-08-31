@@ -51,7 +51,7 @@ static inline bool RzBinDwarfBlock_parse_data(
 	} else {
 		U_OR_RET_FALSE(16, block->length);
 	}
-	RET_FALSE_IF_FAIL(buf_read_block(buffer, block));
+	RET_FALSE_IF_FAIL(read_block(buffer, block));
 	return true;
 }
 

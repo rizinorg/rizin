@@ -393,7 +393,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, bool big_endian, 
 	}
 	case DW_OP_implicit_value: {
 		ULE128_OR_RET_FALSE(self->implicit_value.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &self->implicit_value));
+		RET_FALSE_IF_FAIL(read_block(buffer, &self->implicit_value));
 		self->kind = OPERATION_KIND_IMPLICIT_VALUE;
 		break;
 	}
@@ -405,7 +405,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, bool big_endian, 
 		if (encoding->version == 2) {
 			U_ADDR_SIZE_OR_RET_FALSE(self->implicit_pointer.value);
 		} else {
-			RET_FALSE_IF_FAIL(buf_read_offset(
+			RET_FALSE_IF_FAIL(read_offset(
 				buffer, &self->implicit_pointer.value, encoding->is_64bit, big_endian));
 		}
 		SLE128_OR_RET_FALSE(self->implicit_pointer.byte_offset);
@@ -425,7 +425,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, bool big_endian, 
 	case DW_OP_entry_value:
 	case DW_OP_GNU_entry_value: {
 		ULE128_OR_RET_FALSE(self->entry_value.expression.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &self->entry_value.expression));
+		RET_FALSE_IF_FAIL(read_block(buffer, &self->entry_value.expression));
 		self->kind = OPERATION_KIND_ENTRY_VALUE;
 		break;
 	}
@@ -433,7 +433,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, bool big_endian, 
 	case DW_OP_GNU_const_type: {
 		ULE128_OR_RET_FALSE(self->typed_literal.base_type);
 		U8_OR_RET_FALSE(self->typed_literal.value.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &self->typed_literal.value));
+		RET_FALSE_IF_FAIL(read_block(buffer, &self->typed_literal.value));
 		self->kind = OPERATION_KIND_TYPED_LITERAL;
 		break;
 	}

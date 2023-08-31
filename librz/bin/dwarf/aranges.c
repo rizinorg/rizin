@@ -33,7 +33,7 @@ static bool RzBinDwarfARanges_parse(
 		ut64 offset = rz_buf_tell(buffer);
 		ut64 unit_length = 0;
 		bool is_64bit;
-		GOTO_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &unit_length, big_endian), ok);
+		GOTO_IF_FAIL(read_initial_length(buffer, &is_64bit, &unit_length, big_endian), ok);
 		// Sanity check: length must be at least the minimal size of the remaining header fields
 		// and at maximum the remaining buffer size.
 		size_t header_rest_size = 2 + (is_64bit ? 8 : 4) + 1 + 1;
@@ -49,7 +49,7 @@ static bool RzBinDwarfARanges_parse(
 		set->is_64bit = is_64bit;
 
 		U_OR_GOTO(16, set->version, err);
-		GOTO_IF_FAIL(buf_read_offset(buffer, &set->debug_info_offset, is_64bit, big_endian), err);
+		GOTO_IF_FAIL(read_offset(buffer, &set->debug_info_offset, is_64bit, big_endian), err);
 		U8_OR_GOTO(set->address_size, err);
 		U8_OR_GOTO(set->segment_size, err);
 

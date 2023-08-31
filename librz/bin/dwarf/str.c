@@ -25,6 +25,7 @@ RZ_IPI RzBinDwarfDebugStr *RzBinDwarfDebugStr_from_buf(RZ_NONNULL RZ_OWN RzBuffe
 		free(debug_str);
 		return NULL;
 	}
+	RzBinDwarfDebugStr_read_all(debug_str);
 	return debug_str;
 }
 
@@ -40,12 +41,25 @@ RZ_IPI char *RzBinDwarfDebugStr_get(RzBinDwarfDebugStr *debug_str, ut64 offset) 
 	char *string = ht_up_find(debug_str->str_by_offset, offset, NULL);
 	if (!string) {
 		rz_buf_seek(debug_str->buffer, (st64)offset, RZ_BUF_SET);
-		string = buf_get_string(debug_str->buffer);
+		string = read_string(debug_str->buffer);
 		if (string) {
 			ht_up_update(debug_str->str_by_offset, offset, string);
 		}
 	}
 	return string;
+}
+
+RZ_IPI void RzBinDwarfDebugStr_read_all(RzBinDwarfDebugStr *debug_str) {
+	rz_return_if_fail(debug_str);
+	if (debug_str->cached) {
+		return;
+	}
+	ut64 offset = 0;
+	while (offset > rz_buf_size(debug_str->buffer)) {
+		RzBinDwarfDebugStr_get(debug_str, offset);
+		offset = rz_buf_tell(debug_str->buffer);
+	}
+	debug_str->cached = true;
 }
 
 RZ_API RZ_OWN RzBinDwarfDebugStr *rz_bin_dwarf_str_from_buf(RZ_NONNULL RZ_OWN RzBuffer *buffer) {

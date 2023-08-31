@@ -167,7 +167,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
 		rz_strbuf_appendf(sb, "   Version:       %d\n", unit->hdr.encoding.version);
 		rz_strbuf_appendf(sb, "   Abbrev Offset: 0x%" PFMT64x "\n", unit->hdr.abbrev_offset);
 		rz_strbuf_appendf(sb, "   Pointer Size:  %d\n", unit->hdr.encoding.address_size);
-		const char *unit_type_name = rz_bin_dwarf_unit_type(unit->hdr.unit_type);
+		const char *unit_type_name = rz_bin_dwarf_unit_type(unit->hdr.ut);
 		if (unit_type_name) {
 			rz_strbuf_appendf(sb, "   Unit Type:     %s\n", unit_type_name);
 		}

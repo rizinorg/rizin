@@ -884,8 +884,11 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 			RzType_from_base_type(type, ref);
 			break;
 		}
-		RzBaseTypeKind k = RZ_BASE_TYPE_KIND_STRUCT;
+		RzBaseTypeKind k = -1;
 		switch (die->tag) {
+		case DW_TAG_base_type:
+			k = RZ_BASE_TYPE_KIND_ATOMIC;
+			break;
 		case DW_TAG_structure_type:
 		case DW_TAG_class_type:
 			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
@@ -906,7 +909,8 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 		}
 		type->kind = RZ_TYPE_KIND_IDENTIFIER;
 		type->identifier.name = const_name ? rz_str_new(const_name)
-						   : anonymous_type_name(k, die->offset);
+						   : (k != -1 ? anonymous_type_name(k, die->offset)
+							      : anonymous_name("unspecified", die->offset));
 		break;
 	}
 	case DW_TAG_inlined_subroutine:
@@ -987,6 +991,7 @@ static RZ_OWN RzType *type_parse_from_offset(
 	set_u_free(visited);
 	return type;
 }
+
 static inline const char *select_name(const char *demangle_name, const char *link_name, const char *name, DW_LANG lang) {
 	return prefer_linkage_name(lang) ? (demangle_name ? demangle_name : (link_name ? link_name : name)) : name;
 }
@@ -1627,6 +1632,7 @@ static void parse_die(Context *ctx, RzBinDwarfDie *die) {
 		RzBaseType_from_die(ctx, die);
 		break;
 	}
+	case DW_TAG_entry_point:
 	case DW_TAG_subprogram:
 		function_from_die(ctx, die);
 		break;
