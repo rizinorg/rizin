@@ -77,17 +77,26 @@ static inline void gb_analysis_esil_ret(RzAnalysisOp *op) {
 	rz_strbuf_append(&op->esil, "sp,[2],pc,:=,2,sp,+=");
 }
 
-static inline void gb_analysis_esil_cret(RzAnalysisOp *op, const ut8 data) {
+static inline void gb_analysis_esil_cret(RzAnalysisOpMask mask, RzAnalysisOp *op, const ut8 data) {
 	char cond;
+	gb_flag cond_flag;
 	if ((data & 0xd0) == 0xd0) {
 		cond = 'C';
+		cond_flag = GB_FLAG_C;
 	} else {
 		cond = 'Z';
+		cond_flag = GB_FLAG_Z;
 	}
-	if (op->cond == RZ_TYPE_COND_EQ) {
-		rz_strbuf_setf(&op->esil, "%c,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
-	} else {
-		rz_strbuf_setf(&op->esil, "%c,!,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
+	bool neg = op->cond != RZ_TYPE_COND_EQ;
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		if (!neg) {
+			rz_strbuf_setf(&op->esil, "%c,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
+		} else {
+			rz_strbuf_setf(&op->esil, "%c,!,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
+		}
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_cret(cond_flag, neg, op->addr);
 	}
 }
 
@@ -1426,7 +1435,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0xd0:
 	case 0xd8:
 		gb_analysis_cond(analysis->reg, op, data[0]);
-		gb_analysis_esil_cret(op, data[0]);
+		gb_analysis_esil_cret(mask, op, data[0]);
 		op->eob = true;
 		op->cycles = 20;
 		op->failcycles = 8;

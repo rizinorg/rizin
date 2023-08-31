@@ -421,14 +421,29 @@ static RzILOpEffect *gb_il_ccf() {
 	return SETG("C", INV(VARG("C")));
 }
 
+static RzILOpEffect *gb_il_ret(ut64 op_addr) {
+	return SEQ3(
+		SETL("r", LOADW(16, gb_il_resolve_addr_data(op_addr, VARG("sp")))),
+		SETG("sp", ADD(VARG("sp"), U16(2))),
+		JMP(gb_il_resolve_addr_code(op_addr, VARL("r"))));
+}
+
+static RzILOpEffect *gb_il_cond(gb_flag cond_flag, bool neg, RzILOpEffect *eff) {
+	RzILOpBool *cond = VARG(gb_flag_name(cond_flag));
+	if (neg) {
+		return BRANCH(cond, NOP(), eff);
+	}
+	return BRANCH(cond, eff, NOP());
+}
+
+static RzILOpEffect *gb_il_cret(gb_flag cond_flag, bool neg, ut64 op_addr) {
+	return gb_il_cond(cond_flag, neg, gb_il_ret(op_addr));
+}
+
 // --
 
 static RzILOpEffect *gb_il_cjmp(ut64 dst, gb_flag cond_flag, bool neg) {
-	RzILOpBool *cond = VARG(gb_flag_name(cond_flag));
-	if (neg) {
-		return BRANCH(cond, NOP(), JMP(gb_il_addr_code_abs(dst)));
-	}
-	return BRANCH(cond, JMP(gb_il_addr_code_abs(dst)), NOP());
+	return gb_il_cond(cond_flag, neg, JMP(gb_il_addr_code_abs(dst)));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

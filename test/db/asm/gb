@@ -439,10 +439,10 @@ d "res 7, d" cbba
 d "res 7, e" cbbb
 d "res 7, h" cbbc
 d "res 7, l" cbbd
-d "ret C" d8
-d "ret Z" c8
-d "ret nC" d0
-d "ret nZ" c0
+d "ret C" d8 0x0 (branch (var C) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))) nop)
+d "ret Z" c8 0x0 (branch (var Z) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))) nop)
+d "ret nC" d0 0x0 (branch (var C) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))))
+d "ret nZ" c0 0x0 (branch (var Z) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))))
 d "ret" c9
 d "reti" d9
 d "rl [hl]" cb16 0x0 (seq (set CC (var C)) (set C (msb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (<< (load 0 (append (var h) (var l))) (bv 3 0x1) (var CC))) (set Z (is_zero (append (var h) (var l)))) (set N false) (set H false))
