@@ -15,3 +15,19 @@ rip = 0x00000000004004ed
 rip = 0x00000000004004ed
 EOF
 RUN
+
+NAME=missing main stack frame fix (#3806)
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+ds 2  # Should be dsui call; ds
+dbt~[6-]  # dbtt here would be nice
+EOF
+REGEXP_FILTER_OUT=(loc\.[a-zA-Z0-9_]+.|main\+\d+.|entry0\+\d+.)
+EXPECT=<<EOF
+loc.func_0 loc.func_00
+main+8
+entry0+41
+EOF
+RUN
