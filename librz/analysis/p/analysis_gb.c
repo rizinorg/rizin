@@ -321,15 +321,21 @@ static void gb_analysis_mov_reg(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp 
 	}
 }
 
-static inline void gb_analysis_mov_ime(RzReg *reg, RzAnalysisOp *op, const ut8 data) {
+static inline void gb_analysis_mov_ime(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, "ime", RZ_REG_TYPE_GPR);
 	op->src[0]->absolute = true;
-	op->src[0]->imm = (data != 0xf3);
-	rz_strbuf_setf(&op->esil, "%d,ime,=", (int)op->src[0]->imm);
-	if (data == 0xd9) {
-		rz_strbuf_append(&op->esil, ",");
+	bool val = data != 0xf3;
+	op->src[0]->imm = val;
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		rz_strbuf_setf(&op->esil, "%d,ime,=", (int)op->src[0]->imm);
+		if (data == 0xd9) {
+			rz_strbuf_append(&op->esil, ",");
+		}
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = data == 0xd9 ? gb_il_reti(op->addr) : gb_il_mov_ime(val);
 	}
 }
 
@@ -1442,16 +1448,21 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->type = RZ_ANALYSIS_OP_TYPE_CRET;
 		break;
 	case 0xd9:
-		gb_analysis_mov_ime(analysis->reg, op, data[0]);
+		gb_analysis_mov_ime(mask, analysis->reg, op, data[0]);
 		op->type2 = RZ_ANALYSIS_OP_TYPE_MOV;
 		// fallthrough
 	case 0xc9:
 		op->eob = true;
 		op->cycles = 16;
-		gb_analysis_esil_ret(op);
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			gb_analysis_esil_ret(op);
+		}
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -2;
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
+		if (mask & RZ_ANALYSIS_OP_MASK_IL && data[0] == 0xc9) {
+			op->il_op = gb_il_ret(op->addr);
+		}
 		break;
 	case 0x0b:
 	case 0x1b:
@@ -1652,7 +1663,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case 0xf3: // di
 	case 0xfb: // ei
-		gb_analysis_mov_ime(analysis->reg, op, data[0]);
+		gb_analysis_mov_ime(mask, analysis->reg, op, data[0]);
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
@@ -1880,7 +1891,7 @@ static int esil_gb_fini(RzAnalysisEsil *esil) {
 }
 
 static const char *gb_regs_bound[] = {
-	"a", "b", "c", "d", "e", "h", "l", "sp", "Z", "N", "H", "C", NULL
+	"a", "b", "c", "d", "e", "h", "l", "sp", "Z", "N", "H", "C", "ime", NULL
 };
 
 static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {

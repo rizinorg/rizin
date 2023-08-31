@@ -440,6 +440,16 @@ static RzILOpEffect *gb_il_cret(gb_flag cond_flag, bool neg, ut64 op_addr) {
 	return gb_il_cond(cond_flag, neg, gb_il_ret(op_addr));
 }
 
+static RzILOpEffect *gb_il_reti(ut64 op_addr) {
+	return SEQ2(
+		SETG("ime", IL_TRUE),
+		gb_il_ret(op_addr));
+}
+
+static RzILOpEffect *gb_il_mov_ime(bool value) {
+	return SETG("ime", value ? IL_TRUE : IL_FALSE);
+}
+
 // --
 
 static RzILOpEffect *gb_il_cjmp(ut64 dst, gb_flag cond_flag, bool neg) {

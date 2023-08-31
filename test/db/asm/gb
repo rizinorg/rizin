@@ -125,8 +125,8 @@ d "dec h" 25 0x0 (seq (set h (- (var h) (bv 8 0x1))) (set Z (is_zero (var h))) (
 d "dec hl" 2b 0x0 (seq (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
 d "dec l" 2d 0x0 (seq (set l (- (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (set N true) (set H (== (cast 4 false (var l)) (bv 4 0xf))))
 d "dec sp" 3b 0x0 (set sp (- (var sp) (bv 16 0x1)))
-d "di" f3
-d "ei" fb
+d "di" f3 0x0 (set ime false)
+d "ei" fb 0x0 (set ime true)
 d "halt" 76
 d "inc [hl]" 34 0x0 (seq (set v (+ (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N false) (set H (is_zero (cast 4 false (var v)))))
 d "inc [hl]" 34 0x30000 (seq (set v (+ (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N false) (set H (is_zero (cast 4 false (var v)))))
@@ -443,8 +443,8 @@ d "ret C" d8 0x0 (branch (var C) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (
 d "ret Z" c8 0x0 (branch (var Z) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))) nop)
 d "ret nC" d0 0x0 (branch (var C) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))))
 d "ret nZ" c0 0x0 (branch (var Z) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))))
-d "ret" c9
-d "reti" d9
+d "ret" c9 0x0 (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r))))
+d "reti" d9 0x0 (seq (set ime true) (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r))))
 d "rl [hl]" cb16 0x0 (seq (set CC (var C)) (set C (msb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (<< (load 0 (append (var h) (var l))) (bv 3 0x1) (var CC))) (set Z (is_zero (append (var h) (var l)))) (set N false) (set H false))
 d "rl a" cb17 0x0 (seq (set CC (var C)) (set C (msb (var a))) (set a (<< (var a) (bv 3 0x1) (var CC))) (set Z (is_zero (var a))) (set N false) (set H false))
 d "rl b" cb10 0x0 (seq (set CC (var C)) (set C (msb (var b))) (set b (<< (var b) (bv 3 0x1) (var CC))) (set Z (is_zero (var b))) (set N false) (set H false))
