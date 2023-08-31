@@ -1116,8 +1116,14 @@ special(struct parse *p, int ch) {
 		ordinary(p, '\r');
 		return;
 	case 's':
-		num = 5;
-		memcpy(bracket, "\t\r\n ]", num);
+	case 'S':
+		num = 6;
+		const char *chars = "^\t\r\n ]";
+		if (ch == 's') {
+			num--;
+			chars++;
+		}
+		memcpy(bracket, chars, num);
 		break;
 	case 'd':
 		num = 4;
