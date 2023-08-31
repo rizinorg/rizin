@@ -208,7 +208,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"              ssdeep | Context triggered piecewise hashing comparison\n"
 		"  -i        use command line arguments instead of files (only for -d)\n"
 		"  -H        hexadecimal visual mode\n"
-		"  -h        this help message\n"
+		"  -h        show the help message\n"
 		"  -j        json output\n"
 		"  -q        quite output\n"
 		"  -v        show version information\n"
