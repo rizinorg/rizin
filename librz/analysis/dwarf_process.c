@@ -1212,8 +1212,8 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 	}
 }
 
-static void log_block(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, const RzBinDwarfRange *range) {
-	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block);
+static void RzBinDwarfBlock_log(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, const RzBinDwarfRange *range) {
+	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block, ctx->dw->loc->big_endian);
 	if (RZ_STR_ISNOTEMPTY(expr_str)) {
 		if (!range) {
 			RZ_LOG_VERBOSE("Location parse failed: 0x%" PFMT64x " [%s]\n", offset, expr_str);
@@ -1261,7 +1261,7 @@ static RzBinDwarfLocation *location_list_parse(
 		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
-			log_block(ctx, entry->expression, loclist->offset, entry->range);
+			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, entry->range);
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 			continue;
 		}
@@ -1295,7 +1295,7 @@ err_msg:
 	RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " %s\n", offset, msg);
 	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 err_eval:
-	log_block(ctx, block, offset, NULL);
+	RzBinDwarfBlock_log(ctx, block, offset, NULL);
 	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 empty_loc:
 	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
@@ -1312,7 +1312,7 @@ static RzBinDwarfLocation *location_parse(
 		ut64 offset = attr->reference;
 		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
 		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
-			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, &ctx->unit->hdr.encoding, offset)) {
+			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, ctx->unit, offset)) {
 				goto err_find;
 			}
 			loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
@@ -1338,7 +1338,13 @@ static RzBinDwarfLocation *location_parse(
 	return NULL;
 }
 
-static bool function_var_parse(Context *ctx, RzAnalysisDwarfFunction *f, const RzBinDwarfDie *fn_die, RzAnalysisDwarfVariable *v, const RzBinDwarfDie *var_die, bool *has_unspecified_parameters) {
+static bool function_var_parse(
+	Context *ctx,
+	RzAnalysisDwarfFunction *f,
+	const RzBinDwarfDie *fn_die,
+	RzAnalysisDwarfVariable *v,
+	const RzBinDwarfDie *var_die,
+	bool *has_unspecified_parameters) {
 	v->offset = var_die->offset;
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:

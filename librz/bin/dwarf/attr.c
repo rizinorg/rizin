@@ -43,7 +43,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttr
 		return false;
 	}
 
-	bool big_endian = opt->encoding.big_endian;
+	bool big_endian = opt->big_endian;
 
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
 	switch (value->form) {

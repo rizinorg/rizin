@@ -75,8 +75,8 @@ static char *directory_parse_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, boo
 			.line_hdr = hdr,
 			.encoding = {
 				.address_size = hdr->address_size,
-				.big_endian = big_endian,
 			},
+			.big_endian = big_endian,
 		};
 		RET_NULL_IF_FAIL(RzBinDwarfAttr_parse(buffer, &attr, &opt));
 		if (format->content_type == DW_LNCT_path) {
@@ -86,7 +86,8 @@ static char *directory_parse_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, boo
 	return path_name;
 }
 
-static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
+static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(
+	RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
 	RzBinDwarfFileEntry *entry = RZ_NEW0(RzBinDwarfFileEntry);
 	RET_FALSE_IF_FAIL(entry);
 	RzBinDwarfFileEntryFormat *format = NULL;
@@ -97,9 +98,9 @@ static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(RzBuffer *buffer, RzBin
 			.format = format,
 			.line_hdr = hdr,
 			.encoding = {
-				.big_endian = big_endian,
 				.address_size = hdr->address_size,
 			},
+			.big_endian = big_endian,
 		};
 		ERR_IF_FAIL(RzBinDwarfAttr_parse(buffer, &attr, &opt));
 		switch (format->content_type) {
@@ -285,15 +286,15 @@ RZ_IPI st64 RzBinDwarfLineHeader_spec_op_advance_line(const RzBinDwarfLineHeader
 
 static bool RzBinDwarfLineHeader_parse(
 	RzBuffer *buffer,
+	bool big_endian,
 	RzBinDwarfEncoding encoding,
 	RzBinDwarfLineHeader *hdr) {
 	rz_return_val_if_fail(hdr && buffer, false);
-	bool big_endian = encoding.big_endian;
 	RzBinDwarfLineHeader_init(hdr);
 	hdr->offset = rz_buf_tell(buffer);
 	hdr->is_64bit = false;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(
-		buffer, &hdr->is_64bit, &hdr->unit_length, encoding.big_endian));
+		buffer, &hdr->is_64bit, &hdr->unit_length, big_endian));
 
 	U_OR_RET_FALSE(16, hdr->version);
 	if (hdr->version < 2 || hdr->version > 5) {
@@ -632,6 +633,7 @@ static void RzBinDwarfLineUnit_free(RzBinDwarfLineUnit *unit) {
 
 static RzBinDwarfLineInfo *RzBinDwarfLineInfo_parse(
 	RzBuffer *buffer,
+	bool big_endian,
 	RzBinDwarfEncoding *encoding,
 	RzBinDwarfDebugInfo *debug_info,
 	RzBinDwarfLineInfoMask mask) {
@@ -659,7 +661,7 @@ static RzBinDwarfLineInfo *RzBinDwarfLineInfo_parse(
 			break;
 		}
 
-		if (!RzBinDwarfLineHeader_parse(buffer, *encoding, &unit->header)) {
+		if (!RzBinDwarfLineHeader_parse(buffer, big_endian, *encoding, &unit->header)) {
 			RzBinDwarfLineUnit_free(unit);
 			break;
 		}
@@ -692,7 +694,7 @@ static RzBinDwarfLineInfo *RzBinDwarfLineInfo_parse(
 				    &ctx,
 				    buffer,
 				    (mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) ? &unit->ops : NULL,
-				    encoding->big_endian)) {
+				    big_endian)) {
 				break;
 			}
 		} while (true); // if nothing is read -> error, exit
@@ -717,11 +719,12 @@ RZ_API void rz_bin_dwarf_line_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfLineInfo *l
 
 RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_line_from_buf(
 	RZ_BORROW RZ_NONNULL RzBuffer *buffer,
+	bool big_endian,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE RzBinDwarfDebugInfo *debug_info,
 	RzBinDwarfLineInfoMask mask) {
 	rz_return_val_if_fail(buffer && encoding, NULL);
-	return RzBinDwarfLineInfo_parse(buffer, encoding, debug_info, mask);
+	return RzBinDwarfLineInfo_parse(buffer, big_endian, encoding, debug_info, mask);
 }
 
 /**
@@ -743,7 +746,7 @@ RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_line_from_file(
 
 	RzBuffer *buf = get_section_buf(bf, "debug_line");
 	RET_NULL_IF_FAIL(buf);
-	RzBinDwarfLineInfo *line = RzBinDwarfLineInfo_parse(buf, &encoding_bf, debug_info, mask);
+	RzBinDwarfLineInfo *line = RzBinDwarfLineInfo_parse(buf, bf_bigendian(bf), &encoding_bf, debug_info, mask);
 	rz_buf_free(buf);
 	return line;
 }

@@ -203,7 +203,7 @@ typedef struct {
 	};
 } Operation;
 
-RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfEncoding *encoding);
+RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, bool big_endian, const RzBinDwarfEncoding *encoding);
 
 typedef ut16 Register;
 typedef char *Error;

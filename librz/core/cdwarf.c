@@ -226,7 +226,8 @@ static bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 		RzBinDwarfLocationListEntry *entry = *it;
 		rz_strbuf_appendf(sb, "\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t[", entry->range->begin, entry->range->end);
 		if (entry->expression) {
-			rz_bin_dwarf_expression_dump(&ctx->dw->encoding, entry->expression, ctx->sb, ",\t", "");
+			rz_bin_dwarf_expression_dump(
+				&ctx->dw->encoding, entry->expression, loclist->big_endian, ctx->sb, ",\t", "");
 		}
 		rz_strbuf_append(sb, "]\n");
 	}

@@ -118,7 +118,6 @@ RZ_IPI bool RzBinDwarfEncoding_from_file(RzBinDwarfEncoding *encoding, RzBinFile
 	}
 	RzBinInfo *binfo = bf->o && bf->o->info ? bf->o->info : NULL;
 	encoding->address_size = binfo->bits ? binfo->bits / 8 : 4;
-	encoding->big_endian = binfo->big_endian;
 	return true;
 }
 

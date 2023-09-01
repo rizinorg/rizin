@@ -9,7 +9,6 @@ RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool
 	bool is_64bit = false;
 	ut64 length = 0;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &length, big_endian));
-	hdr->encoding.big_endian = big_endian;
 	hdr->encoding.is_64bit = is_64bit;
 	hdr->unit_length = length;
 
