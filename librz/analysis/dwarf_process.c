@@ -723,13 +723,12 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 		rz_pvector_foreach (btypes, it) {
 			RzBaseType *b = *it;
 			if (RzBaseType_eq(btype, b)) {
-				goto skip_btype;
+				goto err;
 			}
 		}
 		rz_pvector_push(btypes, btype);
 	}
 
-skip_btype:
 	return btype;
 err:
 	rz_type_base_type_free(btype);
@@ -932,13 +931,14 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 		break;
 	}
 
-	if (type) {
-		RzType *copy = rz_type_clone(type);
-		if (!ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
-			RZ_LOG_ERROR("Failed to insert type [%s] into debug_info->type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, type));
-			rz_type_free(copy);
-		}
+	RzType *copy = type ? rz_type_clone(type) : NULL;
+	if (copy && ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
+		RZ_LOG_DEBUG("Insert RzType [%s] into type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, type));
+	} else {
+		RZ_LOG_ERROR("Failed to insert RzType [%s] into type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, type));
+		rz_type_free(copy);
 	}
+
 end:
 	set_u_delete(visited, offset);
 	return type;
@@ -1389,14 +1389,12 @@ static bool function_var_parse(Context *ctx, RzAnalysisDwarfFunction *f, const R
 		}
 	}
 
-	if (!v->name) {
-		v->name = anonymous_name("var", v->offset);
-	}
 	if (!has_location) {
 		v->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
 	} else if (!v->location) {
 		v->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 	}
+
 	v->prefer_name = select_name(NULL, v->link_name, v->name, ctx->unit->language);
 	if (!v->prefer_name) {
 		v->prefer_name = v->name = anonymous_name("var", var_die->offset);
@@ -1428,15 +1426,14 @@ static bool function_children_parse(Context *ctx, const RzBinDwarfDie *die, RzCa
 			callable->has_unspecified_parameters = true;
 			goto err;
 		}
-		if (!(v.location && v.type)) {
-			RZ_LOG_ERROR("DWARF function variable parse failed "
-				     "%s f.addr=0x%" PFMT64x " f.offset=0x%" PFMT64x " [0x%" PFMT64x "]\n",
-				fn->prefer_name, fn->low_pc, die->offset, child_die->offset);
+		if (!v.type) {
+			RZ_LOG_ERROR("DWARF function %s variable %s failed\n",
+				fn->prefer_name, v.prefer_name);
 			goto err;
 		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
 			RzCallableArg *arg = rz_type_callable_arg_new(
-				ctx->analysis->typedb, v.prefer_name ? v.prefer_name : "", rz_type_clone(v.type));
+				ctx->analysis->typedb, v.prefer_name, rz_type_clone(v.type));
 			rz_type_callable_arg_add(callable, arg);
 		}
 		rz_vector_push(&fn->variables, &v);
