@@ -723,12 +723,12 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 		rz_pvector_foreach (btypes, it) {
 			RzBaseType *b = *it;
 			if (RzBaseType_eq(btype, b)) {
-				goto err;
+				goto ok;
 			}
 		}
 		rz_pvector_push(btypes, btype);
 	}
-
+ok:
 	return btype;
 err:
 	rz_type_base_type_free(btype);
