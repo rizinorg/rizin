@@ -658,6 +658,7 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 			goto err;
 		}
 		break;
+	case DW_TAG_unspecified_type:
 	case DW_TAG_base_type:
 		RzBaseType_NEW_CHECKED(btype, RZ_BASE_TYPE_KIND_ATOMIC);
 		break;
@@ -829,7 +830,8 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	// this should be recursive search for the type until you find base/user defined type
 	case DW_TAG_pointer_type:
 	case DW_TAG_reference_type: // C++ references are just pointers to us
-	case DW_TAG_rvalue_reference_type: {
+	case DW_TAG_rvalue_reference_type:
+	case DW_TAG_ptr_to_member_type: {
 		RzType *pointee = type_parse_from_die_internal(ctx, die, true, size, visited);
 		if (!pointee) {
 			goto end;
@@ -848,7 +850,8 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	case DW_TAG_structure_type:
 	case DW_TAG_enumeration_type:
 	case DW_TAG_union_type:
-	case DW_TAG_class_type: {
+	case DW_TAG_class_type:
+	case DW_TAG_unspecified_type: {
 		const char *const_name = die_name_const(die);
 		type = RZ_NEW0(RzType);
 		if (!type) {
@@ -869,6 +872,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
 			k = RZ_BASE_TYPE_KIND_ENUM;
 			break;
+		case DW_TAG_unspecified_type:
 		default:
 			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			break;
@@ -935,7 +939,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	if (copy && ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
 		RZ_LOG_DEBUG("Insert RzType [%s] into type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, type));
 	} else {
-		RZ_LOG_ERROR("Failed to insert RzType [%s] into type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, type));
+		RZ_LOG_ERROR("Failed to insert RzType [0x%" PFMT64x "] into type_by_offset\n", offset);
 		rz_type_free(copy);
 	}
 
@@ -1585,6 +1589,7 @@ static void parse_die(Context *ctx, RzBinDwarfDie *die) {
 	case DW_TAG_class_type:
 	case DW_TAG_enumeration_type:
 	case DW_TAG_typedef:
+	case DW_TAG_unspecified_type:
 	case DW_TAG_base_type: {
 		RzBaseType_from_die(ctx, die);
 		break;
