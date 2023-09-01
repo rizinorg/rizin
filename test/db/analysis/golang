@@ -390,7 +390,7 @@ EOF
 EXPECT=<<EOF
 | 0x00099f7c      lis   r5, 0xb ; 0xb7d3f ; "foogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
 | 0x00099fec      lis   r4, 0xc ; 0xb8198 ; "enableerrno objectpower9selectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs "
-| 0x0009a00c      lis   r4, 0xb ; 0xb7e32 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
+| 0x0009a00c      lis   r4, 0xb ; go-re-sample.go:12 ; 0xb7e32 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
 | 0x0009a050      lis   r9, 0xb ; 0xb7d36 ; "barendfinfoogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
 | 0x0009a0c0      lis   r4, 0xb ; 0xb7f48 ; "levellink mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26  r27"
 | 0x0009a108      lis   r9, 0xd ; 0xbd867 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
@@ -416,7 +416,7 @@ EOF
 EXPECT=<<EOF
 | 0x00099eac      lis   r5, 0xb ; 0xb7d60 ; "foogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
 | 0x00099f1c      lis   r4, 0xc ; 0xb81b9 ; "enableerrno objectpower9selectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs "
-| 0x00099f3c      lis   r4, 0xb ; 0xb7e53 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
+| 0x00099f3c      lis   r4, 0xb ; go-re-sample.go:12 ; 0xb7e53 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
 | 0x00099f80      lis   r9, 0xb ; 0xb7d57 ; "barendfinfoogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
 | 0x00099ff0      lis   r4, 0xb ; 0xb7f69 ; "levellink mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26  r27"
 | 0x0009a038      lis   r9, 0xd ; 0xbd845 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
