@@ -214,7 +214,7 @@ static bool RzBinDwarfLocListTable_convert_raw(
 		OK_None;
 	}
 	if (range->begin > range->end) {
-		RZ_LOG_ERROR("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
+		RZ_LOG_VERBOSE("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
 		goto err;
 	}
 

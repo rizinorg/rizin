@@ -195,7 +195,7 @@ static bool RzBinDwarfRngListTable_convert_raw(RzBinDwarfRngListTable *self, RzB
 		OK_None;
 	}
 	if (range->begin > range->end) {
-		RZ_LOG_WARN("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
+		RZ_LOG_VERBOSE("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
 		free(range);
 		return false;
 	}

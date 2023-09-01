@@ -27,6 +27,11 @@ RZ_IPI RzBinSection *get_section(RzBinFile *binfile, const char *sn) {
 	return NULL;
 }
 
+typedef struct {
+	ut8 gch_magic[4]; /* [ 'Z', 'L', 'I', 'B'] */
+	ut8 gch_size[8]; /* unaligned 64-bit ELFDATAMSB integer */
+} Chdr_GNU;
+
 RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	rz_return_val_if_fail(binfile && sect_name, NULL);
 	RzBinSection *section = get_section(binfile, sect_name);
@@ -37,14 +42,14 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 		return NULL;
 	}
 	ut64 len = RZ_MIN(section->size, binfile->size - section->paddr);
-	if (!(section->flags & SHF_COMPRESSED)) {
+	bool is_zlib_gnu = rz_str_startswith(section->name, ".zdebug");
+	if (!(section->flags & SHF_COMPRESSED || is_zlib_gnu)) {
 		return rz_buf_new_slice(binfile->buf, section->paddr, len);
 	}
 
 	bool is_64bit = binfile->o->info->bits == 64;
-	bool bigendian = bf_bigendian(binfile);
-	ut64 Elf_Chdr_size = is_64bit ? sizeof(Elf64_Chdr) : sizeof(Elf32_Chdr);
-	if (len < Elf_Chdr_size) {
+	ut64 Chdr_size = is_zlib_gnu ? sizeof(Chdr_GNU) : (is_64bit ? sizeof(Elf64_Chdr) : sizeof(Elf32_Chdr));
+	if (len < Chdr_size) {
 		RZ_LOG_ERROR("corrupted compressed section header\n");
 		return NULL;
 	}
@@ -57,10 +62,12 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	if (rz_buf_read_at(binfile->buf, section->paddr, sh_buf, len) != len) {
 		goto err;
 	}
-	ut32 ch_type = rz_read_at_ble32(sh_buf, 0, bigendian);
+	bool bigendian = bf_bigendian(binfile);
+	ut32 ch_type = is_zlib_gnu ? ELFCOMPRESS_ZLIB
+				   : rz_read_at_ble32(sh_buf, 0, bigendian);
 
-	const ut8 *src = sh_buf + Elf_Chdr_size;
-	ut64 src_len = len - Elf_Chdr_size;
+	const ut8 *src = sh_buf + Chdr_size;
+	ut64 src_len = len - Chdr_size;
 	ut64 uncompressed_len = 0;
 	ut8 *uncompressed = NULL;
 	RZ_LOG_VERBOSE("Section %s is compressed\n", section->name);
