@@ -21,7 +21,7 @@ typedef struct {
 	};
 	union {
 		RzBinDwarfLineHeader *line_hdr;
-		RzBinDwarfCompUnitHdr *comp_unit_hdr;
+		RzBinDwarfCompUnit *cu;
 	};
 	RzBinDwarfDebugStr *debug_str;
 	RzBinDwarfEncoding encoding;

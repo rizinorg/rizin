@@ -1096,19 +1096,20 @@ typedef struct {
 	ut64 type_sig; // DWARF 5 addition
 	ut64 type_offset; // DWARF 5 addition
 	ut64 header_size; // excluding length field
-	ut64 unit_offset;
 	RzBinDwarfEncoding encoding;
 } RzBinDwarfCompUnitHdr;
 
-typedef struct {
+struct RzBinDwarfDie_t;
+
+typedef struct RzBinDwarfDie_t {
 	ut64 offset; // important for parsing types
 	DW_TAG tag;
 	ut64 abbrev_code;
 	DW_CHILDREN has_children; // important for parsing types
+	RzPVector /*<struct RzBinDwarfDie_t *>*/ *children;
+	struct RzBinDwarfDie_t *parent;
+
 	RzVector /*<RzBinDwarfAttrValue>*/ attrs;
-	size_t unit_offset;
-	size_t index;
-	size_t depth;
 	ut64 sibling;
 } RzBinDwarfDie;
 

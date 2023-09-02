@@ -30,9 +30,9 @@ RZ_IPI bool RzBinDwarfAttr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttr
 	if (opt->type == DW_ATTR_TYPE_DEF) {
 		value->name = opt->def->name;
 		value->form = opt->def->form;
-		address_size = opt->comp_unit_hdr->encoding.address_size;
-		is_64bit = opt->comp_unit_hdr->encoding.is_64bit;
-		unit_offset = opt->comp_unit_hdr->unit_offset;
+		address_size = opt->cu->hdr.encoding.address_size;
+		is_64bit = opt->cu->hdr.encoding.is_64bit;
+		unit_offset = opt->cu->offset;
 	} else if (opt->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT) {
 		value->form = opt->format->form;
 		address_size = opt->line_hdr->address_size;

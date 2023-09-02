@@ -12,6 +12,7 @@ typedef struct dwarf_parse_context_t {
 	const RzAnalysis *analysis;
 	RzBinDwarfCompUnit *unit;
 	RzBinDWARF *dw;
+	RzStrBuf ns;
 } Context;
 
 static RZ_OWN RzType *type_parse_from_offset_internal(
@@ -39,7 +40,7 @@ static bool function_from_die(
 	RZ_BORROW RZ_IN RZ_NONNULL Context *ctx,
 	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die);
 
-static void parse_die(Context *ctx, RzBinDwarfDie *die);
+static void die_parse(Context *ctx, RzBinDwarfDie *die);
 
 /* For some languages linkage name is more informative like C++,
    but for Rust it's rubbish and the normal name is fine */
@@ -556,6 +557,25 @@ static void variable_fini(RzAnalysisDwarfVariable *var) {
 	rz_type_free(var->type);
 }
 
+static char *ns_name(Context *ctx, const char *name) {
+	rz_return_val_if_fail(ctx && name, NULL);
+	char *ret = NULL;
+	if (rz_strbuf_is_empty(&ctx->ns)) {
+		ret = rz_str_new(name);
+	} else {
+		ret = rz_str_newf("%s::%s", rz_strbuf_get(&ctx->ns), name);
+	}
+	return ret;
+}
+
+static char *anonymous_name(const char *k, ut64 offset) {
+	return rz_str_newf("anonymous_%s_0x%" PFMT64x, k, offset);
+}
+
+static char *anonymous_type_name(Context *ctx, RzBaseTypeKind k, ut64 offset) {
+	return ns_name(ctx, anonymous_name(rz_type_base_type_kind_as_string(k), offset));
+}
+
 static const char *die_name_const(const RzBinDwarfDie *die) {
 	RzBinDwarfAttr *attr = rz_bin_dwarf_die_get_attr(die, DW_AT_name);
 	if (!attr) {
@@ -564,47 +584,26 @@ static const char *die_name_const(const RzBinDwarfDie *die) {
 	return rz_bin_dwarf_attr_get_string_const(attr);
 }
 
-static char *anonymous_name(const char *k, ut64 offset) {
-	return rz_str_newf("anonymous_%s_0x%" PFMT64x, k, offset);
-}
-
-static char *anonymous_type_name(RzBaseTypeKind k, ut64 offset) {
-	return anonymous_name(rz_type_base_type_kind_as_string(k), offset);
+static char *die_type_name(Context *ctx, RzBaseTypeKind k, const RzBinDwarfDie *die) {
+	const char *cname = die_name_const(die);
+	return cname ? ns_name(ctx, cname) : NULL;
 }
 
 /**
  * \brief Get the DIE name or create unique one from its offset
  * \return char* DIEs name or NULL if error
  */
-static char *die_name(const RzBinDwarfDie *die) {
-	const char *const_name = die_name_const(die);
-	return const_name ? rz_str_new(const_name)
-			  : rz_str_newf("die_0x%" PFMT64x, die->offset);
+static char *die_name(const RzBinDwarfDie *die, const char *k) {
+	const char *cname = die_name_const(die);
+	if (cname) {
+		return rz_str_new(cname);
+	} else {
+		return anonymous_name(k ? k : "die", die->offset);
+	}
 }
 
-static RzPVector /*<RzBinDwarfDie *>*/ *die_children(const RzBinDwarfDie *die, RzBinDWARF *dw) {
-	RzPVector /*<RzBinDwarfDie *>*/ *vec = rz_pvector_new(NULL);
-	if (!vec) {
-		return NULL;
-	}
-	RzBinDwarfCompUnit *unit = ht_up_find(dw->info->unit_by_offset, die->unit_offset, NULL);
-	if (!unit) {
-		goto err;
-	}
-
-	for (size_t i = die->index + 1; i < rz_vector_len(&unit->dies); ++i) {
-		RzBinDwarfDie *child_die = rz_vector_index_ptr(&unit->dies, i);
-		if (child_die->depth >= die->depth + 1) {
-			rz_pvector_push(vec, child_die);
-		} else if (child_die->depth == die->depth) {
-			break;
-		}
-	}
-
-	return vec;
-err:
-	rz_pvector_free(vec);
-	return NULL;
+static RzPVector /*<RzBinDwarfDie *>*/ *die_children(const RzBinDwarfDie *parent, RzBinDWARF *dw) {
+	return parent->children;
 }
 
 /**
@@ -683,11 +682,11 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 			if (!decl) {
 				goto err;
 			}
-			btype->name = rz_str_new(die_name_const(decl));
+			btype->name = die_type_name(ctx, btype->kind, decl);
 			break;
 		}
 		case DW_AT_name:
-			btype->name = rz_bin_dwarf_attr_get_string(attr);
+			btype->name = die_type_name(ctx, btype->kind, die);
 			break;
 		case DW_AT_byte_size:
 			btype->size = attr->uconstant * CHAR_BIT;
@@ -706,7 +705,7 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 	}
 
 	if (!btype->name) {
-		btype->name = anonymous_type_name(btype->kind, die->offset);
+		btype->name = anonymous_type_name(ctx, btype->kind, die->offset);
 	}
 
 	if (!ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, btype)) {
@@ -751,7 +750,7 @@ static ut64 array_count_parse(Context *ctx, RzBinDwarfDie *die) {
 	void **it;
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
-		if (!(child_die->tag == DW_TAG_subrange_type)) {
+		if (child_die->tag != DW_TAG_subrange_type) {
 			continue;
 		}
 		RzBinDwarfAttr *value;
@@ -874,7 +873,6 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	case DW_TAG_union_type:
 	case DW_TAG_class_type:
 	case DW_TAG_unspecified_type: {
-		const char *const_name = die_name_const(die);
 		type = RZ_NEW0(RzType);
 		if (!type) {
 			goto end;
@@ -905,8 +903,9 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 			break;
 		}
 		type->kind = RZ_TYPE_KIND_IDENTIFIER;
-		type->identifier.name = const_name ? rz_str_new(const_name)
-						   : anonymous_type_name(k, die->offset);
+		char *type_name = die_type_name(ctx, k, die);
+		type->identifier.name = type_name ? type_name
+						  : anonymous_type_name(ctx, k, die->offset);
 		break;
 	}
 	case DW_TAG_inlined_subroutine:
@@ -987,6 +986,7 @@ static RZ_OWN RzType *type_parse_from_offset(
 	set_u_free(visited);
 	return type;
 }
+
 static inline const char *select_name(const char *demangle_name, const char *link_name, const char *name, DW_LANG lang) {
 	return prefer_linkage_name(lang) ? (demangle_name ? demangle_name : (link_name ? link_name : name)) : name;
 }
@@ -1120,9 +1120,8 @@ static bool struct_union_children_parse(
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
 		// we take only direct descendats of the structure
-		if (!(child_die->depth == die->depth + 1 &&
-			    child_die->tag == DW_TAG_member)) {
-			parse_die(ctx, child_die);
+		if (child_die->tag != DW_TAG_member) {
+			die_parse(ctx, child_die);
 			continue;
 		}
 		RzTypeStructMember member = { 0 };
@@ -1175,7 +1174,7 @@ static RzTypeEnumCase *enumerator_parse(Context *ctx, RzBinDwarfDie *die, RzType
 	// ?? can be block, sdata, data, string w/e
 	// TODO solve the encoding, I don't know in which union member is it store
 
-	result->name = die_name(die);
+	result->name = die_name(die, "enumerator");
 	result->val = val;
 	return result;
 }
@@ -1195,9 +1194,8 @@ static bool enum_children_parse(
 	void **it;
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
-		if (!(child_die->depth == die->depth + 1 &&
-			    child_die->tag == DW_TAG_enumerator)) {
-			parse_die(ctx, child_die);
+		if (child_die->tag != DW_TAG_enumerator) {
+			die_parse(ctx, child_die);
 			continue;
 		}
 		RzTypeEnumCase cas = { 0 };
@@ -1455,14 +1453,16 @@ static bool function_children_parse(Context *ctx, const RzBinDwarfDie *die, RzCa
 	}
 	void **it;
 	rz_pvector_foreach (children, it) {
-		RzBinDwarfDie *child_die = *it;
-		if (child_die->depth != die->depth + 1) {
-			parse_die(ctx, child_die);
+		RzBinDwarfDie *child = *it;
+		if (child->tag != DW_TAG_formal_parameter &&
+			child->tag != DW_TAG_variable &&
+			child->tag != DW_TAG_unspecified_parameters) {
+			die_parse(ctx, child);
 			continue;
 		}
 		RzAnalysisDwarfVariable v = { 0 };
 		bool has_unspecified_parameters = false;
-		if (!function_var_parse(ctx, fn, die, &v, child_die, &has_unspecified_parameters)) {
+		if (!function_var_parse(ctx, fn, die, &v, child, &has_unspecified_parameters)) {
 			goto err;
 		}
 		if (has_unspecified_parameters) {
@@ -1615,7 +1615,69 @@ cleanup:
 	return false;
 }
 
-static void parse_die(Context *ctx, RzBinDwarfDie *die) {
+static void ns_set(Context *ctx, RzList /*<char*>*/ *ns_list) {
+	rz_strbuf_set(&ctx->ns, "");
+	RzListIter *iter;
+	const char *item;
+	rz_list_foreach (ns_list, iter, item) {
+		if (iter == rz_list_head(ns_list)) {
+			rz_strbuf_append(&ctx->ns, item ? item : "(anonymous namespace)");
+		} else {
+			rz_strbuf_appendf(&ctx->ns, "::%s", item ? item : "(anonymous namespace)");
+		}
+	}
+}
+
+static void ns_push(Context *ctx, RzBinDwarfDie *die) {
+	switch (die->tag) {
+	case DW_TAG_structure_type:
+	case DW_TAG_union_type:
+	case DW_TAG_class_type:
+	case DW_TAG_namespace: {
+		const char *decl_ns = die_name_const(die);
+		if (rz_strbuf_is_empty(&ctx->ns)) {
+			rz_strbuf_append(&ctx->ns, decl_ns);
+		} else {
+			rz_strbuf_appendf(&ctx->ns, "::%s", decl_ns);
+		}
+		break;
+	}
+	case DW_TAG_enumeration_type:
+	case DW_TAG_typedef:
+	case DW_TAG_unspecified_type:
+	case DW_TAG_base_type:
+	case DW_TAG_subprogram:
+	default:
+		break;
+	}
+}
+
+static void ns_pop(Context *ctx, RzBinDwarfDie *die) {
+	switch (die->tag) {
+	case DW_TAG_structure_type:
+	case DW_TAG_union_type:
+	case DW_TAG_class_type:
+	case DW_TAG_namespace: {
+		char *ns = rz_strbuf_get(&ctx->ns);
+		const char *r = rz_str_rstr(ns, "::");
+		if (r) {
+			rz_strbuf_slice(&ctx->ns, 0, r - ns);
+		} else {
+			rz_strbuf_set(&ctx->ns, "");
+		}
+		break;
+	}
+	case DW_TAG_enumeration_type:
+	case DW_TAG_typedef:
+	case DW_TAG_unspecified_type:
+	case DW_TAG_base_type:
+	case DW_TAG_subprogram:
+	default:
+		break;
+	}
+}
+
+static void die_parse(Context *ctx, RzBinDwarfDie *die) {
 	switch (die->tag) {
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:
@@ -1623,15 +1685,24 @@ static void parse_die(Context *ctx, RzBinDwarfDie *die) {
 	case DW_TAG_enumeration_type:
 	case DW_TAG_typedef:
 	case DW_TAG_unspecified_type:
-	case DW_TAG_base_type: {
+	case DW_TAG_base_type:
 		RzBaseType_from_die(ctx, die);
 		break;
-	}
 	case DW_TAG_subprogram:
 		function_from_die(ctx, die);
 		break;
 	default:
 		break;
+	}
+	if (die->has_children) {
+		ns_push(ctx, die);
+		void **it;
+		RzBinDwarfDie *child;
+		rz_pvector_foreach (die->children, it) {
+			child = *it;
+			die_parse(ctx, child);
+		}
+		ns_pop(ctx, die);
 	}
 }
 
@@ -1652,22 +1723,28 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 	Context ctx = {
 		.analysis = analysis,
 		.dw = dw,
-		.unit = NULL,
 	};
 	RzBinDwarfCompUnit *unit;
+
 	rz_vector_foreach(&dw->info->units, unit) {
 		if (rz_vector_empty(&unit->dies)) {
 			continue;
 		}
 		ctx.unit = unit;
+
 		for (RzBinDwarfDie *die = rz_vector_head(&unit->dies);
-			die && (ut8 *)die < (ut8 *)unit->dies.a + unit->dies.len * unit->dies.elem_size;
-			(die->sibling > die->offset)
-				? die = ht_up_find(dw->info->die_by_offset, die->sibling, NULL)
-				: ++die) {
-			parse_die(&ctx, die);
+			die && (ut8 *)die < (ut8 *)unit->dies.a + unit->dies.len * unit->dies.elem_size;) {
+
+			die_parse(&ctx, die);
+
+			if (die->tag != DW_TAG_namespace && die->sibling > die->offset) {
+				die = ht_up_find(dw->info->die_by_offset, die->sibling, NULL);
+			} else {
+				++die;
+			}
 		}
 	}
+	rz_strbuf_fini(&ctx.ns);
 }
 
 #define SWAP(T, a, b) \
