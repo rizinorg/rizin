@@ -170,7 +170,7 @@ static int main_help(int line) {
 			"Plugins:\n"
 			" binrc        %s (elf, elf64, mach0, ..)\n"
 			" RZ_USER_PLUGINS %s\n"
-			" RZ_LIBR_PLUGINS %s\n"
+			" RZ_LIB_PLUGINS %s\n"
 			" RZ_EXTRA_PLUGINS %s\n"
 			"Environment:\n"
 			" RZ_DEBUG      if defined, show error messages and crash signal\n"
@@ -178,7 +178,7 @@ static int main_help(int line) {
 			" RZ_MAGICPATH %s\n"
 			" RZ_NOPLUGINS do not load rizin shared plugins\n"
 			" RZ_RCFILE    %s (user preferences, batch script)\n"
-			" RZ_RDATAHOME %s\n"
+			" RZ_DATAHOME %s\n"
 			" RZ_VERSION   contains the current version of rizin\n"
 			"Paths:\n"
 			" RZ_PREFIX       %s\n"
@@ -254,10 +254,10 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_SIGDB", sigdbdir },
 		{ "RZ_EXTRA_SIGDB", rz_str_get(extrasigdbdir) },
 		{ "RZ_LIBEXT", RZ_LIB_EXT },
-		{ "RZ_RCONFIGHOME", confighome },
-		{ "RZ_RDATAHOME", datahome },
-		{ "RZ_RCACHEHOME", cachehome },
-		{ "RZ_LIBR_PLUGINS", plugins },
+		{ "RZ_CONFIGHOME", confighome },
+		{ "RZ_DATAHOME", datahome },
+		{ "RZ_CACHEHOME", cachehome },
+		{ "RZ_LIB_PLUGINS", plugins },
 		{ "RZ_EXTRA_PLUGINS", rz_str_get(extraplugins) },
 		{ "RZ_USER_PLUGINS", homeplugins },
 		{ "RZ_IS_PORTABLE", is_portable },
