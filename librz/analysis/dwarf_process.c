@@ -794,6 +794,28 @@ static RzType *type_parse_from_die_internal(
 	return type_parse_from_offset_internal(ctx, attr->reference, size, visited);
 }
 
+static void RzType_from_base_type(RzType *t, RzBaseType *b) {
+	rz_return_if_fail(t && b);
+	t->kind = RZ_TYPE_KIND_IDENTIFIER;
+	free(t->identifier.name);
+	t->identifier.name = rz_str_new(b->name);
+	switch (b->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT:
+		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
+		break;
+	case RZ_BASE_TYPE_KIND_UNION:
+		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
+		break;
+	case RZ_BASE_TYPE_KIND_ENUM:
+		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
+		break;
+	case RZ_BASE_TYPE_KIND_TYPEDEF:
+	case RZ_BASE_TYPE_KIND_ATOMIC:
+		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+		break;
+	}
+}
+
 /**
  * \brief Recursively parses type entry of a certain offset and saves type size into *size
  *
@@ -856,6 +878,11 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 		type = RZ_NEW0(RzType);
 		if (!type) {
 			goto end;
+		}
+		RzBaseType *ref = ht_up_find(ctx->analysis->debug_info->base_type_by_offset, offset, NULL);
+		if (ref) {
+			RzType_from_base_type(type, ref);
+			break;
 		}
 		RzBaseTypeKind k = RZ_BASE_TYPE_KIND_STRUCT;
 		switch (die->tag) {
@@ -1003,7 +1030,10 @@ static RzType *type_parse_from_abstract_origin(Context *ctx, ut64 offset, char *
  * \brief Parses structured entry into *result RzTypeStructMember
  * https://www.dwarfstd.org/doc/DWARF4.pdf#page=102
  */
-static RzTypeStructMember *struct_member_parse(Context *ctx, RzBinDwarfDie *die, RzTypeStructMember *result) {
+static RzTypeStructMember *struct_member_parse(
+	Context *ctx,
+	RzBinDwarfDie *die,
+	RzTypeStructMember *result) {
 	rz_return_val_if_fail(result, NULL);
 	char *name = NULL;
 	RzType *type = NULL;
@@ -1090,8 +1120,9 @@ static bool struct_union_children_parse(
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
 		// we take only direct descendats of the structure
-		// can be also DW_TAG_suprogram for class methods or tag for templates
-		if (child_die->tag != DW_TAG_member) {
+		if (!(child_die->depth == die->depth + 1 &&
+			    child_die->tag == DW_TAG_member)) {
+			parse_die(ctx, child_die);
 			continue;
 		}
 		RzTypeStructMember member = { 0 };
@@ -1164,7 +1195,9 @@ static bool enum_children_parse(
 	void **it;
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
-		if (child_die->tag != DW_TAG_enumerator) {
+		if (!(child_die->depth == die->depth + 1 &&
+			    child_die->tag == DW_TAG_enumerator)) {
+			parse_die(ctx, child_die);
 			continue;
 		}
 		RzTypeEnumCase cas = { 0 };
