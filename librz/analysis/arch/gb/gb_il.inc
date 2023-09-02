@@ -40,10 +40,18 @@ static RzILOpBitVector *gb_il_resolve_addr_data(ut64 op_addr, RzILOpBitVector *t
 }
 
 static RzILOpBitVector *gb_il_resolve_addr_code(ut64 op_addr, RzILOpBitVector *target_addr16) {
-	return APPEND(U16((op_addr >> 16) & 0xffff), target_addr16);
+	// Similar logic as in gb_op_calljump(), but dynamic.
+	if (op_addr >> 16) {
+		return APPEND(
+			op_addr >> 16 ? ITE(MSB(UNSIGNED(15, target_addr16)), U16((op_addr >> 16) & 0xffff), U16(0)) : U16(0),
+			DUP(target_addr16));
+	}
+	return UNSIGNED(32, target_addr16);
 }
 
-static RzILOpBitVector *gb_il_addr_code_abs(ut64 addr) {
+static RzILOpBitVector *gb_il_resolve_addr_code_imm(ut64 addr) {
+	// No calculation done here at the moment as these addrs are assumed to be already translated
+	// for example by gb_op_calljump()
 	return U32(addr);
 }
 
@@ -483,10 +491,32 @@ static RzILOpEffect *gb_il_pop(gb_reg dst, ut64 op_addr) {
 		SETG("sp", ADD(VARG("sp"), U16(2))));
 }
 
-// --
+static RzILOpEffect *gb_il_jmp(ut64 dst) {
+	return JMP(gb_il_resolve_addr_code_imm(dst));
+}
 
 static RzILOpEffect *gb_il_cjmp(ut64 dst, gb_flag cond_flag, bool neg) {
-	return gb_il_cond(cond_flag, neg, JMP(gb_il_addr_code_abs(dst)));
+	return gb_il_cond(cond_flag, neg, gb_il_jmp(dst));
+}
+
+static RzILOpEffect *gb_il_jmp_hl(ut64 op_addr) {
+	return JMP(gb_il_resolve_addr_code(op_addr, gb_il_read_reg(GB_REG_HL)));
+}
+
+static RzILOpEffect *gb_il_halt() {
+	// wait until interrupt
+	return NOP();
+}
+
+static RzILOpEffect *gb_il_call(ut64 dst, ut64 op_addr) {
+	return SEQ3(
+		SETG("sp", SUB(VARG("sp"), U16(2))),
+		STOREW(gb_il_resolve_addr_data(op_addr, VARG("sp")), U16((ut16)op_addr)),
+		JMP(gb_il_resolve_addr_code_imm(dst)));
+}
+
+static RzILOpEffect *gb_il_ccall(ut64 dst, ut64 op_addr, gb_flag cond_flag, bool neg) {
+	return gb_il_cond(cond_flag, neg, gb_il_call(dst, op_addr));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

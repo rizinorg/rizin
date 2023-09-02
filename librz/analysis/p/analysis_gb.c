@@ -133,15 +133,19 @@ static inline void gb_analysis_cjmp(RzAnalysisOpMask mask, RzAnalysisOp *op, con
 		bool neg = false;
 		switch (data) {
 		case 0x20:
+		case 0xc2:
 			neg = true;
 			// fallthrough
 		case 0x28:
+		case 0xca:
 			flag = GB_FLAG_Z;
 			break;
 		case 0x30:
+		case 0xd2:
 			neg = true;
 			// fallthrough
 		case 0x38:
+		case 0xda:
 			flag = GB_FLAG_C;
 			break;
 		default:
@@ -156,12 +160,17 @@ static inline void gb_analysis_esil_jmp(RzAnalysisOp *op) {
 	rz_strbuf_setf(&op->esil, "0x%" PFMT64x ",pc,:=", (op->jump & 0xffff));
 }
 
-static inline void gb_analysis_jmp_hl(RzReg *reg, RzAnalysisOp *op) {
+static inline void gb_analysis_jmp_hl(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, "pc", RZ_REG_TYPE_GPR);
 	op->src[0]->reg = rz_reg_get(reg, "hl", RZ_REG_TYPE_GPR);
-	rz_strbuf_set(&op->esil, "hl,pc,:=");
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		rz_strbuf_set(&op->esil, "hl,pc,:=");
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_jmp_hl(op->addr);
+	}
 }
 
 static inline void gb_analysis_id(RzAnalysisOpMask mask, RzAnalysis *analysis, RzAnalysisOp *op, const ut8 data) {
@@ -1534,6 +1543,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		}
+		op->il_op = gb_il_jmp(op->jump);
 		op->eob = true;
 		op->cycles = 16;
 		op->fail = addr + ilen;
@@ -1541,7 +1551,12 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x18: // JR
 		op->jump = addr + ilen + (st8)data[1];
 		op->fail = addr + ilen;
-		gb_analysis_esil_jmp(op);
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			gb_analysis_esil_jmp(op);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_jmp(op->jump);
+		}
 		op->cycles = 12;
 		op->eob = true;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
@@ -1570,7 +1585,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		}
 		op->eob = true;
 		gb_analysis_cond(analysis->reg, op, data[0]);
-		gb_analysis_esil_cjmp(op, data[0]);
+		gb_analysis_cjmp(mask, op, data[0]);
 		op->cycles = 16;
 		op->failcycles = 12;
 		op->fail = addr + ilen;
@@ -1579,7 +1594,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 4;
 		op->eob = true;
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		gb_analysis_jmp_hl(analysis->reg, op);
+		gb_analysis_jmp_hl(mask, analysis->reg, op);
 		break;
 	case 0x76:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -1587,6 +1602,9 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->fail = addr + ilen;
 		if (len > 1) {
 			op->jump = addr + gbOpLength(gb_op[data[1]].type) + ilen;
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_halt();
 		}
 		break;
 	case 0xcd:
@@ -1597,7 +1615,12 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		}
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			gb_analysis_esil_call(op);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_call(op->jump, op->addr);
+		}
 		op->cycles = 24;
 		break;
 	case 0xc4:

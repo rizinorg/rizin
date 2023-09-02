@@ -96,7 +96,7 @@ d "bit 7, d" cb7a
 d "bit 7, e" cb7b
 d "bit 7, h" cb7c
 d "bit 7, l" cb7d
-d "call 0x0000" cd0000
+d "call 0x1234" cd3412 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x0)) (jmp (bv 32 0x1234)))
 d "call C, 0x0000" dc0000
 d "call Z, 0x0000" cc0000
 d "call nC, 0x0000" d40000
@@ -127,7 +127,7 @@ d "dec l" 2d 0x0 (seq (set l (- (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (
 d "dec sp" 3b 0x0 (set sp (- (var sp) (bv 16 0x1)))
 d "di" f3 0x0 (set ime false)
 d "ei" fb 0x0 (set ime true)
-d "halt" 76
+d "halt" 76 0x0 nop
 d "inc [hl]" 34 0x0 (seq (set v (+ (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N false) (set H (is_zero (cast 4 false (var v)))))
 d "inc [hl]" 34 0x30000 (seq (set v (+ (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N false) (set H (is_zero (cast 4 false (var v)))))
 d "inc a" 3c 0x0 (seq (set a (+ (var a) (bv 8 0x1))) (set Z (is_zero (var a))) (set N false) (set H (is_zero (cast 4 false (var a)))))
@@ -141,13 +141,24 @@ d "inc h" 24 0x0 (seq (set h (+ (var h) (bv 8 0x1))) (set Z (is_zero (var h))) (
 d "inc hl" 23 0x0 (seq (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
 d "inc l" 2c 0x0 (seq (set l (+ (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (set N false) (set H (is_zero (cast 4 false (var l)))))
 d "inc sp" 33 0x0 (set sp (+ (var sp) (bv 16 0x1)))
-d "jp 0x0000" c30000
-d "jp C, 0x0000" da0000
-d "jp Z, 0x0000" ca0000
-d "jp hl" e9
-d "jp nC, 0x0000" d20000
-d "jp nZ, 0x0000" c20000
-d "jr 0x00" 1800
+d "jp 0x0000" c30000 0x0 (jmp (bv 32 0x0))
+d "jp 0x0000" c30000 0x30000 (jmp (bv 32 0x0))
+d "jp 0x8000" c30080 0x0 (jmp (bv 32 0x8000))
+d "jp 0x8000" c30080 0x30000 (jmp (bv 32 0x8000))
+d "jp 0x8020" c32080 0x0 (jmp (bv 32 0x8020))
+d "jp 0x8020" c32080 0x30000 (jmp (bv 32 0x8020))
+d "jp 0x4020" c32040 0x0 (jmp (bv 32 0x4020))
+d "jp 0x4020" c32040 0x30000 (jmp (bv 32 0x34020))
+d "jp C, 0x1032" da3210 0x0 (branch (var C) (jmp (bv 32 0x1032)) nop)
+d "jp Z, 0x1032" ca3210 0x0 (branch (var Z) (jmp (bv 32 0x1032)) nop)
+d "jp hl" e9 0x0 (jmp (cast 32 false (append (var h) (var l))))
+d "jp hl" e9 0x34321 (jmp (append (ite (msb (cast 15 false (append (var h) (var l)))) (bv 16 0x3) (bv 16 0x0)) (append (var h) (var l))))
+d "jp nC, 0x1032" d23210 0x0 (branch (var C) nop (jmp (bv 32 0x1032)))
+d "jp nZ, 0x1032" c23210 0x0 (branch (var Z) nop (jmp (bv 32 0x1032)))
+d "jp nZ, 0x1032" c23210 0x30000 (branch (var Z) nop (jmp (bv 32 0x1032)))
+d "jp nZ, 0x4032" c23240 0x30000 (branch (var Z) nop (jmp (bv 32 0x34032)))
+d "jr 0x00" 1800 0x0 (jmp (bv 32 0x2))
+d "jr 0x42" 1842 0x0 (jmp (bv 32 0x44))
 d "jr C, 0x42" 3842 0x0 (branch (var C) (jmp (bv 32 0x44)) nop)
 d "jr Z, 0x42" 2842 0x0 (branch (var Z) (jmp (bv 32 0x44)) nop)
 d "jr nC, 0x42" 3042 0x0 (branch (var C) nop (jmp (bv 32 0x44)))
@@ -439,12 +450,12 @@ d "res 7, d" cbba
 d "res 7, e" cbbb
 d "res 7, h" cbbc
 d "res 7, l" cbbd
-d "ret C" d8 0x0 (branch (var C) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))) nop)
-d "ret Z" c8 0x0 (branch (var Z) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))) nop)
-d "ret nC" d0 0x0 (branch (var C) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))))
-d "ret nZ" c0 0x0 (branch (var Z) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r)))))
-d "ret" c9 0x0 (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r))))
-d "reti" d9 0x0 (seq (set ime true) (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (append (bv 16 0x0) (var r))))
+d "ret C" d8 0x0 (branch (var C) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r)))) nop)
+d "ret Z" c8 0x0 (branch (var Z) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r)))) nop)
+d "ret nC" d0 0x0 (branch (var C) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r)))))
+d "ret nZ" c0 0x0 (branch (var Z) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r)))))
+d "ret" c9 0x0 (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r))))
+d "reti" d9 0x0 (seq (set ime true) (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r))))
 d "rl [hl]" cb16 0x0 (seq (set CC (var C)) (set C (msb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (<< (load 0 (append (var h) (var l))) (bv 3 0x1) (var CC))) (set Z (is_zero (append (var h) (var l)))) (set N false) (set H false))
 d "rl a" cb17 0x0 (seq (set CC (var C)) (set C (msb (var a))) (set a (<< (var a) (bv 3 0x1) (var CC))) (set Z (is_zero (var a))) (set N false) (set H false))
 d "rl b" cb10 0x0 (seq (set CC (var C)) (set C (msb (var b))) (set b (<< (var b) (bv 3 0x1) (var CC))) (set Z (is_zero (var b))) (set N false) (set H false))
