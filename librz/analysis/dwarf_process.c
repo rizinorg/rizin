@@ -658,6 +658,7 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 			goto err;
 		}
 		break;
+	case DW_TAG_unspecified_type:
 	case DW_TAG_base_type:
 		RzBaseType_NEW_CHECKED(btype, RZ_BASE_TYPE_KIND_ATOMIC);
 		break;
@@ -723,13 +724,12 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 		rz_pvector_foreach (btypes, it) {
 			RzBaseType *b = *it;
 			if (RzBaseType_eq(btype, b)) {
-				goto skip_btype;
+				goto ok;
 			}
 		}
 		rz_pvector_push(btypes, btype);
 	}
-
-skip_btype:
+ok:
 	return btype;
 err:
 	rz_type_base_type_free(btype);
@@ -794,6 +794,28 @@ static RzType *type_parse_from_die_internal(
 	return type_parse_from_offset_internal(ctx, attr->reference, size, visited);
 }
 
+static void RzType_from_base_type(RzType *t, RzBaseType *b) {
+	rz_return_if_fail(t && b);
+	t->kind = RZ_TYPE_KIND_IDENTIFIER;
+	free(t->identifier.name);
+	t->identifier.name = rz_str_new(b->name);
+	switch (b->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT:
+		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
+		break;
+	case RZ_BASE_TYPE_KIND_UNION:
+		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
+		break;
+	case RZ_BASE_TYPE_KIND_ENUM:
+		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
+		break;
+	case RZ_BASE_TYPE_KIND_TYPEDEF:
+	case RZ_BASE_TYPE_KIND_ATOMIC:
+		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+		break;
+	}
+}
+
 /**
  * \brief Recursively parses type entry of a certain offset and saves type size into *size
  *
@@ -830,7 +852,8 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	// this should be recursive search for the type until you find base/user defined type
 	case DW_TAG_pointer_type:
 	case DW_TAG_reference_type: // C++ references are just pointers to us
-	case DW_TAG_rvalue_reference_type: {
+	case DW_TAG_rvalue_reference_type:
+	case DW_TAG_ptr_to_member_type: {
 		RzType *pointee = type_parse_from_die_internal(ctx, die, true, size, visited);
 		if (!pointee) {
 			goto end;
@@ -849,11 +872,17 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	case DW_TAG_structure_type:
 	case DW_TAG_enumeration_type:
 	case DW_TAG_union_type:
-	case DW_TAG_class_type: {
+	case DW_TAG_class_type:
+	case DW_TAG_unspecified_type: {
 		const char *const_name = die_name_const(die);
 		type = RZ_NEW0(RzType);
 		if (!type) {
 			goto end;
+		}
+		RzBaseType *ref = ht_up_find(ctx->analysis->debug_info->base_type_by_offset, offset, NULL);
+		if (ref) {
+			RzType_from_base_type(type, ref);
+			break;
 		}
 		RzBaseTypeKind k = RZ_BASE_TYPE_KIND_STRUCT;
 		switch (die->tag) {
@@ -870,6 +899,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
 			k = RZ_BASE_TYPE_KIND_ENUM;
 			break;
+		case DW_TAG_unspecified_type:
 		default:
 			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			break;
@@ -932,13 +962,14 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 		break;
 	}
 
-	if (type) {
-		RzType *copy = rz_type_clone(type);
-		if (!ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
-			RZ_LOG_ERROR("Failed to insert type [%s] into debug_info->type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, type));
-			rz_type_free(copy);
-		}
+	RzType *copy = type ? rz_type_clone(type) : NULL;
+	if (copy && ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
+		RZ_LOG_DEBUG("Insert RzType [%s] into type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, type));
+	} else {
+		RZ_LOG_ERROR("Failed to insert RzType [0x%" PFMT64x "] into type_by_offset\n", offset);
+		rz_type_free(copy);
 	}
+
 end:
 	set_u_delete(visited, offset);
 	return type;
@@ -999,7 +1030,10 @@ static RzType *type_parse_from_abstract_origin(Context *ctx, ut64 offset, char *
  * \brief Parses structured entry into *result RzTypeStructMember
  * https://www.dwarfstd.org/doc/DWARF4.pdf#page=102
  */
-static RzTypeStructMember *struct_member_parse(Context *ctx, RzBinDwarfDie *die, RzTypeStructMember *result) {
+static RzTypeStructMember *struct_member_parse(
+	Context *ctx,
+	RzBinDwarfDie *die,
+	RzTypeStructMember *result) {
 	rz_return_val_if_fail(result, NULL);
 	char *name = NULL;
 	RzType *type = NULL;
@@ -1086,8 +1120,9 @@ static bool struct_union_children_parse(
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
 		// we take only direct descendats of the structure
-		// can be also DW_TAG_suprogram for class methods or tag for templates
-		if (child_die->tag != DW_TAG_member) {
+		if (!(child_die->depth == die->depth + 1 &&
+			    child_die->tag == DW_TAG_member)) {
+			parse_die(ctx, child_die);
 			continue;
 		}
 		RzTypeStructMember member = { 0 };
@@ -1160,7 +1195,9 @@ static bool enum_children_parse(
 	void **it;
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
-		if (child_die->tag != DW_TAG_enumerator) {
+		if (!(child_die->depth == die->depth + 1 &&
+			    child_die->tag == DW_TAG_enumerator)) {
+			parse_die(ctx, child_die);
 			continue;
 		}
 		RzTypeEnumCase cas = { 0 };
@@ -1212,8 +1249,8 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 	}
 }
 
-static void log_block(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, const RzBinDwarfRange *range) {
-	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block);
+static void RzBinDwarfBlock_log(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, const RzBinDwarfRange *range) {
+	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block, ctx->dw->loc->big_endian);
 	if (RZ_STR_ISNOTEMPTY(expr_str)) {
 		if (!range) {
 			RZ_LOG_VERBOSE("Location parse failed: 0x%" PFMT64x " [%s]\n", offset, expr_str);
@@ -1261,7 +1298,7 @@ static RzBinDwarfLocation *location_list_parse(
 		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
-			log_block(ctx, entry->expression, loclist->offset, entry->range);
+			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, entry->range);
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 			continue;
 		}
@@ -1295,7 +1332,7 @@ err_msg:
 	RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " %s\n", offset, msg);
 	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 err_eval:
-	log_block(ctx, block, offset, NULL);
+	RzBinDwarfBlock_log(ctx, block, offset, NULL);
 	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 empty_loc:
 	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
@@ -1312,7 +1349,7 @@ static RzBinDwarfLocation *location_parse(
 		ut64 offset = attr->reference;
 		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
 		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
-			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, &ctx->unit->hdr.encoding, offset)) {
+			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, ctx->unit, offset)) {
 				goto err_find;
 			}
 			loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
@@ -1338,7 +1375,13 @@ static RzBinDwarfLocation *location_parse(
 	return NULL;
 }
 
-static bool function_var_parse(Context *ctx, RzAnalysisDwarfFunction *f, const RzBinDwarfDie *fn_die, RzAnalysisDwarfVariable *v, const RzBinDwarfDie *var_die, bool *has_unspecified_parameters) {
+static bool function_var_parse(
+	Context *ctx,
+	RzAnalysisDwarfFunction *f,
+	const RzBinDwarfDie *fn_die,
+	RzAnalysisDwarfVariable *v,
+	const RzBinDwarfDie *var_die,
+	bool *has_unspecified_parameters) {
 	v->offset = var_die->offset;
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
@@ -1389,14 +1432,12 @@ static bool function_var_parse(Context *ctx, RzAnalysisDwarfFunction *f, const R
 		}
 	}
 
-	if (!v->name) {
-		v->name = anonymous_name("var", v->offset);
-	}
 	if (!has_location) {
 		v->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
 	} else if (!v->location) {
 		v->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 	}
+
 	v->prefer_name = select_name(NULL, v->link_name, v->name, ctx->unit->language);
 	if (!v->prefer_name) {
 		v->prefer_name = v->name = anonymous_name("var", var_die->offset);
@@ -1428,15 +1469,14 @@ static bool function_children_parse(Context *ctx, const RzBinDwarfDie *die, RzCa
 			callable->has_unspecified_parameters = true;
 			goto err;
 		}
-		if (!(v.location && v.type)) {
-			RZ_LOG_ERROR("DWARF function variable parse failed "
-				     "%s f.addr=0x%" PFMT64x " f.offset=0x%" PFMT64x " [0x%" PFMT64x "]\n",
-				fn->prefer_name, fn->low_pc, die->offset, child_die->offset);
+		if (!v.type) {
+			RZ_LOG_ERROR("DWARF function %s variable %s failed\n",
+				fn->prefer_name, v.prefer_name);
 			goto err;
 		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
 			RzCallableArg *arg = rz_type_callable_arg_new(
-				ctx->analysis->typedb, v.prefer_name ? v.prefer_name : "", rz_type_clone(v.type));
+				ctx->analysis->typedb, v.prefer_name, rz_type_clone(v.type));
 			rz_type_callable_arg_add(callable, arg);
 		}
 		rz_vector_push(&fn->variables, &v);
@@ -1582,6 +1622,7 @@ static void parse_die(Context *ctx, RzBinDwarfDie *die) {
 	case DW_TAG_class_type:
 	case DW_TAG_enumeration_type:
 	case DW_TAG_typedef:
+	case DW_TAG_unspecified_type:
 	case DW_TAG_base_type: {
 		RzBaseType_from_die(ctx, die);
 		break;

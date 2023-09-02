@@ -25,6 +25,7 @@ typedef struct {
 	};
 	RzBinDwarfDebugStr *debug_str;
 	RzBinDwarfEncoding encoding;
+	bool big_endian;
 } DwAttrOption;
 
 typedef RzBinDwarfValue Value;
@@ -65,13 +66,18 @@ RZ_IPI RzBinDwarfDebugAddr *DebugAddr_from_file(RzBinFile *bf);
 
 /// range
 
-RZ_IPI bool Range_parse(RzBinDwarfRange *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding);
+RZ_IPI bool Range_parse(RzBinDwarfRange *self, RzBuffer *buffer, bool big_endian, ut8 address_size);
 RZ_IPI bool Range_is_end(RzBinDwarfRange *self);
 RZ_IPI bool Range_is_base_address(RzBinDwarfRange *self, ut8 address_size);
 RZ_IPI void Range_add_base_address(RzBinDwarfRange *self, ut64 base_address, ut8 address_size);
 RZ_IPI void Range_free(RzBinDwarfRange *self);
 
-RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format);
+RZ_IPI bool RzBinDwarfRawRngListEntry_parse(
+	RzBinDwarfRawRngListEntry *out,
+	RzBuffer *buffer,
+	bool big_endian,
+	RzBinDwarfEncoding *encoding,
+	RzBinDwarfRngListsFormat format);
 RZ_IPI void RzBinDwarfRngListTable_free(RzBinDwarfRngListTable *self);
 
 /// value

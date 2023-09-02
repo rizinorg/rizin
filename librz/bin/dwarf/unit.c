@@ -42,11 +42,11 @@ static bool RzBinDwarfDie_attrs_parse(
 			.type = DW_ATTR_TYPE_DEF,
 			.def = def,
 			.encoding = {
-				.big_endian = ctx->big_endian,
 				.address_size = hdr->encoding.address_size,
 			},
 			.comp_unit_hdr = hdr,
 			.debug_str = ctx->debug_str,
+			.big_endian = ctx->big_endian,
 		};
 		if (!RzBinDwarfAttr_parse(buffer, &attr, &opt)) {
 			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die: 0x%" PFMT64x " %s [%s]\n ",
@@ -251,7 +251,9 @@ static bool RzBinDwarfCompUnit_parse(DebugInfo_Context *ctx) {
 
 		RzBinDwarfCompUnit unit = {
 			.offset = offset,
-			.hdr.unit_offset = offset,
+			.hdr = {
+				.unit_offset = offset,
+			}
 		};
 		if (RzBinDwarfCompUnit_init(&unit) < 0) {
 			goto cleanup;

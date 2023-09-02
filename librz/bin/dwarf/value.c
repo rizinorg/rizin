@@ -135,28 +135,28 @@ RZ_IPI bool Value_parse_into(
 	value->type = value_type;
 	switch (value_type) {
 	case RzBinDwarfValueType_I8:
-		READ_OR(8, st8, value->i8, rz_buf_read8(buffer, &temp), return NULL);
+		READ8_OR(st8, value->i8, return NULL);
 		break;
 	case RzBinDwarfValueType_U8:
-		U8_OR_RET_NULL(value->u8);
+		READ8_OR(ut8, value->u8, return NULL);
 		break;
 	case RzBinDwarfValueType_I16:
 		READ_T_OR(16, st16, value->i16, return NULL);
 		break;
 	case RzBinDwarfValueType_U16:
-		U_OR_RET_NULL(16, value->u16);
+		READ_T_OR(16, ut16, value->u16, return NULL);
 		break;
 	case RzBinDwarfValueType_I32:
 		READ_T_OR(32, st32, value->i32, return NULL);
 		break;
 	case RzBinDwarfValueType_U32:
-		U_OR_RET_NULL(32, value->u32);
+		READ_T_OR(32, ut32, value->u32, return NULL);
 		break;
 	case RzBinDwarfValueType_I64:
 		READ_T_OR(64, st64, value->i64, return NULL);
 		break;
 	case RzBinDwarfValueType_U64:
-		U_OR_RET_NULL(64, value->u64);
+		READ_UT_OR(64, value->u64, return NULL);
 		break;
 	case RzBinDwarfValueType_I128:
 	case RzBinDwarfValueType_U128:

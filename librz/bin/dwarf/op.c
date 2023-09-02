@@ -43,11 +43,10 @@ static void OperationEvaluationResult_fini(OperationEvaluationResult *self) {
 	RzBinDwarfEvaluationResult_fini(&self->waiting._2);
 }
 
-RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfEncoding *encoding) {
+RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, bool big_endian, const RzBinDwarfEncoding *encoding) {
 	rz_return_val_if_fail(self && buffer && encoding, false);
 	rz_mem_memzero(self, sizeof(Operation));
 	U8_OR_RET_FALSE(self->opcode);
-	bool big_endian = encoding->big_endian;
 	switch (self->opcode) {
 	case DW_OP_addr:
 		U_ADDR_SIZE_OR_RET_FALSE(self->address.address);
@@ -406,7 +405,8 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		if (encoding->version == 2) {
 			U_ADDR_SIZE_OR_RET_FALSE(self->implicit_pointer.value);
 		} else {
-			RET_FALSE_IF_FAIL(buf_read_offset(buffer, &self->implicit_pointer.value, encoding->is_64bit, encoding->big_endian));
+			RET_FALSE_IF_FAIL(buf_read_offset(
+				buffer, &self->implicit_pointer.value, encoding->is_64bit, big_endian));
 		}
 		SLE128_OR_RET_FALSE(self->implicit_pointer.byte_offset);
 		self->kind = OPERATION_KIND_IMPLICIT_POINTER;
@@ -795,7 +795,7 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 	Operation operation = { 0 };
 	bool ret = false;
 	ut64 offset = rz_buf_tell(self->pc);
-	ERR_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
+	ERR_IF_FAIL(Operation_parse(&operation, self->pc, self->big_endian, self->encoding));
 
 	switch (operation.kind) {
 	case OPERATION_KIND_DEREF: {
@@ -970,7 +970,7 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		}
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(&fb_attr->block, self->dw, self->unit, self->die);
 		if (!loc) {
-			char *expr_str = rz_bin_dwarf_expression_to_string(&self->dw->encoding, &fb_attr->block);
+			char *expr_str = rz_bin_dwarf_expression_to_string(&self->dw->encoding, &fb_attr->block, self->big_endian);
 			RZ_LOG_ERROR("Failed eval frame base: [%s]\n", rz_str_get_null(expr_str));
 			free(expr_str);
 			goto err;
@@ -1109,7 +1109,7 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		RzBuffer *buf = RzBinDwarfBlock_as_buf(&operation.typed_literal.value);
 		ERR_IF_FAIL(buf);
 		Value dst = { 0 };
-		bool success = Value_parse_into(&dst, typ, buf, self->encoding->big_endian) &&
+		bool success = Value_parse_into(&dst, typ, buf, self->big_endian) &&
 			Evaluation_push(self, &dst);
 		rz_buf_free(buf);
 		OK_OR_ERR(success, Value_fini(&dst));
@@ -1244,7 +1244,7 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 					rz_bin_dwarf_location_free(location));
 			} else {
 				Operation operation = { 0 };
-				ERR_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
+				ERR_IF_FAIL(Operation_parse(&operation, self->pc, self->big_endian, self->encoding));
 				if (operation.kind != OPERATION_KIND_PIECE) {
 					self->state.kind = EVALUATION_STATE_ERROR;
 					goto err;
@@ -1508,10 +1508,11 @@ static void vec_Operation_free(void *e, void *u) {
 	Operation_fini(e);
 }
 
-static RzVector /*<Operation>*/ *rz_bin_dwarf_expression_parse(RzBuffer *expr, const RzBinDwarfEncoding *encoding) {
+static RzVector /*<Operation>*/ *rz_bin_dwarf_expression_parse(
+	RzBuffer *expr, bool big_endian, const RzBinDwarfEncoding *encoding) {
 	RzVector *exprs = rz_vector_new(sizeof(Operation), vec_Operation_free, NULL);
 	Operation op = { 0 };
-	while (Operation_parse(&op, expr, encoding)) {
+	while (Operation_parse(&op, expr, big_endian, encoding)) {
 		rz_vector_push(exprs, &op);
 	}
 	return exprs;
@@ -1521,12 +1522,13 @@ RZ_API void
 rz_bin_dwarf_expression_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block,
+	bool big_endian,
 	RZ_BORROW RZ_NONNULL RzStrBuf *str_buf,
 	RZ_BORROW RZ_NULLABLE const char *sep,
 	RZ_BORROW RZ_NULLABLE const char *indent) {
 	rz_return_if_fail(encoding && block && str_buf);
 	RzBuffer *buffer = RzBinDwarfBlock_as_buf(block);
-	RzVector *exprs = rz_bin_dwarf_expression_parse(buffer, encoding);
+	RzVector *exprs = rz_bin_dwarf_expression_parse(buffer, big_endian, encoding);
 	rz_buf_free(buffer);
 
 	Operation *op = NULL;
@@ -1544,10 +1546,11 @@ rz_bin_dwarf_expression_dump(
 
 RZ_API char *rz_bin_dwarf_expression_to_string(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block) {
+	RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block,
+	bool big_endian) {
 	RzStrBuf sb = { 0 };
 	rz_strbuf_init(&sb);
-	rz_bin_dwarf_expression_dump(encoding, block, &sb, ",\t", "");
+	rz_bin_dwarf_expression_dump(encoding, block, big_endian, &sb, ",\t", "");
 	return rz_strbuf_drain_nofree(&sb);
 }
 
@@ -1575,7 +1578,7 @@ RZ_API void rz_bin_dwarf_loclist_dump(
 
 		if (encoding) {
 			rz_strbuf_append(sb, " [");
-			rz_bin_dwarf_expression_dump(encoding, entry->expression, sb, ", ", "");
+			rz_bin_dwarf_expression_dump(encoding, entry->expression, loclist->big_endian, sb, ", ", "");
 			rz_strbuf_append(sb, "]");
 		} else {
 			rz_bin_dwarf_block_dump(entry->expression, sb);

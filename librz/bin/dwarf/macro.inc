@@ -39,77 +39,44 @@
 #define GOTO_IF_FAIL(x, label) OK_OR(x, goto label)
 #define ERR_IF_FAIL(x)         OK_OR(x, goto err)
 
-#define WRAP_F(X, F, out, wrap) \
+#define READ_OR(TT, T, out, F, E) \
 	do { \
-		X temp = { 0 }; \
-		wrap(F); \
-		(out) = temp; \
-	} while (0)
-
-#define WRAP_VA_F(X, F, out, wrap, ...) \
-	do { \
-		X temp = { 0 }; \
-		wrap(F, __VA_ARGS__); \
-		out = temp; \
-	} while (0)
-
-#define WRAP_U(X, out, wrap)           WRAP_F(ut##X, rz_buf_read_ble##X(buffer, &temp, big_endian), out, wrap)
-#define WRAP_VA_U(X, out, wrap, ...)   WRAP_VA_F(ut##X, rz_buf_read_ble##X(buffer, &temp, big_endian), out, wrap, __VA_ARGS__)
-#define WRAP_U8(out, wrap)             WRAP_F(ut8, rz_buf_read8(buffer, &temp), out, wrap)
-#define WRAP_VA_U8(out, wrap, ...)     WRAP_VA_F(ut8, rz_buf_read8(buffer, &temp), out, wrap, __VA_ARGS__)
-#define WRAP_ULE128(out, wrap)         WRAP_F(ut64, rz_buf_uleb128(buffer, &temp) > 0, out, wrap)
-#define WRAP_VA_ULE128(out, wrap, ...) WRAP_VA_F(ut64, rz_buf_uleb128(buffer, &temp) > 0, out, wrap, __VA_ARGS__)
-#define WRAP_SLE128(out, wrap)         WRAP_F(st64, rz_buf_sleb128(buffer, &temp) > 0, out, wrap)
-#define WRAP_VA_SLE128(out, wrap, ...) WRAP_VA_F(st64, rz_buf_sleb128(buffer, &temp) > 0, out, wrap, __VA_ARGS__)
-
-#define WRAP_UX(X, out, wrap) \
-	switch ((X)) { \
-	case 1: WRAP_U8(out, wrap); break; \
-	case 2: WRAP_U(16, out, wrap); break; \
-	case 4: WRAP_U(32, out, wrap); break; \
-	case 8: WRAP_U(64, out, wrap); break; \
-	default: RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(X)); return false; \
-	}
-
-#define WRAP_VA_UX(X, out, wrap, ...) \
-	switch ((X)) { \
-	case 1: WRAP_VA_U8(out, wrap, __VA_ARGS__); break; \
-	case 2: WRAP_VA_U(16, out, wrap, __VA_ARGS__); break; \
-	case 4: WRAP_VA_U(32, out, wrap, __VA_ARGS__); break; \
-	case 8: WRAP_VA_U(64, out, wrap, __VA_ARGS__); break; \
-	default: RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(X)); return false; \
-	}
-
-#define READ_OR(bit, T, out, F, E) \
-	do { \
-		ut##bit temp = { 0 }; \
+		TT temp = { 0 }; \
 		if (!F) { \
 			E; \
 		} \
 		(out) = (T)temp; \
 	} while (0)
 
-#define READ_T_OR(bit, T, out, E) READ_OR(bit, T, out, rz_buf_read_ble##bit(buffer, &temp, big_endian), E)
+#define READ8_OR(T, out, E)       READ_OR(ut8, T, out, rz_buf_read8(buffer, &temp), E)
+#define READ_T_OR(bit, T, out, E) READ_OR(ut##bit, T, out, rz_buf_read_ble##bit(buffer, &temp, big_endian), E)
+#define READ_UT_OR(bit, out, E)   READ_OR(ut##bit, ut##bit, out, rz_buf_read_ble##bit(buffer, &temp, big_endian), E)
 
-#define U8_OR_RET_NULL(out)     WRAP_U8(out, RET_NULL_IF_FAIL)
-#define U_OR_RET_NULL(X, out)   WRAP_U(X, out, RET_NULL_IF_FAIL)
-#define UX_OR_RET_NULL(X, out)  WRAP_UX(X, out, RET_NULL_IF_FAIL)
-#define ULE128_OR_RET_NULL(out) WRAP_ULE128(out, RET_NULL_IF_FAIL)
-#define SLE128_OR_RET_NULL(out) WRAP_SLE128(out, RET_NULL_IF_FAIL)
+#define ULE128_OR(T, out, E) READ_OR(ut64, T, out, (rz_buf_uleb128(buffer, &temp) > 0), E)
+#define SLE128_OR(T, out, E) READ_OR(st64, T, out, (rz_buf_sleb128(buffer, &temp) > 0), E)
 
-#define U8_OR_RET_FALSE(out)     WRAP_U8(out, RET_FALSE_IF_FAIL)
-#define U_OR_RET_FALSE(X, out)   WRAP_U(X, out, RET_FALSE_IF_FAIL)
-#define UX_OR_RET_FALSE(X, out)  WRAP_UX(X, out, RET_FALSE_IF_FAIL)
-#define ULE128_OR_RET_FALSE(out) WRAP_ULE128(out, RET_FALSE_IF_FAIL)
-#define SLE128_OR_RET_FALSE(out) WRAP_SLE128(out, RET_FALSE_IF_FAIL)
+#define UX_OR(bit, out, E) \
+	switch ((bit)) { \
+	case 1: READ8_OR(ut8, out, E); break; \
+	case 2: READ_UT_OR(16, out, E); break; \
+	case 4: READ_UT_OR(32, out, E); break; \
+	case 8: READ_UT_OR(64, out, E); break; \
+	default: RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(bit)); return false; \
+	}
 
-#define U8_OR_GOTO(out, label)     WRAP_VA_U8(out, GOTO_IF_FAIL, label)
-#define U_OR_GOTO(X, out, label)   WRAP_VA_U(X, out, GOTO_IF_FAIL, label)
-#define UX_OR_GOTO(X, out, label)  WRAP_VA_UX(X, out, GOTO_IF_FAIL, label)
-#define ULE128_OR_GOTO(out, label) WRAP_VA_ULE128(out, GOTO_IF_FAIL, label)
-#define SLE128_OR_GOTO(out, label) WRAP_VA_SLE128(out, GOTO_IF_FAIL, label)
+#define U8_OR_RET_FALSE(out)     READ8_OR(ut8, out, return false)
+#define U_OR_RET_FALSE(X, out)   READ_UT_OR(X, out, return false)
+#define UX_OR_RET_FALSE(X, out)  UX_OR(X, out, return false)
+#define ULE128_OR_RET_FALSE(out) ULE128_OR(ut64, out, return false)
+#define SLE128_OR_RET_FALSE(out) SLE128_OR(st64, out, return false)
 
-#define U_ADDR_SIZE_OR_RET_FALSE(out) WRAP_UX(encoding->address_size, out, RET_FALSE_IF_FAIL)
+#define U8_OR_GOTO(out, label)     READ8_OR(ut8, out, goto label)
+#define U_OR_GOTO(X, out, label)   READ_UT_OR(X, out, goto label)
+#define UX_OR_GOTO(X, out, label)  UX_OR(X, out, goto label)
+#define ULE128_OR_GOTO(out, label) ULE128_OR(ut64, out, goto label)
+#define SLE128_OR_GOTO(out, label) SLE128_OR(st64, out, goto label)
+
+#define U_ADDR_SIZE_OR_RET_FALSE(out) UX_OR(encoding->address_size, out, return false)
 
 #define Ht_FREE_IMPL(V, T, f) \
 	static void Ht##V##_##T##_free(Ht##V##Kv *kv) { \

@@ -43,7 +43,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttr
 		return false;
 	}
 
-	bool big_endian = opt->encoding.big_endian;
+	bool big_endian = opt->big_endian;
 
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
 	switch (value->form) {
@@ -107,7 +107,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttr
 		break;
 	case DW_FORM_block: // variable length ULEB128
 		value->kind = DW_AT_KIND_BLOCK;
-		ULE128_OR_RET_NULL(value->block.length);
+		ULE128_OR_RET_FALSE(value->block.length);
 		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
 		break;
 	case DW_FORM_flag:
