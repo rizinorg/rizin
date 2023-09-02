@@ -35,7 +35,7 @@
  */
 
 static RzILOpBitVector *gb_il_resolve_addr_data(ut64 op_addr, RzILOpBitVector *target_addr16) {
-	(void)op_addr;
+	(void)op_addr; // currently unused, but the returned addr could be made 32-bits and depend on the op_addr, like with code
 	return target_addr16;
 }
 
@@ -74,6 +74,14 @@ static RzILOpBool *gb_il_carry(bool sub, RzILOpBitVector *a, RzILOpBitVector *b,
 	return UGT(binop(a, b), UN(src_bits, mask));
 }
 
+static RzILOpEffect *gb_il_write_flags(RzILOpBitVector *src) {
+	return SEQ4(
+		SETG("Z", MSB(UNSIGNED(8, src))),
+		SETG("N", MSB(UNSIGNED(7, DUP(src)))),
+		SETG("H", MSB(UNSIGNED(6, DUP(src)))),
+		SETG("C", MSB(UNSIGNED(5, DUP(src)))));
+}
+
 /**
  * \p val must be of size gb_reg_bits(dst)
  */
@@ -89,9 +97,9 @@ static RzILOpEffect *gb_il_write_reg(gb_reg dst, RzILOpBitVector *val) {
 	case GB_REG_SP:
 		return SETG(gb_reg_name(dst), val);
 	case GB_REG_AF:
-		// TODO: assign a and flags
-		rz_warn_if_reached();
-		return NULL;
+		return SEQ2(
+			SETG("a", UNSIGNED(8, SHIFTR0(val, UN(4, 8)))),
+			gb_il_write_flags(DUP(val)));
 	case GB_REG_BC:
 	case GB_REG_DE:
 	case GB_REG_HL:
@@ -104,12 +112,25 @@ static RzILOpEffect *gb_il_write_reg(gb_reg dst, RzILOpBitVector *val) {
 	}
 }
 
+static RzILOpBitVector *gb_il_read_flags() {
+	return LOGOR(
+		ITE(VARG("Z"), U8(0x80), U8(0)),
+		LOGOR(
+			ITE(VARG("N"), U8(0x40), U8(0)),
+			LOGOR(
+				ITE(VARG("H"), U8(0x20), U8(0)),
+				ITE(VARG("C"), U8(0x10), U8(0)))));
+}
+
 static RzILOpBitVector *gb_il_read_reg(gb_reg reg) {
 	if (gb_reg_bits(reg) == 8 || reg == GB_REG_SP) {
 		return VARG(gb_reg_name(reg));
 	}
 	switch (reg) {
 	case GB_REG_AF:
+		return APPEND(
+			VARG("a"),
+			gb_il_read_flags());
 	case GB_REG_BC:
 	case GB_REG_DE:
 	case GB_REG_HL:
@@ -448,6 +469,18 @@ static RzILOpEffect *gb_il_reti(ut64 op_addr) {
 
 static RzILOpEffect *gb_il_mov_ime(bool value) {
 	return SETG("ime", value ? IL_TRUE : IL_FALSE);
+}
+
+static RzILOpEffect *gb_il_push(gb_reg src, ut64 op_addr) {
+	return SEQ2(
+		SETG("sp", SUB(VARG("sp"), U16(2))),
+		STOREW(gb_il_resolve_addr_data(op_addr, VARG("sp")), gb_il_read_reg(src)));
+}
+
+static RzILOpEffect *gb_il_pop(gb_reg dst, ut64 op_addr) {
+	return SEQ2(
+		gb_il_write_reg(dst, LOADW(16, gb_il_resolve_addr_data(op_addr, VARG("sp")))),
+		SETG("sp", ADD(VARG("sp"), U16(2))));
 }
 
 // --

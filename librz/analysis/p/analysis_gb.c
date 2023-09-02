@@ -36,7 +36,12 @@ static gb_reg regs_16[] = {
 	GB_REG_HL,
 	GB_REG_SP
 };
-static const char *regs_16_alt[] = { "bc", "de", "hl", "af" };
+static gb_reg regs_16_alt[] = {
+	GB_REG_BC,
+	GB_REG_DE,
+	GB_REG_HL,
+	GB_REG_AF
+};
 
 static ut8 gb_op_calljump(RzAnalysis *a, RzAnalysisOp *op, const ut8 *data, ut64 addr) {
 	if (GB_IS_RAM_DST(data[1], data[2])) {
@@ -398,16 +403,30 @@ static inline void gb_analysis_cond(RzReg *reg, RzAnalysisOp *op, const ut8 data
 	}
 }
 
-static inline void gb_analysis_pp(RzReg *reg, RzAnalysisOp *op, const ut8 data) // push , pop
+static inline void gb_analysis_pp(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data) // push , pop
 {
 	RzAnalysisValue *val = rz_analysis_value_new();
-	val->reg = rz_reg_get(reg, regs_16_alt[(data >> 4) - 12], RZ_REG_TYPE_GPR);
+	gb_reg regid = regs_16_alt[(data >> 4) - 12];
+	const char *reg_name = gb_reg_name(regid);
+	val->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	if ((data & 0xf) == 1) {
+		// pop
 		op->dst = val;
-		rz_strbuf_setf(&op->esil, "sp,[2],%s,=,2,sp,+=", regs_16_alt[(data >> 4) - 12]); // pop
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_setf(&op->esil, "sp,[2],%s,=,2,sp,+=", reg_name);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_pop(regid, op->addr);
+		}
 	} else {
+		// push
 		op->src[0] = val;
-		rz_strbuf_setf(&op->esil, "2,sp,-=,%s,sp,=[2]", regs_16_alt[(data >> 4) - 12]); // push
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+			rz_strbuf_setf(&op->esil, "2,sp,-=,%s,sp,=[2]", reg_name);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = gb_il_push(regid, op->addr);
+		}
 	}
 }
 
@@ -1492,7 +1511,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0xd5:
 	case 0xe5:
 	case 0xf5:
-		gb_analysis_pp(analysis->reg, op, data[0]);
+		gb_analysis_pp(mask, analysis->reg, op, data[0]);
 		op->cycles = 16;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = 2;
@@ -1502,7 +1521,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0xd1:
 	case 0xe1:
 	case 0xf1:
-		gb_analysis_pp(analysis->reg, op, data[0]);
+		gb_analysis_pp(mask, analysis->reg, op, data[0]);
 		op->cycles = 12;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -2;

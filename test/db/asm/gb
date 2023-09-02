@@ -367,14 +367,14 @@ d "or d" b2 0x0 (seq (set a (| (var a) (var d))) (set Z (is_zero (var a))) (set 
 d "or e" b3 0x0 (seq (set a (| (var a) (var e))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
 d "or h" b4 0x0 (seq (set a (| (var a) (var h))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
 d "or l" b5 0x0 (seq (set a (| (var a) (var l))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
-d "pop af" f1
-d "pop bc" c1
-d "pop de" d1
-d "pop hl" e1
-d "push af" f5
-d "push bc" c5
-d "push de" d5
-d "push hl" e5
+d "pop af" f1 0x0 (seq (set a (cast 8 false (>> (loadw 0 16 (var sp)) (bv 4 0x8) false))) (set Z (msb (cast 8 false (loadw 0 16 (var sp))))) (set N (msb (cast 7 false (loadw 0 16 (var sp))))) (set H (msb (cast 6 false (loadw 0 16 (var sp))))) (set C (msb (cast 5 false (loadw 0 16 (var sp))))) (set sp (+ (var sp) (bv 16 0x2))))
+d "pop bc" c1 0x0 (seq (set b (cast 8 false (>> (loadw 0 16 (var sp)) (bv 4 0x8) false))) (set c (cast 8 false (loadw 0 16 (var sp)))) (set sp (+ (var sp) (bv 16 0x2))))
+d "pop de" d1 0x0 (seq (set d (cast 8 false (>> (loadw 0 16 (var sp)) (bv 4 0x8) false))) (set e (cast 8 false (loadw 0 16 (var sp)))) (set sp (+ (var sp) (bv 16 0x2))))
+d "pop hl" e1 0x0 (seq (set h (cast 8 false (>> (loadw 0 16 (var sp)) (bv 4 0x8) false))) (set l (cast 8 false (loadw 0 16 (var sp)))) (set sp (+ (var sp) (bv 16 0x2))))
+d "push af" f5 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (append (var a) (| (ite (var Z) (bv 8 0x80) (bv 8 0x0)) (| (ite (var N) (bv 8 0x40) (bv 8 0x0)) (| (ite (var H) (bv 8 0x20) (bv 8 0x0)) (ite (var C) (bv 8 0x10) (bv 8 0x0))))))))
+d "push bc" c5 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (append (var b) (var c))))
+d "push de" d5 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (append (var d) (var e))))
+d "push hl" e5 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (append (var h) (var l))))
 d "res 0, [hl]" cb86
 d "res 0, a" cb87
 d "res 0, b" cb80
