@@ -295,7 +295,7 @@ static struct optype {
 RZ_API int rz_analysis_optype_from_string(RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(name, -1);
 	int i;
-	for (i = 0; RZ_ARRAY_SIZE(optypes); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(optypes); i++) {
 		if (!strcmp(optypes[i].name, name)) {
 			return optypes[i].type;
 		}
