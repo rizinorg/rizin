@@ -236,7 +236,7 @@ static RzILOpEffect *gb_il_inc_hl_mem(bool dec, ut64 op_addr) {
 		STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)), VARL("v")),
 		SETG("Z", IS_ZERO(VARL("v"))),
 		SETG("N", dec ? IL_TRUE : IL_FALSE),
-		SETG("H", IS_ZERO(UNSIGNED(4, VARL("v")))));
+		SETG("H", dec ? EQ(UNSIGNED(4, VARL("v")), UN(4, 0xf)) : IS_ZERO(UNSIGNED(4, VARL("v")))));
 }
 
 static RzILOpEffect *gb_il_store_imm_a(ut16 dst_addr, ut64 op_addr) {
@@ -288,10 +288,11 @@ static RzILOpEffect *gb_il_load_a_imm(ut16 src_addr, ut64 op_addr) {
 
 static RzILOpEffect *gb_il_add(gb_reg dst_reg, RzILOpBitVector *src, bool carry_in) {
 	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
-	return SEQ5(
+	return SEQ6(
 		SETG("H", gb_il_carry(false, dst, src, carry_in, 8, 4)),
-		SETG("C", gb_il_carry(false, DUP(dst), DUP(src), carry_in, 8, 8)),
+		SETL("CC", gb_il_carry(false, DUP(dst), DUP(src), carry_in, 8, 8)),
 		gb_il_write_reg(dst_reg, ADD(DUP(dst), carry_in ? ADD(DUP(src), ITE(VARG("C"), U8(1), U8(0))) : DUP(src))),
+		SETG("C", VARL("CC")),
 		SETG("Z", IS_ZERO(DUP(dst))),
 		SETG("N", IL_FALSE));
 }
@@ -562,15 +563,15 @@ static RzILOpEffect *gb_il_stop() {
 	return NOP();
 }
 
-static RzILOpEffect *gb_il_call(ut64 dst, ut64 op_addr) {
+static RzILOpEffect *gb_il_call(ut64 dst, ut64 op_addr, ut8 op_size) {
 	return SEQ3(
 		SETG("sp", SUB(VARG("sp"), U16(2))),
-		STOREW(gb_il_resolve_addr_data(op_addr, VARG("sp")), U16((ut16)op_addr)),
+		STOREW(gb_il_resolve_addr_data(op_addr, VARG("sp")), U16((ut16)op_addr + op_size)),
 		JMP(gb_il_resolve_addr_code_imm(dst)));
 }
 
-static RzILOpEffect *gb_il_ccall(ut64 dst, ut64 op_addr, gb_flag cond_flag, bool neg) {
-	return gb_il_cond(cond_flag, neg, gb_il_call(dst, op_addr));
+static RzILOpEffect *gb_il_ccall(ut64 dst, ut64 op_addr, ut8 op_size, gb_flag cond_flag, bool neg) {
+	return gb_il_cond(cond_flag, neg, gb_il_call(dst, op_addr, op_size));
 }
 
 static RzILOpEffect *gb_il_scf() {

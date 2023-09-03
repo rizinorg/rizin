@@ -66,7 +66,7 @@ static void gb_analysis_call(RzAnalysisOpMask mask, RzAnalysisOp *op) {
 		gb_analysis_esil_call(op);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = gb_il_call(op->jump, op->addr);
+		op->il_op = gb_il_call(op->jump, op->addr, op->size);
 	}
 }
 
@@ -111,7 +111,7 @@ static void gb_analysis_ccall(RzAnalysisOpMask mask, RzAnalysisOp *op, const ut8
 			rz_warn_if_reached();
 			return;
 		}
-		op->il_op = gb_il_ccall(op->jump, op->addr, flag, neg);
+		op->il_op = gb_il_ccall(op->jump, op->addr, op->size, flag, neg);
 	}
 }
 
