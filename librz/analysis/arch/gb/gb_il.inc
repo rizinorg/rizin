@@ -519,4 +519,52 @@ static RzILOpEffect *gb_il_ccall(ut64 dst, ut64 op_addr, gb_flag cond_flag, bool
 	return gb_il_cond(cond_flag, neg, gb_il_call(dst, op_addr));
 }
 
+static RzILOpEffect *gb_il_scf() {
+	return SEQ3(
+		SETG("C", IL_TRUE),
+		SETG("H", IL_FALSE),
+		SETG("N", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_daa() {
+#if 0
+	SETL("v", UNSIGNED(9, VARG("a")));
+	BRANCH(VARG("N"),
+		SEQ2(
+			BRANCH(VARG("H"),
+				SETL("v", LOGAND(SUB(VARL("v"), UN(9, 0x06)), UN(9, 0xff))), NOP()),
+			BRANCH(VARG("C"),
+				SETL("v", SUB(VARL("v"), UN(9, 0x60))), NOP())),
+		SEQ2(
+			BRANCH(OR(VARG("H"), UGT(LOGAND(VARL("v"), UN(9, 0xf)), UN(9, 9))),
+				SETL("v", ADD(VARL("v"), UN(9, 0x06))), NOP()),
+			BRANCH(OR(VARG("C"), UGT(VARL("v"), UN(9, 0x9f))),
+				SETL("v", ADD(VARL("v"), UN(9, 0x60))), NOP())
+			));
+#endif
+	// clang-format off
+	return SEQ5(
+		SETL("res", LET("v0", UNSIGNED(9, VARG("a")),
+			ITE(VARG("N"),
+				LET("v1",
+					ITE(VARG("H"),
+						LOGAND(SUB(VARLP("v0"), UN(9, 0x06)), UN(9, 0xff)),
+						VARLP("v0")),
+					ITE(VARG("C"),
+						SUB(VARLP("v1"), UN(9, 0x60)),
+						VARLP("v1"))),
+				LET("v1",
+					ITE(OR(VARG("H"), UGT(LOGAND(VARLP("v0"), UN(9, 0xf)), UN(9, 9))),
+						ADD(VARLP("v0"), UN(9, 0x06)),
+						VARLP("v0")),
+					ITE(OR(VARG("C"), UGT(VARLP("v1"), UN(9, 0x9f))),
+						ADD(VARLP("v1"), UN(9, 0x60)),
+						VARLP("v1")))))),
+		SETG("a", UNSIGNED(8, VARL("res"))),
+		SETG("Z", IS_ZERO(VARG("a"))),
+		SETG("H", IL_FALSE),
+		SETG("C", MSB(VARL("res"))));
+	// clang-format on
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>

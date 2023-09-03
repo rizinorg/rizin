@@ -61,6 +61,15 @@ static void gb_analysis_esil_call(RzAnalysisOp *op) {
 	rz_strbuf_setf(&op->esil, "2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=", (op->jump & 0xffff));
 }
 
+static void gb_analysis_call(RzAnalysisOpMask mask, RzAnalysisOp *op) {
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		gb_analysis_esil_call(op);
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_call(op->jump, op->addr);
+	}
+}
+
 static inline void gb_analysis_esil_ccall(RzAnalysisOp *op, const ut8 data) {
 	char cond;
 	switch (data) {
@@ -75,6 +84,34 @@ static inline void gb_analysis_esil_ccall(RzAnalysisOp *op, const ut8 data) {
 		rz_strbuf_setf(&op->esil, "%c,?{,2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=,}", cond, (op->jump & 0xffff));
 	} else {
 		rz_strbuf_setf(&op->esil, "%c,!,?{,2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=,}", cond, (op->jump & 0xffff));
+	}
+}
+
+static void gb_analysis_ccall(RzAnalysisOpMask mask, RzAnalysisOp *op, const ut8 data) {
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		gb_analysis_esil_ccall(op, data);
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		gb_flag flag;
+		bool neg = false;
+		switch (data) {
+		case 0xc4:
+			neg = true;
+			// fallthrough
+		case 0xcc:
+			flag = GB_FLAG_Z;
+			break;
+		case 0xd4:
+			neg = true;
+			// fallthrough
+		case 0xdc:
+			flag = GB_FLAG_C;
+			break;
+		default:
+			rz_warn_if_reached();
+			return;
+		}
+		op->il_op = gb_il_ccall(op->jump, op->addr, flag, neg);
 	}
 }
 
@@ -353,12 +390,26 @@ static inline void gb_analysis_mov_ime(RzAnalysisOpMask mask, RzReg *reg, RzAnal
 	}
 }
 
-static inline void gb_analysis_mov_scf(RzReg *reg, RzAnalysisOp *op) {
+static inline void gb_analysis_mov_scf(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, regs_1[3], RZ_REG_TYPE_GPR);
 	op->src[0]->imm = 1;
-	rz_strbuf_set(&op->esil, "1,C,:=");
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		rz_strbuf_set(&op->esil, "1,C,:=");
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_scf();
+	}
+}
+
+static inline void gb_analysis_daa(RzAnalysisOpMask mask, RzAnalysisOp *op) {
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		rz_strbuf_set(&op->esil, "a,daa,a,=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=");
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = gb_il_daa();
+	}
 }
 
 static inline void gb_analysis_xor_cpl(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op) {
@@ -1615,12 +1666,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		}
 		op->fail = addr + ilen;
 		op->eob = true;
-		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			gb_analysis_esil_call(op);
-		}
-		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			op->il_op = gb_il_call(op->jump, op->addr);
-		}
+		gb_analysis_call(mask, op);
 		op->cycles = 24;
 		break;
 	case 0xc4:
@@ -1635,7 +1681,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		}
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_ccall(op, data[0]);
+		gb_analysis_ccall(mask, op, data[0]);
 		op->cycles = 24;
 		op->failcycles = 12;
 		break;
@@ -1643,7 +1689,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->jump = 0x00;
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		gb_analysis_call(mask, op);
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
@@ -1651,7 +1697,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->jump = 0x08;
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		gb_analysis_call(mask, op);
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
@@ -1659,7 +1705,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->jump = 0x10;
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		gb_analysis_call(mask, op);
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
@@ -1667,7 +1713,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->jump = 0x18;
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		gb_analysis_call(mask, op);
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
@@ -1675,7 +1721,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->jump = 0x20;
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		gb_analysis_call(mask, op);
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
@@ -1683,7 +1729,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->jump = 0x28;
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		gb_analysis_call(mask, op);
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
@@ -1691,7 +1737,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->jump = 0x30;
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		gb_analysis_call(mask, op);
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
@@ -1699,7 +1745,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->jump = 0x38;
 		op->fail = addr + ilen;
 		op->eob = true;
-		gb_analysis_esil_call(op);
+		gb_analysis_call(mask, op);
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
@@ -1710,14 +1756,14 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case 0x37:
-		gb_analysis_mov_scf(analysis->reg, op);
+		gb_analysis_mov_scf(mask, analysis->reg, op);
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case 0x27: // daa
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		rz_strbuf_set(&op->esil, "a,daa,a,=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=");
+		gb_analysis_daa(mask, op);
 		break;
 	case 0x10: // stop
 		op->type = RZ_ANALYSIS_OP_TYPE_NULL;
