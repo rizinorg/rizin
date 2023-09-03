@@ -30,6 +30,8 @@ typedef struct {
 
 typedef RzBinDwarfValue Value;
 typedef RzBinDwarfLocation Location;
+typedef RzBinDwarfDie DIE;
+typedef RzBinDwarfCompUnit CU;
 
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian);
 

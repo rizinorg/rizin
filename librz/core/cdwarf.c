@@ -159,8 +159,9 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
 	if (!sb) {
 		return NULL;
 	}
-	RzBinDwarfCompUnit *unit = NULL;
-	rz_vector_foreach(&info->units, unit) {
+	void **it;
+	rz_pvector_foreach (&info->units, it) {
+		RzBinDwarfCompUnit *unit = *it;
 		rz_strbuf_append(sb, "\n");
 		rz_strbuf_appendf(sb, "  Compilation Unit @ offset 0x%" PFMT64x ":\n", unit->offset);
 		rz_strbuf_appendf(sb, "   Length:        0x%" PFMT64x "\n", unit->hdr.length);
@@ -173,8 +174,9 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
 		}
 		rz_strbuf_append(sb, "\n");
 
-		RzBinDwarfDie *die = NULL;
-		rz_vector_foreach(&unit->dies, die) {
+		void **dit;
+		rz_pvector_foreach (&unit->dies, dit) {
+			RzBinDwarfDie *die = *dit;
 			rz_strbuf_appendf(sb, "<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ", die->offset, die->abbrev_code);
 
 			const char *tag_name = rz_bin_dwarf_tag(die->tag);

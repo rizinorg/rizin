@@ -1615,19 +1615,6 @@ cleanup:
 	return false;
 }
 
-static void ns_set(Context *ctx, RzList /*<char*>*/ *ns_list) {
-	rz_strbuf_set(&ctx->ns, "");
-	RzListIter *iter;
-	const char *item;
-	rz_list_foreach (ns_list, iter, item) {
-		if (iter == rz_list_head(ns_list)) {
-			rz_strbuf_append(&ctx->ns, item ? item : "(anonymous namespace)");
-		} else {
-			rz_strbuf_appendf(&ctx->ns, "::%s", item ? item : "(anonymous namespace)");
-		}
-	}
-}
-
 static void ns_push(Context *ctx, RzBinDwarfDie *die) {
 	switch (die->tag) {
 	case DW_TAG_structure_type:
@@ -1719,29 +1706,24 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 	if (!dw->info) {
 		return;
 	}
-	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cpu, analysis->bits);
+	analysis->debug_info->dwarf_register_mapping =
+		dwarf_register_mapping_query(analysis->cpu, analysis->bits);
 	Context ctx = {
 		.analysis = analysis,
 		.dw = dw,
 	};
-	RzBinDwarfCompUnit *unit;
 
-	rz_vector_foreach(&dw->info->units, unit) {
-		if (rz_vector_empty(&unit->dies)) {
+	void **unit_it;
+	rz_pvector_foreach (&dw->info->units, unit_it) {
+		RzBinDwarfCompUnit *unit = *unit_it;
+		if (rz_pvector_empty(&unit->dies)) {
 			continue;
 		}
 		ctx.unit = unit;
-
-		for (RzBinDwarfDie *die = rz_vector_head(&unit->dies);
-			die && (ut8 *)die < (ut8 *)unit->dies.a + unit->dies.len * unit->dies.elem_size;) {
-
+		void **die_it = unit->dies.v.a;
+		rz_pvector_foreach (&unit->dies, die_it) {
+			RzBinDwarfDie *die = *die_it;
 			die_parse(&ctx, die);
-
-			if (die->tag != DW_TAG_namespace && die->sibling > die->offset) {
-				die = ht_up_find(dw->info->die_by_offset, die->sibling, NULL);
-			} else {
-				++die;
-			}
 		}
 	}
 	rz_strbuf_fini(&ctx.ns);

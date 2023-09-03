@@ -15,11 +15,12 @@ typedef struct {
 	RzBinDwarfDebugStr *str;
 } DebugInfo_Context;
 
-static void RzBinDwarfDie_fini(RzBinDwarfDie *die) {
+static void RzBinDwarfDie_free(RzBinDwarfDie *die) {
 	if (!die) {
 		return;
 	}
 	rz_vector_fini(&die->attrs);
+	free(die);
 }
 
 static inline ut64 attr_get_uconstant_or_reference(const RzBinDwarfAttr *attr) {
@@ -86,15 +87,16 @@ static int RzBinDwarfCompUnit_init(RzBinDwarfCompUnit *unit) {
 	if (!unit) {
 		return -EINVAL;
 	}
-	rz_vector_init(&unit->dies, sizeof(RzBinDwarfDie), (RzVectorFree)RzBinDwarfDie_fini, NULL);
+	rz_pvector_init(&unit->dies, (RzPVectorFree)RzBinDwarfDie_free);
 	return 0;
 }
 
-static void RzBinDwarfCompUnit_fini(RzBinDwarfCompUnit *unit, void *user) {
+static void RzBinDwarfCompUnit_free(RzBinDwarfCompUnit *unit) {
 	if (!unit) {
 		return;
 	}
-	rz_vector_fini(&unit->dies);
+	rz_pvector_fini(&unit->dies);
+	free(unit);
 }
 
 static inline ut64 RzBinDwarfCompUnit_next(RzBinDwarfCompUnit *unit) {
@@ -106,18 +108,17 @@ static bool add_die(
 	RzBinDwarfCompUnit *unit,
 	RzBinDwarfDie *die) {
 
-	RzBinDwarfDie *ptr = rz_vector_push(&unit->dies, &die);
-	ERR_IF_FAIL(ptr);
+	ERR_IF_FAIL(rz_pvector_push(&unit->dies, die));
 
-	ht_up_insert(ctx->info->die_by_offset, die->offset, ptr);
+	ht_up_insert(ctx->info->die_by_offset, die->offset, die);
 
 	if (!rz_list_empty(ctx->parents)) {
 		RzBinDwarfDie *parent = (RzBinDwarfDie *)rz_list_last(ctx->parents);
 		ERR_IF_FAIL(parent);
-		ERR_IF_FAIL(rz_pvector_push(parent->children, ptr));
+		ERR_IF_FAIL(rz_pvector_push(parent->children, die));
 	}
-	if (ptr->has_children) {
-		ERR_IF_FAIL(rz_list_append(ctx->parents, ptr));
+	if (die->has_children) {
+		ERR_IF_FAIL(rz_list_append(ctx->parents, die));
 	}
 	return true;
 err:
@@ -132,7 +133,8 @@ static bool RzBinDwarfCompUnit_dies_parse(
 	RzBinDwarfCompUnit *unit,
 	const RzBinDwarfAbbrevTable *tbl) {
 	RzBuffer *buffer = ctx->info->buffer;
-	ctx->depth = 1;
+	DIE *die = NULL;
+	ctx->depth = 0;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
 		if (offset >= RzBinDwarfCompUnit_next(unit)) {
@@ -146,15 +148,16 @@ static bool RzBinDwarfCompUnit_dies_parse(
 			break;
 		}
 
-		RzBinDwarfDie die = {
-			.offset = offset,
-			.abbrev_code = abbrev_code,
-			.parent = rz_list_last(ctx->parents),
-		};
+		die = RZ_NEW0(DIE);
+		ERR_IF_FAIL(die);
+		die->offset = offset;
+		die->abbrev_code = abbrev_code;
+		die->parent = rz_list_last(ctx->parents);
+
 		// there can be "null" entries that have abbr_code == 0
 		if (!abbrev_code) {
 			RZ_LOG_SILLY("0x%" PFMT64x ":\t%sNULL\n", offset, rz_str_indent(ctx->depth));
-			ERR_IF_FAIL(add_die(ctx, unit, &die));
+			ERR_IF_FAIL(add_die(ctx, unit, die));
 			ctx->depth--;
 			rz_list_pop(ctx->parents);
 			if (ctx->depth <= 0) {
@@ -164,29 +167,30 @@ static bool RzBinDwarfCompUnit_dies_parse(
 			}
 		}
 
-		RzBinDwarfAbbrevDecl *abbrev_decl = rz_bin_dwarf_abbrev_get(tbl, die.abbrev_code);
-		if (!abbrev_decl) {
+		RzBinDwarfAbbrevDecl *decl = rz_bin_dwarf_abbrev_get(tbl, die->abbrev_code);
+		if (!decl) {
 			break;
 		}
 
-		ut64 attr_count = rz_bin_dwarf_abbrev_decl_count(abbrev_decl);
+		ut64 attr_count = rz_bin_dwarf_abbrev_decl_count(decl);
 		if (attr_count) {
-			rz_vector_init(&die.attrs, sizeof(RzBinDwarfAttr), (RzVectorFree)RzBinDwarfAttr_fini, NULL);
-			rz_vector_reserve(&die.attrs, attr_count);
+			rz_vector_init(&die->attrs, sizeof(RzBinDwarfAttr), (RzVectorFree)RzBinDwarfAttr_fini, NULL);
+			rz_vector_reserve(&die->attrs, attr_count);
 		}
-		if (abbrev_decl->code != 0) {
-			die.tag = abbrev_decl->tag;
-			die.has_children = abbrev_decl->has_children;
-			if (die.has_children) {
+		if (decl->code != 0) {
+			die->tag = decl->tag;
+			die->has_children = decl->has_children;
+			if (die->has_children) {
 				ctx->depth++;
-				die.children = rz_pvector_new(NULL);
+				die->children = rz_pvector_new(NULL);
 			}
-			GOTO_IF_FAIL(RzBinDwarfDie_attrs_parse(ctx, &die, unit, abbrev_decl), err);
+			GOTO_IF_FAIL(RzBinDwarfDie_attrs_parse(ctx, die, unit, decl), err);
 		}
-		ERR_IF_FAIL(add_die(ctx, unit, &die));
+		ERR_IF_FAIL(add_die(ctx, unit, die));
 	}
 	return true;
 err:
+	RzBinDwarfDie_free(die);
 	return false;
 }
 
@@ -220,7 +224,7 @@ static bool RzBinDwarfCompUnitHdr_parse(DebugInfo_Context *ctx, RzBinDwarfCompUn
 	return true;
 }
 
-static void RzBinDwarfCompUnit_apply(RzBinDwarfCompUnit *unit, RzBinDwarfDie *die) {
+static void RzBinDwarfCompUnit_apply_attrs(RzBinDwarfCompUnit *unit, RzBinDwarfDie *die) {
 	RzBinDwarfAttr *attr = NULL;
 	rz_vector_foreach(&die->attrs, attr) {
 		switch (attr->name) {
@@ -268,56 +272,51 @@ static void RzBinDwarfCompUnit_apply(RzBinDwarfCompUnit *unit, RzBinDwarfDie *di
  */
 static bool RzBinDwarfCompUnit_parse(DebugInfo_Context *ctx) {
 	RzBuffer *buffer = ctx->info->buffer;
+	CU *unit = NULL;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
 		if (offset >= rz_buf_size(buffer)) {
 			break;
 		}
 
-		RzBinDwarfCompUnit unit = {
-			.offset = offset,
-		};
+		unit = RZ_NEW0(CU);
+		ERR_IF_FAIL(unit);
+		unit->offset = offset;
 
-		if (RzBinDwarfCompUnit_init(&unit) < 0) {
-			goto err;
-		}
-		if (!RzBinDwarfCompUnitHdr_parse(ctx, &unit.hdr)) {
+		ERR_IF_FAIL(RzBinDwarfCompUnit_init(unit) < 0);
+		if (!RzBinDwarfCompUnitHdr_parse(ctx, &unit->hdr)) {
 			break;
 		}
-		if (unit.hdr.length > rz_buf_size(buffer)) {
-			goto err;
-		}
+		ERR_IF_FAIL(unit->hdr.length > rz_buf_size(buffer));
 
 		RzBinDwarfAbbrevTable *tbl = ht_up_find(
-			ctx->abbrevs->tbl_by_offset, unit.hdr.abbrev_offset, NULL);
-		if (!tbl) {
-			goto err;
-		}
+			ctx->abbrevs->tbl_by_offset, unit->hdr.abbrev_offset, NULL);
+		ERR_IF_FAIL(tbl);
 
 		RZ_LOG_DEBUG("0x%" PFMT64x ":\tcompile unit length = 0x%" PFMT64x ", "
 			     "abbr_offset: 0x%" PFMT64x "\n",
-			unit.offset, unit.hdr.length, unit.hdr.abbrev_offset);
-		RzBinDwarfCompUnit_dies_parse(ctx, &unit, tbl);
+			unit->offset, unit->hdr.length, unit->hdr.abbrev_offset);
+		RzBinDwarfCompUnit_dies_parse(ctx, unit, tbl);
 
-		ut64 unit_die_count = rz_vector_len(&unit.dies);
+		ut64 unit_die_count = rz_pvector_len(&unit->dies);
 		if (unit_die_count > 0) {
 			ctx->info->die_count += unit_die_count;
-			RzBinDwarfDie *die = rz_vector_head(&unit.dies);
+			RzBinDwarfDie *die = rz_pvector_head(&unit->dies);
 			if (die->tag == DW_TAG_compile_unit) {
-				RzBinDwarfCompUnit_apply(&unit, die);
-				if (unit.stmt_list >= 0 && unit.stmt_list < UT64_MAX && unit.comp_dir) {
+				RzBinDwarfCompUnit_apply_attrs(unit, die);
+				if (unit->stmt_list >= 0 && unit->stmt_list < UT64_MAX && unit->comp_dir) {
 					ht_up_insert(ctx->info->line_info_offset_comp_dir,
-						unit.stmt_list, (void *)unit.comp_dir);
+						unit->stmt_list, (void *)unit->comp_dir);
 				}
 			}
 		}
 
-		RzBinDwarfCompUnit *ptr = rz_vector_push(&ctx->info->units, &unit);
-		ERR_IF_FAIL(ptr);
-		ht_up_insert(ctx->info->unit_by_offset, unit.offset, ptr);
+		ERR_IF_FAIL(rz_pvector_push(&ctx->info->units, unit));
+		ht_up_insert(ctx->info->unit_by_offset, unit->offset, unit);
 	}
 	return true;
 err:
+	RzBinDwarfCompUnit_free(unit);
 	return false;
 }
 
@@ -333,7 +332,7 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(RZ_BORROW RZ_NONNULL 
 }
 
 static bool RzBinDwarfDebugInfo_init(RzBinDwarfDebugInfo *info) {
-	rz_vector_init(&info->units, sizeof(RzBinDwarfCompUnit), (RzVectorFree)RzBinDwarfCompUnit_fini, NULL);
+	rz_pvector_init(&info->units, (RzPVectorFree)RzBinDwarfCompUnit_free);
 	info->line_info_offset_comp_dir = ht_up_new(NULL, NULL, NULL);
 	ERR_IF_FAIL(info->line_info_offset_comp_dir);
 	info->die_by_offset = ht_up_new_size(info->die_count, NULL, NULL, NULL);
@@ -342,7 +341,7 @@ static bool RzBinDwarfDebugInfo_init(RzBinDwarfDebugInfo *info) {
 	ERR_IF_FAIL(info->unit_by_offset);
 	return true;
 err:
-	rz_vector_fini(&info->units);
+	rz_pvector_fini(&info->units);
 	return false;
 }
 
@@ -350,7 +349,7 @@ static inline void RzBinDwarfDebugInfo_free(RzBinDwarfDebugInfo *info) {
 	if (!info) {
 		return;
 	}
-	rz_vector_fini(&info->units);
+	rz_pvector_fini(&info->units);
 	ht_up_free(info->line_info_offset_comp_dir);
 	ht_up_free(info->die_by_offset);
 	ht_up_free(info->unit_by_offset);

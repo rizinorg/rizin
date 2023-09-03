@@ -1116,7 +1116,7 @@ typedef struct RzBinDwarfDie_t {
 typedef struct rz_bin_dwarf_comp_unit_t {
 	ut64 offset;
 	RzBinDwarfCompUnitHdr hdr;
-	RzVector /*<RzBinDwarfDie>*/ dies;
+	RzPVector /*<RzBinDwarfDie *>*/ dies;
 	const char *name;
 	const char *comp_dir;
 	const char *producer;
@@ -1132,7 +1132,7 @@ typedef struct rz_bin_dwarf_comp_unit_t {
 
 typedef struct {
 	RzBuffer *buffer;
-	RzVector /*<RzBinDwarfCompUnit>*/ units;
+	RzPVector /*<RzBinDwarfCompUnit>*/ units;
 	HtUP /*<ut64, DwarfDie *>*/ *die_by_offset;
 	HtUP /*<ut64, RzBinDwarfCompUnit *>*/ *unit_by_offset;
 	size_t die_count;
