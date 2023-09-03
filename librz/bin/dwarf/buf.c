@@ -70,9 +70,5 @@ RZ_IPI char *buf_get_string(RzBuffer *buffer) {
 	RET_NULL_IF_FAIL(x);
 	ut64 len = strlen(x) + 1;
 	rz_buf_seek(buffer, (st64)len, SEEK_CUR);
-	if (len <= 1) {
-		free(x);
-		return NULL;
-	}
 	return x;
 }

@@ -49,7 +49,7 @@ static bool RzBinDwarfDie_attrs_parse(
 			.big_endian = ctx->big_endian,
 		};
 		if (!RzBinDwarfAttr_parse(buffer, &attr, &opt)) {
-			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die: 0x%" PFMT64x " %s [%s]\n ",
+			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die attr: 0x%" PFMT64x " %s [%s]\n ",
 				rz_buf_tell(buffer), die->offset, rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form));
 			continue;
 		}

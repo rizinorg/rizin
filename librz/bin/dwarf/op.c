@@ -795,7 +795,9 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 	Operation operation = { 0 };
 	bool ret = false;
 	ut64 offset = rz_buf_tell(self->pc);
-	ERR_IF_FAIL(Operation_parse(&operation, self->pc, self->big_endian, self->encoding));
+	OK_OR(Operation_parse(&operation, self->pc, self->big_endian, self->encoding),
+		out->kind = OperationEvaluationResult_DECODE_ERROR;
+		goto ok);
 
 	switch (operation.kind) {
 	case OPERATION_KIND_DEREF: {
@@ -982,8 +984,10 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 			loc->kind = RzBinDwarfLocationKind_REGISTER_OFFSET;
 			loc->offset += operation.frame_offset.offset;
 		} else {
-			RZ_LOG_ERROR("Unsupported frame base location kind: %d\n", loc->kind);
-			goto err;
+			self->state.kind = EVALUATION_STATE_WAITING;
+			out->kind = OperationEvaluationResult_WAITING;
+			out->waiting._1 = EvaluationStateWaiting_FbReg;
+			goto ok;
 		}
 		RzBinDwarfValue v = {
 			.type = RzBinDwarfValueType_LOCATION,
@@ -1208,6 +1212,9 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 		switch (op_result.kind) {
 		case OperationEvaluationResult_PIECE:
 			break;
+		case OperationEvaluationResult_DECODE_ERROR:
+			self->state.kind = EVALUATION_STATE_DECODE_ERROR;
+			goto err;
 		case OperationEvaluationResult_INCOMPLETE:
 			if (Evaluation_end_of_expression(self) && !rz_vector_empty(&self->result)) {
 				self->state.kind = EVALUATION_STATE_ERROR;
@@ -1271,7 +1278,7 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 		return false;
 	}
 
-	if (rz_vector_empty(&self->result)) {
+	if (rz_vector_empty(&self->result) && !rz_vector_empty(&self->stack)) {
 		RzBinDwarfValue entry = { 0 };
 		bool status = Evaluation_pop(self, &entry);
 		RzBinDwarfLocation *location = NULL;
@@ -1321,19 +1328,19 @@ RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(
 	return NULL;
 }
 
-static RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *result) {
-	RzBinDwarfLocation *loc = NULL;
+static bool RzBinDwarfEvaluationResult_to_loc(
+	RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *result, Location *loc) {
+	rz_return_val_if_fail(loc, false);
 	if (eval->state.kind == EVALUATION_STATE_COMPLETE && result->kind == EvaluationResult_COMPLETE) {
 		RzVector *pieces = rz_bin_dwarf_evaluation_result(eval);
 		if (!pieces || rz_vector_empty(pieces)) {
-			return NULL;
+			return false;
 		}
 		if (rz_vector_len(pieces) == 1) {
 			RzBinDwarfPiece *piece = rz_vector_index_ptr(pieces, 0);
 			loc = piece->location;
 			piece->location = NULL;
 		} else {
-			loc = RZ_NEW0(RzBinDwarfLocation);
 			loc->kind = RzBinDwarfLocationKind_COMPOSITE;
 			loc->composite = rz_vector_clone(pieces);
 			RzBinDwarfPiece *piece = NULL;
@@ -1341,21 +1348,13 @@ static RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluatio
 				piece->location = NULL;
 			}
 		}
-		rz_bin_dwarf_evaluation_free(eval);
-		RzBinDwarfEvaluationResult_free(result);
-		return loc;
+		return true;
 	}
 
-	loc = RZ_NEW0(RzBinDwarfLocation);
-	if (!loc) {
-		rz_bin_dwarf_evaluation_free(eval);
-		RzBinDwarfEvaluationResult_free(result);
-		return NULL;
-	}
 	loc->kind = RzBinDwarfLocationKind_EVALUATION_WAITING;
 	loc->eval_waiting.eval = eval;
 	loc->eval_waiting.result = result;
-	return loc;
+	return true;
 }
 
 /**
@@ -1372,17 +1371,28 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit,
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die) {
 	rz_return_val_if_fail(block && dw, NULL);
+	Location *loc = RZ_NEW0(Location);
+	OK_OR(loc, return NULL);
 	RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
 	RET_NULL_IF_FAIL(result);
 	RzBinDwarfEvaluation *eval = rz_bin_dwarf_evaluation_new_from_block(block, dw, unit, die);
 	ERR_IF_FAIL(eval);
-	ERR_IF_FAIL(rz_bin_dwarf_evaluation_evaluate(eval, result));
-
-	return RzBinDwarfEvaluationResult_to_loc(eval, result);
+	ERR_IF_FAIL(rz_bin_dwarf_evaluation_evaluate(eval, result) &&
+		RzBinDwarfEvaluationResult_to_loc(eval, result, loc));
+ok:
+	return loc;
 err:
+	if (eval && eval->state.kind == EVALUATION_STATE_DECODE_ERROR) {
+		loc->kind = RzBinDwarfLocationKind_DECODE_ERROR;
+		goto cleanup;
+	} else {
+		rz_bin_dwarf_location_free(loc);
+		loc = NULL;
+	}
+cleanup:
 	rz_bin_dwarf_evaluation_free(eval);
 	RzBinDwarfEvaluationResult_free(result);
-	return NULL;
+	goto ok;
 }
 
 static void Operation_dump(Operation *op, RzStrBuf *buf) {

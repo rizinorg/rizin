@@ -1490,6 +1490,7 @@ typedef struct {
 
 typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfEncoding encoding;
+	bool big_endian : 1;
 	RzBinDwarfARanges *aranges;
 	RzBinDwarfLineInfo *line;
 	RzBinDwarfLocListTable *loc;
@@ -1645,6 +1646,7 @@ typedef enum {
 	EvaluationStateWaiting_TLS,
 	EvaluationStateWaiting_AtLocation,
 	EvaluationStateWaiting_ParameterRef,
+	EvaluationStateWaiting_FbReg,
 } RzBinDwarfEvaluationStateWaiting;
 
 typedef struct {
@@ -1652,6 +1654,7 @@ typedef struct {
 		EVALUATION_STATE_START,
 		EVALUATION_STATE_READY,
 		EVALUATION_STATE_ERROR,
+		EVALUATION_STATE_DECODE_ERROR,
 		EVALUATION_STATE_COMPLETE,
 		EVALUATION_STATE_WAITING,
 		EVALUATION_STATE_WAITING_RESOLVE,

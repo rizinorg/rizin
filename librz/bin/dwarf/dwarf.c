@@ -129,6 +129,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
 	RET_NULL_IF_FAIL(dw);
 	dw->addr = DebugAddr_from_file(bf);
 	dw->str = RzBinDwarfDebugStr_from_file(bf);
+	dw->big_endian = bf_bigendian(bf);
 
 	if (opt->flags & RZ_BIN_DWARF_ABBREVS) {
 		dw->abbrev = rz_bin_dwarf_abbrev_from_file(bf);
