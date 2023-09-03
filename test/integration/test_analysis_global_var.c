@@ -3,11 +3,13 @@
 
 #include <rz_analysis.h>
 #include <rz_core.h>
+#include "test_config.h"
 #include "../unit/minunit.h"
 
 bool test_rz_analysis_global_var() {
 	RzCore *core = rz_core_new();
 	RzAnalysis *analysis = core->analysis;
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
 
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new("foo", 0x1337);
 	mu_assert_notnull(glob, "create a global variable");
@@ -208,6 +210,7 @@ bool test_flag_confusion_addr() {
 bool test_flag_confusion_delete() {
 	RzCore *core = rz_core_new();
 	RzAnalysis *analysis = core->analysis;
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
 
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new("foo", 0x1337);
 	RzTypeParser *parser = rz_type_parser_new();
