@@ -72,3 +72,11 @@ RZ_IPI char *buf_get_string(RzBuffer *buffer) {
 	rz_buf_seek(buffer, (st64)len, SEEK_CUR);
 	return x;
 }
+
+RZ_IPI char *buf_get_string_not_empty(RzBuffer *buffer) {
+	char *str = buf_get_string(buffer);
+	if (RZ_STR_ISEMPTY(str)) {
+		RZ_FREE(str);
+	}
+	return str;
+}

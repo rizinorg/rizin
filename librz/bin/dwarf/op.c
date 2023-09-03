@@ -1338,8 +1338,7 @@ static bool RzBinDwarfEvaluationResult_to_loc(
 		}
 		if (rz_vector_len(pieces) == 1) {
 			RzBinDwarfPiece *piece = rz_vector_index_ptr(pieces, 0);
-			loc = piece->location;
-			piece->location = NULL;
+			OK_OR(RzBinDwarfLocation_move(piece->location, loc), return false);
 		} else {
 			loc->kind = RzBinDwarfLocationKind_COMPOSITE;
 			loc->composite = rz_vector_clone(pieces);

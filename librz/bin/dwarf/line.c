@@ -136,7 +136,7 @@ err:
 }
 
 static bool RzBinDwarfFileEntry_parse_v4(RzBuffer *buffer, RzBinDwarfFileEntry *entry) {
-	entry->path_name = buf_get_string(buffer);
+	entry->path_name = buf_get_string_not_empty(buffer);
 	ERR_IF_FAIL(entry->path_name);
 	ULE128_OR_GOTO(entry->directory_index, err);
 	ULE128_OR_GOTO(entry->timestamp, err);
@@ -177,7 +177,7 @@ static bool RzBinDwarfLineHeader_parse_v5(RzBuffer *buffer, RzBinDwarfLineHeader
 
 static bool RzBinDwarfLineHeader_parse_v4(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
 	while (true) {
-		char *str = buf_get_string(buffer);
+		char *str = buf_get_string_not_empty(buffer);
 		if (!str) {
 			break;
 		}
