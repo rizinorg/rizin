@@ -215,6 +215,7 @@ typedef struct operation_evaluation_result_t {
 		OperationEvaluationResult_PIECE,
 		OperationEvaluationResult_WAITING,
 		OperationEvaluationResult_WAITING_RESOLVE,
+		OperationEvaluationResult_DECODE_ERROR,
 	} kind;
 
 	union {
