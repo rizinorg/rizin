@@ -411,32 +411,81 @@ static RzILOpEffect *gb_il_add_sp(st8 imm) {
 		SETG("N", IL_FALSE));
 }
 
-static RzILOpEffect *gb_il_rot_c(gb_reg reg, bool right, bool set_z, ut64 op_addr) {
+/**
+ * Read an 8-bit value from either the given reg directly, or [HL] if reg == GB_REG_HL
+ */
+static RzILOpBitVector *gb_il_read_reg_or_mem(gb_reg reg, ut64 op_addr) {
 	RzILOpBitVector *src = gb_il_read_reg(reg);
 	if (reg == GB_REG_HL) {
-		src = LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)));
+		return LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)));
 	}
-	RzILOpBitVector *res = (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARG("C"), DUP(src), UN(3, 1));
+	return src;
+}
+
+/**
+ * Write an 8-bit value to either the given reg directly, or [HL] if reg == GB_REG_HL
+ */
+static RzILOpEffect *gb_il_write_reg_or_mem(gb_reg reg, RzILOpBitVector *val, ut64 op_addr) {
+	if (reg == GB_REG_HL) {
+		return STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)), val);
+	}
+	return gb_il_write_reg(reg, val);
+}
+
+static RzILOpEffect *gb_il_rot_c(gb_reg reg, bool right, bool set_z, ut64 op_addr) {
+	RzILOpBitVector *src = gb_il_read_reg_or_mem(reg, op_addr);
 	return SEQ4(
-		reg == GB_REG_HL ? STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)), res) : gb_il_write_reg(reg, res),
-		SETG("Z", set_z ? IS_ZERO(gb_il_read_reg(reg)) : IL_FALSE),
+		gb_il_write_reg_or_mem(reg, (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARG("C"), src, UN(3, 1)), op_addr),
+		SETG("Z", set_z ? IS_ZERO(DUP(src)) : IL_FALSE),
 		SETG("N", IL_FALSE),
 		SETG("H", IL_FALSE));
 }
 
 static RzILOpEffect *gb_il_rot(gb_reg reg, bool right, bool set_z, ut64 op_addr) {
-	RzILOpBitVector *src = gb_il_read_reg(reg);
-	if (reg == GB_REG_HL) {
-		src = LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)));
-	}
-	RzILOpBitVector *res = (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARL("CC"), DUP(src), UN(3, 1));
+	RzILOpBitVector *src = gb_il_read_reg_or_mem(reg, op_addr);
 	return SEQ6(
 		SETL("CC", VARG("C")),
 		SETG("C", MSB(src)),
-		reg == GB_REG_HL ? STORE(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)), res) : gb_il_write_reg(reg, res),
-		SETG("Z", set_z ? IS_ZERO(gb_il_read_reg(reg)) : IL_FALSE),
+		gb_il_write_reg_or_mem(reg, (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARL("CC"), DUP(src), UN(3, 1)), op_addr),
+		SETG("Z", set_z ? IS_ZERO(DUP(src)) : IL_FALSE),
 		SETG("N", IL_FALSE),
 		SETG("H", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_shift(gb_reg reg, bool right, bool is_signed, ut64 op_addr) {
+	RzILOpBitVector *src = gb_il_read_reg_or_mem(reg, op_addr);
+	return SEQ5(
+		SETG("C", right ? LSB(DUP(src)) : MSB(DUP(src))),
+		gb_il_write_reg_or_mem(reg, (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(is_signed ? MSB(DUP(src)) : IL_FALSE, src, UN(3, 1)), op_addr),
+		SETG("Z", IS_ZERO(gb_il_read_reg(reg))),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_swap(gb_reg reg, ut64 op_addr) {
+	RzILOpBitVector *src = gb_il_read_reg_or_mem(reg, op_addr);
+	return SEQ5(
+		gb_il_write_reg_or_mem(reg, APPEND(UNSIGNED(4, src), UNSIGNED(4, SHIFTR0(DUP(src), UN(3, 4)))), op_addr),
+		SETG("Z", IS_ZERO(DUP(src))),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_FALSE),
+		SETG("C", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_bit(gb_reg reg, ut8 bit, ut64 op_addr) {
+	RzILOpBitVector *src = gb_il_read_reg_or_mem(reg, op_addr);
+	return SEQ3(
+		SETG("Z", IS_ZERO(LOGAND(src, U8(bit)))),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_TRUE));
+}
+
+static RzILOpEffect *gb_il_set(gb_reg reg, ut8 bit, ut64 op_addr) {
+	return gb_il_write_reg_or_mem(reg, LOGOR(gb_il_read_reg_or_mem(reg, op_addr), U8(bit)), op_addr);
+}
+
+static RzILOpEffect *gb_il_res(gb_reg reg, ut8 bit, ut64 op_addr) {
+	return gb_il_write_reg_or_mem(reg, LOGAND(gb_il_read_reg_or_mem(reg, op_addr), U8(bit)), op_addr);
 }
 
 static RzILOpEffect *gb_il_cpl() {
@@ -505,6 +554,11 @@ static RzILOpEffect *gb_il_jmp_hl(ut64 op_addr) {
 
 static RzILOpEffect *gb_il_halt() {
 	// wait until interrupt
+	return NOP();
+}
+
+static RzILOpEffect *gb_il_stop() {
+	// similar to halt, but super low power, display off and waiting until interrupt
 	return NOP();
 }
 
