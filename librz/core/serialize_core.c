@@ -12,6 +12,7 @@
  *   /flags => see flag.c
  *   /analysis => see analysis.c
  *   /file => see below
+ *   /seek => see serialize_core_seek.c
  *   offset=<offset>
  *   blocksize=<blocksize>
  */
@@ -26,6 +27,7 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	rz_serialize_flag_save(sdb_ns(db, "flags", true), core->flags);
 	rz_serialize_analysis_save(sdb_ns(db, "analysis", true), core->analysis);
 	rz_serialize_debug_save(sdb_ns(db, "debug", true), core->dbg);
+	rz_serialize_core_seek_save(sdb_ns(db, "seek", true), core);
 
 	char buf[0x20];
 	if (snprintf(buf, sizeof(buf), "0x%" PFMT64x, core->offset) < 0) {
@@ -79,6 +81,7 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	SUB("flags", rz_serialize_flag_load(subdb, core->flags, res));
 	SUB("analysis", rz_serialize_analysis_load(subdb, core->analysis, res));
 	SUB("debug", rz_serialize_debug_load(subdb, core->dbg, res));
+	SUB("seek", rz_serialize_core_seek_load(subdb, core, res));
 
 	const char *str = sdb_const_get(db, "offset", 0);
 	if (!str || !*str) {
@@ -255,4 +258,221 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 
 	RZ_SERIALIZE_ERR(res, "failed to re-locate file referenced by project");
 	return false;
+}
+
+/**
+ * \brief Serialize seek history state and save to a sdb
+ *
+ * \param db sdb to save the state
+ * \param core RzCore instance to save from
+ */
+RZ_API void rz_serialize_core_seek_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(db && core);
+
+	RzList *list = rz_core_seek_list(core);
+	if (!list) {
+		return;
+	}
+
+	RzListIter *iter;
+	RzCoreSeekItem *undo;
+	rz_list_foreach (list, iter, undo) {
+		PJ *j = pj_new();
+		if (!j) {
+			goto err;
+		}
+		pj_o(j);
+		pj_kn(j, "offset", undo->offset);
+		pj_kn(j, "cursor", undo->cursor);
+		pj_kb(j, "current", undo->is_current);
+		pj_end(j);
+
+		char key[12];
+		sdb_set(db, rz_strf(key, "%" PFMT32d, undo->idx), pj_string(j), 0);
+		pj_free(j);
+	}
+
+err:
+	rz_list_free(list);
+}
+
+enum {
+	SEEK_FIELD_OFFSET,
+	SEEK_FIELD_CURSOR,
+	SEEK_FIELD_CURRENT
+};
+
+/**
+ * \brief Create and initialize a JSON parser for seek history items
+ * \return a RzKeyParser* for seek history items
+ **/
+static RzKeyParser *seek_parser_new(void) {
+	RzKeyParser *parser = rz_key_parser_new();
+	if (!parser) {
+		return NULL;
+	}
+
+	rz_key_parser_add(parser, "offset", SEEK_FIELD_OFFSET);
+	rz_key_parser_add(parser, "cursor", SEEK_FIELD_CURSOR);
+	rz_key_parser_add(parser, "current", SEEK_FIELD_CURRENT);
+
+	return parser;
+}
+
+typedef struct {
+	RzCore *core;
+	RzKeyParser *parser;
+	char *current_key;
+	RzVector /*<RzCoreSeekItem>*/ *vec;
+} SeekLoadCtx;
+
+/**
+ * \brief Load a single seek history item
+ * \param ctx context for loading the item
+ * \param k sdb item key
+ * \param v sdb item value (expected to be JSON)
+ **/
+static bool seek_load_item(SeekLoadCtx *ctx, const char *k, const char *v) {
+	bool ret = false;
+	char *json_str = strdup(v);
+	if (!json_str) {
+		return true;
+	}
+	RzJson *json = rz_json_parse(json_str);
+	if (!json || json->type != RZ_JSON_OBJECT) {
+		goto out_free_str;
+	}
+	RzCoreSeekItem seek_item = { 0 };
+
+	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
+		case SEEK_FIELD_OFFSET:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			seek_item.offset = child->num.u_value;
+			break;
+		case SEEK_FIELD_CURSOR:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			seek_item.cursor = child->num.s_value;
+			break;
+		case SEEK_FIELD_CURRENT:
+			if (child->type != RZ_JSON_BOOLEAN) {
+				break;
+			}
+			seek_item.is_current = child->num.u_value;
+			break;
+	})
+
+	if (seek_item.is_current && !ctx->current_key) {
+		// The offset is serialized by the core, so ignore the information from the seek history
+		// But the cursor position isn't serialized otherwise
+		ctx->core->print->cur = seek_item.cursor;
+		// Switch to the vector of redos
+		ctx->vec = &ctx->core->seek_history.redos;
+		// Remember we've found the current seek
+		ctx->current_key = strdup(k);
+	} else {
+		if (seek_item.is_current) {
+			// Warn about this additional "current" seek
+			RZ_LOG_WARN("core: Seek history item \"%s\" marked as current, but current already found at \"%s\"!", k, ctx->current_key);
+		}
+		rz_vector_push(ctx->vec, &seek_item);
+	}
+	ret = true;
+
+	rz_json_free(json);
+out_free_str:
+	free(json_str);
+	return ret;
+}
+
+static int __cmp_num_asc(const void *a, const void *b) {
+	const SdbKv *ka = a, *kb = b;
+	// Parse as signed ints but don't bother witb error detection, it'll sort bad and that's it
+	long ia = strtol(sdbkv_key(ka), NULL, 10);
+	long ib = strtol(sdbkv_key(kb), NULL, 10);
+	return ia > ib;
+}
+
+/**
+ * \brief Deserialize seek history state from an sdb
+ *
+ * \param db sdb to load state from
+ * \param core RzCore instance to load into
+ * \param res RzSerializeResultInfo to store info/errors/warnings
+ * \return true if successful, false otherwise
+ */
+RZ_API bool rz_serialize_core_seek_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE RzSerializeResultInfo *res) {
+	rz_return_val_if_fail(db && core, false);
+
+	bool ret = true;
+	RzKeyParser *seek_parser = seek_parser_new();
+	if (!seek_parser) {
+		return false;
+	}
+
+	// Sort by (numeric) key
+	SdbList *db_list = sdb_foreach_list(db, false);
+	if (!db_list) {
+		ret = false;
+		goto out_free_parser;
+	}
+	ls_sort(db_list, __cmp_num_asc);
+
+	// Clear the current history
+	rz_core_seek_reset(core);
+	core->seek_history.saved_set = false;
+
+	SdbKv *kv;
+	SdbListIter *it;
+	SeekLoadCtx ctx = {
+		.core = core,
+		.parser = seek_parser,
+		.current_key = NULL,
+		.vec = &core->seek_history.undos,
+	};
+	bool parsed = true;
+	ls_foreach (db_list, it, kv) {
+		parsed &= seek_load_item(&ctx, sdbkv_key(kv), sdbkv_value(kv));
+	}
+	ret &= parsed;
+	if (!parsed) {
+		RZ_SERIALIZE_ERR(res, "failed to parse seek history offset from json");
+	}
+
+	// Reverse the redo vector, which has been deserialized from oldest to youngest entry
+	// but should be ordered from youngest to oldest
+	// (so the entry closest to the current seek can be pushed/popped)
+	bool reversed = true;
+	size_t rlen = rz_vector_len(&core->seek_history.redos);
+	for (size_t i = 0; i < rlen / 2; i++) {
+		// Swap with the mirror item from the end of the vector
+		reversed &= rz_vector_swap(&core->seek_history.redos, i, rlen - 1 - i);
+	}
+	ret &= reversed;
+	if (!reversed) {
+		RZ_SERIALIZE_ERR(res, "failed to reorder seek history redo items");
+	}
+
+	// Increase cfg.seek.histsize as needed
+	size_t ulen = rz_vector_len(&core->seek_history.undos);
+	if (SZT_ADD_OVFCHK(ulen, rlen)) {
+		ret = false;
+		RZ_SERIALIZE_ERR(res, "failed to adjust cfg.seek.histsize");
+		rz_goto_if_reached(out_free_list);
+	}
+	ut64 histsize = rz_config_get_i(core->config, "cfg.seek.histsize");
+	if (histsize != 0 && histsize < ulen + rlen) {
+		RZ_LOG_WARN("core: Loaded project seek history exceeds cfg.seek.histsize, increasing that limit.");
+		rz_config_set_i(core->config, "cfg.seek.histsize", ulen + rlen);
+	}
+
+out_free_list:
+	free(ctx.current_key);
+	ls_free(db_list);
+out_free_parser:
+	rz_key_parser_free(seek_parser);
+	return ret;
 }

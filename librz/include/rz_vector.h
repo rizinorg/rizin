@@ -142,6 +142,14 @@ RZ_API void *rz_vector_push(RzVector *vec, void *x);
 // like rz_vector_insert for the beginning of vec
 RZ_API void *rz_vector_push_front(RzVector *vec, void *x);
 
+/**
+ * \brief Swap two elements of the vector
+ * \param index_a index of the first element to swap
+ * \param index_b index of the second element to swap
+ * \return true if the swap succeeded
+ **/
+RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b);
+
 // make sure the capacity is at least capacity.
 RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity);
 
