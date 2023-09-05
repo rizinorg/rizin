@@ -256,7 +256,7 @@ static int process_group_1(RzAsm *a, ut8 *data, const Opcode *op) {
 		return -1;
 	}
 	if (a->bits == 64 && op->operands[0].type & OT_QWORD) {
-		data[l++] = 0x48;
+		data[l++] = op->operands[0].extended ? 0x49 : 0x48;
 	}
 	if (!strcmp(op->mnemonic, "adc")) {
 		modrm = 2;
