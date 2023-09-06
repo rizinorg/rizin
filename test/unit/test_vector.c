@@ -629,6 +629,42 @@ static bool test_vector_push_front(void) {
 	mu_end;
 }
 
+static bool test_vector_swap(void) {
+	RzVector v;
+	init_test_vector(&v, 3, 0, NULL, NULL);
+
+	rz_vector_swap(&v, 0, 2);
+	mu_assert_eq(v.len, 3UL, "rz_vector_swap (valid indexes) => len == 3");
+	ut32 e = *((ut32 *)rz_vector_index_ptr(&v, 0));
+	mu_assert_eq(e, 2, "rz_vector_swap (valid indexes) => content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 1));
+	mu_assert_eq(e, 1, "rz_vector_swap (valid indexes) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
+	mu_assert_eq(e, 0, "rz_vector_swap (valid indexes) => content");
+
+	rz_vector_swap(&v, 2, 2);
+	mu_assert_eq(v.len, 3UL, "rz_vector_swap (same index) => len == 3");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 0));
+	mu_assert_eq(e, 2, "rz_vector_swap (same index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 1));
+	mu_assert_eq(e, 1, "rz_vector_swap (same index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
+	mu_assert_eq(e, 0, "rz_vector_swap (same index) => content");
+
+	rz_vector_swap(&v, 3, 2);
+	mu_assert_eq(v.len, 3UL, "rz_vector_swap (bad index) => len == 3");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 0));
+	mu_assert_eq(e, 2, "rz_vector_swap (bad index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 1));
+	mu_assert_eq(e, 1, "rz_vector_swap (bad index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
+	mu_assert_eq(e, 0, "rz_vector_swap (bad index) => old content");
+
+	rz_vector_clear(&v);
+
+	mu_end;
+}
+
 static bool test_vector_reserve(void) {
 	RzVector v;
 	rz_vector_init(&v, 4, NULL, NULL);
@@ -1343,6 +1379,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_pop_front);
 	mu_run_test(test_vector_push);
 	mu_run_test(test_vector_push_front);
+	mu_run_test(test_vector_swap);
 	mu_run_test(test_vector_reserve);
 	mu_run_test(test_vector_shrink);
 	mu_run_test(test_vector_flush);

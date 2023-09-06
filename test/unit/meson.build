@@ -87,6 +87,7 @@ if get_option('enable_tests')
     'serialize_config',
     'serialize_debug',
     'serialize_flag',
+    'serialize_seek',
     'serialize_spaces',
     'serialize_types',
     'skiplist',
