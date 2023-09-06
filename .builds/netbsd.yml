@@ -5,6 +5,7 @@ packages:
     - gmake
     - clang
     - python38
+    - py38-expat
 environment:
     CXX: clang++
     CC: clang
