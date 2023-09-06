@@ -982,7 +982,7 @@ static inline void gb_analysis_cb_swap(RzAnalysisOpMask mask, RzReg *reg, RzAnal
 	}
 }
 
-static inline void gb_analysis_cb_rlc(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data, bool set_z) {
+static inline void gb_analysis_cb_rlc(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data, bool is_rlca) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
@@ -998,11 +998,15 @@ static inline void gb_analysis_cb_rlc(RzAnalysisOpMask mask, RzReg *reg, RzAnaly
 		rz_strbuf_setf(&op->esil, "1,%s,<<=,7,$c,C,:=,C,%s,|=,$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = gb_il_rot_c(regid, false, set_z, op->addr);
+		if (is_rlca) {
+			op->il_op = gb_il_rot_ca(false);
+		} else {
+			op->il_op = gb_il_rot_c(regid, false, op->addr);
+		}
 	}
 }
 
-static inline void gb_analysis_cb_rl(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data, bool set_z) {
+static inline void gb_analysis_cb_rl(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data, bool is_rla) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
@@ -1018,11 +1022,11 @@ static inline void gb_analysis_cb_rl(RzAnalysisOpMask mask, RzReg *reg, RzAnalys
 		rz_strbuf_setf(&op->esil, "1,%s,<<,C,|,%s,=,7,$c,C,:=,$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = gb_il_rot(regid, false, set_z, op->addr);
+		op->il_op = gb_il_rot(regid, false, !is_rla, op->addr);
 	}
 }
 
-static inline void gb_analysis_cb_rrc(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data, bool set_z) {
+static inline void gb_analysis_cb_rrc(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data, bool is_rrca) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
@@ -1038,11 +1042,15 @@ static inline void gb_analysis_cb_rrc(RzAnalysisOpMask mask, RzReg *reg, RzAnaly
 		rz_strbuf_setf(&op->esil, "1,%s,&,C,:=,1,%s,>>,7,C,<<,|,%s,=,$z,Z,:=,0,H,:=,0,N,:=", reg_name, reg_name, reg_name);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = gb_il_rot_c(regid, true, set_z, op->addr);
+		if (is_rrca) {
+			op->il_op = gb_il_rot_ca(true);
+		} else {
+			op->il_op = gb_il_rot_c(regid, true, op->addr);
+		}
 	}
 }
 
-static inline void gb_analysis_cb_rr(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data, bool set_z) {
+static inline void gb_analysis_cb_rr(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp *op, const ut8 data, bool is_rra) {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
@@ -1058,7 +1066,7 @@ static inline void gb_analysis_cb_rr(RzAnalysisOpMask mask, RzReg *reg, RzAnalys
 		rz_strbuf_setf(&op->esil, "1,%s,&,H,:=,1,%s,>>,7,C,<<,|,%s,=,H,C,:=,0,H,:=,0,N,:=", reg_name, reg_name, reg_name); // HACK
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = gb_il_rot(regid, true, set_z, op->addr);
+		op->il_op = gb_il_rot(regid, true, !is_rra, op->addr);
 	}
 }
 
@@ -1468,22 +1476,22 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x07: // rlca
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-		gb_analysis_cb_rlc(mask, analysis->reg, op, 7, false);
+		gb_analysis_cb_rlc(mask, analysis->reg, op, 7, true);
 		break;
 	case 0x17: // rla
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-		gb_analysis_cb_rl(mask, analysis->reg, op, 7, false);
+		gb_analysis_cb_rl(mask, analysis->reg, op, 7, true);
 		break;
 	case 0x0f: // rrca
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
-		gb_analysis_cb_rrc(mask, analysis->reg, op, 7, false);
+		gb_analysis_cb_rrc(mask, analysis->reg, op, 7, true);
 		break;
 	case 0x1f: // rra
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
-		gb_analysis_cb_rr(mask, analysis->reg, op, 7, false);
+		gb_analysis_cb_rr(mask, analysis->reg, op, 7, true);
 		break;
 	case 0x2f:
 		gb_analysis_xor_cpl(mask, analysis->reg, op); // cpl
@@ -1827,7 +1835,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->cycles = 8;
 			}
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-			gb_analysis_cb_rlc(mask, analysis->reg, op, data[1], true);
+			gb_analysis_cb_rlc(mask, analysis->reg, op, data[1], false);
 			break;
 		case 1:
 			if ((data[1] & 7) == 6) {
@@ -1836,7 +1844,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->cycles = 8;
 			}
 			op->type = RZ_ANALYSIS_OP_TYPE_ROR;
-			gb_analysis_cb_rrc(mask, analysis->reg, op, data[1], true);
+			gb_analysis_cb_rrc(mask, analysis->reg, op, data[1], false);
 			break;
 		case 2:
 			if ((data[1] & 7) == 6) {
@@ -1845,7 +1853,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->cycles = 8;
 			}
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-			gb_analysis_cb_rl(mask, analysis->reg, op, data[1], true);
+			gb_analysis_cb_rl(mask, analysis->reg, op, data[1], false);
 			break;
 		case 3:
 			if ((data[1] & 7) == 6) {
@@ -1854,7 +1862,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->cycles = 8;
 			}
 			op->type = RZ_ANALYSIS_OP_TYPE_ROR;
-			gb_analysis_cb_rr(mask, analysis->reg, op, data[1], true);
+			gb_analysis_cb_rr(mask, analysis->reg, op, data[1], false);
 			break;
 		case 4:
 			if ((data[1] & 7) == 6) {

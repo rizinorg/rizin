@@ -69,7 +69,7 @@ static RzILOpBool *gb_il_carry(bool sub, RzILOpBitVector *a, RzILOpBitVector *b,
 		a = UNSIGNED(carry_bits + 1, a);
 		b = UNSIGNED(carry_bits + 1, b);
 		if (carry_in) {
-			b = binop(b, ITE(VARG("C"), UN(carry_bits + 1, 1), UN(carry_bits + 1, 0)));
+			b = ADD(b, ITE(VARG("C"), UN(carry_bits + 1, 1), UN(carry_bits + 1, 0)));
 		}
 		return MSB(binop(a, b));
 	}
@@ -77,7 +77,7 @@ static RzILOpBool *gb_il_carry(bool sub, RzILOpBitVector *a, RzILOpBitVector *b,
 	a = LOGAND(a, UN(src_bits, mask));
 	b = LOGAND(b, UN(src_bits, mask));
 	if (carry_in) {
-		b = binop(b, ITE(VARG("C"), UN(src_bits, 1), UN(src_bits, 0)));
+		b = ADD(b, ITE(VARG("C"), UN(src_bits, 1), UN(src_bits, 0)));
 	}
 	return UGT(binop(a, b), UN(src_bits, mask));
 }
@@ -299,10 +299,11 @@ static RzILOpEffect *gb_il_add(gb_reg dst_reg, RzILOpBitVector *src, bool carry_
 
 static RzILOpEffect *gb_il_sub(gb_reg dst_reg, RzILOpBitVector *src, bool carry_in) {
 	RzILOpBitVector *dst = gb_il_read_reg(dst_reg);
-	return SEQ5(
+	return SEQ6(
 		SETG("H", gb_il_carry(true, dst, src, carry_in, 8, 4)),
-		SETG("C", gb_il_carry(true, DUP(dst), DUP(src), carry_in, 8, 8)),
-		gb_il_write_reg(dst_reg, SUB(DUP(dst), carry_in ? SUB(DUP(src), ITE(VARG("C"), U8(1), U8(0))) : DUP(src))),
+		SETL("CC", gb_il_carry(true, DUP(dst), DUP(src), carry_in, 8, 8)),
+		gb_il_write_reg(dst_reg, SUB(DUP(dst), carry_in ? ADD(DUP(src), ITE(VARG("C"), U8(1), U8(0))) : DUP(src))),
+		SETG("C", VARL("CC")),
 		SETG("Z", IS_ZERO(DUP(dst))),
 		SETG("N", IL_TRUE));
 }
@@ -433,11 +434,20 @@ static RzILOpEffect *gb_il_write_reg_or_mem(gb_reg reg, RzILOpBitVector *val, ut
 	return gb_il_write_reg(reg, val);
 }
 
-static RzILOpEffect *gb_il_rot_c(gb_reg reg, bool right, bool set_z, ut64 op_addr) {
+static RzILOpEffect *gb_il_rot_ca(bool right) {
+	return SEQ5(
+		SETG("C", right ? LSB(VARG("a")) : MSB(VARG("a"))),
+		SETG("a", (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARG("C"), VARG("a"), UN(3, 1))),
+		SETG("Z", IL_FALSE),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_FALSE));
+}
+
+static RzILOpEffect *gb_il_rot_c(gb_reg reg, bool right, ut64 op_addr) {
 	RzILOpBitVector *src = gb_il_read_reg_or_mem(reg, op_addr);
 	return SEQ4(
 		gb_il_write_reg_or_mem(reg, (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARG("C"), src, UN(3, 1)), op_addr),
-		SETG("Z", set_z ? IS_ZERO(DUP(src)) : IL_FALSE),
+		SETG("Z", IS_ZERO(DUP(src))),
 		SETG("N", IL_FALSE),
 		SETG("H", IL_FALSE));
 }
@@ -446,7 +456,7 @@ static RzILOpEffect *gb_il_rot(gb_reg reg, bool right, bool set_z, ut64 op_addr)
 	RzILOpBitVector *src = gb_il_read_reg_or_mem(reg, op_addr);
 	return SEQ6(
 		SETL("CC", VARG("C")),
-		SETG("C", MSB(src)),
+		SETG("C", right ? LSB(src) : MSB(src)),
 		gb_il_write_reg_or_mem(reg, (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARL("CC"), DUP(src), UN(3, 1)), op_addr),
 		SETG("Z", set_z ? IS_ZERO(DUP(src)) : IL_FALSE),
 		SETG("N", IL_FALSE),
@@ -497,7 +507,10 @@ static RzILOpEffect *gb_il_cpl() {
 }
 
 static RzILOpEffect *gb_il_ccf() {
-	return SETG("C", INV(VARG("C")));
+	return SEQ3(
+		SETG("C", INV(VARG("C"))),
+		SETG("N", IL_FALSE),
+		SETG("H", IL_FALSE));
 }
 
 static RzILOpEffect *gb_il_ret(ut64 op_addr) {
@@ -582,21 +595,6 @@ static RzILOpEffect *gb_il_scf() {
 }
 
 static RzILOpEffect *gb_il_daa() {
-#if 0
-	SETL("v", UNSIGNED(9, VARG("a")));
-	BRANCH(VARG("N"),
-		SEQ2(
-			BRANCH(VARG("H"),
-				SETL("v", LOGAND(SUB(VARL("v"), UN(9, 0x06)), UN(9, 0xff))), NOP()),
-			BRANCH(VARG("C"),
-				SETL("v", SUB(VARL("v"), UN(9, 0x60))), NOP())),
-		SEQ2(
-			BRANCH(OR(VARG("H"), UGT(LOGAND(VARL("v"), UN(9, 0xf)), UN(9, 9))),
-				SETL("v", ADD(VARL("v"), UN(9, 0x06))), NOP()),
-			BRANCH(OR(VARG("C"), UGT(VARL("v"), UN(9, 0x9f))),
-				SETL("v", ADD(VARL("v"), UN(9, 0x60))), NOP())
-			));
-#endif
 	// clang-format off
 	return SEQ5(
 		SETL("res", LET("v0", UNSIGNED(9, VARG("a")),
@@ -618,7 +616,7 @@ static RzILOpEffect *gb_il_daa() {
 		SETG("a", UNSIGNED(8, VARL("res"))),
 		SETG("Z", IS_ZERO(VARG("a"))),
 		SETG("H", IL_FALSE),
-		SETG("C", MSB(VARL("res"))));
+		SETG("C", OR(VARG("C"), MSB(VARL("res")))));
 	// clang-format on
 }
 
