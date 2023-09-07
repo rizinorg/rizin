@@ -1710,7 +1710,8 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		.line_mask = mask,
 		.flags = RZ_BIN_DWARF_ALL,
 	};
-	RzBinDWARF *dw = rz_bin_dwarf_from_file(binfile, &dw_opt);
+	RzBinDWARF *dw = core->analysis->debug_info->dw;
+	dw = dw ? dw : rz_bin_dwarf_from_file(binfile, &dw_opt);
 	if (!dw) {
 		return false;
 	}
@@ -1724,7 +1725,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 			print_free(rz_core_bin_dwarf_abbrevs_to_string(dw->abbrev));
 		}
 		if (dw->info) {
-			print_free(rz_core_bin_dwarf_debug_info_to_string(dw->info));
+			print_free(rz_core_bin_dwarf_debug_info_to_string(dw->info, dw));
 		}
 		if (dw->loclists) {
 			print_free(rz_core_bin_dwarf_loc_to_string(dw, dw->loclists));

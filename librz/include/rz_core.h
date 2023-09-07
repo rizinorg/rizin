@@ -900,9 +900,11 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_abbrev_decl_to_string(
 RZ_API RZ_OWN char *rz_core_bin_dwarf_abbrevs_to_string(
 	RZ_NONNULL RZ_BORROW const RzBinDwarfAbbrev *abbrevs);
 RZ_API RZ_OWN char *rz_core_bin_dwarf_attr_to_string(
-	RZ_NONNULL RZ_BORROW const RzBinDwarfAttr *val);
+	RZ_NONNULL RZ_BORROW const RzBinDwarfAttr *attr,
+	RzBinDWARF *dw, ut64 stroffsets_base);
 RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
-	RZ_NONNULL RZ_BORROW const RzBinDwarfInfo *info);
+	RZ_NONNULL RZ_BORROW const RzBinDwarfInfo *info,
+	const RzBinDWARF *dw);
 RZ_API RZ_OWN char *rz_core_bin_dwarf_loc_to_string(
 	RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
 	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists);

@@ -12,15 +12,15 @@
 
 #define check_attr_string(attr_idx, expect_string) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_streq(attr->string.content, expect_string, "Wrong string attribute information")
+	mu_assert_streq(rz_bin_dwarf_attr_string(attr, dw, 0), expect_string, "Wrong string attribute information")
 
 #define check_attr_name(attr_idx, expect_name) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_eq(attr->name, expect_name, "Wrong attribute name")
+	mu_assert_eq(attr->at, expect_name, "Wrong attribute name")
 
 #define check_attr_address(attr_idx, expect_addr) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_eq(attr->address, expect_addr, "Wrong attribute name")
+	mu_assert_eq(rz_bin_dwarf_attr_udata(attr), expect_addr, "Wrong attribute name")
 
 #define check_attr_form(attr_idx, expect_form) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
@@ -28,23 +28,23 @@
 
 #define check_attr_data(attr_idx, expect_data) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_eq(attr->uconstant, expect_data, "Wrong attribute data")
+	mu_assert_eq(rz_bin_dwarf_attr_udata(attr), expect_data, "Wrong attribute data")
 
 #define check_attr_block_length(attr_idx, expect_len) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_eq(attr->block.length, expect_len, "Wrong attribute block length")
+	mu_assert_eq(rz_bin_dwarf_attr_block(attr)->length, expect_len, "Wrong attribute block length")
 
 #define check_attr_block_data(attr_idx, data_idx, expect_data) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_eq(rz_bin_dwarf_block_data(&attr->block)[data_idx], expect_data, "Wrong attribute block data")
+	mu_assert_eq(rz_bin_dwarf_block_data(rz_bin_dwarf_attr_block(attr))[data_idx], expect_data, "Wrong attribute block data")
 
 #define check_attr_reference(attr_idx, expect_ref) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_eq(attr->reference, expect_ref, "Wrong attribute reference")
+	mu_assert_eq(rz_bin_dwarf_attr_udata(attr), expect_ref, "Wrong attribute reference")
 
 #define check_attr_flag(attr_idx, expect_flag) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_eq(attr->flag, expect_flag, "Wrong attribute flag")
+	mu_assert_eq(rz_bin_dwarf_attr_flag(attr), expect_flag, "Wrong attribute flag")
 
 #define check_die_abbr_code(expect_code) \
 	mu_assert_eq(die->abbrev_code, expect_code, "Wrong abbrev code")

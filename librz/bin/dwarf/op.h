@@ -203,7 +203,7 @@ typedef struct {
 	};
 } Operation;
 
-RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, bool big_endian, const RzBinDwarfEncoding *encoding);
+RZ_IPI bool Operation_parse(Operation *self, RzBinEndianReader *reader, const RzBinDwarfEncoding *encoding);
 
 typedef ut16 Register;
 typedef char *Error;
@@ -228,8 +228,8 @@ typedef struct operation_evaluation_result_t {
 } OperationEvaluationResult;
 
 typedef struct {
-	RzBuffer *pc;
-	RzBuffer *bytecode;
+	RzBinEndianReader *pc;
+	RzBinEndianReader *bytecode;
 } RzBinDwarfExprStackItem;
 
 RZ_IPI void RzBinDwarfEvaluationResult_fini(RzBinDwarfEvaluationResult *self);

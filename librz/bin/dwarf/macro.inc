@@ -48,12 +48,12 @@
 		(out) = (T)temp; \
 	} while (0)
 
-#define READ8_OR(T, out, E)       READ_OR(ut8, T, out, rz_buf_read8(buffer, &temp), E)
-#define READ_T_OR(bit, T, out, E) READ_OR(ut##bit, T, out, rz_buf_read_ble##bit(buffer, &temp, big_endian), E)
-#define READ_UT_OR(bit, out, E)   READ_OR(ut##bit, ut##bit, out, rz_buf_read_ble##bit(buffer, &temp, big_endian), E)
+#define READ8_OR(T, out, E)       READ_OR(ut8, T, out, rz_buf_read8(reader->buffer, &temp), E)
+#define READ_T_OR(bit, T, out, E) READ_OR(ut##bit, T, out, rz_buf_read_ble##bit(reader->buffer, &temp, reader->big_endian), E)
+#define READ_UT_OR(bit, out, E)   READ_OR(ut##bit, ut##bit, out, rz_buf_read_ble##bit(reader->buffer, &temp, reader->big_endian), E)
 
-#define ULE128_OR(T, out, E) READ_OR(ut64, T, out, (rz_buf_uleb128(buffer, &temp) > 0), E)
-#define SLE128_OR(T, out, E) READ_OR(st64, T, out, (rz_buf_sleb128(buffer, &temp) > 0), E)
+#define ULE128_OR(T, out, E) READ_OR(ut64, T, out, (rz_buf_uleb128(reader->buffer, &temp) > 0), E)
+#define SLE128_OR(T, out, E) READ_OR(st64, T, out, (rz_buf_sleb128(reader->buffer, &temp) > 0), E)
 
 #define UX_OR(bit, out, E) \
 	switch ((bit)) { \

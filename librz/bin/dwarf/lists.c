@@ -4,11 +4,11 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-RZ_IPI bool ListsHdr_parse(RzBinDwarfListsHdr *hdr, RzBuffer *buffer, bool big_endian) {
+RZ_IPI bool ListsHdr_parse(RzBinDwarfListsHdr *hdr, RzBinEndianReader *reader) {
 	rz_mem_memzero(hdr, sizeof(RzBinDwarfListsHdr));
 	bool is_64bit = false;
 	ut64 length = 0;
-	RET_FALSE_IF_FAIL(read_initial_length(buffer, &is_64bit, &length, big_endian));
+	RET_FALSE_IF_FAIL(read_initial_length(reader, &is_64bit, &length));
 	hdr->encoding.is_64bit = is_64bit;
 	hdr->unit_length = length;
 
@@ -25,7 +25,7 @@ RZ_IPI bool ListsHdr_parse(RzBinDwarfListsHdr *hdr, RzBuffer *buffer, bool big_e
 		ut64 byte_size = sizeof(ut64) * hdr->offset_entry_count;
 		hdr->location_offsets = malloc(byte_size);
 		for (ut32 i = 0; i < hdr->offset_entry_count; ++i) {
-			RET_FALSE_IF_FAIL(read_offset(buffer, hdr->location_offsets + i, is_64bit, big_endian));
+			RET_FALSE_IF_FAIL(read_offset(reader, hdr->location_offsets + i, is_64bit));
 		}
 	}
 	return true;

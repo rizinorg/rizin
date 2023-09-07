@@ -5,10 +5,10 @@
 #include "dwarf_private.h"
 
 RZ_IPI bool DebugAddr_get_address(const RzBinDwarfAddr *self, ut64 *address,
-	ut8 address_size, bool big_endian, ut64 base, ut64 index) {
-	RzBuffer *buffer = self->buffer;
-	RET_FALSE_IF_FAIL(buffer);
-	rz_buf_seek(buffer, (st64)(base + (index * address_size)), RZ_BUF_SET);
+	ut8 address_size, ut64 base, ut64 index) {
+	RzBinEndianReader *reader = self->reader;
+	RET_FALSE_IF_FAIL(reader);
+	rz_buf_seek(reader->buffer, (st64)(base + (index * address_size)), RZ_BUF_SET);
 	UX_OR_RET_FALSE(address_size, *address);
 	return true;
 }
@@ -17,21 +17,21 @@ RZ_IPI void DebugAddr_free(RzBinDwarfAddr *self) {
 	if (!self) {
 		return;
 	}
-	rz_buf_free(self->buffer);
+	rz_buf_free(self->reader->buffer);
 	free(self);
 }
 
-RZ_IPI RzBinDwarfAddr *DebugAddr_from_buf(RzBuffer *buffer) {
-	rz_return_val_if_fail(buffer, NULL);
+RZ_IPI RzBinDwarfAddr *DebugAddr_new(RzBinEndianReader *reader) {
+	rz_return_val_if_fail(reader, NULL);
 	RzBinDwarfAddr *self = RZ_NEW0(RzBinDwarfAddr);
 	RET_NULL_IF_FAIL(self);
-	self->buffer = buffer;
+	self->reader = reader;
 	return self;
 }
 
 RZ_IPI RzBinDwarfAddr *DebugAddr_from_file(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzBuffer *buffer = get_section_buf(bf, "debug_addr");
-	RET_NULL_IF_FAIL(buffer);
-	return DebugAddr_from_buf(buffer);
+	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_addr");
+	RET_NULL_IF_FAIL(r);
+	return DebugAddr_new(r);
 }

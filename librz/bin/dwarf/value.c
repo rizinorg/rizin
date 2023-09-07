@@ -103,15 +103,15 @@ RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out)
 	RzBinDwarfAttr *attr; // Assuming Attribute is defined elsewhere
 
 	rz_vector_foreach(&entry->attrs, attr) {
-		switch (attr->name) {
+		switch (attr->at) {
 		case DW_AT_byte_size:
-			byte_size = attr->uconstant;
+			byte_size = rz_bin_dwarf_attr_udata(attr);
 			break;
 		case DW_AT_encoding:
-			encoding = attr->uconstant; // Assuming value contains the encoding
+			encoding = rz_bin_dwarf_attr_udata(attr); // Assuming value contains the encoding
 			break;
 		case DW_AT_endianity:
-			endianity = attr->uconstant; // Assuming value contains the endianity
+			endianity = rz_bin_dwarf_attr_udata(attr); // Assuming value contains the endianity
 			break;
 		default:
 			break;
@@ -129,7 +129,7 @@ RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out)
 }
 
 RZ_IPI bool Value_parse_into(
-	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian) {
+	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBinEndianReader *reader) {
 
 	RET_FALSE_IF_FAIL(value);
 	value->type = value_type;
