@@ -62,9 +62,31 @@ bool test_leading_zeros(void) {
 	mu_end;
 }
 
+bool test_bitmaps(void) {
+	RzBitmap32 map32;
+	rz_bits_map_init_32(&map32);
+	RzBitmap64 map64;
+	rz_bits_map_init_64(&map64);
+
+	rz_bits_map_set_32(&map32, 31);
+	mu_assert_true(rz_bits_map_get_32(&map32, 31), "Bitmap get set");
+	mu_assert_false(rz_bits_map_get_32(&map32, 0), "Bitmap not touched");
+	rz_bits_map_unset_32(&map32, 31);
+	mu_assert_false(rz_bits_map_get_32(&map32, 31), "Bitmap unset");
+
+	rz_bits_map_set_64(&map64, 63);
+	mu_assert_true(rz_bits_map_get_64(&map64, 63), "Bitmap get set");
+	mu_assert_false(rz_bits_map_get_64(&map64, 0), "Bitmap not touched");
+	rz_bits_map_unset_64(&map64, 63);
+	mu_assert_false(rz_bits_map_get_64(&map64, 63), "Bitmap unset");
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_file_slurp);
 	mu_run_test(test_leading_zeros);
+	mu_run_test(test_bitmaps);
 	return tests_passed != tests_run;
 }
 

@@ -312,6 +312,8 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 // join two pvector into one, pvec1 should free the joined element in pvec2
 RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *pvec2);
 
+RZ_API void **rz_pvector_assign_at(RzPVector *vec, size_t index, void *ptr);
+
 // removes and returns the pointer at the given index. Does not call free.
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index);
 
