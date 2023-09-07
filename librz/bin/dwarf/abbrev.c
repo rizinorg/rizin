@@ -42,12 +42,12 @@ static void htup_RzBinDwarfAbbrevTable_free(HtUPKv *kv) {
 	RzBinDwarfAbbrevTable_free(kv->value);
 }
 
-static void RzBinDwarfDebugAbbrevs_fini(RzBinDwarfDebugAbbrevs *abbrevs) {
+static void RzBinDwarfAbbrevs_fini(RzBinDwarfAbbrev *abbrevs) {
 	ht_up_free(abbrevs->tbl_by_offset);
 	rz_buf_free(abbrevs->buffer);
 }
 
-static bool RzBinDwarfDebugAbbrevs_init(RzBinDwarfDebugAbbrevs *abbrevs) {
+static bool RzBinDwarfAbbrevs_init(RzBinDwarfAbbrev *abbrevs) {
 	if (!abbrevs) {
 		return false;
 	}
@@ -57,15 +57,15 @@ static bool RzBinDwarfDebugAbbrevs_init(RzBinDwarfDebugAbbrevs *abbrevs) {
 	}
 	return true;
 beach:
-	RzBinDwarfDebugAbbrevs_fini(abbrevs);
+	RzBinDwarfAbbrevs_fini(abbrevs);
 	return false;
 }
 
-RZ_API void rz_bin_dwarf_abbrev_free(RZ_OWN RZ_NULLABLE RzBinDwarfDebugAbbrevs *abbrevs) {
+RZ_API void rz_bin_dwarf_abbrev_free(RZ_OWN RZ_NULLABLE RzBinDwarfAbbrev *abbrevs) {
 	if (!abbrevs) {
 		return;
 	}
-	RzBinDwarfDebugAbbrevs_fini(abbrevs);
+	RzBinDwarfAbbrevs_fini(abbrevs);
 	free(abbrevs);
 }
 
@@ -76,8 +76,8 @@ static RzBinDwarfAbbrevTable *RzBinDwarfAbbrevTable_new(size_t offset) {
 	return table;
 }
 
-static bool RzBinDwarfDebugAbbrevs_parse(RzBinDwarfDebugAbbrevs *abbrevs, RzBuffer *buffer) {
-	RET_FALSE_IF_FAIL(RzBinDwarfDebugAbbrevs_init(abbrevs));
+static bool RzBinDwarfAbbrevs_parse(RzBinDwarfAbbrev *abbrevs, RzBuffer *buffer) {
+	RET_FALSE_IF_FAIL(RzBinDwarfAbbrevs_init(abbrevs));
 	RzBinDwarfAbbrevTable *tbl = RzBinDwarfAbbrevTable_new(rz_buf_tell(buffer));
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
@@ -154,14 +154,14 @@ err:
 /**
  * \brief Parse .debug_abbrev section
  * \param buffer  Buffer to parse
- * \return RzBinDwarfDebugAbbrevs object
+ * \return RzBinDwarfAbbrevs object
  */
-RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_from_buf(RZ_OWN RZ_NONNULL RzBuffer *buffer) {
+RZ_API RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_buf(RZ_OWN RZ_NONNULL RzBuffer *buffer) {
 	rz_return_val_if_fail(buffer, NULL);
-	RzBinDwarfDebugAbbrevs *abbrevs = RZ_NEW0(RzBinDwarfDebugAbbrevs);
+	RzBinDwarfAbbrev *abbrevs = RZ_NEW0(RzBinDwarfAbbrev);
 	RET_FALSE_IF_FAIL(abbrevs);
 	abbrevs->buffer = buffer;
-	if (!RzBinDwarfDebugAbbrevs_parse(abbrevs, buffer)) {
+	if (!RzBinDwarfAbbrevs_parse(abbrevs, buffer)) {
 		rz_bin_dwarf_abbrev_free(abbrevs);
 		return NULL;
 	}
@@ -171,9 +171,9 @@ RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_from_buf(RZ_OWN RZ_NONNULL Rz
 /**
  * \brief Parse .debug_abbrev section
  * \param bf  Binfile to parse
- * \return RzBinDwarfDebugAbbrevs object
+ * \return RzBinDwarfAbbrevs object
  */
-RZ_API RZ_OWN RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
+RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBuffer *buf = get_section_buf(bf, "debug_abbrev");
 	RET_NULL_IF_FAIL(buf);
@@ -215,10 +215,10 @@ RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_index(RZ_NONNULL const RzB
 /**
  * \brief Get the abbrev's decl count
  *
- * \param da RzBinDwarfDebugAbbrevs object
+ * \param da RzBinDwarfAbbrevs object
  * \return Abbrev count
  */
-RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_BORROW RZ_NONNULL const RzBinDwarfDebugAbbrevs *da) {
+RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrev *da) {
 	rz_return_val_if_fail(da, 0);
 	return da->count;
 }
@@ -226,7 +226,7 @@ RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_BORROW RZ_NONNULL const RzBinDwarfDeb
 /**
  * \brief Get the abbrev's decl by index
  *
- * \param da RzBinDwarfDebugAbbrevs object
+ * \param da RzBinDwarfAbbrevs object
  * \param idx Index
  * \return Abbrev decl or NULL if not found
  */

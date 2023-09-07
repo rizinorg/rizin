@@ -4,8 +4,8 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian) {
-	rz_mem_memzero(hdr, sizeof(RzBinDwarfListsHeader));
+RZ_IPI bool ListsHdr_parse(RzBinDwarfListsHdr *hdr, RzBuffer *buffer, bool big_endian) {
+	rz_mem_memzero(hdr, sizeof(RzBinDwarfListsHdr));
 	bool is_64bit = false;
 	ut64 length = 0;
 	RET_FALSE_IF_FAIL(read_initial_length(buffer, &is_64bit, &length, big_endian));

@@ -8,11 +8,11 @@
 
 typedef struct {
 	bool big_endian;
-	RzBinDwarfDebugInfo *debug_info;
+	RzBinDwarfInfo *info;
 	RzBinDWARF *dw;
 } DebugInfoContext;
 
-static void CUDie_fini(RzBinDwarfDie *die) {
+static void Die_fini(RzBinDwarfDie *die) {
 	if (!die) {
 		return;
 	}
@@ -29,7 +29,7 @@ static bool CU_attrs_parse(
 	RzBinDwarfDie *die,
 	RzBinDwarfCompUnit *cu,
 	RzBinDwarfAbbrevDecl *abbrev_decl) {
-	RzBuffer *buffer = ctx->debug_info->buffer;
+	RzBuffer *buffer = ctx->info->buffer;
 
 	RZ_LOG_SILLY("0x%" PFMT64x ":\t%s%s [%" PFMT64d "] %s\n",
 		die->offset, rz_str_indent(die->depth), rz_bin_dwarf_tag(die->tag),
@@ -83,7 +83,7 @@ static int CU_init(RzBinDwarfCompUnit *unit) {
 	if (!unit) {
 		return -EINVAL;
 	}
-	rz_vector_init(&unit->dies, sizeof(RzBinDwarfDie), (RzVectorFree)CUDie_fini, NULL);
+	rz_vector_init(&unit->dies, sizeof(RzBinDwarfDie), (RzVectorFree)Die_fini, NULL);
 	return 0;
 }
 
@@ -106,7 +106,7 @@ static bool CU_dies_parse(
 	RzBinDwarfCompUnit *unit,
 	const RzBinDwarfAbbrevTable *tbl) {
 	st64 depth = 0;
-	RzBuffer *buffer = ctx->debug_info->buffer;
+	RzBuffer *buffer = ctx->info->buffer;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
 		if (offset >= CU_next(unit)) {
@@ -167,9 +167,9 @@ err:
 /**
  * \brief Reads all information about compilation unit header
  */
-static bool CUHdr_parse(DebugInfoContext *ctx, RzBinDwarfCompUnitHdr *hdr) {
+static bool CU_Hdr_parse(DebugInfoContext *ctx, RzBinDwarfCompUnitHdr *hdr) {
 	bool big_endian = ctx->big_endian;
-	RzBuffer *buffer = ctx->debug_info->buffer;
+	RzBuffer *buffer = ctx->info->buffer;
 	RET_FALSE_IF_FAIL(read_initial_length(buffer, &hdr->encoding.is_64bit, &hdr->length, big_endian));
 	RET_FALSE_IF_FAIL(hdr->length <= rz_buf_size(buffer) - rz_buf_tell(buffer));
 	ut64 offset_start = rz_buf_tell(buffer);
@@ -242,7 +242,7 @@ static void CU_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *unit, RzBinDwarf
 	}
 	ut64 stmt = unit->stmt_list;
 	if (stmt < UT64_MAX && unit->comp_dir) {
-		ht_up_insert(ctx->debug_info->line_info_offset_comp_dir,
+		ht_up_insert(ctx->info->line_info_offset_comp_dir,
 			stmt, (void *)unit->comp_dir);
 	}
 }
@@ -251,7 +251,7 @@ static void CU_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *unit, RzBinDwarf
  * \brief Parses whole .debug_info section
  */
 static bool CU_parse_all(DebugInfoContext *ctx) {
-	RzBuffer *buffer = ctx->debug_info->buffer;
+	RzBuffer *buffer = ctx->info->buffer;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
 		if (offset >= rz_buf_size(buffer)) {
@@ -267,7 +267,7 @@ static bool CU_parse_all(DebugInfoContext *ctx) {
 		if (CU_init(&unit) < 0) {
 			goto cleanup;
 		}
-		if (!CUHdr_parse(ctx, &unit.hdr)) {
+		if (!CU_Hdr_parse(ctx, &unit.hdr)) {
 			break;
 		}
 		if (unit.hdr.length > rz_buf_size(buffer)) {
@@ -286,14 +286,14 @@ static bool CU_parse_all(DebugInfoContext *ctx) {
 
 		ut64 die_count = rz_vector_len(&unit.dies);
 		if (die_count > 0) {
-			ctx->debug_info->die_count += die_count;
+			ctx->info->die_count += die_count;
 			RzBinDwarfDie *die = rz_vector_head(&unit.dies);
 			if (die) {
 				CU_apply(ctx, &unit, die);
 			}
 		}
 
-		rz_vector_push(&ctx->debug_info->units, &unit);
+		rz_vector_push(&ctx->info->units, &unit);
 	}
 	return true;
 cleanup:
@@ -311,7 +311,7 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(RZ_BORROW RZ_NONNULL 
 	return NULL;
 }
 
-static bool RzBinDwarfDebugInfo_init(RzBinDwarfDebugInfo *info) {
+static bool info_init(RzBinDwarfInfo *info) {
 	rz_vector_init(&info->units, sizeof(RzBinDwarfCompUnit), (RzVectorFree)CU_fini, NULL);
 	info->line_info_offset_comp_dir = ht_up_new(NULL, NULL, NULL);
 	if (!info->line_info_offset_comp_dir) {
@@ -323,7 +323,7 @@ beach:
 	return false;
 }
 
-static inline void RzBinDwarfDebugInfo_free(RzBinDwarfDebugInfo *info) {
+static inline void info_free(RzBinDwarfInfo *info) {
 	if (!info) {
 		return;
 	}
@@ -335,11 +335,11 @@ static inline void RzBinDwarfDebugInfo_free(RzBinDwarfDebugInfo *info) {
 	free(info);
 }
 
-RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfDebugInfo *info) {
-	RzBinDwarfDebugInfo_free(info);
+RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfInfo *info) {
+	info_free(info);
 }
 
-RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_buf(
+RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 	RZ_OWN RZ_NONNULL RzBuffer *buffer,
 	bool big_endian,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
@@ -348,14 +348,14 @@ RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_buf(
 		rz_buf_free(buffer);
 		return NULL;
 	}
-	RzBinDwarfDebugInfo *info = RZ_NEW0(RzBinDwarfDebugInfo);
+	RzBinDwarfInfo *info = RZ_NEW0(RzBinDwarfInfo);
 	RET_NULL_IF_FAIL(info);
-	ERR_IF_FAIL(RzBinDwarfDebugInfo_init(info));
+	ERR_IF_FAIL(info_init(info));
 	info->buffer = buffer;
 
 	DebugInfoContext ctx = {
 		.big_endian = big_endian,
-		.debug_info = info,
+		.info = info,
 		.dw = dw,
 	};
 	ERR_IF_FAIL(CU_parse_all(&ctx));
@@ -396,7 +396,7 @@ RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_buf(
 	}
 	return info;
 err:
-	RzBinDwarfDebugInfo_free(info);
+	info_free(info);
 	return NULL;
 }
 
@@ -406,7 +406,7 @@ err:
  * \param dw RzBinDWARF instance
  * \return RzBinDwarfDebugInfo* Parsed information, NULL if error
  */
-RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_file(
+RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
 	rz_return_val_if_fail(bf && dw && dw->abbrev, NULL);

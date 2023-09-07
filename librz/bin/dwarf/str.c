@@ -6,7 +6,7 @@
 
 Ht_FREE_IMPL(UP, string, free);
 
-RZ_IPI void RzBinDwarfDebugStr_free(RzBinDwarfDebugStr *debug_str) {
+RZ_IPI void RzBinDwarfStr_free(RzBinDwarfStr *debug_str) {
 	if (!debug_str) {
 		return;
 	}
@@ -15,9 +15,9 @@ RZ_IPI void RzBinDwarfDebugStr_free(RzBinDwarfDebugStr *debug_str) {
 	free(debug_str);
 }
 
-RZ_IPI RzBinDwarfDebugStr *RzBinDwarfDebugStr_from_buf(RZ_NONNULL RZ_OWN RzBuffer *buffer) {
+RZ_IPI RzBinDwarfStr *RzBinDwarfStr_from_buf(RZ_NONNULL RZ_OWN RzBuffer *buffer) {
 	rz_return_val_if_fail(buffer, NULL);
-	RzBinDwarfDebugStr *debug_str = RZ_NEW0(RzBinDwarfDebugStr);
+	RzBinDwarfStr *debug_str = RZ_NEW0(RzBinDwarfStr);
 	RET_NULL_IF_FAIL(debug_str);
 	debug_str->buffer = buffer;
 	debug_str->str_by_offset = ht_up_new(NULL, HtUP_string_free, NULL);
@@ -25,18 +25,18 @@ RZ_IPI RzBinDwarfDebugStr *RzBinDwarfDebugStr_from_buf(RZ_NONNULL RZ_OWN RzBuffe
 		free(debug_str);
 		return NULL;
 	}
-	RzBinDwarfDebugStr_read_all(debug_str);
+	RzBinDwarfStr_read_all(debug_str);
 	return debug_str;
 }
 
-RZ_IPI RzBinDwarfDebugStr *RzBinDwarfDebugStr_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf) {
+RZ_IPI RzBinDwarfStr *RzBinDwarfStr_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBuffer *buffer = get_section_buf(bf, "debug_str");
 	RET_NULL_IF_FAIL(buffer);
-	return RzBinDwarfDebugStr_from_buf(buffer);
+	return RzBinDwarfStr_from_buf(buffer);
 }
 
-RZ_IPI char *RzBinDwarfDebugStr_get(RzBinDwarfDebugStr *debug_str, ut64 offset) {
+RZ_IPI char *RzBinDwarfStr_get(RzBinDwarfStr *debug_str, ut64 offset) {
 	rz_return_val_if_fail(debug_str, NULL);
 	char *string = ht_up_find(debug_str->str_by_offset, offset, NULL);
 	if (!string) {
@@ -49,28 +49,28 @@ RZ_IPI char *RzBinDwarfDebugStr_get(RzBinDwarfDebugStr *debug_str, ut64 offset) 
 	return string;
 }
 
-RZ_IPI void RzBinDwarfDebugStr_read_all(RzBinDwarfDebugStr *debug_str) {
+RZ_IPI void RzBinDwarfStr_read_all(RzBinDwarfStr *debug_str) {
 	rz_return_if_fail(debug_str);
 	if (debug_str->cached) {
 		return;
 	}
 	ut64 offset = 0;
 	while (offset > rz_buf_size(debug_str->buffer)) {
-		RzBinDwarfDebugStr_get(debug_str, offset);
+		RzBinDwarfStr_get(debug_str, offset);
 		offset = rz_buf_tell(debug_str->buffer);
 	}
 	debug_str->cached = true;
 }
 
-RZ_API RZ_OWN RzBinDwarfDebugStr *rz_bin_dwarf_str_from_buf(RZ_NONNULL RZ_OWN RzBuffer *buffer) {
-	return RzBinDwarfDebugStr_from_buf(buffer);
+RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_from_buf(RZ_NONNULL RZ_OWN RzBuffer *buffer) {
+	return RzBinDwarfStr_from_buf(buffer);
 }
-RZ_API RZ_OWN RzBinDwarfDebugStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf) {
-	return RzBinDwarfDebugStr_from_file(bf);
+RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf) {
+	return RzBinDwarfStr_from_file(bf);
 }
-RZ_API void rz_bin_dwarf_str_free(RzBinDwarfDebugStr *str) {
-	RzBinDwarfDebugStr_free(str);
+RZ_API void rz_bin_dwarf_str_free(RzBinDwarfStr *str) {
+	RzBinDwarfStr_free(str);
 }
-RZ_API RZ_BORROW const char *rz_bin_dwarf_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfDebugStr *str, ut64 offset) {
-	return RzBinDwarfDebugStr_get(str, offset);
+RZ_API RZ_BORROW const char *rz_bin_dwarf_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfStr *str, ut64 offset) {
+	return RzBinDwarfStr_get(str, offset);
 }

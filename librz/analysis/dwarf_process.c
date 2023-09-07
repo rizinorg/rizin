@@ -1289,7 +1289,7 @@ static RzBinDwarfLocation *location_list_parse(
 
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
-		RzBinDwarfLocationListEntry *entry = *it;
+		RzBinDwarfLocListEntry *entry = *it;
 		if (entry->location) {
 			continue;
 		}
@@ -1352,12 +1352,12 @@ static RzBinDwarfLocation *location_parse(
 
 	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_UCONSTANT) {
 		ut64 offset = attr->reference;
-		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
+		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loclists->loclist_by_offset, offset, NULL);
 		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
-			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, ctx->unit, offset)) {
+			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loclists, ctx->unit, offset)) {
 				goto err_find;
 			}
-			loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
+			loclist = ht_up_find(ctx->dw->loclists->loclist_by_offset, offset, NULL);
 			if (!loclist) {
 				goto err_find;
 			}
@@ -1365,7 +1365,7 @@ static RzBinDwarfLocation *location_parse(
 		if (rz_pvector_len(&loclist->entries) > 1) {
 			return location_list_parse(ctx, loclist, fn);
 		} else if (rz_pvector_len(&loclist->entries) == 1) {
-			RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 0);
+			RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 			return location_from_block(ctx, die, entry->expression, fn);
 		} else {
 			RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);
@@ -1819,7 +1819,7 @@ static RzBinDwarfLocation *location_by_biggest_range(const RzBinDwarfLocList *lo
 	RzBinDwarfLocation *biggest_range_loc = NULL;
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
-		RzBinDwarfLocationListEntry *entry = *it;
+		RzBinDwarfLocListEntry *entry = *it;
 		ut64 range = entry->range->begin - entry->range->end;
 		if (range > biggest_range && entry->location &&
 			(entry->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET ||

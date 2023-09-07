@@ -120,7 +120,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		attr->kind = DW_AT_KIND_STRING;
 		RET_FALSE_IF_FAIL(read_offset(buffer, &attr->string.offset, is_64bit, big_endian));
 		if (opt->dw->str) {
-			attr->string.content = RzBinDwarfDebugStr_get(opt->dw->str, attr->string.offset);
+			attr->string.content = RzBinDwarfStr_get(opt->dw->str, attr->string.offset);
 		}
 		CHECK_STRING;
 		break;

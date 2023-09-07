@@ -51,7 +51,7 @@ static bool abbrev_table_dump_cb(void *user, ut64 k, const void *v) {
 }
 
 RZ_API RZ_OWN char *rz_core_bin_dwarf_abbrevs_to_string(
-	RZ_NONNULL RZ_BORROW const RzBinDwarfDebugAbbrevs *abbrevs) {
+	RZ_NONNULL RZ_BORROW const RzBinDwarfAbbrev *abbrevs) {
 	rz_return_val_if_fail(abbrevs, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
@@ -153,7 +153,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_attr_to_string(
 }
 
 RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
-	RZ_NONNULL RZ_BORROW const RzBinDwarfDebugInfo *info) {
+	RZ_NONNULL RZ_BORROW const RzBinDwarfInfo *info) {
 	rz_return_val_if_fail(info, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
@@ -223,7 +223,7 @@ static bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 	rz_strbuf_appendf(sb, "0x%" PFMT64x "\n", loclist->offset);
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
-		RzBinDwarfLocationListEntry *entry = *it;
+		RzBinDwarfLocListEntry *entry = *it;
 		rz_strbuf_appendf(sb, "\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t[", entry->range->begin, entry->range->end);
 		if (entry->expression) {
 			rz_bin_dwarf_expression_dump(
@@ -236,7 +236,7 @@ static bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 
 RZ_API RZ_OWN char *rz_core_bin_dwarf_loc_to_string(
 	RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
-	RZ_NONNULL RZ_BORROW RzBinDwarfLocListTable *loclists) {
+	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists) {
 	rz_return_val_if_fail(dw && loclists && loclists->loclist_by_offset, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
@@ -443,7 +443,7 @@ static bool htup_rnglists_cb(void *u, ut64 k, const void *v) {
 }
 
 RZ_API RZ_OWN char *rz_core_bin_dwarf_rnglists_to_string(
-	RZ_NONNULL RZ_BORROW RzBinDwarfRngListTable *rnglists) {
+	RZ_NONNULL RZ_BORROW RzBinDwarfRngLists *rnglists) {
 	rz_warn_if_fail(rnglists && rnglists->rnglist_by_offset);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
