@@ -1,0 +1,391 @@
+# These tests run the test binaries from QEMU.
+# Only bineries which contain 100% supported instructions are run here.
+# If one of those tests fails and you need to debug it,
+# please use BAP qemu to generate a trace of it
+# and compare it with rz-tracetest to Rizin.
+# The broken instructions will mismatch.
+
+NAME=Run test_vspliceb
+FILE=bins/elf/hexagon/rzil/test_vspliceb
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_vpmpyh
+FILE=bins/elf/hexagon/rzil/test_vpmpyh
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_vminh
+FILE=bins/elf/hexagon/rzil/test_vminh
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_vmaxh
+FILE=bins/elf/hexagon/rzil/test_vmaxh
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_vlsrw
+FILE=bins/elf/hexagon/rzil/test_vlsrw
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_vcmpw
+FILE=bins/elf/hexagon/rzil/test_vcmpw
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_vcmpb
+FILE=bins/elf/hexagon/rzil/test_vcmpb
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_vavgw
+FILE=bins/elf/hexagon/rzil/test_vavgw
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_round
+FILE=bins/elf/hexagon/rzil/test_round
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_reorder
+FILE=bins/elf/hexagon/rzil/test_reorder
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_packet
+FILE=bins/elf/hexagon/rzil/test_packet
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_mpyi
+FILE=bins/elf/hexagon/rzil/test_mpyi
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_lsr
+FILE=bins/elf/hexagon/rzil/test_lsr
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_jmp
+FILE=bins/elf/hexagon/rzil/test_jmp
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_hwloops
+FILE=bins/elf/hexagon/rzil/test_hwloops
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_hl
+FILE=bins/elf/hexagon/rzil/test_hl
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_fibonacci
+FILE=bins/elf/hexagon/rzil/test_fibonacci
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_ext
+FILE=bins/elf/hexagon/rzil/test_ext
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_dotnew
+FILE=bins/elf/hexagon/rzil/test_dotnew
+TIMEOUT=5
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_cmp
+FILE=bins/elf/hexagon/rzil/test_cmp
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_clobber
+FILE=bins/elf/hexagon/rzil/test_clobber
+TIMEOUT=5
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_call
+FILE=bins/elf/hexagon/rzil/test_call
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_bitsplit
+FILE=bins/elf/hexagon/rzil/test_bitsplit
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_bitcnt
+FILE=bins/elf/hexagon/rzil/test_bitcnt
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test_abs
+FILE=bins/elf/hexagon/rzil/test_abs
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run first
+FILE=bins/elf/hexagon/rzil/first
+TIMEOUT=5
+CMDS=<<EOF
+aezi
+aezsu loc.pass
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+
+NAME=Run v68_scalar
+TIMEOUT=640
+FILE=bins/elf/hexagon/rzil/v68_scalar
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x000210b0 # End of main
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run v73_scalar
+TIMEOUT=640
+FILE=bins/elf/hexagon/rzil/v73_scalar
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x00020e40 End of main
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run test-vma
+TIMEOUT=640
+FILE=bins/elf/hexagon/rzil/test-vma
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x00020214 # End of main
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run load_align
+TIMEOUT=640
+FILE=bins/elf/hexagon/rzil/load_align
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x000227e0 # End of main
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run mem_noshuf
+FILE=bins/elf/hexagon/rzil/mem_noshuf
+TIMEOUT=640
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x00021a38 # End of main
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run preg_alias
+FILE=bins/elf/hexagon/rzil/preg_alias
+TIMEOUT=640
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x00021784 # End of main
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run dual_stores
+FILE=bins/elf/hexagon/rzil/dual_stores
+TIMEOUT=640
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x00020eac # End of main
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=Run read_write_overlap
+FILE=bins/elf/hexagon/rzil/read_write_overlap
+TIMEOUT=640
+CMDS=<<EOF
+e io.cache=1
+aezi
+aezsu 0x000211dc # End of main
+EOF
+EXPECT=<<EOF
+EOF
+RUN

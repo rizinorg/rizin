@@ -1,9 +1,15 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
-// LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-08-06 14:13:29-04:00
+// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
+// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
+// Date of code generation: 2023-11-21 20:07:05-05:00
+// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
+// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
+// Date of code generation: 2023-11-21 19:58:03-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -12,9 +18,17 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 #include <rz_util.h>
+#include <rz_vector.h>
+#include <string.h>
 #include "hexagon.h"
 #include "hexagon_insn.h"
+#include "rz_list.h"
+#include "rz_util/rz_strbuf.h"
 #include "hexagon_arch.h"
+
+static inline bool is_invalid_insn_data(ut32 data) {
+	return data == HEX_INVALID_INSN_0 || data == HEX_INVALID_INSN_F;
+}
 
 static inline bool is_last_instr(const ut8 parse_bits) {
 	// Duplex instr. (parse bits = 0) are always the last.
@@ -77,7 +91,7 @@ static inline bool is_endloop01_pkt(const ut8 pb_hi_0, const ut8 pb_hi_1) {
  * \param addr The address of the instruction.
  * \return Pointer to instruction or NULL if none was found.
  */
-static HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr) {
+RZ_API HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr) {
 	HexPkt *p;
 	for (ut8 i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		p = &state->pkts[i];
@@ -86,6 +100,7 @@ static HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr) {
 		rz_list_foreach (p->bin, iter, hic) {
 			if (addr == hic->addr) {
 				p->last_access = rz_time_now();
+				RZ_LOG_DEBUG("===== RET buffed_pkts[%d] hic @ 0x010%x ====> \n", i, addr);
 				return hic;
 			}
 		}
@@ -101,6 +116,78 @@ static inline bool sub_insn_at_addr(RZ_NONNULL const HexInsnContainer *hic, cons
 static inline bool hic_at_addr(RZ_NONNULL const HexInsnContainer *hic, const ut32 addr) {
 	rz_return_val_if_fail(hic, false);
 	return (hic->addr == addr) || (hic->is_duplex && sub_insn_at_addr(hic, addr));
+}
+
+/**
+ * \brief Gives for an ISA register character the register name.
+ * E.g.: If the ISA instruction uses the variable "Rd", it passes 'd' as identifier to this function.
+ * The function returns a concrete register name like "R3", "R10" or any other name which is associated with the id.
+ *
+ * \param hi The hexagon instruction.
+ * \param isa_id The ISA register character.
+ * \param new_reg If true it will return the .new register name ("R3_tmp", "R10_tmp" etc.)
+ * \return const char * The concrete register name. Or NULL on error.
+ */
+RZ_API const HexOp *hex_isa_to_reg(const HexInsn *hi, const char isa_id, bool new_reg) {
+	rz_return_val_if_fail(hi && isa_id, NULL);
+	const HexOp *op = NULL;
+	for (ut32 i = 0; i < hi->op_count; ++i) {
+		if ((hi->ops[i].isa_id == isa_id) && (hi->ops[i].type == HEX_OP_TYPE_REG)) {
+			op = &hi->ops[i];
+			break;
+		}
+	}
+	if (!op) {
+		RZ_LOG_WARN("Could not find equivalent register for ISA variable \'%c\'\n", isa_id);
+		return NULL;
+	}
+	return op;
+}
+
+/**
+ * \brief Gives for an n-register the HexOp.
+ *
+ * \param bundle The packet and instruction bundle.
+ * \param isa_id The ISA register character this reg is known to the instruction.
+ * \return HexOp The HexOp. Or {0} on error.
+ */
+RZ_API const HexOp hex_nreg_to_op(const HexInsnPktBundle *bundle, const char isa_id) {
+	rz_return_val_if_fail(bundle && isa_id, (HexOp){ 0 });
+	const HexInsn *hi = bundle->insn;
+	const HexOp *op = NULL;
+	for (ut32 i = 0; i < hi->op_count; ++i) {
+		if ((hi->ops[i].isa_id == isa_id) && (hi->ops[i].type == HEX_OP_TYPE_REG)) {
+			op = &hi->ops[i];
+			break;
+		}
+	}
+	if (!op) {
+		RZ_LOG_WARN("Could not find equivalent register for ISA variable \'%c\'\n", isa_id);
+		return (HexOp){ 0 };
+	}
+
+	HexOp nop = *op;
+	nop.op.reg = resolve_n_register(op->op.reg, hi->addr, bundle->pkt);
+
+	return nop;
+}
+
+/**
+ * \brief Gives for a ISA immediate character the immediate value stored in the instruction.
+ *
+ * \param hi The hexagon instruction.
+ * \param isa_id The character which identifies the immediate.
+ * \return ut64 The immediate value.
+ */
+RZ_API ut64 hex_isa_to_imm(const HexInsn *hi, const char isa_id) {
+	rz_return_val_if_fail(hi && isa_id, 0);
+	for (ut32 i = 0; i < hi->op_count; ++i) {
+		if (hi->ops[i].isa_id == isa_id && (hi->ops[i].type == HEX_OP_TYPE_IMM)) {
+			return hi->ops[i].op.imm;
+		}
+	}
+	RZ_LOG_WARN("No immediate operand for \'%c\' found.\n", isa_id);
+	return 0;
 }
 
 /**
@@ -135,6 +222,7 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	p->is_valid = false;
 	p->last_access = 0;
 	rz_list_purge(p->bin);
+	rz_pvector_clear(p->il_ops);
 }
 
 /**
@@ -149,9 +237,11 @@ static HexPkt *hex_get_stale_pkt(HexState *state) {
 
 	for (ut8 i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		if (state->pkts[i].last_access < oldest) {
+			oldest = state->pkts[i].last_access;
 			stale_state_pkt = &state->pkts[i];
 		}
 	}
+	hex_clear_pkt(stale_state_pkt);
 	return stale_state_pkt;
 }
 
@@ -162,7 +252,7 @@ static HexPkt *hex_get_stale_pkt(HexState *state) {
  * \param addr The address of an instruction.
  * \return HexPkt* The packet to which this address belongs to or NULL if no packet was found.
  */
-static HexPkt *hex_get_pkt(HexState *state, const ut32 addr) {
+RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr) {
 	HexPkt *p = NULL;
 	HexInsnContainer *hic = NULL;
 	RzListIter *iter = NULL;
@@ -170,6 +260,7 @@ static HexPkt *hex_get_pkt(HexState *state, const ut32 addr) {
 		p = &state->pkts[i];
 		rz_list_foreach (p->bin, iter, hic) {
 			if (hic_at_addr(hic, addr)) {
+				p->last_access = rz_time_now();
 				return p;
 			}
 		}
@@ -192,30 +283,23 @@ RZ_API void hex_insn_free(RZ_NULLABLE HexInsn *i) {
  * \param i The instruction container to be freed.
  */
 RZ_API void hex_insn_container_free(RZ_NULLABLE HexInsnContainer *c) {
-	if (c && c->is_duplex) {
+	if (c) {
+		// bin is a uninion. Just free all of them.
 		hex_insn_free(c->bin.sub[0]);
 		hex_insn_free(c->bin.sub[1]);
-	} else if (c) {
-		hex_insn_free(c->bin.insn);
 	}
 	free(c);
 }
 
 /**
- * \brief Copies one instruction container to another.
+ * \brief Moves one instruction container to another.
  *
  * \param dest The destination insruction container.
  * \param src The source instruction container.
  */
-RZ_API void hex_copy_insn_container(RZ_OUT HexInsnContainer *dest, const HexInsnContainer *src) {
+RZ_API void hex_move_insn_container(RZ_OUT HexInsnContainer *dest, const HexInsnContainer *src) {
 	rz_return_if_fail(dest && src);
-	memcpy(dest, src, sizeof(HexInsnContainer));
-	if (src->is_duplex) {
-		memcpy(dest->bin.sub[0], src->bin.sub[0], sizeof(HexInsn));
-		memcpy(dest->bin.sub[1], src->bin.sub[1], sizeof(HexInsn));
-	} else {
-		memcpy(dest->bin.insn, src->bin.insn, sizeof(HexInsn));
-	}
+	memmove(dest, src, sizeof(HexInsnContainer));
 }
 
 /**
@@ -247,11 +331,19 @@ static ut8 get_state_pkt_index(HexState *state, const HexPkt *p) {
 
 /**
  * \brief Initializes each packet of the state once.
+ * Note that this state is not thread safe.
+ * It requires RzArch for this.
  *
- * \return The initialized state of the plugins.
+ * \param reset Reset the state to NULL. Assumes it was freed before.
+ *
+ * \return The initialized state of the plugins or NULL if \p reset = true.
  */
-RZ_API HexState *hexagon_get_state() {
+RZ_API HexState *hexagon_state(bool reset) {
 	static HexState *state = NULL;
+	if (reset) {
+		state = NULL;
+		return NULL;
+	}
 	if (state) {
 		return state;
 	}
@@ -262,12 +354,14 @@ RZ_API HexState *hexagon_get_state() {
 	}
 	for (int i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		state->pkts[i].bin = rz_list_newf((RzListFree)hex_insn_container_free);
+		state->pkts[i].il_ops = rz_pvector_new(NULL);
 		if (!state->pkts[i].bin) {
 			RZ_LOG_FATAL("Could not initialize instruction list!");
 		}
 		hex_clear_pkt(&(state->pkts[i]));
 	}
 	state->const_ext_l = rz_list_newf((RzListFree)hex_const_ext_free);
+	state->token_patterns = NULL;
 	return state;
 }
 
@@ -416,14 +510,14 @@ void hex_set_hic_text(RZ_INOUT HexInsnContainer *hic) {
  * \brief Sets the packet related information in an instruction.
  *
  * \param hi The instruction.
- * \param p The packet the instruction belongs to.
+ * \param pkt The packet the instruction belongs to.
  * \param k The index of the instruction within the packet.
  */
-static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic, const HexPkt *p, const ut8 k, const bool update_text) {
-	rz_return_if_fail(hic && p);
+static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic, const HexPkt *pkt, const ut8 k, const bool update_text) {
+	rz_return_if_fail(hic && pkt);
 	bool is_first = (k == 0);
 	HexPktInfo *hi_pi = &hic->pkt_info;
-	HexState *state = hexagon_get_state();
+	HexState *state = hexagon_state(false);
 	bool sdk_form = rz_config_get_b(state->cfg, "plugins.hexagon.sdk");
 
 	strncpy(hi_pi->text_postfix, "", 16);
@@ -431,7 +525,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 	if (is_first && is_last_instr(hic->parse_bits)) { // Single instruction packet.
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = true;
-		if (p->is_valid) {
+		if (pkt->is_valid) {
 			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, SINGLE_IN_PKT), 8);
 			if (sdk_form) {
 				strncpy(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, SINGLE_IN_PKT), 8);
@@ -442,7 +536,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 	} else if (is_first) {
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = false;
-		if (p->is_valid) {
+		if (pkt->is_valid) {
 			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, FIRST_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->text_prefix, HEX_PKT_UNK, 8);
@@ -450,13 +544,13 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 	} else if (is_last_instr(hic->parse_bits)) {
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = true;
-		if (p->is_valid) {
+		if (pkt->is_valid) {
 			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, LAST_IN_PKT), 8);
 			if (sdk_form) {
 				strncpy(hi_pi->text_postfix, get_pkt_indicator(rz_asm->utf8, sdk_form, false, LAST_IN_PKT), 8);
 			}
 
-			switch (hex_get_loop_flag(p)) {
+			switch (hex_get_loop_flag(pkt)) {
 			default:
 				break;
 			case HEX_LOOP_01:
@@ -475,7 +569,7 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsnContainer *hic
 	} else {
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = false;
-		if (p->is_valid) {
+		if (pkt->is_valid) {
 			strncpy(hi_pi->text_prefix, get_pkt_indicator(rz_asm->utf8, sdk_form, true, MID_IN_PKT), 8);
 		} else {
 			strncpy(hi_pi->text_prefix, HEX_PKT_UNK, 8);
@@ -516,7 +610,36 @@ RZ_API HexLoopAttr hex_get_loop_flag(const HexPkt *p) {
 }
 
 /**
- * \brief Sets the packet after pkt to valid and updates its textual assembly.
+ * \brief Sets the given packet to valid and updates the packet information of
+ * each instruction in it.
+ *
+ * \param state The to operate on.
+ * \param pkt The packet to set to valid.
+ */
+static void make_packet_valid(RZ_BORROW HexState *state, RZ_BORROW HexPkt *pkt) {
+	rz_return_if_fail(state && pkt);
+	pkt->is_valid = true;
+	HexInsnContainer *hi = NULL;
+	RzListIter *it = NULL;
+	ut8 i = 0;
+	ut8 slot = 0;
+	rz_list_foreach (pkt->bin, it, hi) {
+		hex_set_pkt_info(&state->rz_asm, hi, pkt, i, true);
+		if (hi->is_duplex) {
+			hi->bin.sub[0]->slot = 0;
+			hi->bin.sub[1]->slot = 1;
+			slot = 2;
+		} else {
+			hi->bin.insn->slot = slot;
+			++slot;
+		}
+		++i;
+	}
+	pkt->last_access = rz_time_now();
+}
+
+/**
+ * \brief Sets the packet after \p pkt to valid and updates its textual assembly.
  *
  * \param state The state to operate on.
  * \param pkt The packet which predecessor will be updated.
@@ -535,15 +658,7 @@ static void make_next_packet_valid(HexState *state, const HexPkt *pkt) {
 			if (p->is_valid) {
 				break;
 			}
-			p->is_valid = true;
-			HexInsnContainer *hi = NULL;
-			RzListIter *it = NULL;
-			ut8 k = 0;
-			rz_list_foreach (p->bin, it, hi) {
-				hex_set_pkt_info(&state->rz_asm, hi, p, k, true);
-				++k;
-			}
-			p->last_access = rz_time_now();
+			make_packet_valid(state, p);
 			break;
 		}
 	}
@@ -559,6 +674,7 @@ RZ_API HexInsn *hexagon_alloc_instr() {
 	if (!hi) {
 		RZ_LOG_FATAL("Could not allocate memory for new instruction.\n");
 	}
+	hi->fround_mode = RZ_FLOAT_RMODE_RNE;
 	return hi;
 }
 
@@ -580,31 +696,32 @@ RZ_API HexInsnContainer *hexagon_alloc_instr_container() {
  *
  * \param state The state to operate on.
  * \param new_hic The instruction container to copy.
- * \param p The packet in which will hold the instruction container.
+ * \param pkt The packet in which will hold the instruction container.
  * \param k The index of the instruction container in the packet.
  * \return HexInsnContainer* Pointer to the copied instruction container on the heap.
  */
-static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer *new_hic, RZ_INOUT HexPkt *p, const ut8 k) {
+static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer *new_hic, RZ_INOUT HexPkt *pkt, const ut8 k) {
 	if (k > 3) {
 		RZ_LOG_FATAL("Instruction could not be set! A packet can only hold four instructions but k=%d.", k);
 	}
 	HexInsnContainer *hic = hexagon_alloc_instr_container();
-	hex_copy_insn_container(hic, new_hic);
-	rz_list_insert(p->bin, k, hic);
+	hex_move_insn_container(hic, new_hic);
+	rz_list_del_n(pkt->bin, k);
+	rz_list_insert(pkt->bin, k, hic);
 
 	if (k == 0) {
-		p->pkt_addr = hic->addr;
+		pkt->pkt_addr = hic->addr;
 	}
-	p->last_instr_present |= is_last_instr(hic->parse_bits);
-	ut32 p_l = rz_list_length(p->bin);
-	hex_set_pkt_info(&state->rz_asm, hic, p, k, false);
+	pkt->last_instr_present |= is_last_instr(hic->parse_bits);
+	ut32 p_l = rz_list_length(pkt->bin);
+	hex_set_pkt_info(&state->rz_asm, hic, pkt, k, false);
 	if (k == 0 && p_l > 1) {
 		// Update the instruction which was previously the first one.
-		hex_set_pkt_info(&state->rz_asm, rz_list_get_n(p->bin, 1), p, 1, true);
+		hex_set_pkt_info(&state->rz_asm, rz_list_get_n(pkt->bin, 1), pkt, 1, true);
 	}
-	p->last_access = rz_time_now();
-	if (p->last_instr_present) {
-		make_next_packet_valid(state, p);
+	pkt->last_access = rz_time_now();
+	if (pkt->last_instr_present) {
+		make_next_packet_valid(state, pkt);
 	}
 	return hic;
 }
@@ -614,26 +731,27 @@ static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer 
  *
  * \param state The state to operate on.
  * \param new_hic The instruction container to copy.
- * \param p The old packet which attributes are copied to the new one.
- * \param new_p The new packet will hold the instruction container.
+ * \param pkt The old packet which attributes are copied to the new one.
+ * \param new_pkt The new packet will hold the instruction container.
  * \return HexInsnContainer* Pointer to the copied instruction container on the heap.
  */
-static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer *new_hic, const HexPkt *p, RZ_INOUT HexPkt *new_p) {
-	hex_clear_pkt(new_p);
+static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer *new_hic, const HexPkt *pkt, RZ_INOUT HexPkt *new_pkt) {
+	hex_clear_pkt(new_pkt);
 
 	HexInsnContainer *hic = hexagon_alloc_instr_container();
-	hex_copy_insn_container(hic, new_hic);
-	rz_list_insert(new_p->bin, 0, hic);
+	hex_move_insn_container(hic, new_hic);
+	rz_list_del_n(new_pkt->bin, 0);
+	rz_list_insert(new_pkt->bin, 0, hic);
 
-	new_p->last_instr_present |= is_last_instr(hic->parse_bits);
-	new_p->hw_loop0_addr = p->hw_loop0_addr;
-	new_p->hw_loop1_addr = p->hw_loop1_addr;
-	new_p->is_valid = (p->is_valid || p->last_instr_present);
-	new_p->pkt_addr = hic->addr;
-	new_p->last_access = rz_time_now();
-	hex_set_pkt_info(&state->rz_asm, hic, new_p, 0, false);
-	if (new_p->last_instr_present) {
-		make_next_packet_valid(state, new_p);
+	new_pkt->last_instr_present |= is_last_instr(hic->parse_bits);
+	new_pkt->hw_loop0_addr = pkt->hw_loop0_addr;
+	new_pkt->hw_loop1_addr = pkt->hw_loop1_addr;
+	new_pkt->is_valid = (pkt->is_valid || pkt->last_instr_present);
+	new_pkt->pkt_addr = hic->addr;
+	new_pkt->last_access = rz_time_now();
+	hex_set_pkt_info(&state->rz_asm, hic, new_pkt, 0, false);
+	if (new_pkt->last_instr_present) {
+		make_next_packet_valid(state, new_pkt);
 	}
 	return hic;
 }
@@ -646,22 +764,99 @@ static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer 
  * \return HexInsnContainer* Pointer to the copied instruction container on the heap.
  */
 static HexInsnContainer *hex_add_to_stale_pkt(HexState *state, const HexInsnContainer *new_hic) {
-	HexPkt *p = hex_get_stale_pkt(state);
-	hex_clear_pkt(p);
+	HexPkt *pkt = hex_get_stale_pkt(state);
+	hex_clear_pkt(pkt);
 
 	HexInsnContainer *hic = hexagon_alloc_instr_container();
-	hex_copy_insn_container(hic, new_hic);
-	rz_list_insert(p->bin, 0, hic);
+	hex_move_insn_container(hic, new_hic);
+	rz_list_insert(pkt->bin, 0, hic);
 
-	p->last_instr_present |= is_last_instr(hic->parse_bits);
-	p->pkt_addr = new_hic->addr;
+	pkt->last_instr_present |= is_last_instr(hic->parse_bits);
+	pkt->pkt_addr = new_hic->addr;
 	// p->is_valid = true; // Setting it true also detects a lot of data as valid assembly.
-	p->last_access = rz_time_now();
-	hex_set_pkt_info(&state->rz_asm, hic, p, 0, false);
-	if (p->last_instr_present) {
-		make_next_packet_valid(state, p);
+	pkt->last_access = rz_time_now();
+	hex_set_pkt_info(&state->rz_asm, hic, pkt, 0, false);
+	if (pkt->last_instr_present) {
+		make_next_packet_valid(state, pkt);
 	}
 	return hic;
+}
+
+#if RZ_BUILD_DEBUG
+static char desc_letter_hic(const HexInsnContainer *hic) {
+	char desc = ' ';
+	if (!hic) {
+		desc = ' ';
+	} else if (hic->is_duplex) {
+		desc = hic->bin.sub[0]->identifier != HEX_INS_INVALID_DECODE ? 'v' : 'i';
+		desc = hic->pkt_info.last_insn ? 'l' : desc;
+	} else {
+		desc = hic->bin.insn->identifier != HEX_INS_INVALID_DECODE ? 'v' : 'i';
+		desc = hic->pkt_info.last_insn ? 'l' : desc;
+	}
+	return desc;
+}
+#endif
+
+static void print_state_pkt(const HexState *state, st32 index, HexBufferAction action, const HexInsnContainer *new_hic) {
+#if RZ_BUILD_DEBUG
+	ut32 oldest = 7;
+	ut32 newest = 0;
+	ut64 min_time = 0xffffffffffffffff;
+	ut64 max_time = 0;
+	for (int i = 0; i < HEXAGON_STATE_PKTS; ++i) {
+		const HexPkt *pkt = &state->pkts[i];
+		if (pkt->last_access < min_time) {
+			min_time = pkt->last_access;
+			oldest = i;
+		}
+		if (pkt->last_access > max_time) {
+			max_time = pkt->last_access;
+			newest = i;
+		}
+	}
+	RZ_LOG_DEBUG("╭─────┬──────────────┬─────┬──────────────────┬───────────────╮\n");
+	RZ_LOG_DEBUG("│ pkt │   packet     │     │                  │ [i]n[v]alid   │\n");
+	RZ_LOG_DEBUG("│ id  │   address    │ age │    last access   │ [l]ast        │\n");
+	RZ_LOG_DEBUG("├─────┼──────────────┼─────┼──────────────────┼───┬───┬───┬───┤\n");
+	RzStrBuf *pkt_line = rz_strbuf_new("");
+	for (int i = 0; i < HEXAGON_STATE_PKTS; ++i) {
+		const HexPkt *pkt = &state->pkts[i];
+		const char *time_ind = "   ";
+		if (i == oldest) {
+			time_ind = "old";
+		} else if (i == newest) {
+			time_ind = "new";
+		}
+		rz_strbuf_appendf(pkt_line, "│  %d  │ 0x%010x │ %s │ %016llu │ ", i, pkt->pkt_addr, time_ind, pkt->last_access);
+		HexInsnContainer *hic = NULL;
+		for (int j = 0; j < 4; ++j) {
+			hic = rz_list_get_n(pkt->bin, j);
+			const char desc = desc_letter_hic(hic);
+			rz_strbuf_appendf(pkt_line, "%c │ ", desc);
+		}
+		if ((index < 0 && i == oldest) || (index == i)) {
+			const char desc = desc_letter_hic(new_hic);
+			rz_strbuf_append(pkt_line, " < ");
+			if (action == HEX_BUF_ADD) {
+				rz_strbuf_appendf(pkt_line, "%s %c", "ADDED", desc);
+			} else if (action == HEX_BUF_STALE) {
+				rz_strbuf_appendf(pkt_line, "added %c %s", desc, "to STALE");
+			} else if (action == HEX_BUF_NEW) {
+				rz_strbuf_appendf(pkt_line, "added %c %s", desc, "to NEW");
+			}
+		}
+		rz_strbuf_append(pkt_line, "\n");
+		RZ_LOG_DEBUG("%s", rz_strbuf_get(pkt_line));
+		rz_strbuf_fini(pkt_line);
+		if (i < HEXAGON_STATE_PKTS - 1) {
+			RZ_LOG_DEBUG("├─────┼──────────────┼─────┼──────────────────┼───┼───┼───┼───┤\n");
+		} else {
+			RZ_LOG_DEBUG("╰─────┴──────────────┴─────┴──────────────────┴───┴───┴───┴───╯\n");
+		}
+	}
+	rz_strbuf_free(pkt_line);
+#endif
 }
 
 /**
@@ -689,17 +884,18 @@ static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnCont
 		return hex_add_to_stale_pkt(state, new_hic);
 	}
 
-	for (ut8 i = 0; i < HEXAGON_STATE_PKTS; ++i, k = 0) {
+	ut32 i = 0;
+	for (; i < HEXAGON_STATE_PKTS; ++i, k = 0) {
 		p = &(state->pkts[i]);
 
 		HexInsnContainer *p_hic = NULL; // Instructions container already in the packet.
 		RzListIter *iter = NULL;
 		rz_list_foreach (p->bin, iter, p_hic) {
 			if (new_hic->addr == (p_hic->addr - 4)) {
-				// Instruction preceeds one in the packet.
+				// Instruction precedes one in the packet.
 				if (is_last_instr(new_hic->parse_bits) || is_pkt_full(p)) {
-					write_to_stale_pkt = true;
-					break;
+					// Continue searching. The instruction might belong to another packet.
+					continue;
 				} else {
 					insert_before_pkt_hi = true;
 					add_to_pkt = true;
@@ -720,20 +916,31 @@ static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnCont
 			break;
 		}
 	}
+	if (!add_to_pkt && !new_pkt && !write_to_stale_pkt) {
+		// No packet found this one belongs to.
+		// Add to a stale one.
+		write_to_stale_pkt = true;
+	}
 
 	// Add the instruction to packet p
 	if (add_to_pkt) {
 		if (insert_before_pkt_hi) {
-			return hex_add_to_pkt(state, new_hic, p, k);
+			HexInsnContainer *result_hic = hex_add_to_pkt(state, new_hic, p, k);
+			print_state_pkt(state, i, HEX_BUF_ADD, result_hic);
+			return result_hic;
 		}
-		return hex_add_to_pkt(state, new_hic, p, k + 1);
-
+		HexInsnContainer *result_hic = hex_add_to_pkt(state, new_hic, p, k + 1);
+		print_state_pkt(state, i, HEX_BUF_ADD, result_hic);
+		return result_hic;
 	} else if (new_pkt) {
 		ut8 ni = (get_state_pkt_index(state, p) + 1) % HEXAGON_STATE_PKTS;
-		return hex_to_new_pkt(state, new_hic, p, &state->pkts[ni]);
-	} else {
-		return hex_add_to_stale_pkt(state, new_hic);
+		HexInsnContainer *result_hic = hex_to_new_pkt(state, new_hic, p, &state->pkts[ni]);
+		print_state_pkt(state, ni, HEX_BUF_NEW, result_hic);
+		return result_hic;
 	}
+	HexInsnContainer *result_hic = hex_add_to_stale_pkt(state, new_hic);
+	print_state_pkt(state, -1, HEX_BUF_STALE, result_hic);
+	return result_hic;
 }
 
 /**
@@ -744,8 +951,11 @@ static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnCont
  * \param addr The address of the instruction container.
  * \param parse_bits The parse bits of the instruction container.
  */
-static void setup_new_hic(HexInsnContainer *hic, const HexReversedOpcode *rz_reverse, const ut32 addr, const ut8 parse_bits) {
+static void setup_new_hic(HexInsnContainer *hic, const HexReversedOpcode *rz_reverse, const ut32 addr, const ut8 parse_bits, ut32 data) {
+	rz_return_if_fail(hic && rz_reverse);
+	bool invalid = is_invalid_insn_data(data);
 	hic->identifier = HEX_INS_INVALID_DECODE;
+	hic->bytes = data;
 	hic->addr = addr;
 	hic->parse_bits = parse_bits;
 	if (rz_reverse->asm_op) {
@@ -765,7 +975,11 @@ static void setup_new_hic(HexInsnContainer *hic, const HexReversedOpcode *rz_rev
 
 	hic->asm_op.size = 4;
 	hic->ana_op.size = 4;
-	if (parse_bits == 0b00) {
+
+	hic->bin.sub[0] = NULL;
+	hic->bin.sub[1] = NULL;
+	if (parse_bits == 0b00 && !invalid) {
+		hic->is_duplex = true;
 		hic->bin.sub[0] = hexagon_alloc_instr();
 		hic->bin.sub[1] = hexagon_alloc_instr();
 	} else {
@@ -830,58 +1044,8 @@ RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_ne
 	}
 }
 
-/**
- * \brief Reverses a given opcode and copies the result into one of the rizin structs in rz_reverse.
- *
- * \param rz_reverse Rizin core structs which store asm and analysis information.
- * \param buf The buffer which stores the current opcode.
- * \param addr The address of the current opcode.
- */
-RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr) {
-	HexState *state = hexagon_get_state();
-	if (!state) {
-		RZ_LOG_FATAL("HexState was NULL.");
-	}
-	if (rz_asm) {
-		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
-	}
-	HexInsnContainer *hic = hex_get_hic_at_addr(state, addr);
-	if (hic) {
-		// Opcode was already reversed and is still in the state. Copy the result and return.
-		switch (rz_reverse->action) {
-		default:
-			memcpy(rz_reverse->asm_op, &(hic->asm_op), sizeof(RzAsmOp));
-			memcpy(rz_reverse->ana_op, &(hic->ana_op), sizeof(RzAnalysisOp));
-			rz_strbuf_set(&rz_reverse->asm_op->buf_asm, hic->text);
-			rz_reverse->asm_op->asm_toks = rz_asm_tokenize_asm_regex(&rz_reverse->asm_op->buf_asm, state->token_patterns);
-			rz_reverse->asm_op->asm_toks->op_type = hic->ana_op.type;
-			return;
-		case HEXAGON_DISAS:
-			memcpy(rz_reverse->asm_op, &(hic->asm_op), sizeof(RzAsmOp));
-			rz_strbuf_set(&rz_reverse->asm_op->buf_asm, hic->text);
-			rz_reverse->asm_op->asm_toks = rz_asm_tokenize_asm_regex(&rz_reverse->asm_op->buf_asm, state->token_patterns);
-			rz_reverse->asm_op->asm_toks->op_type = hic->ana_op.type;
-			return;
-		case HEXAGON_ANALYSIS:
-			memcpy(rz_reverse->ana_op, &(hic->ana_op), sizeof(RzAnalysisOp));
-			return;
-		}
-	}
-
-	ut32 data = rz_read_le32(buf);
-	ut8 parse_bits = (data & HEX_PARSE_BITS_MASK) >> 14;
-	HexInsnContainer hic_new = { 0 };
-	setup_new_hic(&hic_new, rz_reverse, addr, parse_bits);
-	// Add to state
-	hic = hex_add_hic_to_state(state, &hic_new);
-	if (!hic) {
-		return;
-	}
-	HexPkt *p = hex_get_pkt(state, hic->addr);
-
-	// Do disasassembly and analysis
-	hexagon_disasm_instruction(state, data, hic, p);
-
+static void copy_asm_ana_ops(const HexState *state, RZ_BORROW HexReversedOpcode *rz_reverse, RZ_BORROW HexInsnContainer *hic) {
+	rz_return_if_fail(state && rz_reverse && hic);
 	switch (rz_reverse->action) {
 	default:
 		memcpy(rz_reverse->asm_op, &hic->asm_op, sizeof(RzAsmOp));
@@ -903,5 +1067,61 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	case HEXAGON_ANALYSIS:
 		memcpy(rz_reverse->ana_op, &hic->ana_op, sizeof(RzAnalysisOp));
 		break;
+	}
+}
+
+/**
+ * \brief Reverses a given opcode and copies the result into one of the rizin structs in rz_reverse
+ * if \p copy_result is set.
+ *
+ * \param rz_reverse Rizin core structs which store asm and analysis information.
+ * \param buf The buffer which stores the current opcode.
+ * \param addr The address of the current opcode.
+ * \param copy_result If set, it copies the result. Otherwise it only buffers it in the internal state.
+ */
+RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result) {
+	HexState *state = hexagon_state(false);
+	if (!state) {
+		RZ_LOG_FATAL("HexState was NULL.");
+	}
+	if (rz_asm) {
+		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
+	}
+	HexInsnContainer *hic = hex_get_hic_at_addr(state, addr);
+	if (hic && !is_invalid_insn_data(hic->bytes)) {
+		// Code was already reversed and is still in the state. Copy the result and return.
+		//
+		// We never return buffered instructions of 0x00000000 and 0xffffffff.
+		// Because Rizin's IO layer is not a transparent view into the binary.
+		// Sometimes it passes a buffer for address `a` of size `n`, which has only
+		// `m` bytes of actual binary data set (where `m < n`).
+		// Although, there are still valid instructions bytes at `a + m` in the
+		// actual binary. So the IO layer only passes a certain window of `n - m` valid bytes
+		// and sets the rest to `0x0` or `0xff`.
+		// So previously we might have disassembled and buffered those invalid bytes
+		// at `a + m`. Although in the actual binary there are valid
+		// instructions at this address.
+		if (copy_result) {
+			copy_asm_ana_ops(state, rz_reverse, hic);
+		}
+		return;
+	}
+
+	ut32 data = rz_read_le32(buf);
+	ut8 parse_bits = (data & HEX_PARSE_BITS_MASK) >> 14;
+	HexInsnContainer hic_new = { 0 };
+	setup_new_hic(&hic_new, rz_reverse, addr, parse_bits, data);
+	// Add to state
+	hic = hex_add_hic_to_state(state, &hic_new);
+	if (!hic) {
+		return;
+	}
+	HexPkt *p = hex_get_pkt(state, hic->addr);
+
+	// Do disassembly and analysis
+	hexagon_disasm_instruction(state, data, hic, p);
+
+	if (copy_result) {
+		copy_asm_ana_ops(state, rz_reverse, hic);
 	}
 }

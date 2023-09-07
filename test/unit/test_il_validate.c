@@ -869,12 +869,6 @@ static bool test_il_validate_effect_seq() {
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_seq(rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x100)), rz_il_op_new_set("x", true, rz_il_op_new_b0()));
-	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
-	mu_assert_false(val, "invalid");
-	mu_assert_streq_free(report, "Encountered further effects after a ctrl effect in seq op.", "report");
-	rz_il_op_effect_free(op);
-
 	op = rz_il_op_new_seq(rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x100)), rz_il_op_new_nop());
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");

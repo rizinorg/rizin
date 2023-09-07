@@ -1,9 +1,15 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
-// LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-09-12 14:26:04-04:00
+// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
+// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
+// Date of code generation: 2023-11-21 20:07:05-05:00
+// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
+// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
+// Date of code generation: 2023-11-21 19:58:03-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -19,13 +25,8 @@
 #include <hexagon/hexagon_insn.h>
 #include <hexagon/hexagon_arch.h>
 
-static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(HexState *state) {
-	RzPVector *pvec = state->token_patterns;
-	if (pvec) {
-		return pvec;
-	}
-
-	pvec = rz_pvector_new(rz_asm_token_pattern_free);
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
+	RzPVector *pvec = rz_pvector_new(rz_asm_token_pattern_free);
 
 	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_META;
@@ -121,7 +122,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(HexState *
  */
 static bool hex_cfg_set(void *user, void *data) {
 	rz_return_val_if_fail(user && data, false);
-	HexState *state = hexagon_get_state();
+	HexState *state = hexagon_state(false);
 	if (!state) {
 		return false;
 	}
@@ -140,11 +141,26 @@ static bool hex_cfg_set(void *user, void *data) {
 	return false;
 }
 
+RZ_IPI void hexagon_state_fini(HexState *state) {
+	if (!state) {
+		return;
+	}
+	rz_config_free(state->cfg);
+	rz_pvector_free(state->token_patterns);
+	rz_list_free(state->const_ext_l);
+	return;
+}
+
+static bool hexagon_fini(void *user) {
+	hexagon_state_fini(hexagon_state(false));
+	hexagon_state(true);
+	return true;
+}
+
 static bool hexagon_init(void **user) {
-	HexState *state = hexagon_get_state();
+	HexState *state = hexagon_state(false);
 	rz_return_val_if_fail(state, false);
 
-	*user = state; // user = RzAsm.plugin_data
 	state->cfg = rz_config_new(state);
 	rz_return_val_if_fail(state->cfg, false);
 
@@ -155,26 +171,16 @@ static bool hexagon_init(void **user) {
 	SETCB("plugins.hexagon.sdk", "false", &hex_cfg_set, "Print packet syntax in objdump style.");
 	SETCB("plugins.hexagon.reg.alias", "true", &hex_cfg_set, "Print the alias of registers (Alias from C0 = SA0).");
 
-	state->token_patterns = get_token_patterns(state);
+	if (!state->token_patterns) {
+		state->token_patterns = get_token_patterns();
+	}
 	rz_asm_compile_token_patterns(state->token_patterns);
 
 	return true;
 }
 
-static bool hexagon_fini(void *user) {
-	HexState *state = (HexState *)user;
-	rz_return_val_if_fail(state, false);
-
-	if (state->token_patterns) {
-		rz_pvector_free(state->token_patterns);
-		state->token_patterns = NULL;
-	}
-
-	return true;
-}
-
-RZ_API RZ_BORROW RzConfig *hexagon_get_config(void) {
-	HexState *state = hexagon_get_state();
+RZ_API RZ_BORROW RzConfig *hexagon_get_config() {
+	HexState *state = hexagon_state(false);
 	rz_return_val_if_fail(state, NULL);
 	return state->cfg;
 }
@@ -190,14 +196,27 @@ RZ_API RZ_BORROW RzConfig *hexagon_get_config(void) {
  */
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
 	rz_return_val_if_fail(a && op && buf, -1);
-	if (l < 4) {
+	if (l < HEX_INSN_SIZE) {
 		return -1;
 	}
 	ut32 addr = (ut32)a->pc;
-	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
+	// Disassemble as many instructions as possible from the buffer.
+	ut32 buf_offset = 0;
+	while (buf_offset + HEX_INSN_SIZE <= l && buf_offset <= HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT) {
+		const ut32 buf_ptr = rz_read_at_le32(buf, buf_offset);
+		if (buf_offset > 0 && (buf_ptr == HEX_INVALID_INSN_0 || buf_ptr == HEX_INVALID_INSN_F)) {
+			// Do not disassemble invalid instructions, if we already have a valid one.
+			break;
+		}
 
-	hexagon_reverse_opcode(a, &rev, buf, addr);
-	return op->size;
+		HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
+		hexagon_reverse_opcode(a, &rev, buf + buf_offset, addr + buf_offset, false);
+		buf_offset += HEX_INSN_SIZE;
+	}
+	// Copy operation actually requested.
+	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
+	hexagon_reverse_opcode(a, &rev, buf, addr, true);
+	return HEX_INSN_SIZE;
 }
 
 RzAsmPlugin rz_asm_plugin_hexagon = {
@@ -208,7 +227,7 @@ RzAsmPlugin rz_asm_plugin_hexagon = {
 	.bits = 32,
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
 	.init = &hexagon_init,
-	.fini = hexagon_fini,
+	.fini = &hexagon_fini,
 	.disassemble = &disassemble,
 	.get_config = &hexagon_get_config,
 };
