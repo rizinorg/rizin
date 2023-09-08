@@ -15,7 +15,11 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	// READ
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).mem.base);
+#if CS_NEXT_VERSION < 6
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+#else
+	const char *rB = cs_reg_name(handle, INSOP(1).mem.offset);
+#endif
 	st64 d = INSOP(1).mem.disp; // RA = base ; D = Disposition
 #if CS_NEXT_VERSION < 6
 	st64 sI = INSOP(1).imm; // liX instructions (alias for addX).
@@ -215,7 +219,11 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	// READ
 	const char *rS = cs_reg_name(handle, INSOP(0).reg);
 	const char *rA = cs_reg_name(handle, INSOP(1).mem.base);
+#if CS_NEXT_VERSION < 6
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
+#else
+	const char *rB = cs_reg_name(handle, INSOP(1).mem.offset);
+#endif
 	st64 d = INSOP(1).mem.disp; // RA = base ; D = Disposition
 	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
 	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
