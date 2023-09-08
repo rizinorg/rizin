@@ -23,6 +23,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
 	dw->addr = DebugAddr_from_file(bf);
 	dw->str = RzBinDwarfStr_from_file(bf);
 	dw->str_offsets = RzBinDwarfStrOffsets_from_file(bf);
+	dw->line_str = rz_bin_dwarf_line_str_from_file(bf);
 	dw->abbrev = rz_bin_dwarf_abbrev_from_file(bf);
 	dw->aranges = rz_bin_dwarf_aranges_from_file(bf);
 	if (dw->abbrev) {
@@ -31,7 +32,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
 	dw->loclists = rz_bin_dwarf_loclists_new_from_file(bf);
 	dw->rnglists = rz_bin_dwarf_rnglists_new_from_file(bf);
 	if (dw->info) {
-		dw->line = rz_bin_dwarf_line_from_file(bf, dw->info);
+		dw->line = rz_bin_dwarf_line_from_file(bf, dw);
 	}
 	return dw;
 }

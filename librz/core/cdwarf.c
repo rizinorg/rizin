@@ -127,7 +127,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_attr_to_string(
 	case DW_FORM_line_ptr:
 	case DW_FORM_strp_sup:
 	case DW_FORM_strp:
-		rz_strbuf_appendf(sb, "(indirect string ): %s", rz_bin_dwarf_attr_string(attr, dw, stroffsets_base));
+		rz_strbuf_appendf(sb, "(indirect string %" PFMT64u "): %s", attr->value.u64, rz_bin_dwarf_attr_string(attr, dw, stroffsets_base));
 		break;
 	case DW_FORM_addr:
 	case DW_FORM_addrx:
@@ -197,7 +197,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
 				} else {
 					rz_strbuf_appendf(sb, "\tAT_UNKWN [0x%-3" PFMT32x "]\t ", attr->at);
 				}
-				rz_strbuf_appendf(sb, "[%s]\t:", rz_str_get_null(rz_bin_dwarf_form(attr->form)));
+				rz_strbuf_appendf(sb, "[%s]\t: ", rz_str_get_null(rz_bin_dwarf_form(attr->form)));
 				rz_strbuf_append(sb, rz_str_get_null(rz_core_bin_dwarf_attr_to_string(attr, (RzBinDWARF *)dw, unit->str_offsets_base)));
 				rz_strbuf_append(sb, "\n");
 			}
@@ -364,7 +364,8 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_line_unit_to_string(
 	rz_strbuf_appendf(sb, "  Opcode Base:                        %d\n\n", hdr->opcode_base);
 	rz_strbuf_append(sb, " Opcodes:\n");
 	for (size_t i = 1; i < hdr->opcode_base; i++) {
-		rz_strbuf_appendf(sb, "  Opcode %zu has %d arg\n", i, hdr->std_opcode_lengths[i - 1]);
+		rz_strbuf_appendf(sb, "standard_opcode_lengths[%s] = %d\n",
+			rz_str_get_null(rz_bin_dwarf_lns(i)), hdr->std_opcode_lengths[i - 1]);
 	}
 	rz_strbuf_append(sb, "\n");
 	if (rz_pvector_len(&hdr->directories) > 0) {

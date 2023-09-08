@@ -1259,6 +1259,8 @@ typedef struct {
 	HtUP /*<ut64, const char* *>*/ *str_by_offset;
 } RzBinDwarfStr;
 
+typedef RzBinDwarfStr RzBinDwarfLineStr;
+
 typedef struct {
 	RzBinEndianReader *reader;
 	RzBinDwarfEncoding encoding;
@@ -1436,6 +1438,7 @@ typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfAddr *addr;
 	RzBinDwarfStr *str;
 	RzBinDwarfStrOffsets *str_offsets;
+	RzBinDwarfLineStr *line_str;
 } RzBinDWARF;
 
 RZ_API const char *rz_bin_dwarf_tag(DW_TAG tag);
@@ -1455,6 +1458,11 @@ RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_new(RZ_NONNULL RZ_OWN RzBinEndianR
 RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
 RZ_API void rz_bin_dwarf_str_free(RzBinDwarfStr *str);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfStr *str, ut64 offset);
+
+RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
+RZ_API void rz_bin_dwarf_line_str_free(RzBinDwarfLineStr *str);
+RZ_API RZ_BORROW const char *rz_bin_dwarf_line_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfLineStr *str, ut64 offset);
 
 /// .debug_str_offsets
 RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
@@ -1791,8 +1799,8 @@ static inline char *rz_bin_dwarf_attr_string(
 		rz_warn_if_fail(dw);
 		return rz_str_new(rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64));
 	} else if (v->kind == RzBinDwarfAttr_LineStrRef) {
-		RZ_LOG_ERROR("Unimplemented debug_line_str\n");
-		rz_warn_if_reached();
+		rz_warn_if_fail(dw);
+		return rz_str_new(rz_bin_dwarf_line_str_get(dw->line_str, v->u64));
 	}
 	return NULL;
 }

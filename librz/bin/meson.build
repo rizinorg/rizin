@@ -269,6 +269,7 @@ rz_bin_sources = [
   'dwarf/endian_reader.c',
   'dwarf/lists.c',
   'dwarf/line.c',
+  'dwarf/line_str.c',
   'dwarf/loclists.c',
   'dwarf/op.c',
   'dwarf/rnglists.c',

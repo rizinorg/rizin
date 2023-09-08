@@ -229,8 +229,9 @@ static char *full_file_path(
 	 * or backslashes anyway, we will simply use slashes always here.
 	 */
 
-	const char *comp_dir = ctx->dw->info ? ht_up_find(ctx->dw->info->line_info_offset_comp_dir, ctx->hdr->offset, NULL)
-					     : NULL;
+	const char *comp_dir = ctx->dw && ctx->dw->info
+		? ht_up_find(ctx->dw->info->line_info_offset_comp_dir, ctx->hdr->offset, NULL)
+		: NULL;
 	const char *include_dir = NULL;
 	char *own_str = NULL;
 	if (file->directory_index > 0 && file->directory_index - 1 < rz_pvector_len(&ctx->hdr->directories)) {
@@ -635,7 +636,7 @@ static RzBinDwarfLine *Line_parse(
 	RzBinDwarfEncoding *encoding,
 	RzBinDWARF *dw) {
 	// Dwarf 3 Standard 6.2 Line Number Information
-	rz_return_val_if_fail(reader && reader->buffer && dw, NULL);
+	rz_return_val_if_fail(reader && reader->buffer, NULL);
 	RzBinDwarfLine *li = RZ_NEW0(RzBinDwarfLine);
 	if (!li) {
 		return NULL;
@@ -662,8 +663,6 @@ static RzBinDwarfLine *Line_parse(
 			.hdr = &unit->header,
 			.regs = &regs,
 			.source_line_info_builder = &source_line_info_builder,
-			.file_path_cache = rz_pvector_new_with_len(
-				free, rz_vector_len(&unit->header.file_names)),
 		};
 
 		if (!LineHdr_parse(&ctx, reader, *encoding)) {
@@ -671,6 +670,8 @@ static RzBinDwarfLine *Line_parse(
 			break;
 		}
 
+		ctx.file_path_cache = rz_pvector_new_with_len(
+			free, rz_vector_len(&unit->header.file_names));
 		rz_vector_init(&unit->ops, sizeof(RzBinDwarfLineOp), NULL, NULL);
 		SMRegisters_reset(&unit->header, &regs);
 		// we read the whole compilation unit (that might be composed of more sequences)
@@ -718,7 +719,7 @@ RZ_API RzBinDwarfLine *rz_bin_dwarf_line_new(
 RZ_API RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
-	rz_return_val_if_fail(bf && dw, NULL);
+	rz_return_val_if_fail(bf, NULL);
 	RzBinDwarfEncoding encoding_bf = { 0 };
 	if (!RzBinDwarfEncoding_from_file(&encoding_bf, bf)) {
 		return NULL;
