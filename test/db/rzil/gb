@@ -1,0 +1,15 @@
+NAME=gb emulateme.gb decrypt
+FILE=bins/gb/emulateme.gb
+TIMEOUT=20
+CMDS=<<EOF
+o malloc://1024 0xc000
+ou 3 # reset fd to rom
+s 0x59
+aezi
+aezsu 0x79
+ps @ 0xc000
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+RUN
