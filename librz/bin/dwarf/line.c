@@ -15,12 +15,12 @@
 typedef RzPVector /*<char *>*/ LineFilePathCache;
 
 typedef struct {
-	const RzBinDwarfLineHdr *hdr;
+	RzBinDWARF *dw;
+	RzBinDwarfLineHdr *hdr;
 	RzBinDwarfSMRegisters *regs;
 	RzBinSourceLineInfoBuilder *source_line_info_builder;
-	RzBinDwarfInfo *debug_info;
 	LineFilePathCache *file_path_cache;
-} DWLineOpEvalContext;
+} DWLineContext;
 
 static void FileEntry_fini(RzBinDwarfFileEntry *x, void *user) {
 	if (!x) {
@@ -80,10 +80,10 @@ static bool FileEntryFormat_parse(
 	return true;
 }
 
-static char *directory_parse_v5(RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) {
+static char *directory_parse_v5(DWLineContext *ctx, RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) {
 	char *path_name = NULL;
 	RzBinDwarfFileEntryFormat *format = NULL;
-	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
+	rz_vector_foreach(&hdr->directory_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
 		AttrOption opt = {
 			.offset = hdr->offset,
@@ -93,14 +93,15 @@ static char *directory_parse_v5(RzBinEndianReader *reader, RzBinDwarfLineHdr *hd
 		};
 		RET_NULL_IF_FAIL(RzBinDwarfAttr_parse(reader, &attr, &opt));
 		if (format->content_type == DW_LNCT_path) {
-			path_name = rz_bin_dwarf_attr_string(&attr, NULL, 0);
+			path_name = rz_bin_dwarf_attr_string(&attr, ctx->dw, UT64_MAX);
 		}
 	}
 	return path_name;
 }
 
 static RzBinDwarfFileEntry *FileEntry_parse_v5(
-	RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) {
+	DWLineContext *ctx, RzBinEndianReader *reader) {
+	RzBinDwarfLineHdr *hdr = ctx->hdr;
 	RzBinDwarfFileEntry *entry = RZ_NEW0(RzBinDwarfFileEntry);
 	RET_FALSE_IF_FAIL(entry);
 	RzBinDwarfFileEntryFormat *format = NULL;
@@ -115,7 +116,7 @@ static RzBinDwarfFileEntry *FileEntry_parse_v5(
 		ERR_IF_FAIL(RzBinDwarfAttr_parse(reader, &attr, &opt));
 		switch (format->content_type) {
 		case DW_LNCT_path:
-			entry->path_name = rz_bin_dwarf_attr_string(&attr, NULL, 0);
+			entry->path_name = rz_bin_dwarf_attr_string(&attr, ctx->dw, UT64_MAX);
 			break;
 		case DW_LNCT_directory_index:
 			entry->directory_index = rz_bin_dwarf_attr_udata(&attr);
@@ -158,12 +159,13 @@ err:
 /**
  * 6.2.4 The Line Number Program Header: https://dwarfstd.org/doc/DWARF5.pdf#page=172
  */
-static bool LineHdr_parse_v5(RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) {
+static bool LineHdr_parse_v5(DWLineContext *ctx, RzBinEndianReader *reader) {
+	RzBinDwarfLineHdr *hdr = ctx->hdr;
 	RET_FALSE_IF_FAIL(FileEntryFormat_parse(reader, &hdr->directory_entry_formats, hdr));
 	ut64 count = 0;
 	ULE128_OR_RET_FALSE(count);
 	for (ut64 i = 0; i < count; ++i) {
-		char *dir = directory_parse_v5(reader, hdr);
+		char *dir = directory_parse_v5(ctx, reader, hdr);
 		if (!dir) {
 			break;
 		}
@@ -173,7 +175,7 @@ static bool LineHdr_parse_v5(RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) 
 	RET_FALSE_IF_FAIL(FileEntryFormat_parse(reader, &hdr->file_name_entry_formats, hdr));
 	ULE128_OR_RET_FALSE(count);
 	for (ut64 i = 0; i < count; ++i) {
-		RzBinDwarfFileEntry *entry = FileEntry_parse_v5(reader, hdr);
+		RzBinDwarfFileEntry *entry = FileEntry_parse_v5(ctx, reader);
 		if (!entry) {
 			break;
 		}
@@ -182,20 +184,20 @@ static bool LineHdr_parse_v5(RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) 
 	return true;
 }
 
-static bool LineHdr_parse_v4(RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) {
+static bool LineHdr_parse_v4(DWLineContext *ctx, RzBinEndianReader *reader) {
 	while (true) {
 		char *str = read_string_not_empty(reader);
 		if (!str) {
 			break;
 		}
-		rz_pvector_push(&hdr->directories, str);
+		rz_pvector_push(&ctx->hdr->directories, str);
 	}
 	while (true) {
 		RzBinDwarfFileEntry entry = { 0 };
 		if (!FileEntry_parse_v4(reader, &entry)) {
 			break;
 		}
-		rz_vector_push(&hdr->file_names, &entry);
+		rz_vector_push(&ctx->hdr->file_names, &entry);
 	}
 	return true;
 }
@@ -207,7 +209,7 @@ static bool LineHdr_parse_v4(RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) 
  * \return the full path or NULL if the file index is invalid
  */
 static char *full_file_path(
-	DWLineOpEvalContext *ctx,
+	DWLineContext *ctx,
 	ut64 file_index) {
 	rz_return_val_if_fail(ctx && ctx->hdr, NULL);
 	if (file_index >= rz_vector_len(&ctx->hdr->file_names)) {
@@ -227,8 +229,8 @@ static char *full_file_path(
 	 * or backslashes anyway, we will simply use slashes always here.
 	 */
 
-	const char *comp_dir = ctx->debug_info ? ht_up_find(ctx->debug_info->line_info_offset_comp_dir, ctx->hdr->offset, NULL)
-					       : NULL;
+	const char *comp_dir = ctx->dw->info ? ht_up_find(ctx->dw->info->line_info_offset_comp_dir, ctx->hdr->offset, NULL)
+					     : NULL;
 	const char *include_dir = NULL;
 	char *own_str = NULL;
 	if (file->directory_index > 0 && file->directory_index - 1 < rz_pvector_len(&ctx->hdr->directories)) {
@@ -247,7 +249,7 @@ static char *full_file_path(
 	return r;
 }
 
-static const char *full_file_path_cached(DWLineOpEvalContext *ctx, ut64 file_index) {
+static const char *full_file_path_cached(DWLineContext *ctx, ut64 file_index) {
 	if (file_index >= rz_vector_len(&ctx->hdr->file_names)) {
 		return NULL;
 	}
@@ -292,11 +294,12 @@ static st64 LineHdr_spec_op_advance_line(const RzBinDwarfLineHdr *hdr, ut8 opcod
 }
 
 static bool LineHdr_parse(
+	DWLineContext *ctx,
 	RzBinEndianReader *reader,
-	RzBinDwarfEncoding encoding,
-	RzBinDwarfLineHdr *hdr) {
-	rz_return_val_if_fail(hdr && reader && reader->buffer, false);
-	LineHdr_init(hdr);
+	RzBinDwarfEncoding encoding) {
+	rz_return_val_if_fail(ctx && reader && reader->buffer, false);
+	RzBinDwarfLineHdr *hdr = ctx->hdr;
+	LineHdr_init(ctx->hdr);
 	hdr->offset = rz_buf_tell(reader->buffer);
 	hdr->is_64bit = false;
 	RET_FALSE_IF_FAIL(read_initial_length(reader, &hdr->is_64bit, &hdr->unit_length));
@@ -338,9 +341,7 @@ static bool LineHdr_parse(
 	}
 
 	U8_OR_RET_FALSE(hdr->default_is_stmt);
-	ut8 line_base;
-	U8_OR_RET_FALSE(line_base);
-	hdr->line_base = (st8)line_base;
+	READ8_OR(st8, hdr->line_base, return false);
 	U8_OR_RET_FALSE(hdr->line_range);
 	if (hdr->line_range == 0) {
 		RZ_LOG_ERROR("DWARF line hdr line range %d is not supported\n", hdr->line_range);
@@ -361,9 +362,9 @@ static bool LineHdr_parse(
 	}
 
 	if (hdr->version <= 4) {
-		return LineHdr_parse_v4(reader, hdr);
+		return LineHdr_parse_v4(ctx, reader);
 	} else if (hdr->version == 5) {
-		return LineHdr_parse_v5(reader, hdr);
+		return LineHdr_parse_v5(ctx, reader);
 	}
 	RZ_LOG_ERROR("DWARF line hdr version %d is not supported\n", hdr->version);
 	return false;
@@ -489,7 +490,7 @@ static void SMRegisters_reset(
 	regs->isa = 0;
 }
 
-static void store_line_sample(DWLineOpEvalContext *ctx) {
+static void store_line_sample(DWLineContext *ctx) {
 	const char *file = NULL;
 	if (ctx->regs->file) {
 		file = full_file_path_cached(ctx, ctx->regs->file - 1);
@@ -504,7 +505,7 @@ static void store_line_sample(DWLineOpEvalContext *ctx) {
  */
 static bool LineOp_run(
 	RZ_NONNULL RZ_BORROW RzBinDwarfLineOp *op,
-	RZ_NONNULL RZ_BORROW RZ_INOUT DWLineOpEvalContext *ctx) {
+	RZ_NONNULL RZ_BORROW RZ_INOUT DWLineContext *ctx) {
 	rz_return_val_if_fail(ctx && ctx->hdr && ctx->regs && op, false);
 	switch (op->type) {
 	case RZ_BIN_DWARF_LINE_OP_TYPE_STD:
@@ -593,7 +594,7 @@ static bool LineOp_run(
 }
 
 static bool LineOp_parse_all(
-	DWLineOpEvalContext *ctx,
+	DWLineContext *ctx,
 	RzBinEndianReader *reader,
 	RzVector /*<RzBinDwarfLineOp>*/ *ops_out) {
 	while (true) {
@@ -632,13 +633,14 @@ static void LineUnit_free(RzBinDwarfLineUnit *unit) {
 static RzBinDwarfLine *Line_parse(
 	RzBinEndianReader *reader,
 	RzBinDwarfEncoding *encoding,
-	RzBinDwarfInfo *debug_info) {
+	RzBinDWARF *dw) {
 	// Dwarf 3 Standard 6.2 Line Number Information
-	rz_return_val_if_fail(reader && reader->buffer, NULL);
+	rz_return_val_if_fail(reader && reader->buffer && dw, NULL);
 	RzBinDwarfLine *li = RZ_NEW0(RzBinDwarfLine);
 	if (!li) {
 		return NULL;
 	}
+	li->reader = reader;
 	li->units = rz_list_newf((RzListFree)LineUnit_free);
 	if (!li->units) {
 		free(li);
@@ -647,7 +649,7 @@ static RzBinDwarfLine *Line_parse(
 
 	RzBinSourceLineInfoBuilder source_line_info_builder;
 	rz_bin_source_line_info_builder_init(&source_line_info_builder);
-
+	RzBinDwarfSMRegisters regs;
 	// each iteration we read one header AKA comp. unit
 	while (true) {
 		RzBinDwarfLineUnit *unit = RZ_NEW0(RzBinDwarfLineUnit);
@@ -655,35 +657,34 @@ static RzBinDwarfLine *Line_parse(
 			break;
 		}
 
-		if (!LineHdr_parse(reader, *encoding, &unit->header)) {
+		DWLineContext ctx = {
+			.dw = dw,
+			.hdr = &unit->header,
+			.regs = &regs,
+			.source_line_info_builder = &source_line_info_builder,
+			.file_path_cache = rz_pvector_new_with_len(
+				free, rz_vector_len(&unit->header.file_names)),
+		};
+
+		if (!LineHdr_parse(&ctx, reader, *encoding)) {
 			LineUnit_free(unit);
 			break;
 		}
 
 		rz_vector_init(&unit->ops, sizeof(RzBinDwarfLineOp), NULL, NULL);
-		LineFilePathCache *line_file_cache = rz_pvector_new_with_len(
-			free, rz_vector_len(&unit->header.file_names));
-		RzBinDwarfSMRegisters regs;
 		SMRegisters_reset(&unit->header, &regs);
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
 			if (rz_buf_tell(reader->buffer) > unit->header.offset + unit->header.unit_length + 1) {
 				break;
 			}
-			DWLineOpEvalContext ctx = {
-				.hdr = &unit->header,
-				.regs = &regs,
-				.source_line_info_builder = &source_line_info_builder,
-				.debug_info = debug_info,
-				.file_path_cache = line_file_cache,
-			};
 			// reads one whole sequence
 			if (!LineOp_parse_all(&ctx, reader, &unit->ops)) {
 				break;
 			}
 		} while (true); // if nothing is read -> error, exit
 
-		rz_pvector_free(line_file_cache);
+		rz_pvector_free(ctx.file_path_cache);
 		rz_list_push(li->units, unit);
 	}
 	li->lines = rz_bin_source_line_info_builder_build_and_fini(&source_line_info_builder);
@@ -702,9 +703,9 @@ RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li) {
 RZ_API RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfInfo *debug_info) {
-	rz_return_val_if_fail(reader && reader->buffer && encoding, NULL);
-	return Line_parse(reader, encoding, debug_info);
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
+	rz_return_val_if_fail(reader && reader->buffer && encoding && dw, NULL);
+	return Line_parse(reader, encoding, dw);
 }
 
 /**
@@ -716,8 +717,8 @@ RZ_API RzBinDwarfLine *rz_bin_dwarf_line_new(
  */
 RZ_API RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfInfo *debug_info) {
-	rz_return_val_if_fail(bf, NULL);
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
+	rz_return_val_if_fail(bf && dw, NULL);
 	RzBinDwarfEncoding encoding_bf = { 0 };
 	if (!RzBinDwarfEncoding_from_file(&encoding_bf, bf)) {
 		return NULL;
@@ -725,5 +726,5 @@ RZ_API RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 
 	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_line");
 	RET_NULL_IF_FAIL(reader);
-	return Line_parse(reader, &encoding_bf, debug_info);
+	return Line_parse(reader, &encoding_bf, dw);
 }

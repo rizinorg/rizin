@@ -235,8 +235,8 @@ static bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 }
 
 RZ_API RZ_OWN char *rz_core_bin_dwarf_loc_to_string(
-	RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
-	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists) {
+	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists,
+	RZ_NONNULL RZ_BORROW RzBinDWARF *dw) {
 	rz_return_val_if_fail(dw && loclists && loclists->loclist_by_offset, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
@@ -399,18 +399,17 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_line_unit_to_string(
 	return rz_strbuf_drain(sb);
 }
 
-RZ_API RZ_OWN char *rz_core_bin_dwarf_line_units_to_string(
-	RZ_NONNULL RZ_BORROW RzList /*<RzBinDwarfLineUnit *>*/ *lines) {
-	rz_return_val_if_fail(lines, NULL);
+RZ_API RZ_OWN char *rz_core_bin_dwarf_line_units_to_string(RZ_NONNULL RZ_BORROW RzBinDwarfLine *line) {
+	rz_return_val_if_fail(line && line->reader, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
 		return NULL;
 	}
-	rz_strbuf_append(sb, "Raw dump of debug contents of section .debug_line:\n\n");
+	rz_strbuf_appendf(sb, "Raw dump of debug contents of section %s:\n\n", line->reader->section->name);
 	RzListIter *it;
 	RzBinDwarfLineUnit *unit;
 	bool first = true;
-	rz_list_foreach (lines, it, unit) {
+	rz_list_foreach (line->units, it, unit) {
 		if (first) {
 			first = false;
 		} else {

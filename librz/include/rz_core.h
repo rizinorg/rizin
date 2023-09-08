@@ -906,13 +906,11 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
 	RZ_NONNULL RZ_BORROW const RzBinDwarfInfo *info,
 	const RzBinDWARF *dw);
 RZ_API RZ_OWN char *rz_core_bin_dwarf_loc_to_string(
-	RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
-	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists);
+	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists,
+	RZ_NONNULL RZ_BORROW RzBinDWARF *dw);
 RZ_API RZ_OWN char *rz_core_bin_dwarf_aranges_to_string(RZ_NONNULL RZ_BORROW RzBinDwarfARanges *aranges);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_line_unit_to_string(
-	RZ_NONNULL RZ_BORROW RzBinDwarfLineUnit *unit);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_line_units_to_string(
-	RZ_NONNULL RZ_BORROW RzList /*<RzBinDwarfLineUnit *>*/ *lines);
+RZ_API RZ_OWN char *rz_core_bin_dwarf_line_unit_to_string(RZ_NONNULL RZ_BORROW RzBinDwarfLineUnit *unit);
+RZ_API RZ_OWN char *rz_core_bin_dwarf_line_units_to_string(RZ_NONNULL RZ_BORROW RzBinDwarfLine *line);
 RZ_API RZ_OWN char *rz_core_bin_dwarf_rnglists_to_string(
 	RZ_NONNULL RZ_BORROW RzBinDwarfRngLists *rnglists);
 

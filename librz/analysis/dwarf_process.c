@@ -1331,14 +1331,14 @@ empty_loc:
 static RzBinDwarfLocation *location_parse(
 	Context *ctx, const RzBinDwarfDie *die, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
-	if (attr->value.kind == RzBinDwarfAttr_BLOCK) {
+	if (attr->value.kind == RzBinDwarfAttr_Block) {
 		return location_from_block(ctx, die, rz_bin_dwarf_attr_block(attr), fn);
 	}
 
-	if (attr->value.kind == RzBinDwarfAttr_LOCLISTPTR ||
-		attr->value.kind == RzBinDwarfAttr_REFERENCE ||
-		attr->value.kind == RzBinDwarfAttr_UCONSTANT ||
-		attr->value.kind == RzBinDwarfAttr_SEC_OFFSET) {
+	if (attr->value.kind == RzBinDwarfAttr_LoclistPtr ||
+		attr->value.kind == RzBinDwarfAttr_Reference ||
+		attr->value.kind == RzBinDwarfAttr_UConstant ||
+		attr->value.kind == RzBinDwarfAttr_SecOffset) {
 		if (!ctx->dw->loclists) {
 			RZ_LOG_VERBOSE("loclists is NULL\n");
 			return NULL;

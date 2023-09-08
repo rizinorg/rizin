@@ -20,27 +20,27 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
 	switch (attr->form) {
 	case DW_FORM_addr:
-		value->kind = RzBinDwarfAttr_ADDRESS;
+		value->kind = RzBinDwarfAttr_Address;
 		UX_OR_RET_FALSE(address_size, value->u64);
 		break;
 	case DW_FORM_data1:
-		value->kind = RzBinDwarfAttr_UCONSTANT;
+		value->kind = RzBinDwarfAttr_UConstant;
 		U8_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_data2:
-		value->kind = RzBinDwarfAttr_UCONSTANT;
+		value->kind = RzBinDwarfAttr_UConstant;
 		U_OR_RET_FALSE(16, value->u64);
 		break;
 	case DW_FORM_data4:
-		value->kind = RzBinDwarfAttr_UCONSTANT;
+		value->kind = RzBinDwarfAttr_UConstant;
 		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_data8:
-		value->kind = RzBinDwarfAttr_UCONSTANT;
+		value->kind = RzBinDwarfAttr_UConstant;
 		U_OR_RET_FALSE(64, value->u64);
 		break;
 	case DW_FORM_data16:
-		value->kind = RzBinDwarfAttr_UCONSTANT;
+		value->kind = RzBinDwarfAttr_UConstant;
 		if (reader->big_endian) {
 			U_OR_RET_FALSE(64, value->u128.High);
 			U_OR_RET_FALSE(64, value->u128.Low);
@@ -50,11 +50,11 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		}
 		break;
 	case DW_FORM_sdata:
-		value->kind = RzBinDwarfAttr_CONSTANT;
+		value->kind = RzBinDwarfAttr_Constant;
 		SLE128_OR_RET_FALSE(value->s64);
 		break;
 	case DW_FORM_udata:
-		value->kind = RzBinDwarfAttr_UCONSTANT;
+		value->kind = RzBinDwarfAttr_UConstant;
 		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_string:
@@ -62,27 +62,27 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		value->string = read_string(reader);
 		break;
 	case DW_FORM_block1:
-		value->kind = RzBinDwarfAttr_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		U8_OR_RET_FALSE(value->block.length);
 		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 	case DW_FORM_block2:
-		value->kind = RzBinDwarfAttr_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		U_OR_RET_FALSE(16, value->block.length);
 		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 	case DW_FORM_block4:
-		value->kind = RzBinDwarfAttr_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		U_OR_RET_FALSE(32, value->block.length);
 		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 	case DW_FORM_block: // variable length ULEB128
-		value->kind = RzBinDwarfAttr_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		ULE128_OR_RET_FALSE(value->block.length);
 		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 	case DW_FORM_flag:
-		value->kind = RzBinDwarfAttr_FLAG;
+		value->kind = RzBinDwarfAttr_Flag;
 		U8_OR_RET_FALSE(value->flag);
 		break;
 		// offset in .debug_str
@@ -92,7 +92,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		break;
 		// offset in .debug_info
 	case DW_FORM_ref_addr:
-		value->kind = RzBinDwarfAttr_REFERENCE;
+		value->kind = RzBinDwarfAttr_Reference;
 		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 		// This type of u64 is an offset from the first byte of the compilation
@@ -103,32 +103,32 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	case DW_FORM_ref8: {
 		static const int index_sizes[] = { 1, 2, 4, 8 };
 		UX_OR_RET_FALSE(index_sizes[attr->form - DW_FORM_ref1], value->u64);
-		value->kind = RzBinDwarfAttr_REFERENCE;
+		value->kind = RzBinDwarfAttr_Reference;
 		value->u64 += unit_offset;
 		break;
 	}
 	case DW_FORM_ref_udata:
-		value->kind = RzBinDwarfAttr_REFERENCE;
+		value->kind = RzBinDwarfAttr_Reference;
 		ULE128_OR_RET_FALSE(value->u64);
 		value->u64 += unit_offset;
 		break;
 		// offset in a section other than .debug_info or .debug_str
 	case DW_FORM_sec_offset:
-		value->kind = RzBinDwarfAttr_SEC_OFFSET;
+		value->kind = RzBinDwarfAttr_SecOffset;
 		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 	case DW_FORM_exprloc:
-		value->kind = RzBinDwarfAttr_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		ULE128_OR_RET_FALSE(value->block.length);
 		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 		// this means that the flag is present, nothing is read
 	case DW_FORM_flag_present:
-		value->kind = RzBinDwarfAttr_FLAG;
+		value->kind = RzBinDwarfAttr_Flag;
 		value->flag = true;
 		break;
 	case DW_FORM_ref_sig8:
-		value->kind = RzBinDwarfAttr_REFERENCE;
+		value->kind = RzBinDwarfAttr_Reference;
 		U_OR_RET_FALSE(64, value->u64);
 		break;
 	/// offset into .debug_str_offsets section
@@ -155,35 +155,37 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_implicit_const:
-		value->kind = RzBinDwarfAttr_CONSTANT;
+		value->kind = RzBinDwarfAttr_Constant;
 		value->u64 = opt->implicit_const;
 		break;
 	/**  addrx* forms : The index is relative to the value of the
 		DW_AT_addr_base attribute of the associated compilation unit.
 	    index into an array of addresses in the .debug_addr section.*/
 	case DW_FORM_addrx:
-		value->kind = RzBinDwarfAttr_ADDRESS;
+		value->kind = RzBinDwarfAttr_Address;
 		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_addrx1:
-		value->kind = RzBinDwarfAttr_ADDRESS;
+		value->kind = RzBinDwarfAttr_Address;
 		U8_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_addrx2:
-		value->kind = RzBinDwarfAttr_ADDRESS;
+		value->kind = RzBinDwarfAttr_Address;
 		U_OR_RET_FALSE(16, value->u64);
 		break;
 	case DW_FORM_addrx3:
 		// TODO: .DW_FORM_addrx3
-		value->kind = RzBinDwarfAttr_ADDRESS;
+		value->kind = RzBinDwarfAttr_Address;
 		rz_buf_seek(reader->buffer, 3, RZ_BUF_CUR);
 		RZ_LOG_ERROR("TODO: DW_FORM_addrx3\n");
 		break;
 	case DW_FORM_addrx4:
-		value->kind = RzBinDwarfAttr_ADDRESS;
+		value->kind = RzBinDwarfAttr_Address;
 		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
+		value->kind = RzBinDwarfAttr_LineStrRef;
+		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 	case DW_FORM_strp_sup:
 		value->kind = RzBinDwarfAttr_StrRef;
@@ -191,21 +193,21 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		break;
 		// offset in the supplementary object file
 	case DW_FORM_ref_sup4:
-		value->kind = RzBinDwarfAttr_REFERENCE;
+		value->kind = RzBinDwarfAttr_Reference;
 		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_ref_sup8:
-		value->kind = RzBinDwarfAttr_REFERENCE;
+		value->kind = RzBinDwarfAttr_Reference;
 		U_OR_RET_FALSE(64, value->u64);
 		break;
 		// An index into the .debug_loc
 	case DW_FORM_loclistx:
-		value->kind = RzBinDwarfAttr_LOCLISTPTR;
+		value->kind = RzBinDwarfAttr_LoclistPtr;
 		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 		// An index into the .debug_rnglists
 	case DW_FORM_rnglistx:
-		value->kind = RzBinDwarfAttr_ADDRESS;
+		value->kind = RzBinDwarfAttr_Address;
 		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	default:
@@ -221,7 +223,7 @@ RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *attr) {
 		return;
 	}
 	switch (attr->value.kind) {
-	case RzBinDwarfAttr_BLOCK:
+	case RzBinDwarfAttr_Block:
 		RzBinDwarfBlock_fini(&attr->value.block);
 		break;
 	default:

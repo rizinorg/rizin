@@ -979,7 +979,7 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 			OK_OR_ERR(Evaluation_push(self, &v),
 				rz_bin_dwarf_location_free(v.location));
 			break;
-		} else if (fb_attr->value.kind == RzBinDwarfAttr_BLOCK) {
+		} else if (fb_attr->value.kind == RzBinDwarfAttr_Block) {
 			RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(rz_bin_dwarf_attr_block(fb_attr), self->dw, self->unit, self->die);
 			if (!loc) {
 				char *expr_str = rz_bin_dwarf_expression_to_string(&self->unit->hdr.encoding, rz_bin_dwarf_attr_block(fb_attr));

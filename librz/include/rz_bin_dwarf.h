@@ -994,18 +994,17 @@ typedef struct {
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
 typedef struct {
 	enum {
-		RzBinDwarfAttr_ADDRESS,
-		RzBinDwarfAttr_BLOCK,
-		RzBinDwarfAttr_CONSTANT,
-		RzBinDwarfAttr_UCONSTANT,
-		RzBinDwarfAttr_EXPRLOC,
-		RzBinDwarfAttr_FLAG,
-		RzBinDwarfAttr_LINEPTR,
-		RzBinDwarfAttr_LOCLISTPTR,
-		RzBinDwarfAttr_MACPTR,
-		RzBinDwarfAttr_RANGELISTPTR,
-		RzBinDwarfAttr_REFERENCE,
-		RzBinDwarfAttr_SEC_OFFSET,
+		RzBinDwarfAttr_Address,
+		RzBinDwarfAttr_Block,
+		RzBinDwarfAttr_Constant,
+		RzBinDwarfAttr_UConstant,
+		RzBinDwarfAttr_Exprloc,
+		RzBinDwarfAttr_Flag,
+		RzBinDwarfAttr_LoclistPtr,
+		RzBinDwarfAttr_MacPtr,
+		RzBinDwarfAttr_RangelistPtr,
+		RzBinDwarfAttr_Reference,
+		RzBinDwarfAttr_SecOffset,
 		RzBinDwarfAttr_StrRef, /// An offset into the .debug_str section.
 		RzBinDwarfAttr_StrOffsetIndex, /// An offset to a set of entries in the .debug_str_offsets section.
 		RzBinDwarfAttr_LineStrRef, /// An offset into the .debug_line_str section.
@@ -1498,10 +1497,10 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 RZ_API RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfInfo *debug_info);
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
 RZ_API RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfInfo *debug_info);
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
 RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
 
@@ -1818,7 +1817,7 @@ static inline st64 rz_bin_dwarf_attr_sdata(
 
 static inline const RzBinDwarfBlock *rz_bin_dwarf_attr_block(
 	const RzBinDwarfAttr *attr) {
-	rz_return_val_if_fail(attr && attr->value.kind == RzBinDwarfAttr_BLOCK, NULL);
+	rz_return_val_if_fail(attr && attr->value.kind == RzBinDwarfAttr_Block, NULL);
 	return &attr->value.block;
 }
 
