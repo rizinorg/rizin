@@ -242,11 +242,13 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		NOT_IMPLEMENTED;
 	case PPC_INS_DCBZ: {
 		ut32 r = ppc_log_2(DCACHE_LINE_SIZE);
-		rA = cs_reg_name(handle, INSOP(0).reg);
-		rB = cs_reg_name(handle, INSOP(1).reg);
 #if CS_NEXT_VERSION >= 6
+		rA = cs_reg_name(handle, INSOP(0).mem.base);
+		rB = cs_reg_name(handle, INSOP(0).mem.offset);
 		base = VARG(rA);
 #else
+		rA = cs_reg_name(handle, INSOP(0).reg);
+		rB = cs_reg_name(handle, INSOP(1).reg);
 		base = rA ? VARG(rA) : NULL;
 #endif
 
