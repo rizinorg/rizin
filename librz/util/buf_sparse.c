@@ -167,7 +167,7 @@ static bool buf_sparse_resize(RzBuffer *b, ut64 newsize) {
 		RzBufferSparseChunk *c = rz_vector_index_ptr(&priv->chunks, n - 1);
 		if (newsize <= c->to) {
 			// must chop the now-last block
-			assert(newsize); // newsize > 0 is guaranteed when n > 0, otherwise the lower bound above would have returned 0.
+			rz_return_val_if_fail(newsize, false); // newsize > 0 is guaranteed when n > 0, otherwise the lower bound above would have returned 0.
 			c->to = newsize - 1;
 			ut8 *tmp = realloc(c->data, c->to - c->from + 1);
 			if (tmp) {
