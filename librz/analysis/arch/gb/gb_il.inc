@@ -104,6 +104,9 @@ static const char *gb_flag_name(gb_flag flag) {
 		return "H";
 	case GB_FLAG_C:
 		return "C";
+	default:
+		rz_warn_if_reached();
+		return NULL;
 	}
 }
 
@@ -471,6 +474,9 @@ static RzILOpEffect *gb_il_binop_dispatch(gb_il_binop op, gb_reg dst_reg, RzILOp
 		return gb_il_or(dst_reg, src);
 	case GB_IL_BINOP_CMP:
 		return gb_il_cmp(dst_reg, src);
+	default:
+		rz_warn_if_reached();
+		return NULL;
 	}
 }
 
