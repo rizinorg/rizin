@@ -404,11 +404,10 @@ static RzILOpEffect *gb_il_add_hl(gb_reg src_reg) {
 }
 
 static RzILOpEffect *gb_il_add_sp(st8 imm) {
-	RzILOpBitVector *dst = gb_il_read_reg(GB_REG_HL);
 	return SEQ5(
-		SETG("H", gb_il_carry(false, dst, S16(imm), false, 16, 4)),
-		SETG("C", gb_il_carry(false, DUP(dst), S16(imm), false, 16, 8)),
-		gb_il_write_reg(GB_REG_HL, imm < 0 ? SUB(DUP(dst), U16(-(st16)imm)) : ADD(DUP(dst), U16(imm))),
+		SETG("H", gb_il_carry(false, VARG("sp"), S16(imm), false, 16, 4)),
+		SETG("C", gb_il_carry(false, VARG("sp"), S16(imm), false, 16, 8)),
+		SETG("sp", imm < 0 ? SUB(VARG("sp"), U16(-(st16)imm)) : ADD(VARG("sp"), U16(imm))),
 		SETG("Z", IL_FALSE),
 		SETG("N", IL_FALSE));
 }
@@ -445,8 +444,9 @@ static RzILOpEffect *gb_il_rot_ca(bool right) {
 
 static RzILOpEffect *gb_il_rot_c(gb_reg reg, bool right, ut64 op_addr) {
 	RzILOpBitVector *src = gb_il_read_reg_or_mem(reg, op_addr);
-	return SEQ4(
-		gb_il_write_reg_or_mem(reg, (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARG("C"), src, UN(3, 1)), op_addr),
+	return SEQ5(
+		SETG("C", right ? LSB(src) : MSB(src)),
+		gb_il_write_reg_or_mem(reg, (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(VARG("C"), DUP(src), UN(3, 1)), op_addr),
 		SETG("Z", IS_ZERO(DUP(src))),
 		SETG("N", IL_FALSE),
 		SETG("H", IL_FALSE));
@@ -468,7 +468,7 @@ static RzILOpEffect *gb_il_shift(gb_reg reg, bool right, bool is_signed, ut64 op
 	return SEQ5(
 		SETG("C", right ? LSB(DUP(src)) : MSB(DUP(src))),
 		gb_il_write_reg_or_mem(reg, (right ? rz_il_op_new_shiftr : rz_il_op_new_shiftl)(is_signed ? MSB(DUP(src)) : IL_FALSE, src, UN(3, 1)), op_addr),
-		SETG("Z", IS_ZERO(gb_il_read_reg(reg))),
+		SETG("Z", IS_ZERO(DUP(src))),
 		SETG("N", IL_FALSE),
 		SETG("H", IL_FALSE));
 }

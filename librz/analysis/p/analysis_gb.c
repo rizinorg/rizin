@@ -309,7 +309,7 @@ static void gb_analysis_mov_imm(RzAnalysisOpMask mask, RzReg *reg, RzAnalysisOp 
 	op->dst = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, reg_name, RZ_REG_TYPE_GPR);
 	op->src[0] = rz_analysis_value_new();
-	op->src[0]->imm = data[1];
+	op->src[0]->imm = imm;
 	op->src[0]->absolute = true;
 	op->val = op->src[0]->imm;
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
