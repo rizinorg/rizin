@@ -6,32 +6,125 @@
  * GameBoy lifting to be included from analysis_gb.c and plugged directly into the decoding logic.
  */
 
-//-----------------
-// TODO: remove this include block, it is only to give clangd some context
-#ifndef RZ_TYPES_H
-#include <string.h>
-#include <rz_types.h>
-#include <rz_util.h>
-#include <rz_asm.h>
-#include <rz_analysis.h>
-#include <rz_reg.h>
-#define GB_DIS_LEN_ONLY
-#include "../../asm/arch/gb/gbdis.c"
-#include "gb_makros.h"
-#include "meta_gb_cmt.c"
-#endif
-//----------------
+static ut32 gb_reg_bits(gb_reg reg) {
+	switch (reg) {
+	case GB_REG_A:
+	case GB_REG_B:
+	case GB_REG_C:
+	case GB_REG_D:
+	case GB_REG_E:
+	case GB_REG_H:
+	case GB_REG_L:
+		return 8;
+	case GB_REG_AF:
+	case GB_REG_BC:
+	case GB_REG_DE:
+	case GB_REG_HL:
+	case GB_REG_SP:
+		return 16;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+/**
+ * Get the register that forms the lower part of \p reg (which must be BC, DE or HL)
+ */
+static gb_reg gb_reg_lower(gb_reg reg) {
+	switch (reg) {
+	case GB_REG_BC:
+		return GB_REG_C;
+	case GB_REG_DE:
+		return GB_REG_E;
+	case GB_REG_HL:
+		return GB_REG_L;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+/**
+ * Get the register that forms the higher part of \p reg (which must be BC, DE or HL)
+ */
+static gb_reg gb_reg_higher(gb_reg reg) {
+	switch (reg) {
+	case GB_REG_BC:
+		return GB_REG_B;
+	case GB_REG_DE:
+		return GB_REG_D;
+	case GB_REG_HL:
+		return GB_REG_H;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+static const char *gb_reg_name(gb_reg reg) {
+	switch (reg) {
+	case GB_REG_A:
+		return "a";
+	case GB_REG_B:
+		return "b";
+	case GB_REG_C:
+		return "c";
+	case GB_REG_D:
+		return "d";
+	case GB_REG_E:
+		return "e";
+	case GB_REG_H:
+		return "h";
+	case GB_REG_L:
+		return "l";
+	case GB_REG_AF:
+		return "af";
+	case GB_REG_BC:
+		return "bc";
+	case GB_REG_DE:
+		return "de";
+	case GB_REG_HL:
+		return "hl";
+	case GB_REG_SP:
+		return "sp";
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+}
+
+static const char *gb_flag_name(gb_flag flag) {
+	switch (flag) {
+	case GB_FLAG_Z:
+		return "Z";
+	case GB_FLAG_N:
+		return "N";
+	case GB_FLAG_H:
+		return "H";
+	case GB_FLAG_C:
+		return "C";
+	}
+}
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 /**
- * Resolve the given 16-bit \p target_addr16 to the memory space that Rizin uses.
- *
+ * \name Address Calculation
  * Because Gameboy uses bank switching, where one part of memory may be switched to
  * different rom parts at runtime, but we still want to be able to see the entire code
  * all the time, Rizin flattens out the ROM over a 32-bit space.
+ * This imposes a challenge to lifting because we have to determine into which 64k "page"
+ * a 16-bit pointer will actually point. Due to the dynamic nature of bank switching,
+ * this is not always possible and no static implementation will be perfect, so we abstract
+ * this logic out of the lifting code itself and into the following functions to enable
+ * easy future adjustments.
  *
- * TODO: polish these docs
+ * In the current implementation we try to do a best effort approach by leveraging the
+ * higher bits of the current program counter as extra context. If these high bits are 0,
+ * it will stay in the 0 page, meaning actual emulation in a pure 16-bit space will not
+ * be affected.
+ * @{
  */
 
 static RzILOpBitVector *gb_il_resolve_addr_data(ut64 op_addr, RzILOpBitVector *target_addr16) {
@@ -54,6 +147,8 @@ static RzILOpBitVector *gb_il_resolve_addr_code_imm(ut64 addr) {
 	// for example by gb_op_calljump()
 	return U32(addr);
 }
+
+/// @}
 
 /*
  * Calculate the carry of a \p carry_bits addition (or subtraction) of \p a, \p b and optinally C, where \p a, \p b are of size \p src_bits

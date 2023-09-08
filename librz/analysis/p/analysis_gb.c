@@ -835,7 +835,7 @@ static inline void gb_analysis_load(RzAnalysisOpMask mask, RzReg *reg, RzAnalysi
 		if (op->src[0]->base < 0x4000) {
 			op->ptr = op->src[0]->base;
 		} else {
-			if (op->addr > 0x3fff && op->src[0]->base < 0x8000) { /* hack */ // TODO: add this to RzIL?
+			if (op->addr > 0x3fff && op->src[0]->base < 0x8000) { /* hack */
 				op->ptr = op->src[0]->base + (op->addr & 0xffffffffffff0000LL);
 			}
 		}
