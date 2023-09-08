@@ -869,7 +869,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	const char *rS = cs_reg_name(handle, INSOP(0).reg);
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
 #endif
-	const char *spr_name;
+	const char *spr_name = "";
 	// Some registers need to assemble the value before it is read or written (e.g. XER with all its bits).
 	// Leave it NULL if the value of the SPR or RS should be used.
 	RzILOpEffect *set_val = NULL;
