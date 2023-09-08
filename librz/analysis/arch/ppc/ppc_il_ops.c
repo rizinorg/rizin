@@ -365,6 +365,18 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	// I/M/Z 		Immediate, Minus one, Zero extend,
 	// C/E/S		Carry (sets it), Extends (adds carry it), Shift immediate
 
+	// Handle Add alias
+	switch (insn->alias_id) {
+	default:
+		break;
+	case PPC_INS_ALIAS_LI: // RT = sI
+		return SETG(rT, EXTEND(PPC_ARCH_BITS, SN(16, sI)));
+		break;
+	case PPC_INS_ALIAS_LIS: // RT = SI << 16
+		return SETG(rT, EXTEND(PPC_ARCH_BITS, APPEND(SN(16, sI), U16(0))));
+		break;
+	}
+
 	// EXEC
 	switch (id) {
 	default:
