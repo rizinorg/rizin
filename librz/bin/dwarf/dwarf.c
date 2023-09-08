@@ -16,35 +16,22 @@ RZ_IPI bool RzBinDwarfEncoding_from_file(RzBinDwarfEncoding *encoding, RzBinFile
 }
 
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NONNULL const RzBinDWARFOption *opt) {
-	rz_return_val_if_fail(bf && opt, NULL);
+	RZ_BORROW RZ_NONNULL RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
 	RzBinDWARF *dw = RZ_NEW0(RzBinDWARF);
 	RET_NULL_IF_FAIL(dw);
 	dw->addr = DebugAddr_from_file(bf);
 	dw->str = RzBinDwarfStr_from_file(bf);
 	dw->str_offsets = RzBinDwarfStrOffsets_from_file(bf);
-
-	if (opt->flags & RZ_BIN_DWARF_ABBREVS) {
-		dw->abbrev = rz_bin_dwarf_abbrev_from_file(bf);
-	}
-	if (opt->flags & RZ_BIN_DWARF_ARANGES) {
-		dw->aranges = rz_bin_dwarf_aranges_from_file(bf);
-	}
-
-	if (opt->flags & RZ_BIN_DWARF_INFO && dw->abbrev) {
+	dw->abbrev = rz_bin_dwarf_abbrev_from_file(bf);
+	dw->aranges = rz_bin_dwarf_aranges_from_file(bf);
+	if (dw->abbrev) {
 		dw->info = rz_bin_dwarf_info_from_file(bf, dw);
 	}
-
-	if (opt->flags & RZ_BIN_DWARF_LOC && dw->info) {
-		dw->loclists = rz_bin_dwarf_loclists_new_from_file(bf);
-	}
-	if (opt->flags & RZ_BIN_DWARF_RNG && dw->info) {
-		dw->rnglists = rz_bin_dwarf_rnglists_new_from_file(bf);
-	}
-
-	if (opt->flags & RZ_BIN_DWARF_LINES && dw->info) {
-		dw->line = rz_bin_dwarf_line_from_file(bf, dw->info, opt->line_mask);
+	dw->loclists = rz_bin_dwarf_loclists_new_from_file(bf);
+	dw->rnglists = rz_bin_dwarf_rnglists_new_from_file(bf);
+	if (dw->info) {
+		dw->line = rz_bin_dwarf_line_from_file(bf, dw->info);
 	}
 	return dw;
 }

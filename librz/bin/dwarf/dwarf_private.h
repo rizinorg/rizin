@@ -124,30 +124,7 @@ RZ_IPI void Value_dump(
 
 #include "op.h"
 
-/// debug_lines
-
-/**
- * \brief Opaque cache for fully resolved filenames during Dwarf Line Info Generation
- * This cache stores full file paths to be optionally used in RzBinDwarfLineOp_run().
- * It is strictly associated with the RzBinDwarfLineHeader it has been created with in rz_bin_dwarf_line_header_new_file_cache()
- * and must be freed with the same header in rz_bin_dwarf_line_header_free_file_cache().
- */
-typedef RzPVector /*<char *>*/ RzBinDwarfLineFilePathCache;
-
-typedef struct {
-	const RzBinDwarfLineHdr *hdr;
-	RzBinDwarfSMRegisters *regs;
-	RzBinSourceLineInfoBuilder *source_line_info_builder;
-	RzBinDwarfInfo *debug_info;
-	RzBinDwarfLineFilePathCache *file_path_cache;
-} DWLineOpEvalContext;
-
-RZ_IPI char *RzBinDwarfLineHeader_full_file_path(DWLineOpEvalContext *ctx, ut64 file_index);
-RZ_IPI ut64 RzBinDwarfLineHeader_adj_opcode(const RzBinDwarfLineHdr *hdr, ut8 opcode);
-RZ_IPI ut64 RzBinDwarfLineHeader_spec_op_advance_pc(const RzBinDwarfLineHdr *hdr, ut8 opcode);
-RZ_IPI st64 RzBinDwarfLineHeader_spec_op_advance_line(const RzBinDwarfLineHdr *hdr, ut8 opcode);
-RZ_IPI void RzBinDwarfSMRegisters_reset(const RzBinDwarfLineHdr *hdr, RzBinDwarfSMRegisters *regs);
-RZ_IPI bool RzBinDwarfLineOp_run(RZ_NONNULL RZ_BORROW RzBinDwarfLineOp *op, RZ_NONNULL RZ_BORROW RZ_INOUT DWLineOpEvalContext *ctx);
+///
 
 /// debug_str
 RZ_IPI void RzBinDwarfStr_free(RzBinDwarfStr *str);

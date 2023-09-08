@@ -632,11 +632,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
-	RzBinDWARFOption opt = {
-		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
-		.flags = RZ_BIN_DWARF_ALL - RZ_BIN_DWARF_LOC
-	};
-	RzBinDWARF *dw = rz_bin_dwarf_from_file(binfile, &opt);
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(binfile);
 	if (!dw) {
 		return false;
 	}
@@ -1704,14 +1700,8 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		return false;
 	}
 
-	RzBinDwarfLineInfoMask mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES;
-	mask |= (state->mode == RZ_OUTPUT_MODE_STANDARD ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0);
-	RzBinDWARFOption dw_opt = {
-		.line_mask = mask,
-		.flags = RZ_BIN_DWARF_ALL,
-	};
 	RzBinDWARF *dw = core->analysis->debug_info->dw;
-	dw = dw ? dw : rz_bin_dwarf_from_file(binfile, &dw_opt);
+	dw = dw ? dw : rz_bin_dwarf_from_file(binfile);
 	if (!dw) {
 		return false;
 	}

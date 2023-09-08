@@ -123,8 +123,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	TEST_ABBREV_ATTR(4, DW_AT_type, DW_FORM_ref4);
 
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL,
-		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+		bin->cur, NULL);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -210,8 +209,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	// rz_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
 
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL,
-		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+		bin->cur, NULL);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -327,8 +325,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	TEST_ABBREV_ATTR(6, DW_AT_sibling, DW_FORM_ref4);
 
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL,
-		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+		bin->cur, NULL);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -446,8 +443,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 731, "Incorrect number of abbreviation");
 
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL,
-		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+		bin->cur, NULL);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 25, "line units count");
 	RzBinDwarfLineUnit *lunit = rz_list_tail(li->units)->data;
@@ -575,8 +571,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	TEST_ABBREV_ATTR(3, DW_AT_location, DW_FORM_block1);
 
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL,
-		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+		bin->cur, NULL);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -668,8 +663,7 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	// TODO add abbrev checks
 
 	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL,
-		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+		bin->cur, NULL);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -768,11 +762,7 @@ bool test_dwarf4_multidir_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDWARFOption dwopt = {
-		.flags = RZ_BIN_DWARF_ALL,
-		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES_ALL,
-	};
-	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf, &dwopt);
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
 	mu_assert_notnull(dw, "DWARF");
 
 	RzBinDwarfAbbrev *da = rz_bin_dwarf_abbrev_from_file(bin->cur);
@@ -817,9 +807,7 @@ bool test_big_endian_dwarf2(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(
-		bin->cur, NULL,
-		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	RzBinDwarfLine *li = rz_bin_dwarf_line_from_file(bin->cur, NULL);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -1374,10 +1362,7 @@ bool test_dwarf5_loclists(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/float_ex1/float_ex1_arm", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDWARFOption parse_opts = {
-		.flags = RZ_BIN_DWARF_LOC | RZ_BIN_DWARF_INFO | RZ_BIN_DWARF_ABBREVS,
-	};
-	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf, &parse_opts);
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
 	mu_assert_notnull(dw->loclists, ".debug_loclists");
 	mu_assert_eq(dw->loclists->hdr.unit_length, 0x56, ".debug_loclists unit length");
 	mu_assert_eq(dw->loclists->hdr.encoding.version, 5, ".debug_loclists version");
@@ -1446,10 +1431,7 @@ bool test_dwarf4_loclists(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/vista-glass.exe", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDWARFOption parse_opts = {
-		.flags = RZ_BIN_DWARF_LOC | RZ_BIN_DWARF_INFO | RZ_BIN_DWARF_ABBREVS,
-	};
-	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf, &parse_opts);
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
 	mu_assert_notnull(dw->loclists, ".debug_loc");
 	mu_assert_notnull(dw->info, ".debug_info");
 

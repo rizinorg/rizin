@@ -1218,13 +1218,6 @@ typedef struct {
 	RzBinSourceLineInfo *lines;
 } RzBinDwarfLine;
 
-typedef enum {
-	RZ_BIN_DWARF_LINE_INFO_MASK_BASIC = 0x0, //< parse just the headers
-	RZ_BIN_DWARF_LINE_INFO_MASK_OPS = 0x1, //< decode and output all instructions
-	RZ_BIN_DWARF_LINE_INFO_MASK_LINES = 0x2, //< run instructions and output the resulting line infos
-	RZ_BIN_DWARF_LINE_INFO_MASK_LINES_ALL = 0x1 | 0x2,
-} RzBinDwarfLineInfoMask;
-
 typedef struct rz_bin_dwarf_arange_t {
 	ut64 addr;
 	ut64 length;
@@ -1446,21 +1439,6 @@ typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfStrOffsets *str_offsets;
 } RzBinDWARF;
 
-typedef enum {
-	RZ_BIN_DWARF_ABBREVS = 1 << 1,
-	RZ_BIN_DWARF_INFO = 1 << 2,
-	RZ_BIN_DWARF_LOC = 1 << 3,
-	RZ_BIN_DWARF_LINES = 1 << 4,
-	RZ_BIN_DWARF_ARANGES = 1 << 5,
-	RZ_BIN_DWARF_RNG = 1 << 6,
-	RZ_BIN_DWARF_ALL = RZ_BIN_DWARF_ABBREVS | RZ_BIN_DWARF_INFO | RZ_BIN_DWARF_LOC | RZ_BIN_DWARF_LINES | RZ_BIN_DWARF_ARANGES | RZ_BIN_DWARF_RNG,
-} RzBinDWARFFlags;
-
-typedef struct {
-	RzBinDwarfLineInfoMask line_mask;
-	RzBinDWARFFlags flags;
-} RzBinDWARFOption;
-
 RZ_API const char *rz_bin_dwarf_tag(DW_TAG tag);
 RZ_API const char *rz_bin_dwarf_attr(DW_AT attr_code);
 RZ_API const char *rz_bin_dwarf_form(DW_FORM form_code);
@@ -1520,18 +1498,14 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 RZ_API RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfInfo *debug_info,
-	RzBinDwarfLineInfoMask mask);
+	RZ_BORROW RZ_NULLABLE RzBinDwarfInfo *debug_info);
 RZ_API RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfInfo *debug_info,
-	RzBinDwarfLineInfoMask mask);
+	RZ_BORROW RZ_NULLABLE RzBinDwarfInfo *debug_info);
 RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
 
-RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NONNULL const RzBinDWARFOption *opt);
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw);
 
 // Assuming ValueType is an enum defined elsewhere
