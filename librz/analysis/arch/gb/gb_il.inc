@@ -517,11 +517,10 @@ static RzILOpEffect *gb_il_add_sp(st8 imm) {
  * Read an 8-bit value from either the given reg directly, or [HL] if reg == GB_REG_HL
  */
 static RzILOpBitVector *gb_il_read_reg_or_mem(gb_reg reg, ut64 op_addr) {
-	RzILOpBitVector *src = gb_il_read_reg(reg);
 	if (reg == GB_REG_HL) {
 		return LOAD(gb_il_resolve_addr_data(op_addr, gb_il_read_reg(GB_REG_HL)));
 	}
-	return src;
+	return gb_il_read_reg(reg);
 }
 
 /**
