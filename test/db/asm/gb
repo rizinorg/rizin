@@ -1,621 +1,627 @@
-d "adc 0x00" ce00
-d "adc [hl]" 8e
-d "adc a" 8f
-d "adc b" 88
-d "adc c" 89
-d "adc d" 8a
-d "adc e" 8b
-d "adc h" 8c
-d "adc l" 8d
-d "add 0x00" c600
-d "add [hl]" 86
-d "add a" 87
-d "add b" 80
-d "add c" 81
-d "add d" 82
-d "add e" 83
-d "add h" 84
-d "add hl, bc" 09
-d "add hl, de" 19
-d "add hl, hl" 29
-d "add hl, sp" 39
-d "add l" 85
-d "add sp, 0x00" e800
-d "and 0x00" e600
-d "and [hl]" a6
-d "and a" a7
-d "and b" a0
-d "and c" a1
-d "and d" a2
-d "and e" a3
-d "and h" a4
-d "and l" a5
-d "bit 0, [hl]" cb46
-d "bit 0, a" cb47
-d "bit 0, b" cb40
-d "bit 0, c" cb41
-d "bit 0, d" cb42
-d "bit 0, e" cb43
-d "bit 0, h" cb44
-d "bit 0, l" cb45
-d "bit 1, [hl]" cb4e
-d "bit 1, a" cb4f
-d "bit 1, b" cb48
-d "bit 1, c" cb49
-d "bit 1, d" cb4a
-d "bit 1, e" cb4b
-d "bit 1, h" cb4c
-d "bit 1, l" cb4d
-d "bit 2, [hl]" cb56
-d "bit 2, a" cb57
-d "bit 2, b" cb50
-d "bit 2, c" cb51
-d "bit 2, d" cb52
-d "bit 2, e" cb53
-d "bit 2, h" cb54
-d "bit 2, l" cb55
-d "bit 3, [hl]" cb5e
-d "bit 3, a" cb5f
-d "bit 3, b" cb58
-d "bit 3, c" cb59
-d "bit 3, d" cb5a
-d "bit 3, e" cb5b
-d "bit 3, h" cb5c
-d "bit 3, l" cb5d
-d "bit 4, [hl]" cb66
-d "bit 4, a" cb67
-d "bit 4, b" cb60
-d "bit 4, c" cb61
-d "bit 4, d" cb62
-d "bit 4, e" cb63
-d "bit 4, h" cb64
-d "bit 4, l" cb65
-d "bit 5, [hl]" cb6e
-d "bit 5, a" cb6f
-d "bit 5, b" cb68
-d "bit 5, c" cb69
-d "bit 5, d" cb6a
-d "bit 5, e" cb6b
-d "bit 5, h" cb6c
-d "bit 5, l" cb6d
-d "bit 6, [hl]" cb76
-d "bit 6, a" cb77
-d "bit 6, b" cb70
-d "bit 6, c" cb71
-d "bit 6, d" cb72
-d "bit 6, e" cb73
-d "bit 6, h" cb74
-d "bit 6, l" cb75
-d "bit 7, [hl]" cb7e
-d "bit 7, a" cb7f
-d "bit 7, b" cb78
-d "bit 7, c" cb79
-d "bit 7, d" cb7a
-d "bit 7, e" cb7b
-d "bit 7, h" cb7c
-d "bit 7, l" cb7d
-d "call 0x0000" cd0000
-d "call C, 0x0000" dc0000
-d "call Z, 0x0000" cc0000
-d "call nC, 0x0000" d40000
-d "call nZ, 0x0000" c40000
-d "ccf" 3f
-d "cp 0x00" fe00
-d "cp [hl]" be
-d "cp a" bf
-d "cp b" b8
-d "cp c" b9
-d "cp d" ba
-d "cp e" bb
-d "cp h" bc
-d "cp l" bd
-d "cpl" 2f
-d "daa" 27
-d "dec [hl]" 35
-d "dec a" 3d
-d "dec b" 05
-d "dec bc" 0b
-d "dec c" 0d
-d "dec d" 15
-d "dec de" 1b
-d "dec e" 1d
-d "dec h" 25
-d "dec hl" 2b
-d "dec l" 2d
-d "dec sp" 3b
-d "di" f3
-d "ei" fb
-d "halt" 76
-d "inc [hl]" 34
-d "inc a" 3c
-d "inc b" 04
-d "inc bc" 03
-d "inc c" 0c
-d "inc d" 14
-d "inc de" 13
-d "inc e" 1c
-d "inc h" 24
-d "inc hl" 23
-d "inc l" 2c
-d "inc sp" 33
-d "jp 0x0000" c30000
-d "jp C, 0x0000" da0000
-d "jp Z, 0x0000" ca0000
-d "jp hl" e9
-d "jp nC, 0x0000" d20000
-d "jp nZ, 0x0000" c20000
-d "jr 0x00" 1800
-d "jr C, 0x00" 3800
-d "jr Z, 0x00" 2800
-d "jr nC, 0x00" 3000
-d "jr nZ, 0x00" 2000
-d "ld [0x0000], a" ea0000
-d "ld [0x0000], sp" 080000
-d "ld [0xff00 + c], a" e2
-d "ld [rP1], a" e000
-d "ld [rSB], a" e001
-d "ld [rSC], a" e002
-d "ld [rDIV], a" e004
-d "ld [rTIMA], a" e005
-d "ld [rTMA], a" e006
-d "ld [rTAC], a" e007
-d "ld [rIF], a" e00f
-d "ld [rAUD1SWEEP], a" e010
-d "ld [rAUD1LEN], a" e011
-d "ld [rAUD1ENV], a" e012
-d "ld [rAUD1LOW], a" e013
-d "ld [rAUD1HIGH], a" e014
-d "ld [rAUD2LEN], a" e016
-d "ld [rAUD2ENV], a" e017
-d "ld [rAUD2LOW], a" e018
-d "ld [rAUD2HIGH], a" e019
-d "ld [rAUD3ENA], a" e01a
-d "ld [rAUD3LEN], a" e01b
-d "ld [rAUD3LEVEL], a" e01c
-d "ld [rAUD3LOW], a" e01d
-d "ld [rAUD3HIGH], a" e01e
-d "ld [rAUD4LEN], a" e020
-d "ld [rAUD4ENV], a" e021
-d "ld [rAUD4POLY], a" e022
-d "ld [rAUD4GO], a" e023
-d "ld [rAUDVOL], a" e024
-d "ld [rAUDTERM], a" e025
-d "ld [rAUDENA], a" e026
-d "ld [rPCM12], a" e076
-d "ld [rPCM34], a" e077
-d "ld [rLCDC], a" e040
-d "ld [rSTAT], a" e041
-d "ld [rSCY], a" e042
-d "ld [rSCX], a" e043
-d "ld [rLY], a" e044
-d "ld [rLYC], a" e045
-d "ld [rDMA], a" e046
-d "ld [rBGP], a" e047
-d "ld [rOBP0], a" e048
-d "ld [rOBP1], a" e049
-d "ld [rWY], a" e04a
-d "ld [rWX], a" e04b
-d "ld [rKEY1], a" e04d
-d "ld [rVBK], a" e04f
-d "ld [rHDMA1], a" e051
-d "ld [rHDMA2], a" e052
-d "ld [rHDMA3], a" e053
-d "ld [rHDMA4], a" e054
-d "ld [rHDMA5], a" e055
-d "ld [rRP], a" e056
-d "ld [rBCPS], a" e068
-d "ld [rBCPD], a" e069
-d "ld [rOCPS], a" e06a
-d "ld [rOCPD], a" e06b
-d "ld [rSVBK], a" e070
-d "ld [rIE], a" e0ff
-d "ld [bc], a" 02
-d "ld [de], a" 12
-d "ld [hl], 0x00" 3600
-d "ld [hl], a" 77
-d "ld [hl], b" 70
-d "ld [hl], c" 71
-d "ld [hl], d" 72
-d "ld [hl], e" 73
-d "ld [hl], h" 74
-d "ld [hl], l" 75
-d "ld a, 0x00" 3e00
-d "ld a, [0x0000]" fa0000
-d "ld a, [0xff00 + c]" f2
-d "ld a, [rP1]" f000
-d "ld a, [rSB]" f001
-d "ld a, [rSC]" f002
-d "ld a, [rDIV]" f004
-d "ld a, [rTIMA]" f005
-d "ld a, [rTMA]" f006
-d "ld a, [rTAC]" f007
-d "ld a, [rIF]" f00f
-d "ld a, [rAUD1SWEEP]" f010
-d "ld a, [rAUD1LEN]" f011
-d "ld a, [rAUD1ENV]" f012
-d "ld a, [rAUD1LOW]" f013
-d "ld a, [rAUD1HIGH]" f014
-d "ld a, [rAUD2LEN]" f016
-d "ld a, [rAUD2ENV]" f017
-d "ld a, [rAUD2LOW]" f018
-d "ld a, [rAUD2HIGH]" f019
-d "ld a, [rAUD3ENA]" f01a
-d "ld a, [rAUD3LEN]" f01b
-d "ld a, [rAUD3LEVEL]" f01c
-d "ld a, [rAUD3LOW]" f01d
-d "ld a, [rAUD3HIGH]" f01e
-d "ld a, [rAUD4LEN]" f020
-d "ld a, [rAUD4ENV]" f021
-d "ld a, [rAUD4POLY]" f022
-d "ld a, [rAUD4GO]" f023
-d "ld a, [rAUDVOL]" f024
-d "ld a, [rAUDTERM]" f025
-d "ld a, [rAUDENA]" f026
-d "ld a, [rPCM12]" f076
-d "ld a, [rPCM34]" f077
-d "ld a, [rLCDC]" f040
-d "ld a, [rSTAT]" f041
-d "ld a, [rSCY]" f042
-d "ld a, [rSCX]" f043
-d "ld a, [rLY]" f044
-d "ld a, [rLYC]" f045
-d "ld a, [rDMA]" f046
-d "ld a, [rBGP]" f047
-d "ld a, [rOBP0]" f048
-d "ld a, [rOBP1]" f049
-d "ld a, [rWY]" f04a
-d "ld a, [rWX]" f04b
-d "ld a, [rKEY1]" f04d
-d "ld a, [rVBK]" f04f
-d "ld a, [rHDMA1]" f051
-d "ld a, [rHDMA2]" f052
-d "ld a, [rHDMA3]" f053
-d "ld a, [rHDMA4]" f054
-d "ld a, [rHDMA5]" f055
-d "ld a, [rRP]" f056
-d "ld a, [rBCPS]" f068
-d "ld a, [rBCPD]" f069
-d "ld a, [rOCPS]" f06a
-d "ld a, [rOCPD]" f06b
-d "ld a, [rSVBK]" f070
-d "ld a, [rIE]" f0ff
-d "ld a, [bc]" 0a
-d "ld a, [de]" 1a
-d "ld a, [hl]" 7e
-d "ld a, a" 7f
-d "ld a, b" 78
-d "ld a, c" 79
-d "ld a, d" 7a
-d "ld a, e" 7b
-d "ld a, h" 7c
-d "ld a, l" 7d
-d "ld b, 0x00" 0600
-d "ld b, [hl]" 46
-d "ld b, a" 47
-d "ld b, b" 40
-d "ld b, c" 41
-d "ld b, d" 42
-d "ld b, e" 43
-d "ld b, h" 44
-d "ld b, l" 45
-d "ld bc, 0x0000" 010000
-d "ld c, 0x00" 0e00
-d "ld c, [hl]" 4e
-d "ld c, a" 4f
-d "ld c, b" 48
-d "ld c, c" 49
-d "ld c, d" 4a
-d "ld c, e" 4b
-d "ld c, h" 4c
-d "ld c, l" 4d
-d "ld d, 0x00" 1600
-d "ld d, [hl]" 56
-d "ld d, a" 57
-d "ld d, b" 50
-d "ld d, c" 51
-d "ld d, d" 52
-d "ld d, e" 53
-d "ld d, h" 54
-d "ld d, l" 55
-d "ld de, 0x0000" 110000
-d "ld e, 0x00" 1e00
-d "ld e, [hl]" 5e
-d "ld e, a" 5f
-d "ld e, b" 58
-d "ld e, c" 59
-d "ld e, d" 5a
-d "ld e, e" 5b
-d "ld e, h" 5c
-d "ld e, l" 5d
-d "ld h, 0x00" 2600
-d "ld h, [hl]" 66
-d "ld h, a" 67
-d "ld h, b" 60
-d "ld h, c" 61
-d "ld h, d" 62
-d "ld h, e" 63
-d "ld h, h" 64
-d "ld h, l" 65
-d "ld hl, 0x0000" 210000
-d "ld hl, sp + 0x00" f800
-d "ld l, 0x00" 2e00
-d "ld l, [hl]" 6e
-d "ld l, a" 6f
-d "ld l, b" 68
-d "ld l, c" 69
-d "ld l, d" 6a
-d "ld l, e" 6b
-d "ld l, h" 6c
-d "ld l, l" 6d
-d "ld sp, 0x0000" 310000
-d "ld sp, hl" f9
-d "ldd [hl], a" 32
-d "ldd a, [hl]" 3a
-d "ldi [hl], a" 22
-d "ldi a, [hl]" 2a
-d "nop" 00
-d "or 0x00" f600
-d "or [hl]" b6
-d "or a" b7
-d "or b" b0
-d "or c" b1
-d "or d" b2
-d "or e" b3
-d "or h" b4
-d "or l" b5
-d "pop af" f1
-d "pop bc" c1
-d "pop de" d1
-d "pop hl" e1
-d "push af" f5
-d "push bc" c5
-d "push de" d5
-d "push hl" e5
-d "res 0, [hl]" cb86
-d "res 0, a" cb87
-d "res 0, b" cb80
-d "res 0, c" cb81
-d "res 0, d" cb82
-d "res 0, e" cb83
-d "res 0, h" cb84
-d "res 0, l" cb85
-d "res 1, [hl]" cb8e
-d "res 1, a" cb8f
-d "res 1, b" cb88
-d "res 1, c" cb89
-d "res 1, d" cb8a
-d "res 1, e" cb8b
-d "res 1, h" cb8c
-d "res 1, l" cb8d
-d "res 2, [hl]" cb96
-d "res 2, a" cb97
-d "res 2, b" cb90
-d "res 2, c" cb91
-d "res 2, d" cb92
-d "res 2, e" cb93
-d "res 2, h" cb94
-d "res 2, l" cb95
-d "res 3, [hl]" cb9e
-d "res 3, a" cb9f
-d "res 3, b" cb98
-d "res 3, c" cb99
-d "res 3, d" cb9a
-d "res 3, e" cb9b
-d "res 3, h" cb9c
-d "res 3, l" cb9d
-d "res 4, [hl]" cba6
-d "res 4, a" cba7
-d "res 4, b" cba0
-d "res 4, c" cba1
-d "res 4, d" cba2
-d "res 4, e" cba3
-d "res 4, h" cba4
-d "res 4, l" cba5
-d "res 5, [hl]" cbae
-d "res 5, a" cbaf
-d "res 5, b" cba8
-d "res 5, c" cba9
-d "res 5, d" cbaa
-d "res 5, e" cbab
-d "res 5, h" cbac
-d "res 5, l" cbad
-d "res 6, [hl]" cbb6
-d "res 6, a" cbb7
-d "res 6, b" cbb0
-d "res 6, c" cbb1
-d "res 6, d" cbb2
-d "res 6, e" cbb3
-d "res 6, h" cbb4
-d "res 6, l" cbb5
-d "res 7, [hl]" cbbe
-d "res 7, a" cbbf
-d "res 7, b" cbb8
-d "res 7, c" cbb9
-d "res 7, d" cbba
-d "res 7, e" cbbb
-d "res 7, h" cbbc
-d "res 7, l" cbbd
-d "ret C" d8
-d "ret Z" c8
-d "ret nC" d0
-d "ret nZ" c0
-d "ret" c9
-d "reti" d9
-d "rl [hl]" cb16
-d "rl a" cb17
-d "rl b" cb10
-d "rl c" cb11
-d "rl d" cb12
-d "rl e" cb13
-d "rl h" cb14
-d "rl l" cb15
-d "rla" 17
-d "rlc [hl]" cb06
-d "rlc a" cb07
-d "rlc b" cb00
-d "rlc c" cb01
-d "rlc d" cb02
-d "rlc e" cb03
-d "rlc h" cb04
-d "rlc l" cb05
-d "rlca" 07
-d "rr [hl]" cb1e
-d "rr a" cb1f
-d "rr b" cb18
-d "rr c" cb19
-d "rr d" cb1a
-d "rr e" cb1b
-d "rr h" cb1c
-d "rr l" cb1d
-d "rra" 1f
-d "rrc [hl]" cb0e
-d "rrc a" cb0f
-d "rrc b" cb08
-d "rrc c" cb09
-d "rrc d" cb0a
-d "rrc e" cb0b
-d "rrc h" cb0c
-d "rrc l" cb0d
-d "rrca" 0f
-d "rst 0" c7
-d "rst 16" d7
-d "rst 24" df
-d "rst 32" e7
-d "rst 40" ef
-d "rst 48" f7
-d "rst 56" ff
-d "rst 8" cf
-d "sbc 0x00" de00
-d "sbc [hl]" 9e
-d "sbc a" 9f
-d "sbc b" 98
-d "sbc c" 99
-d "sbc d" 9a
-d "sbc e" 9b
-d "sbc h" 9c
-d "sbc l" 9d
-d "scf" 37
-d "set 0, [hl]" cbc6
-d "set 0, a" cbc7
-d "set 0, b" cbc0
-d "set 0, c" cbc1
-d "set 0, d" cbc2
-d "set 0, e" cbc3
-d "set 0, h" cbc4
-d "set 0, l" cbc5
-d "set 1, [hl]" cbce
-d "set 1, a" cbcf
-d "set 1, b" cbc8
-d "set 1, c" cbc9
-d "set 1, d" cbca
-d "set 1, e" cbcb
-d "set 1, h" cbcc
-d "set 1, l" cbcd
-d "set 2, [hl]" cbd6
-d "set 2, a" cbd7
-d "set 2, b" cbd0
-d "set 2, c" cbd1
-d "set 2, d" cbd2
-d "set 2, e" cbd3
-d "set 2, h" cbd4
-d "set 2, l" cbd5
-d "set 3, [hl]" cbde
-d "set 3, a" cbdf
-d "set 3, b" cbd8
-d "set 3, c" cbd9
-d "set 3, d" cbda
-d "set 3, e" cbdb
-d "set 3, h" cbdc
-d "set 3, l" cbdd
-d "set 4, [hl]" cbe6
-d "set 4, a" cbe7
-d "set 4, b" cbe0
-d "set 4, c" cbe1
-d "set 4, d" cbe2
-d "set 4, e" cbe3
-d "set 4, h" cbe4
-d "set 4, l" cbe5
-d "set 5, [hl]" cbee
-d "set 5, a" cbef
-d "set 5, b" cbe8
-d "set 5, c" cbe9
-d "set 5, d" cbea
-d "set 5, e" cbeb
-d "set 5, h" cbec
-d "set 5, l" cbed
-d "set 6, [hl]" cbf6
-d "set 6, a" cbf7
-d "set 6, b" cbf0
-d "set 6, c" cbf1
-d "set 6, d" cbf2
-d "set 6, e" cbf3
-d "set 6, h" cbf4
-d "set 6, l" cbf5
-d "set 7, [hl]" cbfe
-d "set 7, a" cbff
-d "set 7, b" cbf8
-d "set 7, c" cbf9
-d "set 7, d" cbfa
-d "set 7, e" cbfb
-d "set 7, h" cbfc
-d "set 7, l" cbfd
-d "sla [hl]" cb26
-d "sla a" cb27
-d "sla b" cb20
-d "sla c" cb21
-d "sla d" cb22
-d "sla e" cb23
-d "sla h" cb24
-d "sla l" cb25
-d "sra [hl]" cb2e
-d "sra a" cb2f
-d "sra b" cb28
-d "sra c" cb29
-d "sra d" cb2a
-d "sra e" cb2b
-d "sra h" cb2c
-d "sra l" cb2d
-d "srl [hl]" cb3e
-d "srl a" cb3f
-d "srl b" cb38
-d "srl c" cb39
-d "srl d" cb3a
-d "srl e" cb3b
-d "srl h" cb3c
-d "srl l" cb3d
-d "stop" 10
-d "sub 0x00" d600
-d "sub [hl]" 96
-d "sub a" 97
-d "sub b" 90
-d "sub c" 91
-d "sub d" 92
-d "sub e" 93
-d "sub h" 94
-d "sub l" 95
-d "swap [hl]" cb36
-d "swap a" cb37
-d "swap b" cb30
-d "swap c" cb31
-d "swap d" cb32
-d "swap e" cb33
-d "swap h" cb34
-d "swap l" cb35
-d "xor 0x00" ee00
-d "xor [hl]" ae
-d "xor a" af
-d "xor b" a8
-d "xor c" a9
-d "xor d" aa
-d "xor e" ab
-d "xor h" ac
-d "xor l" ad
-a "ld hl, 0xc3a0" 21a0c3
-a "ld bc, 0x188" 018801
-a "ld sp, 0xc3a0" 31a0c3
-a "ld de, 0x188" 118801
-a "call 0x36e0" cde036
-a "ld b, [hl]" 46
-a "ld [hl], a" 77
-a "ld a, 0x63" 3e63
-a "rlc [hl]" cb06
+d "adc 0x42" ce42 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (bv 8 0x42) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (bv 8 0x42)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (bv 8 0x42) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "adc [hl]" 8e 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var src) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var src)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var src) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "adc a" 8f 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var a) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var a)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var a) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "adc b" 88 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var b) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var b)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var b) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "adc c" 89 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var c) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var c)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var c) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "adc d" 8a 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var d) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var d)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var d) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "adc e" 8b 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var e) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var e)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var e) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "adc h" 8c 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var h) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var h)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var h) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "adc l" 8d 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (+ (& (var l) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (+ (cast 9 false (var l)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (+ (var a) (+ (var l) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add 0x42" c642 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (bv 8 0x42) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (bv 8 0x42))))) (set a (+ (var a) (bv 8 0x42))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add [hl]" 86 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var src) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (var src))))) (set a (+ (var a) (var src))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add a" 87 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var a) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (var a))))) (set a (+ (var a) (var a))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add b" 80 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var b) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (var b))))) (set a (+ (var a) (var b))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add c" 81 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var c) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (var c))))) (set a (+ (var a) (var c))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add d" 82 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var d) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (var d))))) (set a (+ (var a) (var d))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add e" 83 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var e) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (var e))))) (set a (+ (var a) (var e))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add h" 84 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var h) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (var h))))) (set a (+ (var a) (var h))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add hl, bc" 09 0x0 (seq (set H (! (ule (+ (& (append (var h) (var l)) (bv 16 0xfff)) (& (append (var b) (var c)) (bv 16 0xfff))) (bv 16 0xfff)))) (set C (msb (+ (cast 17 false (append (var h) (var l))) (cast 17 false (append (var b) (var c)))))) (set h (cast 8 false (>> (+ (append (var h) (var l)) (append (var b) (var c))) (bv 4 0x8) false))) (set l (cast 8 false (+ (append (var h) (var l)) (append (var b) (var c))))) (set N false))
+d "add hl, de" 19 0x0 (seq (set H (! (ule (+ (& (append (var h) (var l)) (bv 16 0xfff)) (& (append (var d) (var e)) (bv 16 0xfff))) (bv 16 0xfff)))) (set C (msb (+ (cast 17 false (append (var h) (var l))) (cast 17 false (append (var d) (var e)))))) (set h (cast 8 false (>> (+ (append (var h) (var l)) (append (var d) (var e))) (bv 4 0x8) false))) (set l (cast 8 false (+ (append (var h) (var l)) (append (var d) (var e))))) (set N false))
+d "add hl, hl" 29 0x0 (seq (set H (! (ule (+ (& (append (var h) (var l)) (bv 16 0xfff)) (& (append (var h) (var l)) (bv 16 0xfff))) (bv 16 0xfff)))) (set C (msb (+ (cast 17 false (append (var h) (var l))) (cast 17 false (append (var h) (var l)))))) (set h (cast 8 false (>> (+ (append (var h) (var l)) (append (var h) (var l))) (bv 4 0x8) false))) (set l (cast 8 false (+ (append (var h) (var l)) (append (var h) (var l))))) (set N false))
+d "add hl, sp" 39 0x0 (seq (set H (! (ule (+ (& (append (var h) (var l)) (bv 16 0xfff)) (& (var sp) (bv 16 0xfff))) (bv 16 0xfff)))) (set C (msb (+ (cast 17 false (append (var h) (var l))) (cast 17 false (var sp))))) (set h (cast 8 false (>> (+ (append (var h) (var l)) (var sp)) (bv 4 0x8) false))) (set l (cast 8 false (+ (append (var h) (var l)) (var sp)))) (set N false))
+d "add l" 85 0x0 (seq (set H (! (ule (+ (& (var a) (bv 8 0xf)) (& (var l) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (+ (cast 9 false (var a)) (cast 9 false (var l))))) (set a (+ (var a) (var l))) (set C (var CC)) (set Z (is_zero (var a))) (set N false))
+d "add sp, 0x42" e842 0x0 (seq (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0x42) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0x42) (bv 16 0xff))) (bv 16 0xff)))) (set sp (+ (var sp) (bv 16 0x42))) (set Z false) (set N false))
+d "add sp, 0x80" e880 0x0 (seq (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0xff80) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0xff80) (bv 16 0xff))) (bv 16 0xff)))) (set sp (- (var sp) (bv 16 0x80))) (set Z false) (set N false))
+d "add sp, 0xff" e8ff 0x0 (seq (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0xffff) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0xffff) (bv 16 0xff))) (bv 16 0xff)))) (set sp (- (var sp) (bv 16 0x1))) (set Z false) (set N false))
+d "and 0x42" e642 0x0 (seq (set a (& (var a) (bv 8 0x42))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "and [hl]" a6 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set a (& (var a) (var src))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "and a" a7 0x0 (seq (set a (& (var a) (var a))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "and b" a0 0x0 (seq (set a (& (var a) (var b))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "and c" a1 0x0 (seq (set a (& (var a) (var c))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "and d" a2 0x0 (seq (set a (& (var a) (var d))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "and e" a3 0x0 (seq (set a (& (var a) (var e))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "and h" a4 0x0 (seq (set a (& (var a) (var h))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "and l" a5 0x0 (seq (set a (& (var a) (var l))) (set Z (is_zero (var a))) (set N false) (set H true) (set C false))
+d "bit 0, [hl]" cb46 0x0 (seq (set Z (is_zero (& (load 0 (append (var h) (var l))) (bv 8 0x1)))) (set N false) (set H true))
+d "bit 0, a" cb47 0x0 (seq (set Z (is_zero (& (var a) (bv 8 0x1)))) (set N false) (set H true))
+d "bit 0, b" cb40 0x0 (seq (set Z (is_zero (& (var b) (bv 8 0x1)))) (set N false) (set H true))
+d "bit 0, c" cb41 0x0 (seq (set Z (is_zero (& (var c) (bv 8 0x1)))) (set N false) (set H true))
+d "bit 0, d" cb42 0x0 (seq (set Z (is_zero (& (var d) (bv 8 0x1)))) (set N false) (set H true))
+d "bit 0, e" cb43 0x0 (seq (set Z (is_zero (& (var e) (bv 8 0x1)))) (set N false) (set H true))
+d "bit 0, h" cb44 0x0 (seq (set Z (is_zero (& (var h) (bv 8 0x1)))) (set N false) (set H true))
+d "bit 0, l" cb45 0x0 (seq (set Z (is_zero (& (var l) (bv 8 0x1)))) (set N false) (set H true))
+d "bit 1, [hl]" cb4e 0x0 (seq (set Z (is_zero (& (load 0 (append (var h) (var l))) (bv 8 0x2)))) (set N false) (set H true))
+d "bit 1, a" cb4f 0x0 (seq (set Z (is_zero (& (var a) (bv 8 0x2)))) (set N false) (set H true))
+d "bit 1, b" cb48 0x0 (seq (set Z (is_zero (& (var b) (bv 8 0x2)))) (set N false) (set H true))
+d "bit 1, c" cb49 0x0 (seq (set Z (is_zero (& (var c) (bv 8 0x2)))) (set N false) (set H true))
+d "bit 1, d" cb4a 0x0 (seq (set Z (is_zero (& (var d) (bv 8 0x2)))) (set N false) (set H true))
+d "bit 1, e" cb4b 0x0 (seq (set Z (is_zero (& (var e) (bv 8 0x2)))) (set N false) (set H true))
+d "bit 1, h" cb4c 0x0 (seq (set Z (is_zero (& (var h) (bv 8 0x2)))) (set N false) (set H true))
+d "bit 1, l" cb4d 0x0 (seq (set Z (is_zero (& (var l) (bv 8 0x2)))) (set N false) (set H true))
+d "bit 2, [hl]" cb56 0x0 (seq (set Z (is_zero (& (load 0 (append (var h) (var l))) (bv 8 0x4)))) (set N false) (set H true))
+d "bit 2, a" cb57 0x0 (seq (set Z (is_zero (& (var a) (bv 8 0x4)))) (set N false) (set H true))
+d "bit 2, b" cb50 0x0 (seq (set Z (is_zero (& (var b) (bv 8 0x4)))) (set N false) (set H true))
+d "bit 2, c" cb51 0x0 (seq (set Z (is_zero (& (var c) (bv 8 0x4)))) (set N false) (set H true))
+d "bit 2, d" cb52 0x0 (seq (set Z (is_zero (& (var d) (bv 8 0x4)))) (set N false) (set H true))
+d "bit 2, e" cb53 0x0 (seq (set Z (is_zero (& (var e) (bv 8 0x4)))) (set N false) (set H true))
+d "bit 2, h" cb54 0x0 (seq (set Z (is_zero (& (var h) (bv 8 0x4)))) (set N false) (set H true))
+d "bit 2, l" cb55 0x0 (seq (set Z (is_zero (& (var l) (bv 8 0x4)))) (set N false) (set H true))
+d "bit 3, [hl]" cb5e 0x0 (seq (set Z (is_zero (& (load 0 (append (var h) (var l))) (bv 8 0x8)))) (set N false) (set H true))
+d "bit 3, a" cb5f 0x0 (seq (set Z (is_zero (& (var a) (bv 8 0x8)))) (set N false) (set H true))
+d "bit 3, b" cb58 0x0 (seq (set Z (is_zero (& (var b) (bv 8 0x8)))) (set N false) (set H true))
+d "bit 3, c" cb59 0x0 (seq (set Z (is_zero (& (var c) (bv 8 0x8)))) (set N false) (set H true))
+d "bit 3, d" cb5a 0x0 (seq (set Z (is_zero (& (var d) (bv 8 0x8)))) (set N false) (set H true))
+d "bit 3, e" cb5b 0x0 (seq (set Z (is_zero (& (var e) (bv 8 0x8)))) (set N false) (set H true))
+d "bit 3, h" cb5c 0x0 (seq (set Z (is_zero (& (var h) (bv 8 0x8)))) (set N false) (set H true))
+d "bit 3, l" cb5d 0x0 (seq (set Z (is_zero (& (var l) (bv 8 0x8)))) (set N false) (set H true))
+d "bit 4, [hl]" cb66 0x0 (seq (set Z (is_zero (& (load 0 (append (var h) (var l))) (bv 8 0x10)))) (set N false) (set H true))
+d "bit 4, a" cb67 0x0 (seq (set Z (is_zero (& (var a) (bv 8 0x10)))) (set N false) (set H true))
+d "bit 4, b" cb60 0x0 (seq (set Z (is_zero (& (var b) (bv 8 0x10)))) (set N false) (set H true))
+d "bit 4, c" cb61 0x0 (seq (set Z (is_zero (& (var c) (bv 8 0x10)))) (set N false) (set H true))
+d "bit 4, d" cb62 0x0 (seq (set Z (is_zero (& (var d) (bv 8 0x10)))) (set N false) (set H true))
+d "bit 4, e" cb63 0x0 (seq (set Z (is_zero (& (var e) (bv 8 0x10)))) (set N false) (set H true))
+d "bit 4, h" cb64 0x0 (seq (set Z (is_zero (& (var h) (bv 8 0x10)))) (set N false) (set H true))
+d "bit 4, l" cb65 0x0 (seq (set Z (is_zero (& (var l) (bv 8 0x10)))) (set N false) (set H true))
+d "bit 5, [hl]" cb6e 0x0 (seq (set Z (is_zero (& (load 0 (append (var h) (var l))) (bv 8 0x20)))) (set N false) (set H true))
+d "bit 5, a" cb6f 0x0 (seq (set Z (is_zero (& (var a) (bv 8 0x20)))) (set N false) (set H true))
+d "bit 5, b" cb68 0x0 (seq (set Z (is_zero (& (var b) (bv 8 0x20)))) (set N false) (set H true))
+d "bit 5, c" cb69 0x0 (seq (set Z (is_zero (& (var c) (bv 8 0x20)))) (set N false) (set H true))
+d "bit 5, d" cb6a 0x0 (seq (set Z (is_zero (& (var d) (bv 8 0x20)))) (set N false) (set H true))
+d "bit 5, e" cb6b 0x0 (seq (set Z (is_zero (& (var e) (bv 8 0x20)))) (set N false) (set H true))
+d "bit 5, h" cb6c 0x0 (seq (set Z (is_zero (& (var h) (bv 8 0x20)))) (set N false) (set H true))
+d "bit 5, l" cb6d 0x0 (seq (set Z (is_zero (& (var l) (bv 8 0x20)))) (set N false) (set H true))
+d "bit 6, [hl]" cb76 0x0 (seq (set Z (is_zero (& (load 0 (append (var h) (var l))) (bv 8 0x40)))) (set N false) (set H true))
+d "bit 6, a" cb77 0x0 (seq (set Z (is_zero (& (var a) (bv 8 0x40)))) (set N false) (set H true))
+d "bit 6, b" cb70 0x0 (seq (set Z (is_zero (& (var b) (bv 8 0x40)))) (set N false) (set H true))
+d "bit 6, c" cb71 0x0 (seq (set Z (is_zero (& (var c) (bv 8 0x40)))) (set N false) (set H true))
+d "bit 6, d" cb72 0x0 (seq (set Z (is_zero (& (var d) (bv 8 0x40)))) (set N false) (set H true))
+d "bit 6, e" cb73 0x0 (seq (set Z (is_zero (& (var e) (bv 8 0x40)))) (set N false) (set H true))
+d "bit 6, h" cb74 0x0 (seq (set Z (is_zero (& (var h) (bv 8 0x40)))) (set N false) (set H true))
+d "bit 6, l" cb75 0x0 (seq (set Z (is_zero (& (var l) (bv 8 0x40)))) (set N false) (set H true))
+d "bit 7, [hl]" cb7e 0x0 (seq (set Z (is_zero (& (load 0 (append (var h) (var l))) (bv 8 0x80)))) (set N false) (set H true))
+d "bit 7, a" cb7f 0x0 (seq (set Z (is_zero (& (var a) (bv 8 0x80)))) (set N false) (set H true))
+d "bit 7, b" cb78 0x0 (seq (set Z (is_zero (& (var b) (bv 8 0x80)))) (set N false) (set H true))
+d "bit 7, c" cb79 0x0 (seq (set Z (is_zero (& (var c) (bv 8 0x80)))) (set N false) (set H true))
+d "bit 7, d" cb7a 0x0 (seq (set Z (is_zero (& (var d) (bv 8 0x80)))) (set N false) (set H true))
+d "bit 7, e" cb7b 0x0 (seq (set Z (is_zero (& (var e) (bv 8 0x80)))) (set N false) (set H true))
+d "bit 7, h" cb7c 0x0 (seq (set Z (is_zero (& (var h) (bv 8 0x80)))) (set N false) (set H true))
+d "bit 7, l" cb7d 0x0 (seq (set Z (is_zero (& (var l) (bv 8 0x80)))) (set N false) (set H true))
+ad "call 0x1234" cd3412 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x3)) (jmp (bv 32 0x1234)))
+d "call C, 0x1234" dc3412 0x0 (branch (var C) (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x3)) (jmp (bv 32 0x1234))) nop)
+d "call Z, 0x1234" cc3412 0x0 (branch (var Z) (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x3)) (jmp (bv 32 0x1234))) nop)
+d "call nC, 0x1234" d43412 0x0 (branch (var C) nop (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x3)) (jmp (bv 32 0x1234))))
+d "call nZ, 0x1234" c43412 0x0 (branch (var Z) nop (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x3)) (jmp (bv 32 0x1234))))
+d "ccf" 3f 0x0 (seq (set C (! (var C))) (set N false) (set H false))
+d "cp 0x42" fe42 0x0 (seq (set Z (== (var a) (bv 8 0x42))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (bv 8 0x42))) (! (== (cast 4 false (var a)) (cast 4 false (bv 8 0x42)))))) (set C (&& (ule (var a) (bv 8 0x42)) (! (== (var a) (bv 8 0x42))))))
+d "cp [hl]" be 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set Z (== (var a) (var src))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var src))) (! (== (cast 4 false (var a)) (cast 4 false (var src)))))) (set C (&& (ule (var a) (var src)) (! (== (var a) (var src))))))
+d "cp a" bf 0x0 (seq (set Z (== (var a) (var a))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var a))) (! (== (cast 4 false (var a)) (cast 4 false (var a)))))) (set C (&& (ule (var a) (var a)) (! (== (var a) (var a))))))
+d "cp b" b8 0x0 (seq (set Z (== (var a) (var b))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var b))) (! (== (cast 4 false (var a)) (cast 4 false (var b)))))) (set C (&& (ule (var a) (var b)) (! (== (var a) (var b))))))
+d "cp c" b9 0x0 (seq (set Z (== (var a) (var c))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var c))) (! (== (cast 4 false (var a)) (cast 4 false (var c)))))) (set C (&& (ule (var a) (var c)) (! (== (var a) (var c))))))
+d "cp d" ba 0x0 (seq (set Z (== (var a) (var d))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var d))) (! (== (cast 4 false (var a)) (cast 4 false (var d)))))) (set C (&& (ule (var a) (var d)) (! (== (var a) (var d))))))
+d "cp e" bb 0x0 (seq (set Z (== (var a) (var e))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var e))) (! (== (cast 4 false (var a)) (cast 4 false (var e)))))) (set C (&& (ule (var a) (var e)) (! (== (var a) (var e))))))
+d "cp h" bc 0x0 (seq (set Z (== (var a) (var h))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var h))) (! (== (cast 4 false (var a)) (cast 4 false (var h)))))) (set C (&& (ule (var a) (var h)) (! (== (var a) (var h))))))
+d "cp l" bd 0x0 (seq (set Z (== (var a) (var l))) (set N true) (set H (&& (ule (cast 4 false (var a)) (cast 4 false (var l))) (! (== (cast 4 false (var a)) (cast 4 false (var l)))))) (set C (&& (ule (var a) (var l)) (! (== (var a) (var l))))))
+d "cpl" 2f 0x0 (seq (set a (~ (var a))) (set N true) (set H true))
+d "daa" 27 0x0 (seq (set res (let v0 (cast 9 false (var a)) (ite (var N) (let v1 (ite (var H) (& (- (var v0) (bv 9 0x6)) (bv 9 0xff)) (var v0)) (ite (var C) (- (var v1) (bv 9 0x60)) (var v1))) (let v1 (ite (|| (var H) (! (ule (& (var v0) (bv 9 0xf)) (bv 9 0x9)))) (+ (var v0) (bv 9 0x6)) (var v0)) (ite (|| (var C) (! (ule (var v1) (bv 9 0x9f)))) (+ (var v1) (bv 9 0x60)) (var v1)))))) (set a (cast 8 false (var res))) (set Z (is_zero (var a))) (set H false) (set C (|| (var C) (msb (var res)))))
+d "dec [hl]" 35 0x0 (seq (set v (- (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N true) (set H (== (cast 4 false (var v)) (bv 4 0xf))))
+d "dec a" 3d 0x0 (seq (set a (- (var a) (bv 8 0x1))) (set Z (is_zero (var a))) (set N true) (set H (== (cast 4 false (var a)) (bv 4 0xf))))
+d "dec b" 05 0x0 (seq (set b (- (var b) (bv 8 0x1))) (set Z (is_zero (var b))) (set N true) (set H (== (cast 4 false (var b)) (bv 4 0xf))))
+d "dec bc" 0b 0x0 (seq (set b (ite (is_zero (var c)) (- (var b) (bv 8 0x1)) (var b))) (set c (- (var c) (bv 8 0x1))))
+d "dec c" 0d 0x0 (seq (set c (- (var c) (bv 8 0x1))) (set Z (is_zero (var c))) (set N true) (set H (== (cast 4 false (var c)) (bv 4 0xf))))
+d "dec d" 15 0x0 (seq (set d (- (var d) (bv 8 0x1))) (set Z (is_zero (var d))) (set N true) (set H (== (cast 4 false (var d)) (bv 4 0xf))))
+d "dec de" 1b 0x0 (seq (set d (ite (is_zero (var e)) (- (var d) (bv 8 0x1)) (var d))) (set e (- (var e) (bv 8 0x1))))
+d "dec e" 1d 0x0 (seq (set e (- (var e) (bv 8 0x1))) (set Z (is_zero (var e))) (set N true) (set H (== (cast 4 false (var e)) (bv 4 0xf))))
+d "dec h" 25 0x0 (seq (set h (- (var h) (bv 8 0x1))) (set Z (is_zero (var h))) (set N true) (set H (== (cast 4 false (var h)) (bv 4 0xf))))
+d "dec hl" 2b 0x0 (seq (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
+d "dec l" 2d 0x0 (seq (set l (- (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (set N true) (set H (== (cast 4 false (var l)) (bv 4 0xf))))
+d "dec sp" 3b 0x0 (set sp (- (var sp) (bv 16 0x1)))
+d "di" f3 0x0 (set ime false)
+d "ei" fb 0x0 (set ime true)
+d "halt" 76 0x0 nop
+d "inc [hl]" 34 0x0 (seq (set v (+ (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N false) (set H (is_zero (cast 4 false (var v)))))
+d "inc [hl]" 34 0x30000 (seq (set v (+ (load 0 (append (var h) (var l))) (bv 8 0x1))) (store 0 (append (var h) (var l)) (var v)) (set Z (is_zero (var v))) (set N false) (set H (is_zero (cast 4 false (var v)))))
+d "inc a" 3c 0x0 (seq (set a (+ (var a) (bv 8 0x1))) (set Z (is_zero (var a))) (set N false) (set H (is_zero (cast 4 false (var a)))))
+d "inc b" 04 0x0 (seq (set b (+ (var b) (bv 8 0x1))) (set Z (is_zero (var b))) (set N false) (set H (is_zero (cast 4 false (var b)))))
+d "inc bc" 03 0x0 (seq (set c (+ (var c) (bv 8 0x1))) (set b (ite (is_zero (var c)) (+ (var b) (bv 8 0x1)) (var b))))
+d "inc c" 0c 0x0 (seq (set c (+ (var c) (bv 8 0x1))) (set Z (is_zero (var c))) (set N false) (set H (is_zero (cast 4 false (var c)))))
+d "inc d" 14 0x0 (seq (set d (+ (var d) (bv 8 0x1))) (set Z (is_zero (var d))) (set N false) (set H (is_zero (cast 4 false (var d)))))
+d "inc de" 13 0x0 (seq (set e (+ (var e) (bv 8 0x1))) (set d (ite (is_zero (var e)) (+ (var d) (bv 8 0x1)) (var d))))
+d "inc e" 1c 0x0 (seq (set e (+ (var e) (bv 8 0x1))) (set Z (is_zero (var e))) (set N false) (set H (is_zero (cast 4 false (var e)))))
+d "inc h" 24 0x0 (seq (set h (+ (var h) (bv 8 0x1))) (set Z (is_zero (var h))) (set N false) (set H (is_zero (cast 4 false (var h)))))
+d "inc hl" 23 0x0 (seq (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
+d "inc l" 2c 0x0 (seq (set l (+ (var l) (bv 8 0x1))) (set Z (is_zero (var l))) (set N false) (set H (is_zero (cast 4 false (var l)))))
+d "inc sp" 33 0x0 (set sp (+ (var sp) (bv 16 0x1)))
+d "jp 0x0000" c30000 0x0 (jmp (bv 32 0x0))
+d "jp 0x0000" c30000 0x30000 (jmp (bv 32 0x0))
+d "jp 0x8000" c30080 0x0 (jmp (bv 32 0x8000))
+d "jp 0x8000" c30080 0x30000 (jmp (bv 32 0x8000))
+d "jp 0x8020" c32080 0x0 (jmp (bv 32 0x8020))
+d "jp 0x8020" c32080 0x30000 (jmp (bv 32 0x8020))
+d "jp 0x4020" c32040 0x0 (jmp (bv 32 0x4020))
+d "jp 0x4020" c32040 0x30000 (jmp (bv 32 0x34020))
+d "jp C, 0x1032" da3210 0x0 (branch (var C) (jmp (bv 32 0x1032)) nop)
+d "jp Z, 0x1032" ca3210 0x0 (branch (var Z) (jmp (bv 32 0x1032)) nop)
+d "jp hl" e9 0x0 (jmp (cast 32 false (append (var h) (var l))))
+d "jp hl" e9 0x34321 (jmp (append (ite (msb (cast 15 false (append (var h) (var l)))) (bv 16 0x3) (bv 16 0x0)) (append (var h) (var l))))
+d "jp nC, 0x1032" d23210 0x0 (branch (var C) nop (jmp (bv 32 0x1032)))
+d "jp nZ, 0x1032" c23210 0x0 (branch (var Z) nop (jmp (bv 32 0x1032)))
+d "jp nZ, 0x1032" c23210 0x30000 (branch (var Z) nop (jmp (bv 32 0x1032)))
+d "jp nZ, 0x4032" c23240 0x30000 (branch (var Z) nop (jmp (bv 32 0x34032)))
+d "jr 0x00" 1800 0x0 (jmp (bv 32 0x2))
+d "jr 0x42" 1842 0x0 (jmp (bv 32 0x44))
+d "jr C, 0x42" 3842 0x0 (branch (var C) (jmp (bv 32 0x44)) nop)
+d "jr Z, 0x42" 2842 0x0 (branch (var Z) (jmp (bv 32 0x44)) nop)
+d "jr nC, 0x42" 3042 0x0 (branch (var C) nop (jmp (bv 32 0x44)))
+d "jr nZ, 0x42" 2042 0x0 (branch (var Z) nop (jmp (bv 32 0x44)))
+d "ld [0x1234], a" ea3412 0x0 (store 0 (bv 16 0x1234) (var a))
+d "ld [0x1234], sp" 083412 0x0 (storew 0 (bv 16 0x1234) (var sp))
+d "ld [0xff00 + c], a" e2 0x0 (store 0 (append (bv 8 0xff) (var c)) (var a))
+d "ld [rP1], a" e000 0x0 (store 0 (bv 16 0xff00) (var a))
+d "ld [rSB], a" e001 0x0 (store 0 (bv 16 0xff01) (var a))
+d "ld [rSC], a" e002 0x0 (store 0 (bv 16 0xff02) (var a))
+d "ld [rDIV], a" e004 0x0 (store 0 (bv 16 0xff04) (var a))
+d "ld [rTIMA], a" e005 0x0 (store 0 (bv 16 0xff05) (var a))
+d "ld [rTMA], a" e006 0x0 (store 0 (bv 16 0xff06) (var a))
+d "ld [rTAC], a" e007 0x0 (store 0 (bv 16 0xff07) (var a))
+d "ld [rIF], a" e00f 0x0 (store 0 (bv 16 0xff0f) (var a))
+d "ld [rAUD1SWEEP], a" e010 0x0 (store 0 (bv 16 0xff10) (var a))
+d "ld [rAUD1LEN], a" e011 0x0 (store 0 (bv 16 0xff11) (var a))
+d "ld [rAUD1ENV], a" e012 0x0 (store 0 (bv 16 0xff12) (var a))
+d "ld [rAUD1LOW], a" e013 0x0 (store 0 (bv 16 0xff13) (var a))
+d "ld [rAUD1HIGH], a" e014 0x0 (store 0 (bv 16 0xff14) (var a))
+d "ld [rAUD2LEN], a" e016 0x0 (store 0 (bv 16 0xff16) (var a))
+d "ld [rAUD2ENV], a" e017 0x0 (store 0 (bv 16 0xff17) (var a))
+d "ld [rAUD2LOW], a" e018 0x0 (store 0 (bv 16 0xff18) (var a))
+d "ld [rAUD2HIGH], a" e019 0x0 (store 0 (bv 16 0xff19) (var a))
+d "ld [rAUD3ENA], a" e01a 0x0 (store 0 (bv 16 0xff1a) (var a))
+d "ld [rAUD3LEN], a" e01b 0x0 (store 0 (bv 16 0xff1b) (var a))
+d "ld [rAUD3LEVEL], a" e01c 0x0 (store 0 (bv 16 0xff1c) (var a))
+d "ld [rAUD3LOW], a" e01d 0x0 (store 0 (bv 16 0xff1d) (var a))
+d "ld [rAUD3HIGH], a" e01e 0x0 (store 0 (bv 16 0xff1e) (var a))
+d "ld [rAUD4LEN], a" e020 0x0 (store 0 (bv 16 0xff20) (var a))
+d "ld [rAUD4ENV], a" e021 0x0 (store 0 (bv 16 0xff21) (var a))
+d "ld [rAUD4POLY], a" e022 0x0 (store 0 (bv 16 0xff22) (var a))
+d "ld [rAUD4GO], a" e023 0x0 (store 0 (bv 16 0xff23) (var a))
+d "ld [rAUDVOL], a" e024 0x0 (store 0 (bv 16 0xff24) (var a))
+d "ld [rAUDTERM], a" e025 0x0 (store 0 (bv 16 0xff25) (var a))
+d "ld [rAUDENA], a" e026 0x0 (store 0 (bv 16 0xff26) (var a))
+d "ld [rPCM12], a" e076 0x0 (store 0 (bv 16 0xff76) (var a))
+d "ld [rPCM34], a" e077 0x0 (store 0 (bv 16 0xff77) (var a))
+d "ld [rLCDC], a" e040 0x0 (store 0 (bv 16 0xff40) (var a))
+d "ld [rSTAT], a" e041 0x0 (store 0 (bv 16 0xff41) (var a))
+d "ld [rSCY], a" e042 0x0 (store 0 (bv 16 0xff42) (var a))
+d "ld [rSCX], a" e043 0x0 (store 0 (bv 16 0xff43) (var a))
+d "ld [rLY], a" e044 0x0 (store 0 (bv 16 0xff44) (var a))
+d "ld [rLYC], a" e045 0x0 (store 0 (bv 16 0xff45) (var a))
+d "ld [rDMA], a" e046 0x0 (store 0 (bv 16 0xff46) (var a))
+d "ld [rBGP], a" e047 0x0 (store 0 (bv 16 0xff47) (var a))
+d "ld [rOBP0], a" e048 0x0 (store 0 (bv 16 0xff48) (var a))
+d "ld [rOBP1], a" e049 0x0 (store 0 (bv 16 0xff49) (var a))
+d "ld [rWY], a" e04a 0x0 (store 0 (bv 16 0xff4a) (var a))
+d "ld [rWX], a" e04b 0x0 (store 0 (bv 16 0xff4b) (var a))
+d "ld [rKEY1], a" e04d 0x0 (store 0 (bv 16 0xff4d) (var a))
+d "ld [rVBK], a" e04f 0x0 (store 0 (bv 16 0xff4f) (var a))
+d "ld [rHDMA1], a" e051 0x0 (store 0 (bv 16 0xff51) (var a))
+d "ld [rHDMA2], a" e052 0x0 (store 0 (bv 16 0xff52) (var a))
+d "ld [rHDMA3], a" e053 0x0 (store 0 (bv 16 0xff53) (var a))
+d "ld [rHDMA4], a" e054 0x0 (store 0 (bv 16 0xff54) (var a))
+d "ld [rHDMA5], a" e055 0x0 (store 0 (bv 16 0xff55) (var a))
+d "ld [rRP], a" e056 0x0 (store 0 (bv 16 0xff56) (var a))
+d "ld [rBCPS], a" e068 0x0 (store 0 (bv 16 0xff68) (var a))
+d "ld [rBCPD], a" e069 0x0 (store 0 (bv 16 0xff69) (var a))
+d "ld [rOCPS], a" e06a 0x0 (store 0 (bv 16 0xff6a) (var a))
+d "ld [rOCPD], a" e06b 0x0 (store 0 (bv 16 0xff6b) (var a))
+d "ld [rSVBK], a" e070 0x0 (store 0 (bv 16 0xff70) (var a))
+d "ld [rIE], a" e0ff 0x0 (store 0 (bv 16 0xffff) (var a))
+d "ld [bc], a" 02 0x0 (store 0 (append (var b) (var c)) (var a))
+d "ld [de], a" 12 0x0 (store 0 (append (var d) (var e)) (var a))
+d "ld [hl], 0x42" 3642 0x0 (store 0 (append (var h) (var l)) (bv 8 0x42))
+ad "ld [hl], a" 77 0x0 (store 0 (append (var h) (var l)) (var a))
+d "ld [hl], b" 70 0x0 (store 0 (append (var h) (var l)) (var b))
+d "ld [hl], c" 71 0x0 (store 0 (append (var h) (var l)) (var c))
+d "ld [hl], d" 72 0x0 (store 0 (append (var h) (var l)) (var d))
+d "ld [hl], e" 73 0x0 (store 0 (append (var h) (var l)) (var e))
+d "ld [hl], h" 74 0x0 (store 0 (append (var h) (var l)) (var h))
+d "ld [hl], l" 75 0x0 (store 0 (append (var h) (var l)) (var l))
+ad "ld a, 0x63" 3e63 0x0 (set a (bv 8 0x63))
+d "ld a, [0x1234]" fa3412 0x0 (set a (load 0 (bv 16 0x1234)))
+d "ld a, [0xff00 + c]" f2 0x0 (set a (load 0 (append (bv 8 0xff) (var c))))
+d "ld a, [rP1]" f000 0x0 (set a (load 0 (bv 16 0xff00)))
+d "ld a, [rSB]" f001 0x0 (set a (load 0 (bv 16 0xff01)))
+d "ld a, [rSC]" f002 0x0 (set a (load 0 (bv 16 0xff02)))
+d "ld a, [rDIV]" f004 0x0 (set a (load 0 (bv 16 0xff04)))
+d "ld a, [rTIMA]" f005 0x0 (set a (load 0 (bv 16 0xff05)))
+d "ld a, [rTMA]" f006 0x0 (set a (load 0 (bv 16 0xff06)))
+d "ld a, [rTAC]" f007 0x0 (set a (load 0 (bv 16 0xff07)))
+d "ld a, [rIF]" f00f 0x0 (set a (load 0 (bv 16 0xff0f)))
+d "ld a, [rAUD1SWEEP]" f010 0x0 (set a (load 0 (bv 16 0xff10)))
+d "ld a, [rAUD1LEN]" f011 0x0 (set a (load 0 (bv 16 0xff11)))
+d "ld a, [rAUD1ENV]" f012 0x0 (set a (load 0 (bv 16 0xff12)))
+d "ld a, [rAUD1LOW]" f013 0x0 (set a (load 0 (bv 16 0xff13)))
+d "ld a, [rAUD1HIGH]" f014 0x0 (set a (load 0 (bv 16 0xff14)))
+d "ld a, [rAUD2LEN]" f016 0x0 (set a (load 0 (bv 16 0xff16)))
+d "ld a, [rAUD2ENV]" f017 0x0 (set a (load 0 (bv 16 0xff17)))
+d "ld a, [rAUD2LOW]" f018 0x0 (set a (load 0 (bv 16 0xff18)))
+d "ld a, [rAUD2HIGH]" f019 0x0 (set a (load 0 (bv 16 0xff19)))
+d "ld a, [rAUD3ENA]" f01a 0x0 (set a (load 0 (bv 16 0xff1a)))
+d "ld a, [rAUD3LEN]" f01b 0x0 (set a (load 0 (bv 16 0xff1b)))
+d "ld a, [rAUD3LEVEL]" f01c 0x0 (set a (load 0 (bv 16 0xff1c)))
+d "ld a, [rAUD3LOW]" f01d 0x0 (set a (load 0 (bv 16 0xff1d)))
+d "ld a, [rAUD3HIGH]" f01e 0x0 (set a (load 0 (bv 16 0xff1e)))
+d "ld a, [rAUD4LEN]" f020 0x0 (set a (load 0 (bv 16 0xff20)))
+d "ld a, [rAUD4ENV]" f021 0x0 (set a (load 0 (bv 16 0xff21)))
+d "ld a, [rAUD4POLY]" f022 0x0 (set a (load 0 (bv 16 0xff22)))
+d "ld a, [rAUD4GO]" f023 0x0 (set a (load 0 (bv 16 0xff23)))
+d "ld a, [rAUDVOL]" f024 0x0 (set a (load 0 (bv 16 0xff24)))
+d "ld a, [rAUDTERM]" f025 0x0 (set a (load 0 (bv 16 0xff25)))
+d "ld a, [rAUDENA]" f026 0x0 (set a (load 0 (bv 16 0xff26)))
+d "ld a, [rPCM12]" f076 0x0 (set a (load 0 (bv 16 0xff76)))
+d "ld a, [rPCM34]" f077 0x0 (set a (load 0 (bv 16 0xff77)))
+d "ld a, [rLCDC]" f040 0x0 (set a (load 0 (bv 16 0xff40)))
+d "ld a, [rSTAT]" f041 0x0 (set a (load 0 (bv 16 0xff41)))
+d "ld a, [rSCY]" f042 0x0 (set a (load 0 (bv 16 0xff42)))
+d "ld a, [rSCX]" f043 0x0 (set a (load 0 (bv 16 0xff43)))
+d "ld a, [rLY]" f044 0x0 (set a (load 0 (bv 16 0xff44)))
+d "ld a, [rLYC]" f045 0x0 (set a (load 0 (bv 16 0xff45)))
+d "ld a, [rDMA]" f046 0x0 (set a (load 0 (bv 16 0xff46)))
+d "ld a, [rBGP]" f047 0x0 (set a (load 0 (bv 16 0xff47)))
+d "ld a, [rOBP0]" f048 0x0 (set a (load 0 (bv 16 0xff48)))
+d "ld a, [rOBP1]" f049 0x0 (set a (load 0 (bv 16 0xff49)))
+d "ld a, [rWY]" f04a 0x0 (set a (load 0 (bv 16 0xff4a)))
+d "ld a, [rWX]" f04b 0x0 (set a (load 0 (bv 16 0xff4b)))
+d "ld a, [rKEY1]" f04d 0x0 (set a (load 0 (bv 16 0xff4d)))
+d "ld a, [rVBK]" f04f 0x0 (set a (load 0 (bv 16 0xff4f)))
+d "ld a, [rHDMA1]" f051 0x0 (set a (load 0 (bv 16 0xff51)))
+d "ld a, [rHDMA2]" f052 0x0 (set a (load 0 (bv 16 0xff52)))
+d "ld a, [rHDMA3]" f053 0x0 (set a (load 0 (bv 16 0xff53)))
+d "ld a, [rHDMA4]" f054 0x0 (set a (load 0 (bv 16 0xff54)))
+d "ld a, [rHDMA5]" f055 0x0 (set a (load 0 (bv 16 0xff55)))
+d "ld a, [rRP]" f056 0x0 (set a (load 0 (bv 16 0xff56)))
+d "ld a, [rBCPS]" f068 0x0 (set a (load 0 (bv 16 0xff68)))
+d "ld a, [rBCPD]" f069 0x0 (set a (load 0 (bv 16 0xff69)))
+d "ld a, [rOCPS]" f06a 0x0 (set a (load 0 (bv 16 0xff6a)))
+d "ld a, [rOCPD]" f06b 0x0 (set a (load 0 (bv 16 0xff6b)))
+d "ld a, [rSVBK]" f070 0x0 (set a (load 0 (bv 16 0xff70)))
+d "ld a, [rIE]" f0ff 0x0 (set a (load 0 (bv 16 0xffff)))
+d "ld a, [bc]" 0a 0x0 (set a (load 0 (append (var b) (var c))))
+d "ld a, [de]" 1a 0x0 (set a (load 0 (append (var d) (var e))))
+d "ld a, [hl]" 7e 0x0 (set a (load 0 (append (var h) (var l))))
+d "ld a, a" 7f 0x0 nop
+d "ld a, b" 78 0x0 (set a (var b))
+d "ld a, c" 79 0x0 (set a (var c))
+d "ld a, d" 7a 0x0 (set a (var d))
+d "ld a, e" 7b 0x0 (set a (var e))
+d "ld a, h" 7c 0x0 (set a (var h))
+d "ld a, l" 7d 0x0 (set a (var l))
+d "ld b, 0x42" 0642 0x0 (set b (bv 8 0x42))
+ad "ld b, [hl]" 46 0x0 (set b (load 0 (append (var h) (var l))))
+d "ld b, a" 47 0x0 (set b (var a))
+d "ld b, b" 40 0x0 nop
+d "ld b, c" 41 0x0 (set b (var c))
+d "ld b, d" 42 0x0 (set b (var d))
+d "ld b, e" 43 0x0 (set b (var e))
+d "ld b, h" 44 0x0 (set b (var h))
+d "ld b, l" 45 0x0 (set b (var l))
+ad "ld bc, 0x1234" 013412 0x0 (seq (set b (bv 8 0x12)) (set c (bv 8 0x34)))
+d "ld c, 0x42" 0e42 0x0 (set c (bv 8 0x42))
+d "ld c, [hl]" 4e 0x0 (set c (load 0 (append (var h) (var l))))
+d "ld c, a" 4f 0x0 (set c (var a))
+d "ld c, b" 48 0x0 (set c (var b))
+d "ld c, c" 49 0x0 nop
+d "ld c, d" 4a 0x0 (set c (var d))
+d "ld c, e" 4b 0x0 (set c (var e))
+d "ld c, h" 4c 0x0 (set c (var h))
+d "ld c, l" 4d 0x0 (set c (var l))
+d "ld d, 0x42" 1642 0x0 (set d (bv 8 0x42))
+d "ld d, [hl]" 56 0x0 (set d (load 0 (append (var h) (var l))))
+d "ld d, a" 57 0x0 (set d (var a))
+d "ld d, b" 50 0x0 (set d (var b))
+d "ld d, c" 51 0x0 (set d (var c))
+d "ld d, d" 52 0x0 nop
+d "ld d, e" 53 0x0 (set d (var e))
+d "ld d, h" 54 0x0 (set d (var h))
+d "ld d, l" 55 0x0 (set d (var l))
+ad "ld de, 0x1234" 113412 0x0 (seq (set d (bv 8 0x12)) (set e (bv 8 0x34)))
+d "ld e, 0x42" 1e42 0x0 (set e (bv 8 0x42))
+d "ld e, [hl]" 5e 0x0 (set e (load 0 (append (var h) (var l))))
+d "ld e, a" 5f 0x0 (set e (var a))
+d "ld e, b" 58 0x0 (set e (var b))
+d "ld e, c" 59 0x0 (set e (var c))
+d "ld e, d" 5a 0x0 (set e (var d))
+d "ld e, e" 5b 0x0 nop
+d "ld e, h" 5c 0x0 (set e (var h))
+d "ld e, l" 5d 0x0 (set e (var l))
+d "ld h, 0x42" 2642 0x0 (set h (bv 8 0x42))
+d "ld h, [hl]" 66 0x0 (set h (load 0 (append (var h) (var l))))
+d "ld h, a" 67 0x0 (set h (var a))
+d "ld h, b" 60 0x0 (set h (var b))
+d "ld h, c" 61 0x0 (set h (var c))
+d "ld h, d" 62 0x0 (set h (var d))
+d "ld h, e" 63 0x0 (set h (var e))
+d "ld h, h" 64 0x0 nop
+d "ld h, l" 65 0x0 (set h (var l))
+ad "ld hl, 0xc3a0" 21a0c3 0x0 (seq (set h (bv 8 0xc3)) (set l (bv 8 0xa0)))
+d "ld hl, sp + 0x42" f842 0x0 (seq (set h (cast 8 false (>> (+ (var sp) (bv 16 0x42)) (bv 4 0x8) false))) (set l (cast 8 false (+ (var sp) (bv 16 0x42)))) (set Z false) (set N false) (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0x42) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0x42) (bv 16 0xff))) (bv 16 0xff)))))
+d "ld hl, sp + 0xf2" f8f2 0x0 (seq (set h (cast 8 false (>> (- (var sp) (bv 16 0xe)) (bv 4 0x8) false))) (set l (cast 8 false (- (var sp) (bv 16 0xe)))) (set Z false) (set N false) (set H (! (ule (+ (& (var sp) (bv 16 0xf)) (& (bv 16 0xf2) (bv 16 0xf))) (bv 16 0xf)))) (set C (! (ule (+ (& (var sp) (bv 16 0xff)) (& (bv 16 0xf2) (bv 16 0xff))) (bv 16 0xff)))))
+d "ld l, 0x42" 2e42 0x0 (set l (bv 8 0x42))
+d "ld l, [hl]" 6e 0x0 (set l (load 0 (append (var h) (var l))))
+d "ld l, a" 6f 0x0 (set l (var a))
+d "ld l, b" 68 0x0 (set l (var b))
+d "ld l, c" 69 0x0 (set l (var c))
+d "ld l, d" 6a 0x0 (set l (var d))
+d "ld l, e" 6b 0x0 (set l (var e))
+d "ld l, h" 6c 0x0 (set l (var h))
+d "ld l, l" 6d 0x0 nop
+ad "ld sp, 0xc3a0" 31a0c3 0x0 (set sp (bv 16 0xc3a0))
+d "ld sp, hl" f9 0x0 (set sp (append (var h) (var l)))
+d "ldd [hl], a" 32 0x0 (seq (store 0 (append (var h) (var l)) (var a)) (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
+d "ldd a, [hl]" 3a 0x0 (seq (set a (load 0 (append (var h) (var l)))) (set h (ite (is_zero (var l)) (- (var h) (bv 8 0x1)) (var h))) (set l (- (var l) (bv 8 0x1))))
+d "ldi [hl], a" 22 0x0 (seq (store 0 (append (var h) (var l)) (var a)) (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
+d "ldi a, [hl]" 2a 0x0 (seq (set a (load 0 (append (var h) (var l)))) (set l (+ (var l) (bv 8 0x1))) (set h (ite (is_zero (var l)) (+ (var h) (bv 8 0x1)) (var h))))
+d "nop" 00 0x0 nop
+d "or 0x42" f642 0x0 (seq (set a (| (var a) (bv 8 0x42))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or [hl]" b6 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set a (| (var a) (var src))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or a" b7 0x0 (seq (set a (| (var a) (var a))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or b" b0 0x0 (seq (set a (| (var a) (var b))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or c" b1 0x0 (seq (set a (| (var a) (var c))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or d" b2 0x0 (seq (set a (| (var a) (var d))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or e" b3 0x0 (seq (set a (| (var a) (var e))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or h" b4 0x0 (seq (set a (| (var a) (var h))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "or l" b5 0x0 (seq (set a (| (var a) (var l))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "pop af" f1 0x0 (seq (set a (cast 8 false (>> (loadw 0 16 (var sp)) (bv 4 0x8) false))) (set Z (msb (cast 8 false (loadw 0 16 (var sp))))) (set N (msb (cast 7 false (loadw 0 16 (var sp))))) (set H (msb (cast 6 false (loadw 0 16 (var sp))))) (set C (msb (cast 5 false (loadw 0 16 (var sp))))) (set sp (+ (var sp) (bv 16 0x2))))
+d "pop bc" c1 0x0 (seq (set b (cast 8 false (>> (loadw 0 16 (var sp)) (bv 4 0x8) false))) (set c (cast 8 false (loadw 0 16 (var sp)))) (set sp (+ (var sp) (bv 16 0x2))))
+d "pop de" d1 0x0 (seq (set d (cast 8 false (>> (loadw 0 16 (var sp)) (bv 4 0x8) false))) (set e (cast 8 false (loadw 0 16 (var sp)))) (set sp (+ (var sp) (bv 16 0x2))))
+d "pop hl" e1 0x0 (seq (set h (cast 8 false (>> (loadw 0 16 (var sp)) (bv 4 0x8) false))) (set l (cast 8 false (loadw 0 16 (var sp)))) (set sp (+ (var sp) (bv 16 0x2))))
+d "push af" f5 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (append (var a) (| (ite (var Z) (bv 8 0x80) (bv 8 0x0)) (| (ite (var N) (bv 8 0x40) (bv 8 0x0)) (| (ite (var H) (bv 8 0x20) (bv 8 0x0)) (ite (var C) (bv 8 0x10) (bv 8 0x0))))))))
+d "push bc" c5 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (append (var b) (var c))))
+d "push de" d5 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (append (var d) (var e))))
+d "push hl" e5 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (append (var h) (var l))))
+d "res 0, [hl]" cb86 0x0 (store 0 (append (var h) (var l)) (& (load 0 (append (var h) (var l))) (bv 8 0xfe)))
+d "res 0, a" cb87 0x0 (set a (& (var a) (bv 8 0xfe)))
+d "res 0, b" cb80 0x0 (set b (& (var b) (bv 8 0xfe)))
+d "res 0, c" cb81 0x0 (set c (& (var c) (bv 8 0xfe)))
+d "res 0, d" cb82 0x0 (set d (& (var d) (bv 8 0xfe)))
+d "res 0, e" cb83 0x0 (set e (& (var e) (bv 8 0xfe)))
+d "res 0, h" cb84 0x0 (set h (& (var h) (bv 8 0xfe)))
+d "res 0, l" cb85 0x0 (set l (& (var l) (bv 8 0xfe)))
+d "res 1, [hl]" cb8e 0x0 (store 0 (append (var h) (var l)) (& (load 0 (append (var h) (var l))) (bv 8 0xfd)))
+d "res 1, a" cb8f 0x0 (set a (& (var a) (bv 8 0xfd)))
+d "res 1, b" cb88 0x0 (set b (& (var b) (bv 8 0xfd)))
+d "res 1, c" cb89 0x0 (set c (& (var c) (bv 8 0xfd)))
+d "res 1, d" cb8a 0x0 (set d (& (var d) (bv 8 0xfd)))
+d "res 1, e" cb8b 0x0 (set e (& (var e) (bv 8 0xfd)))
+d "res 1, h" cb8c 0x0 (set h (& (var h) (bv 8 0xfd)))
+d "res 1, l" cb8d 0x0 (set l (& (var l) (bv 8 0xfd)))
+d "res 2, [hl]" cb96 0x0 (store 0 (append (var h) (var l)) (& (load 0 (append (var h) (var l))) (bv 8 0xfb)))
+d "res 2, a" cb97 0x0 (set a (& (var a) (bv 8 0xfb)))
+d "res 2, b" cb90 0x0 (set b (& (var b) (bv 8 0xfb)))
+d "res 2, c" cb91 0x0 (set c (& (var c) (bv 8 0xfb)))
+d "res 2, d" cb92 0x0 (set d (& (var d) (bv 8 0xfb)))
+d "res 2, e" cb93 0x0 (set e (& (var e) (bv 8 0xfb)))
+d "res 2, h" cb94 0x0 (set h (& (var h) (bv 8 0xfb)))
+d "res 2, l" cb95 0x0 (set l (& (var l) (bv 8 0xfb)))
+d "res 3, [hl]" cb9e 0x0 (store 0 (append (var h) (var l)) (& (load 0 (append (var h) (var l))) (bv 8 0xf7)))
+d "res 3, a" cb9f 0x0 (set a (& (var a) (bv 8 0xf7)))
+d "res 3, b" cb98 0x0 (set b (& (var b) (bv 8 0xf7)))
+d "res 3, c" cb99 0x0 (set c (& (var c) (bv 8 0xf7)))
+d "res 3, d" cb9a 0x0 (set d (& (var d) (bv 8 0xf7)))
+d "res 3, e" cb9b 0x0 (set e (& (var e) (bv 8 0xf7)))
+d "res 3, h" cb9c 0x0 (set h (& (var h) (bv 8 0xf7)))
+d "res 3, l" cb9d 0x0 (set l (& (var l) (bv 8 0xf7)))
+d "res 4, [hl]" cba6 0x0 (store 0 (append (var h) (var l)) (& (load 0 (append (var h) (var l))) (bv 8 0xef)))
+d "res 4, a" cba7 0x0 (set a (& (var a) (bv 8 0xef)))
+d "res 4, b" cba0 0x0 (set b (& (var b) (bv 8 0xef)))
+d "res 4, c" cba1 0x0 (set c (& (var c) (bv 8 0xef)))
+d "res 4, d" cba2 0x0 (set d (& (var d) (bv 8 0xef)))
+d "res 4, e" cba3 0x0 (set e (& (var e) (bv 8 0xef)))
+d "res 4, h" cba4 0x0 (set h (& (var h) (bv 8 0xef)))
+d "res 4, l" cba5 0x0 (set l (& (var l) (bv 8 0xef)))
+d "res 5, [hl]" cbae 0x0 (store 0 (append (var h) (var l)) (& (load 0 (append (var h) (var l))) (bv 8 0xdf)))
+d "res 5, a" cbaf 0x0 (set a (& (var a) (bv 8 0xdf)))
+d "res 5, b" cba8 0x0 (set b (& (var b) (bv 8 0xdf)))
+d "res 5, c" cba9 0x0 (set c (& (var c) (bv 8 0xdf)))
+d "res 5, d" cbaa 0x0 (set d (& (var d) (bv 8 0xdf)))
+d "res 5, e" cbab 0x0 (set e (& (var e) (bv 8 0xdf)))
+d "res 5, h" cbac 0x0 (set h (& (var h) (bv 8 0xdf)))
+d "res 5, l" cbad 0x0 (set l (& (var l) (bv 8 0xdf)))
+d "res 6, [hl]" cbb6 0x0 (store 0 (append (var h) (var l)) (& (load 0 (append (var h) (var l))) (bv 8 0xbf)))
+d "res 6, a" cbb7 0x0 (set a (& (var a) (bv 8 0xbf)))
+d "res 6, b" cbb0 0x0 (set b (& (var b) (bv 8 0xbf)))
+d "res 6, c" cbb1 0x0 (set c (& (var c) (bv 8 0xbf)))
+d "res 6, d" cbb2 0x0 (set d (& (var d) (bv 8 0xbf)))
+d "res 6, e" cbb3 0x0 (set e (& (var e) (bv 8 0xbf)))
+d "res 6, h" cbb4 0x0 (set h (& (var h) (bv 8 0xbf)))
+d "res 6, l" cbb5 0x0 (set l (& (var l) (bv 8 0xbf)))
+d "res 7, [hl]" cbbe 0x0 (store 0 (append (var h) (var l)) (& (load 0 (append (var h) (var l))) (bv 8 0x7f)))
+d "res 7, a" cbbf 0x0 (set a (& (var a) (bv 8 0x7f)))
+d "res 7, b" cbb8 0x0 (set b (& (var b) (bv 8 0x7f)))
+d "res 7, c" cbb9 0x0 (set c (& (var c) (bv 8 0x7f)))
+d "res 7, d" cbba 0x0 (set d (& (var d) (bv 8 0x7f)))
+d "res 7, e" cbbb 0x0 (set e (& (var e) (bv 8 0x7f)))
+d "res 7, h" cbbc 0x0 (set h (& (var h) (bv 8 0x7f)))
+d "res 7, l" cbbd 0x0 (set l (& (var l) (bv 8 0x7f)))
+d "ret C" d8 0x0 (branch (var C) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r)))) nop)
+d "ret Z" c8 0x0 (branch (var Z) (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r)))) nop)
+d "ret nC" d0 0x0 (branch (var C) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r)))))
+d "ret nZ" c0 0x0 (branch (var Z) nop (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r)))))
+d "ret" c9 0x0 (seq (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r))))
+d "reti" d9 0x0 (seq (set ime true) (set r (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (cast 32 false (var r))))
+d "rl [hl]" cb16 0x0 (seq (set CC (var C)) (set C (msb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (<< (load 0 (append (var h) (var l))) (bv 3 0x1) (var CC))) (set Z (is_zero (load 0 (append (var h) (var l))))) (set N false) (set H false))
+d "rl a" cb17 0x0 (seq (set CC (var C)) (set C (msb (var a))) (set a (<< (var a) (bv 3 0x1) (var CC))) (set Z (is_zero (var a))) (set N false) (set H false))
+d "rl b" cb10 0x0 (seq (set CC (var C)) (set C (msb (var b))) (set b (<< (var b) (bv 3 0x1) (var CC))) (set Z (is_zero (var b))) (set N false) (set H false))
+d "rl c" cb11 0x0 (seq (set CC (var C)) (set C (msb (var c))) (set c (<< (var c) (bv 3 0x1) (var CC))) (set Z (is_zero (var c))) (set N false) (set H false))
+d "rl d" cb12 0x0 (seq (set CC (var C)) (set C (msb (var d))) (set d (<< (var d) (bv 3 0x1) (var CC))) (set Z (is_zero (var d))) (set N false) (set H false))
+d "rl e" cb13 0x0 (seq (set CC (var C)) (set C (msb (var e))) (set e (<< (var e) (bv 3 0x1) (var CC))) (set Z (is_zero (var e))) (set N false) (set H false))
+d "rl h" cb14 0x0 (seq (set CC (var C)) (set C (msb (var h))) (set h (<< (var h) (bv 3 0x1) (var CC))) (set Z (is_zero (var h))) (set N false) (set H false))
+d "rl l" cb15 0x0 (seq (set CC (var C)) (set C (msb (var l))) (set l (<< (var l) (bv 3 0x1) (var CC))) (set Z (is_zero (var l))) (set N false) (set H false))
+d "rla" 17 0x0 (seq (set CC (var C)) (set C (msb (var a))) (set a (<< (var a) (bv 3 0x1) (var CC))) (set Z false) (set N false) (set H false))
+ad "rlc [hl]" cb06 0x0 (seq (set C (msb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (<< (load 0 (append (var h) (var l))) (bv 3 0x1) (var C))) (set Z (is_zero (load 0 (append (var h) (var l))))) (set N false) (set H false))
+d "rlc a" cb07 0x0 (seq (set C (msb (var a))) (set a (<< (var a) (bv 3 0x1) (var C))) (set Z (is_zero (var a))) (set N false) (set H false))
+d "rlc b" cb00 0x0 (seq (set C (msb (var b))) (set b (<< (var b) (bv 3 0x1) (var C))) (set Z (is_zero (var b))) (set N false) (set H false))
+d "rlc c" cb01 0x0 (seq (set C (msb (var c))) (set c (<< (var c) (bv 3 0x1) (var C))) (set Z (is_zero (var c))) (set N false) (set H false))
+d "rlc d" cb02 0x0 (seq (set C (msb (var d))) (set d (<< (var d) (bv 3 0x1) (var C))) (set Z (is_zero (var d))) (set N false) (set H false))
+d "rlc e" cb03 0x0 (seq (set C (msb (var e))) (set e (<< (var e) (bv 3 0x1) (var C))) (set Z (is_zero (var e))) (set N false) (set H false))
+d "rlc h" cb04 0x0 (seq (set C (msb (var h))) (set h (<< (var h) (bv 3 0x1) (var C))) (set Z (is_zero (var h))) (set N false) (set H false))
+d "rlc l" cb05 0x0 (seq (set C (msb (var l))) (set l (<< (var l) (bv 3 0x1) (var C))) (set Z (is_zero (var l))) (set N false) (set H false))
+d "rlca" 07 0x0 (seq (set C (msb (var a))) (set a (<< (var a) (bv 3 0x1) (var C))) (set Z false) (set N false) (set H false))
+d "rr [hl]" cb1e 0x0 (seq (set CC (var C)) (set C (lsb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (>> (load 0 (append (var h) (var l))) (bv 3 0x1) (var CC))) (set Z (is_zero (load 0 (append (var h) (var l))))) (set N false) (set H false))
+d "rr a" cb1f 0x0 (seq (set CC (var C)) (set C (lsb (var a))) (set a (>> (var a) (bv 3 0x1) (var CC))) (set Z (is_zero (var a))) (set N false) (set H false))
+d "rr b" cb18 0x0 (seq (set CC (var C)) (set C (lsb (var b))) (set b (>> (var b) (bv 3 0x1) (var CC))) (set Z (is_zero (var b))) (set N false) (set H false))
+d "rr c" cb19 0x0 (seq (set CC (var C)) (set C (lsb (var c))) (set c (>> (var c) (bv 3 0x1) (var CC))) (set Z (is_zero (var c))) (set N false) (set H false))
+d "rr d" cb1a 0x0 (seq (set CC (var C)) (set C (lsb (var d))) (set d (>> (var d) (bv 3 0x1) (var CC))) (set Z (is_zero (var d))) (set N false) (set H false))
+d "rr e" cb1b 0x0 (seq (set CC (var C)) (set C (lsb (var e))) (set e (>> (var e) (bv 3 0x1) (var CC))) (set Z (is_zero (var e))) (set N false) (set H false))
+d "rr h" cb1c 0x0 (seq (set CC (var C)) (set C (lsb (var h))) (set h (>> (var h) (bv 3 0x1) (var CC))) (set Z (is_zero (var h))) (set N false) (set H false))
+d "rr l" cb1d 0x0 (seq (set CC (var C)) (set C (lsb (var l))) (set l (>> (var l) (bv 3 0x1) (var CC))) (set Z (is_zero (var l))) (set N false) (set H false))
+d "rra" 1f 0x0 (seq (set CC (var C)) (set C (lsb (var a))) (set a (>> (var a) (bv 3 0x1) (var CC))) (set Z false) (set N false) (set H false))
+d "rrc [hl]" cb0e 0x0 (seq (set C (lsb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (>> (load 0 (append (var h) (var l))) (bv 3 0x1) (var C))) (set Z (is_zero (load 0 (append (var h) (var l))))) (set N false) (set H false))
+d "rrc a" cb0f 0x0 (seq (set C (lsb (var a))) (set a (>> (var a) (bv 3 0x1) (var C))) (set Z (is_zero (var a))) (set N false) (set H false))
+d "rrc b" cb08 0x0 (seq (set C (lsb (var b))) (set b (>> (var b) (bv 3 0x1) (var C))) (set Z (is_zero (var b))) (set N false) (set H false))
+d "rrc c" cb09 0x0 (seq (set C (lsb (var c))) (set c (>> (var c) (bv 3 0x1) (var C))) (set Z (is_zero (var c))) (set N false) (set H false))
+d "rrc d" cb0a 0x0 (seq (set C (lsb (var d))) (set d (>> (var d) (bv 3 0x1) (var C))) (set Z (is_zero (var d))) (set N false) (set H false))
+d "rrc e" cb0b 0x0 (seq (set C (lsb (var e))) (set e (>> (var e) (bv 3 0x1) (var C))) (set Z (is_zero (var e))) (set N false) (set H false))
+d "rrc h" cb0c 0x0 (seq (set C (lsb (var h))) (set h (>> (var h) (bv 3 0x1) (var C))) (set Z (is_zero (var h))) (set N false) (set H false))
+d "rrc l" cb0d 0x0 (seq (set C (lsb (var l))) (set l (>> (var l) (bv 3 0x1) (var C))) (set Z (is_zero (var l))) (set N false) (set H false))
+d "rrca" 0f 0x0 (seq (set C (lsb (var a))) (set a (>> (var a) (bv 3 0x1) (var C))) (set Z false) (set N false) (set H false))
+d "rst 0" c7 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)) (jmp (bv 32 0x0)))
+d "rst 16" d7 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)) (jmp (bv 32 0x10)))
+d "rst 24" df 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)) (jmp (bv 32 0x18)))
+d "rst 32" e7 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)) (jmp (bv 32 0x20)))
+d "rst 40" ef 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)) (jmp (bv 32 0x28)))
+d "rst 48" f7 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)) (jmp (bv 32 0x30)))
+d "rst 56" ff 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)) (jmp (bv 32 0x38)))
+d "rst 8" cf 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)) (jmp (bv 32 0x8)))
+d "sbc 0x42" de42 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (bv 8 0x42) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (bv 8 0x42)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (bv 8 0x42) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sbc [hl]" 9e 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (var src) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (var src)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (var src) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sbc a" 9f 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (var a) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (var a)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (var a) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sbc b" 98 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (var b) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (var b)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (var b) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sbc c" 99 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (var c) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (var c)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (var c) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sbc d" 9a 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (var d) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (var d)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (var d) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sbc e" 9b 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (var e) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (var e)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (var e) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sbc h" 9c 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (var h) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (var h)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (var h) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sbc l" 9d 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (+ (& (var l) (bv 8 0xf)) (ite (var C) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (+ (cast 9 false (var l)) (ite (var C) (bv 9 0x1) (bv 9 0x0)))))) (set a (- (var a) (+ (var l) (ite (var C) (bv 8 0x1) (bv 8 0x0))))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "scf" 37 0x0 (seq (set C true) (set H false) (set N false))
+d "set 0, [hl]" cbc6 0x0 (store 0 (append (var h) (var l)) (| (load 0 (append (var h) (var l))) (bv 8 0x1)))
+d "set 0, a" cbc7 0x0 (set a (| (var a) (bv 8 0x1)))
+d "set 0, b" cbc0 0x0 (set b (| (var b) (bv 8 0x1)))
+d "set 0, c" cbc1 0x0 (set c (| (var c) (bv 8 0x1)))
+d "set 0, d" cbc2 0x0 (set d (| (var d) (bv 8 0x1)))
+d "set 0, e" cbc3 0x0 (set e (| (var e) (bv 8 0x1)))
+d "set 0, h" cbc4 0x0 (set h (| (var h) (bv 8 0x1)))
+d "set 0, l" cbc5 0x0 (set l (| (var l) (bv 8 0x1)))
+d "set 1, [hl]" cbce 0x0 (store 0 (append (var h) (var l)) (| (load 0 (append (var h) (var l))) (bv 8 0x2)))
+d "set 1, a" cbcf 0x0 (set a (| (var a) (bv 8 0x2)))
+d "set 1, b" cbc8 0x0 (set b (| (var b) (bv 8 0x2)))
+d "set 1, c" cbc9 0x0 (set c (| (var c) (bv 8 0x2)))
+d "set 1, d" cbca 0x0 (set d (| (var d) (bv 8 0x2)))
+d "set 1, e" cbcb 0x0 (set e (| (var e) (bv 8 0x2)))
+d "set 1, h" cbcc 0x0 (set h (| (var h) (bv 8 0x2)))
+d "set 1, l" cbcd 0x0 (set l (| (var l) (bv 8 0x2)))
+d "set 2, [hl]" cbd6 0x0 (store 0 (append (var h) (var l)) (| (load 0 (append (var h) (var l))) (bv 8 0x4)))
+d "set 2, a" cbd7 0x0 (set a (| (var a) (bv 8 0x4)))
+d "set 2, b" cbd0 0x0 (set b (| (var b) (bv 8 0x4)))
+d "set 2, c" cbd1 0x0 (set c (| (var c) (bv 8 0x4)))
+d "set 2, d" cbd2 0x0 (set d (| (var d) (bv 8 0x4)))
+d "set 2, e" cbd3 0x0 (set e (| (var e) (bv 8 0x4)))
+d "set 2, h" cbd4 0x0 (set h (| (var h) (bv 8 0x4)))
+d "set 2, l" cbd5 0x0 (set l (| (var l) (bv 8 0x4)))
+d "set 3, [hl]" cbde 0x0 (store 0 (append (var h) (var l)) (| (load 0 (append (var h) (var l))) (bv 8 0x8)))
+d "set 3, a" cbdf 0x0 (set a (| (var a) (bv 8 0x8)))
+d "set 3, b" cbd8 0x0 (set b (| (var b) (bv 8 0x8)))
+d "set 3, c" cbd9 0x0 (set c (| (var c) (bv 8 0x8)))
+d "set 3, d" cbda 0x0 (set d (| (var d) (bv 8 0x8)))
+d "set 3, e" cbdb 0x0 (set e (| (var e) (bv 8 0x8)))
+d "set 3, h" cbdc 0x0 (set h (| (var h) (bv 8 0x8)))
+d "set 3, l" cbdd 0x0 (set l (| (var l) (bv 8 0x8)))
+d "set 4, [hl]" cbe6 0x0 (store 0 (append (var h) (var l)) (| (load 0 (append (var h) (var l))) (bv 8 0x10)))
+d "set 4, a" cbe7 0x0 (set a (| (var a) (bv 8 0x10)))
+d "set 4, b" cbe0 0x0 (set b (| (var b) (bv 8 0x10)))
+d "set 4, c" cbe1 0x0 (set c (| (var c) (bv 8 0x10)))
+d "set 4, d" cbe2 0x0 (set d (| (var d) (bv 8 0x10)))
+d "set 4, e" cbe3 0x0 (set e (| (var e) (bv 8 0x10)))
+d "set 4, h" cbe4 0x0 (set h (| (var h) (bv 8 0x10)))
+d "set 4, l" cbe5 0x0 (set l (| (var l) (bv 8 0x10)))
+d "set 5, [hl]" cbee 0x0 (store 0 (append (var h) (var l)) (| (load 0 (append (var h) (var l))) (bv 8 0x20)))
+d "set 5, a" cbef 0x0 (set a (| (var a) (bv 8 0x20)))
+d "set 5, b" cbe8 0x0 (set b (| (var b) (bv 8 0x20)))
+d "set 5, c" cbe9 0x0 (set c (| (var c) (bv 8 0x20)))
+d "set 5, d" cbea 0x0 (set d (| (var d) (bv 8 0x20)))
+d "set 5, e" cbeb 0x0 (set e (| (var e) (bv 8 0x20)))
+d "set 5, h" cbec 0x0 (set h (| (var h) (bv 8 0x20)))
+d "set 5, l" cbed 0x0 (set l (| (var l) (bv 8 0x20)))
+d "set 6, [hl]" cbf6 0x0 (store 0 (append (var h) (var l)) (| (load 0 (append (var h) (var l))) (bv 8 0x40)))
+d "set 6, a" cbf7 0x0 (set a (| (var a) (bv 8 0x40)))
+d "set 6, b" cbf0 0x0 (set b (| (var b) (bv 8 0x40)))
+d "set 6, c" cbf1 0x0 (set c (| (var c) (bv 8 0x40)))
+d "set 6, d" cbf2 0x0 (set d (| (var d) (bv 8 0x40)))
+d "set 6, e" cbf3 0x0 (set e (| (var e) (bv 8 0x40)))
+d "set 6, h" cbf4 0x0 (set h (| (var h) (bv 8 0x40)))
+d "set 6, l" cbf5 0x0 (set l (| (var l) (bv 8 0x40)))
+d "set 7, [hl]" cbfe 0x0 (store 0 (append (var h) (var l)) (| (load 0 (append (var h) (var l))) (bv 8 0x80)))
+d "set 7, a" cbff 0x0 (set a (| (var a) (bv 8 0x80)))
+d "set 7, b" cbf8 0x0 (set b (| (var b) (bv 8 0x80)))
+d "set 7, c" cbf9 0x0 (set c (| (var c) (bv 8 0x80)))
+d "set 7, d" cbfa 0x0 (set d (| (var d) (bv 8 0x80)))
+d "set 7, e" cbfb 0x0 (set e (| (var e) (bv 8 0x80)))
+d "set 7, h" cbfc 0x0 (set h (| (var h) (bv 8 0x80)))
+d "set 7, l" cbfd 0x0 (set l (| (var l) (bv 8 0x80)))
+d "sla [hl]" cb26 0x0 (seq (set C (msb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (<< (load 0 (append (var h) (var l))) (bv 3 0x1) false)) (set Z (is_zero (load 0 (append (var h) (var l))))) (set N false) (set H false))
+d "sla a" cb27 0x0 (seq (set C (msb (var a))) (set a (<< (var a) (bv 3 0x1) false)) (set Z (is_zero (var a))) (set N false) (set H false))
+d "sla b" cb20 0x0 (seq (set C (msb (var b))) (set b (<< (var b) (bv 3 0x1) false)) (set Z (is_zero (var b))) (set N false) (set H false))
+d "sla c" cb21 0x0 (seq (set C (msb (var c))) (set c (<< (var c) (bv 3 0x1) false)) (set Z (is_zero (var c))) (set N false) (set H false))
+d "sla d" cb22 0x0 (seq (set C (msb (var d))) (set d (<< (var d) (bv 3 0x1) false)) (set Z (is_zero (var d))) (set N false) (set H false))
+d "sla e" cb23 0x0 (seq (set C (msb (var e))) (set e (<< (var e) (bv 3 0x1) false)) (set Z (is_zero (var e))) (set N false) (set H false))
+d "sla h" cb24 0x0 (seq (set C (msb (var h))) (set h (<< (var h) (bv 3 0x1) false)) (set Z (is_zero (var h))) (set N false) (set H false))
+d "sla l" cb25 0x0 (seq (set C (msb (var l))) (set l (<< (var l) (bv 3 0x1) false)) (set Z (is_zero (var l))) (set N false) (set H false))
+d "sra [hl]" cb2e 0x0 (seq (set C (lsb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (>> (load 0 (append (var h) (var l))) (bv 3 0x1) (msb (load 0 (append (var h) (var l)))))) (set Z (is_zero (load 0 (append (var h) (var l))))) (set N false) (set H false))
+d "sra a" cb2f 0x0 (seq (set C (lsb (var a))) (set a (>> (var a) (bv 3 0x1) (msb (var a)))) (set Z (is_zero (var a))) (set N false) (set H false))
+d "sra b" cb28 0x0 (seq (set C (lsb (var b))) (set b (>> (var b) (bv 3 0x1) (msb (var b)))) (set Z (is_zero (var b))) (set N false) (set H false))
+d "sra c" cb29 0x0 (seq (set C (lsb (var c))) (set c (>> (var c) (bv 3 0x1) (msb (var c)))) (set Z (is_zero (var c))) (set N false) (set H false))
+d "sra d" cb2a 0x0 (seq (set C (lsb (var d))) (set d (>> (var d) (bv 3 0x1) (msb (var d)))) (set Z (is_zero (var d))) (set N false) (set H false))
+d "sra e" cb2b 0x0 (seq (set C (lsb (var e))) (set e (>> (var e) (bv 3 0x1) (msb (var e)))) (set Z (is_zero (var e))) (set N false) (set H false))
+d "sra h" cb2c 0x0 (seq (set C (lsb (var h))) (set h (>> (var h) (bv 3 0x1) (msb (var h)))) (set Z (is_zero (var h))) (set N false) (set H false))
+d "sra l" cb2d 0x0 (seq (set C (lsb (var l))) (set l (>> (var l) (bv 3 0x1) (msb (var l)))) (set Z (is_zero (var l))) (set N false) (set H false))
+d "srl [hl]" cb3e 0x0 (seq (set C (lsb (load 0 (append (var h) (var l))))) (store 0 (append (var h) (var l)) (>> (load 0 (append (var h) (var l))) (bv 3 0x1) false)) (set Z (is_zero (load 0 (append (var h) (var l))))) (set N false) (set H false))
+d "srl a" cb3f 0x0 (seq (set C (lsb (var a))) (set a (>> (var a) (bv 3 0x1) false)) (set Z (is_zero (var a))) (set N false) (set H false))
+d "srl b" cb38 0x0 (seq (set C (lsb (var b))) (set b (>> (var b) (bv 3 0x1) false)) (set Z (is_zero (var b))) (set N false) (set H false))
+d "srl c" cb39 0x0 (seq (set C (lsb (var c))) (set c (>> (var c) (bv 3 0x1) false)) (set Z (is_zero (var c))) (set N false) (set H false))
+d "srl d" cb3a 0x0 (seq (set C (lsb (var d))) (set d (>> (var d) (bv 3 0x1) false)) (set Z (is_zero (var d))) (set N false) (set H false))
+d "srl e" cb3b 0x0 (seq (set C (lsb (var e))) (set e (>> (var e) (bv 3 0x1) false)) (set Z (is_zero (var e))) (set N false) (set H false))
+d "srl h" cb3c 0x0 (seq (set C (lsb (var h))) (set h (>> (var h) (bv 3 0x1) false)) (set Z (is_zero (var h))) (set N false) (set H false))
+d "srl l" cb3d 0x0 (seq (set C (lsb (var l))) (set l (>> (var l) (bv 3 0x1) false)) (set Z (is_zero (var l))) (set N false) (set H false))
+d "stop" 10 0x0 nop
+d "sub 0x42" d642 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (bv 8 0x42) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (bv 8 0x42))))) (set a (- (var a) (bv 8 0x42))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sub [hl]" 96 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (var src) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (var src))))) (set a (- (var a) (var src))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sub a" 97 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (var a) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (var a))))) (set a (- (var a) (var a))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sub b" 90 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (var b) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (var b))))) (set a (- (var a) (var b))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sub c" 91 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (var c) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (var c))))) (set a (- (var a) (var c))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sub d" 92 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (var d) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (var d))))) (set a (- (var a) (var d))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sub e" 93 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (var e) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (var e))))) (set a (- (var a) (var e))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sub h" 94 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (var h) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (var h))))) (set a (- (var a) (var h))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "sub l" 95 0x0 (seq (set H (! (ule (- (& (var a) (bv 8 0xf)) (& (var l) (bv 8 0xf))) (bv 8 0xf)))) (set CC (msb (- (cast 9 false (var a)) (cast 9 false (var l))))) (set a (- (var a) (var l))) (set C (var CC)) (set Z (is_zero (var a))) (set N true))
+d "swap [hl]" cb36 0x0 (seq (store 0 (append (var h) (var l)) (append (cast 4 false (load 0 (append (var h) (var l)))) (cast 4 false (>> (load 0 (append (var h) (var l))) (bv 3 0x4) false)))) (set Z (is_zero (load 0 (append (var h) (var l))))) (set N false) (set H false) (set C false))
+d "swap a" cb37 0x0 (seq (set a (append (cast 4 false (var a)) (cast 4 false (>> (var a) (bv 3 0x4) false)))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "swap b" cb30 0x0 (seq (set b (append (cast 4 false (var b)) (cast 4 false (>> (var b) (bv 3 0x4) false)))) (set Z (is_zero (var b))) (set N false) (set H false) (set C false))
+d "swap c" cb31 0x0 (seq (set c (append (cast 4 false (var c)) (cast 4 false (>> (var c) (bv 3 0x4) false)))) (set Z (is_zero (var c))) (set N false) (set H false) (set C false))
+d "swap d" cb32 0x0 (seq (set d (append (cast 4 false (var d)) (cast 4 false (>> (var d) (bv 3 0x4) false)))) (set Z (is_zero (var d))) (set N false) (set H false) (set C false))
+d "swap e" cb33 0x0 (seq (set e (append (cast 4 false (var e)) (cast 4 false (>> (var e) (bv 3 0x4) false)))) (set Z (is_zero (var e))) (set N false) (set H false) (set C false))
+d "swap h" cb34 0x0 (seq (set h (append (cast 4 false (var h)) (cast 4 false (>> (var h) (bv 3 0x4) false)))) (set Z (is_zero (var h))) (set N false) (set H false) (set C false))
+d "swap l" cb35 0x0 (seq (set l (append (cast 4 false (var l)) (cast 4 false (>> (var l) (bv 3 0x4) false)))) (set Z (is_zero (var l))) (set N false) (set H false) (set C false))
+d "xor 0x42" ee42 0x0 (seq (set a (^ (var a) (bv 8 0x42))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor [hl]" ae 0x0 (seq (set src (load 0 (append (var h) (var l)))) (set a (^ (var a) (var src))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor a" af 0x0 (seq (set a (^ (var a) (var a))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor b" a8 0x0 (seq (set a (^ (var a) (var b))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor c" a9 0x0 (seq (set a (^ (var a) (var c))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor d" aa 0x0 (seq (set a (^ (var a) (var d))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor e" ab 0x0 (seq (set a (^ (var a) (var e))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor h" ac 0x0 (seq (set a (^ (var a) (var h))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
+d "xor l" ad 0x0 (seq (set a (^ (var a) (var l))) (set Z (is_zero (var a))) (set N false) (set H false) (set C false))
