@@ -21,12 +21,17 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
 dcu main
+dbt
+echo ----
 ds 2  # Should be dsui call; ds
 dbt~[6-]  # dbtt here would be nice
 EOF
-REGEXP_FILTER_OUT=(loc\.\S+.|main\+\d+.|entry0\+\d+.)
+REGEXP_FILTER_OUT=(loc\.\S+.|main\S*.|entry0\+\d+\s+|-+.)
 EXPECT=<<EOF
-loc.func_0 loc.func_00
+main loc.func_6+6
+entry0+41 
+----
+loc.func_0
 main+8
 entry0+41
 EOF
