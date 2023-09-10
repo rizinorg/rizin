@@ -31,7 +31,7 @@ EXPECT=<<EOF
 main loc.func_6+6
 entry0+41 
 ----
-loc.func_0 loc.func_00
+loc.func_0
 main+8
 entry0+41
 EOF
