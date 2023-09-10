@@ -226,6 +226,21 @@ RZ_API void *rz_vector_push_front(RzVector *vec, void *x) {
 	return rz_vector_insert(vec, 0, x);
 }
 
+RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
+	rz_return_val_if_fail(vec && index_a < vec->len && index_b < vec->len, false);
+	ut8 *tmp = malloc(vec->elem_size);
+	if (!tmp) {
+		return false;
+	}
+	void *elem_a = rz_vector_index_ptr(vec, index_a);
+	void *elem_b = rz_vector_index_ptr(vec, index_b);
+	memcpy(tmp, elem_a, vec->elem_size);
+	memcpy(elem_a, elem_b, vec->elem_size);
+	memcpy(elem_b, tmp, vec->elem_size);
+	free(tmp);
+	return true;
+}
+
 RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity) {
 	rz_return_val_if_fail(vec, NULL);
 	if (vec->capacity < capacity) {

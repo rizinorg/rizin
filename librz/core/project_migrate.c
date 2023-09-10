@@ -533,7 +533,7 @@ RZ_API bool rz_project_migrate_v12_v13(RzProject *prj, RzSerializeResultInfo *re
 // --
 // Migration 13 -> 14
 //
-// Changes from <commit hash not yet known>:
+// Changes from 8e29b959b86a35bbbfed599989f077dba6e0ebd5:
 //	Removed {stack,reg} from "/core/analysis/functions/vars"
 //	and converted into storage object { ..., storage: { type: ... }  }
 
@@ -592,6 +592,21 @@ RZ_API bool rz_project_migrate_v13_v14(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 14 -> 15
+//
+// Changes from <commit hash not yet known>:
+//	Added serialization functionality for seek history
+//	New namespace: /core/seek
+
+RZ_API bool rz_project_migrate_v14_v15(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	sdb_ns(core_db, "seek", true);
+
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -606,6 +621,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v11_v12,
 	rz_project_migrate_v12_v13,
 	rz_project_migrate_v13_v14,
+	rz_project_migrate_v14_v15,
 };
 
 /// Migrate the given project to the current version in-place
