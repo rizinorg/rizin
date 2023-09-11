@@ -6,6 +6,7 @@
 
 RZ_IPI bool DebugAddr_get_address(const RzBinDwarfAddr *self, ut64 *address,
 	ut8 address_size, ut64 base, ut64 index) {
+	rz_return_val_if_fail(self && self->reader && address, false);
 	RzBinEndianReader *reader = self->reader;
 	RET_FALSE_IF_FAIL(reader);
 	rz_buf_seek(reader->buffer, (st64)(base + (index * address_size)), RZ_BUF_SET);

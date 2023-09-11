@@ -342,33 +342,13 @@ RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 
 	info->die_by_offset = ht_up_new_size(info->die_count, NULL, NULL, NULL);
 	ERR_IF_FAIL(info->die_by_offset);
-	info->unit_by_offset = ht_up_new(NULL, NULL, NULL);
+	info->unit_by_offset = ht_up_new_size(rz_vector_len(&info->units), NULL, NULL, NULL);
 	ERR_IF_FAIL(info->unit_by_offset);
 
 	// build hashtable after whole parsing because of possible relocations
 	RzBinDwarfCompUnit *unit = NULL;
 	rz_vector_foreach(&info->units, unit) {
 		ht_up_insert(info->unit_by_offset, unit->offset, unit);
-		switch (unit->hdr.ut) {
-		case DW_UT_skeleton: {
-			RzBinDwarfDie *die = rz_vector_head(&unit->dies);
-			if (!die) {
-				RZ_LOG_ERROR("Invalid DW_UT_skeleton [0x%" PFMT64x "]\n", unit->offset);
-				break;
-			}
-
-			break;
-		}
-		case DW_UT_compile:
-		case DW_UT_type:
-		case DW_UT_partial:
-		case DW_UT_split_compile:
-		case DW_UT_split_type:
-		case DW_UT_lo_user:
-		case DW_UT_hi_user:
-		default: break;
-		}
-
 		RzBinDwarfDie *die = NULL;
 		rz_vector_foreach(&unit->dies, die) {
 			ht_up_insert(info->die_by_offset, die->offset, die); // optimization for further processing

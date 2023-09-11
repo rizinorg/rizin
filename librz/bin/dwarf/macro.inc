@@ -6,12 +6,6 @@
 #define MEM_ZERO(T, x)       rz_mem_memzero((x), sizeof(T))
 #define MEM_CPY(T, dst, src) rz_mem_copy((dst), sizeof(T), (src), sizeof(T))
 
-#define OK_None \
-	do { \
-		*out = NULL; \
-		return true; \
-	} while (0)
-
 #define OK_OR(x, E) \
 	do { \
 		if (!(x)) { \

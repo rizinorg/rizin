@@ -136,7 +136,8 @@ static bool convert_raw(
 	RzBinDwarfRange *range = NULL;
 	if (raw->is_address_or_offset_pair) {
 		if (self->base_address == tombstone) {
-			OK_None;
+			*out = NULL;
+			return true;
 		}
 		range = RZ_NEW0(RzBinDwarfRange);
 		RET_FALSE_IF_FAIL(range);
@@ -148,11 +149,13 @@ static bool convert_raw(
 		case DW_RLE_end_of_list: break;
 		case DW_RLE_base_address:
 			self->base_address = raw->base_address.addr;
-			OK_None;
+			*out = NULL;
+			return true;
 		case DW_RLE_base_addressx:
 			RET_FALSE_IF_FAIL(DebugAddr_get_address(addr, &self->base_address,
 				cu->hdr.encoding.address_size, cu->addr_base, raw->base_addressx.addr));
-			OK_None;
+			*out = NULL;
+			return true;
 		case DW_RLE_startx_endx:
 			range = RZ_NEW0(RzBinDwarfRange);
 			RET_FALSE_IF_FAIL(range);
@@ -170,7 +173,8 @@ static bool convert_raw(
 			break;
 		case DW_RLE_offset_pair:
 			if (self->base_address == tombstone) {
-				OK_None;
+				*out = NULL;
+				return true;
 			}
 			range = RZ_NEW0(RzBinDwarfRange);
 			RET_FALSE_IF_FAIL(range);
@@ -198,7 +202,8 @@ static bool convert_raw(
 	}
 	if (range->begin == tombstone) {
 		free(range);
-		OK_None;
+		*out = NULL;
+		return true;
 	}
 	if (range->begin > range->end) {
 		RZ_LOG_VERBOSE("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
