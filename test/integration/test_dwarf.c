@@ -1364,12 +1364,6 @@ bool test_dwarf5_loclists(void) {
 
 	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
 	mu_assert_notnull(dw->loclists, ".debug_loclists");
-	mu_assert_eq(dw->loclists->hdr.unit_length, 0x56, ".debug_loclists unit length");
-	mu_assert_eq(dw->loclists->hdr.encoding.version, 5, ".debug_loclists version");
-	mu_assert_eq(dw->loclists->hdr.encoding.address_size, 4, ".debug_loclists address size");
-	mu_assert_eq(dw->loclists->hdr.encoding.is_64bit, false, ".debug_loclists is 64bit");
-	mu_assert_eq(dw->loclists->hdr.segment_selector_size, 0, ".debug_loclists segment size");
-	mu_assert_eq(dw->loclists->hdr.offset_entry_count, 0x0, ".debug_loclists offset entry count");
 
 	mu_assert_notnull(dw->info, ".debug_info");
 	RzBinDwarfCompUnit *cu = rz_vector_head(&dw->info->units);
@@ -1443,8 +1437,8 @@ bool test_dwarf4_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x0, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4, "entry end");
+		mu_assert_eq(entry->range->begin, 0x4013b0, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4013b4, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
@@ -1456,8 +1450,8 @@ bool test_dwarf4_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 1);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4, "entry begin");
-		mu_assert_eq(entry->range->end, 0x10, "entry end");
+		mu_assert_eq(entry->range->begin, 0x4013b4, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4013c0, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
@@ -1468,8 +1462,8 @@ bool test_dwarf4_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 2);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x10, "entry begin");
-		mu_assert_eq(entry->range->end, 0x378, "entry end");
+		mu_assert_eq(entry->range->begin, 0x4013c0, "entry begin");
+		mu_assert_eq(entry->range->end, 0x401728, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");

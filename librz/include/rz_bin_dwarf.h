@@ -1004,6 +1004,7 @@ typedef struct {
 		RzBinDwarfAttr_MacPtr,
 		RzBinDwarfAttr_RangelistPtr,
 		RzBinDwarfAttr_Reference,
+		RzBinDwarfAttr_UnitRef,
 		RzBinDwarfAttr_SecOffset,
 		RzBinDwarfAttr_StrRef, /// An offset into the .debug_str section.
 		RzBinDwarfAttr_StrOffsetIndex, /// An offset to a set of entries in the .debug_str_offsets section.
@@ -1335,7 +1336,8 @@ typedef struct {
 } RzBinDwarfRngList;
 
 typedef struct {
-	RzBinEndianReader *reader;
+	RzBinEndianReader *rnglists;
+	RzBinEndianReader *ranges;
 	ut64 base_address;
 	RzBinDwarfListsHdr hdr;
 	HtUP /*<ut64, RzBinDwarfLocList>*/ *rnglist_by_offset;
@@ -1420,7 +1422,8 @@ typedef struct {
 } RzBinDwarfLocList;
 
 typedef struct {
-	RzBinEndianReader *reader;
+	RzBinEndianReader *loclists;
+	RzBinEndianReader *loc;
 	ut64 base_address;
 	RzBinDwarfListsHdr hdr;
 	HtUP /*<ut64, RzBinDwarfLocList>*/ *loclist_by_offset;
@@ -1761,7 +1764,7 @@ RZ_API RzBinDwarfLocList *rz_bin_dwarf_loclists_get(
 	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
 	ut64 offset);
 
-RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(RzBinEndianReader *loclists, RzBinEndianReader *loc);
 RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
 RZ_API bool rz_bin_dwarf_rnglists_parse_at(
@@ -1770,7 +1773,8 @@ RZ_API bool rz_bin_dwarf_rnglists_parse_at(
 	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
 	ut64 offset);
 /// rnglists
-RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(
+	RZ_OWN RZ_NULLABLE RzBinEndianReader *rnglists, RZ_OWN RZ_NULLABLE RzBinEndianReader *ranges);
 RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
 /// Block
@@ -1803,8 +1807,7 @@ static inline char *rz_bin_dwarf_attr_string(
 	return NULL;
 }
 
-static inline ut64 rz_bin_dwarf_attr_udata(
-	const RzBinDwarfAttr *attr) {
+static inline ut64 rz_bin_dwarf_attr_udata(const RzBinDwarfAttr *attr) {
 	rz_return_val_if_fail(attr, UT64_MAX);
 	return attr->value.u64;
 }

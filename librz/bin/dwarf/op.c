@@ -509,7 +509,8 @@ RZ_IPI bool Operation_parse(Operation *self, RzBinEndianReader *reader, const Rz
 	}
 	case DW_OP_hi_user:
 	default:
-		RZ_LOG_WARN("Unsupported opcode %s\n", rz_bin_dwarf_op(self->opcode));
+		RZ_LOG_WARN("Unsupported opcode %s 0x%" PFMT32x "\n",
+			rz_bin_dwarf_op(self->opcode), self->opcode);
 		return false;
 	}
 	return true;

@@ -10,11 +10,11 @@
 RZ_IPI bool RzBinDwarfAttr_parse(
 	RzBinEndianReader *reader, RzBinDwarfAttr *attr, AttrOption *opt) {
 	rz_return_val_if_fail(opt && opt->encoding && attr && reader && reader->buffer, false);
+	ut64 unit_offset = opt->unit_offset;
 	attr->at = opt->at;
 	attr->form = opt->form;
 	ut8 address_size = opt->encoding->address_size;
 	bool is_64bit = opt->encoding->is_64bit;
-	ut64 unit_offset = opt->offset;
 	RzBinDwarfAttrValue *value = &attr->value;
 
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
@@ -105,14 +105,14 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	case DW_FORM_ref2:
 	case DW_FORM_ref4:
 	case DW_FORM_ref8: {
+		value->kind = RzBinDwarfAttr_UnitRef;
 		static const int index_sizes[] = { 1, 2, 4, 8 };
 		RET_FALSE_IF_FAIL(read_address(reader, &value->u64, index_sizes[attr->form - DW_FORM_ref1]));
-		value->kind = RzBinDwarfAttr_Reference;
 		value->u64 += unit_offset;
 		break;
 	}
 	case DW_FORM_ref_udata:
-		value->kind = RzBinDwarfAttr_Reference;
+		value->kind = RzBinDwarfAttr_UnitRef;
 		ULE128_OR_RET_FALSE(value->u64);
 		value->u64 += unit_offset;
 		break;

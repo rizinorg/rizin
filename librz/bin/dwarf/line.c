@@ -88,7 +88,6 @@ static char *directory_parse_v5(DWLineContext *ctx, RzBinDwarfLineHdr *hdr) {
 	rz_vector_foreach(&hdr->directory_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
 		AttrOption opt = {
-			.offset = hdr->offset,
 			.form = format->form,
 			.encoding = &hdr->encoding,
 		};
@@ -110,7 +109,6 @@ static RzBinDwarfFileEntry *FileEntry_parse_v5(
 	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
 		AttrOption opt = {
-			.offset = hdr->offset,
 			.form = format->form,
 			.encoding = &hdr->encoding,
 		};

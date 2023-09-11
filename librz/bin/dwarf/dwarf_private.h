@@ -9,7 +9,7 @@
 #include "macro.inc"
 
 typedef struct {
-	ut64 offset;
+	ut64 unit_offset;
 	RzBinDwarfEncoding *encoding;
 	DW_AT at;
 	DW_FORM form;

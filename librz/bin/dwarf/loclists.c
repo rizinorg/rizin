@@ -254,13 +254,17 @@ static void LocList_free(RzBinDwarfLocList *self) {
 	free(self);
 }
 
-static bool LocList_parse(
-	RzBinDwarfLocLists *self, RzBinDwarfAddr *addr, RzBinDwarfCompUnit *cu) {
+static bool LocList_parse_at(
+	RzBinDwarfLocLists *self, RzBinDwarfAddr *addr, RzBinDwarfCompUnit *cu, ut64 offset) {
 	rz_return_val_if_fail(self && cu, false);
-	RzBinEndianReader *reader = self->reader;
+	RzBinEndianReader *reader = cu->hdr.encoding.version <= 4
+		? self->loc
+		: self->loclists;
 	RzBinDwarfLocListsFormat format = cu->hdr.encoding.version <= 4
 		? RzBinDwarfLocListsFormat_BARE
 		: RzBinDwarfLocListsFormat_LLE;
+	OK_OR(reader && rz_buf_seek(reader->buffer, offset, RZ_BUF_SET) >= 0, return false);
+
 	RzBinDwarfLocList *loclist = RZ_NEW0(RzBinDwarfLocList);
 	RET_FALSE_IF_FAIL(loclist);
 	self->base_address = cu->low_pc;
@@ -270,9 +274,8 @@ static bool LocList_parse(
 	while (true) {
 		RzBinDwarfRawLocListEntry *raw = RZ_NEW0(RzBinDwarfRawLocListEntry);
 		RzBinDwarfLocListEntry *entry = NULL;
-		ERR_IF_FAIL(raw);
-		ERR_IF_FAIL(RawLocListEntry_parse(raw, self->reader, &cu->hdr.encoding, format));
-		ERR_IF_FAIL(rz_pvector_push(&loclist->raw_entries, raw));
+		ERR_IF_FAIL(raw && RawLocListEntry_parse(raw, reader, &cu->hdr.encoding, format) &&
+			rz_pvector_push(&loclist->raw_entries, raw));
 		if (raw->encoding == DW_LLE_end_of_list && !raw->is_address_or_offset_pair) {
 			break;
 		}
@@ -308,8 +311,7 @@ RZ_API bool rz_bin_dwarf_loclists_parse_at(
 	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
 	ut64 offset) {
 	rz_return_val_if_fail(self && cu, false);
-	ERR_IF_FAIL(rz_buf_seek(self->reader->buffer, offset, RZ_BUF_SET) >= 0);
-	ERR_IF_FAIL(LocList_parse(self, addr, cu));
+	ERR_IF_FAIL(LocList_parse_at(self, addr, cu, offset));
 	return true;
 err:
 	return false;
@@ -341,15 +343,13 @@ Ht_FREE_IMPL(UP, LocList, LocList_free);
  * \param dw RzBinDWARF instance
  * \return RzBinDwarfLocListTable instance on success, NULL otherwise
  */
-RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(RzBinEndianReader *reader) {
-	rz_return_val_if_fail(reader, NULL);
+RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(RzBinEndianReader *loclists, RzBinEndianReader *loc) {
+	rz_return_val_if_fail(loclists || loc, NULL);
 	RzBinDwarfLocLists *self = RZ_NEW0(RzBinDwarfLocLists);
 	RET_NULL_IF_FAIL(self);
-	self->reader = reader;
+	self->loclists = loclists;
+	self->loc = loc;
 	self->loclist_by_offset = ht_up_new(NULL, HtUP_LocList_free, NULL);
-	if (reader->section->name && rz_str_strchr(reader->section->name, "debug_loclists")) {
-		ListsHdr_parse(&self->hdr, reader);
-	}
 	return self;
 }
 
@@ -361,10 +361,12 @@ RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(RzBinEndianReader *r
  */
 RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	RET_NULL_IF_FAIL(bf);
-	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_loc");
-	reader = reader ? reader : RzBinEndianReader_from_file(bf, ".debug_loclists");
-	RET_NULL_IF_FAIL(reader);
-	return rz_bin_dwarf_loclists_new(reader);
+	RzBinEndianReader *loclists = RzBinEndianReader_from_file(bf, ".debug_loclists");
+	RzBinEndianReader *loc = RzBinEndianReader_from_file(bf, ".debug_loc");
+	if (!(loclists || loc)) {
+		return NULL;
+	}
+	return rz_bin_dwarf_loclists_new(loclists, loc);
 }
 
 RZ_API void rz_bin_dwarf_loclists_free(RZ_OWN RZ_NULLABLE RzBinDwarfLocLists *self) {
@@ -372,7 +374,8 @@ RZ_API void rz_bin_dwarf_loclists_free(RZ_OWN RZ_NULLABLE RzBinDwarfLocLists *se
 		return;
 	}
 	ht_up_free(self->loclist_by_offset);
-	rz_buf_free(self->reader->buffer);
+	RzBinEndianReader_free(self->loclists);
+	RzBinEndianReader_free(self->loc);
 	free(self);
 }
 

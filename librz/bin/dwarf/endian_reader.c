@@ -199,7 +199,7 @@ RZ_IPI bool read_address(RzBinEndianReader *reader, ut64 *out, ut8 address_size)
 	case 2: READ_UT_OR(16, *out, goto err); break;
 	case 4: READ_UT_OR(32, *out, goto err); break;
 	case 8: READ_UT_OR(64, *out, goto err); break;
-	default: RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)address_size); goto err;
+	default: RZ_LOG_ERROR("DWARF: unexpected address size: %u\n", (unsigned)address_size); goto err;
 	}
 	*out = relocate(reader, offset, *out);
 	return true;

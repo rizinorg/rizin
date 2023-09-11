@@ -215,14 +215,19 @@ static bool convert_raw(
 	return true;
 }
 
-static bool rnglist_parse(
+static bool rnglist_parse_at(
 	RzBinDwarfRngLists *self,
 	RzBinDwarfAddr *addr,
-	RzBinDwarfCompUnit *cu) {
-	RzBinEndianReader *reader = self->reader;
+	RzBinDwarfCompUnit *cu,
+	ut64 offset) {
+	RzBinEndianReader *reader = cu->hdr.encoding.version <= 4
+		? self->ranges
+		: self->rnglists;
 	RzBinDwarfRngListsFormat format = cu->hdr.encoding.version <= 4
 		? RzBinDwarfRngListsFormat_Bare
 		: RzBinDwarfRngListsFormat_Rle;
+	OK_OR(reader && rz_buf_seek(reader->buffer, offset, RZ_BUF_SET) > 0, return false);
+
 	RzBinDwarfRngList *rnglist = RZ_NEW0(RzBinDwarfRngList);
 	RET_FALSE_IF_FAIL(rnglist);
 	rnglist->offset = rz_buf_tell(reader->buffer);
@@ -230,10 +235,8 @@ static bool rnglist_parse(
 	rz_pvector_init(&rnglist->entries, (RzPVectorFree)Range_free);
 	while (true) {
 		RzBinDwarfRawRngListEntry *raw_entry = RZ_NEW0(RzBinDwarfRawRngListEntry);
-		GOTO_IF_FAIL(raw_entry, err1);
 		RzBinDwarfRange *range = NULL;
-		GOTO_IF_FAIL(RawRngListEntry_parse(
-				     raw_entry, reader, &cu->hdr.encoding, format),
+		GOTO_IF_FAIL(raw_entry && RawRngListEntry_parse(raw_entry, reader, &cu->hdr.encoding, format),
 			err1);
 		rz_pvector_push(&rnglist->raw_entries, raw_entry);
 		if (raw_entry->encoding == DW_RLE_end_of_list && !raw_entry->is_address_or_offset_pair) {
@@ -264,15 +267,14 @@ static bool rnglist_parse(
  * \param dw the RzBinDWARF instance
  * \return RzBinDwarfRngListTable instance on success, NULL otherwise
  */
-RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader) {
-	rz_return_val_if_fail(reader && reader->buffer, NULL);
+RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(
+	RZ_OWN RZ_NULLABLE RzBinEndianReader *rnglists, RZ_OWN RZ_NULLABLE RzBinEndianReader *ranges) {
+	rz_return_val_if_fail(rnglists || ranges, NULL);
 	RzBinDwarfRngLists *self = RZ_NEW0(RzBinDwarfRngLists);
 	RET_NULL_IF_FAIL(self);
-	self->reader = reader;
+	self->rnglists = rnglists;
+	self->ranges = ranges;
 	self->rnglist_by_offset = ht_up_new(NULL, HtUP_RngList_free, NULL);
-	if (reader->section->name && rz_str_strchr(reader->section->name, "debug_rnglists")) {
-		ListsHdr_parse(&self->hdr, reader);
-	}
 	return self;
 }
 
@@ -285,10 +287,12 @@ RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(RZ_OWN RZ_NONNULL Rz
 RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	RET_NULL_IF_FAIL(bf);
-	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_ranges");
-	reader = reader ? reader : RzBinEndianReader_from_file(bf, ".debug_rnglists");
-	RET_NULL_IF_FAIL(reader);
-	return rz_bin_dwarf_rnglists_new(reader);
+	RzBinEndianReader *rnglists = RzBinEndianReader_from_file(bf, ".debug_rnglists");
+	RzBinEndianReader *ranges = RzBinEndianReader_from_file(bf, ".debug_ranges");
+	if (!(rnglists || ranges)) {
+		return NULL;
+	}
+	return rz_bin_dwarf_rnglists_new(rnglists, ranges);
 }
 
 /**
@@ -303,13 +307,8 @@ RZ_API bool rz_bin_dwarf_rnglists_parse_at(
 	RZ_BORROW RZ_NONNULL RzBinDwarfAddr *addr,
 	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
 	ut64 offset) {
-	RET_FALSE_IF_FAIL(self);
-	if (cu->hdr.encoding.version == 5) {
-		ERR_IF_FAIL(ListsHdr_parse(&self->hdr, self->reader));
-	}
-
-	ERR_IF_FAIL(rz_buf_seek(self->reader->buffer, (st64)offset, RZ_BUF_SET) >= 0);
-	ERR_IF_FAIL(rnglist_parse(self, addr, cu));
+	RET_FALSE_IF_FAIL(self && cu);
+	ERR_IF_FAIL(rnglist_parse_at(self, addr, cu, offset));
 	return true;
 err:
 	return false;

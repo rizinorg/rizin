@@ -261,7 +261,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_loc_to_string(
 	if (!sb) {
 		return NULL;
 	}
-	rz_strbuf_appendf(sb, "\nContents of the %s section:\n", loclists->reader->section->name);
+	rz_strbuf_appendf(sb, "\nContents of the .debug_loc|.debug_loclists section:\n");
 	DumpContext ctx = {
 		.dw = dw,
 		.sb = sb,
@@ -468,7 +468,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_rnglists_to_string(
 	if (!sb) {
 		return NULL;
 	}
-	rz_strbuf_appendf(sb, "\nContents of the %s section:\n", rnglists->reader->section->name);
+	rz_strbuf_appendf(sb, "\nContents of the .debug_rnglists|.debug_ranges section:\n");
 	ht_up_foreach(rnglists->rnglist_by_offset, htup_rnglists_cb, sb);
 	rz_strbuf_append(sb, "\n");
 	return rz_strbuf_drain(sb);

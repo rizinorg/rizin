@@ -1079,7 +1079,7 @@ Contents of the .debug_aranges section:
     0x0000000000000000 0x0000000000000000
 
 
-Contents of the .debug_ranges section:
+Contents of the .debug_rnglists|.debug_ranges section:
 
 Raw dump of debug contents of section .debug_line:
 
@@ -2745,7 +2745,7 @@ Contents of the .debug_aranges section:
     0x0000000000000000 0x0000000000000000
 
 
-Contents of the .debug_ranges section:
+Contents of the .debug_rnglists|.debug_ranges section:
 
 Raw dump of debug contents of section .debug_line:
 

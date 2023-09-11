@@ -990,6 +990,9 @@ static RZ_OWN RzType *type_parse_from_offset(
 	}
 	RzType *type = type_parse_from_offset_internal(ctx, offset, size, visited);
 	set_u_free(visited);
+	if (!type) {
+		RZ_LOG_VERBOSE("DWARF Type failed at 0x%" PFMT64x "\n", offset);
+	}
 	return type;
 }
 
@@ -1535,7 +1538,8 @@ static bool function_from_die(
 		{
 			RzBinDwarfDie *spec = ht_up_find(ctx->dw->info->die_by_offset, rz_bin_dwarf_attr_udata(attr), NULL);
 			if (!spec) {
-				RZ_LOG_ERROR("DWARF cannot find specification DIE at 0x%" PFMT64x " f.offset=0x%" PFMT64x "\n", rz_bin_dwarf_attr_udata(attr), die->offset);
+				RZ_LOG_ERROR("DWARF cannot find specification DIE at 0x%" PFMT64x " f.offset=0x%" PFMT64x "\n",
+					rz_bin_dwarf_attr_udata(attr), die->offset);
 				break;
 			}
 			function_apply_specification(ctx, spec, fcn);
@@ -1572,7 +1576,9 @@ static bool function_from_die(
 		}
 	}
 	if (fcn->link_name) {
-		fcn->demangle_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, rz_bin_dwarf_lang_for_demangle(ctx->unit->language), fcn->link_name);
+		fcn->demangle_name =
+			ctx->analysis->binb.demangle(ctx->analysis->binb.bin,
+				rz_bin_dwarf_lang_for_demangle(ctx->unit->language), fcn->link_name);
 	}
 	fcn->prefer_name = select_name(fcn->demangle_name, fcn->link_name, fcn->name, ctx->unit->language);
 	if (!fcn->prefer_name) {
@@ -1584,7 +1590,8 @@ static bool function_from_die(
 	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), (RzVectorFree)variable_fini, NULL);
 	function_children_parse(ctx, die, callable, fcn);
 
-	RZ_LOG_DEBUG("DWARF function saving %s 0x%" PFMT64x " [0x%" PFMT64x "]\n", fcn->prefer_name, fcn->low_pc, die->offset);
+	RZ_LOG_DEBUG("DWARF function saving %s 0x%" PFMT64x " [0x%" PFMT64x "]\n",
+		fcn->prefer_name, fcn->low_pc, die->offset);
 	if (!ht_up_update(ctx->analysis->debug_info->callable_by_offset, die->offset, callable)) {
 		RZ_LOG_ERROR("DWARF callable saving failed [0x%" PFMT64x "]\n", die->offset);
 		goto cleanup;
@@ -1595,7 +1602,8 @@ static bool function_from_die(
 	}
 	if (fcn->low_pc > 0) {
 		if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->low_pc, fcn)) {
-			RZ_LOG_ERROR("DWARF function saving failed with addr: [0x%" PFMT64x "]\n", fcn->low_pc);
+			RZ_LOG_ERROR("DWARF function saving failed with addr: [0x%" PFMT64x "]\n",
+				fcn->low_pc);
 			goto cleanup;
 		}
 	}

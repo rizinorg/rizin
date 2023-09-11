@@ -75,7 +75,6 @@ static bool CU_attrs_parse(
 	RzBinDwarfDie *die,
 	RzBinDwarfCompUnit *cu,
 	RzBinDwarfAbbrevDecl *abbrev_decl) {
-	RzBuffer *buffer = ctx->info->reader->buffer;
 
 	RZ_LOG_SILLY("0x%" PFMT64x ":\t%s%s [%" PFMT64d "] %s\n",
 		die->offset, rz_str_indent(die->depth), rz_bin_dwarf_tag(die->tag),
@@ -88,12 +87,12 @@ static bool CU_attrs_parse(
 			.implicit_const = spec->special,
 			.form = spec->form,
 			.at = spec->at,
-			.offset = cu->offset,
+			.unit_offset = cu->offset,
 			.encoding = &cu->hdr.encoding,
 		};
 		if (!RzBinDwarfAttr_parse(ctx->info->reader, &attr, &opt)) {
-			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die attr: 0x%" PFMT64x " %s [%s]\n ",
-				rz_buf_tell(buffer), die->offset, rz_bin_dwarf_attr(spec->at), rz_bin_dwarf_form(spec->form));
+			RZ_LOG_ERROR("DWARF: failed attr: 0x%" PFMT64x " %s [%s]\n ",
+				die->offset, rz_bin_dwarf_attr(spec->at), rz_bin_dwarf_form(spec->form));
 			continue;
 		}
 
@@ -282,7 +281,8 @@ cleanup:
 	return false;
 }
 
-RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, DW_AT name) {
+RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, DW_AT name) {
 	rz_return_val_if_fail(die, NULL);
 	RzBinDwarfAttr *attr = NULL;
 	rz_vector_foreach(&die->attrs, attr) {
