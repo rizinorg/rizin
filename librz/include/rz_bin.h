@@ -721,6 +721,7 @@ typedef struct rz_bin_reloc_t {
 	ut64 vaddr; ///< the vaddr where the value should be patched into
 	ut64 paddr; ///< the paddr where the value should be patched into
 	ut64 target_vaddr; ///< the target address that the patched reloc points to
+	ut64 section_vaddr; ///< the subsection address
 	ut32 visibility;
 	bool additive;
 	/* is_ifunc: indirect function, `addend` points to a resolver function
