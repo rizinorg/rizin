@@ -5962,7 +5962,13 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned ch
 	while (!exit_histogram && !is_error && !rz_cons_is_breaked()) {
 		showcursor(core, false);
 		w = rz_cons_get_size(&h);
-		rz_cons_canvas_resize(hist->can, w, h);
+		if (!rz_cons_canvas_resize(hist->can, w, h)) {
+			rz_histogram_options_free(hist->opts);
+			rz_config_hold_restore(hc);
+			rz_config_hold_free(hc);
+			rz_cons_canvas_free(can);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		hist->w = w;
 		hist->h = h;
 		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data);
@@ -5975,7 +5981,7 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned ch
 		switch (key) {
 		case '?':
 			rz_cons_clear00();
-			rz_cons_printf("Visual Ascii Art graph keybindings:\n"
+			rz_cons_printf("Visual ASCII Art graph keybindings:\n"
 				       " +/-    - zoom in/out\n"
 				       " hl    	- move left and right\n"
 				       " q      - back to Visual mode\n");
