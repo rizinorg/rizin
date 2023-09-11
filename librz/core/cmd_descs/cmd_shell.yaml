@@ -37,14 +37,11 @@ commands:
           - text: "env"
             comment: List all environment variables
           - text: "env"
-            arg_str: "SHELL"
+            arg_str: " SHELL"
             comment: Print value of SHELL variable
           - text: "env"
-            arg_str: "TMPDIR=/tmp"
+            arg_str: " TMPDIR=/tmp"
             comment: Set TMPDIR to "/tmp"
-          - text: "env"
-            arg_str: " SHELL"
-            comment: Same as `%SHELL`
       - name: Environment
         entries:
           - text: "RZ_FILE"
