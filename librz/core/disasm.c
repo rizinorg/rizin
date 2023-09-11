@@ -6568,13 +6568,13 @@ RZ_API RZ_OWN RzPVector /*<RzCoreDisasmOp *>*/ *rz_core_disasm_all_possible_opco
 		op->size = rz_asm_disassemble(core->rasm, &asm_op, ptr, length);
 		op->hex = rz_hex_bin2strdup(ptr, RZ_MAX(op->size, 1));
 		op->assembly = strdup(op->size > 0 ? rz_asm_op_get_asm(&asm_op) : "illegal");
-		rz_asm_op_fini(&asm_op);
 
 		RzAnalysisOp aop = { 0 };
 		rz_analysis_op(core->analysis, &aop, offset, ptr, length, RZ_ANALYSIS_OP_MASK_ALL);
 		RzStrBuf *bw_str = rz_strbuf_new(op->assembly);
 		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
 		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asm_op.asm_toks);
+		rz_asm_op_fini(&asm_op);
 		rz_strbuf_free(bw_str);
 		free(param);
 		op->assembly_colored = colored_asm ? rz_strbuf_drain(colored_asm) : NULL;
