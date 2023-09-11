@@ -5,8 +5,8 @@
 #include "dwarf_private.h"
 
 RZ_IPI bool Range_parse(RzBinDwarfRange *self, RzBinEndianReader *reader, ut8 address_size) {
-	UX_OR(address_size, self->begin, return false);
-	UX_OR(address_size, self->end, return true);
+	RET_FALSE_IF_FAIL(read_address(reader, &self->begin, address_size));
+	RET_FALSE_IF_FAIL(read_address(reader, &self->end, address_size));
 	return true;
 }
 
@@ -76,14 +76,14 @@ static bool RawRngListEntry_parse(
 			ULE128_OR_RET_FALSE(entry.offset_pair.end);
 			break;
 		case DW_RLE_base_address:
-			U_ADDR_SIZE_OR_RET_FALSE(entry.base_address.addr);
+			RET_FALSE_IF_FAIL(read_address(reader, &entry.base_address.addr, encoding->address_size));
 			break;
 		case DW_RLE_start_end:
-			U_ADDR_SIZE_OR_RET_FALSE(entry.start_end.begin);
-			U_ADDR_SIZE_OR_RET_FALSE(entry.start_end.end);
+			RET_FALSE_IF_FAIL(read_address(reader, &entry.start_end.begin, encoding->address_size));
+			RET_FALSE_IF_FAIL(read_address(reader, &entry.start_end.end, encoding->address_size));
 			break;
 		case DW_RLE_start_length:
-			U_ADDR_SIZE_OR_RET_FALSE(entry.start_length.begin);
+			RET_FALSE_IF_FAIL(read_address(reader, &entry.start_length.begin, encoding->address_size));
 			ULE128_OR_RET_FALSE(entry.start_length.length);
 			break;
 		default: {

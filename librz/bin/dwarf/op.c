@@ -49,7 +49,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBinEndianReader *reader, const Rz
 	U8_OR_RET_FALSE(self->opcode);
 	switch (self->opcode) {
 	case DW_OP_addr:
-		U_ADDR_SIZE_OR_RET_FALSE(self->address.address);
+		RET_FALSE_IF_FAIL(read_address(reader, &self->address.address, encoding->address_size));
 		self->kind = OPERATION_KIND_ADDRESS;
 		break;
 	case DW_OP_deref:
@@ -373,7 +373,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBinEndianReader *reader, const Rz
 		break;
 	}
 	case DW_OP_call_ref: {
-		U_ADDR_SIZE_OR_RET_FALSE(self->call.offset);
+		RET_FALSE_IF_FAIL(read_address(reader, &self->call.offset, encoding->address_size));
 		self->kind = OPERATION_KIND_CALL;
 		break;
 	}
@@ -403,7 +403,8 @@ RZ_IPI bool Operation_parse(Operation *self, RzBinEndianReader *reader, const Rz
 	case DW_OP_implicit_pointer:
 	case DW_OP_GNU_implicit_pointer: {
 		if (encoding->version == 2) {
-			U_ADDR_SIZE_OR_RET_FALSE(self->implicit_pointer.value);
+			RET_FALSE_IF_FAIL(read_address(
+				reader, &self->implicit_pointer.value, encoding->address_size));
 		} else {
 			RET_FALSE_IF_FAIL(read_offset(
 				reader, &self->implicit_pointer.value, encoding->is_64bit));

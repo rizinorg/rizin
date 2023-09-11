@@ -398,7 +398,7 @@ static bool LineOp_parse_ext(
 
 	switch (op->ext_opcode) {
 	case DW_LNE_set_address: {
-		UX_OR_RET_FALSE(hdr->address_size, op->args.set_address);
+		RET_FALSE_IF_FAIL(read_address(reader, &op->args.set_address, hdr->address_size));
 		break;
 	}
 	case DW_LNE_define_file: {

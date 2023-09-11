@@ -108,15 +108,15 @@ static bool RawLocListEntry_parse(
 			RET_FALSE_IF_FAIL(parse_data(reader, &out->default_location.data, encoding));
 			break;
 		case DW_LLE_base_address:
-			U_ADDR_SIZE_OR_RET_FALSE(out->base_address.addr);
+			RET_FALSE_IF_FAIL(read_address(reader, &out->base_address.addr, encoding->address_size));
 			break;
 		case DW_LLE_start_end:
-			U_ADDR_SIZE_OR_RET_FALSE(out->start_end.begin);
-			U_ADDR_SIZE_OR_RET_FALSE(out->start_end.end);
+			RET_FALSE_IF_FAIL(read_address(reader, &out->start_end.begin, encoding->address_size));
+			RET_FALSE_IF_FAIL(read_address(reader, &out->start_end.end, encoding->address_size));
 			RET_FALSE_IF_FAIL(parse_data(reader, &out->start_end.data, encoding));
 			break;
 		case DW_LLE_start_length:
-			U_ADDR_SIZE_OR_RET_FALSE(out->start_length.begin);
+			RET_FALSE_IF_FAIL(read_address(reader, &out->start_length.begin, encoding->address_size));
 			ULE128_OR_RET_FALSE(out->start_length.length);
 			RET_FALSE_IF_FAIL(parse_data(reader, &out->start_length.data, encoding));
 			break;

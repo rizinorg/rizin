@@ -32,6 +32,7 @@ RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
 
 RZ_IPI bool read_initial_length(RzBinEndianReader *reader, RZ_OUT bool *is_64bit, ut64 *out);
 RZ_IPI bool read_offset(RzBinEndianReader *reader, ut64 *out, bool is_64bit);
+RZ_IPI bool read_address(RzBinEndianReader *reader, ut64 *out, ut8 address_size);
 RZ_IPI bool read_block(RzBinEndianReader *reader, RzBinDwarfBlock *block);
 RZ_IPI char *read_string(RzBinEndianReader *reader);
 RZ_IPI char *read_string_not_empty(RzBinEndianReader *reader);

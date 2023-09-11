@@ -73,8 +73,8 @@ static bool RzBinDwarfARanges_parse(
 		size_t count = 0;
 		for (; count < set->aranges_count; count++) {
 			RzBinDwarfARange *range = set->aranges + count;
-			UX_OR_GOTO(set->address_size, range->addr, err);
-			UX_OR_GOTO(set->address_size, range->length, err);
+			GOTO_IF_FAIL(read_address(reader, &range->addr, set->address_size), err);
+			GOTO_IF_FAIL(read_address(reader, &range->length, set->address_size), err);
 			if (!range->addr && !range->length) {
 				// last entry has two 0s
 				count++;

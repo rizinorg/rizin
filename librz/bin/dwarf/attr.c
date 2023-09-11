@@ -21,7 +21,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	switch (attr->form) {
 	case DW_FORM_addr:
 		value->kind = RzBinDwarfAttr_Address;
-		UX_OR_RET_FALSE(address_size, value->u64);
+		RET_FALSE_IF_FAIL(read_address(reader, &value->u64, address_size));
 		break;
 	case DW_FORM_data1:
 		value->kind = RzBinDwarfAttr_UConstant;
@@ -102,7 +102,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	case DW_FORM_ref4:
 	case DW_FORM_ref8: {
 		static const int index_sizes[] = { 1, 2, 4, 8 };
-		UX_OR_RET_FALSE(index_sizes[attr->form - DW_FORM_ref1], value->u64);
+		RET_FALSE_IF_FAIL(read_address(reader, &value->u64, index_sizes[attr->form - DW_FORM_ref1]));
 		value->kind = RzBinDwarfAttr_Reference;
 		value->u64 += unit_offset;
 		break;
