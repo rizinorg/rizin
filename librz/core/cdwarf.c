@@ -126,9 +126,28 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_attr_to_string(
 	case DW_FORM_strx4:
 	case DW_FORM_line_ptr:
 	case DW_FORM_strp_sup:
-	case DW_FORM_strp:
-		rz_strbuf_appendf(sb, "(indirect string %" PFMT64u "): %s", attr->value.u64, rz_bin_dwarf_attr_string(attr, dw, stroffsets_base));
+	case DW_FORM_strp: {
+		switch (attr->value.kind) {
+		case RzBinDwarfAttr_String:
+			rz_strbuf_appendf(sb, "%s", rz_bin_dwarf_attr_string(attr, dw, stroffsets_base));
+			break;
+		case RzBinDwarfAttr_StrOffsetIndex:
+			rz_strbuf_appendf(sb, "(indirect string, index 0x%" PFMT64x "): %s",
+				attr->value.u64, rz_bin_dwarf_attr_string(attr, dw, stroffsets_base));
+			break;
+		case RzBinDwarfAttr_StrRef:
+			rz_strbuf_appendf(sb, "(indirect string, .debug_str+0x%" PFMT64x "): %s",
+				attr->value.u64, rz_bin_dwarf_attr_string(attr, dw, stroffsets_base));
+			break;
+		case RzBinDwarfAttr_LineStrRef:
+			rz_strbuf_appendf(sb, "(indirect string, .debug_line_str+0x%" PFMT64x "): %s",
+				attr->value.u64, rz_bin_dwarf_attr_string(attr, dw, stroffsets_base));
+			break;
+		default:
+			break;
+		}
 		break;
+	}
 	case DW_FORM_addr:
 	case DW_FORM_addrx:
 	case DW_FORM_addrx1:
@@ -351,7 +370,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_line_unit_to_string(
 	if (!sb) {
 		return NULL;
 	}
-	RzBinDwarfLineHdr *hdr = &unit->header;
+	RzBinDwarfLineHdr *hdr = &unit->hdr;
 	rz_strbuf_appendf(sb, " Header information[0x%" PFMT64x "]\n", hdr->offset);
 	rz_strbuf_appendf(sb, "  Length:                             %" PFMT64u "\n", hdr->unit_length);
 	rz_strbuf_appendf(sb, "  DWARF Version:                      %d\n", hdr->version);
@@ -391,7 +410,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_line_unit_to_string(
 	rz_vector_enumerate(&unit->ops, opsit, i) {
 		RzBinDwarfLineOp *op = opsit;
 		rz_strbuf_append(sb, "  ");
-		print_line_op(sb, op, &unit->header);
+		print_line_op(sb, op, &unit->hdr);
 		if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->ext_opcode == DW_LNE_end_sequence && i + 1 < rz_vector_len(&unit->ops)) {
 			// extra newline for nice sequence separation
 			rz_strbuf_append(sb, "\n");

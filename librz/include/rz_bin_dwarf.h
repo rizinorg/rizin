@@ -1087,7 +1087,7 @@ typedef struct {
 	 * representing the DW_AT_comp_dir attribute of the compilation unit
 	 * that references this particular line information.
 	 */
-	HtUP /*<ut64, char *>*/ *line_info_offset_comp_dir;
+	HtUP /*<ut64, char *>*/ *offset_comp_dir;
 } RzBinDwarfInfo;
 
 typedef struct {
@@ -1204,7 +1204,7 @@ typedef struct {
  * This contains the entire raw line info for one compilation unit.
  */
 typedef struct {
-	RzBinDwarfLineHdr header;
+	RzBinDwarfLineHdr hdr;
 	RzVector /*<RzBinDwarfLineOp>*/ ops;
 } RzBinDwarfLineUnit;
 

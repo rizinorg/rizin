@@ -16,6 +16,7 @@ typedef RzPVector /*<char *>*/ LineFilePathCache;
 
 typedef struct {
 	RzBinDWARF *dw;
+	RzBinDwarfLine *line;
 	RzBinDwarfLineHdr *hdr;
 	RzBinDwarfSMRegisters *regs;
 	RzBinSourceLineInfoBuilder *source_line_info_builder;
@@ -80,7 +81,8 @@ static bool FileEntryFormat_parse(
 	return true;
 }
 
-static char *directory_parse_v5(DWLineContext *ctx, RzBinEndianReader *reader, RzBinDwarfLineHdr *hdr) {
+static char *directory_parse_v5(DWLineContext *ctx, RzBinDwarfLineHdr *hdr) {
+	RzBinEndianReader *reader = ctx->line->reader;
 	char *path_name = NULL;
 	RzBinDwarfFileEntryFormat *format = NULL;
 	rz_vector_foreach(&hdr->directory_entry_formats, format) {
@@ -100,7 +102,8 @@ static char *directory_parse_v5(DWLineContext *ctx, RzBinEndianReader *reader, R
 }
 
 static RzBinDwarfFileEntry *FileEntry_parse_v5(
-	DWLineContext *ctx, RzBinEndianReader *reader) {
+	DWLineContext *ctx) {
+	RzBinEndianReader *reader = ctx->line->reader;
 	RzBinDwarfLineHdr *hdr = ctx->hdr;
 	RzBinDwarfFileEntry *entry = RZ_NEW0(RzBinDwarfFileEntry);
 	RET_FALSE_IF_FAIL(entry);
@@ -159,13 +162,14 @@ err:
 /**
  * 6.2.4 The Line Number Program Header: https://dwarfstd.org/doc/DWARF5.pdf#page=172
  */
-static bool LineHdr_parse_v5(DWLineContext *ctx, RzBinEndianReader *reader) {
+static bool LineHdr_parse_v5(DWLineContext *ctx) {
+	RzBinEndianReader *reader = ctx->line->reader;
 	RzBinDwarfLineHdr *hdr = ctx->hdr;
 	RET_FALSE_IF_FAIL(FileEntryFormat_parse(reader, &hdr->directory_entry_formats, hdr));
 	ut64 count = 0;
 	ULE128_OR_RET_FALSE(count);
 	for (ut64 i = 0; i < count; ++i) {
-		char *dir = directory_parse_v5(ctx, reader, hdr);
+		char *dir = directory_parse_v5(ctx, hdr);
 		if (!dir) {
 			break;
 		}
@@ -175,7 +179,7 @@ static bool LineHdr_parse_v5(DWLineContext *ctx, RzBinEndianReader *reader) {
 	RET_FALSE_IF_FAIL(FileEntryFormat_parse(reader, &hdr->file_name_entry_formats, hdr));
 	ULE128_OR_RET_FALSE(count);
 	for (ut64 i = 0; i < count; ++i) {
-		RzBinDwarfFileEntry *entry = FileEntry_parse_v5(ctx, reader);
+		RzBinDwarfFileEntry *entry = FileEntry_parse_v5(ctx);
 		if (!entry) {
 			break;
 		}
@@ -184,7 +188,8 @@ static bool LineHdr_parse_v5(DWLineContext *ctx, RzBinEndianReader *reader) {
 	return true;
 }
 
-static bool LineHdr_parse_v4(DWLineContext *ctx, RzBinEndianReader *reader) {
+static bool LineHdr_parse_v4(DWLineContext *ctx) {
+	RzBinEndianReader *reader = ctx->line->reader;
 	while (true) {
 		char *str = read_string_not_empty(reader);
 		if (!str) {
@@ -230,7 +235,7 @@ static char *full_file_path(
 	 */
 
 	const char *comp_dir = ctx->dw && ctx->dw->info
-		? ht_up_find(ctx->dw->info->line_info_offset_comp_dir, ctx->hdr->offset, NULL)
+		? ht_up_find(ctx->dw->info->offset_comp_dir, ctx->hdr->offset, NULL)
 		: NULL;
 	const char *include_dir = NULL;
 	char *own_str = NULL;
@@ -296,9 +301,9 @@ static st64 LineHdr_spec_op_advance_line(const RzBinDwarfLineHdr *hdr, ut8 opcod
 
 static bool LineHdr_parse(
 	DWLineContext *ctx,
-	RzBinEndianReader *reader,
 	RzBinDwarfEncoding encoding) {
-	rz_return_val_if_fail(ctx && reader && reader->buffer, false);
+	rz_return_val_if_fail(ctx, false);
+	RzBinEndianReader *reader = ctx->line->reader;
 	RzBinDwarfLineHdr *hdr = ctx->hdr;
 	LineHdr_init(ctx->hdr);
 	hdr->offset = rz_buf_tell(reader->buffer);
@@ -363,9 +368,9 @@ static bool LineHdr_parse(
 	}
 
 	if (hdr->version <= 4) {
-		return LineHdr_parse_v4(ctx, reader);
+		return LineHdr_parse_v4(ctx);
 	} else if (hdr->version == 5) {
-		return LineHdr_parse_v5(ctx, reader);
+		return LineHdr_parse_v5(ctx);
 	}
 	RZ_LOG_ERROR("DWARF line hdr version %d is not supported\n", hdr->version);
 	return false;
@@ -596,8 +601,8 @@ static bool LineOp_run(
 
 static bool LineOp_parse_all(
 	DWLineContext *ctx,
-	RzBinEndianReader *reader,
 	RzVector /*<RzBinDwarfLineOp>*/ *ops_out) {
+	RzBinEndianReader *reader = ctx->line->reader;
 	while (true) {
 		RzBinDwarfLineOp op = { .offset = rz_buf_tell(reader->buffer), 0 };
 		if (rz_buf_tell(reader->buffer) > ctx->hdr->offset + ctx->hdr->unit_length + 1) {
@@ -626,7 +631,7 @@ static void LineUnit_free(RzBinDwarfLineUnit *unit) {
 	if (!unit) {
 		return;
 	}
-	LineHdr_fini(&unit->header);
+	LineHdr_fini(&unit->hdr);
 	rz_vector_fini(&unit->ops);
 	free(unit);
 }
@@ -660,27 +665,28 @@ static RzBinDwarfLine *Line_parse(
 
 		DWLineContext ctx = {
 			.dw = dw,
-			.hdr = &unit->header,
+			.line = li,
+			.hdr = &unit->hdr,
 			.regs = &regs,
 			.source_line_info_builder = &source_line_info_builder,
 		};
 
-		if (!LineHdr_parse(&ctx, reader, *encoding)) {
+		if (!LineHdr_parse(&ctx, *encoding)) {
 			LineUnit_free(unit);
 			break;
 		}
 
 		ctx.file_path_cache = rz_pvector_new_with_len(
-			free, rz_vector_len(&unit->header.file_names));
+			free, rz_vector_len(&unit->hdr.file_names));
 		rz_vector_init(&unit->ops, sizeof(RzBinDwarfLineOp), NULL, NULL);
-		SMRegisters_reset(&unit->header, &regs);
+		SMRegisters_reset(&unit->hdr, &regs);
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
-			if (rz_buf_tell(reader->buffer) > unit->header.offset + unit->header.unit_length + 1) {
+			if (rz_buf_tell(reader->buffer) > unit->hdr.offset + unit->hdr.unit_length + 1) {
 				break;
 			}
 			// reads one whole sequence
-			if (!LineOp_parse_all(&ctx, reader, &unit->ops)) {
+			if (!LineOp_parse_all(&ctx, &unit->ops)) {
 				break;
 			}
 		} while (true); // if nothing is read -> error, exit

@@ -449,7 +449,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	RzBinDwarfLineUnit *lunit = rz_list_tail(li->units)->data;
 	mu_assert_notnull(lunit, "line unit");
 
-	RzBinDwarfLineHdr *hdr = &lunit->header;
+	RzBinDwarfLineHdr *hdr = &lunit->hdr;
 	mu_assert_eq(hdr->unit_length, 704, "");
 	mu_assert_eq(hdr->version, 2, "");
 	mu_assert_eq(hdr->min_inst_len, 1, "");

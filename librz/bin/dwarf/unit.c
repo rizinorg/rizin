@@ -26,7 +26,7 @@ static void CU_attr_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDw
 		break;
 	case DW_AT_comp_dir:
 		cu->comp_dir = rz_bin_dwarf_attr_string(attr, ctx->dw, cu->str_offsets_base);
-		break;
+		goto offset_comp_dir;
 	case DW_AT_producer:
 		cu->producer = rz_bin_dwarf_attr_string(attr, ctx->dw, cu->str_offsets_base);
 		break;
@@ -45,11 +45,7 @@ static void CU_attr_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDw
 		break;
 	case DW_AT_stmt_list:
 		cu->stmt_list = rz_bin_dwarf_attr_udata(attr);
-		if (cu->stmt_list < UT64_MAX && cu->comp_dir) {
-			ht_up_insert(ctx->info->line_info_offset_comp_dir,
-				cu->stmt_list, (void *)cu->comp_dir);
-		}
-		break;
+		goto offset_comp_dir;
 	case DW_AT_str_offsets_base:
 		cu->str_offsets_base = rz_bin_dwarf_attr_udata(attr);
 		break;
@@ -65,6 +61,12 @@ static void CU_attr_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDw
 		break;
 	default:
 		break;
+	}
+
+	return;
+offset_comp_dir:
+	if (cu->stmt_list < UT64_MAX && cu->comp_dir) {
+		ht_up_insert(ctx->info->offset_comp_dir, cu->stmt_list, (void *)cu->comp_dir);
 	}
 }
 
@@ -294,8 +296,8 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(RZ_BORROW RZ_NONNULL 
 
 static bool info_init(RzBinDwarfInfo *info) {
 	rz_vector_init(&info->units, sizeof(RzBinDwarfCompUnit), (RzVectorFree)CU_fini, NULL);
-	info->line_info_offset_comp_dir = ht_up_new(NULL, NULL, NULL);
-	if (!info->line_info_offset_comp_dir) {
+	info->offset_comp_dir = ht_up_new(NULL, NULL, NULL);
+	if (!info->offset_comp_dir) {
 		goto beach;
 	}
 	return true;
@@ -309,7 +311,7 @@ static inline void info_free(RzBinDwarfInfo *info) {
 		return;
 	}
 	rz_vector_fini(&info->units);
-	ht_up_free(info->line_info_offset_comp_dir);
+	ht_up_free(info->offset_comp_dir);
 	ht_up_free(info->die_by_offset);
 	ht_up_free(info->unit_by_offset);
 	rz_buf_free(info->reader->buffer);

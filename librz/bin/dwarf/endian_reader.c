@@ -110,56 +110,12 @@ void add_relocations(
 	rz_return_if_fail(relocations && section);
 	for (size_t i = 0; i < bf->o->relocs->relocs_count; ++i) {
 		RzBinReloc *reloc = bf->o->relocs->relocs[i];
-		if (!(reloc && reloc->vaddr > section->vaddr && reloc->vaddr < section->vaddr + section->size)) {
+		if (reloc->section_vaddr != section->vaddr) {
 			continue;
 		}
 		ut64 offset = reloc->vaddr - section->vaddr;
 		ht_up_insert(relocations, offset, reloc);
 	}
-	//    for (offset64, mut relocation) in section.relocations() {
-	//        let offset = offset64 as usize;
-	//        if offset as u64 != offset64 {
-	//            continue;
-	//        }
-	//        let offset = offset as usize;
-	//        match relocation.kind() {
-	//            object::RelocationKind::Absolute => {
-	//                match relocation.target() {
-	//                    object::RelocationTarget::Symbol(symbol_idx) => {
-	//                        match file.symbol_by_index(symbol_idx) {
-	//                            Ok(symbol) => {
-	//                                let addend =
-	//                                    symbol.address().wrapping_add(relocation.addend() as u64);
-	//                                relocation.set_addend(addend as i64);
-	//                            }
-	//                            Err(_) => {
-	//                                eprintln!(
-	//                                    "Relocation with invalid symbol for section {} at offset 0x{:08x}",
-	//                                    section.name().unwrap(),
-	//                                    offset
-	//                                );
-	//                            }
-	//                        }
-	//                    }
-	//                    _ => {}
-	//                }
-	//                if relocations.insert(offset, relocation).is_some() {
-	//                    eprintln!(
-	//                        "Multiple relocations for section {} at offset 0x{:08x}",
-	//                        section.name().unwrap(),
-	//                        offset
-	//                    );
-	//                }
-	//            }
-	//            _ => {
-	//                eprintln!(
-	//                    "Unsupported relocation for section {} at offset 0x{:08x}",
-	//                    section.name().unwrap(),
-	//                    offset
-	//                );
-	//            }
-	//        }
-	//    }
 }
 
 RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const char *sect_name) {
@@ -189,19 +145,6 @@ static ut64 relocate(RzBinEndianReader *reader, ut64 offset, ut64 value) {
 		RZ_LOG_DEBUG("Relocating 0x%" PFMT64x "\n", offset);
 		return reloc->addend;
 	}
-	//        if let Some(relocation) = self.relocations.get(&offset) {
-	//            match relocation.kind() {
-	//                object::RelocationKind::Absolute => {
-	//                    if relocation.has_implicit_addend() {
-	//                        // Use the explicit addend too, because it may have the symbol value.
-	//                        return value.wrapping_add(relocation.addend() as u64);
-	//                    } else {
-	//                        return relocation.addend() as u64;
-	//                    }
-	//                }
-	//                _ => {}
-	//            }
-	//        };
 	return value;
 }
 
