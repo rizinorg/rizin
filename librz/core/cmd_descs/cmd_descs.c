@@ -18074,9 +18074,8 @@ static const RzCmdDescHelp cmd_shell_diff_help = {
 
 static const RzCmdDescDetailEntry cmd_shell_env_Examples_detail_entries[] = {
 	{ .text = "env", .arg_str = NULL, .comment = "List all environment variables" },
-	{ .text = "env", .arg_str = "SHELL", .comment = "Print value of SHELL variable" },
-	{ .text = "env", .arg_str = "TMPDIR=/tmp", .comment = "Set TMPDIR to \"/tmp\"" },
-	{ .text = "env", .arg_str = " SHELL", .comment = "Same as `%SHELL`" },
+	{ .text = "env", .arg_str = " SHELL", .comment = "Print value of SHELL variable" },
+	{ .text = "env", .arg_str = " TMPDIR=/tmp", .comment = "Set TMPDIR to \"/tmp\"" },
 	{ 0 },
 };
 
