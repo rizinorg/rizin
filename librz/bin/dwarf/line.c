@@ -90,8 +90,7 @@ static char *directory_parse_v5(DWLineContext *ctx, RzBinDwarfLineHdr *hdr) {
 		AttrOption opt = {
 			.offset = hdr->offset,
 			.form = format->form,
-			.address_size = hdr->address_size,
-			.is_64bit = hdr->is_64bit,
+			.encoding = &hdr->encoding,
 		};
 		RET_NULL_IF_FAIL(RzBinDwarfAttr_parse(reader, &attr, &opt));
 		if (format->content_type == DW_LNCT_path) {
@@ -113,8 +112,7 @@ static RzBinDwarfFileEntry *FileEntry_parse_v5(
 		AttrOption opt = {
 			.offset = hdr->offset,
 			.form = format->form,
-			.address_size = hdr->address_size,
-			.is_64bit = hdr->is_64bit,
+			.encoding = &hdr->encoding,
 		};
 		ERR_IF_FAIL(RzBinDwarfAttr_parse(reader, &attr, &opt));
 		switch (format->content_type) {
@@ -307,28 +305,28 @@ static bool LineHdr_parse(
 	RzBinDwarfLineHdr *hdr = ctx->hdr;
 	LineHdr_init(ctx->hdr);
 	hdr->offset = rz_buf_tell(reader->buffer);
-	hdr->is_64bit = false;
-	RET_FALSE_IF_FAIL(read_initial_length(reader, &hdr->is_64bit, &hdr->unit_length));
+	MEM_ZERO(RzBinDwarfEncoding, &hdr->encoding);
+	RET_FALSE_IF_FAIL(read_initial_length(reader, &hdr->encoding.is_64bit, &hdr->unit_length));
 
-	U_OR_RET_FALSE(16, hdr->version);
-	if (hdr->version < 2 || hdr->version > 5) {
-		RZ_LOG_VERBOSE("DWARF line hdr version %d is not supported\n", hdr->version);
+	U_OR_RET_FALSE(16, hdr->encoding.version);
+	if (hdr->encoding.version < 2 || hdr->encoding.version > 5) {
+		RZ_LOG_VERBOSE("DWARF line hdr version %d is not supported\n", hdr->encoding.version);
 		return false;
 	}
-	if (hdr->version == 5) {
-		U8_OR_RET_FALSE(hdr->address_size);
+	if (hdr->encoding.version == 5) {
+		U8_OR_RET_FALSE(hdr->encoding.address_size);
 		U8_OR_RET_FALSE(hdr->segment_selector_size);
 		if (hdr->segment_selector_size != 0) {
 			RZ_LOG_ERROR("DWARF line hdr segment selector size %d is not supported\n",
 				hdr->segment_selector_size);
 			return false;
 		}
-	} else if (hdr->version < 5) {
+	} else if (hdr->encoding.version < 5) {
 		// Dwarf < 5 needs this size to be supplied from outside
-		hdr->address_size = encoding.address_size;
+		hdr->encoding.address_size = encoding.address_size;
 	}
 
-	RET_FALSE_IF_FAIL(read_offset(reader, &hdr->header_length, hdr->is_64bit));
+	RET_FALSE_IF_FAIL(read_offset(reader, &hdr->header_length, hdr->encoding.is_64bit));
 
 	U8_OR_RET_FALSE(hdr->min_inst_len);
 	if (hdr->min_inst_len == 0) {
@@ -336,7 +334,7 @@ static bool LineHdr_parse(
 		return false;
 	}
 
-	if (hdr->version >= 4) {
+	if (hdr->encoding.version >= 4) {
 		U8_OR_RET_FALSE(hdr->max_ops_per_inst);
 	} else {
 		hdr->max_ops_per_inst = 1;
@@ -367,12 +365,12 @@ static bool LineHdr_parse(
 		hdr->std_opcode_lengths = NULL;
 	}
 
-	if (hdr->version <= 4) {
+	if (hdr->encoding.version <= 4) {
 		return LineHdr_parse_v4(ctx);
-	} else if (hdr->version == 5) {
+	} else if (hdr->encoding.version == 5) {
 		return LineHdr_parse_v5(ctx);
 	}
-	RZ_LOG_ERROR("DWARF line hdr version %d is not supported\n", hdr->version);
+	RZ_LOG_ERROR("DWARF line hdr version %d is not supported\n", hdr->encoding.version);
 	return false;
 }
 
@@ -398,11 +396,11 @@ static bool LineOp_parse_ext(
 
 	switch (op->ext_opcode) {
 	case DW_LNE_set_address: {
-		RET_FALSE_IF_FAIL(read_address(reader, &op->args.set_address, hdr->address_size));
+		RET_FALSE_IF_FAIL(read_address(reader, &op->args.set_address, hdr->encoding.address_size));
 		break;
 	}
 	case DW_LNE_define_file: {
-		if (hdr->version <= 4) {
+		if (hdr->encoding.version <= 4) {
 			RET_FALSE_IF_FAIL(FileEntry_parse_v4(reader, &op->args.define_file));
 		} else {
 			op->type = RZ_BIN_DWARF_LINE_OP_TYPE_EXT_UNKNOWN;

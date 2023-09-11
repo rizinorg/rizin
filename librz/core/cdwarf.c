@@ -373,7 +373,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_line_unit_to_string(
 	RzBinDwarfLineHdr *hdr = &unit->hdr;
 	rz_strbuf_appendf(sb, " Header information[0x%" PFMT64x "]\n", hdr->offset);
 	rz_strbuf_appendf(sb, "  Length:                             %" PFMT64u "\n", hdr->unit_length);
-	rz_strbuf_appendf(sb, "  DWARF Version:                      %d\n", hdr->version);
+	rz_strbuf_appendf(sb, "  DWARF Version:                      %d\n", hdr->encoding.version);
 	rz_strbuf_appendf(sb, "  Header Length:                      %" PFMT64d "\n", hdr->header_length);
 	rz_strbuf_appendf(sb, "  Minimum Instruction Length:         %d\n", hdr->min_inst_len);
 	rz_strbuf_appendf(sb, "  Maximum Operations per Instruction: %d\n", hdr->max_ops_per_inst);

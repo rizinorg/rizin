@@ -9,11 +9,11 @@
  */
 RZ_IPI bool RzBinDwarfAttr_parse(
 	RzBinEndianReader *reader, RzBinDwarfAttr *attr, AttrOption *opt) {
-	rz_return_val_if_fail(opt && attr && reader && reader->buffer, false);
+	rz_return_val_if_fail(opt && opt->encoding && attr && reader && reader->buffer, false);
 	attr->at = opt->at;
 	attr->form = opt->form;
-	ut8 address_size = opt->address_size;
-	bool is_64bit = opt->is_64bit;
+	ut8 address_size = opt->encoding->address_size;
+	bool is_64bit = opt->encoding->is_64bit;
 	ut64 unit_offset = opt->offset;
 	RzBinDwarfAttrValue *value = &attr->value;
 
@@ -93,7 +93,11 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		// offset in .debug_info
 	case DW_FORM_ref_addr:
 		value->kind = RzBinDwarfAttr_Reference;
-		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		if (opt->encoding->version == 2) {
+			RET_FALSE_IF_FAIL(read_address(reader, &value->u64, opt->encoding->address_size));
+		} else {
+			RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		}
 		break;
 		// This type of u64 is an offset from the first byte of the compilation
 		// header for the compilation unit containing the u64

@@ -10,8 +10,7 @@
 
 typedef struct {
 	ut64 offset;
-	bool is_64bit;
-	ut8 address_size;
+	RzBinDwarfEncoding *encoding;
 	DW_AT at;
 	DW_FORM form;
 	ut64 implicit_const;

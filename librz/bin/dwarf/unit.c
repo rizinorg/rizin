@@ -89,8 +89,7 @@ static bool CU_attrs_parse(
 			.form = spec->form,
 			.at = spec->at,
 			.offset = cu->offset,
-			.address_size = cu->hdr.encoding.address_size,
-			.is_64bit = cu->hdr.encoding.is_64bit,
+			.encoding = &cu->hdr.encoding,
 		};
 		if (!RzBinDwarfAttr_parse(ctx->info->reader, &attr, &opt)) {
 			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die attr: 0x%" PFMT64x " %s [%s]\n ",

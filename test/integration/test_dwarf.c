@@ -451,7 +451,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 
 	RzBinDwarfLineHdr *hdr = &lunit->hdr;
 	mu_assert_eq(hdr->unit_length, 704, "");
-	mu_assert_eq(hdr->version, 2, "");
+	mu_assert_eq(hdr->encoding.version, 2, "");
 	mu_assert_eq(hdr->min_inst_len, 1, "");
 	mu_assert_eq(hdr->max_ops_per_inst, 1, "");
 	mu_assert_eq(hdr->default_is_stmt, 1, "");

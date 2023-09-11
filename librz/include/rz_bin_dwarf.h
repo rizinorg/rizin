@@ -1143,7 +1143,6 @@ typedef struct {
 typedef struct {
 	ut64 offset; //< offset inside the debug_line section, for references from outside
 	ut64 unit_length;
-	ut16 version;
 	ut64 header_length;
 	ut8 min_inst_len;
 	ut8 max_ops_per_inst;
@@ -1151,9 +1150,8 @@ typedef struct {
 	st32 line_base;
 	ut8 line_range;
 	ut8 opcode_base;
-	ut8 address_size;
 	ut8 segment_selector_size;
-	bool is_64bit;
+	RzBinDwarfEncoding encoding;
 
 	/**
 	 * \brief The number of LEB128 operands for each of the standard opcodes
