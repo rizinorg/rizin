@@ -710,6 +710,13 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 		btype->name = anonymous_type_name(btype->kind, die->offset);
 	}
 
+	if ((btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ||
+		    btype->kind == RZ_BASE_TYPE_KIND_ATOMIC ||
+		    btype->kind == RZ_BASE_TYPE_KIND_ENUM) &&
+		!btype->type) {
+		btype->type = rz_type_identifier_of_base_type_str(ctx->analysis->typedb, "void");
+	}
+
 	if (!ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, btype)) {
 		RZ_LOG_WARN("Failed to save base type %s [0x%" PFMT64x "]\n",
 			btype->name, die->offset);
