@@ -577,10 +577,18 @@ static char *anonymous_type_name(RzBaseTypeKind k, ut64 offset) {
  */
 static char *die_name(const RzBinDwarfDie *die, Context *ctx) {
 	RzBinDwarfAttr *attr = rz_bin_dwarf_die_get_attr(die, DW_AT_name);
-	if (!attr) {
-		return NULL;
+	if (attr) {
+		return attr_string(attr, ctx);
 	}
-	return attr_string(attr, ctx);
+	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_specification);
+	RzBinDwarfDie *spec = attr ? ht_up_find(ctx->dw->info->die_by_offset, rz_bin_dwarf_attr_udata(attr), NULL) : NULL;
+	if (spec) {
+		attr = rz_bin_dwarf_die_get_attr(spec, DW_AT_name);
+		if (attr) {
+			return attr_string(attr, ctx);
+		}
+	}
+	return NULL;
 }
 
 static RzPVector /*<RzBinDwarfDie *>*/ *die_children(const RzBinDwarfDie *die, RzBinDWARF *dw) {
@@ -710,10 +718,10 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 		btype->name = anonymous_type_name(btype->kind, die->offset);
 	}
 
-	if ((btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ||
-		    btype->kind == RZ_BASE_TYPE_KIND_ATOMIC ||
-		    btype->kind == RZ_BASE_TYPE_KIND_ENUM) &&
-		!btype->type) {
+	if (!btype->type &&
+		(btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ||
+			btype->kind == RZ_BASE_TYPE_KIND_ATOMIC ||
+			btype->kind == RZ_BASE_TYPE_KIND_ENUM)) {
 		btype->type = rz_type_identifier_of_base_type_str(ctx->analysis->typedb, "void");
 	}
 
