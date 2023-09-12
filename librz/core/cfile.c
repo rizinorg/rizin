@@ -731,11 +731,7 @@ static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loada
 	if (cf) {
 		rz_pvector_push(&cf->binfiles, binfile);
 	}
-	if (rz_core_bin_apply_all_info(r, binfile)) {
-		if (!r->analysis->sdb_cc->path) {
-			RZ_LOG_WARN("No calling convention defined for this file, analysis may be inaccurate.\n");
-		}
-	}
+	rz_core_bin_apply_all_info(r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin && !strcmp(plugin->name, "any")) {
 		RzBinObject *obj = rz_bin_cur_object(r->bin);
