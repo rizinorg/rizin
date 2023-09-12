@@ -167,6 +167,10 @@ static bool get_relocs_entry_from_dt_dynamic(ELFOBJ *bin, RzVector /*<RzBinElfRe
 	}
 
 	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_RELAENT, &entry_size)) {
+		if (!entry_size) {
+			return false;
+		}
+
 		if (!get_relocs_entry_from_dt_dynamic_aux(bin, relocs, DT_RELA, DT_RELASZ, entry_size, DT_RELA, set)) {
 			return false;
 		}
