@@ -344,7 +344,7 @@ module.exports = grammar({
       prec.left(
         seq(
           field("command", alias($._env_stmt_identifier, $.cmd_identifier)),
-          field("args", optional(alias($.eq_sep_args, $.args))),
+          optional(seq(/[ ]+/, field("args", optional(alias($.eq_sep_args, $.args))))),
         ),
       ),
     _env_stmt_identifier: ($) => "env",
