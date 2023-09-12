@@ -54,3 +54,11 @@ EXPECT=<<EOF
 BBB
 EOF
 RUN
+
+NAME=must space after env
+FILE=--
+CMDS=envPATH=.
+EXPECT_ERR=<<EOF
+ERROR: core: Error while parsing command: `envPATH=.`
+EOF
+RUN
