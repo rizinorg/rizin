@@ -2740,25 +2740,42 @@
             }
           },
           {
-            "type": "FIELD",
-            "name": "args",
-            "content": {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "eq_sep_args"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "PATTERN",
+                    "value": "[ ]+"
                   },
-                  "named": true,
-                  "value": "args"
-                },
-                {
-                  "type": "BLANK"
-                }
-              ]
-            }
+                  {
+                    "type": "FIELD",
+                    "name": "args",
+                    "content": {
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "ALIAS",
+                          "content": {
+                            "type": "SYMBOL",
+                            "name": "eq_sep_args"
+                          },
+                          "named": true,
+                          "value": "args"
+                        },
+                        {
+                          "type": "BLANK"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
           }
         ]
       }
