@@ -720,7 +720,7 @@ RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li) {
 	free(li);
 }
 
-RZ_API RzBinDwarfLine *rz_bin_dwarf_line_new(
+RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
@@ -735,7 +735,7 @@ RZ_API RzBinDwarfLine *rz_bin_dwarf_line_new(
  * \param mask RzBinDwarfLineInfoMask
  * \return RzBinDwarfLineInfo or NULL if failed
  */
-RZ_API RzBinDwarfLine *rz_bin_dwarf_line_from_file(
+RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
 	rz_return_val_if_fail(bf, NULL);

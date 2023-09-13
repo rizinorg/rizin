@@ -1455,13 +1455,13 @@ RZ_API void rz_bin_dwarf_str_offsets_free(RzBinDwarfStrOffsets *str_offsets);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_offsets_get(RzBinDwarfStr *debug_str, RzBinDwarfStrOffsets *debug_str_offsets, ut64 base, ut64 index);
 
 /// .debug_aranges
-RZ_API RzBinDwarfARanges *rz_bin_dwarf_aranges_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfARanges *rz_bin_dwarf_aranges_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
 RZ_API RZ_OWN RzBinDwarfARanges *rz_bin_dwarf_aranges_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 RZ_API void rz_bin_dwarf_arange_set_free(RZ_OWN RZ_NULLABLE RzBinDwarfARangeSet *set);
 RZ_API void rz_bin_dwarf_aranges_free(RZ_OWN RZ_NULLABLE RzBinDwarfARanges *aranges);
 
 /// .debug_abbrev
-RZ_API RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader);
 RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
 RZ_API void rz_bin_dwarf_abbrev_free(RZ_OWN RZ_NULLABLE RzBinDwarfAbbrev *abbrevs);
@@ -1485,11 +1485,11 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, DW_AT name);
 
 /// .debug_line
-RZ_API RzBinDwarfLine *rz_bin_dwarf_line_new(
+RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
-RZ_API RzBinDwarfLine *rz_bin_dwarf_line_from_file(
+RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
 RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op);

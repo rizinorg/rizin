@@ -94,7 +94,7 @@ ok:
 	return aranges;
 }
 
-RZ_API RzBinDwarfARanges *rz_bin_dwarf_aranges_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader) {
+RZ_API RZ_OWN RzBinDwarfARanges *rz_bin_dwarf_aranges_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader) {
 	RzBinDwarfARanges *aranges = RZ_NEW0(RzBinDwarfARanges);
 	ERR_IF_FAIL(aranges);
 	aranges->list = rz_list_newf((RzListFree)rz_bin_dwarf_arange_set_free);

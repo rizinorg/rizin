@@ -157,7 +157,7 @@ err:
  * \param buffer  Buffer to parse
  * \return RzBinDwarfAbbrevs object
  */
-RZ_API RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader) {
+RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader) {
 	rz_return_val_if_fail(reader, NULL);
 	RzBinDwarfAbbrev *abbrevs = RZ_NEW0(RzBinDwarfAbbrev);
 	RET_FALSE_IF_FAIL(abbrevs);
