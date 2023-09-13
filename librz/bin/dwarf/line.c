@@ -723,22 +723,21 @@ RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li) {
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
-	rz_return_val_if_fail(reader && reader->buffer && encoding && dw, NULL);
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw) {
+	rz_return_val_if_fail(reader && reader->buffer && encoding, NULL);
 	return Line_parse(reader, encoding, dw);
 }
 
 /**
  * \brief Parse the .debug_line section
  * \param bf RzBinFile to parse
- * \param info RzBinDwarfDebugInfo instance
- * \param mask RzBinDwarfLineInfoMask
+ * \param dw RzBinDWARF instance
  * \return RzBinDwarfLineInfo or NULL if failed
  */
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
-	rz_return_val_if_fail(bf && dw, NULL);
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw) {
+	rz_return_val_if_fail(bf, NULL);
 	RzBinDwarfEncoding encoding_bf = { 0 };
 	if (!RzBinDwarfEncoding_from_file(&encoding_bf, bf)) {
 		return NULL;

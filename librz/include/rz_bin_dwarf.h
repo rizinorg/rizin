@@ -1488,10 +1488,10 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NONNULL RzBinDWARF *dw);
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NONNULL RzBinDWARF *dw);
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
 RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
 
@@ -1776,14 +1776,11 @@ static inline char *rz_bin_dwarf_attr_string(
 	const RzBinDwarfAttrValue *v = &attr->value;
 	if (v->kind == RzBinDwarfAttr_String) {
 		return rz_str_new(v->string);
-	} else if (v->kind == RzBinDwarfAttr_StrRef) {
-		rz_warn_if_fail(dw);
+	} else if (v->kind == RzBinDwarfAttr_StrRef && dw) {
 		return rz_str_new(rz_bin_dwarf_str_get(dw->str, v->u64));
-	} else if (v->kind == RzBinDwarfAttr_StrOffsetIndex) {
-		rz_warn_if_fail(dw);
+	} else if (v->kind == RzBinDwarfAttr_StrOffsetIndex && dw) {
 		return rz_str_new(rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64));
-	} else if (v->kind == RzBinDwarfAttr_LineStrRef) {
-		rz_warn_if_fail(dw);
+	} else if (v->kind == RzBinDwarfAttr_LineStrRef && dw) {
 		return rz_str_new(rz_bin_dwarf_line_str_get(dw->line_str, v->u64));
 	}
 	return NULL;
