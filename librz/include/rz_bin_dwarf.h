@@ -1488,10 +1488,10 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw);
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw);
 RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
 

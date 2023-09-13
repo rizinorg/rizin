@@ -738,7 +738,7 @@ RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
-	rz_return_val_if_fail(bf, NULL);
+	rz_return_val_if_fail(bf && dw, NULL);
 	RzBinDwarfEncoding encoding_bf = { 0 };
 	if (!RzBinDwarfEncoding_from_file(&encoding_bf, bf)) {
 		return NULL;
