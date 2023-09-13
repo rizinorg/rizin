@@ -229,8 +229,8 @@ RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr) 
 	if (bpi) {
 		rz_bp_del(core->dbg->bp, addr);
 	} else {
-		int hwbp = (int)rz_config_get_i(core->config, "dbg.hwbp");
-		bpi = rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+		bool hwbp = (int)rz_config_get_b(core->config, "dbg.hwbp");
+		bpi = rz_debug_bp_add(core->dbg, addr, hwbp ? 1 : 0, false, 0, NULL, 0);
 		if (!bpi) {
 			RZ_LOG_ERROR("core: cannot set breakpoint at 0x%" PFMT64x "\n", addr);
 		}
@@ -253,11 +253,11 @@ RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
 	RzBinSymbol *symbol;
 	RzListIter *iter;
 	RzBreakpointItem *bp;
-	int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
+	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
 	rz_list_foreach (symbols, iter, symbol) {
 		if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
 			if (rz_analysis_noreturn_at(core->analysis, symbol->vaddr)) {
-				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
+				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, hwbp ? 1 : 0, false, 0, NULL, 0);
 				if (!bp) {
 					RZ_LOG_ERROR("Unable to add a breakpoint into a noreturn function %s at addr 0x%" PFMT64x "\n", symbol->name, symbol->vaddr);
 					return;
