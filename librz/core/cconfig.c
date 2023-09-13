@@ -3340,7 +3340,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	SETCB("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
 	SETBPREF("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
-	SETI("dbg.hwbp", 0, "Set HW or SW breakpoints");
+	SETB("dbg.hwbp", false, "Use hardware instead of software breakpoints by default");
 	SETCB("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETCB("dbg.verbose", "false", &cb_dbg_verbose, "Verbose debug output");
 	SETBPREF("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
