@@ -3707,7 +3707,7 @@ static void disassembly_as_table(RzTable *t, RzCore *core, int n_instrs, int n_b
 	}
 }
 
-static bool core_disassembly(RzCore *core, ut64 addr, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool cbytes) {
+static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool cbytes) {
 	ut32 old_blocksize = core->blocksize;
 	ut64 old_offset = core->offset;
 	if (!rz_core_handle_backwards_disasm(core, &n_instrs, &n_bytes)) {
@@ -3718,13 +3718,13 @@ static bool core_disassembly(RzCore *core, ut64 addr, int n_bytes, int n_instrs,
 		       "blocksize: %" PFMT32d " "
 		       "n_bytes: %" PFMT32d " "
 		       "n_instrs: %" PFMT32d "\n",
-		addr, core->blocksize, n_bytes, n_instrs);
+		core->offset, core->blocksize, n_bytes, n_instrs);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = cbytes,
 	};
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core, addr, core->block, n_bytes,
+		rz_core_print_disasm(core, core->offset, core->block, n_bytes,
 			n_bytes > 0 && !n_instrs ? n_bytes : n_instrs, state, &disasm_options);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
@@ -3732,7 +3732,7 @@ static bool core_disassembly(RzCore *core, ut64 addr, int n_bytes, int n_instrs,
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		rz_cmd_state_output_array_start(state);
-		rz_core_print_disasm_json(core, addr, core->block, n_bytes, n_instrs, state->d.pj);
+		rz_core_print_disasm_json(core, core->offset, core->block, n_bytes, n_instrs, state->d.pj);
 		rz_cmd_state_output_array_end(state);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
@@ -3752,12 +3752,12 @@ static bool core_disassembly(RzCore *core, ut64 addr, int n_bytes, int n_instrs,
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int n_bytes = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
-	return bool2status(core_disassembly(core, core->offset, n_bytes, 0, state, true));
+	return bool2status(core_disassembly(core, n_bytes, 0, state, true));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int n_instrs = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 0;
-	return bool2status(core_disassembly(core, core->offset, argc > 1 && n_instrs == 0 ? 0 : (int)core->blocksize, n_instrs, state, false));
+	return bool2status(core_disassembly(core, argc > 1 && n_instrs == 0 ? 0 : (int)core->blocksize, n_instrs, state, false));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -4388,7 +4388,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 			continue;
 		}
 
-		core_disassembly(core, core->offset, core->blocksize, 1, state, false);
+		core_disassembly(core, core->blocksize, 1, state, false);
 
 		switch (aop_type) {
 		case RZ_ANALYSIS_OP_TYPE_JMP:
@@ -5184,7 +5184,7 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 		} else {
 			ut64 off = core->offset;
 			rz_core_seek(core, xrefi->from, true);
-			core_disassembly(core, core->offset, 1, 1, state, false);
+			core_disassembly(core, 1, 1, state, false);
 			rz_core_seek(core, off, true);
 		}
 	}
@@ -5545,7 +5545,7 @@ static void print_stack(RzCore *core) {
 		rz_core_print_dump(core, RZ_OUTPUT_MODE_STANDARD, sp_addr, 4, 128, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL);
 	}
 	rz_cmd_state_output_init(&so, RZ_OUTPUT_MODE_STANDARD);
-	core_disassembly(core, core->offset, core->blocksize, 0, &so, false);
+	core_disassembly(core, core->blocksize, 0, &so, false);
 	rz_cmd_state_output_fini(&so);
 }
 
