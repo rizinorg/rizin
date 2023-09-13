@@ -1,6 +1,7 @@
 NAME=id Dwarf Printing
 FILE=bins/elf/dwarf3_many_comp_units.elf
 CMDS=<<EOF
+aaa
 id
 EOF
 EXPECT=<<EOF
@@ -1322,6 +1323,70 @@ standard_opcode_lengths[DW_LNS_set_isa] = 1
   DW_LNS_advance_pc	7
   DW_LNE_end_sequence
 
+0x0000118a	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	3
+0x00001196	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	19
+0x000011a4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	22
+0x000011a8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	3
+0x000011b8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	22
+0x000011d8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4	22
+0x000011e4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4	31
+0x000011e9	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4	34
+0x000011eb	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10	12
+0x000011f7	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10	12
+0x00001206	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	12	23
+0x00001212	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	13	1
+0x00001228	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7	6
+0x00001234	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7	26
+0x00001239	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7	28
+0x0000123b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	15	12
+0x00001248	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18	16
+0x0000125d	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18	5
+0x00001261	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19	15
+0x00001276	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19	5
+0x0000127a	/home/hound/r2test/dwarf/cpp/dump/main.cpp	20	7
+0x00001281	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21	20
+0x0000128f	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21	19
+0x00001298	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21	10
+0x0000129b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22	21
+0x000012a9	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22	20
+0x000012b2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22	10
+0x000012b5	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23	23
+0x000012ba	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23	24
+0x000012bf	/home/hound/r2test/dwarf/cpp/dump/main.cpp	24	1
+0x000012c6	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2	3
+0x000012d2	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2	12
+0x000012e0	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2	15
+0x000012e3	-	0	0
+0x000012e4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4	3
+0x000012f4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4	9
+0x0000130e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4	12
+0x00001311	-	0	0
+0x00001312	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	11
+0x00001322	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	18
+0x0000133c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	19
+0x0000133f	-	0	0
+0x00001340	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	11
+0x00001350	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	19
+0x0000136f	-	0	0
+0x00001370	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6	15
+0x0000137c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6	31
+0x00001381	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6	34
+0x00001383	-	0	0
+0x00001384	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10	3
+0x00001390	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10	10
+0x0000139e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10	13
+0x000013a1	-	0	0
+0x000013a2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	11
+0x000013ae	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	19
+0x000013bc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	20
+0x000013bf	-	0	0
+0x000013c0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	11
+0x000013d0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	20
+0x000013ef	-	0	0
+0x000013f0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12	15
+0x000013fc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12	30
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12	33
+0x00001403	-	0	0
 EOF
 RUN
 
@@ -1346,7 +1411,7 @@ NAME="Mach-O dSYM lines (armv7)"
 FILE=bins/mach0/TestRTTI-armv7-dSYM
 CMDS=ix.@ 0x0000a24e
 EXPECT=<<EOF
-0x0000a24e	/Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp	18
+0x0000a24e	/Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp	18	0
 EOF
 RUN
 
@@ -1938,6 +2003,14 @@ standard_opcode_lengths[DW_LNS_set_isa] = 1
   DW_LNS_advance_pc	2
   DW_LNE_end_sequence
 
+0x00001129	/home/hound/r2test/dwarf/c/main.c	3	1
+0x00001131	/home/hound/r2test/dwarf/c/main.c	6	1
+0x00001134	/home/hound/r2test/dwarf/c/main.c	7	12
+0x00001140	/home/hound/r2test/dwarf/c/main.c	8	2
+0x0000114a	/home/hound/r2test/dwarf/c/main.c	9	6
+0x00001151	/home/hound/r2test/dwarf/c/main.c	10	9
+0x00001154	/home/hound/r2test/dwarf/c/main.c	11	1
+0x00001156	-	0	0
 EOF
 RUN
 
@@ -2935,6 +3008,66 @@ standard_opcode_lengths[DW_LNS_set_isa] = 1
   DW_LNS_advance_pc	7
   DW_LNE_end_sequence
 
+0x00001169	/home/hound/r2test/dwarf/cpp/main.cpp	19	12
+0x00001176	/home/hound/r2test/dwarf/cpp/main.cpp	22	16
+0x0000118b	/home/hound/r2test/dwarf/cpp/main.cpp	22	5
+0x0000118f	/home/hound/r2test/dwarf/cpp/main.cpp	23	15
+0x000011a4	/home/hound/r2test/dwarf/cpp/main.cpp	23	5
+0x000011a8	/home/hound/r2test/dwarf/cpp/main.cpp	24	7
+0x000011af	/home/hound/r2test/dwarf/cpp/main.cpp	25	20
+0x000011bd	/home/hound/r2test/dwarf/cpp/main.cpp	25	19
+0x000011c6	/home/hound/r2test/dwarf/cpp/main.cpp	25	10
+0x000011c9	/home/hound/r2test/dwarf/cpp/main.cpp	26	21
+0x000011d7	/home/hound/r2test/dwarf/cpp/main.cpp	26	20
+0x000011e0	/home/hound/r2test/dwarf/cpp/main.cpp	26	10
+0x000011e3	/home/hound/r2test/dwarf/cpp/main.cpp	27	10
+0x000011e6	/home/hound/r2test/dwarf/cpp/main.cpp	28	1
+0x000011ed	-	0	0
+0x000011ee	/home/hound/r2test/dwarf/cpp/main.cpp	2	3
+0x000011fa	/home/hound/r2test/dwarf/cpp/main.cpp	2	12
+0x00001208	/home/hound/r2test/dwarf/cpp/main.cpp	2	15
+0x0000120b	-	0	0
+0x0000120c	/home/hound/r2test/dwarf/cpp/main.cpp	3	11
+0x00001218	/home/hound/r2test/dwarf/cpp/main.cpp	3	21
+0x00001226	/home/hound/r2test/dwarf/cpp/main.cpp	3	22
+0x00001229	-	0	0
+0x0000122a	/home/hound/r2test/dwarf/cpp/main.cpp	3	11
+0x0000123a	/home/hound/r2test/dwarf/cpp/main.cpp	3	22
+0x00001259	-	0	0
+0x0000125a	/home/hound/r2test/dwarf/cpp/main.cpp	4	15
+0x00001266	/home/hound/r2test/dwarf/cpp/main.cpp	4	31
+0x0000126b	/home/hound/r2test/dwarf/cpp/main.cpp	4	34
+0x0000126d	-	0	0
+0x0000126e	/home/hound/r2test/dwarf/cpp/main.cpp	8	3
+0x0000127e	/home/hound/r2test/dwarf/cpp/main.cpp	8	9
+0x00001298	/home/hound/r2test/dwarf/cpp/main.cpp	8	12
+0x0000129b	-	0	0
+0x0000129c	/home/hound/r2test/dwarf/cpp/main.cpp	9	11
+0x000012ac	/home/hound/r2test/dwarf/cpp/main.cpp	9	18
+0x000012c6	/home/hound/r2test/dwarf/cpp/main.cpp	9	19
+0x000012c9	-	0	0
+0x000012ca	/home/hound/r2test/dwarf/cpp/main.cpp	9	11
+0x000012da	/home/hound/r2test/dwarf/cpp/main.cpp	9	19
+0x000012f9	-	0	0
+0x000012fa	/home/hound/r2test/dwarf/cpp/main.cpp	10	15
+0x00001306	/home/hound/r2test/dwarf/cpp/main.cpp	10	31
+0x0000130b	/home/hound/r2test/dwarf/cpp/main.cpp	10	34
+0x0000130d	-	0	0
+0x0000130e	/home/hound/r2test/dwarf/cpp/main.cpp	14	3
+0x0000131a	/home/hound/r2test/dwarf/cpp/main.cpp	14	10
+0x00001328	/home/hound/r2test/dwarf/cpp/main.cpp	14	13
+0x0000132b	-	0	0
+0x0000132c	/home/hound/r2test/dwarf/cpp/main.cpp	15	11
+0x00001338	/home/hound/r2test/dwarf/cpp/main.cpp	15	19
+0x00001346	/home/hound/r2test/dwarf/cpp/main.cpp	15	20
+0x00001349	-	0	0
+0x0000134a	/home/hound/r2test/dwarf/cpp/main.cpp	15	11
+0x0000135a	/home/hound/r2test/dwarf/cpp/main.cpp	15	20
+0x00001379	-	0	0
+0x0000137a	/home/hound/r2test/dwarf/cpp/main.cpp	16	15
+0x00001386	/home/hound/r2test/dwarf/cpp/main.cpp	16	30
+0x0000138b	/home/hound/r2test/dwarf/cpp/main.cpp	16	33
+0x0000138d	-	0	0
 EOF
 RUN
 
@@ -4566,6 +4699,88 @@ standard_opcode_lengths[DW_LNS_set_isa] = 1
   DW_LNS_advance_pc	12
   DW_LNE_end_sequence
 
+0x00000000	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	15	0
+0x00000020	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	7
+0x0000002c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	10
+0x00000034	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	14
+0x00000040	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	6
+0x00000048	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	0	6
+0x0000004c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	17	3
+0x0000005c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	19
+0x00000064	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	3
+0x00000068	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	7
+0x0000006c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	14
+0x00000070	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	4
+0x00000074	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	3
+0x00000078	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	12
+0x0000007c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	12
+0x00000080	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	11
+0x00000084	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	18
+0x00000088	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	21
+0x0000008c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	2
+0x00000094	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	21
+0x0000009c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	4
+0x000000a0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	3
+0x000000a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	12
+0x000000a8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	16
+0x000000ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	4
+0x000000b0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	3
+0x000000b4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	14
+0x000000bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	24	2
+0x000000cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
+0x000000d4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
+0x000000e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	27	0
+0x000000ec	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	29
+0x000000f4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	15
+0x000000f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	9
+0x000000fc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	2
+0x00000108	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	9
+0x0000010c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	2
+0x00000118	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	33	0
+0x00000130	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	35	4
+0x00000140	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	36	4
+0x00000150	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
+0x00000154	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	17
+0x00000158	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	15
+0x0000015c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	21
+0x00000160	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	25
+0x00000164	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	19
+0x00000168	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
+0x0000016c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	9
+0x00000170	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	35
+0x00000178	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	38
+0x00000180	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	41
+0x00000184	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	2
+0x00000190	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	14
+0x00000194	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	10
+0x00000198	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	7
+0x000001a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	6
+0x000001ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	41	3
+0x000001b8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	20
+0x000001bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	15
+0x000001c0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	16
+0x000001cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	19
+0x000001e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	37
+0x000001e4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	40
+0x000001e8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	7
+0x000001f0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	6
+0x000001f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	45	3
+0x00000204	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	60
+0x00000208	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	63
+0x0000020c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	4
+0x00000214	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	13
+0x0000021c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	22
+0x00000224	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	31
+0x0000022c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	40
+0x00000234	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	49
+0x0000023c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
+0x00000240	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	61
+0x00000244	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
+0x00000248	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	2
+0x00000254	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	50	2
+0x0000025c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
+0x00000260	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
+0x0000026c	-	0	0
 EOF
 RUN
 
@@ -6197,5 +6412,87 @@ standard_opcode_lengths[DW_LNS_set_isa] = 1
   DW_LNS_advance_pc	12
   DW_LNE_end_sequence
 
+0x00000000	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	15	0
+0x00000020	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	7
+0x0000002c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	10
+0x00000034	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	14
+0x00000040	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	6
+0x00000048	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	0	6
+0x0000004c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	17	3
+0x0000005c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	19
+0x00000064	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	3
+0x00000068	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	7
+0x0000006c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	14
+0x00000070	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	4
+0x00000074	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	3
+0x00000078	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	12
+0x0000007c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	12
+0x00000080	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	11
+0x00000084	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	18
+0x00000088	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	21
+0x0000008c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	2
+0x00000094	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	21
+0x0000009c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	4
+0x000000a0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	3
+0x000000a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	12
+0x000000a8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	16
+0x000000ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	4
+0x000000b0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	3
+0x000000b4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	14
+0x000000bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	24	2
+0x000000cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
+0x000000d4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
+0x000000e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	27	0
+0x000000ec	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	29
+0x000000f4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	15
+0x000000f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	9
+0x000000fc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	2
+0x00000108	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	9
+0x0000010c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	2
+0x00000118	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	33	0
+0x00000130	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	35	4
+0x00000140	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	36	4
+0x00000150	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
+0x00000154	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	17
+0x00000158	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	15
+0x0000015c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	21
+0x00000160	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	25
+0x00000164	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	19
+0x00000168	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
+0x0000016c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	9
+0x00000170	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	35
+0x00000178	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	38
+0x00000180	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	41
+0x00000184	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	2
+0x00000190	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	14
+0x00000194	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	10
+0x00000198	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	7
+0x000001a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	6
+0x000001ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	41	3
+0x000001b8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	20
+0x000001bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	15
+0x000001c0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	16
+0x000001cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	19
+0x000001e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	37
+0x000001e4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	40
+0x000001e8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	7
+0x000001f0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	6
+0x000001f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	45	3
+0x00000204	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	60
+0x00000208	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	63
+0x0000020c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	4
+0x00000214	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	13
+0x0000021c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	22
+0x00000224	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	31
+0x0000022c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	40
+0x00000234	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	49
+0x0000023c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
+0x00000240	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	61
+0x00000244	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
+0x00000248	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	2
+0x00000254	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	50	2
+0x0000025c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
+0x00000260	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
+0x0000026c	-	0	0
 EOF
 RUN

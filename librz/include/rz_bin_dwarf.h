@@ -1110,24 +1110,6 @@ typedef struct {
 	size_t count;
 } RzBinDwarfAbbrev;
 
-#define DWARF_FALSE 0
-#define DWARF_TRUE  1
-
-typedef struct {
-	ut64 address;
-	ut64 op_index;
-	ut64 file;
-	ut64 line;
-	ut64 column;
-	ut8 is_stmt;
-	ut8 basic_block;
-	ut8 end_sequence;
-	ut8 prologue_end;
-	ut8 epilogue_begin;
-	ut64 isa;
-	ut64 discriminator;
-} RzBinDwarfSMRegisters;
-
 typedef struct rz_bin_dwarf_line_file_entry_format_t {
 	DW_LNCT content_type;
 	DW_FORM form;

@@ -12,15 +12,30 @@
  * It is strictly associated with the RzBinDwarfLineHeader it has been created with in rz_bin_dwarf_line_header_new_file_cache()
  * and must be freed with the same header in rz_bin_dwarf_line_header_free_file_cache().
  */
-typedef RzPVector /*<char *>*/ LineFilePathCache;
+typedef RzPVector /*<char *>*/ FilePathCache;
+
+typedef struct {
+	ut64 address;
+	ut64 op_index;
+	ut64 file;
+	ut64 line;
+	ut64 column;
+	ut8 is_stmt;
+	ut8 basic_block;
+	ut8 end_sequence;
+	ut8 prologue_end;
+	ut8 epilogue_begin;
+	ut64 isa;
+	ut64 discriminator;
+} SMRegisters;
 
 typedef struct {
 	RzBinDWARF *dw;
 	RzBinDwarfLine *line;
 	RzBinDwarfLineHdr *hdr;
-	RzBinDwarfSMRegisters *regs;
+	SMRegisters *regs;
 	RzBinSourceLineInfoBuilder *source_line_info_builder;
-	LineFilePathCache *file_path_cache;
+	FilePathCache *file_path_cache;
 } DWLineContext;
 
 static void FileEntry_fini(RzBinDwarfFileEntry *x, void *user) {
@@ -252,6 +267,10 @@ static char *full_file_path(
 }
 
 static const char *full_file_path_cached(DWLineContext *ctx, ut64 file_index) {
+	if (ctx->hdr->encoding.version <= 4) {
+		file_index -= 1;
+	}
+
 	if (file_index >= rz_vector_len(&ctx->hdr->file_names)) {
 		return NULL;
 	}
@@ -478,27 +497,24 @@ ok:
 
 static void SMRegisters_reset(
 	const RzBinDwarfLineHdr *hdr,
-	RzBinDwarfSMRegisters *regs) {
+	SMRegisters *regs) {
 	rz_return_if_fail(hdr && regs);
 	regs->address = 0;
 	regs->file = 1;
 	regs->line = 1;
 	regs->column = 0;
 	regs->is_stmt = hdr->default_is_stmt;
-	regs->basic_block = DWARF_FALSE;
-	regs->end_sequence = DWARF_FALSE;
-	regs->prologue_end = DWARF_FALSE;
-	regs->epilogue_begin = DWARF_FALSE;
+	regs->basic_block = 0;
+	regs->end_sequence = 0;
+	regs->prologue_end = 0;
+	regs->epilogue_begin = 0;
 	regs->isa = 0;
 }
 
 static void store_line_sample(DWLineContext *ctx) {
-	const char *file = NULL;
-	if (ctx->regs->file) {
-		file = full_file_path_cached(ctx, ctx->regs->file - 1);
-	}
+	const char *filepath = full_file_path_cached(ctx, ctx->regs->file);
 	rz_bin_source_line_info_builder_push_sample(
-		ctx->source_line_info_builder, ctx->regs->address, (ut32)ctx->regs->line, (ut32)ctx->regs->column, file);
+		ctx->source_line_info_builder, ctx->regs->address, (ut32)ctx->regs->line, (ut32)ctx->regs->column, filepath);
 }
 
 /**
@@ -516,7 +532,7 @@ static bool LineOp_run(
 			if (ctx->source_line_info_builder) {
 				store_line_sample(ctx);
 			}
-			ctx->regs->basic_block = DWARF_FALSE;
+			ctx->regs->basic_block = 0;
 			break;
 		case DW_LNS_advance_pc:
 			ctx->regs->address += op->args.advance_pc * ctx->hdr->min_inst_len;
@@ -531,10 +547,10 @@ static bool LineOp_run(
 			ctx->regs->column = op->args.set_column;
 			break;
 		case DW_LNS_negate_stmt:
-			ctx->regs->is_stmt = ctx->regs->is_stmt ? DWARF_FALSE : DWARF_TRUE;
+			ctx->regs->is_stmt = ctx->regs->is_stmt ? 0 : 1;
 			break;
 		case DW_LNS_set_basic_block:
-			ctx->regs->basic_block = DWARF_TRUE;
+			ctx->regs->basic_block = 1;
 			break;
 		case DW_LNS_const_add_pc:
 			ctx->regs->address += LineHdr_spec_op_advance_pc(ctx->hdr, 255);
@@ -558,7 +574,7 @@ static bool LineOp_run(
 	case RZ_BIN_DWARF_LINE_OP_TYPE_EXT:
 		switch (op->ext_opcode) {
 		case DW_LNE_end_sequence:
-			ctx->regs->end_sequence = DWARF_TRUE;
+			ctx->regs->end_sequence = 1;
 			if (ctx->source_line_info_builder) {
 				// closing entry
 				rz_bin_source_line_info_builder_push_sample(
@@ -570,6 +586,7 @@ static bool LineOp_run(
 			ctx->regs->address = op->args.set_address;
 			break;
 		case DW_LNE_define_file:
+			rz_vector_push(&ctx->hdr->file_names, &op->args.define_file);
 			break;
 		case DW_LNE_set_discriminator:
 			ctx->regs->discriminator = op->args.set_discriminator;
@@ -584,9 +601,9 @@ static bool LineOp_run(
 		if (ctx->source_line_info_builder) {
 			store_line_sample(ctx);
 		}
-		ctx->regs->basic_block = DWARF_FALSE;
-		ctx->regs->prologue_end = DWARF_FALSE;
-		ctx->regs->epilogue_begin = DWARF_FALSE;
+		ctx->regs->basic_block = 0;
+		ctx->regs->prologue_end = 0;
+		ctx->regs->epilogue_begin = 0;
 		ctx->regs->discriminator = 0;
 		break;
 	default:
@@ -651,7 +668,7 @@ static RzBinDwarfLine *Line_parse(
 
 	RzBinSourceLineInfoBuilder source_line_info_builder;
 	rz_bin_source_line_info_builder_init(&source_line_info_builder);
-	RzBinDwarfSMRegisters regs;
+	SMRegisters regs;
 	// each iteration we read one header AKA comp. unit
 	while (true) {
 		RzBinDwarfLineUnit *unit = RZ_NEW0(RzBinDwarfLineUnit);
