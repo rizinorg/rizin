@@ -8,6 +8,7 @@
 #include "../../asm/arch/ppc/libvle/vle.h"
 #include "../arch/ppc/ppc_analysis.h"
 #include "../arch/ppc/ppc_il.h"
+#include "rz_util/rz_strbuf.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
@@ -1328,22 +1329,28 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case PPC_INS_B:
 		case PPC_INS_BC:
 		case PPC_INS_BA:
-			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-			op->jump = ARG(1)[0] == '\0' ? IMM(0) : IMM(1);
+			if (insn->id == PPC_INS_BC) {
+				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+			} else {
+				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+			}
 			op->fail = addr + op->size;
+			bool cr_cond_set = true;
 #if CS_NEXT_VERSION >= 6
+			op->jump = insn->id == PPC_INS_BC ? IMM(2) : IMM(0);
 			switch (insn->detail->ppc.bc.pred_cr) {
 			case PPC_PRED_LT:
 #else
+			op->jump = ARG(1)[0] == '\0' ? IMM(0) : IMM(1);
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_LT:
 #endif
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,&,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "2,cr0,&,");
 				} else {
-					esilprintf(op, "2,%s,&,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "2,%s,&,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1354,9 +1361,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "3,cr0,&,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "3,cr0,&,");
 				} else {
-					esilprintf(op, "3,%s,&,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "3,%s,&,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1367,9 +1374,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "1,cr0,&,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "1,cr0,&,");
 				} else {
-					esilprintf(op, "1,%s,&,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "1,%s,&,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1380,9 +1387,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,^,3,&,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "2,cr0,^,3,&,");
 				} else {
-					esilprintf(op, "2,%s,^,3,&,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "2,%s,^,3,&,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1393,9 +1400,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,&,!,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "2,cr0,&,!,");
 				} else {
-					esilprintf(op, "2,%s,&,!,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "2,%s,&,!,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1406,29 +1413,42 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "cr0,1,&,!,?{,%s,pc,=,},", ARG(0));
+					esilprintf(op, "cr0,1,&,!,");
 				} else {
-					esilprintf(op, "%s,1,&,!,?{,%s,pc,=,},", ARG(0), ARG(1));
+					esilprintf(op, "%s,1,&,!,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_INVALID:
-#else
-			case PPC_BC_INVALID:
-#endif
-				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-				esilprintf(op, "%s,pc,=", ARG(0));
-#if CS_NEXT_VERSION >= 6
 			case PPC_PRED_UN: // unordered + PPC_PRED_SO - summary overflow
 			case PPC_PRED_NU: // not unordered + PPC_PRED_NS - not summary overflow
 #else
+			case PPC_BC_INVALID:
 			case PPC_BC_UN: // unordered
 			case PPC_BC_NU: // not unordered
 			case PPC_BC_SO: // summary overflow
 			case PPC_BC_NS: // not summary overflow
 #endif
 			default:
+				cr_cond_set = false;
 				break;
+			}
+#if CS_NEXT_VERSION >= 6
+			switch (insn->detail->ppc.bc.pred_ctr) {
+			default:
+				break;
+			case PPC_PRED_Z:
+				rz_strbuf_appendf(&op->esil, "1,ctr,-=,$z,%s", cr_cond_set ? "&&,?" : "?");
+				break;
+			case PPC_PRED_NZ:
+				rz_strbuf_appendf(&op->esil, "1,ctr,-=,$z,!,%s", cr_cond_set ? "&&,?" : "?");
+				break;
+			}
+#endif
+			if (op->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
+				rz_strbuf_appendf(&op->esil, "{,0x%llx,pc,=,},", op->jump);
+			} else {
+				esilprintf(op, ",%s,pc,=,", ARG(0));
 			}
 			break;
 #if CS_NEXT_VERSION < 6
@@ -1516,29 +1536,27 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case PPC_INS_BLR:
 		case PPC_INS_BLRL:
 		case PPC_INS_BCLR:
-		case PPC_INS_BCLRL:
-			op->type = RZ_ANALYSIS_OP_TYPE_CRET;
-			op->fail = addr + op->size;
-			switch (insn->detail->ppc.bc.pred_cr) {
-#if CS_NEXT_VERSION >= 6
-			case PPC_PRED_INVALID:
-#else
-			case PPC_BC_INVALID:
-#endif
+		case PPC_INS_BCLRL: {
+			if (insn->id == PPC_INS_BCLR || insn->id == PPC_INS_BCLRL) {
+				op->type = RZ_ANALYSIS_OP_TYPE_CRET;
+			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_RET;
-				esilprintf(op, "lr,pc,=");
-				break;
+			}
+			op->fail = addr + op->size;
+			bool cr_cond_set = true;
 #if CS_NEXT_VERSION >= 6
+			switch (insn->detail->ppc.bc.pred_cr) {
 			case PPC_PRED_LT:
 #else
+			switch (insn->detail->ppc.bc) {
 			case PPC_BC_LT:
 #endif
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,&,?{,lr,pc,=,},");
+					esilprintf(op, "2,cr0,&,");
 				} else {
-					esilprintf(op, "2,%s,&,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "2,%s,&,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1549,9 +1567,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "3,cr0,&,?{,lr,pc,=,},");
+					esilprintf(op, "3,cr0,&,");
 				} else {
-					esilprintf(op, "3,%s,&,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "3,%s,&,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1562,9 +1580,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "1,cr0,&,?{,lr,pc,=,},");
+					esilprintf(op, "1,cr0,&,");
 				} else {
-					esilprintf(op, "1,%s,&,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "1,%s,&,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1575,9 +1593,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,^,3,&,?{,lr,pc,=,},");
+					esilprintf(op, "2,cr0,^,3,&,");
 				} else {
-					esilprintf(op, "2,%s,^,3,&,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "2,%s,^,3,&,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1588,9 +1606,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,&,!,?{,lr,pc,=,},");
+					esilprintf(op, "2,cr0,&,!,");
 				} else {
-					esilprintf(op, "2,%s,&,!,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "2,%s,&,!,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
@@ -1601,24 +1619,47 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				/* 0b01 == equal
 				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "cr0,1,&,!,?{,lr,pc,=,},");
+					esilprintf(op, "cr0,1,&,!,");
 				} else {
-					esilprintf(op, "%s,1,&,!,?{,lr,pc,=,},", ARG(0));
+					esilprintf(op, "%s,1,&,!,", ARG(0));
 				}
 				break;
 #if CS_NEXT_VERSION >= 6
+			case PPC_PRED_INVALID:
 			case PPC_PRED_UN: // unordered + PPC_PRED_SO - summary overflow
 			case PPC_PRED_NU: // not unordered + PPC_PRED_NS - not summary overflow
 #else
+			case PPC_BC_INVALID:
 			case PPC_BC_UN: // unordered
 			case PPC_BC_NU: // not unordered
 			case PPC_BC_SO: // summary overflow
 			case PPC_BC_NS: // not summary overflow
 #endif
 			default:
+				cr_cond_set = false;
 				break;
 			}
+#if CS_NEXT_VERSION >= 6
+			switch (insn->detail->ppc.bc.pred_ctr) {
+			default:
+				break;
+			case PPC_PRED_Z:
+				rz_strbuf_appendf(&op->esil, "1,ctr,-=,$z,%s", cr_cond_set ? "&&,?" : "?");
+				break;
+			case PPC_PRED_NZ:
+				rz_strbuf_appendf(&op->esil, "1,ctr,-=,$z,!,%s", cr_cond_set ? "&&,?" : "?");
+				break;
+			}
+#endif
+			if (op->type == RZ_ANALYSIS_OP_TYPE_CRET) {
+				op->type = RZ_ANALYSIS_OP_TYPE_CRET;
+				rz_strbuf_appendf(&op->esil, "{,lr,pc,=,},");
+			} else {
+				op->type = RZ_ANALYSIS_OP_TYPE_RET;
+				esilprintf(op, ",lr,pc,=,");
+			}
 			break;
+		}
 		case PPC_INS_NOR:
 			op->type = RZ_ANALYSIS_OP_TYPE_NOR;
 			esilprintf(op, "%s,%s,|,!,%s,=", ARG(2), ARG(1), ARG(0));
