@@ -379,7 +379,7 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	populate_symbols(bf);
 	return rz_coff_get_relocs(bf->o->bin_obj);
 }

@@ -182,7 +182,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return r;
 }
 
-static void convert_relocs(RzBfltObj *bin, RzList /*<RzBinReloc *>*/ *out, RzVector /*<RzBfltReloc>*/ *relocs) {
+static void convert_relocs(RzBfltObj *bin, RzPVector /*<RzBinReloc *>*/ *out, RzVector /*<RzBfltReloc>*/ *relocs) {
 	RzBfltReloc *br;
 	rz_vector_foreach(relocs, br) {
 		RzBinReloc *r = RZ_NEW0(RzBinReloc);
@@ -196,20 +196,20 @@ static void convert_relocs(RzBfltObj *bin, RzList /*<RzBinReloc *>*/ *out, RzVec
 		// 0 preserved, see also patching in bflt.c
 		r->target_vaddr = br->value_orig ? rz_bflt_paddr_to_vaddr(bin, br->value_orig) : 0;
 
-		rz_list_push(out, r);
+		rz_pvector_push(out, r);
 	}
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	RzBfltObj *obj = (RzBfltObj *)bf->o->bin_obj;
-	RzList *list = rz_list_newf((RzListFree)free);
-	if (!list || !obj) {
-		rz_list_free(list);
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)free);
+	if (!vec || !obj) {
+		rz_pvector_free(vec);
 		return NULL;
 	}
-	convert_relocs(obj, list, &obj->got_relocs);
-	convert_relocs(obj, list, &obj->relocs);
-	return list;
+	convert_relocs(obj, vec, &obj->got_relocs);
+	convert_relocs(obj, vec, &obj->relocs);
+	return vec;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {

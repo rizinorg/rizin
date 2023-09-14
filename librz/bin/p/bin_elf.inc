@@ -1702,9 +1702,9 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinReloc *ptr = NULL;
 
 	if (!bf->o) {
@@ -1718,7 +1718,7 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 
 	patch_relocs(bf, bin);
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
 		return NULL;
 	}
 
@@ -1734,7 +1734,7 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 			continue;
 		}
 
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;

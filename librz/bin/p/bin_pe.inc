@@ -410,7 +410,7 @@ static void filter_import(ut8 *n) {
 }
 
 static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
-	RzList *relocs = NULL;
+	RzPVector *relocs = NULL;
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
@@ -426,10 +426,10 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 
 	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
 	if (((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs) {
-		rz_list_free(((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs);
+		rz_pvector_free(((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs);
 	}
 
-	if (!(relocs = rz_list_newf(free))) {
+	if (!(relocs = rz_pvector_new(free))) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
@@ -471,13 +471,13 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 			rel->vaddr = newaddr;
 		}
 		rel->paddr = imports[i].paddr;
-		rz_list_append(relocs, rel);
+		rz_pvector_push(relocs, rel);
 	}
 	free(imports);
 	return ret;
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (obj) {
 		return obj->relocs;
@@ -594,12 +594,13 @@ static int has_canary(RzBinFile *bf) {
 	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
+	void **it;
 	if (bin) {
-		const RzList *relocs_list = bin->relocs;
+		const RzPVector *relocs_vec = bin->relocs;
 		RzBinReloc *rel;
-		RzListIter *iter;
-		if (relocs_list) {
-			rz_list_foreach (relocs_list, iter, rel) {
+		if (relocs_vec) {
+			rz_pvector_foreach (relocs_vec, it) {
+				rel = *it;
 				if (!strcmp(rel->import->name, "__security_init_cookie")) {
 					return true;
 				}
@@ -608,10 +609,9 @@ static int has_canary(RzBinFile *bf) {
 	} else { // rz_bin needs this as it will not initialise bin
 		const RzPVector *imports_vec = imports(bf);
 		RzBinImport *imp;
-		void **vec_it;
 		if (imports_vec) {
-			rz_pvector_foreach (imports_vec, vec_it) {
-				imp = *vec_it;
+			rz_pvector_foreach (imports_vec, it) {
+				imp = *it;
 				if (!strcmp(imp->name, "__security_init_cookie")) {
 					return true;
 				}

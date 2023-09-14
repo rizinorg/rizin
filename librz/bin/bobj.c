@@ -94,27 +94,28 @@ static int reloc_target_cmp(const void *a, const void *b) {
 
 #undef CMP_CHECK
 
-RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList /*<RzBinReloc *>*/ *relocs) {
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs) {
 	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
 	if (!ret) {
 		return NULL;
 	}
 	RzPVector sorter;
 	rz_pvector_init(&sorter, NULL);
-	rz_pvector_reserve(&sorter, rz_list_length(relocs));
+	rz_pvector_reserve(&sorter, rz_pvector_len(relocs));
 	RzPVector target_sorter;
 	rz_pvector_init(&target_sorter, NULL);
-	rz_pvector_reserve(&target_sorter, rz_list_length(relocs));
-	RzListIter *it;
+	rz_pvector_reserve(&target_sorter, rz_pvector_len(relocs));
+	void **it;
 	RzBinReloc *reloc;
-	rz_list_foreach (relocs, it, reloc) {
+	rz_pvector_foreach (relocs, it) {
+		reloc = *it;
 		rz_pvector_push(&sorter, reloc);
 		if (rz_bin_reloc_has_target(reloc)) {
 			rz_pvector_push(&target_sorter, reloc);
 		}
 	}
-	relocs->free = NULL; // ownership of relocs transferred
-	rz_list_free(relocs);
+	relocs->v.free = NULL; // ownership of relocs transferred
+	rz_pvector_free(relocs);
 	rz_pvector_sort(&sorter, reloc_cmp);
 	ret->relocs_count = rz_pvector_len(&sorter);
 	ret->relocs = (RzBinReloc **)rz_pvector_flush(&sorter);
@@ -537,7 +538,7 @@ RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject 
 	// to io so we need to be run from bin_relocs, free the previous reloc and get
 	// the patched ones
 	if (first && o->plugin && o->plugin->patch_relocs) {
-		RzList *tmp = o->plugin->patch_relocs(bf);
+		RzPVector *tmp = o->plugin->patch_relocs(bf);
 		first = false;
 		if (!tmp) {
 			return o->relocs;

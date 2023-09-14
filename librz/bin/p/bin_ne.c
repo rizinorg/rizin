@@ -111,7 +111,7 @@ RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_ne_get_segments(bf->o->bin_obj);
 }
 
-RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return rz_bin_ne_get_relocs(bf->o->bin_obj);
 }
 

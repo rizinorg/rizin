@@ -159,7 +159,7 @@ struct PE_(rz_bin_pe_obj_t) {
 	bool verbose;
 	int big_endian;
 	RzList /*<Pe_image_rich_entry *>*/ *rich_entries;
-	RzList /*<RzBinReloc *>*/ *relocs;
+	RzPVector /*<RzBinReloc *>*/ *relocs;
 	RzList /*<rz_pe_resource *>*/ *resources;
 	const char *file;
 	RzBuffer *b;

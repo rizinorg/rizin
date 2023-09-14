@@ -38,7 +38,7 @@ typedef struct {
 
 void rz_bin_ne_free(rz_bin_ne_obj_t *bin);
 rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose);
-RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin);
+RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin);
 RzPVector /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin);
 RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin);
 RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin);

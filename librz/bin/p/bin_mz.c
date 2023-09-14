@@ -224,8 +224,8 @@ static void header(RzBinFile *bf) {
 		mz->dos_header->overlay_number);
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinReloc *rel = NULL;
 	const struct rz_bin_mz_reloc_t *relocs = NULL;
 	int i;
@@ -233,7 +233,7 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if (!(relocs = rz_bin_mz_get_relocs(bf->o->bin_obj))) {
@@ -242,13 +242,13 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	for (i = 0; !relocs[i].last; i++) {
 		if (!(rel = RZ_NEW0(RzBinReloc))) {
 			free((void *)relocs);
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		rel->type = RZ_BIN_RELOC_16;
 		rel->vaddr = relocs[i].vaddr;
 		rel->paddr = relocs[i].paddr;
-		rz_list_append(ret, rel);
+		rz_pvector_push(ret, rel);
 	}
 	free((void *)relocs);
 	return ret;

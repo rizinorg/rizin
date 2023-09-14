@@ -243,12 +243,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	RzBinReloc *reloc = NULL;
 	RzListIter *it = NULL;
-	RzList *relocs = rz_list_newf(free);
+	RzPVector *relocs = rz_pvector_new(free);
 	if (!relocs) {
 		return NULL;
 	}
@@ -261,7 +261,7 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 		copy->vaddr = reloc->vaddr;
 		copy->paddr = reloc->paddr;
 		copy->type = reloc->type;
-		rz_list_append(relocs, copy);
+		rz_pvector_push(relocs, copy);
 	}
 	return relocs;
 }

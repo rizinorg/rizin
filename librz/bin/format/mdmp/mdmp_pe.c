@@ -94,11 +94,11 @@ RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel;
 	RzPVector *ret;
-	RzList *relocs;
+	RzPVector *relocs;
 
 	imports = PE_(rz_bin_pe_get_imports)(pe_bin->bin);
 	ret = rz_pvector_new(NULL);
-	relocs = rz_list_newf(free);
+	relocs = rz_pvector_new(free);
 
 	if (!imports || !ret || !relocs) {
 		free(imports);
@@ -137,7 +137,7 @@ RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin
 		rel->addend = 0;
 		rel->vaddr = offset + pe_bin->vaddr;
 		rel->paddr = imports[i].paddr + pe_bin->paddr;
-		rz_list_append(relocs, rel);
+		rz_pvector_push(relocs, rel);
 	}
 	free(imports);
 
