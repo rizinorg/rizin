@@ -1168,6 +1168,10 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_RLWINM:
 	case PPC_INS_RLWNM:
 #if CS_NEXT_VERSION >= 6
+		if (insn->alias_id == PPC_INS_ALIAS_CLRLWI ||
+			insn->alias_id == PPC_INS_ALIAS_CLRLWI_) {
+			break; // Handle down below
+		}
 		if (id == PPC_INS_RLWNM) {
 #else
 		if (id == PPC_INS_RLWNM || id == PPC_INS_ROTLW) {
@@ -1208,6 +1212,10 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_RLDICR:
 	case PPC_INS_RLDIMI:
 #if CS_NEXT_VERSION >= 6
+		if (insn->alias_id == PPC_INS_ALIAS_CLRLDI ||
+			insn->alias_id == PPC_INS_ALIAS_CLRLDI_) {
+			break; // Handle below
+		}
 		if (id == PPC_INS_RLDCR || id == PPC_INS_RLDCL) {
 #else
 		if (id == PPC_INS_RLDCR || id == PPC_INS_RLDCL || id == PPC_INS_ROTLD) {
@@ -1332,8 +1340,21 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		all_bits_set = (((b - 1) & 0x3f) == e);
 		set_mask = all_bits_set ? NULL : SET_MASK(U8(b), U8(e));
 		into_rA = all_bits_set ? r : LOGAND(r, VARL("mask"));
-#endif
 	}
+#else
+	}
+	if (insn->alias_id == PPC_INS_ALIAS_CLRLDI ||
+		insn->alias_id == PPC_INS_ALIAS_CLRLWI ||
+		insn->alias_id == PPC_INS_ALIAS_CLRLDI_ ||
+		insn->alias_id == PPC_INS_ALIAS_CLRLWI_) {
+		r = VARG(rS);
+		b = (insn->alias_id == PPC_INS_ALIAS_CLRLWI) ? INSOP(3).imm + 32 : INSOP(3).imm;
+		e = 63;
+		all_bits_set = (((b - 1) & 0x3f) == e);
+		set_mask = all_bits_set ? NULL : SET_MASK(U8(b), U8(e));
+		into_rA = all_bits_set ? r : LOGAND(r, VARL("mask"));
+	}	
+#endif
 
 	RzILOpPure *zero = UA(0);
 	RzILOpPure *old_res = VARL("result");
