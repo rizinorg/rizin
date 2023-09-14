@@ -1156,6 +1156,15 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		id = PPC_INS_RLWINM;
 	}
 #endif
+#if CS_NEXT_VERSION >= 6
+	if (insn->alias_id == PPC_INS_ALIAS_SLWI) {
+		id = PPC_INS_SLWI;
+	} else if (insn->alias_id == PPC_INS_ALIAS_SRWI) {
+		id = PPC_INS_SRWI;
+	} else if (insn->alias_id == PPC_INS_ALIAS_SLDI) {
+		id = PPC_INS_SLDI;
+	}
+#endif
 
 	switch (id) {
 	default:
@@ -1273,9 +1282,11 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		}
 		break;
 	case PPC_INS_SLDI:
+#if CS_NEXT_VERSION < 6
 		// Currently broken in rizins capstone version.
 		// Immediate is not in instruction.
 		NOT_IMPLEMENTED;
+#endif
 	case PPC_INS_SLD:
 	case PPC_INS_SRD:
 	case PPC_INS_SLWI:
