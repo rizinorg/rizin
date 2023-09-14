@@ -5266,21 +5266,29 @@ bool __handle_console(RzCore *core, RzPanel *panel, const int key) {
 	switch (key) {
 	case 'i': {
 		char cmd[128] = { 0 };
-		char *prompt = rz_str_newf("[0x%08" PFMT64x "]) ", core->offset);
+		char *prompt = rz_str_newf("[0x%08" PFMT64x "] ", core->offset);
 		__panel_prompt(prompt, cmd, sizeof(cmd));
 		if (*cmd) {
 			if (!strcmp(cmd, "clear")) {
 				rz_cons_clear00();
 			} else {
-				rz_core_cmdf(core, "?e %s %s>>$console", prompt, cmd);
-				rz_core_cmdf(core, "%s >>$console", cmd);
+				char *res = rz_core_cmd_str(core, cmd);
+				if (!res) {
+					free(prompt);
+					return false;
+				}
+				char *old_value = rz_cmd_alias_get(core->rcmd, "$console", 1);
+				char *new_value = rz_str_newf("%s%s %s\n%s\n", old_value ? old_value : "$", prompt, cmd, res);
+				rz_cmd_alias_set(core->rcmd, "$console", new_value, 1);
+				free(new_value);
 			}
 		}
+		free(prompt);
 		panel->view->refresh = true;
-	}
 		return true;
+	}
 	case 'l':
-		rz_core_cmd0(core, ":>$console");
+		rz_cmd_alias_set(core->rcmd, "$console", "", 1);
 		panel->view->refresh = true;
 		return true;
 	default:

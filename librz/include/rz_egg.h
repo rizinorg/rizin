@@ -109,20 +109,6 @@ typedef struct rz_egg_t {
 	int context;
 } RzEgg;
 
-/* XXX: this may fail in different arches */
-#if 0
-rizin -q - <<EOF
-?e #define RZ_EGG_OS_LINUX \`?h linux\`
-?e #define RZ_EGG_OS_OSX \`?h osx\`
-?e #define RZ_EGG_OS_DARWIN \`?h darwin\`
-?e #define RZ_EGG_OS_MACOS \`?h macos\`
-?e #define RZ_EGG_OS_W32 \`?h w32\`
-?e #define RZ_EGG_OS_WINDOWS \`?h windows\`
-?e #define RZ_EGG_OS_BEOS \`?h beos\`
-?e #define RZ_EGG_OS_FREEBSD \`?h freebsd\`
-EOF
-#endif
-
 #define RZ_EGG_OS_LINUX   0x5ca62a43
 #define RZ_EGG_OS_OSX     0x0ad593a1
 #define RZ_EGG_OS_DARWIN  0xd86d1ae2

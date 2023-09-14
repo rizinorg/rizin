@@ -57,9 +57,9 @@ p8 4 # something
 #! identified as comment if not command name
 ============================================
 
-?e #!this is a comment
-?e #this is also a comment
-?e # and this too
+echo #!this is a comment
+echo #this is also a comment
+echo # and this too
 
 ---
 

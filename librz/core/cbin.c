@@ -102,7 +102,6 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
-		// printf ("?e (%s) (%s)\n", k, v);
 		if ((flagname = strstr(dup, ".offset"))) {
 			*flagname = 0;
 			flagname = dup;

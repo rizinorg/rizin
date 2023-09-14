@@ -60,11 +60,11 @@ static bool is_interpret_cmd(const char *s) {
 
 static bool is_special_start(const int32_t ch) {
 	return ch == '*' || ch == '(' || ch == '@' || ch == '|' || ch == '>' ||
-		ch == '.' || ch == '|' || ch == '~' || ch == '!';
+		ch == '.' || ch == '|' || ch == '~' || ch == '!' || ch == '?';
 }
 
 static bool is_start_of_command(const int32_t ch) {
-	return iswalpha (ch) || ch == '$' || ch == '?' || ch == ':' || ch == '+' ||
+	return iswalpha (ch) || ch == '$' || ch == ':' || ch == '+' ||
 		ch == '=' || ch == '/' || ch == '_' || ch == '#' || ch == '\\' ||
 		ch == '-' || ch == '<' || ch == '&' || ch == '%' || is_special_start (ch);
 }
@@ -180,10 +180,9 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		if (is_comment (res)) {
 			return false;
 		}
-		// ?? is not considered an help command, just a regular one
-		if ((res[i_res - 1] == '?' && strcmp (res, "??") != 0) ||
-			(i_res > 2 && is_recursive_help (res[i_res - 2], res[i_res - 1])) ||
-			(i_res > 3 && is_recursive_help_json (res[i_res - 3], res[i_res - 2], res[i_res - 1]))) {
+		if ((res[i_res - 1] == '?') ||
+			(i_res >= 2 && is_recursive_help(res[i_res - 2], res[i_res - 1])) ||
+			(i_res >= 3 && is_recursive_help_json(res[i_res - 3], res[i_res - 2], res[i_res - 1]))) {
 			if (i_res == 1) {
 				return false;
 			}

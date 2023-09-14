@@ -54,6 +54,20 @@ af 0xdeadbeef
     (args (arg (arg_identifier)))))
 
 
+=========================
+?v not valid
+=========================
+
+?v 3
+
+---
+
+(statements
+      (help_stmt
+        (cmd_identifier))
+      (ERROR))
+
+
 ======================
 Percentage mark statements
 ======================
@@ -160,7 +174,7 @@ pf???
   (help_stmt (cmd_identifier))
   (help_stmt (cmd_identifier))
   (help_stmt (cmd_identifier))
-  (arged_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
   (help_stmt (cmd_identifier))
   (help_stmt (cmd_identifier))
   (help_stmt (cmd_identifier))
@@ -173,7 +187,7 @@ pf???
 Command with concatenation args
 ===============================
 
-?e Hello" World"'!' And All
+echo Hello" World"'!' And All
 
 ---
 
@@ -193,7 +207,7 @@ Command with concatenation args
 Tasks command
 =============
 
-& ?e Hello
+& echo Hello
 && 1
 &=
 &
@@ -215,7 +229,7 @@ Tasks command
 Arg with (...)
 ==============
 
-?e Hello(World)
+echo Hello(World)
 
 ---
 
@@ -235,7 +249,7 @@ Arg with (...)
 Expressions with (...)
 ============================
 
-?v (100 + (2 - 3)) * 2
+%v (100 + (2 - 3)) * 2
 
 ---
 
@@ -263,13 +277,13 @@ Expressions with (...)
 Arg with $
 ==========
 
-?v $$
+%v $$
 s $
-?v $*
-?v $$$ test
-?v $alias
-?e hello$alias
-?e test
+%v $*
+%v $$$ test
+%v $alias
+echo hello$alias
+echo test
 
 ---
 

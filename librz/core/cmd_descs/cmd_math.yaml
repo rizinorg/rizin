@@ -4,7 +4,7 @@
 name: cmd_math
 commands:
   - name: "%"
-    summary: Evaluate given numerical expression
+    summary: Evaluate numerical expression <expr>
     cname: calculate_expr
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
@@ -30,7 +30,7 @@ commands:
     cname: set_active_tab_next
     args: []
   - name: "%r"
-    summary: Generate random number
+    summary: Generate a random number between <lowlimit> and <uplimit>
     cname: generate_random_number
     args:
       - name: lowlimit
@@ -38,43 +38,37 @@ commands:
       - name: uplimit
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: "%b"
-    summary: Base64 encode/decode and print binary commands
-    type: RZ_CMD_DESC_TYPE_GROUP
-    subcommands:
-      - name: "%b"
-        summary: Print binary format
-        cname: print_binary
-        args:
-          - name: num
-            type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: "%b64"
-        summary: Base64 encode
-        cname: base64_encode
-        args:
-          - name: strs
-            type: RZ_CMD_ARG_TYPE_STRING
-            flags: RZ_CMD_ARG_FLAG_ARRAY
-        details:
-          - name: Examples
-            entries:
-              - text: "%b64"
-                arg_str: " ILoveRizin"
-                comment: (SUxvdmVSaXppbgo=) Encodes given string into base64
-      - name: "%b64-"
-        summary: Base64 decode. Maximum input length = 4*(strlen(str)).
-        cname: base64_decode
-        args:
-          - name: b64strs
-            type: RZ_CMD_ARG_TYPE_STRING
-            flags: RZ_CMD_ARG_FLAG_ARRAY
-        details:
-          - name: Examples
-            entries:
-              - text: "%b64- "
-                arg_str: SUxvdmVSaXppbgo=
-                comment: (ILoveRizin) Decodes given base64 string
+    summary: Print <expr> in binary format
+    cname: print_binary
+    args:
+      - name: expr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: "%b64"
+    summary: Encode <str> in Base64
+    cname: base64_encode
+    args:
+      - name: str
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Examples
+        entries:
+          - text: "%b64"
+            arg_str: " ILoveRizin"
+            comment: (SUxvdmVSaXppbgo=) Encodes given string into base64
+  - name: "%b64-"
+    summary: Decode <str> from Base64
+    cname: base64_decode
+    args:
+      - name: str
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Examples
+        entries:
+          - text: "%b64- "
+            arg_str: SUxvdmVSaXppbgo=
+            comment: (ILoveRizin) Decodes given base64 string
   - name: "%btw"
-    summary: Check if middle number is between the other two (first and last)
+    summary: Check if <middle> number is between <first> and <last>
     cname: check_between
     args:
       - name: first
@@ -103,12 +97,11 @@ commands:
             arg_str: io.maps
             comment: Prints boundaries of all io maps
   - name: "%h"
-    summary: Print hash value of given input
+    summary: Print hash value of string <str>
     cname: print_djb2_hash
     args:
-      - name: strs
+      - name: <str>
         type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_ARRAY
     details:
       - name: Examples
         entries:
@@ -138,10 +131,10 @@ commands:
             arg_str: " 12 Hello"
             comment: "LL (00110b selected : big-endian bitstring)"
   - name: "%o"
-    summary: Evaluate expression and print value in octal.
+    summary: Print <expr> in octal format
     cname: eval_expr_print_octal
     args:
-      - name: input
+      - name: expr
         type: RZ_CMD_ARG_TYPE_RZNUM
     details:
       - name: Examples
@@ -153,16 +146,69 @@ commands:
             arg_str: " 321"
             comment: 0501 in octal
   - name: "%u"
-    summary: "Convert evaluated numbers/expressions to K, M, G, T etc... units"
+    summary: "Convert <expr> to K, M, G, T etc... units"
     cname: num_to_units
     args:
-      - name: input
+      - name: expr
         type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: "%q"
-    summary: Update $? (last evaluated expression) without printing anything
+  - name: "%v"
+    summary: Show value commands
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: "%v"
+        summary: Show last expression ($?) or currently evaluated <expr>
+        cname: show_value
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: "%vx"
+        summary: Show last expression ($?) or currently evaluated <expr> in hex
+        cname: show_value_hex
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: "%vi1"
+        summary: Show last expression ($?) or currently evaluated <expr> as 1 byte integer
+        cname: show_value_i1
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: "%vi2"
+        summary: Show last expression ($?) or currently evaluated <expr> as 2 bytes integer
+        cname: show_value_i2
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: "%vi4"
+        summary: Show last expression ($?) or currently evaluated <expr> as 4 bytes integer
+        cname: show_value_i4
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: "%vi8"
+        summary: Show last expression ($?) or currently evaluated <expr> as 8 bytes integer
+        cname: show_value_i8
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: "%vi"
+        summary: Show last expression ($?) or currently evaluated <expr> as integer
+        cname: show_value_int
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: "%="
+    summary: Update $? (last evaluated expression) with <expr>, without printing anything
     cname: set_last_eval_expr
     args:
-      - name: input
+      - name: expr
         type: RZ_CMD_ARG_TYPE_RZNUM
     details:
       - name: Examples
@@ -170,69 +216,10 @@ commands:
           - text: "%q"
             arg_str: " 123"
             comment: >-
-              This will set $?. Then commands like ??x can be used to do some task
+              This will set $?. Then commands like %+, %-, etc. can be used to do some task
               by checking whether $? holds positive value or not.
-  - name: "%v"
-    summary: Show value commands
-    type: RZ_CMD_DESC_TYPE_GROUP
-    subcommands:
-      - name: "%v"
-        summary: Show last or currently evaluated expression
-        cname: show_value
-        args:
-          - name: input
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-      - name: "%vx"
-        summary: Show last or currently evaluated expression in hex
-        cname: show_value_hex
-        args:
-          - name: input
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-      - name: "%vi1"
-        summary: Show last or currently evaluated expression as 1 byte integer
-        cname: show_value_i1
-        args:
-          - name: input
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-      - name: "%vi2"
-        summary: Show last or currently evaluated expression as 2 byte integer
-        cname: show_value_i2
-        args:
-          - name: input
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-      - name: "%vi4"
-        summary: Show last or currently evaluated expression as 4 byte integer
-        cname: show_value_i4
-        args:
-          - name: input
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-      - name: "%vi8"
-        summary: Show last or currently evaluated expression as 8 byte integer
-        cname: show_value_i8
-        args:
-          - name: input
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-      - name: "%vi"
-        summary: Show last or currently evaluated expression as integer
-        cname: show_value_int
-        args:
-          - name: input
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-  - name: "%="
-    summary: Replace the value of last evalued expression with given value
-    cname: set_core_num_value
-    args:
-      - name: input
-        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: "%=="
-    summary: Compare two given strings and set $? register to cmp result
+    summary: Compare strings <str1> and <str2> and set $? register to cmp result
     cname: compare_and_set_core_num_value
     args:
       - name: str1
@@ -246,7 +233,7 @@ commands:
             arg_str: " str1 str2"
             comment: $? will be set to 0 if these two strings are equal, otherwise some other positive value.
   - name: "%+"
-    summary: Execute given command if $? register is greater than 0
+    summary: Execute command <cmd> if $? register is greater than 0
     cname: exec_cmd_if_core_num_value_positive
     args:
       - name: cmd
@@ -264,7 +251,7 @@ commands:
             arg_str: " %%x"
             comment: Won"t do anything
   - name: "%-"
-    summary: Execute given command if $? register is less than 0
+    summary: Execute command <cmd> if $? register is less than 0
     cname: exec_cmd_if_core_num_value_negative
     args:
       - name: cmd
@@ -282,19 +269,19 @@ commands:
             arg_str: " %%x"
             comment: Won"t do anything
   - name: "%!"
-    summary: Execute command if result of last numeric expression evaluation (related) command was 0
+    summary: Execute command <cmd> if $? is 0
     cname: exec_cmd_if_core_num_value_zero
     args:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
   - name: "%%"
-    summary: Execute command if result of last numeric expression evaluation (related) command was not 0
+    summary: Execute command <cmd> if $? is not 0
     cname: exec_cmd_if_core_num_value_nonzero
     args:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
   - name: "%l"
-    summary: Calculate length of string. Quite mode stores value in `$?` register.
+    summary: Calculate length of string <str>. Quite mode stores value in `$?` register.
     cname: calculate_string_length
     args:
       - name: str
@@ -304,7 +291,7 @@ commands:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_QUIET
   - name: "%X"
-    summary: Show evaluated expression in hex
+    summary: Show evaluated expression <expr> in hex
     cname: calc_expr_show_hex
     args:
       - name: expr
@@ -332,7 +319,7 @@ commands:
           - name: hexnum
             type: RZ_CMD_ARG_TYPE_RZNUM
   - name: "%s"
-    summary: Generate sequence of numbers (?s from to step)
+    summary: Generate sequence of numbers from <start> to <stop> with <step> increments
     cname: generate_sequence
     args:
       - name: start
@@ -346,14 +333,14 @@ commands:
     cname: phys2virt
     args:
       - name: paddr
-        type: RZ_CMD_ARG_TYPE_NUM
+        type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
   - name: "%p"
     summary: Virtual to physical address conversion
     cname: virt2phys
     args:
       - name: vaddr
-        type: RZ_CMD_ARG_TYPE_NUM
+        type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
   - name: "%_"
     summary: HUD input
@@ -366,23 +353,29 @@ commands:
     type: RZ_CMD_DESC_TYPE_GROUP
     subcommands:
       - name: "%i"
-        summary: Input numerical expression and store in $? register
-        cname: input_numerical_expr
+        summary: Input the <prompt> and save response in yank clipboard (`y` commands) 
+        cname: input_prompt
         args:
-          - name: vaddr
-            type: RZ_CMD_ARG_TYPE_NUM
+          - name: prompt
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: "%ie"
+        summary: Input the <prompt>, save response in yank clipboard (`y` commands), and print it
+        cname: input_prompt_echo
+        args:
+          - name: prompt
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: "%in"
-        summary: Input YES/NO and store result in $? register
+        summary: Input Yes/No <question> and store result in $? register (default No)
         cname: input_yesno_no
         args:
-          - name: opt
+          - name: question
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
       - name: "%iy"
-        summary: Input YES/NO and store result in $? register
+        summary: Input Yes/No <question> and store result in $? register (default Yes)
         cname: input_yesno_yes
         args:
-          - name: opt
+          - name: question
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
       - name: "%ik"
@@ -390,23 +383,24 @@ commands:
         cname: input_any_key
         args: []
       - name: "%ip"
-        summary: Yank HUD path and store result in $? register
+        summary: Interactive HUD mode to find files in <path>
         cname: input_yank_hud
         args:
           - name: path
             type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
       - name: "%im"
-        summary: Input message and display in console
+        summary: Display <msg> in console and wait for key
         cname: input_msg
         args:
           - name: msg
             type: RZ_CMD_ARG_TYPE_STRING
       - name: "%if"
-        summary: Input conditional and store result in $? register
+        summary: Evaluate <expr>, store result in $? register and print true if <expr> != 0, false otherwise
         cname: input_conditional
         args:
-          - name: cond
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_RZNUM
   - name: "%w"
     summary: Get references of given address
     cname: get_addr_references

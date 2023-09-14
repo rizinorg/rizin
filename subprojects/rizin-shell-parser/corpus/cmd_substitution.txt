@@ -2,7 +2,7 @@
 Command substitution used as simple arg $(
 =======================================
 
-?e $(p8 10)
+echo $(p8 10)
 
 ---
 
@@ -17,7 +17,7 @@ Command substitution used as simple arg $(
 Command substitution with multiple statements
 =======================================
 
-?e $(p8 10; p8 4 @ 0xdeadbeef)
+echo $(p8 10; p8 4 @ 0xdeadbeef)
 
 ---
 
@@ -38,7 +38,7 @@ Command substitution with multiple statements
 Command substitution used as simple arg `
 =======================================
 
-?e `p8 10`
+echo `p8 10`
 
 ---
 
@@ -54,7 +54,7 @@ Command substitution used as simple arg `
 Nested command substitution
 =======================================
 
-?e $(p8 $(?e 10))
+echo $(p8 $(echo 10))
 
 ---
 
@@ -71,7 +71,7 @@ Nested command substitution
 Nested command substitution 2
 =======================================
 
-?e Hello$(?e Wor$(?e ld))
+echo Hello$(echo Wor$(echo ld))
 
 ---
 

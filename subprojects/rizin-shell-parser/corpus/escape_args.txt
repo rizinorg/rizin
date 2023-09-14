@@ -16,7 +16,7 @@ pd 10\@test\>name
 Use newlines in echo
 ====================
 
-?e "Hello\nWorld"
+echo "Hello\nWorld"
 
 ---
 
@@ -30,7 +30,7 @@ Use newlines in echo
 Escape hash
 ===========
 
-?e Hello\#World
+echo Hello\#World
 
 ---
 
