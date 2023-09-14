@@ -112,10 +112,10 @@ commands:
             arg_str: ""
             comment: List defined macros
           - text: (
-            arg_str: foo; ?e Disassemble 10 bytes at 0x10000; pd 10 @ 0x10000)
+            arg_str: foo; echo Disassemble 10 bytes at 0x10000; pd 10 @ 0x10000)
             comment: Define a new macro 'foo', which executes `?` followed by `pd` when called.
           - text: (
-            arg_str: foo a b; ?e Disassemble ${a} bytes at ${b}; pd ${a} @ ${b})
+            arg_str: foo a b; echo Disassemble ${a} bytes at ${b}; pd ${a} @ ${b})
             comment: Define a new macro 'foo' with two arguments. ${a}/${b} are replaced before execution.
           - text: (-
             arg_str: foo

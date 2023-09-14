@@ -326,10 +326,10 @@ onemoretime:
 		handleHints(core);
 		break;
 	case 'r': // "Vdr"
-		rz_core_cmdf(core, "?i new function name;afn `yp` @ 0x%08" PFMT64x, off);
+		rz_core_cmdf(core, "%%i new function name;afn `yp` @ 0x%08" PFMT64x, off);
 		break;
 	case 'z': // "Vdz"
-		rz_core_cmdf(core, "?i zone name;fz `yp` @ 0x%08" PFMT64x, off);
+		rz_core_cmdf(core, "%%i zone name;fz `yp` @ 0x%08" PFMT64x, off);
 		break;
 	case 'R': // "VdR"
 		eprintf("Finding references to 0x%08" PFMT64x " ...\n", off);

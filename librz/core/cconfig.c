@@ -3248,7 +3248,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("cfg.user", rz_sys_whoami(buf), "Set current username/pid");
 	SETCB("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
 	SETCB("cfg.fortunes.file", "tips", &cb_cfg_fortunes_file, "Type of fortunes to show (tips, fun)");
-	SETBPREF("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
+	SETBPREF("cfg.fortunes.clippy", "false", "Use 'clippy' instead of 'echo'");
 	SETPREF("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETBPREF("cfg.wseek", "false", "Seek after write");
 	SETICB("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");

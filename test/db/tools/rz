@@ -88,7 +88,7 @@ RUN
 NAME=rizin shortcut
 FILE==
 CMDS=<<EOF
-%q `!!rizin -h~Usage?`
+%= `!!rizin -h~Usage?`
 %+ %vi $?
 %! echo `!!rizin.bat -h~Usage?`
 EOF

@@ -268,7 +268,7 @@ Interpreter statements
 Pointer type statements with substitution
 =======================================
 
-*entr$(?e y0)=$(?v $$)
+*entr$(echo y0)=$(%v $$)
 
 ---
 

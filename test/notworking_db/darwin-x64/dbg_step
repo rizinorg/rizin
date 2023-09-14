@@ -10,7 +10,7 @@ wx 90
 pi 1 # hack this shouldnt be here
 ds
 .dr*
-?v rip-a
+%v rip-a
 EOF
 EXPECT=<<EOF
 nop
@@ -24,7 +24,7 @@ ARGS=-d
 BROKEN=1
 CMDS=<<EOF
 is~?
-?!?e zerosyms
+?! echo zerosyms
 EOF
 EXPECT=<<EOF
 EOF

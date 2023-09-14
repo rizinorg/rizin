@@ -31,7 +31,7 @@ struct rz_core_var core_vars[] = {
 	{ "$b", "block size" },
 	{ "$c", "get terminal width in character columns" },
 	{ "$Cn", "get nth call of function" },
-	{ "$D", "current debug map base address ?v $D @ rsp" },
+	{ "$D", "current debug map base address %v $D @ rsp" },
 	{ "$DB", "same as dbg.baddr, progam base address" },
 	{ "$DD", "current debug map size" },
 	{ "$Dn", "get nth data reference in function" },
@@ -258,33 +258,23 @@ RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_base64_encode_handler(RzCore *core, int argc, const char **argv) {
-	char *buf = NULL;
-	for (int i = 1; i < argc; i++) {
-		const int buflen = (strlen(argv[i]) * 4) + 1;
-		buf = (char *)realloc((void *)buf, buflen * sizeof(char));
-		if (!buf) {
-			RZ_LOG_ERROR("core: Out of memory!");
-			return RZ_CMD_STATUS_ERROR;
-		}
-		rz_base64_encode(buf, (const ut8 *)argv[i], strlen(argv[i]));
-		rz_cons_println((const char *)buf);
+	char *buf = rz_base64_encode_dyn((ut8 *)argv[1], strlen(argv[1]));
+	if (!buf) {
+		RZ_LOG_ERROR("core: Out of memory!");
+		return RZ_CMD_STATUS_ERROR;
 	}
+	rz_cons_println(buf);
 	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_base64_decode_handler(RzCore *core, int argc, const char **argv) {
-	ut8 *buf = NULL;
-	for (int i = 1; i < argc; i++) {
-		const int buflen = (strlen(argv[i]) * 4) + 1;
-		buf = (ut8 *)realloc((void *)buf, buflen * sizeof(ut8));
-		if (!buf) {
-			RZ_LOG_ERROR("core: Out of memory!");
-			return RZ_CMD_STATUS_ERROR;
-		}
-		rz_base64_decode(buf, argv[i], -1);
-		rz_cons_println((const char *)buf);
+	ut8 *buf = rz_base64_decode_dyn(argv[1], -1);
+	if (!buf) {
+		RZ_LOG_ERROR("core: Out of memory!");
+		return RZ_CMD_STATUS_ERROR;
 	}
+	rz_cons_println((char *)buf);
 	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
@@ -298,7 +288,7 @@ RZ_IPI RzCmdStatus rz_check_between_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv) {
-	const char *mode = rz_str_trim_head_ro(argv[0]);
+	const char *mode = rz_str_trim_head_ro(argv[1]);
 	RzList *list = rz_core_get_boundaries_prot(core, -1, mode, "search");
 	if (!list) {
 		RZ_LOG_ERROR("core: Failed to get boundaries protection values in RzList");
@@ -314,10 +304,8 @@ RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_print_djb2_hash_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		ut32 hash = (ut32)rz_str_djb2_hash(argv[i]);
-		rz_cons_printf("0x%08x\n", hash);
-	}
+	ut32 hash = (ut32)rz_str_djb2_hash(argv[1]);
+	rz_cons_printf("0x%08x\n", hash);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -345,10 +333,6 @@ RZ_IPI RzCmdStatus rz_num_to_units_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_set_last_eval_expr_handler(RzCore *core, int argc, const char **argv) {
-	if (core->num->dbz) {
-		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
 	rz_num_math(core->num, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
@@ -369,7 +353,7 @@ RZ_IPI RzCmdStatus rz_show_value_hex_handler(RzCore *core, int argc, const char 
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("0x%08" PFMT64x "\n", n); // differs from ?v here 0x%08
+	rz_cons_printf("0x%08" PFMT64x "\n", n); // differs from %v here 0x%08
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -418,11 +402,6 @@ RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char 
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("%" PFMT64d "\n", n);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_set_core_num_value_handler(RzCore *core, int argc, const char **argv) {
-	rz_num_math(core->num, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -596,7 +575,7 @@ RZ_IPI RzCmdStatus rz_yank_hud_file_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_input_numerical_expr_handler(RzCore *core, int argc, const char **argv) {
+static RzCmdStatus prompt_handler(RzCore *core, int argc, const char **argv, bool echo) {
 	if (!rz_cons_is_interactive()) {
 		RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		return RZ_CMD_STATUS_WRONG_ARGS;
@@ -611,27 +590,36 @@ RZ_IPI RzCmdStatus rz_input_numerical_expr_handler(RzCore *core, int argc, const
 	rz_core_yank_set_str(core, RZ_CORE_FOREIGN_ADDR, foo);
 	core->num->value = rz_num_math(core->num, foo);
 	rz_cons_set_raw(0);
+	if (echo) {
+		rz_cons_printf("%s\n", foo);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_input_prompt_handler(RzCore *core, int argc, const char **argv) {
+	return prompt_handler(core, argc, argv, false);
+}
+
+RZ_IPI RzCmdStatus rz_input_prompt_echo_handler(RzCore *core, int argc, const char **argv) {
+	return prompt_handler(core, argc, argv, true);
+}
+
+static RzCmdStatus yesno_handler(RzCore *core, int argc, const char **argv, const char *yn) {
+	if (!rz_cons_is_interactive()) {
+		RZ_LOG_ERROR("core: Not running in interactive mode\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	core->num->value = rz_cons_yesno(0, "%s? (%s) ", argv[1], yn);
+	rz_cons_set_raw(0);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_input_yesno_no_handler(RzCore *core, int argc, const char **argv) {
-	if (!rz_cons_is_interactive()) {
-		RZ_LOG_ERROR("core: Not running in interactive mode\n");
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-	core->num->value = rz_cons_yesno(0, "%s? (y/N)", argv[1]);
-	rz_cons_set_raw(0);
-	return RZ_CMD_STATUS_OK;
+	return yesno_handler(core, argc, argv, "y/N");
 }
 
 RZ_IPI RzCmdStatus rz_input_yesno_yes_handler(RzCore *core, int argc, const char **argv) {
-	if (!rz_cons_is_interactive()) {
-		RZ_LOG_ERROR("core: Not running in interactive mode\n");
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-	core->num->value = rz_cons_yesno(0, "%s? (Y/n)", argv[1]);
-	rz_cons_set_raw(0);
-	return RZ_CMD_STATUS_OK;
+	return yesno_handler(core, argc, argv, "Y/n");
 }
 
 RZ_IPI RzCmdStatus rz_input_any_key_handler(RzCore *core, int argc, const char **argv) {

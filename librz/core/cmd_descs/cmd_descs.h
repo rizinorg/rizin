@@ -118,8 +118,6 @@ RZ_IPI RzCmdStatus rz_print_bitstring_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_eval_expr_print_octal_handler(RzCore *core, int argc, const char **argv);
 // "%u"
 RZ_IPI RzCmdStatus rz_num_to_units_handler(RzCore *core, int argc, const char **argv);
-// "%q"
-RZ_IPI RzCmdStatus rz_set_last_eval_expr_handler(RzCore *core, int argc, const char **argv);
 // "%v"
 RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **argv);
 // "%vx"
@@ -135,7 +133,7 @@ RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char *
 // "%vi"
 RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char **argv);
 // "%="
-RZ_IPI RzCmdStatus rz_set_core_num_value_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_set_last_eval_expr_handler(RzCore *core, int argc, const char **argv);
 // "%=="
 RZ_IPI RzCmdStatus rz_compare_and_set_core_num_value_handler(RzCore *core, int argc, const char **argv);
 // "%+"
@@ -165,7 +163,9 @@ RZ_IPI RzCmdStatus rz_virt2phys_handler(RzCore *core, int argc, const char **arg
 // "%_"
 RZ_IPI RzCmdStatus rz_yank_hud_file_handler(RzCore *core, int argc, const char **argv);
 // "%i"
-RZ_IPI RzCmdStatus rz_input_numerical_expr_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_input_prompt_handler(RzCore *core, int argc, const char **argv);
+// "%ie"
+RZ_IPI RzCmdStatus rz_input_prompt_echo_handler(RzCore *core, int argc, const char **argv);
 // "%in"
 RZ_IPI RzCmdStatus rz_input_yesno_no_handler(RzCore *core, int argc, const char **argv);
 // "%iy"

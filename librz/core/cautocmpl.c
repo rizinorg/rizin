@@ -68,7 +68,7 @@ static void guess_data_free(struct guess_data_t *g) {
 /**
  * Modify the input in \p buf to add additional characters, trying to detect
  * what token could go in the current position of the buffer. For example, to
- * detect that a CMD_ID is expected at * `?e $(<TAB>`, you could try inserting
+ * detect that a CMD_ID is expected at `echo $(<TAB>`, you could try inserting
  * a letter and see what would be the new syntax tree.
  */
 static struct guess_data_t *guess_next_autocmplt_token(RzCore *core, RzLineBuffer *buf, const char *fake_text, size_t offset) {

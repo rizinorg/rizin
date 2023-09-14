@@ -28,9 +28,9 @@ afl~$
 Grep with cmd substitution as specifier
 =======================================
 
-pd 10~`?e mov`
-pd 10~mo`?e v`
-pd 10~mo$(?e v)
+pd 10~`echo mov`
+pd 10~mo`echo v`
+pd 10~mo$(echo v)
 
 ---
 
