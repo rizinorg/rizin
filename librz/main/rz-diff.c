@@ -1461,6 +1461,7 @@ static void print_color_node(RzCore *core, RzAnalysisBlock *bbi) {
 static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 	char *opcodes = NULL;
 	RzConfigHold *hc = NULL;
+	ut8 *block = NULL;
 
 	if (!(hc = rz_config_hold_new(core->config))) {
 		return NULL;
@@ -1475,8 +1476,31 @@ static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 	rz_config_set_i(core->config, "asm.comments", 0);
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 
-	opcodes = rz_core_cmd_strf(core, "pdb @ 0x%08" PFMT64x, bbi->addr);
+	rz_cons_push();
+	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, bbi->addr);
+	if (!b) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", bbi->addr);
+		goto exit;
+	}
 
+	block = malloc(b->size + 1);
+	if (!block) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		goto exit;
+	}
+
+	rz_io_read_at(core->io, b->addr, block, b->size);
+	RzCoreDisasmOptions disasm_options = {
+		.cbytes = 2,
+	};
+	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
+	rz_cons_filter();
+	const char *retstr = rz_str_get(rz_cons_get_buffer());
+	opcodes = strdup(retstr);
+exit:
+	rz_cons_pop();
+	rz_cons_echo(NULL);
+	free(block);
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
 	return opcodes;
