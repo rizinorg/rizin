@@ -52,3 +52,9 @@ const char *print5Formats[PRINT_5_FORMATS] = {
 const char *printCmds[lastPrintMode] = {
 	"pdf", "pd $r", "agf", "agl", "afi", "pxa"
 };
+
+// the pd* commands that support <n_instr> as argument
+const char *printDisOptimized[] = {
+	"pd", "pda", "pdC", "pde", "pdJ", "pdl",
+	NULL
+};

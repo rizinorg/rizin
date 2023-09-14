@@ -27,3 +27,4 @@ extern const char *print5Formats[PRINT_5_FORMATS];
 #define lastPrintMode 6
 
 extern const char *printCmds[lastPrintMode];
+extern const char *printDisOptimized[];

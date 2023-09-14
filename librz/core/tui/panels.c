@@ -5,6 +5,7 @@
 #include <rz_core.h>
 #include <rz_cmd.h>
 #include "../core_private.h"
+#include "modes.h"
 
 #define PANEL_NUM_LIMIT 9
 
@@ -37,12 +38,6 @@
 #define PANEL_CMD_TINYGRAPH     "agft"
 #define PANEL_CMD_HEXDUMP       "xc"
 #define PANEL_CMD_CONSOLE       "$console"
-
-// the commands support <n_instr> as argument
-static const char *command_optimized[] = {
-	"pd", "pda", "pdC", "pde", "pdJ", "pdl",
-	NULL
-};
 
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
@@ -4047,8 +4042,8 @@ void __print_disassembly_cb(void *user, void *p) {
 	// optimize the commands that support setting the number of instr
 	char *ocmd = panel->model->cmd;
 	ut32 i = 0;
-	while (command_optimized[i]) {
-		if (!strcmp(command_optimized[i++], ocmd)) {
+	while (printDisOptimized[i]) {
+		if (!strcmp(printDisOptimized[i++], ocmd)) {
 			panel->model->cmd = rz_str_newf("%s %d", ocmd, panel->view->pos.h - 3);
 			free(ocmd);
 			break;
