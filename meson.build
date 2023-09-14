@@ -584,11 +584,15 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
 endif
 
-zstd_proj = subproject('zstd', default_options: [
-    'default_library=static',
-    'static_runtime=@0@'.format(is_static_build),
-])
-libzstd_dep = zstd_proj.get_variable('libzstd_dep')
+libzstd_dep = dependency('libzstd', required: get_option('use_sys_libzstd'), static: is_static_build, fallback: [])
+if not libzstd_dep.found()
+  zstd_proj = subproject('zstd', default_options: [
+      'default_library=static',
+      'static_runtime=@0@'.format(is_static_build),
+  ])
+  libzstd_dep = zstd_proj.get_variable('libzstd_dep')
+  meson.override_dependency('zstd', libzstd_dep)
+endif
 
 # handle mpc dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'mpc', check: false)
@@ -747,6 +751,7 @@ summary({
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
   'System lzma library': liblzma_dep.found() and liblzma_dep.type_name() != 'internal',
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
+  'System zstd library': libzstd_dep.found() and libzstd_dep.type_name() != 'internal',
   'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
   'Use RPATH': rpath_summary,
