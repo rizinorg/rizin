@@ -133,7 +133,7 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core);
 RZ_IPI void rz_core_debug_continue(RzCore *core);
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid);
 RZ_IPI void rz_core_debug_print_status(RzCore *core);
-RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, bool hwbp, bool watch);
+RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, const char *arg_size, bool hwbp, bool watch);
 RZ_IPI void rz_core_debug_ri(RzCore *core);
 RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *state);
 RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state);

@@ -230,7 +230,7 @@ RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr) 
 		rz_bp_del(core->dbg->bp, addr);
 	} else {
 		bool hwbp = (int)rz_config_get_b(core->config, "dbg.hwbp");
-		bpi = rz_debug_bp_add(core->dbg, addr, hwbp ? 1 : 0, false, 0, NULL, 0);
+		bpi = rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);
 		if (!bpi) {
 			RZ_LOG_ERROR("core: cannot set breakpoint at 0x%" PFMT64x "\n", addr);
 		}
@@ -257,7 +257,7 @@ RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
 	rz_list_foreach (symbols, iter, symbol) {
 		if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
 			if (rz_analysis_noreturn_at(core->analysis, symbol->vaddr)) {
-				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, hwbp ? 1 : 0, false, 0, NULL, 0);
+				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, 0, hwbp, false, 0, NULL, 0);
 				if (!bp) {
 					RZ_LOG_ERROR("Unable to add a breakpoint into a noreturn function %s at addr 0x%" PFMT64x "\n", symbol->name, symbol->vaddr);
 					return;
@@ -819,7 +819,7 @@ RZ_API bool rz_core_debug_step_over(RzCore *core, int steps) {
 	rz_reg_arena_swap(core->dbg->reg, true);
 	rz_debug_step_over(core->dbg, steps);
 	if (bpi) {
-		(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+		(void)rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);
 	}
 	rz_core_reg_update_flags(core);
 	return true;
@@ -847,7 +847,7 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 	rz_reg_setv(core->analysis->reg, "PC", addr);
 	rz_core_reg_update_flags(core);
 	if (bpi) {
-		(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+		(void)rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);
 	}
 	return true;
 }
