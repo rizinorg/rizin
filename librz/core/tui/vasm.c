@@ -57,7 +57,7 @@ static int readline_callback(void *_a, const char *str) {
 			core->print->cur_enabled = 1;
 			core->print->ocur = 0;
 			core->print->cur = (a->acode && a->acode->len) ? a->acode->len - 1 : 0;
-			char *cmd = rz_str_newf("pd %d @x:%s @0x%" PFMT64x, rows - 11, a->codebuf, a->off);
+			char *cmd = rz_str_newf("pd %d @x:%s @ 0x%" PFMT64x, rows - 11, a->codebuf, a->off);
 			char *res = rz_core_cmd_str(a->core, cmd);
 			char *msg = rz_str_ansi_crop(res, 0, 0, cols - 2, rows - 5);
 			rz_cons_printf("%s\n", msg);

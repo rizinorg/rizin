@@ -18,7 +18,7 @@ CMDS=<<EOF
 # Other stuff is also ignored: `..` ~ ..
 
 # But inside a command line only the commands after the # are ignored.
-%v $$ # this must beignored ; ?v $$ | ls
+%v $$ # this must beignored ; %v $$ | ls
 EOF
 EXPECT=<<EOF
 0x0

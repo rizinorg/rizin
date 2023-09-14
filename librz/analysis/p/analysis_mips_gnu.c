@@ -1461,7 +1461,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			// TODO: currently there is no way for the macro to get access to this register
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->reg = rz_reg_get(analysis->reg, mips_reg_decode(rs), RZ_REG_TYPE_GPR);
-			op->val = imm; // Beware: this one is signed... use `?vi $v`
+			op->val = imm; // Beware: this one is signed... use `%vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
 				snprintf((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);

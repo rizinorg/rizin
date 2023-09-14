@@ -903,7 +903,7 @@ static int rz_type_format_10bytes(const RzTypeDB *typedb, RzStrBuf *outbuf, int 
 	ut8 buffer[255];
 	int j;
 	if (MUSTSET) {
-		rz_strbuf_append(outbuf, "?e pf B not yet implemented\n");
+		rz_strbuf_append(outbuf, "echo pf B not yet implemented\n");
 	} else if (mode & RZ_PRINT_DOT) {
 		for (j = 0; j < 10; j++) {
 			rz_strbuf_appendf(outbuf, "%02x ", buf[j]);
@@ -949,7 +949,7 @@ static int rz_type_format_hexpairs(RzStrBuf *outbuf, int endian, int mode,
 	int j;
 	size = (size == -1) ? 1 : size;
 	if (MUSTSET) {
-		rz_strbuf_append(outbuf, "?e pf X not yet implemented\n");
+		rz_strbuf_append(outbuf, "echo pf X not yet implemented\n");
 	} else if (mode & RZ_PRINT_DOT) {
 		for (j = 0; j < size; j++) {
 			rz_strbuf_appendf(outbuf, "%02x", buf[i + j]);

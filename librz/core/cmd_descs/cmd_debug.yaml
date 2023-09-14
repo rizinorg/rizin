@@ -61,7 +61,7 @@ commands:
           - name: Usage example
             entries:
               - text: "Example of a condition"
-                comment: "?v rax-0x0"
+                comment: "%v rax-0x0"
       - name: dbd
         summary: Disable breakpoint at current offset
         cname: cmd_debug_disable_bp

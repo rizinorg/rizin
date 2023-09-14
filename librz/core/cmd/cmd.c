@@ -1860,7 +1860,7 @@ next2:
 			if (ptr[1] == '!') {
 				str = rz_core_cmd_str_pipe(core, ptr + 1);
 			} else {
-				// Color disabled when doing backticks ?e `pi 1`
+				// Color disabled when doing backticks echo `pi 1`
 				int ocolor = rz_config_get_i(core->config, "scr.color");
 				rz_config_set_i(core->config, "scr.color", 0);
 				core->cmd_in_backticks = true;
@@ -3950,11 +3950,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	if (node_str_len >= 2 && !strcmp(node_string + node_str_len - 2, "?*")) {
 		node_string[node_str_len - 2] = 0;
 		const char *argv[2] = { NULL, node_string };
-		return rz_cmd_help_search_handler(state->core, 2, argv, RZ_OUTPUT_MODE_STANDARD);
+		int argc = node_str_len > 2 ? 2 : 1;
+		return rz_cmd_help_search_handler(state->core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 	} else if (node_str_len >= 3 && !strcmp(node_string + node_str_len - 3, "?*j")) {
 		node_string[node_str_len - 3] = 0;
 		const char *argv[2] = { NULL, node_string };
-		return rz_cmd_help_search_handler(state->core, 2, argv, RZ_OUTPUT_MODE_JSON);
+		int argc = node_str_len > 2 ? 2 : 1;
+		return rz_cmd_help_search_handler(state->core, argc, argv, RZ_OUTPUT_MODE_JSON);
 	}
 
 	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));

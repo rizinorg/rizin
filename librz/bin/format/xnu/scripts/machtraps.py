@@ -39,12 +39,12 @@ def walk_back_until(addr, pattern, min_addr):
 
 
 def carve_trap_num(addr, flag):
-    saved_seek = r.cmd("?v $$")
+    saved_seek = r.cmd("%v $$")
     r.cmd("e io.cache=true")
     r.cmd("e emu.write=true")
     r.cmd("aei")
     r.cmd("aeim")
-    min_addr = int(r.cmd("?v " + flag), 0)
+    min_addr = int(r.cmd("%v " + flag), 0)
     emu_start = walk_back_until(addr - 4, r"^b|^ret|^invalid", min_addr)
     r.cmd("s " + str(emu_start))
     obj = r.cmd("aefa 0x%08x~[0]:0" % addr)
