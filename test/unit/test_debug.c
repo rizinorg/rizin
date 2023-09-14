@@ -75,33 +75,50 @@ static void dbg_mock_fail() {
 }
 
 typedef struct {
+	ut64 addr;
+	ut64 size;
+	int perm; ///< RZ_PERM_RWX
+} DebugMockHWBP;
+
+typedef struct {
 	ut64 pc;
+	ut8 a; ///< accumulator
 	bool running;
 	RzStrBuf output; ///< output of print instructions
 	bool is_thumb; ///< only used in multibits variant below
+	RzVector /* <DebugMockHWBP> */ hwbps;
 } DebugMockCtx;
 
 static bool dbg_mock_init(RzDebug *dbg, void **user) {
 	DebugMockCtx *ctx = RZ_NEW0(DebugMockCtx);
 	ctx->pc = 0x30;
+	ctx->a = 0;
 	ctx->running = false;
 	rz_strbuf_init(&ctx->output);
+	rz_vector_init(&ctx->hwbps, sizeof(DebugMockHWBP), NULL, NULL);
 	*user = ctx;
 	return true;
 }
 
 static void dbg_mock_fini(RzDebug *dbg, void *user) {
-	free(user);
+	DebugMockCtx *ctx = user;
+	rz_strbuf_fini(&ctx->output);
+	rz_vector_fini(&ctx->hwbps);
+	free(ctx);
 }
 
 static int dbg_mock_attach(RzDebug *dbg, int pid) {
 	return true;
 }
 
-static int dbg_mock_cont(RzDebug *dbg, int pid, int tid, int sig) {
-	DebugMockCtx *ctx = dbg->plugin_data;
-	ctx->running = true;
-	return RZ_DEBUG_REASON_NONE;
+static bool mock_isa_hwbp_at(DebugMockCtx *ctx, ut64 addr, int perm) {
+	DebugMockHWBP *bp;
+	rz_vector_foreach(&ctx->hwbps, bp) {
+		if (bp->addr <= addr && bp->addr + bp->size > addr && (bp->perm & perm)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 static RzDebugReasonType mock_isa_step(DebugMockCtx *ctx, RzIO *io) {
@@ -109,6 +126,12 @@ static RzDebugReasonType mock_isa_step(DebugMockCtx *ctx, RzIO *io) {
 	static const char *op_nop = "\x00\x00\x00\x00"; ///< nop
 	static const char *op_break = "STOP"; ///< software breakpoint
 	static const char *op_print = "PRNT"; ///< print something to ctx->output
+	static const char op_pfx_load = 'L'; ///< "L<3-nibble hex addr>" load memory at the given addr into a
+	static const char op_pfx_store = 'S'; ///< "S<3-nibble hex addr>" store a into memory at given addr
+
+	if (mock_isa_hwbp_at(ctx, ctx->pc, RZ_PERM_X)) {
+		return RZ_DEBUG_REASON_BREAKPOINT;
+	}
 
 	ut8 opcode[4];
 	rz_io_read_at(io, ctx->pc, opcode, sizeof(opcode));
@@ -123,9 +146,39 @@ static RzDebugReasonType mock_isa_step(DebugMockCtx *ctx, RzIO *io) {
 		rz_strbuf_appendf(&ctx->output, "PRNT with next pc = 0x%" PFMT64x "\n", ctx->pc);
 		return RZ_DEBUG_REASON_NONE;
 	}
+	if (*opcode == op_pfx_load || *opcode == op_pfx_store) {
+		char val[4];
+		memcpy(val, opcode + 1, 3);
+		val[3] = 0;
+		ut64 addr = strtoul(val, NULL, 16);
+		int perm;
+		if (*opcode == op_pfx_load) {
+			rz_io_read_at(io, addr, &ctx->a, 1);
+			perm = RZ_PERM_R;
+		} else {
+			rz_io_write_at(io, addr, &ctx->a, 1);
+			perm = RZ_PERM_W;
+		}
+		if (mock_isa_hwbp_at(ctx, addr, perm)) {
+			return RZ_DEBUG_REASON_BREAKPOINT;
+		}
+		return RZ_DEBUG_REASON_NONE;
+	}
 	// invalid instruction
 	dbg_mock_fail();
 	return RZ_DEBUG_REASON_ILLEGAL;
+}
+
+static bool dbg_mock_step(RzDebug *dbg) {
+	DebugMockCtx *ctx = dbg->plugin_data;
+	mock_isa_step(ctx, dbg->iob.io);
+	return true;
+}
+
+static int dbg_mock_cont(RzDebug *dbg, int pid, int tid, int sig) {
+	DebugMockCtx *ctx = dbg->plugin_data;
+	ctx->running = true;
+	return RZ_DEBUG_REASON_NONE;
 }
 
 RzDebugReasonType dbg_mock_wait(RzDebug *dbg, int pid) {
@@ -145,7 +198,7 @@ RzDebugReasonType dbg_mock_wait(RzDebug *dbg, int pid) {
 	return r;
 }
 
-#define DBG_MOCK_REG_PROFILE_SIZE 8
+#define DBG_MOCK_REG_PROFILE_SIZE 9
 
 int dbg_mock_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	if (type != RZ_REG_TYPE_GPR) {
@@ -157,6 +210,7 @@ int dbg_mock_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		return 0;
 	}
 	rz_write_at_le64(buf, ctx->pc, 0);
+	buf[8] = ctx->a;
 	return DBG_MOCK_REG_PROFILE_SIZE;
 }
 
@@ -170,13 +224,37 @@ int dbg_mock_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		return 0;
 	}
 	ctx->pc = rz_read_at_le64(buf, 0);
+	ctx->a = buf[8];
 	return DBG_MOCK_REG_PROFILE_SIZE;
 }
 
 char *dbg_mock_reg_profile(RzDebug *dbg) {
 	return strdup(
 		"=PC	pc\n"
-		"gpr	pc	.64	0	0\n");
+		"gpr	pc	.64	0	0\n"
+		"gpr	a	.8	8	0\n");
+}
+
+static int dbg_mock_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
+	RzDebug *dbg = bp->user;
+	DebugMockCtx *ctx = dbg->plugin_data;
+	if (set) {
+		DebugMockHWBP hwbp = {
+			.addr = b->addr,
+			.size = b->size,
+			.perm = b->perm
+		};
+		rz_vector_push(&ctx->hwbps, &hwbp);
+		return true;
+	}
+	for (size_t i = 0; i < rz_vector_len(&ctx->hwbps); i++) {
+		DebugMockHWBP *hwbp = rz_vector_index_ptr(&ctx->hwbps, i);
+		if (hwbp->addr == b->addr) {
+			rz_vector_remove_at(&ctx->hwbps, i, NULL);
+			return true;
+		}
+	}
+	return false;
 }
 
 static RzDebugPlugin dbg_mock_plugin = {
@@ -186,8 +264,10 @@ static RzDebugPlugin dbg_mock_plugin = {
 	.init = dbg_mock_init,
 	.fini = dbg_mock_fini,
 	.attach = dbg_mock_attach,
+	.step = dbg_mock_step,
 	.cont = dbg_mock_cont,
 	.wait = dbg_mock_wait,
+	.breakpoint = dbg_mock_breakpoint,
 	.reg_read = dbg_mock_reg_read,
 	.reg_write = dbg_mock_reg_write,
 	.reg_profile = dbg_mock_reg_profile
@@ -366,9 +446,10 @@ static bool test_debug_sw_bp(void) {
 	ut64 pc = rz_reg_get_value_by_role(dbg->reg, RZ_REG_NAME_PC);
 	mu_assert_eq(pc, 0x30, "initial pc");
 
-	RzBreakpointItem *b = rz_debug_bp_add(dbg, 0x50, false, false, 0, NULL, 0);
+	RzBreakpointItem *b = rz_debug_bp_add(dbg, 0x50, 0, false, false, 0, NULL, 0);
 	mu_assert_false(dbg_mock_failed, "global failure");
 	mu_assert_notnull(b, "add bp");
+	mu_assert_false(b->hw, "bp is software");
 
 	r = rz_debug_continue(dbg);
 	mu_assert_false(dbg_mock_failed, "global failure");
@@ -446,27 +527,27 @@ static bool test_debug_sw_bp_multibits(void) {
 	ut64 pc = rz_reg_get_value_by_role(dbg->reg, RZ_REG_NAME_PC);
 	mu_assert_eq(pc, 0x30, "initial pc");
 
-	RzBreakpointItem *b = rz_debug_bp_add(dbg, 0x50, false, false, 0, NULL, 0);
+	RzBreakpointItem *b = rz_debug_bp_add(dbg, 0x50, 0, false, false, 0, NULL, 0);
 	mu_assert_false(dbg_mock_failed, "global failure");
 	mu_assert_notnull(b, "add bp in non-thumb");
 	mu_assert_eq(b->size, 4, "non-thumb bp size");
-	b = rz_debug_bp_add(dbg, 0x54, false, false, 0, NULL, 0);
+	b = rz_debug_bp_add(dbg, 0x54, 0, false, false, 0, NULL, 0);
 	mu_assert_false(dbg_mock_failed, "global failure");
 	mu_assert_notnull(b, "add bp at the end of non-thumb");
 	mu_assert_eq(b->size, 4, "non-thumb bp size");
-	b = rz_debug_bp_add(dbg, 0x58, false, false, 0, NULL, 0);
+	b = rz_debug_bp_add(dbg, 0x58, 0, false, false, 0, NULL, 0);
 	mu_assert_false(dbg_mock_failed, "global failure");
 	mu_assert_notnull(b, "add bp at the beginning of thumb");
 	mu_assert_eq(b->size, 2, "thumb bp size");
-	b = rz_debug_bp_add(dbg, 0x5a, false, false, 0, NULL, 0);
+	b = rz_debug_bp_add(dbg, 0x5a, 0, false, false, 0, NULL, 0);
 	mu_assert_false(dbg_mock_failed, "global failure");
 	mu_assert_notnull(b, "add bp in the middle of thumb");
 	mu_assert_eq(b->size, 2, "thumb bp size");
-	b = rz_debug_bp_add(dbg, 0x5e, false, false, 0, NULL, 0);
+	b = rz_debug_bp_add(dbg, 0x5e, 0, false, false, 0, NULL, 0);
 	mu_assert_false(dbg_mock_failed, "global failure");
 	mu_assert_notnull(b, "add bp at the end of thumb");
 	mu_assert_eq(b->size, 2, "thumb bp size");
-	b = rz_debug_bp_add(dbg, 0x68, false, false, 0, NULL, 0);
+	b = rz_debug_bp_add(dbg, 0x68, 0, false, false, 0, NULL, 0);
 	mu_assert_false(dbg_mock_failed, "global failure");
 	mu_assert_notnull(b, "add bp after thumb");
 	mu_assert_eq(b->size, 4, "non-thumb bp size");
@@ -563,12 +644,130 @@ static bool test_debug_sw_bp_multibits(void) {
 }
 /// @}
 
+/**
+ * \brief Simple hw breakpoint test
+ * Start at 0x30, set breakpoint at 0x50 and 0x80
+ */
+static bool test_debug_hw_bp(void) {
+	RzDebug *dbg;
+	RzIO *io;
+	SETUP_DEBUG(&dbg_mock_plugin, &bp_mock_plugin, &bp_ctx);
+
+	rz_io_open_at(io, "malloc://0x1000", RZ_PERM_RW, 0644, 0x0, NULL);
+	rz_io_write_at(io, 0x50, (const ut8 *)"PRNT", 4);
+
+	int r = rz_debug_attach(dbg, 42);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_true(r, "attach");
+
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	ut64 pc = rz_reg_get_value_by_role(dbg->reg, RZ_REG_NAME_PC);
+	mu_assert_eq(pc, 0x30, "initial pc");
+
+	RzBreakpointItem *b = rz_debug_bp_add(dbg, 0x50, 0, true, false, 0, NULL, 0);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_notnull(b, "add bp");
+	mu_assert_true(b->hw, "bp is hardware");
+
+	b = rz_debug_bp_add(dbg, 0x60, 0, true, false, 0, NULL, 0);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_notnull(b, "add bp");
+	mu_assert_true(b->hw, "bp is hardware");
+
+	r = rz_debug_continue(dbg);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_true(r, "continue");
+
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	pc = rz_reg_get_value_by_role(dbg->reg, RZ_REG_NAME_PC);
+	mu_assert_eq(pc, 0x50, "pc after hitting hw breakpoint at 0x54");
+
+	ut8 data[4];
+	rz_io_read_at(io, 0x50, data, sizeof(data));
+	mu_assert_memeq(data, (const ut8 *)"PRNT", 4, "original bytes");
+
+	DebugMockCtx *ctx = dbg->plugin_data;
+	mu_assert_streq(rz_strbuf_get(&ctx->output), "", "no print hit");
+
+	r = rz_debug_continue(dbg);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_true(r, "continue");
+
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	pc = rz_reg_get_value_by_role(dbg->reg, RZ_REG_NAME_PC);
+	mu_assert_eq(pc, 0x60, "pc after hitting hw breakpoint at 0x54");
+	mu_assert_streq(rz_strbuf_get(&ctx->output), "PRNT with next pc = 0x54\n", "print hit");
+
+	rz_debug_free(dbg);
+	rz_io_free(io);
+	mu_end;
+}
+
+/**
+ * \brief Simple hw watchpoint test
+ * Start at 0x30, set a watchpoint and run until hit
+ */
+static bool test_debug_hw_watch(void) {
+	RzDebug *dbg;
+	RzIO *io;
+	SETUP_DEBUG(&dbg_mock_plugin, &bp_mock_plugin, &bp_ctx);
+
+	rz_io_open_at(io, "malloc://0x1000", RZ_PERM_RW, 0644, 0x0, NULL);
+	const char *code =
+		"PRNT" // 0x50
+		"L050" // 0x54
+		"PRNT" // 0x58
+		"S04f" // 0x5c
+		"L04f" // 0x60
+		"PRNT" // 0x64
+		"STOP"; // 0x68
+	rz_io_write_at(io, 0x50, (const ut8 *)code, strlen(code));
+	int r = rz_debug_attach(dbg, 42);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_true(r, "attach");
+
+	RzBreakpointItem *b = rz_debug_bp_add(dbg, 0x4c, 4, true, true, RZ_PERM_R, NULL, 0);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_notnull(b, "add wp");
+	mu_assert_true(b->hw, "bp is hardware");
+
+	r = rz_debug_continue(dbg);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_true(r, "continue");
+
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	ut64 pc = rz_reg_get_value_by_role(dbg->reg, RZ_REG_NAME_PC);
+	mu_assert_eq(pc, 0x64, "pc after hitting watchpoint");
+
+	DebugMockCtx *ctx = dbg->plugin_data;
+	mu_assert_streq(rz_strbuf_get(&ctx->output), "PRNT with next pc = 0x54\nPRNT with next pc = 0x5c\n",
+		"side effects at watchpoint hit");
+	mu_assert_eq(rz_reg_getv(dbg->reg, "a"), 'P', "acc side effects at watchpoint hit");
+
+	r = rz_debug_continue(dbg);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_true(r, "continue");
+	mu_assert_streq(rz_strbuf_get(&ctx->output),
+		"PRNT with next pc = 0x54\nPRNT with next pc = 0x5c\nPRNT with next pc = 0x68\n",
+		"print hit");
+
+	rz_debug_free(dbg);
+	rz_io_free(io);
+	mu_end;
+}
+
 int all_tests() {
 	rz_cons_new(); // there is some windows-specific code in debug that accesses the cons singleton
 	mu_run_test(test_rz_debug_use);
 	mu_run_test(test_rz_debug_reg_offset);
 	mu_run_test(test_debug_sw_bp);
 	mu_run_test(test_debug_sw_bp_multibits);
+	mu_run_test(test_debug_hw_bp);
+	mu_run_test(test_debug_hw_watch);
 	rz_cons_free();
 	return tests_passed != tests_run;
 }

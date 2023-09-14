@@ -3614,7 +3614,7 @@ int __watch_points_cb(void *user) {
 	__panel_prompt(rwPrompt, perm, sizeof(perm));
 	ut64 addr = rz_num_math(core->num, addrBuf);
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-	rz_core_debug_bp_add(core, addr, perm, hwbp, true);
+	rz_core_debug_bp_add(core, addr, perm, NULL, hwbp, true);
 	return 0;
 }
 

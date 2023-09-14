@@ -49,7 +49,7 @@ static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
-static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
+static const RzCmdDescDetail cmd_debug_add_watchpoint_details[3];
 static const RzCmdDescDetail cmd_debug_esil_add_details[2];
 static const RzCmdDescDetail cmd_debug_signal_option_details[2];
 static const RzCmdDescDetail debug_reg_cond_details[4];
@@ -365,7 +365,7 @@ static const RzCmdDescArg cmd_debug_bp_plugin_args[2];
 static const RzCmdDescArg cmd_debug_remove_bp_plugin_args[2];
 static const RzCmdDescArg cmd_debug_display_bt_oneline_args[2];
 static const RzCmdDescArg cmd_debug_bp_set_expr_cur_offset_args[2];
-static const RzCmdDescArg cmd_debug_add_watchpoint_args[2];
+static const RzCmdDescArg cmd_debug_add_watchpoint_args[3];
 static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[3];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
@@ -7748,8 +7748,17 @@ static const RzCmdDescDetailEntry cmd_debug_add_watchpoint_Valid_space_permissio
 	{ .text = "rw", .arg_str = NULL, .comment = "read-write" },
 	{ 0 },
 };
+
+static const RzCmdDescDetailEntry cmd_debug_add_watchpoint_Example_space_sizes_detail_entries[] = {
+	{ .text = "1", .arg_str = NULL, .comment = "watch only a single byte" },
+	{ .text = "2", .arg_str = NULL, .comment = "watch a 16-bit value" },
+	{ .text = "4", .arg_str = NULL, .comment = "watch a 32-bit value" },
+	{ .text = "8", .arg_str = NULL, .comment = "watch a 64-bit value" },
+	{ 0 },
+};
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[] = {
 	{ .name = "Valid permission arguments", .entries = cmd_debug_add_watchpoint_Valid_space_permission_space_arguments_detail_entries },
+	{ .name = "Example sizes", .entries = cmd_debug_add_watchpoint_Example_space_sizes_detail_entries },
 	{ 0 },
 };
 static const char *cmd_debug_add_watchpoint_perm_choices[] = { "r", "w", "rw", NULL };
@@ -7758,6 +7767,13 @@ static const RzCmdDescArg cmd_debug_add_watchpoint_args[] = {
 		.name = "perm",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.choices.choices = cmd_debug_add_watchpoint_perm_choices,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
