@@ -58,6 +58,11 @@ RZ_API bool rz_bp_restore_except(RzBreakpoint *bp, bool set, ut64 addr) {
 		if (bp->breakpoint && bp->breakpoint(bp, b, set)) {
 			continue;
 		}
+		// Hardware breakpoints do not need memory restoration and are not handled here
+		if (b->hw) {
+			rc = true;
+			continue;
+		}
 
 		/* write (o|b)bytes from every breakpoint in rz_bp if not handled by plugin */
 		rz_bp_restore_one(bp, b, set);
