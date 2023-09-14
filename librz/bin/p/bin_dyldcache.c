@@ -365,13 +365,13 @@ static void destroy(RzBinFile *bf) {
 	rz_dyldcache_free(cache);
 }
 
-static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
+static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
 
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -477,7 +477,7 @@ static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 					}
 					num_of_unnamed_class++;
 				}
-				rz_list_append(ret, klass);
+				rz_pvector_push(ret, klass);
 			}
 
 			RZ_FREE(pointers);
@@ -491,7 +491,7 @@ static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	return ret;
 
 beach:
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	rz_buf_free(owned_buf);
 	return NULL;
 }

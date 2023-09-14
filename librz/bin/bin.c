@@ -888,12 +888,6 @@ RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,
 	return plugin->create(bin, code, codelen, data, datalen, opt);
 }
 
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinClass *>*/ *rz_bin_get_classes(RZ_NONNULL RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->classes : NULL;
-}
-
 RZ_API ut64 rz_bin_get_size(RzBin *bin) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 	RzBinObject *o = rz_bin_cur_object(bin);

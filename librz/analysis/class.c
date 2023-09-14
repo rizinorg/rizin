@@ -56,11 +56,13 @@ static const char *attr_type_id(RzAnalysisClassAttrType attr_type) {
 
 RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis) {
 	rz_cons_break_push(NULL, NULL);
-	RzList *classes = rz_bin_get_classes(analysis->binb.bin);
+	RzBinObject *bin_obj = rz_bin_cur_object(analysis->binb.bin);
+	const RzPVector *classes = rz_bin_object_get_classes(bin_obj);
 	if (classes) {
-		RzListIter *iter_class;
+		void **iter_class;
 		RzBinClass *class;
-		rz_list_foreach (classes, iter_class, class) {
+		rz_pvector_foreach (classes, iter_class) {
+			class = *iter_class;
 			if (rz_cons_is_breaked()) {
 				break;
 			}

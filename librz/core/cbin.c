@@ -11,6 +11,7 @@
 #include <rz_basefind.h>
 
 #include "core_private.h"
+#include "rz_vector.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
 #define is_invalid_address_va2(va, vaddr, paddr) (((va) != VA_FALSE && (vaddr) == UT64_MAX) || ((va) == VA_FALSE && (paddr) == UT64_MAX))
@@ -1520,7 +1521,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
 	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
-	RzList *cs = o ? o->classes : NULL;
+	RzPVector *cs = o ? o->classes : NULL;
 	if (!cs) {
 		return false;
 	}
@@ -1530,9 +1531,10 @@ RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
 
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_CLASSES);
 
-	RzListIter *iter;
+	void **iter;
 	RzBinClass *c;
-	rz_list_foreach (cs, iter, c) {
+	rz_pvector_foreach (cs, iter) {
+		c = *iter;
 		if (!c || !c->name || !c->name[0]) {
 			continue;
 		}
@@ -3717,15 +3719,16 @@ RZ_API bool rz_core_bin_class_as_source_print(RZ_NONNULL RzCore *core, RZ_NONNUL
 	rz_return_val_if_fail(core && bf, false);
 
 	RzBinClass *c;
-	RzListIter *iter;
+	void **iter;
 
-	const RzList *cs = rz_bin_object_get_classes(bf->o);
+	const RzPVector *cs = rz_bin_object_get_classes(bf->o);
 	if (!cs) {
 		return false;
 	}
 
 	bool found = false;
-	rz_list_foreach (cs, iter, c) {
+	rz_pvector_foreach (cs, iter) {
+		c = *iter;
 		if (class_name && (!c->name || !strstr(c->name, class_name))) {
 			continue;
 		}
@@ -3757,12 +3760,13 @@ RZ_API bool rz_core_bin_class_as_source_print(RZ_NONNULL RzCore *core, RZ_NONNUL
 RZ_API bool rz_core_bin_class_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, const char *class_name) {
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
-	RzListIter *iter, *iter2;
+	RzListIter *iter2;
+	void **iter;
 	RzBinClass *c;
 	RzBinClassField *f;
 	int m = 0;
 
-	const RzList *cs = rz_bin_object_get_classes(bf->o);
+	const RzPVector *cs = rz_bin_object_get_classes(bf->o);
 	if (!cs) {
 		return false;
 	}
@@ -3770,7 +3774,8 @@ RZ_API bool rz_core_bin_class_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL R
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "Xissss", "address", "index", "class", "flags", "name", "type", NULL);
 
-	rz_list_foreach (cs, iter, c) {
+	rz_pvector_foreach (cs, iter) {
+		c = *iter;
 		if (class_name && (!c->name || strcmp(c->name, class_name))) {
 			continue;
 		}
@@ -3824,12 +3829,13 @@ RZ_API bool rz_core_bin_class_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL R
 RZ_API bool rz_core_bin_class_methods_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, const char *class_name) {
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
-	RzListIter *iter, *iter2;
+	RzListIter *iter2;
+	void **iter;
 	RzBinClass *c;
 	RzBinSymbol *sym;
 	int m = 0;
 
-	const RzList *cs = rz_bin_object_get_classes(bf->o);
+	const RzPVector *cs = rz_bin_object_get_classes(bf->o);
 	if (!cs) {
 		return false;
 	}
@@ -3837,7 +3843,8 @@ RZ_API bool rz_core_bin_class_methods_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "Xisss", "address", "index", "class", "flags", "name", NULL);
 
-	rz_list_foreach (cs, iter, c) {
+	rz_pvector_foreach (cs, iter) {
+		c = *iter;
 		if (class_name && (!c->name || strcmp(c->name, class_name))) {
 			continue;
 		}
@@ -3882,12 +3889,13 @@ RZ_API bool rz_core_bin_class_methods_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
-	RzListIter *iter, *iter2, *iter3;
+	void **iter;
+	RzListIter *iter2, *iter3;
 	RzBinSymbol *sym;
 	RzBinClass *c;
 	RzBinClassField *f;
 
-	const RzList *cs = rz_bin_object_get_classes(bf->o);
+	const RzPVector *cs = rz_bin_object_get_classes(bf->o);
 	if (!cs) {
 		return false;
 	}
@@ -3899,7 +3907,8 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 		rz_cons_println("fs classes");
 	}
 
-	rz_list_foreach (cs, iter, c) {
+	rz_pvector_foreach (cs, iter) {
+		c = *iter;
 		ut64 at_min = UT64_MAX;
 		ut64 at_max = 0LL;
 
