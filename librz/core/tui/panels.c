@@ -38,6 +38,12 @@
 #define PANEL_CMD_HEXDUMP       "xc"
 #define PANEL_CMD_CONSOLE       "$console"
 
+// the commands support <n_instr> as argument
+static const char *command_optimized[] = {
+	"pd", "pda", "pdC", "pde", "pdJ", "pdl",
+	NULL
+};
+
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
 #define PANEL_CONFIG_SIDEPANEL_W 60
@@ -4038,8 +4044,16 @@ void __print_disassembly_cb(void *user, void *p) {
 		__update_panel_contents(core, panel, cmdstr);
 		return;
 	}
+	// optimize the commands that support setting the number of instr
 	char *ocmd = panel->model->cmd;
-	panel->model->cmd = rz_str_newf("%s %d", panel->model->cmd, panel->view->pos.h - 3);
+	ut32 i = 0;
+	while (command_optimized[i]) {
+		if (!strcmp(command_optimized[i++], ocmd)) {
+			panel->model->cmd = rz_str_newf("%s %d", ocmd, panel->view->pos.h - 3);
+			free(ocmd);
+			break;
+		}
+	}
 	ut64 o_offset = core->offset;
 	core->offset = panel->model->addr;
 	rz_core_seek(core, panel->model->addr, true);
@@ -4048,8 +4062,6 @@ void __print_disassembly_cb(void *user, void *p) {
 	}
 	cmdstr = __handle_cmd_str_cache(core, panel, false);
 	core->offset = o_offset;
-	free(panel->model->cmd);
-	panel->model->cmd = ocmd;
 	__update_panel_contents(core, panel, cmdstr);
 }
 
