@@ -4074,12 +4074,13 @@ RZ_API bool rz_core_bin_headers_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 
 static int bin_trycatch(RzCore *core, PJ *pj, int mode) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
-	RzListIter *iter;
+	void **iter;
 	RzBinTrycatch *tc;
-	RzList *trycatch = rz_bin_file_get_trycatch(bf);
+	RzPVector *trycatch = rz_bin_file_get_trycatch(bf);
 	int idx = 0;
 	// FIXME: json mode
-	rz_list_foreach (trycatch, iter, tc) {
+	rz_pvector_foreach (trycatch, iter) {
+		tc = *iter;
 		rz_cons_printf("f+ try.%d.%" PFMT64x ".from @ 0x%08" PFMT64x "\n", idx, tc->source, tc->from);
 		rz_cons_printf("f+ try.%d.%" PFMT64x ".to @ 0x%08" PFMT64x "\n", idx, tc->source, tc->to);
 		rz_cons_printf("f+ try.%d.%" PFMT64x ".catch @ 0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
