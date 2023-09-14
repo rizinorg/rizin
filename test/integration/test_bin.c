@@ -92,18 +92,18 @@ bool test_rz_bin(void) {
 	mu_end;
 }
 
-static RzBinReloc *add_reloc(RzList *l, ut64 paddr, ut64 vaddr, ut64 target_vaddr) {
+static RzBinReloc *add_reloc(RzPVector *l, ut64 paddr, ut64 vaddr, ut64 target_vaddr) {
 	RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
 	reloc->type = RZ_BIN_RELOC_8;
 	reloc->paddr = paddr;
 	reloc->vaddr = vaddr;
 	reloc->target_vaddr = target_vaddr;
-	rz_list_push(l, reloc);
+	rz_pvector_push(l, reloc);
 	return reloc;
 }
 
 bool test_rz_bin_reloc_storage(void) {
-	RzList *l = rz_list_new();
+	RzPVector *l = rz_pvector_new(NULL);
 	RzBinReloc *r0 = add_reloc(l, 0x108, 0x1000, 0x2004);
 	mu_assert_notnull(r0, "reloc");
 	RzBinReloc *r1 = add_reloc(l, 0x2002, 0x1003, 0x2008);

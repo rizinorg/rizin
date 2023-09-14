@@ -182,23 +182,23 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 	}
 }
 
-void get_relocs_list_cb(RZ_BORROW RzBinReloc *reloc, ut8 *patch_buf, size_t patch_buf_sz, void *user) {
-	RzList *r = user;
+void get_relocs_pvector_cb(RZ_BORROW RzBinReloc *reloc, ut8 *patch_buf, size_t patch_buf_sz, void *user) {
+	RzPVector *r = user;
 	RzBinReloc *reloc_copy = RZ_NEW(RzBinReloc);
 	if (!reloc_copy) {
 		return;
 	}
 	memcpy(reloc_copy, reloc, sizeof(*reloc_copy));
-	rz_list_push(r, reloc_copy);
+	rz_pvector_push(r, reloc_copy);
 }
 
-RZ_API RzList /*<RzBinReloc *>*/ *rz_coff_get_relocs(struct rz_bin_coff_obj *bin) {
+RZ_API RzPVector /*<RzBinReloc *>*/ *rz_coff_get_relocs(struct rz_bin_coff_obj *bin) {
 	rz_return_val_if_fail(bin, NULL);
-	RzList *r = rz_list_newf(free);
+	RzPVector *r = rz_pvector_new(free);
 	if (!r) {
 		return NULL;
 	}
-	relocs_foreach(bin, get_relocs_list_cb, r);
+	relocs_foreach(bin, get_relocs_pvector_cb, r);
 	return r;
 }
 

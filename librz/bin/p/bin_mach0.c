@@ -377,17 +377,16 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	struct MACH0_(obj_t) *bin = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
 	if (bf && bf->o) {
 		bin = bf->o->bin_obj;
 	}
-	if (!obj || !obj->bin_obj || !(ret = rz_list_newf(free))) {
+	if (!obj || !obj->bin_obj || !(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	RzSkipList *relocs = MACH0_(get_relocs)(bf->o->bin_obj);
 	if (!relocs) {
@@ -416,7 +415,7 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 		ptr->vaddr = reloc->addr;
 		ptr->paddr = reloc->offset;
 		ptr->target_vaddr = reloc->target;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

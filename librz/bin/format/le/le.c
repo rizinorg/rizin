@@ -1738,14 +1738,14 @@ RZ_OWN RzList /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile *b
 	return vfiles;
 }
 
-RZ_OWN RzList /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf) {
+RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	RzList /*<LE_reloc *>*/ *le_relocs = bin->le_relocs;
-	RzList /*<RzBinReloc *>*/ *relocs = rz_list_newf((RzListFree)rz_bin_reloc_free);
+	RzPVector /*<RzBinReloc *>*/ *relocs = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
 	RzBinReloc *reloc = NULL;
 	if (!relocs) {
 	fail_cleanup:
-		rz_list_free(relocs);
+		rz_pvector_free(relocs);
 		rz_bin_reloc_free(reloc);
 		return NULL;
 	}
@@ -1754,7 +1754,7 @@ RZ_OWN RzList /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf) {
 	LE_reloc *le_reloc;
 	rz_list_foreach (le_relocs, it, le_reloc) {
 		CHECK(reloc = RZ_NEW0(RzBinReloc));
-		CHECK(rz_list_append(relocs, reloc));
+		CHECK(rz_pvector_push(relocs, reloc));
 		reloc->symbol = le_reloc->symbol;
 		reloc->import = le_reloc->import;
 		reloc->addend = le_reloc->addend;
@@ -1785,11 +1785,11 @@ RZ_OWN RzList /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf) {
 			// adding additional 2-byte relocation right after the 4-byte one
 			// to represent a 48 bit 16:32 relocation
 			CHECK(reloc = RZ_NEW0(RzBinReloc));
-			*reloc = *(RzBinReloc *)rz_list_tail(relocs)->data;
+			*reloc = *(RzBinReloc *)rz_pvector_tail(relocs);
 			reloc->vaddr += 4;
 			reloc->paddr += 4;
 			reloc->type = RZ_BIN_RELOC_16;
-			CHECK(rz_list_append(relocs, reloc));
+			CHECK(rz_pvector_push(relocs, reloc));
 			reloc = NULL;
 			break;
 

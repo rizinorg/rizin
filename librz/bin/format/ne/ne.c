@@ -474,7 +474,7 @@ end:
 	return entries;
 }
 
-RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
+RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	RzList *segments = bin->segments;
 	if (!segments) {
 		return NULL;
@@ -494,7 +494,7 @@ RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	}
 	rz_buf_read_at(bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, bin->ne_header->ModRefs * sizeof(ut16));
 
-	RzList *relocs = rz_list_newf(free);
+	RzPVector *relocs = rz_pvector_new(free);
 	if (!relocs) {
 		free(modref);
 		return NULL;
@@ -608,10 +608,10 @@ RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 
 			if (rel.flags & ADDITIVE) {
 				reloc->additive = 1;
-				rz_list_append(relocs, reloc);
+				rz_pvector_push(relocs, reloc);
 			} else {
 				do {
-					rz_list_append(relocs, reloc);
+					rz_pvector_push(relocs, reloc);
 					ut16 tmp_offset;
 					if (!rz_buf_read_le16_at(bin->buf, reloc->paddr, &tmp_offset)) {
 						reloc = NULL;

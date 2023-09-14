@@ -538,11 +538,11 @@ typedef struct rz_bin_plugin_t {
 	RzBinInfo *(*info)(RzBinFile *bf);
 	RzList /*<RzBinField *>*/ *(*fields)(RzBinFile *bf);
 	RzList /*<char *>*/ *(*libs)(RzBinFile *bf);
-	RzList /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
+	RzPVector /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
 	RzList /*<RzBinTrycatch *>*/ *(*trycatch)(RzBinFile *bf);
 	RzList /*<RzBinClass *>*/ *(*classes)(RzBinFile *bf);
 	RzList /*<RzBinMem *>*/ *(*mem)(RzBinFile *bf);
-	RzList /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
+	RzPVector /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzList /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
 	RzList /*<RzBinResource *>*/ *(*resources)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);
@@ -665,9 +665,10 @@ typedef struct rz_bin_class_t {
 #define REBASE_PADDR(o, l, type_t) \
 	do { \
 		if ((o)->opts.loadaddr) { \
-			RzListIter *_it; \
+			void **_it; \
 			type_t *_el; \
-			rz_list_foreach ((l), _it, _el) { \
+			rz_pvector_foreach ((l), _it) { \
+				_el = *_it; \
 				_el->paddr += (o)->opts.loadaddr; \
 			} \
 		} \
@@ -740,7 +741,7 @@ struct rz_bin_reloc_storage_t {
 	size_t target_relocs_count;
 }; // RzBinRelocStorage
 
-RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList /*<RzBinReloc *>*/ *relocs);
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs);
 RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage);
 RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_in(RzBinRelocStorage *storage, ut64 vaddr, ut64 size);
 
