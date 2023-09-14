@@ -233,7 +233,29 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_callgraph(RZ_NONNUL
 typedef char *(*GraphBodyFn)(RzCore *core, ut64 addr, RzAnalysisBlock *bb);
 
 static inline char *block_disasm(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
-	return rz_core_cmd_strf(core, "pdb @ 0x%" PFMT64x, addr);
+	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+	if (!b) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", addr);
+		return NULL;
+	}
+	ut8 *block = malloc(b->size + 1);
+	if (!block) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return NULL;
+	}
+	rz_cons_push();
+	rz_io_read_at(core->io, b->addr, block, b->size);
+	RzCoreDisasmOptions disasm_options = {
+		.cbytes = 2,
+	};
+	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
+	rz_cons_filter();
+	const char *retstr = rz_str_get(rz_cons_get_buffer());
+	char *opcodes = strdup(retstr);
+	rz_cons_pop();
+	rz_cons_echo(NULL);
+	free(block);
+	return opcodes;
 }
 
 static inline RzGraphNode *graph_add_cached(RzCore *core, HtUP *cache, RzAnalysisBlock *bb, ut64 offset, RzGraph /*<RzGraphNodeInfo *>*/ *graph, GraphBodyFn body_fn) {
