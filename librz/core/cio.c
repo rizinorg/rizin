@@ -335,7 +335,7 @@ RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, RZ_NONNULL const char
 	}
 
 	if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
-		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x " address\n", acode->len, core->offset);
 		core->num->value = 1;
 		goto err;
 	}
@@ -384,7 +384,7 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const
 	rz_core_hack(core, "nop");
 
 	if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
-		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+		RZ_LOG_ERROR("Cannot write %d bytes at 0x%" PFMT64x " address\n", acode->len, core->offset);
 		core->num->value = 1;
 		goto err;
 	}
