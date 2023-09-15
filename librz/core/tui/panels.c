@@ -5,6 +5,7 @@
 #include <rz_core.h>
 #include <rz_cmd.h>
 #include "../core_private.h"
+#include "modes.h"
 
 #define PANEL_NUM_LIMIT 9
 
@@ -4038,8 +4039,16 @@ void __print_disassembly_cb(void *user, void *p) {
 		__update_panel_contents(core, panel, cmdstr);
 		return;
 	}
+	// optimize the commands that support setting the number of instr
 	char *ocmd = panel->model->cmd;
-	panel->model->cmd = rz_str_newf("%s %d", panel->model->cmd, panel->view->pos.h - 3);
+	ut32 i = 0;
+	while (printDisOptimized[i]) {
+		if (!strcmp(printDisOptimized[i++], ocmd)) {
+			panel->model->cmd = rz_str_newf("%s %d", ocmd, panel->view->pos.h - 3);
+			free(ocmd);
+			break;
+		}
+	}
 	ut64 o_offset = core->offset;
 	core->offset = panel->model->addr;
 	rz_core_seek(core, panel->model->addr, true);
@@ -4048,8 +4057,6 @@ void __print_disassembly_cb(void *user, void *p) {
 	}
 	cmdstr = __handle_cmd_str_cache(core, panel, false);
 	core->offset = o_offset;
-	free(panel->model->cmd);
-	panel->model->cmd = ocmd;
 	__update_panel_contents(core, panel, cmdstr);
 }
 
