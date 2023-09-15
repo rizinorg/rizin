@@ -26,7 +26,7 @@ echo ----
 ds 2  # Should be dsui call; ds
 dbt~[6-]  # dbtt here would be nice
 EOF
-REGEXP_FILTER_OUT=(loc\.[^_]\S*.|main\S*.|entry0\+\d+\s+|-+.)
+REGEXP_FILTER_OUT=(loc\.[^_]\S*.|main\S*.|entry0\+\d+\s+|-+\n)
 EXPECT=<<EOF
 main loc.func_6+6
 entry0+41 
