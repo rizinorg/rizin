@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file x86_il.c
+ * \file il_ops.c
  *
- * Converts x86 instructions to RzIL instructions
+ * Contains the IL implementations for x86 instructions.
  *
  * References:
  *  - https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
