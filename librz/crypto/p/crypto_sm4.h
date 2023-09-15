@@ -9,4 +9,4 @@
 typedef struct sm4_ctx {
     ut8 key[SM4_KEY_SIZE];
 } sm4_state;
-#endi
+#endif
