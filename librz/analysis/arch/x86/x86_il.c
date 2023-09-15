@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "x86_il.h"
 #include "il_ops.inc"
 
