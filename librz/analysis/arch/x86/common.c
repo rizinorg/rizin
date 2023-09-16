@@ -1070,4 +1070,24 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
 	return SEQ2(set_val, eff);
 }
 
+static bool check_st_reg(X86Reg reg) {
+	return reg >= X86_REG_ST0 && reg <= X86_REG_ST7;
+}
+
+RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
+	if (check_st_reg(reg)) {
+		return BV2F(RZ_FLOAT_IEEE754_BIN_64, VARG(x86_registers[reg]));
+	}
+
+	return NULL;
+}
+
+RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
+	if (check_st_reg(reg)) {
+		return SETG(x86_registers[reg], F2BV(val));
+	}
+
+	return NULL;
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>

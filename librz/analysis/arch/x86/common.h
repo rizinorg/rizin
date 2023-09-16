@@ -104,4 +104,7 @@ RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPure *res,
 RzILOpPure *x86_il_get_flags(unsigned int size);
 RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size);
 
+RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
+RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val);
+
 #endif // X86_IL_COMMON_H

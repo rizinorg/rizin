@@ -3,6 +3,7 @@
 
 #include "x86_il.h"
 #include "il_ops.inc"
+#include "il_fp_ops.inc"
 
 #define COMMON_REGS \
 	"cs", /* X86_REG_CS */ \
@@ -240,7 +241,10 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_INSW] = x86_il_unimpl,
 	[X86_INS_OUTSB] = x86_il_unimpl,
 	[X86_INS_OUTSW] = x86_il_unimpl,
-	[X86_INS_LEAVE] = x86_il_leave
+	[X86_INS_LEAVE] = x86_il_leave,
+
+	/* floating-point instructions */
+	[X86_INS_FABS] = x86_il_fabs
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
