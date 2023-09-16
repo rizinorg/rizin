@@ -4223,7 +4223,7 @@ pd 10 @ 0x08049410
 EOF
 EXPECT=<<EOF
 / int main(int argc, char **argv, char **envp);
-|           0x080491ca     0            lea   ecx, [argv]
+|           0x080491ca     0            lea   ecx, [argc]
 |           0x080491ce     0            and   esp, 0xfffffff0
 |           0x080491d1     0 -= 4       push  dword [ecx - 4]
 |           0x080491d4    -4 -= 4       push  ebp

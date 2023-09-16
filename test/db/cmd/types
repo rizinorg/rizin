@@ -1659,7 +1659,26 @@ var size_t var_1ch @ stack - 0x1c
 var size_t size @ stack - 0x18
 var char *dest @ stack - 0x14
 var int32_t var_10h @ stack - 0x10
-arg char **argv @ stack + 0x4
+arg int argc @ stack + 0x4
+EOF
+RUN
+
+NAME=off-by-1 stack arg fix (#3835)
+FILE=bins/elf/true32
+CMDS=aa; pd 1 @ main
+EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x8048e5b
+            ;-- section..text:
+/ int main(int argc, char **argv, char **envp);
+|           ; var int32_t var_40h @ stack - 0x40
+|           ; var int32_t var_24h @ stack - 0x24
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_1ch @ stack - 0x1c
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; arg int argc @ stack + 0x4
+|           ; arg char **argv @ stack + 0x8
+|           0x08048d60      push  ebp                                  ; [13] -r-x section size 9756 named .text
 EOF
 RUN
 
