@@ -499,7 +499,7 @@ RZ_API void rz_bin_class_free(RZ_NULLABLE RzBinClass *k) {
 	free(k);
 }
 
-RZ_API RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf) {
+RZ_API RZ_OWN RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->plugin, NULL);
 	if (bf->o->plugin->trycatch) {
 		return bf->o->plugin->trycatch(bf);

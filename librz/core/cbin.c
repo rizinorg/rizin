@@ -4098,6 +4098,7 @@ static int bin_trycatch(RzCore *core, PJ *pj, int mode) {
 		}
 		idx++;
 	}
+	rz_pvector_free(trycatch);
 	return true;
 }
 

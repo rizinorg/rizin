@@ -1224,7 +1224,7 @@ static RzList *parse_swift_classes(RzBinFile *bf) {
 }
 #endif
 
-RZ_API RzPVector /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
+RZ_API RZ_OWN RzPVector /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
 	RzPVector /*<RzBinClass *>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RzBinClass *klass = NULL;
