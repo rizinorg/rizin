@@ -1216,6 +1216,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 					to = rz_type_func_args_count(analysis->typedb, fname);
 				}
 				const int bytes = (fcn->bits ? fcn->bits : analysis->bits) / 8;
+				sum_sz += bytes; // move past the return address
 				for (i = from; stack_rev ? i >= to : i < to; stack_rev ? i-- : i++) {
 					RzType *tp = rz_type_func_args_type(analysis->typedb, fname, i);
 					if (!tp) {
