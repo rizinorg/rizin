@@ -57,6 +57,10 @@ static const char *attr_type_id(RzAnalysisClassAttrType attr_type) {
 RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis) {
 	rz_cons_break_push(NULL, NULL);
 	RzBinObject *bin_obj = rz_bin_cur_object(analysis->binb.bin);
+	if (!bin_obj) {
+		rz_cons_break_pop();
+		return;
+	}
 	const RzPVector *classes = rz_bin_object_get_classes(bin_obj);
 	if (classes) {
 		void **iter_class;
