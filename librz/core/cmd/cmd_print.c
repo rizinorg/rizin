@@ -675,18 +675,23 @@ static void findMethodBounds(RzList /*<RzBinSymbol *>*/ *methods, ut64 *min, ut6
 
 static ut64 findClassBounds(RzCore *core, int *len) {
 	ut64 min = 0, max = 0;
-	RzListIter *iter;
+	void **iter;
 	RzBinClass *c;
-	RzList *cs = rz_bin_get_classes(core->bin);
-	rz_list_foreach (cs, iter, c) {
-		if (!c || !c->name || !c->name[0]) {
-			continue;
+
+	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
+	const RzPVector *cs = rz_bin_object_get_classes(bin_obj);
+	if (cs) {
+		rz_pvector_foreach (cs, iter) {
+			c = *iter;
+			if (!c || !c->name || !c->name[0]) {
+				continue;
+			}
+			findMethodBounds(c->methods, &min, &max);
+			if (len) {
+				*len = (max - min);
+			}
+			return min;
 		}
-		findMethodBounds(c->methods, &min, &max);
-		if (len) {
-			*len = (max - min);
-		}
-		return min;
 	}
 	return 0;
 }

@@ -1143,14 +1143,14 @@ static RzList /*<RzBinSymbol *>*/ *dex_resolve_fields_in_class_as_symbols(RzBinD
 }
 
 /**
- * \brief Returns a RzList<RzBinClass*> containing the dex classes
+ * \brief Returns a RzPVector<RzBinClass*> containing the dex classes
  */
-RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
 	RzBinClass *bclass = NULL;
-	RzList *classes = NULL;
+	RzPVector *classes = NULL;
 	void **it;
 
 	ut32 n_methods = rz_pvector_len(dex->method_ids);
@@ -1164,7 +1164,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 		return NULL;
 	}
 
-	classes = rz_list_newf((RzListFree)rz_bin_class_free);
+	classes = rz_pvector_new((RzPVectorFree)rz_bin_class_free);
 	if (!classes) {
 		free(inserted_fields);
 		free(inserted_methods);
@@ -1186,7 +1186,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 		bclass->methods = dex_resolve_methods_in_class(dex, class_def, inserted_methods);
 		bclass->fields = dex_resolve_fields_in_class(dex, class_def, inserted_fields);
 
-		if (!rz_list_append(classes, bclass)) {
+		if (!rz_pvector_push(classes, bclass)) {
 			rz_bin_class_free(bclass);
 			break;
 		}

@@ -68,7 +68,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bf->sdb;
 }
 
-static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
+static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;

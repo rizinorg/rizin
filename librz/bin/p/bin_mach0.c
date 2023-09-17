@@ -487,7 +487,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
+static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	return MACH0_(parse_classes)(bf, NULL);
 }
 

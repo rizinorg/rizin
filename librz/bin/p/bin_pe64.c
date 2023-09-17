@@ -433,7 +433,7 @@ static bool read_pe64_scope_record(RzBuffer *buf, ut64 base, PE64_SCOPE_RECORD *
 		rz_buf_read_ble32_offset(buf, &offset, &record->JumpTarget, big_endian);
 }
 
-static RzList /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
+static RzPVector /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 	ut64 baseAddr = bf->o->opts.baseaddr;
 	ut64 offset;
 
@@ -457,8 +457,8 @@ static RzList /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzList *tclist = rz_list_newf((RzListFree)rz_bin_trycatch_free);
-	if (!tclist) {
+	RzPVector *tc_vec = rz_pvector_new((RzPVectorFree)rz_bin_trycatch_free);
+	if (!tc_vec) {
 		return NULL;
 	}
 	const struct rz_bin_pe_section_t *unwind_data_section = NULL;
@@ -570,10 +570,10 @@ static RzList /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 				scope.EndAddress + baseAddr,
 				scope.JumpTarget + baseAddr,
 				handlerAddr);
-			rz_list_append(tclist, tc);
+			rz_pvector_push(tc_vec, tc);
 		}
 	}
-	return tclist;
+	return tc_vec;
 }
 
 RzBinPlugin rz_bin_plugin_pe64 = {

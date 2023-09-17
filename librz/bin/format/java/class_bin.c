@@ -2002,23 +2002,23 @@ RZ_API void rz_bin_java_class_interfaces_as_json(RZ_NONNULL RzBinJavaClass *bin,
 }
 
 /**
- * \brief Returns a RzList<RzBinClass*> containing only the class of the bin
+ * \brief Returns a RzPVector<RzBinClass*> containing only the class of the bin
  */
-RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzBinClass *bclass = NULL;
-	RzList *list = rz_list_newf((RzListFree)rz_bin_class_free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_bin_class_free);
+	if (!vec) {
 		return NULL;
 	}
 
 	bclass = RZ_NEW0(RzBinClass);
 	if (!bclass) {
-		rz_list_free(list);
+		rz_pvector_free(vec);
 		return NULL;
 	}
-	rz_list_append(list, bclass);
+	rz_pvector_push(vec, bclass);
 
 	bclass->name = demangle_java_and_free(rz_bin_java_class_name(bin));
 	bclass->super = demangle_java_and_free(rz_bin_java_class_super(bin));
@@ -2028,9 +2028,9 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL
 	bclass->methods = rz_bin_java_class_methods_as_symbols(bin);
 	bclass->fields = rz_bin_java_class_fields_as_binfields(bin);
 	if (!bclass->methods || !bclass->fields) {
-		rz_list_free(list);
+		rz_pvector_free(vec);
 		return NULL;
 	}
 
-	return list;
+	return vec;
 }

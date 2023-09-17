@@ -282,7 +282,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<char *>*/ *libs;
 	RzBinRelocStorage *relocs;
 	RzBinStrDb *strings;
-	RzList /*<RzBinClass *>*/ *classes;
+	RzPVector /*<RzBinClass *>*/ *classes;
 	HtPP /*<char *, RzBinClass*>*/ *name_to_class_object;
 	HtPP /*<char *, RzBinSymbol*>*/ *glue_to_class_method;
 	HtPP /*<char *, RzBinClassField*>*/ *glue_to_class_field;
@@ -539,8 +539,8 @@ typedef struct rz_bin_plugin_t {
 	RzList /*<RzBinField *>*/ *(*fields)(RzBinFile *bf);
 	RzList /*<char *>*/ *(*libs)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
-	RzList /*<RzBinTrycatch *>*/ *(*trycatch)(RzBinFile *bf);
-	RzList /*<RzBinClass *>*/ *(*classes)(RzBinFile *bf);
+	RzPVector /*<RzBinTrycatch *>*/ *(*trycatch)(RzBinFile *bf);
+	RzPVector /*<RzBinClass *>*/ *(*classes)(RzBinFile *bf);
 	RzList /*<RzBinMem *>*/ *(*mem)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzList /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
@@ -923,12 +923,11 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinAddr *>*/ *rz_bin_get_entries(RZ_NO
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinField *>*/ *rz_bin_get_fields(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<char *>*/ *rz_bin_get_libs(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSection *>*/ *rz_bin_get_sections(RZ_NONNULL RzBin *bin);
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinClass *>*/ *rz_bin_get_classes(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinString *>*/ *rz_bin_get_strings(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinMem *>*/ *rz_bin_get_mem(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSymbol *>*/ *rz_bin_get_symbols(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin);
-RZ_API RzList /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
+RZ_API RZ_OWN RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
 
 RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
@@ -939,7 +938,7 @@ RZ_API const RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONN
 RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzPVector /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj);

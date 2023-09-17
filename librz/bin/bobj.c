@@ -192,7 +192,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_bin_reloc_storage_free(o->relocs);
 	rz_bin_source_line_info_free(o->lines);
 	rz_bin_string_database_free(o->strings);
-	rz_list_free(o->classes);
+	rz_pvector_free(o->classes);
 	rz_list_free(o->entries);
 	rz_list_free(o->fields);
 	rz_pvector_free(o->imports);
@@ -301,10 +301,8 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 		return NULL;
 	}
 
-	if (!o->classes->sorted) {
-		rz_list_sort(o->classes, (RzListComparator)rz_bin_compare_class);
-	}
-	rz_list_add_sorted(o->classes, oclass, (RzListComparator)rz_bin_compare_class);
+	rz_pvector_push(o->classes, oclass);
+	rz_pvector_sort(o->classes, (RzPVectorComparator)rz_bin_compare_class);
 	ht_pp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }
@@ -738,7 +736,7 @@ RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinOb
 /**
  * \brief Get list of \p RzBinClass representing the classes (e.g. C++ classes) defined in the binary object.
  */
-RZ_API const RzList /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->classes;
 }
