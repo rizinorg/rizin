@@ -102,7 +102,7 @@ RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb) {
 		return;
 	}
 
-	rz_list_free(rb->file_hashes);
+	rz_pvector_free(rb->file_hashes);
 	free(rb->intrp);
 	free(rb->file);
 	free(rb->type);

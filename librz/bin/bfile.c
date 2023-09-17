@@ -357,7 +357,7 @@ RZ_API bool rz_bin_file_close(RzBin *bin, int bd) {
 	return false;
 }
 
-static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList /*<RzBinFileHash *>*/ *list) {
+static inline bool add_file_hash(RzHashCfg *md, const char *name, RzPVector /*<RzBinFileHash *>*/ *vec) {
 	char hash[256];
 	const ut8 *digest = NULL;
 	RzHashSize digest_size = 0;
@@ -384,7 +384,7 @@ static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList /*<RzBi
 
 	fh->type = strdup(name);
 	fh->hex = strdup(hash);
-	rz_list_push(list, fh);
+	rz_pvector_push(vec, fh);
 	return true;
 }
 
@@ -396,13 +396,13 @@ static ut64 buf_compute_hashes(const ut8 *buf, ut64 size, void *user) {
 }
 
 /**
- * Return a list of RzBinFileHash structures with the hashes md5, sha1, sha256, crc32 and entropy
+ * Return a pvector of RzBinFileHash structures with the hashes md5, sha1, sha256, crc32 and entropy
  * computed over the whole \p bf .
  */
-RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
+RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
 	rz_return_val_if_fail(bin && bf && bf->o, NULL);
 	RzBinObject *o = bf->o;
-	RzList *file_hashes = NULL;
+	RzPVector *file_hashes = NULL;
 	RzHashCfg *md = NULL;
 	RzBuffer *buf = rz_buf_new_with_io_fd(&bin->iob, bf->fd);
 	const ut64 buf_size = rz_buf_size(buf);
@@ -416,7 +416,7 @@ RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bi
 		}
 		return NULL;
 	}
-	file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
+	file_hashes = rz_pvector_new((RzPVectorFree)rz_bin_file_hash_free);
 	if (!file_hashes) {
 		RZ_LOG_ERROR("Cannot allocate file hash list\n");
 		goto rz_bin_file_compute_hashes_bad;
@@ -455,9 +455,14 @@ RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bi
 	}
 
 	if (o->plugin && o->plugin->hashes) {
-		RzList *plugin_hashes = o->plugin->hashes(bf);
-		rz_list_join(file_hashes, plugin_hashes);
-		rz_list_free(plugin_hashes);
+		RzPVector *plugin_hashes = o->plugin->hashes(bf);
+		void **it;
+		rz_pvector_foreach (plugin_hashes, it) {
+			RzBinFileHash *h = *it;
+			rz_pvector_push(file_hashes, h);
+		}
+		plugin_hashes->v.free = NULL;
+		rz_pvector_free(plugin_hashes);
 	}
 
 	// TODO: add here more rows
@@ -468,20 +473,20 @@ RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bi
 rz_bin_file_compute_hashes_bad:
 	rz_buf_free(buf);
 	rz_hash_cfg_free(md);
-	rz_list_free(file_hashes);
+	rz_pvector_free(file_hashes);
 	return NULL;
 }
 
 /**
  * \brief Set \p file_hashes on current RzBinInfo
- * \return RzList of previous file_hashes
+ * \return RzPVector of previous file_hashes
  */
-RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzList /*<RzBinFileHash *>*/ *new_hashes) {
+RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzPVector /*<RzBinFileHash *>*/ *new_hashes) {
 	rz_return_val_if_fail(bin && bin->cur && bin->cur->o && bin->cur->o->info, NULL);
 	RzBinFile *bf = bin->cur;
 	RzBinInfo *info = bf->o->info;
 
-	RzList *prev_hashes = info->file_hashes;
+	RzPVector *prev_hashes = info->file_hashes;
 	info->file_hashes = new_hashes;
 
 	return prev_hashes;
