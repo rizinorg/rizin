@@ -244,6 +244,8 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_LEAVE] = x86_il_leave,
 
 	/* floating-point instructions */
+	[X86_INS_FNINIT] = x86_il_fninit,
+	[X86_INS_FLDCW] = x86_il_fldcw,
 	[X86_INS_FABS] = x86_il_fabs
 };
 

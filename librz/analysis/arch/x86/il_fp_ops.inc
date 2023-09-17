@@ -10,10 +10,33 @@
  *  - https://docs.oracle.com/cd/E18752_01/html/817-5477/eoizy.html
  *  - https://eng.libretexts.org/Bookshelves/Computer_Science/Programming_Languages/x86-64_Assembly_Language_Programming_with_Ubuntu_(Jorgensen)/18%3A_Floating-Point_Instructions
  *  - https://en.wikibooks.org/wiki/X86_Assembly/Floating_Point#Floating-Point_Instruction_Set
+ *  - https://github.com/avast/retdec/wiki/x86-FPU-semantic-model
  */
 
 #include "common.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
+
+/**
+ * FINIT/FNINIT
+ * Initialize x87 FPU
+ */
+IL_LIFTER(fninit) {
+	RzILOpEffect *set_cw = SETG(X86_REG_FPU_CW, UN(16, 0x37f));
+    RzILOpEffect *set_sw = x86_il_set_reg(X86_REG_FPSW, UN(16, 0x0));
+	RzILOpEffect *set_tw = SETG(X86_REG_FPU_TW, UN(16, 0xffff));
+	RzILOpEffect *set_ip = SETG(X86_REG_FPU_IP, UN(32, 0x0));
+	RzILOpEffect *set_dp = SETG(X86_REG_FPU_DP, UN(32, 0x0));
+
+    return SEQ5(set_cw, set_sw, set_tw, set_ip, set_dp);
+}
+
+/**
+ * FLDCW m16
+ * Load x87 Control Word 
+ */
+IL_LIFTER(fldcw) {
+    return SETG(X86_REG_FPU_CW, x86_il_get_op(0));
+}
 
 /* Arithmetic instructions */
 
