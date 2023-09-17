@@ -29,6 +29,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	rz_strbuf_free(instr_strbuf);
 
+	op->size = bytes_read;
 	return bytes_read;
 }
 
