@@ -590,7 +590,25 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	case RZ_CORE_DISASM_STRINGS_MODE_BLOCK: {
 		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 		if (bb) {
-			dump_string = rz_core_cmd_strf(core, "pD %" PFMT64u " @ 0x%08" PFMT64x, bb->size, bb->addr);
+			ut8 *block = malloc(bb->size + 1);
+			if (!block) {
+				RZ_LOG_ERROR("Cannot allocate buffer\n");
+				goto restore_conf;
+			}
+
+			rz_io_read_at(core->io, bb->addr, block, bb->size);
+			RzCoreDisasmOptions disasm_options = {
+				.cbytes = true,
+			};
+
+			rz_cons_push();
+			rz_core_print_disasm(core, bb->addr, block, bb->size, 9999, NULL, &disasm_options);
+			rz_cons_filter();
+			const char *retstr = rz_str_get(rz_cons_get_buffer());
+			dump_string = strdup(retstr);
+			rz_cons_pop();
+			rz_cons_echo(NULL);
+			free(block);
 		} else {
 			RZ_LOG_ERROR("cannot find block %" PFMT64x ".\n", core->offset);
 			goto restore_conf;
@@ -612,9 +630,24 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		break;
 	}
 	case RZ_CORE_DISASM_STRINGS_MODE_BYTES:
-	default:
-		dump_string = rz_core_cmd_strf(core, "pD %" PFMT64d, n_bytes);
+	default: {
+		ut32 old_blksize = core->blocksize;
+		ut32 new_blksize = n_bytes;
+		RzCoreDisasmOptions disasm_options = {
+			.cbytes = true,
+		};
+
+		rz_core_block_size(core, new_blksize);
+		rz_cons_push();
+		rz_core_print_disasm(core, core->offset, core->block, n_bytes, 9999, NULL, &disasm_options);
+		rz_cons_filter();
+		const char *retstr = rz_str_get(rz_cons_get_buffer());
+		dump_string = strdup(retstr);
+		rz_cons_pop();
+		rz_cons_echo(NULL);
+		rz_core_block_size(core, old_blksize);
 		break;
+	}
 	}
 	rz_config_hold_restore(hc);
 
