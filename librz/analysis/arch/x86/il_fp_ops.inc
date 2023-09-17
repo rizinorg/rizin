@@ -32,10 +32,26 @@ IL_LIFTER(fninit) {
 
 /**
  * FLDCW m16
- * Load x87 Control Word 
+ * Load x87 FPU Control Word 
  */
 IL_LIFTER(fldcw) {
     return SETG(X86_REG_FPU_CW, x86_il_get_op(0));
+}
+
+/**
+ * FSTCW/FNSTCW m2byte
+ * Store x87 FPU Control Word
+ */
+IL_LIFTER(fnstcw) {
+    return x86_il_set_op(0, VARG(X86_REG_FPU_CW));
+}
+
+/**
+ * FSTSW/FNSTSW {m2byte | AX}
+ * Store x87 FPU Status Word
+ */
+IL_LIFTER(fnstsw) {
+    return x86_il_set_op(0, x86_il_get_reg(X86_REG_FPSW));
 }
 
 /* Arithmetic instructions */
