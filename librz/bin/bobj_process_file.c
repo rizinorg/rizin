@@ -61,9 +61,9 @@ RZ_IPI void rz_bin_set_and_process_file(RzBinFile *bf, RzBinObject *o) {
 		o->kv = sdb_new0();
 	}
 
-	rz_list_free(o->mem);
+	rz_pvector_free(o->mem);
 	if (!plugin->mem || !(o->mem = plugin->mem(bf))) {
-		o->mem = rz_list_newf((RzListFree)rz_bin_mem_free);
+		o->mem = rz_pvector_new((RzPVectorFree)rz_bin_mem_free);
 	}
 
 	rz_list_free(o->resources);
