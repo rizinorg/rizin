@@ -178,22 +178,21 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
-	RzList *ret;
+RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinMem *m, *n;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(rz_bin_mem_free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("fastram");
 	m->addr = 0xff80LL;
 	m->size = 0x80;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
@@ -202,7 +201,7 @@ RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	m->addr = 0xff00LL;
 	m->size = 0x4c;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
@@ -211,7 +210,7 @@ RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	m->addr = 0xfe00LL;
 	m->size = 0xa0;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
@@ -220,7 +219,7 @@ RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	m->addr = 0x8000LL;
 	m->size = 0x2000;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
@@ -229,12 +228,12 @@ RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	m->addr = 0xc000LL;
 	m->size = 0x2000;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
-	if (!(m->mirrors = rz_list_new())) {
+	rz_pvector_push(ret, m);
+	if (!(m->mirrors = rz_pvector_new(rz_bin_mem_free))) {
 		return ret;
 	}
 	if (!(n = RZ_NEW0(RzBinMem))) {
-		rz_list_free(m->mirrors);
+		rz_pvector_free(m->mirrors);
 		m->mirrors = NULL;
 		return ret;
 	}
@@ -242,7 +241,7 @@ RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	n->addr = 0xe000LL;
 	n->size = 0x1e00;
 	n->perms = rz_str_rwx("rx");
-	rz_list_append(m->mirrors, n);
+	rz_pvector_push(m->mirrors, n);
 
 	return ret;
 }

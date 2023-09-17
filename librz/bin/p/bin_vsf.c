@@ -114,27 +114,26 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 	return true;
 }
 
-static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
+static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	// FIXME: What does Mem do? Should I remove it ?
 	struct rz_bin_vsf_obj *vsf_obj = (struct rz_bin_vsf_obj *)bf->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
-	RzList *ret;
+	RzPVector *ret;
 	RzBinMem *m;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(rz_bin_mem_free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("RAM");
 	m->addr = 0; // start address
 	m->size = _machines[vsf_obj->machine_idx].ram_size;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	return ret;
 }
 

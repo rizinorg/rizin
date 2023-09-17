@@ -288,7 +288,7 @@ typedef struct rz_bin_object_t {
 	HtPP /*<char *, RzBinClassField*>*/ *glue_to_class_field;
 	HtUP /*<vaddr , RzBinSymbol*>*/ *vaddr_to_class_method;
 	RzBinSourceLineInfo *lines;
-	RzList /*<RzBinMem *>*/ *mem;
+	RzPVector /*<RzBinMem *>*/ *mem;
 	char *regstate;
 	RzBinInfo *info;
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
@@ -541,7 +541,7 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
 	RzPVector /*<RzBinTrycatch *>*/ *(*trycatch)(RzBinFile *bf);
 	RzPVector /*<RzBinClass *>*/ *(*classes)(RzBinFile *bf);
-	RzList /*<RzBinMem *>*/ *(*mem)(RzBinFile *bf);
+	RzPVector /*<RzBinMem *>*/ *(*mem)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzList /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
 	RzList /*<RzBinResource *>*/ *(*resources)(RzBinFile *bf);
@@ -793,7 +793,7 @@ typedef struct rz_bin_mem_t {
 	ut64 addr;
 	int size;
 	int perms;
-	RzList /*<RzBinMem *>*/ *mirrors; // for mirror access; stuff here should only create new maps not new fds
+	RzPVector /*<RzBinMem *>*/ *mirrors; // for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
 
 typedef struct rz_bin_resource_t {
@@ -924,7 +924,6 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinField *>*/ *rz_bin_get_fields(RZ_NO
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<char *>*/ *rz_bin_get_libs(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSection *>*/ *rz_bin_get_sections(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinString *>*/ *rz_bin_get_strings(RZ_NONNULL RzBin *bin);
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinMem *>*/ *rz_bin_get_mem(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSymbol *>*/ *rz_bin_get_symbols(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin);
 RZ_API RZ_OWN RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
@@ -940,7 +939,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL
 RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_BORROW const RzPVector /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *obj);

@@ -41,9 +41,10 @@ RZ_API void rz_bin_mem_free(RZ_NULLABLE void *data) {
 		return;
 	}
 	RzBinMem *mem = (RzBinMem *)data;
+	free(mem->name);
 	if (mem->mirrors) {
-		mem->mirrors->free = rz_bin_mem_free;
-		rz_list_free(mem->mirrors);
+		mem->mirrors->v.free_user = rz_bin_mem_free;
+		rz_pvector_free(mem->mirrors);
 	}
 	free(mem);
 }
@@ -198,7 +199,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_pvector_free(o->imports);
 	rz_list_free(o->libs);
 	rz_list_free(o->maps);
-	rz_list_free(o->mem);
+	rz_pvector_free(o->mem);
 	rz_list_free(o->sections);
 	rz_list_free(o->symbols);
 	rz_list_free(o->vfiles);
@@ -755,7 +756,7 @@ RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL Rz
 /**
  * \brief Get list of \p RzBinMem representing the memory regions identified in the binary object.
  */
-RZ_API const RzList /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_BORROW const RzPVector /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->mem;
 }
