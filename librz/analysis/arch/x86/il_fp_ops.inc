@@ -22,6 +22,8 @@
  */
 IL_LIFTER(fninit) {
 	RzILOpEffect *set_cw = SETG(X86_REG_FPU_CW, UN(16, 0x37f));
+    /* No need to set C0-C3 flags to zero, since we are setting the FPSW to 0,
+     * so all the flag bits will also be set to 0. */
     RzILOpEffect *set_sw = x86_il_set_reg(X86_REG_FPSW, UN(16, 0x0));
 	RzILOpEffect *set_tw = SETG(X86_REG_FPU_TW, UN(16, 0xffff));
 	RzILOpEffect *set_ip = SETG(X86_REG_FPU_IP, UN(32, 0x0));
@@ -52,6 +54,16 @@ IL_LIFTER(fnstcw) {
  */
 IL_LIFTER(fnstsw) {
     return x86_il_set_op(0, x86_il_get_reg(X86_REG_FPSW));
+}
+
+/**
+ * FCLEX/FNCLEX
+ * Clear exceptions
+ */
+IL_LIFTER(fnclex) {
+    /* Zero out the 15th bit and 0-7 bits. */
+    RzILOpPure *new_sw = LOGAND(x86_il_get_reg(X86_REG_FPSW), UN(16, 0x7f00));\
+    return x86_il_set_reg(X86_REG_FPSW, new_sw);
 }
 
 /* Arithmetic instructions */
