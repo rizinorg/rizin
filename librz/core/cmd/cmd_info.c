@@ -26,16 +26,18 @@ static int bin_is_executable(RzBinObject *obj) {
 	return false;
 }
 
-static bool is_equal_file_hashes(RzList /*<RzBinFileHash *>*/ *lfile_hashes, RzList /*<RzBinFileHash *>*/ *rfile_hashes, bool *equal) {
+static bool is_equal_file_hashes(RzPVector /*<RzBinFileHash *>*/ *lfile_hashes, RzPVector /*<RzBinFileHash *>*/ *rfile_hashes, bool *equal) {
 	rz_return_val_if_fail(lfile_hashes, false);
 	rz_return_val_if_fail(rfile_hashes, false);
 	rz_return_val_if_fail(equal, false);
 
 	*equal = true;
 	RzBinFileHash *fh_l, *fh_r;
-	RzListIter *hiter_l, *hiter_r;
-	rz_list_foreach (lfile_hashes, hiter_l, fh_l) {
-		rz_list_foreach (rfile_hashes, hiter_r, fh_r) {
+	void **hiter_l, **hiter_r;
+	rz_pvector_foreach (lfile_hashes, hiter_l) {
+		fh_l = *hiter_l;
+		rz_pvector_foreach (rfile_hashes, hiter_r) {
+			fh_r = *hiter_r;
 			if (strcmp(fh_l->type, fh_r->type)) {
 				continue;
 			}
@@ -619,27 +621,29 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 
 	GET_CHECK_CUR_BINFILE(core);
 
-	RzList *new_hashes = rz_bin_file_compute_hashes(core->bin, bf, limit);
-	RzList *old_hashes = rz_bin_file_set_hashes(core->bin, new_hashes);
+	RzPVector *new_hashes = rz_bin_file_compute_hashes(core->bin, bf, limit);
+	RzPVector *old_hashes = rz_bin_file_set_hashes(core->bin, new_hashes);
 	bool equal = true;
-	if (!rz_list_empty(new_hashes) && !rz_list_empty(old_hashes)) {
+	if (new_hashes && old_hashes && !rz_pvector_empty(new_hashes) && !rz_pvector_empty(old_hashes)) {
 		if (!is_equal_file_hashes(new_hashes, old_hashes, &equal)) {
 			RZ_LOG_ERROR("core: Cannot compare file hashes\n");
-			rz_list_free(old_hashes);
+			rz_pvector_free(old_hashes);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
 	RzBinFileHash *fh_old, *fh_new;
-	RzListIter *hiter_old, *hiter_new;
+	void **hiter_old, **hiter_new;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
-		rz_list_foreach (new_hashes, hiter_new, fh_new) {
+		rz_pvector_foreach (new_hashes, hiter_new) {
+			fh_new = *hiter_new;
 			pj_ks(state->d.pj, fh_new->type, fh_new->hex);
 		}
 		if (!equal) {
 			// print old hashes prefixed with `o` character like `omd5` and `isha1`
-			rz_list_foreach (old_hashes, hiter_old, fh_old) {
+			rz_pvector_foreach (old_hashes, hiter_old) {
+				fh_old = *hiter_old;
 				char *key = rz_str_newf("o%s", fh_old->type);
 				pj_ks(state->d.pj, key, fh_old->hex);
 				free(key);
@@ -649,11 +653,10 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (!equal) {
-			hiter_new = rz_list_iterator(new_hashes);
-			hiter_old = rz_list_iterator(old_hashes);
-			while (rz_list_iter_next(hiter_new) && rz_list_iter_next(hiter_old)) {
-				fh_new = (RzBinFileHash *)rz_list_iter_get(hiter_new);
-				fh_old = (RzBinFileHash *)rz_list_iter_get(hiter_old);
+			size_t min_len = RZ_MIN(rz_pvector_len(old_hashes), rz_pvector_len(new_hashes));
+			for (int i = 0; i < min_len; i++) {
+				fh_new = (RzBinFileHash *)rz_pvector_at(new_hashes, i);
+				fh_old = (RzBinFileHash *)rz_pvector_at(old_hashes, i);
 				if (strcmp(fh_new->type, fh_old->type)) {
 					RZ_LOG_ERROR("core: Wrong file hashes structure");
 				}
@@ -667,7 +670,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 				}
 			}
 		} else { // hashes are equal
-			rz_list_foreach (new_hashes, hiter_new, fh_new) {
+			rz_pvector_foreach (new_hashes, hiter_new) {
+				fh_new = *hiter_new;
 				rz_cons_printf("%s %s\n", fh_new->type, fh_new->hex);
 			}
 		}
@@ -676,7 +680,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 		rz_warn_if_reached();
 		break;
 	}
-	rz_list_free(old_hashes);
+	rz_pvector_free(old_hashes);
 	return RZ_CMD_STATUS_OK;
 }
 

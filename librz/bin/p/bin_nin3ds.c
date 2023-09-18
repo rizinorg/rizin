@@ -230,19 +230,19 @@ static RzBinFileHash *n3ds_hash_buffer(const char *name, const ut8 *hash, size_t
 	return fh;
 }
 
-static RzList /*<RzBinFileHash *>*/ *n3ds_hashes(RzBinFile *bf) {
+static RzPVector /*<RzBinFileHash *>*/ *n3ds_hashes(RzBinFile *bf) {
 	if (!bf || !bf->o) {
 		return NULL;
 	}
 
-	RzList *list = rz_list_newf((RzListFree)rz_bin_file_hash_free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_bin_file_hash_free);
+	if (!vec) {
 		return NULL;
 	}
 
 	N3DSFirmHdr *hdr = n3ds_get_hdr(bf);
 	RzBinFileHash *fh = n3ds_hash_buffer("rsa2048:firmware", hdr->rsa2048, sizeof(hdr->rsa2048));
-	if (fh && !rz_list_append(list, fh)) {
+	if (fh && !rz_pvector_push(vec, fh)) {
 		rz_bin_file_hash_free(fh);
 	}
 
@@ -270,12 +270,12 @@ static RzList /*<RzBinFileHash *>*/ *n3ds_hashes(RzBinFile *bf) {
 			break;
 		}
 
-		if (fh && !rz_list_append(list, fh)) {
+		if (fh && !rz_pvector_push(vec, fh)) {
 			rz_bin_file_hash_free(fh);
 		}
 	}
 
-	return list;
+	return vec;
 }
 
 static RZ_OWN char *n3ds_section_type_to_string(ut64 type) {

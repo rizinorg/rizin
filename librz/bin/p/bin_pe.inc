@@ -717,15 +717,15 @@ static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
 }
 
-static RzList /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
-	RzList *file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
+static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
+	RzPVector *file_hashes = rz_pvector_new((RzPVectorFree)rz_bin_file_hash_free);
 	const char *authentihash = PE_(bin_pe_get_authentihash)(bf->o->bin_obj);
 	if (authentihash) {
 		RzBinFileHash *authhash = RZ_NEW0(RzBinFileHash);
 		if (authhash) {
 			authhash->type = strdup("authentihash");
 			authhash->hex = strdup(authentihash);
-			rz_list_push(file_hashes, authhash);
+			rz_pvector_push(file_hashes, authhash);
 		}
 	}
 

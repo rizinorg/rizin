@@ -226,7 +226,7 @@ typedef struct rz_bin_info_t {
 	char *debug_file_name;
 	const char *lang;
 	char *default_cc;
-	RzList /*<RzBinFileHash *>*/ *file_hashes;
+	RzPVector /*<RzBinFileHash *>*/ *file_hashes;
 	int bits;
 	int has_va;
 	int has_pi; // pic/pie
@@ -543,7 +543,7 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<RzBinClass *>*/ *(*classes)(RzBinFile *bf);
 	RzPVector /*<RzBinMem *>*/ *(*mem)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
-	RzList /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
+	RzPVector /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
 	RzList /*<RzBinResource *>*/ *(*resources)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
@@ -985,8 +985,8 @@ RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
 RZ_API ut64 rz_bin_file_delete_all(RzBin *bin);
 RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf);
-RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit);
-RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzList /*<RzBinFileHash *>*/ *new_hashes);
+RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit);
+RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzPVector /*<RzBinFileHash *>*/ *new_hashes);
 RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);
 RZ_API void rz_bin_file_hash_free(RZ_NULLABLE RzBinFileHash *fhash);
 
