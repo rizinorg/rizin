@@ -540,6 +540,32 @@ static void core_handle_call(RzCore *core, char *line, char **str) {
 }
 
 /**
+ *  \brief Get the console output of disassembling \p byte_len bytes at \p addr
+ */
+static char *cons_dis_n_bytes(RzCore *core, ut64 addr, ut32 byte_len) {
+	ut8 *block = malloc(byte_len + 1);
+	if (!block) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return NULL;
+	}
+
+	rz_io_read_at(core->io, addr, block, byte_len);
+	RzCoreDisasmOptions disasm_options = {
+		.cbytes = true,
+	};
+
+	rz_cons_push();
+	rz_core_print_disasm(core, addr, block, byte_len, 9999, NULL, &disasm_options);
+	rz_cons_filter();
+	const char *cons_str = rz_str_get(rz_cons_get_buffer());
+	char *ret = strdup(cons_str);
+	rz_cons_pop();
+	rz_cons_echo(NULL);
+	free(block);
+	return ret;
+}
+
+/**
  * \brief Get string in disassembly line for \p mode
  * \param mode RzCorePrintDisasmStringsMode RZ_CORE_DISASM_STRINGS_MODE_{BYTES,INST,BLOCK,FUNCTION}
  * \param n_bytes Number of bytes to disassemble, only used for RZ_CORE_DISASM_STRINGS_MODE_BYTES
@@ -590,25 +616,10 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	case RZ_CORE_DISASM_STRINGS_MODE_BLOCK: {
 		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 		if (bb) {
-			ut8 *block = malloc(bb->size + 1);
-			if (!block) {
-				RZ_LOG_ERROR("Cannot allocate buffer\n");
+			dump_string = cons_dis_n_bytes(core, bb->addr, bb->size);
+			if (!dump_string) {
 				goto restore_conf;
 			}
-
-			rz_io_read_at(core->io, bb->addr, block, bb->size);
-			RzCoreDisasmOptions disasm_options = {
-				.cbytes = true,
-			};
-
-			rz_cons_push();
-			rz_core_print_disasm(core, bb->addr, block, bb->size, 9999, NULL, &disasm_options);
-			rz_cons_filter();
-			const char *retstr = rz_str_get(rz_cons_get_buffer());
-			dump_string = strdup(retstr);
-			rz_cons_pop();
-			rz_cons_echo(NULL);
-			free(block);
 		} else {
 			RZ_LOG_ERROR("cannot find block %" PFMT64x ".\n", core->offset);
 			goto restore_conf;
@@ -631,21 +642,10 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	}
 	case RZ_CORE_DISASM_STRINGS_MODE_BYTES:
 	default: {
-		ut32 old_blksize = core->blocksize;
-		ut32 new_blksize = n_bytes;
-		RzCoreDisasmOptions disasm_options = {
-			.cbytes = true,
-		};
-
-		rz_core_block_size(core, new_blksize);
-		rz_cons_push();
-		rz_core_print_disasm(core, core->offset, core->block, n_bytes, 9999, NULL, &disasm_options);
-		rz_cons_filter();
-		const char *retstr = rz_str_get(rz_cons_get_buffer());
-		dump_string = strdup(retstr);
-		rz_cons_pop();
-		rz_cons_echo(NULL);
-		rz_core_block_size(core, old_blksize);
+		dump_string = cons_dis_n_bytes(core, core->offset, n_bytes);
+		if (!dump_string) {
+			goto restore_conf;
+		}
 		break;
 	}
 	}
