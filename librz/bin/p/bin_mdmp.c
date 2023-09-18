@@ -302,19 +302,19 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
+static RzPVector /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 	MiniDmpLocDescr32 *location = NULL;
 	MiniDmpMemDescr32 *module;
 	MiniDmpMemDescr64 *module64;
 	MiniDmpMemInfo *mem_info;
 	MiniDmpObj *obj;
-	RzList *ret;
+	RzPVector *ret;
 	RzListIter *it;
 	RzBinMem *ptr;
 	ut64 index;
 	ut64 state, type, a_protect;
 
-	if (!(ret = rz_list_newf(rz_bin_mem_free))) {
+	if (!(ret = rz_pvector_new(rz_bin_mem_free))) {
 		return NULL;
 	}
 
@@ -342,7 +342,7 @@ static RzList /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 					   " type=0x%08" PFMT64x " allocation_protect=0x%08" PFMT64x " Memory_Section",
 			location->rva, state, type, a_protect));
 
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	index = obj->streams.memories64.base_rva;
@@ -367,7 +367,7 @@ static RzList /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 
 		index += module64->data_size;
 
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;

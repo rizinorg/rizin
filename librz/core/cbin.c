@@ -4871,11 +4871,12 @@ RZ_API RZ_OWN char *rz_core_bin_pdb_get_filename(RZ_NONNULL RzCore *core) {
 		symstore_path, basename, info->guid, basename);
 }
 
-static void bin_memory_print_rec(RzCmdStateOutput *state, RzBinMem *mirror, const RzList /*<RzBinMem *>*/ *mems, int perms) {
-	RzListIter *it;
+static void bin_memory_print_rec(RzCmdStateOutput *state, RzBinMem *mirror, const RzPVector /*<RzBinMem *>*/ *mems, int perms) {
+	void **it;
 	RzBinMem *mem;
 
-	rz_list_foreach (mems, it, mem) {
+	rz_pvector_foreach (mems, it) {
+		mem = *it;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
@@ -4913,7 +4914,7 @@ RZ_API bool rz_core_bin_memory_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sxXss", "name", "size", "address", "flags", "mirror");
 
-	const RzList *mems = rz_bin_object_get_mem(bf->o);
+	const RzPVector *mems = rz_bin_object_get_mem(bf->o);
 	bin_memory_print_rec(state, NULL, mems, 7);
 	rz_cmd_state_output_array_end(state);
 	return true;

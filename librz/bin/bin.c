@@ -102,7 +102,7 @@ RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb) {
 		return;
 	}
 
-	rz_list_free(rb->file_hashes);
+	rz_pvector_free(rb->file_hashes);
 	free(rb->intrp);
 	free(rb->file);
 	free(rb->type);
@@ -725,12 +725,6 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSymbol *>*/ *rz_bin_get_symbols(RZ_
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? (RzList *)rz_bin_object_get_symbols(o) : NULL;
-}
-
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinMem *>*/ *rz_bin_get_mem(RZ_NONNULL RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? (RzList *)rz_bin_object_get_mem(o) : NULL;
 }
 
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin) {
