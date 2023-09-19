@@ -5,8 +5,19 @@
 #define CRYPTO_SM4_ALGO_H
 #include <rz_util.h>
 
+#define SM4_ENCRYPT  1
+#define SM4_DECRYPT  2
 #define SM4_KEY_SIZE 16
+
+#ifndef GET_UT64
+#define GET_UT64(n, b, i) \
+	{ \
+		(n) = ((unsigned int)(b)[(i)] << 24) | ((unsigned int)(b)[(i) + 1] << 16) | ((unsigned int)(b)[(i) + 2] << 8) | ((unsigned int)(b)[(i) + 3]); \
+	}
+#endif
+
 typedef struct sm4_ctx {
-    ut8 key[SM4_KEY_SIZE];
+	int mode;
+	ut64 subkeys[32];
 } sm4_state;
 #endif
