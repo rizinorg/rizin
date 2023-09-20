@@ -1341,128 +1341,6 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case PPC_INS_BUN:
 		case PPC_INS_BUNA:
 #endif
-		case PPC_INS_B:
-		case PPC_INS_BC:
-		case PPC_INS_BA:
-			if (insn->id == PPC_INS_BC) {
-				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-			} else {
-				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-			}
-			op->fail = addr + op->size;
-			bool cr_cond_set = true;
-#if CS_NEXT_VERSION >= 6
-			op->jump = insn->id == PPC_INS_BC ? IMM(2) : IMM(0);
-			switch (insn->detail->ppc.bc.pred_cr) {
-#else
-			op->jump = ARG(1)[0] == '\0' ? IMM(0) : IMM(1);
-			switch (insn->detail->ppc.bc) {
-#endif
-#if CS_NEXT_VERSION >= 6
-			case PPC_PRED_LT:
-				esilprintf(op, "2,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
-#else
-			case PPC_BC_LT:
-				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,&,");
-				} else {
-					esilprintf(op, "2,%s,&,", ARG(0));
-				}
-#endif
-				break;
-#if CS_NEXT_VERSION >= 6
-			case PPC_PRED_LE:
-				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
-#else
-			case PPC_BC_LE:
-				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "3,cr0,&,");
-				} else {
-					esilprintf(op, "3,%s,&,", ARG(0));
-				}
-#endif
-				break;
-#if CS_NEXT_VERSION >= 6
-			case PPC_PRED_EQ:
-				esilprintf(op, "1,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
-#else
-			case PPC_BC_EQ:
-				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "1,cr0,&,");
-				} else {
-					esilprintf(op, "1,%s,&,", ARG(0));
-				}
-#endif
-				break;
-#if CS_NEXT_VERSION >= 6
-			case PPC_PRED_GE:
-				esilprintf(op, "2,%s,^,3,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
-#else
-			case PPC_BC_GE:
-				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,^,3,&,");
-				} else {
-					esilprintf(op, "2,%s,^,3,&,", ARG(0));
-				}
-#endif
-				break;
-#if CS_NEXT_VERSION >= 6
-			case PPC_PRED_GT:
-				esilprintf(op, "2,%s,&,!,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
-#else
-			case PPC_BC_GT:
-				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "2,cr0,&,!,");
-				} else {
-					esilprintf(op, "2,%s,&,!,", ARG(0));
-				}
-#endif
-				break;
-#if CS_NEXT_VERSION >= 6
-			case PPC_PRED_NE:
-				esilprintf(op, "%s,1,&,!,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
-#else
-			case PPC_BC_NE:
-				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "cr0,1,&,!,");
-				} else {
-					esilprintf(op, "%s,1,&,!,", ARG(0));
-				}
-#endif
-				break;
-#if CS_NEXT_VERSION >= 6
-			case PPC_PRED_INVALID:
-			case PPC_PRED_UN: // unordered + PPC_PRED_SO - summary overflow
-			case PPC_PRED_NU: // not unordered + PPC_PRED_NS - not summary overflow
-#else
-			case PPC_BC_INVALID:
-			case PPC_BC_UN: // unordered
-			case PPC_BC_NU: // not unordered
-			case PPC_BC_SO: // summary overflow
-			case PPC_BC_NS: // not summary overflow
-#endif
-			default:
-				cr_cond_set = false;
-				break;
-			}
-#if CS_NEXT_VERSION >= 6
-			switch (insn->detail->ppc.bc.pred_ctr) {
-			default:
-				break;
-			case PPC_PRED_Z:
-				rz_strbuf_appendf(&op->esil, "1,ctr,-=,$z,%s", cr_cond_set ? "&&,?" : "?");
-				break;
-			case PPC_PRED_NZ:
-				rz_strbuf_appendf(&op->esil, "1,ctr,-=,$z,!,%s", cr_cond_set ? "&&,?" : "?");
-				break;
-			}
-#endif
-			if (op->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
-				rz_strbuf_appendf(&op->esil, "{,0x%llx,pc,=,},", op->jump);
-			} else {
-				esilprintf(op, ",%s,pc,=,", ARG(0));
-			}
-			break;
 #if CS_NEXT_VERSION < 6
 		case PPC_INS_BT:
 		case PPC_INS_BF:
@@ -1545,17 +1423,29 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->fail = addr + op->size;
 			break;
 #endif
+		case PPC_INS_B:
+		case PPC_INS_BC:
+		case PPC_INS_BA:
+		case PPC_INS_BCL:
 		case PPC_INS_BLR:
 		case PPC_INS_BLRL:
 		case PPC_INS_BCLR:
-		case PPC_INS_BCLRL: {
-			if (insn->id == PPC_INS_BCLR || insn->id == PPC_INS_BCLRL) {
+		case PPC_INS_BCLRL:
+		case PPC_INS_BCCTR:
+		case PPC_INS_BCCTRL: {
+			if (insn->id == PPC_INS_BC || insn->id == PPC_INS_BCCTR) {
+				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+			} else if (insn->id == PPC_INS_B || insn->id == PPC_INS_BA) {
+				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+			} else if (insn->id == PPC_INS_BCLR || insn->id == PPC_INS_BCLRL) {
 				op->type = RZ_ANALYSIS_OP_TYPE_CRET;
-			} else {
+			} else if (insn->id == PPC_INS_BLR || insn->id == PPC_INS_BLRL) {
 				op->type = RZ_ANALYSIS_OP_TYPE_RET;
+			} else if (insn->id == PPC_INS_BCCTRL) {
+				op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
 			}
-			op->fail = addr + op->size;
 			bool cr_cond_set = true;
+			bool ctr_cond_set = true;
 #if CS_NEXT_VERSION >= 6
 			switch (insn->detail->ppc.bc.pred_cr) {
 			case PPC_PRED_LT:
@@ -1644,6 +1534,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 #if CS_NEXT_VERSION >= 6
 			switch (insn->detail->ppc.bc.pred_ctr) {
 			default:
+				ctr_cond_set = false;
 				break;
 			case PPC_PRED_Z:
 				rz_strbuf_appendf(&op->esil, "1,ctr,-=,$z,%s", cr_cond_set ? "&&,?" : "?");
@@ -1653,12 +1544,38 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				break;
 			}
 #endif
-			if (op->type == RZ_ANALYSIS_OP_TYPE_CRET) {
-				op->type = RZ_ANALYSIS_OP_TYPE_CRET;
-				rz_strbuf_appendf(&op->esil, "{,lr,pc,=,},");
+			bool is_cond = cr_cond_set || ctr_cond_set;
+			if (is_cond) {
+				rz_strbuf_appendf(&op->esil, "{,");
+				op->fail = addr + op->size;
+			}
+
+			if (insn->id == PPC_INS_B || insn->id == PPC_INS_BC || insn->id == PPC_INS_BA || insn->id == PPC_INS_BCL) {
+#if CS_NEXT_VERSION >= 6
+				op->jump = (insn->id == PPC_INS_BC || insn->id == PPC_INS_BCL) ? IMM(2) : IMM(0);
+#else
+				op->jump = ARG(1)[0] == '\0' ? IMM(0) : IMM(1);
+#endif
+			}
+
+			if (insn->id == PPC_INS_BLRL ||
+				insn->id == PPC_INS_BCLRL ||
+				insn->id == PPC_INS_BCCTRL ||
+				insn->id == PPC_INS_BCL) {
+				op->fail = addr + op->size;
+				rz_strbuf_appendf(&op->esil, "0x%"PFMT64x",lr,=,", op->fail);
+			}
+
+			// Set target source
+			if (insn->id == PPC_INS_BCCTR || insn->id == PPC_INS_BCCTRL) {
+				rz_strbuf_appendf(&op->esil, "ctr,pc,=,");
+			} else if (op->type == RZ_ANALYSIS_OP_TYPE_CRET || op->type == RZ_ANALYSIS_OP_TYPE_RET) {
+				rz_strbuf_appendf(&op->esil, "lr,pc,=,");
 			} else {
-				op->type = RZ_ANALYSIS_OP_TYPE_RET;
-				esilprintf(op, ",lr,pc,=,");
+				rz_strbuf_appendf(&op->esil, "0x%"PFMT64x",pc,=,", op->jump);
+			}
+			if (is_cond) {
+				rz_strbuf_appendf(&op->esil, "},");
 			}
 			break;
 		}
