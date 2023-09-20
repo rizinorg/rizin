@@ -40,24 +40,22 @@ static ut8 sm4_ecb_sbox(unsigned char val) {
 	return ret_val;
 }
 
-static ut64 _rol (ut64 n, ut64 c)
-{
-  const unsigned int mask = (CHAR_BIT*sizeof(n) - 1); 
-  c &= mask;
-  return (n<<c) | (n>>( (-c)&mask ));
+static ut64 _rol(ut64 n, ut64 c) {
+	const unsigned int mask = (CHAR_BIT * sizeof(n) - 1);
+	c &= mask;
+	return (n << c) | (n >> ((-c) & mask));
 }
 
-static ut64 _ror (ut64 n, ut64 c)
-{
-  const unsigned int mask = (CHAR_BIT*sizeof(n) - 1);
-  c &= mask;
-  return (n>>c) | (n<<( (-c)&mask ));
+static ut64 _ror(ut64 n, ut64 c) {
+	const unsigned int mask = (CHAR_BIT * sizeof(n) - 1);
+	c &= mask;
+	return (n >> c) | (n << ((-c) & mask));
 }
 
-static ut64 sm4_lt_algorithm(ut64 val){
-	ut8 a1 = (ut8)val>>24;
-	ut8 a2 = (ut8)val>>16;
-	ut8 a3 = (ut8)val>>8;
+static ut64 sm4_lt_algorithm(ut64 val) {
+	ut8 a1 = (ut8)val >> 24;
+	ut8 a2 = (ut8)val >> 16;
+	ut8 a3 = (ut8)val >> 8;
 	ut8 a4 = (ut8)val;
 	ut8 b1 = sm4_ecb_sbox(a1);
 	ut8 b2 = sm4_ecb_sbox(a2);
@@ -67,18 +65,18 @@ static ut64 sm4_lt_algorithm(ut64 val){
 	return 0;
 }
 
-static void sm4_ecb_crypt(sm4_state* state, const ut8* input, int len){
+static void sm4_ecb_crypt(sm4_state *state, const ut8 *input, int len) {
 	ut64 buff[36];
-	ut64* output = (ut64*)malloc(len);
-	while(len){
-		buff[0] = ((ut64)input[0] << 24) | ((ut64)input[1] << 16) | ((ut64)input[2] << 8)|((ut64)input[3]);
-		buff[1] = ((ut64)input[8] << 24) | ((ut64)input[9] << 16) | ((ut64)input[10] << 8)|((ut64)input[11]);
-		buff[2] = ((ut64)input[4] << 24) | ((ut64)input[5] << 16) | ((ut64)input[6] << 8)|((ut64)input[7]);
-		buff[3] = ((ut64)input[12] << 24) | ((ut64)input[13] << 16) | ((ut64)input[14] << 8)|((ut64)input[15]);
+	ut64 *output = (ut64 *)malloc(len);
+	while (len) {
+		buff[0] = ((ut64)input[0] << 24) | ((ut64)input[1] << 16) | ((ut64)input[2] << 8) | ((ut64)input[3]);
+		buff[1] = ((ut64)input[8] << 24) | ((ut64)input[9] << 16) | ((ut64)input[10] << 8) | ((ut64)input[11]);
+		buff[2] = ((ut64)input[4] << 24) | ((ut64)input[5] << 16) | ((ut64)input[6] << 8) | ((ut64)input[7]);
+		buff[3] = ((ut64)input[12] << 24) | ((ut64)input[13] << 16) | ((ut64)input[14] << 8) | ((ut64)input[15]);
 
-		for(int i=0;i<32;i++){
-			ut64 v1 = buff[1]^buff[2]^buff[3]^state->subkeys[i];
-			buff[i+4] = buff[0] ^ sm4_lt_algorithm(v1);
+		for (int i = 0; i < 32; i++) {
+			ut64 v1 = buff[1] ^ buff[2] ^ buff[3] ^ state->subkeys[i];
+			buff[i + 4] = buff[0] ^ sm4_lt_algorithm(v1);
 		}
 
 		len -= 16;
@@ -88,12 +86,12 @@ static void sm4_ecb_crypt(sm4_state* state, const ut8* input, int len){
 }
 
 static ut64 sm4_ecb_get_round_key(ut64 a) {
-	ut8 b1 = sm4_ecb_sbox(a>>24);
-	ut8 b2 = sm4_ecb_sbox(a>>16);
-	ut8 b3 = sm4_ecb_sbox(a>>8);
+	ut8 b1 = sm4_ecb_sbox(a >> 24);
+	ut8 b2 = sm4_ecb_sbox(a >> 16);
+	ut8 b3 = sm4_ecb_sbox(a >> 8);
 	ut8 b4 = sm4_ecb_sbox(a);
-	ut8 val = (b1<<24)|(b2<<16)|(b3<<8)|b4;
-	ut64 round_key = val^_rol(val,13)^_rol(val,23);
+	ut8 val = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+	ut64 round_key = val ^ _rol(val, 13) ^ _rol(val, 23);
 	return round_key;
 }
 static void sm4_ecb_setup_key(ut64 subkeys[32], const ut8 *key) {
@@ -113,7 +111,7 @@ static void sm4_ecb_setup_key(ut64 subkeys[32], const ut8 *key) {
 	for (int i = 0; i < 32; i++) {
 		ut64 xor_val = K[i + 1] ^ K[i + 2] ^ K[i + 3] ^ CK[i];
 		K[i + 4] = K[i] ^ sm4_ecb_get_round_key(xor_val);
-        subkeys[i] = K[i+4];
+		subkeys[i] = K[i + 4];
 	}
 }
 static void sm4_setkey_enc(sm4_state *s, const ut8 *key) {
