@@ -749,7 +749,7 @@ static const char *RzAnalysisVarOriginKind_strings[] = {
 		return strings[k]; \
 	} \
 	static inline T rz_analysis_##name##_from_string(const char *s) { \
-		for (int i = 0; i < RZ_ARRAY_SIZE(strings); ++i) { \
+		for (unsigned int i = 0; i < RZ_ARRAY_SIZE(strings); ++i) { \
 			if (RZ_STR_EQ(s, strings[i])) { \
 				return (T)i; \
 			} \
