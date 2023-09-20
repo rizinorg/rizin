@@ -1364,7 +1364,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		all_bits_set = (((b - 1) & 0x3f) == e);
 		set_mask = all_bits_set ? NULL : SET_MASK(U8(b), U8(e));
 		into_rA = all_bits_set ? r : LOGAND(r, VARL("mask"));
-	}	
+	}
 #endif
 
 	RzILOpPure *zero = UA(0);

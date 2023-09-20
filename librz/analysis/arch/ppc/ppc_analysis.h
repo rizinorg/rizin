@@ -5,9 +5,9 @@
 #define PPC_ANALYSIS_H
 
 #define PPC_DETAIL(insn) insn->detail->ppc
-#define INSOP(n) insn->detail->ppc.operands[n]
-#define OP_CNT   insn->detail->ppc.op_count
-#define IMM(x)   (ut64)(insn->detail->ppc.operands[x].imm)
+#define INSOP(n)         insn->detail->ppc.operands[n]
+#define OP_CNT           insn->detail->ppc.op_count
+#define IMM(x)           (ut64)(insn->detail->ppc.operands[x].imm)
 
 #define PPC_IN_BE_MODE (mode & CS_MODE_BIG_ENDIAN)
 // Capstone does not extract the BO or BI fields of instructions. So we do it manually.

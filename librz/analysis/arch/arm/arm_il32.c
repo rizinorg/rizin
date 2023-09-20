@@ -3162,7 +3162,7 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? MEMINDEX(mem_idx) : UN(32, (ut64) elem_bytes * group_sz);
+		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? MEMINDEX(mem_idx) : UN(32, (ut64)elem_bytes * group_sz);
 		wback_eff = write_reg(REGID(mem_idx), ADD(MEMBASE(mem_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
@@ -3247,7 +3247,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? MEMINDEX(mem_idx) : UN(32, (ut64) elem_bytes * group_sz);
+		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? MEMINDEX(mem_idx) : UN(32, (ut64)elem_bytes * group_sz);
 		wback_eff = write_reg(REGID(mem_idx), ADD(MEMBASE(mem_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
@@ -3438,7 +3438,7 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? MEMINDEX(mem_idx) : UN(32, (ut64) elem_bytes * group_sz);
+		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? MEMINDEX(mem_idx) : UN(32, (ut64)elem_bytes * group_sz);
 		wback_eff = write_reg(REGID(mem_idx), ADD(MEMBASE(mem_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
