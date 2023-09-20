@@ -5,8 +5,7 @@
 #include <rz_crypto.h>
 #include "crypto_sm4.h"
 
-ut64 FK[4] = { 0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc };
-static ut8 SBOX_TABLE[16][16] = {
+static ut8 sbox[16][16] = {
 	{ 0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7, 0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05 },
 	{ 0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3, 0xaa, 0x44, 0x13, 0x26, 0x49, 0x86, 0x06, 0x99 },
 	{ 0x9c, 0x42, 0x50, 0xf4, 0x91, 0xef, 0x98, 0x7a, 0x33, 0x54, 0x0b, 0x43, 0xed, 0xcf, 0xac, 0x62 },
@@ -35,33 +34,86 @@ static const unsigned long CK[32] = {
 	0xa0a7aeb5, 0xbcc3cad1, 0xd8dfe6ed, 0xf4fb0209,
 	0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279
 };
-
 static ut8 sm4_ecb_sbox(unsigned char val) {
-	unsigned char *p_table = (unsigned char *)SBOX_TABLE;
+	unsigned char *p_table = (unsigned char *)sbox;
 	unsigned char ret_val = (unsigned char)(p_table[val]);
 	return ret_val;
 }
 
+static ut64 _rol (ut64 n, ut64 c)
+{
+  const unsigned int mask = (CHAR_BIT*sizeof(n) - 1); 
+  c &= mask;
+  return (n<<c) | (n>>( (-c)&mask ));
+}
+
+static ut64 _ror (ut64 n, ut64 c)
+{
+  const unsigned int mask = (CHAR_BIT*sizeof(n) - 1);
+  c &= mask;
+  return (n>>c) | (n<<( (-c)&mask ));
+}
+
+static ut64 sm4_lt_algorithm(ut64 val){
+	ut8 a1 = (ut8)val>>24;
+	ut8 a2 = (ut8)val>>16;
+	ut8 a3 = (ut8)val>>8;
+	ut8 a4 = (ut8)val;
+	ut8 b1 = sm4_ecb_sbox(a1);
+	ut8 b2 = sm4_ecb_sbox(a2);
+	ut8 b3 = sm4_ecb_sbox(a3);
+	ut8 b4 = sm4_ecb_sbox(a4);
+	// TODO
+	return 0;
+}
+
+static void sm4_ecb_crypt(sm4_state* state, const ut8* input, int len){
+	ut64 buff[36];
+	ut64* output = (ut64*)malloc(len);
+	while(len){
+		buff[0] = ((ut64)input[0] << 24) | ((ut64)input[1] << 16) | ((ut64)input[2] << 8)|((ut64)input[3]);
+		buff[1] = ((ut64)input[8] << 24) | ((ut64)input[9] << 16) | ((ut64)input[10] << 8)|((ut64)input[11]);
+		buff[2] = ((ut64)input[4] << 24) | ((ut64)input[5] << 16) | ((ut64)input[6] << 8)|((ut64)input[7]);
+		buff[3] = ((ut64)input[12] << 24) | ((ut64)input[13] << 16) | ((ut64)input[14] << 8)|((ut64)input[15]);
+
+		for(int i=0;i<32;i++){
+			ut64 v1 = buff[1]^buff[2]^buff[3]^state->subkeys[i];
+			buff[i+4] = buff[0] ^ sm4_lt_algorithm(v1);
+		}
+
+		len -= 16;
+		input += 16;
+		output += 16;
+	}
+}
+
 static ut64 sm4_ecb_get_round_key(ut64 a) {
-        return 0;
+	ut8 b1 = sm4_ecb_sbox(a>>24);
+	ut8 b2 = sm4_ecb_sbox(a>>16);
+	ut8 b3 = sm4_ecb_sbox(a>>8);
+	ut8 b4 = sm4_ecb_sbox(a);
+	ut8 val = (b1<<24)|(b2<<16)|(b3<<8)|b4;
+	ut64 round_key = val^_rol(val,13)^_rol(val,23);
+	return round_key;
 }
 static void sm4_ecb_setup_key(ut64 subkeys[32], const ut8 *key) {
 	ut64 MK[4];
 	ut64 K[36];
 
 	GET_UT64(MK[0], key, 0);
-	GET_UT64(MK[0], key, 4);
-	GET_UT64(MK[0], key, 8);
-	GET_UT64(MK[0], key, 12);
+	GET_UT64(MK[1], key, 4);
+	GET_UT64(MK[2], key, 8);
+	GET_UT64(MK[3], key, 12);
 
-	K[0] = MK[0] ^ FK[0];
-	K[1] = MK[1] ^ FK[1];
-	K[2] = MK[2] ^ FK[2];
-	K[3] = MK[3] ^ FK[3];
+	K[0] = MK[0] ^ 0xa3b1bac6;
+	K[1] = MK[1] ^ 0x56aa3350;
+	K[2] = MK[2] ^ 0x677d9197;
+	K[3] = MK[3] ^ 0xb27022dc;
 
 	for (int i = 0; i < 32; i++) {
-		K[i + 4] = K[i] ^ sm4_ecb_get_round_key(K[i + 1] ^ K[i + 2] ^ K[i + 3] ^ CK[i]);
-                subkeys[i] = K[i+4];
+		ut64 xor_val = K[i + 1] ^ K[i + 2] ^ K[i + 3] ^ CK[i];
+		K[i + 4] = K[i] ^ sm4_ecb_get_round_key(xor_val);
+        subkeys[i] = K[i+4];
 	}
 }
 static void sm4_setkey_enc(sm4_state *s, const ut8 *key) {
