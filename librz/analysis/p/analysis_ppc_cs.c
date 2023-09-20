@@ -1354,84 +1354,81 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 #if CS_NEXT_VERSION >= 6
 			op->jump = insn->id == PPC_INS_BC ? IMM(2) : IMM(0);
 			switch (insn->detail->ppc.bc.pred_cr) {
-			case PPC_PRED_LT:
 #else
 			op->jump = ARG(1)[0] == '\0' ? IMM(0) : IMM(1);
 			switch (insn->detail->ppc.bc) {
-			case PPC_BC_LT:
 #endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
+#if CS_NEXT_VERSION >= 6
+			case PPC_PRED_LT:
+				esilprintf(op, "2,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+#else
+			case PPC_BC_LT:
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "2,cr0,&,");
 				} else {
 					esilprintf(op, "2,%s,&,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_LE:
+				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_LE:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "3,cr0,&,");
 				} else {
 					esilprintf(op, "3,%s,&,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_EQ:
+				esilprintf(op, "1,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_EQ:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "1,cr0,&,");
 				} else {
 					esilprintf(op, "1,%s,&,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_GE:
+				esilprintf(op, "2,%s,^,3,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_GE:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "2,cr0,^,3,&,");
 				} else {
 					esilprintf(op, "2,%s,^,3,&,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_GT:
+				esilprintf(op, "2,%s,&,!,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_GT:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "2,cr0,&,!,");
 				} else {
 					esilprintf(op, "2,%s,&,!,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_NE:
+				esilprintf(op, "%s,1,&,!,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_NE:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "cr0,1,&,!,");
 				} else {
 					esilprintf(op, "%s,1,&,!,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_INVALID:
@@ -1562,82 +1559,72 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 #if CS_NEXT_VERSION >= 6
 			switch (insn->detail->ppc.bc.pred_cr) {
 			case PPC_PRED_LT:
+				esilprintf(op, "2,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_LT:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "2,cr0,&,");
 				} else {
 					esilprintf(op, "2,%s,&,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_LE:
+				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_LE:
+				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
-				if (ARG(1)[0] == '\0') {
-					esilprintf(op, "3,cr0,&,");
-				} else {
-					esilprintf(op, "3,%s,&,", ARG(0));
-				}
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_EQ:
+				esilprintf(op, "1,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_EQ:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "1,cr0,&,");
 				} else {
 					esilprintf(op, "1,%s,&,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_GE:
+				esilprintf(op, "2,%s,^,3,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_GE:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "2,cr0,^,3,&,");
 				} else {
 					esilprintf(op, "2,%s,^,3,&,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_GT:
+				esilprintf(op, "2,%s,&,!,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_GT:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "2,cr0,&,!,");
 				} else {
 					esilprintf(op, "2,%s,&,!,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_NE:
+				esilprintf(op, "%s,1,&,!,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_NE:
-#endif
-				/* 0b01 == equal
-				 * 0b10 == less than */
 				if (ARG(1)[0] == '\0') {
 					esilprintf(op, "cr0,1,&,!,");
 				} else {
 					esilprintf(op, "%s,1,&,!,", ARG(0));
 				}
+#endif
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_INVALID:
