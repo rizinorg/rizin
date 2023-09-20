@@ -1284,8 +1284,23 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case PPC_INS_ADDIS:
 		case PPC_INS_ADDME:
 		case PPC_INS_ADDZE:
+#if CS_NEXT_VERSION >= 6
+			switch (insn->alias_id) {
+			default:
+				op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+				esilprintf(op, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
+				break;
+			case PPC_INS_ALIAS_LIS:
+				op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+				op->val = IMM(2);
+				op->val <<= 16;
+				esilprintf(op, "0x%llx0000,%s,=", IMM(2), ARG(0));
+				break;
+			}
+#else
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			esilprintf(op, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
+#endif
 			break;
 		case PPC_INS_MTSPR:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
