@@ -1084,6 +1084,10 @@ static const char *get_regname(RzAnalysis *analysis, RzAnalysisValue *value) {
 	return name;
 }
 
+static inline bool is_not_read_nor_write(const RzAnalysisOpDirection direction) {
+	return direction != RZ_ANALYSIS_OP_DIR_READ && direction != RZ_ANALYSIS_OP_DIR_WRITE;
+}
+
 /**
  * Try to extract any args from a single op
  *
@@ -1106,7 +1110,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if ((delta < 0 && *sign == '+') || (delta >= 0 && *sign == '-')) {
 			continue;
 		}
-		if (!delta && op->direction != RZ_ANALYSIS_OP_DIR_READ && op->direction != RZ_ANALYSIS_OP_DIR_WRITE) {
+		if (!delta && is_not_read_nor_write(op->direction)) {
 			// avoid creating variables for just `mov rbp, rsp`, which would otherwise detect a var at rsp+0
 			// so for delta == 0, we only consider actual memory operations for now
 			continue;
@@ -1171,7 +1175,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if (*sign == '-') {
 			addend = -addend;
 		}
-		if (addend == 0 && op->direction != RZ_ANALYSIS_OP_DIR_READ && op->direction != RZ_ANALYSIS_OP_DIR_WRITE) {
+		if (addend == 0 && is_not_read_nor_write(op->direction)) {
 			// avoid creating variables for just `mov rbp, rsp`, which would otherwise detect a var at rsp+0
 			// so for addend == 0, we only consider actual memory operations for now
 			goto beach;
