@@ -90,6 +90,10 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		break;
 	}
 	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	if (a->cpu && RZ_STR_EQ(a->cpu, "qpx")) {
+		mode |= CS_MODE_QPX;
+	}
+
 	if (mode != omode || a->bits != obits) {
 		cs_close(&handle);
 		handle = 0;
@@ -125,7 +129,7 @@ RzAsmPlugin rz_asm_plugin_ppc_cs = {
 	.license = "BSD",
 	.author = "pancake",
 	.arch = "ppc",
-	.cpus = "ppc,vle,ps",
+	.cpus = "ppc,vle,ps,qpx",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.fini = the_end,

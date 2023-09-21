@@ -940,6 +940,8 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		if (ret >= 0) {
 			return op->size;
 		}
+	} else if (a->cpu && RZ_STR_EQ(a->cpu, "qpx")) {
+		mode |= CS_MODE_QPX;
 	}
 
 	if (mode != omode || a->bits != obits) {
