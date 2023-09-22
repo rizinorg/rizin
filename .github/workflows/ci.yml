@@ -98,7 +98,7 @@ jobs:
             os: ubuntu-22.04
             build_system: meson
             compiler: gcc-12
-            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp -Wtype-limits -Wwrite-strings -Warray-bounds -fsanitize=bounds -fsanitize-undefined-trap-on-error -ftrivial-auto-var-init=pattern -funsigned-char"
+            cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp -Wtype-limits -Wwrite-strings -Warray-bounds -Wshadow=local -fsanitize=bounds -fsanitize-undefined-trap-on-error -ftrivial-auto-var-init=pattern -funsigned-char"
             meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror
             asan: true
             asan_options: "detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1"
