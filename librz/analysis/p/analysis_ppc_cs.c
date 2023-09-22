@@ -1565,7 +1565,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				insn->id == PPC_INS_BCCTRL ||
 				insn->id == PPC_INS_BCL) {
 				op->fail = addr + op->size;
-				rz_strbuf_appendf(&op->esil, "0x%"PFMT64x",lr,=,", op->fail);
+				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",lr,=,", op->fail);
 			}
 
 			// Set target source
@@ -1574,7 +1574,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			} else if (op->type == RZ_ANALYSIS_OP_TYPE_CRET || op->type == RZ_ANALYSIS_OP_TYPE_RET) {
 				rz_strbuf_appendf(&op->esil, "lr,pc,=,");
 			} else {
-				rz_strbuf_appendf(&op->esil, "0x%"PFMT64x",pc,=,", op->jump);
+				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",pc,=,", op->jump);
 			}
 			if (is_cond) {
 				rz_strbuf_appendf(&op->esil, "},");
