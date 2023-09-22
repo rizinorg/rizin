@@ -62,6 +62,7 @@ static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
+static const RzCmdDescDetail write_details[3];
 static const RzCmdDescDetail write_bits_details[2];
 static const RzCmdDescDetail wv_details[2];
 static const RzCmdDescDetail w1_details[2];
@@ -16642,6 +16643,32 @@ static const RzCmdDescHelp cmd_panels_help = {
 static const RzCmdDescHelp w_help = {
 	.summary = "Write commands",
 };
+static const RzCmdDescDetailEntry write_Examples_detail_entries[] = {
+	{ .text = "w", .arg_str = " 123\\n", .comment = "Write the chars '1', '2', '3' and a newline" },
+	{ .text = "w", .arg_str = " ab\\0cd\\0", .comment = "Write the chars 'a', 'b', a NUL, 'c', 'd' and another NUL" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry write_Escape_space_sequences_detail_entries[] = {
+	{ .text = "\\0", .arg_str = NULL, .comment = "NUL (0x0)" },
+	{ .text = "\\a", .arg_str = NULL, .comment = "Bell (0x7)" },
+	{ .text = "\\b", .arg_str = NULL, .comment = "Backspace (0x8)" },
+	{ .text = "\\e", .arg_str = NULL, .comment = "Escape (0x1b)" },
+	{ .text = "\\f", .arg_str = NULL, .comment = "Form feed (0xc)" },
+	{ .text = "\\n", .arg_str = NULL, .comment = "Newline (0xa)" },
+	{ .text = "\\r", .arg_str = NULL, .comment = "Carriage return (0xd)" },
+	{ .text = "\\t", .arg_str = NULL, .comment = "Tab (0x9)" },
+	{ .text = "\\v", .arg_str = NULL, .comment = "Vertical tab (0xb)" },
+	{ .text = "\\\\", .arg_str = NULL, .comment = "Backslash ('\\')" },
+	{ .text = "\\xhh", .arg_str = NULL, .comment = "Byte in hexadecimal" },
+	{ .text = "\\nnn", .arg_str = NULL, .comment = "Byte in octal (eg. \\033 for the escape char)" },
+	{ 0 },
+};
+static const RzCmdDescDetail write_details[] = {
+	{ .name = "Examples", .entries = write_Examples_detail_entries },
+	{ .name = "Escape sequences", .entries = write_Escape_space_sequences_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg write_args[] = {
 	{
 		.name = "string",
@@ -16653,6 +16680,7 @@ static const RzCmdDescArg write_args[] = {
 };
 static const RzCmdDescHelp write_help = {
 	.summary = "Write string",
+	.details = write_details,
 	.args = write_args,
 };
 
