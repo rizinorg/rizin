@@ -1132,7 +1132,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 
 	RzILOpPure *n; // Shift/rotate steps
 	RzILOpPure *r; // Rotate result
-	RzILOpPure *into_rA;
+	RzILOpPure *into_rA = NULL;
 	RzILOpPure *ca_val; // Arithmetic shift instructions set the ca field.
 	RzILOpEffect *set_mask = NULL, *set_ca = NULL, *update_cr0 = NULL;
 
