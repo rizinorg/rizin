@@ -10,7 +10,7 @@
 #include "../../asm/arch/rl78/rl78.h"
 
 static int rl78_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-                   const ut8 *buf, int len, RzAnalysisOpMask mask);
+	const ut8 *buf, int len, RzAnalysisOpMask mask);
 static void populate_jump_fields(const RL78Instr *instr, size_t instr_size, ut64 addr, RzAnalysisOp *op);
 static char *get_reg_profile(RzAnalysis *analysis);
 
@@ -188,8 +188,7 @@ static int rl78_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	return op->size;
 }
 
-static void populate_jump_fields(const RL78Instr *instr, size_t instr_size, ut64 addr, RzAnalysisOp *op)
-{
+static void populate_jump_fields(const RL78Instr *instr, size_t instr_size, ut64 addr, RzAnalysisOp *op) {
 	const RL78Operand *target = &instr->op0;
 	if (instr->operation == RL78_OPERATION_BT ||
 		instr->operation == RL78_OPERATION_BF ||
@@ -218,19 +217,18 @@ static void populate_jump_fields(const RL78Instr *instr, size_t instr_size, ut64
 	}
 }
 
-static char *get_reg_profile(RzAnalysis *analysis)
-{
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
-                "=ZF	z\n"
-                "=CF	cy\n"
-                "=SN	%s\n" // x8 on linux or android, x16 for the rest
-                // ABI: https://www.renesas.com/eu/en/document/mat/cc-rl-compiler-users-manual
+		"=ZF	z\n"
+		"=CF	cy\n"
+		"=SN	%s\n" // x8 on linux or android, x16 for the rest
+		// ABI: https://www.renesas.com/eu/en/document/mat/cc-rl-compiler-users-manual
 		"=A0	ax\n"
 		"=A1	bc\n"
 		"=A2	de\n"
-                // general-purpose registers
+		// general-purpose registers
 		"gpr	hl	.16	0	0\n"
 		"gpr	de	.16	0	0\n"
 		"gpr	bc	.16	0	0\n"
@@ -244,7 +242,7 @@ static char *get_reg_profile(RzAnalysis *analysis)
 		"gpr	a	.8	0	0\n"
 		"gpr	x	.8	0	0\n"
 
-                // flags
+		// flags
 		"flg	psw	.8	0	0       ie_z_rbs1_ac_rbs0_isp1_isp0_cy\n"
 		"flg	ie	.1	0	0	interrupt_enable\n"
 		"flg	z	.1	0	0	zero\n"
@@ -263,9 +261,9 @@ RzAnalysisPlugin rz_analysis_plugin_rl78 = {
 	.desc = "Renesas RL78 analysis plugin",
 	.license = "LGPL3",
 	.arch = "rl78",
-	.bits = 32,
+	.bits = 16,
 	.op = &rl78_op,
-        .get_reg_profile = &get_reg_profile
+	.get_reg_profile = &get_reg_profile
 };
 
 #ifndef RZ_PLUGIN_INCORE

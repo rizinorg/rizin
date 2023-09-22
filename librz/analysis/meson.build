@@ -29,6 +29,7 @@ analysis_plugins_list = [
   'ppc_cs',
   'propeller',
   'pyc',
+  'rl78',
   'rsp',
   'snes',
   'sparc_cs',

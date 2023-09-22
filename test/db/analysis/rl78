@@ -1,5 +1,5 @@
-NAME=RL78 caesar_strip
-FILE=bins/rl78/caesar_strip
+NAME=RL78 caesar_nostrip info
+FILE=bins/rl78/caesar_nostrip
 ARGS=-a rl78
 CMDS=<<EOF
 pd 4 @ entry0
@@ -7,6 +7,7 @@ iI
 EOF
 EXPECT=<<EOF
             ;-- entry0:
+            ;-- _start:
             0x0000077c      movw  spl, #0xfedc
             0x00000780      mov   es, #0x0
             0x00000782      movw  bc, #0x472
@@ -14,11 +15,11 @@ EXPECT=<<EOF
 arch     N/A
 cpu      N/A
 baddr    0x00000000
-binsz    0x00004b72
+binsz    0x00008360
 bintype  elf
 bits     32
 class    ELF32
-compiler N/A
+compiler Linker: LLD 10.0.0 clang version LLVM for Renesas RL78 10.0.0.202306
 dbg_file N/A
 endian   LE
 hdr.csum N/A
@@ -32,17 +33,115 @@ os       linux
 cc       N/A
 rpath    NONE
 subsys   linux
-stripped true
+stripped false
 crypto   false
 havecode true
 va       true
 sanitiz  false
 static   true
-linenum  false
-lsyms    false
+linenum  true
+lsyms    true
 canary   false
 PIE      false
-RELROCS  false
+RELROCS  true
 NX       true
+EOF
+RUN
+
+NAME=RL78 caesar_nostrip function bodies
+FILE=bins/rl78/caesar_nostrip
+ARGS=-a rl78
+CMDS=<<EOF
+aaa
+pdf @ sym._decrypt
+pdf @ sym._make_uppercase
+pdf @ sym._hash
+pdf @ sym._main
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- segment.LOAD4:
+            ;-- _decrypt:
+/ int dbg.decrypt(char *decrypted, const char *encrypted, size_t n);
+|           0x00000552      subw  sp, #0x12                            ; caesar.c:15 { ; int decrypt(char *decrypted, const char *encrypted, size_t n);
+|           0x00000554      movw  [sp+0x0], ax
+|           0x00000556      movw  ax, bc
+|           0x00000557      movw  [sp+0x2], ax
+|           0x00000559      movw  ax, de
+|           0x0000055a      movw  [sp+0x4], ax
+|           0x0000055c      clrw  ax
+|           0x0000055d      movw  [sp+0x6], ax                         ; caesar.c:16 for (size_t i = 0; i < n; i++) {
+\       @-> 0x0000055f      br    $0x0
+/ sym._make_uppercase();
+|           0x000005a3      subw  sp, #0x18                            ; caesar.c:24 {
+|           0x000005a5      movw  [sp+0x0], ax
+|           0x000005a7      movw  ax, bc
+|           0x000005a8      movw  [sp+0x2], ax
+|           0x000005aa      clrw  ax
+|           0x000005ab      movw  [sp+0x4], ax                         ; caesar.c:25 for (size_t i = 0; i < n; i++) {
+\       @-> 0x000005ad      br    $0x0
+            ; CALL XREFS from sym._main @ +0x8f, +0x9d
+            ;-- _hash:
+/ int dbg.hash(const char *buf, size_t n);
+|           0x00000634      subw  sp, #0x1e                            ; caesar.c:33 { ; int hash(const char *buf, size_t n);
+|           0x00000636      movw  [sp+0x4], ax
+|           0x00000638      movw  ax, bc
+|           0x00000639      movw  [sp+0x6], ax
+|           0x0000063b      clrw  ax
+|           0x0000063c      movw  [sp+0xc], ax                         ; caesar.c:34 int sum = 0;
+|           0x0000063e      movw  [sp+0x8], ax
+|           0x00000640      movw  ax, [sp+0xc]                         ; caesar.c:35 for (size_t i = 0; i < n; i++) {
+|           0x00000642      movw  [sp+0xa], ax
+\       @-> 0x00000644      br    $0x0
+            ; CALL XREF from entry0 @ 0x7f8
+            ;-- _main:
+/ int dbg.main(int argc, char **argv);
+|           0x000006b3      subw  sp, #0x26                            ; caesar.c:43 { ; int main(int argc, char **argv);
+|           0x000006b5      movw  de, #0x0
+|           0x000006b8      movw  [sp+0x14], ax
+|           0x000006ba      movw  ax, de
+|           0x000006bb      movw  [sp+0x0], ax
+|           0x000006bd      movw  ax, [sp+0x14]
+|           0x000006bf      movw  [sp+0x2], ax
+|           0x000006c1      movw  ax, bc
+|           0x000006c2      movw  [sp+0x4], ax
+|           0x000006c4      movw  ax, !0x3004                          ; caesar.c:44 const struct operations ops = {
+|           0x000006c7      movw  [sp+0x8], ax
+|           0x000006c9      movw  ax, !0x3002
+|           0x000006cc      movw  [sp+0x6], ax
+|           0x000006ce      movw  ax, !0x5700                          ; caesar.c:49 const size_t len = strlen(encrypted);
+|           0x000006d1      call  !0x84e                               ; sym._strlen
+|           0x000006d4      movw  [sp+0xa], ax
+|           0x000006d6      movw  ax, [sp+0xa]                         ; caesar.c:50 if (len > MAX_LEN) {
+|           0x000006d8      cmpw  ax, #0x41
+|       ,=< 0x000006db      bc    $0x8
+|      @=-> 0x000006dd      br    $0x0
+..
+|      |`-> 0x000006e3      dec   c
+|      |    0x000006e4      nop
+|      |    0x000006e5      movw  ax, [sp+0xa]                         ; caesar.c:54 char *decrypted = malloc(len);
+|      |    0x000006e7      call  !0xb18                               ; sym._malloc
+|      |    0x000006ea      movw  [sp+0xc], ax
+|      |    0x000006ec      movw  ax, [sp+0x6]                         ; caesar.c:55 if (!ops.decrypt(decrypted, encrypted, len)) {
+|      |    0x000006ee      movw  [sp+0x16], ax
+|      |    0x000006f0      movw  ax, [sp+0xc]
+|      |    0x000006f2      movw  bc, !0x5700
+|      |    0x000006f5      movw  [sp+0x18], ax
+|      |    0x000006f7      movw  ax, [sp+0xa]
+|      |    0x000006f9      movw  de, ax
+|      |    0x000006fa      movw  ax, [sp+0x18]
+|      |    0x000006fc      xchw  ax, hl
+|      |    0x000006fd      movw  ax, [sp+0x16]
+|      |    0x000006ff      xchw  ax, hl
+|      |    0x00000700      call  hl
+|      |    0x00000702      cmpw  ax, #0x0
+|      |,=< 0x00000705      bnz   $0xc
+|     @==-> 0x00000707      br    $0x0
+..
+|     ,=`-> 0x00000711      br    $0x64
+..
+|    || @   ; CODE XREF from dbg.main @ 0x711
+|    || @   ; CODE XREF from sym._main @ +0xb3
+\    ``-@-> 0x00000775      br    $0x0
 EOF
 RUN
