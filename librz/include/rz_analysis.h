@@ -713,6 +713,8 @@ typedef enum rz_analysis_var_kind_t {
 	RZ_ANALYSIS_VAR_KIND_INVALID = 0, ///< Invalid or unspecified variable
 	RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER, ///< Variable is function formal parameter
 	RZ_ANALYSIS_VAR_KIND_VARIABLE, ///< Variable is local variable
+	/* End enum */
+	RZ_ANALYSIS_VAR_KIND_END  ///< Number of RzAnalysisVarKind enums
 } RzAnalysisVarKind;
 
 typedef struct dwarf_variable_t {
@@ -728,17 +730,19 @@ typedef struct dwarf_variable_t {
 typedef enum {
 	RZ_ANALYSIS_VAR_ORIGIN_NONE = 0, ///< Variable was created from rizin
 	RZ_ANALYSIS_VAR_ORIGIN_DWARF, ///< Variable was created from DWARF information
+	/* End enum */
+	RZ_ANALYSIS_VAR_ORIGIN_END  ///< Number of RzAnalysisVarOriginKind enums
 } RzAnalysisVarOriginKind;
 
-static const char *RzAnalysisVarKind_strings[] = {
-	[RZ_ANALYSIS_VAR_KIND_INVALID] = "invalid",
-	[RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER] = "formal_parameter",
-	[RZ_ANALYSIS_VAR_KIND_VARIABLE] = "variable",
+static const char *RzAnalysisVarKind_strings[RZ_ANALYSIS_VAR_KIND_END] = {
+	"invalid", /* RZ_ANALYSIS_VAR_KIND_INVALID */
+	"formal_parameter", /* RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER */
+	"variable" /* RZ_ANALYSIS_VAR_KIND_VARIABLE */
 };
 
 static const char *RzAnalysisVarOriginKind_strings[] = {
-	[RZ_ANALYSIS_VAR_ORIGIN_NONE] = "none",
-	[RZ_ANALYSIS_VAR_ORIGIN_DWARF] = "DWARF",
+	"none", /* RZ_ANALYSIS_VAR_ORIGIN_NONE */
+	"DWARF" /* RZ_ANALYSIS_VAR_ORIGIN_DWARF */
 };
 
 #define RZ_ANALYSIS_AS_STRING_IMPL(T, name, strings) \
