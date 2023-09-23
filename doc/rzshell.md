@@ -83,7 +83,7 @@ Let's make an example and suppose we want to add the `sky` command, which
 would find all occurrences of the word "sky" in a binary. The first thing to
 do is to see where `sky` command could be added by reading
 [`librz/core/cmd_descs/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/librz/core/cmd_descs/cmd_descs.yaml).
-`sky` is `s` command's subcommand and they are splitted and placed inside the .YAML 
+`sky` is `s` command's subcommand and they are splitted and placed inside the .YAML
 file specified by the descriptor `subcommands` of the respective command. Since `sky`
 starts with an `s`, its subcommands would be in [`librz/core/cmd_descs/cmd_seek.yaml`](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/librz/core/cmd_descs/cmd_seek.yaml).
 That file respects the same tree structure used when executing rizin and seeing its help,
@@ -162,37 +162,57 @@ then fix/improve the `summary` and/or `description` fields. If the command canno
 
 ## How to show examples of a command or additional details
 
-You may notice some commands like `env`, `%`, `*` and others have additional
-sections when you show the extensive help with e.g. `env??` (or `%??`, etc.).
-Those additional secions are called `details` and they can be specified,
-again, in the file
-[`librz/core/cmd_descs/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/librz/core/cmd_descs/cmd_descs.yaml).
-The structure is explained at the beginning of the file and it can be seen in
-existing commands (e.g.
-https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/librz/core/cmd_descs/cmd_shell.yaml#L18
-). The result, looks something like:
+You may notice some commands like `e`, `w` and others have additional
+sections where you can show more extensive help with `??` e.g. `e??` (or `w??` etc.).
+Those additional sections are called `details` and they can be seen in
+existing commands e.g.:
+https://github.com/rizinorg/rizin/blob/c4a1a501fa9e998aec26005829d391dad3a30dca/librz/core/cmd_descs/cmd_eval.yaml#L14-L31
+Their structure is explained at the beginning of [`librz/core/cmd_descs/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/c4a1a501fa9e998aec26005829d391dad3a30dca/librz/core/cmd_descs/cmd_descs.yaml#L27-L29).
+A _possible_ difference between `?` and `??` is shown below:
 ```
-[0x00000000]> %??
-Usage: %[varname[=varvalue]]   # get/set environment variables
+[0x00000000]> w?
+Usage: w[?]   # Write commands
+| w <string>        # Write string
+| wB[-]             # Set or unset bits with given value
+| wv[1248]          # Write value of given size
+| w0 <len>          # Write <len> bytes with value 0x00
+| w<1248><+-> [<n>] # increment/decrement byte, word, ..
+| w6<de>            # Write base64 [d]ecoded or [e]ncoded string
+| we<nsx>           # Extend write operations (insert bytes instead of replacing)
+| wu <file>         # Apply unified hex patch (see output of cu)
+| wr <len>          # Write <len> random bytes
+| wc[j*-+ip?]       # Write cache commands
+| wz <string>       # Write zero-terminated string
+| wf[xfs]           # Write data from file, socket, offset
+| ww <string>       # Write wide 16 little endian string
+| wx[f]             # Write hexadecimal data
+| wa[ifo]           # Write opcodes
+| wb <hex>          # Write in current block an hexstring cyclically
+| wm[-]             # Set binary mask hexpair to be used as cyclic write mask
+| wo<?>             # Write a block with a special operation
+| wD[/]             # Write De Bruijn Pattern
+| wd <src> <len>    # Duplicate <len> bytes from <src> offset to current seek
+| ws <string>       # Write 1 byte for length and then the string
+```
+```
+[0x00000000]> w??
+Usage: w <string>   # Write string
 
 Examples:
-| %            # list all environment variables
-| %SHELL       # print value of SHELL variable
-| %TMPDIR=/tmp # set TMPDIR to "/tmp"
-| envSHELL     # same as `%SHELL`
+| w 123\n    # Write the chars '1', '2', '3' and a newline
+| w ab\0cd\0 # Write the chars 'a', 'b', a NUL, 'c', 'd' and another NUL
 
-Environment:
-| RZ_FILE          # currently opened file name
-| RZ_OFFSET        # 10base offset 64bit value
-| RZ_XOFFSET       # same as above, but in 16 base
-| RZ_BSIZE         # block size
-| RZ_ENDIAN        # 'big' or 'little'
-| RZ_IOVA          # is io.va true? virtual addressing (1,0)
-| RZ_DEBUG         # debug mode enabled? (1,0)
-| RZ_SIZE          # file size
-| RZ_ARCH          # value of asm.arch
-| RZ_BITS          # arch reg size (8, 16, 32, 64)
-| RZ_BIN_LANG      # assume this lang to demangle
-| RZ_BIN_DEMANGLE  # demangle or not
-| RZ_BIN_PDBSERVER # e pdb.server
+Escape sequences:
+| \0   # NUL (0x0)
+| \a   # Bell (0x7)
+| \b   # Backspace (0x8)
+| \e   # Escape (0x1b)
+| \f   # Form feed (0xc)
+| \n   # Newline (0xa)
+| \r   # Carriage return (0xd)
+| \t   # Tab (0x9)
+| \v   # Vertical tab (0xb)
+| \\   # Backslash ('\')
+| \xhh # Byte in hexadecimal
+| \nnn # Byte in octal (eg. \033 for the escape char)
 ```
