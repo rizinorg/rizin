@@ -9,14 +9,12 @@
 # #############################################################################
 
 project('zstd',
-  ['c', 'cpp'],
+  ['c'],
   license: ['BSD', 'GPLv2'],
   default_options : [
     # There shouldn't be any need to force a C standard convention for zstd
     # but in case one would want that anyway, this can be done here.
     # 'c_std=gnu99',
-    # c++11 standard is useful for pzstd
-    # 'cpp_std=c++11',
     # 'buildtype=release',
     # 'warning_level=3',
     # -Wdocumentation does not actually pass, nor do the test binaries,
@@ -27,7 +25,6 @@ project('zstd',
   meson_version: '>=0.50.0')
 
 cc = meson.get_compiler('c')
-cxx = meson.get_compiler('cpp')
 pkgconfig = import('pkgconfig')
 windows_mod = import('windows')
 
@@ -110,27 +107,15 @@ if cc_id == compiler_msvc
   if use_static_runtime
     msvc_compile_flags += '/MT'
   endif
-  add_project_arguments(msvc_compile_flags, language: ['c', 'cpp'])
+  add_project_arguments(msvc_compile_flags, language: ['c'])
 endif
 
 # Use the safe way to access unaligned values as all other methods fail
 # on OpenBSD/sparc64 with gcc.
-add_project_arguments('-DMEM_FORCE_MEMORY_ACCESS=0', language: ['c', 'cpp'])
+add_project_arguments('-DMEM_FORCE_MEMORY_ACCESS=0', language: ['c'])
 
 # =============================================================================
 # Subdirs
 # =============================================================================
 
 subdir('lib')
-
-if bin_programs or bin_tests
-  subdir('programs')
-endif
-
-if bin_tests
-  subdir('tests')
-endif
-
-if bin_contrib
-  subdir('contrib')
-endif
