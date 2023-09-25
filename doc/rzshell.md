@@ -176,7 +176,7 @@ Usage: w[?]   # Write commands
 | wB[-]             # Set or unset bits with given value
 | wv[1248]          # Write value of given size
 | w0 <len>          # Write <len> bytes with value 0x00
-| w<1248><+-> [<n>] # increment/decrement byte, word, ..
+| w<1248><+-> [<n>] # Increment/decrement byte, word, ...
 | w6<de>            # Write base64 [d]ecoded or [e]ncoded string
 | we<nsx>           # Extend write operations (insert bytes instead of replacing)
 | wu <file>         # Apply unified hex patch (see output of cu)
@@ -184,13 +184,13 @@ Usage: w[?]   # Write commands
 | wc[j*-+ip?]       # Write cache commands
 | wz <string>       # Write zero-terminated string
 | wf[xfs]           # Write data from file, socket, offset
-| ww <string>       # Write wide 16 little endian string
+| ww <string>       # Write wide (16-bit) little-endian string
 | wx[f]             # Write hexadecimal data
 | wa[ifo]           # Write opcodes
-| wb <hex>          # Write in current block an hexstring cyclically
+| wb <hex>          # Write in current block a hexstring cyclically
 | wm[-]             # Set binary mask hexpair to be used as cyclic write mask
 | wo<?>             # Write a block with a special operation
-| wD[/]             # Write De Bruijn Pattern
+| wD[/]             # Write de Bruijn pattern
 | wd <src> <len>    # Duplicate <len> bytes from <src> offset to current seek
 | ws <string>       # Write 1 byte for length and then the string
 ```

@@ -16823,7 +16823,7 @@ static const RzCmdDescHelp write_zero_help = {
 };
 
 static const RzCmdDescHelp write_incdec_help = {
-	.summary = "increment/decrement byte, word, ..",
+	.summary = "Increment/decrement byte, word, ...",
 	.args_str = " [<n>]",
 	.options = "<1248><+->",
 };
@@ -17353,7 +17353,7 @@ static const RzCmdDescArg write_wide_string_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp write_wide_string_help = {
-	.summary = "Write wide 16 little endian string",
+	.summary = "Write wide (16-bit) little-endian string",
 	.args = write_wide_string_args,
 };
 
@@ -17476,7 +17476,7 @@ static const RzCmdDescArg write_block_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp write_block_help = {
-	.summary = "Write in current block an hexstring cyclically",
+	.summary = "Write in current block a hexstring cyclically",
 	.args = write_block_args,
 };
 
@@ -17764,7 +17764,7 @@ static const RzCmdDescHelp write_op_encrypt_help = {
 };
 
 static const RzCmdDescHelp wD_help = {
-	.summary = "Write De Bruijn Pattern",
+	.summary = "Write de Bruijn pattern",
 };
 static const RzCmdDescArg write_debruijn_args[] = {
 	{
@@ -17776,7 +17776,7 @@ static const RzCmdDescArg write_debruijn_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp write_debruijn_help = {
-	.summary = "Write a De Bruijn Pattern of length <len> at the current offset",
+	.summary = "Write a de Bruijn pattern of length <len> at the current offset",
 	.args = write_debruijn_args,
 };
 
@@ -17790,7 +17790,7 @@ static const RzCmdDescArg write_debruijn_find_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp write_debruijn_find_help = {
-	.summary = "Returns the offset where <value> can be found in a De Bruijn Pattern",
+	.summary = "Returns the offset where <value> can be found in a de Bruijn pattern",
 	.description = "It search for a particular value in the pattern as returned by the `wD` command. <value> is assumed to be a number of as few bytes as necessary, in the endian specified by cfg.bigendian.",
 	.args = write_debruijn_find_args,
 };
