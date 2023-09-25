@@ -143,7 +143,7 @@ commands:
         type: RZ_CMD_ARG_TYPE_NUM
   - name: w
     cname: write_incdec
-    summary: increment/decrement byte, word, ..
+    summary: Increment/decrement byte, word, ...
     options: <1248><+->
     args_str: " [<n>]"
     type: RZ_CMD_DESC_TYPE_INNER
@@ -452,7 +452,7 @@ commands:
             optional: true
   - name: ww
     cname: write_wide_string
-    summary: Write wide 16 little endian string
+    summary: Write wide (16-bit) little-endian string
     args:
       - name: string
         type: RZ_CMD_ARG_TYPE_STRING
@@ -548,7 +548,7 @@ commands:
                 comment: Swap the condition of the current conditional instruction
   - name: wb
     cname: write_block
-    summary: Write in current block an hexstring cyclically
+    summary: Write in current block a hexstring cyclically
     args:
       - name: hex
         type: RZ_CMD_ARG_TYPE_STRING
@@ -709,17 +709,17 @@ commands:
             arg_str: ""
             comment: "Content before: 1122334455667788; Content after: 4433221188776655"
   - name: wD
-    summary: Write De Bruijn Pattern
+    summary: Write de Bruijn pattern
     subcommands:
       - name: wD
         cname: write_debruijn
-        summary: Write a De Bruijn Pattern of length <len> at the current offset
+        summary: Write a de Bruijn pattern of length <len> at the current offset
         args:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
       - name: wD/
         cname: write_debruijn_find
-        summary: Returns the offset where <value> can be found in a De Bruijn Pattern
+        summary: Returns the offset where <value> can be found in a de Bruijn pattern
         description: >
           It search for a particular value in the pattern as returned by the
           `wD` command. <value> is assumed to be a number of as few bytes as
