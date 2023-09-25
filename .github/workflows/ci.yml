@@ -739,8 +739,8 @@ jobs:
           name: rizin-android-${{ matrix.name }}
           path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
 
-  build-cpp:
-    name: Include Rizin headers from C++ program
+  build-cpp-linux:
+    name: Include Rizin headers from C++ program (Linux)
     runs-on: ubuntu-22.04
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
