@@ -129,7 +129,7 @@ extract the license/copyright of all files in the repository.
 Examples
 --------
 
-Arch Linux [PKGBUILD](https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=rizin-git)
+Arch Linux [PKGBUILD](https://gitlab.archlinux.org/archlinux/packaging/packages/rizin/-/blob/main/PKGBUILD?ref_type=heads)
 
 Compatibility
 -------------
