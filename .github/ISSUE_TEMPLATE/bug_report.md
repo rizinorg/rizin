@@ -4,11 +4,12 @@ about: Create a report to help us improve
 
 ---
 
-# This template is meant for bug reports, if you have a feature request, please be as descriptive as possible and delete the template
+<!-- This template is meant for bug reports, if you have a feature request, please be as descriptive as possible and delete the template
 
 Make sure you are testing using the latest git version of rizin before submitting any issue.
 
-*If you would like to report a bug, please fill the template below*
+If you would like to report a bug, please fill the template below
+-->
 
 ### Work environment
 
