@@ -325,8 +325,9 @@ jobs:
     steps:
       - name: Install tools
         run: yum install -y patch unzip git gcc make python3-pip
+        # Pin Meson to the last version stil supporting Python 3.6
       - name: Install meson and ninja
-        run: pip3 install meson ninja PyYAML
+        run: pip3 install meson==0.61.5 ninja PyYAML
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
@@ -395,13 +396,14 @@ jobs:
           ./configure
           make install
         env:
-          PYVERSION: 3.6.12
+          PYVERSION: 3.6.15
+        # Pin Meson to the last version stil supporting Python 3.6
       - name: Install Meson and Ninja
         run: |
           mkdir ${HOME}/.cache
           chmod +w ${HOME}/.cache
           python3 -m pip install ${TRUSTED} --upgrade pip setuptools
-          python3 -m pip install ${TRUSTED} meson ninja PyYAML
+          python3 -m pip install ${TRUSTED} meson==0.61.5 ninja PyYAML
         env:
           TRUSTED: --trusted-host=pypi.org --trusted-host=files.pythonhosted.org
       - name: Checkout rizin
