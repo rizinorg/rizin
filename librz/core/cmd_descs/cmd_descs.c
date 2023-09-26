@@ -16679,7 +16679,7 @@ static const RzCmdDescArg write_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp write_help = {
-	.summary = "Write string",
+	.summary = "Write string (see 'w??' for more help)",
 	.details = write_details,
 	.args = write_args,
 };
