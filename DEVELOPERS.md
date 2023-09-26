@@ -14,6 +14,8 @@ doxygen C-style comments to improve documentation and comments in code.
 See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
 for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
 
+Documentation goes into the source files (not the header files)
+
 ```c
 /**
  * \brief Find the min and max addresses in an RzList of maps.
@@ -27,7 +29,7 @@ for more info. Example usage can be found [here](http://www.doxygen.nl/manual/do
  * Used to determine the min & max addresses of maps and
  * scale the ascii bar to the width of the terminal
  */
-static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
+static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width) { /* ... */ }
 ```
 
 In order to improve the documentation and help newcomers, documenting code is mandatory.
