@@ -62,8 +62,11 @@ EXPECT=<<EOF
             ;-- section..text:
             ;-- segment.LOAD4:
             ;-- _decrypt:
-/ int dbg.decrypt(char *decrypted, const char *encrypted, size_t n);
-|           0x00000552      subw  sp, #0x12                            ; caesar.c:15 { ; int decrypt(char *decrypted, const char *encrypted, size_t n);
+/ int decrypt(char *decrypted, const char *encrypted, size_t n)
+|           ; arg char *decrypted @ ...
+|           ; arg const char *encrypted @ ...
+|           ; arg size_t n @ ...
+|           0x00000552      subw  sp, #0x12                            ; caesar.c:15 { ; int decrypt(char *decrypted, const char *encrypted, size_t n)
 |           0x00000554      movw  [sp+0x0], ax
 |           0x00000556      movw  ax, bc
 |           0x00000557      movw  [sp+0x2], ax
@@ -72,8 +75,11 @@ EXPECT=<<EOF
 |           0x0000055c      clrw  ax
 |           0x0000055d      movw  [sp+0x6], ax                         ; caesar.c:16 for (size_t i = 0; i < n; i++) {
 \       @-> 0x0000055f      br    $0x0
-/ sym._make_uppercase();
-|           0x000005a3      subw  sp, #0x18                            ; caesar.c:24 {
+            ;-- _make_uppercase:
+/ void make_uppercase(char *buf, size_t n)
+|           ; arg char *buf @ ...
+|           ; arg size_t n @ ...
+|           0x000005a3      subw  sp, #0x18                            ; caesar.c:24 { ; void make_uppercase(char *buf, size_t n)
 |           0x000005a5      movw  [sp+0x0], ax
 |           0x000005a7      movw  ax, bc
 |           0x000005a8      movw  [sp+0x2], ax
@@ -82,8 +88,11 @@ EXPECT=<<EOF
 \       @-> 0x000005ad      br    $0x0
             ; CALL XREFS from sym._main @ +0x8f, +0x9d
             ;-- _hash:
-/ int dbg.hash(const char *buf, size_t n);
-|           0x00000634      subw  sp, #0x1e                            ; caesar.c:33 { ; int hash(const char *buf, size_t n);
+/ int hash(const char *buf, size_t n)
+|           ; arg const char *buf @ ...
+|           ; arg size_t n @ ...
+|           ; var int sum @ ...
+|           0x00000634      subw  sp, #0x1e                            ; caesar.c:33 { ; int hash(const char *buf, size_t n)
 |           0x00000636      movw  [sp+0x4], ax
 |           0x00000638      movw  ax, bc
 |           0x00000639      movw  [sp+0x6], ax
@@ -95,8 +104,16 @@ EXPECT=<<EOF
 \       @-> 0x00000644      br    $0x0
             ; CALL XREF from entry0 @ 0x7f8
             ;-- _main:
-/ int dbg.main(int argc, char **argv);
-|           0x000006b3      subw  sp, #0x26                            ; caesar.c:43 { ; int main(int argc, char **argv);
+/ int main(int argc, char **argv)
+|           ; arg int argc @ ...
+|           ; arg char **argv @ ...
+|           ; var const struct operations ops @ ...
+|           ; var size_t len @ ...
+|           ; var char *decrypted @ ...
+|           ; var char *uppercase @ ...
+|           ; var const char *pw @ ...
+|           ; var size_t pwlen @ ...
+|           0x000006b3      subw  sp, #0x26                            ; caesar.c:43 { ; int main(int argc, char **argv)
 |           0x000006b5      movw  de, #0x0
 |           0x000006b8      movw  [sp+0x14], ax
 |           0x000006ba      movw  ax, de
