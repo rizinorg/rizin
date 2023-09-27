@@ -970,7 +970,7 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 	case OPERATION_KIND_FRAME_OFFSET: {
 		RzBinDwarfAttr *fb_attr = rz_bin_dwarf_die_get_attr(self->die, DW_AT_frame_base);
 		ERR_IF_FAIL(fb_attr);
-		if (fb_attr->value.kind == OPERATION_KIND_UNSIGNED_CONSTANT) {
+		if (fb_attr->value.kind == RzBinDwarfAttr_UConstant) {
 			RzBinDwarfValue v = {
 				.type = RzBinDwarfValueType_LOCATION,
 				.location = RZ_NEW0(RzBinDwarfLocation),
