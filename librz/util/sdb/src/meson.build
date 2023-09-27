@@ -12,7 +12,6 @@ libsdb_sources = files(
   'ht_pp.c',
   'ht_up.c',
   'ht_pu.c',
-  'journal.c',
   'lock.c',
   'ls.c',
   'match.c',
