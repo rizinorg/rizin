@@ -1520,7 +1520,7 @@ static void cursor_nextrow(RzCore *core, bool use_ocur) {
 	RzAsmOp op;
 
 	cursor_ocur(core, use_ocur);
-	if (PIDX == 1) { // DISASM
+	if (PIDX == RZ_CORE_VISUAL_MODE_PD) {
 		nextOpcode(core);
 		return;
 	}
@@ -1560,7 +1560,7 @@ static void cursor_nextrow(RzCore *core, bool use_ocur) {
 			return;
 		}
 	}
-	if (p->row_offsets) {
+	if (p->row_offsets && PIDX != RZ_CORE_VISUAL_MODE_PX) {
 		// FIXME: cache the current row
 		row = rz_print_row_at_off(p, p->cur);
 		roff = rz_print_rowoff(p, row);
@@ -1600,7 +1600,7 @@ static void cursor_prevrow(RzCore *core, bool use_ocur) {
 	int row;
 
 	cursor_ocur(core, use_ocur);
-	if (PIDX == 1) { // DISASM
+	if (PIDX == RZ_CORE_VISUAL_MODE_PD) { // DISASM
 		prevOpcode(core);
 		return;
 	}
@@ -1644,7 +1644,7 @@ static void cursor_prevrow(RzCore *core, bool use_ocur) {
 			return;
 		}
 	}
-	if (p->row_offsets) {
+	if (p->row_offsets && PIDX != RZ_CORE_VISUAL_MODE_PX) {
 		int delta, prev_sz;
 
 		// FIXME: cache the current row
