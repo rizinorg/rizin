@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <rz_endian.h>
 #include "sdb.h"
 #include "cdb.h"
 #include "cdb_make.h"
@@ -153,7 +154,7 @@ int cdb_make_finish(struct cdb_make *c) {
 	for (i = 0; i < 256; i++) {
 		count = c->count[i];
 		len = count << 1;
-		ut32_pack(c->final + 4 * i, c->pos);
+		rz_write_at_le32(c->final, c->pos, 4 * i);
 		for (u = 0; u < len; u++) {
 			c->hash[u].h = c->hash[u].p = 0;
 		}
@@ -168,8 +169,8 @@ int cdb_make_finish(struct cdb_make *c) {
 			c->hash[where] = *hp++;
 		}
 		for (u = 0; u < len; u++) {
-			ut32_pack(buf, c->hash[u].h);
-			ut32_pack(buf + 4, c->hash[u].p);
+			rz_write_le32(buf, c->hash[u].h);
+			rz_write_at_le32(buf, c->hash[u].p, 4);
 			if (!buffer_putalign(&c->b, buf, 8)) {
 				return 0;
 			}

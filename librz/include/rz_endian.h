@@ -259,6 +259,11 @@ static inline void rz_write_le24(void *_dest, ut32 val) {
 	rz_write_le8(dest, val >> 16);
 }
 
+/**
+ * \brief Unpack the buffer, in low-endian order, into a 32-bit integer.
+ * \param[in] src The buffer to read from.
+ * \return The result of unpacking \p src.
+ */
 static inline ut32 rz_read_le32(const void *src) {
 	if (!src) {
 		return UT32_MAX;
@@ -276,6 +281,11 @@ static inline ut32 rz_read_at_le32(const void *src, size_t offset) {
 	return rz_read_le32(s);
 }
 
+/**
+ * \brief Pack the 32-bit integer in little-endian order into a buffer.
+ * \param[out] dest The buffer to write to.
+ * \param val The integer to pack.
+ */
 static inline void rz_write_le32(void *dest, ut32 val) {
 	rz_write_le16(dest, val);
 	rz_write_at_le16(dest, val >> 16, sizeof(ut16));
