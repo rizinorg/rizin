@@ -55,7 +55,6 @@ extern char *strdup(const char *);
 #define SDB_OPTION_SYNC    (1 << 0)
 #define SDB_OPTION_NOSTAMP (1 << 1)
 #define SDB_OPTION_FS      (1 << 2)
-#define SDB_OPTION_JOURNAL (1 << 3)
 
 #define SDB_LIST_UNSORTED 0
 #define SDB_LIST_SORTED   1
@@ -69,7 +68,6 @@ typedef struct sdb_t {
 	int fd;
 	int refs; // reference counter
 	int lock;
-	int journal;
 	struct cdb db;
 	struct cdb_make m;
 	HtPP *ht;
@@ -204,14 +202,6 @@ RZ_API bool sdb_text_load(Sdb *s, const char *file);
 RZ_API void sdb_dump_begin(Sdb *s);
 RZ_API SdbKv *sdb_dump_next(Sdb *s);
 RZ_API bool sdb_dump_dupnext(Sdb *s, char *key, char **value, int *_vlen);
-
-/* journaling */
-RZ_API bool sdb_journal_close(Sdb *s);
-RZ_API bool sdb_journal_open(Sdb *s);
-RZ_API int sdb_journal_load(Sdb *s);
-RZ_API bool sdb_journal_log(Sdb *s, const char *key, const char *val);
-RZ_API bool sdb_journal_clear(Sdb *s);
-RZ_API bool sdb_journal_unlink(Sdb *s);
 
 /* numeric */
 RZ_API char *sdb_itoa(ut64 n, char *s, int base);

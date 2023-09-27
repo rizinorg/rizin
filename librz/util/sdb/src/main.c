@@ -247,7 +247,6 @@ static int showusage(int o) {
 		       "  -D      diff two databases\n"
 		       "  -e      encode stdin as base64\n"
 		       "  -h      show this help\n"
-		       "  -J      enable journaling\n"
 		       "  -v      show version information\n");
 		return 0;
 	}
@@ -370,14 +369,6 @@ int main(int argc, const char **argv) {
 			}
 			grep = argv[2];
 			argi += 2;
-			break;
-		case 'J':
-			options |= SDB_OPTION_JOURNAL;
-			db0++;
-			argi++;
-			if (db0 >= argc) {
-				return showusage(1);
-			}
 			break;
 		case 'c': return (argc < 3) ? showusage(1) : showcount(argv[2]);
 		case 'v': return showversion();
