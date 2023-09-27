@@ -38,51 +38,6 @@ static inline int seek_set(int fd, off_t pos) {
 	return ((fd == -1) || (lseek(fd, (off_t)pos, SEEK_SET) == -1)) ? 0 : 1;
 }
 
-/**
- * \brief Pack the 32-bit integer in little-endian order into a buffer.
- * \param[out] s The buffer to write to.
- * \param u The integer to pack.
- */
-static inline void ut32_pack(char s[4], ut32 u) {
-	s[0] = u & 255;
-	u >>= 8;
-	s[1] = u & 255;
-	u >>= 8;
-	s[2] = u & 255;
-	s[3] = u >> 8;
-}
-
-/**
- * \brief Pack the 32-bit integer in big-endian order into a buffer.
- * \param[out] s The buffer to write to.
- * \param u The integer to pack.
- */
-static inline void ut32_pack_big(char s[4], ut32 u) {
-	s[3] = u & 255;
-	u >>= 8;
-	s[2] = u & 255;
-	u >>= 8;
-	s[1] = u & 255;
-	s[0] = u >> 8;
-}
-
-/**
- * \brief Unpack the buffer, in low-endian order, into a 32-bit integer.
- * \param[in] s The buffer to read from.
- * \param[out] u The result of unpacking \p s.
- */
-static inline void ut32_unpack(char s[4], ut32 *u) {
-	ut32 result = 0;
-	result = (ut8)s[3];
-	result <<= 8;
-	result += (ut8)s[2];
-	result <<= 8;
-	result += (ut8)s[1];
-	result <<= 8;
-	result += (ut8)s[0];
-	*u = result;
-}
-
 #ifdef __cplusplus
 }
 #endif
