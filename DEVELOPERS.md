@@ -29,7 +29,7 @@ Documentation goes into the source files (not the header files)
  * Used to determine the min & max addresses of maps and
  * scale the ascii bar to the width of the terminal
  */
-static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width) { /* ... */ }
+static int find_min_max(RzList *maps, ut64 *min, ut64 *max, int skip, int width) { /* ... */ }
 ```
 
 In order to improve the documentation and help newcomers, documenting code is mandatory.
