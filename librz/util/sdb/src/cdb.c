@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <rz_endian.h>
 #include "cdb.h"
 #if HAVE_HEADER_SYS_MMAN_H
 #include <sys/mman.h>
@@ -281,9 +282,9 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 			return -1;
 		}
 		/* hslots = (hpos_next - hpos) / 8 */
-		ut32_unpack(buf, &c->hpos);
+		c->hpos = rz_read_le32(buf);
 		if (bufsz == sizeof(buf)) {
-			ut32_unpack(buf + 4, &pos);
+			pos = rz_read_at_le32(buf, 4);
 		} else {
 			pos = c->size;
 		}
@@ -303,7 +304,7 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 		if (!cdb_read(c, buf, sizeof(buf), c->kpos)) {
 			return 0;
 		}
-		ut32_unpack(buf + 4, &pos);
+		pos = rz_read_at_le32(buf, 4);
 		if (!pos) {
 			return 0;
 		}
@@ -312,7 +313,7 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, ut32 len) {
 		if (c->kpos == c->hpos + (c->hslots << 3)) {
 			c->kpos = c->hpos;
 		}
-		ut32_unpack(buf, &u);
+		u = rz_read_le32(buf);
 		if (u == c->khash) {
 			/* The hashes match, compare the strings. */
 			if (!cdb_getkvlen(c, &u, &c->dlen, pos) || !u) {
