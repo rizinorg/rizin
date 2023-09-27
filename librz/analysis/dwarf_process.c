@@ -582,13 +582,14 @@ static char *die_name(const RzBinDwarfDie *die, Context *ctx) {
 	}
 	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_specification);
 	RzBinDwarfDie *spec = attr ? ht_up_find(ctx->dw->info->die_by_offset, rz_bin_dwarf_attr_udata(attr), NULL) : NULL;
-	if (spec) {
-		attr = rz_bin_dwarf_die_get_attr(spec, DW_AT_name);
-		if (attr) {
-			return attr_string(attr, ctx);
-		}
+	if (!spec) {
+		return NULL;
 	}
-	return NULL;
+	attr = rz_bin_dwarf_die_get_attr(spec, DW_AT_name);
+	if (!attr) {
+		return NULL;
+	}
+	return attr_string(attr, ctx);
 }
 
 static RzPVector /*<RzBinDwarfDie *>*/ *die_children(const RzBinDwarfDie *die, RzBinDWARF *dw) {
