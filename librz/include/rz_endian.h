@@ -78,11 +78,11 @@ static inline ut32 rz_read_at_be24(const void *src, size_t offset) {
 	return rz_read_be24(s);
 }
 
-static inline void rz_write_be24(void *_dest, ut32 val) {
-	ut8 *dest = (ut8 *)_dest;
-	rz_write_be8(dest++, val >> 16);
-	rz_write_be8(dest++, val >> 8);
-	rz_write_be8(dest, val);
+static inline void rz_write_be24(void *dest, ut32 val) {
+	ut8 *_dest = (ut8 *)dest;
+	rz_write_be8(_dest++, val >> 16);
+	rz_write_be8(_dest++, val >> 8);
+	rz_write_be8(_dest, val);
 }
 
 static inline ut32 rz_read_be32(const void *src) {
@@ -252,11 +252,11 @@ static inline void rz_write_at_le16(void *dest, ut16 val, size_t offset) {
 	rz_write_le16(d, val);
 }
 
-static inline void rz_write_le24(void *_dest, ut32 val) {
-	ut8 *dest = (ut8 *)_dest;
-	rz_write_le8(dest++, val);
-	rz_write_le8(dest++, val >> 8);
-	rz_write_le8(dest, val >> 16);
+static inline void rz_write_le24(void *dest, ut32 val) {
+	ut8 *_dest = (ut8 *)dest;
+	rz_write_le8(_dest++, val);
+	rz_write_le8(_dest++, val >> 8);
+	rz_write_le8(_dest, val >> 16);
 }
 
 /**
