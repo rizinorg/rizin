@@ -7,70 +7,116 @@
 #include "dwarf_private.h"
 
 typedef struct {
-	bool big_endian;
-	RzBinDwarfDebugAbbrevs *debug_abbrevs;
-	RzBinDwarfDebugInfo *debug_info;
-	RzBinDwarfDebugStr *debug_str;
-} DebugInfo_Context;
+	RzBinDwarfInfo *info;
+	RzBinDWARF *dw;
+} DebugInfoContext;
 
-static void RzBinDwarfDie_fini(RzBinDwarfDie *die) {
+static void Die_fini(RzBinDwarfDie *die) {
 	if (!die) {
 		return;
 	}
 	rz_vector_fini(&die->attrs);
 }
 
-static inline ut64 attr_get_uconstant_or_reference(const RzBinDwarfAttr *attr) {
-	rz_warn_if_fail(attr->kind == DW_AT_KIND_UCONSTANT || attr->kind == DW_AT_KIND_REFERENCE);
-	return attr->kind == DW_AT_KIND_UCONSTANT ? attr->uconstant : attr->reference;
+static void CU_attr_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDwarfAttr *attr) {
+	rz_return_if_fail(attr);
+	switch (attr->at) {
+	case DW_AT_name:
+		cu->name = rz_bin_dwarf_attr_string(attr, ctx->dw, cu->str_offsets_base);
+		break;
+	case DW_AT_comp_dir:
+		cu->comp_dir = rz_bin_dwarf_attr_string(attr, ctx->dw, cu->str_offsets_base);
+		goto offset_comp_dir;
+	case DW_AT_producer:
+		cu->producer = rz_bin_dwarf_attr_string(attr, ctx->dw, cu->str_offsets_base);
+		break;
+	case DW_AT_GNU_dwo_name:
+	case DW_AT_dwo_name:
+		cu->dwo_name = rz_bin_dwarf_attr_string(attr, ctx->dw, cu->str_offsets_base);
+		break;
+	case DW_AT_language:
+		cu->language = rz_bin_dwarf_attr_udata(attr);
+		break;
+	case DW_AT_low_pc:
+		cu->low_pc = rz_bin_dwarf_attr_udata(attr);
+		break;
+	case DW_AT_high_pc:
+		cu->high_pc = rz_bin_dwarf_attr_udata(attr);
+		break;
+	case DW_AT_stmt_list:
+		cu->stmt_list = rz_bin_dwarf_attr_udata(attr);
+		goto offset_comp_dir;
+	case DW_AT_str_offsets_base:
+		cu->str_offsets_base = rz_bin_dwarf_attr_udata(attr);
+		break;
+	case DW_AT_GNU_addr_base:
+	case DW_AT_addr_base:
+		cu->addr_base = rz_bin_dwarf_attr_udata(attr);
+		break;
+	case DW_AT_loclists_base:
+		cu->loclists_base = rz_bin_dwarf_attr_udata(attr);
+		break;
+	case DW_AT_rnglists_base:
+		cu->rnglists_base = rz_bin_dwarf_attr_udata(attr);
+		break;
+	default:
+		break;
+	}
+
+	return;
+offset_comp_dir:
+	if (cu->stmt_list < UT64_MAX && cu->comp_dir) {
+		ht_up_insert(ctx->info->offset_comp_dir, cu->stmt_list, (void *)cu->comp_dir);
+	}
 }
 
-static bool RzBinDwarfDie_attrs_parse(
-	DebugInfo_Context *ctx,
+static bool CU_attrs_parse(
+	DebugInfoContext *ctx,
 	RzBinDwarfDie *die,
-	RzBinDwarfCompUnitHdr *hdr,
+	RzBinDwarfCompUnit *cu,
 	RzBinDwarfAbbrevDecl *abbrev_decl) {
-	RzBuffer *buffer = ctx->debug_info->buffer;
 
 	RZ_LOG_SILLY("0x%" PFMT64x ":\t%s%s [%" PFMT64d "] %s\n",
 		die->offset, rz_str_indent(die->depth), rz_bin_dwarf_tag(die->tag),
 		die->abbrev_code, rz_bin_dwarf_children(die->has_children));
-	RzBinDwarfAttrDef *def = NULL;
-	rz_vector_foreach(&abbrev_decl->defs, def) {
+	RzBinDwarfAttrSpec *spec = NULL;
+	rz_vector_foreach(&abbrev_decl->defs, spec) {
 		RzBinDwarfAttr attr = { 0 };
-		DwAttrOption opt = {
-			.type = DW_ATTR_TYPE_DEF,
-			.def = def,
-			.encoding = {
-				.address_size = hdr->encoding.address_size,
-			},
-			.comp_unit_hdr = hdr,
-			.debug_str = ctx->debug_str,
-			.big_endian = ctx->big_endian,
+		AttrOption opt = {
+			.dw = ctx->dw,
+			.implicit_const = spec->special,
+			.form = spec->form,
+			.at = spec->at,
+			.unit_offset = cu->offset,
+			.encoding = &cu->hdr.encoding,
 		};
-		if (!RzBinDwarfAttr_parse(buffer, &attr, &opt)) {
-			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die attr: 0x%" PFMT64x " %s [%s]\n ",
-				rz_buf_tell(buffer), die->offset, rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form));
+		if (!RzBinDwarfAttr_parse(ctx->info->reader, &attr, &opt)) {
+			RZ_LOG_ERROR("DWARF: failed attr: 0x%" PFMT64x " %s [%s]\n ",
+				die->offset, rz_bin_dwarf_attr(spec->at), rz_bin_dwarf_form(spec->form));
 			continue;
 		}
 
-#if RZ_BUILD_DEBUG
-		char *data = RzBinDwarfAttr_to_string(&attr);
-		RZ_LOG_SILLY("0x%" PFMT64x ":\t%s\t%s [%s] (%s)\n",
-			rz_buf_tell(buffer), rz_str_indent(die->depth), rz_bin_dwarf_attr(def->name),
-			rz_bin_dwarf_form(def->form), rz_str_get(data));
-		free(data);
-#endif
-
-		switch (attr.name) {
+		switch (attr.at) {
 		case DW_AT_sibling:
-			die->sibling = attr_get_uconstant_or_reference(&attr);
+			die->sibling = rz_bin_dwarf_attr_udata(&attr);
 			break;
 		default:
 			break;
 		}
 
 		rz_vector_push(&die->attrs, &attr);
+	}
+
+	if (die->tag == DW_TAG_compile_unit ||
+		die->tag == DW_TAG_skeleton_unit) {
+		RzBinDwarfAttr *str_offset_base = rz_bin_dwarf_die_get_attr(die, DW_AT_str_offsets_base);
+		if (str_offset_base) {
+			CU_attr_apply(ctx, cu, str_offset_base);
+		}
+		RzBinDwarfAttr *attr;
+		rz_vector_foreach(&die->attrs, attr) {
+			CU_attr_apply(ctx, cu, attr);
+		}
 	}
 	return true;
 }
@@ -80,37 +126,37 @@ static bool RzBinDwarfDie_attrs_parse(
  * \param unit The RzBinDwarfCompUnit to initialize
  * \return 0 on success, -EINVAL on error
  */
-static int RzBinDwarfCompUnit_init(RzBinDwarfCompUnit *unit) {
+static int CU_init(RzBinDwarfCompUnit *unit) {
 	if (!unit) {
 		return -EINVAL;
 	}
-	rz_vector_init(&unit->dies, sizeof(RzBinDwarfDie), (RzVectorFree)RzBinDwarfDie_fini, NULL);
+	rz_vector_init(&unit->dies, sizeof(RzBinDwarfDie), (RzVectorFree)Die_fini, NULL);
 	return 0;
 }
 
-static void RzBinDwarfCompUnit_fini(RzBinDwarfCompUnit *unit, void *user) {
+static void CU_fini(RzBinDwarfCompUnit *unit, void *user) {
 	if (!unit) {
 		return;
 	}
 	rz_vector_fini(&unit->dies);
 }
 
-static inline ut64 RzBinDwarfCompUnit_next(RzBinDwarfCompUnit *unit) {
+static inline ut64 CU_next(RzBinDwarfCompUnit *unit) {
 	return unit->offset + unit->hdr.length + (unit->hdr.encoding.is_64bit ? 12 : 4);
 }
 
 /**
  * \brief Reads throught comp_unit buffer and parses all its DIEntries*
  */
-static bool RzBinDwarfCompUnit_dies_parse(
-	DebugInfo_Context *ctx,
+static bool CU_dies_parse(
+	DebugInfoContext *ctx,
 	RzBinDwarfCompUnit *unit,
 	const RzBinDwarfAbbrevTable *tbl) {
 	st64 depth = 0;
-	RzBuffer *buffer = ctx->debug_info->buffer;
+	RzBuffer *buffer = ctx->info->reader->buffer;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
-		if (offset >= RzBinDwarfCompUnit_next(unit)) {
+		if (offset >= CU_next(unit)) {
 			break;
 		}
 		// DIE starts with ULEB128 with the abbreviation code
@@ -156,7 +202,7 @@ static bool RzBinDwarfCompUnit_dies_parse(
 			if (die.has_children) {
 				depth++;
 			}
-			GOTO_IF_FAIL(RzBinDwarfDie_attrs_parse(ctx, &die, &unit->hdr, abbrev_decl), err);
+			GOTO_IF_FAIL(CU_attrs_parse(ctx, &die, unit, abbrev_decl), err);
 		}
 		rz_vector_push(&unit->dies, &die);
 	}
@@ -168,81 +214,37 @@ err:
 /**
  * \brief Reads all information about compilation unit header
  */
-static bool RzBinDwarfCompUnitHdr_parse(DebugInfo_Context *ctx, RzBinDwarfCompUnitHdr *hdr) {
-	bool big_endian = ctx->big_endian;
-	RzBuffer *buffer = ctx->debug_info->buffer;
-	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &hdr->encoding.is_64bit, &hdr->length, big_endian));
-	RET_FALSE_IF_FAIL(hdr->length <= rz_buf_size(buffer) - rz_buf_tell(buffer));
-	ut64 offset_start = rz_buf_tell(buffer);
+static bool CU_Hdr_parse(DebugInfoContext *ctx, RzBinDwarfCompUnitHdr *hdr) {
+	RzBinEndianReader *reader = ctx->info->reader;
+	RET_FALSE_IF_FAIL(read_initial_length(reader, &hdr->encoding.is_64bit, &hdr->length));
+	RET_FALSE_IF_FAIL(hdr->length <= rz_buf_size(reader->buffer) - rz_buf_tell(reader->buffer));
+	ut64 offset_start = rz_buf_tell(reader->buffer);
 	U_OR_RET_FALSE(16, hdr->encoding.version);
 
 	if (hdr->encoding.version == 5) {
-		U8_OR_RET_FALSE(hdr->unit_type);
+		U8_OR_RET_FALSE(hdr->ut);
 		U8_OR_RET_FALSE(hdr->encoding.address_size);
-		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &hdr->abbrev_offset, hdr->encoding.is_64bit, big_endian));
+		RET_FALSE_IF_FAIL(read_offset(reader, &hdr->abbrev_offset, hdr->encoding.is_64bit));
 
-		if (hdr->unit_type == DW_UT_skeleton || hdr->unit_type == DW_UT_split_compile) {
-			U8_OR_RET_FALSE(hdr->dwo_id);
-		} else if (hdr->unit_type == DW_UT_type || hdr->unit_type == DW_UT_split_type) {
+		if (hdr->ut == DW_UT_skeleton || hdr->ut == DW_UT_split_compile) {
+			U_OR_RET_FALSE(64, hdr->dwo_id);
+		} else if (hdr->ut == DW_UT_type || hdr->ut == DW_UT_split_type) {
 			U_OR_RET_FALSE(64, hdr->type_sig);
-			RET_FALSE_IF_FAIL(buf_read_offset(buffer, &hdr->type_offset, hdr->encoding.is_64bit, big_endian));
+			RET_FALSE_IF_FAIL(read_offset(reader, &hdr->type_offset, hdr->encoding.is_64bit));
 		}
 	} else {
-		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &hdr->abbrev_offset, hdr->encoding.is_64bit, big_endian));
+		RET_FALSE_IF_FAIL(read_offset(reader, &hdr->abbrev_offset, hdr->encoding.is_64bit));
 		U8_OR_RET_FALSE(hdr->encoding.address_size);
 	}
-	hdr->header_size = rz_buf_tell(buffer) - offset_start; // header size excluding length field
+	hdr->header_size = rz_buf_tell(reader->buffer) - offset_start; // header size excluding length field
 	return true;
-}
-
-static void RzBinDwarfCompUnit_apply(RzBinDwarfCompUnit *unit, RzBinDwarfDie *die) {
-	RzBinDwarfAttr *attr = NULL;
-	rz_vector_foreach(&die->attrs, attr) {
-		switch (attr->name) {
-		case DW_AT_name:
-			unit->name = rz_bin_dwarf_attr_get_string_const(attr);
-			break;
-		case DW_AT_comp_dir:
-			unit->comp_dir = rz_bin_dwarf_attr_get_string_const(attr);
-			break;
-		case DW_AT_producer:
-			unit->producer = rz_bin_dwarf_attr_get_string_const(attr);
-			break;
-		case DW_AT_language:
-			unit->language = attr->uconstant;
-			break;
-		case DW_AT_low_pc:
-			unit->low_pc = attr->address;
-			break;
-		case DW_AT_high_pc:
-			unit->high_pc = attr->address;
-			break;
-		case DW_AT_stmt_list:
-			unit->stmt_list = attr_get_uconstant_or_reference(attr);
-			break;
-		case DW_AT_str_offsets_base:
-			unit->str_offsets_base = attr->uconstant;
-			break;
-		case DW_AT_addr_base:
-			unit->addr_base = attr->uconstant;
-			break;
-		case DW_AT_loclists_base:
-			unit->loclists_base = attr->uconstant;
-			break;
-		case DW_AT_rnglists_base:
-			unit->rnglists_base = attr->uconstant;
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 /**
  * \brief Parses whole .debug_info section
  */
-static bool RzBinDwarfCompUnit_parse(DebugInfo_Context *ctx) {
-	RzBuffer *buffer = ctx->debug_info->buffer;
+static bool CU_parse_all(DebugInfoContext *ctx) {
+	RzBuffer *buffer = ctx->info->reader->buffer;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
 		if (offset >= rz_buf_size(buffer)) {
@@ -251,14 +253,11 @@ static bool RzBinDwarfCompUnit_parse(DebugInfo_Context *ctx) {
 
 		RzBinDwarfCompUnit unit = {
 			.offset = offset,
-			.hdr = {
-				.unit_offset = offset,
-			}
 		};
-		if (RzBinDwarfCompUnit_init(&unit) < 0) {
+		if (CU_init(&unit) < 0) {
 			goto cleanup;
 		}
-		if (!RzBinDwarfCompUnitHdr_parse(ctx, &unit.hdr)) {
+		if (!CU_Hdr_parse(ctx, &unit.hdr)) {
 			break;
 		}
 		if (unit.hdr.length > rz_buf_size(buffer)) {
@@ -266,53 +265,38 @@ static bool RzBinDwarfCompUnit_parse(DebugInfo_Context *ctx) {
 		}
 
 		RzBinDwarfAbbrevTable *tbl = ht_up_find(
-			ctx->debug_abbrevs->tbl_by_offset, unit.hdr.abbrev_offset, NULL);
+			ctx->dw->abbrev->tbl_by_offset, unit.hdr.abbrev_offset, NULL);
 		if (!tbl) {
 			goto cleanup;
 		}
 
-		RZ_LOG_DEBUG("0x%" PFMT64x ":\tcompile unit length = 0x%" PFMT64x ", "
-			     "abbr_offset: 0x%" PFMT64x "\n",
+		RZ_LOG_DEBUG("0x%" PFMT64x ":\tcompile unit length = 0x%" PFMT64x ", abbr_offset: 0x%" PFMT64x "\n",
 			unit.offset, unit.hdr.length, unit.hdr.abbrev_offset);
-		RzBinDwarfCompUnit_dies_parse(ctx, &unit, tbl);
-
-		ut64 unit_die_count = rz_vector_len(&unit.dies);
-		if (unit_die_count > 0) {
-			ctx->debug_info->die_count += unit_die_count;
-			RzBinDwarfDie *die = rz_vector_head(&unit.dies);
-			if (die->tag == DW_TAG_compile_unit) {
-				RzBinDwarfCompUnit_apply(&unit, die);
-				if (unit.stmt_list >= 0 && unit.stmt_list < UT64_MAX && unit.comp_dir) {
-					ht_up_insert(ctx->debug_info->line_info_offset_comp_dir,
-						unit.stmt_list, (void *)unit.comp_dir);
-				}
-			}
-			rz_vector_shrink(&unit.dies);
-		}
-
-		rz_vector_push(&ctx->debug_info->units, &unit);
+		CU_dies_parse(ctx, &unit, tbl);
+		ctx->info->die_count += rz_vector_len(&unit.dies);
+		rz_vector_push(&ctx->info->units, &unit);
 	}
-	rz_vector_shrink(&ctx->debug_info->units);
 	return true;
 cleanup:
 	return false;
 }
 
-RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, DW_AT name) {
+RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, DW_AT name) {
 	rz_return_val_if_fail(die, NULL);
 	RzBinDwarfAttr *attr = NULL;
 	rz_vector_foreach(&die->attrs, attr) {
-		if (attr->name == name) {
+		if (attr->at == name) {
 			return attr;
 		}
 	}
 	return NULL;
 }
 
-static bool RzBinDwarfDebugInfo_init(RzBinDwarfDebugInfo *info) {
-	rz_vector_init(&info->units, sizeof(RzBinDwarfCompUnit), (RzVectorFree)RzBinDwarfCompUnit_fini, NULL);
-	info->line_info_offset_comp_dir = ht_up_new(NULL, NULL, NULL);
-	if (!info->line_info_offset_comp_dir) {
+static bool info_init(RzBinDwarfInfo *info) {
+	rz_vector_init(&info->units, sizeof(RzBinDwarfCompUnit), (RzVectorFree)CU_fini, NULL);
+	info->offset_comp_dir = ht_up_new(NULL, NULL, NULL);
+	if (!info->offset_comp_dir) {
 		goto beach;
 	}
 	return true;
@@ -321,44 +305,44 @@ beach:
 	return false;
 }
 
-static inline void RzBinDwarfDebugInfo_free(RzBinDwarfDebugInfo *info) {
+static inline void info_free(RzBinDwarfInfo *info) {
 	if (!info) {
 		return;
 	}
 	rz_vector_fini(&info->units);
-	ht_up_free(info->line_info_offset_comp_dir);
+	ht_up_free(info->offset_comp_dir);
 	ht_up_free(info->die_by_offset);
 	ht_up_free(info->unit_by_offset);
-	rz_buf_free(info->buffer);
+	rz_buf_free(info->reader->buffer);
 	free(info);
 }
 
-RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfDebugInfo *info) {
-	RzBinDwarfDebugInfo_free(info);
+RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfInfo *info) {
+	info_free(info);
 }
 
-RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_buf(
-	RZ_OWN RZ_NONNULL RzBuffer *buffer,
-	bool big_endian,
-	RZ_BORROW RZ_NONNULL RzBinDwarfDebugAbbrevs *debug_abbrevs,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfDebugStr *debug_str) {
-	rz_return_val_if_fail(buffer && debug_abbrevs, NULL);
-	RzBinDwarfDebugInfo *info = RZ_NEW0(RzBinDwarfDebugInfo);
+RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
+	RZ_OWN RZ_NONNULL RzBinEndianReader *reader,
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
+	rz_return_val_if_fail(reader && reader->buffer && dw && dw->abbrev, NULL);
+	if (rz_buf_size(reader->buffer) <= 0) {
+		rz_buf_free(reader->buffer);
+		return NULL;
+	}
+	RzBinDwarfInfo *info = RZ_NEW0(RzBinDwarfInfo);
 	RET_NULL_IF_FAIL(info);
-	ERR_IF_FAIL(RzBinDwarfDebugInfo_init(info));
-	info->buffer = buffer;
+	ERR_IF_FAIL(info_init(info));
+	info->reader = reader;
 
-	DebugInfo_Context ctx = {
-		.big_endian = big_endian,
-		.debug_abbrevs = debug_abbrevs,
-		.debug_info = info,
-		.debug_str = debug_str,
+	DebugInfoContext ctx = {
+		.info = info,
+		.dw = dw,
 	};
-	ERR_IF_FAIL(RzBinDwarfCompUnit_parse(&ctx));
+	ERR_IF_FAIL(CU_parse_all(&ctx));
 
 	info->die_by_offset = ht_up_new_size(info->die_count, NULL, NULL, NULL);
 	ERR_IF_FAIL(info->die_by_offset);
-	info->unit_by_offset = ht_up_new(NULL, NULL, NULL);
+	info->unit_by_offset = ht_up_new_size(rz_vector_len(&info->units), NULL, NULL, NULL);
 	ERR_IF_FAIL(info->unit_by_offset);
 
 	// build hashtable after whole parsing because of possible relocations
@@ -372,23 +356,21 @@ RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_buf(
 	}
 	return info;
 err:
-	RzBinDwarfDebugInfo_free(info);
+	info_free(info);
 	return NULL;
 }
 
 /**
  * \brief Parses .debug_info section
- *
- * \param abbrevs Parsed abbreviations
  * \param bin RzBinFile instance
+ * \param dw RzBinDWARF instance
  * \return RzBinDwarfDebugInfo* Parsed information, NULL if error
  */
-RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_from_file(
+RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NONNULL RzBinDwarfDebugAbbrevs *debug_abbrevs,
-	RZ_BORROW RZ_NULLABLE RzBinDwarfDebugStr *debug_str) {
-	rz_return_val_if_fail(bf && debug_abbrevs, NULL);
-	RzBuffer *buf = get_section_buf(bf, "debug_info");
-	RET_NULL_IF_FAIL(buf);
-	return rz_bin_dwarf_info_from_buf(buf, bf_bigendian(bf), debug_abbrevs, debug_str);
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw) {
+	rz_return_val_if_fail(bf && dw && dw->abbrev, NULL);
+	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_info");
+	RET_NULL_IF_FAIL(reader);
+	return rz_bin_dwarf_info_from_buf(reader, dw);
 }

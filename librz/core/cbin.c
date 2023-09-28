@@ -632,11 +632,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
-	RzBinDWARFOption opt = {
-		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
-		.flags = RZ_BIN_DWARF_ALL - RZ_BIN_DWARF_LOC
-	};
-	RzBinDWARF *dw = rz_bin_dwarf_from_file(binfile, &opt);
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(binfile);
 	if (!dw) {
 		return false;
 	}
@@ -647,14 +643,16 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		rz_analysis_dwarf_process_info(core->analysis, dw);
 	}
 
-	const RzBinSourceLineInfo *li = NULL;
 	if (dw->line) {
 		// move all produced rows line info out (TODO: bin loading should do that)
-		li = binfile->o->lines = dw->line->lines;
-		dw->line->lines = NULL;
-	}
-	if (!li) {
-		return false;
+		if (!binfile->o->lines) {
+			binfile->o->lines = RZ_NEW0(RzBinSourceLineInfo);
+			if (!binfile->o->lines) {
+				return false;
+			}
+			rz_str_constpool_init(&binfile->o->lines->filename_pool);
+		}
+		rz_bin_source_line_info_merge(binfile->o->lines, dw->line->lines);
 	}
 	return true;
 }
@@ -1704,13 +1702,8 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		return false;
 	}
 
-	RzBinDwarfLineInfoMask mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES;
-	mask |= (state->mode == RZ_OUTPUT_MODE_STANDARD ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0);
-	RzBinDWARFOption dw_opt = {
-		.line_mask = mask,
-		.flags = RZ_BIN_DWARF_ALL,
-	};
-	RzBinDWARF *dw = rz_bin_dwarf_from_file(binfile, &dw_opt);
+	RzBinDWARF *dw = core->analysis->debug_info->dw;
+	dw = dw ? dw : rz_bin_dwarf_from_file(binfile);
 	if (!dw) {
 		return false;
 	}
@@ -1724,25 +1717,27 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 			print_free(rz_core_bin_dwarf_abbrevs_to_string(dw->abbrev));
 		}
 		if (dw->info) {
-			print_free(rz_core_bin_dwarf_debug_info_to_string(dw->info));
+			print_free(rz_core_bin_dwarf_debug_info_to_string(dw->info, dw));
 		}
-		if (dw->loc) {
-			print_free(rz_core_bin_dwarf_loc_to_string(dw, dw->loc));
+		if (dw->loclists) {
+			print_free(rz_core_bin_dwarf_loc_to_string(dw->loclists, dw));
 		}
 		if (dw->aranges) {
 			print_free(rz_core_bin_dwarf_aranges_to_string(dw->aranges));
 		}
-		if (dw->rng) {
-			print_free(rz_core_bin_dwarf_rnglists_to_string(dw->rng));
+		if (dw->rnglists) {
+			print_free(rz_core_bin_dwarf_rnglists_to_string(dw->rnglists));
 		}
 		if (dw->line) {
-			print_free(rz_core_bin_dwarf_line_units_to_string(dw->line->units));
+			print_free(rz_core_bin_dwarf_line_units_to_string(dw->line));
 		}
 	}
 	if (dw->line && dw->line->lines) {
 		rz_core_bin_print_source_line_info(core, dw->line->lines, state);
 	}
-	rz_bin_dwarf_free(dw);
+	if (dw != core->analysis->debug_info->dw) {
+		rz_bin_dwarf_free(dw);
+	}
 	return true;
 }
 
@@ -1771,11 +1766,8 @@ RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSource
 	} else {
 		rz_cons_printf("0x%08" PFMT64x "\t%s\t",
 			s->address, s->file ? s->file : "-");
-		if (s->line) {
-			rz_cons_printf("%" PFMT32u "\n", s->line);
-		} else {
-			rz_cons_print("-\n");
-		}
+		rz_cons_printf("%" PFMT32u "\t", s->line);
+		rz_cons_printf("%" PFMT32u "\n", s->column);
 	}
 }
 

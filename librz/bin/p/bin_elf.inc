@@ -1251,6 +1251,11 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	r->paddr = rel->paddr;
 	r->target_vaddr = rel->target_vaddr;
 
+	RzBinElfSection *section = rel->section > 0 ? Elf_(rz_bin_elf_get_section)(bin, rel->section) : NULL;
+	if (section) {
+		r->section_vaddr = section->rva;
+	}
+
 #define SET(T) \
 	r->type = RZ_BIN_RELOC_##T; \
 	r->additive = 0; \

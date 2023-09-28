@@ -32,6 +32,7 @@ static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RzBinElfReloc *reloc,
 	} else {
 		reloc->paddr = sub_section->offset + reloc->offset;
 		reloc->vaddr = Elf_(rz_bin_elf_p2v)(bin, reloc->paddr);
+		reloc->section = section->info;
 	}
 }
 

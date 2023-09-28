@@ -3,286 +3,234 @@
 
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
-
-#define CHECK_STRING \
-	if (!value->string.content) { \
-		const char *tag_str = opt->type == DW_ATTR_TYPE_DEF \
-			? rz_bin_dwarf_attr(value->name) \
-			: (opt->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT \
-					  ? rz_bin_dwarf_lnct(opt->format->content_type) \
-					  : "unknown"); \
-		RZ_LOG_ERROR("Failed to read string [0x%" PFMT64x "] %s [%s]\n", \
-			value->string.offset, tag_str, rz_bin_dwarf_form(value->form)); \
-		return false; \
-	}
-
 /**
- * This function is quite incomplete and requires lot of work
- * With parsing various new FORM values
  * \brief Parses attribute value based on its definition
  *        and stores it into `value`
  */
-RZ_IPI bool RzBinDwarfAttr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *opt) {
-	rz_return_val_if_fail(opt && value && buffer, false);
-	ut8 address_size = 0;
-	bool is_64bit = false;
-	ut64 unit_offset = 0;
-	if (opt->type == DW_ATTR_TYPE_DEF) {
-		value->name = opt->def->name;
-		value->form = opt->def->form;
-		address_size = opt->comp_unit_hdr->encoding.address_size;
-		is_64bit = opt->comp_unit_hdr->encoding.is_64bit;
-		unit_offset = opt->comp_unit_hdr->unit_offset;
-	} else if (opt->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT) {
-		value->form = opt->format->form;
-		address_size = opt->line_hdr->address_size;
-		is_64bit = opt->line_hdr->is_64bit;
-		unit_offset = opt->line_hdr->offset;
-	} else {
-		rz_warn_if_reached();
-		return false;
-	}
-
-	bool big_endian = opt->big_endian;
+RZ_IPI bool RzBinDwarfAttr_parse(
+	RzBinEndianReader *reader, RzBinDwarfAttr *attr, AttrOption *opt) {
+	rz_return_val_if_fail(opt && opt->encoding && attr && reader && reader->buffer, false);
+	ut64 unit_offset = opt->unit_offset;
+	attr->at = opt->at;
+	attr->form = opt->form;
+	ut8 address_size = opt->encoding->address_size;
+	bool is_64bit = opt->encoding->is_64bit;
+	RzBinDwarfAttrValue *value = &attr->value;
 
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
-	switch (value->form) {
+	switch (attr->form) {
 	case DW_FORM_addr:
-		value->kind = DW_AT_KIND_ADDRESS;
-		UX_OR_RET_FALSE(address_size, value->address);
+		value->kind = RzBinDwarfAttr_Address;
+		RET_FALSE_IF_FAIL(read_address(reader, &value->u64, address_size));
 		break;
 	case DW_FORM_data1:
-		value->kind = DW_AT_KIND_UCONSTANT;
-		U8_OR_RET_FALSE(value->uconstant);
+		value->kind = RzBinDwarfAttr_UConstant;
+		U8_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_data2:
-		value->kind = DW_AT_KIND_UCONSTANT;
-		U_OR_RET_FALSE(16, value->uconstant);
+		value->kind = RzBinDwarfAttr_UConstant;
+		U_OR_RET_FALSE(16, value->u64);
 		break;
 	case DW_FORM_data4:
-		value->kind = DW_AT_KIND_UCONSTANT;
-		U_OR_RET_FALSE(32, value->uconstant);
+		value->kind = RzBinDwarfAttr_UConstant;
+		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_data8:
-		value->kind = DW_AT_KIND_UCONSTANT;
-		U_OR_RET_FALSE(64, value->uconstant);
+		value->kind = RzBinDwarfAttr_UConstant;
+		U_OR_RET_FALSE(64, value->u64);
 		break;
 	case DW_FORM_data16:
-		value->kind = DW_AT_KIND_UCONSTANT;
-		if (big_endian) {
-			U_OR_RET_FALSE(64, value->uconstant128.High);
-			U_OR_RET_FALSE(64, value->uconstant128.Low);
+		value->kind = RzBinDwarfAttr_UConstant;
+		if (reader->big_endian) {
+			U_OR_RET_FALSE(64, value->u128.High);
+			U_OR_RET_FALSE(64, value->u128.Low);
 		} else {
-			U_OR_RET_FALSE(64, value->uconstant128.Low);
-			U_OR_RET_FALSE(64, value->uconstant128.High);
+			U_OR_RET_FALSE(64, value->u128.Low);
+			U_OR_RET_FALSE(64, value->u128.High);
 		}
 		break;
 	case DW_FORM_sdata:
-		value->kind = DW_AT_KIND_CONSTANT;
-		SLE128_OR_RET_FALSE(value->sconstant);
+		value->kind = RzBinDwarfAttr_Constant;
+		SLE128_OR_RET_FALSE(value->s64);
 		break;
 	case DW_FORM_udata:
-		value->kind = DW_AT_KIND_UCONSTANT;
-		ULE128_OR_RET_FALSE(value->uconstant);
+		value->kind = RzBinDwarfAttr_UConstant;
+		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_string:
-		value->kind = DW_AT_KIND_STRING;
-		value->string.content = buf_get_string(buffer);
-		CHECK_STRING;
+		value->kind = RzBinDwarfAttr_String;
+		value->string = read_string(reader);
 		break;
 	case DW_FORM_block1:
-		value->kind = DW_AT_KIND_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		U8_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 	case DW_FORM_block2:
-		value->kind = DW_AT_KIND_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		U_OR_RET_FALSE(16, value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 	case DW_FORM_block4:
-		value->kind = DW_AT_KIND_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		U_OR_RET_FALSE(32, value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 	case DW_FORM_block: // variable length ULEB128
-		value->kind = DW_AT_KIND_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		ULE128_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 	case DW_FORM_flag:
-		value->kind = DW_AT_KIND_FLAG;
+		value->kind = RzBinDwarfAttr_Flag;
 		U8_OR_RET_FALSE(value->flag);
 		break;
 		// offset in .debug_str
 	case DW_FORM_strp:
-		value->kind = DW_AT_KIND_STRING;
-		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->string.offset, is_64bit, big_endian));
-		if (opt->debug_str) {
-			value->string.content = RzBinDwarfDebugStr_get(opt->debug_str, value->string.offset);
-		}
-		CHECK_STRING;
+		value->kind = RzBinDwarfAttr_StrRef;
+		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 		// offset in .debug_info
 	case DW_FORM_ref_addr:
-		value->kind = DW_AT_KIND_REFERENCE;
-		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->reference, is_64bit, big_endian));
+		value->kind = RzBinDwarfAttr_Reference;
+		if (opt->encoding->version == 2) {
+			RET_FALSE_IF_FAIL(read_address(reader, &value->u64, opt->encoding->address_size));
+		} else {
+			RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		}
 		break;
-		// This type of reference is an offset from the first byte of the compilation
-		// header for the compilation unit containing the reference
+		// This type of u64 is an offset from the first byte of the compilation
+		// header for the compilation unit containing the u64
 	case DW_FORM_ref1:
 	case DW_FORM_ref2:
 	case DW_FORM_ref4:
 	case DW_FORM_ref8: {
+		value->kind = RzBinDwarfAttr_UnitRef;
 		static const int index_sizes[] = { 1, 2, 4, 8 };
-		UX_OR_RET_FALSE(index_sizes[value->form - DW_FORM_ref1], value->reference);
-		value->kind = DW_AT_KIND_REFERENCE;
-		value->reference += unit_offset;
+		RET_FALSE_IF_FAIL(read_address(reader, &value->u64, index_sizes[attr->form - DW_FORM_ref1]));
+		value->u64 += unit_offset;
 		break;
 	}
 	case DW_FORM_ref_udata:
-		value->kind = DW_AT_KIND_REFERENCE;
-		ULE128_OR_RET_FALSE(value->reference);
-		value->reference += unit_offset;
+		value->kind = RzBinDwarfAttr_UnitRef;
+		ULE128_OR_RET_FALSE(value->u64);
+		value->u64 += unit_offset;
 		break;
 		// offset in a section other than .debug_info or .debug_str
 	case DW_FORM_sec_offset:
-		value->kind = DW_AT_KIND_REFERENCE;
-		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->reference, is_64bit, big_endian));
+		value->kind = RzBinDwarfAttr_SecOffset;
+		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 	case DW_FORM_exprloc:
-		value->kind = DW_AT_KIND_BLOCK;
+		value->kind = RzBinDwarfAttr_Block;
 		ULE128_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		RET_FALSE_IF_FAIL(read_block(reader, &value->block));
 		break;
 		// this means that the flag is present, nothing is read
 	case DW_FORM_flag_present:
-		value->kind = DW_AT_KIND_FLAG;
+		value->kind = RzBinDwarfAttr_Flag;
 		value->flag = true;
 		break;
 	case DW_FORM_ref_sig8:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U_OR_RET_FALSE(64, value->reference);
+		value->kind = RzBinDwarfAttr_Reference;
+		U_OR_RET_FALSE(64, value->u64);
 		break;
-		// offset into .debug_line_str section, can't parse the section now, so we just skip
+	/// offset into .debug_str_offsets section
 	case DW_FORM_strx:
-		value->kind = DW_AT_KIND_STRING;
-		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->string.offset, is_64bit, big_endian));
-		// TODO: .debug_line_str
-		RZ_LOG_ERROR("TODO: .debug_line_str\n");
+		value->kind = RzBinDwarfAttr_StrOffsetIndex;
+		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 	case DW_FORM_strx1:
-		value->kind = DW_AT_KIND_STRING;
-		U8_OR_RET_FALSE(value->string.offset);
+		value->kind = RzBinDwarfAttr_StrOffsetIndex;
+		U8_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_strx2:
-		value->kind = DW_AT_KIND_STRING;
-		U_OR_RET_FALSE(16, value->string.offset);
+		value->kind = RzBinDwarfAttr_StrOffsetIndex;
+		U_OR_RET_FALSE(16, value->u64);
 		break;
 	case DW_FORM_strx3:
-		value->kind = DW_AT_KIND_STRING;
+		value->kind = RzBinDwarfAttr_StrOffsetIndex;
 		// TODO: DW_FORM_strx3
-		rz_buf_seek(buffer, 3, RZ_BUF_CUR);
+		rz_buf_seek(reader->buffer, 3, RZ_BUF_CUR);
 		RZ_LOG_ERROR("TODO: DW_FORM_strx3\n");
 		break;
 	case DW_FORM_strx4:
-		value->kind = DW_AT_KIND_STRING;
-		U_OR_RET_FALSE(32, value->string.offset);
+		value->kind = RzBinDwarfAttr_StrOffsetIndex;
+		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_implicit_const:
-		value->kind = DW_AT_KIND_CONSTANT;
-		value->uconstant = opt->type == DW_ATTR_TYPE_DEF ? opt->def->special : 0;
+		value->kind = RzBinDwarfAttr_Constant;
+		value->u64 = opt->implicit_const;
 		break;
 	/**  addrx* forms : The index is relative to the value of the
 		DW_AT_addr_base attribute of the associated compilation unit.
 	    index into an array of addresses in the .debug_addr section.*/
 	case DW_FORM_addrx:
-		value->kind = DW_AT_KIND_ADDRESS;
-		ULE128_OR_RET_FALSE(value->address);
+		value->kind = RzBinDwarfAttr_Address;
+		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_addrx1:
-		value->kind = DW_AT_KIND_ADDRESS;
-		U8_OR_RET_FALSE(value->address);
+		value->kind = RzBinDwarfAttr_Address;
+		U8_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_addrx2:
-		value->kind = DW_AT_KIND_ADDRESS;
-		U_OR_RET_FALSE(16, value->address);
+		value->kind = RzBinDwarfAttr_Address;
+		U_OR_RET_FALSE(16, value->u64);
 		break;
 	case DW_FORM_addrx3:
 		// TODO: .DW_FORM_addrx3
-		value->kind = DW_AT_KIND_ADDRESS;
-		rz_buf_seek(buffer, 3, RZ_BUF_CUR);
+		value->kind = RzBinDwarfAttr_Address;
+		rz_buf_seek(reader->buffer, 3, RZ_BUF_CUR);
 		RZ_LOG_ERROR("TODO: DW_FORM_addrx3\n");
 		break;
 	case DW_FORM_addrx4:
-		value->kind = DW_AT_KIND_ADDRESS;
-		U_OR_RET_FALSE(32, value->address);
+		value->kind = RzBinDwarfAttr_Address;
+		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
-	case DW_FORM_strp_sup: // offset in a section .debug_line_str
-		value->kind = DW_AT_KIND_STRING;
-		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->string.offset, is_64bit, big_endian));
-		// TODO: .debug_line_str
-		RZ_LOG_ERROR("TODO: .debug_line_str\n");
+		value->kind = RzBinDwarfAttr_LineStrRef;
+		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		break;
+	case DW_FORM_strp_sup:
+		value->kind = RzBinDwarfAttr_StrRef;
+		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 		// offset in the supplementary object file
 	case DW_FORM_ref_sup4:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U_OR_RET_FALSE(32, value->reference);
+		value->kind = RzBinDwarfAttr_Reference;
+		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_ref_sup8:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U_OR_RET_FALSE(64, value->reference);
+		value->kind = RzBinDwarfAttr_Reference;
+		U_OR_RET_FALSE(64, value->u64);
 		break;
 		// An index into the .debug_loc
 	case DW_FORM_loclistx:
-		value->kind = DW_AT_KIND_LOCLISTPTR;
-		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->reference, is_64bit, big_endian));
+		value->kind = RzBinDwarfAttr_LoclistPtr;
+		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
 		break;
 		// An index into the .debug_rnglists
 	case DW_FORM_rnglistx:
-		value->kind = DW_AT_KIND_ADDRESS;
-		ULE128_OR_RET_FALSE(value->address);
+		value->kind = RzBinDwarfAttr_Address;
+		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	default:
-		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT32x "\n", value->form);
-		value->uconstant = 0;
+		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT32x "\n", attr->form);
+		value->u64 = 0;
 		return false;
 	}
 	return true;
 }
 
-RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *val) {
-	if (!val) {
+RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *attr) {
+	if (!attr) {
 		return;
 	}
-	switch (val->kind) {
-	case DW_AT_KIND_BLOCK:
-		RzBinDwarfBlock_fini(&val->block);
+	switch (attr->value.kind) {
+	case RzBinDwarfAttr_Block:
+		RzBinDwarfBlock_fini(&attr->value.block);
 		break;
 	default:
 		break;
 	};
-}
-
-RZ_IPI char *RzBinDwarfAttr_to_string(RzBinDwarfAttr *attr) {
-	switch (attr->name) {
-	case DW_AT_language: return rz_str_new(rz_bin_dwarf_lang(attr->uconstant));
-	default: break;
-	}
-	switch (attr->kind) {
-	case DW_AT_KIND_ADDRESS: return rz_str_newf("0x%" PFMT64x, attr->address);
-	case DW_AT_KIND_BLOCK: return rz_str_newf("0x%" PFMT64x, attr->block.length);
-	case DW_AT_KIND_CONSTANT:
-		return rz_str_newf("0x%" PFMT64x, attr->uconstant);
-	case DW_AT_KIND_FLAG: return rz_str_newf("true");
-	case DW_AT_KIND_REFERENCE:
-	case DW_AT_KIND_LOCLISTPTR: return rz_str_newf("ref: 0x%" PFMT64x, attr->reference);
-	case DW_AT_KIND_STRING: return attr->string.offset > 0 ? rz_str_newf(".debug_str[0x%" PFMT64x "] = \"%s\"", attr->string.offset, attr->string.content) : rz_str_newf("\"%s\"", attr->string.content);
-	case DW_AT_KIND_RANGELISTPTR:
-	case DW_AT_KIND_MACPTR:
-	case DW_AT_KIND_LINEPTR:
-	case DW_AT_KIND_EXPRLOC:
-	default: return NULL;
-	}
 }

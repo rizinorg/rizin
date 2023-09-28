@@ -144,6 +144,31 @@ RZ_API void rz_bin_source_line_info_free(RzBinSourceLineInfo *sli) {
 }
 
 /**
+ * \brief Merge two RzBinSourceLineInfo, save to \p dst
+ * \param dst the RzBinSourceLineInfo destination
+ * \param src the RzBinSourceLineInfo source
+ * \return true if success else false
+ */
+RZ_API bool rz_bin_source_line_info_merge(RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *dst, RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *src) {
+	rz_return_val_if_fail(dst && src, false);
+	RzBinSourceLineSample *tmp = realloc(dst->samples, sizeof(RzBinSourceLineSample) * (dst->samples_count + src->samples_count));
+	if (!tmp) {
+		return false;
+	}
+	dst->samples = tmp;
+	for (int i = 0; i < src->samples_count; ++i) {
+		RzBinSourceLineSample *sample_src = src->samples + i;
+		RzBinSourceLineSample *sample_dst = dst->samples + dst->samples_count + i;
+		if (!rz_mem_copy(sample_dst, sizeof(RzBinSourceLineSample), sample_src, sizeof(RzBinSourceLineSample))) {
+			return false;
+		}
+		sample_dst->file = sample_src->file ? rz_str_constpool_get(&dst->filename_pool, sample_src->file) : NULL;
+	}
+	dst->samples_count += src->samples_count;
+	return true;
+}
+
+/**
  * \brief Find the first sample that affects the given address.
  * i.e. find the first sample with the highest address less or equal to addr.
  * There may be more which can be retrieved by repeatedly calling rz_bin_source_line_info_get_next() until it returns NULL.

@@ -49,8 +49,14 @@ RZ_API bool rz_bin_dwarf_block_empty(const RzBinDwarfBlock *self) {
 	return self->length == 0;
 }
 
-RZ_IPI RzBuffer *RzBinDwarfBlock_as_buf(const RzBinDwarfBlock *self) {
-	return rz_buf_new_with_bytes(rz_bin_dwarf_block_data(self), self->length);
+RZ_IPI RzBinEndianReader *RzBinDwarfBlock_as_reader(const RzBinDwarfBlock *self) {
+	RzBuffer *buf = rz_buf_new_with_bytes(rz_bin_dwarf_block_data(self), self->length);
+	RET_NULL_IF_FAIL(buf);
+	RzBinEndianReader *r = RZ_NEW0(RzBinEndianReader);
+	RET_NULL_IF_FAIL(r);
+	r->buffer = buf;
+	r->big_endian = self->big_endian;
+	return r;
 }
 
 RZ_IPI bool RzBinDwarfBlock_move(RzBinDwarfBlock *self, RzBinDwarfBlock *out) {
