@@ -51,11 +51,13 @@ coding style as the rest of the code base.
 
 * Use git-clang-format 16 to format your code. If clang-format-16 is not available on
   your Debian-based distribution, you can install it from https://apt.llvm.org/.
-  You should invoke it as below (after making sure that your local copy of `dev`
-  is up-to-date and your branch is up-to-date with `dev`):
+  There is a script available automating the process for you; you will need python and
+  the gitpython python library, which you may install e.g. from pip. Invoke it as
+  follows (after making sure that your local copy of `dev` is up-to-date and your
+  branch is up-to-date with `dev`):
 
 ```bash
-git-clang-format-16 --extensions c,cpp,h,hpp,inc --style file dev
+./sys/clang-format.py
 ```
 
 * Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes
