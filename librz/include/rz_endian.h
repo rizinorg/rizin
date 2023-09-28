@@ -34,6 +34,9 @@ static inline ut8 rz_read_ble8(const void *src) {
  * \return The read byte value.
  */
 static inline ut8 rz_read_at_ble8(const void *src, size_t offset) {
+	if (!src) {
+		return UT8_MAX;
+	}
 	return rz_read_ble8(((const ut8 *)src) + offset);
 }
 
@@ -104,6 +107,9 @@ static inline void rz_write_at_be8(void *dest, ut8 val, size_t offset) {
  * \return The read 16-bit value.
  */
 static inline ut16 rz_read_be16(const void *src) {
+	if (!src) {
+		return UT16_MAX;
+	}
 	const ut8 *s = (const ut8 *)src;
 	return (((ut16)s[0]) << 8) | (((ut16)s[1]) << 0);
 }
@@ -115,6 +121,9 @@ static inline ut16 rz_read_be16(const void *src) {
  * \return The read 16-bit value.
  */
 static inline ut16 rz_read_at_be16(const void *src, size_t offset) {
+	if (!src) {
+		return UT16_MAX;
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_be16(s);
 }
@@ -146,6 +155,9 @@ static inline void rz_write_at_be16(void *dest, ut16 val, size_t offset) {
  * \return The read 24-bit value.
  */
 static inline ut32 rz_read_be24(const void *src) {
+	if (!src) {
+		return UT24_MAX;
+	}
 	return rz_read_be8(src) << 16 | rz_read_be8((const ut8 *)src + 1) << 8 |
 		rz_read_be8((const ut8 *)src + 2);
 }
@@ -157,6 +169,9 @@ static inline ut32 rz_read_be24(const void *src) {
  * \return The read 24-bit value.
  */
 static inline ut32 rz_read_at_be24(const void *src, size_t offset) {
+	if (!src) {
+		return UT24_MAX;
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_be24(s);
 }
@@ -179,6 +194,9 @@ static inline void rz_write_be24(void *dest, ut32 val) {
  * \return The read 32-bit value.
  */
 static inline ut32 rz_read_be32(const void *src) {
+	if (!src) {
+		return UT32_MAX;
+	}
 	const ut8 *s = (const ut8 *)src;
 	return (((ut32)s[0]) << 24) | (((ut32)s[1]) << 16) |
 		(((ut32)s[2]) << 8) | (((ut32)s[3]) << 0);
@@ -191,6 +209,9 @@ static inline ut32 rz_read_be32(const void *src) {
  * \return The read 32-bit value.
  */
 static inline ut32 rz_read_at_be32(const void *src, size_t offset) {
+	if (!src) {
+		return UT32_MAX;
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_be32(s);
 }
@@ -222,6 +243,9 @@ static inline void rz_write_at_be32(void *dest, ut32 val, size_t offset) {
  * \return The read 64-bit value.
  */
 static inline ut64 rz_read_be64(const void *src) {
+	if (!src) {
+		return UT64_MAX;
+	}
 	ut64 val = ((ut64)(rz_read_be32(src))) << 32;
 	val |= rz_read_at_be32(src, sizeof(ut32));
 	return val;
@@ -234,6 +258,9 @@ static inline ut64 rz_read_be64(const void *src) {
  * \return The read 64-bit value.
  */
 static inline ut64 rz_read_at_be64(const void *src, size_t offset) {
+	if (!src) {
+		return UT64_MAX;
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_be64(s);
 }
@@ -265,6 +292,11 @@ static inline void rz_write_at_be64(void *dest, ut64 val, size_t offset) {
  * \return The read 128-bit value.
  */
 static inline ut128 rz_read_be128(const void *src) {
+	if (!src) {
+		val.High = UT64_MAX;
+		val.Low = UT64_MAX;
+		return val;
+	}
 	ut128 val;
 	val.High = rz_read_be64(src);
 	val.Low = rz_read_at_be64(src, sizeof(ut64));
@@ -278,6 +310,12 @@ static inline ut128 rz_read_be128(const void *src) {
  * \return The read 128-bit value.
  */
 static inline ut128 rz_read_at_be128(const void *src, size_t offset) {
+	if (!src) {
+		ut128 val;
+		val.High = UT64_MAX;
+		val.Low = UT64_MAX;
+		return val;
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_be128(s);
 }
@@ -328,6 +366,9 @@ static inline float rz_read_be_float(const void *src) {
  * \attention \c NaN payloads might not be preserved.
  */
 static inline float rz_read_at_be_float(const void *src, size_t offset) {
+	if (!src) {
+		return rz_read_be_float(NULL);
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_be_float(s);
 }
@@ -382,6 +423,9 @@ static inline double rz_read_be_double(const void *src) {
  * \attention \c NaN payloads might not be preserved.
  */
 static inline double rz_read_at_be_double(const void *src, size_t offset) {
+	if (!src) {
+		return rz_read_be_double(NULL);
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_be_double(s);
 }
@@ -420,9 +464,6 @@ static inline void rz_write_at_be_double(void *dest, double val, size_t offset) 
  * \attention If \p src is \c NULL then \c UT8_MAX is returned.
  */
 static inline ut8 rz_read_le8(const void *src) {
-	if (!src) {
-		return UT8_MAX;
-	}
 	return rz_read_ble8(src);
 }
 
@@ -572,6 +613,9 @@ static inline void rz_write_at_le32(void *dest, ut32 val, size_t offset) {
  * \return The read 64-bit value.
  */
 static inline ut64 rz_read_le64(const void *src) {
+	if (!src) {
+		return UT64_MAX;
+	}
 	ut64 val = ((ut64)(rz_read_at_le32(src, sizeof(ut32)))) << 32;
 	val |= rz_read_le32(src);
 	return val;
@@ -584,6 +628,9 @@ static inline ut64 rz_read_le64(const void *src) {
  * \return The read 64-bit value.
  */
 static inline ut64 rz_read_at_le64(const void *src, size_t offset) {
+	if (!src) {
+		return UT64_MAX;
+	}
 	const ut8 *s = ((const ut8 *)src) + offset;
 	return rz_read_le64(s);
 }
@@ -615,6 +662,11 @@ static inline void rz_write_at_le64(void *dest, ut64 val, size_t offset) {
  * \return The read 128-bit value.
  */
 static inline ut128 rz_read_le128(const void *src) {
+	if (!src) {
+		val.High = UT64_MAX;
+		val.Low = UT64_MAX;
+		return val;
+	}
 	ut128 val;
 	val.High = rz_read_at_le64(src, sizeof(ut64));
 	val.Low = rz_read_le64(src);
@@ -628,6 +680,12 @@ static inline ut128 rz_read_le128(const void *src) {
  * \return The read 128-bit value.
  */
 static inline ut128 rz_read_at_le128(const void *src, size_t offset) {
+	if (!src) {
+		ut128 val;
+		val.High = UT64_MAX;
+		val.Low = UT64_MAX;
+		return val;
+	}
 	const ut8 *s = ((const ut8 *)src) + offset;
 	return rz_read_le128(s);
 }
@@ -678,6 +736,9 @@ static inline float rz_read_le_float(const void *src) {
  * \attention \c NaN payloads might not be preserved.
  */
 static inline float rz_read_at_le_float(const void *src, size_t offset) {
+	if (!src) {
+		return rz_read_le_float(NULL);
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_le_float(s);
 }
@@ -732,6 +793,9 @@ static inline double rz_read_le_double(const void *src) {
  * \attention \c NaN payloads might not be preserved.
  */
 static inline double rz_read_at_le_double(const void *src, size_t offset) {
+	if (!src) {
+		return rz_read_le_double(NULL);
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_le_double(s);
 }
@@ -770,7 +834,7 @@ static inline void rz_write_at_le_double(void *dest, double val, size_t offset) 
  * \attention If \p src is \c NULL then \c UT8_MAX is returned.
  */
 static inline ut8 rz_read_me8(const void *src) {
-	return src ? rz_read_ble8(src) : UT8_MAX;
+	return rz_read_ble8(src);
 }
 
 /**
@@ -907,6 +971,9 @@ static inline void rz_write_at_me32(void *dest, ut32 val, size_t offset) {
  * \return The read 64-bit value.
  */
 static inline ut64 rz_read_me64(const void *src) {
+	if (!src) {
+		return UT64_MAX;
+	}
 	ut64 val = ((ut64)(rz_read_at_me32(src, sizeof(ut32)))) << 32;
 	val |= rz_read_me32(src);
 	return val;
@@ -919,6 +986,9 @@ static inline ut64 rz_read_me64(const void *src) {
  * \return The read 64-bit value.
  */
 static inline ut64 rz_read_at_me64(const void *src, size_t offset) {
+	if (!src) {
+		return UT64_MAX;
+	}
 	const ut8 *s = ((const ut8 *)src) + offset;
 	return rz_read_me64(s);
 }
@@ -969,6 +1039,9 @@ static inline float rz_read_me_float(const void *src) {
  * \attention \c NaN payloads might not be preserved.
  */
 static inline float rz_read_at_me_float(const void *src, size_t offset) {
+	if (!src) {
+		return rz_read_me_float(NULL);
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_me_float(s);
 }
@@ -1023,6 +1096,9 @@ static inline double rz_read_me_double(const void *src) {
  * \attention \c NaN payloads might not be preserved.
  */
 static inline double rz_read_at_me_double(const void *src, size_t offset) {
+	if (!src) {
+		return rz_read_me_double(NULL);
+	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_me_double(s);
 }
@@ -1233,7 +1309,7 @@ static inline double rz_read_at_ble_double(const void *src, size_t offset, bool 
 static inline ut64 rz_read_ble(const void *src, bool big_endian, int size) {
 	switch (size) {
 	case 8:
-		return (ut64)((const ut8 *)src)[0];
+		return rz_read_ble8(src);
 	case 16:
 		return rz_read_ble16(src, big_endian);
 	case 32:
