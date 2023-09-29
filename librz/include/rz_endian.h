@@ -195,6 +195,17 @@ static inline void rz_write_be24(void *dest, ut32 val) {
 }
 
 /**
+ * \brief Write a 24-bit value to \p dest in big-endian order.
+ * \param[out] dest The pointer to which the value is written.
+ * \param val The written 24-bit value.
+ * \param offset The offset at which the value is written.
+ */
+static inline void rz_write_at_be24(void *dest, ut32 val, size_t offset) {
+	ut8 *_dest = (ut8 *)dest + offset;
+	rz_write_be24(_dest, val);
+}
+
+/**
  * \brief Read a 32-bit value from \p src in big-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 32-bit value.
@@ -566,6 +577,35 @@ static inline void rz_write_at_le16(void *dest, ut16 val, size_t offset) {
 }
 
 /**
+ * \brief Read a 24-bit value from \p src in little-endian order.
+ * \param src The pointer from which the value is read.
+ * \return The read 24-bit value.
+ * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ */
+static inline ut32 rz_read_le24(const void *src) {
+	if (!src) {
+		return UT24_MAX;
+	}
+	return rz_read_at_le8(src, 0) | rz_read_at_le8(src, 1) << 8 |
+		rz_read_at_le8(src, 2) << 16;
+}
+
+/**
+ * \brief Read a 24-bit value from \p src at \p offset in little-endian order.
+ * \param src The pointer from which the value is read.
+ * \param offset The offset at which the value is read.
+ * \return The read 24-bit value.
+ * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ */
+static inline ut32 rz_read_at_le24(const void *src, size_t offset) {
+	if (!src) {
+		return UT24_MAX;
+	}
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_le24(s);
+}
+
+/**
  * \brief Write a 24-bit value to \p dest in little-endian order.
  * \param[out] dest The pointer to which the value is written.
  * \param val The written 24-bit value.
@@ -575,6 +615,17 @@ static inline void rz_write_le24(void *dest, ut32 val) {
 	rz_write_le8(_dest++, val);
 	rz_write_le8(_dest++, val >> 8);
 	rz_write_le8(_dest, val >> 16);
+}
+
+/**
+ * \brief Write a 24-bit value to \p dest in little-endian order.
+ * \param[out] dest The pointer to which the value is written.
+ * \param val The written 24-bit value.
+ * \param offset The offset at which the value is written.
+ */
+static inline void rz_write_at_le24(void *dest, ut32 val, size_t offset) {
+	ut8 *_dest = (ut8 *)dest + offset;
+	rz_write_le24(_dest);
 }
 
 /**
@@ -1187,6 +1238,22 @@ static inline ut16 rz_read_ble16(const void *src, bool big_endian) {
 }
 
 /**
+ * \brief Read a 24-bit value from \p src in specified order.
+ * \param src The pointer from which the value is read.
+ * \param big_endian The choice of endianness.
+ * \return The read 24-bit value.
+ * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ *
+ * The value is read according to \p big_endian. If \p big_endian is
+ * \c true, then an integer in big-endian order is read. Otherwise, if
+ * \p big_endian is \c false, an integer in little-endian order is
+ * read.
+ */
+static inline ut32 rz_read_ble24(const void *src, bool big_endian) {
+	return big_endian ? rz_read_be24(src) : rz_read_le24(src);
+}
+
+/**
  * \brief Read a 32-bit value from \p src in specified order.
  * \param src The pointer from which the value is read.
  * \param big_endian The choice of endianness.
@@ -1272,9 +1339,10 @@ static inline double rz_read_ble_double(const void *src, bool big_endian) {
 }
 
 /**
- * \brief Read a 16-bit value from \p src at \p offset in big-endian order.
+ * \brief Read a 16-bit value from \p src at \p offset in specified order.
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
+ * \param big_endian The choice of endianness.
  * \return The read 16-bit value.
  * \attention If \p src is \c NULL then \c UT16_MAX is returned.
  */
@@ -1283,9 +1351,22 @@ static inline ut16 rz_read_at_ble16(const void *src, size_t offset, bool big_end
 }
 
 /**
- * \brief Read a 32-bit value from \p src at \p offset in big-endian order.
+ * \brief Read a 24-bit value from \p src at \p offset in specified order.
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
+ * \param big_endian The choice of endianness.
+ * \return The read 24-bit value.
+ * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ */
+static inline ut32 rz_read_at_ble24(const void *src, size_t offset, bool big_endian) {
+	return big_endian ? rz_read_at_be24(src, offset) : rz_read_at_le24(src, offset);
+}
+
+/**
+ * \brief Read a 32-bit value from \p src at \p offset in specified order.
+ * \param src The pointer from which the value is read.
+ * \param offset The offset at which the value is read.
+ * \param big_endian The choice of endianness.
  * \return The read 32-bit value.
  * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
@@ -1294,14 +1375,27 @@ static inline ut32 rz_read_at_ble32(const void *src, size_t offset, bool big_end
 }
 
 /**
- * \brief Read a 64-bit value from \p src at \p offset in big-endian order.
+ * \brief Read a 64-bit value from \p src at \p offset in specified order.
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
+ * \param big_endian The choice of endianness.
  * \return The read 64-bit value.
  * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut64 rz_read_at_ble64(const void *src, size_t offset, bool big_endian) {
 	return big_endian ? rz_read_at_be64(src, offset) : rz_read_at_le64(src, offset);
+}
+
+/**
+ * \brief Read a 128-bit value from \p src at \p offset in specified order.
+ * \param src The pointer from which the value is read.
+ * \param offset The offset at which the value is read.
+ * \param big_endian The choice of endianness.
+ * \return The read 128-bit value.
+ * \attention If \p src is \c NULL then \c UT128_MAX is returned.
+ */
+static inline ut64 rz_read_at_ble128(const void *src, size_t offset, bool big_endian) {
+	return big_endian ? rz_read_at_be128(src, offset) : rz_read_at_le128(src, offset);
 }
 
 /**
@@ -1514,6 +1608,138 @@ static inline void rz_write_ble_float(void *src, float val, bool big_endian) {
  * value in little-endian order is written.
  */
 static inline void rz_write_ble_double(void *src, double val, bool big_endian) {
+	big_endian ? rz_write_be_double(src, val) : rz_write_le_double(src, val);
+}
+
+/**
+ * \brief Write a 16-bit value to \p dest in specified order.
+ * \param[out] dest The pointer to which the value is written.
+ * \param val The written 16-bit value.
+ * \param big_endian The choice of endianness.
+ * \param offset The offset at which the value is written.
+ *
+ * The value is written according to \p big_endian. If \p big_endian
+ * is \c true, then an integer in big-endian order is
+ * written. Otherwise, if \p big_endian is \c false, an integer in
+ * little-endian order is written.
+ */
+static inline void rz_write_at_ble16(void *dest, ut16 val, bool big_endian, size_t offset) {
+	if (big_endian) {
+		rz_write_at_be16(dest, val, offset)
+	} else {
+		rz_write_at_le16(dest, val, offset);
+	}
+}
+
+/**
+ * \brief Write a 24-bit value to \p dest in specified order.
+ * \param[out] dest The pointer to which the value is written.
+ * \param val The written 24-bit value.
+ * \param big_endian The choice of endianness.
+ * \param offset The offset at which the value is written.
+ *
+ * The value is written according to \p big_endian. If \p big_endian
+ * is \c true, then an integer in big-endian order is
+ * written. Otherwise, if \p big_endian is \c false, an integer in
+ * little-endian order is written.
+ */
+static inline void rz_write_at_ble24(void *dest, ut32 val, bool big_endian, size_t offset) {
+	if (big_endian) {
+		rz_write_at_be24(dest, val, offset)
+	} else {
+		rz_write_at_le24(dest, val, offset);
+	}
+}
+
+/**
+ * \brief Write a 32-bit value to \p dest in specified order.
+ * \param[out] dest The pointer to which the value is written.
+ * \param val The written 32-bit value.
+ * \param big_endian The choice of endianness.
+ * \param offset The offset at which the value is written.
+ *
+ * The value is written according to \p big_endian. If \p big_endian
+ * is \c true, then an integer in big-endian order is
+ * written. Otherwise, if \p big_endian is \c false, an integer in
+ * little-endian order is written.
+ */
+static inline void rz_write_at_ble32(void *dest, ut32 val, bool big_endian, size_t offset) {
+	if (big_endian) {
+		rz_write_at_be32(dest, val, offset)
+	} else {
+		rz_write_at_le32(dest, val, offset);
+	}
+}
+
+/**
+ * \brief Write a 64-bit value to \p dest in specified order.
+ * \param[out] dest The pointer to which the value is written.
+ * \param val The written 64-bit value.
+ * \param big_endian The choice of endianness.
+ * \param offset The offset at which the value is written.
+ *
+ * The value is written according to \p big_endian. If \p big_endian
+ * is \c true, then an integer in big-endian order is
+ * written. Otherwise, if \p big_endian is \c false, an integer in
+ * little-endian order is written.
+ */
+static inline void rz_write_at_ble64(void *dest, ut64 val, bool big_endian, size_t offset) {
+	if (big_endian) {
+		rz_write_at_be64(dest, val, offset)
+	} else {
+		rz_write_at_le64(dest, val, offset);
+	}
+}
+
+/**
+ * \brief Write a 128-bit value to \p dest in specified order.
+ * \param[out] dest The pointer to which the value is written.
+ * \param val The written 128-bit value.
+ * \param big_endian The choice of endianness.
+ * \param offset The offset at which the value is written.
+ *
+ * The value is written according to \p big_endian. If \p big_endian
+ * is \c true, then an integer in big-endian order is
+ * written. Otherwise, if \p big_endian is \c false, an integer in
+ * little-endian order is written.
+ */
+static inline void rz_write_at_ble128(void *dest, ut128 val, bool big_endian, size_t offset) {
+	if (big_endian) {
+		rz_write_at_be128(dest, val, offset)
+	} else {
+		rz_write_at_le128(dest, val, offset);
+	}
+}
+
+/**
+ * \brief Write a 32-bit floating-point to \p dest in specified order.
+ * \param[out] dest The pointer to which the floating-point value is written.
+ * \param val The floating-point value to be written.
+ * \param big_endian The choice of endianness.
+ * \param offset The offset at which the value is written.
+ *
+ * The value is written according to \p big_endian. If \p big_endian
+ * is \c true, then a floating-point value in big-endian order is
+ * written. Otherwise, if \p big_endian is \c false, a floating-point
+ * value in little-endian order is written.
+ */
+static inline void rz_write_at_ble_float(void *src, float val, bool big_endian) {
+	big_endian ? rz_write_be_float(src, val) : rz_write_le_float(src, val);
+}
+
+/**
+ * \brief Write a 64-bit floating-point to \p dest in specified order.
+ * \param[out] dest The pointer to which the floating-point value is written.
+ * \param val The floating-point value to be written.
+ * \param big_endian The choice of endianness.
+ * \param offset The offset at which the value is written.
+ *
+ * The value is written according to \p big_endian. If \p big_endian
+ * is \c true, then a floating-point value in big-endian order is
+ * written. Otherwise, if \p big_endian is \c false, a floating-point
+ * value in little-endian order is written.
+ */
+static inline void rz_write_at_ble_double(void *src, double val, bool big_endian) {
 	big_endian ? rz_write_be_double(src, val) : rz_write_le_double(src, val);
 }
 
