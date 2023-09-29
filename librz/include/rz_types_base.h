@@ -78,12 +78,14 @@ typedef struct _utX {
 #define UT64_16U  0xFFFFFFFFFFFF0000ULL
 #define UT64_8U   0xFFFFFFFFFFFFFF00ULL
 #define UT32_MIN  0U
+#define UT24_MIN  0U
 #define UT16_MIN  0U
 #define UT32_GT0  0x80000000U
 #define UT32_LT0  0x7FFFFFFFU
 #define ST32_MAX  0x7FFFFFFF
 #define ST32_MIN  (-ST32_MAX - 1)
 #define UT32_MAX  0xFFFFFFFFU
+#define UT24_MAX  0xFFFFFFU
 #define ST16_MAX  0x7FFF
 #define ST16_MIN  (-ST16_MAX - 1)
 #define UT16_GT0  0x8000U
