@@ -315,12 +315,12 @@ static inline void rz_write_at_be64(void *dest, ut64 val, size_t offset) {
  * returned.
  */
 static inline ut128 rz_read_be128(const void *src) {
+	ut128 val;
 	if (!src) {
 		val.High = UT64_MAX;
 		val.Low = UT64_MAX;
 		return val;
 	}
-	ut128 val;
 	val.High = rz_read_be64(src);
 	val.Low = rz_read_at_be64(src, sizeof(ut64));
 	return val;
@@ -625,7 +625,7 @@ static inline void rz_write_le24(void *dest, ut32 val) {
  */
 static inline void rz_write_at_le24(void *dest, ut32 val, size_t offset) {
 	ut8 *_dest = (ut8 *)dest + offset;
-	rz_write_le24(_dest);
+	rz_write_le24(_dest, val);
 }
 
 /**
@@ -738,12 +738,12 @@ static inline void rz_write_at_le64(void *dest, ut64 val, size_t offset) {
  * returned.
  */
 static inline ut128 rz_read_le128(const void *src) {
+	ut128 val;
 	if (!src) {
 		val.High = UT64_MAX;
 		val.Low = UT64_MAX;
 		return val;
 	}
-	ut128 val;
 	val.High = rz_read_at_le64(src, sizeof(ut64));
 	val.Low = rz_read_le64(src);
 	return val;
@@ -1394,7 +1394,7 @@ static inline ut64 rz_read_at_ble64(const void *src, size_t offset, bool big_end
  * \return The read 128-bit value.
  * \attention If \p src is \c NULL then \c UT128_MAX is returned.
  */
-static inline ut64 rz_read_at_ble128(const void *src, size_t offset, bool big_endian) {
+static inline ut128 rz_read_at_ble128(const void *src, size_t offset, bool big_endian) {
 	return big_endian ? rz_read_at_be128(src, offset) : rz_read_at_le128(src, offset);
 }
 
@@ -1625,7 +1625,7 @@ static inline void rz_write_ble_double(void *src, double val, bool big_endian) {
  */
 static inline void rz_write_at_ble16(void *dest, ut16 val, bool big_endian, size_t offset) {
 	if (big_endian) {
-		rz_write_at_be16(dest, val, offset)
+		rz_write_at_be16(dest, val, offset);
 	} else {
 		rz_write_at_le16(dest, val, offset);
 	}
@@ -1645,7 +1645,7 @@ static inline void rz_write_at_ble16(void *dest, ut16 val, bool big_endian, size
  */
 static inline void rz_write_at_ble24(void *dest, ut32 val, bool big_endian, size_t offset) {
 	if (big_endian) {
-		rz_write_at_be24(dest, val, offset)
+		rz_write_at_be24(dest, val, offset);
 	} else {
 		rz_write_at_le24(dest, val, offset);
 	}
@@ -1665,7 +1665,7 @@ static inline void rz_write_at_ble24(void *dest, ut32 val, bool big_endian, size
  */
 static inline void rz_write_at_ble32(void *dest, ut32 val, bool big_endian, size_t offset) {
 	if (big_endian) {
-		rz_write_at_be32(dest, val, offset)
+		rz_write_at_be32(dest, val, offset);
 	} else {
 		rz_write_at_le32(dest, val, offset);
 	}
@@ -1685,7 +1685,7 @@ static inline void rz_write_at_ble32(void *dest, ut32 val, bool big_endian, size
  */
 static inline void rz_write_at_ble64(void *dest, ut64 val, bool big_endian, size_t offset) {
 	if (big_endian) {
-		rz_write_at_be64(dest, val, offset)
+		rz_write_at_be64(dest, val, offset);
 	} else {
 		rz_write_at_le64(dest, val, offset);
 	}
@@ -1705,7 +1705,7 @@ static inline void rz_write_at_ble64(void *dest, ut64 val, bool big_endian, size
  */
 static inline void rz_write_at_ble128(void *dest, ut128 val, bool big_endian, size_t offset) {
 	if (big_endian) {
-		rz_write_at_be128(dest, val, offset)
+		rz_write_at_be128(dest, val, offset);
 	} else {
 		rz_write_at_le128(dest, val, offset);
 	}
