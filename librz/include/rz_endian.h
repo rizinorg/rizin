@@ -32,6 +32,7 @@ static inline ut8 rz_read_ble8(const void *src) {
  * \param src The pointer from which a byte is read.
  * \param offset The offset at which the byte is read.
  * \return The read byte value.
+ * \attention If \p src is \c NULL then \c UT8_MAX is returned.
  */
 static inline ut8 rz_read_at_ble8(const void *src, size_t offset) {
 	if (!src) {
@@ -77,6 +78,7 @@ static inline ut8 rz_read_be8(const void *src) {
  * \param src The pointer from which a byte is read.
  * \param offset The offset at which the byte is read.
  * \return The read byte value.
+ * \attention If \p src is \c NULL then \c UT8_MAX is returned.
  */
 static inline ut8 rz_read_at_be8(const void *src, size_t offset) {
 	return rz_read_at_ble8(src, offset);
@@ -105,6 +107,7 @@ static inline void rz_write_at_be8(void *dest, ut8 val, size_t offset) {
  * \brief Read a 16-bit value from \p src in big-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 16-bit value.
+ * \attention If \p src is \c NULL then \c UT16_MAX is returned.
  */
 static inline ut16 rz_read_be16(const void *src) {
 	if (!src) {
@@ -119,6 +122,7 @@ static inline ut16 rz_read_be16(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 16-bit value.
+ * \attention If \p src is \c NULL then \c UT16_MAX is returned.
  */
 static inline ut16 rz_read_at_be16(const void *src, size_t offset) {
 	if (!src) {
@@ -153,6 +157,7 @@ static inline void rz_write_at_be16(void *dest, ut16 val, size_t offset) {
  * \brief Read a 24-bit value from \p src in big-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 24-bit value.
+ * \attention If \p src is \c NULL then \c UT24_MAX is returned.
  */
 static inline ut32 rz_read_be24(const void *src) {
 	if (!src) {
@@ -167,6 +172,7 @@ static inline ut32 rz_read_be24(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 24-bit value.
+ * \attention If \p src is \c NULL then \c UT24_MAX is returned.
  */
 static inline ut32 rz_read_at_be24(const void *src, size_t offset) {
 	if (!src) {
@@ -192,6 +198,7 @@ static inline void rz_write_be24(void *dest, ut32 val) {
  * \brief Read a 32-bit value from \p src in big-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 32-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_be32(const void *src) {
 	if (!src) {
@@ -207,6 +214,7 @@ static inline ut32 rz_read_be32(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 32-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_at_be32(const void *src, size_t offset) {
 	if (!src) {
@@ -241,6 +249,7 @@ static inline void rz_write_at_be32(void *dest, ut32 val, size_t offset) {
  * \brief Read a 64-bit value from \p src in big-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 64-bit value.
+ * \attention If \p src is \c NULL then \c UT64_MAX is returned.
  */
 static inline ut64 rz_read_be64(const void *src) {
 	if (!src) {
@@ -256,6 +265,7 @@ static inline ut64 rz_read_be64(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 64-bit value.
+ * \attention If \p src is \c NULL then \c UT64_MAX is returned.
  */
 static inline ut64 rz_read_at_be64(const void *src, size_t offset) {
 	if (!src) {
@@ -290,6 +300,8 @@ static inline void rz_write_at_be64(void *dest, ut64 val, size_t offset) {
  * \brief Read a 128-bit value from \p src in big-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 128-bit value.
+ * \attention If \p src is \c NULL then the maximum 128-bit value is
+ * returned.
  */
 static inline ut128 rz_read_be128(const void *src) {
 	if (!src) {
@@ -308,6 +320,8 @@ static inline ut128 rz_read_be128(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 128-bit value.
+ * \attention If \p src is \c NULL then the maximum 128-bit value is
+ * returned.
  */
 static inline ut128 rz_read_at_be128(const void *src, size_t offset) {
 	if (!src) {
@@ -347,6 +361,7 @@ static inline void rz_write_at_be128(void *dest, ut128 val, size_t offset) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 32-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline float rz_read_be_float(const void *src) {
 	union {
@@ -364,6 +379,7 @@ static inline float rz_read_be_float(const void *src) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 32-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline float rz_read_at_be_float(const void *src, size_t offset) {
 	if (!src) {
@@ -404,6 +420,7 @@ static inline void rz_write_at_be_float(void *dest, float val, size_t offset) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 64-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline double rz_read_be_double(const void *src) {
 	union {
@@ -421,6 +438,7 @@ static inline double rz_read_be_double(const void *src) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 64-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline double rz_read_at_be_double(const void *src, size_t offset) {
 	if (!src) {
@@ -472,6 +490,7 @@ static inline ut8 rz_read_le8(const void *src) {
  * \param src The pointer from which a byte is read.
  * \param offset The offset at which the byte is read.
  * \return The read byte value.
+ * \attention If \p src is \c NULL then \c UT8_MAX is returned.
  */
 static inline ut8 rz_read_at_le8(const void *src, size_t offset) {
 	return rz_read_at_ble8(src, offset);
@@ -562,6 +581,7 @@ static inline void rz_write_le24(void *dest, ut32 val) {
  * \brief Read a 32-bit value from \p src in little-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 32-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_le32(const void *src) {
 	if (!src) {
@@ -577,6 +597,7 @@ static inline ut32 rz_read_le32(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 32-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_at_le32(const void *src, size_t offset) {
 	if (!src) {
@@ -611,6 +632,7 @@ static inline void rz_write_at_le32(void *dest, ut32 val, size_t offset) {
  * \brief Read a 64-bit value from \p src in little-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 64-bit value.
+ * \attention If \p src is \c NULL then \c UT64_MAX is returned.
  */
 static inline ut64 rz_read_le64(const void *src) {
 	if (!src) {
@@ -626,6 +648,7 @@ static inline ut64 rz_read_le64(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 64-bit value.
+ * \attention If \p src is \c NULL then \c UT64_MAX is returned.
  */
 static inline ut64 rz_read_at_le64(const void *src, size_t offset) {
 	if (!src) {
@@ -660,6 +683,8 @@ static inline void rz_write_at_le64(void *dest, ut64 val, size_t offset) {
  * \brief Read a 128-bit value from \p src in little-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 128-bit value.
+ * \attention If \p src is \c NULL then the maximum 128-bit value is
+ * returned.
  */
 static inline ut128 rz_read_le128(const void *src) {
 	if (!src) {
@@ -678,6 +703,8 @@ static inline ut128 rz_read_le128(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 128-bit value.
+ * \attention If \p src is \c NULL then the maximum 128-bit value is
+ * returned.
  */
 static inline ut128 rz_read_at_le128(const void *src, size_t offset) {
 	if (!src) {
@@ -717,6 +744,7 @@ static inline void rz_write_at_le128(void *dest, ut128 val, size_t offset) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 32-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline float rz_read_le_float(const void *src) {
 	union {
@@ -734,6 +762,7 @@ static inline float rz_read_le_float(const void *src) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 32-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline float rz_read_at_le_float(const void *src, size_t offset) {
 	if (!src) {
@@ -774,6 +803,7 @@ static inline void rz_write_at_le_float(void *dest, float val, size_t offset) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 64-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline double rz_read_le_double(const void *src) {
 	union {
@@ -791,6 +821,7 @@ static inline double rz_read_le_double(const void *src) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 64-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline double rz_read_at_le_double(const void *src, size_t offset) {
 	if (!src) {
@@ -842,6 +873,7 @@ static inline ut8 rz_read_me8(const void *src) {
  * \param src The pointer from which a byte is read.
  * \param offset The offset at which the byte is read.
  * \return The read byte value.
+ * \attention If \p src is \c NULL then \c UT8_MAX is returned.
  */
 static inline ut8 rz_read_at_me8(const void *src, size_t offset) {
 	return rz_read_at_ble8(src, offset);
@@ -920,6 +952,7 @@ static inline void rz_write_at_me16(void *dest, ut16 val, size_t offset) {
  * \brief Read a 32-bit value from \p src in middle-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 32-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_me32(const void *src) {
 	if (!src) {
@@ -935,6 +968,7 @@ static inline ut32 rz_read_me32(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 32-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_at_me32(const void *src, size_t offset) {
 	if (!src) {
@@ -969,6 +1003,7 @@ static inline void rz_write_at_me32(void *dest, ut32 val, size_t offset) {
  * \brief Read a 64-bit value from \p src in middle-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 64-bit value.
+ * \attention If \p src is \c NULL then \c UT64_MAX is returned.
  */
 static inline ut64 rz_read_me64(const void *src) {
 	if (!src) {
@@ -984,6 +1019,7 @@ static inline ut64 rz_read_me64(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 64-bit value.
+ * \attention If \p src is \c NULL then \c UT64_MAX is returned.
  */
 static inline ut64 rz_read_at_me64(const void *src, size_t offset) {
 	if (!src) {
@@ -1020,6 +1056,7 @@ static inline void rz_write_at_me64(void *dest, ut64 val, size_t offset) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 32-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline float rz_read_me_float(const void *src) {
 	union {
@@ -1037,6 +1074,7 @@ static inline float rz_read_me_float(const void *src) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 32-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline float rz_read_at_me_float(const void *src, size_t offset) {
 	if (!src) {
@@ -1077,6 +1115,7 @@ static inline void rz_write_at_me_float(void *dest, float val, size_t offset) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 64-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline double rz_read_me_double(const void *src) {
 	union {
@@ -1094,6 +1133,7 @@ static inline double rz_read_me_double(const void *src) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 64-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  */
 static inline double rz_read_at_me_double(const void *src, size_t offset) {
 	if (!src) {
@@ -1135,6 +1175,7 @@ static inline void rz_write_at_me_double(void *dest, double val, size_t offset) 
  * \param src The pointer from which the value is read.
  * \param big_endian The choice of endianness.
  * \return The read 16-bit value.
+ * \attention If \p src is \c NULL then \c UT16_MAX is returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then an integer in big-endian order is read. Otherwise, if
@@ -1150,6 +1191,7 @@ static inline ut16 rz_read_ble16(const void *src, bool big_endian) {
  * \param src The pointer from which the value is read.
  * \param big_endian The choice of endianness.
  * \return The read 32-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then an integer in big-endian order is read. Otherwise, if
@@ -1165,6 +1207,7 @@ static inline ut32 rz_read_ble32(const void *src, bool big_endian) {
  * \param src The pointer from which the value is read.
  * \param big_endian The choice of endianness.
  * \return The read 64-bit value.
+ * \attention If \p src is \c NULL then \c UT64_MAX is returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then an integer in big-endian order is read. Otherwise, if
@@ -1180,6 +1223,8 @@ static inline ut64 rz_read_ble64(const void *src, bool big_endian) {
  * \param src The pointer from which the value is read.
  * \param big_endian The choice of endianness.
  * \return The read 128-bit value.
+ * \attention If \p src is \c NULL then the maximum 128-bit value is
+ * returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then an integer in big-endian order is read. Otherwise, if
@@ -1197,6 +1242,7 @@ static inline ut128 rz_read_ble128(const void *src, bool big_endian) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 32-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then a floating-point value in big-endian order is
@@ -1214,6 +1260,7 @@ static inline float rz_read_ble_float(const void *src, bool big_endian) {
  * \return The floating-point value with representation equal to that
  *  of the unsigned 64-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then a floating-point value in big-endian order is
@@ -1229,6 +1276,7 @@ static inline double rz_read_ble_double(const void *src, bool big_endian) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 16-bit value.
+ * \attention If \p src is \c NULL then \c UT16_MAX is returned.
  */
 static inline ut16 rz_read_at_ble16(const void *src, size_t offset, bool big_endian) {
 	return big_endian ? rz_read_at_be16(src, offset) : rz_read_at_le16(src, offset);
@@ -1239,16 +1287,18 @@ static inline ut16 rz_read_at_ble16(const void *src, size_t offset, bool big_end
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 32-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_at_ble32(const void *src, size_t offset, bool big_endian) {
 	return big_endian ? rz_read_at_be32(src, offset) : rz_read_at_le32(src, offset);
 }
 
 /**
- * \brief Read a 128-bit value from \p src at \p offset in big-endian order.
+ * \brief Read a 64-bit value from \p src at \p offset in big-endian order.
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
- * \return The read 128-bit value.
+ * \return The read 64-bit value.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut64 rz_read_at_ble64(const void *src, size_t offset, bool big_endian) {
 	return big_endian ? rz_read_at_be64(src, offset) : rz_read_at_le64(src, offset);
@@ -1280,6 +1330,7 @@ static inline float rz_read_at_ble_float(const void *src, size_t offset, bool bi
  * \return The floating-point value with representation equal to that
  *  of the unsigned 64-bit value read from \p src.
  * \attention \c NaN payloads might not be preserved.
+ * \attention If \p src is \c NULL then \c NaN is returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then a floating-point value in big-endian order is
@@ -1297,6 +1348,9 @@ static inline double rz_read_at_ble_double(const void *src, size_t offset, bool 
  * \param size The size of the representation in bits.
  * \return The read integer value.
  * \retval UT64_MAX If the \p size parameter is not 8, 16, 32, or 64.
+ * \attention If \p src is \c NULL and \p size is a valid size, the
+ * appropriate maximum unsigned integer value for that size is
+ * returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then an integer in big-endian order is read. Otherwise, if
