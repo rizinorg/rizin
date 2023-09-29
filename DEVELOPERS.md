@@ -58,6 +58,15 @@ coding style as the rest of the code base.
 git-clang-format-16 --extensions c,cpp,h,hpp,inc --style file dev
 ```
 
+  There is a script available to run on all source files; you will need python and
+  the gitpython python library, which you may install e.g. from pip. Invoke it as
+  follows (after making sure that your local copy of `dev` is up-to-date and your
+  branch is up-to-date with `dev`):
+
+```bash
+./sys/clang-format.py
+```
+
 * Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes
   things more readable, you can use more than 100 characters, but this should be
   the exception, not the rule.
