@@ -157,11 +157,11 @@ static inline void rz_write_at_be16(void *dest, ut16 val, size_t offset) {
  * \brief Read a 24-bit value from \p src in big-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 24-bit value.
- * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_be24(const void *src) {
 	if (!src) {
-		return UT24_MAX;
+		return UT32_MAX;
 	}
 	return rz_read_be8(src) << 16 | rz_read_be8((const ut8 *)src + 1) << 8 |
 		rz_read_be8((const ut8 *)src + 2);
@@ -172,11 +172,11 @@ static inline ut32 rz_read_be24(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 24-bit value.
- * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_at_be24(const void *src, size_t offset) {
 	if (!src) {
-		return UT24_MAX;
+		return UT32_MAX;
 	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_be24(s);
@@ -580,11 +580,11 @@ static inline void rz_write_at_le16(void *dest, ut16 val, size_t offset) {
  * \brief Read a 24-bit value from \p src in little-endian order.
  * \param src The pointer from which the value is read.
  * \return The read 24-bit value.
- * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_le24(const void *src) {
 	if (!src) {
-		return UT24_MAX;
+		return UT32_MAX;
 	}
 	return rz_read_at_le8(src, 0) | rz_read_at_le8(src, 1) << 8 |
 		rz_read_at_le8(src, 2) << 16;
@@ -595,11 +595,11 @@ static inline ut32 rz_read_le24(const void *src) {
  * \param src The pointer from which the value is read.
  * \param offset The offset at which the value is read.
  * \return The read 24-bit value.
- * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_at_le24(const void *src, size_t offset) {
 	if (!src) {
-		return UT24_MAX;
+		return UT32_MAX;
 	}
 	const ut8 *s = (const ut8 *)src + offset;
 	return rz_read_le24(s);
@@ -1242,7 +1242,7 @@ static inline ut16 rz_read_ble16(const void *src, bool big_endian) {
  * \param src The pointer from which the value is read.
  * \param big_endian The choice of endianness.
  * \return The read 24-bit value.
- * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  *
  * The value is read according to \p big_endian. If \p big_endian is
  * \c true, then an integer in big-endian order is read. Otherwise, if
@@ -1356,7 +1356,7 @@ static inline ut16 rz_read_at_ble16(const void *src, size_t offset, bool big_end
  * \param offset The offset at which the value is read.
  * \param big_endian The choice of endianness.
  * \return The read 24-bit value.
- * \attention If \p src is \c NULL then \c UT24_MAX is returned.
+ * \attention If \p src is \c NULL then \c UT32_MAX is returned.
  */
 static inline ut32 rz_read_at_ble24(const void *src, size_t offset, bool big_endian) {
 	return big_endian ? rz_read_at_be24(src, offset) : rz_read_at_le24(src, offset);
