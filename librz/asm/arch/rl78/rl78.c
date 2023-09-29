@@ -13,6 +13,14 @@ static inline bool optype_es_applies(RL78OperandType type);
 static inline bool final_value_known(RL78OperandType type);
 static inline RL78Label addr_to_symbol(int addr);
 
+/**
+ * \brief Disassemble a byte sequence into an rl78_instr
+ * \param instr Resulting instruction
+ * \param byte_read Number of bytes disassembled
+ * \param buf Byte buffer
+ * \param buf_len Length of the buffer
+ * \return false if byte sequence does not represent a valid instruction
+ */
 bool rl78_dis(RL78Instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
 	const ut8 *buf, size_t buf_len) {
 	if (buf_len == 0) {
