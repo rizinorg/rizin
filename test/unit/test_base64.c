@@ -26,6 +26,13 @@ bool test_rz_base64_decode_invalid(void) {
 	// Returns the length of the decoded string, 0 == invalid input.
 	mu_assert_eq(status, -1, "invalid base64 decoding");
 	free(hello);
+
+	unsigned char *foo1, *foo2;
+	foo1 = rz_base64_decode_dyn("Zm,Zb0,Zb1=", -1);
+	foo2 = rz_base64_decode_dyn("Zm9v", -1);
+	mu_assert_true(memcmp(foo1, foo2, 4) != 0, "incorrect treatment of invalid characters");
+	free(foo1);
+	free(foo2);
 	mu_end;
 }
 
@@ -53,12 +60,23 @@ int test_rz_base64_encode(void) {
 	mu_end;
 }
 
+int test_rz_base64_decode_offby1(void) {
+	unsigned char message[4] = "A\0B";
+	char base64[32] = { 0 };
+	mu_assert_eq(message[2], 'B', "off-by-1 test");
+	rz_base64_encode(base64, message, 1);
+	rz_base64_decode(message, base64, strlen(base64));
+	mu_assert_eq(message[2], 'B', "rz_base64_decode");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_base64_decode_dyn);
 	mu_run_test(test_rz_base64_decode);
 	mu_run_test(test_rz_base64_decode_invalid);
 	mu_run_test(test_rz_base64_encode_dyn);
 	mu_run_test(test_rz_base64_encode);
+	mu_run_test(test_rz_base64_decode_offby1);
 	return tests_passed != tests_run;
 }
 
