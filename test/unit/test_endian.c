@@ -97,228 +97,70 @@ static const struct {
 	} result;
 } rz_read_table[] = {
 	/* rz_read_be128, rz_read_at_be128 */
-	{
-		BE_TEST(0, 0, 128) = {
-			.High = 0xA1A2A3A4A5A6A7A8,
-			.Low = 0xB1B2B3B4B5B6B7B8,
-		},
-	},
-	{
-		BE_TEST(0, 16, 128) = {
-			.High = 0xC1C2C3C4C5C6C7C8,
-			.Low = 0xD1D2D3D4D5D6D7D8,
-		},
-	},
-	{
-		BE_TEST(8, 0, 128) = {
-			.High = 0xB1B2B3B4B5B6B7B8,
-			.Low = 0xC1C2C3C4C5C6C7C8,
-		},
-	},
-	{
-		BE_TEST(8, 8, 128) = {
-			.High = 0xC1C2C3C4C5C6C7C8,
-			.Low = 0xD1D2D3D4D5D6D7D8,
-		},
-	},
+	{ BE_TEST(0, 0, 128) = { .High = 0xA1A2A3A4A5A6A7A8, .Low = 0xB1B2B3B4B5B6B7B8 } },
+	{ BE_TEST(0, 16, 128) = { .High = 0xC1C2C3C4C5C6C7C8, .Low = 0xD1D2D3D4D5D6D7D8 } },
+	{ BE_TEST(8, 0, 128) = { .High = 0xB1B2B3B4B5B6B7B8, .Low = 0xC1C2C3C4C5C6C7C8 } },
+	{ BE_TEST(8, 8, 128) = { .High = 0xC1C2C3C4C5C6C7C8, .Low = 0xD1D2D3D4D5D6D7D8 } },
 	/* rz_reat_be64, rz_reat_at_be64 */
-	{
-		BE_TEST(0, 0, 64) = 0xA1A2A3A4A5A6A7A8,
-	},
-	{
-		BE_TEST(0, 8, 64) = 0xB1B2B3B4B5B6B7B8,
-
-	},
-	{
-		BE_TEST(8, 0, 64) = 0xB1B2B3B4B5B6B7B8,
-
-	},
-	{
-		BE_TEST(8, 8, 64) = 0xC1C2C3C4C5C6C7C8,
-	},
+	{ BE_TEST(0, 0, 64) = 0xA1A2A3A4A5A6A7A8 },
+	{ BE_TEST(0, 8, 64) = 0xB1B2B3B4B5B6B7B8 },
+	{ BE_TEST(8, 0, 64) = 0xB1B2B3B4B5B6B7B8 },
+	{ BE_TEST(8, 8, 64) = 0xC1C2C3C4C5C6C7C8 },
 	/* rz_reat_be32, rz_reat_at_be32 */
-	{
-		BE_TEST(0, 0, 32) = 0xA1A2A3A4,
-
-	},
-	{
-		BE_TEST(0, 8, 32) = 0xB1B2B3B4,
-
-	},
-	{
-		BE_TEST(8, 0, 32) = 0xB1B2B3B4,
-
-	},
-	{
-		BE_TEST(8, 8, 32) = 0xC1C2C3C4,
-	},
+	{ BE_TEST(0, 0, 32) = 0xA1A2A3A4 },
+	{ BE_TEST(0, 8, 32) = 0xB1B2B3B4 },
+	{ BE_TEST(8, 0, 32) = 0xB1B2B3B4 },
+	{ BE_TEST(8, 8, 32) = 0xC1C2C3C4 },
 	/* rz_reat_be24, rz_reat_at_be24 */
-	{
-		BE24_TEST(0, 0) = 0xA1A2A3,
-
-	},
-	{
-		BE24_TEST(0, 8) = 0xB1B2B3,
-
-	},
-	{
-		BE24_TEST(8, 0) = 0xB1B2B3,
-
-	},
-	{
-		BE24_TEST(8, 8) = 0xC1C2C3,
-	},
+	{ BE24_TEST(0, 0) = 0xA1A2A3 },
+	{ BE24_TEST(0, 8) = 0xB1B2B3 },
+	{ BE24_TEST(8, 0) = 0xB1B2B3 },
+	{ BE24_TEST(8, 8) = 0xC1C2C3 },
 	/* rz_reat_be16, rz_reat_at_be16 */
-	{
-		BE_TEST(0, 0, 16) = 0xA1A2,
-
-	},
-	{
-		BE_TEST(0, 8, 16) = 0xB1B2,
-
-	},
-	{
-		BE_TEST(8, 0, 16) = 0xB1B2,
-
-	},
-	{
-		BE_TEST(8, 8, 16) = 0xC1C2,
-	},
+	{ BE_TEST(0, 0, 16) = 0xA1A2 },
+	{ BE_TEST(0, 8, 16) = 0xB1B2 },
+	{ BE_TEST(8, 0, 16) = 0xB1B2 },
+	{ BE_TEST(8, 8, 16) = 0xC1C2 },
 	/* rz_read_le128, rz_read_at_le128 */
-	{
-		LE_TEST(0, 0, 128) = {
-			.High = 0xB8B7B6B5B4B3B2B1,
-			.Low = 0xA8A7A6A5A4A3A2A1,
-		},
-	},
-	{
-		LE_TEST(0, 16, 128) = {
-			.High = 0xD8D7D6D5D4D3D2D1,
-			.Low = 0xC8C7C6C5C4C3C2C1,
-		},
-	},
-	{
-		LE_TEST(8, 0, 128) = {
-			.High = 0xC8C7C6C5C4C3C2C1,
-			.Low = 0xB8B7B6B5B4B3B2B1,
-		},
-	},
-	{
-		LE_TEST(8, 8, 128) = {
-			.High = 0xD8D7D6D5D4D3D2D1,
-			.Low = 0xC8C7C6C5C4C3C2C1,
-		},
-	},
+	{ LE_TEST(0, 0, 128) = { .High = 0xB8B7B6B5B4B3B2B1, .Low = 0xA8A7A6A5A4A3A2A1 } },
+	{ LE_TEST(0, 16, 128) = { .High = 0xD8D7D6D5D4D3D2D1, .Low = 0xC8C7C6C5C4C3C2C1 } },
+	{ LE_TEST(8, 0, 128) = { .High = 0xC8C7C6C5C4C3C2C1, .Low = 0xB8B7B6B5B4B3B2B1 } },
+	{ LE_TEST(8, 8, 128) = { .High = 0xD8D7D6D5D4D3D2D1, .Low = 0xC8C7C6C5C4C3C2C1 } },
 	/* rz_reat_le64, rz_reat_at_le64 */
-	{
-		LE_TEST(0, 0, 64) = 0xA8A7A6A5A4A3A2A1,
-	},
-	{
-		LE_TEST(0, 8, 64) = 0xB8B7B6B5B4B3B2B1,
-
-	},
-	{
-		LE_TEST(8, 0, 64) = 0xB8B7B6B5B4B3B2B1,
-
-	},
-	{
-		LE_TEST(8, 8, 64) = 0xC8C7C6C5C4C3C2C1,
-	},
+	{ LE_TEST(0, 0, 64) = 0xA8A7A6A5A4A3A2A1 },
+	{ LE_TEST(0, 8, 64) = 0xB8B7B6B5B4B3B2B1 },
+	{ LE_TEST(8, 0, 64) = 0xB8B7B6B5B4B3B2B1 },
+	{ LE_TEST(8, 8, 64) = 0xC8C7C6C5C4C3C2C1 },
 	/* rz_reat_le32, rz_reat_at_le32 */
-	{
-		LE_TEST(0, 0, 32) = 0xA4A3A2A1,
-
-	},
-	{
-		LE_TEST(0, 8, 32) = 0xB4B3B2B1,
-
-	},
-	{
-		LE_TEST(8, 0, 32) = 0xB4B3B2B1,
-
-	},
-	{
-		LE_TEST(8, 8, 32) = 0xC4C3C2C1,
-	},
+	{ LE_TEST(0, 0, 32) = 0xA4A3A2A1 },
+	{ LE_TEST(0, 8, 32) = 0xB4B3B2B1 },
+	{ LE_TEST(8, 0, 32) = 0xB4B3B2B1 },
+	{ LE_TEST(8, 8, 32) = 0xC4C3C2C1 },
 	/* rz_reat_le24, rz_reat_at_le24 */
-	{
-		LE24_TEST(0, 0) = 0xA3A2A1,
-
-	},
-	{
-		LE24_TEST(0, 8) = 0xB3B2B1,
-
-	},
-	{
-		LE24_TEST(8, 0) = 0xB3B2B1,
-
-	},
-	{
-		LE24_TEST(8, 8) = 0xC3C2C1,
-	},
+	{ LE24_TEST(0, 0) = 0xA3A2A1 },
+	{ LE24_TEST(0, 8) = 0xB3B2B1 },
+	{ LE24_TEST(8, 0) = 0xB3B2B1 },
+	{ LE24_TEST(8, 8) = 0xC3C2C1 },
 	/* rz_reat_le16, rz_reat_at_le16 */
-	{
-		LE_TEST(0, 0, 16) = 0xA2A1,
-
-	},
-	{
-		LE_TEST(0, 8, 16) = 0xB2B1,
-
-	},
-	{
-		LE_TEST(8, 0, 16) = 0xB2B1,
-
-	},
-	{
-		LE_TEST(8, 8, 16) = 0xC2C1,
-	},
+	{ LE_TEST(0, 0, 16) = 0xA2A1 },
+	{ LE_TEST(0, 8, 16) = 0xB2B1 },
+	{ LE_TEST(8, 0, 16) = 0xB2B1 },
+	{ LE_TEST(8, 8, 16) = 0xC2C1 },
 	/* rz_reat_me64, rz_reat_at_me64 */
-	{
-		ME_TEST(0, 0, 64) = 0xA7A8A5A6A3A4A1A2,
-	},
-	{
-		ME_TEST(0, 8, 64) = 0xB7B8B5B6B3B4B1B2,
-
-	},
-	{
-		ME_TEST(8, 0, 64) = 0xB7B8B5B6B3B4B1B2,
-
-	},
-	{
-		ME_TEST(8, 8, 64) = 0xC7C8C5C6C3C4C1C2,
-	},
+	{ ME_TEST(0, 0, 64) = 0xA7A8A5A6A3A4A1A2 },
+	{ ME_TEST(0, 8, 64) = 0xB7B8B5B6B3B4B1B2 },
+	{ ME_TEST(8, 0, 64) = 0xB7B8B5B6B3B4B1B2 },
+	{ ME_TEST(8, 8, 64) = 0xC7C8C5C6C3C4C1C2 },
 	/* rz_reat_me32, rz_reat_at_me32 */
-	{
-		ME_TEST(0, 0, 32) = 0xA3A4A1A2,
-
-	},
-	{
-		ME_TEST(0, 8, 32) = 0xB3B4B1B2,
-
-	},
-	{
-		ME_TEST(8, 0, 32) = 0xB3B4B1B2,
-
-	},
-	{
-		ME_TEST(8, 8, 32) = 0xC3C4C1C2,
-	},
+	{ ME_TEST(0, 0, 32) = 0xA3A4A1A2 },
+	{ ME_TEST(0, 8, 32) = 0xB3B4B1B2 },
+	{ ME_TEST(8, 0, 32) = 0xB3B4B1B2 },
+	{ ME_TEST(8, 8, 32) = 0xC3C4C1C2 },
 	/* rz_reat_me16, rz_reat_at_me16 */
-	{
-		ME_TEST(0, 0, 16) = 0xA1A2,
-
-	},
-	{
-		ME_TEST(0, 8, 16) = 0xB1B2,
-
-	},
-	{
-		ME_TEST(8, 0, 16) = 0xB1B2,
-
-	},
-	{
-		ME_TEST(8, 8, 16) = 0xC1C2,
-	},
+	{ ME_TEST(0, 0, 16) = 0xA1A2 },
+	{ ME_TEST(0, 8, 16) = 0xB1B2 },
+	{ ME_TEST(8, 0, 16) = 0xB1B2 },
+	{ ME_TEST(8, 8, 16) = 0xC1C2 }
 };
 
 /* This is a helper macro, we later abstract away the vararg
@@ -334,10 +176,10 @@ static const struct {
 		(void)offset; \
 		for (i = 0; i < sizeof rz_read_table / sizeof rz_read_table[0]; i++) { \
 			if (IS_##endianness##_SIZE(i, size)) { \
-				test_result = rz_read_aux_##endianness##size(1 < sizeof #__VA_ARGS__, INPUT(i), OFFSET(i)); \
+				test_result = rz_read_aux_##endianness##size(1 < sizeof "" #__VA_ARGS__, INPUT(i), OFFSET(i)); \
 				actual_result = RESULT(i).u##ret_type; \
 				mu_assert_memeq((void *)&test_result, (void *)&actual_result, size / 8, "rz_read_" #__VA_ARGS__ #endianness #size); \
-				rz_write_aux_##endianness##size(1 < sizeof #__VA_ARGS__, dest, actual_result, OFFSET(i)); \
+				rz_write_aux_##endianness##size(1 < sizeof "" #__VA_ARGS__, dest, actual_result, OFFSET(i)); \
 				mu_assert_memeq((void *)&dest[OFFSET(i)], (void *)(INPUT(i) + OFFSET(i)), size / 8, "rz_write_" #__VA_ARGS__ #endianness #size); \
 			} \
 		} \
