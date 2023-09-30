@@ -1769,16 +1769,6 @@ static inline ut16 rz_swap_ut16(ut16 val) {
 #define rz_swap_ut16 rz_swap_ut16
 #endif
 
-#if HAVE___BUILTIN_BSWAP16
-#define rz_swap_st16 __builtin_bswap16
-#else
-static inline st16 rz_swap_st16(st16 val) {
-	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
-	return (val << 16) | (val >> 16);
-}
-#define rz_swap_st16 rz_swap_st16
-#endif
-
 /**
  * \def rz_swap_ut32
  * \brief Reverse the order of bytes of the 32-bit representation.
@@ -1800,16 +1790,6 @@ static inline ut32 rz_swap_ut32(ut32 val) {
 	return (val << 16) | (val >> 16);
 }
 #define rz_swap_ut32 rz_swap_ut32
-#endif
-
-#if HAVE___BUILTIN_BSWAP32
-#define rz_swap_st32 __builtin_bswap32
-#else
-static inline st32 rz_swap_st32(st32 val) {
-	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
-	return (val << 16) | ((val >> 16) & 0xFFFF);
-}
-#define rz_swap_st32 rz_swap_st32
 #endif
 
 /**
@@ -1834,17 +1814,6 @@ static inline ut64 rz_swap_ut64(ut64 val) {
 	return (val << 32) | (val >> 32);
 }
 #define rz_swap_ut64 rz_swap_ut64
-#endif
-
-#if HAVE___BUILTIN_BSWAP64
-#define rz_swap_st64 __builtin_bswap64
-#else
-static inline st64 rz_swap_st64(st64 val) {
-	val = ((val << 8) & 0xFF00FF00FF00FF00ULL) | ((val >> 8) & 0x00FF00FF00FF00FFULL);
-	val = ((val << 16) & 0xFFFF0000FFFF0000ULL) | ((val >> 16) & 0x0000FFFF0000FFFFULL);
-	return (val << 32) | ((val >> 32) & 0xFFFFFFFFULL);
-}
-#define rz_swap_st64 rz_swap_st64
 #endif
 
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
