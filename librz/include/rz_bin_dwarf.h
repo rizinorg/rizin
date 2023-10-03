@@ -992,25 +992,27 @@ typedef struct {
 } RzBinDwarfBlock;
 
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
+typedef enum {
+	RzBinDwarfAttr_Address,
+	RzBinDwarfAttr_Block,
+	RzBinDwarfAttr_Constant,
+	RzBinDwarfAttr_UConstant,
+	RzBinDwarfAttr_Exprloc,
+	RzBinDwarfAttr_Flag,
+	RzBinDwarfAttr_LoclistPtr,
+	RzBinDwarfAttr_MacPtr,
+	RzBinDwarfAttr_RangelistPtr,
+	RzBinDwarfAttr_Reference,
+	RzBinDwarfAttr_UnitRef,
+	RzBinDwarfAttr_SecOffset,
+	RzBinDwarfAttr_StrRef, /// An offset into the .debug_str section.
+	RzBinDwarfAttr_StrOffsetIndex, /// An offset to a set of entries in the .debug_str_offsets section.
+	RzBinDwarfAttr_LineStrRef, /// An offset into the .debug_line_str section.
+	RzBinDwarfAttr_String, /// A slice of bytes representing a string. Does not include a final null byte. Not guaranteed to be UTF-8 or anything like that.
+} RzBinDwarfAttrClass;
+
 typedef struct {
-	enum {
-		RzBinDwarfAttr_Address,
-		RzBinDwarfAttr_Block,
-		RzBinDwarfAttr_Constant,
-		RzBinDwarfAttr_UConstant,
-		RzBinDwarfAttr_Exprloc,
-		RzBinDwarfAttr_Flag,
-		RzBinDwarfAttr_LoclistPtr,
-		RzBinDwarfAttr_MacPtr,
-		RzBinDwarfAttr_RangelistPtr,
-		RzBinDwarfAttr_Reference,
-		RzBinDwarfAttr_UnitRef,
-		RzBinDwarfAttr_SecOffset,
-		RzBinDwarfAttr_StrRef, /// An offset into the .debug_str section.
-		RzBinDwarfAttr_StrOffsetIndex, /// An offset to a set of entries in the .debug_str_offsets section.
-		RzBinDwarfAttr_LineStrRef, /// An offset into the .debug_line_str section.
-		RzBinDwarfAttr_String, /// A slice of bytes representing a string. Does not include a final null byte. Not guaranteed to be UTF-8 or anything like that.
-	} kind;
+	RzBinDwarfAttrClass kind;
 	union {
 		RzBinDwarfBlock block;
 		ut64 u64;
