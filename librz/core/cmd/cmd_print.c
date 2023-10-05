@@ -237,7 +237,7 @@ static const char *help_detail2_pf[] = {
 	"pf", " 5sqw string quad word", "Print an array with sqw struct along with its field names",
 	"pf", " {integer}? (bifc)", "Print integer times the following format (bifc)",
 	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
-	"pf", " ic...?i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structures",
+	"pf", " ic...%i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structures",
 	"pf", " ;..x", "Print value located 6 bytes from current offset",
 	"pf", " [10]z[3]i[10]Zb", "Print an fixed size str, widechar, and var",
 	"pfj", " +F @ 0x14", "Print the content at given offset with flag",
