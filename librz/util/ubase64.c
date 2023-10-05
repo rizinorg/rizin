@@ -22,12 +22,14 @@
  * dmc - dynamic mail client -- author: pancake
  * See LICENSE file for copyright and license details.
  *
- * Derived work redone in 2023 to fix certain bugs.
+ * Updated in 2023 by Nikolaos Chatzikonstantinou
+ * <nchatz314@gmail.com>.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <rz_types_base.h>
 #include <rz_util.h>
 
 /** \internal
@@ -50,9 +52,8 @@ static size_t cd64(int c) {
 		return 62;
 	} else if (c == '/') {
 		return 63;
-	} else {
-		return SIZE_MAX;
 	}
+	return SIZE_MAX;
 }
 
 /** \internal
@@ -84,8 +85,9 @@ static void pack_to6(ut8 dest[4], const ut8 src[3]) {
 static void unpack_from6(ut8 dest[3], const ut8 src[4]) {
 	ut8 idx[4];
 	size_t i;
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
 		idx[i] = cd64(src[i]);
+	}
 	dest[0] = idx[0] << 2 | idx[1] >> 4;
 	dest[1] = idx[1] << 4 | idx[2] >> 2;
 	dest[2] = idx[2] << 6 | idx[3] >> 0;
@@ -111,18 +113,18 @@ static bool is_base64(int c) {
  *
  * This function returns \p len as it is unless it is negative, in
  * which case, it returns the string length of \p src. A possibility
- * of a string size larger than \c INT_MAX requires us to make a
+ * of a string size larger than \c ST64_MAX requires us to make a
  * bounds check, and error if overflow is possible. This function is
  * provided in lieu of modifying the decoding API parameter list.
  */
-static int calculate_src_length(const char *src, int len) {
+static st64 calculate_src_length(const char *src, st64 len) {
 	size_t real_len;
 	if (len < 0) {
 		real_len = strlen(src);
-		if (INT_MAX < real_len) {
+		if (ST64_MAX < real_len) {
 			return -1;
 		}
-		len = (int)real_len;
+		len = (st64)real_len;
 	}
 	return len;
 }
@@ -249,10 +251,19 @@ RZ_API char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
  *
  * If either \p dest or \p src is \c NULL, nothing is done and the
  * value \c 0 is returned.
+ *
+ * The return value is \c -1 in the following cases:
+ *
+ * - the characters in \p src were rejected because their value was
+ *   below \c 43 or above \c 122,
+ * - the parameter \p n was \c -1 and the length of the string in \p
+ *   src exceeds \c ST64_MAX.
  */
-RZ_API int rz_base64_decode(ut8 *dest, const char *src, int n) {
+RZ_API st64 rz_base64_decode(ut8 *dest, const char *src, st64 n) {
 	char buf[4], tmp[3];
-	int c, i, j, ret = 0;
+	int c;
+	size_t i, j;
+	st64 ret = 0;
 	rz_return_val_if_fail(src, 0);
 	rz_return_val_if_fail(dest, 0);
 	n = calculate_src_length(src, n);
@@ -286,14 +297,14 @@ RZ_API int rz_base64_decode(ut8 *dest, const char *src, int n) {
 		dest[0] = tmp[0];
 		dest[1] = '\0';
 		return ret + 1;
-	} else /* j == 3 */ {
-		buf[3] = 0;
-		unpack_from6((ut8 *)tmp, (const ut8 *)buf);
-		dest[0] = tmp[0];
-		dest[1] = tmp[1];
-		dest[2] = '\0';
-		return ret + 2;
 	}
+	/* j == 3 */
+	buf[3] = 0;
+	unpack_from6((ut8 *)tmp, (const ut8 *)buf);
+	dest[0] = tmp[0];
+	dest[1] = tmp[1];
+	dest[2] = '\0';
+	return ret + 2;
 }
 
 /**
@@ -314,7 +325,7 @@ RZ_API int rz_base64_decode(ut8 *dest, const char *src, int n) {
  *
  * - in case of a memory allocation error,
  * - in case \p len is equal to \c -1 and \p src is longer than \c
- *   INT_MAX,
+ *   ST64_MAX,
  * - if \p src is \c NULL.
  *
  * It is not necessary that this function fails in case of the integer
@@ -324,9 +335,9 @@ RZ_API int rz_base64_decode(ut8 *dest, const char *src, int n) {
  * If the parameter \p src is \c NULL, nothing is done and the value
  * \c NULL is returned.
  */
-RZ_API ut8 *rz_base64_decode_dyn(const char *src, int len) {
+RZ_API ut8 *rz_base64_decode_dyn(const char *src, st64 len) {
 	ut8 *ret, *tmp;
-	int ret_size;
+	st64 ret_size;
 	rz_return_val_if_fail(src, NULL);
 	len = calculate_src_length(src, len);
 	if (len < 0) {
@@ -334,7 +345,7 @@ RZ_API ut8 *rz_base64_decode_dyn(const char *src, int len) {
 	}
 	ret_size = 1 + 3 * (len / 4);
 	ret = malloc((size_t)ret_size);
-	if (ret == NULL) {
+	if (!ret) {
 		return NULL;
 	}
 	if ((ret_size = rz_base64_decode(ret, src, len)) == -1) {
@@ -345,7 +356,6 @@ RZ_API ut8 *rz_base64_decode_dyn(const char *src, int len) {
 	// we attempt to minimize memory usage
 	if ((tmp = realloc(ret, ret_size)) != NULL) {
 		return tmp;
-	} else {
-		return ret;
 	}
+	return ret;
 }
