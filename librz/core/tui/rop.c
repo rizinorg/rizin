@@ -185,7 +185,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			}
 		} break;
 		case '/':
-			rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
+			rz_core_prompt_highlight(core);
 			break;
 		case 'i': {
 			rz_line_set_prompt("insert value: ");

@@ -385,7 +385,7 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
-			rz_config_set(core->config, "scr.highlight", cmd);
+			rz_cons_highlight(cmd);
 			rz_cons_set_raw(1);
 			rz_cons_show_cursor(false);
 			rz_cons_clear();

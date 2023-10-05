@@ -8,6 +8,8 @@
 #include "rz_util.h"
 #include "rz_types.h"
 
+#define HIGHLIGHT_SZ 1024
+
 static const char *help_msg_greater_sign[] = {
 	"Usage:", "[cmd]>[file]", "redirects console from 'cmd' output to 'file'",
 	"[cmd] > [file]", "", "redirect STDOUT of 'cmd' to 'file'",
@@ -575,18 +577,41 @@ RZ_IPI RzCmdStatus rz_yank_hud_file_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus prompt_handler(RzCore *core, int argc, const char **argv, bool echo) {
+static bool get_prompt(RzCore *core, char *prompt, char *output, size_t output_sz) {
 	if (!rz_cons_is_interactive()) {
 		RZ_LOG_ERROR("core: Not running in interactive mode\n");
-		return RZ_CMD_STATUS_WRONG_ARGS;
+		return false;
 	}
-	char foo[1024];
 	rz_cons_flush();
-	// TODO: rz_cons_input()
+	rz_line_set_prompt(prompt);
+	rz_cons_fgets(output, output_sz, 0, NULL);
+	output[output_sz - 1] = 0;
+	return true;
+}
+
+/**
+ * \brief Show a prompt "highlight" and highlights the string inserted by the user
+ *
+ * \param core Reference to RzCore
+ */
+RZ_IPI void rz_core_prompt_highlight(RzCore *core) {
+	char highlight_str[HIGHLIGHT_SZ];
+
+	if (!get_prompt(core, "highlight: ", highlight_str, sizeof(highlight_str))) {
+		return;
+	}
+
+	rz_cons_highlight(highlight_str);
+}
+
+static RzCmdStatus prompt_handler(RzCore *core, int argc, const char **argv, bool echo) {
+	char foo[1024];
+
 	snprintf(foo, sizeof(foo) - 1, "%s: ", argv[1]);
-	rz_line_set_prompt(foo);
-	rz_cons_fgets(foo, sizeof(foo), 0, NULL);
-	foo[sizeof(foo) - 1] = 0;
+	if (!get_prompt(core, foo, foo, sizeof(foo))) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	rz_core_yank_set_str(core, RZ_CORE_FOREIGN_ADDR, foo);
 	core->num->value = rz_num_math(core->num, foo);
 	rz_cons_set_raw(0);

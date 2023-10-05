@@ -727,7 +727,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 		}
 			continue;
 		case '/':
-			rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
+			rz_core_prompt_highlight(core);
 			break;
 		case 'a':
 			switch (level) {

@@ -4231,7 +4231,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			get_bbupdate(g, core, fcn);
 		} break;
 		case '\\':
-			nextword(core, g, rz_config_get(core->config, "scr.highlight"));
+			nextword(core, g, rz_cons_singleton()->highlight);
 			break;
 		case 'b':
 			rz_core_visual_browse(core, "");
@@ -4706,7 +4706,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case '/':
 			showcursor(core, true);
-			rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
+			rz_core_prompt_highlight(core);
 			showcursor(core, false);
 			break;
 		case ':':
