@@ -2000,7 +2000,7 @@ static bool __handle_mouse_on_panel(RzCore *core, RzPanel *panel, int x, int y, 
 			__set_addr_by_type(core, PANEL_CMD_DISASSEMBLY, addr);
 		}
 		rz_flag_set(core->flags, "panel.addr", addr, 1);
-		rz_config_set(core->config, "scr.highlight", word);
+		rz_cons_highlight(word);
 #if 1
 		// TODO implement sync
 		{
@@ -6758,7 +6758,7 @@ repeat:
 		__set_panel_addr(core, cur, core->offset);
 		break;
 	case 'G': {
-		const char *hl = rz_config_get(core->config, "scr.highlight");
+		const char *hl = rz_cons_singleton()->highlight;
 		if (hl) {
 			ut64 addr = rz_num_math(core->num, hl);
 			__set_panel_addr(core, cur, addr);
@@ -6808,7 +6808,7 @@ repeat:
 		cur->view->refresh = true;
 		break;
 	case '/':
-		rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
+		rz_core_prompt_highlight(core);
 		break;
 	case 'z':
 		if (panels->curnode > 0) {

@@ -1281,10 +1281,10 @@ repeat:
 				rz_cons_newline();
 			}
 			/* prepare highlight */
-			char *cmd = strdup(rz_config_get(core->config, "scr.highlight"));
+			char *cmd = strdup(rz_cons_singleton()->highlight);
 			char *ats = rz_str_newf("%" PFMT64x, curat);
 			if (ats && !*cmd) {
-				(void)rz_config_set(core->config, "scr.highlight", ats);
+				rz_cons_highlight(ats);
 			}
 			/* print disasm */
 			char *d = rz_str_ansi_crop(dis, 0, 0, cols, rows - 9);
@@ -1294,7 +1294,7 @@ repeat:
 			}
 			/* flush and restore highlight */
 			rz_cons_flush();
-			rz_config_set(core->config, "scr.highlight", cmd);
+			rz_cons_highlight(cmd);
 			free(ats);
 			free(cmd);
 			free(dis);
@@ -1345,7 +1345,7 @@ repeat:
 		}
 		goto repeat;
 	} else if (ch == '/') {
-		rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
+		rz_core_prompt_highlight(core);
 		goto repeat;
 	} else if (ch == 'x' || ch == '<') {
 		xref_to = true;
@@ -2920,7 +2920,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				visual_search(core);
 			} else {
 				if (visual->autoblocksize) {
-					rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
+					rz_core_prompt_highlight(core);
 				} else {
 					rz_core_block_size(core, core->blocksize - cols);
 				}
