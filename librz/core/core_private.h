@@ -460,4 +460,6 @@ static inline char *rz_address_str(ut64 addr) {
 	return rz_str_newf("0x%" PFMT64x, addr);
 }
 
+RZ_IPI void rz_core_prompt_highlight(RzCore *core);
+
 #endif
