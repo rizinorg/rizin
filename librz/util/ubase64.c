@@ -170,6 +170,19 @@ static size_t calculate_dest_length(const ut8 *src, size_t len) {
  *
  * If either \p dest or \p src is \c NULL, nothing is done and the
  * value \c 0 is returned.
+ *
+ * # Example
+ *
+ * \code{.c}
+ * const char msg[] = "Hello, world!";
+ * size_t msg_len = strlen(msg);
+ * size_t enc_len = 4 * ((msg_len + 2) / 3);
+ * char *enc = malloc(enc_len + 1); // +1 for NUL byte
+ * if (enc == NULL) { goto memory_error; }
+ * rz_base64_encode(enc, msg, msg_len);
+ * assert(strcmp(enc, "SGVsbG8sIHdvcmxkIQ==") == 0);
+ * free(enc);
+ * \endcode
  */
 RZ_API size_t rz_base64_encode(char *dest, const ut8 *src, size_t n) {
 	ut8 final_group[3] = { 0 };
@@ -212,6 +225,32 @@ RZ_API size_t rz_base64_encode(char *dest, const ut8 *src, size_t n) {
  *
  * If the parameter \p src is \c NULL, nothing is done and the value
  * \c NULL is returned.
+ *
+ * # Example
+ *
+ * \code{.c}
+ * const char foo[] = "foo";
+ * const char bin[] = { 0x00, 0x01, 0x02, 0x03 };
+ * // Base64-encode textual data.
+ * char *foo_enc = rz_base64_encode_dyn(foo, strlen(foo));
+ * if(foo_enc == NULL) { goto memory_error; }
+ * assert(strcmp(foo_enc, "Zm9v") == 0);
+ * char *foo_dec = rz_base64_decode_dyn(foo_enc, -1);
+ * if(foo_dec == NULL) { goto memory_error; }
+ * assert(strcmp(foo_dec, foo) == 0);
+ * // Base64-encode binary data.
+ * char *bin_enc = rz_base64_encode_dyn(bin, sizeof bin);
+ * if(bin_enc == NULL) { goto memory_error; }
+ * assert(strcmp(bin_enc, "AAECAw==") == 0);
+ * char *bin_dec = rz_base64_decode_dyn(bin_enc, strlen(bin_enc));
+ * if(bin_dec == NULL) { goto memory_error; }
+ * assert(memcmp(bin_dec, bin, sizeof bin) == 0);
+ * // It's important to free all resources after use!
+ * free(foo_enc);
+ * free(foo_dec);
+ * free(bin_enc);
+ * free(bin_dec);
+ * \endcode
  */
 RZ_API char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
 	size_t ret_size;
@@ -232,11 +271,11 @@ RZ_API char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
  * \param n The length of the encoded message.
  * \return The length of the decoded message, excluding the NUL byte.
  * \attention The \p dest parameter should have sufficient space to
- * accomodate the decoded output. In particular, it should have at
- * least \c 3*(n/4) bytes available, although an exact computation
- * of the space size can be obtained (if desired by the user) by
- * counting the non-ignored characters in the encoding before applying
- * the size formula.
+ * accomodate the decoded output, including the NUL byte. In
+ * particular, it should have at least \c 1+(3*(n+1))/4 bytes
+ * available, although an exact computation of the space size can be
+ * obtained (if desired by the user) by counting the non-ignored
+ * characters in the encoding before applying the size formula.
  *
  * Decode a base64-encoded message. The \p n parameter may be
  * negative, in which case \p src is treated as a C string and its
@@ -258,6 +297,19 @@ RZ_API char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
  *   below \c 43 or above \c 122,
  * - the parameter \p n was \c -1 and the length of the string in \p
  *   src exceeds \c ST64_MAX.
+ *
+ * # Example
+ *
+ * \code{.c}
+ * const char enc[] = "QQ==";
+ * size_t enc_len = strlen(enc);
+ * size_t msg_len_bound = 3*(enc/4);
+ * char *msg = malloc(msg_len_bound + 1); // +1 for NUL byte
+ * if (msg == NULL) { goto memory_error; }
+ * rz_base64_decode(msg, enc, enc_len);
+ * assert(strcmp(msg, "A") == 0);
+ * free(msg);
+ * \endcode
  */
 RZ_API st64 rz_base64_decode(ut8 *dest, const char *src, st64 n) {
 	char buf[4], tmp[3];
@@ -334,6 +386,10 @@ RZ_API st64 rz_base64_decode(ut8 *dest, const char *src, st64 n) {
  *
  * If the parameter \p src is \c NULL, nothing is done and the value
  * \c NULL is returned.
+ *
+ * # Example
+ *
+ * See \a rz_base64_encode_dyn for an example.
  */
 RZ_API ut8 *rz_base64_decode_dyn(const char *src, st64 len) {
 	ut8 *ret, *tmp;
@@ -343,7 +399,8 @@ RZ_API ut8 *rz_base64_decode_dyn(const char *src, st64 len) {
 	if (len < 0) {
 		return NULL;
 	}
-	ret_size = 1 + 3 * (len / 4);
+	// calculate 1 + (3*(len+1))/4 but avoid integer overflow
+	ret_size = 1 + 3 * (len / 4) + (3 * (len % 4 + 1)) / 4;
 	ret = malloc((size_t)ret_size);
 	if (!ret) {
 		return NULL;
