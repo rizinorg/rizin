@@ -327,6 +327,8 @@ foreach it : ccs
   if have_lrt and not it_lrt.found()
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
+  # FreeBSD has backtrace() in libexecinfo
+  it_lexecinfo = it_cc.find_library('execinfo', required: false)
 
   it_userconf.set('RZ_CHECKS_LEVEL', checks_level)
   it_userconf.set10('IS_PORTABLE', get_option('portable'))
@@ -428,7 +430,7 @@ foreach it : ccs
       ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
       # copy_file_range for now disable on freebsd as it s not reliable even for small chunks
       ['copy_file_range', '#ifdef __linux__\n#define _GNU_SOURCE\n#include <unistd.h>\n#endif', []],
-      ['backtrace', '', []],
+      ['backtrace', '', [it_lexecinfo]],
       ['__builtin_bswap16', '', []],
       ['__builtin_bswap32', '', []],
       ['__builtin_bswap64', '', []],
