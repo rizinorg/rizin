@@ -117,6 +117,11 @@ rz_util_files = [
   'rz_util/rz_utf8.h',
   'rz_util/rz_version.h',
   'rz_util/rz_x509.h',
+  'rz_util/ht_inc.h',
+  'rz_util/ht_pp.h',
+  'rz_util/ht_pu.h',
+  'rz_util/ht_up.h',
+  'rz_util/ht_uu.h',
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
