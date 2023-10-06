@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2023 Nikolaos Chatzikonstantinou <nchatz314@gmail.com>
 // SPDX-FileCopyrightText: 2017-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -174,7 +175,7 @@ static size_t calculate_dest_length(const ut8 *src, size_t len) {
  * # Example
  *
  * \code{.c}
- * const char msg[] = "Hello, world!";
+ * const ut8 msg[] = "Hello, world!";
  * size_t msg_len = strlen(msg);
  * size_t enc_len = 4 * ((msg_len + 2) / 3);
  * char *enc = malloc(enc_len + 1); // +1 for NUL byte
@@ -229,20 +230,20 @@ RZ_API size_t rz_base64_encode(char *dest, const ut8 *src, size_t n) {
  * # Example
  *
  * \code{.c}
- * const char foo[] = "foo";
- * const char bin[] = { 0x00, 0x01, 0x02, 0x03 };
+ * const ut8 foo[] = "foo";
+ * const ut8 bin[] = { 0x00, 0x01, 0x02, 0x03 };
  * // Base64-encode textual data.
  * char *foo_enc = rz_base64_encode_dyn(foo, strlen(foo));
  * if(foo_enc == NULL) { goto memory_error; }
  * assert(strcmp(foo_enc, "Zm9v") == 0);
- * char *foo_dec = rz_base64_decode_dyn(foo_enc, -1);
+ * ut8 *foo_dec = rz_base64_decode_dyn(foo_enc, -1);
  * if(foo_dec == NULL) { goto memory_error; }
  * assert(strcmp(foo_dec, foo) == 0);
  * // Base64-encode binary data.
  * char *bin_enc = rz_base64_encode_dyn(bin, sizeof bin);
  * if(bin_enc == NULL) { goto memory_error; }
  * assert(strcmp(bin_enc, "AAECAw==") == 0);
- * char *bin_dec = rz_base64_decode_dyn(bin_enc, strlen(bin_enc));
+ * ut8 *bin_dec = rz_base64_decode_dyn(bin_enc, strlen(bin_enc));
  * if(bin_dec == NULL) { goto memory_error; }
  * assert(memcmp(bin_dec, bin, sizeof bin) == 0);
  * // It's important to free all resources after use!
@@ -304,7 +305,7 @@ RZ_API char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
  * const char enc[] = "QQ==";
  * size_t enc_len = strlen(enc);
  * size_t msg_len_bound = 3*(enc/4);
- * char *msg = malloc(msg_len_bound + 1); // +1 for NUL byte
+ * ut8 *msg = malloc(msg_len_bound + 1); // +1 for NUL byte
  * if (msg == NULL) { goto memory_error; }
  * rz_base64_decode(msg, enc, enc_len);
  * assert(strcmp(msg, "A") == 0);
