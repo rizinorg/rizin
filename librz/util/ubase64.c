@@ -22,9 +22,6 @@
 /* Original code from:
  * dmc - dynamic mail client -- author: pancake
  * See LICENSE file for copyright and license details.
- *
- * Updated in 2023 by Nikolaos Chatzikonstantinou
- * <nchatz314@gmail.com>.
  */
 
 #include <stdio.h>
@@ -253,7 +250,7 @@ RZ_API size_t rz_base64_encode(char *dest, const ut8 *src, size_t n) {
  * free(bin_dec);
  * \endcode
  */
-RZ_API char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
+RZ_API RZ_OWN char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
 	size_t ret_size;
 	char *ret;
 	rz_return_val_if_fail(src, NULL);
@@ -392,7 +389,7 @@ RZ_API st64 rz_base64_decode(ut8 *dest, const char *src, st64 n) {
  *
  * See \a rz_base64_encode_dyn for an example.
  */
-RZ_API ut8 *rz_base64_decode_dyn(const char *src, st64 len) {
+RZ_API RZ_OWN ut8 *rz_base64_decode_dyn(const char *src, st64 len) {
 	ut8 *ret, *tmp;
 	st64 ret_size;
 	rz_return_val_if_fail(src, NULL);
