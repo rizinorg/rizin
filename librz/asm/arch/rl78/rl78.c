@@ -3,6 +3,7 @@
 
 #include "rl78.h"
 #include "rl78_maps.h"
+#include <stdio.h>
 
 static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_byte_p,
 	const ut8 RZ_BORROW *buf, size_t buf_len);
@@ -138,7 +139,8 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 			return true;
 		}
 
-		rz_return_val_if_fail(*next_byte_p < buf_len, false);
+		if (*next_byte_p >= buf_len)
+			return false;
 
 		if (operand->type == RL78_OP_TYPE_BASED_ADDR_8) {
 			// write to v1 since v0 already has base register
@@ -156,7 +158,8 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 			return true;
 		}
 
-		rz_return_val_if_fail(*next_byte_p < buf_len, false);
+		if (*next_byte_p >= buf_len)
+			return false;
 
 		operand->v0 = 0xFFF00 + buf[*next_byte_p];
 		(*next_byte_p)++;
@@ -164,7 +167,8 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 		break;
 
 	case RL78_OP_TYPE_SADDR:
-		rz_return_val_if_fail(*next_byte_p < buf_len, false);
+		if (*next_byte_p >= buf_len)
+			return false;
 
 		operand->v0 = 0xFFE20 + buf[*next_byte_p];
 		(*next_byte_p)++;
@@ -176,11 +180,15 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 	case RL78_OP_TYPE_ABSOLUTE_ADDR_16:
 	case RL78_OP_TYPE_RELATIVE_ADDR_16:
 	case RL78_OP_TYPE_BASED_ADDR_16:
-		rz_return_val_if_fail(*next_byte_p < buf_len, false);
+		if (*next_byte_p >= buf_len)
+			return false;
+
 		int word = buf[*next_byte_p];
 		(*next_byte_p)++;
 
-		rz_return_val_if_fail(*next_byte_p < buf_len, false);
+		if (*next_byte_p >= buf_len)
+			return false;
+
 		word |= (int)buf[*next_byte_p] << 8;
 		(*next_byte_p)++;
 
@@ -195,15 +203,21 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 
 		// 20 bit
 	case RL78_OP_TYPE_ABSOLUTE_ADDR_20:
-		rz_return_val_if_fail(*next_byte_p < buf_len, false);
+		if (*next_byte_p >= buf_len)
+			return false;
+
 		int val = buf[*next_byte_p];
 		(*next_byte_p)++;
 
-		rz_return_val_if_fail(*next_byte_p < buf_len, false);
+		if (*next_byte_p >= buf_len)
+			return false;
+
 		val |= (int)buf[*next_byte_p] << 8;
 		(*next_byte_p)++;
 
-		rz_return_val_if_fail(*next_byte_p < buf_len, false);
+		if (*next_byte_p >= buf_len)
+			return false;
+
 		val |= (int)(buf[*next_byte_p] & 0xf) << 16;
 		(*next_byte_p)++;
 
