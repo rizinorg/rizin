@@ -10,14 +10,20 @@
 extern "C" {
 #endif
 
+/**
+ * \brief The callback which writes to the file descriptor.
+ *
+ * Takes the parameters \c fd, \c buf, \c len in this order, and
+ * returns the number of bytes successfully written.
+ */
 typedef int (*BufferOp)(int, const char *, int);
 
 typedef struct buffer {
-	char *x;
-	unsigned int p;
-	unsigned int n;
-	int fd;
-	BufferOp op;
+	char *x; ///< The underlying memory buffer.
+	unsigned int p; ///< Anything between 0 and p is buffered; not yet written out.
+	unsigned int n; ///< The total size of the memory buffer.
+	int fd; ///< The file descriptor to write to when the buffer is full.
+	BufferOp op; ///< The callback which writes to the file descriptor.
 } buffer;
 
 extern void buffer_init(buffer *, BufferOp, int, char *, unsigned int);
