@@ -321,7 +321,6 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 				}
 			} else {
 				if (strstr(buf_asm, instr)) {
-					RZ_LOG_ERROR("core: esil: stop.\n");
 					break;
 				}
 			}

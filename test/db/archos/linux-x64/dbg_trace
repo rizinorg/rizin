@@ -72,6 +72,5 @@ entry0+41
 EOF
 REGEXP_FILTER_ERR=ERROR.*\n
 EXPECT_ERR=<<EOF
-ERROR: core: esil: stop.
 EOF
 RUN
