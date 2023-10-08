@@ -58,7 +58,7 @@ CMDS=<<EOF
 dcu main
 dbt
 echo ----
-ds 2  # Should be dsui call; ds
+dsui call; ds
 dbt~[6-]  # dbtt here would be nice
 EOF
 REGEXP_FILTER_OUT=(loc\.[^_]\S*.|main\S*.|entry0\+\d+\s+|-+\n)
@@ -69,5 +69,9 @@ entry0+41
 loc.func_0
 main+8
 entry0+41
+EOF
+REGEXP_FILTER_ERR=ERROR.*\n
+EXPECT_ERR=<<EOF
+ERROR: core: esil: stop.
 EOF
 RUN
