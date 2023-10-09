@@ -182,7 +182,7 @@ static size_t calculate_dest_length(const ut8 *src, size_t len) {
  * free(enc);
  * \endcode
  */
-RZ_API size_t rz_base64_encode(char *dest, const ut8 *src, size_t n) {
+RZ_API size_t rz_base64_encode(RZ_OUT RZ_NULLABLE char *dest, RZ_NULLABLE const ut8 *src, size_t n) {
 	ut8 final_group[3] = { 0 };
 	size_t ret;
 	rz_return_val_if_fail(src, 0);
@@ -250,7 +250,7 @@ RZ_API size_t rz_base64_encode(char *dest, const ut8 *src, size_t n) {
  * free(bin_dec);
  * \endcode
  */
-RZ_API RZ_OWN char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
+RZ_API RZ_OWN char *rz_base64_encode_dyn(RZ_NULLABLE const ut8 *src, size_t n) {
 	size_t ret_size;
 	char *ret;
 	rz_return_val_if_fail(src, NULL);
@@ -309,7 +309,7 @@ RZ_API RZ_OWN char *rz_base64_encode_dyn(const ut8 *src, size_t n) {
  * free(msg);
  * \endcode
  */
-RZ_API st64 rz_base64_decode(ut8 *dest, const char *src, st64 n) {
+RZ_API st64 rz_base64_decode(RZ_OUT RZ_NULLABLE ut8 *dest, RZ_NULLABLE const char *src, st64 n) {
 	char buf[4], tmp[3];
 	int c;
 	size_t i, j;
@@ -389,7 +389,7 @@ RZ_API st64 rz_base64_decode(ut8 *dest, const char *src, st64 n) {
  *
  * See \a rz_base64_encode_dyn for an example.
  */
-RZ_API RZ_OWN ut8 *rz_base64_decode_dyn(const char *src, st64 len) {
+RZ_API RZ_OWN ut8 *rz_base64_decode_dyn(RZ_NULLABLE const char *src, st64 len) {
 	ut8 *ret, *tmp;
 	st64 ret_size;
 	rz_return_val_if_fail(src, NULL);
