@@ -7,7 +7,9 @@ cs_files = [
   'arch/AArch64/AArch64InstPrinter.c',
   'arch/AArch64/AArch64Mapping.c',
   'arch/AArch64/AArch64Module.c',
+  'arch/ARM/ARMBaseInfo.c',
   'arch/ARM/ARMDisassembler.c',
+  'arch/ARM/ARMDisassemblerExtension.c',
   'arch/ARM/ARMInstPrinter.c',
   'arch/ARM/ARMMapping.c',
   'arch/ARM/ARMModule.c',
@@ -54,11 +56,12 @@ cs_files = [
   'arch/TriCore/TriCoreMapping.c',
   'arch/TriCore/TriCoreModule.c',
   'cs.c',
+  'Mapping.c',
   'MCInst.c',
   'MCInstrDesc.c',
+  'MCInstPrinter.c',
   'MCRegisterInfo.c',
   'SStream.c',
-  'Mapping.c',
   'utils.c',
 ]
 
