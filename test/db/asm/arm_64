@@ -137,8 +137,8 @@ ad "ldrb w5, [x7, -0x100]!" e50c5038
 ad "ldrb w6, [x7], 0x71" e6144738
 ad "ldrb w7, [x7]" e7004039
 ad "ldrb w7, [x7, 0xfff]" e7fc7f39
-ad "ldrb w8, [x30, -0xa]!" c86f5f38
-ad "ldrb w9, [x29, -0x85]!" a9bf5738
+ad "ldrb w8, [lr, -0xa]!" c86f5f38
+ad "ldrb w9, [fp, -0x85]!" a9bf5738
 ad "ldrb w10, [x28, -0x100]!" 8a0f5038
 ad "ldrb w11, [x27, 0x71]" 6bc74139
 ad "ldrb w12, [x26], 0xec" 4cc74e38
@@ -296,7 +296,7 @@ ad "strh w2, [x7, 0x1ffe]" e2fc3f79
 ad "strh w3, [x8, x2]" 03692278
 ad "strh w20, [sp, w19, uxtw]" f44b3378
 ad "strh w28, [sp, x26, lsl 1]" fc7b3a78
-ad "strh w18, [x30, w0, sxtw]" d2cb2078
+ad "strh w18, [lr, w0, sxtw]" d2cb2078
 ad "strh w16, [x25, x5, sxtx 1]" 30fb2578
 a "stur w2, [x7, -10]" e2601fb8
 a "stur w2, [x7, -133]" e2b017b8
@@ -402,8 +402,8 @@ d "add x27, x28, w29, uxtb" 9b033d8b 0x0 (set x27 (+ (var x28) (cast 64 false (c
 d "add x27, x28, w29, uxtb 3" 9b0f3d8b 0x0 (set x27 (+ (var x28) (<< (cast 64 false (cast 8 false (var x29))) (bv 6 0x3) false)))
 d "add x27, x28, w29, uxth" 9b233d8b 0x0 (set x27 (+ (var x28) (cast 64 false (cast 16 false (var x29)))))
 d "add x27, x28, w29, uxtw" 9b433d8b 0x0 (set x27 (+ (var x28) (cast 64 false (cast 32 false (var x29)))))
-d "add x27, x28, x29, uxtx" 9b633d8b 0x0 (set x27 (+ (var x28) (var x29)))
-d "add x27, x28, x29, uxtx 2" 9b6b3d8b 0x0 (set x27 (+ (var x28) (<< (var x29) (bv 6 0x2) false)))
+d "add x27, x28, fp, uxtx" 9b633d8b 0x0 (set x27 (+ (var x28) (var x29)))
+d "add x27, x28, fp, uxtx 2" 9b6b3d8b 0x0 (set x27 (+ (var x28) (<< (var x29) (bv 6 0x2) false)))
 d "add x1, x2, w3, sxtb" 4180238b 0x0 (set x1 (+ (var x2) (cast 64 (msb (cast 8 false (var x3))) (cast 8 false (var x3)))))
 d "add x1, x2, w3, sxtb 1" 4184238b 0x0 (set x1 (+ (var x2) (<< (cast 64 (msb (cast 8 false (var x3))) (cast 8 false (var x3))) (bv 6 0x1) false)))
 d "add x1, x2, w3, sxth" 41a0238b 0x0 (set x1 (+ (var x2) (cast 64 (msb (cast 16 false (var x3))) (cast 16 false (var x3)))))
