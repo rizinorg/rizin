@@ -218,7 +218,7 @@ EOF
 EXPECT=<<EOF
 afvR
    var_10h  0x18,0x1c
-   var_20h  0x24
+   var_20h
     var_8h  0x1c
 afvW
    var_10h  0x14
@@ -229,9 +229,9 @@ afvW
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
 |           0x00000010     0 -= 32      str   x19, [var_20h]!
-|           0x00000014   -32            stp   x29, x30, [var_10h]
-|           0x00000018   -32            add   x29, sp, 0x10
-|           0x0000001c   -32            ldp   x29, x30, [var_10h]
+|           0x00000014   -32            stp   fp, lr, [var_10h]
+|           0x00000018   -32            add   fp, sp, 0x10
+|           0x0000001c   -32            ldp   fp, lr, [var_10h]
 |           0x00000020   -32            mov   x0, x19
 |           0x00000024   -32 += 32      ldr   x19, [sp], 0x20
 \           0x00000028     0            ret

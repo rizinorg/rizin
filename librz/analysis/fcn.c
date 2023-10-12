@@ -1418,7 +1418,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 				goto beach;
 			}
-			if (!op.cond) {
+			if (op.cond == RZ_TYPE_COND_AL) {
 				RZ_LOG_DEBUG("RET 0x%08" PFMT64x ". overlap=%s %" PFMT64u " %" PFMT64u "\n",
 					addr + delay.un_idx - oplen, rz_str_bool(overlapped),
 					bb->size, rz_analysis_function_linear_size(fcn));
