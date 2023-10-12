@@ -1170,7 +1170,7 @@ static bool lib_crypto_cb(RzLibPlugin *pl, void *user, void *data) {
 }
 
 static void hash_load_plugins(RzHashContext *ctx) {
-	char *tmp = rz_sys_getenv("RZ_ASM_NOPLUGINS");
+	char *tmp = rz_sys_getenv("RZ_NOPLUGINS");
 	if (tmp) {
 		free(tmp);
 		return;
