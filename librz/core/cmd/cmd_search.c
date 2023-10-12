@@ -2071,7 +2071,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 								if (*input == 'c') {
 									match = true; // aop.cond;
 								} else {
-									match = !aop.cond;
+									match = aop.cond == RZ_TYPE_COND_AL;
 								}
 							} else {
 								match = true;

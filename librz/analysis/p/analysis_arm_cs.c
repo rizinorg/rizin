@@ -616,7 +616,11 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 }
 
 static int cond_cs2r2_32(int cc) {
-	if (cc == CS_ARMCC(AL) || cc < 0) {
+#if CS_NEXT_VERSION >= 6
+	if (cc == ARMCC_AL || cc < 0 || cc == ARMCC_UNDEF) {
+#else
+	if (cc == ARM_CC_AL || cc < 0) {
+#endif
 		cc = RZ_TYPE_COND_AL;
 	} else {
 		switch (cc) {
@@ -640,7 +644,7 @@ static int cond_cs2r2_32(int cc) {
 }
 
 static int cond_cs2r2_64(int cc) {
-	if (cc == ARM64_CC_AL || cc < 0) {
+	if (cc == CS_AARCH64CC(_AL) || cc < 0) {
 		cc = RZ_TYPE_COND_AL;
 	} else {
 		switch (cc) {
@@ -658,6 +662,10 @@ static int cond_cs2r2_64(int cc) {
 		case CS_AARCH64CC(_LT): cc = RZ_TYPE_COND_LT; break;
 		case CS_AARCH64CC(_GT): cc = RZ_TYPE_COND_GT; break;
 		case CS_AARCH64CC(_LE): cc = RZ_TYPE_COND_LE; break;
+		case CS_AARCH64CC(_NV): cc = RZ_TYPE_COND_AL; break;
+#if CS_NEXT_VERSION >= 6
+		case CS_AARCH64CC(_Invalid): cc = RZ_TYPE_COND_AL; break;
+#endif
 		}
 	}
 	return cc;
@@ -1016,7 +1024,11 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 			op->stackptr = -MEMDISP64(1);
 		} else if (ISPOSTINDEX64() && REGID64(1) == CS_AARCH64(_REG_SP)) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
+#if CS_NEXT_VERSION >= 6
+			op->stackptr = -MEMDISP64(1);
+#else
 			op->stackptr = -IMM64(2);
+#endif
 		}
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
