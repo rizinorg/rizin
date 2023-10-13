@@ -1128,6 +1128,7 @@ static RzVector /*<LE_map>*/ *le_create_maps(rz_bin_le_obj_t *bin) {
 	rz_vector_foreach(le_maps, m) {
 		max_vaddr = RZ_MAX(max_vaddr, m->vaddr + m->vsize);
 	}
+	CHECK(h->pagesize);
 	bin->reloc_target_map_base = max_vaddr - max_vaddr % h->pagesize + h->pagesize * 2;
 
 	return le_maps;
