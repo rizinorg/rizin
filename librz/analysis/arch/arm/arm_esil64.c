@@ -288,7 +288,7 @@ static void cmp(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 static void bfm(RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	ut64 lsb = IMM64(2);
 	ut64 width = IMM64(3);
-	switch(insn->alias_id) {
+	switch (insn->alias_id) {
 	default:
 		return;
 	case AArch64_INS_ALIAS_BFI: // bfi w8, w8, 2, 1
@@ -919,7 +919,7 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case CS_AARCH64(_INS_CSINC):
 		switch (insn->alias_id) {
 		default:
-			 // csinc Wd, Wn, Wm --> Wd := (cond) ? Wn : (Wm+1)
+			// csinc Wd, Wn, Wm --> Wd := (cond) ? Wn : (Wm+1)
 			rz_strbuf_appendf(&op->esil, "%s,}{,1,%s,+,},%s,=", REG64(1), REG64(2), REG64(0));
 			postfix = "";
 			break;
