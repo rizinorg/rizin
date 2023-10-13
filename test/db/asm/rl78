@@ -1,0 +1,1331 @@
+d "mov x, #0x30" 5030
+d "mov a, #0x30" 5130
+d "mov c, #0x30" 5230
+d "mov b, #0x30" 5330
+d "mov e, #0x30" 5430
+d "mov d, #0x30" 5530
+d "mov l, #0x30" 5630
+d "mov h, #0x30" 5730
+d "mov 0xffe46, #0x30" cd2630
+d "mov pmc, #0x30" cefe30
+d "mov !0x30a4, #0x70" cfa43070
+d "mov a, x" 60
+d "mov a, c" 62
+d "mov a, b" 63
+d "mov a, e" 64
+d "mov a, d" 65
+d "mov a, l" 66
+d "mov a, h" 67
+d "mov x, a" 70
+d "mov c, a" 72
+d "mov b, a" 73
+d "mov e, a" 74
+d "mov d, a" 75
+d "mov l, a" 76
+d "mov h, a" 77
+d "mov a, 0xffe46" 8d26
+d "mov 0xffe46, a" 9d26
+d "mov a, pmc" 8efe
+d "mov pmc, a" 9efe
+d "mov a, !0x30a4" 8fa430
+d "mov !0x30a4, a" 9fa430
+d "mov psw, #0x30" cefa30
+d "mov a, psw" 8efa
+d "mov psw, a" 9efa
+d "mov es, #0x30" 4130
+d "mov es, 0xffe46" 61b826
+d "mov a, es" 8efd
+d "mov es, a" 9efd
+d "mov cs, #0x30" cefc30
+d "mov a, cs" 8efc
+d "mov cs, a" 9efc
+d "mov a, [de]" 89
+d "mov [de], a" 99
+d "mov [de+0x30], #0x17" ca3017
+d "mov a, [de+0x30]" 8a30
+d "mov [de+0x30], a" 9a30
+d "mov a, [hl]" 8b
+d "mov [hl], a" 9b
+d "mov [hl+0x30], #0x17" cc3017
+d "mov a, [hl+0x30]" 8c30
+d "mov [hl+0x30], a" 9c30
+d "mov a, [hl+b]" 61c9
+d "mov [hl+b], a" 61d9
+d "mov a, [hl+c]" 61e9
+d "mov [hl+c], a" 61f9
+d "mov 0xfa20[b], #0x30" 1920fa30
+d "mov a, 0xfa20[b]" 0920fa
+d "mov 0xfa20[b], a" 1820fa
+d "mov 0xfa20[c], #0x30" 3820fa30
+d "mov a, 0xfa20[c]" 2920fa
+d "mov 0xfa20[c], a" 2820fa
+d "mov 0xfa20[bc], #0x30" 3920fa30
+d "mov a, 0xfa20[bc]" 4920fa
+d "mov 0xfa20[bc], a" 4820fa
+d "mov [sp+0x30], #0x17" c83017
+d "mov a, [sp+0x30]" 8830
+d "mov [sp+0x30], a" 9830
+d "mov b, 0xffe46" e826
+d "mov b, !0x30a4" e9a430
+d "mov c, 0xffe46" f826
+d "mov c, !0x30a4" f9a430
+d "mov x, 0xffe46" d826
+d "mov x, !0x30a4" d9a430
+d "mov es:!0x30a4, #0x17" 11cfa43017
+d "mov a, es:!0x30a4" 118fa430
+d "mov es:!0x30a4, a" 119fa430
+d "mov a, es:[de]" 1189
+d "mov es:[de], a" 1199
+d "mov es:[de+0x30], #0x17" 11ca3017
+d "mov a, es:[de+0x30]" 118a30
+d "mov es:[de+0x30], a" 119a30
+d "mov a, es:[hl]" 118b
+d "mov es:[hl], a" 119b
+d "mov es:[hl+0x30], #0x17" 11cc3017
+d "mov a, es:[hl+0x30]" 118c30
+d "mov es:[hl+0x30], a" 119c30
+d "mov a, es:[hl+b]" 1161c9
+d "mov es:[hl+b], a" 1161d9
+d "mov a, es:[hl+c]" 1161e9
+d "mov es:[hl+c], a" 1161f9
+d "mov es:0xfa20[b], #0x30" 111920fa30
+d "mov a, es:0xfa20[b]" 110920fa
+d "mov es:0xfa20[b], a" 111820fa
+d "mov es:0xfa20[c], #0x30" 113820fa30
+d "mov a, es:0xfa20[c]" 112920fa
+d "mov es:0xfa20[c], a" 112820fa
+d "mov es:0xfa20[bc], #0x30" 113920fa30
+d "mov a, es:0xfa20[bc]" 114920fa
+d "mov es:0xfa20[bc], a" 114820fa
+d "mov b, es:!0x30a4" 11e9a430
+d "mov c, es:!0x30a4" 11f9a430
+d "mov x, es:!0x30a4" 11d9a430
+d "xch a, x" 08
+d "xch a, c" 618a
+d "xch a, b" 618b
+d "xch a, e" 618c
+d "xch a, d" 618d
+d "xch a, l" 618e
+d "xch a, h" 618f
+d "xch a, 0xffe46" 61a826
+d "xch a, pmc" 61abfe
+d "xch a, !0x30a4" 61aaa430
+d "xch a, [de]" 61ae
+d "xch a, [de+0x30]" 61af30
+d "xch a, [hl]" 61ac
+d "xch a, [hl+0x30]" 61ad30
+d "xch a, [hl+b]" 61b9
+d "xch a, [hl+c]" 61a9
+d "xch a, es:!0x30a4" 1161aaa430
+d "xch a, es:[de]" 1161ae
+d "xch a, es:[de+0x30]" 1161af30
+d "xch a, es:[hl]" 1161ac
+d "xch a, es:[hl+0x30]" 1161ad30
+d "xch a, es:[hl+b]" 1161b9
+d "xch a, es:[hl+c]" 1161a9
+d "oneb a" e1
+d "oneb x" e0
+d "oneb b" e3
+d "oneb c" e2
+d "oneb 0xffe46" e426
+d "oneb !0x30a4" e5a430
+d "oneb es:!0x30a4" 11e5a430
+d "clrb a" f1
+d "clrb x" f0
+d "clrb b" f3
+d "clrb c" f2
+d "clrb 0xffe46" f426
+d "clrb !0x30a4" f5a430
+d "clrb es:!0x30a4" 11f5a430
+d "movs [hl+0x30], x" 61ce30
+d "movs es:[hl+0x30], x" 1161ce30
+d "movw ax, #0x1337" 303713
+d "movw bc, #0x1337" 323713
+d "movw de, #0x1337" 343713
+d "movw hl, #0x1337" 363713
+d "movw 0xffe46, #0x1337" c9263713
+d "movw pmc, #0x1337" cbfe3713
+d "movw ax, 0xffe46" ad26
+d "movw 0xffe46, ax" bd26
+d "movw ax, pmc" aefe
+d "movw pmc, ax" befe
+d "movw ax, bc" 13
+d "movw ax, de" 15
+d "movw ax, hl" 17
+d "movw bc, ax" 12
+d "movw de, ax" 14
+d "movw hl, ax" 16
+d "movw ax, !0x30a4" afa430
+d "movw !0x30a4, ax" bfa430
+d "movw ax, [de]" a9
+d "movw [de], ax" b9
+d "movw ax, [de+0x30]" aa30
+d "movw [de+0x30], ax" ba30
+d "movw ax, [hl]" ab
+d "movw [hl], ax" bb
+d "movw ax, [hl+0x30]" ac30
+d "movw [hl+0x30], ax" bc30
+d "movw ax, 0xfa20[b]" 5920fa
+d "movw 0xfa20[b], ax" 5820fa
+d "movw ax, 0xfa20[c]" 6920fa
+d "movw 0xfa20[c], ax" 6820fa
+d "movw ax, 0xfa20[bc]" 7920fa
+d "movw 0xfa20[bc], ax" 7820fa
+d "movw ax, [sp+0x30]" a830
+d "movw [sp+0x30], ax" b830
+d "movw bc, 0xffe46" da26
+d "movw bc, !0x30a4" dba430
+d "movw de, 0xffe46" ea26
+d "movw de, !0x30a4" eba430
+d "movw hl, 0xffe46" fa26
+d "movw hl, !0x30a4" fba430
+d "movw ax, es:!0x30a4" 11afa430
+d "movw es:!0x30a4, ax" 11bfa430
+d "movw ax, es:[de]" 11a9
+d "movw es:[de], ax" 11b9
+d "movw ax, es:[de+0x30]" 11aa30
+d "movw es:[de+0x30], ax" 11ba30
+d "movw ax, es:[hl]" 11ab
+d "movw es:[hl], ax" 11bb
+d "movw ax, es:[hl+0x30]" 11ac30
+d "movw es:[hl+0x30], ax" 11bc30
+d "movw ax, es:0xfa20[b]" 115920fa
+d "movw es:0xfa20[b], ax" 115820fa
+d "movw ax, es:0xfa20[c]" 116920fa
+d "movw es:0xfa20[c], ax" 116820fa
+d "movw ax, es:0xfa20[bc]" 117920fa
+d "movw es:0xfa20[bc], ax" 117820fa
+d "movw bc, es:!0x30a4" 11dba430
+d "movw de, es:!0x30a4" 11eba430
+d "movw hl, es:!0x30a4" 11fba430
+d "xchw ax, bc" 33
+d "xchw ax, de" 35
+d "xchw ax, hl" 37
+d "onew ax" e6
+d "onew bc" e7
+d "clrw ax" f6
+d "clrw bc" f7
+d "add a, #0x30" 0c30
+d "add 0xffe46, #0x30" 0a2630
+d "add a, x" 6108
+d "add a, c" 610a
+d "add a, b" 610b
+d "add a, e" 610c
+d "add a, d" 610d
+d "add a, l" 610e
+d "add a, h" 610f
+d "add x, a" 6100
+d "add a, a" 6101
+d "add c, a" 6102
+d "add b, a" 6103
+d "add e, a" 6104
+d "add d, a" 6105
+d "add l, a" 6106
+d "add h, a" 6107
+d "add a, 0xffe46" 0b26
+d "add a, !0x30a4" 0fa430
+d "add a, [hl]" 0d
+d "add a, [hl+0x30]" 0e30
+d "add a, [hl+b]" 6180
+d "add a, [hl+c]" 6182
+d "add a, es:!0x30a4" 110fa430
+d "add a, es:[hl]" 110d
+d "add a, es:[hl+0x30]" 110e30
+d "add a, es:[hl+b]" 116180
+d "add a, es:[hl+c]" 116182
+d "addc a, #0x30" 1c30
+d "addc 0xffe46, #0x30" 1a2630
+d "addc a, x" 6118
+d "addc a, c" 611a
+d "addc a, b" 611b
+d "addc a, e" 611c
+d "addc a, d" 611d
+d "addc a, l" 611e
+d "addc a, h" 611f
+d "addc x, a" 6110
+d "addc a, a" 6111
+d "addc c, a" 6112
+d "addc b, a" 6113
+d "addc e, a" 6114
+d "addc d, a" 6115
+d "addc l, a" 6116
+d "addc h, a" 6117
+d "addc a, 0xffe46" 1b26
+d "addc a, !0x30a4" 1fa430
+d "addc a, [hl]" 1d
+d "addc a, [hl+0x30]" 1e30
+d "addc a, [hl+b]" 6190
+d "addc a, [hl+c]" 6192
+d "addc a, es:!0x30a4" 111fa430
+d "addc a, es:[hl]" 111d
+d "addc a, es:[hl+0x30]" 111e30
+d "addc a, es:[hl+b]" 116190
+d "addc a, es:[hl+c]" 116192
+d "sub a, #0x30" 2c30
+d "sub 0xffe46, #0x30" 2a2630
+d "sub a, x" 6128
+d "sub a, c" 612a
+d "sub a, b" 612b
+d "sub a, e" 612c
+d "sub a, d" 612d
+d "sub a, l" 612e
+d "sub a, h" 612f
+d "sub x, a" 6120
+d "sub a, a" 6121
+d "sub c, a" 6122
+d "sub b, a" 6123
+d "sub e, a" 6124
+d "sub d, a" 6125
+d "sub l, a" 6126
+d "sub h, a" 6127
+d "sub a, 0xffe46" 2b26
+d "sub a, !0x30a4" 2fa430
+d "sub a, [hl]" 2d
+d "sub a, [hl+0x30]" 2e30
+d "sub a, [hl+b]" 61a0
+d "sub a, [hl+c]" 61a2
+d "sub a, es:!0x30a4" 112fa430
+d "sub a, es:[hl]" 112d
+d "sub a, es:[hl+0x30]" 112e30
+d "sub a, es:[hl+b]" 1161a0
+d "sub a, es:[hl+c]" 1161a2
+d "subc a, #0x30" 3c30
+d "subc 0xffe46, #0x30" 3a2630
+d "subc a, x" 6138
+d "subc a, c" 613a
+d "subc a, b" 613b
+d "subc a, e" 613c
+d "subc a, d" 613d
+d "subc a, l" 613e
+d "subc a, h" 613f
+d "subc x, a" 6130
+d "subc a, a" 6131
+d "subc c, a" 6132
+d "subc b, a" 6133
+d "subc e, a" 6134
+d "subc d, a" 6135
+d "subc l, a" 6136
+d "subc h, a" 6137
+d "subc a, 0xffe46" 3b26
+d "subc a, !0x30a4" 3fa430
+d "subc a, [hl]" 3d
+d "subc a, [hl+0x30]" 3e30
+d "subc a, [hl+b]" 61b0
+d "subc a, [hl+c]" 61b2
+d "subc a, es:!0x30a4" 113fa430
+d "subc a, es:[hl]" 113d
+d "subc a, es:[hl+0x30]" 113e30
+d "subc a, es:[hl+b]" 1161b0
+d "subc a, es:[hl+c]" 1161b2
+d "and a, #0x30" 5c30
+d "and 0xffe46, #0x30" 5a2630
+d "and a, x" 6158
+d "and a, c" 615a
+d "and a, b" 615b
+d "and a, e" 615c
+d "and a, d" 615d
+d "and a, l" 615e
+d "and a, h" 615f
+d "and x, a" 6150
+d "and a, a" 6151
+d "and c, a" 6152
+d "and b, a" 6153
+d "and e, a" 6154
+d "and d, a" 6155
+d "and l, a" 6156
+d "and h, a" 6157
+d "and a, 0xffe46" 5b26
+d "and a, !0x30a4" 5fa430
+d "and a, [hl]" 5d
+d "and a, [hl+0x30]" 5e30
+d "and a, [hl+b]" 61d0
+d "and a, [hl+c]" 61d2
+d "and a, es:!0x30a4" 115fa430
+d "and a, es:[hl]" 115d
+d "and a, es:[hl+0x30]" 115e30
+d "and a, es:[hl+b]" 1161d0
+d "and a, es:[hl+c]" 1161d2
+d "or a, #0x30" 6c30
+d "or 0xffe46, #0x30" 6a2630
+d "or a, x" 6168
+d "or a, c" 616a
+d "or a, b" 616b
+d "or a, e" 616c
+d "or a, d" 616d
+d "or a, l" 616e
+d "or a, h" 616f
+d "or x, a" 6160
+d "or a, a" 6161
+d "or c, a" 6162
+d "or b, a" 6163
+d "or e, a" 6164
+d "or d, a" 6165
+d "or l, a" 6166
+d "or h, a" 6167
+d "or a, 0xffe46" 6b26
+d "or a, !0x30a4" 6fa430
+d "or a, [hl]" 6d
+d "or a, [hl+0x30]" 6e30
+d "or a, [hl+b]" 61e0
+d "or a, [hl+c]" 61e2
+d "or a, es:!0x30a4" 116fa430
+d "or a, es:[hl]" 116d
+d "or a, es:[hl+0x30]" 116e30
+d "or a, es:[hl+b]" 1161e0
+d "or a, es:[hl+c]" 1161e2
+d "xor a, #0x30" 7c30
+d "xor 0xffe46, #0x30" 7a2630
+d "xor a, x" 6178
+d "xor a, c" 617a
+d "xor a, b" 617b
+d "xor a, e" 617c
+d "xor a, d" 617d
+d "xor a, l" 617e
+d "xor a, h" 617f
+d "xor x, a" 6170
+d "xor a, a" 6171
+d "xor c, a" 6172
+d "xor b, a" 6173
+d "xor e, a" 6174
+d "xor d, a" 6175
+d "xor l, a" 6176
+d "xor h, a" 6177
+d "xor a, 0xffe46" 7b26
+d "xor a, !0x30a4" 7fa430
+d "xor a, [hl]" 7d
+d "xor a, [hl+0x30]" 7e30
+d "xor a, [hl+b]" 61f0
+d "xor a, [hl+c]" 61f2
+d "xor a, es:!0x30a4" 117fa430
+d "xor a, es:[hl]" 117d
+d "xor a, es:[hl+0x30]" 117e30
+d "xor a, es:[hl+b]" 1161f0
+d "xor a, es:[hl+c]" 1161f2
+d "cmp a, #0x30" 4c30
+d "cmp 0xffe46, #0x30" 4a2630
+d "cmp a, x" 6148
+d "cmp a, c" 614a
+d "cmp a, b" 614b
+d "cmp a, e" 614c
+d "cmp a, d" 614d
+d "cmp a, l" 614e
+d "cmp a, h" 614f
+d "cmp x, a" 6140
+d "cmp a, a" 6141
+d "cmp c, a" 6142
+d "cmp b, a" 6143
+d "cmp e, a" 6144
+d "cmp d, a" 6145
+d "cmp l, a" 6146
+d "cmp h, a" 6147
+d "cmp a, 0xffe46" 4b26
+d "cmp a, !0x30a4" 4fa430
+d "cmp a, [hl]" 4d
+d "cmp a, [hl+0x30]" 4e30
+d "cmp a, [hl+b]" 61c0
+d "cmp a, [hl+c]" 61c2
+d "cmp !0x30a4, #0x17" 40a43017
+d "cmp a, es:!0x30a4" 114fa430
+d "cmp a, es:[hl]" 114d
+d "cmp a, es:[hl+0x30]" 114e30
+d "cmp a, es:[hl+b]" 1161c0
+d "cmp a, es:[hl+c]" 1161c2
+d "cmp es:!0x30a4, #0x17" 1140a43017
+d "cmp0 a" d1
+d "cmp0 x" d0
+d "cmp0 b" d3
+d "cmp0 c" d2
+d "cmp0 0xffe46" d426
+d "cmp0 !0x30a4" d5a430
+d "cmp0 es:!0x30a4" 11d5a430
+d "cmps x, [hl+0x30]" 61de30
+d "cmps x, es:[hl+0x30]" 1161de30
+d "addw ax, #0x1337" 043713
+d "addw ax, ax" 01
+d "addw ax, bc" 03
+d "addw ax, de" 05
+d "addw ax, hl" 07
+d "addw ax, 0xffe46" 0626
+d "addw ax, !0x30a4" 02a430
+d "addw ax, [hl+0x30]" 610930
+d "addw ax, es:!0x30a4" 1102a430
+d "addw ax, es:[hl+0x30]" 11610930
+d "subw ax, #0x1337" 243713
+d "subw ax, bc" 23
+d "subw ax, de" 25
+d "subw ax, hl" 27
+d "subw ax, 0xffe46" 2626
+d "subw ax, !0x30a4" 22a430
+d "subw ax, [hl+0x30]" 612930
+d "subw ax, es:!0x30a4" 1122a430
+d "subw ax, es:[hl+0x30]" 11612930
+d "cmpw ax, #0x1337" 443713
+d "cmpw ax, bc" 43
+d "cmpw ax, de" 45
+d "cmpw ax, hl" 47
+d "cmpw ax, 0xffe46" 4626
+d "cmpw ax, !0x30a4" 42a430
+d "cmpw ax, [hl+0x30]" 614930
+d "cmpw ax, es:!0x30a4" 1142a430
+d "cmpw ax, es:[hl+0x30]" 11614930
+d "mulu x" d6
+d "mulhu" cefb01
+d "mulh" cefb02
+d "divhu" cefb03
+d "divwu" cefb0b
+d "machu" cefb05
+d "mach" cefb06
+d "inc x" 80
+d "inc a" 81
+d "inc c" 82
+d "inc b" 83
+d "inc e" 84
+d "inc d" 85
+d "inc l" 86
+d "inc h" 87
+d "inc 0xffe46" a426
+d "inc !0x30a4" a0a430
+d "inc [hl+0x30]" 615930
+d "inc es:!0x30a4" 11a0a430
+d "inc es:[hl+0x30]" 11615930
+d "dec x" 90
+d "dec a" 91
+d "dec c" 92
+d "dec b" 93
+d "dec e" 94
+d "dec d" 95
+d "dec l" 96
+d "dec h" 97
+d "dec 0xffe46" b426
+d "dec !0x30a4" b0a430
+d "dec [hl+0x30]" 616930
+d "dec es:!0x30a4" 11b0a430
+d "dec es:[hl+0x30]" 11616930
+d "incw ax" a1
+d "incw bc" a3
+d "incw de" a5
+d "incw hl" a7
+d "incw 0xffe46" a626
+d "incw !0x30a4" a2a430
+d "incw [hl+0x30]" 617930
+d "incw es:!0x30a4" 11a2a430
+d "incw es:[hl+0x30]" 11617930
+d "decw ax" b1
+d "decw bc" b3
+d "decw de" b5
+d "decw hl" b7
+d "decw 0xffe46" b626
+d "decw !0x30a4" b2a430
+d "decw [hl+0x30]" 618930
+d "decw es:!0x30a4" 11b2a430
+d "decw es:[hl+0x30]" 11618930
+d "shr a, 1" 311a
+d "shr a, 2" 312a
+d "shr a, 3" 313a
+d "shr a, 4" 314a
+d "shr a, 5" 315a
+d "shr a, 6" 316a
+d "shr a, 7" 317a
+d "shrw ax, 1" 311e
+d "shrw ax, 2" 312e
+d "shrw ax, 3" 313e
+d "shrw ax, 4" 314e
+d "shrw ax, 5" 315e
+d "shrw ax, 6" 316e
+d "shrw ax, 7" 317e
+d "shrw ax, 8" 318e
+d "shrw ax, 9" 319e
+d "shrw ax, 10" 31ae
+d "shrw ax, 11" 31be
+d "shrw ax, 12" 31ce
+d "shrw ax, 13" 31de
+d "shrw ax, 14" 31ee
+d "shrw ax, 15" 31fe
+d "shl a, 1" 3119
+d "shl a, 2" 3129
+d "shl a, 3" 3139
+d "shl a, 4" 3149
+d "shl a, 5" 3159
+d "shl a, 6" 3169
+d "shl a, 7" 3179
+d "shl b, 1" 3118
+d "shl b, 2" 3128
+d "shl b, 3" 3138
+d "shl b, 4" 3148
+d "shl b, 5" 3158
+d "shl b, 6" 3168
+d "shl b, 7" 3178
+d "shl c, 1" 3117
+d "shl c, 2" 3127
+d "shl c, 3" 3137
+d "shl c, 4" 3147
+d "shl c, 5" 3157
+d "shl c, 6" 3167
+d "shl c, 7" 3177
+d "shlw ax, 1" 311d
+d "shlw ax, 2" 312d
+d "shlw ax, 3" 313d
+d "shlw ax, 4" 314d
+d "shlw ax, 5" 315d
+d "shlw ax, 6" 316d
+d "shlw ax, 7" 317d
+d "shlw ax, 8" 318d
+d "shlw ax, 9" 319d
+d "shlw ax, 10" 31ad
+d "shlw ax, 11" 31bd
+d "shlw ax, 12" 31cd
+d "shlw ax, 13" 31dd
+d "shlw ax, 14" 31ed
+d "shlw ax, 15" 31fd
+d "shlw bc, 1" 311c
+d "shlw bc, 2" 312c
+d "shlw bc, 3" 313c
+d "shlw bc, 4" 314c
+d "shlw bc, 5" 315c
+d "shlw bc, 6" 316c
+d "shlw bc, 7" 317c
+d "shlw bc, 8" 318c
+d "shlw bc, 9" 319c
+d "shlw bc, 10" 31ac
+d "shlw bc, 11" 31bc
+d "shlw bc, 12" 31cc
+d "shlw bc, 13" 31dc
+d "shlw bc, 14" 31ec
+d "shlw bc, 15" 31fc
+d "sar a, 1" 311b
+d "sar a, 2" 312b
+d "sar a, 3" 313b
+d "sar a, 4" 314b
+d "sar a, 5" 315b
+d "sar a, 6" 316b
+d "sar a, 7" 317b
+d "sarw ax, 1" 311f
+d "sarw ax, 2" 312f
+d "sarw ax, 3" 313f
+d "sarw ax, 4" 314f
+d "sarw ax, 5" 315f
+d "sarw ax, 6" 316f
+d "sarw ax, 7" 317f
+d "sarw ax, 8" 318f
+d "sarw ax, 9" 319f
+d "sarw ax, 10" 31af
+d "sarw ax, 11" 31bf
+d "sarw ax, 12" 31cf
+d "sarw ax, 13" 31df
+d "sarw ax, 14" 31ef
+d "sarw ax, 15" 31ff
+d "ror a, 1" 61db
+d "rol a, 1" 61eb
+d "rorc a, 1" 61fb
+d "rolc a, 1" 61dc
+d "rolwc ax, 1" 61ee
+d "rolwc bc, 1" 61fe
+d "mov1 cy, 0xffe46.0" 710426
+d "mov1 cy, 0xffe46.1" 711426
+d "mov1 cy, 0xffe46.2" 712426
+d "mov1 cy, 0xffe46.3" 713426
+d "mov1 cy, 0xffe46.4" 714426
+d "mov1 cy, 0xffe46.5" 715426
+d "mov1 cy, 0xffe46.6" 716426
+d "mov1 cy, 0xffe46.7" 717426
+d "mov1 cy, pmc.0" 710cfe
+d "mov1 cy, pmc.1" 711cfe
+d "mov1 cy, pmc.2" 712cfe
+d "mov1 cy, pmc.3" 713cfe
+d "mov1 cy, pmc.4" 714cfe
+d "mov1 cy, pmc.5" 715cfe
+d "mov1 cy, pmc.6" 716cfe
+d "mov1 cy, pmc.7" 717cfe
+d "mov1 cy, a.0" 718c
+d "mov1 cy, a.1" 719c
+d "mov1 cy, a.2" 71ac
+d "mov1 cy, a.3" 71bc
+d "mov1 cy, a.4" 71cc
+d "mov1 cy, a.5" 71dc
+d "mov1 cy, a.6" 71ec
+d "mov1 cy, a.7" 71fc
+d "mov1 cy, psw.0" 710cfa
+d "mov1 cy, psw.1" 711cfa
+d "mov1 cy, psw.2" 712cfa
+d "mov1 cy, psw.3" 713cfa
+d "mov1 cy, psw.4" 714cfa
+d "mov1 cy, psw.5" 715cfa
+d "mov1 cy, psw.6" 716cfa
+d "mov1 cy, psw.7" 717cfa
+d "mov1 cy, [hl].0" 7184
+d "mov1 cy, [hl].1" 7194
+d "mov1 cy, [hl].2" 71a4
+d "mov1 cy, [hl].3" 71b4
+d "mov1 cy, [hl].4" 71c4
+d "mov1 cy, [hl].5" 71d4
+d "mov1 cy, [hl].6" 71e4
+d "mov1 cy, [hl].7" 71f4
+d "mov1 0xffe46.0, cy" 710126
+d "mov1 0xffe46.1, cy" 711126
+d "mov1 0xffe46.2, cy" 712126
+d "mov1 0xffe46.3, cy" 713126
+d "mov1 0xffe46.4, cy" 714126
+d "mov1 0xffe46.5, cy" 715126
+d "mov1 0xffe46.6, cy" 716126
+d "mov1 0xffe46.7, cy" 717126
+d "mov1 pmc.0, cy" 7109fe
+d "mov1 pmc.1, cy" 7119fe
+d "mov1 pmc.2, cy" 7129fe
+d "mov1 pmc.3, cy" 7139fe
+d "mov1 pmc.4, cy" 7149fe
+d "mov1 pmc.5, cy" 7159fe
+d "mov1 pmc.6, cy" 7169fe
+d "mov1 pmc.7, cy" 7179fe
+d "mov1 a.0, cy" 7189
+d "mov1 a.1, cy" 7199
+d "mov1 a.2, cy" 71a9
+d "mov1 a.3, cy" 71b9
+d "mov1 a.4, cy" 71c9
+d "mov1 a.5, cy" 71d9
+d "mov1 a.6, cy" 71e9
+d "mov1 a.7, cy" 71f9
+d "mov1 psw.0, cy" 7109fa
+d "mov1 psw.1, cy" 7119fa
+d "mov1 psw.2, cy" 7129fa
+d "mov1 psw.3, cy" 7139fa
+d "mov1 psw.4, cy" 7149fa
+d "mov1 psw.5, cy" 7159fa
+d "mov1 psw.6, cy" 7169fa
+d "mov1 psw.7, cy" 7179fa
+d "mov1 [hl].0, cy" 7181
+d "mov1 [hl].1, cy" 7191
+d "mov1 [hl].2, cy" 71a1
+d "mov1 [hl].3, cy" 71b1
+d "mov1 [hl].4, cy" 71c1
+d "mov1 [hl].5, cy" 71d1
+d "mov1 [hl].6, cy" 71e1
+d "mov1 [hl].7, cy" 71f1
+d "mov1 cy, es:[hl].0" 117184
+d "mov1 cy, es:[hl].1" 117194
+d "mov1 cy, es:[hl].2" 1171a4
+d "mov1 cy, es:[hl].3" 1171b4
+d "mov1 cy, es:[hl].4" 1171c4
+d "mov1 cy, es:[hl].5" 1171d4
+d "mov1 cy, es:[hl].6" 1171e4
+d "mov1 cy, es:[hl].7" 1171f4
+d "mov1 es:[hl].0, cy" 117181
+d "mov1 es:[hl].1, cy" 117191
+d "mov1 es:[hl].2, cy" 1171a1
+d "mov1 es:[hl].3, cy" 1171b1
+d "mov1 es:[hl].4, cy" 1171c1
+d "mov1 es:[hl].5, cy" 1171d1
+d "mov1 es:[hl].6, cy" 1171e1
+d "mov1 es:[hl].7, cy" 1171f1
+d "and1 cy, 0xffe46.0" 710526
+d "and1 cy, 0xffe46.1" 711526
+d "and1 cy, 0xffe46.2" 712526
+d "and1 cy, 0xffe46.3" 713526
+d "and1 cy, 0xffe46.4" 714526
+d "and1 cy, 0xffe46.5" 715526
+d "and1 cy, 0xffe46.6" 716526
+d "and1 cy, 0xffe46.7" 717526
+d "and1 cy, pmc.0" 710dfe
+d "and1 cy, pmc.1" 711dfe
+d "and1 cy, pmc.2" 712dfe
+d "and1 cy, pmc.3" 713dfe
+d "and1 cy, pmc.4" 714dfe
+d "and1 cy, pmc.5" 715dfe
+d "and1 cy, pmc.6" 716dfe
+d "and1 cy, pmc.7" 717dfe
+d "and1 cy, a.0" 718d
+d "and1 cy, a.1" 719d
+d "and1 cy, a.2" 71ad
+d "and1 cy, a.3" 71bd
+d "and1 cy, a.4" 71cd
+d "and1 cy, a.5" 71dd
+d "and1 cy, a.6" 71ed
+d "and1 cy, a.7" 71fd
+d "and1 cy, psw.0" 710dfa
+d "and1 cy, psw.1" 711dfa
+d "and1 cy, psw.2" 712dfa
+d "and1 cy, psw.3" 713dfa
+d "and1 cy, psw.4" 714dfa
+d "and1 cy, psw.5" 715dfa
+d "and1 cy, psw.6" 716dfa
+d "and1 cy, psw.7" 717dfa
+d "and1 cy, [hl].0" 7185
+d "and1 cy, [hl].1" 7195
+d "and1 cy, [hl].2" 71a5
+d "and1 cy, [hl].3" 71b5
+d "and1 cy, [hl].4" 71c5
+d "and1 cy, [hl].5" 71d5
+d "and1 cy, [hl].6" 71e5
+d "and1 cy, [hl].7" 71f5
+d "and1 cy, es:[hl].0" 117185
+d "and1 cy, es:[hl].1" 117195
+d "and1 cy, es:[hl].2" 1171a5
+d "and1 cy, es:[hl].3" 1171b5
+d "and1 cy, es:[hl].4" 1171c5
+d "and1 cy, es:[hl].5" 1171d5
+d "and1 cy, es:[hl].6" 1171e5
+d "and1 cy, es:[hl].7" 1171f5
+d "or1 cy, 0xffe46.0" 710626
+d "or1 cy, 0xffe46.1" 711626
+d "or1 cy, 0xffe46.2" 712626
+d "or1 cy, 0xffe46.3" 713626
+d "or1 cy, 0xffe46.4" 714626
+d "or1 cy, 0xffe46.5" 715626
+d "or1 cy, 0xffe46.6" 716626
+d "or1 cy, 0xffe46.7" 717626
+d "or1 cy, pmc.0" 710efe
+d "or1 cy, pmc.1" 711efe
+d "or1 cy, pmc.2" 712efe
+d "or1 cy, pmc.3" 713efe
+d "or1 cy, pmc.4" 714efe
+d "or1 cy, pmc.5" 715efe
+d "or1 cy, pmc.6" 716efe
+d "or1 cy, pmc.7" 717efe
+d "or1 cy, a.0" 718e
+d "or1 cy, a.1" 719e
+d "or1 cy, a.2" 71ae
+d "or1 cy, a.3" 71be
+d "or1 cy, a.4" 71ce
+d "or1 cy, a.5" 71de
+d "or1 cy, a.6" 71ee
+d "or1 cy, a.7" 71fe
+d "or1 cy, psw.0" 710efa
+d "or1 cy, psw.1" 711efa
+d "or1 cy, psw.2" 712efa
+d "or1 cy, psw.3" 713efa
+d "or1 cy, psw.4" 714efa
+d "or1 cy, psw.5" 715efa
+d "or1 cy, psw.6" 716efa
+d "or1 cy, psw.7" 717efa
+d "or1 cy, [hl].0" 7186
+d "or1 cy, [hl].1" 7196
+d "or1 cy, [hl].2" 71a6
+d "or1 cy, [hl].3" 71b6
+d "or1 cy, [hl].4" 71c6
+d "or1 cy, [hl].5" 71d6
+d "or1 cy, [hl].6" 71e6
+d "or1 cy, [hl].7" 71f6
+d "or1 cy, es:[hl].0" 117186
+d "or1 cy, es:[hl].1" 117196
+d "or1 cy, es:[hl].2" 1171a6
+d "or1 cy, es:[hl].3" 1171b6
+d "or1 cy, es:[hl].4" 1171c6
+d "or1 cy, es:[hl].5" 1171d6
+d "or1 cy, es:[hl].6" 1171e6
+d "or1 cy, es:[hl].7" 1171f6
+d "xor1 cy, 0xffe46.0" 710726
+d "xor1 cy, 0xffe46.1" 711726
+d "xor1 cy, 0xffe46.2" 712726
+d "xor1 cy, 0xffe46.3" 713726
+d "xor1 cy, 0xffe46.4" 714726
+d "xor1 cy, 0xffe46.5" 715726
+d "xor1 cy, 0xffe46.6" 716726
+d "xor1 cy, 0xffe46.7" 717726
+d "xor1 cy, pmc.0" 710ffe
+d "xor1 cy, pmc.1" 711ffe
+d "xor1 cy, pmc.2" 712ffe
+d "xor1 cy, pmc.3" 713ffe
+d "xor1 cy, pmc.4" 714ffe
+d "xor1 cy, pmc.5" 715ffe
+d "xor1 cy, pmc.6" 716ffe
+d "xor1 cy, pmc.7" 717ffe
+d "xor1 cy, a.0" 718f
+d "xor1 cy, a.1" 719f
+d "xor1 cy, a.2" 71af
+d "xor1 cy, a.3" 71bf
+d "xor1 cy, a.4" 71cf
+d "xor1 cy, a.5" 71df
+d "xor1 cy, a.6" 71ef
+d "xor1 cy, a.7" 71ff
+d "xor1 cy, psw.0" 710ffa
+d "xor1 cy, psw.1" 711ffa
+d "xor1 cy, psw.2" 712ffa
+d "xor1 cy, psw.3" 713ffa
+d "xor1 cy, psw.4" 714ffa
+d "xor1 cy, psw.5" 715ffa
+d "xor1 cy, psw.6" 716ffa
+d "xor1 cy, psw.7" 717ffa
+d "xor1 cy, [hl].0" 7187
+d "xor1 cy, [hl].1" 7197
+d "xor1 cy, [hl].2" 71a7
+d "xor1 cy, [hl].3" 71b7
+d "xor1 cy, [hl].4" 71c7
+d "xor1 cy, [hl].5" 71d7
+d "xor1 cy, [hl].6" 71e7
+d "xor1 cy, [hl].7" 71f7
+d "xor1 cy, es:[hl].0" 117187
+d "xor1 cy, es:[hl].1" 117197
+d "xor1 cy, es:[hl].2" 1171a7
+d "xor1 cy, es:[hl].3" 1171b7
+d "xor1 cy, es:[hl].4" 1171c7
+d "xor1 cy, es:[hl].5" 1171d7
+d "xor1 cy, es:[hl].6" 1171e7
+d "xor1 cy, es:[hl].7" 1171f7
+d "set1 0xffe46.0" 710226
+d "set1 0xffe46.1" 711226
+d "set1 0xffe46.2" 712226
+d "set1 0xffe46.3" 713226
+d "set1 0xffe46.4" 714226
+d "set1 0xffe46.5" 715226
+d "set1 0xffe46.6" 716226
+d "set1 0xffe46.7" 717226
+d "set1 pmc.0" 710afe
+d "set1 pmc.1" 711afe
+d "set1 pmc.2" 712afe
+d "set1 pmc.3" 713afe
+d "set1 pmc.4" 714afe
+d "set1 pmc.5" 715afe
+d "set1 pmc.6" 716afe
+d "set1 pmc.7" 717afe
+d "set1 a.0" 718a
+d "set1 a.1" 719a
+d "set1 a.2" 71aa
+d "set1 a.3" 71ba
+d "set1 a.4" 71ca
+d "set1 a.5" 71da
+d "set1 a.6" 71ea
+d "set1 a.7" 71fa
+d "set1 !0x30a4.0" 7100a430
+d "set1 !0x30a4.1" 7110a430
+d "set1 !0x30a4.2" 7120a430
+d "set1 !0x30a4.3" 7130a430
+d "set1 !0x30a4.4" 7140a430
+d "set1 !0x30a4.5" 7150a430
+d "set1 !0x30a4.6" 7160a430
+d "set1 !0x30a4.7" 7170a430
+d "set1 psw.0" 710afa
+d "set1 psw.1" 711afa
+d "set1 psw.2" 712afa
+d "set1 psw.3" 713afa
+d "set1 psw.4" 714afa
+d "set1 psw.5" 715afa
+d "set1 psw.6" 716afa
+# d "set1 psw.7" 717afa enable interrupt (see end of file)
+d "set1 [hl].0" 7182
+d "set1 [hl].1" 7192
+d "set1 [hl].2" 71a2
+d "set1 [hl].3" 71b2
+d "set1 [hl].4" 71c2
+d "set1 [hl].5" 71d2
+d "set1 [hl].6" 71e2
+d "set1 [hl].7" 71f2
+d "set1 es:!0x30a4.0" 117100a430
+d "set1 es:!0x30a4.1" 117110a430
+d "set1 es:!0x30a4.2" 117120a430
+d "set1 es:!0x30a4.3" 117130a430
+d "set1 es:!0x30a4.4" 117140a430
+d "set1 es:!0x30a4.5" 117150a430
+d "set1 es:!0x30a4.6" 117160a430
+d "set1 es:!0x30a4.7" 117170a430
+d "set1 es:[hl].0" 117182
+d "set1 es:[hl].1" 117192
+d "set1 es:[hl].2" 1171a2
+d "set1 es:[hl].3" 1171b2
+d "set1 es:[hl].4" 1171c2
+d "set1 es:[hl].5" 1171d2
+d "set1 es:[hl].6" 1171e2
+d "set1 es:[hl].7" 1171f2
+d "clr1 0xffe46.0" 710326
+d "clr1 0xffe46.1" 711326
+d "clr1 0xffe46.2" 712326
+d "clr1 0xffe46.3" 713326
+d "clr1 0xffe46.4" 714326
+d "clr1 0xffe46.5" 715326
+d "clr1 0xffe46.6" 716326
+d "clr1 0xffe46.7" 717326
+d "clr1 pmc.0" 710bfe
+d "clr1 pmc.1" 711bfe
+d "clr1 pmc.2" 712bfe
+d "clr1 pmc.3" 713bfe
+d "clr1 pmc.4" 714bfe
+d "clr1 pmc.5" 715bfe
+d "clr1 pmc.6" 716bfe
+d "clr1 pmc.7" 717bfe
+d "clr1 a.0" 718b
+d "clr1 a.1" 719b
+d "clr1 a.2" 71ab
+d "clr1 a.3" 71bb
+d "clr1 a.4" 71cb
+d "clr1 a.5" 71db
+d "clr1 a.6" 71eb
+d "clr1 a.7" 71fb
+d "clr1 !0x30a4.0" 7108a430
+d "clr1 !0x30a4.1" 7118a430
+d "clr1 !0x30a4.2" 7128a430
+d "clr1 !0x30a4.3" 7138a430
+d "clr1 !0x30a4.4" 7148a430
+d "clr1 !0x30a4.5" 7158a430
+d "clr1 !0x30a4.6" 7168a430
+d "clr1 !0x30a4.7" 7178a430
+d "clr1 psw.0" 710bfa
+d "clr1 psw.1" 711bfa
+d "clr1 psw.2" 712bfa
+d "clr1 psw.3" 713bfa
+d "clr1 psw.4" 714bfa
+d "clr1 psw.5" 715bfa
+d "clr1 psw.6" 716bfa
+# d "clr1 psw.7" 717bfa disable interrupt (see end of file)
+d "clr1 [hl].0" 7183
+d "clr1 [hl].1" 7193
+d "clr1 [hl].2" 71a3
+d "clr1 [hl].3" 71b3
+d "clr1 [hl].4" 71c3
+d "clr1 [hl].5" 71d3
+d "clr1 [hl].6" 71e3
+d "clr1 [hl].7" 71f3
+d "clr1 es:!0x30a4.0" 117108a430
+d "clr1 es:!0x30a4.1" 117118a430
+d "clr1 es:!0x30a4.2" 117128a430
+d "clr1 es:!0x30a4.3" 117138a430
+d "clr1 es:!0x30a4.4" 117148a430
+d "clr1 es:!0x30a4.5" 117158a430
+d "clr1 es:!0x30a4.6" 117168a430
+d "clr1 es:!0x30a4.7" 117178a430
+d "clr1 es:[hl].0" 117183
+d "clr1 es:[hl].1" 117193
+d "clr1 es:[hl].2" 1171a3
+d "clr1 es:[hl].3" 1171b3
+d "clr1 es:[hl].4" 1171c3
+d "clr1 es:[hl].5" 1171d3
+d "clr1 es:[hl].6" 1171e3
+d "clr1 es:[hl].7" 1171f3
+d "set1 cy" 7180
+d "clr1 cy" 7188
+d "not1 cy" 71c0
+d "call ax" 61ca
+d "call bc" 61da
+d "call de" 61ea
+d "call hl" 61fa
+d "call $!0xfa20" fe20fa
+d "call !0x30a4" fda430
+d "call !!0xffa20" fc20fa0f
+d "callt [0x80]" 6184
+d "callt [0x82]" 6194
+d "callt [0x84]" 61a4
+d "callt [0x86]" 61b4
+d "callt [0x88]" 61c4
+d "callt [0x8a]" 61d4
+d "callt [0x8c]" 61e4
+d "callt [0x8e]" 61f4
+d "callt [0x90]" 6185
+d "callt [0x92]" 6195
+d "callt [0x94]" 61a5
+d "callt [0x96]" 61b5
+d "callt [0x98]" 61c5
+d "callt [0x9a]" 61d5
+d "callt [0x9c]" 61e5
+d "callt [0x9e]" 61f5
+d "callt [0xa0]" 6186
+d "callt [0xa2]" 6196
+d "callt [0xa4]" 61a6
+d "callt [0xa6]" 61b6
+d "callt [0xa8]" 61c6
+d "callt [0xaa]" 61d6
+d "callt [0xac]" 61e6
+d "callt [0xae]" 61f6
+d "callt [0xb0]" 6187
+d "callt [0xb2]" 6197
+d "callt [0xb4]" 61a7
+d "callt [0xb6]" 61b7
+d "callt [0xb8]" 61c7
+d "callt [0xba]" 61d7
+d "callt [0xbc]" 61e7
+d "callt [0xbe]" 61f7
+d "brk" 61cc
+d "ret" d7
+d "reti" 61fc
+d "retb" 61ec
+d "push psw" 61dd
+d "push ax" c1
+d "push bc" c3
+d "push de" c5
+d "push hl" c7
+d "pop psw" 61cd
+d "pop ax" c0
+d "pop bc" c2
+d "pop de" c4
+d "pop hl" c6
+d "movw spl, #0x1337" cbf83713
+d "movw spl, ax" bef8
+d "movw ax, spl" aef8
+d "movw bc, !0xfa20" db20fa
+d "movw de, !0xfa20" eb20fa
+d "movw hl, !0xfa20" fb20fa
+d "addw sp, #0x30" 1030
+d "subw sp, #0x30" 2030
+d "br ax" 61cb
+d "br $0x30" ef30
+d "br $!0xfa20" ee20fa
+d "br !0x30a4" eda430
+d "br !!0xffa20" ec20fa0f
+d "bc $0x30" dc30
+d "bnc $0x30" de30
+d "bz $0x30" dd30
+d "bnz $0x30" df30
+d "bh $0x30" 61c330
+d "bnh $0x30" 61d330
+d "bt 0xffe46.0, $0x30" 31022630
+d "bt 0xffe46.1, $0x30" 31122630
+d "bt 0xffe46.2, $0x30" 31222630
+d "bt 0xffe46.3, $0x30" 31322630
+d "bt 0xffe46.4, $0x30" 31422630
+d "bt 0xffe46.5, $0x30" 31522630
+d "bt 0xffe46.6, $0x30" 31622630
+d "bt 0xffe46.7, $0x30" 31722630
+d "bt pmc.0, $0x30" 3182fe30
+d "bt pmc.1, $0x30" 3192fe30
+d "bt pmc.2, $0x30" 31a2fe30
+d "bt pmc.3, $0x30" 31b2fe30
+d "bt pmc.4, $0x30" 31c2fe30
+d "bt pmc.5, $0x30" 31d2fe30
+d "bt pmc.6, $0x30" 31e2fe30
+d "bt pmc.7, $0x30" 31f2fe30
+d "bt a.0, $0x30" 310330
+d "bt a.1, $0x30" 311330
+d "bt a.2, $0x30" 312330
+d "bt a.3, $0x30" 313330
+d "bt a.4, $0x30" 314330
+d "bt a.5, $0x30" 315330
+d "bt a.6, $0x30" 316330
+d "bt a.7, $0x30" 317330
+d "bt psw.0, $0x30" 3182fa30
+d "bt psw.1, $0x30" 3192fa30
+d "bt psw.2, $0x30" 31a2fa30
+d "bt psw.3, $0x30" 31b2fa30
+d "bt psw.4, $0x30" 31c2fa30
+d "bt psw.5, $0x30" 31d2fa30
+d "bt psw.6, $0x30" 31e2fa30
+d "bt psw.7, $0x30" 31f2fa30
+d "bt [hl].0, $0x30" 318330
+d "bt [hl].1, $0x30" 319330
+d "bt [hl].2, $0x30" 31a330
+d "bt [hl].3, $0x30" 31b330
+d "bt [hl].4, $0x30" 31c330
+d "bt [hl].5, $0x30" 31d330
+d "bt [hl].6, $0x30" 31e330
+d "bt [hl].7, $0x30" 31f330
+d "bt es:[hl].0, $0x30" 11318330
+d "bt es:[hl].1, $0x30" 11319330
+d "bt es:[hl].2, $0x30" 1131a330
+d "bt es:[hl].3, $0x30" 1131b330
+d "bt es:[hl].4, $0x30" 1131c330
+d "bt es:[hl].5, $0x30" 1131d330
+d "bt es:[hl].6, $0x30" 1131e330
+d "bt es:[hl].7, $0x30" 1131f330
+d "bf 0xffe46.0, $0x30" 31042630
+d "bf 0xffe46.1, $0x30" 31142630
+d "bf 0xffe46.2, $0x30" 31242630
+d "bf 0xffe46.3, $0x30" 31342630
+d "bf 0xffe46.4, $0x30" 31442630
+d "bf 0xffe46.5, $0x30" 31542630
+d "bf 0xffe46.6, $0x30" 31642630
+d "bf 0xffe46.7, $0x30" 31742630
+d "bf pmc.0, $0x30" 3184fe30
+d "bf pmc.1, $0x30" 3194fe30
+d "bf pmc.2, $0x30" 31a4fe30
+d "bf pmc.3, $0x30" 31b4fe30
+d "bf pmc.4, $0x30" 31c4fe30
+d "bf pmc.5, $0x30" 31d4fe30
+d "bf pmc.6, $0x30" 31e4fe30
+d "bf pmc.7, $0x30" 31f4fe30
+d "bf a.0, $0x30" 310530
+d "bf a.1, $0x30" 311530
+d "bf a.2, $0x30" 312530
+d "bf a.3, $0x30" 313530
+d "bf a.4, $0x30" 314530
+d "bf a.5, $0x30" 315530
+d "bf a.6, $0x30" 316530
+d "bf a.7, $0x30" 317530
+d "bf psw.0, $0x30" 3184fa30
+d "bf psw.1, $0x30" 3194fa30
+d "bf psw.2, $0x30" 31a4fa30
+d "bf psw.3, $0x30" 31b4fa30
+d "bf psw.4, $0x30" 31c4fa30
+d "bf psw.5, $0x30" 31d4fa30
+d "bf psw.6, $0x30" 31e4fa30
+d "bf psw.7, $0x30" 31f4fa30
+d "bf [hl].0, $0x30" 318530
+d "bf [hl].1, $0x30" 319530
+d "bf [hl].2, $0x30" 31a530
+d "bf [hl].3, $0x30" 31b530
+d "bf [hl].4, $0x30" 31c530
+d "bf [hl].5, $0x30" 31d530
+d "bf [hl].6, $0x30" 31e530
+d "bf [hl].7, $0x30" 31f530
+d "bf es:[hl].0, $0x30" 11318530
+d "bf es:[hl].1, $0x30" 11319530
+d "bf es:[hl].2, $0x30" 1131a530
+d "bf es:[hl].3, $0x30" 1131b530
+d "bf es:[hl].4, $0x30" 1131c530
+d "bf es:[hl].5, $0x30" 1131d530
+d "bf es:[hl].6, $0x30" 1131e530
+d "bf es:[hl].7, $0x30" 1131f530
+d "btclr 0xffe46.0, $0x30" 31002630
+d "btclr 0xffe46.1, $0x30" 31102630
+d "btclr 0xffe46.2, $0x30" 31202630
+d "btclr 0xffe46.3, $0x30" 31302630
+d "btclr 0xffe46.4, $0x30" 31402630
+d "btclr 0xffe46.5, $0x30" 31502630
+d "btclr 0xffe46.6, $0x30" 31602630
+d "btclr 0xffe46.7, $0x30" 31702630
+d "btclr pmc.0, $0x30" 3180fe30
+d "btclr pmc.1, $0x30" 3190fe30
+d "btclr pmc.2, $0x30" 31a0fe30
+d "btclr pmc.3, $0x30" 31b0fe30
+d "btclr pmc.4, $0x30" 31c0fe30
+d "btclr pmc.5, $0x30" 31d0fe30
+d "btclr pmc.6, $0x30" 31e0fe30
+d "btclr pmc.7, $0x30" 31f0fe30
+d "btclr a.0, $0x30" 310130
+d "btclr a.1, $0x30" 311130
+d "btclr a.2, $0x30" 312130
+d "btclr a.3, $0x30" 313130
+d "btclr a.4, $0x30" 314130
+d "btclr a.5, $0x30" 315130
+d "btclr a.6, $0x30" 316130
+d "btclr a.7, $0x30" 317130
+d "btclr psw.0, $0x30" 3180fa30
+d "btclr psw.1, $0x30" 3190fa30
+d "btclr psw.2, $0x30" 31a0fa30
+d "btclr psw.3, $0x30" 31b0fa30
+d "btclr psw.4, $0x30" 31c0fa30
+d "btclr psw.5, $0x30" 31d0fa30
+d "btclr psw.6, $0x30" 31e0fa30
+d "btclr psw.7, $0x30" 31f0fa30
+d "btclr [hl].0, $0x30" 318130
+d "btclr [hl].1, $0x30" 319130
+d "btclr [hl].2, $0x30" 31a130
+d "btclr [hl].3, $0x30" 31b130
+d "btclr [hl].4, $0x30" 31c130
+d "btclr [hl].5, $0x30" 31d130
+d "btclr [hl].6, $0x30" 31e130
+d "btclr [hl].7, $0x30" 31f130
+d "btclr es:[hl].0, $0x30" 11318130
+d "btclr es:[hl].1, $0x30" 11319130
+d "btclr es:[hl].2, $0x30" 1131a130
+d "btclr es:[hl].3, $0x30" 1131b130
+d "btclr es:[hl].4, $0x30" 1131c130
+d "btclr es:[hl].5, $0x30" 1131d130
+d "btclr es:[hl].6, $0x30" 1131e130
+d "btclr es:[hl].7, $0x30" 1131f130
+d "skc" 61c8
+d "sknc" 61d8
+d "skz" 61e8
+d "sknz" 61f8
+d "skh" 61e3
+d "sknh" 61f3
+d "sel rb0" 61cf
+d "sel rb1" 61df
+d "sel rb2" 61ef
+d "sel rb3" 61ff
+d "nop" 00
+d "ei" 717afa
+d "di" 717bfa
+d "halt" 61ed
+d "stop" 61fd
+
+# test 'holes'
+d "(invalid)" 21
+d "(invalid)" ff
+d "(invalid)" 6119
+d "(invalid)" 6139
+d "(invalid)" 6181
+d "(invalid)" 6183
+d "(invalid)" 6188
+d "(invalid)" 6191
+d "(invalid)" 6193
+d "(invalid)" 6198
+d "(invalid)" 6191
+d "(invalid)" 6193
+d "(invalid)" 6198
+d "(invalid)" 6199
+d "(invalid)" 619a
+d "(invalid)" 619b
+d "(invalid)" 619c
+d "(invalid)" 619d
+d "(invalid)" 619e
+d "(invalid)" 619f
+d "(invalid)" 61a1
+d "(invalid)" 61a3
+d "(invalid)" 61b1
+d "(invalid)" 61b3
+d "(invalid)" 61ba
+d "(invalid)" 61bb
+d "(invalid)" 61bc
+d "(invalid)" 61bd
+d "(invalid)" 61be
+d "(invalid)" 61bf
+d "(invalid)" 61c1
+d "(invalid)" 61d1
+d "(invalid)" 61e1
+d "(invalid)" 61f1
+d "(invalid)" 7190
+d "(invalid)" 7198
+d "(invalid)" 71a0
+d "(invalid)" 71a8
+d "(invalid)" 71b0
+d "(invalid)" 71b8
+d "(invalid)" 71c8
+d "(invalid)" 71d0
+d "(invalid)" 71d0
+d "(invalid)" 71e0
+d "(invalid)" 71e8
+d "(invalid)" 71f8
+d "(invalid)" 3106
+d "(invalid)" 3107
+d "(invalid)" 3108
+d "(invalid)" 3109
+d "(invalid)" 310a
+d "(invalid)" 310b
+d "(invalid)" 310c
+d "(invalid)" 310d
+d "(invalid)" 310e
+d "(invalid)" 310f
+d "(invalid)" 3116
+d "(invalid)" 3126
+d "(invalid)" 3136
+d "(invalid)" 3146
+d "(invalid)" 3156
+d "(invalid)" 3166
+d "(invalid)" 3176
+d "(invalid)" 3186
+d "(invalid)" 3186
+d "(invalid)" 3187
+d "(invalid)" 3188
+d "(invalid)" 3189
+d "(invalid)" 318a
+d "(invalid)" 318b
+d "(invalid)" 3197
+d "(invalid)" 3198
+d "(invalid)" 3199
+d "(invalid)" 319a
+d "(invalid)" 319b
+d "(invalid)" 31a7
+d "(invalid)" 31a8
+d "(invalid)" 31a9
+d "(invalid)" 31aa
+d "(invalid)" 31ab
+d "(invalid)" 31b7
+d "(invalid)" 31b8
+d "(invalid)" 31b9
+d "(invalid)" 31ba
+d "(invalid)" 31bb
+d "(invalid)" 31c7
+d "(invalid)" 31c8
+d "(invalid)" 31c9
+d "(invalid)" 31ca
+d "(invalid)" 31cb
+d "(invalid)" 31d7
+d "(invalid)" 31d8
+d "(invalid)" 31d9
+d "(invalid)" 31da
+d "(invalid)" 31db
+d "(invalid)" 31e7
+d "(invalid)" 31e8
+d "(invalid)" 31e9
+d "(invalid)" 31ea
+d "(invalid)" 31eb
+d "(invalid)" 31f7
+d "(invalid)" 31f8
+d "(invalid)" 31f9
+d "(invalid)" 31fa
+d "(invalid)" 31fb

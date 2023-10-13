@@ -29,6 +29,7 @@ analysis_plugins_list = [
   'ppc_cs',
   'propeller',
   'pyc',
+  'rl78',
   'rsp',
   'snes',
   'sparc_cs',
@@ -139,6 +140,7 @@ rz_analysis_sources = [
   'p/analysis_ppc_cs.c',
   'p/analysis_propeller.c',
   'p/analysis_pyc.c',
+  'p/analysis_rl78.c',
   'p/analysis_rsp.c',
   'p/analysis_snes.c',
   'p/analysis_sparc_cs.c',
@@ -230,7 +232,11 @@ rz_analysis_sources = [
   '../asm/arch/luac/v54/analysis_54.c',
   '../asm/arch/luac/v54/opcode_54.c',
   '../asm/arch/luac/v53/analysis_53.c',
-  '../asm/arch/luac/v53/opcode_53.c'
+  '../asm/arch/luac/v53/opcode_53.c',
+  '../asm/arch/rl78/rl78_instr.c',
+  '../asm/arch/rl78/rl78_maps.c',
+  '../asm/arch/rl78/rl78_operand.c',
+  '../asm/arch/rl78/rl78.c'
 ]
 
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
