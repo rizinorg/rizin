@@ -44,7 +44,7 @@ static void htup_RzBinDwarfAbbrevTable_free(HtUPKv *kv) {
 
 static void RzBinDwarfAbbrevs_fini(RzBinDwarfAbbrev *abbrevs) {
 	ht_up_free(abbrevs->tbl_by_offset);
-	rz_buf_free(abbrevs->reader->buffer);
+	RzBinEndianReader_free(abbrevs->reader);
 }
 
 static bool RzBinDwarfAbbrevs_init(RzBinDwarfAbbrev *abbrevs) {

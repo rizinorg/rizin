@@ -18,7 +18,7 @@ RZ_IPI void DebugAddr_free(RzBinDwarfAddr *self) {
 	if (!self) {
 		return;
 	}
-	rz_buf_free(self->reader->buffer);
+	RzBinEndianReader_free(self->reader);
 	free(self);
 }
 

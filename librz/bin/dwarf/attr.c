@@ -230,6 +230,9 @@ RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *attr) {
 	case RzBinDwarfAttr_Block:
 		RzBinDwarfBlock_fini(&attr->value.block);
 		break;
+	case RzBinDwarfAttr_String:
+		free(attr->value.string);
+		break;
 	default:
 		break;
 	};

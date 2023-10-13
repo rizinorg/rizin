@@ -364,6 +364,8 @@ RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(RZ_BORROW 
 	RzBinEndianReader *loclists = RzBinEndianReader_from_file(bf, ".debug_loclists");
 	RzBinEndianReader *loc = RzBinEndianReader_from_file(bf, ".debug_loc");
 	if (!(loclists || loc)) {
+		RzBinEndianReader_free(loclists);
+		RzBinEndianReader_free(loc);
 		return NULL;
 	}
 	return rz_bin_dwarf_loclists_new(loclists, loc);

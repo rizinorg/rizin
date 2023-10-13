@@ -36,23 +36,26 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, RzBinSection *section) {
 	if (section->paddr >= binfile->size) {
 		return NULL;
 	}
+	RzBuffer *buffer = NULL;
 	ut64 len = RZ_MIN(section->size, binfile->size - section->paddr);
 	bool is_zlib_gnu = rz_str_startswith(section->name, ".zdebug");
+
+	ut8 *sh_buf = malloc(len);
+	if (!(sh_buf && (rz_buf_read_at(binfile->buf, section->paddr, sh_buf, len) == len))) {
+		goto err;
+	}
+
 	if (!(section->flags & SHF_COMPRESSED || is_zlib_gnu)) {
-		return rz_buf_new_slice(binfile->buf, section->paddr, len);
+		return rz_buf_new_with_pointers(sh_buf, len, true);
 	}
 
 	bool is_64bit = binfile->o->info->bits == 64;
 	ut64 Chdr_size = is_zlib_gnu ? sizeof(Chdr_GNU) : (is_64bit ? sizeof(Elf64_Chdr) : sizeof(Elf32_Chdr));
 	if (len < Chdr_size) {
 		RZ_LOG_ERROR("corrupted compressed section header\n");
-		return NULL;
-	}
-	RzBuffer *buffer = NULL;
-	ut8 *sh_buf = malloc(len);
-	if (!(sh_buf && (rz_buf_read_at(binfile->buf, section->paddr, sh_buf, len) == len))) {
 		goto err;
 	}
+
 	bool bigendian = bf_bigendian(binfile);
 	ut32 ch_type = is_zlib_gnu ? ELFCOMPRESS_ZLIB
 				   : rz_read_at_ble32(sh_buf, 0, bigendian);

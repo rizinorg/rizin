@@ -715,6 +715,7 @@ RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li) {
 	if (!li) {
 		return;
 	}
+	RzBinEndianReader_free(li->reader);
 	rz_list_free(li->units);
 	rz_bin_source_line_info_free(li->lines);
 	free(li);

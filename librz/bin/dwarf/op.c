@@ -1269,18 +1269,17 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 					self->state.kind = EVALUATION_STATE_ERROR;
 					goto err;
 				}
-				Location *location = RZ_NEW0(RzBinDwarfLocation);
-				ERR_IF_FAIL(location);
 				RzBinDwarfPiece piece = {
-					.location = location,
+					.location = RZ_NEW0(RzBinDwarfLocation),
 					.has_size_in_bits = true,
 					.size_in_bits = operation.piece.size_in_bits,
 					.has_bit_offset = operation.piece.has_bit_offset,
 					.bit_offset = operation.piece.bit_offset,
 				};
+				ERR_IF_FAIL(piece.location);
 				OK_OR_ERR(RzBinDwarfLocation_move(&op_result.complete, piece.location) &&
 						rz_vector_push(&self->result, &piece),
-					rz_bin_dwarf_location_free(location));
+					rz_bin_dwarf_location_free(piece.location));
 			}
 			break;
 		}
@@ -1342,31 +1341,38 @@ RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(
 }
 
 static bool RzBinDwarfEvaluationResult_to_loc(
-	RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *result, Location *loc) {
-	rz_return_val_if_fail(loc, false);
-	if (eval->state.kind == EVALUATION_STATE_COMPLETE && result->kind == EvaluationResult_COMPLETE) {
-		RzVector *pieces = rz_bin_dwarf_evaluation_result(eval);
-		if (!pieces || rz_vector_empty(pieces)) {
-			return false;
-		}
-		if (rz_vector_len(pieces) == 1) {
-			RzBinDwarfPiece *piece = rz_vector_index_ptr(pieces, 0);
-			OK_OR(RzBinDwarfLocation_move(piece->location, loc), return false);
-		} else {
-			loc->kind = RzBinDwarfLocationKind_COMPOSITE;
-			loc->composite = rz_vector_clone(pieces);
-			RzBinDwarfPiece *piece = NULL;
-			rz_vector_foreach(pieces, piece) {
-				piece->location = NULL;
-			}
-		}
+	RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *eval_result, Location *loc) {
+	rz_warn_if_fail(loc);
+	if (eval->state.kind != EVALUATION_STATE_COMPLETE || eval_result->kind != EvaluationResult_COMPLETE) {
+		loc->kind = RzBinDwarfLocationKind_EVALUATION_WAITING;
+		loc->eval_waiting.eval = eval;
+		loc->eval_waiting.result = eval_result;
 		return true;
 	}
 
-	loc->kind = RzBinDwarfLocationKind_EVALUATION_WAITING;
-	loc->eval_waiting.eval = eval;
-	loc->eval_waiting.result = result;
-	return true;
+	bool result = false;
+	RzVector *pieces = rz_bin_dwarf_evaluation_result(eval);
+	if (!pieces || rz_vector_empty(pieces)) {
+		goto beach;
+	}
+	if (rz_vector_len(pieces) == 1) {
+		RzBinDwarfPiece *piece = rz_vector_index_ptr(pieces, 0);
+		result = piece && RzBinDwarfLocation_move(piece->location, loc);
+		goto beach;
+	} else {
+		loc->kind = RzBinDwarfLocationKind_COMPOSITE;
+		loc->composite = rz_vector_clone(pieces);
+		RzBinDwarfPiece *piece = NULL;
+		rz_vector_foreach(pieces, piece) {
+			piece->location = NULL;
+		}
+		result = true;
+		goto beach;
+	}
+beach:
+	rz_bin_dwarf_evaluation_free(eval);
+	RzBinDwarfEvaluationResult_free(eval_result);
+	return result;
 }
 
 /**
@@ -1391,20 +1397,15 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 	ERR_IF_FAIL(eval);
 	ERR_IF_FAIL(rz_bin_dwarf_evaluation_evaluate(eval, result) &&
 		RzBinDwarfEvaluationResult_to_loc(eval, result, loc));
-ok:
 	return loc;
 err:
 	if (eval && eval->state.kind == EVALUATION_STATE_DECODE_ERROR) {
 		loc->kind = RzBinDwarfLocationKind_DECODE_ERROR;
-		goto cleanup;
 	} else {
 		rz_bin_dwarf_location_free(loc);
 		loc = NULL;
 	}
-cleanup:
-	rz_bin_dwarf_evaluation_free(eval);
-	RzBinDwarfEvaluationResult_free(result);
-	goto ok;
+	return loc;
 }
 
 static void Operation_dump(Operation *op, RzStrBuf *buf) {
