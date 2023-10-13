@@ -5,6 +5,11 @@
 #include "rl78_maps.h"
 #include <stdio.h>
 
+#define CHECK_BOUNDS(p, len) \
+	if (*p >= len) { \
+		return false; \
+	}
+
 static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_byte_p,
 	const ut8 RZ_BORROW *buf, size_t buf_len);
 
@@ -101,7 +106,7 @@ bool rl78_dis(RL78Instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
 		byte = buf[next_byte_p++];
 	}
 
-	*instr = rl78_instr_maps[map * 256 + byte];
+	*instr = rl78_instr_maps[(map * 256) + byte];
 
 	// an empty slot was indexed
 	if (instr->operation == RL78_OPERATION_NONE) {
@@ -139,8 +144,7 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 			return true;
 		}
 
-		if (*next_byte_p >= buf_len)
-			return false;
+		CHECK_BOUNDS(next_byte_p, buf_len);
 
 		if (operand->type == RL78_OP_TYPE_BASED_ADDR_8) {
 			// write to v1 since v0 already has base register
@@ -158,8 +162,7 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 			return true;
 		}
 
-		if (*next_byte_p >= buf_len)
-			return false;
+		CHECK_BOUNDS(next_byte_p, buf_len);
 
 		operand->v0 = 0xFFF00 + buf[*next_byte_p];
 		(*next_byte_p)++;
@@ -167,8 +170,7 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 		break;
 
 	case RL78_OP_TYPE_SADDR:
-		if (*next_byte_p >= buf_len)
-			return false;
+		CHECK_BOUNDS(next_byte_p, buf_len);
 
 		operand->v0 = 0xFFE20 + buf[*next_byte_p];
 		(*next_byte_p)++;
@@ -180,14 +182,12 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 	case RL78_OP_TYPE_ABSOLUTE_ADDR_16:
 	case RL78_OP_TYPE_RELATIVE_ADDR_16:
 	case RL78_OP_TYPE_BASED_ADDR_16:
-		if (*next_byte_p >= buf_len)
-			return false;
+		CHECK_BOUNDS(next_byte_p, buf_len);
 
 		int word = buf[*next_byte_p];
 		(*next_byte_p)++;
 
-		if (*next_byte_p >= buf_len)
-			return false;
+		CHECK_BOUNDS(next_byte_p, buf_len);
 
 		word |= (int)buf[*next_byte_p] << 8;
 		(*next_byte_p)++;
@@ -203,20 +203,17 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 
 		// 20 bit
 	case RL78_OP_TYPE_ABSOLUTE_ADDR_20:
-		if (*next_byte_p >= buf_len)
-			return false;
+		CHECK_BOUNDS(next_byte_p, buf_len);
 
 		int val = buf[*next_byte_p];
 		(*next_byte_p)++;
 
-		if (*next_byte_p >= buf_len)
-			return false;
+		CHECK_BOUNDS(next_byte_p, buf_len);
 
 		val |= (int)buf[*next_byte_p] << 8;
 		(*next_byte_p)++;
 
-		if (*next_byte_p >= buf_len)
-			return false;
+		CHECK_BOUNDS(next_byte_p, buf_len);
 
 		val |= (int)(buf[*next_byte_p] & 0xf) << 16;
 		(*next_byte_p)++;
