@@ -83,6 +83,11 @@ rz_util_common_sources = [
   'version.c',
   'w32-sys.c',
   'x509.c',
+  'ht/ht_uu.c',
+  'ht/ht_pp.c',
+  'ht/ht_up.c',
+  'ht/ht_pu.c',
+  'set.c',
 ]
 rz_util_sources = rz_util_common_sources
 
@@ -112,7 +117,7 @@ else
   rz_util_sources += ['big.c']
 endif
 
-rz_util_includes = [platform_inc, include_directories('sdb/src', 'sdb')]
+rz_util_includes = [platform_inc, include_directories('sdb/src', 'sdb', '../include/rz_util', '.')]
 
 rz_util = library('rz_util', rz_util_sources, libsdb_sources,
   include_directories: rz_util_includes,

@@ -964,109 +964,39 @@ jobs:
       - name: Extract rizin version
         run: echo "branch=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
+      - uses: actions/download-artifact@v3
+      - name: Rename artifacts for release
+        run: |
+          mv ./rizin-src.tar.xz/rizin-src.tar.xz rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
+          mv ./rizin-static.tar.xz/rizin-static.tar.xz rizin-${{ steps.extract_version.outputs.branch }}-static-x86_64.tar.xz
+          mv ./rizin-android-x86_64/rizin-android-x86_64.tar.gz rizin-${{ steps.extract_version.outputs.branch }}-android-x86_64.tar.gz
+          mv ./rizin-android-arm/rizin-android-arm.tar.gz rizin-${{ steps.extract_version.outputs.branch }}-android-arm.tar.gz
+          mv ./rizin-android-aarch64/rizin-android-aarch64.tar.gz rizin-${{ steps.extract_version.outputs.branch }}-android-aarch64.tar.gz
+          mv ./rizin.pkg/rizin.pkg rizin-macos-${{ steps.extract_version.outputs.branch }}.pkg
+          mv ./rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip/rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip rizin-windows-static-${{ steps.extract_version.outputs.branch }}.zip
+          mv ./rizin-clang_cl-${{ steps.extract_version.outputs.branch }}.zip/rizin-clang_cl-${{ steps.extract_version.outputs.branch }}.zip rizin-windows-shared64-${{ steps.extract_version.outputs.branch }}.zip
+          mv ./rizin_installer-clang_cl-${{ steps.extract_version.outputs.branch }}/rizin.exe rizin_installer-${{ steps.extract_version.outputs.branch }}-x86_64.exe
+          mv ./rizin_installer-clang_cl_x86-${{ steps.extract_version.outputs.branch }}/rizin.exe rizin_installer-${{ steps.extract_version.outputs.branch }}-x86.exe
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.extract_version.outputs.branch }}
-          release_name: Release ${{ steps.extract_version.outputs.branch }}
+          name: Release ${{ steps.extract_version.outputs.branch }}
           draft: true
           prerelease: false
-      - uses: actions/download-artifact@v3
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Upload rizin src tarball
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-src.tar.xz/rizin-src.tar.xz
-          asset_name: rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
-          asset_content_type: application/zip
-      - name: Upload rizin static x86_64 tar.gz
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-static.tar.xz/rizin-static.tar.xz
-          asset_name: rizin-${{ steps.extract_version.outputs.branch }}-static-x86_64.tar.xz
-          asset_content_type: application/zip
-      - name: Upload rizin android x86_64 tar.gz
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-android-x86_64/rizin-android-x86_64.tar.gz
-          asset_name: rizin-${{ steps.extract_version.outputs.branch }}-android-x86_64.tar.gz
-          asset_content_type: application/zip
-      - name: Upload rizin android arm tar.gz
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-android-arm/rizin-android-arm.tar.gz
-          asset_name: rizin-${{ steps.extract_version.outputs.branch }}-android-arm.tar.gz
-          asset_content_type: application/zip
-      - name: Upload rizin android aarch64 tar.gz
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-android-aarch64/rizin-android-aarch64.tar.gz
-          asset_name: rizin-${{ steps.extract_version.outputs.branch }}-android-aarch64.tar.gz
-          asset_content_type: application/zip
-      - name: Upload rizin OSX pkg
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin.pkg/rizin.pkg
-          asset_name: rizin-macos-${{ steps.extract_version.outputs.branch }}.pkg
-          asset_content_type: application/zip
-      - name: Upload rizin windows archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip/rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip
-          asset_name: rizin-windows-static-${{ steps.extract_version.outputs.branch }}.zip
-          asset_content_type: application/zip
-      - name: Upload rizin windows dynamic archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-clang_cl-${{ steps.extract_version.outputs.branch }}.zip/rizin-clang_cl-${{ steps.extract_version.outputs.branch }}.zip
-          asset_name: rizin-windows-shared64-${{ steps.extract_version.outputs.branch }}.zip
-          asset_content_type: application/zip
-      - name: Upload rizin windows installer (x64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin_installer-clang_cl-${{ steps.extract_version.outputs.branch }}/rizin.exe
-          asset_name: rizin_installer-${{ steps.extract_version.outputs.branch }}-x86_64.exe
-          asset_content_type: application/zip
-      - name: Upload rizin windows installer (x86)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin_installer-clang_cl_x86-${{ steps.extract_version.outputs.branch }}/rizin.exe
-          asset_name: rizin_installer-${{ steps.extract_version.outputs.branch }}-x86.exe
-          asset_content_type: application/zip
+          files: |
+            rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
+            rizin-${{ steps.extract_version.outputs.branch }}-static-x86_64.tar.xz
+            rizin-${{ steps.extract_version.outputs.branch }}-android-x86_64.tar.gz
+            rizin-${{ steps.extract_version.outputs.branch }}-android-arm.tar.gz
+            rizin-${{ steps.extract_version.outputs.branch }}-android-aarch64.tar.gz
+            rizin-macos-${{ steps.extract_version.outputs.branch }}.pkg
+            rizin-windows-static-${{ steps.extract_version.outputs.branch }}.zip
+            rizin-windows-shared64-${{ steps.extract_version.outputs.branch }}.zip
+            rizin_installer-${{ steps.extract_version.outputs.branch }}-x86_64.exe
+            rizin_installer-${{ steps.extract_version.outputs.branch }}-x86.exe
 
   publish-docker-image:
     name: Publish Docker image on Docker Hub
