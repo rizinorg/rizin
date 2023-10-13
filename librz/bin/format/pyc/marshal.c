@@ -682,6 +682,10 @@ static pyc_object *get_ascii_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	ut32 n = 0;
 
 	n = get_ut32(buffer, &error);
+	if (n > ST32_MAX) {
+		RZ_LOG_ERROR("bad marshal data (ascii size out of range)\n");
+		return NULL;
+	}
 	if (error) {
 		return NULL;
 	}
@@ -693,6 +697,10 @@ static pyc_object *get_ascii_interned_object(RzBinPycObj *pyc, RzBuffer *buffer)
 	ut32 n;
 
 	n = get_ut32(buffer, &error);
+	if (n > ST32_MAX) {
+		RZ_LOG_ERROR("bad marshal data (ascii size out of range)\n");
+		return NULL;
+	}
 	if (error) {
 		return NULL;
 	}
