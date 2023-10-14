@@ -139,6 +139,10 @@ static void CU_fini(RzBinDwarfCompUnit *unit, void *user) {
 		return;
 	}
 	rz_vector_fini(&unit->dies);
+	free(unit->comp_dir);
+	free(unit->dwo_name);
+	free(unit->name);
+	free(unit->producer);
 }
 
 static inline ut64 CU_next(RzBinDwarfCompUnit *unit) {
@@ -309,11 +313,11 @@ static inline void info_free(RzBinDwarfInfo *info) {
 	if (!info) {
 		return;
 	}
+	RzBinEndianReader_free(info->reader);
 	rz_vector_fini(&info->units);
 	ht_up_free(info->offset_comp_dir);
 	ht_up_free(info->die_by_offset);
 	ht_up_free(info->unit_by_offset);
-	rz_buf_free(info->reader->buffer);
 	free(info);
 }
 

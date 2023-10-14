@@ -985,7 +985,11 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 
 	RzType *copy = type ? rz_type_clone(type) : NULL;
 	if (copy && ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
-		RZ_LOG_DEBUG("Insert RzType [%s] into type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, type));
+#if RZ_BUILD_DEBUG
+		char *tstring = rz_type_as_string(ctx->analysis->typedb, type);
+		RZ_LOG_DEBUG("Insert RzType [%s] into type_by_offset\n", tstring);
+		free(tstring);
+#endif
 	} else {
 		RZ_LOG_ERROR("Failed to insert RzType [0x%" PFMT64x "] into type_by_offset\n", offset);
 		rz_type_free(copy);
@@ -1022,8 +1026,8 @@ static RzType *type_parse_from_abstract_origin(Context *ctx, ut64 offset, char *
 		return NULL;
 	}
 	ut64 size = 0;
-	const char *name = NULL;
-	const char *linkname = NULL;
+	char *name = NULL;
+	char *linkname = NULL;
 	RzType *type = NULL;
 	const RzBinDwarfAttr *attr;
 	rz_vector_foreach(&die->attrs, attr) {
@@ -1042,12 +1046,15 @@ static RzType *type_parse_from_abstract_origin(Context *ctx, ut64 offset, char *
 		}
 	}
 	if (!type) {
-		return NULL;
+		goto beach;
 	}
 	const char *prefer_name = select_name(NULL, linkname, name, ctx->unit->language);
 	if (prefer_name && name_out) {
 		*name_out = rz_str_new(prefer_name);
 	}
+beach:
+	free(name);
+	free(linkname);
 	return type;
 }
 
@@ -1772,7 +1779,7 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDWAR
 
 static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f,
 	RzAnalysisDwarfVariable *dw_var, const char *reg_name, RzAnalysisVar *var) {
-	if (!(dw_var->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET)) {
+	if (dw_var->location->kind != RzBinDwarfLocationKind_REGISTER_OFFSET) {
 		return false;
 	}
 	ut16 reg = dw_var->location->register_number;
@@ -1946,6 +1953,7 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 	if (callable) {
 		char *sig = rz_type_callable_as_string(analysis->typedb, callable);
 		rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, dw_fn->low_pc, sig);
+		free(sig);
 	}
 
 	if (dw_fn->prefer_name && !rz_str_startswith(dw_fn->prefer_name, "anonymous")) {

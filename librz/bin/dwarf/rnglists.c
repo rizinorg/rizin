@@ -119,6 +119,8 @@ RZ_IPI void DebugRngLists_free(RzBinDwarfRngLists *self) {
 		return;
 	}
 
+	RzBinEndianReader_free(self->ranges);
+	RzBinEndianReader_free(self->rnglists);
 	ht_up_free(self->rnglist_by_offset);
 	free(self);
 }
@@ -290,6 +292,8 @@ RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(
 	RzBinEndianReader *rnglists = RzBinEndianReader_from_file(bf, ".debug_rnglists");
 	RzBinEndianReader *ranges = RzBinEndianReader_from_file(bf, ".debug_ranges");
 	if (!(rnglists || ranges)) {
+		RzBinEndianReader_free(rnglists);
+		RzBinEndianReader_free(ranges);
 		return NULL;
 	}
 	return rz_bin_dwarf_rnglists_new(rnglists, ranges);

@@ -19,7 +19,7 @@ RZ_API void rz_bin_dwarf_aranges_free(RZ_OWN RZ_NULLABLE RzBinDwarfARanges *aran
 		return;
 	}
 	rz_list_free(aranges->list);
-	rz_buf_free(aranges->reader->buffer);
+	RzBinEndianReader_free(aranges->reader);
 	free(aranges);
 }
 
