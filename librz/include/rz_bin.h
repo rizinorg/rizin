@@ -369,6 +369,7 @@ struct rz_bin_t {
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 	RzDemangler *demangler;
 	RzHash *hash;
+	RzList /*<char *>*/ *default_hashes; //bin.hashes.default
 };
 
 typedef struct rz_bin_xtr_metadata_t {
