@@ -615,7 +615,7 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free(pj);
 }
 
-static int cond_cs2r2_32(int cc) {
+static int cond_cs2rz_32(int cc) {
 #if CS_NEXT_VERSION >= 6
 	if (cc == ARMCC_AL || cc < 0 || cc == ARMCC_UNDEF) {
 #else
@@ -643,7 +643,7 @@ static int cond_cs2r2_32(int cc) {
 	return cc;
 }
 
-static int cond_cs2r2_64(int cc) {
+static int cond_cs2rz_64(int cc) {
 	if (cc == CS_AARCH64CC(_AL) || cc < 0) {
 		cc = RZ_TYPE_COND_AL;
 	} else {
@@ -707,7 +707,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	}
 #endif
 
-	op->cond = cond_cs2r2_64(insn->detail->CS_aarch64().cc);
+	op->cond = cond_cs2rz_64(insn->detail->CS_aarch64().cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return;
@@ -1151,7 +1151,7 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 	const int pcdelta = thumb ? 4 : 8;
 	int i;
 
-	op->cond = cond_cs2r2_32(insn->detail->arm.cc);
+	op->cond = cond_cs2rz_32(insn->detail->arm.cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return;
@@ -1647,7 +1647,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			ARMCondCodeToString(insn->detail->arm.cc),
 			insn->op_str[0] ? " " : "",
 			insn->op_str);
-		op->cond = (RzTypeCond)insn->detail->arm.cc;
+		op->cond = cond_cs2rz_32(insn->detail->arm.cc);
 	}
 }
 
