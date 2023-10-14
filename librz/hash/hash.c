@@ -261,8 +261,8 @@ RZ_API void rz_hash_cfg_free(RZ_NONNULL RzHashCfg *md) {
 /**
  * \brief Allocates and configures the plugin message digest context
  *
- * message digest allocates internally a HashCfgConfig which
- * contains all the needed informations to the plugin to work.
+ * message digest internally allocates a HashCfgConfig which
+ * contains all the information needed for the plugin to work.
  * */
 RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(md && name, false);
