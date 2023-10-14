@@ -169,6 +169,14 @@ static const char *vector_data_type_name(arm_vectordata_type type) {
 	}
 }
 
+static bool cc_holds_cond(CS_aarch64_cc() cc) {
+#if CS_NEXT_VERSION >= 6
+	return (cc != CS_AARCH64CC(_Invalid) && cc != CS_AARCH64CC(_AL) && cc != CS_AARCH64CC(_NV));
+#else
+	return (cc != CS_AARCH64CC(_INVALID) && cc != CS_AARCH64CC(_AL) && cc != CS_AARCH64CC(_NV));
+#endif
+}
+
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new();
@@ -601,11 +609,7 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 #endif
 		pj_kb(pj, "writeback", true);
 	}
-#if CS_NEXT_VERSION < 6
-	if (x->cc != CS_AARCH64CC(_INVALID) && x->cc != CS_AARCH64CC(_AL) && x->cc != CS_AARCH64CC(_NV)) {
-#else
-	if (x->cc != CS_AARCH64CC(_AL) && x->cc != CS_AARCH64CC(_NV)) {
-#endif
+	if (cc_holds_cond(x->cc)) {
 		pj_ks(pj, "cc", cc_name64(x->cc));
 	}
 	pj_end(pj);
@@ -1130,7 +1134,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		// BX LR == RET
 		if (insn->detail->CS_aarch64().operands[0].reg == CS_AARCH64(_REG_LR)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
-		} else if (insn->detail->CS_aarch64().cc) {
+		} else if (cc_holds_cond(insn->detail->CS_aarch64().cc)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->jump = IMM64(0);
 			op->fail = addr + op->size;
