@@ -2455,11 +2455,11 @@ static bool cb_binhashesdefault(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (*node->value == '?') {
 		print_node_options(node);
-		rz_cons_printf( "Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
+		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
 		return false;
 	}
 
-	char* algos[] = {
+	char *algos[] = {
 		"md5",
 		"sha1",
 		"sha256",
@@ -2471,20 +2471,20 @@ static bool cb_binhashesdefault(void *user, void *data) {
 	};
 
 	free(core->bin->default_hashes);
-	if(*node->value){
-		char* delim = ",";
-		char* value = strdup(node->value);
+	if (*node->value) {
+		char *delim = ",";
+		char *value = strdup(node->value);
 		if (!value) {
 			rz_sys_perror("strdup");
 			return false;
 		}
 		RzList *algo_list = rz_list_newf((RzListFree)free);
-		char* token = strtok(value, delim);
-		while (token){
-			for(int i = 0; i < RZ_ARRAY_SIZE(algos);  i++) {
+		char *token = strtok(value, delim);
+		while (token) {
+			for (int i = 0; i < RZ_ARRAY_SIZE(algos); i++) {
 				if (algos[i] != NULL && !strcmp(token, algos[i])) {
-					char* hash = strdup(algos[i]);
-					if(hash) {
+					char *hash = strdup(algos[i]);
+					if (hash) {
 						rz_list_append(algo_list, hash);
 					} else {
 						rz_sys_perror("strdup");
@@ -2494,7 +2494,7 @@ static bool cb_binhashesdefault(void *user, void *data) {
 					}
 					algos[i] = NULL;
 					break;
-				} else if (i == RZ_ARRAY_SIZE(algos)- 1) {
+				} else if (i == RZ_ARRAY_SIZE(algos) - 1) {
 					RZ_LOG_ERROR("core: bin.hashes.default: invalid or duplicate value: %s\n", node->value);
 					rz_list_free(algo_list);
 					free(value);
@@ -2510,7 +2510,6 @@ static bool cb_binhashesdefault(void *user, void *data) {
 		core->bin->default_hashes = NULL;
 		return true;
 	}
-
 }
 
 static bool cb_debase64(void *user, void *data) {
