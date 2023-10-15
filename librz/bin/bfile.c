@@ -426,54 +426,53 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 	if (!md) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
-	RzListIter * hash_algos_iter = bin->default_hashes ? rz_list_iterator(bin->default_hashes) : NULL;
-	if (!hash_algos_iter) {
-		goto rz_bin_file_compute_hashes_bad;
-	}
+	RzListIter *hash_algos_iter = bin->default_hashes ? rz_list_iterator(bin->default_hashes) : NULL;
 
+	if (hash_algos_iter) {
+		while (hash_algos_iter) {
+			char *algo = rz_list_iter_get(hash_algos_iter);
+			if (!rz_hash_cfg_configure(md, algo)) {
+				goto rz_bin_file_compute_hashes_bad;
+			}
+		}
 
-	while (hash_algos_iter) {
-		char * algo = rz_list_iter_get(hash_algos_iter);
-		if(!rz_hash_cfg_configure(md, algo)){
+		if (!rz_hash_cfg_init(md)) {
 			goto rz_bin_file_compute_hashes_bad;
 		}
-	}
 
-	if (!rz_hash_cfg_init(md)) {
-		goto rz_bin_file_compute_hashes_bad;
-	}
-
-	if (rz_buf_fwd_scan(buf, 0, buf_size, buf_compute_hashes, md) != buf_size) {
-		goto rz_bin_file_compute_hashes_bad;
-	}
-
-	if (!rz_hash_cfg_final(md)) {
-		goto rz_bin_file_compute_hashes_bad;
-	}
-
-	hash_algos_iter = rz_list_iterator(bin->default_hashes);
-
-	while (hash_algos_iter) {
-		char * algo = rz_list_iter_get(hash_algos_iter);
-		if(!add_file_hash(md, algo, file_hashes)){
+		if (rz_buf_fwd_scan(buf, 0, buf_size, buf_compute_hashes, md) != buf_size) {
 			goto rz_bin_file_compute_hashes_bad;
 		}
-	}
 
-	if (o->plugin && o->plugin->hashes) {
-		RzPVector *plugin_hashes = o->plugin->hashes(bf);
-		void **it;
-		rz_pvector_foreach (plugin_hashes, it) {
-			RzBinFileHash *h = *it;
-			rz_pvector_push(file_hashes, h);
+		if (!rz_hash_cfg_final(md)) {
+			goto rz_bin_file_compute_hashes_bad;
 		}
-		plugin_hashes->v.free = NULL;
-		rz_pvector_free(plugin_hashes);
+
+		hash_algos_iter = rz_list_iterator(bin->default_hashes);
+
+		while (hash_algos_iter) {
+			char *algo = rz_list_iter_get(hash_algos_iter);
+			if (!add_file_hash(md, algo, file_hashes)) {
+				goto rz_bin_file_compute_hashes_bad;
+			}
+		}
+
+		if (o->plugin && o->plugin->hashes) {
+			RzPVector *plugin_hashes = o->plugin->hashes(bf);
+			void **it;
+			rz_pvector_foreach (plugin_hashes, it) {
+				RzBinFileHash *h = *it;
+				rz_pvector_push(file_hashes, h);
+			}
+			plugin_hashes->v.free = NULL;
+			rz_pvector_free(plugin_hashes);
+		}
 	}
 
 	// TODO: add here more rows
 	rz_buf_free(buf);
 	rz_hash_cfg_free(md);
+	return file_hashes;
 
 rz_bin_file_compute_hashes_bad:
 	rz_buf_free(buf);

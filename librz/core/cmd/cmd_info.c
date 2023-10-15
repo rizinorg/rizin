@@ -622,10 +622,16 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 	GET_CHECK_CUR_BINFILE(core);
 
 	RzPVector *new_hashes = rz_bin_file_compute_hashes(core->bin, bf, limit);
+	if (!new_hashes) {
+		RZ_LOG_ERROR("core: Computing file hashes failed\n")
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzPVector *old_hashes = rz_bin_file_set_hashes(core->bin, new_hashes);
-	bool equal = true;
+	bool equal = false;
 	if (new_hashes && old_hashes && !rz_pvector_empty(new_hashes) && !rz_pvector_empty(old_hashes)) {
-		if (!is_equal_file_hashes(new_hashes, old_hashes, &equal)) {
+		if (is_equal_file_hashes(new_hashes, old_hashes, &equal)) {
+			equal = true;
+		} else {
 			RZ_LOG_ERROR("core: Cannot compare file hashes\n");
 			rz_pvector_free(old_hashes);
 			return RZ_CMD_STATUS_ERROR;
@@ -653,20 +659,23 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (!equal) {
-			size_t min_len = RZ_MIN(rz_pvector_len(old_hashes), rz_pvector_len(new_hashes));
-			for (int i = 0; i < min_len; i++) {
-				fh_new = (RzBinFileHash *)rz_pvector_at(new_hashes, i);
-				fh_old = (RzBinFileHash *)rz_pvector_at(old_hashes, i);
-				if (strcmp(fh_new->type, fh_old->type)) {
+			size_t max_len = RZ_MAX(rz_pvector_len(old_hashes), rz_pvector_len(new_hashes));
+			for (int i = 0; i < max_len; i++) {
+				fh_new = i < rz_pvector_len(new_hashes) ? (RzBinFileHash *)rz_pvector_at(new_hashes, i) : NULL;
+				fh_old = i < rz_pvector_len(old_hashes) ? (RzBinFileHash *)rz_pvector_at(old_hashes, i) : NULL;
+				if (fh_new && fh_old && strcmp(fh_new->type, fh_old->type)) {
 					RZ_LOG_ERROR("core: Wrong file hashes structure");
 				}
-				if (!strcmp(fh_new->hex, fh_old->hex)) {
+				if (fh_new && fh_old && !strcmp(fh_new->hex, fh_old->hex)) {
 					fprintf(stderr, "= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
 				} else {
 					// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
-					fprintf(stderr, "- %s %s\n+ %s %s\n",
-						fh_old->type, fh_old->hex,
-						fh_new->type, fh_new->hex);
+					if (fh_old) {
+						fprintf(stderr, "- %s %s\n", fh_old->type, fh_old->hex);
+					}
+					if (fh_new) {
+						fprintf(stderr, "+ %s %s\n", fh_new->type, fh_new->hex);
+					}
 				}
 			}
 		} else { // hashes are equal
