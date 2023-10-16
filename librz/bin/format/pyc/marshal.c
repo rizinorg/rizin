@@ -679,10 +679,11 @@ static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, 
 
 static pyc_object *get_ascii_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_ut32(buffer, &error);
-	if (error) {
+	ut32 n = get_ut32(buffer, &error);
+	if (n > ST32_MAX) {
+		RZ_LOG_ERROR("bad marshal data (string size out of range)\n");
+		return NULL;
+	} else if (error) {
 		return NULL;
 	}
 	return get_ascii_object_generic(pyc, buffer, n, true);
@@ -690,10 +691,11 @@ static pyc_object *get_ascii_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 static pyc_object *get_ascii_interned_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
-	ut32 n;
-
-	n = get_ut32(buffer, &error);
-	if (error) {
+	ut32 n = get_ut32(buffer, &error);
+	if (n > ST32_MAX) {
+		RZ_LOG_ERROR("bad marshal data (string size out of range)\n");
+		return NULL;
+	} else if (error) {
 		return NULL;
 	}
 	return get_ascii_object_generic(pyc, buffer, n, true);
