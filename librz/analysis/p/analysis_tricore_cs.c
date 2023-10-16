@@ -1018,6 +1018,9 @@ static void rz_analysis_tricore_fillval(RzAnalysis *a, RzAnalysisOp *op, csh han
 			if (op->dst) {
 				rz_warn_if_reached();
 			}
+			if (av == op->src[srci - 1]) {
+				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
+			}
 			op->dst = av;
 		}
 	}
