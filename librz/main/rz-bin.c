@@ -216,8 +216,8 @@ static int rabin_show_help(int v) {
 	}
 	if (v) {
 		printf("Environment:\n"
+		       " RZ_NOPLUGINS:                        # do not load shared plugins (speedup loading)\n"
 		       " RZ_BIN_LANG:      e bin.lang         # assume lang for demangling\n"
-		       " RZ_BIN_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
 		       " RZ_BIN_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		       " RZ_BIN_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
 		       " RZ_BIN_STRFILTER: e bin.str.filter   # rizin -qc 'e bin.str.filter=?"
@@ -699,7 +699,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	rz_core_init(&core);
 	bin = core.bin;
-	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
+	if (!(tmp = rz_sys_getenv("RZ_NOPLUGINS"))) {
 		char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
 		char *plugindir = rz_path_system(RZ_PLUGINS);
 		char *extraplugindir = rz_path_extra(RZ_PLUGINS);

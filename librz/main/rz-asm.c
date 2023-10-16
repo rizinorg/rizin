@@ -203,7 +203,7 @@ static int rasm_show_help(int v) {
 		       " If '-l' value is greater than output length, output is padded with nops\n"
 		       " If the last argument is '-' reads from stdin\n");
 		printf("Environment:\n"
-		       " RZ_ASM_NOPLUGINS  do not load shared plugins (speedup loading)\n"
+		       " RZ_NOPLUGINS      do not load shared plugins (speedup loading)\n"
 		       " RZ_ASM_ARCH       same as rz-asm -a\n"
 		       " RZ_ASM_BITS       same as rz-asm -b\n"
 		       " RZ_DEBUG          if defined, show error messages and crash signal\n"
@@ -477,7 +477,7 @@ static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, u
 }
 
 static void __load_plugins(RzAsmState *as) {
-	char *tmp = rz_sys_getenv("RZ_ASM_NOPLUGINS");
+	char *tmp = rz_sys_getenv("RZ_NOPLUGINS");
 	if (tmp) {
 		free(tmp);
 		return;
