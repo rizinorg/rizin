@@ -46,7 +46,7 @@ struct rz_il_vm_t {
 	RzBitVector *pc; ///< Program Counter of VM
 	RzILOpPureHandler *op_handler_pure_table; ///< Array of Handler, handler can be indexed by opcode
 	RzILOpEffectHandler *op_handler_effect_table; ///< Array of Handler, handler can be indexed by opcode
-	RzList /*<RzILEvent *>*/ *events; ///< List of events that has happened in the last step
+	RzPVector /*<RzILEvent *>*/ *events; ///< List of events that has happened in the last step
 	bool big_endian; ///< Sets the endianness of the memory reads/writes operations
 };
 

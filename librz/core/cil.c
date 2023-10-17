@@ -744,7 +744,8 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 	RzILVM *vm = core->analysis->il_vm->vm;
 
 	RzStrBuf *sb = NULL;
-	RzListIter *it;
+	//RzListIter *it;
+	void **it;
 	RzILEvent *evt;
 
 	bool evt_read = rz_config_get_b(core->config, "rzil.step.events.read");
@@ -759,7 +760,8 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 	if (!pj) {
 		sb = rz_strbuf_new("");
 	}
-	rz_list_foreach (vm->events, it, evt) {
+	rz_pvector_foreach(vm->events, it) {
+		evt = *it;
 		if (!evt_read && (evt->type == RZ_IL_EVENT_MEM_READ || evt->type == RZ_IL_EVENT_VAR_READ)) {
 			continue;
 		} else if (!evt_write && (evt->type != RZ_IL_EVENT_MEM_READ && evt->type != RZ_IL_EVENT_VAR_READ)) {
