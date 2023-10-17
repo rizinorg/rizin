@@ -954,7 +954,7 @@ jobs:
         build-debian,
         build-static,
         build-android,
-        build-cpp-linux,
+        build-cpp,
         test-osx-pkg,
         test-windows-clang_cl,
         build-rzpipe,
