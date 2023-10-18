@@ -1700,9 +1700,21 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		b = temp; \
 	} while (0)
 
+static inline void update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
+	RzBaseType *t = rz_type_db_get_base_type(typedb, type->name);
+	if (t && t == type) {
+		return;
+	}
+	rz_type_db_update_base_type(typedb, rz_base_type_clone(type));
+}
+
 static void db_save_renamed(RzTypeDB *db, RzBaseType *b, char *name) {
 	if (!name) {
 		rz_warn_if_reached();
+		return;
+	}
+	RzBaseType *t = rz_type_db_get_base_type(db, b->name);
+	if (t == b) {
 		return;
 	}
 	free(b->name);
@@ -1719,7 +1731,7 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 		RZ_LOG_WARN("BaseType %s has nothing", name);
 	} else if (len == 1) {
 		RzBaseType *t = rz_pvector_head(types);
-		rz_type_db_update_base_type(analysis->typedb, rz_base_type_clone(t));
+		update_base_type(analysis->typedb, t);
 	} else if (len == 2) {
 		RzBaseType *a = rz_pvector_head(types);
 		RzBaseType *b = rz_pvector_tail(types);
@@ -1727,7 +1739,7 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 			SWAP(RzBaseType *, a, b);
 		}
 		if (a->kind != RZ_BASE_TYPE_KIND_TYPEDEF) {
-			rz_type_db_update_base_type(analysis->typedb, rz_base_type_clone(a));
+			update_base_type(analysis->typedb, a);
 			db_save_renamed(analysis->typedb, rz_base_type_clone(b), rz_str_newf("%s_0", name));
 			goto beach;
 		}
@@ -1743,7 +1755,7 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 		free(a->type->identifier.name);
 		char *newname = rz_str_newf("%s_0", name);
 		a->type->identifier.name = rz_str_new(newname);
-		rz_type_db_update_base_type(analysis->typedb, rz_base_type_clone(a));
+		update_base_type(analysis->typedb, a);
 
 		db_save_renamed(analysis->typedb, rz_base_type_clone(b), newname);
 	} else {

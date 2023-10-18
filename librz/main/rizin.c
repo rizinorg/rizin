@@ -582,7 +582,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				rz_core_cmd0(r, "eq");
 			} else {
 				rz_config_eval(r->config, opt.arg);
-				rz_list_append(evals, (void *)opt.arg);
 			}
 			break;
 		case 'f':
