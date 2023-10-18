@@ -11,6 +11,79 @@
 #define MEMBASE64(x)  rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
 #define MEMINDEX64(x) rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 
+RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, arm64_cc cond_type) {
+	const char *close_cond[2];
+	close_cond[0] = "";
+	close_cond[1] = ",}";
+	int close_type = 0;
+	switch (cond_type) {
+	case ARM64_CC_EQ:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "zf,?{,");
+		break;
+	case ARM64_CC_NE:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "zf,!,?{,");
+		break;
+	case ARM64_CC_HS:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "cf,?{,");
+		break;
+	case ARM64_CC_LO:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "cf,!,?{,");
+		break;
+	case ARM64_CC_MI:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "nf,?{,");
+		break;
+	case ARM64_CC_PL:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "nf,!,?{,");
+		break;
+	case ARM64_CC_VS:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "vf,?{,");
+		break;
+	case ARM64_CC_VC:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "vf,!,?{,");
+		break;
+	case ARM64_CC_HI:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "cf,zf,!,&,?{,");
+		break;
+	case ARM64_CC_LS:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "cf,!,zf,|,?{,");
+		break;
+	case ARM64_CC_GE:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "nf,vf,^,!,?{,");
+		break;
+	case ARM64_CC_LT:
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "nf,vf,^,?{,");
+		break;
+	case ARM64_CC_GT:
+		// zf == 0 && nf == vf
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "zf,!,nf,vf,^,!,&,?{,");
+		break;
+	case ARM64_CC_LE:
+		// zf == 1 || nf != vf
+		close_type = 1;
+		rz_strbuf_setf(&op->esil, "zf,nf,vf,^,|,?{,");
+		break;
+	case ARM64_CC_AL:
+		// always executed
+		break;
+	default:
+		break;
+	}
+	return close_cond[close_type];
+}
+
 static int arm64_reg_width(int reg) {
 	switch (reg) {
 	case ARM64_REG_W0:
@@ -205,7 +278,7 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	rz_strbuf_init(&op->esil);
 	rz_strbuf_set(&op->esil, "");
 
-	postfix = rz_arm_cs_esil_prefix_cond(op, insn->detail->arm64.cc);
+	postfix = rz_arm64_cs_esil_prefix_cond(op, insn->detail->arm64.cc);
 
 	switch (insn->id) {
 	case ARM64_INS_REV:

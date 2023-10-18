@@ -427,11 +427,11 @@ afvR
       arg1  0x6
       arg2  0x8
       arg3  0xc
-   var_10h  0x4,0x2c
+   var_10h
     var_ch  0x18,0x22
     var_eh  0x16,0x1e
     var_fh  0x10
-    var_4h  0x2c
+    var_4h
 afvW
       arg1
       arg2
@@ -472,7 +472,7 @@ afvW
 |      `--> 0x00000026      00bf           nop
 |           0x00000028      0c37           adds  r7, 0xc
 |           0x0000002a      bd46           mov   sp, r7
-|           0x0000002c      5df8047b       ldr   r7, [sp], 4
+|           0x0000002c      5df8047b       pop   {r7}
 \           0x00000030      7047           bx    lr
 EOF
 RUN

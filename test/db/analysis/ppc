@@ -61,13 +61,6 @@ fcn.10003f90:
     sym.imp.unlink
     fcn.10003e40
 
-fcn.10003e40:
-    sym.imp.free
-    sym.imp.elf_getdata
-    sym.imp.elf_end
-    sym.imp.fsync
-    sym.imp.close
-
 fcn.100016f0:
     sym.imp.memset
     sym.imp.gelf_fsize
@@ -199,6 +192,13 @@ fcn.100030f0:
     fcn.10003bc0
     sym.imp.elf_getdata
 
+fcn.10003e40:
+    sym.imp.free
+    sym.imp.elf_getdata
+    sym.imp.elf_end
+    sym.imp.fsync
+    sym.imp.close
+
 fcn.10003ce0:
     sym.imp.error
 
@@ -287,10 +287,6 @@ fcn.1000cbf0:
     sym.imp.calloc
     sym.imp.free
 
-fcn.1000c730:
-    sym.imp.fprintf
-    sym.imp.abort
-
 fcn.1000cb20:
     fcn.1000c730
     sym.imp.free
@@ -301,7 +297,18 @@ fcn.1000c650:
     sym.imp.free
 
 fcn.10009270:
+    fcn.10003bc0
+    sym.imp.elf_flagscn
     sym.imp.error
+    fcn.10008f70
+    sym.imp.__assert_fail
+
+fcn.1000c490:
+    sym.imp.abort
+
+fcn.1000c730:
+    sym.imp.fprintf
+    sym.imp.abort
 
 fcn.1000ce30:
     sym.imp.memset
@@ -336,6 +343,12 @@ fcn.100036e0:
 
 fcn.100139b0:
     sym.imp.qsort
+    sym.imp.calloc
+    sym.imp.memset
+    fcn.100139b0
+    sym.imp.error
+    fcn.10025b30
+    fcn.10003230
 
 fcn.10003230:
     fcn.100030f0
@@ -357,6 +370,7 @@ fcn.10003770:
 
 fcn.100034d0:
     fcn.100030f0
+    sym.imp.elf_flagscn
 
 fcn.10003630:
     fcn.100030f0
@@ -702,7 +716,7 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 1072,
+    "id": 942,
     "opex": {
       "operands": [
         {

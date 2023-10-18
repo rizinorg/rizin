@@ -17,9 +17,11 @@
 // s/index/base|reg/
 #define HASMEMINDEX(x)   (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
-#define MEMDISP(x)       insn->detail->arm.operands[x].mem.disp
+#define MEMDISP(x)       (ISMEMINDEXSUB(x) ? -insn->detail->arm.operands[x].mem.disp : insn->detail->arm.operands[x].mem.disp)
+#define MEMDISP_BV(x)    (HASMEMINDEX(x) ? REG_VAL(insn->detail->arm.operands[x].mem.index) : U32(MEMDISP(x)))
 #define ISIMM(x)         (insn->detail->arm.operands[x].type == ARM_OP_IMM || insn->detail->arm.operands[x].type == ARM_OP_FP)
 #define ISREG(x)         (insn->detail->arm.operands[x].type == ARM_OP_REG)
+#define ISPSRFLAGS(x)    (insn->detail->arm.operands[x].type == ARM_OP_CPSR || insn->detail->arm.operands[x].type == ARM_OP_SPSR)
 #define ISMEM(x)         (insn->detail->arm.operands[x].type == ARM_OP_MEM)
 #define ISFPIMM(x)       (insn->detail->arm.operands[x].type == ARM_OP_FP)
 
@@ -38,6 +40,7 @@
 	SHIFTTYPE(x) == ARM_SFT_RRX_REG)
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
-#define ISWRITEBACK32() insn->detail->arm.writeback
-#define ISPREINDEX32()  (((OPCOUNT() == 2) && (ISMEM(1)) && (ISWRITEBACK32())) || ((OPCOUNT() == 3) && (ISMEM(2)) && (ISWRITEBACK32())))
-#define ISPOSTINDEX32() (((OPCOUNT() == 3) && (ISIMM(2) || ISREG(2)) && (ISWRITEBACK32())) || ((OPCOUNT() == 4) && (ISIMM(3) || ISREG(3)) && (ISWRITEBACK32())))
+#define ISPOSTINDEX()   insn->detail->arm.post_index
+#define ISWRITEBACK32() insn->detail->writeback
+#define ISPREINDEX32()  (((OPCOUNT() == 2) && (ISMEM(1)) && (ISWRITEBACK32()) && (!ISPOSTINDEX())) || \
+	((OPCOUNT() == 3) && (ISMEM(2)) && (ISWRITEBACK32()) && (!ISPOSTINDEX())))
