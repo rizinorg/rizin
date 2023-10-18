@@ -744,7 +744,6 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 	RzILVM *vm = core->analysis->il_vm->vm;
 
 	RzStrBuf *sb = NULL;
-	//RzListIter *it;
 	void **it;
 	RzILEvent *evt;
 
