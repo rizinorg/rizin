@@ -759,7 +759,7 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 	if (!pj) {
 		sb = rz_strbuf_new("");
 	}
-	rz_pvector_foreach(vm->events, it) {
+	rz_pvector_foreach (vm->events, it) {
 		evt = *it;
 		if (!evt_read && (evt->type == RZ_IL_EVENT_MEM_READ || evt->type == RZ_IL_EVENT_VAR_READ)) {
 			continue;
