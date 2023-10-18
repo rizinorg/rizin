@@ -1702,8 +1702,9 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		return false;
 	}
 
-	RzBinDWARF *dw = core->analysis->debug_info->dw;
-	dw = dw ? dw : rz_bin_dwarf_from_file(binfile);
+	RzBinDWARF *dw = (core->analysis && core->analysis->debug_info && core->analysis->debug_info->dw)
+		? core->analysis->debug_info->dw
+		: rz_bin_dwarf_from_file(binfile);
 	if (!dw) {
 		return false;
 	}
