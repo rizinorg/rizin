@@ -1965,6 +1965,7 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 	RzAnalysisDwarfVariable *dw_var;
 	rz_vector_foreach(&dw_fn->variables, dw_var) {
 		RzAnalysisVar *var = RZ_NEW0(RzAnalysisVar);
+		rz_analysis_var_init(var);
 		if (!RzAnalysisDwarfVariable_as_RzAnalysisVar(analysis, fn, dw_var, var)) {
 			free(var);
 			continue;
