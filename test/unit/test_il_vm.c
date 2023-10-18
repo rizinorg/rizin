@@ -207,7 +207,7 @@ static bool test_rzil_vm_op_let() {
 	rz_pvector_free(vars);
 
 	// var and set for local pure vars should not emit events because everything is local
-	mu_assert_eq(rz_list_length(vm->events), 0, "no events");
+	mu_assert_eq(rz_pvector_len(vm->events), 0, "no events");
 
 	rz_il_vm_free(vm);
 	mu_end;
@@ -252,7 +252,7 @@ static bool test_rzil_vm_op_cast() {
 	mu_assert_eq(rz_bv_to_ut64(r), 0x1f42, "eval val");
 	rz_bv_free(r);
 
-	mu_assert_eq(rz_list_length(vm->events), 0, "no events");
+	mu_assert_eq(rz_pvector_len(vm->events), 0, "no events");
 
 	rz_il_vm_free(vm);
 	mu_end;
@@ -279,7 +279,7 @@ static bool test_rzil_vm_op_unsigned() {
 	mu_assert_eq(rz_bv_to_ut64(r), 0xf2, "eval val");
 	rz_bv_free(r);
 
-	mu_assert_eq(rz_list_length(vm->events), 0, "no events");
+	mu_assert_eq(rz_pvector_len(vm->events), 0, "no events");
 
 	rz_il_vm_free(vm);
 	mu_end;
@@ -306,7 +306,7 @@ static bool test_rzil_vm_op_signed() {
 	mu_assert_eq(rz_bv_to_ut64(r), 0x1ff2, "eval val");
 	rz_bv_free(r);
 
-	mu_assert_eq(rz_list_length(vm->events), 0, "no events");
+	mu_assert_eq(rz_pvector_len(vm->events), 0, "no events");
 
 	rz_il_vm_free(vm);
 	mu_end;
@@ -333,8 +333,8 @@ static bool test_rzil_vm_op_set() {
 	mu_assert_eq(rz_pvector_len(vars), 0, "cleanup");
 	rz_pvector_free(vars);
 
-	mu_assert_eq(rz_list_length(vm->events), 1, "events count");
-	RzILEvent *ev = rz_list_get_n(vm->events, 0);
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "events count");
+	RzILEvent *ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_VAR_WRITE, "event type");
 	mu_assert_streq(ev->data.var_write.variable, "r1", "event var");
 	RzBitVector *ref = rz_bv_new_from_ut64(32, 0);
@@ -365,9 +365,9 @@ static bool test_rzil_vm_op_set() {
 	mu_assert_eq(rz_pvector_len(vars), 0, "cleanup");
 	rz_pvector_free(vars);
 
-	mu_assert_eq(rz_list_length(vm->events), 3, "events count");
+	mu_assert_eq(rz_pvector_len(vm->events), 3, "events count");
 
-	ev = rz_list_get_n(vm->events, 0);
+	ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_PC_WRITE, "event type"); // pc write done by the step
 	ref = rz_bv_new_from_ut64(8, 0);
 	mu_assert_true(rz_bv_eq(ev->data.pc_write.old_pc, ref), "old pc");
@@ -376,7 +376,7 @@ static bool test_rzil_vm_op_set() {
 	mu_assert_true(rz_bv_eq(ev->data.pc_write.new_pc, ref), "new pc");
 	rz_bv_free(ref);
 
-	ev = rz_list_get_n(vm->events, 1);
+	ev = rz_pvector_at(vm->events, 1);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_VAR_READ, "event type");
 	mu_assert_streq(ev->data.var_write.variable, "r1", "event var");
 	ref = rz_bv_new_from_ut64(32, 42);
@@ -384,7 +384,7 @@ static bool test_rzil_vm_op_set() {
 	mu_assert_true(rz_bv_eq(ev->data.var_read.value->data.bv, ref), "event value");
 	rz_bv_free(ref);
 
-	ev = rz_list_get_n(vm->events, 2);
+	ev = rz_pvector_at(vm->events, 2);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_VAR_WRITE, "event type");
 	mu_assert_streq(ev->data.var_write.variable, "r1", "event var");
 	ref = rz_bv_new_from_ut64(32, 42);
@@ -555,8 +555,8 @@ static bool test_rzil_vm_op_load() {
 	mu_assert_eq(rz_bv_to_ut64(res), 0x42, "res value");
 	rz_bv_free(res);
 
-	mu_assert_eq(rz_list_length(vm->events), 1, "events count");
-	RzILEvent *ev = rz_list_get_n(vm->events, 0);
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "events count");
+	RzILEvent *ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_MEM_READ, "event type");
 	RzBitVector *ref = rz_bv_new_from_ut64(16, 3);
 	mu_assert_true(rz_bv_eq(ev->data.mem_read.address, ref), "event addr");
@@ -574,8 +574,8 @@ static bool test_rzil_vm_op_load() {
 	mu_assert_eq(rz_bv_to_ut64(res), 0xaa, "res value (overflow)");
 	rz_bv_free(res);
 
-	mu_assert_eq(rz_list_length(vm->events), 1, "events count");
-	ev = rz_list_get_n(vm->events, 0);
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "events count");
+	ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_MEM_READ, "event type");
 	ref = rz_bv_new_from_ut64(16, 100);
 	mu_assert_true(rz_bv_eq(ev->data.mem_read.address, ref), "event addr");
@@ -603,8 +603,8 @@ static bool test_rzil_vm_op_store() {
 	ut8 expect[] = { 0x10, 0x11, 0xab, 0x42, 0x14, 0x15 };
 	mu_assert_memeq(data, expect, sizeof(expect), "stored");
 
-	mu_assert_eq(rz_list_length(vm->events), 1, "events count");
-	RzILEvent *ev = rz_list_get_n(vm->events, 0);
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "events count");
+	RzILEvent *ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_MEM_WRITE, "event type");
 	RzBitVector *ref = rz_bv_new_from_ut64(16, 2);
 	mu_assert_true(rz_bv_eq(ev->data.mem_write.address, ref), "event addr");
@@ -636,8 +636,8 @@ static bool test_rzil_vm_op_loadw_le() {
 	mu_assert_eq(rz_bv_to_ut64(res), 0x442, "res value");
 	rz_bv_free(res);
 
-	mu_assert_eq(rz_list_length(vm->events), 1, "events count");
-	RzILEvent *ev = rz_list_get_n(vm->events, 0);
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "events count");
+	RzILEvent *ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_MEM_READ, "event type");
 	RzBitVector *ref = rz_bv_new_from_ut64(16, 3);
 	mu_assert_true(rz_bv_eq(ev->data.mem_read.address, ref), "event addr");
@@ -665,8 +665,8 @@ static bool test_rzil_vm_op_storew_le() {
 	ut8 expect[] = { 0x0, 0x1, 0xcd, 0xab, 0x4, 0x5 };
 	mu_assert_memeq(data, expect, sizeof(expect), "stored");
 
-	mu_assert_eq(rz_list_length(vm->events), 1, "events count");
-	RzILEvent *ev = rz_list_get_n(vm->events, 0);
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "events count");
+	RzILEvent *ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_MEM_WRITE, "event type");
 	RzBitVector *ref = rz_bv_new_from_ut64(16, 2);
 	mu_assert_true(rz_bv_eq(ev->data.mem_write.address, ref), "event addr");
@@ -697,8 +697,8 @@ static bool test_rzil_vm_op_loadw_be() {
 	mu_assert_eq(rz_bv_len(res), 16, "res byte size");
 	mu_assert_eq(rz_bv_to_ut64(res), 0x4204, "res value");
 
-	mu_assert_eq(rz_list_length(vm->events), 1, "events count");
-	RzILEvent *ev = rz_list_get_n(vm->events, 0);
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "events count");
+	RzILEvent *ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_MEM_READ, "event type");
 	RzBitVector *ref = rz_bv_new_from_ut64(16, 3);
 	mu_assert_true(rz_bv_eq(ev->data.mem_read.address, ref), "event addr");
@@ -727,8 +727,8 @@ static bool test_rzil_vm_op_storew_be() {
 	ut8 expect[] = { 0x0, 0x1, 0xab, 0xcd, 0x4, 0x5 };
 	mu_assert_memeq(data, expect, sizeof(expect), "stored");
 
-	mu_assert_eq(rz_list_length(vm->events), 1, "events count");
-	RzILEvent *ev = rz_list_get_n(vm->events, 0);
+	mu_assert_eq(rz_pvector_len(vm->events), 1, "events count");
+	RzILEvent *ev = rz_pvector_at(vm->events, 0);
 	mu_assert_eq(ev->type, RZ_IL_EVENT_MEM_WRITE, "event type");
 	RzBitVector *ref = rz_bv_new_from_ut64(16, 2);
 	mu_assert_true(rz_bv_eq(ev->data.mem_write.address, ref), "event addr");
