@@ -205,7 +205,7 @@ static bool test_rzil_vm_op_let() {
 	mu_assert_notnull(vars, "vars vector");
 	mu_assert_eq(rz_pvector_len(vars), 0, "cleanup");
 	rz_pvector_free(vars);
-	
+
 	// var and set for local pure vars should not emit events because everything is local
 	mu_assert_eq(rz_pvector_len(vm->events), 0, "no events");
 
