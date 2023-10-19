@@ -808,6 +808,13 @@ static RZ_OWN LE_page *le_load_pages(rz_bin_le_obj_t *bin) {
 		ut32 voff = 0;
 		LE_page *page = &le_pages[obj->page_tbl_idx - 1];
 		for (ut32 i = 0; i < obj->page_tbl_entries; i++, page++) {
+			unsigned int pi = (obj->page_tbl_idx - 1) + i;
+			if (pi >= h->mpages) {
+				RZ_LOG_ERROR("LE: object #%u page table entry index %u is out "
+					     "of range.\n",
+					oi + 1, pi + 1);
+				goto fail_cleanup;
+			}
 			page->obj_num = oi + 1;
 			page->vaddr = obj->reloc_base_addr + voff;
 			page->vsize = h->pagesize;
@@ -1016,6 +1023,12 @@ static RzVector /*<LE_map>*/ *le_create_maps(rz_bin_le_obj_t *bin) {
 		size_t len_before = rz_vector_len(le_maps);
 		ut32 beg = obj->page_tbl_idx - 1, end = beg + obj->page_tbl_entries;
 		for (ut32 pi = beg; pi != end; pi++) {
+			if (pi >= h->mpages) {
+				RZ_LOG_ERROR("LE: object #%u page table entry index %u is out "
+					     "of range.\n",
+					oi + 1, pi + 1);
+				goto fail_cleanup;
+			}
 			LE_page *page = &bin->le_pages[pi];
 			m.first_page_num = pi + 1;
 			if (page->type == PAGE_LEGAL) {
