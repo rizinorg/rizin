@@ -6496,3 +6496,79 @@ standard_opcode_lengths[DW_LNS_set_isa] = 1
 0x0000026c	-	0	0
 EOF
 RUN
+
+NAME="ARM types"
+FILE=
+CMDS=<<EOF
+e asm.cpu=cortexm
+o bins/elf/test_app2/test_app2.elf
+aaa
+afv @ dbg.main
+pdf @ dbg.new_some
+aaa
+EOF
+EXPECT=<<EOF
+var int16_t var_38h @ stack - 0x38
+var int16_t var_34h @ stack - 0x34
+var int16_t var_30h @ stack - 0x30
+var int16_t var_2ch @ stack - 0x2c
+var int16_t var_1ch @ stack - 0x1c
+var some_t *s @ stack - 0x1a
+arg int argc @ r0
+arg char **argv @ r1
+var struct Some *gg @ r2
+var float a @ ...
+var float b @ ...
+var double c @ ...
+            ; CALL XREFS from dbg.main @ 0x817c, 0x8184
+            ;-- new_some:
+/ some_t * new_some()
+|           ; var struct Some *n @ r4
+|           0x0000813c      push  {r4, lr}                             ; some_t * new_some()
+|           0x0000813e      movs  r0, 0x14                             ; size_t size
+|           0x00008140      bl    sym.malloc                           ; void *malloc(size_t size)
+|           0x00008144      mov   r4, r0
+|           0x00008146      movs  r2, 0x14                             ; size_t n
+|           0x00008148      movs  r1, 0                                ; int c
+|           0x0000814a      bl    sym.memset                           ; void *memset(void *s, int c, size_t n)
+|           0x0000814e      mov   r0, r4
+\           0x00008150      pop   {r4, pc}
+EOF
+RUN
+
+NAME="ARM types"
+FILE=bins/elf/test_app2/test_app2.elf
+CMDS=<<EOF
+aaa
+afv @ dbg.main
+pdf @ dbg.new_some
+aaa
+EOF
+EXPECT=<<EOF
+var int16_t var_38h @ stack - 0x38
+var int16_t var_34h @ stack - 0x34
+var int16_t var_30h @ stack - 0x30
+var int16_t var_2ch @ stack - 0x2c
+var int16_t var_1ch @ stack - 0x1c
+var some_t *s @ stack - 0x1a
+arg int argc @ r0
+arg char **argv @ r1
+var struct Some *gg @ r2
+var float a @ ...
+var float b @ ...
+var double c @ ...
+            ; CALL XREFS from dbg.main @ 0x817c, 0x8184
+            ;-- new_some:
+/ some_t * new_some()
+|           ; var struct Some *n @ r4
+|           0x0000813c      push  {r4, lr}                             ; some_t * new_some()
+|           0x0000813e      movs  r0, 0x14                             ; size_t size
+|           0x00008140      bl    sym.malloc                           ; void *malloc(size_t size)
+|           0x00008144      mov   r4, r0
+|           0x00008146      movs  r2, 0x14                             ; size_t n
+|           0x00008148      movs  r1, 0                                ; int c
+|           0x0000814a      bl    sym.memset                           ; void *memset(void *s, int c, size_t n)
+|           0x0000814e      mov   r0, r4
+\           0x00008150      pop   {r4, pc}
+EOF
+RUN

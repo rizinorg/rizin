@@ -317,6 +317,9 @@ RZ_API int rz_analysis_get_address_bits(RzAnalysis *analysis) {
 }
 
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
+	if (RZ_STR_EQ(cpu, analysis->cpu)) {
+		return;
+	}
 	free(analysis->cpu);
 	analysis->cpu = cpu ? strdup(cpu) : NULL;
 	int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
