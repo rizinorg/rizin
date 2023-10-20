@@ -981,9 +981,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
-#if CS_API_MAJOR >= 4
 		case PPC_INS_CMPB:
-#endif
 		case PPC_INS_CMPD:
 		case PPC_INS_CMPDI:
 		case PPC_INS_CMPLD:
@@ -1137,9 +1135,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%s,=[8],%s=", ARG(0), op1, op1);
 			break;
 		case PPC_INS_LBZ:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LBZCIX:
-#endif
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
@@ -1155,9 +1151,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		case PPC_INS_LD:
 		case PPC_INS_LDARX:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LDCIX:
-#endif
 		case PPC_INS_LDU:
 		case PPC_INS_LDUX:
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
@@ -1208,9 +1202,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case PPC_INS_LWAUX:
 		case PPC_INS_LWAX:
 		case PPC_INS_LWZ:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LWZCIX:
-#endif
 		case PPC_INS_LWZX:
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 			esilprintf(op, "%s,%s,=", ARG2(1, "[4]"), ARG(0));

@@ -571,10 +571,8 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group(handle, insn, ARM64_GRP_CRC)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
-#if CS_API_MAJOR >= 4
 	} else if (cs_insn_group(handle, insn, ARM64_GRP_PRIVILEGE)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
-#endif
 	} else if (cs_insn_group(handle, insn, ARM64_GRP_NEON)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 	} else if (cs_insn_group(handle, insn, ARM64_GRP_FPARMV8)) {
@@ -1019,12 +1017,10 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasCRC)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
-#if CS_API_MAJOR >= 4
 	} else if (cs_insn_group(handle, insn, ARM_GRP_PRIVILEGE)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasVirtualization)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_VIRT;
-#endif
 	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasNEON)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasFPARMv8)) {

@@ -5,14 +5,6 @@
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 
-#if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
-#define CAPSTONE_HAS_M680X 1
-#else
-#define CAPSTONE_HAS_M680X 0
-#endif
-
-#if CAPSTONE_HAS_M680X
-
 static csh cd = 0;
 
 static int m680xmode(const char *str) {
@@ -103,16 +95,6 @@ RzAsmPlugin rz_asm_plugin_m680x_cs = {
 	.fini = the_end,
 	.disassemble = &disassemble,
 };
-
-#else
-RzAsmPlugin rz_asm_plugin_m680x_cs = {
-	.name = "m680x",
-	.desc = "Capstone M680X Disassembler (Not supported)",
-	.license = "BSD",
-	.arch = "m680x",
-	.bits = 8 | 32,
-};
-#endif
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {

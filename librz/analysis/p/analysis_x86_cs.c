@@ -88,13 +88,11 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 		op->type = X86_OP_REG;
 		op->reg = X86_REG_EFLAGS;
 		op->size = regsz;
-#if CS_API_MAJOR >= 4
 		if (id == X86_INS_PUSHF || id == X86_INS_PUSHFD || id == X86_INS_PUSHFQ) {
 			op->access = 1;
 		} else {
 			op->access = 2;
 		}
-#endif
 		break;
 	case X86_INS_PUSHAW:
 	case X86_INS_PUSHAL:
@@ -122,9 +120,7 @@ static void opex(RzStrBuf *buf, X86CSContext *ctx, int mode) {
 		cs_x86_op *op = x->operands + i;
 		pj_o(pj);
 		pj_ki(pj, "size", op->size);
-#if CS_API_MAJOR >= 4
 		pj_ki(pj, "rw", op->access); // read, write, read|write
-#endif
 		switch (op->type) {
 		case X86_OP_REG:
 			pj_ks(pj, "type", "reg");
@@ -431,9 +427,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case X86_INS_FPREM:
 	case X86_INS_FPREM1:
 	case X86_INS_FPTAN:
-#if CS_API_MAJOR >= 4
 	case X86_INS_FFREEP:
-#endif
 	case X86_INS_FRNDINT:
 	case X86_INS_FRSTOR:
 	case X86_INS_FNSAVE:
@@ -514,9 +508,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case X86_INS_CLAC:
 	case X86_INS_CLGI:
 	case X86_INS_CLTS:
-#if CS_API_MAJOR >= 4
 	case X86_INS_CLWB:
-#endif
 	case X86_INS_STAC:
 	case X86_INS_STGI:
 		break;
@@ -1905,7 +1897,6 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	val->reg = cs_reg2reg(reg, handle, ip);
 	rz_list_append(ret, val);
 
-#if CS_API_MAJOR >= 4
 	// Register access info
 	cs_regs regs_read, regs_write;
 	ut8 read_count, write_count;
@@ -1929,7 +1920,6 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 			}
 		}
 	}
-#endif
 
 	switch (insn->id) {
 	case X86_INS_PUSH:
@@ -2007,7 +1997,6 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 		if (INSOP(i).type == X86_OP_MEM) {
 			val = rz_analysis_value_new();
 			val->type = RZ_ANALYSIS_VAL_MEM;
-#if CS_API_MAJOR >= 4
 			switch (INSOP(i).access) {
 			case CS_AC_READ:
 				val->access = RZ_ANALYSIS_ACC_R;
@@ -2019,9 +2008,6 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 				val->access = RZ_ANALYSIS_ACC_UNKNOWN;
 				break;
 			}
-#else
-			val->access = RZ_ANALYSIS_ACC_UNKNOWN;
-#endif
 			val->mul = INSOP(i).mem.scale;
 			val->delta = INSOP(i).mem.disp;
 			if (INSOP(0).mem.base == X86_REG_RIP ||
@@ -2255,9 +2241,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_FPREM:
 	case X86_INS_FPREM1:
 	case X86_INS_FPTAN:
-#if CS_API_MAJOR >= 4
 	case X86_INS_FFREEP:
-#endif
 	case X86_INS_FRNDINT:
 	case X86_INS_FRSTOR:
 	case X86_INS_FNSAVE:
@@ -2352,9 +2336,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_CLAC:
 	case X86_INS_CLGI:
 	case X86_INS_CLTS:
-#if CS_API_MAJOR >= 4
 	case X86_INS_CLWB:
-#endif
 	case X86_INS_STAC:
 	case X86_INS_STGI:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
@@ -2466,9 +2448,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_PCMPGTQ:
 	case X86_INS_PCMPISTRI:
 	case X86_INS_PCMPISTRM:
-#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPB:
-#endif
 	case X86_INS_VPCMPD:
 	case X86_INS_VPCMPEQB:
 	case X86_INS_VPCMPEQD:
@@ -2483,15 +2463,11 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_VPCMPISTRI:
 	case X86_INS_VPCMPISTRM:
 	case X86_INS_VPCMPQ:
-#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPUB:
-#endif
 	case X86_INS_VPCMPUD:
 	case X86_INS_VPCMPUQ:
-#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPUW:
 	case X86_INS_VPCMPW:
-#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 		break;
@@ -2727,9 +2703,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		op->stackptr = -regsz;
 		op->cycles = CYCLE_MEM + CYCLE_JMP;
 		break;
-#if CS_API_MAJOR >= 4
 	case X86_INS_UD0:
-#endif
 	case X86_INS_UD2:
 #if CS_API_MAJOR == 4
 	case X86_INS_UD2B:
