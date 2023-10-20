@@ -51,13 +51,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	// always unsigned immediates (kernel addresses)
 	// maybe rizin should have an option for this too?
-#if CS_API_MAJOR >= 4
 	cs_option(cd, CS_OPT_UNSIGNED, CS_OPT_ON);
-#endif
 	if (a->syntax == RZ_ASM_SYNTAX_MASM) {
-#if CS_API_MAJOR >= 4
 		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
-#endif
 	} else if (a->syntax == RZ_ASM_SYNTAX_ATT) {
 		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 	} else {

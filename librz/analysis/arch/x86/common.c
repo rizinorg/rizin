@@ -81,7 +81,6 @@ const char *x86_registers[X86_REG_ENDING] = {
 	[X86_REG_DR5] = "dr5",
 	[X86_REG_DR6] = "dr6",
 	[X86_REG_DR7] = "dr7",
-#if CS_API_MAJOR >= 4
 	[X86_REG_DR8] = "dr8",
 	[X86_REG_DR9] = "dr9",
 	[X86_REG_DR10] = "dr10",
@@ -90,7 +89,6 @@ const char *x86_registers[X86_REG_ENDING] = {
 	[X86_REG_DR13] = "dr13",
 	[X86_REG_DR14] = "dr14",
 	[X86_REG_DR15] = "dr15",
-#endif
 	[X86_REG_FP0] = "fp0",
 	[X86_REG_FP1] = "fp1",
 	[X86_REG_FP2] = "fp2",
