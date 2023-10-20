@@ -264,11 +264,7 @@ static inline RzFloatFormat cvtdt2fmt(arm_vectordata_type type, bool choose_src)
 #define VVEC_DT(insn)           insn->detail->arm.vector_data
 #define FROM_FMT(dt)            cvtdt2fmt(dt, true)
 #define TO_FMT(dt)              cvtdt2fmt(dt, false)
-#if CS_API_MAJOR > 3
-// clang-format off
 #define NEON_LANE(n)            insn->detail->arm.operands[n].neon_lane
-// clang-format on
-#endif
 
 /**
  * IL to write the given capstone reg
@@ -1371,8 +1367,6 @@ static void label_svc(RzILVM *vm, RzILOpEffect *op) {
 	// stub, nothing to do here
 }
 
-#if CS_API_MAJOR > 3
-
 /**
  * Capstone: ARM_INS_HVC
  * ARM: hvc
@@ -1380,8 +1374,6 @@ static void label_svc(RzILVM *vm, RzILOpEffect *op) {
 static RzILOpEffect *hvc(cs_insn *insn, bool is_thumb) {
 	return GOTO("hvc");
 }
-
-#endif
 
 static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
 	// stub, nothing to do here
@@ -2591,7 +2583,6 @@ static RzILOpEffect *write_reg_lane(arm_reg reg, ut32 lane, ut32 vec_size, RzILO
  * VFP and NEON
  */
 
-#if CS_API_MAJOR > 3
 /**
  * Capstone: ARM_INS_VMOV
  * ARM: vmov
@@ -2708,7 +2699,6 @@ static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 
 	return write_reg(REGID(0), val);
 }
-#endif
 
 /**
  * Capstone: ARM_INS_VMRS
@@ -3088,7 +3078,6 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	return SEQ2(eff, wback_eff);
 }
 
-#if CS_API_MAJOR > 3
 static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	ut32 mem_idx;
 	bool use_rm_as_wback_offset = false;
@@ -3170,7 +3159,6 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 
 	return SEQ2(eff, wback_eff);
 }
-#endif
 
 static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	ut32 mem_idx;
@@ -3261,12 +3249,10 @@ static RzILOpEffect *vldn(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 
-#if CS_API_MAJOR > 3
 	// to single lane
 	if (NEON_LANE(0) != -1) {
 		return vldn_single_lane(insn, is_thumb);
 	}
-#endif
 
 	// TODO: capstone cannot distinguish details of the following instructions
 	// vld3.8 {d0, d1, d2}, [r0] (f420040f)
@@ -3365,7 +3351,6 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	return SEQ2(eff, wback_eff);
 }
 
-#if CS_API_MAJOR > 3
 static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	ut32 mem_idx;
 	bool use_rm_as_wback_offset = false;
@@ -3446,18 +3431,15 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 
 	return SEQ2(eff, wback_eff);
 }
-#endif
 
 static RzILOpEffect *vstn(cs_insn *insn, bool is_thumb) {
 	if (OPCOUNT() < 2 || !ISREG(0)) {
 		return NULL;
 	}
 
-#if CS_API_MAJOR > 3
 	if (NEON_LANE(0) != -1) {
 		return vstn_from_single_lane(insn, is_thumb);
 	}
-#endif
 
 	return vstn_multiple_elem(insn, is_thumb);
 }
@@ -3622,7 +3604,6 @@ static RzILOpEffect *vcvt(cs_insn *insn, bool is_thumb) {
 	return NULL;
 }
 
-#if CS_API_MAJOR > 3
 static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
 	if (OPCOUNT() < 2) {
 		return NULL;
@@ -3643,7 +3624,6 @@ static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
 
 	return eff;
 }
-#endif
 
 static RzILOpEffect *vext(cs_insn *insn, bool is_thumb) {
 	if (OPCOUNT() < 2) {
@@ -4144,10 +4124,8 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return clz(insn, is_thumb);
 	case ARM_INS_SVC:
 		return svc(insn, is_thumb);
-#if CS_API_MAJOR > 3
 	case ARM_INS_HVC:
 		return hvc(insn, is_thumb);
-#endif
 	case ARM_INS_BFC:
 		return bfc(insn, is_thumb);
 	case ARM_INS_BFI:
@@ -4302,11 +4280,9 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VMOVN:
 	case ARM_INS_VMOVX:
 #endif
-#if CS_API_MAJOR > 3
 	case ARM_INS_VMOV:
 	case ARM_INS_VMVN:
 		return vmov(insn, is_thumb);
-#endif
 	case ARM_INS_VMSR:
 		return vmsr(insn, is_thumb);
 	case ARM_INS_VMRS:
@@ -4353,10 +4329,8 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VCVTT:
 #endif
 		return vcvt(insn, is_thumb);
-#if CS_API_MAJOR > 3
 	case ARM_INS_VDUP:
 		return vdup(insn, is_thumb);
-#endif
 	case ARM_INS_VEXT:
 		return vext(insn, is_thumb);
 	case ARM_INS_VZIP:

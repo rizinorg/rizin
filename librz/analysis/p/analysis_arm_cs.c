@@ -807,9 +807,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 		break;
 	case ARM64_INS_NEG:
-#if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
-#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		break;
 	case ARM64_INS_FCMP:
@@ -1606,9 +1604,7 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 			break;
 		case ARM_OP_MEM:
 			val->type = RZ_ANALYSIS_VAL_MEM;
-#if CS_API_MAJOR > 3
 			val->mul = armop.mem.scale << armop.mem.lshift;
-#endif
 #if CS_NEXT_VERSION == 6
 			val->delta = MEMDISP(x);
 #else
@@ -1658,7 +1654,6 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 	case RZ_ANALYSIS_OP_TYPE_ROL:
 	case RZ_ANALYSIS_OP_TYPE_CAST:
 		for (i = 1; i < count; i++) {
-#if CS_API_MAJOR > 3
 			if (bits == 64) {
 				cs_arm64_op arm64op = INSOP64(i);
 				if (arm64op.access == CS_AC_WRITE) {
@@ -1671,7 +1666,6 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 					continue;
 				}
 			}
-#endif
 			break;
 		}
 		for (j = 0; j < 3; j++, i++) {

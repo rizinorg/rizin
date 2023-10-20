@@ -25,9 +25,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		} else if (!strcmp(a->cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
 		} else if (!strcmp(a->cpu, "v2")) {
-#if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
-#endif
 		}
 	}
 	mode |= (a->bits == 64) ? CS_MODE_MIPS64 : CS_MODE_MIPS32;

@@ -733,9 +733,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		} else if (!strcmp(analysis->cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
 		} else if (!strcmp(analysis->cpu, "v2")) {
-#if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
-#endif
 		}
 	}
 	switch (analysis->bits) {

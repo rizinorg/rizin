@@ -1127,9 +1127,7 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 		}
 		break;
 	case ARM64_INS_NEG:
-#if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
-#endif
 		if (LSHIFT2_64(1)) {
 			SHIFTED_REG64_APPEND(&op->esil, 1);
 		} else {
