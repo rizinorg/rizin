@@ -2349,7 +2349,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 			}
 		} else {
 			if (outline) {
-				rz_cons_printf("%s", flag->name);
+				rz_cons_printf(FLAG_PREFIX "%s", flag->name);
 			} else {
 				rz_cons_printf("%s%s", comma, flag->name);
 			}
@@ -3418,8 +3418,10 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 			if (ds->core->vmode && (rz_str_startswith(flag->name, "sym.") || (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL))) && flag_sym->demangled) {
 				return;
 			}
-			ds_begin_comment(ds);
-			ds_comment(ds, true, "; %s", flag->name);
+			if (ds->core->flags->realnames && flag->realname) {
+				ds_begin_comment(ds);
+				ds_comment(ds, true, "; %s", flag->name);
+			}
 			return;
 		}
 	}
