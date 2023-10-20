@@ -94,16 +94,18 @@ static inline RzBinDWARF *dwarf_from_debuglink(
 	char *file_dir = NULL;
 
 	path = rz_file_path_join(file_directory, debuglink_path);
-	if (!rz_file_exists(path)) {
-		free(path);
+	if (rz_file_exists(path)) {
+		goto ok;
 	}
+	free(path);
 
 	dir = rz_file_path_join(file_directory, ".debug");
 	path = rz_file_path_join(dir, debuglink_path);
-	if (!rz_file_exists(path)) {
-		free(path);
-		free(dir);
+	if (rz_file_exists(path)) {
+		goto ok;
 	}
+	free(dir);
+	free(path);
 
 	if (RZ_STR_ISNOTEMPTY(file_directory) && strlen(file_directory) >= 2 && file_directory[1] == ':') {
 		file_dir = rz_str_newf("/%c%s", file_directory[0], file_directory + 2);
@@ -115,13 +117,16 @@ static inline RzBinDWARF *dwarf_from_debuglink(
 	rz_list_foreach (debug_file_directorys, it, debug_file_directory) {
 		dir = rz_file_path_join(debug_file_directory, file_dir);
 		path = rz_file_path_join(dir, debuglink_path);
-		if (!rz_file_exists(path)) {
-			free(path);
-			free(dir);
+		if (rz_file_exists(path)) {
+			goto ok;
 		}
+		free(dir);
+		free(path);
 	}
 
-	dw = rz_file_exists(path) ? rz_bin_dwarf_dwo_from_file(path) : NULL;
+	return NULL;
+ok:
+	dw = rz_bin_dwarf_dwo_from_file(path);
 	free(dir);
 	free(path);
 	free(file_dir);
