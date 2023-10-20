@@ -7,7 +7,7 @@
 #include <rz_io.h>
 #include <rz_cons.h>
 #include <rz_list.h>
-#include <ht_pu.h>
+#include <rz_util/ht_pu.h>
 #include <rz_demangler.h>
 #include <rz_hash.h>
 

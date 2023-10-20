@@ -26,7 +26,7 @@
 #include <rz_bin.h>
 #include <rz_hash.h>
 #include <rz_util.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 #include <rz_util/rz_print.h>
 #include <rz_crypto.h>
 #include <rz_bind.h>

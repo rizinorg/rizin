@@ -21,7 +21,7 @@ extern "C" {
 #include <rz_util/rz_file.h>
 #include <rz_vector.h>
 #include <sdb.h>
-#include <ht_up.h>
+#include <rz_util/ht_up.h>
 
 #include <stdio.h>
 #include <sys/types.h>
