@@ -117,7 +117,7 @@ else
   rz_util_sources += ['big.c']
 endif
 
-rz_util_includes = [platform_inc, include_directories('sdb/src', 'sdb', '../include/rz_util', '.')]
+rz_util_includes = [platform_inc, include_directories('sdb/src', 'sdb', '../include/rz_util')]
 
 rz_util = library('rz_util', rz_util_sources, libsdb_sources,
   include_directories: rz_util_includes,

@@ -18,7 +18,7 @@
 #include <rz_util.h>
 #include <rz_bind.h>
 #include <rz_syscall.h>
-#include <set.h>
+#include <rz_util/set.h>
 #include <rz_flag.h>
 #include <rz_bin.h>
 #include <rz_type.h>
