@@ -62,7 +62,6 @@ jobs:
             linux-gcc-tests-asan,
             linux-clang-tests-asan,
             linux-gcc-tests-codecov,
-            capstone-v3,
             capstone-v4,
           ]
         include:
@@ -127,16 +126,6 @@ jobs:
             coverage: true
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 60
-            cflags: "-Wno-cpp"
-            allow_failure: false
-          - name: capstone-v3
-            os: ubuntu-22.04
-            build_system: meson
-            compiler: gcc
-            meson_options: -Dbuildtype=release -Duse_capstone_version=v3 --werror
-            run_tests: false
-            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
-            timeout: 45
             cflags: "-Wno-cpp"
             allow_failure: false
           - name: capstone-sys
