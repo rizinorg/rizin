@@ -742,11 +742,6 @@ RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int im
 		return SN(op.size * BITS_PER_BYTE, op.imm);
 	case X86_OP_MEM:
 		return LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
-#if CS_API_MAJOR <= 3
-	case X86_OP_FP:
-		RZ_LOG_WARN("RzIL: x86: Floating point instructions not implemented yet\n");
-		return NULL;
-#endif
 	default:
 		return NULL;
 	}

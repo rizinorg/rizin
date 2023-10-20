@@ -84,12 +84,10 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LWA:
 	case PPC_INS_LWAX:
 	case PPC_INS_LWAUX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
-#endif
 #if CS_NEXT_VERSION >= 6
 		base = VARG(rA);
 #else
@@ -275,12 +273,10 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STHUX:
 	case PPC_INS_STWUX:
 	case PPC_INS_STDUX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_STBCIX:
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
-#endif
 #if CS_NEXT_VERSION >= 6
 		base = VARG(rA);
 #else
@@ -667,7 +663,6 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		res = LOGNOT(
 			(id == PPC_INS_NAND) ? LOGAND(op0, op1) : LOGOR(op0, op1));
 		break;
-#if CS_API_MAJOR > 3
 	// Compare bytes
 	case PPC_INS_CMPB: {
 		//	do n = 0 to (64BIT_CPU ? 7 : 3)
@@ -700,7 +695,6 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 		return SEQ5(SETL("res", UA(0)), init_n, init_bitmask, loop, SETG(rA, VARL("res")));
 	}
-#endif
 	case PPC_INS_EQV:
 		op0 = VARG(rS);
 		op1 = VARG(rB);
@@ -1504,12 +1498,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_LWZU:
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
-#endif
 		lop = load_op(handle, insn, mode);
 		break;
 	case PPC_INS_STB:
@@ -1553,12 +1545,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_STXVD2X:
 	case PPC_INS_STXVW4X:
 	case PPC_INS_DCBZ:
-#if CS_API_MAJOR > 3
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STBCIX:
 	case PPC_INS_STDCIX:
-#endif
 		lop = store_op(handle, insn, mode);
 		break;
 #if CS_NEXT_VERSION < 6
@@ -1593,9 +1583,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CNTLZW:
 	case PPC_INS_POPCNTD:
 	case PPC_INS_POPCNTW:
-#if CS_API_MAJOR > 3
 	case PPC_INS_CMPB:
-#endif
 #if CS_API_MAJOR == 5
 	case PPC_INS_CMPRB:
 	case PPC_INS_CMPEQB:
