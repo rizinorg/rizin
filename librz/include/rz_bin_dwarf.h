@@ -1420,7 +1420,7 @@ typedef struct {
 struct rz_core_bin_dwarf_t;
 
 typedef struct rz_core_bin_dwarf_t {
-	struct rz_core_bin_dwarf_t *dwo_parent;
+	struct rz_core_bin_dwarf_t *parent;
 
 	RzBinDwarfARanges *aranges;
 	RzBinDwarfLine *line;
@@ -1510,9 +1510,10 @@ RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
 
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
-RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_dwo_from_file(
-	RZ_BORROW RZ_NONNULL RzBin *bin,
-	RZ_BORROW RZ_NONNULL const char *filepath);
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_dwo_from_file(RZ_BORROW RZ_NONNULL const char *filepath);
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debug_file_directorys);
 
 RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw);
 

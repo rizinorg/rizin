@@ -626,14 +626,31 @@ RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va) {
 	return true;
 }
 
-static inline RzBinDWARF *rz_core_bin_dwarf(RzCore *core, RzBinFile *binfile) {
+static inline RzBinDWARF *load_dwarf(RzCore *core, RzBinFile *binfile) {
 	RzBinDWARF *dw = rz_bin_dwarf_from_file(binfile);
 
 	const char *dwo_path = rz_config_get(core->config, "bin.dbginfo.dwo_path");
 	if (RZ_STR_ISNOTEMPTY(dwo_path)) {
 		RzBinDWARF *dwo = rz_bin_dwarf_dwo_from_file(core->bin, dwo_path);
-		dwo->dwo_parent = dw;
-		return dwo;
+		if (dwo) {
+			dwo->parent = dw;
+			return dwo;
+		}
+	}
+	const char *debug_file_directory = rz_config_get(
+		core->config, "bin.dbginfo.debug_file_directory");
+	if (RZ_STR_ISNOTEMPTY(debug_file_directory)) {
+		RzList *debug_file_directorys =
+			rz_str_split_duplist(debug_file_directory, ";", true);
+		if (debug_file_directorys) {
+			RzBinDWARF *sep_dw =
+				rz_bin_dwarf_search_debug_file_directory(binfile, debug_file_directorys);
+			rz_list_free(debug_file_directorys);
+			if (sep_dw) {
+				sep_dw->parent = dw;
+				return sep_dw;
+			}
+		}
 	}
 	return dw;
 }
@@ -644,7 +661,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
-	RzBinDWARF *dw = rz_core_bin_dwarf(core, binfile);
+	RzBinDWARF *dw = load_dwarf(core, binfile);
 	if (!dw) {
 		return false;
 	}

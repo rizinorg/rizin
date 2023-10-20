@@ -41,7 +41,7 @@ static inline RZ_OWN RzBinDWARF *dwarf_from_file(
 	return dw;
 }
 
-static inline char *read_debuglink(RzCore *core, RzBinFile *binfile) {
+static inline char *read_debuglink(RzBinFile *binfile) {
 	RzBinSection *sect = rz_bin_dwarf_section_by_name(binfile, ".gnu_debuglink", false);
 	RET_NULL_IF_FAIL(sect);
 	RzBuffer *buffer = rz_bin_dwarf_section_buf(binfile, sect);
@@ -52,7 +52,7 @@ static inline char *read_debuglink(RzCore *core, RzBinFile *binfile) {
 	return name;
 }
 
-static inline char *read_build_id(RzCore *core, RzBinFile *binfile) {
+static inline char *read_build_id(RzBinFile *binfile) {
 	RzBinSection *sect = rz_bin_dwarf_section_by_name(binfile, ".note.gnu.build-id", false);
 	RET_NULL_IF_FAIL(sect);
 	RzBuffer *buffer = rz_bin_dwarf_section_buf(binfile, sect);
@@ -84,17 +84,108 @@ beach:
 	return build_id;
 }
 
+static inline RzBinDWARF *dwarf_from_debuglink(
+	const char *file_directory,
+	RzList /*<const char *>*/ *debug_file_directorys,
+	const char *debuglink_path) {
+	RzBinDWARF *dw = NULL;
+	char *dir = NULL;
+	char *path = NULL;
+	char *file_dir = NULL;
+
+	path = rz_file_path_join(file_directory, debuglink_path);
+	if (!rz_file_exists(path)) {
+		free(path);
+	}
+
+	dir = rz_file_path_join(file_directory, ".debug");
+	path = rz_file_path_join(dir, debuglink_path);
+	if (!rz_file_exists(path)) {
+		free(path);
+		free(dir);
+	}
+
+	if (RZ_STR_ISNOTEMPTY(file_directory) && strlen(file_directory) >= 2 && file_directory[1] == ':') {
+		file_dir = rz_str_newf("/%c%s", file_directory[0], file_directory + 2);
+	} else {
+		file_dir = rz_str_new(file_directory);
+	}
+	RzListIter *it = NULL;
+	const char *debug_file_directory = NULL;
+	rz_list_foreach (debug_file_directorys, it, debug_file_directory) {
+		dir = rz_file_path_join(debug_file_directory, file_dir);
+		path = rz_file_path_join(dir, debuglink_path);
+		if (!rz_file_exists(path)) {
+			free(path);
+			free(dir);
+		}
+	}
+
+	dw = rz_file_exists(path) ? rz_bin_dwarf_dwo_from_file(path) : NULL;
+	free(dir);
+	free(path);
+	free(file_dir);
+	return dw;
+}
+
+static inline RzBinDWARF *dwarf_from_build_id(
+	RzList /*<const char *>*/ *debug_file_directorys,
+	const char *build_id_path) {
+	RzListIter *it = NULL;
+	const char *debug_file_directory = NULL;
+	rz_list_foreach (debug_file_directorys, it, debug_file_directory) {
+		char *dir = rz_file_path_join(debug_file_directory, ".build-id");
+		char *path = rz_file_path_join(dir, build_id_path);
+		if (rz_file_exists(path)) {
+			RzBinDWARF *dw = rz_bin_dwarf_dwo_from_file(path);
+			free(dir);
+			free(path);
+			return dw;
+		}
+		free(dir);
+		free(path);
+	}
+	return NULL;
+}
+
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debug_file_directorys) {
+	rz_return_val_if_fail(bf && debug_file_directorys, NULL);
+
+	RzBinDWARF *dw = NULL;
+	char *build_id = read_build_id(bf);
+	if (build_id) {
+		char *build_id_path = rz_str_newf("%c%c/%s", build_id[0], build_id[1], build_id + 2);
+		dw = dwarf_from_build_id(debug_file_directorys, build_id_path);
+		free(build_id);
+		free(build_id_path);
+		if (dw) {
+			return dw;
+		}
+	}
+	char *debuglink = read_debuglink(bf);
+	if (debuglink) {
+		char *file_dir = rz_file_dirname(bf->file);
+		if (file_dir) {
+			dw = dwarf_from_debuglink(file_dir, debug_file_directorys, debuglink);
+		}
+		free(debuglink);
+		free(file_dir);
+		if (dw) {
+			return dw;
+		}
+	}
+	return NULL;
+}
+
 /**
  * \brief Load DWARF from split DWARF file
- * \param bin The RzBin instance
- * \param opt The RzBinDWARFOption reference
  * \param filepath The file path
  * \return RzBinDWARF pointer or NULL if failed
  */
-RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_dwo_from_file(
-	RZ_BORROW RZ_NONNULL RzBin *bin,
-	RZ_BORROW RZ_NONNULL const char *filepath) {
-	rz_return_val_if_fail(bin && filepath, NULL);
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_dwo_from_file(RZ_BORROW RZ_NONNULL const char *filepath) {
+	rz_return_val_if_fail(filepath, NULL);
 
 	RzBinDWARF *dwo = NULL;
 	RzIO *io_tmp = rz_io_new();
@@ -124,7 +215,7 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw) {
 	if (!dw) {
 		return;
 	}
-	rz_bin_dwarf_free(dw->dwo_parent);
+	rz_bin_dwarf_free(dw->parent);
 
 	DebugRngLists_free(dw->rnglists);
 	DebugAddr_free(dw->addr);
