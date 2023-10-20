@@ -126,7 +126,7 @@ static inline RzBinDWARF *dwarf_from_debuglink(
 
 	return NULL;
 ok:
-	dw = rz_bin_dwarf_dwo_from_file(path);
+	dw = rz_bin_dwarf_from_path(path, false);
 	free(dir);
 	free(path);
 	free(file_dir);
@@ -142,7 +142,7 @@ static inline RzBinDWARF *dwarf_from_build_id(
 		char *dir = rz_file_path_join(debug_file_directory, ".build-id");
 		char *path = rz_file_path_join(dir, build_id_path);
 		if (rz_file_exists(path)) {
-			RzBinDWARF *dw = rz_bin_dwarf_dwo_from_file(path);
+			RzBinDWARF *dw = rz_bin_dwarf_from_path(path, false);
 			free(dir);
 			free(path);
 			return dw;
@@ -171,7 +171,8 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 	}
 	char *debuglink = read_debuglink(bf);
 	if (debuglink) {
-		char *file_dir = rz_file_dirname(bf->file);
+		char *file_abspath = rz_file_abspath(bf->file);
+		char *file_dir = file_abspath ? rz_file_dirname(file_abspath) : NULL;
 		if (file_dir) {
 			dw = dwarf_from_debuglink(file_dir, debug_file_directorys, debuglink);
 		}
@@ -189,7 +190,8 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
  * \param filepath The file path
  * \return RzBinDWARF pointer or NULL if failed
  */
-RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_dwo_from_file(RZ_BORROW RZ_NONNULL const char *filepath) {
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_path(
+	RZ_BORROW RZ_NONNULL const char *filepath, bool is_dwo) {
 	rz_return_val_if_fail(filepath, NULL);
 
 	RzBinDWARF *dwo = NULL;
@@ -203,7 +205,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_dwo_from_file(RZ_BORROW RZ_NONNULL const 
 	if (!bf) {
 		goto beach;
 	}
-	dwo = dwarf_from_file(bf, true);
+	dwo = dwarf_from_file(bf, is_dwo);
 
 beach:
 	rz_bin_free(bin_tmp);

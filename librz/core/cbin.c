@@ -631,7 +631,7 @@ static inline RzBinDWARF *load_dwarf(RzCore *core, RzBinFile *binfile) {
 
 	const char *dwo_path = rz_config_get(core->config, "bin.dbginfo.dwo_path");
 	if (RZ_STR_ISNOTEMPTY(dwo_path)) {
-		RzBinDWARF *dwo = rz_bin_dwarf_dwo_from_file(core->bin, dwo_path);
+		RzBinDWARF *dwo = rz_bin_dwarf_from_path(dwo_path, true);
 		if (dwo) {
 			dwo->parent = dw;
 			return dwo;
@@ -1733,7 +1733,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 
 	RzBinDWARF *dw = (core->analysis && core->analysis->debug_info && core->analysis->debug_info->dw)
 		? core->analysis->debug_info->dw
-		: rz_bin_dwarf_from_file(binfile);
+		: load_dwarf(core, binfile);
 	if (!dw) {
 		return false;
 	}
