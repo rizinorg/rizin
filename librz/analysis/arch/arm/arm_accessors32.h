@@ -25,8 +25,8 @@
 #define ISMEM(x)         (insn->detail->arm.operands[x].type == ARM_OP_MEM)
 #define ISFPIMM(x)       (insn->detail->arm.operands[x].type == ARM_OP_FP)
 
-#define LSHIFT(x)  insn->detail->arm.operands[x].mem.lshift
-#define LSHIFT2(x) insn->detail->arm.operands[x].shift.value // Dangerous, returns value even if isn't LSL
+#define LSHIFT(x)       insn->detail->arm.operands[x].mem.lshift
+#define LSHIFT2(x)      insn->detail->arm.operands[x].shift.value // Dangerous, returns value even if isn't LSL
 #define OPCOUNT()       insn->detail->arm.op_count
 #define ISSHIFTED(x)    (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
 #define SHIFTTYPE(x)    insn->detail->arm.operands[x].shift.type
