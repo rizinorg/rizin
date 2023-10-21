@@ -138,7 +138,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	cs_option(ctx->cd, CS_OPT_SYNTAX, (a->syntax == RZ_ASM_SYNTAX_REGNUM) ? CS_OPT_SYNTAX_NOREGNAME : CS_OPT_SYNTAX_DEFAULT);
-#if CS_VERSION_NEXT >= 6
+#if CS_NEXT_VERSION >= 6
 	cs_option(ctx->cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_CS_REG_ALIAS);
 #endif
 	cs_option(ctx->cd, CS_OPT_DETAIL, (a->features && *a->features) ? CS_OPT_ON : CS_OPT_OFF);
