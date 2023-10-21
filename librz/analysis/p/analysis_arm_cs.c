@@ -13,7 +13,6 @@
 #include "../arch/arm/arm_accessors32.h"
 #include "../arch/arm/arm_accessors64.h"
 #include "../../asm/arch/arm/arm_it.h"
-#include "subprojects/capstone-4.0.2/include/capstone/arm.h"
 
 #if CS_NEXT_VERSION < 6
 inline static const char *ARMCondCodeToString(arm_cc cc)
