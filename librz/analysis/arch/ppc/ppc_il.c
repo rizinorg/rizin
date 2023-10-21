@@ -267,18 +267,12 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BGEL:
 	case PPC_INS_BGELRL:
 	case PPC_INS_BGELA:
-	case PPC_INS_BDNZTL:
-	case PPC_INS_BDNZTLA:
 	case PPC_INS_BDNZL:
 	case PPC_INS_BDNZLA:
 	case PPC_INS_BDNZLRL:
 	case PPC_INS_BDZL:
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLRL:
-	case PPC_INS_BL:
-	case PPC_INS_BLA:
-	case PPC_INS_BLRL:
-	case PPC_INS_BCLA:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTLA:
 	case PPC_INS_BDNZFL:
@@ -300,6 +294,7 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	}
 }
 
+#if CS_NEXT_VERSION >= 6
 /**
  * \brief Returns true if the given branch instruction is conditional.
  *
@@ -310,6 +305,7 @@ RZ_IPI bool ppc_insn_is_conditional(const cs_insn *insn) {
 	rz_return_val_if_fail(insn, false);
 	return PPC_DETAIL(insn).bc.pred_cr != PPC_PRED_INVALID || PPC_DETAIL(insn).bc.pred_ctr != PPC_PRED_INVALID;
 }
+#endif
 
 /**
  * \brief Returns true if the given branch instruction is conditional.

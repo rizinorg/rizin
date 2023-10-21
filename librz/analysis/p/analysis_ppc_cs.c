@@ -956,7 +956,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			return -1;
 		}
 		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+#if CS_NEXT_VERSION >= 6
 		cs_option(handle, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL);
+#endif
 	}
 	op->size = 4;
 
@@ -1459,7 +1461,13 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_LE:
-				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+				/* 0b01 == equal
+				 * 0b10 == less than */
+				if (ARG(1)[0] == '\0') {
+					esilprintf(op, "3,cr0,&,?{,%s,pc,=,},", ARG(0));
+				} else {
+					esilprintf(op, "3,%s,&,?{,%s,pc,=,},", ARG(0), ARG(1));
+				}
 #endif
 				break;
 #if CS_NEXT_VERSION >= 6
