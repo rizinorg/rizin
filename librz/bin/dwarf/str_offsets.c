@@ -22,6 +22,7 @@ err:
 	rz_bin_dwarf_str_offsets_free(str_offsets);
 	return NULL;
 }
+
 RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_from_file(
 	RZ_NONNULL RZ_BORROW RzBinFile *bf, bool is_dwo) {
 	rz_return_val_if_fail(bf, NULL);
@@ -30,7 +31,8 @@ RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_from_file(
 	RET_NULL_IF_FAIL(r);
 	return rz_bin_dwarf_str_offsets_from_buf(r);
 }
-RZ_API void rz_bin_dwarf_str_offsets_free(RzBinDwarfStrOffsets *str_offsets) {
+
+RZ_API void rz_bin_dwarf_str_offsets_free(RZ_NULLABLE RzBinDwarfStrOffsets *str_offsets) {
 	if (!str_offsets) {
 		return;
 	}
@@ -38,6 +40,7 @@ RZ_API void rz_bin_dwarf_str_offsets_free(RzBinDwarfStrOffsets *str_offsets) {
 	RzBinEndianReader_free(str_offsets->reader);
 	free(str_offsets);
 }
+
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_offsets_get(
 	RzBinDwarfStr *str, RzBinDwarfStrOffsets *str_offsets, ut64 base, ut64 index) {
 	rz_return_val_if_fail(str && str_offsets && index >= 0, NULL);
