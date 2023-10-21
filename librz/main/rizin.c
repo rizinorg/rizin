@@ -1483,12 +1483,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					if (rz_config_get_i(r->config, "dbg.exitkills") && y_kill_debug) {
 						rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 					}
-				} else {
-					if (rz_config_get_i(r->config, "dbg.exitkills") &&
+				} else if (rz_config_get_i(r->config, "dbg.exitkills") &&
 						rz_debug_can_kill(r->dbg) &&
 						rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
-						rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-					}
+					rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 				}
 			}
 		} else {
