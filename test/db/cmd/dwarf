@@ -6894,7 +6894,7 @@ paddr      size  vaddr      vsize align perm name               type       flags
 <0x14d>: Abbrev Number: 2    (DW_TAG_pointer_type)
 	DW_AT_type [DW_FORM_ref4]	: <0x13a>
 <0x152>: Abbrev Number: 0    (DW_TAG_null_entry)
-Raw dump of debug contents of section (null):
+Raw dump of debug contents of section .debug_line:
 
  Header information[0x0]
   Length:                             351

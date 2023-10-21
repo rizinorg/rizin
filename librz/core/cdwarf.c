@@ -426,7 +426,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_line_units_to_string(RZ_NONNULL RZ_BORROW 
 	if (!sb) {
 		return NULL;
 	}
-	rz_strbuf_appendf(sb, "Raw dump of debug contents of section %s:\n\n", line->reader->section->name);
+	rz_strbuf_appendf(sb, "Raw dump of debug contents of section %s:\n\n", line->reader->section_name);
 	RzListIter *it;
 	RzBinDwarfLineUnit *unit;
 	bool first = true;

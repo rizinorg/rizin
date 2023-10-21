@@ -972,7 +972,7 @@ struct rz_bin_section_t;
 typedef struct {
 	RzBuffer *buffer;
 	bool big_endian;
-	const struct rz_bin_section_t *section;
+	char *section_name;
 	HtUP *relocations;
 } RzBinEndianReader;
 

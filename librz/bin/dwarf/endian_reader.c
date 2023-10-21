@@ -144,7 +144,7 @@ RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const 
 
 	reader->buffer = buf;
 	reader->big_endian = bf_bigendian(binfile);
-	reader->section = section;
+	reader->section_name = rz_str_new(section->name);
 	reader->relocations = relocations;
 	return reader;
 }
@@ -258,6 +258,7 @@ RZ_IPI void RzBinEndianReader_free(RzBinEndianReader *r) {
 	}
 	rz_buf_free(r->buffer);
 	ht_up_free(r->relocations);
+	free(r->section_name);
 	free(r);
 }
 
