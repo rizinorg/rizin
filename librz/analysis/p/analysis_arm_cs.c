@@ -278,7 +278,11 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->update_flags) {
 		pj_kb(pj, "update_flags", true);
 	}
+#if CS_NEXT_VERSION >= 6
 	if (insn->detail->writeback) {
+#else
+	if (x->writeback) {
+#endif
 		pj_kb(pj, "writeback", true);
 	}
 	if (x->vector_size) {

@@ -395,7 +395,7 @@ PUSH { r4, r5, r6, r7, lr }
 			rz_strbuf_appendf(&op->esil, "%s,%s,%d,+,=[4],",
 				REG(i), ARG(0), (i + offset) * 4);
 		}
-		if (insn->detail->writeback == true) { // writeback, reg should be incremented
+		if (ISWRITEBACK32() == true) { // writeback, reg should be incremented
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,",
 				direction * (insn->detail->arm.op_count - 1) * 4, ARG(0));
 		}
@@ -410,7 +410,7 @@ PUSH { r4, r5, r6, r7, lr }
 			width += REGSIZE32(i);
 		}
 		// increment if writeback
-		if (insn->detail->writeback) {
+		if (ISWRITEBACK32()) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,", width, ARG(0));
 		}
 		break;
@@ -434,7 +434,7 @@ PUSH { r4, r5, r6, r7, lr }
 			width += REGSIZE32(i);
 		}
 		// increment if writeback
-		if (insn->detail->writeback) {
+		if (ISWRITEBACK32()) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,", width, ARG(0));
 		}
 		break;
@@ -493,7 +493,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			rz_strbuf_appendf(&op->esil, "%s,%d,+,[4],%s,=,", ARG(0), (i + offset) * 4, REG(i));
 		}
-		if (insn->detail->writeback) {
+		if (ISWRITEBACK32()) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,",
 				direction * (insn->detail->arm.op_count - 1) * 4, ARG(0));
 		}
@@ -549,14 +549,14 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		default:
 			str_ldr_bytes = 4;
 		}
-		if (!ISPOSTINDEX()) {
+		if (!ISPOSTINDEX32()) {
 			if (ISMEM(1) && !HASMEMINDEX(1)) {
 				int disp = MEMDISP(1);
 				char sign = disp >= 0 ? '+' : '-';
 				disp = disp >= 0 ? disp : -disp;
 				rz_strbuf_appendf(&op->esil, "%s,0x%x,%s,%c,0xffffffff,&,=[%d]",
 					REG(0), disp, MEMBASE(1), sign, str_ldr_bytes);
-				if (insn->detail->writeback) {
+				if (ISWRITEBACK32()) {
 					rz_strbuf_appendf(&op->esil, ",%d,%s,%c,%s,=",
 						disp, MEMBASE(1), sign, MEMBASE(1));
 				}
@@ -567,7 +567,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_LSL:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,<<,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->writeback) { // e.g. 'str r2, [r3, r1, lsl 4]!'
+						if (ISWRITEBACK32()) { // e.g. 'str r2, [r3, r1, lsl 4]!'
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,<<,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -575,7 +575,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_LSR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->writeback) {
+						if (ISWRITEBACK32()) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -583,7 +583,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_ASR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->writeback) {
+						if (ISWRITEBACK32()) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -591,7 +591,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_ROR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->writeback) {
+						if (ISWRITEBACK32()) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -606,14 +606,14 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				} else { // No shift
 					rz_strbuf_appendf(&op->esil, "%s,%s,%s,+,0xffffffff,&,=[%d]",
 						REG(0), MEMINDEX(1), MEMBASE(1), str_ldr_bytes);
-					if (insn->detail->writeback) {
+					if (ISWRITEBACK32()) {
 						rz_strbuf_appendf(&op->esil, ",%s,%s,+,%s,=",
 							MEMINDEX(1), MEMBASE(1), MEMBASE(1));
 					}
 				}
 			}
 		}
-		if (ISPOSTINDEX()) { // e.g. 'str r2, [r3], 4
+		if (ISPOSTINDEX32()) { // e.g. 'str r2, [r3], 4
 			if (!HASMEMINDEX(1) && (str_ldr_bytes != 8)) { // e.g. 'str r2, [r3], 4
 				rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%d,%s,+=",
 					REG(0), MEMBASE(1), str_ldr_bytes, MEMDISP(1), MEMBASE(1));
@@ -654,7 +654,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					disp = disp >= 0 ? disp : -disp;
 					rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
 						REG(0), MEMBASE(2), REG(1), MEMBASE(2));
-					if (insn->detail->writeback) {
+					if (ISWRITEBACK32()) {
 						rz_strbuf_appendf(&op->esil, ",%d,%s,%c,%s,=",
 							disp, MEMBASE(2), sign, MEMBASE(2));
 					}
@@ -664,7 +664,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					} else {
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
 							REG(0), MEMBASE(2), REG(1), MEMBASE(2));
-						if (insn->detail->writeback) {
+						if (ISWRITEBACK32()) {
 							const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c=",
 								MEMINDEX(2), MEMBASE(2), sign);
@@ -687,7 +687,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",2,2,%s,%d,+,>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 					(ut64)MEMDISP(2), pc, pcdelta, REG(0), REG(1));
 			} else {
-				int disp = ISPOSTINDEX() ? 0 : MEMDISP(2);
+				int disp = ISPOSTINDEX32() ? 0 : MEMDISP(2);
 				// not refptr, because we can't grab the reg value statically op->refptr = 4;
 				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 					(ut64)-disp, MEMBASE(2), REG(0), REG(1));
@@ -708,16 +708,16 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			} else {
 				if (HASMEMINDEX(2)) { // e.g. `ldrd r2, r3 [r4, r1]` or `ldrd r2, r3 [r4], r1`
 					const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
-					const char *mem_index = ISPOSTINDEX() ? "0" : MEMINDEX(2);
+					const char *mem_index = ISPOSTINDEX32() ? "0" : MEMINDEX(2);
 					rz_strbuf_appendf(&op->esil, "%s,%s,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						mem_index, MEMBASE(2), op_index, REG(0), REG(1));
 				} else {
-					int disp = ISPOSTINDEX() ? 0 : MEMDISP(2);
+					int disp = ISPOSTINDEX32() ? 0 : MEMDISP(2);
 					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						disp, MEMBASE(2), REG(0), REG(1));
 				}
-				if (insn->detail->writeback) {
-					if (ISPOSTINDEX()) {
+				if (ISWRITEBACK32()) {
+					if (ISPOSTINDEX32()) {
 						if (!HASMEMINDEX(2)) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
 								MEMBASE(2), MEMDISP(2), MEMBASE(2));
@@ -726,7 +726,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c,%s,=",
 								MEMINDEX(2), MEMBASE(2), op_index, MEMBASE(2));
 						}
-					} else if (ISPREINDEX32()) {
+					} else {
 						if (HASMEMINDEX(2)) {
 							const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c,%s,=",
@@ -749,9 +749,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				MEMINDEX(1), MEMBASE(1), REG(0));
 		} else {
 			rz_strbuf_appendf(&op->esil, "%s,%d,+,[1],%s,=",
-				MEMBASE(1), ISPOSTINDEX() ? 0 : MEMDISP(1), REG(0));
+				MEMBASE(1), ISPOSTINDEX32() ? 0 : MEMDISP(1), REG(0));
 		}
-		if (insn->detail->writeback) {
+		if (ISWRITEBACK32()) {
 			rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
 				MEMBASE(1), MEMDISP(1), MEMBASE(1));
 		}
@@ -830,14 +830,14 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				} else if (HASMEMINDEX(1)) { // e.g. `ldr r2, [r3, r1]`
 					rz_strbuf_appendf(&op->esil, "%s,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 						MEMINDEX(1), MEMBASE(1), mask, REG(0));
-				} else if (ISPOSTINDEX()) {
+				} else if (ISPOSTINDEX32()) {
 					rz_strbuf_appendf(&op->esil, "%s,0xffffffff,&,[4],0x%x,&,%s,=",
 						MEMBASE(1), mask, REG(0));
 				} else {
 					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 						MEMDISP(1), MEMBASE(1), mask, REG(0));
 				}
-				if (insn->detail->writeback) {
+				if (ISWRITEBACK32()) {
 					rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
 						MEMBASE(1), MEMDISP(1), MEMBASE(1));
 				}

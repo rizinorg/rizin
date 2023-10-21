@@ -37,13 +37,12 @@
 	SHIFTTYPE(x) == ARM_SFT_RRX_REG)
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
-#define ISPOSTINDEX()   insn->detail->arm.post_index
-#define ISWRITEBACK32() insn->detail->writeback
-#define ISPREINDEX32()  (((OPCOUNT() == 2) && (ISMEM(1)) && (ISWRITEBACK32()) && (!ISPOSTINDEX())) || \
-	((OPCOUNT() == 3) && (ISMEM(2)) && (ISWRITEBACK32()) && (!ISPOSTINDEX())))
-
 #if CS_NEXT_VERSION >= 6
 #define CS_ARMCC(CC) ARMCC_##CC
+#define ISWRITEBACK32() insn->detail->writeback
+#define ISPOSTINDEX32() insn->detail->arm.post_index
 #else
 #define CS_ARMCC(CC) ARM_CC_##CC
+#define ISWRITEBACK32() insn->detail->arm.writeback
+#define ISPOSTINDEX32() (((OPCOUNT() == 3) && (ISIMM(2) || ISREG(2)) && (ISWRITEBACK32())) || ((OPCOUNT() == 4) && (ISIMM(3) || ISREG(3)) && (ISWRITEBACK32())))
 #endif
