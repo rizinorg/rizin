@@ -16,6 +16,46 @@ typedef struct arm_cs_context_t {
 	int obits;
 } ArmCSContext;
 
+#if CS_NEXT_VERSION < 6
+inline static const char *ARMCondCodeToString(arm_cc cc)
+{
+  switch (cc) {
+  default:
+    assert(0 && "Unknown condition code");
+  case ARM_CC_EQ:
+    return "eq";
+  case ARM_CC_NE:
+    return "ne";
+  case ARM_CC_HS:
+    return "hs";
+  case ARM_CC_LO:
+    return "lo";
+  case ARM_CC_MI:
+    return "mi";
+  case ARM_CC_PL:
+    return "pl";
+  case ARM_CC_VS:
+    return "vs";
+  case ARM_CC_VC:
+    return "vc";
+  case ARM_CC_HI:
+    return "hi";
+  case ARM_CC_LS:
+    return "ls";
+  case ARM_CC_GE:
+    return "ge";
+  case ARM_CC_LT:
+    return "lt";
+  case ARM_CC_GT:
+    return "gt";
+  case ARM_CC_LE:
+    return "le";
+  case ARM_CC_AL:
+    return "al";
+  }
+}
+#endif
+
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 
 static bool check_features(RzAsm *a, cs_insn *insn) {
@@ -27,9 +67,15 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 	for (i = 0; i < insn->detail->groups_count; i++) {
 		int id = insn->detail->groups[i];
 		switch (id) {
+#if CS_VERSION_NEXT >= 6
 		case ARM_FEATURE_IsARM:
 		case ARM_FEATURE_IsThumb:
 		case ARM_FEATURE_IsThumb2:
+#else
+		case ARM_GRP_ARM:
+		case ARM_GRP_THUMB:
+		case ARM_GRP_THUMB2:
+#endif
 			continue;
 		default:
 			if (id < 128) {
@@ -92,7 +138,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	cs_option(ctx->cd, CS_OPT_SYNTAX, (a->syntax == RZ_ASM_SYNTAX_REGNUM) ? CS_OPT_SYNTAX_NOREGNAME : CS_OPT_SYNTAX_DEFAULT);
+#if CS_VERSION_NEXT >= 6
 	cs_option(ctx->cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_CS_REG_ALIAS);
+#endif
 	cs_option(ctx->cd, CS_OPT_DETAIL, (a->features && *a->features) ? CS_OPT_ON : CS_OPT_OFF);
 	cs_option(ctx->cd, CS_OPT_DETAIL, CS_OPT_ON);
 	if (!buf) {
@@ -119,7 +167,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op && !op->size) {
 		op->size = insn->size;
+#if CS_NEXT_VERSION >= 6
 		if (insn->id == ARM_INS_IT || insn->id == ARM_INS_VPT) {
+#else
+		if (insn->id == ARM_INS_IT) {
+#endif
 			rz_arm_it_update_block(&ctx->it, insn);
 		} else {
 			rz_arm_it_update_nonblock(&ctx->it, insn);

@@ -302,37 +302,41 @@ static RzILOpEffect *write_reg(arm_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector *v
  * IL for arm condition
  * unconditional is returned as NULL (rather than true), for simpler code
  */
+#if CS_NEXT_VERSION >= 6
 static RZ_NULLABLE RzILOpBool *cond(ARMCC_CondCodes c) {
+#else
+static RZ_NULLABLE RzILOpBool *cond(arm_cc c) {
+#endif
 	switch (c) {
-	case ARMCC_EQ:
+	case CS_ARMCC(EQ):
 		return VARG("zf");
-	case ARMCC_NE:
+	case CS_ARMCC(NE):
 		return INV(VARG("zf"));
-	case ARMCC_HS:
+	case CS_ARMCC(HS):
 		return VARG("cf");
-	case ARMCC_LO:
+	case CS_ARMCC(LO):
 		return INV(VARG("cf"));
-	case ARMCC_MI:
+	case CS_ARMCC(MI):
 		return VARG("nf");
-	case ARMCC_PL:
+	case CS_ARMCC(PL):
 		return INV(VARG("nf"));
-	case ARMCC_VS:
+	case CS_ARMCC(VS):
 		return VARG("vf");
-	case ARMCC_VC:
+	case CS_ARMCC(VC):
 		return INV(VARG("vf"));
-	case ARMCC_HI:
+	case CS_ARMCC(HI):
 		return AND(VARG("cf"), INV(VARG("zf")));
-	case ARMCC_LS:
+	case CS_ARMCC(LS):
 		return OR(INV(VARG("cf")), VARG("zf"));
-	case ARMCC_GE:
+	case CS_ARMCC(GE):
 		return INV(XOR(VARG("nf"), VARG("vf")));
-	case ARMCC_LT:
+	case CS_ARMCC(LT):
 		return XOR(VARG("nf"), VARG("vf"));
-	case ARMCC_GT:
+	case CS_ARMCC(GT):
 		return AND(INV(VARG("zf")), INV(XOR(VARG("nf"), VARG("vf"))));
-	case ARMCC_LE:
+	case CS_ARMCC(LE):
 		return OR(VARG("zf"), XOR(VARG("nf"), VARG("vf")));
-	case ARMCC_AL:
+	case CS_ARMCC(AL):
 	default:
 		return NULL;
 	}
@@ -1470,6 +1474,7 @@ static RzILOpEffect *mla(cs_insn *insn, bool is_thumb) {
  * ARM: mrs
  */
 static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
+#if CS_NEXT_VERSION >= 6
 	if (!ISREG(0) || !(ISREG(1) || ISPSRFLAGS(1))) {
 		return NULL;
 	}
@@ -1477,6 +1482,15 @@ static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
 		// only these regs supported
 		return NULL;
 	}
+#else
+	if (!ISREG(0) || !(ISREG(1))) {
+		return NULL;
+	}
+	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_SPSR && REGID(1) != ARM_REG_APSR) {
+		// only these regs supported
+		return NULL;
+	}
+#endif
 	// There are more bits in ARM, but this is all we have:
 	return write_reg(REGID(0),
 		LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
@@ -1493,6 +1507,7 @@ static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
  */
 static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
 	cs_arm_op *dst = &insn->detail->arm.operands[0];
+#if CS_NEXT_VERSION >= 6
 	if ((dst->type != ARM_OP_SYSREG) && (dst->type != ARM_OP_CPSR) && (dst->type != ARM_OP_SPSR)) {
 		return NULL;
 	}
@@ -1515,6 +1530,30 @@ static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
 		update_s = (dst->sysop.psr_bits & ARM_FIELD_CPSR_S) || (dst->sysop.psr_bits & ARM_FIELD_SPSR_S);
 		break;
 	}
+#else
+	if (dst->type != ARM_OP_SYSREG) {
+		return NULL;
+	}
+	// check if the reg+mask contains any of the flags we have:
+	bool update_f = false;
+	bool update_s = false;
+	switch (dst->reg) {
+	case ARM_SYSREG_APSR_NZCVQ:
+		update_f = true;
+		break;
+	case ARM_SYSREG_APSR_G:
+		update_s = true;
+		break;
+	case ARM_SYSREG_APSR_NZCVQG:
+		update_f = true;
+		update_s = true;
+		break;
+	default:
+		update_f = (dst->reg & ARM_SYSREG_CPSR_F) || (dst->reg & ARM_SYSREG_SPSR_F);
+		update_s = (dst->reg & ARM_SYSREG_CPSR_S) || (dst->reg & ARM_SYSREG_SPSR_S);
+		break;
+	}
+#endif
 	if (!update_f && !update_s) {
 		// no flags we know
 		return NULL;
@@ -3537,7 +3576,11 @@ static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success)
 	bv_sz = cvt_isize(VVEC_DT(insn), &is_signed);
 	ut32 fl_sz = rz_float_get_format_info(is_f2i ? from_fmt : to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
 
+#if CS_NEXT_VERSION >= 6
 	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+#else
+	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
+#endif
 		// vfp
 		// VCVT.F64.S32/U32 <Dd>, <Sm>
 		// VCVT.F32.S32/U32 <Sd>, <Sm>
@@ -3770,7 +3813,11 @@ static RzILOpEffect *vadd(cs_insn *insn, bool is_thumb) {
 	RzFloatFormat fmt = dt2fmt(dt);
 	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
+#if CS_NEXT_VERSION >= 6
 	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+#else
+	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
+#endif
 		// VFP
 		return write_reg(REGID(0),
 			F2BV(FADD(RZ_FLOAT_RMODE_RNE,
@@ -3817,7 +3864,11 @@ static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
 	RzFloatFormat fmt = dt2fmt(dt);
 	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
+#if CS_NEXT_VERSION >= 6
 	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+#else
+	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
+#endif
 		// VFP
 		return write_reg(REGID(0),
 			F2BV(FSUB(RZ_FLOAT_RMODE_RNE,
@@ -3862,7 +3913,11 @@ static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
 	arm_vectordata_type dt = VVEC_DT(insn);
 	RzFloatFormat fmt = dt2fmt(dt);
 
+#if CS_NEXT_VERSION >= 6
 	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+#else
+	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
+#endif
 		// VFP fmul
 		return write_reg(REGID(0),
 			F2BV(FMUL(RZ_FLOAT_RMODE_RNE,
@@ -3959,7 +4014,11 @@ static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 
-	if (rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+#if CS_NEXT_VERSION >= 6
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+#else
+	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
+#endif
 		// not implement
 		return NULL;
 	}

@@ -21,7 +21,9 @@
 #define MEMDISP_BV(x)    (HASMEMINDEX(x) ? REG_VAL(insn->detail->arm.operands[x].mem.index) : U32(MEMDISP(x)))
 #define ISIMM(x)         (insn->detail->arm.operands[x].type == ARM_OP_IMM || insn->detail->arm.operands[x].type == ARM_OP_FP)
 #define ISREG(x)         (insn->detail->arm.operands[x].type == ARM_OP_REG)
+#if CS_NEXT_VERSION >= 6
 #define ISPSRFLAGS(x)    (insn->detail->arm.operands[x].type == ARM_OP_CPSR || insn->detail->arm.operands[x].type == ARM_OP_SPSR)
+#endif
 #define ISMEM(x)         (insn->detail->arm.operands[x].type == ARM_OP_MEM)
 #define ISFPIMM(x)       (insn->detail->arm.operands[x].type == ARM_OP_FP)
 
@@ -39,3 +41,9 @@
 #define ISWRITEBACK32() insn->detail->writeback
 #define ISPREINDEX32()  (((OPCOUNT() == 2) && (ISMEM(1)) && (ISWRITEBACK32()) && (!ISPOSTINDEX())) || \
 	((OPCOUNT() == 3) && (ISMEM(2)) && (ISWRITEBACK32()) && (!ISPOSTINDEX())))
+
+#if CS_NEXT_VERSION >= 6
+#define CS_ARMCC(CC) ARMCC_##CC
+#else
+#define CS_ARMCC(CC) ARM_CC_##CC
+#endif

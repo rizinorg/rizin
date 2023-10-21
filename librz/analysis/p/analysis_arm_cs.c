@@ -13,6 +13,47 @@
 #include "../arch/arm/arm_accessors32.h"
 #include "../arch/arm/arm_accessors64.h"
 #include "../../asm/arch/arm/arm_it.h"
+#include "subprojects/capstone-4.0.2/include/capstone/arm.h"
+
+#if CS_NEXT_VERSION < 6
+inline static const char *ARMCondCodeToString(arm_cc cc)
+{
+  switch (cc) {
+  default:
+    assert(0 && "Unknown condition code");
+  case ARM_CC_EQ:
+    return "eq";
+  case ARM_CC_NE:
+    return "ne";
+  case ARM_CC_HS:
+    return "hs";
+  case ARM_CC_LO:
+    return "lo";
+  case ARM_CC_MI:
+    return "mi";
+  case ARM_CC_PL:
+    return "pl";
+  case ARM_CC_VS:
+    return "vs";
+  case ARM_CC_VC:
+    return "vc";
+  case ARM_CC_HI:
+    return "hi";
+  case ARM_CC_LS:
+    return "ls";
+  case ARM_CC_GE:
+    return "ge";
+  case ARM_CC_LT:
+    return "lt";
+  case ARM_CC_GT:
+    return "gt";
+  case ARM_CC_LE:
+    return "le";
+  case ARM_CC_AL:
+    return "al";
+  }
+}
+#endif
 
 typedef struct arm_cs_context_t {
 	RzArmITContext it;
@@ -253,9 +294,15 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->cps_flag != ARM_CPSFLAG_INVALID) {
 		pj_ki(pj, "cps_flag", x->cps_flag);
 	}
+#if CS_NEXT_VERSION >= 6
 	if (x->cc != ARMCC_UNDEF && x->cc != ARMCC_AL) {
 		pj_ks(pj, "cc", ARMCondCodeToString(x->cc));
 	}
+#else
+	if (x->cc != ARM_CC_INVALID && x->cc != ARM_CC_AL) {
+		pj_ks(pj, "cc", ARMCondCodeToString(x->cc));
+	}
+#endif
 	if (x->mem_barrier != ARM_MB_RESERVED_0) {
 		pj_ki(pj, "mem_barrier", x->mem_barrier - 1);
 	}
@@ -515,31 +562,31 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 }
 
 static int cond_cs2r2_32(int cc) {
-	if (cc == ARMCC_AL || cc < 0) {
+	if (cc == CS_ARMCC(AL) || cc < 0) {
 		cc = RZ_TYPE_COND_AL;
 	} else {
 		switch (cc) {
-		case ARMCC_EQ: cc = RZ_TYPE_COND_EQ; break;
-		case ARMCC_NE: cc = RZ_TYPE_COND_NE; break;
-		case ARMCC_HS: cc = RZ_TYPE_COND_HS; break;
-		case ARMCC_LO: cc = RZ_TYPE_COND_LO; break;
-		case ARMCC_MI: cc = RZ_TYPE_COND_MI; break;
-		case ARMCC_PL: cc = RZ_TYPE_COND_PL; break;
-		case ARMCC_VS: cc = RZ_TYPE_COND_VS; break;
-		case ARMCC_VC: cc = RZ_TYPE_COND_VC; break;
-		case ARMCC_HI: cc = RZ_TYPE_COND_HI; break;
-		case ARMCC_LS: cc = RZ_TYPE_COND_LS; break;
-		case ARMCC_GE: cc = RZ_TYPE_COND_GE; break;
-		case ARMCC_LT: cc = RZ_TYPE_COND_LT; break;
-		case ARMCC_GT: cc = RZ_TYPE_COND_GT; break;
-		case ARMCC_LE: cc = RZ_TYPE_COND_LE; break;
+		case CS_ARMCC(EQ): cc = RZ_TYPE_COND_EQ; break;
+		case CS_ARMCC(NE): cc = RZ_TYPE_COND_NE; break;
+		case CS_ARMCC(HS): cc = RZ_TYPE_COND_HS; break;
+		case CS_ARMCC(LO): cc = RZ_TYPE_COND_LO; break;
+		case CS_ARMCC(MI): cc = RZ_TYPE_COND_MI; break;
+		case CS_ARMCC(PL): cc = RZ_TYPE_COND_PL; break;
+		case CS_ARMCC(VS): cc = RZ_TYPE_COND_VS; break;
+		case CS_ARMCC(VC): cc = RZ_TYPE_COND_VC; break;
+		case CS_ARMCC(HI): cc = RZ_TYPE_COND_HI; break;
+		case CS_ARMCC(LS): cc = RZ_TYPE_COND_LS; break;
+		case CS_ARMCC(GE): cc = RZ_TYPE_COND_GE; break;
+		case CS_ARMCC(LT): cc = RZ_TYPE_COND_LT; break;
+		case CS_ARMCC(GT): cc = RZ_TYPE_COND_GT; break;
+		case CS_ARMCC(LE): cc = RZ_TYPE_COND_LE; break;
 		}
 	}
 	return cc;
 }
 
 static int cond_cs2r2_64(int cc) {
-	if (cc == ARMCC_AL || cc < 0) {
+	if (cc == ARM64_CC_AL || cc < 0) {
 		cc = RZ_TYPE_COND_AL;
 	} else {
 		switch (cc) {
@@ -887,7 +934,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		}
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-			if (insn->detail->arm.cc != ARMCC_AL) {
+			if (insn->detail->arm.cc != CS_ARMCC(AL)) {
 				// op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 			}
@@ -1012,7 +1059,9 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 		return;
 	}
 	op->cycles = 1;
+
 	/* grab family */
+#if CS_NEXT_VERSION >= 6
 	if (cs_insn_group(handle, insn, ARM_FEATURE_HasAES)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasCRC)) {
@@ -1031,6 +1080,21 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 	} else {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 	}
+#else
+	if (cs_insn_group(handle, insn, ARM64_GRP_CRYPTO)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
+	} else if (cs_insn_group(handle, insn, ARM64_GRP_CRC)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
+	} else if (cs_insn_group(handle, insn, ARM64_GRP_PRIVILEGE)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+	} else if (cs_insn_group(handle, insn, ARM64_GRP_NEON)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+	} else if (cs_insn_group(handle, insn, ARM64_GRP_FPARMV8)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+	} else {
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
+	}
+#endif
 
 	if (insn->id != ARM_INS_IT) {
 		rz_arm_it_update_nonblock(&ctx->it, insn);
@@ -1097,7 +1161,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
 			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 				insn->detail->arm.operands[i].reg == ARM_REG_PC) {
-				if (insn->detail->arm.cc == ARMCC_AL) {
+				if (insn->detail->arm.cc == CS_ARMCC(AL)) {
 					op->type = RZ_ANALYSIS_OP_TYPE_RET;
 				} else {
 					op->type = RZ_ANALYSIS_OP_TYPE_CRET;
@@ -1142,7 +1206,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARMCC_AL) {
+			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != CS_ARMCC(AL)) {
 				// op->type = RZ_ANALYSIS_OP_TYPE_RCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
@@ -1325,7 +1389,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->disp = MEMDISP(1);
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-			if (insn->detail->arm.cc != ARMCC_AL) {
+			if (insn->detail->arm.cc != CS_ARMCC(AL)) {
 				// op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 			}
@@ -1348,7 +1412,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		} else if (REGBASE(1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1);
 			op->refptr = 4;
-			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARMCC_AL) {
+			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != CS_ARMCC(AL)) {
 				// op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
@@ -1401,10 +1465,14 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_B:
 		/* b.cc label */
 		op->cycles = 4;
+#if CS_NEXT_VERSION >= 6
 		if (insn->detail->arm.cc == ARMCC_UNDEF) {
+#else
+		if (insn->detail->arm.cc == ARM_CC_INVALID) {
+#endif
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			op->fail = addr + op->size;
-		} else if (insn->detail->arm.cc == ARMCC_AL) {
+		} else if (insn->detail->arm.cc == CS_ARMCC(AL)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op->fail = UT64_MAX;
 		} else {
@@ -1740,7 +1808,9 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	if (ctx->handle == 0) {
 		ret = (a->bits == 64) ? cs_open(CS_ARCH_ARM64, mode, &ctx->handle) : cs_open(CS_ARCH_ARM, mode, &ctx->handle);
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
+#if CS_NEXT_VERSION >= 6
 		cs_option(ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_CS_REG_ALIAS);
+#endif
 		if (ret != CS_ERR_OK) {
 			ctx->handle = 0;
 			return -1;

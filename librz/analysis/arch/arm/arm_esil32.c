@@ -59,72 +59,76 @@ static unsigned int regsize32(cs_insn *insn, int n) {
 
 #define REGSIZE32(x) regsize32(insn, x)
 
+#if CS_NEXT_VERSION >= 6
 // return postfix
 RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, ARMCC_CondCodes cond_type) {
+#else
+RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, arm_cc cond_type) {
+#endif
 	const char *close_cond[2];
 	close_cond[0] = "";
 	close_cond[1] = ",}";
 	int close_type = 0;
 	switch (cond_type) {
-	case ARMCC_EQ:
+	case CS_ARMCC(EQ):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,?{,");
 		break;
-	case ARMCC_NE:
+	case CS_ARMCC(NE):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,!,?{,");
 		break;
-	case ARMCC_HS:
+	case CS_ARMCC(HS):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,?{,");
 		break;
-	case ARMCC_LO:
+	case CS_ARMCC(LO):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,!,?{,");
 		break;
-	case ARMCC_MI:
+	case CS_ARMCC(MI):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,?{,");
 		break;
-	case ARMCC_PL:
+	case CS_ARMCC(PL):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,!,?{,");
 		break;
-	case ARMCC_VS:
+	case CS_ARMCC(VS):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "vf,?{,");
 		break;
-	case ARMCC_VC:
+	case CS_ARMCC(VC):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "vf,!,?{,");
 		break;
-	case ARMCC_HI:
+	case CS_ARMCC(HI):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,zf,!,&,?{,");
 		break;
-	case ARMCC_LS:
+	case CS_ARMCC(LS):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,!,zf,|,?{,");
 		break;
-	case ARMCC_GE:
+	case CS_ARMCC(GE):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,vf,^,!,?{,");
 		break;
-	case ARMCC_LT:
+	case CS_ARMCC(LT):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,vf,^,?{,");
 		break;
-	case ARMCC_GT:
+	case CS_ARMCC(GT):
 		// zf == 0 && nf == vf
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
-	case ARMCC_LE:
+	case CS_ARMCC(LE):
 		// zf == 1 || nf != vf
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,nf,vf,^,|,?{,");
 		break;
-	case ARMCC_AL:
+	case CS_ARMCC(AL):
 		// always executed
 		break;
 	default:
@@ -844,7 +848,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		// TODO: esil for MRS
 		break;
 	case ARM_INS_MSR:
+#if CS_NEXT_VERSION >= 6
 		msr_flags = insn->detail->arm.operands[0].sysop.msr_mask;
+#else
+		msr_flags = insn->detail->arm.operands[0].reg >> 4;
+#endif
 		rz_strbuf_appendf(&op->esil, "0,");
 		if (msr_flags & 1) {
 			rz_strbuf_appendf(&op->esil, "0xFF,|,");
