@@ -63,6 +63,7 @@ jobs:
             linux-clang-tests-asan,
             linux-gcc-tests-codecov,
             capstone-v4,
+            capstone-v5,
           ]
         include:
           - name: linux-meson-clang-tests
@@ -143,6 +144,16 @@ jobs:
             build_system: meson
             compiler: gcc
             meson_options: -Dbuildtype=release -Duse_capstone_version=v4 --werror
+            run_tests: false
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
+            timeout: 45
+            cflags: "-Wno-cpp"
+            allow_failure: true
+          - name: capstone-v5
+            os: ubuntu-22.04
+            build_system: meson
+            compiler: gcc
+            meson_options: -Dbuildtype=release -Duse_capstone_version=v5 --werror
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
