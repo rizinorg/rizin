@@ -192,7 +192,8 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
 
 		RzBinDwarfDie *die = NULL;
 		rz_vector_foreach(&unit->dies, die) {
-			rz_strbuf_appendf(sb, "<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ", die->offset, die->abbrev_code);
+			rz_strbuf_appendf(sb, "<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ",
+				die->offset, die->abbrev_code);
 
 			const char *tag_name = rz_bin_dwarf_tag(die->tag);
 			if (tag_name) {
@@ -425,7 +426,7 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_line_units_to_string(RZ_NONNULL RZ_BORROW 
 	if (!sb) {
 		return NULL;
 	}
-	rz_strbuf_appendf(sb, "Raw dump of debug contents of section %s:\n\n", line->reader->section->name);
+	rz_strbuf_appendf(sb, "Raw dump of debug contents of section %s:\n\n", line->reader->section_name);
 	RzListIter *it;
 	RzBinDwarfLineUnit *unit;
 	bool first = true;

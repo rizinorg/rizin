@@ -29,6 +29,9 @@ RZ_IPI RzBinEndianReader *RzBinDwarfBlock_as_reader(const RzBinDwarfBlock *self)
 RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
 
+RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn, bool is_dwo);
+RZ_IPI RzBuffer *rz_bin_dwarf_section_buf(RzBinFile *binfile, RzBinSection *section);
+
 RZ_IPI bool read_initial_length(RzBinEndianReader *reader, RZ_OUT bool *is_64bit, ut64 *out);
 RZ_IPI bool read_offset(RzBinEndianReader *reader, ut64 *out, bool is_64bit);
 RZ_IPI bool read_address(RzBinEndianReader *reader, ut64 *out, ut8 address_size);
@@ -40,9 +43,9 @@ RZ_IPI RzBinEndianReader *RzBinEndianReader_clone(RzBinEndianReader *x);
 
 RZ_IPI bool RzBinDwarfAttr_parse(RzBinEndianReader *reader, RzBinDwarfAttr *attr, AttrOption *opt);
 RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *attr);
-RZ_IPI char *RzBinDwarfAttr_to_string(RzBinDwarfAttr *attr);
 
-RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const char *sect_name);
+RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(
+	RzBinFile *binfile, const char *sect_name, bool is_dwo);
 
 static inline bool bf_bigendian(RzBinFile *bf) {
 	return bf->o && bf->o->info && bf->o->info->big_endian;
@@ -123,20 +126,5 @@ RZ_IPI void Value_dump(
 /// op
 
 #include "op.h"
-
-///
-
-/// debug_str
-RZ_IPI void RzBinDwarfStr_free(RzBinDwarfStr *str);
-RZ_IPI char *RzBinDwarfStr_get(RzBinDwarfStr *str, ut64 offset);
-RZ_IPI void RzBinDwarfStr_read_all(RzBinDwarfStr *str);
-RZ_IPI RzBinDwarfStr *RzBinDwarfStr_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
-RZ_IPI RzBinDwarfStr *RzBinDwarfStr_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
-
-/// debug_str_offsets
-RZ_IPI void RzBinDwarfStrOffsets_free(RzBinDwarfStrOffsets *str_offsets);
-RZ_IPI char *RzBinDwarfStrOffsets_get(RzBinDwarfStr *str, RzBinDwarfStrOffsets *str_offsets, ut64 base, ut64 index);
-RZ_IPI RzBinDwarfStrOffsets *RzBinDwarfStrOffsets_new(RzBinEndianReader *reader);
-RZ_IPI RzBinDwarfStrOffsets *RzBinDwarfStrOffsets_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
 
 #endif

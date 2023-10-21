@@ -32,7 +32,7 @@ RZ_IPI RzBinDwarfAddr *DebugAddr_new(RzBinEndianReader *reader) {
 
 RZ_IPI RzBinDwarfAddr *DebugAddr_from_file(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_addr");
+	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_addr", false);
 	RET_NULL_IF_FAIL(r);
 	return DebugAddr_new(r);
 }

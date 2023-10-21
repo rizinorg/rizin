@@ -115,7 +115,7 @@ err:
  */
 RZ_API RZ_OWN RzBinDwarfARanges *rz_bin_dwarf_aranges_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_aranges");
+	RzBinEndianReader *reader = RzBinEndianReader_from_file(bf, ".debug_aranges", false);
 	RET_NULL_IF_FAIL(reader);
 	return rz_bin_dwarf_aranges_new(reader);
 }
