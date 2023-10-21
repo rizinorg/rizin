@@ -15,42 +15,41 @@
 #include "../../asm/arch/arm/arm_it.h"
 
 #if CS_NEXT_VERSION < 6
-inline static const char *ARMCondCodeToString(arm_cc cc)
-{
-  switch (cc) {
-  default:
-    assert(0 && "Unknown condition code");
-  case ARM_CC_EQ:
-    return "eq";
-  case ARM_CC_NE:
-    return "ne";
-  case ARM_CC_HS:
-    return "hs";
-  case ARM_CC_LO:
-    return "lo";
-  case ARM_CC_MI:
-    return "mi";
-  case ARM_CC_PL:
-    return "pl";
-  case ARM_CC_VS:
-    return "vs";
-  case ARM_CC_VC:
-    return "vc";
-  case ARM_CC_HI:
-    return "hi";
-  case ARM_CC_LS:
-    return "ls";
-  case ARM_CC_GE:
-    return "ge";
-  case ARM_CC_LT:
-    return "lt";
-  case ARM_CC_GT:
-    return "gt";
-  case ARM_CC_LE:
-    return "le";
-  case ARM_CC_AL:
-    return "al";
-  }
+inline static const char *ARMCondCodeToString(arm_cc cc) {
+	switch (cc) {
+	default:
+		assert(0 && "Unknown condition code");
+	case ARM_CC_EQ:
+		return "eq";
+	case ARM_CC_NE:
+		return "ne";
+	case ARM_CC_HS:
+		return "hs";
+	case ARM_CC_LO:
+		return "lo";
+	case ARM_CC_MI:
+		return "mi";
+	case ARM_CC_PL:
+		return "pl";
+	case ARM_CC_VS:
+		return "vs";
+	case ARM_CC_VC:
+		return "vc";
+	case ARM_CC_HI:
+		return "hi";
+	case ARM_CC_LS:
+		return "ls";
+	case ARM_CC_GE:
+		return "ge";
+	case ARM_CC_LT:
+		return "lt";
+	case ARM_CC_GT:
+		return "gt";
+	case ARM_CC_LE:
+		return "le";
+	case ARM_CC_AL:
+		return "al";
+	}
 }
 #endif
 

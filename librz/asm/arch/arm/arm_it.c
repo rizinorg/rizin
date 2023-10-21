@@ -29,41 +29,40 @@ RZ_API void rz_arm_it_context_fini(RzArmITContext *ctx) {
 }
 
 #if CS_NEXT_VERSION < 6
-inline static arm_cc ARMCC_getOppositeCondition(arm_cc cc)
-{
-  switch (cc) {
-  default:
-    // llvm_unreachable("Unknown condition code");
-    assert(0);
-  case ARM_CC_EQ:
-    return ARM_CC_NE;
-  case ARM_CC_NE:
-    return ARM_CC_EQ;
-  case ARM_CC_HS:
-    return ARM_CC_LO;
-  case ARM_CC_LO:
-    return ARM_CC_HS;
-  case ARM_CC_MI:
-    return ARM_CC_PL;
-  case ARM_CC_PL:
-    return ARM_CC_MI;
-  case ARM_CC_VS:
-    return ARM_CC_VC;
-  case ARM_CC_VC:
-    return ARM_CC_VS;
-  case ARM_CC_HI:
-    return ARM_CC_LS;
-  case ARM_CC_LS:
-    return ARM_CC_HI;
-  case ARM_CC_GE:
-    return ARM_CC_LT;
-  case ARM_CC_LT:
-    return ARM_CC_GE;
-  case ARM_CC_GT:
-    return ARM_CC_LE;
-  case ARM_CC_LE:
-    return ARM_CC_GT;
-  }
+inline static arm_cc ARMCC_getOppositeCondition(arm_cc cc) {
+	switch (cc) {
+	default:
+		// llvm_unreachable("Unknown condition code");
+		assert(0);
+	case ARM_CC_EQ:
+		return ARM_CC_NE;
+	case ARM_CC_NE:
+		return ARM_CC_EQ;
+	case ARM_CC_HS:
+		return ARM_CC_LO;
+	case ARM_CC_LO:
+		return ARM_CC_HS;
+	case ARM_CC_MI:
+		return ARM_CC_PL;
+	case ARM_CC_PL:
+		return ARM_CC_MI;
+	case ARM_CC_VS:
+		return ARM_CC_VC;
+	case ARM_CC_VC:
+		return ARM_CC_VS;
+	case ARM_CC_HI:
+		return ARM_CC_LS;
+	case ARM_CC_LS:
+		return ARM_CC_HI;
+	case ARM_CC_GE:
+		return ARM_CC_LT;
+	case ARM_CC_LT:
+		return ARM_CC_GE;
+	case ARM_CC_GT:
+		return ARM_CC_LE;
+	case ARM_CC_LE:
+		return ARM_CC_GT;
+	}
 }
 #endif
 
