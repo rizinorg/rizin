@@ -1592,8 +1592,8 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		if (insn->is_alias && insn->alias_id == PPC_INS_ALIAS_XNOP) {
 			return NOP();
 		}
-		// fallthrough
 #endif
+		// fallthrough
 	case PPC_INS_XORIS:
 	case PPC_INS_EQV:
 	case PPC_INS_EXTSB:
