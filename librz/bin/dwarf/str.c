@@ -27,7 +27,7 @@ RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORROW RzB
 	return rz_bin_dwarf_str_new(r);
 }
 
-RZ_API void rz_bin_dwarf_str_free(RZ_NONNULL RzBinDwarfStr *str) {
+RZ_API void rz_bin_dwarf_str_free(RZ_NULLABLE RzBinDwarfStr *str) {
 	if (!str) {
 		return;
 	}

@@ -1449,21 +1449,23 @@ RZ_API const char *rz_bin_dwarf_op(DW_OP op);
 /// .debug_str
 RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
 RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf, bool is_dwo);
-RZ_API void rz_bin_dwarf_str_free(RzBinDwarfStr *str);
+RZ_API void rz_bin_dwarf_str_free(RZ_NULLABLE RzBinDwarfStr *str);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfStr *str, ut64 offset);
 
 RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
 RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
-RZ_API void rz_bin_dwarf_line_str_free(RzBinDwarfLineStr *str);
+RZ_API void rz_bin_dwarf_line_str_free(RZ_NULLABLE RzBinDwarfLineStr *str);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_line_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfLineStr *str, ut64 offset);
 
 /// .debug_str_offsets
 RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
 RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_from_file(
 	RZ_NONNULL RZ_BORROW RzBinFile *bf, bool is_dwo);
-RZ_API void rz_bin_dwarf_str_offsets_free(RzBinDwarfStrOffsets *str_offsets);
+RZ_API void rz_bin_dwarf_str_offsets_free(RZ_NULLABLE RzBinDwarfStrOffsets *str_offsets);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_offsets_get(
-	RzBinDwarfStr *str, RzBinDwarfStrOffsets *str_offsets, ut64 base, ut64 index);
+	RZ_NONNULL RZ_BORROW RzBinDwarfStr *str,
+	RZ_NONNULL RZ_BORROW RzBinDwarfStrOffsets *str_offsets,
+	ut64 base, ut64 index);
 
 /// .debug_aranges
 RZ_API RZ_OWN RzBinDwarfARanges *rz_bin_dwarf_aranges_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);

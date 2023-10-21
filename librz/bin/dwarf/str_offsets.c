@@ -42,7 +42,9 @@ RZ_API void rz_bin_dwarf_str_offsets_free(RZ_NULLABLE RzBinDwarfStrOffsets *str_
 }
 
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_offsets_get(
-	RzBinDwarfStr *str, RzBinDwarfStrOffsets *str_offsets, ut64 base, ut64 index) {
+	RZ_NONNULL RZ_BORROW RzBinDwarfStr *str,
+	RZ_NONNULL RZ_BORROW RzBinDwarfStrOffsets *str_offsets,
+	ut64 base, ut64 index) {
 	rz_return_val_if_fail(str && str_offsets && index >= 0, NULL);
 	RzBinEndianReader *reader = str_offsets->reader;
 	ut64 offset = 0;
