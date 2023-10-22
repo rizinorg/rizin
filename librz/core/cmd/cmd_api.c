@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
-#include <rz_util.h>
 #include <rz_core.h>
 
 /*!
