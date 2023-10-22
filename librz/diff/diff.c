@@ -60,8 +60,8 @@
 #include <rz_diff.h>
 #include <rz_util.h>
 /**/
-#include <ht_pp.h>
-#include <ht_uu.h>
+#include <rz_util/ht_pp.h>
+#include <rz_util/ht_uu.h>
 
 #define NUM2PTR(x) ((void *)(intptr_t)(x))
 #define PTR2NUM(x) ((intptr_t)(void *)(x))

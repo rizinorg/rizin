@@ -15,7 +15,7 @@ extern "C" {
  * value. The API functions starts with "ht_pp_" and the types starts with "HtPP".
  */
 #define HT_TYPE 1
-#include "ht_inc.h"
+#include <rz_util/ht_inc.h>
 
 RZ_API HtName_(Ht) * Ht_(new0)(void);
 RZ_API HtName_(Ht) * Ht_(new)(HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) valueSize);

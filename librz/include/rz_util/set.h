@@ -4,8 +4,8 @@
 #ifndef SDB_SET_H
 #define SDB_SET_H
 
-#include "ht_pp.h"
-#include "ht_up.h"
+#include <rz_util/ht_pp.h>
+#include <rz_util/ht_up.h>
 
 #ifdef __cplusplus
 extern "C" {

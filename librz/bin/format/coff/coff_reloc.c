@@ -3,7 +3,7 @@
 
 #include "coff.h"
 #include <rz_util.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 /// base vaddr where to map the artificial reloc target vfile
 RZ_API ut64 rz_coff_get_reloc_targets_map_base(struct rz_bin_coff_obj *obj) {

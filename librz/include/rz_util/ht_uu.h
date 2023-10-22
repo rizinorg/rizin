@@ -15,7 +15,7 @@ extern "C" {
  * value. The API functions starts with "ht_" and the types starts with "Ht".
  */
 #define HT_TYPE 3
-#include "ht_inc.h"
+#include <rz_util/ht_inc.h>
 
 RZ_API HtName_(Ht) * Ht_(new0)(void);
 #undef HT_TYPE

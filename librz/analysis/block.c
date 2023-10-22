@@ -4,7 +4,7 @@
 
 #include <rz_analysis.h>
 #include <rz_hash.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 #include <assert.h>
 
 #define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzAnalysisBlock, _rb) : NULL)

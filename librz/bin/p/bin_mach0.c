@@ -10,7 +10,7 @@
 #include "../i/private.h"
 #include "mach0/mach0.h"
 #include "objc/mach0_classes.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 // wip settings
 

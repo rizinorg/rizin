@@ -8,8 +8,8 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
-#include <ht_up.h>
-#include <ht_uu.h>
+#include <rz_util/ht_up.h>
+#include <rz_util/ht_uu.h>
 
 #define COFF_IS_BIG_ENDIAN    1
 #define COFF_IS_LITTLE_ENDIAN 0

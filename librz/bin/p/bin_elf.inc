@@ -13,7 +13,7 @@
 #include <rz_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 #define rz_bin_file_get_elf(bf) ((ELFOBJ *)bf->o->bin_obj)
 
