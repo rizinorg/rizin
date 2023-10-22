@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 /// Finm a suitable location for putting the artificial reloc targets map
 RZ_API ut64 rz_bin_relocs_patch_find_targets_map_base(RzList /*<RzBinMap *>*/ *maps, ut64 target_sz) {

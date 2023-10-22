@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "sdb.h"
-#include "ht_pp.h"
+#include <rz_util/ht_pp.h>
 #include "ht_inc.c"
 
 static HtName_(Ht) * internal_ht_default_new(ut32 size, ut32 prime_idx, HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) calcsizeV) {

@@ -9,7 +9,7 @@
 #include <rz_flag.h>
 #include <rz_core.h>
 #include <rz_bin.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 #include <rz_util/rz_graph_drawable.h>
 #include <rz_util/rz_path.h>
 

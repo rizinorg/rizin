@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rz_il_validate.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 /////////////////////////////////////////////////////////
 // ---------------------- context -----------------------

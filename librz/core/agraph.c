@@ -5,7 +5,7 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include <rz_util/rz_graph_drawable.h>
-#include <ht_pu.h>
+#include <rz_util/ht_pu.h>
 #include <ctype.h>
 #include <limits.h>
 #include "core_private.h"

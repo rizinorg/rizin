@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 #define HASH_NCHAIN_OFFSET(x) ((x) + 4)
 

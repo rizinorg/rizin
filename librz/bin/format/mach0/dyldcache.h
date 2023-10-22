@@ -6,7 +6,7 @@
 #define RZ_BIN_FORMAT_DYLDCACHE_H
 
 #include <rz_util.h>
-#include <set.h>
+#include <rz_util/set.h>
 
 #define RZ_BIN_MACH064 1
 

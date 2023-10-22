@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "sdb.h"
-#include "ht_pu.h"
+#include <rz_util/ht_pu.h>
 #include "ht_inc.c"
 
 static void free_kv_key(HT_(Kv) * kv) {

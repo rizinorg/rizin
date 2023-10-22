@@ -6,7 +6,7 @@
 
 #include <rz_util.h>
 #include "mach0.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 #include "mach0_utils.inc"
 

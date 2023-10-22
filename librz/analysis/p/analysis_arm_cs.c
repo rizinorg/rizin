@@ -3,7 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <rz_util/rz_assert.h>

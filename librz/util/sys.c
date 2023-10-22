@@ -1364,7 +1364,7 @@ RZ_API int rz_sys_pipe_close(int fd) {
 }
 
 #elif __UNIX__ && HAVE_PIPE
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 static HtUU *fd2close;
 // Use this lock to wraps pipe, close, exec*, system to ensure all pipe file
 // descriptors are either created AND added to fd2close or not created at all.

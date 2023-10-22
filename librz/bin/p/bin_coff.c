@@ -6,7 +6,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 #include "coff/coff.h"
 
