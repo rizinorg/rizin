@@ -3561,6 +3561,37 @@ static inline ut32 cvt_isize(arm_vectordata_type type, bool *is_signed) {
 	}
 }
 
+#if CS_NEXT_VERSION >= 6
+/**
+ * \brief Tests if the instruction is part of a float supporting
+ * group (NEON, VFP MVEFloat...).
+ *
+ * \param insn The instruction to test.
+ * \return true The instruction is a float instruction.
+ * \return false The instruction is not a float instruction.
+ */
+RZ_IPI bool rz_arm_cs_is_float_insn(const cs_insn *insn) {
+	rz_return_val_if_fail(insn && insn->detail, false);
+	uint32_t i = 0;
+	arm_insn_group group_it = insn->detail->groups[i];
+	while (group_it) {
+		switch (group_it) {
+		default:
+			break;
+		case ARM_FEATURE_HasNEON:
+		case ARM_FEATURE_HasVFP2:
+		case ARM_FEATURE_HasVFP3:
+		case ARM_FEATURE_HasVFP4:
+		case ARM_FEATURE_HasDPVFP:
+		case ARM_FEATURE_HasMVEFloat:
+			return true;
+		}
+		group_it = insn->detail->groups[++i];
+	}
+	return false;
+}
+#endif
+
 static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success) {
 	bool is_f2i = false;
 	bool is_signed = false;
@@ -4015,7 +4046,7 @@ static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
 	}
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_float_insn(insn)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif
