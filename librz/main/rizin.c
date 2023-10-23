@@ -1453,24 +1453,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			}
 
-			if (debug) {
-				if (no_question_debug) {
-					if (rz_config_get_i(r->config, "dbg.exitkills") && y_kill_debug) {
-						rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-					}
-				} else {
-					if (rz_cons_yesno('y', "Do you want to quit? (Y/n)")) {
-						if (rz_config_get_i(r->config, "dbg.exitkills") &&
-							rz_debug_can_kill(r->dbg) &&
-							rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
-							rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-						}
-					} else {
-						continue;
-					}
-				}
-			}
-
 			prj = rz_config_get(r->config, "prj.file");
 			bool compress = rz_config_get_b(r->config, "prj.compress");
 			RzProjectErr prj_err = RZ_PROJECT_ERR_SUCCESS;
@@ -1493,6 +1475,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (rz_config_get_i(r->config, "scr.confirmquit")) {
 				if (!rz_cons_yesno('n', "Do you want to quit? (Y/n)")) {
 					continue;
+				}
+			}
+
+			if (debug) {
+				if (no_question_debug) {
+					if (rz_config_get_i(r->config, "dbg.exitkills") && y_kill_debug) {
+						rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
+					}
+				} else if (rz_config_get_i(r->config, "dbg.exitkills") &&
+					rz_debug_can_kill(r->dbg) &&
+					rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
+					rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 				}
 			}
 		} else {
