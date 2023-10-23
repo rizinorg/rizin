@@ -1070,24 +1070,62 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
 	return SEQ2(set_val, eff);
 }
 
-static bool check_st_reg(X86Reg reg) {
+/**
+ * \brief Check whether \p reg is an FPU stack register (ST0 - ST7)
+ *
+ * \param reg
+ */
+static bool x86_il_is_st_reg(X86Reg reg) {
 	return reg >= X86_REG_ST0 && reg <= X86_REG_ST7;
 }
 
+/**
+ * \brief Get the float stored in FPU stack \p reg
+ *
+ * \param reg
+ * \return RzILOpFloat*
+ */
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
-	if (check_st_reg(reg)) {
-		return BV2F(RZ_FLOAT_IEEE754_BIN_64, VARG(x86_registers[reg]));
-	}
-
-	return NULL;
+	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
+	return BV2F(RZ_FLOAT_IEEE754_BIN_64, VARG(x86_registers[reg]));
 }
 
+/**
+ * \brief Store a float at FPU stack \p reg
+ *
+ * \param reg
+ * \return RzILOpFloat*
+ */
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
-	if (check_st_reg(reg)) {
-		return SETG(x86_registers[reg], F2BV(val));
-	}
+	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
+	return SETG(x86_registers[reg], F2BV(val));
+}
 
-	return NULL;
+#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l))
+
+RzILOpEffect *x86_il_st_push(RzILOpFloat *val) {
+	return SEQ8(
+		ST_MOVE_RIGHT(6, 7),
+		ST_MOVE_RIGHT(5, 6),
+		ST_MOVE_RIGHT(4, 5),
+		ST_MOVE_RIGHT(3, 4),
+		ST_MOVE_RIGHT(2, 3),
+		ST_MOVE_RIGHT(1, 2),
+		ST_MOVE_RIGHT(0, 1),
+		x86_il_set_st_reg(X86_REG_ST0, val));
+}
+
+#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r))
+
+RzILOpEffect *x86_il_st_pop() {
+	return SEQ7(
+		ST_MOVE_LEFT(0, 1),
+		ST_MOVE_LEFT(1, 2),
+		ST_MOVE_LEFT(2, 3),
+		ST_MOVE_LEFT(3, 4),
+		ST_MOVE_LEFT(4, 5),
+		ST_MOVE_LEFT(5, 6),
+		ST_MOVE_LEFT(6, 7));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

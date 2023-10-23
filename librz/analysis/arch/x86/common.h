@@ -120,4 +120,13 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size);
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val);
 
+RzILOpEffect *x86_il_st_push(RzILOpFloat *val);
+RzILOpEffect *x86_il_st_pop();
+
+#define X86_IL_ST_POP(val, eff) \
+	do { \
+		val = x86_il_get_st_reg(X86_REG_ST0); \
+		eff = x86_il_st_pop(); \
+	} while (0)
+
 #endif // X86_IL_COMMON_H
