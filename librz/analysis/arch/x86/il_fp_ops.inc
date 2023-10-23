@@ -22,22 +22,22 @@
  */
 IL_LIFTER(fninit) {
 	RzILOpEffect *set_cw = SETG(X86_REG_FPU_CW, UN(16, 0x37f));
-    /* No need to set C0-C3 flags to zero, since we are setting the FPSW to 0,
-     * so all the flag bits will also be set to 0. */
-    RzILOpEffect *set_sw = x86_il_set_reg(X86_REG_FPSW, UN(16, 0x0));
+	/* No need to set C0-C3 flags to zero, since we are setting the FPSW to 0,
+	 * so all the flag bits will also be set to 0. */
+	RzILOpEffect *set_sw = x86_il_set_reg(X86_REG_FPSW, UN(16, 0x0));
 	RzILOpEffect *set_tw = SETG(X86_REG_FPU_TW, UN(16, 0xffff));
 	RzILOpEffect *set_ip = SETG(X86_REG_FPU_IP, UN(32, 0x0));
 	RzILOpEffect *set_dp = SETG(X86_REG_FPU_DP, UN(32, 0x0));
 
-    return SEQ5(set_cw, set_sw, set_tw, set_ip, set_dp);
+	return SEQ5(set_cw, set_sw, set_tw, set_ip, set_dp);
 }
 
 /**
  * FLDCW m16
- * Load x87 FPU Control Word 
+ * Load x87 FPU Control Word
  */
 IL_LIFTER(fldcw) {
-    return SETG(X86_REG_FPU_CW, x86_il_get_op(0));
+	return SETG(X86_REG_FPU_CW, x86_il_get_op(0));
 }
 
 /**
@@ -45,7 +45,7 @@ IL_LIFTER(fldcw) {
  * Store x87 FPU Control Word
  */
 IL_LIFTER(fnstcw) {
-    return x86_il_set_op(0, VARG(X86_REG_FPU_CW));
+	return x86_il_set_op(0, VARG(X86_REG_FPU_CW));
 }
 
 /**
@@ -53,7 +53,7 @@ IL_LIFTER(fnstcw) {
  * Store x87 FPU Status Word
  */
 IL_LIFTER(fnstsw) {
-    return x86_il_set_op(0, x86_il_get_reg(X86_REG_FPSW));
+	return x86_il_set_op(0, x86_il_get_reg(X86_REG_FPSW));
 }
 
 /**
@@ -61,9 +61,9 @@ IL_LIFTER(fnstsw) {
  * Clear exceptions
  */
 IL_LIFTER(fnclex) {
-    /* Zero out the 15th bit and 0-7 bits. */
-    RzILOpPure *new_sw = LOGAND(x86_il_get_reg(X86_REG_FPSW), UN(16, 0x7f00));\
-    return x86_il_set_reg(X86_REG_FPSW, new_sw);
+	/* Zero out the 15th bit and 0-7 bits. */
+	RzILOpPure *new_sw = LOGAND(x86_il_get_reg(X86_REG_FPSW), UN(16, 0x7f00));
+	return x86_il_set_reg(X86_REG_FPSW, new_sw);
 }
 
 /* Arithmetic instructions */
