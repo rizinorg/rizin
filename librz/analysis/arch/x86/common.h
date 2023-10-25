@@ -94,8 +94,10 @@ RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits, ut64 pc);
 RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits, ut64 pc);
 RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits, ut64 pc);
 
+RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y);
 RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y);
-RzILOpBitVector *x86_bool_to_bv(RzILOpBool *b, unsigned int bits);
+RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y);
+RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y);
 
 RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RzILOpPure *result, int bits);
 RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits);

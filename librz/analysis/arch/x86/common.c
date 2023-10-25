@@ -877,16 +877,6 @@ RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x
 	return or ;
 }
 
-/**
- * \brief Convert a bool \p b to a bitvector of length \p bits
- *
- * \param b
- * \param bits
- */
-RzILOpBitVector *x86_bool_to_bv(RzILOpBool *b, unsigned int bits) {
-	return ITE(b, UN(bits, 1), UN(bits, 0));
-}
-
 struct x86_parity_helper_t {
 	RzILOpBool *val; ///< value of parity
 	RzILOpEffect *eff; ///< RzILOpEffect used to find the parity
@@ -906,7 +896,7 @@ struct x86_parity_helper_t x86_il_get_parity(RZ_OWN RzILOpPure *val) {
 	since the value of "_popcnt" wouldn't change any further */
 	RzILOpBool *condition = NON_ZERO(VARL("_val"));
 
-	RzILOpEffect *popcnt = SETL("_popcnt", ADD(VARL("_popcnt"), x86_bool_to_bv(LSB(VARL("_val")), 8)));
+	RzILOpEffect *popcnt = SETL("_popcnt", ADD(VARL("_popcnt"), BOOL_TO_BV(LSB(VARL("_val")), 8)));
 	popcnt = SEQ2(popcnt, SETL("_val", SHIFTR0(VARL("_val"), U8(1))));
 
 	RzILOpEffect *repeat_eff = REPEAT(condition, popcnt);
@@ -1002,30 +992,30 @@ RzILOpPure *x86_il_get_flags(unsigned int size) {
 	always 1 on 8086 and 186,
 	always 0 on later models
 	Assuming 0 */
-	val = x86_bool_to_bv(IL_FALSE, size);
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(NT)), size));
+	val = BOOL_TO_BV(IL_FALSE, size);
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(NT)), size));
 
 	/** Bit 12-13: IOPL,
 	I/O privilege level (286+ only),
 	always 1 on 8086 and 186
 	Assuming all 1 */
 	val = LOGOR(SHIFTL0(val, UN(size, 2)), UN(size, 0x3));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(OF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(DF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(IF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(TF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(OF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(DF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(IF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(TF)), size));
 
 lower_half:
 	if (size == 8) {
-		val = x86_bool_to_bv(VARG(EFLAGS(SF)), size);
+		val = BOOL_TO_BV(VARG(EFLAGS(SF)), size);
 	} else {
-		val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(ZF)), size));
+		val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(ZF)), size));
 	}
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(ZF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(EFLAGS(AF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(EFLAGS(PF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(ZF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), BOOL_TO_BV(VARG(EFLAGS(AF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), BOOL_TO_BV(VARG(EFLAGS(PF)), size));
 	val = LOGOR(SHIFTL0(val, UN(size, 1)), UN(size, 1));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(CF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(CF)), size));
 
 	return val;
 }

@@ -156,7 +156,7 @@ IL_LIFTER(adc) {
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_op(1));
 	RzILOpPure *cf = VARG(EFLAGS(CF));
 
-	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), x86_bool_to_bv(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
+	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), BOOL_TO_BV(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("sum"));
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("sum"));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("sum"), VARL("op1"), VARL("op2"), true);
@@ -1800,7 +1800,7 @@ IL_LIFTER(rcl) {
 
 	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
 	RzILOpEffect *repeat = SETL("_tmp_cf", MSB(VARL("_dest")));
-	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), x86_bool_to_bv(VARG(EFLAGS(CF)), BITS_PER_BYTE * size))));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), BOOL_TO_BV(VARG(EFLAGS(CF)), BITS_PER_BYTE * size))));
 	repeat = SEQ2(repeat, SETG(EFLAGS(CF), VARL("_tmp_cf")));
 	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(tmp_count_size, 1))));
 
@@ -1826,7 +1826,7 @@ IL_LIFTER(rcr) {
 
 	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
 	RzILOpEffect *repeat = SETL("_tmp_cf", LSB(VARL("_dest")));
-	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(x86_bool_to_bv(VARG(EFLAGS(CF)), BITS_PER_BYTE * size), U8(size)))));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(BOOL_TO_BV(VARG(EFLAGS(CF)), BITS_PER_BYTE * size), U8(size)))));
 	repeat = SEQ2(repeat, SETG(EFLAGS(CF), VARL("_tmp_cf")));
 	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(tmp_count_size, 1))));
 
@@ -1862,7 +1862,7 @@ IL_LIFTER(rol) {
 
 	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
 	RzILOpEffect *repeat = SETL("_tmp_cf", MSB(VARL("_dest")));
-	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), x86_bool_to_bv(VARL("_tmp_cf"), BITS_PER_BYTE * size))));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), BOOL_TO_BV(VARL("_tmp_cf"), BITS_PER_BYTE * size))));
 	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(cnt_size, 1))));
 
 	RzILOpBool *if_cond1 = NON_ZERO(VARL("_masked"));
@@ -1887,7 +1887,7 @@ IL_LIFTER(ror) {
 
 	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
 	RzILOpEffect *repeat = SETL("_tmp_cf", LSB(VARL("_dest")));
-	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(x86_bool_to_bv(VARL("_tmp_cf"), BITS_PER_BYTE * size), U8(size)))));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(BOOL_TO_BV(VARL("_tmp_cf"), BITS_PER_BYTE * size), U8(size)))));
 	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(cnt_size, 1))));
 
 	RzILOpBool *if_cond1 = NON_ZERO(VARL("_masked"));
@@ -2066,7 +2066,7 @@ IL_LIFTER(sbb) {
 	RzILOpEffect *op2 = SETL("_op2", x86_il_get_op(1));
 	RzILOpPure *cf = VARG(EFLAGS(CF));
 
-	RzILOpEffect *diff = SETL("_diff", SUB(SUB(VARL("_op1"), VARL("_op2")), x86_bool_to_bv(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
+	RzILOpEffect *diff = SETL("_diff", SUB(SUB(VARL("_op1"), VARL("_op2")), BOOL_TO_BV(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_diff"));
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("_diff"));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("_diff"), VARL("_op1"), VARL("_op2"), false);
