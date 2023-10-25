@@ -1213,7 +1213,7 @@ RzILOpBool *x86_il_get_fpu_flag(X86FPUFlags flag) {
 
 RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value) {
 	RzILOpPure *zero_mask = UN(16, ~(1 << flag));
-	RzILOpPure *value_mask = SHIFTL0(UN(8, flag), BOOL_TO_BV(value, 16));
+	RzILOpPure *value_mask = SHIFTL0(BOOL_TO_BV(value, 16), UN(8, flag));
 	RzILOpPure *new_fpsw = LOGOR(value_mask, LOGAND(zero_mask, x86_il_get_reg_bits(X86_REG_FPSW, 0, 0)));
 	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
 }
@@ -1274,6 +1274,8 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
  */
 RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, int bits, ut64 pc) {
 	RzILOpEffect *ret = NULL;
+	RzILOpEffect *rmode = INIT_RMODE("rmode");
+
 	switch (op.type) {
 	case X86_OP_REG:
 		/* We assume that the only registers we will be writing to would be the
@@ -1286,9 +1288,11 @@ RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, int b
 	case X86_OP_IMM:
 	default:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", X86_OP_IMM);
+		return ret;
 		break;
 	}
-	return ret;
+
+	return SEQ2(rmode, ret);
 }
 
 RzILOpEffect *x86_il_clear_fpsw_flags() {

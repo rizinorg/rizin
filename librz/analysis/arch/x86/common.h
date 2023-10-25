@@ -128,7 +128,6 @@ typedef enum {
 
 bool x86_il_is_st_reg(X86Reg reg);
 
-#define INIT_RMODE(var) SETL(var, x86_il_fpu_get_rmode())
 
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val);
@@ -147,6 +146,11 @@ RzILOpEffect *x86_il_st_pop();
 
 RzILOpPure *x86_il_get_fpu_flag(X86FPUFlags flag);
 RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value);
+
+RzILOpPure *x86_il_fpu_get_rmode();
+#define INIT_RMODE(var) SETL(var, x86_il_fpu_get_rmode())
+
+RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, unsigned int width);
 
 RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc);
 

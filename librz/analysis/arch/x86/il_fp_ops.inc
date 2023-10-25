@@ -11,6 +11,7 @@
  *  - https://eng.libretexts.org/Bookshelves/Computer_Science/Programming_Languages/x86-64_Assembly_Language_Programming_with_Ubuntu_(Jorgensen)/18%3A_Floating-Point_Instructions
  *  - https://en.wikibooks.org/wiki/X86_Assembly/Floating_Point#Floating-Point_Instruction_Set
  *  - https://github.com/avast/retdec/wiki/x86-FPU-semantic-model
+ *	- https://redirect.cs.umbc.edu/courses/undergraduate/CMSC313/fall04/burt_katz/lectures/Lect12/floatingpoint.html
  */
 
 #include "common.h"
@@ -77,18 +78,22 @@ IL_LIFTER(fabs) {
 	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
 
+static RzILOpEffect *fpu_stack_push_val(RzILOpFloat *val) {
+	RzILOpEffect *push_eff = x86_il_st_push(val);
+
+	/* Set C1 if stack overflow. If stack overflow occurred, then the value of
+	 * stack TOP must be 0x7. */
+	RzILOpEffect *set_oveflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 7)));
+
+	return SEQ2(push_eff, set_oveflow);
+}
+
 /**
  * FLD
  * Loads a floating point value and pushes it onto the FPU stack in ST(0)
  */
 IL_LIFTER(fld) {
-	RzILOpEffect *push_eff = x86_il_st_push(x86_il_get_floating_op(0));
-
-	/* Set C1 if stack overflow. If stack overflow occurred, then the value of
-	* stack TOP must be 0x7. */
-	RzILOpEffect *set_oveflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 7)));
-
-	return SEQ2(push_eff, set_oveflow);
+	return fpu_stack_push_val(x86_il_get_floating_op(0));
 }
 
 /**
@@ -112,6 +117,93 @@ IL_LIFTER(fstp) {
 	return SEQ3(
 		x86_il_set_floating_op(0, pop_val),
 		pop_eff,
-		x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 0)))
-	);
+		x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 0))));
+}
+
+/**
+ * FLD1
+ * Load +1.0
+ */
+IL_LIFTER(fld1) {
+	return fpu_stack_push_val(F64(1.0));
+}
+
+/**
+ * FLDZ
+ * Load +0.0
+ */
+IL_LIFTER(fldz) {
+	return fpu_stack_push_val(F64(0.0));
+}
+
+/*
+ * 128-bit representation of h for value v, where
+ *
+ * v = (h - 1) * 2^x
+ *
+ * Here x is the exponent. The reason why we are computing h is because the
+ * first 66 bits of the mantissa of h are stored as the internal constants in
+ * the FPU and should be used for rounding. In our case, we will directly use
+ *
+ * log2(10)	=	3fffd49a784bcd1b8afe492bf6ff1e13
+ * log10(2)	=	3fff9a209a84fbcff7988f8959ac200d
+ * ln(2)	=	3ffeb17217f7d1cf79abc9e3b39828ef
+ * log2(e)	=	3fffb8aa3b295c17f0bbbe87fed055ed
+ * pi 		=	4000c90fdaa22168c234c4c6628b8361
+ */
+
+#define FPU_L2T 0x3fffd49a784bcd1bULL, 0x8afe492bf6ff1e13ULL
+#define FPU_LG2 0x3fff9a209a84fbcfULL, 0xf7988f8959ac200dULL
+#define FPU_LN2 0x3ffeb17217f7d1cfULL, 0x79abc9e3b39828efULL
+#define FPU_L2E 0x3fffb8aa3b295c17ULL, 0xf0bbbe87fed055edULL
+#define FPU_PI  0x4000c90fdaa22168ULL, 0xc234c4c6628b8361ULL
+
+RzILOpFloat *math_const_to_float(uint64_t upper, uint64_t lower) {
+	RzILOpPure *upper_unshifted = UN(128, upper);
+	RzILOpPure *upper_shifted = SHIFTL0(upper_unshifted, UN(8, 64));
+
+	uint64_t stripped_lower = lower & ~(0x3fffffffffffULL);
+	RzILOpPure *final_bits = LOGOR(upper_shifted, UN(128, stripped_lower));
+	
+	return x86_il_resize_floating(BV2F(RZ_FLOAT_IEEE754_BIN_128, final_bits), 64);
+}
+
+/**
+ * FLDL2T
+ * Load log2(10)
+ */
+IL_LIFTER(fldl2t) {
+	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_L2T)));
+}
+
+/**
+ * FLDL2E
+ * Load log2(e)
+ */
+IL_LIFTER(fldl2e) {
+	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_L2E)));
+}
+
+/**
+ * FLDPI
+ * Load pi
+ */
+IL_LIFTER(fldpi) {
+	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_PI)));
+}
+
+/**
+ * FLDLG2
+ * Load log10(2)
+ */
+IL_LIFTER(fldlg2) {
+	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_LG2)));
+}
+
+/**
+ * FLDLN2
+ * Load ln(2)
+ */
+IL_LIFTER(fldln2) {
+	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_LN2)));
 }
