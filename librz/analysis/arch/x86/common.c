@@ -1091,11 +1091,11 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
 }
 
 #define FLOAT_FORMAT_SWITCH_CASE(n) \
-do { \
+	do { \
 	case n: \
 		format = RZ_FLOAT_IEEE754_BIN_##n; \
 		break; \
-} while (0)
+	} while (0)
 
 /**
  * \brief Resize the float \p val to \p width
@@ -1115,8 +1115,8 @@ RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, unsigned int width) {
 		FLOAT_FORMAT_SWITCH_CASE(64);
 		FLOAT_FORMAT_SWITCH_CASE(80);
 		FLOAT_FORMAT_SWITCH_CASE(128);
-		default:
-			rz_return_val_if_reached(NULL);
+	default:
+		rz_return_val_if_reached(NULL);
 	}
 
 	/* I hate this, but this is the only way to conditionally round val. */
@@ -1135,7 +1135,7 @@ RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, unsigned int width) {
  */
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
-	
+
 	RzILOpEffect *rmode = INIT_RMODE("rmode");
 	RzILOpFloat *converted_val = x86_il_resize_floating(val, 64);
 
@@ -1258,8 +1258,9 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 #endif
 	default:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", op.type);
-		return NULL;
 	}
+
+	return NULL;
 }
 
 /**
@@ -1279,7 +1280,7 @@ RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, int b
 	switch (op.type) {
 	case X86_OP_REG:
 		/* We assume that the only registers we will be writing to would be the
-		* FPU stack registers, hence the 64 resize width. */
+		 * FPU stack registers, hence the 64 resize width. */
 		ret = x86_il_set_reg_bits(op.reg, x86_il_resize_floating(val, 64), bits);
 		break;
 	case X86_OP_MEM:

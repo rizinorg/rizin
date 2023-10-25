@@ -146,17 +146,17 @@ IL_LIFTER(fldz) {
  * the FPU and should be used for rounding. In our case, we will directly use
  *
  * log2(10)	=	3fffd49a784bcd1b8afe492bf6ff1e13
- * log10(2)	=	3fff9a209a84fbcff7988f8959ac200d
- * ln(2)	=	3ffeb17217f7d1cf79abc9e3b39828ef
  * log2(e)	=	3fffb8aa3b295c17f0bbbe87fed055ed
  * pi 		=	4000c90fdaa22168c234c4c6628b8361
+ * log10(2)	=	3fff9a209a84fbcff7988f8959ac200d
+ * ln(2)	=	3ffeb17217f7d1cf79abc9e3b39828ef
  */
 
 #define FPU_L2T 0x3fffd49a784bcd1bULL, 0x8afe492bf6ff1e13ULL
-#define FPU_LG2 0x3fff9a209a84fbcfULL, 0xf7988f8959ac200dULL
-#define FPU_LN2 0x3ffeb17217f7d1cfULL, 0x79abc9e3b39828efULL
 #define FPU_L2E 0x3fffb8aa3b295c17ULL, 0xf0bbbe87fed055edULL
 #define FPU_PI  0x4000c90fdaa22168ULL, 0xc234c4c6628b8361ULL
+#define FPU_LG2 0x3fff9a209a84fbcfULL, 0xf7988f8959ac200dULL
+#define FPU_LN2 0x3ffeb17217f7d1cfULL, 0x79abc9e3b39828efULL
 
 RzILOpFloat *math_const_to_float(uint64_t upper, uint64_t lower) {
 	RzILOpPure *upper_unshifted = UN(128, upper);
@@ -164,7 +164,7 @@ RzILOpFloat *math_const_to_float(uint64_t upper, uint64_t lower) {
 
 	uint64_t stripped_lower = lower & ~(0x3fffffffffffULL);
 	RzILOpPure *final_bits = LOGOR(upper_shifted, UN(128, stripped_lower));
-	
+
 	return x86_il_resize_floating(BV2F(RZ_FLOAT_IEEE754_BIN_128, final_bits), 64);
 }
 
