@@ -1075,7 +1075,7 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
  *
  * \param reg
  */
-static bool x86_il_is_st_reg(X86Reg reg) {
+bool x86_il_is_st_reg(X86Reg reg) {
 	return reg >= X86_REG_ST0 && reg <= X86_REG_ST7;
 }
 
@@ -1098,7 +1098,7 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
  */
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
-	return SETG(x86_registers[reg], F2BV(val));
+	return SETG(x86_registers[reg], FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, F2BV(val)));
 }
 
 /**
@@ -1109,8 +1109,8 @@ RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
  * @return RzILOpPure* Bitvector of length 3
  */
 RzILOpPure *x86_il_get_fpu_stack_top() {
-	RzILOpPure *status_word = VARG(x86_registers[X86_REG_FPSW]);
-	return UNSIGNED(3, SHIFTR0(UN(8, 11), status_word));
+	RzILOpPure *status_word = x86_il_get_reg_bits(X86_REG_FPSW, 0, 0);
+	return UNSIGNED(3, SHIFTR0(status_word, UN(8, 11)));
 }
 
 /**
@@ -1122,12 +1122,12 @@ RzILOpPure *x86_il_get_fpu_stack_top() {
  * @return RzILOpEffect*
  */
 RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top) {
-	RzILOpPure *shifted_top = SHIFTL0(UN(8, 11), UNSIGNED(16, top));
+	RzILOpPure *shifted_top = SHIFTL0(UNSIGNED(16, top), UN(8, 11));
 	/* 0x3800 only has the 12, 13 & 14 bits set, so we take its negation for the
 	 * mask. */
 	RzILOpPure *mask = UN(16, ~(0x3800));
-	RzILOpPure *new_fpsw = LOGOR(shifted_top, LOGAND(mask, VARG(x86_registers[X86_REG_FPSW])));
-	return SETG(x86_registers[X86_REG_FPSW], new_fpsw);
+	RzILOpPure *new_fpsw = LOGOR(shifted_top, LOGAND(mask, x86_il_get_reg_bits(X86_REG_FPSW, 0, 0)));
+	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
 }
 
 #define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l))
@@ -1163,6 +1163,67 @@ RzILOpEffect *x86_il_st_pop() {
 		ST_MOVE_LEFT(6, 7));
 
 	return SEQ2(set_top, st_shift);
+}
+
+RzILOpBool *x86_il_get_fpu_flag(X86FPUFlags flag) {
+	RzILOpPure *shifted_fpsw = SHIFTR0(x86_il_get_reg_bits(X86_REG_FPSW, 0, 0), UN(8, flag));
+	return NON_ZERO(UNSIGNED(1, shifted_fpsw));
+}
+
+RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value) {
+	RzILOpPure *zero_mask = UN(16, ~(1 << flag));
+	RzILOpPure *value_mask = SHIFTL0(UN(8, flag), BOOL_TO_BV(value, 16));
+	RzILOpPure *new_fpsw = LOGOR(value_mask, LOGAND(zero_mask, x86_il_get_reg_bits(X86_REG_FPSW, 0, 0)));
+	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
+}
+
+#define FLOATING_OP_MEM_WIDTH_CASE(n) \
+do { \
+	case n: \
+		return LOADW(BITS_PER_BYTE * n, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc)); \
+} while (0)
+
+/**
+ * \brief Get the value of the floating point operand \p op
+ * This function takes care of everything, like choosing
+ * the correct type and returning the correct value and
+ * converting to the correct FP format
+ * Use the wrapper `x86_il_get_flop`
+ *
+ * \param op
+ * \param analysis_bits bitness
+ */
+RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc) {
+	switch (op.type) {
+	case X86_OP_REG:
+		if (x86_il_is_st_reg(op.reg)) {
+			return x86_il_get_st_reg(op.reg);
+		} else {
+			RZ_LOG_ERROR("x86: RzIL: Invalid register passed as a floating point operand: %d\n", op.reg);
+		}
+	case X86_OP_MEM:
+		switch (op.size) {
+			/* ~Duff's~ DMaroo's device */
+			FLOATING_OP_MEM_WIDTH_CASE(32);
+			FLOATING_OP_MEM_WIDTH_CASE(64);
+			FLOATING_OP_MEM_WIDTH_CASE(80);
+			default:
+				RZ_LOG_ERROR("x86: RzIL: Invalid memory operand width for a floating point operand: %d\n", op.size);
+		}
+	case X86_OP_INVALID:
+	case X86_OP_IMM:
+#if CS_API_MAJOR <= 3
+	case X86_OP_FP:
+#endif
+	default:
+		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
+		return NULL;
+	}
+}
+
+RzILOpEffect *x86_il_clear_fpsw_flags() {
+	RzILOpPure *new_fpsw = LOGAND(x86_il_get_reg_bits(X86_REG_FPSW, 0, 0), UN(16, 0x3f80));
+	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

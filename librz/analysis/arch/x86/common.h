@@ -117,8 +117,20 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size);
 /* FPU data pointer */
 #define X86_REG_FPU_DP "frdp"
 
+typedef enum {
+	X86_FPU_C0 = 8,
+	X86_FPU_C1 = 9,
+	X86_FPU_C2 = 10,
+	X86_FPU_C3 = 14,
+} X86FPUFlags;
+
+bool x86_il_is_st_reg(X86Reg reg);
+
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val);
+
+RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top);
+RzILOpPure *x86_il_get_fpu_stack_top();
 
 RzILOpEffect *x86_il_st_push(RzILOpFloat *val);
 RzILOpEffect *x86_il_st_pop();
@@ -128,5 +140,15 @@ RzILOpEffect *x86_il_st_pop();
 		val = x86_il_get_st_reg(X86_REG_ST0); \
 		eff = x86_il_st_pop(); \
 	} while (0)
+
+RzILOpPure *x86_il_get_fpu_flag(X86FPUFlags flag);
+RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value);
+
+RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc);
+
+#define x86_il_get_floating_op(opnum) \
+	x86_il_get_floating_operand_bits(ins->structure->operands[opnum], analysis->bits, pc)
+
+RzILOpEffect *x86_il_clear_fpsw_flags();
 
 #endif // X86_IL_COMMON_H

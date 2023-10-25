@@ -63,7 +63,7 @@ IL_LIFTER(fnstsw) {
 IL_LIFTER(fnclex) {
 	/* Zero out the 15th bit and 0-7 bits. */
 	RzILOpPure *new_sw = LOGAND(x86_il_get_reg(X86_REG_FPSW), UN(16, 0x7f00));
-	return x86_il_set_reg(X86_REG_FPSW, new_sw);
+	return SEQ2(x86_il_set_reg(X86_REG_FPSW, new_sw), x86_il_clear_fpsw_flags());
 }
 
 /* Arithmetic instructions */
@@ -74,5 +74,19 @@ IL_LIFTER(fnclex) {
  */
 IL_LIFTER(fabs) {
 	RzILOpFloat *abs_value = FABS(x86_il_get_st_reg(X86_REG_ST0));
-	return x86_il_set_st_reg(X86_REG_ST0, abs_value);
+	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
+}
+
+/**
+ * FLD
+ * Loads a floating point value and pushes it onto the FPU stack
+ */
+IL_LIFTER(fld) {
+	RzILOpEffect *push_val = x86_il_st_push(x86_il_get_floating_op(0));
+
+	/* Set C0 if stack overflow. If stack overflow occurred, then the value of
+	* stack TOP must be 0x7. */
+	RzILOpEffect *set_oveflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 7)));
+
+	return SEQ2(push_val, set_oveflow);
 }
