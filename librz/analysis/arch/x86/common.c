@@ -1101,10 +1101,42 @@ RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
 	return SETG(x86_registers[reg], F2BV(val));
 }
 
+/**
+ * \brief Get the stack TOP stored in the FPU status word.
+ * TOP = FPU[12:15] (bits 12, 13 & 14)
+ * 12th bit is the least significant bit.
+ *
+ * @return RzILOpPure* Bitvector of length 3
+ */
+RzILOpPure *x86_il_get_fpu_stack_top() {
+	RzILOpPure *status_word = VARG(x86_registers[X86_REG_FPSW]);
+	return UNSIGNED(3, SHIFTR0(UN(8, 11), status_word));
+}
+
+/**
+ * \brief Set the value of FPU status word.
+ * See \ref x86_il_get_fpu_stack_top() for tehe structure of FPU status word and
+ * stack TOP.
+ *
+ * \param top Value to be stored as the new TOP (bitvector length = 3)
+ * @return RzILOpEffect*
+ */
+RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top) {
+	RzILOpPure *shifted_top = SHIFTL0(UN(8, 11), UNSIGNED(16, top));
+	/* 0x3800 only has the 12, 13 & 14 bits set, so we take its negation for the
+	 * mask. */
+	RzILOpPure *mask = UN(16, ~(0x3800));
+	RzILOpPure *new_fpsw = LOGOR(shifted_top, LOGAND(mask, VARG(x86_registers[X86_REG_FPSW])));
+	return SETG(x86_registers[X86_REG_FPSW], new_fpsw);
+}
+
 #define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l))
 
 RzILOpEffect *x86_il_st_push(RzILOpFloat *val) {
-	return SEQ8(
+	/* No need for a modulo here since the bitvector width will truncate any top
+	 * value > 7 */
+	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(SUB(x86_il_get_fpu_stack_top(), UN(3, 1)));
+	RzILOpEffect *st_shift = SEQ8(
 		ST_MOVE_RIGHT(6, 7),
 		ST_MOVE_RIGHT(5, 6),
 		ST_MOVE_RIGHT(4, 5),
@@ -1113,12 +1145,15 @@ RzILOpEffect *x86_il_st_push(RzILOpFloat *val) {
 		ST_MOVE_RIGHT(1, 2),
 		ST_MOVE_RIGHT(0, 1),
 		x86_il_set_st_reg(X86_REG_ST0, val));
+
+	return SEQ2(set_top, st_shift);
 }
 
 #define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r))
 
 RzILOpEffect *x86_il_st_pop() {
-	return SEQ7(
+	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(ADD(x86_il_get_fpu_stack_top(), UN(3, 1)));
+	RzILOpEffect *st_shift = SEQ7(
 		ST_MOVE_LEFT(0, 1),
 		ST_MOVE_LEFT(1, 2),
 		ST_MOVE_LEFT(2, 3),
@@ -1126,6 +1161,8 @@ RzILOpEffect *x86_il_st_pop() {
 		ST_MOVE_LEFT(4, 5),
 		ST_MOVE_LEFT(5, 6),
 		ST_MOVE_LEFT(6, 7));
+
+	return SEQ2(set_top, st_shift);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
