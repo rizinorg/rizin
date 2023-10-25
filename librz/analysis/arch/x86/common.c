@@ -1242,6 +1242,7 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 		} else {
 			RZ_LOG_ERROR("x86: RzIL: Invalid register passed as a floating point operand: %d\n", op.reg);
 		}
+		break;
 	case X86_OP_MEM:
 		switch (op.size) {
 			/* ~Duff's~ DMaroo's device */
@@ -1251,6 +1252,7 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 		default:
 			RZ_LOG_ERROR("x86: RzIL: Invalid memory operand width for a floating point operand: %d\n", op.size);
 		}
+		break;
 	case X86_OP_INVALID:
 	case X86_OP_IMM:
 #if CS_API_MAJOR <= 3

@@ -207,3 +207,28 @@ IL_LIFTER(fldlg2) {
 IL_LIFTER(fldln2) {
 	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_LN2)));
 }
+
+/**
+ * FXCH
+ * Exchange the contents of FPU stack register with ST(0)
+ */
+IL_LIFTER(fxch) {
+	X86Reg reg;
+
+	if (ins->structure->op_count == 0) {
+		/* Use ST1 as the default reg in case no operand is provided. */
+		reg = X86_REG_ST1;
+	} else {
+		reg = ins->structure->operands[0].reg;
+	}
+
+	/* TODO: The IL generated from the following code is too verbose because of
+	many rounding checks, there are ways to remove this sort of rounding checks,
+	but it doesn't matter for now so I'm not bothering with it. */
+	return SEQ4(
+		SETL("tmp", x86_il_get_st_reg(X86_REG_ST0)),
+		x86_il_set_st_reg(X86_REG_ST0, x86_il_get_st_reg(reg)),
+		x86_il_set_st_reg(reg, VARL("tmp")),
+		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE)
+	);
+}

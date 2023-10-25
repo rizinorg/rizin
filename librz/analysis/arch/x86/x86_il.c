@@ -259,7 +259,8 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FLDL2E] = x86_il_fldl2e,
 	[X86_INS_FLDPI] = x86_il_fldpi,
 	[X86_INS_FLDLG2] = x86_il_fldlg2,
-	[X86_INS_FLDLN2] = x86_il_fldln2
+	[X86_INS_FLDLN2] = x86_il_fldln2,
+	[X86_INS_FXCH] = x86_il_fxch,
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
