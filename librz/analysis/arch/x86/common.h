@@ -109,7 +109,7 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size);
 /* Capstone does not have the following FPU registers. */
 
 /* FPU control word */
-#define X86_REG_FPU_CW "cwd"
+#define X86_REG_FPU_CW "fpcw"
 /* FPU tag word */
 #define X86_REG_FPU_TW "ftw"
 /* FPU last instruction opcode */
@@ -127,6 +127,8 @@ typedef enum {
 } X86FPUFlags;
 
 bool x86_il_is_st_reg(X86Reg reg);
+
+#define INIT_RMODE(var) SETL(var, x86_il_fpu_get_rmode())
 
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val);
@@ -150,6 +152,11 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 
 #define x86_il_get_floating_op(opnum) \
 	x86_il_get_floating_operand_bits(ins->structure->operands[opnum], analysis->bits, pc)
+
+RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, int bits, ut64 pc);
+
+#define x86_il_set_floating_op(opnum, val) \
+	x86_il_set_floating_operand_bits(ins->structure->operands[opnum], val, analysis->bits, pc)
 
 RzILOpEffect *x86_il_clear_fpsw_flags();
 

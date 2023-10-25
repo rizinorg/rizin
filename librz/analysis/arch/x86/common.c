@@ -1070,14 +1070,61 @@ bool x86_il_is_st_reg(X86Reg reg) {
 }
 
 /**
+ * \brief Get the 11th and 12th bit which stores the rounding mode from the FPU
+ * control word
+ *
+ * \return RzILOpPure* 2 bit rounding mode
+ */
+RzILOpPure *x86_il_fpu_get_rmode() {
+	return UNSIGNED(2, SHIFTR0(UN(8, 10), VARG(X86_REG_FPU_CW)));
+}
+
+/**
  * \brief Get the float stored in FPU stack \p reg
  *
  * \param reg
- * \return RzILOpFloat*
+ * \return RzILOpFloat* IEEE754 64 bit float
  */
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
 	return BV2F(RZ_FLOAT_IEEE754_BIN_64, VARG(x86_registers[reg]));
+}
+
+#define FLOAT_FORMAT_SWITCH_CASE(n) \
+do { \
+	case n: \
+		format = RZ_FLOAT_IEEE754_BIN_##n; \
+		break; \
+} while (0)
+
+/**
+ * \brief Resize the float \p val to \p width
+ * You need to have initialized a local variable "rmode" set with the rounding
+ * mode before you call this function.
+ *
+ * \param val
+ * \param width Output float width
+ * \return RzILOpFloat*
+ */
+RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, unsigned int width) {
+	RzFloatFormat format = RZ_FLOAT_IEEE754_BIN_64;
+
+	switch (width) {
+		FLOAT_FORMAT_SWITCH_CASE(16);
+		FLOAT_FORMAT_SWITCH_CASE(32);
+		FLOAT_FORMAT_SWITCH_CASE(64);
+		FLOAT_FORMAT_SWITCH_CASE(80);
+		FLOAT_FORMAT_SWITCH_CASE(128);
+		default:
+			rz_return_val_if_reached(NULL);
+	}
+
+	/* I hate this, but this is the only way to conditionally round val. */
+	return ITE(
+		EQ(VARL("rmode"), UN(2, 0)), FCONVERT(format, RZ_FLOAT_RMODE_RNE, val),
+		(EQ(VARL("rmode"), UN(2, 1)), FCONVERT(format, RZ_FLOAT_RMODE_RTN, val),
+			(EQ(VARL("rmode"), UN(2, 2)), FCONVERT(format, RZ_FLOAT_RMODE_RTP, val),
+				(FCONVERT(format, RZ_FLOAT_RMODE_RTZ, val)))));
 }
 
 /**
@@ -1088,7 +1135,11 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
  */
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
-	return SETG(x86_registers[reg], FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, F2BV(val)));
+	
+	RzILOpEffect *rmode = INIT_RMODE("rmode");
+	RzILOpFloat *converted_val = x86_il_resize_floating(val, 64);
+
+	return SEQ2(rmode, SETG(x86_registers[reg], F2BV(converted_val)));
 }
 
 /**
@@ -1096,7 +1147,7 @@ RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
  * TOP = FPU[12:15] (bits 12, 13 & 14)
  * 12th bit is the least significant bit.
  *
- * @return RzILOpPure* Bitvector of length 3
+ * \return RzILOpPure* Bitvector of length 3
  */
 RzILOpPure *x86_il_get_fpu_stack_top() {
 	RzILOpPure *status_word = x86_il_get_reg_bits(X86_REG_FPSW, 0, 0);
@@ -1109,7 +1160,7 @@ RzILOpPure *x86_il_get_fpu_stack_top() {
  * stack TOP.
  *
  * \param top Value to be stored as the new TOP (bitvector length = 3)
- * @return RzILOpEffect*
+ * \return RzILOpEffect*
  */
 RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top) {
 	RzILOpPure *shifted_top = SHIFTL0(UNSIGNED(16, top), UN(8, 11));
@@ -1168,17 +1219,17 @@ RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value) {
 }
 
 #define FLOATING_OP_MEM_WIDTH_CASE(n) \
-do { \
+	do { \
 	case n: \
 		return LOADW(BITS_PER_BYTE * n, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc)); \
-} while (0)
+	} while (0)
 
 /**
  * \brief Get the value of the floating point operand \p op
  * This function takes care of everything, like choosing
- * the correct type and returning the correct value and
+ * the correct typem returning the correct value and
  * converting to the correct FP format
- * Use the wrapper `x86_il_get_flop`
+ * Use the wrapper `x86_il_get_floating_op`
  *
  * \param op
  * \param analysis_bits bitness
@@ -1197,8 +1248,8 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 			FLOATING_OP_MEM_WIDTH_CASE(32);
 			FLOATING_OP_MEM_WIDTH_CASE(64);
 			FLOATING_OP_MEM_WIDTH_CASE(80);
-			default:
-				RZ_LOG_ERROR("x86: RzIL: Invalid memory operand width for a floating point operand: %d\n", op.size);
+		default:
+			RZ_LOG_ERROR("x86: RzIL: Invalid memory operand width for a floating point operand: %d\n", op.size);
 		}
 	case X86_OP_INVALID:
 	case X86_OP_IMM:
@@ -1206,9 +1257,38 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 	case X86_OP_FP:
 #endif
 	default:
-		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
+		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", op.type);
 		return NULL;
 	}
+}
+
+/**
+ * \brief Set the value of the floating point operand \p op
+ * This function takes care of everything, like choosing
+ * the correct type, setting the correct value and
+ * converting to the correct FP format
+ * Use the wrapper `x86_il_set_floating_op`
+ *
+ * \param op
+ * \param analysis_bits bitness
+ */
+RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, int bits, ut64 pc) {
+	RzILOpEffect *ret = NULL;
+	switch (op.type) {
+	case X86_OP_REG:
+		/* We assume that the only registers we will be writing to would be the
+		* FPU stack registers, hence the 64 resize width. */
+		ret = x86_il_set_reg_bits(op.reg, x86_il_resize_floating(val, 64), bits);
+		break;
+	case X86_OP_MEM:
+		ret = x86_il_set_mem_bits(op.mem, x86_il_resize_floating(val, op.size * BITS_PER_BYTE), bits, pc);
+		break;
+	case X86_OP_IMM:
+	default:
+		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", X86_OP_IMM);
+		break;
+	}
+	return ret;
 }
 
 RzILOpEffect *x86_il_clear_fpsw_flags() {

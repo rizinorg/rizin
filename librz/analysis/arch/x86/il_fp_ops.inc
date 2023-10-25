@@ -79,14 +79,39 @@ IL_LIFTER(fabs) {
 
 /**
  * FLD
- * Loads a floating point value and pushes it onto the FPU stack
+ * Loads a floating point value and pushes it onto the FPU stack in ST(0)
  */
 IL_LIFTER(fld) {
-	RzILOpEffect *push_val = x86_il_st_push(x86_il_get_floating_op(0));
+	RzILOpEffect *push_eff = x86_il_st_push(x86_il_get_floating_op(0));
 
-	/* Set C0 if stack overflow. If stack overflow occurred, then the value of
+	/* Set C1 if stack overflow. If stack overflow occurred, then the value of
 	* stack TOP must be 0x7. */
 	RzILOpEffect *set_oveflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 7)));
 
-	return SEQ2(push_val, set_oveflow);
+	return SEQ2(push_eff, set_oveflow);
+}
+
+/**
+ * FST
+ * Stores the floating point value stored at the top of the FPU stack in ST(0)
+ */
+IL_LIFTER(fst) {
+	return x86_il_set_floating_op(0, x86_il_get_st_reg(X86_REG_ST0));
+}
+
+/**
+ * FSTP
+ * Stores the floating point value stored at the top of the FPU stack in ST(0)
+ * and pops the value off the stack
+ */
+IL_LIFTER(fstp) {
+	RzILOpEffect *pop_eff;
+	RzILOpPure *pop_val;
+	X86_IL_ST_POP(pop_val, pop_eff);
+
+	return SEQ3(
+		x86_il_set_floating_op(0, pop_val),
+		pop_eff,
+		x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 0)))
+	);
 }
