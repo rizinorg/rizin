@@ -21,12 +21,8 @@
 #define ISREG64(x)       (insn->detail->arm64.operands[x].type == ARM64_OP_REG)
 #define ISMEM64(x)       (insn->detail->arm64.operands[x].type == ARM64_OP_MEM)
 
-#if CS_API_MAJOR > 3
 #define LSHIFT2_64(x) insn->detail->arm64.operands[x].shift.value
-#else
-#define LSHIFT2_64(x) 0
-#endif
-#define OPCOUNT64() insn->detail->arm64.op_count
+#define OPCOUNT64()   insn->detail->arm64.op_count
 
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
 #define ISPREINDEX64()  (((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64())))

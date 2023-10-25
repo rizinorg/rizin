@@ -1838,15 +1838,11 @@ static RzILOpEffect *mvn(cs_insn *insn) {
 	RzILOpBitVector *res;
 	switch (insn->id) {
 	case ARM64_INS_NEG:
-#if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
-#endif
 		res = NEG(val);
 		break;
 	case ARM64_INS_NGC:
-#if CS_API_MAJOR > 3
 	case ARM64_INS_NGCS:
-#endif
 		res = NEG(ADD(val, ITE(VARG("cf"), UN(bits, 0), UN(bits, 1))));
 		break;
 	default: // ARM64_INS_MVN
@@ -2652,10 +2648,8 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case ARM64_INS_MVN:
 	case ARM64_INS_NEG:
 	case ARM64_INS_NGC:
-#if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
 	case ARM64_INS_NGCS:
-#endif
 		return mvn(insn);
 	case ARM64_INS_RBIT:
 		return rbit(insn);

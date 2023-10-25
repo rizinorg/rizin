@@ -5,21 +5,6 @@
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 
-#if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
-#define CAPSTONE_HAS_M680X 1
-#else
-#define CAPSTONE_HAS_M680X 0
-#endif
-
-#if !CAPSTONE_HAS_M680X
-#ifdef _MSC_VER
-#pragma message("Cannot find support for m680x in capstone")
-#else
-#warning Cannot find capstone-m680x support
-#endif
-#endif
-
-#if CAPSTONE_HAS_M680X
 #include <capstone/m680x.h>
 
 static int m680xmode(const char *str) {
@@ -538,15 +523,6 @@ RzAnalysisPlugin rz_analysis_plugin_m680x_cs = {
 	.bits = 16 | 32,
 	.op = &analyze_op,
 };
-#else
-RzAnalysisPlugin rz_analysis_plugin_m680x_cs = {
-	.name = "m680x (unsupported)",
-	.desc = "Capstone M680X analyzer (unsupported)",
-	.license = "BSD",
-	.arch = "m680x",
-	.bits = 32,
-};
-#endif
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {

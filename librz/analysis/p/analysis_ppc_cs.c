@@ -956,7 +956,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			return -1;
 		}
 		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+#if CS_NEXT_VERSION >= 6
 		cs_option(handle, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL);
+#endif
 	}
 	op->size = 4;
 
@@ -981,9 +983,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
-#if CS_API_MAJOR >= 4
 		case PPC_INS_CMPB:
-#endif
 		case PPC_INS_CMPD:
 		case PPC_INS_CMPDI:
 		case PPC_INS_CMPLD:
@@ -1137,9 +1137,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			esilprintf(op, "%s,%s,=[8],%s=", ARG(0), op1, op1);
 			break;
 		case PPC_INS_LBZ:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LBZCIX:
-#endif
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
@@ -1155,9 +1153,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		case PPC_INS_LD:
 		case PPC_INS_LDARX:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LDCIX:
-#endif
 		case PPC_INS_LDU:
 		case PPC_INS_LDUX:
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
@@ -1208,9 +1204,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case PPC_INS_LWAUX:
 		case PPC_INS_LWAX:
 		case PPC_INS_LWZ:
-#if CS_API_MAJOR >= 4
 		case PPC_INS_LWZCIX:
-#endif
 		case PPC_INS_LWZX:
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 			esilprintf(op, "%s,%s,=", ARG2(1, "[4]"), ARG(0));
@@ -1467,7 +1461,13 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_LE:
-				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+				/* 0b01 == equal
+				 * 0b10 == less than */
+				if (ARG(1)[0] == '\0') {
+					esilprintf(op, "3,cr0,&,?{,%s,pc,=,},", ARG(0));
+				} else {
+					esilprintf(op, "3,%s,&,?{,%s,pc,=,},", ARG(0), ARG(1));
+				}
 #endif
 				break;
 #if CS_NEXT_VERSION >= 6

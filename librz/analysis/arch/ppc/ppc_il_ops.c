@@ -84,12 +84,10 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LWA:
 	case PPC_INS_LWAX:
 	case PPC_INS_LWAUX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
-#endif
 #if CS_NEXT_VERSION >= 6
 		base = VARG(rA);
 #else
@@ -275,12 +273,10 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STHUX:
 	case PPC_INS_STWUX:
 	case PPC_INS_STDUX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_STBCIX:
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
-#endif
 #if CS_NEXT_VERSION >= 6
 		base = VARG(rA);
 #else
@@ -365,6 +361,7 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	// I/M/Z 		Immediate, Minus one, Zero extend,
 	// C/E/S		Carry (sets it), Extends (adds carry it), Shift immediate
 
+#if CS_NEXT_VERSION >= 6
 	// Handle Add alias
 	switch (insn->alias_id) {
 	default:
@@ -374,6 +371,7 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	case PPC_INS_ALIAS_LIS: // RT = SI << 16
 		return SETG(rT, EXTEND(PPC_ARCH_BITS, APPEND(SN(16, sI), U16(0))));
 	}
+#endif
 
 	// EXEC
 	switch (id) {
@@ -667,7 +665,6 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		res = LOGNOT(
 			(id == PPC_INS_NAND) ? LOGAND(op0, op1) : LOGOR(op0, op1));
 		break;
-#if CS_API_MAJOR > 3
 	// Compare bytes
 	case PPC_INS_CMPB: {
 		//	do n = 0 to (64BIT_CPU ? 7 : 3)
@@ -700,7 +697,6 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 		return SEQ5(SETL("res", UA(0)), init_n, init_bitmask, loop, SETG(rA, VARL("res")));
 	}
-#endif
 	case PPC_INS_EQV:
 		op0 = VARG(rS);
 		op1 = VARG(rB);
@@ -945,14 +941,26 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTCTR:
 		spr_name = "ctr";
 		break;
+#if CS_NEXT_VERSION < 6
+	case PPC_INS_MFXER:
+	case PPC_INS_MTXER:
+		if (id == PPC_INS_MTXER) {
+			return ppc_set_xer(VARG(rS), mode);
+		}
+		spr_name = "xer";
+		set_val = SETL("val", ppc_get_xer(mode));
+		break;
+#endif
 	case PPC_INS_MFSPR:
 	case PPC_INS_MTSPR: {
+#if CS_NEXT_VERSION >= 6
 		if (insn->alias_id == PPC_INS_ALIAS_MTXER) {
 			return ppc_set_xer(VARG(rS), mode);
 		} else if (insn->alias_id == PPC_INS_ALIAS_MFXER) {
 			set_val = SETL("val", ppc_get_xer(mode));
 			break;
 		}
+#endif
 		ut32 spr = INSOP(1).imm;
 		switch (spr) {
 		default:
@@ -1034,6 +1042,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFPID:
 	case PPC_INS_MFTBLO:
 	case PPC_INS_MFTBHI:
+#if CS_NEXT_VERSION >= 6
 	case PPC_INS_MFDBATU0:
 	case PPC_INS_MFDBATL0:
 	case PPC_INS_MFDBATU1:
@@ -1050,6 +1059,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFIBATL2:
 	case PPC_INS_MFIBATU3:
 	case PPC_INS_MFIBATL3:
+#endif
 	case PPC_INS_MFDBATU:
 	case PPC_INS_MFDBATL:
 	case PPC_INS_MFIBATU:
@@ -1074,6 +1084,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTTBU:
 	case PPC_INS_MTTBLO:
 	case PPC_INS_MTTBHI:
+#if CS_NEXT_VERSION >= 6
 	case PPC_INS_MTDBATU0:
 	case PPC_INS_MTDBATL0:
 	case PPC_INS_MTDBATU1:
@@ -1090,6 +1101,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTIBATL2:
 	case PPC_INS_MTIBATU3:
 	case PPC_INS_MTIBATL3:
+#endif
 	case PPC_INS_MTDBATU:
 	case PPC_INS_MTDBATL:
 	case PPC_INS_MTIBATU:
@@ -1504,12 +1516,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_LWZU:
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
-#endif
 		lop = load_op(handle, insn, mode);
 		break;
 	case PPC_INS_STB:
@@ -1553,12 +1563,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_STXVD2X:
 	case PPC_INS_STXVW4X:
 	case PPC_INS_DCBZ:
-#if CS_API_MAJOR > 3
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STBCIX:
 	case PPC_INS_STDCIX:
-#endif
 		lop = store_op(handle, insn, mode);
 		break;
 #if CS_NEXT_VERSION < 6
@@ -1580,9 +1588,11 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 #endif
 	case PPC_INS_XOR:
 	case PPC_INS_XORI:
+#if CS_NEXT_VERSION >= 6
 		if (insn->is_alias && insn->alias_id == PPC_INS_ALIAS_XNOP) {
 			return NOP();
 		}
+#endif
 		// fallthrough
 	case PPC_INS_XORIS:
 	case PPC_INS_EQV:
@@ -1593,9 +1603,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CNTLZW:
 	case PPC_INS_POPCNTD:
 	case PPC_INS_POPCNTW:
-#if CS_API_MAJOR > 3
 	case PPC_INS_CMPB:
-#endif
 #if CS_API_MAJOR == 5
 	case PPC_INS_CMPRB:
 	case PPC_INS_CMPEQB:

@@ -60,7 +60,6 @@ RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	case PPC_INS_STDX:
 	case PPC_INS_STDCX:
 	case PPC_INS_STWCX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LDCIX:
 	case PPC_INS_LHZCIX:
@@ -69,7 +68,6 @@ RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
-#endif
 		return true;
 	}
 }
@@ -101,10 +99,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STBU:
 	case PPC_INS_STBUX:
 	case PPC_INS_STBX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_STBCIX:
 	case PPC_INS_LBZCIX:
-#endif
 		return PPC_BYTE;
 	case PPC_INS_LHA:
 	case PPC_INS_LHAU:
@@ -120,10 +116,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STHU:
 	case PPC_INS_STHUX:
 	case PPC_INS_STHX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LHZCIX:
 	case PPC_INS_STHCIX:
-#endif
 		return PPC_HWORD;
 	case PPC_INS_LWA:
 	case PPC_INS_LWARX:
@@ -142,10 +136,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STWUX:
 	case PPC_INS_STWX:
 	case PPC_INS_STMW:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LWZCIX:
 	case PPC_INS_STWCIX:
-#endif
 		return PPC_WORD;
 	case PPC_INS_LD:
 	case PPC_INS_LDARX:
@@ -159,10 +151,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STDU:
 	case PPC_INS_STDUX:
 	case PPC_INS_STDX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LDCIX:
 	case PPC_INS_STDCIX:
-#endif
 		return PPC_DWORD;
 	}
 }
@@ -277,18 +267,12 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BGEL:
 	case PPC_INS_BGELRL:
 	case PPC_INS_BGELA:
-	case PPC_INS_BDNZTL:
-	case PPC_INS_BDNZTLA:
 	case PPC_INS_BDNZL:
 	case PPC_INS_BDNZLA:
 	case PPC_INS_BDNZLRL:
 	case PPC_INS_BDZL:
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLRL:
-	case PPC_INS_BL:
-	case PPC_INS_BLA:
-	case PPC_INS_BLRL:
-	case PPC_INS_BCLA:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTLA:
 	case PPC_INS_BDNZFL:
@@ -310,6 +294,7 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	}
 }
 
+#if CS_NEXT_VERSION >= 6
 /**
  * \brief Returns true if the given branch instruction is conditional.
  *
@@ -320,6 +305,7 @@ RZ_IPI bool ppc_insn_is_conditional(const cs_insn *insn) {
 	rz_return_val_if_fail(insn, false);
 	return PPC_DETAIL(insn).bc.pred_cr != PPC_PRED_INVALID || PPC_DETAIL(insn).bc.pred_ctr != PPC_PRED_INVALID;
 }
+#endif
 
 /**
  * \brief Returns true if the given branch instruction is conditional.
