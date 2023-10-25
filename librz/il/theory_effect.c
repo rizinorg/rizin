@@ -109,7 +109,10 @@ bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op) {
 		if (!condition->b) {
 			break;
 		}
-		res = res && rz_il_evaluate_effect(vm, op_repeat->data_eff);
+		if (!rz_il_evaluate_effect(vm, op_repeat->data_eff)) {
+			res = false;
+			break;
+		}
 		rz_il_bool_free(condition);
 	}
 	rz_il_bool_free(condition);
