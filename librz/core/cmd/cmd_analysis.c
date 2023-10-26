@@ -2495,7 +2495,93 @@ static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 	return rz_analysis_var_storage_cmp(&a->storage, &b->storage);
 }
 
-static void var_list_show(RzCore *core,
+typedef struct {
+	const char *func_var;
+	const char *func_var_type;
+	const char *func_var_addr;
+	const char *color_reset;
+	RzCore *core;
+	RzCmdStateOutput *out;
+} VarShowContext;
+
+void var_show(
+	RZ_NONNULL VarShowContext *ctx,
+	RZ_NONNULL RzAnalysisFunction *fcn,
+	RZ_NONNULL RzAnalysisVar *var) {
+	const char *pfx = rz_analysis_var_is_arg(var) ? "arg" : "var";
+	char *constr = rz_analysis_var_get_constraints_readable(var);
+	char *var_type_string = rz_type_as_string(ctx->core->analysis->typedb, var->type);
+	char *storage_string = rz_analysis_var_storage_to_string(ctx->core->analysis, &var->storage);
+
+	switch (ctx->out->mode) {
+	case RZ_OUTPUT_MODE_RIZIN: {
+		// we can't express all type info here :(
+		switch (var->storage.type) {
+		case RZ_ANALYSIS_VAR_STORAGE_REG:
+			rz_cons_printf("afvr %s %s %s @ 0x%" PFMT64x "\n",
+				var->storage.reg, var->name, var_type_string, fcn->addr);
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_STACK:
+			rz_cons_printf("afvs %" PFMT64d " %s %s @ 0x%" PFMT64x "\n",
+				var->storage.stack_off, var->name, var_type_string,
+				fcn->addr);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_o(ctx->out->d.pj);
+		pj_ks(ctx->out->d.pj, "name", var->name);
+		pj_kb(ctx->out->d.pj, "arg", rz_analysis_var_is_arg(var));
+		pj_ks(ctx->out->d.pj, "type", var_type_string);
+		rz_analysis_var_storage_dump_pj(ctx->out->d.pj, var, &var->storage);
+		pj_end(ctx->out->d.pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD:
+	case RZ_OUTPUT_MODE_LONG:
+		rz_cons_printf("%s%s %s%s%s%s",
+			ctx->func_var, pfx,
+			ctx->func_var_type, var_type_string,
+			rz_str_endswith(var_type_string, "*") ? "" : " ",
+			var->name);
+
+		rz_cons_printf(" %s%s%s%s",
+			ctx->func_var_addr,
+			constr ? " { " : "",
+			constr ? constr : "",
+			constr ? "} " : "");
+
+		if (ctx->out->mode == RZ_OUTPUT_MODE_LONG && var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF) {
+			rz_cons_printf("%s origin=DWARF", ctx->color_reset);
+
+			RzBinDWARFDumpContext dump_ctx = {
+				.dwarf_register_mapping = ctx->core->analysis->debug_info->dwarf_register_mapping,
+				.sep = ", ",
+				.indent = "",
+			};
+			char *loc_string = rz_bin_dwarf_location_to_string(var->origin.dw_var->location, &dump_ctx);
+			rz_cons_printf("@ %s", loc_string);
+			free(loc_string);
+		} else {
+			rz_cons_printf("@ %s", storage_string);
+		}
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		break;
+	default: break;
+	}
+
+	free(var_type_string);
+	free(constr);
+	free(storage_string);
+}
+
+static void var_list_show(
+	RzCore *core,
 	RzAnalysisFunction *fcn,
 	RzCmdStateOutput *state,
 	RzList /*<RzAnalysisVar *>*/ *list) {
@@ -2508,49 +2594,27 @@ static void var_list_show(RzCore *core,
 		goto fail;
 	}
 	rz_list_sort(list, (RzListComparator)var_comparator);
+
+	bool color_arg = (rz_config_get_b(core->config, "scr.color") && rz_config_get_b(core->config, "scr.color.args"));
+	VarShowContext ctx = {
+		.core = core,
+		.out = state,
+		.func_var = color_arg
+			? core->cons->context->pal.func_var
+			: "",
+		.func_var_type = color_arg
+			? core->cons->context->pal.func_var_type
+			: "",
+		.func_var_addr = color_arg
+			? core->cons->context->pal.func_var_addr
+			: "",
+		.color_reset = color_arg
+			? Color_RESET
+			: "",
+	};
+
 	rz_list_foreach (list, iter, var) {
-		switch (state->mode) {
-		case RZ_OUTPUT_MODE_RIZIN: {
-			// we can't express all type info here :(
-			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-			switch (var->storage.type) {
-			case RZ_ANALYSIS_VAR_STORAGE_REG:
-				rz_cons_printf("afvr %s %s %s @ 0x%" PFMT64x "\n",
-					var->storage.reg, var->name, vartype, fcn->addr);
-				break;
-			case RZ_ANALYSIS_VAR_STORAGE_STACK:
-				rz_cons_printf("afvs %" PFMT64d " %s %s @ 0x%" PFMT64x "\n",
-					var->storage.stack_off, var->name, vartype,
-					fcn->addr);
-				break;
-			default:
-				rz_warn_if_reached();
-				break;
-			}
-			free(vartype);
-			break;
-		}
-		case RZ_OUTPUT_MODE_JSON: {
-			pj_o(state->d.pj);
-			pj_ks(state->d.pj, "name", var->name);
-			pj_kb(state->d.pj, "arg", rz_analysis_var_is_arg(var));
-
-			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-			pj_ks(state->d.pj, "type", vartype);
-			free(vartype);
-
-			rz_analysis_var_storage_dump_pj(state->d.pj, var, &var->storage);
-			pj_end(state->d.pj);
-			break;
-		}
-		default: {
-			char *s = rz_core_analysis_var_to_string(core, var);
-			if (s) {
-				rz_cons_println(s);
-				free(s);
-			}
-		}
-		}
+		var_show(&ctx, fcn, var);
 	}
 fail:
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
@@ -2580,6 +2644,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_RIZIN:
 	case RZ_OUTPUT_MODE_STANDARD:
+	case RZ_OUTPUT_MODE_QUIET:
+	case RZ_OUTPUT_MODE_LONG:
 		for (int i = 0; i <= RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING; ++i) {
 			core_analysis_var_list_show(core, fcn, i, state);
 		}

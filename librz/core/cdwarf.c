@@ -246,8 +246,12 @@ static bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 		RzBinDwarfLocListEntry *entry = *it;
 		rz_strbuf_appendf(sb, "\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t[", entry->range->begin, entry->range->end);
 		if (entry->expression) {
+			RzBinDWARFDumpContext dump_ctx = {
+				.sep = ",\t",
+				.indent = "",
+			};
 			rz_bin_dwarf_expression_dump(
-				&ctx->cu->hdr.encoding, entry->expression, ctx->sb, ",\t", "");
+				&ctx->cu->hdr.encoding, entry->expression, ctx->sb, &dump_ctx);
 		}
 		rz_strbuf_append(sb, "]\n");
 	}
