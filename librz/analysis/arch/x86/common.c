@@ -1128,18 +1128,24 @@ RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, unsigned int width) {
 }
 
 /**
- * \brief Store a float at FPU stack \p reg
+ * \brief Store a float \p val at FPU stack \p reg
  *
  * \param reg
+ * \param val
+ * \param val_size Width of \p val
  * \return RzILOpFloat*
  */
-RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val) {
+RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, ut64 val_size) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
 
-	RzILOpEffect *rmode = INIT_RMODE("rmode");
-	RzILOpFloat *converted_val = x86_il_resize_floating(val, 64);
+	if (val_size == 64) {
+		return SETG(x86_registers[reg], F2BV(val));
+	} else {
+		RzILOpEffect *rmode = INIT_RMODE("rmode");
+		RzILOpFloat *converted_val = x86_il_resize_floating(val, 64);
 
-	return SEQ2(rmode, SETG(x86_registers[reg], F2BV(converted_val)));
+		return SEQ2(rmode, SETG(x86_registers[reg], F2BV(converted_val)));
+	}
 }
 
 /**
@@ -1171,9 +1177,9 @@ RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top) {
 	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
 }
 
-#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l))
+#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l), 64)
 
-RzILOpEffect *x86_il_st_push(RzILOpFloat *val) {
+RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size) {
 	/* No need for a modulo here since the bitvector width will truncate any top
 	 * value > 7 */
 	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(SUB(x86_il_get_fpu_stack_top(), UN(3, 1)));
@@ -1185,12 +1191,12 @@ RzILOpEffect *x86_il_st_push(RzILOpFloat *val) {
 		ST_MOVE_RIGHT(2, 3),
 		ST_MOVE_RIGHT(1, 2),
 		ST_MOVE_RIGHT(0, 1),
-		x86_il_set_st_reg(X86_REG_ST0, val));
+		x86_il_set_st_reg(X86_REG_ST0, val, val_size));
 
 	return SEQ2(set_top, st_shift);
 }
 
-#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r))
+#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r), 64)
 
 RzILOpEffect *x86_il_st_pop() {
 	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(ADD(x86_il_get_fpu_stack_top(), UN(3, 1)));
@@ -1221,7 +1227,7 @@ RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value) {
 #define FLOATING_OP_MEM_WIDTH_CASE(n) \
 	do { \
 	case n: \
-		return LOADW(BITS_PER_BYTE * n, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc)); \
+		return LOADW(BITS_PER_BYTE * n, x86_il_get_memaddr_bits(op.mem, bits, pc)); \
 	} while (0)
 
 /**
@@ -1231,10 +1237,11 @@ RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value) {
  * converting to the correct FP format
  * Use the wrapper `x86_il_get_floating_op`
  *
- * \param op
- * \param analysis_bits bitness
+ * \param op Operand to get
+ * \param bits bitness
+ * \param pc
  */
-RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc) {
+RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc) {
 	switch (op.type) {
 	case X86_OP_REG:
 		if (x86_il_is_st_reg(op.reg)) {
@@ -1272,10 +1279,13 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
  * converting to the correct FP format
  * Use the wrapper `x86_il_set_floating_op`
  *
- * \param op
- * \param analysis_bits bitness
+ * \param op Operand to be set
+ * \param val Value to be used
+ * \param val_size Width of \p val
+ * \param bits Bitness
+ * \param pc
  */
-RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, int bits, ut64 pc) {
+RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, ut64 val_size, int bits, ut64 pc) {
 	RzILOpEffect *ret = NULL;
 	RzILOpEffect *rmode = INIT_RMODE("rmode");
 
@@ -1283,11 +1293,14 @@ RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, int b
 	case X86_OP_REG:
 		/* We assume that the only registers we will be writing to would be the
 		 * FPU stack registers, hence the 64 resize width. */
-		ret = x86_il_set_reg_bits(op.reg, x86_il_resize_floating(val, 64), bits);
+		ret = x86_il_set_st_reg(op.reg, val, val_size);
 		break;
-	case X86_OP_MEM:
-		ret = x86_il_set_mem_bits(op.mem, x86_il_resize_floating(val, op.size * BITS_PER_BYTE), bits, pc);
+	case X86_OP_MEM: {
+		ut64 required_size = op.size * BITS_PER_BYTE;
+		RzILOpPure *resized_val = required_size == val_size ? val : x86_il_resize_floating(val, required_size);
+		ret = x86_il_set_mem_bits(op.mem, resized_val, bits, pc);
 		break;
+	}
 	case X86_OP_IMM:
 	default:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", X86_OP_IMM);

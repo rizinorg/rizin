@@ -128,14 +128,15 @@ typedef enum {
 
 bool x86_il_is_st_reg(X86Reg reg);
 
+/* Need to pass in val_size as a param to avoid unnecessary rounding of val. */
 
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
-RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val);
+RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, ut64 val_size);
 
 RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top);
 RzILOpPure *x86_il_get_fpu_stack_top();
 
-RzILOpEffect *x86_il_st_push(RzILOpFloat *val);
+RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size);
 RzILOpEffect *x86_il_st_pop();
 
 #define X86_IL_ST_POP(val, eff) \
@@ -157,10 +158,10 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 #define x86_il_get_floating_op(opnum) \
 	x86_il_get_floating_operand_bits(ins->structure->operands[opnum], analysis->bits, pc)
 
-RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, int bits, ut64 pc);
+RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, ut64 val_size, int bits, ut64 pc);
 
-#define x86_il_set_floating_op(opnum, val) \
-	x86_il_set_floating_operand_bits(ins->structure->operands[opnum], val, analysis->bits, pc)
+#define x86_il_set_floating_op(opnum, val, val_size) \
+	x86_il_set_floating_operand_bits(ins->structure->operands[opnum], val, val_size, analysis->bits, pc)
 
 RzILOpEffect *x86_il_clear_fpsw_flags();
 
