@@ -1719,8 +1719,8 @@ RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(
 	RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self);
 RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfBlock *block,
-	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
-	RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit,
+	RZ_BORROW RZ_NONNULL const RzBinDWARF *dw,
+	RZ_BORROW RZ_NONNULL const RzBinDwarfCompUnit *unit,
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
 
 typedef struct {

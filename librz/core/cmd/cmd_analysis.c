@@ -2504,7 +2504,7 @@ typedef struct {
 	RzCmdStateOutput *out;
 } VarShowContext;
 
-void var_show(
+static void var_show(
 	RZ_NONNULL VarShowContext *ctx,
 	RZ_NONNULL RzAnalysisFunction *fcn,
 	RZ_NONNULL RzAnalysisVar *var) {
@@ -2513,9 +2513,9 @@ void var_show(
 	char *storage_string = rz_analysis_var_storage_to_string(ctx->core->analysis, &var->storage);
 	RzBinDWARFDumpOption dump_opt = {
 		.dwarf_register_mapping = ctx->core->analysis->debug_info->dwarf_register_mapping,
-		.loclist_sep = ",\n",
-		.loclist_indent = "\t",
-		.loclist_breaklines = true,
+		.loclist_sep = ",\t",
+		.loclist_indent = "",
+		.loclist_breaklines = false,
 		.expr_sep = ",\t",
 		.expr_indent = "",
 		.expr_breaklines = false,

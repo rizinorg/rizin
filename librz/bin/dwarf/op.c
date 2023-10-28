@@ -1391,10 +1391,14 @@ beach:
  */
 RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfBlock *block,
-	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
-	RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit,
+	RZ_BORROW RZ_NONNULL const RzBinDWARF *dw,
+	RZ_BORROW RZ_NONNULL const RzBinDwarfCompUnit *unit,
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die) {
-	rz_return_val_if_fail(block && dw, NULL);
+	rz_return_val_if_fail(dw && unit, NULL);
+	if (!block) {
+		return NULL;
+	}
+
 	RzBinDwarfEvaluation *eval = NULL;
 	Location *loc = RZ_NEW0(Location);
 	OK_OR(loc, return NULL);
