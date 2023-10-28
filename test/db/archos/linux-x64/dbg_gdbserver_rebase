@@ -74,9 +74,9 @@ CMDS=<<EOF
 aa
 !scripts/gdbserver.py --port 12344 --binary bins/elf/hello_world
 oodf gdb://127.0.0.1:12344
-afv @ main
+afvl @ main
 doc
-afv @ main
+afvl @ main
 EOF
 EXPECT=<<EOF
 var int64_t var_20h @ rbp-0x20

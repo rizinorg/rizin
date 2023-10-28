@@ -464,7 +464,7 @@ afvn test var_4h
 wa "jne 0" @ 4
 pdr
 wx 00000000
-afv # check var was deleted
+afvl # check var was deleted
 EOF
 EXPECT=<<EOF
 / fcn.00000000();

@@ -6503,7 +6503,7 @@ CMDS=<<EOF
 e asm.cpu=cortexm
 o bins/elf/test_app2/test_app2.elf
 aaa
-afv @ dbg.main
+afvl @ dbg.main
 pdf @ dbg.new_some
 aaa
 EOF
@@ -6540,7 +6540,7 @@ NAME="ARM types"
 FILE=bins/elf/test_app2/test_app2.elf
 CMDS=<<EOF
 aaa
-afv @ dbg.main
+afvl @ dbg.main
 pdf @ dbg.new_some
 aaa
 EOF
