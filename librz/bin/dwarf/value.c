@@ -1058,13 +1058,13 @@ static const char *Value_strings[] = {
 RZ_IPI void Value_dump(
 	const RzBinDwarfValue *self,
 	RzStrBuf *sb,
-	const RzBinDWARFDumpContext *ctx) {
+	const RzBinDWARFDumpOption *opt) {
 	rz_warn_if_fail(self && sb);
 	if (self->type <= 0 || self->type >= RZ_ARRAY_SIZE(Value_strings)) {
 		return;
 	}
 	rz_strbuf_append(sb, Value_strings[self->type]);
-	rz_strbuf_append(sb, rz_str_get(ctx->sep));
+	rz_strbuf_append(sb, rz_str_get(opt->loclist_sep));
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC:
 		rz_strbuf_appendf(sb, "%" PFMT64x, self->generic);
@@ -1090,7 +1090,7 @@ RZ_IPI void Value_dump(
 		rz_strbuf_appendf(sb, "%f", self->f64);
 		break;
 	case RzBinDwarfValueType_LOCATION:
-		rz_bin_dwarf_location_dump(self->location, sb, ctx);
+		rz_bin_dwarf_location_dump(self->location, sb, opt);
 		break;
 	default:
 		rz_strbuf_append(sb, "unimplemented");

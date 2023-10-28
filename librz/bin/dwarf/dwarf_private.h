@@ -119,7 +119,7 @@ RZ_IPI bool Value_clone_into(RzBinDwarfValue *self, RzBinDwarfValue *val);
 RZ_IPI void Value_dump(
 	const RzBinDwarfValue *self,
 	RzStrBuf *sb,
-	const RzBinDWARFDumpContext *ctx);
+	const RzBinDWARFDumpOption *opt);
 /// op
 
 #include "op.h"

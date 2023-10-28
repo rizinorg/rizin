@@ -2508,11 +2508,23 @@ void var_show(
 	RZ_NONNULL VarShowContext *ctx,
 	RZ_NONNULL RzAnalysisFunction *fcn,
 	RZ_NONNULL RzAnalysisVar *var) {
-	const char *pfx = rz_analysis_var_is_arg(var) ? "arg" : "var";
 	char *constr = rz_analysis_var_get_constraints_readable(var);
 	char *var_type_string = rz_type_as_string(ctx->core->analysis->typedb, var->type);
 	char *storage_string = rz_analysis_var_storage_to_string(ctx->core->analysis, &var->storage);
-
+	RzBinDWARFDumpOption dump_opt = {
+		.dwarf_register_mapping = ctx->core->analysis->debug_info->dwarf_register_mapping,
+		.loclist_sep = ",\n",
+		.loclist_indent = "\t",
+		.loclist_breaklines = true,
+		.expr_sep = ",\t",
+		.expr_indent = "",
+		.expr_breaklines = false,
+		.composite_sep = ",\t",
+		.composite_indent = "",
+		.compose_breaklines = false,
+	};
+	char *loc_string = var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF ? rz_bin_dwarf_location_to_string(var->origin.dw_var->location, &dump_opt)
+									    : NULL;
 	switch (ctx->out->mode) {
 	case RZ_OUTPUT_MODE_RIZIN: {
 		// we can't express all type info here :(
@@ -2542,7 +2554,8 @@ void var_show(
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
-	case RZ_OUTPUT_MODE_LONG:
+	case RZ_OUTPUT_MODE_LONG: {
+		const char *pfx = rz_analysis_var_is_arg(var) ? "arg" : "var";
 		rz_cons_printf("%s%s %s%s%s%s",
 			ctx->func_var, pfx,
 			ctx->func_var_type, var_type_string,
@@ -2556,28 +2569,29 @@ void var_show(
 			constr ? "} " : "");
 
 		if (ctx->out->mode == RZ_OUTPUT_MODE_LONG && var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF) {
-			rz_cons_printf("%s origin=DWARF", ctx->color_reset);
-
-			RzBinDWARFDumpContext dump_ctx = {
-				.dwarf_register_mapping = ctx->core->analysis->debug_info->dwarf_register_mapping,
-				.sep = ", ",
-				.indent = "",
-			};
-			char *loc_string = rz_bin_dwarf_location_to_string(var->origin.dw_var->location, &dump_ctx);
-			rz_cons_printf("@ %s", loc_string);
-			free(loc_string);
+			rz_cons_printf("%sorigin=DWARF @ %s\n", ctx->color_reset, loc_string);
 		} else {
-			rz_cons_printf("@ %s", storage_string);
+			rz_cons_printf("@ %s\n", storage_string);
 		}
 		break;
-	case RZ_OUTPUT_MODE_TABLE:
+	}
+	case RZ_OUTPUT_MODE_TABLE: {
+		rz_table_add_rowf(ctx->out->d.t, "bsssss",
+			rz_analysis_var_is_arg(var),
+			var->name,
+			var_type_string,
+			constr,
+			var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF ? "DWARF" : "rizin",
+			var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF ? loc_string : storage_string);
 		break;
+	}
 	default: break;
 	}
 
 	free(var_type_string);
 	free(constr);
 	free(storage_string);
+	free(loc_string);
 }
 
 static void var_list_show(
@@ -2585,11 +2599,10 @@ static void var_list_show(
 	RzAnalysisFunction *fcn,
 	RzCmdStateOutput *state,
 	RzList /*<RzAnalysisVar *>*/ *list) {
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_a(state->d.pj);
-	}
-	RzAnalysisVar *var;
-	RzListIter *iter;
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "bsssss",
+		"is_arg", "name", "type", "constraints", "origin", "addr");
+
 	if (!(list && rz_list_length(list) > 0)) {
 		goto fail;
 	}
@@ -2613,13 +2626,13 @@ static void var_list_show(
 			: "",
 	};
 
+	RzAnalysisVar *var;
+	RzListIter *iter;
 	rz_list_foreach (list, iter, var) {
 		var_show(&ctx, fcn, var);
 	}
 fail:
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(state->d.pj);
-	}
+	rz_cmd_state_output_array_end(state);
 }
 
 static void core_analysis_var_list_show(
@@ -2644,8 +2657,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_RIZIN:
 	case RZ_OUTPUT_MODE_STANDARD:
-	case RZ_OUTPUT_MODE_QUIET:
 	case RZ_OUTPUT_MODE_LONG:
+	case RZ_OUTPUT_MODE_TABLE:
 		for (int i = 0; i <= RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING; ++i) {
 			core_analysis_var_list_show(core, fcn, i, state);
 		}

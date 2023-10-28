@@ -1266,11 +1266,11 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 }
 
 static void RzBinDwarfBlock_log(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, const RzBinDwarfRange *range) {
-	RzBinDWARFDumpContext dump_ctx = {
-		.indent = "",
-		.sep = ",\t",
+	RzBinDWARFDumpOption dump_opt = {
+		.loclist_indent = "",
+		.loclist_sep = ",\t",
 	};
-	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->unit->hdr.encoding, block, &dump_ctx);
+	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->unit->hdr.encoding, block, &dump_opt);
 	if (RZ_STR_ISNOTEMPTY(expr_str)) {
 		if (!range) {
 			RZ_LOG_VERBOSE("Location parse failed: 0x%" PFMT64x " [%s]\n", offset, expr_str);

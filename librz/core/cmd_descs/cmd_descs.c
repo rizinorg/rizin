@@ -19102,8 +19102,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_stacksz_cd = rz_cmd_desc_argv_new(core->rcmd, af_cd, "afS", rz_analysis_function_stacksz_handler, &analysis_function_stacksz_help);
 	rz_warn_if_fail(analysis_function_stacksz_cd);
 
-	RzCmdDesc *afv_cd = rz_cmd_desc_group_state_new(core->rcmd, af_cd, "afv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_function_vars_handler, &analysis_function_vars_help, &afv_help);
+	RzCmdDesc *afv_cd = rz_cmd_desc_group_new(core->rcmd, af_cd, "afv", NULL, NULL, &afv_help);
 	rz_warn_if_fail(afv_cd);
+	RzCmdDesc *analysis_function_vars_cd = rz_cmd_desc_argv_state_new(core->rcmd, afv_cd, "afvl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_LONG, rz_analysis_function_vars_handler, &analysis_function_vars_help);
+	rz_warn_if_fail(analysis_function_vars_cd);
+
 	RzCmdDesc *analysis_function_vars_dis_refs_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afv=", rz_analysis_function_vars_dis_refs_handler, &analysis_function_vars_dis_refs_help);
 	rz_warn_if_fail(analysis_function_vars_dis_refs_cd);
 
