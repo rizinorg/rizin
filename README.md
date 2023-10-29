@@ -6,7 +6,7 @@ Rizin is a fork of the radare2 reverse engineering framework with a focus on
 usability, working features and code cleanliness.
 
 Rizin is portable and it can be used to analyze binaries, disassemble code,
-debug programs, as a forensics tool, as a scriptable command-line hexadecimal
+debug programs, as a forensic tool, as a scriptable command-line hexadecimal
 editor able to open disk files, and much more!
 
 To learn more on Rizin you may want to read the
