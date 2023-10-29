@@ -63,9 +63,9 @@ FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF
 aa
-afv @ entry0
+afvl @ entry0
 doc
-afv @ entry0
+afvl @ entry0
 EOF
 EXPECT=<<EOF
 var int64_t var_18h @ stack - 0x18

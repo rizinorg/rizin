@@ -117,12 +117,9 @@ RZ_IPI void Value_free(RzBinDwarfValue *self);
 RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self);
 RZ_IPI bool Value_clone_into(RzBinDwarfValue *self, RzBinDwarfValue *val);
 RZ_IPI void Value_dump(
-	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NULLABLE DWARF_RegisterMapping dwarf_register_mapping,
 	const RzBinDwarfValue *self,
 	RzStrBuf *sb,
-	const char *sep,
-	const char *indent);
+	const RzBinDWARFDumpOption *opt);
 /// op
 
 #include "op.h"

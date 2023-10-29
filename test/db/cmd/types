@@ -1246,7 +1246,7 @@ tu Books
 s main
 afvt var_78h "union Books"
 afvn books var_78h
-afv~Books
+afvl~Books
 s 0x000006d2
 pd 1
 EOF
@@ -1547,9 +1547,9 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 aaa
 s 0x4070
-afv
+afvl
 afvt var_70h "char [20]"
-afv
+afvl
 ar bp=0x98
 afvd var_70h
 EOF
@@ -1591,7 +1591,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var size_t size @ stack - 0x1c
@@ -1606,7 +1606,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var size_t size @ stack - 0x1c
@@ -1621,7 +1621,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var size_t var_24h @ stack - 0x24
@@ -1637,7 +1637,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var size_t var_28h @ stack - 0x28
@@ -1654,7 +1654,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var const char *src @ stack - 0x24
@@ -1800,7 +1800,7 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv~ptr
+afvl~ptr
 EOF
 EXPECT=<<EOF
 var char **ptr @ stack - 0x20
@@ -1813,9 +1813,9 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv~var_3ch
-afv~var_38h
-afv~var_30h
+afvl~var_3ch
+afvl~var_38h
+afvl~var_30h
 EOF
 EXPECT=<<EOF
 var int var_3ch @ stack - 0x3c
@@ -1830,7 +1830,7 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var void *va_args @ stack - 0x3c
@@ -1862,9 +1862,9 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv
+afvl
 s sym.processCmd
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var char **var_14e8h @ stack - 0x14e8
@@ -1930,7 +1930,7 @@ CMDS=<<EOF
 s main
 af
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var int32_t var_1454h @ stack - 0x1454
@@ -1964,7 +1964,7 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var int64_t var_2dh @ stack - 0x2d
@@ -1983,7 +1983,7 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var char **var_30h @ stack - 0x30
@@ -2024,7 +2024,7 @@ FILE=bins/elf/movstr
 CMDS=<<EOF
 aaa
 s main
-afv~var_28h
+afvl~var_28h
 EOF
 EXPECT=<<EOF
 var const char *var_28h @ stack - 0x28
@@ -2036,7 +2036,7 @@ FILE=bins/elf/tie-test
 CMDS=<<EOF
 aaa
 s sym.foo
-afv~var_28h
+afvl~var_28h
 EOF
 EXPECT=<<EOF
 var size_t *var_28h @ stack - 0x28
@@ -2134,7 +2134,7 @@ af
 afc fastcall
 afs "int fastcalled(int sarg0, int sarg1, int sarg2, int sarg3)"
 afs
-afv
+afvl
 afi~name,convention
 EOF
 EXPECT=<<EOF

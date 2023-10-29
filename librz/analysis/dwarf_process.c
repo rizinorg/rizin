@@ -1266,7 +1266,11 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 }
 
 static void RzBinDwarfBlock_log(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, const RzBinDwarfRange *range) {
-	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->unit->hdr.encoding, block);
+	RzBinDWARFDumpOption dump_opt = {
+		.loclist_indent = "",
+		.loclist_sep = ",\t",
+	};
+	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->unit->hdr.encoding, block, &dump_opt);
 	if (RZ_STR_ISNOTEMPTY(expr_str)) {
 		if (!range) {
 			RZ_LOG_VERBOSE("Location parse failed: 0x%" PFMT64x " [%s]\n", offset, expr_str);
@@ -1324,41 +1328,11 @@ static RzBinDwarfLocation *location_list_parse(
 	return location;
 }
 
-static RzBinDwarfLocation *location_from_block(
-	Context *ctx, const RzBinDwarfDie *die, const RzBinDwarfBlock *block, const RzBinDwarfDie *fn) {
-	ut64 offset = die->offset;
-	const char *msg = "";
-	if (!block) {
-		goto empty_loc;
-	}
-	if (rz_bin_dwarf_block_empty(block)) {
-		goto empty_loc;
-	}
-	if (!rz_bin_dwarf_block_valid(block)) {
-		msg = "<Invalid Block>";
-		goto err_msg;
-	}
-
-	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(block, ctx->dw, ctx->unit, fn);
-	if (!loc) {
-		goto err_eval;
-	}
-	return loc;
-err_msg:
-	RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " %s\n", offset, msg);
-	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
-err_eval:
-	RzBinDwarfBlock_log(ctx, block, offset, NULL);
-	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
-empty_loc:
-	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
-}
-
 static RzBinDwarfLocation *location_parse(
 	Context *ctx, const RzBinDwarfDie *die, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
 	if (attr->value.kind == RzBinDwarfAttr_Block) {
-		return location_from_block(ctx, die, rz_bin_dwarf_attr_block(attr), fn);
+		return rz_bin_dwarf_location_from_block(rz_bin_dwarf_attr_block(attr), ctx->dw, ctx->unit, fn);
 	}
 
 	if (attr->value.kind == RzBinDwarfAttr_LoclistPtr ||
@@ -1378,10 +1352,14 @@ static RzBinDwarfLocation *location_parse(
 			return location_list_parse(ctx, loclist, fn);
 		} else if (rz_pvector_len(&loclist->entries) == 1) {
 			RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
-			return location_from_block(ctx, die, entry->expression, fn);
+			return rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		} else {
 			RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);
+			if (!loc) {
+				return NULL;
+			}
 			loc->kind = RzBinDwarfLocationKind_EMPTY;
+			loc->encoding = ctx->unit->hdr.encoding;
 			return loc;
 		}
 	err_find:

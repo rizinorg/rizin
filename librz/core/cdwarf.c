@@ -244,12 +244,16 @@ static bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocListEntry *entry = *it;
-		rz_strbuf_appendf(sb, "\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t[", entry->range->begin, entry->range->end);
+		rz_strbuf_appendf(sb, "\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t", entry->range->begin, entry->range->end);
 		if (entry->expression) {
+			RzBinDWARFDumpOption dump_opt = {
+				.loclist_sep = ",\t",
+				.loclist_indent = "",
+			};
 			rz_bin_dwarf_expression_dump(
-				&ctx->cu->hdr.encoding, entry->expression, ctx->sb, ",\t", "");
+				&ctx->cu->hdr.encoding, entry->expression, ctx->sb, &dump_opt);
 		}
-		rz_strbuf_append(sb, "]\n");
+		rz_strbuf_append(sb, "\n");
 	}
 	return true;
 }

@@ -418,7 +418,7 @@ commands:
       - name: afv
         summary: Manipulate arguments/variables in a function
         subcommands:
-          - name: afv
+          - name: afvl
             cname: analysis_function_vars
             summary: List all variables and arguments of the current function
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
@@ -426,6 +426,8 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_TABLE
+              - RZ_OUTPUT_MODE_LONG
             args: []
           - name: afv=
             cname: analysis_function_vars_dis_refs

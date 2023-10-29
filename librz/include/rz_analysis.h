@@ -783,7 +783,7 @@ typedef struct rz_analysis_var_t {
 	struct {
 		RzAnalysisVarOriginKind kind; ///< Kind of origin
 		union {
-			RzAnalysisDwarfVariable *dw_var; ///< Location description from DWARF
+			RzAnalysisDwarfVariable *dw_var; ///< Variable description from DWARF
 		};
 	} origin; ///< Origin of the variable, i.e. DWARF, PDB, OMF
 } RzAnalysisVar;
