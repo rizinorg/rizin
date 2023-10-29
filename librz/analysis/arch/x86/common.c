@@ -1106,7 +1106,7 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
  * \param width Output float width
  * \return RzILOpFloat*
  */
-RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, unsigned int width) {
+RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, ut32 width) {
 	RzFloatFormat format = RZ_FLOAT_IEEE754_BIN_64;
 
 	switch (width) {
@@ -1128,6 +1128,40 @@ RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, unsigned int width) {
 }
 
 /**
+ * \brief Convert the integer \p int_val to a RzILOpFloat of format \p fmt
+ * You need to have initialized a local variable "rmode" set with the rounding
+ * mode before you call this function.
+ *
+ * \param int_val
+ * \param format Output float format
+ * \return RzILOpFloat*
+ */
+RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat format) {
+	return ITE(
+		EQ(VARL("rmode"), UN(2, 0)), SINT2F(format, RZ_FLOAT_RMODE_RNE, int_val),
+		(EQ(VARL("rmode"), UN(2, 1)), SINT2F(format, RZ_FLOAT_RMODE_RTN, int_val),
+			(EQ(VARL("rmode"), UN(2, 2)), SINT2F(format, RZ_FLOAT_RMODE_RTP, int_val),
+				(SINT2F(format, RZ_FLOAT_RMODE_RTZ, int_val)))));
+}
+
+/**
+ * \brief Convert the floating \p float_val to a RzILOpBitVector of size \p width
+ * You need to have initialized a local variable "rmode" set with the rounding
+ * mode before you call this function.
+ *
+ * \param float_val
+ * \param width Output bitvector width
+ * \return RzILOpBitVector*
+ */
+RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width) {
+	return ITE(
+		EQ(VARL("rmode"), UN(2, 0)), F2SINT(width, RZ_FLOAT_RMODE_RNE, float_val),
+		(EQ(VARL("rmode"), UN(2, 1)), F2SINT(width, RZ_FLOAT_RMODE_RTN, float_val),
+			(EQ(VARL("rmode"), UN(2, 2)), F2SINT(width, RZ_FLOAT_RMODE_RTP, float_val),
+				(F2SINT(width, RZ_FLOAT_RMODE_RTZ, float_val)))));
+}
+
+/**
  * \brief Store a float \p val at FPU stack \p reg
  *
  * \param reg
@@ -1141,7 +1175,7 @@ RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, ut64 val_size) {
 	if (val_size == 64) {
 		return SETG(x86_registers[reg], F2BV(val));
 	} else {
-		RzILOpEffect *rmode = INIT_RMODE("rmode");
+		RzILOpEffect *rmode = INIT_RMODE();
 		RzILOpFloat *converted_val = x86_il_resize_floating(val, 64);
 
 		return SEQ2(rmode, SETG(x86_registers[reg], F2BV(converted_val)));
@@ -1193,7 +1227,11 @@ RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size) {
 		ST_MOVE_RIGHT(0, 1),
 		x86_il_set_st_reg(X86_REG_ST0, val, val_size));
 
-	return SEQ2(set_top, st_shift);
+	/* Set C1 if stack overflow. If stack overflow occurred, then the value of
+	 * stack TOP must be 0x7. */
+	RzILOpEffect *set_overflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 7)));
+
+	return SEQ3(set_top, st_shift, set_overflow);
 }
 
 #define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r), 64)
@@ -1209,7 +1247,11 @@ RzILOpEffect *x86_il_st_pop() {
 		ST_MOVE_LEFT(5, 6),
 		ST_MOVE_LEFT(6, 7));
 
-	return SEQ2(set_top, st_shift);
+	/* Set C1 if stack underflow. If stack underflow occurred, then the value of
+	 * stack TOP must be 0x0. */
+	RzILOpEffect *set_underflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 0)));
+
+	return SEQ3(set_top, st_shift, set_underflow);
 }
 
 RzILOpBool *x86_il_get_fpu_flag(X86FPUFlags flag) {
@@ -1287,7 +1329,7 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc) {
  */
 RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, ut64 val_size, int bits, ut64 pc) {
 	RzILOpEffect *ret = NULL;
-	RzILOpEffect *rmode = INIT_RMODE("rmode");
+	RzILOpEffect *rmode = INIT_RMODE();
 
 	switch (op.type) {
 	case X86_OP_REG:

@@ -78,22 +78,12 @@ IL_LIFTER(fabs) {
 	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value, 64), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
 
-static RzILOpEffect *fpu_stack_push_val(RzILOpFloat *val, int val_size) {
-	RzILOpEffect *push_eff = x86_il_st_push(val, val_size);
-
-	/* Set C1 if stack overflow. If stack overflow occurred, then the value of
-	 * stack TOP must be 0x7. */
-	RzILOpEffect *set_oveflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 7)));
-
-	return SEQ2(push_eff, set_oveflow);
-}
-
 /**
  * FLD
  * Loads a floating point value and pushes it onto the FPU stack in ST(0)
  */
 IL_LIFTER(fld) {
-	return fpu_stack_push_val(x86_il_get_floating_op(0),
+	return x86_il_st_push(x86_il_get_floating_op(0),
 		ins->structure->operands[0].size * BITS_PER_BYTE);
 }
 
@@ -115,10 +105,7 @@ IL_LIFTER(fstp) {
 	RzILOpPure *pop_val;
 	X86_IL_ST_POP(pop_val, pop_eff);
 
-	return SEQ3(
-		x86_il_set_floating_op(0, pop_val, 64),
-		pop_eff,
-		x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 0))));
+	return SEQ2(x86_il_set_floating_op(0, pop_val, 64), pop_eff);
 }
 
 /**
@@ -126,7 +113,7 @@ IL_LIFTER(fstp) {
  * Load +1.0
  */
 IL_LIFTER(fld1) {
-	return fpu_stack_push_val(F64(1.0), 64);
+	return x86_il_st_push(F64(1.0), 64);
 }
 
 /**
@@ -134,7 +121,7 @@ IL_LIFTER(fld1) {
  * Load +0.0
  */
 IL_LIFTER(fldz) {
-	return fpu_stack_push_val(F64(0.0), 64);
+	return x86_il_st_push(F64(0.0), 64);
 }
 
 /*
@@ -174,7 +161,7 @@ RzILOpFloat *math_const_to_float(uint64_t upper, uint64_t lower) {
  * Load log2(10)
  */
 IL_LIFTER(fldl2t) {
-	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_L2T), 64));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_L2T), 64));
 }
 
 /**
@@ -182,7 +169,7 @@ IL_LIFTER(fldl2t) {
  * Load log2(e)
  */
 IL_LIFTER(fldl2e) {
-	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_L2E), 64));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_L2E), 64));
 }
 
 /**
@@ -190,7 +177,7 @@ IL_LIFTER(fldl2e) {
  * Load pi
  */
 IL_LIFTER(fldpi) {
-	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_PI), 64));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_PI), 64));
 }
 
 /**
@@ -198,7 +185,7 @@ IL_LIFTER(fldpi) {
  * Load log10(2)
  */
 IL_LIFTER(fldlg2) {
-	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_LG2), 64));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_LG2), 64));
 }
 
 /**
@@ -206,7 +193,7 @@ IL_LIFTER(fldlg2) {
  * Load ln(2)
  */
 IL_LIFTER(fldln2) {
-	return SEQ2(INIT_RMODE("rmode"), fpu_stack_push_val(math_const_to_float(FPU_LN2), 64));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_LN2), 64));
 }
 
 /**
@@ -231,4 +218,37 @@ IL_LIFTER(fxch) {
 		x86_il_set_st_reg(X86_REG_ST0, x86_il_get_st_reg(reg), 64),
 		x86_il_set_st_reg(reg, VARL("tmp"), 64),
 		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
+}
+
+/**
+ * FILD
+ * Load integer onto the FPU register stack
+ */
+IL_LIFTER(fild) {
+	RzILOpPure *int_val = x86_il_get_op(0);
+	RzILOpFloat *float_val = x86_il_floating_from_int(int_val, RZ_FLOAT_IEEE754_BIN_64);
+
+	return SEQ2(INIT_RMODE(), x86_il_st_push(float_val, 64));
+}
+
+/**
+ * FIST
+ * Store float in ST(0) after rounding to integer
+ */
+IL_LIFTER(fist) {
+	RzILOpPure *int_val = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->structure->operands[0].size * BITS_PER_BYTE);
+	return SEQ2(INIT_RMODE(), x86_il_set_op(0, int_val));
+}
+
+/**
+ * FISTP
+ * Store float in ST(0) after rounding to integer, pop the FPU register stack
+ */
+IL_LIFTER(fistp) {
+	RzILOpEffect *pop_eff;
+	RzILOpPure *pop_val;
+	X86_IL_ST_POP(pop_val, pop_eff);
+
+	RzILOpPure *int_val = x86_il_int_from_floating(pop_val, ins->structure->operands[0].size * BITS_PER_BYTE);
+	return SEQ3(INIT_RMODE(), x86_il_set_op(0, int_val), pop_eff);
 }

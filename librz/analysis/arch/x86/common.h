@@ -149,9 +149,11 @@ RzILOpPure *x86_il_get_fpu_flag(X86FPUFlags flag);
 RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value);
 
 RzILOpPure *x86_il_fpu_get_rmode();
-#define INIT_RMODE(var) SETL(var, x86_il_fpu_get_rmode())
+#define INIT_RMODE() SETL("rmode", x86_il_fpu_get_rmode())
 
-RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, unsigned int width);
+RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, ut32 width);
+RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat format);
+RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width);
 
 RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc);
 

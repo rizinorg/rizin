@@ -249,6 +249,10 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FNSTCW] = x86_il_fnstcw,
 	[X86_INS_FNSTSW] = x86_il_fnstsw,
 	[X86_INS_FNCLEX] = x86_il_fnclex,
+	[X86_INS_FLDENV] = x86_il_unimpl,
+	[X86_INS_FNSTENV] = x86_il_unimpl,
+	[X86_INS_FNSAVE] = x86_il_unimpl,
+	[X86_INS_FRSTOR] = x86_il_unimpl,
 	[X86_INS_FABS] = x86_il_fabs,
 	[X86_INS_FLD] = x86_il_fld,
 	[X86_INS_FST] = x86_il_fst,
@@ -261,6 +265,9 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FLDLG2] = x86_il_fldlg2,
 	[X86_INS_FLDLN2] = x86_il_fldln2,
 	[X86_INS_FXCH] = x86_il_fxch,
+	[X86_INS_FILD] = x86_il_fild,
+	[X86_INS_FIST] = x86_il_fist,
+	[X86_INS_FISTP] = x86_il_fistp
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
