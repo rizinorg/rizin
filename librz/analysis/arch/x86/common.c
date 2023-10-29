@@ -1083,11 +1083,11 @@ RzILOpPure *x86_il_fpu_get_rmode() {
  * \brief Get the float stored in FPU stack \p reg
  *
  * \param reg
- * \return RzILOpFloat* IEEE754 64 bit float
+ * \return RzILOpFloat* IEEE754 80 bit float
  */
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
-	return BV2F(RZ_FLOAT_IEEE754_BIN_64, VARG(x86_registers[reg]));
+	return BV2F(RZ_FLOAT_IEEE754_BIN_80, VARG(x86_registers[reg]));
 }
 
 #define FLOAT_FORMAT_SWITCH_CASE(n) \
@@ -1107,7 +1107,7 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
  * \return RzILOpFloat*
  */
 RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, ut32 width) {
-	RzFloatFormat format = RZ_FLOAT_IEEE754_BIN_64;
+	RzFloatFormat format;
 
 	switch (width) {
 		FLOAT_FORMAT_SWITCH_CASE(16);
@@ -1172,11 +1172,11 @@ RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width) {
 RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, ut64 val_size) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
 
-	if (val_size == 64) {
+	if (val_size == 80) {
 		return SETG(x86_registers[reg], F2BV(val));
 	} else {
 		RzILOpEffect *rmode = INIT_RMODE();
-		RzILOpFloat *converted_val = x86_il_resize_floating(val, 64);
+		RzILOpFloat *converted_val = x86_il_resize_floating(val, val_size);
 
 		return SEQ2(rmode, SETG(x86_registers[reg], F2BV(converted_val)));
 	}
@@ -1211,7 +1211,7 @@ RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top) {
 	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
 }
 
-#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l), 64)
+#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l), 80)
 
 RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size) {
 	/* No need for a modulo here since the bitvector width will truncate any top
@@ -1234,7 +1234,7 @@ RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size) {
 	return SEQ3(set_top, st_shift, set_overflow);
 }
 
-#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r), 64)
+#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r), 80)
 
 RzILOpEffect *x86_il_st_pop() {
 	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(ADD(x86_il_get_fpu_stack_top(), UN(3, 1)));
@@ -1333,8 +1333,6 @@ RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, ut64 
 
 	switch (op.type) {
 	case X86_OP_REG:
-		/* We assume that the only registers we will be writing to would be the
-		 * FPU stack registers, hence the 64 resize width. */
 		ret = x86_il_set_st_reg(op.reg, val, val_size);
 		break;
 	case X86_OP_MEM: {
