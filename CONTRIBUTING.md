@@ -70,7 +70,7 @@ This is discouraged, as it produces ugly hard-to-maintain commit history.
 
 ## Commit message rules
 
-When commiting your changes into the repository you may want to follow some
+When committing your changes into the repository you may want to follow some
 rules to make the git history more readable and consistent:
 
 * Start the message capitalized (only the first character must be in uppercase)
