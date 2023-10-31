@@ -72,7 +72,7 @@ i386, x86-64, ARM/ARM64, RISC-V, PowerPC, MIPS, AVR, SPARC, System Z (S390),
 SuperH, m68k, m680x, XAP, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300,
 Renesas (V810, V850, RL78), CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
-NIOS II, TMS320 (c54x, c55x, c55+, c66), Hexagon, DCPU16, LANAI,
+NIOS II, TMS320 (c54x, c55x, c55+, c64x), Hexagon, DCPU16, LANAI,
 MCORE, mcs96, RSP, C-SKY(MCore), VAX, AMD Am29000.
 
 There is also support for the following bytecode formats:
