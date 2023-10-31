@@ -105,27 +105,10 @@ static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
 	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
 }
 
-static void composite_dump(RZ_NONNULL RZ_BORROW RzAnalysis *a,
-	RZ_NONNULL RZ_BORROW RZ_OUT RzStrBuf *sb,
-	RZ_NONNULL RZ_BORROW const RzVector /*<RzAnalysisVarStoragePiece>*/ *composite) {
-	rz_strbuf_append(sb, "composite: [");
-	ut32 i;
-	ut32 end = rz_vector_len(composite) - 1;
-	RzAnalysisVarStoragePiece *piece = NULL;
-	rz_vector_enumerate(composite, piece, i) {
-		rz_strbuf_appendf(sb, "(.%" PFMT32u ", %" PFMT32u "): ",
-			piece->offset_in_bits, piece->size_in_bits);
-		rz_analysis_var_storage_dump(a, sb, piece->storage);
-		if (i < end) {
-			rz_strbuf_append(sb, ", ");
-		}
-	}
-	rz_strbuf_append(sb, "]");
-}
-
 RZ_API void rz_analysis_var_storage_dump(
 	RZ_NONNULL RZ_BORROW RzAnalysis *a,
 	RZ_NONNULL RZ_BORROW RZ_OUT RzStrBuf *sb,
+	RZ_NULLABLE RZ_BORROW const RzAnalysisVar *var,
 	RZ_NONNULL RZ_BORROW const RzAnalysisVarStorage *storage) {
 	rz_return_if_fail(a && sb && storage);
 	switch (storage->type) {
@@ -139,12 +122,18 @@ RZ_API void rz_analysis_var_storage_dump(
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSITE: {
-		composite_dump(a, sb, storage->composite);
+		rz_strbuf_append(sb, "COMPOSITE");
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING:
 		/// Omit storage information
-		rz_strbuf_append(sb, "...");
+		if (var && var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF &&
+			var->origin.dw_var && var->origin.dw_var->location &&
+			var->origin.dw_var->location->kind == RzBinDwarfLocationKind_LOCLIST) {
+			rz_strbuf_append(sb, "LOCLIST");
+		} else {
+			rz_strbuf_append(sb, "...");
+		}
 		break;
 	default:
 		rz_warn_if_reached();
@@ -154,10 +143,11 @@ RZ_API void rz_analysis_var_storage_dump(
 
 RZ_API RZ_OWN char *rz_analysis_var_storage_to_string(
 	RZ_NONNULL RZ_BORROW RzAnalysis *a,
+	RZ_NULLABLE RZ_BORROW const RzAnalysisVar *var,
 	RZ_NONNULL RZ_BORROW const RzAnalysisVarStorage *storage) {
 	rz_return_val_if_fail(a && storage, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	rz_analysis_var_storage_dump(a, sb, storage);
+	rz_analysis_var_storage_dump(a, sb, var, storage);
 	return rz_strbuf_drain(sb);
 }
 
