@@ -239,7 +239,7 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 				rz_cons_printf("%s%s %s %s @ ", i == *vindex ? "* " : "  ", rz_analysis_var_is_arg(var) ? "arg" : "var", vartype, var->name);
 				free(vartype);
 
-				char *storage_str = rz_analysis_var_storage_to_string(core->analysis, &var->storage);
+				char *storage_str = rz_analysis_var_storage_to_string(core->analysis, var, &var->storage);
 				rz_cons_strcat(storage_str);
 				free(storage_str);
 			}

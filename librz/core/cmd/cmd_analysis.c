@@ -2510,7 +2510,7 @@ static void var_show(
 	RZ_NONNULL RzAnalysisVar *var) {
 	char *constr = rz_analysis_var_get_constraints_readable(var);
 	char *var_type_string = rz_type_as_string(ctx->core->analysis->typedb, var->type);
-	char *storage_string = rz_analysis_var_storage_to_string(ctx->core->analysis, &var->storage);
+	char *storage_string = rz_analysis_var_storage_to_string(ctx->core->analysis, var, &var->storage);
 	RzBinDWARFDumpOption dump_opt = {
 		.dwarf_register_mapping = ctx->core->analysis->debug_info->dwarf_register_mapping,
 		.loclist_sep = ",\t",
@@ -2949,7 +2949,7 @@ static RzCmdStatus analysis_function_vars_getsetref(RzCore *core, RzAnalysisVarS
 
 	RzAnalysisVar *var = rz_analysis_function_get_var_at(fcn, stor);
 	if (!var) {
-		char *stor_str = rz_analysis_var_storage_to_string(core->analysis, stor);
+		char *stor_str = rz_analysis_var_storage_to_string(core->analysis, NULL, stor);
 		RZ_LOG_ERROR("core: Cannot find variable with %s\n", stor_str);
 		free(stor_str);
 		return RZ_CMD_STATUS_ERROR;

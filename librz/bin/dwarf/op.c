@@ -1626,7 +1626,8 @@ RZ_API void rz_bin_dwarf_loclist_dump(
 	void **it = NULL;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocListEntry *entry = *it;
-		rz_strbuf_appendf(sb, "%s(0x%" PFMT64x ", 0x%" PFMT64x "):", rz_str_get(opt->loclist_indent), entry->range->begin, entry->range->end);
+		rz_strbuf_appendf(sb, "%s(0x%" PFMT64x ", %" PFMT64d "):",
+			rz_str_get(opt->loclist_indent), entry->range->begin, entry->range->end - entry->range->begin);
 
 		if (entry->location) {
 			rz_strbuf_append(sb, " ");
