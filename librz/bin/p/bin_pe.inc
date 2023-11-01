@@ -263,15 +263,20 @@ static bool is_go_pclntab(ut8 *magic) {
 #define IS_GOPCLNTAB_1_16_BE(x) (x[3] == 0xfa && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
 #define IS_GOPCLNTAB_1_18_LE(x) (x[0] == 0xf0 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
 #define IS_GOPCLNTAB_1_18_BE(x) (x[3] == 0xf0 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_20_LE(x) (x[0] == 0xf1 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_20_BE(x) (x[3] == 0xf1 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
 	return IS_GOPCLNTAB_1_2_LE(magic) || IS_GOPCLNTAB_1_2_BE(magic) ||
 		IS_GOPCLNTAB_1_16_LE(magic) || IS_GOPCLNTAB_1_16_BE(magic) ||
-		IS_GOPCLNTAB_1_18_LE(magic) || IS_GOPCLNTAB_1_18_BE(magic);
+		IS_GOPCLNTAB_1_18_LE(magic) || IS_GOPCLNTAB_1_18_BE(magic) ||
+		IS_GOPCLNTAB_1_20_LE(magic) || IS_GOPCLNTAB_1_20_BE(magic);
 #undef IS_GOPCLNTAB_1_2_LE
 #undef IS_GOPCLNTAB_1_2_BE
 #undef IS_GOPCLNTAB_1_16_LE
 #undef IS_GOPCLNTAB_1_16_BE
 #undef IS_GOPCLNTAB_1_18_LE
 #undef IS_GOPCLNTAB_1_18_BE
+#undef IS_GOPCLNTAB_1_20_LE
+#undef IS_GOPCLNTAB_1_20_BE
 }
 
 static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
