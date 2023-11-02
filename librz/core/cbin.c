@@ -666,7 +666,8 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
-	rz_bin_dwarf_free(core->analysis->debug_info->dw);
+	rz_analysis_debug_info_free(core->analysis->debug_info);
+	core->analysis->debug_info = rz_analysis_debug_info_new();
 	core->analysis->debug_info->dw = dw;
 	if (dw->info) {
 		rz_analysis_dwarf_process_info(core->analysis, dw);

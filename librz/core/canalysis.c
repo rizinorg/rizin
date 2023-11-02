@@ -4849,7 +4849,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	rz_core_task_yield(&core->tasks);
 
 	// Apply DWARF function information
-	{
+	if (core->analysis->debug_info) {
 		notify = "Integrate dwarf function information.";
 		rz_core_notify_begin(core, "%s", notify);
 		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags);
