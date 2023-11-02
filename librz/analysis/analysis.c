@@ -44,16 +44,13 @@ void rz_analysis_hint_storage_init(RzAnalysis *a);
 
 void rz_analysis_hint_storage_fini(RzAnalysis *a);
 
-static void rz_meta_item_fini(RzAnalysisMetaItem *item) {
-	free(item->str);
-}
-
-static void rz_meta_item_free(void *_item) {
-	if (_item) {
-		RzAnalysisMetaItem *item = _item;
-		rz_meta_item_fini(item);
-		free(item);
+static void meta_item_free(void *item) {
+	if (!item) {
+		return;
 	}
+	RzAnalysisMetaItem *it = item;
+	free(it->str);
+	free(it);
 }
 
 static void global_kv_free(HtPPKv *kv) {
@@ -88,7 +85,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_event_hook(analysis->meta_spaces.event, RZ_SPACE_EVENT_COUNT, meta_count_for, NULL);
 
 	rz_analysis_hint_storage_init(analysis);
-	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
+	rz_interval_tree_init(&analysis->meta, meta_item_free);
 	analysis->typedb = rz_type_db_new();
 	analysis->sdb_fmts = sdb_ns(analysis->sdb, "spec", 1);
 	analysis->sdb_cc = sdb_ns(analysis->sdb, "cc", 1);
@@ -448,7 +445,7 @@ RZ_API bool rz_analysis_op_is_eob(RzAnalysisOp *op) {
 RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_analysis_hint_clear(analysis);
 	rz_interval_tree_fini(&analysis->meta);
-	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
+	rz_interval_tree_init(&analysis->meta, meta_item_free);
 	rz_type_db_purge(analysis->typedb);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
