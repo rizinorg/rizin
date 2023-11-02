@@ -456,3 +456,63 @@ EXPECT=<<EOF
 | 0x00099edc      auipc t0, 0x3e ; 0xbd602 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 EOF
 RUN
+
+NAME=Resolve all symbols on a stripped windows go1.21 binary
+FILE=bins/golang/go-re-sample-windows-amd64-go121.exe
+CMDS=<<EOF
+aalg
+fl~sym.go.~?
+pdfs @ main ~str.
+izq~?
+EOF
+EXPECT=<<EOF
+1604
+0x00490237 str.foo
+0x00490292 str.enable
+0x004902a0 str.enable
+0x004902b0 str.name
+0x004902c0 str.name
+0x004902f2 str.bar
+0x0049034d str.level
+0x0049035b str.level
+0x00490448 str.subcommand__bar
+0x00490495 str.level:
+0x0049051d str.tail:
+0x004905c2 str.subcommand__foo
+0x00490615 str.enable:
+0x00490692 str.name:
+0x0049071e str.tail:
+0x00490780 str.expected__foo__or__bar__subcommands
+20633
+EOF
+RUN
+
+NAME=Resolve all symbols on a stripped linux go1.21 binary
+FILE=bins/golang/go-re-sample-linux-amd64-go121
+CMDS=<<EOF
+aalg
+fl~sym.go.~?
+pdfs @ main ~str.
+izq~?
+EOF
+EXPECT=<<EOF
+1587
+0x004875b7 str.foo
+0x00487612 str.enable
+0x00487620 str.enable
+0x00487630 str.name
+0x00487640 str.name
+0x00487672 str.bar
+0x004876cd str.level
+0x004876db str.level
+0x004877c8 str.subcommand__bar
+0x00487815 str.level:
+0x0048789d str.tail:
+0x00487942 str.subcommand__foo
+0x00487995 str.enable:
+0x00487a12 str.name:
+0x00487a9e str.tail:
+0x00487b00 str.expected__foo__or__bar__subcommands
+3558
+EOF
+RUN
