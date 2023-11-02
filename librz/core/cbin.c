@@ -652,6 +652,24 @@ static inline RzBinDWARF *load_dwarf(RzCore *core, RzBinFile *binfile) {
 			}
 		}
 	}
+
+	if (rz_config_get_b(core->config, "bin.dbginfo.debuginfod")) {
+		char *debuginfod_urls = (char *)rz_config_get(core->config, "bin.dbginfo.debuginfod_urls");
+		if (RZ_STR_ISNOTEMPTY(debuginfod_urls)) {
+			debuginfod_urls = rz_str_new(debuginfod_urls);
+		} else {
+			debuginfod_urls = rz_sys_getenv("DEBUGINFOD_URLS");
+		}
+		RzList *urls = RZ_STR_ISNOTEMPTY(debuginfod_urls) ? rz_str_split_duplist(debuginfod_urls, " ", true) : NULL;
+		if (urls) {
+			RzBinDWARF *sep_dw = rz_bin_dwarf_from_debuginfod(binfile, urls);
+			rz_list_free(urls);
+			if (sep_dw) {
+				sep_dw->parent = dw;
+				return sep_dw;
+			}
+		}
+	}
 	return dw;
 }
 

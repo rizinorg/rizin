@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin_dwarf.h>
+#include <rz_socket.h>
 #include "dwarf_private.h"
 #include "../format/elf/elf.h"
 
@@ -183,6 +184,31 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 		}
 	}
 	return NULL;
+}
+
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_debuginfod(
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debuginfod_urls) {
+	RzBinDWARF *dw = NULL;
+	char *build_id = read_build_id(bf);
+	if (!build_id) {
+		return NULL;
+	}
+	RzListIter *it = NULL;
+	const char *debuginfod_url = NULL;
+	rz_list_foreach (debuginfod_urls, it, debuginfod_url) {
+		char *url = rz_str_newf("%s/buildid/%s/debuginfo", debuginfod_url, build_id);
+		if (!url) {
+			break;
+		}
+		dw = rz_bin_dwarf_from_path(url, false);
+		free(url);
+		if (dw) {
+			break;
+		}
+	}
+	free(build_id);
+	return dw;
 }
 
 /**

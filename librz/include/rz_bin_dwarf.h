@@ -1517,6 +1517,9 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_path(
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debug_file_directorys);
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_debuginfod(
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debuginfod_urls);
 
 RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw);
 

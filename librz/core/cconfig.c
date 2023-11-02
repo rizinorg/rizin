@@ -3248,6 +3248,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.dbginfo.dwo_path", "", NULL, "Load separate debug information (DWARF) file if available");
 	SETCB("bin.dbginfo.debug_file_directory", "/usr/lib/debug", NULL,
 		"Set the directories which searches for separate debugging information files to directory");
+	SETCB("bin.dbginfo.debuginfod", "true", NULL,
+		"Load debug file from bin.dbginfo.debuginfod_urls or DEBUGINFOD_URLS environment variable");
+	SETCB("bin.dbginfo.debuginfod_urls", "http://debuginfod.elfutils.org/", NULL,
+		"Looks for debug symbols on the debuginfod servers, the value is a string of a space separated URLs");
 	SETBPREF("bin.relocs", "true", "Load relocs information at startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for strings in bin plugins");
 	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for strings in bin plugins");
