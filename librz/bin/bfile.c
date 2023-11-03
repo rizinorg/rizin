@@ -426,18 +426,19 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 	if (!md) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
-	RzListIter *hash_algos_iter = bin->default_hashes ? rz_list_iterator(bin->default_hashes) : NULL;
 
-	if (!hash_algos_iter) {
-		RZ_LOG_ERROR("bin: default hashes: no default hashes configured");
-		goto rz_bin_file_compute_hashes_bad;
-	}
-	while (hash_algos_iter) {
-		char *algo = rz_list_iter_get(hash_algos_iter);
-		if (!rz_hash_cfg_configure(md, algo)) {
-			goto rz_bin_file_compute_hashes_bad;
-		}
-	}
+    if (!bin->default_hashes) {
+        RZ_LOG_ERROR("bin: default hashes: no default hashes configured\n")
+        goto rz_bin_file_compute_hashes_bad;
+    }
+
+    RzListIter *iter = NULL;
+    const char *algo = NULL;
+    rz_list_foreach(bin->default_hashes, iter, algo){
+        if (!rz_hash_cfg_configure(md, algo)) {
+            goto rz_bin_file_compute_hashes_bad;
+        }
+    }
 
 	if (!rz_hash_cfg_init(md)) {
 		goto rz_bin_file_compute_hashes_bad;
@@ -451,14 +452,11 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	hash_algos_iter = rz_list_iterator(bin->default_hashes);
-
-	while (hash_algos_iter) {
-		char *algo = rz_list_iter_get(hash_algos_iter);
-		if (!add_file_hash(md, algo, file_hashes)) {
-			goto rz_bin_file_compute_hashes_bad;
-		}
-	}
+    rz_list_foreach(bin->default_hashes, iter, algo) {
+        if(!add_file_hash(md, algo, file_hashes)) {
+            goto rz_bin_file_compute_hashes_bad;
+        }
+    }
 
 	if (o->plugin && o->plugin->hashes) {
 		RzPVector *plugin_hashes = o->plugin->hashes(bf);
