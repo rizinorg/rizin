@@ -2459,8 +2459,9 @@ static bool cb_binhashesdefault(void *user, void *data) {
 		return false;
 	}
 	core->bin->default_hashes = rz_str_split_duplist(node->value, ",", true);
-	if (!core->bin->default_hashes) core->bin->default_hashes = rz_list_new();
-    return true;
+	if (!core->bin->default_hashes)
+		core->bin->default_hashes = rz_list_new();
+	return true;
 }
 
 static bool cb_debase64(void *user, void *data) {
