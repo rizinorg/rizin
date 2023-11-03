@@ -2458,58 +2458,9 @@ static bool cb_binhashesdefault(void *user, void *data) {
 		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
 		return false;
 	}
-
-	char *algos[] = {
-		"md5",
-		"sha1",
-		"sha256",
-		"crc32",
-		"crc64",
-		"entropy",
-		"blake3",
-		"sm3",
-	};
-
-	free(core->bin->default_hashes);
-	if (*node->value) {
-		char *delim = ",";
-		char *value = strdup(node->value);
-		if (!value) {
-			rz_sys_perror("strdup");
-			return false;
-		}
-		RzList *algo_list = rz_list_newf((RzListFree)free);
-		char *token = strtok(value, delim);
-		while (token) {
-			for (int i = 0; i < RZ_ARRAY_SIZE(algos); i++) {
-				if (algos[i] != NULL && !strcmp(token, algos[i])) {
-					char *hash = strdup(algos[i]);
-					if (hash) {
-						rz_list_append(algo_list, hash);
-					} else {
-						rz_sys_perror("strdup");
-						rz_list_free(algo_list);
-						free(value);
-						return false;
-					}
-					algos[i] = NULL;
-					break;
-				} else if (i == RZ_ARRAY_SIZE(algos) - 1) {
-					RZ_LOG_ERROR("core: bin.hashes.default: invalid or duplicate value: %s\n", node->value);
-					rz_list_free(algo_list);
-					free(value);
-					return false;
-				}
-			}
-			token = strtok(NULL, delim);
-		}
-		free(value);
-		core->bin->default_hashes = algo_list;
-		return true;
-	} else {
-		core->bin->default_hashes = NULL;
-		return true;
-	}
+	core->bin->default_hashes = rz_str_split_duplist(node->value, ",", true);
+	if (!core->bin->default_hashes) core->bin->default_hashes = rz_list_new();
+    return true;
 }
 
 static bool cb_debase64(void *user, void *data) {
@@ -3308,9 +3259,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETCB("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
 	SETCB("bin.hashes.default", "md5,sha1,sha256,crc32,entropy", &cb_binhashesdefault, "Select hash algorithms");
-	n = NODECB("bin.hashes.default", "md5,sha1,sha256,crc32,entropy", &cb_binhashesdefault);
-	SETDESC(n, "Select hashing algorithms");
-	SETOPTIONS(n, "md5", "sha1", "sha256", "crc32", "entropy", "blake3", "sm3", NULL);
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");

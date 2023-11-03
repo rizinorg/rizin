@@ -627,11 +627,9 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzPVector *old_hashes = rz_bin_file_set_hashes(core->bin, new_hashes);
-	bool equal = false;
+	bool equal = true;
 	if (new_hashes && old_hashes && !rz_pvector_empty(new_hashes) && !rz_pvector_empty(old_hashes)) {
-		if (is_equal_file_hashes(new_hashes, old_hashes, &equal)) {
-			equal = true;
-		} else {
+		if (!is_equal_file_hashes(new_hashes, old_hashes, &equal)) {
 			RZ_LOG_ERROR("core: Cannot compare file hashes\n");
 			rz_pvector_free(old_hashes);
 			return RZ_CMD_STATUS_ERROR;

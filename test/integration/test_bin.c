@@ -9,7 +9,7 @@
 bool test_rz_bin(void) {
 	RzBin *bin = rz_bin_new();
 	const char* default_algos[] = {"md5", "sha1", "sha256", "crc32", "entropy"};
-	bin->default_hashes = rz_list_new_from_array(default_algos, sizeof(default_algos)/sizeof(default_algos[0]));
+	bin->default_hashes = rz_list_new_from_array((void**)default_algos, RZ_ARRAY_SIZE(default_algos));
 	RzIO *io = rz_io_new();
 	rz_io_bind(io, &bin->iob);
 
