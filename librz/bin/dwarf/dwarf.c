@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin_dwarf.h>
-#include <rz_socket.h>
 #include "dwarf_private.h"
 #include "../format/elf/elf.h"
 

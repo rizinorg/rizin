@@ -211,7 +211,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		break;
 		// An index into the .debug_rnglists
 	case DW_FORM_rnglistx:
-		value->kind = RzBinDwarfAttr_Addr;
+		value->kind = RzBinDwarfAttr_RangelistPtr;
 		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	default:
