@@ -1782,7 +1782,7 @@ EXPECT=<<EOF
 |           ; arg SmallInt mag @ stack - 0x10
 |           ; arg SmallInt szel @ stack - 0x18
 |           ; var SmallInt i @ stack - 0x1c
-|           0x00401980      55             push  rbp                   ; void palya(SmallInt mag, SmallInt szel)
+|           0x00401980      55             push  rbp                   ; unit p$mozgkigyo palya(smallint,smallint)
 |           0x00401981      4889e5         mov   rbp, rsp
 |           0x00401984      488d6424d0     lea   rsp, [rsp - 0x30]
 |           0x00401989      48895dd8       mov   qword [var_30h], rbx

@@ -2173,6 +2173,18 @@ static void __preline_flag(RzDisasmState *ds, RzFlagItem *flag) {
 	}
 }
 
+// check the equality between names from symbol tab and debug info
+// like sym.func_name and dbg.func_name
+static bool is_sym_dbg_equal(const char *a, const char *b) {
+	if (!rz_str_startswith(a, "sym.") && !rz_str_startswith(a, "dbg.")) {
+		return false;
+	}
+	if (!rz_str_startswith(b, "sym.") && !rz_str_startswith(b, "dbg.")) {
+		return false;
+	}
+	return !strcmp(a + strlen("sym."), b + strlen("sym."));
+}
+
 #define printPre (outline || !*comma)
 static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 	// const char *beginch;
@@ -2197,7 +2209,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 	RzAnalysisBlock *switch_block = NULL;
 	const char *switch_enum_name = NULL;
 	rz_list_foreach (uniqlist, iter, flag) {
-		if (!overlapped && f && f->addr == flag->offset && !strcmp(flag->name, f->name)) {
+		if (!overlapped && f && f->addr == flag->offset && (!strcmp(flag->name, f->name) || is_sym_dbg_equal(flag->name, f->name))) {
 			// do not show non-overlapped flags that have the same name as the function
 			continue;
 		}
@@ -5514,6 +5526,7 @@ toro:
 				ds_show_refs(ds);
 			}
 		}
+
 		core->print->resetbg = true;
 		ds_newline(ds);
 		if (ds->line) {
