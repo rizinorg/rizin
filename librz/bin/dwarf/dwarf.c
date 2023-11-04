@@ -192,6 +192,8 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_debuginfod(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debuginfod_urls) {
+	rz_return_val_if_fail(bf && debuginfod_urls, NULL);
+
 	RzBinDWARF *dw = NULL;
 	char *build_id = read_build_id(bf);
 	if (!build_id) {
