@@ -23,7 +23,7 @@ static inline RZ_OWN RzBinDWARF *dwarf_from_file(
 	RzBinDWARF *dw = RZ_NEW0(RzBinDWARF);
 	RET_NULL_IF_FAIL(dw);
 
-	dw->addr = DebugAddr_from_file(bf);
+	dw->addr = rz_bin_dwarf_addr_from_file(bf);
 	dw->line_str = rz_bin_dwarf_line_str_from_file(bf);
 	dw->aranges = rz_bin_dwarf_aranges_from_file(bf);
 
@@ -251,7 +251,7 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw) {
 	rz_bin_dwarf_free(dw->parent);
 
 	DebugRngLists_free(dw->rnglists);
-	DebugAddr_free(dw->addr);
+	rz_bin_dwarf_addr_free(dw->addr);
 	rz_bin_dwarf_str_free(dw->str);
 	rz_bin_dwarf_str_offsets_free(dw->str_offsets);
 

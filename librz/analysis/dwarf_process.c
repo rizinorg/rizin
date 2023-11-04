@@ -1527,13 +1527,16 @@ static bool function_from_die(
 			fcn->link_name = attr_string(attr, ctx);
 			break;
 		case DW_AT_low_pc:
-			fcn->low_pc = rz_bin_dwarf_attr_udata(attr);
+			fcn->low_pc = rz_bin_dwarf_attr_addr(
+				attr, ctx->dw, ctx->unit->hdr.encoding.address_size, ctx->unit->addr_base);
 			break;
 		case DW_AT_high_pc:
-			fcn->high_pc = rz_bin_dwarf_attr_udata(attr);
+			fcn->high_pc = rz_bin_dwarf_attr_addr(
+				attr, ctx->dw, ctx->unit->hdr.encoding.address_size, ctx->unit->addr_base);
 			break;
 		case DW_AT_entry_pc:
-			fcn->entry_pc = rz_bin_dwarf_attr_udata(attr);
+			fcn->entry_pc = rz_bin_dwarf_attr_addr(
+				attr, ctx->dw, ctx->unit->hdr.encoding.address_size, ctx->unit->addr_base);
 			break;
 		case DW_AT_specification: /* u64 to declaration DIE with more info */
 		{

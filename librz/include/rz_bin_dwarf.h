@@ -993,7 +993,9 @@ typedef struct {
 
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
 typedef enum {
-	RzBinDwarfAttr_Address,
+	RzBinDwarfAttr_Addr,
+	RzBinDwarfAttr_AddrBase, /// An offset to a set of addresses in the `.debug_addr` section.
+	RzBinDwarfAttr_AddrIndex, /// An index into a set of addresses in the `.debug_addr` section.
 	RzBinDwarfAttr_Block,
 	RzBinDwarfAttr_Constant,
 	RzBinDwarfAttr_UConstant,
@@ -1803,6 +1805,15 @@ RZ_API bool rz_bin_dwarf_block_empty(const RzBinDwarfBlock *self);
 RZ_API void rz_bin_dwarf_block_dump(const RzBinDwarfBlock *self, RzStrBuf *sb);
 RZ_API const ut8 *rz_bin_dwarf_block_data(const RzBinDwarfBlock *self);
 
+/// addr
+RZ_API bool rz_bin_dwarf_addr_get(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfAddr *self,
+	RZ_BORROW RZ_NONNULL ut64 *address,
+	ut8 address_size, ut64 base, ut64 index);
+RZ_API void rz_bin_dwarf_addr_free(RzBinDwarfAddr *self);
+RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+
 /**
  * \brief Safely get the string from an RzBinDwarfAttrValue if it has one.
  */
@@ -1822,6 +1833,30 @@ static inline char *rz_bin_dwarf_attr_string(
 		return rz_str_new(rz_bin_dwarf_line_str_get(dw->line_str, v->u64));
 	}
 	return NULL;
+}
+
+static inline ut64 rz_bin_dwarf_attr_addr(
+	const RzBinDwarfAttr *attr,
+	RzBinDWARF *dw,
+	ut64 addr_size, ut64 base) {
+	rz_return_val_if_fail(attr, UT64_MAX);
+
+	const RzBinDwarfAttrValue *v = &attr->value;
+	if (v->kind == RzBinDwarfAttr_Addr) {
+		return attr->value.u64;
+	} else if (v->kind == RzBinDwarfAttr_AddrIndex) {
+		ut64 addr = 0;
+		if (dw && rz_bin_dwarf_addr_get(dw->addr, &addr, addr_size, base, attr->value.u64)) {
+			return addr;
+		} else {
+			rz_warn_if_reached();
+		}
+	} else if (v->kind == RzBinDwarfAttr_UConstant) {
+		return attr->value.u64;
+	} else {
+		rz_warn_if_reached();
+	}
+	return attr->value.u64;
 }
 
 static inline ut64 rz_bin_dwarf_attr_udata(const RzBinDwarfAttr *attr) {

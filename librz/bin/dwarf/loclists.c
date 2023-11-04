@@ -165,7 +165,7 @@ static bool convert_raw(
 			*entry = NULL;
 			return true;
 		case DW_LLE_base_addressx:
-			ERR_IF_FAIL(DebugAddr_get_address(
+			ERR_IF_FAIL(rz_bin_dwarf_addr_get(
 				addr, &self->base_address,
 				encoding->address_size, cu->addr_base, raw->base_addressx.addr));
 			return true;
@@ -175,17 +175,17 @@ static bool convert_raw(
 		case DW_LLE_startx_endx:
 			range = RZ_NEW0(RzBinDwarfRange);
 			ERR_IF_FAIL(range);
-			ERR_IF_FAIL(DebugAddr_get_address(
+			ERR_IF_FAIL(rz_bin_dwarf_addr_get(
 				addr, &range->begin,
 				encoding->address_size, cu->addr_base, raw->startx_endx.begin));
-			ERR_IF_FAIL(DebugAddr_get_address(
+			ERR_IF_FAIL(rz_bin_dwarf_addr_get(
 				addr, &range->end,
 				encoding->address_size, cu->addr_base, raw->startx_endx.end));
 			break;
 		case DW_LLE_startx_length:
 			range = RZ_NEW0(RzBinDwarfRange);
 			ERR_IF_FAIL(range);
-			ERR_IF_FAIL(DebugAddr_get_address(
+			ERR_IF_FAIL(rz_bin_dwarf_addr_get(
 				addr, &range->begin,
 				encoding->address_size, cu->addr_base, raw->startx_length.begin));
 			range->end = (raw->startx_length.length + raw->startx_length.begin) & mask;
