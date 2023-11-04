@@ -39,6 +39,10 @@ static inline RZ_OWN RzBinDWARF *dwarf_from_file(
 	if (dw->info) {
 		dw->line = rz_bin_dwarf_line_from_file(bf, dw, is_dwo);
 	}
+	if (!(dw->addr || dw->line_str || dw->aranges || dw->str || dw->str_offsets || dw->loclists || dw->rnglists || dw->abbrev)) {
+		rz_bin_dwarf_free(dw);
+		return NULL;
+	}
 	return dw;
 }
 
