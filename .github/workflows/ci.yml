@@ -200,7 +200,7 @@ jobs:
         if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-12'
         run: |
           sudo apt-get update
-          sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev
+          sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev debuginfod
       - name: Install gdbserver dependency
         if: matrix.run_tests && matrix.enabled && matrix.os == 'ubuntu-22.04'
         run: sudo apt-get --assume-yes install gdbserver
