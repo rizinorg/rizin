@@ -1353,7 +1353,7 @@ end:
 	free(ta);
 }
 
-void GH(print_inst_minfo)(GH(RzHeapInfo) * heap_info, GHT hinfo) {
+void GH(print_inst_minfo)(RzCore *core, GH(RzHeapInfo) * heap_info, GHT hinfo) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	PRINT_YA("malloc_info @ ");
@@ -1383,7 +1383,7 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 		}
 		rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
 		GH(print_inst_minfo)
-		(heap_info, h_info);
+		(core, heap_info, h_info);
 		MallocState *ms = RZ_NEW0(MallocState);
 		if (!ms) {
 			free(heap_info);
@@ -1400,7 +1400,7 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 				h_info = (ms->top >> 16) << 16;
 				rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
 				GH(print_inst_minfo)
-				(heap_info, h_info);
+				(core, heap_info, h_info);
 			}
 		}
 		free(heap_info);
