@@ -2450,6 +2450,21 @@ static bool cb_binverbose(void *user, void *data) {
 	return true;
 }
 
+static bool cb_binhashesdefault(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (*node->value == '?') {
+		print_node_options(node);
+		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
+		return false;
+	}
+	core->bin->default_hashes = rz_str_split_duplist(node->value, ",", true);
+	if (!core->bin->default_hashes) {
+		core->bin->default_hashes = rz_list_new();
+	}
+	return true;
+}
+
 static bool cb_debase64(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3245,6 +3260,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETCB("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
+	SETCB("bin.hashes.default", "md5,sha1,sha256,crc32,entropy", &cb_binhashesdefault, "Select hash algorithms");
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");

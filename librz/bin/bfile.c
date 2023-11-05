@@ -396,7 +396,7 @@ static ut64 buf_compute_hashes(const ut8 *buf, ut64 size, void *user) {
 }
 
 /**
- * Return a pvector of RzBinFileHash structures with the hashes md5, sha1, sha256, crc32 and entropy
+ * Return a pvector of RzBinFileHash structures with the hashes configured in bin.hashes.default
  * computed over the whole \p bf .
  */
 RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
@@ -427,13 +427,19 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	if (!rz_hash_cfg_configure(md, "md5") ||
-		!rz_hash_cfg_configure(md, "sha1") ||
-		!rz_hash_cfg_configure(md, "sha256") ||
-		!rz_hash_cfg_configure(md, "crc32") ||
-		!rz_hash_cfg_configure(md, "entropy")) {
+	if (!bin->default_hashes) {
+		RZ_LOG_ERROR("bin: default hashes: no default hashes configured\n")
 		goto rz_bin_file_compute_hashes_bad;
 	}
+
+	RzListIter *iter = NULL;
+	const char *algo = NULL;
+	rz_list_foreach (bin->default_hashes, iter, algo) {
+		if (!rz_hash_cfg_configure(md, algo)) {
+			goto rz_bin_file_compute_hashes_bad;
+		}
+	}
+
 	if (!rz_hash_cfg_init(md)) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
@@ -446,12 +452,10 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	if (!add_file_hash(md, "md5", file_hashes) ||
-		!add_file_hash(md, "sha1", file_hashes) ||
-		!add_file_hash(md, "sha256", file_hashes) ||
-		!add_file_hash(md, "crc32", file_hashes) ||
-		!add_file_hash(md, "entropy", file_hashes)) {
-		goto rz_bin_file_compute_hashes_bad;
+	rz_list_foreach (bin->default_hashes, iter, algo) {
+		if (!add_file_hash(md, algo, file_hashes)) {
+			goto rz_bin_file_compute_hashes_bad;
+		}
 	}
 
 	if (o->plugin && o->plugin->hashes) {

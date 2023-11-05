@@ -3976,7 +3976,9 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				ut64 subrel_addr = core->parser->subrel_addr;
 				if (subrel_addr && subrel_addr != p) {
 					f2 = rz_core_flag_get_by_spaces(core->flags, subrel_addr);
-					f2_in_opstr = f2 && ds->opstr && (strstr(ds->opstr, f2->name) || strstr(ds->opstr, f2->realname));
+					f2_in_opstr = f2 && ds->opstr &&
+						((f2->name && strstr(ds->opstr, f2->name)) ||
+							(f2->realname && strstr(ds->opstr, f2->realname)));
 				}
 				refaddr = p;
 				if (!flag_printed && !is_filtered_flag(ds, f->name) && (!ds->opstr || (!strstr(ds->opstr, f->name) && !strstr(ds->opstr, f->realname))) && !f2_in_opstr) {

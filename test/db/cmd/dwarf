@@ -6501,10 +6501,12 @@ NAME="ARM types"
 FILE=
 CMDS=<<EOF
 e asm.cpu=cortexm
+e asm.flags.real=true
 o bins/elf/test_app2/test_app2.elf
 aaa
 afvl @ dbg.main
 pdf @ dbg.new_some
+pdf @ sym.__do_global_dtors_aux
 aaa
 EOF
 EXPECT=<<EOF
@@ -6525,13 +6527,27 @@ var double c @ ...
 |           ; var struct Some *n @ r4
 |           0x0000813c      push  {r4, lr}
 |           0x0000813e      movs  r0, 0x14                             ; size_t size
-|           0x00008140      bl    sym.malloc                           ; void *malloc(size_t size)
+|           0x00008140      bl    malloc                               ; sym.malloc ; void *malloc(size_t size)
 |           0x00008144      mov   r4, r0
 |           0x00008146      movs  r2, 0x14                             ; size_t n
 |           0x00008148      movs  r1, 0                                ; int c
-|           0x0000814a      bl    sym.memset                           ; void *memset(void *s, int c, size_t n)
+|           0x0000814a      bl    memset                               ; sym.memset ; void *memset(void *s, int c, size_t n)
 |           0x0000814e      mov   r0, r4
 \           0x00008150      pop   {r4, pc}
+/ __do_global_dtors_aux();
+|           0x00008038      push  {r4, lr}
+|           0x0000803a      ldr   r4, completed.10277                  ; [data.00008050:4]=0x197ec loc._edata
+|           0x0000803c      ldrb  r3, [r4]                             ; 0x197ec
+|                                                                      ; loc._edata
+|       ,=< 0x0000803e      cbnz  r3, 0x804e
+|       |   0x00008040      ldr   r3, [data.00008054]                  ; [0x8054:4]=0
+|      ,==< 0x00008042      cbz   r3, 0x804a
+|      ||   0x00008044      ldr   r0,                                  ; data.00008058
+|      ||                                                              ; [0x8058:4]=0x977c obj.__FRAME_END
+|      ||   0x00008046      nop.w
+|      `--> 0x0000804a      movs  r3, 1
+|       |   0x0000804c      strb  r3, [r4]
+\       `-> 0x0000804e      pop   {r4, pc}
 EOF
 RUN
 

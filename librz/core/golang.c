@@ -9,6 +9,7 @@
 #define GO_1_2  (12)
 #define GO_1_16 (116)
 #define GO_1_18 (118)
+#define GO_1_20 (120)
 
 #define IS_GOPCLNTAB_1_2_LE(x)  (x[0] == 0xfb && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff)
 #define IS_GOPCLNTAB_1_2_BE(x)  (x[3] == 0xfb && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff)
@@ -16,6 +17,8 @@
 #define IS_GOPCLNTAB_1_16_BE(x) (x[3] == 0xfa && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff)
 #define IS_GOPCLNTAB_1_18_LE(x) (x[0] == 0xf0 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff)
 #define IS_GOPCLNTAB_1_18_BE(x) (x[3] == 0xf0 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff)
+#define IS_GOPCLNTAB_1_20_LE(x) (x[0] == 0xf1 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff)
+#define IS_GOPCLNTAB_1_20_BE(x) (x[3] == 0xf1 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff)
 
 typedef struct go_pc_line_table_t {
 	RzIO *io;
@@ -101,6 +104,21 @@ ut64 go_data(GoPcLnTab *pclntab, ut32 n_word) {
 	return pclntab->vaddr + offset;
 }
 
+static const char *pclntab_version_str(GoPcLnTab *pclntab) {
+	switch (pclntab->version) {
+	case GO_1_2:
+		return "go 1.2";
+	case GO_1_16:
+		return "go 1.16-1.17";
+	case GO_1_18:
+		return "go 1.18-1.19";
+	case GO_1_20:
+		return "go 1.20-1.21";
+	default:
+		return "go unknown";
+	}
+}
+
 #define is_addr_outside(x) ((x) <= begin || (x) >= end)
 static bool is_pclntab_valid(GoPcLnTab *pclntab) {
 	ut64 begin = pclntab->vaddr + 8;
@@ -158,8 +176,9 @@ static void add_new_func_symbol(RzCore *core, const char *name, ut64 vaddr) {
 	}
 }
 
-static ut32 core_recover_golang_functions_go_1_18(RzCore *core, GoPcLnTab *pclntab) {
-	rz_core_notify_done(core, "Found go 1.18 pclntab data.");
+static ut32 core_recover_golang_functions_go_1_18_plus(RzCore *core, GoPcLnTab *pclntab) {
+	const char *go_ver = pclntab_version_str(pclntab);
+	rz_core_notify_done(core, "Found %s pclntab data.", go_ver);
 	ut8 tmp8[8];
 	char name[256];
 	char *flag = NULL;
@@ -178,7 +197,7 @@ static ut32 core_recover_golang_functions_go_1_18(RzCore *core, GoPcLnTab *pclnt
 	pclntab->ptrsize = 4; // GO 1.18+ uses ut32 words.
 
 	if (!is_pclntab_valid(pclntab)) {
-		rz_core_notify_error(core, "Invalid go 1.18 pclntab (invalid table).");
+		rz_core_notify_error(core, "Invalid %s pclntab (invalid table).", go_ver);
 		return 0;
 	}
 
@@ -234,7 +253,8 @@ static ut32 core_recover_golang_functions_go_1_18(RzCore *core, GoPcLnTab *pclnt
 }
 
 static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclntab) {
-	rz_core_notify_done(core, "Found go 1.16 pclntab data.");
+	const char *go_ver = pclntab_version_str(pclntab);
+	rz_core_notify_done(core, "Found %s pclntab data.", go_ver);
 	ut8 tmp8[8];
 	char name[256];
 	char *flag = NULL;
@@ -252,7 +272,7 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 	pclntab->functabsize = ((pclntab->nfunctab * 2) + 1) * go_func_tab_field_size(pclntab);
 
 	if (!is_pclntab_valid(pclntab)) {
-		rz_core_notify_error(core, "Invalid go 1.16 pclntab (invalid table).");
+		rz_core_notify_error(core, "Invalid %s pclntab (invalid table).", go_ver);
 		return 0;
 	}
 
@@ -311,7 +331,8 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 
 // Valid for golang 1.2 -> 1.15
 static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclntab) {
-	rz_core_notify_done(core, "Found go 1.12 pclntab data.");
+	const char *go_ver = pclntab_version_str(pclntab);
+	rz_core_notify_done(core, "Found %s pclntab data.", go_ver);
 	ut8 tmp8[8];
 	char name[256];
 	char *flag = NULL;
@@ -339,7 +360,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 	pclntab->nfiletab = rz_read_ble32(tmp8, pclntab->big_endian);
 
 	if (!is_pclntab_valid(pclntab)) {
-		rz_core_notify_error(core, "Invalid go 1.12 pclntab (invalid table).");
+		rz_core_notify_error(core, "Invalid %s pclntab (invalid table).", go_ver);
 		return 0;
 	}
 
@@ -472,10 +493,14 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	pclntab.quantum = header[6];
 	pclntab.ptrsize = header[7];
 
-	if (IS_GOPCLNTAB_1_18_BE(header) || IS_GOPCLNTAB_1_18_LE(header)) {
+	if (IS_GOPCLNTAB_1_20_BE(header) || IS_GOPCLNTAB_1_20_LE(header)) {
+		pclntab.version = GO_1_20;
+		pclntab.big_endian = IS_GOPCLNTAB_1_20_BE(header);
+		num_syms = core_recover_golang_functions_go_1_18_plus(core, &pclntab);
+	} else if (IS_GOPCLNTAB_1_18_BE(header) || IS_GOPCLNTAB_1_18_LE(header)) {
 		pclntab.version = GO_1_18;
 		pclntab.big_endian = IS_GOPCLNTAB_1_18_BE(header);
-		num_syms = core_recover_golang_functions_go_1_18(core, &pclntab);
+		num_syms = core_recover_golang_functions_go_1_18_plus(core, &pclntab);
 	} else if (IS_GOPCLNTAB_1_16_BE(header) || IS_GOPCLNTAB_1_16_LE(header)) {
 		pclntab.version = GO_1_16;
 		pclntab.big_endian = IS_GOPCLNTAB_1_16_BE(header);
@@ -486,7 +511,7 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 		num_syms = core_recover_golang_functions_go_1_2(core, &pclntab);
 	} else {
 		ut32 magic = rz_read_be32(header);
-		rz_core_notify_error(core, "Invalid go pclntab (unknown version: 0x%x).", magic);
+		rz_core_notify_error(core, "Invalid go pclntab (unknown version: 0x%x). Please open an issue.", magic);
 		return false;
 	}
 

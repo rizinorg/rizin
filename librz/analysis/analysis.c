@@ -327,6 +327,10 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 		analysis->pcalign = v;
 	}
 	rz_analysis_set_reg_profile(analysis);
+	if (RZ_STR_EQ(cpu, analysis->typedb->target->cpu)) {
+		return;
+	}
+
 	rz_type_db_set_cpu(analysis->typedb, cpu);
 	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_reload(analysis->typedb, types_dir);
