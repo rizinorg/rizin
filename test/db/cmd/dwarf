@@ -6521,10 +6521,9 @@ var float a @ ...
 var float b @ ...
 var double c @ ...
             ; CALL XREFS from dbg.main @ 0x817c, 0x8184
-            ;-- new_some:
 / some_t * new_some()
 |           ; var struct Some *n @ r4
-|           0x0000813c      push  {r4, lr}                             ; some_t * new_some()
+|           0x0000813c      push  {r4, lr}
 |           0x0000813e      movs  r0, 0x14                             ; size_t size
 |           0x00008140      bl    sym.malloc                           ; void *malloc(size_t size)
 |           0x00008144      mov   r4, r0
@@ -6558,10 +6557,9 @@ var float a @ ...
 var float b @ ...
 var double c @ ...
             ; CALL XREFS from dbg.main @ 0x817c, 0x8184
-            ;-- new_some:
 / some_t * new_some()
 |           ; var struct Some *n @ r4
-|           0x0000813c      push  {r4, lr}                             ; some_t * new_some()
+|           0x0000813c      push  {r4, lr}
 |           0x0000813e      movs  r0, 0x14                             ; size_t size
 |           0x00008140      bl    sym.malloc                           ; void *malloc(size_t size)
 |           0x00008144      mov   r4, r0
