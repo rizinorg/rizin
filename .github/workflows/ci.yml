@@ -284,6 +284,7 @@ jobs:
               export ASAN_LD_PRELOAD=$(${CC} -print-file-name=libasan.so)
             fi
           fi
+          debuginfod -vvv -d debuginfod.sqlite -F test/bins 2>&1 > test/debuginfod.log &
           meson test -C build --suite integration
           cd test
           rz-test -L -o results.json
@@ -315,7 +316,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: test-results-${{ matrix.name }}
-          path: test/results.json
+          path: |
+            test/results.json
+            test/debuginfod.log
 
   build-centos7:
     name: Build on CentOS 7

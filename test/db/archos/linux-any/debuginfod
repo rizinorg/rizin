@@ -1,8 +1,6 @@
 NAME="Debugging Information in debuginfod"
 FILE=
 CMDS=<<EOF
-& !debuginfod -F bins/elf/float_ex1/
-sleep 1
 e bin.dbginfo.debuginfod=true
 e bin.dbginfo.debuginfod_urls=http://127.0.0.1:8002
 o bins/elf/float_ex1/float_ex1_buildid
@@ -10,7 +8,6 @@ aaa
 iS
 afl
 pdf @ dbg.fn1
-qyn
 EOF
 EXPECT=<<EOF
 paddr      size  vaddr      vsize align perm name               type       flags
