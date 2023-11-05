@@ -1,8 +1,8 @@
 NAME="Debugging Information in debuginfod"
 FILE=
 CMDS=<<EOF
-& !debuginfod -F bins/elf/float_ex1/
-sleep 1
+& !debuginfod -vvv -F bins/elf/float_ex1/float_ex1_buildid bins/elf/float_ex1/float_ex1_split-dwarf.debug
+sleep 10
 e bin.dbginfo.debuginfod=true
 e bin.dbginfo.debuginfod_urls=http://127.0.0.1:8002
 o bins/elf/float_ex1/float_ex1_buildid
@@ -13,9 +13,9 @@ pdf @ dbg.fn1
 qyn
 EOF
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align perm name               type       flags
+paddr      size  vaddr      vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
-0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL
+0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
 0x00000318 0x1c  0x00000318 0x1c  0x0   -r-- .interp            PROGBITS   alloc
 0x00000338 0x20  0x00000338 0x20  0x0   -r-- .note.gnu.property NOTE       alloc
 0x00000358 0x24  0x00000358 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
@@ -44,9 +44,9 @@ paddr      size  vaddr      vsize align perm name               type       flags
 0x00003028 0x10  0x00004028 0x10  0x0   -rw- .data              PROGBITS   write,alloc
 0x00003038 0x0   0x00004038 0x8   0x0   -rw- .bss               NOBITS     write,alloc
 0x00003038 0x3b  ---------- 0x3b  0x0   ---- .comment           PROGBITS   merge,strings
-0x00003078 0x378 ---------- 0x378 0x0   ---- .symtab            SYMTAB
-0x000033f0 0x21c ---------- 0x21c 0x0   ---- .strtab            STRTAB
-0x0000360c 0x11a ---------- 0x11a 0x0   ---- .shstrtab          STRTAB
+0x00003078 0x378 ---------- 0x378 0x0   ---- .symtab            SYMTAB     
+0x000033f0 0x21c ---------- 0x21c 0x0   ---- .strtab            STRTAB     
+0x0000360c 0x11a ---------- 0x11a 0x0   ---- .shstrtab          STRTAB     
 0x00001090    1 33           entry0
 0x000010c0    4 41   -> 34   sym.deregister_tm_clones
 0x000010f0    4 57   -> 51   sym.register_tm_clones

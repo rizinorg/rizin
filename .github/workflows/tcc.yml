@@ -92,7 +92,7 @@ jobs:
       run: |
           python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
           sudo apt-get update
-          sudo apt-get --assume-yes install libc6 libc6-i386
+          sudo apt-get --assume-yes install libc6 libc6-i386 debuginfod
 
     - name: Run tests
       env:
