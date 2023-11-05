@@ -306,14 +306,14 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 						}
 					}
 					*ptr = 0;
-					char *flagname;
+					char *flagname = NULL;
 					if (label) {
 						flagname = rz_str_newf(".%s", label);
 					} else {
-						flagname = strdup(f->realnames ? flag->realname : flag->name);
+						flagname = rz_str_new(f->realnames ? flag->realname : flag->name);
 					}
 					int maxflagname = p->maxflagnamelen;
-					if (maxflagname > 0 && strlen(flagname) > maxflagname) {
+					if (maxflagname > 0 && flagname && strlen(flagname) > maxflagname) {
 						char *doublelower = (char *)rz_str_rstr(flagname, "__");
 						char *doublecolon = (char *)rz_str_rstr(flagname, "::");
 						char *token = NULL;
@@ -339,7 +339,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 							flagname = newstr;
 						}
 					}
-					snprintf(str, len, "%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
+					snprintf(str, len, "%s%s%s", data, rz_str_get(flagname), (ptr != ptr2) ? ptr2 : "");
 					free(flagname);
 					bool banned = false;
 					{

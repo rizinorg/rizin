@@ -6,7 +6,6 @@
 #define INC_HEAP32 1
 #include "rz_heap_jemalloc.h"
 #undef INC_HEAP32
-#endif
 
 #undef GH
 #undef GHT
@@ -22,14 +21,28 @@
 #define GHT_MAX UT64_MAX
 #endif
 
-#define PRINTF_A(color, fmt, ...) rz_cons_printf(color fmt Color_RESET, __VA_ARGS__)
-#define PRINTF_YA(fmt, ...)       PRINTF_A("%s", fmt, pal->offset, __VA_ARGS__)
-#define PRINTF_GA(fmt, ...)       PRINTF_A("%s", fmt, pal->args, __VA_ARGS__)
-#define PRINTF_BA(fmt, ...)       PRINTF_A("%s", fmt, pal->num, __VA_ARGS__)
-#define PRINTF_RA(fmt, ...)       PRINTF_A("%s", fmt, pal->invalid, __VA_ARGS__)
+#undef PRINTF_A
+#undef PRINTF_YA
+#undef PRINTF_GA
+#undef PRINTF_BA
+#undef PRINTF_RA
 
-#define PRINT_A(color, msg) rz_cons_print(color msg Color_RESET)
-#define PRINT_YA(msg)       rz_cons_printf("%s" msg Color_RESET, pal->offset)
-#define PRINT_GA(msg)       rz_cons_printf("%s" msg Color_RESET, pal->args)
-#define PRINT_BA(msg)       rz_cons_printf("%s" msg Color_RESET, pal->num)
-#define PRINT_RA(msg)       rz_cons_printf("%s" msg Color_RESET, pal->invalid)
+#define PRINTF_A(color, fmt, ...) rz_cons_printf("%s" fmt "%s", \
+	rz_config_get_b(core->config, "scr.color") ? color : "", \
+	__VA_ARGS__, \
+	rz_config_get_b(core->config, "scr.color") ? Color_RESET : "")
+#define PRINTF_YA(fmt, ...) PRINTF_A(pal->offset, fmt, __VA_ARGS__)
+#define PRINTF_GA(fmt, ...) PRINTF_A(pal->args, fmt, __VA_ARGS__)
+#define PRINTF_BA(fmt, ...) PRINTF_A(pal->num, fmt, __VA_ARGS__)
+#define PRINTF_RA(fmt, ...) PRINTF_A(pal->invalid, fmt, __VA_ARGS__)
+
+#define PRINT_A(color, msg) rz_cons_printf("%s%s%s", \
+	rz_config_get_b(core->config, "scr.color") ? color : "", \
+	msg, \
+	rz_config_get_b(core->config, "scr.color") ? Color_RESET : "")
+#define PRINT_YA(msg) PRINT_A(pal->offset, msg)
+#define PRINT_GA(msg) PRINT_A(pal->args, msg)
+#define PRINT_BA(msg) PRINT_A(pal->num, msg)
+#define PRINT_RA(msg) PRINT_A(pal->invalid, msg)
+
+#endif
