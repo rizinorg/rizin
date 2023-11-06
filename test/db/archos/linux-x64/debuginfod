@@ -64,7 +64,6 @@ paddr      size  vaddr      vsize align perm name               type       flags
 0x00001040    1 6            sym.imp.printf
 0x00001070    1 6            sym.imp.strdup
             ; CALL XREF from dbg.main @ 0x132a
-            ;-- fn1:
 / _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
 |           ; var char **arg1 @ rdi
 |           ; var const char *arg2 @ rsi
@@ -76,7 +75,7 @@ paddr      size  vaddr      vsize align perm name               type       flags
 |           ; arg double q @ stack - 0x20
 |           ; arg struct Some *gg @ stack - 0x28
 |           ; arg some_t **out @ stack - 0x30
-|           0x00001180      push  rbp                                  ; float_ex1.c:15 ; _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
+|           0x00001180      push  rbp                                  ; float_ex1.c:15
 |           0x00001181      mov   rbp, rsp
 |           0x00001184      sub   rsp, 0x30
 |           0x00001188      mov   dword [a], edi                       ; arg1
