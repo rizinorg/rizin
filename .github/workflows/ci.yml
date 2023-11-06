@@ -451,7 +451,7 @@ jobs:
       - name: Install test dependencies
         run: |
           sudo pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
-          sudo apt-get install --yes tzdata
+          sudo apt-get install --yes tzdata debuginfod
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
@@ -500,6 +500,10 @@ jobs:
     steps:
       - name: Install meson and ninja
         run: sudo pip3 install meson ninja
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes debuginfod
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
