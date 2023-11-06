@@ -304,9 +304,9 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 static const char *help_fun_visual[] = {
 	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to ", "(X)", "xrefs from\n",
 	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(:)", "shell ", "(v)", "vars\n",
-	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", " help\n",
+	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", "help\n",
 	"(f/F)", "set/reset filter ", "(s)", "function signature ", "(q)", "quit\n",
-	"(=)", "show/hide legend\n\n",
+	"(=)", "show/hide legend ", "(←/→)", "short/full function name\n\n",
 	NULL
 };
 
@@ -592,7 +592,7 @@ static void set_current_option_to_seek(RzCore *core) {
 /* Like emenu but for real */
 RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 	char old[218];
-	int nfcns, ch, _option = 0;
+	int nfcns, ch = 0;
 
 	RzCoreVisual *visual = core->visual;
 	RzConsEvent olde = core->cons->event_resize;
@@ -930,13 +930,13 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			goto beach;
 			break;
 		case 'l':
-			level = 1;
-			_option = option;
+			rz_cons_singleton()->show_vals = true;
 			break;
 		case 'h':
+			rz_cons_singleton()->show_vals = false;
+			break;
 		case 'b': // back
 			level = 0;
-			option = _option;
 			break;
 		case 'Q':
 		case 'q':
