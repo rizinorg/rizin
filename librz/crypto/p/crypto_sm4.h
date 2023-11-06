@@ -16,8 +16,7 @@
 	}
 #endif
 
-typedef struct sm4_ctx {
-	int mode;
-	ut64 subkeys[32];
-} sm4_state;
+typedef struct {
+	uint32_t round_keys[32];
+}sm4_state;
 #endif
