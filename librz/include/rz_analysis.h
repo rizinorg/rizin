@@ -2029,7 +2029,7 @@ RZ_API bool rz_meta_set_with_subtype(RzAnalysis *m, RzAnalysisMetaType type, int
 RZ_API void rz_meta_del(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 size);
 
 // Same as rz_meta_set() with a size of 1.
-RZ_API bool rz_meta_set_string(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, const char *s);
+RZ_API bool rz_meta_set_string(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, RZ_NULLABLE const char *s);
 
 // Convenience function to get the str content of the item at addr with given type in the current space.
 RZ_API const char *rz_meta_get_string(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr);
