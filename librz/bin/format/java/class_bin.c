@@ -721,16 +721,17 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 	char *tmp = NULL;
 	ut16 index;
 
-	RzListIter *iter;
-	RzList *list = rz_bin_java_class_as_libraries(bin);
-	rz_list_foreach (list, iter, tmp) {
+	void **iter;
+	RzPVector *vec = rz_bin_java_class_as_libraries(bin);
+	rz_pvector_foreach (vec, iter) {
+		tmp = *iter;
 		rz_str_replace_char(tmp, '/', '.');
 		rz_strbuf_appendf(sb, "import %s;\n", tmp);
 	}
-	if (rz_list_length(list) > 0) {
+	if (rz_pvector_len(vec) > 0) {
 		rz_strbuf_appendf(sb, "\n");
 	}
-	rz_list_free(list);
+	rz_pvector_free(vec);
 
 	rz_strbuf_append(sb, "class");
 
@@ -1883,18 +1884,14 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 	return sections;
 }
 
-static int compare_strings(const void *a, const void *b) {
-	return strcmp((const char *)a, (const char *)b);
-}
-
 /**
- * \brief Returns a RzList<char*> containing the class libraries
+ * \brief Returns a RzPVector<char*> containing the class libraries
  */
-RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf(free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new(free);
+	if (!vec) {
 		return NULL;
 	}
 	ut16 arg0, arg1;
@@ -1929,14 +1926,14 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL RzB
 				// arg0 is name_index
 				tmp = java_class_constant_pool_stringify_at(bin, arg0);
 			}
-			if (tmp && !rz_list_find(list, tmp, compare_strings)) {
-				rz_list_append(list, tmp);
+			if (tmp && !rz_pvector_contains(vec, tmp)) {
+				rz_pvector_push(vec, tmp);
 			} else {
 				free(tmp);
 			}
 		}
 	}
-	return list;
+	return vec;
 }
 
 /**

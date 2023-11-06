@@ -227,12 +227,12 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 	if (!obj->drivers) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	RzListIter *it;
 	dmp_driver_desc *driver;
 	rz_list_foreach (obj->drivers, it, driver) {
@@ -240,7 +240,7 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 		if (!file) {
 			break;
 		}
-		rz_list_append(ret, file);
+		rz_pvector_push(ret, file);
 	}
 	return ret;
 }

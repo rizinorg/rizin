@@ -127,7 +127,9 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 			}
 		}
 	}
-	rz_list_foreach (o->libs, iter, lib) {
+	void **vec_it = NULL;
+	rz_pvector_foreach (o->libs, vec_it) {
+		lib = *vec_it;
 		if (is_macho && strstr(lib, "swift")) {
 			info->lang = "swift";
 			return language_apply_blocks_mask(RZ_BIN_LANGUAGE_SWIFT, is_blocks);

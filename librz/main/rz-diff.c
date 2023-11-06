@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021 deroad <wargiof@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -1075,21 +1075,21 @@ static void libs_stringify(const char *elem, RzStrBuf *sb) {
 }
 
 static RzDiff *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, libs);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, libs);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, libs);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, libs);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)libs_compare);
-	rz_list_sort(list_b, (RzListComparator)libs_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)libs_compare);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)libs_compare);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
@@ -1099,7 +1099,7 @@ static RzDiff *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** sections ***************************************/

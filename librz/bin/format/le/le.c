@@ -1680,20 +1680,20 @@ RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 	return entries;
 }
 
-RZ_OWN RzList /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf) {
+RZ_OWN RzPVector /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	if (rz_pvector_empty(bin->imp_mod_names)) {
 		return NULL;
 	}
-	RzList *libs = rz_list_new();
+	RzPVector *libs = rz_pvector_new(free);
 	if (!libs) {
 	fail_cleanup:
-		rz_list_free(libs);
+		rz_pvector_free(libs);
 		return NULL;
 	}
 	void **it;
 	rz_pvector_foreach (bin->imp_mod_names, it) {
-		CHECK(rz_list_append(libs, *it));
+		CHECK(rz_pvector_push(libs, *it));
 	}
 	return libs;
 }
