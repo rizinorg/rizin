@@ -511,13 +511,13 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
+static RzPVector /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (!obj) {
 		return NULL;
 	}
 
-	RzList *res = rz_list_newf((RzListFree)rz_bin_resource_free);
+	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_resource_free);
 	if (!res) {
 		return NULL;
 	}
@@ -554,12 +554,12 @@ static RzList /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
 			goto err;
 		}
 
-		rz_list_append(res, br);
+		rz_pvector_push(res, br);
 	}
 	return res;
 
 err:
-	rz_list_free(res);
+	rz_pvector_free(res);
 	return NULL;
 }
 

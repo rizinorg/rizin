@@ -5037,9 +5037,10 @@ RZ_API bool rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBi
 		}
 	}
 
-	const RzList *resources = rz_bin_object_get_resources(bf->o);
-
-	rz_list_foreach (resources, it, resource) {
+	const RzPVector *resources = rz_bin_object_get_resources(bf->o);
+	void **vec_it = NULL;
+	rz_pvector_foreach (resources, vec_it) {
+		resource = *vec_it;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
 			bin_resources_print_standard(core, hashes, resource);
