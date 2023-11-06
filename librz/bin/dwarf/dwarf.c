@@ -22,7 +22,7 @@ static inline RZ_OWN RzBinDWARF *dwarf_from_file(
 	RzBinDWARF *dw = RZ_NEW0(RzBinDWARF);
 	RET_NULL_IF_FAIL(dw);
 
-	dw->addr = DebugAddr_from_file(bf);
+	dw->addr = rz_bin_dwarf_addr_from_file(bf);
 	dw->line_str = rz_bin_dwarf_line_str_from_file(bf);
 	dw->aranges = rz_bin_dwarf_aranges_from_file(bf);
 
@@ -37,6 +37,10 @@ static inline RZ_OWN RzBinDWARF *dwarf_from_file(
 	}
 	if (dw->info) {
 		dw->line = rz_bin_dwarf_line_from_file(bf, dw, is_dwo);
+	}
+	if (!(dw->addr || dw->line_str || dw->aranges || dw->str || dw->str_offsets || dw->loclists || dw->rnglists || dw->abbrev)) {
+		rz_bin_dwarf_free(dw);
+		return NULL;
 	}
 	return dw;
 }
@@ -185,6 +189,33 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 	return NULL;
 }
 
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_debuginfod(
+	RZ_BORROW RZ_NONNULL RzBinFile *bf,
+	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debuginfod_urls) {
+	rz_return_val_if_fail(bf && debuginfod_urls, NULL);
+
+	RzBinDWARF *dw = NULL;
+	char *build_id = read_build_id(bf);
+	if (!build_id) {
+		return NULL;
+	}
+	RzListIter *it = NULL;
+	const char *debuginfod_url = NULL;
+	rz_list_foreach (debuginfod_urls, it, debuginfod_url) {
+		char *url = rz_str_newf("%s/buildid/%s/debuginfo", debuginfod_url, build_id);
+		if (!url) {
+			break;
+		}
+		dw = rz_bin_dwarf_from_path(url, false);
+		free(url);
+		if (dw) {
+			break;
+		}
+	}
+	free(build_id);
+	return dw;
+}
+
 /**
  * \brief Load DWARF from split DWARF file
  * \param filepath The file path
@@ -225,7 +256,7 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw) {
 	rz_bin_dwarf_free(dw->parent);
 
 	DebugRngLists_free(dw->rnglists);
-	DebugAddr_free(dw->addr);
+	rz_bin_dwarf_addr_free(dw->addr);
 	rz_bin_dwarf_str_free(dw->str);
 	rz_bin_dwarf_str_offsets_free(dw->str_offsets);
 

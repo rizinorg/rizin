@@ -52,13 +52,6 @@ static inline bool bf_bigendian(RzBinFile *bf) {
 }
 
 RZ_IPI bool RzBinDwarfEncoding_from_file(RzBinDwarfEncoding *encoding, RzBinFile *bf);
-/// addr
-
-RZ_IPI bool DebugAddr_get_address(const RzBinDwarfAddr *self, ut64 *address,
-	ut8 address_size, ut64 base, ut64 index);
-RZ_IPI void DebugAddr_free(RzBinDwarfAddr *self);
-RZ_IPI RzBinDwarfAddr *DebugAddr_new(RzBinEndianReader *reader);
-RZ_IPI RzBinDwarfAddr *DebugAddr_from_file(RzBinFile *bf);
 
 /// range
 

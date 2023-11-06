@@ -154,22 +154,22 @@ static bool convert_raw(
 			*out = NULL;
 			return true;
 		case DW_RLE_base_addressx:
-			RET_FALSE_IF_FAIL(DebugAddr_get_address(addr, &self->base_address,
+			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &self->base_address,
 				cu->hdr.encoding.address_size, cu->addr_base, raw->base_addressx.addr));
 			*out = NULL;
 			return true;
 		case DW_RLE_startx_endx:
 			range = RZ_NEW0(RzBinDwarfRange);
 			RET_FALSE_IF_FAIL(range);
-			RET_FALSE_IF_FAIL(DebugAddr_get_address(addr, &range->begin,
+			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &range->begin,
 				cu->hdr.encoding.address_size, cu->addr_base, raw->startx_endx.begin));
-			RET_FALSE_IF_FAIL(DebugAddr_get_address(addr, &range->end,
+			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &range->end,
 				cu->hdr.encoding.address_size, cu->addr_base, raw->startx_endx.end));
 			break;
 		case DW_RLE_startx_length:
 			range = RZ_NEW0(RzBinDwarfRange);
 			RET_FALSE_IF_FAIL(range);
-			RET_FALSE_IF_FAIL(DebugAddr_get_address(addr, &range->begin,
+			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &range->begin,
 				cu->hdr.encoding.address_size, cu->addr_base, raw->startx_length.begin));
 			range->end = (raw->startx_length.length + raw->startx_length.begin) & mask;
 			break;

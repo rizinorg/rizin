@@ -20,7 +20,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
 	switch (attr->form) {
 	case DW_FORM_addr:
-		value->kind = RzBinDwarfAttr_Address;
+		value->kind = RzBinDwarfAttr_Addr;
 		RET_FALSE_IF_FAIL(read_address(reader, &value->u64, address_size));
 		break;
 	case DW_FORM_data1:
@@ -166,25 +166,25 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		DW_AT_addr_base attribute of the associated compilation unit.
 	    index into an array of addresses in the .debug_addr section.*/
 	case DW_FORM_addrx:
-		value->kind = RzBinDwarfAttr_Address;
+		value->kind = RzBinDwarfAttr_AddrIndex;
 		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_addrx1:
-		value->kind = RzBinDwarfAttr_Address;
+		value->kind = RzBinDwarfAttr_AddrIndex;
 		U8_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_addrx2:
-		value->kind = RzBinDwarfAttr_Address;
+		value->kind = RzBinDwarfAttr_AddrIndex;
 		U_OR_RET_FALSE(16, value->u64);
 		break;
 	case DW_FORM_addrx3:
 		// TODO: .DW_FORM_addrx3
-		value->kind = RzBinDwarfAttr_Address;
+		value->kind = RzBinDwarfAttr_AddrIndex;
 		rz_buf_seek(reader->buffer, 3, RZ_BUF_CUR);
 		RZ_LOG_ERROR("TODO: DW_FORM_addrx3\n");
 		break;
 	case DW_FORM_addrx4:
-		value->kind = RzBinDwarfAttr_Address;
+		value->kind = RzBinDwarfAttr_AddrIndex;
 		U_OR_RET_FALSE(32, value->u64);
 		break;
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
@@ -211,7 +211,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		break;
 		// An index into the .debug_rnglists
 	case DW_FORM_rnglistx:
-		value->kind = RzBinDwarfAttr_Address;
+		value->kind = RzBinDwarfAttr_RangelistPtr;
 		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	default:
