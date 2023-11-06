@@ -195,7 +195,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_bin_string_database_free(o->strings);
 	rz_pvector_free(o->classes);
 	rz_list_free(o->entries);
-	rz_list_free(o->fields);
+	rz_pvector_free(o->fields);
 	rz_pvector_free(o->imports);
 	rz_list_free(o->libs);
 	rz_list_free(o->maps);
@@ -655,9 +655,9 @@ RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBi
 }
 
 /**
- * \brief Get list of \p RzBinField representing the fields of the binary object.
+ * \brief Get pvector of \p RzBinField representing the fields of the binary object.
  */
-RZ_API const RzList /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->fields;
 }

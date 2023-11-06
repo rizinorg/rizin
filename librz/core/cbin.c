@@ -4062,14 +4062,15 @@ RZ_API bool rz_core_bin_signatures_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzB
 RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
-	const RzList *fields = rz_bin_object_get_fields(bf->o);
-	RzListIter *iter;
+	const RzPVector *fields = rz_bin_object_get_fields(bf->o);
+	void **iter;
 	RzBinField *field;
 	bool haveComment;
 
 	rz_cmd_state_output_set_columnsf(state, "XsXs", "paddr", "name", "vaddr", "comment");
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (fields, iter, field) {
+	rz_pvector_foreach (fields, iter) {
+		field = *iter;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);

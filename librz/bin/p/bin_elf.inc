@@ -1899,7 +1899,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool add_fields_aux(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ *bin), const char *fmt) {
+static bool add_fields_aux(ELFOBJ *bin, RzPVector /*<RzBinField *>*/ *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ *bin), const char *fmt) {
 	char *value = get_value(bin);
 	if (!value) {
 		return false;
@@ -1911,7 +1911,7 @@ static bool add_fields_aux(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result, ut64 
 		return false;
 	}
 
-	if (!rz_list_append(result, field)) {
+	if (!rz_pvector_push(result, field)) {
 		rz_bin_field_free(field);
 		free(value);
 		return false;
@@ -1921,7 +1921,7 @@ static bool add_fields_aux(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result, ut64 
 	return true;
 }
 
-static bool add_fields(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result) {
+static bool add_fields(ELFOBJ *bin, RzPVector /*<RzBinField *>*/ *result) {
 	size_t size = bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64 ? 8 : 4;
 
 	return add_fields_aux(bin, result, E_IDENT_OFFSET, 16, "MAGIC", Elf_(rz_bin_elf_get_e_indent_as_string), "x") &&
@@ -1940,18 +1940,18 @@ static bool add_fields(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result) {
 		add_fields_aux(bin, result, E_SHSTRNDX_OFFSET, 2, "ShStrndx", Elf_(rz_bin_elf_get_e_shstrndx_as_string), "d");
 }
 
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
 
-	RzList *result = rz_list_newf((RzListFree)rz_bin_field_free);
+	RzPVector *result = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	if (!result) {
 		return NULL;
 	}
 
 	if (!add_fields(bin, result)) {
-		rz_list_free(result);
+		rz_pvector_free(result);
 		return NULL;
 	}
 

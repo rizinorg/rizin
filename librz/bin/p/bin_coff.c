@@ -9,6 +9,7 @@
 #include <rz_util/ht_uu.h>
 
 #include "coff/coff.h"
+#include "rz_vector.h"
 
 #define VFILE_NAME_RELOC_TARGETS "reloc-targets"
 #define VFILE_NAME_PATCHED       "patched"
@@ -493,7 +494,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	return NULL;
 }
 
