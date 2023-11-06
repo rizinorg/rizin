@@ -541,7 +541,6 @@ e asm.comments=0
 pdf
 EOF
 EXPECT=<<EOF
-            ;-- varfunc:
 / int varfunc()
 |           ; var int lightbulb @ stack - 0x18
 |           ; var int sun @ stack - 0x14
@@ -588,7 +587,6 @@ e asm.comments=0
 pdf
 EOF
 EXPECT=<<EOF
-            ;-- varfunc:
 / int varfunc()
 |           ; var int lightbulb @ stack - 0x10
 |           ; var int sun @ stack - 0xc
@@ -618,7 +616,6 @@ pdf
 EOF
 EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x11c0
-            ;-- foo:
 / int foo(int num)
 |           ; var int64_t arg1 @ rdi
 |           ; arg int num @ stack - 0x2c
@@ -628,7 +625,7 @@ EXPECT=<<EOF
 |           ; var int mult_int @ stack - 0x1c
 |           ; var long int add_long @ stack - 0x10
 |           ; var short int sub_short @ stack - 0x22
-|           0x00001139      push  rbp                                  ; example.c:3 ; int foo(int num)
+|           0x00001139      push  rbp                                  ; example.c:3
 |           0x0000113a      mov   rbp, rsp
 |           0x0000113d      sub   rsp, 0x30
 |           0x00001141      mov   dword [num], edi                     ; arg1
@@ -899,12 +896,11 @@ true   fmt  const char *             DWARF  loclist: [(0x80000c22, 10): a4,	(0x8
 false  ans  int                      DWARF  empty
 int printf(const char *fmt, ...);
             ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
-            ;-- printf:
 / int printf(const char *fmt, ...)
 |           ; arg const char *fmt @ a4
 |           ; var int ans @ ...
 |           ; var va_list ap @ stack + 0x4
-|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, ...)
+|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5
 ---------
 arg void *str @ a4
 arg const char *buf @ a4
@@ -917,13 +913,12 @@ true   buf  const char *             DWARF  loclist: [(0x80000c04, 12): a5,	(0x8
 false  arg6 int32_t                  rizin  a5
 true   n    size_t                   DWARF  loclist: [(0x80000c04, 10): d4,	(0x80000c0e, 5): d5,	(0x80000c13, 7): d15,	(0x80000c1a, 8): <evaluation waiting>]
 void * prout(void *str, const char *buf, size_t n);
-            ;-- prout:
 / void * prout(void *str, const char *buf, size_t n)
 |           ; var int32_t arg6 @ a5
 |           ; arg void *str @ a4
 |           ; arg const char *buf @ a4
 |           ; arg size_t n @ d5
-|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
+|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5
 ---------
 arg fp_number_type *b @ a2
 arg fp_number_type *a @ a4
@@ -948,7 +943,6 @@ false  a_fraction   fractype                     DWARF  loclist: [(0x80003cd4, 1
 fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
-            ;-- _fpadd_parts:
 / fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
 |           ; var int32_t arg6 @ a5
 |           ; arg fp_number_type *a @ a4
@@ -959,7 +953,7 @@ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_ty
 |           ; var int b_normal_exp @ d2
 |           ; var fractype a_fraction @ LOCLIST
 |           ; var fractype b_fraction @ COMPOSITE
-|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
+|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5
 ---------
 arg const char *s @ a2
 var const char *sc @ a2
@@ -973,13 +967,12 @@ false  arg5    int32_t                  rizin  a4
 true   maxsize size_t                   DWARF  loclist: [(0x800030ca, 8): d4,	(0x800030ea, 2): d4]
 size_t strnlen_s(const char *s, size_t maxsize);
             ; CALL XREF from dbg._Fail_s @ 0x8000191e
-            ;-- strnlen_s:
 / size_t strnlen_s(const char *s, size_t maxsize)
 |           ; var int32_t arg5 @ a4
 |           ; arg const char *s @ a2
 |           ; arg size_t maxsize @ d4
 |           ; var const char *sc @ a2
-|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize)
+|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6
 ---------
 var _Statab *pwcstate @ a13
 arg char *s @ a4
@@ -995,14 +988,13 @@ true   wc       wchar_t                 DWARF  loclist: [(0x800018a6, 21): d4,	(
 false  pmbstate _Statab *               DWARF  empty
 int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
             ; CALL XREF from dbg._Putstr @ 0x800014d2
-            ;-- _Wctomb:
 / int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
 |           ; arg char *s @ a4
 |           ; arg wchar_t wc @ d4
 |           ; arg mbstate_t *pst @ a5
 |           ; var _Statab *pmbstate @ ...
 |           ; var _Statab *pwcstate @ a13
-|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
+|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123
 ---------
 arg mbstate_t *pst @ a12
 arg const char *s @ a13
@@ -1022,7 +1014,6 @@ false  arg7 int32_t                  rizin  a6
 true   nin  size_t                   DWARF  loclist: [(0x80003084, 23): d4,	(0x8000309b, 21): d15]
 int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
             ; CALL XREF from dbg._Printf @ 0x80000d02
-            ;-- _Mbtowc:
 / int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
 |           ; var int32_t arg5 @ a4
 |           ; var int32_t arg6 @ a5
@@ -1031,7 +1022,7 @@ int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
 |           ; arg const char *s @ a13
 |           ; arg size_t nin @ d15
 |           ; arg mbstate_t *pst @ a12
-|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
+|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150
 ---------
 arg int except @ d4
 is_arg name   type constraints origin addr 
@@ -1039,10 +1030,9 @@ is_arg name   type constraints origin addr
 true   except int              DWARF  d4
 int feraiseexcept(int except);
             ; CALL XREF from dbg._Feraise @ 0x8000343e
-            ;-- feraiseexcept:
 / int feraiseexcept(int except)
 |           ; arg int except @ d4
-|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except)
+|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173
 ---------
 var size_t size_arg @ a0
 var Ppvoidfn newfuns @ a2
@@ -1055,12 +1045,11 @@ false  inc      size_t               DWARF  d15
 int _Atrealloc();
             ; CALL XREF from dbg.atexit @ 0x80001a4c
             ; CALL XREF from dbg._Atexit @ 0x800033b8
-            ;-- _Atrealloc:
 / int _Atrealloc()
 |           ; var size_t size_arg @ a0
 |           ; var size_t inc @ d15
 |           ; var Ppvoidfn newfuns @ a2
-|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc()
+|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22
 ---------
 arg some_t **out @ stack - 0x18
 arg struct Some *gg @ stack - 0x14
@@ -1084,7 +1073,6 @@ false  arg6     int32_t                   rizin  a5
 false  arg7     int32_t                   rizin  a6
 void dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
             ; CALL XREF from dbg.main @ 0x8000059e
-            ;-- fn1:
 / _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
 |           ; var int32_t arg5 @ a4
 |           ; var int32_t arg6 @ a5
@@ -1095,7 +1083,7 @@ void dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
 |           ; arg double q @ stack - 0x10
 |           ; arg struct Some *gg @ stack - 0x14
 |           ; arg some_t **out @ stack - 0x18
-|           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15 ; _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
+|           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15
 ---------
 EOF
 RUN

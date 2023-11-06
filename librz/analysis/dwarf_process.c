@@ -1937,15 +1937,6 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 		return true;
 	}
 
-	/* Apply signature as a comment at a function address */
-	RzCallable *callable = dw_fn->prefer_name ? rz_type_func_get(analysis->typedb, dw_fn->prefer_name)
-						  : ht_up_find(analysis->debug_info->callable_by_offset, dw_fn->offset, NULL);
-	if (callable) {
-		char *sig = rz_type_callable_as_string(analysis->typedb, callable);
-		rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, dw_fn->low_pc, sig);
-		free(sig);
-	}
-
 	if (dw_fn->prefer_name && !rz_str_startswith(dw_fn->prefer_name, "anonymous")) {
 		char *dwf_name = rz_str_newf("dbg.%s", dw_fn->prefer_name);
 		rz_analysis_function_rename((RzAnalysisFunction *)fn, dwf_name);
