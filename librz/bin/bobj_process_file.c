@@ -66,8 +66,8 @@ RZ_IPI void rz_bin_set_and_process_file(RzBinFile *bf, RzBinObject *o) {
 		o->mem = rz_pvector_new((RzPVectorFree)rz_bin_mem_free);
 	}
 
-	rz_list_free(o->resources);
+	rz_pvector_free(o->resources);
 	if (!plugin->resources || !(o->resources = plugin->resources(bf))) {
-		o->resources = rz_list_newf((RzListFree)rz_bin_resource_free);
+		o->resources = rz_pvector_new((RzPVectorFree)rz_bin_resource_free);
 	}
 }

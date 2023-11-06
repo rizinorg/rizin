@@ -271,7 +271,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<RzBinSection *>*/ *sections;
 	RzPVector /*<RzBinImport *>*/ *imports;
 	RzList /*<RzBinSymbol *>*/ *symbols;
-	RzList /*<RzBinResource *>*/ *resources;
+	RzPVector /*<RzBinResource *>*/ *resources;
 	/**
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
@@ -546,7 +546,7 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<RzBinMem *>*/ *(*mem)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzPVector /*<RzBinFileHash *>*/ *(*hashes)(RzBinFile *bf);
-	RzList /*<RzBinResource *>*/ *(*resources)(RzBinFile *bf);
+	RzPVector /*<RzBinResource *>*/ *(*resources)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
@@ -943,7 +943,7 @@ RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinOb
 RZ_API const RzPVector /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_BORROW const RzPVector /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj);
-RZ_API const RzList /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj);
+RZ_API const RzPVector /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzList /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_BORROW RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va);
