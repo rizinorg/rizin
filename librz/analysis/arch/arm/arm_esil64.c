@@ -1324,7 +1324,9 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 		break;
 #endif
 	case CS_AARCH64(_INS_NEG):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_NEGS):
+#endif
 		if (LSHIFT2_64(1)) {
 			SHIFTED_REG64_APPEND(&op->esil, 1);
 		} else {

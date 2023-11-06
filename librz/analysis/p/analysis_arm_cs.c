@@ -948,7 +948,9 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 		break;
 	case CS_AARCH64(_INS_NEG):
+#if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_NEGS):
+#endif
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		break;
 	case CS_AARCH64(_INS_FCMP):

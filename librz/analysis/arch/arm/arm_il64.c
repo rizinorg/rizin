@@ -2993,7 +2993,6 @@ RZ_IPI RzILOpEffect *rz_arm_cs_64_il(csh *handle, cs_insn *insn) {
 	case CS_AARCH64(_INS_NEGS):
 	case CS_AARCH64(_INS_NGCS):
 #endif
-#endif
 		return mvn(insn);
 	case CS_AARCH64(_INS_RBIT):
 		return rbit(insn);
