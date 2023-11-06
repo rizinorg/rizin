@@ -500,10 +500,6 @@ jobs:
     steps:
       - name: Install meson and ninja
         run: sudo pip3 install meson ninja
-      - name: Install test dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes debuginfod
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
@@ -524,7 +520,7 @@ jobs:
       - name: Run debug tests
         run: |
           cd test
-          rz-test -L -o results.json db/archos/linux-x64
+          rz-test -L -e db/archos/linux-x64/debuginfod -e db/archos/linux-x64/dbg_dmh -o results.json db/archos/linux-x64
         working-directory: rizin
 
   build-static:
@@ -612,7 +608,7 @@ jobs:
     name: Test source tarball
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
     runs-on: ubuntu-22.04
-    needs: [create-tarball]
+    needs: [ create-tarball ]
     steps:
       - name: Install python and other dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
@@ -650,7 +646,7 @@ jobs:
     name: Build OSX package
     runs-on: macos-12
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
-    needs: [build-and-test]
+    needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v3
       - name: Install pkg-config with Homebrew
@@ -673,11 +669,11 @@ jobs:
     name: Build Windows zip/installer ${{ matrix.name }}
     runs-on: windows-latest
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'windows') || (github.event_name == 'push' && (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'))
-    needs: [build-and-test]
+    needs: [ build-and-test ]
     strategy:
       fail-fast: false
       matrix:
-        name: [vs2019_static, clang_cl, clang_cl_x86]
+        name: [ vs2019_static, clang_cl, clang_cl_x86 ]
         include:
           - name: vs2019_static
             compiler: cl
@@ -718,11 +714,11 @@ jobs:
     name: Build Android ${{ matrix.name }} package
     runs-on: ubuntu-22.04
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'android') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
-    needs: [build-and-test]
+    needs: [ build-and-test ]
     strategy:
       fail-fast: false
       matrix:
-        name: [x86_64, arm, aarch64]
+        name: [ x86_64, arm, aarch64 ]
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
@@ -747,7 +743,7 @@ jobs:
     name: Include Rizin headers from C++ program (Linux)
     runs-on: ubuntu-22.04
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
-    needs: [build-and-test]
+    needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
@@ -773,7 +769,7 @@ jobs:
     name: Test EXTRA_PREFIX works well
     runs-on: ubuntu-22.04
     if: contains(github.head_ref, 'dist') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
-    needs: [build-and-test]
+    needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
@@ -796,7 +792,7 @@ jobs:
   build-rzpipe:
     name: Build rizin rzpipe
     if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
-    needs: [test-tarball]
+    needs: [ test-tarball ]
     runs-on: ubuntu-22.04
     env:
       RZPIPE_TESTS: "rz-pipe-py rz-pipe-go"
@@ -825,7 +821,7 @@ jobs:
   build-bindgen:
     name: Build rz-bindgen
     if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
-    needs: [test-tarball]
+    needs: [ test-tarball ]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/download-artifact@v3
@@ -871,7 +867,7 @@ jobs:
         system:
           - macos-12
     runs-on: ${{ matrix.system }}
-    needs: [build-osx-pkg]
+    needs: [ build-osx-pkg ]
     steps:
       - name: Install pkg-config with Homebrew
         run: brew install pkg-config
@@ -892,10 +888,10 @@ jobs:
   test-windows-clang_cl:
     name: Test Windows installer built with ${{ matrix.name }}
     runs-on: windows-latest
-    needs: [build-windows]
+    needs: [ build-windows ]
     strategy:
       matrix:
-        name: [clang_cl, clang_cl_x86]
+        name: [ clang_cl, clang_cl_x86 ]
         include:
           - name: clang_cl
             bits: 64
@@ -1004,7 +1000,7 @@ jobs:
 
   publish-docker-image:
     name: Publish Docker image on Docker Hub
-    needs: [build-and-test]
+    needs: [ build-and-test ]
     runs-on: ubuntu-22.04
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
