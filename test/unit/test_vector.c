@@ -893,6 +893,20 @@ static bool test_pvector_set(void) {
 	mu_end;
 }
 
+static int compare_int(const void *a, const void *b) {
+	return *(ut32 *)a - *(ut32 *)b;
+}
+
+static bool test_pvector_find(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+	void *e = ((void **)v.v.a)[3];
+	ut32 e_val = 3;
+	void **p = rz_pvector_find(&v, &e_val, compare_int);
+	mu_assert_eq(*p, e, "find");
+	mu_end;
+}
+
 static bool test_pvector_contains(void) {
 	RzPVector v;
 	init_test_pvector(&v, 5, 0);
@@ -1393,6 +1407,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_free);
 	mu_run_test(test_pvector_at);
 	mu_run_test(test_pvector_set);
+	mu_run_test(test_pvector_find);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
 	mu_run_test(test_pvector_insert);

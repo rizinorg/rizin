@@ -1092,7 +1092,7 @@ static RzDiff *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	rz_pvector_sort(vec_b, (RzPVectorComparator)libs_compare);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)libs_hash,
 		.compare = (RzDiffMethodCompare)libs_compare,
 		.stringify = (RzDiffMethodStringify)libs_stringify,

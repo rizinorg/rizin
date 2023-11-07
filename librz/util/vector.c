@@ -382,6 +382,25 @@ RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 	return NULL;
 }
 
+/**
+ * \brief Find the \p element in the \p vec
+ * \param vec the RzPVector to search in
+ * \param element the element to search for
+ * \param cmp the comparator function
+ * \return the iter of the element if found, NULL otherwise
+ */
+RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *element, RZ_NONNULL RzPVectorComparator cmp) {
+	rz_return_val_if_fail(vec, NULL);
+
+	void **iter;
+	rz_pvector_foreach (vec, iter) {
+		if (!cmp(*iter, element)) {
+			return iter;
+		}
+	}
+	return NULL;
+}
+
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
 	rz_return_val_if_fail(vec, NULL);
 	void *r = rz_pvector_at(vec, index);

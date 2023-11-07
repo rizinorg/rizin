@@ -1884,6 +1884,10 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 	return sections;
 }
 
+static int compare_strings(const void *a, const void *b) {
+	return strcmp((const char *)a, (const char *)b);
+}
+
 /**
  * \brief Returns a RzPVector<char*> containing the class libraries
  */
@@ -1926,7 +1930,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL 
 				// arg0 is name_index
 				tmp = java_class_constant_pool_stringify_at(bin, arg0);
 			}
-			if (tmp && !rz_pvector_contains(vec, tmp)) {
+			if (tmp && !rz_pvector_find(vec, tmp, compare_strings)) {
 				rz_pvector_push(vec, tmp);
 			} else {
 				free(tmp);
