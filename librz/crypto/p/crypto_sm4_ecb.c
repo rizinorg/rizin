@@ -71,89 +71,6 @@ static ut32 _ror32(ut32 n, ut32 c) {
 	return (n >> c) | (n << ((-c) & mask));
 }
 
-// static ut64 sm4_lt_algorithm(ut64 val) {
-// 	ut8 a1 = (ut8)val >> 24;
-// 	ut8 a2 = (ut8)val >> 16;
-// 	ut8 a3 = (ut8)val >> 8;
-// 	ut8 a4 = (ut8)val;
-// 	ut8 b1 = sm4_ecb_sbox(a1);
-// 	ut8 b2 = sm4_ecb_sbox(a2);
-// 	ut8 b3 = sm4_ecb_sbox(a3);
-// 	ut8 b4 = sm4_ecb_sbox(a4);
-// 	TODO
-// 	return 0;
-// }
-
-// static void sm4_ecb_crypt(sm4_state *state, const ut8 *input, ut64*output, int len) {
-// ut64 buff[36];
-// while (len) {
-// 	buff[0] = ((ut64)input[0] << 24) | ((ut64)input[1] << 16) | ((ut64)input[2] << 8) | ((ut64)input[3]);
-// 	buff[1] = ((ut64)input[8] << 24) | ((ut64)input[9] << 16) | ((ut64)input[10] << 8) | ((ut64)input[11]);
-// 	buff[2] = ((ut64)input[4] << 24) | ((ut64)input[5] << 16) | ((ut64)input[6] << 8) | ((ut64)input[7]);
-// 	buff[3] = ((ut64)input[12] << 24) | ((ut64)input[13] << 16) | ((ut64)input[14] << 8) | ((ut64)input[15]);
-
-// 	for (int i = 0; i < 32; i++) {
-// 		ut64 v1 = buff[1] ^ buff[2] ^ buff[3] ^ state->subkeys[i];
-// 		buff[i + 4] = buff[0] ^ sm4_lt_algorithm(v1);
-// 	}
-
-// 	int curr_idx = 35;
-
-// 	output[0] = buff[35]>>24;
-// 	output[1] = buff[35]>>16;
-// 	output[2] = buff[35]>>8;
-// 	output[3] = buff[35];
-
-// 	output[4] = buff[34]>>24;
-// 	output[5] = buff[34]>>16;
-// 	output[6] = buff[34]>>8;
-// 	output[7] = buff[34];
-
-// 	output[8] = buff[33]>>24;
-// 	output[9] = buff[33]>>16;
-// 	output[10] = buff[33]>>8;
-// 	output[11] = buff[33];
-
-// 	output[12] = buff[32]>>24;
-// 	output[13] = buff[32]>>16;
-// 	output[14] = buff[32]>>8;
-// 	output[15] = buff[32];
-
-// 	len -= 16;
-// 	input += 16;
-// 	output += 16;
-// }
-// }
-
-// #define PUT_ULONG_BE(n,b,i)                             \
-// {                                                       \
-//     (b)[(i)    ] = (unsigned char) ( (n) >> 24 );       \
-//     (b)[(i) + 1] = (unsigned char) ( (n) >> 16 );       \
-//     (b)[(i) + 2] = (unsigned char) ( (n) >>  8 );       \
-//     (b)[(i) + 3] = (unsigned char) ( (n)       );       \
-// }
-
-
-// static void sm4_ecb_setup_key(ut64 subkeys[32], const ut8 *key) {
-// 	ut64 MK[4];
-// 	ut64 K[36];
-
-// 	GET_UT64(MK[0], key, 0);
-// 	GET_UT64(MK[1], key, 4);
-// 	GET_UT64(MK[2], key, 8);
-// 	GET_UT64(MK[3], key, 12);
-
-// 	K[0] = MK[0] ^ 0xa3b1bac6;
-// 	K[1] = MK[1] ^ 0x56aa3350;
-// 	K[2] = MK[2] ^ 0x677d9197;
-// 	K[3] = MK[3] ^ 0xb27022dc;
-
-// 	for (int i = 0; i < 32; i++) {
-// 		ut64 xor_val = K[i + 1] ^ K[i + 2] ^ K[i + 3] ^ CK[i];
-// 		K[i + 4] = K[i] ^ sm4_ecb_get_round_key(xor_val);
-// 		subkeys[i] = K[i + 4];
-// 	}
-// }
 
 static ut32 buffer_to_ut32_be(const ut8* buf){
 	return buf[0]<<24 | buf[1]<<16 | buf[2]<<8 | buf[3];
@@ -171,17 +88,26 @@ static ut8* uint_to_bytes(ut32 val){
 	return buf;
 }
 
-static ut32 sm4_ecb_get_round_key(ut32 val) {
+static ut32 sm4_ecb_transform_internal(ut32 val){
 	ut8 buf[4];
 	ut32_to_buffer_be(val,buf);
 	for(int i=0;i<4;i++){
 		buf[i] = sbox[buf[i]];
 	}
-	ut32 x = buffer_to_ut32_be(buf);
+	return buffer_to_ut32_be(buf);
+}
+
+static ut32 sm4_ecb_get_round_key(ut32 val) {
+	ut32 x = sm4_ecb_transform_internal(val);
 	return x^_rol32(x,13)^_rol32(x,23);
 }
 
-static void sm4_setkey_enc(sm4_state *s, const ut8 *key) {
+static ut32 sm4_ecb_transform(ut32 val){
+	ut32 x = sm4_ecb_transform_internal(val);
+	return x^_rol32(x,2)^_rol32(x,10)^_rol32(x,18)^_rol32(x,24);
+}
+
+static void sm4_setkey_internal(sm4_state *s, const ut8 *key) {
 	ut32 mk[4];
 	ut32 rk[4];
 	ut32 i,temp;
@@ -203,13 +129,16 @@ static void sm4_setkey_enc(sm4_state *s, const ut8 *key) {
 	}
 }
 
-static void sm4_setkey_dec(sm4_state *s, const ut8 *key) {
-	// sm4_ecb_setup_key(s->round_keys, key);
-	// for (int i = 0; i < 16; i++) {
-	// 	ut64 temp = s->subkeys[i];
-	// 	s->subkeys[i] = s->subkeys[31 - i];
-	// 	s->subkeys[31 - i] = temp;
-	// }
+static void sm4_setkey_enc(sm4_state* s,const ut8* key){
+	sm4_setkey_internal(s,key);
+}
+static void sm4_setkey_dec(sm4_state*s, const ut8* key){
+	sm4_setkey_internal(s,key);
+	for(int i=0;i<16;i++){
+		ut32 temp = s->round_keys[i];
+		s->round_keys[i] = s->round_keys[31-i];
+		s->round_keys[31-i] = temp;
+	}
 }
 
 static bool sm4_ecb_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
@@ -234,11 +163,29 @@ static int sm4_ecb_get_key_size(RzCrypto *cry) {
 static bool sm4_use(const char *algo) {
 	return !strcmp(algo, "sm4-ecb");
 }
-static void sm4_ecb_encrypt(const ut32* round_key,ut32 length,const ut8* input,ut8* output){
-	// for(int i=0;i<32;i++){
-	// 	printf("%x ",round_key[i]);
-	// }
+
+static void sm4_round(const ut32* round_key,const ut8* input,ut8* output){
+	ut32 x[36],i;
+	for(i=0;i<4;i++){
+		x[i] = buffer_to_ut32_be(input+4*i);
+	}
+	for(i=0;i<32;i++){
+		x[i+4] = x[i]^sm4_ecb_transform(x[i+1]^x[i+2]^x[i+3]^round_key[i]);
+	}
+	ut32_to_buffer_be(x[35],output);
+	ut32_to_buffer_be(x[34],output+4);
+	ut32_to_buffer_be(x[33],output+8);
+	ut32_to_buffer_be(x[32],output+12);
 }
+static void sm4_ecb_encrypt(const ut32* round_key,int length,const ut8* input,ut8* output){
+	sm4_round(round_key,input,output);
+
+}
+
+static int get_next_available_len(int curr_len){
+	return ((curr_len + 15) / 16) * 16;
+}
+
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	rz_return_val_if_fail(cry, 0);
 	ut8 *output = (ut8 *)malloc(len);
@@ -246,10 +193,21 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	if (len < 1) {
 		return false;
 	}
-	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
-		sm4_ecb_encrypt(state->round_keys,len,buf,output);
-	} else {
+	if(len%16==0){
+		len += 16;
 	}
+	else{
+		len = get_next_available_len(len);
+	}
+	// printf("%d",len);
+	// if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
+	// 	sm4_ecb_encrypt(state->round_keys,len,buf,output);
+	// 	for(int i=0;i<16;i++){
+	// 		printf("%x ",output[i]);
+	// 	}
+	// } else {
+
+	// }
 	return true;
 }
 
