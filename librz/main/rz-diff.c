@@ -1280,11 +1280,11 @@ static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool com
 		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_pvector_sort(vec_a, (RzPVectorComparator)field_compare);
-	rz_pvector_sort(vec_b, (RzPVectorComparator)field_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)(compare_addr ? field_compare_addr : field_compare));
+	rz_pvector_sort(vec_b, (RzPVectorComparator)(compare_addr ? field_compare_addr : field_compare));
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? field_hash_addr : field_hash),
 		.compare = (RzDiffMethodCompare)(compare_addr ? field_compare_addr : field_compare),
 		.stringify = (RzDiffMethodStringify)(compare_addr ? field_stringify_addr : field_stringify),

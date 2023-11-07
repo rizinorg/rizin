@@ -11,7 +11,7 @@ RZ_IPI void rz_bin_set_and_process_fields(RzBinFile *bf, RzBinObject *o) {
 
 	rz_pvector_free(o->fields);
 	if (!plugin->fields || !(o->fields = plugin->fields(bf))) {
-		o->fields = rz_pvector_new((RzListFree)rz_bin_field_free);
+		o->fields = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 		return;
 	}
 
