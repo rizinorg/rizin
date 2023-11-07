@@ -459,10 +459,10 @@ RZ_API void rz_analysis_var_init(RZ_BORROW RzAnalysisVar *var) {
 RZ_API void rz_analysis_var_fini(RZ_OWN RzAnalysisVar *var) {
 	rz_return_if_fail(var);
 	rz_analysis_var_clear_accesses(var);
-	rz_type_free(var->type);
+	RZ_FREE_CUSTOM(var->type, rz_type_free);
 	rz_vector_fini(&var->constraints);
-	free(var->name);
-	free(var->comment);
+	RZ_FREE(var->name);
+	RZ_FREE(var->comment);
 	rz_analysis_var_storage_fini(&var->storage);
 }
 
