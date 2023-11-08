@@ -2166,13 +2166,14 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 RZ_API bool rz_core_bin_libs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
-	const RzList *libs = rz_bin_object_get_libs(bf->o);
-	RzListIter *iter;
+	const RzPVector *libs = rz_bin_object_get_libs(bf->o);
+	void **iter;
 	char *lib;
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "s", "library");
-	rz_list_foreach (libs, iter, lib) {
+	rz_pvector_foreach (libs, iter) {
+		lib = *iter;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_s(state->d.pj, lib);

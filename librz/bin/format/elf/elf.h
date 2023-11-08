@@ -277,7 +277,7 @@ bool Elf_(rz_bin_elf_has_imports)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_targets_map_base)(ELFOBJ *bin);
 
 // elf_info.c
-RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzPVector /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN Sdb *Elf_(rz_bin_elf_get_symbols_info)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin);

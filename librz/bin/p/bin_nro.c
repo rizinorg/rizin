@@ -286,7 +286,7 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return bin->imports_vec;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return NULL;
 }
 

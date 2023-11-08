@@ -232,13 +232,13 @@ static char *describe_xbe_lib_at(RzBuffer *b, ut64 off, ut64 filesz) {
 	return rz_str_newf("%s %i.%i.%i", name, lib.major, lib.minor, lib.build);
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
 	xbe_header *h = &obj->header;
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -253,7 +253,7 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 		if (!lib) {
 			break;
 		}
-		rz_list_push(ret, lib);
+		rz_pvector_push(ret, lib);
 	}
 
 	return ret;

@@ -870,11 +870,11 @@ static char *get_abi_mips(ELFOBJ *bin) {
 /**
  * \brief List all imported lib
  * \param elf binary
- * \return an allocated list of char*
+ * \return an allocated pvector of char*
  *
  * Use dynamic information (dt_needed) to generate a list of imported lib
  */
-RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzPVector /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !bin->dynstr) {
@@ -886,7 +886,7 @@ RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	RzList *result = rz_list_newf(free);
+	RzPVector *result = rz_pvector_new(free);
 	if (!result) {
 		return NULL;
 	}
@@ -895,12 +895,12 @@ RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_vector_foreach(dt_needed, iter) {
 		char *tmp = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, *iter);
 		if (!tmp) {
-			rz_list_free(result);
+			rz_pvector_free(result);
 			return NULL;
 		}
 
-		if (!rz_list_append(result, tmp)) {
-			rz_list_free(result);
+		if (!rz_pvector_push(result, tmp)) {
+			rz_pvector_free(result);
 			return NULL;
 		}
 	}

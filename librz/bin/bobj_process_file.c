@@ -41,9 +41,9 @@ RZ_IPI void rz_bin_set_and_process_file(RzBinFile *bf, RzBinObject *o) {
 		}
 	}
 
-	rz_list_free(o->libs);
+	rz_pvector_free(o->libs);
 	if (!plugin->libs || !(o->libs = plugin->libs(bf))) {
-		o->libs = rz_list_newf(free);
+		o->libs = rz_pvector_new(free);
 	}
 
 	rz_bin_info_free(o->info);

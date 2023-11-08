@@ -197,7 +197,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_list_free(o->entries);
 	rz_list_free(o->fields);
 	rz_pvector_free(o->imports);
-	rz_list_free(o->libs);
+	rz_pvector_free(o->libs);
 	rz_list_free(o->maps);
 	rz_pvector_free(o->mem);
 	rz_list_free(o->sections);
@@ -679,9 +679,9 @@ RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj) {
 }
 
 /**
- * \brief Get list of \p char* representing the libraries used by the binary object.
+ * \brief Get pvector of \p char* representing the libraries used by the binary object.
  */
-RZ_API const RzList /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->libs;
 }
@@ -804,7 +804,7 @@ RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj) {
  */
 RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, false);
-	if (obj->libs && rz_list_length(obj->libs) > 0) {
+	if (obj->libs && rz_pvector_len(obj->libs) > 0) {
 		return RZ_BIN_DBG_STATIC & obj->info->dbg_info;
 	}
 	return true;

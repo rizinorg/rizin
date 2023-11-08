@@ -104,7 +104,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return rz_bin_dex_symbols(dex);
 }
 
-static RzList /*<char *>*/ *libraries(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libraries(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;

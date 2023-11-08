@@ -490,22 +490,21 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	char *ptr = NULL;
 	int i;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
 		return ret;
 	}
 	for (i = 0; !libs[i].last; i++) {
 		ptr = strdup(libs[i].name);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	free(libs);
 	return ret;
