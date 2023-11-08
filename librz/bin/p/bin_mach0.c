@@ -420,20 +420,20 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	int i;
 	char *ptr = NULL;
 	struct lib_t *libs;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = rz_list_newf(free))) {
+	if (!obj || !obj->bin_obj || !(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if ((libs = MACH0_(get_libs)(obj->bin_obj))) {
 		for (i = 0; !libs[i].last; i++) {
 			ptr = strdup(libs[i].name);
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(libs);
 	}

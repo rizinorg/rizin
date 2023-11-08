@@ -121,20 +121,20 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 	char *ptr = NULL;
 	int i;
 	MiniDmpObj *obj;
 	struct rz_bin_pe_lib_t *libs = NULL;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzListIter *it;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 
@@ -148,7 +148,7 @@ static RzList /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 		}
 		for (i = 0; !libs[i].last; i++) {
 			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, libs[i].name);
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(libs);
 	}
@@ -158,7 +158,7 @@ static RzList /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 		}
 		for (i = 0; !libs[i].last; i++) {
 			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe64_bin->vaddr, libs[i].name);
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(libs);
 	}

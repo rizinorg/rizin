@@ -1056,16 +1056,21 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	}
 	if (rz_config_get_b(r->config, "bin.libs")) {
 		const char *lib;
-		RzListIter *iter;
-		RzList *libs = rz_bin_get_libs(r->bin);
-		rz_list_foreach (libs, iter, lib) {
-			if (file_is_loaded(r, lib)) {
-				continue;
-			}
-			RZ_LOG_INFO("Opening library %s\n", lib);
-			ut64 baddr = rz_io_map_location(r->io, 0x200000);
-			if (baddr != UT64_MAX) {
-				rz_core_file_loadlib(r, lib, baddr);
+		void **iter;
+
+		RzBinObject *o = rz_bin_cur_object(r->bin);
+		const RzPVector *libs = rz_bin_object_get_libs(o);
+		if (libs) {
+			rz_pvector_foreach (libs, iter) {
+				lib = *iter;
+				if (file_is_loaded(r, lib)) {
+					continue;
+				}
+				RZ_LOG_INFO("Opening library %s\n", lib);
+				ut64 baddr = rz_io_map_location(r->io, 0x200000);
+				if (baddr != UT64_MAX) {
+					rz_core_file_loadlib(r, lib, baddr);
+				}
 			}
 		}
 

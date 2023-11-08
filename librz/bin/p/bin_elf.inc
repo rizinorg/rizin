@@ -1702,7 +1702,7 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return result;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
 }

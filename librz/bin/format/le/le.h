@@ -108,7 +108,7 @@ RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf);
 RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf);
 RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(RzBinFile *bf);
 RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_le_get_imports(RzBinFile *bf);
-RZ_OWN RzList /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf);
+RZ_OWN RzPVector /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf);
 RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf);
 RZ_OWN RzList /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile *bf);
 

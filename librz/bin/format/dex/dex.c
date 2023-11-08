@@ -1503,20 +1503,20 @@ static int compare_strings(const void *a, const void *b) {
 }
 
 /**
- * \brief Returns a RzList<char*> containing the dex libraries
+ * \brief Returns a RzPVector<char*> containing the dex libraries
  */
-RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexMethodId *method_id;
 	DexClassDef *class_def;
-	RzList *libraries = NULL;
+	RzPVector *libraries = NULL;
 	ut32 *class_ids = NULL;
 	void **vit;
 
 	ut32 n_classes = rz_pvector_len(dex->class_defs);
 	if (n_classes < 1) {
-		return rz_list_newf((RzListFree)free);
+		return rz_pvector_new((RzPVectorFree)free);
 	}
 
 	class_ids = RZ_NEWS0(ut32, n_classes);
@@ -1531,7 +1531,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex
 		j++;
 	}
 
-	libraries = rz_list_newf((RzListFree)free);
+	libraries = rz_pvector_new((RzPVectorFree)free);
 	if (!libraries) {
 		free(class_ids);
 		return NULL;
@@ -1564,12 +1564,12 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex
 			object = p;
 		}
 
-		if (rz_list_find(libraries, object, compare_strings)) {
+		if (rz_pvector_find(libraries, object, compare_strings)) {
 			free(object);
 			continue;
 		}
 
-		if (!rz_list_append(libraries, object)) {
+		if (!rz_pvector_push(libraries, object)) {
 			free(object);
 			break;
 		}
