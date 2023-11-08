@@ -3325,14 +3325,14 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	free(mh);
 }
 
-RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
+RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 	RzBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size(buf);
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
 	if (!mh) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	if (!ret) {
 		free(mh);
 		return NULL;
@@ -3340,7 +3340,7 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 	ut64 addr = pa2va(bf, 0);
 	ut64 paddr = 0;
 
-	rz_list_append(ret, rz_bin_field_new(addr, addr, 1, "header", "mach0_header", "mach0_header", true));
+	rz_pvector_push(ret, rz_bin_field_new(addr, addr, 1, "header", "mach0_header", "mach0_header", true));
 	addr += 0x20 - 4;
 	paddr += 0x20 - 4;
 	bool is64 = mh->cputype >> 16;
@@ -3381,7 +3381,7 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 		}
 		const char *pf_definition = cmd_to_pf_definition(lcType);
 		if (pf_definition) {
-			rz_list_append(ret, rz_bin_field_new(addr, addr, 1, sdb_fmt("load_command_%d_%s", n, cmd_to_string(lcType)), pf_definition, pf_definition, true));
+			rz_pvector_push(ret, rz_bin_field_new(addr, addr, 1, sdb_fmt("load_command_%d_%s", n, cmd_to_string(lcType)), pf_definition, pf_definition, true));
 		}
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
@@ -3392,7 +3392,7 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 			ut64 off = 24;
 			int j = 0;
 			while (off < lcSize && ntools--) {
-				rz_list_append(ret, rz_bin_field_new(addr + off, addr + off, 1, sdb_fmt("tool_%d", j++), "mach0_build_version_tool", "mach0_build_version_tool", true));
+				rz_pvector_push(ret, rz_bin_field_new(addr + off, addr + off, 1, sdb_fmt("tool_%d", j++), "mach0_build_version_tool", "mach0_build_version_tool", true));
 				off += 8;
 			}
 			break;
@@ -3409,7 +3409,7 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 				const char *sname = is64 ? "mach0_section64" : "mach0_section";
 				RzBinField *f = rz_bin_field_new(addr + off, addr + off, 1,
 					sdb_fmt("section_%zu", j++), sname, sname, true);
-				rz_list_append(ret, f);
+				rz_pvector_push(ret, f);
 				off += is64 ? 80 : 68;
 			}
 			break;

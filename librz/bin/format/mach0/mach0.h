@@ -262,7 +262,7 @@ const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) * hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr);
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf);
 void MACH0_(mach_headerfields)(RzBinFile *bf);
-RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf);
+RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf);
 RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, bool filter);
 RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);
 RZ_API ut64 MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * bin, ut64 addr);

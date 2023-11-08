@@ -493,7 +493,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	return NULL;
 }
 

@@ -84,11 +84,11 @@ static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
-	RzList *fields = rz_list_newf((RzListFree)rz_bin_field_free);
+static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+	RzPVector *fields = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 #define FIELD_COMMENT(header, field, comment) \
-	rz_list_append(fields, rz_bin_field_new(rz_offsetof(header, field), rz_offsetof(header, field), sizeof(((header *)0)->field), #field, comment, sizeof(((header *)0)->field) == 4 ? "x" : "q", false));
+	rz_pvector_push(fields, rz_bin_field_new(rz_offsetof(header, field), rz_offsetof(header, field), sizeof(((header *)0)->field), #field, comment, sizeof(((header *)0)->field) == 4 ? "x" : "q", false));
 #define FIELD(header, field) FIELD_COMMENT(header, field, NULL)
 
 	FIELD(dmp64_header, MajorVersion);

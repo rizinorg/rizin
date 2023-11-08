@@ -9,15 +9,16 @@
 RZ_IPI void rz_bin_set_and_process_fields(RzBinFile *bf, RzBinObject *o) {
 	RzBinPlugin *plugin = o->plugin;
 
-	rz_list_free(o->fields);
+	rz_pvector_free(o->fields);
 	if (!plugin->fields || !(o->fields = plugin->fields(bf))) {
-		o->fields = rz_list_newf((RzListFree)rz_bin_field_free);
+		o->fields = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 		return;
 	}
 
-	RzListIter *it;
+	void **it;
 	RzBinField *element;
-	rz_list_foreach (o->fields, it, element) {
+	rz_pvector_foreach (o->fields, it) {
+		element = *it;
 		// rebase physical address
 		element->paddr += o->opts.loadaddr;
 	}

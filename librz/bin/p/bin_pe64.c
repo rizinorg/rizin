@@ -62,14 +62,14 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
+static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
 
 #define ROWL(nam, siz, val, fmt) \
-	rz_list_append(ret, rz_bin_field_new(addr, addr, siz, nam, sdb_fmt("0x%08" PFMT64x, (ut64)val), fmt, false));
+	rz_pvector_push(ret, rz_bin_field_new(addr, addr, siz, nam, sdb_fmt("0x%08" PFMT64x, (ut64)val), fmt, false));
 
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	ut64 addr = bin->rich_header_offset ? bin->rich_header_offset : 128;
@@ -77,7 +77,7 @@ static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzListIter *it;
 	Pe_image_rich_entry *rich;
 	rz_list_foreach (bin->rich_entries, it, rich) {
-		rz_list_append(ret, rz_bin_field_new(addr, addr, 0, "RICH_ENTRY_NAME", strdup(rich->productName), "s", false));
+		rz_pvector_push(ret, rz_bin_field_new(addr, addr, 0, "RICH_ENTRY_NAME", strdup(rich->productName), "s", false));
 		ROWL("RICH_ENTRY_ID", 2, rich->productId, "x");
 		addr += 2;
 		ROWL("RICH_ENTRY_VERSION", 2, rich->minVersion, "x");

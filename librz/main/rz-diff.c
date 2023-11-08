@@ -1267,31 +1267,31 @@ static void field_stringify(const RzBinField *elem, RzStrBuf *sb) {
 }
 
 static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, fields);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, fields);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, fields);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, fields);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)field_compare);
-	rz_list_sort(list_b, (RzListComparator)field_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)(compare_addr ? field_compare_addr : field_compare));
+	rz_pvector_sort(vec_b, (RzPVectorComparator)(compare_addr ? field_compare_addr : field_compare));
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? field_hash_addr : field_hash),
 		.compare = (RzDiffMethodCompare)(compare_addr ? field_compare_addr : field_compare),
 		.stringify = (RzDiffMethodStringify)(compare_addr ? field_stringify_addr : field_stringify),
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** commands ***************************************/
