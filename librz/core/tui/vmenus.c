@@ -306,7 +306,7 @@ static const char *help_fun_visual[] = {
 	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(:)", "shell ", "(v)", "vars\n",
 	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", "help\n",
 	"(f/F)", "set/reset filter ", "(s)", "function signature ", "(q)", "quit\n",
-	"(=)", "show/hide legend ", "(←/→)", "short/full function name\n\n",
+	"(=)", "show/hide legend ", "(h/l)", "short/full function name\n\n",
 	NULL
 };
 
