@@ -1175,7 +1175,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						};
 						if (op.ireg) {
 							rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
-						} else { // op.reg
+						} else if (RZ_STR_EQ(analysis->arch_target->arch, "arm")) {
 							rz_analysis_walkthrough_arm_jmptbl_style(analysis, fcn, bb, &params);
 						}
 						// check if op.jump and op.fail contain jump table location
