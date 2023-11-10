@@ -55,10 +55,10 @@ inline static const char *ARMCondCodeToString(arm_cc cc) {
 #endif
 
 typedef struct arm_cs_context_t {
-	RzArmITContext it;
-	csh handle;
-	int omode;
-	int obits;
+	RzArmITContext it; ///< Save IT values between instruction disassembly.
+	csh handle; ///< The Capstone handle used.
+	int omode; ///< Capstone mode flags.
+	int obits; ///< Architecture bits.
 } ArmCSContext;
 
 static const char *shift_type_name(arm_shifter type) {
@@ -1210,13 +1210,16 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != CS_ARMCC(AL)) {
-				// op->type = RZ_ANALYSIS_OP_TYPE_RCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
-				op->jump = ((addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1)) & UT64_MAX;
-				op->ptr = (addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1);
 				op->refptr = 4;
-				op->reg = rz_str_get_null(cs_reg_name(handle, INSOP(2).reg));
+				op->reg = rz_str_get_null(cs_reg_name(handle, INSOP(0).reg));
+				// add pc, pc, <offset|ireg> is considered a jump table start.
+				// op->ptr points to the start of the table.
+				op->ptr = (addr & ~3LL) + (thumb ? 4 : 8);
+				if (ISIMM(2)) {
+					op->jump = ((addr & ~3LL) + (thumb ? 4 : 8) + INSOP(2).imm) & UT64_MAX;
+				}
 				break;
 			}
 		}
