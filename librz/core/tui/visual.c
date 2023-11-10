@@ -1281,9 +1281,9 @@ repeat:
 				rz_cons_newline();
 			}
 			/* prepare highlight */
-			char *cmd = strdup(rz_cons_singleton()->highlight);
+			char *cmd = rz_str_new(rz_cons_singleton()->highlight);
 			char *ats = rz_str_newf("%" PFMT64x, curat);
-			if (ats && !*cmd) {
+			if (ats && RZ_STR_ISEMPTY(cmd)) {
 				rz_cons_highlight(ats);
 			}
 			/* print disasm */
