@@ -674,32 +674,26 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
 }
 
 /**
- * \brief Find the last binary symbol at offset \p off.
+ * \brief Find the binary symbol at offset \p off.
  *
- * This function returns the last binary symbol that contains offset \p off,
- * assuming that symbols are sorted by priority, and the last one is the most
- * important one.
+ * This function returns the binary symbol that contains offset \p off.
+ * It uses a hashtable for efficient lookup of symbols.
  *
  * \param o Reference to the \p RzBinObject instance
  * \param off Address to search
  * \param va When false, the offset \p off is considered a physical address; otherwise, a virtual address
- * \return Pointer to a \p RzBinSymbol containing the address
+ * \return Pointer to a \p RzBinSymbol containing the address, or NULL if no symbol is found at the address
  */
 
-RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va){
-	rz_return_val_if_fail(o, NULL);
-
-	RzBinSymbol *sym;
-	RzListIter *iter;
-	ut64 from, to;
-
-	rz_list_foreach (o->symbols, iter, sym) {
-		from = va ? rz_bin_object_addr_with_base(o, sym->vaddr) : sym->paddr;
-		to = from + (va ? sym->size : sym->size);
-		if (off >= from && off < to) {
-			return sym;
-		}
-	}
+RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va) {
+    rz_return_val_if_fail(o, NULL);
+    if (!o->symbols) {
+        return NULL;
+    }
+    if (va) {
+        return ht_up_find(o->symbols->virt, off, NULL);
+    }
+    return ht_up_find(o->symbols->phys, off, NULL);
 }
 
 /**
@@ -786,7 +780,17 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->ids = rz_id_storage_new(0, ST32_MAX);
 
 	/* bin parsers */
-	bin->binfiles = rz_list_newf((RzListFree)rz_bin_file_free);
+	bin->binfiles = rz_list_newf((RzListFreRZ_API RZ_BORROW RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va) {
+	rz_return_val_if_fail(obj, false);
+	if (!obj->strings) {
+		return NULL;
+	}
+	if (is_va) {
+		return ht_up_find(obj->strings->virt, address, NULL);
+	}
+	return ht_up_find(obj->strings->phys, address, NULL);
+}
+e)rz_bin_file_free);
 	bin->plugins = rz_list_new_from_array((const void **)bin_static_plugins, RZ_ARRAY_SIZE(bin_static_plugins));
 	/* extractors */
 	bin->binxtrs = rz_list_new_from_array((const void **)bin_xtr_static_plugins, RZ_ARRAY_SIZE(bin_xtr_static_plugins));
