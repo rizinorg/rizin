@@ -10,8 +10,6 @@
 #include <rz_io.h>
 #include <config.h>
 #include "i/private.h"
-#include "rz_list.h"
-#include "rz_types.h"
 
 RZ_LIB_VERSION(rz_bin);
 
@@ -686,7 +684,7 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
  * \param va When false, the offset \p off is considered a physical address; otherwise, a virtual address
  * \return Pointer to a \p RzBinSymbol containing the address, or NULL if no symbol is found at the address
  */
-RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULLL RzBinObject *o, ut64 off, bool va) {
+RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va) {
 	rz_return_val_if_fail(o, NULL);
 
 	RzBinSymbol *sym;
