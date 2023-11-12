@@ -780,17 +780,6 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->ids = rz_id_storage_new(0, ST32_MAX);
 
 	/* bin parsers */
-	bin->binfiles = rz_list_newf((RzListFreRZ_API RZ_BORROW RzBinString *rz_bin_object_get_string_at(RZ_NONNULL RzBinObject *obj, ut64 address, bool is_va) {
-	rz_return_val_if_fail(obj, false);
-	if (!obj->strings) {
-		return NULL;
-	}
-	if (is_va) {
-		return ht_up_find(obj->strings->virt, address, NULL);
-	}
-	return ht_up_find(obj->strings->phys, address, NULL);
-}
-e)rz_bin_file_free);
 	bin->plugins = rz_list_new_from_array((const void **)bin_static_plugins, RZ_ARRAY_SIZE(bin_static_plugins));
 	/* extractors */
 	bin->binxtrs = rz_list_new_from_array((const void **)bin_xtr_static_plugins, RZ_ARRAY_SIZE(bin_xtr_static_plugins));
