@@ -674,6 +674,35 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
 }
 
 /**
+ * \brief Find the last binary symbol at offset \p off.
+ *
+ * This function returns the last binary symbol that contains offset \p off,
+ * assuming that symbols are sorted by priority, and the last one is the most
+ * important one.
+ *
+ * \param o Reference to the \p RzBinObject instance
+ * \param off Address to search
+ * \param va When false, the offset \p off is considered a physical address; otherwise, a virtual address
+ * \return Pointer to a \p RzBinSymbol containing the address
+ */
+
+RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va){
+	rz_return_val_if_fail(o, NULL);
+
+	RzBinSymbol *sym;
+	RzListIter *iter;
+	ut64 from, to;
+
+	rz_list_foreach (o->symbols, iter, sym) {
+		from = va ? rz_bin_object_addr_with_base(o, sym->vaddr) : sym->paddr;
+		to = from + (va ? sym->size : sym->size);
+		if (off >= from && off < to) {
+			return sym;
+		}
+	}
+}
+
+/**
  * \brief Find all binary maps at offset \p off .
  *
  * \param o Reference to the \p RzBinObject instance
