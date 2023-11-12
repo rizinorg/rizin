@@ -10,6 +10,8 @@
 #include <rz_io.h>
 #include <config.h>
 #include "i/private.h"
+#include "rz_list.h"
+#include "rz_types.h"
 
 RZ_LIB_VERSION(rz_bin);
 
@@ -677,23 +679,27 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
  * \brief Find the binary symbol at offset \p off.
  *
  * This function returns the binary symbol that contains offset \p off.
- * It uses a hashtable for efficient lookup of symbols.
+ * It iterates over the list of symbols and directly compares the offset with the virtual or physical address.
  *
  * \param o Reference to the \p RzBinObject instance
  * \param off Address to search
  * \param va When false, the offset \p off is considered a physical address; otherwise, a virtual address
  * \return Pointer to a \p RzBinSymbol containing the address, or NULL if no symbol is found at the address
  */
+RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULLL RzBinObject *o, ut64 off, bool va) {
+	rz_return_val_if_fail(o, NULL);
 
-RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va) {
-    rz_return_val_if_fail(o, NULL);
-    if (!o->symbols) {
-        return NULL;
-    }
-    if (va) {
-        return ht_up_find(o->symbols->virt, off, NULL);
-    }
-    return ht_up_find(o->symbols->phys, off, NULL);
+	RzBinSymbol *sym;
+	RzListIter *iter;
+
+	rz_list_foreach (o->symbols, iter, sym) {
+		if (va && off == sym->vaddr) {
+			return sym;
+		} else if (!va && off == sym->paddr) {
+			return sym;
+		}
+	}
+	return NULL;
 }
 
 /**
@@ -780,6 +786,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->ids = rz_id_storage_new(0, ST32_MAX);
 
 	/* bin parsers */
+	bin->binfiles = rz_list_newf((RzListFree)rz_bin_file_free);
 	bin->plugins = rz_list_new_from_array((const void **)bin_static_plugins, RZ_ARRAY_SIZE(bin_static_plugins));
 	/* extractors */
 	bin->binxtrs = rz_list_new_from_array((const void **)bin_xtr_static_plugins, RZ_ARRAY_SIZE(bin_xtr_static_plugins));
