@@ -2977,6 +2977,13 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 				rz_strbuf_append(buf, "?");
 			} else if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_ENUM) {
 				rz_strbuf_append(buf, "E");
+			} else {
+				RzBaseType *btyp = rz_type_get_base_type(typedb, type);
+				if (btyp) {
+					RzStrBuf *fields = rz_strbuf_new("");
+					base_type_to_format_no_unfold(typedb, btyp, type->identifier.name, buf, fields);
+					rz_strbuf_free(fields);
+				}
 			}
 		}
 	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
