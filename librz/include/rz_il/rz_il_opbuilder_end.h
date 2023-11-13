@@ -56,6 +56,10 @@
 #undef FMAD
 #undef FNEQ
 #undef FEQ
+#undef FLT
+#undef FLE
+#undef FGE
+#undef FGT
 
 #undef IL_FALSE
 #undef IL_TRUE

@@ -98,8 +98,12 @@
 #define AND(x, y) rz_il_op_new_bool_and(x, y)
 #define OR(x, y)  rz_il_op_new_bool_or(x, y)
 
-#define FNEQ(flx, fly) OR(FORDER(flx, fly), FORDER(DUP(fly), DUP(flx)))
-#define FEQ(flx, fly)  INV(FNEQ(flx, fly))
+#define FNEQ(flx, fly) OR(OR(IS_FNAN(flx), IS_FNAN(fly)), OR(FORDER(DUP(flx), DUP(fly)), FORDER(DUP(fly), DUP(flx))))
+#define FEQ(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), INV(FNEQ(DUP(flx), DUP(fly))))
+#define FLT(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), FORDER(DUP(flx), DUP(fly)))
+#define FLE(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), OR(FLT(DUP(flx), DUP(fly)), FEQ(DUP(flx), DUP(fly))))
+#define FGT(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), INV(FLE(DUP(flx), DUP(fly))))
+#define FGE(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), INV(FLT(DUP(flx), DUP(fly))))
 
 #define UNSIGNED(n, x)    rz_il_op_new_unsigned(n, x)
 #define SIGNED(n, x)      rz_il_op_new_signed(n, x)
