@@ -133,4 +133,15 @@
 #undef JMP
 #undef GOTO
 
+#undef NOT_IMPLEMENTED
+
+#undef EXTRACT32
+#undef EXTRACT64
+#undef SEXTRACT64
+#undef DEPOSIT32
+#undef DEPOSIT64
+#undef BSWAP16
+#undef BSWAP32
+#undef BSWAP64
+
 #undef RZ_IL_OPBUILDER_BEGIN_H
