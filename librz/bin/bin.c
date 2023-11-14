@@ -676,9 +676,6 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
 /**
  * \brief Find the binary symbol at offset \p off.
  *
- * This function returns the binary symbol that contains offset \p off.
- * It iterates over the list of symbols and directly compares the offset with the virtual or physical address.
- *
  * \param o Reference to the \p RzBinObject instance
  * \param off Address to search
  * \param va When false, the offset \p off is considered a physical address; otherwise, a virtual address
@@ -690,11 +687,17 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject
 	RzBinSymbol *sym;
 	RzListIter *iter;
 
-	rz_list_foreach (o->symbols, iter, sym) {
-		if (va && off == sym->vaddr) {
-			return sym;
-		} else if (!va && off == sym->paddr) {
-			return sym;
+	if (va) {
+		rz_list_foreach (o->symbols, iter, sym) {
+			if (off == sym->vaddr) {
+				return sym;
+			}
+		}
+	} else {
+		rz_list_foreach (o->symbols, iter, sym) {
+			if (off == sym->paddr) {
+				return sym;
+			}
 		}
 	}
 	return NULL;
