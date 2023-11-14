@@ -495,10 +495,17 @@ CMDS=<<EOF
 td "struct test_struct{int x;int y;};"
 ts test_struct
 tsd test_struct
+td "typedef uint16_t word;"
+td "typedef uint32_t dword;"
+td "struct test_struct2{word a; word b[5]; word c; word d[10]; dword e;};"
+ts test_struct2
+tsd test_struct2
 EOF
 EXPECT=<<EOF
 pf dd x y
 struct test_struct { int x; int y; };
+pf w[5]ww[10]wd a (word)b c (word)d e
+struct test_struct2 { word a; word b[5]; word c; word d[10]; dword e; };
 EOF
 RUN
 
