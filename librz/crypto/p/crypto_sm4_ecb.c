@@ -53,74 +53,45 @@ static const ut32 FK[4] = {
 	0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc
 };
 
-static ut8 sm4_ecb_sbox(unsigned char val) {
-	unsigned char *p_table = (unsigned char *)sbox;
-	unsigned char ret_val = (unsigned char)(p_table[val]);
-	return ret_val;
-}
-
 static ut32 _rol32(ut32 n, ut32 c) {
 	const unsigned int mask = (CHAR_BIT * sizeof(n) - 1);
 	c &= mask;
 	return (n << c) | (n >> ((-c) & mask));
 }
 
-static ut32 _ror32(ut32 n, ut32 c) {
-	const unsigned int mask = (CHAR_BIT * sizeof(n) - 1);
-	c &= mask;
-	return (n >> c) | (n << ((-c) & mask));
-}
-
-
-static ut32 buffer_to_ut32_be(const ut8* buf){
-	return buf[0]<<24 | buf[1]<<16 | buf[2]<<8 | buf[3];
-}
-
-static void ut32_to_buffer_be(const ut32 num, ut8* buffer){
-	buffer[0] = (ut8)(num>>24);
-	buffer[1] = (ut8)(num>>16);
-	buffer[2] = (ut8)(num>>8);
-	buffer[3] = (ut8)(num);
-}
-
-static ut8* uint_to_bytes(ut32 val){
-	ut8* buf = (ut8*)&val;
-	return buf;
-}
-
-static ut32 sm4_ecb_transform_internal(ut32 val){
+static ut32 sm4_ecb_transform_internal(ut32 val) {
 	ut8 buf[4];
-	ut32_to_buffer_be(val,buf);
-	for(int i=0;i<4;i++){
+	rz_write_at_be32(buf, val, 0);
+	for (int i = 0; i < 4; i++) {
 		buf[i] = sbox[buf[i]];
 	}
-	return buffer_to_ut32_be(buf);
+	return rz_read_be32(buf);
 }
 
 static ut32 sm4_ecb_get_round_key(ut32 val) {
 	ut32 x = sm4_ecb_transform_internal(val);
-	return x^_rol32(x,13)^_rol32(x,23);
+	return x ^ _rol32(x, 13) ^ _rol32(x, 23);
 }
 
-static ut32 sm4_ecb_transform(ut32 val){
+static ut32 sm4_ecb_transform(ut32 val) {
 	ut32 x = sm4_ecb_transform_internal(val);
-	return x^_rol32(x,2)^_rol32(x,10)^_rol32(x,18)^_rol32(x,24);
+	return x ^ _rol32(x, 2) ^ _rol32(x, 10) ^ _rol32(x, 18) ^ _rol32(x, 24);
 }
 
 static void sm4_setkey_internal(sm4_state *s, const ut8 *key) {
 	ut32 mk[4];
 	ut32 rk[4];
-	ut32 i,temp;
+	ut32 i, temp;
 
-	for(i=0;i<4;i++){
-		mk[i] = buffer_to_ut32_be(key+4*i);
+	for (i = 0; i < 4; i++) {
+		mk[i] = rz_read_be32(key + 4 * i);
 	}
-	for(i=0;i<4;i++){
-		rk[i] = mk[i]^FK[i];
+	for (i = 0; i < 4; i++) {
+		rk[i] = mk[i] ^ FK[i];
 	}
-	
-	for(i=0;i<32;i++){
-		temp = rk[0]^sm4_ecb_get_round_key(rk[1]^rk[2]^rk[3]^CK[i]);
+
+	for (i = 0; i < 32; i++) {
+		temp = rk[0] ^ sm4_ecb_get_round_key(rk[1] ^ rk[2] ^ rk[3] ^ CK[i]);
 		s->round_keys[i] = temp;
 		rk[0] = rk[1];
 		rk[1] = rk[2];
@@ -129,22 +100,22 @@ static void sm4_setkey_internal(sm4_state *s, const ut8 *key) {
 	}
 }
 
-static void sm4_setkey_enc(sm4_state* s,const ut8* key){
-	sm4_setkey_internal(s,key);
+static void sm4_setkey_enc(sm4_state *s, const ut8 *key) {
+	sm4_setkey_internal(s, key);
 }
-static void sm4_setkey_dec(sm4_state*s, const ut8* key){
-	sm4_setkey_internal(s,key);
-	for(int i=0;i<16;i++){
+static void sm4_setkey_dec(sm4_state *s, const ut8 *key) {
+	sm4_setkey_internal(s, key);
+	for (int i = 0; i < 16; i++) {
 		ut32 temp = s->round_keys[i];
-		s->round_keys[i] = s->round_keys[31-i];
-		s->round_keys[31-i] = temp;
+		s->round_keys[i] = s->round_keys[31 - i];
+		s->round_keys[31 - i] = temp;
 	}
 }
 
 static bool sm4_ecb_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	rz_return_val_if_fail(cry->user && key, false);
 	sm4_state *s = (sm4_state *)cry->user;
-
+	cry->dir = direction;
 	if (keylen != SM4_KEY_SIZE) {
 		return false;
 	}
@@ -164,57 +135,60 @@ static bool sm4_use(const char *algo) {
 	return !strcmp(algo, "sm4-ecb");
 }
 
-static void sm4_round(const ut32* round_key,const ut8* input,ut8* output){
-	ut32 x[36],i;
-	for(i=0;i<4;i++){
-		x[i] = buffer_to_ut32_be(input+4*i);
+static void sm4_round(const ut32 *round_key, const ut8 *input, ut8 *output) {
+	ut32 x[36], i;
+	for (i = 0; i < 4; i++) {
+		x[i] = rz_read_be32(input + 4 * i);
 	}
-	for(i=0;i<32;i++){
-		x[i+4] = x[i]^sm4_ecb_transform(x[i+1]^x[i+2]^x[i+3]^round_key[i]);
+	for (i = 0; i < 32; i++) {
+		x[i + 4] = x[i] ^ sm4_ecb_transform(x[i + 1] ^ x[i + 2] ^ x[i + 3] ^ round_key[i]);
 	}
-	ut32_to_buffer_be(x[35],output);
-	ut32_to_buffer_be(x[34],output+4);
-	ut32_to_buffer_be(x[33],output+8);
-	ut32_to_buffer_be(x[32],output+12);
-}
-static void sm4_ecb_encrypt(const ut32* round_key,int length,const ut8* input,ut8* output){
-	sm4_round(round_key,input,output);
 
+	rz_write_at_be32(output, x[35], 0);
+	rz_write_at_be32(output, x[34], 4);
+	rz_write_at_be32(output, x[33], 8);
+	rz_write_at_be32(output, x[32], 12);
+}
+static void sm4_ecb_encrypt(const ut32 *round_key, int length, const ut8 *input, ut8 *output) {
+	int times = length / 16;
+	for (int i = 0; i < times; i++) {
+		sm4_round(round_key, input, output);
+		input += 16;
+		output += 16;
+	}
 }
 
-static int get_next_available_len(int curr_len){
+static int get_next_available_len(int curr_len) {
 	return ((curr_len + 15) / 16) * 16;
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	rz_return_val_if_fail(cry, 0);
-	ut8 *output = (ut8 *)malloc(len);
-	sm4_state* state = (sm4_state*)cry->user;
+	sm4_state *state = (sm4_state *)cry->user;
+	int old_len = len;
 	if (len < 1) {
 		return false;
 	}
-	if(len%16==0){
+	if (len % 16 == 0) {
 		len += 16;
-	}
-	else{
+	} else {
 		len = get_next_available_len(len);
 	}
-	// printf("%d",len);
-	// if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
-	// 	sm4_ecb_encrypt(state->round_keys,len,buf,output);
-	// 	for(int i=0;i<16;i++){
-	// 		printf("%x ",output[i]);
-	// 	}
-	// } else {
+	ut8 *output = (ut8 *)calloc(1, len);
+	ut8 *padded_input = (ut8 *)calloc(1, len);
+	state->original_len = old_len;
 
-	// }
+	memcpy(padded_input, buf, old_len);
+
+	sm4_ecb_encrypt(state->round_keys, len, padded_input, output);
+	rz_crypto_append(cry, output, len);
+
 	return true;
 }
 
 static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
-
 
 static bool sm4_ecb_init(RzCrypto *cry) {
 	rz_return_val_if_fail(cry, false);

@@ -294,6 +294,7 @@ _D____ ror            LGPL-3     pancake
 ED____ rot            LGPL-3     pancake
 ED____ serpent-ecb    LGPL-3     NicsTr
 ED____ xor            LGPL-3     pancake
+ED____ sm4-ecb        LGPL-3     0xSh4dy
 
 flags legenda:
     E = encryption, D = decryption

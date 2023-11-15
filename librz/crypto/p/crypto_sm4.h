@@ -9,14 +9,8 @@
 #define SM4_DECRYPT  2
 #define SM4_KEY_SIZE 16
 
-#ifndef GET_UT64
-#define GET_UT64(n, b, i) \
-	{ \
-		(n) = ((unsigned int)(b)[(i)] << 24) | ((unsigned int)(b)[(i) + 1] << 16) | ((unsigned int)(b)[(i) + 2] << 8) | ((unsigned int)(b)[(i) + 3]); \
-	}
-#endif
-
 typedef struct {
+	int original_len;
 	uint32_t round_keys[32];
-}sm4_state;
+} sm4_state;
 #endif
