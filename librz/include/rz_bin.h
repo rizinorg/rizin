@@ -999,6 +999,7 @@ RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSp
 RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImport *imp);
 RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const char *name);
+RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va);
 
 // class
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_find_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name);
