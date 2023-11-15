@@ -353,7 +353,7 @@ static const ut8 objc_stubs_mask_arm64[] = {
 	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
 	0xff, 0x03, 0xc0, 0xff, // ldr   x1, [x1, <selector string ptr offset>]
 	0x1f, 0x00, 0x00, 0x9f, // adrp  x16, <reloc base>
-	0xff, 0x0f, 0xe0, 0xff, // ldr   x16, [x16, <reloc offset>]
+	0xff, 0x03, 0xc0, 0xff, // ldr   x16, [x16, <reloc offset>]
 	0xff, 0xff, 0xff, 0xff, // br    x16
 	0xff, 0xff, 0xff, 0xff, // brk   1
 	0xff, 0xff, 0xff, 0xff, // brk   1
@@ -386,7 +386,7 @@ static const ut8 objc_stubs_mask_arm64_32[] = {
 	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
 	0xff, 0x03, 0xc0, 0xff, // ldr   w1, [x1, <selector string ptr offset>]
 	0x1f, 0x00, 0x00, 0x9f, // adrp  x16, <reloc base>
-	0xff, 0x0f, 0xe0, 0xff, // ldr   w16, [x16, <reloc offset>]
+	0xff, 0x03, 0xc0, 0xff, // ldr   w16, [x16, <reloc offset>]
 	0xff, 0xff, 0xff, 0xff, // br    x16
 	0xff, 0xff, 0xff, 0xff, // brk   1
 	0xff, 0xff, 0xff, 0xff, // brk   1
@@ -575,6 +575,7 @@ static void analyze_objc_stubs(RzCore *core, ut64 start, ut64 size) {
 			break;
 		}
 		if (!stride) {
+			RZ_LOG_ERROR("Failed to match any known pattern against __objc_stubs contents\n");
 			// no pattern matched, cancel the entire search because the section is not in a known format.
 			break;
 		}
