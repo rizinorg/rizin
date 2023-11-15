@@ -515,6 +515,8 @@ static const char *map_dwarf_reg_to_arm64(ut32 reg_num) {
 	}
 }
 
+#include "hexagon_dwarf_reg_num_table.inc"
+
 static const char *map_dwarf_register_dummy(ut32 reg_num) {
 	static char buf[32];
 	return rz_strf(buf, "reg%u", reg_num);
@@ -543,6 +545,8 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch,
 		} else if (bits <= 32) {
 			return map_dwarf_reg_to_arm32;
 		}
+	} else if (RZ_STR_EQ(arch, "hexagon")) {
+		return map_dwarf_reg_to_hexagon_reg;
 	}
 	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
 	return map_dwarf_register_dummy;
