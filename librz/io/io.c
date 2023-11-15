@@ -353,11 +353,24 @@ RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
+/**
+ * \brief Writes \p len bytes of data from \p buf to \p addr into the given \p io.
+ *
+ * \param io The IO object to write to.
+ * \param addr The address the data is written.
+ * \param buf The buffer to read the data for writing.
+ * \param len The number of bytes to write.
+ * \return true The write was successful.
+ * \return false The write as unsucessful or \p len was less then 1.
+ */
 RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	int i;
 	bool ret = false;
 	ut8 *mybuf = (ut8 *)buf;
-	rz_return_val_if_fail(io && buf && len > 0, false);
+	if (len <= 0) {
+		return false;
+	}
+	rz_return_val_if_fail(io && buf, false);
 	if (io->write_mask) {
 		mybuf = rz_mem_dup((void *)buf, len);
 		for (i = 0; i < len; i++) {
