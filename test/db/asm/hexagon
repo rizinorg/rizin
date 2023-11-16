@@ -56,3 +56,56 @@ d "?   if (!P0) R5:4 = memd(R0+R2<<#0x0)" 04c2c031 0x0
 d "?   if (!P0.new) R2 = add(R2,##0x8)" 02618274 0x0
 d "?   invalid" ffffffff 0x0
 d "?   invalid ; invalid" ff3fffff 0x0
+
+d "?   barrier" 00c000a8 0x0
+d "?   dckill" 00c000a2 0x0
+d "?   l2kill" 00c020a8 0x0
+d "?   syncht" 00c040a8 0x0
+d "?   dccleana(R10)" 00c00aa0 0x0
+d "?   dcinva(R11)" 00c02ba0 0x0
+d "?   dccleaninva(R12)" 00c04ca0 0x0
+d "?   dccleanidx(R13)" 00c02da2 0x0
+d "?   dctagw(R16,R17)" 00d110a4 0x0
+d "?   dcinvidx(R14)" 00c04ea2 0x0
+d "?   dccleaninvidx(R15)" 00c06fa2 0x0
+d "?   R18 = dctagr(R19)" 12c033a4 0x0
+d "?   l2tagw(R20,R21)" 00d554a4 0x0
+d "?   R22 = l2tagr(R23)" 16c077a4 0x0
+d "?   l2fetch(R24,R25)" 00d918a6 0x0
+d "?   l2cleaninvidx(R26)" 00c07aa8 0x0
+d "?   swi(R1)" 00c00164 0x0
+d "?   CSwi(R2)" 20c00264 0x0
+d "?   iassignw(R3)" 40c00364 0x0
+d "?   ciad(R4)" 60c00464 0x0
+d "?   wait(R5)" 00c04564 0x0
+d "?   resume(R6)" 20c04664 0x0
+d "?   stop(R7)" 00c06764 0x0
+d "?   start(R8)" 20c06864 0x0
+d "?   nmi(R9)" 40c06964 0x0
+d "?   siad(R10)" 60c08a64 0x0
+d "?   setimask(P3,R11)" 00c38b64 0x0
+d "?   crswap(R12,SGP0)" 00c00c65 0x0
+d "?   crswap(R13,SGP1)" 00c02d65 0x0
+d "?   R14 = getimask(R15)" 0ec00f66 0x0
+d "?   R16 = iassignr(R17)" 10c07166 0x0
+d "?   SSR = R0" 06c00067 0x0
+d "?   tlbw(R13:12,R3)" 00c30c6c 0x0
+d "?   brkpt" 00c0206c 0x0
+d "?   tlblock" 20c0206c 0x0
+d "?   tlbunlock" 40c0206c 0x0
+d "?   k0lock" 60c0206c 0x0
+d "?   k0unlock" 80c0206c 0x0
+d "?   R3:2 = tlbr(R4)" 02c0446c 0x0
+d "?   R5 = tlbp(R6)" 05c0866c 0x0
+d "?   S63:62 = R11:10" 3ec00a6d 0x0
+d "?   R0 = SSR" 00c0866e 0x0
+d "?   R1:0 = S63:62" 00c03e6f 0x0
+d "?   LR = add(PC,##0x4)" 1fc2496a 0x0
+d "?   trace(LR)" 00c05f62 0x0
+d "?   R11 = tlboc(R7:6)" 0bc0e66c 0x0
+d "?   tlbinvasid(R28)" 00c0bc6c 0x0
+d "?   l2invidx(R22)" 00c056a6 0x0
+d "?   l2fetch(R19,R1:0)" 00c093a6 0x0
+d "?   l2cleanidx(R20)" 00c034a6 0x0
+d "?   R12 = ctlbw(R7:6,R6)" 0cc6c66c 0x0
+d "?   l2fetch(R24,R13)" 00cd18a6 0x0
