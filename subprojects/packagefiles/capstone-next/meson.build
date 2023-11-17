@@ -3,6 +3,7 @@ project('capstone', 'c', version: 'next', meson_version: '>=0.55.0')
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
   'arch/AArch64/AArch64Disassembler.c',
+  'arch/AArch64/AArch64DisassemblerExtension.c',
   'arch/AArch64/AArch64InstPrinter.c',
   'arch/AArch64/AArch64Mapping.c',
   'arch/AArch64/AArch64Module.c',
