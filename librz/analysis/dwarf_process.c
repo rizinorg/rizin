@@ -1379,7 +1379,8 @@ static bool function_var_parse(
 	RzAnalysisDwarfFunction *f,
 	const RzBinDwarfDie *fn_die,
 	RzAnalysisDwarfVariable *v,
-	const RzBinDwarfDie *var_die) {
+	const RzBinDwarfDie *var_die,
+	bool *has_unspecified_parameters) {
 	v->offset = var_die->offset;
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
@@ -1391,6 +1392,9 @@ static bool function_var_parse(
 	case DW_TAG_unspecified_parameters:
 		if (f) {
 			f->has_unspecified_parameters = true;
+		}
+		if (has_unspecified_parameters) {
+			*has_unspecified_parameters = true;
 		}
 		return true;
 	default:
@@ -1462,10 +1466,11 @@ static bool function_children_parse(
 			continue;
 		}
 		RzAnalysisDwarfVariable v = { 0 };
-		if (!function_var_parse(ctx, fn, die, &v, child_die)) {
+		bool has_unspecified_parameters = false;
+		if (!function_var_parse(ctx, fn, die, &v, child_die, &has_unspecified_parameters)) {
 			goto loop_end;
 		}
-		if (fn->has_unspecified_parameters) {
+		if (has_unspecified_parameters) {
 			callable->has_unspecified_parameters = true;
 			goto loop_end;
 		}
@@ -1623,16 +1628,32 @@ cleanup:
 	return false;
 }
 
+static bool variable_exist_global(RzAnalysis *a, RzAnalysisDwarfVariable *v) {
+	RzAnalysisVarGlobal *existing_glob = NULL;
+	if ((existing_glob = rz_analysis_var_global_get_byaddr_in(a, v->location->address))) {
+		return true;
+	}
+	if ((existing_glob = rz_analysis_var_global_get_byname(a, v->prefer_name))) {
+		return true;
+	}
+	return false;
+}
+
 static bool variable_from_die(
 	RZ_BORROW RZ_IN RZ_NONNULL Context *ctx,
 	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die) {
 	RzAnalysisDwarfVariable v = { 0 };
-	if (!function_var_parse(ctx, NULL, NULL, &v, die)) {
+	if (!function_var_parse(ctx, NULL, NULL, &v, die, NULL)) {
 		return false;
 	}
 	if (!(v.type && v.location->kind == RzBinDwarfLocationKind_ADDRESS)) {
 		return false;
 	}
+
+	if (variable_exist_global(ctx->analysis, &v)) {
+		return false;
+	}
+
 	bool result = rz_analysis_var_global_create(
 		ctx->analysis, v.prefer_name, v.type, v.location->address);
 
@@ -1892,6 +1913,9 @@ static bool RzBinDwarfLocation_as_RzAnalysisVarStorage(
 		break;
 	}
 	case RzBinDwarfLocationKind_ADDRESS: {
+		if (variable_exist_global(a, dw_var)) {
+			return false;
+		}
 		rz_analysis_var_global_create(a, dw_var->prefer_name,
 			rz_type_clone(dw_var->type), loc->address);
 		rz_analysis_var_fini(var);
