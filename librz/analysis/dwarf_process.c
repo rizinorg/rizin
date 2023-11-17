@@ -9,7 +9,7 @@
 #include "analysis_private.h"
 
 typedef struct dwarf_parse_context_t {
-	const RzAnalysis *analysis;
+	RzAnalysis *analysis;
 	RzBinDwarfCompUnit *unit;
 	RzBinDWARF *dw;
 } Context;
@@ -1379,8 +1379,7 @@ static bool function_var_parse(
 	RzAnalysisDwarfFunction *f,
 	const RzBinDwarfDie *fn_die,
 	RzAnalysisDwarfVariable *v,
-	const RzBinDwarfDie *var_die,
-	bool *has_unspecified_parameters) {
+	const RzBinDwarfDie *var_die) {
 	v->offset = var_die->offset;
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
@@ -1390,7 +1389,9 @@ static bool function_var_parse(
 		v->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
 		break;
 	case DW_TAG_unspecified_parameters:
-		*has_unspecified_parameters = f->has_unspecified_parameters = true;
+		if (f) {
+			f->has_unspecified_parameters = true;
+		}
 		return true;
 	default:
 		return false;
@@ -1444,7 +1445,8 @@ static bool function_var_parse(
 	return true;
 }
 
-static bool function_children_parse(Context *ctx, const RzBinDwarfDie *die, RzCallable *callable, RzAnalysisDwarfFunction *fn) {
+static bool function_children_parse(
+	Context *ctx, const RzBinDwarfDie *die, RzCallable *callable, RzAnalysisDwarfFunction *fn) {
 	if (!die->has_children) {
 		return false;
 	}
@@ -1460,18 +1462,17 @@ static bool function_children_parse(Context *ctx, const RzBinDwarfDie *die, RzCa
 			continue;
 		}
 		RzAnalysisDwarfVariable v = { 0 };
-		bool has_unspecified_parameters = false;
-		if (!function_var_parse(ctx, fn, die, &v, child_die, &has_unspecified_parameters)) {
-			goto err;
+		if (!function_var_parse(ctx, fn, die, &v, child_die)) {
+			goto loop_end;
 		}
-		if (has_unspecified_parameters) {
+		if (fn->has_unspecified_parameters) {
 			callable->has_unspecified_parameters = true;
-			goto err;
+			goto loop_end;
 		}
 		if (!v.type) {
 			RZ_LOG_ERROR("DWARF function %s variable %s failed\n",
 				fn->prefer_name, v.prefer_name);
-			goto err;
+			goto loop_end;
 		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
 			RzCallableArg *arg = rz_type_callable_arg_new(
@@ -1481,7 +1482,7 @@ static bool function_children_parse(Context *ctx, const RzBinDwarfDie *die, RzCa
 		rz_vector_push(&fn->variables, &v);
 		ht_up_insert(ctx->analysis->debug_info->variable_by_offset, v.offset, &v);
 		continue;
-	err:
+	loop_end:
 		variable_fini(&v);
 	}
 	rz_pvector_free(children);
@@ -1622,7 +1623,29 @@ cleanup:
 	return false;
 }
 
+static bool variable_from_die(
+	RZ_BORROW RZ_IN RZ_NONNULL Context *ctx,
+	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die) {
+	RzAnalysisDwarfVariable v = { 0 };
+	if (!function_var_parse(ctx, NULL, NULL, &v, die)) {
+		return false;
+	}
+	if (!(v.type && v.location->kind == RzBinDwarfLocationKind_ADDRESS)) {
+		return false;
+	}
+	bool result = rz_analysis_var_global_create(
+		ctx->analysis, v.prefer_name, v.type, v.location->address);
+
+	v.type = NULL;
+	variable_fini(&v);
+	return result;
+}
+
 static void parse_die(Context *ctx, RzBinDwarfDie *die) {
+	if (set_u_contains(ctx->analysis->debug_info->visited, die->offset)) {
+		return;
+	}
+	set_u_add(ctx->analysis->debug_info->visited, die->offset);
 	switch (die->tag) {
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:
@@ -1638,6 +1661,9 @@ static void parse_die(Context *ctx, RzBinDwarfDie *die) {
 	case DW_TAG_subprogram:
 		function_from_die(ctx, die);
 		break;
+	case DW_TAG_variable:
+		variable_from_die(ctx, die);
+		break;
 	default:
 		break;
 	}
@@ -1650,7 +1676,7 @@ static void parse_die(Context *ctx, RzBinDwarfDie *die) {
  * \param dw RzBinDwarf pointer
  */
 RZ_API void rz_analysis_dwarf_preprocess_info(
-	RZ_NONNULL RZ_BORROW const RzAnalysis *analysis,
+	RZ_NONNULL RZ_BORROW RzAnalysis *analysis,
 	RZ_NONNULL RZ_BORROW RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
 	if (!dw->info) {
@@ -1767,7 +1793,7 @@ static bool store_callable(void *u, ut64 k, const void *v) {
  * \param analysis RzAnalysis pointer
  * \param dw RzBinDwarf pointer
  */
-RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDWARF *dw) {
+RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
 	rz_analysis_dwarf_preprocess_info(analysis, dw);
 	ht_pp_foreach(analysis->debug_info->base_type_by_name, store_base_type, (void *)analysis);
@@ -2007,6 +2033,7 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	debug_info->callable_by_offset = ht_up_new(NULL, HtUP_RzCallable_free, NULL);
 	debug_info->base_type_by_offset = ht_up_new(NULL, HtUP_RzBaseType_free, NULL);
 	debug_info->base_type_by_name = ht_pp_new(NULL, HtPP_RzPVector_free, NULL);
+	debug_info->visited = set_u_new();
 	return debug_info;
 }
 
@@ -2026,5 +2053,6 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	ht_up_free(debuginfo->base_type_by_offset);
 	ht_pp_free(debuginfo->base_type_by_name);
 	rz_bin_dwarf_free(debuginfo->dw);
+	set_u_free(debuginfo->visited);
 	free(debuginfo);
 }

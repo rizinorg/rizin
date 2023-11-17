@@ -692,7 +692,7 @@ RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(
 	RZ_OWN RZ_NONNULL RzBinEndianReader *byte_code,
 	RZ_BORROW RZ_NONNULL const RzBinDWARF *dw,
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit,
-	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die) {
+	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *fn_die) {
 	rz_return_val_if_fail(byte_code && dw && unit, NULL);
 	RzBinDwarfEvaluation *self = RZ_NEW0(RzBinDwarfEvaluation);
 	RET_NULL_IF_FAIL(self);
@@ -704,7 +704,7 @@ RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(
 	self->pc = RzBinEndianReader_clone(byte_code);
 	self->dw = dw;
 	self->unit = unit;
-	self->die = die;
+	self->fn_die = fn_die;
 	rz_vector_init(&self->stack, sizeof(RzBinDwarfValue), vec_Value_fini, NULL);
 	rz_vector_init(&self->expression_stack, sizeof(RzBinDwarfExprStackItem), vec_RzBinDwarfExprStackItem_fini, NULL);
 	rz_vector_init(&self->result, sizeof(RzBinDwarfPiece), (RzVectorFree)RzBinDwarfPiece_fini, NULL);
@@ -802,7 +802,8 @@ RZ_API void RzBinDwarfEvaluationResult_free(RZ_OWN RzBinDwarfEvaluationResult *s
 		break; \
 	}
 
-static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEvaluationResult *out) {
+static bool Evaluation_evaluate_one_operation(
+	RzBinDwarfEvaluation *self, OperationEvaluationResult *out) {
 	RzBinEndianReader *reader = self->pc;
 	Operation operation = { 0 };
 	bool ret = false;
@@ -968,7 +969,13 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		break;
 	}
 	case OPERATION_KIND_FRAME_OFFSET: {
-		RzBinDwarfAttr *fb_attr = rz_bin_dwarf_die_get_attr(self->die, DW_AT_frame_base);
+		if (!self->fn_die) {
+			out->kind = OperationEvaluationResult_WAITING;
+			out->waiting._1 = EvaluationStateWaiting_FbReg;
+			goto ok;
+		}
+
+		RzBinDwarfAttr *fb_attr = rz_bin_dwarf_die_get_attr(self->fn_die, DW_AT_frame_base);
 		ERR_IF_FAIL(fb_attr);
 		if (fb_attr->value.kind == RzBinDwarfAttr_UConstant) {
 			RzBinDwarfValue v = {
@@ -982,7 +989,7 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 				rz_bin_dwarf_location_free(v.location));
 			break;
 		} else if (fb_attr->value.kind == RzBinDwarfAttr_Block) {
-			RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(rz_bin_dwarf_attr_block(fb_attr), self->dw, self->unit, self->die);
+			RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(rz_bin_dwarf_attr_block(fb_attr), self->dw, self->unit, self->fn_die);
 			if (!loc) {
 				RzBinDWARFDumpOption opt = {
 					.loclist_indent = "",
@@ -1107,16 +1114,23 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		goto ok;
 	}
 	case OPERATION_KIND_ADDRESS: {
-		out->kind = OperationEvaluationResult_WAITING;
-		out->waiting._1 = EvaluationStateWaiting_RelocatedAddress;
-		out->waiting._2.requires_relocated_address = operation.address.address;
+		out->kind = OperationEvaluationResult_COMPLETE;
+		out->complete.kind = RzBinDwarfLocationKind_ADDRESS;
+		out->complete.address = operation.address.address;
 		goto ok;
 	}
 	case OPERATION_KIND_ADDRESS_INDEX: {
-		out->kind = OperationEvaluationResult_WAITING;
-		out->waiting._1 = EvaluationStateWaiting_IndexedAddress;
-		out->waiting._2.requires_indexed_address.index = operation.address_index.index;
-		out->waiting._2.requires_indexed_address.relocate = true;
+		ut64 addr = 0;
+		if (self->dw && self->unit && rz_bin_dwarf_addr_get(self->dw->addr, &addr, self->unit->hdr.encoding.address_size, self->unit->addr_base, operation.address_index.index)) {
+			out->kind = OperationEvaluationResult_COMPLETE;
+			out->complete.kind = RzBinDwarfLocationKind_ADDRESS;
+			out->complete.address = addr;
+		} else {
+			out->kind = OperationEvaluationResult_WAITING;
+			out->waiting._1 = EvaluationStateWaiting_IndexedAddress;
+			out->waiting._2.requires_indexed_address.index = operation.address_index.index;
+			out->waiting._2.requires_indexed_address.relocate = true;
+		}
 		goto ok;
 	}
 	case OPERATION_KIND_CONSTANT_INDEX: {
