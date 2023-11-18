@@ -239,7 +239,7 @@ static const char *help_detail2_pf[] = {
 	"pf", " {integer}? (bifc)", "Print integer times the following format (bifc)",
 	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
 	"pf", " ic...%i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structures",
-	"pf", " ;..x", "Print value located 6 bytes from current offset",
+	"pf", " :..x", "Print value located 6 bytes from current offset",
 	"pf", " [10]z[3]i[10]Zb", "Print an fixed size str, widechar, and var",
 	"pfj", " +F @ 0x14", "Print the content at given offset with flag",
 	"pf", " n2", "print signed short (2 bytes) value. Use N instead of n for printing unsigned values",
