@@ -6969,7 +6969,13 @@ static void printraw(RzCore *core, int len) {
 	if (!data) {
 		return;
 	}
-	if (rz_io_read_at(core->io, core->offset, data, len)) {
+	if(rz_io_read_at(core->io, core->offset, data, len)){
+		for (int i = 0; i<len; i++){
+			if(data[i]=='\0'){
+				len = i;
+				break;
+			}
+		}
 		rz_print_raw(core->print, core->offset, data, len);
 	}
 	free(data);
