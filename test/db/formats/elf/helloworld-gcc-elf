@@ -488,7 +488,7 @@ EXPECT=<<EOF
 0x08049694 0 sym..got.plt
 0x08049694 0 obj._GLOBAL_OFFSET_TABLE
 0x080496a0 4 reloc.puts
-0x080496a4 4 reloc.__gmon_start.0
+0x080496a4 4 reloc.__gmon_start.80496a4
 0x080496a8 4 reloc.__libc_start_main
 0x080496ac 8 section..data
 0x080496ac 0 sym..data

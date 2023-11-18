@@ -1149,7 +1149,9 @@ static void reloc_set_flag(RzCore *core, RzBinReloc *reloc, const char *prefix, 
 		return;
 	}
 	RzFlagItem *fi = rz_flag_set_next(core->flags, flag_name, flag_addr, bin_reloc_size(reloc));
-	rz_flag_item_set_realname(fi, reloc_name);
+	if (fi) {
+		rz_flag_item_set_realname(fi, reloc_name);
+	}
 
 	free(reloc_name);
 	free(flag_name);
