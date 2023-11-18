@@ -1,0 +1,9 @@
+platform: darwin/arm64
+
+pipeline:
+  build:
+    image: /bin/bash
+    commands:
+      - meson setup build --cross-file sys/cross-arm64-ios.txt --prefix="`pwd`/prefix"
+      - ninja -C build
+      - ninja -C build install
