@@ -9,7 +9,7 @@
 #include <string.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
-#include <mach/mach_vm.h>
+#include "mach_vm.h"
 #include <mach/thread_status.h>
 #include <mach/vm_statistics.h>
 
