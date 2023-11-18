@@ -1,3 +1,34 @@
+NAME="Static variables inside function"
+FILE=bins/elf/dwarf/static_var
+CMDS=<<EOF
+aaa
+avg
+echo "fn1"
+afvll @ dbg.fn1
+echo "fn2"
+afvll @ dbg.fn2
+echo "main"
+afvll @ dbg.main
+EOF
+EXPECT=<<EOF
+global char [19] anonymous_var_0xb4 @ 0x2021
+global const float qwe @ 0x2034
+global char * bla @ 0x4088
+global char [5] anonymous_var_0x59 @ 0x2010
+fn1
+arg int b origin=DWARF @ rbp-8
+arg int a origin=DWARF @ rbp-4
+var int arg1 @ rdi
+var uintmax_t arg2 @ rsi
+fn2
+arg void *q origin=DWARF @ rbp-8
+var float *arg1 @ rdi
+main
+var uintmax_t var_18h @ stack - 0x18
+var int64_t var_ch @ stack - 0xc
+EOF
+RUN
+
 NAME="Global and static variables"
 FILE=bins/elf/dwarf_go_tree
 CMDS=<<EOF
