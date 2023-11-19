@@ -6969,21 +6969,27 @@ static void printraw(RzCore *core, int len) {
 	if (!data) {
 		return;
 	}
-	if(rz_io_read_at(core->io, core->offset, data, len)){
-		for (int i = 0; i<len; i++){
-			if(data[i]=='\0'){
-				len = i;
-				break;
-			}
-		}
-		rz_print_raw(core->print, core->offset, data, len);
+	if (rz_io_read_at(core->io, core->offset, data, len)) {
+		rz_print_raw(core->print, core->offset, data, len, false);
+	}
+	free(data);
+	core->cons->newline = core->cmd_in_backticks ? false : true;
+}
+
+static void printrawzero(RzCore *core, int len) {
+	ut8 *data = malloc(len);
+	if (!data) {
+		return;
+	}
+	if (rz_io_read_at(core->io, core->offset, data, len)) {
+		rz_print_raw(core->print, core->offset, data, len, true);
 	}
 	free(data);
 	core->cons->newline = core->cmd_in_backticks ? false : true;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_raw_handler(RzCore *core, int argc, const char **argv) {
-	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -7034,10 +7040,10 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_printable_handler(RzCore *core, int argc, co
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const char **argv) {
-	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	printraw(core, len);
+	printrawzero(core, len);
 	return RZ_CMD_STATUS_OK;
 }
