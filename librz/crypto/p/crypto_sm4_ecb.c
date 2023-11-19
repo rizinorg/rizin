@@ -169,10 +169,12 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	if (len < 1) {
 		return false;
 	}
-	if (len % 16 == 0) {
-		len += 16;
-	} else {
-		len = get_next_available_len(len);
+	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
+		if (len % 16 == 0) {
+			len += 16;
+		} else {
+			len = get_next_available_len(len);
+		}
 	}
 	ut8 *output = (ut8 *)calloc(1, len);
 	ut8 *padded_input = (ut8 *)calloc(1, len);
@@ -181,6 +183,12 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	memcpy(padded_input, buf, old_len);
 
 	sm4_ecb_encrypt(state->round_keys, len, padded_input, output);
+
+	if (cry->dir == RZ_CRYPTO_DIR_DECRYPT) {
+		while (output[len - 1] == 0x0) {
+			len--;
+		}
+	}
 	rz_crypto_append(cry, output, len);
 
 	return true;
