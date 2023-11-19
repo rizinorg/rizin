@@ -249,6 +249,7 @@ static bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 			RzBinDWARFDumpOption dump_opt = {
 				.loclist_sep = ",\t",
 				.loclist_indent = "",
+				.expr_sep = ", "
 			};
 			rz_bin_dwarf_expression_dump(
 				&ctx->cu->hdr.encoding, entry->expression, ctx->sb, &dump_opt);
