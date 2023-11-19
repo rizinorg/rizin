@@ -684,6 +684,11 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
+	rz_type_db_purge(core->analysis->typedb);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_reload(core->analysis->typedb, types_dir);
+	free(types_dir);
+
 	rz_analysis_debug_info_free(core->analysis->debug_info);
 	core->analysis->debug_info = rz_analysis_debug_info_new();
 	core->analysis->debug_info->dw = dw;
