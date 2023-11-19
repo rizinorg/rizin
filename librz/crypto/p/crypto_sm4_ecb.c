@@ -185,7 +185,7 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	sm4_ecb_encrypt(state->round_keys, len, padded_input, output);
 
 	if (cry->dir == RZ_CRYPTO_DIR_DECRYPT) {
-		while (len>1 && output[len - 1] == 0x0) {
+		while (len > 1 && output[len - 1] == 0x0) {
 			len--;
 		}
 	}
