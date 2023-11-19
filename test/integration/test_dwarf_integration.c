@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2020 HoundThe <cgkajm@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_core.h>
 #include <rz_analysis.h>
 #include <rz_bin.h>
 #include <rz_type.h>
@@ -19,14 +20,12 @@
 	}
 
 static bool test_parse_dwarf_types(void) {
-	RzBin *bin = rz_bin_new();
-	mu_assert_notnull(bin, "Couldn't create new RzBin");
-	RzIO *io = rz_io_new();
-	mu_assert_notnull(io, "Couldn't create new RzIO");
-	RzAnalysis *analysis = rz_analysis_new();
-	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
-	rz_io_bind(io, &bin->iob);
-	analysis->binb.demangle = rz_bin_demangle;
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
+	mu_assert_notnull(core->io, "Couldn't create new RzIO");
+	mu_assert_notnull(core->analysis, "Couldn't create new RzAnalysis");
+	RzAnalysis *analysis = core->analysis;
+	RzBin *bin = core->bin;
 
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
@@ -122,22 +121,18 @@ static bool test_parse_dwarf_types(void) {
 	// check_kv("union.unaligned.s8", "long long int,0,0");
 
 	rz_bin_dwarf_free(dw);
-	rz_analysis_free(analysis);
-	rz_bin_free(bin);
-	rz_io_free(io);
+	rz_core_free(core);
 	mu_end;
 }
 
 static bool test_dwarf_function_parsing_cpp(void) {
 #if WITH_GPL
-	RzBin *bin = rz_bin_new();
-	mu_assert_notnull(bin, "Couldn't create new RzBin");
-	RzIO *io = rz_io_new();
-	mu_assert_notnull(io, "Couldn't create new RzIO");
-	RzAnalysis *analysis = rz_analysis_new();
-	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
-	rz_io_bind(io, &bin->iob);
-	analysis->binb.demangle = rz_bin_demangle;
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
+	mu_assert_notnull(core->io, "Couldn't create new RzIO");
+	mu_assert_notnull(core->analysis, "Couldn't create new RzAnalysis");
+	RzAnalysis *analysis = core->analysis;
+	RzBin *bin = core->bin;
 
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
@@ -165,22 +160,18 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	check_fn(0x401160, "main", "int main()");
 
 	rz_bin_dwarf_free(dw);
-	rz_analysis_free(analysis);
-	rz_bin_free(bin);
-	rz_io_free(io);
+	rz_core_free(core);
 #endif
 	mu_end;
 }
 
 static bool test_dwarf_function_parsing_go(void) {
-	RzBin *bin = rz_bin_new();
-	mu_assert_notnull(bin, "Couldn't create new RzBin");
-	RzIO *io = rz_io_new();
-	mu_assert_notnull(io, "Couldn't create new RzIO");
-	RzAnalysis *analysis = rz_analysis_new();
-	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
-	rz_io_bind(io, &bin->iob);
-	analysis->binb.demangle = rz_bin_demangle;
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
+	mu_assert_notnull(core->io, "Couldn't create new RzIO");
+	mu_assert_notnull(core->analysis, "Couldn't create new RzAnalysis");
+	RzAnalysis *analysis = core->analysis;
+	RzBin *bin = core->bin;
 
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
@@ -208,21 +199,17 @@ static bool test_dwarf_function_parsing_go(void) {
 	   don't check variable information and add it in the future */
 
 	rz_bin_dwarf_free(dw);
-	rz_analysis_free(analysis);
-	rz_bin_free(bin);
-	rz_io_free(io);
+	rz_core_free(core);
 	mu_end;
 }
 
 static bool test_dwarf_function_parsing_rust(void) {
-	RzBin *bin = rz_bin_new();
-	mu_assert_notnull(bin, "Couldn't create new RzBin");
-	RzIO *io = rz_io_new();
-	mu_assert_notnull(io, "Couldn't create new RzIO");
-	RzAnalysis *analysis = rz_analysis_new();
-	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
-	rz_io_bind(io, &bin->iob);
-	analysis->binb.demangle = rz_bin_demangle;
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
+	mu_assert_notnull(core->io, "Couldn't create new RzIO");
+	mu_assert_notnull(core->analysis, "Couldn't create new RzAnalysis");
+	RzAnalysis *analysis = core->analysis;
+	RzBin *bin = core->bin;
 
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
@@ -252,9 +239,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	check_fn(0x8730, "lang_start_internal", "isize lang_start_internal(struct &Fn<()> main, isize argc, u8 **argv)");
 
 	rz_bin_dwarf_free(dw);
-	rz_analysis_free(analysis);
-	rz_bin_free(bin);
-	rz_io_free(io);
+	rz_core_free(core);
 	mu_end;
 }
 

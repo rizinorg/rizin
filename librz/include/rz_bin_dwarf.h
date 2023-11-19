@@ -1608,7 +1608,7 @@ typedef struct {
 typedef struct {
 	const RzBinDWARF *dw;
 	const RzBinDwarfCompUnit *unit;
-	const RzBinDwarfDie *die;
+	const RzBinDwarfDie *fn_die;
 	RzBinEndianReader *bytecode;
 	const RzBinDwarfEncoding *encoding;
 	ut64 *object_address;
@@ -1709,7 +1709,7 @@ RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(
 	RZ_OWN RZ_NONNULL RzBinEndianReader *byte_code,
 	RZ_BORROW RZ_NONNULL const RzBinDWARF *dw,
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit,
-	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
+	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *fn_die);
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block,
 	RZ_BORROW RZ_NONNULL const RzBinDWARF *dw,
