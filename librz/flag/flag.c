@@ -489,30 +489,55 @@ RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off) {
 	return p;
 }
 
-// Set a new flag named `name` at offset `off`. If there's already a flag with
-// the same name, slightly change the name by appending ".%d" as suffix
+/**
+ * Set a flag if there is not already a flag with the same name that does
+ * not match the given \p off and \p size.
+ * \return whether to stop searching for another name, using bool instead of returning
+ *         a pointer to distinguish between existing name and failed malloc.
+ */
+bool try_set_flag(RzFlag *f, const char *name, ut64 off, ut32 size, RzFlagItem **r) {
+	RzFlagItem *fi = rz_flag_get(f, name);
+	if (fi) {
+		if (fi->offset == off && fi->size == size) {
+			*r = fi;
+			return true;
+		}
+		return false;
+	}
+	*r = rz_flag_set(f, name, off, size);
+	return true;
+}
+
+/**
+ * Set a new flag named \p name at \p off. If there's already a flag with
+ * the same name, slightly change the name by appending the address or ".%d" as suffix.
+ * If there is a flag at \p off of size \p size and a matching name, that flag is returned
+ * instead of creating a new one.
+ */
 RZ_API RzFlagItem *rz_flag_set_next(RzFlag *f, const char *name, ut64 off, ut32 size) {
 	rz_return_val_if_fail(f && name, NULL);
-	if (!rz_flag_get(f, name)) {
-		return rz_flag_set(f, name, off, size);
+	RzFlagItem *r = NULL;
+	if (try_set_flag(f, name, off, size, &r)) {
+		return r;
 	}
-	int i, newNameSize = strlen(name);
-	char *newName = malloc(newNameSize + 16);
-	if (!newName) {
+	size_t name_len = strlen(name);
+	static const size_t suffix_size = 16 + 2; // max size of a 64bit addr + '.' + '\0'
+	char *new_name = malloc(name_len + suffix_size);
+	if (!new_name) {
 		return NULL;
 	}
-	strcpy(newName, name);
-	for (i = 0;; i++) {
-		snprintf(newName + newNameSize, 15, ".%d", i);
-		if (!rz_flag_get(f, newName)) {
-			RzFlagItem *fi = rz_flag_set(f, newName, off, size);
-			if (fi) {
-				free(newName);
-				return fi;
+	memcpy(new_name, name, name_len);
+	snprintf(new_name + name_len, suffix_size, ".%" PFMT64x, off);
+	if (!try_set_flag(f, new_name, off, size, &r)) {
+		for (int i = 0; i < 1024 /* some upper bound to prevent unreasonable looping */; i++) {
+			snprintf(new_name + name_len, 17, ".%d", i);
+			if (try_set_flag(f, new_name, off, size, &r)) {
+				break;
 			}
 		}
 	}
-	return NULL;
+	free(new_name);
+	return r;
 }
 
 /* create or modify an existing flag item with the given name and parameters.
