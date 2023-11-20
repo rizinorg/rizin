@@ -6964,25 +6964,13 @@ RZ_IPI RzCmdStatus rz_print_equal_two_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
-static void printraw(RzCore *core, int len) {
+static void printraw(RzCore *core, int len, bool stop_at_null) {
 	ut8 *data = malloc(len);
 	if (!data) {
 		return;
 	}
 	if (rz_io_read_at(core->io, core->offset, data, len)) {
-		rz_print_raw(core->print, core->offset, data, len, false);
-	}
-	free(data);
-	core->cons->newline = core->cmd_in_backticks ? false : true;
-}
-
-static void printrawzero(RzCore *core, int len) {
-	ut8 *data = malloc(len);
-	if (!data) {
-		return;
-	}
-	if (rz_io_read_at(core->io, core->offset, data, len)) {
-		rz_print_raw(core->print, core->offset, data, len, true);
+		rz_print_raw(core->print, core->offset, data, len, stop_at_null);
 	}
 	free(data);
 	core->cons->newline = core->cmd_in_backticks ? false : true;
@@ -6993,7 +6981,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_handler(RzCore *core, int argc, const char *
 	if (len < 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	printraw(core, len);
+	printraw(core, len, false);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -7044,6 +7032,6 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const
 	if (len < 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	printrawzero(core, len);
+	printraw(core, len, true);
 	return RZ_CMD_STATUS_OK;
 }

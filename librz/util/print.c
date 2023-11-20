@@ -1245,17 +1245,11 @@ RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt)
 	}
 }
 
-RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len, bool stop_at_null) {
-	if (stop_at_null) {
-		for (int i = 0; i < len; i++) {
-			if (buf[i] == '\0') {
-				break;
-			}
-			p->write(&buf[i], 1);
-		}
-	} else {
-		p->write(buf, len);
+RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len, bool stop_at_null){
+	if(stop_at_null){
+		len = rz_str_nlen((const char *)buf, len);
 	}
+	p->write(buf, len);
 }
 
 /* TODO: handle screen width */
