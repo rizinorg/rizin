@@ -268,9 +268,9 @@ NAME=prz cmd with offset 0
 FILE=bins/elf/ls
 CMDS=<<EOF
 s 0
-prz 100
+prz 100 | rz-ax -S
 EOF
 EXPECT=<<EOF
-ELF
+7f454c46020101
 EOF 
 RUN
