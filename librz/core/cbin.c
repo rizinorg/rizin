@@ -4534,7 +4534,7 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid) {
 	if (bf) {
 		rz_io_use_fd(core->io, bf->fd);
 	}
-	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
+	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core) > 0;
 }
 
 /**
@@ -4550,7 +4550,7 @@ RZ_API bool rz_core_binfiles_delete(RzCore *core, RzBinFile *bf) {
 	if (bf) {
 		rz_io_use_fd(core->io, bf->fd);
 	}
-	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
+	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core) > 0;
 }
 
 static void core_bin_file_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
