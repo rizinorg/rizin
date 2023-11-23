@@ -2782,16 +2782,11 @@ RZ_API bool rz_core_block_size(RzCore *core, ut32 bsize) {
 	ut8 *bump;
 	if (bsize == core->blocksize) {
 		return true;
-	}
-	if (bsize > core->blocksize_max) {
-		RZ_LOG_ERROR("Block size %d is too big\n", bsize);
-		return false;
-	}
-	if (bsize < 1) {
+	} else if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize > core->blocksize_max) {
-		RZ_LOG_ERROR("block size is bigger than its max (check `bm` command). set to 0x%x\n", core->blocksize_max);
-		bsize = core->blocksize_max;
+		RZ_LOG_ERROR("block size is bigger than its max 0x%x (check `bm` command)\n", core->blocksize_max);
+		return false;
 	}
 	bump = realloc(core->block, bsize + 1);
 	if (!bump) {
