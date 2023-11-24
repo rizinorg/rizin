@@ -174,7 +174,7 @@ RZ_API RzGraphNode *rz_graph_add_nodef(RzGraph *graph, void *data, RzListFree us
 
 /* remove the node from the graph and free the node */
 /* users of this function should be aware they can't access n anymore */
-RZ_API void rz_graph_del_node(RzGraph *t, RzGraphNode *n) {
+RZ_API void rz_graph_del_node(RzGraph *t, RZ_OWN RzGraphNode *n) {
 	RzGraphNode *gn;
 	RzListIter *it;
 	if (!n) {

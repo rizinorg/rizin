@@ -4076,6 +4076,21 @@ static const RzCmdDescHelp analysis_graph_callgraph_global_help = {
 	.args = analysis_graph_callgraph_global_args,
 };
 
+static const RzCmdDescArg analysis_graph_icfg_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices_cb = rz_analysis_graph_format_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_graph_icfg_help = {
+	.summary = "Inter-procedual control flow graph",
+	.args = analysis_graph_icfg_args,
+};
+
 static const RzCmdDescArg analysis_graph_bb_function_args[] = {
 	{
 		.name = "format",
@@ -19365,6 +19380,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_graph_callgraph_global_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agC", rz_analysis_graph_callgraph_global_handler, &analysis_graph_callgraph_global_help);
 	rz_warn_if_fail(analysis_graph_callgraph_global_cd);
+
+	RzCmdDesc *analysis_graph_icfg_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agCi", rz_analysis_graph_icfg_handler, &analysis_graph_icfg_help);
+	rz_warn_if_fail(analysis_graph_icfg_cd);
 
 	RzCmdDesc *analysis_graph_bb_function_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agf", rz_analysis_graph_bb_function_handler, &analysis_graph_bb_function_help);
 	rz_warn_if_fail(analysis_graph_bb_function_cd);
