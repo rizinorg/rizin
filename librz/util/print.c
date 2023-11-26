@@ -1245,10 +1245,7 @@ RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt)
 	}
 }
 
-RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len, bool stop_at_null) {
-	if (stop_at_null) {
-		len = rz_str_nlen((const char *)buf, len);
-	}
+RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
 	p->write(buf, len);
 }
 

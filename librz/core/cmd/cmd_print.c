@@ -6970,7 +6970,10 @@ static void printraw(RzCore *core, int len, bool stop_at_null) {
 		return;
 	}
 	if (rz_io_read_at(core->io, core->offset, data, len)) {
-		rz_print_raw(core->print, core->offset, data, len, stop_at_null);
+		if (stop_at_null) {
+			len = rz_str_nlen((const char *)data, len);
+		}
+		rz_print_raw(core->print, core->offset, data, len);
 	}
 	free(data);
 	core->cons->newline = core->cmd_in_backticks ? false : true;
