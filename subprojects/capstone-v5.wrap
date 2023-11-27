@@ -1,6 +1,5 @@
-[wrap-file]
-source_url = https://github.com/capstone-engine/capstone/archive/5.0.1.tar.gz
-source_filename = capstone-5.0.1.tar.gz
-source_hash = 2b9c66915923fdc42e0e32e2a9d7d83d3534a45bb235e163a70047951890c01a
+[wrap-git]
+url = https://github.com/capstone-engine/capstone.git
+revision = ee75e4b9a4fd77939c86786c0ed3cd1697ddb8cf
 patch_directory = capstone-5.0.1
 directory = capstone-5.0.1
