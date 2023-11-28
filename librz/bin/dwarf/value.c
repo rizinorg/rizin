@@ -1060,40 +1060,42 @@ RZ_IPI void Value_dump(
 	RzStrBuf *sb,
 	const RzBinDWARFDumpOption *opt) {
 	rz_warn_if_fail(self && sb);
-	if (self->type <= 0 || self->type >= RZ_ARRAY_SIZE(Value_strings)) {
+	if (self->type < 0 || self->type >= RZ_ARRAY_SIZE(Value_strings)) {
+		rz_strbuf_append(sb, "<err:invalid value type>");
 		return;
 	}
-	rz_strbuf_append(sb, Value_strings[self->type]);
-	rz_strbuf_append(sb, rz_str_get(opt->loclist_sep));
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC:
-		rz_strbuf_appendf(sb, "%" PFMT64x, self->generic);
+		rz_strbuf_appendf(sb, "+%" PFMT64x, self->generic);
 		break;
 	case RzBinDwarfValueType_I8:
 	case RzBinDwarfValueType_I16:
 	case RzBinDwarfValueType_I32:
-		rz_strbuf_appendf(sb, "%" PFMT32d, self->i32);
+		rz_strbuf_appendf(sb, "%+" PFMT32d, self->i32);
 		break;
 	case RzBinDwarfValueType_U8:
 	case RzBinDwarfValueType_U16:
 	case RzBinDwarfValueType_U32:
-		rz_strbuf_appendf(sb, "%" PFMT32u, self->u32);
+		rz_strbuf_appendf(sb, "+%" PFMT32u, self->u32);
 		break;
 	case RzBinDwarfValueType_I64:
-		rz_strbuf_appendf(sb, "%" PFMT64d, self->i64);
+		rz_strbuf_appendf(sb, "%+" PFMT64d, self->i64);
 		break;
 	case RzBinDwarfValueType_U64:
-		rz_strbuf_appendf(sb, "%" PFMT64u, self->u64);
+		rz_strbuf_appendf(sb, "+%" PFMT64u, self->u64);
 		break;
 	case RzBinDwarfValueType_F32:
 	case RzBinDwarfValueType_F64:
-		rz_strbuf_appendf(sb, "%f", self->f64);
+		rz_strbuf_appendf(sb, "%+f", self->f64);
 		break;
 	case RzBinDwarfValueType_LOCATION:
 		rz_bin_dwarf_location_dump(self->location, sb, opt);
 		break;
 	default:
-		rz_strbuf_append(sb, "unimplemented");
+		rz_strbuf_append(sb, "<unimplemented>");
 		break;
+	}
+	if (opt->value_detail) {
+		rz_strbuf_appendf(sb, " : %s", Value_strings[self->type]);
 	}
 }

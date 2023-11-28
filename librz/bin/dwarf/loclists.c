@@ -422,10 +422,39 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_clone(RZ_BORROW RZ_NONNU
 	RzBinDwarfLocation *loc = RZ_NEWCOPY(RzBinDwarfLocation, self);
 	switch (loc->kind) {
 	case RzBinDwarfLocationKind_COMPOSITE:
-		loc->composite = rz_vector_clone(self->composite);
+		loc->composite = rz_vector_clonef(self->composite, (RzVectorItemCpyFunc)RzBinDwarfPiece_cpy);
 		break;
 	default:
 		break;
 	}
 	return loc;
+}
+
+RZ_IPI void Location_cpy(Location *dst, Location *src) {
+	rz_return_if_fail(dst && src);
+	memcpy(dst, src, sizeof(Location));
+	switch (src->kind) {
+	case RzBinDwarfLocationKind_BYTES:
+		RzBinDwarfBlock_cpy(&dst->bytes, &src->bytes);
+		break;
+	case RzBinDwarfLocationKind_EVALUATION_WAITING:
+		rz_bin_dwarf_evaluation_cpy(dst->eval_waiting.eval, src->eval_waiting.eval);
+		RzBinDwarfEvaluationResult_cpy(dst->eval_waiting.result, src->eval_waiting.result);
+		break;
+	case RzBinDwarfLocationKind_COMPOSITE:
+		rz_vector_clone_intof(dst->composite, src->composite, (RzVectorItemCpyFunc)RzBinDwarfPiece_cpy);
+		break;
+	case RzBinDwarfLocationKind_LOCLIST:
+		rz_warn_if_reached();
+		break;
+	case RzBinDwarfLocationKind_EMPTY: break;
+	case RzBinDwarfLocationKind_DECODE_ERROR: break;
+	case RzBinDwarfLocationKind_REGISTER: break;
+	case RzBinDwarfLocationKind_REGISTER_OFFSET: break;
+	case RzBinDwarfLocationKind_ADDRESS: break;
+	case RzBinDwarfLocationKind_VALUE: break;
+	case RzBinDwarfLocationKind_IMPLICIT_POINTER: break;
+	case RzBinDwarfLocationKind_CFA_OFFSET: break;
+	case RzBinDwarfLocationKind_FB_OFFSET: break;
+	}
 }
