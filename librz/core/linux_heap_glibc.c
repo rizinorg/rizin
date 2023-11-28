@@ -1182,8 +1182,8 @@ RZ_API RzList /*<RzHeapBin *>*/ *GH(rz_heap_tcache_content)(RzCore *core, GHT ar
 		GHT tcache_fd = entry;
 		GHT tcache_tmp = GHT_MAX;
 		for (size_t n = 1; n < count; n++) {
-			bool r = rz_io_nread_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
-			if (!r) {
+			int r = rz_io_nread_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
+			if (r <= 0) {
 				goto error;
 			}
 			tcache_tmp = GH(get_next_pointer)(core, tcache_fd, tcache_tmp);
