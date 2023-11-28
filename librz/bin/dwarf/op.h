@@ -4,6 +4,8 @@
 #ifndef RIZIN_OP_H
 #define RIZIN_OP_H
 
+#include "loclists.h"
+
 typedef enum {
 	OPERATION_KIND_DEREF,
 	OPERATION_KIND_DROP,
@@ -233,5 +235,9 @@ typedef struct {
 } RzBinDwarfExprStackItem;
 
 RZ_IPI void RzBinDwarfEvaluationResult_fini(RzBinDwarfEvaluationResult *self);
+
+RZ_IPI void RzBinDwarfPiece_fini(RzBinDwarfPiece *x);
+
+RZ_IPI void RzBinDwarfPiece_cpy(RzBinDwarfPiece *dst, RzBinDwarfPiece *src);
 
 #endif // RIZIN_OP_H

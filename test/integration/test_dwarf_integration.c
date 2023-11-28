@@ -238,6 +238,25 @@ static bool test_dwarf_function_parsing_rust(void) {
 	check_fn(0x5270, "bubble_sort<i32>", "void bubble_sort<i32>(struct &mut [i32] values)");
 	check_fn(0x8730, "lang_start_internal", "isize lang_start_internal(struct &Fn<()> main, isize argc, u8 **argv)");
 
+	RzBinDwarfCompUnit *cu = ht_up_find(dw->info->unit_by_offset, 0x4151, NULL);
+	mu_assert_notnull(cu, "Couldn't get compunit");
+	RzBinDwarfLocList *loclist = rz_bin_dwarf_loclists_get(dw->loclists, dw->addr, cu, 0xd973);
+	mu_assert_notnull(loclist, "Couldn't get loclist");
+	RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
+	mu_assert_notnull(entry, "Couldn't get entry");
+	mu_assert_notnull(entry->range, "Couldn't get entry range");
+	mu_assert_notnull(entry->expression, "Couldn't get entry expression");
+	mu_assert_eq(entry->range->begin, 0x84e1, "Err entry begin");
+	mu_assert_eq(entry->range->end, 0x84fc, "Err entry end");
+	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
+	mu_assert_notnull(loc, "Couldn't get location");
+	RzBinDWARFDumpOption dump_option = {
+		.composite_sep = ", "
+	};
+	char *locstr = rz_bin_dwarf_location_to_string(loc, &dump_option);
+	mu_assert_streq_free(locstr, "composite: [(.0, 64): stack+18, (.0, 64): stack+8]", "Error location string");
+	rz_bin_dwarf_location_free(loc);
+
 	rz_bin_dwarf_free(dw);
 	rz_core_free(core);
 	mu_end;

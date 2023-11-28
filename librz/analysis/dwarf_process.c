@@ -39,7 +39,7 @@ static bool function_from_die(
 	RZ_BORROW RZ_IN RZ_NONNULL Context *ctx,
 	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die);
 
-static void parse_die(Context *ctx, RzBinDwarfDie *die);
+static void die_parse(Context *ctx, RzBinDwarfDie *die);
 
 /* For some languages linkage name is more informative like C++,
    but for Rust it's rubbish and the normal name is fine */
@@ -735,10 +735,10 @@ static RzBaseType *RzBaseType_from_die(Context *ctx, const RzBinDwarfDie *die) {
 			btype->name, die->offset);
 	}
 
-	RzPVector *btypes = ht_pp_find(ctx->analysis->debug_info->base_type_by_name, btype->name, NULL);
+	RzPVector *btypes = ht_pp_find(ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
 	if (!btypes) {
 		btypes = rz_pvector_new(NULL);
-		ht_pp_insert(ctx->analysis->debug_info->base_type_by_name, btype->name, btypes);
+		ht_pp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes);
 		rz_pvector_push(btypes, btype);
 	} else {
 		void **it;
@@ -1158,7 +1158,7 @@ static bool struct_union_children_parse(
 		// we take only direct descendats of the structure
 		if (!(child_die->depth == die->depth + 1 &&
 			    child_die->tag == DW_TAG_member)) {
-			parse_die(ctx, child_die);
+			die_parse(ctx, child_die);
 			continue;
 		}
 		RzTypeStructMember member = { 0 };
@@ -1217,7 +1217,7 @@ static bool enum_children_parse(
 		RzBinDwarfDie *child_die = *it;
 		if (!(child_die->depth == die->depth + 1 &&
 			    child_die->tag == DW_TAG_enumerator)) {
-			parse_die(ctx, child_die);
+			die_parse(ctx, child_die);
 			continue;
 		}
 		RzTypeEnumCase cas = { 0 };
@@ -1354,18 +1354,18 @@ static RzBinDwarfLocation *location_parse(
 		}
 		if (rz_pvector_len(&loclist->entries) > 1) {
 			return location_list_parse(ctx, loclist, fn);
-		} else if (rz_pvector_len(&loclist->entries) == 1) {
+		}
+		if (rz_pvector_len(&loclist->entries) == 1) {
 			RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 			return rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
-		} else {
-			RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);
-			if (!loc) {
-				return NULL;
-			}
-			loc->kind = RzBinDwarfLocationKind_EMPTY;
-			loc->encoding = ctx->unit->hdr.encoding;
-			return loc;
 		}
+		RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);
+		if (!loc) {
+			return NULL;
+		}
+		loc->kind = RzBinDwarfLocationKind_EMPTY;
+		loc->encoding = ctx->unit->hdr.encoding;
+		return loc;
 	err_find:
 		RZ_LOG_ERROR("Location parse failed 0x%" PFMT64x " <Cannot find loclist>\n", offset);
 		return NULL;
@@ -1462,7 +1462,7 @@ static bool function_children_parse(
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
 		if (child_die->depth != die->depth + 1) {
-			parse_die(ctx, child_die);
+			die_parse(ctx, child_die);
 			continue;
 		}
 		RzAnalysisDwarfVariable v = { 0 };
@@ -1662,7 +1662,7 @@ static bool variable_from_die(
 	return result;
 }
 
-static void parse_die(Context *ctx, RzBinDwarfDie *die) {
+static void die_parse(Context *ctx, RzBinDwarfDie *die) {
 	if (set_u_contains(ctx->analysis->debug_info->visited, die->offset)) {
 		return;
 	}
@@ -1688,6 +1688,12 @@ static void parse_die(Context *ctx, RzBinDwarfDie *die) {
 	default:
 		break;
 	}
+}
+
+static RzBinDwarfDie *die_next(RzBinDwarfDie *die, RzBinDWARF *dw) {
+	return (die->sibling > die->offset)
+		? ht_up_find(dw->info->die_by_offset, die->sibling, NULL)
+		: die + 1;
 }
 
 /**
@@ -1717,10 +1723,8 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		ctx.unit = unit;
 		for (RzBinDwarfDie *die = rz_vector_head(&unit->dies);
 			die && (ut8 *)die < (ut8 *)unit->dies.a + unit->dies.len * unit->dies.elem_size;
-			(die->sibling > die->offset)
-				? die = ht_up_find(dw->info->die_by_offset, die->sibling, NULL)
-				: ++die) {
-			parse_die(&ctx, die);
+			die = die_next(die, dw)) {
+			die_parse(&ctx, die);
 		}
 	}
 }
@@ -1758,7 +1762,7 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 	RzAnalysis *analysis = u;
 	const char *name = k;
 	RzPVector *types = (RzPVector *)v;
-	ut32 len = rz_pvector_len(types);
+	const ut32 len = rz_pvector_len(types);
 	if (len == 0) {
 		RZ_LOG_WARN("BaseType %s has nothing", name);
 	} else if (len == 1) {
@@ -1792,7 +1796,6 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 		db_save_renamed(analysis->typedb, rz_base_type_clone(b), newname);
 	} else {
 		RZ_LOG_WARN("BaseType: same name [%s] type count is more than 3\n", name);
-		goto beach;
 	}
 beach:
 	return true;
@@ -1817,7 +1820,7 @@ static bool store_callable(void *u, ut64 k, const void *v) {
 RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
 	rz_analysis_dwarf_preprocess_info(analysis, dw);
-	ht_pp_foreach(analysis->debug_info->base_type_by_name, store_base_type, (void *)analysis);
+	ht_pp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
 	ht_up_foreach(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
 }
 
@@ -2056,7 +2059,7 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	debug_info->type_by_offset = ht_up_new(NULL, HtUP_RzType_free, NULL);
 	debug_info->callable_by_offset = ht_up_new(NULL, HtUP_RzCallable_free, NULL);
 	debug_info->base_type_by_offset = ht_up_new(NULL, HtUP_RzBaseType_free, NULL);
-	debug_info->base_type_by_name = ht_pp_new(NULL, HtPP_RzPVector_free, NULL);
+	debug_info->base_types_by_name = ht_pp_new(NULL, HtPP_RzPVector_free, NULL);
 	debug_info->visited = set_u_new();
 	return debug_info;
 }
@@ -2075,7 +2078,7 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	ht_up_free(debuginfo->type_by_offset);
 	ht_up_free(debuginfo->callable_by_offset);
 	ht_up_free(debuginfo->base_type_by_offset);
-	ht_pp_free(debuginfo->base_type_by_name);
+	ht_pp_free(debuginfo->base_types_by_name);
 	rz_bin_dwarf_free(debuginfo->dw);
 	set_u_free(debuginfo->visited);
 	free(debuginfo);
