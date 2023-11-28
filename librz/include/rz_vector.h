@@ -68,11 +68,20 @@ RZ_API void rz_vector_fini(RzVector *vec);
 // frees the vector and calls vec->free on every element if set.
 RZ_API void rz_vector_free(RzVector *vec);
 
+typedef void (*RzVectorItemCpyFunc)(void *, void *);
+
+RZ_API bool rz_vector_clone_intof(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src,
+	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy);
+RZ_API RZ_OWN RzVector *rz_vector_clonef(
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec,
+	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy);
 RZ_API bool rz_vector_clone_into(
 	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
-	RZ_NONNULL RZ_BORROW RZ_IN RzVector *src);
-
-RZ_API RzVector *rz_vector_clone(RzVector *vec);
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src);
+RZ_API RZ_OWN RzVector *rz_vector_clone(
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec);
 
 static inline bool rz_vector_empty(const RzVector *vec) {
 	rz_return_val_if_fail(vec, false);
@@ -240,8 +249,15 @@ RZ_API void rz_pvector_clear(RzPVector *vec);
 RZ_API void rz_pvector_free(RzPVector *vec);
 
 /// See rz_vector_clone() for detailed semantics
-static inline RzPVector *rz_pvector_clone(RzPVector *vec) {
+static inline RzPVector *rz_pvector_clone(
+	RzPVector *vec) {
 	return (RzPVector *)rz_vector_clone(&vec->v);
+}
+
+static inline RzPVector *rz_pvector_clonef(
+	RzPVector *vec,
+	void (*item_cpy)(void *, void *)) {
+	return (RzPVector *)rz_vector_clonef(&vec->v, item_cpy);
 }
 
 static inline size_t rz_pvector_len(const RzPVector *vec) {

@@ -83,11 +83,13 @@ RZ_API void rz_vector_free(RzVector *vec) {
  * \brief Clone the contents of \p src into \p dst.
  * \param dst The vector to clone into.
  * \param src The vector to clone from.
+ * \param item_cpy The function to copy every element of \p src into \p dst
  * \return true on success, false on failure.
  */
-RZ_API bool rz_vector_clone_into(
+RZ_API bool rz_vector_clone_intof(
 	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
-	RZ_NONNULL RZ_BORROW RZ_IN RzVector *src) {
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src,
+	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy) {
 	rz_return_val_if_fail(dst && src, false);
 	dst->capacity = src->capacity;
 	dst->len = src->len;
@@ -101,29 +103,69 @@ RZ_API bool rz_vector_clone_into(
 		if (!dst->a) {
 			return false;
 		}
-		memcpy(dst->a, src->a, src->elem_size * src->len);
+		const ut64 len = rz_vector_len(src);
+		if (item_cpy) {
+			for (ut64 i = 0; i < len; ++i) {
+				item_cpy((ut8 *)(dst->a) + i * src->elem_size,
+					(ut8 *)(src->a) + i * src->elem_size);
+			}
+		} else {
+			memcpy(dst->a, src->a, src->elem_size * len);
+		}
 	}
 	return true;
 }
 
 /**
  * Construct a new vector with the same contents and capacity as \p vec.
- *
+ * \param vec The source vector
+ * \return The new vector
+ */
+RZ_API RZ_OWN RzVector *rz_vector_clonef(
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec,
+	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy) {
+	rz_return_val_if_fail(vec, NULL);
+	RzVector *dst = RZ_NEW(RzVector);
+	if (!dst) {
+		return NULL;
+	}
+	if (!rz_vector_clone_intof(dst, vec, item_cpy)) {
+		free(dst);
+		return NULL;
+	}
+	return dst;
+}
+
+/**
+ * \brief Clone the contents of \p src into \p dst.
+ * \param dst The vector to clone into.
+ * \param src The vector to clone from.
+ * \return true on success, false on failure.
+ */
+RZ_API bool rz_vector_clone_into(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src) {
+	const bool ret = rz_vector_clone_intof(dst, src, NULL);
+	dst->free = NULL;
+	dst->free_user = NULL;
+	return ret;
+}
+
+/**
+ * \brief Construct a new vector with the same contents and capacity as \p vec.
  * The free function of the resulting vector will be NULL, so if elements are considered
  * to be owned and freed by \p vec, this will still be the case and the returned vector
  * only borrows them.
+ *
+ * \param vec The source vector
+ * \return The new vector
  */
-RZ_API RzVector *rz_vector_clone(RzVector *vec) {
-	rz_return_val_if_fail(vec, NULL);
-	RzVector *ret = RZ_NEW(RzVector);
-	if (!ret) {
-		return NULL;
-	}
-	if (!rz_vector_clone_into(ret, vec)) {
-		free(ret);
-		return NULL;
-	}
-	return ret;
+RZ_API RZ_OWN RzVector *rz_vector_clone(
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec) {
+	RzVector *dst = rz_vector_clonef(vec, NULL);
+	dst->free = NULL;
+	dst->free_user = NULL;
+	return dst;
 }
 
 RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem) {
