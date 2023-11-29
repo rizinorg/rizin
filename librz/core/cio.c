@@ -147,7 +147,10 @@ RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) 
 		return false;
 	}
 	bool ret = rz_io_write_at(core->io, addr, buf, size);
-	if (addr >= core->offset && addr <= core->offset + core->blocksize - 1) {
+	// whether the written contents affect core->block
+	bool start_in_block = addr >= core->offset && addr <= core->offset + core->blocksize - 1;
+	bool end_in_block = addr + size > core->offset && addr + size <= core->offset + core->blocksize;
+	if (start_in_block || end_in_block) {
 		rz_core_block_read(core);
 	}
 	if (rz_config_get_i(core->config, "cfg.wseek")) {

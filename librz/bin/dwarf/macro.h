@@ -7,26 +7,20 @@
 #define MEM_CPY(T, dst, src) rz_mem_copy((dst), sizeof(T), (src), sizeof(T))
 
 #define OK_OR(x, E) \
-	do { \
-		if (!(x)) { \
-			E; \
-		} \
-	} while (0)
+	if (!(x)) { \
+		E; \
+	}
 
 #define OK_OR_ERR(x, E) \
-	do { \
-		if (!(x)) { \
-			E; \
-			goto err; \
-		} \
-	} while (0)
+	if (!(x)) { \
+		E; \
+		goto err; \
+	}
 
 #define AND_DO(x, E) \
-	do { \
-		if ((x)) { \
-			E; \
-		} \
-	} while (0)
+	if ((x)) { \
+		E; \
+	}
 
 #define RET_FALSE_IF_FAIL(x)   OK_OR(x, return false)
 #define RET_NULL_IF_FAIL(x)    OK_OR(x, return NULL)
@@ -62,4 +56,9 @@
 #define Ht_FREE_IMPL(V, T, f) \
 	static void Ht##V##_##T##_free(Ht##V##Kv *kv) { \
 		f(kv->value); \
+	}
+
+#define RZ_VECTOR_FINI_T(T, f) \
+	static void RzVector_##T##_fini(void *v, void *u) { \
+		f(v); \
 	}

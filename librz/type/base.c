@@ -124,6 +124,32 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeD
 	return types;
 }
 
+static void RzTypeStructMember_cpy(RzTypeStructMember *dst, RzTypeStructMember *src) {
+	if (!(src && dst)) {
+		return;
+	}
+	memcpy(dst, src, sizeof(RzTypeStructMember));
+	dst->name = rz_str_new(src->name);
+	dst->type = rz_type_clone(src->type);
+}
+
+static void RzTypeEnumCase_cpy(RzTypeEnumCase *dst, RzTypeEnumCase *src) {
+	if (!(src && dst)) {
+		return;
+	}
+	memcpy(dst, src, sizeof(RzTypeEnumCase));
+	dst->name = rz_str_new(src->name);
+}
+
+static void RzTypeUnionMember_cpy(RzTypeUnionMember *dst, RzTypeUnionMember *src) {
+	if (!(src && dst)) {
+		return;
+	}
+	memcpy(dst, src, sizeof(RzTypeUnionMember));
+	dst->name = rz_str_new(src->name);
+	dst->type = rz_type_clone(src->type);
+}
+
 /**
  * \brief Copy RzBaseType \p src into another RzBaseType \p dst
  * \param dst the destination RzBaseType
@@ -140,13 +166,16 @@ RZ_API bool rz_base_type_clone_into(
 
 	switch (src->kind) {
 	case RZ_BASE_TYPE_KIND_ENUM:
-		rz_vector_clone_into(&dst->enum_data.cases, &src->enum_data.cases);
+		rz_vector_clone_intof(&dst->enum_data.cases, &src->enum_data.cases,
+			(RzVectorItemCpyFunc)RzTypeEnumCase_cpy);
 		break;
 	case RZ_BASE_TYPE_KIND_STRUCT:
-		rz_vector_clone_into(&dst->struct_data.members, &src->struct_data.members);
+		rz_vector_clone_intof(&dst->struct_data.members, &src->struct_data.members,
+			(RzVectorItemCpyFunc)RzTypeStructMember_cpy);
 		break;
 	case RZ_BASE_TYPE_KIND_UNION:
-		rz_vector_clone_into(&dst->union_data.members, &src->union_data.members);
+		rz_vector_clone_intof(&dst->union_data.members, &src->union_data.members,
+			(RzVectorItemCpyFunc)RzTypeUnionMember_cpy);
 		break;
 	default: break;
 	}

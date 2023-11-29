@@ -651,14 +651,14 @@ static bool test_vector_swap(void) {
 	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
 	mu_assert_eq(e, 0, "rz_vector_swap (same index) => content");
 
-	rz_vector_swap(&v, 3, 2);
+	rz_vector_swap(&v, 1, 2);
 	mu_assert_eq(v.len, 3UL, "rz_vector_swap (bad index) => len == 3");
 	e = *((ut32 *)rz_vector_index_ptr(&v, 0));
 	mu_assert_eq(e, 2, "rz_vector_swap (bad index) => old content");
 	e = *((ut32 *)rz_vector_index_ptr(&v, 1));
-	mu_assert_eq(e, 1, "rz_vector_swap (bad index) => old content");
-	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
 	mu_assert_eq(e, 0, "rz_vector_swap (bad index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
+	mu_assert_eq(e, 1, "rz_vector_swap (bad index) => old content");
 
 	rz_vector_clear(&v);
 

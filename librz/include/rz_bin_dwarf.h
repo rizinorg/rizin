@@ -1408,7 +1408,7 @@ typedef struct {
 	ut64 offset;
 	bool has_location;
 	RzPVector /*<RzBinDwarfRawLocListEntry *>*/ raw_entries;
-	RzPVector /*<RzBinDwarfLocationListEntry *>*/ entries;
+	RzPVector /*<RzBinDwarfLocListEntry *>*/ entries;
 } RzBinDwarfLocList;
 
 typedef struct {
@@ -1739,6 +1739,7 @@ typedef struct {
 	const char *composite_sep;
 	const char *composite_indent;
 	const bool compose_breaklines;
+	const bool value_detail;
 } RzBinDWARFDumpOption;
 
 RZ_API void rz_bin_dwarf_expression_dump(
@@ -1755,7 +1756,7 @@ RZ_API void rz_bin_dwarf_loclist_dump(
 	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
 	RZ_BORROW RZ_NONNULL const RzBinDWARFDumpOption *opt);
 RZ_API void rz_bin_dwarf_location_composite_dump(
-	RZ_BORROW RZ_NONNULL RzVector /*<RzBinDwarfPiece>*/ *composite,
+	RZ_BORROW RZ_NONNULL const RzVector /*<RzBinDwarfPiece>*/ *composite,
 	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
 	RZ_BORROW RZ_NONNULL const RzBinDWARFDumpOption *opt);
 RZ_API void rz_bin_dwarf_location_dump(
@@ -1819,7 +1820,7 @@ RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_from_file(RZ_BORROW RZ_NONNULL R
  */
 static inline char *rz_bin_dwarf_attr_string(
 	const RzBinDwarfAttr *attr,
-	RzBinDWARF *dw,
+	const RzBinDWARF *dw,
 	ut64 str_offsets_base) {
 	rz_return_val_if_fail(attr, NULL);
 	const RzBinDwarfAttrValue *v = &attr->value;
@@ -1837,7 +1838,7 @@ static inline char *rz_bin_dwarf_attr_string(
 
 static inline ut64 rz_bin_dwarf_attr_addr(
 	const RzBinDwarfAttr *attr,
-	RzBinDWARF *dw,
+	const RzBinDWARF *dw,
 	ut64 addr_size, ut64 base) {
 	rz_return_val_if_fail(attr, UT64_MAX);
 
