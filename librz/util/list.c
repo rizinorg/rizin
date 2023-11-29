@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
-#include "rz_util.h"
+#include <rz_util.h>
 
 /**
  * \brief returns the next RzList iterator in the list
@@ -434,8 +434,7 @@ RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
 				it->p->n = it->n;
 				it->n->p = it->p;
 			}
-			free(it);
-			list->length--;
+			rz_list_delete(list, it);
 			return true;
 		}
 	}
