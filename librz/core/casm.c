@@ -258,6 +258,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				ut64 len = RZ_MIN(15, core->blocksize - idx);
 				if (rz_analysis_op(core->analysis, &aop, addr, buf + idx, len, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
 					idx++; // TODO: honor mininstrsz
+					rz_analysis_op_fini(&aop);
 					continue;
 				}
 				ut64 val = aop.val; // Referenced value
@@ -285,18 +286,21 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 					if (!(hit = rz_core_asm_hit_new())) {
 						rz_list_purge(hits);
 						RZ_FREE(hits);
+						rz_analysis_op_fini(&aop);
 						goto beach;
 					}
 					hit->addr = addr;
 					hit->len = aop.size; //  idx + len - tidx;
 					if (hit->len == -1) {
 						rz_core_asm_hit_free(hit);
+						rz_analysis_op_fini(&aop);
 						goto beach;
 					}
 					rz_asm_disassemble(core->rasm, &op, buf + addrbytes * idx,
 						core->blocksize - addrbytes * idx);
 					hit->code = rz_str_new(rz_strbuf_get(&op.buf_asm));
 					rz_asm_op_fini(&op);
+					rz_analysis_op_fini(&aop);
 					idx = (matchcount) ? tidx + 1 : idx + 1;
 					matchcount = 0;
 					rz_list_append(hits, hit);
@@ -309,6 +313,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				RzAnalysisOp aop = { 0 };
 				if (rz_analysis_op(core->analysis, &aop, addr, buf + idx, 15, RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 					idx++; // TODO: honor mininstrsz
+					rz_analysis_op_fini(&aop);
 					continue;
 				}
 				// opsz = aop.size;
