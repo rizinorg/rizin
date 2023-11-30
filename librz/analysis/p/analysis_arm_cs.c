@@ -1917,10 +1917,10 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 #if CS_NEXT_VERSION >= 6
 		cs_option(ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_CS_REG_ALIAS);
-#endif
 		if (a->bits == 64) {
 			cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL);
 		}
+#endif
 		if (ret != CS_ERR_OK) {
 			ctx->handle = 0;
 			return -1;
