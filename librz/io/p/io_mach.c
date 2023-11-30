@@ -204,7 +204,7 @@ static ut64 find_next_readable_region(task_t task, ut64 min_addr, ut64 *size_out
 	return UT64_MAX;
 }
 
-static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
+static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && desc && buf && len >= 0, -1);
 	RzIODescData *dd = (RzIODescData *)desc->data;
 	rz_return_val_if_fail(dd, -1);
@@ -277,7 +277,7 @@ static vm_address_t tsk_getpagebase(RzIODesc *desc, ut64 addr) {
 	return (addr & ~(pagesize - 1));
 }
 
-static bool tsk_setperm(RzIO *io, task_t task, vm_address_t addr, int len, int perm) {
+static bool tsk_setperm(RzIO *io, task_t task, vm_address_t addr, size_t len, int perm) {
 	kern_return_t kr;
 	kr = vm_protect(task, addr, len, 0, perm);
 	if (kr != KERN_SUCCESS) {
@@ -287,7 +287,7 @@ static bool tsk_setperm(RzIO *io, task_t task, vm_address_t addr, int len, int p
 	return true;
 }
 
-static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
+static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, size_t len) {
 	kern_return_t kr = vm_write(task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
 	if (kr != KERN_SUCCESS) {
 		return false;
@@ -295,7 +295,7 @@ static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	return true;
 }
 
-static int mach_write_at(RzIO *io, RzIODesc *desc, const void *buf, int len, ut64 addr) {
+static int mach_write_at(RzIO *io, RzIODesc *desc, const void *buf, size_t len, ut64 addr) {
 	vm_address_t vaddr = addr;
 	vm_address_t pageaddr;
 	vm_size_t pagesize;
@@ -336,7 +336,7 @@ static int mach_write_at(RzIO *io, RzIODesc *desc, const void *buf, int len, ut6
 	return len;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int len) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t len) {
 	return mach_write_at(io, fd, buf, len, io->off);
 }
 

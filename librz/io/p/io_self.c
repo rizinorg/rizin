@@ -284,7 +284,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int len) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t len) {
 	int left, perm;
 	if (self_in_section(io, io->off, &left, &perm)) {
 		if (perm & RZ_PERM_R) {
@@ -297,7 +297,7 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int len) {
 	return 0;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int len) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t len) {
 	if (fd->perm & RZ_PERM_W) {
 		int left, perm;
 		if (self_in_section(io, io->off, &left, &perm)) {

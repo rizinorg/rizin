@@ -18,7 +18,7 @@ typedef struct {
 	int fd;
 } RzIOFdata;
 
-static int __write(RzIO *io, RzIODesc *desc, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *desc, const ut8 *buf, size_t count) {
 	RzIOFdata *fdd = (RzIOFdata *)desc->data;
 	if (fdd) {
 		return write(fdd->fd, buf, count);
@@ -34,7 +34,7 @@ static bool __resize(RzIO *io, RzIODesc *desc, ut64 count) {
 	return false;
 }
 
-static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, size_t count) {
 	RzIOFdata *fdd = (RzIOFdata *)desc->data;
 	if (fdd) {
 		rz_cons_break_push(NULL, NULL);

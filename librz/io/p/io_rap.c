@@ -17,7 +17,7 @@ typedef struct {
 #define RzIORAP_IS_LISTEN(x) (((RzIORap *)((x)->data))->listener)
 #define RzIORAP_IS_VALID(x)  ((x) && ((x)->data) && ((x)->plugin == &rz_io_plugin_rap))
 
-static int __rap_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __rap_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	RzSocket *s = RzIORAP_FD(fd);
 	return rz_socket_rap_client_write(s, buf, count);
 }
@@ -31,7 +31,7 @@ static bool __rap_accept(RzIO *io, RzIODesc *desc, int fd) {
 	return false;
 }
 
-static int __rap_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __rap_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	RzSocket *s = RzIORAP_FD(fd);
 	return rz_socket_rap_client_read(s, buf, count);
 }

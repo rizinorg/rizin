@@ -27,7 +27,7 @@ typedef struct {
 	RzIODesc *fd;
 } ReadAtCtx;
 
-static int op_at_phys(void *user, ut64 address, const ut8 *in, ut8 *out, int len, bool write) {
+static int op_at_phys(void *user, ut64 address, const ut8 *in, ut8 *out, size_t len, bool write) {
 	ReadAtCtx *ctx = user;
 	int ret = write ? winkd_write_at_phys(ctx->fd->data, address, in, len) : winkd_read_at_phys(ctx->fd->data, address, out, len);
 	return ret;
@@ -105,7 +105,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	return c->fd;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd) {
 		return -1;
 	}
@@ -128,7 +128,7 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	}
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!fd) {
 		return -1;
 	}

@@ -55,7 +55,7 @@ static char *runcmd(const char *cmd) {
 	return NULL;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -82,7 +82,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return count;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}

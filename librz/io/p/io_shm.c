@@ -36,7 +36,7 @@ typedef struct {
 
 #define SHMATSZ 0x9000; // 32*1024*1024; /* 32MB : XXX not used correctly? */
 
-static int shm__write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int shm__write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	RzIOShm *shm = fd->data;
 	if (shm->buf) {
@@ -50,7 +50,7 @@ static int shm__write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 #endif
 }
 
-static int shm__read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int shm__read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	RzIOShm *shm = fd->data;
 	if (io->off + count >= shm->size) {

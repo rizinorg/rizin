@@ -18,7 +18,7 @@ typedef struct {
 #define RzIOSPARSE_BUF(x) (((RzIOSparse *)(x)->data)->buf)
 #define RzIOSPARSE_OFF(x) (((RzIOSparse *)(x)->data)->offset)
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	ut64 o;
 	RzBuffer *b;
 	if (!fd || !fd->data) {
@@ -33,7 +33,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return r;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	ut64 o;
 	RzBuffer *b;
 	if (!fd || !fd->data) {

@@ -35,7 +35,7 @@ static inline int is_in_base(ut64 off, BfvmCPU *c) {
 	return (off >= c->base && off < c->base + c->size);
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	RzIOBfdbg *riom;
 	int sz;
 	if (!fd || !fd->data) {
@@ -81,7 +81,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return count;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	RzIOBfdbg *riom;
 	int sz;
 	if (!fd || !fd->data) {

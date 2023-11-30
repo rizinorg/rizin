@@ -109,14 +109,14 @@ static bool rz_io_def_mmap_check_default(const char *filename) {
 	return (!peekaboo || (peekaboo - filename) > 10);
 }
 
-static int rz_io_def_mmap_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int rz_io_def_mmap_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	rz_return_val_if_fail(fd && fd->data && buf, -1);
 	RzIOMMapFileObj *mmo = (RzIOMMapFileObj *)fd->data;
 	rz_return_val_if_fail(mmo && mmo->buf, -1);
 	return (int)rz_buf_read(mmo->buf, buf, count);
 }
 
-static int rz_io_def_mmap_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int rz_io_def_mmap_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	rz_return_val_if_fail(io && fd && fd->data && buf, -1);
 	RzIOMMapFileObj *mmo = (RzIOMMapFileObj *)fd->data;
 	rz_return_val_if_fail(mmo && mmo->buf, -1);
@@ -157,11 +157,11 @@ static RzIODesc *__open_default(RzIO *io, const char *file, int perm, int mode) 
 	return NULL;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int len) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t len) {
 	return rz_io_def_mmap_read(io, fd, buf, len);
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int len) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t len) {
 	return rz_io_def_mmap_write(io, fd, buf, len);
 }
 
