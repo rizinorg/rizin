@@ -180,7 +180,7 @@ RZ_API bool rz_io_desc_close(RzIODesc *desc) {
 }
 
 // returns length of written bytes
-RZ_API int rz_io_desc_write(RzIODesc *desc, const ut8 *buf, int len) {
+RZ_API int rz_io_desc_write(RzIODesc *desc, const ut8 *buf, size_t len) {
 	rz_return_val_if_fail(desc && buf, -1);
 	if (len < 0) {
 		return -1;
@@ -194,7 +194,7 @@ RZ_API int rz_io_desc_write(RzIODesc *desc, const ut8 *buf, int len) {
 }
 
 // returns length of read bytes
-RZ_API int rz_io_desc_read(RzIODesc *desc, ut8 *buf, int len) {
+RZ_API int rz_io_desc_read(RzIODesc *desc, ut8 *buf, size_t len) {
 	// check pointers and permissions
 	if (!buf || !desc || !desc->plugin || !(desc->perm & RZ_PERM_R)) {
 		return -1;
@@ -348,7 +348,7 @@ RZ_API bool rz_io_desc_get_base(RzIODesc *desc, ut64 *base) {
 	return desc->plugin->getbase(desc, base);
 }
 
-RZ_API int rz_io_desc_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len) {
+RZ_API int rz_io_desc_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, size_t len) {
 	ut64 val = rz_io_desc_seek(desc, addr, RZ_IO_SEEK_SET);
 	if (desc && buf && val != UT64_MAX && val == addr) {
 		return rz_io_desc_read(desc, buf, len);
@@ -356,7 +356,7 @@ RZ_API int rz_io_desc_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len) {
 	return 0;
 }
 
-RZ_API int rz_io_desc_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, int len) {
+RZ_API int rz_io_desc_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, size_t len) {
 	ut64 val = rz_io_desc_seek(desc, addr, RZ_IO_SEEK_SET);
 	if (desc && buf && val != UT64_MAX && val == addr) {
 		return rz_io_desc_write(desc, buf, len);

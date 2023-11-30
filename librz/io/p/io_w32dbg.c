@@ -19,7 +19,7 @@ static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
 	return from < to ? from : UT64_MAX;
 }
 
-static int debug_os_read_at(W32DbgWInst *dbg, ut8 *buf, int len, ut64 addr) {
+static int debug_os_read_at(W32DbgWInst *dbg, ut8 *buf, size_t len, ut64 addr) {
 	SIZE_T ret = 0;
 	if (!ReadProcessMemory(dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret) && GetLastError() == ERROR_PARTIAL_COPY) {
 		int skipped = 0;
@@ -64,16 +64,16 @@ static int debug_os_read_at(W32DbgWInst *dbg, ut8 *buf, int len, ut64 addr) {
 	return len;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int len) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t len) {
 	return debug_os_read_at(fd->data, buf, len, io->off);
 }
 
-static int w32dbg_write_at(W32DbgWInst *dbg, const ut8 *buf, int len, ut64 addr) {
+static int w32dbg_write_at(W32DbgWInst *dbg, const ut8 *buf, size_t len, ut64 addr) {
 	SIZE_T ret;
 	return 0 != WriteProcessMemory(dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret) ? len : 0;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int len) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t len) {
 	return w32dbg_write_at(fd->data, buf, len, io->off);
 }
 

@@ -78,7 +78,7 @@ RZ_API RzIOPlugin *rz_io_plugin_byname(RzIO *io, const char *name) {
 	return rz_io_plugin_get_default(io, name, false);
 }
 
-RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len) {
+RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, size_t len) {
 	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & RZ_PERM_R)) {
 		return 0;
 	}
@@ -88,7 +88,7 @@ RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len) {
 	return desc->plugin->read(desc->io, desc, buf, len);
 }
 
-RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, int len) {
+RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, size_t len) {
 	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & RZ_PERM_W)) {
 		return 0;
 	}
@@ -102,14 +102,14 @@ RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, int len) {
 	return ret;
 }
 
-RZ_API int rz_io_plugin_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len) {
+RZ_API int rz_io_plugin_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, size_t len) {
 	if (rz_io_desc_is_chardevice(desc) || (rz_io_desc_seek(desc, addr, RZ_IO_SEEK_SET) == addr)) {
 		return rz_io_plugin_read(desc, buf, len);
 	}
 	return 0;
 }
 
-RZ_API int rz_io_plugin_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, int len) {
+RZ_API int rz_io_plugin_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, size_t len) {
 	if (rz_io_desc_is_chardevice(desc) || rz_io_desc_seek(desc, addr, RZ_IO_SEEK_SET) == addr) {
 		return rz_io_plugin_write(desc, buf, len);
 	}

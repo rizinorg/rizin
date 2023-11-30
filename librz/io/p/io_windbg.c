@@ -615,7 +615,7 @@ static ut64 windbg_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int windbg_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int windbg_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	DbgEngContext *idbg = fd->data;
 	ULONG bytesRead = 0ULL;
 	if (FAILED(ITHISCALL(dbgData, ReadVirtual, io->off, (PVOID)buf, count, &bytesRead))) {
@@ -633,7 +633,7 @@ static int windbg_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	return bytesRead;
 }
 
-static int windbg_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int windbg_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	DbgEngContext *idbg = fd->data;
 	ULONG bytesWritten = 0ULL;
 	ITHISCALL(dbgData, WriteVirtual, io->off, (PVOID)buf, count, &bytesWritten);

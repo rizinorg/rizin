@@ -81,7 +81,7 @@ static int debug_os_read_at(RzIO *io, int pid, ut32 *buf, int sz, ut64 addr) {
 	return sz;
 }
 
-static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
+static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, size_t len) {
 #if USE_PROC_PID_MEM
 	int ret, fd;
 #endif
@@ -152,7 +152,7 @@ static int ptrace_write_at(RzIO *io, int pid, const ut8 *pbuf, int sz, ut64 addr
 	return sz;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int len) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t len) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -200,11 +200,11 @@ static inline bool is_pid_already_attached(RzIO *io, int pid) {
 	return rz_io_ptrace(io, PTRACE_GETSIGINFO, pid, NULL, &sig) != -1;
 #elif defined(__FreeBSD__)
 	struct ptrace_lwpinfo info = { 0 };
-	int len = (int)sizeof(info);
+	size_t len = (int)sizeof(info);
 	return rz_io_ptrace(io, PT_LWPINFO, pid, &info, len) != -1;
 #elif defined(__OpenBSD__) || defined(__NetBSD__)
 	ptrace_state_t state = { 0 };
-	int len = (int)sizeof(state);
+	size_t len = (int)sizeof(state);
 	return rz_io_ptrace(io, PT_GET_PROCESS_STATE, pid, &state, len) != -1;
 #else
 	return false;

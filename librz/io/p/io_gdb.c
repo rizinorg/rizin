@@ -130,7 +130,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	return riogdb;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	ut64 addr = io->off;
 	if (!desc || !desc->data) {
 		return -1;
@@ -152,7 +152,7 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!io || !fd || !buf || count < 1) {
 		return -1;
 	}

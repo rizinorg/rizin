@@ -13,7 +13,7 @@
 
 // TODO: add rzpipe_assert
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	char fmt[4096];
 	char *bufn, bufnum[4096];
 	int i, rv, rescount = -1;
@@ -27,7 +27,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 		snprintf(bufn, bufn_sz, "%s%d", i ? "," : "", buf[i]);
 		bufn += strlen(bufn);
 	}
-	int len = snprintf(fmt, sizeof(fmt),
+	size_t len = snprintf(fmt, sizeof(fmt),
 		"{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
 		io->off, bufnum);
 	if (len >= sizeof(fmt)) {
@@ -45,7 +45,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return rescount;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	char fmt[4096], num[128];
 	int rv, rescount = -1;
 	int bufi, numi;
@@ -57,7 +57,7 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 		count = 1024;
 	}
 	snprintf(fmt, sizeof(fmt),
-		"{\"op\":\"read\",\"address\":%" PFMT64d ",\"count\":%d}",
+		"{\"op\":\"read\",\"address\":%" PFMT64d ",\"count\":%" PFMTSZd "}",
 		io->off, count);
 	rv = rzpipe_write(RZP(fd), fmt);
 	if (rv < 1) {

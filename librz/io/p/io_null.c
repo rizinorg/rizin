@@ -10,7 +10,7 @@ typedef struct {
 	ut64 offset;
 } RzIONull;
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	RzIONull *null;
 	if (!fd || !fd->data || !buf) {
 		return -1;
@@ -40,7 +40,7 @@ static bool __resize(RzIO *io, RzIODesc *fd, ut64 count) {
 	return false;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	RzIONull *null;
 	if (!fd || !fd->data || !buf) {
 		return -1;
