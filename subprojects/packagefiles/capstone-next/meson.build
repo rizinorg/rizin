@@ -86,6 +86,10 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_TRICORE',
 ]
 
+if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')
+  libcapstone_c_args += '-Wno-maybe-uninitialized'
+endif
+
 libcapstone = library('capstone', cs_files,
   c_args: libcapstone_c_args,
   include_directories: capstone_includes,
