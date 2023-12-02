@@ -2013,6 +2013,24 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_analysis_global_variable_print_handler(RzCore *core, int argc, const char **argv) {
+	const char *name = argv[1];
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, name);
+	if (!glob) {
+		RZ_LOG_ERROR("Global variable '%s' does not exist!\n", name);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *fmt = rz_type_as_format_pair(core->analysis->typedb, glob->type);
+	if (RZ_STR_ISEMPTY(fmt)) {
+		free(fmt);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// TODO: Convert to the API
+	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, glob->addr);
+	free(fmt);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int argc, const char **argv) {
 	const char *name = argv[1];
 	const char *type = argv[2];

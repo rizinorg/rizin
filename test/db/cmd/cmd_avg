@@ -111,3 +111,32 @@ EXPECT_ERR=<<EOF
 ERROR: Global variable 'foo' does not exist!
 EOF
 RUN
+
+NAME=avgp - print global variable value
+FILE==
+CMDS=<<EOF
+wx 40102030405050230590909090
+w alfdjsdfgkjdhfgkdghdfgdfg @ 0x20
+avga foo int @ 0x10
+avgp foo
+avga boo char @ 0x0
+avgp boo
+avga goo "struct aaa { int a; char b; };" @ 0x5
+avgp goo
+avga qoo "enum qwe { A=0,B,C,D };" @ 0x15
+avgp qoo
+avga poo "char *" @ 0x25
+avgp poo
+avga xoo "char [5]" @ 0x30
+avgp xoo
+EOF
+EXPECT=<<EOF
+ int : 0x00000010 = 0
+ char : 0x00000000 = '@'
+ a : 0x00000005 = 86200400
+ b : 0x00000009 = '.'
+ qwe : 0x00000015 = qwe (enum qwe) = 0x0 ; A
+ char : (*0x68646a6b67666473)0x00000025 = '.'
+ char : 0x00000030 = [ 'd', 'g', 'h', 'd', 'f' ]
+EOF
+RUN
