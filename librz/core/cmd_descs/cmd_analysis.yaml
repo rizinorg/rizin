@@ -1564,6 +1564,13 @@ commands:
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
               - name: new_var_name
                 type: RZ_CMD_ARG_TYPE_STRING
+          - name: avgp
+            summary: print the global variable value
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_print
+            args:
+              - name: name
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
           - name: avgt
             summary: change the global variable type
             type: RZ_CMD_DESC_TYPE_ARGV
