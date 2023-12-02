@@ -186,7 +186,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
-        run: pip3 install --user meson==1.2.3 ninja PyYAML
+        run: pip3 install --user meson ninja PyYAML
       - name: Checkout rzpipe
         if: matrix.enabled
         uses: actions/checkout@v3
@@ -447,7 +447,7 @@ jobs:
       - name: Install python and other dependencies
         run: sudo apt-get install --yes python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
-        run: sudo pip3 install meson==1.2.3 ninja PyYAML
+        run: sudo pip3 install meson ninja PyYAML
       - name: Install test dependencies
         run: |
           sudo pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
@@ -499,7 +499,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Install meson and ninja
-        run: sudo pip3 install meson==1.2.3 ninja
+        run: sudo pip3 install meson ninja
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
@@ -584,7 +584,7 @@ jobs:
       - name: Install python and other dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
-        run: pip3 install --user meson==1.2.3 ninja PyYAML
+        run: pip3 install --user meson ninja PyYAML
       - uses: actions/checkout@v3
       - name: Extract rizin version
         run: echo "version=$(python sys/version.py)" >> $GITHUB_OUTPUT
@@ -611,7 +611,7 @@ jobs:
       - name: Install python and other dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
-        run: sudo pip3 install meson==1.2.3 ninja PyYAML
+        run: sudo pip3 install meson ninja PyYAML
       - uses: actions/download-artifact@v3
         with:
           name: rizin-src.tar.xz
@@ -650,7 +650,7 @@ jobs:
       - name: Install pkg-config with Homebrew
         run: brew install pkg-config
       - name: Install meson and ninja
-        run: pip3 install meson==1.2.3 ninja PyYAML
+        run: pip3 install meson ninja PyYAML
       - name: Install ImageMagick
         run: brew install imagemagick
       - name: Create OSX package
@@ -720,7 +720,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson==1.2.3 ninja
+        run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
       - name: Compile with meson
         run: |
           export PATH=${HOME}/.local/bin:${PATH}
@@ -747,7 +747,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
-        run: sudo pip3 install meson==1.2.3 ninja PyYAML
+        run: sudo pip3 install meson ninja PyYAML
       - name: Compile & Install Rizin
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
@@ -773,7 +773,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
-        run: sudo pip3 install meson==1.2.3 ninja PyYAML
+        run: sudo pip3 install meson ninja PyYAML
       - name: Compile & Install Rizin
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
@@ -803,7 +803,7 @@ jobs:
           mkdir rizin && pwd && ls -l
           tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
       - name: Install dependencies
-        run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson==1.2.3 ninja
+        run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
       - name: Install rizin
         run: |
           export PATH=$PATH:/usr/local/bin
@@ -832,7 +832,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt-get --assume-yes install cmake swig pkg-config clang libclang-dev llvm wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson==1.2.3 ninja
+          sudo apt-get --assume-yes install cmake swig pkg-config clang libclang-dev llvm wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
       - name: Install rizin
         run: |
           export PATH=$PATH:/usr/local/bin
@@ -1004,7 +1004,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson==1.2.3
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
       - name: Download subprojects
         run: |
           export PATH=${HOME}/.local/bin:${PATH}

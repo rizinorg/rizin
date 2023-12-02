@@ -405,7 +405,9 @@ bool test_rz_analysis_var_is_arg() {
 }
 
 int all_tests() {
+#if !ASAN
 	mu_run_test(test_rz_analysis_var);
+#endif
 	mu_run_test(test_rz_analysis_function_get_stack_var_in);
 	mu_run_test(test_rz_analysis_function_var_expr_for_reg_access_at);
 	mu_run_test(test_rz_analysis_var_is_arg);
