@@ -92,6 +92,7 @@ static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 addres
 		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	// TODO: Convert to the API
 	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, address);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
@@ -117,6 +118,7 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 addr = rz_core_analysis_var_addr(core, var);
+	// TODO: Convert to the API
 	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
@@ -129,6 +131,7 @@ static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 
 		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	// TODO: Convert to the API
 	rz_core_cmdf(core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
@@ -141,6 +144,7 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	// TODO: Convert to the API
 	rz_core_cmdf(core, "pf %s @x:%s", fmt, hexpairs);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;

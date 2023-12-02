@@ -561,6 +561,8 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_byaddr_handler(RzCore *cor
 RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_byname_handler(RzCore *core, int argc, const char **argv);
 // "avgn"
 RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int argc, const char **argv);
+// "avgp"
+RZ_IPI RzCmdStatus rz_analysis_global_variable_print_handler(RzCore *core, int argc, const char **argv);
 // "avgt"
 RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int argc, const char **argv);
 // "avr"
