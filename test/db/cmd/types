@@ -69,6 +69,38 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=types - rename
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+td "typedef uint16_t WORD;"
+td "typedef struct _VbHeader { char szVbMagic[4]; WORD wRuntimeBuild; char szLangDll[14]; char szSecLangDll[14];} VbHeader;"
+tc WORD
+tr WORD SILENCE
+tc SILENCE
+tc _VbHeader
+tr _VbHeader BBHeader
+tc BBHeader
+EOF
+EXPECT=<<EOF
+WORD;
+SILENCE;
+struct _VbHeader {
+	char szVbMagic[4];
+	unknown_t wRuntimeBuild;
+	char szLangDll[14];
+	char szSecLangDll[14];
+};
+struct BBHeader {
+	char szVbMagic[4];
+	unknown_t wRuntimeBuild;
+	char szLangDll[14];
+	char szSecLangDll[14];
+};
+EOF
+RUN
+
 NAME=Global variables with types - JSON
 FILE==
 CMDS=<<EOF
