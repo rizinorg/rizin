@@ -6964,12 +6964,15 @@ RZ_IPI RzCmdStatus rz_print_equal_two_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
-static void printraw(RzCore *core, int len) {
+static void printraw(RzCore *core, int len, bool stop_at_null) {
 	ut8 *data = malloc(len);
 	if (!data) {
 		return;
 	}
 	if (rz_io_read_at(core->io, core->offset, data, len)) {
+		if (stop_at_null) {
+			len = rz_str_nlen((const char *)data, len);
+		}
 		rz_print_raw(core->print, core->offset, data, len);
 	}
 	free(data);
@@ -6977,11 +6980,11 @@ static void printraw(RzCore *core, int len) {
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_raw_handler(RzCore *core, int argc, const char **argv) {
-	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	printraw(core, len);
+	printraw(core, len, false);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -7028,10 +7031,10 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_printable_handler(RzCore *core, int argc, co
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const char **argv) {
-	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	printraw(core, len);
+	printraw(core, len, true);
 	return RZ_CMD_STATUS_OK;
 }
