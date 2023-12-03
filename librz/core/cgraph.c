@@ -787,21 +787,21 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCor
  * is not yet added as node to the graph, it adds it to the graph and returns its reference.
  *
  * \param icfg The iCFG to fill.
- * \param grap_idx Hash table to track the graph node indices for each function address.
+ * \param graph_idx Hash table to track the graph indices of each function address.
  * \param fcn The function to add.
  * \param existed Is set to true if the node was already in the graph.
  *
  * \return The GraphNode.
  */
-static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *grap_idx, const RzAnalysisFunction *fcn) {
-	rz_return_val_if_fail(icfg && grap_idx && fcn, NULL);
+static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *graph_idx, const RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(icfg && graph_idx && fcn, NULL);
 	bool found = false;
-	ut64 graph_idx = ht_uu_find(grap_idx, fcn->addr, &found);
+	ut64 i = ht_uu_find(graph_idx, fcn->addr, &found);
 	if (found) {
 		// Node already added, get it.
-		return rz_graph_get_node(icfg, graph_idx);
+		return rz_graph_get_node(icfg, i);
 	}
-	ht_uu_insert(grap_idx, fcn->addr, rz_list_length(rz_graph_get_nodes(icfg)));
+	ht_uu_insert(graph_idx, fcn->addr, rz_list_length(rz_graph_get_nodes(icfg)));
 	return rz_graph_add_node_info(icfg, fcn->name, NULL, fcn->addr);
 }
 
@@ -811,12 +811,12 @@ static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNod
  *
  * \param analysis The current RzAnalysis.
  * \param icfg The iCFG to fill.
- * \param grap_idx Hash table to track the graph node indices for each function address.
+ * \param graph_idx Hash table to track the graph node indices for each function address.
  * \param fcn The function to add.
  */
-static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *grap_idx, const RzAnalysisFunction *fcn) {
-	rz_return_if_fail(analysis && icfg && grap_idx && fcn);
-	RzGraphNode *from_node = get_graph_node_of_fcn(icfg, grap_idx, fcn);
+static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *graph_idx, const RzAnalysisFunction *fcn) {
+	rz_return_if_fail(analysis && icfg && graph_idx && fcn);
+	RzGraphNode *from_node = get_graph_node_of_fcn(icfg, graph_idx, fcn);
 	RzListIter *it;
 	const RzAnalysisXRef *xref;
 	rz_list_foreach (rz_analysis_function_get_xrefs_from(fcn), it, xref) {
@@ -828,14 +828,14 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 			// Either a faulty entry or a GOT entry
 			continue;
 		}
-		RzGraphNode *to_node = get_graph_node_of_fcn(icfg, grap_idx, called_fcn);
+		RzGraphNode *to_node = get_graph_node_of_fcn(icfg, graph_idx, called_fcn);
 		if (rz_graph_adjacent(icfg, from_node, to_node)) {
 			// Edge already added and walked. Don't recurse.
 			continue;
 		}
 		rz_graph_add_edge(icfg, from_node, to_node);
 		// Recurse into called function.
-		extend_icfg(analysis, icfg, grap_idx, called_fcn);
+		extend_icfg(analysis, icfg, graph_idx, called_fcn);
 	}
 }
 
@@ -859,12 +859,12 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzC
 		return NULL;
 	}
 
-	HtUU *grap_idx = ht_uu_new0();
+	HtUU *graph_idx = ht_uu_new0();
 	RzListIter *it;
 	const RzAnalysisFunction *fcn;
 	rz_list_foreach (fcns, it, fcn) {
-		extend_icfg(core->analysis, graph, grap_idx, fcn);
+		extend_icfg(core->analysis, graph, graph_idx, fcn);
 	}
-	ht_uu_free(grap_idx);
+	ht_uu_free(graph_idx);
 	return graph;
 }
