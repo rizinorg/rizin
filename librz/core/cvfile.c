@@ -76,7 +76,7 @@ beach:
 	return desc;
 }
 
-static int vf_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int vf_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	if (!(fd->perm & RZ_PERM_W)) {
 		return -1;
@@ -85,7 +85,7 @@ static int vf_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return rz_buf_write_at(ctx->vfile->buf, ctx->off, buf, count);
 }
 
-static int vf_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int vf_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	VFileCtx *ctx = fd->data;
 	return rz_buf_read_at(ctx->vfile->buf, ctx->off, buf, count);

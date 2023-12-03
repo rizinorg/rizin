@@ -15,19 +15,19 @@
 
 RZ_LIB_VERSION(rz_io);
 
-static int fd_read_at_wrap(RzIO *io, int fd, ut64 addr, ut8 *buf, int len, RzIOMap *map, void *user) {
+static int fd_read_at_wrap(RzIO *io, int fd, ut64 addr, ut8 *buf, size_t len, RzIOMap *map, void *user) {
 	return rz_io_fd_read_at(io, fd, addr, buf, len);
 }
 
-static int fd_write_at_wrap(RzIO *io, int fd, ut64 addr, ut8 *buf, int len, RzIOMap *map, void *user) {
+static int fd_write_at_wrap(RzIO *io, int fd, ut64 addr, ut8 *buf, size_t len, RzIOMap *map, void *user) {
 	return rz_io_fd_write_at(io, fd, addr, buf, len);
 }
 
-typedef int (*cbOnIterMap)(RzIO *io, int fd, ut64 addr, ut8 *buf, int len, RzIOMap *map, void *user);
+typedef int (*cbOnIterMap)(RzIO *io, int fd, ut64 addr, ut8 *buf, size_t len, RzIOMap *map, void *user);
 
 // If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
 // If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
-static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
+static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, size_t len, int match_flg, cbOnIterMap op, bool prefix_mode) {
 	RzVector *skyline = &io->map_skyline.v;
 	ut64 addr = vaddr;
 	size_t i;
@@ -264,7 +264,7 @@ RZ_API int rz_io_close_all(RzIO *io) { // what about undo?
 	return true;
 }
 
-RZ_API int rz_io_pread_at(RzIO *io, ut64 paddr, ut8 *buf, int len) {
+RZ_API int rz_io_pread_at(RzIO *io, ut64 paddr, ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf && len >= 0, -1);
 	if (io->ff) {
 		memset(buf, io->Oxff, len);
@@ -272,13 +272,13 @@ RZ_API int rz_io_pread_at(RzIO *io, ut64 paddr, ut8 *buf, int len) {
 	return rz_io_desc_read_at(io->desc, paddr, buf, len);
 }
 
-RZ_API int rz_io_pwrite_at(RzIO *io, ut64 paddr, const ut8 *buf, int len) {
+RZ_API int rz_io_pwrite_at(RzIO *io, ut64 paddr, const ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf && len > 0, -1);
 	return rz_io_desc_write_at(io->desc, paddr, buf, len);
 }
 
 // Returns true iff all reads on mapped regions are successful and complete.
-RZ_API bool rz_io_vread_at_mapped(RzIO *io, ut64 vaddr, ut8 *buf, int len) {
+RZ_API bool rz_io_vread_at_mapped(RzIO *io, ut64 vaddr, ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf && len > 0, false);
 	if (io->ff) {
 		memset(buf, io->Oxff, len);
@@ -286,7 +286,7 @@ RZ_API bool rz_io_vread_at_mapped(RzIO *io, ut64 vaddr, ut8 *buf, int len) {
 	return on_map_skyline(io, vaddr, buf, len, RZ_PERM_R, fd_read_at_wrap, false);
 }
 
-static bool rz_io_vwrite_at(RzIO *io, ut64 vaddr, const ut8 *buf, int len) {
+static bool rz_io_vwrite_at(RzIO *io, ut64 vaddr, const ut8 *buf, size_t len) {
 	return on_map_skyline(io, vaddr, (ut8 *)buf, len, RZ_PERM_W, fd_write_at_wrap, false);
 }
 
@@ -295,7 +295,7 @@ static bool rz_io_vwrite_at(RzIO *io, ut64 vaddr, const ut8 *buf, int len) {
 // and complete.
 // For physical mode, the interface is broken because the actual read bytes are
 // not available. This requires fixes in all call sites.
-RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
+RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf && len >= 0, false);
 	if (len == 0) {
 		return false;
@@ -313,7 +313,7 @@ RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
 // Unmapped regions are filled with io->Oxff in both physical and virtual modes.
 // Use this function if you want to ignore gaps or do not care about the number
 // of read bytes.
-RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, int len) {
+RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 	bool ret;
 	rz_return_val_if_fail(io && buf, false);
 	if (io->ff) {
@@ -333,7 +333,7 @@ RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, int len) {
 // For both virtual and physical mode, returns the number of bytes of read
 // prefix.
 // Returns -1 on error.
-RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
+RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 	int ret;
 	rz_return_val_if_fail(io && buf && len >= 0, -1);
 	if (len == 0) {
@@ -353,7 +353,17 @@ RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, int len) {
+/**
+ * \brief Writes \p len bytes of data from \p buf to \p addr into the given \p io.
+ *
+ * \param io The IO object to write to.
+ * \param addr The address the data is written.
+ * \param buf The buffer to read the data for writing.
+ * \param len The number of bytes to write.
+ * \return true The write was successful.
+ * \return false The write as unsucessful or \p len was less then 1.
+ */
+RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, size_t len) {
 	int i;
 	bool ret = false;
 	ut8 *mybuf = (ut8 *)buf;
@@ -378,7 +388,7 @@ RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	return ret;
 }
 
-RZ_API bool rz_io_read(RzIO *io, ut8 *buf, int len) {
+RZ_API bool rz_io_read(RzIO *io, ut8 *buf, size_t len) {
 	if (io && rz_io_read_at(io, io->off, buf, len)) {
 		io->off += len;
 		return true;
@@ -386,7 +396,7 @@ RZ_API bool rz_io_read(RzIO *io, ut8 *buf, int len) {
 	return false;
 }
 
-RZ_API bool rz_io_write(RzIO *io, const ut8 *buf, int len) {
+RZ_API bool rz_io_write(RzIO *io, const ut8 *buf, size_t len) {
 	if (io && buf && len > 0 && rz_io_write_at(io, io->off, buf, len)) {
 		io->off += len;
 		return true;
@@ -512,7 +522,7 @@ RZ_API bool rz_io_extend_at(RzIO *io, ut64 addr, ut64 size) {
  * \param len Number of bytes in the mask
  * \return true if the mask was correctly set, false otherwise
  */
-RZ_API bool rz_io_set_write_mask(RzIO *io, const ut8 *mask, int len) {
+RZ_API bool rz_io_set_write_mask(RzIO *io, const ut8 *mask, size_t len) {
 	rz_return_val_if_fail(io, false);
 	rz_return_val_if_fail(mask || len == 0, false);
 

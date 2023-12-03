@@ -164,7 +164,7 @@ fail:
 	return NULL;
 }
 
-static int io_bochs_no_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int io_bochs_no_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd || !fd->data || count < 0) {
 		return -1;
 	}
@@ -221,7 +221,7 @@ static bool io_bochs_read_memory(RzSubprocess *bochs, ut64 address, ut8 *buf, si
 	return written == count;
 }
 
-static int io_bochs_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int io_bochs_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!fd || !fd->data || count < 0) {
 		return -1;
 	}

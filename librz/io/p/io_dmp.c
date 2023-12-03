@@ -14,7 +14,7 @@ typedef struct {
 	RzIODesc *fd;
 } ReadAtCtx;
 
-static int op_at_phys(void *user, ut64 address, const ut8 *in, ut8 *out, int len, bool write) {
+static int op_at_phys(void *user, ut64 address, const ut8 *in, ut8 *out, size_t len, bool write) {
 	ReadAtCtx *ctx = user;
 	DmpCtx *dmp = ctx->fd->data;
 	const ut64 saved_target = dmp->target;
@@ -91,7 +91,7 @@ static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 	return c->fd;
 }
 
-static int dmp_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int dmp_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd) {
 		return -1;
 	}
@@ -127,7 +127,7 @@ static ut64 dmp_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	}
 }
 
-static int dmp_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int dmp_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!fd) {
 		return -1;
 	}

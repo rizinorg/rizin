@@ -16,7 +16,7 @@ typedef struct {
 #define rFD(x)  (((RzIOR2Web *)(x)->data)->fd)
 #define rURL(x) (((RzIOR2Web *)(x)->data)->url)
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	int code, rlen;
 	char *out, *url, *hexbuf;
 	if (!fd || !fd->data) {
@@ -40,14 +40,14 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return count;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	int code, rlen;
 	char *out, *url;
 	int ret = 0;
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	url = rz_str_newf("%s/p8%%20%d@0x%" PFMT64x,
+	url = rz_str_newf("%s/p8%%20%" PFMTSZd "@0x%" PFMT64x,
 		rURL(fd), count, io->off);
 	out = rz_socket_http_get(url, &code, &rlen);
 	if (out && rlen > 0) {

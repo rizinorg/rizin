@@ -12,7 +12,7 @@ typedef struct io_mock_t {
 	size_t size;
 } IOMock;
 
-static bool io_mock_read_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
+static bool io_mock_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 	IOMock *mock = (void *)io;
 	memset (buf, 0xff, len);
 	if (addr < mock->start) {

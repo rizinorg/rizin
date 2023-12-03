@@ -13,7 +13,7 @@ RZ_API bool rz_io_fd_close(RzIO *io, int fd) {
 }
 
 // returns length of read bytes
-RZ_API int rz_io_fd_read(RzIO *io, int fd, ut8 *buf, int len) {
+RZ_API int rz_io_fd_read(RzIO *io, int fd, ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf, -1);
 	if (len < 0) {
 		return -1;
@@ -23,7 +23,7 @@ RZ_API int rz_io_fd_read(RzIO *io, int fd, ut8 *buf, int len) {
 }
 
 // returns length of written bytes
-RZ_API int rz_io_fd_write(RzIO *io, int fd, const ut8 *buf, int len) {
+RZ_API int rz_io_fd_write(RzIO *io, int fd, const ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf, -1);
 	if (len < 0) {
 		return -1;
@@ -68,7 +68,7 @@ RZ_API bool rz_io_fd_is_chardevice(RzIO *io, int fd) {
 }
 
 // returns length of read bytes
-RZ_API int rz_io_fd_read_at(RzIO *io, int fd, ut64 addr, ut8 *buf, int len) {
+RZ_API int rz_io_fd_read_at(RzIO *io, int fd, ut64 addr, ut8 *buf, size_t len) {
 	RzIODesc *desc;
 	if (!io || !buf || (len < 1) || !(desc = rz_io_desc_get(io, fd))) {
 		return 0;
@@ -77,7 +77,7 @@ RZ_API int rz_io_fd_read_at(RzIO *io, int fd, ut64 addr, ut8 *buf, int len) {
 }
 
 // returns length of written bytes
-RZ_API int rz_io_fd_write_at(RzIO *io, int fd, ut64 addr, const ut8 *buf, int len) {
+RZ_API int rz_io_fd_write_at(RzIO *io, int fd, ut64 addr, const ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf, false);
 	RzIODesc *desc = rz_io_desc_get(io, fd);
 	return desc ? rz_io_desc_write_at(desc, addr, buf, len) : -1;
