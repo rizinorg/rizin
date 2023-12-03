@@ -565,7 +565,8 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	}
 
 	if (!strcmp(key, "program")) {
-		p->_args[0] = p->_program = strdup(value);
+		p->_args[0] = strdup(value);
+		p->_program = strdup(value);
 	} else if (!strcmp(key, "daemon")) {
 		p->_daemon = true;
 	} else if (!strcmp(key, "system")) {
