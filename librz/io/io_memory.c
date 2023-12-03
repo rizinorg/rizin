@@ -53,7 +53,7 @@ static inline void _io_malloc_set_off(RzIODesc *desc, ut64 off) {
 	mal->offset = off;
 }
 
-int io_memory_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t  count) {
+int io_memory_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd || !buf || count < 0 || !fd->data) {
 		return -1;
 	}
