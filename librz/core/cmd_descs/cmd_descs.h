@@ -565,6 +565,8 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_print_handler(RzCore *core, int argc, const char **argv);
 // "avgt"
 RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int argc, const char **argv);
+// "avgx"
+RZ_IPI RzCmdStatus rz_analysis_global_variable_xrefs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "avr"
 RZ_IPI RzCmdStatus rz_analysis_print_rtti_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "avra"

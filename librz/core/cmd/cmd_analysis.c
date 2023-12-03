@@ -3179,11 +3179,9 @@ static void xref_list_print_as_cmd(RZ_UNUSED RzCore *core, RzList /*<RzAnalysisX
 	}
 }
 
-RZ_IPI RzCmdStatus rz_analysis_xrefs_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzListIter *iter;
+static void xrefs_list_handler(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list, RzCmdStateOutput *state) {
 	RzAnalysisXRef *xref;
-	RzCmdStatus status = RZ_CMD_STATUS_OK;
-	RzList *list = rz_analysis_xrefs_list(core->analysis);
+	RzListIter *iter;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		xrefs_list_print(core, list);
@@ -3201,18 +3199,21 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_list_handler(RzCore *core, int argc, const 
 		break;
 	default:
 		rz_warn_if_reached();
-		status = RZ_CMD_STATUS_WRONG_ARGS;
 		break;
 	}
+}
+
+RZ_IPI RzCmdStatus rz_analysis_xrefs_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
+	RzList *list = rz_analysis_xrefs_list(core->analysis);
+	xrefs_list_handler(core, list, state);
 	rz_list_free(list);
 	return status;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+static void xrefs_to_list_handler(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list, RzCmdStateOutput *state) {
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
-	RzCmdStatus status = RZ_CMD_STATUS_OK;
-	RzList *list = rz_analysis_xrefs_get_to(core->analysis, core->offset);
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (list, iter, xref) {
@@ -3247,9 +3248,14 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_handler(RzCore *core, int argc, con
 		break;
 	default:
 		rz_warn_if_reached();
-		status = RZ_CMD_STATUS_WRONG_ARGS;
 		break;
 	}
+}
+
+RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
+	RzList *list = rz_analysis_xrefs_get_to(core->analysis, core->offset);
+	xrefs_to_list_handler(core, list, state);
 	rz_list_free(list);
 	return status;
 }
@@ -3490,6 +3496,19 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_graph_handler(RzCore *core, int argc, const
 	xrefs_graph(core, core->offset, 0, ht, state->mode, pj);
 	ht_uu_free(ht);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_xrefs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, argv[1]);
+	if (!glob) {
+		RZ_LOG_ERROR("Global variable '%s' does not exist!\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
+	RzList *list = rz_analysis_var_global_xrefs(core->analysis, glob);
+	xrefs_to_list_handler(core, list, state);
+	rz_list_free(list);
+	return status;
 }
 
 #define CMD_REGS_PREFIX   analysis
