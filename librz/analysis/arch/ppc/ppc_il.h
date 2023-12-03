@@ -24,15 +24,6 @@
 #define DCACHE_LINE_SIZE 128
 
 /**
- * \brief Writes to the info log that an unimplemented instruction was encountered and returns an EMPTY() effect.
- */
-#define NOT_IMPLEMENTED \
-	do { \
-		RZ_LOG_INFO("IL instruction not implemented."); \
-		return NULL; \
-	} while (0)
-
-/**
  * \brief Unsigned value \p i which is PPC_ARCH_BITS (32 or 64) wide.
  */
 #define UA(i) (IN_64BIT_MODE ? U64(i) : U32(i))

@@ -62,6 +62,7 @@ if get_option('enable_tests')
     'il_reg',
     'il_validate',
     'il_vm',
+    'il_helpers',
     'intervaltree',
     'io',
     'io_ihex',
