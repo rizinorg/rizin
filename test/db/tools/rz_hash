@@ -294,6 +294,7 @@ _D____ ror            LGPL-3     pancake
 ED____ rot            LGPL-3     pancake
 ED____ serpent-ecb    LGPL-3     NicsTr
 ED____ xor            LGPL-3     pancake
+ED____ sm4-ecb        LGPL-3     0xSh4dy
 
 flags legenda:
     E = encryption, D = decryption
@@ -1249,6 +1250,22 @@ FILE==
 CMDS=!rz-hash -a fletcher64 -s hello-world
 EXPECT=<<EOF
 string: 0x00000000-0x0000000b fletcher64: 49ff47dc88f79724
+EOF
+RUN
+
+NAME=rz-hash -qqE sm4-ecb
+FILE==
+CMDS=!rz-hash  -qqE sm4-ecb -K eb54a02a277466043a8045838590d7f8 -x 0f297f79fd109457bbd23ad98f8a6ee1460558 | rz-ax -S
+EXPECT=<<EOF
+5cfb54093f02dea448d0cf68117215a60587fa2786d0c30062b1fc974f07c51f
+EOF
+RUN
+
+NAME=rz-hash -qqD sm4-ecb
+FILE==
+CMDS=!rz-hash  -qqD sm4-ecb -K eb54a02a277466043a8045838590d7f8 -x 5cfb54093f02dea448d0cf68117215a60587fa2786d0c30062b1fc974f07c51f | rz-ax -S
+EXPECT=<<EOF
+0f297f79fd109457bbd23ad98f8a6ee146055800000000000000000000000000
 EOF
 RUN
 
