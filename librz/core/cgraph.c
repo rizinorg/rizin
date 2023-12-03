@@ -847,7 +847,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph *icfg, RZ_
  *
  * \return The iCFG of the binary or NULL in case of failure.
  */
-RZ_API RZ_OWN RzGraph /*<RzAnalysisICFGNode *>*/ *rz_core_graph_icfg(RZ_NONNULL RzCore *core) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 	const RzList *fcns = core->analysis->fcns;
 	RzGraph *graph = rz_graph_new();
