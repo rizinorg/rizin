@@ -1580,6 +1580,18 @@ commands:
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
               - name: type
                 type: RZ_CMD_ARG_TYPE_ANY_TYPE
+          - name: avgx
+            summary: print all xrefs to the global variable
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: analysis_global_variable_xrefs
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_RIZIN
+            args:
+              - name: name
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
       - name: avr
         summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
         type: RZ_CMD_DESC_TYPE_ARGV_MODES

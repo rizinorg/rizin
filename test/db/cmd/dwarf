@@ -3,6 +3,8 @@ FILE=bins/elf/dwarf/static_var
 CMDS=<<EOF
 aaa
 avg
+avgx qwe
+avgx bla
 echo "fn1"
 afvll @ dbg.fn1
 echo "fn2"
@@ -15,6 +17,9 @@ global char [19] anonymous_var_0xb4 @ 0x2021
 global const float qwe @ 0x2034
 global char * bla @ 0x4088
 global char [5] anonymous_var_0x59 @ 0x2010
+dbg.fn2 0x11b4 [DATA] lea rax, obj.fn2.qwe
+dbg.fn1 0x116a [DATA] mov qword [obj.fn1.bla], rax
+dbg.fn1 0x1171 [DATA] mov rsi, qword [obj.fn1.bla]
 fn1
 arg int b origin=DWARF @ rbp-8
 arg int a origin=DWARF @ rbp-4

@@ -18,6 +18,7 @@ crypto_plugins = {
     'rot',
     'serpent',
     'xor',
+    'sm4_ecb'
   ],
 }
 
@@ -41,6 +42,7 @@ rz_crypto_sources = [
   'p/crypto_serpent.c',
   'p/crypto_serpent_algo.c',
   'p/crypto_xor.c',
+  'p/crypto_sm4_ecb.c'
 ]
 
 nettle_proj = subproject('nettle')

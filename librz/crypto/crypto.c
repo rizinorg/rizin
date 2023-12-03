@@ -30,6 +30,7 @@ static const struct {
 	{ "des-ecb", RZ_CRYPTO_DES_ECB },
 	{ "xor", RZ_CRYPTO_XOR },
 	{ "serpent-ecb", RZ_CRYPTO_SERPENT },
+	{ "sm4-ecb", RZ_CRYPTO_SM4_ECB },
 };
 
 static const struct {

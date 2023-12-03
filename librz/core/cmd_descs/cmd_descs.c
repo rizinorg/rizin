@@ -250,6 +250,7 @@ static const RzCmdDescArg analysis_global_variable_delete_byname_args[2];
 static const RzCmdDescArg analysis_global_variable_rename_args[3];
 static const RzCmdDescArg analysis_global_variable_print_args[2];
 static const RzCmdDescArg analysis_global_variable_retype_args[3];
+static const RzCmdDescArg analysis_global_variable_xrefs_args[2];
 static const RzCmdDescArg analysis_rtti_demangle_class_name_args[2];
 static const RzCmdDescArg analysis_xrefs_set_0_args[2];
 static const RzCmdDescArg analysis_xrefs_set_c_args[2];
@@ -4878,6 +4879,19 @@ static const RzCmdDescArg analysis_global_variable_retype_args[] = {
 static const RzCmdDescHelp analysis_global_variable_retype_help = {
 	.summary = "change the global variable type",
 	.args = analysis_global_variable_retype_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_xrefs_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_xrefs_help = {
+	.summary = "print all xrefs to the global variable",
+	.args = analysis_global_variable_xrefs_args,
 };
 
 static const RzCmdDescArg analysis_print_rtti_args[] = {
@@ -19497,6 +19511,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_global_variable_retype_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgt", rz_analysis_global_variable_retype_handler, &analysis_global_variable_retype_help);
 	rz_warn_if_fail(analysis_global_variable_retype_cd);
+
+	RzCmdDesc *analysis_global_variable_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, avg_cd, "avgx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN, rz_analysis_global_variable_xrefs_handler, &analysis_global_variable_xrefs_help);
+	rz_warn_if_fail(analysis_global_variable_xrefs_cd);
 
 	RzCmdDesc *analysis_print_rtti_cd = rz_cmd_desc_argv_modes_new(core->rcmd, av_cd, "avr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_rtti_handler, &analysis_print_rtti_help);
 	rz_warn_if_fail(analysis_print_rtti_cd);
