@@ -461,6 +461,8 @@ RZ_IPI RzCmdStatus rz_analysis_graph_dataref_global_handler(RzCore *core, int ar
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_function_handler(RzCore *core, int argc, const char **argv);
 // "agC"
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_global_handler(RzCore *core, int argc, const char **argv);
+// "agCi"
+RZ_IPI RzCmdStatus rz_analysis_graph_icfg_handler(RzCore *core, int argc, const char **argv);
 // "agf"
 RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc, const char **argv);
 // "agi"
@@ -477,8 +479,6 @@ RZ_IPI RzCmdStatus rz_analysis_graph_line_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_analysis_graph_xrefs_handler(RzCore *core, int argc, const char **argv);
 // "agI"
 RZ_IPI RzCmdStatus rz_analysis_graph_il_handler(RzCore *core, int argc, const char **argv);
-// "agCi"
-RZ_IPI RzCmdStatus rz_analysis_graph_icfg_handler(RzCore *core, int argc, const char **argv);
 // "agg"
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_handler(RzCore *core, int argc, const char **argv);
 // "ag-"

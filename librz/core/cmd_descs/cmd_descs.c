@@ -215,6 +215,7 @@ static const RzCmdDescArg analysis_graph_dataref_args[2];
 static const RzCmdDescArg analysis_graph_dataref_global_args[2];
 static const RzCmdDescArg analysis_graph_callgraph_function_args[2];
 static const RzCmdDescArg analysis_graph_callgraph_global_args[2];
+static const RzCmdDescArg analysis_graph_icfg_args[2];
 static const RzCmdDescArg analysis_graph_bb_function_args[2];
 static const RzCmdDescArg analysis_graph_imports_args[2];
 static const RzCmdDescArg analysis_graph_refs_args[2];
