@@ -793,7 +793,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCor
  *
  * \return The GraphNode.
  */
-static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph *icfg, RZ_BORROW HtUU *grap_idx, const RzAnalysisFunction *fcn) {
+static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *grap_idx, const RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(icfg && grap_idx && fcn, NULL);
 	bool found = false;
 	ut64 graph_idx = ht_uu_find(grap_idx, fcn->addr, &found);
@@ -814,7 +814,7 @@ static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph *icfg, RZ_BOR
  * \param grap_idx Hash table to track the graph node indices for each function address.
  * \param fcn The function to add.
  */
-static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph *icfg, RZ_BORROW HtUU *grap_idx, const RzAnalysisFunction *fcn) {
+static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *grap_idx, const RzAnalysisFunction *fcn) {
 	rz_return_if_fail(analysis && icfg && grap_idx && fcn);
 	RzGraphNode *from_node = get_graph_node_of_fcn(icfg, grap_idx, fcn);
 	RzListIter *it;
