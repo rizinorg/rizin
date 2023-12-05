@@ -850,9 +850,7 @@ jobs:
           sudo meson install -C build
         working-directory: rz-bindgen
       - name: Test python lang plugin
-        run: |
-          rizin -qc "Ll" | grep "Python SWIG"
-        working-directory: rz-bindgen
+        run: rizin -qc "Ll" | grep "Python SWIG"
       - name: Test rizin.py
         run: |
           echo "import rizin" > testimport.py
