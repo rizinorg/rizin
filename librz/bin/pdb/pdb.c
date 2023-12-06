@@ -44,19 +44,19 @@ static bool parse_streams(RzPdb *pdb) {
 			break;
 		case PDB_STREAM_PDB:
 			if (!parse_pdb_stream(pdb, ms)) {
-				RZ_LOG_ERROR("Parse pdb stream failed.");
+				RZ_LOG_ERROR("Parse pdb stream failed.\n");
 				return false;
 			}
 			break;
 		case PDB_STREAM_TPI:
 			if (!parse_tpi_stream(pdb, ms)) {
-				RZ_LOG_ERROR("Parse tpi stream failed.");
+				RZ_LOG_ERROR("Parse tpi stream failed.\n");
 				return false;
 			}
 			break;
 		case PDB_STREAM_DBI:
 			if (!parse_dbi_stream(pdb, ms)) {
-				RZ_LOG_ERROR("Parse dbi stream failed.");
+				RZ_LOG_ERROR("Parse dbi stream failed.\n");
 				return false;
 			}
 			break;
@@ -66,19 +66,19 @@ static bool parse_streams(RzPdb *pdb) {
 			}
 			if (ms->stream_idx == pdb->s_dbi->hdr.sym_record_stream) {
 				if (!parse_gdata_stream(pdb, ms)) {
-					RZ_LOG_ERROR("Parse gdata stream failed.");
+					RZ_LOG_ERROR("Parse gdata stream failed.\n");
 					return false;
 				}
 			} else if (ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_section_hdr ||
 				ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_section_hdr_orig) {
 				if (!parse_pe_stream(pdb, ms)) {
-					RZ_LOG_ERROR("Parse pe stream failed.");
+					RZ_LOG_ERROR("Parse pe stream failed.\n");
 					return false;
 				}
 			} else if (ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_omap_to_src ||
 				ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_omap_from_src) {
 				if (!parse_omap_stream(pdb, ms)) {
-					RZ_LOG_ERROR("Parse omap stream failed.");
+					RZ_LOG_ERROR("Parse omap stream failed.\n");
 					return false;
 				}
 			}
@@ -87,6 +87,36 @@ static bool parse_streams(RzPdb *pdb) {
 		}
 	}
 	return true;
+}
+
+RZ_IPI RzPdbMsfStream *pdb_raw_steam(RzPdb *pdb, ut16 index) {
+	if (!(pdb && pdb->streams)) {
+		return NULL;
+	}
+	RzListIter *it;
+	RzPdbMsfStream *ms;
+	rz_list_foreach (pdb->streams, it, ms) {
+		if (ms->stream_idx == index) {
+			return ms;
+		}
+	}
+	return NULL;
+}
+
+RZ_IPI PDBSymbolTable *pdb_global_symbols(RzPdb *pdb) {
+	if (!(pdb && pdb->s_dbi)) {
+		return NULL;
+	}
+	RzPdbMsfStream *steam = pdb_raw_steam(pdb, pdb->s_dbi->hdr.sym_record_stream);
+	if (!steam) {
+		return NULL;
+	}
+	PDBSymbolTable *symbols = RZ_NEW0(PDBSymbolTable);
+	if (!symbols) {
+		return NULL;
+	}
+	symbols->b = steam->stream_data;
+	return symbols;
 }
 
 static void msf_stream_free(void *data) {

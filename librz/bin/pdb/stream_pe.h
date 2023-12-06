@@ -26,4 +26,8 @@ typedef struct {
 	ut32 charactestics;
 } PeImageSectionHeader;
 
+static inline PeImageSectionHeader *pdb_section_hdr_by_index(RZ_NONNULL const RzPdbPeStream *s, ut64 index) {
+	return rz_list_get_n(s->sections_hdrs, index - 1);
+}
+
 #endif

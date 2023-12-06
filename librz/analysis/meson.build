@@ -103,7 +103,7 @@ rz_analysis_sources = [
   'serialize_analysis.c',
   'similarity.c',
   'switch.c',
-  'type_pdb.c',
+  'pdb_process.c',
   'types.c',
   'value.c',
   'var.c',

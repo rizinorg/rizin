@@ -1,15 +1,19 @@
 // SPDX-FileCopyrightText: 2021 Basstorm <basstorm@nyist.edu.cn>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifndef PDB_PRIVATE_INCLUDE_H_
+#define PDB_PRIVATE_INCLUDE_H_
+
 #include <rz_pdb.h>
 #include "dbi.h"
-#include "gdata.h"
 #include "omap.h"
 #include "stream_pe.h"
 #include "tpi.h"
+#include "symbol.h"
 
-#ifndef PDB_PRIVATE_INCLUDE_H_
-#define PDB_PRIVATE_INCLUDE_H_
+RZ_IPI RzPdbMsfStream *pdb_raw_steam(RzPdb *pdb, ut16 index);
+RZ_IPI PDBSymbolTable *pdb_global_symbols(RzPdb *pdb);
+
 // OMAP
 RZ_IPI bool parse_omap_stream(RzPdb *pdb, RzPdbMsfStream *stream);
 RZ_IPI void free_omap_stream(RzPdbOmapStream *stream);

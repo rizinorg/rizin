@@ -65,14 +65,14 @@ typedef struct dbi_stream_t {
 
 // GDATA
 typedef struct {
-	RzList /*<GDataGlobal *>*/ *global_list;
+	RzPVector /*<GDataGlobal *>*/ *global_symbols;
 } RzPdbGDataStream;
 
 // OMAP
 typedef struct
 {
 	RzList /*<OmapEntry *>*/ *entries;
-	ut32 *froms;
+	ut64 *froms;
 } RzPdbOmapStream;
 
 // PE Stream
@@ -143,10 +143,10 @@ typedef struct tpi_stream_header_t {
 
 typedef struct tpi_types {
 	RBNode rb;
-	ut32 type_index;
-	ut16 leaf_type;
+	ut32 index;
+	ut16 leaf;
 	ut16 length;
-	void *type_data;
+	void *data;
 	bool parsed;
 } RzPdbTpiType;
 
@@ -250,6 +250,11 @@ typedef struct rz_pdb_t {
 	RzPdbPeStream *s_pe;
 } RzPdb;
 
+typedef struct {
+	ut32 offset;
+	ut16 section_index;
+} PDBSectionOffset;
+
 // PDB
 RZ_API bool rz_bin_pdb_extract_in_folder(RZ_NONNULL const char *file_cab, RZ_NONNULL const char *output_dir);
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename);
@@ -260,12 +265,12 @@ RZ_API void rz_bin_pdb_free(RzPdb *pdb);
 RZ_API RZ_BORROW RzPdbTpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL RzPdbTpiStream *stream, ut32 index);
 RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx);
 RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL RzPdbTpiType *t);
-RZ_API RZ_BORROW RzList /*<RzPdbTpiType *>*/ *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t);
+RZ_API RZ_BORROW RzPVector /*<RzPdbTpiType *>*/ *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t);
 RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type);
 RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type);
 
 // OMAP
-RZ_API int rz_bin_pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, int address);
+RZ_API ut64 rz_bin_pdb_to_rva(RZ_NONNULL const RzPdb *pdb, const PDBSectionOffset *section_offset);
 
 #ifdef __cplusplus
 }
