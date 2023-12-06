@@ -148,14 +148,14 @@ RZ_IPI bool PDBSymbolIter_next(PDBSymbolIter *iter, PDBSymbol *symbol) {
 		if (length < 2) {
 			return false;
 		}
-
-		b = rz_buf_new_slice(iter->b, rz_buf_tell(iter->b), length);
-		map_err(b);
+		const ut64 begin = rz_buf_tell(iter->b);
 		rz_buf_seek(iter->b, length, RZ_BUF_CUR);
-
 		if (!symbol) {
-			continue;
+			goto loop_continue;
 		}
+
+		b = rz_buf_new_slice(iter->b, begin, length);
+		map_err(b);
 		symbol->index = index;
 		symbol->length = length;
 		map_err(PDBSymbol_parse(b, symbol));
@@ -163,10 +163,16 @@ RZ_IPI bool PDBSymbolIter_next(PDBSymbolIter *iter, PDBSymbol *symbol) {
 		switch (symbol->raw_kind) {
 		case S_ALIGN:
 		case S_SKIP:
-			continue;
+			goto loop_continue;
 		default:
+			if (!symbol->data) {
+				goto loop_continue;
+			}
 			return true;
 		}
+	loop_continue:
+		rz_buf_free(b);
+		b = NULL;
 	}
 err:
 	rz_buf_free(b);
@@ -196,6 +202,25 @@ RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector **psymbols) {
 			break;
 		}
 		rz_pvector_push(symbols, symbol);
+	}
+	return true;
+}
+
+RZ_API bool rz_pdb_all_symbols_foreach(const RzPdb *pdb, bool (*f)(const RzPdb *, const PDBSymbol *, void *), void *u) {
+	void **it;
+	rz_pvector_foreach (pdb->s_gdata->global_symbols, it) {
+		if (!f(pdb, *it, u)) {
+			return false;
+		}
+	}
+	void **modit;
+	rz_pvector_foreach (pdb->module_infos, modit) {
+		PDBModuleInfo *modi = *modit;
+		rz_pvector_foreach (modi->symbols, it) {
+			if (!f(pdb, *it, u)) {
+				return false;
+			}
+		}
 	}
 	return true;
 }

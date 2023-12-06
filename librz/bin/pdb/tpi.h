@@ -6,6 +6,10 @@
 
 #include <rz_util.h>
 
+RZ_IPI bool tpi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream);
+RZ_IPI RzPdbTpiType *parse_simple_type(RzPdbTpiStream *stream, ut32 idx);
+RZ_IPI void tpi_stream_free(RzPdbTpiStream *stream);
+
 /// enumeration for virtual shape table entries
 typedef enum {
 	VTS_near = 0x00,

@@ -4,7 +4,7 @@
 
 #include "pdb.h"
 
-RZ_IPI void free_dbi_stream(RzPdbDbiStream *stream) {
+RZ_IPI void dbi_stream_free(RzPdbDbiStream *stream) {
 	if (!stream) {
 		return;
 	}
@@ -112,7 +112,7 @@ err:
 	return false;
 }
 
-RZ_IPI bool parse_dbi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+RZ_IPI bool dbi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	if (!pdb || !stream) {
 		return false;
 	}

@@ -5,7 +5,7 @@
 
 #include "pdb.h"
 
-RZ_IPI bool parse_omap_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+RZ_IPI bool omap_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	rz_return_val_if_fail(pdb && stream, false);
 	if (!pdb->s_omap) {
 		pdb->s_omap = RZ_NEW0(RzPdbOmapStream);
@@ -39,7 +39,7 @@ RZ_IPI bool parse_omap_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	return true;
 }
 
-RZ_IPI void free_omap_stream(RzPdbOmapStream *stream) {
+RZ_IPI void omap_stream_free(RzPdbOmapStream *stream) {
 	if (!stream) {
 		return;
 	}

@@ -248,7 +248,8 @@ typedef struct {
 typedef struct rz_pdb_t {
 	RzBuffer *buf; // mmap of file
 	RzPdbMsfSuperBlock *super_block;
-	RzList /*<RzPdbMsfStream *>*/ *streams;
+	RzPdbMsfStreamDirectory *msd;
+	RzPVector /*<RzPdbMsfStream *>*/ *streams;
 	RzPdbStream *s_pdb;
 	RzPdbDbiStream *s_dbi;
 	RzPdbTpiStream *s_tpi;
@@ -263,11 +264,83 @@ typedef struct {
 	ut16 section_index;
 } PDBSectionOffset;
 
+typedef ut16 PDBSymbolKind;
+typedef ut32 PDBTypeIndex;
+typedef ut32 PDBSymbolIndex;
+
+typedef struct {
+	bool global : 1;
+	bool managed : 1;
+	PDBTypeIndex type_index;
+	PDBSectionOffset offset;
+	char *name;
+} PDBSData;
+
+RZ_IPI bool PDBSData_parse(RzBuffer *b, PDBSymbolKind kind, PDBSData *sdata);
+
+typedef struct {
+	bool code : 1;
+	bool function : 1;
+	bool managed : 1;
+	bool msil : 1;
+	PDBSectionOffset offset;
+	char *name;
+} PDBSPublic;
+
+RZ_IPI bool PDBSPublic_parse(RzBuffer *b, PDBSymbolKind kind, PDBSPublic *s);
+
+typedef struct {
+	PDBSymbolIndex index;
+	PDBSymbolKind raw_kind;
+	ut16 length;
+	enum {
+		PDB_ScopeEnd, /// End of a scope, such as a procedure.
+		PDB_ObjName, /// Name of the object file of this module.
+		PDB_RegisterVariable, /// A Register variable.
+		PDB_Constant, /// A constant value.
+		PDB_UserDefinedType, /// A user defined type.
+		PDB_MultiRegisterVariable, /// A Register variable spanning multiple registers.
+		PDB_Data, /// Static data, such as a global variable.
+		PDB_Public, /// A public symbol with a mangled name.
+		PDB_Procedure, /// A procedure, such as a function or method.
+		PDB_ThreadStorage, /// A thread local variable.
+		PDB_CompileFlags, /// Flags used to compile a module.
+		PDB_UsingNamespace, /// A using namespace directive.
+		PDB_ProcedureReference, /// Reference to a [`ProcedureSymbol`].
+		PDB_DataReference, /// Reference to an imported variable.
+		PDB_AnnotationReference, /// Reference to an annotation.
+		PDB_Trampoline, /// Trampoline thunk.
+		PDB_Export, /// An exported symbol.
+		PDB_Local, /// A local symbol in optimized code.
+		PDB_BuildInfo, /// Reference to build information.
+		PDB_InlineSite, /// The callsite of an inlined function.
+		PDB_InlineSiteEnd, /// End of an inline callsite.
+		PDB_ProcedureEnd, /// End of a procedure.
+		PDB_Label, /// A label.
+		PDB_Block, /// A block.
+		PDB_RegisterRelative, /// Data allocated relative to a register.
+		PDB_Thunk, /// A thunk.
+		PDB_SeparatedCode, /// A block of separated code.
+		PDB_DefRange, /// A live range of a variable.
+		PDB_DefRangeSubField, /// A live range of a sub field of a variable.
+		PDB_DefRangeRegister, /// A live range of a register variable.
+		PDB_DefRangeFramePointerRelative, /// A live range of a frame pointer-relative variable.
+		PDB_DefRangeFramePointerRelativeFullScope, /// A frame-pointer variable which is valid in the full scope of the function.
+		PDB_DefRangeSubFieldRegister, /// A live range of a sub field of a register variable.
+		PDB_DefRangeRegisterRelative, /// A live range of a variable related to a register.
+		PDB_BasePointerRelative, /// A base pointer-relative variable.
+		PDB_FrameProcedure, /// Extra frame and proc information.
+		PDB_CallSiteInfo, /// Indirect call site information.
+	} kind;
+	void *data;
+} PDBSymbol;
+
 // PDB
 RZ_API bool rz_bin_pdb_extract_in_folder(RZ_NONNULL const char *file_cab, RZ_NONNULL const char *output_dir);
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename);
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf);
 RZ_API void rz_bin_pdb_free(RzPdb *pdb);
+RZ_API bool rz_pdb_all_symbols_foreach(const RzPdb *pdb, bool (*f)(const RzPdb *, const PDBSymbol *, void *), void *u);
 
 // TPI
 RZ_API RZ_BORROW RzPdbTpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL RzPdbTpiStream *stream, ut32 index);

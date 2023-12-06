@@ -720,7 +720,7 @@ static void free_tpi_rbtree(RBNode *node, void *user) {
 	free_tpi_type(type);
 }
 
-RZ_IPI void free_tpi_stream(RzPdbTpiStream *stream) {
+RZ_IPI void tpi_stream_free(RzPdbTpiStream *stream) {
 	if (!stream) {
 		return;
 	}
@@ -1532,7 +1532,7 @@ static Tpi_LF_Vftable *vftable_parse(RzBuffer *buf) {
 	}
 	rz_pvector_init(&vft->method_names, free);
 
-	while (rz_buf_peek(buf) < LF_PAD0) {
+	while (!buf_empty(buf) && rz_buf_peek(buf) < LF_PAD0) {
 		char *name = NULL;
 		ut64 nlen = rz_buf_read_string(buf, &name);
 		if (nlen <= 0) {
@@ -1700,7 +1700,7 @@ static bool parse_tpi_stream_header(RzPdbTpiStream *s, RzBuffer *buf) {
 		rz_buf_read_le32(buf, &s->header.HashAdjBufferLength);
 }
 
-RZ_IPI bool parse_tpi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+RZ_IPI bool tpi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	if (!pdb || !stream) {
 		return false;
 	}

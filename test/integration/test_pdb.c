@@ -21,6 +21,10 @@ bool pdb_info_save_types(RzAnalysis *analysis, const char *file) {
 	return true;
 }
 
+#define STREAMS_CHECK(x) \
+	mu_assert_notnull(pdb->streams, "NULL streams"); \
+	mu_assert_eq(rz_pvector_len(pdb->streams), (x), "Incorrect number of streams");
+
 #define MEMBER_INIT_AND_CHECK_LEN(x) \
 	RzPVector *members = rz_bin_pdb_get_type_members(stream, type); \
 	mu_assert_notnull(members, "NULL members"); \
@@ -30,11 +34,7 @@ bool test_pdb_tpi_cpp(void) {
 
 	RzPdb *pdb = rz_bin_pdb_parse_from_file("bins/pdb/Project1.pdb");
 	mu_assert_notnull(pdb, "PDB parse failed.");
-
-	RzList *plist = pdb->streams;
-	mu_assert_notnull(plist, "PDB streams is NULL");
-
-	mu_assert_eq(pdb->streams->length, 50, "Incorrect number of streams");
+	STREAMS_CHECK(50);
 
 	RzPdbTpiStream *stream = pdb->s_tpi;
 	mu_assert_notnull(stream, "TPIs stream not found in current PDB");
@@ -42,7 +42,6 @@ bool test_pdb_tpi_cpp(void) {
 	mu_assert_eq(stream->header.TypeIndexBegin, 0x1000, "Wrong beginning index");
 	RBIter it;
 	RzPdbTpiType *type;
-
 	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
 		mu_assert_notnull(type, "RzPdbTpiType is null in RBTree.");
 		if (type->index == 0x1028) {
@@ -195,11 +194,7 @@ bool test_pdb_tpi_rust(void) {
 
 	RzPdb *pdb = rz_bin_pdb_parse_from_file("bins/pdb/ghidra_rust_pdb_bug.pdb");
 	mu_assert_notnull(pdb, "PDB parse failed.");
-
-	RzList *plist = pdb->streams;
-	mu_assert_notnull(plist, "PDB streams is NULL");
-
-	mu_assert_eq(pdb->streams->length, 88, "Incorrect number of streams");
+	STREAMS_CHECK(88);
 
 	RzPdbTpiStream *stream = pdb->s_tpi;
 	mu_assert_notnull(stream, "TPIs stream not found in current PDB");
@@ -434,11 +429,7 @@ bool test_pdb_type_save(void) {
 bool test_pdb_tpi_cpp_vs2019(void) {
 	RzPdb *pdb = rz_bin_pdb_parse_from_file("bins/pdb/vs2019_cpp_override.pdb");
 	mu_assert_notnull(pdb, "PDB parse failed.");
-
-	RzList *plist = pdb->streams;
-	mu_assert_notnull(plist, "PDB streams is NULL");
-
-	mu_assert_eq(pdb->streams->length, 75, "Incorrect number of streams");
+	STREAMS_CHECK(75);
 
 	RzPdbTpiStream *stream = pdb->s_tpi;
 	mu_assert_notnull(stream, "TPIs stream not found in current PDB");
@@ -673,11 +664,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 bool test_pdb_tpi_arm(void) {
 	RzPdb *pdb = rz_bin_pdb_parse_from_file("bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb");
 	mu_assert_notnull(pdb, "PDB parse failed.");
-
-	RzList *plist = pdb->streams;
-	mu_assert_notnull(plist, "PDB streams is NULL");
-
-	mu_assert_eq(pdb->streams->length, 399, "Incorrect number of streams");
+	STREAMS_CHECK(399);
 
 	RzPdbTpiStream *stream = pdb->s_tpi;
 	mu_assert_notnull(stream, "TPIs stream not found in current PDB");
@@ -685,7 +672,6 @@ bool test_pdb_tpi_arm(void) {
 	mu_assert_eq(stream->header.TypeIndexBegin, 0x1000, "Wrong beginning index");
 	RBIter it;
 	RzPdbTpiType *type;
-
 	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
 		if (type->index == 0x1A56) {
 			mu_assert_eq(type->leaf, LF_PROCEDURE, "Incorrect data type");

@@ -82,7 +82,7 @@ int PE_(bin_pe_init_security)(RzBinPEObj *bin) {
 	PE_DWord paddr = data_dir_security->VirtualAddress;
 	ut32 size = data_dir_security->Size;
 	if (size < 8 || paddr > bin->size || paddr + size > bin->size) {
-		RZ_LOG_INFO("Invalid certificate table");
+		RZ_LOG_INFO("Invalid certificate table\n");
 		return false;
 	}
 

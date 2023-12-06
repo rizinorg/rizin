@@ -13,6 +13,9 @@
 #include "modi.h"
 
 static inline RzBuffer *buf_take(RzBuffer *b, ut32 len) {
+	if (!(b && len)) {
+		return NULL;
+	}
 	RzBuffer *type_buffer = rz_buf_new_slice(b, rz_buf_tell(b), len);
 	if (!type_buffer) {
 		return NULL;
@@ -59,25 +62,16 @@ RZ_IPI RzPdbMsfStream *pdb_raw_steam(const RzPdb *pdb, ut16 index);
 RZ_IPI PDBSymbolTable *pdb_global_symbols(const RzPdb *pdb);
 
 // OMAP
-RZ_IPI bool parse_omap_stream(RzPdb *pdb, RzPdbMsfStream *stream);
-RZ_IPI void free_omap_stream(RzPdbOmapStream *stream);
+RZ_IPI bool omap_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream);
+RZ_IPI void omap_stream_free(RzPdbOmapStream *stream);
 RZ_IPI int omap_remap(void *stream, int address);
 
 // GDATA
-RZ_IPI bool parse_gdata_stream(RzPdb *pdb, RzPdbMsfStream *stream);
-RZ_IPI void free_gdata_stream(RzPdbGDataStream *stream);
-
-// DBI
-RZ_IPI bool parse_dbi_stream(RzPdb *pdb, RzPdbMsfStream *stream);
-RZ_IPI void free_dbi_stream(RzPdbDbiStream *stream);
+RZ_IPI bool gdata_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream);
+RZ_IPI void gdata_stream_free(RzPdbGDataStream *stream);
 
 // PE
-RZ_IPI bool parse_pe_stream(RzPdb *pdb, RzPdbMsfStream *stream);
-RZ_IPI void free_pe_stream(RzPdbPeStream *stream);
-
-// TPI
-RZ_IPI bool parse_tpi_stream(RzPdb *pdb, RzPdbMsfStream *stream);
-RZ_IPI RzPdbTpiType *parse_simple_type(RzPdbTpiStream *stream, ut32 idx);
-RZ_IPI void free_tpi_stream(RzPdbTpiStream *stream);
+RZ_IPI bool pe_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream);
+RZ_IPI void pe_stream_free(RzPdbPeStream *stream);
 
 #endif

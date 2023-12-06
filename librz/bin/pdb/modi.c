@@ -31,6 +31,10 @@ RZ_IPI bool PDBModuleInfo_parse(const RzPdb *pdb, const PDB_DBIModule *m, PDBMod
 	}
 	modi->stream_index = m->stream;
 	modi->symbols_size = m->symbols_size;
+	if (modi->symbols_size == 0) {
+		return true;
+	}
+
 	const RzPdbMsfStream *stream = pdb_raw_steam(pdb, modi->stream_index);
 	if (!stream) {
 		return false;

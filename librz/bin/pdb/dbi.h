@@ -6,6 +6,9 @@
 
 #include <rz_pdb.h>
 
+RZ_IPI bool dbi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream);
+RZ_IPI void dbi_stream_free(RzPdbDbiStream *stream);
+
 enum dbi_stream_version {
 	DSV_VC41 = 930803,
 	DSV_V50 = 19960307,
