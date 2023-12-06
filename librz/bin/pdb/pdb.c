@@ -86,10 +86,26 @@ static bool parse_streams(RzPdb *pdb) {
 		}
 		}
 	}
+	if (pdb->s_dbi && pdb->s_dbi->modules) {
+		pdb->module_infos = rz_pvector_new(NULL);
+		void **modit;
+		rz_pvector_foreach (pdb->s_dbi->modules, modit) {
+			const PDB_DBIModule *m = *modit;
+			PDBModuleInfo *modi = RZ_NEW0(PDBModuleInfo);
+			if (!modi) {
+				return false;
+			}
+			if (!PDBModuleInfo_parse(pdb, m, modi)) {
+				free(modi);
+				return false;
+			}
+			rz_pvector_push(pdb->module_infos, modi);
+		}
+	}
 	return true;
 }
 
-RZ_IPI RzPdbMsfStream *pdb_raw_steam(RzPdb *pdb, ut16 index) {
+RZ_IPI RzPdbMsfStream *pdb_raw_steam(const RzPdb *pdb, ut16 index) {
 	if (!(pdb && pdb->streams)) {
 		return NULL;
 	}
@@ -103,7 +119,7 @@ RZ_IPI RzPdbMsfStream *pdb_raw_steam(RzPdb *pdb, ut16 index) {
 	return NULL;
 }
 
-RZ_IPI PDBSymbolTable *pdb_global_symbols(RzPdb *pdb) {
+RZ_IPI PDBSymbolTable *pdb_global_symbols(const RzPdb *pdb) {
 	if (!(pdb && pdb->s_dbi)) {
 		return NULL;
 	}

@@ -18,29 +18,12 @@ RZ_IPI bool parse_gdata_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
 		return false;
 	}
-	s->global_symbols = rz_pvector_new(free);
-	if (!s->global_symbols) {
-		return false;
-	}
 
 	PDBSymbolIter iter = { 0 };
 	PDBSymbolTable_iter(syms, &iter);
-	while (true) {
-		PDBSymbol *symbol = RZ_NEW0(PDBSymbol);
-		if (!symbol) {
-			goto err;
-		}
-		if (!PDBSymbolIter_next(&iter, symbol)) {
-			free(symbol);
-			break;
-		}
-		if (!symbol->data) {
-			free(symbol);
-			continue;
-		}
-		rz_pvector_push(s->global_symbols, symbol);
+	if (!PDBSymbolIter_collect(&iter, &s->global_symbols)) {
+		return false;
 	}
-
 	return true;
 err:
 	return false;

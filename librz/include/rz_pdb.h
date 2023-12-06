@@ -58,9 +58,9 @@ typedef struct {
 
 typedef struct dbi_stream_t {
 	RzPdbRzPdbDbiStreamHdr hdr;
-	RzList /*<RzPdbDbiStreamExHdr *>*/ *ex_hdrs;
+	ut64 hdr_size;
+	RzPVector /*<PDB_DBIModuleInfo *>*/ *modules;
 	RzPdbRzPdbDbiStreamDbgHeader dbg_hdr;
-
 } RzPdbDbiStream;
 
 // GDATA
@@ -238,6 +238,13 @@ typedef struct {
 	RzBuffer *sd;
 } RzPdbMsfStreamDirectory;
 
+typedef struct {
+	RzBuffer *stream;
+	ut32 symbols_size;
+	ut16 stream_index;
+	RzPVector /*<PDBSymbol *>*/ *symbols;
+} PDBModuleInfo;
+
 typedef struct rz_pdb_t {
 	RzBuffer *buf; // mmap of file
 	RzPdbMsfSuperBlock *super_block;
@@ -248,6 +255,7 @@ typedef struct rz_pdb_t {
 	RzPdbGDataStream *s_gdata;
 	RzPdbOmapStream *s_omap;
 	RzPdbPeStream *s_pe;
+	RzPVector /*<PDBModuleInfo *>*/ *module_infos;
 } RzPdb;
 
 typedef struct {

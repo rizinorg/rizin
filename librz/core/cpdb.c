@@ -114,6 +114,45 @@ static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, co
 	}
 }
 
+static void symbol_dump(PDBSymbol *symbol, RzStrBuf *buf, RZ_NONNULL const RzPdb *pdb, const ut64 img_base, PJ *pj, const RzOutputMode mode) {
+	if (symbol->kind == PDB_Public) {
+		PDBSPublic *public = symbol->data;
+		PeImageSectionHeader *sctn_header = pdb_section_hdr_by_index(pdb->s_pe, public->offset.section_index);
+		if (!sctn_header) {
+			return;
+		}
+		ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
+		if (addr == UT64_MAX) {
+			return;
+		}
+		if (img_base != UT64_MAX) {
+			addr += img_base;
+		}
+
+		char *name = rz_demangler_msvc(public->name, RZ_DEMANGLER_FLAG_BASE);
+		name = (name) ? name : strdup(public->name);
+
+		switch (mode) {
+		case RZ_OUTPUT_MODE_JSON: // JSON
+			pj_o(pj);
+			pj_kn(pj, "address", addr);
+			pj_kN(pj, "symtype", symbol->raw_kind);
+			pj_ks(pj, "section_name", sctn_header->name);
+			pj_ks(pj, "gdata_name", name);
+			pj_end(pj);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_strbuf_appendf(buf, "0x%08" PFMT64x "  %d  %.*s  %s\n",
+				addr,
+				symbol->raw_kind, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
+			break;
+		default:
+			break;
+		}
+		free(name);
+	}
+}
+
 /**
  * \brief Return the PDB global vars string
  *
@@ -123,7 +162,8 @@ static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, co
  * \param mode RzOutputMode
  * \return char *
  */
-RZ_API char *rz_core_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base, PJ *pj, const RzOutputMode mode) {
+RZ_API char *rz_core_bin_pdb_gvars_as_string(
+	RZ_NONNULL const RzPdb *pdb, const ut64 img_base, PJ *pj, const RzOutputMode mode) {
 	rz_return_val_if_fail(pdb, NULL);
 	RzPdbGDataStream *gsym_data_stream = 0;
 	RzPdbPeStream *pe_stream = 0;
@@ -143,42 +183,17 @@ RZ_API char *rz_core_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const 
 	}
 	void **it;
 	rz_pvector_foreach (gsym_data_stream->global_symbols, it) {
-		PDBSymbol *symbol = *it;
-		if (symbol->kind == PDB_Public) {
-			PDBSPublic *public = symbol->data;
-			PeImageSectionHeader *sctn_header = pdb_section_hdr_by_index(pdb->s_pe, public->offset.section_index);
-			if (!sctn_header) {
-				continue;
+		symbol_dump(*it, buf, pdb, img_base, pj, mode);
+	}
+	if (pdb->module_infos) {
+		void **modit;
+		rz_pvector_foreach (pdb->module_infos, modit) {
+			PDBModuleInfo *modi = *modit;
+			rz_pvector_foreach (modi->symbols, it) {
+				symbol_dump(*it, buf, pdb, img_base, pj, mode);
 			}
-			ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
-			if (addr == UT64_MAX) {
-				continue;
-			}
-			if (img_base != UT64_MAX) {
-				addr += img_base;
-			}
-
-			char *name = rz_demangler_msvc(public->name, RZ_DEMANGLER_FLAG_BASE);
-			name = (name) ? name : strdup(public->name);
-
-			switch (mode) {
-			case RZ_OUTPUT_MODE_JSON: // JSON
-				pj_o(pj);
-				pj_kn(pj, "address", addr);
-				pj_kN(pj, "symtype", symbol->raw_kind);
-				pj_ks(pj, "section_name", sctn_header->name);
-				pj_ks(pj, "gdata_name", name);
-				pj_end(pj);
-				break;
-			case RZ_OUTPUT_MODE_STANDARD:
-				rz_strbuf_appendf(buf, "0x%08" PFMT64x "  %d  %.*s  %s\n",
-					addr,
-					symbol->raw_kind, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
-				break;
-			default:
-				break;
-			}
-			free(name);
+		err:
+			continue;
 		}
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -202,63 +217,81 @@ static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, c
 	free(str);
 }
 
+static void symbol_process(PDBSymbol *symbol, const RzCore *core, const RzPdb *pdb, const ut64 img_base, char *file) {
+	if (!symbol) {
+		return;
+	}
+	const RzDemanglerFlag dflags = rz_demangler_get_flags(core->bin->demangler);
+	if (symbol->kind == PDB_Public) {
+		const PDBSPublic *public = symbol->data;
+
+		char *name = rz_demangler_msvc(public->name, dflags);
+		name = (name) ? name : strdup(public->name);
+		char *filtered_name = rz_name_filter2(name, true);
+		char *fname = rz_str_newf("pdb.%s.%s", file, filtered_name);
+
+		ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
+		if (addr == UT64_MAX) {
+			return;
+		}
+		if (img_base != UT64_MAX) {
+			addr += img_base;
+		}
+
+		RzFlagItem *item = rz_flag_set(core->flags, fname, addr, 0);
+		if (item) {
+			rz_flag_item_set_realname(item, name);
+		}
+		free(filtered_name);
+		free(name);
+	} else if (symbol->kind == PDB_Data) {
+		const PDBSData *data = symbol->data;
+		if (!data->global) {
+			return;
+		}
+		ut64 addr = rz_bin_pdb_to_rva(pdb, &data->offset);
+		if (addr == UT64_MAX) {
+			return;
+		}
+		if (img_base != UT64_MAX) {
+			addr += img_base;
+		}
+
+		RzPdbTpiType *t = rz_bin_pdb_get_type_by_index(pdb->s_tpi, data->type_index);
+		if (!t) {
+			return;
+		}
+		RzType *rt = rz_type_db_pdb_parse(core->analysis->typedb, pdb->s_tpi, t);
+		if (!rt) {
+			return;
+		}
+		rz_analysis_var_global_create(core->analysis, data->name, rt, addr);
+	}
+}
+
 static void pdb_set_symbols(
 	const RzCore *core, const RzPdb *pdb, const ut64 img_base, const char *pdbfile) {
 	rz_return_if_fail(core && pdb);
 	if (!(pdb->s_pe && pdb->s_gdata)) {
 		return;
 	}
-	RzDemanglerFlag dflags = rz_demangler_get_flags(core->bin->demangler);
 	char *file = rz_str_replace(strdup(pdbfile), ".pdb", "", 0);
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
 	void **it;
 	rz_pvector_foreach (pdb->s_gdata->global_symbols, it) {
-		PDBSymbol *symbol = *it;
-		if (symbol->kind == PDB_Public) {
-			PDBSPublic *public = symbol->data;
+		symbol_process(*it, core, pdb, img_base, file);
+	}
 
-			char *name = rz_demangler_msvc(public->name, dflags);
-			name = (name) ? name : strdup(public->name);
-			char *filtered_name = rz_name_filter2(name, true);
-			char *fname = rz_str_newf("pdb.%s.%s", file, filtered_name);
-
-			ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
-			if (addr == UT64_MAX) {
-				continue;
+	if (pdb->module_infos) {
+		void **modit;
+		rz_pvector_foreach (pdb->module_infos, modit) {
+			PDBModuleInfo *modi = *modit;
+			rz_pvector_foreach (modi->symbols, it) {
+				symbol_process(*it, core, pdb, img_base, file);
 			}
-			if (img_base != UT64_MAX) {
-				addr += img_base;
-			}
-
-			RzFlagItem *item = rz_flag_set(core->flags, fname, addr, 0);
-			if (item) {
-				rz_flag_item_set_realname(item, name);
-			}
-			free(filtered_name);
-			free(name);
-		} else if (symbol->kind == PDB_Data) {
-			const PDBSData *data = symbol->data;
-			if (!data->global) {
-				continue;
-			}
-			ut64 addr = rz_bin_pdb_to_rva(pdb, &data->offset);
-			if (addr == UT64_MAX) {
-				continue;
-			}
-			if (img_base != UT64_MAX) {
-				addr += img_base;
-			}
-
-			RzPdbTpiType *t = rz_bin_pdb_get_type_by_index(pdb->s_tpi, data->type_index);
-			if (!t) {
-				continue;
-			}
-			RzType *rt = rz_type_db_pdb_parse(core->analysis->typedb, pdb->s_tpi, t);
-			if (!rt) {
-				continue;
-			}
-			rz_analysis_var_global_create(core->analysis, data->name, rt, addr);
+		err:
+			continue;
 		}
 	}
 	rz_flag_space_pop(core->flags);

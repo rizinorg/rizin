@@ -180,3 +180,22 @@ RZ_IPI bool PDBSymbolIter_seek(PDBSymbolIter *iter, PDBSymbolIndex index) {
 err:
 	return false;
 }
+
+RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector **psymbols) {
+	RzPVector *symbols = *psymbols = rz_pvector_new(NULL);
+	if (!symbols) {
+		return false;
+	}
+	while (true) {
+		PDBSymbol *symbol = RZ_NEW0(PDBSymbol);
+		if (!symbol) {
+			return false;
+		}
+		if (!PDBSymbolIter_next(iter, symbol)) {
+			free(symbol);
+			break;
+		}
+		rz_pvector_push(symbols, symbol);
+	}
+	return true;
+}

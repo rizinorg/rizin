@@ -6,37 +6,6 @@
 
 static RzPdbTpiType *RzPdbTpiType_from_buf(RzBuffer *b, ut32 index, ut16 length);
 
-static RzBuffer *buf_take(RzBuffer *b, ut32 len) {
-	RzBuffer *type_buffer = rz_buf_new_slice(b, rz_buf_tell(b), len);
-	if (!type_buffer) {
-		return NULL;
-	}
-	rz_buf_seek(b, len, RZ_BUF_CUR);
-	return type_buffer;
-}
-
-static bool buf_empty(RzBuffer *b) {
-	if (!b) {
-		return true;
-	}
-	return rz_buf_tell(b) >= rz_buf_size(b);
-}
-
-static void buf_read_padding(RzBuffer *b) {
-	if (!b) {
-		return;
-	}
-	while (!buf_empty(b) && rz_buf_peek(b) > 0xf0) {
-		ut8 padding = 0;
-		if (!rz_buf_read8(b, &padding)) {
-			return;
-		}
-		if (padding > 0xf0) {
-			rz_buf_seek(b, (padding & 0x0f) - 1, RZ_BUF_CUR);
-		}
-	}
-}
-
 static bool is_simple_type(RzPdbTpiStream *stream, ut32 idx) {
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
   .---------------------------.------.----------.
