@@ -5276,12 +5276,11 @@ RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
 	}
 	rz_bin_pdb_free(pdb);
 	const char *buf = rz_cons_get_buffer();
+	rz_cons_pop();
 	if (!buf) {
-		rz_cons_pop();
 		return false;
 	}
 	char *s = strdup(buf);
-	rz_cons_pop();
 	if (!s) {
 		return false;
 	}

@@ -107,6 +107,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 
 RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size);
 RZ_API RZ_OWN char *rz_buf_get_string(RZ_NONNULL RzBuffer *b, ut64 addr);
+RZ_API ut64 rz_buf_read_string(RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE char **s);
 RZ_API RZ_OWN char *rz_buf_to_string(RZ_NONNULL RzBuffer *b);
 RZ_API RzBuffer *rz_buf_ref(RzBuffer *b);
 RZ_API bool rz_buf_append_buf(RZ_NONNULL RzBuffer *b, RZ_NONNULL RzBuffer *a);
@@ -348,6 +349,35 @@ DEFINE_RZ_BUF_WRITE_OFFSET_BLE(64)
 #undef DEFINE_RZ_BUF_WRITE_BLE
 #undef DEFINE_RZ_BUF_READ_OFFSET_BLE
 #undef DEFINE_RZ_BUF_WRITE_OFFSET_BLE
+
+/**
+ * \brief Peeks at the next byte in the buffer without modify the buffer position.
+ *
+ * It assumes that the buffer contains at least one byte beyond the current position.
+ * otherwise, the behavior of the function is undefined.
+ * \param b The buffer
+ * \return The byte value
+ */
+static inline ut8 rz_buf_peek(RZ_NONNULL RzBuffer *b) {
+	ut8 x = 0;
+	rz_buf_read8_at(b, rz_buf_tell(b), &x);
+	return x;
+}
+
+/**
+ * \brief Peeks at the next two bytes in the buffer as a little-endian
+ *        unsigned 16-bit integer without modify the buffer position.
+ *
+ * It assumes that the buffer contains at least two bytes beyond the current position,
+ * otherwise the behavior of the function is undefined.
+ * \param b The buffer
+ * \return The ut16 value
+ */
+static inline ut8 rz_buf_peek_u16(RZ_NONNULL RzBuffer *b) {
+	ut16 x = 0;
+	rz_buf_read_le16_at(b, rz_buf_tell(b), &x);
+	return x;
+}
 
 // sparse-specific
 

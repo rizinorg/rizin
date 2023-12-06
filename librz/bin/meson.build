@@ -259,6 +259,7 @@ rz_bin_sources = [
   'pdb/pdb_downloader.c',
   'pdb/stream_pe.c',
   'pdb/tpi.c',
+  'pdb/symbol.c',
 
   'dwarf/abbrev.c',
   'dwarf/addr.c',

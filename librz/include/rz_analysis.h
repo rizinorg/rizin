@@ -2282,7 +2282,8 @@ RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *anal
 RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f);
 
 /* PDB */
-RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb);
+RZ_API RzType *rz_type_db_pdb_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
+RZ_API void rz_type_db_pdb_load(const RzTypeDB *typedb, const RzPdb *pdb);
 
 /* DWARF */
 RZ_API void rz_analysis_dwarf_preprocess_info(
