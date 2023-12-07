@@ -46,8 +46,9 @@ bool test_pdb_tpi_cpp(void) {
 		mu_assert_notnull(type, "RzPdbTpiType is null in RBTree.");
 		if (type->index == 0x1028) {
 			mu_assert_eq(type->leaf, LF_PROCEDURE, "Incorrect data type");
+			Tpi_LF_Procedure *procedure = type->data;
 			RzPdbTpiType *arglist;
-			arglist = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->data))->arg_list);
+			arglist = rz_bin_pdb_get_type_by_index(stream, procedure->arg_list);
 			mu_assert_eq(arglist->index, 0x1027, "Wrong type index");
 			RzPdbTpiType *return_type;
 			return_type = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->data))->return_type);

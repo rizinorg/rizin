@@ -12,6 +12,11 @@
 #include "symbol.h"
 #include "modi.h"
 
+#define map_err(x) \
+	if (!(x)) { \
+		goto err; \
+	}
+
 static inline RzBuffer *buf_take(RzBuffer *b, ut32 len) {
 	if (!(b && len)) {
 		return NULL;

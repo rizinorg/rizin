@@ -3,10 +3,7 @@
 
 #include "symbol.h"
 
-#define map_err(x) \
-	if (!(x)) { \
-		goto err; \
-	}
+#include "pdb.h"
 
 RZ_IPI bool PDBSectionOffset_parse(RzBuffer *b, PDBSectionOffset *section_offset) {
 	if (!section_offset) {

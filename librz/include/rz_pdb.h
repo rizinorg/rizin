@@ -141,11 +141,42 @@ typedef struct tpi_stream_header_t {
 	ut32 HashAdjBufferLength;
 } RzPdbTpiStreamHeader;
 
+typedef enum {
+	TpiKind_INVALID,
+	TpiKind_FILEDLIST,
+	TpiKind_ENUM,
+	TpiKind_ENUMERATE,
+	TpiKind_CLASS,
+	TpiKind_UNION,
+	TpiKind_BITFIELD,
+	TpiKind_POINTER,
+	TpiKind_ARRAY,
+	TpiKind_MODIFIER,
+	TpiKind_ARGLIST,
+	TpiKind_MFUNCTION,
+	TpiKind_METHODLIST,
+	TpiKind_PROCEDURE,
+	TpiKind_VTSHAPE,
+	TpiKind_VFTABLE,
+	TpiKind_LABEL,
+	TpiKind_NESTTYPE,
+	TpiKind_MEMBER,
+	TpiKind_METHOD,
+	TpiKind_ONEMETHOD,
+	TpiKind_BCLASS,
+	TpiKind_VFUNCTAB,
+	TpiKind_STMEMBER,
+	TpiKind_VBCLASS,
+	TpiKind_INDEX,
+	TpiKind_SIMPLE_TYPE,
+} RzPDBTpiKind;
+
 typedef struct tpi_types {
 	RBNode rb;
 	ut32 index;
 	ut16 leaf;
 	ut16 length;
+	RzPDBTpiKind kind;
 	void *data;
 	bool parsed;
 } RzPdbTpiType;
