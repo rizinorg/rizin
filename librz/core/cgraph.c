@@ -308,8 +308,9 @@ static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<
 			continue;
 		}
 		RzAnalysisCaseOp *case_op;
-		RzListIter *iter_case;
-		rz_list_foreach (bbi->switch_op->cases, iter_case, case_op) {
+		void **it;
+		rz_pvector_foreach (bbi->switch_op->cases, it) {
+			case_op = *it;
 			RzGraphNode *case_node = graph_add_cached(core, cache, NULL, case_op->addr, graph, body_fn);
 			if (case_node) {
 				rz_graph_add_edge(graph, bb_node, case_node);

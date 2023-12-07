@@ -39,7 +39,7 @@ bool test_analysis_switch_op_load() {
 	mu_assert_eq(sop->min_val, 42, "min val");
 	mu_assert_eq(sop->max_val, 45, "max val");
 	mu_assert_eq(sop->def_val, 46, "def val");
-	mu_assert_true(rz_list_empty(sop->cases), "no cases");
+	mu_assert_true(rz_pvector_empty(sop->cases), "no cases");
 	rz_analysis_switch_op_free(sop);
 
 	str = strdup("{\"addr\":1337,\"min\":42,\"max\":45,\"def\":46,\"cases\":[{\"addr\":1339,\"jump\":57005,\"value\":42},{\"addr\":1340,\"jump\":48879,\"value\":43}]}");

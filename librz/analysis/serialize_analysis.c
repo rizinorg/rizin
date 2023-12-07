@@ -71,9 +71,10 @@ RZ_API void rz_serialize_analysis_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL Rz
 	pj_kn(j, "def", op->def_val);
 	pj_k(j, "cases");
 	pj_a(j);
-	RzListIter *it;
+	void **it;
 	RzAnalysisCaseOp *cop;
-	rz_list_foreach (op->cases, it, cop) {
+	rz_pvector_foreach (op->cases, it) {
+		cop = *it;
 		rz_serialize_analysis_case_op_save(j, cop);
 	}
 	pj_end(j);

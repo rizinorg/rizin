@@ -7,12 +7,11 @@
 static RzAnalysisSwitchOp *__switch_op_new(void) {
 	RzAnalysisSwitchOp *swop = RZ_NEW0(RzAnalysisSwitchOp);
 	if (swop) {
-		swop->cases = rz_list_new();
+		swop->cases = rz_pvector_new((RzPVectorFree)free);
 		if (!swop->cases) {
 			free(swop);
 			return NULL;
 		}
-		swop->cases->free = (void *)free;
 		swop->min_val = swop->def_val = swop->max_val = 0;
 	}
 	return swop;

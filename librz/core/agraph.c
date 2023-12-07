@@ -2271,9 +2271,10 @@ static bool isbbfew(RzAnalysisBlock *curbb, RzAnalysisBlock *bb) {
 		return true;
 	}
 	if (curbb->switch_op) {
-		RzListIter *it;
 		RzAnalysisCaseOp *cop;
-		rz_list_foreach (curbb->switch_op->cases, it, cop) {
+		void **it;
+		rz_pvector_foreach (curbb->switch_op->cases, it) {
+			cop = *it;
 			if (cop->addr == bb->addr) {
 				return true;
 			}
@@ -2362,9 +2363,10 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 			rz_agraph_add_edge(g, u, v);
 		}
 		if (bb->switch_op) {
-			RzListIter *it;
 			RzAnalysisCaseOp *cop;
-			rz_list_foreach (bb->switch_op->cases, it, cop) {
+			void **it;
+			rz_pvector_foreach (bb->switch_op->cases, it) {
+				cop = *it;
 				title = get_title(cop->addr);
 				v = rz_agraph_get_node(g, title);
 				free(title);
