@@ -141,6 +141,28 @@ RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr) {
 	}
 }
 
+/**
+ * \brief Read \p size bytes from \p addr of mapped regions into \p buf
+ * \param core reference to RzCore instance
+ * \param addr address where to read from
+ * \param buf buffer where to store the read data
+ * \param size number of bytes to read
+ * \return true if all reads on mapped regions are successful and complete, false otherwise
+ **/
+RZ_API bool rz_core_read_at(RzCore *core, ut64 addr, ut8 *buf, int size) {
+	rz_return_val_if_fail(core && buf && addr != UT64_MAX, false);
+	if (size < 1) {
+		return false;
+	}
+	// if cached in core->block
+	if (addr >= core->offset && addr + size <= core->offset + core->blocksize) {
+		int offset = addr - core->offset;
+		memcpy(buf, core->block + offset, size);
+		return true;
+	}
+	return rz_io_read_at_mapped(core->io, addr, buf, size);
+}
+
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) {
 	rz_return_val_if_fail(core && buf && addr != UT64_MAX, false);
 	if (size < 1) {

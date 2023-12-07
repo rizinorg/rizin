@@ -2826,7 +2826,11 @@ RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_print_instructions_handler(RzCore *core, int argc, const char **argv) {
-	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (argc <= 1) {
+		RZ_LOG_ERROR("Invalid arguments\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 len = rz_num_math(core->num, argv[1]);
 	rz_core_print_disasm_instructions(core, len, 0);
 	return RZ_CMD_STATUS_OK;
 }
@@ -5067,7 +5071,11 @@ RZ_IPI RzCmdStatus rz_print_key_mosaic_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_print_instr_handler(RzCore *core, int argc, const char **argv) {
-	ut64 N = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (argc <= 1) {
+		RZ_LOG_ERROR("Invalid arguments\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 N = rz_num_math(core->num, argv[1]);
 	if (N == 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}

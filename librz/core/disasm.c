@@ -5640,8 +5640,8 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	RzDisasmState *ds = NULL;
 	int i, j, ret, len = 0;
 	char *tmpopstr;
-	const ut64 old_offset = core->offset;
 	bool hasanalysis = false;
+	bool alloc_buf = buf ? false : true;
 	const size_t addrbytes = buf ? 1 : core->io->addrbytes;
 	int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
@@ -5656,16 +5656,20 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	ds->len = nb_opcodes * 8;
 
 	if (!buf) {
-		rz_core_seek(core, address, true);
-		buf = core->block;
+		buf = malloc(RZ_ABS(nb_bytes) + 1);
+		if (!buf) {
+			RZ_LOG_ERROR("Fail to alloc memory.");
+			return 0;
+		}
+		if (!rz_core_read_at(core, address, buf, RZ_ABS(nb_bytes) + 1)) {
+			RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".", address);
+			return 0;
+		}
 	}
-
-	core->offset = address;
 
 	rz_cons_break_push(NULL, NULL);
 	// build ranges to map addr with bits
 	j = 0;
-toro:
 	for (i = 0; rz_disasm_check_end(nb_opcodes, j, nb_bytes, addrbytes * i); i += ret, j++) {
 		ds->at = address + i;
 		ds->vat = rz_core_pava(core, ds->at);
@@ -5785,20 +5789,18 @@ toro:
 			ds->hint = NULL;
 		}
 	}
-	if (buf == core->block && nb_opcodes > 0 && j < nb_opcodes) {
-		rz_core_seek(core, core->offset + i, true);
-		goto toro;
-	}
 	rz_cons_break_pop();
 	ds_free(ds);
-	core->offset = old_offset;
 	rz_reg_arena_pop(core->analysis->reg);
-
+	if (alloc_buf) {
+		free(buf);
+	}
 	return len;
 }
 
 /**
- * \brief Converting negative numbers n_opcodes and n_opcodes
+ * \brief (DEPRECATED, consider rz_core_backward_offset)
+ *        Converting negative numbers n_opcodes and n_opcodes
  * 	  to positive numbers n_opcodes and n_opcodes
  *	  and seek the appropriate offset
  * \param core RzCore reference
@@ -5806,7 +5808,7 @@ toro:
  * \param pn_bytes Pointer to n_bytes
  * \return success
  */
-RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
+RZ_DEPRECATE RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
 	RZ_NONNULL RZ_INOUT int *pn_opcodes, RZ_NONNULL RZ_INOUT int *pn_bytes) {
 	rz_return_val_if_fail(core && pn_opcodes && pn_bytes, false);
 
@@ -5849,18 +5851,60 @@ RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
 	return true;
 }
 
+/**
+ * \brief Calculate the offset while \p pn_opcodes and \p pn_bytes
+ *       are negative, and \p pn_opcodes and \p pn_bytes will be
+ *       converted to positive numbers.
+ * \param core RzCore reference
+ * \prarm pn_opcodes Pointer to n_opcodes
+ * \param pn_bytes Pointer to n_bytes
+ * \return calculated offset
+ */
+RZ_IPI ut64 rz_core_backward_offset(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_INOUT int *pn_opcodes, RZ_NONNULL RZ_INOUT int *pn_bytes) {
+	rz_return_val_if_fail(core && pn_opcodes && pn_bytes, false);
+
+	if (*pn_opcodes >= 0 && *pn_bytes >= 0) {
+		return core->offset;
+	}
+
+	ut64 opcode_offset = core->offset;
+	if (*pn_opcodes < 0) {
+		*pn_opcodes = -*pn_opcodes;
+		if (!rz_core_prevop_addr(core, core->offset, *pn_opcodes, &opcode_offset)) {
+			opcode_offset = rz_core_prevop_addr_force(core, core->offset, *pn_opcodes);
+		}
+	}
+
+	ut64 byte_offset = core->offset;
+	if (*pn_bytes < 0) {
+		*pn_bytes = RZ_MIN(RZ_ABS(*pn_bytes), RZ_CORE_MAX_DISASM);
+		byte_offset = core->offset - *pn_bytes;
+	}
+
+	return RZ_MIN(opcode_offset, byte_offset);
+}
+
 /* Disassemble either `nb_opcodes` instructions, or
  * `nb_bytes` bytes; both can be negative.
  * Set to 0 the parameter you don't use */
+#define MAX_OPSIZE 16
+#define MIN_OPSIZE 1
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes) {
-	const ut64 ocore_offset = core->offset;
 	int ret = -1;
-	if (rz_core_handle_backwards_disasm(core, &nb_opcodes, &nb_bytes)) {
-		ret = rz_core_print_disasm_instructions_with_buf(core, core->offset, NULL, nb_bytes, nb_opcodes);
+	// handler negative parameters
+	ut64 offset = rz_core_backward_offset(core, &nb_opcodes, &nb_bytes);
+	// set the parameter equaling to 0 to a value that won't affect another parameter
+	if (nb_bytes == 0 && nb_opcodes != 0) {
+		nb_bytes = MAX_OPSIZE * RZ_ABS(nb_opcodes) + 1;
 	}
-	rz_core_seek(core, ocore_offset, true);
+	if (nb_bytes != 0 && nb_opcodes == 0) {
+		nb_opcodes = nb_bytes / MIN_OPSIZE + 1;
+	}
+	ret = rz_core_print_disasm_instructions_with_buf(core, offset, NULL, nb_bytes, nb_opcodes);
 	return ret;
 }
+#undef MIN_OPSIZE
+#undef MAX_OPSIZE
 
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	ut64 old_offset = core->offset;

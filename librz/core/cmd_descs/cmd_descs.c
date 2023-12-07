@@ -13416,7 +13416,7 @@ static const RzCmdDescArg print_instr_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_instr_help = {
-	.summary = "Print <N> instructions/bytes",
+	.summary = "Print <N> instructions",
 	.args = print_instr_args,
 };
 
@@ -13534,7 +13534,7 @@ static const RzCmdDescArg print_instructions_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_instructions_help = {
-	.summary = "Print <N> instructions/bytes",
+	.summary = "Print <N> bytes of instructions",
 	.args = print_instructions_args,
 };
 

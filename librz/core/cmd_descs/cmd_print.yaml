@@ -546,7 +546,7 @@ commands:
     summary: Print instructions
     subcommands:
       - name: pi
-        summary: Print <N> instructions/bytes
+        summary: Print <N> instructions
         cname: print_instr
         args:
           - name: N
@@ -626,7 +626,7 @@ commands:
     summary: Print instructions
     subcommands:
       - name: pI
-        summary: Print <N> instructions/bytes
+        summary: Print <N> bytes of instructions
         cname: print_instructions
         args:
           - name: N
