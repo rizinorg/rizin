@@ -160,7 +160,7 @@ RZ_API bool rz_core_read_at(RzCore *core, ut64 addr, ut8 *buf, int size) {
 		memcpy(buf, core->block + offset, size);
 		return true;
 	}
-	return rz_io_read_at_mapped(core->io, addr, buf, size);
+	return rz_io_nread_at(core->io, addr, buf, size) != -1;
 }
 
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) {

@@ -49,7 +49,7 @@ CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c64x
 e asm.pseudo=true
-pi~=
+pi 0x100~=
 EOF
 EXPECT=<<EOF
 a17 = (half) 0x13cf
