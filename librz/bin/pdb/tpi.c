@@ -791,14 +791,18 @@ static void tpi_data_free_with_kind(void *data, RzPDBTpiKind k) {
 }
 
 static void tpi_type_free(void *type_info) {
-	rz_return_if_fail(type_info);
+	if (!type_info) {
+		return;
+	}
 	RzPdbTpiType *type = type_info;
 	tpi_data_free_with_kind(type->data, type->kind);
 	free(type);
 }
 
 static void tpi_rbtree_free(RBNode *node, void *user) {
-	rz_return_if_fail(node);
+	if (!node) {
+		return;
+	}
 	RzPdbTpiType *type = container_of(node, RzPdbTpiType, rb);
 	tpi_type_free(type);
 }
@@ -1565,17 +1569,21 @@ RZ_IPI bool tpi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 		RZ_LOG_ERROR("Corrupted TPI stream.\n");
 		return false;
 	}
+	RzPdbTpiType *type = NULL;
+	RzBuffer *b = NULL;
 	for (ut32 index = s->header.TypeIndexBegin; index < s->header.TypeIndexEnd; index++) {
 		ut16 length = 0;
 		if (!rz_buf_read_le16(steam_buffer, &length)) {
 			goto err;
 		}
-		RzBuffer *b = buf_take(steam_buffer, length);
+		b = NULL;
+		b = buf_take(steam_buffer, length);
 		if (!b) {
 			goto err;
 		}
 
-		RzPdbTpiType *type = RzPdbTpiType_from_buf(b, index, length);
+		type = NULL;
+		type = RzPdbTpiType_from_buf(b, index, length);
 		if (!type) {
 			goto err;
 		}

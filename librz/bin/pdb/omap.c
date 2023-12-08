@@ -117,9 +117,11 @@ static ut64 pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, ut64 address
  * \param section_offset The section offset
  * \return The relative virtual address
  */
-RZ_API ut64 rz_bin_pdb_to_rva(RZ_NONNULL const RzPdb *pdb, const PDBSectionOffset *section_offset) {
+RZ_API ut64 rz_bin_pdb_to_rva(
+	RZ_BORROW RZ_NONNULL const RzPdb *pdb,
+	RZ_BORROW RZ_NONNULL const PDBSectionOffset *section_offset) {
 	static const ut64 DEFAULT = UT64_MAX;
-	rz_return_val_if_fail(pdb && pdb->s_pe, DEFAULT);
+	rz_return_val_if_fail(pdb && pdb->s_pe && section_offset, DEFAULT);
 	PeImageSectionHeader *section_hdr = pdb_section_hdr_by_index(pdb->s_pe, section_offset->section_index);
 	if (!section_hdr) {
 		return DEFAULT;

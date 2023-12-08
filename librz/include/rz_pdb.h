@@ -371,7 +371,10 @@ RZ_API bool rz_bin_pdb_extract_in_folder(RZ_NONNULL const char *file_cab, RZ_NON
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename);
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf);
 RZ_API void rz_bin_pdb_free(RzPdb *pdb);
-RZ_API bool rz_pdb_all_symbols_foreach(const RzPdb *pdb, bool (*f)(const RzPdb *, const PDBSymbol *, void *), void *u);
+RZ_API bool rz_pdb_all_symbols_foreach(
+	RZ_BORROW RZ_NONNULL const RzPdb *pdb,
+	RZ_BORROW RZ_NONNULL bool (*f)(const RzPdb *, const PDBSymbol *, void *),
+	RZ_BORROW RZ_NULLABLE void *u);
 
 // TPI
 RZ_API RZ_BORROW RzPdbTpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL RzPdbTpiStream *stream, ut32 index);
@@ -382,7 +385,9 @@ RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type);
 RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type);
 
 // OMAP
-RZ_API ut64 rz_bin_pdb_to_rva(RZ_NONNULL const RzPdb *pdb, const PDBSectionOffset *section_offset);
+RZ_API ut64 rz_bin_pdb_to_rva(
+	RZ_BORROW RZ_NONNULL const RzPdb *pdb,
+	RZ_BORROW RZ_NONNULL const PDBSectionOffset *section_offset);
 
 #ifdef __cplusplus
 }

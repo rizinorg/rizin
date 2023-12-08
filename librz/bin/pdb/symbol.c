@@ -230,16 +230,29 @@ RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector /*<PDBSymbol*>*
 	return true;
 }
 
-RZ_API bool rz_pdb_all_symbols_foreach(const RzPdb *pdb, bool (*f)(const RzPdb *, const PDBSymbol *, void *), void *u) {
+RZ_API bool rz_pdb_all_symbols_foreach(
+	RZ_BORROW RZ_NONNULL const RzPdb *pdb,
+	RZ_BORROW RZ_NONNULL bool (*f)(const RzPdb *, const PDBSymbol *, void *),
+	RZ_BORROW RZ_NULLABLE void *u) {
+	rz_return_val_if_fail(pdb && f, false);
+	if (!(pdb->s_gdata && pdb->s_gdata->global_symbols)) {
+		return true;
+	}
 	void **it;
 	rz_pvector_foreach (pdb->s_gdata->global_symbols, it) {
 		if (!f(pdb, *it, u)) {
 			return false;
 		}
 	}
+	if (!pdb->module_infos) {
+		return true;
+	}
 	void **modit;
 	rz_pvector_foreach (pdb->module_infos, modit) {
 		PDBModuleInfo *modi = *modit;
+		if (!modi->symbols) {
+			continue;
+		}
 		rz_pvector_foreach (modi->symbols, it) {
 			if (!f(pdb, *it, u)) {
 				return false;
