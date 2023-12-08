@@ -1813,7 +1813,7 @@ RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 			}
 		}
 		if (bb->switch_op && bb->switch_op->cases) {
-			E += rz_list_length(bb->switch_op->cases);
+			E += rz_pvector_len(bb->switch_op->cases);
 		}
 	}
 

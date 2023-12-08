@@ -40,7 +40,7 @@ RZ_API RzAnalysisCaseOp *rz_analysis_case_op_new(ut64 addr, ut64 val, ut64 jump)
 
 RZ_API void rz_analysis_switch_op_free(RzAnalysisSwitchOp *swop) {
 	if (swop) {
-		rz_list_free(swop->cases);
+		rz_pvector_free(swop->cases);
 		free(swop);
 	}
 }
@@ -49,7 +49,7 @@ RZ_API RzAnalysisCaseOp *rz_analysis_switch_op_add_case(RzAnalysisSwitchOp *swop
 	rz_return_val_if_fail(swop && addr != UT64_MAX, NULL);
 	RzAnalysisCaseOp *caseop = rz_analysis_case_op_new(addr, value, jump);
 	if (caseop) {
-		rz_list_append(swop->cases, caseop);
+		rz_pvector_push(swop->cases, caseop);
 	}
 	return caseop;
 }

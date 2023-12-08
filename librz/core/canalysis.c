@@ -378,9 +378,15 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		inputs += (bb2->jump == bb->addr) + (bb2->fail == bb->addr);
 	}
 	if (bb->switch_op) {
-		RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp);
-		outputs += rz_list_length(unique_cases);
-		rz_list_free(unique_cases);
+		RzPVector *unique_cases = rz_pvector_new(NULL);
+		void **it;
+		rz_pvector_foreach (bb->switch_op->cases, it) {
+			if (!rz_pvector_contains(unique_cases, *it)) {
+				rz_pvector_push(unique_cases, *it);
+			}
+		}
+		outputs += rz_pvector_len(unique_cases);
+		rz_pvector_free(unique_cases);
 	}
 	ut64 opaddr = __opaddr(bb, addr);
 
@@ -399,12 +405,18 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		}
 		if (bb->switch_op) {
 			RzAnalysisCaseOp *cop;
-			RzListIter *iter;
-			RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp);
-			rz_list_foreach (unique_cases, iter, cop) {
+			void **it;
+			RzPVector *unique_cases = rz_pvector_new(NULL);
+			rz_pvector_foreach (bb->switch_op->cases, it) {
+				if (!rz_pvector_contains(unique_cases, *it)) {
+					rz_pvector_push(unique_cases, *it);
+				}
+			}
+			rz_pvector_foreach (unique_cases, it) {
+				cop = *it;
 				rz_cons_printf(" s 0x%08" PFMT64x, cop->addr);
 			}
-			rz_list_free(unique_cases);
+			rz_pvector_free(unique_cases);
 		}
 		rz_cons_newline();
 		break;
@@ -3210,8 +3222,8 @@ typedef struct {
 	ut64 end_addr;
 	RzAnalysisFunction *fcn;
 	RzAnalysisBlock *cur_bb;
-	RzList /*<RzAnalysisBlock *>*/ *bbl, *path;
-	RzList /*<RzAnalysisCaseOp *>*/ *switch_path;
+	RzPVector /*<RzAnalysisBlock *>*/ *bbl, *path;
+	RzPVector /*<RzAnalysisCaseOp *>*/ *switch_path;
 } IterCtx;
 
 static int find_bb(ut64 *addr, RzAnalysisBlock *bb) {
@@ -3225,7 +3237,14 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 		if (!ctx->cur_bb) {
 			ctx->path = rz_pvector_new(NULL);
 			ctx->switch_path = rz_pvector_new(NULL);
-			ctx->bbl = rz_pvector_clone(ctx->fcn->bbs);
+			RzPVector *bbs_vector = rz_pvector_new(NULL);
+			RzAnalysisBlock *block;
+			RzListIter *iter;
+			rz_list_foreach (ctx->fcn->bbs, iter, block) {
+				rz_pvector_push(bbs_vector, block);
+			}
+			ctx->bbl = rz_pvector_clone(bbs_vector);
+			rz_pvector_free(bbs_vector);
 			ctx->cur_bb = rz_analysis_get_block_at(ctx->fcn->analysis, ctx->fcn->addr);
 			rz_pvector_push(ctx->path, ctx->cur_bb);
 		}
@@ -3279,7 +3298,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				rz_pvector_free(ctx->bbl);
 				return false;
 			}
-			ctx->cur_bb = bbit;
+			ctx->cur_bb = *bbit;
 			rz_pvector_push(ctx->path, ctx->cur_bb);
 			rz_pvector_remove_data(ctx->bbl, *bbit);
 			*next_i = ctx->cur_bb->addr - ctx->start_addr;
