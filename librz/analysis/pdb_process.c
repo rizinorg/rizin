@@ -283,6 +283,7 @@ static RzTypeIdentifierKind iKind_from_bKind(RzBaseTypeKind k) {
 	case RZ_BASE_TYPE_KIND_TYPEDEF:
 	case RZ_BASE_TYPE_KIND_ATOMIC: return RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 	}
+	return RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 }
 
 static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name) {

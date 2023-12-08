@@ -121,14 +121,16 @@ err:
 
 RZ_IPI PDBSymbol *PDBSymbolTable_symbol_by_index(PDBSymbolTable *symbol_table, PDBSymbolIndex index) {
 	PDBSymbolIter iter = { 0 };
+	PDBSymbol *symbol = NULL;
 	map_err(PDBSymbolTable_iter(symbol_table, &iter));
 	map_err(PDBSymbolIter_seek(&iter, index));
-	PDBSymbol *symbol = RZ_NEW0(PDBSymbol);
+	symbol = RZ_NEW0(PDBSymbol);
 	map_err(symbol);
 	map_err(PDBSymbolIter_next(&iter, symbol));
 
 	return symbol;
 err:
+	free(symbol);
 	return NULL;
 }
 
@@ -184,18 +186,43 @@ err:
 	return false;
 }
 
-RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector **psymbols) {
-	RzPVector *symbols = *psymbols = rz_pvector_new(NULL);
+static void PDBSymbol_free(void *x) {
+	if (!x) {
+		return;
+	}
+	PDBSymbol *symbol = x;
+	if (symbol->data) {
+		switch (symbol->kind) {
+		case PDB_Public: {
+			PDBSPublic *d = symbol->data;
+			free(d->name);
+			break;
+		}
+		case PDB_Data: {
+			PDBSData *d = symbol->data;
+			free(d->name);
+			break;
+		}
+		default: rz_warn_if_reached(); break;
+		}
+		free(symbol->data);
+	}
+	free(symbol);
+}
+
+RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector /*<PDBSymbol*>*/ **psymbols) {
+	RzPVector *symbols = *psymbols = rz_pvector_new(PDBSymbol_free);
 	if (!symbols) {
 		return false;
 	}
 	while (true) {
 		PDBSymbol *symbol = RZ_NEW0(PDBSymbol);
 		if (!symbol) {
+			rz_pvector_free(symbols);
+			psymbols = NULL;
 			return false;
 		}
 		if (!PDBSymbolIter_next(iter, symbol)) {
-			free(symbol);
 			break;
 		}
 		rz_pvector_push(symbols, symbol);

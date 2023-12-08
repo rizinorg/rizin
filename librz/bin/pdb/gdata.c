@@ -16,15 +16,19 @@ RZ_IPI bool gdata_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	RzPdbGDataStream *s = pdb->s_gdata;
 	if (!s) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
-		return false;
+		goto err;
 	}
 
 	PDBSymbolIter iter = { 0 };
 	PDBSymbolTable_iter(syms, &iter);
 	if (!PDBSymbolIter_collect(&iter, &s->global_symbols)) {
-		return false;
+		goto err;
 	}
+	free(syms);
 	return true;
+err:
+	free(syms);
+	return false;
 }
 
 RZ_IPI void gdata_stream_free(RzPdbGDataStream *stream) {

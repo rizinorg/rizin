@@ -654,11 +654,12 @@ RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 		case TpiVariant_U32: return x->u32v;
 		case TpiVariant_U16: return x->u16v;
 		case TpiVariant_U8: return x->u8v;
-		case TpiVariant_I64: rz_warn_if_fail(x->i64v >= 0); return x->i64v;
-		case TpiVariant_I32: rz_warn_if_fail(x->i32v >= 0); return x->i32v;
-		case TpiVariant_I16: rz_warn_if_fail(x->i16v >= 0); return x->i16v;
-		case TpiVariant_I8: rz_warn_if_fail(x->i8v >= 0); return x->i8v;
+		case TpiVariant_I64: return x->i64v;
+		case TpiVariant_I32: return x->i32v;
+		case TpiVariant_I16: return x->i16v;
+		case TpiVariant_I8: return x->i8v;
 		}
+		break;
 	}
 	case TpiKind_CLASS: {
 		Tpi_LF_Class *lf_struct = type->data;
@@ -685,6 +686,7 @@ RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 		rz_warn_if_reached();
 		return 0;
 	}
+	return -1;
 }
 
 static void tpi_data_free_with_kind(void *data, RzPDBTpiKind k) {

@@ -156,7 +156,7 @@ static bool symbol_dump(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 			break;
 		default:
 			break;
-		}
+		}o0o0O)O)?
 		free(name);
 	}
 	return true;
@@ -225,10 +225,14 @@ static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 	const RzDemanglerFlag dflags = rz_demangler_get_flags(ctx->core->bin->demangler);
 	if (symbol->kind == PDB_Public) {
 		const PDBSPublic *public = symbol->data;
+		if (RZ_STR_ISEMPTY(public->name)) {
+			return true;
+		}
 
 		char *name = rz_demangler_msvc(public->name, dflags);
 		name = (name) ? name : strdup(public->name);
-		char *fname = rz_str_newf("pdb.%s.%s", ctx->file, name);
+		char *filtered_name = rz_name_filter2(name, true);
+		char *fname = rz_str_newf("pdb.%s.%s", ctx->file, filtered_name);
 
 		ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
 		if (addr == UT64_MAX) {
@@ -242,10 +246,14 @@ static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 		if (item) {
 			rz_flag_item_set_realname(item, name);
 		}
+		free(filtered_name);
 		free(fname);
 		free(name);
 	} else if (symbol->kind == PDB_Data) {
 		const PDBSData *data = symbol->data;
+		if (RZ_STR_ISEMPTY(data->name)) {
+			return true;
+		}
 		ut64 addr = rz_bin_pdb_to_rva(pdb, &data->offset);
 		if (addr == UT64_MAX) {
 			return true;

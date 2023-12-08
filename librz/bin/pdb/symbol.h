@@ -10,10 +10,6 @@
 
 RZ_IPI bool PDBSectionOffset_parse(RzBuffer *b, PDBSectionOffset *section_offset);
 
-RZ_IPI bool PDBSData_parse(RzBuffer *b, PDBSymbolKind kind, PDBSData *sdata);
-
-RZ_IPI bool PDBSPublic_parse(RzBuffer *b, PDBSymbolKind kind, PDBSPublic *s);
-
 RZ_IPI bool PDBSymbol_parse(RzBuffer *b, PDBSymbol *symbol);
 
 typedef struct {
@@ -29,6 +25,6 @@ RZ_IPI PDBSymbol *PDBSymbolTable_symbol_by_index(PDBSymbolTable *symbol_table, P
 
 RZ_IPI bool PDBSymbolIter_next(PDBSymbolIter *iter, PDBSymbol *symbol);
 RZ_IPI bool PDBSymbolIter_seek(PDBSymbolIter *iter, PDBSymbolIndex index);
-RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector **psymbols);
+RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector /*<PDBSymbol*>*/ **psymbols);
 
 #endif // RIZIN_SYMBOL_H
