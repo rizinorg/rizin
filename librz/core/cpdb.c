@@ -320,6 +320,46 @@ RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 	return pdb;
 }
 
+static void pdb_modules_print(RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput *state) {
+	if (!(pdb->s_dbi && pdb->s_dbi->modules)) {
+		return;
+	}
+	PJ *j = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(j);
+		pj_ka(j, "modules");
+		break;
+	case RZ_OUTPUT_MODE_STANDARD: {
+		rz_cons_println("modules:");
+		break;
+	}
+	default: rz_warn_if_reached();
+	}
+	void **it;
+	rz_pvector_foreach (pdb->s_dbi->modules, it) {
+		PDB_DBIModule *module = *it;
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON: {
+			pj_o(j);
+			pj_ks(j, "module_name", module->module_name);
+			pj_ks(j, "object_file_name", module->object_file_name);
+			pj_end(j);
+			break;
+		}
+		case RZ_OUTPUT_MODE_STANDARD: {
+			rz_cons_println(module->module_name);
+			break;
+		}
+		default: rz_warn_if_reached();
+		}
+	}
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(j);
+		pj_end(j);
+	}
+}
+
 /**
  * \brief Print parsed PDB file info
  *
@@ -339,6 +379,7 @@ RZ_API void rz_core_pdb_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTypeDB 
 	}
 
 	rz_cmd_state_output_array_start(state);
+	pdb_modules_print(pdb, state);
 	rz_core_bin_pdb_types_print(core->analysis->typedb, pdb, state);
 	rz_core_bin_pdb_gvars_print(pdb, baddr, state);
 	rz_cmd_state_output_array_end(state);

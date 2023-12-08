@@ -59,7 +59,7 @@ typedef struct {
 typedef struct dbi_stream_t {
 	RzPdbRzPdbDbiStreamHdr hdr;
 	ut64 hdr_size;
-	RzPVector /*<PDB_DBIModuleInfo *>*/ *modules;
+	RzPVector /*<PDB_DBIModule *>*/ *modules;
 	RzPdbRzPdbDbiStreamDbgHeader dbg_hdr;
 } RzPdbDbiStream;
 

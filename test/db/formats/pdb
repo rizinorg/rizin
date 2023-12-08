@@ -1,3 +1,42 @@
+NAME=Modules from PDB
+FILE=
+CMDS=<<EOF
+idpi bins/pdb/Project1.pdb~:..30
+EOF
+EXPECT=<<EOF
+modules:
+* Linker Generated Manifest RES *
+C:\Users\inisider\documents\visual studio 2012\Projects\Project1\Project1\Debug\Source.obj
+KERNEL32.dll
+Import:KERNEL32.dll
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\INTEL\xdll_lib\unhandld.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\atonexit.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\cinitexe.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\crtexe.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\dllargv.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\gs_cookie.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\gs_report.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\gs_support.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\merr.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\natstart.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\pesect.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\wildcard.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\asm\dllsupp.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\INTEL\xdll_lib\chandler4gs.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\fp8.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\loadcfg.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\secchk.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\_newmode.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\xncommod.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\xtxtmode.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\src\build\INTEL\xdll_obj\nativec\xthdloc.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\prebuild\build\INTEL\xdll_obj\rtc\nativecpp\\userapi.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\prebuild\build\INTEL\xdll_obj\rtc\nativecpp\\stack.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\prebuild\build\INTEL\xdll_obj\rtc\nativecpp\\pdblkup.obj
+F:\dd\vctools\crt_bld\SELF_X86\crt\prebuild\build\INTEL\xdll_obj\rtc\nativecpp\\initsect.obj
+EOF
+RUN
+
 NAME=Load global variables from PDB
 FILE=
 CMDS=<<EOF
