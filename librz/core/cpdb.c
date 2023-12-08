@@ -156,7 +156,7 @@ static bool symbol_dump(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 			break;
 		default:
 			break;
-		}o0o0O)O)?
+		}
 		free(name);
 	}
 	return true;

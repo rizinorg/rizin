@@ -51,6 +51,18 @@ static inline void buf_read_padding(RzBuffer *b) {
 	}
 }
 
+static inline bool buf_read_u8_pascal_string(RzBuffer *b, char **result) {
+	ut8 length = 0;
+	if (!rz_buf_read8(b, &length)) {
+		return false;
+	}
+	*result = RZ_NEWS0(char, length);
+	if (!*result) {
+		return false;
+	}
+	return rz_buf_read(b, (ut8 *)*result, length);
+}
+
 static inline bool buf_align(RzBuffer *b, ut64 alignment) {
 	const ut64 diff = rz_buf_tell(b) % alignment;
 	if (diff <= 0) {

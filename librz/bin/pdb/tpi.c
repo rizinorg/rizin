@@ -6,6 +6,15 @@
 
 #define conditional(X, T, F) (X ? T : F)
 
+static bool buf_read_string(RzBuffer *b, ut16 leaf, char **result) {
+	if (leaf < LF_ST_MAX) {
+		return buf_read_u8_pascal_string(b, result);
+	} else {
+		return rz_buf_read_string(b, result) > 0;
+	}
+	return false;
+}
+
 static RzPdbTpiType *RzPdbTpiType_from_buf(RzBuffer *b, ut32 index, ut16 length);
 
 int tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
@@ -803,7 +812,7 @@ RZ_IPI void tpi_stream_free(RzPdbTpiStream *stream) {
 	free(stream);
 }
 
-static Tpi_LF_Enumerate *enumerate_parse(RzBuffer *b) {
+static Tpi_LF_Enumerate *enumerate_parse(RzBuffer *b, ut16 leaf) {
 	rz_return_val_if_fail(b, NULL);
 	Tpi_LF_Enumerate *enumerate = RZ_NEW0(Tpi_LF_Enumerate);
 	if (!enumerate) {
@@ -811,7 +820,7 @@ static Tpi_LF_Enumerate *enumerate_parse(RzBuffer *b) {
 	}
 	map_err(TpiCVFldattr_parse(b, &enumerate->fldattr) &&
 		TpiVariant_parse(b, &enumerate->value) &&
-		rz_buf_read_string(b, &enumerate->name));
+		buf_read_string(b, leaf, &enumerate->name));
 	return enumerate;
 err:
 	rz_warn_if_reached();
@@ -847,7 +856,7 @@ static Tpi_LF_NestType *nesttype_parse(RzBuffer *b, ut16 leaf) {
 			TpiCVFldattr_parse(b, &nest->fldattr),
 			rz_buf_read_le16(b, &pad)) &&
 		rz_buf_read_le32(b, &nest->index) &&
-		rz_buf_read_string(b, &nest->name));
+		buf_read_string(b, leaf, &nest->name));
 	return nest;
 err:
 	rz_warn_if_reached();
@@ -872,7 +881,7 @@ err:
 	return NULL;
 }
 
-static Tpi_LF_Method *method_parse(RzBuffer *b) {
+static Tpi_LF_Method *method_parse(RzBuffer *b, ut16 leaf) {
 	rz_return_val_if_fail(b, NULL);
 	Tpi_LF_Method *method = RZ_NEW0(Tpi_LF_Method);
 	if (!method) {
@@ -880,7 +889,7 @@ static Tpi_LF_Method *method_parse(RzBuffer *b) {
 	}
 	map_err(rz_buf_read_le16(b, &method->count) &&
 		rz_buf_read_le32(b, &method->mlist) &&
-		rz_buf_read_string(b, &method->name));
+		buf_read_string(b, leaf, &method->name));
 	return method;
 err:
 	rz_warn_if_reached();
@@ -889,7 +898,7 @@ err:
 	return NULL;
 }
 
-static Tpi_LF_Member *member_parse(RzBuffer *b) {
+static Tpi_LF_Member *member_parse(RzBuffer *b, ut16 leaf) {
 	rz_return_val_if_fail(b, NULL);
 	Tpi_LF_Member *member = RZ_NEW0(Tpi_LF_Member);
 	if (!member) {
@@ -898,7 +907,7 @@ static Tpi_LF_Member *member_parse(RzBuffer *b) {
 	map_err(TpiCVFldattr_parse(b, &member->fldattr) &&
 		rz_buf_read_le32(b, &member->field_type) &&
 		buf_read_unsigned(b, &member->offset) &&
-		rz_buf_read_string(b, &member->name));
+		buf_read_string(b, leaf, &member->name));
 	return member;
 err:
 	rz_warn_if_reached();
@@ -906,7 +915,7 @@ err:
 	return NULL;
 }
 
-static Tpi_LF_StaticMember *staticmember_parse(RzBuffer *b) {
+static Tpi_LF_StaticMember *staticmember_parse(RzBuffer *b, ut16 leaf) {
 	rz_return_val_if_fail(b, NULL);
 	Tpi_LF_StaticMember *member = RZ_NEW0(Tpi_LF_StaticMember);
 	if (!member) {
@@ -914,7 +923,7 @@ static Tpi_LF_StaticMember *staticmember_parse(RzBuffer *b) {
 	}
 	map_err(TpiCVFldattr_parse(b, &member->fldattr) &&
 		rz_buf_read_le32(b, &member->field_type) &&
-		rz_buf_read_string(b, &member->name));
+		buf_read_string(b, leaf, &member->name));
 	return member;
 err:
 	rz_warn_if_reached();
@@ -923,7 +932,7 @@ err:
 	return NULL;
 }
 
-static Tpi_LF_OneMethod *onemethod_parse(RzBuffer *b) {
+static Tpi_LF_OneMethod *onemethod_parse(RzBuffer *b, ut16 leaf) {
 	rz_return_val_if_fail(b, NULL);
 	Tpi_LF_OneMethod *onemethod = RZ_NEW0(Tpi_LF_OneMethod);
 	if (!onemethod) {
@@ -934,7 +943,7 @@ static Tpi_LF_OneMethod *onemethod_parse(RzBuffer *b) {
 		conditional(TpiCVFldattr_is_intro_virtual(&onemethod->fldattr),
 			rz_buf_read_le32(b, &onemethod->offset_in_vtable),
 			true) &&
-		rz_buf_read_string(b, &onemethod->name));
+		buf_read_string(b, leaf, &onemethod->name));
 	return onemethod;
 err:
 	rz_warn_if_reached();
@@ -1004,7 +1013,7 @@ err:
 	return NULL;
 }
 
-static Tpi_LF_Enum *enum_parse(RzBuffer *b) {
+static Tpi_LF_Enum *enum_parse(RzBuffer *b, ut16 leaf) {
 	rz_return_val_if_fail(b, NULL);
 	Tpi_LF_Enum *_enum = RZ_NEW0(Tpi_LF_Enum);
 	if (!_enum) {
@@ -1014,9 +1023,9 @@ static Tpi_LF_Enum *enum_parse(RzBuffer *b) {
 		TpiCVProperty_parse(b, &_enum->prop) &&
 		rz_buf_read_le32(b, &_enum->utype) &&
 		rz_buf_read_le32(b, &_enum->field_list) &&
-		rz_buf_read_string(b, &_enum->name) &&
+		buf_read_string(b, leaf, &_enum->name) &&
 		conditional(_enum->prop.has_uniquename,
-			rz_buf_read_string(b, &_enum->mangled_name), true));
+			buf_read_string(b, leaf, &_enum->mangled_name), true));
 	return _enum;
 err:
 	rz_warn_if_reached();
@@ -1066,9 +1075,9 @@ static Tpi_LF_Class *class_parse(RzBuffer *b, ut16 leaf) {
 			rz_buf_read_le32(b, &structure->derived) &&
 			rz_buf_read_le32(b, &structure->vshape) &&
 			buf_read_unsigned(b, &structure->size) &&
-			rz_buf_read_string(b, &structure->name) &&
+			buf_read_string(b, leaf, &structure->name) &&
 			conditional(structure->prop.has_uniquename,
-				rz_buf_read_string(b, &structure->mangled_name), true));
+				buf_read_string(b, leaf, &structure->mangled_name), true));
 	} else {
 		map_err(TpiCVProperty_parse_opt(b, &structure->prop, is_32bit_property) &&
 			rz_buf_read_le32(b, &structure->field_list) &&
@@ -1076,9 +1085,9 @@ static Tpi_LF_Class *class_parse(RzBuffer *b, ut16 leaf) {
 			rz_buf_read_le32(b, &structure->vshape) &&
 			rz_buf_read_le16(b, &structure->count) &&
 			buf_read_unsigned(b, &structure->size) &&
-			rz_buf_read_string(b, &structure->name) &&
+			buf_read_string(b, leaf, &structure->name) &&
 			conditional(structure->prop.has_uniquename,
-				rz_buf_read_string(b, &structure->mangled_name), true));
+				buf_read_string(b, leaf, &structure->mangled_name), true));
 	}
 	return structure;
 err:
@@ -1250,17 +1259,17 @@ static Tpi_LF_Union *union_parse(RzBuffer *b, ut16 leaf) {
 			TpiCVProperty_parse_opt(b, &unin->prop, leaf == LF_UNION_19) &&
 			rz_buf_read_le32(b, &unin->field_list) &&
 			buf_read_unsigned(b, &unin->size) &&
-			rz_buf_read_string(b, &unin->name) &&
+			buf_read_string(b, leaf, &unin->name) &&
 			conditional(unin->prop.has_uniquename,
-				rz_buf_read_string(b, &unin->mangled_name), true));
+				buf_read_string(b, leaf, &unin->mangled_name), true));
 	} else {
 		map_err(TpiCVProperty_parse_opt(b, &unin->prop, leaf == LF_UNION_19) &&
 			rz_buf_read_le32(b, &unin->field_list) &&
 			rz_buf_read_le16(b, &unin->count) &&
 			buf_read_unsigned(b, &unin->size) &&
-			rz_buf_read_string(b, &unin->name) &&
+			buf_read_string(b, leaf, &unin->name) &&
 			conditional(unin->prop.has_uniquename,
-				rz_buf_read_string(b, &unin->mangled_name), true));
+				buf_read_string(b, leaf, &unin->mangled_name), true));
 	}
 	return unin;
 err:
@@ -1310,7 +1319,7 @@ err:
 	return NULL;
 }
 
-static Tpi_LF_Vftable *vftable_parse(RzBuffer *b) {
+static Tpi_LF_Vftable *vftable_parse(RzBuffer *b, ut16 leaf) {
 	rz_return_val_if_fail(b, NULL);
 	Tpi_LF_Vftable *vft = RZ_NEW0(Tpi_LF_Vftable);
 	if (!vft) {
@@ -1325,7 +1334,7 @@ static Tpi_LF_Vftable *vftable_parse(RzBuffer *b) {
 	rz_pvector_init(&vft->method_names, free);
 	while (!buf_empty(b) && rz_buf_peek(b) < LF_PAD0) {
 		char *name = NULL;
-		const ut64 nlen = rz_buf_read_string(b, &name);
+		const ut64 nlen = buf_read_string(b, leaf, &name);
 		if (nlen <= 0) {
 			continue;
 		}
@@ -1372,12 +1381,12 @@ static RzPdbTpiType *RzPdbTpiType_from_buf(RzBuffer *b, ut32 index, ut16 length)
 	case LF_ENUM:
 	case LF_ENUM_ST:
 		k = TpiKind_ENUM;
-		data = enum_parse(b);
+		data = enum_parse(b, leaf);
 		break;
 	case LF_ENUMERATE:
 	case LF_ENUMERATE_ST:
 		k = TpiKind_ENUMERATE;
-		data = enumerate_parse(b);
+		data = enumerate_parse(b, leaf);
 		break;
 	case LF_CLASS:
 	case LF_CLASS_ST:
@@ -1436,7 +1445,7 @@ static RzPdbTpiType *RzPdbTpiType_from_buf(RzBuffer *b, ut32 index, ut16 length)
 		break;
 	case LF_VFTABLE:
 		k = TpiKind_VFTABLE;
-		data = vftable_parse(b);
+		data = vftable_parse(b, leaf);
 		break;
 	case LF_LABEL:
 		k = TpiKind_LABEL;
@@ -1452,17 +1461,17 @@ static RzPdbTpiType *RzPdbTpiType_from_buf(RzBuffer *b, ut32 index, ut16 length)
 	case LF_MEMBER:
 	case LF_MEMBER_ST:
 		k = TpiKind_MEMBER;
-		data = member_parse(b);
+		data = member_parse(b, leaf);
 		break;
 	case LF_METHOD:
 	case LF_METHOD_ST:
 		k = TpiKind_METHOD;
-		data = method_parse(b);
+		data = method_parse(b, leaf);
 		break;
 	case LF_ONEMETHOD:
 	case LF_ONEMETHOD_ST:
 		k = TpiKind_ONEMETHOD;
-		data = onemethod_parse(b);
+		data = onemethod_parse(b, leaf);
 		break;
 	case LF_BCLASS:
 	case LF_BINTERFACE:
@@ -1476,7 +1485,7 @@ static RzPdbTpiType *RzPdbTpiType_from_buf(RzBuffer *b, ut32 index, ut16 length)
 	case LF_STMEMBER:
 	case LF_STMEMBER_ST:
 		k = TpiKind_STMEMBER;
-		data = staticmember_parse(b);
+		data = staticmember_parse(b, leaf);
 		break;
 	case LF_VBCLASS:
 	case LF_IVBCLASS:

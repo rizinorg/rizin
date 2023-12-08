@@ -22,7 +22,7 @@ RZ_IPI bool PDBSectionOffset_parse(RzBuffer *b, PDBSectionOffset *section_offset
 
 static bool symbol_name_parse(RzBuffer *b, PDBSymbolKind kind, char **result) {
 	if (kind < S_ST_MAX) {
-		// TODO: pascal
+		return buf_read_u8_pascal_string(b, result);
 	} else {
 		return rz_buf_read_string(b, result) > 0;
 	}
