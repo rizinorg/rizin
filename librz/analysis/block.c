@@ -524,7 +524,11 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 		} else {
 			if (cur_bb->switch_op && cur_ctx->index == -1) {
 				cur_ctx->index = 0;
-				cur_ctx->switch_it = rz_pvector_at(cur_bb->switch_op->cases, cur_ctx->index);
+				if (cur_ctx->index < rz_pvector_len(cur_bb->switch_op->cases)) {
+					cur_ctx->switch_it = rz_pvector_at(cur_bb->switch_op->cases, cur_ctx->index);
+				} else {
+					cur_ctx->switch_it = NULL;
+				}
 			} else if (cur_ctx->switch_it) {
 				cur_ctx->index++;
 				if (cur_ctx->index < rz_pvector_len(cur_bb->switch_op->cases)) {

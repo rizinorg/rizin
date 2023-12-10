@@ -3272,10 +3272,12 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			rz_reg_arena_push(ctx->fcn->analysis->reg);
 			void **bbit = NULL;
 			if (bb->switch_op) {
-				RzAnalysisCaseOp *cop = rz_pvector_at(bb->switch_op->cases, 0);
-				bbit = rz_pvector_find(ctx->bbl, &cop->jump, (RzPVectorComparator)find_bb);
-				if (bbit) {
-					rz_pvector_push(ctx->switch_path, rz_pvector_at(bb->switch_op->cases, 0));
+				if (rz_pvector_len(bb->switch_op->cases) > 0) {
+					RzAnalysisCaseOp *cop = rz_pvector_at(bb->switch_op->cases, 0);
+					bbit = rz_pvector_find(ctx->bbl, &cop->jump, (RzPVectorComparator)find_bb);
+					if (bbit) {
+						rz_pvector_push(ctx->switch_path, rz_pvector_at(bb->switch_op->cases, 0));
+					}
 				}
 			} else {
 				bbit = rz_pvector_find(ctx->bbl, &bb->jump, (RzPVectorComparator)find_bb);
@@ -3284,7 +3286,10 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				}
 			}
 			if (!bbit) {
-				void **cop_it = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 1);
+				void **cop_it = NULL;
+				if (rz_pvector_len(ctx->switch_path) > 0) {
+					cop_it = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 1);
+				}
 				RzAnalysisBlock *prev_bb = NULL;
 				do {
 					rz_reg_arena_pop(ctx->fcn->analysis->reg);
@@ -3307,7 +3312,11 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 					}
 					if (cop_it == rz_pvector_at(ctx->switch_path, 0)) {
 						rz_pvector_pop(ctx->switch_path);
-						cop_it = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 1);
+						if (rz_pvector_len(ctx->switch_path) > 0) {
+							cop_it = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 1);
+						} else {
+							cop_it = NULL;
+						}
 					}
 				} while (!bbit && !rz_pvector_empty(ctx->path) > 0);
 			}
