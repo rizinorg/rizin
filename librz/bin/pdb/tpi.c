@@ -1231,7 +1231,7 @@ static Tpi_LF_MethodList *methodlist_parse(RzBuffer *b) {
 	return mlist;
 err:
 	rz_warn_if_reached();
-	tpi_data_free_with_kind(member, TpiKind_MEMBER);
+	tpi_data_free_with_kind(member, TpiKind_METHODLIST);
 	return NULL;
 }
 
