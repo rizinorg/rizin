@@ -3274,9 +3274,16 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			if (bb->switch_op) {
 				if (rz_pvector_len(bb->switch_op->cases) > 0) {
 					RzAnalysisCaseOp *cop = rz_pvector_at(bb->switch_op->cases, 0);
+					if (!cop) {
+						return false;
+					}
 					bbit = rz_pvector_find(ctx->bbl, &cop->jump, (RzPVectorComparator)find_bb);
 					if (bbit) {
-						rz_pvector_push(ctx->switch_path, rz_pvector_at(bb->switch_op->cases, 0));
+						RzAnalysisCaseOp *cop2 = rz_pvector_at(bb->switch_op->cases, 0);
+						if (!cop2) {
+							return false;
+						}
+						rz_pvector_push(ctx->switch_path, cop2);
 					}
 				}
 			} else {
@@ -3289,6 +3296,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				void **cop_it = NULL;
 				if (rz_pvector_len(ctx->switch_path) > 0) {
 					cop_it = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 1);
+					if (!cop_it) {
+						return false;
+					}
 				}
 				RzAnalysisBlock *prev_bb = NULL;
 				do {
