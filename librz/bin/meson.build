@@ -260,6 +260,7 @@ rz_bin_sources = [
   'pdb/stream_pe.c',
   'pdb/tpi.c',
   'pdb/symbol.c',
+  'pdb/modi.c',
 
   'dwarf/abbrev.c',
   'dwarf/addr.c',
