@@ -4,7 +4,7 @@
 
 #include "pdb.h"
 
-RZ_IPI bool parse_gdata_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+RZ_IPI bool gdata_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	rz_return_val_if_fail(pdb && stream, false);
 	PDBSymbolTable *syms = pdb_global_symbols(pdb);
 	if (!syms) {
@@ -16,37 +16,22 @@ RZ_IPI bool parse_gdata_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	RzPdbGDataStream *s = pdb->s_gdata;
 	if (!s) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
-		return false;
-	}
-	s->global_symbols = rz_pvector_new(free);
-	if (!s->global_symbols) {
-		return false;
+		goto err;
 	}
 
 	PDBSymbolIter iter = { 0 };
 	PDBSymbolTable_iter(syms, &iter);
-	while (true) {
-		PDBSymbol *symbol = RZ_NEW0(PDBSymbol);
-		if (!symbol) {
-			goto err;
-		}
-		if (!PDBSymbolIter_next(&iter, symbol)) {
-			free(symbol);
-			break;
-		}
-		if (!symbol->data) {
-			free(symbol);
-			continue;
-		}
-		rz_pvector_push(s->global_symbols, symbol);
+	if (!PDBSymbolIter_collect(&iter, &s->global_symbols)) {
+		goto err;
 	}
-
+	free(syms);
 	return true;
 err:
+	free(syms);
 	return false;
 }
 
-RZ_IPI void free_gdata_stream(RzPdbGDataStream *stream) {
+RZ_IPI void gdata_stream_free(RzPdbGDataStream *stream) {
 	if (!stream) {
 		return;
 	}
