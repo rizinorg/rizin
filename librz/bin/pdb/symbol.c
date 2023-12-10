@@ -210,7 +210,7 @@ static void PDBSymbol_free(void *x) {
 	free(symbol);
 }
 
-RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector /*<PDBSymbol*>*/ **psymbols) {
+RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector /*<PDBSymbol *>*/ **psymbols) {
 	RzPVector *symbols = *psymbols = rz_pvector_new(PDBSymbol_free);
 	if (!symbols) {
 		return false;

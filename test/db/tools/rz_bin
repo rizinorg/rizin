@@ -1069,6 +1069,22 @@ EXPECT=<<EOF
 {
   "pdb": [
     {
+      "modules": [
+        {
+          "module_name": "* Linker Generated Manifest RES *",
+          "object_file_name": ""
+        },
+        {
+          "module_name": "C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj",
+          "object_file_name": "C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"
+        },
+        {
+          "module_name": "* Linker *",
+          "object_file_name": ""
+        }
+      ]
+    },
+    {
       "types": [
         {
           "type": "structure",

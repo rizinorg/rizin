@@ -275,7 +275,7 @@ static bool symbol_do(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 	if (symbol->kind != PDB_Public) {
 		return true;
 	}
-	ut64 baddr = u;
+	ut64 baddr = (ut64)u;
 	const PDBSPublic *data = symbol->data;
 	if (!(data && data->name)) {
 		return true;
