@@ -1775,6 +1775,7 @@ RZ_API RZ_OWN RzAnalysisVar *rz_analysis_var_new();
 RZ_API void rz_analysis_var_free(RZ_OWN RzAnalysisVar *var);
 RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, bool verbose);
 RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var);
+RZ_API ut64 rz_analysis_var_size(const RzAnalysis *analysis, RZ_NONNULL RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps);
 RZ_API void rz_analysis_var_delete(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 reg_addend);

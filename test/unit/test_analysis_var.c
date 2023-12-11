@@ -304,12 +304,18 @@ bool test_rz_analysis_function_var_expr_for_reg_access_at() {
 	rz_analysis_var_storage_init_stack(&stor, -0x10);
 	RzAnalysisVar *a = set_var_str(fcn, &stor, "char *", 0, "var_10h");
 	mu_assert_notnull(a, "create var");
+	ut64 a_size = rz_analysis_var_size(analysis, a);
+	mu_assert_eq(a_size, 64, "var size");
 	rz_analysis_var_storage_init_stack(&stor, -0x18);
 	RzAnalysisVar *b = rz_analysis_function_set_var(fcn, &stor, struct_type, 0, "var_18h");
 	mu_assert_notnull(b, "create var");
+	ut64 b_size = rz_analysis_var_size(analysis, b);
+	mu_assert_eq(b_size, 64, "var size");
 	rz_analysis_var_storage_init_stack(&stor, 8);
 	RzAnalysisVar *c = set_var_str(fcn, &stor, "char *", 0, "arg_8h");
 	mu_assert_notnull(c, "create var");
+	ut64 c_size = rz_analysis_var_size(analysis, c);
+	mu_assert_eq(c_size, 64, "var size");
 	rz_type_free(struct_type);
 	assert_sane(analysis);
 
