@@ -1,0 +1,8 @@
+[wrap-git]
+url = https://github.com/PCRE2Project/pcre2.git
+revision = 52c08847921a324c804cabf2814549f50bce1265
+directory = pcre2
+patch_directory = pcre2
+
+[provide]
+pcre2=pcre2_dep

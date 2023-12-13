@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_regex.h>
+#include <rz_vector.h>
 #include <rz_types.h>
 #include <rz_core.h>
 #include <rz_asm.h>
@@ -342,9 +344,11 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				} else if (!regexp) {
 					matches = strstr(opst, tokens[matchcount]) != NULL;
 				} else {
-					rx = rz_regex_new(tokens[matchcount], "es");
-					matches = rz_regex_exec(rx, opst, 0, 0, 0) == 0;
+					rx = rz_regex_new(tokens[matchcount], RZ_REGEX_EXTENDED, 0);
+					RzPVector *tmp_m = rz_regex_match_first(rx, opst, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+					matches = (!rz_pvector_empty(tmp_m) && tmp_m != NULL) ? 1 : 0;
 					rz_regex_free(rx);
+					rz_pvector_free(tmp_m);
 				}
 			}
 			if (align && align > 1) {

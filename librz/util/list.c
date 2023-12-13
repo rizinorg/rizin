@@ -827,6 +827,10 @@ RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzL
 /**
  * \brief Casts a RzList containg strings into a concatenated string
  *
+ * \param list The list of strings to concatenate.
+ * \param ch char to separate the match strings.
+ *
+ * \return The concatenated string.
  **/
 RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch) {
 	RzListIter *iter;

@@ -5,7 +5,7 @@
 #include "rz_util/rz_print.h"
 #include <rz_vector.h>
 #include <rz_util/rz_strbuf.h>
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include <rz_util/rz_assert.h>
 #include <rz_list.h>
 #include <stdio.h>
@@ -1545,7 +1545,7 @@ RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPatter
 	rz_pvector_foreach (patterns, it) {
 		RzAsmTokenPattern *pat = *it;
 		if (!pat->regex) {
-			pat->regex = rz_regex_new(pat->pattern, "e");
+			pat->regex = rz_regex_new(pat->pattern, RZ_REGEX_EXTENDED, 0);
 			if (!pat->regex) {
 				RZ_LOG_WARN("Did not compile regex pattern %s.\n", pat->pattern);
 				rz_warn_if_reached();
@@ -1584,32 +1584,31 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 			}
 		}
 
-		/// Start pattern search from the beginning
-		size_t asm_str_off = 0;
-
 		// Search for token pattern.
-		RzRegexMatch match[1];
-		while (rz_regex_exec(pattern->regex, asm_str + asm_str_off, 1, match, 0) == 0) {
-			st64 match_start = match[0].rm_so; // Token start
-			st64 match_end = match[0].rm_eo; // Token end
-			st64 len = match_end - match_start; // Length of token
-			st64 tok_offset = asm_str_off + match_start; // Token offset in str
+		RzPVector *match_sets = rz_regex_match_all(pattern->regex, asm_str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+		void **grouped_match;
+		rz_pvector_foreach (match_sets, grouped_match) {
+			if (rz_pvector_empty(*grouped_match)) {
+				continue;
+			}
+			RzRegexMatch *match = rz_pvector_at(*grouped_match, 0);
+			st64 match_start = match->start; // Token start
+			st64 len = match->len; // Length of token
+			st64 tok_offset = match_start; // Token offset in str
 			if (overlaps_with_token(toks->tokens, tok_offset, tok_offset + len - 1)) {
 				// If this is true a token with higher priority was matched before.
-				asm_str_off = tok_offset + len;
 				continue;
 			}
 
 			// New token found, add it.
 			if (!is_num(asm_str + tok_offset)) {
 				add_token(toks, tok_offset, len, pattern->type, 0);
-				asm_str_off = tok_offset + len;
 				continue;
 			}
 			ut64 number = strtoull(asm_str + tok_offset, NULL, 0);
 			add_token(toks, tok_offset, len, pattern->type, number);
-			asm_str_off = tok_offset + len;
 		}
+		rz_pvector_free(match_sets);
 	}
 
 	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false, NULL);

@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include <rz_util.h>
 #include "pager_private.h"
+#include "rz_vector.h"
 
 #define I(x) rz_cons_singleton()->x
 
@@ -31,7 +32,7 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 	RzRegex *rx = NULL;
 	int w, h, ch, to, ui = 1, from = 0, i;
 	const char *sreg;
-	RzList **mla;
+	RzPVector **mla;
 
 	// rcons kills str after flushing the buffer, so we must keep a copy
 	char *ostr = strdup(str);
@@ -47,16 +48,13 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 	if (lines_count < 1) {
 		mla = NULL;
 	} else {
-		mla = calloc(lines_count, sizeof(RzList *));
+		mla = calloc(lines_count, sizeof(RzPVector *));
 		if (!mla) {
 			free(p);
 			free(ostr);
 			free(lines);
 			return 0;
 		}
-	}
-	for (i = 0; i < lines_count; i++) {
-		mla[i] = rz_list_new();
 	}
 	rz_cons_set_raw(true);
 	rz_cons_show_cursor(false);
@@ -75,7 +73,7 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 		ch = rz_cons_readchar();
 		if (exitkeys && strchr(exitkeys, ch)) {
 			for (i = 0; i < lines_count; i++) {
-				rz_list_free(mla[i]);
+				rz_pvector_free(mla[i]);
 			}
 			free(p);
 			free(mla);
@@ -129,7 +127,7 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 				if (rx) {
 					rz_regex_free(rx);
 				}
-				rx = rz_regex_new(sreg, "");
+				rx = rz_regex_new(sreg, RZ_REGEX_EXTENDED | RZ_REGEX_MULTILINE, 0);
 			} else { /* we got an empty string */
 				from = pager_next_match(from, mla, lines_count);
 				break;
@@ -138,9 +136,12 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 				break;
 			}
 			/* find all occurrences */
-			if (pager_all_matches(p, rx, mla, lines, lines_count)) {
-				from = pager_next_match(from, mla, lines_count);
+			RzPVector *matches = rz_regex_match_all_not_grouped(rx, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+			if (rz_pvector_empty(matches)) {
+				rz_pvector_free(matches);
+				break;
 			}
+			from = pager_next_match(from, mla, lines_count);
 			break;
 		case 'n': /* next match */
 			/* search already performed */
@@ -157,7 +158,7 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 		}
 	}
 	for (i = 0; i < lines_count; i++) {
-		rz_list_free(mla[i]);
+		rz_pvector_free(mla[i]);
 	}
 	free(mla);
 	rz_regex_free(rx);

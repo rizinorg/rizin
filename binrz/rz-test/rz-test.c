@@ -743,9 +743,8 @@ static void print_diff(const char *actual, const char *expected, const char *reg
 	const char *output = actual;
 
 	if (regexp) {
-		RzList *matches = rz_regex_get_match_list(regexp, "e", actual);
-		output = rz_list_to_str(matches, '\0');
-		rz_list_free(matches);
+		RzStrBuf *match_str = rz_regex_full_match_str(regexp, actual, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, "\n");
+		output = rz_strbuf_drain(match_str);
 	}
 
 	d = rz_diff_lines_new(expected, output, NULL);

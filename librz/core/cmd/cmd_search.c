@@ -6,6 +6,7 @@
 #include <rz_core.h>
 #include <rz_io.h>
 #include <rz_list.h>
+#include <rz_util/rz_regex.h>
 #include <rz_types_base.h>
 #include "../core_private.h"
 
@@ -1080,8 +1081,8 @@ static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr
 		idx += opsz;
 		addr += opsz;
 		if (rx) {
-			grep_find = !rz_regex_match(rx, "e", opst);
-			search_hit = (end && grep && (grep_find < 1));
+			grep_find = rz_regex_contains(rx, opst, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+			search_hit = (end && grep && grep_find);
 		} else {
 			search_hit = (end && grep && strstr(opst, grep_str));
 		}

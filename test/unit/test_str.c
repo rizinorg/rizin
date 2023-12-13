@@ -212,7 +212,7 @@ bool test_rz_str_split_list(void) {
 	rz_list_free(l);
 
 	char s1[] = "Hello  World\tAnd \t Everyone";
-	RzList *l1 = rz_str_split_duplist_n_regex(s1, "[[:blank:]]+", 0, false);
+	RzList *l1 = rz_str_split_duplist_n_regex(s1, "\\s+", 0, false);
 	mu_assert_eq(rz_list_length(l1), 4, "string has been split in 4 items");
 	mu_assert_streq(rz_list_get_n(l1, 0), "Hello", "first item");
 	mu_assert_streq(rz_list_get_n(l1, 1), "World", "second item");
@@ -228,7 +228,7 @@ bool test_rz_str_split_list(void) {
 	rz_list_free(l2);
 
 	char s3[] = "Hello  World\tAnd \t Everyone\t";
-	RzList *l3 = rz_str_split_list_regex(s3, "[[:blank:]]+", 0);
+	RzList *l3 = rz_str_split_list_regex(s3, "\\s+", 0);
 	mu_assert_eq(rz_list_length(l3), 4, "string has been split in 4 items");
 	mu_assert_streq(rz_list_get_n(l3, 0), "Hello", "first item");
 	mu_assert_streq(rz_list_get_n(l3, 1), "World", "second item");

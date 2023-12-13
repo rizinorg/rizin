@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_regex.h>
+#include <rz_vector.h>
 #include <rz_core.h>
 #include <rz_socket.h>
 #include <rz_cmp.h>
@@ -1377,17 +1379,17 @@ static void autocomplete_theme(RzCore *core, RzLineCompletion *completion, const
 
 static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf) {
 	const char *pattern = "e (.*)=";
-	RzRegex *rx = rz_regex_new(pattern, "e");
-	const size_t nmatch = 2;
-	RzRegexMatch pmatch[2] = { 0 };
+	RzRegex *rx = rz_regex_new(pattern, RZ_REGEX_EXTENDED, 0);
 	bool ret = false;
 
-	if (rz_regex_exec(rx, buf->data, nmatch, pmatch, 1)) {
+	RzPVector *matches = rz_regex_match_all_not_grouped(rx, buf->data, buf->length, 0, RZ_REGEX_DEFAULT);
+	if (!matches || rz_pvector_empty(matches) || rz_pvector_len(matches) < 2) {
 		goto out;
 	}
 	int i;
 	char *str = NULL, *sp;
-	for (i = pmatch[1].rm_so; i < pmatch[1].rm_eo; i++) {
+	RzRegexMatch *m1 = rz_pvector_at(matches, 1);
+	for (i = m1->start; i < m1->start + m1->len; i++) {
 		str = rz_str_appendch(str, buf->data[i]);
 	}
 	if (!str) {
@@ -1403,7 +1405,8 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 		*sp = ' ';
 	}
 	if (!node) {
-		return false;
+		ret = false;
+		goto out;
 	}
 	RzListIter *iter;
 	char *option;
@@ -1420,6 +1423,7 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 
 out:
 	rz_regex_free(rx);
+	rz_pvector_free(matches);
 	return ret;
 }
 

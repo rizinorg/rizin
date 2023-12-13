@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <rz_util/rz_str.h>
 #include <rz_list.h>
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_log.h>

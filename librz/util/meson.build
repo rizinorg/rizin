@@ -43,9 +43,7 @@ rz_util_common_sources = [
   'punycode.c',
   'range.c',
   'rbtree.c',
-  'regex/regcomp.c',
-  'regex/regerror.c',
-  'regex/regexec.c',
+  'regex.c',
   'serialize_spaces.c',
   'signal.c',
   'skiplist.c',
@@ -91,7 +89,7 @@ rz_util_common_sources = [
 ]
 rz_util_sources = rz_util_common_sources
 
-rz_util_deps = [ldl, lrt, mth, th, utl] + platform_deps
+rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep] + platform_deps
 if zlib_dep.found()
   rz_util_deps += [zlib_dep]
 endif
@@ -149,7 +147,7 @@ if meson.is_cross_build()
       cc_native.find_library('psapi'),
     ]
   endif
-  rz_util_native_deps = [ldl_native, lrt_native, mth_native, th_native, utl_native] + platform_native_deps
+  rz_util_native_deps = [ldl_native, lrt_native, mth_native, th_native, utl_native, pcre2_dep] + platform_native_deps
   if execinfo_native.found()
     rz_util_native_deps += [execinfo_native]
   endif

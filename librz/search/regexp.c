@@ -3,48 +3,54 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_search.h"
-#include <rz_regex.h>
+#include <rz_vector.h>
+#include <rz_util/rz_regex.h>
 
+/**
+ * \return -1 on failure.
+ */
 RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	RzSearchKeyword *kw;
 	RzListIter *iter;
-	RzRegexMatch match;
-	RzRegex compiled = { 0 };
+	RzPVector *matches = NULL;
+	RzRegex *compiled = NULL;
 	const int old_nhits = s->nhits;
 	int ret = 0;
 
 	rz_list_foreach (s->kws, iter, kw) {
-		int reflags = RZ_REGEX_EXTENDED;
+		int cflags = RZ_REGEX_EXTENDED;
 
 		if (kw->icase) {
-			reflags |= RZ_REGEX_ICASE;
+			cflags |= RZ_REGEX_CASELESS;
 		}
 
-		if (rz_regex_comp(&compiled, (char *)kw->bin_keyword, reflags)) {
+		compiled = rz_regex_new((char *)kw->bin_keyword, cflags, 0);
+		if (!compiled) {
 			eprintf("Cannot compile '%s' regexp\n", kw->bin_keyword);
 			return -1;
 		}
 
-		match.rm_so = 0;
-		match.rm_eo = len;
-
-		while (!rz_regex_exec(&compiled, (char *)buf, 1, &match, RZ_REGEX_STARTEND)) {
-			int t = rz_search_hit_new(s, kw, from + match.rm_so);
-			if (!t) {
+		matches = rz_regex_match_all_not_grouped(compiled, (char *)buf, len, from, RZ_REGEX_DEFAULT);
+		void **it;
+		rz_pvector_foreach (matches, it) {
+			RzRegexMatch *m = *it;
+			int t = rz_search_hit_new(s, kw, m->start);
+			if (t == 0) {
 				ret = -1;
+				rz_pvector_free(matches);
 				goto beach;
 			}
+			// Max hits reached
 			if (t > 1) {
+				rz_pvector_free(matches);
 				goto beach;
 			}
-			/* Setup the boundaries for RZ_REGEX_STARTEND */
-			match.rm_so = match.rm_eo;
-			match.rm_eo = len;
 		}
+		rz_pvector_free(matches);
 	}
 
 beach:
-	rz_regex_fini(&compiled);
+	rz_regex_free(compiled);
 	if (!ret) {
 		ret = s->nhits - old_nhits;
 	}
