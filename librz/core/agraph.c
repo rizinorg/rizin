@@ -3298,9 +3298,6 @@ static bool check_changes(RzAGraph *g, int is_interactive, RzCore *core, RzAnaly
 			return false;
 		}
 	}
-	if (fcn) {
-		agraph_update_title(core, g, fcn);
-	}
 	if (core && core->config) {
 		if (rz_config_get_i(core->config, "graph.trace")) {
 			// fold all bbs not traced
@@ -3338,6 +3335,9 @@ static bool check_changes(RzAGraph *g, int is_interactive, RzCore *core, RzAnaly
 		if (n) {
 			update_seek(g->can, n, g->force_update_seek);
 		}
+	}
+	if (fcn) {
+		agraph_update_title(core, g, fcn);
 	}
 	if (oldpos[0] || oldpos[1]) {
 		g->can->sx = oldpos[0];
