@@ -91,12 +91,28 @@ static void setup_vm_from_config(RzAnalysis *analysis, RzAnalysisILVM *vm, RzAna
 static void setup_vm_init_state(RzAnalysisILVM *vm, RZ_NULLABLE RzAnalysisILInitState *is, RZ_NULLABLE RzReg *reg);
 
 /**
+ * \brief Checks if io.cache = true and warns the user if it is unset.
+ * Wthout it IL memory writes are ignored.
+ *
+ * See https://github.com/rizinorg/rizin/issues/3996 for a general
+ * problem description.
+ */
+static void check_io_cache_setting(const RzAnalysis *a) {
+	rz_return_if_fail(a);
+	bool transparent_cache = (bool)a->coreb.cfggeti(a->core, "io.cache");
+	if (!transparent_cache) {
+		RZ_LOG_WARN("io.cache != true. RzIL operations won't be able to write to memory. Please run 'e io.cache=true' before using the IL.\n")
+	}
+}
+
+/**
  * Create and initialize an RzAnalysisILVM with the current arch/cpu/bits configuration and plugin
  * \p init_state_reg optional RzReg to take variable values from, unless the plugin overrides them using RzAnalysisILInitState
  * \return RzAnalysisRzil* a pointer to RzAnalysisILVM instance
  */
 RZ_API RZ_OWN RzAnalysisILVM *rz_analysis_il_vm_new(RzAnalysis *a, RZ_NULLABLE RzReg *init_state_reg) {
 	rz_return_val_if_fail(a, NULL);
+	check_io_cache_setting(a);
 	RzAnalysisILConfig *config = a->cur->il_config(a);
 	if (!config) {
 		return false;
