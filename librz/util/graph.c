@@ -172,12 +172,17 @@ RZ_API RzGraphNode *rz_graph_add_nodef(RzGraph *graph, void *data, RzListFree us
 	return node;
 }
 
-/* remove the node from the graph and free the node */
-/* users of this function should be aware they can't access n anymore */
-RZ_API void rz_graph_del_node(RzGraph *t, RzGraphNode *n) {
+/**
+ * \brief Deletes the node \p n from the graph \p t and frees the \p n.
+ *
+ * \param t The graph to operate on.
+ * \param n The node to delete.
+ */
+RZ_API void rz_graph_del_node(RzGraph *t, RZ_OWN RzGraphNode *n) {
+	rz_return_if_fail(t);
 	RzGraphNode *gn;
 	RzListIter *it;
-	if (!n) {
+	if (!n || !rz_list_contains(t->nodes, n)) {
 		return;
 	}
 	rz_list_foreach (n->in_nodes, it, gn) {

@@ -165,7 +165,15 @@ RZ_API bool rz_analysis_function_delete(RzAnalysisFunction *fcn) {
 	return rz_list_delete_data(fcn->analysis->fcns, fcn);
 }
 
-RZ_API RzAnalysisFunction *rz_analysis_get_function_at(RzAnalysis *analysis, ut64 addr) {
+/**
+ * \brief Returns the function which has its entrypoint at \p addr or NULL if non was found.
+ *
+ * \param analysis The current RzAnalysis.
+ * \param addr The address of the function to get.
+ *
+ * \return The function with an entrypoint at \p addr or NULL if non was found.
+ */
+RZ_API RzAnalysisFunction *rz_analysis_get_function_at(const RzAnalysis *analysis, ut64 addr) {
 	bool found = false;
 	RzAnalysisFunction *f = ht_up_find(analysis->ht_addr_fun, addr, &found);
 	if (f && found) {
