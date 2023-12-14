@@ -1819,3 +1819,17 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 	rz_type_func_save(analysis->typedb, callable);
 	rz_analysis_fcn_vars_cache_fini(&cache);
 }
+
+/**
+ * \brief Calculates the size of a variable
+ *
+ * Gets the type (RzType) of a variable and calculates its size
+ *
+ * \param analysis RzAnalysis instance
+ * \param var Variable to check
+ * \return The variable size in bits or `UT64_MAX` in case of failure
+ */
+RZ_API ut64 rz_analysis_var_size(const RzAnalysis *analysis, RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(analysis && var, UT64_MAX);
+	return rz_type_db_get_bitsize(analysis->typedb, var->type);
+}
