@@ -1060,6 +1060,14 @@ commands:
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
             choices_cb: rz_analysis_graph_format_choices
+      - name: agCi
+        summary: Inter-procedual control flow graph
+        cname: analysis_graph_icfg
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
       - name: agf
         summary: Basic blocks function graph
         cname: analysis_graph_bb_function

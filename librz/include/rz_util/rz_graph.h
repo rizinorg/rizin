@@ -50,8 +50,7 @@ RZ_API RzListIter *rz_graph_node_iter(const RzGraph *g, unsigned int idx);
 RZ_API void rz_graph_reset(RzGraph *g);
 RZ_API RzGraphNode *rz_graph_add_node(RzGraph *g, void *data);
 RZ_API RzGraphNode *rz_graph_add_nodef(RzGraph *g, void *data, RzListFree user_free);
-// XXX 'n' is destroyed after calling this function.
-RZ_API void rz_graph_del_node(RzGraph *g, RzGraphNode *n);
+RZ_API void rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *n);
 RZ_API void rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 RZ_API void rz_graph_add_edge_at(RzGraph *g, RzGraphNode *from, RzGraphNode *to, int nth);
 RZ_API RzGraphNode *rz_graph_node_split_forward(RzGraph *g, RzGraphNode *split_me, void *data);
