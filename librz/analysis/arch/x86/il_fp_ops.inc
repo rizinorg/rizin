@@ -252,3 +252,44 @@ IL_LIFTER(fistp) {
 	RzILOpPure *int_val = x86_il_int_from_floating(pop_val, ins->structure->operands[0].size * BITS_PER_BYTE);
 	return SEQ3(INIT_RMODE(), x86_il_set_op(0, int_val), pop_eff);
 }
+
+/**
+ * FBLD
+ * Load binary coded decimal in ST(0)
+ * 80-bit BCD := [sign-byte] + 9 * [data-bytes]
+ */
+IL_LIFTER(fbld) {
+	RzILOpEffect *bcd_mem_init = SETL("bcd_mem", x86_il_get_op(0));
+	RzILOpEffect *i_init = SETL("i", UN(8, 8));
+	RzILOpEffect *val_init = SETL("val", UN(64, 0));
+
+	RzILOpPure *byte_mem = ADD(VARL("bcd_mem"), VARL("i"));
+	RzILOpEffect *set_byte = SETL("byte", LOADW(8, byte_mem));
+
+	RzILOpPure *new_val = ADD(
+		MUL(VARL("val"), UN(64, 100)), // hundredths position (old val)
+		UNSIGNED(64, ADD(MUL(SHIFTR0(VARL("byte"), UN(8, 4)), UN(8, 10)), // tenths position (top nibble)
+				     LOGAND(VARL("byte"), UN(8, 0xf)) // ones position (lower nibble)
+				     )));
+
+	RzILOpEffect *bcd_decode_loop = REPEAT( // while
+		UGE(VARL("i"), UN(8, 0)), // i < 8
+		SEQ3(
+			set_byte, // get byte
+			SETL("val", new_val), // update val
+			SETL("i", ADD(VARL("i"), UN(8, 1))) // i++
+			));
+
+	RzILOpEffect *f_init = SETL("f", x86_il_floating_from_int(VARL("val"), RZ_FLOAT_IEEE754_BIN_80));
+
+	/* Check sign byte (index 9) checking if sign byte is zero */
+	RzILOpPure *sign_byte = LOADW(8, ADD(VARL("bcd_mem"), UN(8, 9)));
+	RzILOpFloat *final_float = ITE(IS_ZERO(sign_byte), VARL("f"), FNEG(VARL("f")));
+
+	return SEQ7(
+		bcd_mem_init, i_init, val_init, // Local vars init
+		bcd_decode_loop, // BCD decoding loop
+		INIT_RMODE(), f_init, // Conversion to 80-bit float
+		x86_il_st_push(final_float, 80) // Push the value onto the FPU stack
+	);
+}

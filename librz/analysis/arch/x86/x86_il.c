@@ -267,7 +267,8 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FXCH] = x86_il_fxch,
 	[X86_INS_FILD] = x86_il_fild,
 	[X86_INS_FIST] = x86_il_fist,
-	[X86_INS_FISTP] = x86_il_fistp
+	[X86_INS_FISTP] = x86_il_fistp,
+	[X86_INS_FBLD] = x86_il_fbld
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
