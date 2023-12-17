@@ -852,8 +852,9 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 		break;
 	}
 	case TRICORE_INS_RFM:
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->stackop = RZ_ANALYSIS_STACK_SET;
-		// fallthrough
+		break;
 	case TRICORE_INS_RET:
 	case TRICORE_INS_RFE: {
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
