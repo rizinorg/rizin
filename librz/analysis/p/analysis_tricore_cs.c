@@ -404,11 +404,10 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 	case TRICORE_INS_ADDS_U: {
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		if (tricore_op_count(insn) >= 2) {
-			cs_tricore_op *op1 = tricore_get_op(insn, 1);
+			const cs_tricore_op *op1 = tricore_get_op(insn, 1);
 			if (op1->type == TRICORE_OP_IMM) {
 				op->val = op1->imm;
-
-				cs_tricore_op *op0 = tricore_get_op(insn, 0);
+				const cs_tricore_op *op0 = tricore_get_op(insn, 0);
 				if (op0->type == TRICORE_OP_REG && op0->reg == TRICORE_REG_SP) {
 					op->stackop = RZ_ANALYSIS_STACK_INC;
 					op->stackptr = op1->imm;
@@ -598,8 +597,9 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 	case TRICORE_INS_LDLCX:
 	case TRICORE_INS_LDUCX:
 		op->refptr = 4 * 16;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->stackop = RZ_ANALYSIS_STACK_GET;
-		// fallthrough
+		break;
 	case TRICORE_INS_LDMST:
 	case TRICORE_INS_LD_A:
 	case TRICORE_INS_LD_BU:
@@ -613,7 +613,7 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 		op->refptr = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		if (insn->detail->tricore.op_count >= 2) {
-			cs_tricore_op *op1 = &insn->detail->tricore.operands[1];
+			const cs_tricore_op *op1 = tricore_get_op(insn, 1);
 			if (op1->type == TRICORE_OP_REG && op1->reg == TRICORE_REG_SP) {
 				op->stackop = RZ_ANALYSIS_STACK_GET;
 			}
@@ -782,13 +782,11 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 	case TRICORE_INS_MSUBM_U:
 	case TRICORE_INS_MSUBMS_U: {
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		cs_tricore_op *op0 = tricore_get_op(insn, 0);
+		const cs_tricore_op *op0 = tricore_get_op(insn, 0);
 		if (tricore_op_count(insn) >= 2) {
-			cs_tricore_op *op1 = tricore_get_op(insn, 1);
+			const cs_tricore_op *op1 = tricore_get_op(insn, 1);
 			if (op1->type == TRICORE_OP_IMM) {
 				op->val = op1->imm;
-
-				cs_tricore_op *op1 = tricore_get_op(insn, 1);
 				if (op0->type == TRICORE_OP_REG && op0->reg == TRICORE_REG_SP) {
 					op->stackop = RZ_ANALYSIS_STACK_INC;
 					op->stackptr = -op1->imm;
@@ -852,8 +850,9 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 		break;
 	}
 	case TRICORE_INS_RFM:
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->stackop = RZ_ANALYSIS_STACK_SET;
-		// fallthrough
+		break;
 	case TRICORE_INS_RET:
 	case TRICORE_INS_RFE: {
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
@@ -908,7 +907,8 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 		op->ptr = tricore_get_op_imm(insn, 0);
 		op->ptrsize = 4 * 16;
 		op->stackop = RZ_ANALYSIS_STACK_GET;
-		// fallthrough
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		break;
 	case TRICORE_INS_ST_A:
 	case TRICORE_INS_ST_B:
 	case TRICORE_INS_ST_DA:
@@ -919,7 +919,7 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 	case TRICORE_INS_ST_W: {
 		op->ptrsize = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		cs_tricore_op *op0 = tricore_get_op(insn, 0);
+		const cs_tricore_op *op0 = tricore_get_op(insn, 0);
 		switch (op0->type) {
 		case TRICORE_OP_MEM:
 		case TRICORE_OP_INVALID:
@@ -933,7 +933,7 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 		case TRICORE_OP_IMM: {
 			op->ptr = op0->imm;
 			break;
-		};
+		}
 		}
 		break;
 	}
