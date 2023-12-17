@@ -633,25 +633,20 @@ IL_LIFTER(div) {
 	return SEQ2(op, BRANCH(IS_ZERO(VARL("_src")), NULL, ret));
 }
 
-// /**
-//  * ESC
-//  * Escape to coprocessor instruction set
-//  * To be used with floating-point unit
-//  */
-// IL_LIFTER(esc) {
-// 	/* Not necessary to implement for binary analysis */
-// 	return EMPTY();
-// }
+/**
+ * ESC
+ * Escape to coprocessor instruction set
+ * To be used with floating-point unit
+ * Not necessary to implement for binary analysis
+ */
 
 /**
  * HLT
  * Enter HALT state
  */
 IL_LIFTER(hlt) {
-	/* It just jumps to an empty goto label "halt"
-	Also need an EMPTY() instruction after it to denote
-	the end of analysis and restart all IL analysis */
-	return SEQ2(GOTO("halt"), EMPTY());
+	/* It just jumps to an empty goto label "halt" */
+	return GOTO("halt");
 }
 
 void label_halt(RzILVM *vm, RzILOpEffect *op) {
@@ -827,10 +822,8 @@ IL_LIFTER(imul) {
  * Encodings: I, ZO
  */
 IL_LIFTER(in) {
-	/* It just jumps to an empty goto label "port"
-	Also need an EMPTY() instruction after it to denote
-	the end of analysis and restart all IL analysis */
-	return SEQ2(GOTO("port"), EMPTY());
+	/* It just jumps to an empty goto label "port" */
+	return GOTO("port");
 }
 
 void label_port(RzILVM *vm, RzILOpEffect *op) {
@@ -860,10 +853,8 @@ IL_LIFTER(inc) {
  * Encodings: I, ZO
  */
 IL_LIFTER(int) {
-	/* For now, it just jumps to an empty goto label "int"
-	Also need an EMPTY() instruction after it to denote
-	the end of analysis and restart all IL analysis */
-	return SEQ2(GOTO("int"), EMPTY());
+	/* For now, it just jumps to an empty goto label "int" */
+	return GOTO("int");
 }
 
 void label_int(RzILVM *vm, RzILOpEffect *op) {
@@ -876,17 +867,14 @@ void label_int(RzILVM *vm, RzILOpEffect *op) {
  * Call to interrupt if overflow flag set
  */
 IL_LIFTER(into) {
-	return BRANCH(VARG(EFLAGS(OF)), SEQ2(GOTO("int"), EMPTY()), NOP());
+	return BRANCH(VARG(EFLAGS(OF)), GOTO("int"), NOP());
 }
 
-// /**
-//  * IRET
-//  * Return from interrupt
-//  */
-// IL_LIFTER(iret) {
-// 	/* TODO: Implement IRET properly */
-// 	return EMPTY();
-// }
+// TODO: Implement IRET
+/**
+ * IRET
+ * Return from interrupt
+ */
 
 #define JUMP_IL() \
 	do { \
@@ -1527,10 +1515,8 @@ IL_LIFTER(or) {
  * Encodings: I, ZO
  */
 IL_LIFTER(out) {
-	/* It just jumps to an empty goto label "port"
-	Also need an EMPTY() instruction after it to denote
-	the end of analysis and restart all IL analysis */
-	return SEQ2(GOTO("port"), EMPTY());
+	/* It just jumps to an empty goto label "port" */
+	return GOTO("port");
 }
 
 typedef struct pop_helper_t {
@@ -1924,27 +1910,19 @@ IL_LIFTER(ret) {
 	return ret;
 }
 
-// /**
-//  * RETF
-//  * Return far pointer
-//  * Encoding: ZO, I
-//  * Rarely found in modern programs
-//  */
-// IL_LIFTER(retf) {
-// 	/* Unimplemented: Too rare and cumbersome to implement */
-// 	return EMPTY();
-// }
+/**
+ * RETF
+ * Return far pointer
+ * Encoding: ZO, I
+ * Rarely found in modern programs
+ */
 
-// /**
-//  * RETFQ
-//  * Return far pointer (size: qword)
-//  * Encoding: ZO, I
-//  * Rarely found in modern programs
-//  */
-// IL_LIFTER(retfq) {
-// 	/* Unimplemented: Too rare and cumbersome to implement */
-// 	return EMPTY();
-// }
+/**
+ * RETFQ
+ * Return far pointer (size: qword)
+ * Encoding: ZO, I
+ * Rarely found in modern programs
+ */
 
 /**
  * SAHF
@@ -2431,7 +2409,7 @@ IL_LIFTER(bound) {
 	RzILOpBool *cond = OR(ULT(VARL("_index"), VARL("_lower")), UGT(VARL("_index"), VARL("_upper")));
 
 	/* Interrupt if out of bounds, NOP otherwise */
-	return SEQ4(index, lower, upper, BRANCH(cond, SEQ2(GOTO("int"), EMPTY()), NOP()));
+	return SEQ4(index, lower, upper, BRANCH(cond, GOTO("int"), NOP()));
 }
 
 /**

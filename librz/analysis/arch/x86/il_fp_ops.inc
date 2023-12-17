@@ -309,8 +309,7 @@ IL_LIFTER(fbstp) {
 
 	RzILOpEffect *maybe_exception = BRANCH(
 		SGE(VARL("val"), UN(64, 1e18)), // |val| >= 1e18
-		/* `EMPTY()` after the interrupt so as to stop and restart any analysis */
-		SEQ2(GOTO("int"), EMPTY()),
+		GOTO("int"),
 		NOP());
 
 	RzILOpEffect *mem_init = SETL("mem", x86_il_get_op(0));
