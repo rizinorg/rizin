@@ -67,17 +67,6 @@ IL_LIFTER(fnclex) {
 	return SEQ2(x86_il_set_reg(X86_REG_FPSW, new_sw), x86_il_clear_fpsw_flags());
 }
 
-/* Arithmetic instructions */
-
-/**
- * FABS
- * Clears the sign bit of st(0) to create absolute value
- */
-IL_LIFTER(fabs) {
-	RzILOpFloat *abs_value = FABS(x86_il_get_st_reg(X86_REG_ST0));
-	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value, 80), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
-}
-
 /**
  * FLD
  * Loads a floating point value and pushes it onto the FPU stack in ST(0)
@@ -338,4 +327,15 @@ IL_LIFTER(fbstp) {
 		bcd_encode_loop, // convert val to bcd
 		store_sign // store the saved sign in the bcd
 	);
+}
+
+/* Arithmetic instructions */
+
+/**
+ * FABS
+ * Clears the sign bit of st(0) to create absolute value
+ */
+IL_LIFTER(fabs) {
+	RzILOpFloat *abs_value = FABS(x86_il_get_st_reg(X86_REG_ST0));
+	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value, 80), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
