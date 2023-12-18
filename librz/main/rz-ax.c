@@ -497,11 +497,11 @@ dotherax:
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR)) { // -t
 		RzList *split = rz_str_split_list(str, "GMT", 0);
-		RzListIter *it = rz_list_head(split);
-		char *ts = rz_list_iter_get_data(split);
-		const char *gmt = NULL;
-		if (rz_list_length(split) >= 2 && strlen(rz_list_iter_get_next_data(split)) >= 2) {
-			gmt = (const char *)rz_list_iter_get_next_data(split);
+		RzListIter *head = rz_list_head(split);
+		char *ts = rz_list_iter_get_data(head);
+		const char *gmt = rz_list_iter_get_next_data(head);
+		if (gmt && strlen(gmt) < 2) {
+			gmt = NULL;
 		}
 		ut32 n = rz_num_math(num, ts);
 		int timezone = (int)rz_num_math(num, gmt);
