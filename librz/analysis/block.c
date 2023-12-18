@@ -808,7 +808,6 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
 	RzList *merge_blocks = rz_list_newf((RzListFree)rz_analysis_block_unref);
-	rz_list_init(merge_blocks);
 	ht_up_foreach(succs, noreturn_get_blocks_cb, merge_blocks);
 
 	// Free/unref BEFORE doing the merge!
