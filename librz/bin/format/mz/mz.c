@@ -138,7 +138,7 @@ RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t
 	rz_list_foreach (seg_list, iter, section) {
 		section->name = rz_str_newf("seg_%03d", section_number);
 		if (section_number) {
-			RzBinSection *p_section = iter->p->data;
+			RzBinSection *p_section = rz_list_iter_get_prev_data(iter);
 			p_section->size = section->vaddr - p_section->vaddr;
 			p_section->vsize = p_section->size;
 		}

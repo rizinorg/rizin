@@ -918,7 +918,7 @@ static void showregs(RzList /*<char *>*/ *list) {
 		RzListIter *iter;
 		rz_list_foreach (list, iter, reg) {
 			rz_cons_print(reg);
-			if (iter->n) {
+			if (rz_list_iter_has_next(iter)) {
 				rz_cons_printf(" ");
 			}
 		}

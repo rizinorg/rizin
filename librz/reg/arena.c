@@ -214,10 +214,8 @@ RZ_API void rz_reg_arena_swap(RzReg *reg, int copy) {
 		if (rz_list_length(reg->regset[i].pool) > 1) {
 			RzListIter *ia = reg->regset[i].cur;
 			RzListIter *ib = reg->regset[i].pool->head;
-			void *tmp = ia->data;
-			ia->data = ib->data;
-			ib->data = tmp;
-			reg->regset[i].arena = ia->data;
+			rz_list_iter_swap_data(ia, ib);
+			reg->regset[i].arena = rz_list_iter_get_data(ia);
 		} else {
 			break;
 		}
@@ -236,10 +234,10 @@ RZ_API void rz_reg_arena_pop(RzReg *reg) {
 		}
 		a = rz_list_pop(reg->regset[i].pool);
 		rz_reg_arena_free(a);
-		a = reg->regset[i].pool->tail->data;
+		a = rz_list_get_tail_data(reg->regset[i].pool);
 		if (a) {
 			reg->regset[i].arena = a;
-			reg->regset[i].cur = reg->regset[i].pool->tail;
+			reg->regset[i].cur = rz_list_tail(reg->regset[i].pool);
 		}
 	}
 }

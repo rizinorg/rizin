@@ -293,7 +293,7 @@ static bool flirt_node_shorten_and_insert(const RzFlirtNode *root, RzFlirtNode *
 			rz_list_sort(child->child_list, (RzListComparator)flirt_compare_node);
 		} else if (node->length == i) {
 			// partial pattern match but matches the node
-			it->data = node;
+			rz_list_iter_set_data(it, node);
 			flirt_node_shorten_pattern(child, i);
 			if (!rz_list_append(node->child_list, child)) {
 				RZ_LOG_ERROR("FLIRT: cannot append child to optimized list.\n");
@@ -307,7 +307,7 @@ static bool flirt_node_shorten_and_insert(const RzFlirtNode *root, RzFlirtNode *
 				rz_sign_flirt_node_free(node);
 				return false;
 			}
-			it->data = middle_node;
+			rz_list_iter_set_data(it, middle_node);
 			if (!rz_list_append(middle_node->child_list, child)) {
 				RZ_LOG_ERROR("FLIRT: cannot append child to optimized list.\n");
 				rz_sign_flirt_node_free(node);
@@ -351,7 +351,7 @@ bool flirt_node_optimize(RzFlirtNode *root) {
 	RzListIter *it;
 	RzFlirtNode *child;
 	rz_list_foreach (childs, it, child) {
-		it->data = NULL;
+		rz_list_iter_set_data(it, NULL);
 		if (!flirt_node_shorten_and_insert(root, child)) {
 			goto fail;
 		}

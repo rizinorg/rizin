@@ -398,8 +398,7 @@ static void set_plugin_configs(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg
 	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
 	RzConfigNode *n;
 	RzListIter *it;
-	rz_list_foreach_iter(pcfg->nodes, it) {
-		n = it->data;
+	rz_list_foreach (pcfg->nodes, it, n) {
 		if (!rz_config_add_node(conf, rz_config_node_clone(n))) {
 			RZ_LOG_WARN("Failed to add \"%s\" to the global config.\n", n->name)
 		}
@@ -418,8 +417,7 @@ static void unset_plugins_config(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pc
 	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
 	RzConfigNode *n;
 	RzListIter *it;
-	rz_list_foreach_iter(pcfg->nodes, it) {
-		n = it->data;
+	rz_list_foreach (pcfg->nodes, it, n) {
 		if (!rz_config_rm(conf, n->name)) {
 			RZ_LOG_WARN("Failed to remove \"%s\" from the global config.", n->name)
 		}

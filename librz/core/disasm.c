@@ -1314,7 +1314,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			ds_comment(ds, false, "%s 0x%08" PFMT64x "  ",
 				rz_analysis_xrefs_type_tostring(xrefi->type), xrefi->from);
 			if (count == cols) {
-				if (iter->n) {
+				if (rz_list_iter_has_next(iter)) {
 					ds_print_color_reset(ds);
 					ds_newline(ds);
 					ds_begin_line(ds);
@@ -1343,8 +1343,8 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			realname = NULL;
 			fun = fcnIn(ds, xrefi->from, -1);
 			if (fun) {
-				if (iter != xrefs->tail) {
-					ut64 next_addr = ((RzAnalysisXRef *)(iter->n->data))->from;
+				if (iter != rz_list_tail(xrefs)) {
+					ut64 next_addr = ((RzAnalysisXRef *)rz_list_iter_get_next_data(iter))->from;
 					next_fun = rz_analysis_get_fcn_in(core->analysis, next_addr, -1);
 					if (next_fun && next_fun->addr == fun->addr) {
 						rz_list_append(addrs, rz_num_dup(xrefi->from));
@@ -1356,8 +1356,8 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			} else {
 				f = rz_flag_get_at(core->flags, xrefi->from, true);
 				if (f) {
-					if (iter != xrefs->tail) {
-						ut64 next_addr = ((RzAnalysisXRef *)(iter->n->data))->from;
+					if (iter != rz_list_tail(xrefs)) {
+						ut64 next_addr = ((RzAnalysisXRef *)rz_list_iter_get_next_data(iter))->from;
 						next_f = rz_flag_get_at(core->flags, next_addr, true);
 						if (next_f && f->offset == next_f->offset) {
 							rz_list_append(addrs, rz_num_dup(xrefi->from - f->offset));
@@ -1380,7 +1380,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			ut64 *addrptr;
 			rz_list_foreach (addrs, it, addrptr) {
 				if (addrptr && *addrptr) {
-					ds_comment(ds, false, "%s%s0x%" PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
+					ds_comment(ds, false, "%s%s0x%" PFMT64x, it == rz_list_head(addrs) ? "" : ", ", plus, *addrptr);
 				}
 			}
 			if (realname && (!fun || rz_analysis_get_function_at(core->analysis, ds->at))) {
@@ -1754,15 +1754,15 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
  **/
 static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnalysisVar *>*/ *iter) {
 	ut32 iter_mov = 0;
-	RzAnalysisVar *var = iter->data;
+	RzAnalysisVar *var = rz_list_iter_get_data(iter);
 	if (!strcmp(ds->fold_var, "none") || rz_analysis_var_is_arg(var)) {
 		return iter_mov;
 	}
 	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-	RzListIter *temp_it = iter->n;
+	RzListIter *temp_it = rz_list_iter_get_next(iter);
 	ut32 same_type_cnt = 1;
 	while (temp_it) {
-		RzAnalysisVar *temp_var = temp_it->data;
+		RzAnalysisVar *temp_var = rz_list_iter_get_data(temp_it);
 		if (!temp_var) {
 			break;
 		}
@@ -1776,7 +1776,7 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 		}
 		same_type_cnt += 1;
 		free(temp_vartype);
-		temp_it = temp_it->n;
+		temp_it = rz_list_iter_get_next(temp_it);
 	}
 
 	// fold if more than 3 same-typed variables
@@ -1790,12 +1790,12 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 	// fold_var = hide -> group the first two var with ellipsis in tail
 	ut32 group_num = strcmp(ds->fold_var, "group") ? 2 : 3;
 	while (iter_mov < group_num) {
-		RzAnalysisVar *temp_var = iter->data;
+		RzAnalysisVar *temp_var = rz_list_iter_get_data(iter);
 		const RzStackAddr off = temp_var->storage.stack_off;
 		const char sign = off >= 0 ? '+' : '-';
 		rz_strbuf_appendf(sb, "%s @ stack %c 0x%" PFMT64x "; ", temp_var->name, sign, RZ_ABS(off));
 		iter_mov++;
-		iter = iter->n;
+		iter = rz_list_iter_get_next(iter);
 	}
 	// remove extra "; " in tail
 	rz_strbuf_slice(sb, 0, sb->len - 2);
@@ -1849,7 +1849,7 @@ static void ds_show_fn_vars_lines(
 		if (iter_mov > 0) {
 			int cnt = 0;
 			while (cnt++ < iter_mov - 1) {
-				iter = iter->n;
+				iter = rz_list_iter_get_next(iter);
 			}
 			continue;
 		}
@@ -2329,7 +2329,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 							rz_cons_printf("%d:", case_prev);
 						}
 						if (iter != uniqlist->head && iter != uniqlist->tail) {
-							iter = iter->p;
+							iter = rz_list_iter_get_prev(iter);
 						}
 						case_start = case_current;
 					} else {

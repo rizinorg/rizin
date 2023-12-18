@@ -26,7 +26,7 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 	}
 	switch (mode) {
 	case RZ_CONS_PAL_SEEK_PREVIOUS: {
-		const char *next_fn = iter->n ? iter->n->data : NULL;
+		const char *next_fn = rz_list_iter_get_next_data(iter);
 		if (!core->curtheme) {
 			return true;
 		}
@@ -38,7 +38,7 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 		break;
 	}
 	case RZ_CONS_PAL_SEEK_NEXT: {
-		const char *prev_fn = iter->p ? iter->p->data : NULL;
+		const char *prev_fn = rz_list_iter_get_prev_data(iter);
 		if (!core->curtheme) {
 			return true;
 		}

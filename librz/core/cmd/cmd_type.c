@@ -189,7 +189,7 @@ static void types_xrefs_summary(RzCore *core) {
 		rz_list_foreach (uniq, iter2, type) {
 			char *str = rz_type_as_string(analysis->typedb, type);
 			if (str) {
-				rz_cons_printf("%s%s", str, iter2->n ? "," : "\n");
+				rz_cons_printf("%s%s", str, rz_list_iter_has_next(iter2) ? "," : "\n");
 			}
 			free(str);
 		}

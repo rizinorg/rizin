@@ -612,21 +612,21 @@ static bool callback_foreach_kv(void *user, const char *k, const char *v) {
 }
 
 RZ_API int rz_line_hist_sdb_up(RzLine *line) {
-	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->n) {
+	if (!rz_list_iter_get_next(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = line->sdbshell_hist_iter->n;
-	strncpy(line->buffer.data, line->sdbshell_hist_iter->data, RZ_LINE_BUFSIZE - 1);
+	line->sdbshell_hist_iter = rz_list_iter_get_next(line->sdbshell_hist_iter);
+	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
 
 RZ_API int rz_line_hist_sdb_down(RzLine *line) {
-	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->p) {
+	if (!rz_list_iter_get_prev(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = line->sdbshell_hist_iter->p;
-	strncpy(line->buffer.data, line->sdbshell_hist_iter->data, RZ_LINE_BUFSIZE - 1);
+	line->sdbshell_hist_iter = rz_list_iter_get_prev(line->sdbshell_hist_iter);
+	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
