@@ -926,7 +926,6 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph *graph, RZ_NONNULL RzVector *to_v
 	if (from == to) {
 		from_idx = to_idx;
 	}
-	printf("0x%llx -> 0x%llx\n", from, to);
 	to_idx = ht_uu_find(nodes_visited, to, &visited);
 
 	if (from != to && !visited) {
