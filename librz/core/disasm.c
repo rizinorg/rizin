@@ -1343,7 +1343,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			realname = NULL;
 			fun = fcnIn(ds, xrefi->from, -1);
 			if (fun) {
-				if (iter != xrefs->tail) {
+				if (iter != rz_list_tail(xrefs)) {
 					ut64 next_addr = ((RzAnalysisXRef *)rz_list_iter_get_next_data(iter))->from;
 					next_fun = rz_analysis_get_fcn_in(core->analysis, next_addr, -1);
 					if (next_fun && next_fun->addr == fun->addr) {
@@ -1356,8 +1356,8 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			} else {
 				f = rz_flag_get_at(core->flags, xrefi->from, true);
 				if (f) {
-					if (iter != xrefs->tail) {
-						ut64 next_addr = ((RzAnalysisXRef *)rz_list_iter_has_next(iter))->from;
+					if (iter != rz_list_tail(xrefs)) {
+						ut64 next_addr = ((RzAnalysisXRef *)rz_list_iter_get_next_data(iter))->from;
 						next_f = rz_flag_get_at(core->flags, next_addr, true);
 						if (next_f && f->offset == next_f->offset) {
 							rz_list_append(addrs, rz_num_dup(xrefi->from - f->offset));
@@ -1380,7 +1380,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			ut64 *addrptr;
 			rz_list_foreach (addrs, it, addrptr) {
 				if (addrptr && *addrptr) {
-					ds_comment(ds, false, "%s%s0x%" PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
+					ds_comment(ds, false, "%s%s0x%" PFMT64x, it == rz_list_head(addrs) ? "" : ", ", plus, *addrptr);
 				}
 			}
 			if (realname && (!fun || rz_analysis_get_function_at(core->analysis, ds->at))) {
