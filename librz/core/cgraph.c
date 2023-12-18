@@ -891,7 +891,7 @@ static inline bool is_leaf_op(const RzAnalysisOp *op) {
  * \return true On success.
  * \return false On failure.
  */
-static bool add_edge_to_cfg(RZ_BORROW RzGraph *graph, RZ_BORROW RzVector *to_visit, HtUU *nodes_visited, ut64 from, ut64 to) {
+static bool add_edge_to_cfg(RZ_NONNULL RzGraph *graph, RZ_NONNULL RzVector *to_visit, RZ_NONNULL HtUU *nodes_visited, ut64 from, ut64 to) {
 	rz_return_val_if_fail(graph && to_visit && nodes_visited, -1);
 	bool visited = false;
 	ut64 from_idx = ht_uu_find(nodes_visited, from, &visited);
