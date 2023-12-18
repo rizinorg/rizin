@@ -4104,7 +4104,7 @@ static const RzCmdDescArg analysis_graph_cfg_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_graph_cfg_help = {
-	.summary = "Control flow graph",
+	.summary = "Control flow graph (without calls)",
 	.args = analysis_graph_cfg_args,
 };
 

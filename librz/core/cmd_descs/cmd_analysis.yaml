@@ -1069,7 +1069,7 @@ commands:
             default_value: "ascii"
             choices_cb: rz_analysis_graph_format_choices
       - name: agF
-        summary: Control flow graph
+        summary: Control flow graph (without calls)
         cname: analysis_graph_cfg
         args:
           - name: format

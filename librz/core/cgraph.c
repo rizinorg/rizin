@@ -941,6 +941,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph *graph, RZ_NONNULL RzVector *to_v
 
 /**
  * \brief Get the procedual control flow graph (CFG) at an address.
+ * Calls are not followed.
  *
  * \param core The current core.
  * \param addr The CFG entry point.
