@@ -1196,7 +1196,7 @@ repeat:
 				rz_cons_printf("...");
 				break;
 			}
-			if (!iter->n && idx < skip) {
+			if (!rz_list_iter_has_next(iter) && idx < skip) {
 				skip = idx;
 			}
 			if (idx >= skip) {

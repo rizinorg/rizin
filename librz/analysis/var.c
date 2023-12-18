@@ -1758,7 +1758,7 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		size_t tmp_len = strlen(vartype);
 		rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
 			tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
-			var->name, iter->n ? ", " : "");
+			var->name, rz_list_iter_has_next(iter) ? ", " : "");
 		free(vartype);
 	}
 

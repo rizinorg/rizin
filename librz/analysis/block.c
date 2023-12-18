@@ -807,10 +807,9 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
-	RzList merge_blocks;
-	rz_list_init(&merge_blocks);
-	merge_blocks.free = (RzListFree)rz_analysis_block_unref;
-	ht_up_foreach(succs, noreturn_get_blocks_cb, &merge_blocks);
+	RzList *merge_blocks = rz_list_newf((RzListFree)rz_analysis_block_unref);
+	rz_list_init(merge_blocks);
+	ht_up_foreach(succs, noreturn_get_blocks_cb, merge_blocks);
 
 	// Free/unref BEFORE doing the merge!
 	// Some of the blocks might not be valid anymore later!
@@ -820,11 +819,11 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 	ut64 block_addr = block->addr; // save the addr to identify the block. the automerge might free it so we must not use the pointer!
 
 	// Do the actual merge
-	rz_analysis_block_automerge(&merge_blocks);
+	rz_analysis_block_automerge(merge_blocks);
 
 	// No try to recover the pointer to the block if it still exists
 	RzAnalysisBlock *ret = NULL;
-	for (it = merge_blocks.head; it && (block = it->data, 1); it = it->n) {
+	rz_list_foreach (merge_blocks, it, block) {
 		if (block->addr == block_addr) {
 			// block is still there
 			ret = block;
@@ -832,7 +831,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 		}
 	}
 
-	rz_list_purge(&merge_blocks);
+	rz_list_free(merge_blocks);
 	return ret;
 }
 
@@ -941,7 +940,7 @@ RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks) 
 		// we would uaf after the merge since block will be freed.
 		RzListIter *bit;
 		RzAnalysisBlock *clock;
-		for (bit = it->n; bit && (clock = bit->data, 1); bit = bit->n) {
+		rz_list_foreach_iter(rz_list_iter_get_next(it), bit, clock) {
 			RzAnalysisBlock *fixup_pred = ht_up_find(ctx.predecessors, (ut64)(size_t)clock, NULL);
 			if (fixup_pred == block) {
 				rz_list_push(fixup_candidates, clock);
