@@ -1366,7 +1366,8 @@ RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 			for (i = 0; i < t->totalCols; i++) {
 				rz_table_add_row(transpose, item, NULL);
 				if (rz_list_iter_has_next(iter)) {
-					item = rz_list_iter_get(iter);
+					iter = rz_list_iter_get_next(iter);
+					item = rz_list_iter_get_data(iter);
 				}
 			}
 		}
