@@ -316,7 +316,7 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 	}
 	RzListIter *iter;
 	RzAnalysisBlock *b;
-	ls_foreach (fcn->bbs, iter, b) {
+	rz_list_foreach (fcn->bbs, iter, b) {
 		RzInterval inter = (RzInterval){ b->addr, b->size };
 		RzListInfo *info = rz_listinfo_new(NULL, inter, inter, -1, NULL);
 		if (!info) {
@@ -335,7 +335,7 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisBlock *b;
-	ls_foreach (fcn->bbs, iter, b) {
+	rz_list_foreach (fcn->bbs, iter, b) {
 		if (b->jump == UT64_MAX) {
 			ut64 retaddr = rz_analysis_block_get_op_addr(b, b->ninstr - 1);
 			if (retaddr == UT64_MAX) {
@@ -3258,16 +3258,16 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 						}
 					}
 					if (!bbit && cop_it) {
-						RzAnalysisCaseOp *cop = cop_it->data;
-						if (cop->jump == prev_bb->addr && cop_it->n) {
-							cop = cop_it->n->data;
+						RzAnalysisCaseOp *cop = rz_list_iter_get_data(cop_it);
+						if (cop->jump == prev_bb->addr && rz_list_iter_has_next(cop_it)) {
+							cop = rz_list_iter_get_next_data(cop_it);
 							rz_list_pop(ctx->switch_path);
-							rz_list_push(ctx->switch_path, cop_it->n);
-							cop_it = cop_it->n;
+							rz_list_push(ctx->switch_path, rz_list_iter_get_next(cop_it));
+							cop_it = rz_list_iter_get_next(cop_it);
 							bbit = rz_list_find(ctx->bbl, &cop->jump, (RzListComparator)find_bb);
 						}
 					}
-					if (cop_it && !cop_it->n) {
+					if (cop_it && !rz_list_iter_has_next(cop_it)) {
 						rz_list_pop(ctx->switch_path);
 						cop_it = rz_list_last(ctx->switch_path);
 					}
@@ -3279,7 +3279,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				rz_list_free(ctx->bbl);
 				return false;
 			}
-			ctx->cur_bb = bbit->data;
+			ctx->cur_bb = rz_list_iter_get_data(bbit);
 			rz_list_push(ctx->path, ctx->cur_bb);
 			rz_list_delete(ctx->bbl, bbit);
 			*next_i = ctx->cur_bb->addr - ctx->start_addr;

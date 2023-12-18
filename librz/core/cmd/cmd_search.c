@@ -1180,7 +1180,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 		}
 		pj_end(pj);
 		if (db && hit) {
-			const ut64 addr = ((RzCoreAsmHit *)hitlist->head->data)->addr;
+			const ut64 addr = ((RzCoreAsmHit *)rz_list_get_head_data(hitlist))->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = sdb_fmt("0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
@@ -1195,7 +1195,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 		// Print gadgets in a 'linear manner', each sequence
 		// on one line.
 		rz_cons_printf("0x%08" PFMT64x ":",
-			((RzCoreAsmHit *)hitlist->head->data)->addr);
+			((RzCoreAsmHit *)rz_list_get_head_data(hitlist))->addr);
 		rz_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc(hit->len);
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
@@ -1221,7 +1221,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 			rz_analysis_op_fini(&aop);
 		}
 		if (db && hit) {
-			const ut64 addr = ((RzCoreAsmHit *)hitlist->head->data)->addr;
+			const ut64 addr = ((RzCoreAsmHit *)rz_list_get_head_data(hitlist))->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = sdb_fmt("0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
@@ -1275,7 +1275,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 			rz_analysis_op_fini(&aop);
 		}
 		if (db && hit) {
-			const ut64 addr = ((RzCoreAsmHit *)hitlist->head->data)->addr;
+			const ut64 addr = ((RzCoreAsmHit *)rz_list_get_head_data(hitlist))->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = sdb_fmt("0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
@@ -1500,7 +1500,7 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 					if (gadgetSdb) {
 						RzListIter *iter;
 
-						RzCoreAsmHit *hit = (RzCoreAsmHit *)hitlist->head->data;
+						RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_get_head_data(hitlist);
 						char *headAddr = rz_str_newf("%" PFMT64x, hit->addr);
 						if (!headAddr) {
 							result = false;
@@ -1526,8 +1526,8 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 					if ((mode == 'q') && subchain) {
 						do {
 							print_rop(core, hitlist, NULL, mode);
-							hitlist->head = hitlist->head->n;
-						} while (hitlist->head->n);
+							hitlist->head = hitlist->head->next;
+						} while (hitlist->head->next);
 					} else {
 						print_rop(core, hitlist, param->pj, mode);
 					}

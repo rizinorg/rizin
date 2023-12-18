@@ -194,7 +194,8 @@ RzList /*<char *>*/ *arm_tokenize(const char *assembly, size_t length) {
 	if (comma_replace) {
 		RzListIter *it;
 		rz_list_foreach (tokens, it, buf) {
-			it->data = rz_str_replace(buf, ",", comma_replace, 1);
+			char *repl = rz_str_replace(buf, ",", comma_replace, 1);
+			rz_list_iter_set_data(it, repl);
 		}
 	}
 

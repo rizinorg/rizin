@@ -131,7 +131,7 @@ RZ_API RzGraphNode *rz_graph_get_node(const RzGraph *t, unsigned int idx) {
 	if (!it) {
 		return NULL;
 	}
-	return (RzGraphNode *)it->data;
+	return (RzGraphNode *)rz_list_iter_get_data(it);
 }
 
 RZ_API RzListIter *rz_graph_node_iter(const RzGraph *t, unsigned int idx) {
