@@ -1940,26 +1940,26 @@ aaft
 afvl
 EOF
 EXPECT=<<EOF
-var int32_t var_1454h @ stack - 0x1454
-var void *var_1438h @ stack - 0x1438
-var const char *s1 @ stack - 0x1038
-var int *wstatus @ stack - 0x44
+var int32_t var_1460h @ stack - 0x1460
+var void *var_1444h @ stack - 0x1444
+var const char *s1 @ stack - 0x1044
+var int *wstatus @ stack - 0x50
+var int32_t var_4ch @ stack - 0x4c
+var const char *var_48h @ stack - 0x48
+var int32_t var_44h @ stack - 0x44
 var int32_t var_40h @ stack - 0x40
-var const char *var_3ch @ stack - 0x3c
-var int32_t var_38h @ stack - 0x38
-var int32_t var_34h @ stack - 0x34
+var int32_t var_3ch @ stack - 0x3c
+var pid_t pid @ stack - 0x38
+var const char *v2 @ stack - 0x34
 var int32_t var_30h @ stack - 0x30
-var pid_t pid @ stack - 0x2c
-var const char *v2 @ stack - 0x28
+var const char *src @ stack - 0x2c
+var int32_t var_28h @ stack - 0x28
 var int32_t var_24h @ stack - 0x24
-var const char *src @ stack - 0x20
-var int32_t var_1ch @ stack - 0x1c
+var const char *s @ stack - 0x20
+var const char *var_1ch @ stack - 0x1c
 var int32_t var_18h @ stack - 0x18
-var const char *s @ stack - 0x14
-var const char *var_10h @ stack - 0x10
-var int32_t var_ch @ stack - 0xc
-var int32_t var_8h @ stack - 0x8
-var const char *option @ stack - 0x4
+var int32_t var_14h @ stack - 0x14
+var const char *option @ stack - 0x10
 arg int argc @ r0
 arg char **argv @ r1
 EOF

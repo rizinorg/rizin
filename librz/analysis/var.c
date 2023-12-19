@@ -1079,7 +1079,7 @@ static inline bool is_not_read_nor_write(const RzAnalysisOpDirection direction) 
 }
 
 /**
- * Try to extract any args from a single op
+ * \brief Try to extract any args from a single op
  *
  * \param reg name of the register to look at for accesses
  * \param from_sp whether \p reg is the sp or bp
@@ -1241,7 +1241,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if (varname) {
 			RzAnalysisVarStorage stor;
 			rz_analysis_var_storage_init_stack(&stor, stack_off);
-			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, vartype, analysis->bits / 8, varname);
+			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, vartype, rz_analysis_guessed_mem_access_width(analysis), varname);
 			if (var) {
 				rz_analysis_var_set_access(var, reg, op->addr, rw, addend);
 			}
@@ -1257,7 +1257,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		}
 		char *varname = rz_str_newf("%s_%" PFMT64x "h", VARPREFIX, RZ_ABS(stor.stack_off));
 		if (varname) {
-			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, NULL, analysis->bits / 8, varname);
+			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, NULL, rz_analysis_guessed_mem_access_width(analysis), varname);
 			if (var) {
 				rz_analysis_var_set_access(var, reg, op->addr, rw, addend);
 			}

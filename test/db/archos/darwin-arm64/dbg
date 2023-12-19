@@ -23,12 +23,12 @@ pi 8 @ pc
 EOF
 EXPECT=<<EOF
 sub sp, sp, 0x50
-stp x29, x30, [sp, 0x40]
-add x29, sp, 0x40
+stp fp, lr, [sp, 0x40]
+add fp, sp, 0x40
 adrp x8, reloc.NSLog
 add x8, x8, 0x180
-stur w0, [x29, -4]
-stur x1, [x29, -0x10]
+stur w0, [fp, -4]
+stur x1, [fp, -0x10]
 str x8, [sp, 0x10]
 EOF
 REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)

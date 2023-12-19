@@ -22,8 +22,9 @@ typedef enum regtype_t {
 	ARM_REG64 = 1,
 	ARM_REG32 = 2,
 	ARM_SP = 4,
-	ARM_PC = 8,
-	ARM_SIMD = 16
+	ARM_LR = 8,
+	ARM_PC = 16,
+	ARM_SIMD = 32
 } RegType;
 
 typedef enum shifttype_t {
@@ -1226,6 +1227,16 @@ static bool parseOperands(char *str, ArmOp *op) {
 				op->operands[operand].mem_option = mem_opt;
 			}
 			break;
+		case 'f':
+			if (token[1] == 'p') {
+				// lr register alias
+				op->operands_count++;
+				op->operands[operand].type = ARM_GPR;
+				op->operands[operand].reg_type = ARM_FP | ARM_REG64;
+				op->operands[operand].reg = 29;
+				break;
+			}
+			break;
 		case 'L':
 		case 'l':
 		case 'I':
@@ -1236,6 +1247,14 @@ static bool parseOperands(char *str, ArmOp *op) {
 		case 'o':
 		case 'p':
 		case 'P':
+			if (token[1] == 'r') {
+				// lr register alias
+				op->operands_count++;
+				op->operands[operand].type = ARM_GPR;
+				op->operands[operand].reg_type = ARM_LR | ARM_REG64;
+				op->operands[operand].reg = 30;
+				break;
+			}
 			mem_opt = get_mem_option(token);
 			if (mem_opt != -1) {
 				op->operands_count++;

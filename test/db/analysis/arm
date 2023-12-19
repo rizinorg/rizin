@@ -748,28 +748,28 @@ aa
 afvl~var
 EOF
 EXPECT=<<EOF
-var int16_t var_74h @ stack - 0x74
-var int16_t var_70h @ stack - 0x70
-var int16_t var_6ch @ stack - 0x6c
-var int16_t var_68h @ stack - 0x68
-var int16_t var_64h @ stack - 0x64
-var int16_t var_60h @ stack - 0x60
-var int16_t var_5ch @ stack - 0x5c
-var int16_t var_58h @ stack - 0x58
-var int16_t var_54h @ stack - 0x54
-var int16_t var_50h @ stack - 0x50
-var int16_t var_4ch @ stack - 0x4c
-var int16_t var_48h @ stack - 0x48
-var int16_t var_44h @ stack - 0x44
-var int16_t var_40h @ stack - 0x40
-var int16_t var_3ch @ stack - 0x3c
-var int16_t var_38h @ stack - 0x38
-var int16_t var_34h @ stack - 0x34
-var int16_t var_30h @ stack - 0x30
-var int16_t var_2ch @ stack - 0x2c
-var int16_t var_28h @ stack - 0x28
-var int16_t var_24h @ stack - 0x24
-var int16_t var_8h @ stack - 0x8
+var int32_t var_74h @ stack - 0x74
+var int32_t var_70h @ stack - 0x70
+var int32_t var_6ch @ stack - 0x6c
+var int32_t var_68h @ stack - 0x68
+var int32_t var_64h @ stack - 0x64
+var int32_t var_60h @ stack - 0x60
+var int32_t var_5ch @ stack - 0x5c
+var int32_t var_58h @ stack - 0x58
+var int32_t var_54h @ stack - 0x54
+var int32_t var_50h @ stack - 0x50
+var int32_t var_4ch @ stack - 0x4c
+var int32_t var_48h @ stack - 0x48
+var int32_t var_44h @ stack - 0x44
+var int32_t var_40h @ stack - 0x40
+var int32_t var_3ch @ stack - 0x3c
+var int32_t var_38h @ stack - 0x38
+var int32_t var_34h @ stack - 0x34
+var int32_t var_30h @ stack - 0x30
+var int32_t var_2ch @ stack - 0x2c
+var int32_t var_28h @ stack - 0x28
+var int32_t var_24h @ stack - 0x24
+var int32_t var_8h @ stack - 0x8
 EOF
 RUN
 
@@ -906,21 +906,22 @@ EOF
 EXPECT=<<EOF
 address: 0x568
 opcode: push {r3, lr}
-esilcost: 16
+esilcost: 24
 disasm: push {r3, lr}
 pseudo: push (r3, lr)
 mnemonic: push
 mask: ffffffff
 prefix: 0
-id: 635
+id: 438
 bytes: 08402de9
 refptr: 0
 size: 4
 sign: false
 type: push
 cycles: 1
-esil: 8,sp,-=,lr,r3,2,sp,=[*]
+esil: r3,sp,-8,+,=[4],lr,sp,-4,+,=[4],-8,sp,+=,
 rzil: (seq (storew 0 (- (var sp) (bv 32 0x8)) (var r3)) (storew 0 (- (var sp) (bv 32 0x4)) (var lr)) (set sp (- (var sp) (bv 32 0x8))))
+direction: write
 family: cpu
 stackop: inc
 stackptr: 8

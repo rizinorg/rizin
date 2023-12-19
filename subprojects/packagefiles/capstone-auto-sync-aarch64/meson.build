@@ -1,4 +1,4 @@
-project('capstone', 'c', version: 'next', meson_version: '>=0.55.0')
+project('capstone', 'c', version: '5.0.1', meson_version: '>=0.55.0')
 
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
@@ -85,10 +85,6 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_TMS320C64X',
   '-DCAPSTONE_HAS_TRICORE',
 ]
-
-if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')
-  libcapstone_c_args += '-Wno-maybe-uninitialized'
-endif
 
 libcapstone = library('capstone', cs_files,
   c_args: libcapstone_c_args,

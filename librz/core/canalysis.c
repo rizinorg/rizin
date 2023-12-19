@@ -3068,7 +3068,7 @@ static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val
 	EsilBreakCtx *ctx = esil->user;
 	RzAnalysisOp *op = ctx->op;
 	RzCore *core = analysis->coreb.core;
-	handle_var_stack_access(esil, *val, RZ_ANALYSIS_VAR_ACCESS_TYPE_PTR, esil->analysis->bits / 8);
+	handle_var_stack_access(esil, *val, RZ_ANALYSIS_VAR_ACCESS_TYPE_PTR, rz_analysis_guessed_mem_access_width(esil->analysis));
 	// specific case to handle blx/bx cases in arm through emulation
 	//  XXX this thing creates a lot of false positives
 	ut64 at = *val;
