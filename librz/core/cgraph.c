@@ -885,15 +885,14 @@ static inline bool is_call(const RzAnalysisOp *op) {
 	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_CALL;
 }
 
+static inline bool is_uncond_jump(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_JMP &&
+		!((op->type & RZ_ANALYSIS_OP_HINT_MASK) & RZ_ANALYSIS_OP_TYPE_COND);
+}
+
 static inline bool ignore_next_instr(const RzAnalysisOp *op) {
 	// Ignore if:
-	return (
-			!is_call(op) && // For calls one should combine this information with an iCFG.
-			(op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_JMP &&
-			!((op->type & RZ_ANALYSIS_OP_HINT_MASK) & RZ_ANALYSIS_OP_TYPE_COND)
-		) || // is unconditional jump
-     op->fail != UT64_MAX // op->fail was set.
-   );
+	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)); // Except calls, everything which has set fail
 }
 
 /**
