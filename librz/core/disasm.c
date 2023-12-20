@@ -5641,7 +5641,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	int i, j, ret, len = 0;
 	char *tmpopstr;
 	bool hasanalysis = false;
-	bool alloc_buf = buf ? false : true;
+	bool alloc_buf = !buf;
 	const size_t addrbytes = buf ? 1 : core->io->addrbytes;
 	int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
