@@ -675,6 +675,30 @@ static int cond_cs2rz_64(int cc) {
 	return cc;
 }
 
+#if CS_NEXT_VERSION >= 6
+static bool is_system_hint(const cs_insn *insn) {
+	rz_return_val_if_fail(insn && insn->is_alias && insn->id == AArch64_INS_HINT, false);
+	switch (insn->alias_id) {
+	default:
+		return false;
+	case AArch64_INS_ALIAS_PACIA1716:
+	case AArch64_INS_ALIAS_PACIASP:
+	case AArch64_INS_ALIAS_PACIAZ:
+	case AArch64_INS_ALIAS_PACIB1716:
+	case AArch64_INS_ALIAS_PACIBSP:
+	case AArch64_INS_ALIAS_PACIBZ:
+	case AArch64_INS_ALIAS_AUTIA1716:
+	case AArch64_INS_ALIAS_AUTIASP:
+	case AArch64_INS_ALIAS_AUTIAZ:
+	case AArch64_INS_ALIAS_AUTIB1716:
+	case AArch64_INS_ALIAS_AUTIBSP:
+	case AArch64_INS_ALIAS_AUTIBZ:
+	case AArch64_INS_ALIAS_XPACLRI:
+		return true;
+	}
+}
+#endif
+
 static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	csh handle = ctx->handle;
 	ut64 addr = op->addr;
@@ -782,6 +806,12 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	case CS_AARCH64(_INS_HINT):
 #if CS_NEXT_VERSION < 6
 	case CS_AARCH64(_INS_NOP):
+#else
+		if (is_system_hint(insn)) {
+			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+			op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
+			break;
+		}
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->cycles = 1;
