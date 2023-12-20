@@ -162,7 +162,7 @@ FILE=./bins/elf/hello_world
 ARGS=-A
 CMDS=<<EOF
 s 0x844
-(_;s;b;pi)() @@i
+(_;s;b;pi 0x1)() @@i
 EOF
 EXPECT=<<EOF
 0x844

@@ -365,7 +365,7 @@ sd +128
 e asm.arch=v850
 e asm.pseudo=true
 b 64
-pi~=
+pi 64~=
 EOF
 EXPECT=<<EOF
 *(r8 + 0x1047) = (byte) r24
@@ -396,4 +396,3 @@ r25 = (byte) *(r8805 + 0x5)
 r9 = r0
 EOF
 RUN
-

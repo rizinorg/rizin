@@ -546,7 +546,7 @@ commands:
     summary: Print instructions
     subcommands:
       - name: pi
-        summary: Print <N> instructions/bytes
+        summary: Disassemble and print <N> instructions
         cname: print_instr
         args:
           - name: N
@@ -626,7 +626,7 @@ commands:
     summary: Print instructions
     subcommands:
       - name: pI
-        summary: Print <N> instructions/bytes
+        summary: Disassemble and print <N> bytes
         cname: print_instructions
         args:
           - name: N
