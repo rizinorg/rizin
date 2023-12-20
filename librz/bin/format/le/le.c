@@ -230,7 +230,7 @@ static RZ_BORROW RzBinSymbol *le_add_symbol(rz_bin_le_obj_t *bin, ut32 ordinal, 
 		if (rz_list_empty(bin->symbols)) {
 			ordinal = 1;
 		} else {
-			ordinal = ((RzBinSymbol *)rz_list_tail(bin->symbols)->data)->ordinal + 1;
+			ordinal = ((RzBinSymbol *)rz_list_get_tail_data(bin->symbols))->ordinal + 1;
 		}
 	}
 	if (!rz_list_append(bin->symbols, sym)) {

@@ -10,6 +10,8 @@
 // still required by core in lot of places
 #define USE_VARSUBS 0
 
+#define RZ_ANALYSIS_OP_INVALID_STACKPTR 0
+
 #include <rz_types.h>
 #include <rz_io.h>
 #include <rz_reg.h>
@@ -352,6 +354,7 @@ typedef enum {
 	RZ_ANALYSIS_STACK_NULL = 0,
 	RZ_ANALYSIS_STACK_NOP,
 	RZ_ANALYSIS_STACK_INC,
+	RZ_ANALYSIS_STACK_DEC,
 	RZ_ANALYSIS_STACK_GET,
 	RZ_ANALYSIS_STACK_SET,
 	RZ_ANALYSIS_STACK_RESET,
@@ -717,6 +720,8 @@ typedef enum rz_analysis_var_kind_t {
 	/* End enum */
 	RZ_ANALYSIS_VAR_KIND_END ///< Number of RzAnalysisVarKind enums
 } RzAnalysisVarKind;
+
+RZ_API ut32 rz_analysis_guessed_mem_access_width(RZ_NONNULL const RzAnalysis *analysis);
 
 typedef struct dwarf_variable_t {
 	ut64 offset; ///< DIE offset of the variable
@@ -1486,8 +1491,7 @@ RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, con
 // returns all functions that have a basic block containing the given address
 RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_functions_in(RzAnalysis *analysis, ut64 addr);
 
-// returns the function that has its entrypoint at addr or NULL
-RZ_API RzAnalysisFunction *rz_analysis_get_function_at(RzAnalysis *analysis, ut64 addr);
+RZ_API RzAnalysisFunction *rz_analysis_get_function_at(const RzAnalysis *analysis, ut64 addr);
 
 RZ_API bool rz_analysis_function_delete(RzAnalysisFunction *fcn);
 
@@ -1733,8 +1737,8 @@ RZ_API RzAnalysisXRefType rz_analysis_xrefs_type(char ch);
 RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xrefs_list(RzAnalysis *analysis);
-RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn);
-RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn);
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_from(const RzAnalysisFunction *fcn);
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(const RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
@@ -1775,6 +1779,7 @@ RZ_API RZ_OWN RzAnalysisVar *rz_analysis_var_new();
 RZ_API void rz_analysis_var_free(RZ_OWN RzAnalysisVar *var);
 RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, bool verbose);
 RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var);
+RZ_API ut64 rz_analysis_var_size(const RzAnalysis *analysis, RZ_NONNULL RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps);
 RZ_API void rz_analysis_var_delete(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 reg_addend);

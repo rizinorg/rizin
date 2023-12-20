@@ -411,14 +411,12 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			// get function size from flirt signature
 			ut64 flirt_fcn_size = module->length - flirt_func->offset;
 			RzFlirtFunction *next_flirt_func;
-			RzListIter *next_it = it->n;
-			while (next_it) {
-				next_flirt_func = next_it->data;
+			RzListIter *next_it;
+			rz_list_foreach_iter(rz_list_iter_get_next(it), next_it, next_flirt_func) {
 				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
 					flirt_fcn_size = next_flirt_func->offset - flirt_func->offset;
 					break;
 				}
-				next_it = next_it->n;
 			}
 			// resize function if needed
 			next_module_function_size = rz_analysis_function_linear_size(next_module_function);

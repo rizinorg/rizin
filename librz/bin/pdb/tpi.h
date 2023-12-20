@@ -6,6 +6,10 @@
 
 #include <rz_util.h>
 
+RZ_IPI bool tpi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream);
+RZ_IPI RzPdbTpiType *simple_type_parse(RzPdbTpiStream *stream, ut32 idx);
+RZ_IPI void tpi_stream_free(RzPdbTpiStream *stream);
+
 /// enumeration for virtual shape table entries
 typedef enum {
 	VTS_near = 0x00,
@@ -250,6 +254,8 @@ typedef enum {
 	LF_USER_DEFINED_TYPE_MODULE_SOURCE_AND_LINE = 0x1607,
 	LF_CLASS_19 = 0x1608,
 	LF_STRUCTURE_19 = 0x1609,
+	LF_UNION_19 = 0x160A,
+	LF_INTERFACE_19 = 0x160B,
 	LF_ID_LAST, // one greater than the last ID record
 	LF_ID_MAX = LF_ID_LAST - 1,
 
@@ -259,6 +265,7 @@ typedef enum {
 	 *      directly.  If the data is more the 0x8000 or is a negative value,
 	 *      then the data is preceeded by the proper index.
 	 */
+	LF_NUMERIC = 0x8000,
 	LF_CHAR = 0x8000, // signed character leaf
 	LF_SHORT = 0x8001, // signed short leaf
 	LF_USHORT = 0x8002, // unsigned short leaf
@@ -350,15 +357,15 @@ typedef struct {
 } TpiCVFldattr;
 
 typedef struct cv_funcattr {
-	unsigned char cxxreturnudt : 1; // true if C++ style ReturnUDT
-	unsigned char ctor : 1; // true if func is an instance constructor
-	unsigned char ctorvbase : 1; // true if func is an instance constructor of a class with virtual bases
-	unsigned char unused : 5; // unused
+	RzPdbTpiCallingConvention calling_convention;
+	ut8 cxxreturnudt : 1; // true if C++ style ReturnUDT
+	ut8 ctor : 1; // true if func is an instance constructor
+	ut8 ctorvbase : 1; // true if func is an instance constructor of a class with virtual bases
+	ut8 unused : 5; // unused
 } TpiCVFuncattr;
 
 typedef struct {
 	ut32 return_type;
-	RzPdbTpiCallingConvention call_conv;
 	TpiCVFuncattr func_attr;
 	ut16 parm_count;
 	ut32 arg_list;
@@ -369,7 +376,6 @@ typedef struct {
 	ut32 return_type;
 	ut32 class_type;
 	ut32 this_type;
-	RzPdbTpiCallingConvention call_conv; // 1 byte
 	TpiCVFuncattr func_attr;
 	ut16 parm_count;
 	ut32 arglist;
@@ -454,70 +460,67 @@ typedef struct {
 typedef struct {
 	ut32 utype;
 	TpiCVPointerAttr ptr_attr;
-	union {
-		struct {
-			ut32 pmclass; // index of containing class for pointer to member
-			ut16 pmtype; // TpiCVPmType
-		} pmember;
-		struct {
-			ut32 index; // type index if PTR_BASE_TYPE
-		} pbase;
-	};
+	PDBTypeIndex containing_class;
 	ut8 pad;
 } Tpi_LF_Pointer;
 
 typedef struct {
-	char *name;
-	ut32 size;
-} Tpi_Type_String;
-
-typedef struct {
-	ut16 type_index;
-	void *data;
-	bool is_integer;
-} Tpi_Type_Numeric;
+	enum {
+		TpiVariant_U64,
+		TpiVariant_U32,
+		TpiVariant_U16,
+		TpiVariant_U8,
+		TpiVariant_I64,
+		TpiVariant_I32,
+		TpiVariant_I16,
+		TpiVariant_I8,
+	} tag;
+	union {
+		ut64 u64v;
+		ut32 u32v;
+		ut16 u16v;
+		ut8 u8v;
+		st64 i64v;
+		st32 i32v;
+		st16 i16v;
+		st8 i8v;
+	};
+} TpiVariant;
 
 typedef struct {
 	ut32 element_type;
 	ut32 index_type;
 	ut32 stride;
-	Tpi_Type_Numeric size;
-	Tpi_Type_String name;
+	RzVector /*<ut32>*/ dimensions;
 	ut8 pad;
 } Tpi_LF_Array;
 
-typedef struct {
-	ut16 count;
-	TpiCVProperty prop; // property attribute field
-	ut32 field_list; // type index of LF_FIELD descriptor list
-	ut32 derived; // type index of derived from list if not zero
-	ut32 vshape; // type index of vshape table for this class
-	Tpi_Type_Numeric size;
-	Tpi_Type_String name;
-	Tpi_Type_String mangled_name;
-	ut8 pad;
-} Tpi_LF_Structure, Tpi_LF_Class;
+typedef enum {
+	ClassKind_Class,
+	ClassKind_Struct,
+	ClassKind_Interface
+} ClassKind;
 
 typedef struct {
+	ut16 count;
+	ClassKind kind;
 	TpiCVProperty prop; // property attribute field
-	ut16 unknown;
 	ut32 field_list; // type index of LF_FIELD descriptor list
 	ut32 derived; // type index of derived from list if not zero
 	ut32 vshape; // type index of vshape table for this class
-	Tpi_Type_Numeric unknown1;
-	Tpi_Type_Numeric size;
-	Tpi_Type_String name;
-	Tpi_Type_String mangled_name;
+	ut64 size;
+	char *name;
+	char *mangled_name;
 	ut8 pad;
-} Tpi_LF_Structure_19, Tpi_LF_Class_19;
+} Tpi_LF_Structure, Tpi_LF_Class;
 
 typedef struct {
 	ut16 count;
 	TpiCVProperty prop;
 	ut32 field_list;
-	Tpi_Type_Numeric size;
-	Tpi_Type_String name;
-	Tpi_Type_String mangled_name;
+	ut64 size;
+	char *name;
+	char *mangled_name;
 	ut32 pad;
 } Tpi_LF_Union;
 
@@ -530,7 +533,7 @@ typedef struct {
 
 typedef struct {
 	ut16 count;
-	char *vt_descriptors;
+	RzVector /*<ut8>*/ descriptors;
 	ut8 pad;
 } Tpi_LF_Vtshape;
 
@@ -555,22 +558,22 @@ typedef struct {
 	TpiCVProperty prop;
 	ut32 utype;
 	ut32 field_list;
-	Tpi_Type_String name;
-	Tpi_Type_String mangled_name;
+	char *name;
+	char *mangled_name;
 	ut8 pad;
 } Tpi_LF_Enum;
 
 typedef struct {
 	TpiCVFldattr fldattr;
-	Tpi_Type_Numeric enum_value;
-	Tpi_Type_String name;
+	TpiVariant value;
+	char *name;
 	ut8 pad;
 } Tpi_LF_Enumerate;
 
 typedef struct {
-	ut16 pad;
+	TpiCVFldattr fldattr;
 	ut32 index;
-	Tpi_Type_String name;
+	char *name;
 } Tpi_LF_NestType;
 
 typedef struct {
@@ -581,7 +584,7 @@ typedef struct {
 typedef struct {
 	ut16 count;
 	ut32 mlist;
-	Tpi_Type_String name;
+	char *name;
 	ut8 pad;
 } Tpi_LF_Method;
 
@@ -593,21 +596,21 @@ typedef struct {
 } Tpi_Type_MethodListMember;
 
 typedef struct {
-	RzList /*<Tpi_Type_MethodListMember *>*/ *members;
+	RzPVector /*<Tpi_Type_MethodListMember *>*/ members;
 } Tpi_LF_MethodList;
 
 typedef struct {
 	TpiCVFldattr fldattr;
-	ut32 index;
-	Tpi_Type_Numeric offset;
-	Tpi_Type_String name;
+	ut32 field_type;
+	ut64 offset;
+	char *name;
 	ut8 pad;
 } Tpi_LF_Member;
 
 typedef struct {
 	TpiCVFldattr fldattr;
-	ut32 index;
-	Tpi_Type_String name;
+	ut32 field_type;
+	char *name;
 	ut8 pad;
 } Tpi_LF_StaticMember;
 
@@ -621,14 +624,15 @@ typedef struct {
 	TpiCVFldattr fldattr;
 	ut32 index;
 	ut32 offset_in_vtable;
-	Tpi_Type_String name;
+	char *name;
 	ut8 pad;
 } Tpi_LF_OneMethod;
 
 typedef struct {
+	ClassKind kind;
 	TpiCVFldattr fldattr;
 	ut32 index;
-	Tpi_Type_Numeric offset;
+	ut64 offset;
 	ut8 pad;
 } Tpi_LF_BClass;
 
@@ -636,8 +640,8 @@ typedef struct {
 	TpiCVFldattr fldattr;
 	ut32 direct_vbclass_idx;
 	ut32 vb_pointer_idx;
-	Tpi_Type_Numeric vb_pointer_offset;
-	Tpi_Type_Numeric vb_offset_from_vbtable;
+	ut64 vb_pointer_offset;
+	ut64 vb_offset_from_vbtable;
 } Tpi_LF_VBClass, Tpi_LF_IVBClass;
 
 typedef struct {

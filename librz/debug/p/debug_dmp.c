@@ -609,16 +609,17 @@ static void debug_dmp_set_i386_registers(RzReg *reg, struct context_type_i386 *c
 static void debug_dmp_set_current_context(WindCtx *ctx, RzReg *reg, ut8 *buf) {
 	if (ctx->is_arm && ctx->is_64bit) {
 		// ARM 64
-		return debug_dmp_set_arm64_registers(reg, (struct context_type_arm64 *)buf);
+		debug_dmp_set_arm64_registers(reg, (struct context_type_arm64 *)buf);
 	} else if (ctx->is_arm && !ctx->is_64bit) {
 		// ARM 32
-		return debug_dmp_set_arm32_registers(reg, (struct context_type_arm *)buf);
+		debug_dmp_set_arm32_registers(reg, (struct context_type_arm *)buf);
 	} else if (ctx->is_64bit) {
 		// AMD 64
-		return debug_dmp_set_amd64_registers(reg, (struct context_type_amd64 *)buf);
+		debug_dmp_set_amd64_registers(reg, (struct context_type_amd64 *)buf);
+	} else {
+		// i386
+		debug_dmp_set_i386_registers(reg, (struct context_type_i386 *)buf);
 	}
-	// i386
-	return debug_dmp_set_i386_registers(reg, (struct context_type_i386 *)buf);
 }
 
 static size_t debug_dmp_get_current_context_size(WindCtx *ctx) {

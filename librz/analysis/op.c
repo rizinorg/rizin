@@ -31,6 +31,7 @@ RZ_API void rz_analysis_op_init(RzAnalysisOp *op) {
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
 		op->mmio_address = UT64_MAX;
+		op->stackptr = RZ_ANALYSIS_OP_INVALID_STACKPTR;
 	}
 }
 
@@ -213,6 +214,8 @@ RZ_API bool rz_analysis_op_ismemref(int t) {
 	case RZ_ANALYSIS_OP_TYPE_STORE:
 	case RZ_ANALYSIS_OP_TYPE_LEA:
 	case RZ_ANALYSIS_OP_TYPE_CMP:
+	case RZ_ANALYSIS_OP_TYPE_POP:
+	case RZ_ANALYSIS_OP_TYPE_PUSH:
 		return true;
 	default:
 		return false;

@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: 2022 imbillow <billow.fun@gmail.com>
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2023 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_analysis.h>
 #include <rz_list.h>
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 #include "core_private.h"
+#include <rz_util/ht_up.h>
+#include <rz_util/rz_graph.h>
+#include <rz_util/rz_th_ht.h>
 
 static inline bool is_between(ut64 a, ut64 x, ut64 b) {
 	return (a == UT64_MAX && b == UT64_MAX) || RZ_BETWEEN(a, x, b);
@@ -484,6 +489,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCor
 	case RZ_CORE_GRAPH_TYPE_IL:
 		graph = rz_core_graph_il(core, addr);
 		break;
+	case RZ_CORE_GRAPH_TYPE_ICFG:
+		graph = rz_core_graph_icfg(core);
+		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF:
 	default:
 		rz_warn_if_reached();
@@ -600,7 +608,7 @@ RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, R
 		return false;
 	}
 	bool is_il = type == RZ_CORE_GRAPH_TYPE_IL;
-	core->graph->is_callgraph = type == RZ_CORE_GRAPH_TYPE_FUNCALL;
+	core->graph->is_callgraph = (type == RZ_CORE_GRAPH_TYPE_FUNCALL || type == RZ_CORE_GRAPH_TYPE_ICFG);
 	core->graph->is_il = is_il;
 	rz_core_graph_print_graph(core, g, format, !is_il);
 	rz_graph_free(g);
@@ -771,5 +779,92 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCor
 	if (addr != old_offset) {
 		rz_core_seek(core, old_offset, true);
 	}
+	return graph;
+}
+
+/**
+ * \brief Returns the graph node of a given \p fcn. If the function
+ * is not yet added as node to the graph, it adds it to the graph and returns its reference.
+ *
+ * \param icfg The iCFG to fill.
+ * \param graph_idx Hash table to track the graph indices of each function address.
+ * \param fcn The function to add.
+ * \param existed Is set to true if the node was already in the graph.
+ *
+ * \return The GraphNode.
+ */
+static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *graph_idx, const RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(icfg && graph_idx && fcn, NULL);
+	bool found = false;
+	ut64 i = ht_uu_find(graph_idx, fcn->addr, &found);
+	if (found) {
+		// Node already added, get it.
+		return rz_graph_get_node(icfg, i);
+	}
+	ht_uu_insert(graph_idx, fcn->addr, rz_list_length(rz_graph_get_nodes(icfg)));
+	return rz_graph_add_node_info(icfg, fcn->name, NULL, fcn->addr);
+}
+
+/**
+ * \brief Adds all call xrefs from \p fcn as edges to the iCFG
+ * and recurses into each of them.
+ *
+ * \param analysis The current RzAnalysis.
+ * \param icfg The iCFG to fill.
+ * \param graph_idx Hash table to track the graph node indices for each function address.
+ * \param fcn The function to add.
+ */
+static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *graph_idx, const RzAnalysisFunction *fcn) {
+	rz_return_if_fail(analysis && icfg && graph_idx && fcn);
+	RzGraphNode *from_node = get_graph_node_of_fcn(icfg, graph_idx, fcn);
+	RzListIter *it;
+	const RzAnalysisXRef *xref;
+	rz_list_foreach (rz_analysis_function_get_xrefs_from(fcn), it, xref) {
+		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
+			continue;
+		}
+		const RzAnalysisFunction *called_fcn = rz_analysis_get_function_at(analysis, xref->to);
+		if (!called_fcn) {
+			// Either a faulty entry or a GOT entry
+			continue;
+		}
+		RzGraphNode *to_node = get_graph_node_of_fcn(icfg, graph_idx, called_fcn);
+		if (rz_graph_adjacent(icfg, from_node, to_node)) {
+			// Edge already added and walked. Don't recurse.
+			continue;
+		}
+		rz_graph_add_edge(icfg, from_node, to_node);
+		// Recurse into called function.
+		extend_icfg(analysis, icfg, graph_idx, called_fcn);
+	}
+}
+
+/**
+ * \brief Get the inter-procedual control flow graph of the binary.
+ * It uses the already discovered functions and their xrefs.
+ *
+ * \param core The current core.
+ *
+ * \return The iCFG of the binary or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
+	const RzList *fcns = core->analysis->fcns;
+	RzGraph *graph = rz_graph_new();
+	if (!graph) {
+		return NULL;
+	}
+	if (rz_list_length(fcns) < 1) {
+		RZ_LOG_WARN("Cannot build iCFG without discovered functions. Did you run 'aac' and 'aap'?\n");
+		return NULL;
+	}
+
+	HtUU *graph_idx = ht_uu_new0();
+	RzListIter *it;
+	const RzAnalysisFunction *fcn;
+	rz_list_foreach (fcns, it, fcn) {
+		extend_icfg(core->analysis, graph, graph_idx, fcn);
+	}
+	ht_uu_free(graph_idx);
 	return graph;
 }

@@ -272,7 +272,11 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case ARM_INS_BKPT:
 		rz_strbuf_setf(&op->esil, "%d,%d,TRAP", IMM(0), IMM(0));
 		break;
+#if CS_NEXT_VERSION < 6
 	case ARM_INS_NOP:
+#else
+	case ARM_INS_HINT:
+#endif
 		rz_strbuf_setf(&op->esil, ",");
 		break;
 	case ARM_INS_BL:

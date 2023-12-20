@@ -643,10 +643,12 @@ RZ_API ut64 rz_buf_read_string(RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE cha
 	if (!tmp) {
 		return 0;
 	}
-	ut64 string_len = strlen(tmp) + 1;
+	const ut64 string_len = strlen(tmp) + 1;
 	rz_buf_seek(b, string_len, RZ_BUF_CUR);
 	if (s) {
 		*s = tmp;
+	} else {
+		free(tmp);
 	}
 	return string_len;
 }

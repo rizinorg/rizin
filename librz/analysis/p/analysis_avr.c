@@ -379,6 +379,7 @@ static ut8 *analysis_mask_avr(RzAnalysis *analysis, int size, const ut8 *data, u
 	rz_strbuf_fini(&sb);
 
 	if (opsize < 2 || !(ret = malloc(opsize))) {
+		free(ret);
 		rz_analysis_op_free(op);
 		return NULL;
 	}

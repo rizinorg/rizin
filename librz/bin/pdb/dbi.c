@@ -4,18 +4,18 @@
 
 #include "pdb.h"
 
-RZ_IPI void free_dbi_stream(RzPdbDbiStream *stream) {
+RZ_IPI void dbi_stream_free(RzPdbDbiStream *stream) {
 	if (!stream) {
 		return;
 	}
-	RzPdbDbiStreamExHdr *ex_hdr;
-	RzListIter *it;
-	rz_list_foreach (stream->ex_hdrs, it, ex_hdr) {
-		RZ_FREE(ex_hdr->ModuleName);
-		RZ_FREE(ex_hdr->ObjFileName);
-		RZ_FREE(ex_hdr);
+	void **it;
+	rz_pvector_foreach (stream->modules, it) {
+		PDB_DBIModule *m = *it;
+		RZ_FREE(m->module_name);
+		RZ_FREE(m->object_file_name);
+		RZ_FREE(m);
 	}
-	rz_list_free(stream->ex_hdrs);
+	rz_pvector_free(stream->modules);
 	free(stream);
 }
 
@@ -42,113 +42,77 @@ static bool parse_dbi_stream_header(RzPdbDbiStream *s, RzBuffer *buf) {
 		rz_buf_read_le32(buf, &s->hdr.padding);
 }
 
-static bool parse_dbi_stream_section_entry(RzPdbDbiStreamExHdr *hdr, RzBuffer *buf) {
-	return rz_buf_read_le16(buf, &hdr->sec_con.Section) &&
-		rz_buf_read_le16(buf, (ut16 *)&hdr->sec_con.Padding1) &&
-		rz_buf_read_le32(buf, (ut32 *)&hdr->sec_con.Offset) &&
-		rz_buf_read_le32(buf, (ut32 *)&hdr->sec_con.Size) &&
-		rz_buf_read_le32(buf, &hdr->sec_con.Characteristics) &&
-		rz_buf_read_le16(buf, &hdr->sec_con.ModuleIndex) &&
-		rz_buf_read_le16(buf, (ut16 *)&hdr->sec_con.Padding2) &&
-		rz_buf_read_le32(buf, &hdr->sec_con.DataCrc) &&
-		rz_buf_read_le32(buf, &hdr->sec_con.RelocCrc);
+static bool PDB_DBISectionContrbution_parse(RzBuffer *buf, PDB_DBISectionContrbution *section) {
+	ut16 pad = 0;
+	return rz_buf_read_le16(buf, &section->offset.section_index) &&
+		rz_buf_read_le16(buf, &pad) &&
+		rz_buf_read_le32(buf, &section->offset.offset) &&
+		rz_buf_read_le32(buf, &section->size) &&
+		rz_buf_read_le32(buf, &section->characteristics) &&
+		rz_buf_read_le16(buf, &section->module) &&
+		rz_buf_read_le16(buf, &section->pad) &&
+		rz_buf_read_le32(buf, &section->data_crc) &&
+		rz_buf_read_le32(buf, &section->reloc_crc);
 }
 
-static bool parse_dbi_stream_ex_header(RzPdbDbiStream *s, RzBuffer *buf) {
-	s->ex_hdrs = rz_list_new();
-	if (!s->ex_hdrs) {
-		// free s-dbi
-		return false;
-	}
-	ut32 ex_size = s->hdr.mod_info_size;
-	ut32 read_len = 0;
-	bool result = true;
-	while (read_len < ex_size) {
-		ut32 initial_seek = rz_buf_tell(buf);
-		RzPdbDbiStreamExHdr *hdr = RZ_NEW0(RzPdbDbiStreamExHdr);
-		if (!hdr) {
-			result = false;
-			goto err;
-		}
-		if (!rz_buf_read_le32(buf, &hdr->unknown)) {
-			result = false;
-			goto err;
-		}
-		if (!parse_dbi_stream_section_entry(hdr, buf)) {
-			result = false;
-			goto err;
-		}
-		if (!rz_buf_read_le16(buf, &hdr->Flags) ||
-			!rz_buf_read_le16(buf, &hdr->ModuleSymStream)) {
-			result = false;
-			goto err;
-		}
-		if (!rz_buf_read_le32(buf, &hdr->SymByteSize) ||
-			!rz_buf_read_le32(buf, &hdr->C11ByteSize) ||
-			!rz_buf_read_le32(buf, &hdr->C13ByteSize)) {
-			result = false;
-			goto err;
-		}
-		if (!rz_buf_read_le16(buf, &hdr->SourceFileCount) ||
-			!rz_buf_read_le16(buf, (ut16 *)&hdr->Padding)) {
-			result = false;
-			goto err;
-		}
-		if (!rz_buf_read_le32(buf, &hdr->Unused2) ||
-			!rz_buf_read_le32(buf, &hdr->SourceFileNameIndex) ||
-			!rz_buf_read_le32(buf, &hdr->PdbFilePathNameIndex)) {
-			result = false;
-			goto err;
-		}
-
-		hdr->ModuleName = rz_buf_get_string(buf, rz_buf_tell(buf));
-		ut32 str_length = strlen(hdr->ModuleName) + 1;
-		if (str_length) {
-			rz_buf_seek(buf, str_length, RZ_BUF_CUR);
-		}
-
-		hdr->ObjFileName = rz_buf_get_string(buf, rz_buf_tell(buf));
-		str_length = strlen(hdr->ObjFileName) + 1;
-		if (str_length) {
-			rz_buf_seek(buf, str_length, RZ_BUF_CUR);
-		}
-		read_len += rz_buf_tell(buf) - initial_seek;
-		if ((read_len % 4)) {
-			ut16 remain = 4 - (read_len % 4);
-			rz_buf_seek(buf, remain, RZ_BUF_CUR);
-			read_len += remain;
-		}
-		rz_list_append(s->ex_hdrs, hdr);
-	err:
-		if (!result) {
-			free(hdr);
-			return false;
-		}
-	}
-	if (read_len != ex_size) {
-		return false;
-	}
-	return true;
+static bool PDB_DBIModule_parse(RzBuffer *b, PDB_DBIModule *m) {
+	return rz_buf_read_le32(b, &m->opened) &&
+		PDB_DBISectionContrbution_parse(b, &m->section) &&
+		rz_buf_read_le16(b, &m->flags) &&
+		rz_buf_read_le16(b, &m->stream) &&
+		rz_buf_read_le32(b, &m->symbols_size) &&
+		rz_buf_read_le32(b, &m->line_size) &&
+		rz_buf_read_le32(b, &m->c13_line_size) &&
+		rz_buf_read_le16(b, &m->files) &&
+		rz_buf_read_le16(b, &m->pad) &&
+		rz_buf_read_le32(b, &m->filename_offsets) &&
+		rz_buf_read_le32(b, &m->source) &&
+		rz_buf_read_le32(b, &m->compiler) &&
+		rz_buf_read_string(b, &m->module_name) > 0 &&
+		rz_buf_read_string(b, &m->object_file_name) > 0;
 }
 
 static bool parse_dbi_dbg_header(RzPdbDbiStream *s, RzBuffer *buf) {
-	if (!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fpo) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_exception) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fixup) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_omap_to_src) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_omap_from_src) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_section_hdr) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_token_rid_map) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_xdata) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_pdata) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_new_fpo) ||
-		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_section_hdr_orig)) {
-		return false;
-	}
-	return true;
+	return rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fpo) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_exception) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fixup) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_omap_to_src) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_omap_from_src) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_section_hdr) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_token_rid_map) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_xdata) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_pdata) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_new_fpo) &&
+		rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_section_hdr_orig);
 }
 
-RZ_IPI bool parse_dbi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+static bool modules_parse(RzPdbDbiStream *s, RzBuffer *stream_buffer) {
+	s->modules = rz_pvector_new(NULL);
+	if (!s->modules) {
+		return false;
+	}
+
+	RzBuffer *b = rz_buf_new_slice(stream_buffer, s->hdr_size, s->hdr.mod_info_size);
+	if (!b) {
+		return false;
+	}
+	while (!buf_empty(b)) {
+		PDB_DBIModule *m = RZ_NEW0(PDB_DBIModule);
+		if (!(m && PDB_DBIModule_parse(b, m) &&
+			    buf_align(b, 4))) {
+			free(m);
+			goto err;
+		}
+		rz_pvector_push(s->modules, m);
+	}
+	rz_buf_free(b);
+	return true;
+err:
+	rz_buf_free(b);
+	return false;
+}
+
+RZ_IPI bool dbi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	if (!pdb || !stream) {
 		return false;
 	}
@@ -159,16 +123,19 @@ RZ_IPI bool parse_dbi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 		return false;
 	}
 	RzBuffer *buf = stream->stream_data;
-	// parse header
-	if (!parse_dbi_stream_header(s, buf) || !parse_dbi_stream_ex_header(s, buf)) {
+	if (!parse_dbi_stream_header(s, buf)) {
+		return false;
+	}
+	s->hdr_size = rz_buf_tell(buf);
+	if (!modules_parse(s, buf)) {
 		return false;
 	}
 
 	// skip these streams
-	ut64 seek = s->hdr.section_contribution_size + s->hdr.section_map_size +
+	ut64 pos = s->hdr_size + s->hdr.mod_info_size + s->hdr.section_contribution_size + s->hdr.section_map_size +
 		s->hdr.source_info_size + s->hdr.type_server_map_size +
 		s->hdr.ec_substream_size;
-	rz_buf_seek(buf, seek, RZ_BUF_CUR);
+	rz_buf_seek(buf, pos, RZ_BUF_SET);
 	if (!parse_dbi_dbg_header(s, buf)) {
 		return false;
 	}

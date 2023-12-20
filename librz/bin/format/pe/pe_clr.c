@@ -31,16 +31,17 @@ RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bi
 	ut32 type_methods_end = type_methods_start;
 
 	if (type_it) {
-		Pe_image_metadata_typedef *typedef_ = type_it->data;
+		Pe_image_metadata_typedef *typedef_ = rz_list_iter_get_data(type_it);
 		type_name = rz_buf_get_string(bin->clr->strings, typedef_->name);
 		type_namespace = rz_buf_get_string(bin->clr->strings, typedef_->namespace);
 
-		type_methods_start = ((Pe_image_metadata_typedef *)type_it->data)->methodlist;
+		type_methods_start = typedef_->methodlist;
 		type_methods_end = rz_pvector_len(bin->clr->methoddefs) + 1;
 
-		type_it = type_it->n;
+		type_it = rz_list_iter_get_next(type_it);
 		if (type_it) {
-			type_methods_end = ((Pe_image_metadata_typedef *)type_it->data)->methodlist;
+			Pe_image_metadata_typedef *itypedef_ = rz_list_iter_get_data(type_it);
+			type_methods_end = itypedef_->methodlist;
 		}
 	}
 
@@ -54,14 +55,15 @@ RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bi
 			free(type_name);
 			free(type_namespace);
 
-			Pe_image_metadata_typedef *typedef_ = type_it->data;
+			Pe_image_metadata_typedef *typedef_ = rz_list_iter_get_data(type_it);
 			type_name = rz_buf_get_string(bin->clr->strings, typedef_->name);
 			type_namespace = rz_buf_get_string(bin->clr->strings, typedef_->namespace);
 
 			// Update next end
-			type_it = type_it->n;
+			type_it = rz_list_iter_get_next(type_it);
 			if (type_it) {
-				type_methods_end = ((Pe_image_metadata_typedef *)type_it->data)->methodlist;
+				Pe_image_metadata_typedef *next_typedef_ = rz_list_iter_get_data(type_it);
+				type_methods_end = next_typedef_->methodlist;
 			} else {
 				type_methods_end = rz_pvector_len(bin->clr->methoddefs) + 1;
 			}

@@ -918,7 +918,7 @@ static void showregs(RzList /*<char *>*/ *list) {
 		RzListIter *iter;
 		rz_list_foreach (list, iter, reg) {
 			rz_cons_print(reg);
-			if (iter->n) {
+			if (rz_list_iter_has_next(iter)) {
 				rz_cons_printf(" ");
 			}
 		}
@@ -4708,6 +4708,11 @@ RZ_IPI RzCmdStatus rz_analysis_graph_xrefs_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_analysis_graph_il_handler(RzCore *core, int argc, const char **argv) {
 	const RzCoreGraphFormat format = rz_core_graph_format_from_string(argv[1]);
 	return bool2status(rz_core_graph_print(core, core->offset, RZ_CORE_GRAPH_TYPE_IL, format));
+}
+
+RZ_IPI RzCmdStatus rz_analysis_graph_icfg_handler(RzCore *core, int argc, const char **argv) {
+	const RzCoreGraphFormat format = rz_core_graph_format_from_string(argv[1]);
+	return bool2status(rz_core_graph_print(core, core->offset, RZ_CORE_GRAPH_TYPE_ICFG, format));
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_handler(RzCore *core, int argc, const char **argv) {

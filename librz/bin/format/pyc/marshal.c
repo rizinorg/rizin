@@ -1151,8 +1151,10 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 
 	if (flag && ref_idx) {
-		free_object(ref_idx->data);
-		ref_idx->data = copy_object(ret);
+		void *p = rz_list_iter_get_data(ref_idx);
+		free_object(p);
+		p = copy_object(ret);
+		rz_list_iter_set_data(ref_idx, p);
 	}
 	return ret;
 }

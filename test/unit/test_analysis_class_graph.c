@@ -24,7 +24,7 @@ bool test_inherit_graph_creation() {
 	RzListIter *iter;
 	RzGraphNode *node;
 	int i = 0;
-	ls_foreach (graph->nodes, iter, node) {
+	rz_list_foreach (graph->nodes, iter, node) {
 		RzGraphNodeInfo *info = node->data;
 		switch (i++) {
 		case 0:
@@ -34,7 +34,7 @@ bool test_inherit_graph_creation() {
 				RzListIter *iter;
 				RzGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				rz_list_foreach (node->out_nodes, iter, out_node) {
 					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
@@ -55,7 +55,7 @@ bool test_inherit_graph_creation() {
 				RzListIter *iter;
 				RzGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				rz_list_foreach (node->out_nodes, iter, out_node) {
 					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
@@ -73,7 +73,7 @@ bool test_inherit_graph_creation() {
 				RzListIter *iter;
 				RzGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				rz_list_foreach (node->out_nodes, iter, out_node) {
 					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:

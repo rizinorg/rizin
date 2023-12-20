@@ -80,7 +80,7 @@ s sym._call
 pi 1
 EOF
 EXPECT=<<EOF
-stp x29, x30, [sp, -0x10]!
+stp fp, lr, [sp, -0x10]!
 EOF
 RUN
 
@@ -91,7 +91,7 @@ s sym._call
 pi 1
 EOF
 EXPECT=<<EOF
-stp x29, x30, [sp, -0x10]!
+stp fp, lr, [sp, -0x10]!
 EOF
 RUN
 

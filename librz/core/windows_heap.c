@@ -268,6 +268,38 @@ static inline bool has_heap_globals(void) {
 	return RtlpHpHeapGlobalsOffset && RtlpLFHKeyOffset;
 }
 
+static bool symbol_do(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
+	if (has_heap_globals()) {
+		return false;
+	}
+	if (symbol->kind != PDB_Public) {
+		return true;
+	}
+	ut64 baddr = (ut64)u;
+	const PDBSPublic *data = symbol->data;
+	if (!(data && data->name)) {
+		return true;
+	}
+
+	ut64 addr = rz_bin_pdb_to_rva(pdb, &data->offset);
+	if (addr == UT64_MAX) {
+		return true;
+	}
+	if (baddr != UT64_MAX) {
+		addr += baddr;
+	}
+
+	char *name = rz_demangler_msvc(data->name, RZ_DEMANGLER_FLAG_BASE);
+	if (RZ_STR_EQ(name, "RtlpHpHeapGlobals")) {
+		RtlpHpHeapGlobalsOffset = addr;
+	}
+	if (RZ_STR_EQ(name, "RtlpLFHKey")) {
+		RtlpLFHKeyOffset = addr;
+	}
+	free(name);
+	return true;
+}
+
 static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	if (has_heap_globals()) {
 		return true;
@@ -311,11 +343,13 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 		rz_io_fd_close(core->io, fd);
 		return false;
 	}
+	char *pdb_path = NULL;
+	RzPdb *pdb = NULL;
 	RzBinInfo *info = rz_bin_get_info(core->bin);
 	if (!info) {
 		goto fail;
 	}
-	char *pdb_path = rz_str_newf("%s\\ntdll.pdb\\%s\\ntdll.pdb",
+	pdb_path = rz_str_newf("%s\\ntdll.pdb\\%s\\ntdll.pdb",
 		rz_config_get(core->config, "pdb.symstore"), info->guid);
 	if (!pdb_path) {
 		goto fail;
@@ -328,62 +362,28 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 		opts.symbol_server = rz_config_get(core->config, "pdb.server");
 		if (rz_bin_pdb_download(core->bin, NULL, false, &opts)) {
 			RZ_LOG_ERROR("core: Failed to download ntdll.pdb file\n");
-			free(pdb_path);
 			goto fail;
 		}
 	}
 
 	// Get ntdll.dll PDB info and parse json output
-	RzPdb *pdb = rz_bin_pdb_parse_from_file(pdb_path);
+	pdb = rz_bin_pdb_parse_from_file(pdb_path);
 	if (!pdb) {
-		free(pdb_path);
 		goto fail;
 	}
 
-	free(pdb_path);
 	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
 	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
 		baddr = core->bin->cur->o->opts.baseaddr;
 	} else {
 		RZ_LOG_WARN("core: Cannot find base address, flags will probably be misplaced\n");
 	}
-	PJ *pj = pj_new();
-	if (!pj) {
-		rz_bin_pdb_free(pdb);
-		goto fail;
-	}
-	char *j = rz_core_bin_pdb_gvars_as_string(pdb, baddr, pj, RZ_OUTPUT_MODE_JSON);
-	if (!j) {
-		rz_bin_pdb_free(pdb);
-		pj_free(pj);
-		goto fail;
-	}
-	pj_free(pj);
-	rz_bin_pdb_free(pdb);
-	RzJson *json = rz_json_parse(j);
-	if (!json) {
-		RZ_LOG_ERROR("core: rz_core_pdb_info returned invalid JSON");
-		free(j);
-		goto fail;
-	}
-	free(j);
 
-	// Go through gvars array and search for the heap globals symbols
-	const RzJson *gvars = rz_json_get(json, "gvars");
-	gvars = gvars->children.first;
-	do {
-		const RzJson *gdata_name = rz_json_get(gvars, "gdata_name");
-		if (!strcmp(gdata_name->str_value, "RtlpHpHeapGlobals")) {
-			const RzJson *address = rz_json_get(gvars, "address");
-			RtlpHpHeapGlobalsOffset = address->num.u_value;
-		} else if (!strcmp(gdata_name->str_value, "RtlpLFHKey")) {
-			const RzJson *address = rz_json_get(gvars, "address");
-			RtlpLFHKeyOffset = address->num.u_value;
-		}
-	} while ((gvars = gvars->next) && !has_heap_globals());
+	rz_pdb_all_symbols_foreach(pdb, symbol_do, (void *)baddr);
 
-	free(json);
 fail:
+	rz_bin_pdb_free(pdb);
+	free(pdb_path);
 	rz_bin_file_delete(core->bin, bf);
 	rz_bin_file_set_cur_binfile(core->bin, obf);
 	rz_io_fd_close(core->io, fd);
@@ -685,7 +685,8 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 		PRTL_BALANCED_NODE node = malloc(sizeof(RTL_BALANCED_NODE));
 		RzStack *s = rz_stack_new(segheapHeader.LargeReservedPages);
 		PRTL_BALANCED_NODE curr = segheapHeader.LargeAllocMetadata.Root;
-		do { // while (!rz_stack_is_empty(s));
+		do {
+			// while (!rz_stack_is_empty(s));
 			GROW_PBLOCKS();
 			while (curr) {
 				rz_stack_push(s, curr);
@@ -870,7 +871,8 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 			curEntry = lfhHeader.SubSegmentZones.Flink;
 
 			// Loops through all _HEAP_SUBSEGMENTs
-			do { // (curEntry != firstEntry)
+			do {
+				// (curEntry != firstEntry)
 				HEAP_LOCAL_SEGMENT_INFO info;
 				HEAP_LOCAL_DATA localData;
 				HEAP_SUBSEGMENT subsegment;
@@ -879,7 +881,8 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 
 				WPARAM curSubsegment = (WPARAM)(curEntry + 2);
 				int next = 0;
-				do { // (next < blockZone.NextIndex)
+				do {
+					// (next < blockZone.NextIndex)
 					if (!ReadProcessMemory(h_proc, (PVOID)curSubsegment, &subsegment, sizeof(HEAP_SUBSEGMENT), &bytesRead) || !subsegment.BlockSize || !ReadProcessMemory(h_proc, subsegment.LocalInfo, &info, sizeof(HEAP_LOCAL_SEGMENT_INFO), &bytesRead) || !ReadProcessMemory(h_proc, info.LocalData, &localData, sizeof(HEAP_LOCAL_DATA), &bytesRead) || !ReadProcessMemory(h_proc, localData.CrtZone, &blockZone, sizeof(LFH_BLOCK_ZONE), &bytesRead)) {
 						break;
 					}
@@ -1032,7 +1035,8 @@ static PHeapBlock GetSingleSegmentBlock(RzDebug *dbg, HANDLE h_proc, PSEGMENT_HE
 	WPARAM segSignature;
 	ReadProcessMemory(h_proc, (PVOID)(pgSegOff + sizeof(LIST_ENTRY)), &segSignature, sizeof(WPARAM), NULL); // HEAP_PAGE_SEGMENT.Signature
 	WPARAM test = RtlpHpHeapGlobal ^ pgSegOff ^ segSignature ^ ((WPARAM)heapBase + offsetof(SEGMENT_HEAP, SegContexts));
-	if (test == 0xa2e64eada2e64ead) { // Hardcoded in ntdll
+	if (test == 0xa2e64eada2e64ead) {
+		// Hardcoded in ntdll
 		HEAP_PAGE_SEGMENT segment;
 		ReadProcessMemory(h_proc, (PVOID)pgSegOff, &segment, sizeof(HEAP_PAGE_SEGMENT), NULL);
 		WPARAM pgRangeDescOff = ((headerOff - pgSegOff) >> heap.SegContexts[0].UnitShift) << 5;

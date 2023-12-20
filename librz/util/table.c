@@ -1362,12 +1362,12 @@ RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	if (row_name && t->rows) {
 		iter = row_name->head;
 		if (iter) {
-			item = iter->data;
+			item = rz_list_iter_get_data(iter);
 			for (i = 0; i < t->totalCols; i++) {
 				rz_table_add_row(transpose, item, NULL);
-				if (iter->n) {
-					iter = iter->n;
-					item = iter->data;
+				if (rz_list_iter_has_next(iter)) {
+					iter = rz_list_iter_get_next(iter);
+					item = rz_list_iter_get_data(iter);
 				}
 			}
 		}
