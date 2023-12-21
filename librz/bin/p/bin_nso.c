@@ -241,8 +241,8 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return kv;
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -255,7 +255,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		vf->buf = bin->decompressed;
 		vf->buf_owned = false;
 		vf->name = strdup(VFILE_NAME_DECOMPRESSED);
-		rz_list_push(ret, vf);
+		rz_pvector_push(ret, vf);
 	}
 	return ret;
 }

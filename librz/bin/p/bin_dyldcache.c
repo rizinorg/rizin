@@ -238,8 +238,8 @@ static void sections_from_bin(RzList /*<RzBinSection *>*/ *ret, RzBinFile *bf, R
 	(mach0);
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -252,7 +252,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		vf->buf = rz_dyldcache_new_rebasing_buf(cache);
 		vf->buf_owned = true;
 		vf->name = strdup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
-		rz_list_push(ret, vf);
+		rz_pvector_push(ret, vf);
 	}
 	return ret;
 }

@@ -65,7 +65,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return MACH0_(get_baddr)(bin);
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return MACH0_(get_virtual_files)(bf);
 }
 

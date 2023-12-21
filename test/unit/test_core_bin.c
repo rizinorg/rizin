@@ -25,20 +25,20 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *virtual_files(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+static RzPVector *virtual_files(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 
 	RzBinVirtualFile *vfile = RZ_NEW0(RzBinVirtualFile);
 	vfile->name = strdup("vfile0");
 	vfile->buf = rz_buf_new_with_bytes((const ut8 *)"\xc0\xff\xee", 3);
 	vfile->buf_owned = true;
-	rz_list_push(ret, vfile);
+	rz_pvector_push(ret, vfile);
 
 	vfile = RZ_NEW0(RzBinVirtualFile);
 	vfile->name = strdup("vfile1");
 	vfile->buf = rz_buf_new_with_bytes((const ut8 *)"rizin123", 8);
 	vfile->buf_owned = true;
-	rz_list_push(ret, vfile);
+	rz_pvector_push(ret, vfile);
 
 	return ret;
 }
@@ -192,7 +192,7 @@ bool test_map(void) {
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xc0\xff\xee\x00\xff\xff", 8, "virtual file read");
 
 	// first vfile mapped as readonly at 0x400, write should fail and change nothing
-	RzBinVirtualFile *vf = rz_list_get_n(bf->o->vfiles, 0);
+	RzBinVirtualFile *vf = rz_pvector_at(bf->o->vfiles, 0);
 	ut8 red = rz_buf_read_at(vf->buf, 0, buf, 3);
 	mu_assert_eq(red, 3, "pre-sanity check buf read size");
 	mu_assert_memeq(buf, (const ut8 *)"\xc0\xff\xee", 3, "pre-sanity check buf contents");
@@ -206,7 +206,7 @@ bool test_map(void) {
 	mu_assert_memeq(buf, (const ut8 *)"\xc0\xff\xee", 3, "nothing changed in buf");
 
 	// second vfile mapped as rw at 0x300, write should succeed and change the buffer
-	vf = rz_list_get_n(bf->o->vfiles, 1);
+	vf = rz_pvector_at(bf->o->vfiles, 1);
 	red = rz_buf_read_at(vf->buf, 0, buf, 8);
 	mu_assert_eq(red, 8, "pre-sanity check buf read size");
 	mu_assert_memeq(buf, (const ut8 *)"rizin123", 8, "pre-sanity check buf contents");

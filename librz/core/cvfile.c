@@ -23,9 +23,10 @@ static RzBinVirtualFile *find_vfile(RzBinFile *bf, const char *name) {
 	if (!bf->o || !bf->o->vfiles) {
 		return NULL;
 	}
-	RzListIter *it;
+	void **it;
 	RzBinVirtualFile *vfile;
-	rz_list_foreach (bf->o->vfiles, it, vfile) {
+	rz_pvector_foreach (bf->o->vfiles, it) {
+		vfile = *it;
 		if (!strcmp(vfile->name, name)) {
 			return vfile;
 		}

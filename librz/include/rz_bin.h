@@ -266,7 +266,7 @@ typedef struct rz_bin_object_t {
 	ut64 boffset;
 	ut64 size;
 	ut64 obj_size;
-	RzList /*<RzBinVirtualFile *>*/ *vfiles;
+	RzPVector /*<RzBinVirtualFile *>*/ *vfiles;
 	RzList /*<RzBinMap *>*/ *maps;
 	RzList /*<RzBinSection *>*/ *sections;
 	RzPVector /*<RzBinImport *>*/ *imports;
@@ -528,7 +528,7 @@ typedef struct rz_bin_plugin_t {
 	bool (*check_filename)(const char *filename);
 	ut64 (*baddr)(RzBinFile *bf);
 	ut64 (*boffset)(RzBinFile *bf);
-	RzList /*<RzBinVirtualFile *>*/ *(*virtual_files)(RzBinFile *bf);
+	RzPVector /*<RzBinVirtualFile *>*/ *(*virtual_files)(RzBinFile *bf);
 	RzList /*<RzBinMap *>*/ *(*maps)(RzBinFile *bf);
 	RzBinAddr *(*binsym)(RzBinFile *bf, RzBinSpecialSymbol num);
 	RzList /*<RzBinAddr *>*/ *(*entries)(RzBinFile *bf);

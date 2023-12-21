@@ -985,9 +985,9 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1000,7 +1000,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		vf->buf = kobj->patched_buf;
 		vf->buf_owned = false;
 		vf->name = strdup(VFILE_NAME_PATCHED);
-		rz_list_push(ret, vf);
+		rz_pvector_push(ret, vf);
 	}
 	return ret;
 }

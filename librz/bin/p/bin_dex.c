@@ -140,7 +140,7 @@ static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_dex_strings(dex);
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -151,7 +151,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzList *vfiles = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	RzPVector *vfiles = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!vfiles) {
 		return NULL;
 	}
@@ -165,7 +165,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	vf->buf_owned = false;
 	vf->name = strdup(RZ_DEX_RELOC_TARGETS);
 
-	rz_list_push(vfiles, vf);
+	rz_pvector_push(vfiles, vf);
 	return vfiles;
 }
 
