@@ -1099,7 +1099,7 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
 
 /**
  * \brief Resize the float \p val to \p width
- * You need to have initialized a local variable "rmode" set with the rounding
+ * You need to have initialized a local variable "_rmode" set with the rounding
  * mode before you call this function.
  *
  * \param val
@@ -1121,15 +1121,15 @@ RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, ut32 width) {
 
 	/* I hate this, but this is the only way to conditionally round val. */
 	return ITE(
-		EQ(VARL("rmode"), UN(2, 0)), FCONVERT(format, RZ_FLOAT_RMODE_RNE, val),
-		(EQ(VARL("rmode"), UN(2, 1)), FCONVERT(format, RZ_FLOAT_RMODE_RTN, val),
-			(EQ(VARL("rmode"), UN(2, 2)), FCONVERT(format, RZ_FLOAT_RMODE_RTP, val),
+		EQ(VARL("_rmode"), UN(2, 0)), FCONVERT(format, RZ_FLOAT_RMODE_RNE, val),
+		(EQ(VARL("_rmode"), UN(2, 1)), FCONVERT(format, RZ_FLOAT_RMODE_RTN, val),
+			(EQ(VARL("_rmode"), UN(2, 2)), FCONVERT(format, RZ_FLOAT_RMODE_RTP, val),
 				(FCONVERT(format, RZ_FLOAT_RMODE_RTZ, val)))));
 }
 
 /**
  * \brief Convert the integer \p int_val to a RzILOpFloat of format \p fmt
- * You need to have initialized a local variable "rmode" set with the rounding
+ * You need to have initialized a local variable "_rmode" set with the rounding
  * mode before you call this function.
  *
  * \param int_val
@@ -1138,15 +1138,15 @@ RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, ut32 width) {
  */
 RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat format) {
 	return ITE(
-		EQ(VARL("rmode"), UN(2, 0)), SINT2F(format, RZ_FLOAT_RMODE_RNE, int_val),
-		(EQ(VARL("rmode"), UN(2, 1)), SINT2F(format, RZ_FLOAT_RMODE_RTN, int_val),
-			(EQ(VARL("rmode"), UN(2, 2)), SINT2F(format, RZ_FLOAT_RMODE_RTP, int_val),
+		EQ(VARL("_rmode"), UN(2, 0)), SINT2F(format, RZ_FLOAT_RMODE_RNE, int_val),
+		(EQ(VARL("_rmode"), UN(2, 1)), SINT2F(format, RZ_FLOAT_RMODE_RTN, int_val),
+			(EQ(VARL("_rmode"), UN(2, 2)), SINT2F(format, RZ_FLOAT_RMODE_RTP, int_val),
 				(SINT2F(format, RZ_FLOAT_RMODE_RTZ, int_val)))));
 }
 
 /**
  * \brief Convert the floating \p float_val to a RzILOpBitVector of size \p width
- * You need to have initialized a local variable "rmode" set with the rounding
+ * You need to have initialized a local variable "_rmode" set with the rounding
  * mode before you call this function.
  *
  * \param float_val
@@ -1155,9 +1155,9 @@ RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat fo
  */
 RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width) {
 	return ITE(
-		EQ(VARL("rmode"), UN(2, 0)), F2SINT(width, RZ_FLOAT_RMODE_RNE, float_val),
-		(EQ(VARL("rmode"), UN(2, 1)), F2SINT(width, RZ_FLOAT_RMODE_RTN, float_val),
-			(EQ(VARL("rmode"), UN(2, 2)), F2SINT(width, RZ_FLOAT_RMODE_RTP, float_val),
+		EQ(VARL("_rmode"), UN(2, 0)), F2SINT(width, RZ_FLOAT_RMODE_RNE, float_val),
+		(EQ(VARL("_rmode"), UN(2, 1)), F2SINT(width, RZ_FLOAT_RMODE_RTN, float_val),
+			(EQ(VARL("_rmode"), UN(2, 2)), F2SINT(width, RZ_FLOAT_RMODE_RTP, float_val),
 				(F2SINT(width, RZ_FLOAT_RMODE_RTZ, float_val)))));
 }
 

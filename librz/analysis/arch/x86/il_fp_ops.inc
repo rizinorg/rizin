@@ -12,6 +12,7 @@
  *  - https://en.wikibooks.org/wiki/X86_Assembly/Floating_Point#Floating-Point_Instruction_Set
  *  - https://github.com/avast/retdec/wiki/x86-FPU-semantic-model
  *	- https://redirect.cs.umbc.edu/courses/undergraduate/CMSC313/fall04/burt_katz/lectures/Lect12/floatingpoint.html
+ *	- https://www.plantation-productions.com/Webster/www.artofasm.com/Windows/HTML/RealArithmetica2.html
  */
 
 #include "common.h"
@@ -320,7 +321,7 @@ IL_LIFTER(fbstp) {
 	RzILOpEffect *store_sign = BRANCH(VARL("sgn"), STOREW(byte_mem, UN(8, 0xff)), STOREW(byte_mem, UN(8, 0)));
 
 	return SEQN(10,
-		INIT_RMODE(), val_init, pop_eff, // get val from ST(0)
+		INIT_RMODE(), val_init, pop_eff, // get val from ST(0) and pop
 		sgn_init, val_abs, // val = |val| and store sign
 		maybe_exception, // throw exception if val can't fit in 18-digit BCD
 		mem_init, i_init, // init loop vars
@@ -333,7 +334,7 @@ IL_LIFTER(fbstp) {
 
 /**
  * FABS
- * Clears the sign bit of st(0) to create absolute value
+ * Clears the sign bit of ST(0) to create absolute value
  */
 IL_LIFTER(fabs) {
 	RzILOpFloat *abs_value = FABS(x86_il_get_st_reg(X86_REG_ST0));
