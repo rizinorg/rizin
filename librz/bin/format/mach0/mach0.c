@@ -1931,9 +1931,9 @@ static bool __isDataSection(RzBinSection *sect) {
 	return false;
 }
 
-RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
+RzPVector /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1959,7 +1959,7 @@ RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 		vf->buf = buf;
 		vf->buf_owned = true;
 		vf->name = strdup(MACH0_VFILE_NAME_RELOC_TARGETS);
-		rz_list_push(ret, vf);
+		rz_pvector_push(ret, vf);
 	}
 	// virtual file mirroring the raw file, but with relocs patched
 	if (obj->buf_patched) {
@@ -1970,7 +1970,7 @@ RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 		vf->buf = obj->buf_patched;
 		vf->buf_owned = false;
 		vf->name = strdup(MACH0_VFILE_NAME_PATCHED);
-		rz_list_push(ret, vf);
+		rz_pvector_push(ret, vf);
 	}
 	return ret;
 }

@@ -202,7 +202,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_pvector_free(o->mem);
 	rz_list_free(o->sections);
 	rz_list_free(o->symbols);
-	rz_list_free(o->vfiles);
+	rz_pvector_free(o->vfiles);
 	rz_pvector_free(o->resources);
 	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
@@ -568,9 +568,10 @@ RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const ch
 	if (!o->vfiles) {
 		return NULL;
 	}
-	RzListIter *it;
+	void **it;
 	RzBinVirtualFile *vf;
-	rz_list_foreach (o->vfiles, it, vf) {
+	rz_pvector_foreach (o->vfiles, it) {
+		vf = *it;
 		if (!strcmp(vf->name, name)) {
 			return vf;
 		}

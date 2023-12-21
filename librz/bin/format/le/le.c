@@ -1701,15 +1701,15 @@ RZ_OWN RzPVector /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf) {
 #define VFILE_NAME_PATCHED       "patched"
 #define VFILE_NAME_RELOC_TARGETS "reloc-targets"
 
-RZ_OWN RzList /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile *bf) {
+RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	RzBinVirtualFile *vf = NULL;
 	RzBuffer *buf = NULL;
-	RzList *vfiles = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	RzPVector *vfiles = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!vfiles) {
 	fail_cleanup:
 		rz_bin_virtual_file_free(vf);
-		rz_list_free(vfiles);
+		rz_pvector_free(vfiles);
 		rz_buf_free(buf);
 		return NULL;
 	}
@@ -1720,7 +1720,7 @@ RZ_OWN RzList /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile *b
 		CHECK(vf->name = strdup(VFILE_NAME_PATCHED));
 		vf->buf = bin->buf_patched;
 		vf->buf_owned = false;
-		CHECK(rz_list_append(vfiles, vf));
+		CHECK(rz_pvector_push(vfiles, vf));
 		vf = NULL;
 	}
 
@@ -1734,7 +1734,7 @@ RZ_OWN RzList /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile *b
 		CHECK(vf->name = strdup(le_map->vfile_name));
 		vf->buf = le_map->vfile_buf;
 		vf->buf_owned = false;
-		CHECK(rz_list_append(vfiles, vf));
+		CHECK(rz_pvector_push(vfiles, vf));
 		vf = NULL;
 	}
 
@@ -1745,7 +1745,7 @@ RZ_OWN RzList /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile *b
 		CHECK(vf->name = strdup(VFILE_NAME_RELOC_TARGETS))
 		CHECK(vf->buf = rz_buf_new_empty(rtmsz));
 		vf->buf_owned = true;
-		CHECK(rz_list_append(vfiles, vf));
+		CHECK(rz_pvector_push(vfiles, vf));
 		vf = NULL;
 	}
 

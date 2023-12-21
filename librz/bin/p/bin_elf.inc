@@ -1448,8 +1448,8 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
-	RzList *r = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+	RzPVector *r = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!r) {
 		return NULL;
 	}
@@ -1474,7 +1474,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		vf->buf = buf;
 		vf->buf_owned = true;
 		vf->name = strdup(VFILE_NAME_RELOC_TARGETS);
-		rz_list_push(r, vf);
+		rz_pvector_push(r, vf);
 	}
 	// virtual file mirroring the raw file, but with relocs patched
 	if (obj->buf_patched) {
@@ -1484,7 +1484,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = obj->buf_patched;
 		vf->name = strdup(VFILE_NAME_PATCHED);
-		rz_list_push(r, vf);
+		rz_pvector_push(r, vf);
 	}
 	return r;
 }

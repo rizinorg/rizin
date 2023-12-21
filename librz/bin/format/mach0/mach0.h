@@ -233,7 +233,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin);
 char *MACH0_(section_type_to_string)(ut64 type);
 RzList /*<char *>*/ *MACH0_(section_flag_to_rzlist)(ut64 flag);
-RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf);
+RzPVector /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf);
 RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf);
 RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf);
 RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf);

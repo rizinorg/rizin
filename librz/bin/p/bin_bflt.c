@@ -164,9 +164,9 @@ beach:
 	return NULL;
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
-	RzList *r = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	RzPVector *r = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!r) {
 		return NULL;
 	}
@@ -177,7 +177,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = obj->buf_patched;
 		vf->name = strdup(VFILE_NAME_PATCHED);
-		rz_list_push(r, vf);
+		rz_pvector_push(r, vf);
 	}
 	return r;
 }
