@@ -1340,6 +1340,49 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			RZ_LOG_WARN("Reloc type %d for Renesas RX family not implemented yet.\n", rel->type);
 			break;
 		}
+		break;
+	case EM_ALPHA:
+		switch (rel->type) {
+		case RZ_ALPHA_NONE: break;
+		case RZ_ALPHA_REFLONG:
+			val = S + A;
+			rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+			break;
+		case RZ_ALPHA_REFQUAD:
+			val = S + A;
+			rz_buf_write_ble64_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+			break;
+		case RZ_ALPHA_SREL16:
+			val = S + A - P + 1;
+			if (obj->big_endian) {
+				buf[1] = val;
+				buf[0] = val >> 8;
+			} else {
+				buf[0] = val;
+				buf[1] = val >> 8;
+			}
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
+			break;
+		case RZ_ALPHA_SREL32:
+			val = S + A - P + 1;
+			if (obj->big_endian) {
+				buf[3] = val;
+				buf[2] = val >> 8;
+				buf[1] = val >> 16;
+				buf[0] = val >> 24;
+			} else {
+				buf[0] = val;
+				buf[1] = val >> 8;
+				buf[2] = val >> 16;
+				buf[3] = val >> 24;
+			}
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+			break;
+		default:
+			RZ_LOG_WARN("Reloc type %d for DEC Alpha is not implemented yet.\n", rel->type);
+			break;
+		}
+		break;
 	}
 }
 
@@ -1551,6 +1594,22 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		// FIXME: Quite a few relocatons missing here.
 		default:
 			RZ_LOG_WARN("unimplemented ELF/RX reloc type %d\n", rel->type);
+			break;
+		}
+		break;
+	case EM_ALPHA:
+		switch (rel->type) {
+		case RZ_ALPHA_NONE: break;
+		case RZ_ALPHA_REFLONG: SET(32, "R_ALPHA_REFLONG");
+		case RZ_ALPHA_REFQUAD: SET(64, "R_ALPHA_REFQUAD");
+		case RZ_ALPHA_SREL16: ADD(16, -P, "R_ALPHA_SREL16");
+		case RZ_ALPHA_SREL32: ADD(32, -P, "R_ALPHA_SREL32");
+		case RZ_ALPHA_SREL64: ADD(64, -P, "R_ALPHA_SREL64");
+		case RZ_ALPHA_COPY: ADD(32, 0, "R_ALPHA_COPY"); // copy symbol at runtime
+		case RZ_ALPHA_GLOB_DAT: ADD(32, 0, "R_ALPHA_GLOB_DAT");
+		case RZ_ALPHA_JMP_SLOT: ADD(32, 0, "R_ALPHA_JMP_SLOT");
+		default:
+			RZ_LOG_WARN("unimplemented ELF/Alpha reloc type %d\n", rel->type);
 			break;
 		}
 	default:

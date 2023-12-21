@@ -6,6 +6,7 @@ subdir('platforms')
 arch_plugins_list = [
   '6502',
   '8051',
+  'alpha_cs',
   'amd29k',
   'arm_as',
   'arm_cs',
@@ -63,6 +64,7 @@ arch_plugins_list = [
 arch_plugin_sources = [
   'p/arch_6502.c',
   'p/arch_8051.c',
+  'p/arch_alpha.c',
   'p/arch_amd29k.c',
   'p/arch_arm_as.c',
   'p/arch_arm_cs.c',
