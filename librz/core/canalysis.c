@@ -5761,7 +5761,7 @@ RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
  * \param nops analysis n ops
  * \return list of RzAnalysisBytes
  */
-RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops) {
+RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, int len, int nops) {
 	rz_return_val_if_fail(core && buf, NULL);
 	RzPVector *vec = rz_pvector_new(rz_analysis_bytes_free);
 	if (!vec) {
@@ -5794,7 +5794,7 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNU
 		}
 
 		rz_pvector_push(vec, ab);
-		ut64 addr = core->offset + i_offset;
+		ut64 addr = start_addr + i_offset;
 		const ut8 *ptr = buf + i_offset;
 		rz_asm_set_pc(core->rasm, addr);
 

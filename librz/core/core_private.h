@@ -152,8 +152,7 @@ RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 ra
 /* cdisasm.c */
 RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes);
 RZ_IPI void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at, RZ_INOUT RZ_NONNULL int *oplen, RZ_NONNULL int *ret);
-RZ_DEPRECATE RZ_IPI bool rz_core_handle_backwards_disasm(RZ_NONNULL RzCore *core,
-	RZ_NONNULL RZ_INOUT int *pn_opcodes, RZ_NONNULL RZ_INOUT int *pn_bytes);
+RZ_IPI ut64 rz_core_backward_offset(RZ_NONNULL RzCore *core, ut64 cur_offset, RZ_NONNULL RZ_INOUT int *pn_opcodes, RZ_NONNULL RZ_INOUT int *pn_bytes);
 
 /* cprint.c */
 RZ_IPI bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len);

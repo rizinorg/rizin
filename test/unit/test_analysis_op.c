@@ -102,7 +102,7 @@ bool test_rz_core_analysis_bytes() {
 	rz_core_set_asm_configs(core, "x86", 64, 0);
 	ut8 buf[128];
 	int len = rz_hex_str2bin("554889e5897dfc", buf);
-	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, 0);
+	RzPVector *vec = rz_core_analysis_bytes(core, core->offset, buf, len, 0);
 	mu_assert_notnull(vec, "rz_core_analysis_bytes");
 	mu_assert_eq(rz_pvector_len(vec), 3, "rz_core_analysis_bytes len");
 

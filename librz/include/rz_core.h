@@ -504,7 +504,7 @@ RZ_API RZ_OWN char *rz_core_types_as_c_all(RZ_NONNULL RzCore *core, bool multili
 RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core);
 RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core);
 RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr);
-RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops);
+RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, int len, int nops);
 
 RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallback cb);
 RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);

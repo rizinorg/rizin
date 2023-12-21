@@ -32,7 +32,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd V8 and Cortex-M profiles 
+NAME=pd V8 and Cortex-M profiles
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
