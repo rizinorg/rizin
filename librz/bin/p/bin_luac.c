@@ -119,7 +119,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return rz_list_clone(bin_info_obj->entry_list);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}
@@ -128,7 +128,13 @@ static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 		return NULL;
 	}
 
-	return rz_list_clone(bin_info_obj->string_list);
+	RzListIter *iter;
+	RzBinString *bstr;
+	RzPVector *pvec = rz_pvector_new((RzPVectorFree)bin_info_obj->string_list->free);
+	rz_list_foreach (bin_info_obj->string_list, iter, bstr) {
+		rz_pvector_push(pvec, bstr);
+	}
+	return pvec;
 }
 
 static void destroy(RzBinFile *bf) {

@@ -439,7 +439,7 @@ static bool add_string_to_cache(RzBinPycObj *pyc, ut64 addr, const char *data, u
 	string->ordinal = 0;
 	string->type = type;
 	string->string = rz_str_new(data);
-	if (!rz_list_append(pyc->strings_cache, string)) {
+	if (!rz_pvector_push(pyc->strings_cache, string)) {
 		return false;
 	}
 	return true;

@@ -315,7 +315,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets
 	return ret;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 

@@ -733,12 +733,6 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps_at(RzBinObject 
 	return res;
 }
 
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinString *>*/ *rz_bin_get_strings(RZ_NONNULL RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? (RzList *)rz_bin_object_get_strings(o) : NULL;
-}
-
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSymbol *>*/ *rz_bin_get_symbols(RZ_NONNULL RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);

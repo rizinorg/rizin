@@ -13,7 +13,7 @@ RZ_IPI void rz_bin_set_and_process_strings(RzBinFile *bf, RzBinObject *o) {
 		return;
 	}
 
-	RzList *strings = NULL;
+	RzPVector *strings = NULL;
 	RzBinPlugin *plugin = o->plugin;
 
 	if (!plugin->strings || !(strings = plugin->strings(bf))) {
@@ -21,9 +21,10 @@ RZ_IPI void rz_bin_set_and_process_strings(RzBinFile *bf, RzBinObject *o) {
 		strings = rz_bin_file_strings(bf, minlen, true);
 	}
 
-	RzListIter *it;
+	void **it;
 	RzBinString *string;
-	rz_list_foreach (strings, it, string) {
+	rz_pvector_foreach (strings, it) {
+		string = *it;
 		// rebase physical address
 		string->paddr += o->opts.loadaddr;
 

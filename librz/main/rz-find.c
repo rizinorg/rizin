@@ -350,13 +350,14 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			}
 			pj_a(pj);
 		}
-		RzList *list = rz_bin_file_strings(bf, bin->minstrlen, true);
-		RzListIter *it;
+		RzPVector *vec = rz_bin_file_strings(bf, bin->minstrlen, true);
+		void **it;
 		RzBinString *string;
-		rz_list_foreach (list, it, string) {
+		rz_pvector_foreach (vec, it) {
+			string = *it;
 			print_bin_string(bf, string, pj);
 		}
-		rz_list_free(list);
+		rz_pvector_free(vec);
 		if (pj) {
 			pj_end(pj);
 			printf("%s", pj_string(pj));
