@@ -82,8 +82,11 @@ IL_LIFTER(fld) {
  * Stores the floating point value stored at the top of the FPU stack in ST(0)
  */
 IL_LIFTER(fst) {
+	// TODO: Set the C1 bit depending on floating-point inexact exception (#P).
 	return x86_il_set_floating_op(0, x86_il_get_st_reg(X86_REG_ST0), 80);
 }
+
+// TODO: Implement undocumented instructions, have a look at #4045 for more.
 
 /**
  * FSTP
