@@ -1090,12 +1090,16 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
 	return BV2F(RZ_FLOAT_IEEE754_BIN_80, VARG(x86_registers[reg]));
 }
 
-#define FLOAT_FORMAT_SWITCH_CASE(n) \
-	do { \
-	case n: \
-		format = RZ_FLOAT_IEEE754_BIN_##n; \
-		break; \
-	} while (0)
+/* I hate this, but this is the only way to conditionally use the correct rmode. */
+#define EXEC_WITH_RMODE(f, ...) \
+	ITE(EQ(VARL("_rmode"), UN(2, 0)), f(RZ_FLOAT_RMODE_RNE, __VA_ARGS__), \
+		(EQ(VARL("_rmode"), UN(2, 1)), f(RZ_FLOAT_RMODE_RTN, __VA_ARGS__), \
+			(EQ(VARL("_rmode"), UN(2, 2)), f(RZ_FLOAT_RMODE_RTP, __VA_ARGS__), \
+				(f(RZ_FLOAT_RMODE_RTZ, __VA_ARGS__)))))
+
+RzILOpFloat *resize_floating_helper(RzFloatRMode rmode, RzFloatFormat format, RzILOpFloat *val) {
+	return FCONVERT(format, rmode, val);
+}
 
 /**
  * \brief Resize the float \p val to \p width
@@ -1103,28 +1107,23 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
  * mode before you call this function.
  *
  * \param val
- * \param width Output float width
+ * \param format Output float format
  * \return RzILOpFloat*
  */
-RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, ut32 width) {
-	RzFloatFormat format;
+RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, RzFloatFormat format) {
+	return EXEC_WITH_RMODE(resize_floating_helper, format, val);
+}
 
-	switch (width) {
-		FLOAT_FORMAT_SWITCH_CASE(16);
-		FLOAT_FORMAT_SWITCH_CASE(32);
-		FLOAT_FORMAT_SWITCH_CASE(64);
-		FLOAT_FORMAT_SWITCH_CASE(80);
-		FLOAT_FORMAT_SWITCH_CASE(128);
-	default:
-		rz_return_val_if_reached(NULL);
-	}
-
-	/* I hate this, but this is the only way to conditionally round val. */
-	return ITE(
-		EQ(VARL("_rmode"), UN(2, 0)), FCONVERT(format, RZ_FLOAT_RMODE_RNE, val),
-		(EQ(VARL("_rmode"), UN(2, 1)), FCONVERT(format, RZ_FLOAT_RMODE_RTN, val),
-			(EQ(VARL("_rmode"), UN(2, 2)), FCONVERT(format, RZ_FLOAT_RMODE_RTP, val),
-				(FCONVERT(format, RZ_FLOAT_RMODE_RTZ, val)))));
+/**
+ * \brief Add \p x and \p y with the correct rounding mode as determined from
+ * the FPU control word
+ *
+ * \param x
+ * \param y
+ * \return RzILOpFloat* sum
+ */
+RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+	return EXEC_WITH_RMODE(FADD, x, y);
 }
 
 /**
@@ -1166,17 +1165,17 @@ RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width) {
  *
  * \param reg
  * \param val
- * \param val_size Width of \p val
+ * \param val_format Format of \p val
  * \return RzILOpFloat*
  */
-RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, ut64 val_size) {
+RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, RzFloatFormat val_format) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
 
-	if (val_size == 80) {
+	if (val_format == RZ_FLOAT_IEEE754_BIN_80) {
 		return SETG(x86_registers[reg], F2BV(val));
 	} else {
 		RzILOpEffect *rmode = INIT_RMODE();
-		RzILOpFloat *converted_val = x86_il_resize_floating(val, val_size);
+		RzILOpFloat *converted_val = x86_il_resize_floating(val, val_format);
 
 		return SEQ2(rmode, SETG(x86_registers[reg], F2BV(converted_val)));
 	}
@@ -1211,9 +1210,16 @@ RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top) {
 	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
 }
 
-#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l), 80)
+#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l), RZ_FLOAT_IEEE754_BIN_80)
 
-RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size) {
+/**
+ * \brief Push \p val on the FPU stack
+ *
+ * \param val
+ * \param val_format Format of \p val
+ * \return RzILOpEffect* Push effect
+ */
+RzILOpEffect *x86_il_st_push(RzILOpFloat *val, RzFloatFormat val_format) {
 	/* No need for a modulo here since the bitvector width will truncate any top
 	 * value > 7 */
 	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(SUB(x86_il_get_fpu_stack_top(), UN(3, 1)));
@@ -1225,7 +1231,7 @@ RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size) {
 		ST_MOVE_RIGHT(2, 3),
 		ST_MOVE_RIGHT(1, 2),
 		ST_MOVE_RIGHT(0, 1),
-		x86_il_set_st_reg(X86_REG_ST0, val, val_size));
+		x86_il_set_st_reg(X86_REG_ST0, val, val_format));
 
 	/* Set C1 if stack overflow. If stack overflow occurred, then the value of
 	 * stack TOP must be 0x7. */
@@ -1234,8 +1240,13 @@ RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size) {
 	return SEQ3(set_top, st_shift, set_overflow);
 }
 
-#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r), 80)
+#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r), RZ_FLOAT_IEEE754_BIN_80)
 
+/**
+ * \brief Pop a value from the FPU stack
+ *
+ * \return RzILOpEffect* Pop effect
+ */
 RzILOpEffect *x86_il_st_pop() {
 	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(ADD(x86_il_get_fpu_stack_top(), UN(3, 1)));
 	RzILOpEffect *st_shift = SEQ7(
@@ -1314,6 +1325,42 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc) {
 	return NULL;
 }
 
+#define FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(n) \
+	do { \
+	case n: \
+		return RZ_FLOAT_IEEE754_BIN_##n; \
+	} while (0)
+
+RzFloatFormat x86_width_to_format(ut8 width) {
+	switch (width) {
+		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(32);
+		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(64);
+		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(80);
+		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(128);
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+}
+
+#define FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(n) \
+	do { \
+	case RZ_FLOAT_IEEE754_BIN_##n: \
+		return n; \
+	} while (0)
+
+ut8 x86_format_to_width(RzFloatFormat format) {
+	switch (format) {
+		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(32);
+		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(64);
+		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(80);
+		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(128);
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+}
+
 /**
  * \brief Set the value of the floating point operand \p op
  * This function takes care of everything, like choosing
@@ -1323,21 +1370,22 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc) {
  *
  * \param op Operand to be set
  * \param val Value to be used
- * \param val_size Width of \p val
+ * \param val_format Format of \p val
  * \param bits Bitness
  * \param pc
  */
-RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, ut64 val_size, int bits, ut64 pc) {
+RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc) {
 	RzILOpEffect *ret = NULL;
 	RzILOpEffect *rmode = INIT_RMODE();
 
 	switch (op.type) {
 	case X86_OP_REG:
-		ret = x86_il_set_st_reg(op.reg, val, val_size);
+		ret = x86_il_set_st_reg(op.reg, val, val_format);
 		break;
 	case X86_OP_MEM: {
-		ut64 required_size = op.size * BITS_PER_BYTE;
-		RzILOpPure *resized_val = required_size == val_size ? val : x86_il_resize_floating(val, required_size);
+		ut64 required_format = x86_width_to_format(op.size * BITS_PER_BYTE);
+
+		RzILOpPure *resized_val = required_format == val_format ? val : x86_il_resize_floating(val, required_format);
 		ret = x86_il_set_mem_bits(op.mem, resized_val, bits, pc);
 		break;
 	}

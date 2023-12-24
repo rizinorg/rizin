@@ -131,12 +131,12 @@ bool x86_il_is_st_reg(X86Reg reg);
 /* Need to pass in val_size as a param to avoid unnecessary rounding of val. */
 
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
-RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, ut64 val_size);
+RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, RzFloatFormat val_format);
 
 RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top);
 RzILOpPure *x86_il_get_fpu_stack_top();
 
-RzILOpEffect *x86_il_st_push(RzILOpFloat *val, int val_size);
+RzILOpEffect *x86_il_st_push(RzILOpFloat *val, RzFloatFormat val_format);
 RzILOpEffect *x86_il_st_pop();
 
 #define X86_IL_ST_POP(val, eff) \
@@ -151,7 +151,9 @@ RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value);
 RzILOpPure *x86_il_fpu_get_rmode();
 #define INIT_RMODE() SETL("_rmode", x86_il_fpu_get_rmode())
 
-RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, ut32 width);
+RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, RzFloatFormat format);
+RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
+
 RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat format);
 RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width);
 
@@ -160,10 +162,13 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 #define x86_il_get_floating_op(opnum) \
 	x86_il_get_floating_operand_bits(ins->structure->operands[opnum], analysis->bits, pc)
 
-RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, ut64 val_size, int bits, ut64 pc);
+RzFloatFormat x86_width_to_format(ut8 width);
+ut8 x86_format_to_width(RzFloatFormat format);
 
-#define x86_il_set_floating_op(opnum, val, val_size) \
-	x86_il_set_floating_operand_bits(ins->structure->operands[opnum], val, val_size, analysis->bits, pc)
+RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc);
+
+#define x86_il_set_floating_op(opnum, val, val_format) \
+	x86_il_set_floating_operand_bits(ins->structure->operands[opnum], val, val_format, analysis->bits, pc)
 
 RzILOpEffect *x86_il_clear_fpsw_flags();
 

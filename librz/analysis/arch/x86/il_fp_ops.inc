@@ -74,7 +74,7 @@ IL_LIFTER(fnclex) {
  */
 IL_LIFTER(fld) {
 	return x86_il_st_push(x86_il_get_floating_op(0),
-		ins->structure->operands[0].size * BITS_PER_BYTE);
+		x86_width_to_format(ins->structure->operands[0].size * BITS_PER_BYTE));
 }
 
 /**
@@ -83,7 +83,7 @@ IL_LIFTER(fld) {
  */
 IL_LIFTER(fst) {
 	// TODO: Set the C1 bit depending on floating-point inexact exception (#P).
-	return x86_il_set_floating_op(0, x86_il_get_st_reg(X86_REG_ST0), 80);
+	return x86_il_set_floating_op(0, x86_il_get_st_reg(X86_REG_ST0), RZ_FLOAT_IEEE754_BIN_80);
 }
 
 // TODO: Implement undocumented instructions, have a look at #4045 for more.
@@ -98,7 +98,7 @@ IL_LIFTER(fstp) {
 	RzILOpPure *pop_val;
 	X86_IL_ST_POP(pop_val, pop_eff);
 
-	return SEQ2(x86_il_set_floating_op(0, pop_val, 80), pop_eff);
+	return SEQ2(x86_il_set_floating_op(0, pop_val, RZ_FLOAT_IEEE754_BIN_80), pop_eff);
 }
 
 /**
@@ -106,7 +106,7 @@ IL_LIFTER(fstp) {
  * Load +1.0
  */
 IL_LIFTER(fld1) {
-	return x86_il_st_push(F80(1.0), 80);
+	return x86_il_st_push(F80(1.0), RZ_FLOAT_IEEE754_BIN_80);
 }
 
 /**
@@ -114,7 +114,7 @@ IL_LIFTER(fld1) {
  * Load +0.0
  */
 IL_LIFTER(fldz) {
-	return x86_il_st_push(F80(0.0), 80);
+	return x86_il_st_push(F80(0.0), RZ_FLOAT_IEEE754_BIN_80);
 }
 
 /*
@@ -146,7 +146,7 @@ RzILOpFloat *math_const_to_float(uint64_t upper, uint64_t lower) {
 	uint64_t stripped_lower = lower & ~(0x3fffffffffffULL);
 	RzILOpPure *final_bits = LOGOR(upper_shifted, UN(80, (stripped_lower >> (64 - 16))));
 
-	return x86_il_resize_floating(BV2F(RZ_FLOAT_IEEE754_BIN_80, final_bits), 80);
+	return x86_il_resize_floating(BV2F(RZ_FLOAT_IEEE754_BIN_80, final_bits), RZ_FLOAT_IEEE754_BIN_80);
 }
 
 /**
@@ -154,7 +154,7 @@ RzILOpFloat *math_const_to_float(uint64_t upper, uint64_t lower) {
  * Load log2(10)
  */
 IL_LIFTER(fldl2t) {
-	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_L2T), 80));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_L2T), RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -162,7 +162,7 @@ IL_LIFTER(fldl2t) {
  * Load log2(e)
  */
 IL_LIFTER(fldl2e) {
-	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_L2E), 80));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_L2E), RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -170,7 +170,7 @@ IL_LIFTER(fldl2e) {
  * Load pi
  */
 IL_LIFTER(fldpi) {
-	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_PI), 80));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_PI), RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -178,7 +178,7 @@ IL_LIFTER(fldpi) {
  * Load log10(2)
  */
 IL_LIFTER(fldlg2) {
-	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_LG2), 80));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_LG2), RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -186,7 +186,7 @@ IL_LIFTER(fldlg2) {
  * Load ln(2)
  */
 IL_LIFTER(fldln2) {
-	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_LN2), 80));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(math_const_to_float(FPU_LN2), RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -208,8 +208,8 @@ IL_LIFTER(fxch) {
 	but it doesn't matter for now so I'm not bothering with it. */
 	return SEQ4(
 		SETL("tmp", x86_il_get_st_reg(X86_REG_ST0)),
-		x86_il_set_st_reg(X86_REG_ST0, x86_il_get_st_reg(reg), 80),
-		x86_il_set_st_reg(reg, VARL("tmp"), 80),
+		x86_il_set_st_reg(X86_REG_ST0, x86_il_get_st_reg(reg), RZ_FLOAT_IEEE754_BIN_80),
+		x86_il_set_st_reg(reg, VARL("tmp"), RZ_FLOAT_IEEE754_BIN_80),
 		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
 
@@ -221,7 +221,7 @@ IL_LIFTER(fild) {
 	RzILOpPure *int_val = x86_il_get_op(0);
 	RzILOpFloat *float_val = x86_il_floating_from_int(int_val, RZ_FLOAT_IEEE754_BIN_80);
 
-	return SEQ2(INIT_RMODE(), x86_il_st_push(float_val, 80));
+	return SEQ2(INIT_RMODE(), x86_il_st_push(float_val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -283,7 +283,7 @@ IL_LIFTER(fbld) {
 		mem_init, i_init, val_init, // Local vars init
 		bcd_decode_loop, // BCD decoding loop
 		INIT_RMODE(), f_init, // Conversion to 80-bit float
-		x86_il_st_push(final_float, 80) // Push the value onto the FPU stack
+		x86_il_st_push(final_float, RZ_FLOAT_IEEE754_BIN_80) // Push the value onto the FPU stack
 	);
 }
 
@@ -341,5 +341,39 @@ IL_LIFTER(fbstp) {
  */
 IL_LIFTER(fabs) {
 	RzILOpFloat *abs_value = FABS(x86_il_get_st_reg(X86_REG_ST0));
-	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value, 80), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
+	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value, RZ_FLOAT_IEEE754_BIN_80), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
+}
+
+/**
+ * FADD
+ * Add floating point values
+ */
+IL_LIFTER(fadd) {
+	RzILOpEffect *src_init;
+	X86Reg dest_st_reg;
+
+	switch (ins->structure->op_count) {
+	case 0:
+		/* ST(1) = ST(1) + ST(0) */
+		dest_st_reg = X86_REG_ST1;
+		src_init = SETL("src", x86_il_get_st_reg(X86_REG_ST0));
+		break;
+	case 1:
+		/* Need to convert a 32-bit or 64-bit memory operand */
+		dest_st_reg = X86_REG_ST0;
+		src_init = SEQ2(INIT_RMODE(), SETL("src", x86_il_resize_floating(x86_il_get_floating_op(0), RZ_FLOAT_IEEE754_BIN_80)));
+		break;
+	case 2:
+		/* ST(i) operand, so no need for resizing */
+		dest_st_reg = ins->structure->operands[0].reg;
+		src_init = SETL("src", x86_il_get_floating_op(0));
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpFloat *sum = x86_il_fadd_with_rmode(VARL("src"), x86_il_get_st_reg(dest_st_reg));
+
+	return SEQ2(src_init, x86_il_set_st_reg(dest_st_reg, sum, RZ_FLOAT_IEEE754_BIN_80));
 }
