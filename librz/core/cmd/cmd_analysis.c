@@ -506,7 +506,7 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 }
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
-	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, nops);
+	RzPVector *vec = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
 	if (!vec) {
 		return;
 	}
@@ -615,7 +615,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	}
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
-	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, nops);
+	RzPVector *vec = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
 	if (!vec) {
 		return;
 	}

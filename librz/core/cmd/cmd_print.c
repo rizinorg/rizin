@@ -2831,6 +2831,10 @@ RZ_IPI RzCmdStatus rz_print_instructions_handler(RzCore *core, int argc, const c
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 len = rz_num_math(core->num, argv[1]);
+	if (len == 0) {
+		RZ_LOG_ERROR("The argument cannot be zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_core_print_disasm_instructions(core, len, 0);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2843,6 +2847,10 @@ RZ_IPI RzCmdStatus rz_print_instructions_function_handler(RzCore *core, int argc
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 fcn_size = rz_analysis_function_linear_size((RzAnalysisFunction *)f);
+	if (fcn_size == 0) {
+		RZ_LOG_ERROR("The function size is zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_core_print_disasm_instructions(core, fcn_size, 0);
 	return RZ_CMD_STATUS_OK;
 }
@@ -3681,13 +3689,13 @@ RZ_IPI RzCmdStatus rz_cmd_print_byte_array_with_inst_handler(RzCore *core, int a
 	return RZ_CMD_STATUS_OK;
 }
 
-static void disassembly_as_table(RzTable *t, RzCore *core, int n_instrs, int n_bytes) {
+static void disassembly_as_table(RzTable *t, RzCore *core, ut64 addr, int n_instrs, int n_bytes) {
 	ut8 buffer[256];
 	rz_table_set_columnsf(t, "snssssss", "name", "addr", "bytes", "disasm", "comment", "esil", "refs", "xrefs");
 	const int minopsz = 1;
 	const int options = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_ESIL;
 	const int addrbytes = core->io->addrbytes;
-	ut64 offset = core->offset;
+	ut64 offset = addr;
 	ut64 inc = 0;
 	for (int i = 0, j = 0; rz_disasm_check_end(n_instrs, i, n_bytes, j * addrbytes); i++, offset += inc, j += inc) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, offset, options);
@@ -3717,11 +3725,7 @@ static void disassembly_as_table(RzTable *t, RzCore *core, int n_instrs, int n_b
 }
 
 static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool cbytes) {
-	ut32 old_blocksize = core->blocksize;
-	ut64 old_offset = core->offset;
-	if (!rz_core_handle_backwards_disasm(core, &n_instrs, &n_bytes)) {
-		return false;
-	}
+	ut64 offset = rz_core_backward_offset(core, core->offset, &n_instrs, &n_bytes);
 
 	RZ_LOG_VERBOSE("disassembly at: 0x%" PFMT64x " "
 		       "blocksize: %" PFMT32d " "
@@ -3731,17 +3735,27 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = cbytes,
 	};
+	ut8 *buf = malloc(n_bytes + 1);
+	if (!buf) {
+		RZ_LOG_ERROR("Failed to allocate memory\n");
+		return false;
+	}
+	if (rz_io_nread_at(core->io, offset, buf, n_bytes + 1) == -1) {
+		free(buf);
+		RZ_LOG_ERROR("Failed to read at 0x%" PFMT64x "\n", offset);
+		return false;
+	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_print_disasm(core, core->offset, core->block, n_bytes,
+		rz_core_print_disasm(core, offset, buf, n_bytes,
 			n_bytes > 0 && !n_instrs ? n_bytes : n_instrs, state, &disasm_options);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		disassembly_as_table(state->d.t, core, n_instrs, n_bytes);
+		disassembly_as_table(state->d.t, core, offset, n_instrs, n_bytes);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		rz_cmd_state_output_array_start(state);
-		rz_core_print_disasm_json(core, core->offset, core->block, n_bytes, n_instrs, state->d.pj);
+		rz_core_print_disasm_json(core, offset, buf, n_bytes, n_instrs, state->d.pj);
 		rz_cmd_state_output_array_end(state);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
@@ -3751,21 +3765,34 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 		rz_warn_if_reached();
 		break;
 	}
+	free(buf);
 
-	rz_core_block_size(core, old_blocksize);
-	if (core->offset != old_offset) {
-		rz_core_seek(core, old_offset, true);
-	}
 	return true;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int n_bytes = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	if (argc <= 1) {
+		RZ_LOG_ERROR("Invalid number of arguments\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_bytes = (int)rz_num_math(core->num, argv[1]);
+	if (n_bytes == 0) {
+		RZ_LOG_ERROR("The argument cannot be zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return bool2status(core_disassembly(core, n_bytes, 0, state, true));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int n_instrs = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 0;
+	if (argc <= 1) {
+		RZ_LOG_ERROR("Invalid number of arguments\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_instrs = (int)rz_num_math(core->num, argv[1]);
+	if (n_instrs == 0) {
+		RZ_LOG_ERROR("The argument cannot be zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return bool2status(core_disassembly(core, argc > 1 && n_instrs == 0 ? 0 : (int)core->blocksize, n_instrs, state, false));
 }
 
@@ -5077,6 +5104,7 @@ RZ_IPI RzCmdStatus rz_print_instr_handler(RzCore *core, int argc, const char **a
 	}
 	ut64 N = rz_num_math(core->num, argv[1]);
 	if (N == 0) {
+		RZ_LOG_ERROR("The argument cannot be zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_print_disasm_instructions(core, 0, N);

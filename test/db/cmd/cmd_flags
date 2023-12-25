@@ -268,7 +268,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 f a
 fC a blabla
-pd~?blabla
+pd 0x100~?blabla
 EOF
 EXPECT=<<EOF
 1

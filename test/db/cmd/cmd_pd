@@ -32,7 +32,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd V8 and Cortex-M profiles 
+NAME=pd V8 and Cortex-M profiles
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
@@ -119,7 +119,7 @@ e asm.bits=64
 wx 90
 e asm.lines.bb=0
 b 1
-pd
+pd 1
 pd 1
 EOF
 EXPECT=<<EOF
@@ -151,7 +151,7 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e asm.lines.bb=0
-pd@x:90
+pd 1@x:90
 EOF
 EXPECT=<<EOF
   0x00000000      90             nop
@@ -2524,7 +2524,7 @@ NAME=pd is not limited by blocksize
 FILE==
 CMDS=<<EOF
 b 10
-pd~?
+pd 10~?
 pd 3~?
 pd 20~?
 EOF

@@ -4,7 +4,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.bytes=true
-pD@x:90
+pD 0x1@x:90
 EOF
 EXPECT=<<EOF
             0x00000000      90             nop
@@ -17,7 +17,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.bytes=true
-pd@x:90
+pd 0x1@x:90
 EOF
 EXPECT=<<EOF
             0x00000000      90             nop
@@ -30,7 +30,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
-pd@x:90909090
+pd 4@x:90909090
 EOF
 EXPECT=<<EOF
             0x00000000      90             nop
@@ -46,7 +46,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
-pd@x:909090
+pd 3@x:909090
 EOF
 EXPECT=<<EOF
             0x00000000      90             nop
