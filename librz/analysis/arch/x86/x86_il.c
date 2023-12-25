@@ -94,6 +94,11 @@ const char *x86_bound_regs_64[] = {
 	NULL
 };
 
+/* I know using globals is _bad_, but using a context to pass this information up
+ * the chain makes the code very ugly and hard to read/understand. Using a global
+ * instead, I believe, is a good compromise. */
+bool use_rmode;
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -270,7 +275,8 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FBLD] = x86_il_fbld,
 	[X86_INS_FBSTP] = x86_il_fbstp,
 	[X86_INS_FABS] = x86_il_fabs,
-	[X86_INS_FADD] = x86_il_fadd
+	[X86_INS_FADD] = x86_il_fadd,
+	[X86_INS_FIADD] = x86_il_fiadd
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
@@ -291,7 +297,12 @@ RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnaly
 		/* For unimplemented instructions */
 		lifter = x86_il_unimpl;
 	}
+
+	use_rmode = false;
 	lifted = lifter(ins, pc, analysis);
+	if (use_rmode) {
+		lifted = rz_il_op_new_seq(init_rmode(), lifted);
+	}
 
 	aop->il_op = lifted;
 	return true;

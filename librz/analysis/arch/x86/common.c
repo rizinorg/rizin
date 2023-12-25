@@ -4,6 +4,8 @@
 #include "common.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+extern bool use_rmode;
+
 /**
  * \brief x86 registers
  */
@@ -1090,6 +1092,16 @@ RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
 	return BV2F(RZ_FLOAT_IEEE754_BIN_80, VARG(x86_registers[reg]));
 }
 
+/**
+ * \brief Set the local variable to the value of "_rmode" computed using control
+ * word bits
+ *
+ * \return RzILOpEffect*
+ */
+RzILOpEffect *init_rmode() {
+	return SETL("_rmode", x86_il_fpu_get_rmode());
+}
+
 /* I hate this, but this is the only way to conditionally use the correct rmode. */
 #define EXEC_WITH_RMODE(f, ...) \
 	ITE(EQ(VARL("_rmode"), UN(2, 0)), f(RZ_FLOAT_RMODE_RNE, __VA_ARGS__), \
@@ -1106,24 +1118,39 @@ RzILOpFloat *resize_floating_helper(RzFloatRMode rmode, RzFloatFormat format, Rz
  * You need to have initialized a local variable "_rmode" set with the rounding
  * mode before you call this function.
  *
- * \param val
+ * \param val Desirable that it is a small expression since it will be duped
  * \param format Output float format
  * \return RzILOpFloat*
  */
 RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, RzFloatFormat format) {
-	return EXEC_WITH_RMODE(resize_floating_helper, format, val);
+	use_rmode = true;
+
+	/* TODO: Figure out a more elegant solution than to `DUP` the input val. */
+	RzILOpFloat *ret = EXEC_WITH_RMODE(resize_floating_helper, format, DUP(val));
+	rz_il_op_pure_free(val);
+	return ret;
 }
 
 /**
  * \brief Add \p x and \p y with the correct rounding mode as determined from
  * the FPU control word
  *
- * \param x
- * \param y
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
  * \return RzILOpFloat* sum
  */
 RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
-	return EXEC_WITH_RMODE(FADD, x, y);
+	use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FADD, DUP(x), DUP(y));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
+RzILOpFloat *sint2f_floating_helper(RzFloatRMode rmode, RzFloatFormat format, RzILOpBitVector *val) {
+	return SINT2F(format, rmode, val);
 }
 
 /**
@@ -1131,16 +1158,19 @@ RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  * You need to have initialized a local variable "_rmode" set with the rounding
  * mode before you call this function.
  *
- * \param int_val
+ * \param int_val Desirable that it is a small expression since it will be duped
  * \param format Output float format
  * \return RzILOpFloat*
  */
 RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat format) {
-	return ITE(
-		EQ(VARL("_rmode"), UN(2, 0)), SINT2F(format, RZ_FLOAT_RMODE_RNE, int_val),
-		(EQ(VARL("_rmode"), UN(2, 1)), SINT2F(format, RZ_FLOAT_RMODE_RTN, int_val),
-			(EQ(VARL("_rmode"), UN(2, 2)), SINT2F(format, RZ_FLOAT_RMODE_RTP, int_val),
-				(SINT2F(format, RZ_FLOAT_RMODE_RTZ, int_val)))));
+	use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(sint2f_floating_helper, format, DUP(int_val));
+	rz_il_op_pure_free(int_val);
+	return ret;
+}
+
+RzILOpFloat *f2sint_floating_helper(RzFloatRMode rmode, ut32 width, RzILOpFloat *val) {
+	return F2SINT(width, rmode, val);
 }
 
 /**
@@ -1148,16 +1178,15 @@ RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat fo
  * You need to have initialized a local variable "_rmode" set with the rounding
  * mode before you call this function.
  *
- * \param float_val
+ * \param float_val Desirable that it is a small expression since it will be duped
  * \param width Output bitvector width
  * \return RzILOpBitVector*
  */
 RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width) {
-	return ITE(
-		EQ(VARL("_rmode"), UN(2, 0)), F2SINT(width, RZ_FLOAT_RMODE_RNE, float_val),
-		(EQ(VARL("_rmode"), UN(2, 1)), F2SINT(width, RZ_FLOAT_RMODE_RTN, float_val),
-			(EQ(VARL("_rmode"), UN(2, 2)), F2SINT(width, RZ_FLOAT_RMODE_RTP, float_val),
-				(F2SINT(width, RZ_FLOAT_RMODE_RTZ, float_val)))));
+	use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(f2sint_floating_helper, width, DUP(float_val));
+	rz_il_op_pure_free(float_val);
+	return ret;
 }
 
 /**
@@ -1174,10 +1203,9 @@ RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, RzFloatFormat val_
 	if (val_format == RZ_FLOAT_IEEE754_BIN_80) {
 		return SETG(x86_registers[reg], F2BV(val));
 	} else {
-		RzILOpEffect *rmode = INIT_RMODE();
 		RzILOpFloat *converted_val = x86_il_resize_floating(val, val_format);
 
-		return SEQ2(rmode, SETG(x86_registers[reg], F2BV(converted_val)));
+		return SETG(x86_registers[reg], F2BV(converted_val));
 	}
 }
 
@@ -1339,7 +1367,7 @@ RzFloatFormat x86_width_to_format(ut8 width) {
 		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(128);
 	default:
 		rz_warn_if_reached();
-		return NULL;
+		return RZ_FLOAT_UNK;
 	}
 }
 
@@ -1357,7 +1385,7 @@ ut8 x86_format_to_width(RzFloatFormat format) {
 		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(128);
 	default:
 		rz_warn_if_reached();
-		return NULL;
+		return -1;
 	}
 }
 
@@ -1376,27 +1404,21 @@ ut8 x86_format_to_width(RzFloatFormat format) {
  */
 RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc) {
 	RzILOpEffect *ret = NULL;
-	RzILOpEffect *rmode = INIT_RMODE();
 
 	switch (op.type) {
 	case X86_OP_REG:
-		ret = x86_il_set_st_reg(op.reg, val, val_format);
-		break;
+		return x86_il_set_st_reg(op.reg, val, val_format);
 	case X86_OP_MEM: {
 		ut64 required_format = x86_width_to_format(op.size * BITS_PER_BYTE);
 
 		RzILOpPure *resized_val = required_format == val_format ? val : x86_il_resize_floating(val, required_format);
-		ret = x86_il_set_mem_bits(op.mem, resized_val, bits, pc);
-		break;
+		return x86_il_set_mem_bits(op.mem, resized_val, bits, pc);
 	}
 	case X86_OP_IMM:
 	default:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", X86_OP_IMM);
 		return ret;
-		break;
 	}
-
-	return SEQ2(rmode, ret);
 }
 
 RzILOpEffect *x86_il_clear_fpsw_flags() {

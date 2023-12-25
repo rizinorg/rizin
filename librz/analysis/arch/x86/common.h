@@ -149,7 +149,8 @@ RzILOpPure *x86_il_get_fpu_flag(X86FPUFlags flag);
 RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value);
 
 RzILOpPure *x86_il_fpu_get_rmode();
-#define INIT_RMODE() SETL("_rmode", x86_il_fpu_get_rmode())
+
+RzILOpEffect *init_rmode();
 
 RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, RzFloatFormat format);
 RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
