@@ -30,6 +30,9 @@
 static ut64 emustack_min = 0LL;
 static ut64 emustack_max = 0LL;
 
+static const ut8 MAX_OPSIZE = 16;
+static const ut8 MIN_OPSIZE = 1;
+
 static const char *rz_vline_a[] = {
 	"|", // LINE_VERT
 	"|-", // LINE_CROSS
@@ -5152,8 +5155,9 @@ RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t) {
 }
 
 /**
- * \brief Disassemble \p len bytes and \p nlines opcodes
+ * \brief Disassemble \p len bytes or \p nlines opcodes
  * 	  restricted by \p len and \p nlines at the same time
+ *        \p len and \p nlines cannot be zero at the same time
  * \param core RzCore reference
  * \param addr Address
  * \param buf Buffer
@@ -5636,9 +5640,21 @@ RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int
 	return i_bytes < nb_bytes;
 }
 
-#define MAX_OPSIZE 16
-#define MIN_OPSIZE 1
+/**
+ * \brief Disassemble \p nb_bytes bytes or \p nb_opcodes instructions, the length is
+ *      constrained by both of them. Set one of them to 0 will disable its constraint.
+ *      Both of them cannot be 0 at the same time.
+ * \param core RzCore reference
+ * \param address Start address of disassembling
+ * \param buf Buffer, if NULL, read from address
+ * \param nb_bytes Bytes number
+ * \param nb_opcodes Opcode number
+ * \return Number of disassembled bytes
+ */
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes) {
+	// unclear stop condition if nb_bytes and nb_opcodes are both 0
+	rz_return_val_if_fail(core && (nb_bytes || nb_opcodes), 0);
+
 	RzDisasmState *ds = NULL;
 	int i, j, ret, len = 0;
 	char *tmpopstr;
@@ -5808,15 +5824,13 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	}
 	return len;
 }
-#undef MIN_OPSIZE
-#undef MAX_OPSIZE
 
 /**
  * \brief Calculate the offset while \p pn_opcodes and \p pn_bytes
  *       are negative, and \p pn_opcodes and \p pn_bytes will be
  *       converted to positive numbers.
  * \param core RzCore reference
- * \param current offset
+ * \param cur_offset current offset
  * \prarm pn_opcodes Pointer to n_opcodes
  * \param pn_bytes Pointer to n_bytes
  * \return calculated offset
@@ -5848,8 +5862,6 @@ RZ_IPI ut64 rz_core_backward_offset(RZ_NONNULL RzCore *core, ut64 cur_offset, RZ
 /* Disassemble either `nb_opcodes` instructions, or
  * `nb_bytes` bytes; both can be negative.
  * Set to 0 the parameter you don't use */
-#define MAX_OPSIZE 16
-#define MIN_OPSIZE 1
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes) {
 	int ret = -1;
 	// handler negative parameters
@@ -5857,8 +5869,6 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 	ret = rz_core_print_disasm_instructions_with_buf(core, offset, NULL, nb_bytes, nb_opcodes);
 	return ret;
 }
-#undef MIN_OPSIZE
-#undef MAX_OPSIZE
 
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	bool res = true;
@@ -6134,8 +6144,6 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	return count;
 }
 
-#define MAX_OPSIZE 16
-#define MIN_OPSIZE 1
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt) {
 	bool show_offset = rz_config_get_b(core->config, "asm.offset");
 	bool show_bytes = rz_config_get_b(core->config, "asm.bytes");
@@ -6380,8 +6388,6 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 	}
 	return err;
 }
-#undef MIN_OPSIZE
-#undef MAX_OPSIZE
 
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int ret = -1;

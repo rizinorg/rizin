@@ -2831,6 +2831,10 @@ RZ_IPI RzCmdStatus rz_print_instructions_handler(RzCore *core, int argc, const c
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 len = rz_num_math(core->num, argv[1]);
+	if (len == 0) {
+		RZ_LOG_ERROR("The argument cannot be zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_core_print_disasm_instructions(core, len, 0);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2843,6 +2847,10 @@ RZ_IPI RzCmdStatus rz_print_instructions_function_handler(RzCore *core, int argc
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 fcn_size = rz_analysis_function_linear_size((RzAnalysisFunction *)f);
+	if (fcn_size == 0) {
+		RZ_LOG_ERROR("The function size is zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_core_print_disasm_instructions(core, fcn_size, 0);
 	return RZ_CMD_STATUS_OK;
 }
@@ -3763,12 +3771,28 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int n_bytes = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
+	if (argc <= 1) {
+		RZ_LOG_ERROR("Invalid number of arguments\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_bytes = (int)rz_num_math(core->num, argv[1]);
+	if (n_bytes == 0) {
+		RZ_LOG_ERROR("The argument cannot be zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return bool2status(core_disassembly(core, n_bytes, 0, state, true));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	int n_instrs = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : 0;
+	if (argc <= 1) {
+		RZ_LOG_ERROR("Invalid number of arguments\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int n_instrs = (int)rz_num_math(core->num, argv[1]);
+	if (n_instrs == 0) {
+		RZ_LOG_ERROR("The argument cannot be zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return bool2status(core_disassembly(core, argc > 1 && n_instrs == 0 ? 0 : (int)core->blocksize, n_instrs, state, false));
 }
 
@@ -5080,6 +5104,7 @@ RZ_IPI RzCmdStatus rz_print_instr_handler(RzCore *core, int argc, const char **a
 	}
 	ut64 N = rz_num_math(core->num, argv[1]);
 	if (N == 0) {
+		RZ_LOG_ERROR("The argument cannot be zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_print_disasm_instructions(core, 0, N);

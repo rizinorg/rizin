@@ -637,7 +637,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		break;
 	}
 	case RZ_CORE_DISASM_STRINGS_MODE_INST: {
-		dump_string = rz_core_cmd_str(core, "pd");
+		dump_string = rz_core_cmd_strf(core, "pd %d", core->blocksize);
 		break;
 	}
 	case RZ_CORE_DISASM_STRINGS_MODE_BYTES:
