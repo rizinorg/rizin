@@ -346,52 +346,64 @@ IL_LIFTER(fabs) {
 	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value, RZ_FLOAT_IEEE754_BIN_80), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
 
+#define FLOATING_ARTITHMETIC_IL(op) \
+	do { \
+		RzILOpFloat *src; \
+		X86Reg dest_reg; \
+\
+		/* Capstone does not differentiate between FADD and FADDP, so we need to \
+		 * manually check whether we need to pop the stack the the end not. */ \
+		bool pop = false; \
+\
+		/* TODO: Check whether all the enumerated cases here are correct, through \
+		 * code coverage. */ \
+		switch (ins->structure->op_count) { \
+		case 0: \
+			/* FADDP with no arguments */ \
+			pop = true; \
+			dest_reg = X86_REG_ST1; \
+			src = x86_il_get_st_reg(X86_REG_ST0); \
+			break; \
+		case 1: \
+			/* Need to convert a 32-bit or 64-bit memory operand */ \
+			dest_reg = X86_REG_ST0; \
+			src = x86_il_resize_floating(x86_il_get_floating_op(0), RZ_FLOAT_IEEE754_BIN_80); \
+			break; \
+		case 2: \
+			/* ST(i) operand, so no need for resizing */ \
+			dest_reg = ins->structure->operands[0].reg; \
+			src = x86_il_get_floating_op(0); \
+\
+			/* Check if this is FADDP */ \
+			if (ins->structure->opcode[0] == 0xde) { \
+				pop = true; \
+			} \
+			break; \
+		default: \
+			rz_warn_if_reached(); \
+			return NULL; \
+		} \
+\
+		RzILOpFloat *sum = x86_il_##op##_with_rmode(src, x86_il_get_st_reg(dest_reg)); \
+		RzILOpEffect *store = x86_il_set_st_reg(dest_reg, sum, RZ_FLOAT_IEEE754_BIN_80); \
+		RzILOpEffect *store_and_maybe_pop = (pop ? SEQ2(store, x86_il_st_pop()) : store); \
+\
+		return store_and_maybe_pop; \
+	} while (0)
+
+#define FLOATING_INT_ARTITHMETIC_IL(op) \
+	do { \
+		RzILOpPure *float_val = x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80); \
+		RzILOpPure *sum = x86_il_fadd_with_rmode(x86_il_get_st_reg(X86_REG_ST0), float_val); \
+		return x86_il_set_st_reg(X86_REG_ST0, sum, RZ_FLOAT_IEEE754_BIN_80); \
+	} while (0)
+
 /**
  * FADD
  * Add floating point values
  */
 IL_LIFTER(fadd) {
-	RzILOpFloat *src;
-	X86Reg dest_reg;
-
-	/* Capstone does not differentiate between FADD and FADDP, so we need to
-	 * manually check whether we need to pop the stack the the end not. */
-	bool pop = false;
-
-	/* TODO: Check whether all the enumerated cases here are correct, through
-	 * code coverage. */
-	switch (ins->structure->op_count) {
-	case 0:
-		/* FADDP with no arguments */
-		pop = true;
-		dest_reg = X86_REG_ST1;
-		src = x86_il_get_st_reg(X86_REG_ST0);
-		break;
-	case 1:
-		/* Need to convert a 32-bit or 64-bit memory operand */
-		dest_reg = X86_REG_ST0;
-		src = x86_il_resize_floating(x86_il_get_floating_op(0), RZ_FLOAT_IEEE754_BIN_80);
-		break;
-	case 2:
-		/* ST(i) operand, so no need for resizing */
-		dest_reg = ins->structure->operands[0].reg;
-		src = x86_il_get_floating_op(0);
-
-		/* Check if this is FADDP */
-		if (ins->structure->opcode[0] == 0xde) {
-			pop = true;
-		}
-		break;
-	default:
-		rz_warn_if_reached();
-		return NULL;
-	}
-
-	RzILOpFloat *sum = x86_il_fadd_with_rmode(src, x86_il_get_st_reg(dest_reg));
-	RzILOpEffect *store = x86_il_set_st_reg(dest_reg, sum, RZ_FLOAT_IEEE754_BIN_80);
-	RzILOpEffect *store_and_maybe_pop = (pop ? SEQ2(store, x86_il_st_pop()) : store);
-
-	return store_and_maybe_pop;
+	FLOATING_ARTITHMETIC_IL(fadd);
 }
 
 /**
@@ -399,9 +411,23 @@ IL_LIFTER(fadd) {
  * Add an integer to ST(0)
  */
 IL_LIFTER(fiadd) {
-	RzILOpPure *float_val = x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80);
-	RzILOpPure *sum = x86_il_fadd_with_rmode(x86_il_get_st_reg(X86_REG_ST0), float_val);
-	return x86_il_set_st_reg(X86_REG_ST0, sum, RZ_FLOAT_IEEE754_BIN_80);
+	FLOATING_INT_ARTITHMETIC_IL(fadd);
+}
+
+/**
+ * FMUL
+ * Multiply floating point values
+ */
+IL_LIFTER(fmul) {
+	FLOATING_ARTITHMETIC_IL(fmul);
+}
+
+/**
+ * FIMUL
+ * Multiply an integer to ST(0)
+ */
+IL_LIFTER(fimul) {
+	FLOATING_INT_ARTITHMETIC_IL(fmul);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

@@ -1149,6 +1149,24 @@ RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 	return ret;
 }
 
+/**
+ * \brief Multiply \p x and \p y with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \return RzILOpFloat* product
+ */
+RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+	use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FMUL, DUP(x), DUP(y));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
 RzILOpFloat *sint2f_floating_helper(RzFloatRMode rmode, RzFloatFormat format, RzILOpBitVector *val) {
 	return SINT2F(format, rmode, val);
 }
