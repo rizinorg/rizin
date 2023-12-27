@@ -5685,10 +5685,12 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 		buf = malloc(RZ_ABS(nb_bytes) + 1);
 		if (!buf) {
 			RZ_LOG_ERROR("Fail to alloc memory.");
+			ds_free(ds);
 			return 0;
 		}
 		if (rz_io_nread_at(core->io, address, buf, RZ_ABS(nb_bytes) + 1) == -1) {
 			RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".", address);
+			ds_free(ds);
 			free(buf);
 			return 0;
 		}
