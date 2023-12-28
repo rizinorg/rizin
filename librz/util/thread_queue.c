@@ -197,6 +197,22 @@ RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue) {
 }
 
 /**
+ * \brief  Returns the total number of element in the queue (thread-safe)
+ *
+ * \param  queue The RzThreadQueue to use
+ *
+ * \return Returns the total number of element in the queue
+ */
+RZ_API size_t rz_th_queue_size(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_val_if_fail(queue, false);
+
+	rz_th_lock_enter(queue->lock);
+	size_t size = rz_list_length(queue->list);
+	rz_th_lock_leave(queue->lock);
+	return size;
+}
+
+/**
  * \brief  Removes all elements from the queue, but does not awaits when empty.
  *
  * \param  queue The RzThreadQueue to pop from

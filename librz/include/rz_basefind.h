@@ -23,7 +23,7 @@ typedef struct rz_basefind_t {
 
 typedef struct rz_basefind_info_t {
 	ut32 n_threads; ///< Total number of search threads.
-	ut32 thread_idx; ///< Sesarch thread number.
+	ut32 thread_idx; ///< Thread number.
 	ut64 begin_address; ///< Thread related search address (start).
 	ut64 current_address; ///< Thread related search address (current).
 	ut64 end_address; ///< Thread related search address (end).
