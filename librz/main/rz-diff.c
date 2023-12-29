@@ -212,8 +212,8 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -h        show the help message\n"
 		"  -j        json output\n"
 		"  -q        quite output\n"
-		"  -v        show version information\n"
-		"  -V        be more verbose (stderr output)\n"
+		"  -V        show version information\n"
+		"  -v        be more verbose (stderr output)\n"
 		"  -e [k=v]  set an evaluable config variable\n"
 		"  -A        compare virtual and physical addresses\n"
 		"  -B        run 'aaa' when loading the bin\n"
@@ -289,8 +289,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'j': rz_diff_ctx_set_mode(ctx, DIFF_MODE_JSON); break;
 		case 'q': rz_diff_ctx_set_mode(ctx, DIFF_MODE_QUIET); break;
 		case 't': rz_diff_set_def(type, NULL, opt.arg); break;
-		case 'v': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
-		case 'V': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
+		case 'V': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'v': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
 		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
 		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
 		case 'e': rz_diff_ctx_add_evar(ctx, opt.arg); break;
