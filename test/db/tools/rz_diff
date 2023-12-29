@@ -14,9 +14,9 @@ ERROR: rz-diff: error, cannot open a file without a name.
 EOF
 RUN
 
-NAME=rz-diff -v~commit?"
+NAME=rz-diff -V~commit?"
 FILE==
-CMDS=!!rz-diff -C -v~commit?
+CMDS=!!rz-diff -C -V~commit?
 EXPECT=<<EOF
 1
 EOF

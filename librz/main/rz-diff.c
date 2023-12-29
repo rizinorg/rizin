@@ -78,6 +78,7 @@ typedef struct diff_context_t {
 	bool colors;
 	bool analyze_all;
 	bool command_line;
+	bool verbose;
 	const char *architecture;
 	const char *input_a;
 	const char *input_b;
@@ -211,7 +212,8 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -h        show the help message\n"
 		"  -j        json output\n"
 		"  -q        quite output\n"
-		"  -v        show version information\n"
+		"  -V        show version information\n"
+		"  -v        be more verbose (stderr output)\n"
 		"  -e [k=v]  set an evaluable config variable\n"
 		"  -A        compare virtual and physical addresses\n"
 		"  -B        run 'aaa' when loading the bin\n"
@@ -270,7 +272,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hHjqviABCTa:b:e:d:t:0:1:S:");
+	rz_getopt_init(&opt, argc, argv, "hHjqvViABCTa:b:e:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
@@ -287,7 +289,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'j': rz_diff_ctx_set_mode(ctx, DIFF_MODE_JSON); break;
 		case 'q': rz_diff_ctx_set_mode(ctx, DIFF_MODE_QUIET); break;
 		case 't': rz_diff_set_def(type, NULL, opt.arg); break;
-		case 'v': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'V': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'v': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
 		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
 		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
 		case 'e': rz_diff_ctx_add_evar(ctx, opt.arg); break;
@@ -584,12 +587,16 @@ static inline RzBinFile *core_get_file(RzCoreFile *cfile) {
 	return rz_pvector_at(&cfile->binfiles, 0);
 }
 
-static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits, RzList /*<char *>*/ *evars, bool colors) {
+static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits, RzList /*<char *>*/ *evars, bool colors, bool verbose) {
 	RzCore *core = NULL;
 	RzCoreFile *cfile = NULL;
 	RzBinFile *bfile = NULL;
 	RzListIter *it;
 	char *config;
+
+	if (verbose) {
+		fprintf(stderr, "rz-diff: loading file '%s'\n", filename);
+	}
 
 	core = rz_core_new();
 	if (!core) {
@@ -1297,13 +1304,18 @@ static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool com
 /**************************************** commands ***************************************/
 
 static char *execute_command(const char *command, const char *filename, DiffContext *ctx) {
-	RzCoreFile *cfile = rz_diff_load_file_with_core(filename, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
+	RzCoreFile *cfile = rz_diff_load_file_with_core(filename, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors, ctx->verbose);
 	if (!cfile) {
 		return NULL;
 	}
 
-	if (ctx->analyze_all && !rz_core_analysis_everything(cfile->core, false, NULL)) {
-		rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
+	if (ctx->analyze_all) {
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: analysing file '%s'\n", filename);
+		}
+		if (!rz_core_analysis_everything(cfile->core, false, NULL)) {
+			rz_diff_error("cannot analyze binary '%s'\n", filename);
+		}
 	}
 
 	char *output = rz_core_cmd_str(cfile->core, command);
@@ -1818,17 +1830,32 @@ static void diff_graph_as_json(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 	pj_end(pj);
 }
 
-static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, RzAnalysis *analysis_b, RzAnalysisFunction *find) {
+static bool diff_progess_status(const size_t n_left, const size_t n_matches, void *user) {
+	rz_cons_clear_line(true);
+	fprintf(stderr, "rz-diff: to check %" PFMTSZu " | matches %" PFMTSZu "\r", n_left, n_matches);
+	return !rz_cons_is_breaked();
+}
+
+static bool diff_check_ctrl_c(const size_t n_left, const size_t n_matches, void *user) {
+	return !rz_cons_is_breaked();
+}
+
+static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, RzAnalysis *analysis_b, RzAnalysisFunction *find, bool verbose) {
 	RzAnalysisMatchPair *pair = NULL;
 	RzAnalysisFunction *match = NULL;
 	RzAnalysisMatchResult *result = NULL;
+	RzAnalysisMatchOpt opts = { 0 };
 	RzList *list_a = rz_list_new();
 	if (!list_a || !rz_list_append(list_a, find)) {
 		RZ_LOG_ERROR("rz-diff: cannot allocate and initialize RzList for function search\n");
 		goto fail;
 	}
 
-	result = rz_analysis_match_functions_2(analysis_a, list_a, analysis_b, analysis_b->fcns);
+	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
+	opts.analysis_a = analysis_a;
+	opts.analysis_b = analysis_b;
+
+	result = rz_analysis_match_functions(list_a, analysis_b->fcns, &opts);
 	if (result && rz_list_length(result->matches) > 0) {
 		pair = (RzAnalysisMatchPair *)rz_list_first(result->matches);
 		match = (RzAnalysisFunction *)pair->pair_b;
@@ -1856,12 +1883,13 @@ static int comparePairBlocks(const RzAnalysisMatchPair *ma, const RzAnalysisMatc
  * Each node that doesn't match 100% with the other function will include
  * a unified diff of the assembly of the same basic block.
  * */
-static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b, ut64 addr_b, DiffMode mode) {
+static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b, ut64 addr_b, DiffMode mode, bool verbose) {
 	rz_return_if_fail(core_a && core_b);
 
 	PJ *pj = NULL;
 	RzAnalysisFunction *fcn_b = NULL, *fcn_a = NULL;
 	RzAnalysisMatchResult *result = NULL;
+	RzAnalysisMatchOpt opts = { 0 };
 
 	// find function
 	fcn_a = rz_analysis_get_function_at(core_a->analysis, addr_a);
@@ -1872,7 +1900,7 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 
 	if (addr_b == UT64_MAX) {
 		// find matching function on core B
-		fcn_b = find_best_matching_function(core_a->analysis, core_b->analysis, fcn_a);
+		fcn_b = find_best_matching_function(core_a->analysis, core_b->analysis, fcn_a, verbose);
 		if (!fcn_b) {
 			RZ_LOG_ERROR("rz-diff: cannot find best matching function for function at 0x%" PFMT64x "\n", addr_a);
 			return;
@@ -1885,8 +1913,12 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 		}
 	}
 
+	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
+	opts.analysis_a = core_a->analysis;
+	opts.analysis_b = core_b->analysis;
+
 	// calculate all the matches between the basic blocks of the 2 functions.
-	result = rz_analysis_match_basic_blocks_2(core_a->analysis, fcn_a, core_b->analysis, fcn_b);
+	result = rz_analysis_match_basic_blocks(fcn_a, fcn_b, &opts);
 	if (!result) {
 		RZ_LOG_ERROR("rz-diff: cannot calculate matching basic blocks for function at 0x%" PFMT64x "\n", addr_a);
 		return;
@@ -1998,7 +2030,7 @@ static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisM
  * Then the scores are shown in a table (when in quiet mode, the table
  * is headerless)
  * */
-static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
+static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool verbose) {
 	rz_return_if_fail(core_a && core_b);
 
 	char *output = NULL;
@@ -2007,6 +2039,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
 	RzTable *table = NULL;
 	RzAnalysisMatchResult *result = NULL;
 	RzAnalysisMatchPair *pair = NULL;
+	RzAnalysisMatchOpt opts = { 0 };
 	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
 	RzListIter *iter = NULL;
 	bool color = false, no_name = false;
@@ -2023,8 +2056,12 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
 		goto fail;
 	}
 
+	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
+	opts.analysis_a = core_a->analysis;
+	opts.analysis_b = core_b->analysis;
+
 	// calculate all the matches between the functions of the 2 different core files.
-	result = rz_analysis_match_functions_2(core_a->analysis, fcns_a, core_b->analysis, fcns_b);
+	result = rz_analysis_match_functions(fcns_a, fcns_b, &opts);
 	if (!result) {
 		RZ_LOG_ERROR("rz-diff: cannot perform matching functions search\n");
 		goto fail;
@@ -2145,12 +2182,12 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 	RzCoreFile *a = NULL;
 	RzCoreFile *b = NULL;
 
-	a = rz_diff_load_file_with_core(ctx->file_a, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
+	a = rz_diff_load_file_with_core(ctx->file_a, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors, ctx->verbose);
 	if (!a) {
 		goto rz_diff_graphs_files_bad;
 	}
 
-	b = rz_diff_load_file_with_core(ctx->file_b, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
+	b = rz_diff_load_file_with_core(ctx->file_b, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors, ctx->verbose);
 	if (!b) {
 		goto rz_diff_graphs_files_bad;
 	}
@@ -2170,9 +2207,15 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 		}
 
 		if (ctx->analyze_all) {
+			if (ctx->verbose) {
+				fprintf(stderr, "rz-diff: analysing file '%s'\n", ctx->file_a);
+			}
 			if (!rz_core_analysis_everything(a->core, false, NULL)) {
 				rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
 				goto rz_diff_graphs_files_bad;
+			}
+			if (ctx->verbose) {
+				fprintf(stderr, "rz-diff: analysing file '%s'\n", ctx->file_b);
 			}
 			if (!rz_core_analysis_everything(b->core, false, NULL)) {
 				rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
@@ -2189,17 +2232,29 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 				goto rz_diff_graphs_files_bad;
 			}
 		}
-		core_show_function_diff(a->core, address_a, b->core, address_b, ctx->mode);
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: start diffing.\n");
+		}
+		core_show_function_diff(a->core, address_a, b->core, address_b, ctx->mode, ctx->verbose);
 	} else {
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: analysing file '%s'\n", ctx->file_a);
+		}
 		if (!rz_core_analysis_everything(a->core, false, NULL)) {
 			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
 			goto rz_diff_graphs_files_bad;
+		}
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: analysing file '%s'\n", ctx->file_b);
 		}
 		if (!rz_core_analysis_everything(b->core, false, NULL)) {
 			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
 			goto rz_diff_graphs_files_bad;
 		}
-		core_diff_show(a->core, b->core, ctx->mode);
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: start diffing.\n");
+		}
+		core_diff_show(a->core, b->core, ctx->mode, ctx->verbose);
 	}
 
 	success = true;

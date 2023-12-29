@@ -1885,6 +1885,20 @@ typedef enum {
 #define RZ_ANALYSIS_SIMILARITY_PARTIAL_STR  "PARTIAL"
 #define RZ_ANALYSIS_SIMILARITY_UNLIKE_STR   "UNLIKE"
 
+typedef struct rz_analysis_match_info_t {
+	ut32 queue_len; ///< Total number of element left in the queue.
+	ut32 percentage; ///< Progress made by the search thread.
+} RzAnalysisMatchThreadInfo;
+
+typedef bool (*RzAnalysisMatchThreadInfoCb)(const size_t n_left, const size_t n_matches, void *user);
+
+typedef struct rz_analysis_match_options_t {
+	RZ_NONNULL RzAnalysis *analysis_a; ///< Analysis context for the first input
+	RZ_NONNULL RzAnalysis *analysis_b; ///< Analysis context for the second input (can be the same as analysis_a)
+	RzAnalysisMatchThreadInfoCb callback; ///< When set allows to get the thread information
+	void *user; ///< User pointer to pass to the callback function for the thread info
+} RzAnalysisMatchOpt;
+
 typedef struct rz_analysis_match_pair_t {
 	const void *pair_a; ///< Match pair from input A (the pointers are either RzAnalysisBlock or RzAnalysisFunction)
 	const void *pair_b; ///< Match pair from input B (the pointers are either RzAnalysisBlock or RzAnalysisFunction)
@@ -1909,10 +1923,8 @@ RZ_API double rz_analysis_similarity_basic_block(RZ_NONNULL RzAnalysis *analysis
 RZ_API double rz_analysis_similarity_function(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b);
 RZ_API double rz_analysis_similarity_basic_block_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisBlock *bb_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisBlock *bb_b);
 RZ_API double rz_analysis_similarity_function_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisFunction *fcn_b);
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b);
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RZ_NONNULL RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b);
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisFunction *fcn_b);
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions_2(RZ_NONNULL RzAnalysis *analysis_a, RzList /*<RzAnalysisFunction *>*/ *list_a, RZ_NONNULL RzAnalysis *analysis_b, RzList /*<RzAnalysisFunction *>*/ *list_b);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b, RZ_NONNULL RzAnalysisMatchOpt *opt);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b, RZ_NONNULL RzAnalysisMatchOpt *opt);
 RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *result);
 
 /* value.c */
