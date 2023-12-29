@@ -353,7 +353,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
 	if (var && !rz_analysis_var_storage_equals(&var->storage, stor)) {
 		// var name already exists at a different kind+delta
-		RZ_LOG_WARN("var name %s already exists at a different kind+delta\n", name);
+		RZ_LOG_INFO("var name %s already exists at a different kind+delta\n", name);
 		return NULL;
 	}
 	var = rz_analysis_function_get_var_at(fcn, stor);
