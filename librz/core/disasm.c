@@ -5936,15 +5936,16 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_kn(pj, "type_num", (ut64)(op->type & UT64_MAX));
 		pj_kn(pj, "type2_num", (ut64)(op->type2 & UT64_MAX));
 		// handle switch statements
-		if (op->switch_op && rz_list_length(op->switch_op->cases) > 0) {
+		if (op->switch_op && rz_pvector_len(op->switch_op->cases) > 0) {
 			// XXX - the java caseop will still be reported in the assembly,
 			// this is an artifact to make ensure the disassembly is properly
 			// represented during the analysis
-			RzListIter *iter2;
 			RzAnalysisCaseOp *caseop;
 			pj_k(pj, "switch");
 			pj_a(pj);
-			rz_list_foreach (op->switch_op->cases, iter2, caseop) {
+			void **it;
+			rz_pvector_foreach (op->switch_op->cases, it) {
+				caseop = *it;
 				pj_o(pj);
 				pj_kn(pj, "addr", caseop->addr);
 				pj_kN(pj, "value", (st64)caseop->value);

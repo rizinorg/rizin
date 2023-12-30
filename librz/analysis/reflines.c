@@ -194,13 +194,14 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 			break;
 		case RZ_ANALYSIS_OP_TYPE_SWITCH: {
 			RzAnalysisCaseOp *caseop;
-			RzListIter *iter;
 
 			// add caseops
 			if (!op.switch_op) {
 				break;
 			}
-			rz_list_foreach (op.switch_op->cases, iter, caseop) {
+			void **it;
+			rz_pvector_foreach (op.switch_op->cases, it) {
+				caseop = *it;
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					goto __next;
 				}

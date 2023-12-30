@@ -388,7 +388,7 @@ typedef struct rz_analysis_switch_obj_t {
 	ut64 min_val;
 	ut64 def_val;
 	ut64 max_val;
-	RzList /*<RzAnalysisCaseOp *>*/ *cases;
+	RzPVector /*<RzAnalysisCaseOp *>*/ *cases;
 	RzType *enum_type;
 } RzAnalysisSwitchOp;
 

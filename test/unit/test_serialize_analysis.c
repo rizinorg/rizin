@@ -39,7 +39,7 @@ bool test_analysis_switch_op_load() {
 	mu_assert_eq(sop->min_val, 42, "min val");
 	mu_assert_eq(sop->max_val, 45, "max val");
 	mu_assert_eq(sop->def_val, 46, "def val");
-	mu_assert_true(rz_list_empty(sop->cases), "no cases");
+	mu_assert_true(rz_pvector_empty(sop->cases), "no cases");
 	rz_analysis_switch_op_free(sop);
 
 	str = strdup("{\"addr\":1337,\"min\":42,\"max\":45,\"def\":46,\"cases\":[{\"addr\":1339,\"jump\":57005,\"value\":42},{\"addr\":1340,\"jump\":48879,\"value\":43}]}");
@@ -52,12 +52,12 @@ bool test_analysis_switch_op_load() {
 	mu_assert_eq(sop->min_val, 42, "min val");
 	mu_assert_eq(sop->max_val, 45, "max val");
 	mu_assert_eq(sop->def_val, 46, "def val");
-	mu_assert_eq(rz_list_length(sop->cases), 2, "cases count");
-	RzAnalysisCaseOp *cop = rz_list_get_n(sop->cases, 0);
+	mu_assert_eq(rz_pvector_len(sop->cases), 2, "cases count");
+	RzAnalysisCaseOp *cop = rz_pvector_at(sop->cases, 0);
 	mu_assert_eq(cop->addr, 1339, "addr");
 	mu_assert_eq(cop->jump, 0xdead, "jump");
 	mu_assert_eq(cop->value, 42, "value");
-	cop = rz_list_get_n(sop->cases, 1);
+	cop = rz_pvector_at(sop->cases, 1);
 	mu_assert_eq(cop->addr, 1340, "addr");
 	mu_assert_eq(cop->jump, 0xbeef, "jump");
 	mu_assert_eq(cop->value, 43, "value");

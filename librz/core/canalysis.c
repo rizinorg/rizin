@@ -378,9 +378,18 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		inputs += (bb2->jump == bb->addr) + (bb2->fail == bb->addr);
 	}
 	if (bb->switch_op) {
-		RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp);
-		outputs += rz_list_length(unique_cases);
-		rz_list_free(unique_cases);
+		RzAnalysisCaseOp *case_op;
+		void **it;
+		RzPVector *unique_cases = rz_pvector_new(NULL);
+		rz_pvector_foreach (bb->switch_op->cases, it) {
+			case_op = *it;
+			void **found = rz_pvector_find(unique_cases, case_op, (RzPVectorComparator)casecmp);
+			if (!found) {
+				rz_pvector_push(unique_cases, case_op);
+			}
+		}
+		outputs += rz_pvector_len(unique_cases);
+		rz_pvector_free(unique_cases);
 	}
 	ut64 opaddr = __opaddr(bb, addr);
 
@@ -398,13 +407,23 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 			rz_cons_printf(" f 0x%08" PFMT64x, bb->fail);
 		}
 		if (bb->switch_op) {
-			RzAnalysisCaseOp *cop;
-			RzListIter *iter;
-			RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp);
-			rz_list_foreach (unique_cases, iter, cop) {
-				rz_cons_printf(" s 0x%08" PFMT64x, cop->addr);
+			if (bb->switch_op) {
+				RzAnalysisCaseOp *case_op;
+				void **it;
+				RzPVector *unique_cases = rz_pvector_new(NULL);
+				rz_pvector_foreach (bb->switch_op->cases, it) {
+					case_op = *it;
+					void **found = rz_pvector_find(unique_cases, case_op, (RzPVectorComparator)casecmp);
+					if (!found) {
+						rz_pvector_push(unique_cases, case_op);
+					}
+				}
+				rz_pvector_foreach (unique_cases, it) {
+					case_op = *it;
+					rz_cons_printf(" s 0x%08" PFMT64x, case_op->addr);
+				}
+				rz_pvector_free(unique_cases);
 			}
-			rz_list_free(unique_cases);
 		}
 		rz_cons_newline();
 		break;
@@ -426,9 +445,10 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 			pj_k(pj, "cases");
 			pj_a(pj);
 			{
-				RzListIter *case_op_iter;
 				RzAnalysisCaseOp *case_op;
-				rz_list_foreach (bb->switch_op->cases, case_op_iter, case_op) {
+				void **it;
+				rz_pvector_foreach (bb->switch_op->cases, it) {
+					case_op = *it;
 					pj_o(pj);
 					pj_kn(pj, "addr", case_op->addr);
 					pj_kn(pj, "jump", case_op->jump);
@@ -3209,8 +3229,8 @@ typedef struct {
 	ut64 end_addr;
 	RzAnalysisFunction *fcn;
 	RzAnalysisBlock *cur_bb;
-	RzList /*<RzAnalysisBlock *>*/ *bbl, *path;
-	RzList /*<RzAnalysisCaseOp *>*/ *switch_path;
+	RzPVector /*<RzAnalysisBlock *>*/ *bbl, *path;
+	RzPVector /*<RzAnalysisCaseOp *>*/ *switch_path;
 } IterCtx;
 
 static int find_bb(ut64 *addr, RzAnalysisBlock *bb) {
@@ -3222,66 +3242,87 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	ut64 cur_addr = *next_i + ctx->start_addr;
 	if (ctx->fcn) {
 		if (!ctx->cur_bb) {
-			ctx->path = rz_list_new();
-			ctx->switch_path = rz_list_new();
-			ctx->bbl = rz_list_clone(ctx->fcn->bbs);
+			ctx->path = rz_pvector_new(NULL);
+			ctx->switch_path = rz_pvector_new(NULL);
+			RzPVector *bbs_vector = rz_pvector_new(NULL);
+			RzAnalysisBlock *block;
+			RzListIter *iter;
+			rz_list_foreach (ctx->fcn->bbs, iter, block) {
+				rz_pvector_push(bbs_vector, block);
+			}
+			ctx->bbl = rz_pvector_clone(bbs_vector);
+			rz_pvector_free(bbs_vector);
 			ctx->cur_bb = rz_analysis_get_block_at(ctx->fcn->analysis, ctx->fcn->addr);
-			rz_list_push(ctx->path, ctx->cur_bb);
+			rz_pvector_push(ctx->path, ctx->cur_bb);
 		}
 		RzAnalysisBlock *bb = ctx->cur_bb;
 		if (cur_addr >= bb->addr + bb->size) {
 			rz_reg_arena_push(ctx->fcn->analysis->reg);
-			RzListIter *bbit = NULL;
+			void **bbit = NULL;
 			if (bb->switch_op) {
-				RzAnalysisCaseOp *cop = rz_list_first(bb->switch_op->cases);
-				bbit = rz_list_find(ctx->bbl, &cop->jump, (RzListComparator)find_bb);
-				if (bbit) {
-					rz_list_push(ctx->switch_path, bb->switch_op->cases->head);
+				if (rz_pvector_len(bb->switch_op->cases) > 0) {
+					RzAnalysisCaseOp *cop = rz_pvector_at(bb->switch_op->cases, 0);
+					if (!cop) {
+						return false;
+					}
+					bbit = rz_pvector_find(ctx->bbl, &cop->jump, (RzPVectorComparator)find_bb);
+					if (bbit) {
+						RzAnalysisCaseOp *cop2 = rz_pvector_at(bb->switch_op->cases, 0);
+						if (!cop2) {
+							return false;
+						}
+						rz_pvector_push(ctx->switch_path, cop2);
+					}
 				}
 			} else {
-				bbit = rz_list_find(ctx->bbl, &bb->jump, (RzListComparator)find_bb);
+				bbit = rz_pvector_find(ctx->bbl, &bb->jump, (RzPVectorComparator)find_bb);
 				if (!bbit && bb->fail != UT64_MAX) {
-					bbit = rz_list_find(ctx->bbl, &bb->fail, (RzListComparator)find_bb);
+					bbit = rz_pvector_find(ctx->bbl, &bb->fail, (RzPVectorComparator)find_bb);
 				}
 			}
 			if (!bbit) {
-				RzListIter *cop_it = rz_list_last(ctx->switch_path);
+				void **cop_it = NULL;
+				if (rz_pvector_len(ctx->switch_path) > 0) {
+					cop_it = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 1);
+					if (!cop_it) {
+						return false;
+					}
+				}
 				RzAnalysisBlock *prev_bb = NULL;
 				do {
 					rz_reg_arena_pop(ctx->fcn->analysis->reg);
-					prev_bb = rz_list_pop(ctx->path);
+					prev_bb = rz_pvector_pop(ctx->path);
 					if (prev_bb->fail != UT64_MAX) {
-						bbit = rz_list_find(ctx->bbl, &prev_bb->fail, (RzListComparator)find_bb);
+						bbit = rz_pvector_find(ctx->bbl, &prev_bb->fail, (RzPVectorComparator)find_bb);
 						if (bbit) {
 							rz_reg_arena_push(ctx->fcn->analysis->reg);
-							rz_list_push(ctx->path, prev_bb);
+							rz_pvector_push(ctx->path, prev_bb);
 						}
 					}
 					if (!bbit && cop_it) {
-						RzAnalysisCaseOp *cop = rz_list_iter_get_data(cop_it);
-						if (cop->jump == prev_bb->addr && rz_list_iter_has_next(cop_it)) {
-							cop = rz_list_iter_get_next_data(cop_it);
-							rz_list_pop(ctx->switch_path);
-							rz_list_push(ctx->switch_path, rz_list_iter_get_next(cop_it));
-							cop_it = rz_list_iter_get_next(cop_it);
-							bbit = rz_list_find(ctx->bbl, &cop->jump, (RzListComparator)find_bb);
+						RzAnalysisCaseOp *cop = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 1);
+						if (cop->jump == prev_bb->addr && rz_pvector_len(ctx->switch_path) > 1) {
+							cop = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 2);
+							rz_pvector_pop(ctx->switch_path);
+							rz_pvector_push(ctx->switch_path, cop);
+							bbit = rz_pvector_find(ctx->bbl, &cop->jump, (RzPVectorComparator)find_bb);
 						}
 					}
-					if (cop_it && !rz_list_iter_has_next(cop_it)) {
-						rz_list_pop(ctx->switch_path);
-						cop_it = rz_list_last(ctx->switch_path);
+					if (cop_it && rz_pvector_len(ctx->switch_path) == 1) {
+						rz_pvector_pop(ctx->switch_path);
+						cop_it = rz_pvector_at(ctx->switch_path, rz_pvector_len(ctx->switch_path) - 1);
 					}
-				} while (!bbit && !rz_list_empty(ctx->path));
+				} while (!bbit && !rz_pvector_empty(ctx->path));
 			}
 			if (!bbit) {
-				rz_list_free(ctx->path);
-				rz_list_free(ctx->switch_path);
-				rz_list_free(ctx->bbl);
+				rz_pvector_free(ctx->path);
+				rz_pvector_free(ctx->switch_path);
+				rz_pvector_free(ctx->bbl);
 				return false;
 			}
-			ctx->cur_bb = rz_list_iter_get_data(bbit);
-			rz_list_push(ctx->path, ctx->cur_bb);
-			rz_list_delete(ctx->bbl, bbit);
+			ctx->cur_bb = (RzAnalysisBlock *)*bbit;
+			rz_pvector_push(ctx->path, ctx->cur_bb);
+			rz_pvector_remove_data(ctx->bbl, ctx->cur_bb);
 			*next_i = ctx->cur_bb->addr - ctx->start_addr;
 		}
 	} else if (cur_addr >= ctx->end_addr) {
