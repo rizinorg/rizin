@@ -90,6 +90,12 @@ if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')
   libcapstone_c_args += '-Wno-maybe-uninitialized'
 endif
 
+# Currently, Capstone next breaks on the gcc release build. This dials down the
+# optimization level.
+if get_option('buildtype') == 'release' and meson.get_compiler('c').get_id() == 'gcc'
+  libcapstone_c_args += '-O1'
+endif
+
 libcapstone = library('capstone', cs_files,
   c_args: libcapstone_c_args,
   include_directories: capstone_includes,
