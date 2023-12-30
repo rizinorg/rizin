@@ -14,6 +14,8 @@ RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
 RZ_IPI int bb_cmpaddr(const void *_a, const void *_b);
 RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b);
 
+RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to);
+RZ_IPI bool rz_core_get_string_at(RzCore *core, ut64 address, char **string, size_t *length, RzStrEnc *encoding, bool can_search);
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);

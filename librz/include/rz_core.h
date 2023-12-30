@@ -307,6 +307,7 @@ struct rz_core_t {
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;
+	/* TODO: Move this to RzCoreVisual instead */
 	int curtab; // current tab
 	int seltab; // selected tab
 	char *cmdremote;
@@ -653,8 +654,6 @@ RZ_API RzCmdStatus rz_core_lang_plugins_print(RzLang *lang, RzCmdStateOutput *st
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state);
 
 /* cil.c */
-// TODO : They should have been there, but require `static` vars inside canalysis.c
-//      : Keep esil in canalysis.c, and split the rzil in cil.c
 RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABLE RzAnalysisFunction *fcn);
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
