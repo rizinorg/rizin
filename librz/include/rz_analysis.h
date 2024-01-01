@@ -491,6 +491,7 @@ typedef struct rz_analysis_t {
 	int esil_goto_limit; // esil.gotolimit
 	int pcalign; // asm.pcalign
 	struct rz_analysis_esil_t *esil;
+	struct rz_analysis_esil_inter_state_t *esilinterstate;
 	RzAnalysisILVM *il_vm; ///< user-faced VM, NEVER use this for any analysis passes!
 	struct rz_analysis_plugin_t *cur;
 	RzAnalysisRange *limit; // analysis.from, analysis.to
@@ -1176,6 +1177,15 @@ typedef struct rz_analysis_esil_t {
 	void *user;
 	int stack_fd; // ahem, let's not do this
 } RzAnalysisEsil;
+
+/* During the analysis RzAnalysisEsil could be reset multiple times,
+ * thus there is a need to preserve some values between those runs.
+ */
+typedef struct rz_analysis_esil_inter_state_t {
+	bool analysis_stop;
+	ut64 last_read;
+	ut64 last_data;
+} RzAnalysisEsilInterState;
 
 /* Alias RegChange and MemChange */
 typedef RzAnalysisEsilRegChange RzAnalysisRzilRegChange;
