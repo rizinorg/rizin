@@ -538,4 +538,54 @@ IL_LIFTER(fidivr) {
 	FLOATING_INT_ARITHMETIC_IL(fdivr);
 }
 
+RzILOpEffect *fcom_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, bool st1) {
+	RzILOpPure *st0 = x86_il_get_st_reg(X86_REG_ST0);
+	RzILOpPure *op1;
+
+	if (st1 || ins->structure->op_count == 0) {
+		/* ST(1) is the default operand */
+		op1 = x86_il_get_st_reg(X86_REG_ST1);
+	} else {
+		op1 = x86_il_get_floating_op(0);
+	}
+
+	RzILOpEffect *set_c = BRANCH(FLT(st0, op1),
+		x86_il_set_fpu_flag(X86_FPU_C0, IL_TRUE),
+		BRANCH(FEQ(DUP(st0), DUP(op1)),
+			x86_il_set_fpu_flag(X86_FPU_C3, IL_TRUE), NOP()));
+
+	// TODO: Set the C0, C2, C3 bits depending on invalid arithmetic operand exception (#IA).
+	return SEQ5(
+		x86_il_set_fpu_flag(X86_FPU_C0, IL_FALSE),
+		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE),
+		x86_il_set_fpu_flag(X86_FPU_C2, IL_FALSE),
+		x86_il_set_fpu_flag(X86_FPU_C3, IL_FALSE),
+		set_c);
+}
+
+/**
+ * FCOM
+ * Compare floating point values and store the result in the FPU control word
+ */
+IL_LIFTER(fcom) {
+	return fcom_helper(ins, pc, analysis, false);
+}
+
+/**
+ * FCOMP
+ * Compare floating point values, store the result in the FPU control word and pop the stack
+ */
+IL_LIFTER(fcomp) {
+	return SEQ2(fcom_helper(ins, pc, analysis, false), x86_il_st_pop());
+}
+
+/**
+ * FCOMPP
+ * Compare floating point values, store the result in the FPU control word and pop the stack twice
+ */
+IL_LIFTER(fcompp) {
+	/* This function takes in no operands, so we set the [st1] argument to true in [fcom_helper]. */
+	return SEQ3(fcom_helper(ins, pc, analysis, true), x86_il_st_pop(), x86_il_st_pop());
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>

@@ -301,7 +301,10 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FIDIV] = x86_il_fidiv,
 	[X86_INS_FDIVR] = x86_il_fdivr,
 	[X86_INS_FDIVRP] = x86_il_fdivrp,
-	[X86_INS_FIDIVR] = x86_il_fidivr
+	[X86_INS_FIDIVR] = x86_il_fidivr,
+	[X86_INS_FCOM] = x86_il_fcom,
+	[X86_INS_FCOMP] = x86_il_fcomp,
+	[X86_INS_FCOMPP] = x86_il_fcompp
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
