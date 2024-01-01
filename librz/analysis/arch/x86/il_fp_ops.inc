@@ -650,4 +650,25 @@ IL_LIFTER(fsqrt) {
 	return x86_il_set_st_reg(X86_REG_ST0, x86_il_fsqrt_with_rmode(x86_il_get_st_reg(X86_REG_ST0)), RZ_FLOAT_IEEE754_BIN_80);
 }
 
+/**
+ * FNOP
+ * No-op
+ */
+IL_LIFTER(fnop) {
+	return NOP();
+}
+
+/**
+ * FISTTP
+ * Round ST(0) to an integer (using RZ_FLOAT_RMODE_RTZ), store the integer in the memory operand and pop the stack
+ */
+IL_LIFTER(fisttp) {
+	return SEQ2(
+		x86_il_set_op(0,
+			x86_il_int_from_floating(
+				x86_il_get_st_reg(X86_REG_ST0),
+				ins->structure->operands[0].size * BITS_PER_BYTE)),
+		x86_il_st_pop());
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>
