@@ -315,7 +315,9 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FUCOMI] = x86_il_fcomi,
 	[X86_INS_FUCOMPI] = x86_il_fcomip,
 	[X86_INS_FCHS] = x86_il_fchs,
-	[X86_INS_FTST] = x86_il_ftst
+	[X86_INS_FTST] = x86_il_ftst,
+	[X86_INS_FRNDINT] = x86_il_frndint,
+	[X86_INS_FSQRT] = x86_il_fsqrt
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);

@@ -1213,7 +1213,7 @@ RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
- * \return RzILOpFloat* product
+ * \return RzILOpFloat* difference
  */
 RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 	use_rmode = true;
@@ -1239,7 +1239,7 @@ RzILOpFloat *x86_il_fsubr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
- * \return RzILOpFloat* product
+ * \return RzILOpFloat* division
  */
 RzILOpFloat *x86_il_fdiv_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 	use_rmode = true;
@@ -1257,6 +1257,22 @@ RzILOpFloat *x86_il_fdiv_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  */
 RzILOpFloat *x86_il_fdivr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 	return x86_il_fdiv_with_rmode(y, x);
+}
+
+/**
+ * \brief Calculate the square root of \p x with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \return RzILOpFloat* square root
+ */
+RzILOpFloat *x86_il_fsqrt_with_rmode(RzILOpFloat *x) {
+	use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FSQRT, DUP(x));
+
+	rz_il_op_pure_free(x);
+
+	return ret;
 }
 
 /**

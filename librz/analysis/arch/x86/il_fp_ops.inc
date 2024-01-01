@@ -619,8 +619,7 @@ IL_LIFTER(fcomip) {
 IL_LIFTER(fchs) {
 	return SEQ2(
 		x86_il_set_st_reg(X86_REG_ST0, FNEG(x86_il_get_st_reg(X86_REG_ST0)), RZ_FLOAT_IEEE754_BIN_80),
-		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE)
-	);
+		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
 
 /**
@@ -630,6 +629,25 @@ IL_LIFTER(fchs) {
 IL_LIFTER(ftst) {
 	/* We reuse the [fcom_helper] function here by passing in the [op1_override] argument. */
 	return fcom_helper(ins, pc, analysis, F80(0.0));
+}
+
+/**
+ * FRNDINT
+ * Round ST(0) to an integer
+ */
+IL_LIFTER(frndint) {
+	return x86_il_set_st_reg(X86_REG_ST0,
+		/* Not very sure about whether the rounded integer should be limited to 64 bits or not. */
+		x86_il_floating_from_int(x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), 64), RZ_FLOAT_IEEE754_BIN_80),
+		RZ_FLOAT_IEEE754_BIN_80);
+}
+
+/**
+ * FSQRT
+ * Calculate the square root of ST(0)
+ */
+IL_LIFTER(fsqrt) {
+	return x86_il_set_st_reg(X86_REG_ST0, x86_il_fsqrt_with_rmode(x86_il_get_st_reg(X86_REG_ST0)), RZ_FLOAT_IEEE754_BIN_80);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
