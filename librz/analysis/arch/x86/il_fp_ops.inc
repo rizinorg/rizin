@@ -440,10 +440,26 @@ IL_LIFTER(fsub) {
 
 /**
  * FISUB
- * Subtract an integer to ST(0)
+ * Subtract an integer from ST(0)
  */
 IL_LIFTER(fisub) {
 	FLOATING_INT_ARTITHMETIC_IL(fsub);
+}
+
+/**
+ * FSUBR
+ * Reverse subtract floating point value
+ */
+IL_LIFTER(fsubr) {
+	FLOATING_ARTITHMETIC_IL(fsubr);
+}
+
+/**
+ * FISUBR
+ * Subtract ST(0) from an integer and store the result in ST(0)
+ */
+IL_LIFTER(fisubr) {
+	FLOATING_INT_ARTITHMETIC_IL(fsubr);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

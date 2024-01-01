@@ -159,6 +159,7 @@ RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width);
 RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
 RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
 RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
+RzILOpFloat *x86_il_fsubr_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
 
 RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc);
 

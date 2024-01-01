@@ -1227,6 +1227,13 @@ RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 }
 
 /**
+ * \brief Subtract \p y from \p x (reverse of \ref x86_il_fsub_with_rmode)
+ */
+RzILOpFloat *x86_il_fsubr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+	return x86_il_fsub_with_rmode(y, x);
+}
+
+/**
  * \brief Store a float \p val at FPU stack \p reg
  *
  * \param reg
