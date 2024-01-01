@@ -538,11 +538,13 @@ IL_LIFTER(fidivr) {
 	FLOATING_INT_ARITHMETIC_IL(fdivr);
 }
 
-RzILOpEffect *fcom_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, bool st1) {
+RzILOpEffect *fcom_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, RzILOpPure *op1_override) {
 	RzILOpPure *st0 = x86_il_get_st_reg(X86_REG_ST0);
 	RzILOpPure *op1;
 
-	if (st1 || ins->structure->op_count == 0) {
+	if (op1_override) {
+		op1 = op1_override;
+	} else if (ins->structure->op_count == 0) {
 		/* ST(1) is the default operand */
 		op1 = x86_il_get_st_reg(X86_REG_ST1);
 	} else {
@@ -562,7 +564,7 @@ RzILOpEffect *fcom_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, bo
  * Compare floating point values and store the result in the FPU control word
  */
 IL_LIFTER(fcom) {
-	return fcom_helper(ins, pc, analysis, false);
+	return fcom_helper(ins, pc, analysis, NULL);
 }
 
 /**
@@ -570,7 +572,7 @@ IL_LIFTER(fcom) {
  * Compare floating point values, store the result in the FPU control word and pop the stack
  */
 IL_LIFTER(fcomp) {
-	return SEQ2(fcom_helper(ins, pc, analysis, false), x86_il_st_pop());
+	return SEQ2(fcom_helper(ins, pc, analysis, NULL), x86_il_st_pop());
 }
 
 /**
@@ -578,8 +580,8 @@ IL_LIFTER(fcomp) {
  * Compare floating point values, store the result in the FPU control word and pop the stack twice
  */
 IL_LIFTER(fcompp) {
-	/* This function takes in no operands, so we set the [st1] argument to true in [fcom_helper]. */
-	return SEQ3(fcom_helper(ins, pc, analysis, true), x86_il_st_pop(), x86_il_st_pop());
+	/* This function takes in no operands, so we pass in the [op1_override] argument in [fcom_helper]. */
+	return SEQ3(fcom_helper(ins, pc, analysis, x86_il_get_st_reg(X86_REG_ST1)), x86_il_st_pop(), x86_il_st_pop());
 }
 
 RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
@@ -608,6 +610,26 @@ IL_LIFTER(fcomi) {
  */
 IL_LIFTER(fcomip) {
 	return SEQ2(fcomi_helper(ins, pc, analysis), x86_il_st_pop());
+}
+
+/**
+ * FCHS
+ * Change the sign of ST(0)
+ */
+IL_LIFTER(fchs) {
+	return SEQ2(
+		x86_il_set_st_reg(X86_REG_ST0, FNEG(x86_il_get_st_reg(X86_REG_ST0)), RZ_FLOAT_IEEE754_BIN_80),
+		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE)
+	);
+}
+
+/**
+ * FTST
+ * Test the value in ST(0) (i.e. compare with 0.0)
+ */
+IL_LIFTER(ftst) {
+	/* We reuse the [fcom_helper] function here by passing in the [op1_override] argument. */
+	return fcom_helper(ins, pc, analysis, F80(0.0));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
