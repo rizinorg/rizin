@@ -304,7 +304,16 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FIDIVR] = x86_il_fidivr,
 	[X86_INS_FCOM] = x86_il_fcom,
 	[X86_INS_FCOMP] = x86_il_fcomp,
-	[X86_INS_FCOMPP] = x86_il_fcompp
+	[X86_INS_FCOMPP] = x86_il_fcompp,
+	[X86_INS_FICOM] = x86_il_fcomi,
+	[X86_INS_FICOMP] = x86_il_fcomip,
+	/* Using the same FCOM & FCOMI family IL lifters for FUCOM FUCOMI family instructions
+	 * since we don't support invalid arithmetic operand exceptions (#IA) anyways. */
+	[X86_INS_FUCOM] = x86_il_fcom,
+	[X86_INS_FUCOMP] = x86_il_fcomp,
+	[X86_INS_FUCOMPP] = x86_il_fcompp,
+	[X86_INS_FUCOMI] = x86_il_fcomi,
+	[X86_INS_FUCOMPI] = x86_il_fcomip
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);

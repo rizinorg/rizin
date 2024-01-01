@@ -549,18 +549,12 @@ RzILOpEffect *fcom_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, bo
 		op1 = x86_il_get_floating_op(0);
 	}
 
-	RzILOpEffect *set_c = BRANCH(FLT(st0, op1),
-		x86_il_set_fpu_flag(X86_FPU_C0, IL_TRUE),
-		BRANCH(FEQ(DUP(st0), DUP(op1)),
-			x86_il_set_fpu_flag(X86_FPU_C3, IL_TRUE), NOP()));
-
 	// TODO: Set the C0, C2, C3 bits depending on invalid arithmetic operand exception (#IA).
-	return SEQ5(
-		x86_il_set_fpu_flag(X86_FPU_C0, IL_FALSE),
+	return SEQ4(
+		x86_il_set_fpu_flag(X86_FPU_C0, FLT(st0, op1)),
 		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE),
 		x86_il_set_fpu_flag(X86_FPU_C2, IL_FALSE),
-		x86_il_set_fpu_flag(X86_FPU_C3, IL_FALSE),
-		set_c);
+		x86_il_set_fpu_flag(X86_FPU_C3, FEQ(DUP(st0), DUP(op1))));
 }
 
 /**
@@ -586,6 +580,34 @@ IL_LIFTER(fcomp) {
 IL_LIFTER(fcompp) {
 	/* This function takes in no operands, so we set the [st1] argument to true in [fcom_helper]. */
 	return SEQ3(fcom_helper(ins, pc, analysis, true), x86_il_st_pop(), x86_il_st_pop());
+}
+
+RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	RzILOpPure *st0 = x86_il_get_st_reg(X86_REG_ST0);
+	RzILOpPure *sti = x86_il_get_floating_op(1);
+
+	// TODO: Set the ZF, PF, CF depending on invalid arithmetic operand exception (#IA).
+	return SEQ4(
+		x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE),
+		SETG(EFLAGS(ZF), FEQ(st0, sti)),
+		SETG(EFLAGS(PF), IL_FALSE),
+		SETG(EFLAGS(CF), FLT(DUP(st0), DUP(sti))));
+}
+
+/**
+ * FCOMI
+ * Compare ST(0) and ST(i) and set the EFLAGS accordingly
+ */
+IL_LIFTER(fcomi) {
+	return fcomi_helper(ins, pc, analysis);
+}
+
+/**
+ * FCOMIP
+ * Compare ST(0) and ST(i), set the EFLAGS accordingly and pop the stack
+ */
+IL_LIFTER(fcomip) {
+	return SEQ2(fcomi_helper(ins, pc, analysis), x86_il_st_pop());
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
