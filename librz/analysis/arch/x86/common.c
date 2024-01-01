@@ -1131,42 +1131,6 @@ RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, RzFloatFormat format) {
 	return ret;
 }
 
-/**
- * \brief Add \p x and \p y with the correct rounding mode as determined from
- * the FPU control word
- *
- * \param x Desirable that it is a small expression since it will be duped
- * \param y Desirable that it is a small expression since it will be duped
- * \return RzILOpFloat* sum
- */
-RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
-	use_rmode = true;
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FADD, DUP(x), DUP(y));
-
-	rz_il_op_pure_free(x);
-	rz_il_op_pure_free(y);
-
-	return ret;
-}
-
-/**
- * \brief Multiply \p x and \p y with the correct rounding mode as determined
- * from the FPU control word
- *
- * \param x Desirable that it is a small expression since it will be duped
- * \param y Desirable that it is a small expression since it will be duped
- * \return RzILOpFloat* product
- */
-RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
-	use_rmode = true;
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FMUL, DUP(x), DUP(y));
-
-	rz_il_op_pure_free(x);
-	rz_il_op_pure_free(y);
-
-	return ret;
-}
-
 RzILOpFloat *sint2f_floating_helper(RzFloatRMode rmode, RzFloatFormat format, RzILOpBitVector *val) {
 	return SINT2F(format, rmode, val);
 }
@@ -1204,6 +1168,61 @@ RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width) {
 	use_rmode = true;
 	RzILOpFloat *ret = EXEC_WITH_RMODE(f2sint_floating_helper, width, DUP(float_val));
 	rz_il_op_pure_free(float_val);
+	return ret;
+}
+
+/**
+ * \brief Add \p x and \p y with the correct rounding mode as determined from
+ * the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \return RzILOpFloat* sum
+ */
+RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+	use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FADD, DUP(x), DUP(y));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
+/**
+ * \brief Multiply \p x and \p y with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \return RzILOpFloat* product
+ */
+RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+	use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FMUL, DUP(x), DUP(y));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
+/**
+ * \brief Subtract \p x from \p y with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \return RzILOpFloat* product
+ */
+RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+	use_rmode = true;
+	// y - x, hence y is the first argument
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FSUB, DUP(y), DUP(x));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
 	return ret;
 }
 

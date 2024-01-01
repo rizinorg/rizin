@@ -430,4 +430,20 @@ IL_LIFTER(fimul) {
 	FLOATING_INT_ARTITHMETIC_IL(fmul);
 }
 
+/**
+ * FSUB
+ * Subtract floating point value
+ */
+IL_LIFTER(fsub) {
+	FLOATING_ARTITHMETIC_IL(fsub);
+}
+
+/**
+ * FISUB
+ * Subtract an integer to ST(0)
+ */
+IL_LIFTER(fisub) {
+	FLOATING_INT_ARTITHMETIC_IL(fsub);
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>

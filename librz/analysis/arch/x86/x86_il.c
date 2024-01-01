@@ -278,7 +278,9 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FADD] = x86_il_fadd,
 	[X86_INS_FIADD] = x86_il_fiadd,
 	[X86_INS_FMUL] = x86_il_fmul,
-	[X86_INS_FIMUL] = x86_il_fimul
+	[X86_INS_FIMUL] = x86_il_fimul,
+	[X86_INS_FSUB] = x86_il_fsub,
+	[X86_INS_FISUB] = x86_il_fisub
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
