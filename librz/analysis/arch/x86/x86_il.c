@@ -276,16 +276,31 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FBSTP] = x86_il_fbstp,
 	[X86_INS_FABS] = x86_il_fabs,
 	[X86_INS_FADD] = x86_il_fadd,
+#if CS_API_MAJOR > 4
+	/* This feels wrong (since PFADD is a 3DNow instruction from what I
+	 * understand after going through the source code), but aquynh said this is
+	 * correct and this is what radare2 also uses.
+	 * See https://github.com/capstone-engine/capstone/issues/1456#issuecomment-482620580
+	 * and https://github.com/radareorg/radare2/blob/7fddeb97096e5d4db977dcd7d4f84db148eba595/libr/arch/p/x86/plugin_cs.c#L2158 */
+	[X86_INS_PFADD] = x86_il_faddp,
+#else
+	[X86_INS_FADDP] = x86_il_faddp,
+#endif
 	[X86_INS_FIADD] = x86_il_fiadd,
 	[X86_INS_FMUL] = x86_il_fmul,
+	[X86_INS_FMULP] = x86_il_fmulp,
 	[X86_INS_FIMUL] = x86_il_fimul,
 	[X86_INS_FSUB] = x86_il_fsub,
+	[X86_INS_FSUBP] = x86_il_fsubp,
 	[X86_INS_FISUB] = x86_il_fisub,
 	[X86_INS_FSUBR] = x86_il_fsubr,
+	[X86_INS_FSUBRP] = x86_il_fsubrp,
 	[X86_INS_FISUBR] = x86_il_fisubr,
 	[X86_INS_FDIV] = x86_il_fdiv,
+	[X86_INS_FDIVP] = x86_il_fdivp,
 	[X86_INS_FIDIV] = x86_il_fidiv,
 	[X86_INS_FDIVR] = x86_il_fdivr,
+	[X86_INS_FDIVRP] = x86_il_fdivrp,
 	[X86_INS_FIDIVR] = x86_il_fidivr
 };
 

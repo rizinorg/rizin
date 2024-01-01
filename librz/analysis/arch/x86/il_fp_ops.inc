@@ -346,24 +346,14 @@ IL_LIFTER(fabs) {
 	return SEQ2(x86_il_set_st_reg(X86_REG_ST0, abs_value, RZ_FLOAT_IEEE754_BIN_80), x86_il_set_fpu_flag(X86_FPU_C1, IL_FALSE));
 }
 
-#define FLOATING_ARTITHMETIC_IL(op) \
+#define FLOATING_ARITHMETIC_IL(op) \
 	do { \
 		RzILOpFloat *src; \
 		X86Reg dest_reg; \
 \
-		/* Capstone does not differentiate between FADD and FADDP, so we need to \
-		 * manually check whether we need to pop the stack the the end not. */ \
-		bool pop = false; \
-\
 		/* TODO: Check whether all the enumerated cases here are correct, through \
 		 * code coverage. */ \
 		switch (ins->structure->op_count) { \
-		case 0: \
-			/* FADDP with no arguments */ \
-			pop = true; \
-			dest_reg = X86_REG_ST1; \
-			src = x86_il_get_st_reg(X86_REG_ST0); \
-			break; \
 		case 1: \
 			/* Need to convert a 32-bit or 64-bit memory operand */ \
 			dest_reg = X86_REG_ST0; \
@@ -373,29 +363,34 @@ IL_LIFTER(fabs) {
 			/* ST(i) operand, so no need for resizing */ \
 			dest_reg = ins->structure->operands[0].reg; \
 			src = x86_il_get_floating_op(0); \
-\
-			/* Check if this is FADDP */ \
-			if (ins->structure->opcode[0] == 0xde) { \
-				pop = true; \
-			} \
 			break; \
 		default: \
 			rz_warn_if_reached(); \
 			return NULL; \
 		} \
 \
-		RzILOpFloat *sum = x86_il_##op##_with_rmode(src, x86_il_get_st_reg(dest_reg)); \
-		RzILOpEffect *store = x86_il_set_st_reg(dest_reg, sum, RZ_FLOAT_IEEE754_BIN_80); \
-		RzILOpEffect *store_and_maybe_pop = (pop ? SEQ2(store, x86_il_st_pop()) : store); \
-\
-		return store_and_maybe_pop; \
+		RzILOpFloat *result = x86_il_##op##_with_rmode(src, x86_il_get_st_reg(dest_reg)); \
+		return x86_il_set_st_reg(dest_reg, result, RZ_FLOAT_IEEE754_BIN_80); \
 	} while (0)
 
-#define FLOATING_INT_ARTITHMETIC_IL(op) \
+#define FLOATING_ARITHMETIC_POP_IL(op) \
+	do { \
+		X86Reg dest_reg = X86_REG_ST1; \
+\
+		if (ins->structure->op_count == 2) { \
+			/* Destination register passed in as the first operand */ \
+			dest_reg = ins->structure->operands[0].reg; \
+		} \
+\
+		RzILOpPure *result = x86_il_##op##_with_rmode(x86_il_get_st_reg(X86_REG_ST0), x86_il_get_st_reg(dest_reg)); \
+		return x86_il_set_st_reg(dest_reg, result, RZ_FLOAT_IEEE754_BIN_80); \
+	} while (0)
+
+#define FLOATING_INT_ARITHMETIC_IL(op) \
 	do { \
 		RzILOpPure *float_val = x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80); \
-		RzILOpPure *sum = x86_il_fadd_with_rmode(x86_il_get_st_reg(X86_REG_ST0), float_val); \
-		return x86_il_set_st_reg(X86_REG_ST0, sum, RZ_FLOAT_IEEE754_BIN_80); \
+		RzILOpPure *result = x86_il_##op##_with_rmode(float_val, x86_il_get_st_reg(X86_REG_ST0)); \
+		return x86_il_set_st_reg(X86_REG_ST0, result, RZ_FLOAT_IEEE754_BIN_80); \
 	} while (0)
 
 /**
@@ -403,7 +398,16 @@ IL_LIFTER(fabs) {
  * Add floating point values
  */
 IL_LIFTER(fadd) {
-	FLOATING_ARTITHMETIC_IL(fadd);
+	FLOATING_ARITHMETIC_IL(fadd);
+}
+
+/**
+ * FADDP
+ * (the corresponding enum is PFADD for Capstone version > 4)
+ * Add ST(0) to ST(i) and pop the stack
+ */
+IL_LIFTER(faddp) {
+	FLOATING_ARITHMETIC_POP_IL(fadd);
 }
 
 /**
@@ -411,7 +415,7 @@ IL_LIFTER(fadd) {
  * Add an integer to ST(0)
  */
 IL_LIFTER(fiadd) {
-	FLOATING_INT_ARTITHMETIC_IL(fadd);
+	FLOATING_INT_ARITHMETIC_IL(fadd);
 }
 
 /**
@@ -419,7 +423,15 @@ IL_LIFTER(fiadd) {
  * Multiply floating point values
  */
 IL_LIFTER(fmul) {
-	FLOATING_ARTITHMETIC_IL(fmul);
+	FLOATING_ARITHMETIC_IL(fmul);
+}
+
+/**
+ * FMULP
+ * Multiply ST(0) to ST(i) and pop the stack
+ */
+IL_LIFTER(fmulp) {
+	FLOATING_ARITHMETIC_POP_IL(fmul);
 }
 
 /**
@@ -427,7 +439,7 @@ IL_LIFTER(fmul) {
  * Multiply an integer to ST(0)
  */
 IL_LIFTER(fimul) {
-	FLOATING_INT_ARTITHMETIC_IL(fmul);
+	FLOATING_INT_ARITHMETIC_IL(fmul);
 }
 
 /**
@@ -435,7 +447,15 @@ IL_LIFTER(fimul) {
  * Subtract floating point value
  */
 IL_LIFTER(fsub) {
-	FLOATING_ARTITHMETIC_IL(fsub);
+	FLOATING_ARITHMETIC_IL(fsub);
+}
+
+/**
+ * FSUBP
+ * Subtract ST(0) from ST(i) and pop the stack
+ */
+IL_LIFTER(fsubp) {
+	FLOATING_ARITHMETIC_POP_IL(fsub);
 }
 
 /**
@@ -443,7 +463,7 @@ IL_LIFTER(fsub) {
  * Subtract an integer from ST(0)
  */
 IL_LIFTER(fisub) {
-	FLOATING_INT_ARTITHMETIC_IL(fsub);
+	FLOATING_INT_ARITHMETIC_IL(fsub);
 }
 
 /**
@@ -451,7 +471,15 @@ IL_LIFTER(fisub) {
  * Reverse subtract floating point value
  */
 IL_LIFTER(fsubr) {
-	FLOATING_ARTITHMETIC_IL(fsubr);
+	FLOATING_ARITHMETIC_IL(fsubr);
+}
+
+/**
+ * FSUBRP
+ * Subtract ST(i) from ST(0), store the result in ST(i) and pop the stack
+ */
+IL_LIFTER(fsubrp) {
+	FLOATING_ARITHMETIC_POP_IL(fsubr);
 }
 
 /**
@@ -459,7 +487,7 @@ IL_LIFTER(fsubr) {
  * Subtract ST(0) from an integer and store the result in ST(0)
  */
 IL_LIFTER(fisubr) {
-	FLOATING_INT_ARTITHMETIC_IL(fsubr);
+	FLOATING_INT_ARITHMETIC_IL(fsubr);
 }
 
 /**
@@ -467,7 +495,15 @@ IL_LIFTER(fisubr) {
  * Divide floating point value
  */
 IL_LIFTER(fdiv) {
-	FLOATING_ARTITHMETIC_IL(fdiv);
+	FLOATING_ARITHMETIC_IL(fdiv);
+}
+
+/**
+ * FDIVP
+ * Divide ST(0) from ST(i) and pop the stack
+ */
+IL_LIFTER(fdivp) {
+	FLOATING_ARITHMETIC_POP_IL(fdiv);
 }
 
 /**
@@ -475,7 +511,7 @@ IL_LIFTER(fdiv) {
  * Divide an integer from ST(0)
  */
 IL_LIFTER(fidiv) {
-	FLOATING_INT_ARTITHMETIC_IL(fdiv);
+	FLOATING_INT_ARITHMETIC_IL(fdiv);
 }
 
 /**
@@ -483,7 +519,15 @@ IL_LIFTER(fidiv) {
  * Reverse divide floating point value
  */
 IL_LIFTER(fdivr) {
-	FLOATING_ARTITHMETIC_IL(fdivr);
+	FLOATING_ARITHMETIC_IL(fdivr);
+}
+
+/**
+ * FDIVRP
+ * Divide ST(i) from ST(0), store the result in ST(i) and pop the stack
+ */
+IL_LIFTER(fdivrp) {
+	FLOATING_ARITHMETIC_POP_IL(fdiv);
 }
 
 /**
@@ -491,7 +535,7 @@ IL_LIFTER(fdivr) {
  * Divide ST(0) from an integer and store the result in ST(0)
  */
 IL_LIFTER(fidivr) {
-	FLOATING_INT_ARTITHMETIC_IL(fdivr);
+	FLOATING_INT_ARITHMETIC_IL(fdivr);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
