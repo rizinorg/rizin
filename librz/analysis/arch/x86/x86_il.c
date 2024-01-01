@@ -282,7 +282,11 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FSUB] = x86_il_fsub,
 	[X86_INS_FISUB] = x86_il_fisub,
 	[X86_INS_FSUBR] = x86_il_fsubr,
-	[X86_INS_FISUBR] = x86_il_fisubr
+	[X86_INS_FISUBR] = x86_il_fisubr,
+	[X86_INS_FDIV] = x86_il_fdiv,
+	[X86_INS_FIDIV] = x86_il_fidiv,
+	[X86_INS_FDIVR] = x86_il_fdivr,
+	[X86_INS_FIDIVR] = x86_il_fidivr
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);

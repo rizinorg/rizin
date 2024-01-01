@@ -462,4 +462,36 @@ IL_LIFTER(fisubr) {
 	FLOATING_INT_ARTITHMETIC_IL(fsubr);
 }
 
+/**
+ * FDIV
+ * Divide floating point value
+ */
+IL_LIFTER(fdiv) {
+	FLOATING_ARTITHMETIC_IL(fdiv);
+}
+
+/**
+ * FIDIV
+ * Divide an integer from ST(0)
+ */
+IL_LIFTER(fidiv) {
+	FLOATING_INT_ARTITHMETIC_IL(fdiv);
+}
+
+/**
+ * FDIVR
+ * Reverse divide floating point value
+ */
+IL_LIFTER(fdivr) {
+	FLOATING_ARTITHMETIC_IL(fdivr);
+}
+
+/**
+ * FIDIVR
+ * Divide ST(0) from an integer and store the result in ST(0)
+ */
+IL_LIFTER(fidivr) {
+	FLOATING_INT_ARTITHMETIC_IL(fdivr);
+}
+
 #include <rz_il/rz_il_opbuilder_end.h>

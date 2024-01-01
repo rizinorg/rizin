@@ -1218,7 +1218,7 @@ RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 	use_rmode = true;
 	// y - x, hence y is the first argument
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FSUB, DUP(y), DUP(x));
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FDIV, DUP(y), DUP(x));
 
 	rz_il_op_pure_free(x);
 	rz_il_op_pure_free(y);
@@ -1231,6 +1231,32 @@ RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  */
 RzILOpFloat *x86_il_fsubr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 	return x86_il_fsub_with_rmode(y, x);
+}
+
+/**
+ * \brief Divide \p x from \p y with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \return RzILOpFloat* product
+ */
+RzILOpFloat *x86_il_fdiv_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+	use_rmode = true;
+	// y / x, hence y is the first argument
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FSUB, DUP(y), DUP(x));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
+/**
+ * \brief Divide \p y from \p x (reverse of \ref x86_il_fdiv_with_rmode)
+ */
+RzILOpFloat *x86_il_fdivr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+	return x86_il_fdiv_with_rmode(y, x);
 }
 
 /**
