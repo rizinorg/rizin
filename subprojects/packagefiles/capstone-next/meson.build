@@ -90,11 +90,10 @@ if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')
   libcapstone_c_args += '-Wno-maybe-uninitialized'
 endif
 
-# Currently, Capstone next breaks on the gcc release build. This dials down the
-# optimization level.
-if get_option('buildtype') == 'release' and meson.get_compiler('c').get_id() == 'gcc'
-  libcapstone_c_args += '-O1'
-endif
+# As of a128f31d20befedbf06ca9560f1bb23b5ebb3c4e, the Capstone
+# AArch64_AM_isSVEMaskOfIdenticalElements family of functions violates C strict
+# aliasing rules
+libcapstone_c_args += '-fno-strict-aliasing'
 
 libcapstone = library('capstone', cs_files,
   c_args: libcapstone_c_args,
