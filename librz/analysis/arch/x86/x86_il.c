@@ -23,19 +23,19 @@
 
 #define FPU_REGS \
 	"cwd", /* X86_REG_FPU_CW */ \
-	"swd", /* X86_REG_FPSW */ \
-	"ftw", /* X86_REG_FPU_TW */ \
-	"fop", /* X86_REG_FPU_OP */ \
-	"frip", /* X86_REG_FPU_IP */ \
-	"frdp", /* X86_REG_FPU_DP */ \
-	"st0", /* X86_REG_ST0 */ \
-	"st1", /* X86_REG_ST1 */ \
-	"st2", /* X86_REG_ST2 */ \
-	"st3", /* X86_REG_ST3 */ \
-	"st4", /* X86_REG_ST4 */ \
-	"st5", /* X86_REG_ST5 */ \
-	"st6", /* X86_REG_ST6 */ \
-	"st7" /* X86_REG_ST6 */
+		"swd", /* X86_REG_FPSW */ \
+		"ftw", /* X86_REG_FPU_TW */ \
+		"fop", /* X86_REG_FPU_OP */ \
+		"frip", /* X86_REG_FPU_IP */ \
+		"frdp", /* X86_REG_FPU_DP */ \
+		"st0", /* X86_REG_ST0 */ \
+		"st1", /* X86_REG_ST1 */ \
+		"st2", /* X86_REG_ST2 */ \
+		"st3", /* X86_REG_ST3 */ \
+		"st4", /* X86_REG_ST4 */ \
+		"st5", /* X86_REG_ST5 */ \
+		"st6", /* X86_REG_ST6 */ \
+		"st7" /* X86_REG_ST6 */
 
 /**
  * \brief All registers bound to IL variables for x86 16-bit
@@ -288,15 +288,8 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FBSTP] = x86_il_fbstp,
 	[X86_INS_FABS] = x86_il_fabs,
 	[X86_INS_FADD] = x86_il_fadd,
-#if CS_API_MAJOR > 4
-	/* This feels wrong (since PFADD is a 3DNow instruction from what I
-	 * understand after going through the source code), but aquynh said this is
-	 * correct and this is what radare2 also uses.
-	 * See https://github.com/capstone-engine/capstone/issues/1456#issuecomment-482620580
-	 * and https://github.com/radareorg/radare2/blob/7fddeb97096e5d4db977dcd7d4f84db148eba595/libr/arch/p/x86/plugin_cs.c#L2158 */
-	[X86_INS_PFADD] = x86_il_faddp,
-#else
-	[X86_INS_FADDP] = x86_il_faddp,
+#if CS_API_MAJOR <= 4
+	[X86_INS_FADDP] = x86_il_fadd,
 #endif
 	[X86_INS_FIADD] = x86_il_fiadd,
 	[X86_INS_FMUL] = x86_il_fmul,

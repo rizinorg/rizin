@@ -391,7 +391,7 @@ IL_LIFTER(fabs) {
 		} \
 \
 		RzILOpPure *result = x86_il_##op##_with_rmode(x86_il_get_st_reg(X86_REG_ST0), x86_il_get_st_reg(dest_reg)); \
-		return x86_il_set_st_reg(dest_reg, result, RZ_FLOAT_IEEE754_BIN_80); \
+		return SEQ2(x86_il_set_st_reg(dest_reg, result, RZ_FLOAT_IEEE754_BIN_80), x86_il_st_pop()); \
 	} while (0)
 
 #define FLOATING_INT_ARITHMETIC_IL(op) \
@@ -406,16 +406,15 @@ IL_LIFTER(fabs) {
  * Add floating point values
  */
 IL_LIFTER(fadd) {
-	FLOATING_ARITHMETIC_IL(fadd);
-}
-
-/**
- * FADDP
- * (the corresponding enum is PFADD for Capstone version > 4)
- * Add ST(0) to ST(i) and pop the stack
- */
-IL_LIFTER(faddp) {
-	FLOATING_ARITHMETIC_POP_IL(fadd);
+	/* Have a unified IL lifter for FADD and FADDP since Capstone has removed the
+	 * distinction after version 4, which I think is a terrible thing. */
+	if (ins->structure->opcode[0] == 0xde) {
+		// FADDP
+		FLOATING_ARITHMETIC_POP_IL(fadd);
+	} else {
+		// FADD
+		FLOATING_ARITHMETIC_IL(fadd);
+	}
 }
 
 /**
