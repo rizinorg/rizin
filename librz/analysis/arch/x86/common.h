@@ -9,7 +9,7 @@
 #define X86_BIT(x)  UN(1, x)
 #define X86_TO32(x) UNSIGNED(32, x)
 
-#define IL_LIFTER(mnem) static RzILOpEffect *x86_il_##mnem(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis)
+#define IL_LIFTER(mnem) static RzILOpEffect *x86_il_##mnem(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, X86ILContext *ctx)
 
 // Namespace clash with android-ndk-25b's x86_64-linux-android/asm/processor-flags.h
 #undef X86_EFLAGS_CF
@@ -131,13 +131,18 @@ bool x86_il_is_st_reg(X86Reg reg);
 /* Need to pass in val_size as a param to avoid unnecessary rounding of val. */
 
 RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
-RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, RzFloatFormat val_format);
+RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RzILOpFloat *val, RzFloatFormat val_format, X86ILContext *ctx);
+
+#define x86_il_set_st_reg(reg, val, val_format) x86_il_set_st_reg_ctx(reg, val, val_format, ctx)
 
 RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top);
 RzILOpPure *x86_il_get_fpu_stack_top();
 
-RzILOpEffect *x86_il_st_push(RzILOpFloat *val, RzFloatFormat val_format);
-RzILOpEffect *x86_il_st_pop();
+RzILOpEffect *x86_il_st_push_ctx(RzILOpFloat *val, RzFloatFormat val_format, X86ILContext *ctx);
+RzILOpEffect *x86_il_st_pop_ctx(X86ILContext *ctx);
+
+#define x86_il_st_push(val, val_format) x86_il_st_push_ctx(val, val_format, ctx)
+#define x86_il_st_pop()                 x86_il_st_pop_ctx(ctx)
 
 #define X86_IL_ST_POP(val, eff) \
 	do { \
@@ -152,17 +157,28 @@ RzILOpPure *x86_il_fpu_get_rmode();
 
 RzILOpEffect *init_rmode();
 
-RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, RzFloatFormat format);
-RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat format);
-RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width);
+RzILOpFloat *x86_il_resize_floating_ctx(RzILOpFloat *val, RzFloatFormat format, X86ILContext *ctx);
+RzILOpFloat *x86_il_floating_from_int_ctx(RzILOpBitVector *int_val, RzFloatFormat format, X86ILContext *ctx);
+RzILOpBitVector *x86_il_int_from_floating_ctx(RzILOpFloat *float_val, ut32 width, X86ILContext *ctx);
 
-RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
-RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
-RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
-RzILOpFloat *x86_il_fsubr_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
-RzILOpFloat *x86_il_fdiv_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
-RzILOpFloat *x86_il_fdivr_with_rmode(RzILOpFloat *x, RzILOpFloat *y);
-RzILOpFloat *x86_il_fsqrt_with_rmode(RzILOpFloat *x);
+RzILOpFloat *x86_il_fadd_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
+RzILOpFloat *x86_il_fmul_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
+RzILOpFloat *x86_il_fsub_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
+RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
+RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
+RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
+RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RzILOpFloat *x, X86ILContext *ctx);
+
+#define x86_il_resize_floating(val, format)        x86_il_resize_floating_ctx(val, format, ctx)
+#define x86_il_floating_from_int(int_val, format)  x86_il_floating_from_int_ctx(int_val, format, ctx)
+#define x86_il_int_from_floating(float_val, width) x86_il_int_from_floating_ctx(float_val, width, ctx)
+#define x86_il_fadd_with_rmode(x, y)               x86_il_fadd_with_rmode_ctx(x, y, ctx)
+#define x86_il_fmul_with_rmode(x, y)               x86_il_fmul_with_rmode_ctx(x, y, ctx)
+#define x86_il_fsub_with_rmode(x, y)               x86_il_fsub_with_rmode_ctx(x, y, ctx)
+#define x86_il_fsubr_with_rmode(x, y)              x86_il_fsubr_with_rmode_ctx(x, y, ctx)
+#define x86_il_fdiv_with_rmode(x, y)               x86_il_fdiv_with_rmode_ctx(x, y, ctx)
+#define x86_il_fdivr_with_rmode(x, y)              x86_il_fdivr_with_rmode_ctx(x, y, ctx)
+#define x86_il_fsqrt_with_rmode(x)                 x86_il_fsqrt_with_rmode_ctx(x, ctx)
 
 RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc);
 
@@ -172,10 +188,10 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 p
 RzFloatFormat x86_width_to_format(ut8 width);
 ut8 x86_format_to_width(RzFloatFormat format);
 
-RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc);
+RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, X86ILContext *ctx);
 
 #define x86_il_set_floating_op(opnum, val, val_format) \
-	x86_il_set_floating_operand_bits(ins->structure->operands[opnum], val, val_format, analysis->bits, pc)
+	x86_il_set_floating_operand_bits_ctx(ins->structure->operands[opnum], val, val_format, analysis->bits, pc, ctx)
 
 RzILOpEffect *x86_il_clear_fpsw_flags();
 

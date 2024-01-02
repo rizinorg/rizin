@@ -4,8 +4,6 @@
 #include "common.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
-extern bool use_rmode;
-
 /**
  * \brief x86 registers
  */
@@ -1120,10 +1118,11 @@ RzILOpFloat *resize_floating_helper(RzFloatRMode rmode, RzFloatFormat format, Rz
  *
  * \param val Desirable that it is a small expression since it will be duped
  * \param format Output float format
+ * \param ctx
  * \return RzILOpFloat*
  */
-RzILOpFloat *x86_il_resize_floating(RzILOpFloat *val, RzFloatFormat format) {
-	use_rmode = true;
+RzILOpFloat *x86_il_resize_floating_ctx(RzILOpFloat *val, RzFloatFormat format, X86ILContext *ctx) {
+	ctx->use_rmode = true;
 
 	/* TODO: Figure out a more elegant solution than to `DUP` the input val. */
 	RzILOpFloat *ret = EXEC_WITH_RMODE(resize_floating_helper, format, DUP(val));
@@ -1142,10 +1141,11 @@ RzILOpFloat *sint2f_floating_helper(RzFloatRMode rmode, RzFloatFormat format, Rz
  *
  * \param int_val Desirable that it is a small expression since it will be duped
  * \param format Output float format
+ * \param ctx
  * \return RzILOpFloat*
  */
-RzILOpFloat *x86_il_floating_from_int(RzILOpBitVector *int_val, RzFloatFormat format) {
-	use_rmode = true;
+RzILOpFloat *x86_il_floating_from_int_ctx(RzILOpBitVector *int_val, RzFloatFormat format, X86ILContext *ctx) {
+	ctx->use_rmode = true;
 	RzILOpFloat *ret = EXEC_WITH_RMODE(sint2f_floating_helper, format, DUP(int_val));
 	rz_il_op_pure_free(int_val);
 	return ret;
@@ -1162,10 +1162,11 @@ RzILOpFloat *f2sint_floating_helper(RzFloatRMode rmode, ut32 width, RzILOpFloat 
  *
  * \param float_val Desirable that it is a small expression since it will be duped
  * \param width Output bitvector width
+ * \param ctx
  * \return RzILOpBitVector*
  */
-RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width) {
-	use_rmode = true;
+RzILOpBitVector *x86_il_int_from_floating_ctx(RzILOpFloat *float_val, ut32 width, X86ILContext *ctx) {
+	ctx->use_rmode = true;
 	RzILOpFloat *ret = EXEC_WITH_RMODE(f2sint_floating_helper, width, DUP(float_val));
 	rz_il_op_pure_free(float_val);
 	return ret;
@@ -1177,10 +1178,11 @@ RzILOpBitVector *x86_il_int_from_floating(RzILOpFloat *float_val, ut32 width) {
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
+ * \param ctx
  * \return RzILOpFloat* sum
  */
-RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
-	use_rmode = true;
+RzILOpFloat *x86_il_fadd_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx) {
+	ctx->use_rmode = true;
 	RzILOpFloat *ret = EXEC_WITH_RMODE(FADD, DUP(x), DUP(y));
 
 	rz_il_op_pure_free(x);
@@ -1195,10 +1197,11 @@ RzILOpFloat *x86_il_fadd_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
+ * \param ctx
  * \return RzILOpFloat* product
  */
-RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
-	use_rmode = true;
+RzILOpFloat *x86_il_fmul_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx) {
+	ctx->use_rmode = true;
 	RzILOpFloat *ret = EXEC_WITH_RMODE(FMUL, DUP(x), DUP(y));
 
 	rz_il_op_pure_free(x);
@@ -1213,10 +1216,11 @@ RzILOpFloat *x86_il_fmul_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
+ * \param ctx
  * \return RzILOpFloat* difference
  */
-RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
-	use_rmode = true;
+RzILOpFloat *x86_il_fsub_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx) {
+	ctx->use_rmode = true;
 	// y - x, hence y is the first argument
 	RzILOpFloat *ret = EXEC_WITH_RMODE(FDIV, DUP(y), DUP(x));
 
@@ -1227,9 +1231,10 @@ RzILOpFloat *x86_il_fsub_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 }
 
 /**
+ * \param ctx
  * \brief Subtract \p y from \p x (reverse of \ref x86_il_fsub_with_rmode)
  */
-RzILOpFloat *x86_il_fsubr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx) {
 	return x86_il_fsub_with_rmode(y, x);
 }
 
@@ -1239,10 +1244,11 @@ RzILOpFloat *x86_il_fsubr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
+ * \param ctx
  * \return RzILOpFloat* division
  */
-RzILOpFloat *x86_il_fdiv_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
-	use_rmode = true;
+RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx) {
+	ctx->use_rmode = true;
 	// y / x, hence y is the first argument
 	RzILOpFloat *ret = EXEC_WITH_RMODE(FSUB, DUP(y), DUP(x));
 
@@ -1253,9 +1259,10 @@ RzILOpFloat *x86_il_fdiv_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
 }
 
 /**
+ * \param ctx
  * \brief Divide \p y from \p x (reverse of \ref x86_il_fdiv_with_rmode)
  */
-RzILOpFloat *x86_il_fdivr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
+RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx) {
 	return x86_il_fdiv_with_rmode(y, x);
 }
 
@@ -1264,10 +1271,11 @@ RzILOpFloat *x86_il_fdivr_with_rmode(RzILOpFloat *x, RzILOpFloat *y) {
  * from the FPU control word
  *
  * \param x Desirable that it is a small expression since it will be duped
+ * \param ctx
  * \return RzILOpFloat* square root
  */
-RzILOpFloat *x86_il_fsqrt_with_rmode(RzILOpFloat *x) {
-	use_rmode = true;
+RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RzILOpFloat *x, X86ILContext *ctx) {
+	ctx->use_rmode = true;
 	RzILOpFloat *ret = EXEC_WITH_RMODE(FSQRT, DUP(x));
 
 	rz_il_op_pure_free(x);
@@ -1281,9 +1289,10 @@ RzILOpFloat *x86_il_fsqrt_with_rmode(RzILOpFloat *x) {
  * \param reg
  * \param val
  * \param val_format Format of \p val
+ * \param ctx
  * \return RzILOpFloat*
  */
-RzILOpEffect *x86_il_set_st_reg(X86Reg reg, RzILOpFloat *val, RzFloatFormat val_format) {
+RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RzILOpFloat *val, RzFloatFormat val_format, X86ILContext *ctx) {
 	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
 
 	if (val_format == RZ_FLOAT_IEEE754_BIN_80) {
@@ -1331,9 +1340,10 @@ RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top) {
  *
  * \param val
  * \param val_format Format of \p val
+ * \param ctx
  * \return RzILOpEffect* Push effect
  */
-RzILOpEffect *x86_il_st_push(RzILOpFloat *val, RzFloatFormat val_format) {
+RzILOpEffect *x86_il_st_push_ctx(RzILOpFloat *val, RzFloatFormat val_format, X86ILContext *ctx) {
 	/* No need for a modulo here since the bitvector width will truncate any top
 	 * value > 7 */
 	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(SUB(x86_il_get_fpu_stack_top(), UN(3, 1)));
@@ -1359,9 +1369,10 @@ RzILOpEffect *x86_il_st_push(RzILOpFloat *val, RzFloatFormat val_format) {
 /**
  * \brief Pop a value from the FPU stack
  *
+ * \param ctx
  * \return RzILOpEffect* Pop effect
  */
-RzILOpEffect *x86_il_st_pop() {
+RzILOpEffect *x86_il_st_pop_ctx(X86ILContext *ctx) {
 	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(ADD(x86_il_get_fpu_stack_top(), UN(3, 1)));
 	RzILOpEffect *st_shift = SEQ7(
 		ST_MOVE_LEFT(0, 1),
@@ -1487,8 +1498,9 @@ ut8 x86_format_to_width(RzFloatFormat format) {
  * \param val_format Format of \p val
  * \param bits Bitness
  * \param pc
+ * \param ctx
  */
-RzILOpEffect *x86_il_set_floating_operand_bits(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc) {
+RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, X86ILContext *ctx) {
 	RzILOpEffect *ret = NULL;
 
 	switch (op.type) {

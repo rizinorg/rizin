@@ -139,7 +139,7 @@ IL_LIFTER(fldz) {
 #define FPU_LG2 0x3fff9a209a84fbcfULL, 0xf7988f8959ac200dULL
 #define FPU_LN2 0x3ffeb17217f7d1cfULL, 0x79abc9e3b39828efULL
 
-RzILOpFloat *math_const_to_float(uint64_t upper, uint64_t lower) {
+RzILOpFloat *math_const_to_float_ctx(uint64_t upper, uint64_t lower, X86ILContext *ctx) {
 	RzILOpPure *upper_unshifted = UN(128, upper);
 	RzILOpPure *upper_shifted = SHIFTL0(upper_unshifted, UN(8, 8));
 
@@ -150,6 +150,8 @@ RzILOpFloat *math_const_to_float(uint64_t upper, uint64_t lower) {
 	 * value to emulate the rounding effect of rounding a 66-bit value. */
 	return x86_il_resize_floating(BV2F(RZ_FLOAT_IEEE754_BIN_128, final_bits), RZ_FLOAT_IEEE754_BIN_80);
 }
+
+#define math_const_to_float(upper_lower) math_const_to_float_ctx(upper_lower, ctx)
 
 /**
  * FLDL2T

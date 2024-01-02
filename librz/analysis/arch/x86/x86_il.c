@@ -94,12 +94,7 @@ const char *x86_bound_regs_64[] = {
 	NULL
 };
 
-/* I know using globals is _bad_, but using a context to pass this information up
- * the chain makes the code very ugly and hard to read/understand. Using a global
- * instead, I believe, is a good compromise. */
-bool use_rmode;
-
-typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
+typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *, X86ILContext *);
 
 /**
  * \brief RzIL handlers for x86 instructions
@@ -341,9 +336,12 @@ RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnaly
 		lifter = x86_il_unimpl;
 	}
 
-	use_rmode = false;
-	lifted = lifter(ins, pc, analysis);
-	if (use_rmode) {
+	X86ILContext ctx = {
+		.use_rmode = false
+	};
+
+	lifted = lifter(ins, pc, analysis, &ctx);
+	if (ctx.use_rmode) {
 		lifted = rz_il_op_new_seq(init_rmode(), lifted);
 	}
 
