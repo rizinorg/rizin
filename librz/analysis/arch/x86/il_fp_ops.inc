@@ -256,8 +256,10 @@ IL_LIFTER(fistp) {
  * 80-bit BCD (18-digits) := [sign-byte] + 9 * [data-bytes]
  */
 IL_LIFTER(fbld) {
-	RzILOpEffect *mem_init = SETL("mem", x86_il_get_op(0));
-	RzILOpEffect *i_init = SETL("i", UN(8, 8));
+	ut8 mem_size = analysis->bits;
+
+	RzILOpEffect *mem_init = SETL("mem", x86_il_get_memaddr(ins->structure->operands[0].mem));
+	RzILOpEffect *i_init = SETL("i", UN(mem_size, 8));
 	RzILOpEffect *val_init = SETL("val", UN(64, 0));
 
 	RzILOpPure *byte_mem = ADD(VARL("mem"), VARL("i"));
@@ -270,17 +272,17 @@ IL_LIFTER(fbld) {
 				     )));
 
 	RzILOpEffect *bcd_decode_loop = REPEAT( // while
-		UGE(VARL("i"), UN(8, 0)), // i >= 0
+		UGE(VARL("i"), UN(mem_size, 0)), // i >= 0
 		SEQ3(
 			set_byte, // get byte
 			SETL("val", new_val), // update val
-			SETL("i", SUB(VARL("i"), UN(8, 1))) // i--
+			SETL("i", SUB(VARL("i"), UN(mem_size, 1))) // i--
 			));
 
 	RzILOpEffect *f_init = SETL("f", x86_il_floating_from_int(VARL("val"), RZ_FLOAT_IEEE754_BIN_80));
 
 	/* Check sign byte (index 9) checking if sign byte is zero */
-	RzILOpPure *sign_byte = LOADW(8, ADD(VARL("mem"), UN(8, 9)));
+	RzILOpPure *sign_byte = LOADW(8, ADD(VARL("mem"), UN(mem_size, 9)));
 	RzILOpFloat *final_float = ITE(IS_ZERO(sign_byte), VARL("f"), FNEG(VARL("f")));
 
 	return SEQ6(
@@ -296,6 +298,8 @@ IL_LIFTER(fbld) {
  * Pop the float in ST(0), convert it to BCD and store
  */
 IL_LIFTER(fbstp) {
+	ut8 mem_size = analysis->bits;
+
 	RzILOpEffect *pop_eff;
 	RzILOpPure *pop_val;
 	X86_IL_ST_POP(pop_val, pop_eff);
@@ -304,13 +308,8 @@ IL_LIFTER(fbstp) {
 	RzILOpEffect *sgn_init = SETL("sgn", MSB(VARL("val")));
 	RzILOpEffect *val_abs = SETL("val", ITE(VARL("sgn"), NEG(VARL("val")), VARL("val")));
 
-	RzILOpEffect *maybe_exception = BRANCH(
-		SGE(VARL("val"), UN(64, 1e18)), // |val| >= 1e18
-		GOTO("int"),
-		NOP());
-
-	RzILOpEffect *mem_init = SETL("mem", x86_il_get_op(0));
-	RzILOpEffect *i_init = SETL("i", UN(8, 0));
+	RzILOpEffect *mem_init = SETL("mem", x86_il_get_memaddr(ins->structure->operands[0].mem));
+	RzILOpEffect *i_init = SETL("i", UN(mem_size, 0));
 	RzILOpPure *byte_mem = ADD(VARL("mem"), VARL("i"));
 
 	RzILOpPure *upper_nibble = DIV(MOD(VARL("val"), UN(64, 100)), UN(64, 10));
@@ -318,23 +317,30 @@ IL_LIFTER(fbstp) {
 	RzILOpPure *new_byte = UNSIGNED(8, LOGOR(SHIFTL0(upper_nibble, UN(8, 4)), lower_nibble));
 
 	RzILOpEffect *bcd_encode_loop = REPEAT( // while
-		ULT(VARL("i"), UN(9, 0)), // i < 9
+		ULT(VARL("i"), UN(mem_size, 9)), // i < 9
 		SEQ3(
 			STOREW(byte_mem, new_byte), // store byte
 			SETL("val", DIV(VARL("val"), UN(64, 100))), // val /= 100
-			SETL("i", ADD(VARL("i"), UN(8, 1))) // i++
+			SETL("i", ADD(VARL("i"), UN(mem_size, 1))) // i++
 			));
 
-	RzILOpEffect *store_sign = BRANCH(VARL("sgn"), STOREW(byte_mem, UN(8, 0xff)), STOREW(byte_mem, UN(8, 0)));
+	RzILOpEffect *update_mem = SETL("mem", DUP(byte_mem));
+	RzILOpEffect *store_sign = BRANCH(VARL("sgn"), STOREW(VARL("mem"), UN(8, 0xff)), STOREW(VARL("mem"), UN(8, 0)));
 
-	return SEQ9(
-		val_init, pop_eff, // get val from ST(0) and pop
-		sgn_init, val_abs, // val = |val| and store sign
-		maybe_exception, // throw exception if val can't fit in 18-digit BCD
+	RzILOpEffect *noexcept_case = SEQ5(
 		mem_init, i_init, // init loop vars
 		bcd_encode_loop, // convert val to bcd
-		store_sign // store the saved sign in the bcd
+		update_mem, store_sign // update mem pointer and store the saved sign in the bcd
 	);
+	RzILOpEffect *maybe_except = BRANCH(
+		SGE(VARL("val"), UN(64, 1e18)), // |val| >= 1e18
+		GOTO("int"), // throw exception if val can't fit in 18-digit BCD
+		noexcept_case);
+
+	return SEQ5(
+		val_init, pop_eff, // get val from ST(0) and pop
+		sgn_init, val_abs, // val = |val| and store sign
+		maybe_except);
 }
 
 /* Arithmetic instructions */
@@ -578,12 +584,28 @@ IL_LIFTER(fcomp) {
 }
 
 /**
+ * FICOM
+ * Compare the floating point value in ST(0) with an integer and store the result in the FPU control word
+ */
+IL_LIFTER(ficom) {
+	return fcom_helper(ins, pc, analysis, x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80));
+}
+
+/**
  * FCOMPP
  * Compare floating point values, store the result in the FPU control word and pop the stack twice
  */
 IL_LIFTER(fcompp) {
 	/* This function takes in no operands, so we pass in the [op1_override] argument in [fcom_helper]. */
 	return SEQ3(fcom_helper(ins, pc, analysis, x86_il_get_st_reg(X86_REG_ST1)), x86_il_st_pop(), x86_il_st_pop());
+}
+
+/**
+ * FICOMP
+ * Compare the floating point value in ST(0) with an integer, store the result in the FPU control word and pop the stack
+ */
+IL_LIFTER(ficomp) {
+	return SEQ2(fcom_helper(ins, pc, analysis, x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80)), x86_il_st_pop());
 }
 
 RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {

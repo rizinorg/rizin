@@ -109,7 +109,7 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size);
 /* Capstone does not have the following FPU registers. */
 
 /* FPU control word */
-#define X86_REG_FPU_CW "fpcw"
+#define X86_REG_FPU_CW "cwd"
 /* FPU tag word */
 #define X86_REG_FPU_TW "ftw"
 /* FPU last instruction opcode */

@@ -21,6 +21,22 @@
 		"of", /* X86_EFLAGS_OF */ \
 		"nt" /* X86_EFLAGS_NT */
 
+#define FPU_REGS \
+	"cwd", /* X86_REG_FPU_CW */ \
+	"swd", /* X86_REG_FPSW */ \
+	"ftw", /* X86_REG_FPU_TW */ \
+	"fop", /* X86_REG_FPU_OP */ \
+	"frip", /* X86_REG_FPU_IP */ \
+	"frdp", /* X86_REG_FPU_DP */ \
+	"st0", /* X86_REG_ST0 */ \
+	"st1", /* X86_REG_ST1 */ \
+	"st2", /* X86_REG_ST2 */ \
+	"st3", /* X86_REG_ST3 */ \
+	"st4", /* X86_REG_ST4 */ \
+	"st5", /* X86_REG_ST5 */ \
+	"st6", /* X86_REG_ST6 */ \
+	"st7" /* X86_REG_ST6 */
+
 /**
  * \brief All registers bound to IL variables for x86 16-bit
  */
@@ -91,6 +107,7 @@ const char *x86_bound_regs_64[] = {
 	"gs", /* X86_REG_GS */
 	"cr0", /* X86_REG_CR0 */
 	"dr0", /* X86_REG_DR0 */
+	FPU_REGS,
 	NULL
 };
 
@@ -299,9 +316,11 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FIDIVR] = x86_il_fidivr,
 	[X86_INS_FCOM] = x86_il_fcom,
 	[X86_INS_FCOMP] = x86_il_fcomp,
+	[X86_INS_FICOM] = x86_il_ficom,
 	[X86_INS_FCOMPP] = x86_il_fcompp,
-	[X86_INS_FICOM] = x86_il_fcomi,
-	[X86_INS_FICOMP] = x86_il_fcomip,
+	[X86_INS_FICOMP] = x86_il_ficomp,
+	[X86_INS_FCOMI] = x86_il_fcomi,
+	[X86_INS_FCOMPI] = x86_il_fcomip,
 	/* Using the same FCOM & FCOMI family IL lifters for FUCOM FUCOMI family instructions
 	 * since we don't support invalid arithmetic operand exceptions (#IA) anyways. */
 	[X86_INS_FUCOM] = x86_il_fcom,

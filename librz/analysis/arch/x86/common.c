@@ -38,7 +38,7 @@ const char *x86_registers[X86_REG_ENDING] = {
 	[X86_REG_ES] = "es",
 	[X86_REG_ESI] = "esi",
 	[X86_REG_ESP] = "esp",
-	[X86_REG_FPSW] = "fpsw",
+	[X86_REG_FPSW] = "swd",
 	[X86_REG_FS] = "fs",
 	[X86_REG_GS] = "gs",
 	[X86_REG_IP] = "ip",
@@ -1222,7 +1222,7 @@ RzILOpFloat *x86_il_fmul_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILCon
 RzILOpFloat *x86_il_fsub_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx) {
 	ctx->use_rmode = true;
 	// y - x, hence y is the first argument
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FDIV, DUP(y), DUP(x));
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FSUB, DUP(y), DUP(x));
 
 	rz_il_op_pure_free(x);
 	rz_il_op_pure_free(y);
@@ -1250,7 +1250,7 @@ RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILCo
 RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx) {
 	ctx->use_rmode = true;
 	// y / x, hence y is the first argument
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FSUB, DUP(y), DUP(x));
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FDIV, DUP(y), DUP(x));
 
 	rz_il_op_pure_free(x);
 	rz_il_op_pure_free(y);
@@ -1405,7 +1405,7 @@ RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value) {
 #define FLOATING_OP_MEM_WIDTH_CASE(n) \
 	do { \
 	case n: \
-		return LOADW(BITS_PER_BYTE * n, x86_il_get_memaddr_bits(op.mem, bits, pc)); \
+		return BV2F(RZ_FLOAT_IEEE754_BIN_##n, LOADW(BITS_PER_BYTE * n, x86_il_get_memaddr_bits(op.mem, bits, pc))); \
 	} while (0)
 
 /**
@@ -1429,7 +1429,7 @@ RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc) {
 		}
 		break;
 	case X86_OP_MEM:
-		switch (op.size) {
+		switch (op.size * BITS_PER_BYTE) {
 			/* ~Duff's~ DMaroo's device */
 			FLOATING_OP_MEM_WIDTH_CASE(32);
 			FLOATING_OP_MEM_WIDTH_CASE(64);
