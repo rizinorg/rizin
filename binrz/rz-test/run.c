@@ -380,6 +380,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 			rz_str_trim(il);
 			char *il_err = (char *)crlf2lf(rz_subprocess_err(proc, NULL));
 			rz_str_trim(il_err);
+			rz_str_replace_char(il, '\n', '\t');
 			out->il = il;
 			out->il_report = il_err;
 			out->il_failed = rz_subprocess_ret(proc) != 0;
