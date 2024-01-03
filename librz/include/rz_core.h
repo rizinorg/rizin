@@ -814,7 +814,7 @@ typedef struct rz_core_asm_hit {
  */
 typedef struct rz_core_disasm_options {
 	int invbreak;
-	int cbytes;
+	int cbytes; ///< set false to ignore the constraint of \p len and print \p nlines instructions in rz_core_print_disasm
 	RzAnalysisFunction *function; ///< Disassemble a function
 	RzPVector /*<RzAnalysisDisasmText *>*/ *vec; ///< Not print, but append as RzPVector<RzAnalysisDisasmText>
 } RzCoreDisasmOptions;
