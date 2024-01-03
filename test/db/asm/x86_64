@@ -1112,15 +1112,12 @@ a "fsubrp" dee1 0x0 (seq (set _rmode (cast 2 false (>> (bv 8 0xa) (var cwd) fals
 a "fsubrp st2, st0" dee2 0x0 (seq (set _rmode (cast 2 false (>> (bv 8 0xa) (var cwd) false))) (set st1 (fbits (ite (== (var _rmode) (bv 2 0x0)) (-. rne (float 2 (var st0) ) (float 2 (var st1) )) (-. rtz (float 2 (var st0) ) (float 2 (var st1) ))))) (set swd (| (<< (cast 16 false (+ (cast 3 false (>> (var swd) (bv 8 0xb) false)) (bv 3 0x1))) (bv 8 0xb) false) (& (bv 16 0xc7ff) (var swd)))) (set st0 (fbits (float 2 (var st1) ))) (set st1 (fbits (float 2 (var st2) ))) (set st2 (fbits (float 2 (var st3) ))) (set st3 (fbits (float 2 (var st4) ))) (set st4 (fbits (float 2 (var st5) ))) (set st5 (fbits (float 2 (var st6) ))) (set st6 (fbits (float 2 (var st7) ))) (set swd (| (<< (ite (== (cast 3 false (>> (var swd) (bv 8 0xb) false)) (bv 3 0x0)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x9) false) (& (bv 16 0xfdff) (var swd)))))
 a "fisubr word [rax]" de28 0x0 (seq (set _rmode (cast 2 false (>> (bv 8 0xa) (var cwd) false))) (set st0 (fbits (ite (== (var _rmode) (bv 2 0x0)) (-. rne (ite (== (var _rmode) (bv 2 0x0)) (fcast_sfloat ieee754-bin80 rne (loadw 0 16 (+ (var rax) (bv 64 0x0)))) (fcast_sfloat ieee754-bin80 rtz (loadw 0 16 (+ (var rax) (bv 64 0x0))))) (float 2 (var st0) )) (-. rtz (ite (== (var _rmode) (bv 2 0x0)) (fcast_sfloat ieee754-bin80 rne (loadw 0 16 (+ (var rax) (bv 64 0x0)))) (fcast_sfloat ieee754-bin80 rtz (loadw 0 16 (+ (var rax) (bv 64 0x0))))) (float 2 (var st0) ))))))
 a "fisubr dword [rax]" da28 0x0 (seq (set _rmode (cast 2 false (>> (bv 8 0xa) (var cwd) false))) (set st0 (fbits (ite (== (var _rmode) (bv 2 0x0)) (-. rne (ite (== (var _rmode) (bv 2 0x0)) (fcast_sfloat ieee754-bin80 rne (loadw 0 32 (+ (var rax) (bv 64 0x0)))) (fcast_sfloat ieee754-bin80 rtz (loadw 0 32 (+ (var rax) (bv 64 0x0))))) (float 2 (var st0) )) (-. rtz (ite (== (var _rmode) (bv 2 0x0)) (fcast_sfloat ieee754-bin80 rne (loadw 0 32 (+ (var rax) (bv 64 0x0)))) (fcast_sfloat ieee754-bin80 rtz (loadw 0 32 (+ (var rax) (bv 64 0x0))))) (float 2 (var st0) ))))))
-# The extra nop at the start of fstcw and fstsw instructions is because it
-# actually consists of two instructions, wait and fnstcw (or fnstsw in case of
-# fstsw). Hence, the nop is for the wait and the other IL in another separated
-# parentheses is for fnstcw (or fnstsw).
-a "fstcw word [rcx]" 9bd939 0x0 nop	(storew 0 (+ (var rcx) (bv 64 0x0)) (var cwd))
+# Not testing [fstcw] and [fstsw] since they are made up of a [wait] instruction and a [fnstcw] (or [fnstsw]) instruction, and we already test both of these instructions.
+a "fstcw word [rcx]" 9bd939
 a "fnstcw word [rcx]" d939 0x0 (storew 0 (+ (var rcx) (bv 64 0x0)) (var cwd))
-a "fstsw word [rcx]" 9bdd39 0x0 nop	(storew 0 (+ (var rcx) (bv 64 0x0)) (var swd))
+a "fstsw word [rcx]" 9bdd39
 a "fnstsw word [rcx]" dd39 0x0 (storew 0 (+ (var rcx) (bv 64 0x0)) (var swd))
-a "fstsw ax" 9bdfe0 0x0 nop	(set rax (| (& (var rax) (~ (bv 64 0xffff))) (cast 64 false (var swd))))
+a "fstsw ax" 9bdfe0
 a "fnstsw ax" dfe0 0x0 (set rax (| (& (var rax) (~ (bv 64 0xffff))) (cast 64 false (var swd))))
 a "fsave dword [rax]" 9bdd30
 a "fnsave dword [rax]" dd30
