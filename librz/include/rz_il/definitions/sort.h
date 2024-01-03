@@ -5,6 +5,7 @@
 #define RZ_IL_SORT_H
 
 #include <rz_types.h>
+#include <rz_util/rz_float.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,9 @@ static inline bool rz_il_sort_pure_eq(RzILSortPure a, RzILSortPure b) {
 		return false;
 	}
 	if (a.type == RZ_IL_TYPE_PURE_BITVECTOR && a.props.bv.length != b.props.bv.length) {
+		return false;
+	}
+	if (a.type == RZ_IL_TYPE_PURE_FLOAT && a.props.f.format != b.props.f.format) {
 		return false;
 	}
 	return true;
