@@ -1344,6 +1344,21 @@ static bool test_il_validate_pure_float() {
 	mu_end;
 }
 
+static bool test_il_validate_pure_float80() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	RzILOpPure *op = rz_il_op_new_float_from_f80(4.2L);
+	RzILSortPure sort;
+	RzILValidateReport report;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_80)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 static bool test_il_validate_pure_fbits() {
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 
@@ -1745,6 +1760,7 @@ bool all_tests() {
 	mu_run_test(test_il_validate_effect_repeat);
 	mu_run_test(test_il_validate_effect_branch);
 	mu_run_test(test_il_validate_pure_float);
+	mu_run_test(test_il_validate_pure_float80);
 	mu_run_test(test_il_validate_pure_fbits);
 	mu_run_test(test_il_validate_pure_float_bool_uop);
 	mu_run_test(test_il_validate_pure_float_uop);

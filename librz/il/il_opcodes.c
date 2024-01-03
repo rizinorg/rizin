@@ -796,6 +796,24 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f64(double f) {
 	return ret;
 }
 
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f80(long double f) {
+	RzFloat *value = rz_float_new_from_f80(f);
+	if (!value) {
+		return NULL;
+	}
+	RzILOpFloat *ret = RZ_NEW0(RzILOpFloat);
+	if (!ret) {
+		rz_float_free(value);
+		return NULL;
+	}
+
+	ret->code = RZ_IL_OP_FLOAT;
+	ret->op.float_.bv = rz_il_op_new_bitv(value->s);
+	ret->op.float_.r = value->r;
+	free(value);
+	return ret;
+}
+
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fbits(RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzILOpBitVector *ret;

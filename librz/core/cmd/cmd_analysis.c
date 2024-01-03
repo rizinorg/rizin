@@ -9,6 +9,8 @@
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
+#define ESILISTATE core->analysis->esilinterstate
+
 HEAPTYPE(ut64);
 
 static const char *help_msg_a[] = {
@@ -822,20 +824,11 @@ static bool contains(RzList /*<char *>*/ *list, const char *name) {
 	return false;
 }
 
-static char *oldregread = NULL;
-static RzList *mymemxsr = NULL;
-static RzList *mymemxsw = NULL;
-
-#define RZ_NEW_DUP(x) memcpy((void *)malloc(sizeof(x)), &(x), sizeof(x))
-typedef struct {
-	ut64 addr;
-	int size;
-} AeaMemItem;
-
 static int mymemwrite(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	RzListIter *iter;
-	AeaMemItem *n;
-	rz_list_foreach (mymemxsw, iter, n) {
+	RzAnalysisEsilMemoryRegion *n;
+	RzList *memwrites = esil->analysis->esilinterstate->memwrites;
+	rz_list_foreach (memwrites, iter, n) {
 		if (addr == n->addr) {
 			return len;
 		}
@@ -843,19 +836,20 @@ static int mymemwrite(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) 
 	if (!rz_io_is_valid_offset(esil->analysis->iob.io, addr, 0)) {
 		return false;
 	}
-	n = RZ_NEW(AeaMemItem);
+	n = RZ_NEW(RzAnalysisEsilMemoryRegion);
 	if (n) {
 		n->addr = addr;
 		n->size = len;
-		rz_list_push(mymemxsw, n);
+		rz_list_push(memwrites, n);
 	}
 	return len;
 }
 
 static int mymemread(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RzListIter *iter;
-	AeaMemItem *n;
-	rz_list_foreach (mymemxsr, iter, n) {
+	RzAnalysisEsilMemoryRegion *n;
+	RzList *memreads = esil->analysis->esilinterstate->memreads;
+	rz_list_foreach (memreads, iter, n) {
 		if (addr == n->addr) {
 			return len;
 		}
@@ -863,21 +857,17 @@ static int mymemread(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!rz_io_is_valid_offset(esil->analysis->iob.io, addr, 0)) {
 		return false;
 	}
-	n = RZ_NEW(AeaMemItem);
+	n = RZ_NEW(RzAnalysisEsilMemoryRegion);
 	if (n) {
 		n->addr = addr;
 		n->size = len;
-		rz_list_push(mymemxsr, n);
+		rz_list_push(memreads, n);
 	}
 	return len;
 }
 
 static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	AeaStats *stats = esil->user;
-	if (oldregread && !strcmp(name, oldregread)) {
-		rz_list_pop(stats->regread);
-		RZ_FREE(oldregread)
-	}
 	if (!IS_DIGIT(*name)) {
 		if (!contains(stats->regs, name)) {
 			rz_list_push(stats->regs, strdup(name));
@@ -926,9 +916,9 @@ static void showregs(RzList /*<char *>*/ *list) {
 	rz_cons_newline();
 }
 
-static void showmem(RzList /*<AeaMemItem *>*/ *list) {
+static void showmem(RzList /*<RzAnalysisEsilMemoryRegion *>*/ *list) {
 	if (!rz_list_empty(list)) {
-		AeaMemItem *item;
+		RzAnalysisEsilMemoryRegion *item;
 		RzListIter *iter;
 		rz_list_foreach (list, iter, item) {
 			rz_cons_printf(" 0x%08" PFMT64x, item->addr);
@@ -950,11 +940,11 @@ static void showregs_json(RzList /*<char *>*/ *list, PJ *pj) {
 	pj_end(pj);
 }
 
-static void showmem_json(RzList /*<AeaMemItem *>*/ *list, PJ *pj) {
+static void showmem_json(RzList /*<RzAnalysisEsilMemoryRegion *>*/ *list, PJ *pj) {
 	pj_a(pj);
 	if (!rz_list_empty(list)) {
 		RzListIter *iter;
-		AeaMemItem *item;
+		RzAnalysisEsilMemoryRegion *item;
 		rz_list_foreach (list, iter, item) {
 			pj_n(pj, item->addr);
 		}
@@ -1015,8 +1005,8 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	rz_analysis_esil_setup(esil, core->analysis, romem, stats1, noNULL); // setup io
 #define hasNext(x) (x & 1) ? (addr < addr_end) : (ops < ops_end)
 
-	mymemxsr = rz_list_new();
-	mymemxsw = rz_list_new();
+	ESILISTATE->memreads = rz_list_new();
+	ESILISTATE->memwrites = rz_list_new();
 	esil->user = &stats;
 	esil->cb.hook_reg_write = myregwrite;
 	esil->cb.hook_reg_read = myregread;
@@ -1055,15 +1045,15 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	}
 	if ((mode >> 5) & 1) {
 		RzListIter *iter;
-		AeaMemItem *n;
+		RzAnalysisEsilMemoryRegion *n;
 		int c = 0;
 		rz_cons_printf("f-mem.*\n");
-		rz_list_foreach (mymemxsr, iter, n) {
-			rz_cons_printf("f mem.read.%d 0x%08x @ 0x%08" PFMT64x "\n", c++, n->size, n->addr);
+		rz_list_foreach (ESILISTATE->memreads, iter, n) {
+			rz_cons_printf("f mem.read.%d 0x%08zu @ 0x%08" PFMT64x "\n", c++, n->size, n->addr);
 		}
 		c = 0;
-		rz_list_foreach (mymemxsw, iter, n) {
-			rz_cons_printf("f mem.write.%d 0x%08x @ 0x%08" PFMT64x "\n", c++, n->size, n->addr);
+		rz_list_foreach (ESILISTATE->memwrites, iter, n) {
+			rz_cons_printf("f mem.write.%d 0x%08zu @ 0x%08" PFMT64x "\n", c++, n->size, n->addr);
 		}
 	}
 
@@ -1096,13 +1086,13 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 			pj_k(pj, "N");
 			showregs_json(regnow, pj);
 		}
-		if (!rz_list_empty(mymemxsr)) {
+		if (!rz_list_empty(ESILISTATE->memreads)) {
 			pj_k(pj, "@R");
-			showmem_json(mymemxsr, pj);
+			showmem_json(ESILISTATE->memreads, pj);
 		}
-		if (!rz_list_empty(mymemxsw)) {
+		if (!rz_list_empty(ESILISTATE->memwrites)) {
 			pj_k(pj, "@W");
-			showmem_json(mymemxsw, pj);
+			showmem_json(ESILISTATE->memwrites, pj);
 		}
 
 		pj_end(pj);
@@ -1135,20 +1125,20 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 			rz_cons_printf(" N: ");
 			showregs(regnow);
 		}
-		if (!rz_list_empty(mymemxsr)) {
+		if (!rz_list_empty(ESILISTATE->memreads)) {
 			rz_cons_printf("@R:");
-			showmem(mymemxsr);
+			showmem(ESILISTATE->memreads);
 		}
-		if (!rz_list_empty(mymemxsw)) {
+		if (!rz_list_empty(ESILISTATE->memwrites)) {
 			rz_cons_printf("@W:");
-			showmem(mymemxsw);
+			showmem(ESILISTATE->memwrites);
 		}
 	}
 
-	rz_list_free(mymemxsr);
-	rz_list_free(mymemxsw);
-	mymemxsr = NULL;
-	mymemxsw = NULL;
+	rz_list_free(ESILISTATE->memreads);
+	rz_list_free(ESILISTATE->memwrites);
+	ESILISTATE->memreads = NULL;
+	ESILISTATE->memwrites = NULL;
 	aea_stats_fini(&stats);
 	free(buf);
 	RZ_FREE(regnow);

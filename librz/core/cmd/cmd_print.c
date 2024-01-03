@@ -7,7 +7,6 @@
 #include <rz_util.h>
 #include <rz_type.h>
 #include <rz_types.h>
-#include <limits.h>
 
 #include "../core_private.h"
 #include "rz_util/rz_strbuf.h"
@@ -4451,8 +4450,12 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	if (argc <= 1) {
+		RZ_LOG_ERROR("Invalid argument.");
+		return RZ_CMD_STATUS_ERROR;
+	}
 
+	ut64 n_bytes = rz_num_math(core->num, argv[1]);
 	// small patch to reuse rz_core_print_disasm_strings which
 	// needs to be rewritten entirely
 	char *string = rz_core_print_disasm_strings(core, argc > 1 ? RZ_CORE_DISASM_STRINGS_MODE_BYTES : RZ_CORE_DISASM_STRINGS_MODE_INST, n_bytes, NULL);

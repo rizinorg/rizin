@@ -642,7 +642,7 @@ s sym.func.100004401
 af
 afn newname
 s entry0
-pds
+pds 0x420
 EOF
 EXPECT=<<EOF
 0x100001085 call newname

@@ -1185,6 +1185,10 @@ typedef struct rz_analysis_esil_inter_state_t {
 	bool analysis_stop;
 	ut64 last_read;
 	ut64 last_data;
+	ut64 emustack_min;
+	ut64 emustack_max;
+	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memreads;
+	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memwrites;
 } RzAnalysisEsilInterState;
 
 /* Alias RegChange and MemChange */
@@ -1308,6 +1312,12 @@ typedef struct rz_analysis_esil_basic_block_t {
 	char *expr; // synthesized esil-expression for this block
 	RzAnalysisEsilBlockEnterType enter; // maybe more type is needed here
 } RzAnalysisEsilBB;
+
+// Structure to represent memory reads and writes during ESIL tracing
+typedef struct rz_analysis_esil_memory_region_t {
+	ut64 addr; ///< memory address
+	size_t size; ///< size of the region
+} RzAnalysisEsilMemoryRegion;
 
 // TODO: rm data + len
 typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
