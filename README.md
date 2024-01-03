@@ -87,6 +87,21 @@ ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), DMP (Windows pa
 WASM (WebAssembly binary), Commodore VICE emulator, QNX,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
 
+## Tools
+
+Apart from the main tool - `rizin` there are also other tools tailored for specific purpose and 
+useful for shell scripting or as a separate standalone tools:
+
+- `rz-bin` - provides all kind of information about binary formats
+- `rz-asm` - a command-line assembler and disassemblers
+- `rz-diff` - a tool to compare two binaries as raw data or analyzed executables
+- `rz-hash` - allows to calculate different hashes or even encrypt the Data
+- `rz-gg` - a small "eggs" code generator useful for exploitation purposes
+- `rz-find` - binary analog of `find` tool, allowing to search patterns and bit masks
+- `rz-sign` - tool to work with FLIRT signatures
+- `rz-ax` - a calculator and number format converter
+- `rz-run` - a tool that allows to specify running environment and arguments for debugged file
+
 ## Scripting
 
 We provide a way to interact with Rizin from Python, Haskell, OCaml,
