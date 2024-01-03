@@ -1110,8 +1110,10 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 
 	pj_ka(j, "bbs");
 	RzListIter *it;
+	void **iter;
 	RzAnalysisBlock *block;
-	rz_list_foreach (function->bbs, it, block) {
+	rz_pvector_foreach (function->bbs, iter) {
+		block = *iter;
 		pj_n(j, block->addr);
 	}
 	pj_end(j);

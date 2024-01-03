@@ -2246,14 +2246,15 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 	const bool orig_bb_middle = rz_config_get_b(core->config, "asm.bb.middle");
 	rz_config_set_b(core->config, "asm.bb.middle", false);
 
-	rz_list_sort(f->bbs, (RzListComparator)bbcmp);
+	rz_pvector_sort(f->bbs, (RzListComparator)bbcmp);
 
 	RzAnalysisBlock *b;
-	RzListIter *iter;
+	void **iter;
 
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		rz_cmd_state_output_array_start(state);
-		rz_list_foreach (f->bbs, iter, b) {
+		rz_pvector_foreach (f->bbs, iter) {
+			b = *iter;
 			if (fromHere) {
 				if (b->addr < core->offset) {
 					core->cons->null = true;
@@ -2282,7 +2283,8 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
 
-		rz_list_foreach (f->bbs, iter, b) {
+		rz_pvector_foreach (f->bbs, iter) {
+			b = *iter;
 			pr_bb(core, f, b, emu, saved_gp, saved_arena, 'I', fromHere);
 		}
 		if (emu) {
@@ -4320,22 +4322,23 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_ropchain_handler(RzCore *core, int argc, c
 }
 
 static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmdStateOutput *state, char type_print, bool fromHere) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *b = NULL;
 	const bool orig_bb_middle = rz_config_get_b(core->config, "asm.bb.middle");
 	rz_config_set_b(core->config, "asm.bb.middle", false);
 
-	if (rz_list_length(f->bbs) >= 1) {
+	if (rz_pvector_len(f->bbs) >= 1) {
 		ut32 fcn_size = rz_analysis_function_realsize(f);
-		b = rz_list_get_top(f->bbs);
+		b = rz_pvector_at(f->bbs, 0);
 		if (b->size > fcn_size) {
 			b->size = fcn_size;
 		}
 	}
 
-	rz_list_sort(f->bbs, (RzListComparator)bbcmp);
+	rz_pvector_sort(f->bbs, (RzListComparator)bbcmp);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		rz_list_foreach (f->bbs, iter, b) {
+		rz_pvector_foreach (f->bbs, iter) {
+			b = *iter;
 			ut8 *buf = malloc(b->size);
 			if (!buf) {
 				RZ_LOG_ERROR("cannot allocate %" PFMT64u " byte(s)\n", b->size);
@@ -4355,7 +4358,8 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 			saved_arena = rz_reg_arena_peek(core->analysis->reg);
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
-		rz_list_foreach (f->bbs, iter, b) {
+		rz_pvector_foreach (f->bbs, iter) {
+			b = *iter;
 			pr_bb(core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
 		}
 		if (emu) {
@@ -5950,7 +5954,7 @@ static ut8 *analysis_histogram_data(RzCore *core, CoreBlockRange *brange, CoreAn
 			if (hist_type == HISTOGRAM_ANALYSIS_BASIC_BLOCKS) {
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, off + j, 0);
 				if (fcn) {
-					data[i] = rz_list_length(fcn->bbs);
+					data[i] = rz_pvector_len(fcn->bbs);
 				}
 				continue;
 			}

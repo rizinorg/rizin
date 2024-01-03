@@ -270,8 +270,9 @@ RZ_IPI RzCmdStatus rz_comment_function_list_handler(RzCore *core, int argc, cons
 
 static void meta_function_comment_remove(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
-	RzListIter *iter;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	void **iter;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
 		int i;
 		for (i = 0; i < bb->size; i++) {
 			ut64 addr = bb->addr + i;

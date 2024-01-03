@@ -445,7 +445,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	rz_return_val_if_fail(analysis && fcn && params && block, false);
 	bool isValid = false;
 	int i;
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *tmp_bb, *prev_bb;
 	prev_bb = 0;
 	if (!fcn->bbs) {
@@ -468,7 +468,8 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	}
 
 	// search for the predecessor bb
-	rz_list_foreach (fcn->bbs, iter, tmp_bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		tmp_bb = *iter;
 		if (tmp_bb->jump == block->addr || tmp_bb->fail == block->addr) {
 			prev_bb = tmp_bb;
 			break;

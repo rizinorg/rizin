@@ -120,9 +120,10 @@ static bool function_data_new(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut8
 	size_t size = 0, current = 0;
 	ut8 *data = NULL;
 	RzAnalysisBlock *bb = NULL;
-	RzListIter *iter = NULL;
+	void **iter = NULL;
 
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
 		size += bb->size;
 	}
 
@@ -131,7 +132,8 @@ static bool function_data_new(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut8
 	}
 
 	current = 0;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->size > 0 && !iob_read_at(bb->addr, data + current, bb->size)) {
 			goto fail;
 		}
@@ -420,7 +422,26 @@ static void *analysis_match_basic_blocks(SharedContext *shared) {
  */
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b, RZ_NONNULL RzAnalysisMatchOpt *opt) {
 	rz_return_val_if_fail(opt && opt->analysis_a && opt->analysis_b && fcn_a && fcn_b, NULL);
-	return analysis_match_result_new(opt, fcn_a->bbs, fcn_b->bbs, (RzThreadFunction)analysis_match_basic_blocks, (AllocateBuffer)basic_block_data_new);
+
+	RzList *bbs_list_a = rz_list_new();
+	RzList *bbs_list_b = rz_list_new();
+	if (!bbs_list_a || !bbs_list_b) {
+		// If memory allocation failed, print an error message and return NULL
+		eprintf("Failed to allocate memory for bbs_list_a or bbs_list_b.\n");
+		rz_list_free(bbs_list_a); // It's safe to call rz_list_free with NULL
+		rz_list_free(bbs_list_b);
+		return NULL;
+	}
+
+	void **it;
+	rz_pvector_foreach (fcn_a->bbs, it) {
+		rz_list_append(bbs_list_a, *it);
+	}
+	rz_pvector_foreach (fcn_b->bbs, it) {
+		rz_list_append(bbs_list_b, *it);
+	}
+
+	return analysis_match_result_new(opt, bbs_list_a, bbs_list_b, (RzThreadFunction)analysis_match_basic_blocks, (AllocateBuffer)basic_block_data_new);
 }
 
 static bool function_name_cmp(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b) {

@@ -1617,9 +1617,10 @@ static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 #define PAL_TRUE "#13a10e"
 static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bbi;
-	RzListIter *iter;
+	void **iter;
 
-	rz_list_foreach (fcn->bbs, iter, bbi) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bbi = *iter;
 		if (bbi->jump != UT64_MAX) {
 			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 				bbi->addr, bbi->jump,

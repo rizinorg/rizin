@@ -6559,7 +6559,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 
 RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 	RzAnalysisBlock *b;
-	RzListIter *locs_it = NULL;
+	void **locs_it = NULL;
 	ut32 fcn_size = rz_analysis_function_realsize(fcn);
 	const char *orig_bb_middle = rz_config_get(core->config, "asm.bb.middle");
 	rz_config_set_i(core->config, "asm.bb.middle", false);
@@ -6569,9 +6569,9 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 	pj_kn(pj, "addr", fcn->addr);
 	pj_k(pj, "ops");
 	pj_a(pj);
-	rz_list_sort(fcn->bbs, bb_cmpaddr);
-	rz_list_foreach (fcn->bbs, locs_it, b) {
-
+	rz_pvector_sort(fcn->bbs, bb_cmpaddr);
+	rz_pvector_foreach (fcn->bbs, locs_it) {
+		b = *locs_it;
 		ut8 *buf = malloc(b->size);
 		if (buf) {
 			rz_io_read_at(core->io, b->addr, buf, b->size);

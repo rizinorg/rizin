@@ -1087,7 +1087,15 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 		if (!ctx->cur_bb) {
 			ctx->path = rz_list_new();
 			ctx->switch_path = rz_list_new();
-			ctx->bbl = rz_list_clone(ctx->fcn->bbs);
+			ctx->bbl = rz_list_new();
+			if (!ctx->bbl) {
+				eprintf("Failed to allocate memory for ctx->bbl list.\n");
+				return false;
+			}
+			void **it;
+			rz_pvector_foreach (ctx->fcn->bbs, it) {
+				rz_list_append(ctx->bbl, *it);
+			}
 			ctx->cur_bb = rz_analysis_get_block_at(ctx->fcn->analysis, ctx->fcn->addr);
 			rz_list_push(ctx->path, ctx->cur_bb);
 		}

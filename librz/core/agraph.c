@@ -2224,7 +2224,7 @@ static int bbcmp(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 
 static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
-	RzListIter *iter;
+	void **iter;
 	bool emu = rz_config_get_i(core->config, "asm.emu");
 	ut64 saved_gp = core->analysis->gp;
 	ut8 *saved_arena = NULL;
@@ -2239,10 +2239,11 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		RZ_FREE(saved_arena);
 		return;
 	}
-	rz_list_sort(fcn->bbs, (RzListComparator)bbcmp);
+	rz_pvector_sort(fcn->bbs, (RzListComparator)bbcmp);
 
 	shortcuts = rz_config_get_i(core->config, "graph.nodejmps");
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
@@ -2339,7 +2340,7 @@ static bool isbbfew(RzAnalysisBlock *curbb, RzAnalysisBlock *bb) {
 /* build the RzGraph inside the RzAGraph g, starting from the Basic Blocks */
 static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
-	RzListIter *iter;
+	void **iter;
 	bool emu = rz_config_get_i(core->config, "asm.emu");
 	bool few = rz_config_get_i(core->config, "graph.few");
 	int ret = false;
@@ -2353,10 +2354,11 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	if (emu) {
 		saved_arena = rz_reg_arena_peek(core->analysis->reg);
 	}
-	rz_list_sort(fcn->bbs, (RzListComparator)bbcmp);
+	rz_pvector_sort(fcn->bbs, (RzListComparator)bbcmp);
 	RzAnalysisBlock *curbb = NULL;
 	if (few) {
-		rz_list_foreach (fcn->bbs, iter, bb) {
+		rz_pvector_foreach (fcn->bbs, iter) {
+			bb = *iter;
 			if (!curbb) {
 				curbb = bb;
 			}
@@ -2369,7 +2371,8 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 
 	core->keep_asmqjmps = false;
 	bool shortcuts = rz_core_agraph_is_shortcuts(core, g);
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
@@ -2391,7 +2394,8 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		core->keep_asmqjmps = true;
 	}
 
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}

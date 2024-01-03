@@ -170,7 +170,7 @@ typedef struct rz_analysis_function_t {
 	bool bp_frame : 1;
 	bool is_noreturn : 1; // true if function does not return
 	int argnum; // number of arguments;
-	RzList /*<RzAnalysisBlock *>*/ *bbs; // TODO: should be RzPVector
+	RzPVector /*<RzAnalysisBlock *>*/ *bbs;
 	RzAnalysisFcnMeta meta;
 	RzList /*<char *>*/ *imports; // maybe bound to class?
 	struct rz_analysis_t *analysis; // this function is associated with this instance

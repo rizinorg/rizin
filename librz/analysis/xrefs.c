@@ -275,13 +275,14 @@ RZ_API ut64 rz_analysis_xrefs_count(RzAnalysis *analysis) {
 }
 
 static RZ_OWN RzList /*<RzAnalysisXRef *>*/ *fcn_get_refs(const RzAnalysisFunction *fcn, HtUP *ht) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *bb;
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
 		return NULL;
 	}
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
 		int i;
 
 		for (i = 0; i < bb->ninstr; i++) {

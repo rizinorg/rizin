@@ -716,7 +716,7 @@ static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisCo
 RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_return_if_fail(core && core->analysis && fcn);
 	RzAnalysisBlock *bb;
-	RzListIter *it;
+	void **it;
 	RzAnalysisOp aop = { 0 };
 	bool ioCache = rz_config_get_i(core->config, "io.cache");
 	bool stack_set = false;
@@ -766,8 +766,9 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 	ut64 oldoff = core->offset;
 	rz_cons_break_push(NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
-	rz_list_sort(fcn->bbs, bb_cmpaddr);
-	rz_list_foreach (fcn->bbs, it, bb) {
+	rz_pvector_sort(fcn->bbs, bb_cmpaddr);
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = *it;
 		ut64 at = bb->addr;
 		ut64 to = bb->addr + bb->size;
 		rz_reg_set_value(esil->analysis->reg, pc, at);

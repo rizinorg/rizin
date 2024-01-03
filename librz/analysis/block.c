@@ -874,9 +874,10 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *v) {
 	AutomergeCtx *ctx = user;
 	const RzAnalysisFunction *fcn = (const RzAnalysisFunction *)(size_t)k;
-	RzListIter *it;
+	void **it;
 	RzAnalysisBlock *block;
-	rz_list_foreach (fcn->bbs, it, block) {
+	rz_pvector_foreach (fcn->bbs, it) {
+		block = *it;
 		bool already_visited;
 		ht_up_find(ctx->visited_blocks, (ut64)(size_t)block, &already_visited);
 		if (already_visited) {

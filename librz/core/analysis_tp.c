@@ -812,7 +812,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 #define OP_CACHE_LIMIT 8192
 
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
-	RzListIter *it;
+	void **it;
 
 	rz_return_if_fail(core && core->analysis && fcn);
 
@@ -868,10 +868,11 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		goto out_function;
 	}
 	rz_cons_break_push(NULL, NULL);
-	rz_list_sort(fcn->bbs, bb_cmpaddr);
+	rz_pvector_sort(fcn->bbs, bb_cmpaddr);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, it, bb) {
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = *it;
 		ut64 addr = bb->addr;
 		rz_reg_set_value(reg, r, addr);
 		ht_up_free(op_cache);

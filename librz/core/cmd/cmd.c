@@ -2753,9 +2753,10 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		ut64 offorig = core->offset;
 		ut64 obs = core->blocksize;
 		if (fcn) {
-			RzListIter *iter;
+			void **iter;
 			RzAnalysisBlock *bb;
-			rz_list_foreach (fcn->bbs, iter, bb) {
+			rz_pvector_foreach (fcn->bbs, iter) {
+				bb = *iter;
 				rz_core_seek(core, bb->addr, true);
 				rz_core_block_size(core, bb->size);
 				rz_core_cmd0(core, cmd);
@@ -2861,13 +2862,14 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		break;
 	case 'b': // "@@b" - function basic blocks
 	{
-		RzListIter *iter;
+		void **iter;
 		RzAnalysisBlock *bb;
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
 		int bs = core->blocksize;
 		if (fcn) {
-			rz_list_sort(fcn->bbs, bb_cmp);
-			rz_list_foreach (fcn->bbs, iter, bb) {
+			rz_pvector_sort(fcn->bbs, bb_cmp);
+			rz_pvector_foreach (fcn->bbs, iter) {
+				bb = *iter;
 				rz_core_block_size(core, bb->size);
 				rz_core_seek(core, bb->addr, true);
 				rz_core_cmd(core, cmd, 0);
@@ -2905,13 +2907,14 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 	} break;
 	case 'i': // "@@i" - function instructions
 	{
-		RzListIter *iter;
+		void **iter;
 		RzAnalysisBlock *bb;
 		int i;
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
 		if (fcn) {
-			rz_list_sort(fcn->bbs, bb_cmp);
-			rz_list_foreach (fcn->bbs, iter, bb) {
+			rz_pvector_sort(fcn->bbs, bb_cmp);
+			rz_pvector_foreach (fcn->bbs, iter) {
+				bb = *iter;
 				for (i = 0; i < bb->op_pos_size; i++) {
 					ut64 addr = bb->addr + bb->op_pos[i];
 					rz_core_seek(core, addr, true);
@@ -4676,11 +4679,12 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_bbs_stmt) {
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *bb;
 	RzCmdStatus ret = RZ_CMD_STATUS_OK;
-	rz_list_sort(fcn->bbs, bb_cmp);
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_sort(fcn->bbs, bb_cmp);
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
 		rz_core_seek(core, bb->addr, true);
 		rz_core_block_size(core, bb->size);
 		RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
