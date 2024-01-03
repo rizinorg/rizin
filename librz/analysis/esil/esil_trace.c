@@ -7,8 +7,7 @@
 #define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalysisEsilRegChange *)(y))->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalysisEsilMemChange *)(y))->idx)
 
-static int ocbs_set = false;
-static RzAnalysisEsilCallbacks ocbs = { 0 };
+#define ESILISTATE esil->analysis->esilinterstate
 
 // IL trace wrapper of esil
 static inline bool esil_add_mem_trace(RzAnalysisEsilTrace *etrace, RzILTraceMemOp *mem) {
@@ -127,10 +126,10 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 		// RZ_LOG_WARN("Register not found in profile\n");
 		return 0;
 	}
-	if (ocbs.hook_reg_read) {
+	if (ESILISTATE->callbacks.hook_reg_read) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = ocbs;
-		ret = ocbs.hook_reg_read(esil, name, res, size);
+		esil->cb = ESILISTATE->callbacks;
+		ret = ESILISTATE->callbacks.hook_reg_read(esil, name, res, size);
 		esil->cb = cbs;
 	}
 	if (!ret && esil->cb.reg_read) {
@@ -171,10 +170,10 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 
 	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
-	if (ocbs.hook_reg_write) {
+	if (ESILISTATE->callbacks.hook_reg_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = ocbs;
-		ret = ocbs.hook_reg_write(esil, name, val);
+		esil->cb = ESILISTATE->callbacks;
+		ret = ESILISTATE->callbacks.hook_reg_write(esil, name, val);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -207,10 +206,10 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 		RZ_FREE(mem_read);
 	}
 
-	if (ocbs.hook_mem_read) {
+	if (ESILISTATE->callbacks.hook_mem_read) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = ocbs;
-		ret = ocbs.hook_mem_read(esil, addr, buf, len);
+		esil->cb = ESILISTATE->callbacks;
+		ret = ESILISTATE->callbacks.hook_mem_read(esil, addr, buf, len);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -245,10 +244,10 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 		add_mem_change(esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
 	}
 
-	if (ocbs.hook_mem_write) {
+	if (ESILISTATE->callbacks.hook_mem_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = ocbs;
-		ret = ocbs.hook_mem_write(esil, addr, buf, len);
+		esil->cb = ESILISTATE->callbacks;
+		ret = ESILISTATE->callbacks.hook_mem_write(esil, addr, buf, len);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -288,11 +287,11 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysi
 	}
 	/* save old callbacks */
 	int esil_verbose = esil->verbose;
-	if (ocbs_set) {
+	if (ESILISTATE->callbacks_set) {
 		RZ_LOG_ERROR("esil: Cannot call recursively\n");
 	}
-	ocbs = esil->cb;
-	ocbs_set = true;
+	ESILISTATE->callbacks = esil->cb;
+	ESILISTATE->callbacks_set = true;
 
 	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
 	rz_pvector_push(esil->trace->instructions, instruction);
@@ -310,8 +309,8 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysi
 	rz_analysis_esil_parse(esil, expr);
 	rz_analysis_esil_stack_free(esil);
 	/* restore hooks */
-	esil->cb = ocbs;
-	ocbs_set = false;
+	esil->cb = ESILISTATE->callbacks;
+	ESILISTATE->callbacks_set = false;
 	esil->verbose = esil_verbose;
 	/* increment idx */
 	esil->trace->idx++;

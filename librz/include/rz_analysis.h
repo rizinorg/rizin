@@ -1189,6 +1189,8 @@ typedef struct rz_analysis_esil_inter_state_t {
 	ut64 emustack_max;
 	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memreads;
 	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memwrites;
+	RzAnalysisEsilCallbacks callbacks;
+	bool callbacks_set;
 } RzAnalysisEsilInterState;
 
 /* Alias RegChange and MemChange */
