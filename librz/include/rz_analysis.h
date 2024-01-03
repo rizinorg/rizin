@@ -1185,6 +1185,8 @@ typedef struct rz_analysis_esil_inter_state_t {
 	bool analysis_stop;
 	ut64 last_read;
 	ut64 last_data;
+	ut64 emustack_min;
+	ut64 emustack_max;
 } RzAnalysisEsilInterState;
 
 /* Alias RegChange and MemChange */
