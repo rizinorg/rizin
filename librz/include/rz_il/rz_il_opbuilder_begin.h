@@ -57,6 +57,7 @@
 #define BV2F(fmt, bv)              rz_il_op_new_float(fmt, bv)
 #define F32(f32)                   rz_il_op_new_float_from_f32(f32)
 #define F64(f64)                   rz_il_op_new_float_from_f64(f64)
+#define F80(f80)                   rz_il_op_new_float_from_f80(f80)
 #define F2BV(fl)                   rz_il_op_new_fbits(fl)
 #define IS_FINITE(fl)              rz_il_op_new_is_finite(fl)
 #define IS_FNAN(fl)                rz_il_op_new_is_nan(fl)

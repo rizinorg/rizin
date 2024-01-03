@@ -24,6 +24,7 @@
 #undef BV2F
 #undef F32
 #undef F64
+#undef F80
 #undef F2BV
 #undef IS_FINITE
 #undef IS_FNAN
