@@ -95,7 +95,7 @@ useful for shell scripting or as separate standalone tools:
 - `rz-bin` - provides all kind of information about binary formats
 - `rz-asm` - a command-line assembler and disassemblers
 - `rz-diff` - a tool to compare two binaries as raw data or analyzed executables
-- `rz-hash` - allows to calculate different hashes or even encrypt the Data
+- `rz-hash` - allows to calculate different hashes or even encrypt data
 - `rz-gg` - a small "eggs" code generator useful for exploitation purposes
 - `rz-find` - binary analog of `find` tool, allowing to search patterns and bit masks
 - `rz-sign` - tool to work with FLIRT signatures
