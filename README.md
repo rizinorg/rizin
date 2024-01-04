@@ -89,7 +89,7 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
 
 ## Tools
 
-Apart from the main tool - `rizin` there are also other tools tailored for specific purpose and 
+Apart from the main tool `rizin`, there are also other tools tailored for specific purposes and 
 useful for shell scripting or as a separate standalone tools:
 
 - `rz-bin` - provides all kind of information about binary formats
