@@ -261,7 +261,9 @@ static inline RzPVector *rz_pvector_clonef(
 }
 
 static inline size_t rz_pvector_len(const RzPVector *vec) {
-	rz_return_val_if_fail(vec, 0);
+	if (!vec) {
+		return 0;
+	}
 	return vec->v.len;
 }
 

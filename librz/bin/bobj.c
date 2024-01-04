@@ -744,14 +744,14 @@ RZ_API const RzPVector /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL 
 }
 
 /**
- * \brief Get list of \p RzBinString representing the strings identified in the binary object.
+ * \brief Get RzPVector of \p RzBinString representing the strings identified in the binary object.
  */
-RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	if (!obj->strings) {
 		return NULL;
 	}
-	return obj->strings->list;
+	return obj->strings->pvec;
 }
 
 /**
@@ -952,29 +952,36 @@ RZ_API ut64 rz_bin_object_v2p(RZ_NONNULL RzBinObject *obj, ut64 vaddr) {
 /**
  * \brief   Allocates and initializes the RzBinStrDb structure with the given list of strings
  *
- * \param   list  The list of strings to initialize the database with
+ * \param   pvector  The pvector of strings to initialize the database with
  *
  * \return  On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzList /*<RzBinString *>*/ *list) {
+RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVector /*<RzBinString *>*/ *pvector) {
 	RzBinStrDb *db = RZ_NEW0(RzBinStrDb);
 	if (!db) {
 		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb\n");
-		rz_list_free(list);
+		rz_pvector_free(pvector);
 		return NULL;
 	}
 
-	db->list = list ? list : rz_list_newf((RzListFree)rz_bin_string_free);
+	void **it;
+	RzBinString *bstr;
+	db->pvec = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	if (pvector) {
+		rz_pvector_foreach (pvector, it) {
+			bstr = *it;
+			rz_pvector_push(db->pvec, bstr);
+		}
+	}
 	db->phys = ht_up_new0();
 	db->virt = ht_up_new0();
-	if (!db->list || !db->phys || !db->virt) {
+	if (!db->pvec || !db->phys || !db->virt) {
 		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb internal data structure.\n");
 		goto fail;
 	}
 
-	RzListIter *it;
-	RzBinString *bstr;
-	rz_list_foreach (list, it, bstr) {
+	rz_pvector_foreach (pvector, it) {
+		bstr = *it;
 		if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
 			RZ_LOG_ERROR("rz_bin: Cannot insert/update RzBinString in RzBinStrDb (phys)\n");
 			goto fail;
@@ -1000,7 +1007,7 @@ RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db) {
 	if (!db) {
 		return;
 	}
-	rz_list_free(db->list);
+	rz_pvector_free(db->pvec);
 	ht_up_free(db->phys);
 	ht_up_free(db->virt);
 	free(db);
@@ -1017,7 +1024,7 @@ RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db) {
 RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr) {
 	rz_return_val_if_fail(db && bstr, false);
 
-	if (!rz_list_append(db->list, bstr)) {
+	if (!rz_pvector_push(db->pvec, bstr)) {
 		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (list)\n");
 		return false;
 	}
@@ -1047,6 +1054,6 @@ RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 addres
 
 	ht_up_delete(db->virt, bstr->vaddr);
 	ht_up_delete(db->phys, bstr->paddr);
-	rz_list_delete_data(db->list, bstr);
+	rz_pvector_remove_data(db->pvec, bstr);
 	return true;
 }

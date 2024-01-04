@@ -40,7 +40,7 @@ bool test_rz_bin(void) {
 	const char *import_names[] = { "__libc_start_main", "printf", "scanf", "strcmp", "__gmon_start__" };
 	bool has_import_names[sizeof(import_names)] = { 0 };
 	RzBinImport *import;
-	RzListIter *it;
+	void **it;
 	void **vec_it;
 	rz_pvector_foreach (imports, vec_it) {
 		import = *vec_it;
@@ -55,8 +55,8 @@ bool test_rz_bin(void) {
 		mu_assert_true(has_import_names[i], "Import name was not found");
 	}
 
-	const RzList *strings = rz_bin_object_get_strings(obj);
-	mu_assert_eq(rz_list_length(strings), 5, "rz_bin_object_get_strings");
+	const RzPVector *strings = rz_bin_object_get_strings(obj);
+	mu_assert_eq(rz_pvector_len(strings), 5, "rz_bin_object_get_strings");
 	const char *exp_strings[] = {
 		"IOLI Crackme Level 0x00\n",
 		"Password: ",
@@ -67,7 +67,8 @@ bool test_rz_bin(void) {
 	};
 	RzBinString *s;
 	int i = 0;
-	rz_list_foreach (strings, it, s) {
+	rz_pvector_foreach (strings, it) {
+                s = *it;
 		mu_assert_streq(s->string, exp_strings[i], "String not found");
 		mu_assert_true(rz_bin_object_get_string_at(obj, s->vaddr, true) != NULL, "is_string (virt) should be true");
 		mu_assert_false(rz_bin_object_get_string_at(obj, s->vaddr, false) != NULL, "is_string (phys) should be false");

@@ -195,9 +195,9 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	// we dont want to find strings in avr bins because there are lot of false positives
-	return rz_list_newf((RzListFree)rz_bin_string_free);
+	return rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 }
 
 RzBinPlugin rz_bin_plugin_avr = {

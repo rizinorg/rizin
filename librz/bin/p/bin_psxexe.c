@@ -108,7 +108,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	// hardcode minstrlen = 20
 	int minstrlen = bf->minstrlen ? bf->minstrlen : 20;
 	return rz_bin_file_strings(bf, minstrlen, true);

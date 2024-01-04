@@ -2663,13 +2663,16 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 's':
 		if (each[1] == 't') { // strings
-			list = rz_bin_get_strings(core->bin);
-			if (list) {
+			RzBinObject *o = rz_bin_cur_object(core->bin);
+			RzPVector *pvec = o ? (RzPVector *)rz_bin_object_get_strings(o) : NULL;
+			if (pvec) {
 				ut64 offorig = core->offset;
 				ut64 obs = core->blocksize;
 				RzBinString *s;
 				RzList *lost = rz_list_newf(free);
-				rz_list_foreach (list, iter, s) {
+				void **it;
+				rz_pvector_foreach (pvec, it) {
+					s = *it;
 					RzBinString *bs = rz_mem_dup(s, sizeof(RzBinString));
 					rz_list_append(lost, bs);
 				}
@@ -4906,15 +4909,20 @@ err:
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_string_stmt) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child(node, 0);
-	RzList *list = rz_bin_get_strings(core->bin);
+
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *vec = o ? (RzPVector *)rz_bin_object_get_strings(o) : NULL;
+
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	if (list) {
+	if (vec) {
 		ut64 offorig = core->offset;
 		ut64 obs = core->blocksize;
 		RzBinString *s;
 		RzList *lost = rz_list_newf(free);
 		RzListIter *iter;
-		rz_list_foreach (list, iter, s) {
+		void **it;
+		rz_pvector_foreach (vec, it) {
+			s = *it;
 			RzBinString *bs = rz_mem_dup(s, sizeof(RzBinString));
 			rz_list_append(lost, bs);
 		}
