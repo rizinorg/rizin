@@ -73,6 +73,7 @@ RZ_API size_t rz_th_pool_size(RZ_NONNULL RzThreadPool *pool);
 
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzListFree qfree);
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new2(RZ_NONNULL RZ_OWN RzList /*<void *>*/ *list);
+RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new3(RZ_NONNULL RZ_BORROW RzPVector /*<void *>*/ *vector, RZ_NULLABLE RzListFree qfree);
 RZ_API void rz_th_queue_free(RZ_NULLABLE RzThreadQueue *queue);
 RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *user, bool tail);
 RZ_API RZ_OWN void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
