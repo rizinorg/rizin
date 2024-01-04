@@ -98,7 +98,7 @@ useful for shell scripting or as separate standalone tools:
 - `rz-hash` - allows to calculate different hashes or even encrypt data
 - `rz-gg` - a small "eggs" code generator useful for exploitation purposes
 - `rz-find` - binary analog of `find` tool, allowing to search patterns and bit masks
-- `rz-sign` - tool to work with FLIRT signatures
+- `rz-sign` - tool to create, convert and parse FLIRT signatures
 - `rz-ax` - a calculator and number format converter
 - `rz-run` - a tool that allows to specify running environment and arguments for debugged file
 
