@@ -31,14 +31,6 @@ static inline int nextcas(void) {
 	return cas++;
 }
 
-static SdbHook global_hook = NULL;
-static void *global_user = NULL;
-
-RZ_API void sdb_global_hook(SdbHook hook, void *user) {
-	global_hook = hook;
-	global_user = user;
-}
-
 // TODO: use mmap instead of read.. much faster!
 RZ_API Sdb *sdb_new0(void) {
 	return sdb_new(NULL, NULL, 0);
@@ -106,9 +98,6 @@ RZ_API Sdb *sdb_new(const char *path, const char *name, int lock) {
 	s->ht = sdb_ht_new();
 	s->lock = lock;
 	// if open fails ignore
-	if (global_hook) {
-		sdb_hook(s, global_hook, global_user);
-	}
 	cdb_init(&s->db, s->fd);
 	return s;
 fail:
