@@ -532,7 +532,8 @@ typedef struct rz_analysis_t {
 	HtPP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
-	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc.
+	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..
+	ut64 cmpval; ///< last compare value for jump table.
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
