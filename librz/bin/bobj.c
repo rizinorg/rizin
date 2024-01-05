@@ -532,20 +532,17 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
 	rz_return_val_if_fail(bf && o, NULL);
 
-	static bool first = true;
 	// rz_bin_object_set_items set o->relocs but there we don't have access
 	// to io so we need to be run from bin_relocs, free the previous reloc and get
 	// the patched ones
-	if (first && o->plugin && o->plugin->patch_relocs) {
+	if (!bf->rbin->is_reloc_patched && o->plugin && o->plugin->patch_relocs) {
 		RzPVector *tmp = o->plugin->patch_relocs(bf);
-		first = false;
 		if (!tmp) {
 			return o->relocs;
 		}
 		rz_bin_reloc_storage_free(o->relocs);
 		REBASE_PADDR(o, tmp, RzBinReloc);
 		o->relocs = rz_bin_reloc_storage_new(tmp);
-		first = false;
 		bf->rbin->is_reloc_patched = true;
 	}
 	return o->relocs;
