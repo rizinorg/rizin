@@ -45,7 +45,7 @@ typedef struct match_ui_info_t {
 static bool shared_context_init(SharedContext *context, RzAnalysis *analysis_a, RzAnalysis *analysis_b, RzList /*<void *>*/ *list_a, RzList /*<void *>*/ *list_b, AllocateBuffer alloc_cb) {
 	RzThreadLock *lock_a = rz_th_lock_new(true);
 	RzThreadLock *lock_b = analysis_a == analysis_b ? lock_a : rz_th_lock_new(true);
-	RzThreadQueue *queue = rz_th_queue_new2(rz_list_clone(list_a));
+	RzThreadQueue *queue = rz_th_queue_from_list(list_a, NULL);
 	RzThreadQueue *matches = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
 	RzThreadQueue *unmatch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
 	RzAtomicBool *loop = rz_atomic_bool_new(true);
