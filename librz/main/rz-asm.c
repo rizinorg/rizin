@@ -12,13 +12,6 @@
 #include <string.h>
 #include <rz_main.h>
 #include <rz_core.h>
-<<<<<<< HEAD
-#define COLOR_GREEN   "\x1b[32m"
-#define COLOR_RESET   "\x1b[0m"
-#define COLOR_LIGHT_BLUE "\x1b[36m"
-#define COLOR_YELLOW "\x1b[33m"
-=======
->>>>>>> f60893219b (updated)
 
 typedef struct {
 	RzLib *l;
@@ -173,78 +166,6 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	free(buf);
 	return ret;
 }
-<<<<<<< HEAD
-static void printColoredText(const char* color, const char* text) {
-    printf("%s %-8s %s", color, text, COLOR_GREEN);
-}
-static void printOption(const char* option, const char* arg,const char* description) {
-	size_t optionWidth = strlen(option);
-    size_t maxSpaces = 12 - optionWidth;
-
-    printf(" %-.*s", (int)optionWidth, option);  // Dynamically align option based on width
-
-    if (arg[0] != '\0') {
-        printColoredText(COLOR_YELLOW, arg);
-    } else {
-        printf("%-*.*s", (int)maxSpaces, (int)maxSpaces, "");  // Dynamically add spaces when arg is not present
-    }
-
-    printColoredText(COLOR_RESET, description);
-    printf("\n");
-}
-
-static int rasm_show_help(int v) {
-	if (v < 2) {
-		printf("%s%s",COLOR_LIGHT_BLUE,"Usage:");
-    	printColoredText(COLOR_RESET, "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
-		       "             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
-	}
-	const char* options[] = {
-		       "-a","[arch]",    "   Set architecture to assemble/disassemble (see -L)",
-		       " -A","",         "    Show Analysis information from given hexpairs",
-		       " -b","[bits]",   "   Set cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)",
-		       " -B","",         "    Binary input/output (-l is mandatory for binary input)",
-		       " -c","[cpu]",    "   Select specific CPU (depends on arch)",
-		       " -C","",         "    Output in C format",
-		       " -d, -D","",     "    Disassemble from hexpair bytes (-D show hexpairs)",
-		       " -e","",         "    Use big endian instead of little endian",
-		       " -I","",         "    Display lifted RzIL code (same input as in -d, IL is also validated)",
-		       " -E","",         "    Display ESIL expression (same input as in -d)",
-		       " -f","[file]",   "   Read data from file",
-		       " -F","[in:out]",  "   Specify input and/or output filters (att2intel, x86.pseudo, ...)",
-		       " -h, -hh","",    "    Show this help, -hh for long",
-		       " -i","[len]",     "   ignore/skip N bytes of the input buffer",
-		       " -j","",         "    output in json format",
-		       " -k","[kernel]",  "   Select operating system (linux, windows, darwin, ..)",
-		       " -l","[len]",     "   Input/Output length",
-		       " -L","",         "    List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)",
-		       " -o,-@","[addr]", "Set start address for code (default 0)",
-		       " -O","[file]",    "   Output file name (rz-asm -Bf a.asm -O a)",
-		       " -p","",         "    Run SPP over input for assembly",
-		       " -q","",         "    quiet mode",
-		       " -r","",         "    output in rizin commands",
-		       " -s","[syntax]",  "   Select syntax (intel, att)",
-		       " -v","",         "    Show version information",
-		       " -x","",         "    Use hex dwords instead of hex pairs when assembling.",
-		       " -w","",         "    What's this instruction for? describe opcode",
-			   };
-			   if (v != 1){
-			   for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-					if (i + 1 < sizeof(options) / sizeof(options[0])) {
-						printOption(options[i], options[i + 1],options[i + 2]);
-					}
-				}
-			   }
-			   printf("%s%s", COLOR_RESET, "  If '-l' value is greater than output length, output is padded with nops\n\
-  If the last argument is '-' reads from stdin\n\
- Environment:\n\
-  RZ_NOPLUGINS      do not load shared plugins (speedup loading)\n\
-  RZ_ASM_ARCH       same as rz-asm -a\n\
-  RZ_ASM_BITS       same as rz-asm -b\n\
-  RZ_DEBUG          if defined, show error messages and crash signal\n"
-);
-
-=======
 
 static int rasm_show_help(int v) {
 	if (v < 2) {
@@ -305,7 +226,6 @@ static int rasm_show_help(int v) {
 		       " RZ_ASM_BITS       same as rz-asm -b\n"
 		       " RZ_DEBUG          if defined, show error messages and crash signal\n"
 		       "");
->>>>>>> f60893219b (updated)
 	if (v == 2) {
 		printf("Supported Assembler directives:\n");
 		rz_asm_list_directives();

@@ -194,95 +194,13 @@ typedef struct diff_hex_view_t {
 #define rz_diff_ctx_set_type(x, t) rz_diff_ctx_set_def(x, type, DIFF_TYPE_UNKNOWN, t)
 #define rz_diff_ctx_set_mode(x, m) rz_diff_ctx_set_def(x, mode, DIFF_MODE_STANDARD, m)
 #define rz_diff_ctx_set_opt(x, o)  rz_diff_ctx_set_def(x, option, DIFF_OPT_UNKNOWN, o)
-<<<<<<< HEAD
-#define COLOR_GREEN   "\x1b[32m"
-#define COLOR_RESET   "\x1b[0m"
-#define COLOR_LIGHT_BLUE "\x1b[36m"
-#define COLOR_YELLOW "\x1b[33m"
-
-static void printColoredText(const char* color, const char* text) {
-    printf("%s %-9s %s", color, text, COLOR_GREEN);
-}
-static void printOption(const char* option, const char* arg,const char* description) {
-	size_t optionWidth = strlen(option);
-    size_t maxSpaces = 13 - optionWidth;
-
-    printf(" %-.*s", (int)optionWidth, option);  // Dynamically align option based on width
-
-    if (arg[0] != '\0') {
-        printColoredText(COLOR_YELLOW, arg);
-    } else {
-        printf("%-*.*s", (int)maxSpaces, (int)maxSpaces, "");  // Dynamically add spaces when arg is not present
-    }
-
-    printColoredText(COLOR_RESET, description);
-    printf("\n");
-}
 
 static void rz_diff_show_help(bool usage_only) {
-	printf("%s%s",COLOR_LIGHT_BLUE,"Usage:");
-    printColoredText(COLOR_RESET, "rz-diff [options] <file0> <file1>\n");
-=======
-
-static void rz_diff_show_help(bool usage_only) {
-<<<<<<< HEAD
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage:", COLOR_RESET);
-	printf(COLOR_RESET "rz-diff [options] <file0> <file1>\n");
->>>>>>> f60893219b (updated)
-=======
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage:", Color_RESET);
-	printf(Color_RESET "rz-diff [options] <file0> <file1>\n");
->>>>>>> a6f4477e07 (modified)
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", Color_RESET);
+	printf("rz-diff [options] <file0> <file1>\n");
 	if (usage_only) {
 		return;
 	}
-<<<<<<< HEAD
-	printf(
-		"  -a [arch] specify architecture plugin to use (x86, arm, ..)\n"
-		"  -b [bits] specify register size for arch (16 (thumb), 32, 64, ..)\n"
-		"  -d [algo] compute edit distance based on the choosen algorithm:\n"
-		"              myers  | Eugene W. Myers' O(ND) algorithm (no substitution)\n"
-		"              leven  | Levenshtein O(N^2) algorithm (with substitution)\n"
-		"              ssdeep | Context triggered piecewise hashing comparison\n"
-		"  -i        use command line arguments instead of files (only for -d)\n"
-		"  -H        hexadecimal visual mode\n"
-		"  -h        show the help message\n"
-		"  -j        json output\n"
-		"  -q        quite output\n"
-		"  -V        show version information\n"
-		"  -v        be more verbose (stderr output)\n"
-		"  -e [k=v]  set an evaluable config variable\n"
-		"  -A        compare virtual and physical addresses\n"
-		"  -B        run 'aaa' when loading the bin\n"
-		"  -C        disable colors\n"
-		"  -T        show timestamp information\n"
-		"  -S [WxH]  sets the width and height of the terminal for visual mode\n"
-		"  -0 [cmd]  input for file0 when option -t 'commands' is given.\n"
-		"            the same value will be set for file1, if -1 is not set.\n"
-		"  -1 [cmd]  input for file1 when option -t 'commands' is given.\n"
-		"  -t [type] compute the difference between two files based on its type:\n"
-		"              bytes      | compares raw bytes in the files (only for small files)\n"
-		"              lines      | compares text files\n"
-		"              functions  | compares functions found in the files\n"
-		"              classes    | compares classes found in the files\n"
-		"              command    | compares command output returned when executed in both files\n"
-		"                         | requires -0 <cmd> and -1 <cmd> is optional\n"
-		"              entries    | compares entries found in the files\n"
-		"              fields     | compares fields found in the files\n"
-		"              graphs     | compares 2 functions and outputs in graphviz/dot format\n"
-		"                         | requires -0 <fcn name|offset> and -1 <fcn name|offset> is optional\n"
-		"              imports    | compares imports found in the files\n"
-		"              libraries  | compares libraries found in the files\n"
-		"              sections   | compares sections found in the files\n"
-		"              strings    | compares strings found in the files\n"
-		"              symbols    | compares symbols found in the files\n"
-		"  palette colors can be changed by adding the following lines\n"
-		"          inside the $HOME/.rizinrc file\n"
-		"  ec diff.unknown blue   | offset color\n"
-		"  ec diff.match   green  | match color\n"
-		"  ec diff.unmatch red    | mismatch color\n"
-		"");
-=======
 	const char *options[] = {
 		"-a","[arch]","specify architecture plugin to use (x86, arm, ..)",
 		"-b","[bits]","specify register size for arch (16 (thumb), 32, 64, ..)",
@@ -344,14 +262,9 @@ static void rz_diff_show_help(bool usage_only) {
   	"ec diff.unknown blue   | offset color\n"
   	"ec diff.match   green  | match color\n"
   	"ec diff.unmatch red    | mismatch color\n");
-<<<<<<< HEAD
-=======
 
 }
->>>>>>> f60893219b (updated)
 
-}
->>>>>>> 814f81abb7 (coloring help output of rizin,rz-diff,rz-asm)
 static bool rz_diff_is_file(const char *file) {
 	if (IS_NULLSTR(file)) {
 		rz_diff_error_ret(false, "cannot open a file without a name.\n");

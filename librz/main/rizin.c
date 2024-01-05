@@ -4,13 +4,6 @@
 #define USE_THREADS       1
 #define ALLOW_THREADED    0
 #define UNCOLORIZE_NONTTY 0
-<<<<<<< HEAD
-#define COLOR_GREEN   "\x1b[32m"
-#define COLOR_RESET   "\x1b[0m"
-#define COLOR_LIGHT_BLUE "\x1b[36m"
-#define COLOR_YELLOW "\x1b[33m"
-=======
->>>>>>> f60893219b (updated)
 
 #include <rz_core.h>
 #include <rz_demangler.h>
@@ -95,93 +88,10 @@ static int rz_main_version_verify(int show) {
 	}
 	return ret;
 }
-<<<<<<< HEAD
-static void printColoredText(const char* color, const char* text) {
-    printf("%s %-9s %s", color, text, COLOR_GREEN);
-	}
-
-static void printOption(const char* option, const char* arg,const char* description) {
-	size_t optionWidth = strlen(option);
-    size_t maxSpaces = 14 - optionWidth;
-
-    printf(" %-.*s", (int)optionWidth, option);  // Dynamically align option based on width
-
-    if (arg[0] != '\0') {
-        printColoredText(COLOR_YELLOW, arg);
-    } 
-	else {
-        printf("%-*.*s", (int)maxSpaces, (int)maxSpaces, "");  // Dynamically add spaces when arg is not present
-    }
-
-    printColoredText(COLOR_RESET, description);
-    printf("\n");
-}
-=======
->>>>>>> f60893219b (updated)
 
 static int main_help(int line) {
 
 	if (line < 2) {
-<<<<<<< HEAD
-		printf("%s%s",COLOR_LIGHT_BLUE,"Usage:");
-        printColoredText(COLOR_RESET, "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-            "             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
-	}
-	if (line != 1) {
-		const char* options[] = {
-			"--",  "", "run rizin without opening any file",
-			" =",  "", " same as 'rizin malloc://512",
-			" -",  "", " read file from stdin",
-			" -=",  "", " perform R=! command to run all commands remotely",
-			" -0",  "", " print \\x00 after init and every command",
-			" -2",  "", " close stderr file descriptor (silent warning messages)",
-			" -a" ,"[arch]", " set asm.arch",
-			" -A",  "", " run 'aaa' command to analyze all referenced code",
-			" -b" ,"[bits]", " set asm.bits",
-			" -B" ,"[baddr]", " set base address for PIE binaries",
-			" -c 'cmd..'",  "", " execute rizin command",
-			" -C",  "", " file is host:port (alias for -cR+http://%%s/cmd/)",
-			" -d",  "", " debug the executable 'file' or running process 'pid",
-			" -D" ,"[backend]", " enable debug mode (e cfg.debug=true)",
-			" -e k=v",  "", " evaluate config var",
-			" -f",  "", " block size = file size",
-			" -F" ,"[binplug]", " force to use that rbin plugin",
-			" -h, -hh",  "", " show help message, -hh for long",
-			" -H" ,"([var])", " display variable",
-			" -i" ,"[file]", " run script file",
-			" -I" ,"[file]", " run script file before the file is opened",
-			" -k" ,"[OS/kern]", " set asm.os (linux, macos, w32, netbsd, ...)",
-			" -l" ,"[lib]", " load plugin file",
-			" -L",  "", " list supported IO plugins",
-			" -m" ,"[addr]", " map file at given address (loadaddr)",
-			" -M","", " do not demangle symbol names",
-			" -n, -nn","", " do not load RzBin info (-nn only load bin structures)",
-			" -N","", " do not load user settings and scripts",
-			" -NN","", " do not load any script or plugin",
-			" -q","", " quiet mode (no prompt) and quit after -i",
-			" -qq","", " quit after running all -c and -i",
-			" -Q","", " quiet mode (no prompt) and quit faster (quickLeak=true)",
-			" -p", "[p.rzdb]", " load project file",
-			" -r", "[rz-run]", " specify rz-run profile to load (same as -e dbg.profile=X)",
-			" -R", "[rule]", " specify custom rz-run directive",
-			" -s","[addr]", " initial seek",
-		#if USE_THREADS && ALLOW_THREADED
-			" -t",""," load rz-bin info in thread",
-		#endif
-			" -T ","", " do not compute file hashes",
-			" -u ","", " set bin.filter=false to get raw sym/sec/cls names",
-			" -v, -V ","", " show rizin version (-V show lib versions)",
-			" -w ","", " open file in write mode",
-			" -x ","", " open without exec-flag (asm.emu will not work), See io.exec",
-			" -X ","", " same as -e bin.usextr=false (useful for dyldcache)",
-			" -z, -zz" ,""," do not load strings or load them even in raw",
-		};
-		 // Print options and descriptions using a loop
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			printOption(options[i], options[i + 1],options[i + 2]);
-		}
-=======
 		printf("%s%s", COLOR_LIGHT_BLUE, "Usage: ");
 		printf(Color_RESET "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
                   "             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
@@ -249,7 +159,6 @@ static int main_help(int line) {
 			if (i + 1 < sizeof(options) / sizeof(options[0])) {
 				print_colored_help_tools(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
 			}
->>>>>>> f60893219b (updated)
 		}
 	}
 	if (line == 2) {
