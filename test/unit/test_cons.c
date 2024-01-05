@@ -196,13 +196,13 @@ bool test_line_nocompletion(void) {
 	strcpy(line->buffer.data, "pd");
 	line->buffer.length = strlen("pd");
 	line->buffer.index = 2;
-	rz_line_autocomplete();
+	rz_line_autocomplete(line);
 
 	mu_assert_streq(line->buffer.data, "pd", "pd is still there");
 	mu_assert_eq(line->buffer.length, 2, "length is still 2");
 	mu_assert_eq(line->buffer.index, 2, "the user position is still the same");
 
-	rz_line_free();
+	rz_line_free(line);
 	mu_end;
 }
 
@@ -219,7 +219,7 @@ bool test_line_onecompletion(void) {
 	strcpy(line->buffer.data, "pd");
 	line->buffer.length = strlen("pd");
 	line->buffer.index = 2;
-	rz_line_autocomplete();
+	rz_line_autocomplete(line);
 
 	mu_assert_eq(line->buffer.length, 4, "length is updated (space included)");
 	mu_assert_eq(line->buffer.index, 4, "index after the space");
@@ -228,13 +228,13 @@ bool test_line_onecompletion(void) {
 	strcpy(line->buffer.data, "pd fcn");
 	line->buffer.length = strlen("pd fcn");
 	line->buffer.index = 2;
-	rz_line_autocomplete();
+	rz_line_autocomplete(line);
 
 	mu_assert_eq(line->buffer.index, 3, "should leave everythin else intact");
 	mu_assert_eq(line->buffer.length, 7, "length is updated");
 	mu_assert_streq(line->buffer.data, "pdf fcn", "pdf has been autocompleted and fcn kept intact");
 
-	rz_line_free();
+	rz_line_free(line);
 	mu_end;
 }
 
@@ -261,7 +261,6 @@ bool test_line_multicompletion(void) {
 	// Make test reproducible everywhere
 	cons->force_columns = 80;
 	cons->force_rows = 23;
-	rz_line_free();
 	RzLine *line = rz_line_new();
 	line->ns_completion.run = multicompletion_run;
 	cons->line = line;
@@ -269,7 +268,7 @@ bool test_line_multicompletion(void) {
 	strcpy(line->buffer.data, "pd");
 	line->buffer.length = strlen("pd");
 	line->buffer.index = 2;
-	rz_line_autocomplete();
+	rz_line_autocomplete(line);
 
 	mu_assert_eq(line->buffer.length, 2, "length is the same");
 	mu_assert_eq(line->buffer.index, 2, "index is the same");
@@ -286,7 +285,7 @@ bool test_line_multicompletion(void) {
 	strcpy(line->buffer.data, "p");
 	line->buffer.length = strlen("p");
 	line->buffer.index = 1;
-	rz_line_autocomplete();
+	rz_line_autocomplete(line);
 
 	mu_assert_eq(line->buffer.length, 2, "length was updated for 'pd'");
 	mu_assert_eq(line->buffer.index, 2, "index is at the end of 'pd'");
@@ -307,7 +306,6 @@ bool test_line_kill_word(void) {
 	// Make test reproducible everywhere
 	cons->force_columns = 80;
 	cons->force_rows = 23;
-	rz_line_free();
 	RzLine *line = rz_line_new();
 	line->ns_completion.run = multicompletion_run;
 	cons->line = line;
@@ -315,7 +313,7 @@ bool test_line_kill_word(void) {
 	// write the string, then do ^b two times to move the index to 10, then ^d to delete the word under the cursor
 	const char instr[] = "pd 10@ hello\x1b\x62\x1b\x62\x1b\x64\n";
 	rz_cons_readpush(instr, sizeof(instr));
-	rz_line_readline();
+	rz_line_readline(line);
 
 	mu_assert_eq(line->buffer.index, 3, "index is after 'pd '");
 	mu_assert_streq(line->buffer.data, "pd @ hello", "10 was deleted");
@@ -329,28 +327,27 @@ bool test_line_undo(void) {
 	// Make test reproducible everywhere
 	cons->force_columns = 80;
 	cons->force_rows = 23;
-	rz_line_free();
 	RzLine *line = rz_line_new();
 	cons->line = line;
 
 	// write 20 chars and undo once
 	char input_concat[] = "01234567890123456789\x1f\n";
 	rz_cons_readpush(input_concat, sizeof(input_concat));
-	rz_line_readline();
+	rz_line_readline(line);
 	mu_assert_eq(line->buffer.length, 0, "concatenated string should get cleared");
 	mu_assert_eq(line->buffer.index, 0, "index is 0");
 
 	// write a string, delete, then undo('\x1f') twice
 	char input_undo[] = "0123\x17\x1f\x1f\n";
 	rz_cons_readpush(input_undo, sizeof(input_undo));
-	rz_line_readline();
+	rz_line_readline(line);
 	mu_assert_eq(line->buffer.index, 0, "index is at 0");
 	mu_assert_eq(line->buffer.length, 0, "legth is 0");
 
 	// write a string, undo('\x1f') and redo('\x1b\x3f')
 	char input_redo[] = "pDF\x1f\x1b\x3f\n";
 	rz_cons_readpush(input_redo, sizeof(input_redo));
-	rz_line_readline();
+	rz_line_readline(line);
 	mu_assert_streq(line->buffer.data, "pDF", "redo not working");
 
 	// run completion (example of replacing and continuous operation).
@@ -358,7 +355,7 @@ bool test_line_undo(void) {
 	// now "pd" has been confirmed to be completed to "pdf ". undo will turn it to previous state replacing the texts.
 	const char input_undo_group[] = "pd\t\x1f\n";
 	rz_cons_readpush(input_undo_group, sizeof(input_undo_group));
-	rz_line_readline();
+	rz_line_readline(line);
 	mu_assert_streq(line->buffer.data, "pd", "undo group operations not working");
 
 	rz_cons_free();

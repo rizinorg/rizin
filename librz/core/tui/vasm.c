@@ -78,7 +78,7 @@ RZ_IPI void rz_core_visual_asm(RzCore *core, ut64 off) {
 	rz_io_read_at(core->io, off, cva.buf, sizeof(cva.buf));
 	cva.blocklen = rz_hex_bin2str(cva.buf, sizeof(cva.buf), cva.blockbuf);
 
-	rz_line_readline_cb(readline_callback, &cva);
+	rz_line_readline_cb(core->cons->line, readline_callback, &cva);
 
 	if (cva.acode && cva.acode->len > 0) {
 		if (rz_cons_yesno('y', "Save changes? (Y/n)")) {

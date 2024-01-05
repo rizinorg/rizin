@@ -1500,7 +1500,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (mustSaveHistory(r->config)) {
 		char *history = rz_path_home_history();
-		rz_line_hist_save(history);
+		rz_line_hist_save(r->cons->line, history);
 		free(history);
 	}
 

@@ -2646,7 +2646,7 @@ static char *visual_prompt(DiffHexView *hview, const char *prompt) {
 	rz_cons_gotoxy(0, hview->screen.height);
 	rz_cons_clear_line(0);
 	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
-	rz_line_set_prompt(":> ");
+	rz_line_set_prompt(rz_cons_singleton()->line, ":> ");
 	rz_cons_flush();
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (*buf) {

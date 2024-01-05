@@ -1203,29 +1203,28 @@ struct rz_line_t {
 
 #ifdef RZ_API
 
-RZ_API RzLine *rz_line_new(void);
-RZ_API RzLine *rz_line_singleton(void);
-RZ_API void rz_line_free(void);
-RZ_API RZ_OWN char *rz_line_get_prompt(void);
-RZ_API void rz_line_set_prompt(const char *prompt);
-RZ_API bool rz_line_dietline_init(void);
-RZ_API void rz_line_clipboard_push(const char *str);
-RZ_API void rz_line_hist_free(void);
-RZ_API void rz_line_autocomplete(void);
+RZ_API RZ_OWN RzLine *rz_line_new(void);
+RZ_API void rz_line_free(RZ_NULLABLE RzLine *line);
+RZ_API RZ_OWN char *rz_line_get_prompt(RZ_NONNULL RzLine *line);
+RZ_API void rz_line_set_prompt(RZ_NONNULL RzLine *line, RZ_NONNULL const char *prompt);
+RZ_API bool rz_line_dietline_init(RZ_NONNULL RzLine *line);
+RZ_API void rz_line_clipboard_push(RZ_NONNULL RzLine *line, RZ_NONNULL const char *str);
+RZ_API void rz_line_hist_free(RZ_NULLABLE RzLine *line);
+RZ_API void rz_line_autocomplete(RZ_NONNULL RzLine *line);
 
 typedef int(RzLineReadCallback)(void *user, const char *line);
-RZ_API const char *rz_line_readline(void);
-RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user);
+RZ_API const char *rz_line_readline(RZ_NONNULL RzLine *line);
+RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallback cb, void *user);
 
-RZ_API int rz_line_hist_load(RZ_NONNULL const char *file);
-RZ_API int rz_line_hist_add(const char *line);
-RZ_API int rz_line_hist_save(RZ_NONNULL const char *file);
-RZ_API int rz_line_hist_list(void);
-RZ_API const char *rz_line_hist_get(int n);
+RZ_API bool rz_line_hist_load(RZ_NONNULL RzLine *line, RZ_NONNULL const char *file);
+RZ_API bool rz_line_hist_add(RZ_NONNULL RzLine *line, RZ_NONNULL const char *str);
+RZ_API bool rz_line_hist_save(RZ_NONNULL RzLine *line, const char *file);
+RZ_API int rz_line_hist_list(RZ_NONNULL RzLine *line);
+RZ_API const char *rz_line_hist_get(RZ_NONNULL RzLine *line, int n);
 
-RZ_API int rz_line_set_hist_callback(RzLine *line, RzLineHistoryUpCb cb_up, RzLineHistoryDownCb cb_down);
-RZ_API int rz_line_hist_cmd_up(RzLine *line);
-RZ_API int rz_line_hist_cmd_down(RzLine *line);
+RZ_API int rz_line_set_hist_callback(RZ_NONNULL RzLine *line, RzLineHistoryUpCb cb_up, RzLineHistoryDownCb cb_down);
+RZ_API int rz_line_hist_cmd_up(RZ_NONNULL RzLine *line);
+RZ_API int rz_line_hist_cmd_down(RZ_NONNULL RzLine *line);
 
 RZ_API void rz_line_completion_init(RzLineCompletion *completion, size_t args_limit);
 RZ_API void rz_line_completion_fini(RzLineCompletion *completion);

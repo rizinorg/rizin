@@ -25,6 +25,7 @@ static void config_visual_hit_i(RzCore *core, const char *name, int delta) {
 static void config_visual_hit(RzCore *core, const char *name, int editor) {
 	char buf[1024];
 	RzConfigNode *node;
+	RzLine *line = core->cons->line;
 
 	if (!(node = rz_config_node_get(core->config, name))) {
 		return;
@@ -43,7 +44,7 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 			rz_cons_show_cursor(true);
 			rz_cons_flush();
 			rz_cons_set_raw(0);
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			rz_cons_fgets(buf, sizeof(buf), 0, 0);
 			rz_cons_set_raw(1);
 			rz_cons_show_cursor(false);

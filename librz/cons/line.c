@@ -4,73 +4,74 @@
 #include <rz_util.h>
 #include <rz_cons.h>
 
-static RzLine rz_line_instance;
-#define I rz_line_instance
-
 static void rz_line_nscompletion_init(RzLineNSCompletion *c) {
 	c->run = NULL;
 	c->run_user = NULL;
 }
 
-static void undo_free(void) {
-	rz_vector_free(I.undo_vec);
-	I.undo_vec = NULL;
-	I.undo_cursor = 0;
-	I.undo_continue = false;
-}
-
-RZ_API RzLine *rz_line_singleton(void) {
-	return &rz_line_instance;
-}
-
-RZ_API RzLine *rz_line_new(void) {
-	I.hist_up = NULL;
-	I.hist_down = NULL;
-	I.prompt = strdup("> ");
-	I.contents = NULL;
-	I.enable_vi_mode = false;
-	I.clipboard = NULL;
-	I.kill_ring = rz_list_newf(free);
-	I.kill_ring_ptr = -1;
-#if __WINDOWS__
-	I.vtmode = rz_cons_detect_vt_mode();
-#else
-	I.vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
-#endif
-	if (!rz_line_dietline_init()) {
-		eprintf("error: rz_line_dietline_init\n");
+static void undo_free(RzLine *line) {
+	if (!line) {
+		return;
 	}
-	rz_line_completion_init(&I.completion, 4096);
-	rz_line_nscompletion_init(&I.ns_completion);
-	return &I;
+	rz_vector_free(line->undo_vec);
+	line->undo_vec = NULL;
+	line->undo_cursor = 0;
+	line->undo_continue = false;
 }
 
-RZ_API void rz_line_free(void) {
-	// XXX: prompt out of the heap?
-	free((void *)I.prompt);
-	I.prompt = NULL;
-	rz_list_free(I.kill_ring);
-	rz_line_hist_free();
-	undo_free();
-	rz_line_completion_fini(&I.completion);
+RZ_API RZ_OWN RzLine *rz_line_new(void) {
+	RzLine *line = RZ_NEW0(RzLine);
+	if (!line) {
+		return NULL;
+	}
+	line->prompt = strdup("> ");
+	line->kill_ring = rz_list_newf(free);
+	line->kill_ring_ptr = -1;
+#if __WINDOWS__
+	line->vtmode = rz_cons_detect_vt_mode();
+#else
+	line->vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
+#endif
+	if (!rz_line_dietline_init(line)) {
+		RZ_LOG_ERROR("error: rz_line_dietline_init\n");
+	}
+	rz_line_completion_init(&line->completion, 4096);
+	rz_line_nscompletion_init(&line->ns_completion);
+	return line;
 }
 
-RZ_API void rz_line_clipboard_push(const char *str) {
-	I.kill_ring_ptr += 1;
-	rz_list_insert(I.kill_ring, I.kill_ring_ptr, strdup(str));
+RZ_API void rz_line_free(RZ_NULLABLE RzLine *line) {
+	if (!line) {
+		return;
+	}
+	free((void *)line->prompt);
+	line->prompt = NULL;
+	rz_list_free(line->kill_ring);
+	rz_line_hist_free(line);
+	undo_free(line);
+	rz_line_completion_fini(&line->completion);
+	free(line);
+}
+
+RZ_API void rz_line_clipboard_push(RZ_NONNULL RzLine *line, RZ_NONNULL const char *str) {
+	rz_return_if_fail(line && str);
+	line->kill_ring_ptr += 1;
+	rz_list_insert(line->kill_ring, line->kill_ring_ptr, strdup(str));
 }
 
 // handle const or dynamic prompts?
-RZ_API void rz_line_set_prompt(const char *prompt) {
-	free(I.prompt);
-	I.prompt = strdup(prompt);
+RZ_API void rz_line_set_prompt(RZ_NONNULL RzLine *line, RZ_NONNULL const char *prompt) {
+	rz_return_if_fail(line && prompt);
+	free(line->prompt);
+	line->prompt = strdup(prompt);
 	RzCons *cons = rz_cons_singleton();
-	I.cb_fkey = cons->cb_fkey;
+	line->cb_fkey = cons->cb_fkey;
 }
 
 // handle const or dynamic prompts?
-RZ_API RZ_OWN char *rz_line_get_prompt(void) {
-	return strdup(I.prompt);
+RZ_API RZ_OWN char *rz_line_get_prompt(RZ_NONNULL RzLine *line) {
+	rz_return_val_if_fail(line, NULL);
+	return strdup(line->prompt);
 }
 
 RZ_API void rz_line_completion_init(RzLineCompletion *completion, size_t args_limit) {
