@@ -249,7 +249,7 @@ static int rasm_show_help(int v) {
 static int rasm_show_help(int v) {
 	if (v < 2) {
 		printf("%s%s", COLOR_LIGHT_BLUE, "Usage: ");
-		printf(COLOR_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
+		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
                   "             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	}
 	const char *options[] = {

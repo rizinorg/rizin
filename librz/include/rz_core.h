@@ -79,7 +79,6 @@ RZ_LIB_VERSION_HEADER(rz_core);
 
 #define RTR_MAX_HOSTS 255
 #define COLOR_GREEN       "\x1b[32m"
-#define COLOR_RESET       "\x1b[0m"
 #define COLOR_LIGHT_BLUE  "\x1b[36m"
 #define COLOR_YELLOW      "\x1b[33m"
 

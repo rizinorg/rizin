@@ -225,9 +225,14 @@ static void rz_diff_show_help(bool usage_only) {
 =======
 
 static void rz_diff_show_help(bool usage_only) {
+<<<<<<< HEAD
 	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage:", COLOR_RESET);
 	printf(COLOR_RESET "rz-diff [options] <file0> <file1>\n");
 >>>>>>> f60893219b (updated)
+=======
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage:", Color_RESET);
+	printf(Color_RESET "rz-diff [options] <file0> <file1>\n");
+>>>>>>> a6f4477e07 (modified)
 	if (usage_only) {
 		return;
 	}

@@ -183,7 +183,7 @@ static int main_help(int line) {
 		}
 =======
 		printf("%s%s", COLOR_LIGHT_BLUE, "Usage: ");
-		printf(COLOR_RESET "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
+		printf(Color_RESET "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
                   "             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 
 	}

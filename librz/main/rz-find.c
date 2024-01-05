@@ -171,7 +171,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", COLOR_RESET);
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", Color_RESET);
 	printf("%s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;

@@ -12,8 +12,8 @@ enum rz_sign_option {
 };
 
 static void rz_sign_show_help(void) {
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", COLOR_RESET);
-	printf(COLOR_RESET "rz-sign [options] [file]\n");
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", Color_RESET);
+	printf("rz-sign [options] [file]\n");
 	const char *options[] ={
 	       "-h","","this help message",
 	       "-a","[-a]","add extra 'a' to analysis command (available only with -o option)",

@@ -9,7 +9,7 @@
 #include <rz_core.h>
 
 static int usage(int v) {
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", COLOR_RESET);
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", Color_RESET);
 	printf("rz-gg [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 	       "             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
 	       "             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] file|f.asm|-\n");
