@@ -32,6 +32,23 @@ RZ_API RZ_OWN char *rz_core_print_string_c_cpp(RzCore *core) {
 	return rz_strbuf_drain(sb);
 }
 
+RZ_API void print_colored_help_tools(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
+	size_t optionWidth = strlen(option);
+	size_t maxSpaces = maxOptionAndArgLength + 2;
+	// Print option with dynamic alignment
+	printf(COLOR_GREEN " %-.*s" COLOR_RESET, (int)optionWidth, option);
+	// Calculate the remaining spaces needed for alignment
+	size_t remainingSpaces = maxSpaces - optionWidth;
+	// Print arg with dynamic alignment
+	if (arg[0] != '\0') {
+		printf(COLOR_YELLOW " %-s " COLOR_RESET, arg);
+		remainingSpaces -= strlen(arg) + 2; // Adjust remaining spaces based on arg length
+	}
+	// Print spaces for alignment
+	printf("%-*.*s", (int)remainingSpaces, (int)remainingSpaces, "");
+	printf(COLOR_RESET "%s\n", description);
+}
+
 /**
  * \brief Get the hexpair of the assembly
  * \param core RzCore

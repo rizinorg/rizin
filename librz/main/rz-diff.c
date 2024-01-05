@@ -194,6 +194,7 @@ typedef struct diff_hex_view_t {
 #define rz_diff_ctx_set_type(x, t) rz_diff_ctx_set_def(x, type, DIFF_TYPE_UNKNOWN, t)
 #define rz_diff_ctx_set_mode(x, m) rz_diff_ctx_set_def(x, mode, DIFF_MODE_STANDARD, m)
 #define rz_diff_ctx_set_opt(x, o)  rz_diff_ctx_set_def(x, option, DIFF_OPT_UNKNOWN, o)
+<<<<<<< HEAD
 #define COLOR_GREEN   "\x1b[32m"
 #define COLOR_RESET   "\x1b[0m"
 #define COLOR_LIGHT_BLUE "\x1b[36m"
@@ -221,6 +222,12 @@ static void printOption(const char* option, const char* arg,const char* descript
 static void rz_diff_show_help(bool usage_only) {
 	printf("%s%s",COLOR_LIGHT_BLUE,"Usage:");
     printColoredText(COLOR_RESET, "rz-diff [options] <file0> <file1>\n");
+=======
+
+static void rz_diff_show_help(bool usage_only) {
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage:", COLOR_RESET);
+	printf(COLOR_RESET "rz-diff [options] <file0> <file1>\n");
+>>>>>>> f60893219b (updated)
 	if (usage_only) {
 		return;
 	}
@@ -332,6 +339,11 @@ static void rz_diff_show_help(bool usage_only) {
   	"ec diff.unknown blue   | offset color\n"
   	"ec diff.match   green  | match color\n"
   	"ec diff.unmatch red    | mismatch color\n");
+<<<<<<< HEAD
+=======
+
+}
+>>>>>>> f60893219b (updated)
 
 }
 >>>>>>> 814f81abb7 (coloring help output of rizin,rz-diff,rz-asm)

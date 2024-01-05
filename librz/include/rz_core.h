@@ -78,6 +78,10 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RTR_PROTOCOL_UNIX 4
 
 #define RTR_MAX_HOSTS 255
+#define COLOR_GREEN       "\x1b[32m"
+#define COLOR_RESET       "\x1b[0m"
+#define COLOR_LIGHT_BLUE  "\x1b[36m"
+#define COLOR_YELLOW      "\x1b[33m"
 
 typedef enum {
 	RZ_CORE_WRITE_OP_BYTESWAP2, ///< Swap the endianess of 2-bytes values
@@ -1058,6 +1062,7 @@ RZ_API RZ_OWN char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode
 RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len, bool use_comment);
 RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bool hex_offset, ut64 addr, int len, ut8 size);
 RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, ut64 addr, int len);
+RZ_API void print_colored_help_tools(const char *option, const char *arg, const char *description,size_t maxOptionAndArgLength);
 
 typedef enum {
 	RZ_CORE_DISASM_STRINGS_MODE_BYTES = 0,

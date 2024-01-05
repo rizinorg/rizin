@@ -6,45 +6,66 @@
 #include <rz_main.h>
 #include <rz_util/rz_print.h>
 #include <rz_util.h>
+#include <rz_core.h>
 
 static int usage(int v) {
-	printf("Usage: rz-gg [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", COLOR_RESET);
+	printf("rz-gg [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 	       "             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
 	       "             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] file|f.asm|-\n");
 	if (v) {
-		printf(
-			" -a [arch]       select architecture (x86, mips, arm)\n"
-			" -b [bits]       register size (32, 64, ..)\n"
-			" -B [hexpairs]   append some hexpair bytes\n"
-			" -c [k=v]        set configuration options\n"
-			" -C [file]       append contents of file\n"
-			" -d [off:dword]  patch dword (4 bytes) at given offset\n"
-			" -D [off:qword]  patch qword (8 bytes) at given offset\n"
-			" -e [encoder]    use specific encoder. see -L\n"
-			" -f [format]     output format (raw, c, pe, elf, mach0, python, javascript)\n"
-			" -F              output native format (osx=mach0, linux=elf, ..)\n"
-			" -h              show this help\n"
-			" -i [shellcode]  include shellcode plugin, uses options. see -L\n"
-			" -I [path]       add include path\n"
-			" -k [os]         operating system's kernel (linux,bsd,osx,w32)\n"
-			" -L              list all plugins (shellcodes and encoders)\n"
-			" -n [dword]      append 32bit number (4 bytes)\n"
-			" -N [dword]      append 64bit number (8 bytes)\n"
-			" -o [file]       output file\n"
-			" -O              use default output file (filename without extension or a.out)\n"
-			" -p [padding]    add padding after compilation (padding=n10s32)\n"
-			"                 ntas : begin nop, trap, 'a', sequence\n"
-			"                 NTAS : same as above, but at the end\n"
-			" -P [size]       prepend debruijn pattern\n"
-			" -q [fragment]   debruijn pattern offset\n"
-			" -r              show raw bytes instead of hexpairs\n"
-			" -s              show assembler\n"
-			" -S [string]     append a string\n"
-			" -v              show version\n"
-			" -w [off:hex]    patch hexpairs at given offset\n"
-			" -x              execute\n"
-			" -X [hexpairs]   execute rop chain, using the stack provided\n"
-			" -z              output in C string syntax\n");
+		const char *options[] = {
+			"-a","[arch]","select architecture (x86, mips, arm)",
+			"-b","[bits]","register size (32, 64, ..)",
+			"-B","[hexpairs]","append some hexpair bytes",
+			"-c","[k=v]","set configuration options",
+			"-C","[file]","append contents of file",
+			"-d","[off:dword]","patch dword (4 bytes) at given offset",
+			"-D","[off:qword]","patch qword (8 bytes) at given offset",
+			"-e","[encoder]","use specific encoder. see -L",
+			"-f","[format]","output format (raw, c, pe, elf, mach0, python, javascript)",
+			"-F","","output native format (osx=mach0, linux=elf, ..)",
+			"-h","","show this help",
+			"-i","[shellcode]","include shellcode plugin, uses options. see -L",
+			"-I","[path]","add include path",
+			"-k","[os]","operating system's kernel (linux,bsd,osx,w32)",
+			"-L","","list all plugins (shellcodes and encoders)",
+			"-n","[dword]","append 32bit number (4 bytes)",
+			"-N","[dword]","append 64bit number (8 bytes)",
+			"-o","[file]","output file",
+			"-O","","use default output file (filename without extension or a.out)",
+			"-p","[padding]","add padding after compilation (padding=n10s32)",
+			"",
+			"",
+			"ntas : begin nop, trap, 'a', sequence",
+			"",
+			"",
+			"NTAS : same as above, but at the end",
+			"-P","[size]","prepend debruijn pattern",
+			"-q","[fragment]","debruijn pattern offset",
+			"-r","","show raw bytes instead of hexpairs",
+			"-s","","show assembler",
+			"-S","[string]","append a string",
+			"-v","","show version",
+			"-w","[off:hex]","patch hexpairs at given offset",
+			"-x","","execute",
+			"-X","[hexpairs]","execute rop chain, using the stack provided",
+			"-z","","output in C string syntax",
+		};
+		size_t maxOptionAndArgLength = 0;
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			size_t optionLength = strlen(options[i]);
+			size_t argLength = strlen(options[i + 1]);
+			size_t totalLength = optionLength + argLength;
+			if (totalLength > maxOptionAndArgLength) {
+				maxOptionAndArgLength = totalLength;
+			}
+		}
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			if (i + 1 < sizeof(options) / sizeof(options[0])) {
+				print_colored_help_tools(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+			}
+		}
 	}
 	return 1;
 }

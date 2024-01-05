@@ -12,20 +12,38 @@ enum rz_sign_option {
 };
 
 static void rz_sign_show_help(void) {
-	printf("Usage: rz-sign [options] [file]\n"
-	       " -h                          this help message\n"
-	       " -a [-a]                     add extra 'a' to analysis command (available only with -o option)\n"
-	       " -e [k=v]                    set an evaluable config variable (available only with -o option)\n"
-	       " -c [output.pat] [input.sig] parses a FLIRT signature and converts it to its other format\n"
-	       " -o [output.sig] [input.bin] performs an analysis on the binary and generates the FLIRT signature.\n"
-	       " -d [flirt.sig]              parses a FLIRT signature and dump its content\n"
-	       " -q                          quiet mode\n"
-	       " -v                          show version information\n"
-	       "Examples:\n"
-	       "  rz-sign -d signature.sig\n"
-	       "  rz-sign -c new_signature.pat old_signature.sig\n"
-	       "  rz-sign -o libc.sig libc.so.6\n");
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", COLOR_RESET);
+	printf(COLOR_RESET "rz-sign [options] [file]\n");
+	const char *options[] ={
+	       "-h","","this help message",
+	       "-a","[-a]","add extra 'a' to analysis command (available only with -o option)",
+	       "-e","[k=v]","set an evaluable config variable (available only with -o option)",
+	       "-c","[output.pat] [input.sig]","parses a FLIRT signature and converts it to its other format",
+	       "-o","[output.sig] [input.bin]","performs an analysis on the binary and generates the FLIRT signature.",
+	       "-d","[flirt.sig]","parses a FLIRT signature and dump its content",
+	       "-q","","quiet mode",
+	       "-v","","show version information",
+		   };
+	size_t maxOptionAndArgLength = 0;
+    for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+        size_t optionLength = strlen(options[i]);
+        size_t argLength = strlen(options[i + 1]);
+        size_t totalLength = optionLength + argLength;
+        if (totalLength > maxOptionAndArgLength) {
+            maxOptionAndArgLength = totalLength;
+        }
+    }
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		if (i + 1 < sizeof(options) / sizeof(options[0])) {
+			print_colored_help_tools(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
+		}
+	}
+	printf("Examples:\n"
+           "  rz-sign -d signature.sig\n"
+           "  rz-sign -c new_signature.pat old_signature.sig\n"
+           "  rz-sign -o libc.sig libc.so.6\n");
 }
+
 
 static void perform_analysis(RzCore *core, size_t complexity) {
 	const char *cmd = NULL;

@@ -171,34 +171,50 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
+	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", COLOR_RESET);
+	printf("%s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
-	printf(
-		" -a [align] only accept aligned hits\n"
-		" -b [size]  set block size\n"
-		" -e [regex] search for regex matches (can be used multiple times)\n"
-		" -f [from]  start searching from address 'from'\n"
-		" -F [file]  read the contents of the file and use it as keyword\n"
-		" -h         show this help\n"
-		" -i         identify filetype (rizin -nqcpm file)\n"
-		" -j         output in JSON\n"
-		" -m         magic search, file-type carver\n"
-		" -M [str]   set a binary mask to be applied on keywords\n"
-		" -n         do not stop on read errors\n"
-		" -r         print using rizin commands\n"
-		" -s [str]   search for a specific string (can be used multiple times)\n"
-		" -w [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
-		" -I [str]   search for an entry in import table.\n"
-		" -S [str]   search for a symbol in symbol table.\n"
-		" -t [to]    stop search at address 'to'\n"
-		" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
-		" -v         print version and exit\n"
-		" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
-		" -X         show hexdump of search results\n"
-		" -z         search for zero-terminated strings\n"
-		" -Z         show string found on each search hit\n");
+	const char *options[] = {
+		"-a","[align]","only accept aligned hits",
+		"-b","[size]","set block size",
+		"-e","[regex]","search for regex matches (can be used multiple times)",
+		"-f","[from]","start searching from address 'from'",
+		"-F","[file]","read the contents of the file and use it as keyword",
+		"-h","","show this help",
+		"-i","","identify filetype (rizin -nqcpm file)",
+		"-j","","output in JSON",
+		"-m","","magic search, file-type carver",
+		"-M","[str]","set a binary mask to be applied on keywords",
+		"-n","","do not stop on read errors",
+		"-r","","print using rizin commands",
+		"-s","[str]","search for a specific string (can be used multiple times)",
+		"-w","[str]","search for a specific wide string (can be used multiple times). Assumes str is UTF-8.",
+		"-I","[str]","search for an entry in import table.",
+		"-S","[str]","search for a symbol in symbol table.",
+		"-t","[to]","stop search at address 'to'",
+		"-q","","quiet - do not show headings (filenames) above matching contents (default for searching a single file)",
+		"-v","","print version and exit",
+		"-x","[hex]","search for hexpair string (909090) (can be used multiple times)",
+		"-X","","show hexdump of search results",
+		"-z","","search for zero-terminated strings",
+		"-Z","","show string found on each search hit",
+	};
+	size_t maxOptionAndArgLength = 0;
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		size_t optionLength = strlen(options[i]);
+		size_t argLength = strlen(options[i + 1]);
+		size_t totalLength = optionLength + argLength;
+		if (totalLength > maxOptionAndArgLength) {
+			maxOptionAndArgLength = totalLength;
+		}
+	}
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		if (i + 1 < sizeof(options) / sizeof(options[0])) {
+			print_colored_help_tools(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+		}
+	}
 	return 0;
 }
 
