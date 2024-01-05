@@ -244,6 +244,9 @@ static void shifted_reg64_append(RzStrBuf *sb, csh *handle, cs_insn *insn, int n
 // got rid of the opchar= pattern here because it caused missing operators to fail silently
 // and makes things more complicated with very little benefit
 static void arm64math(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
+	if (ISIMM64(0) || ISIMM64(1)) {
+		return;
+	}
 	const char *r0 = REG64(0);
 	const char *r1 = REG64(1);
 
