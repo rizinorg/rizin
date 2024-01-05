@@ -50,19 +50,25 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzList
 /**
  * \brief  Allocates and initializes a new fifo queue using a user-defined list
  *
- * \param  list  Pointer to the list that will be owned by the queue.
+ * \param  list  Pointer to the list that will be used to initialize the queue.
  *
  * \return On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new2(RZ_NONNULL RZ_OWN RzList /*<void *>*/ *list) {
+RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_list(RZ_NONNULL RZ_BORROW RzList /*<void *>*/ *list, RZ_NULLABLE RzListFree qfree) {
 	rz_return_val_if_fail(list, NULL);
 	RzThreadQueue *queue = RZ_NEW0(RzThreadQueue);
 	if (!queue) {
 		return NULL;
 	}
 
+	queue->list = rz_list_clone(list);
+	if (!queue->list) {
+		free(queue);
+		return NULL;
+	}
+
+	queue->list->free = qfree;
 	queue->max_size = rz_list_length(list);
-	queue->list = list;
 	queue->lock = rz_th_lock_new(false);
 	queue->cond = rz_th_cond_new();
 	if (!queue->list || !queue->lock || !queue->cond) {
@@ -81,7 +87,7 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new2(RZ_NONNULL RZ_OWN RzList /*<void *
  *
  * \return On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new3(RZ_NONNULL RZ_BORROW RzPVector /*<void *>*/ *vector, RZ_NULLABLE RzListFree qfree) {
+RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_pvector(RZ_NONNULL RZ_BORROW RzPVector /*<void *>*/ *vector, RZ_NULLABLE RzListFree qfree) {
 	rz_return_val_if_fail(vector, NULL);
 	RzThreadQueue *queue = rz_th_queue_new(rz_pvector_len(vector), qfree);
 	if (!queue) {
