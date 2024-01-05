@@ -555,7 +555,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	bool overlapped = false;
 	RzAnalysisOp op = { 0 };
 	int oplen, idx = 0;
-	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
 	bool varset = false;
 	struct {
 		int cnt;
@@ -1105,14 +1104,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_SUB:
 			if (op.val != UT64_MAX && op.val > 0 && op.val < analysis->opt.jmptbl_maxcount) {
 				// if register is not stack
-				cmpval = op.val;
+				analysis->cmpval = op.val;
 			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_CMP: {
 			ut64 val = is_x86 ? op.val : op.ptr;
 			if (val) {
 				if (val < analysis->opt.jmptbl_maxcount) {
-					cmpval = val;
+					analysis->cmpval = val;
 				}
 				bb->cmpval = val;
 				bb->cmpreg = op.reg;
@@ -1154,14 +1153,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			}
 			if (analysis->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {
-					if (cmpval != UT64_MAX && op.fail != UT64_MAX && (op.reg || op.ireg)) {
+					if (analysis->cmpval != UT64_MAX && op.fail != UT64_MAX && (op.reg || op.ireg)) {
 						RzAnalysisJmpTableParams params = {
 							.jmp_address = op.addr,
 							.case_shift = 0,
 							.jmptbl_loc = op.ptr,
 							.casetbl_loc = UT64_MAX,
 							.entry_size = analysis->bits >> 3,
-							.table_count = cmpval + 1,
+							.table_count = analysis->cmpval + 1,
 							.jmptbl_off = op.ptr,
 							.default_case = op.fail,
 							.sp = sp,
@@ -1179,7 +1178,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						} else if (op.fail == op.ptr) {
 							op.fail = UT64_MAX;
 						}
-						cmpval = UT64_MAX;
+						analysis->cmpval = UT64_MAX;
 					}
 				}
 			}
@@ -1324,13 +1323,13 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						}
 					}
 					if (!rz_analysis_get_jmptbl_info(analysis, fcn, bb, op.addr, &params)) {
-						params.table_count = cmpval + 1;
+						params.table_count = analysis->cmpval + 1;
 						params.default_case = -1;
 					}
 					params.jmptbl_loc = params.jmptbl_off + movdisp;
 					params.entry_size = movscale;
 					ret = rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
-					cmpval = UT64_MAX;
+					analysis->cmpval = UT64_MAX;
 				} else if (is_arm) {
 					params.jmptbl_loc = op.addr + op.size;
 					params.jmptbl_off = op.addr + 4;
@@ -1341,7 +1340,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						if (pred_cmpval != UT64_MAX) {
 							params.table_count += pred_cmpval;
 						} else {
-							params.table_count += cmpval;
+							params.table_count += analysis->cmpval;
 						}
 						params.entry_size = 1;
 						ret = rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
@@ -1353,7 +1352,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						if (pred_cmpval != UT64_MAX) {
 							params.table_count += pred_cmpval;
 						} else {
-							params.table_count += cmpval;
+							params.table_count += analysis->cmpval;
 						}
 						params.entry_size = 2;
 						ret = rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
