@@ -1727,7 +1727,6 @@ RZ_API int rz_analysis_fcn_del(RzAnalysis *analysis, ut64 addr);
 RZ_API int rz_analysis_fcn_del_locs(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail);
 RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
-RZ_API void rz_analysis_fcn_invalidate_read_ahead_cache(void);
 
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size);
