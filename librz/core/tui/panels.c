@@ -1640,7 +1640,7 @@ void __handleComment(RzCore *core) {
 	}
 	char buf[4095];
 	int i;
-	rz_line_set_prompt("[Comment]> ");
+	rz_line_set_prompt(core->cons->line, "[Comment]> ");
 	strcpy(buf, "\"CC ");
 	i = strlen(buf);
 	if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
@@ -6324,7 +6324,7 @@ void __handle_tab_new_with_cur_panel(RzCore *core) {
 }
 
 void __panel_prompt(const char *prompt, char *buf, int len) {
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(rz_cons_singleton()->line, prompt);
 	*buf = 0;
 	rz_cons_fgets(buf, len, 0, NULL);
 }

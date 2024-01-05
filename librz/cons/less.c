@@ -7,6 +7,8 @@
 #include <rz_util.h>
 #include "pager_private.h"
 
+#define I(x) rz_cons_singleton()->x
+
 RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 	rz_return_val_if_fail(str && *str, 0);
 	if (!rz_cons_is_interactive()) {
@@ -119,8 +121,8 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 			break;
 		case '/': /* search */
 			rz_cons_reset_colors();
-			rz_line_set_prompt("/");
-			sreg = rz_line_readline();
+			rz_line_set_prompt(I(line), "/");
+			sreg = rz_line_readline(I(line));
 			from = RZ_MIN(lines_count - 1, from);
 			/* repeat last search if empty string is provided */
 			if (sreg[0]) { /* prepare for a new search */

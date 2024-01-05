@@ -673,7 +673,7 @@ RZ_API RzCons *rz_cons_free(void) {
 	restore_console_state();
 #endif
 	if (I.line) {
-		rz_line_free();
+		rz_line_free(I.line);
 		I.line = NULL;
 	}
 	RZ_FREE(I.input->readbuffer);

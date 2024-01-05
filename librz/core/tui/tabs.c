@@ -12,7 +12,7 @@ static void prompt_read(const char *p, char *buf, int buflen) {
 		return;
 	}
 	*buf = 0;
-	rz_line_set_prompt(p);
+	rz_line_set_prompt(rz_cons_singleton()->line, p);
 	rz_core_visual_showcursor(NULL, true);
 	rz_cons_fgets(buf, buflen, 0, NULL);
 	rz_core_visual_showcursor(NULL, false);

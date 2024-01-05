@@ -164,7 +164,7 @@ RZ_IPI bool rz_core_visual_config_hud(RzCore *core) {
 		rz_cons_set_raw(false);
 		cmd[0] = '\0';
 		eprintf("Set new value for %s (old=%s)\n", res, oldvalue);
-		rz_line_set_prompt(":> ");
+		rz_line_set_prompt(core->cons->line, ":> ");
 		if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 			cmd[0] = '\0';
 		}

@@ -21,25 +21,26 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	RzListIter *iter;
 	const int rows = 7;
 	int cur = 0;
+	RzLine *line = core->cons->line;
 
-	rz_line_set_prompt("rop regexp: ");
-	const char *line = rz_line_readline();
+	rz_line_set_prompt(line, "rop regexp: ");
+	const char *linestr = rz_line_readline(line);
+	if (RZ_STR_ISEMPTY(linestr)) {
+		return false;
+	}
 
 	int scr_h, scr_w = rz_cons_get_size(&scr_h);
 
-	if (!line || !*line) {
-		return false;
-	}
 	// maybe store in RzCore, so we can save it in project and use it outside visual
 
 	eprintf("Searching ROP gadgets...\n");
-	char *ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", line);
+	char *ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", linestr);
 	RzList *rops = rz_str_split_list(ropstr, "\n", 0);
 	int delta = 0;
 	bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
-	char *cursearch = strdup(line);
+	char *cursearch = strdup(linestr);
 	while (true) {
 		rz_cons_clear00();
 		rz_cons_printf("[0x%08" PFMT64x "]-[visual-rzrop] %s (see pdp command)\n",
@@ -139,7 +140,7 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			while (true) {
 				char cmd[1024];
 				cmd[0] = '\0';
-				rz_line_set_prompt(":> ");
+				rz_line_set_prompt(line, ":> ");
 				if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
@@ -159,10 +160,10 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			rz_core_yank_hexpair(core, chainstr);
 			break;
 		case 'o': {
-			rz_line_set_prompt("offset: ");
-			const char *line = rz_line_readline();
-			if (line && *line) {
-				ut64 off = rz_num_math(core->num, line);
+			rz_line_set_prompt(line, "offset: ");
+			const char *linestr = rz_line_readline(line);
+			if (RZ_STR_ISNOTEMPTY(linestr)) {
+				ut64 off = rz_num_math(core->num, linestr);
 				rz_core_seek(core, off, true);
 				addr = off;
 				forceaddr = true;
@@ -170,16 +171,16 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			}
 		} break;
 		case 'r': {
-			rz_line_set_prompt("rop regexp: ");
-			const char *line = rz_line_readline();
-			if (line && *line) {
+			rz_line_set_prompt(line, "rop regexp: ");
+			const char *linestr = rz_line_readline(line);
+			if (RZ_STR_ISNOTEMPTY(linestr)) {
 				free(cursearch);
 				delta = 0;
 				addr = UT64_MAX;
 				cur = 0;
-				cursearch = strdup(line);
+				cursearch = strdup(linestr);
 				free(ropstr);
-				ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", line);
+				ropstr = rz_core_cmd_strf(core, "\"/Rl %s\" @e:scr.color=0", linestr);
 				rz_list_free(rops);
 				rops = rz_str_split_list(ropstr, "\n", 0);
 			}
@@ -188,18 +189,18 @@ RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 			rz_core_prompt_highlight(core);
 			break;
 		case 'i': {
-			rz_line_set_prompt("insert value: ");
-			const char *line = rz_line_readline();
-			if (line && *line) {
-				ut64 n = rz_num_math(core->num, line);
+			rz_line_set_prompt(line, "insert value: ");
+			const char *linestr = rz_line_readline(line);
+			if (RZ_STR_ISNOTEMPTY(linestr)) {
+				ut64 n = rz_num_math(core->num, linestr);
 				rz_list_push(core->ropchain, rz_str_newf("0x%08" PFMT64x, n));
 			}
 		} break;
 		case ';': {
-			rz_line_set_prompt("comment: ");
-			const char *line = rz_line_readline();
-			if (line && *line) {
-				rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr + delta, line);
+			rz_line_set_prompt(line, "comment: ");
+			const char *linestr = rz_line_readline(line);
+			if (RZ_STR_ISNOTEMPTY(linestr)) {
+				rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr + delta, linestr);
 			}
 		} break;
 		case '.':

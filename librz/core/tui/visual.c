@@ -565,7 +565,7 @@ static void prompt_read(const char *p, char *buf, int buflen) {
 		return;
 	}
 	*buf = 0;
-	rz_line_set_prompt(p);
+	rz_line_set_prompt(rz_cons_singleton()->line, p);
 	rz_core_visual_showcursor(NULL, true);
 	rz_cons_fgets(buf, buflen, 0, NULL);
 	rz_core_visual_showcursor(NULL, false);
@@ -657,20 +657,21 @@ RZ_IPI void rz_core_visual_prompt_input(RzCore *core) {
 RZ_IPI int rz_core_visual_prompt(RzCore *core) {
 	char buf[1024];
 	int ret;
+	RzLine *line = core->cons->line;
 	if (PIDX != 2) {
 		core->seltab = 0;
 	}
 #if __UNIX__
-	rz_line_set_prompt(Color_RESET ":> ");
+	rz_line_set_prompt(line, Color_RESET ":> ");
 #else
-	rz_line_set_prompt(":> ");
+	rz_line_set_prompt(line, ":> ");
 #endif
 	rz_core_visual_showcursor(core, true);
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (!strcmp(buf, "q")) {
 		ret = false;
 	} else if (*buf) {
-		rz_line_hist_add(buf);
+		rz_line_hist_add(line, buf);
 		rz_core_cmd(core, buf, 0);
 		rz_cons_echo(NULL);
 		rz_cons_flush();
@@ -905,7 +906,7 @@ static void visual_search(RzCore *core) {
 	int len, d = core->print->cur;
 	char str[128], buf[sizeof(str) * 2 + 1];
 
-	rz_line_set_prompt("search byte/string in block: ");
+	rz_line_set_prompt(core->cons->line, "search byte/string in block: ");
 	rz_cons_fgets(str, sizeof(str), 0, NULL);
 	len = rz_hex_str2bin(str, (ut8 *)buf);
 	if (*str == '"') {
@@ -1055,12 +1056,13 @@ RZ_IPI int rz_line_hist_offset_down(RzLine *line) {
 
 RZ_IPI void rz_core_visual_offset(RzCore *core) {
 	char buf[256];
+	RzLine *line = core->cons->line;
 
-	core->cons->line->prompt_type = RZ_LINE_PROMPT_OFFSET;
-	rz_line_set_hist_callback(core->cons->line,
+	line->prompt_type = RZ_LINE_PROMPT_OFFSET;
+	rz_line_set_hist_callback(line,
 		&rz_line_hist_offset_up,
 		&rz_line_hist_offset_down);
-	rz_line_set_prompt("[offset]> ");
+	rz_line_set_prompt(line, "[offset]> ");
 	if (rz_cons_fgets(buf, sizeof(buf) - 1, 0, NULL) > 0) {
 		if (!strcmp(buf, "g") || !strcmp(buf, "G")) {
 			__core_visual_gogo(core, buf[0]);
@@ -1074,8 +1076,8 @@ RZ_IPI void rz_core_visual_offset(RzCore *core) {
 		}
 		reset_print_cur(core->print);
 	}
-	rz_line_set_hist_callback(core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
-	core->cons->line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
+	rz_line_set_hist_callback(line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
+	line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
 }
 
 RZ_IPI int rz_core_visual_prevopsz(RzCore *core, ut64 addr) {
@@ -1089,7 +1091,7 @@ static void add_comment(RzCore *core, ut64 addr, const char *prompt) {
 	rz_core_visual_showcursor(core, true);
 	rz_cons_flush();
 	rz_cons_set_raw(false);
-	rz_line_set_prompt(":> ");
+	rz_line_set_prompt(core->cons->line, ":> ");
 	rz_cons_enable_mouse(false);
 	if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 0) {
 		buf[0] = '\0';
@@ -2048,6 +2050,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 	RzAsmOp op;
 	ut64 offset = core->offset;
 	RzCoreVisual *visual = core->visual;
+	RzLine *line = core->cons->line;
 	char buf[4096];
 	const char *key_s;
 	int i, cols = core->print->cols;
@@ -2202,7 +2205,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_cons_flush();
 			rz_cons_set_raw(false);
 			strcpy(buf, "\"wa ");
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			rz_cons_enable_mouse(false);
 			if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
@@ -2231,9 +2234,9 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			const char *buf = NULL;
 #define I core->cons
 			const char *cmd = rz_config_get(core->config, "cmd.vprompt");
-			rz_line_set_prompt("cmd.vprompt> ");
+			rz_line_set_prompt(line, "cmd.vprompt> ");
 			I->line->contents = strdup(cmd);
-			buf = rz_line_readline();
+			buf = rz_line_readline(line);
 			I->line->contents = NULL;
 			(void)rz_config_set(core->config, "cmd.vprompt", buf);
 			rz_core_visual_showcursor(core, false);
@@ -2243,16 +2246,16 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			const char *buf = NULL;
 #define I core->cons
 			const char *cmd = rz_config_get(core->config, "cmd.cprompt");
-			rz_line_set_prompt("cmd.cprompt> ");
-			I->line->contents = strdup(cmd);
-			buf = rz_line_readline();
+			rz_line_set_prompt(line, "cmd.cprompt> ");
+			line->contents = strdup(cmd);
+			buf = rz_line_readline(line);
 			if (buf && !strcmp(buf, "|")) {
-				RZ_FREE(I->line->contents);
+				RZ_FREE(line->contents);
 				core->print->cur_enabled = true;
 				core->print->cur = 0;
 				(void)rz_config_set(core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
-				RZ_FREE(I->line->contents);
+				RZ_FREE(line->contents);
 				(void)rz_config_set(core->config, "cmd.cprompt", buf ? buf : "");
 			}
 			rz_core_visual_showcursor(core, false);
@@ -2328,7 +2331,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			bool mouse_state = __holdMouseState(core);
 			int range, min, max;
 			char name[256], *n;
-			rz_line_set_prompt("flag name: ");
+			rz_line_set_prompt(line, "flag name: ");
 			rz_core_visual_showcursor(core, true);
 			if (rz_cons_fgets(name, sizeof(name), 0, NULL) >= 0 && *name) {
 				n = name;
@@ -2459,7 +2462,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_cons_set_raw(0);
 			if (ch == 'I') {
 				strcpy(buf, "wb ");
-				rz_line_set_prompt("insert hexpair block: ");
+				rz_line_set_prompt(line, "insert hexpair block: ");
 				if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
@@ -2476,13 +2479,13 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			if (core->print->col == 2) {
 				strcpy(buf, "\"w ");
-				rz_line_set_prompt("insert string: ");
+				rz_line_set_prompt(line, "insert string: ");
 				if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				strcat(buf, "\"");
 			} else {
-				rz_line_set_prompt("insert hex: ");
+				rz_line_set_prompt(line, "insert hex: ");
 				if (core->print->ocur != -1) {
 					int bs = RZ_ABS(core->print->cur - core->print->ocur) + 1;
 					core->blocksize = bs;

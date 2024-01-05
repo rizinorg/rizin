@@ -744,7 +744,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		RzList *sdb_hist = line->sdbshell_hist;
 		rz_line_set_hist_callback(line, &rz_line_hist_sdb_up, &rz_line_hist_sdb_down);
 		for (;;) {
-			rz_line_set_prompt(p);
+			rz_line_set_prompt(line, p);
 			if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 1) {
 				break;
 			}
@@ -5344,6 +5344,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	}
 
 	TSNode root = ts_tree_root_node(tree);
+	RzLine *line = core->cons->line;
 
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	struct tsr2cmd_state state;
@@ -5357,7 +5358,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	rz_pvector_init(&state.saved_tree, NULL);
 
 	if (state.log) {
-		rz_line_hist_add(state.input);
+		rz_line_hist_add(line, state.input);
 	}
 
 	char *ts_str = ts_node_string(root);
