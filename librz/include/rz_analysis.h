@@ -1177,6 +1177,7 @@ typedef struct rz_analysis_esil_t {
 	bool (*cmd)(ANALYSIS_ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd; // ahem, let's not do this
+	bool in_cmd_step;
 } RzAnalysisEsil;
 
 /* During the analysis RzAnalysisEsil could be reset multiple times,
