@@ -100,6 +100,7 @@ RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned 
 	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	esil->ops = ht_pp_new(NULL, esil_ops_free, NULL);
 	esil->iotrap = iotrap;
+	esil->in_cmd_step = false;
 	rz_analysis_esil_sources_init(esil);
 	rz_analysis_esil_interrupts_init(esil);
 	esil->addrmask = genmask(addrsize - 1);
@@ -2953,17 +2954,13 @@ static int evalWord(RzAnalysisEsil *esil, const char *ostr, const char **str) {
 }
 
 static bool __stepOut(RzAnalysisEsil *esil, const char *cmd) {
-	static bool inCmdStep = false;
-	if (cmd && esil && esil->cmd && !inCmdStep) {
-		inCmdStep = true;
-		if (esil->cmd(esil, cmd, esil->address, 0)) {
-			inCmdStep = false;
-			// if returns 1 we skip the impl
-			return true;
-		}
-		inCmdStep = false;
+	bool ret = false;
+	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
+		esil->in_cmd_step = true;
+		ret = esil->cmd(esil, cmd, esil->address, 0);
+		esil->in_cmd_step = false;
 	}
-	return false;
+	return ret;
 }
 
 RZ_API bool rz_analysis_esil_parse(RzAnalysisEsil *esil, const char *str) {
