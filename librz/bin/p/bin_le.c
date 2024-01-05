@@ -116,7 +116,7 @@ static void le_header(RzBinFile *bf) {
 	p("Stack Size: 0x%x\n", h->stacksize);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 

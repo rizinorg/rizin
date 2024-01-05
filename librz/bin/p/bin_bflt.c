@@ -248,7 +248,7 @@ static void destroy(RzBinFile *bf) {
 	rz_bflt_free(bf->o->bin_obj);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 

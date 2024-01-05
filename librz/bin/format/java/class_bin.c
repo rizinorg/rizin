@@ -993,11 +993,11 @@ RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_java_class_entrypoints(RZ_NONNULL
 /**
  * \brief Returns a RzList<RzBinString*> containing the strings
  */
-RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf(rz_bin_string_free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	if (!vec) {
 		return NULL;
 	}
 
@@ -1025,7 +1025,7 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL R
 			bstr->size = cpool->size;
 			bstr->string = string;
 			bstr->type = RZ_STRING_ENC_MUTF8;
-			rz_list_append(list, bstr);
+			rz_pvector_push(vec, bstr);
 		}
 	}
 
@@ -1043,10 +1043,10 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL R
 			bstr->size = attr->attribute_length;
 			bstr->string = strdup(attr->info);
 			bstr->type = RZ_STRING_ENC_UTF8;
-			rz_list_append(list, bstr);
+			rz_pvector_push(vec, bstr);
 		}
 	}
-	return list;
+	return vec;
 }
 
 static char *add_class_name_to_name(char *name, char *classname) {

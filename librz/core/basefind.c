@@ -108,7 +108,7 @@ static bool basefind_array_has(const BaseFindArray *array, ut64 value) {
 }
 
 static BaseFindArray *basefind_create_array_of_addresses(RzCore *core, ut32 min_string_len) {
-	RzList *strings = NULL;
+	RzPVector *strings = NULL;
 	BaseFindArray *array = NULL;
 	RzBinFile *alloc = NULL;
 	RzBinFile *current = rz_bin_cur(core->bin);
@@ -121,9 +121,9 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core, ut32 min_
 
 	// if this list is sorted we can improve speed via half-interval search
 	strings = rz_bin_file_strings(current, min_string_len, true);
-	if (!strings || rz_list_empty(strings)) {
+	if (!strings || rz_pvector_empty(strings)) {
 		RZ_LOG_ERROR("basefind: cannot find strings in binary with a minimum size of %u.\n", min_string_len);
-		rz_list_free(strings);
+		rz_pvector_free(strings);
 		return NULL;
 	}
 
@@ -133,7 +133,7 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core, ut32 min_
 		goto error;
 	}
 
-	array->size = rz_list_length(strings);
+	array->size = rz_pvector_len(strings);
 	array->ptr = RZ_NEWS0(ut64, array->size);
 	if (!array->ptr) {
 		RZ_LOG_ERROR("basefind: cannot allocate array of addresses.\n");
@@ -143,9 +143,10 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core, ut32 min_
 	}
 
 	ut32 i = 0;
-	RzListIter *iter;
+	void **iter;
 	RzBinString *string;
-	rz_list_foreach (strings, iter, string) {
+	rz_pvector_foreach (strings, iter) {
+		string = *iter;
 		RZ_LOG_VERBOSE("basefind: 0x%016" PFMT64x " '%s'\n", string->paddr, string->string);
 		array->ptr[i] = string->paddr;
 		i++;
@@ -153,7 +154,7 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core, ut32 min_
 	RZ_LOG_INFO("basefind: located %u strings\n", array->size);
 
 error:
-	rz_list_free(strings);
+	rz_pvector_free(strings);
 	if (alloc) {
 		rz_buf_free(alloc->buf);
 		free(alloc->file);

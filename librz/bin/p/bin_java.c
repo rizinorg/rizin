@@ -143,7 +143,7 @@ static RzList /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	return rz_bin_java_class_entrypoints(jclass);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;

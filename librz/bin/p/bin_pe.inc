@@ -736,7 +736,7 @@ static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
 	return file_hashes;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
