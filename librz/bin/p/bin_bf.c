@@ -18,8 +18,8 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_list_newf((RzListFree)rz_bin_string_free);
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	return rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {

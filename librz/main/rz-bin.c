@@ -1191,13 +1191,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			pj_a(pj);
 		}
-		RzList *list = rz_bin_file_strings(bf, bin->minstrlen, true);
-		RzListIter *it;
+		RzPVector *vec = rz_bin_file_strings(bf, bin->minstrlen, true);
+		void **it;
 		RzBinString *string;
-		rz_list_foreach (list, it, string) {
+		rz_pvector_foreach (vec, it) {
+			string = *it;
 			print_string(bf, string, pj, out_mode);
 		}
-		rz_list_free(list);
+		rz_pvector_free(vec);
 		if (pj) {
 			pj_end(pj);
 			printf("%s", pj_string(pj));

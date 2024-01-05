@@ -543,8 +543,8 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 		return true;
 	}
 
-	const RzList *strings = rz_bin_object_get_strings(bf->o);
-	ordinal = rz_list_length(strings);
+	const RzPVector *strings = rz_bin_object_get_strings(bf->o);
+	ordinal = rz_pvector_len(strings);
 
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
 

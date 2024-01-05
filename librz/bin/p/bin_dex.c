@@ -131,7 +131,7 @@ static RzList /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	return rz_bin_dex_entrypoints(dex);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;

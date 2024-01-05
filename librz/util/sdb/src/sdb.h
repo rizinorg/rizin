@@ -301,7 +301,6 @@ RZ_API char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas);
 
 typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
 
-RZ_API void sdb_global_hook(SdbHook hook, void *user);
 RZ_API bool sdb_hook(Sdb *s, SdbHook cb, void *user);
 RZ_API bool sdb_unhook(Sdb *s, SdbHook h);
 RZ_API int sdb_hook_call(Sdb *s, const char *k, const char *v);

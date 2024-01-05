@@ -482,7 +482,7 @@ static bool mdmp_check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzList /*<RzBinString *>*/ *mdmp_strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *mdmp_strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 

@@ -891,31 +891,31 @@ static void string_stringify(const RzBinString *elem, RzStrBuf *sb) {
 }
 
 static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = (RzList *)rz_bin_object_get_strings(dfile_a->file->o);
-	if (!list_a) {
+	vec_a = (RzPVector *)rz_bin_object_get_strings(dfile_a->file->o);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = (RzList *)rz_bin_object_get_strings(dfile_b->file->o);
-	if (!list_b) {
+	vec_b = (RzPVector *)rz_bin_object_get_strings(dfile_b->file->o);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)string_compare);
-	rz_list_sort(list_b, (RzListComparator)string_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)string_compare);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)string_compare);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? string_hash_addr : string_hash),
 		.compare = (RzDiffMethodCompare)(compare_addr ? string_compare_addr : string_compare),
 		.stringify = (RzDiffMethodStringify)(compare_addr ? string_stringify_addr : string_stringify),
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** classes ***************************************/

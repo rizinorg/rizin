@@ -736,14 +736,14 @@ RZ_API RZ_OWN char *rz_bin_dex_access_flags_readable(ut32 access_flags) {
 }
 
 /**
- * \brief Returns a RzList<RzBinString*> containing the dex strings
+ * \brief Returns a RzPVector<RzBinString*> containing the dex strings
  */
-RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexString *string;
 	void **it;
-	RzList *strings = rz_list_newf(rz_bin_string_free);
+	RzPVector *strings = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 	if (!strings) {
 		return NULL;
 	}
@@ -762,7 +762,7 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex
 		bstr->size = string->size;
 		bstr->string = rz_str_ndup(string->data, string->size);
 		bstr->type = RZ_STRING_ENC_UTF8;
-		if (!rz_list_append(strings, bstr)) {
+		if (!rz_pvector_push(strings, bstr)) {
 			free(bstr);
 		}
 		ordinal++;

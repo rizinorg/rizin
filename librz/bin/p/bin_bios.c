@@ -59,7 +59,7 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 /* accelerate binary load */
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 

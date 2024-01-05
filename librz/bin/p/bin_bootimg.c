@@ -116,7 +116,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return bio ? bio->bi.kernel_addr : 0;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 
