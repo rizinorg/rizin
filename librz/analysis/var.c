@@ -779,9 +779,11 @@ RZ_API int rz_analysis_var_get_argnum(RzAnalysisVar *var) {
 	if (!reg) {
 		return -1;
 	}
-	int i;
-	int arg_max = var->fcn->cc ? rz_analysis_cc_max_arg(analysis, var->fcn->cc) : 0;
-	for (i = 0; i < arg_max; i++) {
+	int arg_max = 0;
+	if (RZ_STR_ISNOTEMPTY(var->fcn->cc)) {
+		arg_max = rz_analysis_cc_max_arg(analysis, var->fcn->cc);
+	}
+	for (int i = 0; i < arg_max; i++) {
 		const char *reg_arg = rz_analysis_cc_arg(analysis, var->fcn->cc, i);
 		if (reg_arg && !strcmp(reg->name, reg_arg)) {
 			return i;

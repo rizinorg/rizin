@@ -3,6 +3,7 @@ default.cc=arm32
 arm32=cc
 cc.arm32.arg0=r0
 cc.arm32.arg1=r1
+cc.arm32.maxargs=2
 cc.arm32.ret=r0
 
 arm16=cc
@@ -11,6 +12,7 @@ cc.arm16.arg1=r1
 cc.arm16.arg2=r2
 cc.arm16.arg3=r3
 cc.arm16.argn=stack
+cc.arm16.maxargs=4
 cc.arm16.ret=r0
 
 swift=cc
@@ -19,6 +21,7 @@ cc.swift.arg1=r1
 cc.swift.arg2=r2
 cc.swift.arg3=r3
 cc.swift.argn=stack
+cc.swift.maxargs=4
 cc.swift.self=r10
 cc.swift.self=r8
 cc.swift.ret=r0

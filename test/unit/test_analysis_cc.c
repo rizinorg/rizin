@@ -12,6 +12,7 @@ static Sdb *ref_db() {
 	sdb_set(db, "cc.sectarian.arg1", "rcx", 0);
 	sdb_set(db, "cc.sectarian.arg0", "rdx", 0);
 	sdb_set(db, "cc.sectarian.argn", "stack", 0);
+	sdb_set(db, "cc.sectarian.maxargs", "2", 0);
 	sdb_set(db, "sectarian", "cc", 0);
 	return db;
 }
@@ -24,6 +25,7 @@ static Sdb *ref_db_self_err() {
 	sdb_set(db, "cc.sectarian.arg1", "rcx", 0);
 	sdb_set(db, "cc.sectarian.arg0", "rdx", 0);
 	sdb_set(db, "cc.sectarian.argn", "stack", 0);
+	sdb_set(db, "cc.sectarian.maxargs", "2", 0);
 	sdb_set(db, "sectarian", "cc", 0);
 	return db;
 }
