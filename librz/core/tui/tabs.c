@@ -71,7 +71,9 @@ RZ_IPI RZ_OWN char *rz_core_visual_tab_string(RzCore *core, const char *kolor) {
 	if (str) {
 		int n = 79 - rz_str_ansi_len(str);
 		if (n > 0) {
-			str = rz_str_append(str, rz_str_pad('_', n));
+			char *pad = rz_str_pad('_', n);
+			str = rz_str_append(str, pad);
+			free(pad);
 		}
 		str = rz_str_append(str, "\n" Color_RESET);
 	}

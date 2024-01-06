@@ -94,7 +94,7 @@ RZ_LIB_VERSION(rz_cmd);
 
 static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color);
 
-static int cd_sort(const void *a, const void *b) {
+static int cd_sort(const void *a, const void *b, void *user) {
 	RzCmdDesc *ca = (RzCmdDesc *)a;
 	RzCmdDesc *cb = (RzCmdDesc *)b;
 	return rz_str_casecmp(ca->name, cb->name);
@@ -120,7 +120,7 @@ static bool cmd_desc_set_parent(RzCmd *cmd, RzCmdDesc *cd, RzCmdDesc *parent) {
 		cd->parent = parent;
 		rz_pvector_push(&parent->children, cd);
 		if (!cmd->batch && parent->help->sort_subcommands) {
-			rz_pvector_sort(&parent->children, cd_sort);
+			rz_pvector_sort(&parent->children, cd_sort, NULL);
 		}
 		parent->n_children++;
 	}
@@ -271,7 +271,7 @@ static void sort_groups(RzCmdDesc *group) {
 	void **it_cd;
 
 	if (group->help->sort_subcommands) {
-		rz_pvector_sort(&group->children, cd_sort);
+		rz_pvector_sort(&group->children, cd_sort, NULL);
 	}
 	rz_cmd_desc_children_foreach(group, it_cd) {
 		RzCmdDesc *cd = *(RzCmdDesc **)it_cd;

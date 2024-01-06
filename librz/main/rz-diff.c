@@ -742,6 +742,10 @@ static int import_compare(const RzBinImport *a, const RzBinImport *b) {
 	return 0;
 }
 
+static int import_compare_vec(const RzBinImport *a, const RzBinImport *b, void *user) {
+	return import_compare(a, b);
+}
+
 static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	RzPVector *vec_a = NULL;
 	RzPVector *vec_b = NULL;
@@ -756,8 +760,8 @@ static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_pvector_sort(vec_a, (RzPVectorComparator)import_compare);
-	rz_pvector_sort(vec_b, (RzPVectorComparator)import_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)import_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)import_compare_vec, NULL);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
@@ -811,6 +815,10 @@ static int symbol_compare(const RzBinSymbol *a, const RzBinSymbol *b) {
 	return 0;
 }
 
+static int symbol_compare_vec(const RzBinSymbol *a, const RzBinSymbol *b, void *user) {
+	return symbol_compare(a, b);
+}
+
 static void symbol_stringify(const RzBinSymbol *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s %s\n", elem->libname, elem->classname, elem->name);
 }
@@ -829,8 +837,8 @@ static RzDiff *rz_diff_symbols_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_pvector_sort(vec_a, (RzPVectorComparator)symbol_compare);
-	rz_pvector_sort(vec_b, (RzPVectorComparator)symbol_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)symbol_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)symbol_compare_vec, NULL);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
@@ -890,6 +898,10 @@ static void string_stringify(const RzBinString *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s\n", elem->string);
 }
 
+static int string_compare_vec(const RzBinString *a, const RzBinString *b, void *user) {
+	return string_compare(a, b);
+}
+
 static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
 	RzPVector *vec_a = NULL;
 	RzPVector *vec_b = NULL;
@@ -904,8 +916,8 @@ static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_pvector_sort(vec_a, (RzPVectorComparator)string_compare);
-	rz_pvector_sort(vec_b, (RzPVectorComparator)string_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)string_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)string_compare_vec, NULL);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
@@ -952,6 +964,10 @@ static int class_compare(const RzBinClass *a, const RzBinClass *b) {
 	return 0;
 }
 
+static int class_compare_vec(const RzBinClass *a, const RzBinClass *b, void *user) {
+	return class_compare(a, b);
+}
+
 static void class_stringify(const RzBinClass *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s\n", SAFE_STR(elem->super), elem->name);
 }
@@ -970,8 +986,8 @@ static RzDiff *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_pvector_sort(vec_a, (RzPVectorComparator)class_compare);
-	rz_pvector_sort(vec_b, (RzPVectorComparator)class_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)class_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)class_compare_vec, NULL);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
@@ -1077,6 +1093,10 @@ static int libs_compare(const char *a, const char *b) {
 	return 0;
 }
 
+static int libs_compare_vec(const char *a, const char *b, void *user) {
+	return libs_compare(a, b);
+}
+
 static void libs_stringify(const char *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s\n", SAFE_STR(elem));
 }
@@ -1095,8 +1115,8 @@ static RzDiff *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_pvector_sort(vec_a, (RzPVectorComparator)libs_compare);
-	rz_pvector_sort(vec_b, (RzPVectorComparator)libs_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)libs_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)libs_compare_vec, NULL);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
@@ -1269,6 +1289,14 @@ static int field_compare(const RzBinField *a, const RzBinField *b) {
 	return 0;
 }
 
+static int field_compare_addr_vec(const RzBinField *a, const RzBinField *b, void *user) {
+	return field_compare_addr(a, b);
+}
+
+static int field_compare_vec(const RzBinField *a, const RzBinField *b, void *user) {
+	return field_compare(a, b);
+}
+
 static void field_stringify(const RzBinField *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s\n", SAFE_STR(elem->type), elem->name);
 }
@@ -1287,8 +1315,8 @@ static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool com
 		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_pvector_sort(vec_a, (RzPVectorComparator)(compare_addr ? field_compare_addr : field_compare));
-	rz_pvector_sort(vec_b, (RzPVectorComparator)(compare_addr ? field_compare_addr : field_compare));
+	rz_pvector_sort(vec_a, (RzPVectorComparator)(compare_addr ? field_compare_addr_vec : field_compare_vec), NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)(compare_addr ? field_compare_addr_vec : field_compare_vec), NULL);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,

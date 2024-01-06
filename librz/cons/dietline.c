@@ -709,7 +709,9 @@ static void selection_widget_draw(void) {
 	} else {
 		pos_y = rz_cons_get_cur_line();
 		if (pos_y + sel_widget->h > cons->rows) {
-			printf("%s\n", rz_str_pad('\n', sel_widget->h));
+			char *pad = rz_str_pad('\n', sel_widget->h);
+			printf("%s\n", pad);
+			free(pad);
 			pos_y = cons->rows - sel_widget->h - 1;
 		}
 	}

@@ -234,7 +234,7 @@ static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, R
 	return true;
 }
 
-static int string_compare_sort(const RzBinString *a, const RzBinString *b) {
+static int string_compare_sort(const RzBinString *a, const RzBinString *b, void *user) {
 	if (b->paddr > a->paddr) {
 		return -1;
 	} else if (b->paddr < a->paddr) {
@@ -493,7 +493,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 	if (!raw_strings) {
 		scan_cfstring_table(bf, strings_db, results, max_interval);
 	}
-	rz_pvector_sort(results, (RzPVectorComparator)string_compare_sort);
+	rz_pvector_sort(results, (RzPVectorComparator)string_compare_sort, NULL);
 
 	{
 		void **it;

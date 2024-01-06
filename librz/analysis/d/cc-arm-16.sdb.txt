@@ -6,6 +6,7 @@ cc.arm16.arg1=r1
 cc.arm16.arg2=r2
 cc.arm16.arg3=r3
 cc.arm16.argn=stack
+cc.arm16.maxargs=4
 cc.arm16.ret=r0
 
 arm32=cc
@@ -13,4 +14,5 @@ cc.arm32.arg0=r0
 cc.arm32.arg1=r1
 cc.arm32.arg2=r2
 cc.arm32.argn=stack
+cc.arm16.maxargs=3
 cc.arm32.ret=r0

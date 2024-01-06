@@ -856,7 +856,6 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 	if (!fcn->name) {
 		fcn->name = rz_str_newf("%s.%08" PFMT64x, fcnpfx, at);
 	}
-	rz_analysis_fcn_invalidate_read_ahead_cache();
 	do {
 		RzFlagItem *f;
 		ut64 delta = rz_analysis_function_linear_size(fcn);

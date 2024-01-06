@@ -73,7 +73,7 @@ typedef int (*RzStrRangeCallback)(void *, int);
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc);
 RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *enc);
 RZ_API char *rz_str_repeat(const char *ch, int sz);
-RZ_API const char *rz_str_pad(const char ch, int len);
+RZ_API RZ_OWN char *rz_str_pad(const char ch, int len);
 RZ_API const char *rz_str_rstr(const char *base, const char *p);
 RZ_API const char *rz_strstr_ansi(RZ_NONNULL const char *a, RZ_NONNULL const char *b, bool icase);
 RZ_API const char *rz_str_rchr(const char *base, const char *p, int ch);

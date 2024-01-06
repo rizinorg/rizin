@@ -10,8 +10,10 @@ cc.reg.arg5=a5
 cc.reg.arg6=a6
 cc.reg.arg7=a7
 cc.reg.argn=stack
+cc.reg.maxargs=8
 cc.reg.ret=d2
 
 stack=cc
 cc.stack.argn=stack
+cc.stack.maxargs=0
 cc.stack.ret=d2

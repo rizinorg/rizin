@@ -1439,7 +1439,7 @@ static bool overlaps_with_token(RZ_BORROW RzVector /*<RzAsmTokenString>*/ *toks,
  * \return 1 If a.start > b.start
  * \return 0 If a.start == b.start
  */
-static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
+static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b, void *user) {
 	rz_return_val_if_fail(a && b, 0);
 	if (a->start < b->start) {
 		return -1;
@@ -1591,7 +1591,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 		}
 	}
 
-	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false);
+	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false, NULL);
 	check_token_coverage(toks);
 
 	return toks;

@@ -532,7 +532,9 @@ typedef struct rz_analysis_t {
 	HtPP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
-	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc.
+	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..
+	ut64 cmpval; ///< last compare value for jump table.
+	ut64 lea_jmptbl_ip; ///< jump table x86 lea ip
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
@@ -1176,6 +1178,7 @@ typedef struct rz_analysis_esil_t {
 	bool (*cmd)(ANALYSIS_ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd; // ahem, let's not do this
+	bool in_cmd_step;
 } RzAnalysisEsil;
 
 /* During the analysis RzAnalysisEsil could be reset multiple times,
@@ -1727,7 +1730,6 @@ RZ_API int rz_analysis_fcn_del(RzAnalysis *analysis, ut64 addr);
 RZ_API int rz_analysis_fcn_del_locs(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail);
 RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
-RZ_API void rz_analysis_fcn_invalidate_read_ahead_cache(void);
 
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size);

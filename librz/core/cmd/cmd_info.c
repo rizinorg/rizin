@@ -65,6 +65,10 @@ typedef enum {
 	PRINT_SOURCE_INFO_FILES
 } PrintSourceInfoType;
 
+static int compare_string(const char *s1, const char *s2, void *user) {
+	return strcmp(s1, s2);
+}
+
 static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdStateOutput *state) {
 	RzBinFile *binfile = core->bin->cur;
 	if (!binfile || !binfile->o) {
@@ -94,7 +98,7 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 		RzPVector sorter;
 		rz_pvector_init(&sorter, free);
 		ht_pp_foreach(files, source_file_collect_cb, &sorter);
-		rz_pvector_sort(&sorter, (RzPVectorComparator)strcmp);
+		rz_pvector_sort(&sorter, (RzPVectorComparator)compare_string, NULL);
 		ht_pp_free(files);
 		// print them!
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {
