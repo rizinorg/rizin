@@ -1065,12 +1065,12 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzBinObject *obj = bf ? bf->o : NULL;
 	if (!obj || !obj->bin_obj) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1099,7 +1099,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		}
 		map->perm = prot2perm(seg->initprot);
 		map->vfile_name = kobj->patched_buf ? strdup(VFILE_NAME_PATCHED) : NULL;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	return ret;

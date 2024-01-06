@@ -660,10 +660,11 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
 	rz_return_val_if_fail(o, NULL);
 
 	RzBinMap *map;
-	RzListIter *iter;
+	void **iter;
 	ut64 from, to;
 
-	rz_list_foreach_prev(o->maps, iter, map) {
+	rz_pvector_foreach_prev(o->maps, iter) {
+		map = *iter;
 		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->paddr;
 		to = from + (va ? map->vsize : map->psize);
 		if (off >= from && off < to) {
@@ -717,7 +718,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps_at(RzBinObject 
 	rz_return_val_if_fail(o, NULL);
 
 	RzBinMap *map;
-	RzListIter *iter;
+	void **iter;
 	ut64 from, to;
 
 	RzPVector *res = rz_pvector_new(NULL);
@@ -725,7 +726,8 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps_at(RzBinObject 
 		return NULL;
 	}
 
-	rz_list_foreach (o->maps, iter, map) {
+	rz_pvector_foreach (o->maps, iter) {
+		map = *iter;
 		from = va ? rz_bin_object_addr_with_base(o, map->vaddr) : map->paddr;
 		to = from + (va ? map->vsize : map->psize);
 		if (off >= from && off < to) {
@@ -1063,14 +1065,14 @@ RZ_API void rz_bin_map_free(RZ_NULLABLE RzBinMap *map) {
 }
 
 /**
- * \brief Create a list of RzBinMap from RzBinSections queried from the given file
+ * \brief Create a pvector of RzBinMap from RzBinSections queried from the given file
  *
  * Some binary formats have a 1:1 correspondence of mapping and
  * their RzBinSections. This is not always the case (e.g. ELF)
  * but if it is, plugins can use this function as their maps callback,
  * which will generate mappings for sections.
  * */
-RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile) {
+RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
 	if (!binfile->o || !binfile->o->plugin || !binfile->o->plugin->sections) {
 		return NULL;
@@ -1079,7 +1081,7 @@ RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL R
 	if (!sections) {
 		return NULL;
 	}
-	RzList *r = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *r = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!r) {
 		goto hcf;
 	}
@@ -1096,7 +1098,7 @@ RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNULL R
 		map->vaddr = sec->vaddr;
 		map->vsize = sec->vsize;
 		map->perm = sec->perm;
-		rz_list_push(r, map);
+		rz_pvector_push(r, map);
 	}
 hcf:
 	rz_list_free(sections);
@@ -1104,7 +1106,7 @@ hcf:
 }
 
 /**
- * \brief Create a list of RzBinSection from RzBinMaps
+ * \brief Create a pvector of RzBinSection from RzBinMaps
  *
  * Some binary formats have a 1:1 correspondence of mapping and
  * some of their RzBinSections, but also want to add some unmapped sections.
@@ -1114,15 +1116,16 @@ hcf:
  * See also rz_bin_maps_of_file_sections() for the inverse, when no additional
  * sections should be added.
  * */
-RZ_API RzList /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzList /*<RzBinMap *>*/ *maps) {
+RZ_API RzPVector /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzPVector /*<RzBinMap *>*/ *maps) {
 	rz_return_val_if_fail(maps, NULL);
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
-	RzListIter *it;
+	void **it;
 	RzBinMap *map;
-	rz_list_foreach (maps, it, map) {
+	rz_pvector_foreach (maps, it) {
+		map = *it;
 		RzBinSection *sec = RZ_NEW0(RzBinSection);
 		if (!sec) {
 			break;
@@ -1133,7 +1136,7 @@ RZ_API RzList /*<RzBinSection *>*/ *rz_bin_sections_of_maps(RzList /*<RzBinMap *
 		sec->vaddr = map->vaddr;
 		sec->vsize = map->vsize;
 		sec->perm = map->perm;
-		rz_list_append(ret, sec);
+		rz_pvector_push(ret, sec);
 	}
 	return ret;
 }

@@ -7,15 +7,16 @@
 RZ_IPI void rz_bin_set_and_process_maps(RzBinFile *bf, RzBinObject *o) {
 	RzBinPlugin *plugin = o->plugin;
 
-	rz_list_free(o->maps);
+	rz_pvector_free(o->maps);
 	if (!plugin->maps || !(o->maps = plugin->maps(bf))) {
-		o->maps = rz_list_newf((RzListFree)rz_bin_map_free);
+		o->maps = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 		return;
 	}
 
-	RzListIter *it;
+	void **it;
 	RzBinMap *element;
-	rz_list_foreach (o->maps, it, element) {
+	rz_pvector_foreach (o->maps, it) {
+		element = *it;
 		// rebase physical address
 		element->paddr += o->opts.loadaddr;
 	}

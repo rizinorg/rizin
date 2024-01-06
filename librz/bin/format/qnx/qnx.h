@@ -80,7 +80,7 @@ typedef struct {
 	lmf_header lmfh;
 	RzList /*<RzBinSection *>*/ *fixups;
 	RzList /*<RzBinSection *>*/ *sections;
-	RzList /*<RzBinMap *>*/ *maps;
+	RzPVector /*<RzBinMap *>*/ *maps;
 	lmf_rw_end rwend;
 } QnxObj;
 

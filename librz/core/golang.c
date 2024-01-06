@@ -1666,13 +1666,13 @@ static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRe
 
 	RzAnalysis *analysis = core->analysis;
 	const ut32 word_size = analysis->bits / 8;
-	RzListIter *iter;
+	void **iter;
 	RzBinMap *map;
 	ut8 *buffer = NULL;
 	ut64 string_addr, string_size;
 	RzBinObject *object = rz_bin_cur_object(core->bin);
-	RzList *map_list = object ? rz_bin_object_get_maps(object) : NULL;
-	if (!map_list) {
+	RzPVector *map_vec = object ? rz_bin_object_get_maps(object) : NULL;
+	if (!map_vec) {
 		RZ_LOG_ERROR("Failed to get the RzBinMap list\n");
 		goto end;
 	}
@@ -1683,7 +1683,8 @@ static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRe
 		goto end;
 	}
 
-	rz_list_foreach (map_list, iter, map) {
+	rz_pvector_foreach (map_vec, iter) {
+		map = *iter;
 		if (!rz_bin_map_is_data(map) || map->psize < (word_size * 2)) {
 			continue;
 		}

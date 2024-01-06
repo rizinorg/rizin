@@ -185,14 +185,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	dmp_page_desc *page;
 	dmp64_triage_datablock *datablock;
-	RzList *ret;
+	RzPVector *ret;
 	RzListIter *it;
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_map_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free))) {
 		return NULL;
 	}
 
@@ -207,7 +207,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->vaddr = page->start;
 		map->vsize = page->size;
 		map->perm = RZ_PERM_R;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	rz_list_foreach (obj->datablocks, it, datablock) {
@@ -221,7 +221,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->vaddr = datablock->virtualAddress;
 		map->vsize = datablock->size;
 		map->perm = RZ_PERM_R;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	return ret;
