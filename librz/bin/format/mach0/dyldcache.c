@@ -1325,8 +1325,8 @@ RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage 
 		if (symstr) {
 			sym->name = symstr;
 		} else {
-			static ut32 k = 0;
-			sym->name = rz_str_newf("unk_local%d", k++);
+			sym->name = rz_str_newf("unk_local%" PFMT32u, cache->unk_local_n);
+			cache->unk_local_n++;
 		}
 
 		rz_pvector_push(symbols, sym);
@@ -1357,6 +1357,7 @@ RZ_API RzDyldCache *rz_dyldcache_new_buf(RzBuffer *buf) {
 	}
 	cache->locsym = rz_dyld_locsym_new(cache);
 	cache->rebase_infos = get_rebase_infos(cache);
+	cache->unk_local_n = 0;
 	return cache;
 cupertino:
 	rz_dyldcache_free(cache);
