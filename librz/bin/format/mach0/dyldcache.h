@@ -233,6 +233,7 @@ typedef struct rz_dyldcache_t {
 	RzDyldLocSym *locsym;
 	objc_cache_opt_info *oi;
 	bool objc_opt_info_loaded;
+	ut32 unk_local_n;
 } RzDyldCache;
 
 RZ_API bool rz_dyldcache_check_magic(const char *magic);
