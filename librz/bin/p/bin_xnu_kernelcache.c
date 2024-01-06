@@ -125,7 +125,7 @@ static RKext *rz_kext_index_vget(RKextIndex *index, ut64 vaddr);
 static void process_kmod_init_term(RzXNUKernelCacheObj *obj, RKext *kext, RzPVector /*<RzBinSymbol *>*/ *ret, ut64 **inits, ut64 **terms);
 static void create_initterm_syms(RKext *kext, RzPVector /*<RzBinSymbol *>*/ *ret, int type, ut64 *pointers);
 static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzList /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
-static void process_constructors_vector(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzPVector /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
+RZ_DEPRECATE static void process_constructors_vector(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzPVector /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
 static RzBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type);
 static void ensure_kexts_initialized(RzXNUKernelCacheObj *obj);
 
@@ -963,7 +963,7 @@ static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) 
 }
 
 // this function will be removed once the transition of entries (RzBinPlugin) from RzList to RzPVector is done
-static void process_constructors_vector(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzPVector /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
+RZ_DEPRECATE static void process_constructors_vector(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzPVector /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(mach0))) {
 		return;
