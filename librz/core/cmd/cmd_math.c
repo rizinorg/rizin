@@ -105,12 +105,13 @@ RZ_IPI RzCmdStatus rz_list_rizin_vars_handler(RzCore *core, int argc, const char
 		if (argc > 1 && strcmp(argv[1], var->name)) {
 			continue;
 		}
-		const char *pad = rz_str_pad(' ', 6 - strlen(var->name));
+		char *pad = rz_str_pad(' ', 6 - strlen(var->name));
 		if (wideOffsets) {
 			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
 		} else {
 			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
 		}
+		free(pad);
 	}
 	return RZ_CMD_STATUS_OK;
 }

@@ -400,7 +400,9 @@ static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
 	rz_strbuf_appendf(sb, "%" PFMT64x, x);
 	ut8 len = rz_strbuf_length(sb);
 	if (len < width) {
-		rz_strbuf_prepend(sb, rz_str_pad('0', width - len));
+		char *pad = rz_str_pad('0', width - len);
+		rz_strbuf_prepend(sb, pad);
+		free(pad);
 	}
 	rz_strbuf_prepend(sb, "0x");
 	return rz_strbuf_drain(sb);

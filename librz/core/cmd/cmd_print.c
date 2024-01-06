@@ -3151,23 +3151,26 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 				if (label) {
 					const int label_padding = 10;
 					if (delta > 0) {
-						const char *pad = rz_str_pad(' ', sz - sz2 + label_padding);
+						char *pad = rz_str_pad(' ', sz - sz2 + label_padding);
 						if (offdec) {
 							rz_cons_printf("%s%s%s%s+%d%s", k, inv, label, reset, delta, pad);
 						} else {
 							rz_cons_printf("%s%s%s%s+0x%x%s", k, inv, label, reset, delta, pad);
 						}
+						free(pad);
 					} else {
-						const char *pad = rz_str_pad(' ', sz + label_padding);
+						char *pad = rz_str_pad(' ', sz + label_padding);
 						rz_cons_printf("%s%s%s%s%s", k, inv, label, reset, pad);
+						free(pad);
 					}
 				} else {
-					const char *pad = rz_str_pad(' ', sz - sz2);
+					char *pad = rz_str_pad(' ', sz - sz2);
 					if (offdec) {
 						rz_cons_printf("%s+%d%s", pad, delta, reset);
 					} else {
 						rz_cons_printf("%s+0x%x%s", pad, delta, reset);
 					}
+					free(pad);
 				}
 			} else {
 				if (offdec) {
@@ -3197,13 +3200,14 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 		} else {
 			int sz = lenof(off, 0);
 			int sz2 = lenof(delta, 1);
-			const char *pad = rz_str_pad(' ', sz - 5 - sz2 - 3);
 			if (delta > 0) {
+				char *pad = rz_str_pad(' ', sz - 5 - sz2 - 3);
 				if (offdec) {
 					rz_cons_printf("%s+%d%s", pad, delta, reset);
 				} else {
 					rz_cons_printf("%s+0x%x%s", pad, delta, reset);
 				}
+				free(pad);
 			} else {
 				if (offdec) {
 					snprintf(space, sizeof(space), "%" PFMT64u, off);

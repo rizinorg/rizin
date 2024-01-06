@@ -2804,12 +2804,13 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_stackframe_handler(RzCore *core, in
 		if (p->storage.type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
 			continue;
 		}
-		const char *pad = rz_str_pad(' ', 10 - strlen(p->name));
+		char *pad = rz_str_pad(' ', 10 - strlen(p->name));
 		char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
 		st64 off = p->storage.stack_off;
 		char sign = off < 0 ? '-' : '+';
 		rz_cons_printf("%c0x%08" PFMT64x "  %s:%s%s\n", sign, RZ_ABS(off), p->name, pad, ptype);
 		free(ptype);
+		free(pad);
 	}
 	rz_pvector_free(vars);
 	return RZ_CMD_STATUS_OK;
@@ -5824,8 +5825,9 @@ RZ_IPI RzCmdStatus rz_list_mne_handler(RzCore *core, int argc, const char **argv
 		*nl = 0;
 		char *desc = rz_asm_describe(core->rasm, ptr);
 		if (desc) {
-			const char *pad = rz_str_pad(' ', 16 - strlen(ptr));
+			char *pad = rz_str_pad(' ', 16 - strlen(ptr));
 			rz_cons_printf("%s%s%s\n", ptr, pad, desc);
+			free(pad);
 			free(desc);
 		} else {
 			rz_cons_printf("%s\n", ptr);

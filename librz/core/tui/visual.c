@@ -3078,14 +3078,16 @@ static void visual_flagzone(RzCore *core) {
 		char *title = rz_str_newf("[ 0x%08" PFMT64x " ]", core->offset);
 		title_size = strlen(title);
 		padsize -= strlen(title) / 2;
-		const char *halfpad = rz_str_pad(' ', padsize);
+		char *halfpad = rz_str_pad(' ', padsize);
 		rz_cons_printf("%s%s", halfpad, title);
 		free(title);
+		free(halfpad);
 	}
 	if (b) {
 		padsize = (w / 2) - title_size - strlen(b) - 4;
-		const char *halfpad = padsize > 1 ? rz_str_pad(' ', padsize) : "";
+		char *halfpad = rz_str_pad(' ', padsize);
 		rz_cons_printf("%s[%s >>]", halfpad, b);
+		free(halfpad);
 	}
 	if (a || b) {
 		rz_cons_newline();

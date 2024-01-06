@@ -999,9 +999,8 @@ void __update_help_contents(RzPanels *panels, RzPanel *panel) {
 	RzConsCanvas *can = panels->can;
 	(void)rz_cons_canvas_gotoxy(can, x + 2, y + 2);
 	if (sx < 0) {
-		char *white = (char *)rz_str_pad(' ', 128);
-		int idx = RZ_MIN(-sx, strlen(white) - 1);
-		white[idx] = 0;
+		int idx = RZ_MIN(-sx, 127);
+		char *white = rz_str_pad(' ', idx);
 		text = rz_str_ansi_crop(read_only,
 			0, sy, w + sx - 3, h - 2 + sy);
 		char *newText = rz_str_prefix_all(text, white);
@@ -1009,6 +1008,7 @@ void __update_help_contents(RzPanels *panels, RzPanel *panel) {
 			free(text);
 			text = newText;
 		}
+		free(white);
 	} else {
 		text = rz_str_ansi_crop(read_only,
 			sx, sy, w + sx - 3, h - 2 + sy);
@@ -1063,9 +1063,8 @@ void __update_panel_contents(RzCore *core, RzPanel *panel, const char *cmdstr) {
 	RzConsCanvas *can = panels->can;
 	(void)rz_cons_canvas_gotoxy(can, x + 2, y + 2);
 	if (sx < 0) {
-		char *white = (char *)rz_str_pad(' ', 128);
-		int idx = RZ_MIN(-sx, strlen(white) - 1);
-		white[idx] = 0;
+		int idx = RZ_MIN(-sx, 127);
+		char *white = rz_str_pad(' ', idx);
 		text = rz_str_ansi_crop(cmdstr,
 			0, sy + graph_pad, w + sx - 3, h - 2 + sy);
 		char *newText = rz_str_prefix_all(text, white);
@@ -1073,6 +1072,7 @@ void __update_panel_contents(RzCore *core, RzPanel *panel, const char *cmdstr) {
 			free(text);
 			text = newText;
 		}
+		free(white);
 	} else {
 		text = rz_str_ansi_crop(cmdstr, sx, sy + graph_pad, w + sx - 3, h - 2 + sy);
 	}
