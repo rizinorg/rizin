@@ -512,7 +512,6 @@ int PE_(rz_bin_pe_get_image_size)(RzBinPEObj *bin) {
 
 struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(RzBinPEObj *bin) {
 	struct rz_bin_pe_addr_t *entry = NULL;
-	static bool debug = false;
 	int i;
 	ut64 base_addr = PE_(rz_bin_pe_get_image_base)(bin);
 	if (!bin || !bin->optional_header) {
@@ -531,10 +530,6 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(RzBinPEObj *bin) {
 	if (entry->paddr >= bin->size) {
 		struct rz_bin_pe_section_t *sections = bin->sections;
 		ut64 paddr = 0;
-		if (!debug) {
-			RZ_LOG_INFO("Invalid entrypoint ... "
-				    "trying to fix it but i do not promise nothing\n");
-		}
 		for (i = 0; i < bin->num_sections; i++) {
 			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
 				entry->paddr = sections[i].paddr;
@@ -563,9 +558,6 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(RzBinPEObj *bin) {
 		}
 	}
 	if (!entry->paddr) {
-		if (!debug) {
-			RZ_LOG_INFO("NULL entrypoint\n");
-		}
 		struct rz_bin_pe_section_t *sections = bin->sections;
 		for (i = 0; i < bin->num_sections; i++) {
 			// If there is a section with x without w perm is a good candidate to be the entrypoint
@@ -582,9 +574,6 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(RzBinPEObj *bin) {
 		if (entry->paddr & 1) {
 			entry->paddr--;
 		}
-	}
-	if (!debug) {
-		debug = true;
 	}
 	return entry;
 }
