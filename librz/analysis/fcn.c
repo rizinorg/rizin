@@ -643,7 +643,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			gotoBeach(RZ_ANALYSIS_RET_ERROR);
 		}
 	}
-	static ut64 lea_jmptbl_ip = UT64_MAX;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
 	bool last_is_push = false;
@@ -986,7 +985,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 							? rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params)
 							: rz_analysis_walkthrough_casetbl(analysis, fcn, bb, &params);
 						if (ret) {
-							lea_jmptbl_ip = jmp_aop.addr;
+							analysis->lea_jmptbl_ip = jmp_aop.addr;
 						}
 					}
 				}
@@ -1267,7 +1266,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			// switch statement
-			if (analysis->opt.jmptbl && lea_jmptbl_ip != op.addr) {
+			if (analysis->opt.jmptbl && analysis->lea_jmptbl_ip != op.addr) {
 				RzAnalysisJmpTableParams params = {
 					.jmp_address = op.addr,
 					.entry_size = analysis->bits >> 3,
@@ -1361,8 +1360,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					}
 				}
 			}
-			if (lea_jmptbl_ip == op.addr) {
-				lea_jmptbl_ip = UT64_MAX;
+			if (analysis->lea_jmptbl_ip == op.addr) {
+				analysis->lea_jmptbl_ip = UT64_MAX;
 			}
 			if (analysis->opt.ijmp) {
 				if (continue_after_jump) {
