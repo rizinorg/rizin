@@ -868,7 +868,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		goto out_function;
 	}
 	rz_cons_break_push(NULL, NULL);
-	rz_pvector_sort(fcn->bbs, bb_cmpaddr);
+	rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bb_cmpaddr, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	RzAnalysisBlock *bb;
 	rz_pvector_foreach (fcn->bbs, it) {

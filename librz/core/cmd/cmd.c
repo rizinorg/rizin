@@ -2873,7 +2873,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
 		int bs = core->blocksize;
 		if (fcn) {
-			rz_pvector_sort(fcn->bbs, bb_cmp);
+			rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bb_cmp, NULL);
 			rz_pvector_foreach (fcn->bbs, iter) {
 				bb = *iter;
 				rz_core_block_size(core, bb->size);
@@ -2918,7 +2918,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		int i;
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
 		if (fcn) {
-			rz_pvector_sort(fcn->bbs, bb_cmp);
+			rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bb_cmp, NULL);
 			rz_pvector_foreach (fcn->bbs, iter) {
 				bb = *iter;
 				for (i = 0; i < bb->op_pos_size; i++) {
@@ -4688,7 +4688,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_bbs_stmt) {
 	void **iter;
 	RzAnalysisBlock *bb;
 	RzCmdStatus ret = RZ_CMD_STATUS_OK;
-	rz_pvector_sort(fcn->bbs, bb_cmp);
+	rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bb_cmp, NULL);
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = *iter;
 		rz_core_seek(core, bb->addr, true);

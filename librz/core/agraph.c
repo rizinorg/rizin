@@ -2239,7 +2239,7 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		RZ_FREE(saved_arena);
 		return;
 	}
-	rz_pvector_sort(fcn->bbs, (RzListComparator)bbcmp);
+	rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bbcmp, NULL);
 
 	shortcuts = rz_config_get_i(core->config, "graph.nodejmps");
 	rz_pvector_foreach (fcn->bbs, iter) {
@@ -2354,7 +2354,7 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	if (emu) {
 		saved_arena = rz_reg_arena_peek(core->analysis->reg);
 	}
-	rz_pvector_sort(fcn->bbs, (RzListComparator)bbcmp);
+	rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bbcmp, NULL);
 	RzAnalysisBlock *curbb = NULL;
 	if (few) {
 		rz_pvector_foreach (fcn->bbs, iter) {

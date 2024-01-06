@@ -6564,7 +6564,7 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 	pj_kn(pj, "addr", fcn->addr);
 	pj_k(pj, "ops");
 	pj_a(pj);
-	rz_pvector_sort(fcn->bbs, bb_cmpaddr);
+	rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bb_cmpaddr, NULL);
 	rz_pvector_foreach (fcn->bbs, locs_it) {
 		b = *locs_it;
 		ut8 *buf = malloc(b->size);

@@ -495,7 +495,7 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 		rz_cons_printf("fs blocks\n");
 	}
 
-	rz_pvector_sort(fcn->bbs, bb_cmp);
+	rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bb_cmp, NULL);
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = *iter;
 		bb_info_print(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);

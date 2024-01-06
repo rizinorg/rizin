@@ -766,7 +766,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 	ut64 oldoff = core->offset;
 	rz_cons_break_push(NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
-	rz_pvector_sort(fcn->bbs, bb_cmpaddr);
+	rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bb_cmpaddr, NULL);
 	rz_pvector_foreach (fcn->bbs, it) {
 		bb = *it;
 		ut64 at = bb->addr;

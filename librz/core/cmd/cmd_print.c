@@ -2245,7 +2245,7 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 	const bool orig_bb_middle = rz_config_get_b(core->config, "asm.bb.middle");
 	rz_config_set_b(core->config, "asm.bb.middle", false);
 
-	rz_pvector_sort(f->bbs, (RzListComparator)bbcmp);
+	rz_pvector_sort(f->bbs, (RzPVectorComparator)bbcmp, NULL);
 
 	RzAnalysisBlock *b;
 	void **iter;
@@ -4338,7 +4338,7 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 		}
 	}
 
-	rz_pvector_sort(f->bbs, (RzListComparator)bbcmp);
+	rz_pvector_sort(f->bbs, (RzPVectorComparator)bbcmp, NULL);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		rz_pvector_foreach (f->bbs, iter) {
 			b = *iter;
