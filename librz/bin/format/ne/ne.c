@@ -105,7 +105,7 @@ RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	return segments;
 }
 
-static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
+static int __find_symbol_by_paddr(const void *paddr, const void *sym, void *user) {
 	return (int)!(*(ut64 *)paddr == ((RzBinSymbol *)sym)->paddr);
 }
 
@@ -184,7 +184,7 @@ RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinAddr *en;
 	int i = 1;
 	rz_list_foreach (entries, it, en) {
-		if (!rz_pvector_find(symbols, &en->paddr, __find_symbol_by_paddr)) {
+		if (!rz_pvector_find(symbols, &en->paddr, __find_symbol_by_paddr, NULL)) {
 			sym = RZ_NEW0(RzBinSymbol);
 			if (!sym) {
 				break;

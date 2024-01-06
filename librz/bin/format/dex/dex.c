@@ -1508,7 +1508,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBin
 	return imports;
 }
 
-static int compare_strings(const void *a, const void *b) {
+static int compare_strings(const void *a, const void *b, void *user) {
 	return strcmp((const char *)a, (const char *)b);
 }
 
@@ -1574,7 +1574,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *
 			object = p;
 		}
 
-		if (rz_pvector_find(libraries, object, compare_strings)) {
+		if (rz_pvector_find(libraries, object, compare_strings, NULL)) {
 			free(object);
 			continue;
 		}

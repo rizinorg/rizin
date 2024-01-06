@@ -73,7 +73,7 @@ RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc) {
 		} \
 	} while (0);
 
-static int reloc_cmp(const void *a, const void *b) {
+static int reloc_cmp(const void *a, const void *b, void *user) {
 	const RzBinReloc *ar = a;
 	const RzBinReloc *br = b;
 	CMP_CHECK(vaddr);
@@ -83,7 +83,7 @@ static int reloc_cmp(const void *a, const void *b) {
 	return 0;
 }
 
-static int reloc_target_cmp(const void *a, const void *b) {
+static int reloc_target_cmp(const void *a, const void *b, void *user) {
 	const RzBinReloc *ar = a;
 	const RzBinReloc *br = b;
 	CMP_CHECK(target_vaddr);
@@ -117,11 +117,11 @@ RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinRelo
 	}
 	relocs->v.free = NULL; // ownership of relocs transferred
 	rz_pvector_free(relocs);
-	rz_pvector_sort(&sorter, reloc_cmp);
+	rz_pvector_sort(&sorter, reloc_cmp, NULL);
 	ret->relocs_count = rz_pvector_len(&sorter);
 	ret->relocs = (RzBinReloc **)rz_pvector_flush(&sorter);
 	rz_pvector_fini(&sorter);
-	rz_pvector_sort(&target_sorter, reloc_target_cmp);
+	rz_pvector_sort(&target_sorter, reloc_target_cmp, NULL);
 	ret->target_relocs_count = rz_pvector_len(&target_sorter);
 	ret->target_relocs = (RzBinReloc **)rz_pvector_flush(&target_sorter);
 	rz_pvector_fini(&target_sorter);
@@ -273,6 +273,10 @@ RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b) {
 	return 0;
 }
 
+static int bin_compare_class(RzBinClass *a, RzBinClass *b, void *user) {
+	return rz_bin_compare_class(a, b);
+}
+
 /**
  * \brief      Tries to add a new class unless its name is found and returns it.
  *
@@ -303,7 +307,7 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 	}
 
 	rz_pvector_push(o->classes, oclass);
-	rz_pvector_sort(o->classes, (RzPVectorComparator)rz_bin_compare_class);
+	rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
 	ht_pp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }

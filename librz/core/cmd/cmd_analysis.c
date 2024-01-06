@@ -2776,7 +2776,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_display_handler(RzCore *core, int a
 	return RZ_CMD_STATUS_OK;
 }
 
-static int delta_cmp(const void *a, const void *b) {
+static int delta_cmp(const void *a, const void *b, void *user) {
 	const RzAnalysisVar *va = a;
 	const RzAnalysisVar *vb = b;
 	if (va->storage.type != vb->storage.type) {
@@ -2797,7 +2797,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_stackframe_handler(RzCore *core, in
 	if (!vars) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_pvector_sort(vars, delta_cmp);
+	rz_pvector_sort(vars, delta_cmp, NULL);
 	void **it;
 	rz_pvector_foreach (vars, it) {
 		RzAnalysisVar *p = *it;
