@@ -3338,8 +3338,9 @@ static void ds_print_optype(RzDisasmState *ds) {
 	if (ds->show_optype) {
 		const char *optype = rz_analysis_optype_to_string(ds->analysis_op.type);
 		ds_print_color_reset(ds);
-		const char *pad = rz_str_pad(' ', 8 - strlen(optype));
+		char *pad = rz_str_pad(' ', 8 - strlen(optype));
 		rz_cons_printf("[%s]%s", optype, pad);
+		free(pad);
 	}
 }
 

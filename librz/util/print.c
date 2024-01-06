@@ -405,6 +405,7 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 		0
 	};
 	const char *white = "";
+	char *allocated = NULL;
 #define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x) ? p->cons->context->pal.x
 	bool use_segoff = p ? (p->flags & RZ_PRINT_FLAGS_SEGOFF) : false;
 	bool use_color = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
@@ -425,8 +426,8 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 		a = addr & 0xffff;
 		s = (addr - a) >> (p ? p->seggrn : 0);
 		if (dec) {
-			snprintf(space, sizeof(space), "%d:%d", s & 0xffff, a & 0xffff);
-			white = rz_str_pad(' ', 9 - strlen(space));
+			rz_strf(space, "%d:%d", s & 0xffff, a & 0xffff);
+			white = allocated = rz_str_pad(' ', 9 - strlen(space));
 		}
 		if (use_color) {
 			const char *pre = PREOFF(offset)
@@ -446,9 +447,9 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 		}
 	} else {
 		if (dec) {
-			snprintf(space, sizeof(space), "%" PFMT64d, addr);
+			rz_strf(space, "%" PFMT64d, addr);
 			int w = RZ_MAX(10 - strlen(space), 0);
-			white = rz_str_pad(' ', w);
+			white = allocated = rz_str_pad(' ', w);
 		}
 		if (use_color) {
 			char rgbstr[32] = { 0 };
@@ -484,6 +485,7 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 			}
 		}
 	}
+	free(allocated);
 }
 
 RZ_API void rz_print_addr(RzPrint *p, ut64 addr) {

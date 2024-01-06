@@ -148,7 +148,9 @@ static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, con
 			rz_cons_printf("agn %s %s\n", fn, fn + name_len);
 			rz_cons_printf("age %s %s\n", RZ_STR_ISNOTEMPTY(name) ? name : "root", fn);
 		} else {
-			rz_cons_printf("%s %s\n", rz_str_pad(' ', name_len), fn + name_len);
+			char *pad = rz_str_pad(' ', name_len);
+			rz_cons_printf("%s %s\n", pad, fn + name_len);
+			free(pad);
 		}
 		// rz_cons_printf (".fg %s\n", fn);
 		__printRecursive(core, flags, fn, mode, depth + 1);

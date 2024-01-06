@@ -78,7 +78,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 			const char *expr = rz_strbuf_get(&aop.esil);
 			rz_cons_printf(Color_RESET "esil: %s\n" Color_RESET, expr);
 			int wp = wordpos(expr, x);
-			char *pas = strdup(rz_str_pad(' ', wp ? wp + 1 : 0));
+			char *pas = rz_str_pad(' ', wp ? wp + 1 : 0);
 			int wp2 = wordpos(expr, x + 1);
 			free(word);
 			word = rz_str_ndup(expr + (wp ? (wp + 1) : 0), (wp2 - wp) - (wp ? 1 : 0));
@@ -90,10 +90,10 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 				free(pas);
 				continue;
 			}
-			const char *pad = rz_str_pad('-', wp2 - ((wp > 0) ? wp + 1 : 0));
+			char *pad = rz_str_pad('-', wp2 - ((wp > 0) ? wp + 1 : 0));
 			rz_cons_printf(Color_RESET "      %s%s\n" Color_RESET, pas, pad);
 			free(pas);
-			// free (pad);
+			free(pad);
 		}
 		rz_cons_printf("esil regs:\n");
 		showreg(esil, "$$", "address");
