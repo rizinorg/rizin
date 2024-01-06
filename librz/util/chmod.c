@@ -8,58 +8,15 @@
 #include <sys/stat.h>
 
 #if __UNIX__
-static bool chmodr(const char *, int recursive);
-static bool parsemode(const char *);
-static void recurse(const char *path, int rec, bool (*fn)(const char *, int));
 
-static char oper = '=';
-static mode_t mode = 0;
-#endif
+#define GETCWD_BUFFER_SIZE 4096
 
-RZ_API bool rz_file_chmod(const char *file, const char *mod, int recursive) {
-#if __UNIX__
-	oper = '=';
-	mode = 0;
-	if (!parsemode(mod)) {
-		return false;
-	}
-	return chmodr(file, recursive);
-#else
-	return false;
-#endif
-}
+typedef struct {
+	char oper;
+	mode_t mode;
+} chmod_t;
 
-#if __UNIX__
-/* copied from sbase/chmod.c (suckless.org) */
-static bool chmodr(const char *path, int rflag) {
-	struct stat st;
-
-	if (stat(path, &st) == -1) {
-		return false;
-	}
-
-	switch (oper) {
-	case '+':
-		st.st_mode |= mode;
-		break;
-	case '-':
-		st.st_mode &= ~mode;
-		break;
-	case '=':
-		st.st_mode = mode;
-		break;
-	}
-	if (chmod(path, st.st_mode) == -1) {
-		eprintf("chmod %s:", path);
-		return false;
-	}
-	if (rflag) {
-		recurse(path, rflag, chmodr);
-	}
-	return true;
-}
-
-static bool parsemode(const char *str) {
+static bool parse_options(const char *str, chmod_t *chm) {
 	char *end;
 	const char *p;
 	int octal;
@@ -68,37 +25,37 @@ static bool parsemode(const char *str) {
 	octal = strtol(str, &end, 8);
 	if (*end == '\0') {
 		if (octal & 04000) {
-			mode |= S_ISUID;
+			chm->mode |= S_ISUID;
 		}
 		if (octal & 02000) {
-			mode |= S_ISGID;
+			chm->mode |= S_ISGID;
 		}
 		if (octal & 00400) {
-			mode |= S_IRUSR;
+			chm->mode |= S_IRUSR;
 		}
 		if (octal & 00200) {
-			mode |= S_IWUSR;
+			chm->mode |= S_IWUSR;
 		}
 		if (octal & 00100) {
-			mode |= S_IXUSR;
+			chm->mode |= S_IXUSR;
 		}
 		if (octal & 00040) {
-			mode |= S_IRGRP;
+			chm->mode |= S_IRGRP;
 		}
 		if (octal & 00020) {
-			mode |= S_IWGRP;
+			chm->mode |= S_IWGRP;
 		}
 		if (octal & 00010) {
-			mode |= S_IXGRP;
+			chm->mode |= S_IXGRP;
 		}
 		if (octal & 00004) {
-			mode |= S_IROTH;
+			chm->mode |= S_IROTH;
 		}
 		if (octal & 00002) {
-			mode |= S_IWOTH;
+			chm->mode |= S_IWOTH;
 		}
 		if (octal & 00001) {
-			mode |= S_IXOTH;
+			chm->mode |= S_IXOTH;
 		}
 		return true;
 	}
@@ -121,20 +78,20 @@ static bool parsemode(const char *str) {
 		case '+':
 		case '-':
 		case '=':
-			oper = *p;
+			chm->oper = *p;
 			break;
 		/* modes */
 		case 'r':
-			mode |= S_IRUSR | S_IRGRP | S_IROTH;
+			chm->mode |= S_IRUSR | S_IRGRP | S_IROTH;
 			break;
 		case 'w':
-			mode |= S_IWUSR | S_IWGRP | S_IWOTH;
+			chm->mode |= S_IWUSR | S_IWGRP | S_IWOTH;
 			break;
 		case 'x':
-			mode |= S_IXUSR | S_IXGRP | S_IXOTH;
+			chm->mode |= S_IXUSR | S_IXGRP | S_IXOTH;
 			break;
 		case 's':
-			mode |= S_ISUID | S_ISGID;
+			chm->mode |= S_ISUID | S_ISGID;
 			break;
 		/* error */
 		default:
@@ -143,23 +100,23 @@ static bool parsemode(const char *str) {
 		}
 	}
 	if (mask) {
-		mode &= mask;
+		chm->mode &= mask;
 	}
 	return true;
 }
 
 static char *agetcwd(void) {
-	char *buf = malloc(4096);
+	char *buf = malloc(GETCWD_BUFFER_SIZE);
 	if (!buf) {
 		return NULL;
 	}
-	if (!getcwd(buf, 4096)) {
+	if (!getcwd(buf, GETCWD_BUFFER_SIZE)) {
 		eprintf("getcwd:");
 	}
 	return buf;
 }
 
-static void recurse(const char *path, int rec, bool (*fn)(const char *, int)) {
+static void recurse(const char *path, int rec, bool (*fn)(const char *, int, chmod_t *), chmod_t *chm) {
 	char *cwd;
 	struct dirent *d;
 	struct stat st;
@@ -180,7 +137,7 @@ static void recurse(const char *path, int rec, bool (*fn)(const char *, int)) {
 	}
 	while ((d = readdir(dp))) {
 		if (strcmp(d->d_name, ".") && strcmp(d->d_name, "..")) {
-			fn(d->d_name, 1);
+			fn(d->d_name, 1, chm);
 		}
 	}
 
@@ -190,4 +147,48 @@ static void recurse(const char *path, int rec, bool (*fn)(const char *, int)) {
 	}
 	free(cwd);
 }
+
+/* copied from sbase/chmod.c (suckless.org) */
+static bool chmodr(const char *path, int rflag, chmod_t *chm) {
+	struct stat st;
+
+	if (stat(path, &st) == -1) {
+		return false;
+	}
+
+	switch (chm->oper) {
+	case '+':
+		st.st_mode |= chm->mode;
+		break;
+	case '-':
+		st.st_mode &= ~chm->mode;
+		break;
+	case '=':
+		st.st_mode = chm->mode;
+		break;
+	}
+	if (chmod(path, st.st_mode) == -1) {
+		eprintf("chmod %s:", path);
+		return false;
+	}
+	if (rflag) {
+		recurse(path, rflag, chmodr, chm);
+	}
+	return true;
+}
+
 #endif
+
+RZ_API bool rz_file_chmod(const char *file, const char *mod, int recursive) {
+#if __UNIX__
+	chmod_t chm;
+	chm.oper = '=';
+	chm.mode = 0;
+	if (!parse_options(mod, &chm)) {
+		return false;
+	}
+	return chmodr(file, recursive, &chm);
+#else
+	return false;
+#endif
+}
