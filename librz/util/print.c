@@ -451,13 +451,13 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 			white = rz_str_pad(' ', w);
 		}
 		if (use_color) {
+			char rgbstr[32] = { 0 };
 			const char *pre = PREOFF(offset)
 			    : Color_GREEN;
 			const char *fin = Color_RESET;
 			if (p && p->flags & RZ_PRINT_FLAGS_RAINBOW) {
 				// pre = rz_cons_rgb_str_off (rgbstr, addr);
 				if (p->cons && p->cons->rgbstr) {
-					static char rgbstr[32];
 					pre = p->cons->rgbstr(rgbstr, sizeof(rgbstr), addr);
 				}
 			}
