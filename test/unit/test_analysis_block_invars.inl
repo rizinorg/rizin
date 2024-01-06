@@ -37,7 +37,6 @@ static bool block_check_invariants(RzAnalysis *analysis) {
 		ut64 realsz = 0;
 		rz_pvector_foreach (fcn->bbs, iter) {
 			block = *iter;
-			blockiter = *iter;
 			RzListIter *blockiter2;
 			RzAnalysisBlock *block2;
 			if (block->addr < min) {
@@ -47,8 +46,11 @@ static bool block_check_invariants(RzAnalysis *analysis) {
 				max = block->addr + block->size;
 			}
 			realsz += block->size;
-			rz_list_foreach_iter(rz_list_iter_get_next(blockiter), blockiter2, block2) {
-				mu_assert_ptrneq(block, block2, "duplicate basic block in function");
+			rz_list_foreach (block->fcns, blockiter, block2) {
+				RzListIter *next_iter = rz_list_iter_get_next(blockiter);
+				rz_list_foreach_iter(next_iter, blockiter2, block2) {
+					mu_assert_ptrneq(block, block2, "duplicate basic block in function");
+				}
 			}
 			mu_assert("function references block, but block does not reference function", rz_list_contains(block->fcns, fcn));
 		}
