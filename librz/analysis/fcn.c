@@ -107,7 +107,7 @@ RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
 	ut64 eof = fcn->addr + newsize;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = *iter;
-		if(!bb) {
+		if (!bb) {
 			continue;
 		}
 		if (bb->addr >= eof) {
@@ -2364,7 +2364,7 @@ static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *
 		RzList *bbs_temp = rz_list_new();
 		if (!bbs_temp) {
 			// If memory allocation failed, print an error message and return from the function
-			eprintf("Failed to allocate memory for bbs.\n");
+			RZ_LOG_ERROR("Failed to allocate memory for bbs.\n");
 			return;
 		}
 
