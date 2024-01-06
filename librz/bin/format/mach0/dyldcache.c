@@ -1278,7 +1278,7 @@ RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache) {
 	return 0;
 }
 
-RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzPVector /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
 	RzDyldLocSym *locsym = cache->locsym;
 	if (!locsym) {
 		return;
@@ -1329,7 +1329,7 @@ RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage 
 			sym->name = rz_str_newf("unk_local%d", k++);
 		}
 
-		rz_list_append(symbols, sym);
+		rz_pvector_push(symbols, sym);
 	}
 
 	free(nlists);

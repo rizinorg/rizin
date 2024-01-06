@@ -1638,11 +1638,11 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1651,24 +1651,24 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_bin_elf_foreach_symbols(bin, symbol) {
 		RzBinSymbol *tmp = convert_symbol(bin, symbol);
 		if (!tmp) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 
-		rz_list_append(ret, tmp);
+		rz_pvector_push(ret, tmp);
 	}
 
 	RzBinElfSymbol *import;
 	rz_bin_elf_foreach_imports(bin, import) {
 		RzBinSymbol *tmp = convert_symbol(bin, import);
 		if (!tmp) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 
 		tmp->is_imported = true;
 
-		rz_list_append(ret, tmp);
+		rz_pvector_push(ret, tmp);
 	}
 
 	return ret;
@@ -1746,12 +1746,13 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 }
 
 static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
-	RzList *symbols_list = symbols(bf);
-	RzListIter *iter;
+	RzPVector *symbols_vec = symbols(bf);
+	void **iter;
 	RzBinSymbol *symbol;
 	bool is_rust = false;
-	if (symbols_list) {
-		rz_list_foreach (symbols_list, iter, symbol) {
+	if (symbols_vec) {
+		rz_pvector_foreach (symbols_vec, iter) {
+			symbol = *iter;
 			if (ret->has_canary && is_rust) {
 				break;
 			}
@@ -1768,7 +1769,7 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 				ret->lang = "rust";
 			}
 		}
-		rz_list_free(symbols_list);
+		rz_pvector_free(symbols_vec);
 	}
 }
 

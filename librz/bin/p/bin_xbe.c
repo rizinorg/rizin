@@ -259,10 +259,10 @@ static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj;
 	xbe_header *h;
-	RzList *ret;
+	RzPVector *ret;
 	ut32 kt_addr;
 	ut32 addr;
 
@@ -273,7 +273,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	obj = bf->o->bin_obj;
 	h = &obj->header;
 	kt_addr = h->kernel_thunk_addr ^ obj->kt_key;
-	ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -319,14 +319,14 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			sym->paddr = sym->vaddr - h->base;
 			sym->size = 4;
 			sym->ordinal = i;
-			rz_list_append(ret, sym);
+			rz_pvector_push(ret, sym);
 		} else {
 			free(sym);
 		}
 	}
 	return ret;
 out_error:
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 

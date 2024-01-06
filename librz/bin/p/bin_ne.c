@@ -99,7 +99,7 @@ RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return rz_bin_ne_get_entrypoints(bf->o->bin_obj);
 }
 
-RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return rz_bin_ne_get_symbols(bf->o->bin_obj);
 }
 

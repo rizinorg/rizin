@@ -2690,10 +2690,13 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			RzBinSymbol *sym;
 			ut64 offorig = core->offset;
 			ut64 obs = core->blocksize;
-			list = rz_bin_get_symbols(core->bin);
+			RzBinObject *o = rz_bin_cur_object(core->bin);
+			RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+			void **it;
 			rz_cons_break_push(NULL, NULL);
 			RzList *lost = rz_list_newf(free);
-			rz_list_foreach (list, iter, sym) {
+			rz_pvector_foreach (symbols, it) {
+				sym = *it;
 				RzBinSymbol *bs = rz_mem_dup(sym, sizeof(RzBinSymbol));
 				rz_list_append(lost, bs);
 			}
@@ -4807,14 +4810,16 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_import_stmt) {
 	TSNode command = ts_node_named_child(node, 0);
 	RzBinSymbol *imp;
 	ut64 offorig = core->offset;
-	RzList *list = rz_bin_get_symbols(core->bin);
-	if (!list) {
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+	if (!symbols) {
 		return RZ_CMD_STATUS_OK;
 	}
 
 	RzList *lost = rz_list_newf(free);
-	RzListIter *iter;
-	rz_list_foreach (list, iter, imp) {
+	void **it;
+	rz_pvector_foreach (symbols, it) {
+		imp = *it;
 		if (!imp->is_imported) {
 			continue;
 		}
@@ -4823,6 +4828,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_import_stmt) {
 		rz_list_append(lost, n);
 	}
 	ut64 *naddr;
+	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_list_foreach (lost, iter, naddr) {
 		ut64 addr = *naddr;
@@ -4884,11 +4890,14 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_symbol_stmt) {
 	RzBinSymbol *sym;
 	ut64 offorig = core->offset;
 	ut64 obs = core->blocksize;
-	RzList *list = rz_bin_get_symbols(core->bin);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	RzListIter *iter;
+	void **it;
 	rz_cons_break_push(NULL, NULL);
 	RzList *lost = rz_list_newf(free);
-	rz_list_foreach (list, iter, sym) {
+	rz_pvector_foreach (symbols, it) {
+		sym = *it;
 		RzBinSymbol *bs = rz_mem_dup(sym, sizeof(RzBinSymbol));
 		rz_list_append(lost, bs);
 	}

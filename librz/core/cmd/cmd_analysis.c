@@ -6289,11 +6289,12 @@ RZ_IPI RzCmdStatus rz_analyze_symbols_entries_handler(RzCore *core, int argc, co
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	const RzList *symbols = rz_bin_object_get_symbols(obj);
-	RzListIter *it;
+	const RzPVector *symbols = rz_bin_object_get_symbols(obj);
+	void **it;
 	RzBinSymbol *symbol;
 
-	rz_list_foreach (symbols, it, symbol) {
+	rz_pvector_foreach (symbols, it) {
+		symbol = *it;
 		rz_core_analysis_function_add(core, NULL, symbol->vaddr, analyze_recursively);
 	}
 

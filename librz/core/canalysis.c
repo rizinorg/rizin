@@ -901,11 +901,13 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 			if (f && f->name && strncmp(f->name, "sect", 4)) { /* Check if it's already flagged */
 				char *new_name = strdup(f->name);
 				if (is_entry_flag(f)) {
-					RzListIter *iter;
 					RzBinSymbol *sym;
-					const RzList *syms = rz_bin_get_symbols(core->bin);
+					RzBinObject *o = rz_bin_cur_object(core->bin);
+					const RzPVector *syms = o ? rz_bin_object_get_symbols(o) : NULL;
 					ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
-					rz_list_foreach (syms, iter, sym) {
+					void **it;
+					rz_pvector_foreach (syms, it) {
+						sym = *it;
 						if ((sym->paddr + baddr) == fcn->addr && !strcmp(sym->type, RZ_BIN_TYPE_FUNC_STR)) {
 							free(new_name);
 							new_name = rz_str_newf("sym.%s", sym->name);
@@ -2392,8 +2394,11 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzBinFile *bf = core->bin->cur;
 	RzBinObject *o = bf ? bf->o : NULL;
 	/* Symbols (Imports are already analyzed by rz_bin on init) */
-	if (o && (list = o->symbols) != NULL) {
-		rz_list_foreach (list, iter, symbol) {
+	RzPVector *vec = NULL;
+	void **it;
+	if (o && (vec = o->symbols) != NULL) {
+		rz_pvector_foreach (vec, it) {
+			symbol = *it;
 			if (rz_cons_is_breaked()) {
 				break;
 			}
@@ -2599,7 +2604,11 @@ RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore 
 		}
 	}
 	// iter all symbols
-	rz_list_foreach (rz_bin_get_symbols(core->bin), iter, S) {
+	void **it;
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+	rz_pvector_foreach (symbols, it) {
+		S = *it;
 		if (S->vaddr < from || S->vaddr > to) {
 			continue;
 		}

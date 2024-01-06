@@ -51,14 +51,15 @@ bool test_rz_bin_symbols(void) {
 	mu_assert_notnull(bf->o, "bin object");
 
 	RzBinObject *obj = rz_bin_cur_object(bin);
-	const RzList *symbols = rz_bin_object_get_symbols(obj);
+	const RzPVector *symbols = rz_bin_object_get_symbols(obj);
 	mu_assert_notnull(symbols, "mipsbe-ip symbols");
 
-	mu_assert_eq(rz_list_length(symbols), 204, "symbols count");
+	mu_assert_eq(rz_pvector_len(symbols), 204, "symbols count");
 	size_t matches = 0, expected = RZ_ARRAY_SIZE(mipsbe_ip_symbols) - 1;
-	RzListIter *it;
+	void **it;
 	RzBinSymbol *sym;
-	rz_list_foreach (symbols, it, sym) {
+	rz_pvector_foreach (symbols, it) {
+                sym = *it;
 		for (int i = 0; i < expected; i++) {
 			if (sym && sym->name && !strcmp(sym->name, mipsbe_ip_symbols[i].name) &&
 					sym->vaddr == mipsbe_ip_symbols[i].addr) {

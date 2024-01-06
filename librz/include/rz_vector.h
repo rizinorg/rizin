@@ -37,7 +37,8 @@ extern "C" {
  * Call rz_(p)vector_shrink explicitly if desired.
  */
 
-typedef int (*RzPVectorComparator)(const void *a, const void *b);
+// RzPVectorComparator should return negative, 0, positive to indicate "value < vec_data", "value == vec_data", "value > vec_data".
+typedef int (*RzPVectorComparator)(const void *value, const void *vec_data);
 typedef int (*RzVectorComparator)(const void *a, const void *b);
 typedef void (*RzVectorFree)(void *e, void *user);
 typedef void (*RzPVectorFree)(void *e);

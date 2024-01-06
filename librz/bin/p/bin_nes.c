@@ -40,7 +40,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, ut32 size) {
+static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, ut32 size) {
 	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 	if (!ptr) {
 		return;
@@ -49,12 +49,12 @@ static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr,
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
 	ptr->ordinal = 0;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *ret = NULL;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	addsym(ret, "NMI_VECTOR_START_ADDRESS", NMI_VECTOR_START_ADDRESS, 2);

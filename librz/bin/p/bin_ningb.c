@@ -82,24 +82,24 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSymbol *ptr[13];
 	int i;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 
 	for (i = 0; i < 8; i++) {
 		if (!(ptr[i] = RZ_NEW0(RzBinSymbol))) {
-			ret->free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		ptr[i]->name = rz_str_newf("rst_%i", i * 8);
 		ptr[i]->paddr = ptr[i]->vaddr = i * 8;
 		ptr[i]->size = 1;
 		ptr[i]->ordinal = i;
-		rz_list_append(ret, ptr[i]);
+		rz_pvector_push(ret, ptr[i]);
 	}
 
 	if (!(ptr[8] = RZ_NEW0(RzBinSymbol))) {
@@ -110,7 +110,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	ptr[8]->paddr = ptr[8]->vaddr = 64;
 	ptr[8]->size = 1;
 	ptr[8]->ordinal = 8;
-	rz_list_append(ret, ptr[8]);
+	rz_pvector_push(ret, ptr[8]);
 
 	if (!(ptr[9] = RZ_NEW0(RzBinSymbol))) {
 		return ret;
@@ -120,7 +120,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	ptr[9]->paddr = ptr[9]->vaddr = 72;
 	ptr[9]->size = 1;
 	ptr[9]->ordinal = 9;
-	rz_list_append(ret, ptr[9]);
+	rz_pvector_push(ret, ptr[9]);
 
 	if (!(ptr[10] = RZ_NEW0(RzBinSymbol))) {
 		return ret;
@@ -130,7 +130,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	ptr[10]->paddr = ptr[10]->vaddr = 80;
 	ptr[10]->size = 1;
 	ptr[10]->ordinal = 10;
-	rz_list_append(ret, ptr[10]);
+	rz_pvector_push(ret, ptr[10]);
 
 	if (!(ptr[11] = RZ_NEW0(RzBinSymbol))) {
 		return ret;
@@ -140,7 +140,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	ptr[11]->paddr = ptr[11]->vaddr = 88;
 	ptr[11]->size = 1;
 	ptr[11]->ordinal = 11;
-	rz_list_append(ret, ptr[11]);
+	rz_pvector_push(ret, ptr[11]);
 
 	if (!(ptr[12] = RZ_NEW0(RzBinSymbol))) {
 		return ret;
@@ -150,7 +150,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	ptr[12]->paddr = ptr[12]->vaddr = 96;
 	ptr[12]->size = 1;
 	ptr[12]->ordinal = 12;
-	rz_list_append(ret, ptr[12]);
+	rz_pvector_push(ret, ptr[12]);
 
 	return ret;
 }

@@ -32,7 +32,7 @@ typedef struct {
 	RzList /*<RzBinAddr *>*/ *entries;
 	RzList /*<rz_ne_resource *>*/ *resources;
 	RzPVector /*<RzBinImport *>*/ *imports;
-	RzList /*<RzBinSymbol *>*/ *symbols;
+	RzPVector /*<RzBinSymbol *>*/ *symbols;
 	char *os;
 } rz_bin_ne_obj_t;
 
@@ -40,7 +40,7 @@ void rz_bin_ne_free(rz_bin_ne_obj_t *bin);
 rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose);
 RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin);
 RzPVector /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin);
-RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin);
+RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin);
 RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin);
 RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin);
 

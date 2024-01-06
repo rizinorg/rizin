@@ -448,14 +448,16 @@ static RzPVector /*<RzBinImport *>*/ *mdmp_imports(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *mdmp_symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *mdmp_symbols(RzBinFile *bf) {
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *ret, *list;
-	RzListIter *it;
+	RzList *list;
+	RzPVector *ret;
+	RzListIter *it, *iter;
+	RzBinSymbol *sym;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 
@@ -463,12 +465,20 @@ static RzList /*<RzBinSymbol *>*/ *mdmp_symbols(RzBinFile *bf) {
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_rz_bin_mdmp_pe_get_symbols(bf->rbin, pe32_bin);
-		rz_list_join(ret, list);
+		rz_list_foreach (list, iter, sym) {
+			rz_pvector_push(ret, sym);
+		}
+		list->length = 0;
+		list->head = list->tail = NULL;
 		rz_list_free(list);
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		list = Pe64_rz_bin_mdmp_pe_get_symbols(bf->rbin, pe64_bin);
-		rz_list_join(ret, list);
+		rz_list_foreach (list, iter, sym) {
+			rz_pvector_push(ret, sym);
+		}
+		list->length = 0;
+		list->head = list->tail = NULL;
 		rz_list_free(list);
 	}
 	return ret;

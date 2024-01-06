@@ -94,26 +94,41 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_java_class_as_sections(jclass);
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *tmp;
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
 	}
 
+	// read from list and save to pvector
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
+	RzListIter *iter;
+	RzBinSymbol *sym;
 	RzList *list = rz_bin_java_class_methods_as_symbols(jclass);
 	if (!list) {
 		return NULL;
 	}
+	rz_list_foreach (list, iter, sym) {
+		rz_pvector_push(ret, sym);
+	}
 
 	tmp = rz_bin_java_class_fields_as_symbols(jclass);
-	rz_list_join(list, tmp);
+	rz_list_foreach (tmp, iter, sym) {
+		rz_pvector_push(ret, sym);
+	}
+	tmp->length = 0;
+	tmp->head = tmp->tail = NULL;
 	rz_list_free(tmp);
 
 	tmp = rz_bin_java_class_const_pool_as_symbols(jclass);
-	rz_list_join(list, tmp);
+	rz_list_foreach (tmp, iter, sym) {
+		rz_pvector_push(ret, sym);
+	}
+	tmp->length = 0;
+	tmp->head = tmp->tail = NULL;
 	rz_list_free(tmp);
-	return list;
+	return ret;
 }
 
 static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {

@@ -166,7 +166,7 @@ static void add_new_func_symbol(RzCore *core, const char *name, ut64 vaddr) {
 
 	symbol->bind = RZ_BIN_BIND_GLOBAL_STR;
 	symbol->type = RZ_BIN_TYPE_FUNC_STR;
-	if (!rz_list_append(bf->o->symbols, symbol)) {
+	if (!rz_pvector_push(bf->o->symbols, symbol)) {
 		RZ_LOG_ERROR("Failed append new go symbol to symbols list\n");
 		rz_bin_symbol_free(symbol);
 	}
@@ -446,8 +446,10 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	rz_return_val_if_fail(core && core->bin && core->io, false);
 
 	RzList *section_list = rz_bin_get_sections(core->bin);
-	RzList *symbols_list = rz_bin_get_symbols(core->bin);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols_vec = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	RzListIter *iter;
+	void **it;
 	RzBinSection *section;
 	ut32 num_syms = 0;
 	GoPcLnTab pclntab = { 0 };
@@ -466,7 +468,8 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 
 	if (!pclntab.vaddr) {
 		RzBinSymbol *symbol;
-		rz_list_foreach (symbols_list, iter, symbol) {
+		rz_pvector_foreach (symbols_vec, it) {
+			symbol = *it;
 			// on PE files the pclntab sections is inside .rdata, so rizin creates a symbol for it
 			if (symbol->size >= 16 && !strcmp(symbol->name, "gopclntab")) {
 				pclntab.vaddr = symbol->vaddr;
