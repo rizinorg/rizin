@@ -107,6 +107,9 @@ RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
 	ut64 eof = fcn->addr + newsize;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = *iter;
+		if(!bb) {
+			continue;
+		}
 		if (bb->addr >= eof) {
 			rz_analysis_function_remove_block(fcn, bb);
 			continue;

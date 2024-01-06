@@ -339,6 +339,8 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	return result;
 
 fail:
+	rz_list_free(list_a);
+	rz_list_free(list_b);
 	rz_th_pool_free(pool);
 	shared_context_fini(&shared);
 	rz_list_free(unmatch_a);
@@ -427,7 +429,7 @@ RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL R
 	RzList *bbs_list_b = rz_list_new();
 	if (!bbs_list_a || !bbs_list_b) {
 		// If memory allocation failed, print an error message and return NULL
-		eprintf("Failed to allocate memory for bbs_list_a or bbs_list_b.\n");
+		RZ_LOG_ERROR("Failed to allocate memory for bbs_list_a or bbs_list_b.\n");
 		rz_list_free(bbs_list_a); // It's safe to call rz_list_free with NULL
 		rz_list_free(bbs_list_b);
 		return NULL;
