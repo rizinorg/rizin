@@ -972,7 +972,9 @@ static void interact(RzTestState *state) {
 	printf(" %" PFMT64u " failed test(s) " UTF8_POLICE_CARS_REVOLVING_LIGHT "\n",
 		(ut64)rz_pvector_len(&failed_results));
 
+	ut32 cnt = 0;
 	rz_pvector_foreach (&failed_results, it) {
+		cnt++;
 		RzTestResultInfo *result = *it;
 		if (result->test->type != RZ_TEST_TYPE_CMD && result->test->type != RZ_TEST_TYPE_ASM) {
 			continue;
@@ -981,7 +983,7 @@ static void interact(RzTestState *state) {
 		printf("#####################\n\n");
 		char *name = rz_test_test_name(result->test);
 		if (name) {
-			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
+			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET " (No. %d/%zu)\n", result->test->path, name, cnt, rz_pvector_len(&failed_results));
 			free(name);
 		}
 		print_result_diff(&state->run_config, result);
