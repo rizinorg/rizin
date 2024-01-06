@@ -201,7 +201,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_list_free(o->maps);
 	rz_pvector_free(o->mem);
 	rz_list_free(o->sections);
-	rz_list_free(o->symbols);
+	rz_pvector_free(o->symbols);
 	rz_pvector_free(o->vfiles);
 	rz_pvector_free(o->resources);
 	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
@@ -763,9 +763,9 @@ RZ_API RZ_BORROW const RzPVector /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONN
 }
 
 /**
- * \brief Get list of \p RzBinSymbol representing the symbols in the binary object.
+ * \brief Get pvector of \p RzBinSymbol representing the symbols in the binary object.
  */
-RZ_API const RzList /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->symbols;
 }

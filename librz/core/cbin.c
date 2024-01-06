@@ -1469,10 +1469,13 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	rz_spaces_push(&core->analysis->meta_spaces, "bin");
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
-	RzList *symbols = rz_bin_get_symbols(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = obj ? (RzPVector *)rz_bin_object_get_symbols(obj) : NULL;
 	RzListIter *iter;
+	void **it;
 	RzBinSymbol *symbol;
-	rz_list_foreach (symbols, iter, symbol) {
+	rz_pvector_foreach (symbols, it) {
+		symbol = *it;
 		if (!symbol->name) {
 			continue;
 		}
@@ -1956,16 +1959,17 @@ static bool is_in_symbol_range(ut64 sym_addr, ut64 sym_size, ut64 addr) {
 
 static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter, bool only_export) {
 	RzBinObject *o = bf->o;
-	const RzList *symbols = rz_bin_object_get_symbols(o);
+	const RzPVector *symbols = rz_bin_object_get_symbols(o);
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	RzBinSymbol *symbol;
-	RzListIter *iter;
+	void **iter;
 	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "dXXssnss", "nth", "paddr", "vaddr", "bind", "type", "size", "lib", "name");
 
-	rz_list_foreach (symbols, iter, symbol) {
+	rz_pvector_foreach (symbols, iter) {
+		symbol = *iter;
 		if (!symbol->name) {
 			continue;
 		}

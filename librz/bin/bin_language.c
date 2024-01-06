@@ -148,7 +148,9 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 		return language_apply_blocks_mask(RZ_BIN_LANGUAGE_OBJC, is_blocks);
 	}
 
-	rz_list_foreach (o->symbols, iter, sym) {
+	void **it;
+	rz_pvector_foreach (o->symbols, it) {
+		sym = *it;
 		if (!sym->name) {
 			continue;
 		}

@@ -427,16 +427,16 @@ RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 /**
  * \brief Find the \p element in the \p vec
  * \param vec the RzPVector to search in
- * \param element the element to search for
+ * \param value the value that elements in pvector compare against by \p cmp
  * \param cmp the comparator function
  * \return the iter of the element if found, NULL otherwise
  */
-RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *element, RZ_NONNULL RzPVectorComparator cmp) {
+RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *value, RZ_NONNULL RzPVectorComparator cmp) {
 	rz_return_val_if_fail(vec, NULL);
 
 	void **iter;
 	rz_pvector_foreach (vec, iter) {
-		if (!cmp(*iter, element)) {
+		if (!cmp(value, *iter)) {
 			return iter;
 		}
 	}

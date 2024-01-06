@@ -116,7 +116,7 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 			sym->vaddr = sym->paddr + baddr;
 			RZ_LOG_INFO("f sym.%s %" PFMT64u " @ 0x%" PFMT64x "\n", symName, size, addr);
 		}
-		rz_list_append(bin->methods_list, sym);
+		rz_pvector_push(bin->methods_vec, sym);
 		i += 8 - 1;
 	}
 	return;

@@ -1594,12 +1594,18 @@ RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_le_get_imports(RzBinFile *bf) {
 	return l;
 }
 
-RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(RzBinFile *bf) {
+RZ_OWN RzPVector /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	if (rz_list_empty(bin->symbols)) {
 		return NULL;
 	}
-	return rz_list_clone(bin->symbols);
+	RzListIter *iter;
+	RzBinSymbol *sym;
+	RzPVector *vec = rz_pvector_new(NULL);
+	rz_list_foreach (bin->symbols, iter, sym) {
+		rz_pvector_push(vec, sym);
+	}
+	return vec;
 }
 
 RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {

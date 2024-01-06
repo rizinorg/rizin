@@ -685,16 +685,18 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject
 	rz_return_val_if_fail(o, NULL);
 
 	RzBinSymbol *sym;
-	RzListIter *iter;
+	void **iter;
 
 	if (va) {
-		rz_list_foreach (o->symbols, iter, sym) {
+		rz_pvector_foreach (o->symbols, iter) {
+			sym = *iter;
 			if (off == sym->vaddr) {
 				return sym;
 			}
 		}
 	} else {
-		rz_list_foreach (o->symbols, iter, sym) {
+		rz_pvector_foreach (o->symbols, iter) {
+			sym = *iter;
 			if (off == sym->paddr) {
 				return sym;
 			}
@@ -731,12 +733,6 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps_at(RzBinObject 
 		}
 	}
 	return res;
-}
-
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSymbol *>*/ *rz_bin_get_symbols(RZ_NONNULL RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? (RzList *)rz_bin_object_get_symbols(o) : NULL;
 }
 
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin) {

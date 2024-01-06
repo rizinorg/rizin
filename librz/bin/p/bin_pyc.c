@@ -40,7 +40,7 @@ static bool init_pyc_cache(RzBinPycObj *pyc, RzBuffer *buf) {
 		return false;
 	}
 	pyc->sections_cache = sections;
-	RzList *symbols = rz_list_newf((RzListFree)free);
+	RzPVector *symbols = rz_pvector_new((RzPVectorFree)free);
 	if (!symbols) {
 		rz_list_free(shared);
 		rz_list_free(sections);
@@ -151,7 +151,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *arch) {
 	return ctx->sections_cache;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *arch) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *arch) {
 	RzBinPycObj *pyc = arch->o->bin_obj;
 	return pyc->symbols_cache;
 }

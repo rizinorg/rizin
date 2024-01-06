@@ -336,9 +336,9 @@ static void populate_symbols(RzBinFile *bf) {
 	}
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -347,7 +347,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		for (size_t i = 0; i < obj->hdr.f_nsyms; i++) {
 			RzBinSymbol *ptr = ht_up_find(obj->sym_ht, i, NULL);
 			if (ptr) {
-				rz_list_append(ret, ptr);
+				rz_pvector_push(ret, ptr);
 			}
 			i += obj->symbols[i].n_numaux;
 		}

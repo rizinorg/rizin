@@ -888,10 +888,11 @@ static bool resolve_import_cb(RzCoreLinkData *ld, RzIODesc *desc, ut32 id) {
 	if (!bf) {
 		return true;
 	}
-	RzListIter *iter;
+	void **iter;
 	RzBinSymbol *sym;
-	RzList *symbols = rz_bin_file_get_symbols(bf);
-	rz_list_foreach (symbols, iter, sym) {
+	RzPVector *symbols = rz_bin_file_get_symbols(bf);
+	rz_pvector_foreach (symbols, iter) {
+		sym = *iter;
 		if (!strcmp(sym->name, ld->name)) {
 			ld->addr = sym->vaddr;
 			return false;

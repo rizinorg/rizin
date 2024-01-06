@@ -378,15 +378,17 @@ static int rabin_extract(RzBin *bin, int all) {
 }
 
 static int rabin_dump_symbols(RzBin *bin, int len) {
-	RzList *symbols = rz_bin_get_symbols(bin);
+	RzBinObject *o = rz_bin_cur_object(bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	if (!symbols) {
 		return false;
 	}
 
-	RzListIter *iter;
+	void **iter;
 	RzBinSymbol *symbol;
 	int olen = len;
-	rz_list_foreach (symbols, iter, symbol) {
+	rz_pvector_foreach (symbols, iter) {
+		symbol = *iter;
 		if (symbol->size && (olen > symbol->size || !olen)) {
 			len = symbol->size;
 		} else if (!symbol->size && !olen) {
