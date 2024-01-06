@@ -1509,7 +1509,7 @@ RZ_API bool rz_bv_is_all_one(RZ_NONNULL const RzBitVector *x) {
 }
 
 /**
- * get predecessor of bv (dec 1)
+ * get predecessor of bv (dec 1) in 2^n modulo
  * \param bv
  * \return predecessor of bv
  */
@@ -1530,12 +1530,33 @@ RZ_API RZ_OWN RzBitVector *rz_bv_pred(RZ_NONNULL RzBitVector *bv) {
 }
 
 /**
+ * get successor of bv (inc 1) in 2^n modulo
+ * \param bv
+ * \return successor of bv
+ */
+RZ_API RZ_OWN RzBitVector *rz_bv_succ(RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, NULL);
+	ut32 len = bv->len;
+	if (len <= 64) {
+		ut64 val = rz_bv_to_ut64(bv);
+		val += 1;
+		return rz_bv_new_from_ut64(len, val);
+	}
+
+	RzBitVector *one = rz_bv_new_one(len);
+	RzBitVector *result = rz_bv_sub(bv, one, NULL);
+	rz_bv_free(one);
+
+	return result;
+}
+
+/**
  * Arithmetic right shift of bv, shift right with (msb bv) bit filled
  * \param bv
  * \param dist shift distance
  * \return true if success
  */
-RZ_API bool rz_arshift(RZ_NONNULL RzBitVector *bv, ut32 dist) {
+RZ_API bool rz_bv_arshift(RZ_NONNULL RzBitVector *bv, ut32 dist) {
 	rz_return_val_if_fail(bv, false);
 	bool msb = rz_bv_msb(bv);
 	return rz_bv_rshift_fill(bv, dist, msb);
