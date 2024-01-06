@@ -36,7 +36,7 @@ RZ_API void rz_bin_source_line_info_builder_push_sample(RzBinSourceLineInfoBuild
 	sample->file = file ? rz_str_constpool_get(&builder->filename_pool, file) : NULL;
 }
 
-static int line_sample_cmp(const void *a, const void *b) {
+static int line_sample_cmp(const void *a, const void *b, void *user) {
 	const RzBinSourceLineSample *sa = a;
 	const RzBinSourceLineSample *sb = b;
 	// first, sort by addr
@@ -106,7 +106,7 @@ RZ_API RzBinSourceLineInfo *rz_bin_source_line_info_builder_build_and_fini(RzBin
 		for (size_t i = 0; i < initial_samples_count; i++) {
 			rz_pvector_push(&sorter, &initial_samples[i]);
 		}
-		rz_pvector_sort(&sorter, line_sample_cmp);
+		rz_pvector_sort(&sorter, line_sample_cmp, NULL);
 
 		r->samples_count = 0;
 		for (size_t i = 0; i < initial_samples_count; i++) {
