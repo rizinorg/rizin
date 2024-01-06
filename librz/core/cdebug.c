@@ -6,6 +6,7 @@
 #include <rz_core.h>
 #include <rz_debug.h>
 #include "core_private.h"
+#include "rz_bin.h"
 
 /**
  * \brief Check whether the core is in debug mode (equivalent to cfg.debug)
@@ -245,16 +246,18 @@ RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr) 
  * \return void
  */
 RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
-	RzList *symbols = rz_bin_get_symbols(core->bin);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	if (!symbols) {
 		RZ_LOG_ERROR("Unable to find symbols in the binary\n");
 		return;
 	}
 	RzBinSymbol *symbol;
-	RzListIter *iter;
+	void **iter;
 	RzBreakpointItem *bp;
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-	rz_list_foreach (symbols, iter, symbol) {
+	rz_pvector_foreach (symbols, iter) {
+		symbol = *iter;
 		if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
 			if (rz_analysis_noreturn_at(core->analysis, symbol->vaddr)) {
 				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, 0, hwbp, false, 0, NULL, 0);

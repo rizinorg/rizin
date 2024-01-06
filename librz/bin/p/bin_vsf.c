@@ -328,7 +328,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 
 	static const struct {
 		const ut16 address;
@@ -469,9 +469,9 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	}
 	const int m_idx = vsf_obj->machine_idx;
 	int offset = _machines[m_idx].offset_mem;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinSymbol *ptr;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 
@@ -488,7 +488,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		ptr->size = 2;
 		ptr->paddr = vsf_obj->mem + offset + _symbols[i].address;
 		ptr->ordinal = i;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;

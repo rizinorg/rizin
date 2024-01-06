@@ -31,7 +31,7 @@ static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_
 	GHT vaddr = GHT_MAX;
 	RzBin *bin = core->bin;
 	RzBinFile *current_bf = rz_bin_cur(bin);
-	RzListIter *iter;
+	void **iter;
 	RzBinSymbol *s;
 
 	RzBinOptions opt;
@@ -45,8 +45,10 @@ static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_
 		return vaddr;
 	}
 
-	RzList *syms = rz_bin_get_symbols(bin);
-	rz_list_foreach (syms, iter, s) {
+	RzBinObject *o = rz_bin_cur_object(bin);
+	RzPVector *syms = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+	rz_pvector_foreach (syms, iter) {
+		s = *iter;
 		if (!strcmp(s->name, sym_name)) {
 			vaddr = s->vaddr;
 			break;

@@ -290,7 +290,7 @@ static void header(RzBinFile *bf) {
 /*
  * No mention of symbols in the doc
  */
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
 }
 

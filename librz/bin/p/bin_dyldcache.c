@@ -134,7 +134,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RzDyldCache *cache, RzList /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
+void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0(bf, bin);
 	if (!mach0) {
 		return;
@@ -166,7 +166,7 @@ void symbols_from_bin(RzDyldCache *cache, RzList /*<RzBinSymbol *>*/ *ret, RzBin
 		sym->ordinal = i;
 
 		set_u_add(hash, sym->vaddr);
-		rz_list_append(ret, sym);
+		rz_pvector_push(ret, sym);
 	}
 	MACH0_(mach0_free)
 	(mach0);
@@ -325,13 +325,13 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
 
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -341,7 +341,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_list_foreach (cache->bins, iter, bin) {
 		SetU *hash = set_u_new();
 		if (!hash) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		symbols_from_bin(cache, ret, bf, bin, hash);
@@ -352,7 +352,9 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	ut64 slide = rz_dyldcache_get_slide(cache);
 	if (slide) {
 		RzBinSymbol *sym;
-		rz_list_foreach (ret, iter, sym) {
+		void **it;
+		rz_pvector_foreach (ret, it) {
+			sym = *it;
 			sym->vaddr += slide;
 		}
 	}

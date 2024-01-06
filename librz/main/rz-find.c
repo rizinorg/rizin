@@ -226,9 +226,10 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 	if (ro->import || ro->symbol) {
 		RzBinFile *bf;
-		const RzList *symbols;
+		const RzPVector *symbols;
 		const RzPVector *imports;
-		RzListIter *iter, *it;
+		RzListIter *iter;
+		void **it;
 		void **vec_it;
 		RzBinSymbol *symbol;
 		RzBinImport *import;
@@ -271,7 +272,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				if (!kw) {
 					continue;
 				}
-				rz_list_foreach (symbols, it, symbol) {
+				rz_pvector_foreach (symbols, it) {
+					symbol = *it;
 					if (!symbol->name) {
 						continue;
 					}

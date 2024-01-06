@@ -831,7 +831,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int arg
 RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	CMD_CHECK_DEBUG_DEAD(core);
-	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr = core->offset;
 	switch (input[0]) {
@@ -960,10 +959,13 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 		map = get_closest_map(core, addr);
 		if (map) {
 			ut64 closest_addr = UT64_MAX;
-			RzList *symbols = rz_bin_get_symbols(core->bin);
+			RzBinObject *o = rz_bin_cur_object(core->bin);
+			RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 			RzBinSymbol *symbol, *closest_symbol = NULL;
+			void **iter;
 
-			rz_list_foreach (symbols, iter, symbol) {
+			rz_pvector_foreach (symbols, iter) {
+				symbol = *iter;
 				if (symbol->vaddr > addr) {
 					if (symbol->vaddr - addr < closest_addr) {
 						closest_addr = symbol->vaddr - addr;

@@ -1159,7 +1159,7 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	return ret;
 }
 
-static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzList /*<RzBinSection *>*/ *sections, RzList /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, char *prefix) {
+static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzList /*<RzBinSection *>*/ *sections, RzPVector /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, char *prefix) {
 	pyc_code_object *cobj = NULL;
 	RzBinSection *section = NULL;
 	RzBinSymbol *symbol = NULL;
@@ -1210,7 +1210,7 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzList /
 	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
 		goto fail;
 	}
-	if (!rz_list_append(symbols, symbol)) {
+	if (!rz_pvector_push(symbols, symbol)) {
 		goto fail;
 	}
 	rz_list_foreach (((RzList *)(cobj->consts->data)), i, obj)
@@ -1225,7 +1225,7 @@ fail:
 	return false;
 }
 
-bool get_sections_symbols_from_code_objects(RzBinPycObj *pyc, RzBuffer *buffer, RzList /*<RzBinSection *>*/ *sections, RzList /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, ut32 magic) {
+bool get_sections_symbols_from_code_objects(RzBinPycObj *pyc, RzBuffer *buffer, RzList /*<RzBinSection *>*/ *sections, RzPVector /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, ut32 magic) {
 	bool ret;
 	pyc->magic_int = magic;
 	pyc->refs = rz_list_newf((RzListFree)free_object);

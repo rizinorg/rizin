@@ -353,8 +353,8 @@ static bool check_buffer(RzBuffer *b) {
 	return !memcmp(buf, "\x02\xff\x01\xff", 4);
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *res = rz_list_newf((RzListFree)rz_bin_symbol_free);
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
@@ -371,7 +371,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		RzBinSymbol *s = bin_symbol_from_symbol(element, sym);
 		if (s) {
-			rz_list_append(res, s);
+			rz_pvector_push(res, s);
 			ht_uu_insert(hash, sym->paddr, 1);
 		}
 	}
@@ -383,7 +383,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		RzBinSymbol *s = bin_symbol_from_symbol(element, sym);
 		if (s) {
-			rz_list_append(res, s);
+			rz_pvector_push(res, s);
 		}
 	}
 	ht_uu_free(hash);

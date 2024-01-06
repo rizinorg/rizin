@@ -61,7 +61,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 	}
 
 	ut64 ba = baddr(bf);
-	bin->methods_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	bin->methods_vec = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	bin->imports_vec = rz_pvector_new((RzListFree)rz_bin_import_free);
 	parseMod(b, bin, mod0, ba);
 	obj->bin_obj = bin;
@@ -268,13 +268,13 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	bin = (RzBinNXOObj *)bf->o->bin_obj;
-	return bin->methods_list;
+	return bin->methods_vec;
 }
 
 static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
