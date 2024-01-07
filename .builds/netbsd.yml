@@ -5,7 +5,6 @@ packages:
     - gmake
     - clang
     - python38
-    - wget
 environment:
     CXX: clang++
     CC: clang
@@ -15,8 +14,7 @@ sources:
 hottub_trigger: '^(dev|stable|bsd-.+|dist-.+)$'
 tasks:
     - rzpipe: |
-        wget https://bootstrap.pypa.io/get-pip.py
-        python3.8 get-pip.py
+        python3.8 -m ensurepip --user
         python3.8 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
