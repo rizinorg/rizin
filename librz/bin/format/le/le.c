@@ -1820,13 +1820,13 @@ RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf) {
 	return relocs;
 }
 
-RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
+RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
-	RzList *maps = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *maps = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	RzBinMap *map = NULL;
 	if (!maps) {
 	fail_cleanup:
-		rz_list_free(maps);
+		rz_pvector_free(maps);
 		rz_bin_map_free(map);
 		return NULL;
 	}
@@ -1857,7 +1857,7 @@ RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 				CHECK(map->vfile_name = strdup(le_map->vfile_name));
 			}
 		}
-		CHECK(rz_list_append(maps, map));
+		CHECK(rz_pvector_push(maps, map));
 		map = NULL;
 	}
 
@@ -1869,7 +1869,7 @@ RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 	map->vsize = rtmsz;
 	CHECK(map->name = strdup(VFILE_NAME_RELOC_TARGETS));
 	CHECK(map->vfile_name = strdup(VFILE_NAME_RELOC_TARGETS));
-	CHECK(rz_list_append(maps, map));
+	CHECK(rz_pvector_push(maps, map));
 
 	return maps;
 }

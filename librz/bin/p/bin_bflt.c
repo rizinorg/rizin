@@ -33,16 +33,16 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
 
 	RzBinMap *map = RZ_NEW0(RzBinMap);
 	if (!map) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	map->paddr = 0;
@@ -52,11 +52,11 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->perm = RZ_PERM_RWX;
 	map->name = strdup("hdr+text");
 	map->vfile_name = obj->buf_patched ? strdup(VFILE_NAME_PATCHED) : NULL;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
 	if (!map) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	map->paddr = obj->hdr.data_start;
@@ -66,7 +66,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->perm = RZ_PERM_RWX;
 	map->name = strdup("data+bss");
 	map->vfile_name = obj->buf_patched ? strdup(VFILE_NAME_PATCHED) : NULL;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	return ret;
 }

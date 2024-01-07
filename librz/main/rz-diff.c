@@ -632,7 +632,7 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 		goto rz_diff_load_file_with_core_fail;
 	}
 
-	if (rz_list_empty(bfile->o->maps)) {
+	if (rz_pvector_empty(bfile->o->maps)) {
 		rz_config_set_i(core->config, "io.va", false);
 	}
 
