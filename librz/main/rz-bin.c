@@ -151,7 +151,7 @@ static ut32 actions2mask(ut64 action) {
 }
 
 static int rabin_show_help(int v) {
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ",Color_RESET);
+	printf("%s%s%s", Color_CYAN, "Usage: ",Color_RESET);
 	printf("rz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 	       "              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 	       "              [-o str] [-O str] [-k query] [-D lang symname] file\n");
@@ -226,7 +226,7 @@ static int rabin_show_help(int v) {
 		}
 		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				print_colored_help_tools(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+				rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
 			}
 		}
 	}

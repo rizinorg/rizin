@@ -169,7 +169,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 
 static int rasm_show_help(int v) {
 	if (v < 2) {
-		printf("%s%s", COLOR_LIGHT_BLUE, "Usage: ");
+		printf("%s%s", Color_CYAN, "Usage: ");
 		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
                   "             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	}
@@ -214,7 +214,7 @@ static int rasm_show_help(int v) {
     }
 		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				print_colored_help_tools(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
+				rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
 			}
 		}
 	}

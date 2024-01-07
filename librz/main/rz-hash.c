@@ -72,7 +72,7 @@ typedef struct rz_hash_context {
 typedef bool (*RzHashRun)(RzHashContext *ctx, RzIO *io, const char *filename);
 
 static void rz_hash_show_help(bool usage_only) {
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", Color_RESET);
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...\n");
 	if (usage_only) {
 		return;
@@ -119,7 +119,7 @@ static void rz_hash_show_help(bool usage_only) {
     }
 		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			print_colored_help_tools(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
+			rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
 		}
 	}
 }

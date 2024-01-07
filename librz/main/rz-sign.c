@@ -12,7 +12,7 @@ enum rz_sign_option {
 };
 
 static void rz_sign_show_help(void) {
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", Color_RESET);
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-sign [options] [file]\n");
 	const char *options[] ={
 	       "-h","","this help message",
@@ -35,7 +35,7 @@ static void rz_sign_show_help(void) {
     }
 	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			print_colored_help_tools(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
+			rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
 		}
 	}
 	printf("Examples:\n"

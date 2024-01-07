@@ -92,7 +92,7 @@ static int rz_main_version_verify(int show) {
 static int main_help(int line) {
 
 	if (line < 2) {
-		printf("%s%s", COLOR_LIGHT_BLUE, "Usage: ");
+		printf("%s%s", Color_CYAN, "Usage: ");
 		printf(Color_RESET "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
                   "             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 
@@ -157,7 +157,7 @@ static int main_help(int line) {
     }
 		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				print_colored_help_tools(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
+				rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
 			}
 		}
 	}

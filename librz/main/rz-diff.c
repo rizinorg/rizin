@@ -196,7 +196,7 @@ typedef struct diff_hex_view_t {
 #define rz_diff_ctx_set_opt(x, o)  rz_diff_ctx_set_def(x, option, DIFF_OPT_UNKNOWN, o)
 
 static void rz_diff_show_help(bool usage_only) {
-	printf("%s%s%s", COLOR_LIGHT_BLUE, "Usage: ", Color_RESET);
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-diff [options] <file0> <file1>\n");
 	if (usage_only) {
 		return;
@@ -252,7 +252,7 @@ static void rz_diff_show_help(bool usage_only) {
     }
 	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			print_colored_help_tools(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
+			rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
 		}
 	}
 

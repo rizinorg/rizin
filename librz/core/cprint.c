@@ -32,19 +32,22 @@ RZ_API RZ_OWN char *rz_core_print_string_c_cpp(RzCore *core) {
 	return rz_strbuf_drain(sb);
 }
 
-RZ_API void print_colored_help_tools(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
+/**
+ * \brief Print a colored help option with dynamic alignment.
+ * \param option The option string to print.
+ * \param arg The argument string to print.
+ * \param description The description string to print.
+ * \param maxOptionAndArgLength The maximum combined length of any option + arg strings.
+ */
+RZ_API void rz_core_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
 	size_t optionWidth = strlen(option);
 	size_t maxSpaces = maxOptionAndArgLength + 2;
-	// Print option with dynamic alignment
-	printf(COLOR_GREEN " %-.*s" Color_RESET, (int)optionWidth, option);
-	// Calculate the remaining spaces needed for alignment
+	printf(Color_GREEN " %-.*s" Color_RESET, (int)optionWidth, option);
 	size_t remainingSpaces = maxSpaces - optionWidth;
-	// Print arg with dynamic alignment
 	if (arg[0] != '\0') {
-		printf(COLOR_YELLOW " %-s " Color_RESET, arg);
-		remainingSpaces -= strlen(arg) + 2; // Adjust remaining spaces based on arg length
+		printf(Color_YELLOW " %-s " Color_RESET, arg);
+		remainingSpaces -= strlen(arg) + 2;
 	}
-	// Print spaces for alignment
 	printf("%-*.*s", (int)remainingSpaces, (int)remainingSpaces, "");
 	printf(Color_RESET "%s\n", description);
 }
