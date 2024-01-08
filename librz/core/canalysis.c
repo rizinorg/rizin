@@ -333,7 +333,8 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 	rz_list_free(flist);
 }
 
-RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) {
+RZ_IPI void rz_core_analysis_fcn_returns(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_if_fail(core && fcn);
 	void **iter;
 	RzAnalysisBlock *b;
 	rz_pvector_foreach (fcn->bbs, iter) {
@@ -785,7 +786,7 @@ static void function_rename(RzFlag *flags, RzAnalysisFunction *fcn) {
 }
 
 static void autoname_imp_trampoline(RzCore *core, RzAnalysisFunction *fcn) {
-	if (rz_pvector_len(fcn->bbs) == 1 && ((RzAnalysisBlock *)rz_pvector_at(fcn->bbs, 0))->ninstr == 1) {
+	if (rz_pvector_len(fcn->bbs) == 1 && ((RzAnalysisBlock *)rz_pvector_head(fcn->bbs))->ninstr == 1) {
 		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		if (xrefs && rz_list_length(xrefs) == 1) {
 			RzAnalysisXRef *xref = rz_list_first(xrefs);

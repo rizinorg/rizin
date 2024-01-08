@@ -339,8 +339,6 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	return result;
 
 fail:
-	rz_list_free(list_a);
-	rz_list_free(list_b);
 	rz_th_pool_free(pool);
 	shared_context_fini(&shared);
 	rz_list_free(unmatch_a);

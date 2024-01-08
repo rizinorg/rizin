@@ -78,7 +78,7 @@ static int read_ahead(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut8 *buf, 
 	return -1;
 }
 
-RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
+RZ_API int rz_analysis_function_resize(RZ_NONNULL RzAnalysisFunction *fcn, int newsize) {
 	RzAnalysis *analysis = fcn->analysis;
 	RzAnalysisBlock *bb;
 	void **iter;
@@ -1763,7 +1763,7 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 /**
  * \brief Returns the amount of loops located in the \p fcn function
  */
-RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
+RZ_API int rz_analysis_function_loops(RZ_NONNULL RzAnalysisFunction *fcn) {
 	void **iter;
 	RzAnalysisBlock *bb;
 	ut32 loops = 0;
@@ -2062,7 +2062,7 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysi
 }
 
 // compute the cyclomatic cost
-RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn) {
+RZ_API ut32 rz_analysis_function_cost(RZ_NONNULL RzAnalysisFunction *fcn) {
 	void **iter;
 	RzAnalysisBlock *bb;
 	ut32 totalCycles = 0;
@@ -2352,8 +2352,8 @@ static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *
 			fcn->ninstr -= bb->ninstr;
 			rz_analysis_function_remove_block(fcn, bb);
 		}
-		RzList *bbs_temp = rz_list_new();
-		if (!bbs_temp) {
+		RzList *bbs = rz_list_new();
+		if (!bbs) {
 			// If memory allocation failed, print an error message and return from the function
 			RZ_LOG_ERROR("Failed to allocate memory for bbs.\n");
 			return;
@@ -2361,10 +2361,9 @@ static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *
 
 		void **it;
 		rz_pvector_foreach (fcn->bbs, it) {
-			rz_list_append(bbs_temp, *it);
+			rz_list_append(bbs, *it);
 		}
 
-		RzList *bbs = rz_list_clone(bbs_temp);
 		rz_analysis_block_automerge(bbs);
 		rz_analysis_function_delete_unused_vars(fcn);
 		rz_list_free(bbs);

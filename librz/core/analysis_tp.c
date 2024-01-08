@@ -524,7 +524,8 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 }
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RzAnalysisBlock *a = _a, *b = _b;
+	const RzAnalysisBlock *a = *(const RzAnalysisBlock **)_a;
+	const RzAnalysisBlock *b = *(const RzAnalysisBlock **)_b;
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
@@ -811,10 +812,9 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 
 #define OP_CACHE_LIMIT 8192
 
-RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
-	void **it;
-
+RZ_API void rz_core_analysis_type_match(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn, HtUU *loop_table) {
 	rz_return_if_fail(core && core->analysis && fcn);
+	void **it;
 
 	if (!core->analysis->esil) {
 		RZ_LOG_ERROR("core: please run aeim first.\n");

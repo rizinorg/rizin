@@ -794,7 +794,7 @@ RZ_API RZ_OWN char *rz_core_graph_to_dot_str(RZ_NONNULL RzCore *core, RZ_NONNULL
 RZ_API RZ_OWN char *rz_core_graph_to_sdb_str(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph);
 
 /*tp.c*/
-RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
+RZ_API void rz_core_analysis_type_match(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn, HtUU *addr_loop_table);
 
 /* asm.c */
 #define RZ_MIDFLAGS_HIDE     0

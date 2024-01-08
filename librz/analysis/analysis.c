@@ -411,7 +411,8 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, u
 	return ret;
 }
 
-RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr) {
+RZ_API void rz_analysis_trace_bb(RZ_NONNULL RzAnalysis *analysis, ut64 addr) {
+	rz_return_if_fail(analysis);
 	RzAnalysisBlock *bbi;
 	RzAnalysisFunction *fcni;
 	void **iter2;
