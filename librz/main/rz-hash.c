@@ -78,48 +78,50 @@ static void rz_hash_show_help(bool usage_only) {
 		return;
 	}
 	const char *options[] = {
-		"-v","","Shows version",
-		"-h","","Shows this help page",
-		"-","","Input read from stdin instead from a file",
-		"-a","algo","Hash algorithm to use and you can specify multiple ones by",
-		"","","appending a comma (example: sha1,md4,md5,sha256)",
-		"-B","","Outputs the calculated value for each block",
-		"-b","size","Sets the block size",
-		"-c","value","Compare calculated value with a given one (hexadecimal)",
-		"-e","endian","Sets the endianness (default: 'big' accepted: 'big' or 'little')",
-		"-D","algo","Decrypt the given input; use -S to set key and -I to set IV (if needed)",
-		"-E","algo","Encrypt the given input; use -S to set key and -I to set IV (if needed)",
-		"-f","from","Starts the calculation at given offset",
-		"-t","to","Stops the calculation at given offset",
-		"-I","iv","Sets the initialization vector (IV)",
-		"-i","times","Repeat the calculation N times",
-		"-j","","Outputs the result as a JSON structure",
-		"-k","","Outputs the calculated value using openssh's randomkey algorithm",
-		"-L","","List all algorithms",
-		"-q","","Sets quiet mode (use -qq to get only the calculated value)",
-		"-S","seed","Sets the seed for -a, use '^' to append it before the input, use '@'",
-		"","","prefix to load it from a file and '-' from read it",
-		"-K","key","Sets the hmac key for -a and the key for -E/-D, use '@' prefix to",
-		"","","load it from a file and '-' from read it",
-		"","","from stdin (you can combine them)",
-		"-s","string","Input read from a zero-terminated string instead from a file",
-		"-x","hex","Input read from a hexadecimal value instead from a file",
-		"","","",
-		"","","All the inputs (besides -s/-x/-c) can be hexadecimal or strings",
-		"","","if 's:' prefix is specified",
-		};
-		size_t maxOptionAndArgLength = 0;
-    for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-        size_t optionLength = strlen(options[i]);
-        size_t argLength = strlen(options[i + 1]);
-        size_t totalLength = optionLength + argLength;
-        if (totalLength > maxOptionAndArgLength) {
-            maxOptionAndArgLength = totalLength;
-        }
-    }
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		// clang-format off
+		"-v",     "",       "Shows version",
+		"-h",     "",       "Shows this help page",
+		"-",      "",       "Input read from stdin instead from a file",
+		"-a",     "algo",   "Hash algorithm to use and you can specify multiple ones by",
+		"",       "",       "appending a comma (example: sha1,md4,md5,sha256)",
+		"-B",     "",       "Outputs the calculated value for each block",
+		"-b",     "size",   "Sets the block size",
+		"-c",     "value",  "Compare calculated value with a given one (hexadecimal)",
+		"-e",     "endian", "Sets the endianness (default: 'big' accepted: 'big' or 'little')",
+		"-D",     "algo",   "Decrypt the given input; use -S to set key and -I to set IV (if needed)",
+		"-E",     "algo",   "Encrypt the given input; use -S to set key and -I to set IV (if needed)",
+		"-f",     "from",   "Starts the calculation at given offset",
+		"-t",     "to",     "Stops the calculation at given offset",
+		"-I",     "iv",     "Sets the initialization vector (IV)",
+		"-i",     "times",  "Repeat the calculation N times",
+		"-j",     "",       "Outputs the result as a JSON structure",
+		"-k",     "",       "Outputs the calculated value using openssh's randomkey algorithm",
+		"-L",     "",       "List all algorithms",
+		"-q",     "",       "Sets quiet mode (use -qq to get only the calculated value)",
+		"-S",     "seed",   "Sets the seed for -a, use '^' to append it before the input, use '@'",
+		"",       "",       "prefix to load it from a file and '-' from read it",
+		"-K",     "key",    "Sets the hmac key for -a and the key for -E/-D, use '@' prefix to",
+		"",       "",       "load it from a file and '-' from read it",
+		"",       "",       "from stdin (you can combine them)",
+		"-s",     "string", "Input read from a zero-terminated string instead from a file",
+		"-x",     "hex",    "Input read from a hexadecimal value instead from a file",
+		"",       "",       "",
+		"",       "",       "All the inputs (besides -s/-x/-c) can be hexadecimal or strings",
+		"",       "",       "if 's:' prefix is specified",
+		// clang-format on
+	};
+	size_t maxOptionAndArgLength = 0;
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		size_t optionLength = strlen(options[i]);
+		size_t argLength = strlen(options[i + 1]);
+		size_t totalLength = optionLength + argLength;
+		if (totalLength > maxOptionAndArgLength) {
+			maxOptionAndArgLength = totalLength;
+		}
+	}
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
+			rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
 		}
 	}
 }

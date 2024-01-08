@@ -94,70 +94,71 @@ static int main_help(int line) {
 	if (line < 2) {
 		printf("%s%s", Color_CYAN, "Usage: ");
 		printf(Color_RESET "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-                  "             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
-
+				   "             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
 		const char *options[] = {
-			"--","","run rizin without opening any file",
-			"=","","same as 'rizin malloc://512",
-			"-","","read file from stdin",
-			"-=","","perform R=! command to run all commands remotely",
-			"-0","","print \\x00 after init and every command",
-			"-2","","close stderr file descriptor (silent warning messages)",
-			"-a","[arch]","set asm.arch",
-			"-A","","run 'aaa' command to analyze all referenced code",
-			"-b","[bits]","set asm.bits",
-			"-B","[baddr]","set base address for PIE binaries",
-			"-c 'cmd..'","","execute rizin command",
-			"-C","","file is host:port (alias for -cR+http://%%s/cmd/)",
-			"-d","","debug the executable 'file' or running process 'pid",
-			"-D","[backend]","enable debug mode (e cfg.debug=true)",
-			"-e k=v","","evaluate config var",
-			"-f","","block size = file size",
-			"-F","[binplug]","force to use that rbin plugin",
-			"-h, -hh","","show help message, -hh for long",
-			"-H","([var])","display variable",
-			"-i","[file]","run script file",
-			"-I","[file]","run script file before the file is opened",
-			"-k","[OS/kern]","set asm.os (linux, macos, w32, netbsd, ...)",
-			"-l","[lib]","load plugin file",
-			"-L","","list supported IO plugins",
-			"-m","[addr]","map file at given address (loadaddr)",
-			"-M","","do not demangle symbol names",
-			"-n, -nn","","do not load RzBin info (-nn only load bin structures)",
-			"-N","","do not load user settings and scripts",
-			"-NN","","do not load any script or plugin",
-			"-q","","quiet mode (no prompt) and quit after -i",
-			"-qq","","quit after running all -c and -i",
-			"-Q","","quiet mode (no prompt) and quit faster (quickLeak=true)",
-			"-p","[p.rzdb]","load project file",
-			"-r","[rz-run]","specify rz-run profile to load (same as -e dbg.profile=X)",
-			"-R","[rule]","specify custom rz-run directive",
-			"-s","[addr]","initial seek",
-#if USE_THREADS && ALLOW_THREADED
-			"-t","","load rz-bin info in thread",
-#endif
-			"-T","","do not compute file hashes",
-			"-u","","set bin.filter=false to get raw sym/sec/cls names",
-			"-v, -V","","show rizin version (-V show lib versions)",
-			"-w","","open file in write mode",
-			"-x","","open without exec-flag (asm.emu will not work), See io.exec",
-			"-X","","same as -e bin.usextr=false (useful for dyldcache)",
-			"-z, -zz","","do not load strings or load them even in raw",
+			// clang-format off
+			"--",          "",          "run rizin without opening any file",
+			"=",           "",          "same as 'rizin malloc://512",
+			"- ",          "",          "read file from stdin",
+			"-=",          "",          "perform R=! command to run all commands remotely",
+			"-0",          "",          "print \\x00 after init and every command",
+			"-2",          "",          "close stderr file descriptor (silent warning messages)",
+			"-a",          "[arch]",    "set asm.arch",
+			"-A",          "",          "run 'aaa' command to analyze all referenced code",
+			"-b",          "[bits]",    "set asm.bits",
+			"-B",          "[baddr]",   "set base address for PIE binaries",
+			"-c 'cmd..'",  "",          "execute rizin command",
+			"-C",          "",          "file is host:port (alias for -cR+http://%%s/cmd/)",
+			"-d",          "",          "debug the executable 'file' or running process 'pid",
+			"-D",          "[backend]", "enable debug mode (e cfg.debug=true)",
+			"-e k=v",      "",          "evaluate config var",
+			"-f",          "",          "block size = file size",
+			"-F",          "[binplug]", "force to use that rbin plugin",
+			"-h, -hh",     "",          "show help message, -hh for long",
+			"-H",          "([var])",   "display variable",
+			"-i",          "[file]",    "run script file",
+			"-I",          "[file]",    "run script file before the file is opened",
+			"-k",          "[OS/kern]", "set asm.os (linux, macos, w32, netbsd, ...)",
+			"-l",          "[lib]",     "load plugin file",
+			"-L",          "",          "list supported IO plugins",
+			"-m",          "[addr]",    "map file at given address (loadaddr)",
+			"-M",          "",          "do not demangle symbol names",
+			"-n, -nn",     "",          "do not load RzBin info (-nn only load bin structures)",
+			"-N",          "",          "do not load user settings and scripts",
+			"-NN",         "",          "do not load any script or plugin",
+			"-q",          "",          "quiet mode (no prompt) and quit after -i",
+			"-qq",         "",          "quit after running all -c and -i",
+			"-Q",          "",          "quiet mode (no prompt) and quit faster (quickLeak=true)",
+			"-p",          "[p.rzdb]",  "load project file",
+			"-r",          "[rz-run]",  "specify rz-run profile to load (same as -e dbg.profile=X)",
+			"-R",          "[rule]",    "specify custom rz-run directive",
+			"-s",          "[addr]",    "initial seek",
+		#if USE_THREADS && ALLOW_THREADED
+			"-t",          "",          "load rz-bin info in thread",
+		#endif
+			"-T",          "",          "do not compute file hashes",
+			"-u",          "",          "set bin.filter=false to get raw sym/sec/cls names",
+			"-v, -V",      "",          "show rizin version (-V show lib versions)",
+			"-w",          "",          "open file in write mode",
+			"-x",          "",          "open without exec-flag (asm.emu will not work), See io.exec",
+			"-X",          "",          "same as -e bin.usextr=false (useful for dyldcache)",
+			"-z, -zz",     "",          "do not load strings or load them even in raw",
+			// clang-format on
 		};
 		size_t maxOptionAndArgLength = 0;
-    for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-        size_t optionLength = strlen(options[i]);
-        size_t argLength = strlen(options[i + 1]);
-        size_t totalLength = optionLength + argLength;
-        if (totalLength > maxOptionAndArgLength) {
-            maxOptionAndArgLength = totalLength;
-        }
-    }
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			size_t optionLength = strlen(options[i]);
+			size_t argLength = strlen(options[i + 1]);
+			size_t totalLength = optionLength + argLength;
+			if (totalLength > maxOptionAndArgLength) {
+				maxOptionAndArgLength = totalLength;
+			}
+		}
 		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2],maxOptionAndArgLength);
+				rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
 			}
 		}
 	}

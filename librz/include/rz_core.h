@@ -1058,7 +1058,7 @@ RZ_API RZ_OWN char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode
 RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len, bool use_comment);
 RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bool hex_offset, ut64 addr, int len, ut8 size);
 RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, ut64 addr, int len);
-RZ_API void rz_core_print_colored_help_option(const char *option, const char *arg, const char *description,size_t maxOptionAndArgLength);
+RZ_API void rz_core_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength);
 
 typedef enum {
 	RZ_CORE_DISASM_STRINGS_MODE_BYTES = 0,
