@@ -6,7 +6,6 @@
 #include <rz_main.h>
 #include <rz_util/rz_print.h>
 #include <rz_util.h>
-#include <rz_core.h>
 
 static int usage(int v) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);

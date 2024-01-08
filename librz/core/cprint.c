@@ -33,26 +33,6 @@ RZ_API RZ_OWN char *rz_core_print_string_c_cpp(RzCore *core) {
 }
 
 /**
- * \brief Print a colored help option with dynamic alignment.
- * \param option The option string to print.
- * \param arg The argument string to print.
- * \param description The description string to print.
- * \param maxOptionAndArgLength The maximum combined length of any option + arg strings.
- */
-RZ_API void rz_core_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
-	size_t optionWidth = strlen(option);
-	size_t maxSpaces = maxOptionAndArgLength + 2;
-	printf(Color_GREEN " %-.*s" Color_RESET, (int)optionWidth, option);
-	size_t remainingSpaces = maxSpaces - optionWidth;
-	if (arg[0] != '\0') {
-		printf(Color_YELLOW " %-s " Color_RESET, arg);
-		remainingSpaces -= strlen(arg) + 2;
-	}
-	printf("%-*.*s", (int)remainingSpaces, (int)remainingSpaces, "");
-	printf(Color_RESET "%s\n", description);
-}
-
-/**
  * \brief Get the hexpair of the assembly
  * \param core RzCore
  * \param assembly assembly

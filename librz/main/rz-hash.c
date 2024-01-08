@@ -10,7 +10,6 @@
 #include <rz_util.h>
 #include <rz_crypto.h>
 #include <rz_lib.h>
-#include <rz_core.h>
 
 #define RZ_HASH_DEFAULT_BLOCK_SIZE 0x1000
 
