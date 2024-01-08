@@ -151,68 +151,86 @@ static ut32 actions2mask(ut64 action) {
 }
 
 static int rabin_show_help(int v) {
-	printf("Usage: rz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
+	printf("rz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 	       "              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 	       "              [-o str] [-O str] [-k query] [-D lang symname] file\n");
 	if (v) {
-		printf(
-			" -@ [addr]       show section, symbol or import at addr\n"
-			" -A              list sub-binaries and their arch-bits pairs\n"
-			" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
-			" -b [bits]       set bits (32, 64 ...)\n"
-			" -B [addr]       override base address (pie bins)\n"
-			" -c              list classes\n"
-			" -cc             list classes in header format\n"
-			" -C [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
-			" -d              show debug/dwarf information\n"
-			" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
-			" -e              entrypoint\n"
-			" -ee             constructor/destructor entrypoints\n"
-			" -E              globally exportable symbols\n"
-			" -f [str]        select sub-bin named str\n"
-			" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
-			" -g              same as -SMZIHVResizcld -SS -SSS -ee (show all info)\n"
-			" -G [addr]       load address . offset to header\n"
-			" -h              this help message\n"
-			" -H              header fields\n"
-			" -i              imports (symbols imported from libraries)\n"
-			" -I              binary info\n"
-			" -j              output in json\n"
-			" -k [sdb-query]  run sdb query. for example: '*'\n"
-			" -K [algo]       calculate checksums (md5, sha1, ..)\n"
-			" -l              linked libraries\n"
-			" -L [plugin]     list supported bin plugins or plugin details\n"
-			" -m [addr]       show source line at addr\n"
-			" -M              main (show address of main symbol)\n"
-			" -n [str]        show section, symbol or import named str\n"
-			" -N [min:max]    force min:max number of chars per string (see -z and -zz)\n"
-			" -o [str]        output file/folder for write operations (out by default)\n"
-			" -O [str]        write/extract operations (-O help)\n"
-			" -p              show physical addresses\n"
-			" -P              show debug/pdb information\n"
-			" -PP             download pdb file for binary\n"
-			" -q              be quiet, just show fewer data\n"
-			" -qq             show less info (no offset/size for -z for ex.)\n"
-			" -Q              show load address used by dlopen (non-aslr libs)\n"
-			" -r              rizin output\n"
-			" -R              relocations\n"
-			" -s              symbols\n"
-			" -S              sections\n"
-			" -SS             segments\n"
-			" -SSS            sections mapping to segments\n"
-			" -T              display file signature\n"
-			" -u              unfiltered (no rename duplicated symbols/sections)\n"
-			" -U              resoUrces\n"
-			" -v              display version and quit\n"
-			" -V              Show binary version information\n"
-			" -w              display try/catch blocks\n"
-			" -x              extract bins contained in file\n"
-			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
-			" -Y [fw file]    calculates all the possibles base address candidates of a firmware bin\n"
-			" -z              strings (from data section)\n"
-			" -zz             strings (from raw strings from bin)\n"
-			" -zzz            dump raw strings to stdout (for huge files)\n"
-			" -Z              guess size of binary program\n");
+		const char *options[] = {
+			// clang-format off
+			"-@",           "[addr]",       "show section, symbol or import at addr",
+			"-A",           "",             "list sub-binaries and their arch-bits pairs",
+			"-a",           "[arch]",       "set arch (x86, arm, .. or <arch>_<bits>)",
+			"-b",           "[bits]",       "set bits (32, 64 ...)",
+			"-B",           "[addr]",       "override base address (pie bins)",
+			"-c",           "",             "list classes",
+			"-cc",          "",             "list classes in header format",
+			"-C",           "[fmt:C:D]",    "create [elf,mach0,pe] with Code and Data hexpairs (see -a)",
+			"-d",           "",             "show debug/dwarf information",
+			"-D",           "lang name",    "demangle symbol name (-D all for bin.demangle=true)",
+			"-e",           "",             "entrypoint",
+			"-ee",          "",             "constructor/destructor entrypoints",
+			"-E",           "",             "globally exportable symbols",
+			"-f",           "[str]",        "select sub-bin named str",
+			"-F",           "[binfmt]",     "force to use that bin plugin (ignore header check)",
+			"-g",           "",             "same as -SMZIHVResizcld -SS -SSS -ee (show all info)",
+			"-G",           "[addr]",       "load address . offset to header",
+			"-h",           "",             "this help message",
+			"-H",           "",             "header fields",
+			"-i",           "",             "imports (symbols imported from libraries)",
+			"-I",           "",             "binary info",
+			"-j",           "",             "output in json",
+			"-k",           "[sdb-query]",  "run sdb query. for example: '*'",
+			"-K",           "[algo]",       "calculate checksums (md5, sha1, ..)",
+			"-l",           "",             "linked libraries",
+			"-L",           "[plugin]",     "list supported bin plugins or plugin details",
+			"-m",           "[addr]",       "show source line at addr",
+			"-M",           "",             "main (show address of main symbol)",
+			"-n",           "[str]",        "show section, symbol or import named str",
+			"-N",           "[min:max]",    "force min:max number of chars per string (see -z and -zz)",
+			"-o",           "[str]",        "output file/folder for write operations (out by default)",
+			"-O",           "[str]",        "write/extract operations (-O help)",
+			"-p",           "",             "show physical addresses",
+			"-P",           "",             "show debug/pdb information",
+			"-PP",          "",             "download pdb file for binary",
+			"-q",           "",             "be quiet, just show fewer data",
+			"-qq",          "",             "show less info (no offset/size for -z for ex.)",
+			"-Q",           "",             "show load address used by dlopen (non-aslr libs)",
+			"-r",           "",             "rizin output",
+			"-R",           "",             "relocations",
+			"-s",           "",             "symbols",
+			"-S",           "",             "sections",
+			"-SS",          "",             "segments",
+			"-SSS",         "",             "sections mapping to segments",
+			"-T",           "",             "display file signature",
+			"-u",           "",             "unfiltered (no rename duplicated symbols/sections)",
+			"-U",           "",             "resoUrces",
+			"-v",           "",             "display version and quit",
+			"-V",           "",             "Show binary version information",
+			"-w",           "",             "display try/catch blocks",
+			"-x",           "",             "extract bins contained in file",
+			"-X",           "[fmt] [f] ..", "package in fat or zip the given files and bins contained in file",
+			"-Y",           "[fw file]",    "calculates all the possibles base address candidates of a firmware bin",
+			"-z",           "",             "strings (from data section)",
+			"-zz",          "",             "strings (from raw strings from bin)",
+			"-zzz",         "",             "dump raw strings to stdout (for huge files)",
+			"-Z",           "",             "guess size of binary program",
+			// clang-format on
+		};
+		size_t maxOptionAndArgLength = 0;
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			size_t optionLength = strlen(options[i]);
+			size_t argLength = strlen(options[i + 1]);
+			size_t totalLength = optionLength + argLength;
+			if (totalLength > maxOptionAndArgLength) {
+				maxOptionAndArgLength = totalLength;
+			}
+		}
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			if (i + 1 < sizeof(options) / sizeof(options[0])) {
+				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+			}
+		}
 	}
 	if (v) {
 		printf("Environment:\n"

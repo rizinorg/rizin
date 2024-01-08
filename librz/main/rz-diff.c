@@ -196,55 +196,74 @@ typedef struct diff_hex_view_t {
 #define rz_diff_ctx_set_opt(x, o)  rz_diff_ctx_set_def(x, option, DIFF_OPT_UNKNOWN, o)
 
 static void rz_diff_show_help(bool usage_only) {
-	printf("Usage: rz-diff [options] <file0> <file1>\n");
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
+	printf("rz-diff [options] <file0> <file1>\n");
 	if (usage_only) {
 		return;
 	}
+	const char *options[] = {
+		// clang-format off
+		"-a",       "[arch]",       "specify architecture plugin to use (x86, arm, ..)",
+		"-b",       "[bits]",       "specify register size for arch (16 (thumb), 32, 64, ..)",
+		"-d",       "[algo]",       "compute edit distance based on the chosen algorithm:",
+		"",         "",             "   myers  | Eugene W. Myers' O(ND) algorithm (no substitution)",
+		"",         "",             "   leven  | Levenshtein O(N^2) algorithm (with substitution)",
+		"",         "",             "   ssdeep | Context triggered piecewise hashing comparison",
+		"-i",       "",             "use command line arguments instead of files (only for -d)",
+		"-H",       "",             "hexadecimal visual mode",
+		"-h",       "",             "show the help message",
+		"-j",       "",             "json output",
+		"-q",       "",             "quite output",
+		"-V",       "",             "show version information",
+		"-v",       "",             "be more verbose (stderr output)",
+		"-e",       "[k=v]",        "set an evaluable config variable",
+		"-A",       "",             "compare virtual and physical addresses",
+		"-B",       "",             "run 'aaa' when loading the bin",
+		"-C",       "",             "disable colors",
+		"-T",       "",             "show timestamp information",
+		"-S",       "[WxH]",        "sets the width and height of the terminal for visual mode",
+		"-0",       "[cmd]",        "input for file0 when option -t 'commands' is given.",
+		"",         "",             "the same value will be set for file1, if -1 is not set.",
+		"-1",       "[cmd]",        "input for file1 when option -t 'commands' is given.",
+		"-t",       "[type]",       "compute the difference between two files based on its type:",
+		"",         "",             "   bytes      | compares raw bytes in the files (only for small files)",
+		"",         "",             "   lines      | compares text files",
+		"",         "",             "   functions  | compares functions found in the files",
+		"",         "",             "   classes    | compares classes found in the files",
+		"",         "",             "   command    | compares command output returned when executed in both files",
+		"",         "",             "              | requires -0 <cmd> and -1 <cmd> is optional",
+		"",         "",             "   entries    | compares entries found in the files",
+		"",         "",             "   fields     | compares fields found in the files",
+		"",         "",             "   graphs     | compares 2 functions and outputs in graphviz/dot format",
+		"",         "",             "              | requires -0 <fcn name|offset> and -1 <fcn name|offset> is optional",
+		"",         "",             "   imports    | compares imports found in the files",
+		"",         "",             "   libraries  | compares libraries found in the files",
+		"",         "",             "   sections   | compares sections found in the files",
+		"",         "",             "   strings    | compares strings found in the files",
+		"",         "",             "   symbols    | compares symbols found in the files",
+		// clang-format on
+	};
+	size_t maxOptionAndArgLength = 0;
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		size_t optionLength = strlen(options[i]);
+		size_t argLength = strlen(options[i + 1]);
+		size_t totalLength = optionLength + argLength;
+		if (totalLength > maxOptionAndArgLength) {
+			maxOptionAndArgLength = totalLength;
+		}
+	}
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		if (i + 1 < sizeof(options) / sizeof(options[0])) {
+			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+		}
+	}
+
 	printf(
-		"  -a [arch] specify architecture plugin to use (x86, arm, ..)\n"
-		"  -b [bits] specify register size for arch (16 (thumb), 32, 64, ..)\n"
-		"  -d [algo] compute edit distance based on the choosen algorithm:\n"
-		"              myers  | Eugene W. Myers' O(ND) algorithm (no substitution)\n"
-		"              leven  | Levenshtein O(N^2) algorithm (with substitution)\n"
-		"              ssdeep | Context triggered piecewise hashing comparison\n"
-		"  -i        use command line arguments instead of files (only for -d)\n"
-		"  -H        hexadecimal visual mode\n"
-		"  -h        show the help message\n"
-		"  -j        json output\n"
-		"  -q        quite output\n"
-		"  -V        show version information\n"
-		"  -v        be more verbose (stderr output)\n"
-		"  -e [k=v]  set an evaluable config variable\n"
-		"  -A        compare virtual and physical addresses\n"
-		"  -B        run 'aaa' when loading the bin\n"
-		"  -C        disable colors\n"
-		"  -T        show timestamp information\n"
-		"  -S [WxH]  sets the width and height of the terminal for visual mode\n"
-		"  -0 [cmd]  input for file0 when option -t 'commands' is given.\n"
-		"            the same value will be set for file1, if -1 is not set.\n"
-		"  -1 [cmd]  input for file1 when option -t 'commands' is given.\n"
-		"  -t [type] compute the difference between two files based on its type:\n"
-		"              bytes      | compares raw bytes in the files (only for small files)\n"
-		"              lines      | compares text files\n"
-		"              functions  | compares functions found in the files\n"
-		"              classes    | compares classes found in the files\n"
-		"              command    | compares command output returned when executed in both files\n"
-		"                         | requires -0 <cmd> and -1 <cmd> is optional\n"
-		"              entries    | compares entries found in the files\n"
-		"              fields     | compares fields found in the files\n"
-		"              graphs     | compares 2 functions and outputs in graphviz/dot format\n"
-		"                         | requires -0 <fcn name|offset> and -1 <fcn name|offset> is optional\n"
-		"              imports    | compares imports found in the files\n"
-		"              libraries  | compares libraries found in the files\n"
-		"              sections   | compares sections found in the files\n"
-		"              strings    | compares strings found in the files\n"
-		"              symbols    | compares symbols found in the files\n"
-		"  palette colors can be changed by adding the following lines\n"
-		"          inside the $HOME/.rizinrc file\n"
-		"  ec diff.unknown blue   | offset color\n"
-		"  ec diff.match   green  | match color\n"
-		"  ec diff.unmatch red    | mismatch color\n"
-		"");
+		"palette colors can be changed by adding the following lines\n"
+		"inside the $HOME/.rizinrc file\n"
+		"ec diff.unknown blue   | offset color\n"
+		"ec diff.match   green  | match color\n"
+		"ec diff.unmatch red    | mismatch color\n");
 }
 
 static bool rz_diff_is_file(const char *file) {
