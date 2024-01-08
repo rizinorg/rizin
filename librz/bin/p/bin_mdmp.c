@@ -176,9 +176,9 @@ static bool mdmp_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 	return false;
 }
 
-static RzList /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 	MiniDmpObj *obj = (MiniDmpObj *)bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -196,7 +196,7 @@ static RzList /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 		map->vsize = (memory->memory).data_size;
 		map->perm = rz_bin_mdmp_get_perm(obj, map->vaddr);
 		map->name = rz_str_newf("memory.0x%" PFMT64x, map->vaddr);
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	ut64 index = obj->streams.memories64.base_rva;
@@ -212,7 +212,7 @@ static RzList /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 		map->vsize = memory64->data_size;
 		map->perm = rz_bin_mdmp_get_perm(obj, map->vaddr);
 		map->name = rz_str_newf("memory64.0x%" PFMT64x, map->vaddr);
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 		index += memory64->data_size;
 	}
 

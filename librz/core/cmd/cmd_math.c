@@ -584,7 +584,7 @@ static bool get_prompt(RzCore *core, char *prompt, char *output, size_t output_s
 		return false;
 	}
 	rz_cons_flush();
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(rz_cons_singleton()->line, prompt);
 	rz_cons_fgets(output, output_sz, 0, NULL);
 	output[output_sz - 1] = 0;
 	return true;

@@ -15,7 +15,8 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 	char *color = calloc(1, 64), cstr[32];
 	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;
-	bool truecolor = rz_cons_singleton()->context->color_mode == COLOR_MODE_16M;
+	RzCons *cons = rz_cons_singleton();
+	bool truecolor = cons->context->color_mode == COLOR_MODE_16M;
 	char *rgb_xxx_fmt = truecolor ? "rgb:%2.2x%2.2x%2.2x " : "rgb:%x%x%x ";
 	const char *k;
 	RzColor rcolor;
@@ -133,7 +134,7 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 			rcolor.b = rz_num_rand32(0xff);
 			break;
 		case 'c':
-			rz_line_set_prompt("Preview command> ");
+			rz_line_set_prompt(cons->line, "Preview command> ");
 			rz_cons_show_cursor(true);
 			rz_cons_fgets(preview_cmd, sizeof(preview_cmd), 0, NULL);
 			rz_cons_show_cursor(false);

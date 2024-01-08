@@ -28,6 +28,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	RzAnalysisOp aop;
 	ut8 buf[sizeof(ut64)];
 	bool bitsInLine = false;
+	RzLine *rzline = core->cons->line;
 
 	if (core->blocksize < sizeof(ut64)) {
 		return false;
@@ -212,8 +213,8 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 			buf[x / 8] = rotate_nibble(buf[(x / 8)], 1);
 			break;
 		case 'i': {
-			rz_line_set_prompt("> ");
-			const char *line = rz_line_readline();
+			rz_line_set_prompt(rzline, "> ");
+			const char *line = rz_line_readline(rzline);
 			ut64 num = rz_num_math(core->num, line);
 			if (num || (!num && *line == '0')) {
 				buf[x / 8] = num;
@@ -263,7 +264,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			cmd[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(rzline, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}

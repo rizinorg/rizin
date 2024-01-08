@@ -198,7 +198,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_pvector_free(o->fields);
 	rz_pvector_free(o->imports);
 	rz_pvector_free(o->libs);
-	rz_list_free(o->maps);
+	rz_pvector_free(o->maps);
 	rz_pvector_free(o->mem);
 	rz_list_free(o->sections);
 	rz_pvector_free(o->symbols);
@@ -731,7 +731,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL
 /**
  * \brief Get list of \p RzBinMap representing only the maps of the binary object.
  */
-RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->maps;
 }

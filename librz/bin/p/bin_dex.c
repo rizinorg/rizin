@@ -214,12 +214,13 @@ static ut64 get_offset(RzBinFile *bf, int type, int index) {
 	}
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
-	RzList *maps = rz_bin_maps_of_file_sections(bf);
-	RzListIter *iter;
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+	RzPVector *maps = rz_bin_maps_of_file_sections(bf);
+	void **iter;
 	RzBinMap *map;
 
-	rz_list_foreach (maps, iter, map) {
+	rz_pvector_foreach (maps, iter) {
+		map = *iter;
 		if (strcmp(map->name, RZ_DEX_RELOC_TARGETS)) {
 			continue;
 		}

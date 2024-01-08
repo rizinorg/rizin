@@ -1665,7 +1665,7 @@ static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLineP
 
 RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	RzCore *core = (RzCore *)user;
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = core->cons;
 	RzLine *rzline = cons->line;
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
@@ -1679,7 +1679,7 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 		rzline->completion.run = NULL;
 		rzline->completion.run_user = NULL;
 	}
-	const char *ptr = rz_line_readline();
+	const char *ptr = rz_line_readline(rzline);
 	if (!ptr) {
 		return -1;
 	}
@@ -2404,7 +2404,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		core->cons->user_fgets_user = core;
 #endif
 		char *history = rz_path_home_history();
-		rz_line_hist_load(history);
+		rz_line_hist_load(core->cons->line, history);
 		free(history);
 	}
 	core->print->cons = core->cons;
@@ -2712,6 +2712,7 @@ static bool prompt_add_offset(RzCore *core, RzStrBuf *sb, bool add_sep) {
 }
 
 static void set_prompt(RzCore *r) {
+	RzLine *line = r->cons->line;
 	const char *cmdprompt = rz_config_get(r->config, "cmd.prompt");
 	const char *BEGIN = "";
 	const char *END = "";
@@ -2742,7 +2743,7 @@ static void set_prompt(RzCore *r) {
 	rz_strbuf_appendf(&prompt_ct, "]>%s ", END);
 
 	char *prompt = rz_strbuf_drain_nofree(&prompt_ct);
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(line, prompt);
 	free(prompt);
 }
 

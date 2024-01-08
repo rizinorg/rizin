@@ -597,9 +597,9 @@ RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) *
 	if (obj->reloc_targets_map_base_calculated) {
 		return obj->reloc_targets_map_base;
 	}
-	RzList *maps = MACH0_(get_maps_unpatched)(bf);
+	RzPVector *maps = MACH0_(get_maps_unpatched)(bf);
 	obj->reloc_targets_map_base = rz_bin_relocs_patch_find_targets_map_base(maps, MACH0_(reloc_target_size)(obj));
-	rz_list_free(maps);
+	rz_pvector_free(maps);
 	obj->reloc_targets_map_base_calculated = true;
 	return obj->reloc_targets_map_base;
 }

@@ -257,6 +257,7 @@ RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 
 RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 	RzCoreVisualViewGraph status = { 0 };
+	RzLine *line = core->cons->line;
 	status.core = core;
 	status.cur_sort = SORT_NAME;
 	__reset_status(&status);
@@ -381,7 +382,7 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			cmd[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
@@ -398,7 +399,7 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			cmd[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}

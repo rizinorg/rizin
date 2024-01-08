@@ -139,13 +139,13 @@ static ut32 perm_of_section_perm(ut64 perm) {
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	struct rz_bin_pe_section_t *sections = NULL;
 	if (!bin || !(sections = bin->sections)) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -164,7 +164,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vaddr = ba;
 	map->vsize = RZ_ROUND(map->psize, 4096);
 	map->perm = RZ_PERM_R;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 	PE_(rz_bin_pe_check_sections)
 	(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
@@ -189,7 +189,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		}
 		map->vaddr = sections[i].vaddr + ba;
 		map->perm = perm_of_section_perm(sections[i].perm);
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 	return ret;
 }

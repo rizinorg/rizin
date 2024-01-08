@@ -16,7 +16,7 @@
 #include <signal.h>
 #endif
 
-static char *rz_line_nullstr = "";
+static const char *rz_line_nullstr = "";
 static const char word_break_characters[] = "\t\n ~`!@#$%^&*()-_=+[]{}\\|;:\"'<>,./";
 
 typedef enum {
@@ -57,41 +57,41 @@ static void undo_entry_free(RzLineUndoEntry *e, void *user) {
 	RZ_FREE(e->inserted_text);
 }
 
-static bool undo_reset(void) {
-	if (I.enable_vi_mode || I.hud) {
-		// Undo functionality does not yet support vi_mode.
+static bool undo_reset(RzLine *line) {
+	if (line->enable_vi_mode || line->hud) {
+		// FIXME: Undo functionality doesn't support vi_mode yet.
 		return true;
 	}
-	if (I.undo_vec) {
-		rz_vector_free(I.undo_vec);
+	if (line->undo_vec) {
+		rz_vector_free(line->undo_vec);
 	}
-	I.undo_cursor = 0;
-	I.undo_continue = false;
-	I.undo_vec = rz_vector_new(sizeof(RzLineUndoEntry), (RzVectorFree)undo_entry_free, NULL);
-	return !!I.undo_vec;
+	line->undo_cursor = 0;
+	line->undo_continue = false;
+	line->undo_vec = rz_vector_new(sizeof(RzLineUndoEntry), (RzVectorFree)undo_entry_free, NULL);
+	return !!line->undo_vec;
 }
 
 /* If possible, concatenate input characters according to the behavior of bash. (Others such as zsh don't do that) */
-static bool undo_concat_entry(const char *diff, const int diff_len) {
-	if (!I.undo_vec->len) {
+static bool undo_concat_entry(RzLine *line, const char *diff, const int diff_len) {
+	if (!line->undo_vec->len) {
 		return false;
 	}
 	// undo_vector has one or more entries.
-	if (I.undo_cursor != I.undo_vec->len) {
+	if (line->undo_cursor != line->undo_vec->len) {
 		return false;
 	}
 	// cursor is at tail
-	RzLineUndoEntry *e = rz_vector_tail(I.undo_vec);
+	RzLineUndoEntry *e = rz_vector_tail(line->undo_vec);
 	if (!is_undo_entry_valid(e)) {
 		// entry broken
-		undo_reset();
+		undo_reset(line);
 		return false;
 	}
 	if (e->deleted_len || !e->inserted_len) {
 		// concat only works for inserted text, not deleted or replaced.
 		return false;
 	}
-	if (e->offset + e->inserted_len != I.buffer.index) {
+	if (e->offset + e->inserted_len != line->buffer.index) {
 		return false;
 	}
 	if (e->inserted_len + diff_len > 20) {
@@ -101,7 +101,7 @@ static bool undo_concat_entry(const char *diff, const int diff_len) {
 	e->inserted_len += diff_len;
 	if (!e->inserted_text) {
 		// realloc broken
-		undo_reset();
+		undo_reset(line);
 		return false;
 	}
 	return true;
@@ -109,20 +109,21 @@ static bool undo_concat_entry(const char *diff, const int diff_len) {
 
 /**
  * \brief Add an entry to undo vector.
+ * \param line RzLine instance
  * \param offset The beginning index of buffer edit
  * \param deleted_text Text to be deleted. need to be allocated beforehand. Either deleted_text or inserted_text should be non-empty.
  * \param inserted_text Text to be inserted. need to be allocated beforehand. Either deleted_text or inserted_text should be non-empty.
  * \return true if success and false if failed. when failed, arg texts are freed.
  * **/
-static bool undo_add_entry(int offset, RZ_OWN char *deleted_text, RZ_OWN char *inserted_text) {
-	if (I.enable_vi_mode || I.hud) {
+static bool undo_add_entry(RzLine *line, int offset, RZ_OWN char *deleted_text, RZ_OWN char *inserted_text) {
+	if (line->enable_vi_mode || line->hud) {
 		// Undo functionality does not yet support vi_mode.
 		RZ_FREE(deleted_text);
 		RZ_FREE(inserted_text);
 		return false;
 	}
-	if (!I.undo_vec || I.undo_vec->len > RZ_LINE_UNDOSIZE) {
-		undo_reset();
+	if (!line->undo_vec || line->undo_vec->len > RZ_LINE_UNDOSIZE) {
+		undo_reset(line);
 	}
 	RzLineUndoEntry new_entry = {
 		offset,
@@ -130,7 +131,7 @@ static bool undo_add_entry(int offset, RZ_OWN char *deleted_text, RZ_OWN char *i
 		deleted_text ? rz_str_nlen(deleted_text, RZ_LINE_BUFSIZE) : 0,
 		inserted_text,
 		inserted_text ? rz_str_nlen(inserted_text, RZ_LINE_BUFSIZE) : 0,
-		I.undo_continue,
+		line->undo_continue,
 		false
 	};
 	if (!is_undo_entry_valid(&new_entry)) {
@@ -139,54 +140,54 @@ static bool undo_add_entry(int offset, RZ_OWN char *deleted_text, RZ_OWN char *i
 		RZ_FREE(inserted_text);
 		return false;
 	}
-	if (I.undo_vec->len) {
-		RzLineUndoEntry *prev_entry = rz_vector_tail(I.undo_vec);
-		if (I.undo_continue) {
+	if (line->undo_vec->len) {
+		RzLineUndoEntry *prev_entry = rz_vector_tail(line->undo_vec);
+		if (line->undo_continue) {
 			new_entry.continuous_prev = prev_entry->continuous_next;
 		}
 	}
-	if (I.undo_cursor < I.undo_vec->len) {
+	if (line->undo_cursor < line->undo_vec->len) {
 		// remove all entries after undo_cursor
-		for (int i = I.undo_cursor; i < I.undo_vec->len; ++i) {
+		for (int i = line->undo_cursor; i < line->undo_vec->len; ++i) {
 			// free entries to avoid memory leak
-			RzLineUndoEntry *e = rz_vector_index_ptr(I.undo_vec, i);
+			RzLineUndoEntry *e = rz_vector_index_ptr(line->undo_vec, i);
 			undo_entry_free(e, NULL);
 		}
-		rz_vector_remove_range(I.undo_vec, I.undo_cursor, I.undo_vec->len - I.undo_cursor, NULL);
+		rz_vector_remove_range(line->undo_vec, line->undo_cursor, line->undo_vec->len - line->undo_cursor, NULL);
 	}
-	rz_vector_push(I.undo_vec, &new_entry);
-	I.undo_cursor++;
+	rz_vector_push(line->undo_vec, &new_entry);
+	line->undo_cursor++;
 	return true;
 }
 
 /* To group several entries into one undo action, call undo_continuous_entries_begin/end before and after the sequence of operations. */
-static void undo_continuous_entries_begin() {
-	I.undo_continue = true;
+static void undo_continuous_entries_begin(RzLine *line) {
+	line->undo_continue = true;
 }
-static void undo_continuous_entries_end() {
-	I.undo_continue = false;
-	if (!I.undo_vec->len) {
+static void undo_continuous_entries_end(RzLine *line) {
+	line->undo_continue = false;
+	if (!line->undo_vec->len) {
 		return;
 	}
-	RzLineUndoEntry *e = rz_vector_tail(I.undo_vec);
+	RzLineUndoEntry *e = rz_vector_tail(line->undo_vec);
 	// terminate
 	e->continuous_next = false;
 }
 
-static bool undo_nothing_to_do(bool is_redo) {
-	if (is_redo && I.undo_cursor == I.undo_vec->len) {
+static bool undo_nothing_to_do(RzLine *line, bool is_redo) {
+	if (is_redo && line->undo_cursor == line->undo_vec->len) {
 		return true;
-	} else if (!is_redo && I.undo_cursor == 0) {
+	} else if (!is_redo && line->undo_cursor == 0) {
 		return true;
 	}
 	return false;
 }
 
-static void line_do(const bool is_redo) {
+static void line_do(RzLine *line, const bool is_redo) {
 	RzLineUndoEntry *e = NULL;
 	bool is_continuous;
-	if (!I.undo_vec) {
-		undo_reset();
+	if (!line->undo_vec) {
+		undo_reset(line);
 		return;
 	}
 	do {
@@ -196,26 +197,26 @@ static void line_do(const bool is_redo) {
 		int inserting_len = 0;
 		int start, end;
 
-		if (undo_nothing_to_do(is_redo)) {
+		if (undo_nothing_to_do(line, is_redo)) {
 			break;
 		}
 
 		// obtain entry and set is_continuous
 		if (!is_redo) {
 			// undo
-			e = rz_vector_index_ptr(I.undo_vec, I.undo_cursor - 1);
-			I.undo_cursor--;
+			e = rz_vector_index_ptr(line->undo_vec, line->undo_cursor - 1);
+			line->undo_cursor--;
 			is_continuous = e->continuous_prev;
 		} else {
 			// redo
-			e = rz_vector_index_ptr(I.undo_vec, I.undo_cursor);
-			I.undo_cursor++;
+			e = rz_vector_index_ptr(line->undo_vec, line->undo_cursor);
+			line->undo_cursor++;
 			is_continuous = e->continuous_next;
 		}
 
 		if (!is_undo_entry_valid(e)) {
 			// undo_vec broken
-			undo_reset();
+			undo_reset(line);
 			break;
 		}
 
@@ -247,40 +248,40 @@ static void line_do(const bool is_redo) {
 			// delete text
 			start = e->offset;
 			end = e->offset + deleting_len;
-			if (start < 0 || end > I.buffer.length) {
-				undo_reset();
+			if (start < 0 || end > line->buffer.length) {
+				undo_reset(line);
 				break;
 			}
-			memmove(I.buffer.data + start, I.buffer.data + end, I.buffer.length - end);
-			I.buffer.length -= deleting_len;
-			I.buffer.data[I.buffer.length] = '\0';
-			I.buffer.index = start;
+			memmove(line->buffer.data + start, line->buffer.data + end, line->buffer.length - end);
+			line->buffer.length -= deleting_len;
+			line->buffer.data[line->buffer.length] = '\0';
+			line->buffer.index = start;
 		}
 		if (inserting_text) {
 			// insert text
 			start = e->offset;
 			end = e->offset + inserting_len;
-			if (start < 0 || start > I.buffer.length) {
-				undo_reset();
+			if (start < 0 || start > line->buffer.length) {
+				undo_reset(line);
 				break;
 			}
-			memmove(I.buffer.data + end, I.buffer.data + start, I.buffer.length - start);
-			memcpy(I.buffer.data + start, inserting_text, inserting_len);
-			I.buffer.length += inserting_len;
-			I.buffer.data[I.buffer.length] = '\0';
-			I.buffer.index = end;
+			memmove(line->buffer.data + end, line->buffer.data + start, line->buffer.length - start);
+			memcpy(line->buffer.data + start, inserting_text, inserting_len);
+			line->buffer.length += inserting_len;
+			line->buffer.data[line->buffer.length] = '\0';
+			line->buffer.index = end;
 		}
 
 	} while (is_continuous);
 	return;
 }
 
-static void line_undo() {
-	line_do(false);
+static void line_undo(RzLine *line) {
+	line_do(line, false);
 }
 
-static void line_redo() {
-	line_do(true);
+static void line_redo(RzLine *line) {
+	line_do(line, true);
 }
 
 static inline bool is_word_break_char(char ch, bool mode) {
@@ -297,15 +298,15 @@ static inline bool is_word_break_char(char ch, bool mode) {
 }
 
 /* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
-static void backward_kill_word(BreakMode mode) {
+static void backward_kill_word(RzLine *line, BreakMode mode) {
 	int i, len;
-	if (I.buffer.index <= 0) {
+	if (line->buffer.index <= 0) {
 		return;
 	}
-	for (i = I.buffer.index; i > 0 && is_word_break_char(I.buffer.data[i], mode); i--) {
+	for (i = line->buffer.index; i > 0 && is_word_break_char(line->buffer.data[i], mode); i--) {
 		/* Move the cursor index back until we hit a non-word-break-character */
 	}
-	for (; i > 0 && !is_word_break_char(I.buffer.data[i], mode); i--) {
+	for (; i > 0 && !is_word_break_char(line->buffer.data[i], mode); i--) {
 		/* Move the cursor index back until we hit a word-break-character */
 	}
 	if (i > 0) {
@@ -313,105 +314,108 @@ static void backward_kill_word(BreakMode mode) {
 	} else if (i < 0) {
 		i = 0;
 	}
-	if (I.buffer.index > I.buffer.length) {
-		I.buffer.length = I.buffer.index;
+	if (line->buffer.index > line->buffer.length) {
+		line->buffer.length = line->buffer.index;
 	}
-	len = I.buffer.index - i;
-	free(I.clipboard);
-	I.clipboard = rz_str_ndup(I.buffer.data + i, len);
-	rz_line_clipboard_push(I.clipboard);
-	memmove(I.buffer.data + i, I.buffer.data + I.buffer.index,
-		I.buffer.length - I.buffer.index + 1);
-	undo_add_entry(i, rz_str_ndup(I.clipboard, len), NULL);
-	I.buffer.length = strlen(I.buffer.data);
-	I.buffer.index = i;
+	len = line->buffer.index - i;
+	free(line->clipboard);
+	line->clipboard = rz_str_ndup(line->buffer.data + i, len);
+	rz_line_clipboard_push(line, line->clipboard);
+	memmove(line->buffer.data + i, line->buffer.data + line->buffer.index,
+		line->buffer.length - line->buffer.index + 1);
+	undo_add_entry(line, i, rz_str_ndup(line->clipboard, len), NULL);
+	line->buffer.length = strlen(line->buffer.data);
+	line->buffer.index = i;
 }
 
-static void kill_word(BreakMode mode) {
+static void kill_word(RzLine *line, BreakMode mode) {
 	int i, len;
-	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char(I.buffer.data[i], mode); i++) {
+	for (i = line->buffer.index; i < line->buffer.length && is_word_break_char(line->buffer.data[i], mode); i++) {
 		/* Move the cursor index forward until we hit a non-word-break-character */
 	}
-	for (; i < I.buffer.length && !is_word_break_char(I.buffer.data[i], mode); i++) {
+	for (; i < line->buffer.length && !is_word_break_char(line->buffer.data[i], mode); i++) {
 		/* Move the cursor index forward until we hit a word-break-character */
 	}
-	len = i - I.buffer.index;
-	free(I.clipboard);
-	I.clipboard = rz_str_ndup(I.buffer.data + I.buffer.index, len);
-	rz_line_clipboard_push(I.clipboard);
-	memmove(I.buffer.data + I.buffer.index, I.buffer.data + i, I.buffer.length - i + 1);
-	undo_add_entry(i, rz_str_ndup(I.clipboard, len), NULL);
-	I.buffer.length -= len;
+	len = i - line->buffer.index;
+	free(line->clipboard);
+	line->clipboard = rz_str_ndup(line->buffer.data + line->buffer.index, len);
+	rz_line_clipboard_push(line, line->clipboard);
+	memmove(line->buffer.data + line->buffer.index, line->buffer.data + i, line->buffer.length - i + 1);
+	undo_add_entry(line, i, rz_str_ndup(line->clipboard, len), NULL);
+	line->buffer.length -= len;
 }
 
-static void paste(bool *enable_yank_pop) {
-	if (I.clipboard) {
-		char *cursor = I.buffer.data + I.buffer.index;
-		int dist = (I.buffer.data + I.buffer.length) - cursor;
-		int len = strlen(I.clipboard);
-		I.buffer.length += len;
-		memmove(cursor + len, cursor, dist);
-		memcpy(cursor, I.clipboard, len);
-		undo_add_entry(I.buffer.index, NULL, rz_str_ndup(I.clipboard, len));
-		I.buffer.index += len;
-		*enable_yank_pop = true;
+static void paste(RzLine *line, bool *enable_yank_pop) {
+	if (!line->clipboard) {
+		return;
 	}
+	char *cursor = line->buffer.data + line->buffer.index;
+	int dist = (line->buffer.data + line->buffer.length) - cursor;
+	int len = strlen(line->clipboard);
+	line->buffer.length += len;
+	memmove(cursor + len, cursor, dist);
+	memcpy(cursor, line->clipboard, len);
+	undo_add_entry(line, line->buffer.index, NULL, rz_str_ndup(line->clipboard, len));
+	line->buffer.index += len;
+	*enable_yank_pop = true;
 }
 
-static void unix_word_rubout(void) {
+static void unix_word_rubout(RzLine *line) {
 	int i, len;
-	if (I.buffer.index > 0) {
-		for (i = I.buffer.index - 1; i > 0 && I.buffer.data[i] == ' '; i--) {
-			/* Move cursor backwards until we hit a non-space character or EOL */
-			/* This removes any trailing spaces from the input */
-		}
-		for (; i > 0 && I.buffer.data[i] != ' '; i--) {
-			/* Move cursor backwards until we hit a space character or EOL */
-			/* This deletes everything back to the previous space character */
-		}
-		if (i > 0) {
-			i++;
-		} else if (i < 0) {
-			i = 0;
-		}
-		if (I.buffer.index > I.buffer.length) {
-			I.buffer.length = I.buffer.index;
-		}
-		len = I.buffer.index - i;
-		I.clipboard = rz_str_ndup(I.buffer.data + i, len);
-		rz_line_clipboard_push(I.clipboard);
-		undo_add_entry(i, rz_str_ndup(I.clipboard, len), NULL);
-		memmove(I.buffer.data + i,
-			I.buffer.data + I.buffer.index,
-			I.buffer.length - I.buffer.index + 1);
-		I.buffer.length = strlen(I.buffer.data);
-		I.buffer.index = i;
+	if (line->buffer.index < 1) {
+		return;
 	}
+	for (i = line->buffer.index - 1; i > 0 && line->buffer.data[i] == ' '; i--) {
+		/* Move cursor backwards until we hit a non-space character or EOL */
+		/* This removes any trailing spaces from the input */
+	}
+	for (; i > 0 && line->buffer.data[i] != ' '; i--) {
+		/* Move cursor backwards until we hit a space character or EOL */
+		/* This deletes everything back to the previous space character */
+	}
+	if (i > 0) {
+		i++;
+	} else if (i < 0) {
+		i = 0;
+	}
+	if (line->buffer.index > line->buffer.length) {
+		line->buffer.length = line->buffer.index;
+	}
+	len = line->buffer.index - i;
+	line->clipboard = rz_str_ndup(line->buffer.data + i, len);
+	rz_line_clipboard_push(line, line->clipboard);
+	undo_add_entry(line, i, rz_str_ndup(line->clipboard, len), NULL);
+	memmove(line->buffer.data + i,
+		line->buffer.data + line->buffer.index,
+		line->buffer.length - line->buffer.index + 1);
+	line->buffer.length = strlen(line->buffer.data);
+	line->buffer.index = i;
 }
 
-static int inithist(void) {
-	ZERO_FILL(I.history);
-	if ((I.history.size + 1024) * sizeof(char *) < I.history.size) {
+static int inithist(RzLine *line) {
+	ZERO_FILL(line->history);
+	if ((line->history.size + 1024) * sizeof(char *) < line->history.size) {
 		return false;
 	}
-	I.history.data = (char **)calloc((I.history.size + 1024), sizeof(char *));
-	if (!I.history.data) {
+	line->history.data = (char **)calloc((line->history.size + 1024), sizeof(char *));
+	if (!line->history.data) {
 		return false;
 	}
-	I.history.size = RZ_LINE_HISTSIZE;
+	line->history.size = RZ_LINE_HISTSIZE;
 	return true;
 }
 
 /* initialize history stuff */
-RZ_API bool rz_line_dietline_init(void) {
-	ZERO_FILL(I.completion);
-	if (!inithist()) {
+RZ_API bool rz_line_dietline_init(RZ_NONNULL RzLine *line) {
+	rz_return_val_if_fail(line, false);
+	ZERO_FILL(line->completion);
+	if (!inithist(line)) {
 		return false;
 	}
-	if (!undo_reset()) {
+	if (!undo_reset(line)) {
 		return false;
 	}
-	I.echo = true;
+	line->echo = true;
 	return true;
 }
 
@@ -455,7 +459,8 @@ static int rz_line_readchar_utf8(ut8 *s, int maxlen) {
 	return len;
 }
 
-RZ_API int rz_line_set_hist_callback(RzLine *line, RzLineHistoryUpCb up, RzLineHistoryDownCb down) {
+RZ_API int rz_line_set_hist_callback(RZ_NONNULL RzLine *line, RzLineHistoryUpCb up, RzLineHistoryDownCb down) {
+	rz_return_val_if_fail(line, -1);
 	line->cb_history_up = up;
 	line->cb_history_down = down;
 	line->offset_hist_index = 0;
@@ -479,12 +484,13 @@ static void setup_hist_match(RzLine *line) {
 	line->history.do_setup_match = false;
 }
 
-RZ_API int rz_line_hist_cmd_up(RzLine *line) {
+RZ_API int rz_line_hist_cmd_up(RZ_NONNULL RzLine *line) {
+	rz_return_val_if_fail(line, -1);
 	if (line->hist_up) {
 		return line->hist_up(line->user);
 	}
 	if (!line->history.data) {
-		inithist();
+		inithist(line);
 	}
 	if (line->history.index > 0 && line->history.data) {
 		setup_hist_match(line);
@@ -509,12 +515,13 @@ RZ_API int rz_line_hist_cmd_up(RzLine *line) {
 	return false;
 }
 
-RZ_API int rz_line_hist_cmd_down(RzLine *line) {
+RZ_API int rz_line_hist_cmd_down(RZ_NONNULL RzLine *line) {
+	rz_return_val_if_fail(line, -1);
 	if (line->hist_down) {
 		return line->hist_down(line->user);
 	}
 	if (!line->history.data) {
-		inithist();
+		inithist(line);
 	}
 	setup_hist_match(line);
 	if (line->history.match) {
@@ -545,89 +552,95 @@ RZ_API int rz_line_hist_cmd_down(RzLine *line) {
 	return true;
 }
 
-RZ_API int rz_line_hist_add(const char *line) {
-	if (!line || !*line) {
+RZ_API bool rz_line_hist_add(RZ_NONNULL RzLine *line, RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(line && str, -1);
+	if (RZ_STR_ISEMPTY(str)) {
 		return false;
 	}
-	if (!I.history.data) {
-		inithist();
+	if (!line->history.data) {
+		inithist(line);
 	}
 	/* ignore dup */
-	if (I.history.top > 0) {
-		const char *data = I.history.data[I.history.top - 1];
-		if (data && !strcmp(line, data)) {
-			I.history.index = I.history.top;
+	if (line->history.top > 0) {
+		const char *data = line->history.data[line->history.top - 1];
+		if (data && !strcmp(str, data)) {
+			line->history.index = line->history.top;
 			return false;
 		}
 	}
-	if (I.history.top == I.history.size) {
+	if (line->history.top == line->history.size) {
 		int i;
-		free(I.history.data[0]);
-		for (i = 0; i <= I.history.size - 2; i++) {
-			I.history.data[i] = I.history.data[i + 1];
+		free(line->history.data[0]);
+		for (i = 0; i <= line->history.size - 2; i++) {
+			line->history.data[i] = line->history.data[i + 1];
 		}
-		I.history.top--;
+		line->history.top--;
 	}
-	I.history.data[I.history.top++] = strdup(line);
-	I.history.index = I.history.top;
+	line->history.data[line->history.top++] = strdup(str);
+	line->history.index = line->history.top;
 	return true;
 }
 
-static int rz_line_hist_up(void) {
-	if (!I.cb_history_up) {
-		rz_line_set_hist_callback(&I, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
+static int rz_line_hist_up(RzLine *line) {
+	if (!line->cb_history_up) {
+		rz_line_set_hist_callback(line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
 	}
-	return I.cb_history_up(&I);
+	return line->cb_history_up(line);
 }
 
-static int rz_line_hist_down(void) {
-	if (!I.cb_history_down) {
-		rz_line_set_hist_callback(&I, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
+static int rz_line_hist_down(RzLine *line) {
+	if (!line->cb_history_down) {
+		rz_line_set_hist_callback(line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
 	}
-	return I.cb_history_down(&I);
+	return line->cb_history_down(line);
 }
 
-RZ_API const char *rz_line_hist_get(int n) {
+RZ_API const char *rz_line_hist_get(RZ_NONNULL RzLine *line, int n) {
+	rz_return_val_if_fail(line, NULL);
 	int i = 0;
-	if (!I.history.data) {
-		inithist();
+	if (!line->history.data) {
+		inithist(line);
 	}
 	n--;
-	if (I.history.data) {
-		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
+	if (line->history.data) {
+		for (i = 0; i < line->history.size && line->history.data[i]; i++) {
 			if (n == i) {
-				return I.history.data[i];
+				return line->history.data[i];
 			}
 		}
 	}
 	return NULL;
 }
 
-RZ_API int rz_line_hist_list(void) {
+RZ_API int rz_line_hist_list(RZ_NONNULL RzLine *line) {
+	rz_return_val_if_fail(line, -1);
 	int i = 0;
-	if (!I.history.data) {
-		inithist();
+	if (!line->history.data) {
+		inithist(line);
 	}
-	if (I.history.data) {
-		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
+	if (line->history.data) {
+		for (i = 0; i < line->history.size && line->history.data[i]; i++) {
 			// when you execute a command, you always move the history
 			// by 1 before actually printing it.
-			rz_cons_printf("%5d  %s\n", i + 1, I.history.data[i]);
+			rz_cons_printf("%5d  %s\n", i + 1, line->history.data[i]);
 		}
 	}
 	return i;
 }
 
-RZ_API void rz_line_hist_free(void) {
+RZ_API void rz_line_hist_free(RZ_NULLABLE RzLine *line) {
+	if (!line) {
+		return;
+	}
 	int i;
-	if (I.history.data) {
-		for (i = 0; i < I.history.size; i++) {
-			RZ_FREE(I.history.data[i]);
+	if (line->history.data) {
+		for (i = 0; i < line->history.size; i++) {
+			RZ_FREE(line->history.data[i]);
 		}
 	}
-	RZ_FREE(I.history.data);
-	RZ_FREE(I.sdbshell_hist);
-	I.history.index = 0;
+	RZ_FREE(line->history.data);
+	RZ_FREE(line->sdbshell_hist);
+	line->history.index = 0;
 }
 
 /**
@@ -637,7 +650,7 @@ RZ_API void rz_line_hist_free(void) {
  *             were saved in a previous session
  * \return false(0) if it fails, true(!0) otherwise
  */
-RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
+RZ_API bool rz_line_hist_load(RZ_NONNULL RzLine *line, RZ_NONNULL const char *path) {
 	rz_return_val_if_fail(path, false);
 
 	FILE *fd;
@@ -647,7 +660,7 @@ RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
 	}
 	while (fgets(buf, sizeof(buf), fd) != NULL) {
 		rz_str_trim_tail(buf);
-		rz_line_hist_add(buf);
+		rz_line_hist_add(line, buf);
 	}
 	fclose(fd);
 	return true;
@@ -660,7 +673,8 @@ RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
  *             will be saved
  * \return false(0) if it fails, true(!0) otherwise
  */
-RZ_API int rz_line_hist_save(RZ_NONNULL const char *path) {
+RZ_API bool rz_line_hist_save(RZ_NONNULL RzLine *line, const char *path) {
+	rz_return_val_if_fail(line, false);
 	FILE *fd;
 	int i, ret = false;
 	if (RZ_STR_ISEMPTY(path)) {
@@ -677,9 +691,9 @@ RZ_API int rz_line_hist_save(RZ_NONNULL const char *path) {
 	}
 	fd = rz_sys_fopen(path, "w");
 	if (fd != NULL) {
-		if (I.history.data) {
-			for (i = 0; i < I.history.index; i++) {
-				fputs(I.history.data[i], fd);
+		if (line->history.data) {
+			for (i = 0; i < line->history.index; i++) {
+				fputs(line->history.data[i], fd);
 				fputs("\n", fd);
 			}
 			fclose(fd);
@@ -691,15 +705,16 @@ RZ_API int rz_line_hist_save(RZ_NONNULL const char *path) {
 	return ret;
 }
 
-RZ_API int rz_line_hist_chop(const char *file, int limit) {
+RZ_API int rz_line_hist_chop(RZ_NONNULL RzLine *line, const char *file, int limit) {
+	rz_return_val_if_fail(line, -1);
 	/* TODO */
 	return 0;
 }
 
-static void selection_widget_draw(void) {
+static void selection_widget_draw(RzLine *line) {
 	RzCons *cons = rz_cons_singleton();
-	RzSelWidget *sel_widget = I.sel_widget;
-	int y, pos_y, pos_x = rz_str_ansi_len(I.prompt);
+	RzSelWidget *sel_widget = line->sel_widget;
+	int y, pos_y, pos_x = rz_str_ansi_len(line->prompt);
 	sel_widget->h = RZ_MIN(sel_widget->h, RZ_SELWIDGET_MAXH);
 	for (y = 0; y < sel_widget->options_len; y++) {
 		sel_widget->w = RZ_MAX(sel_widget->w, strlen(sel_widget->options[y]));
@@ -743,126 +758,122 @@ static void selection_widget_draw(void) {
 		}
 	}
 
-	rz_cons_gotoxy(pos_x + I.buffer.length, pos_y);
+	rz_cons_gotoxy(pos_x + line->buffer.length, pos_y);
 	rz_cons_memcat(Color_RESET_BG, 5);
 	rz_cons_flush();
 }
 
-static void selection_widget_up(int steps) {
-	RzSelWidget *sel_widget = I.sel_widget;
-	if (sel_widget) {
-		if (sel_widget->direction == RZ_SELWIDGET_DIR_UP) {
-			int height = RZ_MIN(sel_widget->h, RZ_SELWIDGET_MAXH - 1);
-			sel_widget->selection = RZ_MIN(sel_widget->selection + steps, sel_widget->options_len - 1);
-			if (steps == 1) {
-				sel_widget->scroll = RZ_MIN(sel_widget->scroll + 1, RZ_SELWIDGET_MAXH - 1);
-			} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
-				sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
-			}
-		} else {
-			sel_widget->selection = RZ_MAX(sel_widget->selection - steps, 0);
-			if (steps == 1) {
-				sel_widget->scroll = RZ_MAX(sel_widget->scroll - 1, 0);
-			} else if (sel_widget->selection - sel_widget->scroll <= 0) {
-				sel_widget->scroll = sel_widget->selection;
-			}
-		}
-	}
-}
-
-static void selection_widget_down(int steps) {
-	RzSelWidget *sel_widget = I.sel_widget;
-	if (sel_widget) {
-		if (sel_widget->direction == RZ_SELWIDGET_DIR_UP) {
-			sel_widget->selection = RZ_MAX(sel_widget->selection - steps, 0);
-			if (steps == 1) {
-				sel_widget->scroll = RZ_MAX(sel_widget->scroll - 1, 0);
-			} else if (sel_widget->selection - sel_widget->scroll <= 0) {
-				sel_widget->scroll = sel_widget->selection;
-			}
-		} else {
-			int height = RZ_MIN(sel_widget->h, RZ_SELWIDGET_MAXH - 1);
-			sel_widget->selection = RZ_MIN(sel_widget->selection + steps, sel_widget->options_len - 1);
-			if (steps == 1) {
-				sel_widget->scroll = RZ_MIN(sel_widget->scroll + 1, RZ_SELWIDGET_MAXH - 1);
-			} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
-				sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
-			}
-		}
-	}
-}
-
-static void print_rline_task(void *_core) {
-	rz_cons_clear_line(0);
-	rz_cons_printf("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
-	rz_cons_flush();
-}
-
-static void selection_widget_erase(void) {
-	RzSelWidget *sel_widget = I.sel_widget;
-	if (sel_widget) {
-		sel_widget->options_len = 0;
-		sel_widget->selection = -1;
-		selection_widget_draw();
-		RZ_FREE(I.sel_widget);
-		RzCons *cons = rz_cons_singleton();
-		if (cons->event_resize && cons->event_data) {
-			cons->event_resize(cons->event_data);
-			RzCore *core = (RzCore *)(cons->user);
-			if (core) {
-				cons->cb_task_oneshot(&core->tasks, print_rline_task, core);
-			}
-		}
-		printf("%s", RZ_CONS_CLEAR_FROM_CURSOR_TO_END);
-	}
-}
-
-static void selection_widget_select(void) {
-	RzSelWidget *sel_widget = I.sel_widget;
-	if (sel_widget && sel_widget->selection < sel_widget->options_len) {
-		char *sp = strchr(I.buffer.data, ' ');
-		if (sp) {
-			int delta = sp - I.buffer.data + 1;
-			I.buffer.length = RZ_MIN(delta + strlen(sel_widget->options[sel_widget->selection]), RZ_LINE_BUFSIZE - 1);
-			memcpy(I.buffer.data + delta, sel_widget->options[sel_widget->selection], strlen(sel_widget->options[sel_widget->selection]));
-			I.buffer.index = I.buffer.length;
-			return;
-		}
-		char *del_text = strdup(I.buffer.data);
-		I.buffer.length = RZ_MIN(strlen(sel_widget->options[sel_widget->selection]), RZ_LINE_BUFSIZE - 1);
-		memcpy(I.buffer.data, sel_widget->options[sel_widget->selection], I.buffer.length);
-		I.buffer.data[I.buffer.length] = '\0';
-		I.buffer.index = I.buffer.length;
-		undo_add_entry(0, del_text, strdup(I.buffer.data));
-		selection_widget_erase();
-	}
-}
-
-static void selection_widget_update(void) {
-	int argc = rz_pvector_len(&I.completion.args);
-	const char **argv = (const char **)rz_pvector_data(&I.completion.args);
-	if (argc == 0 || (argc == 1 && I.buffer.length >= strlen(argv[0]))) {
-		selection_widget_erase();
+static void selection_widget_up(RzLine *line, int steps) {
+	RzSelWidget *sel_widget = line->sel_widget;
+	if (!sel_widget) {
 		return;
 	}
-	if (!I.sel_widget) {
-		RzSelWidget *sel_widget = RZ_NEW0(RzSelWidget);
-		I.sel_widget = sel_widget;
-	}
-	I.sel_widget->scroll = 0;
-	I.sel_widget->selection = 0;
-	I.sel_widget->options_len = argc;
-	I.sel_widget->options = argv;
-	I.sel_widget->h = RZ_MAX(I.sel_widget->h, I.sel_widget->options_len);
-
-	if (I.prompt_type == RZ_LINE_PROMPT_DEFAULT) {
-		I.sel_widget->direction = RZ_SELWIDGET_DIR_DOWN;
+	if (sel_widget->direction == RZ_SELWIDGET_DIR_UP) {
+		int height = RZ_MIN(sel_widget->h, RZ_SELWIDGET_MAXH - 1);
+		sel_widget->selection = RZ_MIN(sel_widget->selection + steps, sel_widget->options_len - 1);
+		if (steps == 1) {
+			sel_widget->scroll = RZ_MIN(sel_widget->scroll + 1, RZ_SELWIDGET_MAXH - 1);
+		} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
+			sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+		}
 	} else {
-		I.sel_widget->direction = RZ_SELWIDGET_DIR_UP;
+		sel_widget->selection = RZ_MAX(sel_widget->selection - steps, 0);
+		if (steps == 1) {
+			sel_widget->scroll = RZ_MAX(sel_widget->scroll - 1, 0);
+		} else if (sel_widget->selection - sel_widget->scroll <= 0) {
+			sel_widget->scroll = sel_widget->selection;
+		}
 	}
-	selection_widget_draw();
+}
+
+static void selection_widget_down(RzLine *line, int steps) {
+	RzSelWidget *sel_widget = line->sel_widget;
+	if (!sel_widget) {
+		return;
+	}
+	if (sel_widget->direction == RZ_SELWIDGET_DIR_UP) {
+		sel_widget->selection = RZ_MAX(sel_widget->selection - steps, 0);
+		if (steps == 1) {
+			sel_widget->scroll = RZ_MAX(sel_widget->scroll - 1, 0);
+		} else if (sel_widget->selection - sel_widget->scroll <= 0) {
+			sel_widget->scroll = sel_widget->selection;
+		}
+	} else {
+		int height = RZ_MIN(sel_widget->h, RZ_SELWIDGET_MAXH - 1);
+		sel_widget->selection = RZ_MIN(sel_widget->selection + steps, sel_widget->options_len - 1);
+		if (steps == 1) {
+			sel_widget->scroll = RZ_MIN(sel_widget->scroll + 1, RZ_SELWIDGET_MAXH - 1);
+		} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
+			sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+		}
+	}
+}
+
+static void selection_widget_erase(RzLine *line) {
+	RzSelWidget *sel_widget = line->sel_widget;
+	if (sel_widget) {
+		return;
+	}
+	sel_widget->options_len = 0;
+	sel_widget->selection = -1;
+	selection_widget_draw(line);
+	RZ_FREE(line->sel_widget);
+	RzCons *cons = rz_cons_singleton();
+	if (cons->event_resize && cons->event_data) {
+		cons->event_resize(cons->event_data);
+		RzCore *core = (RzCore *)(cons->user);
+		if (core) {
+			cons->cb_task_oneshot(line, NULL, &core->tasks);
+		}
+	}
+	printf("%s", RZ_CONS_CLEAR_FROM_CURSOR_TO_END);
+}
+
+static void selection_widget_select(RzLine *line) {
+	RzSelWidget *sel_widget = line->sel_widget;
+	if (sel_widget && sel_widget->selection < sel_widget->options_len) {
+		char *sp = strchr(line->buffer.data, ' ');
+		if (sp) {
+			int delta = sp - line->buffer.data + 1;
+			line->buffer.length = RZ_MIN(delta + strlen(sel_widget->options[sel_widget->selection]), RZ_LINE_BUFSIZE - 1);
+			memcpy(line->buffer.data + delta, sel_widget->options[sel_widget->selection], strlen(sel_widget->options[sel_widget->selection]));
+			line->buffer.index = line->buffer.length;
+			return;
+		}
+		char *del_text = strdup(line->buffer.data);
+		line->buffer.length = RZ_MIN(strlen(sel_widget->options[sel_widget->selection]), RZ_LINE_BUFSIZE - 1);
+		memcpy(line->buffer.data, sel_widget->options[sel_widget->selection], line->buffer.length);
+		line->buffer.data[line->buffer.length] = '\0';
+		line->buffer.index = line->buffer.length;
+		undo_add_entry(line, 0, del_text, strdup(line->buffer.data));
+		selection_widget_erase(NULL);
+	}
+}
+
+static void selection_widget_update(RzLine *line) {
+	int argc = rz_pvector_len(&line->completion.args);
+	const char **argv = (const char **)rz_pvector_data(&line->completion.args);
+	if (argc == 0 || (argc == 1 && line->buffer.length >= strlen(argv[0]))) {
+		selection_widget_erase(line);
+		return;
+	}
+	if (!line->sel_widget) {
+		RzSelWidget *sel_widget = RZ_NEW0(RzSelWidget);
+		line->sel_widget = sel_widget;
+	}
+	line->sel_widget->scroll = 0;
+	line->sel_widget->selection = 0;
+	line->sel_widget->options_len = argc;
+	line->sel_widget->options = argv;
+	line->sel_widget->h = RZ_MAX(line->sel_widget->h, line->sel_widget->options_len);
+
+	if (line->prompt_type == RZ_LINE_PROMPT_DEFAULT) {
+		line->sel_widget->direction = RZ_SELWIDGET_DIR_DOWN;
+	} else {
+		line->sel_widget->direction = RZ_SELWIDGET_DIR_UP;
+	}
+	selection_widget_draw(line);
 	rz_cons_flush();
-	return;
 }
 
 static bool is_valid_buffer_limits(RzLineBuffer *buf, size_t start, size_t end, size_t s_len) {
@@ -878,7 +889,7 @@ static bool is_valid_buffer_limits(RzLineBuffer *buf, size_t start, size_t end, 
 	return true;
 }
 
-static void replace_buffer_text(RzLineBuffer *buf, size_t start, size_t end, const char *s) {
+static void replace_buffer_text(RzLine *line, RzLineBuffer *buf, size_t start, size_t end, const char *s) {
 	size_t s_len = strlen(s);
 	if (!is_valid_buffer_limits(buf, start, end, s_len)) {
 		return;
@@ -889,7 +900,7 @@ static void replace_buffer_text(RzLineBuffer *buf, size_t start, size_t end, con
 		char *del_text = rz_str_ndup(buf->data + start, diff);
 		char *ins_text = rz_str_ndup(s, s_len);
 		if (diff != s_len || rz_str_cmp(del_text, ins_text, diff)) {
-			undo_add_entry(start, del_text, ins_text);
+			undo_add_entry(line, start, del_text, ins_text);
 		} else {
 			RZ_FREE(del_text);
 			RZ_FREE(ins_text);
@@ -952,7 +963,8 @@ static void print_options(int argc, const char **argv) {
 	rz_cons_printf("\n");
 }
 
-RZ_API void rz_line_autocomplete(void) {
+RZ_API void rz_line_autocomplete(RZ_NONNULL RzLine *line) {
+	rz_return_if_fail(line);
 	char *p;
 	char *del_text = NULL;
 	const char **argv = NULL;
@@ -960,74 +972,74 @@ RZ_API void rz_line_autocomplete(void) {
 	bool opt = false;
 	RzCons *cons = rz_cons_singleton();
 
-	if (I.ns_completion.run) {
-		RzLineNSCompletionResult *res = I.ns_completion.run(&I.buffer, I.prompt_type, I.ns_completion.run_user);
-		undo_continuous_entries_begin();
+	if (line->ns_completion.run) {
+		RzLineNSCompletionResult *res = line->ns_completion.run(&line->buffer, line->prompt_type, line->ns_completion.run_user);
+		undo_continuous_entries_begin(line);
 		if (!res || rz_pvector_empty(&res->options)) {
 			// do nothing
 		} else if (rz_pvector_len(&res->options) == 1) {
 			// if there is just one option, just use it
-			bool is_at_end = I.buffer.length == I.buffer.index;
-			replace_buffer_text(&I.buffer, res->start, res->end, rz_pvector_at(&res->options, 0));
+			bool is_at_end = line->buffer.length == line->buffer.index;
+			replace_buffer_text(line, &line->buffer, res->start, res->end, rz_pvector_at(&res->options, 0));
 			if (is_at_end && res->end_string) {
-				replace_buffer_text(&I.buffer, I.buffer.length, I.buffer.length, res->end_string);
+				replace_buffer_text(line, &line->buffer, line->buffer.length, line->buffer.length, res->end_string);
 			}
 
 		} else {
 			// otherwise find maxcommonprefix, print it, and then print options
 			char *max_common_pfx = get_max_common_pfx(&res->options);
-			replace_buffer_text(&I.buffer, res->start, res->end, max_common_pfx);
+			replace_buffer_text(line, &line->buffer, res->start, res->end, max_common_pfx);
 			free(max_common_pfx);
 
-			rz_cons_printf("%s%s\n", I.prompt, I.buffer.data);
+			rz_cons_printf("%s%s\n", line->prompt, line->buffer.data);
 			print_options(rz_pvector_len(&res->options), (const char **)rz_pvector_data(&res->options));
 		}
-		undo_continuous_entries_end();
+		undo_continuous_entries_end(line);
 		rz_line_ns_completion_result_free(res);
 		return;
 	}
 
 	/* prepare argc and argv */
-	if (I.completion.run) {
-		I.completion.opt = false;
-		I.completion.run(&I.completion, &I.buffer, I.prompt_type, I.completion.run_user);
-		argc = rz_pvector_len(&I.completion.args);
-		argv = (const char **)rz_pvector_data(&I.completion.args);
-		opt = I.completion.opt;
+	if (line->completion.run) {
+		line->completion.opt = false;
+		line->completion.run(&line->completion, &line->buffer, line->prompt_type, line->completion.run_user);
+		argc = rz_pvector_len(&line->completion.args);
+		argv = (const char **)rz_pvector_data(&line->completion.args);
+		opt = line->completion.opt;
 	}
-	if (I.sel_widget && !I.sel_widget->complete_common) {
-		selection_widget_update();
+	if (line->sel_widget && !line->sel_widget->complete_common) {
+		selection_widget_update(line);
 		return;
 	}
 
 	if (opt) {
-		p = (char *)rz_sub_str_lchr(I.buffer.data, 0, I.buffer.index, '=');
+		p = (char *)rz_sub_str_lchr(line->buffer.data, 0, line->buffer.index, '=');
 	} else {
-		p = (char *)rz_sub_str_lchr(I.buffer.data, 0, I.buffer.index, ' ');
+		p = (char *)rz_sub_str_lchr(line->buffer.data, 0, line->buffer.index, ' ');
 	}
 	if (!p) {
-		p = (char *)rz_sub_str_lchr(I.buffer.data, 0, I.buffer.index, '@'); // HACK FOR r2
+		p = (char *)rz_sub_str_lchr(line->buffer.data, 0, line->buffer.index, '@'); // HACK FOR r2
 	}
 	if (p) {
 		p++;
-		plen = sizeof(I.buffer.data) - (int)(size_t)(p - I.buffer.data);
+		plen = sizeof(line->buffer.data) - (int)(size_t)(p - line->buffer.data);
 	} else {
-		p = I.buffer.data; // XXX: removes current buffer
-		plen = sizeof(I.buffer.data);
+		p = line->buffer.data; // XXX: removes current buffer
+		plen = sizeof(line->buffer.data);
 	}
 	if (plen) {
-		del_text = rz_str_ndup(I.buffer.data, I.buffer.length);
+		del_text = rz_str_ndup(line->buffer.data, line->buffer.length);
 	}
 	/* autocomplete */
 	if (argc == 1) {
-		const char *end_word = rz_sub_str_rchr(I.buffer.data,
-			I.buffer.index, strlen(I.buffer.data), ' ');
-		const char *t = end_word != NULL ? end_word : I.buffer.data + I.buffer.index;
+		const char *end_word = rz_sub_str_rchr(line->buffer.data,
+			line->buffer.index, strlen(line->buffer.data), ' ');
+		const char *t = end_word != NULL ? end_word : line->buffer.data + line->buffer.index;
 		int largv0 = strlen(argv[0] ? argv[0] : "");
 		size_t len_t = strlen(t);
 		p[largv0] = '\0';
 
-		if ((p - I.buffer.data) + largv0 + 1 + len_t < plen) {
+		if ((p - line->buffer.data) + largv0 + 1 + len_t < plen) {
 			if (len_t > 0) {
 				int tt = largv0;
 				if (*t != ' ') {
@@ -1043,13 +1055,13 @@ RZ_API void rz_line_autocomplete(void) {
 					p[largv0 + 1] = '\0';
 				}
 			}
-			I.buffer.length = strlen(I.buffer.data);
-			I.buffer.index = I.buffer.length;
+			line->buffer.length = strlen(line->buffer.data);
+			line->buffer.index = line->buffer.length;
 		}
 	} else if (argc > 0) {
 		if (*p) {
 			// TODO: avoid overflow
-			const char *t = I.buffer.data + I.buffer.index;
+			const char *t = line->buffer.data + line->buffer.index;
 			const char *root = argv[0];
 			int min_common_len = strlen(root);
 			size_t len_t = strlen(t);
@@ -1076,228 +1088,229 @@ RZ_API void rz_line_autocomplete(void) {
 			if (!len_t) {
 				p[min_common_len] = '\0';
 			}
-			I.buffer.length = strlen(I.buffer.data);
-			I.buffer.index = (p - I.buffer.data) + min_common_len;
+			line->buffer.length = strlen(line->buffer.data);
+			line->buffer.index = (p - line->buffer.data) + min_common_len;
 		}
 	}
 
-	if (rz_str_cmp(del_text, I.buffer.data, I.buffer.length)) {
-		undo_add_entry(0, del_text, rz_str_ndup(I.buffer.data, I.buffer.length));
+	if (rz_str_cmp(del_text, line->buffer.data, line->buffer.length)) {
+		undo_add_entry(line, 0, del_text, rz_str_ndup(line->buffer.data, line->buffer.length));
 	} else {
 		RZ_FREE(del_text);
 	}
 
-	if (I.prompt_type != RZ_LINE_PROMPT_DEFAULT || cons->show_autocomplete_widget) {
-		selection_widget_update();
-		if (I.sel_widget) {
-			I.sel_widget->complete_common = false;
+	if (line->prompt_type != RZ_LINE_PROMPT_DEFAULT || cons->show_autocomplete_widget) {
+		selection_widget_update(line);
+		if (line->sel_widget) {
+			line->sel_widget->complete_common = false;
 		}
 		return;
 	}
 
 	/* show options */
-	if (argc > 1 && I.echo) {
-		rz_cons_printf("%s%s\n", I.prompt, I.buffer.data);
+	if (argc > 1 && line->echo) {
+		rz_cons_printf("%s%s\n", line->prompt, line->buffer.data);
 		print_options(argc, argv);
 	}
 }
 
-RZ_API const char *rz_line_readline(void) {
-	return rz_line_readline_cb(NULL, NULL);
+RZ_API const char *rz_line_readline(RZ_NONNULL RzLine *line) {
+	rz_return_val_if_fail(line, NULL);
+	return rz_line_readline_cb(line, NULL, NULL);
 }
 
-static inline void rotate_kill_ring(bool *enable_yank_pop) {
+static inline void rotate_kill_ring(RzLine *line, bool *enable_yank_pop) {
 	if (!*enable_yank_pop) {
 		return;
 	}
-	I.buffer.index -= strlen(rz_list_get_n(I.kill_ring, I.kill_ring_ptr));
-	undo_continuous_entries_begin();
-	undo_add_entry(I.buffer.index, rz_str_ndup(I.buffer.data + I.buffer.index, I.buffer.length - I.buffer.index), NULL);
-	I.buffer.data[I.buffer.index] = 0;
-	I.kill_ring_ptr -= 1;
-	if (I.kill_ring_ptr < 0) {
-		I.kill_ring_ptr = I.kill_ring->length - 1;
+	line->buffer.index -= strlen(rz_list_get_n(line->kill_ring, line->kill_ring_ptr));
+	undo_continuous_entries_begin(line);
+	undo_add_entry(line, line->buffer.index, rz_str_ndup(line->buffer.data + line->buffer.index, line->buffer.length - line->buffer.index), NULL);
+	line->buffer.data[line->buffer.index] = 0;
+	line->kill_ring_ptr -= 1;
+	if (line->kill_ring_ptr < 0) {
+		line->kill_ring_ptr = line->kill_ring->length - 1;
 	}
-	I.clipboard = rz_list_get_n(I.kill_ring, I.kill_ring_ptr);
-	paste(enable_yank_pop);
-	undo_continuous_entries_end();
+	line->clipboard = rz_list_get_n(line->kill_ring, line->kill_ring_ptr);
+	paste(line, enable_yank_pop);
+	undo_continuous_entries_end(line);
 }
 
-static inline void __delete_next_char(void) {
-	if (I.buffer.index < I.buffer.length) {
-		undo_add_entry(I.buffer.index, rz_str_ndup(I.buffer.data + I.buffer.index, 1), NULL);
-		int len = rz_str_utf8_charsize(I.buffer.data + I.buffer.index);
-		memmove(I.buffer.data + I.buffer.index,
-			I.buffer.data + I.buffer.index + len,
-			strlen(I.buffer.data + I.buffer.index + 1) + 1);
-		I.buffer.length -= len;
+static inline void __delete_next_char(RzLine *line) {
+	if (line->buffer.index < line->buffer.length) {
+		undo_add_entry(line, line->buffer.index, rz_str_ndup(line->buffer.data + line->buffer.index, 1), NULL);
+		int len = rz_str_utf8_charsize(line->buffer.data + line->buffer.index);
+		memmove(line->buffer.data + line->buffer.index,
+			line->buffer.data + line->buffer.index + len,
+			strlen(line->buffer.data + line->buffer.index + 1) + 1);
+		line->buffer.length -= len;
 	}
 }
 
-static inline void __delete_prev_char(void) {
-	if (I.buffer.index > 0) {
-		undo_add_entry(I.buffer.index - 1, rz_str_ndup(I.buffer.data + I.buffer.index - 1, 1), NULL);
+static inline void __delete_prev_char(RzLine *line) {
+	if (line->buffer.index > 0) {
+		undo_add_entry(line, line->buffer.index - 1, rz_str_ndup(line->buffer.data + line->buffer.index - 1, 1), NULL);
 	}
-	if (I.buffer.index < I.buffer.length) {
-		if (I.buffer.index > 0) {
-			size_t len = rz_str_utf8_charsize_prev(I.buffer.data + I.buffer.index, I.buffer.index);
-			I.buffer.index -= len;
-			memmove(I.buffer.data + I.buffer.index,
-				I.buffer.data + I.buffer.index + len,
-				strlen(I.buffer.data + I.buffer.index));
-			I.buffer.length -= len;
+	if (line->buffer.index < line->buffer.length) {
+		if (line->buffer.index > 0) {
+			size_t len = rz_str_utf8_charsize_prev(line->buffer.data + line->buffer.index, line->buffer.index);
+			line->buffer.index -= len;
+			memmove(line->buffer.data + line->buffer.index,
+				line->buffer.data + line->buffer.index + len,
+				strlen(line->buffer.data + line->buffer.index));
+			line->buffer.length -= len;
 		}
 	} else {
-		I.buffer.length -= rz_str_utf8_charsize_last(I.buffer.data);
-		I.buffer.index = I.buffer.length;
-		if (I.buffer.length < 0) {
-			I.buffer.length = 0;
+		line->buffer.length -= rz_str_utf8_charsize_last(line->buffer.data);
+		line->buffer.index = line->buffer.length;
+		if (line->buffer.length < 0) {
+			line->buffer.length = 0;
 		}
 	}
-	I.buffer.data[I.buffer.length] = '\0';
-	if (I.buffer.index < 0) {
-		I.buffer.index = 0;
+	line->buffer.data[line->buffer.length] = '\0';
+	if (line->buffer.index < 0) {
+		line->buffer.index = 0;
 	}
 }
 
-static inline void delete_till_end(void) {
-	if (I.buffer.index < I.buffer.length) {
-		undo_add_entry(I.buffer.index, strdup(I.buffer.data + I.buffer.index), NULL);
+static inline void delete_till_end(RzLine *line) {
+	if (line->buffer.index < line->buffer.length) {
+		undo_add_entry(line, line->buffer.index, strdup(line->buffer.data + line->buffer.index), NULL);
 	}
-	I.buffer.data[I.buffer.index] = '\0';
-	I.buffer.length = I.buffer.index;
-	I.buffer.index = I.buffer.index > 0 ? I.buffer.index - 1 : 0;
+	line->buffer.data[line->buffer.index] = '\0';
+	line->buffer.length = line->buffer.index;
+	line->buffer.index = line->buffer.index > 0 ? line->buffer.index - 1 : 0;
 }
 
-static void __print_prompt(void) {
+static void __print_prompt(RzLine *line) {
 	RzCons *cons = rz_cons_singleton();
 	int columns = rz_cons_get_size(NULL) - 2;
-	int chars = strlen(I.buffer.data);
-	int len, i, cols = RZ_MAX(1, columns - rz_str_ansi_len(I.prompt) - 2);
+	int chars = strlen(line->buffer.data);
+	int len, i, cols = RZ_MAX(1, columns - rz_str_ansi_len(line->prompt) - 2);
 	if (cons->line->prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		rz_cons_gotoxy(0, cons->rows);
 		rz_cons_flush();
 	}
 	rz_cons_clear_line(0);
 	if (cons->context->color_mode > 0) {
-		printf("\r%s%s", Color_RESET, I.prompt);
+		printf("\r%s%s", Color_RESET, line->prompt);
 	} else {
-		printf("\r%s", I.prompt);
+		printf("\r%s", line->prompt);
 	}
-	fwrite(I.buffer.data, 1, RZ_MIN(cols, chars), stdout);
-	printf("\r%s", I.prompt);
-	if (I.buffer.index > cols) {
+	fwrite(line->buffer.data, 1, RZ_MIN(cols, chars), stdout);
+	printf("\r%s", line->prompt);
+	if (line->buffer.index > cols) {
 		printf("< ");
-		i = I.buffer.index - cols;
-		if (i > sizeof(I.buffer.data)) {
-			i = sizeof(I.buffer.data) - 1;
+		i = line->buffer.index - cols;
+		if (i > sizeof(line->buffer.data)) {
+			i = sizeof(line->buffer.data) - 1;
 		}
 	} else {
 		i = 0;
 	}
-	len = I.buffer.index - i;
-	if (len > 0 && (i + len) <= I.buffer.length) {
-		fwrite(I.buffer.data + i, 1, len, stdout);
+	len = line->buffer.index - i;
+	if (len > 0 && (i + len) <= line->buffer.length) {
+		fwrite(line->buffer.data + i, 1, len, stdout);
 	}
 	fflush(stdout);
 }
 
-static inline void __move_cursor_right(void) {
-	I.buffer.index = I.buffer.index < I.buffer.length
-		? I.buffer.index + rz_str_utf8_charsize(I.buffer.data + I.buffer.index)
-		: I.buffer.length;
+static inline void __move_cursor_right(RzLine *line) {
+	line->buffer.index = line->buffer.index < line->buffer.length
+		? line->buffer.index + rz_str_utf8_charsize(line->buffer.data + line->buffer.index)
+		: line->buffer.length;
 }
 
-static inline void __move_cursor_left(void) {
-	I.buffer.index = I.buffer.index
-		? I.buffer.index - rz_str_utf8_charsize_prev(I.buffer.data + I.buffer.index, I.buffer.index)
+static inline void __move_cursor_left(RzLine *line) {
+	line->buffer.index = line->buffer.index
+		? line->buffer.index - rz_str_utf8_charsize_prev(line->buffer.data + line->buffer.index, line->buffer.index)
 		: 0;
 }
 
-static inline void vi_cmd_b(void) {
+static inline void vi_cmd_b(RzLine *line) {
 	int i;
-	for (i = I.buffer.index - 2; i >= 0; i--) {
-		if ((is_word_break_char(I.buffer.data[i], MINOR_BREAK) && !is_word_break_char(I.buffer.data[i], MAJOR_BREAK)) || (is_word_break_char(I.buffer.data[i - 1], MINOR_BREAK) && !is_word_break_char(I.buffer.data[i], MINOR_BREAK))) {
-			I.buffer.index = i;
+	for (i = line->buffer.index - 2; i >= 0; i--) {
+		if ((is_word_break_char(line->buffer.data[i], MINOR_BREAK) && !is_word_break_char(line->buffer.data[i], MAJOR_BREAK)) || (is_word_break_char(line->buffer.data[i - 1], MINOR_BREAK) && !is_word_break_char(line->buffer.data[i], MINOR_BREAK))) {
+			line->buffer.index = i;
 			break;
 		}
 	}
 	if (i < 0) {
-		I.buffer.index = 0;
+		line->buffer.index = 0;
 	}
 }
 
-static inline void vi_cmd_B(void) {
+static inline void vi_cmd_B(RzLine *line) {
 	int i;
-	for (i = I.buffer.index - 2; i >= 0; i--) {
-		if ((!is_word_break_char(I.buffer.data[i], MAJOR_BREAK) && is_word_break_char(I.buffer.data[i - 1], MAJOR_BREAK))) {
-			I.buffer.index = i;
+	for (i = line->buffer.index - 2; i >= 0; i--) {
+		if ((!is_word_break_char(line->buffer.data[i], MAJOR_BREAK) && is_word_break_char(line->buffer.data[i - 1], MAJOR_BREAK))) {
+			line->buffer.index = i;
 			break;
 		}
 	}
 	if (i < 0) {
-		I.buffer.index = 0;
+		line->buffer.index = 0;
 	}
 }
 
-static inline void vi_cmd_W(void) {
+static inline void vi_cmd_W(RzLine *line) {
 	int i;
-	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-		if ((!is_word_break_char(I.buffer.data[i], MAJOR_BREAK) && is_word_break_char(I.buffer.data[i - 1], MAJOR_BREAK))) {
-			I.buffer.index = i;
+	for (i = line->buffer.index + 1; i < line->buffer.length; i++) {
+		if ((!is_word_break_char(line->buffer.data[i], MAJOR_BREAK) && is_word_break_char(line->buffer.data[i - 1], MAJOR_BREAK))) {
+			line->buffer.index = i;
 			break;
 		}
 	}
-	if (i >= I.buffer.length) {
-		I.buffer.index = I.buffer.length - 1;
+	if (i >= line->buffer.length) {
+		line->buffer.index = line->buffer.length - 1;
 	}
 }
 
-static inline void vi_cmd_w(void) {
+static inline void vi_cmd_w(RzLine *line) {
 	int i;
-	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-		if ((!is_word_break_char(I.buffer.data[i], MINOR_BREAK) && is_word_break_char(I.buffer.data[i - 1], MINOR_BREAK)) || (is_word_break_char(I.buffer.data[i], MINOR_BREAK) && !is_word_break_char(I.buffer.data[i], MAJOR_BREAK))) {
-			I.buffer.index = i;
+	for (i = line->buffer.index + 1; i < line->buffer.length; i++) {
+		if ((!is_word_break_char(line->buffer.data[i], MINOR_BREAK) && is_word_break_char(line->buffer.data[i - 1], MINOR_BREAK)) || (is_word_break_char(line->buffer.data[i], MINOR_BREAK) && !is_word_break_char(line->buffer.data[i], MAJOR_BREAK))) {
+			line->buffer.index = i;
 			break;
 		}
 	}
-	if (i >= I.buffer.length) {
-		I.buffer.index = I.buffer.length - 1;
+	if (i >= line->buffer.length) {
+		line->buffer.index = line->buffer.length - 1;
 	}
 }
 
-static inline void vi_cmd_E(void) {
+static inline void vi_cmd_E(RzLine *line) {
 	int i;
-	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-		if ((!is_word_break_char(I.buffer.data[i], MAJOR_BREAK) && is_word_break_char(I.buffer.data[i + 1], MAJOR_BREAK))) {
-			I.buffer.index = i;
+	for (i = line->buffer.index + 1; i < line->buffer.length; i++) {
+		if ((!is_word_break_char(line->buffer.data[i], MAJOR_BREAK) && is_word_break_char(line->buffer.data[i + 1], MAJOR_BREAK))) {
+			line->buffer.index = i;
 			break;
 		}
 	}
-	if (i >= I.buffer.length) {
-		I.buffer.index = I.buffer.length - 1;
+	if (i >= line->buffer.length) {
+		line->buffer.index = line->buffer.length - 1;
 	}
 }
 
-static inline void vi_cmd_e(void) {
+static inline void vi_cmd_e(RzLine *line) {
 	int i;
-	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-		if ((!is_word_break_char(I.buffer.data[i], MINOR_BREAK) && is_word_break_char(I.buffer.data[i + 1], MINOR_BREAK)) || (is_word_break_char(I.buffer.data[i], MINOR_BREAK) && !is_word_break_char(I.buffer.data[i], MAJOR_BREAK))) {
-			I.buffer.index = i;
+	for (i = line->buffer.index + 1; i < line->buffer.length; i++) {
+		if ((!is_word_break_char(line->buffer.data[i], MINOR_BREAK) && is_word_break_char(line->buffer.data[i + 1], MINOR_BREAK)) || (is_word_break_char(line->buffer.data[i], MINOR_BREAK) && !is_word_break_char(line->buffer.data[i], MAJOR_BREAK))) {
+			line->buffer.index = i;
 			break;
 		}
 	}
-	if (i >= I.buffer.length) {
-		I.buffer.index = I.buffer.length - 1;
+	if (i >= line->buffer.length) {
+		line->buffer.index = line->buffer.length - 1;
 	}
 }
 
-static void __update_prompt_color(void) {
+static void __update_prompt_color(RzLine *line) {
 	RzCons *cons = rz_cons_singleton();
 	const char *BEGIN = "", *END = "";
 	if (cons->context->color_mode) {
-		if (I.prompt_mode) {
-			switch (I.vi_mode) {
+		if (line->prompt_mode) {
+			switch (line->vi_mode) {
 			case CONTROL_MODE:
 				BEGIN = cons->context->pal.invalid;
 				break;
@@ -1311,29 +1324,29 @@ static void __update_prompt_color(void) {
 		}
 		END = cons->context->pal.reset;
 	}
-	char *prompt = rz_str_escape(I.prompt); // remote the color
-	free(I.prompt);
-	I.prompt = rz_str_newf("%s%s%s", BEGIN, prompt, END);
+	char *prompt = rz_str_escape(line->prompt); // remote the color
+	free(line->prompt);
+	line->prompt = rz_str_newf("%s%s%s", BEGIN, prompt, END);
 	free(prompt);
 }
 
-static void __vi_mode(bool *enable_yank_pop) {
+static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 	char ch;
-	I.vi_mode = CONTROL_MODE;
-	__update_prompt_color();
+	line->vi_mode = CONTROL_MODE;
+	__update_prompt_color(line);
 	const char *gcomp_line = "";
 	static int gcomp = 0;
 	for (;;) {
 		int rep = 0;
-		if (I.echo) {
-			__print_prompt();
+		if (line->echo) {
+			__print_prompt(line);
 		}
-		if (I.vi_mode != CONTROL_MODE) { // exit if insert mode is selected
-			__update_prompt_color();
+		if (line->vi_mode != CONTROL_MODE) { // exit if insert mode is selected
+			__update_prompt_color(line);
 			break;
 		}
-		bool o_do_setup_match = I.history.do_setup_match;
-		I.history.do_setup_match = true;
+		bool o_do_setup_match = line->history.do_setup_match;
+		line->history.do_setup_match = true;
 		ch = rz_cons_readchar();
 		while (IS_DIGIT(ch)) { // handle commands like 3b
 			if (ch == '0' && rep == 0) { // to handle the command 0
@@ -1347,31 +1360,31 @@ static void __vi_mode(bool *enable_yank_pop) {
 
 		switch (ch) {
 		case 3:
-			if (I.hud) {
-				I.hud->activate = false;
-				I.hud->current_entry_n = -1;
+			if (line->hud) {
+				line->hud->activate = false;
+				line->hud->current_entry_n = -1;
 			}
-			if (I.echo) {
+			if (line->echo) {
 				eprintf("^C\n");
 			}
-			I.buffer.index = I.buffer.length = 0;
-			*I.buffer.data = '\0';
+			line->buffer.index = line->buffer.length = 0;
+			*line->buffer.data = '\0';
 			gcomp = 0;
 			return;
 		case 'D':
-			delete_till_end();
+			delete_till_end(line);
 			break;
 		case 'r': {
 			char c = rz_cons_readchar();
-			I.buffer.data[I.buffer.index] = c;
+			line->buffer.data[line->buffer.index] = c;
 		} break;
 		case 'x':
 			while (rep--) {
-				__delete_next_char();
+				__delete_next_char(line);
 			}
 			break;
 		case 'c':
-			I.vi_mode = INSERT_MODE; // goto insert mode
+			line->vi_mode = INSERT_MODE; // goto insert mode
 			/* fall through */
 		case 'd': {
 			char c = rz_cons_readchar();
@@ -1380,157 +1393,158 @@ static void __vi_mode(bool *enable_yank_pop) {
 				case 'i': {
 					char t = rz_cons_readchar();
 					if (t == 'w') { // diw
-						kill_word(MINOR_BREAK);
-						backward_kill_word(MINOR_BREAK);
+						kill_word(line, MINOR_BREAK);
+						backward_kill_word(line, MINOR_BREAK);
 					} else if (t == 'W') { // diW
-						kill_word(MAJOR_BREAK);
-						backward_kill_word(MINOR_BREAK);
+						kill_word(line, MAJOR_BREAK);
+						backward_kill_word(line, MINOR_BREAK);
 					}
-					if (I.hud) {
-						I.hud->vi = false;
+					if (line->hud) {
+						line->hud->vi = false;
 					}
 				} break;
 				case 'W':
-					kill_word(MAJOR_BREAK);
+					kill_word(line, MAJOR_BREAK);
 					break;
 				case 'w':
-					kill_word(MINOR_BREAK);
+					kill_word(line, MINOR_BREAK);
 					break;
 				case 'B':
-					backward_kill_word(MAJOR_BREAK);
+					backward_kill_word(line, MAJOR_BREAK);
 					break;
 				case 'b':
-					backward_kill_word(MINOR_BREAK);
+					backward_kill_word(line, MINOR_BREAK);
 					break;
 				case 'h':
-					__delete_prev_char();
+					__delete_prev_char(line);
 					break;
 				case 'l':
-					__delete_next_char();
+					__delete_next_char(line);
 					break;
 				case '$':
-					delete_till_end();
+					delete_till_end(line);
 					break;
 				case '^':
 				case '0':
-					strncpy(I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
-					I.buffer.length -= I.buffer.index;
-					I.buffer.index = 0;
+					strncpy(line->buffer.data, line->buffer.data + line->buffer.index, line->buffer.length);
+					line->buffer.length -= line->buffer.index;
+					line->buffer.index = 0;
 					break;
 				}
-				__print_prompt();
+				__print_prompt(line);
 			}
 		} break;
 		case 'I':
-			if (I.hud) {
-				I.hud->vi = false;
+			if (line->hud) {
+				line->hud->vi = false;
 			}
-			I.vi_mode = INSERT_MODE;
+			line->vi_mode = INSERT_MODE;
 			/* fall through */
 		case '^':
 		case '0':
 			if (gcomp) {
-				strcpy(I.buffer.data, gcomp_line);
-				I.buffer.length = strlen(I.buffer.data);
-				I.buffer.index = 0;
+				strcpy(line->buffer.data, gcomp_line);
+				line->buffer.length = strlen(line->buffer.data);
+				line->buffer.index = 0;
 				gcomp = false;
 			}
-			I.buffer.index = 0;
+			line->buffer.index = 0;
 			break;
 		case 'A':
-			I.vi_mode = INSERT_MODE;
+			line->vi_mode = INSERT_MODE;
 			/* fall through */
 		case '$':
 			if (gcomp) {
-				strcpy(I.buffer.data, gcomp_line);
-				I.buffer.index = strlen(I.buffer.data);
-				I.buffer.length = I.buffer.index;
+				strcpy(line->buffer.data, gcomp_line);
+				line->buffer.index = strlen(line->buffer.data);
+				line->buffer.length = line->buffer.index;
 				gcomp = false;
 			} else {
-				I.buffer.index = I.buffer.length;
+				line->buffer.index = line->buffer.length;
 			}
 			break;
 		case 'p':
 			while (rep--) {
-				paste(enable_yank_pop);
+				paste(line, enable_yank_pop);
 			}
 			break;
 		case 'a':
-			__move_cursor_right();
+			__move_cursor_right(line);
 			/* fall through */
 		case 'i':
-			I.vi_mode = INSERT_MODE;
-			if (I.hud) {
-				I.hud->vi = false;
+			line->vi_mode = INSERT_MODE;
+			if (line->hud) {
+				line->hud->vi = false;
 			}
 			break;
 		case 'h':
 			while (rep--) {
-				__move_cursor_left();
+				__move_cursor_left(line);
 			}
 			break;
 		case 'l':
 			while (rep--) {
-				__move_cursor_right();
+				__move_cursor_right(line);
 			}
 			break;
 		case 'E':
 			while (rep--) {
-				vi_cmd_E();
+				vi_cmd_E(line);
 			}
 			break;
 		case 'e':
 			while (rep--) {
-				vi_cmd_e();
+				vi_cmd_e(line);
 			}
 			break;
 		case 'B':
 			while (rep--) {
-				vi_cmd_B();
+				vi_cmd_B(line);
 			}
 			break;
 		case 'b':
 			while (rep--) {
-				vi_cmd_b();
+				vi_cmd_b(line);
 			}
 			break;
 		case 'W':
 			while (rep--) {
-				vi_cmd_W();
+				vi_cmd_W(line);
 			}
 			break;
 		case 'w':
 			while (rep--) {
-				vi_cmd_w();
+				vi_cmd_w(line);
 			}
 			break;
 		default: // escape key
 			ch = tolower(rz_cons_arrow_to_hjkl(ch));
 			switch (ch) {
 			case 'k': // up
-				I.history.do_setup_match = o_do_setup_match;
-				rz_line_hist_up();
+				line->history.do_setup_match = o_do_setup_match;
+				rz_line_hist_up(line);
 				break;
 			case 'j': // down
-				I.history.do_setup_match = o_do_setup_match;
-				rz_line_hist_down();
+				line->history.do_setup_match = o_do_setup_match;
+				rz_line_hist_down(line);
 				break;
 			case 'l': // right
-				__move_cursor_right();
+				__move_cursor_right(line);
 				break;
 			case 'h': // left
-				__move_cursor_left();
+				__move_cursor_left(line);
 				break;
 			}
 			break;
 		}
-		if (I.hud) {
+		if (line->hud) {
 			return;
 		}
 	}
 }
 
-RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
+RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallback cb, void *user) {
+	rz_return_val_if_fail(line, NULL);
 	int rows;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
@@ -1546,36 +1560,36 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 
 	RzCons *cons = rz_cons_singleton();
 
-	if (!I.hud || (I.hud && !I.hud->activate)) {
-		I.buffer.index = I.buffer.length = 0;
-		I.buffer.data[0] = '\0';
-		if (I.hud) {
-			I.hud->activate = true;
+	if (!line->hud || (line->hud && !line->hud->activate)) {
+		line->buffer.index = line->buffer.length = 0;
+		line->buffer.data[0] = '\0';
+		if (line->hud) {
+			line->hud->activate = true;
 		}
 	}
 	int mouse_status = cons->mouse;
-	if (I.hud && I.hud->vi) {
-		__vi_mode(&enable_yank_pop);
+	if (line->hud && line->hud->vi) {
+		__vi_mode(NULL, &enable_yank_pop);
 		goto _end;
 	}
-	if (I.contents) {
-		memmove(I.buffer.data, I.contents,
-			RZ_MIN(strlen(I.contents) + 1, RZ_LINE_BUFSIZE - 1));
-		I.buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
-		I.buffer.index = I.buffer.length = strlen(I.contents);
+	if (line->contents) {
+		memmove(line->buffer.data, line->contents,
+			RZ_MIN(strlen(line->contents) + 1, RZ_LINE_BUFSIZE - 1));
+		line->buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
+		line->buffer.index = line->buffer.length = strlen(line->contents);
 	}
-	if (I.disable) {
-		if (!fgets(I.buffer.data, RZ_LINE_BUFSIZE, stdin)) {
+	if (line->disable) {
+		if (!fgets(line->buffer.data, RZ_LINE_BUFSIZE, stdin)) {
 			return NULL;
 		}
-		return (*I.buffer.data) ? I.buffer.data : rz_line_nullstr;
+		return (*line->buffer.data) ? line->buffer.data : rz_line_nullstr;
 	}
 
 	memset(&buf, 0, sizeof buf);
 	rz_cons_set_raw(1);
 
-	if (I.echo) {
-		__print_prompt();
+	if (line->echo) {
+		__print_prompt(line);
 	}
 	rz_cons_break_push(NULL, NULL);
 	for (;;) {
@@ -1583,12 +1597,12 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		I.buffer.data[I.buffer.length] = '\0';
+		line->buffer.data[line->buffer.length] = '\0';
 		if (cb) {
-			int cbret = cb(user, I.buffer.data);
+			int cbret = cb(user, line->buffer.data);
 			if (cbret == 0) {
-				I.buffer.data[0] = 0;
-				I.buffer.length = 0;
+				line->buffer.data[0] = 0;
+				line->buffer.length = 0;
 			}
 		}
 		utflen = rz_line_readchar_utf8((ut8 *)buf, sizeof(buf));
@@ -1597,9 +1611,9 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			return NULL;
 		}
 		buf[utflen] = 0;
-		bool o_do_setup_match = I.history.do_setup_match;
-		I.history.do_setup_match = true;
-		if (I.echo) {
+		bool o_do_setup_match = line->history.do_setup_match;
+		line->history.do_setup_match = true;
+		if (line->echo) {
 			rz_cons_clear_line(0);
 		}
 		switch (*buf) {
@@ -1609,80 +1623,80 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			break;
 		case 1: // ^A
 			if (gcomp) {
-				strcpy(I.buffer.data, gcomp_line);
-				I.buffer.length = strlen(I.buffer.data);
-				I.buffer.index = 0;
+				strcpy(line->buffer.data, gcomp_line);
+				line->buffer.length = strlen(line->buffer.data);
+				line->buffer.index = 0;
 				gcomp = false;
 			}
-			I.buffer.index = 0;
+			line->buffer.index = 0;
 			break;
 		case 2: // ^b // emacs left
-			__move_cursor_left();
+			__move_cursor_left(NULL);
 			break;
 		case 5: // ^E
 			if (gcomp) {
-				strcpy(I.buffer.data, gcomp_line);
-				I.buffer.index = strlen(I.buffer.data);
-				I.buffer.length = I.buffer.index;
+				strcpy(line->buffer.data, gcomp_line);
+				line->buffer.index = strlen(line->buffer.data);
+				line->buffer.length = line->buffer.index;
 				gcomp = false;
 			} else if (prev == 24) { // ^X = 0x18
-				I.buffer.data[I.buffer.length] = 0; // probably unnecessary
-				tmp_ed_cmd = I.cb_editor(I.user, I.buffer.data);
+				line->buffer.data[line->buffer.length] = 0; // probably unnecessary
+				tmp_ed_cmd = line->cb_editor(line->user, line->buffer.data);
 				if (tmp_ed_cmd) {
 					/* copied from yank (case 25) */
-					I.buffer.length = strlen(tmp_ed_cmd);
-					if (I.buffer.length < RZ_LINE_BUFSIZE) {
-						I.buffer.index = I.buffer.length;
-						strncpy(I.buffer.data, tmp_ed_cmd, RZ_LINE_BUFSIZE - 1);
-						I.buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
-						undo_add_entry(0, NULL, strdup(tmp_ed_cmd));
+					line->buffer.length = strlen(tmp_ed_cmd);
+					if (line->buffer.length < RZ_LINE_BUFSIZE) {
+						line->buffer.index = line->buffer.length;
+						strncpy(line->buffer.data, tmp_ed_cmd, RZ_LINE_BUFSIZE - 1);
+						line->buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
+						undo_add_entry(line, 0, NULL, strdup(tmp_ed_cmd));
 					} else {
-						I.buffer.length -= strlen(tmp_ed_cmd);
+						line->buffer.length -= strlen(tmp_ed_cmd);
 					}
 					free(tmp_ed_cmd);
 				}
 			} else {
-				I.buffer.index = I.buffer.length;
+				line->buffer.index = line->buffer.length;
 			}
 			break;
 		case 3: // ^C
-			if (I.hud) {
-				I.hud->activate = false;
-				I.hud->current_entry_n = -1;
+			if (line->hud) {
+				line->hud->activate = false;
+				line->hud->current_entry_n = -1;
 			}
-			if (I.echo) {
+			if (line->echo) {
 				eprintf("^C\n");
 			}
-			I.buffer.index = I.buffer.length = 0;
-			*I.buffer.data = '\0';
+			line->buffer.index = line->buffer.length = 0;
+			*line->buffer.data = '\0';
 			gcomp = 0;
 			goto _end;
 		case 4: // ^D
-			if (!I.buffer.data[0]) { /* eof */
-				if (I.echo) {
-					__print_prompt();
+			if (!line->buffer.data[0]) { /* eof */
+				if (line->echo) {
+					__print_prompt(line);
 					printf("\n");
 				}
 				rz_cons_set_raw(false);
 				rz_cons_break_pop();
 				return NULL;
 			}
-			if (I.buffer.index < I.buffer.length) {
-				__delete_next_char();
+			if (line->buffer.index < line->buffer.length) {
+				__delete_next_char(line);
 			}
 			break;
 		case 11: // ^K
-			if (I.buffer.index != I.buffer.length) {
-				undo_add_entry(I.buffer.index, strdup(I.buffer.data + I.buffer.index), NULL);
+			if (line->buffer.index != line->buffer.length) {
+				undo_add_entry(line, line->buffer.index, strdup(line->buffer.data + line->buffer.index), NULL);
 			}
-			I.buffer.data[I.buffer.index] = '\0';
-			I.buffer.length = I.buffer.index;
+			line->buffer.data[line->buffer.index] = '\0';
+			line->buffer.length = line->buffer.index;
 			break;
 		case 6: // ^f // emacs right
-			__move_cursor_right();
+			__move_cursor_right(line);
 			break;
 		case 12: // ^L -- clear screen
-			if (I.echo) {
+			if (line->echo) {
 				eprintf("\x1b[2J\x1b[0;0H");
 			}
 			fflush(stdout);
@@ -1701,19 +1715,19 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				}
 				gcomp_is_rev = false;
 			} else {
-				__move_cursor_left();
+				__move_cursor_left(line);
 			}
 			break;
 		case 21: // ^U - cut
-			free(I.clipboard);
-			I.clipboard = strdup(I.buffer.data);
-			rz_line_clipboard_push(I.clipboard);
-			if (I.buffer.length) {
-				undo_add_entry(0, strdup(I.clipboard), NULL);
+			free(line->clipboard);
+			line->clipboard = strdup(line->buffer.data);
+			rz_line_clipboard_push(line, line->clipboard);
+			if (line->buffer.length) {
+				undo_add_entry(line, 0, strdup(line->clipboard), NULL);
 			}
-			I.buffer.data[0] = '\0';
-			I.buffer.length = 0;
-			I.buffer.index = 0;
+			line->buffer.data[0] = '\0';
+			line->buffer.length = 0;
+			line->buffer.index = 0;
 			break;
 #if __WINDOWS__
 		case 22: // ^V - Paste from windows clipboard
@@ -1731,13 +1745,13 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							break;
 						}
 						int len = strlen(txt);
-						I.buffer.length += len;
-						if (I.buffer.length < RZ_LINE_BUFSIZE) {
-							undo_add_entry(I.buffer.index, NULL, strdup(txt));
-							I.buffer.index = I.buffer.length;
-							strcat(I.buffer.data, txt);
+						line->buffer.length += len;
+						if (line->buffer.length < RZ_LINE_BUFSIZE) {
+							undo_add_entry(line, line->buffer.index, NULL, strdup(txt));
+							line->buffer.index = line->buffer.length;
+							strcat(line->buffer.data, txt);
 						} else {
-							I.buffer.length -= len;
+							line->buffer.length -= len;
 						}
 						free(txt);
 					}
@@ -1748,132 +1762,132 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		} break;
 #endif
 		case 23: // ^W ^w unix-word-rubout
-			unix_word_rubout();
+			unix_word_rubout(line);
 			break;
 		case 24: // ^X
-			if (I.buffer.index > 0) {
-				undo_add_entry(0, rz_str_ndup(I.buffer.data, I.buffer.index), NULL);
-				strncpy(I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
-				I.buffer.length -= I.buffer.index;
-				I.buffer.index = 0;
+			if (line->buffer.index > 0) {
+				undo_add_entry(line, 0, rz_str_ndup(line->buffer.data, line->buffer.index), NULL);
+				strncpy(line->buffer.data, line->buffer.data + line->buffer.index, line->buffer.length);
+				line->buffer.length -= line->buffer.index;
+				line->buffer.index = 0;
 			}
 			break;
 		case 25: // ^Y - paste
-			paste(&enable_yank_pop);
+			paste(line, &enable_yank_pop);
 			yank_flag = 1;
 			break;
 		case 29: // ^^ - rotate kill ring
-			rotate_kill_ring(&enable_yank_pop);
+			rotate_kill_ring(line, &enable_yank_pop);
 			yank_flag = enable_yank_pop ? 1 : 0;
 			break;
 		case 20: // ^t Kill from point to the end of the current word,
-			kill_word(MINOR_BREAK);
+			kill_word(line, MINOR_BREAK);
 			break;
 		case 15: // ^o kill backward
-			backward_kill_word(MINOR_BREAK);
+			backward_kill_word(line, MINOR_BREAK);
 			break;
 		case 14: // ^n
-			if (I.hud) {
-				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
-					I.hud->top_entry_n++;
+			if (line->hud) {
+				if (line->hud->top_entry_n + 1 < line->hud->current_entry_n) {
+					line->hud->top_entry_n++;
 				}
-			} else if (I.sel_widget) {
-				selection_widget_down(1);
-				selection_widget_draw();
+			} else if (line->sel_widget) {
+				selection_widget_down(line, 1);
+				selection_widget_draw(line);
 			} else if (gcomp) {
 				if (gcomp_idx > 0) {
 					gcomp_idx--;
 				}
 			} else {
-				undo_reset();
-				I.history.do_setup_match = o_do_setup_match;
-				rz_line_hist_down();
+				undo_reset(line);
+				line->history.do_setup_match = o_do_setup_match;
+				rz_line_hist_down(line);
 			}
 			break;
 		case 16: // ^p
-			if (I.hud) {
-				if (I.hud->top_entry_n >= 0) {
-					I.hud->top_entry_n--;
+			if (line->hud) {
+				if (line->hud->top_entry_n >= 0) {
+					line->hud->top_entry_n--;
 				}
-			} else if (I.sel_widget) {
-				selection_widget_up(1);
-				selection_widget_draw();
+			} else if (line->sel_widget) {
+				selection_widget_up(line, 1);
+				selection_widget_draw(line);
 			} else if (gcomp) {
 				gcomp_idx++;
 			} else {
-				undo_reset();
-				I.history.do_setup_match = o_do_setup_match;
-				rz_line_hist_up();
+				undo_reset(line);
+				line->history.do_setup_match = o_do_setup_match;
+				rz_line_hist_up(line);
 			}
 			break;
 		case 31: // ^_ ctrl-/ or ctrl-_
-			if (!gcomp && !I.hud && !I.sel_widget) {
-				line_undo();
+			if (!gcomp && !line->hud && !line->sel_widget) {
+				line_undo(line);
 			}
 			break;
 		case 27: // esc-5b-41-00-00 alt/meta key
 			buf[0] = rz_cons_readchar_timeout(50);
 			switch ((signed char)buf[0]) {
 			case 127: // alt+bkspace
-				backward_kill_word(MINOR_BREAK);
+				backward_kill_word(line, MINOR_BREAK);
 				break;
 			case -1: // escape key, goto vi mode
-				if (I.enable_vi_mode) {
-					if (I.hud) {
-						I.hud->vi = true;
+				if (line->enable_vi_mode) {
+					if (line->hud) {
+						line->hud->vi = true;
 					}
-					__vi_mode(&enable_yank_pop);
+					__vi_mode(line, &enable_yank_pop);
 				};
-				if (I.sel_widget) {
-					selection_widget_erase();
+				if (line->sel_widget) {
+					selection_widget_erase(line);
 				}
 				break;
 			case 1: // begin
-				I.buffer.index = 0;
+				line->buffer.index = 0;
 				break;
 			case 5: // end
-				I.buffer.index = I.buffer.length;
+				line->buffer.index = line->buffer.length;
 				break;
 			case 'B':
 			case 'b':
-				for (i = I.buffer.index - 2; i >= 0; i--) {
-					if (is_word_break_char(I.buffer.data[i], MINOR_BREAK) && !is_word_break_char(I.buffer.data[i + 1], MINOR_BREAK)) {
-						I.buffer.index = i + 1;
+				for (i = line->buffer.index - 2; i >= 0; i--) {
+					if (is_word_break_char(line->buffer.data[i], MINOR_BREAK) && !is_word_break_char(line->buffer.data[i + 1], MINOR_BREAK)) {
+						line->buffer.index = i + 1;
 						break;
 					}
 				}
 				if (i < 0) {
-					I.buffer.index = 0;
+					line->buffer.index = 0;
 				}
 				break;
 			case 'D':
 			case 'd':
-				kill_word(MINOR_BREAK);
+				kill_word(line, MINOR_BREAK);
 				break;
 			case 'F':
 			case 'f':
 				// next word
-				for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-					if (!is_word_break_char(I.buffer.data[i], MINOR_BREAK) && is_word_break_char(I.buffer.data[i - 1], MINOR_BREAK)) {
-						I.buffer.index = i;
+				for (i = line->buffer.index + 1; i < line->buffer.length; i++) {
+					if (!is_word_break_char(line->buffer.data[i], MINOR_BREAK) && is_word_break_char(line->buffer.data[i - 1], MINOR_BREAK)) {
+						line->buffer.index = i;
 						break;
 					}
 				}
-				if (i >= I.buffer.length) {
-					I.buffer.index = I.buffer.length;
+				if (i >= line->buffer.length) {
+					line->buffer.index = line->buffer.length;
 				}
 				break;
 			case 63: // ^[? Meta-/
 			case 95: // ^[_ Meta-_
-				if (!gcomp && !I.hud && !I.sel_widget) {
-					line_redo();
+				if (!gcomp && !line->hud && !line->sel_widget) {
+					line_redo(line);
 				}
 				break;
 			default:
 				buf[1] = rz_cons_readchar_timeout(50);
 				if (buf[1] == -1) { // alt+e
 					rz_cons_break_pop();
-					__print_prompt();
+					__print_prompt(line);
 					continue;
 				}
 				if (buf[0] == 'O' && strchr("ABCDFH", buf[1]) != NULL) { // O
@@ -1882,7 +1896,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				if (buf[0] == 0x5b) { // [
 					switch (buf[1]) {
 					case '3': // supr
-						__delete_next_char();
+						__delete_next_char(line);
 						buf[1] = rz_cons_readchar();
 						if (buf[1] == -1) {
 							rz_cons_break_pop();
@@ -1891,42 +1905,42 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						break;
 					case '5': // pag up
 						buf[1] = rz_cons_readchar();
-						if (I.hud) {
+						if (line->hud) {
 							rz_cons_get_size(&rows);
-							I.hud->top_entry_n -= (rows - 1);
-							if (I.hud->top_entry_n < 0) {
-								I.hud->top_entry_n = 0;
+							line->hud->top_entry_n -= (rows - 1);
+							if (line->hud->top_entry_n < 0) {
+								line->hud->top_entry_n = 0;
 							}
 						}
-						if (I.sel_widget) {
-							selection_widget_up(RZ_MIN(I.sel_widget->h, RZ_SELWIDGET_MAXH));
-							selection_widget_draw();
+						if (line->sel_widget) {
+							selection_widget_up(line, RZ_MIN(line->sel_widget->h, RZ_SELWIDGET_MAXH));
+							selection_widget_draw(line);
 						}
 						break;
 					case '6': // pag down
 						buf[1] = rz_cons_readchar();
-						if (I.hud) {
+						if (line->hud) {
 							rz_cons_get_size(&rows);
-							I.hud->top_entry_n += (rows - 1);
-							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
-								I.hud->top_entry_n = I.hud->current_entry_n - 1;
+							line->hud->top_entry_n += (rows - 1);
+							if (line->hud->top_entry_n >= line->hud->current_entry_n) {
+								line->hud->top_entry_n = line->hud->current_entry_n - 1;
 							}
 						}
-						if (I.sel_widget) {
-							selection_widget_down(RZ_MIN(I.sel_widget->h, RZ_SELWIDGET_MAXH));
-							selection_widget_draw();
+						if (line->sel_widget) {
+							selection_widget_down(line, RZ_MIN(line->sel_widget->h, RZ_SELWIDGET_MAXH));
+							selection_widget_draw(line);
 						}
 						break;
 					case '9': // handle mouse wheel
 						key = rz_cons_readchar();
 						cons->mouse_event = MOUSE_DEFAULT;
 						if (key == '6') { // up
-							if (I.hud && I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
-								I.hud->top_entry_n--;
+							if (line->hud && line->hud->top_entry_n + 1 < line->hud->current_entry_n) {
+								line->hud->top_entry_n--;
 							}
 						} else if (key == '7') { // down
-							if (I.hud && I.hud->top_entry_n >= 0) {
-								I.hud->top_entry_n++;
+							if (line->hud && line->hud->top_entry_n >= 0) {
+								line->hud->top_entry_n++;
 							}
 						}
 						while (rz_cons_readchar() != 'M') {
@@ -1934,56 +1948,56 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						break;
 					/* arrows */
 					case 'A': // up arrow
-						if (I.hud) {
-							if (I.hud->top_entry_n > 0) {
-								I.hud->top_entry_n--;
+						if (line->hud) {
+							if (line->hud->top_entry_n > 0) {
+								line->hud->top_entry_n--;
 							}
-						} else if (I.sel_widget) {
-							selection_widget_up(1);
-							selection_widget_draw();
+						} else if (line->sel_widget) {
+							selection_widget_up(line, 1);
+							selection_widget_draw(line);
 						} else if (gcomp) {
 							gcomp_idx++;
 						} else {
-							undo_reset();
-							I.history.do_setup_match = o_do_setup_match;
-							if (rz_line_hist_up() == -1) {
+							undo_reset(line);
+							line->history.do_setup_match = o_do_setup_match;
+							if (rz_line_hist_up(line) == -1) {
 								rz_cons_break_pop();
 								return NULL;
 							}
 						}
 						break;
 					case 'B': // down arrow
-						if (I.hud) {
-							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
-								I.hud->top_entry_n++;
+						if (line->hud) {
+							if (line->hud->top_entry_n + 1 < line->hud->current_entry_n) {
+								line->hud->top_entry_n++;
 							}
-						} else if (I.sel_widget) {
-							selection_widget_down(1);
-							selection_widget_draw();
+						} else if (line->sel_widget) {
+							selection_widget_down(line, 1);
+							selection_widget_draw(line);
 						} else if (gcomp) {
 							if (gcomp_idx > 0) {
 								gcomp_idx--;
 							}
 						} else {
-							undo_reset();
-							I.history.do_setup_match = o_do_setup_match;
-							if (rz_line_hist_down() == -1) {
+							undo_reset(line);
+							line->history.do_setup_match = o_do_setup_match;
+							if (rz_line_hist_down(line) == -1) {
 								rz_cons_break_pop();
 								return NULL;
 							}
 						}
 						break;
 					case 'C': // right arrow
-						__move_cursor_right();
+						__move_cursor_right(line);
 						break;
 					case 'D': // left arrow
-						__move_cursor_left();
+						__move_cursor_left(line);
 						break;
 					case 0x31: // control + arrow
 						ch = rz_cons_readchar();
 						if (ch == 0x7e) { // HOME in screen/tmux
 							// corresponding END is 0x34 below (the 0x7e is ignored there)
-							I.buffer.index = 0;
+							line->buffer.index = 0;
 							break;
 						}
 						rz_cons_readchar();
@@ -1992,39 +2006,39 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						switch (ch) {
 						case 0x41:
 							// first
-							I.buffer.index = 0;
+							line->buffer.index = 0;
 							break;
 						case 0x44:
 							// previous word
-							for (i = I.buffer.index; i > 0; i--) {
-								if (I.buffer.data[i] == ' ') {
-									I.buffer.index = i - 1;
+							for (i = line->buffer.index; i > 0; i--) {
+								if (line->buffer.data[i] == ' ') {
+									line->buffer.index = i - 1;
 									break;
 								}
 							}
-							if (I.buffer.data[i] != ' ') {
-								I.buffer.index = 0;
+							if (line->buffer.data[i] != ' ') {
+								line->buffer.index = 0;
 							}
 							break;
 						case 0x42:
 							// end
-							I.buffer.index = I.buffer.length;
+							line->buffer.index = line->buffer.length;
 							break;
 						case 0x43:
 							// next word
-							for (i = I.buffer.index; i < I.buffer.length; i++) {
-								if (I.buffer.data[i] == ' ') {
-									I.buffer.index = i + 1;
+							for (i = line->buffer.index; i < line->buffer.length; i++) {
+								if (line->buffer.data[i] == ' ') {
+									line->buffer.index = i + 1;
 									break;
 								}
 							}
-							if (I.buffer.data[i] != ' ') {
-								I.buffer.index = I.buffer.length;
+							if (line->buffer.data[i] != ' ') {
+								line->buffer.index = line->buffer.length;
 							}
 							break;
 						default:
-							if (I.cb_fkey) {
-								I.cb_fkey(I.user, fkey);
+							if (line->cb_fkey) {
+								line->cb_fkey(line->user, fkey);
 							}
 							break;
 						}
@@ -2034,24 +2048,24 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						rz_cons_readchar();
 						/* fall through */
 					case 0x48: // HOME
-						if (I.sel_widget) {
-							selection_widget_up(I.sel_widget->options_len - 1);
-							selection_widget_draw();
+						if (line->sel_widget) {
+							selection_widget_up(line, line->sel_widget->options_len - 1);
+							selection_widget_draw(line);
 							break;
 						}
-						I.buffer.index = 0;
+						line->buffer.index = 0;
 						break;
 					case 0x34: // END
 					case 0x38: // END xrvt-unicode
 						rz_cons_readchar();
 						/* fall through */
 					case 0x46: // END
-						if (I.sel_widget) {
-							selection_widget_down(I.sel_widget->options_len - 1);
-							selection_widget_draw();
+						if (line->sel_widget) {
+							selection_widget_down(line, line->sel_widget->options_len - 1);
+							selection_widget_draw(line);
 							break;
 						}
-						I.buffer.index = I.buffer.length;
+						line->buffer.index = line->buffer.length;
 						break;
 					}
 				}
@@ -2059,43 +2073,43 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			break;
 		case 8:
 		case 127:
-			if (I.hud && (I.buffer.index == 0)) {
-				I.hud->activate = false;
-				I.hud->current_entry_n = -1;
+			if (line->hud && (line->buffer.index == 0)) {
+				line->hud->activate = false;
+				line->hud->current_entry_n = -1;
 			}
-			__delete_prev_char();
+			__delete_prev_char(line);
 			break;
 		case 9: // TAB tab
-			if (I.sel_widget) {
-				selection_widget_down(1);
-				I.sel_widget->complete_common = true;
-				selection_widget_draw();
+			if (line->sel_widget) {
+				selection_widget_down(line, 1);
+				line->sel_widget->complete_common = true;
+				selection_widget_draw(line);
 			}
-			if (I.hud) {
-				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
-					I.hud->top_entry_n++;
+			if (line->hud) {
+				if (line->hud->top_entry_n + 1 < line->hud->current_entry_n) {
+					line->hud->top_entry_n++;
 				} else {
-					I.hud->top_entry_n = 0;
+					line->hud->top_entry_n = 0;
 				}
 			} else {
-				rz_line_autocomplete();
+				rz_line_autocomplete(line);
 				rz_cons_flush();
 			}
 			break;
 		case 10: // ^J -- ignore
 		case 13: // enter
-			if (I.hud) {
-				I.hud->activate = false;
+			if (line->hud) {
+				line->hud->activate = false;
 				break;
 			}
-			if (I.sel_widget) {
-				selection_widget_select();
+			if (line->sel_widget) {
+				selection_widget_select(line);
 				break;
 			}
-			if (gcomp && I.buffer.length > 0) {
-				strncpy(I.buffer.data, gcomp_line, RZ_LINE_BUFSIZE - 1);
-				I.buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
-				I.buffer.length = strlen(gcomp_line);
+			if (gcomp && line->buffer.length > 0) {
+				strncpy(line->buffer.data, gcomp_line, RZ_LINE_BUFSIZE - 1);
+				line->buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
+				line->buffer.length = strlen(gcomp_line);
 			}
 			gcomp_idx = gcomp = 0;
 			goto _end;
@@ -2105,51 +2119,51 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			}
 			{
 				int size = utflen;
-				if (I.buffer.length + size >= RZ_LINE_BUFSIZE) {
+				if (line->buffer.length + size >= RZ_LINE_BUFSIZE) {
 					break;
 				}
 			}
-			if (I.buffer.index < I.buffer.length) {
-				if ((I.buffer.length + utflen) < sizeof(I.buffer.data)) {
-					I.buffer.length += utflen;
-					for (i = I.buffer.length; i > I.buffer.index; i--) {
-						I.buffer.data[i] = I.buffer.data[i - utflen];
+			if (line->buffer.index < line->buffer.length) {
+				if ((line->buffer.length + utflen) < sizeof(line->buffer.data)) {
+					line->buffer.length += utflen;
+					for (i = line->buffer.length; i > line->buffer.index; i--) {
+						line->buffer.data[i] = line->buffer.data[i - utflen];
 					}
-					memcpy(I.buffer.data + I.buffer.index, buf, utflen);
-					undo_add_entry(I.buffer.index, NULL, rz_str_ndup(buf, utflen));
+					memcpy(line->buffer.data + line->buffer.index, buf, utflen);
+					undo_add_entry(line, line->buffer.index, NULL, rz_str_ndup(buf, utflen));
 				}
 			} else {
-				if ((I.buffer.length + utflen) < sizeof(I.buffer.data)) {
-					memcpy(I.buffer.data + I.buffer.length, buf, utflen);
-					I.buffer.length += utflen;
-					if (!undo_concat_entry(buf, utflen)) {
-						undo_add_entry(I.buffer.index, NULL, rz_str_ndup(buf, utflen));
+				if ((line->buffer.length + utflen) < sizeof(line->buffer.data)) {
+					memcpy(line->buffer.data + line->buffer.length, buf, utflen);
+					line->buffer.length += utflen;
+					if (!undo_concat_entry(line, buf, utflen)) {
+						undo_add_entry(line, line->buffer.index, NULL, rz_str_ndup(buf, utflen));
 					}
 				}
-				I.buffer.data[I.buffer.length] = '\0';
+				line->buffer.data[line->buffer.length] = '\0';
 			}
-			if ((I.buffer.index + utflen) <= I.buffer.length) {
-				I.buffer.index += utflen;
+			if ((line->buffer.index + utflen) <= line->buffer.length) {
+				line->buffer.index += utflen;
 			}
 			break;
 		}
-		if (I.sel_widget && I.buffer.length != prev_buflen) {
-			prev_buflen = I.buffer.length;
-			rz_line_autocomplete();
+		if (line->sel_widget && line->buffer.length != prev_buflen) {
+			prev_buflen = line->buffer.length;
+			rz_line_autocomplete(line);
 			rz_cons_flush();
 		}
 		prev = buf[0];
-		if (I.echo) {
+		if (line->echo) {
 			if (gcomp) {
 				gcomp_line = "";
 				int counter = 0;
-				if (I.history.data != NULL) {
-					for (i = I.history.size - 1; i >= 0; i--) {
-						if (!I.history.data[i]) {
+				if (line->history.data != NULL) {
+					for (i = line->history.size - 1; i >= 0; i--) {
+						if (!line->history.data[i]) {
 							continue;
 						}
-						if (strstr(I.history.data[i], I.buffer.data)) {
-							gcomp_line = I.history.data[i];
+						if (strstr(line->history.data[i], line->buffer.data)) {
+							gcomp_line = line->history.data[i];
 							if (++counter > gcomp_idx) {
 								break;
 							}
@@ -2162,34 +2176,34 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					}
 				}
 				const char *prompt = gcomp_is_rev ? "reverse-i-search" : "forward-i-search";
-				printf("\r (%s (%s)): %s\r", prompt, I.buffer.data, gcomp_line);
+				printf("\r (%s (%s)): %s\r", prompt, line->buffer.data, gcomp_line);
 			} else {
-				__print_prompt();
+				__print_prompt(line);
 			}
 			fflush(stdout);
 		}
 		enable_yank_pop = yank_flag ? 1 : 0;
-		if (I.hud) {
+		if (line->hud) {
 			goto _end;
 		}
 	}
 _end:
-	undo_reset();
+	undo_reset(line);
 	rz_cons_break_pop();
 	rz_cons_set_raw(0);
 	rz_cons_enable_mouse(mouse_status);
-	if (I.echo) {
-		printf("\r%s%s\n", I.prompt, I.buffer.data);
+	if (line->echo) {
+		printf("\r%s%s\n", line->prompt, line->buffer.data);
 		fflush(stdout);
 	}
 
-	RZ_FREE(I.sel_widget);
+	RZ_FREE(line->sel_widget);
 
 	// should be here or not?
-	if (!memcmp(I.buffer.data, "!history", 8)) {
-		// if (I.buffer.data[0]=='!' && I.buffer.data[1]=='\0') {
-		rz_line_hist_list();
+	if (!memcmp(line->buffer.data, "!history", 8)) {
+		// if (line->buffer.data[0]=='!' && line->buffer.data[1]=='\0') {
+		rz_line_hist_list(line);
 		return rz_line_nullstr;
 	}
-	return I.buffer.data[0] != '\0' ? I.buffer.data : rz_line_nullstr;
+	return line->buffer.data[0] != '\0' ? line->buffer.data : rz_line_nullstr;
 }

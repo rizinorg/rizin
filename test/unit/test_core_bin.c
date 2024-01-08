@@ -43,8 +43,8 @@ static RzPVector *virtual_files(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *maps(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+static RzPVector *maps(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 
 	RzBinMap *map = RZ_NEW0(RzBinMap);
 	map->name = strdup("direct map");
@@ -53,7 +53,7 @@ static RzList *maps(RzBinFile *bf) {
 	map->psize = 2;
 	map->vsize = 2;
 	map->perm = RZ_PERM_RX;
-	rz_list_push(ret, map);
+	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
 	map->name = strdup("direct map with zeroes");
@@ -62,7 +62,7 @@ static RzList *maps(RzBinFile *bf) {
 	map->psize = 2;
 	map->vsize = 0x30;
 	map->perm = RZ_PERM_R;
-	rz_list_push(ret, map);
+	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
 	map->name = strdup("vfile map");
@@ -72,7 +72,7 @@ static RzList *maps(RzBinFile *bf) {
 	map->vsize = 4;
 	map->perm = RZ_PERM_RWX;
 	map->vfile_name = strdup("vfile1");
-	rz_list_push(ret, map);
+	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
 	map->name = strdup("vfile map with zeroes");
@@ -82,7 +82,7 @@ static RzList *maps(RzBinFile *bf) {
 	map->vsize = 4;
 	map->perm = RZ_PERM_R;
 	map->vfile_name = strdup("vfile0");
-	rz_list_push(ret, map);
+	rz_pvector_push(ret, map);
 
 	return ret;
 }

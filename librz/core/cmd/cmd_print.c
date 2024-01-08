@@ -7036,7 +7036,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_raw_colors_handler(RzCore *core, int argc, const char **argv) {
-	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}

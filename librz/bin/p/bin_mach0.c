@@ -69,7 +69,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return MACH0_(get_virtual_files)(bf);
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return MACH0_(get_maps)(bf);
 }
 

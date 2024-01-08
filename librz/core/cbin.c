@@ -918,15 +918,16 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 		return true;
 	}
 	RzBinObject *o = binfile->o;
-	if (!o || rz_list_empty(o->maps)) {
+	if (!o || rz_pvector_empty(o->maps)) {
 		return false;
 	}
-	RzList *maps = o->maps;
+	RzPVector *maps = o->maps;
 	RzCoreFile *cf = rz_core_file_find_by_fd(core, binfile->fd);
 
-	RzListIter *it;
+	void **it;
 	RzBinMap *map;
-	rz_list_foreach (maps, it, map) {
+	rz_pvector_foreach (maps, it) {
+		map = *it;
 		int va_map = va ? VA_TRUE : VA_FALSE;
 		if (va && !(map->perm & RZ_PERM_R)) {
 			va_map = VA_NOREBASE;

@@ -162,7 +162,7 @@ static const char *menus_settings_screen[] = {
 
 static const char *menus_Help[] = {
 	"Toggle Help",
-	"License", "Version",
+	"Version",
 	"Fortune",
 	NULL
 };
@@ -509,7 +509,6 @@ static int __watch_points_cb(void *user);
 static int __references_cb(void *user);
 static int __help_cb(void *user);
 static int __fortune_cb(void *user);
-static int __license_cb(void *user);
 static int __version_cb(void *user);
 static int __quit_cb(void *user);
 static int __io_cache_on_cb(void *user);
@@ -1640,7 +1639,7 @@ void __handleComment(RzCore *core) {
 	}
 	char buf[4095];
 	int i;
-	rz_line_set_prompt("[Comment]> ");
+	rz_line_set_prompt(core->cons->line, "[Comment]> ");
 	strcpy(buf, "\"CC ");
 	i = strlen(buf);
 	if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
@@ -3638,11 +3637,6 @@ int __help_cb(void *user) {
 	return 0;
 }
 
-int __license_cb(void *user) {
-	rz_cons_message("Copyright 2006-2020 - pancake - LGPL");
-	return 0;
-}
-
 int __version_cb(void *user) {
 	char *v = rz_version_str(NULL);
 	rz_cons_message(v);
@@ -4572,9 +4566,7 @@ bool __init_panels_menu(RzCore *core) {
 	parent = "Help";
 	i = 0;
 	while (menus_Help[i]) {
-		if (!strcmp(menus_Help[i], "License")) {
-			__add_menu(core, parent, menus_Help[i], __license_cb);
-		} else if (!strcmp(menus_Help[i], "Version")) {
+		if (!strcmp(menus_Help[i], "Version")) {
 			__add_menu(core, parent, menus_Help[i], __version_cb);
 		} else if (!strcmp(menus_Help[i], "Fortune")) {
 			__add_menu(core, parent, menus_Help[i], __fortune_cb);
@@ -6324,7 +6316,7 @@ void __handle_tab_new_with_cur_panel(RzCore *core) {
 }
 
 void __panel_prompt(const char *prompt, char *buf, int len) {
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(rz_cons_singleton()->line, prompt);
 	*buf = 0;
 	rz_cons_fgets(buf, len, 0, NULL);
 }

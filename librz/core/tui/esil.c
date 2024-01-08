@@ -43,6 +43,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	RzAnalysisOp aop;
 	ut8 buf[sizeof(ut64)];
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
+	RzLine *line = core->cons->line;
 
 	if (core->blocksize < sizeof(ut64)) {
 		return false;
@@ -160,7 +161,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			*cmd = 0;
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}

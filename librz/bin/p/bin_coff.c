@@ -220,8 +220,8 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -248,7 +248,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		if (hdr->s_nreloc) {
 			ptr->vfile_name = strdup(VFILE_NAME_PATCHED);
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	ut64 rtmsz = rz_coff_get_reloc_targets_vfile_size(obj);
 	if (rtmsz) {
@@ -264,7 +264,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->vsize = rtmsz;
 		map->perm = RZ_PERM_R;
 		map->vfile_name = strdup(VFILE_NAME_RELOC_TARGETS);
-		rz_list_prepend(ret, map);
+		rz_pvector_push_front(ret, map);
 	}
 	return ret;
 }

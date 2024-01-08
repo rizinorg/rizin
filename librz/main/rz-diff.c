@@ -632,7 +632,7 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 		goto rz_diff_load_file_with_core_fail;
 	}
 
-	if (rz_list_empty(bfile->o->maps)) {
+	if (rz_pvector_empty(bfile->o->maps)) {
 		rz_config_set_i(core->config, "io.va", false);
 	}
 
@@ -2647,7 +2647,7 @@ static char *visual_prompt(DiffHexView *hview, const char *prompt) {
 	rz_cons_gotoxy(0, hview->screen.height);
 	rz_cons_clear_line(0);
 	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
-	rz_line_set_prompt(":> ");
+	rz_line_set_prompt(rz_cons_singleton()->line, ":> ");
 	rz_cons_flush();
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (*buf) {
