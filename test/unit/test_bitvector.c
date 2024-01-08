@@ -1201,6 +1201,24 @@ bool test_rz_bv_extra_operations(void) {
 	rz_bv_free(succ_mo);
 	rz_bv_free(mo);
 
+	// zero pred and succ
+	// forward
+	RzBitVector *zero = rz_bv_new_zero(32);
+	RzBitVector *zero_pred = rz_bv_pred(zero);
+	RzBitVector *zero_pp = rz_bv_pred(zero_pred);
+	mu_assert_true(rz_bv_is_all_one(zero_pred), "pred 0 -> 0xffff...");
+	mu_assert_eq((st32)rz_bv_to_ut32(zero_pp), -2, "pred -1 -> -2");
+	// backward
+	RzBitVector *n1 = rz_bv_new_minus_one(32);
+	RzBitVector *n1_next = rz_bv_succ(n1);
+	mu_assert_true(rz_bv_is_zero_vector(n1_next), "succ -1 -> 0");
+
+	rz_bv_free(zero);
+	rz_bv_free(zero_pred);
+	rz_bv_free(zero_pp);
+	rz_bv_free(n1);
+	rz_bv_free(n1_next);
+
 	// test compare
 	RzBitVector *y = rz_bv_new_from_ut64(32, 'Y');
 	RzBitVector *xx = rz_bv_new_from_ut64(32, 'X');
