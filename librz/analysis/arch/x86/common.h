@@ -139,10 +139,9 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RZ_OWN RZ_NONNULL RzILOpPure *top)
 RZ_IPI RzILOpPure *x86_il_get_fpu_stack_top();
 
 RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpEffect *x86_il_st_pop_ctx(RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpEffect *x86_il_st_pop();
 
 #define x86_il_st_push(val, val_format) x86_il_st_push_ctx(val, val_format, ctx)
-#define x86_il_st_pop()                 x86_il_st_pop_ctx(ctx)
 
 #define X86_IL_ST_POP(val, eff) \
 	do { \

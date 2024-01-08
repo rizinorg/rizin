@@ -1138,7 +1138,7 @@ RzILOpFloat *resize_floating_helper(RzFloatRMode rmode, RzFloatFormat format, Rz
  *
  * \param val Desirable that it is a small expression since it will be duped
  * \param format Output float format
- * \param ctx
+ * \param ctx use_rmode gets set to true
  * \return RzILOpFloat*
  */
 RZ_IPI RzILOpFloat *x86_il_resize_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1162,7 +1162,7 @@ RzILOpFloat *sint2f_floating_helper(RzFloatRMode rmode, RzFloatFormat format, Rz
  *
  * \param int_val Desirable that it is a small expression since it will be duped
  * \param format Output float format
- * \param ctx
+ * \param ctx use_rmode gets set to true
  * \return RzILOpFloat*
  */
 RZ_IPI RzILOpFloat *x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBitVector *int_val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1185,7 +1185,7 @@ RzILOpFloat *f2sint_floating_helper(RzFloatRMode rmode, ut32 width, RzILOpFloat 
  *
  * \param float_val Desirable that it is a small expression since it will be duped
  * \param width Output bitvector width
- * \param ctx
+ * \param ctx use_rmode gets set to true
  * \return RzILOpBitVector*
  */
 RZ_IPI RzILOpBitVector *x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1202,7 +1202,7 @@ RZ_IPI RzILOpBitVector *x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFlo
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
- * \param ctx
+ * \param ctx use_rmode gets set to true
  * \return RzILOpFloat* sum
  */
 RZ_IPI RzILOpFloat *x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1222,7 +1222,7 @@ RZ_IPI RzILOpFloat *x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x,
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
- * \param ctx
+ * \param ctx use_rmode gets set to true
  * \return RzILOpFloat* product
  */
 RZ_IPI RzILOpFloat *x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1242,7 +1242,7 @@ RZ_IPI RzILOpFloat *x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x,
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
- * \param ctx
+ * \param ctx use_rmode gets set to true
  * \return RzILOpFloat* difference
  */
 RZ_IPI RzILOpFloat *x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1259,7 +1259,6 @@ RZ_IPI RzILOpFloat *x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x,
 
 /**
  * \brief Subtract \p y from \p x (reverse of \ref x86_il_fsub_with_rmode)
- * \param ctx
  */
 RZ_IPI RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
 	rz_return_val_if_fail(x && y && ctx, NULL);
@@ -1272,7 +1271,7 @@ RZ_IPI RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x
  *
  * \param x Desirable that it is a small expression since it will be duped
  * \param y Desirable that it is a small expression since it will be duped
- * \param ctx
+ * \param ctx use_rmode gets set to true
  * \return RzILOpFloat* division
  */
 RZ_IPI RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1288,7 +1287,6 @@ RZ_IPI RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x,
 }
 
 /**
- * \param ctx
  * \brief Divide \p y from \p x (reverse of \ref x86_il_fdiv_with_rmode)
  */
 RZ_IPI RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1301,7 +1299,7 @@ RZ_IPI RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x
  * from the FPU control word
  *
  * \param x Desirable that it is a small expression since it will be duped
- * \param ctx
+ * \param ctx  use_rmode gets set to true
  * \return RzILOpFloat* square root
  */
 RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1320,7 +1318,7 @@ RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x
  * \param reg
  * \param val
  * \param val_format Format of \p val
- * \param ctx
+ * \param ctx use_rmode gets set to true if any resizing of \p val is required
  * \return RzILOpFloat*
  */
 RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1373,7 +1371,7 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RZ_OWN RZ_NONNULL RzILOpPure *top)
  *
  * \param val
  * \param val_format Format of \p val
- * \param ctx
+ * \param ctx use_rmode gets set to true if any resizing of \p val is required
  * \return RzILOpEffect* Push effect
  */
 RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
@@ -1404,11 +1402,12 @@ RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFl
 /**
  * \brief Pop a value from the FPU stack
  *
- * \param ctx
  * \return RzILOpEffect* Pop effect
  */
-RZ_IPI RzILOpEffect *x86_il_st_pop_ctx(RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(ctx, NULL);
+RZ_IPI RzILOpEffect *x86_il_st_pop() {
+	/* We actually don't need a context here because we will never need to resize
+	 * any value. */
+	X86ILContext *ctx = NULL;
 
 	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(ADD(x86_il_get_fpu_stack_top(), UN(3, 1)));
 	RzILOpEffect *st_shift = SEQ7(
@@ -1537,7 +1536,7 @@ RZ_IPI ut8 x86_format_to_width(RzFloatFormat format) {
  * \param val_format Format of \p val
  * \param bits Bitness
  * \param pc
- * \param ctx
+ * \param ctx use_rmode gets set to true if any resizing of \p val is required
  */
 RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, X86ILContext *ctx) {
 	RzILOpEffect *ret = NULL;
