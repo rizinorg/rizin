@@ -85,26 +85,26 @@ typedef enum x86_eflags_t {
 extern const char *x86_eflags_registers[X86_EFLAGS_ENDING];
 
 RZ_IPI RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc);
-RZ_IPI RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits);
+RZ_IPI RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpPure *val, int bits);
 
 RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size);
-RZ_IPI RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits, ut64 pc);
+RZ_IPI RzILOpEffect *x86_il_set_operand_bits(X86Op op, RZ_OWN RZ_NONNULL RzILOpPure *val, int bits, ut64 pc);
 
 RZ_IPI RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits, ut64 pc);
 RZ_IPI RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits, ut64 pc);
-RZ_IPI RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits, ut64 pc);
+RZ_IPI RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RZ_OWN RZ_NONNULL RzILOpPure *val, int bits, ut64 pc);
 
-RZ_IPI RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y);
-RZ_IPI RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y);
-RZ_IPI RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y);
-RZ_IPI RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y);
+RZ_IPI RzILOpBool *x86_il_is_add_carry(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y);
+RZ_IPI RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y);
+RZ_IPI RzILOpBool *x86_il_is_add_overflow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y);
+RZ_IPI RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y);
 
-RZ_IPI RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RzILOpPure *result, int bits);
-RZ_IPI RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits);
-RZ_IPI RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits);
+RZ_IPI RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RZ_NONNULL RzILOpPure *result, int bits);
+RZ_IPI RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y, bool addition, int bits);
+RZ_IPI RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y, bool addition, int bits);
 
 RZ_IPI RzILOpPure *x86_il_get_flags(unsigned int size);
-RZ_IPI RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size);
+RZ_IPI RzILOpEffect *x86_il_set_flags(RZ_OWN RZ_NONNULL RzILOpPure *val, unsigned int size);
 
 /* Capstone does not have the following FPU registers. */
 
@@ -131,15 +131,15 @@ RZ_IPI bool x86_il_is_st_reg(X86Reg reg);
 /* Need to pass in val_size as a param to avoid unnecessary rounding of val. */
 
 RZ_IPI RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
-RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RzILOpFloat *val, RzFloatFormat val_format, X86ILContext *ctx);
+RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 
 #define x86_il_set_st_reg(reg, val, val_format) x86_il_set_st_reg_ctx(reg, val, val_format, ctx)
 
-RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RzILOpPure *top);
+RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RZ_OWN RZ_NONNULL RzILOpPure *top);
 RZ_IPI RzILOpPure *x86_il_get_fpu_stack_top();
 
-RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RzILOpFloat *val, RzFloatFormat val_format, X86ILContext *ctx);
-RZ_IPI RzILOpEffect *x86_il_st_pop_ctx(X86ILContext *ctx);
+RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpEffect *x86_il_st_pop_ctx(RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 
 #define x86_il_st_push(val, val_format) x86_il_st_push_ctx(val, val_format, ctx)
 #define x86_il_st_pop()                 x86_il_st_pop_ctx(ctx)
@@ -151,23 +151,23 @@ RZ_IPI RzILOpEffect *x86_il_st_pop_ctx(X86ILContext *ctx);
 	} while (0)
 
 RZ_IPI RzILOpPure *x86_il_get_fpu_flag(X86FPUFlags flag);
-RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RzILOpBool *value);
+RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RZ_OWN RZ_NONNULL RzILOpBool *value);
 
 RZ_IPI RzILOpPure *x86_il_fpu_get_rmode();
 
 RZ_IPI RzILOpEffect *init_rmode();
 
-RZ_IPI RzILOpFloat *x86_il_resize_floating_ctx(RzILOpFloat *val, RzFloatFormat format, X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_floating_from_int_ctx(RzILOpBitVector *int_val, RzFloatFormat format, X86ILContext *ctx);
-RZ_IPI RzILOpBitVector *x86_il_int_from_floating_ctx(RzILOpFloat *float_val, ut32 width, X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_resize_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBitVector *int_val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpBitVector *x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 
-RZ_IPI RzILOpFloat *x86_il_fadd_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fmul_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fsub_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RzILOpFloat *x, RzILOpFloat *y, X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RzILOpFloat *x, X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 
 #define x86_il_resize_floating(val, format)        x86_il_resize_floating_ctx(val, format, ctx)
 #define x86_il_floating_from_int(int_val, format)  x86_il_floating_from_int_ctx(int_val, format, ctx)
@@ -188,7 +188,7 @@ RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits,
 RZ_IPI RzFloatFormat x86_width_to_format(ut8 width);
 RZ_IPI ut8 x86_format_to_width(RzFloatFormat format);
 
-RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, X86ILContext *ctx);
+RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 
 #define x86_il_set_floating_op(opnum, val, val_format) \
 	x86_il_set_floating_operand_bits_ctx(ins->structure->operands[opnum], val, val_format, analysis->bits, pc, ctx)
