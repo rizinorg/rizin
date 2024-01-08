@@ -1,0 +1,107 @@
+NAME=Printing IL ops in various formats
+FILE=bins/elf/emulateme.x86
+CMDS=<<EOF
+s sym.decrypt
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x1006f5 (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (var rbp))) (set rsp (var final)))
+0x1006f6 (set rbp (var rsp))
+0x1006f9 (storew 0 (+ (var rbp) (bv 64 0xffffffffffffffd8)) (var rdi))
+0x1006fd (storew 0 (+ (var rbp) (bv 64 0xffffffffffffffef)) (bv 8 0x0))
+0x100701 (storew 0 (+ (var rbp) (bv 64 0xfffffffffffffff0)) (bv 64 0x0))
+-- pretty
+0x1006f5
+(seq
+  (set final
+    (-
+      (var rsp)
+      (bv 64 0x8)))
+  (storew 0
+    (var final)
+    (cast 64
+      false
+      (var rbp)))
+  (set rsp
+    (var final)))
+0x1006f6
+(set rbp
+  (var rsp))
+0x1006f9
+(storew 0
+  (+
+    (var rbp)
+    (bv 64 0xffffffffffffffd8))
+  (var rdi))
+0x1006fd
+(storew 0
+  (+
+    (var rbp)
+    (bv 64 0xffffffffffffffef))
+  (bv 8 0x0))
+0x100701
+(storew 0
+  (+
+    (var rbp)
+    (bv 64 0xfffffffffffffff0))
+  (bv 64 0x0))
+-- graph
+                                        .-------------.
+                                        |  push rbp   |
+                                        `-------------'
+                                           v v v
+                                           | | |
+                                           | | '--------------------------.
+            .------------------------------' |                            |
+            |                                |                            |
+            |                                |                            |
+        .--------------.                 .-------------.              .------------.
+        |  set: final  |                 |  storew: 0  |              |  set: rsp  |
+        `--------------'                 `-------------'              `------------'
+            v                                  v v                        v
+            |                                  | |                        |
+            '-.                                | |                        |
+              |                    .-----------' |                        |
+              |                    |             '-----.                  |
+              |                    |                   |                 .'
+              |                    |                   |                 |
+          .-----------.        .--------------.    .------------.    .--------------.
+          |  sub      |        |  var: final  |    |  cast: 64  |    |  var: final  |
+          `-----------'        `--------------'    `------------'    `--------------'
+                v v                                      v v
+                | |                                      | |
+    .-----------' |                                      | |
+    |             '---.                                  | |
+    |                 |                         .--------' |
+    |                 |                         |          '----.
+    |                 |                         |               |
+.------------.    .--------------.          .----------.    .------------.
+|  var: rsp  |    |  bv: 64 0x8  |          |  false   |    |  var: rbp  |
+`------------'    `--------------'          `----------'    `------------'
+EOF
+RUN
+
+NAME=Testing the decryption in emulateme
+FILE=bins/elf/emulateme.x86
+TIMEOUT=30
+CMDS=<<EOF
+aezi @ sym.decrypt
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit   # New file mapping from 0x0-0xf
+omb. obj.seckrit @ 0x0
+w AnyColourYouLike @ 0x50000
+ar rdi=0x50000
+ar rsp=0x41000
+aezsu 0x001007ba
+psi @ obj.seckrit
+EOF
+EXPECT=Hello from RzIL!
+EXPECT_ERR=
+RUN
