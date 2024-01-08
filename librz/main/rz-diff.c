@@ -254,7 +254,7 @@ static void rz_diff_show_help(bool usage_only) {
 	}
 	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
 		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			rz_core_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
 		}
 	}
 
