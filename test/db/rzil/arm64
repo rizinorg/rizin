@@ -389,8 +389,8 @@ CMDS=<<EOF
 s sym.decrypt
 o malloc://0x1000 0x40000
 o malloc://0x10 0x50000
-# oC 0x10 @ obj.seckrit # TODO: does not work
-e io.cache=1 # TODO: replace this by oC above
+oC 0x10 @ obj.seckrit   # New file mapping from 0x0-0xf
+omb. obj.seckrit @ 0x0
 w AnyColourYouLike @ 0x50000
 ar sp=0x41000
 ar x0=0x50000
