@@ -559,6 +559,49 @@ bool test_rz_bv_cast(void) {
 	rz_bv_free(bv);
 
 	mu_assert("cast bv<->ut32", normal == shadow);
+
+	RzBitVector *one32 = rz_bv_new_one(32);
+	RzBitVector *one78 = rz_bv_new_one(78);
+	RzBitVector *one32_as78 = rz_bv_cast(one32, 78, 0);
+	mu_assert_true(rz_bv_eq(one78, one32_as78), "test one cast");
+	rz_bv_free(one32);
+	rz_bv_free(one78);
+	rz_bv_free(one32_as78);
+
+	RzBitVector *bv32 = rz_bv_new_from_ut64(32, 123);
+	RzBitVector *bv32_as64 = rz_bv_cast(bv32, 64, 0);
+	RzBitVector *bv64 = rz_bv_new_from_ut64(64, 123);
+	mu_assert_true(rz_bv_eq(bv64, bv32_as64), "test 123 from bv32 to bv64");
+	rz_bv_free(bv32);
+	rz_bv_free(bv32_as64);
+	rz_bv_free(bv64);
+
+	// narrow cast
+	ut64 val64 = 34017;
+	val64 <<= 32;
+	val64 |= 202301;
+	bv64 = rz_bv_new_from_ut64(64, val64);
+	bv32 = rz_bv_new_from_ut64(32, 202301);
+	RzBitVector *bv64_as32 = rz_bv_cast(bv64, 32, 0);
+	mu_assert_true(rz_bv_eq(bv64_as32, bv32), "test narrow cast from 64 to 32");
+	rz_bv_free(bv64);
+	rz_bv_free(bv32);
+	rz_bv_free(bv64_as32);
+
+	// signed cast
+	RzBitVector *neg_one32 = rz_bv_new_minus_one(32);
+	RzBitVector *neg_one64 = rz_bv_new_minus_one(64);
+	RzBitVector *neg_one32_as64 = rz_bv_signed_cast(neg_one32, 64);
+	RzBitVector *neg_one32_asu64 = rz_bv_unsigned_cast(neg_one32, 64);
+	mu_assert_true(rz_bv_eq(neg_one64, neg_one32_as64), "test signed cast from 32 to 64");
+	mu_assert_eq(rz_bv_to_ut64(neg_one32_asu64), (ut64)(ut32)(-1), "test unsigned cast for -1 from 32-bit to 64-bit");
+	mu_assert_eq(rz_bv_to_ut64(neg_one32_asu64),
+		rz_bv_to_ut64(neg_one32),
+		"test unsigned cast and convert to ut64 val");
+	rz_bv_free(neg_one32);
+	rz_bv_free(neg_one64);
+	rz_bv_free(neg_one32_asu64);
+	rz_bv_free(neg_one32_as64);
 	mu_end;
 }
 
@@ -1124,6 +1167,99 @@ bool test_rz_bv_copy_nbits(void) {
 	mu_end;
 }
 
+bool test_rz_bv_extra_operations(void) {
+	// arithmetic rshift
+	RzBitVector *bv1 = rz_bv_new_from_ut64(32, 73 * 16);
+	rz_bv_arshift(bv1, 4);
+	ut32 val1 = rz_bv_to_ut32(bv1);
+	mu_assert_eq(73, val1, "test arshift for positive value");
+
+	RzBitVector *bv2 = rz_bv_new_from_st64(32, -73 * 16);
+	rz_bv_arshift(bv2, 4);
+	st32 val2 = (st32)rz_bv_to_ut32(bv2);
+	mu_assert_eq(-73, val2, "test arshift for negative value");
+
+	rz_bv_free(bv1);
+	rz_bv_free(bv2);
+
+	// pred and succ
+	RzBitVector *x = rz_bv_new_from_ut64(32, 'X');
+	RzBitVector *pred_x = rz_bv_pred(x);
+	RzBitVector *succ_x = rz_bv_succ(x);
+	mu_assert_eq('W', rz_bv_to_ut32(pred_x), "test normal (pred x)");
+	mu_assert_eq('Y', rz_bv_to_ut32(succ_x), "test normal (succ x)");
+
+	RzBitVector *mo = rz_bv_new_minus_one(32);
+	RzBitVector *pred_mo = rz_bv_pred(mo);
+	RzBitVector *succ_mo = rz_bv_succ(mo);
+	mu_assert_eq((ut32)(-2), rz_bv_to_ut32(pred_mo), "test (pred -1)");
+	mu_assert_eq(0, rz_bv_to_ut32(succ_mo), "test (succ -1)");
+
+	rz_bv_free(pred_x);
+	rz_bv_free(succ_x);
+	rz_bv_free(pred_mo);
+	rz_bv_free(succ_mo);
+	rz_bv_free(mo);
+
+	// zero pred and succ
+	// forward
+	RzBitVector *zero = rz_bv_new_zero(32);
+	RzBitVector *zero_pred = rz_bv_pred(zero);
+	RzBitVector *zero_pp = rz_bv_pred(zero_pred);
+	mu_assert_true(rz_bv_is_all_one(zero_pred), "pred 0 -> 0xffff...");
+	mu_assert_eq((st32)rz_bv_to_ut32(zero_pp), -2, "pred -1 -> -2");
+	// backward
+	RzBitVector *n1 = rz_bv_new_minus_one(32);
+	RzBitVector *n1_next = rz_bv_succ(n1);
+	mu_assert_true(rz_bv_is_zero_vector(n1_next), "succ -1 -> 0");
+
+	rz_bv_free(zero);
+	rz_bv_free(zero_pred);
+	rz_bv_free(zero_pp);
+	rz_bv_free(n1);
+	rz_bv_free(n1_next);
+
+	// test compare
+	RzBitVector *y = rz_bv_new_from_ut64(32, 'Y');
+	RzBitVector *xx = rz_bv_new_from_ut64(32, 'X');
+	mu_assert_true(rz_bv_ult(x, y), "test unsigned X < Y");
+	mu_assert_true(rz_bv_ugt(y, x), "test unsigned Y > X");
+	mu_assert_true(rz_bv_uge(y, x), "test unsigned Y >= X");
+	mu_assert_true(rz_bv_uge(x, xx), "test unsigned X >= X");
+	mu_assert_false(rz_bv_ult(y, x), "test unsigned Y < X is false");
+	mu_assert_false(rz_bv_ugt(x, y), "test unsgined X > Y is false");
+	mu_assert_false(rz_bv_uge(x, y), "test unsigned X >= Y is false");
+	mu_assert_false(rz_bv_ult(x, xx), "test unsigned X < X is false");
+	mu_assert_false(rz_bv_ugt(x, xx), "test unsigned X > X is false");
+
+	RzBitVector *ny = rz_bv_new_from_ut64(32, -'Y');
+	RzBitVector *nx = rz_bv_new_from_ut64(32, -'X');
+	mu_assert_true(rz_bv_ult(ny, nx), "test signed -Y < -X");
+	mu_assert_true(rz_bv_ugt(nx, ny), "test unsigned -Y < -X");
+	mu_assert_true(rz_bv_uge(nx, ny), "test unsigned -X >= -Y");
+	mu_assert_false(rz_bv_ult(nx, ny), "test unsigned -X < -Y is false");
+	mu_assert_false(rz_bv_ugt(ny, nx), "test unsgined -X < -Y is false");
+	mu_assert_false(rz_bv_uge(ny, nx), "test unsigned -X <= -Y is false");
+
+	mu_assert_false(rz_bv_slt(nx, nx), "test signed -X > -X is false");
+	mu_assert_false(rz_bv_sgt(nx, nx), "test signed -X < -X is false");
+	mu_assert_true(rz_bv_sge(nx, nx), "test signed -X >= -X");
+	mu_assert_true(rz_bv_sge(nx, ny), "test signed -X >= -Y");
+
+	mu_assert_true(rz_bv_sge(x, nx), "test signed X >= -X");
+	mu_assert_true(rz_bv_sgt(x, nx), "test signed X > -X");
+	mu_assert_true(rz_bv_slt(nx, x), "test signed -X < X");
+	mu_assert_true(rz_bv_ult(x, nx), "test unsigned X < -X");
+	mu_assert_true(rz_bv_ugt(nx, x), "test unsigned -X > X");
+
+	rz_bv_free(x);
+	rz_bv_free(y);
+	rz_bv_free(xx);
+	rz_bv_free(nx);
+	rz_bv_free(ny);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -1148,6 +1284,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_set_operations);
 	mu_run_test(test_rz_bv_set_to_bytes_le);
 	mu_run_test(test_rz_bv_copy_nbits);
+	mu_run_test(test_rz_bv_extra_operations);
 
 	return tests_passed != tests_run;
 }
