@@ -577,7 +577,10 @@ bool test_rz_bv_cast(void) {
 	rz_bv_free(bv64);
 
 	// narrow cast
-	bv64 = rz_bv_new_from_ut64(64, (34017L << 32) | 202301);
+	ut64 val64 = 34017;
+	val64 <<= 32;
+	val64 |= 202301;
+	bv64 = rz_bv_new_from_ut64(64, val64);
 	bv32 = rz_bv_new_from_ut64(32, 202301);
 	RzBitVector *bv64_as32 = rz_bv_cast(bv64, 32, 0);
 	mu_assert_true(rz_bv_eq(bv64_as32, bv32), "test narrow cast from 64 to 32");
