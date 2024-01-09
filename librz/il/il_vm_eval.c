@@ -291,19 +291,35 @@ RZ_API void rz_il_vm_clear_events(RzILVM *vm) {
  * \param vm pointer to VM
  * \param op_list, a list of op roots.
  * \param fallthrough_addr initial address to set PC to. Thus also the address to "step to" if no explicit jump occurs.
+ * \param delayed_by it is used to notify the vm_step to update the pc after N instructions.
  */
-RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr) {
+RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr, ut32 delayed_by) {
 	rz_return_val_if_fail(vm && op, false);
 
 	rz_il_vm_clear_events(vm);
 
 	// Set the successor pc **before** evaluating. Any jmp/goto may then overwrite it again.
-	RzBitVector *next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);
+	/* if (vm->delayed_by) { */
+	/* 	vm->delayed_by--; */
+	/* 	rz_warn_if_fail(vm->delayed_by); */
+	/* 	if (!vm->delayed_by) { */
+	/* 		RZ_PTR_MOVE(next_pc, vm->delayed_pc); */
+	/* 	} */
+	/* } else { */
+	/* } */
+
+	RzBitVector *next_pc = NULL;
+	next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);
+	rz_warn_if_fail(next_pc);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_bv_free(vm->pc);
 	vm->pc = next_pc;
 
 	bool succ = rz_il_evaluate_effect(vm, op);
+
+	/* if (delayed_by) { */
+	/* 	vm->delayed_by = delayed_by; */
+	/* } */
 
 	// remove any local defined variable (local pure vars are unbound automatically)
 	rz_il_var_set_reset(&vm->local_vars);

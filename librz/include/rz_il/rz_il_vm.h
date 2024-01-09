@@ -43,11 +43,13 @@ struct rz_il_vm_t {
 	ut32 addr_size; ///< size of address space
 	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
 	HtPP *vm_local_label_table; ///< Hashtable to maintain the label and address
+	RzBitVector *delayed_pc; ///< Program Counter of VM but delayed
 	RzBitVector *pc; ///< Program Counter of VM
 	RzILOpPureHandler *op_handler_pure_table; ///< Array of Handler, handler can be indexed by opcode
 	RzILOpEffectHandler *op_handler_effect_table; ///< Array of Handler, handler can be indexed by opcode
 	RzPVector /*<RzILEvent *>*/ *events; ///< List of events that has happened in the last step
 	bool big_endian; ///< Sets the endianness of the memory reads/writes operations
+	ut32 delayed_by; ///< Sets the delayed slots before delayed_pc is set to pc.
 };
 
 // VM high level operations
@@ -98,7 +100,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_
 RZ_API RZ_NULLABLE RZ_OWN void *rz_il_evaluate_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILTypePure *type);
 RZ_API bool rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op);
 
-RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr);
+RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr, ut32 delayed_by);
 
 #ifdef __cplusplus
 }

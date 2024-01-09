@@ -139,7 +139,7 @@ static bool test_rzil_vm_step() {
 
 	// fallthrough
 	RzILOpEffect *op = rz_il_op_new_set("r1", false, rz_il_op_new_bitv_from_ut64(32, 42));
-	bool succ = rz_il_vm_step(vm, op, 0x321);
+	bool succ = rz_il_vm_step(vm, op, 0x321, 0);
 	rz_il_op_effect_free(op);
 	mu_assert_true(succ, "success");
 	RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var_r1->name);
@@ -153,7 +153,7 @@ static bool test_rzil_vm_step() {
 
 	// jump overriding fallthrough
 	op = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(16, 0x678));
-	succ = rz_il_vm_step(vm, op, 0x123);
+	succ = rz_il_vm_step(vm, op, 0x123, 0);
 	rz_il_op_effect_free(op);
 	mu_assert_true(succ, "success");
 	pc = vm->pc;
@@ -352,7 +352,7 @@ static bool test_rzil_vm_op_set() {
 		rz_il_op_new_set("r1", true, rz_il_op_new_bitv_from_ut64(32, 2)),
 		rz_il_op_new_set("r1", false,
 			rz_il_op_new_div(rz_il_op_new_var("r1", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_var("r1", RZ_IL_VAR_KIND_LOCAL))));
-	succ = rz_il_vm_step(vm, op, 1); // use step here because it also clears the local vars
+	succ = rz_il_vm_step(vm, op, 1, 0); // use step here because it also clears the local vars
 	rz_il_op_effect_free(op);
 	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var_r1->name);
 	mu_assert_true(succ, "success");

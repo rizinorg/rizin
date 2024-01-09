@@ -51,8 +51,13 @@ bool rz_il_handler_set(RzILVM *vm, RzILOpEffect *op) {
 
 static void perform_jump(RzILVM *vm, RZ_OWN RzBitVector *dst) {
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, dst));
-	rz_bv_free(vm->pc);
-	vm->pc = dst;
+	if (vm->delayed_by) {
+		rz_bv_free(vm->delayed_pc);
+		vm->delayed_pc = dst;
+	} else {
+		rz_bv_free(vm->pc);
+		vm->pc = dst;
+	}
 }
 
 bool rz_il_handler_jmp(RzILVM *vm, RzILOpEffect *op) {
