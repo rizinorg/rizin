@@ -56,7 +56,7 @@ static bool check_buffer(RzBuffer *buf) {
 
 static void destroy(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
-	rz_list_free(qo->sections);
+	rz_pvector_free(qo->sections);
 	rz_pvector_free(qo->maps);
 	rz_list_free(qo->fixups);
 	bf->o->bin_obj = NULL;
@@ -74,7 +74,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		return false;
 	}
 
-	RzList *sections = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	RzPVector *maps = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	RzList *fixups = rz_list_newf(free);
 	if (!sections || !maps || !fixups) {
@@ -127,7 +127,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			ptr->paddr = offset;
 			ptr->vsize = lrec.data_nbytes - LMF_RESOURCE_SIZE;
 			ptr->size = ptr->vsize;
-			rz_list_append(sections, ptr);
+			rz_pvector_push(sections, ptr);
 
 			RzBinMap *map = RZ_NEW0(RzBinMap);
 			if (!map) {
@@ -157,7 +157,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			ptr->vaddr = ldata.offset;
 			ptr->vsize = lrec.data_nbytes - LMF_DATA_SIZE;
 			ptr->size = ptr->vsize;
-			rz_list_append(sections, ptr);
+			rz_pvector_push(sections, ptr);
 
 			RzBinMap *map = RZ_NEW0(RzBinMap);
 			if (!map) {
@@ -215,7 +215,7 @@ beach:
 	free(qo);
 	rz_list_free(fixups);
 	rz_pvector_free(maps);
-	rz_list_free(sections);
+	rz_pvector_free(sections);
 	return false;
 }
 
@@ -301,10 +301,10 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 }
 
 // Returns the sections
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
-	return rz_list_clone(qo->sections);
+	return rz_pvector_clone(qo->sections);
 }
 
 /*

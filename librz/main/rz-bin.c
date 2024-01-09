@@ -436,18 +436,20 @@ static int rabin_dump_symbols(RzBin *bin, int len) {
 }
 
 static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, const char *file) {
-	RzList *sections;
-	RzListIter *iter;
+	void **iter;
 	RzBinSection *section;
 	ut8 *buf;
 	char *ret;
 	int r;
 
-	if (!(sections = rz_bin_get_sections(bin))) {
+	RzBinObject *obj = rz_bin_cur_object(bin);
+	const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
+	if (!sections) {
 		return false;
 	}
 
-	rz_list_foreach (sections, iter, section) {
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
 		if (!strcmp(scnname, section->name)) {
 			if (!(buf = malloc(section->size))) {
 				return false;

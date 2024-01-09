@@ -82,8 +82,8 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	ines_hdr ihdr;
 	memset(&ihdr, 0, INES_HDR_SIZE);
@@ -92,7 +92,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		RZ_LOG_ERROR("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -105,7 +105,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vaddr = ROM_START_ADDRESS;
 	ptr->vsize = mirror ? ROM_MIRROR_ADDRESS - ROM_START_ADDRESS : ROM_SIZE; // make sure the ROM zero excess does not overlap the mirror
 	ptr->perm = RZ_PERM_RX;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	if (mirror) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
@@ -116,7 +116,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->vaddr = ROM_MIRROR_ADDRESS;
 		ptr->vsize = ROM_MIRROR_SIZE;
 		ptr->perm = RZ_PERM_RX;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

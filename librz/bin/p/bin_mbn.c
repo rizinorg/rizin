@@ -99,14 +99,13 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	SblHeader *sb = mbn_file_get_hdr(bf);
 	RzBinSection *ptr = NULL;
-	RzList *ret = NULL;
-	if (!(ret = rz_list_new())) {
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	// add text segment
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -119,7 +118,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vaddr = sb->vaddr;
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->has_strings = true;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -131,7 +130,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vaddr = sb->sign_va;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->has_strings = true;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (sb->cert_sz && sb->cert_va > sb->vaddr) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -144,7 +143,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->vaddr = sb->cert_va;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->has_strings = true;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

@@ -610,12 +610,6 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzBinInfo *rz_bin_get_info(RzBin *bin) {
 	return o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
 }
 
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSection *>*/ *rz_bin_get_sections(RZ_NONNULL RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? (RzList *)rz_bin_object_get_sections_all(o) : NULL;
-}
-
 /**
  * \brief Find the binary section at offset \p off.
  *
@@ -626,12 +620,13 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinSection *>*/ *rz_bin_get_sections(R
  */
 RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 	RzBinSection *section;
-	RzListIter *iter;
+	void **iter;
 	ut64 from, to;
 
 	rz_return_val_if_fail(o, NULL);
 	// TODO: must be O(1) .. use sdb here
-	rz_list_foreach (o->sections, iter, section) {
+	rz_pvector_foreach (o->sections, iter) {
+		section = *iter;
 		if (section->is_segment) {
 			continue;
 		}
@@ -865,7 +860,7 @@ RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
 		b->bin = bin;
 		b->get_offset = __getoffset;
 		b->get_name = __getname;
-		b->get_sections = rz_bin_get_sections;
+		b->get_sections = rz_bin_object_get_sections_all;
 		b->get_vsect_at = __get_vsection_at;
 		b->demangle = rz_bin_demangle;
 	}
@@ -1077,7 +1072,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNUL
 	if (!binfile->o || !binfile->o->plugin || !binfile->o->plugin->sections) {
 		return NULL;
 	}
-	RzList *sections = binfile->o->plugin->sections(binfile);
+	RzPVector *sections = binfile->o->plugin->sections(binfile);
 	if (!sections) {
 		return NULL;
 	}
@@ -1086,8 +1081,9 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNUL
 		goto hcf;
 	}
 	RzBinSection *sec;
-	RzListIter *it;
-	rz_list_foreach (sections, it, sec) {
+	void **it;
+	rz_pvector_foreach (sections, it) {
+		sec = *it;
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			goto hcf;
@@ -1101,7 +1097,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_maps_of_file_sections(RZ_NONNUL
 		rz_pvector_push(r, map);
 	}
 hcf:
-	rz_list_free(sections);
+	rz_pvector_free(sections);
 	return r;
 }
 

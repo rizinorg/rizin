@@ -53,11 +53,12 @@ static void loadGP(RzCore *core) {
 	}
 }
 
-static RZ_OWN RzList /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) {
-	RzList *sections = rz_bin_get_sections(core->bin);
-	RzListIter *it;
+static RZ_OWN RzPVector /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) {
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
+	void **it;
 	RzBinSection *sec;
-	RzList *old_sections = rz_list_new();
+	RzPVector *old_sections = rz_pvector_new(NULL);
 
 	// Return an empty list
 	if (!sections) {
@@ -65,8 +66,9 @@ static RZ_OWN RzList /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) {
 		return old_sections;
 	}
 
-	old_sections->free = sections->free;
-	rz_list_foreach (sections, it, sec) {
+	old_sections->v.free_user = sections->v.free_user;
+	rz_pvector_foreach (sections, it) {
+		sec = *it;
 		RzBinSection *old_sec = RZ_NEW0(RzBinSection);
 		if (!old_sec) {
 			break;
@@ -74,14 +76,14 @@ static RZ_OWN RzList /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) {
 		*old_sec = *sec;
 		old_sec->name = strdup(sec->name);
 		old_sec->format = NULL;
-		rz_list_append(old_sections, old_sec);
+		rz_pvector_push(old_sections, old_sec);
 	}
 	return old_sections;
 }
 
 struct __rebase_struct {
 	RzCore *core;
-	RzList /*<RzBinSection *>*/ *old_sections;
+	RzPVector /*<RzBinSection *>*/ *old_sections;
 	ut64 old_base;
 	ut64 diff;
 	int type;
@@ -93,10 +95,11 @@ struct __rebase_struct {
 static bool __rebase_flags(RzFlagItem *flag, void *user) {
 	struct __rebase_struct *reb = user;
 	ut64 old_base = reb->old_base;
-	RzListIter *it;
+	void **it;
 	RzBinSection *sec;
 	// Only rebase flags that were in the rebased sections, otherwise it will take too long
-	rz_list_foreach (reb->old_sections, it, sec) {
+	rz_pvector_foreach (reb->old_sections, it) {
+		sec = *it;
 		if (__is_inside_section(flag->offset, sec)) {
 			rz_flag_set(reb->core->flags, flag->name, flag->offset + reb->diff, flag->size);
 			break;
@@ -120,8 +123,8 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-static void __rebase_everything(RzCore *core, RzList /*<RzBinSection *>*/ *old_sections, ut64 old_base) {
-	RzListIter *it, *itit, *ititit;
+static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *old_sections, ut64 old_base) {
+	RzListIter *it, *ititit;
 	RzAnalysisFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;
 	RzBinSection *old_section;
@@ -131,7 +134,9 @@ static void __rebase_everything(RzCore *core, RzList /*<RzBinSection *>*/ *old_s
 	}
 	// FUNCTIONS
 	rz_list_foreach (core->analysis->fcns, it, fcn) {
-		rz_list_foreach (old_sections, itit, old_section) {
+		void **iter;
+		rz_pvector_foreach (old_sections, iter) {
+			old_section = *iter;
 			if (!__is_inside_section(fcn->addr, old_section)) {
 				continue;
 			}
@@ -230,7 +235,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 	}
 
 	core->dbg->main_arena_resolved = false;
-	RzList *old_sections = __save_old_sections(core);
+	RzPVector *old_sections = __save_old_sections(core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
 	rz_config_set_i(core->config, "asm.bits", bits);
@@ -254,14 +259,14 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 		rz_core_bin_load(core, uri, addr);
 	} else {
 		RZ_LOG_ERROR("Cannot open file '%s'\n", uri);
-		rz_list_free(old_sections);
+		rz_pvector_free(old_sections);
 		return;
 	}
 	rz_core_block_read(core);
 	if (rz_config_get_i(core->config, "dbg.rebase")) {
 		__rebase_everything(core, old_sections, old_base);
 	}
-	rz_list_free(old_sections);
+	rz_pvector_free(old_sections);
 	rz_core_seek_to_register(core, "PC", false);
 }
 
@@ -297,7 +302,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 		return;
 	}
 	core->dbg->main_arena_resolved = false;
-	RzList *old_sections = __save_old_sections(core);
+	RzPVector *old_sections = __save_old_sections(core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
 	char *bin_abspath = rz_file_abspath(binpath);
@@ -312,7 +317,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	if (rz_config_get_i(core->config, "dbg.rebase")) {
 		__rebase_everything(core, old_sections, old_base);
 	}
-	rz_list_free(old_sections);
+	rz_pvector_free(old_sections);
 	rz_core_seek_to_register(core, "PC", false);
 	free(bin_abspath);
 	free(escaped_path);
@@ -1624,7 +1629,7 @@ RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
 	// Backup the baddr and sections that were already rebased to
 	// revert the rebase after the debug session is closed
 	ut64 orig_baddr = core->bin->cur->o->baddr_shift;
-	RzList *orig_sections = __save_old_sections(core);
+	RzPVector *orig_sections = __save_old_sections(core);
 
 	rz_bin_file_delete_all(core->bin);
 	rz_io_close_all(core->io);
@@ -1632,21 +1637,21 @@ RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
 
 	RzCoreFile *cfile = rz_core_file_open(core, file, RZ_PERM_R, 0);
 	if (!cfile) {
-		rz_list_free(orig_sections);
+		rz_pvector_free(orig_sections);
 		RZ_LOG_ERROR("Cannot open file '%s'\n", file);
 		return;
 	}
 	core->num->value = cfile->fd;
 	// If no baddr defined, use the one provided by the file
 	if (!rz_core_bin_load(core, file, UT64_MAX)) {
-		rz_list_free(orig_sections);
+		rz_pvector_free(orig_sections);
 		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", file);
 		return;
 	}
 	rz_core_block_read(core);
 
 	__rebase_everything(core, orig_sections, orig_baddr);
-	rz_list_free(orig_sections);
+	rz_pvector_free(orig_sections);
 	free(file);
 }
 

@@ -8,7 +8,7 @@
 
 RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn, bool is_dwo) {
 	rz_return_val_if_fail(binfile && sn, NULL);
-	RzListIter *iter = NULL;
+	void **iter = NULL;
 	RzBinSection *section = NULL;
 	RzBinSection *result_section = NULL;
 	RzBinObject *o = binfile->o;
@@ -19,7 +19,8 @@ RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char
 	if (!name) {
 		return NULL;
 	}
-	rz_list_foreach (o->sections, iter, section) {
+	rz_pvector_foreach (o->sections, iter) {
+		section = *iter;
 		if (!section->name) {
 			continue;
 		}

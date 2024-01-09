@@ -194,19 +194,19 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	struct rz_bin_pe_section_t *sections = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	ut64 ba = baddr(bf);
 	int n_nonzero = 0;
 	int i;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	if (!bin || !(sections = bin->sections)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	PE_(rz_bin_pe_check_sections)
@@ -228,7 +228,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (ptr->size != 0) {
 			n_nonzero++;
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	if (n_nonzero == 1 && ptr && ptr->perm & RZ_PERM_R) {
 		// if there is only one section, then we expect to have data in here also.

@@ -39,8 +39,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	spc_hdr spchdr;
 	memset(&spchdr, 0, SPC_HDR_SIZE);
@@ -49,11 +49,11 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		eprintf("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	ptr->name = strdup("RAM");
@@ -62,7 +62,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vaddr = 0x0;
 	ptr->vsize = RAM_SIZE;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 

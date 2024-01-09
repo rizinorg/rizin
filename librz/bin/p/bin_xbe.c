@@ -145,10 +145,10 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	char tmp[0x100];
 	int i, r;
 	ut32 addr;
@@ -161,11 +161,10 @@ static RzList /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 	if (h->sections < 1) {
 		return NULL;
 	}
-	ret = rz_list_new();
+	ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	if (h->sections < 1 || h->sections > 255) {
 		goto out_error;
 	}
@@ -204,11 +203,11 @@ static RzList /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 		if (sect.flags & SECT_FLAG_W) {
 			item->perm |= RZ_PERM_W;
 		}
-		rz_list_append(ret, item);
+		rz_pvector_push(ret, item);
 	}
 	return ret;
 out_error:
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 

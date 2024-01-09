@@ -743,7 +743,7 @@ int rz_bin_omf_get_bits(rz_bin_omf_obj *obj) {
 	return 16;
 }
 
-int rz_bin_omf_send_sections(RzList /*<RzBinSection *>*/ *list, OMF_segment *section, rz_bin_omf_obj *obj) {
+int rz_bin_omf_send_sections(RzPVector /*<RzBinSection *>*/ *vec, OMF_segment *section, rz_bin_omf_obj *obj) {
 	RzBinSection *new;
 	OMF_data *data = section->data;
 	ut32 ct_name = 1;
@@ -765,7 +765,7 @@ int rz_bin_omf_send_sections(RzList /*<RzBinSection *>*/ *list, OMF_segment *sec
 		new->paddr = data->paddr;
 		new->vaddr = section->vaddr + data->offset + OMF_BASE_ADDR;
 		new->perm = RZ_PERM_RWX;
-		rz_list_append(list, new);
+		rz_pvector_push(vec, new);
 		data = data->next;
 	}
 	return true;

@@ -85,7 +85,7 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return rz_bin_java_class_const_pool_as_imports(jclass);
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
