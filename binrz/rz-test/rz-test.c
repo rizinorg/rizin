@@ -983,7 +983,7 @@ static void interact(RzTestState *state) {
 		printf("#####################\n\n");
 		char *name = rz_test_test_name(result->test);
 		if (name) {
-			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET " (No. %d/%zu)\n", result->test->path, name, cnt, rz_pvector_len(&failed_results));
+			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET " (%d/%zu)\n", result->test->path, name, cnt, rz_pvector_len(&failed_results));
 			free(name);
 		}
 		print_result_diff(&state->run_config, result);
