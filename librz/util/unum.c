@@ -223,6 +223,7 @@ static void error(RzNum *num, const char *err_str) {
 	}
 }
 
+// FIXME: Rename into `rz_num_value_get()`
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
 RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
@@ -494,6 +495,7 @@ RZ_API ut64 rz_num_math_ut64(RzNum *num, const char *str) {
 	return ret;
 }
 
+// FIXME: Rename into rz_num_value_get_float()
 RZ_API double rz_num_get_float(RzNum *num, const char *str) {
 	double d = 0.0f;
 	(void)sscanf(str, "%lf", &d);
