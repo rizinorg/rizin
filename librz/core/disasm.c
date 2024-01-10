@@ -11,7 +11,6 @@
 #include "core_private.h"
 #include "rz_analysis.h"
 #include <rz_util/rz_strbuf.h>
-#include <librz/asm/arch/tricore/tricore.h>
 
 #define HASRETRY      1
 #define HAVE_LOCALS   1
@@ -5019,11 +5018,14 @@ static bool set_jump_realname(RzDisasmState *ds, ut64 addr, const char **kw, con
  * \brief Remove '#' from the asm string
  * \param op RzAsmOp instance
  */
-void rz_asm_op_tricore_fixup(RzAsmOp *op, RzAsmTriCoreState *state) {
+void rz_asm_op_tricore_fixup(RzAsmOp *op) {
 	char *asmstr = rz_asm_op_get_asm(op);
 	rz_str_remove_char(asmstr, '#');
 	rz_asm_op_set_asm(op, asmstr);
-	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, state->token_patterns);
+	if (op->asm_toks) {
+		rz_asm_token_string_free(op->asm_toks);
+		op->asm_toks = NULL;
+	}
 }
 
 static void ds_asmop_fixup(RzDisasmState *ds) {
@@ -5037,7 +5039,7 @@ static void ds_asmop_fixup(RzDisasmState *ds) {
 		return;
 	}
 	if (rz_str_cmp(ds->core->rasm->cur->arch, "tricore", -1) == 0) {
-		rz_asm_op_tricore_fixup(&ds->asmop, ds->core->rasm->plugin_data);
+		rz_asm_op_tricore_fixup(&ds->asmop);
 	}
 }
 
