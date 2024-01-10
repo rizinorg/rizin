@@ -6203,7 +6203,7 @@ RZ_IPI RzCmdStatus rz_print_analysis_details_handler(RzCore *core, int argc, con
 		rz_cons_printf("signatures:  %" PFMT64d "\n", sigs);
 		rz_cons_printf("coverage:    %" PFMT64d "\n", covr);
 		rz_cons_printf("code size:   %" PFMT64d "\n", code);
-		rz_cons_printf("percentuage: %.2f%% (coverage on code size)\n", precentage);
+		rz_cons_printf("percentage: %.2f%% (coverage on code size)\n", precentage);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
