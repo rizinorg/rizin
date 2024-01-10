@@ -4675,6 +4675,12 @@ RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_with_events_handler(RzCore *core, int argc, const char **argv) {
+	ut64 address = rz_num_math(core->num, argv[1]);
+	rz_core_il_step_until_with_events(core, address);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 3) {
 		ut64 value = rz_num_math(core->num, argv[2]);

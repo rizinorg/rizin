@@ -261,7 +261,12 @@ RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key
 		return;
 	}
 	RzBitVector *old_value = rz_il_mem_loadw(mem, key, rz_bv_len(value), vm->big_endian);
-	rz_il_mem_storew(mem, key, value, vm->big_endian);
+	if (!rz_il_mem_storew(mem, key, value, vm->big_endian)) {
+		RZ_LOG_ERROR("StoreW mem %u 0x%llx failed\n", (unsigned int)index, rz_bv_to_ut64(key));
+		return;
+	}
+	RzBitVector *new_value = rz_il_mem_loadw(mem, key, rz_bv_len(value), vm->big_endian);
+	assert(rz_bv_eq(new_value, value));
 	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
 	rz_bv_free(old_value);
 }

@@ -1707,6 +1707,9 @@ RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg);
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
 	bool (*cond)(RzAnalysisILVM *vm, void *user), void *user);
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while_with_events(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	bool (*cond)(RzAnalysisILVM *vm, void *user), void *user);
 RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis);
 RZ_API void rz_analysis_il_vm_cleanup(RzAnalysis *analysis);
 

@@ -742,6 +742,23 @@ RZ_API bool rz_core_il_step_until(RZ_NONNULL RzCore *core, ut64 until) {
 }
 
 /**
+ * Perform zero or more steps starting at the PC given by analysis->reg in RzIL
+ * until reaching the given PC and output VM changes (read & write)
+ * \param until destination address where to stop
+ * \return false if an error occured (e.g. invalid op)
+ */
+RZ_API bool rz_core_il_step_until_with_events(RZ_NONNULL RzCore *core, ut64 until) {
+	rz_return_val_if_fail(core && until, false);
+	if (!step_assert_vm(core)) {
+		return false;
+	}
+	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while_with_events(
+		core->analysis, core->analysis->il_vm, core->analysis->reg,
+		step_cond_until, &until);
+	return step_handle_result(core, r);
+}
+
+/**
  * Perform a single step at the PC given by analysis->reg in RzIL and print any events that happened
  * \return false if an error occured (e.g. invalid op)
  */

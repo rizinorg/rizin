@@ -990,6 +990,13 @@ commands:
         args:
           - name: address
             type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: aezsue
+        summary: Step until PC equals given address and output VM changes (read & write)
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: il_vm_step_until_addr_with_events
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: aezv
         summary: Print or modify the current status of the RzIL Virtual Machine
         cname: il_vm_status

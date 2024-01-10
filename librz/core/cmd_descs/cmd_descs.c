@@ -213,6 +213,7 @@ static const RzCmdDescArg il_step_until_opt_args[2];
 static const RzCmdDescArg il_vm_step_args[2];
 static const RzCmdDescArg il_vm_step_with_events_args[2];
 static const RzCmdDescArg il_vm_step_until_addr_args[2];
+static const RzCmdDescArg il_vm_step_until_addr_with_events_args[2];
 static const RzCmdDescArg il_vm_status_args[3];
 static const RzCmdDescArg analysis_graph_dataref_args[2];
 static const RzCmdDescArg analysis_graph_dataref_global_args[2];
@@ -4044,6 +4045,20 @@ static const RzCmdDescArg il_vm_step_until_addr_args[] = {
 static const RzCmdDescHelp il_vm_step_until_addr_help = {
 	.summary = "Step until PC equals given address",
 	.args = il_vm_step_until_addr_args,
+};
+
+static const RzCmdDescArg il_vm_step_until_addr_with_events_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp il_vm_step_until_addr_with_events_help = {
+	.summary = "Step until PC equals given address and output VM changes (read & write)",
+	.args = il_vm_step_until_addr_with_events_args,
 };
 
 static const RzCmdDescArg il_vm_status_args[] = {
@@ -19726,6 +19741,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *il_vm_step_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezsu", rz_il_vm_step_until_addr_handler, &il_vm_step_until_addr_help);
 	rz_warn_if_fail(il_vm_step_until_addr_cd);
+
+	RzCmdDesc *il_vm_step_until_addr_with_events_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezsue", rz_il_vm_step_until_addr_with_events_handler, &il_vm_step_until_addr_with_events_help);
+	rz_warn_if_fail(il_vm_step_until_addr_with_events_cd);
 
 	RzCmdDesc *il_vm_status_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_il_vm_status_handler, &il_vm_status_help);
 	rz_warn_if_fail(il_vm_status_cd);
