@@ -258,6 +258,7 @@ static void plugin_fini(RzAsm *a) {
 	if (a->cur && a->cur->fini && !a->cur->fini(a->plugin_data)) {
 		RZ_LOG_ERROR("asm plugin '%s' failed to terminate.\n", a->cur->name);
 	}
+	a->plugin_data = NULL;
 }
 
 RZ_API RzAsm *rz_asm_new(void) {
