@@ -2359,8 +2359,8 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 
 	pj_o(pj);
 	pj_ks(pj, "name", section->name);
-	pj_kN(pj, "size", section->size);
-	pj_kN(pj, "vsize", section->vsize);
+	pj_kn(pj, "size", section->size);
+	pj_kn(pj, "vsize", section->vsize);
 	pj_ks(pj, "perm", perms);
 	if (!section->is_segment) {
 		char *section_type = rz_bin_section_type_to_string(core->bin, section->type);
@@ -2382,10 +2382,10 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 		}
 		rz_list_free(flags);
 	}
-	pj_kN(pj, "paddr", section->paddr);
-	pj_kN(pj, "vaddr", addr);
+	pj_kn(pj, "paddr", section->paddr);
+	pj_kn(pj, "vaddr", addr);
 	if (section->align) {
-		pj_kN(pj, "align", section->align);
+		pj_kn(pj, "align", section->align);
 	}
 	if (hashes && section->size > 0) {
 		HtPP *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
@@ -2974,7 +2974,7 @@ RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 			pj_ki(state->d.pj, "fd", desc->fd);
 			if (fsz != UT64_MAX) {
 				char humansz[8];
-				pj_kN(state->d.pj, "size", fsz);
+				pj_kn(state->d.pj, "size", fsz);
 				rz_num_units(humansz, sizeof(humansz), fsz);
 				pj_ks(state->d.pj, "humansz", humansz);
 			}
@@ -3866,7 +3866,7 @@ RZ_API bool rz_core_bin_class_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL R
 				if (f->flags) {
 					flags_to_json(state->d.pj, f->flags);
 				}
-				pj_kN(state->d.pj, "addr", f->vaddr);
+				pj_kn(state->d.pj, "addr", f->vaddr);
 				pj_end(state->d.pj);
 			}
 			break;
@@ -3928,7 +3928,7 @@ RZ_API bool rz_core_bin_class_methods_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 				if (sym->method_flags) {
 					flags_to_json(state->d.pj, sym->method_flags);
 				}
-				pj_kN(state->d.pj, "addr", sym->vaddr);
+				pj_kn(state->d.pj, "addr", sym->vaddr);
 				pj_end(state->d.pj);
 				break;
 			case RZ_OUTPUT_MODE_TABLE:
@@ -4000,7 +4000,7 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "classname", c->name);
-			pj_kN(state->d.pj, "addr", c->addr);
+			pj_kn(state->d.pj, "addr", c->addr);
 			if (c->super) {
 				pj_ks(state->d.pj, "visibility", c->visibility_str ? c->visibility_str : "");
 				pj_ks(state->d.pj, "super", c->super);
@@ -4012,7 +4012,7 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 				if (sym->method_flags) {
 					flags_to_json(state->d.pj, sym->method_flags);
 				}
-				pj_kN(state->d.pj, "addr", sym->vaddr);
+				pj_kn(state->d.pj, "addr", sym->vaddr);
 				pj_end(state->d.pj);
 			}
 			pj_end(state->d.pj);
@@ -4026,7 +4026,7 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 				if (f->flags) {
 					flags_to_json(state->d.pj, f->flags);
 				}
-				pj_kN(state->d.pj, "addr", f->vaddr);
+				pj_kn(state->d.pj, "addr", f->vaddr);
 				pj_end(state->d.pj);
 			}
 			pj_end(state->d.pj);
@@ -4095,8 +4095,8 @@ RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "name", field->name);
-			pj_kN(state->d.pj, "vaddr", field->vaddr);
-			pj_kN(state->d.pj, "paddr", field->paddr);
+			pj_kn(state->d.pj, "vaddr", field->vaddr);
+			pj_kn(state->d.pj, "paddr", field->paddr);
 			if (field->comment && *field->comment) {
 				pj_ks(state->d.pj, "comment", field->comment);
 			}
@@ -4590,8 +4590,8 @@ static void core_bin_file_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *s
 		pj_ko(state->d.pj, "obj");
 		pj_ks(state->d.pj, "arch", arch);
 		pj_ki(state->d.pj, "bits", bits);
-		pj_kN(state->d.pj, "binoffset", obj->boffset);
-		pj_kN(state->d.pj, "objsize", obj->obj_size);
+		pj_kn(state->d.pj, "binoffset", obj->boffset);
+		pj_kn(state->d.pj, "objsize", obj->obj_size);
 		pj_end(state->d.pj);
 		pj_end(state->d.pj);
 		break;
