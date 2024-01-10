@@ -5658,6 +5658,10 @@ RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 			break;
 		}
 
+		if (!op.il_op) {
+			rz_cons_printf("0x%" PFMT64x "%c%s\n", core->offset + idx, delim, "()");
+			goto loop_continue;
+		}
 		rz_strbuf_init(&sb);
 		rz_il_op_effect_stringify(op.il_op, &sb, pretty);
 		il_stmt = rz_strbuf_get(&sb);
@@ -5666,9 +5670,10 @@ RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 		} else {
 			rz_cons_printf("0x%" PFMT64x "%c%s\n", core->offset + idx, delim, il_stmt);
 		}
+		rz_strbuf_fini(&sb);
+	loop_continue:
 		idx += op.size;
 		rz_analysis_op_fini(&op);
-		rz_strbuf_fini(&sb);
 	}
 }
 
