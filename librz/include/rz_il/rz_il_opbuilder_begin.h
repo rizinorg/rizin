@@ -179,11 +179,13 @@
 
 #define EXTRACT32(value, start, length)           rz_il_extract32(value, start, length)
 #define EXTRACT64(value, start, length)           rz_il_extract64(value, start, length)
+#define SEXTRACT32(value, start, length)          rz_il_sextract32(value, start, length)
 #define SEXTRACT64(value, start, length)          rz_il_sextract64(value, start, length)
 #define DEPOSIT32(value, start, length, fieldval) rz_il_deposit32(value, start, length, fieldval)
 #define DEPOSIT64(value, start, length, fieldval) rz_il_deposit64(value, start, length, fieldval)
 #define BSWAP16(t)                                rz_il_bswap16(t)
 #define BSWAP32(t)                                rz_il_bswap32(t)
 #define BSWAP64(t)                                rz_il_bswap64(t)
+#define NE(x, y)                                  rz_il_op_new_ne(x, y)
 
 #endif

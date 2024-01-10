@@ -279,6 +279,7 @@ typedef bool (*ValidatePureFn)(VALIDATOR_PURE_ARGS);
 #define VALIDATOR_ASSERT(condition, ...) \
 	do { \
 		if (!(condition)) { \
+			rz_warn_if_reached(); \
 			rz_strbuf_appendf(report_builder, __VA_ARGS__); \
 			return false; \
 		} \

@@ -50,6 +50,27 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_extract64(RZ_BORROW RzILOpBitVector *value,
 }
 
 /**
+ * \brief Extracts \p length bits from \p start from \p value and returns them as S32. The extracted value is sign extended.
+ *
+ * Performed operation: (((st32) (value << 0x20 - length - start)) >> 0x20 - length);
+ *
+ * \param value The value to extract the bits from. It must be a bitvector of size 32.
+ * \param start The start index of the bits to extract. Passed bitvector must be 32bits in size.
+ * \param length Number of bits to extract. Passed bitvector must be 32bits in size.
+ *
+ * \return A 32bit wide sign extended bitvector with the extracted value.
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_sextract32(RZ_BORROW RzILOpBitVector *value, RZ_BORROW RzILOpBitVector *start, RZ_BORROW RzILOpBitVector *length) {
+	rz_return_val_if_fail(value && start && length, NULL);
+	RzILOpPure *op_SUB_1 = rz_il_op_new_sub(rz_il_op_new_bitv_from_st64(32, 0x20), length);
+	RzILOpPure *op_SUB_2 = rz_il_op_new_sub(op_SUB_1, start);
+	RzILOpPure *op_LSHIFT_3 = rz_il_op_new_shiftl(rz_il_op_new_b0(), value, op_SUB_2);
+	RzILOpPure *op_SUB_6 = rz_il_op_new_sub(rz_il_op_new_bitv_from_st64(32, 0x20), rz_il_op_pure_dup(length));
+	RzILOpPure *op_RSHIFT_7 = rz_il_op_new_shiftr_arith(rz_il_op_new_cast(32, rz_il_op_new_b0(), op_LSHIFT_3), op_SUB_6);
+	return op_RSHIFT_7;
+}
+
+/**
  * \brief Extracts \p length bits from \p start from \p value and returns them as S64. The extracted value is sign extended.
  *
  * Performed operation: (((st64) (value << 0x40 - length - start)) >> 0x40 - length);
@@ -169,7 +190,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap32(RZ_BORROW RzILOpBitVector *t) {
 }
 
 /**
- * \brief Performes a byte swap of \p t.
+ * \brief Performs a byte swap of \p t.
  *
  * Perfomed operation:
  *   ((t & 0xff) << 0x38)
@@ -210,4 +231,16 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap64(RZ_BORROW RzILOpBitVector *t) {
 	RzILOpPure *op_RSHIFT_37 = rz_il_op_new_shiftr(rz_il_op_new_b0(), op_AND_35, rz_il_op_new_bitv_from_st64(32, 0x38));
 	RzILOpPure *op_OR_38 = rz_il_op_new_log_or(op_OR_33, op_RSHIFT_37);
 	return op_OR_38;
+}
+
+/**
+ *  \brief [NE] not eq x y binary predicate for bitwise equality
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ne(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpBool *result = rz_il_op_new_eq(x, y);
+	if (!result) {
+		return NULL;
+	}
+	return rz_il_op_new_bool_inv(result);
 }
