@@ -10,6 +10,7 @@ cc.arm64.arg5=x5
 cc.arm64.arg6=x6
 cc.arm64.arg7=x7
 cc.arm64.argn=stack
+cc.arm64.maxargs=8
 cc.arm64.ret=x0
 
 swift=cc
@@ -22,6 +23,7 @@ cc.swift.arg5=x5
 cc.swift.arg6=x6
 cc.swift.arg7=x7
 cc.swift.argn=stack
+cc.swift.maxargs=8
 cc.swift.self=x20
 cc.swift.error=x21
 cc.swift.ret=x0

@@ -37,8 +37,9 @@ extern "C" {
  * Call rz_(p)vector_shrink explicitly if desired.
  */
 
-typedef int (*RzPVectorComparator)(const void *a, const void *b);
-typedef int (*RzVectorComparator)(const void *a, const void *b);
+// RzPVectorComparator should return negative, 0, positive to indicate "value < vec_data", "value == vec_data", "value > vec_data".
+typedef int (*RzPVectorComparator)(const void *value, const void *vec_data, void *user);
+typedef int (*RzVectorComparator)(const void *a, const void *b, void *user);
 typedef void (*RzVectorFree)(void *e, void *user);
 typedef void (*RzPVectorFree)(void *e);
 
@@ -175,7 +176,7 @@ RZ_API void *rz_vector_shrink(RzVector *vec);
 RZ_API void *rz_vector_flush(RzVector *vec);
 
 // sort vector
-RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse);
+RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user);
 
 /*
  * example:
@@ -261,7 +262,9 @@ static inline RzPVector *rz_pvector_clonef(
 }
 
 static inline size_t rz_pvector_len(const RzPVector *vec) {
-	rz_return_val_if_fail(vec, 0);
+	if (!vec) {
+		return 0;
+	}
 	return vec->v.len;
 }
 
@@ -307,7 +310,7 @@ static inline void *rz_pvector_tail(RzPVector *vec) {
 RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x);
 
 // find the element in the vec based on cmparator
-RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *element, RZ_NONNULL RzPVectorComparator cmp);
+RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *element, RZ_NONNULL RzPVectorComparator cmp, void *user);
 
 // removes and returns the pointer at the given index. Does not call free.
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index);
@@ -342,7 +345,7 @@ static inline void **rz_pvector_push_front(RzPVector *vec, void *x) {
 }
 
 // sort vec using quick sort.
-RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp);
+RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user);
 
 static inline void **rz_pvector_reserve(RzPVector *vec, size_t capacity) {
 	return (void **)rz_vector_reserve(&vec->v, capacity);

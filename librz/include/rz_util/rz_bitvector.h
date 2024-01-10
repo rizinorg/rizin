@@ -79,6 +79,8 @@ RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API ut32 rz_bv_clz(RZ_NONNULL RzBitVector *bv);
 RZ_API ut32 rz_bv_ctz(RZ_NONNULL RzBitVector *bv);
 
+RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit);
+
 // some convert functions
 RZ_API ut8 rz_bv_to_ut8(RZ_NONNULL const RzBitVector *x);
 RZ_API ut16 rz_bv_to_ut16(RZ_NONNULL const RzBitVector *x);
@@ -108,6 +110,20 @@ RZ_API ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x);
 #define rz_bv_new_one(l)       rz_bv_new_from_ut64(l, 1)
 #define rz_bv_new_two(l)       rz_bv_new_from_ut64(l, 2)
 #define rz_bv_new_minus_one(l) rz_bv_new_from_st64(l, -1)
+
+// extra added to basic
+RZ_API RZ_OWN RzBitVector *rz_bv_pred(RZ_NONNULL RzBitVector *bv);
+RZ_API RZ_OWN RzBitVector *rz_bv_succ(RZ_NONNULL RzBitVector *bv);
+RZ_API bool rz_bv_arshift(RZ_NONNULL RzBitVector *bv, ut32 dist);
+RZ_API RZ_OWN RzBitVector *rz_bv_signed_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size);
+RZ_API RZ_OWN RzBitVector *rz_bv_unsigned_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size);
+
+RZ_API bool rz_bv_slt(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_ult(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_sgt(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_ugt(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_sge(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_uge(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 
 #ifdef __cplusplus
 }

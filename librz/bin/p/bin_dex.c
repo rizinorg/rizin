@@ -95,7 +95,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_dex_sections(dex);
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -131,7 +131,7 @@ static RzList /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	return rz_bin_dex_entrypoints(dex);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -214,12 +214,13 @@ static ut64 get_offset(RzBinFile *bf, int type, int index) {
 	}
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
-	RzList *maps = rz_bin_maps_of_file_sections(bf);
-	RzListIter *iter;
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+	RzPVector *maps = rz_bin_maps_of_file_sections(bf);
+	void **iter;
 	RzBinMap *map;
 
-	rz_list_foreach (maps, iter, map) {
+	rz_pvector_foreach (maps, iter) {
+		map = *iter;
 		if (strcmp(map->name, RZ_DEX_RELOC_TARGETS)) {
 			continue;
 		}

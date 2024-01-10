@@ -105,7 +105,7 @@ RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	return segments;
 }
 
-static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
+static int __find_symbol_by_paddr(const void *paddr, const void *sym, void *user) {
 	return (int)!(*(ut64 *)paddr == ((RzBinSymbol *)sym)->paddr);
 }
 
@@ -118,10 +118,10 @@ static void ne_sanitize_name(char *name, ut16 count) {
 	}
 }
 
-RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
+RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinSymbol *sym;
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
-	RzList *symbols = rz_list_newf(free);
+	RzPVector *symbols = rz_pvector_new(free);
 	if (!symbols) {
 		return NULL;
 	}
@@ -177,14 +177,14 @@ RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 			sym->paddr = -1;
 		}
 		sym->ordinal = entry_off;
-		rz_list_append(symbols, sym);
+		rz_pvector_push(symbols, sym);
 		first = false;
 	}
 	RzListIter *it;
 	RzBinAddr *en;
 	int i = 1;
 	rz_list_foreach (entries, it, en) {
-		if (!rz_list_find(symbols, &en->paddr, __find_symbol_by_paddr)) {
+		if (!rz_pvector_find(symbols, &en->paddr, __find_symbol_by_paddr, NULL)) {
 			sym = RZ_NEW0(RzBinSymbol);
 			if (!sym) {
 				break;
@@ -193,7 +193,7 @@ RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 			sym->paddr = en->paddr;
 			sym->bind = RZ_BIN_BIND_GLOBAL_STR;
 			sym->ordinal = i;
-			rz_list_append(symbols, sym);
+			rz_pvector_push(symbols, sym);
 		}
 		i++;
 	}
@@ -483,7 +483,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	if (!entries) {
 		return NULL;
 	}
-	RzList *symbols = bin->symbols;
+	RzPVector *symbols = bin->symbols;
 	if (!symbols) {
 		return NULL;
 	}
@@ -597,8 +597,9 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				}
 				reloc->addend = offset;
 				RzBinSymbol *sym = NULL;
-				RzListIter *sit;
-				rz_list_foreach (symbols, sit, sym) {
+				void **sit;
+				rz_pvector_foreach (symbols, sit) {
+					sym = *sit;
 					if (sym->paddr == reloc->addend) {
 						reloc->symbol = sym;
 						break;

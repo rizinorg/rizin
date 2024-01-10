@@ -3261,16 +3261,16 @@ RZ_API int rz_str_do_until_token(str_operation op, char *str, const char tok) {
 	return ret;
 }
 
-RZ_API const char *rz_str_pad(const char ch, int sz) {
-	static char pad[1024];
+RZ_API RZ_OWN char *rz_str_pad(const char ch, int sz) {
 	if (sz < 0) {
 		sz = 0;
 	}
-	memset(pad, ch, RZ_MIN(sz, sizeof(pad)));
-	if (sz < sizeof(pad)) {
-		pad[sz] = 0;
+	char *pad = malloc(sz + 1);
+	if (!pad) {
+		return NULL;
 	}
-	pad[sizeof(pad) - 1] = 0;
+	memset(pad, ch, sz);
+	pad[sz] = 0;
 	return pad;
 }
 
@@ -3898,7 +3898,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 	RzList *out = rz_list_newf(free);
 
 	int curline = -1;
-	char *linetext = (char *)rz_str_pad(' ', w);
+	char *linetext = rz_str_pad(' ', w);
 	for (i = 0; i < h; i++) {
 		int zoomedline = i * (int)((float)rows / h);
 		const char *srcline = rz_list_get_n(lines, zoomedline);
@@ -3913,6 +3913,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 		}
 		memset(linetext, ' ', w);
 	}
+	free(linetext);
 	free(str);
 
 	char *join = rz_str_list_join(out, "\n");

@@ -556,7 +556,7 @@ static char *__prompt(const char *msg, void *p) {
 	char res[128];
 	rz_cons_show_cursor(true);
 	rz_cons_set_raw(false);
-	rz_line_set_prompt(msg);
+	rz_line_set_prompt(rz_cons_singleton()->line, msg);
 	res[0] = 0;
 	if (!rz_cons_fgets(res, sizeof(res), 0, NULL)) {
 		res[0] = 0;
@@ -594,6 +594,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 	char old[218];
 	int nfcns, ch = 0;
 
+	RzLine *line = core->cons->line;
 	RzCoreVisual *visual = core->visual;
 	RzConsEvent olde = core->cons->event_resize;
 	void *olde_user = core->cons->event_data;
@@ -746,7 +747,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			case 1:
 				rz_cons_show_cursor(true);
 				rz_cons_set_raw(false);
-				rz_line_set_prompt("New name: ");
+				rz_line_set_prompt(line, "New name: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;
@@ -755,7 +756,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				}
 				break;
 			default:
-				rz_line_set_prompt("New name: ");
+				rz_line_set_prompt(line, "New name: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;
@@ -771,7 +772,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			if (level == 1) {
 				rz_cons_show_cursor(true);
 				rz_cons_set_raw(false);
-				rz_line_set_prompt("New type: ");
+				rz_line_set_prompt(line, "New type: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;

@@ -336,7 +336,9 @@ static void flirt_print_node_pattern(const RzFlirtNode *node) {
 }
 
 static void flirt_print_indentation(int indent) {
-	rz_cons_printf("%s", rz_str_pad(' ', indent));
+	char *pad = rz_str_pad(' ', indent);
+	rz_cons_printf("%s", pad);
+	free(pad);
 }
 
 static void flirt_print_node(const RzFlirtNode *node, int indent) {

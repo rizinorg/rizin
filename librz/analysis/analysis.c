@@ -85,6 +85,11 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 		free(analysis);
 		return NULL;
 	}
+	analysis->esilinterstate = RZ_NEW0(RzAnalysisEsilInterState);
+	if (!analysis->esilinterstate) {
+		free(analysis);
+		return NULL;
+	}
 	analysis->bb_tree = NULL;
 	analysis->ht_addr_fun = ht_up_new0();
 	analysis->ht_name_fun = ht_pp_new0();
@@ -133,6 +138,8 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
 	analysis->debug_info = rz_analysis_debug_info_new();
+	analysis->cmpval = UT64_MAX;
+	analysis->lea_jmptbl_ip = UT64_MAX;
 	return analysis;
 }
 
@@ -178,6 +185,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 		rz_analysis_esil_free(a->esil);
 		a->esil = NULL;
 	}
+	free(a->esilinterstate);
 	free(a->last_disasm_reg);
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);

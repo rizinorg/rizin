@@ -3949,12 +3949,13 @@ RZ_API RzAGraph *rz_agraph_new(RzConsCanvas *can) {
 static void visual_offset(RzAGraph *g, RzCore *core) {
 	char buf[256];
 	int rows;
+	RzLine *line = core->cons->line;
 	rz_cons_get_size(&rows);
 	rz_cons_gotoxy(0, rows);
 	rz_cons_flush();
-	core->cons->line->prompt_type = RZ_LINE_PROMPT_OFFSET;
-	rz_line_set_hist_callback(core->cons->line, &rz_line_hist_offset_up, &rz_line_hist_offset_down);
-	rz_line_set_prompt("[offset]> ");
+	line->prompt_type = RZ_LINE_PROMPT_OFFSET;
+	rz_line_set_hist_callback(line, &rz_line_hist_offset_up, &rz_line_hist_offset_down);
+	rz_line_set_prompt(line, "[offset]> ");
 	strcpy(buf, "s ");
 	if (rz_cons_fgets(buf + 2, sizeof(buf) - 2, 0, NULL) > 0) {
 		if (buf[2] == '.') {
@@ -3963,7 +3964,7 @@ static void visual_offset(RzAGraph *g, RzCore *core) {
 		rz_core_cmd0(core, buf);
 		rz_line_set_hist_callback(core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
 	}
-	core->cons->line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
+	line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
 }
 
 static void goto_asmqjmps(RzAGraph *g, RzCore *core) {
@@ -4141,6 +4142,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	const char *key_s;
 	RzConsCanvas *can, *o_can = NULL;
 	RzCoreVisual *visual = core->visual;
+	RzLine *line = core->cons->line;
 	bool graph_allocated = false;
 	int movspeed;
 	int ret, invscroll;
@@ -4281,10 +4283,10 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 		case '=': { // TODO: edit
 			showcursor(core, true);
 			const char *cmd = rz_config_get(core->config, "cmd.gprompt");
-			rz_line_set_prompt("cmd.gprompt> ");
-			core->cons->line->contents = strdup(cmd);
-			const char *buf = rz_line_readline();
-			core->cons->line->contents = NULL;
+			rz_line_set_prompt(line, "cmd.gprompt> ");
+			line->contents = strdup(cmd);
+			const char *buf = rz_line_readline(line);
+			line->contents = NULL;
 			rz_config_set(core->config, "cmd.gprompt", buf);
 			showcursor(core, false);
 		} break;
@@ -4581,7 +4583,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			if (fcn) {
 				showcursor(core, true);
 				char buf[256];
-				rz_line_set_prompt("[comment]> ");
+				rz_line_set_prompt(line, "[comment]> ");
 				if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) > 0) {
 					rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, core->offset, buf);
 				}

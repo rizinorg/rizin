@@ -888,10 +888,11 @@ static bool resolve_import_cb(RzCoreLinkData *ld, RzIODesc *desc, ut32 id) {
 	if (!bf) {
 		return true;
 	}
-	RzListIter *iter;
+	void **iter;
 	RzBinSymbol *sym;
-	RzList *symbols = rz_bin_file_get_symbols(bf);
-	rz_list_foreach (symbols, iter, sym) {
+	RzPVector *symbols = rz_bin_file_get_symbols(bf);
+	rz_pvector_foreach (symbols, iter) {
+		sym = *iter;
 		if (!strcmp(sym->name, ld->name)) {
 			ld->addr = sym->vaddr;
 			return false;
@@ -1025,7 +1026,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 					rz_config_set_i(r->config, "io.va", 0);
 				}
 				// workaround to map correctly malloc:// and raw binaries
-				if (rz_io_desc_is_dbg(desc) || (rz_list_empty(obj->maps) || !va)) {
+				if (rz_io_desc_is_dbg(desc) || (rz_pvector_empty(obj->maps) || !va)) {
 					rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 				}
 				RzBinInfo *info = obj->info;

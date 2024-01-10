@@ -139,13 +139,13 @@ static ut32 perm_of_section_perm(ut64 perm) {
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	struct rz_bin_pe_section_t *sections = NULL;
 	if (!bin || !(sections = bin->sections)) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -164,7 +164,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vaddr = ba;
 	map->vsize = RZ_ROUND(map->psize, 4096);
 	map->perm = RZ_PERM_R;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 	PE_(rz_bin_pe_check_sections)
 	(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
@@ -189,7 +189,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		}
 		map->vaddr = sections[i].vaddr + ba;
 		map->perm = perm_of_section_perm(sections[i].perm);
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 	return ret;
 }
@@ -316,8 +316,8 @@ static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
 	return 0;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	ut64 go_pclntab_paddr = 0;
 	ut64 go_pclntab_vaddr = 0;
 	ut32 go_pclntab_size = 0;
@@ -327,7 +327,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	int i;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	int file_bits = PE_(rz_bin_pe_get_bits(bin));
@@ -353,7 +353,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 				ptr->paddr = symbols[i].paddr;
 			}
 			ptr->ordinal = symbols[i].ordinal;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(symbols);
 	}
@@ -369,7 +369,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		ptr->bits = file_bits;
 		ptr->vaddr = go_pclntab_vaddr;
 		ptr->paddr = go_pclntab_paddr;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	if ((imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
@@ -388,16 +388,22 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			ptr->vaddr = imports[i].vaddr;
 			ptr->paddr = imports[i].paddr;
 			ptr->ordinal = imports[i].ordinal;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(imports);
 	}
 
 	// CLR symbols
 	RzList *clr_symbols = PE_(rz_bin_pe_get_clr_symbols)(bf->o->bin_obj);
+	RzListIter *iter;
+	RzBinSymbol *sym;
 	if (clr_symbols) {
-		rz_list_join(ret, clr_symbols);
-		free(clr_symbols);
+		rz_list_foreach (clr_symbols, iter, sym) {
+			rz_pvector_push(ret, sym);
+		}
+		clr_symbols->length = 0;
+		clr_symbols->head = clr_symbols->tail = NULL;
+		rz_list_free(clr_symbols);
 	}
 
 	find_pe_overlay(bf);
@@ -736,7 +742,7 @@ static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
 	return file_hashes;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 

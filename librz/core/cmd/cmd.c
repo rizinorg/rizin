@@ -744,7 +744,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		RzList *sdb_hist = line->sdbshell_hist;
 		rz_line_set_hist_callback(line, &rz_line_hist_sdb_up, &rz_line_hist_sdb_down);
 		for (;;) {
-			rz_line_set_prompt(p);
+			rz_line_set_prompt(line, p);
 			if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 1) {
 				break;
 			}
@@ -2663,13 +2663,16 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 's':
 		if (each[1] == 't') { // strings
-			list = rz_bin_get_strings(core->bin);
-			if (list) {
+			RzBinObject *o = rz_bin_cur_object(core->bin);
+			RzPVector *pvec = o ? (RzPVector *)rz_bin_object_get_strings(o) : NULL;
+			if (pvec) {
 				ut64 offorig = core->offset;
 				ut64 obs = core->blocksize;
 				RzBinString *s;
 				RzList *lost = rz_list_newf(free);
-				rz_list_foreach (list, iter, s) {
+				void **it;
+				rz_pvector_foreach (pvec, it) {
+					s = *it;
 					RzBinString *bs = rz_mem_dup(s, sizeof(RzBinString));
 					rz_list_append(lost, bs);
 				}
@@ -2687,10 +2690,13 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			RzBinSymbol *sym;
 			ut64 offorig = core->offset;
 			ut64 obs = core->blocksize;
-			list = rz_bin_get_symbols(core->bin);
+			RzBinObject *o = rz_bin_cur_object(core->bin);
+			RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+			void **it;
 			rz_cons_break_push(NULL, NULL);
 			RzList *lost = rz_list_newf(free);
-			rz_list_foreach (list, iter, sym) {
+			rz_pvector_foreach (symbols, it) {
+				sym = *it;
 				RzBinSymbol *bs = rz_mem_dup(sym, sizeof(RzBinSymbol));
 				rz_list_append(lost, bs);
 			}
@@ -4800,14 +4806,16 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_import_stmt) {
 	TSNode command = ts_node_named_child(node, 0);
 	RzBinSymbol *imp;
 	ut64 offorig = core->offset;
-	RzList *list = rz_bin_get_symbols(core->bin);
-	if (!list) {
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+	if (!symbols) {
 		return RZ_CMD_STATUS_OK;
 	}
 
 	RzList *lost = rz_list_newf(free);
-	RzListIter *iter;
-	rz_list_foreach (list, iter, imp) {
+	void **it;
+	rz_pvector_foreach (symbols, it) {
+		imp = *it;
 		if (!imp->is_imported) {
 			continue;
 		}
@@ -4816,6 +4824,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_import_stmt) {
 		rz_list_append(lost, n);
 	}
 	ut64 *naddr;
+	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_list_foreach (lost, iter, naddr) {
 		ut64 addr = *naddr;
@@ -4877,11 +4886,14 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_symbol_stmt) {
 	RzBinSymbol *sym;
 	ut64 offorig = core->offset;
 	ut64 obs = core->blocksize;
-	RzList *list = rz_bin_get_symbols(core->bin);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	RzListIter *iter;
+	void **it;
 	rz_cons_break_push(NULL, NULL);
 	RzList *lost = rz_list_newf(free);
-	rz_list_foreach (list, iter, sym) {
+	rz_pvector_foreach (symbols, it) {
+		sym = *it;
 		RzBinSymbol *bs = rz_mem_dup(sym, sizeof(RzBinSymbol));
 		rz_list_append(lost, bs);
 	}
@@ -4906,15 +4918,20 @@ err:
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_string_stmt) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child(node, 0);
-	RzList *list = rz_bin_get_strings(core->bin);
+
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *vec = o ? (RzPVector *)rz_bin_object_get_strings(o) : NULL;
+
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	if (list) {
+	if (vec) {
 		ut64 offorig = core->offset;
 		ut64 obs = core->blocksize;
 		RzBinString *s;
 		RzList *lost = rz_list_newf(free);
 		RzListIter *iter;
-		rz_list_foreach (list, iter, s) {
+		void **it;
+		rz_pvector_foreach (vec, it) {
+			s = *it;
 			RzBinString *bs = rz_mem_dup(s, sizeof(RzBinString));
 			rz_list_append(lost, bs);
 		}
@@ -5327,6 +5344,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	}
 
 	TSNode root = ts_tree_root_node(tree);
+	RzLine *line = core->cons->line;
 
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	struct tsr2cmd_state state;
@@ -5340,7 +5358,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	rz_pvector_init(&state.saved_tree, NULL);
 
 	if (state.log) {
-		rz_line_hist_add(state.input);
+		rz_line_hist_add(line, state.input);
 	}
 
 	char *ts_str = ts_node_string(root);

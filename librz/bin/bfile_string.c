@@ -21,7 +21,7 @@ typedef struct shared_data_t {
 
 typedef struct search_thread_data_t {
 	RzThreadQueue *intervals;
-	RzList /*<RzBinString *>*/ *results;
+	RzPVector /*<RzBinString *>*/ *results;
 	size_t min_length;
 	RzStrEnc encoding;
 	bool check_ascii_freq;
@@ -132,7 +132,7 @@ static void *search_string_thread_runner(SearchThreadData *std) {
 			}
 
 			RzBinString *bstr = to_bin_string(detected);
-			if (!bstr || !rz_list_append(std->results, bstr)) {
+			if (!bstr || !rz_pvector_push(std->results, bstr)) {
 				rz_bin_string_free(bstr);
 				loop = false;
 				break;
@@ -158,7 +158,7 @@ static void bin_file_string_search_free(SearchThreadData *std) {
 	if (!std) {
 		return;
 	}
-	rz_list_free(std->results);
+	rz_pvector_free(std->results);
 	rz_atomic_bool_free(std->loop);
 	free(std);
 }
@@ -206,7 +206,7 @@ static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, R
 		return false;
 	}
 
-	std->results = rz_list_newf(rz_bin_string_free);
+	std->results = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 	if (!std->results) {
 		bin_file_string_search_free(std);
 		return false;
@@ -234,7 +234,7 @@ static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, R
 	return true;
 }
 
-static int string_compare_sort(const RzBinString *a, const RzBinString *b) {
+static int string_compare_sort(const RzBinString *a, const RzBinString *b, void *user) {
 	if (b->paddr > a->paddr) {
 		return -1;
 	} else if (b->paddr < a->paddr) {
@@ -247,7 +247,7 @@ static int string_compare_sort(const RzBinString *a, const RzBinString *b) {
 	return 0;
 }
 
-static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzList /*<RzBinString *>*/ *results, const RzBinSection *section) {
+static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzPVector /*<RzBinString *>*/ *results, const RzBinSection *section) {
 	// load objc/swift strings from CFstring table section
 
 	RzBinObject *o = bf->o;
@@ -293,13 +293,13 @@ static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzList /
 		bs->vaddr = cfstr_vaddr;
 		bs->paddr = rz_bin_object_v2p(o, bs->vaddr);
 		bs->string = rz_str_newf("cstr.%s", s->string);
-		rz_list_append(results, bs);
+		rz_pvector_push(results, bs);
 		ht_up_insert(strings_db, bs->vaddr, bs);
 	}
 	free(sbuf);
 }
 
-static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzList /*<RzBinString *>*/ *results, ut64 max_interval) {
+static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<RzBinString *>*/ *results, ut64 max_interval) {
 	RzListIter *iter = NULL;
 	RzBinSection *section = NULL;
 	RzBinObject *o = bf->o;
@@ -331,11 +331,11 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzList /*<RzBin
  *
  * \return On success returns RzList pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings) {
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings) {
 	rz_return_val_if_fail(bf, NULL);
 
 	HtUP *strings_db = NULL;
-	RzList *results = NULL;
+	RzPVector *results = NULL;
 	RzThreadQueue *intervals = NULL;
 	RzThreadPool *pool = NULL;
 	RzThreadLock *lock = NULL;
@@ -467,7 +467,7 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFi
 
 	rz_th_pool_wait(pool);
 
-	results = rz_list_newf(rz_bin_string_free);
+	results = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 	if (!results) {
 		RZ_LOG_ERROR("bin_file_strings: cannot allocate results list.\n");
 		goto fail;
@@ -480,20 +480,27 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFi
 		}
 		SearchThreadData *std = (SearchThreadData *)rz_th_get_user(th);
 		if (std) {
-			rz_list_join(results, std->results);
+			void **iter;
+			RzBinString *bstr;
+			rz_pvector_foreach (std->results, iter) {
+				bstr = *iter;
+				rz_pvector_push(results, bstr);
+			}
+			std->results->v.len = 0;
 		}
 	}
 
 	if (!raw_strings) {
 		scan_cfstring_table(bf, strings_db, results, max_interval);
 	}
-	rz_list_sort(results, (RzListComparator)string_compare_sort);
+	rz_pvector_sort(results, (RzPVectorComparator)string_compare_sort, NULL);
 
 	{
-		RzListIter *it;
+		void **it;
 		RzBinString *bstr;
 		ut32 ordinal = 0;
-		rz_list_foreach (results, it, bstr) {
+		rz_pvector_foreach (results, it) {
+			bstr = *it;
 			bstr->ordinal = ordinal;
 			ordinal++;
 		}

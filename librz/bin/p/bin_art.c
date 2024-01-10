@@ -94,7 +94,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return ao ? ao->art.image_base : 0;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 

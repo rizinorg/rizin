@@ -134,7 +134,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RzDyldCache *cache, RzList /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
+void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0(bf, bin);
 	if (!mach0) {
 		return;
@@ -166,7 +166,7 @@ void symbols_from_bin(RzDyldCache *cache, RzList /*<RzBinSymbol *>*/ *ret, RzBin
 		sym->ordinal = i;
 
 		set_u_add(hash, sym->vaddr);
-		rz_list_append(ret, sym);
+		rz_pvector_push(ret, sym);
 	}
 	MACH0_(mach0_free)
 	(mach0);
@@ -271,12 +271,12 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -284,7 +284,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	for (ut32 i = 0; i < cache->n_maps; i++) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		map->name = rz_str_newf("cache_map.%d", i);
@@ -296,7 +296,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		if (rz_dyldcache_range_needs_rebasing(cache, map->paddr, map->psize)) {
 			map->vfile_name = strdup(RZ_DYLDCACHE_VFILE_NAME_REBASED);
 		}
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 	return ret;
 }
@@ -325,13 +325,13 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
 
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -341,7 +341,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_list_foreach (cache->bins, iter, bin) {
 		SetU *hash = set_u_new();
 		if (!hash) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		symbols_from_bin(cache, ret, bf, bin, hash);
@@ -352,7 +352,9 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	ut64 slide = rz_dyldcache_get_slide(cache);
 	if (slide) {
 		RzBinSymbol *sym;
-		rz_list_foreach (ret, iter, sym) {
+		void **it;
+		rz_pvector_foreach (ret, it) {
+			sym = *it;
 			sym->vaddr += slide;
 		}
 	}

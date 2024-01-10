@@ -18,8 +18,8 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_list_newf((RzListFree)rz_bin_string_free);
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	return rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -113,15 +113,15 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
 
 	RzBinMap *map = RZ_NEW0(RzBinMap);
 	if (!map) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	map->paddr = 0;
@@ -130,11 +130,11 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vsize = bf->size;
 	map->perm = RZ_PERM_RWX;
 	map->name = strdup("code");
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
 	if (!map) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	map->paddr = 0;
@@ -143,7 +143,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vsize = 30000;
 	map->perm = RZ_PERM_RW;
 	map->name = strdup("mem");
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 	return ret;
 }
 

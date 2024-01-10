@@ -2152,17 +2152,18 @@ static bool scr_vtmode(void *user, void *data) {
 		node->i_value = RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
 	node->i_value = node->i_value > RZ_VIRT_TERM_MODE_COMPLETE ? RZ_VIRT_TERM_MODE_COMPLETE : node->i_value;
-	rz_line_singleton()->vtmode = rz_cons_singleton()->vtmode = node->i_value;
+	RzCons *cons = rz_cons_singleton();
+	cons->line->vtmode = cons->vtmode = node->i_value;
 
 	DWORD mode;
 	HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(input, &mode);
 	if (node->i_value == RZ_VIRT_TERM_MODE_COMPLETE) {
 		SetConsoleMode(input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
-		rz_cons_singleton()->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+		cons->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	} else {
 		SetConsoleMode(input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
-		rz_cons_singleton()->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
+		cons->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
 	HANDLE streams[] = { GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE) };
 	int i;
@@ -2296,14 +2297,15 @@ static bool cb_scrprompt(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->print->scr_prompt = node->i_value;
-	rz_line_singleton()->echo = node->i_value;
+	core->cons->line->echo = node->i_value;
 	return true;
 }
 
 static bool cb_scrrows(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	int n = atoi(node->value);
-	((RzCore *)user)->cons->force_rows = n;
+	core->cons->force_rows = n;
 	return true;
 }
 

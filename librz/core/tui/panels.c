@@ -162,7 +162,7 @@ static const char *menus_settings_screen[] = {
 
 static const char *menus_Help[] = {
 	"Toggle Help",
-	"License", "Version",
+	"Version",
 	"Fortune",
 	NULL
 };
@@ -509,7 +509,6 @@ static int __watch_points_cb(void *user);
 static int __references_cb(void *user);
 static int __help_cb(void *user);
 static int __fortune_cb(void *user);
-static int __license_cb(void *user);
 static int __version_cb(void *user);
 static int __quit_cb(void *user);
 static int __io_cache_on_cb(void *user);
@@ -999,9 +998,8 @@ void __update_help_contents(RzPanels *panels, RzPanel *panel) {
 	RzConsCanvas *can = panels->can;
 	(void)rz_cons_canvas_gotoxy(can, x + 2, y + 2);
 	if (sx < 0) {
-		char *white = (char *)rz_str_pad(' ', 128);
-		int idx = RZ_MIN(-sx, strlen(white) - 1);
-		white[idx] = 0;
+		int idx = RZ_MIN(-sx, 127);
+		char *white = rz_str_pad(' ', idx);
 		text = rz_str_ansi_crop(read_only,
 			0, sy, w + sx - 3, h - 2 + sy);
 		char *newText = rz_str_prefix_all(text, white);
@@ -1009,6 +1007,7 @@ void __update_help_contents(RzPanels *panels, RzPanel *panel) {
 			free(text);
 			text = newText;
 		}
+		free(white);
 	} else {
 		text = rz_str_ansi_crop(read_only,
 			sx, sy, w + sx - 3, h - 2 + sy);
@@ -1063,9 +1062,8 @@ void __update_panel_contents(RzCore *core, RzPanel *panel, const char *cmdstr) {
 	RzConsCanvas *can = panels->can;
 	(void)rz_cons_canvas_gotoxy(can, x + 2, y + 2);
 	if (sx < 0) {
-		char *white = (char *)rz_str_pad(' ', 128);
-		int idx = RZ_MIN(-sx, strlen(white) - 1);
-		white[idx] = 0;
+		int idx = RZ_MIN(-sx, 127);
+		char *white = rz_str_pad(' ', idx);
 		text = rz_str_ansi_crop(cmdstr,
 			0, sy + graph_pad, w + sx - 3, h - 2 + sy);
 		char *newText = rz_str_prefix_all(text, white);
@@ -1073,6 +1071,7 @@ void __update_panel_contents(RzCore *core, RzPanel *panel, const char *cmdstr) {
 			free(text);
 			text = newText;
 		}
+		free(white);
 	} else {
 		text = rz_str_ansi_crop(cmdstr, sx, sy + graph_pad, w + sx - 3, h - 2 + sy);
 	}
@@ -1640,7 +1639,7 @@ void __handleComment(RzCore *core) {
 	}
 	char buf[4095];
 	int i;
-	rz_line_set_prompt("[Comment]> ");
+	rz_line_set_prompt(core->cons->line, "[Comment]> ");
 	strcpy(buf, "\"CC ");
 	i = strlen(buf);
 	if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
@@ -3638,11 +3637,6 @@ int __help_cb(void *user) {
 	return 0;
 }
 
-int __license_cb(void *user) {
-	rz_cons_message("Copyright 2006-2020 - pancake - LGPL");
-	return 0;
-}
-
 int __version_cb(void *user) {
 	char *v = rz_version_str(NULL);
 	rz_cons_message(v);
@@ -4572,9 +4566,7 @@ bool __init_panels_menu(RzCore *core) {
 	parent = "Help";
 	i = 0;
 	while (menus_Help[i]) {
-		if (!strcmp(menus_Help[i], "License")) {
-			__add_menu(core, parent, menus_Help[i], __license_cb);
-		} else if (!strcmp(menus_Help[i], "Version")) {
+		if (!strcmp(menus_Help[i], "Version")) {
 			__add_menu(core, parent, menus_Help[i], __version_cb);
 		} else if (!strcmp(menus_Help[i], "Fortune")) {
 			__add_menu(core, parent, menus_Help[i], __fortune_cb);
@@ -6324,7 +6316,7 @@ void __handle_tab_new_with_cur_panel(RzCore *core) {
 }
 
 void __panel_prompt(const char *prompt, char *buf, int len) {
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(rz_cons_singleton()->line, prompt);
 	*buf = 0;
 	rz_cons_fgets(buf, len, 0, NULL);
 }

@@ -4,9 +4,10 @@
 #include <rz_util/rz_table.h>
 #include "rz_cons.h"
 
-// cant do that without globals because RzList doesnt have void *user :(
-static int Gnth = 0;
-static RzListComparator Gcmp = NULL;
+typedef struct row_info {
+	int nth;
+	RzListComparator cmp;
+} row_info_t;
 
 static int sortString(const void *a, const void *b) {
 	return strcmp(a, b);
@@ -790,44 +791,45 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 	}
 }
 
-static int cmp(const void *_a, const void *_b) {
+static int cmp(const void *_a, const void *_b, void *user) {
+	row_info_t *info = (row_info_t *)user;
 	RzTableRow *a = (RzTableRow *)_a;
 	RzTableRow *b = (RzTableRow *)_b;
-	const char *wa = rz_pvector_at(a->items, Gnth);
-	const char *wb = rz_pvector_at(b->items, Gnth);
-	int res = Gcmp(wa, wb);
-	return res;
+	const char *wa = rz_pvector_at(a->items, info->nth);
+	const char *wb = rz_pvector_at(b->items, info->nth);
+	return info->cmp(wa, wb);
 }
 
 RZ_API void rz_table_sort(RzTable *t, int nth, bool dec) {
 	RzTableColumn *col = rz_vector_index_ptr(t->cols, nth);
-	if (col) {
-		Gnth = nth;
-		if (col->type && col->type->cmp) {
-			Gcmp = col->type->cmp;
-			rz_vector_sort(t->rows, cmp, dec);
-		}
-		Gnth = 0;
-		Gcmp = NULL;
+	if (!(col && col->type && col->type->cmp)) {
+		return;
 	}
+
+	row_info_t info = { 0 };
+	info.nth = nth;
+	info.cmp = col->type->cmp;
+	rz_vector_sort(t->rows, cmp, dec, &info);
 }
 
-static int cmplen(const void *_a, const void *_b) {
+static int cmplen(const void *_a, const void *_b, void *user) {
+	row_info_t *info = (row_info_t *)user;
 	RzTableRow *a = (RzTableRow *)_a;
 	RzTableRow *b = (RzTableRow *)_b;
-	const char *wa = rz_pvector_at(a->items, Gnth);
-	const char *wb = rz_pvector_at(b->items, Gnth);
-	int res = strlen(wa) - strlen(wb);
-	return res;
+	const char *wa = rz_pvector_at(a->items, info->nth);
+	const char *wb = rz_pvector_at(b->items, info->nth);
+	return strlen(wa) - strlen(wb);
 }
 
 RZ_API void rz_table_sortlen(RzTable *t, int nth, bool dec) {
 	RzTableColumn *col = rz_vector_index_ptr(t->cols, nth);
-	if (col) {
-		Gnth = nth;
-		rz_vector_sort(t->rows, cmplen, dec);
-		Gnth = 0;
+	if (!col) {
+		return;
 	}
+
+	row_info_t info = { 0 };
+	info.nth = nth;
+	rz_vector_sort(t->rows, cmplen, dec, &info);
 }
 
 static int rz_rows_cmp(RzPVector /*<char *>*/ *lhs, RzPVector /*<char *>*/ *rhs, RzVector /*<RzTableColumn>*/ *cols, int nth) {

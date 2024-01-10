@@ -62,6 +62,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 	int menu = 0;
 	int sort = SORT_NONE;
 	RzCoreVisual *visual = core->visual;
+	RzLine *rzline = core->cons->line;
 
 	if (rz_flag_space_is_empty(core->flags)) {
 		menu = 1;
@@ -214,7 +215,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 			switch (menu) {
 			case 0: // new flag space
 				rz_cons_show_cursor(true);
-				rz_line_set_prompt("add flagspace: ");
+				rz_line_set_prompt(rzline, "add flagspace: ");
 				if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) > 0) {
 					rz_flag_space_set(core->flags, cmd);
 					rz_cons_set_raw(1);
@@ -223,7 +224,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 				break;
 			case 1: // new flag
 				rz_cons_show_cursor(true);
-				rz_line_set_prompt("add flag: ");
+				rz_line_set_prompt(rzline, "add flag: ");
 				strcpy(cmd, "f ");
 				if (rz_cons_fgets(cmd + 2, sizeof(cmd) - 2, 0, NULL) > 0) {
 					rz_core_cmd(core, cmd, 0);
@@ -270,7 +271,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 				snprintf(cmd, sizeof(cmd), "fr %s ", fs2);
 				len = strlen(cmd);
 				eprintf("Rename flag '%s' as:\n", fs2);
-				rz_line_set_prompt(":> ");
+				rz_line_set_prompt(rzline, ":> ");
 				if (rz_cons_fgets(cmd + len, sizeof(cmd) - len, 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
@@ -285,7 +286,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 				rz_cons_show_cursor(true);
 				rz_cons_set_raw(0);
 				eprintf("Rename function '%s' as:\n", fs2);
-				rz_line_set_prompt(":> ");
+				rz_line_set_prompt(rzline, ":> ");
 				if (rz_cons_fgets(line, sizeof(line), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
@@ -341,7 +342,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			*cmd = 0;
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(rzline, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				*cmd = 0;
 			}

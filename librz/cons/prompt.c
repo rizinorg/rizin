@@ -23,7 +23,7 @@ RZ_API RZ_OWN char *rz_cons_prompt(RZ_NONNULL const char *str, RZ_NULLABLE const
 		RZ_FREE(rz_cons_singleton()->line->contents);
 	}
 	*cmd = '\0';
-	rz_line_set_prompt(str);
+	rz_line_set_prompt(rz_cons_singleton()->line, str);
 	if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 		*cmd = '\0';
 	}
@@ -31,7 +31,7 @@ RZ_API RZ_OWN char *rz_cons_prompt(RZ_NONNULL const char *str, RZ_NULLABLE const
 	if (*cmd) {
 		res = strdup(cmd);
 	}
-	rz_line_set_prompt(oprompt);
+	rz_line_set_prompt(rz_cons_singleton()->line, oprompt);
 	free(oprompt);
 	RZ_FREE(rz_cons_singleton()->line->contents);
 	return res;

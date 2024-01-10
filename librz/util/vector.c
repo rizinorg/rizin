@@ -310,7 +310,7 @@ RZ_API void *rz_vector_flush(RzVector *vec) {
 
 // CLRS Quicksort. It is slow, but simple.
 #define VEC_INDEX(a, i) (char *)a + elem_size *(i)
-static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorComparator cmp, bool reverse) {
+static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(a);
 	if (len <= 1) {
 		return;
@@ -330,8 +330,8 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorCo
 	memcpy(pivot, VEC_INDEX(a, i), elem_size);
 	memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
 	for (i = 0; i < len - 1; i++) {
-		if ((cmp(VEC_INDEX(a, i), pivot) < 0 && !reverse) ||
-			(cmp(VEC_INDEX(a, i), pivot) > 0 && reverse)) {
+		if ((cmp(VEC_INDEX(a, i), pivot, user) < 0 && !reverse) ||
+			(cmp(VEC_INDEX(a, i), pivot, user) > 0 && reverse)) {
 			memcpy(t, VEC_INDEX(a, i), elem_size);
 			memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
 			memcpy(VEC_INDEX(a, j), t, elem_size);
@@ -342,8 +342,8 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorCo
 	memcpy(VEC_INDEX(a, j), pivot, elem_size);
 	RZ_FREE(t);
 	RZ_FREE(pivot);
-	vector_quick_sort(a, elem_size, j, cmp, reverse);
-	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse);
+	vector_quick_sort(a, elem_size, j, cmp, reverse, user);
+	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user);
 }
 #undef VEC_INDEX
 
@@ -353,10 +353,11 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorCo
  * \param vec pointer to RzVector
  * \param cmp function used for comparing elements while sorting
  * \param reverse sort order, ascending order when reverse = False
+ * \param user user pointer to extra data.
  */
-RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse) {
+RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(vec && cmp);
-	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse);
+	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse, user);
 }
 
 // pvector
@@ -427,16 +428,16 @@ RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 /**
  * \brief Find the \p element in the \p vec
  * \param vec the RzPVector to search in
- * \param element the element to search for
+ * \param value the value that elements in pvector compare against by \p cmp
  * \param cmp the comparator function
  * \return the iter of the element if found, NULL otherwise
  */
-RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *element, RZ_NONNULL RzPVectorComparator cmp) {
+RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *value, RZ_NONNULL RzPVectorComparator cmp, void *user) {
 	rz_return_val_if_fail(vec, NULL);
 
 	void **iter;
 	rz_pvector_foreach (vec, iter) {
-		if (!cmp(*iter, element)) {
+		if (!cmp(value, *iter, user)) {
 			return iter;
 		}
 	}
@@ -475,7 +476,7 @@ RZ_API void *rz_pvector_pop_front(RzPVector *vec) {
 }
 
 // CLRS Quicksort. It is slow, but simple.
-static void quick_sort(void **a, size_t n, RzPVectorComparator cmp) {
+static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) {
 	if (n <= 1) {
 		return;
 	}
@@ -483,7 +484,7 @@ static void quick_sort(void **a, size_t n, RzPVectorComparator cmp) {
 	void *t, *pivot = a[i];
 	a[i] = a[n - 1];
 	for (i = 0; i < n - 1; i++) {
-		if (cmp(a[i], pivot) < 0) {
+		if (cmp(a[i], pivot, user) < 0) {
 			t = a[i];
 			a[i] = a[j];
 			a[j] = t;
@@ -492,11 +493,11 @@ static void quick_sort(void **a, size_t n, RzPVectorComparator cmp) {
 	}
 	a[n - 1] = a[j];
 	a[j] = pivot;
-	quick_sort(a, j, cmp);
-	quick_sort(a + j + 1, n - j - 1, cmp);
+	quick_sort(a, j, cmp, user);
+	quick_sort(a + j + 1, n - j - 1, cmp, user);
 }
 
-RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp) {
+RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
 	rz_return_if_fail(vec && cmp);
-	quick_sort(vec->v.a, vec->v.len, cmp);
+	quick_sort(vec->v.a, vec->v.len, cmp, user);
 }

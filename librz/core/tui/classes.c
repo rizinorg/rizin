@@ -202,6 +202,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 	int oldcur = 0;
 	char *grep = NULL;
 	bool grepmode = false;
+	RzLine *line = core->cons->line;
 	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
 	const RzPVector *vec = rz_bin_object_get_classes(bin_obj);
 	if (!vec || rz_pvector_empty(vec)) {
@@ -368,7 +369,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			cmd[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
@@ -490,6 +491,7 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 	int oldcur = 0;
 	char mode = ' ';
 	const char *class_name = "";
+	RzLine *line = core->cons->line;
 
 	if (rz_list_empty(list)) {
 		rz_cons_message("No Classes");
@@ -577,7 +579,7 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			command[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(command, sizeof(command), 0, NULL) < 0) {
 				command[0] = '\0';
 			}

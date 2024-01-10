@@ -1266,6 +1266,7 @@ static Sdb *cc_ref_db() {
 	sdb_set(db, "cc.sectarian.arg1", "rcx", 0);
 	sdb_set(db, "cc.sectarian.arg0", "rdx", 0);
 	sdb_set(db, "cc.sectarian.argn", "stack", 0);
+	sdb_set(db, "cc.sectarian.maxargs", "2", 0);
 	sdb_set(db, "sectarian", "cc", 0);
 	return db;
 }
@@ -1352,6 +1353,7 @@ Sdb *analysis_ref_db() {
 	sdb_set(cc, "cc.sectarian.arg1", "rcx", 0);
 	sdb_set(cc, "cc.sectarian.arg0", "rdx", 0);
 	sdb_set(cc, "cc.sectarian.argn", "stack", 0);
+	sdb_set(cc, "cc.sectarian.maxargs", "2", 0);
 	sdb_set(cc, "sectarian", "cc", 0);
 
 	sdb_ns(db, "types", true);

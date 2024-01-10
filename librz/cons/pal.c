@@ -126,6 +126,10 @@ static inline ut8 rgbnum(const char ch1, const char ch2) {
 	return r << 4 | r2;
 }
 
+static int compare_strings(const char *s1, const char *s2, void *user) {
+	return strcmp(s1, s2);
+}
+
 static void __cons_pal_update_event(RzConsContext *ctx) {
 	RzPVector sorter;
 	rz_pvector_init(&sorter, NULL);
@@ -139,7 +143,7 @@ static void __cons_pal_update_event(RzConsContext *ctx) {
 		char *rgb = rz_str_newf("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		rz_pvector_push(&sorter, rgb);
 	}
-	rz_pvector_sort(&sorter, (RzPVectorComparator)strcmp);
+	rz_pvector_sort(&sorter, (RzPVectorComparator)compare_strings, NULL);
 	rz_cons_rainbow_free(ctx);
 	rz_cons_rainbow_new(ctx, rz_pvector_len(&sorter));
 	int n = 0;

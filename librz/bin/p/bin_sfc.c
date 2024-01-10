@@ -122,7 +122,7 @@ static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
 }
 #endif
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
 }
 

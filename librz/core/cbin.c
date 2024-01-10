@@ -39,7 +39,7 @@
 	if (binfile && binfile->rbin && binfile->rbin->verbose) \
 	eprintf
 
-static RZ_NULLABLE RZ_BORROW const RzList /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file);
+static RZ_NULLABLE RZ_BORROW const RzPVector /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file);
 
 static void table_add_row_bool(RzTable *t, const char *key, bool val) {
 	RzTableColumnType *typeString = rz_table_type("bool");
@@ -509,16 +509,17 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 	if (!o) {
 		return false;
 	}
-	const RzList *l = core_bin_strings(r, binfile);
+	const RzPVector *l = core_bin_strings(r, binfile);
 	if (!l) {
 		return false;
 	}
 	int va = (binfile->o && binfile->o->info && binfile->o->info->has_va) ? VA_TRUE : VA_FALSE;
 	rz_flag_space_push(r->flags, RZ_FLAGS_FS_STRINGS);
 	rz_cons_break_push(NULL, NULL);
-	RzListIter *iter;
+	void **iter;
 	RzBinString *string;
-	rz_list_foreach (l, iter, string) {
+	rz_pvector_foreach (l, iter) {
+		string = *iter;
 		if (is_invalid_address_va(va, string->vaddr, string->paddr)) {
 			continue;
 		}
@@ -917,15 +918,16 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 		return true;
 	}
 	RzBinObject *o = binfile->o;
-	if (!o || rz_list_empty(o->maps)) {
+	if (!o || rz_pvector_empty(o->maps)) {
 		return false;
 	}
-	RzList *maps = o->maps;
+	RzPVector *maps = o->maps;
 	RzCoreFile *cf = rz_core_file_find_by_fd(core, binfile->fd);
 
-	RzListIter *it;
+	void **it;
 	RzBinMap *map;
-	rz_list_foreach (maps, it, map) {
+	rz_pvector_foreach (maps, it) {
+		map = *it;
 		int va_map = va ? VA_TRUE : VA_FALSE;
 		if (va && !(map->perm & RZ_PERM_R)) {
 			va_map = VA_NOREBASE;
@@ -1468,10 +1470,13 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	rz_spaces_push(&core->analysis->meta_spaces, "bin");
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
-	RzList *symbols = rz_bin_get_symbols(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = obj ? (RzPVector *)rz_bin_object_get_symbols(obj) : NULL;
 	RzListIter *iter;
+	void **it;
 	RzBinSymbol *symbol;
-	rz_list_foreach (symbols, iter, symbol) {
+	rz_pvector_foreach (symbols, it) {
+		symbol = *it;
 		if (!symbol->name) {
 			continue;
 		}
@@ -1712,7 +1717,7 @@ RZ_API bool rz_core_bin_set_cur(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *
 /**
  * Strings for the given file, respecting settings like bin.strings
  */
-static RZ_NULLABLE RZ_BORROW const RzList /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file) {
+static RZ_NULLABLE RZ_BORROW const RzPVector /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file) {
 	rz_return_val_if_fail(r && file, false);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(file);
 	if (!plugin || !rz_config_get_i(r->config, "bin.strings")) {
@@ -1721,7 +1726,12 @@ static RZ_NULLABLE RZ_BORROW const RzList /*<RzBinString *>*/ *core_bin_strings(
 	if (plugin->name && !strcmp(plugin->name, "any")) {
 		return NULL;
 	}
-	return rz_bin_get_strings(r->bin);
+
+	if (!r->bin) {
+		return NULL;
+	}
+	RzBinObject *o = rz_bin_cur_object(r->bin);
+	return o ? rz_bin_object_get_strings(o) : NULL;
 }
 
 /**
@@ -1950,16 +1960,17 @@ static bool is_in_symbol_range(ut64 sym_addr, ut64 sym_size, ut64 addr) {
 
 static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter, bool only_export) {
 	RzBinObject *o = bf->o;
-	const RzList *symbols = rz_bin_object_get_symbols(o);
+	const RzPVector *symbols = rz_bin_object_get_symbols(o);
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	RzBinSymbol *symbol;
-	RzListIter *iter;
+	void **iter;
 	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "dXXssnss", "nth", "paddr", "vaddr", "bind", "type", "size", "lib", "name");
 
-	rz_list_foreach (symbols, iter, symbol) {
+	rz_pvector_foreach (symbols, iter) {
+		symbol = *iter;
 		if (!symbol->name) {
 			continue;
 		}
@@ -2668,12 +2679,12 @@ RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 	return true;
 }
 
-static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList /*<RzBinString *>*/ *list) {
+static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector /*<RzBinString *>*/ *vec) {
 	bool b64str = rz_config_get_i(core->config, "bin.b64str");
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 
-	RzListIter *iter;
+	void **iter;
 	RzBinString *string;
 	RzBinSection *section;
 
@@ -2681,7 +2692,8 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList /*
 	rz_cmd_state_output_set_columnsf(state, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 
 	RzBinString b64 = { 0 };
-	rz_list_foreach (list, iter, string) {
+	rz_pvector_foreach (vec, iter) {
+		string = *iter;
 		const char *section_name, *type_string;
 		char quiet_val[20];
 		ut64 paddr, vaddr;
@@ -2845,17 +2857,17 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList /*
 RZ_API bool rz_core_bin_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && bf && state, false);
 
-	const RzList *list = rz_bin_object_get_strings(bf->o);
-	return strings_print(core, state, list);
+	const RzPVector *vec = rz_bin_object_get_strings(bf->o);
+	return strings_print(core, state, vec);
 }
 
 /***
- * \brief Generates a RzList struct containing RzBinString from a given RzBinFile
+ * \brief Generates a RzPVector struct containing RzBinString from a given RzBinFile
  * \param core The RzCore instance
  * \param bf The RzBinFile to use for searching for strings
- * \return On success returns RzList pointer, otherwise NULL
+ * \return On success returns RzPVector pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *bf) {
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *bf) {
 	rz_return_val_if_fail(core, NULL);
 
 	bool new_bf = false;
@@ -2897,7 +2909,7 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNULL R
 		new_bf = true;
 	}
 	size_t min = rz_config_get_i(core->config, "bin.minstr");
-	RzList *l = rz_bin_file_strings(bf, min, true);
+	RzPVector *l = rz_bin_file_strings(bf, min, true);
 	if (new_bf) {
 		rz_buf_free(bf->buf);
 		free(bf->file);
@@ -2909,12 +2921,12 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNULL R
 RZ_API bool rz_core_bin_whole_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
-	RzList *l = rz_core_bin_whole_strings(core, bf);
+	RzPVector *l = rz_core_bin_whole_strings(core, bf);
 	if (!l) {
 		return false;
 	}
 	bool res = strings_print(core, state, l);
-	rz_list_free(l);
+	rz_pvector_free(l);
 	return res;
 }
 

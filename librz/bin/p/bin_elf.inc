@@ -650,12 +650,12 @@ static ut32 section_perms_from_flags(ut32 flags) {
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	if (!obj) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -695,7 +695,7 @@ static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 				map->name = rz_str_newf("LOAD%d", n);
 			}
 			n++;
-			rz_list_append(ret, map);
+			rz_pvector_push(ret, map);
 		}
 	} else {
 		// Load sections if there is no PHDR
@@ -713,11 +713,11 @@ static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 			map->vsize = section->size;
 			map->vaddr = section->rva;
 			map->perm = section_perms_from_flags(section->flags);
-			rz_list_append(ret, map);
+			rz_pvector_push(ret, map);
 		}
 	}
 
-	if (rz_list_empty(ret)) {
+	if (rz_pvector_empty(ret)) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			return ret;
@@ -728,7 +728,7 @@ static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		map->vaddr = 0x10000;
 		map->vsize = bf->size;
 		map->perm = RZ_PERM_RWX;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	if (obj->ehdr.e_type == ET_REL) {
@@ -746,7 +746,7 @@ static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		map->vaddr = obj->baddr;
 		map->vsize = ehdr_size;
 		map->perm = RZ_PERM_RW;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 	return ret;
 }
@@ -1489,12 +1489,12 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	if (!obj) {
 		return NULL;
 	}
-	RzList *ret = maps_unpatched(bf);
+	RzPVector *ret = maps_unpatched(bf);
 	if (!ret) {
 		return NULL;
 	}
@@ -1638,11 +1638,11 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1651,24 +1651,24 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_bin_elf_foreach_symbols(bin, symbol) {
 		RzBinSymbol *tmp = convert_symbol(bin, symbol);
 		if (!tmp) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 
-		rz_list_append(ret, tmp);
+		rz_pvector_push(ret, tmp);
 	}
 
 	RzBinElfSymbol *import;
 	rz_bin_elf_foreach_imports(bin, import) {
 		RzBinSymbol *tmp = convert_symbol(bin, import);
 		if (!tmp) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 
 		tmp->is_imported = true;
 
-		rz_list_append(ret, tmp);
+		rz_pvector_push(ret, tmp);
 	}
 
 	return ret;
@@ -1746,12 +1746,13 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 }
 
 static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
-	RzList *symbols_list = symbols(bf);
-	RzListIter *iter;
+	RzPVector *symbols_vec = symbols(bf);
+	void **iter;
 	RzBinSymbol *symbol;
 	bool is_rust = false;
-	if (symbols_list) {
-		rz_list_foreach (symbols_list, iter, symbol) {
+	if (symbols_vec) {
+		rz_pvector_foreach (symbols_vec, iter) {
+			symbol = *iter;
 			if (ret->has_canary && is_rust) {
 				break;
 			}
@@ -1768,7 +1769,7 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 				ret->lang = "rust";
 			}
 		}
-		rz_list_free(symbols_list);
+		rz_pvector_free(symbols_vec);
 	}
 }
 
@@ -1975,6 +1976,6 @@ static ut64 size(RzBinFile *bf) {
 	return off + len;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }

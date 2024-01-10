@@ -26,9 +26,7 @@
 #define DS_ANALYSIS_OP_MASK (RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL | \
 	RZ_ANALYSIS_OP_MASK_VAL | (ds->show_cmt_il ? RZ_ANALYSIS_OP_MASK_IL : 0))
 
-// ugly globals but meh
-static ut64 emustack_min = 0LL;
-static ut64 emustack_max = 0LL;
+#define ESILISTATE core->analysis->esilinterstate
 
 static const ut8 MAX_OPSIZE = 16;
 static const ut8 MIN_OPSIZE = 1;
@@ -671,8 +669,8 @@ static RzDisasmState *ds_init(RzCore *core) {
 		const char *uri = "malloc://32K";
 		ut64 size = rz_num_get(core->num, "32K");
 		ut64 addr = rz_reg_getv(core->analysis->reg, "SP") - (size / 2);
-		emustack_min = addr;
-		emustack_max = addr + size;
+		ESILISTATE->emustack_min = addr;
+		ESILISTATE->emustack_max = addr + size;
 		ds->stackFd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
 		RzIOMap *map = rz_io_map_add(core->io, ds->stackFd, RZ_PERM_RW, 0LL, addr, size);
 		if (!map) {
@@ -798,8 +796,6 @@ static RzDisasmState *ds_init(RzCore *core) {
 	return ds;
 }
 
-static ut64 lastaddr = UT64_MAX;
-
 static void ds_reflines_fini(RzDisasmState *ds) {
 	RzAnalysis *analysis = ds->core->analysis;
 	rz_list_free(analysis->reflines);
@@ -811,8 +807,6 @@ static void ds_reflines_fini(RzDisasmState *ds) {
 
 static void ds_reflines_init(RzDisasmState *ds) {
 	RzAnalysis *analysis = ds->core->analysis;
-
-	lastaddr = UT64_MAX;
 
 	// refline info is needed when it is shown as ascii,
 	// or returned as part of a json or C struct representation.
@@ -3344,8 +3338,9 @@ static void ds_print_optype(RzDisasmState *ds) {
 	if (ds->show_optype) {
 		const char *optype = rz_analysis_optype_to_string(ds->analysis_op.type);
 		ds_print_color_reset(ds);
-		const char *pad = rz_str_pad(' ', 8 - strlen(optype));
+		char *pad = rz_str_pad(' ', 8 - strlen(optype));
 		rz_cons_printf("[%s]%s", optype, pad);
+		free(pad);
 	}
 }
 
@@ -4248,7 +4243,7 @@ static int mymemwrite1(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len)
 }
 
 static int mymemwrite2(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	return (addr >= emustack_min && addr < emustack_max);
+	return (addr >= esil->analysis->esilinterstate->emustack_min && addr < esil->analysis->esilinterstate->emustack_max);
 }
 
 static char *ssa_get(RzAnalysisEsil *esil, const char *reg) {

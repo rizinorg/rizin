@@ -8,7 +8,6 @@
 #include <rz_util.h>
 #include <rz_list.h>
 
-#define READ_AHEAD 1
 #define SDB_KEY_BB "bb.0x%" PFMT64x ".0x%" PFMT64x
 // XXX must be configurable by the user
 #define JMPTBL_LEA_SEARCH_SZ 64
@@ -45,46 +44,38 @@ RZ_API const char *rz_analysis_fcntype_tostring(int type) {
 	return "unk";
 }
 
-#if READ_AHEAD
-static ut64 cache_addr = UT64_MAX;
+typedef struct {
+	ut8 cache[1024];
+	ut64 cache_addr;
+} ReadAhead;
 
 // TODO: move into io :?
-static int read_ahead(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len) {
-	static ut8 cache[1024];
-	const int cache_len = sizeof(cache);
-
+static int read_ahead(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut8 *buf, ssize_t len) {
+	bool is_cached = false;
 	if (len < 1) {
-		return 0;
-	}
-	if (len > cache_len) {
-		int a = analysis->iob.read_at(analysis->iob.io, addr, buf, len); // double read
-		memcpy(cache, buf, cache_len);
-		cache_addr = addr;
-		return a;
+		return -1;
 	}
 
-	ut64 addr_end = UT64_ADD_OVFCHK(addr, len) ? UT64_MAX : addr + len;
-	ut64 cache_addr_end = UT64_ADD_OVFCHK(cache_addr, cache_len) ? UT64_MAX : cache_addr + cache_len;
-	bool isCached = ((addr != UT64_MAX) && (addr >= cache_addr) && (addr_end < cache_addr_end));
-	if (isCached) {
-		memcpy(buf, cache + (addr - cache_addr), len);
-	} else {
-		analysis->iob.read_at(analysis->iob.io, addr, cache, sizeof(cache));
-		memcpy(buf, cache, len);
-		cache_addr = addr;
+	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr < ra->cache_addr + sizeof(ra->cache)) {
+		ut64 addr_end = UT64_ADD_OVFCHK(addr, len) ? UT64_MAX : addr + len;
+		ut64 cache_addr_end = UT64_ADD_OVFCHK(ra->cache_addr, sizeof(ra->cache)) ? UT64_MAX : ra->cache_addr + sizeof(ra->cache);
+		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end < cache_addr_end));
 	}
-	return len;
-}
-#else
-static int read_ahead(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len) {
-	return analysis->iob.read_at(analysis->iob.io, addr, buf, len);
-}
-#endif
 
-RZ_API void rz_analysis_fcn_invalidate_read_ahead_cache(void) {
-#if READ_AHEAD
-	cache_addr = UT64_MAX;
-#endif
+	if (!is_cached) {
+		if (len > sizeof(ra->cache)) {
+			len = sizeof(ra->cache);
+		}
+		analysis->iob.read_at(analysis->iob.io, addr, ra->cache, sizeof(ra->cache));
+		ra->cache_addr = addr;
+	}
+	ssize_t delta = addr - ra->cache_addr;
+	if (delta >= 0) {
+		size_t length = sizeof(ra->cache) - delta;
+		memcpy(buf, ra->cache + delta, RZ_MIN(len, length));
+		return len;
+	}
+	return -1;
 }
 
 RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
@@ -161,7 +152,7 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
 }
 
-static bool is_delta_pointer_table(RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
+static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[64] = { 0 };
@@ -173,7 +164,7 @@ static bool is_delta_pointer_table(RzAnalysis *analysis, ut64 addr, ut64 lea_ptr
 	RzAnalysisOp add_aop = { 0 };
 	RzRegItem *reg_src = NULL, *o_reg_dst = NULL;
 	RzAnalysisValue cur_scr, cur_dst = { 0 };
-	read_ahead(analysis, addr, (ut8 *)buf, sizeof(buf));
+	read_ahead(ra, analysis, addr, buf, sizeof(buf));
 	bool isValid = false;
 	for (i = 0; i + 8 < JMPTBL_LEA_SEARCH_SZ; i++) {
 		ut64 at = addr + i;
@@ -237,7 +228,7 @@ static bool is_delta_pointer_table(RzAnalysis *analysis, ut64 addr, ut64 lea_ptr
 	}
 #endif
 	/* check if jump table contains valid deltas */
-	read_ahead(analysis, *jmptbl_addr, (ut8 *)&jmptbl, 64);
+	read_ahead(ra, analysis, *jmptbl_addr, (ut8 *)&jmptbl, 64);
 	for (i = 0; i < 3; i++) {
 		dst = lea_ptr + (st32)rz_read_le32(jmptbl);
 		if (!analysis->iob.is_valid_offset(analysis->iob.io, dst, 0)) {
@@ -553,6 +544,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	RzStackAddr sp = item->sp;
 	ut64 addr = item->start_address;
 	ut64 len = analysis->opt.bb_max_size;
+	ReadAhead read_ahead_cache = { 0 };
 	const int continue_after_jump = analysis->opt.afterjmp;
 	const int addrbytes = analysis->iob.io ? analysis->iob.io->addrbytes : 1;
 	char *last_reg_mov_lea_name = NULL;
@@ -563,7 +555,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	bool overlapped = false;
 	RzAnalysisOp op = { 0 };
 	int oplen, idx = 0;
-	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
 	bool varset = false;
 	struct {
 		int cnt;
@@ -575,6 +566,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	} delay = {
 		0
 	};
+
+	read_ahead_cache.cache_addr = UT64_MAX; // invalidate the cache
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
 	bool arch_destroys_dst = does_arch_destroys_dst(analysis->cur->arch);
 	bool is_arm = false, is_x86 = false, is_amd64 = false, is_dalvik = false, is_hexagon = false;
@@ -650,7 +643,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			gotoBeach(RZ_ANALYSIS_RET_ERROR);
 		}
 	}
-	static ut64 lea_jmptbl_ip = UT64_MAX;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
 	bool last_is_push = false;
@@ -707,7 +699,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			break;
 		}
 		ut64 bytes_read = RZ_MIN(len - at_delta, sizeof(buf));
-		ret = read_ahead(analysis, at, buf, bytes_read);
+		ret = read_ahead(&read_ahead_cache, analysis, at, buf, bytes_read);
 
 		if (ret < 0) {
 			RZ_LOG_ERROR("Failed to read ahead\n");
@@ -972,7 +964,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				RzAnalysisOp jmp_aop = { 0 };
 				ut64 jmptbl_addr = op.ptr;
 				ut64 casetbl_addr = op.ptr;
-				if (is_delta_pointer_table(analysis, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+				if (is_delta_pointer_table(&read_ahead_cache, analysis, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
 					// we require both checks here since rz_analysis_get_jmptbl_info uses
 					// BB info of the final jmptbl jump, which is no present with
 					// is_delta_pointer_table just scanning ahead
@@ -993,7 +985,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 							? rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params)
 							: rz_analysis_walkthrough_casetbl(analysis, fcn, bb, &params);
 						if (ret) {
-							lea_jmptbl_ip = jmp_aop.addr;
+							analysis->lea_jmptbl_ip = jmp_aop.addr;
 						}
 					}
 				}
@@ -1111,14 +1103,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_SUB:
 			if (op.val != UT64_MAX && op.val > 0 && op.val < analysis->opt.jmptbl_maxcount) {
 				// if register is not stack
-				cmpval = op.val;
+				analysis->cmpval = op.val;
 			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_CMP: {
 			ut64 val = is_x86 ? op.val : op.ptr;
 			if (val) {
 				if (val < analysis->opt.jmptbl_maxcount) {
-					cmpval = val;
+					analysis->cmpval = val;
 				}
 				bb->cmpval = val;
 				bb->cmpreg = op.reg;
@@ -1160,14 +1152,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			}
 			if (analysis->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {
-					if (cmpval != UT64_MAX && op.fail != UT64_MAX && (op.reg || op.ireg)) {
+					if (analysis->cmpval != UT64_MAX && op.fail != UT64_MAX && (op.reg || op.ireg)) {
 						RzAnalysisJmpTableParams params = {
 							.jmp_address = op.addr,
 							.case_shift = 0,
 							.jmptbl_loc = op.ptr,
 							.casetbl_loc = UT64_MAX,
 							.entry_size = analysis->bits >> 3,
-							.table_count = cmpval + 1,
+							.table_count = analysis->cmpval + 1,
 							.jmptbl_off = op.ptr,
 							.default_case = op.fail,
 							.sp = sp,
@@ -1185,7 +1177,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						} else if (op.fail == op.ptr) {
 							op.fail = UT64_MAX;
 						}
-						cmpval = UT64_MAX;
+						analysis->cmpval = UT64_MAX;
 					}
 				}
 			}
@@ -1274,7 +1266,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			// switch statement
-			if (analysis->opt.jmptbl && lea_jmptbl_ip != op.addr) {
+			if (analysis->opt.jmptbl && analysis->lea_jmptbl_ip != op.addr) {
 				RzAnalysisJmpTableParams params = {
 					.jmp_address = op.addr,
 					.entry_size = analysis->bits >> 3,
@@ -1330,13 +1322,13 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						}
 					}
 					if (!rz_analysis_get_jmptbl_info(analysis, fcn, bb, op.addr, &params)) {
-						params.table_count = cmpval + 1;
+						params.table_count = analysis->cmpval + 1;
 						params.default_case = -1;
 					}
 					params.jmptbl_loc = params.jmptbl_off + movdisp;
 					params.entry_size = movscale;
 					ret = rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
-					cmpval = UT64_MAX;
+					analysis->cmpval = UT64_MAX;
 				} else if (is_arm) {
 					params.jmptbl_loc = op.addr + op.size;
 					params.jmptbl_off = op.addr + 4;
@@ -1347,7 +1339,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						if (pred_cmpval != UT64_MAX) {
 							params.table_count += pred_cmpval;
 						} else {
-							params.table_count += cmpval;
+							params.table_count += analysis->cmpval;
 						}
 						params.entry_size = 1;
 						ret = rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
@@ -1359,7 +1351,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						if (pred_cmpval != UT64_MAX) {
 							params.table_count += pred_cmpval;
 						} else {
-							params.table_count += cmpval;
+							params.table_count += analysis->cmpval;
 						}
 						params.entry_size = 2;
 						ret = rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
@@ -1368,8 +1360,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					}
 				}
 			}
-			if (lea_jmptbl_ip == op.addr) {
-				lea_jmptbl_ip = UT64_MAX;
+			if (analysis->lea_jmptbl_ip == op.addr) {
+				analysis->lea_jmptbl_ip = UT64_MAX;
 			}
 			if (analysis->opt.ijmp) {
 				if (continue_after_jump) {
@@ -2317,7 +2309,6 @@ static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *
 	RzAnalysisFunction *fcn;
 	bool old_jmpmid = analysis->opt.jmpmid;
 	analysis->opt.jmpmid = true;
-	rz_analysis_fcn_invalidate_read_ahead_cache();
 	rz_list_foreach (fcns, it, fcn) {
 		// Recurse through blocks of function, mark reachable,
 		// analyze edges that don't have a block

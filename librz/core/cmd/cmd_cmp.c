@@ -79,9 +79,10 @@ static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 	const char *color_end = scr_color ? Color_RESET : "";
 	if (rz_config_get_i(core->config, "hex.header")) {
 		char *n = rz_str_newf("0x%08" PFMT64x, cmp->addr1);
-		const char *extra = rz_str_pad(' ', strlen(n) - 10);
+		char *extra = rz_str_pad(' ', strlen(n) - 10);
 		free(n);
 		rz_cons_printf("%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, extra, color_end);
+		free(extra);
 	}
 	color = scr_color ? pal->graph_false : "";
 	color_end = scr_color ? Color_RESET : "";

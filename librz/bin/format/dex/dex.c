@@ -736,14 +736,14 @@ RZ_API RZ_OWN char *rz_bin_dex_access_flags_readable(ut32 access_flags) {
 }
 
 /**
- * \brief Returns a RzList<RzBinString*> containing the dex strings
+ * \brief Returns a RzPVector<RzBinString*> containing the dex strings
  */
-RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexString *string;
 	void **it;
-	RzList *strings = rz_list_newf(rz_bin_string_free);
+	RzPVector *strings = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 	if (!strings) {
 		return NULL;
 	}
@@ -762,7 +762,7 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex
 		bstr->size = string->size;
 		bstr->string = rz_str_ndup(string->data, string->size);
 		bstr->type = RZ_STRING_ENC_UTF8;
-		if (!rz_list_append(strings, bstr)) {
+		if (!rz_pvector_push(strings, bstr)) {
 			free(bstr);
 		}
 		ordinal++;
@@ -1278,16 +1278,16 @@ RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBin
 }
 
 /**
- * \brief Returns a RzList<RzBinSymbol*> containing the dex symbols
+ * \brief Returns a RzPVector<RzBinSymbol*> containing the dex symbols
  */
-RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
 	DexFieldId *field_id;
 	DexMethodId *method_id;
 	RzList *class_symbols = NULL;
-	RzList *symbols = NULL;
+	RzPVector *symbols = NULL;
 	void **vit;
 	ut8 *inserted_methods = NULL;
 	ut8 *inserted_fields = NULL;
@@ -1302,7 +1302,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		return NULL;
 	}
 
-	symbols = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	symbols = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!symbols) {
 		free(inserted_fields);
 		free(inserted_methods);
@@ -1311,16 +1311,26 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 
 	rz_pvector_foreach (dex->class_defs, vit) {
 		class_def = (DexClassDef *)*vit;
+		RzListIter *iter;
+		RzBinSymbol *sym;
 
 		class_symbols = dex_resolve_fields_in_class_as_symbols(dex, class_def, inserted_fields);
 		if (class_symbols) {
-			rz_list_join(symbols, class_symbols);
+			rz_list_foreach (class_symbols, iter, sym) {
+				rz_pvector_push(symbols, sym);
+			}
+			class_symbols->length = 0;
+			class_symbols->head = class_symbols->tail = NULL;
 			rz_list_free(class_symbols);
 		}
 
 		class_symbols = dex_resolve_methods_in_class(dex, class_def, inserted_methods);
 		if (class_symbols) {
-			rz_list_join(symbols, class_symbols);
+			rz_list_foreach (class_symbols, iter, sym) {
+				rz_pvector_push(symbols, sym);
+			}
+			class_symbols->length = 0;
+			class_symbols->head = class_symbols->tail = NULL;
 			rz_list_free(class_symbols);
 		}
 	}
@@ -1346,7 +1356,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		field->vaddr = UT64_MAX;
 		field->paddr = UT64_MAX;
 
-		if (!rz_list_append(symbols, field)) {
+		if (!rz_pvector_push(symbols, field)) {
 			rz_bin_symbol_free(field);
 			break;
 		}
@@ -1380,7 +1390,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		}
 		method->size = method_id->code_size;
 
-		if (!rz_list_append(symbols, method)) {
+		if (!rz_pvector_push(symbols, method)) {
 			rz_bin_symbol_free(method);
 			break;
 		}
@@ -1498,7 +1508,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBin
 	return imports;
 }
 
-static int compare_strings(const void *a, const void *b) {
+static int compare_strings(const void *a, const void *b, void *user) {
 	return strcmp((const char *)a, (const char *)b);
 }
 
@@ -1564,7 +1574,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *
 			object = p;
 		}
 
-		if (rz_pvector_find(libraries, object, compare_strings)) {
+		if (rz_pvector_find(libraries, object, compare_strings, NULL)) {
 			free(object);
 			continue;
 		}

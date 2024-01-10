@@ -69,7 +69,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return MACH0_(get_virtual_files)(bf);
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return MACH0_(get_maps)(bf);
 }
 
@@ -185,13 +185,13 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) * bin, RzBinSymbol **p) {
 	}
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	struct MACH0_(obj_t) * bin;
 	int i;
 	const struct symbol_t *syms = NULL;
 	RzBinSymbol *ptr = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	int wordsize = 0;
 	if (!ret) {
 		return NULL;
@@ -231,7 +231,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp(ptr->name, "radr://", 7) ? 0 : 1;
 		set_u_add(symcache, ptr->vaddr);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	// functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
@@ -256,7 +256,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 				_handle_arm_thumb(bin, &ptr);
 			}
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
 				if (!set_u_contains(symcache, ptr->vaddr)) {
@@ -813,7 +813,7 @@ static ut64 size(RzBinFile *bf) {
 	return off + len;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 

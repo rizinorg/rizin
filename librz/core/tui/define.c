@@ -43,8 +43,9 @@ static void handleHints(RzCore *core) {
 		rz_cons_fill_line();
 		rz_cons_printf("\r%s\n", lines[i]);
 	}
+	RzLine *line = core->cons->line;
 	rz_cons_flush();
-	rz_line_set_prompt("analysis hint: ");
+	rz_line_set_prompt(line, "analysis hint: ");
 	if (rz_cons_fgets(ch, sizeof(ch), 0, NULL) > 0) {
 		switch (ch[0]) {
 		case 'b': {
@@ -63,6 +64,7 @@ static void handleHints(RzCore *core) {
 
 RZ_IPI void rz_core_visual_define(RzCore *core, const char *args, int distance) {
 	RzCoreVisual *visual = core->visual;
+	RzLine *line = core->cons->line;
 	int plen = core->blocksize;
 	ut64 off = core->offset;
 	int i, h = 0, n, ch, ntotal = 0;
@@ -116,7 +118,7 @@ onemoretime:
 		rz_cons_show_cursor(true);
 		rz_core_cmd0(core, "pf?");
 		rz_cons_flush();
-		rz_line_set_prompt("format: ");
+		rz_line_set_prompt(line, "format: ");
 		strcpy(cmd, "Cf 0 ");
 		if (rz_cons_fgets(cmd + 5, sizeof(cmd) - 5, 0, NULL) > 0) {
 			rz_core_cmdf(core, "%s @ 0x%08" PFMT64x, cmd, off);
@@ -131,7 +133,7 @@ onemoretime:
 	case 'o': {
 		char str[128];
 		rz_cons_show_cursor(true);
-		rz_line_set_prompt(ch == 't' ? "type: " : "opstr: ");
+		rz_line_set_prompt(line, ch == 't' ? "type: " : "opstr: ");
 		if (rz_cons_fgets(str, sizeof(str), 0, NULL) > 0) {
 			rz_core_cmdf(core, "ah%c %s @ 0x%" PFMT64x, ch, str, off);
 		}
@@ -142,7 +144,7 @@ onemoretime:
 	case 'i': {
 		char str[128];
 		rz_cons_show_cursor(true);
-		rz_line_set_prompt("immbase: ");
+		rz_line_set_prompt(line, "immbase: ");
 		if (rz_cons_fgets(str, sizeof(str), 0, NULL) > 0) {
 			int base = rz_num_base_of_string(core->num, str);
 			rz_analysis_hint_set_immbase(core->analysis, off, base);
@@ -151,7 +153,7 @@ onemoretime:
 	case 'I': {
 		char str[128];
 		rz_cons_show_cursor(true);
-		rz_line_set_prompt("immbase: ");
+		rz_line_set_prompt(line, "immbase: ");
 		if (rz_cons_fgets(str, sizeof(str), 0, NULL) > 0) {
 			rz_core_cmdf(core, "ahi1 %s @ 0x%" PFMT64x, str, off);
 		}
@@ -266,7 +268,7 @@ onemoretime:
 			char cmd[128];
 			rz_cons_show_cursor(true);
 			rz_cons_flush();
-			rz_line_set_prompt("color: ");
+			rz_line_set_prompt(line, "color: ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) > 0) {
 				rz_flag_item_set_color(item, cmd);
 				rz_cons_set_raw(1);
@@ -284,7 +286,7 @@ onemoretime:
 			rz_cons_printf("Current flag size is: %" PFMT64d "\n", item->size);
 			rz_cons_show_cursor(true);
 			rz_cons_flush();
-			rz_line_set_prompt("new size: ");
+			rz_line_set_prompt(line, "new size: ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) > 0) {
 				item->size = rz_num_math(core->num, cmd);
 				rz_cons_set_raw(1);

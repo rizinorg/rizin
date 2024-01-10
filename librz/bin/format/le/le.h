@@ -103,10 +103,10 @@ typedef struct rz_bin_le_obj_s {
 bool rz_bin_le_check_buffer(RzBuffer *b);
 bool rz_bin_le_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb);
 void rz_bin_le_destroy(RzBinFile *bf);
-RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf);
+RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf);
 RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf);
 RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf);
-RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(RzBinFile *bf);
+RZ_OWN RzPVector /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(RzBinFile *bf);
 RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_le_get_imports(RzBinFile *bf);
 RZ_OWN RzPVector /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf);
 RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf);

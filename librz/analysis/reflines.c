@@ -302,8 +302,9 @@ static void add_spaces(RzBuffer *b, int level, int pos, bool wide) {
 			level *= 2;
 		}
 		if (pos > level + 1) {
-			const char *pd = rz_str_pad(' ', pos - level - 1);
-			rz_buf_append_string(b, pd);
+			char *pad = rz_str_pad(' ', pos - level - 1);
+			rz_buf_append_string(b, pad);
+			free(pad);
 		}
 	}
 }
@@ -313,15 +314,16 @@ static void fill_level(RzBuffer *b, int pos, char ch, RzAnalysisRefline *r, bool
 	if (wide) {
 		sz *= 2;
 	}
-	const char *pd = rz_str_pad(ch, sz - 1);
+	char *pad = rz_str_pad(ch, sz - 1);
 	if (pos == -1) {
-		rz_buf_append_string(b, pd);
+		rz_buf_append_string(b, pad);
 	} else {
-		int pdlen = strlen(pd);
+		int pdlen = strlen(pad);
 		if (pdlen > 0) {
-			rz_buf_write_at(b, pos, (const ut8 *)pd, pdlen);
+			rz_buf_write_at(b, pos, (const ut8 *)pad, pdlen);
 		}
 	}
+	free(pad);
 }
 
 static inline bool refline_kept(RzAnalysisRefline *ref, bool middle_after, ut64 addr) {

@@ -1975,10 +1975,10 @@ RzPVector /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 	return ret;
 }
 
-RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
+RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -2000,13 +2000,13 @@ RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 		// boffset is relevant for fatmach0 where the mach0 is located boffset into the whole file
 		// the rebasing vfile above however is based at the mach0 already
 		map->paddr = seg->fileoff + bf->o->boffset;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 	return ret;
 }
 
-RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
-	RzList *ret = MACH0_(get_maps_unpatched)(bf);
+RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
+	RzPVector *ret = MACH0_(get_maps_unpatched)(bf);
 	if (!ret) {
 		return NULL;
 	}

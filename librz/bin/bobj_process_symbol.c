@@ -90,7 +90,7 @@ static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzD
 }
 
 RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
-	if (rz_list_length(o->symbols) < 1) {
+	if (rz_pvector_len(o->symbols) < 1) {
 		return;
 	}
 
@@ -99,9 +99,10 @@ RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemang
 
 	RzBinProcessLanguage language_cb = rz_bin_process_language_symbol(o);
 
-	RzListIter *it;
+	void **it;
 	RzBinSymbol *element;
-	rz_list_foreach (o->symbols, it, element) {
+	rz_pvector_foreach (o->symbols, it) {
+		element = *it;
 		process_handle_symbol(element, o, demangler, flags, language_cb);
 	}
 }
@@ -109,16 +110,17 @@ RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemang
 RZ_IPI void rz_bin_set_symbols_from_plugin(RzBinFile *bf, RzBinObject *o) {
 	RzBinPlugin *plugin = o->plugin;
 
-	rz_list_free(o->symbols);
+	rz_pvector_free(o->symbols);
 	if (!plugin->symbols || !(o->symbols = plugin->symbols(bf))) {
-		o->symbols = rz_list_newf((RzListFree)rz_bin_symbol_free);
+		o->symbols = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	}
 }
 
 RZ_IPI void rz_bin_demangle_symbols_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
-	RzListIter *it;
+	void **it;
 	RzBinSymbol *element;
-	rz_list_foreach (o->symbols, it, element) {
+	rz_pvector_foreach (o->symbols, it) {
+		element = *it;
 		rz_bin_demangle_symbol(element, demangler, flags, true);
 	}
 }

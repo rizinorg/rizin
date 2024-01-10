@@ -467,8 +467,9 @@ static bool flirt_pat_write_line(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL 
 	}
 
 	if (prelude_len < (RZ_FLIRT_MAX_PRELUDE_SIZE << 1)) {
-		const char *pad = rz_str_pad('.', (RZ_FLIRT_MAX_PRELUDE_SIZE << 1) - prelude_len);
+		char *pad = rz_str_pad('.', (RZ_FLIRT_MAX_PRELUDE_SIZE << 1) - prelude_len);
 		rz_strbuf_append(prelude, pad);
+		free(pad);
 	}
 
 	char tmp[32];

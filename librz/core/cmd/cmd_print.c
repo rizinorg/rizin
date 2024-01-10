@@ -7,7 +7,6 @@
 #include <rz_util.h>
 #include <rz_type.h>
 #include <rz_types.h>
-#include <limits.h>
 
 #include "../core_private.h"
 #include "rz_util/rz_strbuf.h"
@@ -3152,23 +3151,26 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 				if (label) {
 					const int label_padding = 10;
 					if (delta > 0) {
-						const char *pad = rz_str_pad(' ', sz - sz2 + label_padding);
+						char *pad = rz_str_pad(' ', sz - sz2 + label_padding);
 						if (offdec) {
 							rz_cons_printf("%s%s%s%s+%d%s", k, inv, label, reset, delta, pad);
 						} else {
 							rz_cons_printf("%s%s%s%s+0x%x%s", k, inv, label, reset, delta, pad);
 						}
+						free(pad);
 					} else {
-						const char *pad = rz_str_pad(' ', sz + label_padding);
+						char *pad = rz_str_pad(' ', sz + label_padding);
 						rz_cons_printf("%s%s%s%s%s", k, inv, label, reset, pad);
+						free(pad);
 					}
 				} else {
-					const char *pad = rz_str_pad(' ', sz - sz2);
+					char *pad = rz_str_pad(' ', sz - sz2);
 					if (offdec) {
 						rz_cons_printf("%s+%d%s", pad, delta, reset);
 					} else {
 						rz_cons_printf("%s+0x%x%s", pad, delta, reset);
 					}
+					free(pad);
 				}
 			} else {
 				if (offdec) {
@@ -3198,13 +3200,14 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 		} else {
 			int sz = lenof(off, 0);
 			int sz2 = lenof(delta, 1);
-			const char *pad = rz_str_pad(' ', sz - 5 - sz2 - 3);
 			if (delta > 0) {
+				char *pad = rz_str_pad(' ', sz - 5 - sz2 - 3);
 				if (offdec) {
 					rz_cons_printf("%s+%d%s", pad, delta, reset);
 				} else {
 					rz_cons_printf("%s+0x%x%s", pad, delta, reset);
 				}
+				free(pad);
 			} else {
 				if (offdec) {
 					snprintf(space, sizeof(space), "%" PFMT64u, off);
@@ -4447,8 +4450,12 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	if (argc <= 1) {
+		RZ_LOG_ERROR("Invalid argument.");
+		return RZ_CMD_STATUS_ERROR;
+	}
 
+	ut64 n_bytes = rz_num_math(core->num, argv[1]);
 	// small patch to reuse rz_core_print_disasm_strings which
 	// needs to be rewritten entirely
 	char *string = rz_core_print_disasm_strings(core, argc > 1 ? RZ_CORE_DISASM_STRINGS_MODE_BYTES : RZ_CORE_DISASM_STRINGS_MODE_INST, n_bytes, NULL);
@@ -7025,7 +7032,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_raw_colors_handler(RzCore *core, int argc, const char **argv) {
-	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}

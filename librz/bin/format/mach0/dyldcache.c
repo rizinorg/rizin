@@ -1278,7 +1278,7 @@ RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache) {
 	return 0;
 }
 
-RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzPVector /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
 	RzDyldLocSym *locsym = cache->locsym;
 	if (!locsym) {
 		return;
@@ -1325,11 +1325,11 @@ RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage 
 		if (symstr) {
 			sym->name = symstr;
 		} else {
-			static ut32 k = 0;
-			sym->name = rz_str_newf("unk_local%d", k++);
+			sym->name = rz_str_newf("unk_local%" PFMT32u, cache->unk_local_n);
+			cache->unk_local_n++;
 		}
 
-		rz_list_append(symbols, sym);
+		rz_pvector_push(symbols, sym);
 	}
 
 	free(nlists);
@@ -1357,6 +1357,7 @@ RZ_API RzDyldCache *rz_dyldcache_new_buf(RzBuffer *buf) {
 	}
 	cache->locsym = rz_dyld_locsym_new(cache);
 	cache->rebase_infos = get_rebase_infos(cache);
+	cache->unk_local_n = 0;
 	return cache;
 cupertino:
 	rz_dyldcache_free(cache);

@@ -244,6 +244,9 @@ static void shifted_reg64_append(RzStrBuf *sb, csh *handle, cs_insn *insn, int n
 // got rid of the opchar= pattern here because it caused missing operators to fail silently
 // and makes things more complicated with very little benefit
 static void arm64math(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
+	if (ISIMM64(0) || ISIMM64(1)) {
+		return;
+	}
 	const char *r0 = REG64(0);
 	const char *r1 = REG64(1);
 
@@ -1040,7 +1043,11 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 			if (REGSIZE64(0) == 4) {
 				rz_strbuf_appendf(&op->esil, "%s,0xffffffff,^,%s,&=", REG64(1), REG64(0));
 			} else {
-				rz_strbuf_appendf(&op->esil, "%s,0xffffffffffffffff,^,%s,&=", REG64(1), REG64(0));
+				if (ISREG64(1)) {
+					rz_strbuf_appendf(&op->esil, "%s,0xffffffffffffffff,^,%s,&=", REG64(1), REG64(0));
+				} else {
+					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",0xffffffffffffffff,^,%s,&=", IMM64(1), REG64(0));
+				}
 			}
 		} else {
 			if (REGSIZE64(0) == 4) {

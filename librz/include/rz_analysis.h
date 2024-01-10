@@ -491,6 +491,7 @@ typedef struct rz_analysis_t {
 	int esil_goto_limit; // esil.gotolimit
 	int pcalign; // asm.pcalign
 	struct rz_analysis_esil_t *esil;
+	struct rz_analysis_esil_inter_state_t *esilinterstate;
 	RzAnalysisILVM *il_vm; ///< user-faced VM, NEVER use this for any analysis passes!
 	struct rz_analysis_plugin_t *cur;
 	RzAnalysisRange *limit; // analysis.from, analysis.to
@@ -531,7 +532,9 @@ typedef struct rz_analysis_t {
 	HtPP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
-	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc.
+	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..
+	ut64 cmpval; ///< last compare value for jump table.
+	ut64 lea_jmptbl_ip; ///< jump table x86 lea ip
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
@@ -1175,7 +1178,23 @@ typedef struct rz_analysis_esil_t {
 	bool (*cmd)(ANALYSIS_ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd; // ahem, let's not do this
+	bool in_cmd_step;
 } RzAnalysisEsil;
+
+/* During the analysis RzAnalysisEsil could be reset multiple times,
+ * thus there is a need to preserve some values between those runs.
+ */
+typedef struct rz_analysis_esil_inter_state_t {
+	bool analysis_stop;
+	ut64 last_read;
+	ut64 last_data;
+	ut64 emustack_min;
+	ut64 emustack_max;
+	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memreads;
+	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memwrites;
+	RzAnalysisEsilCallbacks callbacks;
+	bool callbacks_set;
+} RzAnalysisEsilInterState;
 
 /* Alias RegChange and MemChange */
 typedef RzAnalysisEsilRegChange RzAnalysisRzilRegChange;
@@ -1298,6 +1317,12 @@ typedef struct rz_analysis_esil_basic_block_t {
 	char *expr; // synthesized esil-expression for this block
 	RzAnalysisEsilBlockEnterType enter; // maybe more type is needed here
 } RzAnalysisEsilBB;
+
+// Structure to represent memory reads and writes during ESIL tracing
+typedef struct rz_analysis_esil_memory_region_t {
+	ut64 addr; ///< memory address
+	size_t size; ///< size of the region
+} RzAnalysisEsilMemoryRegion;
 
 // TODO: rm data + len
 typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
@@ -1705,7 +1730,6 @@ RZ_API int rz_analysis_fcn_del(RzAnalysis *analysis, ut64 addr);
 RZ_API int rz_analysis_fcn_del_locs(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail);
 RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
-RZ_API void rz_analysis_fcn_invalidate_read_ahead_cache(void);
 
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size);

@@ -25,6 +25,7 @@ RZ_API void rz_analysis_cc_del(RzAnalysis *analysis, const char *name) {
 	rz_return_if_fail(analysis && name);
 	sdb_unset(DB, name, 0);
 	cc_sdb_unsetf(DB, "cc.%s.ret", name);
+	cc_sdb_unsetf(DB, "cc.%s.maxargs", name);
 	cc_sdb_unsetf(DB, "cc.%s.argn", name);
 	for (int i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
 		cc_sdb_unsetf(DB, "cc.%s.arg%d", name, i);
@@ -76,6 +77,11 @@ RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
 			cc_sdb_setf(DB, arg, "cc.%s.arg%d", ccname, n);
 			n++;
 		}
+	}
+	if (n > rz_analysis_cc_max_arg(analysis, ccname)) {
+		char maxargs[256];
+		rz_strf(maxargs, "%d", n);
+		cc_sdb_setf(DB, maxargs, "cc.%s.maxargs", ccname);
 	}
 	rz_list_free(ccArgs);
 	free(e);
@@ -197,27 +203,18 @@ RZ_API void rz_analysis_cc_set_error(RzAnalysis *analysis, const char *conventio
 }
 
 RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc) {
-	int i = 0;
 	rz_return_val_if_fail(analysis && DB && cc, 0);
-	static void *oldDB = NULL;
-	static char *oldCC = NULL;
-	static int oldArg = 0;
-	if (oldDB == DB && !strcmp(cc, oldCC)) {
-		return oldArg;
+	char *query = rz_str_newf("cc.%s.maxargs", cc);
+	if (!query) {
+		return 0;
 	}
-	oldDB = DB;
-	free(oldCC);
-	oldCC = strdup(cc);
-	for (i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
-		char *query = rz_str_newf("cc.%s.arg%d", cc, i);
-		const char *res = query ? sdb_const_get(DB, query, 0) : NULL;
-		free(query);
-		if (!res) {
-			break;
-		}
+	const char *res = sdb_const_get(DB, query, 0);
+	free(query);
+	int maxargs = res ? atoi(res) : 0;
+	if (maxargs < 0 || maxargs > RZ_ANALYSIS_CC_MAXARG) {
+		return 0;
 	}
-	oldArg = i;
-	return i;
+	return maxargs;
 }
 
 RZ_API const char *rz_analysis_cc_ret(RzAnalysis *analysis, const char *convention) {
