@@ -1333,11 +1333,12 @@ RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x
  * \return RzILOpFloat*
  */
 RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(val && ctx && x86_il_is_st_reg(reg), NULL);
+	rz_return_val_if_fail(val && x86_il_is_st_reg(reg), NULL);
 
 	if (val_format == RZ_FLOAT_IEEE754_BIN_80) {
 		return SETG(x86_registers[reg], F2BV(val));
 	} else {
+		rz_return_val_if_fail(ctx, NULL);
 		RzILOpFloat *converted_val = x86_il_resize_floating(val, val_format);
 
 		return SETG(x86_registers[reg], F2BV(converted_val));
