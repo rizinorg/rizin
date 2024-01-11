@@ -21,13 +21,13 @@ bool test_rz_bin(void) {
 
 	RzBinObject *obj = rz_bin_cur_object(bin);
 
-	RzList *sections = rz_bin_object_get_sections(obj);
-	mu_assert_eq(rz_list_length(sections), 29, "rz_bin_object_get_sections");
-	rz_list_free(sections);
+	RzPVector *sections = rz_bin_object_get_sections(obj);
+	mu_assert_eq(rz_pvector_len(sections), 29, "rz_bin_object_get_sections");
+	rz_pvector_free(sections);
 
-	RzList *segments = rz_bin_object_get_segments(obj);
-	mu_assert_eq(rz_list_length(segments), 10, "rz_bin_object_get_segments");
-	rz_list_free(segments);
+	RzPVector *segments = rz_bin_object_get_segments(obj);
+	mu_assert_eq(rz_pvector_len(segments), 10, "rz_bin_object_get_segments");
+	rz_pvector_free(segments);
 
 	const RzList *entries = rz_bin_object_get_entries(obj);
 	mu_assert_eq(rz_list_length(entries), 1, "rz_bin_object_get_entries");

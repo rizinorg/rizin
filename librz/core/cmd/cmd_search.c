@@ -715,8 +715,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		if (obj) {
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (!s->is_segment) {
 					continue;
 				}
@@ -734,8 +735,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 			ut64 from = UT64_MAX;
 			ut64 to = 0;
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (s->is_segment) {
 					continue;
 				}
@@ -771,8 +773,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		if (obj) {
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (s->is_segment) {
 					continue;
 				}
@@ -788,8 +791,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		if (obj) {
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (!s->is_segment) {
 					continue;
 				}
@@ -804,8 +808,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		if (obj) {
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (s->is_segment) {
 					continue;
 				}

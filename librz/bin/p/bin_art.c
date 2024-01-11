@@ -144,19 +144,18 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ArtObj *ao = bf->o->bin_obj;
 	if (!ao) {
 		return NULL;
 	}
 	ARTHeader art = ao->art;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -167,7 +166,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
 	ptr->perm = RZ_PERM_R; // r--
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -178,7 +177,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->perm = RZ_PERM_RX; // r-x
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -189,7 +188,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
 	ptr->perm = RZ_PERM_RX; // r-x
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -200,7 +199,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;
 	ptr->perm = RZ_PERM_R; // r--
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	return ret;
 }

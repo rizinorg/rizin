@@ -115,17 +115,17 @@ static ut64 nds_boffset(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RzList /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	if (!bf || !bf->o) {
 		return NULL;
 	}
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinSection *ptr9 = NULL, *ptr7 = NULL;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free)) ||
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free)) ||
 		!(ptr9 = RZ_NEW0(RzBinSection)) ||
 		!(ptr7 = RZ_NEW0(RzBinSection))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		free(ptr9);
 		return NULL;
 	}
@@ -137,7 +137,7 @@ static RzList /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	ptr9->paddr = hdr->arm9_rom_offset;
 	ptr9->vaddr = hdr->arm9_ram_address;
 	ptr9->perm = rz_str_rwx("rwx");
-	rz_list_append(ret, ptr9);
+	rz_pvector_push(ret, ptr9);
 
 	ptr7->name = strdup("arm7");
 	ptr7->size = hdr->arm7_size;
@@ -145,7 +145,7 @@ static RzList /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	ptr7->paddr = hdr->arm7_rom_offset;
 	ptr7->vaddr = hdr->arm7_ram_address;
 	ptr7->perm = rz_str_rwx("rwx");
-	rz_list_append(ret, ptr7);
+	rz_pvector_push(ret, ptr7);
 
 	return ret;
 }

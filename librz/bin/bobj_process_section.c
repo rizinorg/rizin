@@ -28,16 +28,17 @@ RZ_IPI void rz_bin_set_and_process_sections(RzBinFile *bf, RzBinObject *o) {
 	RzBin *bin = bf->rbin;
 	RzBinPlugin *plugin = o->plugin;
 
-	rz_list_free(o->sections);
+	rz_pvector_free(o->sections);
 	if (!plugin->sections || !(o->sections = plugin->sections(bf))) {
-		o->sections = rz_list_newf((RzListFree)rz_bin_section_free);
+		o->sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	}
 
 	HtPP *filter_db = bin->filter ? ht_pp_new0() : NULL;
 
-	RzListIter *it;
+	void **it;
 	RzBinSection *element;
-	rz_list_foreach (o->sections, it, element) {
+	rz_pvector_foreach (o->sections, it) {
+		element = *it;
 		process_handle_section(element, o, filter_db);
 	}
 

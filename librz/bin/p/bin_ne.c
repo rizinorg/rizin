@@ -107,7 +107,7 @@ RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return rz_bin_ne_get_imports(bf->o->bin_obj);
 }
 
-RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_ne_get_segments(bf->o->bin_obj);
 }
 

@@ -83,7 +83,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return bin_info_obj->general_info;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}
@@ -92,7 +92,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	return rz_list_clone(bin_info_obj->section_list);
+	return rz_pvector_clone(bin_info_obj->section_vec);
 }
 
 static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {

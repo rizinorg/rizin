@@ -252,9 +252,9 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
-	if (!(ret = rz_list_new())) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	RzBinSection *ptr;
@@ -265,7 +265,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -274,7 +274,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof(SMD_Header);
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -289,7 +289,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	ptr->size = ptr->vsize = rz_buf_size(bf->buf) - ptr->paddr;
 	ptr->perm = RZ_PERM_RX;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 

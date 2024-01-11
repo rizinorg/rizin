@@ -2631,8 +2631,9 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			ut64 offorig = core->offset;
 			ut64 bszorig = core->blocksize;
 			RzBinSection *sec;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, sec) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				sec = *iter;
 				rz_core_seek(core, sec->vaddr, true);
 				rz_core_block_size(core, sec->vsize);
 				rz_core_cmd0(core, cmd);
@@ -4960,8 +4961,9 @@ static RzCmdStatus do_iter_sections(struct tsr2cmd_state *state, TSNode node, bo
 	ut64 offorig = core->offset;
 	ut64 bszorig = core->blocksize;
 	RzBinSection *sec;
-	RzListIter *iter;
-	rz_list_foreach (obj->sections, iter, sec) {
+	void **iter;
+	rz_pvector_foreach (obj->sections, iter) {
+		sec = *iter;
 		if ((sec->is_segment && show_sections) || (!sec->is_segment && !show_sections)) {
 			continue;
 		}

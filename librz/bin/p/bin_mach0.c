@@ -73,7 +73,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return MACH0_(get_maps)(bf);
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return MACH0_(get_segments)(bf);
 }
 
@@ -95,11 +95,12 @@ static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 }
 
 static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, int bits) {
-	RzList *secs = sections(bf);
-	RzListIter *iter;
+	RzPVector *secs = sections(bf);
+	void **iter;
 	RzBinSection *sec;
 	int i, type;
-	rz_list_foreach (secs, iter, sec) {
+	rz_pvector_foreach (secs, iter) {
+		sec = *iter;
 		type = -1;
 		if (strstr(sec->name, "_mod_fini_func")) {
 			type = RZ_BIN_ENTRY_TYPE_FINI;
@@ -800,10 +801,11 @@ static ut64 size(RzBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!bf->o->sections) {
-		RzListIter *iter;
+		void **iter;
 		RzBinSection *section;
 		bf->o->sections = sections(bf);
-		rz_list_foreach (bf->o->sections, iter, section) {
+		rz_pvector_foreach (bf->o->sections, iter) {
+			section = *iter;
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;

@@ -208,10 +208,10 @@ maps_err:
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -226,7 +226,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	int bufsz = rz_buf_size(bf->buf);
 
@@ -251,7 +251,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = mod0;
 		ptr->vaddr = mod0 + ba;
 		ptr->perm = RZ_PERM_R; // rw-
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	} else {
 		RZ_LOG_ERROR("Invalid MOD0 address\n");
 	}
@@ -264,7 +264,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			RzBinSection *section;
 			rz_pvector_foreach (msecs, iter) {
 				section = *iter;
-				rz_list_append(ret, section);
+				rz_pvector_push(ret, section);
 			}
 			msecs->v.len = 0;
 			rz_pvector_free(msecs);

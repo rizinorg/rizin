@@ -99,7 +99,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj);
 static RzList /*<RKext *>*/ *carve_kexts(RzXNUKernelCacheObj *obj);
 static RzList /*<RKext *>*/ *kexts_from_load_commands(RzXNUKernelCacheObj *obj);
 
-static void sections_from_mach0(RzList /*<RzBinSection *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, char *prefix, RzXNUKernelCacheObj *obj);
+static void sections_from_mach0(RzPVector /*<RzBinSection *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, char *prefix, RzXNUKernelCacheObj *obj);
 static void handle_data_sections(RzBinSection *sect);
 static void symbols_from_mach0(RzPVector /*<RzBinSymbol *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, int ordinal);
 static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr);
@@ -1105,11 +1105,11 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!obj || !obj->bin_obj || !(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -1159,7 +1159,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = ptr->paddr;
 		}
 		ptr->perm = prot2perm(seg->initprot);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;
@@ -1176,7 +1176,7 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static void sections_from_mach0(RzList /*<RzBinSection *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, char *prefix, RzXNUKernelCacheObj *obj) {
+static void sections_from_mach0(RzPVector /*<RzBinSection *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, char *prefix, RzXNUKernelCacheObj *obj) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(mach0))) {
 		return;
@@ -1208,7 +1208,7 @@ static void sections_from_mach0(RzList /*<RzBinSection *>*/ *ret, struct MACH0_(
 		if (!ptr->perm && strstr(sections[i].name, "__TEXT_EXEC.__text")) {
 			ptr->perm = 1 | 4;
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	free(sections);
 }

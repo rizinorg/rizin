@@ -921,6 +921,17 @@ static bool test_pvector_find(void) {
 	mu_end;
 }
 
+static bool test_pvector_join(void) {
+	RzPVector m, n;
+	init_test_pvector(&m, 5, 0);
+	init_test_pvector(&n, 3, 0);
+	mu_assert_eq(rz_pvector_len(&m), 5, "length is 5 before join");
+	rz_pvector_join(&m, &n);
+	mu_assert_eq(rz_pvector_len(&m), 8, "length is 8 after join");
+	mu_assert_eq(*((ut32 *)rz_pvector_at(&m, 6)), 1, "m[6] = n[1]");
+	mu_end;
+}
+
 static bool test_pvector_contains(void) {
 	RzPVector v;
 	init_test_pvector(&v, 5, 0);
@@ -1424,6 +1435,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_at);
 	mu_run_test(test_pvector_set);
 	mu_run_test(test_pvector_find);
+	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
 	mu_run_test(test_pvector_insert);

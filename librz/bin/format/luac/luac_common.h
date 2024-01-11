@@ -159,7 +159,7 @@ typedef struct lua_dbg_upvalue_entry {
 typedef struct luac_bin_info {
 	st32 major; ///< major version
 	st32 minor; ///< minor version
-	RzList /*<RzBinSection *>*/ *section_list; ///< list of sections
+	RzPVector /*<RzBinSection *>*/ *section_vec; ///< list of sections
 	RzList /*<RzBinSymbol *>*/ *symbol_list; ///< list of symbols
 	RzList /*<RzBinAddr *>*/ *entry_list; ///< list of entries
 	RzList /*<RzBinString *>*/ *string_list; ///< list of strings
@@ -187,7 +187,7 @@ void lua_free_proto_entry(LuaProto *);
  * Common Operation to RzBinInfo
  * Implemented in 'bin/format/luac/luac_bin.c'
  * ======================================================== */
-void luac_add_section(RzList /*<RzBinSection *>*/ *section_list, char *name, ut64 offset, ut32 size, bool is_func);
+void luac_add_section(RzPVector /*<RzBinSection *>*/ *section_list, char *name, ut64 offset, ut32 size, bool is_func);
 void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 offset, ut64 size, const char *type);
 void luac_add_entry(RzList /*<RzBinAddr *>*/ *entry_list, ut64 offset, int entry_type);
 void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset, ut64 size);

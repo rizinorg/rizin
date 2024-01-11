@@ -144,19 +144,19 @@ RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin
 	return ret;
 }
 
-RzList /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzPVector /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	/* TODO: Vet code, taken verbatim(ish) from bin_pe.c */
 	int i;
 	ut64 ba = pe_bin->vaddr; // baddr (arch);
 	struct rz_bin_pe_section_t *sections = NULL;
 	RzBinSection *ptr;
-	RzList *ret;
+	RzPVector *ret;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	if (!pe_bin->bin || !(sections = pe_bin->bin->sections)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	PE_(rz_bin_pe_check_sections)
@@ -205,7 +205,7 @@ RzList /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_
 				ptr->is_data = true;
 			}
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

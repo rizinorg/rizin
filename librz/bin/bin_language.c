@@ -87,7 +87,7 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	RzBinSymbol *sym;
 	RzBinImport *imp;
 	RzBinSection *section;
-	RzListIter *iter;
+	void **iter;
 
 	if (!info) {
 		return RZ_BIN_LANGUAGE_UNKNOWN;
@@ -148,9 +148,8 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 		return language_apply_blocks_mask(RZ_BIN_LANGUAGE_OBJC, is_blocks);
 	}
 
-	void **it;
-	rz_pvector_foreach (o->symbols, it) {
-		sym = *it;
+	rz_pvector_foreach (o->symbols, iter) {
+		sym = *iter;
 		if (!sym->name) {
 			continue;
 		}
@@ -193,7 +192,8 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	}
 
 	if (is_macho || is_elf) {
-		rz_list_foreach (o->sections, iter, section) {
+		rz_pvector_foreach (o->sections, iter) {
+			section = *iter;
 			if (!section->name) {
 				continue;
 			}

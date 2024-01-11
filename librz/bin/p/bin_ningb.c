@@ -59,11 +59,11 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -77,7 +77,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		section->vaddr = i ? (i * 0x10000 - 0xc000) : 0;
 		section->size = section->vsize = 0x4000;
 		section->perm = rz_str_rwx("rx");
-		rz_list_append(ret, section);
+		rz_pvector_push(ret, section);
 	}
 	return ret;
 }

@@ -75,12 +75,12 @@ static char *__func_name_from_ord(char *module, ut16 ordinal) {
 	return name;
 }
 
-RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
+RzPVector /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	int i;
 	if (!bin) {
 		return NULL;
 	}
-	RzList *segments = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *segments = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!segments) {
 		return NULL;
 	}
@@ -99,7 +99,7 @@ RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 		bs->paddr = (ut64)se->offset * bin->alignment;
 		bs->name = rz_str_newf("%s.%" PFMT64d, se->flags & IS_MOVEABLE ? "MOVEABLE" : "FIXED", bs->paddr);
 		bs->is_segment = true;
-		rz_list_append(segments, bs);
+		rz_pvector_push(segments, bs);
 	}
 	bin->segments = segments;
 	return segments;
@@ -396,7 +396,7 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 	RzBinAddr *entry;
-	RzList *segments = rz_bin_ne_get_segments(bin);
+	RzPVector *segments = rz_bin_ne_get_segments(bin);
 	if (!segments) {
 		rz_list_free(entries);
 		return NULL;
@@ -405,11 +405,11 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		entry = RZ_NEW0(RzBinAddr);
 		if (!entry) {
 			rz_list_free(entries);
-			rz_list_free(segments);
+			rz_pvector_free(segments);
 			return NULL;
 		}
 		entry->bits = 16;
-		RzBinSection *s = rz_list_get_n(segments, bin->ne_header->csEntryPoint - 1);
+		RzBinSection *s = (RzBinSection *)rz_pvector_at(segments, bin->ne_header->csEntryPoint - 1);
 		entry->paddr = bin->ne_header->ipEntryPoint + (s ? s->paddr : 0);
 		rz_list_append(entries, entry);
 	}
@@ -430,7 +430,7 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 			entry = RZ_NEW0(RzBinAddr);
 			if (!entry) {
 				rz_list_free(entries);
-				rz_list_free(segments);
+				rz_pvector_free(segments);
 				return NULL;
 			}
 			off++;
@@ -469,13 +469,13 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		}
 	}
 end:
-	rz_list_free(segments);
+	rz_pvector_free(segments);
 	bin->entries = entries;
 	return entries;
 }
 
 RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
-	RzList *segments = bin->segments;
+	RzPVector *segments = bin->segments;
 	if (!segments) {
 		return NULL;
 	}
@@ -501,10 +501,11 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	}
 
 	ut64 bufsz = rz_buf_size(bin->buf);
-	RzListIter *it;
+	void **it;
 	RzBinSection *seg;
 	int index = -1;
-	rz_list_foreach (segments, it, seg) {
+	rz_pvector_foreach (segments, it) {
+		seg = *it;
 		index++;
 		if (!(bin->segment_entries[index].flags & RELOCINFO)) {
 			continue;
@@ -581,7 +582,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				// TODO
 			} else {
 				if (strstr(seg->name, "FIXED")) {
-					RzBinSection *s = rz_list_get_n(segments, rel.segnum - 1);
+					RzBinSection *s = (RzBinSection *)rz_pvector_at(segments, rel.segnum - 1);
 					if (s) {
 						offset = s->paddr + rel.segoff;
 					} else {

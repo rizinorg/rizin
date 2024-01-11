@@ -269,9 +269,9 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -294,7 +294,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = obj->scn_va[i];
 		}
 		ptr->perm = rz_coff_perms_from_section_flags(obj->scn_hdrs[i].s_flags);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

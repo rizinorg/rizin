@@ -86,7 +86,7 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return rz_bin_dex_imports(dex);
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
