@@ -1120,7 +1120,18 @@ RZ_IPI RzILOpEffect *init_rmode() {
 	return SETL("_rmode", x86_il_fpu_get_rmode());
 }
 
-/* I hate this, but this is the only way to conditionally use the correct rmode. */
+/**
+ * \brief Execute the function \p f with the correct op mode argument
+ *
+ * \param f function which takes in the rounding mode as the first argument
+ *
+ * 0 -> RNE
+ * 1 -> RTN
+ * 2 -> RTP
+ * 3 -> RTZ
+ *
+ * I hate this, but this is the only way to conditionally use the correct rmode.
+ */
 #define EXEC_WITH_RMODE(f, ...) \
 	ITE(EQ(VARL("_rmode"), UN(2, 0)), f(RZ_FLOAT_RMODE_RNE, __VA_ARGS__), \
 		(EQ(VARL("_rmode"), UN(2, 1)), f(RZ_FLOAT_RMODE_RTN, __VA_ARGS__), \
