@@ -79,7 +79,7 @@ typedef struct {
 	Sdb *kv;
 	lmf_header lmfh;
 	RzList /*<RzBinSection *>*/ *fixups;
-	RzList /*<RzBinSection *>*/ *sections;
+	RzPVector /*<RzBinSection *>*/ *sections;
 	RzPVector /*<RzBinMap *>*/ *maps;
 	lmf_rw_end rwend;
 } QnxObj;

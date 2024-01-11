@@ -1211,30 +1211,30 @@ static RzBinSection *section_new(const char *name, ut32 perm, ut32 size, ut64 pa
 }
 
 /**
- * \brief Returns a RzList<RzBinSection*> containing the dex sections
+ * \brief Returns a RzPVector<RzBinSection*> containing the dex sections
  */
-RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	RzBinSection *section;
-	RzList *sections = NULL;
+	RzPVector *sections = NULL;
 
-	sections = rz_list_newf((RzListFree)rz_bin_section_free);
+	sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!sections) {
 		return NULL;
 	}
 	section = section_new("data", RZ_PERM_RWX, dex->data_size, dex->data_offset, RZ_DEX_VIRT_ADDRESS + dex->data_offset);
-	if (section && !rz_list_append(sections, section)) {
+	if (section && !rz_pvector_push(sections, section)) {
 		rz_bin_section_free(section);
 	}
 	section = section_new("file", RZ_PERM_R, dex->file_size, dex->header_offset, 0);
-	if (section && !rz_list_append(sections, section)) {
+	if (section && !rz_pvector_push(sections, section)) {
 		rz_bin_section_free(section);
 	}
 
 	if (dex->relocs_code) {
 		section = section_new(RZ_DEX_RELOC_TARGETS, RZ_PERM_RWX, dex->relocs_size, 0, dex->relocs_offset);
-		if (section && !rz_list_append(sections, section)) {
+		if (section && !rz_pvector_push(sections, section)) {
 			rz_bin_section_free(section);
 		}
 	}

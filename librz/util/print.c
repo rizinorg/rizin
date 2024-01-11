@@ -1484,3 +1484,17 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	}
 	return out;
 }
+
+// Prints a help option with the option/arg strings colorized and aligned to a max length.
+RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
+	size_t optionWidth = strlen(option);
+	size_t maxSpaces = maxOptionAndArgLength + 2;
+	printf(Color_GREEN " %-.*s" Color_RESET, (int)optionWidth, option);
+	size_t remainingSpaces = maxSpaces - optionWidth;
+	if (RZ_STR_ISNOTEMPTY(arg)) {
+		printf(Color_YELLOW " %-s " Color_RESET, arg);
+		remainingSpaces -= strlen(arg) + 2;
+	}
+	printf("%-*.*s", (int)remainingSpaces, (int)remainingSpaces, "");
+	printf(Color_RESET "%s\n", description);
+}

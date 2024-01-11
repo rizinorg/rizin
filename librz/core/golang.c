@@ -445,17 +445,17 @@ static void analyse_golang_symbols(RzCore *core) {
 RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	rz_return_val_if_fail(core && core->bin && core->io, false);
 
-	RzList *section_list = rz_bin_get_sections(core->bin);
 	RzBinObject *o = rz_bin_cur_object(core->bin);
+	const RzPVector *sections = o ? rz_bin_object_get_sections_all(o) : NULL;
 	RzPVector *symbols_vec = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
-	RzListIter *iter;
-	void **it;
+	void **iter;
 	RzBinSection *section;
 	ut32 num_syms = 0;
 	GoPcLnTab pclntab = { 0 };
 	ut8 header[8] = { 0 };
 
-	rz_list_foreach (section_list, iter, section) {
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
 		// on ELF files the pclntab sections is named .gopclntab, but on macho is __gopclntab
 		if (section->vsize >= 16 && strstr(section->name, "gopclntab")) {
 			pclntab.vaddr = section->vaddr;
@@ -468,8 +468,8 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 
 	if (!pclntab.vaddr) {
 		RzBinSymbol *symbol;
-		rz_pvector_foreach (symbols_vec, it) {
-			symbol = *it;
+		rz_pvector_foreach (symbols_vec, iter) {
+			symbol = *iter;
 			// on PE files the pclntab sections is inside .rdata, so rizin creates a symbol for it
 			if (symbol->size >= 16 && !strcmp(symbol->name, "gopclntab")) {
 				pclntab.vaddr = symbol->vaddr;

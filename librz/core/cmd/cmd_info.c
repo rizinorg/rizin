@@ -11,13 +11,14 @@
 #include "../core_private.h"
 
 static int bin_is_executable(RzBinObject *obj) {
-	RzListIter *it;
+	void **it;
 	RzBinSection *sec;
 	if (obj) {
 		if (obj->info && obj->info->arch) {
 			return true;
 		}
-		rz_list_foreach (obj->sections, it, sec) {
+		rz_pvector_foreach (obj->sections, it) {
+			sec = *it;
 			if (sec->perm & RZ_PERM_X) {
 				return true;
 			}
@@ -291,7 +292,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzList *sections = rz_bin_object_get_sections(o);
+	RzPVector *sections = rz_bin_object_get_sections(o);
 	if (!sections) {
 		RZ_LOG_ERROR("Cannot retrieve sections\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -303,9 +304,10 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		goto sections_err;
 	}
 
-	RzListIter *iter;
+	void **iter;
 	RzBinSection *section;
-	rz_list_foreach (sections, iter, section) {
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
 		char humansz[8];
 		RzInterval pitv = (RzInterval){ section->paddr, section->size };
 		RzInterval vitv = (RzInterval){ section->vaddr, section->vsize };
@@ -339,7 +341,7 @@ table_err:
 list_err:
 	rz_list_free(list);
 sections_err:
-	rz_list_free(sections);
+	rz_pvector_free(sections);
 	return res;
 }
 

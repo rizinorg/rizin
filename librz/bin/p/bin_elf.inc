@@ -1508,12 +1508,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ELFOBJ *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	RzBinSection *ptr = NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 
-	if (!obj || !(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!obj || !(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -1544,7 +1544,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->type = section->type;
 		ptr->flags = section->flags;
 		ptr->perm = section_perms_from_flags(section->flags);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	// program headers is another section
@@ -1615,7 +1615,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			}
 			break;
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	// add entry for ehdr
@@ -1632,7 +1632,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->vsize = ehdr_size;
 		ptr->perm = RZ_PERM_RW;
 		ptr->is_segment = true;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;
@@ -1774,11 +1774,12 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 }
 
 static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
-	RzList *sections_list = sections(bf);
-	RzListIter *iter;
+	RzPVector *sections_vec = sections(bf);
+	void **iter;
 	RzBinSection *section;
 	ret->has_retguard = -1;
-	rz_list_foreach (sections_list, iter, section) {
+	rz_pvector_foreach (sections_vec, iter) {
+		section = *iter;
 		if (ret->has_retguard != -1) {
 			break;
 		}
@@ -1789,7 +1790,7 @@ static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 			break;
 		}
 	}
-	rz_list_free(sections_list);
+	rz_pvector_free(sections_vec);
 }
 
 static bool has_sanitizers(RzBinFile *bf) {
@@ -1963,10 +1964,11 @@ static ut64 size(RzBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!bf->o->sections) {
-		RzListIter *iter;
+		void **iter;
 		RzBinSection *section;
 		bf->o->sections = sections(bf);
-		rz_list_foreach (bf->o->sections, iter, section) {
+		rz_pvector_foreach (bf->o->sections, iter) {
+			section = *iter;
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;

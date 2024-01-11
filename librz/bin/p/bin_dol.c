@@ -83,13 +83,13 @@ dol_err:
 	return false;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	int i;
-	RzList *ret;
+	RzPVector *ret;
 	RzBinSection *s;
 	DolHeader *dol = bf->o->bin_obj;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 
@@ -105,7 +105,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		s->size = dol->text_size[i];
 		s->vsize = s->size;
 		s->perm = rz_str_rwx("r-x");
-		rz_list_append(ret, s);
+		rz_pvector_push(ret, s);
 	}
 	/* data sections */
 	for (i = 0; i < N_DATA; i++) {
@@ -119,7 +119,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		s->size = dol->data_size[i];
 		s->vsize = s->size;
 		s->perm = rz_str_rwx("r--");
-		rz_list_append(ret, s);
+		rz_pvector_push(ret, s);
 	}
 	/* bss section */
 	s = RZ_NEW0(RzBinSection);
@@ -129,7 +129,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	s->size = dol->bss_size;
 	s->vsize = s->size;
 	s->perm = rz_str_rwx("rw-");
-	rz_list_append(ret, s);
+	rz_pvector_push(ret, s);
 
 	return ret;
 }

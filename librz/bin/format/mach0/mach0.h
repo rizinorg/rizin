@@ -213,7 +213,7 @@ struct MACH0_(obj_t) {
 	struct symbol_t *symbols;
 	ut64 main_addr;
 
-	RzList /*<RzBinSection *>*/ *sections_cache;
+	RzPVector /*<RzBinSection *>*/ *sections_cache;
 	RzSkipList /* struct reloc_t * */ *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
 	bool relocs_parsed; ///< whether relocs have already been parsed and relocs is filled (or NULL on error)
 	bool reloc_targets_map_base_calculated;
@@ -236,7 +236,7 @@ RzList /*<char *>*/ *MACH0_(section_flag_to_rzlist)(ut64 flag);
 RzPVector /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf);
 RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf);
 RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf);
-RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf);
+RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
 void MACH0_(imports_foreach)(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user);

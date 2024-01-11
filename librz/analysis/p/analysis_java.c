@@ -30,10 +30,12 @@ static ut64 find_method(RzAnalysis *a, ut64 addr) {
 	}
 
 	RzBinSection *sec;
-	RzListIter *it;
-	RzList *list = a->binb.get_sections(a->binb.bin);
+	void **it;
+	RzBinObject *obj = rz_bin_cur_object(a->binb.bin);
+	const RzPVector *vec = obj ? a->binb.get_sections(obj) : NULL;
 
-	rz_list_foreach (list, it, sec) {
+	rz_pvector_foreach (vec, it) {
+		sec = *it;
 		ut64 from = sec->vaddr;
 		ut64 to = from + sec->vsize;
 		if (!(sec->perm & RZ_PERM_X) || addr < from || addr > to) {

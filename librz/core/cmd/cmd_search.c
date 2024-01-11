@@ -485,7 +485,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 
 		if (param->outmode == RZ_MODE_JSON) {
 			pj_o(param->pj);
-			pj_kN(param->pj, "offset", base_addr + addr);
+			pj_kn(param->pj, "offset", base_addr + addr);
 			pj_ks(param->pj, "type", type);
 			pj_ks(param->pj, "data", s);
 			pj_end(param->pj);
@@ -499,7 +499,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	} else if (kw) {
 		if (param->outmode == RZ_MODE_JSON) {
 			pj_o(param->pj);
-			pj_kN(param->pj, "offset", base_addr + addr);
+			pj_kn(param->pj, "offset", base_addr + addr);
 			pj_ki(param->pj, "len", keyword_len);
 			pj_end(param->pj);
 		} else {
@@ -715,8 +715,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		if (obj) {
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (!s->is_segment) {
 					continue;
 				}
@@ -734,8 +735,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 			ut64 from = UT64_MAX;
 			ut64 to = 0;
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (s->is_segment) {
 					continue;
 				}
@@ -771,8 +773,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		if (obj) {
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (s->is_segment) {
 					continue;
 				}
@@ -788,8 +791,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		if (obj) {
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (!s->is_segment) {
 					continue;
 				}
@@ -804,8 +808,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		if (obj) {
 			RzBinSection *s;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, s) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				s = *iter;
 				if (s->is_segment) {
 					continue;
 				}
@@ -1171,7 +1176,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 				rz_list_append(ropList, (void *)opstr_n);
 			}
 			pj_o(pj);
-			pj_kN(pj, "offset", hit->addr);
+			pj_kn(pj, "offset", hit->addr);
 			pj_ki(pj, "size", hit->len);
 			pj_ks(pj, "opcode", rz_asm_op_get_asm(&asmop));
 			pj_ks(pj, "type", rz_analysis_optype_to_string(aop.type));
@@ -1187,7 +1192,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 			rop_classify(core, db, ropList, key, size);
 		}
 		if (hit) {
-			pj_kN(pj, "retaddr", hit->addr);
+			pj_kn(pj, "retaddr", hit->addr);
 			pj_ki(pj, "size", size);
 		}
 		pj_end(pj);
@@ -2086,7 +2091,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 					switch (mode) {
 					case 'j':
 						pj_o(param->pj);
-						pj_kN(param->pj, "addr", at);
+						pj_kn(param->pj, "addr", at);
 						pj_ki(param->pj, "size", ret);
 						pj_ks(param->pj, "opstr", opstr);
 						pj_end(param->pj);
@@ -2265,7 +2270,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 				switch (param->outmode) {
 				case RZ_MODE_JSON:
 					pj_o(param->pj);
-					pj_kN(param->pj, "offset", hit->addr);
+					pj_kn(param->pj, "offset", hit->addr);
 					pj_ki(param->pj, "len", hit->len);
 					pj_ks(param->pj, "code", hit->code);
 					pj_end(param->pj);
@@ -2614,8 +2619,8 @@ void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) 
 		rz_cons_printf("0x%" PFMT64x ": 0x%" PFMT64x "\n", from, to);
 	} else {
 		pj_o(param->pj);
-		pj_kN(param->pj, "offset", from);
-		pj_kN(param->pj, "value", to);
+		pj_kn(param->pj, "offset", from);
+		pj_kn(param->pj, "value", to);
 		pj_end(param->pj);
 	}
 	rz_core_cmdf(core, "f %s.value.0x%08" PFMT64x " %d @ 0x%08" PFMT64x " \n", prefix, to, vsize, to); // flag at value of hit

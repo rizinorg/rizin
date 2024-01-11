@@ -1761,12 +1761,12 @@ static int compare_section_names(const void *a, const void *b) {
 }
 
 /**
- * \brief Returns a RzList<RzBinSection*> containing the class sections
+ * \brief Returns a RzPVector<RzBinSection*> containing the class sections
  */
-RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *sections = rz_list_newf(section_free);
+	RzPVector *sections = rz_pvector_new(section_free);
 	if (!sections) {
 		return NULL;
 	}
@@ -1775,14 +1775,14 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 	char secname[512];
 	ut64 end_offset;
 	if (bin->constant_pool) {
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.constant_pool",
 				bin->constant_pool_offset,
 				bin->interfaces_offset,
 				RZ_PERM_R));
 	}
 	if (bin->interfaces) {
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.interfaces",
 				bin->interfaces_offset,
 				bin->fields_offset,
@@ -1805,20 +1805,20 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 			} else {
 				end_offset = bin->methods_offset;
 			}
-			for (iname = 0; rz_list_find(sections, secname, compare_section_names); iname++) {
+			for (iname = 0; rz_pvector_find(sections, secname, (RzPVectorComparator)compare_section_names, NULL); iname++) {
 				snprintf(secname, sizeof(secname), "class.fields.%s_%d.attr", tmp, iname);
 			}
 			free(tmp);
-			rz_list_append(sections, new_section(secname, field->offset, end_offset, RZ_PERM_R));
+			rz_pvector_push(sections, new_section(secname, field->offset, end_offset, RZ_PERM_R));
 		}
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.fields",
 				bin->fields_offset,
 				bin->methods_offset,
 				RZ_PERM_R));
 	}
 	if (bin->methods) {
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.methods",
 				bin->methods_offset,
 				bin->attributes_offset,
@@ -1835,7 +1835,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 				continue;
 			}
 			snprintf(secname, sizeof(secname), "class.methods.%s.attr", tmp);
-			for (iname = 0; rz_list_find(sections, secname, compare_section_names); iname++) {
+			for (iname = 0; rz_pvector_find(sections, secname, (RzPVectorComparator)compare_section_names, NULL); iname++) {
 				snprintf(secname, sizeof(secname), "class.methods.%s_%d.attr", tmp, iname);
 			}
 
@@ -1849,7 +1849,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 			} else {
 				snprintf(secname, sizeof(secname), "class.methods.%s.attr", tmp);
 			}
-			rz_list_append(sections, new_section(secname, method->offset, end_offset, RZ_PERM_R));
+			rz_pvector_push(sections, new_section(secname, method->offset, end_offset, RZ_PERM_R));
 
 			if (!method->attributes) {
 				free(tmp);
@@ -1866,7 +1866,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 						snprintf(secname, sizeof(secname), "class.methods.%s.attr.%d.code", tmp, k);
 					}
 					ut64 size = ac->code_offset + attr->attribute_length;
-					rz_list_append(sections, new_section(secname, ac->code_offset, size, RZ_PERM_R | RZ_PERM_X));
+					rz_pvector_push(sections, new_section(secname, ac->code_offset, size, RZ_PERM_R | RZ_PERM_X));
 					break;
 				}
 			}
@@ -1874,7 +1874,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 		}
 	}
 	if (bin->attributes) {
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.attr",
 				bin->attributes_offset,
 				bin->class_end_offset,

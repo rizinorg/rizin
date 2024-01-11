@@ -86,8 +86,8 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret;
 	ut32 ct_omf_sect = 0;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
@@ -95,7 +95,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	rz_bin_omf_obj *obj = bf->o->bin_obj;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 

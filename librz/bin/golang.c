@@ -273,8 +273,8 @@ RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
 	bool is_pe = false;
 	GoBuildInfo go_info = { 0 };
 	RzBinSection *section = NULL;
-	RzListIter *it = NULL;
-	RzList *sections = NULL;
+	void **it = NULL;
+	RzPVector *sections = NULL;
 	const char *plugname = bf->o->plugin->name;
 
 	if (!strcmp(plugname, "pe") || !strcmp(plugname, "pe64")) {
@@ -290,7 +290,8 @@ RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
 		return NULL;
 	}
 
-	rz_list_foreach (sections, it, section) {
+	rz_pvector_foreach (sections, it) {
+		section = *it;
 		if (is_pe && strstr(section->name, "data") && section->size > 16) {
 			find_go_build_info(bf, &go_info, section);
 		} else if (!is_pe && (strstr(section->name, "go_buildinfo") || strstr(section->name, "go.buildinfo"))) {
@@ -300,7 +301,7 @@ RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *bf) {
 			break;
 		}
 	}
-	rz_list_free(sections);
+	rz_pvector_free(sections);
 
 	if (!go_info.version) {
 		return NULL;

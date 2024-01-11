@@ -300,8 +300,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return obj->bin_obj != NULL;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *res = rz_list_newf((RzListFree)rz_bin_section_free);
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
@@ -309,14 +309,14 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		RzCoreSymCacheElementSegment *seg = &element->segments[i];
 		RzBinSection *s = bin_section_from_segment(seg);
 		if (s) {
-			rz_list_append(res, s);
+			rz_pvector_push(res, s);
 		}
 	}
 	for (i = 0; i < element->hdr->n_sections; i++) {
 		RzCoreSymCacheElementSection *sect = &element->sections[i];
 		RzBinSection *s = bin_section_from_section(sect);
 		if (s) {
-			rz_list_append(res, s);
+			rz_pvector_push(res, s);
 		}
 	}
 	return res;

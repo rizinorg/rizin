@@ -136,15 +136,15 @@ static RzBinSection *n3ds_firm_section_new(N3DSFirmSectHdr *shdr) {
 	return section;
 }
 
-static RzList /*<RzBinSection *>*/ *n3ds_sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *n3ds_sections(RzBinFile *bf) {
 	if (!bf || !bf->o) {
 		return NULL;
 	}
 
 	N3DSFirmHdr *hdr = n3ds_get_hdr(bf);
 
-	RzList *ret = NULL;
-	if (!(ret = rz_list_new())) {
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 
@@ -155,7 +155,7 @@ static RzList /*<RzBinSection *>*/ *n3ds_sections(RzBinFile *bf) {
 		if (!sect) {
 			continue;
 		}
-		rz_list_append(ret, sect);
+		rz_pvector_push(ret, sect);
 	}
 
 	return ret;
