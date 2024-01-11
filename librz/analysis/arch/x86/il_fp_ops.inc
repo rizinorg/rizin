@@ -609,7 +609,7 @@ IL_LIFTER(ficomp) {
 
 RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *st0 = x86_il_get_st_reg(X86_REG_ST0);
-	RzILOpPure *sti = x86_il_get_floating_op(1);
+	RzILOpPure *sti = x86_il_get_floating_op(0);
 
 	// TODO: Set the ZF, PF, CF depending on invalid arithmetic operand exception (#IA).
 	return SEQ4(

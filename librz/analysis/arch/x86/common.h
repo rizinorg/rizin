@@ -131,14 +131,14 @@ RZ_IPI bool x86_il_is_st_reg(X86Reg reg);
 /* Need to pass in val_size as a param to avoid unnecessary rounding of val. */
 
 RZ_IPI RzILOpFloat *x86_il_get_st_reg(X86Reg reg);
-RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW X86ILContext *ctx);
 
 #define x86_il_set_st_reg(reg, val, val_format) x86_il_set_st_reg_ctx(reg, val, val_format, ctx)
 
 RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RZ_OWN RZ_NONNULL RzILOpPure *top);
 RZ_IPI RzILOpPure *x86_il_get_fpu_stack_top();
 
-RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW X86ILContext *ctx);
 RZ_IPI RzILOpEffect *x86_il_st_pop();
 
 #define x86_il_st_push(val, val_format) x86_il_st_push_ctx(val, val_format, ctx)
@@ -187,7 +187,7 @@ RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits,
 RZ_IPI RzFloatFormat x86_width_to_format(ut8 width);
 RZ_IPI ut8 x86_format_to_width(RzFloatFormat format);
 
-RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, RZ_BORROW X86ILContext *ctx);
 
 #define x86_il_set_floating_op(opnum, val, val_format) \
 	x86_il_set_floating_operand_bits_ctx(ins->structure->operands[opnum], val, val_format, analysis->bits, pc, ctx)

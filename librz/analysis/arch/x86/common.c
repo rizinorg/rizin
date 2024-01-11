@@ -1332,14 +1332,13 @@ RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x
  * \param ctx use_rmode gets set to true if any resizing of \p val is required
  * \return RzILOpFloat*
  */
-RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW X86ILContext *ctx) {
 	rz_return_val_if_fail(val && x86_il_is_st_reg(reg), NULL);
 
 	if (val_format == RZ_FLOAT_IEEE754_BIN_80) {
 		return SETG(x86_registers[reg], F2BV(val));
 	} else {
-		rz_return_val_if_fail(ctx, NULL);
-		RzILOpFloat *converted_val = x86_il_resize_floating(val, val_format);
+		RzILOpFloat *converted_val = x86_il_resize_floating(val, RZ_FLOAT_IEEE754_BIN_80);
 
 		return SETG(x86_registers[reg], F2BV(converted_val));
 	}
@@ -1386,8 +1385,8 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RZ_OWN RZ_NONNULL RzILOpPure *top)
  * \param ctx use_rmode gets set to true if any resizing of \p val is required
  * \return RzILOpEffect* Push effect
  */
-RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(val && ctx, NULL);
+RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW X86ILContext *ctx) {
+	rz_return_val_if_fail(val, NULL);
 
 	/* No need for a modulo here since the bitvector width will truncate any top
 	 * value > 7 */
@@ -1455,7 +1454,7 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RZ_OWN RZ_NONNULL RzI
 #define FLOATING_OP_MEM_WIDTH_CASE(n) \
 	do { \
 	case n: \
-		return BV2F(RZ_FLOAT_IEEE754_BIN_##n, LOADW(BITS_PER_BYTE * n, x86_il_get_memaddr_bits(op.mem, bits, pc))); \
+		return BV2F(RZ_FLOAT_IEEE754_BIN_##n, LOADW(n, x86_il_get_memaddr_bits(op.mem, bits, pc))); \
 	} while (0)
 
 /**
@@ -1525,15 +1524,7 @@ RZ_IPI RzFloatFormat x86_width_to_format(ut8 width) {
 	} while (0)
 
 RZ_IPI ut8 x86_format_to_width(RzFloatFormat format) {
-	switch (format) {
-		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(32);
-		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(64);
-		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(80);
-		FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(128);
-	default:
-		rz_warn_if_reached();
-		return -1;
-	}
+	return rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 }
 
 /**
@@ -1550,7 +1541,8 @@ RZ_IPI ut8 x86_format_to_width(RzFloatFormat format) {
  * \param pc
  * \param ctx use_rmode gets set to true if any resizing of \p val is required
  */
-RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, X86ILContext *ctx) {
+RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, RZ_BORROW X86ILContext *ctx) {
+	rz_return_val_if_fail(val, NULL);
 	RzILOpEffect *ret = NULL;
 
 	switch (op.type) {
@@ -1560,7 +1552,7 @@ RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RzILOpFloat 
 		ut64 required_format = x86_width_to_format(op.size * BITS_PER_BYTE);
 
 		RzILOpPure *resized_val = required_format == val_format ? val : x86_il_resize_floating(val, required_format);
-		return x86_il_set_mem_bits(op.mem, resized_val, bits, pc);
+		return x86_il_set_mem_bits(op.mem, F2BV(resized_val), bits, pc);
 	}
 	case X86_OP_IMM:
 	default:
