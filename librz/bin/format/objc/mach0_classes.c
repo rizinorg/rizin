@@ -140,7 +140,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	mach0_ut r;
 	mach0_ut addr;
 
-	RzListIter *iter = NULL;
+	void **iter = NULL;
 	RzBinSection *s = NULL;
 	RzBinObject *obj = bf->o;
 
@@ -149,7 +149,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 		return bin->va2pa(p, offset, left, bf);
 	}
 
-	const RzList *sctns = bin->sections_cache;
+	const RzPVector *sctns = bin->sections_cache;
 	if (!sctns) {
 		sctns = rz_bin_plugin_mach.sections(bf);
 		if (!sctns) {
@@ -158,7 +158,8 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	}
 
 	addr = p;
-	rz_list_foreach (sctns, iter, s) {
+	rz_pvector_foreach (sctns, iter) {
+		s = *iter;
 		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
 			if (offset) {
 				*offset = addr - s->vaddr;

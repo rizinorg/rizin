@@ -1608,13 +1608,13 @@ RZ_OWN RzPVector /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(RzBinFile *bf) {
 	return vec;
 }
 
-RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {
+RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
-	RzList *sections = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	RzBinSection *sec = NULL;
 	if (!sections) {
 	fail_cleanup:
-		rz_list_free(sections);
+		rz_pvector_free(sections);
 		rz_bin_section_free(sec);
 		return NULL;
 	}
@@ -1642,7 +1642,7 @@ RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {
 		sec->bits = obj->flags & O_BIG_BIT ? RZ_SYS_BITS_32 : RZ_SYS_BITS_16;
 		sec->is_data = obj->flags & O_RESOURCE || !(sec->perm & RZ_PERM_X);
 
-		CHECK(rz_list_append(sections, sec));
+		CHECK(rz_pvector_push(sections, sec));
 		sec = NULL;
 	}
 

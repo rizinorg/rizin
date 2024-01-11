@@ -444,6 +444,28 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 	return NULL;
 }
 
+/**
+ * \brief Joins 2 pvector into one (pvec2 pointer needs to be freed by the user)
+ *
+ **/
+RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *pvec2) {
+	rz_return_val_if_fail(pvec1 && pvec2, 0);
+
+	if (rz_pvector_empty(pvec2)) {
+		return false;
+	}
+
+	RzVector *vec = &pvec1->v;
+	RESIZE_OR_RETURN_NULL(RZ_MAX(NEXT_VECTOR_CAPACITY, pvec1->v.len + pvec2->v.len));
+	memmove((void **)pvec1->v.a + pvec1->v.len, pvec2->v.a, pvec2->v.elem_size * pvec2->v.len);
+	pvec1->v.len += pvec2->v.len;
+
+	// element in pvec2 is freed by pvec1
+	pvec2->v.len = 0;
+
+	return true;
+}
+
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
 	rz_return_val_if_fail(vec, NULL);
 	void *r = rz_pvector_at(vec, index);

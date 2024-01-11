@@ -137,15 +137,15 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	struct rz_bin_vsf_obj *vsf_obj = (struct rz_bin_vsf_obj *)bf->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
 
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	const int m_idx = vsf_obj->machine_idx;
@@ -166,7 +166,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xa000;
 			ptr->vsize = 1024 * 8; // BASIC size (8k)
 			ptr->perm = RZ_PERM_RX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -178,7 +178,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8; // KERNAL size (8k)
 			ptr->perm = RZ_PERM_RX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 
 			// CHARGEN section ignored
 		} else {
@@ -193,7 +193,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0x4000;
 			ptr->vsize = 1024 * 28; // BASIC size (28k)
 			ptr->perm = RZ_PERM_RX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 
 			// MONITOR (0xb000 - 0xbfff)
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -206,7 +206,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xb000;
 			ptr->vsize = 1024 * 4; // BASIC size (4k)
 			ptr->perm = RZ_PERM_RX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 
 			// EDITOR (0xc000 - 0xcfff)
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -218,7 +218,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xc000;
 			ptr->vsize = 1024 * 4; // BASIC size (4k)
 			ptr->perm = RZ_PERM_RX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -230,7 +230,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8; // KERNAL size (8k)
 			ptr->perm = RZ_PERM_RX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 
 			// CHARGEN section ignored
 		}
@@ -250,7 +250,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->perm = RZ_PERM_RWX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		} else {
 			// RAM C128 (0x0000 - 0xffff): Bank 0
 			// RAM C128 (0x0000 - 0xffff): Bank 1
@@ -266,7 +266,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->perm = RZ_PERM_RWX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
@@ -277,7 +277,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->perm = RZ_PERM_RWX;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 	}
 

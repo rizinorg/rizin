@@ -200,7 +200,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_pvector_free(o->libs);
 	rz_pvector_free(o->maps);
 	rz_pvector_free(o->mem);
-	rz_list_free(o->sections);
+	rz_pvector_free(o->sections);
 	rz_pvector_free(o->symbols);
 	rz_pvector_free(o->vfiles);
 	rz_pvector_free(o->resources);
@@ -689,41 +689,42 @@ RZ_API const RzPVector /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObje
 }
 
 /**
- * \brief Get list of \p RzBinSection representing both the sections and the segments of the binary object.
+ * \brief Get pvector of \p RzBinSection representing both the sections and the segments of the binary object.
  */
-RZ_API const RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->sections;
 }
 
-static RzList /*<RzBinSection *>*/ *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
-	RzList *res = rz_list_new();
+static RzPVector /*<RzBinSection *>*/ *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
+	RzPVector *res = rz_pvector_new(NULL);
 	if (!res) {
 		return NULL;
 	}
-	const RzList *all = rz_bin_object_get_sections_all(obj);
-	RzListIter *it;
+	const RzPVector *all = rz_bin_object_get_sections_all(obj);
+	void **it;
 	RzBinSection *sec;
-	rz_list_foreach (all, it, sec) {
+	rz_pvector_foreach (all, it) {
+		sec = *it;
 		if (sec->is_segment == is_segment) {
-			rz_list_append(res, sec);
+			rz_pvector_push(res, sec);
 		}
 	}
 	return res;
 }
 
 /**
- * \brief Get list of \p RzBinSection representing only the sections of the binary object.
+ * \brief Get pvector of \p RzBinSection representing only the sections of the binary object.
  */
-RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return get_sections_or_segment(obj, false);
 }
 
 /**
- * \brief Get list of \p RzBinSection representing only the segments of the binary object.
+ * \brief Get pvector of \p RzBinSection representing only the segments of the binary object.
  */
-RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return get_sections_or_segment(obj, true);
 }
@@ -826,7 +827,7 @@ static void bin_section_map_fini(void *e, void *user) {
 RZ_API RZ_OWN RzVector /*<RzBinSectionMap>*/ *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 
-	const RzList *all = rz_bin_object_get_sections_all(obj);
+	const RzPVector *all = rz_bin_object_get_sections_all(obj);
 	if (!all) {
 		return NULL;
 	}
@@ -836,7 +837,9 @@ RZ_API RZ_OWN RzVector /*<RzBinSectionMap>*/ *rz_bin_object_sections_mapping_lis
 	RzBinSection *section, *segment;
 	RzListIter *iter;
 
-	rz_list_foreach (all, iter, section) {
+	void **it;
+	rz_pvector_foreach (all, it) {
+		section = *it;
 		RzList *list = section->is_segment ? segments : sections;
 		rz_list_append(list, section);
 	}

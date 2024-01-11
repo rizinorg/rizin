@@ -300,13 +300,14 @@ static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzPVecto
 }
 
 static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<RzBinString *>*/ *results, ut64 max_interval) {
-	RzListIter *iter = NULL;
+	void **iter = NULL;
 	RzBinSection *section = NULL;
 	RzBinObject *o = bf->o;
 	if (!o) {
 		return;
 	}
-	rz_list_foreach (o->sections, iter, section) {
+	rz_pvector_foreach (o->sections, iter) {
+		section = *iter;
 		if (!section->name || section->paddr >= bf->size) {
 			continue;
 		} else if (max_interval && section->size > max_interval) {
@@ -412,12 +413,13 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 				goto fail;
 			}
 		}
-	} else if (bf->o && !rz_list_empty(bf->o->sections)) {
+	} else if (bf->o && !rz_pvector_empty(bf->o->sections)) {
 		// returns only the strings found on the RzBinFile but within the data section
-		RzListIter *iter = NULL;
+		void **iter = NULL;
 		RzBinSection *section = NULL;
 		RzBinObject *o = bf->o;
-		rz_list_foreach (o->sections, iter, section) {
+		rz_pvector_foreach (o->sections, iter) {
+			section = *iter;
 			if (section->paddr >= bf->size) {
 				continue;
 			} else if (max_interval && section->size > max_interval) {

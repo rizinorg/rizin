@@ -71,9 +71,9 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -91,7 +91,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("TEXT");
 	sec->is_segment = true;
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
 	if (!sec) {
@@ -104,7 +104,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("DATA");
 	sec->is_segment = true;
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	// sections
 
@@ -118,7 +118,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->vsize = BFLT_HDR_SIZE;
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("header");
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
 	if (!sec) {
@@ -130,7 +130,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->vsize = obj->hdr.data_start - BFLT_HDR_SIZE;
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("text");
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
 	if (!sec) {
@@ -143,7 +143,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("data");
 	sec->is_data = true;
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
 	if (!sec) {
@@ -156,11 +156,11 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("bss");
 	sec->is_data = true;
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	return ret;
 beach:
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 

@@ -46,7 +46,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL; // TODO
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf);
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf);
 
 static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
@@ -83,25 +83,25 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzList *secs = NULL;
 	RzBinSection *ptr = NULL;
 	RzBinWasmSection *sec;
 
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
 		return NULL;
 	}
 	if (!(secs = rz_bin_wasm_get_sections(bin))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	RzListIter *iter;
 	rz_list_foreach (secs, iter, sec) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			rz_list_free(secs);
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		ptr->name = strdup((char *)sec->name);
@@ -114,7 +114,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = sec->offset;
 		// TODO permissions
 		ptr->perm = 0;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

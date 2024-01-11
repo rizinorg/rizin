@@ -95,7 +95,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static void addrom(RzList /*<RzBinSection *>*/ *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
+static void addrom(RzPVector /*<RzBinSection *>*/ *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
 	RzBinSection *ptr = RZ_NEW0(RzBinSection);
 	if (!ptr) {
 		return;
@@ -105,7 +105,7 @@ static void addrom(RzList /*<RzBinSection *>*/ *ret, const char *name, int i, ut
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;
 	ptr->perm = RZ_PERM_RX;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 }
 
 #if 0
@@ -126,8 +126,8 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	// RzBinSection *ptr = NULL;
 	int hdroffset = 0;
 	bool is_hirom = false;
@@ -163,7 +163,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		is_hirom = true;
 	}
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 

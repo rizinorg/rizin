@@ -191,7 +191,7 @@ static bool __is_data_section(const char *name) {
 	return false;
 }
 
-static void sections_from_bin(RzList /*<RzBinSection *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin) {
+static void sections_from_bin(RzPVector /*<RzBinSection *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return;
@@ -231,7 +231,7 @@ static void sections_from_bin(RzList /*<RzBinSection *>*/ *ret, RzBinFile *bf, R
 			ptr->vaddr = ptr->paddr;
 		}
 		ptr->perm = sections[i].perm;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	free(sections);
 	MACH0_(mach0_free)
@@ -301,12 +301,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -318,7 +318,9 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ut64 slide = rz_dyldcache_get_slide(cache);
 	if (slide) {
 		RzBinSection *section;
-		rz_list_foreach (ret, iter, section) {
+		void **it;
+		rz_pvector_foreach (ret, it) {
+			section = *it;
 			section->vaddr += slide;
 		}
 	}

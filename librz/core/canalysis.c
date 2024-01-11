@@ -3922,7 +3922,7 @@ end:
 
 static bool is_unknown_file(RzCore *core) {
 	if (core->bin->cur && core->bin->cur->o) {
-		return (rz_list_empty(core->bin->cur->o->sections));
+		return (rz_pvector_empty(core->bin->cur->o->sections));
 	}
 	return true;
 }
@@ -4494,7 +4494,7 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	return true;
 }
 
-static int check_rom_exists(const void *value, const void *data) {
+static int check_rom_exists(const void *value, const void *data, void *user) {
 	const char *name = (const char *)value;
 	const RzBinSection *sections = (const RzBinSection *)data;
 	return strcmp(name, sections->name);
@@ -4523,7 +4523,7 @@ RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *an
 	if (!o->sections) {
 		return false;
 	}
-	if (rz_list_find(o->sections, ".rom", check_rom_exists)) {
+	if (rz_pvector_find(o->sections, ".rom", check_rom_exists, NULL)) {
 		return false;
 	}
 	RzBinSection *s = RZ_NEW0(RzBinSection);
@@ -4536,7 +4536,7 @@ RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *an
 	s->size = rom_size;
 	s->paddr = rom_address;
 	s->perm = RZ_PERM_RX;
-	rz_list_append(o->sections, s);
+	rz_pvector_push(o->sections, s);
 	return true;
 }
 

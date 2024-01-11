@@ -310,11 +310,11 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	RzBuffer *b = bf->buf;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -324,13 +324,13 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = strdup("header");
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	ptr->size = tmp;
 
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	ptr->vsize = tmp;
@@ -338,7 +338,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	RzPVector *mappies = maps(bf);
 	if (mappies) {
@@ -348,7 +348,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			RzBinSection *section;
 			rz_pvector_foreach (msecs, iter) {
 				section = *iter;
-				rz_list_append(ret, section);
+				rz_pvector_push(ret, section);
 			}
 			msecs->v.len = 0;
 			rz_pvector_free(msecs);

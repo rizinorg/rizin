@@ -172,7 +172,8 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 }
 
 static RzCoreObjc *core_objc_new(RzCore *core) {
-	RzList *sections = rz_bin_get_sections(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
 	if (!sections) {
 		return false;
 	}
@@ -184,8 +185,9 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 	}
 
 	RzBinSection *s;
-	RzListIter *iter;
-	rz_list_foreach (sections, iter, s) {
+	void **iter;
+	rz_pvector_foreach (sections, iter) {
+		s = *iter;
 		const char *name = s->name;
 		if (strstr(name, "__objc_data")) {
 			o->_data = s;
@@ -594,13 +596,15 @@ static void analyze_objc_stubs(RzCore *core, ut64 start, ut64 size) {
  */
 RZ_API void rz_core_analysis_objc_stubs(RzCore *core) {
 	rz_return_if_fail(core);
-	RzList *sections = rz_bin_get_sections(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
 	if (!sections) {
 		return;
 	}
 	RzBinSection *stubs_section;
-	RzListIter *iter;
-	rz_list_foreach (sections, iter, stubs_section) {
+	void **iter;
+	rz_pvector_foreach (sections, iter) {
+		stubs_section = *iter;
 		if (strstr(stubs_section->name, "__objc_stubs")) {
 			goto found;
 		}

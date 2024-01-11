@@ -1299,10 +1299,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				rz_core_seek(r, fi->offset, true);
 			} else {
 				if (o) {
-					RzList *sections = rz_bin_get_sections(r->bin);
-					RzListIter *iter;
+					RzBinObject *obj = rz_bin_cur_object(r->bin);
+					const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
+					void **iter;
 					RzBinSection *s;
-					rz_list_foreach (sections, iter, s) {
+					rz_pvector_foreach (sections, iter) {
+						s = *iter;
 						if (s->perm & RZ_PERM_X) {
 							ut64 addr = s->vaddr ? s->vaddr : s->paddr;
 							rz_core_seek(r, addr, true);

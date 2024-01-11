@@ -219,12 +219,13 @@ static RzPVector /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 	MiniDmpModule *module;
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *ret, *pe_secs;
+	RzPVector *pe_secs;
+	RzPVector *ret;
 	RzListIter *it, *it0;
 	RzBinSection *ptr;
 	ut8 str_buffer[512];
@@ -232,7 +233,7 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 
 	obj = (MiniDmpObj *)bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -276,7 +277,7 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 		/* As this is an encompassing section we will set the RWX to 0 */
 		ptr->perm = 0;
 
-		if (!rz_list_append(ret, ptr)) {
+		if (!rz_pvector_push(ret, ptr)) {
 			free(ptr);
 			break;
 		}
@@ -285,15 +286,15 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 		rz_list_foreach (obj->pe32_bins, it0, pe32_bin) {
 			if (pe32_bin->vaddr == module->base_of_image && pe32_bin->bin) {
 				pe_secs = Pe32_rz_bin_mdmp_pe_get_sections(pe32_bin);
-				rz_list_join(ret, pe_secs);
-				rz_list_free(pe_secs);
+				rz_pvector_join(ret, pe_secs);
+				rz_pvector_free(pe_secs);
 			}
 		}
 		rz_list_foreach (obj->pe64_bins, it0, pe64_bin) {
 			if (pe64_bin->vaddr == module->base_of_image && pe64_bin->bin) {
 				pe_secs = Pe64_rz_bin_mdmp_pe_get_sections(pe64_bin);
-				rz_list_join(ret, pe_secs);
-				rz_list_free(pe_secs);
+				rz_pvector_join(ret, pe_secs);
+				rz_pvector_free(pe_secs);
 			}
 		}
 	}

@@ -227,7 +227,8 @@ RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *con
 		return NULL;
 	}
 
-	RzList *sections = analysis->binb.get_sections(analysis->binb.bin);
+	RzBinObject *obj = rz_bin_cur_object(analysis->binb.bin);
+	const RzPVector *sections = obj ? analysis->binb.get_sections(obj) : NULL;
 	if (!sections) {
 		rz_list_free(vtables);
 		return NULL;
@@ -235,9 +236,10 @@ RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *con
 
 	rz_cons_break_push(NULL, NULL);
 
-	RzListIter *iter;
+	void **iter;
 	RzBinSection *section;
-	rz_list_foreach (sections, iter, section) {
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
 		if (rz_cons_is_breaked()) {
 			break;
 		}

@@ -162,7 +162,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return res;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_mz_get_segments(bf->o->bin_obj);
 }
 

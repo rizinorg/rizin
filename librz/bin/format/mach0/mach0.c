@@ -2020,12 +2020,12 @@ RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
 	return ret;
 }
 
-RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
+RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	if (bin->sections_cache) {
-		return rz_list_clone(bin->sections_cache);
+		return rz_pvector_clone(bin->sections_cache);
 	}
-	RzList *list = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	size_t i, j;
 
 	if (bin->nsegs > 0) {
@@ -2049,7 +2049,7 @@ RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 			s->is_segment = true;
 			rz_str_filter(s->name);
 			s->perm = prot2perm(seg->initprot);
-			rz_list_append(list, s);
+			rz_pvector_push(vec, s);
 		}
 	}
 	if (bin->nsects > 0) {
@@ -2091,13 +2091,13 @@ RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 #endif
 				s->format = rz_str_newf("Cd %d[%" PFMT64d "]", ws, s->vsize / ws);
 			}
-			rz_list_append(list, s);
+			rz_pvector_push(vec, s);
 			free(segment_name);
 			free(section_name);
 		}
 	}
-	bin->sections_cache = list;
-	return rz_list_clone(list);
+	bin->sections_cache = vec;
+	return rz_pvector_clone(vec);
 }
 
 char *MACH0_(section_type_to_string)(ut64 type) {

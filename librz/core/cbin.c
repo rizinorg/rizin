@@ -956,16 +956,17 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 	if (!o) {
 		return false;
 	}
-	RzList *sections = o->sections;
+	RzPVector *sections = o->sections;
 
 	// make sure both flag spaces exist.
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SEGMENTS);
 	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SECTIONS);
 
 	bool segments_only = true;
-	RzListIter *iter;
+	void **iter;
 	RzBinSection *section;
-	rz_list_foreach (sections, iter, section) {
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
 		if (!section->is_segment) {
 			segments_only = false;
 			break;
@@ -973,7 +974,8 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 	}
 
 	int section_index = 0;
-	rz_list_foreach (sections, iter, section) {
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
 		int va_sect = va ? VA_TRUE : VA_FALSE;
 		if (va && !(section->perm & RZ_PERM_R)) {
 			va_sect = VA_NOREBASE;
@@ -1747,13 +1749,14 @@ RZ_API RZ_BORROW const char *rz_core_bin_get_compile_time(RZ_NONNULL RzBinFile *
 }
 
 static bool is_executable(RzBinObject *obj) {
-	RzListIter *it;
+	void **it;
 	RzBinSection *sec;
 	rz_return_val_if_fail(obj, false);
 	if (obj->info && obj->info->arch) {
 		return true;
 	}
-	rz_list_foreach (obj->sections, it, sec) {
+	rz_pvector_foreach (obj->sections, it) {
+		sec = *it;
 		if (sec->perm & RZ_PERM_X) {
 			return true;
 		}
@@ -2471,13 +2474,13 @@ RZ_API bool rz_core_bin_sections_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	RzBinObject *o = bf->o;
-	RzList *sections = rz_bin_object_get_sections(o);
+	RzPVector *sections = rz_bin_object_get_sections(o);
 	if (!sections) {
 		return false;
 	}
 
 	RzBinSection *section;
-	RzListIter *iter;
+	void **iter;
 	RzOutputMode mode = state->mode;
 	bool res = true;
 
@@ -2493,7 +2496,8 @@ RZ_API bool rz_core_bin_sections_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 	rz_cmd_state_output_array_start(state);
 	sections_headers_setup(core, state, hashes);
 
-	rz_list_foreach (sections, iter, section) {
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
 		if (filter && filter->offset != UT64_MAX) {
 			if (!is_in_symbol_range(section->vaddr, section->vsize, filter->offset) &&
 				!is_in_symbol_range(section->paddr, section->size, filter->offset)) {
@@ -2532,7 +2536,7 @@ err:
 		state->mode = mode;
 		rz_table_free(state->d.t);
 	}
-	rz_list_free(sections);
+	rz_pvector_free(sections);
 	return res;
 }
 
@@ -2632,7 +2636,7 @@ RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	RzBinObject *o = bf->o;
-	RzList *segments = rz_bin_object_get_segments(o);
+	RzPVector *segments = rz_bin_object_get_segments(o);
 	if (!segments) {
 		return false;
 	}
@@ -2651,7 +2655,9 @@ RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 		}
 	}
 
-	rz_list_foreach (segments, iter, segment) {
+	void **it;
+	rz_pvector_foreach (segments, it) {
+		segment = *it;
 		if (filter && filter->offset != UT64_MAX) {
 			if (!is_in_symbol_range(segment->vaddr, segment->vsize, filter->offset) &&
 				!is_in_symbol_range(segment->paddr, segment->size, filter->offset)) {
@@ -2675,7 +2681,7 @@ RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 	}
 
 	rz_cmd_state_output_array_end(state);
-	rz_list_free(segments);
+	rz_pvector_free(segments);
 	return true;
 }
 
