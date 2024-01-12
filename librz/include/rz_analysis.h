@@ -1549,14 +1549,14 @@ RZ_API ut64 rz_analysis_function_size_from_entry(RzAnalysisFunction *fcn);
 
 // the "real" size of the function, that is the sum of the size of the
 // basicblocks this function is composed of
-RZ_API ut64 rz_analysis_function_realsize(const RzAnalysisFunction *fcn);
+RZ_API ut64 rz_analysis_function_realsize(RZ_NONNULL const RzAnalysisFunction *fcn);
 
 // returns whether the function contains a basic block that contains addr
 // This is completely independent of fcn->addr, which is only the entrypoint!
 RZ_API bool rz_analysis_function_contains(RzAnalysisFunction *fcn, ut64 addr);
 
 // returns true if function bytes were modified
-RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn);
+RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn);
 
 RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL char *name);
 RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *name);
@@ -1733,7 +1733,7 @@ RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut
 
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size);
-RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn);
+RZ_API void rz_analysis_function_update_analysis(RZ_NONNULL RzAnalysisFunction *fcn);
 
 RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address, RzStackAddr sp);
 RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks);

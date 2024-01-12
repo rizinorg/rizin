@@ -117,7 +117,16 @@ bool test_analysis_graph_more() {
 	mu_assert_eq(g->n_nodes, 3, "data graph node count");
 	mu_assert_eq(g->n_edges, 3, "data graph edge count");
 
-	RzGraphNode *n = rz_graph_get_node(g, 0);
+	RzGraphNode *n = NULL;
+	RzListIter *it;
+	RzGraphNode *node;
+	rz_list_foreach (g->nodes, it, node) {
+		RzGraphNodeInfo *info = node->data;
+		if (strcmp(info->title, "0x8048be4") == 0) {
+			n = node;
+			break;
+		}
+	}
 	mu_assert_notnull(n, "graph node");
 
 	RzGraphNodeInfo *ni = n->data;

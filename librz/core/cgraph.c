@@ -279,9 +279,7 @@ static inline RzGraphNode *graph_add_cached(RzCore *core, HtUP *cache, RzAnalysi
 }
 
 static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph, HtUP *cache, GraphBodyFn body_fn) {
-	if (!(fcn && fcn->bbs)) {
-		return;
-	}
+	rz_return_if_fail(core && fcn && graph && cache);
 
 	void **iter;
 	RzAnalysisBlock *bbi;

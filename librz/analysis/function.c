@@ -329,7 +329,8 @@ RZ_API ut64 rz_analysis_function_size_from_entry(RzAnalysisFunction *fcn) {
 	return fcn->meta._min == UT64_MAX ? 0 : fcn->meta._max - fcn->addr;
 }
 
-RZ_API ut64 rz_analysis_function_realsize(const RzAnalysisFunction *fcn) {
+RZ_API ut64 rz_analysis_function_realsize(RZ_NONNULL const RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(fcn, 0);
 	void **iter;
 	RzAnalysisBlock *bb;
 	ut64 sz = 0;
@@ -358,7 +359,7 @@ RZ_API bool rz_analysis_function_contains(RzAnalysisFunction *fcn, ut64 addr) {
 	return !rz_analysis_blocks_foreach_in(fcn->analysis, addr, fcn_in_cb, fcn);
 }
 
-RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn) {
+RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, false);
 	void **it;
 	RzAnalysisBlock *bb;

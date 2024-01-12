@@ -124,7 +124,8 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 }
 
 static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *old_sections, ut64 old_base) {
-	RzListIter *it, *ititit;
+	RzListIter *it;
+	void **it3;
 	RzAnalysisFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;
 	RzBinSection *old_section;

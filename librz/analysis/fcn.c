@@ -1764,6 +1764,7 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
  * \brief Returns the amount of loops located in the \p fcn function
  */
 RZ_API int rz_analysis_function_loops(RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(fcn, 0);
 	void **iter;
 	RzAnalysisBlock *bb;
 	ut32 loops = 0;
@@ -2063,6 +2064,7 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysi
 
 // compute the cyclomatic cost
 RZ_API ut32 rz_analysis_function_cost(RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(fcn, 0);
 	void **iter;
 	RzAnalysisBlock *bb;
 	ut32 totalCycles = 0;
@@ -2425,7 +2427,7 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 	rz_list_free(fcns);
 }
 
-RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
+RZ_API void rz_analysis_function_update_analysis(RZ_NONNULL RzAnalysisFunction *fcn) {
 	rz_return_if_fail(fcn);
 	void **it;
 	RzListIter *it2, *tmp2;

@@ -524,8 +524,16 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 }
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
+	if (!_a || !_b) {
+		return 0;
+	}
 	const RzAnalysisBlock *a = *(const RzAnalysisBlock **)_a;
 	const RzAnalysisBlock *b = *(const RzAnalysisBlock **)_b;
+
+	if (!a || !b) {
+		return 0;
+	}
+
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
