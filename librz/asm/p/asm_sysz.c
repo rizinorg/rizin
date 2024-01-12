@@ -18,17 +18,17 @@ static bool the_end(void *p) {
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	static int omode = 0;
+	a->omode = 0;
 	int mode, n, ret;
 	ut64 off = a->pc;
 	cs_insn *insn = NULL;
 	mode = CS_MODE_BIG_ENDIAN;
-	if (cd && mode != omode) {
+	if (cd && mode != a->omode) {
 		cs_close(&cd);
 		cd = 0;
 	}
 	op->size = 0;
-	omode = mode;
+	a->omode = mode;
 	if (cd == 0) {
 		ret = cs_open(CS_ARCH_SYSZ, mode, &cd);
 		if (ret) {

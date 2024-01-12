@@ -23,21 +23,21 @@ static int check_features(RzAsm *a, cs_insn *insn);
 #include "asm_x86_vm.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	static int omode = 0;
+	a->omode = 0;
 	int mode, ret;
 	ut64 off = a->pc;
 
 	mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32
 		: (a->bits == 16)                             ? CS_MODE_16
 							      : 0;
-	if (cd && mode != omode) {
+	if (cd && mode != a->omode) {
 		cs_close(&cd);
 		cd = 0;
 	}
 	if (op) {
 		op->size = 0;
 	}
-	omode = mode;
+	a->omode = mode;
 	if (cd == 0) {
 		ret = cs_open(CS_ARCH_X86, mode, &cd);
 		if (ret) {

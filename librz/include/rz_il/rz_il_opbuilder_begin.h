@@ -35,6 +35,9 @@
 
 #include <rz_il/rz_il_opcodes.h>
 
+#undef AND
+#undef SIGNED
+
 #define DUP(op) rz_il_op_pure_dup(op)
 
 #define ITE(c, t, f) rz_il_op_new_ite(c, t, f)

@@ -5,13 +5,12 @@
 #include <rz_analysis.h>
 #include <rz_asm.h>
 
-static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
-	static RzPVector *pvec = NULL;
-	if (pvec) {
-		return pvec;
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) {
+	if (a->pvec) {
+		return a->pvec;
 	}
 
-	pvec = rz_pvector_new(rz_asm_token_pattern_free);
+	a->pvec = rz_pvector_new(rz_asm_token_pattern_free);
 
 	// Patterns get added here.
 	// Mnemonic pattern
@@ -19,14 +18,14 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat->type = RZ_ASM_TOKEN_MNEMONIC;
 	pat->pattern = strdup(
 		"^(while|inc|dec|out|in|trap|nop|invalid|loop)");
-	rz_pvector_push(pvec, pat);
+	rz_pvector_push(a->pvec, pat);
 
 	// ptr pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
 	pat->pattern = strdup(
 		"(ptr)");
-	rz_pvector_push(pvec, pat);
+	rz_pvector_push(a->pvec, pat);
 
 	// reference pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
@@ -34,16 +33,16 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat->pattern = strdup(
 		"(\\[)|(\\])" // Matches a single bracket
 	);
-	rz_pvector_push(pvec, pat);
+	rz_pvector_push(a->pvec, pat);
 
 	// Separator pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_SEPARATOR;
 	pat->pattern = strdup(
 		"([[:blank:]]+)");
-	rz_pvector_push(pvec, pat);
+	rz_pvector_push(a->pvec, pat);
 
-	return pvec;
+	return a->pvec;
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
@@ -95,7 +94,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	rz_strbuf_set(&op->buf_asm, buf_asm);
 
-	RzPVector *token_patterns = get_token_patterns();
+	RzPVector *token_patterns = get_token_patterns(a);
 	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, token_patterns);
 	op->asm_toks->op_type = op_type;
 

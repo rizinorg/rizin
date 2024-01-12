@@ -27,16 +27,16 @@ static csh cd = 0;
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = NULL;
-	static int omode = -1;
-	static int obits = 32;
 	cs_insn *insn = NULL;
+	a->omode = -1;
+	a->obits = 32;
 	int ret = 0, n = 0;
 	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-	if (mode != omode || a->bits != obits) {
+	if (mode != a->omode || a->bits != a->obits) {
 		cs_close(&cd);
 		cd = 0; // unnecessary
-		omode = mode;
-		obits = a->bits;
+		a->omode = mode;
+		a->obits = a->bits;
 	}
 
 	// replace this with the asm.features?

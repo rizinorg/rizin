@@ -46,7 +46,6 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(struct rz_asm_t *a, struct rz_asm_op_t *op, const ut8 *buf, int len) {
-	static struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
 	}
@@ -55,51 +54,51 @@ static int disassemble(struct rz_asm_t *a, struct rz_asm_op_t *op, const ut8 *bu
 	memcpy(bytes, buf, 4); // TODO handle thumb
 
 	if ((a->cpu != pre_cpu) && (a->features != pre_features)) {
-		free(disasm_obj.disassembler_options);
-		memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
+		free(a->disasm_obj.disassembler_options);
+		memset(&a->disasm_obj, '\0', sizeof(struct disassemble_info));
 	}
 
 	/* prepare disassembler */
 	if (a->cpu && (!pre_cpu || !strcmp(a->cpu, pre_cpu))) {
 		if (!rz_str_casecmp(a->cpu, "mips64r2")) {
-			disasm_obj.mach = bfd_mach_mipsisa64r2;
+			a->disasm_obj.mach = bfd_mach_mipsisa64r2;
 		} else if (!rz_str_casecmp(a->cpu, "mips32r2")) {
-			disasm_obj.mach = bfd_mach_mipsisa32r2;
+			a->disasm_obj.mach = bfd_mach_mipsisa32r2;
 		} else if (!rz_str_casecmp(a->cpu, "mips64")) {
-			disasm_obj.mach = bfd_mach_mipsisa64;
+			a->disasm_obj.mach = bfd_mach_mipsisa64;
 		} else if (!rz_str_casecmp(a->cpu, "mips32")) {
-			disasm_obj.mach = bfd_mach_mipsisa32;
+			a->disasm_obj.mach = bfd_mach_mipsisa32;
 		}
 		pre_cpu = rz_str_dup(pre_cpu, a->cpu);
 	}
 
 	if (a->features && (!pre_features || !strcmp(a->features, pre_features))) {
-		free(disasm_obj.disassembler_options);
+		free(a->disasm_obj.disassembler_options);
 		if (strstr(a->features, "n64")) {
-			disasm_obj.disassembler_options = rz_str_new("abi=n64");
+			a->disasm_obj.disassembler_options = rz_str_new("abi=n64");
 		} else if (strstr(a->features, "n32")) {
-			disasm_obj.disassembler_options = rz_str_new("abi=n32");
+			a->disasm_obj.disassembler_options = rz_str_new("abi=n32");
 		} else if (strstr(a->features, "o32")) {
-			disasm_obj.disassembler_options = rz_str_new("abi=o32");
+			a->disasm_obj.disassembler_options = rz_str_new("abi=o32");
 		}
 		pre_features = rz_str_dup(pre_features, a->features);
 	}
 
 	mips_mode = a->bits;
-	disasm_obj.arch = CPU_LOONGSON_2F;
-	disasm_obj.buffer = bytes;
-	disasm_obj.read_memory_func = &mips_buffer_read_memory;
-	disasm_obj.symbol_at_address_func = &symbol_at_address;
-	disasm_obj.memory_error_func = &memory_error_func;
-	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.buffer_vma = Offset;
-	disasm_obj.buffer_length = 4;
-	disasm_obj.endian = !a->big_endian;
-	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
-	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
-		? print_insn_little_mips((bfd_vma)Offset, &disasm_obj)
-		: print_insn_big_mips((bfd_vma)Offset, &disasm_obj);
+	a->disasm_obj.arch = CPU_LOONGSON_2F;
+	a->disasm_obj.buffer = bytes;
+	a->disasm_obj.read_memory_func = &mips_buffer_read_memory;
+	a->disasm_obj.symbol_at_address_func = &symbol_at_address;
+	a->disasm_obj.memory_error_func = &memory_error_func;
+	a->disasm_obj.print_address_func = &generic_print_address_func;
+	a->disasm_obj.buffer_vma = Offset;
+	a->disasm_obj.buffer_length = 4;
+	a->disasm_obj.endian = !a->big_endian;
+	a->disasm_obj.fprintf_func = &generic_fprintf_func;
+	a->disasm_obj.stream = stdout;
+	op->size = (a->disasm_obj.endian == BFD_ENDIAN_LITTLE)
+		? print_insn_little_mips((bfd_vma)Offset, &a->disasm_obj)
+		: print_insn_big_mips((bfd_vma)Offset, &a->disasm_obj);
 	if (op->size == -1) {
 		rz_strbuf_set(&op->buf_asm, "(data)");
 	}

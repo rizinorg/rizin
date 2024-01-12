@@ -55,7 +55,8 @@ static int decompile_ps(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	static int omode = -1, obits = -1;
+	a->omode = -1;
+	a->obits = -1;
 	int n, ret, mode;
 	ut64 off = a->pc;
 	cs_insn *insn;
@@ -94,11 +95,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		mode |= CS_MODE_QPX;
 	}
 
-	if (mode != omode || a->bits != obits) {
+	if (mode != a->omode || a->bits != a->obits) {
 		cs_close(&handle);
 		handle = 0;
-		omode = mode;
-		obits = a->bits;
+		a->omode = mode;
+		a->obits = a->bits;
 	}
 	if (handle == 0) {
 		ret = cs_open(CS_ARCH_PPC, mode, &handle);
