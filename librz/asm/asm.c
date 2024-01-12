@@ -87,6 +87,24 @@ static bool is_register(const char *name, RZ_BORROW const RzRegSet *regset) {
 	return false;
 }
 
+/**
+ * \brief Checks if the provided token string fits in any known asm token type.
+ *
+ * If the prev byte is not an operator or a separator and next byte is NULL(eg: "push rsp") , don't consider it as unknown
+ * If the prev byte or next byte is not an operator or a separator, don't consider it as unknown.
+ *
+ * \param str The parsed asm token.
+ * \param prev index of the prev byte of the token
+ * \param next index of the next byte of the token
+ * \return true The given token cannot be parsed to any known asm token type.
+ * \return false Otherwise.
+ */
+static bool is_not_unknown(const char *str, size_t prev, size_t next) {
+	rz_return_val_if_fail(str, false);
+	return (is_operator(str + prev - 1) || is_separator(str + prev - 1)) &&
+		(!*(str + next) || (is_operator(str + next) || is_separator(str + next)));
+}
+
 static char *directives[] = {
 	".include", ".error", ".warning",
 	".echo", ".if", ".ifeq", ".endif",
@@ -1741,11 +1759,11 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 				// B: If it could be a hex number but has no prefix, a flag is set.
 				//    In this case we only mark it as number if it is not in the register profile.
 
+				// Handles cases where the string can be of: sym.foo_bar_ADC_dfg, sym_foo_bar_0x80
+				// 1) If the next byte after seek is not an operator or a separator and
+				// 2) if the hex string is not unknown then we can consider it as a number.
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_NUMBER);
-				if (!str[i + l]) { // End of asm string => token is number.
-					prefix_less_hex = !rz_num_is_hex_prefix(str + i);
-					is_number = true;
-				} else if (!isalpha(str[i + l])) { // Next char is something non alphabetic => Treat as number.
+				if ((!str[i + l] || is_separator(str + i + l) || is_operator(str + i + l)) && is_not_unknown(str, i, i + l)) {
 					prefix_less_hex = !rz_num_is_hex_prefix(str + i);
 					is_number = true;
 				}
@@ -1757,7 +1775,7 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 			} else if (mnemonic_parsed) {
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_REGISTER);
 				char *op_name = rz_str_ndup(str + i, l);
-				if (param && is_register(op_name, param->reg_sets)) {
+				if (param && is_register(op_name, param->reg_sets) && is_not_unknown(str, i, i + l)) {
 					add_token(toks, i, l, RZ_ASM_TOKEN_REGISTER, 0);
 				} else if (prefix_less_hex) {
 					// It wasn't a register but still could be a prefixless hex number.
