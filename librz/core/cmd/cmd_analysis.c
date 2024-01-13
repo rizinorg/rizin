@@ -5657,6 +5657,11 @@ RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 			rz_analysis_op_fini(&op);
 			break;
 		}
+		// Just empty RzIL
+		if (!op.il_op) {
+			RZ_LOG_DEBUG("Empty IL at 0x%08" PFMT64x "...\n", core->offset + idx);
+			break;
+		}
 
 		rz_strbuf_init(&sb);
 		rz_il_op_effect_stringify(op.il_op, &sb, pretty);
