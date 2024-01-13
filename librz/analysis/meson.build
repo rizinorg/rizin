@@ -170,7 +170,6 @@ rz_analysis_sources = [
   'arch/x86/x86_il.c',
   'arch/8051/8051_il.c',
   'arch/8051/8051_parse.c',
-  'arch/tricore/tricore_il.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cil/cil_dis.c',
@@ -243,6 +242,7 @@ rz_analysis_sources = [
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   rz_analysis_sources += 'p/analysis_riscv_cs.c'
   rz_analysis_sources += 'p/analysis_tricore_cs.c'
+  rz_analysis_sources +='arch/tricore/tricore_il.c'
 endif
 
 if get_option('use_gpl')
