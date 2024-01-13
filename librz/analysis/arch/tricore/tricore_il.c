@@ -560,10 +560,11 @@ err:
 	return NULL;
 }
 
-#define R(x)   tricore_op_as_reg(ctx, x)
-#define I(x)   tricore_op_as_imm(ctx, x)
-#define M(x)   tricore_op_as_mem(ctx, x)
-#define InsnB0 ctx->insn->bytes[0]
+#define R(x)     tricore_op_as_reg(ctx, x)
+#define I(x)     tricore_op_as_imm(ctx, x)
+#define M(x)     tricore_op_as_mem(ctx, x)
+#define OPC1     ctx->insn->bytes[0]
+#define OPC1_BRN (ctx->insn->bytes[0] & 0x7f)
 
 enum trap_kind_t {
 	/// Class 0 — MMU
@@ -2156,7 +2157,7 @@ static RzAnalysisLiftedILOp lift_rfm(const RzAsmTriCoreContext *ctx) {
 }
 
 static RzAnalysisLiftedILOp lift_add(RzAsmTriCoreContext *ctx) {
-	switch (InsnB0) {
+	switch (OPC1) {
 	case 0x8b: {
 		switch (extract32(ctx->word, 21, 7)) {
 		case 0x00: return packed_op2_sov(R(0), VARG(R(1)), sign_ext32_bv(I(2), 9), Word_b, rz_il_op_new_add, NULL);
@@ -2219,7 +2220,7 @@ static RzAnalysisLiftedILOp e_cadd(const char *dst, RzILOpPure *cnd, RzILOpPure 
 }
 
 static RzAnalysisLiftedILOp lift_cadd(RzAsmTriCoreContext *ctx) {
-	switch (InsnB0) {
+	switch (OPC1) {
 	case /*RCR*/ 0xab: {
 		switch (extract32(ctx->word, 21, 3)) {
 		case /*CADD (RCR)*/ 0x00: return e_cadd(R(0), NON_ZERO(VARG(R(1))), VARG(R(2)), sign_ext32_bv(I(3), 9));
@@ -3072,7 +3073,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_UNPACK: return lift_unpack(ctx);
 	case TRICORE_INS_PACK: return lift_pack(ctx);
 	case TRICORE_INS_ABSDIFS: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8b: return e_ABSDIF(R(0), VARG(R(1)), sign_ext32_bv(I(2), 9), Word_b, ssov);
 		case 0x0b: return e_ABSDIF(R(0), VARG(R(1)), VARG(R(2)), Word_b, ssov);
 		default: break;
@@ -3082,7 +3083,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_ABSDIFS_B: return e_ABSDIF(R(0), VARG(R(1)), VARG(R(2)), Byte_b, ssov);
 	case TRICORE_INS_ABSDIFS_H: return e_ABSDIF(R(0), VARG(R(1)), VARG(R(2)), HalfWord_b, ssov);
 	case TRICORE_INS_ABSDIF: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8b: return e_ABSDIF(R(0), VARG(R(1)), sign_ext32_bv(I(2), 9), Word_b, NULL);
 		case 0x0b: return e_ABSDIF(R(0), VARG(R(1)), VARG(R(2)), Word_b, NULL);
 		default: break;
@@ -3123,7 +3124,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_DSYNC:
 	case TRICORE_INS_WAIT: return NOP();
 	case TRICORE_INS_DISABLE: {
-		if (InsnB0 == 0x0d) {
+		if (OPC1 == 0x0d) {
 			switch (extract32(ctx->word, 22, 6)) {
 			case 0x0d: return set_ICR_IE(U32(0));
 			case 0x0f: return SEQ2(
@@ -3239,7 +3240,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_DEXTR:
 	case TRICORE_INS_EXTR_U:
 	case TRICORE_INS_EXTR: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x77: {
 			switch (extract32(ctx->word, 21, 3)) {
 			case /*DEXTR(RRPW)*/ 0x00: return SETG(R(0), UNSIGNED(32, SHR0(APPEND(VARG(R(1)), SHL0(VARG(R(2)), I(3))), 32)));
@@ -3288,7 +3289,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	}
 	case TRICORE_INS_INSERT:
 	case TRICORE_INS_IMASK: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xb7: {
 			switch (extract32(ctx->word, 21, 2)) {
 			case /*INSERT(RCPW)*/ 0x00:
@@ -3413,7 +3414,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 
 	case TRICORE_INS_JA: return JMP(EA_disp24(I(0)));
 	case TRICORE_INS_J:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x1d:
 		case 0x3c: return JMP(U32(I(0)));
 		default: break;
@@ -3434,14 +3435,14 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 			SETG("a11", U32(PC_NEXT)),
 			JMP(LOGAND(VARG(R(0)), U32(0xfffffffe))));
 	case TRICORE_INS_JLT:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xbf: return BRANCH(SLT(VARG(R(0)), sign_ext32_bv(I(1), 4)), JMP(U32(I(2))), NOP());
 		case 0x3f: return BRANCH(SLE(VARG(R(0)), VARG(R(1))), JMP(U32(I(2))), NOP());
 		default: break;
 		}
 		break;
 	case TRICORE_INS_JLT_U:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xbf: return BRANCH(ULT(VARG(R(0)), U32(I(1))), JMP(U32(I(2))), NOP());
 		case 0x3f: return BRANCH(ULE(VARG(R(0)), VARG(R(1))), JMP(U32(I(2))), NOP());
 		default: break;
@@ -3449,7 +3450,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		break;
 	case TRICORE_INS_JLTZ: return BRANCH(SLT(VARG(R(0)), S32(0)), JMP(U32(I(1))), NOP());
 	case TRICORE_INS_JNE:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xdf: return BRANCH(NE(VARG(R(0)), sign_ext32_bv(I(1), 4)), JMP(U32(I(2))), NOP());
 		case 0x5f: return BRANCH(NE(VARG(R(0)), VARG(R(1))), JMP(U32(I(2))), NOP());
 		case 0x5e:
@@ -3461,7 +3462,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		break;
 	case TRICORE_INS_JNE_A: return BRANCH(NE(VARG(R(0)), VARG(R(1))), JMP(U32(I(2))), NOP());
 	case TRICORE_INS_JNED:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x9f: return SEQ3(
 			SETL("PC", ITE(NE(VARG(R(0)), sign_ext32_bv(I(1), 4)), U32(I(2)), U32(PC_NEXT))),
 			SETG(R(0), SUB(VARG(R(0)), S32(1))),
@@ -3474,7 +3475,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		}
 		break;
 	case TRICORE_INS_JNEI:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x9f: return SEQ3(
 			SETL("PC", ITE(NE(VARG(R(0)), sign_ext32_bv(I(1), 4)), U32(I(2)), U32(PC_NEXT))),
 			SETG(R(0), ADD(VARG(R(0)), S32(1))),
@@ -3487,28 +3488,29 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		}
 		break;
 	case TRICORE_INS_JNZ_A:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xbd: return BRANCH(NE(VARG(R(0)), U32(0)), JMP(U32(I(1))), NOP());
 		case 0x7c: return BRANCH(NE(VARG(R(0)), U32(0)), JMP(U32(I(1))), NOP());
 		default: break;
 		}
 		break;
 	case TRICORE_INS_JNZ_T:
-		switch (InsnB0) {
-		case 0x6f: return BRANCH(BIT32(VARG(R(0)), I(1)), JMP(U32(I(2))), NOP());
-		case 0xae: return BRANCH(BIT32(VARG("d15"), I(0)), JMP(U32(I(1))), NOP());
-		default: break;
+		if (OPC1_BRN == 0x6f) {
+			return BRANCH(BIT32(VARG(R(0)), I(1)), JMP(U32(I(2))), NOP());
+		}
+		if (OPC1 == 0xae) {
+			return BRANCH(BIT32(VARG("d15"), I(0)), JMP(U32(I(1))), NOP());
 		}
 		break;
 	case TRICORE_INS_JNZ:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xee: return BRANCH(NE(VARG("d15"), U32(0)), JMP(U32(I(0))), NOP());
 		case 0xf6: return BRANCH(NE(VARG(R(0)), U32(0)), JMP(U32(I(1))), NOP());
 		default: break;
 		}
 		break;
 	case TRICORE_INS_JEQ:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xdf: return BRANCH(EQ(VARG(R(0)), sign_ext32_bv(I(1), 4)), JMP(U32(I(2))), NOP());
 		case 0x5f: return BRANCH(EQ(VARG(R(0)), VARG(R(1))), JMP(U32(I(2))), NOP());
 		case 0x1e:
@@ -3520,14 +3522,14 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		break;
 	case TRICORE_INS_JEQ_A: return BRANCH(EQ(VARG(R(0)), VARG(R(1))), JMP(U32(I(2))), NOP());
 	case TRICORE_INS_JGE:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xff: return BRANCH(SGE(VARG(R(0)), sign_ext32_bv(I(1), 4)), JMP(U32(I(2))), NOP());
 		case 0x7f: return BRANCH(SGE(VARG(R(0)), VARG(R(1))), JMP(U32(I(2))), NOP());
 		default: break;
 		}
 		break;
 	case TRICORE_INS_JGE_U:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xff: return BRANCH(UGE(VARG(R(0)), U32(I(1))), JMP(U32(I(2))), NOP());
 		case 0x7f: return BRANCH(UGE(VARG(R(0)), VARG(R(1))), JMP(U32(I(2))), NOP());
 		default: break;
@@ -3536,24 +3538,25 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_JGEZ: return BRANCH(UGE(VARG(R(0)), U32(0)), JMP(U32(I(1))), NOP());
 	case TRICORE_INS_JGTZ: return BRANCH(UGT(VARG(R(0)), U32(0)), JMP(U32(I(1))), NOP());
 	case TRICORE_INS_JZ:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x6e: return BRANCH(EQ(VARG("d15"), U32(0)), JMP(U32(I(0))), NOP());
 		case 0x76: return BRANCH(IS_ZERO(VARG(R(0))), JMP(U32(I(1))), NOP());
 		default: break;
 		}
 		break;
 	case TRICORE_INS_JZ_A:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xbd: return BRANCH(EQ(VARG(R(0)), U32(0)), JMP(U32(I(1))), NOP());
 		case 0xbc: return BRANCH(IS_ZERO(VARG(R(0))), JMP(U32(I(1))), NOP());
 		default: break;
 		}
 		break;
 	case TRICORE_INS_JZ_T: {
-		switch (InsnB0) {
-		case 0x6f: return BRANCH(INV(BIT32(VARG(R(0)), I(1))), JMP(U32(I(2))), NOP());
-		case 0x2e: return BRANCH(INV(BIT32(VARG("d15"), I(0))), JMP(U32(I(1))), NOP());
-		default: break;
+		if (OPC1_BRN == 0x6f) {
+			return BRANCH(INV(BIT32(VARG(R(0)), I(1))), JMP(U32(I(2))), NOP());
+		}
+		if (OPC1 == 0x2e) {
+			return BRANCH(INV(BIT32(VARG("d15"), I(0))), JMP(U32(I(1))), NOP());
 		}
 		break;
 	}
@@ -3573,7 +3576,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		return lift_ld_op(ctx);
 	case TRICORE_INS_LOOPU: return JMP(U32(I(0)));
 	case TRICORE_INS_LOOP: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xfd:
 		case 0xfc: return SEQ3(
 			SETL("PC", ITE(NON_ZERO(VARG(R(0))), U32(I(1)), U32(PC_NEXT))),
@@ -3624,7 +3627,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		return NULL;
 	}
 	case TRICORE_INS_MOV: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x3b: return SETG(R(0), sign_ext32_bv(I(1), 16));
 		case 0xfb: return SETG(R(0), sign_ext64_bv(I(1), 16));
 		case 0x0b: {
@@ -3705,7 +3708,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_MIN_HU:
 	case TRICORE_INS_MIN_U:
 	case TRICORE_INS_MIN: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8b:
 			switch (extract32(ctx->word, 21, 7)) {
 			case /*EQ(RC)*/ 0x10: return SETG(R(0), BOOL_TO_BV32(EQ(VARG(R(1)), sign_ext32_bv(I(2), 9))));
@@ -3823,7 +3826,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		break;
 	}
 	case TRICORE_INS_CMPSWAP_W: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x49: {
 			switch (extract32(ctx->word, 22, 6)) {
 			case /*CMPSWAP.W(BO)(Base + Short Offset Addressing Mode)*/ 0x23: {
@@ -3916,7 +3919,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_MADDS: {
 		RzILOpEffect *e = NULL;
 		bool is_32bit_result = true;
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x13: {
 			switch (extract32(ctx->word, 21, 3)) {
 			case /*MADD D[c], D[d], D[a], const9 (RCR)*/ 0x01:
@@ -4060,7 +4063,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_MOV_U: return SETG(R(0), U32(I(1)));
 	case TRICORE_INS_CMOVN:
 	case TRICORE_INS_CMOV: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xaa: return SETG(R(0), ITE(NON_ZERO(VARG("d15")), sign_ext32_bv(I(1), 4), VARG(R(0))));
 		case 0x2a: return SETG(R(0), ITE(NON_ZERO(VARG("d15")), VARG(R(1)), VARG(R(0))));
 		case 0xea: return SETG(R(0), ITE(IS_ZERO(VARG("d15")), sign_ext32_bv(I(1), 4), VARG(R(0))));
@@ -4118,7 +4121,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_MSUB_Q:
 	case TRICORE_INS_MSUB_U:
 	case TRICORE_INS_MSUB: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x33:
 			switch (extract32(ctx->word, 21, 3)) {
 			// MSUB, MSUBS
@@ -4347,7 +4350,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_SUBS_U:
 	case TRICORE_INS_SUBS:
 	case TRICORE_INS_SUB: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x0b:
 			switch (extract32(ctx->word, 20, 8)) {
 			// SUB
@@ -4387,7 +4390,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_MULM_H:
 	case TRICORE_INS_MULM_U:
 	case TRICORE_INS_MULM:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xB3:
 			switch (extract32(ctx->word, 18, 9)) {
 			case 0x1e: return e_mul(ctx, 16, 0, 0, 0, HalfWord_b, f_add_shl16_64);
@@ -4399,7 +4402,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		}
 		break;
 	case TRICORE_INS_MULR_H:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xB3:
 			switch (extract32(ctx->word, 18, 9)) {
 			case 0x0e: return e_mulr_h(ctx, 16, 0, 0, 0, HalfWord_b, append_h16_32);
@@ -4411,7 +4414,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		}
 		break;
 	case TRICORE_INS_MULR_Q: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x93:
 			switch (extract32(ctx->word, 18, 9)) {
 			case 0x07: return e_mulr_q(ctx, 0, 0);
@@ -4422,7 +4425,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		break;
 	}
 	case TRICORE_INS_MUL_H:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xb3:
 			switch (extract32(ctx->word, 18, 9)) {
 			// MUL.H
@@ -4436,7 +4439,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		break;
 
 	case TRICORE_INS_MUL_Q: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x93:
 			switch (extract32(ctx->word, 18, 9)) {
 			// MUL.Q
@@ -4457,7 +4460,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_MULS:
 	case TRICORE_INS_MUL_U:
 	case TRICORE_INS_MUL: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x53:
 			switch (extract32(ctx->word, 21, 7)) {
 			// MUL
@@ -4535,7 +4538,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_RFE: return lift_rfe(ctx);
 	case TRICORE_INS_RFM: return lift_rfm(ctx);
 	case TRICORE_INS_SAT_BU:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x0b:
 			return SETG(R(0), ITE(SGT(VARG(R(1)), U32(0xff)), U32(0xff), VARG(R(1))));
 		case 0x32:
@@ -4543,7 +4546,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		}
 		break;
 	case TRICORE_INS_SAT_B:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x0b:
 			return SETG(R(0),
 				LET("sat_neg", ITE(SLT(VARG(R(1)), S32(-0x80)), S32(-0x80), VARG(R(1))),
@@ -4555,7 +4558,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		}
 		break;
 	case TRICORE_INS_SAT_HU: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x0b:
 			return SETG(R(0), ITE(SGT(VARG(R(1)), U32(0xffff)), U32(0xffff), VARG(R(1))));
 		case 0x32:
@@ -4564,7 +4567,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		break;
 	}
 	case TRICORE_INS_SAT_H: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x0b:
 			return SETG(R(0),
 				LET("sat_neg", ITE(SLT(VARG(R(1)), S32(-0x8000)), S32(-0x8000), VARG(R(1))),
@@ -4578,57 +4581,57 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	}
 	case TRICORE_INS_SELN_A:
 	case TRICORE_INS_SELN:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xab: return SETG(R(0), ITE(IS_ZERO(VARG(R(1))), VARG(R(2)), sign_ext32_bv(I(3), 9)));
 		case 0x2b: return SETG(R(0), ITE(IS_ZERO(VARG(R(1))), VARG(R(2)), VARG(R(3))));
 		}
 		break;
 	case TRICORE_INS_SEL_A:
 	case TRICORE_INS_SEL:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0xab: return SETG(R(0), ITE(NON_ZERO(VARG(R(1))), VARG(R(2)), sign_ext32_bv(I(3), 9)));
 		case 0x2b: return SETG(R(0), ITE(NON_ZERO(VARG(R(1))), VARG(R(2)), VARG(R(3))));
 		}
 		break;
 	case TRICORE_INS_SHAS:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8f: return e_shas(R(0), sign_ext32_bv(I(2), 6), VARG(R(1)));
 		case 0x0f: return e_shas(R(0), SEXT32(VARG(R(2)), 6), VARG(R(1)));
 		}
 		break;
 	case TRICORE_INS_SHA_B:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8f: return e_sha(R(0), sign_ext32_bv(I(2), 6), VARG(R(1)), Byte_b);
 		case 0x0f: return e_sha(R(0), SEXT32(VARG(R(2)), 6), VARG(R(1)), Byte_b);
 		}
 		break;
 	case TRICORE_INS_SHA_H:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8f: return e_sha(R(0), sign_ext32_bv(I(2), 6), VARG(R(1)), HalfWord_b);
 		case 0x0f: return e_sha(R(0), SEXT32(VARG(R(2)), 6), VARG(R(1)), HalfWord_b);
 		}
 		break;
 	case TRICORE_INS_SHA:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8f: return e_sha(R(0), sign_ext32_bv(I(2), 6), VARG(R(1)), Word_b);
 		case 0x0f: return e_sha(R(0), SEXT32(VARG(R(2)), 6), VARG(R(1)), Word_b);
 		case 0x86: return e_sha(R(0), sign_ext32_bv(I(1), 4), VARG(R(0)), Word_b);
 		}
 		break;
 	case TRICORE_INS_SH_B:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8f: return e_sh(R(0), sign_ext32_bv(I(2), 6), VARG(R(1)), Byte_b);
 		case 0x0f: return e_sh(R(0), SEXT32(VARG(R(2)), 6), VARG(R(1)), Byte_b);
 		}
 		break;
 	case TRICORE_INS_SH_H:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8f: return e_sh(R(0), sign_ext32_bv(I(2), 6), VARG(R(1)), HalfWord_b);
 		case 0x0f: return e_sh(R(0), SEXT32(VARG(R(2)), 6), VARG(R(1)), HalfWord_b);
 		}
 		break;
 	case TRICORE_INS_SH: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8f: return e_sh(R(0), sign_ext32_bv(I(2), 6), VARG(R(1)), Word_b);
 		case 0x0f: return e_sh(R(0), SEXT32(VARG(R(2)), 6), VARG(R(1)), Word_b);
 		case 0x06: return e_sh(R(0), sign_ext32_bv(I(1), 4), VARG(R(0)), Word_b);
@@ -4700,7 +4703,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		break;
 	}
 	case TRICORE_INS_SWAPMSK_W:
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x49: {
 			switch (extract32(ctx->word, 22, 6)) {
 			case 0x22: return e_SWAPMSK_W_ea(ADD(VARG(M(0).reg), sign_ext32_bv(M(0).disp, 10)), R(1), NULL);
@@ -4732,7 +4735,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_ORN:
 	case TRICORE_INS_XNOR:
 	case TRICORE_INS_XOR: {
-		switch (InsnB0) {
+		switch (OPC1) {
 		case 0x8f: {
 			switch (extract32(ctx->word, 21, 6)) {
 			case /*AND(RC)*/ 0x08: return e_op2(R(0), VARG(R(1)), U32(I(2)), rz_il_op_new_log_and);
