@@ -8,7 +8,7 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 
-#include <v810_disas.h>
+#include "../arch/v810/v810.h"
 
 enum {
 	V810_FLAG_CY = 1,
@@ -321,67 +321,84 @@ static int v810_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 
 		rz_strbuf_appendf(&op->esil, "$$,%d,+,pc,=", jumpdisp);
 		break;
-	case V810_BCOND:
-		cond = COND(word1);
-		if (cond == V810_COND_NOP) {
-			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-			break;
-		}
+	default:
+		if (OPCODE(word1) >> 3 == 4) {
+			cond = COND(word1);
+			if (cond == V810_COND_NOP) {
+				op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+				break;
+			}
 
-		jumpdisp = DISP9(word1);
-		op->jump = addr + jumpdisp;
-		op->fail = addr + 2;
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+			jumpdisp = DISP9(word1);
+			op->jump = addr + jumpdisp;
+			op->fail = addr + 2;
+			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 
-		switch (cond) {
-		case V810_COND_V:
-			rz_strbuf_appendf(&op->esil, "ov");
-			break;
-		case V810_COND_L:
-			rz_strbuf_appendf(&op->esil, "cy");
-			break;
-		case V810_COND_E:
-			rz_strbuf_appendf(&op->esil, "z");
-			break;
-		case V810_COND_NH:
-			rz_strbuf_appendf(&op->esil, "cy,z,|");
-			break;
-		case V810_COND_N:
-			rz_strbuf_appendf(&op->esil, "s");
-			break;
-		case V810_COND_NONE:
-			rz_strbuf_appendf(&op->esil, "1");
-			break;
-		case V810_COND_LT:
-			rz_strbuf_appendf(&op->esil, "s,ov,^");
-			break;
-		case V810_COND_LE:
-			rz_strbuf_appendf(&op->esil, "s,ov,^,z,|");
-			break;
-		case V810_COND_NV:
-			rz_strbuf_appendf(&op->esil, "ov,!");
-			break;
-		case V810_COND_NL:
-			rz_strbuf_appendf(&op->esil, "cy,!");
-			break;
-		case V810_COND_NE:
-			rz_strbuf_appendf(&op->esil, "z,!");
-			break;
-		case V810_COND_H:
-			rz_strbuf_appendf(&op->esil, "cy,z,|,!");
-			break;
-		case V810_COND_P:
-			rz_strbuf_appendf(&op->esil, "s,!");
-			break;
-		case V810_COND_GE:
-			rz_strbuf_appendf(&op->esil, "s,ov,^,!");
-			break;
-		case V810_COND_GT:
-			rz_strbuf_appendf(&op->esil, "s,ov,^,z,|,!");
-			break;
+			switch (cond) {
+			case V810_COND_V:
+				rz_strbuf_appendf(&op->esil, "ov");
+				break;
+			case V810_COND_L:
+				rz_strbuf_appendf(&op->esil, "cy");
+				break;
+			case V810_COND_E:
+				rz_strbuf_appendf(&op->esil, "z");
+				break;
+			case V810_COND_NH:
+				rz_strbuf_appendf(&op->esil, "cy,z,|");
+				break;
+			case V810_COND_N:
+				rz_strbuf_appendf(&op->esil, "s");
+				break;
+			case V810_COND_NONE:
+				rz_strbuf_appendf(&op->esil, "1");
+				break;
+			case V810_COND_LT:
+				rz_strbuf_appendf(&op->esil, "s,ov,^");
+				break;
+			case V810_COND_LE:
+				rz_strbuf_appendf(&op->esil, "s,ov,^,z,|");
+				break;
+			case V810_COND_NV:
+				rz_strbuf_appendf(&op->esil, "ov,!");
+				break;
+			case V810_COND_NL:
+				rz_strbuf_appendf(&op->esil, "cy,!");
+				break;
+			case V810_COND_NE:
+				rz_strbuf_appendf(&op->esil, "z,!");
+				break;
+			case V810_COND_H:
+				rz_strbuf_appendf(&op->esil, "cy,z,|,!");
+				break;
+			case V810_COND_P:
+				rz_strbuf_appendf(&op->esil, "s,!");
+				break;
+			case V810_COND_GE:
+				rz_strbuf_appendf(&op->esil, "s,ov,^,!");
+				break;
+			case V810_COND_GT:
+				rz_strbuf_appendf(&op->esil, "s,ov,^,z,|,!");
+				break;
+			default: break;
+			}
+			rz_strbuf_appendf(&op->esil, ",?{,$$,%d,+,pc,=,}", jumpdisp);
 		}
-		rz_strbuf_appendf(&op->esil, ",?{,$$,%d,+,pc,=,}", jumpdisp);
 		break;
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+		op->mnemonic = rz_str_newf("%s %s", cmd.instr, cmd.operands);
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		V810AnalysisContext ctx = { 0 };
+		ctx.a = analysis;
+		ctx.w1 = word1;
+		ctx.w2 = word2;
+		ctx.pc = addr;
+
+		op->il_op = v810_il_op(&ctx);
 	}
 
 	return ret;
@@ -431,15 +448,47 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r31	.32	124 0\n"
 		"gpr	pc	.32	128 0\n"
 
-		"gpr	psw .32 132 0\n"
-		"gpr	np  .1 132.16 0\n"
-		"gpr	ep  .1 132.17 0\n"
-		"gpr	ae  .1 132.18 0\n"
-		"gpr	id  .1 132.19 0\n"
-		"flg	cy  .1 132.28 0\n"
-		"flg	ov  .1 132.29 0\n"
-		"flg	s   .1 132.30 0\n"
-		"flg	z   .1 132.31 0\n";
+		"gpr	EIPC	.32	132	0\n"
+		"gpr	EIPSW	.32	136	0\n"
+		"gpr	FEPC	.32	140	0\n"
+		"gpr	FEPSW	.32	144	0\n"
+		"gpr	ECR	.32	148	0\n"
+		"gpr	PSW	.32	152	0\n"
+		"gpr	PIR	.32	156	0\n"
+		"gpr	TKCW	.32	160	0\n"
+		"gpr	Reserved_8	.32	164	0\n"
+		"gpr	Reserved_9	.32	168	0\n"
+		"gpr	Reserved_10	.32	172	0\n"
+		"gpr	Reserved_11	.32	176	0\n"
+		"gpr	Reserved_12	.32	180	0\n"
+		"gpr	Reserved_13	.32	184	0\n"
+		"gpr	Reserved_14	.32	188	0\n"
+		"gpr	Reserved_15	.32	192	0\n"
+		"gpr	Reserved_16	.32	196	0\n"
+		"gpr	Reserved_17	.32	200	0\n"
+		"gpr	Reserved_18	.32	204	0\n"
+		"gpr	Reserved_19	.32	208	0\n"
+		"gpr	Reserved_20	.32	212	0\n"
+		"gpr	Reserved_21	.32	216	0\n"
+		"gpr	Reserved_22	.32	220	0\n"
+		"gpr	Reserved_23	.32	224	0\n"
+		"gpr	CHCW	.32	228	0\n"
+		"gpr	ADTRE	.32	232	0\n"
+		"gpr	Reserved_26	.32	236	0\n"
+		"gpr	Reserved_27	.32	240	0\n"
+		"gpr	Reserved_28	.32	244	0\n"
+		"gpr	Reserved_29	.32	248	0\n"
+		"gpr	Reserved_30	.32	252	0\n"
+		"gpr	Reserved_31	.32	256	0\n"
+
+		"gpr	np  .1 152.16 0\n"
+		"gpr	ep  .1 152.17 0\n"
+		"gpr	ae  .1 152.18 0\n"
+		"gpr	id  .1 152.19 0\n"
+		"flg	cy  .1 152.28 0\n"
+		"flg	ov  .1 152.29 0\n"
+		"flg	s   .1 152.30 0\n"
+		"flg	z   .1 152.31 0\n";
 
 	return strdup(p);
 }
@@ -452,6 +501,7 @@ RzAnalysisPlugin rz_analysis_plugin_v810 = {
 	.bits = 32,
 	.op = v810_op,
 	.esil = true,
+	.il_config = v810_il_config,
 	.get_reg_profile = get_reg_profile,
 };
 
