@@ -4,7 +4,8 @@
 #ifndef RZ_V850_DISASM_H
 #define RZ_V850_DISASM_H
 
-#define V850_INSTR_MAXLEN 24
+#define V850_INSTR_MAXLEN    16
+#define V850_OPERANDS_MAXLEN 32
 
 static inline ut32 SIGN_EXT_T5(ut32 imm) {
 	return (imm & 0x10) ? (imm | 0xE0) : imm;
@@ -33,14 +34,6 @@ typedef enum {
 	V850_SUB = 0xD,
 	V850_ADD = 0xE,
 	V850_CMP = 0xF,
-	V850_MOV_IMM5 = 0x10,
-	V850_SATADD_IMM5 = 0x11,
-	V850_ADD_IMM5 = 0x12,
-	V850_CMP_IMM5 = 0x13,
-	V850_SHR_IMM5 = 0x14,
-	V850_SAR_IMM5 = 0x15,
-	V850_SHL_IMM5 = 0x16,
-	V850_MULH_IMM5 = 0x17,
 	V850_SLDB,
 	V850_SSTB = 0x1C,
 	V850_SLDH = 0x20,
@@ -246,6 +239,9 @@ static inline const char *GR_get(ut8 i) {
 	return GR[i];
 }
 
+/*
+ * \see Section 3.3-3.5  https://www.renesas.com/us/en/document/mas/rh850g3kh-users-manual-software
+ * */
 static inline const char *SR_get(ut8 regID, ut8 selID) {
 	if (selID == 0) {
 		switch (regID) {
@@ -394,7 +390,7 @@ typedef enum {
 	I_reg_reg,
 	II_imm_reg,
 	III_conditional_branch,
-	IIIV_load_store16,
+	IV_load_store16,
 	V_jump,
 	VI_3operand,
 	VII_load_store32,
@@ -408,66 +404,173 @@ typedef enum {
 } V850_Inst_Format;
 
 typedef struct {
-	ut8 reg1 : 5;
-	ut8 reg2 : 5;
-	ut8 reg3 : 5;
-	ut8 cond : 4;
-	ut8 bit : 3;
-	ut8 byte_size : 4;
-	ut16 list;
-	st32 imm;
-	st32 disp;
-
-	ut16 w1;
-	ut16 w2;
-	ut16 w3;
-	ut16 opcode;
-	ut32 sub_opcode;
+	ut64 d;
+	ut32 imm;
+	ut32 disp;
 	V850_Inst_Format format;
 	V850_InstID id;
 	ut64 addr;
+	ut8 byte_size : 4;
 	unsigned type;
 	char instr[V850_INSTR_MAXLEN];
-	char operands[V850_INSTR_MAXLEN];
+	char operands[V850_OPERANDS_MAXLEN];
 } V850_Inst;
 
-static inline ut32 extract(ut32 x, ut8 i, ut8 n) {
+static inline ut32 extract(ut64 x, ut8 i, ut8 n) {
 	return (x >> i) & ((1 << n) - 1);
 }
 
-#define get_opcode(x, l, r) extract(x->w1, l, (r - l + 1))
+static inline ut16 V850_word(const V850_Inst *i, unsigned index) {
+	rz_warn_if_fail(index >= 1 && index <= 4);
+	return extract(i->d, (index - 1) * 16, 16);
+}
+
+static inline ut16 get_opcode(const V850_Inst *i, unsigned l, unsigned r) {
+	return extract(V850_word(i, 1), l, (r - l + 1));
+}
 
 static inline ut8 get_reg1(const V850_Inst *i) {
-	return i->w1 & 0x1F;
+	return V850_word(i, 1) & 0x1F;
 }
 
 static inline ut8 get_reg2(const V850_Inst *i) {
-	return i->w1 >> 11;
+	return V850_word(i, 1) >> 11;
 }
 
 static inline ut8 get_reg3(const V850_Inst *i) {
-	return i->w2 >> 11;
+	return V850_word(i, 2) >> 11;
+}
+
+static inline ut8 xi_reg3(const V850_Inst *i) {
+	return ((i->d >> 12) & 0xf) << 1;
+}
+
+static inline ut8 xi_reg4(const V850_Inst *i) {
+	return ((i->d >> 17) & 0xf) << 1;
 }
 
 static inline ut16 get_imm16(const V850_Inst *i) {
-	return i->w2;
+	return V850_word(i, 2);
 }
 
 static inline ut16 get_disp9(const V850_Inst *i) {
-	return (((i->w1 >> 4) & 0x7) | ((i->w1 >> 11) << 3)) << 1;
+	return (((V850_word(i, 1) >> 4) & 0x7) | ((V850_word(i, 1) >> 11) << 3)) << 1;
 }
 
 static inline ut16 get_cond(const V850_Inst *i) {
-	return i->w1 & 0xf;
+	return i->d & 0xf;
+}
+
+static inline ut16 xi_cond(const V850_Inst *i) {
+	return (i->d >> 17) & 0xf;
 }
 
 static inline ut16 get_disp22(const V850_Inst *i) {
-	return (i->w2 & ~1) | ((i->w1 & 0x3f) << 16);
+	return (V850_word(i, 2) & ~1) | ((V850_word(i, 1) & 0x3f) << 16);
 }
 
-static inline ut16 get_list(const V850_Inst *i) {
-	return ((i->w2 >> 5) << 1) | (i->w1 & 1);
+/**
+ * Lists of registers
+ * \see xiii_sorted_list
+ * \see DISPOSE and PREPARE instruction in section 7.2.2 https://www.renesas.com/us/en/document/mas/rh850g3kh-users-manual-software
+ */
+static const ut8 V850_list12_map[] = {
+	/*[0]  = */ 30,
+	/*[21] = */ 31,
+	/*[22] = */ 29,
+	/*[23] = */ 28,
+	/*[24] = */ 23,
+	/*[25] = */ 22,
+	/*[26] = */ 21,
+	/*[27] = */ 20,
+	/*[28] = */ 27,
+	/*[29] = */ 26,
+	/*[30] = */ 25,
+	/*[31] = */ 24,
+};
+
+static inline ut8 i_vec4(const V850_Inst *i) {
+	return (i->d >> 11) & 0xf;
 }
+
+static inline ut8 viii_bit(const V850_Inst *i) {
+	return (V850_word(i, 1) >> 11) & 0x7;
+}
+
+static inline ut16 xiii_list(const V850_Inst *i) {
+	return ((V850_word(i, 2) >> 5) << 1) | (V850_word(i, 1) & 1);
+}
+
+static inline int xiii_ut8_litter(const void *a, const void *b) {
+	return ((ut8 *)a)[0] - ((ut8 *)b)[0];
+}
+
+static inline int xiii_ut8_greater(const void *a, const void *b) {
+	return ((ut8 *)b)[0] - ((ut8 *)a)[0];
+}
+
+static inline void xiii_sorted_list(ut32 lst, ut8 set[12], unsigned *pn, bool descending) {
+	unsigned n = 0;
+	for (ut32 i = 0; i < 12; i++) {
+		if (lst & (1 << i)) {
+			set[n++] = V850_list12_map[i];
+		}
+	}
+	if (pn) {
+		*pn = n;
+	}
+	qsort(set, n, sizeof(ut8), descending ? xiii_ut8_greater : xiii_ut8_litter);
+}
+
+static inline ut8 xiii_ff(const V850_Inst *i) {
+	return (V850_word(i, 2) >> 3) & 0b11;
+}
+
+static inline ut8 xiii_sub_r1(const V850_Inst *i) {
+	return (i->d >> 16) & 0x1f;
+}
+
+static inline ut8 xii_imm5(const V850_Inst *i) {
+	return i->d & 0x1f;
+}
+static inline ut8 xiii_imm5(const V850_Inst *i) {
+	return (V850_word(i, 1) >> 1) & 0x1f;
+}
+
+static inline ut8 get_selID(const V850_Inst *i) {
+	return extract(i->d, 27, 5);
+}
+
+static inline ut8 bins_msb(const V850_Inst *i) {
+	return extract(i->d, 28, 4);
+}
+
+static inline ut8 bins_lsb(const V850_Inst *i) {
+	return extract(i->d, 17, 3) | (extract(i->d, 27, 1) << 3);
+}
+
+static inline ut8 bins_pos(const V850_Inst *i) {
+	return bins_lsb(i);
+}
+
+static inline ut8 bins_width(const V850_Inst *i) {
+	return bins_msb(i) - bins_pos(i) + 1;
+}
+
+static inline ut8 xi_rh(const V850_Inst *i) {
+	return i->d & 0x1f;
+}
+
+static inline ut8 xi_rt(const V850_Inst *i) {
+	return (i->d >> (16 + 11)) & 0x1f;
+}
+
+static inline ut8 x_vector8(const V850_Inst *i) {
+	return (i->d & 0x1f) | (((i->d >> (16 + 11)) & 0x7) << 5);
+}
+
+#define STSR_regID (get_reg1(ctx->x))
+#define LDSR_regID (get_reg2(ctx->x))
 
 static inline int32_t sext32(uint32_t X, unsigned B) {
 	rz_warn_if_fail(B > 0 && B <= 32);

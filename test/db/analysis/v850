@@ -5,89 +5,116 @@ aap
 afl
 EOF
 EXPECT=<<EOF
-0x00100018    1 8            fcn.00100018
+0x00100000    2 108          entry0
 0x0010006c    1 36           sym._compute
 0x00100090    1 64           main
-0x001000d0    5 74           sym.___main
+0x001000d0    4 74           sym.___main
 0x0010011a    3 34           sym._exit
-0x0010013c  312 7010 -> 5486 sym.__printf_r
+0x0010013c    1 24           sym.__printf_r
+0x00100154    1 28           sym._printf
+0x00100170  267 6958 -> 4874 sym.__vfprintf_r
 0x00101cb8    1 24           sym._vfprintf
-0x00101cd0    5 148          sym.___sbprintf
-0x00101d64   27 264          sym.___swsetup_r
-0x00101e6c   20 170          sym.___call_exitprocs
-0x00101f16    3 66           sym.__exit
-0x00101f58  246 5496 -> 5350 sym._quorem
-0x001034d0   40 428          sym.___sflush_r
+0x00101cd0    5 146          sym.___sbprintf
+0x00101d64   24 264          sym.___swsetup_r
+0x00101e6c   18 170          sym.___call_exitprocs
+0x00101f16    3 64           sym.__exit
+0x00101f58   19 332          sym._quorem
+0x001020a4  212 5164 -> 4886 sym.__dtoa_r
+0x001034d0   36 428          sym.___sflush_r
 0x0010367c    6 68           sym.__fflush_r
-0x001036c0    3 44           sym._fflush
+0x001036c0    3 40           sym._fflush
 0x001036ec    1 106          sym._std
 0x00103756    1 18           sym.__cleanup_r
-0x00103768    1 92           sym.___sinit.part___0
+0x00103768    1 88           sym.___sinit.part___0
 0x001037c4    3 60           sym.___sfmoreglue
-0x00103800   14 202          sym.___sfp
-0x001038ca    3 22           sym.___sinit
-0x001038ea    1 40           fcn.001038ea
+0x00103800   11 180          sym.___sfp
+0x001038b4    1 22           sym.__cleanup
+0x001038ca    3 20           sym.___sinit
+0x001038e6    1 22           sym.___fp_lock_all
+0x001038fc    1 22           sym.___fp_unlock_all
 0x00103912    7 196          sym.__malloc_trim_r
-0x001039d6   40 668          sym.__free_r
-0x00103c72    8 72           sym.__fwalk
-0x00103cba    8 82           sym.__fwalk_reent
-0x00103d1c    6 122          sym.___swhatbuf_r
-0x00103d96  118 2010         sym.___smakebuf_r
-0x001045ac    4 24           sym._memset
-0x001045c8   12 136          sym.__Balloc
-0x00104650    9 198          sym.___multadd
-0x00104716   45 414          sym.___s2b
+0x001039d6   36 668          sym.__free_r
+0x00103c72    7 72           sym.__fwalk
+0x00103cba    7 76           sym.__fwalk_reent
+0x00103d0c    1 8            sym.__localeconv_r
+0x00103d1c    6 122  -> 106  sym.___swhatbuf_r
+0x00103d96    9 204          sym.___smakebuf_r
+0x00103e62  104 1798 -> 1782 sym.__malloc_r
+0x001045ac    3 24           sym._memset
+0x001045c4    1 2            sym.___malloc_lock
+0x001045c6    1 2            sym.___malloc_unlock
+0x001045c8   10 136          sym.__Balloc
+0x00104650    8 198          sym.___multadd
+0x00104716   39 414          sym.___s2b
 0x001048b4    3 52           sym.___i2b
-0x001048e8   22 392          sym.___multiply
-0x00104a70   15 188          sym.___pow5mult
-0x00104b2c   21 342          sym.___lshift
-0x00104c82   28 470          sym.___mdiff
-0x00104e58   14 180          sym.___b2d
-0x00104f0c   12 272          sym.___d2b
-0x0010501c    9 262          sym.___ratio
+0x001048e8   20 392          sym.___multiply
+0x00104a70   14 188          sym.___pow5mult
+0x00104b2c   18 342          sym.___lshift
+0x00104c82   26 470          sym.___mdiff
+0x00104e58   13 180          sym.___b2d
+0x00104f0c   11 272          sym.___d2b
+0x0010501c    3 148          sym.___ratio
+0x001050b0    4 114          sym.__mprec_log10
 0x001051c2    4 46           sym.__sbrk_r
-0x001051f0    3 54           sym.___sread
+0x001051f0    3 50           sym.___sread
 0x00105226    3 70           sym.___swrite
 0x0010526c    3 52           sym.___sseek
-0x001052a0    5 44           sym.___sclose
-0x001052e0   12 132          sym.___sprint_r.part___0
-0x00105364  141 3970 -> 2280 sym.___sprint_r
-0x00105934    2 288  -> 22   fcn.00105934
+0x001052a0    1 16           sym.___sclose
+0x001052b0    4 28           sym._strlen
+0x001052cc    3 18           loc.___trap0
+0x001052e0   11 132          sym.___sprint_r.part___0
+0x00105364    3 28           sym.___sprint_r
+0x00105380  128 3942 -> 2128 sym.__vfiprintf_r
 0x00106300    1 24           sym._vfiprintf
-0x00106318    8 200          sym.___sbprintf_0x106318
-0x001063e0   16 222          sym.___assert_func
+0x00106318    5 146          sym.___sbprintf_0x106318
+0x001063ac    4 52           sym.__write_r
+0x001063e0    4 90           sym.___assert_func
+0x0010643a   11 132          sym.__calloc_r
 0x001064be    4 46           sym.__close_r
-0x001064ec   19 190          sym.__fclose_r
+0x001064ec   18 172          sym.__fclose_r
+0x00106598    1 18           sym._fclose
 0x001065aa    1 20           sym.__fiprintf_r
 0x001065be    1 26           sym._fiprintf
-0x001065d8   17 198          sym.___fputwc
+0x001065d8   16 198          sym.___fputwc
 0x0010669e    3 44           sym.__fputwc_r
-0x001066ca   70 1176         sym._fputwc
+0x001066ca    6 94           sym._fputwc
+0x00106728    4 50           sym.__fstat_r
+0x0010675a   55 1032         sym.___sfvwrite_r
 0x00106b62    4 46           sym.__isatty_r
-0x00106b90    8 90           sym.__setlocale_r
-0x00106bea    4 74           sym._setlocale
-0x00106c34   18 154  -> 156  sym.__mbtowc_r
-0x00106cd0    4 50           fcn.00106cd0
-0x00106d02   66 1322         sym.__realloc_r
+0x00106b90    7 90           sym.__setlocale_r
+0x00106bea    1 22           sym._setlocale
+0x00106c00    4 52           sym.__lseek_r
+0x00106c34    1 34           sym.__mbtowc_r
+0x00106c56   16 120          sym.___ascii_mbtowc
+0x00106cce    4 52           sym.__read_r
+0x00106d02   63 1322         sym.__realloc_r
 0x0010722c   12 150          sym.__sbrk
-0x001072c2   19 248          sym.___swbuf_r
+0x001072c2   18 248          sym.___swbuf_r
 0x001073ba    1 22           sym.___swbuf
 0x001073d0    5 70           sym.__wcrtomb_r
 0x00107416    1 24           sym._wcrtomb
-0x0010742e    5 58           sym.__wctomb_r
-0x00107468    1 84           sym.__write
+0x0010742e    1 22           sym.__wctomb_r
+0x00107468    1 22           sym.__write
+0x0010747e    1 16           sym._abort
+0x0010748e    1 20           sym.__close
+0x001074a2    1 22           sym.__fstat
+0x001074b8    1 4            sym.__isatty
 0x001074bc    1 24           sym.__lseek
 0x001074d4    1 22           sym.__read
-0x001074ea    6 46           sym.__init_signal_r.part___0
+0x001074ea    4 46           sym.__init_signal_r.part___0
 0x00107518    3 26           sym.__init_signal_r
-0x00107532    8 92           sym.__signal_r
-0x0010758e   11 126          sym.__raise_r
-0x0010760c   13 110          sym.___sigtramp_r
+0x00107532    7 92           sym.__signal_r
+0x0010758e   10 126          sym.__raise_r
+0x0010760c   12 110          sym.___sigtramp_r
 0x0010767a    1 18           sym._raise
-0x0010768c    6 120          sym._signal
-0x00107704    1 16           sym.__getpid_r
+0x0010768c    1 22           sym._signal
+0x001076a2    3 30           sym.__init_signal
+0x001076c0    1 18           sym.___sigtramp
+0x001076d2    4 50           sym.__kill_r
+0x00107704    1 12           sym.__getpid_r
+0x00107710    1 4            sym.__getpid
 0x00107714    1 24           sym.__kill
-0x0010772c   13 308          sym.___unorddf2
+0x0010772c    3 92           sym.___unorddf2
 EOF
 RUN
 
@@ -98,270 +125,291 @@ aap
 afl
 EOF
 EXPECT=<<EOF
+0x00100000    2 108          entry0
 0x0010006c    3 130          sym._io_open
-0x001000ee    1 32           sym._hexdump
-0x0010010e   21 452          fcn.0010010e
-0x001002d2    1 48           sym._print_fmt
-0x00100302   19 1922 -> 270  fcn.00100302
-0x001004ea    1 4            fcn.001004ea
-0x00100548    1 4            fcn.00100548
-0x00100588    1 4            fcn.00100588
-0x001005c8    1 4            fcn.001005c8
-0x001005fa    1 4            fcn.001005fa
-0x0010062c    1 4            fcn.0010062c
-0x0010066e    1 4            fcn.0010066e
-0x001006b0    1 4            fcn.001006b0
-0x00100712    1 4            fcn.00100712
-0x00100774    1 4            fcn.00100774
-0x00100816    1 4            fcn.00100816
-0x001008b8    1 4            fcn.001008b8
-0x001008c2    1 4            fcn.001008c2
-0x001008cc    1 4            fcn.001008cc
+0x001000ee    3 484  -> 70   sym._hexdump
+0x001002d2    9 1970 -> 136  sym._print_fmt
 0x00100a84   19 608          sym._str2ut64
-0x00100ce4    8 228  -> 168  sym._hex2byte
-0x00100dc8   13 236          sym._hexstr2raw
+0x00100ce4    5 228  -> 124  sym._hex2byte
+0x00100dc8   12 236          sym._hexstr2raw
 0x00100eb4    9 280          sym._getcurblk
 0x00100fcc    4 272          sym._Nset
 0x001010dc    1 120          sym._Nsetf
-0x00101156    4 390          fcn.00101156
-0x001012de    4 390          fcn.001012de
-0x00101466    1 238          fcn.00101466
-0x00101556    1 238          fcn.00101556
-0x00101646    1 222          fcn.00101646
-0x00101726    7 338          fcn.00101726
+0x00101154    4 392          sym._Naddi
+0x001012dc    4 392          sym._Nsubi
+0x00101464    1 240          sym._Nadd
+0x00101554    1 240          sym._Nsub
+0x00101644    1 224          sym._Nmul
+0x00101724    7 340          sym._Ndiv
 0x00101878    1 68           sym._error
-0x001018bc    6 408          sym._expr
-0x00101a54  143 68824 -> 2564 sym._term
-0x00101c56    5 1304 -> 150  sym._prim
-0x00101e1a    2 872  -> 24   fcn.00101e1a
-0x00101f9a    1 4            fcn.00101f9a
-0x00101ff2    1 4            fcn.00101ff2
-0x0010204a    1 4            fcn.0010204a
+0x001018bc    5 408          sym._expr
+0x00101a54    8 514          sym._term
+0x00101c56    5 1324 -> 170  sym._prim
 0x00102182    1 50           sym._cin_putback
 0x001021b4    6 120          sym._r_num_calc_index
 0x0010222c    9 172          sym._cin_get
 0x001022d8   16 518          sym._cin_get_num
-0x001024de   34 1444 -> 772  sym._get_token
-0x00102526    2 1450 -> 20   fcn.00102526
-0x0010268e    1 4            fcn.0010268e
-0x001026ce    1 4            fcn.001026ce
-0x00102708    1 4            fcn.00102708
-0x00102748    1 4            fcn.00102748
-0x00102782    1 4            fcn.00102782
-0x001027a0    1 4            fcn.001027a0
-0x001027f8    1 4            fcn.001027f8
-0x0010280e    1 4            fcn.0010280e
-0x00102874    1 4            fcn.00102874
-0x001028ea    2 470  -> 66   fcn.001028ea
-0x00102914    1 4            fcn.00102914
+0x001024de   32 1522 -> 788  sym._get_token
 0x00102ad0    1 72           sym._load_token
-0x00102b18   19 770  -> 762  sym._r_num_calc
-0x00102b54    2 744  -> 26   fcn.00102b54
-0x00102d4e    2 216  -> 16   fcn.00102d4e
+0x00102b18   21 804          sym._r_num_calc
 0x00102e3c    5 132          sym._cmd_hexdump
 0x00102ec0    7 158          sym._cmd_print
 0x00102f5e    7 180          sym._cmd_bytedump
-0x00103012    8 232          sym._cmd_search
-0x001030fe   10 578          fcn.001030fe
+0x00103012   12 810  -> 470  sym._cmd_search
 0x0010333c   10 318          sym._cmd_bsize
-0x0010347a    7 412  -> 408  sym._cmd_seek
-0x001034c4    2 432  -> 98   fcn.001034c4
+0x0010347a    8 506          sym._cmd_seek
 0x00103674   10 244          sym._cmd_dump
 0x00103768   13 356          sym._cmd_load
 0x001038cc   13 342          sym._cmd_write
 0x00103a22    4 152          sym._cmd_help
-0x00103aba   23 934  -> 918  sym._cmd_resize
-0x00103afe    6 916  -> 54   fcn.00103afe
-0x00103b46    1 4            fcn.00103b46
-0x00103ca0    1 4            fcn.00103ca0
-0x00103cb4    1 4            fcn.00103cb4
+0x00103aba   29 984          sym._cmd_resize
 0x00103e92   14 562          sym._cmd_system
-0x001040c4    4 262          sym._red_slurpin
+0x001040c4    3 262          sym._red_slurpin
 0x001041ca    7 238          sym._red_interpret
-0x001042b8    9 780  -> 170  sym._red_cmd
-0x0010449a    2 314  -> 20   fcn.0010449a
-0x001044ac    1 4            fcn.001044ac
-0x001044be    1 4            fcn.001044be
-0x001044d0    1 4            fcn.001044d0
-0x001045d4   16 768  -> 764  sym._red_prompt
-0x00104654    2 662  -> 26   fcn.00104654
+0x001042b8    9 796  -> 186  sym._red_cmd
+0x001045d4   17 790          sym._red_prompt
 0x001048ea   18 454          sym._red_open
 0x00104ab0    1 44           sym._red_help
-0x00104adc    3 150          main
-0x00104b72   19 598  -> 314  fcn.00104b72
-0x00104ec0    2 1046 -> 30   fcn.00104ec0
-0x00104ec4  132 67332 -> 1694 sym.___udivdi3
-0x001052d8    5 74           sym.___main
+0x00104adc    8 748  -> 230  main
+0x00104e48    2 1166 -> 150  fcn.00104e48
+0x00104ec4  127 67332 -> 1698 sym.___udivdi3
+0x001052d8    4 74           sym.___main
 0x00105322    3 34           sym._exit
-0x00105344   19 190          sym.__fclose_r
-0x00105402   40 428          sym.___sflush_r
+0x00105344   18 172          sym.__fclose_r
+0x001053f0    1 18           sym._fclose
+0x00105402   36 428          sym.___sflush_r
 0x001055ae    6 68           sym.__fflush_r
-0x001055f2   17 344          sym._fflush
-0x0010574a    1 28           sym._fgets
+0x001055f2    3 40           sym._fflush
+0x0010561a   15 304          sym.__fgets_r
+0x0010574a    1 24           sym._fgets
 0x00105766    1 106          sym._std
 0x001057d0    1 18           sym.__cleanup_r
-0x001057e2    1 92           sym.___sinit.part___0
+0x001057e2    1 88           sym.___sinit.part___0
 0x0010583e    3 60           sym.___sfmoreglue
-0x0010587a   14 202          sym.___sfp
-0x00105944    3 22           sym.___sinit
-0x00105964    1 40           fcn.00105964
+0x0010587a   11 180          sym.___sfp
+0x0010592e    1 22           sym.__cleanup
+0x00105944    3 20           sym.___sinit
+0x00105960    1 22           sym.___fp_lock_all
+0x00105976    1 22           sym.___fp_unlock_all
 0x0010598c    8 174          sym.__fopen_r
 0x00105a3a    1 22           sym._fopen
 0x00105a50    1 20           sym.__fprintf_r
-0x00105a64   16 344          sym._fprintf
+0x00105a64    1 26           sym._fprintf
+0x00105a7e   16 318          sym.__fread_r
 0x00105bbc    1 36           sym._fread
 0x00105be0    7 196          sym.__malloc_trim_r
-0x00105ca4   40 668          sym.__free_r
+0x00105ca4   43 65930 -> 846  sym.__free_r
 0x00105f40    1 12           sym.__fseek_r
 0x00105f4c    1 24           sym._fseek
-0x00105f64   67 65732 -> 810  sym.__fseeko_r
-0x00106274    4 74           sym._fseeko
-0x001062be   23 216          sym.__ftello_r
-0x00106396    8 72           sym.__fwalk
-0x001063de    8 76           sym.__fwalk_reent
+0x00105f64   63 65750 -> 834  sym.__fseeko_r
+0x00106274    1 24           sym._fseeko
+0x0010628e    4 48           fcn.0010628e
+0x001062be   21 198          sym.__ftello_r
+0x00106384    1 18           sym._ftello
+0x00106396    7 72           sym.__fwalk
+0x001063de    7 76           sym.__fwalk_reent
 0x0010642a    8 144          sym.__fwrite_r
-0x001064ba    1 40           sym._fwrite
-0x001064e2    6 122          sym.___swhatbuf_r
-0x0010655c  135 67234 -> 2708 sym.___smakebuf_r
-0x00106d96    4 24           sym._memset
-0x00106db4    4 50           fcn.00106db4
-0x00106de6   26 65590 -> 372  sym.__perror_r
-0x00106f4e    1 12           fcn.00106f4e
-0x00106f5a    1 52           sym.__printf_r
+0x001064ba    1 36           sym._fwrite
+0x001064e2    6 122  -> 106  sym.___swhatbuf_r
+0x0010655c    9 204          sym.___smakebuf_r
+0x00106628    1 18           sym._malloc
+0x0010663a    1 18           sym._free
+0x0010664c  120 66908 -> 2704 sym.__malloc_r
+0x00106d96    3 24           sym._memset
+0x00106dae    1 2            sym.___malloc_lock
+0x00106db0    1 2            sym.___malloc_unlock
+0x00106db2    4 52           sym.__open_r
+0x00106de6   25 65660 -> 454  sym.__perror_r
+0x00106f48    1 18           sym._perror
+0x00106f5a    1 24           sym.__printf_r
+0x00106f72    1 28           sym._printf
 0x00106f8e    1 16           sym.__putchar_r
 0x00106f9e    1 24           sym._putchar
-0x00106fb6    6 170          sym.__puts_r
+0x00106fb6    5 152          sym.__puts_r
+0x0010704e    1 18           sym._puts
 0x00107060    3 30           sym._lflush
-0x0010707e   29 356          sym.___srefill_r
+0x0010707e   28 356          sym.___srefill_r
 0x001071e2    4 46           sym.__sbrk_r
-0x00107210    1 42           sym._setenv
-0x0010723a   37 65668 -> 524  sym.__setenv_r
-0x00107428   11 152          sym.__unsetenv_r
+0x00107210    1 24           sym._setenv
+0x00107228    1 18           sym._unsetenv
+0x0010723a   32 65668 -> 524  sym.__setenv_r
+0x00107428    9 152          sym.__unsetenv_r
 0x001074c0    1 72           sym.__sprintf_r
 0x00107508    1 76           sym._sprintf
 0x00107554    1 86           sym._sscanf
 0x001075aa    1 88           sym.__sscanf_r
-0x00107602    3 54           sym.___sread
+0x00107602    3 50           sym.___sread
 0x00107638    3 70           sym.___swrite
 0x0010767e    3 52           sym.___sseek
-0x001076b2    6 56           sym.___sclose
-0x001076f0    1 12           fcn.001076f0
+0x001076b2    1 16           sym.___sclose
+0x001076ea    1 18           sym._strdup
 0x001076fc    3 48           sym.__strdup_r
-0x0010772c    6 65800 -> 298  sym.__strerror_r
-0x00107cd4    5 68           fcn.00107cd4
-0x0010907e    1 10           fcn.0010907e
-0x00109fce   77 5442 -> 1204 fcn.00109fce
-0x0010ade6    1 12           fcn.0010ade6
+0x0010772c    5 1442 -> 68   sym.__strerror_r
+0x00107cce    1 22           sym._strerror
+0x00107ce4    1 22           sym._strerror_l
+0x00107cfc    4 28           sym._strlen
+0x00107d64  257 6824 -> 4782 sym.__svfprintf_r
+0x0010980c   22 852  -> 470  sym.___ssvfscanf_r
+0x00109fce   10 982  -> 200  fcn.00109fce
+0x0010ade0    1 18           sym._close
 0x0010adf2    1 24           sym._lseek
 0x0010ae0a    1 26           sym._open
 0x0010ae24    1 24           sym._read
 0x0010ae3c    3 32           sym.__system_r
-0x0010ae5c    4 50           sym._system
-0x0010ae8e    1 28           sym._write
-0x0010aeaa  315 7004 -> 5480 sym.__unlink_r
+0x0010ae5c    3 32           sym._system
+0x0010ae7c    1 18           sym._unlink
+0x0010ae8e    1 24           sym._write
+0x0010aea6    1 4            sym.__user_strerror
+0x0010aeaa    4 46           sym.__unlink_r
+0x0010aed8  267 6958 -> 4874 sym.__vfprintf_r
 0x0010ca20    1 24           sym._vfprintf
-0x0010ca38    8 200          sym.___sbprintf
-0x0010cb00   27 264          sym.___swsetup_r
-0x0010cc08   20 170          sym.___call_exitprocs
+0x0010ca38    5 146          sym.___sbprintf
+0x0010cacc    4 52           sym.__write_r
+0x0010cb00   24 264          sym.___swsetup_r
+0x0010cc08   18 170          sym.___call_exitprocs
 0x0010ccb2    3 64           sym.__exit
 0x0010ccf2    4 46           sym.__close_r
-0x0010cd20  246 5498 -> 5352 sym._quorem
-0x0010e2a2   83 1260         sym._fileno
-0x0010e78e   15 160          sym.__findenv_r
+0x0010cd20   19 332          sym._quorem
+0x0010ce6c  212 5166 -> 4888 sym.__dtoa_r
+0x0010e29c    1 6            sym.___errno
+0x0010e2a2    6 60           sym._fileno
+0x0010e2de   14 146          sym.___sflags
+0x0010e370    1 22           sym.__fstat
+0x0010e386   55 1032         sym.___sfvwrite_r
+0x0010e78e   13 160          sym.__findenv_r
 0x0010e82e    1 18           sym.__getenv_r
 0x0010e840    4 46           sym.__isatty_r
-0x0010e86e    3 44           sym._iswspace
-0x0010e89a    8 90           sym.__setlocale_r
-0x0010e8f4    1 28           sym._setlocale
-0x0010e922    4 50           fcn.0010e922
+0x0010e86e    1 14           sym._iswspace
+0x0010e87c    3 30           sym._iswspace_l
+0x0010e89a    7 90           sym.__setlocale_r
+0x0010e8f4    1 22           sym._setlocale
+0x0010e910    1 8            sym.__localeconv_r
+0x0010e920    4 52           sym.__lseek_r
 0x0010e954    5 92           sym.__mbrtowc_r
 0x0010e9b0    1 36           sym._mbrtowc
-0x0010e9d4   18 154  -> 156  sym.__mbtowc_r
-0x0010ea6e   12 136          sym.__Balloc
-0x0010eaf6    9 198          sym.___multadd
-0x0010ebbc   45 414          sym.___s2b
+0x0010e9d4    1 34           sym.__mbtowc_r
+0x0010e9f6   16 120          sym.___ascii_mbtowc
+0x0010ea6e   10 136          sym.__Balloc
+0x0010eaf6    8 198          sym.___multadd
+0x0010ebbc   39 414          sym.___s2b
 0x0010ed5a    3 52           sym.___i2b
-0x0010ed8e   22 392          sym.___multiply
-0x0010ef16   15 188          sym.___pow5mult
-0x0010efd2   21 342          sym.___lshift
-0x0010f128   28 470          sym.___mdiff
-0x0010f2fe   14 180          sym.___b2d
-0x0010f3b2   12 272          sym.___d2b
-0x0010f4c2    9 262          sym.___ratio
-0x0010f66a    1 18           fcn.0010f66a
+0x0010ed8e   20 392          sym.___multiply
+0x0010ef16   14 188          sym.___pow5mult
+0x0010efd2   18 342          sym.___lshift
+0x0010f128   26 470          sym.___mdiff
+0x0010f2fe   13 180          sym.___b2d
+0x0010f3b2   11 272          sym.___d2b
+0x0010f4c2    3 148          sym.___ratio
+0x0010f556    4 114          sym.__mprec_log10
+0x0010f668    1 20           sym.__open
 0x0010f67c    8 108          sym.__putc_r
-0x0010f6e8    4 74           sym._putc
-0x0010f732   58 1228 -> 1046 sym.__realloc_r
+0x0010f6e8    1 22           sym._putc
+0x0010f6fe    4 52           sym.__read_r
+0x0010f732   63 1322 -> 1290 sym.__realloc_r
 0x0010f9f8    1 22           fcn.0010f9f8
 0x0010fa24    1 14           fcn.0010fa24
-0x0010fae0    5 348  -> 90   fcn.0010fae0
-0x0010fb30    1 8            fcn.0010fb30
-0x0010fb5a    3 158  -> 62   fcn.0010fb5a
-0x0010fb84    1 20           fcn.0010fb84
-0x0010fbd6    1 4            fcn.0010fbd6
-0x0010fbfe    3 94   -> 62   fcn.0010fbfe
-0x0010fc5c   27 274          sym.__sbrk
-0x0010fde4  272 5378 -> 4994 sym._sulp
+0x0010fc5c   21 274          sym.__sbrk
+0x0010fde4    4 98           sym._sulp
+0x0010fe46  254 5280 -> 4896 sym.__strtod_l
 0x00111036    1 44           fcn.00111036
 0x001112e6    1 18           sym.__strtod_r
 0x001112f8    1 24           sym._strtod_l
 0x00111310    1 28           sym._strtod
 0x0011132c   10 222          sym._strtof_l
 0x0011140a   10 226          sym._strtof
-0x001114ec   47 376          sym.__strtol_l.isra___0
+0x001114ec   43 376  -> 380  sym.__strtol_l.isra___0
 0x00111664    1 12           sym.__strtol_r
 0x00111670    1 24           sym._strtol_l
 0x00111688    1 24           sym._strtol
-0x001116a0   42 350          sym.__strtoul_l.isra___0
+0x001116a0   38 350  -> 354  sym.__strtoul_l.isra___0
 0x001117fe    1 12           sym.__strtoul_r
 0x0011180a    1 24           sym._strtoul_l
-0x00111822   19 428          sym._strtoul
-0x00111e46    3 22758 -> 448  fcn.00111e46
-0x0011240c    5 736  -> 84   fcn.0011240c
-0x00112758   12 182          sym.__sungetc_r
-0x0011280e   36 4238 -> 688  sym.___ssrefill_r
-0x00112ba8    1 52           fcn.00112ba8
-0x00112c64    2 18           fcn.00112c64
-0x00112c78    6 3406 -> 46   fcn.00112c78
-0x00112c86    2 26           fcn.00112c86
-0x00112fbe   21 2412 -> 520  fcn.00112fbe
-0x001138fa    7 134          sym.___submore
-0x00113980   24 306          sym.__ungetc_r
-0x00113ab2    1 42           sym._ungetc
-0x00113adc   12 132          sym.___sprint_r.part___0
-0x00113b60  141 3970 -> 2280 sym.___sprint_r
-0x00114130    2 288  -> 22   fcn.00114130
-0x00114428    3 1350 -> 34   fcn.00114428
+0x00111822    1 24           sym._strtoul
+0x0011183c   18 402          sym.___ssprint_r
+0x001119ce  130 3464 -> 2190 sym.__svfiprintf_r
+0x00111bba    2 6            fcn.00111bba
+0x00111f24   26 2018 -> 366  fcn.00111f24
+0x00112758   11 182          sym.__sungetc_r
+0x0011280e    6 84           sym.___ssrefill_r
+0x00112862    8 242          sym.__sfread_r
+0x00112954   24 3912 -> 470  sym.___ssvfiscanf_r
+0x00112cf0    3 68           fcn.00112cf0
+0x001138e8    3 18           loc.___trap0
+0x001138fa    6 134          sym.___submore
+0x00113980   23 306          sym.__ungetc_r
+0x00113ab2    1 22           sym._ungetc
+0x00113ac8    1 20           sym.__unlink
+0x00113adc   11 132          sym.___sprint_r.part___0
+0x00113b60    3 28           sym.___sprint_r
+0x00113b7c  128 3942 -> 2128 sym.__vfiprintf_r
+0x00114428    1 20           fcn.00114428
 0x00114afc    1 24           sym._vfiprintf
-0x00114b14    5 148          sym.___sbprintf_0x114b14
-0x00114ba8   19 248          sym.___swbuf_r
+0x00114b14    5 146          sym.___sbprintf_0x114b14
+0x00114ba8   18 248          sym.___swbuf_r
 0x00114ca0    1 22           sym.___swbuf
-0x00114cb6    5 58           sym.__wctomb_r
-0x00114cf0    1 38           sym.__write
-0x00114d16   17 242          sym.___assert_func
+0x00114cb6    1 22           sym.__wctomb_r
+0x00114cf0    1 22           sym.__write
+0x00114d06    1 16           sym._abort
+0x00114d16    4 90           sym.___assert_func
+0x00114d70   11 132          sym.__calloc_r
+0x00114df4    1 20           sym.__close
 0x00114e08    1 20           sym.__fiprintf_r
 0x00114e1c    1 26           sym._fiprintf
-0x00114e36   17 198          sym.___fputwc
+0x00114e36   16 198          sym.___fputwc
 0x00114efc    3 44           sym.__fputwc_r
-0x00114f28    8 98           sym._fputwc
+0x00114f28    6 98   -> 82   sym._fputwc
+0x00115072    1 34           sym.___gethex
 0x00115172    1 12           fcn.00115172
 0x0011517e    3 532  -> 20   fcn.0011517e
-0x0011518c   95 1716 -> 1430 fcn.0011518c
+0x0011518c   72 1622 -> 1010 fcn.0011518c
+0x0011557e    9 606  -> 120  fcn.0011557e
+0x001155ae    2 18           fcn.001155ae
+0x001155d4    1 30           fcn.001155d4
+0x001155f2    1 4            fcn.001155f2
+0x0011561a    6 386  -> 154  fcn.0011561a
+0x001157e2    8 94           fcn.001157e2
+0x00115840    1 60           sym.___hexnan
+0x0011587a   21 430  -> 252  fcn.0011587a
+0x00115944    1 20           fcn.00115944
+0x00115958    1 2            fcn.00115958
+0x0011595a    8 292  -> 136  fcn.0011595a
+0x0011598c    5 106          fcn.0011598c
+0x00115a7e    4 38           fcn.00115a7e
+0x00115aa4    1 4            sym.__isatty
 0x00115aac    1 24           sym.__lseek
-0x00115ac4    1 30           sym.__read
-0x00115ae2    6 46           sym.__init_signal_r.part___0
+0x00115ac4    1 22           sym.__read
+0x00115ae2    4 46           sym.__init_signal_r.part___0
 0x00115b10    3 26           sym.__init_signal_r
-0x00115b2a    8 92           sym.__signal_r
-0x00115b86   11 126          sym.__raise_r
-0x00115c04   14 128          sym.___sigtramp_r
-0x00115c84    6 120          sym._signal
+0x00115b2a    7 92           sym.__signal_r
+0x00115b86    9 126  -> 110  sym.__raise_r
+0x00115be0    1 16           fcn.00115be0
+0x00115c04   12 110          sym.___sigtramp_r
+0x00115c72    1 18           sym._raise
+0x00115c84    1 22           sym._signal
+0x00115c9a    2 30   -> 20   sym.__init_signal
+0x00115ca4    2 12           fcn.00115ca4
+0x00115cb8    1 18           sym.___sigtramp
+0x00115cca    4 50           sym.__kill_r
 0x00115cfc    1 12           sym.__getpid_r
 0x00115d08    5 70           sym.__wcrtomb_r
 0x00115d4e    1 24           sym._wcrtomb
-0x00115d66    2 24           sym.__kill
-0x00115d7e    4 84           sym.___unordsf2
-0x00115dd2   14 244          sym.___unorddf2
+0x00115d66    1 4            sym.__kill
+0x00115d7e    1 10           sym.___unordsf2
+0x00115dd2    1 10           sym.___unorddf2
+0x00115f64    1 6            fcn.00115f64
+0x0011628c    1 50           fcn.0011628c
+0x001162be    1 364          fcn.001162be
+0x0011642a    1 6            fcn.0011642a
+0x001164de    1 4            fcn.001164de
+0x001164e2    1 362          fcn.001164e2
+0x0011664c    1 86           fcn.0011664c
+0x00116d7a    1 28           fcn.00116d7a
+0x00116d96    1 28           fcn.00116d96
+0x00116db2    1 52           fcn.00116db2
+0x00116de6    1 2            fcn.00116de6
+0x00116fb6    1 36           fcn.00116fb6
 0x0011772c    1 34           fcn.0011772c
+0x0011774e    1 230          fcn.0011774e
 EOF
 RUN
 
@@ -382,8 +430,7 @@ r13 = 8
 r13 = 0
 r9 = r2
 r17 = r13 | 904
-r9 = r0
-sp = ~gp
+lp = 0
 r11 = (34120 << XX) + r26
 r6 = r18 | 0
 r9 = r16
@@ -393,16 +440,15 @@ r9 = r16
 r22 = tp | 0
 gp == -1
 r17 = r8 & 0
-r0 = ~r2
-r25 = (byte) *(tp + 8805)
-r9 = r0
+gp == 5
 r9 = ~lp
 r9 = r8
 r24 += r7
 lp = (unsigned half) *(lp - 1)
 r6 *= lp
-r0 -= ep
-r0 = r1
+r11 += -8
+sp = (byte) *(r15 + 64)
+gp = 0
 EOF
 RUN
 
