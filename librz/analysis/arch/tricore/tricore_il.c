@@ -879,9 +879,8 @@ static RzILOpPure *EA_off18(ut32 x) {
 
 static RzILOpEffect *SETG_EA(const char *x, ut8 B, RzILOpPure *(*f)(RzILOpPure *, ut32)) {
 	RzILOpPure *v = LOADW(B, VARL("EA"));
-	v = f ? f(v, B) : v;
 	if (f) {
-		v = f(v, B);
+		v = UNSIGNED(reg_bits(x), f(v, B));
 	} else if (reg_bits(x) != B) {
 		v = UNSIGNED(reg_bits(x), v);
 	}
@@ -972,10 +971,9 @@ static RzILOpEffect *reverseV(const char *name, RzILOpPure *x, RzILOpPure *n) {
 }
 
 static RzAnalysisLiftedILOp ld_addr_abs(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *(*f)(RzILOpPure *, ut32)) {
-	TriCoreMem m = M(0);
 	return SEQ2(
-		SETL("EA", EA_off18(m.disp)),
-		SETG_EA(m.reg, B, f));
+		SETL("EA", EA_off18(I(1))),
+		SETG_EA(R(0), B, f));
 }
 
 static RzILOpPure *EA_bso(TriCoreMem m) {

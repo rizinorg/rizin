@@ -79,7 +79,7 @@ static RzILOpPure *SEXT64(RzILOpPure *value, ut32 length) {
 	return LET("_sext_val", SIGNED(32, value), rz_il_sextract64(VARLP("_sext_val"), U32(0), U32(length)));
 }
 static RzILOpPure *ZEXT32(RzILOpPure *value, ut32 length) {
-	return UNSIGNED(32, value);
+	return value;
 }
 static inline RzILOpPure *SHL0(RzILOpPure *value, ut32 length) {
 	return SHIFTL0(value, U32(length));
