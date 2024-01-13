@@ -9,6 +9,9 @@
 
 #include "../../asm/arch/tricore/tricore.inc"
 
+RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *a);
+RZ_IPI RzAnalysisILConfig *tricore_il_config(RZ_NONNULL RzAnalysis *analysis);
+
 #define TRICORE_REG_SP TRICORE_REG_A10
 
 static char *tricore_reg_profile(RzAnalysis *_) {
@@ -287,6 +290,9 @@ tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len,
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		tricore_fillvals(ctx, a, op);
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->il_op = tricore_il_op(ctx, a);
 	}
 
 beach:
@@ -1274,6 +1280,7 @@ RzAnalysisPlugin rz_analysis_plugin_tricore_cs = {
 	.get_reg_profile = tricore_reg_profile,
 	.archinfo = tricore_archinfo,
 	.op = tricore_op,
+	.il_config = tricore_il_config,
 	.init = tricore_init,
 	.fini = tricore_fini,
 };
