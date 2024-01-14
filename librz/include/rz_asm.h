@@ -125,7 +125,7 @@ typedef struct rz_asm_t {
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
-	RzPVector /*<RzAsmTokenPattern*>*/ *token_patterns;
+	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
 	int omode;
 	int obits;
 	struct disassemble_info disasm_obj;
