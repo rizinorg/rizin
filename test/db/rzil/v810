@@ -1,6 +1,5 @@
 NAME=Testing the decryption in emulateme
 FILE=bins/v810/emulateme.v810
-ARGS=-a v810
 TIMEOUT=30
 CMDS=<<EOF
 aaa

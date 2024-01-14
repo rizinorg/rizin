@@ -276,6 +276,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_VIDEOCORE4, "vc4" },
 	{ EM_MSP430, "msp430" },
 	{ EM_SH, "sh" },
+	{ EM_V810, "v810" },
 	{ EM_V800, "v850" },
 	{ EM_V850, "v850" },
 	{ EM_IA_64, "ia64" },
