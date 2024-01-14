@@ -195,7 +195,7 @@ jobs:
           path: test/rz-pipe
       - name: Install test dependencies
         if: matrix.run_tests && matrix.enabled
-        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
       - name: Install Linux test dependencies
         if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-12'
         run: |
@@ -427,7 +427,7 @@ jobs:
         env:
           PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
       - name: Install test dependencies
-        run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+        run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
       - name: Run tests
         # Debug tests fail on old Debian because of the runtime differences, ignore them
         run: |
@@ -450,7 +450,7 @@ jobs:
         run: sudo pip3 install meson ninja PyYAML
       - name: Install test dependencies
         run: |
-          sudo pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+          sudo pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
           sudo apt-get install --yes tzdata debuginfod
       - name: Checkout rizin
         run: |

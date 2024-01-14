@@ -90,7 +90,7 @@ jobs:
 
     - name: Install test dependencies
       run: |
-          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
           sudo apt-get update
           sudo apt-get --assume-yes install libc6 libc6-i386 debuginfod
 
