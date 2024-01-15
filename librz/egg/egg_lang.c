@@ -3,11 +3,6 @@
 
 #include <rz_egg.h>
 
-#undef INLINE
-#undef GOTO
-#undef SYSCALL
-#undef NAKED
-
 #define CTX egg->context
 
 static inline int is_var(char *x) {

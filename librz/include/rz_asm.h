@@ -12,7 +12,6 @@
 #include <rz_parse.h>
 #include <rz_bind.h>
 #include <rz_config.h>
-#include "../asm/arch/include/disas-asm.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,10 +124,6 @@ typedef struct rz_asm_t {
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
-	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
-	int omode;
-	int obits;
-	struct disassemble_info disasm_obj;
 } RzAsm;
 
 typedef struct rz_asm_plugin_t {
