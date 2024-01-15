@@ -9,6 +9,9 @@
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 #include "core_private.h"
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/ht_uu.h>
 #include <rz_util/ht_up.h>
 #include <rz_util/rz_graph.h>
 #include <rz_util/rz_th_ht.h>
@@ -492,6 +495,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCor
 	case RZ_CORE_GRAPH_TYPE_ICFG:
 		graph = rz_core_graph_icfg(core);
 		break;
+	case RZ_CORE_GRAPH_TYPE_CFG:
+		graph = rz_core_graph_cfg(core, addr);
+		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF:
 	default:
 		rz_warn_if_reached();
@@ -867,4 +873,145 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzC
 	}
 	ht_uu_free(graph_idx);
 	return graph;
+}
+
+static inline bool is_leaf_op(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_ILL ||
+		(op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_RET ||
+		(op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline bool is_call(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_CALL;
+}
+
+static inline bool is_uncond_jump(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_JMP &&
+		!((op->type & RZ_ANALYSIS_OP_HINT_MASK) & RZ_ANALYSIS_OP_TYPE_COND);
+}
+
+static inline bool ignore_next_instr(const RzAnalysisOp *op) {
+	// Ignore if:
+	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)); // Except calls, everything which has set fail
+}
+
+/**
+ * \brief Add an edge to the graph and update \p to_visit vector and the \p nodes_visited hash table.
+ *
+ * \param graph The graph to work on.
+ * \param to_visit The vector with addresses to visit.
+ * \param nodes_visited The hash table holding already visited addresses and their node indices in the graph.
+ * \param from The parent node.
+ * \param to The target node of the edge.
+ *
+ * \return true On success.
+ * \return false On failure.
+ */
+static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL RzVector /*<ut64>*/ *to_visit, RZ_NONNULL HtUU *nodes_visited, ut64 from, ut64 to) {
+	rz_return_val_if_fail(graph && to_visit && nodes_visited, -1);
+	bool visited = false;
+	ut64 from_idx = ht_uu_find(nodes_visited, from, &visited);
+	if (!visited && from != to) {
+		RZ_LOG_ERROR("'from' node should have been added before. 0x%" PFMT64x " -> 0x%" PFMT64x "\n", from, to);
+		return false;
+	}
+
+	RzGraphNode *to_node = rz_graph_add_node_info(graph, rz_str_newf("0x%" PFMT64x, to), NULL, to);
+	if (!to_node) {
+		RZ_LOG_ERROR("Could not add node at 0x%" PFMT64x "\n", to);
+		return false;
+	}
+	ut64 to_idx = to_node->idx;
+	if (from == to) {
+		from_idx = to_idx;
+	}
+	to_idx = ht_uu_find(nodes_visited, to, &visited);
+
+	if (from != to && !visited) {
+		// The target node wasn't visited before. Otherwise this is a back-edge.
+		rz_vector_push(to_visit, &to);
+	}
+
+	ht_uu_insert(nodes_visited, to, to_node->idx);
+	rz_graph_add_edge(graph, rz_graph_get_node(graph, from_idx), to_node);
+	return true;
+}
+
+/**
+ * \brief Get the procedual control flow graph (CFG) at an address.
+ * Calls are not followed.
+ *
+ * \param core The current core.
+ * \param addr The CFG entry point.
+ *
+ * \return The CFG at address \p addr or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis && core->io, NULL);
+	RzGraph *graph = rz_graph_new();
+	if (!graph) {
+		return NULL;
+	}
+
+	// Visited instructions. Indexed by instruction address, value is index in graph.
+	HtUU *nodes_visited = ht_uu_new0();
+	// Addresses to visit.
+	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
+
+	// Add entry node
+	RzGraphNode *entry = rz_graph_add_node_info(graph, rz_str_newf("0x%" PFMT64x, addr), NULL, addr);
+	ht_uu_insert(nodes_visited, addr, entry->idx);
+	rz_vector_push(to_visit, &addr);
+
+	while (rz_vector_len(to_visit) > 0) {
+		ut64 cur_addr = 0;
+		rz_vector_pop(to_visit, &cur_addr);
+
+		ut8 buf[64] = { 0 };
+		if (rz_io_nread_at(core->io, cur_addr, buf, sizeof(buf)) < 0) {
+			RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
+			goto error;
+		}
+
+		RzAnalysisOp op = { 0 };
+		int disas_bytes = rz_analysis_op(core->analysis, &op, cur_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
+		if (disas_bytes <= 0 || is_leaf_op(&op)) {
+			// A leaf. It was added before to the graph by the parent node.
+			rz_analysis_op_fini(&op);
+			continue;
+		}
+
+		if (op.jump != UT64_MAX && !is_call(&op)) {
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, cur_addr, op.jump)) {
+				goto error;
+			}
+		}
+		if (op.fail != UT64_MAX && !is_call(&op)) {
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, cur_addr, op.fail)) {
+				goto error;
+			}
+		}
+
+		if (ignore_next_instr(&op)) {
+			rz_analysis_op_fini(&op);
+			continue;
+		}
+
+		// Add next instruction
+		ut64 next_addr = cur_addr + disas_bytes;
+		if (!add_edge_to_cfg(graph, to_visit, nodes_visited, cur_addr, next_addr)) {
+			goto error;
+		}
+		rz_analysis_op_fini(&op);
+	}
+
+fini:
+	rz_vector_free(to_visit);
+	ht_uu_free(nodes_visited);
+	return graph;
+
+error:
+	rz_graph_free(graph);
+	graph = NULL;
+	goto fini;
 }

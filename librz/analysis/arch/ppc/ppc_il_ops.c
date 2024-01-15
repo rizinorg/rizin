@@ -924,7 +924,16 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	// Note: We do not update CR after the OCRF operations.
 	case PPC_INS_MTOCRF:
 	case PPC_INS_MFOCRF:
+#if CS_NEXT_VERSION >= 6
+		rS = cs_reg_name(handle, INSOP(1).reg);
+		rT = cs_reg_name(handle, INSOP(0).reg);
+		spr_name = rT;
+		size = 4;
+		set_val = SETL("val", VARG(rS));
+#else
 		NOT_IMPLEMENTED;
+#endif
+		break;
 	// IBM POWER specific Segment Register
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MFSRIN:
