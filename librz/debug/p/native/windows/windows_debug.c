@@ -706,7 +706,7 @@ err_get_file_name_from_handle:
 		CloseHandle(handle_file_map);
 	}
 	if (filename) {
-		char *ret = rz_sys_conv_win_to_utf8(filename);
+		char *ret = rz_utf16_to_utf8(filename);
 		free(filename);
 		return ret;
 	}
