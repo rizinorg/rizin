@@ -345,7 +345,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 						rz_bin_file_set_cur_binfile(core->bin, cur);
 					}
 				} else {
-					RZ_LOG_VERBOSE("The library %s does not exist.\n", lib_path);
+					RZ_LOG_ERROR("The library %s does not exist.\n", lib_path);
 				}
 				free(lib_path);
 			}
