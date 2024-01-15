@@ -3617,9 +3617,13 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		case /*MOV.D SRR*/ 0x80: return SETG(R(0), VARG(R(1)));
 		case /*ADD.A SRC*/ 0xb0: return SETG(R(0), ADD(VARG(R(0)), U32(I(1))));
 		case /*ADD.A SRR*/ 0x30: return SETG(R(0), ADD(VARG(R(0)), VARG(R(1))));
-		case /*ADDSC.A SRRS*/ 0x10: return SETG(R(0), ADD(VARG(R(1)), SHL0(VARG("d15"), I(2))));
 		case /*SUB.A SC*/ 0x20: return SETG("a10", SUB(VARG("a10"), U32(I(0))));
-		default: break;
+		default:
+			if (extract32(ctx->word, 0, 6) == 0x10) {
+				/*ADDSC.A SRRS*/
+				return SETG(R(0), ADD(VARG(R(1)), SHL0(VARG("d15"), I(2))));
+			}
+			break;
 		}
 		rz_warn_if_reached();
 		return NULL;
