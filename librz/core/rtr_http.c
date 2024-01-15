@@ -123,7 +123,7 @@ static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *r
 				}
 				free(bar);
 			} else {
-				char *out, *cmd = rs->path + 5;
+				char *out = NULL, *cmd = rs->path + 5;
 				rz_str_uri_decode(cmd);
 				rz_config_set(core->config, "scr.interactive", "false");
 

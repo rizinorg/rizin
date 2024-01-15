@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
 
 r"""
 This script launches rizin in a subprocess, then uploads a file via new upload path
@@ -7,15 +10,17 @@ usage:
     python3 http_post_cmd_upload.py
 """
 
-import subprocess
-import os
-import requests
 import hashlib
+import os
+import subprocess
+import tempfile
+import time
 
+import requests
 
 PORT = 28080
 URL = f"http://localhost:{PORT}"
-TMP_DIR = "/tmp"
+TMP_DIR = tempfile.gettempdir()
 TARGET = "./bins/elf/bomb"
 SAVED_NAME = "rz_http_test"
 
@@ -38,10 +43,7 @@ def main():
             "-cRh",
         ]
     )
-    for output in iter(popen.stderr.readline, ""):
-        # Exit loop once rizin is ready for connections
-        if "rizin -C" in output:
-            break
+    time.sleep(5)
 
     # upload the binary via new /upload path
     boundary = b"------------------------f8a8a5c708553bc9"
@@ -60,27 +62,25 @@ def main():
             URL + "/upload/" + SAVED_NAME,
             data=data,
             headers={"Content-Type": f"multipart/form-data; boundary={str(boundary)}"},
+            timeout=5,
         )
 
     cmd = f"!rz-hash -a md5 {TMP_DIR}/{SAVED_NAME}"
 
     # analyze the file via new POST-cmd
-    post_cmd = requests.post(URL + "/cmd/", data=cmd)
-    post_text = post_cmd.text.split("md5: ")[1][:-1]
+    post_cmd = requests.post(URL + "/cmd/", data=cmd, timeout=5)
+    post_text = post_cmd.text.split("md5: ")[1].rstrip()
 
     # analyze the file by old GET-cmd
-    get_cmd = requests.get(URL + "/cmd/" + cmd)
-    get_text = get_cmd.text.split("md5: ")[1][:-1]
+    get_cmd = requests.get(URL + "/cmd/" + cmd, timeout=5)
+    get_text = get_cmd.text.split("md5: ")[1].rstrip()
 
     # compare results
     if post_text == get_text:
         print("New and old cmd results equal")
-
-    # compare md5
-    if md5.hexdigest() == post_text:
-        print("Test succeeded")
-    else:
-        print("Something goes wrong")
+        # compare md5
+        if md5.hexdigest() == post_text:
+            print("Test succeeded")
 
     os.remove(TMP_DIR + "/" + SAVED_NAME)
     popen.kill()
