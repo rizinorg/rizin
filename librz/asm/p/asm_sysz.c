@@ -9,26 +9,44 @@
 
 static csh cd = 0;
 
+typedef struct {
+	int omode;
+} SyszContext;
+
+static bool init(void **user) {
+
+	SyszContext *ctx = RZ_NEW0(SyszContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->omode = 0;
+	*user = ctx;
+	return true;
+}
+
 static bool the_end(void *p) {
+	SyszContext *ctx = (SyszContext *)p;
 	if (cd) {
 		cs_close(&cd);
 		cd = 0;
+	}
+	if (ctx) {
+		RZ_FREE(ctx);
 	}
 	return true;
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	a->omode = 0;
+	SyszContext *ctx = (SyszContext *)a->plugin_data;
+	int omode = ctx->omode;
 	int mode, n, ret;
 	ut64 off = a->pc;
 	cs_insn *insn = NULL;
 	mode = CS_MODE_BIG_ENDIAN;
-	if (cd && mode != a->omode) {
+	if (cd && mode != omode) {
 		cs_close(&cd);
 		cd = 0;
 	}
 	op->size = 0;
-	a->omode = mode;
+	omode = mode;
 	if (cd == 0) {
 		ret = cs_open(CS_ARCH_SYSZ, mode, &cd);
 		if (ret) {
@@ -61,6 +79,7 @@ RzAsmPlugin rz_asm_plugin_sysz = {
 	.arch = "sysz",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG,
+	.init = init,
 	.fini = the_end,
 	.disassemble = &disassemble,
 };

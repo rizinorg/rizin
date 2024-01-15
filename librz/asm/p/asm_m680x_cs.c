@@ -39,26 +39,43 @@ static int m680xmode(const char *str) {
 	return CS_MODE_M680X_6800;
 }
 
+typedef struct {
+	int omode;
+} M680xContext;
+
+static bool m680x_init(void **user) {
+	M680xContext *ctx = RZ_NEW0(M680xContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->omode = 0;
+	*user = ctx;
+	return true;
+}
+
 static bool the_end(void *p) {
+	M680xContext *ctx = (M680xContext *)p;
 	if (cd) {
 		cs_close(&cd);
 		cd = 0;
+	}
+	if (ctx) {
+		RZ_FREE(ctx);
 	}
 	return true;
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	a->omode = 0;
+	M680xContext *ctx = (M680xContext *)a->plugin_data;
+	int omode = ctx->omode;
 	int mode, n, ret;
 	ut64 off = a->pc;
 	cs_insn *insn = NULL;
 	mode = m680xmode(a->cpu);
-	if (cd && mode != a->omode) {
+	if (cd && mode != omode) {
 		cs_close(&cd);
 		cd = 0;
 	}
 	op->size = 0;
-	a->omode = mode;
+	omode = mode;
 	if (cd == 0) {
 		ret = cs_open(CS_ARCH_M680X, mode, &cd);
 		if (ret) {
@@ -92,6 +109,7 @@ RzAsmPlugin rz_asm_plugin_m680x_cs = {
 	.arch = "m680x",
 	.bits = 8 | 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
+	.init = m680x_init,
 	.fini = the_end,
 	.disassemble = &disassemble,
 };

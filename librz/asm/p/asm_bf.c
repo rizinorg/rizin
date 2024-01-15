@@ -5,12 +5,18 @@
 #include <rz_analysis.h>
 #include <rz_asm.h>
 
+typedef struct {
+	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
+} BfContext;
+
 static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) {
-	if (a->token_patterns) {
-		return a->token_patterns;
+	BfContext *ctx = (BfContext *)a->plugin_data;
+	RzPVector *pvec = ctx->token_patterns;
+	if (pvec) {
+		return pvec;
 	}
 
-	a->token_patterns = rz_pvector_new(rz_asm_token_pattern_free);
+	pvec = rz_pvector_new(rz_asm_token_pattern_free);
 
 	// Patterns get added here.
 	// Mnemonic pattern
@@ -18,14 +24,14 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) 
 	pat->type = RZ_ASM_TOKEN_MNEMONIC;
 	pat->pattern = strdup(
 		"^(while|inc|dec|out|in|trap|nop|invalid|loop)");
-	rz_pvector_push(a->token_patterns, pat);
+	rz_pvector_push(pvec, pat);
 
 	// ptr pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
 	pat->pattern = strdup(
 		"(ptr)");
-	rz_pvector_push(a->token_patterns, pat);
+	rz_pvector_push(pvec, pat);
 
 	// reference pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
@@ -33,16 +39,16 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) 
 	pat->pattern = strdup(
 		"(\\[)|(\\])" // Matches a single bracket
 	);
-	rz_pvector_push(a->token_patterns, pat);
+	rz_pvector_push(pvec, pat);
 
 	// Separator pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_SEPARATOR;
 	pat->pattern = strdup(
 		"([[:blank:]]+)");
-	rz_pvector_push(a->token_patterns, pat);
+	rz_pvector_push(pvec, pat);
 
-	return a->token_patterns;
+	return pvec;
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
@@ -163,6 +169,23 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	return n;
 }
 
+static bool bf_init(void **user) {
+	BfContext *ctx = RZ_NEW0(BfContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->token_patterns = NULL;
+	*user = ctx;
+	return true;
+}
+
+static bool bf_fini(void *user) {
+	BfContext *ctx = (BfContext *)user;
+	if (ctx) {
+		rz_pvector_free(ctx->token_patterns);
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_bf = {
 	.name = "bf",
 	.author = "pancake, nibble",
@@ -172,6 +195,8 @@ RzAsmPlugin rz_asm_plugin_bf = {
 	.bits = 16 | 32 | 64,
 	.endian = RZ_SYS_ENDIAN_NONE,
 	.desc = "Brainfuck",
+	.init = bf_init,
+	.fini = bf_fini,
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };
