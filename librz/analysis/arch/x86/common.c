@@ -1096,7 +1096,7 @@ RZ_IPI bool x86_il_is_st_reg(X86Reg reg) {
  * \return RzILOpPure* 2 bit rounding mode
  */
 RZ_IPI RzILOpPure *x86_il_fpu_get_rmode() {
-	return UNSIGNED(2, SHIFTR0(UN(8, 10), VARG(X86_REG_FPU_CW)));
+	return UNSIGNED(2, SHIFTR0(VARG(X86_REG_FPU_CW), UN(8, 10)));
 }
 
 /**

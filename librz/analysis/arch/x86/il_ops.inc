@@ -1649,15 +1649,8 @@ IL_LIFTER(call) {
 	 * We also need to push the code segment register in case 16 and 32 bit modes.
 	 */
 
-	RzILOpEffect *push_stuff = NULL;
-
-	if (analysis->bits == 64) {
-		push_stuff = x86_push_helper(U64(pc), 8);
-	} else {
-		push_stuff = SEQ4(SETL("_cs", UNSIGNED(analysis->bits, x86_il_get_reg(X86_REG_CS))), x86_push_helper(VARL("_cs"), analysis->bits / BITS_PER_BYTE), SETL("_pc", UN(analysis->bits, pc)), x86_push_helper(VARL("_pc"), analysis->bits / BITS_PER_BYTE));
-	}
-
-	return SEQ2(push_stuff, JMP(x86_il_get_op(0)));
+	RzILOpEffect *push_pc = x86_push_helper(UN(analysis->bits, pc), analysis->bits / BITS_PER_BYTE);
+	return SEQ2(push_pc, JMP(x86_il_get_op(0)));
 }
 
 /**
@@ -1898,12 +1891,12 @@ IL_LIFTER(ror) {
  */
 IL_LIFTER(ret) {
 	PopHelper ph = x86_pop_helper(analysis->bits / BITS_PER_BYTE /* BYTES */);
-	RzILOpEffect *ret = ph.eff;
-	/* We can use RSP, and the correct stack pointer will be resolved depending on bitness */
-	ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ph.val));
+
+	RzILOpEffect *ret = SEQ2(JMP(ph.val), ph.eff);
 
 	if (ins->structure->op_count == 1) {
-		/* Immediate operand (Encondig: I) */
+		/* Immediate operand (Encoding: I) 
+		 * Reduce RSP by that many bytes. */
 		ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ADD(x86_il_get_reg(X86_REG_RSP), UN(analysis->bits, ins->structure->operands[0].imm))));
 	}
 
