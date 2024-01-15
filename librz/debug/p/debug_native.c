@@ -325,14 +325,15 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 			bool autoload_pdb = dbg->corebind.cfggeti(core, "pdb.autoload");
 			if (autoload_pdb) {
 				PLIB_ITEM lib = native_info->lib;
-				if (rz_file_exists(lib->Path)) {
+				char *lib_path = rz_utf16_to_utf8(lib->Path);
+				if (lib_path && rz_file_exists(lib_path)) {
 					if (tracelib(dbg, "load", native_info->lib)) {
 						reason = RZ_DEBUG_REASON_TRAP;
 					}
 					RzBinOptions opts = { 0 };
 					opts.obj_opts.baseaddr = (uintptr_t)lib->BaseOfDll;
 					RzBinFile *cur = rz_bin_cur(core->bin);
-					RzBinFile *bf = rz_bin_open(core->bin, lib->Path, &opts);
+					RzBinFile *bf = rz_bin_open(core->bin, lib_path, &opts);
 					if (bf) {
 						const RzBinInfo *info = rz_bin_object_get_info(bf->o);
 						if (RZ_STR_ISNOTEMPTY(info->debug_file_name)) {
@@ -344,8 +345,9 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 						rz_bin_file_set_cur_binfile(core->bin, cur);
 					}
 				} else {
-					RZ_LOG_VERBOSE("The library %s does not exist.\n", lib->Path);
+					RZ_LOG_VERBOSE("The library %s does not exist.\n", lib_path);
 				}
+				free(lib_path);
 			}
 		} else {
 			RZ_LOG_WARN("Loading unknown library.\n");
