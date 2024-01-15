@@ -1892,15 +1892,15 @@ IL_LIFTER(ror) {
 IL_LIFTER(ret) {
 	PopHelper ph = x86_pop_helper(analysis->bits / BITS_PER_BYTE /* BYTES */);
 
-	RzILOpEffect *ret = SEQ2(JMP(ph.val), ph.eff);
+	RzILOpEffect *ret = SEQ2(SETL("tgt", ph.val), ph.eff);
 
 	if (ins->structure->op_count == 1) {
-		/* Immediate operand (Encoding: I) 
+		/* Immediate operand (Encoding: I)
 		 * Reduce RSP by that many bytes. */
 		ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ADD(x86_il_get_reg(X86_REG_RSP), UN(analysis->bits, ins->structure->operands[0].imm))));
 	}
 
-	return ret;
+	return SEQ2(ret, JMP(VARL("tgt")));
 }
 
 /**

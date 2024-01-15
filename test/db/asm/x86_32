@@ -430,7 +430,7 @@ d "rdpmc" 0f33
 d "rdtsc" 0f31
 d "rdtscp" 0f01f9
 d "repne movsb byte es:[edi], byte ptr [esi]" f2a4
-d "ret" c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
+d "ret" c3 0x0 (seq (set tgt (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))) (jmp (var tgt)))
 d "retf 0" ca0000 0x0 empty
 d "retf" cb 0x0 empty
 d "rol byte [eax], 0" c00000
@@ -1056,11 +1056,11 @@ aB "bt edx, 59" 0fbae23b
 aB "bt ebp, -20" 0fbae5e0
 aB "btr dword [eax], eax" 0fb300
 aB "bts dword [eax], eax" 0fab00
-a "call 0x8049100" e8fb900408 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x5)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (bv 32 0x8049100)))
-a "call 4" e8ffffffff 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x5)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (bv 32 0x4)))
-a "call 5" e800000000 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x5)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (bv 32 0x5)))
-a "call dword [eax]" ff10 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x2)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (loadw 0 32 (+ (var eax) (bv 32 0x0)))))
-a "call ebx" ffd3 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x2)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (var ebx)))
+a "call 0x8049100" e8fb900408 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x5))) (set esp (var final)) (jmp (bv 32 0x8049100)))
+a "call 4" e8ffffffff 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x5))) (set esp (var final)) (jmp (bv 32 0x4)))
+a "call 5" e800000000 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x5))) (set esp (var final)) (jmp (bv 32 0x5)))
+a "call dword [eax]" ff10 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x2))) (set esp (var final)) (jmp (loadw 0 32 (+ (var eax) (bv 32 0x0)))))
+a "call ebx" ffd3 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x2))) (set esp (var final)) (jmp (var ebx)))
 a "bnd call ebx" f2ffd3
 a "cbw" 6698
 a "cdq" 99
@@ -1900,12 +1900,12 @@ a "rdtsc" 0f31
 a "rdtscp" 0f01f9
 a "repne movsb byte es:[edi], byte ptr [esi]" f2a4
 a "repz movsb" f3a4
-a "ret" c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
-ad "ret 0xff" c2ff00 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0xff))))
+a "ret" c3 0x0 (seq (set tgt (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))) (jmp (var tgt)))
+ad "ret 0xff" c2ff00 0x0 (seq (set tgt (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))) (set esp (+ (var esp) (bv 32 0xff))) (jmp (var tgt)))
 a "bnd ret" f2c3
 a "retf 0" ca0000
 a "retf" cb 0x0 empty
-a "retw" 66c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
+a "retw" 66c3 0x0 (seq (set tgt (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))) (jmp (var tgt)))
 ad "rcl byte [eax], cl" d210 0x0 (seq (set _dest (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set _tmp_cnt (mod (cast 5 false (cast 8 false (var ecx))) (bv 5 0x9))) (set _cnt_mask (cast 5 false (cast 8 false (var ecx)))) (repeat (! (is_zero (var _tmp_cnt))) (seq (set _tmp_cf (msb (var _dest))) (set _dest (+ (<< (var _dest) (bv 8 0x1) false) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (set cf (var _tmp_cf)) (set _tmp_cnt (- (var _tmp_cnt) (bv 5 0x1))))) (branch (== (var _cnt_mask) (bv 5 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop) (storew 0 (+ (var eax) (bv 32 0x0)) (var _dest)))
 # capstone v5 removes the `, 1` and makes it implicit.
 ad "rcl byte [eax]" d010 0x0 (seq (set _dest (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set _tmp_cnt (mod (cast 5 false (bv 8 0x1)) (bv 5 0x9))) (set _cnt_mask (cast 5 false (bv 8 0x1))) (repeat (! (is_zero (var _tmp_cnt))) (seq (set _tmp_cf (msb (var _dest))) (set _dest (+ (<< (var _dest) (bv 8 0x1) false) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (set cf (var _tmp_cf)) (set _tmp_cnt (- (var _tmp_cnt) (bv 5 0x1))))) (branch (== (var _cnt_mask) (bv 5 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop) (storew 0 (+ (var eax) (bv 32 0x0)) (var _dest)))
