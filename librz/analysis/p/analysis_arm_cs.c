@@ -677,7 +677,7 @@ static int cond_cs2rz_64(int cc) {
 
 #if CS_NEXT_VERSION >= 6
 static bool is_system_hint(const cs_insn *insn) {
-	rz_return_val_if_fail(insn && insn->is_alias && insn->id == AArch64_INS_HINT, false);
+	rz_return_val_if_fail(insn && insn->id == AArch64_INS_HINT, false);
 	switch (insn->alias_id) {
 	default:
 		return false;
