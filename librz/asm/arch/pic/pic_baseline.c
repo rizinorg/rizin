@@ -183,6 +183,13 @@ PicBaselineOpcode pic_baseline_get_opcode(ut16 instr) {
 	}
 }
 
+PicBaselineOpArgs pic_baseline_get_opargs(PicBaselineOpcode opcode) {
+	if (opcode >= PIC_BASELINE_OPCODE_INVALID) {
+		return -1;
+	}
+	return pic_baseline_op_info[opcode].args;
+}
+
 const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	if (opcode >= PIC_BASELINE_OPCODE_INVALID) {
 		return NULL;
