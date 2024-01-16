@@ -442,6 +442,29 @@ static ut64 get_main_offset_mips(ELFOBJ *bin, ut64 entry, ut8 *buf, size_t size)
 	return 0;
 }
 
+static ut64 get_main_offset_v850(ELFOBJ *bin, ut64 entry, ut8 *buf) {
+	size_t delta = 0;
+
+	/* distinguish by the first two instructions */
+
+	if (!memcmp(buf, "\x20\xa6\xff\x00\x35\x06\xff\xff\x00\x00", 10)) {
+		/* movea 0xFF, r0, r20; mov 0xFFFF, r21 */
+		delta = 0x64;
+	} else if (!memcmp(buf, "\x20\xa6\xff\x00\x00\xa8", 6)) {
+		/* movea 0xFF, r0, r20 ; mov r0, r21 */
+		delta = 0x4e;
+	}
+
+	if (!delta) {
+		return UT64_MAX;
+	}
+
+	ut16 jmp_offset = rz_read_le16(buf + delta);
+	ut64 entry_vaddr = Elf_(rz_bin_elf_p2v)(bin, entry);
+	ut64 vaddr = (entry_vaddr + (delta - 2) + jmp_offset) & ~1;
+	return Elf_(rz_bin_elf_v2p)(bin, vaddr);
+}
+
 static ut64 get_main_offset_arm_glibc_thumb(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	size_t delta = 0;
 
@@ -1960,6 +1983,11 @@ ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin) {
 	}
 
 	main_addr = get_main_offset_linux_64_pie(bin, entry, buf);
+	if (main_addr != UT64_MAX) {
+		return main_addr;
+	}
+
+	main_addr = get_main_offset_v850(bin, entry, buf);
 	if (main_addr != UT64_MAX) {
 		return main_addr;
 	}

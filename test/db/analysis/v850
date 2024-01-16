@@ -7,7 +7,7 @@ EOF
 EXPECT=<<EOF
 0x00100018    3 84           fcn.00100018
 0x0010006c    1 36           sym._compute
-0x00100090    1 64           sym._main
+0x00100090    1 64           main
 0x001000d0    5 74           sym.___main
 0x0010011a    3 34           sym._exit
 0x0010013c   18 768          sym.__printf_r
@@ -354,7 +354,7 @@ EXPECT=<<EOF
 0x001045d4    4 128  -> 80   sym._red_prompt
 0x001048ea    1 66           sym._red_open
 0x00104ab0    1 44           sym._red_help
-0x00104adc    1 150          sym._main
+0x00104adc    1 150          main
 EOF
 RUN
 
@@ -394,5 +394,38 @@ r17 = r8 & 0
 r0 = ~r2
 r25 = (byte) *(r8805 + 0x5)
 r9 = r0
+EOF
+RUN
+
+NAME=v850 s main hello-v850e
+FILE=bins/v850/hello-v850e
+CMDS=<<EOF
+s main
+s
+EOF
+EXPECT=<<EOF
+0x100090
+EOF
+RUN
+
+NAME=v850 s main hello-v850e_stripped
+FILE=bins/v850/hello-v850e_stripped
+CMDS=<<EOF
+s main
+s
+EOF
+EXPECT=<<EOF
+0x100090
+EOF
+RUN
+
+NAME=v850 s main ired_v850
+FILE=bins/v850/ired_v850
+CMDS=<<EOF
+s main
+s
+EOF
+EXPECT=<<EOF
+0x104adc
 EOF
 RUN
