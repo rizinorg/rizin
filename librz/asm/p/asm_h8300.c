@@ -11,7 +11,11 @@
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct h8300_cmd cmd;
 	int ret = h8300_decode_command(buf, &cmd);
-	rz_strbuf_set(&op->buf_asm, sdb_fmt("%s %s", cmd.instr, cmd.operands));
+	char *buf_asm = rz_str_newf("%s %s", cmd.instr, cmd.operands);
+	if (buf_asm) {
+		rz_strbuf_set(&op->buf_asm, buf_asm);
+		free(buf_asm);
+	}
 	return op->size = ret;
 }
 

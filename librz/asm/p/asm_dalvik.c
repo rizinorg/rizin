@@ -22,7 +22,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char *flag_str = NULL;
 	a->dataalign = 2;
 
-	const char *buf_asm = NULL;
+	char *buf_asm = NULL;
 	if (buf[0] == 0x00) { /* nop */
 		if (len < 2) {
 			return -1;
@@ -35,7 +35,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			{
 				ut16 array_size = buf[2] | (buf[3] << 8);
 				int first_key = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				buf_asm = sdb_fmt("packed-switch-payload %d, %d", array_size, first_key);
+				buf_asm = rz_str_newf("packed-switch-payload %d, %d", array_size, first_key);
 				size = 8;
 				payload = 2 * (array_size * 2);
 				len = 0;
@@ -47,7 +47,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			// int[size] relative offsets
 			{
 				ut16 array_size = buf[2] | (buf[3] << 8);
-				buf_asm = sdb_fmt("sparse-switch-payload %d", array_size);
+				buf_asm = rz_str_newf("sparse-switch-payload %d", array_size);
 				size = 4;
 				payload = 2 * (array_size * 4);
 				len = 0;
@@ -60,7 +60,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			if (len > 7) {
 				ut16 elem_width = buf[2] | (buf[3] << 8);
 				ut32 array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				buf_asm = sdb_fmt("fill-array-data-payload %d, %d", elem_width, array_size);
+				buf_asm = rz_str_newf("fill-array-data-payload %d, %d", elem_width, array_size);
 				payload = array_size * elem_width;
 			}
 			size = 8;
@@ -73,6 +73,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (buf_asm) {
 		rz_strbuf_set(&op->buf_asm, buf_asm);
+		RZ_FREE(buf_asm);
 	}
 	strasm = NULL;
 	if (size <= len) {

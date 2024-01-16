@@ -183,14 +183,17 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			rz_str_cpy(insn->mnemonic, tmpstr);
 			free(tmpstr);
 		}
-		char *buf_asm = sdb_fmt("%s%s%s",
+		char *buf_asm = rz_str_newf("%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0] ? " " : "",
 			insn->op_str);
-		if (!disp_hash) {
-			rz_str_replace_char(buf_asm, '#', 0);
+		if (buf_asm) {
+			if (!disp_hash) {
+				rz_str_replace_char(buf_asm, '#', 0);
+			}
+			rz_strbuf_set(&op->buf_asm, buf_asm);
+			free(buf_asm);
 		}
-		rz_strbuf_set(&op->buf_asm, buf_asm);
 	}
 	cs_free(insn, n);
 beach:

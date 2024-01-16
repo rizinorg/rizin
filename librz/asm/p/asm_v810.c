@@ -9,7 +9,7 @@
 
 #include "../arch/v810/v810_disas.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int v810_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct v810_cmd cmd = {
 		.instr = "",
 		.operands = ""
@@ -19,7 +19,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	int ret = v810_decode_command(buf, len, &cmd);
 	if (ret > 0) {
-		rz_asm_op_set_asm(op, sdb_fmt("%s %s", cmd.instr, cmd.operands));
+		char *buf_asm = rz_str_newf("%s %s", cmd.instr, cmd.operands);
+		if (buf_asm) {
+			rz_asm_op_set_asm(op, buf_asm);
+			free(buf_asm);
+		}
 	}
 	return op->size = ret;
 }
@@ -32,7 +36,7 @@ RzAsmPlugin rz_asm_plugin_v810 = {
 	.arch = "v810",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
-	.disassemble = &disassemble
+	.disassemble = &v810_disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE

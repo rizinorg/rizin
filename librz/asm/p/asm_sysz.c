@@ -5,69 +5,52 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone/capstone.h>
 
-static csh cd = 0;
+#include "cs_helper.h"
 
-typedef struct {
-	int omode;
-} SyszContext;
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(sysz);
 
-static bool init(void **user) {
-
-	SyszContext *ctx = RZ_NEW0(SyszContext);
-	rz_return_val_if_fail(ctx, false);
-	ctx->omode = 0;
-	*user = ctx;
-	return true;
-}
-
-static bool the_end(void *p) {
-	SyszContext *ctx = (SyszContext *)p;
-	if (cd) {
-		cs_close(&cd);
-		cd = 0;
-	}
-	if (ctx) {
-		RZ_FREE(ctx);
-	}
-	return true;
-}
-
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	SyszContext *ctx = (SyszContext *)a->plugin_data;
-	int omode = ctx->omode;
-	int mode, n, ret;
+static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
+	int n, ret;
 	ut64 off = a->pc;
 	cs_insn *insn = NULL;
-	mode = CS_MODE_BIG_ENDIAN;
-	if (cd && mode != omode) {
-		cs_close(&cd);
-		cd = 0;
-	}
+	cs_mode mode = CS_MODE_BIG_ENDIAN;
 	op->size = 0;
-	omode = mode;
-	if (cd == 0) {
-		ret = cs_open(CS_ARCH_SYSZ, mode, &cd);
-		if (ret) {
-			return 0;
-		}
-		cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
+
+	if (ctx->omode != mode) {
+		cs_close(&ctx->handle);
+		ctx->omode = -1;
 	}
-	n = cs_disasm(cd, (const ut8 *)buf, len, off, 1, &insn);
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_SYSZ, mode, &ctx->handle);
+		if (ret) {
+			return -1;
+		}
+		ctx->omode = mode;
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
+	}
+
+	n = cs_disasm(ctx->handle, (const ut8 *)buf, len, off, 1, &insn);
 	if (n > 0) {
 		if (insn->size > 0) {
 			op->size = insn->size;
-			char *buf_asm = sdb_fmt("%s%s%s",
+			char *buf_asm = rz_str_newf("%s%s%s",
 				insn->mnemonic, insn->op_str[0] ? " " : "",
 				insn->op_str);
-			char *ptrstr = strstr(buf_asm, "ptr ");
-			if (ptrstr) {
-				memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
+			if (buf_asm) {
+				char *ptrstr = strstr(buf_asm, "ptr ");
+				if (ptrstr) {
+					memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
+				}
+				rz_asm_op_set_asm(op, buf_asm);
+				free(buf_asm);
 			}
-			rz_asm_op_set_asm(op, buf_asm);
 		}
 		cs_free(insn, n);
+	} else {
+		rz_asm_op_set_asm(op, "invalid");
+		return -1;
 	}
 	return op->size;
 }
@@ -79,9 +62,10 @@ RzAsmPlugin rz_asm_plugin_sysz = {
 	.arch = "sysz",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG,
-	.init = init,
-	.fini = the_end,
-	.disassemble = &disassemble,
+	.init = sysz_init,
+	.fini = sysz_fini,
+	.disassemble = &sysz_disassemble,
+	.mnemonics = sysz_mnemonics,
 };
 
 #ifndef RZ_PLUGIN_INCORE

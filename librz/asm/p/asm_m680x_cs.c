@@ -3,11 +3,11 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone/capstone.h>
+#include "cs_helper.h"
 
-static csh cd = 0;
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m680x);
 
-static int m680xmode(const char *str) {
+static cs_mode m680x_mode(const char *str) {
 	if (!str) {
 		return CS_MODE_M680X_6800;
 	}
@@ -39,55 +39,34 @@ static int m680xmode(const char *str) {
 	return CS_MODE_M680X_6800;
 }
 
-typedef struct {
-	int omode;
-} M680xContext;
+static int m680x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
-static bool m680x_init(void **user) {
-	M680xContext *ctx = RZ_NEW0(M680xContext);
-	rz_return_val_if_fail(ctx, false);
-	ctx->omode = 0;
-	*user = ctx;
-	return true;
-}
-
-static bool the_end(void *p) {
-	M680xContext *ctx = (M680xContext *)p;
-	if (cd) {
-		cs_close(&cd);
-		cd = 0;
-	}
-	if (ctx) {
-		RZ_FREE(ctx);
-	}
-	return true;
-}
-
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	M680xContext *ctx = (M680xContext *)a->plugin_data;
-	int omode = ctx->omode;
-	int mode, n, ret;
+	int n, ret;
 	ut64 off = a->pc;
+	cs_mode mode;
 	cs_insn *insn = NULL;
-	mode = m680xmode(a->cpu);
-	if (cd && mode != omode) {
-		cs_close(&cd);
-		cd = 0;
-	}
+	mode = m680x_mode(a->cpu);
 	op->size = 0;
-	omode = mode;
-	if (cd == 0) {
-		ret = cs_open(CS_ARCH_M680X, mode, &cd);
-		if (ret) {
-			return 0;
-		}
-		cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
+
+	if (ctx->omode != mode) {
+		cs_close(&ctx->handle);
+		ctx->omode = -1;
 	}
-	n = cs_disasm(cd, (const ut8 *)buf, len, off, 1, &insn);
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_M680X, mode, &ctx->handle);
+		if (ret) {
+			return -1;
+		}
+		ctx->omode = mode;
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
+	}
+
+	n = cs_disasm(ctx->handle, (const ut8 *)buf, len, off, 1, &insn);
 	if (n > 0) {
 		if (insn->size > 0) {
 			op->size = insn->size;
-			char *buf_asm = sdb_fmt("%s%s%s",
+			char *buf_asm = rz_str_newf("%s%s%s",
 				insn->mnemonic, insn->op_str[0] ? " " : "",
 				insn->op_str);
 			char *ptrstr = strstr(buf_asm, "ptr ");
@@ -95,6 +74,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 				memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
 			}
 			rz_asm_op_set_asm(op, buf_asm);
+			free(buf_asm);
 		}
 		cs_free(insn, n);
 	}
@@ -110,8 +90,9 @@ RzAsmPlugin rz_asm_plugin_m680x_cs = {
 	.bits = 8 | 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.init = m680x_init,
-	.fini = the_end,
-	.disassemble = &disassemble,
+	.fini = m680x_fini,
+	.disassemble = &m680x_disassemble,
+	.mnemonics = m680x_mnemonics,
 };
 
 #ifndef RZ_PLUGIN_INCORE
