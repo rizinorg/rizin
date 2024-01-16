@@ -3,6 +3,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
+#include <capstone/capstone.h>
 
 #ifdef CAPSTONE_TMS320C64X_H
 #define CAPSTONE_HAS_TMS320C64X 1
