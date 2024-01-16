@@ -27,6 +27,7 @@
 import json
 import os
 import re
+import sys
 from binascii import hexlify
 from concurrent.futures import ProcessPoolExecutor
 
@@ -178,6 +179,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main())

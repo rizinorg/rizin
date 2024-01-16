@@ -265,7 +265,6 @@ static int rz_core_rtr_http_handler_post_cmd(RzCore *core, RzSocketHTTPRequest *
 	rz_config_set(core->config, "scr.interactive", "false");
 	rz_core_rtr_http_cmd(core, rs, (char *)rs->data, out, headers);
 	if (!strcmp((char *)rs->data, "Rh*")) {
-		/* do stuff */
 		rz_socket_http_close(rs);
 		return -2;
 	} else if (!strcmp((char *)rs->data, "Rh--")) {
@@ -279,17 +278,17 @@ static rz_core_rtr_http_handler_ptr rz_core_rtr_http_router(RzSocketHTTPRequest 
 	if (!strcmp(rs->method, "OPTIONS")) {
 		return &rz_core_rtr_http_handler_ok;
 	} else if (!strcmp(rs->method, "GET")) {
-		if (!strncmp(rs->path, "/up/", 4)) {
+		if (!strncmp(rs->path, "/up/", strlen("/up/"))) {
 			return rz_core_rtr_http_handler_get_file;
-		} else if (!strncmp(rs->path, "/cmd/", 5)) {
+		} else if (!strncmp(rs->path, "/cmd/", strlen("/cmd/"))) {
 			return rz_core_rtr_http_handler_get_cmd;
 		} else {
 			return rz_core_rtr_http_handler_get_index;
 		}
 	} else if (!strcmp(rs->method, "POST")) {
-		if (!strncmp(rs->path, "/upload/", 8)) {
+		if (!strncmp(rs->path, "/upload/", strlen("/upload/"))) {
 			return rz_core_rtr_http_handler_post_upload;
-		} else if (!strncmp(rs->path, "/cmd/", 5)) {
+		} else if (!strncmp(rs->path, "/cmd/", strlen("/cmd/"))) {
 			return rz_core_rtr_http_handler_post_cmd;
 		}
 	}
@@ -338,7 +337,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	char *dir;
 	int iport;
 	const char *bind = rz_config_get(core->config, "http.bind");
-	// const char *index = rz_config_get(core->config, "http.index");
 	const char *root = rz_config_get(core->config, "http.root");
 	const char *homeroot = rz_config_get(core->config, "http.homeroot");
 	const char *port = rz_config_get(core->config, "http.port");
