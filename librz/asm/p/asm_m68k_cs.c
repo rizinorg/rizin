@@ -25,11 +25,19 @@ static bool check_features(RzAsm *a, cs_insn *insn);
 static csh cd = 0;
 #include "cs_mnemonics.c"
 
+typedef struct {
+	int omode;
+	int obits;
+} M68kContext;
+
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	M68kContext *ctx = (M68kContext *)a->plugin_data;
 	const char *buf_asm = NULL;
-	static int omode = -1;
-	static int obits = 32;
+	int omode = ctx->omode;
+	int obits = ctx->obits;
 	cs_insn *insn = NULL;
+	omode = -1;
+	obits = 32;
 	int ret = 0, n = 0;
 	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
@@ -125,6 +133,23 @@ beach:
 	return ret;
 }
 
+static bool m68k_init(void **user) {
+	M68kContext *ctx = RZ_NEW0(M68kContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->omode = -1;
+	ctx->obits = 32;
+	*user = ctx;
+	return true;
+}
+
+static bool m68k_fini(void *p) {
+	M68kContext *ctx = (M68kContext *)p;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Capstone M68K disassembler",
@@ -133,6 +158,8 @@ RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.arch = "m68k",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BIG,
+	.init = m68k_init,
+	.fini = m68k_fini,
 	.disassemble = &disassemble,
 	.mnemonics = &mnemonics,
 };

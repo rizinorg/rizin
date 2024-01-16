@@ -45,8 +45,12 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
+typedef struct {
+	struct disassemble_info disasm_obj;
+} ArcContext;
+
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	static struct disassemble_info disasm_obj;
+	ArcContext *ctx = (ArcContext *)a->plugin_data;
 	if (len < 2) {
 		return -1;
 	}
@@ -58,27 +62,42 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	memcpy(bytes, buf, len); // TODO handle compact
 	buf_len = len;
 	/* prepare disassembler */
-	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
-	disasm_obj.buffer = bytes;
-	disasm_obj.buffer_length = len;
-	disasm_obj.read_memory_func = &arc_buffer_read_memory;
-	disasm_obj.symbol_at_address_func = &symbol_at_address;
-	disasm_obj.memory_error_func = &memory_error_func;
-	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->big_endian;
-	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
-	disasm_obj.mach = 0;
+	memset(&ctx->disasm_obj, '\0', sizeof(struct disassemble_info));
+	ctx->disasm_obj.buffer = bytes;
+	ctx->disasm_obj.buffer_length = len;
+	ctx->disasm_obj.read_memory_func = &arc_buffer_read_memory;
+	ctx->disasm_obj.symbol_at_address_func = &symbol_at_address;
+	ctx->disasm_obj.memory_error_func = &memory_error_func;
+	ctx->disasm_obj.print_address_func = &generic_print_address_func;
+	ctx->disasm_obj.endian = !a->big_endian;
+	ctx->disasm_obj.fprintf_func = &generic_fprintf_func;
+	ctx->disasm_obj.stream = stdout;
+	ctx->disasm_obj.mach = 0;
 	rz_strbuf_set(&op->buf_asm, "");
 	if (a->bits == 16) {
-		op->size = ARCompact_decodeInstr((bfd_vma)Offset, &disasm_obj);
+		op->size = ARCompact_decodeInstr((bfd_vma)Offset, &ctx->disasm_obj);
 	} else {
-		op->size = ARCTangent_decodeInstr((bfd_vma)Offset, &disasm_obj);
+		op->size = ARCTangent_decodeInstr((bfd_vma)Offset, &ctx->disasm_obj);
 	}
 	if (op->size == -1) {
 		rz_strbuf_set(&op->buf_asm, "(data)");
 	}
 	return op->size;
+}
+
+static bool init(void **user) {
+	ArcContext *ctx = RZ_NEW0(ArcContext);
+	rz_return_val_if_fail(ctx, false);
+	*user = ctx;
+	return true;
+}
+
+static bool the_end(void *p) {
+	ArcContext *ctx = (ArcContext *)p;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
 }
 
 RzAsmPlugin rz_asm_plugin_arc = {
@@ -87,6 +106,8 @@ RzAsmPlugin rz_asm_plugin_arc = {
 	.bits = 16 | 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "Argonaut RISC Core",
+	.init = init,
+	.fini = the_end,
 	.disassemble = &disassemble,
 	.license = "GPL3"
 };

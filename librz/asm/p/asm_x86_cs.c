@@ -8,22 +8,19 @@
 static csh cd = 0;
 static int n = 0;
 
-static bool the_end(void *p) {
-	if (cd) {
-		cs_close(&cd);
-		cd = 0;
-	}
-	return true;
-}
-
 static int check_features(RzAsm *a, cs_insn *insn);
 
 #include "cs_mnemonics.c"
 
 #include "asm_x86_vm.c"
 
+typedef struct {
+	int omode;
+} X86Context;
+
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	static int omode = 0;
+	X86Context *ctx = (X86Context *)a->plugin_data;
+	int omode = ctx->omode;
 	int mode, ret;
 	ut64 off = a->pc;
 
@@ -116,6 +113,26 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static bool x86_cs_init(void **user) {
+	X86Context *ctx = RZ_NEW0(X86Context);
+	rz_return_val_if_fail(ctx, false);
+	ctx->omode = 0;
+	*user = ctx;
+	return true;
+}
+
+static bool the_end(void *p) {
+	X86Context *ctx = (X86Context *)p;
+	if (cd) {
+		cs_close(&cd);
+		cd = 0;
+	}
+	if (ctx) {
+		free(ctx);
+	}
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 disassembler",
@@ -125,6 +142,7 @@ RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.arch = "x86",
 	.bits = 16 | 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
+	.init = x86_cs_init,
 	.fini = the_end,
 	.mnemonics = mnemonics,
 	.disassemble = &disassemble,

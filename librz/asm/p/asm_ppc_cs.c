@@ -54,8 +54,15 @@ static int decompile_ps(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+typedef struct {
+	int omode;
+	int obits;
+} PpcContext;
+
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	static int omode = -1, obits = -1;
+	PpcContext *ctx = (PpcContext *)a->plugin_data;
+	int omode = ctx->omode;
+	int obits = ctx->obits;
 	int n, ret, mode;
 	ut64 off = a->pc;
 	cs_insn *insn;
@@ -123,6 +130,15 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static bool ppc_cs_init(void **user) {
+	PpcContext *ctx = RZ_NEW0(PpcContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->omode = -1;
+	ctx->obits = -1;
+	*user = ctx;
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone PowerPC disassembler",
@@ -132,6 +148,7 @@ RzAsmPlugin rz_asm_plugin_ppc_cs = {
 	.cpus = "ppc,vle,ps,qpx",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
+	.init = ppc_cs_init,
 	.fini = the_end,
 	.disassemble = &disassemble,
 };

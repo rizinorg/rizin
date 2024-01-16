@@ -19,8 +19,8 @@
 #include "hexagon_insn.h"
 #include "hexagon_arch.h"
 
-static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
-	static RzPVector *pvec = NULL;
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(HexState *state) {
+	RzPVector *pvec = state->token_patterns;
 	if (pvec) {
 		return pvec;
 	}
@@ -156,8 +156,20 @@ static bool hexagon_init(void **user) {
 	SETCB("plugins.hexagon.sdk", "false", &hex_cfg_set, "Print packet syntax in objdump style.");
 	SETCB("plugins.hexagon.reg.alias", "true", &hex_cfg_set, "Print the alias of registers (Alias from C0 = SA0).");
 
-	state->token_patterns = get_token_patterns();
+	state->token_patterns = get_token_patterns(state);
 	rz_asm_compile_token_patterns(state->token_patterns);
+
+	return true;
+}
+
+static bool hexagon_fini(void *user) {
+	HexState *state = (HexState *)user;
+	rz_return_val_if_fail(state, false);
+
+	if (state->token_patterns) {
+		rz_pvector_free(state->token_patterns);
+		state->token_patterns = NULL;
+	}
 
 	return true;
 }
@@ -197,6 +209,7 @@ RzAsmPlugin rz_asm_plugin_hexagon = {
 	.bits = 32,
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
 	.init = &hexagon_init,
+	.fini = hexagon_fini,
 	.disassemble = &disassemble,
 	.get_config = &hexagon_get_config,
 };
