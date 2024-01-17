@@ -437,23 +437,41 @@ static RzILOpPure *VARG_SUB(const char *name, bool ms) {
 }
 
 static RzILOpEffect *SETG_wrap(const char *name, RzILOpPure *x) {
-	rz_return_val_if_fail(name && x && strlen(name) >= 2, NOP());
+	if (!(name && x)) {
+		goto err;
+	}
 	if (is_pair_register(name)) {
+		const char *a0 = REG_SUB(name, 0);
+		const char *a1 = REG_SUB(name, 1);
+		if (!(a0 && a1)) {
+			goto err;
+		}
 		return SEQ3(
 			SETL("temp", x),
-			SETG(REG_SUB(name, 0), UNSIGNED(32, VARL("temp"))),
-			SETG(REG_SUB(name, 1), UNSIGNED(32, BITS64(VARL("temp"), 32, 32))));
+			SETG(a0, UNSIGNED(32, VARL("temp"))),
+			SETG(a1, UNSIGNED(32, BITS64(VARL("temp"), 32, 32))));
 	}
 	if (RZ_STR_EQ(name, "sp")) {
 		return SETG("a10", x);
 	}
 	return SETG(name, x);
+err:
+	rz_warn_if_reached();
+	if (x) {
+		rz_il_op_pure_free(x);
+	}
+	return NULL;
 }
 
 static RzILOpPure *VARG_wrap(const char *name) {
-	rz_return_val_if_fail(name && strlen(name) >= 2, NULL);
+	rz_return_val_if_fail(name, NULL);
 	if (is_pair_register(name)) {
-		return APPEND(VARG_SUB(name, 1), VARG_SUB(name, 0));
+		const char *a0 = REG_SUB(name, 0);
+		const char *a1 = REG_SUB(name, 1);
+		if (!(a0 && a1)) {
+			return NULL;
+		}
+		return APPEND(VARG(a1), VARG(a0));
 	}
 	if (RZ_STR_EQ(name, "sp")) {
 		return VARG("a10");
@@ -471,11 +489,12 @@ static RzAnalysisLiftedILOp ST_MB(RzILOpPure *dst, size_t n, ...) {
 	va_list args;
 	va_start(args, n);
 
+	RzILOpEffect *root = NULL;
 	RzILOpEffect *eff = RZ_NEW0(RzILOpEffect);
 	if (!eff) {
-		return NULL;
+		goto err;
 	}
-	RzILOpEffect *root = eff;
+	root = eff;
 	eff->code = RZ_IL_OP_SEQ;
 	eff->op.seq.x = STOREW(dst, va_arg(args, RzILOpPure *));
 	if (!eff->op.seq.x) {
@@ -502,8 +521,10 @@ static RzAnalysisLiftedILOp ST_MB(RzILOpPure *dst, size_t n, ...) {
 		eff->op.seq.y = seq;
 		eff = seq;
 	}
+	va_end(args);
 	return root;
 err:
+	va_end(args);
 	rz_il_op_effect_free(root);
 	return NULL;
 }
@@ -515,17 +536,21 @@ static unsigned reg_index(const char *x) {
 
 static RzAnalysisLiftedILOp SETG_MB(const char *fst, size_t n, ...) {
 	rz_return_val_if_fail(fst && n > 0, rz_il_op_new_nop());
-	size_t index = reg_index(fst);
-	rz_warn_if_fail(index + n < RZ_ARRAY_SIZE(TriCoreREGs));
 
 	va_list args;
 	va_start(args, n);
 
-	RzILOpEffect *eff = RZ_NEW0(RzILOpEffect);
-	if (!eff) {
-		return NULL;
+	RzILOpEffect *root = NULL;
+	RzILOpEffect *eff = NULL;
+	size_t index = reg_index(fst);
+	if (index + n >= RZ_ARRAY_SIZE(TriCoreREGs)) {
+		goto err;
 	}
-	RzILOpEffect *root = eff;
+	eff = RZ_NEW0(RzILOpEffect);
+	if (!eff) {
+		goto err;
+	}
+	root = eff;
 	eff->code = RZ_IL_OP_SEQ;
 	eff->op.seq.x = SETG(TriCoreREGs[index], va_arg(args, RzILOpPure *));
 
@@ -554,8 +579,11 @@ static RzAnalysisLiftedILOp SETG_MB(const char *fst, size_t n, ...) {
 		eff->op.seq.y = seq;
 		eff = seq;
 	}
+	va_end(args);
 	return root;
 err:
+	rz_warn_if_reached();
+	va_end(args);
 	rz_il_op_effect_free(root);
 	return NULL;
 }
@@ -617,12 +645,7 @@ enum trap_kind_t {
 };
 
 static inline RzILOpEffect *trap(enum trap_kind_t kind) {
-	//	if (kind == FCU) {
-	// Unrecoverable Traps
-	//		return GOTO("trap");
-	//	} else {
 	return NOP();
-	//	}
 }
 
 static inline RzILOpPure *PSW_CDC_COUNT() {
@@ -660,14 +683,21 @@ static inline RzILOpPure *PSW_CDC_COUNT_LEN() {
 }
 
 static inline RzILOpEffect *set_PSW_CDC_COUNT(RzILOpPure *val, RzILOpEffect *overflow, RzILOpEffect *underflow) {
+	RzILOpEffect *eff = NULL;
+	if (overflow) {
+		eff = BRANCH(EQ(VARL("CDC_COUNT"), SUB(SHIFTL0(U32(1), VARL("CDC_i")), U32(1))), overflow, NOP());
+	} else if (underflow) {
+		eff = BRANCH(EQ(VARL("CDC_COUNT"), U32(0x0)), underflow, NOP());
+	} else {
+		eff = NOP();
+	}
+
 	return SEQ5(
 		SETL("CDC", PSW_CDC()),
 		SETL("CDC_COUNT", PSW_CDC_COUNT()),
 		SETL("CDC_i", PSW_CDC_COUNT_LEN()),
 		SETG("PSW", DEPOSIT32(VARG("PSW"), U32(0), VARL("CDC_i"), val)),
-		overflow ? (BRANCH(EQ(VARL("CDC_COUNT"), SUB(SHIFTL0(U32(1), VARL("CDC_i")), U32(1))), overflow, NOP()))
-			 : (underflow ? BRANCH(EQ(VARL("CDC_COUNT"), U32(0x0)), underflow, NOP())
-				      : NOP()));
+		eff);
 }
 
 /**
@@ -713,20 +743,6 @@ static RzAnalysisLiftedILOp fast_call(const RzAsmTriCoreContext *ctx, RzILOpPure
 }
 
 static RzAnalysisLiftedILOp abs_call(RzAsmTriCoreContext *ctx, RzILOpPure *target) {
-	RzILOpEffect *cde = set_PSW_CDE(U32(1));
-
-	RzILOpEffect *tmp_FCX = SETL("tmp_FCX", VARG("FCX"));
-
-	RzILOpEffect *EA = SETL("EA", LOGOR(SHIFTL0(FCX_FCXS(), U32(28)), SHIFTL0(FCX_FCXO(), U32(6))));
-
-	RzILOpEffect *new_FCX = SETL("new_FCX", LOADW(32, VARL("EA")));
-
-	RzILOpEffect *M = ST_MB(VARL("EA"), 16,
-		VARG("d15"), VARG("d14"), VARG("d13"), VARG("d12"),
-		VARG("a15"), VARG("a14"), VARG("a13"), VARG("a12"),
-		VARG("d11"), VARG("d10"), VARG("d9"), VARG("d8"),
-		VARG("a11"), VARG("a10"), VARG("PSW"), VARG("PCXI"));
-
 	RzILOpEffect *pcxi = NULL;
 	switch (ctx->mode) {
 	case CS_MODE_TRICORE_162: {
@@ -748,6 +764,20 @@ static RzAnalysisLiftedILOp abs_call(RzAsmTriCoreContext *ctx, RzILOpPure *targe
 		return NULL;
 	}
 	}
+
+	RzILOpEffect *cde = set_PSW_CDE(U32(1));
+
+	RzILOpEffect *tmp_FCX = SETL("tmp_FCX", VARG("FCX"));
+
+	RzILOpEffect *EA = SETL("EA", LOGOR(SHIFTL0(FCX_FCXS(), U32(28)), SHIFTL0(FCX_FCXO(), U32(6))));
+
+	RzILOpEffect *new_FCX = SETL("new_FCX", LOADW(32, VARL("EA")));
+
+	RzILOpEffect *M = ST_MB(VARL("EA"), 16,
+		VARG("d15"), VARG("d14"), VARG("d13"), VARG("d12"),
+		VARG("a15"), VARG("a14"), VARG("a13"), VARG("a12"),
+		VARG("d11"), VARG("d10"), VARG("d9"), VARG("d8"),
+		VARG("a11"), VARG("a10"), VARG("PSW"), VARG("PCXI"));
 
 	RzILOpEffect *fcx = SETG("FCX", BITS32_U(VARG("FCX"), 0, 20, BITS32(VARL("new_FCX"), 0, 20)));
 
@@ -912,17 +942,10 @@ static RzILOpPure *is_denorm(RzILOpPure *x) {
 	return AND(IS_ZERO(BITS32(x, 23, 8)), NON_ZERO(BITS32(DUP(x), 0, 23)));
 }
 
-static RzILOpEffect *f_cons(RzILOpEffect *x, RzILOpEffect *y) {
-	if (!x) {
-		x = RZ_NEW0(RzILOpEffect);
-		if (!x) {
-			goto err;
-		}
-		x->code = RZ_IL_OP_SEQ;
-		x->op.seq.x = y;
-		return x;
+static RzAnalysisLiftedILOp f_cons_(RzILOpEffect *x, RzILOpEffect *y) {
+	if (!(x && x->code == RZ_IL_OP_SEQ)) {
+		goto err;
 	}
-	rz_warn_if_fail(x->code == RZ_IL_OP_SEQ);
 	RzILOpEffect *last = x;
 	while (last->op.seq.y && last->op.seq.y->code == RZ_IL_OP_SEQ) {
 		last = last->op.seq.y;
@@ -941,10 +964,20 @@ static RzILOpEffect *f_cons(RzILOpEffect *x, RzILOpEffect *y) {
 	}
 	return x;
 err:
+	rz_warn_if_reached();
 	rz_il_op_effect_free(x);
 	rz_il_op_effect_free(y);
 	return NULL;
 }
+
+#define merr(x) \
+	if (!x) { \
+		rz_warn_if_reached(); \
+		return NULL; \
+	}
+
+#define f_cons(_x, _y) \
+	merr(f_cons_(_x, _y))
 
 static RzILOpPure *swap_bit_i(RzILOpPure *x, RzILOpPure *ia, RzILOpPure *ib) {
 	return LET("swap_bit_i_x", x,
@@ -960,14 +993,14 @@ static RzILOpPure *swap_bit_i(RzILOpPure *x, RzILOpPure *ia, RzILOpPure *ib) {
 static RzILOpEffect *reverseV(const char *name, RzILOpPure *x, RzILOpPure *n) {
 	rz_return_val_if_fail(name && x && n, NULL);
 
-	RzILOpEffect *xs = SEQ2(SETL(name, x),
+	RzILOpEffect *xs = SEQ2(
+		SETL(name, x),
 		SETL("reverseV_i", U32(0)));
-	f_cons(xs,
+	return f_cons_(xs,
 		REPEAT(ULT(VARL("reverseV_i"), n),
 			SEQ2(
 				SETL(name, swap_bit_i(VARL(name), VARL("reverseV_i"), SUB(U32(31), VARL("reverseV_i")))),
 				SETL("reverseV_i", ADD(VARL("reverseV_i"), U32(1))))));
-	return xs;
 }
 
 static RzAnalysisLiftedILOp ld_addr_abs(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *(*f)(RzILOpPure *, ut32)) {
@@ -1627,7 +1660,7 @@ static RzAnalysisLiftedILOp e_SWAPMSK_W_ea(RzILOpPure *ea, const char *reg, RzIL
 	if (delay) {
 		return SEQ2(
 			SETL("EA", ea),
-			f_cons(e_SWAPMSK_W(reg), delay));
+			f_cons_(e_SWAPMSK_W(reg), delay));
 	} else {
 		return SEQ2(
 			SETL("EA", ea),
@@ -1782,8 +1815,7 @@ static RzAnalysisLiftedILOp f_overflow32(
 static RzAnalysisLiftedILOp f_overflow32_carry(
 	RzAnalysisLiftedILOp e) {
 	f_cons(e, set_PSW_C(BOOL_TO_BV32(VARL("carry_out"))));
-	f_overflow32(e);
-	return e;
+	return f_overflow32(e);
 }
 static RzAnalysisLiftedILOp f_overflow64(
 	RzAnalysisLiftedILOp e) {
@@ -1792,8 +1824,7 @@ static RzAnalysisLiftedILOp f_overflow64(
 	f_cons(e, set_PSW_V(BOOL_TO_BV32(VARL("overflow"))));
 	f_cons(e, set_PSW_AV(BOOL_TO_BV32(VARL("advanced_overflow"))));
 	f_cons(e, BRANCH(VARL("overflow"), set_PSW_SV(U32(1)), NOP()));
-	f_cons(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
-	return e;
+	return f_cons_(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
 }
 static RzAnalysisLiftedILOp f_overflow32x2(
 	RzAnalysisLiftedILOp e, const char *n1, const char *n0) {
@@ -1806,7 +1837,7 @@ static RzAnalysisLiftedILOp f_overflow32x2(
 	f_cons(e, set_PSW_V(BOOL_TO_BV32(VARL("overflow"))));
 	f_cons(e, set_PSW_AV(BOOL_TO_BV32(VARL("advanced_overflow"))));
 	f_cons(e, BRANCH(VARL("overflow"), set_PSW_SV(U32(1)), NOP()));
-	return f_cons(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
+	return f_cons_(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
 }
 static RzAnalysisLiftedILOp f_overflow16x2(
 	RzAnalysisLiftedILOp e, const char *n1, const char *n0) {
@@ -1819,7 +1850,7 @@ static RzAnalysisLiftedILOp f_overflow16x2(
 	f_cons(e, set_PSW_V(BOOL_TO_BV32(VARL("overflow"))));
 	f_cons(e, set_PSW_AV(BOOL_TO_BV32(VARL("advanced_overflow"))));
 	f_cons(e, BRANCH(VARL("overflow"), set_PSW_SV(U32(1)), NOP()));
-	return f_cons(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
+	return f_cons_(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
 }
 static RzAnalysisLiftedILOp f_overflow8x4(
 	RzAnalysisLiftedILOp e, const char *n3, const char *n2, const char *n1, const char *n0) {
@@ -1836,7 +1867,7 @@ static RzAnalysisLiftedILOp f_overflow8x4(
 	f_cons(e, set_PSW_V(BOOL_TO_BV32(VARL("overflow"))));
 	f_cons(e, set_PSW_AV(BOOL_TO_BV32(VARL("advanced_overflow"))));
 	f_cons(e, BRANCH(VARL("overflow"), set_PSW_SV(U32(1)), NOP()));
-	return f_cons(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
+	return f_cons_(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
 }
 
 static RzILOpEffect *packed_op2_(
@@ -1847,28 +1878,28 @@ static RzILOpEffect *packed_op2_(
 
 	RzILOpEffect *e = NULL;
 	if (n == Word_b) {
-		e = f_cons(e, SETL("result", op(a, b, 0, 0, f)));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ2(SETL("result", op(a, b, 0, 0, f)),
+			SETG(r, VARL("result")));
 		if (status_overflow) {
-			e = f_overflow32(e);
+			return f_overflow32(e);
 		}
 	} else if (n == HalfWord_b) {
-		e = f_cons(e, SETL("result_hw1", op(a, b, 16, 16, f)));
-		e = f_cons(e, SETL("result_hw0", op(DUP(a), DUP(b), 0, 16, f)));
-		e = f_cons(e, SETL("result", packed_2halfword(VARL("result_hw1"), VARL("result_hw0"))));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ4(SETL("result_hw1", op(a, b, 16, 16, f)),
+			SETL("result_hw0", op(DUP(a), DUP(b), 0, 16, f)),
+			SETL("result", packed_2halfword(VARL("result_hw1"), VARL("result_hw0"))),
+			SETG(r, VARL("result")));
 		if (status_overflow) {
-			e = f_overflow16x2(e, "result_hw1", "result_hw0");
+			return f_overflow16x2(e, "result_hw1", "result_hw0");
 		}
 	} else if (n == Byte_b) {
-		e = f_cons(e, SETL("result_byte3", op(a, b, 24, 8, f)));
-		e = f_cons(e, SETL("result_byte2", op(DUP(a), DUP(b), 16, 8, f)));
-		e = f_cons(e, SETL("result_byte1", op(DUP(a), DUP(b), 8, 8, f)));
-		e = f_cons(e, SETL("result_byte0", op(DUP(a), DUP(b), 0, 8, f)));
-		e = f_cons(e, SETL("result", packed_4byte(VARL("result_byte3"), VARL("result_byte2"), VARL("result_byte1"), VARL("result_byte0"))));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ6(SETL("result_byte3", op(a, b, 24, 8, f)),
+			SETL("result_byte2", op(DUP(a), DUP(b), 16, 8, f)),
+			SETL("result_byte1", op(DUP(a), DUP(b), 8, 8, f)),
+			SETL("result_byte0", op(DUP(a), DUP(b), 0, 8, f)),
+			SETL("result", packed_4byte(VARL("result_byte3"), VARL("result_byte2"), VARL("result_byte1"), VARL("result_byte0"))),
+			SETG(r, VARL("result")));
 		if (status_overflow) {
-			e = f_overflow8x4(e, "result_byte3", "result_byte2", "result_byte1", "result_byte0");
+			return f_overflow8x4(e, "result_byte3", "result_byte2", "result_byte1", "result_byte0");
 		}
 	}
 	return e;
@@ -1940,86 +1971,44 @@ static RzILOpEffect *packed_op2_s(
 
 	RzILOpEffect *e = NULL;
 	if (n == Word_b || n == DoubleWord_b) {
-		e = f_cons(e, SETL("result", !fini ? op(a, b) : fini(op(a, b), UN(n, n))));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ2(SETL("result", !fini ? op(a, b) : fini(op(a, b), UN(n, n))),
+			SETG(r, VARL("result")));
 		if (ov) {
-			e = n == Word_b ? f_overflow32(e) : f_overflow64(e);
+			if (n == Word_b) {
+				return f_overflow32(e);
+			} else {
+				return f_overflow64(e);
+			}
 		}
 	} else if (n == HalfWord_b) {
-		e = f_cons(e, SETL("result_hw1", !fini ? f_op2_raw(a, b, 16, 16, op) : fini(f_op2_raw(a, b, 16, 16, op), U16(16))));
-		e = f_cons(e, SETL("result_hw0", !fini ? f_op2_raw(DUP(a), DUP(b), 0, 16, op) : fini(f_op2_raw(DUP(a), DUP(b), 0, 16, op), U16(16))));
-		e = f_cons(e, SETL("result", packed_2halfword(VARL("result_hw1"), VARL("result_hw0"))));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ4(SETL("result_hw1", !fini ? f_op2_raw(a, b, 16, 16, op) : fini(f_op2_raw(a, b, 16, 16, op), U16(16))),
+			SETL("result_hw0", !fini ? f_op2_raw(DUP(a), DUP(b), 0, 16, op) : fini(f_op2_raw(DUP(a), DUP(b), 0, 16, op), U16(16))),
+			SETL("result", packed_2halfword(VARL("result_hw1"), VARL("result_hw0"))),
+			SETG(r, VARL("result")));
 		if (ov) {
-			e = f_overflow16x2(e, "result_hw1", "result_hw0");
+			return f_overflow16x2(e, "result_hw1", "result_hw0");
 		}
 	} else if (n == Byte_b) {
-		e = f_cons(e, SETL("result_byte3", !fini ? f_op2_raw(a, b, 24, 8, op) : fini(f_op2_raw(a, b, 24, 8, op), U8(8))));
-		e = f_cons(e, SETL("result_byte2", !fini ? f_op2_raw(DUP(a), DUP(b), 16, 8, op) : fini(f_op2_raw(DUP(a), DUP(b), 16, 8, op), U8(8))));
-		e = f_cons(e, SETL("result_byte1", !fini ? f_op2_raw(DUP(a), DUP(b), 8, 8, op) : fini(f_op2_raw(DUP(a), DUP(b), 8, 8, op), U8(8))));
-		e = f_cons(e, SETL("result_byte0", !fini ? f_op2_raw(DUP(a), DUP(b), 0, 8, op) : fini(f_op2_raw(DUP(a), DUP(b), 0, 8, op), U8(8))));
-		e = f_cons(e, SETL("result", packed_4byte(VARL("result_byte3"), VARL("result_byte2"), VARL("result_byte1"), VARL("result_byte0"))));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ6(SETL("result_byte3", !fini ? f_op2_raw(a, b, 24, 8, op) : fini(f_op2_raw(a, b, 24, 8, op), U8(8))),
+			SETL("result_byte2", !fini ? f_op2_raw(DUP(a), DUP(b), 16, 8, op) : fini(f_op2_raw(DUP(a), DUP(b), 16, 8, op), U8(8))),
+			SETL("result_byte1", !fini ? f_op2_raw(DUP(a), DUP(b), 8, 8, op) : fini(f_op2_raw(DUP(a), DUP(b), 8, 8, op), U8(8))),
+			SETL("result_byte0", !fini ? f_op2_raw(DUP(a), DUP(b), 0, 8, op) : fini(f_op2_raw(DUP(a), DUP(b), 0, 8, op), U8(8))),
+			SETL("result", packed_4byte(VARL("result_byte3"), VARL("result_byte2"), VARL("result_byte1"), VARL("result_byte0"))),
+			SETG(r, VARL("result")));
 		if (ov) {
-			e = f_overflow8x4(e, "result_byte3", "result_byte2", "result_byte1", "result_byte0");
+			return f_overflow8x4(e, "result_byte3", "result_byte2", "result_byte1", "result_byte0");
 		}
 	}
 	return e;
 }
 
-// static RzILOpPure *f_op3_raw(
-//	RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, unsigned i, unsigned l,
-//	FUNC_OP3 op) {
-//	if (i || (l && l != 32)) {
-//		a = UNSIGNED(l, BITS32(a, i, l));
-//		b = UNSIGNED(l, BITS32(b, i, l));
-//		c = UNSIGNED(l, BITS32(c, i, l));
-//	}
-//	return op(a, b, c);
-// }
-// static RzILOpEffect *packed_op3_s(
-//	const char *r, RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, unsigned n,
-//	RzILOpPure *(*op)(RzILOpPure *x, RzILOpPure *y, RzILOpPure *),
-//	RzILOpPure *(*fini)(RzILOpPure *x, RzILOpPure *y),
-//	bool ov) {
-//
-//	RzILOpEffect *e = NULL;
-//	if (n == Word_b) {
-//		e = f_cons(e, SETL("result", !fini ? op(a, b, c) : fini(op(a, b, c), U32(32))));
-//		e = f_cons(e, SETG(r, VARL("result")));
-//		if (ov) {
-//			e = f_overflow32(e);
-//		}
-//	} else if (n == HalfWord_b) {
-//		e = f_cons(e, SETL("result_hw1", !fini ? f_op3_raw(a, b, c, 16, 16, op) : fini(f_op3_raw(a, b, c, 16, 16, op), U16(16))));
-//		e = f_cons(e, SETL("result_hw0", !fini ? f_op3_raw(DUP(a), DUP(b), DUP(c), 0, 16, op) : fini(f_op3_raw(DUP(a), DUP(b), DUP(c), 0, 16, op), U16(16))));
-//		e = f_cons(e, SETL("result", packed_2halfword(VARL("result_hw1"), VARL("result_hw0"))));
-//		e = f_cons(e, SETG(r, VARL("result")));
-//		if (ov) {
-//			e = f_overflow16x2(e, "result_hw1", "result_hw0");
-//		}
-//	} else if (n == Byte_b) {
-//		e = f_cons(e, SETL("result_byte3", !fini ? f_op3_raw(a, b, c, 24, 8, op) : fini(f_op3_raw(a, b, c, 24, 8, op), U8(8))));
-//		e = f_cons(e, SETL("result_byte2", !fini ? f_op3_raw(DUP(a), DUP(b), DUP(c), 16, 8, op) : fini(f_op3_raw(DUP(a), DUP(b), DUP(c), 16, 8, op), U8(8))));
-//		e = f_cons(e, SETL("result_byte1", !fini ? f_op3_raw(DUP(a), DUP(b), DUP(c), 8, 8, op) : fini(f_op3_raw(DUP(a), DUP(b), DUP(c), 8, 8, op), U8(8))));
-//		e = f_cons(e, SETL("result_byte0", !fini ? f_op3_raw(DUP(a), DUP(b), DUP(c), 0, 8, op) : fini(f_op3_raw(DUP(a), DUP(b), DUP(c), 0, 8, op), U8(8))));
-//		e = f_cons(e, SETL("result", packed_4byte(VARL("result_byte3"), VARL("result_byte2"), VARL("result_byte1"), VARL("result_byte0"))));
-//		e = f_cons(e, SETG(r, VARL("result")));
-//		if (ov) {
-//			e = f_overflow8x4(e, "result_byte3", "result_byte2", "result_byte1", "result_byte0");
-//		}
-//	}
-//	return e;
-// }
-
 static RzILOpEffect *e_op2_cond(
 	const char *r, RzILOpPure *a, RzILOpPure *b, RzILOpPure *cond,
 	RzILOpPure *(*op)(RzILOpPure *x, RzILOpPure *y)) {
 
-	RzILOpEffect *e = f_cons(NULL, SETL("result", op(a, b)));
-	e = f_cons(e, SETG(r, VARL("result")));
-	e = f_overflow32(e);
-	return e;
+	RzILOpEffect *e = SEQ2(SETL("result", op(a, b)),
+		SETG(r, VARL("result")));
+	return f_overflow32(e);
 }
 
 static RzILOpEffect *packed_op2_sov(
@@ -2036,28 +2025,28 @@ static RzILOpEffect *packed_op3_(
 
 	RzILOpEffect *e = NULL;
 	if (n == Word_b) {
-		e = f_cons(e, SETL("result", op(a, b, c, 0, 0, f)));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ2(SETL("result", op(a, b, c, 0, 0, f)),
+			SETG(r, VARL("result")));
 		if (ov) {
-			e = f_overflow32(e);
+			return f_overflow32(e);
 		}
 	} else if (n == HalfWord_b) {
-		e = f_cons(e, SETL("result_hw1", op(a, b, c, 16, 16, f)));
-		e = f_cons(e, SETL("result_hw0", op(DUP(a), DUP(b), DUP(c), 0, 16, f)));
-		e = f_cons(e, SETL("result", packed_2halfword(VARL("result_hw1"), VARL("result_hw0"))));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ4(SETL("result_hw1", op(a, b, c, 16, 16, f)),
+			SETL("result_hw0", op(DUP(a), DUP(b), DUP(c), 0, 16, f)),
+			SETL("result", packed_2halfword(VARL("result_hw1"), VARL("result_hw0"))),
+			SETG(r, VARL("result")));
 		if (ov) {
-			e = f_overflow16x2(e, "result_hw1", "result_hw0");
+			return f_overflow16x2(e, "result_hw1", "result_hw0");
 		}
 	} else if (n == Byte_b) {
-		e = f_cons(e, SETL("result_byte3", op(a, b, c, 24, 8, f)));
-		e = f_cons(e, SETL("result_byte2", op(DUP(a), DUP(b), DUP(c), 16, 8, f)));
-		e = f_cons(e, SETL("result_byte1", op(DUP(a), DUP(b), DUP(c), 8, 8, f)));
-		e = f_cons(e, SETL("result_byte0", op(DUP(a), DUP(b), DUP(c), 0, 8, f)));
-		e = f_cons(e, SETL("result", packed_4byte(VARL("result_byte3"), VARL("result_byte2"), VARL("result_byte1"), VARL("result_byte0"))));
-		e = f_cons(e, SETG(r, VARL("result")));
+		e = SEQ6(SETL("result_byte3", op(a, b, c, 24, 8, f)),
+			SETL("result_byte2", op(DUP(a), DUP(b), DUP(c), 16, 8, f)),
+			SETL("result_byte1", op(DUP(a), DUP(b), DUP(c), 8, 8, f)),
+			SETL("result_byte0", op(DUP(a), DUP(b), DUP(c), 0, 8, f)),
+			SETL("result", packed_4byte(VARL("result_byte3"), VARL("result_byte2"), VARL("result_byte1"), VARL("result_byte0"))),
+			SETG(r, VARL("result")));
 		if (ov) {
-			e = f_overflow8x4(e, "result_byte3", "result_byte2", "result_byte1", "result_byte0");
+			return f_overflow8x4(e, "result_byte3", "result_byte2", "result_byte1", "result_byte0");
 		}
 	}
 	return e;
@@ -2455,8 +2444,7 @@ static RzILOpEffect *e_shas(
 	RzILOpEffect *e = SEQ2(
 		SETL("result", ssov_n(f_sha(c, x), 32)),
 		SETG(tgt, VARL("result")));
-	f_overflow32(e);
-	return e;
+	return f_overflow32(e);
 }
 
 static RzILOpEffect *lift_div(RzAsmTriCoreContext *ctx) {
@@ -2598,14 +2586,13 @@ static RzILOpEffect *lift_dvstep(RzAsmTriCoreContext *ctx) {
 	RzILOpEffect *_6 = SETL("remainder", VARG_SUB(R(1), 1));
 	RzILOpEffect *e = SEQ6(_1, _2, _3, _4, _5, _6);
 	for (ut32 i = 0; i < 8; ++i) {
-		e = f_cons(e, SETL("remainder", LOGOR(SHL0(VARL("remainder"), 1), BITS32(VARL("dividend_quotient"), 31, 1))));
-		e = f_cons(e, SETL("dividend_quotient", SHL0(VARL("dividend_quotient"), 1)));
-		e = f_cons(e, SETL("_temp", ADD(VARL("remainder"), VARL("addend"))));
-		e = f_cons(e, SETL("remainder", ITE(f_beq(SLT(VARL("_temp"), S32(0)), VARL("dividend_sign")), VARL("_temp"), VARL("remainder"))));
-		e = f_cons(e, SETL("dividend_quotient", LOGOR(VARL("dividend_quotient"), BOOL_TO_BV32(ITE(f_beq(SLT(VARL("_temp"), S32(0)), VARL("dividend_sign")), INV(VARL("quotient_sign")), VARL("quotient_sign"))))));
+		f_cons(e, SETL("remainder", LOGOR(SHL0(VARL("remainder"), 1), BITS32(VARL("dividend_quotient"), 31, 1))));
+		f_cons(e, SETL("dividend_quotient", SHL0(VARL("dividend_quotient"), 1)));
+		f_cons(e, SETL("_temp", ADD(VARL("remainder"), VARL("addend"))));
+		f_cons(e, SETL("remainder", ITE(f_beq(SLT(VARL("_temp"), S32(0)), VARL("dividend_sign")), VARL("_temp"), VARL("remainder"))));
+		f_cons(e, SETL("dividend_quotient", LOGOR(VARL("dividend_quotient"), BOOL_TO_BV32(ITE(f_beq(SLT(VARL("_temp"), S32(0)), VARL("dividend_sign")), INV(VARL("quotient_sign")), VARL("quotient_sign"))))));
 	}
-	e = f_cons(e, SETG(R(0), APPEND(VARL("remainder"), VARL("dividend_quotient"))));
-	return e;
+	return f_cons_(e, SETG(R(0), APPEND(VARL("remainder"), VARL("dividend_quotient"))));
 }
 static RzILOpEffect *lift_dvstep_u(RzAsmTriCoreContext *ctx) {
 	RzILOpEffect *_1 = SETL("divisor", VARG(R(2)));
@@ -2613,14 +2600,13 @@ static RzILOpEffect *lift_dvstep_u(RzAsmTriCoreContext *ctx) {
 	RzILOpEffect *_3 = SETL("remainder", VARG_SUB(R(1), 1));
 	RzILOpEffect *e = SEQ3(_1, _2, _3);
 	for (ut32 i = 0; i < 8; ++i) {
-		e = f_cons(e, SETL("remainder", LOGOR(SHL0(VARL("remainder"), 1), BITS32(VARL("dividend_quotient"), 31, 1))));
-		e = f_cons(e, SETL("dividend_quotient", SHL0(VARL("dividend_quotient"), 1)));
-		e = f_cons(e, SETL("_temp", ADD(VARL("remainder"), VARL("divisor"))));
-		e = f_cons(e, SETL("remainder", ITE(SLT(VARL("_temp"), S32(0)), VARL("remainder"), VARL("_temp"))));
-		e = f_cons(e, SETL("dividend_quotient", LOGOR(VARL("dividend_quotient"), BOOL_TO_BV32(INV(SLT(VARL("_temp"), S32(0)))))));
+		f_cons(e, SETL("remainder", LOGOR(SHL0(VARL("remainder"), 1), BITS32(VARL("dividend_quotient"), 31, 1))));
+		f_cons(e, SETL("dividend_quotient", SHL0(VARL("dividend_quotient"), 1)));
+		f_cons(e, SETL("_temp", ADD(VARL("remainder"), VARL("divisor"))));
+		f_cons(e, SETL("remainder", ITE(SLT(VARL("_temp"), S32(0)), VARL("remainder"), VARL("_temp"))));
+		f_cons(e, SETL("dividend_quotient", LOGOR(VARL("dividend_quotient"), BOOL_TO_BV32(INV(SLT(VARL("_temp"), S32(0)))))));
 	}
-	e = f_cons(e, SETG(R(0), APPEND(VARL("remainder"), VARL("dividend_quotient"))));
-	return e;
+	return f_cons_(e, SETG(R(0), APPEND(VARL("remainder"), VARL("dividend_quotient"))));
 }
 
 static RzILOpPure *EA_PCXI() {
@@ -2628,19 +2614,19 @@ static RzILOpPure *EA_PCXI() {
 }
 
 static RzILOpEffect *e_bisr(RzAsmTriCoreContext *ctx) {
-	RzILOpEffect *e = SEQ2(
+	RzILOpEffect *e = SEQN(12,
 		SETL("tmp_FCX", VARG("FCX")),
-		SETL("EA", EA_PCXI()));
-	e = f_cons(e, SETL("new_FCX", LOADW(Word_b, VARL("EA"))));
-	e = f_cons(e, ST_MB(VARL("EA"), 16, VARG("d7"), VARG("d6"), VARG("d5"), VARG("d4"), VARG("a7"), VARG("a6"), VARG("a5"), VARG("a4"), VARG("d3"), VARG("d2"), VARG("d1"), VARG("d0"), VARG("a3"), VARG("a2"), VARG("a11"), VARG("PCXI")));
-	e = f_cons(e, set_PCXI_PCPN(ctx->mode, ICR_CCPN()));
-	e = f_cons(e, set_PCXI_PIE(ctx->mode, ICR_IE()));
-	e = f_cons(e, set_PCXI_UL(ctx->mode, U32(0)));
-	e = f_cons(e, SETG("PCXI", BITS32_U(VARG("PCXI"), 0, 20, BITS32(VARG("FCX"), 0, 20))));
-	e = f_cons(e, SETG("FCX", BITS32_U(VARG("FCX"), 0, 20, BITS32(VARL("new_FCX"), 0, 20))));
-	e = f_cons(e, set_ICR_IE(U32(1)));
-	e = f_cons(e, set_ICR_CCPN(LOGAND(U32(I(0)), U32(0xff))));
-	e = f_cons(e, BRANCH(EQ(VARL("tmp_FCX"), VARG("LCX")), trap(FCD), NOP()));
+		SETL("EA", EA_PCXI()),
+		SETL("new_FCX", LOADW(Word_b, VARL("EA"))),
+		ST_MB(VARL("EA"), 16, VARG("d7"), VARG("d6"), VARG("d5"), VARG("d4"), VARG("a7"), VARG("a6"), VARG("a5"), VARG("a4"), VARG("d3"), VARG("d2"), VARG("d1"), VARG("d0"), VARG("a3"), VARG("a2"), VARG("a11"), VARG("PCXI")),
+		set_PCXI_PCPN(ctx->mode, ICR_CCPN()),
+		set_PCXI_PIE(ctx->mode, ICR_IE()),
+		set_PCXI_UL(ctx->mode, U32(0)),
+		SETG("PCXI", BITS32_U(VARG("PCXI"), 0, 20, BITS32(VARG("FCX"), 0, 20))),
+		SETG("FCX", BITS32_U(VARG("FCX"), 0, 20, BITS32(VARL("new_FCX"), 0, 20))),
+		set_ICR_IE(U32(1)),
+		set_ICR_CCPN(LOGAND(U32(I(0)), U32(0xff))),
+		BRANCH(EQ(VARL("tmp_FCX"), VARG("LCX")), trap(FCD), NOP()));
 	return SEQ2(BRANCH(IS_ZERO(VARG("FCX")), trap(FCU), NOP()),
 		e);
 }
@@ -2649,7 +2635,7 @@ static RzILOpEffect *e_bisr(RzAsmTriCoreContext *ctx) {
 static RzILOpEffect *leading_ones(RzAnalysisLiftedILOp xs, const char *name, RzILOpPure *x, const unsigned N) {
 	RzILOpEffect *y =
 		REPEAT(AND(AND(ULT(VARL(name), U32(N)), UGE(VARL(name), U32(0))), NON_ZERO(EXTRACT32(x, VARL(name), U32(1)))), SETL(name, ADD(VARL(name), U32(1))));
-	return xs ? f_cons(f_cons(xs, SETL(name, U32(N - 1))), y) : SEQ2(SETL(name, U32(N - 1)), y);
+	return xs ? f_cons_(f_cons_(xs, SETL(name, U32(N - 1))), y) : SEQ2(SETL(name, U32(N - 1)), y);
 }
 // n start with 30
 static RzILOpEffect *leading_signs(RzAnalysisLiftedILOp xs, const char *name, RzILOpPure *x, const unsigned N) {
@@ -2658,12 +2644,12 @@ static RzILOpEffect *leading_signs(RzAnalysisLiftedILOp xs, const char *name, Rz
 			AND(AND(ULT(VARL(name), U32(N)), UGE(VARL(name), U32(0))),
 				EQ(EXTRACT32(x, VARL(name), U32(1)), EXTRACT32(DUP(x), U32(N - 1), U32(1)))),
 			SETL(name, ADD(VARL(name), U32(1))));
-	return xs ? f_cons(f_cons(xs, SETL(name, U32(N - 2))), y) : SEQ2(SETL(name, U32(N - 2)), y);
+	return xs ? f_cons_(f_cons_(xs, SETL(name, U32(N - 2))), y) : SEQ2(SETL(name, U32(N - 2)), y);
 }
 // n start with 31
 static RzILOpEffect *leading_zeros(RzAnalysisLiftedILOp xs, const char *name, RzILOpPure *x, const unsigned N) {
 	RzILOpEffect *y = REPEAT(AND(AND(ULT(VARL(name), U32(N)), UGE(VARL(name), U32(0))), IS_ZERO(EXTRACT32(x, VARL(name), U32(1)))), SETL(name, ADD(VARL(name), U32(1))));
-	return xs ? f_cons(f_cons(xs, SETL(name, U32(N - 1))), y) : SEQ2(SETL(name, U32(N - 1)), y);
+	return xs ? f_cons_(f_cons_(xs, SETL(name, U32(N - 1))), y) : SEQ2(SETL(name, U32(N - 1)), y);
 }
 
 typedef RzILOpEffect *(*FUNC_BS)(RzAnalysisLiftedILOp xs, const char *name, RzILOpPure *x, const unsigned N);
@@ -2671,21 +2657,20 @@ static RzILOpEffect *e_BS(RzAsmTriCoreContext *ctx, unsigned b, FUNC_BS f) {
 	switch (b) {
 	case Word_b: {
 		RzILOpEffect *xs = f(NULL, "n", VARG(R(1)), Word_b);
-		return f_cons(xs, SETG(R(0), VARL("n")));
+		return f_cons_(xs, SETG(R(0), VARL("n")));
 	}
 	case HalfWord_b: {
-		RzILOpEffect *xs = f(NULL, "n0", BITS32(VARG(R(1)), 0, 16), HalfWord_b);
-		xs = f(xs, "n1", BITS32(VARG(R(1)), 16, 16), HalfWord_b);
-		xs = f_cons(xs, SETG(R(0), packed_2halfword(VARL("n1"), VARL("n0"))));
-		return xs;
+		RzILOpEffect *xs = f(f(NULL, "n0", BITS32(VARG(R(1)), 0, 16), HalfWord_b),
+			"n1", BITS32(VARG(R(1)), 16, 16), HalfWord_b);
+		return f_cons_(xs, SETG(R(0), packed_2halfword(VARL("n1"), VARL("n0"))));
 	}
 	case Byte_b: {
 		RzILOpEffect *xs = f(NULL, "n0", BITS32(VARG(R(1)), 0, 8), Byte_b);
-		xs = f(xs, "n1", BITS32(VARG(R(1)), 8, 8), Byte_b);
-		xs = f(xs, "n2", BITS32(VARG(R(1)), 16, 8), Byte_b);
-		xs = f(xs, "n3", BITS32(VARG(R(1)), 24, 8), Byte_b);
-		xs = f_cons(xs, SETG(R(0), packed_4byte(VARL("n3"), VARL("n2"), VARL("n1"), VARL("n0"))));
-		return xs;
+		merr(xs);
+		merr(f(xs, "n1", BITS32(VARG(R(1)), 8, 8), Byte_b));
+		merr(f(xs, "n2", BITS32(VARG(R(1)), 16, 8), Byte_b));
+		merr(f(xs, "n3", BITS32(VARG(R(1)), 24, 8), Byte_b));
+		return f_cons_(xs, SETG(R(0), packed_4byte(VARL("n3"), VARL("n2"), VARL("n1"), VARL("n0"))));
 	}
 	}
 	rz_warn_if_reached();
@@ -2699,18 +2684,33 @@ static RzILOpPure *crc_div(RzILOpPure *c, RzILOpPure *g, RzILOpPure *crc_width, 
 		MOD(SHIFTL0(c, VARLP("shift")), LOGOR(g, SHIFTL0(U32(1), DUP(crc_width)))));
 }
 
+#define Mab(na, nb) \
+	if (i1 || i2 || (n > 0 && n < Word_b)) { \
+		if (xs) { \
+			f_cons(xs, SETL(#na, BITS32(a, i1, n))); \
+			f_cons(xs, SETL(#nb, BITS32(b, i2, n))); \
+		} else { \
+			xs = SEQ2( \
+				SETL(#na, BITS32(a, i1, n)), \
+				SETL(#nb, BITS32(b, i2, n))); \
+		} \
+	} else { \
+		if (xs) { \
+			f_cons(xs, SETL(#na, a)); \
+			f_cons(xs, SETL(#nb, b)); \
+		} else { \
+			xs = SEQ2( \
+				SETL(#na, a), \
+				SETL(#nb, b)); \
+		} \
+	}
+
 static RzAnalysisLiftedILOp f_madd(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
 	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
-	if (i1 || i2 || (n > 0 && n < Word_b)) {
-		xs = f_cons(xs, SETL("madd_a", BITS32(a, i1, n)));
-		xs = f_cons(xs, SETL("madd_b", BITS32(b, i2, n)));
-	} else {
-		xs = f_cons(xs, SETL("madd_a", a));
-		xs = f_cons(xs, SETL("madd_b", b));
-	}
+	Mab(madd_a, madd_b);
 
 	f_cons(xs,
 		SETL(name1,
@@ -2719,19 +2719,18 @@ static RzAnalysisLiftedILOp f_madd(
 				AND(
 					EQ(VARL("madd_b"), U32(0x8000)),
 					EQ(U32(arg_n), U32(1))))));
-	return f_cons(xs, SETL(name2, ITE(VARL(name1), U32(0x7fffffff), SHL0(MUL(VARL("madd_a"), VARL("madd_b")), arg_n))));
+	return f_cons_(xs, SETL(name2, ITE(VARL(name1), U32(0x7fffffff), SHL0(MUL(VARL("madd_a"), VARL("madd_b")), arg_n))));
 }
 static RzAnalysisLiftedILOp e_madd(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4, unsigned n,
 	FUNC_OP2 finish) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_madd(e, "sc1", "result_word1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
-	e = f_madd(e, "sc0", "result_word0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n);
+	RzAnalysisLiftedILOp e = f_madd(NULL, "sc1", "result_word1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
+	merr(e);
+	merr(f_madd(e, "sc0", "result_word0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n));
 	f_cons(e, SETL("result", ADD(VARG(R(1)), UNSIGNED(64, SHL0(ADD(VARL("result_word1"), VARL("result_word0")), 16)))));
 	f_cons(e, SETG(R(0), finish ? finish(VARL("result"), U64(64)) : VARL("result")));
 
-	f_overflow64(e);
-	return e;
+	return f_overflow64(e);
 }
 
 static RzAnalysisLiftedILOp f_mul(
@@ -2739,13 +2738,7 @@ static RzAnalysisLiftedILOp f_mul(
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
 	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
-	if (i1 || i2 || (n > 0 && n < Word_b)) {
-		xs = f_cons(xs, SETL("mul_a", BITS32(a, i1, n)));
-		xs = f_cons(xs, SETL("mul_b", BITS32(b, i2, n)));
-	} else {
-		xs = f_cons(xs, SETL("mul_a", a));
-		xs = f_cons(xs, SETL("mul_b", b));
-	}
+	Mab(mul_a, mul_b);
 
 	f_cons(xs,
 		SETL(name1,
@@ -2754,30 +2747,23 @@ static RzAnalysisLiftedILOp f_mul(
 				AND(
 					EQ(VARL("mul_b"), U32(0x8000)),
 					EQ(U32(arg_n), U32(1))))));
-	return f_cons(xs, SETL(name2, ITE(VARL(name1), U32(0x7fffffff), SHL0(MUL(VARL("mul_a"), VARL("mul_b")), arg_n))));
+	return f_cons_(xs, SETL(name2, ITE(VARL(name1), U32(0x7fffffff), SHL0(MUL(VARL("mul_a"), VARL("mul_b")), arg_n))));
 }
 static RzAnalysisLiftedILOp f_mulr(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
 	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
-	if (i1 || i2 || (n > 0 && n < Word_b)) {
-		xs = f_cons(xs, SETL("mul_a", BITS32(a, i1, n)));
-		xs = f_cons(xs, SETL("mul_b", BITS32(b, i2, n)));
-	} else {
-		xs = f_cons(xs, SETL("mul_a", a));
-		xs = f_cons(xs, SETL("mul_b", b));
-	}
+	Mab(mulr_a, mulr_b);
 
 	f_cons(xs,
 		SETL(name1,
 			AND(
-				EQ(VARL("mul_a"), U32(0x8000)),
+				EQ(VARL("mulr_a"), U32(0x8000)),
 				AND(
-					EQ(VARL("mul_b"), U32(0x8000)),
+					EQ(VARL("mulr_b"), U32(0x8000)),
 					EQ(U32(arg_n), U32(1))))));
-	return f_cons(xs, SETL(name2, ITE(VARL(name1), U32(0x7fffffff), ADD(SHL0(MUL(VARL("mul_a"), VARL("mul_b")), arg_n), U32(0x8000)))));
+	return f_cons_(xs, SETL(name2, ITE(VARL(name1), U32(0x7fffffff), ADD(SHL0(MUL(VARL("mulr_a"), VARL("mulr_b")), arg_n), U32(0x8000)))));
 }
 
 static RzAnalysisLiftedILOp f_maddr(
@@ -2786,7 +2772,7 @@ static RzAnalysisLiftedILOp f_maddr(
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
 	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	xs = f_mul(xs, name1, name2, a, b, arg_n, i1, i2, n);
-	return f_cons(xs,
+	return f_cons_(xs,
 		SETL(name3,
 			ADD(is_pair_register(R(1)) ? VARG_SUB(R(1), i1 == 16 ? 1 : 0) : SHL0(BITS32(VARG(R(1)), i1, n), 16),
 				ADD(VARL(name2), U32(0x8000)))));
@@ -2795,19 +2781,18 @@ static RzAnalysisLiftedILOp f_maddr(
 static RzAnalysisLiftedILOp e_maddr(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4, unsigned n,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_maddr(e, ctx, "sc1", "mul_res1", "result_halfword1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
-	e = f_maddr(e, ctx, "sc0", "mul_res0", "result_halfword0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n);
+	RzAnalysisLiftedILOp e = f_maddr(NULL, ctx, "sc1", "mul_res1", "result_halfword1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
+	merr(e);
+	merr(f_maddr(e, ctx, "sc0", "mul_res0", "result_halfword0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n));
 	f_cons(e, SETG(R(0), pack(VARL("result_halfword1"), VARL("result_halfword0"))));
 
-	f_overflow32x2(e, "result_halfword1", "result_halfword0");
-	return e;
+	return f_overflow32x2(e, "result_halfword1", "result_halfword0");
 }
 static RzAnalysisLiftedILOp e_maddr_q(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_maddr(e, ctx, "sc", "mul_res", "result", VARG(R(2)), VARG(R(3)), I(4), i1, i2, HalfWord_b);
+	RzAnalysisLiftedILOp e = f_maddr(NULL, ctx, "sc", "mul_res", "result", VARG(R(2)), VARG(R(3)), I(4), i1, i2, HalfWord_b);
+	merr(e);
 	f_cons(e, SETG(R(0), pack(VARL("result"), NULL)));
 
 	f_cons(e, SETL("overflow", OR(UGT(VARL("result"), U32(0x7fffffff)), SLT(VARL("result"), S32(-0x80000000)))));
@@ -2822,48 +2807,45 @@ static RzAnalysisLiftedILOp e_maddr_q(
 static RzAnalysisLiftedILOp e_maddsu(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4, unsigned n,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_mul(e, "sc1", "mul_res1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
-	e = f_mul(e, "sc0", "mul_res0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n);
+	RzAnalysisLiftedILOp e = f_mul(NULL, "sc1", "mul_res1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
+	merr(e);
+	merr(f_mul(e, "sc0", "mul_res0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n));
 	f_cons(e, SETL("result_word1", ADD(VARG_SUB(R(1), 1), VARL("mul_res1"))));
 	f_cons(e, SETL("result_word0", ADD(VARG_SUB(R(1), 0), VARL("mul_res0"))));
 	f_cons(e, SETG(R(0), pack(VARL("result_word1"), VARL("result_word0"))));
 
-	f_overflow32x2(e, "result_word1", "result_word0");
-	return e;
+	return f_overflow32x2(e, "result_word1", "result_word0");
 }
 
 static RzAnalysisLiftedILOp e_maddsum(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4, unsigned n,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_mul(e, "sc1", "result_word1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
-	e = f_mul(e, "sc0", "result_word0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n);
+	RzAnalysisLiftedILOp e = f_mul(NULL, "sc1", "result_word1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
+	merr(e);
+	merr(f_mul(e, "sc0", "result_word0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n));
 	f_cons(e, SETL("result", ADD(VARG(R(1)), SHL0(UNSIGNED(64, SUB(VARL("result_word1"), VARL("result_word0"))), 16))));
 	f_cons(e, SETG(R(0), pack ? pack(VARL("result"), U64(64)) : VARL("result")));
 
-	f_overflow64(e);
-	return e;
+	return f_overflow64(e);
 }
 
 static RzAnalysisLiftedILOp e_maddsur(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4, unsigned n,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_maddr(e, ctx, "sc1", "mul_res1", "result_halfword1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
-	e = f_maddr(e, ctx, "sc0", "mul_res0", "result_halfword0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n);
+	RzAnalysisLiftedILOp e = f_maddr(NULL, ctx, "sc1", "mul_res1", "result_halfword1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, n);
+	merr(e);
+	merr(f_maddr(e, ctx, "sc0", "mul_res0", "result_halfword0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, n));
 	f_cons(e, SETG(R(0), pack(VARL("result_halfword1"), VARL("result_halfword0"))));
 
-	f_overflow32x2(e, "result_halfword1", "result_halfword0");
-	return e;
+	return f_overflow32x2(e, "result_halfword1", "result_halfword0");
 }
 
 static RzAnalysisLiftedILOp e_msubh(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_mul(e, "sc1", "mul_res1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, HalfWord_b);
-	e = f_mul(e, "sc0", "mul_res0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, HalfWord_b);
+	RzAnalysisLiftedILOp e = f_mul(NULL, "sc1", "mul_res1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, HalfWord_b);
+	merr(e);
+	merr(f_mul(e, "sc0", "mul_res0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, HalfWord_b));
 	f_cons(e, SETL("result_word1", SUB(VARG_SUB(R(1), 1), VARL("mul_res1"))));
 	if (ctx->insn->id == TRICORE_INS_MSUBAD_H || ctx->insn->id == TRICORE_INS_MSUBADS_H) {
 		f_cons(e, SETL("result_word0", ADD(VARG_SUB(R(1), 0), VARL("mul_res0"))));
@@ -2872,15 +2854,14 @@ static RzAnalysisLiftedILOp e_msubh(
 	}
 	f_cons(e, SETG(R(0), pack(VARL("result_word1"), VARL("result_word0"))));
 
-	f_overflow32x2(e, "result_word1", "result_word0");
-	return e;
+	return f_overflow32x2(e, "result_word1", "result_word0");
 }
 static RzAnalysisLiftedILOp e_msubadmh(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_mul(e, "sc1", "mul_word1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, HalfWord_b);
-	e = f_mul(e, "sc0", "mul_word0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, HalfWord_b);
+	RzAnalysisLiftedILOp e = f_mul(NULL, "sc1", "mul_word1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, HalfWord_b);
+	merr(e);
+	merr(f_mul(e, "sc0", "mul_word0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, HalfWord_b));
 	if (ctx->insn->id == TRICORE_INS_MSUBADM_H || ctx->insn->id == TRICORE_INS_MSUBADMS_H) {
 		f_cons(e, SETL("result", SUB(VARG(R(1)), SHL0(UNSIGNED(64, SUB(VARL("mul_word1"), VARL("mul_word0"))), 16))));
 	} else if (ctx->insn->id == TRICORE_INS_MSUBM_H || ctx->insn->id == TRICORE_INS_MSUBMS_H) {
@@ -2888,15 +2869,14 @@ static RzAnalysisLiftedILOp e_msubadmh(
 	}
 	f_cons(e, SETG(R(0), pack ? pack(VARL("result"), U64(64)) : VARL("result")));
 
-	f_overflow64(e);
-	return e;
+	return f_overflow64(e);
 }
 static RzAnalysisLiftedILOp e_msubadrh(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_mul(e, "sc1", "mul_res1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, HalfWord_b);
-	e = f_mul(e, "sc0", "mul_res0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, HalfWord_b);
+	RzAnalysisLiftedILOp e = f_mul(NULL, "sc1", "mul_res1", VARG(R(2)), VARG(R(3)), I(4), i1, i2, HalfWord_b);
+	merr(e);
+	merr(f_mul(e, "sc0", "mul_res0", VARG(R(2)), VARG(R(3)), I(4), i3, i4, HalfWord_b));
 
 	RzILOpPure *tmp1 = is_pair_register(R(1))
 		? VARG_SUB(R(1), 1)
@@ -2912,8 +2892,7 @@ static RzAnalysisLiftedILOp e_msubadrh(
 	}
 	f_cons(e, SETG(R(0), pack(VARL("result_halfword1"), VARL("result_halfword0"))));
 
-	f_overflow32x2(e, "result_halfword1", "result_halfword0");
-	return e;
+	return f_overflow32x2(e, "result_halfword1", "result_halfword0");
 }
 
 static RzILOpPure *f_add_shl16_64(
@@ -2924,31 +2903,28 @@ static RzILOpPure *f_add_shl16_64(
 static RzAnalysisLiftedILOp e_mul(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4, unsigned n,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_mul(e, "sc1", "result_word1", VARG(R(1)), VARG(R(2)), I(3), i1, i2, n);
-	e = f_mul(e, "sc0", "result_word0", VARG(R(1)), VARG(R(2)), I(3), i3, i4, n);
+	RzAnalysisLiftedILOp e = f_mul(NULL, "sc1", "result_word1", VARG(R(1)), VARG(R(2)), I(3), i1, i2, n);
+	merr(e);
+	merr(f_mul(e, "sc0", "result_word0", VARG(R(1)), VARG(R(2)), I(3), i3, i4, n));
 	f_cons(e, SETG(R(0), pack(VARL("result_word1"), VARL("result_word0"))));
-	f_overflow32x2(e, "result_word1", "result_word0");
-	return e;
+	return f_overflow32x2(e, "result_word1", "result_word0");
 }
 
 static RzAnalysisLiftedILOp e_mulr_h(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4, unsigned n,
 	FUNC_OP2 pack) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_mulr(e, "sc1", "result_word1", VARG(R(1)), VARG(R(2)), I(3), i1, i2, n);
-	e = f_mulr(e, "sc0", "result_word0", VARG(R(1)), VARG(R(2)), I(3), i3, i4, n);
+	RzAnalysisLiftedILOp e = f_mulr(NULL, "sc1", "result_word1", VARG(R(1)), VARG(R(2)), I(3), i1, i2, n);
+	merr(e);
+	merr(f_mulr(e, "sc0", "result_word0", VARG(R(1)), VARG(R(2)), I(3), i3, i4, n));
 	f_cons(e, SETG(R(0), pack(VARL("result_word1"), VARL("result_word0"))));
-	f_overflow32x2(e, "result_word1", "result_word0");
-	return e;
+	return f_overflow32x2(e, "result_word1", "result_word0");
 }
 
 static RzAnalysisLiftedILOp e_mulr_q(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2) {
-	RzAnalysisLiftedILOp e = NULL;
-	e = f_mulr(e, "sc", "result", VARG(R(1)), VARG(R(2)), I(3), i1, i2, HalfWord_b);
-	e = f_cons(e, SETL(R(0), append_h16_32(VARL("result"), NULL)));
-	return e;
+	RzAnalysisLiftedILOp e = f_mulr(NULL, "sc", "result", VARG(R(1)), VARG(R(2)), I(3), i1, i2, HalfWord_b);
+	merr(e);
+	return f_cons_(e, SETL(R(0), append_h16_32(VARL("result"), NULL)));
 }
 
 static RzILOpPure *f_op2_chain4(FUNC_OP2 f,
@@ -3015,9 +2991,17 @@ static RzILOpPure *byte_select(
 
 static RzAnalysisLiftedILOp population_count(
 	RzAnalysisLiftedILOp xs, const char *name, RzILOpPure *a) {
-	xs = f_cons(xs, SETL(name, U32(0)));
-	xs = f_cons(xs, SETL("_index", U32(0)));
-	xs = f_cons(xs, REPEAT(ULT(VARL("_index"), U32(32)), SETL("name", ITE(NON_ZERO(EXTRACT32(a, VARL("_index"), U32(1))), ADD(VARL(name), U32(1)), VARL(name)))));
+	if (xs) {
+		f_cons(xs, SETL(name, U32(0)));
+		f_cons(xs, SETL("_index", U32(0)));
+		f_cons(xs, REPEAT(ULT(VARL("_index"), U32(32)), SETL("name", ITE(NON_ZERO(EXTRACT32(a, VARL("_index"), U32(1))), ADD(VARL(name), U32(1)), VARL(name)))));
+
+	} else {
+		return SEQ3(
+			SETL(name, U32(0)),
+			SETL("_index", U32(0)),
+			REPEAT(ULT(VARL("_index"), U32(32)), SETL("name", ITE(NON_ZERO(EXTRACT32(a, VARL("_index"), U32(1))), ADD(VARL(name), U32(1)), VARL(name)))));
+	}
 	return xs;
 }
 
@@ -4050,7 +4034,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 						    : SETL("overflow", OR(UGT(VARL("result"), U64(0x7fffffffffffffffULL)), SLT(VARL("result"), S64(-0x8000000000000000LL)))));
 		RzILOpEffect *av = (is_32bit_result ? SETL("advanced_overflow", XOR(BIT32(VARL("result"), 31), BIT32(VARL("result"), 30)))
 						    : SETL("advanced_overflow", XOR(BIT64(VARL("result"), 63), BIT64(VARL("result"), 62))));
-		return f_cons(e,
+		return f_cons_(e,
 			SEQ6(
 				ov,
 				set_PSW_V(BOOL_TO_BV32(VARL("overflow"))),
@@ -4451,8 +4435,8 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 			case 0x19: return f_overflow64(SEQ2(SETL("result", SHL0(MUL(SIGNED(64, VARG(R(1))), SIGNED(64, BITS32(VARG(R(2)), 0, 16))), I(3))), SETG(R(0), VARL("result"))));
 			case 0x00: return f_overflow32(SEQ2(SETL("result", UNSIGNED(32, SHR0(SHL0(MUL(SIGNED(64, VARG(R(1))), SIGNED(64, BITS32(VARG(R(2)), 16, 16))), I(3)), 16))), SETG(R(0), VARL("result"))));
 			case 0x18: return f_overflow64(SEQ2(SETL("result", SHL0(MUL(SIGNED(64, VARG(R(1))), SIGNED(64, BITS32(VARG(R(2)), 16, 16))), I(3))), SETG(R(0), VARL("result"))));
-			case 0x05: return f_overflow32(f_cons(f_mul(NULL, "sc", "result", VARG(R(1)), VARG(R(2)), I(3), 0, 0, HalfWord_b), SETG(R(0), VARL("result"))));
-			case 0x04: return f_overflow32(f_cons(f_mul(NULL, "sc", "result", VARG(R(1)), VARG(R(2)), I(3), 16, 16, HalfWord_b), SETG(R(0), VARL("result"))));
+			case 0x05: return f_overflow32(f_cons_(f_mul(NULL, "sc", "result", VARG(R(1)), VARG(R(2)), I(3), 0, 0, HalfWord_b), SETG(R(0), VARL("result"))));
+			case 0x04: return f_overflow32(f_cons_(f_mul(NULL, "sc", "result", VARG(R(1)), VARG(R(2)), I(3), 16, 16, HalfWord_b), SETG(R(0), VARL("result"))));
 			}
 			break;
 		}
@@ -4534,7 +4518,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 								APPEND(VARLP("_15_8"), VARLP("_7_0"))))))));
 	case TRICORE_INS_POPCNT_W: {
 		RzAnalysisLiftedILOp e = population_count(NULL, "cnt", VARG(R(1)));
-		return f_cons(e, SETG(R(0), VARL("cnt")));
+		return f_cons_(e, SETG(R(0), VARL("cnt")));
 	}
 	case TRICORE_INS_RET: return lift_ret(ctx);
 	case TRICORE_INS_RFE: return lift_rfe(ctx);
