@@ -8,8 +8,7 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 #include <capstone/capstone.h>
-
-#include "../arch/tricore/tricore.inc"
+#include "../arch/tricore/tricore.h"
 
 #define TRICORE_LONGEST_INSTRUCTION  4
 #define TRICORE_SHORTEST_INSTRUCTION 2
@@ -109,7 +108,7 @@ static bool fini(void *u) {
 	return true;
 }
 
-RzAsmPlugin rz_asm_plugin_tricore = {
+RzAsmPlugin rz_asm_plugin_tricore_cs = {
 	.name = "tricore",
 	.arch = "tricore",
 	.author = "billow",
@@ -125,7 +124,7 @@ RzAsmPlugin rz_asm_plugin_tricore = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
-	.data = &rz_asm_plugin_tricore,
+	.data = &rz_asm_plugin_tricore_cs,
 	.version = RZ_VERSION
 };
 #endif

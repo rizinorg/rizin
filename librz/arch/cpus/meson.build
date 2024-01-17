@@ -1,4 +1,4 @@
-sdb_files = [
+sdb_cpus_files = [
   'avr-ATmega1280',
   'avr-ATmega1281',
   'avr-ATxmega128a4u',
@@ -13,7 +13,7 @@ sdb_files = [
   'avr-ATTiny88',
 ]
 
-foreach file : sdb_files
+foreach file : sdb_cpus_files
   outfile = '@0@.sdb'.format(file)
   custom_target(outfile,
     input: '@0@.sdb.txt'.format(file),

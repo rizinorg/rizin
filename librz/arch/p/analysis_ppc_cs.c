@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/ppc.h>
-#include "../../asm/arch/ppc/libvle/vle.h"
+#include "../arch/ppc/libvle/vle.h"
 #include "../arch/ppc/ppc_analysis.h"
 #include "../arch/ppc/ppc_il.h"
 #include "rz_util/rz_strbuf.h"

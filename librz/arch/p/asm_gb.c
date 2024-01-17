@@ -8,7 +8,6 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include "../arch/gb/gbdis.c"
 #include "../arch/gb/gbasm.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {

@@ -7,6 +7,7 @@
 #include <rz_main.h>
 #include <rz_types.h>
 #include <rz_magic.h>
+#include <rz_arch.h>
 #include <rz_agraph.h>
 #include <rz_io.h>
 #include <rz_lib.h>

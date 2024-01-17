@@ -11,7 +11,6 @@
 #include <rz_asm.h>
 
 #include <8051_ass.h>
-#include "../arch/8051/8051_disas.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int dlen = 0;

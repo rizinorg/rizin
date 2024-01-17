@@ -6,7 +6,7 @@
 #define RZIL_ANALYSIS_AVR_H
 
 #include <rz_analysis.h>
-#include "../../../asm/arch/avr/disassembler.h"
+#include "disassembler.h"
 
 RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AVROp *aop, AVROp *next_op);
 RZ_IPI RzAnalysisILConfig *rz_avr_il_config(RZ_NONNULL RzAnalysis *analysis);

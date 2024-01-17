@@ -6,21 +6,20 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-#include "../../asm/arch/riscv/riscv-opc.c"
-#include "../../asm/arch/riscv/riscv.h"
+#include "../arch/riscv/riscv-opc.c"
+#include "../arch/riscv/riscv.h"
+#include "../arch/riscv/riscv.c"
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(*a))
 #define RISCVARGSMAX  (8)
 #define RISCVARGSIZE  (64)
 #define RISCVARGN(x)  ((x)->arg[(x)->num++])
 
-static bool init = false;
-static const char *const *riscv_gpr_names = riscv_gpr_names_abi;
-static const char *const *riscv_fpr_names = riscv_fpr_names_abi;
-
 typedef struct riscv_args {
 	int num;
 	char arg[RISCVARGSMAX][RISCVARGSIZE];
 } riscv_args_t;
+
+static bool init_analysis = false;
 
 #define is_any(...) _is_any(o->name, __VA_ARGS__, NULL)
 static bool _is_any(const char *str, ...) {
@@ -46,26 +45,26 @@ static void arg_p2(char *buf, unsigned long val, const char *const *array, size_
 	snprintf(buf, RISCVARGSIZE, "%s", s);
 }
 
-static struct riscv_opcode *get_opcode(insn_t word) {
+static struct riscv_opcode *get_opcode_analysis(insn_t word) {
 	struct riscv_opcode *op;
 	static const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = { 0 };
 
 #define OP_HASH_IDX(i) ((i) & (riscv_insn_length(i) == 2 ? 3 : OP_MASK_OP))
 
-	if (!init) {
+	if (!init_analysis) {
 		for (op = riscv_opcodes; op < &riscv_opcodes[NUMOPCODES]; op++) {
 			if (!riscv_hash[OP_HASH_IDX(op->match)]) {
 				riscv_hash[OP_HASH_IDX(op->match)] = op;
 			}
 		}
-		init = true;
+		init_analysis = true;
 	}
 
 	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX(word)];
 }
 
 /* Print insn arguments for 32/64-bit code.  */
-static void get_insn_args(riscv_args_t *args, const char *d, insn_t l, uint64_t pc) {
+static void get_insn_args_analysis(riscv_args_t *args, const char *d, insn_t l, uint64_t pc) {
 	int rs1 = (l >> OP_SH_RS1) & OP_MASK_RS1;
 	int rd = (l >> OP_SH_RD) & OP_MASK_RD;
 	uint64_t target;
@@ -262,7 +261,7 @@ static void get_insn_args(riscv_args_t *args, const char *d, insn_t l, uint64_t 
 	case num: \
 		csr_name = #name; \
 		break;
-#include "../../asm/arch/riscv/riscv-opc.h"
+#include "../arch/riscv/riscv-opc.h"
 #undef DECLARE_CSR
 			}
 			if (csr_name) {
@@ -309,7 +308,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		return -1;
 	}
 
-	struct riscv_opcode *o = get_opcode(word);
+	struct riscv_opcode *o = get_opcode_analysis(word);
 	for (; o && o < &riscv_opcodes[NUMOPCODES]; o++) {
 		if (!(o->match_func)(o, word)) {
 			continue;
@@ -343,7 +342,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			op->size = 2;
 		}
 #define ARG(x) (arg_n(&args, (x)))
-		get_insn_args(&args, o->args, word, addr);
+		get_insn_args_analysis(&args, o->args, word, addr);
 		if (!strcmp(name, "nop")) {
 			esilprintf(op, ",");
 		}
@@ -931,7 +930,7 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-RzAnalysisPlugin rz_analysis_plugin_riscv = {
+RzAnalysisPlugin rz_analysis_plugin_riscv_gnu = {
 	.name = "riscv",
 	.desc = "RISC-V analysis plugin",
 	.license = "LGPL",
@@ -942,11 +941,3 @@ RzAnalysisPlugin rz_analysis_plugin_riscv = {
 	.get_reg_profile = &get_reg_profile,
 	.esil = true,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANALYSIS,
-	.data = &rz_analysis_plugin_riscv,
-	.version = RZ_VERSION
-};
-#endif

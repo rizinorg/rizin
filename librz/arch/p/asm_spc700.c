@@ -6,7 +6,6 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include "../arch/spc700/spc700dis.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
 	size_t dlen = spc700_disas(&rz_op->buf_asm, a->pc, buf, len);

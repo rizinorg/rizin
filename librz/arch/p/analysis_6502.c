@@ -16,8 +16,8 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-#include "../../asm/arch/snes/snes_op_table.h"
-#include "../../asm/arch/6502/6502_il.inc"
+#include "../arch/snes/snes_op_table.h"
+#include "../arch/6502/6502_il.inc"
 
 enum {
 	_6502_FLAGS_C = (1 << 0),
@@ -1218,11 +1218,3 @@ RzAnalysisPlugin rz_analysis_plugin_6502 = {
 	.esil_fini = esil_6502_fini,
 	.il_config = il_config
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANALYSIS,
-	.data = &rz_analysis_plugin_6502,
-	.version = RZ_VERSION
-};
-#endif

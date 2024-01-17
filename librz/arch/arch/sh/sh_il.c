@@ -3,7 +3,7 @@
 
 #include "sh_il.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
-#include "../../../asm/arch/sh/regs.h"
+#include "regs.h"
 
 /**
  * \file sh_il.c

@@ -4,7 +4,7 @@
 
 #include <rz_analysis.h>
 
-#include "../../asm/arch/avr/disassembler.h"
+#include "../arch/avr/disassembler.h"
 #include "../arch/avr/avr_esil.h"
 #include "../arch/avr/avr_il.h"
 

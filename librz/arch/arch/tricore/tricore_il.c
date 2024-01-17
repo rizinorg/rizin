@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
-#include "../../asm/arch/tricore/tricore.inc"
+#include "tricore.inc"
 
 #include "tricore_il.h"
 

@@ -3231,7 +3231,7 @@ static int esil_x86_cs_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static bool x86_init(void **user) {
+static bool x86_analysis_init(void **user) {
 	X86CSContext *ctx = RZ_NEW0(X86CSContext);
 	if (!ctx) {
 		return false;
@@ -3240,7 +3240,7 @@ static bool x86_init(void **user) {
 	return true;
 }
 
-static bool x86_fini(void *user) {
+static bool x86_analysis_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	X86CSContext *ctx = (X86CSContext *)user;
 	cs_close(&ctx->handle);
@@ -3760,8 +3760,8 @@ RzAnalysisPlugin rz_analysis_plugin_x86_cs = {
 	.preludes = analysis_preludes,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,
-	.init = x86_init,
-	.fini = x86_fini,
+	.init = x86_analysis_init,
+	.fini = x86_analysis_fini,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
 	.il_config = rz_x86_il_config,

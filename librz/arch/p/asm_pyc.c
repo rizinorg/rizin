@@ -9,9 +9,8 @@
 
 #include "../arch/pyc/pyc_dis.h"
 
-static pyc_opcodes *opcodes_cache = NULL;
-
 static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
+	pyc_opcodes *opcodes_cache = (pyc_opcodes *)a->plugin_data;
 	RzList *shared = NULL;
 
 	RzBin *bin = a->binb.bin;
@@ -32,7 +31,7 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	}
 
 	if (!opcodes_cache || !pyc_opcodes_equal(opcodes_cache, a->cpu)) {
-		opcodes_cache = get_opcode_by_version(a->cpu);
+		a->plugin_data = opcodes_cache = get_opcode_by_version(a->cpu);
 		if (opcodes_cache == NULL) {
 			RZ_LOG_ERROR("disassembler: pyc: unsupported pyc opcode cpu/version (asm.cpu=%s).\n", a->cpu);
 			return len;
@@ -44,11 +43,16 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	return r;
 }
 
-static bool finish(void *user) {
-	if (opcodes_cache) {
-		free_opcode(opcodes_cache);
-		opcodes_cache = NULL;
+static bool pyc_asm_init(void **user) {
+	*user = NULL;
+	return true;
+}
+
+static bool pyc_asm_fini(void *user) {
+	if (!user) {
+		return false;
 	}
+	free_opcode((pyc_opcodes *)user);
 	return true;
 }
 
@@ -59,7 +63,8 @@ RzAsmPlugin rz_asm_plugin_pyc = {
 	.bits = 16 | 8,
 	.desc = "PYC disassemble plugin",
 	.disassemble = &disassemble,
-	.fini = &finish,
+	.init = &pyc_asm_init,
+	.fini = &pyc_asm_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

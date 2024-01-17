@@ -4,7 +4,7 @@
 #include <rz_analysis.h>
 #include <rz_types.h>
 #include <rz_lib.h>
-#include "../../asm/arch/mcore/mcore.h"
+#include "../arch/mcore/mcore.h"
 
 static int mcore_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	mcore_handle handle = { 0 };

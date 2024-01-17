@@ -150,7 +150,6 @@ static void gb_hardware_register_name(char *reg, ut8 offset) {
 	}
 }
 
-#ifndef GB_DIS_LEN_ONLY
 static int gbDisass(RzAsmOp *op, const ut8 *buf, int len) {
 	int foo = gbOpLength(gb_op[buf[0]].type);
 	if (len < foo) {
@@ -180,4 +179,3 @@ static int gbDisass(RzAsmOp *op, const ut8 *buf, int len) {
 	rz_strbuf_set(&op->buf_asm, buf_asm);
 	return foo;
 }
-#endif

@@ -1,0 +1,41 @@
+// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef LIB_ARCH_HELPER_H
+#define LIB_ARCH_HELPER_H
+
+#include <rz_arch.h>
+
+#define DEPRECATED_OLD_ARCH_PLUGIN(name) \
+	RzArchPlugin rz_arch_plugin_##name = { \
+		.p_asm = &rz_asm_plugin_##name, \
+		.p_analysis = &rz_analysis_plugin_##name, \
+	}
+
+#define DEPRECATED_OLD_ARCH_ASM_ONLY_PLUGIN(name) \
+	RzArchPlugin rz_arch_plugin_##name = { \
+		.p_asm = &rz_asm_plugin_##name, \
+		.p_analysis = NULL, \
+	}
+
+#ifndef RZ_PLUGIN_INCORE
+#define ARCH_PLUGIN_LIB_STRUCT(name) \
+	RZ_API RzLibStruct rizin_plugin = { \
+		.type = RZ_LIB_TYPE_ANALYSIS, \
+		.data = &rz_arch_plugin_##name, \
+		.version = RZ_VERSION \
+	}
+#else
+#define ARCH_PLUGIN_LIB_STRUCT(name)
+#endif
+
+#define RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(name) \
+	DEPRECATED_OLD_ARCH_PLUGIN(name); \
+	ARCH_PLUGIN_LIB_STRUCT(name)
+
+#define RZ_ARCH_ASM_ONLY_PLUGIN_DEFINE_DEPRECATED(name) \
+	DEPRECATED_OLD_ARCH_ASM_ONLY_PLUGIN(name); \
+	ARCH_PLUGIN_LIB_STRUCT(name)
+
+#endif /* LIB_ARCH_HELPER_H */

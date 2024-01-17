@@ -3,7 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
-#include "../../asm/arch/amd29k/amd29k.h"
+#include "../arch/amd29k/amd29k.h"
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =

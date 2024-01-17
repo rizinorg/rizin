@@ -9,7 +9,7 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-#include "../../asm/arch/rsp/rsp_idec.h"
+#include "../arch/rsp/rsp_idec.h"
 
 static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b, int len, RzAnalysisOpMask mask) {
 	int i;

@@ -10,7 +10,7 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 // hack
-#include "../../asm/arch/i8080/i8080dis.c"
+#include "../arch/i8080/i8080dis.c"
 
 static int i8080_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	char out[32];

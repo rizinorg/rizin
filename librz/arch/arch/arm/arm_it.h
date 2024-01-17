@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_ARM_IT_H
+#define RZ_ARM_IT_H
 
 /**
  * \file

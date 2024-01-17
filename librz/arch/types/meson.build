@@ -1,4 +1,4 @@
-sdb_files = [
+sdb_types_files = [
   'cc-arm-16',
   'cc-arm-32',
   'cc-arm-64',
@@ -81,7 +81,7 @@ fs = import('fs')
 types_build_dir = meson.current_build_dir()
 types_files = []
 
-foreach file : sdb_files
+foreach file : sdb_types_files
   outfile = '@0@.sdb'.format(file)
   infiles = ['@0@.sdb.txt'.format(file)]
   if file == 'types-windows'

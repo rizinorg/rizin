@@ -11,8 +11,7 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 #include <rz_reg.h>
-#define GB_DIS_LEN_ONLY
-#include "../../asm/arch/gb/gbdis.c"
+#include "../arch/gb/gbdis.c"
 #include "../arch/gb/gb_makros.h"
 #include "../arch/gb/meta_gb_cmt.c"
 #include "../arch/gb/gb_il.inc"

@@ -7,7 +7,7 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
-#include "../../asm/arch/dalvik/opcode.h"
+#include "../arch/dalvik/opcode.h"
 #include "../../bin/format/dex/dex.h"
 
 static const char *getCond(ut8 cond) {

@@ -661,8 +661,7 @@ test_env_common_path = []
 build_root = meson.current_build_dir()
 if host_machine.system() == 'windows'
   test_env_common_path += [
-    build_root / 'librz' / 'analysis',
-    build_root / 'librz' / 'asm',
+    build_root / 'librz' / 'arch',
     build_root / 'librz' / 'bin',
     build_root / 'librz' / 'bp',
     build_root / 'librz' / 'config',
@@ -789,8 +788,7 @@ foreach plugin : hash_plugins.get('list')
 endforeach
 
 summary({
-  'Analysis Plugins': analysis_plugins.get('list'),
-  'Assembler Plugins': asm_plugins.get('list'),
+  'Arch Plugins': arch_plugins.get('list'),
   'Binary Plugins': bin_plugins.get('list'),
   'BinXtr Plugins': bin_xtr_plugins.get('list'),
   'Breakpoint Plugins': bp_plugins.get('list'),

@@ -10,7 +10,7 @@
 #include <rz_analysis.h>
 
 #include <8051_ops.h>
-#include "../asm/arch/8051/8051_disas.c"
+#include "../arch/8051/8051_disas.c"
 #include "../arch/8051/8051_il.h"
 
 static const i8051_cpu_model cpu_models[] = {

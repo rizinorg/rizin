@@ -10,7 +10,7 @@
 #include "../arch/java/jvm.h"
 #include "../arch/java/assembler.h"
 
-typedef struct java_analysis_context_t {
+typedef struct java_asm_context_t {
 	LookupSwitch ls;
 	TableSwitch ts;
 	ut16 switchop;
@@ -19,7 +19,7 @@ typedef struct java_analysis_context_t {
 	ut32 count;
 } JavaAsmContext;
 
-static void update_context(JavaAsmContext *ctx) {
+static void update_context_asm(JavaAsmContext *ctx) {
 	ctx->count++;
 	if (ctx->switchop == BYTECODE_AA_TABLESWITCH && ctx->count > ctx->ts.length) {
 		ctx->switchop = BYTECODE_00_NOP;
@@ -28,7 +28,7 @@ static void update_context(JavaAsmContext *ctx) {
 	}
 }
 
-static ut64 find_method(RzAsm *a) {
+static ut64 find_method_asm(RzAsm *a) {
 	ut64 addr = a->pc;
 	if (!a->binb.bin) {
 		return addr;
@@ -69,7 +69,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		op->size = 4;
 		ut64 jump = ctx->pc + rz_read_be32(buf);
 		rz_strbuf_setf(&op->buf_asm, "case %d: goto 0x%" PFMT64x, ctx->count + ctx->ts.low, jump);
-		update_context(ctx);
+		update_context_asm(ctx);
 		return op->size;
 	}
 	case BYTECODE_AB_LOOKUPSWITCH: {
@@ -81,7 +81,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		st32 number = (st32)rz_read_be32(buf);
 		ut64 jump = ctx->pc + rz_read_at_be32(buf, 4);
 		rz_strbuf_setf(&op->buf_asm, "case %d: goto 0x%" PFMT64x, number, jump);
-		update_context(ctx);
+		update_context_asm(ctx);
 		return op->size;
 	}
 	default:
@@ -93,7 +93,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	rz_strbuf_set(&op->buf_asm, "invalid");
 
-	ut64 section = find_method(a);
+	ut64 section = find_method_asm(a);
 	if (!jvm_init(&vm, buf, len, a->pc, section)) {
 		RZ_LOG_ERROR("[!] java_disassemble: bad or invalid data.\n");
 		return -1;
@@ -121,7 +121,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static bool java_init(void **user) {
+static bool java_asm_init(void **user) {
 	JavaAsmContext *ctx = RZ_NEW0(JavaAsmContext);
 	if (!ctx) {
 		return false;
@@ -130,7 +130,7 @@ static bool java_init(void **user) {
 	return true;
 }
 
-static bool java_fini(void *user) {
+static bool java_asm_fini(void *user) {
 	if (!user) {
 		return false;
 	}
@@ -160,8 +160,8 @@ RzAsmPlugin rz_asm_plugin_java = {
 	.author = "deroad",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BIG,
-	.init = java_init,
-	.fini = java_fini,
+	.init = java_asm_init,
+	.fini = java_asm_fini,
 	.disassemble = &java_disassemble,
 	.assemble = &java_assemble,
 };

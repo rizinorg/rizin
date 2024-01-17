@@ -5,8 +5,7 @@
 #include <rz_vector.h>
 #include <rz_util/rz_graph_drawable.h>
 #include <rz_util/rz_table.h>
-#include "../include/rz_analysis.h"
-#include "../include/rz_util/rz_graph.h"
+#include <rz_util/rz_graph.h>
 
 static void rz_analysis_class_base_delete_class(RzAnalysis *analysis, const char *class_name);
 static void rz_analysis_class_method_delete_class(RzAnalysis *analysis, const char *class_name);

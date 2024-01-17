@@ -6,8 +6,8 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-#include "../../asm/arch/rl78/rl78_instr.h"
-#include "../../asm/arch/rl78/rl78.h"
+#include "../arch/rl78/rl78_instr.h"
+#include "../arch/rl78/rl78.h"
 
 static int rl78_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask);

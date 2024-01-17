@@ -7,14 +7,14 @@
 #include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
 #include "../arch/arm/arm_it.h"
-#include "./asm_arm_hacks.inc"
+#include "asm_arm_hacks.inc"
 
-typedef struct arm_cs_context_t {
+typedef struct arm_cs_context_asm_t {
 	RzArmITContext it;
 	csh cd;
 	int omode;
 	int obits;
-} ArmCSContext;
+} ArmCSContextAsm;
 
 #if CS_NEXT_VERSION < 6
 inline static const char *ARMCondCodeToString(arm_cc cc) {
@@ -59,7 +59,7 @@ inline static const char *ARMCondCodeToString(arm_cc cc) {
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 
 static bool check_features(RzAsm *a, cs_insn *insn) {
-	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
+	ArmCSContextAsm *ctx = (ArmCSContextAsm *)a->plugin_data;
 	int i;
 	if (!insn || !insn->detail) {
 		return true;
@@ -94,7 +94,7 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
+	ArmCSContextAsm *ctx = (ArmCSContextAsm *)a->plugin_data;
 
 	bool disp_hash = a->immdisp;
 	cs_insn *insn = NULL;
@@ -256,8 +256,8 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	return opsize;
 }
 
-static bool arm_init(void **user) {
-	ArmCSContext *ctx = RZ_NEW0(ArmCSContext);
+static bool arm_asm_init(void **user) {
+	ArmCSContextAsm *ctx = RZ_NEW0(ArmCSContextAsm);
 	if (!ctx) {
 		return false;
 	}
@@ -269,9 +269,9 @@ static bool arm_init(void **user) {
 	return true;
 }
 
-static bool arm_fini(void *user) {
+static bool arm_asm_fini(void *user) {
 	rz_return_val_if_fail(user, false);
-	ArmCSContext *ctx = (ArmCSContext *)user;
+	ArmCSContextAsm *ctx = (ArmCSContextAsm *)user;
 	cs_close(&ctx->cd);
 	rz_arm_it_context_fini(&ctx->it);
 	free(ctx);
@@ -279,7 +279,7 @@ static bool arm_fini(void *user) {
 }
 
 static char *mnemonics(RzAsm *a, int id, bool json) {
-	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
+	ArmCSContextAsm *ctx = (ArmCSContextAsm *)a->plugin_data;
 	int i;
 	a->cur->disassemble(a, NULL, NULL, -1);
 	if (id != -1) {
@@ -328,8 +328,8 @@ RzAsmPlugin rz_asm_plugin_arm_cs = {
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,
 	.assemble = &assemble,
-	.init = &arm_init,
-	.fini = &arm_fini,
+	.init = &arm_asm_init,
+	.fini = &arm_asm_fini,
 #if 0
 	// arm32 and arm64
 	"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"

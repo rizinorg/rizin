@@ -8,10 +8,9 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 #undef RZ_IPI
-#define RZ_IPI      static
-#define WASM_NO_ASM // to get rid of a warning
+#define RZ_IPI static
 #include "../../bin/format/wasm/wasm.h"
-#include "../../asm/arch/wasm/wasm.c"
+#include "../arch/wasm/wasm.c"
 
 #define WASM_STACK_SIZE 256
 

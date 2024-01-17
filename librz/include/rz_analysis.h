@@ -2419,67 +2419,6 @@ RZ_API bool rz_serialize_analysis_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnaly
 RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
-/* plugin pointers */
-extern RzAnalysisPlugin rz_analysis_plugin_null;
-extern RzAnalysisPlugin rz_analysis_plugin_6502;
-extern RzAnalysisPlugin rz_analysis_plugin_8051;
-extern RzAnalysisPlugin rz_analysis_plugin_amd29k;
-extern RzAnalysisPlugin rz_analysis_plugin_arc;
-extern RzAnalysisPlugin rz_analysis_plugin_arm_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_avr;
-extern RzAnalysisPlugin rz_analysis_plugin_bf;
-extern RzAnalysisPlugin rz_analysis_plugin_chip8;
-extern RzAnalysisPlugin rz_analysis_plugin_cil;
-extern RzAnalysisPlugin rz_analysis_plugin_cr16;
-extern RzAnalysisPlugin rz_analysis_plugin_cris;
-extern RzAnalysisPlugin rz_analysis_plugin_dalvik;
-extern RzAnalysisPlugin rz_analysis_plugin_ebc;
-extern RzAnalysisPlugin rz_analysis_plugin_gb;
-extern RzAnalysisPlugin rz_analysis_plugin_h8300;
-extern RzAnalysisPlugin rz_analysis_plugin_hexagon;
-extern RzAnalysisPlugin rz_analysis_plugin_i4004;
-extern RzAnalysisPlugin rz_analysis_plugin_i8080;
-extern RzAnalysisPlugin rz_analysis_plugin_java;
-extern RzAnalysisPlugin rz_analysis_plugin_m68k_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_m680x_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_malbolge;
-extern RzAnalysisPlugin rz_analysis_plugin_mcore;
-extern RzAnalysisPlugin rz_analysis_plugin_mips_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_mips_gnu;
-extern RzAnalysisPlugin rz_analysis_plugin_msp430;
-extern RzAnalysisPlugin rz_analysis_plugin_nios2;
-extern RzAnalysisPlugin rz_analysis_plugin_or1k;
-extern RzAnalysisPlugin rz_analysis_plugin_pic;
-extern RzAnalysisPlugin rz_analysis_plugin_ppc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_propeller;
-extern RzAnalysisPlugin rz_analysis_plugin_riscv;
-extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_rl78;
-extern RzAnalysisPlugin rz_analysis_plugin_rsp;
-extern RzAnalysisPlugin rz_analysis_plugin_sh;
-extern RzAnalysisPlugin rz_analysis_plugin_snes;
-extern RzAnalysisPlugin rz_analysis_plugin_sparc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_sparc_gnu;
-extern RzAnalysisPlugin rz_analysis_plugin_spc700;
-extern RzAnalysisPlugin rz_analysis_plugin_sysz;
-extern RzAnalysisPlugin rz_analysis_plugin_tms320;
-extern RzAnalysisPlugin rz_analysis_plugin_tms320c64x;
-extern RzAnalysisPlugin rz_analysis_plugin_tricore_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_v810;
-extern RzAnalysisPlugin rz_analysis_plugin_v850;
-extern RzAnalysisPlugin rz_analysis_plugin_vax;
-extern RzAnalysisPlugin rz_analysis_plugin_wasm;
-extern RzAnalysisPlugin rz_analysis_plugin_x86;
-extern RzAnalysisPlugin rz_analysis_plugin_x86_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_x86_im;
-extern RzAnalysisPlugin rz_analysis_plugin_x86_simple;
-extern RzAnalysisPlugin rz_analysis_plugin_x86_udis;
-extern RzAnalysisPlugin rz_analysis_plugin_xap;
-extern RzAnalysisPlugin rz_analysis_plugin_xcore_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_xtensa;
-extern RzAnalysisPlugin rz_analysis_plugin_z80;
-extern RzAnalysisPlugin rz_analysis_plugin_pyc;
-extern RzAnalysisPlugin rz_analysis_plugin_luac;
 #ifdef __cplusplus
 }
 #endif

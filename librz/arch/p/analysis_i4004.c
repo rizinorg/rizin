@@ -7,6 +7,7 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
+#include "../arch/i4004/i4004dis.c"
 
 #define AVR_SOFTCAST(x, y) ((x) + ((y)*0x100))
 
@@ -42,58 +43,6 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	PC2	.64	34	0\n"
 		"gpr	PC3	.64	34	0\n";
 	return strdup(p);
-}
-
-/* That 3 is a hack */
-static const int i4004_ins_len[16] = {
-	1, 2, 3, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1
-};
-
-static const char *i4004_e[16] = {
-	"wrm",
-	"wmp",
-	"wrr",
-	"wpm",
-	"wr0",
-	"wr1",
-	"wr2",
-	"wr3",
-	"sbm",
-	"rdm",
-	"rdr",
-	"adm",
-	"rd0",
-	"rd1",
-	"rd2",
-	"rd3"
-};
-
-static const char *i4004_f[16] = {
-	"clb",
-	"clc",
-	"iac",
-	"cmc",
-	"cma",
-	"ral",
-	"rar",
-	"tcc",
-	"dac", // decrement
-	"tcs",
-	"stc",
-	"daa",
-	"kbp",
-	"dcl",
-	"invalid",
-	"invalid"
-};
-
-static int i4004_get_ins_len(ut8 hex) {
-	ut8 high = (hex & 0xf0) >> 4;
-	int ret = i4004_ins_len[high];
-	if (ret == 3) {
-		ret = (hex & 1) ? 1 : 2;
-	}
-	return ret;
 }
 
 static int i4004_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {

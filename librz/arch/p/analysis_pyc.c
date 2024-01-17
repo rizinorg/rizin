@@ -6,7 +6,7 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 
-#include "../../asm/arch/pyc/pyc_dis.h"
+#include "../arch/pyc/pyc_dis.h"
 
 #define JMP_OFFSET(ops, v) ((ops)->jump_use_instruction_offset ? (v)*2 : (v))
 

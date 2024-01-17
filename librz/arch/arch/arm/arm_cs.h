@@ -6,7 +6,7 @@
 
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
-#include "../../asm/arch/arm/aarch64_meta_macros.h"
+#include "aarch64_meta_macros.h"
 
 RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb);
 RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn);

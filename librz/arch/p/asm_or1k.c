@@ -5,18 +5,6 @@
 #include <rz_lib.h>
 #include "../arch/or1k/or1k_disas.h"
 
-struct operands {
-	ut32 rd;
-	ut32 ra;
-	ut32 rb;
-	ut32 n;
-	ut32 k1;
-	ut32 k2;
-	ut32 k;
-	ut32 i;
-	ut32 l;
-};
-
 static int insn_to_str(RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct operands o = { 0 };
 	char *name;

@@ -6,7 +6,7 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-#include "../../asm/arch/spc700/spc700dis.c"
+#include "../arch/spc700/spc700dis.c"
 
 static int op(RzAnalysis *analysis, RzAnalysisOp *rz_op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	// TODO: fill this with the actual info

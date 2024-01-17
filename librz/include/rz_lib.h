@@ -50,6 +50,7 @@ typedef enum {
 	RZ_LIB_TYPE_CORE, ///< RzCore commands
 	RZ_LIB_TYPE_EGG, ///< rz_egg plugin
 	RZ_LIB_TYPE_DEMANGLER, ///< demanglers
+	RZ_LIB_TYPE_ARCH, ///< arch
 	RZ_LIB_TYPE_UNKNOWN
 } RzLibType;
 

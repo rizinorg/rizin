@@ -1,9 +1,10 @@
-sdb_files = [
+sdb_opcodes_files = [
   '6502',
   '8051',
   'arc',
   'arm',
   'avr',
+  'chip8',
   'dalvik',
   'i4004',
   'i8080',
@@ -30,7 +31,7 @@ sdb_files = [
   'z80',
 ]
 
-foreach file : sdb_files
+foreach file : sdb_opcodes_files
   outfile = '@0@.sdb'.format(file)
   custom_target(outfile,
     input: '@0@.sdb.txt'.format(file),

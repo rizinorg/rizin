@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2014-2015 jn
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "../../arch/lh5801/lh5801.c"
 #include <rz_asm.h>
 #include <rz_types.h>
 #include <rz_lib.h>
+#include "../arch/lh5801/lh5801.c"
 
 static int disassemble(RzAsm *as, RzAsmOp *op, const ut8 *buf, int len) {
 	struct lh5801_insn insn = { 0 };

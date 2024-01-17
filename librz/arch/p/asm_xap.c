@@ -6,7 +6,6 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
-#include "xap/dis.c"
 
 static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	struct state *s = get_state();
@@ -31,7 +30,7 @@ static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 #endif
 	return 0;
 }
-static int disassemble(RzAsm *a, struct rz_asm_op_t *op, const ut8 *buf, int len) {
+static int xap_disassemble(RzAsm *a, struct rz_asm_op_t *op, const ut8 *buf, int len) {
 	char *buf_asm = rz_strbuf_get(&op->buf_asm);
 	arch_xap_disasm(buf_asm, buf, a->pc);
 	return (op->size = 2);
@@ -44,7 +43,7 @@ RzAsmPlugin rz_asm_plugin_xap = {
 	.bits = 16,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "XAP4 RISC (CSR)",
-	.disassemble = &disassemble
+	.disassemble = &xap_disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE

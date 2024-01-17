@@ -6,8 +6,8 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-#include "../../asm/arch/snes/snes_op_table.h"
-#include "../../asm/p/asm_snes.h"
+#include "../arch/snes/snes_op_table.h"
+#include "asm_snes.h"
 
 static int snes_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	struct snes_asm_flags *snesflags = (struct snes_asm_flags *)analysis->plugin_data;

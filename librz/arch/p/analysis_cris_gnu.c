@@ -275,7 +275,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
-RzAnalysisPlugin rz_analysis_plugin_cris = {
+RzAnalysisPlugin rz_analysis_plugin_cris_gnu = {
 	.name = "cris",
 	.desc = "Axis Communications 32-bit embedded processor",
 	.license = "LGPL3",
@@ -289,7 +289,7 @@ RzAnalysisPlugin rz_analysis_plugin_cris = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANALYSIS,
-	.data = &rz_analysis_plugin_cris,
+	.data = &rz_analysis_plugin_cris_gnu,
 	.version = RZ_VERSION
 };
 #endif

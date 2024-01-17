@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2020 phakeobj
 // SPDX-License-Identifier: LGPL-3.0-only
 
-static char *hack_handle_dp_imm(ut32 insn) {
+static char *hack_handle_dp_imm_asm(ut32 insn) {
 	char *buf_asm = NULL;
 	char *mnemonic = NULL;
 	const ut8 op0 = (insn >> 23) & 0x7;
@@ -33,7 +33,7 @@ static char *hack_handle_dp_imm(ut32 insn) {
 	return NULL;
 }
 
-static char *hack_handle_br_exc_sys(ut32 insn) {
+static char *hack_handle_br_exc_sys_asm(ut32 insn) {
 	char *buf_asm = NULL;
 	const char *mnemonic = "bti";
 	const ut8 op0 = (insn >> 29) & 0x7;
@@ -64,7 +64,7 @@ static char *hack_handle_br_exc_sys(ut32 insn) {
 	return buf_asm;
 }
 
-static char *hack_handle_dp_reg(ut32 insn) {
+static char *hack_handle_dp_reg_asm(ut32 insn) {
 	char *buf_asm = NULL;
 	char *mnemonic = NULL;
 	const bool op0 = (insn >> 30) & 0x1;
@@ -109,7 +109,7 @@ static char *hack_handle_dp_reg(ut32 insn) {
 	return NULL;
 }
 
-static char *hack_handle_ldst(ut32 insn) {
+static char *hack_handle_ldst_asm(ut32 insn) {
 	char *buf_asm = NULL;
 	char *mnemonic = NULL;
 	bool ignore_imm9 = false;
@@ -231,19 +231,19 @@ static int hackyArmAsm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		case 5:
 		case 13:
 			// irg, subp, gmi, subps
-			buf_asm = hack_handle_dp_reg(insn);
+			buf_asm = hack_handle_dp_reg_asm(insn);
 			break;
 		// Data Processing -- Immediate
 		case 8:
 		case 9:
 			// addg, subg
-			buf_asm = hack_handle_dp_imm(insn);
+			buf_asm = hack_handle_dp_imm_asm(insn);
 			break;
 		// Branches, Exception generating, and System instructions
 		case 10:
 		case 11:
 			// bti
-			buf_asm = hack_handle_br_exc_sys(insn);
+			buf_asm = hack_handle_br_exc_sys_asm(insn);
 			break;
 		// Loads and Stores
 		case 4:
@@ -251,7 +251,7 @@ static int hackyArmAsm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		case 12:
 		case 14:
 			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
-			buf_asm = hack_handle_ldst(insn);
+			buf_asm = hack_handle_ldst_asm(insn);
 			break;
 		default:
 			break;

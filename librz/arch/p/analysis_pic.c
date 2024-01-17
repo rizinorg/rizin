@@ -7,7 +7,7 @@
 #include <rz_analysis.h>
 #include <rz_lib.h>
 
-#include "../../asm/arch/pic/pic_midrange.h"
+#include "../arch/pic/pic_midrange.h"
 
 typedef struct _pic_midrange_op_args_val {
 	ut16 f;

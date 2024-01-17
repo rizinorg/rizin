@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include <rz_analysis.h>
 
-#include "../../asm/arch/java/jvm.h"
+#include "../arch/java/jvm.h"
 
 typedef struct java_analysis_context_t {
 	LookupSwitch ls;

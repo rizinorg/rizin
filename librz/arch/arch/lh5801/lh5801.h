@@ -6,9 +6,9 @@
  * (system manual) as published by Günter Holtkötter GmbH.
  */
 
+#include <rz_types.h>
 #include <stdint.h>
 #include <stdlib.h>
-typedef uint8_t ut8;
 
 /* Instruction classes. That's for example "add with carry". */
 enum lh5801_insn_class {

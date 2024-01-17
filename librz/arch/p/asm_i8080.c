@@ -5,7 +5,6 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
-#include "../arch/i8080/i8080dis.c"
 
 static int do_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int dlen = i8080_disasm(buf, rz_strbuf_get(&op->buf_asm), len);

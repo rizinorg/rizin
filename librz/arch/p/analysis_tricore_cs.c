@@ -7,7 +7,7 @@
 #include <rz_asm.h>
 #include <capstone/capstone.h>
 
-#include "../../asm/arch/tricore/tricore.inc"
+#include "../arch/tricore/tricore.inc"
 
 RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *a);
 RZ_IPI RzAnalysisILConfig *tricore_il_config(RZ_NONNULL RzAnalysis *analysis);

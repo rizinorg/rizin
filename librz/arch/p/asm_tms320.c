@@ -97,7 +97,7 @@ static int tms320_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static bool tms320_init(void **user) {
+static bool tms320_asm_init(void **user) {
 	TmsContext *ctx = RZ_NEW0(TmsContext);
 	if (!ctx) {
 		return false;
@@ -107,7 +107,7 @@ static bool tms320_init(void **user) {
 	return true;
 }
 
-static bool tms320_fini(void *user) {
+static bool tms320_asm_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	TmsContext *ctx = (TmsContext *)user;
 #if CAPSTONE_HAS_TMS320C64X
@@ -131,8 +131,8 @@ RzAsmPlugin rz_asm_plugin_tms320 = {
 	.license = "LGPLv3",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
-	.init = tms320_init,
-	.fini = tms320_fini,
+	.init = tms320_asm_init,
+	.fini = tms320_asm_fini,
 	.disassemble = &tms320_disassemble,
 };
 

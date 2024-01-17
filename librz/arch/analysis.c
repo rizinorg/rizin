@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include <rz_arch.h>
 #include <rz_util.h>
 #include <rz_list.h>
 #include <rz_util/rz_path.h>
@@ -11,7 +11,7 @@
 
 RZ_LIB_VERSION(rz_analysis);
 
-static RzAnalysisPlugin *analysis_static_plugins[] = { RZ_ANALYSIS_STATIC_PLUGINS };
+static RzArchPlugin *analysis_static_plugins[] = { RZ_ARCH_STATIC_PLUGINS };
 
 /**
  * \brief Returns the default size byte width of memory access operations.
@@ -130,7 +130,9 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->plugins = rz_list_new();
 	if (analysis->plugins) {
 		for (i = 0; i < RZ_ARRAY_SIZE(analysis_static_plugins); i++) {
-			rz_analysis_plugin_add(analysis, analysis_static_plugins[i]);
+			if (analysis_static_plugins[i]->p_analysis) {
+				rz_analysis_plugin_add(analysis, analysis_static_plugins[i]->p_analysis);
+			}
 		}
 	}
 	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);

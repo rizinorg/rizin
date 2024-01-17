@@ -70,7 +70,7 @@ rz_debug_deps = [
   rz_bp_dep,
   rz_syscall_dep,
   rz_egg_dep,
-  rz_analysis_dep,
+  rz_arch_dep,
   rz_type_dep,
   platform_deps
 ]
@@ -157,7 +157,7 @@ modules += { 'rz_debug': {
       'rz_hash',
       'rz_reg',
       'rz_syscall',
-      'rz_analysis',
+      'rz_arch',
       'rz_io',
       'rz_bin',
       'rz_bp',
