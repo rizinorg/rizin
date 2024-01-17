@@ -112,7 +112,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return vec;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}
@@ -121,7 +121,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 		return NULL;
 	}
 
-	return rz_list_clone(bin_info_obj->entry_list);
+	return rz_pvector_clone(bin_info_obj->entry_vec);
 }
 
 static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {

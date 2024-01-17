@@ -124,24 +124,23 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	const rz_bin_xbe_obj_t *obj;
-	RzList *ret;
+	RzPVector *ret;
 	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 	if (!bf || !bf->buf || !bf->o->bin_obj || !ptr) {
 		free(ptr);
 		return NULL;
 	}
-	ret = rz_list_new();
+	ret = rz_pvector_new(free);
 	if (!ret) {
 		free(ptr);
 		return NULL;
 	}
-	ret->free = free;
 	obj = bf->o->bin_obj;
 	ptr->vaddr = obj->header.ep ^ obj->ep_key;
 	ptr->paddr = ptr->vaddr - obj->header.base;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 

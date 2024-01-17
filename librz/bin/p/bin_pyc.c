@@ -117,26 +117,26 @@ static RzBinInfo *info(RzBinFile *arch) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *arch) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *arch) {
 	RzBinPycObj *pyc = arch->o->bin_obj;
 
-	RzList *entries = rz_list_newf((RzListFree)free);
+	RzPVector *entries = rz_pvector_new((RzPVectorFree)free);
 	if (!entries) {
 		return NULL;
 	}
 	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	if (!addr) {
-		rz_list_free(entries);
+		rz_pvector_free(entries);
 		return NULL;
 	}
 	ut64 entrypoint = get_entrypoint(arch);
 	addr->paddr = entrypoint;
 	addr->vaddr = entrypoint;
 	rz_buf_seek(arch->buf, entrypoint, RZ_IO_SEEK_SET);
-	rz_list_append(entries, addr);
+	rz_pvector_push(entries, addr);
 
 	if (!init_pyc_cache(pyc, arch->buf)) {
-		rz_list_free(entries);
+		rz_pvector_free(entries);
 		return NULL;
 	}
 	return entries;

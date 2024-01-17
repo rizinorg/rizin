@@ -94,7 +94,7 @@ static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	return ptr;
 }
 
-static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, int bits) {
+static void process_constructors(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *ret, int bits) {
 	RzPVector *secs = sections(bf);
 	void **iter;
 	RzBinSection *sec;
@@ -122,7 +122,7 @@ static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, i
 					ut32 addr32 = rz_read_le32(buf + i);
 					RzBinAddr *ba = newEntry(sec->paddr + i, (ut64)addr32, type, bits);
 					if (ba) {
-						rz_list_append(ret, ba);
+						rz_pvector_push(ret, ba);
 					}
 				}
 			} else {
@@ -130,7 +130,7 @@ static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, i
 					ut64 addr64 = rz_read_le64(buf + i);
 					RzBinAddr *ba = newEntry(sec->paddr + i, addr64, type, bits);
 					if (ba) {
-						rz_list_append(ret, ba);
+						rz_pvector_push(ret, ba);
 					}
 				}
 			}
@@ -139,13 +139,13 @@ static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, i
 	}
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	RzBinAddr *ptr = NULL;
 	struct addr_t *entry = NULL;
 
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -166,7 +166,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 				ptr->vaddr--;
 			}
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	process_constructors(bf, ret, bits);

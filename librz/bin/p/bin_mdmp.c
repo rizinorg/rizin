@@ -20,28 +20,28 @@ static void mdmp_destroy(RzBinFile *bf) {
 	rz_bin_mdmp_free((MiniDmpObj *)bf->o->bin_obj);
 }
 
-static RzList /*<RzBinAddr *>*/ *mdmp_entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *mdmp_entries(RzBinFile *bf) {
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzListIter *it;
-	RzList *ret, *list;
+	RzPVector *ret, *vec;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 
 	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		list = Pe32_rz_bin_mdmp_pe_get_entrypoint(pe32_bin);
-		rz_list_join(ret, list);
-		rz_list_free(list);
+		vec = Pe32_rz_bin_mdmp_pe_get_entrypoint(pe32_bin);
+		rz_pvector_join(ret, vec);
+		rz_pvector_free(vec);
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		list = Pe64_rz_bin_mdmp_pe_get_entrypoint(pe64_bin);
-		rz_list_join(ret, list);
-		rz_list_free(list);
+		vec = Pe64_rz_bin_mdmp_pe_get_entrypoint(pe64_bin);
+		rz_pvector_join(ret, vec);
+		rz_pvector_free(vec);
 	}
 
 	return ret;
