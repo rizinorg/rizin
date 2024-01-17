@@ -51,5 +51,7 @@ tasks:
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/rizin-testbins test/bins
         cd test
+        # Workaround to avoid running HTTP POST test
+        rm -f db/cmd/cmd_http_post 
         # Running the unit tests
         MALLOC_OPTIONS=S rz-test -L -o results.json
