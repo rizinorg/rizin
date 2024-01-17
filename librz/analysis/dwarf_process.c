@@ -129,7 +129,6 @@ static const char *map_dwarf_register_dummy(ut32 reg_num) {
 	}
 }
 
-
 /* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
 static const char *map_dwarf_reg_to_x86_64_reg(ut32 reg_num) {
 	switch (reg_num) {
