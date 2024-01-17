@@ -143,40 +143,49 @@ static int _6502Disass(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
 	int i;
 	for (i = 0; ops[i].name != NULL; i++) {
 		if (ops[i].op == buf[0]) {
-			const char *buf_asm = "invalid";
+			char *buf_asm = rz_str_newf("invalid");
 			int len = ops[i].len;
 			switch (ops[i].len) {
 			case 1:
-				buf_asm = sdb_fmt("%s", ops[i].name);
+				free(buf_asm);
+				buf_asm = rz_str_newf("%s", ops[i].name);
 				break;
 			case 2:
 				if (len > 1) {
-					buf_asm = sdb_fmt(ops[i].name, buf[1]);
+					free(buf_asm);
+					buf_asm = rz_str_newf(ops[i].name, buf[1]);
 				} else {
-					buf_asm = "truncated";
+					free(buf_asm);
+					buf_asm = rz_str_newf("truncated");
 					len = -1;
 				}
 				break;
 			case 3:
 				if (len > 2) {
-					buf_asm = sdb_fmt(ops[i].name, buf[1] + 0x100 * buf[2]);
+					free(buf_asm);
+					buf_asm = rz_str_newf(ops[i].name, buf[1] + 0x100 * buf[2]);
 				} else {
-					buf_asm = "truncated";
+					free(buf_asm);
+					buf_asm = rz_str_newf("truncated");
 					len = -1;
 				}
 				break;
 			case 4:
 				if (len > 3) {
-					buf_asm = sdb_fmt(ops[i].name, buf[1] + 0x100 * buf[2] + 0x10000 * buf[3]);
+					free(buf_asm);
+					buf_asm = rz_str_newf(ops[i].name, buf[1] + 0x100 * buf[2] + 0x10000 * buf[3]);
 				} else {
-					buf_asm = "truncated";
+					free(buf_asm);
+					buf_asm = rz_str_newf("truncated");
 					len = -1;
 				}
 				break;
 			default:
+				free(buf_asm);
 				goto beach;
 			}
 			rz_strbuf_set(&op->buf_asm, buf_asm);
+			free(buf_asm);
 			return len;
 		}
 	}
