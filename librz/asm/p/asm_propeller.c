@@ -9,19 +9,22 @@
 
 #include <propeller_disas.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int propeller_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_return_val_if_fail(a && op && buf && len >= 4, -1);
-	const char *buf_asm;
+	char *buf_asm;
 	struct propeller_cmd cmd;
 	int ret = propeller_decode_command(buf, &cmd);
 	if (cmd.prefix[0] && cmd.operands[0]) {
-		buf_asm = sdb_fmt("%s %s %s", cmd.prefix, cmd.instr, cmd.operands);
+		buf_asm = rz_str_newf("%s %s %s", cmd.prefix, cmd.instr, cmd.operands);
 	} else if (cmd.operands[0]) {
-		buf_asm = sdb_fmt("%s %s", cmd.instr, cmd.operands);
+		buf_asm = rz_str_newf("%s %s", cmd.instr, cmd.operands);
 	} else {
-		buf_asm = sdb_fmt("%s", cmd.instr);
+		buf_asm = strdup(cmd.instr);
 	}
-	rz_asm_op_set_asm(op, buf_asm);
+	if (buf_asm) {
+		rz_asm_op_set_asm(op, buf_asm);
+		free(buf_asm);
+	}
 	op->size = 4;
 	return ret;
 }
@@ -33,7 +36,7 @@ RzAsmPlugin rz_asm_plugin_propeller = {
 	.arch = "propeller",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BIG,
-	.disassemble = &disassemble
+	.disassemble = &propeller_disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE

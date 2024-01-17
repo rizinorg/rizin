@@ -17,35 +17,22 @@
 #endif
 
 #if CAPSTONE_HAS_M68K
+#include "cs_helper.h"
+
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m68k);
 
 // Size of the longest instruction in bytes
 #define M68K_LONGEST_INSTRUCTION 10
 
-static bool check_features(RzAsm *a, cs_insn *insn);
-static csh cd = 0;
-#include "cs_mnemonics.c"
-
-typedef struct {
-	int omode;
-	int obits;
-} M68kContext;
-
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	M68kContext *ctx = (M68kContext *)a->plugin_data;
-	const char *buf_asm = NULL;
-	int omode = ctx->omode;
-	int obits = ctx->obits;
+static int m68k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	if (!buf) {
+		return -1;
+	}
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
+	char *buf_asm = NULL;
 	cs_insn *insn = NULL;
-	omode = -1;
-	obits = 32;
 	int ret = 0, n = 0;
 	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-	if (mode != omode || a->bits != obits) {
-		cs_close(&cd);
-		cd = 0; // unnecessary
-		omode = mode;
-		obits = a->bits;
-	}
 
 	// replace this with the asm.features?
 	if (a->cpu && strstr(a->cpu, "68000")) {
@@ -69,27 +56,30 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (op) {
 		op->size = 4;
 	}
-	if (cd == 0) {
-		ret = cs_open(CS_ARCH_M68K, mode, &cd);
+	if (mode != ctx->omode) {
+		cs_close(&ctx->handle);
+		ctx->handle = 0;
+		ctx->omode = -1;
+	}
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_M68K, mode, &ctx->handle);
 		if (ret) {
 			ret = -1;
 			goto beach;
 		}
+		ctx->omode = mode;
 	}
-	if (a->features && *a->features) {
-		cs_option(cd, CS_OPT_DETAIL, CS_OPT_ON);
+	if (RZ_STR_ISNOTEMPTY(a->features)) {
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	} else {
-		cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
-	}
-	if (!buf) {
-		goto beach;
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 
-	ut8 mybuf[M68K_LONGEST_INSTRUCTION] = { 0 };
-	int mylen = RZ_MIN(M68K_LONGEST_INSTRUCTION, len);
-	memcpy(mybuf, buf, mylen);
+	if (len > M68K_LONGEST_INSTRUCTION) {
+		len = M68K_LONGEST_INSTRUCTION;
+	}
 
-	n = cs_disasm(cd, mybuf, mylen, a->pc, 1, &insn);
+	n = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		ret = -1;
 		goto beach;
@@ -101,53 +91,28 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		ret = -1;
 		goto beach;
 	}
-	if (a->features && *a->features) {
-		if (!check_features(a, insn)) {
-			if (op) {
-				op->size = insn->size;
-				buf_asm = "illegal";
-			}
-		}
-	}
 	if (op && !op->size) {
 		op->size = insn->size;
-		buf_asm = sdb_fmt("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+		buf_asm = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	}
 	if (op && buf_asm) {
-		char *p = rz_str_replace(strdup(buf_asm), "$", "0x", true);
-		if (p) {
-			rz_str_replace_char(p, '#', 0);
-			rz_asm_op_set_asm(op, p);
-			free(p);
+		buf_asm = rz_str_replace(buf_asm, "$", "0x", true);
+		if (buf_asm) {
+			rz_str_replace_char(buf_asm, '#', 0);
+			rz_asm_op_set_asm(op, buf_asm);
 		}
 	}
 	cs_free(insn, n);
 beach:
-	// cs_close (&cd);
+
 	if (op && buf_asm) {
 		if (!strncmp(buf_asm, "dc.w", 4)) {
 			rz_asm_op_set_asm(op, "invalid");
 		}
-		return op->size;
+		ret = op->size;
 	}
+	free(buf_asm);
 	return ret;
-}
-
-static bool m68k_init(void **user) {
-	M68kContext *ctx = RZ_NEW0(M68kContext);
-	rz_return_val_if_fail(ctx, false);
-	ctx->omode = -1;
-	ctx->obits = 32;
-	*user = ctx;
-	return true;
-}
-
-static bool m68k_fini(void *p) {
-	M68kContext *ctx = (M68kContext *)p;
-	if (ctx) {
-		RZ_FREE(ctx);
-	}
-	return true;
 }
 
 RzAsmPlugin rz_asm_plugin_m68k_cs = {
@@ -160,14 +125,9 @@ RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.endian = RZ_SYS_ENDIAN_BIG,
 	.init = m68k_init,
 	.fini = m68k_fini,
-	.disassemble = &disassemble,
-	.mnemonics = &mnemonics,
+	.disassemble = &m68k_disassemble,
+	.mnemonics = &m68k_mnemonics,
 };
-
-static bool check_features(RzAsm *a, cs_insn *insn) {
-	/* TODO: Implement support for m68k */
-	return true;
-}
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {

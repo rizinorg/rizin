@@ -5,72 +5,60 @@
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 
-static csh cd = 0;
-static int n = 0;
+static bool check_features(RzAsm *a, cs_insn *insn);
 
-static int check_features(RzAsm *a, cs_insn *insn);
+#include "cs_helper.h"
 
-#include "cs_mnemonics.c"
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(x86);
 
 #include "asm_x86_vm.c"
 
-typedef struct {
-	int omode;
-} X86Context;
-
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	X86Context *ctx = (X86Context *)a->plugin_data;
-	int omode = ctx->omode;
-	int mode, ret;
+static int x86_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
+	int ret, n;
 	ut64 off = a->pc;
 
-	mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32
-		: (a->bits == 16)                             ? CS_MODE_16
-							      : 0;
-	if (cd && mode != omode) {
-		cs_close(&cd);
-		cd = 0;
-	}
+	cs_mode mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32
+		: (a->bits == 16)                                     ? CS_MODE_16
+								      : 0;
 	if (op) {
 		op->size = 0;
 	}
-	omode = mode;
-	if (cd == 0) {
-		ret = cs_open(CS_ARCH_X86, mode, &cd);
+	if (ctx->omode != mode) {
+		cs_close(&ctx->handle);
+		ctx->omode = -1;
+	}
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_X86, mode, &ctx->handle);
 		if (ret) {
-			return 0;
+			return -1;
 		}
+		ctx->omode = mode;
+		cs_option(ctx->handle, CS_OPT_UNSIGNED, CS_OPT_ON);
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	if (a->features && *a->features) {
-		cs_option(cd, CS_OPT_DETAIL, CS_OPT_ON);
-	} else {
-		cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
-	}
+
 	// always unsigned immediates (kernel addresses)
 	// maybe rizin should have an option for this too?
-	cs_option(cd, CS_OPT_UNSIGNED, CS_OPT_ON);
 	if (a->syntax == RZ_ASM_SYNTAX_MASM) {
-		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
+		cs_option(ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
 	} else if (a->syntax == RZ_ASM_SYNTAX_ATT) {
-		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+		cs_option(ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 	} else {
-		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+		cs_option(ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
 	}
-	cs_option(cd, CS_OPT_DETAIL, CS_OPT_ON);
 	if (!op) {
 		return true;
 	}
 	op->size = 1;
 	cs_insn *insn = NULL;
-	n = cs_disasm(cd, (const ut8 *)buf, len, off, 1, &insn);
+	n = cs_disasm(ctx->handle, (const ut8 *)buf, len, off, 1, &insn);
 	if (op) {
 		op->size = 0;
 	}
-	if (a->features && *a->features) {
-		if (!check_features(a, insn)) {
-			op->size = insn->size;
-			rz_asm_op_set_asm(op, "illegal");
-		}
+	if (!check_features(a, insn)) {
+		op->size = insn->size;
+		rz_asm_op_set_asm(op, "illegal");
 	}
 	if (op->size == 0 && n > 0 && insn->size > 0) {
 		char *ptrstr;
@@ -113,26 +101,6 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static bool x86_cs_init(void **user) {
-	X86Context *ctx = RZ_NEW0(X86Context);
-	rz_return_val_if_fail(ctx, false);
-	ctx->omode = 0;
-	*user = ctx;
-	return true;
-}
-
-static bool the_end(void *p) {
-	X86Context *ctx = (X86Context *)p;
-	if (cd) {
-		cs_close(&cd);
-		cd = 0;
-	}
-	if (ctx) {
-		free(ctx);
-	}
-	return true;
-}
-
 RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 disassembler",
@@ -142,20 +110,24 @@ RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.arch = "x86",
 	.bits = 16 | 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
-	.init = x86_cs_init,
-	.fini = the_end,
-	.mnemonics = mnemonics,
-	.disassemble = &disassemble,
+	.init = x86_init,
+	.fini = x86_fini,
+	.mnemonics = x86_mnemonics,
+	.disassemble = &x86_disassemble,
 	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
 		    "f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
 		    "sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
 };
 
-static int check_features(RzAsm *a, cs_insn *insn) {
+static bool check_features(RzAsm *a, cs_insn *insn) {
+	if (RZ_STR_ISEMPTY(a->features)) {
+		return true;
+	}
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	const char *name;
 	int i;
 	if (!insn || !insn->detail) {
-		return 1;
+		return true;
 	}
 	for (i = 0; i < insn->detail->groups_count; i++) {
 		int id = insn->detail->groups[i];
@@ -168,15 +140,15 @@ static int check_features(RzAsm *a, cs_insn *insn) {
 		if (id == X86_GRP_MODE64) {
 			continue;
 		}
-		name = cs_group_name(cd, id);
+		name = cs_group_name(ctx->handle, id);
 		if (!name) {
-			return 1;
+			return true;
 		}
 		if (!strstr(a->features, name)) {
-			return 0;
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
 #ifndef RZ_PLUGIN_INCORE

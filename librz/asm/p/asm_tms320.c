@@ -31,19 +31,21 @@ static int tms320c64x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 
 	cs_insn *insn;
 	int n = -1, ret = -1;
-	int mode = 0;
 	if (op) {
 		memset(op, 0, sizeof(RzAsmOp));
 		op->size = 4;
 	}
 	if (ctx->cd != 0) {
 		cs_close(&ctx->cd);
+		ctx->cd = 0;
 	}
-	ret = cs_open(CS_ARCH_TMS320C64X, mode, &ctx->cd);
-	if (ret) {
-		goto fin;
+	if (!ctx->cd) {
+		ret = cs_open(CS_ARCH_TMS320C64X, 0, &ctx->cd);
+		if (ret) {
+			goto fin;
+		}
+		cs_option(ctx->cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	cs_option(ctx->cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	if (!op) {
 		return 0;
 	}
@@ -52,21 +54,22 @@ static int tms320c64x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 		rz_asm_op_set_asm(op, "invalid");
 		op->size = 4;
 		ret = -1;
-		goto beach;
+		goto fin;
 	} else {
 		ret = 4;
 	}
 	if (insn->size < 1) {
-		goto beach;
+		goto fin;
 	}
 	op->size = insn->size;
-	char *buf_asm = sdb_fmt("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
-	rz_str_replace_char(buf_asm, '%', 0);
-	rz_str_case(buf_asm, false);
-	rz_asm_op_set_asm(op, buf_asm);
+	char *buf_asm = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+	if (buf_asm) {
+		rz_str_replace_char(buf_asm, '%', 0);
+		rz_str_case(buf_asm, false);
+		rz_asm_op_set_asm(op, buf_asm);
+		free(buf_asm);
+	}
 	cs_free(insn, n);
-beach:
-// cs_close (&ctx->cd);
 fin:
 	return ret;
 }
