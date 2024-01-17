@@ -701,12 +701,14 @@ typedef struct rz_analysis_var_storage_t {
 	};
 } RzAnalysisVarStorage;
 
-static inline void rz_analysis_var_storage_init_reg(RzAnalysisVarStorage *stor, RZ_NONNULL const char *reg) {
+static inline void rz_analysis_var_storage_init_reg(RZ_NONNULL RzAnalysisVarStorage *stor, RZ_NONNULL const char *reg) {
+	rz_return_if_fail(stor && reg);
 	stor->type = RZ_ANALYSIS_VAR_STORAGE_REG;
 	stor->reg = reg;
 }
 
-static inline void rz_analysis_var_storage_init_stack(RzAnalysisVarStorage *stor, RzStackAddr stack_off) {
+static inline void rz_analysis_var_storage_init_stack(RZ_NONNULL RzAnalysisVarStorage *stor, RzStackAddr stack_off) {
+	rz_return_if_fail(stor);
 	stor->type = RZ_ANALYSIS_VAR_STORAGE_STACK;
 	stor->stack_off = stack_off;
 }

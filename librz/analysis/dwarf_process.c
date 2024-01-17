@@ -57,6 +57,78 @@ static bool prefer_linkage_name(DW_LANG lang) {
 }
 
 /// DWARF Register Number Mapping
+static const char *map_dwarf_register_dummy(ut32 reg_num) {
+	switch (reg_num) {
+	case 0: return "reg0";
+	case 1: return "reg1";
+	case 2: return "reg2";
+	case 3: return "reg3";
+	case 4: return "reg4";
+	case 5: return "reg5";
+	case 6: return "reg6";
+	case 7: return "reg7";
+	case 8: return "reg8";
+	case 9: return "reg9";
+	case 10: return "reg10";
+	case 11: return "reg11";
+	case 12: return "reg12";
+	case 13: return "reg13";
+	case 14: return "reg14";
+	case 15: return "reg15";
+	case 16: return "reg16";
+	case 17: return "reg17";
+	case 18: return "reg18";
+	case 19: return "reg19";
+	case 20: return "reg20";
+	case 21: return "reg21";
+	case 22: return "reg22";
+	case 23: return "reg23";
+	case 24: return "reg24";
+	case 25: return "reg25";
+	case 26: return "reg26";
+	case 27: return "reg27";
+	case 28: return "reg28";
+	case 29: return "reg29";
+	case 30: return "reg30";
+	case 31: return "reg31";
+	case 32: return "reg32";
+	case 33: return "reg33";
+	case 34: return "reg34";
+	case 35: return "reg35";
+	case 36: return "reg36";
+	case 37: return "reg37";
+	case 38: return "reg38";
+	case 39: return "reg39";
+	case 40: return "reg40";
+	case 41: return "reg41";
+	case 42: return "reg42";
+	case 43: return "reg43";
+	case 44: return "reg44";
+	case 45: return "reg45";
+	case 46: return "reg46";
+	case 47: return "reg47";
+	case 48: return "reg48";
+	case 49: return "reg49";
+	case 50: return "reg50";
+	case 51: return "reg51";
+	case 52: return "reg52";
+	case 53: return "reg53";
+	case 54: return "reg54";
+	case 55: return "reg55";
+	case 56: return "reg56";
+	case 57: return "reg57";
+	case 58: return "reg58";
+	case 59: return "reg59";
+	case 60: return "reg60";
+	case 61: return "reg61";
+	case 62: return "reg62";
+	case 63: return "reg63";
+	default:
+		rz_warn_if_reached();
+		return "unsupported_reg";
+	}
+}
+
 
 /* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
 static const char *map_dwarf_reg_to_x86_64_reg(ut32 reg_num) {
@@ -516,11 +588,6 @@ static const char *map_dwarf_reg_to_arm64(ut32 reg_num) {
 }
 
 #include "hexagon_dwarf_reg_num_table.inc"
-
-static const char *map_dwarf_register_dummy(ut32 reg_num) {
-	static char buf[32];
-	return rz_strf(buf, "reg%u", reg_num);
-}
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name
