@@ -619,7 +619,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_resources_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 limit = rz_config_get_i(core->config, "bin.hashlimit");
-	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzBinInfo *info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
 	if (!info) {
 		RZ_LOG_ERROR("core: Cannot get bin info\n");
 		return RZ_CMD_STATUS_ERROR;

@@ -49,7 +49,8 @@ static ut64 initializeEsil(RzCore *core) {
 	RzBinInfo *info = NULL;
 	if (entries && !rz_pvector_empty(entries)) {
 		entry = (RzBinAddr *)rz_pvector_pop_front(entries);
-		info = rz_bin_get_info(core->bin);
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
 		addr = info->has_va ? entry->vaddr : entry->paddr;
 		rz_pvector_push(entries, entry);
 	} else {

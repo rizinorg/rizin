@@ -345,7 +345,8 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	}
 	char *pdb_path = NULL;
 	RzPdb *pdb = NULL;
-	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzBinInfo *info = o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
 	if (!info) {
 		goto fail;
 	}
