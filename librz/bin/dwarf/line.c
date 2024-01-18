@@ -222,17 +222,17 @@ static bool LineHdr_parse_v4(DWLineContext *ctx) {
 /**
  * \brief Get the full path from a file index, it will join the directory find in \p info with the filename
  * \param ctx the context
- * \param file_index the index of the file
+ * \param index the index of the file
  * \return the full path or NULL if the file index is invalid
  */
 static char *full_file_path(
 	DWLineContext *ctx,
-	ut64 file_index) {
+	ut64 index) {
 	rz_return_val_if_fail(ctx && ctx->hdr, NULL);
-	if (file_index >= rz_vector_len(&ctx->hdr->file_names)) {
+	if (index >= rz_vector_len(&ctx->hdr->file_names)) {
 		return NULL;
 	}
-	RzBinDwarfFileEntry *file = rz_vector_index_ptr(&ctx->hdr->file_names, file_index);
+	RzBinDwarfFileEntry *file = rz_vector_index_ptr(&ctx->hdr->file_names, index);
 	if (!file->path_name) {
 		return NULL;
 	}
@@ -249,22 +249,25 @@ static char *full_file_path(
 	const char *comp_dir = ctx->dw && ctx->dw->info
 		? ht_up_find(ctx->dw->info->offset_comp_dir, ctx->hdr->offset, NULL)
 		: NULL;
-	const char *include_dir = NULL;
-	char *own_str = NULL;
-	if (file->directory_index > 0 && file->directory_index - 1 < rz_pvector_len(&ctx->hdr->directories)) {
-		include_dir = rz_pvector_at(&ctx->hdr->directories, file->directory_index - 1);
-		if (include_dir && include_dir[0] != '/' && comp_dir) {
-			include_dir = own_str = rz_str_newf("%s/%s/", comp_dir, include_dir);
+	const ut64 dir_index = ctx->hdr->encoding.version < 5 ? file->directory_index - 1 : file->directory_index;
+	const char *dir = (dir_index >= 0 && dir_index < rz_pvector_len(&ctx->hdr->directories))
+		? rz_pvector_at(&ctx->hdr->directories, dir_index)
+		: NULL;
+	char *file_path_abs = NULL;
+	if (comp_dir && dir) {
+		if (dir[0] == '/') {
+			file_path_abs = rz_str_newf("%s/%s", dir, file->path_name);
+		} else {
+			file_path_abs = rz_str_newf("%s/%s/%s", comp_dir, dir, file->path_name);
 		}
+	} else if (comp_dir) {
+		file_path_abs = rz_str_newf("%s/%s", comp_dir, file->path_name);
+	} else if (dir) {
+		file_path_abs = rz_str_newf("%s/%s", dir, file->path_name);
 	} else {
-		include_dir = comp_dir;
+		file_path_abs = rz_str_new(file->path_name);
 	}
-	if (!include_dir) {
-		include_dir = "./";
-	}
-	char *r = rz_str_newf("%s/%s", include_dir, file->path_name);
-	free(own_str);
-	return r;
+	return file_path_abs;
 }
 
 static const char *full_file_path_cached(DWLineContext *ctx, ut64 file_index) {
