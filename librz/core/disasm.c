@@ -118,7 +118,8 @@ typedef struct {
 	int tracespace;
 	int cyclespace;
 	int show_indent;
-	ut32 debuginfo;
+	RzDebugInfoOption debuginfo;
+
 	bool show_size;
 	bool show_trace;
 	bool show_family;
@@ -280,13 +281,6 @@ static inline void set_flag(uint32_t *flags, uint32_t flag, bool value) {
 		*flags &= ~flag;
 	}
 }
-
-enum debuginfo_flag_enum_t {
-	DEBUGINFO = 1 << 0,
-	DEBUGINFO_ABSPATH = 1 << 1,
-	DEBUGINFO_FILE = 1 << 2,
-	DEBUGINFO_LINES = 1 << 3,
-};
 
 static void ds_setup_print_pre(RzDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RzDisasmState *ds, bool tail, bool middle);
@@ -566,6 +560,22 @@ static void ds_print_esil_analysis_fini(RzDisasmState *ds) {
 	}
 }
 
+static void RzBinSourceLineCacheItem_free(RzBinSourceLineCacheItem *x) {
+	if (!x) {
+		return;
+	}
+	fclose(x->fd);
+	ht_uu_free(x->line_by_ln);
+	free(x);
+}
+
+static void RzBinSourceLineCacheItem_HtPPKv_free(HtPPKv *x) {
+	if (!x) {
+		return;
+	}
+	RzBinSourceLineCacheItem_free(x->value);
+}
+
 static RzDisasmState *ds_init(RzCore *core) {
 	RzDisasmState *ds = RZ_NEW0(RzDisasmState);
 	if (!ds) {
@@ -631,10 +641,11 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->tracespace = rz_config_get_i(core->config, "asm.tracespace");
 	ds->cyclespace = rz_config_get_i(core->config, "asm.cyclespace");
 
-	set_flag(&ds->debuginfo, DEBUGINFO, rz_config_get_b(core->config, "asm.debuginfo"));
-	set_flag(&ds->debuginfo, DEBUGINFO_FILE, rz_config_get_b(core->config, "asm.debuginfo.file"));
-	set_flag(&ds->debuginfo, DEBUGINFO_ABSPATH, rz_config_get_b(core->config, "asm.debuginfo.abspath"));
-	set_flag(&ds->debuginfo, DEBUGINFO_LINES, rz_config_get_b(core->config, "asm.debuginfo.lines"));
+	ds->debuginfo.enable = rz_config_get_b(core->config, "asm.debuginfo");
+	ds->debuginfo.file = rz_config_get_b(core->config, "asm.debuginfo.file");
+	ds->debuginfo.abspath = rz_config_get_b(core->config, "asm.debuginfo.abspath");
+	ds->debuginfo.lines = rz_config_get_b(core->config, "asm.debuginfo.lines");
+	ds->debuginfo.cache.items = ht_pp_new(NULL, RzBinSourceLineCacheItem_HtPPKv_free, NULL);
 
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
@@ -838,6 +849,7 @@ static void ds_free(RzDisasmState *ds) {
 	ds_reflines_fini(ds);
 	ds_print_esil_analysis_fini(ds);
 	sdb_free(ds->ssa);
+	ht_pp_free(ds->debuginfo.cache.items);
 	free(ds->comment);
 	free(ds->line);
 	free(ds->line_col);
@@ -3699,16 +3711,12 @@ static void ds_align_comment(RzDisasmState *ds) {
 }
 
 static void ds_print_debuginfo(RzDisasmState *ds) {
-	if (!(ds->debuginfo & DEBUGINFO)) {
+	if (!ds->debuginfo.enable)
 		return;
-	}
 
-	if (ds->debuginfo & DEBUGINFO_LINES) {
-		// TODO: cache value in ds
-		int file_and_abspath = (ds->debuginfo & DEBUGINFO_FILE) ? 1 : 0;
-		file_and_abspath += (ds->debuginfo & DEBUGINFO_ABSPATH) ? 1 : 0;
+	if (ds->debuginfo.lines) {
 		free(ds->sl);
-		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, file_and_abspath);
+		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, ds->debuginfo);
 		if (RZ_STR_ISEMPTY(ds->sl))
 			return;
 		if (ds->osl && !(ds->osl && strcmp(ds->sl, ds->osl)))

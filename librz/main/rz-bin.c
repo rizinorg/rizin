@@ -586,7 +586,10 @@ error:
 
 static int rabin_show_srcline(RzBin *bin, ut64 at) {
 	char *srcline;
-	if (at != UT64_MAX && (srcline = rz_bin_addr2text(bin, at, true))) {
+	RzDebugInfoOption option = { 0 };
+	option.file = true;
+	option.abspath = true;
+	if (at != UT64_MAX && (srcline = rz_bin_addr2text(bin, at, option))) {
 		printf("%s\n", srcline);
 		free(srcline);
 		return true;

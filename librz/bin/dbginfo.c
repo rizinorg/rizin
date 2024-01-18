@@ -239,13 +239,117 @@ RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int
 	return false;
 }
 
-RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin) {
+static inline bool read_next_line(FILE *fd, ut64 *psize, RzStrBuf *sb) {
+	rz_return_val_if_fail(fd && sb, NULL);
+
+	ut64 size = 0;
+	char buf[1024] = { 0 };
+	while (true) {
+		ut64 r = fread(buf, 1, sizeof(buf) - 1, fd);
+		if (ferror(fd) || r <= 0) {
+			return false;
+		}
+		char *p = buf;
+		char *q = NULL;
+		do {
+			q = memchr(p, '\n', r);
+			p = q + 1;
+			if (q) {
+				ut64 sz = q - buf;
+				size += sz;
+				fseek(fd, -(long)(r - 1 - sz), SEEK_CUR);
+				if (ferror(fd)) {
+					return false;
+				}
+				rz_strbuf_append_n(sb, buf, sz);
+				if (psize) {
+					*psize = size;
+				}
+				return true;
+			}
+			size += r;
+			rz_strbuf_append_n(sb, buf, r);
+		} while (p - buf <= r && q);
+	}
+	return false;
+}
+
+static char *read_line(const char *file, int line, RzBinSourceLineCache *cache) {
+	rz_return_val_if_fail(file, NULL);
+	if (!(cache && cache->items)) {
+		rz_file_slurp_line(file, line, 0);
+	}
+	bool found = false;
+	bool found_off = false;
+	RzStrBuf sb = { 0 };
+	rz_strbuf_init(&sb);
+	RzBinSourceLineCacheItem *item = ht_pp_find(cache->items, file, &found);
+	if (found) {
+		if (!(item && item->fd)) {
+			return NULL;
+		} else {
+			ut64 offset = ht_uu_find(item->line_by_ln, line, &found_off);
+			if (!found_off) {
+				goto build;
+			}
+			fseek(item->fd, (long)offset, SEEK_SET);
+			read_next_line(item->fd, NULL, &sb);
+			return rz_strbuf_drain_nofree(&sb);
+		}
+	} else {
+	build:
+		if (!rz_file_exists(file)) {
+			ht_pp_insert(cache->items, file, NULL);
+			return NULL;
+		}
+		item = RZ_NEW0(RzBinSourceLineCacheItem);
+		if (!item) {
+			goto err;
+		}
+		item->fd = rz_sys_fopen(file, "r");
+		if (!item->fd) {
+			goto err;
+		}
+		item->line_by_ln = ht_uu_new0();
+		if (!item->line_by_ln) {
+			goto err;
+		}
+
+		ut64 i = 1;
+		ut64 offset = 0;
+		while (i < line) {
+			ut64 tmp_sz = 0;
+			sb.len = sb.ptrlen = 0;
+			if (!read_next_line(item->fd, &tmp_sz, &sb)) {
+				goto err;
+			}
+			++i;
+			offset += tmp_sz + 1;
+		}
+		ht_uu_update(item->line_by_ln, line, offset);
+		ht_pp_update(cache->items, file, item);
+
+		sb.len = sb.ptrlen = 0;
+		read_next_line(item->fd, NULL, &sb);
+		return rz_strbuf_drain_nofree(&sb);
+	}
+err:
+	if (item) {
+		ht_uu_free(item->line_by_ln);
+		fclose(item->fd);
+	}
+	free(item);
+	rz_strbuf_fini(&sb);
+	return NULL;
+}
+
+RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, RzDebugInfoOption opt) {
 	rz_return_val_if_fail(bin, NULL);
-	if (!bin->cur || !bin->cur->o || !bin->cur->o->lines) {
+	if(!(bin->cur && bin->cur->o && bin->cur->o->lines)){
 		return NULL;
 	}
 	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(bin->cur->o->lines, addr);
-	if (s && s->address != addr) {
+	if (!(s && s->address == addr)) {
 		// consider only exact matches, not inside of samples
 		return NULL;
 	}
@@ -255,31 +359,24 @@ RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin) {
 	if (!s) {
 		return NULL;
 	}
-	const char *file_nopath;
-	if (origin > 1) {
-		file_nopath = s->file;
-	} else {
-		file_nopath = strrchr(s->file, '/');
-		if (file_nopath) {
-			file_nopath++;
-		} else {
-			file_nopath = s->file;
-		}
-	}
+	const char *filepath = opt.abspath ? s->file : rz_file_basename(s->file);
 	if (!s->line) {
-		return strdup(file_nopath);
+		return strdup(filepath);
 	}
-	char *out = rz_file_slurp_line(s->file, s->line, 0);
-	if (out) {
-		rz_str_trim(out);
-		if (origin) {
-			char *res = rz_str_newf("%s:%d %s",
-				file_nopath, s->line,
-				out ? out : "");
-			free(out);
-			out = res;
-		}
-		return out;
+
+	RzStrBuf sb = { 0 };
+	rz_strbuf_initf(&sb, "%s:%" PFMT32u, filepath, s->line);
+	if (!opt.file) {
+		return rz_strbuf_drain_nofree(&sb);
 	}
-	return rz_str_newf("%s:%" PFMT32u, file_nopath, s->line);
+
+	char *out = read_line(s->file, s->line, &opt.cache);
+	if (!out) {
+		return rz_strbuf_drain_nofree(&sb);
+	}
+
+	rz_str_trim(out);
+	rz_strbuf_appendf(&sb, " %s", out);
+	free(out);
+	return rz_strbuf_drain_nofree(&sb);
 }

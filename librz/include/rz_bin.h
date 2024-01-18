@@ -163,7 +163,7 @@ typedef enum {
 } RzBinLanguage;
 
 #define RZ_BIN_LANGUAGE_MASK(x)       ((x) & ~RZ_BIN_LANGUAGE_BLOCKS)
-#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x)&RZ_BIN_LANGUAGE_BLOCKS)
+#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x) & RZ_BIN_LANGUAGE_BLOCKS)
 
 enum {
 	RZ_BIN_CLASS_PRIVATE,
@@ -502,6 +502,23 @@ typedef struct rz_bin_source_line_info_builder_t {
 	RzVector /*<RzBinSourceLineSample>*/ samples; //< may be unsorted and will be sorted in the finalization step
 	RzStrConstPool filename_pool;
 } RzBinSourceLineInfoBuilder;
+
+typedef struct {
+	FILE *fd;
+	HtUU /*<ut64, ut64>*/ *line_by_ln;
+} RzBinSourceLineCacheItem;
+
+typedef struct {
+	HtPP /*<const char*, RzBinSourceLineCacheItem *>*/ *items;
+} RzBinSourceLineCache;
+
+typedef struct {
+	RzBinSourceLineCache cache;
+	bool enable : 1;
+	bool file : 1;
+	bool abspath : 1;
+	bool lines : 1;
+} RzDebugInfoOption;
 
 RZ_API void rz_bin_source_line_info_builder_init(RzBinSourceLineInfoBuilder *builder);
 RZ_API void rz_bin_source_line_info_builder_fini(RzBinSourceLineInfoBuilder *builder);
@@ -1018,7 +1035,7 @@ RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, i
 
 /* dbginfo.c */
 RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line);
-RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin);
+RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, RzDebugInfoOption opt);
 
 /* filter.c */
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules);
