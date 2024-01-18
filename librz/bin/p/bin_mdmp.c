@@ -494,10 +494,6 @@ static bool mdmp_check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzPVector /*<RzBinString *>*/ *mdmp_strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
-}
-
 RzBinPlugin rz_bin_plugin_mdmp = {
 	.name = "mdmp",
 	.desc = "Windows MiniDump plugin",
@@ -515,7 +511,6 @@ RzBinPlugin rz_bin_plugin_mdmp = {
 	.maps = &mdmp_maps,
 	.sections = &mdmp_sections,
 	.symbols = &mdmp_symbols,
-	.strings = &mdmp_strings,
 };
 
 #ifndef RZ_PLUGIN_INCORE

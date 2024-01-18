@@ -316,7 +316,12 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets
 }
 
 static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 10 bytes.
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+	opt.min_length = 10;
+	return rz_bin_file_strings(bf, &opt);
 }
 
 RzBinPlugin rz_bin_plugin_smd = {
@@ -332,7 +337,6 @@ RzBinPlugin rz_bin_plugin_smd = {
 	.symbols = &symbols,
 	.strings = &strings,
 	.info = &info,
-	.minstrlen = 10,
 	.strfilter = 'U'
 };
 

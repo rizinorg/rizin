@@ -65,7 +65,6 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 	RzBin *bin = core->bin;
 	ut8 buffer[512] = { 0 };
 	bool ret = false;
-	bool big_endian = core->analysis->big_endian;
 	RzDetectedString *detected = NULL;
 
 	RzList *strings = rz_list_newf((RzListFree)rz_detected_string_free);
@@ -73,18 +72,13 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 		return false;
 	}
 
-	int min_str_length = bin->minstrlen;
-	if (min_str_length < 1) {
-		min_str_length = 4;
-	}
-
-	RzStrEnc strenc = rz_str_enc_string_as_type(bin->strenc);
+	RzStrEnc strenc = bin->str_search_cfg.string_encoding;
 	RzUtilStrScanOptions scan_opt = {
 		.buf_size = sizeof(buffer),
-		.max_uni_blocks = 4,
-		.min_str_length = min_str_length,
-		.prefer_big_endian = big_endian,
-		.check_ascii_freq = bin->strseach_check_ascii_freq,
+		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.min_str_length = bin->str_search_cfg.min_length,
+		.prefer_big_endian = core->analysis->big_endian,
+		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
 	};
 
 	rz_io_pread_at(core->io, pointer, buffer, sizeof(buffer));

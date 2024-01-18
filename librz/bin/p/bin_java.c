@@ -218,7 +218,6 @@ RzBinPlugin rz_bin_plugin_java = {
 	.libs = libs,
 	.classes = classes,
 	.demangle_type = demangle_type,
-	.minstrlen = 3,
 };
 
 #ifndef RZ_PLUGIN_INCORE

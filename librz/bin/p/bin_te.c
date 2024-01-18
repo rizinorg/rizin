@@ -162,7 +162,6 @@ RzBinPlugin rz_bin_plugin_te = {
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
-	.minstrlen = 4,
 };
 
 #ifndef RZ_PLUGIN_INCORE

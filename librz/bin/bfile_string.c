@@ -5,9 +5,6 @@
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_str_search.h>
 
-#define UTIL_STR_SCAN_OPT_BUFFER_SIZE 2048
-#define RAW_FILE_ALIGNMENT            0x10000
-
 typedef struct search_interval_t {
 	ut64 paddr;
 	ut64 psize;
@@ -17,15 +14,17 @@ typedef struct shared_data_t {
 	RzThreadLock *lock;
 	RzBinFile *bf;
 	HtUP *strings_db;
+	RzStrEnc string_encoding;
+	size_t max_uni_blocks;
+	size_t buffer_size;
+	size_t min_str_length;
+	bool check_ascii_freq;
+	bool prefer_big_endian;
 } SharedData;
 
 typedef struct search_thread_data_t {
 	RzThreadQueue *intervals;
 	RzPVector /*<RzBinString *>*/ *results;
-	size_t min_length;
-	RzStrEnc encoding;
-	bool check_ascii_freq;
-	bool big_endian;
 	SharedData *shared;
 	RzAtomicBool *loop;
 } SearchThreadData;
@@ -74,31 +73,34 @@ static RzBinString *to_bin_string(RzDetectedString *src) {
 	return dst;
 }
 
-static RzList /*<RzDetectedString *>*/ *string_scan_range(SearchThreadData *std, const ut64 paddr, const ut64 size) {
+static RzList /*<RzDetectedString *>*/ *string_scan_range(SharedData *shared, const ut64 paddr, const ut64 interval_size) {
 	RzList *found = rz_list_newf((RzListFree)free);
 	if (!found) {
 		return NULL;
 	}
 
+	// ensure the scan buffer size is less or equal to the the actual interval size.
+	size_t buffer_size = RZ_MIN(shared->buffer_size, interval_size);
+
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = UTIL_STR_SCAN_OPT_BUFFER_SIZE,
-		.max_uni_blocks = 4,
-		.min_str_length = std->min_length,
-		.prefer_big_endian = std->big_endian,
-		.check_ascii_freq = std->check_ascii_freq,
+		.buf_size = buffer_size,
+		.max_uni_blocks = shared->max_uni_blocks,
+		.min_str_length = shared->min_str_length,
+		.prefer_big_endian = shared->prefer_big_endian,
+		.check_ascii_freq = shared->check_ascii_freq,
 	};
 
-	ut8 *buf = calloc(size, 1);
+	ut8 *buf = calloc(interval_size, 1);
 	if (!buf) {
 		RZ_LOG_ERROR("bin_file_strings: cannot allocate string seac buffer.\n");
 		rz_list_free(found);
 		return NULL;
 	}
 
-	shared_data_read_at(std->shared, paddr, buf, size);
+	shared_data_read_at(shared, paddr, buf, interval_size);
 
-	ut64 end = paddr + size;
-	int count = rz_scan_strings_raw(buf, found, &scan_opt, paddr, end, std->encoding);
+	ut64 end = paddr + interval_size;
+	int count = rz_scan_strings_raw(buf, found, &scan_opt, paddr, end, shared->string_encoding);
 	free(buf);
 
 	if (count <= 0) {
@@ -112,7 +114,8 @@ static void *search_string_thread_runner(SearchThreadData *std) {
 	RzDetectedString *detected = NULL;
 	ut64 paddr = 0, psize = 0;
 	bool loop = true;
-	const RzBinFile *bf = std->shared->bf; // this data is always RO
+	SharedData *shared = std->shared;
+	const RzBinFile *bf = shared->bf; // this data is always RO
 
 	do {
 		itv = rz_th_queue_pop(std->intervals, false);
@@ -124,7 +127,7 @@ static void *search_string_thread_runner(SearchThreadData *std) {
 		free(itv);
 		RZ_LOG_DEBUG("[%p] searching between [0x%08" PFMT64x " : 0x%08" PFMT64x "]\n", std, paddr, paddr + psize);
 
-		RzList *list = string_scan_range(std, paddr, psize);
+		RzList *list = string_scan_range(shared, paddr, psize);
 		while (list && rz_atomic_bool_get(std->loop)) {
 			detected = rz_list_pop_head(list);
 			if (!detected) {
@@ -144,7 +147,7 @@ static void *search_string_thread_runner(SearchThreadData *std) {
 			bstr->paddr += bf->o->boffset;
 			bstr->vaddr = rz_bin_object_p2v(bf->o, bstr->paddr);
 
-			shared_ht_up_insert(std->shared, bstr->vaddr, bstr);
+			shared_ht_up_insert(shared, bstr->vaddr, bstr);
 		}
 
 		rz_list_free(list);
@@ -180,26 +183,7 @@ static void interrupt_pool(RzThreadPool *pool) {
 	}
 }
 
-static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, RzThreadQueue *intervals, SharedData *shared) {
-	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(shared->bf);
-	bool check_ascii_freq = false;
-	bool big_endian = false;
-
-	if (!min_length) {
-		min_length = plugin && plugin->minstrlen > 0 ? plugin->minstrlen : 4;
-	}
-
-	if (shared->bf->o) {
-		const RzBinInfo *binfo = rz_bin_object_get_info(shared->bf->o);
-		big_endian = binfo ? binfo->big_endian : false;
-	}
-
-	if (shared->bf->rbin) {
-		encoding = rz_str_enc_string_as_type(shared->bf->rbin->strenc);
-		check_ascii_freq = shared->bf->rbin->strseach_check_ascii_freq;
-	}
-
+static bool create_string_search_thread(RzThreadPool *pool, RzThreadQueue *intervals, SharedData *shared) {
 	SearchThreadData *std = RZ_NEW0(SearchThreadData);
 	if (!std) {
 		RZ_LOG_ERROR("bin_file_strings: cannot allocate SearchThreadData.\n");
@@ -212,11 +196,7 @@ static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, R
 		return false;
 	}
 	std->shared = shared;
-	std->check_ascii_freq = check_ascii_freq;
-	std->encoding = encoding;
 	std->intervals = intervals;
-	std->min_length = min_length;
-	std->big_endian = big_endian;
 	std->loop = rz_atomic_bool_new(true);
 
 	RzThread *thread = rz_th_new((RzThreadFunction)search_string_thread_runner, std);
@@ -299,7 +279,7 @@ static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzPVecto
 	free(sbuf);
 }
 
-static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<RzBinString *>*/ *results, ut64 max_interval) {
+static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<RzBinString *>*/ *results, ut64 max_region_size) {
 	void **iter = NULL;
 	RzBinSection *section = NULL;
 	RzBinObject *o = bf->o;
@@ -310,10 +290,10 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<Rz
 		section = *iter;
 		if (!section->name || section->paddr >= bf->size) {
 			continue;
-		} else if (max_interval && section->size > max_interval) {
+		} else if (max_region_size && section->size > max_region_size) {
 			RZ_LOG_WARN("bin_file_strings: search interval size (0x%" PFMT64x
-				    ") exeeds bin.maxstrbuf (0x%" PFMT64x "), skipping it.\n",
-				section->size, max_interval);
+				    ") exeeds max region size (0x%" PFMT64x "), skipping it.\n",
+				section->size, max_region_size);
 			continue;
 		}
 
@@ -324,34 +304,45 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<Rz
 }
 
 /**
+ * \brief  Sets the RzBinStringSearchOpt struct to its default options.
+ *
+ * \param  opt   The RzBinStringSearchOpt struct to initialize.
+ */
+RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt) {
+	rz_return_if_fail(opt);
+	opt->max_threads = RZ_THREAD_POOL_ALL_CORES;
+	opt->min_length = RZ_BIN_STRING_SEARCH_MIN_STRING;
+	opt->buffer_size = RZ_BIN_STRING_SEARCH_BUFFER_SIZE;
+	opt->max_uni_blocks = RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS;
+	opt->max_region_size = RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE;
+	opt->raw_alignment = RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT;
+	opt->string_encoding = RZ_STRING_ENC_GUESS;
+	opt->check_ascii_freq = RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ;
+	opt->mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
+}
+
+/**
  * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile
  *
- * \param  bf           The RzBinFile to use for searching for strings
- * \param  min_length   The string minimum length (when len < 1, is set to 4)
- * \param  raw_strings  When set to false, it will search for strings only in the data section
+ * \param  bf   The RzBinFile to use for searching for strings
+ * \param  opt  The options regarding the string search.
  *
  * \return On success returns RzList pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings) {
-	rz_return_val_if_fail(bf, NULL);
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, RZ_NONNULL const RzBinStringSearchOpt *opt) {
+	rz_return_val_if_fail(bf && opt, NULL);
 
 	HtUP *strings_db = NULL;
 	RzPVector *results = NULL;
 	RzThreadQueue *intervals = NULL;
 	RzThreadPool *pool = NULL;
 	RzThreadLock *lock = NULL;
-	ut64 max_interval = 0;
 	size_t pool_size = 1;
+	bool prefer_big_endian = false;
+	const size_t raw_alignment = opt->raw_alignment;
+	RzBinStringSearchMode mode = opt->mode;
 
-	if (min_length < 1) {
-		min_length = 4;
-	}
-
-	if (bf->rbin) {
-		max_interval = bf->rbin->maxstrbuf;
-	}
-
-	pool = rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES);
+	pool = rz_th_pool_new(opt->max_threads);
 	if (!pool) {
 		RZ_LOG_ERROR("bin_file_strings: cannot allocate thread pool.\n");
 		goto fail;
@@ -376,21 +367,27 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		goto fail;
 	}
 
-	if (raw_strings) {
+	bool has_sections = bf->o && !rz_pvector_empty(bf->o->sections);
+
+	if (mode == RZ_BIN_STRING_SEARCH_MODE_AUTO && !has_sections) {
+		mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+	}
+
+	if (mode == RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY) {
 		// returns all the strings found on the RzBinFile
 		ut64 section_size = bf->size / pool_size;
-		if (section_size & (RAW_FILE_ALIGNMENT - 1)) {
-			section_size += RAW_FILE_ALIGNMENT;
-			section_size &= ~(RAW_FILE_ALIGNMENT - 1);
+		if (section_size & (raw_alignment - 1)) {
+			section_size += raw_alignment;
+			section_size &= ~(raw_alignment - 1);
 		}
 		if (!section_size) {
-			section_size += RAW_FILE_ALIGNMENT;
+			section_size += raw_alignment;
 		}
 
-		if (max_interval && section_size > max_interval) {
-			RZ_LOG_WARN("bin_file_strings: search interval size (0x%" PFMT64x
-				    ") exeeds bin.maxstrbuf (0x%" PFMT64x "), skipping it.\n",
-				section_size, max_interval);
+		if (opt->max_region_size && section_size > opt->max_region_size) {
+			RZ_LOG_ERROR("bin_file_strings: search interval size (0x%" PFMT64x
+				     ") exeeds max region size (0x%" PFMTSZx ").\n",
+				section_size, opt->max_region_size);
 			goto fail;
 		}
 
@@ -413,7 +410,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 				goto fail;
 			}
 		}
-	} else if (bf->o && !rz_pvector_empty(bf->o->sections)) {
+	} else if (has_sections) {
 		// returns only the strings found on the RzBinFile but within the data section
 		void **iter = NULL;
 		RzBinSection *section = NULL;
@@ -422,10 +419,10 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 			section = *iter;
 			if (section->paddr >= bf->size) {
 				continue;
-			} else if (max_interval && section->size > max_interval) {
+			} else if (opt->max_region_size && section->size > opt->max_region_size) {
 				RZ_LOG_WARN("bin_file_strings: search interval size (0x%" PFMT64x
-					    ") exeeds bin.maxstrbuf (0x%" PFMT64x "), skipping it.\n",
-					section->size, max_interval);
+					    ") exeeds max region size (0x%" PFMTSZx "), skipping it.\n",
+					section->size, opt->max_region_size);
 				continue;
 			}
 
@@ -453,15 +450,36 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		}
 	}
 
+	if (rz_th_queue_is_empty(intervals)) {
+		// we just fail directly and return an empty vector, since there are no search intervals.
+		goto fail;
+	}
+
+	if (bf->o) {
+		const RzBinInfo *binfo = rz_bin_object_get_info(bf->o);
+		prefer_big_endian = binfo ? binfo->big_endian : false;
+	}
+
 	SharedData shared = {
 		.lock = lock,
 		.bf = bf,
 		.strings_db = strings_db,
+		.buffer_size = opt->buffer_size,
+		.string_encoding = opt->string_encoding,
+		.max_uni_blocks = opt->max_uni_blocks,
+		.min_str_length = opt->min_length,
+		.check_ascii_freq = opt->check_ascii_freq,
+		.prefer_big_endian = prefer_big_endian,
 	};
+
+	if (shared.min_str_length < 1) {
+		// always ensure string min length is at least 1
+		shared.min_str_length = RZ_BIN_STRING_SEARCH_MIN_STRING;
+	}
 
 	RZ_LOG_VERBOSE("bin_file_strings: using %u threads\n", (ut32)pool_size);
 	for (size_t i = 0; i < pool_size; ++i) {
-		if (!create_string_search_thread(pool, min_length, intervals, &shared)) {
+		if (!create_string_search_thread(pool, intervals, &shared)) {
 			interrupt_pool(pool);
 			goto fail;
 		}
@@ -492,8 +510,8 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		}
 	}
 
-	if (!raw_strings) {
-		scan_cfstring_table(bf, strings_db, results, max_interval);
+	if (opt->mode != RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY) {
+		scan_cfstring_table(bf, strings_db, results, opt->max_region_size);
 	}
 	rz_pvector_sort(results, (RzPVectorComparator)string_compare_sort, NULL);
 

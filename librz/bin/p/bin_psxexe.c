@@ -109,9 +109,12 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 }
 
 static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	// hardcode minstrlen = 20
-	int minstrlen = bf->minstrlen ? bf->minstrlen : 20;
-	return rz_bin_file_strings(bf, minstrlen, true);
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 20 bytes.
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+	opt.min_length = 20;
+	return rz_bin_file_strings(bf, &opt);
 }
 
 RzBinPlugin rz_bin_plugin_psxexe = {
