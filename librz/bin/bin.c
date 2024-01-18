@@ -473,7 +473,6 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	bin->file = NULL;
 	free(bin->force);
 	free(bin->srcdir);
-	free(bin->strenc);
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 
@@ -758,13 +757,12 @@ RZ_API RzBin *rz_bin_new(void) {
 	if (!bin->event) {
 		goto trashbin_constpool;
 	}
+	rz_bin_string_search_opt_init(&bin->str_search_cfg);
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0();
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->minstrlen = 0;
 	bin->strpurge = NULL;
-	bin->strenc = NULL;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
 	bin->hash = rz_hash_new();
@@ -779,6 +777,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->plugins = rz_list_new_from_array((const void **)bin_static_plugins, RZ_ARRAY_SIZE(bin_static_plugins));
 	/* extractors */
 	bin->binxtrs = rz_list_new_from_array((const void **)bin_xtr_static_plugins, RZ_ARRAY_SIZE(bin_xtr_static_plugins));
+
 	return bin;
 
 trashbin_event:

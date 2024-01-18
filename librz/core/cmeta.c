@@ -427,19 +427,20 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 	if (!name) {
 		return false;
 	}
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	if (!bf || !obj) {
+	RzBin *bin = core->bin;
+	RzBinFile *bf = rz_bin_cur(bin);
+	RzBinObject *obj = rz_bin_cur_object(bin);
+	if (!bf || !obj || !bin) {
 		free(name);
 		return false;
 	}
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	RzUtilStrScanOptions scan_opt = {
-		.buf_size = 2048,
-		.max_uni_blocks = 4,
-		.min_str_length = 4,
+		.buf_size = bin->str_search_cfg.buffer_size,
+		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = big_endian,
-		.check_ascii_freq = bf->rbin->strseach_check_ascii_freq
+		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
 	};
 	RzList *str_list = rz_list_new();
 	if (!str_list) {

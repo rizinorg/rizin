@@ -259,10 +259,6 @@ RZ_IPI bool rz_bin_file_set_obj(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
 	} else {
 		obj = bf->o;
 	}
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
-	if (bin->minstrlen < 1) {
-		bin->minstrlen = plugin ? plugin->minstrlen : bin->minstrlen;
-	}
 	if (obj) {
 		if (!obj->info) {
 			return false;

@@ -716,7 +716,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_functions = rz_config_get_b(core->config, "asm.functions");
 	ds->nbytes = rz_config_get_i(core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp(core->print->strconv_mode, "asciidot");
-	ds->strenc = rz_str_enc_string_as_type(rz_config_get(core->config, "bin.str.enc"));
+	ds->strenc = core->bin->str_search_cfg.string_encoding;
 	core->print->bytespace = rz_config_get_i(core->config, "asm.bytes.space");
 	ds->cursor = 0;
 	ds->nb = 0;
@@ -3824,7 +3824,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 }
 
 static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refaddr) {
-	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, -1, refaddr)) {
+	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, refaddr)) {
 		return;
 	}
 	// do not resolve strings on arm64 pointed with ADRP

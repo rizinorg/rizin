@@ -743,10 +743,6 @@ static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
 	return file_hashes;
 }
 
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
-}
-
 /**
  * Currently only used by CIL plugin to resolve `call` and `jmp` targets
  * \returns offset on success, UT64_MAX on fail

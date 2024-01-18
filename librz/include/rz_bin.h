@@ -186,6 +186,31 @@ enum {
 	RZ_BIN_TYPE_CORE = 1
 };
 
+#define RZ_BIN_STRING_SEARCH_MIN_STRING         4
+#define RZ_BIN_STRING_SEARCH_BUFFER_SIZE        2048
+#define RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS     4
+#define RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE    (1024 * 1024 * 10)
+#define RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT 0x10000
+#define RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ   true
+
+typedef enum {
+	RZ_BIN_STRING_SEARCH_MODE_AUTO = 0,
+	RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS,
+	RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY,
+} RzBinStringSearchMode;
+
+typedef struct rz_bin_string_search_opt_t {
+	size_t max_threads; ///< Maximum thread number (normally set to RZ_THREAD_POOL_ALL_CORES).
+	size_t min_length; ///< Smallest string length that is possible to find.
+	size_t buffer_size; ///< Maximum buffer size, which will also determine the maximum string length.
+	size_t max_uni_blocks; ///< Maximum number of unicode blocks
+	size_t max_region_size; ///< Maximum allowable size for the search interval between two memory regions.
+	size_t raw_alignment; ///< Memory sector alignment used for the raw string search.
+	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
+	RzStrEnc string_encoding; ///< The default string encoding type (when set to guess, it is automatically guessed).
+	RzBinStringSearchMode mode; ///< String search mode (auto, ro sections or raw binary)
+} RzBinStringSearchOpt;
+
 typedef struct rz_bin_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
@@ -312,8 +337,6 @@ struct rz_bin_file_t {
 	void *xtr_obj;
 	ut64 loadaddr;
 	/* values used when searching the strings */
-	int minstrlen;
-	int maxstrlen;
 	int narch;
 	struct rz_bin_xtr_plugin_t *curxtr;
 	// struct rz_bin_plugin_t *curplugin; // use o->plugin
@@ -339,8 +362,6 @@ struct rz_bin_t {
 	RzEvent *event;
 	/* preconfigured values */
 	int debase64;
-	int minstrlen;
-	int maxstrlen; //< <= 0 means no limit
 	ut64 maxstrbuf;
 	int rawstr;
 	RZ_DEPRECATE Sdb *sdb;
@@ -360,17 +381,16 @@ struct rz_bin_t {
 	char *strpurge; // purge false positive strings
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
-	char *strenc;
 	ut64 filter_rules;
 	bool verbose;
 	bool demangle;
 	bool use_xtr; // use extract plugins when loading a file?
-	bool strseach_check_ascii_freq; // str.search.check_ascii_freq
 	RzStrConstPool constpool;
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 	RzDemangler *demangler;
 	RzHash *hash;
 	RzList /*<char *>*/ *default_hashes; // bin.hashes.default
+	RzBinStringSearchOpt str_search_cfg;
 };
 
 typedef struct rz_bin_xtr_metadata_t {
@@ -482,8 +502,6 @@ typedef struct rz_bin_plugin_t {
 	char *(*demangle)(const char *str);
 	char *(*regstate)(RzBinFile *bf);
 	int (*file_type)(RzBinFile *bf);
-	/* default value if not specified by user */
-	int minstrlen;
 	char strfilter;
 	void *user;
 } RzBinPlugin;
@@ -841,7 +859,10 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzBinInfo *rz_bin_get_info(RzBin *bin);
 RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr);
 RZ_API ut64 rz_bin_get_laddr(RzBin *bin);
 RZ_API ut64 rz_bin_get_size(RzBin *bin);
-RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, size_t min_length, bool raw_strings);
+
+// string search within the bin
+RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt);
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, RZ_NONNULL const RzBinStringSearchOpt *opt);
 
 // use RzBinFile instead
 RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinAddr *>*/ *rz_bin_get_entries(RZ_NONNULL RzBin *bin);
@@ -946,7 +967,7 @@ RZ_API RZ_BORROW RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, i
 /* filter.c */
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules);
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 addr);
-RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr);
+RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, ut64 addr);
 
 /* bin string */
 RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVector /*<RzBinString *>*/ *pvector);

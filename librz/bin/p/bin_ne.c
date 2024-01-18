@@ -130,7 +130,6 @@ RzBinPlugin rz_bin_plugin_ne = {
 	.symbols = &symbols,
 	.imports = &imports,
 	.relocs = &relocs,
-	.minstrlen = 4
 };
 
 #ifndef RZ_PLUGIN_INCORE

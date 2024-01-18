@@ -252,7 +252,6 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.libs = libraries,
 	.classes = classes,
 	.demangle_type = demangle_type,
-	.minstrlen = 0,
 };
 
 #ifndef RZ_PLUGIN_INCORE

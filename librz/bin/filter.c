@@ -213,13 +213,9 @@ static bool bin_strfilter(RzBin *bin, const char *str) {
 }
 
 /**
- * Filter the given string, respecting bin->strpurge, bin->strfilter,
- * and if len >= 0, also bin->minstrlen and bin->maxstrlen.
+ * Filter the given string, respecting bin->strpurge, bin->strfilter
  */
-RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr) {
-	if (len >= 0 && (len < bin->minstrlen || (bin->maxstrlen > 0 && len > bin->maxstrlen))) {
-		return false;
-	}
+RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, ut64 addr) {
 	if (rz_bin_strpurge(bin, str, addr) || !bin_strfilter(bin, str)) {
 		return false;
 	}

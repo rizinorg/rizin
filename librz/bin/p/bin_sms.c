@@ -100,6 +100,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 10 bytes.
+	opt.min_length = 10;
+	return rz_bin_file_strings(bf, &opt);
+}
+
 RzBinPlugin rz_bin_plugin_sms = {
 	.name = "sms",
 	.desc = "SEGA MasterSystem/GameGear",
@@ -107,7 +115,7 @@ RzBinPlugin rz_bin_plugin_sms = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.info = &info,
-	.minstrlen = 10,
+	.strings = &strings,
 	.strfilter = 'U'
 };
 

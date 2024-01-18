@@ -182,11 +182,19 @@ static void destroy(RzBinFile *bf) {
 	free(sb);
 }
 
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 10 bytes.
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+	opt.min_length = 10;
+	return rz_bin_file_strings(bf, &opt);
+}
+
 RzBinPlugin rz_bin_plugin_mbn = {
 	.name = "mbn",
 	.desc = "MBN/SBL bootloader things",
 	.license = "LGPL3",
-	.minstrlen = 10,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.size = &size,
@@ -195,6 +203,7 @@ RzBinPlugin rz_bin_plugin_mbn = {
 	.entries = &entries,
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
+	.strings = &strings,
 	.info = &info,
 };
 

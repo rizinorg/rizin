@@ -524,7 +524,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 			continue;
 		}
 		ut64 vaddr = rva(o, string->paddr, string->vaddr, va);
-		if (!rz_bin_string_filter(r->bin, string->string, string->length, vaddr)) {
+		if (!rz_bin_string_filter(r->bin, string->string, vaddr)) {
 			continue;
 		}
 		if (rz_cons_is_breaked()) {
@@ -532,7 +532,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 		}
 		rz_meta_set_with_subtype(r->analysis, RZ_META_TYPE_STRING, string->type, vaddr, string->size, string->string);
 		char *f_name = rz_str_dup(string->string);
-		rz_name_filter(f_name, -1, true);
+		rz_name_filter(f_name, string->size, true);
 		char *str;
 		if (r->bin->prefix) {
 			str = rz_str_newf("%s.str.%s", r->bin->prefix, f_name);
@@ -2715,7 +2715,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector
 		ut64 paddr, vaddr;
 		paddr = string->paddr;
 		vaddr = obj ? rva(obj, paddr, string->vaddr, va) : paddr;
-		if (!rz_bin_string_filter(core->bin, string->string, string->length, vaddr)) {
+		if (!rz_bin_string_filter(core->bin, string->string, vaddr)) {
 			continue;
 		}
 
@@ -2924,8 +2924,12 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNUL
 		bf->rbin = core->bin;
 		new_bf = true;
 	}
-	size_t min = rz_config_get_i(core->config, "bin.minstr");
-	RzPVector *l = rz_bin_file_strings(bf, min, true);
+
+	RzBinStringSearchOpt opt = core->bin->str_search_cfg;
+	// enforce raw binary search
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+
+	RzPVector *l = rz_bin_file_strings(bf, &opt);
 	if (new_bf) {
 		rz_buf_free(bf->buf);
 		free(bf->file);

@@ -16,9 +16,14 @@ RZ_IPI void rz_bin_set_and_process_strings(RzBinFile *bf, RzBinObject *o) {
 	RzPVector *strings = NULL;
 	RzBinPlugin *plugin = o->plugin;
 
-	if (!plugin->strings || !(strings = plugin->strings(bf))) {
-		int minlen = (bin->minstrlen > 0) ? bin->minstrlen : plugin->minstrlen;
-		strings = rz_bin_file_strings(bf, minlen, true);
+	/**
+	 * We call rz_bin_file_strings only if the seach mode is not `auto
+	 * or if the plugin fails to generate the string vector.
+	 */
+	if (bin->str_search_cfg.mode != RZ_BIN_STRING_SEARCH_MODE_AUTO ||
+		!plugin->strings ||
+		!(strings = plugin->strings(bf))) {
+		strings = rz_bin_file_strings(bf, &bin->str_search_cfg);
 	}
 
 	void **it;

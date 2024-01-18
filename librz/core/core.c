@@ -1990,7 +1990,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 	}
 	{
 		ut8 buf[128];
-		RzStrEnc encoding = rz_str_enc_string_as_type(core->bin->strenc);
+		RzStrEnc encoding = core->bin->str_search_cfg.string_encoding;
 		const char *c = rz_config_get_i(core->config, "scr.color") ? core->cons->context->pal.ai_ascii : "";
 		const char *cend = (c && *c) ? Color_RESET : "";
 		RzDetectedString *dstr = NULL;

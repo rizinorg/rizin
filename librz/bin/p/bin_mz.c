@@ -269,7 +269,6 @@ RzBinPlugin rz_bin_plugin_mz = {
 	.info = &info,
 	.header = &header,
 	.relocs = &relocs,
-	.minstrlen = 4,
 };
 
 #ifndef RZ_PLUGIN_INCORE

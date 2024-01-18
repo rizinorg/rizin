@@ -2049,8 +2049,7 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_nil, ut32 offset, RzOutputMode mode) {
 	const ut8 *buffer = core->block + offset;
 	const ut32 length = core->blocksize - offset;
-	const char *enc_name = rz_config_get(core->config, "bin.str.enc");
-	RzStrEnc encoding = rz_str_enc_string_as_type(enc_name);
+	RzStrEnc encoding = core->bin->str_search_cfg.string_encoding;
 	RzStrStringifyOpt opt = { 0 };
 
 	if (encoding == RZ_STRING_ENC_GUESS) {
@@ -2123,11 +2122,13 @@ RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int ar
 RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzListIter *it = NULL;
 	RzDetectedString *detected = NULL;
+	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
 		.buf_size = core->blocksize,
-		.max_uni_blocks = 4,
-		.min_str_length = core->bin->minstrlen,
+		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = false,
+		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
 	};
 
 	RzList *found = rz_list_newf((RzListFree)rz_detected_string_free);
@@ -2156,11 +2157,13 @@ RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc
 
 RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzDetectedString *detected = NULL;
+	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
 		.buf_size = core->blocksize,
-		.max_uni_blocks = 4,
-		.min_str_length = core->bin->minstrlen,
+		.max_uni_blocks = bin->str_search_cfg.max_uni_blocks,
+		.min_str_length = bin->str_search_cfg.min_length,
 		.prefer_big_endian = false,
+		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
 	};
 
 	RzList *found = rz_list_newf((RzListFree)rz_detected_string_free);

@@ -370,7 +370,12 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			}
 			pj_a(pj);
 		}
-		RzPVector *vec = rz_bin_file_strings(bf, bin->minstrlen, true);
+
+		RzBinStringSearchOpt opt = bin->str_search_cfg;
+		// enforce raw binary search
+		opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+
+		RzPVector *vec = rz_bin_file_strings(bf, &opt);
 		void **it;
 		RzBinString *string;
 		rz_pvector_foreach (vec, it) {
