@@ -173,12 +173,12 @@ static int _6502Disass(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
 				}
 				break;
 			default:
+				rz_asm_op_set_asm(op, "invalid");
 				goto beach;
 			}
 			return len;
 		}
 	}
 beach:
-	rz_asm_op_set_asm(op, "invalid");
 	return snesDisass(1, 1, pc, op, buf, len);
 }
