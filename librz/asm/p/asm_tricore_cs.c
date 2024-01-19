@@ -31,10 +31,8 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	op->size = ctx->insn->size;
-	char *asmstr = rz_str_newf("%s%s%s",
+	rz_asm_op_setf_asm(op, "%s%s%s",
 		ctx->insn->mnemonic, RZ_STR_ISNOTEMPTY(ctx->insn->op_str) ? " " : "", ctx->insn->op_str);
-	rz_asm_op_set_asm(op, asmstr);
-	free(asmstr);
 
 	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, ctx->token_patterns);
 

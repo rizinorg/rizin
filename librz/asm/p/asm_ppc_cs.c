@@ -105,12 +105,8 @@ static int ppc_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	n = cs_disasm(ctx->handle, (const ut8 *)buf, len, off, 1, &insn);
 	op->size = 4;
 	if (n > 0 && insn->size > 0) {
-		char *opstr = rz_str_newf("%s%s%s", insn->mnemonic,
+		rz_asm_op_setf_asm(op, "%s%s%s", insn->mnemonic,
 			insn->op_str[0] ? " " : "", insn->op_str);
-		if (opstr) {
-			rz_asm_op_set_asm(op, opstr);
-			free(opstr);
-		}
 		cs_free(insn, n);
 		return op->size;
 	}
