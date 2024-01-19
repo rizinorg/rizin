@@ -43,11 +43,7 @@ static int xcore_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = insn->size;
 
 	if (insn->op_str[0]) {
-		char *buf_asm = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
-		if (buf_asm) {
-			rz_asm_op_set_asm(op, buf_asm);
-			free(buf_asm);
-		}
+		rz_asm_op_setf_asm(op, "%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	} else {
 		rz_asm_op_set_asm(op, insn->mnemonic);
 	}
