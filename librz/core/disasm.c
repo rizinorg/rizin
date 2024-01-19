@@ -564,8 +564,8 @@ static void RzBinSourceLineCacheItem_free(RzBinSourceLineCacheItem *x) {
 	if (!x) {
 		return;
 	}
-	fclose(x->fd);
-	ht_uu_free(x->line_by_ln);
+	free(x->file_content);
+	ht_up_free(x->line_by_ln);
 	free(x);
 }
 

@@ -504,8 +504,10 @@ typedef struct rz_bin_source_line_info_builder_t {
 } RzBinSourceLineInfoBuilder;
 
 typedef struct {
-	FILE *fd;
-	HtUU /*<ut64, ut64>*/ *line_by_ln;
+	char *file_content;
+	ut64 file_size;
+	ut64 cached_lines;
+	HtUP /*<ut64, const char *>*/ *line_by_ln;
 } RzBinSourceLineCacheItem;
 
 typedef struct {

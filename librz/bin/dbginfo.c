@@ -239,66 +239,70 @@ RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int
 	return false;
 }
 
-static inline bool read_next_line(FILE *fd, ut64 *psize, RzStrBuf *sb) {
-	rz_return_val_if_fail(fd && sb, NULL);
+static const char *cache_lines(RzBinSourceLineCacheItem *x, ut64 line) {
+	rz_warn_if_fail(line > x->cached_lines);
 
-	ut64 size = 0;
-	char buf[1024] = { 0 };
-	while (true) {
-		ut64 r = fread(buf, 1, sizeof(buf) - 1, fd);
-		if (ferror(fd) || r <= 0) {
-			return false;
-		}
-		char *p = buf;
-		char *q = NULL;
-		do {
-			q = memchr(p, '\n', r);
-			p = q + 1;
-			if (q) {
-				ut64 sz = q - buf;
-				size += sz;
-				fseek(fd, -(long)(r - 1 - sz), SEEK_CUR);
-				if (ferror(fd)) {
-					return false;
-				}
-				rz_strbuf_append_n(sb, buf, sz);
-				if (psize) {
-					*psize = size;
-				}
-				return true;
-			}
-			size += r;
-			rz_strbuf_append_n(sb, buf, r);
-		} while (p - buf <= r && q);
+	if (!x->file_content) {
+		return NULL;
 	}
-	return false;
+	bool found = false;
+	char *str = ht_up_find(x->line_by_ln, x->cached_lines, &found);
+	if (!(found && str)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	ut64 i = x->cached_lines;
+	char *p = str;
+	char *q = NULL;
+	do {
+		q = strchr(p, '\n');
+		++i;
+		if (q) {
+			p = q + 1;
+			*q = '\0';
+			ht_up_update(x->line_by_ln, i, q + 1);
+			x->cached_lines = i;
+		}
+	} while ((p && p - x->file_content < x->file_size));
+
+	str = ht_up_find(x->line_by_ln, line, &found);
+	if (!(found && str)) {
+		return NULL;
+	}
+	q = rz_str_trim_nc(str);
+	if (q != str) {
+		ht_up_update(x->line_by_ln, line, q);
+	}
+	return q;
 }
 
-static char *read_line(const char *file, int line, RzBinSourceLineCache *cache) {
+static const char *read_line(const char *file, int line, RzBinSourceLineCache *cache) {
 	rz_return_val_if_fail(file, NULL);
 	if (!(cache && cache->items)) {
 		rz_file_slurp_line(file, line, 0);
 	}
 	bool found = false;
-	bool found_off = false;
-	RzStrBuf sb = { 0 };
-	rz_strbuf_init(&sb);
+	char *content = NULL;
+	size_t sz = 0;
 	RzBinSourceLineCacheItem *item = ht_pp_find(cache->items, file, &found);
 	if (found) {
-		if (!(item && item->fd)) {
+		if (!(item && item->file_content)) {
 			return NULL;
 		} else {
-			ut64 offset = ht_uu_find(item->line_by_ln, line, &found_off);
-			if (!found_off) {
-				goto build;
+			char *str = ht_up_find(item->line_by_ln, line, NULL);
+			if (!str) {
+				return NULL;
 			}
-			fseek(item->fd, (long)offset, SEEK_SET);
-			read_next_line(item->fd, NULL, &sb);
-			return rz_strbuf_drain_nofree(&sb);
+			char *q = rz_str_trim_nc(str);
+			if (q != str) {
+				ht_up_update(item->line_by_ln, line, q);
+			}
+			return q;
 		}
 	} else {
-	build:
-		if (!rz_file_exists(file)) {
+		content = rz_file_slurp(file, &sz);
+		if (!content) {
 			ht_pp_insert(cache->items, file, NULL);
 			return NULL;
 		}
@@ -306,46 +310,29 @@ static char *read_line(const char *file, int line, RzBinSourceLineCache *cache) 
 		if (!item) {
 			goto err;
 		}
-		item->fd = rz_sys_fopen(file, "r");
-		if (!item->fd) {
-			goto err;
-		}
-		item->line_by_ln = ht_uu_new0();
+		item->file_content = content;
+		item->file_size = sz;
+		item->line_by_ln = ht_up_new0();
 		if (!item->line_by_ln) {
 			goto err;
 		}
-
-		ut64 i = 1;
-		ut64 offset = 0;
-		while (i < line) {
-			ut64 tmp_sz = 0;
-			sb.len = sb.ptrlen = 0;
-			if (!read_next_line(item->fd, &tmp_sz, &sb)) {
-				goto err;
-			}
-			++i;
-			offset += tmp_sz + 1;
-		}
-		ht_uu_update(item->line_by_ln, line, offset);
+		item->cached_lines = 1;
+		ht_up_update(item->line_by_ln, 1, item->file_content);
 		ht_pp_update(cache->items, file, item);
-
-		sb.len = sb.ptrlen = 0;
-		read_next_line(item->fd, NULL, &sb);
-		return rz_strbuf_drain_nofree(&sb);
+		return cache_lines(item, line);
 	}
 err:
 	if (item) {
-		ht_uu_free(item->line_by_ln);
-		fclose(item->fd);
+		ht_up_free(item->line_by_ln);
 	}
+	free(content);
 	free(item);
-	rz_strbuf_fini(&sb);
 	return NULL;
 }
 
 RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, RzDebugInfoOption opt) {
 	rz_return_val_if_fail(bin, NULL);
-	if(!(bin->cur && bin->cur->o && bin->cur->o->lines)){
+	if (!(bin->cur && bin->cur->o && bin->cur->o->lines)) {
 		return NULL;
 	}
 	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(bin->cur->o->lines, addr);
@@ -370,13 +357,11 @@ RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, RzDebugInfoOpt
 		return rz_strbuf_drain_nofree(&sb);
 	}
 
-	char *out = read_line(s->file, s->line, &opt.cache);
+	const char *out = read_line(s->file, s->line, &opt.cache);
 	if (!out) {
 		return rz_strbuf_drain_nofree(&sb);
 	}
 
-	rz_str_trim(out);
 	rz_strbuf_appendf(&sb, " %s", out);
-	free(out);
 	return rz_strbuf_drain_nofree(&sb);
 }
