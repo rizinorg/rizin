@@ -271,17 +271,6 @@ typedef struct {
 	RzPVector /*<RzAnalysisDisasmText *>*/ *vec;
 } RzDisasmState;
 
-// Function to set or clear a flag based on a boolean value
-static inline void set_flag(uint32_t *flags, uint32_t flag, bool value) {
-	if (value) {
-		// Set the flag
-		*flags |= flag;
-	} else {
-		// Clear the flag
-		*flags &= ~flag;
-	}
-}
-
 static void ds_setup_print_pre(RzDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RzDisasmState *ds, bool tail, bool middle);
 static void ds_print_pre(RzDisasmState *ds, bool fcnline);
@@ -565,7 +554,7 @@ static void RzBinSourceLineCacheItem_free(RzBinSourceLineCacheItem *x) {
 		return;
 	}
 	free(x->file_content);
-	ht_up_free(x->line_by_ln);
+	rz_pvector_free(x->line_by_ln);
 	free(x);
 }
 
@@ -3714,29 +3703,20 @@ static void ds_print_debuginfo(RzDisasmState *ds) {
 	if (!ds->debuginfo.enable)
 		return;
 
-	if (ds->debuginfo.lines) {
+	RzBinObject *o = rz_bin_cur_object(ds->core->bin);
+	RzBinSourceLineInfo *sl = o ? o->lines : NULL;
+	if (ds->debuginfo.lines && sl) {
 		free(ds->sl);
-		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, ds->debuginfo);
+		ds->sl = rz_bin_source_line_addr2text(sl, ds->at, ds->debuginfo);
 		if (RZ_STR_ISEMPTY(ds->sl))
 			return;
 		if (ds->osl && !(ds->osl && strcmp(ds->sl, ds->osl)))
 			return;
-		char *line = strdup(ds->sl);
-		rz_str_replace_char(line, '\t', ' ');
-		rz_str_replace_char(line, '\x1b', ' ');
-		rz_str_replace_char(line, '\r', ' ');
-		rz_str_replace_char(line, '\n', '\x00');
-		rz_str_trim(line);
-		if (RZ_STR_ISEMPTY(line)) {
-			free(line);
-			return;
-		}
 		ds_align_comment(ds);
-		theme_printf(comment, "; %s", line);
+		theme_printf(comment, "; %s", ds->sl);
 		free(ds->osl);
 		ds->osl = ds->sl;
 		ds->sl = NULL;
-		free(line);
 	}
 }
 

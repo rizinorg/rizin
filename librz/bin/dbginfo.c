@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
-#include <rz_bin.h>
+#include <rz_bin_source_line.h>
+#include <ctype.h>
 
 RZ_API void rz_bin_source_line_info_builder_init(RzBinSourceLineInfoBuilder *builder) {
 	rz_vector_init(&builder->samples, sizeof(RzBinSourceLineSample), NULL, NULL);
@@ -216,12 +217,14 @@ RZ_API const RzBinSourceLineSample *rz_bin_source_line_info_get_next(const RzBin
 	return next;
 }
 
-RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line) {
-	rz_return_val_if_fail(bin, false);
-	if (!bin->cur || !bin->cur->o || !bin->cur->o->lines) {
-		return false;
-	}
-	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(bin->cur->o->lines, addr);
+RZ_API bool rz_bin_source_line_addr2line(
+	RZ_BORROW RZ_IN RZ_NONNULL const RzBinSourceLineInfo *sl,
+	ut64 addr,
+	RZ_BORROW RZ_OUT RZ_NULLABLE char *file,
+	int len,
+	RZ_BORROW RZ_OUT RZ_NULLABLE int *line) {
+	rz_return_val_if_fail(sl, false);
+	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(sl, addr);
 	if (!s || s->address != addr) {
 		// consider only exact matches, not inside of samples
 		return false;
@@ -236,51 +239,40 @@ RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int
 			*file = 0;
 		}
 	}
-	return false;
+	return true;
 }
 
-static const char *cache_lines(RzBinSourceLineCacheItem *x, ut64 line) {
-	rz_warn_if_fail(line > x->cached_lines);
+static char *str_trim_left_right(char *l, char *r) {
+	l = (char *)rz_str_trim_head_ro(l);
+	for (; r > l && isspace(*r); --r) {
+		*r = '\0';
+	}
+	return l;
+}
 
+static void cache_lines(RzBinSourceLineCacheItem *x) {
 	if (!x->file_content) {
-		return NULL;
-	}
-	bool found = false;
-	char *str = ht_up_find(x->line_by_ln, x->cached_lines, &found);
-	if (!(found && str)) {
-		rz_warn_if_reached();
-		return NULL;
+		return;
 	}
 
-	ut64 i = x->cached_lines;
-	char *p = str;
+	char *p = x->file_content;
 	char *q = NULL;
 	do {
 		q = strchr(p, '\n');
-		++i;
-		if (q) {
-			p = q + 1;
-			*q = '\0';
-			ht_up_update(x->line_by_ln, i, q + 1);
-			x->cached_lines = i;
+		if (!q) {
+			break;
 		}
+		*q = '\0';
+		p = str_trim_left_right(p, q);
+		rz_pvector_push(x->line_by_ln, p);
+		p = q + 1;
 	} while ((p && p - x->file_content < x->file_size));
-
-	str = ht_up_find(x->line_by_ln, line, &found);
-	if (!(found && str)) {
-		return NULL;
-	}
-	q = rz_str_trim_nc(str);
-	if (q != str) {
-		ht_up_update(x->line_by_ln, line, q);
-	}
-	return q;
 }
 
 static const char *read_line(const char *file, int line, RzBinSourceLineCache *cache) {
-	rz_return_val_if_fail(file, NULL);
+	rz_return_val_if_fail(file && line >= 1, NULL);
 	if (!(cache && cache->items)) {
-		rz_file_slurp_line(file, line, 0);
+		return rz_file_slurp_line(file, line, 0);
 	}
 	bool found = false;
 	char *content = NULL;
@@ -290,15 +282,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 		if (!(item && item->file_content)) {
 			return NULL;
 		} else {
-			char *str = ht_up_find(item->line_by_ln, line, NULL);
-			if (!str) {
-				return NULL;
-			}
-			char *q = rz_str_trim_nc(str);
-			if (q != str) {
-				ht_up_update(item->line_by_ln, line, q);
-			}
-			return q;
+			return rz_pvector_at(item->line_by_ln, line - 1);
 		}
 	} else {
 		content = rz_file_slurp(file, &sz);
@@ -312,36 +296,35 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 		}
 		item->file_content = content;
 		item->file_size = sz;
-		item->line_by_ln = ht_up_new0();
+		item->line_by_ln = rz_pvector_new(NULL);
 		if (!item->line_by_ln) {
 			goto err;
 		}
-		item->cached_lines = 1;
-		ht_up_update(item->line_by_ln, 1, item->file_content);
 		ht_pp_update(cache->items, file, item);
-		return cache_lines(item, line);
+
+		rz_pvector_reserve(item->line_by_ln, line);
+		cache_lines(item);
+		return rz_pvector_at(item->line_by_ln, line - 1);
 	}
 err:
 	if (item) {
-		ht_up_free(item->line_by_ln);
+		rz_pvector_free(item->line_by_ln);
 	}
 	free(content);
 	free(item);
 	return NULL;
 }
 
-RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, RzDebugInfoOption opt) {
-	rz_return_val_if_fail(bin, NULL);
-	if (!(bin->cur && bin->cur->o && bin->cur->o->lines)) {
-		return NULL;
-	}
-	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(bin->cur->o->lines, addr);
+RZ_API RZ_OWN char *rz_bin_source_line_addr2text(
+	RZ_BORROW RZ_IN RZ_NONNULL const RzBinSourceLineInfo *sl, ut64 addr, RzDebugInfoOption opt) {
+	rz_return_val_if_fail(sl, NULL);
+	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(sl, addr);
 	if (!(s && s->address == addr)) {
 		// consider only exact matches, not inside of samples
 		return NULL;
 	}
 	while (s && !s->file) {
-		s = rz_bin_source_line_info_get_next(bin->cur->o->lines, s);
+		s = rz_bin_source_line_info_get_next(sl, s);
 	}
 	if (!s) {
 		return NULL;

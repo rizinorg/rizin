@@ -150,7 +150,7 @@ static ut32 actions2mask(ut64 action) {
 	return res;
 }
 
-static int rabin_show_help(int v) {
+static int rzbin_show_help(int v) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 	       "              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
@@ -368,7 +368,7 @@ static bool extract_binobj(const RzBinFile *bf, RzBinXtrData *data, int idx) {
 	return res;
 }
 
-static int rabin_extract(RzBin *bin, int all) {
+static int rzbin_extract(RzBin *bin, int all) {
 	RzBinXtrData *data = NULL;
 	int res = false;
 	RzBinFile *bf = rz_bin_cur(bin);
@@ -395,7 +395,7 @@ static int rabin_extract(RzBin *bin, int all) {
 	return res;
 }
 
-static int rabin_dump_symbols(RzBin *bin, int len) {
+static int rzbin_dump_symbols(RzBin *bin, int len) {
 	RzBinObject *o = rz_bin_cur_object(bin);
 	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	if (!symbols) {
@@ -490,7 +490,7 @@ static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, 
 	return true;
 }
 
-static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *output, const char *file) {
+static int rzbin_do_operation(RzBin *bin, const char *op, int rad, const char *output, const char *file) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 	bool rc = true;
 
@@ -518,25 +518,25 @@ static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 	switch (arg[0]) {
 	case 'd':
 		if (!ptr) {
-			goto _rabin_do_operation_error;
+			goto _rzbin_do_operation_error;
 		}
 		switch (*ptr) {
 		case 's': {
 			ut64 a = ptr2 ? rz_num_math(NULL, ptr2) : 0;
-			if (!rabin_dump_symbols(bin, a)) {
+			if (!rzbin_dump_symbols(bin, a)) {
 				goto error;
 			}
 		} break;
 		case 'S':
 			if (!ptr2) {
-				goto _rabin_do_operation_error;
+				goto _rzbin_do_operation_error;
 			}
 			if (!__dumpSections(bin, ptr2, output, file)) {
 				goto error;
 			}
 			break;
 		default:
-			goto _rabin_do_operation_error;
+			goto _rzbin_do_operation_error;
 		}
 		break;
 	case 'C': {
@@ -570,7 +570,7 @@ static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 		}
 	} break;
 	default:
-	_rabin_do_operation_error:
+	_rzbin_do_operation_error:
 		eprintf("Unknown operation. use -O help\n");
 		goto error;
 	}
@@ -584,17 +584,24 @@ error:
 	return false;
 }
 
-static int rabin_show_srcline(RzBin *bin, ut64 at) {
+static int rzbin_show_srcline(RzBin *bin, ut64 at) {
+	rz_return_val_if_fail(bin, false);
 	char *srcline;
 	RzDebugInfoOption option = { 0 };
 	option.file = true;
 	option.abspath = true;
-	if (at != UT64_MAX && (srcline = rz_bin_addr2text(bin, at, option))) {
-		printf("%s\n", srcline);
-		free(srcline);
-		return true;
+	RzBinObject *o = rz_bin_cur_object(bin);
+	if (!o) {
+		return false;
 	}
-	return false;
+	RzBinSourceLineInfo *sl = o->lines;
+	if (at == UT64_MAX || !sl) {
+		return false;
+	}
+	srcline = rz_bin_source_line_addr2text(sl, at, option);
+	printf("%s\n", srcline);
+	free(srcline);
+	return true;
 }
 
 /* bin callback */
@@ -977,7 +984,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 		case 'h':
 			rz_core_fini(&core);
-			return rabin_show_help(1);
+			return rzbin_show_help(1);
 		default:
 			action |= RZ_BIN_REQ_HELP;
 			break;
@@ -1009,7 +1016,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		const RzDemanglerPlugin *plugin = NULL;
 		if ((argc - opt.ind) < 2) {
 			rz_core_fini(&core);
-			return rabin_show_help(0);
+			return rzbin_show_help(0);
 		}
 		file = argv[opt.ind + 1];
 		plugin = rz_demangler_plugin_get(bin->demangler, do_demangle);
@@ -1061,7 +1068,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (!query) {
 		if (action & RZ_BIN_REQ_HELP || action == RZ_BIN_REQ_UNK || !file) {
 			rz_core_fini(&core);
-			return rabin_show_help(0);
+			return rzbin_show_help(0);
 		}
 	}
 	if (arch) {
@@ -1306,11 +1313,11 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	run_action("classes source", RZ_BIN_REQ_CLASSES_SOURCES, classes_as_source_print);
 	if (action & RZ_BIN_REQ_SRCLINE) {
-		rabin_show_srcline(bin, at);
+		rzbin_show_srcline(bin, at);
 	}
 	if (action & RZ_BIN_REQ_EXTRACT) {
 		if (bf->xtr_data) {
-			rabin_extract(bin, (!arch && !arch_name && !bits));
+			rzbin_extract(bin, (!arch && !arch_name && !bits));
 		} else {
 			eprintf(
 				"Cannot extract bins from '%s'. No supported "
@@ -1319,7 +1326,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 	}
 	if (op && action & RZ_BIN_REQ_OPERATION) {
-		rabin_do_operation(bin, op, out_mode, output, file);
+		rzbin_do_operation(bin, op, out_mode, output, file);
 	}
 	end_state(&state);
 	rz_cmd_state_output_fini(&state);
