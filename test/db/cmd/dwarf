@@ -2029,7 +2029,7 @@ NAME="Mach-O dSYM lines (armv7)"
 FILE=bins/mach0/TestRTTI-armv7-dSYM
 CMDS=ix.@ 0x0000a24e
 EXPECT=<<EOF
-0x0000a24e	/Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp	18	0
+0x0000a24e	/Users/ftamagni/src/TestRTTI/TestRTTI/TestRTTI.cpp	18	0
 EOF
 RUN
 

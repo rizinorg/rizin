@@ -416,8 +416,12 @@ static char *block_line(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 	int line = 0, oline = 0, idx = 0;
 	int is_html = rz_cons_singleton()->is_html;
 	ut64 end = bb->addr + bb->size - 2;
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzBinSourceLineInfo *sl = o ? o->lines : NULL;
 	for (ut64 at = bb->addr; at < end; at += 2) {
-		rz_bin_addr2line(core->bin, at, file, sizeof(file) - 1, &line);
+		if (sl) {
+			rz_bin_source_line_addr2line(sl, at, file, sizeof(file) - 1, &line);
+		}
 		if (line != 0 && line != oline && strcmp(file, "??") != 0) {
 			file_str = rz_file_slurp_line(file, line, 0);
 			if (file_str) {
