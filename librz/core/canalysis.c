@@ -798,6 +798,7 @@ static void autoname_imp_trampoline(RzCore *core, RzAnalysisFunction *fcn) {
 }
 
 static void set_fcn_name_from_flag(RzAnalysisFunction *fcn, RzFlagItem *f, const char *fcnpfx) {
+	char tmpbuf[128];
 	bool nameChanged = false;
 	if (f && f->name) {
 		if (!strncmp(fcn->name, "loc.", 4) || !strncmp(fcn->name, "fcn.", 4)) {
@@ -809,7 +810,7 @@ static void set_fcn_name_from_flag(RzAnalysisFunction *fcn, RzFlagItem *f, const
 		}
 	}
 	if (!nameChanged) {
-		rz_analysis_function_rename(fcn, sdb_fmt("%s.%08" PFMT64x, fcnpfx, fcn->addr));
+		rz_analysis_function_rename(fcn, rz_strf(tmpbuf, "%s.%08" PFMT64x, fcnpfx, fcn->addr));
 	}
 }
 

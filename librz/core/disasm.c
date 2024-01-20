@@ -2507,11 +2507,11 @@ static int ds_disassemble(RzDisasmState *ds, ut8 *buf, int len) {
 			const char *tail = (meta_size > 16) ? "..." : "";
 			switch (meta->type) {
 			case RZ_META_TYPE_STRING:
-				rz_asm_op_set_asm(&ds->asmop, sdb_fmt(".string \"%s%s\"", meta->str, tail));
+				rz_asm_op_setf_asm(&ds->asmop, ".string \"%s%s\"", meta->str, tail);
 				break;
 			default: {
 				char *op_hex = rz_asm_op_get_hex(&ds->asmop);
-				rz_asm_op_set_asm(&ds->asmop, sdb_fmt(".hex %s%s", op_hex, tail));
+				rz_asm_op_setf_asm(&ds->asmop, ".hex %s%s", op_hex, tail);
 				free(op_hex);
 				break;
 			}

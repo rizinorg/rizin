@@ -615,14 +615,14 @@ RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		if (a->invhex) {
 			if (a->bits == 16) {
 				ut16 b = rz_read_le16(buf);
-				rz_strbuf_set(&op->buf_asm, sdb_fmt(".word 0x%04x", b));
+				rz_asm_op_setf_asm(op, ".word 0x%04x", b);
 			} else {
 				ut32 b = rz_read_le32(buf);
-				rz_strbuf_set(&op->buf_asm, sdb_fmt(".dword 0x%08x", b));
+				rz_asm_op_setf_asm(op, ".dword 0x%08x", b);
 			}
 			// TODO: something for 64bits too?
 		} else {
-			rz_strbuf_set(&op->buf_asm, "invalid");
+			rz_asm_op_set_asm(op, "invalid");
 		}
 	}
 	if (a->ofilter) {
