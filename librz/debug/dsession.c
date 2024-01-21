@@ -251,6 +251,7 @@ RZ_API bool rz_debug_session_add_mem_change(RzDebugSession *session, ut64 addr, 
 static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	RzDebugChangeReg *reg;
 	RzVector *vreg = (RzVector *)v;
+	char tmpbuf[32];
 	PJ *j = pj_new();
 	if (!j) {
 		return false;
@@ -265,7 +266,7 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	}
 
 	pj_end(j);
-	sdb_set(db, sdb_fmt("0x%" PFMT64x, k), pj_string(j), 0);
+	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j), 0);
 	pj_free(j);
 	return true;
 }
@@ -278,6 +279,7 @@ static void serialize_registers(Sdb *db, HtUP *registers) {
 static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	RzDebugChangeMem *mem;
 	RzVector *vmem = (RzVector *)v;
+	char tmpbuf[32];
 	PJ *j = pj_new();
 	if (!j) {
 		return false;
@@ -292,7 +294,7 @@ static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	}
 
 	pj_end(j);
-	sdb_set(db, sdb_fmt("0x%" PFMT64x, k), pj_string(j), 0);
+	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j), 0);
 	pj_free(j);
 	return true;
 }
@@ -306,6 +308,7 @@ static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *che
 	RzDebugCheckpoint *chkpt;
 	RzDebugSnap *snap;
 	RzListIter *iter;
+	char tmpbuf[32];
 
 	rz_vector_foreach(checkpoints, chkpt) {
 		// 0x<cnum>={
@@ -360,7 +363,7 @@ static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *che
 		pj_end(j);
 
 		pj_end(j);
-		sdb_set(db, sdb_fmt("0x%x", chkpt->cnum), pj_string(j), 0);
+		sdb_set(db, rz_strf(tmpbuf, "0x%x", chkpt->cnum), pj_string(j), 0);
 		pj_free(j);
 	}
 }
@@ -558,9 +561,6 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 static void deserialize_registers(Sdb *db, HtUP *registers) {
 	sdb_foreach(db, deserialize_registers_cb, registers);
 }
-
-#define SNAPATTR(ATTR) sdb_fmt("snaps.a[%u]." ATTR, i)
-#define REGATTR(ATTR)  sdb_fmt("registers.%d." ATTR, i)
 
 static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
 	const RzJson *child;

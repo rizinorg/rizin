@@ -1035,7 +1035,9 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 #endif
 	fd = rz_sys_fopen(path, "r");
 	if (!fd) {
-		perror(sdb_fmt("Cannot open '%s'", path));
+		char *errmsg = rz_str_newf("Cannot open '%s'", path);
+		perror(errmsg);
+		free(errmsg);
 		return NULL;
 	}
 

@@ -420,6 +420,7 @@ static RzList *windbg_map_get(RzDebug *dbg) {
 	PIMAGE_SECTION_HEADER *s = RZ_NEWS0(PIMAGE_SECTION_HEADER, mod_cnt);
 	RzListIter *it;
 	RzDebugMap *mod = NULL;
+	char tmpbuf[512];
 	size_t i = 0;
 	rz_list_foreach (mod_list, it, mod) {
 		if (FAILED(ITHISCALL(dbgData, ReadImageNtHeaders, mod->addr, h + i))) {
@@ -467,7 +468,7 @@ static RzList *windbg_map_get(RzDebug *dbg) {
 					ut64 sect_vaddr = mod->addr + s[i][j].VirtualAddress;
 					ut64 sect_vsize = (((ut64)s[i][j].Misc.VirtualSize) + p_mask) & ~p_mask;
 					if (mbi.BaseAddress >= sect_vaddr && mbi.BaseAddress < sect_vaddr + sect_vsize) {
-						name = sdb_fmt("%s | %.8s", mod->name, s[i][j].Name);
+						name = rz_strf(tmpbuf, "%s | %.8s", mod->name, s[i][j].Name);
 						break;
 					}
 				}
