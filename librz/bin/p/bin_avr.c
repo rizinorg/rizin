@@ -170,10 +170,11 @@ static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 ad
 
 static void addptr(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, RzBuffer *b) {
 	if (b && rjmp(b, 0)) {
-		addsym(ret, sdb_fmt("vector.%s", name), addr);
+		char tmpbuf[128];
+		addsym(ret, rz_strf(tmpbuf, "vector.%s", name), addr);
 		ut64 ptr_addr;
 		if (rjmp_dest(b, addr, &ptr_addr)) {
-			addsym(ret, sdb_fmt("syscall.%s", name), ptr_addr);
+			addsym(ret, rz_strf(tmpbuf, "syscall.%s", name), ptr_addr);
 		}
 	}
 }

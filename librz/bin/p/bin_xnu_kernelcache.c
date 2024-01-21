@@ -1243,13 +1243,14 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 
+	char tmpbuf[32];
 	RzListIter *iter;
 	void **it;
 	RzBinSymbol *sym;
 	ut64 enosys_addr = 0;
 	rz_pvector_foreach (ret, it) {
 		sym = *it;
-		const char *key = sdb_fmt("%" PFMT64x, sym->vaddr);
+		const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
 		sdb_ht_insert(kernel_syms_by_addr, key, sym->dname ? sym->dname : sym->name);
 		if (!enosys_addr && strstr(sym->name, "enosys")) {
 			enosys_addr = sym->vaddr;
@@ -1259,7 +1260,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *syscalls = resolve_syscalls(obj, enosys_addr);
 	if (syscalls) {
 		rz_list_foreach (syscalls, iter, sym) {
-			const char *key = sdb_fmt("%" PFMT64x, sym->vaddr);
+			const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
 			sdb_ht_insert(kernel_syms_by_addr, key, sym->name);
 			rz_pvector_push(ret, sym);
 		}
@@ -1270,7 +1271,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *subsystem = resolve_mig_subsystem(obj);
 	if (subsystem) {
 		rz_list_foreach (subsystem, iter, sym) {
-			const char *key = sdb_fmt("%" PFMT64x, sym->vaddr);
+			const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
 			sdb_ht_insert(kernel_syms_by_addr, key, sym->name);
 			rz_pvector_push(ret, sym);
 		}
@@ -1559,6 +1560,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 		goto beach;
 	}
 
+	char tmpbuf[32];
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
 	while (cursor + sizeof(ut64) * 2 <= end) {
@@ -1619,7 +1621,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 
 				int num = idx + subs_min_idx;
 				bool found = false;
-				const char *key = sdb_fmt("%d", num);
+				const char *key = rz_strf(tmpbuf, "%d", num);
 				const char *name = sdb_ht_find(mig_hash, key, &found);
 				if (found && name && *name) {
 					sym->name = rz_str_newf("mig.%d.%s", num, name);
@@ -1679,6 +1681,7 @@ static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtPP *kernel_
 	if (!stubs_info) {
 		return;
 	}
+	char tmpbuf[32];
 	ut64 stubs_cursor = stubs_info->stubs.offset;
 	ut64 stubs_end = stubs_cursor + stubs_info->stubs.size;
 
@@ -1711,7 +1714,7 @@ static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtPP *kernel_
 				target_addr = addr;
 			}
 
-			const char *key = sdb_fmt("%" PFMT64x, addr);
+			const char *key = rz_strf(tmpbuf, "%" PFMT64x, addr);
 			const char *name = sdb_ht_find(kernel_syms_by_addr, key, &found);
 
 			if (found) {

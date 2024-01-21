@@ -63,6 +63,7 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 	if (!bin->symbols) {
 		return false;
 	}
+	char tmpbuf[32];
 	struct coff_symbol *s = &bin->symbols[idx];
 	char *coffname = rz_coff_symbol_name(bin, (const ut8 *)&s->n_name);
 	if (!coffname) {
@@ -136,7 +137,7 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 		ptr->size = 0;
 		break;
 	default:
-		ptr->type = rz_str_constpool_get(&rbin->constpool, sdb_fmt("%i", s->n_sclass));
+		ptr->type = rz_str_constpool_get(&rbin->constpool, rz_strf(tmpbuf, "%i", s->n_sclass));
 		break;
 	}
 	return true;

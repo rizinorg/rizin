@@ -792,7 +792,7 @@ typedef struct rz_event_bin_file_del_t {
 } RzEventBinFileDel;
 
 RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o);
-RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s);
+RZ_API RZ_OWN char *rz_bin_symbol_name(RZ_NONNULL RzBinSymbol *s);
 typedef void (*RzBinSymbolCallback)(RzBinObject *obj, RzBinSymbol *symbol);
 
 // common functionality for patching relocs

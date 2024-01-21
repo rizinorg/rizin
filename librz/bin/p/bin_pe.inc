@@ -66,21 +66,22 @@ static void add_tls_callbacks(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *list) {
 	RzBinAddr *ptr = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)(bf->o->bin_obj);
 	char *key;
+	char tmpbuf[128];
 
 	do {
-		key = sdb_fmt("pe.tls_callback%d_paddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
 		paddr = sdb_num_get(bin->kv, key, 0);
 		if (!paddr) {
 			break;
 		}
 
-		key = sdb_fmt("pe.tls_callback%d_vaddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
 		vaddr = sdb_num_get(bin->kv, key, 0);
 		if (!vaddr) {
 			break;
 		}
 
-		key = sdb_fmt("pe.tls_callback%d_haddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
 		haddr = sdb_num_get(bin->kv, key, 0);
 		if (!haddr) {
 			break;
@@ -674,8 +675,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_canary = has_canary(bf);
 	ret->has_nx = haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
-	ret->claimed_checksum = strdup(sdb_fmt("0x%08x", claimed_checksum));
-	ret->actual_checksum = strdup(sdb_fmt("0x%08x", actual_checksum));
+	ret->claimed_checksum = rz_str_newf("0x%08x", claimed_checksum);
+	ret->actual_checksum = rz_str_newf("0x%08x", actual_checksum);
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);

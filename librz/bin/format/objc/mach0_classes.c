@@ -996,6 +996,7 @@ static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_me
 	int len;
 	bool bigendian;
 	ut8 scro[sizeof(struct MACH0_(SClassRoT))] = { 0 };
+	char tmpbuf[2048];
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
 		RZ_LOG_ERROR("Invalid RzBinFile pointer\n");
@@ -1075,12 +1076,12 @@ static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_me
 				free(name);
 			}
 		}
-		sdb_num_set(bin->kv, sdb_fmt("objc_class_%s.offset", klass->name), s, 0);
+		sdb_num_set(bin->kv, rz_strf(tmpbuf, "objc_class_%s.offset", klass->name), s, 0);
 	}
 #ifdef RZ_BIN_MACH064
-	sdb_set(bin->kv, sdb_fmt("objc_class.format"), "lllll isa super cache vtable data", 0);
+	sdb_set(bin->kv, "objc_class.format", "lllll isa super cache vtable data", 0);
 #else
-	sdb_set(bin->kv, sdb_fmt("objc_class.format"), "xxxxx isa super cache vtable data", 0);
+	sdb_set(bin->kv, "objc_class.format", "xxxxx isa super cache vtable data", 0);
 #endif
 
 	if (cro.baseMethods > 0) {
