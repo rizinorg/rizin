@@ -1421,12 +1421,13 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 						if ((f = rz_core_flag_get_by_spaces(core->flags, dst))) {
 							rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, f->name);
 						} else if (rz_core_get_string_at(core, dst, &str, NULL, NULL, true)) {
-							char *str2 = sdb_fmt("esilref: '%s'", str);
+							char *str2 = rz_str_newf("esilref: '%s'", str);
 							// HACK avoid format string inside string used later as format
 							// string crashes disasm inside agf under some conditions.
 							rz_str_replace_char(str2, '%', '&');
 							rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, str2);
 							free(str);
+							free(str2);
 						}
 					}
 				}

@@ -414,6 +414,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	ut64 base_addr = 0;
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	int keyword_len = kw ? kw->keyword_length + (search->mode == RZ_SEARCH_DELTAKEY) : 0;
+	char tmpbuf[128];
 
 	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
@@ -512,7 +513,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	}
 	if (searchflags && kw) {
-		const char *flag = sdb_fmt("%s%d_%d", searchprefix, kw->kwidx, kw->count);
+		const char *flag = rz_strf(tmpbuf, "%s%d_%d", searchprefix, kw->kwidx, kw->count);
 		rz_flag_set(core->flags, flag, base_addr + addr, keyword_len);
 	}
 	if (*param->cmd_hit) {
@@ -1145,6 +1146,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
 	const bool esil = rz_config_get_i(core->config, "asm.esil");
 	const bool rop_db = rz_config_get_i(core->config, "rop.db");
+	char tmpbuf[16];
 
 	if (rop_db) {
 		db = sdb_ns(core->sdb, "rop", true);
@@ -1187,7 +1189,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 		if (db && hit) {
 			const ut64 addr = ((RzCoreAsmHit *)rz_list_get_head_data(hitlist))->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt("0x%08" PFMT64x, addr);
+			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
 		if (hit) {
@@ -1228,7 +1230,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 		if (db && hit) {
 			const ut64 addr = ((RzCoreAsmHit *)rz_list_get_head_data(hitlist))->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt("0x%08" PFMT64x, addr);
+			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
 		break;
@@ -1282,7 +1284,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 		if (db && hit) {
 			const ut64 addr = ((RzCoreAsmHit *)rz_list_get_head_data(hitlist))->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt("0x%08" PFMT64x, addr);
+			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
 	}
@@ -2219,6 +2221,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	RzIOMap *map;
 	bool regexp = input[0] == '/'; // "/c/"
 	bool everyByte = regexp && input[1] == 'a';
+	char tmpbuf[128];
 	char *end_cmd = strchr(input, ' ');
 	switch ((end_cmd ? *(end_cmd - 1) : input[0])) {
 	case 'j':
@@ -2296,7 +2299,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 					break;
 				}
 				if (searchflags) {
-					const char *flagname = sdb_fmt("%s%d_%d", searchprefix, kwidx, count);
+					const char *flagname = rz_strf(tmpbuf, "%s%d_%d", searchprefix, kwidx, count);
 					if (flagname) {
 						rz_flag_set(core->flags, flagname, hit->addr, hit->len);
 					}
