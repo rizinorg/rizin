@@ -33,8 +33,9 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 }
 
 RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *file) {
+	char projver[32];
 	sdb_set(prj, RZ_PROJECT_KEY_TYPE, RZ_PROJECT_TYPE, 0);
-	sdb_set(prj, RZ_PROJECT_KEY_VERSION, sdb_fmt("%u", RZ_PROJECT_VERSION), 0);
+	sdb_set(prj, RZ_PROJECT_KEY_VERSION, rz_strf(projver, "%u", RZ_PROJECT_VERSION), 0);
 	rz_serialize_core_save(sdb_ns(prj, "core", true), core, file);
 	return RZ_PROJECT_ERR_SUCCESS;
 }

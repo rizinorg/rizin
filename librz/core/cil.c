@@ -1341,18 +1341,19 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 			}
 		}
 		if (sn && op.type == RZ_ANALYSIS_OP_TYPE_SWI) {
+			char tmpbuf[256];
 			rz_flag_space_set(core->flags, RZ_FLAGS_FS_SYSCALLS);
 			int snv = (arch == RZ_ARCH_THUMB) ? op.val : (int)rz_reg_getv(core->analysis->reg, sn);
 			RzSyscallItem *si = rz_syscall_get(core->analysis->syscall, snv, -1);
 			if (si) {
 				//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
-				rz_flag_set_next(core->flags, sdb_fmt("syscall.%s", si->name), cur, 1);
+				rz_flag_set_next(core->flags, rz_strf(tmpbuf, "syscall.%s", si->name), cur, 1);
 				rz_syscall_item_free(si);
 			} else {
 				// todo were doing less filtering up top because we can't match against 80 on all platforms
 				//  might get too many of this path now..
 				//	eprintf ("0x%08"PFMT64x" SYSCALL %d\n", cur, snv);
-				rz_flag_set_next(core->flags, sdb_fmt("syscall.%d", snv), cur, 1);
+				rz_flag_set_next(core->flags, rz_strf(tmpbuf, "syscall.%d", snv), cur, 1);
 			}
 			rz_flag_space_set(core->flags, NULL);
 		}

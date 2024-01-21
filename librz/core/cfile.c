@@ -542,17 +542,18 @@ RZ_API void rz_core_sysenv_end(RzCore *core) {
 }
 
 RZ_API void rz_core_sysenv_begin(RzCore *core) {
+	char tmpbuf[64];
 	// This will be deprecated when moving the . commands to newshell
 	RzIODesc *desc = core->file ? rz_io_desc_get(core->io, core->file->fd) : NULL;
 	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get(core->config, "pdb.server"));
 	if (desc && desc->name) {
 		rz_sys_setenv("RZ_FILE", desc->name);
-		rz_sys_setenv("RZ_SIZE", sdb_fmt("%" PFMT64d, rz_io_desc_size(desc)));
+		rz_sys_setenv("RZ_SIZE", rz_strf(tmpbuf, "%" PFMT64d, rz_io_desc_size(desc)));
 	}
-	rz_sys_setenv("RZ_OFFSET", sdb_fmt("%" PFMT64d, core->offset));
-	rz_sys_setenv("RZ_XOFFSET", sdb_fmt("0x%08" PFMT64x, core->offset));
+	rz_sys_setenv("RZ_OFFSET", rz_strf(tmpbuf, "%" PFMT64d, core->offset));
+	rz_sys_setenv("RZ_XOFFSET", rz_strf(tmpbuf, "0x%08" PFMT64x, core->offset));
 	rz_sys_setenv("RZ_ENDIAN", core->rasm->big_endian ? "big" : "little");
-	rz_sys_setenv("RZ_BSIZE", sdb_fmt("%d", core->blocksize));
+	rz_sys_setenv("RZ_BSIZE", rz_strf(tmpbuf, "%d", core->blocksize));
 
 	// dump current config file so other r2 tools can use the same options
 	char *config_sdb_path = NULL;
