@@ -2947,12 +2947,13 @@ RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
 	if (rz_core_get_string_at(core, xref_to, &string, &length, &encoding, true)) {
 		rz_analysis_xrefs_set(core->analysis, xref_from, xref_to, RZ_ANALYSIS_XREF_TYPE_DATA);
 		rz_name_filter(string, -1, true);
-		char *flagname = sdb_fmt("str.%s", string);
+		char *flagname = rz_str_newf("str.%s", string);
 		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
 		rz_flag_set(core->flags, flagname, xref_to, length);
 		rz_flag_space_pop(core->flags);
 		rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, xref_to, length, string);
 		free(string);
+		free(flagname);
 	}
 }
 

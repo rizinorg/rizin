@@ -4182,16 +4182,17 @@ void __add_menu(RzCore *core, const char *parent, const char *name, RzPanelsMenu
 	RzCoreVisual *visual = core->visual;
 	RzPanels *panels = visual->panels;
 	RzPanelsMenuItem *p_item, *item = RZ_NEW0(RzPanelsMenuItem);
+	char tmpbuf[512];
 	if (!item) {
 		return;
 	}
 	if (parent) {
 		void *addr = ht_pp_find(panels->mht, parent, NULL);
 		p_item = (RzPanelsMenuItem *)addr;
-		ht_pp_insert(panels->mht, sdb_fmt("%s.%s", parent, name), item);
+		ht_pp_insert(panels->mht, rz_strf(tmpbuf, "%s.%s", parent, name), item);
 	} else {
 		p_item = panels->panels_menu->root;
-		ht_pp_insert(panels->mht, sdb_fmt("%s", name), item);
+		ht_pp_insert(panels->mht, rz_strf(tmpbuf, "%s", name), item);
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
@@ -4225,9 +4226,10 @@ void __update_menu(RzCore *core, const char *parent, RZ_NULLABLE RzPanelMenuUpda
 	void *addr = ht_pp_find(panels->mht, parent, NULL);
 	RzPanelsMenuItem *p_item = (RzPanelsMenuItem *)addr;
 	int i;
+	char tmpbuf[512];
 	for (i = 0; i < p_item->n_sub; i++) {
 		RzPanelsMenuItem *sub = p_item->sub[i];
-		ht_pp_delete(visual->panels->mht, sdb_fmt("%s.%s", parent, sub->name));
+		ht_pp_delete(visual->panels->mht, rz_strf(tmpbuf, "%s.%s", parent, sub->name));
 	}
 	p_item->sub = NULL;
 	p_item->n_sub = 0;
