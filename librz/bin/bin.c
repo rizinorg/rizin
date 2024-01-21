@@ -162,11 +162,12 @@ RZ_API void rz_bin_resource_free(RZ_NULLABLE RzBinResource *res) {
 	free(res);
 }
 
-RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s) {
+RZ_API RZ_OWN char *rz_bin_symbol_name(RZ_NONNULL RzBinSymbol *s) {
+	rz_return_val_if_fail(s, NULL);
 	if (s->dup_count) {
-		return sdb_fmt("%s_%d", s->name, s->dup_count);
+		return rz_str_newf("%s_%d", s->name, s->dup_count);
 	}
-	return s->name;
+	return strdup(s->name);
 }
 
 RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {

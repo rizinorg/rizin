@@ -12,21 +12,22 @@ static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList /*<
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
 	RzBinAddr *ptr = NULL;
+	char tmpbuf[64];
 
 	do {
-		key = sdb_fmt("pe.tls_callback%d_paddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
 		paddr = sdb_num_get(bin->kv, key, 0);
 		if (!paddr) {
 			break;
 		}
 
-		key = sdb_fmt("pe.tls_callback%d_vaddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
 		vaddr = sdb_num_get(bin->kv, key, 0);
 		if (!vaddr) {
 			break;
 		}
 
-		key = sdb_fmt("pe.tls_callback%d_haddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
 		haddr = sdb_num_get(bin->kv, key, 0);
 		if (!haddr) {
 			break;
