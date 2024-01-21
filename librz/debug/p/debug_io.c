@@ -135,7 +135,8 @@ static int __io_continue(RzDebug *dbg, int pid, int tid, int sig) {
 
 // "dk" send kill signal
 static bool __io_kill(RzDebug *dbg, int pid, int tid, int sig) {
-	const char *cmd = sdb_fmt("dk %d", sig);
+	char tmpbuf[32];
+	const char *cmd = rz_strf(tmpbuf, "dk %d", sig);
 	dbg->iob.system(dbg->iob.io, cmd);
 	rz_cons_flush();
 	return true;

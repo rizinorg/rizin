@@ -603,6 +603,7 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 	ut64 pc = 0;
 	int prev_pid = dbg->pid;
 	int prev_tid = dbg->tid;
+	char tmpbuf[32];
 
 	if (pid < 0) {
 		return false;
@@ -627,7 +628,7 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 		dbg->tid = tid;
 	}
 
-	rz_io_system(dbg->iob.io, sdb_fmt("pid %d", dbg->tid));
+	rz_io_system(dbg->iob.io, rz_strf(tmpbuf, "pid %d", dbg->tid));
 
 	// Synchronize with the current thread's data
 	if (dbg->corebind.core) {
