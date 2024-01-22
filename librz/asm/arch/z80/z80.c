@@ -79,7 +79,7 @@ FUNC_ATTR_USED static int z80Disass(RzAsmOp *op, const ut8 *buf, int len) {
 	z_op = z80_op;
 	switch (z_op[buf[0]].type) {
 	case Z80_OP8:
-		rz_asm_op_setf_asm(op, "%s", z_op[buf[0]].name);
+		rz_asm_op_set_asm(op, z_op[buf[0]].name);
 		break;
 	case Z80_OP8 ^ Z80_ARG8:
 		rz_asm_op_setf_asm(op, z_op[buf[0]].name, buf[1]);
