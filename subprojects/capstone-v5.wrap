@@ -3,3 +3,4 @@ url = https://github.com/capstone-engine/capstone.git
 revision = v5
 patch_directory = capstone-5.0.1
 directory = capstone-5.0.1
+depth = 1
