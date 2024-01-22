@@ -89,13 +89,13 @@ FUNC_ATTR_USED static int z80Disass(RzAsmOp *op, const ut8 *buf, int len) {
 		break;
 	case Z80_OP16:
 		cb_tab = (const char **)z_op[buf[0]].op_moar;
-		rz_asm_op_setf_asm(op, "%s", cb_tab[buf[1]]);
+		rz_asm_op_set_asm(op, cb_tab[buf[1]]);
 		break;
 	case Z80_OP_UNK ^ Z80_ENC1:
 		z_op = (const z80_opcode *)z_op[buf[0]].op_moar;
 		res = z80_ed_branch_index_res(buf[1]);
 		if (z_op[res].type == Z80_OP16) {
-			rz_asm_op_setf_asm(op, "%s", z_op[res].name);
+			rz_asm_op_set_asm(op, z_op[res].name);
 		}
 		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG16)) {
 			rz_asm_op_setf_asm(op, z_op[res].name, buf[2] + (buf[3] << 8));
@@ -105,7 +105,7 @@ FUNC_ATTR_USED static int z80Disass(RzAsmOp *op, const ut8 *buf, int len) {
 		z_op = (const z80_opcode *)z_op[buf[0]].op_moar;
 		res = z80_fddd_branch_index_res(buf[1]);
 		if (z_op[res].type == Z80_OP16) {
-			rz_asm_op_setf_asm(op, "%s", z_op[res].name);
+			rz_asm_op_set_asm(op, z_op[res].name);
 		}
 		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG16)) {
 			rz_asm_op_setf_asm(op, z_op[res].name, buf[2] + (buf[3] << 8));
