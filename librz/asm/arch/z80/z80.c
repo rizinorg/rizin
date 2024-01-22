@@ -8,7 +8,7 @@
 #include <string.h>
 #include "z80_tab.h"
 
-static ut8 z80_op_24_branch_index_res (ut8 hex) {
+static ut8 z80_op_24_branch_index_res(ut8 hex) {
 	if (hex < 0x40) {
 		return hex;
 	}
@@ -22,10 +22,10 @@ static ut8 z80_op_24_branch_index_res (ut8 hex) {
 	case 0x76: return 0x46;
 	case 0x7e: return 0x47;
 	}
-	return (hex > 0x7f)? hex - 0x38: 0xc8;
+	return (hex > 0x7f) ? hex - 0x38 : 0xc8;
 }
 
-static int z80OpLength (const ut8 *buf, int len) {
+static int z80OpLength(const ut8 *buf, int len) {
 	const z80_opcode *op;
 	int type = 0, ret = 0;
 	if (len < 1) {
@@ -49,7 +49,7 @@ static int z80OpLength (const ut8 *buf, int len) {
 	if (type & Z80_OP8) {
 		ret++;
 	}
-	if ((type & Z80_ARG8) && !(type & Z80_ARG16)) { //XXX
+	if ((type & Z80_ARG8) && !(type & Z80_ARG16)) { // XXX
 		ret++;
 	}
 	if (type & Z80_OP16) {
@@ -68,8 +68,8 @@ static int z80OpLength (const ut8 *buf, int len) {
 }
 
 // #include'd in asm/p/asm_z80.c
-FUNC_ATTR_USED static int z80Disass (RzAsmOp *op, const ut8 *buf, int len) {
-	int ret = z80OpLength (buf, len);
+FUNC_ATTR_USED static int z80Disass(RzAsmOp *op, const ut8 *buf, int len) {
+	int ret = z80OpLength(buf, len);
 	const z80_opcode *z_op;
 	const char **cb_tab;
 	ut8 res;
@@ -77,55 +77,56 @@ FUNC_ATTR_USED static int z80Disass (RzAsmOp *op, const ut8 *buf, int len) {
 		return ret;
 	}
 	z_op = z80_op;
-	const char *buf_asm = "invalid";
 	switch (z_op[buf[0]].type) {
 	case Z80_OP8:
-		buf_asm = sdb_fmt ("%s", z_op[buf[0]].name);
+		rz_asm_op_set_asm(op, z_op[buf[0]].name);
 		break;
-	case Z80_OP8^Z80_ARG8:
-		buf_asm = sdb_fmt (z_op[buf[0]].name, buf[1]);
+	case Z80_OP8 ^ Z80_ARG8:
+		rz_asm_op_setf_asm(op, z_op[buf[0]].name, buf[1]);
 		break;
-	case Z80_OP8^Z80_ARG16:
-		buf_asm = sdb_fmt (z_op[buf[0]].name, buf[1]+(buf[2]<<8));
+	case Z80_OP8 ^ Z80_ARG16:
+		rz_asm_op_setf_asm(op, z_op[buf[0]].name, buf[1] + (buf[2] << 8));
 		break;
 	case Z80_OP16:
-		cb_tab = (const char **) z_op[buf[0]].op_moar;
-		buf_asm = sdb_fmt ("%s", cb_tab[buf[1]]);
+		cb_tab = (const char **)z_op[buf[0]].op_moar;
+		rz_asm_op_set_asm(op, cb_tab[buf[1]]);
 		break;
 	case Z80_OP_UNK ^ Z80_ENC1:
 		z_op = (const z80_opcode *)z_op[buf[0]].op_moar;
-		res = z80_ed_branch_index_res (buf[1]);
+		res = z80_ed_branch_index_res(buf[1]);
 		if (z_op[res].type == Z80_OP16) {
-			buf_asm = sdb_fmt ("%s", z_op[res].name);
+			rz_asm_op_set_asm(op, z_op[res].name);
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG16)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2]+(buf[3]<<8));
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG16)) {
+			rz_asm_op_setf_asm(op, z_op[res].name, buf[2] + (buf[3] << 8));
 		}
 		break;
 	case Z80_OP_UNK ^ Z80_ENC0:
 		z_op = (const z80_opcode *)z_op[buf[0]].op_moar;
-		res = z80_fddd_branch_index_res (buf[1]);
+		res = z80_fddd_branch_index_res(buf[1]);
 		if (z_op[res].type == Z80_OP16) {
-			buf_asm = sdb_fmt ("%s", z_op[res].name);
+			rz_asm_op_set_asm(op, z_op[res].name);
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG16)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2]+(buf[3]<<8));
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG16)) {
+			rz_asm_op_setf_asm(op, z_op[res].name, buf[2] + (buf[3] << 8));
 		}
-		if (z_op[res].type == (Z80_OP16^Z80_ARG8)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2]);
+		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG8)) {
+			rz_asm_op_setf_asm(op, z_op[res].name, buf[2]);
 		}
 		if (z_op[res].type == (Z80_OP24 ^ Z80_ARG8)) {
-			cb_tab = (const char **) z_op[res].op_moar;
-			buf_asm = sdb_fmt (cb_tab[z80_op_24_branch_index_res (buf[3])], buf[2]);
+			cb_tab = (const char **)z_op[res].op_moar;
+			rz_asm_op_setf_asm(op, cb_tab[z80_op_24_branch_index_res(buf[3])], buf[2]);
 		}
 		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG8 ^ Z80_ARG16)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2], buf[3]);
+			rz_asm_op_setf_asm(op, z_op[res].name, buf[2], buf[3]);
 		}
 		break;
+	default:
+		rz_asm_op_set_asm(op, "invalid");
+		break;
 	}
-	if (!strcmp (buf_asm, "invalid")) {
+	if (!strcmp(rz_asm_op_get_asm(op), "invalid")) {
 		ret = 0;
 	}
-	rz_asm_op_set_asm (op, buf_asm);
 	return ret;
 }

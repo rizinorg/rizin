@@ -7,6 +7,6 @@
 
 #include <rz_asm.h>
 
-int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l);
+int pic_pic18_disassemble(RzAsmOp *op, const ut8 *b, int l);
 
 #endif // PIC_PIC18_H

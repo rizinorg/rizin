@@ -309,7 +309,7 @@ static int riscv_disassemble(RzAsm *a, RzAsmOp *rop, insn_t word, int xlen, int 
 			get_insn_args (rz_asm_op_get_asm (rop), op->args, word, a->pc);
 			return 0;
 		}
-		rz_asm_op_set_asm (rop, sdb_fmt ("invalid word(%"PFMT64x")", (ut64)word));
+		rz_asm_op_setf_asm (rop, "invalid word(%"PFMT64x")", (ut64)word);
 		return -1;
 	}
 	return 0;
