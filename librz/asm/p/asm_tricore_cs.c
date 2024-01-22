@@ -52,12 +52,10 @@ beach:
 	} while (0)
 
 static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
-	static RzPVector *pvec = NULL;
-	if (pvec) {
-		return pvec;
+	RzPVector *pvec = rz_pvector_new(rz_asm_token_pattern_free);
+	if (!pvec) {
+		return NULL;
 	}
-
-	pvec = rz_pvector_new(rz_asm_token_pattern_free);
 
 	TOKEN(META, "(\\[|\\]|-)");
 	TOKEN(META, "(\\+[rc]?)");
