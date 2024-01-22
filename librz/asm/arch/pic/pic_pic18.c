@@ -111,22 +111,21 @@ static struct {
 	{ 0x0, 0xffff, "invalid", NO_ARG },
 };
 
-int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
+int pic_pic18_disassemble(RzAsmOp *op, const ut8 *b, int blen) {
 	int i;
 	if (blen < 2) { // well noone loves reading bitstream of size zero or 1 !!
-		strcpy(opbuf, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 		op->size = blen;
 		return -1;
 	}
 	ut16 instr = rz_read_le16(b); // instruction
-	// if still redundan code is reported think of this of instr=0x
-	strcpy(opbuf, "invalid");
+	// if still redundant code is reported think of this of instr=0x
 
 	for (i = 0; ops[i].opmin != (ops[i].opmin & instr) || ops[i].opmax != (ops[i].opmax | instr); i++) {
 		;
 	}
 	if (ops[i].opmin == 0 && ops[i].opmax == 0xffff) {
-		strcpy(opbuf, ops[i].name);
+		rz_asm_op_set_asm(op, ops[i].name);
 		op->size = 2;
 		return -1;
 	}
@@ -218,6 +217,5 @@ int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 	default:
 		rz_asm_op_set_asm(op, "unknown args");
 	};
-	strcpy(opbuf, rz_asm_op_get_asm(op));
 	return op->size;
 }

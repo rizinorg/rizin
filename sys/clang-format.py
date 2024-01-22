@@ -29,7 +29,6 @@ skiplist = [
     "librz/asm/arch/riscv/",
     "librz/asm/arch/sh/gnu/",
     "librz/asm/arch/i8080/",
-    "librz/asm/arch/z80/",
     "librz/asm/arch/avr/",
     "librz/asm/arch/arm/aarch64/",
     "librz/hash/xxhash/",

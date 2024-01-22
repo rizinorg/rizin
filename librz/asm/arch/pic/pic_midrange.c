@@ -156,14 +156,14 @@ const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
 	return &pic_midrange_op_info[opcode];
 }
 
-int pic_midrange_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l) {
+int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l) {
 	char fsr_op[6];
 	st16 branch;
 
 #define EMIT_INVALID \
 	{ \
 		op->size = 2; \
-		strcpy(opbuf, "invalid"); \
+		rz_asm_op_set_asm(op, "invalid"); \
 		return 1; \
 	}
 	if (!b || l < 2) {
@@ -244,8 +244,6 @@ int pic_midrange_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		rz_asm_op_set_asm(op, "invalid");
 		break;
 	}
-	if (rz_asm_op_get_asm(op)) {
-		strcpy(opbuf, rz_asm_op_get_asm(op));
-	}
+
 	return op->size;
 }

@@ -190,11 +190,11 @@ const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	return &pic_baseline_op_info[opcode];
 }
 
-int pic_baseline_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l) {
+int pic_baseline_disassemble(RzAsmOp *op, const ut8 *b, int l) {
 #define EMIT_INVALID \
 	{ \
 		op->size = 1; \
-		strcpy(opbuf, "invalid"); \
+		rz_asm_op_set_asm(op, "invalid"); \
 		return 1; \
 	}
 	if (!b || l < 2) {
@@ -249,7 +249,6 @@ int pic_baseline_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		rz_asm_op_set_asm(op, "invalid");
 		break;
 	}
-	strcpy(opbuf, rz_asm_op_get_asm(op));
 
 	return op->size;
 }
