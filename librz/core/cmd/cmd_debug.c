@@ -454,7 +454,9 @@ static bool step_line(RzCore *core, int times) {
 	}
 	file[0] = 0;
 	file2[0] = 0;
-	if (rz_bin_addr2line(core->bin, off, file, sizeof(file), &line)) {
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzBinSourceLineInfo *sl = o ? o->lines : NULL;
+	if (sl && rz_bin_source_line_addr2line(sl, off, file, sizeof(file), &line)) {
 		char *ptr = rz_file_slurp_line(file, line, 0);
 		RZ_LOG_INFO("--> 0x%08" PFMT64x " %s : %d\n", off, file, line);
 		RZ_LOG_INFO("--> %s\n", ptr);
@@ -467,7 +469,7 @@ static bool step_line(RzCore *core, int times) {
 	do {
 		rz_debug_step(core->dbg, 1);
 		off = rz_debug_reg_get(core->dbg, "PC");
-		if (!rz_bin_addr2line(core->bin, off, file2, sizeof(file2), &line2)) {
+		if (!(sl && rz_bin_source_line_addr2line(sl, off, file2, sizeof(file2), &line2))) {
 			if (find_meta) {
 				continue;
 			}

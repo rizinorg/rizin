@@ -325,7 +325,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		RZ_LOG_ERROR("Cannot print section bars\n");
 		goto list_err;
 	}
-	rz_table_visual_list(table, list, core->offset, -1, cols, core->io->va);
+	rz_table_visual_list(table, list, core->offset, 1, cols, core->io->va);
 
 	char *s = rz_table_tostring(table);
 	if (!s) {

@@ -640,6 +640,7 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 	MiniDmpUnloadedModuleList unloaded_module_list = { 0 };
 	ut64 offset;
 	int i, r;
+	char tmpbuf[256];
 
 	/* We could confirm data sizes but a malcious MDMP will always get around
 	** this! But we can ensure that the data is not outside of the file */
@@ -662,8 +663,8 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		sdb_num_set(obj->kv, "mdmp_thread_list.offset",
 			entry->location.rva, 0);
 		sdb_set(obj->kv, "mdmp_thread_list.format",
-			sdb_fmt("d[%d]? "
-				"NumberOfThreads (mdmp_thread)Threads",
+			rz_strf(tmpbuf, "d[%d]? "
+					"NumberOfThreads (mdmp_thread)Threads",
 				thread_list.number_of_threads),
 			0);
 
@@ -685,8 +686,8 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		sdb_num_set(obj->kv, "mdmp_module_list.offset",
 			entry->location.rva, 0);
 		sdb_set(obj->kv, "mdmp_module_list.format",
-			sdb_fmt("d[%d]? "
-				"NumberOfModule (mdmp_module)Modules",
+			rz_strf(tmpbuf, "d[%d]? "
+					"NumberOfModule (mdmp_module)Modules",
 				module_list.number_of_modules),
 			0);
 
@@ -711,9 +712,9 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		sdb_num_set(obj->kv, "mdmp_memory_list.offset",
 			entry->location.rva, 0);
 		sdb_set(obj->kv, "mdmp_memory_list.format",
-			sdb_fmt("d[%d]? "
-				"NumberOfMemoryRanges "
-				"(mdmp_memory_descriptor)MemoryRanges ",
+			rz_strf(tmpbuf, "d[%d]? "
+					"NumberOfMemoryRanges "
+					"(mdmp_memory_descriptor)MemoryRanges ",
 				memory_list.number_of_memory_ranges),
 			0);
 
@@ -788,8 +789,8 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		sdb_num_set(obj->kv, "mdmp_thread_ex_list.offset",
 			entry->location.rva, 0);
 		sdb_set(obj->kv, "mdmp_thread_ex_list.format",
-			sdb_fmt("d[%d]? NumberOfThreads "
-				"(mdmp_thread_ex)Threads",
+			rz_strf(tmpbuf, "d[%d]? NumberOfThreads "
+					"(mdmp_thread_ex)Threads",
 				thread_ex_list.number_of_threads),
 			0);
 
@@ -812,9 +813,9 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		sdb_num_set(obj->kv, "mdmp_memory64_list.offset",
 			entry->location.rva, 0);
 		sdb_set(obj->kv, "mdmp_memory64_list.format",
-			sdb_fmt("qq[%" PFMT64d "]? NumberOfMemoryRanges "
-				"BaseRva "
-				"(mdmp_memory_descriptor64)MemoryRanges",
+			rz_strf(tmpbuf, "qq[%" PFMT64d "]? NumberOfMemoryRanges "
+					"BaseRva "
+					"(mdmp_memory_descriptor64)MemoryRanges",
 				memory64_list.number_of_memory_ranges),
 			0);
 
@@ -959,8 +960,8 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		sdb_num_set(obj->kv, "mdmp_memory_info_list.offset",
 			entry->location.rva, 0);
 		sdb_set(obj->kv, "mdmp_memory_info_list.format",
-			sdb_fmt("ddq[%" PFMT64d "]? SizeOfHeader SizeOfEntry "
-				"NumberOfEntries (mdmp_memory_info)MemoryInfo",
+			rz_strf(tmpbuf, "ddq[%" PFMT64d "]? SizeOfHeader SizeOfEntry "
+					"NumberOfEntries (mdmp_memory_info)MemoryInfo",
 				memory_info_list.number_of_entries),
 			0);
 

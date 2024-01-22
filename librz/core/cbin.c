@@ -1099,7 +1099,8 @@ static ut8 bin_reloc_size(RzBinReloc *reloc) {
 
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
-	char *foo = sdb_get(db, sdb_fmt("%d", ordinal), 0);
+	char tmpbuf[16];
+	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal), 0);
 	return (foo && *foo) ? foo : NULL;
 }
 
@@ -3337,6 +3338,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 
 static void flags_to_json(PJ *pj, int flags) {
 	int i;
+	char tmpbuf[16];
 
 	pj_ka(pj, "flags");
 	for (i = 0; i < 64; i++) {
@@ -3346,7 +3348,7 @@ static void flags_to_json(PJ *pj, int flags) {
 			if (flag_string) {
 				pj_s(pj, flag_string);
 			} else {
-				pj_s(pj, sdb_fmt("0x%08" PFMT64x, flag));
+				pj_s(pj, rz_strf(tmpbuf, "0x%08" PFMT64x, flag));
 			}
 		}
 	}
@@ -4175,6 +4177,7 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 	int num_version = 0;
 	int num_stringtable = 0;
 	int num_string = 0;
+	char tmpbuf[512] = { 0 };
 	const char *format_version = "bin/cur/info/vs_version_info/VS_VERSIONINFO%d";
 	const char *format_stringtable = "%s/string_file_info/stringtable%d";
 	const char *format_string = "%s/string%d";
@@ -4184,7 +4187,7 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 		pj_o(pj);
 	}
 	do {
-		char *path_version = sdb_fmt(format_version, num_version);
+		char *path_version = rz_strf(tmpbuf, format_version, num_version);
 		if (!sdb_ns_path(r->sdb, path_version, 0)) {
 			break;
 		}
@@ -4193,13 +4196,15 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 		} else {
 			rz_cons_printf("# VS_FIXEDFILEINFO\n\n");
 		}
-		const char *path_fixedfileinfo = sdb_fmt("%s/fixed_file_info", path_version);
+		char *path_fixedfileinfo = rz_str_newf("%s/fixed_file_info", path_version);
 		if (!(sdb = sdb_ns_path(r->sdb, path_fixedfileinfo, 0))) {
 			if (IS_MODE_JSON(mode)) {
 				pj_end(pj);
 			}
+			free(path_fixedfileinfo);
 			break;
 		}
+		free(path_fixedfileinfo);
 		ut32 file_version_ms = sdb_num_get(sdb, "FileVersionMS", 0);
 		ut32 file_version_ls = sdb_num_get(sdb, "FileVersionLS", 0);
 		char *file_version = rz_str_newf("%u.%u.%u.%u", file_version_ms >> 16, file_version_ms & 0xFFFF,
@@ -4311,8 +4316,9 @@ static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 			(ut64)addr, (ut64)offset);
 	}
 
+	char tmpbuf[32];
 	for (size_t i = 0; i < num_entries; i++) {
-		const char *const key = sdb_fmt("entry%zu", i);
+		const char *const key = rz_strf(tmpbuf, "entry%zu", i);
 		const char *const value = sdb_const_get(sdb, key, 0);
 
 		if (!value) {
@@ -4340,6 +4346,8 @@ static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 }
 
 static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
+	char tmpbuf[512] = { 0 };
+
 	Sdb *sdb = sdb_ns_path(r->sdb, "bin/cur/info/versioninfo/verneed", 0);
 	if (!sdb) {
 		return;
@@ -4370,7 +4378,7 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 		const char *filename = NULL;
 		int num_vernaux = 0;
 
-		char *path_version = sdb_fmt("bin/cur/info/versioninfo/verneed/version%zu", num_version);
+		char *path_version = rz_strf(tmpbuf, "bin/cur/info/versioninfo/verneed/version%zu", num_version);
 		sdb = sdb_ns_path(r->sdb, path_version, 0);
 
 		if (!sdb) {
@@ -4407,12 +4415,14 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 		}
 
 		do {
-			const char *const path_vernaux = sdb_fmt("%s/vernaux%d", path_version, num_vernaux++);
+			char *path_vernaux = rz_str_newf("%s/vernaux%d", path_version, num_vernaux++);
 
 			sdb = sdb_ns_path(r->sdb, path_vernaux, 0);
 			if (!sdb) {
+				free(path_vernaux);
 				break;
 			}
+			free(path_vernaux);
 
 			const ut64 idx = sdb_num_get(sdb, "idx", 0);
 			const char *const name = sdb_const_get(sdb, "name", 0);
@@ -4753,6 +4763,7 @@ RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls
 
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 	int i;
+	char tmpbuf[16];
 
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (IS_MODE_JSON(mode)) {
@@ -4769,7 +4780,7 @@ RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 				if (flag_string) {
 					pj_s(pj, flag_string);
 				} else {
-					pj_s(pj, sdb_fmt("0x%08" PFMT64x, flag));
+					pj_s(pj, rz_strf(tmpbuf, "0x%08" PFMT64x, flag));
 				}
 			}
 		}

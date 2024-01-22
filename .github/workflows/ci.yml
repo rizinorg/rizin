@@ -327,7 +327,7 @@ jobs:
         run: yum install -y patch unzip git gcc make python3-pip
         # Pin Meson to the last version stil supporting Python 3.6
       - name: Install meson and ninja
-        run: pip3 install meson==0.61.5 ninja PyYAML
+        run: pip3 install meson==0.61.5 ninja PyYAML requests
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
@@ -528,11 +528,11 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-22.04
     container:
-      image: alpine:edge
+      image: alpine:3.19
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
       - name: Install dependencies
-        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz
+        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz py3-requests
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}

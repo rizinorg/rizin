@@ -230,11 +230,13 @@ onemoretime:
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 		RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
 		if (var) {
-			char *newname = rz_cons_input(sdb_fmt("New variable name for '%s': ", var->name));
-			if (newname && *newname) {
+			char *inputstr = rz_str_newf("New variable name for '%s': ", var->name);
+			char *newname = rz_cons_input(inputstr);
+			if (RZ_STR_ISNOTEMPTY(newname)) {
 				rz_analysis_var_rename(var, newname, true);
 				free(newname);
 			}
+			free(inputstr);
 		} else if (tgt_addr != UT64_MAX) {
 			RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
 			RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
@@ -498,11 +500,13 @@ onemoretime:
 		}
 
 		if (var) {
-			char *newname = rz_cons_input(sdb_fmt("New variable name for '%s': ", var->name));
-			if (newname && *newname) {
+			char *inputstr = rz_str_newf("New variable name for '%s': ", var->name);
+			char *newname = rz_cons_input(inputstr);
+			if (RZ_STR_ISNOTEMPTY(newname)) {
 				rz_analysis_var_rename(var, newname, true);
 				free(newname);
 			}
+			free(inputstr);
 		} else {
 			eprintf("Cannot find instruction with a variable\n");
 			rz_cons_any_key(NULL);

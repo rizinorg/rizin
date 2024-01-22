@@ -1037,7 +1037,7 @@ RUN
 
 NAME=rz-bin -d
 FILE=bins/elf/analysis/dwarftest
-CMDS=!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
+CMDS=!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/./dwarftest.c"
 EXPECT=<<EOF
 1
 EOF

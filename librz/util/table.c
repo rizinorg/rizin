@@ -1313,8 +1313,13 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list
 				rz_strbuf_append(buf, ((j * mul) + min >= seek && (j * mul) + min <= seek + len) ? "^" : h_line);
 			}
 			char *s = rz_strbuf_drain(buf);
-			rz_table_add_rowf(table, "sssssss", "=>", sdb_fmt("0x%08" PFMT64x, seek),
-				s, sdb_fmt("0x%08" PFMT64x, seek + len), "", "", "");
+			char *seekstart = rz_str_newf("0x%08" PFMT64x, seek);
+			char *seekend = rz_str_newf("0x%08" PFMT64x, seek + len);
+
+			rz_table_add_rowf(table, "sssssss", "=>", seekstart, s, seekend, "", "", "");
+
+			free(seekend);
+			free(seekstart);
 			free(s);
 		} else {
 			rz_strbuf_free(buf);
