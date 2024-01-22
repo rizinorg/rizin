@@ -1,3 +1,4 @@
 [wrap-git]
 url = https://github.com/rizinorg/sigdb.git
 revision = main
+depth = 1

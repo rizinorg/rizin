@@ -2,3 +2,4 @@
 url = https://github.com/BLAKE3-team/BLAKE3.git
 revision = 3f396d223946f722ab060fe9377cd1cebacaf4c0
 patch_directory = blake3
+depth = 1
