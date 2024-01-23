@@ -1,4 +1,4 @@
-.Dd Feb 6, 2015
+.Dd Jan 22, 2024
 .Dt RZ_HASH 1
 .Sh NAME
 .Nm rz-hash
@@ -32,48 +32,52 @@ This command can be used to calculate hashes of a certain part of a file or a co
 .Pp
 This is the command used by the 'ph' command of rizin.
 .Bl -tag -width Fl
-.It Fl a Ar algo
-Select an algorithm for the hashing. Valid values are listed in: rz-hash -L
-.It Fl b Ar blocksize
-Define the block size
-.It Fl c Ar hash
-Compare the computed hash with this one. Allowed only when a single hash is computed.
-.It Fl D Ar algo
-Decrypt instead of hash using the given algorithm (base64, base91, rc4, aes, xor, blowfish, rot, rol, ror, rc2, rc6, punycode)
-.It Fl e
-Use little endian to display checksums
-.It Fl E Ar algo
-Encrypt instead of hash using the given algorithm (base64, base91, rc4, aes, xor, blowfish, rot, rol, ror, rc2, rc6, punycode)
-.It Fl i Ar iters
-Apply the hash Iters times to itself+seed
-.It Fl I Ar [^]s:string|hexstr
-Set initialization vector (IV) for the cryptographic functions.
-.It Fl j
-Show output in JSON (see -r)
-.It Fl B
-Show per-block hash
-.It Fl k
-Show result using OpenSSH's VisualHostKey randomart algorithm
-.It Fl n
-Amount of blocks to hash
-.It Fl s Ar string
-Hash this string instead of using the 'source' and 'hash-file' arguments.
-.It Fl S Ar [^]s:string|hexstr
-Set seed to hash with, use ^to prefix seed, otherwise its suffixed. If the seed is just a dash '-' it will read from stdin, this is useful to provide huge XOR payloads or other crypto keys bigger than few bytes.
-.It Fl f Ar from
-Start hashing at given address
-.It Fl t Ar to
-Stop hashing at given address
-.It Fl p Ar arg
-Show vertical entropy/statistical entropy graphs
-.It Fl q
-Quiet mode (-qq for even quieter!)
-.It Fl x Ar hexstr
-Hash the given hexpair string instead of using the 'source' and 'hash-file' arguments.
 .It Fl v
-Show version information
+Shows version.
 .It Fl h
-Show usage help message.
+Shows this help page.
+.It Fl 
+Input read from stdin instead of from a file.
+.It Fl a Ar algo
+Hash algorithm to use; you can specify multiple ones by appending a comma (example: sha1,md4,md5,sha256).
+.It Fl B
+Outputs the calculated value for each block.
+.It Fl b Ar size
+Sets the block size.
+.It Fl c Ar value
+Compare calculated value with a given one (hexadecimal).
+.It Fl e Ar endian
+Sets the endianness (default: 'big'; accepted: 'big' or 'little').
+.It Fl D Ar algo
+Decrypt the given input; use -S to set the key and -I to set IV (if needed).
+.It Fl E Ar algo
+Encrypt the given input; use -S to set the key and -I to set IV (if needed).
+.It Fl f Ar from
+Starts the calculation at the given offset.
+.It Fl t Ar to
+Stops the calculation at the given offset.
+.It Fl I Ar iv
+Sets the initialization vector (IV).
+.It Fl i Ar times
+Repeat the calculation N times.
+.It Fl j
+Outputs the result as a JSON structure.
+.It Fl k
+Outputs the calculated value using openssh's randomkey algorithm.
+.It Fl L
+List all algorithms.
+.It Fl q
+Sets quiet mode (use -qq to get only the calculated value).
+.It Fl S Ar seed
+Sets the seed for -a; use '^' to append it before the input. Use '@' prefix to load it from a file and '-' to read it.
+.It Fl K Ar key
+Sets the HMAC key for -a and the key for -E/-D. Use '@' prefix to load it from a file and '-' to read it from stdin (you can combine them).
+.It Fl s Ar string
+Input read from a zero-terminated string instead of from a file.
+.It Fl x Ar hex
+Input read from a hexadecimal value instead of from a file.
+.Pp
+All the inputs (besides -s/-x/-c) can be hexadecimal or strings if 's:' prefix is specified.
 .El
 .Sh DIAGNOSTICS
 .Ex -std
