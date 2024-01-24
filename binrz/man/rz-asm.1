@@ -13,10 +13,8 @@
 .Op Fl f Ar file
 .Op Fl F Ar fil:ter
 .Op Fl i Ar skip
-.Op Fl  Ar syntax
-.Op Fl i Ar int
-.Op Fl l Ar int
-.Op ARG
+.Op Fl l Ar len
+.Ar 'code'|hex|-
 .Sh DESCRIPTION
 This tool uses r_asm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
 .Pp
@@ -47,7 +45,7 @@ Read data from file.
 Specify input and/or output filters (att2intel, x86.pseudo, ...)
 .It Fl h, hh
 Show this help, -hh for long.
-.It Fl i Ar int
+.It Fl i Ar len
 ignore/skip N bytes of the input buffer
 .It Fl j
 output in json format
@@ -67,7 +65,7 @@ Run SPP over input for assembly
 quiet mode
 .It Fl r
 output in rizin commands
-.It Fl s
+.It Fl s Ar syntax
 Select syntax (intel, att)
 .It Fl v
 Show version information
@@ -97,3 +95,5 @@ Disassemble opcode:
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0
