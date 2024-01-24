@@ -160,7 +160,6 @@ RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 	}
 
 	if (pj) {
-		;
 		pj_o(pj);
 		if (n >> 32) {
 			pj_ks(pj, "int32", rz_strf(number, "%d", (st32)(n & UT32_MAX)));

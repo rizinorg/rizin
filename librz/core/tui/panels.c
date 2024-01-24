@@ -228,7 +228,7 @@ static const char *help_msg_panels[] = {
 	"q", "quit, or close a tab",
 	"Q", "close all the tabs and quit",
 	"r", "toggle callhints/jmphints/leahints",
-	"R", "randomize color palette (ecr)",
+	"R", "changes the theme or randomizes colors if scr.randpal option is true.",
 	"s/S", "step in / step over",
 	"t/T", "tab prompt / close a tab",
 	"u/U", "undo / redo seek",
