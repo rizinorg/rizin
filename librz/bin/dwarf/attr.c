@@ -207,7 +207,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 		// An index into the .debug_loc
 	case DW_FORM_loclistx:
 		value->kind = RzBinDwarfAttr_LoclistPtr;
-		RET_FALSE_IF_FAIL(read_offset(reader, &value->u64, is_64bit));
+		ULE128_OR_RET_FALSE(value->u64);
 		break;
 		// An index into the .debug_rnglists
 	case DW_FORM_rnglistx:
