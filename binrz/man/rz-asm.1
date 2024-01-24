@@ -22,13 +22,13 @@ This tool uses r_asm to assemble and disassemble files or hexpair strings. It su
 .It Fl a Ar arch
 Set architecture to assemble/disassemble (see -L)
 .It Fl A
-Show Analysis information from given hexpairs
+Show analysis information from given hexpairs
 .It Fl b Ar bits
-Set cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)
+Set CPU register size (8, 16, 32, 64) (RZ_ASM_BITS)
 .It Fl B
 Binary input/output (-l is mandatory for binary input)
-.It Fl c Ar cpu
-Select specific CPU (depends on arch)
+.It Fl c Ar CPU
+Select specific CPU (depends on the arch)
 .It Fl C
 Output in C format
 .It Fl d, D
@@ -46,15 +46,15 @@ Specify input and/or output filters (att2intel, x86.pseudo, ...)
 .It Fl h, hh
 Show this help, -hh for long.
 .It Fl i Ar len
-ignore/skip N bytes of the input buffer
+ignore N bytes of the input buffer
 .It Fl j
-output in json format
+Output in JSON format
 .It Fl k Ar kernel
 Select operating system (linux, windows, darwin, ..)
 .It Fl l Ar len
 Input/Output length
 .It Fl L
-List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)
+List asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)
 .It Fl o, @ Ar addr
 Set start address for code (default 0)
 .It Fl O Ar file
@@ -62,13 +62,13 @@ Output file name (rz-asm -Bf a.asm -O a)
 .It Fl p
 Run SPP over input for assembly
 .It Fl q
-quiet mode
+Quiet mode
 .It Fl r
-output in rizin commands
+Output in rizin commands
 .It Fl s Ar syntax
 Select syntax (intel, att)
 .It Fl v
-Show version information
+Show version number
 .It Fl x
 Use hex dwords instead of hex pairs when assembling.
 .It Fl w
