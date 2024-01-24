@@ -1849,9 +1849,8 @@ static inline ut64 rz_bin_dwarf_attr_addr(
 		ut64 addr = 0;
 		if (dw && rz_bin_dwarf_addr_get(dw->addr, &addr, addr_size, base, attr->value.u64)) {
 			return addr;
-		} else {
-			rz_warn_if_reached();
 		}
+		rz_warn_if_reached();
 	} else if (v->kind == RzBinDwarfAttr_UConstant) {
 		return attr->value.u64;
 	} else {

@@ -38,10 +38,10 @@ static void CU_attr_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDw
 		cu->language = rz_bin_dwarf_attr_udata(attr);
 		break;
 	case DW_AT_low_pc:
-		cu->low_pc = rz_bin_dwarf_attr_udata(attr);
+		cu->low_pc = rz_bin_dwarf_attr_addr(attr, ctx->dw, cu->hdr.encoding.address_size, cu->addr_base);
 		break;
 	case DW_AT_high_pc:
-		cu->high_pc = rz_bin_dwarf_attr_udata(attr);
+		cu->high_pc = rz_bin_dwarf_attr_addr(attr, ctx->dw, cu->hdr.encoding.address_size, cu->addr_base);
 		break;
 	case DW_AT_stmt_list:
 		cu->stmt_list = rz_bin_dwarf_attr_udata(attr);
@@ -67,6 +67,13 @@ static void CU_attr_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDw
 offset_comp_dir:
 	if (cu->stmt_list < UT64_MAX && cu->comp_dir) {
 		ht_up_insert(ctx->info->offset_comp_dir, cu->stmt_list, (void *)cu->comp_dir);
+	}
+}
+
+static void apply_attr_opt(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDwarfDie *die, DW_AT at) {
+	RzBinDwarfAttr *attr = rz_bin_dwarf_die_get_attr(die, at);
+	if (attr) {
+		CU_attr_apply(ctx, cu, attr);
 	}
 }
 
@@ -109,10 +116,12 @@ static bool CU_attrs_parse(
 
 	if (die->tag == DW_TAG_compile_unit ||
 		die->tag == DW_TAG_skeleton_unit) {
-		RzBinDwarfAttr *str_offset_base = rz_bin_dwarf_die_get_attr(die, DW_AT_str_offsets_base);
-		if (str_offset_base) {
-			CU_attr_apply(ctx, cu, str_offset_base);
-		}
+		apply_attr_opt(ctx, cu, die, DW_AT_str_offsets_base);
+		apply_attr_opt(ctx, cu, die, DW_AT_addr_base);
+		apply_attr_opt(ctx, cu, die, DW_AT_GNU_addr_base);
+		apply_attr_opt(ctx, cu, die, DW_AT_GNU_ranges_base);
+		apply_attr_opt(ctx, cu, die, DW_AT_loclists_base);
+		apply_attr_opt(ctx, cu, die, DW_AT_rnglists_base);
 		RzBinDwarfAttr *attr;
 		rz_vector_foreach(&die->attrs, attr) {
 			CU_attr_apply(ctx, cu, attr);
