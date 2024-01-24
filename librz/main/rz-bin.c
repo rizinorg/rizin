@@ -153,7 +153,7 @@ static ut32 actions2mask(ut64 action) {
 static int rzbin_show_help(int v) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
-	       "              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
+	       "              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P pdb]\n"
 	       "              [-o str] [-O str] [-k query] [-D lang symname] file\n");
 	if (v) {
 		const char *options[] = {
