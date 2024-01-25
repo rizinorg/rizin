@@ -11,6 +11,7 @@ static int chip8_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	uint8_t nibble = opcode & 0x0F;
 	uint16_t nnn = opcode & 0x0FFF;
 	uint8_t kk = opcode & 0xFF;
+	rz_asm_op_set_asm(op, "invalid");
 	switch (opcode & 0xF000) {
 	case 0x0000:
 		if (opcode == 0x00E0) {
@@ -79,11 +80,6 @@ static int chip8_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 		case 0x85: rz_asm_op_setf_asm(op, "ld v%1x, r", x); break;
 		}
 	} break;
-	default: rz_asm_op_set_asm(op, "invalid"); break;
-	}
-
-	if (!*rz_strbuf_get(&op->buf_asm)) {
-		rz_asm_op_set_asm(op, "invalid");
 	}
 
 	op->size = 2;

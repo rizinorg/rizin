@@ -44,7 +44,7 @@ static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->size = insn->size;
 	rz_asm_op_setf_asm(op, "%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
-	char *str = rz_strbuf_get(&op->buf_asm);
+	char *str = rz_asm_op_get_asm(op);
 	if (str) {
 		rz_str_replace_char(str, '$', 0);
 		// remove the '$'<registername> in the string

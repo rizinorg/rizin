@@ -55,7 +55,7 @@ static int sparc_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_asm_op_setf_asm(op, "%s%s%s",
 		insn->mnemonic, insn->op_str[0] ? " " : "",
 		insn->op_str);
-	char *buf_asm = rz_strbuf_get(&op->buf_asm);
+	char *buf_asm = rz_asm_op_get_asm(op);
 	if (buf_asm) {
 		rz_str_replace_char(buf_asm, '%', 0);
 		// TODO: remove the '$'<registername> in the string
