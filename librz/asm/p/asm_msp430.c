@@ -12,27 +12,22 @@
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct msp430_cmd cmd;
 	int ret = msp430_decode_command(buf, len, &cmd);
-	char *buf_asm = NULL;
 	if (ret < 1) {
 		rz_asm_op_set_asm(op, "invalid");
 		goto fail;
 	}
 	if (cmd.operands[0]) {
-		buf_asm = rz_str_newf("%s %s", cmd.instr, cmd.operands);
+		rz_asm_op_setf_asm(op, "%s %s", cmd.instr, cmd.operands);
 	} else {
-		buf_asm = strdup(cmd.instr);
+		rz_asm_op_set_asm(op, cmd.instr);
 	}
+	char *buf_asm = rz_strbuf_get(&op->buf_asm);
 	if (a->syntax != RZ_ASM_SYNTAX_ATT) {
 		rz_str_replace_ch(buf_asm, '#', 0, 1);
 		// rz_str_replace_ch (buf_asm, "$", "$$", 1);
 		rz_str_replace_ch(buf_asm, '&', 0, 1);
 		rz_str_replace_ch(buf_asm, '%', 0, 1);
 	}
-	if (buf_asm) {
-		rz_asm_op_set_asm(op, buf_asm);
-		free(buf_asm);
-	}
-
 fail:
 	return op->size = ret;
 }

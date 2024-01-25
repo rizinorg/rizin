@@ -114,7 +114,7 @@ static int or1k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = -1;
 
 	if (len < 4) {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 		return op->size;
 	}
 
@@ -126,14 +126,14 @@ static int or1k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	/* make sure instruction descriptor table is not overflowed */
 	if (opcode_idx >= insns_count) {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 		return op->size;
 	}
 
 	/* if instruction is marked as invalid finish processing now */
 	insn_descr = &or1k_insns[opcode_idx];
 	if (insn_descr->type == INSN_INVAL) {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 		return op->size;
 	}
 
@@ -148,10 +148,10 @@ static int or1k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		insn_to_str(a, &line, insn_descr, NULL, insn);
 	}
 	if (line) {
-		rz_strbuf_set(&op->buf_asm, line);
+		rz_asm_op_set_asm(op, line);
 		free(line);
 	} else {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 	}
 	return op->size;
 }
