@@ -1,0 +1,239 @@
+d "movea 0xff, r0, r20" 20a6ff00 0x100000
+d "mov 0xffff, r21" 3506ffff0000 0x100004
+d "mov 0x200000, sp" 230600002000 0x10000a
+d "mov 0x10073c, ep" 3e063c071000 0x100010
+d "mov 0x10873c, gp" 24063c871000 0x100016
+d "mov 0x1002e4, r6" 2606e4021000 0x10001c
+d "ldsr r6, CTBP, 0" e6a72000 0x100022
+d "stsr PSW, r6, 0" e5374000 0x100026
+d "movhi 1, r0, r7" 403e0100 0x10002a
+d "or r7, r6" 0731 0x10002e
+d "ldsr r6, PSW, 0" e62f2000 0x100030
+d "movhi 2, r0, r6" 40360200 0x100034
+d "ldsr r6, FPSR, 0" e6372000 0x100038
+d "mov 0x100744, r6" 260644071000 0x10003c
+d "mov 0x10074c, r7" 27064c071000 0x100042
+d "st.w r0, 0[r6]" 66070100 0x100048
+d "addi 4, r6, r6" 06360400 0x10004c
+d "cmp r7, r6" e731 0x100050
+d "bl 0x100048" b1fd 0x100052
+d "jarl 0x10019c, lp" 80ff4801 0x100054
+d "addi -16, sp, sp" 031ef0ff 0x100058
+d "mov 0, r6" 0032 0x10005c
+d "mov 0, r7" 003a 0x10005e
+d "mov 0, r8" 0042 0x100060
+d "jarl 0x10016a, lp" 80ff0801 0x100062
+d "mov r10, r6" 0a30 0x100066
+d "jarl 0x1001d4, lp" 80ff6c01 0x100068
+d "add -4, sp" 5c1a 0x10006c
+d "st.w r29, 0[sp]" 63ef0100 0x10006e
+d "add -12, sp" 541a 0x100072
+d "mov sp, r29" 03e8 0x100074
+d "st.b r0, 11[r29]" 5d070b00 0x100076
+d "st.w r0, 4[r29]" 7d070500 0x10007a
+d "br 0x1000f8" d53d 0x10007e
+d "mov 0x1002fc, r11" 2b06fc021000 0x100080
+d "ld.w 4[r29], r10" 3d570500 0x100086
+d "add r11, r10" cb51 0x10008a
+d "ld.b 0[r10], r10" 0a570000 0x10008c
+d "shl 24, r10" d852 0x100090
+d "sar 24, r10" b852 0x100092
+d "mov r10, r11" 0a58 0x100094
+d "mov 0x100310, r10" 2a0610031000 0x100096
+d "ld.w 0[r10], r12" 2a670100 0x10009c
+d "ld.w 4[r29], r10" 3d570500 0x1000a0
+d "add r12, r10" cc51 0x1000a4
+d "ld.b 0[r10], r10" 0a570000 0x1000a6
+d "shl 24, r10" d852 0x1000aa
+d "sar 24, r10" b852 0x1000ac
+d "xor r11, r10" 2b51 0x1000ae
+d "shl 24, r10" d852 0x1000b0
+d "sar 24, r10" b852 0x1000b2
+d "mov r10, r12" 0a60 0x1000b4
+d "mov 0x1002fc, r11" 2b06fc021000 0x1000b6
+d "ld.w 4[r29], r10" 3d570500 0x1000bc
+d "add r11, r10" cb51 0x1000c0
+d "st.b r12, 0[r10]" 4a670000 0x1000c2
+d "mov 0x1002fc, r11" 2b06fc021000 0x1000c6
+d "ld.w 4[r29], r10" 3d570500 0x1000cc
+d "add r11, r10" cb51 0x1000d0
+d "ld.b 0[r10], r10" 0a570000 0x1000d2
+d "shl 24, r10" d852 0x1000d6
+d "sar 24, r10" b852 0x1000d8
+d "mov r10, r11" 0a58 0x1000da
+d "ld.b 11[r29], r10" 1d570b00 0x1000dc
+d "shl 24, r10" d852 0x1000e0
+d "sar 24, r10" b852 0x1000e2
+d "xor r11, r10" 2b51 0x1000e4
+d "shl 24, r10" d852 0x1000e6
+d "sar 24, r10" b852 0x1000e8
+d "st.b r10, 11[r29]" 5d570b00 0x1000ea
+d "ld.w 4[r29], r10" 3d570500 0x1000ee
+d "add 1, r10" 4152 0x1000f2
+d "st.w r10, 4[r29]" 7d570500 0x1000f4
+d "ld.w 4[r29], r10" 3d570500 0x1000f8
+d "cmp 15, r10" 6f52 0x1000fc
+d "ble 0x100080" 97c5 0x1000fe
+d "movea 0x58, r0, r10" 20565800 0x100100
+d "ld.bu 11[r29], r11" bd5f0b00 0x100104
+d "cmp r10, r11" ea59 0x100108
+d "bne 0x10015c" 9a2d 0x10010a
+d "st.w r0, 0[r29]" 7d070100 0x10010c
+d "br 0x100152" 9525 0x100110
+d "mov 0x1002fc, r11" 2b06fc021000 0x100112
+d "ld.w 0[r29], r10" 3d570100 0x100118
+d "add r11, r10" cb51 0x10011c
+d "ld.b 0[r10], r10" 0a570000 0x10011e
+d "shl 24, r10" d852 0x100122
+d "sar 24, r10" b852 0x100124
+d "mov r10, r11" 0a58 0x100126
+d "ld.b 11[r29], r10" 1d570b00 0x100128
+d "shl 24, r10" d852 0x10012c
+d "sar 24, r10" b852 0x10012e
+d "xor r11, r10" 2b51 0x100130
+d "shl 24, r10" d852 0x100132
+d "sar 24, r10" b852 0x100134
+d "mov r10, r12" 0a60 0x100136
+d "mov 0x1002fc, r11" 2b06fc021000 0x100138
+d "ld.w 0[r29], r10" 3d570100 0x10013e
+d "add r11, r10" cb51 0x100142
+d "st.b r12, 0[r10]" 4a670000 0x100144
+d "ld.w 0[r29], r10" 3d570100 0x100148
+d "add 1, r10" 4152 0x10014c
+d "st.w r10, 0[r29]" 7d570100 0x10014e
+d "ld.w 0[r29], r10" 3d570100 0x100152
+d "cmp 15, r10" 6f52 0x100156
+d "ble 0x100112" d7dd 0x100158
+d "br 0x10015e" a505 0x10015a
+d "nop" 0000 0x10015c
+d "mov r29, sp" 1d18 0x10015e
+d "ld.w 12[sp], r29" 23ef0d00 0x100160
+d "addi 16, sp, sp" 031e1000 0x100164
+d "jmp [lp]" 7f00 0x100168
+d "add -8, sp" 581a 0x10016a
+d "st.w lp, 4[sp]" 63ff0500 0x10016c
+d "st.w r29, 0[sp]" 63ef0100 0x100170
+d "add -8, sp" 581a 0x100174
+d "mov sp, r29" 03e8 0x100176
+d "st.w r6, 4[r29]" 7d370500 0x100178
+d "st.w r7, 0[r29]" 7d3f0100 0x10017c
+d "mov 0x10006c, r10" 2a066c001000 0x100180
+d "jarl [r10], lp" eac760f9 0x100186
+d "mov 0, r10" 0052 0x10018a
+d "mov r29, sp" 1d18 0x10018c
+d "ld.w 12[sp], lp" 23ff0d00 0x10018e
+d "ld.w 8[sp], r29" 23ef0900 0x100192
+d "addi 16, sp, sp" 031e1000 0x100196
+d "jmp [lp]" 7f00 0x10019a
+d "prepare {r28 - r29, lp}, 0" 8007e100 0x10019c
+d "mov 0x100744, r10" 2a0644071000 0x1001a0
+d "ld.w 0[r10], r11" 2a5f0100 0x1001a6
+d "cmp 0, r11" 605a 0x1001aa
+d "bne 0x1001c4" ca0d 0x1001ac
+d "mov 1, r11" 015a 0x1001ae
+d "mov 0x10073c, r29" 3d063c071000 0x1001b0
+d "mov 0x10073c, r28" 3c063c071000 0x1001b6
+d "st.w r11, 0[r10]" 6a5f0100 0x1001bc
+d "cmp r28, r29" fce9 0x1001c0
+d "bh 0x1001c8" bb05 0x1001c2
+d "dispose 0, {r28 - r29, lp}, lp" 4006ff00 0x1001c4
+d "ld.w -4[r29], r10" 3d57fdff 0x1001c8
+d "add -4, r29" 5cea 0x1001cc
+d "jarl [r10], lp" eac760f9 0x1001ce
+d "br 0x1001c0" f5f5 0x1001d2
+d "prepare {r29, lp}, 0" 80076100 0x1001d4
+d "mov 0, r7" 003a 0x1001d8
+d "mov r6, r29" 06e8 0x1001da
+d "jarl 0x1001f6, lp" 80ff1a00 0x1001dc
+d "ld.w -32764[gp], r6" 24370580 0x1001e0
+d "ld.w 60[r6], r10" 26573d00 0x1001e4
+d "cmp 0, r10" 6052 0x1001e8
+d "be 0x1001f0" b205 0x1001ea
+d "jarl [r10], lp" eac760f9 0x1001ec
+d "mov r29, r6" 1d30 0x1001f0
+d "jarl 0x100296, lp" 80ffa400 0x1001f2
+d "prepare {r22 - r29, lp}, 0" 8007e1f3 0x1001f6
+d "ld.w -32764[gp], r24" 24c70580 0x1001fa
+d "mov r6, r25" 06c8 0x1001fe
+d "mov r7, r26" 07d0 0x100200
+d "mov 1, r23" 01ba 0x100202
+d "ld.w 328[r24], r28" 38e74901 0x100204
+d "cmp 0, r28" 60e2 0x100208
+d "be 0x10021c" 920d 0x10020a
+d "ld.w 4[r28], r29" 3cef0500 0x10020c
+d "addi -1, r29, r27" 1ddeffff 0x100210
+d "shl 2, r29" c2ea 0x100214
+d "add r28, r29" dce9 0x100216
+d "cmp 0, r27" 60da 0x100218
+d "bge 0x100220" be05 0x10021a
+d "dispose 0, {r22 - r29, lp}, lp" 4006fff3 0x10021c
+d "cmp 0, r26" 60d2 0x100220
+d "be 0x100232" 820d 0x100222
+d "ld.w 260[r29], r10" 3d570501 0x100224
+d "cmp r26, r10" fa51 0x100228
+d "be 0x100232" c205 0x10022a
+d "add -1, r27" 5fda 0x10022c
+d "add -4, r29" 5cea 0x10022e
+d "br 0x100218" c5f5 0x100230
+d "ld.w 4[r28], r11" 3c5f0500 0x100232
+d "ld.w 4[r29], r10" 3d570500 0x100236
+d "add -1, r11" 5f5a 0x10023a
+d "cmp r27, r11" fb59 0x10023c
+d "bne 0x100272" aa1d 0x10023e
+d "st.w r27, 4[r28]" 7cdf0500 0x100240
+d "cmp 0, r10" 6052 0x100244
+d "be 0x10022c" b2f5 0x100246
+d "ld.w 392[r28], r12" 3c678901 0x100248
+d "mov r23, r11" 1758 0x10024c
+d "shl r27, r11" fb5fc000 0x10024e
+d "ld.w 4[r28], r22" 3cb70500 0x100252
+d "and r11, r12" 4b61 0x100256
+d "cmp 0, r12" 6062 0x100258
+d "bne 0x100278" fa0d 0x10025a
+d "jarl [r10], lp" eac760f9 0x10025c
+d "ld.w 4[r28], r11" 3c5f0500 0x100260
+d "ld.w 328[r24], r10" 38574901 0x100264
+d "cmp r22, r11" f659 0x100268
+d "bne 0x100204" dacd 0x10026a
+d "cmp r10, r28" eae1 0x10026c
+d "be 0x10022c" f2dd 0x10026e
+d "br 0x100204" a5cd 0x100270
+d "st.w r0, 4[r29]" 7d070500 0x100272
+d "br 0x100244" f5e5 0x100276
+d "ld.w 396[r28], r12" 3c678d01 0x100278
+d "ld.w 132[r29], r6" 3d378500 0x10027c
+d "and r12, r11" 4c59 0x100280
+d "cmp 0, r11" 605a 0x100282
+d "bne 0x100290" ea05 0x100284
+d "mov r6, r7" 0638 0x100286
+d "mov r25, r6" 1930 0x100288
+d "jarl [r10], lp" eac760f9 0x10028a
+d "br 0x100260" 95ed 0x10028e
+d "jarl [r10], lp" eac760f9 0x100290
+d "br 0x100260" e5e5 0x100294
+d "prepare {r27 - r29, lp}, 0" 8007e110 0x100296
+d "mov r6, r29" 06e8 0x10029a
+d "mov 0x100738, r28" 3c0638071000 0x10029c
+d "mov 0x10073c, r27" 3b063c071000 0x1002a2
+d "ld.w 0[r28], r10" 3c570100 0x1002a8
+d "cmp r27, r10" fb51 0x1002ac
+d "bl 0x1002c0" 910d 0x1002ae
+d "mov 0, r9" 004a 0x1002b0
+d "mov 0, r8" 0042 0x1002b2
+d "mov r29, r7" 1d38 0x1002b4
+d "mov 1, r6" 0132 0x1002b6
+d "jarl 0x1002d2, lp" 80ff1a00 0x1002b8
+d "dispose 0, {r27 - r29, lp}, lp" 4006ff10 0x1002bc
+d "addi 4, r10, r11" 0a5e0400 0x1002c0
+d "ld.w 0[r10], r10" 2a570100 0x1002c4
+d "st.w r11, 0[r28]" 7c5f0100 0x1002c8
+d "jarl [r10], lp" eac760f9 0x1002cc
+d "br 0x1002a8" c5ed 0x1002d0
+d "trap 31" ff070001 0x1002d2
+d "tst r11, r11" 6b59 0x1002d6
+d "be 0x1002e2" d205 0x1002d8
+d "movhi 16, r0, r6" 40361000 0x1002da
+d "st.w r11, 1864[r6]" 665f4907 0x1002de
+d "jmp [lp]" 7f00 0x1002e2
+d "jarl 0x1052d8, lp" 80ff8452 0x100054
+d "prepare {lp}, 0" 80072100 0xa07e

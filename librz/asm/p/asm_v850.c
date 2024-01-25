@@ -10,21 +10,14 @@
 #include <v850_disas.h>
 
 static int v850_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	struct v850_cmd cmd = {
-		.addr = a->pc,
-		.instr = "",
-		.operands = ""
-	};
+	V850_Inst inst = { 0 };
+	inst.addr = a->pc;
 	if (len < 2) {
 		return -1;
 	}
-	int ret = v850_decode_command(buf, len, &cmd);
+	int ret = v850_decode_command(buf, len, &inst);
 	if (ret > 0) {
-		char *buf_asm = rz_str_newf("%s %s", cmd.instr, cmd.operands);
-		if (buf_asm) {
-			rz_asm_op_set_asm(op, buf_asm);
-			free(buf_asm);
-		}
+		rz_asm_op_setf_asm(op, "%s %s", inst.instr, inst.operands);
 	} else {
 		rz_asm_op_set_asm(op, "invalid");
 	}
