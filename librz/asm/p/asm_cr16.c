@@ -14,7 +14,7 @@ static int cr16_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (ret > -1) {
 		rz_strbuf_initf(&op->buf_asm, "%s %s", cmd.instr, cmd.operands);
 	} else {
-		rz_strbuf_set(&op->buf_asm, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 	}
 	return op->size = ret;
 }

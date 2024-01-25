@@ -52,14 +52,13 @@ static int sparc_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		goto fin;
 	}
 	op->size = insn->size;
-	char *buf_asm = rz_str_newf("%s%s%s",
+	rz_asm_op_setf_asm(op, "%s%s%s",
 		insn->mnemonic, insn->op_str[0] ? " " : "",
 		insn->op_str);
+	char *buf_asm = rz_asm_op_get_asm(op);
 	if (buf_asm) {
 		rz_str_replace_char(buf_asm, '%', 0);
 		// TODO: remove the '$'<registername> in the string
-		rz_asm_op_set_asm(op, buf_asm);
-		free(buf_asm);
 	}
 	cs_free(insn, n);
 fin:
