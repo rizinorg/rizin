@@ -4670,12 +4670,16 @@ RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end) {
 	rz_config_set(core->config, "analysis.limits", c ? c : "");
 }
 
-static bool archIsThumbable(RzCore *core) {
+static bool arch_is(RzCore *core, const char *x) {
 	RzAsm *as = core ? core->rasm : NULL;
 	if (as && as->cur && as->bits <= 32 && as->cur->name) {
-		return strstr(as->cur->name, "arm");
+		return strstr(as->cur->name, x);
 	}
 	return false;
+}
+
+static bool archIsThumbable(RzCore *core) {
+	return arch_is(core, "arm");
 }
 
 static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {

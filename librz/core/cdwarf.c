@@ -228,7 +228,6 @@ RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
 
 typedef struct {
 	RzBinDWARF *dw;
-	RzBinDwarfCompUnit *cu;
 	RzStrBuf *sb;
 } DumpContext;
 
@@ -239,20 +238,24 @@ static bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 		return false;
 	}
 	RzStrBuf *sb = ctx->sb;
-
 	rz_strbuf_appendf(sb, "0x%" PFMT64x "\n", loclist->offset);
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocListEntry *entry = *it;
 		rz_strbuf_appendf(sb, "\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t", entry->range->begin, entry->range->end);
 		if (entry->expression) {
+			const RzBinDwarfEncoding *enc = ht_up_find(
+				ctx->dw->info->location_encoding, k, NULL);
+			if (!enc) {
+				continue;
+			}
 			RzBinDWARFDumpOption dump_opt = {
 				.loclist_sep = ",\t",
 				.loclist_indent = "",
 				.expr_sep = ", "
 			};
 			rz_bin_dwarf_expression_dump(
-				&ctx->cu->hdr.encoding, entry->expression, ctx->sb, &dump_opt);
+				enc, entry->expression, ctx->sb, &dump_opt);
 		}
 		rz_strbuf_append(sb, "\n");
 	}

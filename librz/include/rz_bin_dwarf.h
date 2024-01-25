@@ -1097,6 +1097,7 @@ typedef struct {
 	 * that references this particular line information.
 	 */
 	HtUP /*<ut64, char *>*/ *offset_comp_dir;
+	HtUP /*<ut64, const RzBinDwarfEncoding*>*/ *location_encoding;
 } RzBinDwarfInfo;
 
 typedef struct {

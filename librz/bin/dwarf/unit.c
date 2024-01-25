@@ -107,6 +107,16 @@ static bool CU_attrs_parse(
 		case DW_AT_sibling:
 			die->sibling = rz_bin_dwarf_attr_udata(&attr);
 			break;
+		case DW_AT_location: {
+			if (attr.value.kind == RzBinDwarfAttr_LoclistPtr ||
+				attr.value.kind == RzBinDwarfAttr_Reference ||
+				attr.value.kind == RzBinDwarfAttr_UConstant ||
+				attr.value.kind == RzBinDwarfAttr_SecOffset) {
+				ut64 offset = rz_bin_dwarf_attr_udata(&attr);
+				ht_up_insert(ctx->info->location_encoding,
+					offset, &cu->hdr.encoding);
+			}
+		}
 		default:
 			break;
 		}
@@ -309,6 +319,7 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 static bool info_init(RzBinDwarfInfo *info) {
 	rz_vector_init(&info->units, sizeof(RzBinDwarfCompUnit), (RzVectorFree)CU_fini, NULL);
 	info->offset_comp_dir = ht_up_new(NULL, NULL, NULL);
+	info->location_encoding = ht_up_new0();
 	if (!info->offset_comp_dir) {
 		goto beach;
 	}
@@ -327,6 +338,7 @@ static inline void info_free(RzBinDwarfInfo *info) {
 	ht_up_free(info->offset_comp_dir);
 	ht_up_free(info->die_by_offset);
 	ht_up_free(info->unit_by_offset);
+	ht_up_free(info->location_encoding);
 	free(info);
 }
 
