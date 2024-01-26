@@ -122,7 +122,7 @@ bool test_analysis_graph_more() {
 
 	RzGraphNodeInfo *ni = n->data;
 	mu_assert_notnull(ni, "graph node info");
-	mu_assert_streq(ni->title, "0x8048be4", "graph node");
+	mu_assert_streq(ni->def.title, "0x8048be4", "graph node");
 
 	const RzList *list = rz_graph_get_neighbours(g, n);
 	mu_assert_notnull(list, "node neighbours");
@@ -139,7 +139,7 @@ bool test_analysis_graph_more() {
 
 	ni = n->data;
 	mu_assert_notnull(ni, "graph node info");
-	mu_assert_streq(ni->title, "main", "graph node");
+	mu_assert_streq(ni->def.title, "main", "graph node");
 
 	list = rz_graph_get_neighbours(g, n);
 	mu_assert_notnull(list, "node neighbours");
@@ -162,7 +162,7 @@ bool test_analysis_graph_more() {
 
 	ni = n->data;
 	mu_assert_notnull(ni, "graph node info");
-	mu_assert_streq(ni->title, "sym.main", "graph node");
+	mu_assert_streq(ni->def.title, "sym.main", "graph node");
 
 	list = rz_graph_get_neighbours(g, n);
 	mu_assert_notnull(list, "node neighbours");
@@ -179,7 +179,7 @@ bool test_analysis_graph_more() {
 
 	ni = n->data;
 	mu_assert_notnull(ni, "graph node info");
-	mu_assert_streq(ni->title, "0x08048a3e", "graph node");
+	mu_assert_streq(ni->def.title, "0x08048a3e", "graph node");
 
 	list = rz_graph_get_neighbours(g, n);
 	mu_assert_notnull(list, "node neighbours");
