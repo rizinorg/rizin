@@ -1,6 +1,7 @@
-platform: darwin/arm64
+labels:
+  platform: darwin/arm64
 
-pipeline:
+steps:
   build:
     image: /bin/bash
     commands:
