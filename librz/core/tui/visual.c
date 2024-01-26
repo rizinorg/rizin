@@ -303,7 +303,7 @@ static const char *help_msg_visual[] = {
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to rizin shell",
 	"r", "toggle call/jmp/lea hints",
-	"R", "randomize color palette (ecr)",
+	"R", "changes the theme or randomizes colors if scr.randpal option is true.",
 	"sS", "step / step over",
 	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
 	"uU", "undo/redo seek",
