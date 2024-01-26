@@ -82,6 +82,7 @@ static ut64 get_import_addr_hexagon(ELFOBJ *eo, RzBinElfReloc *rel) {
 
 	switch (rel->type) {
 	default:
+		RZ_LOG_WARN("Unhandled hexagon reloc type %d\n", rel->type);
 		return UT64_MAX;
 	case R_HEX_JMP_SLOT:
 		return plt_addr + pos * 16 + 32;
