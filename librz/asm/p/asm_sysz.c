@@ -35,16 +35,15 @@ static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (n > 0) {
 		if (insn->size > 0) {
 			op->size = insn->size;
-			char *buf_asm = rz_str_newf("%s%s%s",
+			rz_asm_op_setf_asm(op, "%s%s%s",
 				insn->mnemonic, insn->op_str[0] ? " " : "",
 				insn->op_str);
-			if (buf_asm) {
-				char *ptrstr = strstr(buf_asm, "ptr ");
+			char *str = rz_asm_op_get_asm(op);
+			if (str) {
+				char *ptrstr = strstr(str, "ptr ");
 				if (ptrstr) {
 					memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
 				}
-				rz_asm_op_set_asm(op, buf_asm);
-				free(buf_asm);
 			}
 		}
 		cs_free(insn, n);
