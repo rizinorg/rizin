@@ -5,7 +5,7 @@
 .Nd rizin base converter
 .Sh SYNOPSIS
 .Nm rz-ax
-.Op Fl abBdDeEfFhiIklLnNosStuvwxp
+.Op Fl ebBdDeEfFhiIklLosStuvwx
 .Op [expr] ...
 .Sh DESCRIPTION
 This command is part of the rizin project.
@@ -24,49 +24,49 @@ Force output as integer (rz-ax -d 3 outputs 3 instead of 0x3)
 .It Fl D
 Base64 decode
 .It Fl e
-Swap endianness
+Swap endianness (rz-ax -e 0x33)
 .It Fl E
 Base64 encode
 .It Fl f
 Floating point arithmetic (rz-ax -f 6.3+2.1)
 .It Fl F
-Read C strings from stdin and output in hexpairs. Useful to load shellcodes
+Read C strings from stdin and output in hexpairs. Useful to load shellcodes (rz-ax -F < shellcode.[c/py/js])
 .It Fl h
 Show usage help message
 .It Fl i
-Dump stdin to C array in stdout
+Dump stdin to C array in stdout (rz-ax -i < bytes)
 .It Fl I
-Convert LONG to/from IP ADDRESS
+Convert LONG to/from IP ADDRESS (rz-ax -I 3530468537)
 .It Fl k
-Keep the same base as the input data
+Keep the same base as the input data (rz-ax -k 33+3 -> 36)
 .It Fl l
 Append newline to the decoded output
 .It Fl L
 Convert binary to hexadecimal (rz-ax -L 111111111 outputs 0x1ff)
 .It Fl n
-Show hexpairs from integer value
+Show hexpairs from integer value (rz-ax -n 0x1234 # 34120000)
 .It Fl N
-Show hex C string from integer value
+Show hex C string from integer value (rz-ax -N 0x1234 # \x34\x12\x00\x00)
 .It Fl o
-Convert from octal string to char
+Convert from octal string to char (rz-ax -o \162 \172 # rz)
 .It Fl r
-Rz style output
+Rz style output (rz-ax -r 0x1234)
 .It Fl s
-Convert from hex string to character
+Convert from hex string to character (rz-ax -s 43 4a 50)
 .It Fl S
-Convert from character to hex string
+Convert from character to hex string (rz-ax -S < /bin/ls > ls.hex)
 .It Fl t
-Convert timestamp to string
+Convert timestamp to string (rz-ax -t 1234567890)
 .It Fl u
-Convert given value to human readable units format 
+Convert given value to human readable units format (rz-ax -u 389289238 # 317.0M)
 .It Fl v
 Show program version
 .It Fl w
-Convert signed word
+Convert signed word (rz-ax -w 16 0xffff)
 .It Fl x
-Convert a string into a hash
+Convert a string into a hash (rz-ax -x linux osx)
 .It Fl p
-Show position of set bits in the binary representation
+Show position of set bits in the binary representation (rz-ax -p 0xb3)
 .El
 .Sh USAGE
 .Pp
@@ -134,3 +134,5 @@ It is a very useful tool for scripting, so you can read floating point values, o
 .Sh AUTHORS
 .Pp
 Written by pancake <pancake@nopcode.org>.
+.Pp
+byteninjaa0.
