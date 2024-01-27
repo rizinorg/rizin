@@ -220,7 +220,7 @@ static int help(void) {
 		"  -I      IP address <-> LONG  ;  rz-ax -I 3530468537\n"
 		"  -k      keep base            ;  rz-ax -k 33+3 -> 36\n"
 		"  -L      bin -> hex(bignum)   ;  rz-ax -L 111111111 # 0x1ff\n"
-		"  -n      binary number        ;  rz-ax -n 0x1234 # 34120000\n"
+		"  -n      int value -> hexpairs;  rz-ax -n 0x1234 # 34120000\n"
 		"  -o      octalstr -> raw      ;  rz-ax -o \\162 \\172 # rz\n"
 		"  -N      binary number        ;  rz-ax -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -r      rz style output      ;  rz-ax -r 0x1234\n"

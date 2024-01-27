@@ -28,7 +28,7 @@ static int usage(int v) {
 			"-h",		""              ,"show this help",
 			"-i",		"[shellcode]"   ,"include shellcode plugin, uses options. see -L",
 			"-I",		"[path]"        ,"add include path",
-			"-k",		"[os]"          ,"operating system's kernel (linux,bsd,osx,w32)",
+			"-k",		"[kernel]"          ,"operating system's kernel (linux,bsd,osx,w32)",
 			"-L",		""              ,"list all plugins (shellcodes and encoders)",
 			"-n",		"[dword]"       ,"append 32bit number (4 bytes)",
 			"-N",		"[dword]"       ,"append 64bit number (8 bytes)",
