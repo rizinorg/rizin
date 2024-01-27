@@ -5,7 +5,7 @@
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm rz-find
-.Op Fl mXnzZhqv
+.Op Fl hijmnrqvxzZ
 .Op Fl a Ar align
 .Op Fl b Ar size
 .Op Fl f/t Ar from/to
@@ -29,7 +29,7 @@ Start searching from address 'from'
 .It Fl F Ar file
 Read the contents of the file and use it as a keyword
 .It Fl h
-Show this help
+Show usage help message
 .It Fl i
 Identify filetype (rizin -nqcpm file)
 .It Fl j
@@ -47,15 +47,15 @@ Search for a specific string (can be used multiple times)
 .It Fl w Ar str
 Search for a specific wide string (can be used multiple times). Assumes str is UTF-8
 .It Fl I Ar str
-Search for an entry in import table.
+Search for an entry in import table
 .It Fl S Ar str
-Search for a symbol in symbol table.
+Search for a symbol in symbol table
 .It Fl t Ar to
 Stop search at address 'to'
 .It Fl q
 Quiet mode - do not show headings (filenames) above matching contents (default for searching a single file)
 .It Fl v
-Print version and exit
+Show version number
 .It Fl x Ar hex
 Search for an hexpair string (can be used multiple times)
 .It Fl X
