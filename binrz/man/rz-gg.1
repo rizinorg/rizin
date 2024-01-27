@@ -44,7 +44,7 @@ Set register size (32, 64, ..)
 .It Fl B Ar hexpairs
 Append hexpair bytes
 .It Fl c Ar k=v
-Set configuration options
+Set configure option for the shellcode encoder. The argument must be key=value
 .It Fl C Ar file
 Append contents of file
 .It Fl d Ar off:dword
@@ -58,12 +58,12 @@ Output format (raw, c, pe, elf, mach0, python, javascript)
 .It Fl F
 Output native format (osx=mach0, linux=elf, ..)
 .It Fl h
-Show this help
+Show usage help message
 .It Fl i Ar shellcode
 Include shellcode plugin, uses options. See -L
 .It Fl I Ar path
 Add include path
-.It Fl k Ar os
+.It Fl k Ar kernel
 Operating system's kernel (linux, bsd, osx, w32)
 .It Fl L
 List all plugins (shellcodes and encoders)
@@ -72,7 +72,7 @@ Append 32bit number (4 bytes)
 .It Fl N Ar num64
 Append 64bit number (8 bytes)
 .It Fl o Ar file
-Output file
+Output file to write result of compilation
 .It Fl O
 Use default output file (filename without extension or a.out)
 .It Fl p Ar padding
