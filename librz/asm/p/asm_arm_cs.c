@@ -7,7 +7,10 @@
 #include <capstone/capstone.h>
 #include "../arch/arm/asm-arm.h"
 #include "../arch/arm/arm_it.h"
+
+#if CS_NEXT_VERSION < 6
 #include "./asm_arm_hacks.inc"
+#endif
 
 typedef struct arm_cs_context_t {
 	RzArmITContext it;
@@ -146,10 +149,12 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		goto beach;
 	}
+#if CS_NEXT_VERSION < 6
 	int haa = hackyArmAsm(a, op, buf, len);
 	if (haa > 0) {
 		return haa;
 	}
+#endif
 
 	n = cs_disasm(ctx->cd, buf, RZ_MIN(4, len), a->pc, 1, &insn);
 	if (n < 1 || insn->size < 1) {

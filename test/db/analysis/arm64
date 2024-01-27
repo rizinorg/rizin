@@ -118,10 +118,10 @@ cycles: 0
 family: sec
 --
 address: 0x100007f14
-opcode: addg x9, x8, 0x20, 0x0
+opcode: addg x9, x8, 0x20, 0
 esilcost: 0
-disasm: addg x9, x8, 0x20, 0x0
-pseudo: asm("addg x9, x8, 0x20, 0x0")
+disasm: addg x9, x8, 0x20, 0
+pseudo: asm("addg x9, x8, 0x20, 0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
@@ -149,10 +149,10 @@ ao@ 8
 EOF
 EXPECT=<<EOF
 address: 0x0
-opcode: addg x12, x8, 0x0, 0x2
+opcode: addg x12, x8, 0x200, 2
 esilcost: 0
-disasm: addg x12, x8, 0x0, 0x2
-pseudo: asm("addg x12, x8, 0x0, 0x2")
+disasm: addg x12, x8, 0x200, 2
+pseudo: asm("addg x12, x8, 0x200, 2")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
@@ -166,10 +166,10 @@ cycles: 0
 family: sec
 ---
 address: 0x4
-opcode: addg x9, x8, 0x20, 0x0
+opcode: addg x9, x8, 0x20, 0
 esilcost: 0
-disasm: addg x9, x8, 0x20, 0x0
-pseudo: asm("addg x9, x8, 0x20, 0x0")
+disasm: addg x9, x8, 0x20, 0
+pseudo: asm("addg x9, x8, 0x20, 0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
