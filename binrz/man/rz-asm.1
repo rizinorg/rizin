@@ -31,7 +31,7 @@ Set CPU register size (8, 16, 32, 64) (RZ_ASM_BITS)
 .It Fl B
 Binary input/output (-l is mandatory for binary input)
 .It Fl c Ar CPU
-Select specific CPU (depends on the arch).
+Select specific CPU (depends on the arch)
 .It Fl C
 Output in C format
 .It Fl d, D
@@ -75,7 +75,39 @@ Show version number
 .It Fl x
 Use hex dwords instead of hex pairs when assembling
 .It Fl w
-Describe opcode.
+Describe opcode
+.El
+.Sh different than filename
+.Pp
+.Bl -tag -width Fl
+.It Fl .intel_syntax
+Use intel syntax rather than att:w
+.It Fl .att_syntax
+Use ATT syntax rather than flu :w
+dentify the region fof aslerrger
+.It Fl string
+dentify the region fof aslerrger
+.It Fl .align
+.It Fl .arch
+.It Fl .arm
+.It Fl .ascii
+.It Fl .bits
+.It Fl .data
+.It Fl .equ
+.It Fl .fill
+.It Fl .glob
+.It Fl .hex
+.It Fl .int16
+.It Fl .int32
+.It Fl .int64
+.It Fl .kernel
+.It Fl .offset
+.It Fl .org
+.It Fl .os
+.It Fl .short
+.It Fl .text
+.It Fl .thumb
+.El
 .Sh EXAMPLES
 .Pp
 Assemble opcode:
