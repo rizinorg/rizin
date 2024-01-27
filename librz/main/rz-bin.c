@@ -204,7 +204,7 @@ static int rzbin_show_help(int v) {
 			"-SSS",         "",             "sections mapping to segments",
 			"-T",           "",             "display file signature",
 			"-u",           "",             "unfiltered (no rename duplicated symbols/sections)",
-			"-U",           "",             "resoUrces",
+			"-U",           "",             "resources",
 			"-v",           "",             "display version and quit",
 			"-V",           "",             "Show binary version information",
 			"-w",           "",             "display try/catch blocks",

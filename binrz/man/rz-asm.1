@@ -5,16 +5,19 @@
 .Nd rizin assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rz-asm
-.Op Fl ACdDehLBvw 
+.Op Fl ABCdDeIEhjLpqrvxw
 .Op Fl a Ar arch
 .Op Fl b Ar bits
+.Op Fl c Ar CPU
+.Op Fl O Ar file
 .Op Fl o Ar addr
-.Op Fl s Ar syntax
+.Op Fl @ Ar addr
 .Op Fl f Ar file
-.Op Fl F Ar fil:ter
-.Op Fl i Ar skip
+.Op Fl F Ar in:out
+.Op Fl i Ar len
+.Op Fl k Ar kernel
+.Op Fl s Ar syntax
 .Op Fl l Ar len
-.Ar 'code'|hex|-
 .Sh DESCRIPTION
 This tool uses r_asm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
 .Pp
@@ -28,7 +31,7 @@ Set CPU register size (8, 16, 32, 64) (RZ_ASM_BITS)
 .It Fl B
 Binary input/output (-l is mandatory for binary input)
 .It Fl c Ar CPU
-Select specific CPU (depends on the arch)
+Select specific CPU (depends on the arch).
 .It Fl C
 Output in C format
 .It Fl d, D
@@ -38,13 +41,13 @@ Use big endian instead of little endian
 .It Fl I
 Display lifted RzIL code (same input as in -d, IL is also validated)
 .It Fl E
-Display ESIL expression (same input as in -d).
+Display ESIL expression (same input as in -d)
 .It Fl f Ar file
-Read data from file.
+Read data from file
 .It Fl F Ar in:out
 Specify input and/or output filters (att2intel, x86.pseudo, ...)
 .It Fl h, hh
-Show this help, -hh for long.
+Show usage help message, hh for long
 .It Fl i Ar len
 Ignore N bytes of the input buffer
 .It Fl j
@@ -70,9 +73,9 @@ Select syntax (intel, att)
 .It Fl v
 Show version number
 .It Fl x
-Use hex dwords instead of hex pairs when assembling.
+Use hex dwords instead of hex pairs when assembling
 .It Fl w
-What's this instruction for? describe opcode
+Describe opcode.
 .Sh EXAMPLES
 .Pp
 Assemble opcode:
