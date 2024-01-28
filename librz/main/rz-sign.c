@@ -16,14 +16,14 @@ static void rz_sign_show_help(void) {
 	printf("rz-sign [options] [file]\n");
 	const char *options[] = {
 		// clang-format off
-		"-h",       "",                         "this help message",
-		"-a",       "[-a]",                     "add extra 'a' to analysis command (available only with -o option)",
-		"-e",       "[k=v]",                    "set an evaluable config variable (available only with -o option)",
-		"-c",       "[output.pat] [input.sig]", "parses a FLIRT signature and converts it to its other format",
-		"-o",       "[output.sig] [input.bin]", "performs an analysis on the binary and generates the FLIRT signature.",
-		"-d",       "[flirt.sig]",              "parses a FLIRT signature and dumps its content",
-		"-q",       "",                         "quiet mode",
-		"-v",       "",                         "show version information",
+		"-h",       "",                         "This help message",
+		"-a",       "[-a]",                     "Add extra 'a' to analysis command (available only with -o option)",
+		"-e",       "[k=v]",                    "Set an evaluable config variable (available only with -o option)",
+		"-c",       "[output.pat] [input.sig]", "Parses a FLIRT signature and converts it to its other format",
+		"-o",       "[output.sig] [input.bin]", "Performs an analysis on the binary and generates the FLIRT signature.",
+		"-d",       "[flirt.sig]",              "Parses a FLIRT signature and dumps its content",
+		"-q",       "",                         "Quiet mode",
+		"-v",       "",                         "Show version information",
 		// clang-format on
 	};
 	size_t maxOptionAndArgLength = 0;

@@ -78,7 +78,7 @@ static void rz_hash_show_help(bool usage_only) {
 	}
 	const char *options[] = {
 		// clang-format off
-		"-v",     "",       "Shows version",
+		"-v",     "",       "Shows version information",
 		"-h",     "",       "Shows this help page",
 		"-",      "",       "Input read from stdin instead from a file",
 		"-a",     "algo",   "Hash algorithm to use and you can specify multiple ones by",

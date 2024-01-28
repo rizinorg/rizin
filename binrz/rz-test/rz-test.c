@@ -64,6 +64,7 @@ static int help(bool verbose) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
+<<<<<<< HEAD
 		const char *options[] = {
 			// clang-format off
 			"-h",           "",               "print this help",
@@ -102,6 +103,30 @@ static int help(bool verbose) {
 		}
 		printf("Supported test types: @json @unit @fuzz @cmds\n"
 		       "OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
+=======
+		printf(
+			" -h           Print this help\n"
+			" -v           Show version information\n"
+			" -q           Quiet mode\n"
+			" -V           Be Verbose\n"
+			" -i           Interactive mode\n"
+			" -n           Do nothing (don't run any test, just load/parse them)\n"
+			" -L           Log mode (better printing for CI, logfiles, etc.)\n"
+			" -F [dir]     Run fuzz tests (open and default analysis) on all files in the given dir\n"
+			" -j [threads] How many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")\n"
+			" -r [rizin]   Path to rizin executable (default is " RIZIN_CMD_DEFAULT ")\n"
+			" -m [rz-asm]  Path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")\n"
+			" -f [file]    File to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")\n"
+			" -C [dir]     Chdir before running rz-test (default follows executable symlink + test/new\n"
+			" -t [seconds] Timeout per test (default is " TIMEOUT_DEFAULT_STR ")\n"
+			" -o [file]    Output test run information in JSON format to file\n"
+			" -e [dir]     Exclude a particular directory while testing (this option can appear many times)\n"
+			" -s [num]     Number of expected successful tests\n"
+			" -x [num]     Number of expected failed tests"
+			"\n"
+			"Supported test types: @json @unit @fuzz @cmds\n"
+			"OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
+>>>>>>> 85540510ff (.c files)
 	}
 	return 1;
 }
