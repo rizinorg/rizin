@@ -2,7 +2,7 @@
 .Dt RZ_FIND 1
 .Sh NAME
 .Nm rz-find
-.Nd Advanced commandline hexadecimal editor
+.Nd Find byte patterns in files
 .Sh SYNOPSIS
 .Nm rz-find
 .Op Fl hijmnrqvxzZ
@@ -13,8 +13,10 @@
 .Op Fl x Ar hex
 .Op Fl  Ar |file|dir ..
 .Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
 .Nm rz-find
-is a program to find byte patterns into files.
+searches for specified byte patterns, strings, or hexpairs in the given files.
 .Pp
 The options are:
 .Bl -tag -width Fl

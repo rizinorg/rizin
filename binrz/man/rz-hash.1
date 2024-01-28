@@ -18,7 +18,7 @@
 .Op Fl c Ar hash
 .Op [file] ...
 .Sh DESCRIPTION
-This program is part of the rizin project.
+This program is part of the Rizin project.
 .Pp
 rz-hash allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
 .Pp
@@ -29,7 +29,7 @@ This command can be used to calculate hashes of a certain part of a file or a co
 This is the command used by the 'ph' command of rizin.
 .Bl -tag -width Fl
 .It Fl v
-Shows version number
+Show version number
 .It Fl h
 Show usage help message
 .It Fl 
@@ -37,37 +37,37 @@ Input read from stdin instead of from a file
 .It Fl a Ar algo
 Hash algorithm to use; you can specify multiple ones by appending a comma (example: sha1,md4,md5,sha256)
 .It Fl B
-Outputs the calculated value for each block
+Output the calculated value for each block
 .It Fl b Ar size
-Sets the block size
+Set the block size
 .It Fl c Ar value
 Compare calculated value with a given one (hexadecimal)
 .It Fl e Ar endian
-Sets the endianness (default: 'big'; accepted: 'big' or 'little')
+Set the endianness (default: 'big'; accepted: 'big' or 'little')
 .It Fl D Ar algo
 Decrypt the given input; use -S to set the key and -I to set IV (if needed)
 .It Fl E Ar algo
 Encrypt the given input; use -S to set the key and -I to set IV (if needed)
 .It Fl f Ar from
-Starts the calculation at the given offset
+Start the calculation at the given offset
 .It Fl t Ar to
-Stops the calculation at the given offset
+Stop the calculation at the given offset
 .It Fl I Ar iv
-Sets the initialization vector (IV)
+Set the initialization vector (IV)
 .It Fl i Ar times
 Repeat the calculation N times
 .It Fl j
-Outputs the result as a JSON structure
+Output the result as a JSON structure
 .It Fl k
-Outputs the calculated value using openssh's randomkey algorithm
+Output the calculated value using openssh's randomkey algorithm
 .It Fl L
 List all algorithms
 .It Fl q
-Sets quiet mode (use -qq to get only the calculated value)
+Set quiet mode (use -qq to get only the calculated value)
 .It Fl S Ar seed
-Sets the seed for -a; use '^' to append it before the input. Use '@' prefix to load it from a file and '-' to read it
+Set the seed for -a; use '^' to append it before the input. Use '@' prefix to load it from a file and '-' to read it
 .It Fl K Ar key
-Sets the HMAC key for -a and the key for -E/-D. Use '@' prefix to load it from a file and '-' to read it from stdin (you can combine them)
+Set the HMAC key for -a and the key for -E/-D. Use '@' prefix to load it from a file and '-' to read it from stdin (you can combine them)
 .It Fl s Ar string
 Input read from a zero-terminated string instead of from a file
 .It Fl x Ar hex

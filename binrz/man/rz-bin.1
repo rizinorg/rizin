@@ -21,6 +21,10 @@
 .Op Fl k Ar query
 .Op Fl D Ar lang symname
 .Ar file
+.Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
+rz-bin can analyze and extract useful information from binary executable files like ELF, PE, Mach-O, etc. It supports multiple architectures like x86, ARM, MIPS, PowerPC, etc.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl @ Ar addr
@@ -98,9 +102,9 @@ Show less info (no offset/size for -z for ex.)
 .It Fl Q
 Show load address used by dlopen (non-aslr libs)
 .It Fl r
-Rizin output
+Show output in rizin format
 .It Fl R
-Relocations
+Show relocations
 .It Fl s
 Symbols
 .It Fl S
@@ -128,9 +132,9 @@ Package in fat or zip the given files and bins contained in file
 .It Fl Y Ar fw file
 Calculates all the possibles base address candidates of a firmware bin
 .It Fl z
-Strings (from data section)
+Show strings (from data section)
 .It Fl zz
-Strings (from raw strings from bin)
+Show strings (from raw strings from bin)
 .It Fl zzz
 Dump raw strings to stdout (for huge files)
 .It Fl Z

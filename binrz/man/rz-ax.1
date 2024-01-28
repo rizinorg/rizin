@@ -8,7 +8,7 @@
 .Op Fl ebBdDeEfFhiIklLosStuvwx
 .Op [expr] ...
 .Sh DESCRIPTION
-This command is part of the rizin project.
+This command is part of the Rizin project.
 .Pp
 This command allows you to convert values between positive and negative integer, float, octal, binary, ternary, and hexadecimal values.
 .Sh OPTIONS
@@ -81,24 +81,24 @@ Force output mode (numeric base)
 .Pp
 Available variable types are:
 .Pp
-  int   \->  hex    rz-ax 10
-  hex   \->  int    rz-ax 0xa
-  \-int  \->  hex    rz-ax \-77
-  \-hex  \->  int    rz-ax 0xffffffb3
-  int   \->  bin    rz-ax b30
-  int \-> ternary   rz-ax t42
-  ternary -> int   rz-ax 1010dt
-  bin   \->  int    rz-ax 1010d
-  float \->  hex    rz-ax 3.33f
-  hex   \->  float  rz-ax Fx40551ed8
-  oct   \->  hex    rz-ax 35o
-  hex   \->  oct    rz-ax Ox12 (O is a letter)
-  bin   \->  hex    rz-ax 1100011b
-  hex   \->  bin    rz-ax Bx63
-  ternary -> hex   rz-ax 212t
-  hex ->ternary    rz-ax Tx23
-  raw -> hex       rz-ax -S < /binfile
-  hex -> raw       rz-ax -s 414141
+  int     \->  hex     rz-ax 10
+  hex     \->  int     rz-ax 0xa
+  \-int    \->  hex     rz-ax \-77
+  \-hex    \->  int     rz-ax 0xffffffb3
+  int     \->  bin     rz-ax b30
+  int     \->  ternary rz-ax t42
+  ternary \->  int     rz-ax 1010dt
+  bin     \->  int     rz-ax 1010d
+  float   \->  hex     rz-ax 3.33f
+  hex     \->  float   rz-ax Fx40551ed8
+  oct     \->  hex     rz-ax 35o
+  hex     \->  oct     rz-ax Ox12 (O is a letter)
+  bin     \->  hex     rz-ax 1100011b
+  hex     \->  bin     rz-ax Bx63
+  ternary \->  hex     rz-ax 212t
+  hex     \->  ternary z-ax Tx23
+  raw     \->  hex     rz-ax -S < /binfile
+  hex     \->  raw     rz-ax -s 414141
 .Pp
 With no arguments, rz-ax reads values from stdin. You can pass one or more values
 as arguments.

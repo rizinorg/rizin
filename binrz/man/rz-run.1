@@ -2,13 +2,15 @@
 .Dt RZ_RUN 1
 .Sh NAME
 .Nm rz-run
-.Nd rizin utility to run programs in exotic environments
+.Nd rizin utility to run programs in custom environments
 .Sh SYNOPSIS
 .Nm rz-run
 .Op [directives]
 .Op [script.rz]
 .Op [--] [program] [args]
 .Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
 This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
 .Pp
 rz-run -t will show the terminal name and wait for a connection from another process. try rz-run stdio=<ttypath> program=/bin/sh

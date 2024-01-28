@@ -2,7 +2,7 @@
 .Dt RZ_GG 1
 .Sh NAME
 .Nm rz-gg
-.Nd rizin frontend for r_egg, compile programs into tiny binaries for x86-32/64 and arm.
+.Nd rizin frontend for r_egg, compile programs into tiny binaries for different architectures.
 .Sh SYNOPSIS
 .Nm rz-gg
 .Op Fl FOLsrxvhz
@@ -27,6 +27,7 @@
 .Op Fl q Ar fragment
 .Ar file|f.asm|-
 .Sh DESCRIPTION
+This command is part of the Rizin project.
 .Pp
 This tool is experimental and is a rewrite of the old rarc2 and rarc2-tool programs as a library integrated with r_asm and r_bin.
 .Pp
@@ -80,7 +81,7 @@ Add padding after compilation (padding=n10s32)
                  ntas : begin nop, trap, 'a', sequence
                  NTAS : same as above, but at the end
 .It Fl P Ar size
-Prepend debruijn pattern
+Prepend debruijn sequence of given length
 .It Fl q Ar fragment
 Debruijn pattern offset
 .It Fl r

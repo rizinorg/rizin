@@ -122,6 +122,7 @@ command:
 
 documentation:
   - doc/**/*
+  - binrz/man/**/*
 
 RZIL:
   - librz/analysis/rzil/*

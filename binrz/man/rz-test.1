@@ -9,6 +9,8 @@
 .Op Fl j Ar threads
 .Op Fl test Ar file/dir | @test-type
 .Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
 Run all the rizin-regressions tests matching a specific word in the name.
 .Pp
 You need rizin to be available in $PATH.
@@ -19,7 +21,7 @@ Show usage help message
 .It Fl v
 Show version number
 .It Fl q
-Quiet.
+Quiet mode
 .It Fl V
 Be verbose
 .It Fl i
@@ -41,7 +43,7 @@ File to use for JSON tests (default is bins/elf/crackme0x00b)
 .It Fl C Ar dir
 Chdir before running rz-test (default follows executable symlink + test/new)
 .It Fl t Ar seconds
-Timeout per test (default is 960)
+Timeout per test (default is 960 seconds)
 .It Fl o Ar file
 Output test run information in JSON format to file
 .It Fl e Ar dir
