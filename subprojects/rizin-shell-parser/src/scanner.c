@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <tree_sitter/parser.h>
+#include "tree_sitter/parser.h"
 #include <ctype.h>
 #include <wctype.h>
 #include <stdio.h>
