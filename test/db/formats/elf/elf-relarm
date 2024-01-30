@@ -128,7 +128,7 @@ EXPECT=<<EOF
             ;-- section..init_array:
             ;-- segment.LOAD1:
             ;-- .datadiv_decode9958896245423089702:
-            0x00126510      .qword 0x0000000000005a6c ; reloc.target..datadiv_decode9958896245423089702 ; sym..datadiv_decode9958896245423089702; RELOC 64 .datadiv_decode9958896245423089702 @ 0x00005a6c ; [13] -rw- section size 728 named .init_array
+            0x00126510      .qword 0x0000000000005a6c ; reloc.target..datadiv_decode9958896245423089702 ; sym..datadiv_decode9958896245423089702; RELOC 64 .datadiv_decode9958896245423089702 @ 0x00005a6c ; [12] -rw- section size 728 named .init_array
             ;-- .datadiv_decode10476194973746341988:
             0x00126518      .qword 0x0000000000005a80 ; reloc.target..datadiv_decode10476194973746341988 ; sym..datadiv_decode10476194973746341988; RELOC 64 .datadiv_decode10476194973746341988 @ 0x00005a80
             ;-- .datadiv_decode16323044921667855934:
@@ -190,22 +190,22 @@ EXPECT=<<EOF
 0x08000444 = 0x00
 0x08000445 = 0x00
 0x08000446 = 0x00
-0x08000447 = 0xb0
-adrp x0, 0x8001000
-0x08000460 = 0x28
-0x08000461 = 0x4a
+0x08000447 = 0xf0
+adrp x0, 0x8003000
+0x08000460 = 0x1c
+0x08000461 = 0x0d
 0x08000462 = 0x00
-0x08000463 = 0x54
-b.hi stackCursor
-0x0800046c = 0x20
-0x0800046d = 0x58
-0x0800046e = 0x60
-0x0800046f = 0xb8
-ldr w0, [x1, w0, uxtw 2]
-0x080003d8 = 0x36
-0x080003d9 = 0x04
+0x08000463 = 0x94
+bl reloc.target.stackCursor
+0x0800046c = 0x00
+0x0800046d = 0x64
+0x0800046e = 0x44
+0x0800046f = 0xf9
+ldr x0, [x0, 0x8c8]
+0x080003d8 = 0x3a
+0x080003d9 = 0x0d
 0x080003da = 0x00
 0x080003db = 0x94
-bl fputs
+bl reloc.target.fputs
 EOF
 RUN

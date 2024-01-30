@@ -1030,7 +1030,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
-	ut64 val = 0, keep, orig;
+	ut64 val = 0;
 	ut64 A = rel->addend, P = rel->vaddr;
 	RzBinRelocFormularSymbols formular_sym = { .A = A, .B = B, .GOT = GOT, .L = L, .S = S, .P = P, .MB = 0, .G = 0, .GP = 0, .T = 0, .TLS = 0 };
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
@@ -1048,40 +1048,81 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		}
 		rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
 		break;
-	case EM_AARCH64:
+	case EM_AARCH64: {
+		ut32 keep;
+		ut32 nbytes = 4;
 		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 8);
 		switch (rel->type) {
+		case RZ_AARCH64_ABS16:
+			val = S + A;
+			rz_write_le16(buf, val);
+			nbytes = 2;
+			break;
+		case RZ_AARCH64_ABS32:
+			val = S + A;
+			rz_write_le32(buf, val);
+			break;
+		case RZ_AARCH64_GLOB_DAT:
+		case RZ_AARCH64_ABS64:
+		case RZ_AARCH64_JUMP_SLOT:
+			val = S + A;
+			rz_write_le64(buf, val);
+			nbytes = 8;
+			break;
+		case RZ_AARCH64_PREL16:
+			val = S + A - P;
+			rz_write_le16(buf, val);
+			nbytes = 2;
+			break;
+		case RZ_AARCH64_PREL32:
+			val = S + A - P;
+			rz_write_le32(buf, val);
+			break;
+		case RZ_AARCH64_PREL64:
+			val = S + A - P;
+			rz_write_le64(buf, val);
+			nbytes = 8;
+			break;
+		case RZ_AARCH64_RELATIVE:
+			val = B + A;
+			rz_write_le64(buf, val);
+			nbytes = 8;
+			break;
 		case RZ_AARCH64_ADR_PREL_PG_HI21:
 		case RZ_AARCH64_ADR_PREL_PG_HI21_NC:
 		case RZ_AARCH64_ADR_GOT_PAGE:
 			// Reencode ADR imm
-			orig = rz_read_le32(buf);
-			keep = orig & ~(ADR_IMM_MASK1 | ADR_IMM_MASK2);
-			val = PG(S + A) - PG(P);
+			keep = rz_read_le32(buf) & ~(ADR_IMM_MASK1 | ADR_IMM_MASK2);
+			val = ((st64)(PG(S + A) - PG(P))) >> 12;
 			rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(2, 0)) << 29) | ((val & ADR_IMM_MASK3) << 3));
-			orig = rz_read_le32(buf);
 			break;
 		case RZ_AARCH64_JUMP26:
 		case RZ_AARCH64_CALL26:
 			// Reencode 26 bits of the offset
 			keep = rz_read_le32(buf) & ~RZ_BIT_MASK32(26, 0);
-			val = S + A;
+			val = ((st64)(S + A - P)) >> 2;
 			rz_write_le32(buf, keep | (val & RZ_BIT_MASK32(26, 0)));
 			break;
+		case RZ_AARCH64_LDST8_ABS_LO12_NC:
 		case RZ_AARCH64_ADD_ABS_LO12_NC:
-		case RZ_AARCH64_LD64_GOT_LO12_NC:
-			// Reencode ADD or LD/ST imm
 			keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
 			val = PG_OFFSET(S + A);
 			rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
 			break;
+		case RZ_AARCH64_LD64_GOT_LO12_NC:
+		case RZ_AARCH64_LDST64_ABS_LO12_NC:
+			// Reencode LD/ST imm
+			keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
+			val = PG_OFFSET(S + A) >> 3;
+			rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+			break;
 		default:
-			val = S + A;
-			rz_write_le64(buf, val);
+			nbytes = 0;
 			break;
 		}
-		rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
+		rz_buf_write_at(obj->buf_patched, patch_addr, buf, nbytes);
 		break;
+	}
 	case EM_PPC64: {
 		int low = 0, word = 0;
 		switch (rel->type) {
@@ -1408,9 +1449,11 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_AARCH64_GLOB_DAT: SET(64);
 		case RZ_AARCH64_JUMP_SLOT: SET(64);
 		case RZ_AARCH64_RELATIVE: ADD(64, B);
+		case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0);
 		case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0);
 		case RZ_AARCH64_JUMP26: ADD(32, 0);
 		case RZ_AARCH64_CALL26: ADD(32, 0);
+		case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0);
 		case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0);
 		// Page-relative relocations
 		case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0);
