@@ -1778,9 +1778,7 @@ RZ_IPI RzCmdStatus rz_analysis_syscall_show_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
-static const char *syscallNumber(int n) {
-	return sdb_fmt(n > 1000 ? "0x%x" : "%d", n);
-}
+#define SYSCALL_HEX_LIMIT 1000
 
 RZ_IPI RzCmdStatus rz_analysis_syscall_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzListIter *iter;
@@ -1789,10 +1787,14 @@ RZ_IPI RzCmdStatus rz_analysis_syscall_print_handler(RzCore *core, int argc, con
 	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (list, iter, si) {
 		switch (state->mode) {
-		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("%s = 0x%02x.%s\n",
-				si->name, si->swi, syscallNumber(si->num));
+		case RZ_OUTPUT_MODE_STANDARD: {
+			if (si->num > SYSCALL_HEX_LIMIT) {
+				rz_cons_printf("%s = 0x%02x.%x\n", si->name, si->swi, si->num);
+			} else {
+				rz_cons_printf("%s = 0x%02x.%d\n", si->name, si->swi, si->num);
+			}
 			break;
+		}
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "name", si->name);
@@ -1811,12 +1813,16 @@ RZ_IPI RzCmdStatus rz_analysis_syscall_print_handler(RzCore *core, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_analysis_syscall_name_handler(RzCore *core, int argc, const char **argv) {
-	st64 num = rz_syscall_get_num(core->analysis->syscall, argv[1]);
+	int num = rz_syscall_get_num(core->analysis->syscall, argv[1]);
 	if (num < 1) {
 		RZ_LOG_ERROR("Cannot resolve syscall: %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(syscallNumber(num));
+	if (num > SYSCALL_HEX_LIMIT) {
+		rz_cons_printf("%x\n", num);
+	} else {
+		rz_cons_printf("%d\n", num);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1837,9 +1843,17 @@ RZ_IPI RzCmdStatus rz_analysis_syscall_number_handler(RzCore *core, int argc, co
 
 static void syscall_dump(RzSyscallItem *si, bool is_c) {
 	if (is_c) {
-		rz_cons_printf("#define SYS_%s %s\n", si->name, syscallNumber(si->num));
+		if (si->num > SYSCALL_HEX_LIMIT) {
+			rz_cons_printf("#define SYS_%s %x\n", si->name, si->num);
+		} else {
+			rz_cons_printf("#define SYS_%s %d\n", si->name, si->num);
+		}
 	} else {
-		rz_cons_printf(".equ SYS_%s %s\n", si->name, syscallNumber(si->num));
+		if (si->num > SYSCALL_HEX_LIMIT) {
+			rz_cons_printf(".equ SYS_%s %x\n", si->name, si->num);
+		} else {
+			rz_cons_printf(".equ SYS_%s %d\n", si->name, si->num);
+		}
 	}
 }
 
@@ -1852,7 +1866,11 @@ static RzCmdStatus syscalls_dump(RzCore *core, int argc, const char **argv, bool
 				RZ_LOG_ERROR("Cannot resolve syscall: %s\n", argv[1]);
 				return RZ_CMD_STATUS_ERROR;
 			}
-			rz_cons_printf(".equ SYS_%s %s\n", argv[1], syscallNumber(n));
+			if (n > SYSCALL_HEX_LIMIT) {
+				rz_cons_printf(".equ SYS_%s %" PFMT64x "\n", argv[1], n);
+			} else {
+				rz_cons_printf(".equ SYS_%s %" PFMT64d "\n", argv[1], n);
+			}
 			return RZ_CMD_STATUS_OK;
 		}
 		RzSyscallItem *si = rz_syscall_get(core->analysis->syscall, n, -1);

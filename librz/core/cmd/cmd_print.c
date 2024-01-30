@@ -1308,6 +1308,7 @@ static void annotated_hexdump(RzCore *core, int len) {
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
 	ut8 ch = 0;
+	char tmpbuf[20] = { 0 };
 	char *colors[10] = { NULL };
 	for (i = 0; i < 10; i++) {
 		colors[i] = rz_cons_rainbow_get(i, 10, false);
@@ -1347,8 +1348,7 @@ static void annotated_hexdump(RzCore *core, int len) {
 	bytes = calloc(nb_cons_cols * 40, sizeof(char));
 	if (!bytes)
 		goto err_bytes;
-#if 1
-	int addrpadlen = strlen(sdb_fmt("%08" PFMT64x, addr)) - 8;
+	int addrpadlen = strlen(rz_strf(tmpbuf, "%08" PFMT64x, addr)) - 8;
 	char addrpad[32];
 	if (addrpadlen > 0) {
 		memset(addrpad, ' ', addrpadlen);
@@ -1360,7 +1360,6 @@ static void annotated_hexdump(RzCore *core, int len) {
 		addrpadlen = 0;
 	}
 	strcpy(bytes + addrpadlen, "- offset -  ");
-#endif
 	j = strlen(bytes);
 	for (i = 0; i < nb_cols; i += 2) {
 		sprintf(bytes + j, format, (i & 0xf), (i + 1) & 0xf);
@@ -5411,7 +5410,7 @@ static void analysis_stats_json_info(RzCore *core, RzCoreAnalysisStats *as, RzCo
 static void analysis_stats_table_info(RzCore *core, RzCoreAnalysisStats *as, RzCoreAnalysisStatsItem *sitem, ut64 blockidx, RzCmdStateOutput *state) {
 	ut64 at = rz_core_analysis_stats_get_block_from(as, blockidx);
 	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->strings)) {
-		rz_table_add_rowf(state->d.t, "sddddd", sdb_fmt("0x%09" PFMT64x "", at), sitem->flags,
+		rz_table_add_rowf(state->d.t, "xddddd", at, sitem->flags,
 			sitem->functions, sitem->comments, sitem->symbols, sitem->strings);
 	}
 }

@@ -157,6 +157,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	int i;
 	int ret = -1;
 	void *bed = NULL;
+	char tmpbuf[16];
 
 	if (!g || !host) {
 		return -1;
@@ -179,7 +180,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (*host == '/') {
 		ret = rz_socket_connect_serial(g->sock, host, port, 1);
 	} else {
-		ret = rz_socket_connect_tcp(g->sock, host, sdb_fmt("%d", port), 1);
+		ret = rz_socket_connect_tcp(g->sock, host, rz_strf(tmpbuf, "%d", port), 1);
 	}
 	rz_cons_sleep_end(bed);
 	rz_cons_break_push(gdbr_break_process, g);
@@ -929,6 +930,7 @@ end:
 int gdbr_step(libgdbr_t *g, int tid) {
 	int ret = -1;
 	char thread_id[64] = { 0 };
+	char tmpbuf[20] = { 0 };
 
 	if (!gdbr_lock_enter(g)) {
 		goto end;
@@ -936,7 +938,7 @@ int gdbr_step(libgdbr_t *g, int tid) {
 
 	if (tid <= 0 || write_thread_id(thread_id, sizeof(thread_id) - 1, g->pid, tid, g->stub_features.multiprocess) < 0) {
 		send_vcont(g, "vCont?", NULL);
-		send_vcont(g, sdb_fmt("Hc%d", tid), NULL);
+		send_vcont(g, rz_strf(tmpbuf, "Hc%d", tid), NULL);
 		ret = send_vcont(g, CMD_C_STEP, NULL);
 		goto end;
 	}

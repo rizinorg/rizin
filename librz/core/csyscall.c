@@ -4,8 +4,8 @@
 
 #include <rz_core.h>
 
-static const char *syscallNumber(int n) {
-	return sdb_fmt(n > 1000 ? "0x%x" : "%d", n);
+static const char *syscallNumberFmt(int n) {
+	return n > 1000 ? "0x%x" : "%d";
 }
 
 /**
@@ -26,6 +26,7 @@ static const char *syscallNumber(int n) {
 RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 	int i;
 	char str[64];
+	char tmpbuf[32] = { 0 };
 	st64 N = n;
 	int defVector = rz_syscall_get_swi(core->analysis->syscall);
 	if (defVector > 0) {
@@ -43,9 +44,11 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 		item = rz_syscall_get(core->analysis->syscall, N, -1);
 	}
 	if (!item) {
-		return rz_str_newf("%s = unknown ()", syscallNumber(n));
+		const char *syscallnum = rz_strf(tmpbuf, syscallNumberFmt(n), n);
+		return rz_str_newf("%s = unknown ()", syscallnum);
 	}
-	char *res = rz_str_newf("%s = %s (", syscallNumber(item->num), item->name);
+	const char *syscallnum = rz_strf(tmpbuf, syscallNumberFmt(item->num), item->num);
+	char *res = rz_str_newf("%s = %s (", syscallnum, item->name);
 	// TODO: move this to rz_syscall
 	const char *cc = rz_analysis_syscc_default(core->analysis);
 	// TODO replace the hardcoded CC with the sdb ones
