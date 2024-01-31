@@ -1997,8 +1997,11 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 				RzSyscallItem *si;
 				RzList *list = rz_syscall_list(core->analysis->syscall);
 				rz_list_foreach (list, iter, si) {
-					rz_cons_printf("%s = 0x%02x.%s\n",
-						si->name, si->swi, syscallNumber(si->num));
+					if (si->num > SYSCALL_HEX_LIMIT) {
+						rz_cons_printf("%s = 0x%02x.%x\n", si->name, si->swi, si->num);
+					} else {
+						rz_cons_printf("%s = 0x%02x.%d\n", si->name, si->swi, si->num);
+					}
 				}
 				rz_list_free(list);
 				break;

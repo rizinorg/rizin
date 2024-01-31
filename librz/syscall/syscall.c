@@ -348,18 +348,19 @@ RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
 		return NULL;
 	}
 	const char *ret, *ret2, *key;
+	char tmpbuf[64] = { 0 };
 	swi = getswi(s, swi);
 	if (swi < 16) {
-		key = sdb_fmt("%d.%d", swi, num);
+		key = rz_strf(tmpbuf, "%d.%d", swi, num);
 	} else {
-		key = sdb_fmt("0x%02x.%d", swi, num);
+		key = rz_strf(tmpbuf, "0x%02x.%d", swi, num);
 	}
 	ret = sdb_const_get(s->db, key, 0);
 	if (!ret) {
-		key = sdb_fmt("0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed
+		key = rz_strf(tmpbuf, "0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed
 		ret = sdb_const_get(s->db, key, 0);
 		if (!ret) {
-			key = sdb_fmt("0x%02x.%d", num, swi); // Workaround until Syscall SDB is fixed
+			key = rz_strf(tmpbuf, "0x%02x.%d", num, swi); // Workaround until Syscall SDB is fixed
 			ret = sdb_const_get(s->db, key, 0);
 			if (!ret) {
 				return NULL;

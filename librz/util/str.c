@@ -1136,36 +1136,47 @@ RZ_API char *rz_str_appendch(char *x, char y) {
 	return rz_str_append(x, b);
 }
 
-RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g) {
+/**
+ * \brief In-place replacement of string \p key with \p val in \p str.
+ * In case of realloc \p str is freed and NULL is returned.
+ *
+ * \param str The string to replace the sub-string in.
+ * \param key The sub-string to replace.
+ * \param val The sub-string to replace \p key with.
+ * \param g If 'i' it does an "ignore case" replacement. If 0 it replaces only the first occurance.
+ *
+ * \return Pointer to the given string but replaced sub_strings. And NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char *val, int g) {
 	if (g == 'i') {
 		return rz_str_replace_icase(str, key, val, g, true);
 	}
 	rz_return_val_if_fail(str && key && val, NULL);
 
-	int off, i, slen;
-	char *newstr, *p = str;
-	int klen = strlen(key);
-	int vlen = strlen(val);
-	if (klen == 1 && vlen < 2) {
+	int key_off, i, str_len;
+	char *newstr, *key_ptr = str;
+	int key_len = strlen(key);
+	int val_len = strlen(val);
+	if (key_len == 1 && val_len < 2) {
 		rz_str_replace_char(str, *key, *val);
 		return str;
 	}
-	if (klen == vlen && !strcmp(key, val)) {
+	if (key_len == val_len && !strcmp(key, val)) {
 		return str;
 	}
-	slen = strlen(str);
+	str_len = strlen(str);
 	char *q = str;
 	for (;;) {
-		p = strstr(q, key);
-		if (!p) {
+		key_ptr = strstr(q, key);
+		if (!key_ptr) {
 			break;
 		}
-		off = (int)(size_t)(p - str);
-		if (vlen != klen) {
-			int tlen = slen - (off + klen);
-			slen += vlen - klen;
-			if (vlen > klen) {
-				newstr = realloc(str, slen + 1);
+		key_off = (int)(size_t)(key_ptr - str);
+		if (val_len != key_len) {
+			int tail_len = str_len - (key_off + key_len);
+			str_len += val_len - key_len;
+			if (val_len > key_len) {
+				newstr = realloc(str, str_len + 1);
 				if (!newstr) {
 					eprintf("realloc fail\n");
 					RZ_FREE(str);
@@ -1173,11 +1184,11 @@ RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g) 
 				}
 				str = newstr;
 			}
-			p = str + off;
-			memmove(p + vlen, p + klen, tlen + 1);
+			key_ptr = str + key_off;
+			memmove(key_ptr + val_len, key_ptr + key_len, tail_len + 1);
 		}
-		memcpy(p, val, vlen);
-		i = off + vlen;
+		memcpy(key_ptr, val, val_len);
+		i = key_off + val_len;
 		q = str + i;
 		if (!g) {
 			break;

@@ -116,7 +116,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: arm64 sh relocs
+NAME=ELF: arm64 relocs 1
 FILE=bins/elf/r2pay-arm64.so
 CMDS=<<EOF
 ir~?
@@ -124,19 +124,27 @@ s section..init_array
 pd 10
 EOF
 EXPECT=<<EOF
-231
+320
             ;-- section..init_array:
             ;-- segment.LOAD1:
-            0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [12] -rw- section size 728 named .init_array
-            0x00126518      .qword 0x0000000000005a80 ; sym..datadiv_decode10476194973746341988
-            0x00126520      .qword 0x00000000000efddc ; sym..datadiv_decode16323044921667855934
+            ;-- .datadiv_decode9958896245423089702:
+            0x00126510      .qword 0x0000000000005a6c ; reloc.target..datadiv_decode9958896245423089702 ; sym..datadiv_decode9958896245423089702; RELOC 64 .datadiv_decode9958896245423089702 @ 0x00005a6c ; [12] -rw- section size 728 named .init_array
+            ;-- .datadiv_decode10476194973746341988:
+            0x00126518      .qword 0x0000000000005a80 ; reloc.target..datadiv_decode10476194973746341988 ; sym..datadiv_decode10476194973746341988; RELOC 64 .datadiv_decode10476194973746341988 @ 0x00005a80
+            ;-- .datadiv_decode16323044921667855934:
+            0x00126520      .qword 0x00000000000efddc ; reloc.target..datadiv_decode16323044921667855934 ; sym..datadiv_decode16323044921667855934; RELOC 64 .datadiv_decode16323044921667855934 @ 0x000efddc
             0x00126528      .qword 0x0000000000009080 ; entry.init0    ; RELOC 64 
             0x00126530      .qword 0x0000000000077d14 ; entry.init1    ; RELOC 64 
-            0x00126538      .qword 0x00000000000f22e0 ; sym..datadiv_decode667225052219618748
-            0x00126540      .qword 0x00000000000f22e4 ; sym..datadiv_decode8132880250332170398
-            0x00126548      .qword 0x00000000000f22e8 ; sym..datadiv_decode3655886617018729963
-            0x00126550      .qword 0x00000000000f22ec ; sym..datadiv_decode16406252260792032531
-            0x00126558      .qword 0x00000000000f22f0 ; sym..datadiv_decode13403071575248320347
+            ;-- .datadiv_decode667225052219618748:
+            0x00126538      .qword 0x00000000000f22e0 ; reloc.target..datadiv_decode667225052219618748 ; sym..datadiv_decode667225052219618748; RELOC 64 .datadiv_decode667225052219618748 @ 0x000f22e0
+            ;-- .datadiv_decode8132880250332170398:
+            0x00126540      .qword 0x00000000000f22e4 ; reloc.target..datadiv_decode8132880250332170398 ; sym..datadiv_decode8132880250332170398; RELOC 64 .datadiv_decode8132880250332170398 @ 0x000f22e4
+            ;-- .datadiv_decode3655886617018729963:
+            0x00126548      .qword 0x00000000000f22e8 ; reloc.target..datadiv_decode3655886617018729963 ; sym..datadiv_decode3655886617018729963; RELOC 64 .datadiv_decode3655886617018729963 @ 0x000f22e8
+            ;-- .datadiv_decode16406252260792032531:
+            0x00126550      .qword 0x00000000000f22ec ; reloc.target..datadiv_decode16406252260792032531 ; sym..datadiv_decode16406252260792032531; RELOC 64 .datadiv_decode16406252260792032531 @ 0x000f22ec
+            ;-- .datadiv_decode13403071575248320347:
+            0x00126558      .qword 0x00000000000f22f0 ; reloc.target..datadiv_decode13403071575248320347 ; sym..datadiv_decode13403071575248320347; RELOC 64 .datadiv_decode13403071575248320347 @ 0x000f22f0
 EOF
 RUN
 
@@ -157,5 +165,47 @@ EXPECT=<<EOF
 0x00011030  0x00000525                                   %...
 0x00011034  0x0000050d                                   ....
 0x00011040  0x00011040                                   @...
+EOF
+RUN
+
+NAME=ELF: arm64 relocs 2
+FILE=bins/elf/graphascii.c-gcc-arm64-O0.o
+CMDS=<<EOF
+ir~?
+s 0x8000444
+pf bbbb
+pi 1
+s 0x8000460
+pf bbbb
+pi 1
+s 0x800046c
+pf bbbb
+pi 1
+s 0x80003d8
+pf bbbb
+pi 1
+EOF
+EXPECT=<<EOF
+315
+0x08000444 = 0x00
+0x08000445 = 0x00
+0x08000446 = 0x00
+0x08000447 = 0xf0
+adrp x0, 0x8003000
+0x08000460 = 0x1c
+0x08000461 = 0x0d
+0x08000462 = 0x00
+0x08000463 = 0x94
+bl reloc.target.stackCursor
+0x0800046c = 0x00
+0x0800046d = 0x64
+0x0800046e = 0x44
+0x0800046f = 0xf9
+ldr x0, [x0, 0x8c8]
+0x080003d8 = 0x3a
+0x080003d9 = 0x0d
+0x080003da = 0x00
+0x080003db = 0x94
+bl reloc.target.fputs
 EOF
 RUN

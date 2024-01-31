@@ -229,6 +229,7 @@ static struct winedbg_x86_32 regState(void) {
 }
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
+	char tmpbuf[64];
 	if (!strcmp(cmd, "")) {
 		return NULL;
 	}
@@ -316,7 +317,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	} else if (!strncmp(cmd, "dr", 2)) {
 		printcmd(io, "info reg");
 	} else if (!strncmp(cmd, "db ", 3)) {
-		free(runcmd(sdb_fmt("break *%x", rz_num_get(NULL, cmd + 3) || io->off)));
+		free(runcmd(rz_strf(tmpbuf, "break *%x", rz_num_get(NULL, cmd + 3) || io->off)));
 	} else if (!strncmp(cmd, "ds", 2)) {
 		free(runcmd("stepi"));
 	} else if (!strncmp(cmd, "dc", 2)) {
