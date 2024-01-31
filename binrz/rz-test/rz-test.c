@@ -66,7 +66,7 @@ static int help(bool verbose) {
 	if (verbose) {
 		const char *options[] = {
 			// clang-format off
-			"-h",           "",               "Print this help",
+			"-h",           "",               "Show this help",
 			"-v",           "",               "Show version information",
 			"-q",           "",               "Quiet mode",
 			"-V",           "",               "Be verbose",
@@ -77,7 +77,7 @@ static int help(bool verbose) {
 			"-j",           "[threads]",      "How many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")",
 			"-r",           "[rizin]",        "Path to rizin executable (default is " RIZIN_CMD_DEFAULT ")",
 			"-m",           "[rz-asm]",       "Path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")",
-			"-f",           "[file]",         "File to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")",
+			"-f",           "[file]",         "File to use for JSON tests (default is " JSON_TEST_FILE_DEFAULT ")",
 			"-C",           "[dir]",          "Chdir before running rz-test (default follows executable symlink + test/new)",
 			"-t",           "[seconds]",      "Timeout per test (default is " TIMEOUT_DEFAULT_STR " seconds)",
 			"-o",           "[file]",         "Output test run information in JSON format to file",

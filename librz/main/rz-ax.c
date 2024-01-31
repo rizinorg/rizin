@@ -215,7 +215,7 @@ static int help(void) {
 		"  -E      base64 encode        ;\n"
 		"  -f      floating point       ;  rz-ax -f 6.3+2.1\n"
 		"  -F      stdin slurp code hex ;  rz-ax -F < shellcode.[c/py/js]\n"
-		"  -h      help                 ;  rz-ax -h\n"
+		"  -h      show this help       ;  rz-ax -h\n"
 		"  -i      dump as C byte array ;  rz-ax -i < bytes\n"
 		"  -I      IP address <-> LONG  ;  rz-ax -I 3530468537\n"
 		"  -k      keep base            ;  rz-ax -k 33+3 -> 36\n"

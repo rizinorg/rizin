@@ -79,17 +79,17 @@ static void rz_hash_show_help(bool usage_only) {
 	const char *options[] = {
 		// clang-format off
 		"-v",     "",       "Show version information",
-		"-h",     "",       "Show this help page",
+		"-h",     "",       "Show this help",
 		"-",      "",       "Input read from stdin instead from a file",
 		"-a",     "algo",   "Hash algorithm to use and you can specify multiple ones by",
 		"",       "",       "Appending a comma (example: sha1,md4,md5,sha256)",
-		"-B",     "",       "Outputs the calculated value for each block",
+		"-B",     "",       "Output the calculated value for each block",
 		"-b",     "size",   "Set the block size",
 		"-c",     "value",  "Compare calculated value with a given one (hexadecimal)",
 		"-e",     "endian", "Set the endianness (default: 'big' accepted: 'big' or 'little')",
 		"-D",     "algo",   "Decrypt the given input; use -S to set key and -I to set IV (if needed)",
 		"-E",     "algo",   "Encrypt the given input; use -S to set key and -I to set IV (if needed)",
-		"-f",     "from",   "Starts the calculation at given offset",
+		"-f",     "from",   "Start the calculation at given offset",
 		"-t",     "to",     "Stop the calculation at given offset",
 		"-I",     "iv",     "Set the initialization vector (IV)",
 		"-i",     "times",  "Repeat the calculation N times",
@@ -105,7 +105,7 @@ static void rz_hash_show_help(bool usage_only) {
 		"-s",     "string", "Input read from a zero-terminated string instead from a file",
 		"-x",     "hex",    "Input read from a hexadecimal value instead from a file",
 		"",       "",       "",
-		"",       "",       "All the inputs (besides -s/-x/-c) can be hexadecimal or strings",
+		"",       "",       "All the input (besides -s/-x/-c) can be hexadecimal or strings",
 		"",       "",       "If 's:' prefix is specified",
 		// clang-format on
 	};
