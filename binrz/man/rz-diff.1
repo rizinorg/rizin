@@ -14,63 +14,63 @@ rz-diff compares two files or binary programs and highlights the differences bet
 .Pp
 .Bl -tag -width Fl
 .It Fl A
-compare virtual addresses from file0 with physical addresses in file1.
+Compare virtual addresses from file0 with physical addresses in file1
 .It Fl a Ar [arch]	
-specify the architecture plugin to use for analysis (e.g., x86, arm).
+Specify the architecture plugin to use for analysis (e.g., x86, arm)
 .It Fl b Ar [bits]
-specify the register size for the chosen architecture (e.g., 16, 32, 64).
+Specify the register size for the chosen architecture (e.g., 16, 32, 64)
 .It Fl B
-run 'aaa' when loading the binary.
+Run 'aaa' when loading the binary
 .It Fl C
-disable the use of colors in the output.
+Disable the use of colors in the output
 .It Fl d Ar [algo]
-compute the edit distance between files using the chosen algorithm:
+Compute the edit distance between files using the chosen algorithm:
                 myers | Eugene W. Myers' O(ND) algorithm (no substitution)
-                leven | Levenshtein O(N^2) algorithm (with substitution
+                leven | Levenshtein O(N^2) algorithm (with substitution)
                ssdeep | Context triggered piecewise hashing comparison
 .It Fl e Ar [k=v]
-set an evaluable config variable.
+Set an evaluable config variable
 .It Fl H 
-enable hexadecimal visual mode for comparing files in hexadecimal format.
+Enable hexadecimal visual mode for comparing files in hexadecimal format
 .It Fl h
-display the help message.
+Display the help message
 .It Fl i 
-use command line arguments instead of files (only for -d).
+Use command line arguments instead of files (only for -d)
 .It Fl j
-output the comparison results in JSON format.
+Output the comparison results in JSON format
 .It Fl q
-generate quiet output with minimal information.
+Generate quiet output with minimal information
 .It Fl 0 Ar [cmd]
-input for file0 when option -t 'commands' is given.
+Input for file0 when option -t 'commands' is given
 .It Fl 1 Ar [cmd]
-input for file1 when option -t 'commands' is given.
+Input for file1 when option -t 'commands' is given
 .It Fl S Ar [WxH]
-set the width and height of the terminal for visual mode.
+Set the width and height of the terminal for visual mode
 .It Fl t Ar [type]
-compute the difference between two files based on the specified type:
-              bytes      | Compares raw bytes in the files (only for small files)
-              lines      | Compares text files
-              functions  | Compares functions found in the files
-              classes    | Compares classes found in the files
-              command    | Compares command output returned when executed in both files
-                         | Requires -0 <cmd>, -1 <cmd> is optional
-              entries    | Compares entries found in the files
-              fields     | Compares fields found in the files
-              graphs     | Compares 2 functions and outputs in graphviz/dot format
-                         | Requires -0 <fcn name|offset>, -1 <fcn name|offset> is optional
-              imports    | Compares imports found in the files
-              libraries  | Compares libraries found in the files
-              sections   | Compares sections found in the files
-              strings    | Compares strings found in the files
-              symbols    | Compares symbols found in the files
+Compute the difference between two files based on the specified type:
+              bytes      | Compare raw bytes in the files (only for small files)
+              lines      | Compare text files
+              functions  | Compare functions found in the files
+              classes    | Compare classes found in the files
+              command    | Compare command output returned when executed in both files
+                         | Require -0 <cmd>, -1 <cmd> is optional
+              entries    | Compare entries found in the files
+              fields     | Compare fields found in the files
+              graphs     | Compare 2 functions and outputs in graphviz/dot format
+                         | Require -0 <fcn name|offset>, -1 <fcn name|offset> is optional
+              imports    | Compare imports found in the files
+              libraries  | Compare libraries found in the files
+              sections   | Compare sections found in the files
+              strings    | Compare strings found in the files
+              symbols    | Compare symbols found in the files
 .It Fl T
-show timestamp information in the output.
+Show timestamp information in the output
 .It Fl V
-show version information for rz-diff.
+Show version information for rz-diff
 .It Fl v
-be more verbose (stderr output).
+be more verbose (stderr output)
 .Pp 
-palette colors can be changed by adding the following lines
+Palette colors can be changed by adding the following lines
           inside the $HOME/.rizinrc file
   ec diff.unknown blue   | offset color
   ec diff.match   green  | match color
@@ -99,4 +99,4 @@ palette colors can be changed by adding the following lines
 .Pp
 pancake <pancake@nopcode.org>
 .It  
-Sohail  <sksohail.swaraj@gmail.com>
+byteninjaa0

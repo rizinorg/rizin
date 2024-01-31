@@ -26,7 +26,7 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 	RzRunProfile *p;
 	int i, ret;
 	if (argc == 1 || !strcmp(argv[1], "-h")) {
-		printf("Usage: rz-run -v|-t|script.rr2 [directive ..]\n");
+		printf("Usage: rz-run -v|-t|script.rz [directive ..]\n");
 		printf("%s", rz_run_help());
 		return 1;
 	}
