@@ -1142,30 +1142,30 @@ RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g) 
 	}
 	rz_return_val_if_fail(str && key && val, NULL);
 
-	int off, i, slen;
-	char *newstr, *p = str;
-	int klen = strlen(key);
-	int vlen = strlen(val);
-	if (klen == 1 && vlen < 2) {
+	int key_off, i, str_len;
+	char *newstr, *key_ptr = str;
+	int key_len = strlen(key);
+	int val_len = strlen(val);
+	if (key_len == 1 && val_len < 2) {
 		rz_str_replace_char(str, *key, *val);
 		return str;
 	}
-	if (klen == vlen && !strcmp(key, val)) {
+	if (key_len == val_len && !strcmp(key, val)) {
 		return str;
 	}
-	slen = strlen(str);
+	str_len = strlen(str);
 	char *q = str;
 	for (;;) {
-		p = strstr(q, key);
-		if (!p) {
+		key_ptr = strstr(q, key);
+		if (!key_ptr) {
 			break;
 		}
-		off = (int)(size_t)(p - str);
-		if (vlen != klen) {
-			int tlen = slen - (off + klen);
-			slen += vlen - klen;
-			if (vlen > klen) {
-				newstr = realloc(str, slen + 1);
+		key_off = (int)(size_t)(key_ptr - str);
+		if (val_len != key_len) {
+			int tail_len = str_len - (key_off + key_len);
+			str_len += val_len - key_len;
+			if (val_len > key_len) {
+				newstr = realloc(str, str_len + 1);
 				if (!newstr) {
 					eprintf("realloc fail\n");
 					RZ_FREE(str);
@@ -1173,11 +1173,11 @@ RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g) 
 				}
 				str = newstr;
 			}
-			p = str + off;
-			memmove(p + vlen, p + klen, tlen + 1);
+			key_ptr = str + key_off;
+			memmove(key_ptr + val_len, key_ptr + key_len, tail_len + 1);
 		}
-		memcpy(p, val, vlen);
-		i = off + vlen;
+		memcpy(key_ptr, val, val_len);
+		i = key_off + val_len;
 		q = str + i;
 		if (!g) {
 			break;
