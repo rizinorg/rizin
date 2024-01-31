@@ -1136,7 +1136,18 @@ RZ_API char *rz_str_appendch(char *x, char y) {
 	return rz_str_append(x, b);
 }
 
-RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g) {
+/**
+ * \brief In-place replacement of string \p key with \p val in \p str.
+ * In case of realloc \p str is freed and NULL is returned.
+ *
+ * \param str The string to replace the sub-string in.
+ * \param key The sub-string to replace.
+ * \param val The sub-string to replace \p key with.
+ * \param g If 'i' it does an "ignore case" replacement. If 0 it replaces only the first occurance.
+ *
+ * \return Pointer to the given string but replaced sub_strings. And NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char *val, int g) {
 	if (g == 'i') {
 		return rz_str_replace_icase(str, key, val, g, true);
 	}
