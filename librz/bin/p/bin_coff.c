@@ -520,6 +520,60 @@ ut16 CHARACTERISTICS
 	return r >= 20 && rz_coff_supported_arch(tmp);
 }
 
+#define ADD_FLAG_MASK(x, m) \
+	if ((flag & m) == COFF_SCN_##x) { \
+		rz_list_append(flag_list, RZ_STR(x)); \
+	}
+
+#define ADD_FLAG(x) \
+	if (flag & COFF_SCN_##x) { \
+		rz_list_append(flag_list, RZ_STR(x)); \
+	}
+
+RzList /*<char *>*/ *coff_section_flag_to_rzlist(ut64 flag) {
+	RzList *flag_list = rz_list_new();
+	ADD_FLAG(TYPE_NO_PAD);
+	ADD_FLAG(CNT_CODE);
+	ADD_FLAG(CNT_INIT_DATA);
+	ADD_FLAG(CNT_UNIN_DATA);
+	ADD_FLAG(LNK_OTHER);
+	ADD_FLAG(LNK_INFO);
+	ADD_FLAG(LNK_REMOVE);
+	ADD_FLAG(LNK_COMDAT);
+	ADD_FLAG(GPREL);
+	ADD_FLAG(MEM_PURGEABLE);
+	ADD_FLAG(MEM_16BIT);
+	ADD_FLAG(MEM_LOCKED);
+	ADD_FLAG(MEM_PRELOAD);
+	ADD_FLAG_MASK(ALIGN_1BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_2BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_4BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_8BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_16BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_32BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_64BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_128BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_256BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_512BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_1024BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_2048BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_4096BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_8192BYTES, COFF_SCN_ALIGN_MASK);
+	ADD_FLAG(LNK_NRELOC_OVFL);
+	ADD_FLAG(MEM_DISCARDABLE);
+	ADD_FLAG(MEM_NOT_CACHED);
+	ADD_FLAG(MEM_NOT_PAGED);
+
+	// special check for no read
+	if (!(flag & COFF_SCN_MEM_READ)) {
+		rz_list_append(flag_list, "MEM_NO_READ");
+	}
+	return flag_list;
+}
+
+#undef ADD_FLAG_MASK
+#undef ADD_FLAG
+
 RzBinPlugin rz_bin_plugin_coff = {
 	.name = "coff",
 	.desc = "COFF format rz_bin plugin",
@@ -540,7 +594,8 @@ RzBinPlugin rz_bin_plugin_coff = {
 	.fields = &fields,
 	.size = &size,
 	.libs = &libs,
-	.relocs = &relocs
+	.relocs = &relocs,
+	.section_flag_to_rzlist = coff_section_flag_to_rzlist,
 };
 
 #ifndef RZ_PLUGIN_INCORE

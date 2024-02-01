@@ -110,104 +110,70 @@ out_function:
 	return;
 }
 
+#define ADD_FLAG_MASK(x, m) \
+	if ((flag & m) == IMAGE_SCN_##x) { \
+		rz_list_append(flag_list, RZ_STR(x)); \
+	}
+
+#define ADD_FLAG(x) \
+	if (flag & IMAGE_SCN_##x) { \
+		rz_list_append(flag_list, RZ_STR(x)); \
+	}
+
 RzList /*<char *>*/ *PE_(section_flag_to_rzlist)(ut64 flag) {
 	RzList *flag_list = rz_list_new();
-	if (flag & IMAGE_SCN_TYPE_NO_PAD) {
-		rz_list_append(flag_list, "TYPE_NO_PAD");
-	}
-	if (flag & IMAGE_SCN_CNT_CODE) {
-		rz_list_append(flag_list, "CNT_CODE");
-	}
-	if (flag & IMAGE_SCN_CNT_INITIALIZED_DATA) {
-		rz_list_append(flag_list, "CNT_INITIALIZED_DATA");
-	}
-	if (flag & IMAGE_SCN_CNT_UNINITIALIZED_DATA) {
-		rz_list_append(flag_list, "CNT_UNINITIALIZED");
-	}
-	if (flag & IMAGE_SCN_LNK_OTHER) {
-		rz_list_append(flag_list, "LNK_OTHER");
-	}
-	if (flag & IMAGE_SCN_LNK_INFO) {
-		rz_list_append(flag_list, "LNK_INFO");
-	}
-	if (flag & IMAGE_SCN_LNK_REMOVE) {
-		rz_list_append(flag_list, "LNK_REMOVE");
-	}
-	if (flag & IMAGE_SCN_LNK_COMDAT) {
-		rz_list_append(flag_list, "LNK_COMDAT");
-	}
-	if (flag & IMAGE_SCN_GPREL) {
-		rz_list_append(flag_list, "GPREL");
-	}
-	if (flag & IMAGE_SCN_MEM_PURGEABLE) {
-		rz_list_append(flag_list, "MEM_PURGEABLE");
-	}
-	if (flag & IMAGE_SCN_MEM_16BIT) {
-		rz_list_append(flag_list, "MEM_16BIT");
-	}
-	if (flag & IMAGE_SCN_MEM_LOCKED) {
-		rz_list_append(flag_list, "MEM_LOCKED");
-	}
-	if (flag & IMAGE_SCN_MEM_PRELOAD) {
-		rz_list_append(flag_list, "MEM_PRELOAD");
-	}
-	// Alignment flags overlap
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_1BYTES) {
-		rz_list_append(flag_list, "ALIGN_1BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_2BYTES) {
-		rz_list_append(flag_list, "ALIGN_2BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_4BYTES) {
-		rz_list_append(flag_list, "ALIGN_4BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_8BYTES) {
-		rz_list_append(flag_list, "ALIGN_8BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_16BYTES) {
-		rz_list_append(flag_list, "ALIGN_16BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_32BYTES) {
-		rz_list_append(flag_list, "ALIGN_32BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_64BYTES) {
-		rz_list_append(flag_list, "ALIGN_64BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_128BYTES) {
-		rz_list_append(flag_list, "ALIGN_128BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_256BYTES) {
-		rz_list_append(flag_list, "ALIGN_256BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_512BYTES) {
-		rz_list_append(flag_list, "ALIGN_512BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_1024BYTES) {
-		rz_list_append(flag_list, "ALIGN_1024BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_2048BYTES) {
-		rz_list_append(flag_list, "ALIGN_2048BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_4096BYTES) {
-		rz_list_append(flag_list, "ALIGN_4096BYTES");
-	}
-	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_8192BYTES) {
-		rz_list_append(flag_list, "ALIGN_8192BYTES");
-	}
-	if (flag & IMAGE_SCN_LNK_NRELOC_OVFL) {
-		rz_list_append(flag_list, "LNK_NRELOC_OVFL");
-	}
-	if (flag & IMAGE_SCN_MEM_DISCARDABLE) {
-		rz_list_append(flag_list, "IMAGE_SCN_MEM_DISCARDABLE");
-	}
-	if (flag & IMAGE_SCN_MEM_NOT_CACHED) {
-		rz_list_append(flag_list, "MEM_NOT_CACHED");
-	}
-	if (flag & IMAGE_SCN_MEM_NOT_PAGED) {
-		rz_list_append(flag_list, "MEM_NOT_PAGED");
+	ADD_FLAG_MASK(TYPE_REG, UT64_MAX);
+	ADD_FLAG(TYPE_REG);
+	ADD_FLAG(TYPE_D_SECT);
+	ADD_FLAG(TYPE_NO_LOAD);
+	ADD_FLAG(TYPE_GROUP);
+	ADD_FLAG(TYPE_NO_PAD);
+	ADD_FLAG(TYPE_COPY);
+	ADD_FLAG(CNT_CODE);
+	ADD_FLAG(CNT_INITIALIZED_DATA);
+	ADD_FLAG(CNT_UNINITIALIZED_DATA);
+	ADD_FLAG(LNK_OTHER);
+	ADD_FLAG(LNK_INFO);
+	ADD_FLAG(TYPE_OVER);
+	ADD_FLAG(LNK_REMOVE);
+	ADD_FLAG(LNK_COMDAT);
+	ADD_FLAG(NO_DEFER_SPEC_EXC);
+	// ADD_FLAG(MEM_PROTECTED); // this has the same value as NO_DEFER_SPEC_EXC
+	ADD_FLAG(GPREL);
+	// ADD_FLAG(MEM_FARDATA); // this has the same value as GPREL
+	ADD_FLAG(MEM_SYSHEAP);
+	ADD_FLAG(MEM_PURGEABLE);
+	// ADD_FLAG(MEM_16BIT); // this has same value as MEM_PURGEABLE
+	ADD_FLAG(MEM_LOCKED);
+	ADD_FLAG(MEM_PRELOAD);
+	ADD_FLAG_MASK(ALIGN_1BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_2BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_4BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_8BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_16BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_32BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_64BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_128BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_256BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_512BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_1024BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_2048BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_4096BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG_MASK(ALIGN_8192BYTES, PE_SCN_ALIGN_MASK);
+	ADD_FLAG(LNK_NRELOC_OVFL);
+	ADD_FLAG(MEM_DISCARDABLE);
+	ADD_FLAG(MEM_NOT_CACHED);
+	ADD_FLAG(MEM_NOT_PAGED);
+
+	// special check for no read
+	if (!(flag & IMAGE_SCN_MEM_READ)) {
+		rz_list_append(flag_list, "MEM_NO_READ");
 	}
 	return flag_list;
 }
+
+#undef ADD_FLAG_MASK
+#undef ADD_FLAG
 
 bool PE_(read_image_section_header)(RzBuffer *b, ut64 addr, PE_(image_section_header) * section_header) {
 	ut8 buf[sizeof(PE_(image_section_header))];

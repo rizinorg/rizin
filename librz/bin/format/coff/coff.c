@@ -44,6 +44,9 @@ RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
 	if (flags & COFF_SCN_MEM_EXECUTE) {
 		r |= RZ_PERM_X;
 	}
+	if (flags & COFF_SCN_MEM_SHARED) {
+		r |= RZ_PERM_SHAR;
+	}
 	return r;
 }
 
