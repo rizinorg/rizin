@@ -201,7 +201,7 @@ static int rasm_show_help(int v) {
 		"-s",       "[syntax]",         "Select syntax (intel, att)",
 		"-v",       "",                 "Show version information",
 		"-x",       "",                 "Use hex dwords instead of hex pairs when assembling.",
-		"-w",       "",                 "What's this instruction for? describe opcode",
+		"-w",       "",                 "Describe opcode",
 		// clang-format on
 	};
 	if (v != 1) {
