@@ -21,7 +21,7 @@
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-This tool uses r_asm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
+This tool uses RzAsm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
 .Pp
 .Bl -tag -width Fl
 .It Fl a Ar arch
@@ -79,36 +79,34 @@ Use hex dwords instead of hex pairs when assembling
 .It Fl w
 Describe opcode
 .El
-.Sh different than filename
+.Sh Directives
 .Pp
-.Bl -tag -width Fl
-.It Fl .intel_syntax
-Use intel syntax rather than att:w
-.It Fl .att_syntax
-Use ATT syntax rather than flu :w
-dentify the region fof aslerrger
-.It Fl string
-dentify the region fof aslerrger
-.It Fl .align
-.It Fl .arch
-.It Fl .arm
-.It Fl .ascii
-.It Fl .bits
-.It Fl .data
-.It Fl .equ
-.It Fl .fill
-.It Fl .glob
-.It Fl .hex
-.It Fl .int16
-.It Fl .int32
-.It Fl .int64
-.It Fl .kernel
-.It Fl .offset
-.It Fl .org
-.It Fl .os
-.It Fl .short
-.It Fl .text
-.It Fl .thumb
+.Bl -tag -width
+.It Ic .intel_syntax
+Use Intel syntax rather than AT&T
+.It Ic .att_syntax
+Use AT&T syntax rather than Intel
+.It Ic string
+.It Ic .align
+.It Ic .arch
+.It Ic .arm
+.It Ic .ascii
+.It Ic .bits
+.It Ic .data
+.It Ic .equ
+.It Ic .fill
+.It Ic .glob
+.It Ic .hex
+.It Ic .int16
+.It Ic .int32
+.It Ic .int64
+.It Ic .kernel
+.It Ic .offset
+.It Ic .org
+.It Ic .os
+.It Ic .short
+.It Ic .text
+.It Ic .thumb
 .El
 .Sh EXAMPLES
 .Pp
