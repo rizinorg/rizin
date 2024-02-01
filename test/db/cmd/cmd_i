@@ -4415,7 +4415,7 @@ EXPECT=<<EOF
     "vsize": 4096,
     "perm": "-rw-",
     "flags": [
-      "CNT_UNINITIALIZED",
+      "CNT_UNINITIALIZED_DATA",
       "ALIGN_8BYTES"
     ],
     "paddr": 0,
