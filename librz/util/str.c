@@ -890,12 +890,6 @@ RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *s, RZ_NONNULL const c
 	return res;
 }
 
-// Returns a new heap-allocated copy of str.
-// XXX what's the diff with rz_str_dup ?
-RZ_API char *rz_str_new(const char *str) {
-	return str ? strdup(str) : NULL;
-}
-
 // Returns a new heap-allocated copy of str, sets str[len] to '\0'.
 // If the input str is longer than len, it will be truncated.
 RZ_API char *rz_str_newlen(const char *str, int len) {
@@ -1047,11 +1041,17 @@ RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len) {
 	return out;
 }
 
-// TODO: deprecate?
-RZ_API char *rz_str_dup(char *ptr, const char *string) {
-	char *str = rz_str_new(string);
-	free(ptr); // in case ptr == string
-	return str;
+/**
+ * \brief Duplicates a string.
+ *
+ * This function duplicates the given string. If the input string is NULL,
+ * the function will return NULL.
+ *
+ * \param str The string to duplicate. Can be NULL.
+ * \return A new string which is a duplicate of the input string, or NULL if the input string was NULL.
+ */
+RZ_API RZ_OWN char *rz_str_dup(RZ_NULLABLE const char *str) {
+	return str ? strdup(str) : NULL;
 }
 
 RZ_API char *rz_str_prepend(char *ptr, const char *string) {

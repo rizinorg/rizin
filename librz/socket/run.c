@@ -537,7 +537,7 @@ static bool parse_key_value(const char *input, char **key, char **value) {
 	if (equal[1] == '$') {
 		s_value = rz_sys_getenv(equal + 1);
 	} else {
-		s_value = rz_str_new(equal + 1);
+		s_value = rz_str_dup(equal + 1);
 	}
 
 	if (!s_key || !s_value) {

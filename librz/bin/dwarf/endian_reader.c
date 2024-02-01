@@ -15,7 +15,7 @@ RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char
 	if (!o || !o->sections || RZ_STR_ISEMPTY(sn)) {
 		return NULL;
 	}
-	char *name = is_dwo ? rz_str_newf("%s.dwo", sn) : rz_str_new(sn);
+	char *name = is_dwo ? rz_str_newf("%s.dwo", sn) : rz_str_dup(sn);
 	if (!name) {
 		return NULL;
 	}
@@ -145,7 +145,7 @@ RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const 
 
 	reader->buffer = buf;
 	reader->big_endian = bf_bigendian(binfile);
-	reader->section_name = rz_str_new(section->name);
+	reader->section_name = rz_str_dup(section->name);
 	reader->relocations = relocations;
 	return reader;
 }

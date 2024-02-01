@@ -1033,7 +1033,7 @@ static void RzType_from_base_type(RzType *t, RzBaseType *b) {
 	rz_return_if_fail(t && b);
 	t->kind = RZ_TYPE_KIND_IDENTIFIER;
 	free(t->identifier.name);
-	t->identifier.name = rz_str_new(b->name);
+	t->identifier.name = rz_str_dup(b->name);
 	switch (b->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT:
 		t->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
@@ -1268,7 +1268,7 @@ static RzType *type_parse_from_abstract_origin(Context *ctx, ut64 offset, char *
 	}
 	const char *prefer_name = select_name(NULL, linkname, name, ctx->unit->language);
 	if (prefer_name && name_out) {
-		*name_out = rz_str_new(prefer_name);
+		*name_out = rz_str_dup(prefer_name);
 	}
 beach:
 	free(name);
@@ -2004,7 +2004,7 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 		}
 		free(a->type->identifier.name);
 		char *newname = rz_str_newf("%s_0", name);
-		a->type->identifier.name = rz_str_new(newname);
+		a->type->identifier.name = rz_str_dup(newname);
 		update_base_type(analysis->typedb, a);
 
 		db_save_renamed(analysis->typedb, rz_base_type_clone(b), newname);

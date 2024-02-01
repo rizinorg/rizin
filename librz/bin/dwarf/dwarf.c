@@ -114,7 +114,7 @@ static inline RzBinDWARF *dwarf_from_debuglink(
 	if (RZ_STR_ISNOTEMPTY(file_directory) && strlen(file_directory) >= 2 && file_directory[1] == ':') {
 		file_dir = rz_str_newf("/%c%s", file_directory[0], file_directory + 2);
 	} else {
-		file_dir = rz_str_new(file_directory);
+		file_dir = rz_str_dup(file_directory);
 	}
 	RzListIter *it = NULL;
 	const char *debug_file_directory = NULL;

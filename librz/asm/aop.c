@@ -71,7 +71,7 @@ RZ_API void rz_asm_op_setf_asm(RZ_NONNULL RzAsmOp *op, RZ_NONNULL const char *fm
 
 RZ_API int rz_asm_op_set_hex(RZ_NONNULL RzAsmOp *op, RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(op && str, 0);
-	ut8 *bin = (ut8 *)rz_str_new(str);
+	ut8 *bin = (ut8 *)rz_str_dup(str);
 	if (!bin) {
 		return 0;
 	}

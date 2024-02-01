@@ -230,7 +230,7 @@ static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *s
 	}
 
 	c->name = strdup(name);
-	c->super = rz_str_new(super);
+	c->super = rz_str_dup(super);
 	c->methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	c->fields = rz_list_newf((RzListFree)rz_bin_class_field_free);
 	c->addr = address;
@@ -384,7 +384,7 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 	if (!symbol) {
 		return NULL;
 	}
-	symbol->classname = rz_str_new(klass);
+	symbol->classname = rz_str_dup(klass);
 
 	if (!c->methods->sorted) {
 		rz_list_sort(c->methods, (RzListComparator)rz_bin_compare_method);

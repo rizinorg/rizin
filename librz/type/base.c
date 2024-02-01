@@ -129,7 +129,7 @@ static void RzTypeStructMember_cpy(RzTypeStructMember *dst, RzTypeStructMember *
 		return;
 	}
 	memcpy(dst, src, sizeof(RzTypeStructMember));
-	dst->name = rz_str_new(src->name);
+	dst->name = rz_str_dup(src->name);
 	dst->type = rz_type_clone(src->type);
 }
 
@@ -138,7 +138,7 @@ static void RzTypeEnumCase_cpy(RzTypeEnumCase *dst, RzTypeEnumCase *src) {
 		return;
 	}
 	memcpy(dst, src, sizeof(RzTypeEnumCase));
-	dst->name = rz_str_new(src->name);
+	dst->name = rz_str_dup(src->name);
 }
 
 static void RzTypeUnionMember_cpy(RzTypeUnionMember *dst, RzTypeUnionMember *src) {
@@ -146,7 +146,7 @@ static void RzTypeUnionMember_cpy(RzTypeUnionMember *dst, RzTypeUnionMember *src
 		return;
 	}
 	memcpy(dst, src, sizeof(RzTypeUnionMember));
-	dst->name = rz_str_new(src->name);
+	dst->name = rz_str_dup(src->name);
 	dst->type = rz_type_clone(src->type);
 }
 
@@ -161,7 +161,7 @@ RZ_API bool rz_base_type_clone_into(
 	RZ_NONNULL RZ_BORROW RZ_IN RzBaseType *src) {
 	rz_return_val_if_fail(src && dst, false);
 	rz_mem_copy(dst, sizeof(RzBaseType), src, sizeof(RzBaseType));
-	dst->name = rz_str_new(src->name);
+	dst->name = rz_str_dup(src->name);
 	dst->type = src->type ? rz_type_clone(src->type) : NULL;
 
 	switch (src->kind) {

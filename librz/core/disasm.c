@@ -4082,7 +4082,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 		f = rz_flag_get_i(core->flags, refaddr);
 		if (f) {
 			if (strlen(msg) != 1) {
-				char *msg2 = rz_str_new(msg);
+				char *msg2 = rz_str_dup(msg);
 				if (msg2) {
 					rz_str_filter(msg2);
 					if (!strncmp(msg2, "UH..", 4)) {
@@ -6632,7 +6632,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 		free(param);
 		return colored_asm ? rz_strbuf_drain(colored_asm) : NULL;
 	} else {
-		buf_asm = rz_str_new(str);
+		buf_asm = rz_str_dup(str);
 	}
 	return buf_asm;
 }

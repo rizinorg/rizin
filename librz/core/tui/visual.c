@@ -200,7 +200,7 @@ static const char *__core_visual_print_command(RzCore *core) {
 	}
 	if (rz_config_get_i(core->config, "scr.dumpcols")) {
 		free(core->stkcmd);
-		core->stkcmd = rz_str_new(stackPrintCommand(core));
+		core->stkcmd = rz_str_dup(stackPrintCommand(core));
 		return printfmtColumns[PIDX];
 	}
 	return printfmtSingle[PIDX];
@@ -1283,7 +1283,7 @@ repeat:
 				rz_cons_newline();
 			}
 			/* prepare highlight */
-			char *cmd = rz_str_new(rz_cons_singleton()->highlight);
+			char *cmd = rz_str_dup(rz_cons_singleton()->highlight);
 			char *ats = rz_str_newf("%" PFMT64x, curat);
 			if (ats && RZ_STR_ISEMPTY(cmd)) {
 				rz_cons_highlight(ats);

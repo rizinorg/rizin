@@ -496,7 +496,7 @@ static RzBinSymbol *convert_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
 
 	result->paddr = elf_symbol->paddr;
 	result->vaddr = elf_symbol->vaddr;
-	result->name = rz_str_new(elf_symbol->name);
+	result->name = rz_str_dup(elf_symbol->name);
 	result->forwarder = "NONE";
 	result->bind = elf_symbol->bind;
 	result->type = elf_symbol->type;
@@ -526,7 +526,7 @@ static RzBinImport *convert_import(RzBinElfSymbol *symbol) {
 		return NULL;
 	}
 
-	result->name = rz_str_new(symbol->name);
+	result->name = rz_str_dup(symbol->name);
 	result->bind = symbol->bind;
 	result->type = symbol->type;
 	result->ordinal = symbol->ordinal;
@@ -707,7 +707,7 @@ static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 				break;
 			}
 
-			map->name = rz_str_new(section->name);
+			map->name = rz_str_dup(section->name);
 			map->paddr = section->offset;
 			map->psize = section->type != SHT_NOBITS ? section->size : 0;
 			map->vsize = section->size;
@@ -1623,9 +1623,9 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		ptr->name = rz_str_new(section->name);
+		ptr->name = rz_str_dup(section->name);
 		if (!ptr->name) {
-			ptr->name = rz_str_new("");
+			ptr->name = rz_str_dup("");
 		}
 		if (strstr(ptr->name, "data") && !strstr(ptr->name, "rel") && !strstr(ptr->name, "pydata")) {
 			ptr->is_data = true;

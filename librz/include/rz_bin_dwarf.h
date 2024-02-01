@@ -1826,13 +1826,13 @@ static inline char *rz_bin_dwarf_attr_string(
 	rz_return_val_if_fail(attr, NULL);
 	const RzBinDwarfAttrValue *v = &attr->value;
 	if (v->kind == RzBinDwarfAttr_String) {
-		return rz_str_new(v->string);
+		return rz_str_dup(v->string);
 	} else if (v->kind == RzBinDwarfAttr_StrRef && dw) {
-		return rz_str_new(rz_bin_dwarf_str_get(dw->str, v->u64));
+		return rz_str_dup(rz_bin_dwarf_str_get(dw->str, v->u64));
 	} else if (v->kind == RzBinDwarfAttr_StrOffsetIndex && dw) {
-		return rz_str_new(rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64));
+		return rz_str_dup(rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64));
 	} else if (v->kind == RzBinDwarfAttr_LineStrRef && dw) {
-		return rz_str_new(rz_bin_dwarf_line_str_get(dw->line_str, v->u64));
+		return rz_str_dup(rz_bin_dwarf_line_str_get(dw->line_str, v->u64));
 	}
 	return NULL;
 }

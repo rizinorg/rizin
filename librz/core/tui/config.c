@@ -36,7 +36,9 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 		// XXX: must use config_set () to run callbacks!
 		if (editor) {
 			char *buf = rz_core_editor(core, NULL, node->value);
-			node->value = rz_str_dup(node->value, buf);
+			char *tmp = rz_str_dup(buf);
+			free(node->value);
+			node->value = tmp;
 			free(buf);
 		} else {
 			// FGETS AND SO

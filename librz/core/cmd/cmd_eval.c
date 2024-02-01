@@ -59,11 +59,14 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 		return false;
 	}
 	if (!rz_str_cmp(name, "default", strlen(name))) {
-		core->curtheme = rz_str_dup(core->curtheme, name);
+		char *tmp = rz_str_dup(name);
+		free(core->curtheme);
+		core->curtheme = tmp;
 		rz_cons_pal_init(core->cons->context);
 		return true;
 	}
 
+	char *tmp = NULL;
 	char *home_themes = rz_path_home_prefix(RZ_THEMES);
 	char *system_themes = rz_path_system(RZ_THEMES);
 	char *extra_themes = rz_path_extra(RZ_THEMES);
@@ -95,7 +98,9 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	goto fail;
 
 success:
-	core->curtheme = rz_str_dup(core->curtheme, name);
+	tmp = rz_str_dup(name);
+	free(core->curtheme);
+	core->curtheme = tmp;
 fail:
 	free(home_file);
 	free(system_file);

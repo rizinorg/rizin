@@ -124,7 +124,6 @@ RZ_API char *rz_str_arg_escape(const char *arg);
 RZ_API int rz_str_arg_unescape(char *arg);
 RZ_API char **rz_str_argv(const char *str, int *_argc);
 RZ_API void rz_str_argv_free(char **argv);
-RZ_API char *rz_str_new(const char *str);
 RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API bool rz_str_is_whitespace(RZ_NONNULL const char *str);
 RZ_API bool rz_str_is_ascii(const char *str);
@@ -194,7 +193,7 @@ static inline const char *rz_str_get_null(const char *str) {
 	return str ? str : "(null)";
 }
 RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len);
-RZ_API char *rz_str_dup(char *ptr, const char *string);
+RZ_API RZ_OWN char *rz_str_dup(RZ_NULLABLE const char *str);
 RZ_API int rz_str_delta(char *p, char a, char b);
 RZ_API void rz_str_filter(char *str);
 RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len);

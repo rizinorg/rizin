@@ -300,7 +300,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 					}
 					rz_asm_disassemble(core->rasm, &op, buf + addrbytes * idx,
 						core->blocksize - addrbytes * idx);
-					hit->code = rz_str_new(rz_strbuf_get(&op.buf_asm));
+					hit->code = rz_str_dup(rz_strbuf_get(&op.buf_asm));
 					rz_asm_op_fini(&op);
 					rz_analysis_op_fini(&aop);
 					idx = (matchcount) ? tidx + 1 : idx + 1;

@@ -89,7 +89,7 @@ static char *rz_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 				// op @Ri; op Rn
 				disasm = rz_str_newf(name, buf[0] & mask);
 			} else {
-				disasm = rz_str_new(name);
+				disasm = rz_str_dup(name);
 			}
 			break;
 		case 2:

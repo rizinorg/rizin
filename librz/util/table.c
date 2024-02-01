@@ -252,7 +252,7 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 			rz_pvector_push(row, strdup(arg ? arg : "")); \
 			break; \
 		case 'b': \
-			rz_pvector_push(row, rz_str_new(rz_str_bool(va_arg(ap, int)))); \
+			rz_pvector_push(row, rz_str_dup(rz_str_bool(va_arg(ap, int)))); \
 			break; \
 		case 'i': \
 		case 'd': \

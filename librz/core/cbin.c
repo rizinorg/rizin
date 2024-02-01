@@ -531,7 +531,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 			break;
 		}
 		rz_meta_set_with_subtype(r->analysis, RZ_META_TYPE_STRING, string->type, vaddr, string->size, string->string);
-		char *f_name = rz_str_new(string->string);
+		char *f_name = rz_str_dup(string->string);
 		rz_name_filter(f_name, -1, true);
 		char *str;
 		if (r->bin->prefix) {
@@ -657,7 +657,7 @@ static inline RzBinDWARF *load_dwarf(RzCore *core, RzBinFile *binfile) {
 	if (rz_config_get_b(core->config, "bin.dbginfo.debuginfod")) {
 		char *debuginfod_urls = (char *)rz_config_get(core->config, "bin.dbginfo.debuginfod_urls");
 		if (RZ_STR_ISNOTEMPTY(debuginfod_urls)) {
-			debuginfod_urls = rz_str_new(debuginfod_urls);
+			debuginfod_urls = rz_str_dup(debuginfod_urls);
 		} else {
 			debuginfod_urls = rz_sys_getenv("DEBUGINFOD_URLS");
 		}
@@ -1357,10 +1357,10 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NON
 
 	const char *name = demangle && symbol->dname ? symbol->dname : symbol->name;
 	names->name = rz_str_newf("%s%s", symbol->is_imported ? "imp." : "", name);
-	names->libname = rz_str_new(symbol->libname);
+	names->libname = rz_str_dup(symbol->libname);
 	names->nameflag = construct_symbol_flagname(symbol, symbol->name);
 	if (RZ_STR_ISNOTEMPTY(symbol->classname)) {
-		names->classname = rz_str_new(symbol->classname);
+		names->classname = rz_str_dup(symbol->classname);
 		names->classflag = rz_str_newf("sym.%s.%s", names->classname, names->name);
 		rz_name_filter(names->classflag, -1, true);
 		names->methname = rz_str_newf("%s::%s", names->classname, name);

@@ -183,7 +183,7 @@ typedef struct diff_hex_view_t {
 
 #define rz_diff_ctx_add_evar(x, o) \
 	do { \
-		char *copy = rz_str_new(o); \
+		char *copy = rz_str_dup(o); \
 		if (!copy || !rz_list_append((x)->evars, copy)) { \
 			free(copy); \
 			rz_diff_error_opt(x, DIFF_OPT_ERROR, "cannot add evar '%s' to list\n", o); \

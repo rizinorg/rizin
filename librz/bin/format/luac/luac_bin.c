@@ -10,7 +10,7 @@ void luac_add_section(RzPVector /*<RzBinSection *>*/ *section_vec, char *name, u
 		return;
 	}
 
-	bin_sec->name = rz_str_new(name);
+	bin_sec->name = rz_str_dup(name);
 	bin_sec->vaddr = bin_sec->paddr = offset;
 	bin_sec->size = bin_sec->vsize = size;
 	bin_sec->is_data = false;
@@ -36,7 +36,7 @@ void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 o
 		return;
 	}
 
-	bin_sym->name = rz_str_new(name);
+	bin_sym->name = rz_str_dup(name);
 	bin_sym->vaddr = bin_sym->paddr = offset;
 	bin_sym->size = size;
 	bin_sym->type = type;
@@ -67,7 +67,7 @@ void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64
 	bin_string->vaddr = offset;
 	bin_string->size = size;
 	bin_string->length = size;
-	bin_string->string = rz_str_new(string);
+	bin_string->string = rz_str_dup(string);
 	bin_string->type = RZ_STRING_ENC_UTF8;
 
 	rz_list_append(string_list, bin_string);
@@ -247,7 +247,7 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 		// replace name with current offset
 		proto_name = rz_str_newf("fcn.%08llx", proto->offset);
 	} else {
-		proto_name = rz_str_new((char *)proto->proto_name);
+		proto_name = rz_str_dup((char *)proto->proto_name);
 	}
 
 	// 1.1 set section name as function_name.header

@@ -940,9 +940,9 @@ RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char
 		return NULL;
 	}
 
-	ptr->name = rz_str_new(name);
-	ptr->comment = rz_str_new(comment);
-	ptr->format = rz_str_new(format);
+	ptr->name = rz_str_dup(name);
+	ptr->comment = rz_str_dup(comment);
+	ptr->format = rz_str_dup(format);
 	ptr->format_named = format_named;
 	ptr->paddr = paddr;
 	ptr->size = size;
@@ -970,10 +970,10 @@ RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const cha
 
 	ptr->vaddr = vaddr ? vaddr : UT64_MAX;
 	ptr->paddr = paddr;
-	ptr->name = rz_str_new(name);
-	ptr->classname = rz_str_new(classname);
-	ptr->libname = rz_str_new(libname);
-	ptr->type = rz_str_new(type);
+	ptr->name = rz_str_dup(name);
+	ptr->classname = rz_str_dup(classname);
+	ptr->libname = rz_str_dup(libname);
+	ptr->type = rz_str_dup(type);
 	return ptr;
 }
 
