@@ -291,10 +291,11 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->size = obj->scn_hdrs[i].s_size;
 		ptr->vsize = obj->scn_hdrs[i].s_size;
 		ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+		ptr->flags = obj->scn_hdrs[i].s_flags;
 		if (obj->scn_va) {
 			ptr->vaddr = obj->scn_va[i];
 		}
-		ptr->perm = rz_coff_perms_from_section_flags(obj->scn_hdrs[i].s_flags);
+		ptr->perm = rz_coff_perms_from_section_flags(ptr->flags);
 		rz_pvector_push(ret, ptr);
 	}
 	return ret;
