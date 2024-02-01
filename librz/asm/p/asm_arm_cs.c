@@ -103,6 +103,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	cs_insn *insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
+	char tmpbuf[32] = { 0 };
 
 	bool thumb = a->bits == 16;
 	mode |= thumb ? CS_MODE_THUMB : CS_MODE_ARM;
@@ -182,11 +183,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			rz_arm_it_update_nonblock(&ctx->it, insn);
 		}
 		if (thumb && rz_arm_it_apply_cond(&ctx->it, insn)) {
-			char *tmpstr = rz_str_newf("%s%s",
-				cs_insn_name(ctx->cd, insn->id),
-				ARMCondCodeToString(insn->detail->arm.cc));
-			rz_str_cpy(insn->mnemonic, tmpstr);
-			free(tmpstr);
+			rz_str_cpy(insn->mnemonic, rz_strf(tmpbuf, "%s%s", cs_insn_name(ctx->cd, insn->id), ARMCondCodeToString(insn->detail->arm.cc)));
 		}
 		rz_asm_op_setf_asm(op, "%s%s%s",
 			insn->mnemonic,
