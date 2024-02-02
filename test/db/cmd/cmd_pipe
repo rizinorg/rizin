@@ -16,8 +16,8 @@ EOF
 EXPECT=<<EOF
 
 Function names:
-entry0
 sym.imp._Exit
+entry0
 
 Disassembly of entry0:
             ;-- section..text:
@@ -64,8 +64,8 @@ Shared buffer size 0x360c
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x08049020  5589 e583 ec08 83ec 0c6a 2ae8 e0ff ffff  U........j*.....
 
-0x08049020    1 16           entry0
 0x08049010    1 6            sym.imp._Exit
+0x08049020    1 16           entry0
 
             ;-- section..text:
             ;-- .text:
@@ -113,11 +113,11 @@ Shared buffer size 0x10e8
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x100000f70  5548 89e5 4883 ec10 c745 fc00 0000 0089  UH..H....E......
 
-0x100000f70    1 36           entry0
-0x100000f40    1 45           sym._foo
-0x100000ef0    4 65           sym._bar
 0x1000001d5    1 171          fcn.1000001d5
 0x1000002e0   13 3088 -> 3110 fcn.1000002e0
+0x100000ef0    4 65           sym._bar
+0x100000f40    1 45           sym._foo
+0x100000f70    1 36           entry0
 
             ;-- main:
             ;-- _main:

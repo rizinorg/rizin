@@ -6604,6 +6604,9 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	}
 	rz_io_read_at(core->io, addr, buf, size);
 	rz_asm_set_pc(core->rasm, addr);
+	// use core binding to set asm.bits correctly based on the addr
+	// this is because of the hassle of arm/thumb
+	rz_core_seek_arch_bits(core, addr);
 	rz_asm_disassemble(core->rasm, &asmop, buf, size);
 	int ba_len = rz_strbuf_length(&asmop.buf_asm) + 128;
 	char *ba = malloc(ba_len);

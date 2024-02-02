@@ -513,7 +513,9 @@ static bool has_bits(RzAsmPlugin *h, int bits) {
 
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits) {
 	if (has_bits(a->cur, bits)) {
-		a->bits = bits; // TODO : use OR? :)
+		if (a->bits != bits) {
+			a->bits = bits; // TODO : use OR? :)
+		}
 		return true;
 	}
 	return false;
