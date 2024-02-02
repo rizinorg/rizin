@@ -3807,7 +3807,7 @@ static int fcn_cmp_addr(const void *a, const void *b) {
 	return -1;
 }
 
-static RzList *functions_sorted_by_addr(RzAnalysis *analysis) {
+static RzList /*<RzAnalysisFunction *>*/ *functions_sorted_by_addr(RzAnalysis *analysis) {
 	RzList *list = rz_analysis_function_list(analysis);
 	if (!list) {
 		return NULL;
