@@ -166,21 +166,21 @@ RZ_CONFIG: sdb config file
 
 .Sh EXAMPLES
 .Pp
-List symbols of a program
+List symbols of a program:
 .Pp
-$ rz-bin -s a.out
+.Nm rz-bin Fl s Ar a.out
 .Pp
-Get offset of symbol
+Get offset of symbol:
 .Pp
-$ rz-bin -n _main a.out
+.Nm rz-bin Fl n Cm _main Ar a.out
 .Pp
-Get entrypoint
+Get entrypoint:
 .Pp
-$ rz-bin -e a.out
+.Nm rz-bin Fl e Ar a.out
 .Pp
-Load symbols and imports from rizin
+Load symbols and imports from rizin:
 .Pp
-$ rizin -n /bin/ls
+.Nm rizin Fl n Ar /bin/ls
 .Pp
 [0x00000000]> .!rz-bin -prsi $FILE
 .Sh SEE ALSO

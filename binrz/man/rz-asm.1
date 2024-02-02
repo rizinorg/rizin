@@ -86,37 +86,66 @@ Describe opcode
 Use Intel syntax rather than AT&T
 .It Ic .att_syntax
 Use AT&T syntax rather than Intel
-.It Ic string
-.It Ic .align
-.It Ic .arch
+.It Ic .align Ar number
+Set the code or data alignment
+.It Ic .arch Ar name
+Set the code architecture
 .It Ic .arm
-.It Ic .ascii
-.It Ic .bits
+Set the ARM mode (as opposed to Thumb) for ARM architecture
+.It Ic .ascii Ar string
+Define the ASCII string
+.It Ic .asciz Ar string
+Define the zero-ending ASCII string
+.It Ic .bits Ar number
+Define the code bitness
+.It Ic .big_endian
+Set the BE (big endian) byte order
+.It Ic .cpu Ar name
+Set the CPU for the chosen architecture
 .It Ic .data
-.It Ic .equ
-.It Ic .fill
-.It Ic .glob
-.It Ic .hex
-.It Ic .int16
-.It Ic .int32
-.It Ic .int64
-.It Ic .kernel
-.It Ic .offset
-.It Ic .org
-.It Ic .os
-.It Ic .short
+Mark the start of the data section
+.It Ic .endian Ar 1|0
+Set the endianness (the byte order) - 1 is BE, 0 is LE
+.It Ic .equ Ar name Ar value
+Define the constant
+.It Ic .fill Ar repeat,size,value
+Fill the data with the repeating value pattern
+.It Ic .hex Ar data
+Define the data in hexadecimal format
+.It Ic .incbin Ar filename
+Include binary file
+.It Ic .int16 Ar number
+Define 16-bit integer
+.It Ic .int32 Ar number
+Define 32-bit integer
+.It Ic .int64 Ar number
+Define 64-bit integer
+.It Ic .kernel Ar name
+Set the kernel for syscalls
+.It Ic .little_endian
+Set the LE (little endian) byte order
+.It Ic .org Ar value
+Set the value of the PC (Program Counter) register
+.It Ic .os Ar name
+Set the operating system for syscalls
+.It Ic .short Ar number
+Define 16-bit integer
+.It Ic .string Ar string
+Define the ASCII string
 .It Ic .text
+Mark the start of the text section
 .It Ic .thumb
+Set the Thumb mode (as opposed to ARM) for ARM architecture
 .El
 .Sh EXAMPLES
 .Pp
 Assemble opcode:
 .Pp
-  $ rz-asm \-a x86 \-b 32 'mov eax, 33'
+.Nm rz-asm Fl a Cm x86 Fl b Cm 32 Ar 'mov eax, 33'
 .Pp
 Disassemble opcode:
 .Pp
-  $ rz-asm \-d 90
+.Nm rz-asm Fl d Cm 90
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
