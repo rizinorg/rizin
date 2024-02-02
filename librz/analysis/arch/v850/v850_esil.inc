@@ -36,22 +36,19 @@ static void clear_flags(RzStrBuf *out, int flags) {
 #define R2 GR_get(get_reg2(x))
 
 static void v850_esil(RzStrBuf *out, V850_Inst *x) {
-	const char *reg1 = NULL;
-	const char *reg2 = NULL;
 	ut32 bitmask = 0;
 	switch (x->id) {
-	case V850_MOV_IMM5:
 	case V850_MOV:
 		// 2 formats
-		if (x->id != V850_MOV_IMM5) { // Format I
+		if (x->format == I_reg_reg) { // Format I
 			rz_strbuf_appendf(out, "%s,%s,=", R1, R2);
-		} else { // Format II
+		} else if (x->format == II_imm_reg) { // Format II
 			rz_strbuf_appendf(out, "%" PFMT64d ",%s,=", (st64)(x->imm), R2);
 		}
 		break;
 	case V850_MOVEA:
 		// FIXME: to decide about reading 16/32 bit and use only macros to access
-		rz_strbuf_appendf(out, "%s,0xffff,&,%u,+,%s,=", R1, x->w2, R2);
+		rz_strbuf_appendf(out, "%s,0xffff,&,%u,+,%s,=", R1, get_imm16(x), R2);
 		break;
 	case V850_SLDB:
 	case V850_SLDH:
@@ -74,7 +71,6 @@ static void v850_esil(RzStrBuf *out, V850_Inst *x) {
 		rz_strbuf_appendf(out, "%s,pc,=", R1);
 		break;
 	case V850_JARL:
-		// TODO: fix displacement reading
 		rz_strbuf_appendf(out, "pc,%s,=,pc,%u,+=", R2, x->disp);
 		break;
 	case V850_OR:
@@ -84,12 +80,11 @@ static void v850_esil(RzStrBuf *out, V850_Inst *x) {
 		break;
 	case V850_ORI:
 		rz_strbuf_appendf(out, "%hu,%s,|,%s,=",
-			x->w2, R1, R2);
+			get_imm16(x), R1, R2);
 		update_flags(out, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags(out, V850_FLAG_OV);
 		break;
 	case V850_MULH:
-	case V850_MULH_IMM5:
 		break;
 	case V850_XOR:
 		rz_strbuf_appendf(out, "%s,%s,^=", R1, R2);
@@ -97,7 +92,7 @@ static void v850_esil(RzStrBuf *out, V850_Inst *x) {
 		clear_flags(out, V850_FLAG_OV);
 		break;
 	case V850_XORI:
-		rz_strbuf_appendf(out, "%hu,%s,^,%s,=", x->w2, R1, R2);
+		rz_strbuf_appendf(out, "%hu,%s,^,%s,=", get_imm16(x), R1, R2);
 		update_flags(out, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags(out, V850_FLAG_OV);
 		break;
@@ -107,16 +102,16 @@ static void v850_esil(RzStrBuf *out, V850_Inst *x) {
 		clear_flags(out, V850_FLAG_OV);
 		break;
 	case V850_ANDI:
-		rz_strbuf_appendf(out, "%hu,%s,&,%s,=", x->w2, R1, R2);
+		rz_strbuf_appendf(out, "%hu,%s,&,%s,=", get_imm16(x), R1, R2);
 		update_flags(out, V850_FLAG_Z);
 		clear_flags(out, V850_FLAG_OV | V850_FLAG_S);
 		break;
 	case V850_CMP:
-		rz_strbuf_appendf(out, "%s,%s,==", R1, R2);
-		update_flags(out, -1);
-		break;
-	case V850_CMP_IMM5:
-		rz_strbuf_appendf(out, "%d,%s,==", x->imm, R2);
+		if (x->format == I_reg_reg) {
+			rz_strbuf_appendf(out, "%s,%s,==", R1, R2);
+		} else if (x->format == II_imm_reg) {
+			rz_strbuf_appendf(out, "%d,%s,==", x->imm, R2);
+		}
 		update_flags(out, -1);
 		break;
 	case V850_TST:
@@ -133,37 +128,19 @@ static void v850_esil(RzStrBuf *out, V850_Inst *x) {
 		update_flags(out, -1);
 		break;
 	case V850_ADD:
-		rz_strbuf_appendf(out, "%s,%s,+=", R1, R2);
-		update_flags(out, -1);
-		break;
-	case V850_ADD_IMM5:
-		rz_strbuf_appendf(out, "%d,%s,+=", (st8)x->imm, R2);
+		if (x->format == I_reg_reg) {
+			rz_strbuf_appendf(out, "%s,%s,+=", R1, R2);
+		} else if (x->format == II_imm_reg) {
+			rz_strbuf_appendf(out, "%d,%s,+=", (st8)x->imm, R2);
+		}
 		update_flags(out, -1);
 		break;
 	case V850_ADDI:
-		rz_strbuf_appendf(out, "%d,%s,+,%s,=", (st32)x->w2, R1, R2);
+		rz_strbuf_appendf(out, "%d,%s,+,%s,=", (st32)get_imm16(x), R1, R2);
 		update_flags(out, -1);
 		break;
-	case V850_SHR_IMM5:
-		rz_strbuf_appendf(out, "%u,%s,>>=", x->imm, R2);
-		update_flags(out, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
-		clear_flags(out, V850_FLAG_OV);
-		break;
-	case V850_SAR_IMM5: {
-		ut16 imm5 = x->imm;
-		reg2 = R2;
-		rz_strbuf_appendf(out, "31,%s,>>,?{,%u,32,-,%u,1,<<,--,<<,}{,0,},%u,%s,>>,|,%s,=", reg2, (ut8)imm5, (ut8)imm5, (ut8)imm5, reg2, reg2);
-		update_flags(out, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
-		clear_flags(out, V850_FLAG_OV);
-		break;
-	}
-	case V850_SHL_IMM5:
-		rz_strbuf_appendf(out, "%u,%s,<<=", x->imm, R2);
-		update_flags(out, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
-		clear_flags(out, V850_FLAG_OV);
-		break;
 	case V850_BCOND:
-		switch (x->cond) {
+		switch (get_cond(x)) {
 		case V850_COND_BV:
 			rz_strbuf_appendf(out, "ov");
 			break;
@@ -213,33 +190,46 @@ static void v850_esil(RzStrBuf *out, V850_Inst *x) {
 		rz_strbuf_appendf(out, ",?{,$$,%llu,+,pc,=,}", x->addr + x->disp);
 		break;
 	case V850_CLR1:
-		bitmask = (1 << x->bit);
-		rz_strbuf_appendf(out, "%hu,%s,+,[1],%u,&,%hu,%s,+,=[1]", x->w2, R1, bitmask, x->w2, R1);
+		bitmask = (1 << viii_bit(x));
+		rz_strbuf_appendf(out, "%hu,%s,+,[1],%u,&,%hu,%s,+,=[1]", get_imm16(x), R1, bitmask, get_imm16(x), R1);
 		// TODO: Read the value of the memory byte and set zero flag accordingly!
 		break;
 	case V850_NOT1:
-		bitmask = (1 << x->bit);
-		rz_strbuf_appendf(out, "%hu,%s,+,[1],%u,^,%hu,%s,+,=[1]", x->w2, R1, bitmask, x->w2, R1);
+		bitmask = (1 << viii_bit(x));
+		rz_strbuf_appendf(out, "%hu,%s,+,[1],%u,^,%hu,%s,+,=[1]", get_imm16(x), R1, bitmask, get_imm16(x), R1);
 		// TODO: Read the value of the memory byte and set zero flag accordingly!
 		break;
-
 	case V850_SHL:
-		rz_strbuf_appendf(out, "%s,%s,<<=", R1, R2);
+		if (x->format == I_reg_reg) {
+			rz_strbuf_appendf(out, "%s,%s,<<=", R1, R2);
+		} else if (x->format == II_imm_reg) {
+			rz_strbuf_appendf(out, "%d,%s,<<=", (st8)x->imm, R2);
+		}
 		update_flags(out, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags(out, V850_FLAG_OV);
 		break;
 	case V850_SHR:
-		rz_strbuf_appendf(out, "%s,%s,>>=", R1, R2);
+		if (x->format == I_reg_reg) {
+			rz_strbuf_appendf(out, "%s,%s,>>=", R1, R2);
+		} else if (x->format == II_imm_reg) {
+			rz_strbuf_appendf(out, "%d,%s,>>=", (st8)x->imm, R2);
+		}
 		update_flags(out, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags(out, V850_FLAG_OV);
 		break;
-	case V850_SAR:
-		reg1 = R1;
-		reg2 = R2;
-		rz_strbuf_appendf(out, "31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=", reg2, reg1, reg1, reg1, reg2, reg2);
+	case V850_SAR: {
+		ut16 imm5 = x->imm;
+		const char *reg1 = R1;
+		const char *reg2 = R2;
+		if (x->format == I_reg_reg) {
+			rz_strbuf_appendf(out, "31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=", reg2, reg1, reg1, reg1, reg2, reg2);
+		} else if (x->format == II_imm_reg) {
+			rz_strbuf_appendf(out, "31,%s,>>,?{,%u,32,-,%u,1,<<,--,<<,}{,0,},%u,%s,>>,|,%s,=", reg2, (ut8)imm5, (ut8)imm5, (ut8)imm5, reg2, reg2);
+		}
 		update_flags(out, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags(out, V850_FLAG_OV);
 		break;
+	}
 	default: break;
 	}
 }

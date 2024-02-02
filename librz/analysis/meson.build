@@ -171,6 +171,7 @@ rz_analysis_sources = [
   'arch/8051/8051_il.c',
   'arch/8051/8051_parse.c',
   'arch/v810/v810_il.c',
+  'arch/v850/v850_il.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cil/cil_dis.c',
