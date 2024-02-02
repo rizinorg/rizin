@@ -1961,6 +1961,7 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 	}
 }
 
+#if CS_NEXT_VERSION < 6
 static void patch_capstone_bugs(cs_insn *insn, int bits, bool big_endian) {
 	if (!insn->detail) {
 		return;
@@ -1980,6 +1981,7 @@ static void patch_capstone_bugs(cs_insn *insn, int bits, bool big_endian) {
 		}
 	}
 }
+#endif
 
 static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
@@ -2029,9 +2031,10 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			op->mnemonic = strdup("invalid");
 		}
 	} else {
+#if CS_NEXT_VERSION < 6
 		patch_capstone_bugs(insn, a->bits, a->big_endian);
+#endif
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			// TODO Remove after Capstone auto-sync update.
 			op->mnemonic = rz_str_newf("%s%s%s",
 				insn->mnemonic,
 				insn->op_str[0] ? " " : "",
