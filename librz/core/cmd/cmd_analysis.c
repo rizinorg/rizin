@@ -3796,9 +3796,36 @@ static void function_list_print_to_json(RzCore *core, RzList /*<RzAnalysisFuncti
 	pj_end(state->d.pj);
 }
 
+static int fcn_cmp_addr(const void *a, const void *b) {
+	const RzAnalysisFunction *fa = a;
+	const RzAnalysisFunction *fb = b;
+	if (fa->addr > fb->addr) {
+		return 1;
+	} else if (fa->addr == fb->addr) {
+		return 0;
+	}
+	return -1;
+}
+
+static RzList *functions_sorted_by_addr(RzAnalysis *analysis) {
+	RzList *list = rz_analysis_function_list(analysis);
+	if (!list) {
+		return NULL;
+	}
+	RzList *sorted = rz_list_clone(list);
+	if (!sorted) {
+		return NULL;
+	}
+	rz_list_sort(sorted, fcn_cmp_addr);
+	return sorted;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	RzList *list = rz_analysis_function_list(core->analysis);
+	RzList *list = functions_sorted_by_addr(core->analysis);
+	if (!list) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		function_list_print(core, list);
@@ -3828,6 +3855,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, con
 		res = RZ_CMD_STATUS_WRONG_ARGS;
 		break;
 	}
+	rz_list_free(list);
 	return res;
 }
 
@@ -3922,7 +3950,10 @@ static void function_print_calls(RzCore *core, RzList /*<RzAnalysisFunction *>*/
 
 RZ_IPI RzCmdStatus rz_analysis_function_list_calls_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	RzList *list = rz_analysis_function_list(core->analysis);
+	RzList *list = functions_sorted_by_addr(core->analysis);
+	if (!list) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_QUIET:
@@ -3934,15 +3965,15 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_calls_handler(RzCore *core, int arg
 		res = RZ_CMD_STATUS_WRONG_ARGS;
 		break;
 	}
+	rz_list_free(list);
 	return res;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_list_ascii_handler(RzCore *core, int argc, const char **argv) {
-	RzList *fcns = rz_list_clone(rz_analysis_function_list(core->analysis));
+	RzList *fcns = functions_sorted_by_addr(core->analysis);
 	if (!fcns) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_list_sort(fcns, fcn_cmpaddr);
 	RzList *flist = rz_list_newf((RzListFree)rz_listinfo_free);
 	if (!flist) {
 		rz_list_free(fcns);

@@ -2,18 +2,18 @@ NAME=Dalvik HelloWorld afl
 FILE=bins/dex/HelloWorld.dex
 CMDS=aa; afl
 EXPECT=<<EOF
-0x10000025c    1 34           entry0
-0x8000000000    1 2            sym.java.io.PrintStream.void_println_String
 0x100000238    1 20           method.public.constructor.Hello.void__init
-0x8000000006    1 2            sym.Object.void__init
+0x10000025c    1 34           entry0
 0x100000290    1 84           method.public.Hello.void_foo_int
-0x8000000008    1 2            sym.StringBuilder.void__init
-0x800000000a    1 2            sym.StringBuilder.StringBuilder_append_String
-0x8000000002    1 2            sym.Integer.void__init__int
-0x8000000004    1 2            sym.Integer.String_toString
-0x800000000c    1 2            sym.StringBuilder.String_toString
 0x1000002f4    1 20           method.public.constructor.World.void__init
 0x100000318    1 68           method.public.World.void_foo_int
+0x8000000000    1 2            sym.java.io.PrintStream.void_println_String
+0x8000000002    1 2            sym.Integer.void__init__int
+0x8000000004    1 2            sym.Integer.String_toString
+0x8000000006    1 2            sym.Object.void__init
+0x8000000008    1 2            sym.StringBuilder.void__init
+0x800000000a    1 2            sym.StringBuilder.StringBuilder_append_String
+0x800000000c    1 2            sym.StringBuilder.String_toString
 EOF
 RUN
 

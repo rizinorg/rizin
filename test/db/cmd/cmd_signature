@@ -521,9 +521,9 @@ afl~flirt
 EOF
 EXPECT=<<EOF
 0x00409c70    5 208          flirt.printf
-0x0046ffb0    4 208          flirt.printf_1
-0x0046fe50    4 208  -> 197  flirt.printf_2
 0x0046fc50    4 208  -> 201  flirt.printf_3
+0x0046fe50    4 208  -> 197  flirt.printf_2
+0x0046ffb0    4 208          flirt.printf_1
 EOF
 RUN
 
@@ -538,9 +538,9 @@ EOF
 EXPECT=<<EOF
 Applying elf/x86/64/match.sig signature file
 0x00409c70    5 208          flirt.printf
-0x0046ffb0    4 208          flirt.printf_1
-0x0046fe50    4 208  -> 197  flirt.printf_2
 0x0046fc50    4 208  -> 201  flirt.printf_3
+0x0046fe50    4 208  -> 197  flirt.printf_2
+0x0046ffb0    4 208          flirt.printf_1
 EOF
 RUN
 

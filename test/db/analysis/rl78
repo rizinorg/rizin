@@ -171,35 +171,35 @@ aaa
 afl
 EOF
 EXPECT=<<EOF
-0x0000077c   60 1024 -> 464  entry0
-0x0000093a    8 81   -> 83   sym.___do_fini
-0x000008de    2 11           sym.___do_init
-0x000013d7    7 90   -> 91   sym._malloc_extend_top
 0x00000552    2 15           dbg.decrypt
-0x00000b1f    1 7            sym._free
+0x000005a3    2 12           dbg.make_uppercase
 0x00000634    2 18           dbg.hash
 0x000006b3    6 196  -> 86   dbg.main
-0x000005a3    2 12           dbg.make_uppercase
-0x00000b18    1 7            sym._malloc
-0x000015fb    1 7            sym._strdup
-0x0000084e    2 11           sym._strlen
-0x00000e5e    1 20           sym.__malloc_r
+0x0000077c   60 1024 -> 464  entry0
+0x00000800    1 11           sym._rl78_run_preinit_array
+0x0000080b    1 11           sym._rl78_run_init_array
+0x00000816    7 39           sym._rl78_run_fini_array
 0x0000083e    1 8            sym._memcpy
+0x0000084e    2 11           sym._strlen
+0x0000086e    5 25           loc.__COM_lshl
+0x00000896    1 8            loc.__COM_slrem
+0x000008de    2 11           sym.___do_init
+0x0000093a    8 81   -> 83   sym.___do_fini
 0x000009ab    3 26           sym._exit
 0x000009c5    1 24           sym.___call_exitprocs
 0x00000b16    8 345  -> 80   sym.__exit
-0x00000816    7 39           sym._rl78_run_fini_array
-0x0000080b    1 11           sym._rl78_run_init_array
-0x00000800    1 11           sym._rl78_run_preinit_array
-0x000015e1    3 26   -> 28   sym._sbrk
+0x00000b18    1 7            sym._malloc
+0x00000b1f    1 7            sym._free
 0x00000b26    1 11           sym.__free_r
 0x00000d9e    3 49           sym.__malloc_trim_r
+0x00000e5e    1 20           sym.__malloc_r
+0x000013d7    7 90   -> 91   sym._malloc_extend_top
 0x000015bd    1 1            sym.___malloc_lock
 0x000015be    1 1            sym.___malloc_unlock
 0x000015bf    4 34           sym.__sbrk_r
+0x000015e1    3 26   -> 28   sym._sbrk
+0x000015fb    1 7            sym._strdup
 0x00001602    3 44           sym.__strdup_r
-0x00000896    1 8            loc.__COM_slrem
 0x0000162e    1 13           loc.__rl78_init
-0x0000086e    5 25           loc.__COM_lshl
 EOF
 RUN

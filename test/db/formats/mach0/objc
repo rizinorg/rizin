@@ -335,10 +335,10 @@ mov w0, 0
 ldp fp, lr, [var_10h]
 add sp, sp, 0x60
 ret
-0x100003de0    1 20           stub.objc_msgSend_methodWithoutArgs
 0x100003d80    1 20           stub.objc_msgSend_methodWithOneArg:
-0x100003dc0    1 20           stub.objc_msgSend_methodWithTwoArgs:secondArg:
 0x100003da0    1 20           stub.objc_msgSend_methodWithReturn
+0x100003dc0    1 20           stub.objc_msgSend_methodWithTwoArgs:secondArg:
+0x100003de0    1 20           stub.objc_msgSend_methodWithoutArgs
 -- clean function rename
             ; CALL XREF from entry0 @ 0x100003d14
 / stub.objc_msgSend_methodWithReturn();

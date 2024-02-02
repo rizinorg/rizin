@@ -2464,6 +2464,7 @@ RZ_API void rz_core_analysis_data(RZ_NONNULL RzCore *core, ut64 addr, ut32 count
 	ut8 *buf = core->block;
 	ut32 old_len = core->blocksize;
 	ut64 old_offset = core->offset;
+	rz_core_seek_arch_bits(core, addr);
 	int word = wordsize ? wordsize : core->rasm->bits / 8;
 	char *str = NULL;
 	RzConsPrintablePalette *pal = rz_config_get_i(core->config, "scr.color") ? &rz_cons_singleton()->context->pal : NULL;
