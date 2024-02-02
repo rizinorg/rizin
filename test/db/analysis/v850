@@ -5,91 +5,91 @@ aap
 afl
 EOF
 EXPECT=<<EOF
-0x00100000    2 108          entry0
+0x00100000    3 108          entry0
 0x0010006c    1 36           sym._compute
 0x00100090    1 64           main
-0x001000d0    4 74           sym.___main
+0x001000d0    5 74           sym.___main
 0x0010011a    3 34           sym._exit
 0x0010013c    1 24           sym.__printf_r
 0x00100154    1 28           sym._printf
-0x00100170  267 6958 -> 4874 sym.__vfprintf_r
+0x00100170  310 6958 -> 5434 sym.__vfprintf_r
 0x00101cb8    1 24           sym._vfprintf
 0x00101cd0    5 146          sym.___sbprintf
-0x00101d64   24 264          sym.___swsetup_r
-0x00101e6c   18 170          sym.___call_exitprocs
+0x00101d64   27 264          sym.___swsetup_r
+0x00101e6c   20 170          sym.___call_exitprocs
 0x00101f16    3 64           sym.__exit
-0x00101f58   19 332          sym._quorem
-0x001020a4  212 5164 -> 4886 sym.__dtoa_r
-0x001034d0   36 428          sym.___sflush_r
+0x00101f58   21 332          sym._quorem
+0x001020a4  226 5164 -> 5018 sym.__dtoa_r
+0x001034d0   40 428          sym.___sflush_r
 0x0010367c    6 68           sym.__fflush_r
 0x001036c0    3 40           sym._fflush
 0x001036ec    1 106          sym._std
 0x00103756    1 18           sym.__cleanup_r
 0x00103768    1 88           sym.___sinit.part___0
 0x001037c4    3 60           sym.___sfmoreglue
-0x00103800   11 180          sym.___sfp
+0x00103800   13 180          sym.___sfp
 0x001038b4    1 22           sym.__cleanup
 0x001038ca    3 20           sym.___sinit
 0x001038e6    1 22           sym.___fp_lock_all
 0x001038fc    1 22           sym.___fp_unlock_all
 0x00103912    7 196          sym.__malloc_trim_r
-0x001039d6   36 668          sym.__free_r
-0x00103c72    7 72           sym.__fwalk
-0x00103cba    7 76           sym.__fwalk_reent
+0x001039d6   40 668          sym.__free_r
+0x00103c72    8 72           sym.__fwalk
+0x00103cba    8 76           sym.__fwalk_reent
 0x00103d0c    1 8            sym.__localeconv_r
 0x00103d1c    6 122  -> 106  sym.___swhatbuf_r
-0x00103d96    9 204          sym.___smakebuf_r
-0x00103e62  104 1798 -> 1782 sym.__malloc_r
-0x001045ac    3 24           sym._memset
+0x00103d96   10 204          sym.___smakebuf_r
+0x00103e62  108 1806         sym.__malloc_r
+0x001045ac    4 24           sym._memset
 0x001045c4    1 2            sym.___malloc_lock
 0x001045c6    1 2            sym.___malloc_unlock
-0x001045c8   10 136          sym.__Balloc
-0x00104650    8 198          sym.___multadd
-0x00104716   39 414          sym.___s2b
+0x001045c8   12 136          sym.__Balloc
+0x00104650    9 198          sym.___multadd
+0x00104716   45 414          sym.___s2b
 0x001048b4    3 52           sym.___i2b
-0x001048e8   20 392          sym.___multiply
-0x00104a70   14 188          sym.___pow5mult
-0x00104b2c   18 342          sym.___lshift
-0x00104c82   26 470          sym.___mdiff
-0x00104e58   13 180          sym.___b2d
-0x00104f0c   11 272          sym.___d2b
-0x0010501c    3 148          sym.___ratio
-0x001050b0    4 114          sym.__mprec_log10
+0x001048e8   22 392          sym.___multiply
+0x00104a70   15 188          sym.___pow5mult
+0x00104b2c   21 342          sym.___lshift
+0x00104c82   28 470          sym.___mdiff
+0x00104e58   14 180          sym.___b2d
+0x00104f0c   12 272          sym.___d2b
+0x0010501c    4 148          sym.___ratio
+0x001050b0    5 114          sym.__mprec_log10
 0x001051c2    4 46           sym.__sbrk_r
 0x001051f0    3 50           sym.___sread
 0x00105226    3 70           sym.___swrite
 0x0010526c    3 52           sym.___sseek
 0x001052a0    1 16           sym.___sclose
-0x001052b0    4 28           sym._strlen
+0x001052b0    5 28           sym._strlen
 0x001052cc    3 18           loc.___trap0
-0x001052e0   11 132          sym.___sprint_r.part___0
+0x001052e0   12 132          sym.___sprint_r.part___0
 0x00105364    3 28           sym.___sprint_r
-0x00105380  128 3942 -> 2128 sym.__vfiprintf_r
+0x00105380  139 3942 -> 2252 sym.__vfiprintf_r
 0x00106300    1 24           sym._vfiprintf
 0x00106318    5 146          sym.___sbprintf_0x106318
 0x001063ac    4 52           sym.__write_r
-0x001063e0    4 90           sym.___assert_func
-0x0010643a   11 132          sym.__calloc_r
+0x001063e0    5 90           sym.___assert_func
+0x0010643a   12 132          sym.__calloc_r
 0x001064be    4 46           sym.__close_r
 0x001064ec   18 172          sym.__fclose_r
 0x00106598    1 18           sym._fclose
 0x001065aa    1 20           sym.__fiprintf_r
 0x001065be    1 26           sym._fiprintf
-0x001065d8   16 198          sym.___fputwc
+0x001065d8   17 198          sym.___fputwc
 0x0010669e    3 44           sym.__fputwc_r
 0x001066ca    6 94           sym._fputwc
 0x00106728    4 50           sym.__fstat_r
-0x0010675a   55 1032         sym.___sfvwrite_r
+0x0010675a   61 1032         sym.___sfvwrite_r
 0x00106b62    4 46           sym.__isatty_r
-0x00106b90    7 90           sym.__setlocale_r
+0x00106b90    8 90           sym.__setlocale_r
 0x00106bea    1 22           sym._setlocale
 0x00106c00    4 52           sym.__lseek_r
 0x00106c34    1 34           sym.__mbtowc_r
-0x00106c56   16 120          sym.___ascii_mbtowc
+0x00106c56   18 120  -> 122  sym.___ascii_mbtowc
 0x00106cce    4 52           sym.__read_r
-0x00106d02   63 1322         sym.__realloc_r
+0x00106d02   66 1322         sym.__realloc_r
 0x0010722c   12 150          sym.__sbrk
-0x001072c2   18 248          sym.___swbuf_r
+0x001072c2   19 248          sym.___swbuf_r
 0x001073ba    1 22           sym.___swbuf
 0x001073d0    5 70           sym.__wcrtomb_r
 0x00107416    1 24           sym._wcrtomb
@@ -101,11 +101,11 @@ EXPECT=<<EOF
 0x001074b8    1 4            sym.__isatty
 0x001074bc    1 24           sym.__lseek
 0x001074d4    1 22           sym.__read
-0x001074ea    4 46           sym.__init_signal_r.part___0
+0x001074ea    6 46           sym.__init_signal_r.part___0
 0x00107518    3 26           sym.__init_signal_r
-0x00107532    7 92           sym.__signal_r
-0x0010758e   10 126          sym.__raise_r
-0x0010760c   12 110          sym.___sigtramp_r
+0x00107532    8 92           sym.__signal_r
+0x0010758e   11 126          sym.__raise_r
+0x0010760c   13 110          sym.___sigtramp_r
 0x0010767a    1 18           sym._raise
 0x0010768c    1 22           sym._signal
 0x001076a2    3 30           sym.__init_signal
@@ -125,10 +125,10 @@ aap
 afl
 EOF
 EXPECT=<<EOF
-0x00100000    2 108          entry0
+0x00100000    3 108          entry0
 0x0010006c    3 130          sym._io_open
-0x001000ee    3 484  -> 70   sym._hexdump
-0x001002d2    9 1970 -> 136  sym._print_fmt
+0x001000ee   21 484          sym._hexdump
+0x001002d2   19 1970 -> 318  sym._print_fmt
 0x00100a84   19 608          sym._str2ut64
 0x00100ce4    5 228  -> 124  sym._hex2byte
 0x00100dc8   12 236          sym._hexstr2raw
@@ -142,20 +142,20 @@ EXPECT=<<EOF
 0x00101644    1 224          sym._Nmul
 0x00101724    7 340          sym._Ndiv
 0x00101878    1 68           sym._error
-0x001018bc    5 408          sym._expr
-0x00101a54    8 514          sym._term
+0x001018bc    6 408          sym._expr
+0x00101a54    9 514          sym._term
 0x00101c56    5 1324 -> 170  sym._prim
 0x00102182    1 50           sym._cin_putback
 0x001021b4    6 120          sym._r_num_calc_index
 0x0010222c    9 172          sym._cin_get
 0x001022d8   16 518          sym._cin_get_num
-0x001024de   32 1522 -> 788  sym._get_token
+0x001024de   36 1522 -> 866  sym._get_token
 0x00102ad0    1 72           sym._load_token
 0x00102b18   21 804          sym._r_num_calc
 0x00102e3c    5 132          sym._cmd_hexdump
 0x00102ec0    7 158          sym._cmd_print
 0x00102f5e    7 180          sym._cmd_bytedump
-0x00103012   12 810  -> 470  sym._cmd_search
+0x00103012   13 810  -> 498  sym._cmd_search
 0x0010333c   10 318          sym._cmd_bsize
 0x0010347a    8 506          sym._cmd_seek
 0x00103674   10 244          sym._cmd_dump
@@ -164,20 +164,20 @@ EXPECT=<<EOF
 0x00103a22    4 152          sym._cmd_help
 0x00103aba   29 984          sym._cmd_resize
 0x00103e92   14 562          sym._cmd_system
-0x001040c4    3 262          sym._red_slurpin
+0x001040c4    4 262          sym._red_slurpin
 0x001041ca    7 238          sym._red_interpret
 0x001042b8    9 796  -> 186  sym._red_cmd
 0x001045d4   17 790          sym._red_prompt
 0x001048ea   18 454          sym._red_open
 0x00104ab0    1 44           sym._red_help
-0x00104adc    8 748  -> 230  main
+0x00104adc   21 748  -> 464  main
 0x00104e48    2 1166 -> 150  fcn.00104e48
-0x00104ec4  127 67332 -> 1698 sym.___udivdi3
-0x001052d8    4 74           sym.___main
+0x00104ec4  134 67332 -> 1714 sym.___udivdi3
+0x001052d8    5 74           sym.___main
 0x00105322    3 34           sym._exit
 0x00105344   18 172          sym.__fclose_r
 0x001053f0    1 18           sym._fclose
-0x00105402   36 428          sym.___sflush_r
+0x00105402   40 428          sym.___sflush_r
 0x001055ae    6 68           sym.__fflush_r
 0x001055f2    3 40           sym._fflush
 0x0010561a   15 304          sym.__fgets_r
@@ -186,7 +186,7 @@ EXPECT=<<EOF
 0x001057d0    1 18           sym.__cleanup_r
 0x001057e2    1 88           sym.___sinit.part___0
 0x0010583e    3 60           sym.___sfmoreglue
-0x0010587a   11 180          sym.___sfp
+0x0010587a   13 180          sym.___sfp
 0x0010592e    1 22           sym.__cleanup
 0x00105944    3 20           sym.___sinit
 0x00105960    1 22           sym.___fp_lock_all
@@ -198,28 +198,28 @@ EXPECT=<<EOF
 0x00105a7e   16 318          sym.__fread_r
 0x00105bbc    1 36           sym._fread
 0x00105be0    7 196          sym.__malloc_trim_r
-0x00105ca4   43 65930 -> 846  sym.__free_r
+0x00105ca4   47 65930 -> 846  sym.__free_r
 0x00105f40    1 12           sym.__fseek_r
 0x00105f4c    1 24           sym._fseek
-0x00105f64   63 65750 -> 834  sym.__fseeko_r
+0x00105f64   67 65750 -> 834  sym.__fseeko_r
 0x00106274    1 24           sym._fseeko
 0x0010628e    4 48           fcn.0010628e
-0x001062be   21 198          sym.__ftello_r
+0x001062be   22 198          sym.__ftello_r
 0x00106384    1 18           sym._ftello
-0x00106396    7 72           sym.__fwalk
-0x001063de    7 76           sym.__fwalk_reent
+0x00106396    8 72           sym.__fwalk
+0x001063de    8 76           sym.__fwalk_reent
 0x0010642a    8 144          sym.__fwrite_r
 0x001064ba    1 36           sym._fwrite
 0x001064e2    6 122  -> 106  sym.___swhatbuf_r
-0x0010655c    9 204          sym.___smakebuf_r
+0x0010655c   10 204          sym.___smakebuf_r
 0x00106628    1 18           sym._malloc
 0x0010663a    1 18           sym._free
-0x0010664c  120 66908 -> 2704 sym.__malloc_r
-0x00106d96    3 24           sym._memset
+0x0010664c  125 67018 -> 2778 sym.__malloc_r
+0x00106d96    4 24           sym._memset
 0x00106dae    1 2            sym.___malloc_lock
 0x00106db0    1 2            sym.___malloc_unlock
 0x00106db2    4 52           sym.__open_r
-0x00106de6   25 65660 -> 454  sym.__perror_r
+0x00106de6   26 65660 -> 454  sym.__perror_r
 0x00106f48    1 18           sym._perror
 0x00106f5a    1 24           sym.__printf_r
 0x00106f72    1 28           sym._printf
@@ -228,12 +228,12 @@ EXPECT=<<EOF
 0x00106fb6    5 152          sym.__puts_r
 0x0010704e    1 18           sym._puts
 0x00107060    3 30           sym._lflush
-0x0010707e   28 356          sym.___srefill_r
+0x0010707e   29 356          sym.___srefill_r
 0x001071e2    4 46           sym.__sbrk_r
 0x00107210    1 24           sym._setenv
 0x00107228    1 18           sym._unsetenv
-0x0010723a   32 65668 -> 524  sym.__setenv_r
-0x00107428    9 152          sym.__unsetenv_r
+0x0010723a   37 65668 -> 524  sym.__setenv_r
+0x00107428   11 152          sym.__unsetenv_r
 0x001074c0    1 72           sym.__sprintf_r
 0x00107508    1 76           sym._sprintf
 0x00107554    1 86           sym._sscanf
@@ -247,10 +247,10 @@ EXPECT=<<EOF
 0x0010772c    5 1442 -> 68   sym.__strerror_r
 0x00107cce    1 22           sym._strerror
 0x00107ce4    1 22           sym._strerror_l
-0x00107cfc    4 28           sym._strlen
-0x00107d64  257 6824 -> 4782 sym.__svfprintf_r
-0x0010980c   22 852  -> 470  sym.___ssvfscanf_r
-0x00109fce   10 982  -> 200  fcn.00109fce
+0x00107cfc    5 28           sym._strlen
+0x00107d64  294 6824 -> 5246 sym.__svfprintf_r
+0x0010980c   27 5436 -> 504  sym.___ssvfscanf_r
+0x00109fce   54 3600 -> 858  fcn.00109fce
 0x0010ade0    1 18           sym._close
 0x0010adf2    1 24           sym._lseek
 0x0010ae0a    1 26           sym._open
@@ -261,129 +261,135 @@ EXPECT=<<EOF
 0x0010ae8e    1 24           sym._write
 0x0010aea6    1 4            sym.__user_strerror
 0x0010aeaa    4 46           sym.__unlink_r
-0x0010aed8  267 6958 -> 4874 sym.__vfprintf_r
+0x0010aed8  310 6958 -> 5434 sym.__vfprintf_r
 0x0010ca20    1 24           sym._vfprintf
 0x0010ca38    5 146          sym.___sbprintf
 0x0010cacc    4 52           sym.__write_r
-0x0010cb00   24 264          sym.___swsetup_r
-0x0010cc08   18 170          sym.___call_exitprocs
+0x0010cb00   27 264          sym.___swsetup_r
+0x0010cc08   20 170          sym.___call_exitprocs
 0x0010ccb2    3 64           sym.__exit
 0x0010ccf2    4 46           sym.__close_r
-0x0010cd20   19 332          sym._quorem
-0x0010ce6c  212 5166 -> 4888 sym.__dtoa_r
+0x0010cd20   21 332          sym._quorem
+0x0010ce6c  226 5166 -> 5020 sym.__dtoa_r
 0x0010e29c    1 6            sym.___errno
-0x0010e2a2    6 60           sym._fileno
-0x0010e2de   14 146          sym.___sflags
+0x0010e2a2    7 60           sym._fileno
+0x0010e2de   15 146          sym.___sflags
 0x0010e370    1 22           sym.__fstat
-0x0010e386   55 1032         sym.___sfvwrite_r
-0x0010e78e   13 160          sym.__findenv_r
+0x0010e386   61 1032         sym.___sfvwrite_r
+0x0010e78e   15 160          sym.__findenv_r
 0x0010e82e    1 18           sym.__getenv_r
 0x0010e840    4 46           sym.__isatty_r
 0x0010e86e    1 14           sym._iswspace
 0x0010e87c    3 30           sym._iswspace_l
-0x0010e89a    7 90           sym.__setlocale_r
+0x0010e89a    8 90           sym.__setlocale_r
 0x0010e8f4    1 22           sym._setlocale
 0x0010e910    1 8            sym.__localeconv_r
 0x0010e920    4 52           sym.__lseek_r
 0x0010e954    5 92           sym.__mbrtowc_r
 0x0010e9b0    1 36           sym._mbrtowc
 0x0010e9d4    1 34           sym.__mbtowc_r
-0x0010e9f6   16 120          sym.___ascii_mbtowc
-0x0010ea6e   10 136          sym.__Balloc
-0x0010eaf6    8 198          sym.___multadd
-0x0010ebbc   39 414          sym.___s2b
+0x0010e9f6   18 120  -> 122  sym.___ascii_mbtowc
+0x0010ea6e   12 136          sym.__Balloc
+0x0010eaf6    9 198          sym.___multadd
+0x0010ebbc   45 414          sym.___s2b
 0x0010ed5a    3 52           sym.___i2b
-0x0010ed8e   20 392          sym.___multiply
-0x0010ef16   14 188          sym.___pow5mult
-0x0010efd2   18 342          sym.___lshift
-0x0010f128   26 470          sym.___mdiff
-0x0010f2fe   13 180          sym.___b2d
-0x0010f3b2   11 272          sym.___d2b
-0x0010f4c2    3 148          sym.___ratio
-0x0010f556    4 114          sym.__mprec_log10
+0x0010ed8e   22 392          sym.___multiply
+0x0010ef16   15 188          sym.___pow5mult
+0x0010efd2   21 342          sym.___lshift
+0x0010f128   28 470          sym.___mdiff
+0x0010f2fe   14 180          sym.___b2d
+0x0010f3b2   12 272          sym.___d2b
+0x0010f4c2    4 148          sym.___ratio
+0x0010f556    5 114          sym.__mprec_log10
 0x0010f668    1 20           sym.__open
 0x0010f67c    8 108          sym.__putc_r
 0x0010f6e8    1 22           sym._putc
 0x0010f6fe    4 52           sym.__read_r
-0x0010f732   63 1322 -> 1290 sym.__realloc_r
+0x0010f732   56 1228 -> 1030 sym.__realloc_r
 0x0010f9f8    1 22           fcn.0010f9f8
 0x0010fa24    1 14           fcn.0010fa24
-0x0010fc5c   21 274          sym.__sbrk
+0x0010fae0    7 348  -> 106  fcn.0010fae0
+0x0010fb30    1 8            fcn.0010fb30
+0x0010fb5a    3 158  -> 62   fcn.0010fb5a
+0x0010fb84    1 20           fcn.0010fb84
+0x0010fbd6    1 2            fcn.0010fbd6
+0x0010fbfe    3 94   -> 62   fcn.0010fbfe
+0x0010fc5c   26 274          sym.__sbrk
 0x0010fde4    4 98           sym._sulp
-0x0010fe46  254 5280 -> 4896 sym.__strtod_l
+0x0010fe46  269 5280 -> 4896 sym.__strtod_l
 0x00111036    1 44           fcn.00111036
 0x001112e6    1 18           sym.__strtod_r
 0x001112f8    1 24           sym._strtod_l
 0x00111310    1 28           sym._strtod
 0x0011132c   10 222          sym._strtof_l
 0x0011140a   10 226          sym._strtof
-0x001114ec   43 376  -> 380  sym.__strtol_l.isra___0
+0x001114ec   47 376  -> 380  sym.__strtol_l.isra___0
 0x00111664    1 12           sym.__strtol_r
 0x00111670    1 24           sym._strtol_l
 0x00111688    1 24           sym._strtol
-0x001116a0   38 350  -> 354  sym.__strtoul_l.isra___0
+0x001116a0   42 350  -> 354  sym.__strtoul_l.isra___0
 0x001117fe    1 12           sym.__strtoul_r
 0x0011180a    1 24           sym._strtoul_l
 0x00111822    1 24           sym._strtoul
-0x0011183c   18 402          sym.___ssprint_r
-0x001119ce  130 3464 -> 2190 sym.__svfiprintf_r
+0x0011183c   19 402          sym.___ssprint_r
+0x001119ce  102 3464 -> 1832 sym.__svfiprintf_r
 0x00111bba    2 6            fcn.00111bba
-0x00111f24   26 2018 -> 366  fcn.00111f24
-0x00112758   11 182          sym.__sungetc_r
-0x0011280e    6 84           sym.___ssrefill_r
+0x00111f24   58 2222 -> 724  fcn.00111f24
+0x00112758   12 182          sym.__sungetc_r
+0x0011280e    7 84           sym.___ssrefill_r
 0x00112862    8 242          sym.__sfread_r
-0x00112954   24 3912 -> 470  sym.___ssvfiscanf_r
+0x00112954   29 3974 -> 502  sym.___ssvfiscanf_r
 0x00112cf0    3 68           fcn.00112cf0
 0x001138e8    3 18           loc.___trap0
-0x001138fa    6 134          sym.___submore
-0x00113980   23 306          sym.__ungetc_r
+0x001138fa    7 134          sym.___submore
+0x00113980   24 306          sym.__ungetc_r
 0x00113ab2    1 22           sym._ungetc
 0x00113ac8    1 20           sym.__unlink
-0x00113adc   11 132          sym.___sprint_r.part___0
+0x00113adc   12 132          sym.___sprint_r.part___0
 0x00113b60    3 28           sym.___sprint_r
-0x00113b7c  128 3942 -> 2128 sym.__vfiprintf_r
+0x00113b7c  139 3942 -> 2252 sym.__vfiprintf_r
 0x00114428    1 20           fcn.00114428
 0x00114afc    1 24           sym._vfiprintf
 0x00114b14    5 146          sym.___sbprintf_0x114b14
-0x00114ba8   18 248          sym.___swbuf_r
+0x00114ba8   19 248          sym.___swbuf_r
 0x00114ca0    1 22           sym.___swbuf
 0x00114cb6    1 22           sym.__wctomb_r
 0x00114cf0    1 22           sym.__write
 0x00114d06    1 16           sym._abort
-0x00114d16    4 90           sym.___assert_func
-0x00114d70   11 132          sym.__calloc_r
+0x00114d16    5 90           sym.___assert_func
+0x00114d70   12 132          sym.__calloc_r
 0x00114df4    1 20           sym.__close
 0x00114e08    1 20           sym.__fiprintf_r
 0x00114e1c    1 26           sym._fiprintf
-0x00114e36   16 198          sym.___fputwc
+0x00114e36   17 198          sym.___fputwc
 0x00114efc    3 44           sym.__fputwc_r
 0x00114f28    6 98   -> 82   sym._fputwc
 0x00115072    1 34           sym.___gethex
 0x00115172    1 12           fcn.00115172
 0x0011517e    3 532  -> 20   fcn.0011517e
-0x0011518c   72 1622 -> 1010 fcn.0011518c
-0x0011557e    9 606  -> 120  fcn.0011557e
+0x0011518c   71 1622 -> 996  fcn.0011518c
+0x0011557e   11 620  -> 134  fcn.0011557e
 0x001155ae    2 18           fcn.001155ae
 0x001155d4    1 30           fcn.001155d4
 0x001155f2    1 4            fcn.001155f2
 0x0011561a    6 386  -> 154  fcn.0011561a
 0x001157e2    8 94           fcn.001157e2
 0x00115840    1 60           sym.___hexnan
-0x0011587a   21 430  -> 252  fcn.0011587a
-0x00115944    1 20           fcn.00115944
+0x0011587a   22 430  -> 252  fcn.0011587a
+0x00115944    1 2            fcn.00115944
 0x00115958    1 2            fcn.00115958
-0x0011595a    8 292  -> 136  fcn.0011595a
-0x0011598c    5 106          fcn.0011598c
-0x00115a7e    4 38           fcn.00115a7e
+0x0011595a   11 312  -> 154  fcn.0011595a
+0x0011598c    7 52           fcn.0011598c
+0x00115a7e    5 228  -> 92   fcn.00115a7e
 0x00115aa4    1 4            sym.__isatty
 0x00115aac    1 24           sym.__lseek
 0x00115ac4    1 22           sym.__read
-0x00115ae2    4 46           sym.__init_signal_r.part___0
+0x00115ae2    6 46           sym.__init_signal_r.part___0
 0x00115b10    3 26           sym.__init_signal_r
-0x00115b2a    7 92           sym.__signal_r
-0x00115b86    9 126  -> 110  sym.__raise_r
+0x00115b2a    8 92           sym.__signal_r
+0x00115b86   10 126  -> 110  sym.__raise_r
 0x00115be0    1 16           fcn.00115be0
-0x00115c04   12 110          sym.___sigtramp_r
+0x00115c04   13 110          sym.___sigtramp_r
 0x00115c72    1 18           sym._raise
 0x00115c84    1 22           sym._signal
 0x00115c9a    2 30   -> 20   sym.__init_signal
@@ -460,11 +466,11 @@ pdf @@F~33
 plf @@F~33
 EOF
 EXPECT=<<EOF
-| |  ||||   0x00100290      addi  1, r27, r10                          ; vfprintf.c:933
-| |  ||||   0x00100332      st.w  r10, 124[sp]
-| |  ||||   0x00100336      st.w  r17, 120[sp]
+| |::||||   0x00100290      addi  1, r27, r10                          ; vfprintf.c:933
+| |::||||   0x00100332      st.w  r10, 124[sp]
+| |::||||   0x00100336      st.w  r17, 120[sp]
 | ========< 0x0010033a      bgt   0x100fd4
-| |  ||||   0x0010033e      add   8, r29
+| |::||||   0x0010033e      add   8, r29
 | ========< 0x001006bc      bne   0x101336
 | ========< 0x001006e2      be    0x101336
 | --------> 0x00101336      ld.w  32[sp], r8                           ; vfprintf.c:1240
@@ -474,7 +480,7 @@ EXPECT=<<EOF
 | |||||||   0x001014be      cmp   1, r11                               ; vfprintf.c:1331
 | |||||||   0x001014c0      st.w  r10, 20[sp]                          ; vfprintf.c:1330
 | ========< 0x001014c4      ble   0x101bea                             ; vfprintf.c:1331
-| |||||||   0x001014c8      ld.w  20[sp], r10                          ; vfprintf.c:1332
+| --------> 0x001014c8      ld.w  20[sp], r10                          ; vfprintf.c:1332
 | |||||||   0x001014d4      add   r11, r10                             ; vfprintf.c:1332
 | |||||||   0x0010183a      ld.dw 33417[sp], r16
 | |||||||   0x00101870      andi  1, r2, r10                           ; vfprintf.c:1337
@@ -483,27 +489,27 @@ EXPECT=<<EOF
 | |||||||   0x0010195a      ld.dw 33417[sp], r16
 | --------> 0x00101978      ld.w  40[sp], r10                          ; vfprintf.c:1337
 | |||||||   0x00101bee      cmp   0, r11                               ; vfprintf.c:1331
-|      |`-> 0x00101f46      mov   0, r9                                ; _exit.c:33
-|    | ||   0x001021d4      ld.w  92[sp], r10                          ; dtoa.c:336
-|    | ||   0x001021dc      add   r12, r10                             ; dtoa.c:336
-|   || ||   0x0010225a      ld.dw 33225[sp], r16
-|   || ||   0x001022a4      ld.dw 33481[sp], r16
-|   || ||   0x00102332      ld.dw 28873[sp], r14
-|   || ||   0x00102338            
-|   || ||   0x0010233e      sldh  0[ep] r0
-|   | ,===< 0x001024b2      jr    0x112222, r0                         ; dtoa.c:330
-|  ||||||   0x00102534      ld.w  36[sp], r11                          ; dtoa.c:433
-|  ||||||   0x00102592      ld.dw 33225[sp], r16
+|       `-> 0x00101f46      mov   0, r9                                ; _exit.c:33
+| :: |:||   0x001021d4      ld.w  92[sp], r10                          ; dtoa.c:336
+| :: |:||   0x001021dc      add   r12, r10                             ; dtoa.c:336
+| ::||:||   0x0010225a      ld.dw 33225[sp], r16
+| ::||:||   0x001022a4      ld.dw 33481[sp], r16
+| ::||:||   0x00102332      ld.dw 28873[sp], r14
+| ::||:||   0x00102338            
+| ::||:||   0x0010233e      sldh  0[ep] r0
+| ::| ,===< 0x001024b2      jr    0x112222, r0                         ; dtoa.c:330
+| |:|||||   0x00102534      ld.w  36[sp], r11                          ; dtoa.c:433
+| |:|||||   0x00102592      ld.dw 33225[sp], r16
 | ========< 0x001025fc      be    0x103366
-|  ||||||   0x001026b6      ld.dw 33609[sp], r16
-|  ||||||   0x0010272a      st.dw 33615[sp], r16
-|  ||||||   0x00102748      st.dw 33231[sp], r16
-|  ||||||   0x00102790      ld.dw 33225[sp], r16
-|  ||||||   0x001027a0      st.dw 33231[sp], r16
+| |:|||||   0x001026b6      ld.dw 33609[sp], r16
+| |:|||||   0x0010272a      st.dw 33615[sp], r16
+| |:|||||   0x00102748      st.dw 33231[sp], r16
+| |:|||||   0x00102790      ld.dw 33225[sp], r16
+| |:|||||   0x001027a0      st.dw 33231[sp], r16
 | ========< 0x001027c0      be    0x1033d8
-|  ||||||   0x00102854      ld.dw 33097[sp], r16                       ; dtoa.c:556
-|  ||||||   0x001028b0      ld.dw 25033[sp], r12
-|  ||||||   0x00102964      sub   r10, r22                             ; dtoa.c:633
+| --------> 0x00102854      ld.dw 33097[sp], r16                       ; dtoa.c:556
+| |:|||||   0x001028b0      ld.dw 25033[sp], r12
+| |:|||||   0x00102964      sub   r10, r22                             ; dtoa.c:633
 | |||||||   0x00102f48      movea 0x31, r0, r10                        ; dtoa.c:833
 | ========< 0x00102f56      be    0x10333a
 | ========< 0x00102fec      be    0x1033fe
@@ -522,7 +528,7 @@ EXPECT=<<EOF
 | |||||||   0x0010330e      sldh  0[ep] r0
 | ========< 0x00103310      bne   0x1001023ba
 | |||||||   0x00103314      movea 0x30, r0, r14                        ; dtoa.c:526
-| |||||||   0x00103318      ld.b  -1[r10], r11
+| --------> 0x00103318      ld.b  -1[r10], r11
 | |||||||   0x0010331c      mov   r10, r28
 | |||||||   0x0010331e      add   -1, r10
 | |||||||   0x00103320      cmp   r14, r11
@@ -602,42 +608,42 @@ EXPECT=<<EOF
 |           0x00103942      cmp   r10, r29                             ; mallocr.c:3327
 |       |   0x00103946      mov   0, r7                                ; mallocr.c:3336
 |       |   0x00103954      ld.w  8[r26], r11                          ; mallocr.c:3337
-|      |`-> 0x0010395e      mov   r27, r6                              ; mallocr.c:3329
-|      |    0x00103964      mov   0, r10                               ; mallocr.c:3330
-|      |    0x00103966      dispose 0, {r25 - r29, lp}, lp             ; mallocr.c:3373
-|      `--> 0x0010396a      mov   r29, r7                              ; mallocr.c:3345
-|           0x00103974      cmp   -1, r10                              ; mallocr.c:3347
-|       |   0x00103978      mov   obj.___malloc_current_mallinfo, r11  ; mallocr.c:3365
-|       |   0x00103982      ld.w  0[r11], r10                          ; mallocr.c:3366
-|       |   0x00103986      sub   r29, r28                             ; mallocr.c:3365
-|       |   0x0010398c      mov   r27, r6                              ; mallocr.c:3368
-|       |   0x0010398e      subr  r10, r29                             ; mallocr.c:3366
-|       |   0x00103990      st.w  r28, 4[r12]                          ; mallocr.c:3365
-|       |   0x00103994      st.w  r29, 0[r11]                          ; mallocr.c:3366
-|       |   0x00103998      jarl  sym.___malloc_unlock, lp             ; mallocr.c:3367 ;  __malloc_unlock(struct _reent *ptr)
-|       |   0x0010399c      mov   1, r10                               ; mallocr.c:3369
-|       |   0x0010399e      dispose 0, {r25 - r29, lp}, lp             ; mallocr.c:3373
-|       `-> 0x001039a2      mov   0, r7                                ; mallocr.c:3350
-|           0x001039aa      ld.w  8[r26], r12                          ; mallocr.c:3351
-|           0x001039b2      cmp   15, r11                              ; mallocr.c:3352
-|    |      0x001039b6      mov   obj.___malloc_sbrk_base, r13         ; mallocr.c:3354
-|    |      0x001039bc      ori   1, r11, r11                          ; mallocr.c:3355
-|    |      0x001039c0      ld.w  0[r13], r13                          ; mallocr.c:3354
-|    |      0x001039c4      st.w  r11, 4[r12]                          ; mallocr.c:3355
-|    |      0x001039c8      mov   obj.___malloc_current_mallinfo, r11  ; mallocr.c:3354
-\    |,===< 0x001039d4      br    0x10395e                             ; mallocr.c:3355
+|    ..-`-> 0x0010395e      mov   r27, r6                              ; mallocr.c:3329
+|    ::|    0x00103964      mov   0, r10                               ; mallocr.c:3330
+|    ::|    0x00103966      dispose 0, {r25 - r29, lp}, lp             ; mallocr.c:3373
+|    ::`--> 0x0010396a      mov   r29, r7                              ; mallocr.c:3345
+|    ::     0x00103974      cmp   -1, r10                              ; mallocr.c:3347
+|    :: |   0x00103978      mov   obj.___malloc_current_mallinfo, r11  ; mallocr.c:3365
+|    :: |   0x00103982      ld.w  0[r11], r10                          ; mallocr.c:3366
+|    :: |   0x00103986      sub   r29, r28                             ; mallocr.c:3365
+|    :: |   0x0010398c      mov   r27, r6                              ; mallocr.c:3368
+|    :: |   0x0010398e      subr  r10, r29                             ; mallocr.c:3366
+|    :: |   0x00103990      st.w  r28, 4[r12]                          ; mallocr.c:3365
+|    :: |   0x00103994      st.w  r29, 0[r11]                          ; mallocr.c:3366
+|    :: |   0x00103998      jarl  sym.___malloc_unlock, lp             ; mallocr.c:3367 ;  __malloc_unlock(struct _reent *ptr)
+|    :: |   0x0010399c      mov   1, r10                               ; mallocr.c:3369
+|    :: |   0x0010399e      dispose 0, {r25 - r29, lp}, lp             ; mallocr.c:3373
+|    :: `-> 0x001039a2      mov   0, r7                                ; mallocr.c:3350
+|    ::     0x001039aa      ld.w  8[r26], r12                          ; mallocr.c:3351
+|    ::     0x001039b2      cmp   15, r11                              ; mallocr.c:3352
+|     :     0x001039b6      mov   obj.___malloc_sbrk_base, r13         ; mallocr.c:3354
+|     :     0x001039bc      ori   1, r11, r11                          ; mallocr.c:3355
+|     :     0x001039c0      ld.w  0[r13], r13                          ; mallocr.c:3354
+|     :     0x001039c4      st.w  r11, 4[r12]                          ; mallocr.c:3355
+|     :     0x001039c8      mov   obj.___malloc_current_mallinfo, r11  ; mallocr.c:3354
+\     `===< 0x001039d4      br    0x10395e                             ; mallocr.c:3355
 |           0x00103c72      prepare {r25 - r29, lp}, 0                 ; fwalk.c:33
 |           0x00103e62      addi  -48, sp, sp                          ; mallocr.c:2333
 |           0x00103e6e      st.w  r27, 8[sp]                           ; mallocr.c:2333
 |           0x00103e74      st.w  lp, 44[sp]                           ; mallocr.c:2333
-| ||| |||   0x00103f94      cmp   15, r10                              ; mallocr.c:2433
+| |||:|||   0x00103f94      cmp   15, r10                              ; mallocr.c:2433
 | ========< 0x00103fa4      bge   0x10433a                             ; mallocr.c:2447
-| |||| ||   0x00104330      addi  8, r28, r10
-| |||| ||   0x00104334      shr   3, r14
+|  |||:||   0x00104330      addi  8, r28, r10
+|  |||:||   0x00104334      shr   3, r14
 | ,=======< 0x00104336      jr    0x113eb8, r0
 | --------> 0x0010433a      add   r29, r15                             ; mallocr.c:2449
-| |||| ||   0x0010433c      mov   r27, r6                              ; mallocr.c:2451
-| |||| ||   0x0010433e      ld.w  4[r15], r10                          ; mallocr.c:2449
+| ||||:||   0x0010433c      mov   r27, r6                              ; mallocr.c:2451
+| ||||:||   0x0010433e      ld.w  4[r15], r10                          ; mallocr.c:2449
             ; XREFS: UNKNOWN 0x0010332e  UNKNOWN 0x0010340e  
 |           0x001047d8      movhi 65535, r0, r10                       ; mprec.c:233
 |           0x001048ee      ld.w  16[r7], r27                          ; mprec.c:337
@@ -646,18 +652,20 @@ EXPECT=<<EOF
 |       |   0x00104c9c      shl   2, r11                               ; mprec.c:533
 |           0x00104e0e      movhi 32752, r0, r11                       ; mprec.c:633
 | ,=======< 0x0010531c      be    0x10533e
-| |,======< 0x00105330      bne   0x10531a
-| || | ||   0x00105332      st.w  r0, 8[r24]                           ; vfprintf.c:435
-| || | ||   0x00105336      st.w  r0, 4[r24]                           ; vfprintf.c:436
-| || | ||   0x0010533a      dispose 0, {r21 - r29, lp}, lp             ; vfprintf.c:437
+| |`======< 0x00105330      bne   0x10531a
+| | .-----> 0x00105332      st.w  r0, 8[r24]                           ; vfprintf.c:435
+| | :|:||   0x00105336      st.w  r0, 4[r24]                           ; vfprintf.c:436
+| | :|:||   0x0010533a      dispose 0, {r21 - r29, lp}, lp             ; vfprintf.c:437
 | `-------> 0x0010533e      ld.w  8[r24], r10
-|  |,=====< 0x00105352      br    0x105332
-|  || | `-> 0x00105354      jarl  dbg.__sfvwrite_r, lp                 ; vfprintf.c:433 ; int __sfvwrite_r(struct _reent *ptr, FILE *fp, struct __suio *uio)
-| |  ||||   0x00105470      add   1, r28                               ; vfprintf.c:933
-| |  ||||   0x00105494      st.b  r0, 33[sp]                           ; vfprintf.c:939
-| |  ||||   0x001054c2      st.b  r0, 33[sp]                           ; vfprintf.c:1657
+|   `=====< 0x00105352      br    0x105332
+|       `-> 0x00105354      jarl  dbg.__sfvwrite_r, lp                 ; vfprintf.c:433 ; int __sfvwrite_r(struct _reent *ptr, FILE *fp, struct __suio *uio)
+| |::||||   0x00105470      add   1, r28                               ; vfprintf.c:933
+| |::||||   0x00105494      st.b  r0, 33[sp]                           ; vfprintf.c:939
+| |::||||   0x001054c2      st.b  r0, 33[sp]                           ; vfprintf.c:1657
 | --------> 0x001054fe      ld.b  33[sp], r17
-| |  ||||   0x0010550c      addi  33, sp, r10
+| |::||||   0x0010550c      addi  33, sp, r10
+| |||||||   0x00105e58      ld.b  33[sp], r10                          ; vfprintf.c:410
+| |||||||   0x00106248      addi  33, sp, r12
 | --------> 0x00106260      st.b  r6, 33[sp]
 |           0x00106332      addi  104, sp, r12                         ; vfprintf.c:472
 |           0x00106336      movea 0x400, r0, r11                       ; vfprintf.c:473
@@ -665,16 +673,16 @@ EXPECT=<<EOF
 |           0x0010633e      ld.h  14[r29], r10                         ; vfprintf.c:467
 |           0x001065ae      ld.w  4[sp], r8                            ; fiprintf.c:33
 |       |   0x00106c5c      cmp   0, r8                                ; mbtowc_r.c:33
-|    | |`-> 0x00106c7a      cmp   0, r8                                ; mbtowc_r.c:33
-|    |,===< 0x00106c7e      bne   0x106c60                             ; mbtowc_r.c:33
+|   :|:|`-> 0x00106c7a      cmp   0, r8                                ; mbtowc_r.c:33
+|   :|`===< 0x00106c7e      bne   0x106c60                             ; mbtowc_r.c:33
 | ========< 0x00107330      be    0x1073aa
-| | || ||   0x00107332      ld.h  12[r29], r10
-| | || ||   0x00107336      andi  1, r10, r10
-| | || ||   0x0010733a      cmp   0, r10
+| |:||:||   0x00107332      ld.h  12[r29], r10
+| |:||:||   0x00107336      andi  1, r10, r10
+| |:||:||   0x0010733a      cmp   0, r10
 | ========< 0x0010733c      be    0x107342
-| | || ||   0x0010733e      cmp   10, r28
-|     |`--> 0x00107404      movea 0x8a, r0, r11                        ; wcrtomb.c:33
-|      ||   0x001077d6      cmp   r11, r13                             ; fp-bit.c:533
+| |:||:||   0x0010733e      cmp   10, r28
+|      `--> 0x00107404      movea 0x8a, r0, r11                        ; wcrtomb.c:33
+|     :||   0x001077d6      cmp   r11, r13                             ; fp-bit.c:533
 0x100332 (seq (set _adr (+ (var sp) (bv 32 0x7c))) (storew 0 (var _adr) (var r10)))
 0x100336 (seq (set _adr (+ (var sp) (bv 32 0x78))) (storew 0 (var _adr) (var r17)))
 0x10033a (branch (! (|| (^^ (! (is_zero (& (>> (var PSW) (bv 32 0x1) false) (bv 32 0x1)))) (! (is_zero (& (>> (var PSW) (bv 32 0x2) false) (bv 32 0x1))))) (! (is_zero (& (>> (var PSW) (bv 32 0x0) false) (bv 32 0x1)))))) (seq (set _pc (+ (bv 32 0x10033a) (bv 32 0x9a))) (jmp (var _pc))) nop)

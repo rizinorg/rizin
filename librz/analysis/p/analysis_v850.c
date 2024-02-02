@@ -110,7 +110,7 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case V850_JARL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = addr + inst.disp;
+		op->jump = addr + (st32)(inst.disp);
 		op->fail = addr + inst.byte_size;
 		break;
 	case V850_SWITCH:
@@ -119,7 +119,7 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case V850_JR:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = addr + inst.disp;
+		op->jump = addr + (st32)(inst.disp);
 		op->fail = addr + inst.byte_size;
 		break;
 	case V850_OR:
@@ -176,7 +176,7 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
 	case V850_BCOND:
-		op->jump = addr + inst.disp;
+		op->jump = addr + (st32)(inst.disp);
 		op->fail = addr + inst.byte_size;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		break;
