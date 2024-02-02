@@ -622,10 +622,11 @@ static RzAnalysisLiftedILOp lift_ld(const V850AnalysisContext *ctx) {
 			SETL("_adr", addr),
 			SETG(GR_get(reg_dst), src_val));
 	} else {
-		return SEQ3(
+		return SEQ4(
 			SETL("_adr", addr),
-			SETG(GR_get(reg_dst), UNSIGNED(32, src_val)),
-			SETG(GR_get(reg_dst + 1), UNSIGNED(32, shr0(src_val, U32(32)))));
+			SETL("_src_v", src_val),
+			SETG(GR_get(reg_dst), UNSIGNED(32, VARL("_src_v"))),
+			SETG(GR_get(reg_dst + 1), UNSIGNED(32, shr0(VARL("_src_v"), U32(32)))));
 	}
 err:
 	return NULL;
