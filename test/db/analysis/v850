@@ -466,6 +466,7 @@ pdf @@F~33
 plf @@F~33
 EOF
 EXPECT=<<EOF
+|       `-> 0x00101f46      mov   0, r9                                ; _exit.c:33
 | |::||||   0x00100290      addi  1, r27, r10                          ; vfprintf.c:933
 | |::||||   0x00100332      st.w  r10, 124[sp]
 | |::||||   0x00100336      st.w  r17, 120[sp]
@@ -489,7 +490,6 @@ EXPECT=<<EOF
 | |||||||   0x0010195a      ld.dw 33417[sp], r16
 | --------> 0x00101978      ld.w  40[sp], r10                          ; vfprintf.c:1337
 | |||||||   0x00101bee      cmp   0, r11                               ; vfprintf.c:1331
-|       `-> 0x00101f46      mov   0, r9                                ; _exit.c:33
 | :: |:||   0x001021d4      ld.w  92[sp], r10                          ; dtoa.c:336
 | :: |:||   0x001021dc      add   r12, r10                             ; dtoa.c:336
 | ::||:||   0x0010225a      ld.dw 33225[sp], r16
@@ -595,8 +595,23 @@ EXPECT=<<EOF
 | --------> 0x001033fe      mov   0, r25                               ; dtoa.c:480
 | ========< 0x00103450      be    0x1033ea
 |           0x001036e8      mov   0, r10                               ; findfp.c:334
-|           0x001037da      cmp   0, r10                               ; findfp.c:133
-|       ,=< 0x001037de      be    0x1037fa                             ; findfp.c:133
+| ,=======< 0x0010531c      be    0x10533e
+| |`======< 0x00105330      bne   0x10531a
+| | .-----> 0x00105332      st.w  r0, 8[r24]                           ; vfprintf.c:435
+| | :|:||   0x00105336      st.w  r0, 4[r24]                           ; vfprintf.c:436
+| | :|:||   0x0010533a      dispose 0, {r21 - r29, lp}, lp             ; vfprintf.c:437
+| `-------> 0x0010533e      ld.w  8[r24], r10
+|   `=====< 0x00105352      br    0x105332
+|       `-> 0x00105354      jarl  dbg.__sfvwrite_r, lp                 ; vfprintf.c:433 ; int __sfvwrite_r(struct _reent *ptr, FILE *fp, struct __suio *uio)
+|           0x00106332      addi  104, sp, r12                         ; vfprintf.c:472
+|           0x00106336      movea 0x400, r0, r11                       ; vfprintf.c:473
+|           0x0010633a      st.w  r10, 100[sp]                         ; vfprintf.c:466
+|           0x0010633e      ld.h  14[r29], r10                         ; vfprintf.c:467
+|           0x001065ae      ld.w  4[sp], r8                            ; fiprintf.c:33
+|           0x00103c72      prepare {r25 - r29, lp}, 0                 ; fwalk.c:33
+|       |   0x00104c50      shl   2, r11                               ; mprec.c:533
+|           0x001048ee      ld.w  16[r7], r27                          ; mprec.c:337
+|           0x001048f8      cmp   r26, r27                             ; mprec.c:337
 |           0x00103912      prepare {r25 - r29, lp}, 0                 ; mallocr.c:3314
 |           0x00103918      mov   obj.___malloc_av, r26                ; mallocr.c:3324
 |           0x0010391e      mov   r6, r27                              ; mallocr.c:3314
@@ -632,7 +647,18 @@ EXPECT=<<EOF
 |     :     0x001039c4      st.w  r11, 4[r12]                          ; mallocr.c:3355
 |     :     0x001039c8      mov   obj.___malloc_current_mallinfo, r11  ; mallocr.c:3354
 \     `===< 0x001039d4      br    0x10395e                             ; mallocr.c:3355
-|           0x00103c72      prepare {r25 - r29, lp}, 0                 ; fwalk.c:33
+|      `--> 0x00107404      movea 0x8a, r0, r11                        ; wcrtomb.c:33
+|       |   0x00106c5c      cmp   0, r8                                ; mbtowc_r.c:33
+|   :|:|`-> 0x00106c7a      cmp   0, r8                                ; mbtowc_r.c:33
+|   :|`===< 0x00106c7e      bne   0x106c60                             ; mbtowc_r.c:33
+|       |   0x00104c9c      shl   2, r11                               ; mprec.c:533
+| ========< 0x00107330      be    0x1073aa
+| |:||:||   0x00107332      ld.h  12[r29], r10
+| |:||:||   0x00107336      andi  1, r10, r10
+| |:||:||   0x0010733a      cmp   0, r10
+| ========< 0x0010733c      be    0x107342
+| |:||:||   0x0010733e      cmp   10, r28
+|     :||   0x001077d6      cmp   r11, r13                             ; fp-bit.c:533
 |           0x00103e62      addi  -48, sp, sp                          ; mallocr.c:2333
 |           0x00103e6e      st.w  r27, 8[sp]                           ; mallocr.c:2333
 |           0x00103e74      st.w  lp, 44[sp]                           ; mallocr.c:2333
@@ -646,19 +672,6 @@ EXPECT=<<EOF
 | ||||:||   0x0010433e      ld.w  4[r15], r10                          ; mallocr.c:2449
             ; XREFS: UNKNOWN 0x0010332e  UNKNOWN 0x0010340e  
 |           0x001047d8      movhi 65535, r0, r10                       ; mprec.c:233
-|           0x001048ee      ld.w  16[r7], r27                          ; mprec.c:337
-|           0x001048f8      cmp   r26, r27                             ; mprec.c:337
-|       |   0x00104c50      shl   2, r11                               ; mprec.c:533
-|       |   0x00104c9c      shl   2, r11                               ; mprec.c:533
-|           0x00104e0e      movhi 32752, r0, r11                       ; mprec.c:633
-| ,=======< 0x0010531c      be    0x10533e
-| |`======< 0x00105330      bne   0x10531a
-| | .-----> 0x00105332      st.w  r0, 8[r24]                           ; vfprintf.c:435
-| | :|:||   0x00105336      st.w  r0, 4[r24]                           ; vfprintf.c:436
-| | :|:||   0x0010533a      dispose 0, {r21 - r29, lp}, lp             ; vfprintf.c:437
-| `-------> 0x0010533e      ld.w  8[r24], r10
-|   `=====< 0x00105352      br    0x105332
-|       `-> 0x00105354      jarl  dbg.__sfvwrite_r, lp                 ; vfprintf.c:433 ; int __sfvwrite_r(struct _reent *ptr, FILE *fp, struct __suio *uio)
 | |::||||   0x00105470      add   1, r28                               ; vfprintf.c:933
 | |::||||   0x00105494      st.b  r0, 33[sp]                           ; vfprintf.c:939
 | |::||||   0x001054c2      st.b  r0, 33[sp]                           ; vfprintf.c:1657
@@ -667,22 +680,10 @@ EXPECT=<<EOF
 | |||||||   0x00105e58      ld.b  33[sp], r10                          ; vfprintf.c:410
 | |||||||   0x00106248      addi  33, sp, r12
 | --------> 0x00106260      st.b  r6, 33[sp]
-|           0x00106332      addi  104, sp, r12                         ; vfprintf.c:472
-|           0x00106336      movea 0x400, r0, r11                       ; vfprintf.c:473
-|           0x0010633a      st.w  r10, 100[sp]                         ; vfprintf.c:466
-|           0x0010633e      ld.h  14[r29], r10                         ; vfprintf.c:467
-|           0x001065ae      ld.w  4[sp], r8                            ; fiprintf.c:33
-|       |   0x00106c5c      cmp   0, r8                                ; mbtowc_r.c:33
-|   :|:|`-> 0x00106c7a      cmp   0, r8                                ; mbtowc_r.c:33
-|   :|`===< 0x00106c7e      bne   0x106c60                             ; mbtowc_r.c:33
-| ========< 0x00107330      be    0x1073aa
-| |:||:||   0x00107332      ld.h  12[r29], r10
-| |:||:||   0x00107336      andi  1, r10, r10
-| |:||:||   0x0010733a      cmp   0, r10
-| ========< 0x0010733c      be    0x107342
-| |:||:||   0x0010733e      cmp   10, r28
-|      `--> 0x00107404      movea 0x8a, r0, r11                        ; wcrtomb.c:33
-|     :||   0x001077d6      cmp   r11, r13                             ; fp-bit.c:533
+|           0x00104e0e      movhi 32752, r0, r11                       ; mprec.c:633
+|           0x001037da      cmp   0, r10                               ; findfp.c:133
+|       ,=< 0x001037de      be    0x1037fa                             ; findfp.c:133
+0x101f4e (seq (set lp (+ (bv 32 0x101f4e) (bv 32 0x4))) (set _pc (+ (bv 32 0x101f4e) (bv 32 0x337e))) (jmp (var _pc)))
 0x100332 (seq (set _adr (+ (var sp) (bv 32 0x7c))) (storew 0 (var _adr) (var r10)))
 0x100336 (seq (set _adr (+ (var sp) (bv 32 0x78))) (storew 0 (var _adr) (var r17)))
 0x10033a (branch (! (|| (^^ (! (is_zero (& (>> (var PSW) (bv 32 0x1) false) (bv 32 0x1)))) (! (is_zero (& (>> (var PSW) (bv 32 0x2) false) (bv 32 0x1))))) (! (is_zero (& (>> (var PSW) (bv 32 0x0) false) (bv 32 0x1)))))) (seq (set _pc (+ (bv 32 0x10033a) (bv 32 0x9a))) (jmp (var _pc))) nop)
@@ -692,7 +693,6 @@ EXPECT=<<EOF
 0x101336 (seq (set _adr (+ (var sp) (bv 32 0x20))) (set r8 (loadw 0 32 (var _adr))))
 0x10133a (seq (set _adr (+ (var sp) (bv 32 0x24))) (set r9 (loadw 0 32 (var _adr))))
 0x10133e (seq (set _adr (+ (var sp) (bv 32 0x14))) (storew 0 (var _adr) (var r11)))
-0x101f4e (seq (set lp (+ (bv 32 0x101f4e) (bv 32 0x4))) (set _pc (+ (bv 32 0x101f4e) (bv 32 0x337e))) (jmp (var _pc)))
 0x102332 (seq (set _adr (+ (var sp) (bv 32 0xc))) (set _src_v (loadw 0 64 (var _adr))) (set r14 (cast 32 false (var _src_v))) (set r15 (cast 32 false (>> (var _src_v) (bv 32 0x20) false))))
 0x102338 (set r12 (var r14))
 0x10233e (seq (set _adr (+ (var r0) (bv 32 0x0))) (set ep (let _v (cast 32 false (loadw 0 16 (var _adr))) (>> (cast 32 false (<< (var _v) (- (- (bv 32 0x20) (bv 32 0x10)) (bv 32 0x0)) false)) (- (bv 32 0x20) (bv 32 0x10)) (msb (cast 32 false (<< (var _v) (- (- (bv 32 0x20) (bv 32 0x10)) (bv 32 0x0)) false)))))))
@@ -768,12 +768,6 @@ EXPECT=<<EOF
 0x1033f6 (seq (set _adr (+ (var r24) (bv 32 0x0))) (storew 0 (var _adr) (cast 8 false (var r10))))
 0x1033fa (jmp (bv 32 0x112ac2))
 0x1033fe (set r25 (bv 32 0x0))
-0x104330 (seq (set result (+ (var r10) (bv 32 0x8))) (set PSW (| (| (| (<< (ite (|| (&& (sle (var result) (var r10)) (! (== (var result) (var r10)))) (&& (sle (var result) (bv 32 0x8)) (! (== (var result) (bv 32 0x8))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite (let _x (var result) (|| (! (sle (var _x) (bv 32 0x7fffffff))) (&& (sle (var _x) (bv 32 0x80000000)) (! (== (var _x) (bv 32 0x80000000)))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (sle (var result) (bv 32 0x0)) (! (== (var result) (bv 32 0x0)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_zero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false))) (set r10 (var result)))
-0x104334 (seq (set result (>> (var r14) (bv 32 0x3) false)) (set PSW (| (| (| (<< (ite (&& (! (is_zero (bv 32 0x3))) (! (is_zero (& (var r14) (- (<< (bv 32 0x1) (bv 32 0x3) false) (bv 32 0x1)))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite false (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (sle (var result) (bv 32 0x0)) (! (== (var result) (bv 32 0x0)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_zero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false))) (set r14 (var result)))
-0x104336 (jmp (bv 32 0x113eb8))
-0x10433a (seq (set result (+ (var r15) (var r29))) (set PSW (| (| (| (<< (ite (|| (&& (sle (var result) (var r15)) (! (== (var result) (var r15)))) (&& (sle (var result) (var r29)) (! (== (var result) (var r29))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite (let _x (var result) (|| (! (sle (var _x) (bv 32 0x7fffffff))) (&& (sle (var _x) (bv 32 0x80000000)) (! (== (var _x) (bv 32 0x80000000)))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (sle (var result) (bv 32 0x0)) (! (== (var result) (bv 32 0x0)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_zero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false))) (set r15 (var result)))
-0x10433c (set r6 (var r27))
-0x10433e (seq (set _adr (+ (var r15) (bv 32 0x4))) (set r10 (loadw 0 32 (var _adr))))
 0x105330 (branch (! (! (is_zero (& (>> (var PSW) (bv 32 0x0) false) (bv 32 0x1))))) (seq (set _pc (+ (bv 32 0x105330) (bv 32 0xffffffea))) (jmp (var _pc))) nop)
 0x105332 (seq (set _adr (+ (var r24) (bv 32 0x8))) (storew 0 (var _adr) (var r0)))
 0x105336 (seq (set _adr (+ (var r24) (bv 32 0x4))) (storew 0 (var _adr) (var r0)))
@@ -789,6 +783,12 @@ EXPECT=<<EOF
 0x10733a (seq (set result (- (var r10) (bv 32 0x0))) (set PSW (| (| (| (<< (ite (&& (sle (bv 32 0x0) (var r10)) (! (== (bv 32 0x0) (var r10)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite (let _x (var result) (|| (! (sle (var _x) (bv 32 0x7fffffff))) (&& (sle (var _x) (bv 32 0x80000000)) (! (== (var _x) (bv 32 0x80000000)))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (sle (var result) (bv 32 0x0)) (! (== (var result) (bv 32 0x0)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_zero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false))))
 0x10733c (branch (! (is_zero (& (>> (var PSW) (bv 32 0x0) false) (bv 32 0x1)))) (seq (set _pc (+ (bv 32 0x10733c) (bv 32 0x6))) (jmp (var _pc))) nop)
 0x10733e (seq (set result (- (var r28) (bv 32 0xa))) (set PSW (| (| (| (<< (ite (&& (sle (bv 32 0xa) (var r28)) (! (== (bv 32 0xa) (var r28)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite (let _x (var result) (|| (! (sle (var _x) (bv 32 0x7fffffff))) (&& (sle (var _x) (bv 32 0x80000000)) (! (== (var _x) (bv 32 0x80000000)))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (sle (var result) (bv 32 0x0)) (! (== (var result) (bv 32 0x0)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_zero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false))))
+0x104330 (seq (set result (+ (var r10) (bv 32 0x8))) (set PSW (| (| (| (<< (ite (|| (&& (sle (var result) (var r10)) (! (== (var result) (var r10)))) (&& (sle (var result) (bv 32 0x8)) (! (== (var result) (bv 32 0x8))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite (let _x (var result) (|| (! (sle (var _x) (bv 32 0x7fffffff))) (&& (sle (var _x) (bv 32 0x80000000)) (! (== (var _x) (bv 32 0x80000000)))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (sle (var result) (bv 32 0x0)) (! (== (var result) (bv 32 0x0)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_zero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false))) (set r10 (var result)))
+0x104334 (seq (set result (>> (var r14) (bv 32 0x3) false)) (set PSW (| (| (| (<< (ite (&& (! (is_zero (bv 32 0x3))) (! (is_zero (& (var r14) (- (<< (bv 32 0x1) (bv 32 0x3) false) (bv 32 0x1)))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite false (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (sle (var result) (bv 32 0x0)) (! (== (var result) (bv 32 0x0)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_zero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false))) (set r14 (var result)))
+0x104336 (jmp (bv 32 0x113eb8))
+0x10433a (seq (set result (+ (var r15) (var r29))) (set PSW (| (| (| (<< (ite (|| (&& (sle (var result) (var r15)) (! (== (var result) (var r15)))) (&& (sle (var result) (var r29)) (! (== (var result) (var r29))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x3) false) (<< (ite (let _x (var result) (|| (! (sle (var _x) (bv 32 0x7fffffff))) (&& (sle (var _x) (bv 32 0x80000000)) (! (== (var _x) (bv 32 0x80000000)))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x2) false)) (<< (ite (&& (sle (var result) (bv 32 0x0)) (! (== (var result) (bv 32 0x0)))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x1) false)) (<< (ite (is_zero (var result)) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false))) (set r15 (var result)))
+0x10433c (set r6 (var r27))
+0x10433e (seq (set _adr (+ (var r15) (bv 32 0x4))) (set r10 (loadw 0 32 (var _adr))))
 EOF
 RUN
 
