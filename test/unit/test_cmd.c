@@ -661,7 +661,7 @@ bool test_cmd_argv_state(void) {
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
 	char *h = rz_cmd_get_help(cmd, pa, false);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...\n"
-		      "| z[jqJ] # group summary (see z?? for more details)\n";
+		      "| z[jqJ] # group summary\n";
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the help");
 	free(h);
 	rz_cmd_parsed_args_free(pa);
@@ -709,7 +709,7 @@ bool test_cmd_group_argv_modes(void) {
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
 	char *h = rz_cmd_get_help(cmd, pa, false);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...\n"
-		      "| z[jqd] # z group summary (see z?? for more details)\n";
+		      "| z[jqd] # z group summary\n";
 	mu_assert_streq(h, exp_h, "zd is considered in the help");
 	free(h);
 	rz_cmd_parsed_args_free(pa);

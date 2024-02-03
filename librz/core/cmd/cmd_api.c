@@ -1139,28 +1139,7 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 }
 
 static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, bool use_color) {
-	void **it_cd;
-	bool check = false;
-
-	rz_cmd_desc_children_foreach(cd, it_cd) {
-		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
-		if (!strcmp(child->name, cd->name)) {
-			check = true;
-		}
-	}
-
-	const char *summary = strdup(cd->help->summary);
-	size_t summary_len = strlen(summary);
-	char *newSummary = malloc(strlen(summary) + 32);
-
-	if (check) {
-		snprintf(newSummary, summary_len + 32, "%s (see %s?? for more details)", summary, cd->name);
-		summary = newSummary;
-	}
-
-	do_print_child_help(cmd, sb, cd, cd->name, summary ? summary : "", true, max_len, use_color);
-
-	free(newSummary);
+	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary ? cd->help->summary : "", true, max_len, use_color);
 }
 
 static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
