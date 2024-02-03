@@ -92,7 +92,7 @@ RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
-static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color);
+static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color);
 
 static int cd_sort(const void *a, const void *b, void *user) {
 	RzCmdDesc *ca = (RzCmdDesc *)a;
@@ -1162,7 +1162,32 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 		print_child_help(cmd, sb, child, max_len, use_color);
 	}
 
-	fill_details(cmd, cd, sb, use_color);
+	bool details_filled = fill_details(cmd, cd, sb, use_color);
+	if (!details_filled &&
+		cd->type == RZ_CMD_DESC_TYPE_GROUP &&
+		cd->d.group_data.exec_cd &&
+		cd->d.group_data.exec_cd->help->details) {
+
+		cd = cd->d.group_data.exec_cd;
+		const char *pal_args_color = "",
+			   *pal_input_color = "",
+			   *pal_reset = "";
+
+		if (cmd->has_cons && use_color) {
+			RzCons *cons = rz_cons_singleton();
+			pal_args_color = cons->context->pal.args;
+			pal_input_color = cons->context->pal.input;
+			pal_reset = cons->context->pal.reset;
+		}
+
+		rz_strbuf_appendf(sb, "\nDetailed help for %s%s%s", pal_input_color, cd->name, pal_args_color);
+		if (cd->help->args_str) {
+			rz_strbuf_appendf(sb, "%s", cd->help->args_str);
+		} else {
+			fill_args(sb, cd);
+		}
+		rz_strbuf_appendf(sb, "%s is provided by %s??.\n", pal_reset, cd->name);
+	}
 	return rz_strbuf_drain(sb);
 }
 
@@ -1262,26 +1287,28 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 	}
 }
 
-static void fill_details_static(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
+static bool fill_details_static(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
 	const RzCmdDescDetail *detail_it = get_cd_details(cd);
 	if (!detail_it) {
-		return;
+		return false;
 	}
 	fill_details_do(cmd, detail_it, sb, use_color);
+	return true;
 }
 
-static void fill_details_cb(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
+static bool fill_details_cb(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
 	RzCmdDescDetail *detail_it = get_cd_details_cb(cmd, cd);
 	if (!detail_it) {
-		return;
+		return false;
 	}
 	fill_details_do(cmd, detail_it, sb, use_color);
 	rz_cmd_desc_details_free(detail_it);
+	return true;
 }
 
-static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
-	fill_details_static(cmd, cd, sb, use_color);
-	fill_details_cb(cmd, cd, sb, use_color);
+static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
+	// Don't change to boolean "or" (||)
+	return fill_details_static(cmd, cd, sb, use_color) | fill_details_cb(cmd, cd, sb, use_color);
 }
 
 static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {

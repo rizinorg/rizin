@@ -117,3 +117,53 @@ EXPECT=<<EOF
 {"aa":{"cmd":"aa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all flags starting with sym. and entry"},"aaa":{"cmd":"aaa","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all calls, references, emulation and applies signatures"},"aaaa":{"cmd":"aaaa","type":"argv","args_str":"","args":[],"description":"","summary":"Experimental analysis"},"aac":{"cmd":"aac","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze function calls"},"aaci":{"cmd":"aaci","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all function calls to imports"},"aaC":{"cmd":"aaC","type":"argv","args_str":"","args":[],"description":"","summary":"Analysis classes from RzBin"},"aad":{"cmd":"aad","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze data references to code"},"aae":{"cmd":"aae","type":"argv","args_str":" [<len>]","args":[{"type":"expression","name":"len","is_last":true}],"description":"","summary":"Analyze references with ESIL"},"aaef":{"cmd":"aaef","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze references with ESIL in all functions"},"aaf":{"cmd":"aaf","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions"},"aafe":{"cmd":"aafe","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all functions using ESIL"},"aafr":{"cmd":"aafr","type":"argv","args_str":" <length>","args":[{"type":"number","name":"length","required":true}],"description":"","summary":"Analyze all consecutive functions in section"},"aaft":{"cmd":"aaft","type":"argv","args_str":"","args":[],"description":"","summary":"Performs recursive type matching in all functions"},"aai":{"cmd":"aai","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details"},"aaij":{"cmd":"aaij","type":"argv_state","args_str":"","args":[],"description":"","summary":"Print preformed analysis details (JSON mode)"},"aaj":{"cmd":"aaj","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all unresolved jumps"},"aalg":{"cmd":"aalg","type":"argv","args_str":"","args":[],"description":"","summary":"Recover and analyze all Golang functions and strings"},"aalor":{"cmd":"aalor","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all Objective-C references from selector usages to their implementations"},"aalos":{"cmd":"aalos","type":"argv","args_str":"","args":[],"description":"","summary":"Recover all Objective-C selector stub names (__objc_stubs section contents)"},"aan":{"cmd":"aan","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions based on their strings or calls"},"aanr":{"cmd":"aanr","type":"argv","args_str":"","args":[],"description":"","summary":"Renames all functions which does not return"},"aap":{"cmd":"aap","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze all preludes"},"aar":{"cmd":"aar","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Analyze xrefs in current section or by n_bytes"},"aas":{"cmd":"aas","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the symbols"},"aaS":{"cmd":"aaS","type":"argv","args_str":"","args":[],"description":"","summary":"Analyze only the flags starting as sym.* and entry*"},"aat":{"cmd":"aat","type":"argv","args_str":" [<func_name>]","args":[{"type":"function","name":"func_name"}],"description":"","summary":"Analyze all/given function to convert immediate to linked structure offsets"},"aaT":{"cmd":"aaT","type":"argv","args_str":" [<n_bytes>]","args":[{"type":"number","name":"n_bytes"}],"description":"","summary":"Prints commands to create functions after a trap call"},"aau":{"cmd":"aau","type":"argv","args_str":" [<min_len>]","args":[{"type":"number","name":"min_len"}],"description":"","summary":"Print memory areas not covered by functions"},"aav":{"cmd":"aav","type":"argv_state","args_str":"","args":[],"description":"","summary":"Analyze values referencing a specific section or map"},"aav*":{"cmd":"aav*","type":"argv_state","args_str":"","args":[],"description":"","summary":"Analyze values referencing a specific section or map (rizin mode)"}}
 EOF
 RUN
+
+NAME=detailed help available
+FILE=--
+CMDS=<<EOF
+w?
+echo \n----\n
+e?
+EOF
+EXPECT=<<EOF
+Usage: w[?]   # Write commands
+| w <string>        # Write string
+| wB[-]             # Set or unset bits with given value
+| wv[1248]          # Write value of given size
+| w0 <len>          # Write <len> bytes with value 0x00
+| w<1248><+-> [<n>] # Increment/decrement byte, word, ...
+| w6<de>            # Write base64 [d]ecoded or [e]ncoded string
+| we<nsx>           # Extend write operations (insert bytes instead of replacing)
+| wu <file>         # Apply unified hex patch (see output of cu)
+| wr <len>          # Write <len> random bytes
+| wc[j*-+ip?]       # Write cache commands
+| wz <string>       # Write zero-terminated string
+| wf[xfs]           # Write data from file, socket, offset
+| ww <string>       # Write wide (16-bit) little-endian string
+| wx[f]             # Write hexadecimal data
+| wa[ifo]           # Write opcodes
+| wb <hex>          # Write in current block a hexstring cyclically
+| wm[-]             # Set binary mask hexpair to be used as cyclic write mask
+| wo<?>             # Write a block with a special operation
+| wD[/]             # Write de Bruijn pattern
+| wd <src> <len>    # Duplicate <len> bytes from <src> offset to current seek
+| ws <string>       # Write 1 byte for length and then the string
+
+Detailed help for w <string> is provided by w??.
+
+----
+
+Usage: e[?]   # List/get/set config evaluable vars
+| e <key>[=<val|?>] [<key>[=<val|?>] ...]] # Get/Set value of config variable <key>
+| el[j*qlJ] [<key>]      # List config variables with their descriptions
+| e-                     # Reset config variables
+| e! <key>               # Invert the boolean value of config variable <key>
+| ec[?]                  # Set color for given key (prompt, offset, ...)
+| ee <key>               # Open editor to change the value of config variable <key>
+| er <key>               # Set config variable <key> as read-only
+| es [<key>]             # List all config variable spaces or sub-keys/sub-spaces if a <key> is provided
+| et <key>               # Show type of given config variable <key>
+
+Detailed help for e <key>[=<val|?>] [<key>[=<val|?>] ...]] is provided by e??.
+EOF
+RUN
