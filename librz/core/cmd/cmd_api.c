@@ -1307,8 +1307,8 @@ static bool fill_details_cb(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_co
 }
 
 static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
-	// Don't change to boolean "or" (||)
-	return fill_details_static(cmd, cd, sb, use_color) | fill_details_cb(cmd, cd, sb, use_color);
+	return (int)fill_details_static(cmd, cd, sb, use_color) |
+		(int)fill_details_cb(cmd, cd, sb, use_color);
 }
 
 static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {
