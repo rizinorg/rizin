@@ -29,6 +29,18 @@ bool test_rz_regex_all_match(void) {
 	mu_end;
 }
 
+bool test_rz_regex_posix_blank(void) {
+	RzRegex *reg = rz_regex_new("[[:blank:]]", RZ_REGEX_EXTENDED, 0);
+	mu_assert_notnull(reg, "Regex was NULL");
+	RzRegexMatch *match = NULL;
+	mu_assert_true(exec_regex(reg, "push\tpush", &match), "Regex match failed");
+	mu_assert_notnull(match, "match was not set");
+	mu_assert_eq(match->start, 4, "Start of match is not 4");
+	mu_assert_eq(match->len, 1, "Len of match is not 1");
+	rz_regex_free(reg);
+	mu_end;
+}
+
 bool test_rz_regex_extend_space(void) {
 	RzRegex *reg = rz_regex_new("push esi", RZ_REGEX_DEFAULT, 0);
 	mu_assert_notnull(reg, "Regex was NULL");
@@ -172,4 +184,5 @@ int main() {
 	mu_run_test(test_rz_regex_capture);
 	mu_run_test(test_rz_regex_all_to_str);
 	mu_run_test(test_rz_regex_named_matches);
+	mu_run_test(test_rz_regex_posix_blank);
 }
