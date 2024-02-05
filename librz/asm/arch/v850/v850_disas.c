@@ -603,57 +603,57 @@ static bool decode_formatVIII(V850_Inst *inst) {
 }
 
 static bool decode_formatIX(V850_Inst *inst) {
-	ut8 opcode = get_opcode(inst, 5, 10);
 	if (V850_word(inst, 2) & 1) {
 		return false;
 	}
 
-	ut16 sub_opcode = get_imm16(inst) & ~1;
 	ut8 reg1 = get_reg1(inst);
-	if (reg1 == 0) {
-		if (extract(sub_opcode, 0, 11) == 0x364) {
-			inst->id = V850_SCH0L;
-		} else if (extract(sub_opcode, 0, 11) == 0x360) {
-			inst->id = V850_SCH0R;
-		} else if (extract(sub_opcode, 0, 11) == 0x366) {
-			inst->id = V850_SCH1L;
-		} else if (extract(sub_opcode, 0, 11) == 0x362) {
-			inst->id = V850_SCH1R;
-		} else {
-			return false;
-		}
+	if (extract(inst->d, 4, 6) == 0x3e && V850_word(inst, 2) == 0b0000001000000000) {
+		inst->id = V850_SASF;
+	} else if (extract(inst->d, 4, 6) == 0x3e && V850_word(inst, 2) == 0b0000000000000000) {
+		inst->id = V850_SETF;
 	} else {
-		if (opcode == 0x3f) {
-			switch (V850_word(inst, 2)) {
-			case 0b0000000011100100: inst->id = V850_CLR1; break;
-			case 0b0000000011100010: inst->id = V850_NOT1; break;
-			case 0b0000000011100110: inst->id = V850_TST1; break;
-			case 0b0000000011100000: inst->id = V850_SET1; break;
-			case 0b0000000010100000: inst->id = V850_SAR; break;
-			case 0b0000000011000000: inst->id = V850_SHL; break;
-			case 0b0000000010000000: inst->id = V850_SHR; break;
-			default:
-				if (extract(sub_opcode, 0, 11) == 0x020) {
-					inst->id = V850_LDSR;
-				} else if (extract(sub_opcode, 0, 11) == 0x040) {
-					inst->id = V850_STSR;
-				} else if (extract(sub_opcode, 4, 7) == 0x09 ||
-					extract(sub_opcode, 4, 7) == 0x0b ||
-					extract(sub_opcode, 4, 7) == 0x0d) {
-					inst->id = V850_BINS;
-				} else {
-					return false;
-				}
-				break;
-			}
-		} else if (opcode == 0x3e) {
-			switch (V850_word(inst, 2)) {
-			case 0b0000001000000000: inst->id = V850_SASF; break;
-			case 0b0000000000000000: inst->id = V850_SETF; break;
-			default: return false;
+		ut8 opcode = get_opcode(inst, 5, 10);
+		ut16 sub_opcode = get_imm16(inst) & ~1;
+		if (reg1 == 0) {
+			if (extract(sub_opcode, 0, 11) == 0x364) {
+				inst->id = V850_SCH0L;
+			} else if (extract(sub_opcode, 0, 11) == 0x360) {
+				inst->id = V850_SCH0R;
+			} else if (extract(sub_opcode, 0, 11) == 0x366) {
+				inst->id = V850_SCH1L;
+			} else if (extract(sub_opcode, 0, 11) == 0x362) {
+				inst->id = V850_SCH1R;
+			} else {
+				return false;
 			}
 		} else {
-			return false;
+			if (opcode == 0x3f) {
+				switch (V850_word(inst, 2)) {
+				case 0b0000000011100100: inst->id = V850_CLR1; break;
+				case 0b0000000011100010: inst->id = V850_NOT1; break;
+				case 0b0000000011100110: inst->id = V850_TST1; break;
+				case 0b0000000011100000: inst->id = V850_SET1; break;
+				case 0b0000000010100000: inst->id = V850_SAR; break;
+				case 0b0000000011000000: inst->id = V850_SHL; break;
+				case 0b0000000010000000: inst->id = V850_SHR; break;
+				default:
+					if (extract(sub_opcode, 0, 11) == 0x020) {
+						inst->id = V850_LDSR;
+					} else if (extract(sub_opcode, 0, 11) == 0x040) {
+						inst->id = V850_STSR;
+					} else if (extract(sub_opcode, 4, 7) == 0x09 ||
+						extract(sub_opcode, 4, 7) == 0x0b ||
+						extract(sub_opcode, 4, 7) == 0x0d) {
+						inst->id = V850_BINS;
+					} else {
+						return false;
+					}
+					break;
+				}
+			} else {
+				return false;
+			}
 		}
 	}
 
@@ -666,7 +666,15 @@ static bool decode_formatIX(V850_Inst *inst) {
 	case V850_LDSR:
 		OPERANDS("%s, %s, %d", R1, SR_get(reg2, get_selID(inst)), get_reg3(inst));
 		break;
+	case V850_SHR:
+	case V850_SAR:
 	case V850_SHL: OPERANDS("%s, %s", R1, R2); break;
+	case V850_CLR1:
+	case V850_NOT1:
+	case V850_TST1:
+	case V850_SET1: OPERANDS("%s, [%s]", R2, R1); break;
+	case V850_SASF:
+	case V850_SETF: OPERANDS("%d, %s", get_reg1(inst), R2); break;
 	case V850_BINS: OPERANDS("%s, %d, %d, %s", R1, bins_pos(inst), bins_width(inst), R2); break;
 	case V850_SCH0L:
 	case V850_SCH0R:

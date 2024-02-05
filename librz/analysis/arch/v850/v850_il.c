@@ -220,24 +220,24 @@ static RzILOpEffect *SETGp(const char *p, unsigned l, unsigned r, RzILOpPure *x)
 	return SETG(p, updated);
 }
 
-static RzILOpPure *inth(RzILOpPure *x, RzILOpPure *n) {
-	return NON_ZERO(LOGAND(SHIFTR0(x, n), U32(1)));
+static RzILOpPure *inth(unsigned b, RzILOpPure *x, RzILOpPure *n) {
+	return NON_ZERO(LOGAND(SHIFTR0(x, n), UN(b, 1)));
 }
-static RzILOpPure *nth(RzILOpPure *x, unsigned n) {
-	return inth(x, U32(n));
+static RzILOpPure *nth(unsigned b, RzILOpPure *x, unsigned n) {
+	return inth(b, x, UN(b, n));
 }
 
-static RzILOpPure *iset_nth(RzILOpPure *x, RzILOpPure *n, bool v) {
+static RzILOpPure *iset_nth(unsigned b, RzILOpPure *x, RzILOpPure *n, bool v) {
 	if (v) {
-		return LOGOR(x, SHIFTL0(U32(v), n));
+		return LOGOR(x, SHIFTL0(UN(b, v), n));
 	}
-	return LOGAND(x, LOGNOT(SHIFTL0(U32(v), n)));
+	return LOGAND(x, LOGNOT(SHIFTL0(UN(b, v), n)));
 }
-static RzILOpPure *set_nth(RzILOpPure *x, unsigned n, bool v) {
+static RzILOpPure *set_nth(unsigned b, RzILOpPure *x, unsigned n, bool v) {
 	if (v) {
-		return LOGOR(x, U32((ut32)(v) << n));
+		return LOGOR(x, UN(b, (ut32)(v) << n));
 	}
-	return LOGAND(x, U32(~((ut32)(v) << n)));
+	return LOGAND(x, UN(b, ~((ut32)(v) << n)));
 }
 
 static RzILOpPure *isext32(RzILOpPure *x, RzILOpPure *i) {
@@ -246,14 +246,14 @@ static RzILOpPure *isext32(RzILOpPure *x, RzILOpPure *i) {
 
 #define LH(x) LOGAND(x, U32(0xffff))
 
-#define PSW_NP  nth(VARG("PSW"), 7)
-#define PSW_EP  nth(VARG("PSW"), 6)
-#define PSW_ID  nth(VARG("PSW"), 5)
-#define PSW_SAT nth(VARG("PSW"), 4)
-#define PSW_CY  nth(VARG("PSW"), 3)
-#define PSW_OV  nth(VARG("PSW"), 2)
-#define PSW_S   nth(VARG("PSW"), 1)
-#define PSW_Z   nth(VARG("PSW"), 0)
+#define PSW_NP  nth(32, VARG("PSW"), 7)
+#define PSW_EP  nth(32, VARG("PSW"), 6)
+#define PSW_ID  nth(32, VARG("PSW"), 5)
+#define PSW_SAT nth(32, VARG("PSW"), 4)
+#define PSW_CY  nth(32, VARG("PSW"), 3)
+#define PSW_OV  nth(32, VARG("PSW"), 2)
+#define PSW_S   nth(32, VARG("PSW"), 1)
+#define PSW_Z   nth(32, VARG("PSW"), 0)
 
 #define R1_   get_reg1(ctx->x)
 #define R2_   get_reg2(ctx->x)
@@ -533,15 +533,15 @@ static RzAnalysisLiftedILOp lift_bit(const V850AnalysisContext *ctx, RzILOpPure 
 	FV(VIII_bit,
 		SEQ4(
 			SETL("_adr", adr),
-			SETL("_val", LOADW(8, VARL("adr"))),
-			SETGb("PSW", "Z", INV(nth(VARL("_val"), BIT_BIT))),
-			STOREW(VARL("_adr"), set_nth(VARL("_val"), BIT_BIT, v))));
-	FV(XI_extended3,
+			SETL("_val", LOADW(8, VARL("_adr"))),
+			SETGb("PSW", "Z", INV(nth(8, VARL("_val"), BIT_BIT))),
+			STOREW(VARL("_adr"), set_nth(8, VARL("_val"), BIT_BIT, v))));
+	FV(IX_extended1,
 		SEQ4(
 			SETL("_adr", R1V),
-			SETL("_val", LOADW(8, VARL("adr"))),
-			SETGb("PSW", "Z", INV(inth(VARL("_val"), R2V))),
-			STOREW(VARL("_adr"), iset_nth(VARL("_val"), R2V, v))));
+			SETL("_val", LOADW(8, VARL("_adr"))),
+			SETGb("PSW", "Z", INV(inth(8, VARL("_val"), R2V))),
+			STOREW(VARL("_adr"), iset_nth(8, VARL("_val"), R2V, v))));
 	NOT_IMPLEMENTED;
 }
 
@@ -754,12 +754,12 @@ static RzAnalysisLiftedILOp lift_tst1(const V850AnalysisContext *ctx) {
 		SEQ3(
 			SETL("_adr", ADD(R1V, SEXT16)),
 			SETL("_val", LOADW(8, VARL("_adr"))),
-			SETGb("PSW", "Z", INV(nth(VARL("_val"), BIT_BIT)))));
+			SETGb("PSW", "Z", INV(nth(8, VARL("_val"), BIT_BIT)))));
 	FV(IX_extended1,
 		SEQ3(
 			SETL("_adr", R1V),
 			SETL("_val", LOADW(8, VARL("_adr"))),
-			SETGb("PSW", "Z", INV(inth(VARL("_val"), R2V)))));
+			SETGb("PSW", "Z", INV(inth(8, VARL("_val"), R2V)))));
 	NOT_IMPLEMENTED;
 }
 

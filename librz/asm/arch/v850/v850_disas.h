@@ -426,7 +426,7 @@ static inline ut16 V850_word(const V850_Inst *i, unsigned index) {
 }
 
 static inline ut16 get_opcode(const V850_Inst *i, unsigned l, unsigned r) {
-	return extract(V850_word(i, 1), l, (r - l + 1));
+	return extract(i->d, l, (r - l + 1));
 }
 
 static inline ut8 get_reg1(const V850_Inst *i) {
