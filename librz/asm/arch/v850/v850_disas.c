@@ -479,19 +479,14 @@ static bool decode_formatVII(V850_Inst *inst) {
 		}
 		inst->disp &= ~1;
 		break;
-	case 0x3d: /// GUESS!
+	case 0x3c:
+	case 0x3d:
 		if (sub1 && reg2) {
 			inst->id = V850_LDBU;
+			inst->disp = (inst->disp >> 1) | ((opcode & 1) << 15);
 			break;
 		}
 		return false;
-	case 0x3e: {
-		if (sub1) {
-			inst->id = V850_LDBU;
-			break;
-		}
-		return false;
-	}
 	case 0x39: {
 		if (!(sub1)) {
 			inst->id = V850_LDH;
@@ -674,7 +669,7 @@ static bool decode_formatIX(V850_Inst *inst) {
 	case V850_TST1:
 	case V850_SET1: OPERANDS("%s, [%s]", R2, R1); break;
 	case V850_SASF:
-	case V850_SETF: OPERANDS("%d, %s", get_reg1(inst), R2); break;
+	case V850_SETF: OPERANDS("%s, %s", conds[get_reg1(inst)], R2); break;
 	case V850_BINS: OPERANDS("%s, %d, %d, %s", R1, bins_pos(inst), bins_width(inst), R2); break;
 	case V850_SCH0L:
 	case V850_SCH0R:
@@ -1038,6 +1033,7 @@ int v850_decode_command(const ut8 *bytes, int len, V850_Inst *inst) {
 	if (decode_formatXIV(inst)) {
 		goto ok;
 	}
+	goto err;
 
 ok:
 	rz_buf_free(b);
