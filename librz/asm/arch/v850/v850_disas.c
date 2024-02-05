@@ -377,16 +377,20 @@ static bool decode_formatV(V850_Inst *inst) {
 		return false;
 	}
 
+	ut32 disp22 = get_disp22(inst);
+	inst->sdisp = sext32(disp22, 22);
+	ut64 target = inst->addr + inst->sdisp;
+
 	ut8 reg2 = get_reg2(inst);
 	if (reg2 == 0) {
 		inst->id = V850_JR;
+		OPERANDS("0x%llx", target);
 	} else {
 		inst->id = V850_JARL;
+		OPERANDS("0x%llx, %s", target, R2);
 	}
-	inst->disp = sext32(get_disp22(inst), 22);
 
 	PRINT_INSTR;
-	OPERANDS("0x%llx, %s", (st64)(inst->addr) + (st32)(inst->disp), R2);
 	inst->format = V_jump;
 	return true;
 }
@@ -958,7 +962,6 @@ err:
 
 static bool decode_formatXIV(V850_Inst *inst) {
 	ut8 opcode = get_opcode(inst, 5, 10);
-	inst->disp = ((V850_word(inst, 2) >> 4) & 0x7f) | (V850_word(inst, 3) << 7);
 	ut8 sub_opcode = (V850_word(inst, 2) & 0xf) | ((V850_word(inst, 1) >> 11) << 4);
 	ut16 sub_opcode2 = (V850_word(inst, 2) & 0x1f) | ((V850_word(inst, 1) >> 11) << 5);
 	switch (opcode | (sub_opcode << 6)) {
@@ -978,8 +981,10 @@ static bool decode_formatXIV(V850_Inst *inst) {
 		}
 	}
 
+	inst->disp = ((V850_word(inst, 2) >> 4) & 0x7f) | (V850_word(inst, 3) << 7);
+	inst->disp = sext32(inst->disp, 23);
 	PRINT_INSTR;
-	OPERANDS("%d[%s], %s", inst->imm, R1, R3);
+	OPERANDS("%d[%s], %s", (st32)inst->disp, R1, R3);
 	inst->format = XIV_load_store48;
 	return true;
 }

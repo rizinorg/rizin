@@ -406,7 +406,10 @@ typedef enum {
 typedef struct {
 	ut64 d;
 	ut32 imm;
-	ut32 disp;
+	union {
+		ut32 disp;
+		st32 sdisp;
+	};
 	V850_Inst_Format format;
 	V850_InstID id;
 	ut64 addr;
@@ -465,8 +468,8 @@ static inline ut16 xi_cond(const V850_Inst *i) {
 	return (i->d >> 17) & 0xf;
 }
 
-static inline ut16 get_disp22(const V850_Inst *i) {
-	return (V850_word(i, 2) & ~1) | ((V850_word(i, 1) & 0x3f) << 16);
+static inline ut32 get_disp22(const V850_Inst *i) {
+	return (((i->d >> 16) & 0xffff) | ((i->d & 0x3f) << 16)) & ~1;
 }
 
 /**
