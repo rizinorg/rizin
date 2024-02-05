@@ -12,7 +12,7 @@ EXPECT=<<EOF
 0x0010011a    3 34           sym._exit
 0x0010013c    1 24           sym.__printf_r
 0x00100154    1 28           sym._printf
-0x00100170  127 6716 -> 2250 sym.__vfprintf_r
+0x00100170  192 6958 -> 3370 sym.__vfprintf_r
 0x00101cb8    1 24           sym._vfprintf
 0x00101cd0    5 146          sym.___sbprintf
 0x00101d64   27 264  -> 254  sym.___swsetup_r
@@ -254,7 +254,7 @@ EXPECT=<<EOF
 0x00107cce    1 22           sym._strerror
 0x00107ce4    1 22           sym._strerror_l
 0x00107cfc    5 28           sym._strlen
-0x00107d64  119 6824 -> 2142 sym.__svfprintf_r
+0x00107d64  186 6824 -> 3252 sym.__svfprintf_r
 0x0010980c   30 5436 -> 512  sym.___ssvfscanf_r
 0x00109fce    1 4            fcn.00109fce
 0x0010ade0    1 18           sym._close
@@ -267,7 +267,7 @@ EXPECT=<<EOF
 0x0010ae8e    1 24           sym._write
 0x0010aea6    1 4            sym.__user_strerror
 0x0010aeaa    4 46           sym.__unlink_r
-0x0010aed8  127 6716 -> 2250 sym.__vfprintf_r
+0x0010aed8  192 6958 -> 3370 sym.__vfprintf_r
 0x0010ca20    1 24           sym._vfprintf
 0x0010ca38    5 146          sym.___sbprintf
 0x0010cacc    4 52           sym.__write_r
@@ -323,7 +323,7 @@ EXPECT=<<EOF
 0x0010fc5c   26 268          sym.__sbrk
 0x0010fd68    1 6            sym._nanf
 0x0010fde4    4 98   -> 88   sym._sulp
-0x0010fe46  121 5272 -> 1550 sym.__strtod_l
+0x0010fe46  121 5272 -> 1564 sym.__strtod_l
 0x00110af6    1 4            fcn.00110af6
 0x001112e6    1 18           sym.__strtod_r
 0x001112f8    1 24           sym._strtod_l
