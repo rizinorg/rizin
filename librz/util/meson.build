@@ -147,7 +147,7 @@ if meson.is_cross_build()
       cc_native.find_library('psapi'),
     ]
   endif
-  rz_util_native_deps = [ldl_native, lrt_native, mth_native, th_native, utl_native, pcre2_dep] + platform_native_deps
+  rz_util_native_deps = [ldl_native, lrt_native, mth_native, th_native, utl_native, pcre2_native_dep] + platform_native_deps
   if execinfo_native.found()
     rz_util_native_deps += [execinfo_native]
   endif
