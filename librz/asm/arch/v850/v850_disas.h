@@ -139,6 +139,9 @@ typedef enum {
 
 	V850_CACHE,
 	V850_PREF,
+
+	// GUESS，because I can't find a document that describes it.
+	V850_ADSF_D
 } V850_InstID;
 
 enum v850_conds {

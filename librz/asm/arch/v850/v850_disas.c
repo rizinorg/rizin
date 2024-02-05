@@ -125,6 +125,8 @@ static const char *instrs[] = {
 
 	[V850_CACHE] = "cache",
 	[V850_PREF] = "pref",
+
+	[V850_ADSF_D] = "adsf.d",
 };
 
 static const char *conds[] = {
@@ -766,6 +768,7 @@ static bool decode_formatXI(V850_Inst *inst) {
 	case 0b0111001101: inst->id = V850_SATSUB; break;
 	case 0b0001100001: inst->id = V850_SHL; break;
 	case 0b0001000001: inst->id = V850_SHR; break;
+	case 0b1000101100: inst->id = V850_ADSF_D; break;
 	default:
 		if (sub_opcode == 0b0010110000) {
 			switch (reg2) {
@@ -806,6 +809,7 @@ static bool decode_formatXI(V850_Inst *inst) {
 	case V850_JARL: OPERANDS("[%s], %s", R1, R3); break;
 	case V850_PUSHSP:
 	case V850_POPSP: OPERANDS("%d-%d", xi_rh(inst), xi_rt(inst)); break;
+	case V850_ADSF_D: OPERANDS("%s, %s", R2, R3); break;
 	default: OPERANDS("[%s], %s, %s", R1, R2, R3); break;
 	}
 	inst->format = XI_extended3;
@@ -984,7 +988,21 @@ static bool decode_formatXIV(V850_Inst *inst) {
 	inst->disp = ((V850_word(inst, 2) >> 4) & 0x7f) | (V850_word(inst, 3) << 7);
 	inst->disp = sext32(inst->disp, 23);
 	PRINT_INSTR;
-	OPERANDS("%d[%s], %s", (st32)inst->disp, R1, R3);
+	switch (inst->id) {
+	case V850_LDB:
+	case V850_LDBU:
+	case V850_LDH:
+	case V850_LDHU:
+	case V850_LDW:
+	case V850_LDDW:
+		OPERANDS("%d[%s], %s", (st32)inst->disp, R1, R3);
+	case V850_STB:
+	case V850_STH:
+	case V850_STW:
+	case V850_STDW:
+		OPERANDS("%s, %d[%s]", R3, (st32)inst->disp, R1);
+	default: break;
+	}
 	inst->format = XIV_load_store48;
 	return true;
 }
@@ -1018,6 +1036,11 @@ int v850_decode_command(const ut8 *bytes, int len, V850_Inst *inst) {
 	}
 	inst->byte_size = 4;
 	inst->d |= (ut64)(tmp) << 16;
+
+	const char *r1 = R1;
+	const char *r2 = R2;
+	const char *r3 = R3;
+
 	if (decode_formatV(inst) ||
 		decode_formatVI(inst, b) ||
 		decode_formatVII(inst) ||
