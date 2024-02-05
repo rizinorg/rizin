@@ -312,7 +312,7 @@ static bool decode_formatIII(V850_Inst *inst) {
 	}
 
 	INSTR("b%s", cond_s);
-	OPERANDS("0x%06x", (st32)(inst->addr + inst->disp));
+	OPERANDS("0x%llx", (st64)(inst->addr) + (st32)inst->disp);
 	inst->format = III_conditional_branch;
 	return true;
 }
@@ -386,7 +386,7 @@ static bool decode_formatV(V850_Inst *inst) {
 	inst->disp = sext32(get_disp22(inst), 22);
 
 	PRINT_INSTR;
-	OPERANDS("0x%06llx, %s", (st64)(inst->addr) + (st32)(inst->disp), R2);
+	OPERANDS("0x%llx, %s", (st64)(inst->addr) + (st32)(inst->disp), R2);
 	inst->format = V_jump;
 	return true;
 }
@@ -509,7 +509,7 @@ static bool decode_formatVII(V850_Inst *inst) {
 			ut8 cond = get_cond(inst);
 			inst->disp = sext32(((inst->disp >> 1) | (((V850_word(inst, 1) >> 4) & 1) << 15)) << 1, 17);
 			INSTR("b%s", conds[cond]);
-			OPERANDS("0x%06llx", inst->addr + inst->disp);
+			OPERANDS("0x%llx", (st64)inst->addr + (st32)inst->disp);
 			goto ok;
 		}
 		if (sub1) {
@@ -543,7 +543,7 @@ static bool decode_formatVII(V850_Inst *inst) {
 	case V850_LDHU:
 	case V850_LDW:
 		inst->disp = sext32(inst->disp, 16);
-		OPERANDS("%d[%s], %s", inst->disp, R1, R2);
+		OPERANDS("%d[%s], %s", (st32)inst->disp, R1, R2);
 		break;
 	case V850_STB:
 	case V850_STH:
