@@ -487,7 +487,7 @@ static bool decode_formatVII(V850_Inst *inst) {
 	case 0x3d:
 		if (sub1 && reg2) {
 			inst->id = V850_LDBU;
-			inst->disp = (inst->disp >> 1) | ((opcode & 1) << 15);
+			inst->disp = inst->disp | (opcode & 1);
 			break;
 		}
 		return false;
