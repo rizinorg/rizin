@@ -31,10 +31,14 @@ stur w0, [fp, -4]
 stur x1, [fp, -0x10]
 str x8, [sp, 0x10]
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_ERR=(((Continue\suntil)|(hit\sbreakpoint\sat:)|[0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-Continue until c88
-hit breakpoint at: c88
+Continue until
+c88
+
+hit breakpoint at:
+c88
+
 EOF
 RUN
 
@@ -46,10 +50,37 @@ dm~hello~[3-9]
 EOF
 REGEXP_FILTER_OUT=([a-zA-Z0-9_-]+[\.rwx_-]*\s+)
 EXPECT=<<EOF
-- usr 16K u r-x hello-macos-arm64 hello-macos-arm64
-- usr 16K u rw- hello-macos-arm64 hello-macos-arm64
-- usr 16K u rw- hello-macos-arm64 hello-macos-arm64
-- usr 16K u r-- hello-macos-arm64 hello-macos-arm64
+- 
+usr 
+16K 
+u 
+r-x 
+hello-macos-arm64 
+hello-macos-arm64
+
+- 
+usr 
+16K 
+u 
+rw- 
+hello-macos-arm64 
+hello-macos-arm64
+
+- 
+usr 
+16K 
+u 
+rw- 
+hello-macos-arm64 
+hello-macos-arm64
+
+- 
+usr 
+16K 
+u 
+r-- 
+hello-macos-arm64 
+hello-macos-arm64
 EOF
 RUN
 
@@ -61,7 +92,7 @@ fl@F:maps~hello~[1-]
 echo --
 dm*~hello~[0-2]
 EOF
-REGEXP_FILTER_OUT=([0-9]+ [a-zA-Z0-9_-]+\.[\.rwx_]*|[f-].+|\n)
+REGEXP_FILTER_OUT=([0-9]+ [a-zA-Z0-9_-]+\.[\.rwx_]*|[f-].+)
 EXPECT=<<EOF
 16384 hello_macos_arm64.r_x
 16384 hello_macos_arm64.rw
@@ -88,18 +119,23 @@ ds
 dr pc
 dr x8
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
+REGEXP_FILTER_OUT=((x8\s=\s0x.*)|(pc\s=)|(f44)|(f48))
 EXPECT=<<EOF
-pc = f44
+pc =
+f44
 x8 = 0x0000000000000000
---
-pc = f48
+pc =
+f48
 x8 = 0x0000000000000064
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_ERR=(((Continue\suntil)|(hit\sbreakpoint\sat:)|[0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-Continue until f30
-hit breakpoint at: f30
+Continue until
+f30
+
+hit breakpoint at:
+f30
+
 EOF
 RUN
 
@@ -121,21 +157,28 @@ dc
 dr pc
 dr x8
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
+REGEXP_FILTER_OUT=((x8\s=\s0x.*)|(pc\s=)|(f30)|(f44)|(f48))
 EXPECT=<<EOF
-pc = f30
---
-pc = f44
+pc =
+f30
+pc =
+f44
 x8 = 0x0000000000000000
---
-pc = f48
+pc =
+f48
 x8 = 0x0000000000000064
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_ERR=(((hit\sbreakpoint\sat:)|[0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-hit breakpoint at: f30
-hit breakpoint at: f44
-hit breakpoint at: f48
+hit breakpoint at:
+f30
+
+hit breakpoint at:
+f44
+
+hit breakpoint at:
+f48
+
 EOF
 RUN
 
@@ -153,12 +196,10 @@ EXPECT=<<EOF
 x8 = 0x000000000000002a
 Result = 1337
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_ERR=((hit\sbreakpoint\sat:)|(f70\n))
 EXPECT_ERR=<<EOF
-hit breakpoint at: f70
-
-Process finished
-
+hit breakpoint at:
+f70
 EOF
 RUN
 
@@ -180,20 +221,27 @@ dc
 dr pc
 dr x8
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
+REGEXP_FILTER_OUT=((x8\s=\s0x.*)|(pc\s=)|(f30)|(f44)|(f48))
 EXPECT=<<EOF
-pc = f30
---
-pc = f44
+pc =
+f30
+pc =
+f44
 x8 = 0x0000000000000000
---
-pc = f48
+pc =
+f48
 x8 = 0x0000000000000064
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_ERR=(((hit\sbreakpoint\sat:)|[0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-hit breakpoint at: f30
-hit breakpoint at: f44
-hit breakpoint at: f48
+hit breakpoint at:
+f30
+
+hit breakpoint at:
+f44
+
+hit breakpoint at:
+f48
+
 EOF
 RUN

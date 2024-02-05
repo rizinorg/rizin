@@ -188,11 +188,6 @@ Copyright: 1986-1995 Ian F. Darwin
            1995-present Christos Zoulas and others
 License: BSD-2-Clause
 
-Files: librz/util/regex/*
-Copyright: 1992, 1993, 1994 Henry Spencer
-           1992, 1993, 1994 The Regents of the University of California
-License: BSD-3-Clause
-
 Files: subprojects/rzheap/rz_jemalloc/*
 Copyright: 2002-present Jason Evans <jasone@canonware.com>
            2007-2012 Mozilla Foundation.

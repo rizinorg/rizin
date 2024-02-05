@@ -195,6 +195,28 @@ else
   add_project_arguments(['-DUSE_SYS_CAPSTONE'], language: 'c')
 endif
 
+# Handle PCRE2
+cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 's390x', 'x86', 'x86_64' ]
+pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc'
+if pcre2_jit_supported
+  add_project_arguments(['-DSUPPORTS_PCRE2_JIT'], language: 'c')
+endif
+
+pcre2_dep_opt = get_option('use_sys_pcre2')
+pcre2_dep = disabler()
+if (pcre2_dep_opt.enabled() or pcre2_dep_opt.auto()) and not meson.is_cross_build()
+  pcre2_dep = dependency('libpcre2-8', required: false, static: true)
+  if not pcre2_dep.found()
+    pcre2_dep = cc.find_library('pcre2', required: true, static: true)
+  endif
+else
+  pcre2_dep = dependency('pcre2', version: '>=10.42', required: true, static: true)
+endif
+
+if meson.is_cross_build()
+  pcre2_native_dep = dependency('pcre2_cross_native', required: true, static: true, native: true)
+endif
+
 # handle magic library
 sys_magic_opt = get_option('use_sys_magic')
 sys_magic = disabler()
@@ -339,6 +361,8 @@ foreach it : ccs
   it_userconf.set10('IS_PORTABLE', get_option('portable'))
   it_userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
   it_userconf.set10('USE_LIB_MAGIC', sys_magic.found())
+  it_userconf.set10('HAVE_LIB_PCRE2', pcre2_dep.found())
+  it_userconf.set10('USE_LIB_PCRE2', pcre2_dep.found())
   it_userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
   it_userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
   it_userconf.set10('DEBUGGER', has_debugger)
@@ -380,6 +404,7 @@ foreach it : ccs
   it_userconf.set10('HAVE_PTHREAD', have_pthread)
   it_userconf.set10('HAVE_LZMA', get_option('use_lzma'))
   it_userconf.set10('HAVE_ZLIB', get_option('use_zlib'))
+  it_userconf.set10('SUPPORTS_PCRE2_JIT', pcre2_jit_supported)
 
   if it_machine.system() == 'freebsd' or it_machine.system() == 'dragonfly'
     add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c', native: it_native)
@@ -749,7 +774,10 @@ summary({
   'Swift demangler': get_option('use_swift_demangler'),
   'Debugger enabled': has_debugger,
   'Capstone version': capstone_dep.version(),
+  'PCRE2 version': pcre2_dep.version(),
+  'PCRE2 JIT': pcre2_jit_supported,
   'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
+  'System pcre2 library': pcre2_dep.found() and pcre2_dep.type_name() != 'internal',
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',

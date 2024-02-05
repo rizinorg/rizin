@@ -888,13 +888,17 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 		memcpy(rz_reverse->ana_op, &hic->ana_op, sizeof(RzAnalysisOp));
 		rz_strbuf_set(&rz_reverse->asm_op->buf_asm, hic->text);
 		rz_reverse->asm_op->asm_toks = rz_asm_tokenize_asm_regex(&rz_reverse->asm_op->buf_asm, state->token_patterns);
-		rz_reverse->asm_op->asm_toks->op_type = hic->ana_op.type;
+		if (rz_reverse->asm_op->asm_toks) {
+			rz_reverse->asm_op->asm_toks->op_type = hic->ana_op.type;
+		}
 		break;
 	case HEXAGON_DISAS:
 		memcpy(rz_reverse->asm_op, &hic->asm_op, sizeof(RzAsmOp));
 		rz_strbuf_set(&rz_reverse->asm_op->buf_asm, hic->text);
 		rz_reverse->asm_op->asm_toks = rz_asm_tokenize_asm_regex(&rz_reverse->asm_op->buf_asm, state->token_patterns);
-		rz_reverse->asm_op->asm_toks->op_type = hic->ana_op.type;
+		if (rz_reverse->asm_op->asm_toks) {
+			rz_reverse->asm_op->asm_toks->op_type = hic->ana_op.type;
+		}
 		break;
 	case HEXAGON_ANALYSIS:
 		memcpy(rz_reverse->ana_op, &hic->ana_op, sizeof(RzAnalysisOp));

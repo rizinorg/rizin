@@ -3524,7 +3524,7 @@ static void classdump_objc(RzBinClass *c) {
 	RzBinClassField *f;
 	RzBinSymbol *sym;
 	rz_list_foreach (c->fields, iter2, f) {
-		if (f->name && rz_regex_match("ivar", "e", f->name)) {
+		if (f->name && strstr("ivar", f->name)) {
 			rz_cons_printf("  %s %s\n", f->type, f->name);
 		}
 	}

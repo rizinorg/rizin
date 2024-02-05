@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_util/rz_str.h"
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include <stdio.h>
 
 #include <rz_types.h>
@@ -179,7 +179,13 @@ static bool is_lea(const char *asm_str) {
 	if (!colored) {
 		return strlen(asm_str) > 4 && rz_str_startswith_icase(asm_str, "lea") && asm_str[3] == ' ';
 	}
-	return rz_regex_match("(^\x1b\\[[[:digit:]]{1,3}mlea\x1b\\[0m.+)", "ei", asm_str) != RZ_REGEX_NOMATCH;
+	RzRegex *re = rz_regex_new("(^\x1b\\[\\d{1,3}mlea\x1b\\[0m.+)", RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
+	if (!re) {
+		return false;
+	}
+	bool res = rz_regex_match(re, asm_str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT) != RZ_REGEX_ERROR_NOMATCH;
+	rz_regex_free(re);
+	return res;
 }
 
 static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian) {

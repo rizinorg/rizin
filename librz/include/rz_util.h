@@ -6,7 +6,6 @@
 
 #include <rz_types.h>
 #include <rz_diff.h>
-#include <rz_regex.h>
 #include <rz_getopt.h>
 #include <rz_list.h> // rizin linked list
 #include <rz_skiplist.h> // skiplist
@@ -50,6 +49,7 @@
 #include "rz_util/rz_panels.h"
 #include "rz_util/rz_punycode.h"
 #include "rz_util/rz_range.h"
+#include "rz_util/rz_regex.h"
 #include "rz_util/rz_signal.h"
 #include "rz_util/rz_spaces.h"
 #include "rz_util/rz_stack.h"

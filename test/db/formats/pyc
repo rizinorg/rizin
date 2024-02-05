@@ -7,7 +7,7 @@ EXPECT=<<EOF
 machine  Python v3.10.0 VM (rev bfb376ffcc4260feb9bf1b9a110559b1ff31da80)
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -23,7 +23,7 @@ EXPECT=<<EOF
 machine  Python v3.9.0 VM (rev 3a819e5c9d3feae85762ae87cebf55f9c8d2b526)
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -39,7 +39,7 @@ EXPECT=<<EOF
 machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -55,7 +55,7 @@ EXPECT=<<EOF
 machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -71,7 +71,7 @@ EXPECT=<<EOF
 machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -87,7 +87,7 @@ EXPECT=<<EOF
 machine  Python 2.7a2+ VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -103,7 +103,7 @@ EXPECT=<<EOF
 9
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -125,7 +125,7 @@ EXPECT=<<EOF
 0x00002356 0x0   0x00002356 0x0   0x0   ---- module_.Batman.sing             
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -147,7 +147,7 @@ EXPECT=<<EOF
 0x00002326 0x4   0x00002326 0x4   0x0   ---- module_.Batman.sing             
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -169,7 +169,7 @@ EXPECT=<<EOF
 0x00002235 0x4   0x00002235 0x4   0x0   ---- module_.Batman.sing             
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -195,7 +195,7 @@ EXPECT=<<EOF
 0x0000002a 0x0000002a ---------- ---------- program
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -225,7 +225,7 @@ EXPECT=<<EOF
             0x00000040      NOP
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -259,7 +259,7 @@ EXPECT=<<EOF
             0x00001ed1      RETURN_VALUE
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -289,7 +289,7 @@ EXPECT=<<EOF
         `-> 0x00000040      POP_TOP
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -323,7 +323,7 @@ EXPECT=<<EOF
             0x00001e97      RETURN_VALUE
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -353,7 +353,7 @@ EXPECT=<<EOF
         `-> 0x0000003c      POP_TOP
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -369,7 +369,7 @@ EXPECT=<<EOF
 1   0x00000052 0x00000052 NONE FUNC 9        <module>.hello_world
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -397,7 +397,7 @@ EXPECT=<<EOF
             0x00000033      LOAD_CONST            None
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)
@@ -428,7 +428,7 @@ EXPECT=<<EOF
 \           0x00000036      RETURN_VALUE
 EOF
 REGEXP_FILTER_ERR=<<EOF
-free_object\ \(0\)
+free_object\s\(0\)
 EOF
 EXPECT_ERR=<<EOF
 free_object (0)

@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include "rz_list.h"
 #include "rz_types.h"
 #include "rz_util.h"
 #include "rz_cons.h"
 #include "rz_bin.h"
 #include "rz_util/rz_assert.h"
+#include <rz_vector.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1180,7 +1181,7 @@ RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char
 				if (!newstr) {
 					eprintf("realloc fail\n");
 					RZ_FREE(str);
-					break;
+					return NULL;
 				}
 				str = newstr;
 			}
@@ -3409,31 +3410,35 @@ static RzList /*<char *>*/ *str_split_list_common(char *str, const char *c, int 
 static RzList /*<char *>*/ *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRegex *r, int n, bool trim, bool dup) {
 	rz_return_val_if_fail(str && r, NULL);
 	RzList *lst = rz_list_newf(dup ? free : NULL);
-	RzRegexMatch m[1];
 	char *aux;
 	int i = 0;
 	int s = 0, e = 0;
 	int j = 0;
-	while (rz_regex_exec(r, str + j, 1, m, 0) == 0) {
+	void **it;
+	RzPVector *matches = rz_regex_match_all(r, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	rz_pvector_foreach (matches, it) {
+		RzPVector *m = (RzPVector *)*it;
+		RzRegexMatch *group0 = rz_pvector_head(m);
 		if (n == i && n > 0) {
 			break;
 		}
-		s = m[0].rm_so; // Match start (inclusive) in string str + j
-		e = m[0].rm_eo; // Match end (exclusive) in string str + j
+		s = group0->start; // Match start (inclusive) in string str + j
+		e = group0->start + group0->len; // Match end (exclusive) in string str + j
 		if (dup) {
-			aux = rz_str_ndup(str + j, s);
+			aux = rz_str_ndup(str + j, s - j);
 		} else {
 			// Overwrite split chararcters.
-			memset(str + j + s, 0, e - s);
+			memset(str + s, 0, e - s);
 			aux = str + j;
 		}
 		if (trim) {
 			rz_str_trim(aux);
 		}
 		rz_list_append(lst, aux);
-		j += e;
+		j = e;
 		++i;
 	}
+	rz_pvector_free(matches);
 	if (*(str + j) == 0 || (n == i && n > 0) || rz_list_length(lst) == 0) {
 		// No token left.
 		return lst;
@@ -3483,7 +3488,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n) {
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
 	rz_return_val_if_fail(str && r, NULL);
-	RzRegex *regex = rz_regex_new(r, "e");
+	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
 	RzList *res = str_split_list_common_regex(str, regex, n, false, false);
 	rz_regex_free(regex);
 	return res;
@@ -3545,7 +3550,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char 
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
 	rz_return_val_if_fail(_str && r, NULL);
 	char *str = strdup(_str);
-	RzRegex *regex = rz_regex_new(r, "e");
+	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
 	RzList *res = str_split_list_common_regex(str, regex, n, trim, true);
 	free(str);
 	rz_regex_free(regex);

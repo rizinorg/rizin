@@ -112,8 +112,9 @@ ARGS=-e log.level=4
 CMDS=<<EOF
 ood
 EOF
-REGEXP_FILTER_ERR=([a-zA-Z-]+\s+)
+REGEXP_FILTER_ERR=(Process\swith\sPID)|(helloworld-gcc\sreopened\sin\sread-write\smode)
 EXPECT_ERR=<<EOF
-Process with PID File -helloworld-gcc reopened in read-write mode
+Process with PID
+helloworld-gcc reopened in read-write mode
 EOF
 RUN

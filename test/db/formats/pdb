@@ -531,7 +531,7 @@ mkdir .tmp
 idpx bins/pdb/basic32.pd_ .tmp
 !rz-hash -a md5 .tmp/basic32.pdb
 EOF
-REGEXP_FILTER_ERR=(ERROR:.+\nINFO:.+\n)
+REGEXP_FILTER_ERR=(ERROR:.+\nINFO:.+)
 EXPECT_ERR=<<EOF
 ERROR: The pdb file bins/pdb/basic32.pd_ seems to be compressed, please use idpx command to extract the contents.
 INFO: cab_extract: extracted .tmp/basic32.pdb
