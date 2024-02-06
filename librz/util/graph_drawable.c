@@ -122,7 +122,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		char *url;
 		char *label;
 
-		char tmp[256] = { 0 };
+		char tmp[2048] = { 0 };
 		switch (print_node->type & RZ_GRAPH_NODE_TYPE_GROUP_MASK) {
 		default:
 			RZ_LOG_ERROR("Unhandled node type. Graph node either doesn't support dot graph printing or it isn't implemented.\n");
