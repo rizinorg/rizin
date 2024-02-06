@@ -81,7 +81,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 #include "cmd_math.c"
 
 static const char *help_msg_dollar[] = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
+	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See %$? for help on $variables)",
 	"$", "", "list all defined aliases",
 	"$*", "", "list all the aliases as rizin commands in base64",
 	"$**", "", "same as above, but using plain text",
