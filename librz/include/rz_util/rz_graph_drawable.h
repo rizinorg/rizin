@@ -16,10 +16,11 @@ typedef enum {
 	RZ_GRAPH_NODE_TYPE_DEFAULT = 0x80000000, ///< Node contains a title string, a body string and an absract offset value.
 	RZ_GRAPH_NODE_TYPE_CFG = 0x40000000, ///< Node is part of an control flow graph of a procedure.
 	RZ_GRAPH_NODE_TYPE_CFG_NONE = RZ_GRAPH_NODE_TYPE_CFG | 0, ///< No details given to this CFG node.
-	RZ_GRAPH_NODE_TYPE_CFG_ENTRY = RZ_GRAPH_NODE_TYPE_CFG | 1, ///< Entry node of the procedure CFG.
-	RZ_GRAPH_NODE_TYPE_CFG_CALL = RZ_GRAPH_NODE_TYPE_CFG | 2, ///> A node which calls another procedure.
-	RZ_GRAPH_NODE_TYPE_CFG_RETURN = RZ_GRAPH_NODE_TYPE_CFG | 3, ///< A return node of the procedure.
-	RZ_GRAPH_NODE_TYPE_CFG_EXIT = RZ_GRAPH_NODE_TYPE_CFG | 4, ///< A node which exits the program (precedure does not return).
+	RZ_GRAPH_NODE_TYPE_CFG_ENTRY = RZ_GRAPH_NODE_TYPE_CFG | 0x1, ///< Entry node of the procedure CFG.
+	RZ_GRAPH_NODE_TYPE_CFG_CALL = RZ_GRAPH_NODE_TYPE_CFG | 0x2, ///> A node which calls another procedure.
+	RZ_GRAPH_NODE_TYPE_CFG_RETURN = RZ_GRAPH_NODE_TYPE_CFG | 0x4, ///< A return node of the procedure.
+	RZ_GRAPH_NODE_TYPE_CFG_EXIT = RZ_GRAPH_NODE_TYPE_CFG | 0x8, ///< A node which exits the program (precedure does not return).
+	RZ_GRAPH_NODE_TYPE_CFG_COND = RZ_GRAPH_NODE_TYPE_CFG | 0x10, ///< A conditional instruction node.
 	RZ_GRAPH_NODE_TYPE_ICFG = 0x20000000, ///< Node is part of an inter-procedural control flow graph.
 	RZ_GRAPH_NODE_TYPE_ICFG_NONE = RZ_GRAPH_NODE_TYPE_ICFG | 0, ///< No details given to this iCFG node.
 	RZ_GRAPH_NODE_TYPE_ICFG_MALLOC = RZ_GRAPH_NODE_TYPE_ICFG | 1, ///< Node represents a memory allocating procedure.

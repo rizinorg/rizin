@@ -909,9 +909,50 @@ static inline bool is_uncond_jump(const RzAnalysisOp *op) {
 		!((op->type & RZ_ANALYSIS_OP_HINT_MASK) & RZ_ANALYSIS_OP_TYPE_COND);
 }
 
+static inline bool is_return(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_RET;
+}
+
+static inline bool is_cond(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_HINT_MASK) == RZ_ANALYSIS_OP_TYPE_COND;
+}
+
 static inline bool ignore_next_instr(const RzAnalysisOp *op) {
 	// Ignore if:
 	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)); // Except calls, everything which has set fail
+}
+
+static RzGraphNodeType get_cfg_node_flags(const RzAnalysisOp *op) {
+	rz_return_val_if_fail(op, RZ_GRAPH_NODE_TYPE_NONE);
+	RzGraphNodeType flags = RZ_GRAPH_NODE_TYPE_CFG;
+	if (is_call(op)) {
+		flags |= RZ_GRAPH_NODE_TYPE_CFG_CALL;
+	}
+	if (is_return(op)) {
+		flags |= RZ_GRAPH_NODE_TYPE_CFG_RETURN;
+	}
+	if (is_cond(op)) {
+		flags |= RZ_GRAPH_NODE_TYPE_CFG_COND;
+	}
+	return flags;
+}
+
+static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisOp *op, bool is_entry) {
+	rz_return_val_if_fail(cfg, NULL);
+	RzGraphNodeType flags = get_cfg_node_flags(op);
+	if (is_entry) {
+		flags |= RZ_GRAPH_NODE_TYPE_CFG_ENTRY;
+	}
+	ut64 call_target = is_call(op) ? op->jump : UT64_MAX;
+	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, flags);
+	if (!data) {
+		return NULL;
+	}
+	RzGraphNode *node = rz_graph_add_nodef(cfg, data, rz_graph_free_node_info);
+	if (!node) {
+		rz_graph_free_node_info(data);
+	}
+	return node;
 }
 
 /**
@@ -926,8 +967,14 @@ static inline bool ignore_next_instr(const RzAnalysisOp *op) {
  * \return true On success.
  * \return false On failure.
  */
-static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL RzVector /*<ut64>*/ *to_visit, RZ_NONNULL HtUU *nodes_visited, ut64 from, ut64 to) {
-	rz_return_val_if_fail(graph && to_visit && nodes_visited, -1);
+static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
+	RZ_NONNULL RzVector /*<ut64>*/ *to_visit,
+	RZ_NONNULL HtUU *nodes_visited,
+	const RzAnalysisOp *op_from,
+	const RzAnalysisOp *op_to) {
+	rz_return_val_if_fail(graph && to_visit && nodes_visited && op_from && op_to, -1);
+	ut64 from = op_from->addr;
+	ut64 to = op_to->addr;
 	bool visited = false;
 	ut64 from_idx = ht_uu_find(nodes_visited, from, &visited);
 	if (!visited && from != to) {
@@ -935,7 +982,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, R
 		return false;
 	}
 
-	RzGraphNode *to_node = rz_graph_add_node_info(graph, rz_str_newf("0x%" PFMT64x, to), NULL, to);
+	RzGraphNode *to_node = add_node_info_cfg(graph, op_to, false);
 	if (!to_node) {
 		RZ_LOG_ERROR("Could not add node at 0x%" PFMT64x "\n", to);
 		return false;
@@ -978,7 +1025,15 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
 
 	// Add entry node
-	RzGraphNode *entry = rz_graph_add_node_info(graph, rz_str_newf("0x%" PFMT64x, addr), NULL, addr);
+	ut8 buf[64] = { 0 };
+	if (rz_io_nread_at(core->io, addr, buf, sizeof(buf)) < 0) {
+		RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, addr);
+		goto error;
+	}
+	RzAnalysisOp curr_op = { 0 };
+	RzAnalysisOp target_op = { 0 };
+	int disas_bytes = rz_analysis_op(core->analysis, &curr_op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
+	RzGraphNode *entry = add_node_info_cfg(graph, &curr_op, true);
 	ht_uu_insert(nodes_visited, addr, entry->idx);
 	rz_vector_push(to_visit, &addr);
 
@@ -986,42 +1041,55 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 		ut64 cur_addr = 0;
 		rz_vector_pop(to_visit, &cur_addr);
 
-		ut8 buf[64] = { 0 };
 		if (rz_io_nread_at(core->io, cur_addr, buf, sizeof(buf)) < 0) {
 			RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
 			goto error;
 		}
 
-		RzAnalysisOp op = { 0 };
-		int disas_bytes = rz_analysis_op(core->analysis, &op, cur_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
-		if (disas_bytes <= 0 || is_leaf_op(&op)) {
+		disas_bytes = rz_analysis_op(core->analysis, &curr_op, cur_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
+		if (disas_bytes <= 0 || is_leaf_op(&curr_op)) {
 			// A leaf. It was added before to the graph by the parent node.
-			rz_analysis_op_fini(&op);
+			rz_analysis_op_fini(&curr_op);
 			continue;
 		}
 
-		if (op.jump != UT64_MAX && !is_call(&op)) {
-			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, cur_addr, op.jump)) {
+		if (curr_op.jump != UT64_MAX && !is_call(&curr_op)) {
+			if (rz_analysis_op(core->analysis, &target_op, curr_op.jump, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+				goto error;
+			}
+			rz_analysis_op_fini(&target_op);
 		}
-		if (op.fail != UT64_MAX && !is_call(&op)) {
-			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, cur_addr, op.fail)) {
+		if (curr_op.fail != UT64_MAX && !is_call(&curr_op)) {
+			if (rz_analysis_op(core->analysis, &target_op, curr_op.fail, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+				goto error;
+			}
+			rz_analysis_op_fini(&target_op);
 		}
 
-		if (ignore_next_instr(&op)) {
-			rz_analysis_op_fini(&op);
+		if (ignore_next_instr(&curr_op)) {
+			rz_analysis_op_fini(&curr_op);
 			continue;
 		}
 
 		// Add next instruction
 		ut64 next_addr = cur_addr + disas_bytes;
-		if (!add_edge_to_cfg(graph, to_visit, nodes_visited, cur_addr, next_addr)) {
+		if (rz_analysis_op(core->analysis, &target_op, next_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+			rz_analysis_op_fini(&target_op);
 			goto error;
 		}
-		rz_analysis_op_fini(&op);
+		if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+			goto error;
+		}
+		rz_analysis_op_fini(&target_op);
+		rz_analysis_op_fini(&curr_op);
 	}
 
 fini:
@@ -1030,6 +1098,7 @@ fini:
 	return graph;
 
 error:
+	rz_warn_if_reached();
 	rz_graph_free(graph);
 	graph = NULL;
 	goto fini;
