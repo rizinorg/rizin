@@ -76,6 +76,8 @@ typedef struct rz_analysis_graph_node_info_t {
 RZ_API RZ_OWN RzStrBuf *rz_graph_get_node_info_str(RzGraphNodeInfo info);
 RZ_API void rz_graph_free_node_info(void *ptr);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, const char *body, ut64 offset);
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType flags);
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType flags);
 RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset);
 
 /**

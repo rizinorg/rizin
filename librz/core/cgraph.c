@@ -792,6 +792,21 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCor
 	return graph;
 }
 
+static RzGraphNode *rz_graph_add_node_info_icfg(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(graph, NULL);
+	RzGraphNodeType flags = RZ_GRAPH_NODE_TYPE_ICFG;
+	flags |= rz_analysis_function_is_malloc(fcn) ? RZ_GRAPH_NODE_TYPE_ICFG_MALLOC : 0;
+	RzGraphNodeInfo *data = rz_graph_create_node_info_icfg(fcn->addr, flags);
+	if (!data) {
+		return NULL;
+	}
+	RzGraphNode *node = rz_graph_add_nodef(graph, data, rz_graph_free_node_info);
+	if (!node) {
+		rz_graph_free_node_info(data);
+	}
+	return node;
+}
+
 /**
  * \brief Returns the graph node of a given \p fcn. If the function
  * is not yet added as node to the graph, it adds it to the graph and returns its reference.
@@ -812,7 +827,7 @@ static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNod
 		return rz_graph_get_node(icfg, i);
 	}
 	ht_uu_insert(graph_idx, fcn->addr, rz_list_length(rz_graph_get_nodes(icfg)));
-	return rz_graph_add_node_info(icfg, fcn->name, NULL, fcn->addr);
+	return rz_graph_add_node_info_icfg(icfg, fcn);
 }
 
 /**

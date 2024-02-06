@@ -3736,14 +3736,14 @@ RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzA
 		}
 		an->offset = info->def.offset;
 	} else if (info->type & RZ_GRAPH_NODE_TYPE_CFG) {
-		rz_strf(title, "0x%"PFMT64x, info->cfg.address);
+		rz_strf(title, "0x%" PFMT64x, info->cfg.address);
 		an = rz_agraph_add_node(g, title, "");
 		if (!an) {
 			return NULL;
 		}
 		an->offset = info->cfg.address;
 	} else if (info->type & RZ_GRAPH_NODE_TYPE_ICFG) {
-		rz_strf(title, "0x%"PFMT64x, info->icfg.address);
+		rz_strf(title, "0x%" PFMT64x, info->icfg.address);
 		an = rz_agraph_add_node(g, title, "");
 		if (!an) {
 			return NULL;
