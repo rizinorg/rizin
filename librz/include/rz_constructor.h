@@ -62,7 +62,7 @@
 	extern int (*_array##_func)(void); \
 	int _func##_wrapper(void) { \
 		_func(); \
-		char *_func##_var = rz_str_new(""); \
+		char *_func##_var = rz_str_dup(""); \
 		free(_func##_var); \
 		return 0; \
 	} \
@@ -74,7 +74,7 @@
 	extern int (*_array##_func)(void); \
 	int _func##_constructor(void) { \
 		atexit(_func); \
-		char *_func##_var = rz_str_new(""); \
+		char *_func##_var = rz_str_dup(""); \
 		free(_func##_var); \
 		return 0; \
 	} \

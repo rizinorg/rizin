@@ -2102,29 +2102,29 @@ RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 char *MACH0_(section_type_to_string)(ut64 type) {
 	switch (type) {
 	case S_REGULAR:
-		return rz_str_new("REGULAR");
+		return rz_str_dup("REGULAR");
 	case S_ZEROFILL:
-		return rz_str_new("ZEROFILL");
+		return rz_str_dup("ZEROFILL");
 	case S_CSTRING_LITERALS:
-		return rz_str_new("CSTRING_LITERALS");
+		return rz_str_dup("CSTRING_LITERALS");
 	case S_4BYTE_LITERALS:
-		return rz_str_new("4BYTE_LITERALS");
+		return rz_str_dup("4BYTE_LITERALS");
 	case S_LITERAL_POINTERS:
-		return rz_str_new("LITERAL_POINTERS");
+		return rz_str_dup("LITERAL_POINTERS");
 	case S_NON_LAZY_SYMBOL_POINTERS:
-		return rz_str_new("NON_LAZY_SYMBOL_POINTERS");
+		return rz_str_dup("NON_LAZY_SYMBOL_POINTERS");
 	case S_LAZY_SYMBOL_POINTERS:
-		return rz_str_new("LAZY_SYMBOL_POINTERS");
+		return rz_str_dup("LAZY_SYMBOL_POINTERS");
 	case S_SYMBOL_STUBS:
-		return rz_str_new("SYMBOL_STUBS");
+		return rz_str_dup("SYMBOL_STUBS");
 	case S_MOD_INIT_FUNC_POINTERS:
-		return rz_str_new("MOD_INIT_FUNC_POINTERS");
+		return rz_str_dup("MOD_INIT_FUNC_POINTERS");
 	case S_MOD_TERM_FUNC_POINTERS:
-		return rz_str_new("MOD_TERM_FUNC_POINTERS");
+		return rz_str_dup("MOD_TERM_FUNC_POINTERS");
 	case S_COALESCED:
-		return rz_str_new("COALESCED");
+		return rz_str_dup("COALESCED");
 	case S_GB_ZEROFILL:
-		return rz_str_new("GB_ZEROFILL");
+		return rz_str_dup("GB_ZEROFILL");
 	default:
 		return rz_str_newf("0x%" PFMT64x, type);
 	}
@@ -2843,9 +2843,9 @@ ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) * bin) {
 
 char *MACH0_(get_class)(struct MACH0_(obj_t) * bin) {
 #if RZ_BIN_MACH064
-	return rz_str_new("MACH064");
+	return rz_str_dup("MACH064");
 #else
-	return rz_str_new("MACH0");
+	return rz_str_dup("MACH0");
 #endif
 }
 

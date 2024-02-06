@@ -110,7 +110,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			option = RZ_SIGN_OPT_DUMP_FLIRT;
 			break;
 		case 'e':
-			if (!(config = rz_str_new(opt.arg)) || !rz_list_append(evars, config)) {
+			if (!(config = rz_str_dup(opt.arg)) || !rz_list_append(evars, config)) {
 				free(config);
 				RZ_LOG_ERROR("rz-sign: cannot add evaluable config variable '%s' to RzList\n", opt.arg);
 				ret = -1;

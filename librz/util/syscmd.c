@@ -173,7 +173,7 @@ RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL cons
 				}
 				rz_list_foreach (list2, iter2, str2) {
 					if (rz_str_startswith(str2, field)) {
-						char *out = rz_str_new(field);
+						char *out = rz_str_dup(field);
 						char *first = strchr(str1, ' ');
 						char *second = strchr(str2, ' ');
 						rz_str_append(out, first ? first : " ");
@@ -228,7 +228,7 @@ RZ_API RZ_OWN char *rz_syscmd_mkdir(RZ_NONNULL const char *dir) {
 
 	const char *suffix = rz_str_trim_head_ro(strchr(dir, ' '));
 	if (!suffix || !strncmp(suffix, "-p", 3)) {
-		return rz_str_dup(NULL, "Usage: mkdir [-p] [directory]\n");
+		return rz_str_dup("Usage: mkdir [-p] [directory]\n");
 	}
 	int ret;
 	char *dirname = (!strncmp(suffix, "-p ", 3))

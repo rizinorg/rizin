@@ -66,7 +66,7 @@ RZ_API int rz_analysis_value_set_ut64(RzAnalysis *analysis, RzAnalysisValue *val
 RZ_API char *rz_analysis_value_to_string(RzAnalysisValue *value) {
 	char *out = NULL;
 	if (value) {
-		out = rz_str_new("");
+		out = rz_str_dup("");
 		if (!value->base && !value->reg) {
 			if (value->imm != -1LL) {
 				out = rz_str_appendf(out, "0x%" PFMT64x, value->imm);

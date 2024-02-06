@@ -422,7 +422,7 @@ RZ_OWN RzVector /*<Elf_(Shdr)>*/ *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOB
 RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type) {
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(type_translation_table); i++) {
 		if (type == type_translation_table[i].type) {
-			return rz_str_new(type_translation_table[i].name);
+			return rz_str_dup(type_translation_table[i].name);
 		}
 	}
 

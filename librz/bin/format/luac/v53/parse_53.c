@@ -523,11 +523,11 @@ RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = rz_str_new(bf->file);
+	ret->file = rz_str_dup(bf->file);
 	ret->type = rz_str_newf("Lua %c.%c compiled file", major + '0', minor + '0');
-	ret->bclass = rz_str_new("Lua compiled file");
-	ret->rclass = rz_str_new("luac");
-	ret->arch = rz_str_new("luac");
+	ret->bclass = rz_str_dup("Lua compiled file");
+	ret->rclass = rz_str_dup("luac");
+	ret->arch = rz_str_dup("luac");
 	ret->machine = rz_str_newf("Lua %c.%c VM", major + '0', minor + '0');
 	ret->os = rz_str_newf("%c.%c", major + '0', minor + '0');
 	ret->cpu = rz_str_newf("%c.%c", major + '0', minor + '0');
@@ -535,10 +535,10 @@ RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
 
 	/* official format ? */
 	if (luac_format != LUAC_54_FORMAT) {
-		ret->compiler = rz_str_new("Unofficial Lua Compiler");
+		ret->compiler = rz_str_dup("Unofficial Lua Compiler");
 		return ret;
 	}
-	ret->compiler = rz_str_new("Official Lua Compiler");
+	ret->compiler = rz_str_dup("Official Lua Compiler");
 
 	/* Check Size */
 	// TODO : remove this check and process different compiler options
@@ -566,7 +566,7 @@ RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
 	lua_parse_string(buffer, ((ut8 **)&(src_file_name)), &name_len, LUAC_FILENAME_OFFSET, bf->size);
 
 	/* put source file info into GUID */
-	ret->guid = rz_str_new(src_file_name ? src_file_name : "stripped");
+	ret->guid = rz_str_dup(src_file_name ? src_file_name : "stripped");
 	free(src_file_name);
 
 	return ret;

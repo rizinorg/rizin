@@ -322,7 +322,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 				break;
 			}
 			if (!content) {
-				content = rz_str_new(x.data);
+				content = rz_str_dup(x.data);
 			} else {
 				content = rz_str_append(content, x.data);
 			}
@@ -701,7 +701,7 @@ static RzCFValue *rz_cf_value_clone(RzCFValue *value) {
 			RzListIter *iter;
 			RzCFKeyValue *item;
 			rz_list_foreach (((RzCFValueDict *)value)->pairs, iter, item) {
-				char *key = rz_str_new(item->key);
+				char *key = rz_str_dup(item->key);
 				if (key) {
 					RzCFValue *clone = rz_cf_value_clone(item->value);
 					if (clone) {
@@ -742,7 +742,7 @@ static RzCFValue *rz_cf_value_clone(RzCFValue *value) {
 	case RZ_CF_STRING: {
 		RzCFValueString *string = RZ_NEW0(RzCFValueString);
 		if (string) {
-			string->value = rz_str_new(((RzCFValueString *)value)->value);
+			string->value = rz_str_dup(((RzCFValueString *)value)->value);
 			if (string->value) {
 				copy = (RzCFValue *)string;
 			} else {

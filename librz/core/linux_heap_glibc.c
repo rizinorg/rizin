@@ -908,7 +908,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 	heap_bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
 	heap_bin->bin_num = bin_num + 1;
 	heap_bin->size = FASTBIN_IDX_TO_SIZE(bin_num + 1);
-	heap_bin->type = rz_str_new("Fast");
+	heap_bin->type = rz_str_dup("Fast");
 	GHT next = main_arena->fastbinsY[bin_num];
 	if (!next) {
 		free(cnk);
@@ -930,7 +930,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 			break;
 		}
 		item->addr = next;
-		item->status = rz_str_new("free");
+		item->status = rz_str_dup("free");
 		rz_list_append(heap_bin->chunks, item);
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->top) {
 			rz_io_read_at(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
@@ -948,7 +948,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			char message[50];
 			rz_snprintf(message, 50, "Linked list corrupted @ 0x%" PFMT64x, (ut64)next);
-			heap_bin->message = rz_str_new(message);
+			heap_bin->message = rz_str_dup(message);
 			free(cnk);
 			return heap_bin;
 		}
@@ -957,7 +957,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 		if (double_free == next) {
 			char message[50];
 			rz_snprintf(message, 50, "Double free detected @ 0x%" PFMT64x, (ut64)next);
-			heap_bin->message = rz_str_new(message);
+			heap_bin->message = rz_str_dup(message);
 			free(cnk);
 			return heap_bin;
 		}
@@ -965,7 +965,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 	if (next && (next < brk_start || next >= main_arena->top)) {
 		char message[50];
 		rz_snprintf(message, 50, "Linked list corrupted @ 0x%" PFMT64x, (ut64)next);
-		heap_bin->message = rz_str_new(message);
+		heap_bin->message = rz_str_dup(message);
 		free(cnk);
 		return heap_bin;
 	}
@@ -1160,7 +1160,7 @@ RZ_API RzList /*<RzHeapBin *>*/ *GH(rz_heap_tcache_content)(RzCore *core, GHT ar
 		if (!bin) {
 			goto error;
 		}
-		bin->type = rz_str_new("Tcache");
+		bin->type = rz_str_dup("Tcache");
 		bin->bin_num = i;
 		bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
 		rz_list_append(tcache_bins_list, bin);
@@ -1414,11 +1414,11 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 
 char *GH(rz_bin_num_to_type)(int bin_num) {
 	if (bin_num == 0) {
-		return rz_str_new("Unsorted");
+		return rz_str_dup("Unsorted");
 	} else if (bin_num >= 1 && bin_num <= NSMALLBINS - 1) {
-		return rz_str_new("Small");
+		return rz_str_dup("Small");
 	} else if (bin_num >= NSMALLBINS && bin_num <= NBINS - 2) {
-		return rz_str_new("Large");
+		return rz_str_dup("Large");
 	}
 	return NULL;
 }
@@ -1499,7 +1499,7 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	bin->addr = base;
 	while (fw != head->fd) {
 		if (fw > main_arena->top || fw < initial_brk) {
-			bin->message = rz_str_new("Corrupted list");
+			bin->message = rz_str_dup("Corrupted list");
 			break;
 		}
 		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
@@ -1754,7 +1754,7 @@ RZ_API RzList /*<RzArenaListItem *>*/ *GH(rz_heap_arenas_list)(RzCore *core, GHT
 		return arena_list;
 	}
 	item->addr = m_arena;
-	item->type = rz_str_new("Main");
+	item->type = rz_str_dup("Main");
 	item->arena = ta;
 	rz_list_append(arena_list, item);
 	if (main_arena->next != m_arena) {
@@ -1773,7 +1773,7 @@ RZ_API RzList /*<RzArenaListItem *>*/ *GH(rz_heap_arenas_list)(RzCore *core, GHT
 				break;
 			}
 			item->addr = ta_addr;
-			item->type = rz_str_new("Thread");
+			item->type = rz_str_dup("Thread");
 			item->arena = ta;
 			rz_list_append(arena_list, item);
 		}
@@ -1858,7 +1858,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 				break;
 			}
 			block->addr = next_chunk;
-			block->status = rz_str_new("corrupted");
+			block->status = rz_str_dup("corrupted");
 			block->size = size_tmp;
 			rz_list_append(chunks, block);
 			break;
@@ -1959,7 +1959,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 		if (!block) {
 			break;
 		}
-		char *status = rz_str_new("allocated");
+		char *status = rz_str_dup("allocated");
 		if (fastbin) {
 			if (is_free) {
 				strcpy(status, "free");
@@ -1982,7 +1982,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
 		if (block) {
 			block->addr = main_arena->top;
-			block->status = rz_str_new("free (top)");
+			block->status = rz_str_dup("free (top)");
 			RzHeapChunkSimple *chunkSimple = GH(rz_heap_chunk_wrapper)(core, main_arena->top);
 			if (chunkSimple) {
 				block->size = chunkSimple->size;
@@ -2104,7 +2104,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	RzANode *top = RZ_EMPTY, *chunk_node = RZ_EMPTY, *prev_node = RZ_EMPTY;
 	char *top_title = NULL, *top_data = NULL, *node_title = NULL, *node_data = NULL;
 	bool first_node = true;
-	top_data = rz_str_new("");
+	top_data = rz_str_dup("");
 	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, false);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		if (!pj) {

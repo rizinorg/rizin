@@ -265,7 +265,7 @@ static char *full_file_path(
 	} else if (dir) {
 		file_path_abs = rz_str_newf("%s/%s", dir, file->path_name);
 	} else {
-		file_path_abs = rz_str_new(file->path_name);
+		file_path_abs = rz_str_dup(file->path_name);
 	}
 	return file_path_abs;
 }

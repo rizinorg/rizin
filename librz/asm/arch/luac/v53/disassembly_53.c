@@ -120,7 +120,7 @@ int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 		asm_string = luaop_new_str_1arg(opnames[opcode], ax);
 		break;
 	default:
-		asm_string = rz_str_new("invalid");
+		asm_string = rz_str_dup("invalid");
 		break;
 	}
 

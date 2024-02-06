@@ -36,7 +36,7 @@ static void process_class_field(RzBinObject *o, RzBinClassField *field) {
 
 static void process_handle_class(RzBinObject *o, RzBinClass *klass) {
 	if (!klass->name) {
-		klass->name = rz_str_new("unknown_class");
+		klass->name = rz_str_dup("unknown_class");
 	}
 	RzBinClass *found = ht_pp_find(o->name_to_class_object, klass->name, NULL);
 	if (!found) {

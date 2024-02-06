@@ -316,7 +316,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 					if (label) {
 						flagname = rz_str_newf(".%s", label);
 					} else {
-						flagname = rz_str_new(f->realnames ? flag->realname : flag->name);
+						flagname = rz_str_dup(f->realnames ? flag->realname : flag->name);
 					}
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && flagname && strlen(flagname) > maxflagname) {

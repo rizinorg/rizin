@@ -168,16 +168,16 @@ static void simple_merge(RzTableRow *acc, RzTableRow *new_row, int nth) {
 		if (cnt != nth) {
 			if (!strcmp(item_lhs, "a")) {
 				free(item_lhs);
-				rz_pvector_set(lhs, cnt, rz_str_new("a | e"));
+				rz_pvector_set(lhs, cnt, rz_str_dup("a | e"));
 			} else if (!strcmp(item_lhs, "b")) {
 				free(item_lhs);
-				rz_pvector_set(lhs, cnt, rz_str_new("b | f"));
+				rz_pvector_set(lhs, cnt, rz_str_dup("b | f"));
 			} else if (!strcmp(item_lhs, "c")) {
 				free(item_lhs);
-				rz_pvector_set(lhs, cnt, rz_str_new("c | h"));
+				rz_pvector_set(lhs, cnt, rz_str_dup("c | h"));
 			} else if (!strcmp(item_lhs, "d")) {
 				free(item_lhs);
-				rz_pvector_set(lhs, cnt, rz_str_new("d | g"));
+				rz_pvector_set(lhs, cnt, rz_str_dup("d | g"));
 			}
 		}
 	}

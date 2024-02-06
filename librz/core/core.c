@@ -1051,7 +1051,7 @@ static void autocomplete_process_path(RzLineCompletion *completion, const char *
 		goto out;
 	}
 
-	lpath = rz_str_new(path);
+	lpath = rz_str_dup(path);
 #if __WINDOWS__
 	rz_str_replace_ch(lpath, '/', '\\', true);
 #endif
@@ -1062,7 +1062,7 @@ static void autocomplete_process_path(RzLineCompletion *completion, const char *
 #if __WINDOWS__
 			dirname = strdup("\\.\\");
 #else
-			dirname = rz_str_new(RZ_SYS_DIR);
+			dirname = rz_str_dup(RZ_SYS_DIR);
 #endif
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
 			dirname = rz_str_home(lpath + 2);
@@ -1083,10 +1083,10 @@ static void autocomplete_process_path(RzLineCompletion *completion, const char *
 #endif
 			dirname = rz_str_newf(fmt, RZ_SYS_DIR, lpath, RZ_SYS_DIR);
 		}
-		basename = rz_str_new(p + 1);
+		basename = rz_str_dup(p + 1);
 	} else { // xxx
 		dirname = rz_str_newf(".%s", RZ_SYS_DIR);
-		basename = rz_str_new(lpath);
+		basename = rz_str_dup(lpath);
 	}
 
 	if (!dirname || !basename) {
@@ -1126,9 +1126,9 @@ static void autocompleteFilename(RzLineCompletion *completion, RzLineBuffer *buf
 	int n = 0, i = 0;
 	char *pipe = strchr(buf->data, '>');
 	if (pipe) {
-		args = rz_str_new(pipe + 1);
+		args = rz_str_dup(pipe + 1);
 	} else {
-		args = rz_str_new(buf->data);
+		args = rz_str_dup(buf->data);
 	}
 	if (!args) {
 		goto out;
@@ -1139,7 +1139,7 @@ static void autocompleteFilename(RzLineCompletion *completion, RzLineBuffer *buf
 		goto out;
 	}
 
-	input = rz_str_new(rz_str_word_get0(args, narg));
+	input = rz_str_dup(rz_str_word_get0(args, narg));
 	if (!input) {
 		goto out;
 	}
@@ -1258,7 +1258,7 @@ static void autocomplete_sdb(RzCore *core, RzLineCompletion *completion, const c
 	if (pipe) {
 		str = rz_str_trim_head_ro(pipe + 1);
 	}
-	lpath = rz_str_new(str);
+	lpath = rz_str_dup(str);
 	p1 = strchr(lpath, '/');
 	if (p1) {
 		*p1 = 0;

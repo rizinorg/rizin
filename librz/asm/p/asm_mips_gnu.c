@@ -74,19 +74,23 @@ static int disassemble(struct rz_asm_t *a, struct rz_asm_op_t *op, const ut8 *bu
 		} else if (!rz_str_casecmp(a->cpu, "mips32")) {
 			ctx->disasm_obj.mach = bfd_mach_mipsisa32;
 		}
-		pre_cpu = rz_str_dup(pre_cpu, a->cpu);
+		char *tmp = rz_str_dup(a->cpu);
+		free(pre_cpu);
+		pre_cpu = tmp;
 	}
 
 	if (a->features && (!pre_features || !strcmp(a->features, pre_features))) {
 		free(ctx->disasm_obj.disassembler_options);
 		if (strstr(a->features, "n64")) {
-			ctx->disasm_obj.disassembler_options = rz_str_new("abi=n64");
+			ctx->disasm_obj.disassembler_options = rz_str_dup("abi=n64");
 		} else if (strstr(a->features, "n32")) {
-			ctx->disasm_obj.disassembler_options = rz_str_new("abi=n32");
+			ctx->disasm_obj.disassembler_options = rz_str_dup("abi=n32");
 		} else if (strstr(a->features, "o32")) {
-			ctx->disasm_obj.disassembler_options = rz_str_new("abi=o32");
+			ctx->disasm_obj.disassembler_options = rz_str_dup("abi=o32");
 		}
-		pre_features = rz_str_dup(pre_features, a->features);
+		char *tmp = rz_str_dup(a->features);
+		free(pre_features);
+		pre_features = tmp;
 	}
 
 	mips_mode = a->bits;

@@ -270,7 +270,7 @@ static RzType *type_new_identify(const char *name, RzTypeIdentifierKind k) {
 		return NULL;
 	}
 	t->kind = RZ_TYPE_KIND_IDENTIFIER;
-	t->identifier.name = rz_str_new(name);
+	t->identifier.name = rz_str_dup(name);
 	t->identifier.kind = k;
 	return t;
 }
@@ -341,7 +341,7 @@ static RzTypeStructMember *class_member_parse(
 	}
 	case TpiKind_NESTTYPE: {
 		name = rz_bin_pdb_get_type_name(t);
-		type = nest_parse(typedb, stream, t, rz_str_new(name));
+		type = nest_parse(typedb, stream, t, rz_str_dup(name));
 		break;
 	}
 	case TpiKind_VBCLASS:
@@ -527,7 +527,7 @@ static RzTypeUnionMember *union_member_parse(const RzTypeDB *typedb, RzPdbTpiStr
 	}
 	case TpiKind_NESTTYPE: {
 		name = rz_bin_pdb_get_type_name(type_info);
-		type = nest_parse(typedb, stream, type_info, rz_str_new(name));
+		type = nest_parse(typedb, stream, type_info, rz_str_dup(name));
 		break;
 	}
 	default:

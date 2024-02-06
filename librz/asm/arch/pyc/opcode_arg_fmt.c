@@ -25,20 +25,20 @@ const char *format_CALL_FUNCTION_KW_36(ut32 oparg) {
 }
 
 const char *format_CALL_FUNCTION_EX_36(ut32 oparg) {
-	return rz_str_new((oparg & 0x01) ? "keyword args" : "");
+	return rz_str_dup((oparg & 0x01) ? "keyword args" : "");
 }
 
 static const char *MAKE_FUNCTION_FLAGS[] = { "default", "keyword-only", "annotation", "closure" };
 
 const char *format_MAKE_FUNCTION_arg_36(ut32 oparg) {
 	size_t i;
-	char *ret = rz_str_new(" ");
+	char *ret = rz_str_dup(" ");
 	for (i = 0; i < sizeof(MAKE_FUNCTION_FLAGS) / sizeof(char *); ++i) {
 		if (oparg & 0x1) {
 			rz_str_appendf(ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
 		} else {
 			free(ret);
-			ret = rz_str_new(MAKE_FUNCTION_FLAGS[i]);
+			ret = rz_str_dup(MAKE_FUNCTION_FLAGS[i]);
 		}
 		oparg >>= 1;
 	}
@@ -63,7 +63,7 @@ const char *format_value_flags_36(ut32 oparg) {
 		// empty fmt_spec.
 		ret = "";
 	}
-	return rz_str_new(ret);
+	return rz_str_dup(ret);
 }
 
 const char *format_extended_arg_36(ut32 oparg) {

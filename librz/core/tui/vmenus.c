@@ -66,12 +66,12 @@ static RzPVector /*<char *>*/ *capture_filter_keywords(char *inputing) {
 		return NULL;
 	}
 	char *processing = rz_str_trim_dup(inputing);
-	char *buf = rz_str_new("");
+	char *buf = rz_str_dup("");
 	for (int i = 0; i < strlen(processing); i++) {
 		if (IS_WHITESPACE(processing[i])) {
 			if (strlen(buf)) {
 				rz_pvector_push(keywords, buf);
-				buf = rz_str_new("");
+				buf = rz_str_dup("");
 			}
 		} else {
 			buf = rz_str_appendch(buf, processing[i]);
@@ -674,7 +674,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				// add new keyword
 				visual->is_inputing = true;
 				if (!visual->inputing) {
-					visual->inputing = rz_str_new("");
+					visual->inputing = rz_str_dup("");
 				}
 				option = 0;
 			}
