@@ -237,3 +237,24 @@ RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *attr) {
 		break;
 	};
 }
+
+RZ_API RZ_OWN char *rz_bin_dwarf_attr_string(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfAttr *attr,
+	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
+	ut64 str_offsets_base) {
+	rz_return_val_if_fail(attr, NULL);
+
+	const RzBinDwarfAttrValue *v = &attr->value;
+	char *s = NULL;
+	if (v->kind == RzBinDwarfAttr_String) {
+		s = rz_str_dup(v->string);
+	} else if (v->kind == RzBinDwarfAttr_StrRef && dw) {
+		s = rz_str_dup(rz_bin_dwarf_str_get(dw->str, v->u64));
+	} else if (v->kind == RzBinDwarfAttr_StrOffsetIndex && dw) {
+		s = rz_str_dup(rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64));
+	} else if (v->kind == RzBinDwarfAttr_LineStrRef && dw) {
+		s = rz_str_dup(rz_bin_dwarf_line_str_get(dw->line_str, v->u64));
+	}
+	str_escape(&s);
+	return s;
+}

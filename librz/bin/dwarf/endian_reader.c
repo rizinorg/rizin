@@ -242,6 +242,7 @@ RZ_IPI char *read_string(RzBinEndianReader *reader) {
 	RET_NULL_IF_FAIL(x);
 	ut64 len = strlen(x) + 1;
 	rz_buf_seek(reader->buffer, (st64)len, SEEK_CUR);
+	str_escape(&x);
 	return x;
 }
 

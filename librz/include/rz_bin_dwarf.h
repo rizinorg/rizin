@@ -1819,23 +1819,10 @@ RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_from_file(RZ_BORROW RZ_NONNULL R
 /**
  * \brief Safely get the string from an RzBinDwarfAttrValue if it has one.
  */
-static inline char *rz_bin_dwarf_attr_string(
-	const RzBinDwarfAttr *attr,
-	const RzBinDWARF *dw,
-	ut64 str_offsets_base) {
-	rz_return_val_if_fail(attr, NULL);
-	const RzBinDwarfAttrValue *v = &attr->value;
-	if (v->kind == RzBinDwarfAttr_String) {
-		return rz_str_dup(v->string);
-	} else if (v->kind == RzBinDwarfAttr_StrRef && dw) {
-		return rz_str_dup(rz_bin_dwarf_str_get(dw->str, v->u64));
-	} else if (v->kind == RzBinDwarfAttr_StrOffsetIndex && dw) {
-		return rz_str_dup(rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64));
-	} else if (v->kind == RzBinDwarfAttr_LineStrRef && dw) {
-		return rz_str_dup(rz_bin_dwarf_line_str_get(dw->line_str, v->u64));
-	}
-	return NULL;
-}
+RZ_API RZ_OWN char *rz_bin_dwarf_attr_string(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfAttr *attr,
+	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
+	ut64 str_offsets_base);
 
 static inline ut64 rz_bin_dwarf_attr_addr(
 	const RzBinDwarfAttr *attr,
