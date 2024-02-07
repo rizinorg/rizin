@@ -1,3 +1,424 @@
+NAME="ansi injection via dwarf"
+FILE=bins/elf/dwarf_test_func_patched
+ARGS=-AA
+CMDS=<<EOF
+id
+C
+xc
+EOF
+EXPECT=<<EOF
+    1      DW_TAG_compile_unit       [has children] (0x0)
+    DW_AT_producer                 DW_FORM_strp
+    DW_AT_language                 DW_FORM_data1
+    DW_AT_name                     DW_FORM_strp
+    DW_AT_comp_dir                 DW_FORM_strp
+    DW_AT_low_pc                   DW_FORM_addr
+    DW_AT_high_pc                  DW_FORM_data8
+    DW_AT_stmt_list                DW_FORM_sec_offset
+    2      DW_TAG_base_type          [no children] (0x13)
+    DW_AT_byte_size                DW_FORM_data1
+    DW_AT_encoding                 DW_FORM_data1
+    DW_AT_name                     DW_FORM_strp
+    3      DW_TAG_base_type          [no children] (0x1e)
+    DW_AT_byte_size                DW_FORM_data1
+    DW_AT_encoding                 DW_FORM_data1
+    DW_AT_name                     DW_FORM_string
+    4      DW_TAG_pointer_type       [no children] (0x29)
+    DW_AT_byte_size                DW_FORM_data1
+    DW_AT_type                     DW_FORM_ref4
+    5      DW_TAG_const_type         [no children] (0x32)
+    DW_AT_type                     DW_FORM_ref4
+    6      DW_TAG_subprogram         [has children] (0x39)
+    DW_AT_external                 DW_FORM_flag_present
+    DW_AT_name                     DW_FORM_strp
+    DW_AT_decl_file                DW_FORM_data1
+    DW_AT_decl_line                DW_FORM_data2
+    DW_AT_decl_column              DW_FORM_data1
+    DW_AT_prototyped               DW_FORM_flag_present
+    DW_AT_type                     DW_FORM_ref4
+    DW_AT_declaration              DW_FORM_flag_present
+    DW_AT_sibling                  DW_FORM_ref4
+    7      DW_TAG_formal_parameter   [no children] (0x50)
+    DW_AT_type                     DW_FORM_ref4
+    8      DW_TAG_subprogram         [no children] (0x57)
+    DW_AT_external                 DW_FORM_flag_present
+    DW_AT_name                     DW_FORM_strp
+    DW_AT_decl_file                DW_FORM_data1
+    DW_AT_decl_line                DW_FORM_data1
+    DW_AT_decl_column              DW_FORM_data1
+    DW_AT_type                     DW_FORM_ref4
+    DW_AT_low_pc                   DW_FORM_addr
+    DW_AT_high_pc                  DW_FORM_data8
+    DW_AT_frame_base               DW_FORM_exprloc
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag_present
+    9      DW_TAG_subprogram         [has children] (0x71)
+    DW_AT_external                 DW_FORM_flag_present
+    DW_AT_name                     DW_FORM_strp
+    DW_AT_decl_file                DW_FORM_data1
+    DW_AT_decl_line                DW_FORM_data1
+    DW_AT_decl_column              DW_FORM_data1
+    DW_AT_prototyped               DW_FORM_flag_present
+    DW_AT_low_pc                   DW_FORM_addr
+    DW_AT_high_pc                  DW_FORM_data8
+    DW_AT_frame_base               DW_FORM_exprloc
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag_present
+    10     DW_TAG_formal_parameter   [no children] (0x8b)
+    DW_AT_name                     DW_FORM_string
+    DW_AT_decl_file                DW_FORM_data1
+    DW_AT_decl_line                DW_FORM_data1
+    DW_AT_decl_column              DW_FORM_data1
+    DW_AT_type                     DW_FORM_ref4
+    DW_AT_location                 DW_FORM_exprloc
+
+  Compilation Unit @ offset 0x0:
+   Length:        0xe7
+   Version:       4
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+
+<0xb>: Abbrev Number: 1    (DW_TAG_compile_unit)
+	DW_AT_producer [DW_FORM_strp]	: (indirect string, .debug_str+0x1e): GNU C17 11.3.0 -mtune=generic -march=x86-64 -gdwarf-4 -O0 -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+	DW_AT_language [DW_FORM_data1]	: 12   (C99)
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0x133): dwarf_test.c
+	DW_AT_comp_dir [DW_FORM_strp]	: (indirect string, .debug_str+0xe1): /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj
+	DW_AT_low_pc [DW_FORM_addr]	: 0x1149
+	DW_AT_high_pc [DW_FORM_data8]	: 61
+	DW_AT_stmt_list [DW_FORM_sec_offset]	: <0x0>
+<0x2d>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 8
+	DW_AT_encoding [DW_FORM_data1]	: 7
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0xc1): long unsigned int
+<0x34>: Abbrev Number: 3    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 4
+	DW_AT_encoding [DW_FORM_data1]	: 5
+	DW_AT_name [DW_FORM_string]	: int
+<0x3b>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 8
+	DW_AT_encoding [DW_FORM_data1]	: 5
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0x5): long int
+<0x42>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 8
+	DW_AT_encoding [DW_FORM_data1]	: 5
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0x0): long long int
+<0x49>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 1
+	DW_AT_encoding [DW_FORM_data1]	: 8
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0xd3): unsigned char
+<0x50>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 2
+	DW_AT_encoding [DW_FORM_data1]	: 7
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0x116): short unsigned int
+<0x57>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 4
+	DW_AT_encoding [DW_FORM_data1]	: 7
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0xc6): unsigned int
+<0x5e>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 1
+	DW_AT_encoding [DW_FORM_data1]	: 6
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0xd5): signed char
+<0x65>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 2
+	DW_AT_encoding [DW_FORM_data1]	: 5
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0x129): short int
+<0x6c>: Abbrev Number: 4    (DW_TAG_pointer_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 8
+	DW_AT_type [DW_FORM_ref4]	: <0x72>
+<0x72>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 1
+	DW_AT_encoding [DW_FORM_data1]	: 6
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0xdc): char
+<0x79>: Abbrev Number: 5    (DW_TAG_const_type)
+	DW_AT_type [DW_FORM_ref4]	: <0x72>
+<0x7e>: Abbrev Number: 2    (DW_TAG_base_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 8
+	DW_AT_encoding [DW_FORM_data1]	: 7
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0xbc): long long unsigned int
+<0x85>: Abbrev Number: 6    (DW_TAG_subprogram)
+	DW_AT_external [DW_FORM_flag_present]	: 1
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0x19): puts
+	DW_AT_decl_file [DW_FORM_data1]	: 2
+	DW_AT_decl_line [DW_FORM_data2]	: 661
+	DW_AT_decl_column [DW_FORM_data1]	: 12
+	DW_AT_prototyped [DW_FORM_flag_present]	: 1
+	DW_AT_type [DW_FORM_ref4]	: <0x34>
+	DW_AT_declaration [DW_FORM_flag_present]	: 1
+	DW_AT_sibling [DW_FORM_ref4]	: <0x9c>
+<0x96>: Abbrev Number: 7    (DW_TAG_formal_parameter)
+	DW_AT_type [DW_FORM_ref4]	: <0x9c>
+<0x9b>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x9c>: Abbrev Number: 4    (DW_TAG_pointer_type)
+	DW_AT_byte_size [DW_FORM_data1]	: 8
+	DW_AT_type [DW_FORM_ref4]	: <0x79>
+<0xa2>: Abbrev Number: 8    (DW_TAG_subprogram)
+	DW_AT_external [DW_FORM_flag_present]	: 1
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0xb7): main
+	DW_AT_decl_file [DW_FORM_data1]	: 1
+	DW_AT_decl_line [DW_FORM_data1]	: 8
+	DW_AT_decl_column [DW_FORM_data1]	: 5
+	DW_AT_type [DW_FORM_ref4]	: <0x34>
+	DW_AT_low_pc [DW_FORM_addr]	: 0x1168
+	DW_AT_high_pc [DW_FORM_data8]	: 30
+	DW_AT_frame_base [DW_FORM_exprloc]	: 1 byte block: 0x9c
+	DW_AT_GNU_all_tail_call_sites [DW_FORM_flag_present]	: 1
+<0xc0>: Abbrev Number: 9    (DW_TAG_subprogram)
+	DW_AT_external [DW_FORM_flag_present]	: 1
+	DW_AT_name [DW_FORM_strp]	: (indirect string, .debug_str+0xe): \\e[33m_func
+	DW_AT_decl_file [DW_FORM_data1]	: 1
+	DW_AT_decl_line [DW_FORM_data1]	: 4
+	DW_AT_decl_column [DW_FORM_data1]	: 6
+	DW_AT_prototyped [DW_FORM_flag_present]	: 1
+	DW_AT_low_pc [DW_FORM_addr]	: 0x1149
+	DW_AT_high_pc [DW_FORM_data8]	: 31
+	DW_AT_frame_base [DW_FORM_exprloc]	: 1 byte block: 0x9c
+	DW_AT_GNU_all_tail_call_sites [DW_FORM_flag_present]	: 1
+<0xda>: Abbrev Number: 10   (DW_TAG_formal_parameter)
+	DW_AT_name [DW_FORM_string]	: msg
+	DW_AT_decl_file [DW_FORM_data1]	: 1
+	DW_AT_decl_line [DW_FORM_data1]	: 4
+	DW_AT_decl_column [DW_FORM_data1]	: 23
+	DW_AT_type [DW_FORM_ref4]	: <0x6c>
+	DW_AT_location [DW_FORM_exprloc]	: 2 byte block: 0x9168
+<0xe9>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0xea>: Abbrev Number: 0    (DW_TAG_null_entry)
+
+Contents of the .debug_aranges section:
+  Address Range Set
+   Unit Length:           0x2c
+   64bit:                 false
+   Version:               2
+   Offset in .debug_info: 0x0
+   Address Size:          8
+   Segment Size:          0
+   Ranges:
+    address            length
+    0x0000000000001149 0x000000000000003d
+    0x0000000000000000 0x0000000000000000
+
+Raw dump of debug contents of section .debug_line:
+
+ Header information[0x0]
+  Length:                             103
+  DWARF Version:                      4
+  Header Length:                      60
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 1
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+standard_opcode_lengths[DW_LNS_copy] = 0
+standard_opcode_lengths[DW_LNS_advance_pc] = 1
+standard_opcode_lengths[DW_LNS_advance_line] = 1
+standard_opcode_lengths[DW_LNS_set_file] = 1
+standard_opcode_lengths[DW_LNS_set_column] = 1
+standard_opcode_lengths[DW_LNS_negate_stmt] = 0
+standard_opcode_lengths[DW_LNS_set_basic_block] = 0
+standard_opcode_lengths[DW_LNS_const_add_pc] = 0
+standard_opcode_lengths[DW_LNS_fixed_advance_pc] = 1
+standard_opcode_lengths[DW_LNS_set_prologue_end] = 0
+standard_opcode_lengths[DW_LNS_set_epilogue_begin] = 0
+standard_opcode_lengths[DW_LNS_set_isa] = 1
+
+ The Directory Table:
+  1     /usr/include
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          \e[36m_test.c
+  2     1       0         0          stdio.h
+
+ Line Number Statements:
+  DW_LNS_set_column	28
+  DW_LNE_set_address	0x1149
+  Special opcode	21
+  DW_LNS_set_column	5
+  Special opcode	243
+  DW_LNS_set_column	1
+  Special opcode	187
+  DW_LNS_set_column	12
+  Special opcode	62
+  DW_LNS_set_column	5
+  Special opcode	131
+  DW_LNS_set_column	12
+  Special opcode	229
+  DW_LNS_set_column	1
+  Special opcode	89
+  DW_LNS_advance_pc	2
+  DW_LNE_end_sequence
+
+0x00001149	/home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/\e[36m_test.c	4	28
+0x00001159	/home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/\e[36m_test.c	5	5
+0x00001165	/home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/\e[36m_test.c	6	1
+0x00001168	/home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/\e[36m_test.c	8	12
+0x00001170	/home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/\e[36m_test.c	9	5
+0x0000117f	/home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/\e[36m_test.c	10	12
+0x00001184	/home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/\e[36m_test.c	11	1
+0x00001186	-	0	0
+0x00000318 CCu "[00] -r-- section size 28 named .interp"
+0x00000338 CCu "[01] -r-- section size 48 named .note.gnu.property"
+0x00000368 CCu "[02] -r-- section size 36 named .note.gnu.build-id"
+0x0000038c CCu "[03] -r-- section size 32 named .note.ABI-tag"
+0x000003b0 CCu "[04] -r-- section size 36 named .gnu.hash"
+0x000003d8 CCu "[05] -r-- section size 168 named .dynsym"
+0x00000480 CCu "[06] -r-- section size 141 named .dynstr"
+0x0000050e CCu "[07] -r-- section size 14 named .gnu.version"
+0x00000520 CCu "[08] -r-- section size 48 named .gnu.version_r"
+0x00000550 data Cd 8
+0x00000550 CCu "[09] -r-- section size 192 named .rela.dyn"
+0x00000558 data Cd 8
+0x00000560 data Cd 8
+0x00000568 data Cd 8
+0x00000570 data Cd 8
+0x00000578 data Cd 8
+0x00000580 data Cd 8
+0x00000588 data Cd 8
+0x00000590 data Cd 8
+0x00000598 data Cd 8
+0x000005a0 data Cd 8
+0x000005a8 data Cd 8
+0x000005b0 data Cd 8
+0x000005b8 data Cd 8
+0x000005c0 data Cd 8
+0x000005c8 data Cd 8
+0x000005d0 data Cd 8
+0x000005d8 data Cd 8
+0x000005e0 data Cd 8
+0x000005e8 data Cd 8
+0x000005f0 data Cd 8
+0x000005f8 data Cd 8
+0x00000600 data Cd 8
+0x00000608 data Cd 8
+0x00000610 data Cd 8
+0x00000610 CCu "[10] -r-- section size 24 named .rela.plt"
+0x00000618 data Cd 8
+0x00000620 data Cd 8
+0x00001000 CCu "[11] -r-x section size 27 named .init"
+0x00001020 CCu "[12] -r-x section size 32 named .plt"
+0x00001040 CCu "[13] -r-x section size 16 named .plt.got"
+0x00001050 CCu "[14] -r-x section size 16 named .plt.sec"
+0x00001060 CCu "[15] -r-x section size 294 named .text"
+0x00001066 void *rtld_fini
+0x00001069 int argc
+0x0000106a char **ubp_av
+0x00001073 void *fini
+0x00001076 void *init
+0x00001078 void *main
+0x00001155 arg1
+0x0000115d const char *s
+0x00001177 int64_t arg1
+0x00001188 CCu "[16] -r-x section size 13 named .fini"
+0x00002000 CCu "[17] -r-- section size 16 named .rodata"
+0x00002004 ascii[12] "hello world"
+0x00002010 CCu "[18] -r-- section size 60 named .eh_frame_hdr"
+0x00002050 CCu "[19] -r-- section size 204 named .eh_frame"
+0x00003db8 data Cd 8
+0x00003db8 CCu "[20] -rw- section size 8 named .init_array"
+0x00003dc0 data Cd 8
+0x00003dc0 CCu "[21] -rw- section size 8 named .fini_array"
+0x00003dc8 data Cd 8
+0x00003dc8 CCu "[22] -rw- section size 496 named .dynamic"
+0x00003dd0 data Cd 8
+0x00003dd8 data Cd 8
+0x00003de0 data Cd 8
+0x00003de8 data Cd 8
+0x00003df0 data Cd 8
+0x00003df8 data Cd 8
+0x00003e00 data Cd 8
+0x00003e08 data Cd 8
+0x00003e10 data Cd 8
+0x00003e18 data Cd 8
+0x00003e20 data Cd 8
+0x00003e28 data Cd 8
+0x00003e30 data Cd 8
+0x00003e38 data Cd 8
+0x00003e40 data Cd 8
+0x00003e48 data Cd 8
+0x00003e50 data Cd 8
+0x00003e58 data Cd 8
+0x00003e60 data Cd 8
+0x00003e68 data Cd 8
+0x00003e70 data Cd 8
+0x00003e78 data Cd 8
+0x00003e80 data Cd 8
+0x00003e88 data Cd 8
+0x00003e90 data Cd 8
+0x00003e98 data Cd 8
+0x00003ea0 data Cd 8
+0x00003ea8 data Cd 8
+0x00003eb0 data Cd 8
+0x00003eb8 data Cd 8
+0x00003ec0 data Cd 8
+0x00003ec8 data Cd 8
+0x00003ed0 data Cd 8
+0x00003ed8 data Cd 8
+0x00003ee0 data Cd 8
+0x00003ee8 data Cd 8
+0x00003ef0 data Cd 8
+0x00003ef8 data Cd 8
+0x00003f00 data Cd 8
+0x00003f08 data Cd 8
+0x00003f10 data Cd 8
+0x00003f18 data Cd 8
+0x00003f20 data Cd 8
+0x00003f28 data Cd 8
+0x00003f30 data Cd 8
+0x00003f38 data Cd 8
+0x00003f40 data Cd 8
+0x00003f48 data Cd 8
+0x00003f50 data Cd 8
+0x00003f58 data Cd 8
+0x00003f60 data Cd 8
+0x00003f68 data Cd 8
+0x00003f70 data Cd 8
+0x00003f78 data Cd 8
+0x00003f80 data Cd 8
+0x00003f88 data Cd 8
+0x00003f90 data Cd 8
+0x00003f98 data Cd 8
+0x00003fa0 data Cd 8
+0x00003fa8 data Cd 8
+0x00003fb0 data Cd 8
+0x00003fb8 data Cd 8
+0x00003fb8 CCu "[23] -rw- section size 72 named .got"
+0x00003fc0 data Cd 8
+0x00003fc8 data Cd 8
+0x00003fd0 data Cd 8
+0x00003fd8 data Cd 8
+0x00003fe0 data Cd 8
+0x00003fe8 data Cd 8
+0x00003ff0 data Cd 8
+0x00003ff8 data Cd 8
+0x00004000 CCu "[24] -rw- section size 16 named .data"
+0x00004008 data Cd 8
+0x00004010 CCu "[25] -rw- section size 8 named .bss"
+0x00004020 data Cd 8
+0x00004028 data Cd 8
+0x00004030 data Cd 8
+0x00004038 data Cd 8
+0x00004040 data Cd 8
+0x00004048 data Cd 8
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF  comment
+0x00001060  f30f 1efa 31ed 4989 d15e 4889 e248 83e4  ....1.I..^H..H..  ; sym._start  ; [15] -r-x section size 294 named .text  ; void *rtld_fini  ; int argc  ; char **ubp_av
+0x00001070  f050 5445 31c0 31c9 488d 3de9 0000 00ff  .PTE1.1.H.=.....  ; void *fini  ; void *init  ; void *main
+0x00001080  1553 2f00 00f4 662e 0f1f 8400 0000 0000  .S/...f.........
+0x00001090  488d 3d79 2f00 0048 8d05 722f 0000 4839  H.=y/..H..r/..H9  ; sym.deregister_tm_clones
+0x000010a0  f874 1548 8b05 362f 0000 4885 c074 09ff  .t.H..6/..H..t..
+0x000010b0  e00f 1f80 0000 0000 c30f 1f80 0000 0000  ................
+0x000010c0  488d 3d49 2f00 0048 8d35 422f 0000 4829  H.=I/..H.5B/..H)  ; sym.register_tm_clones
+0x000010d0  fe48 89f0 48c1 ee3f 48c1 f803 4801 c648  .H..H..?H...H..H
+0x000010e0  d1fe 7414 488b 0505 2f00 0048 85c0 7408  ..t.H.../..H..t.
+0x000010f0  ffe0 660f 1f44 0000 c30f 1f80 0000 0000  ..f..D..........
+0x00001100  f30f 1efa 803d 052f 0000 0075 2b55 4883  .....=./...u+UH.  ; sym.__do_global_dtors_aux
+0x00001110  3de2 2e00 0000 4889 e574 0c48 8b3d e62e  =.....H..t.H.=..
+0x00001120  0000 e819 ffff ffe8 64ff ffff c605 dd2e  ........d.......
+0x00001130  0000 015d c30f 1f00 c30f 1f80 0000 0000  ...]............
+0x00001140  f30f 1efa e977 ffff fff3 0f1e fa55 4889  .....w.......UH.  ; sym.frame_dummy  ; dbg.__e_33m_func
+0x00001150  e548 83ec 1048 897d f848 8b45 f848 89c7  .H...H.}.H.E.H..  ; arg1  ; const char *s
+EOF
+RUN
+
 NAME="Static variables inside function"
 FILE=bins/elf/dwarf/static_var
 CMDS=<<EOF

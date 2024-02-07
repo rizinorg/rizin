@@ -8,6 +8,28 @@
 #include <rz_bin_dwarf.h>
 #include "macro.h"
 
+static inline char *str_escape_copy(const char *p) {
+	if (!p) {
+		return NULL;
+	}
+	RzStrEscOptions opt = {
+		.dot_nl = true,
+		.esc_bslash = true,
+		.esc_double_quotes = true,
+		.show_asciidot = false
+	};
+	return rz_str_escape_utf8(p, &opt);
+}
+
+static inline void str_escape(char **p) {
+	if (!(p && *p)) {
+		return;
+	}
+	char *out = str_escape_copy(*p);
+	free(*p);
+	*p = out;
+}
+
 typedef struct {
 	ut64 unit_offset;
 	RzBinDwarfEncoding *encoding;
