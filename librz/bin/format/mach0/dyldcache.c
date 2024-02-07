@@ -356,12 +356,13 @@ static void populate_cache_maps(RzDyldCache *cache) {
 	}
 }
 
-static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, RzDyldCacheHeader *hdr, cache_map_t *maps) {
+static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, RzDyldCacheHeader *hdr, cache_map_t *maps, size_t n_maps) {
 	if (!cache_buf || !hdr || !rz_dyldcache_header_may_have_accel(hdr) || !hdr->accelerateInfoSize || !hdr->accelerateInfoAddr) {
 		return NULL;
 	}
 
-	ut64 offset = va2pa(hdr->accelerateInfoAddr, hdr->mappingCount, maps, cache_buf, 0, NULL, NULL);
+	size_t map_count = RZ_MIN(hdr->mappingCount, n_maps);
+	ut64 offset = va2pa(hdr->accelerateInfoAddr, map_count, maps, cache_buf, 0, NULL, NULL);
 	if (!offset) {
 		return NULL;
 	}
@@ -634,6 +635,8 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 		return NULL;
 	}
 
+	ut16 *dep_array = NULL;
+	cache_imgxtr_t *extras = NULL;
 	char *target_libs = NULL;
 	RzList *target_lib_names = NULL;
 	int *deps = NULL;
@@ -663,8 +666,6 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 			goto next;
 		}
 
-		ut16 *dep_array = NULL;
-		cache_imgxtr_t *extras = NULL;
 		if (target_libs) {
 			HtPU *path_to_idx = NULL;
 			size_t dep_array_count = 0;
@@ -1350,7 +1351,7 @@ RZ_API RzDyldCache *rz_dyldcache_new_buf(RzBuffer *buf) {
 	if (!cache->maps) {
 		goto cupertino;
 	}
-	cache->accel = read_cache_accel(cache->buf, cache->hdr, cache->maps);
+	cache->accel = read_cache_accel(cache->buf, cache->hdr, cache->maps, cache->n_maps);
 	cache->bins = create_cache_bins(cache);
 	if (!cache->bins) {
 		goto cupertino;
