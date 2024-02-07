@@ -140,8 +140,8 @@ typedef enum {
 	V850_CACHE,
 	V850_PREF,
 
-	V850_ADSF_D,
-	V850_ADSF_S,
+	V850_ABSF_D,
+	V850_ABSF_S,
 
 	V850_ADDF_D,
 	V850_ADDF_S,
@@ -200,7 +200,6 @@ typedef enum {
 	V850_MINF_D,
 	V850_MINF_S,
 
-	V850_MSUBF_D,
 	V850_MSUBF_S,
 
 	V850_MULF_D,

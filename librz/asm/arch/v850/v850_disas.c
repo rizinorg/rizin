@@ -126,8 +126,8 @@ static const char *instrs[] = {
 	[V850_CACHE] = "cache",
 	[V850_PREF] = "pref",
 
-	[V850_ADSF_D] = "adsf.d",
-	[V850_ADSF_S] = "adsf.s",
+	[V850_ABSF_D] = "absf.d",
+	[V850_ABSF_S] = "absf.s",
 	[V850_ADDF_D] = "addf.d",
 	[V850_ADDF_S] = "addf.s",
 	[V850_CEILF_DL] = "ceilf.dl",
@@ -175,7 +175,6 @@ static const char *instrs[] = {
 	[V850_MAXF_S] = "maxf.s",
 	[V850_MINF_D] = "minf.d",
 	[V850_MINF_S] = "minf.s",
-	[V850_MSUBF_D] = "msubf.d",
 	[V850_MSUBF_S] = "msubf.s",
 	[V850_MULF_D] = "mulf.d",
 	[V850_MULF_S] = "mulf.s",
@@ -841,7 +840,7 @@ static bool decode_formatXI(V850_Inst *inst) {
 	case 0b0111001101: inst->id = V850_SATSUB; break;
 	case 0b0001100001: inst->id = V850_SHL; break;
 	case 0b0001000001: inst->id = V850_SHR; break;
-	case 0b1000101100: inst->id = V850_ADSF_D; break;
+	case 0b1000101100: inst->id = V850_ABSF_D; break;
 	default:
 		if (sub_opcode == 0b0010110000) {
 			switch (reg2) {
@@ -882,7 +881,7 @@ static bool decode_formatXI(V850_Inst *inst) {
 	case V850_JARL: OPERANDS("[%s], %s", R1, R3); break;
 	case V850_PUSHSP:
 	case V850_POPSP: OPERANDS("%d-%d", xi_rh(inst), xi_rt(inst)); break;
-	case V850_ADSF_D: OPERANDS("%s, %s", R2, R3); break;
+	case V850_ABSF_D: OPERANDS("%s, %s", R2, R3); break;
 	default: OPERANDS("[%s], %s, %s", R1, R2, R3); break;
 	}
 	inst->format = XI_extended3;

@@ -1203,7 +1203,7 @@ RzAnalysisLiftedILOp v850_il_op(const V850AnalysisContext *ctx) {
 	case V850_RIE: return lift_rie(ctx);
 	case V850_ROTL: return lift_rotl(ctx);
 	case V850_LOOP: return lift_loop(ctx);
-	case V850_ADSF_D:
+	case V850_ABSF_D:
 	case V850_NOP: return NOP();
 	default: break;
 	}
