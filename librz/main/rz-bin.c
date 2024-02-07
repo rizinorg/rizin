@@ -167,7 +167,8 @@ static int rzbin_show_help(int v) {
 			"-cc",          "",             "List classes in header format",
 			"-C",           "[fmt:C:D]",    "Create [elf,mach0,pe] with Code and Data hexpairs (see -a)",
 			"-d",           "",             "Show debug/dwarf information",
-			"-D",           "lang name",    "Demangle symbol name (-D all for bin.demangle=true)",
+			"-dd",          "",             "Load debug/dwarf information from debuginfod server",
+			"-D",           "lang name",    "Demangle symbol name (-D all for bin.demangle=true)z",
 			"-e",           "",             "Entrypoint",
 			"-ee",          "",             "Constructor/destructor entrypoints",
 			"-E",           "",             "Globally exportable symbols",
@@ -245,6 +246,7 @@ static int rzbin_show_help(int v) {
 		       " RZ_BIN_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		       " RZ_BIN_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		       " RZ_BIN_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
+		       " RZ_BIN_DEBUGINFOD_URLS: e bin.dbginfo.debuginfod_urls # use alternative debuginfod server\n"
 		       " RZ_CONFIG:        # sdb config file\n");
 	}
 	return 1;
@@ -889,7 +891,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'H':
 			set_action(RZ_BIN_REQ_FIELDS);
 			break;
-		case 'd': set_action(RZ_BIN_REQ_DWARF); break;
+		case 'd':
+			if (is_active(RZ_BIN_REQ_DWARF)) {
+				set_action(RZ_BIN_REQ_DEBUGINFOD);
+				break;
+			} else {
+				set_action(RZ_BIN_REQ_DWARF);
+				break;
+			}
 		case 'P':
 			if (is_active(RZ_BIN_REQ_PDB)) {
 				action &= ~RZ_BIN_REQ_PDB;
@@ -1301,6 +1310,13 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 		pdbopts.symbol_store_path = (char *)rz_config_get(core.config, "pdb.symstore");
 		result = rz_bin_pdb_download(core.bin, state.mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, ismodejson, &pdbopts);
+	}
+	if (action & RZ_BIN_REQ_DEBUGINFOD) {
+		rz_config_set_b(core.config, "bin.dbginfo.debuginfod", true);
+		if ((tmp = rz_sys_getenv("RZ_BIN_DEBUGINFOD_URLS"))) {
+			rz_config_set(core.config, "bin.dbginfo.debuginfod_urls", tmp);
+			free(tmp);
+		}
 	}
 
 	if ((tmp = rz_sys_getenv("RZ_BIN_PREFIX"))) {
