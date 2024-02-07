@@ -248,7 +248,7 @@ RZ_API RZ_OWN char *rz_bin_dwarf_attr_string(
 	rz_return_val_if_fail(attr, NULL);
 
 	const RzBinDwarfAttrValue *v = &attr->value;
-	const char* orig = NULL;
+	const char *orig = NULL;
 	if (v->kind == RzBinDwarfAttr_String) {
 		orig = v->string;
 	} else if (v->kind == RzBinDwarfAttr_StrRef && dw) {
