@@ -238,6 +238,9 @@ RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *attr) {
 	};
 }
 
+/**
+ * \brief Safely get the string from an RzBinDwarfAttrValue if it has one.
+ */
 RZ_API RZ_OWN char *rz_bin_dwarf_attr_string(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfAttr *attr,
 	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,

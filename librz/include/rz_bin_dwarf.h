@@ -1816,9 +1816,6 @@ RZ_API void rz_bin_dwarf_addr_free(RzBinDwarfAddr *self);
 RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader);
 RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
-/**
- * \brief Safely get the string from an RzBinDwarfAttrValue if it has one.
- */
 RZ_API RZ_OWN char *rz_bin_dwarf_attr_string(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfAttr *attr,
 	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
