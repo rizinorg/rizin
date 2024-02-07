@@ -5,25 +5,31 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include <asm/arch/rx/rx.h>
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-    size_t bytes_read = 0;
+	RxInst inst = { 0 };
+	st32 bytes_read;
 
-    rz_strbuf_set(&op->buf_asm, "(invalid)");
+	if (!rx_dis(&inst, &bytes_read, buf, len)) {
+		rz_strbuf_set(&op->buf_asm, "(invalid)");
+		return bytes_read;
+	}
 
-    op->size = 0;
-    return bytes_read;
+	rx_inst_stringify(&inst, &op->buf_asm);
+	op->size = bytes_read;
+	return bytes_read;
 }
 
 RzAsmPlugin rz_asm_plugin_rx = {
-        .name = "rx",
-        .arch = "rx",
-        .desc = "Renesas RX Family disassembler",
-        .author = "Heersin",
-        .license = "LGPL3",
-        .bits = 32,
-        .endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
-        .disassemble = &disassemble
+	.name = "rx",
+	.arch = "rx",
+	.desc = "Renesas RX Family disassembler",
+	.author = "Heersin",
+	.license = "LGPL3",
+	.bits = 32,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
+	.disassemble = &disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE
