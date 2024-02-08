@@ -87,60 +87,8 @@ typedef struct rx_inst_t {
 
 // TODO make them into function, not static defined here
 // TODO: call in init
-RxOperandFlag rx_cb_map[16] = {
-	RX_FLAG_C,
-	RX_FLAG_Z,
-	RX_FLAG_S,
-	RX_FLAG_O,
-	RX_FLAG_RESERVED,
-	RX_FLAG_RESERVED,
-	RX_FLAG_RESERVED,
-	RX_FLAG_RESERVED,
-	RX_FLAG_I,
-	RX_FLAG_U,
-	RX_FLAG_RESERVED,
-	RX_FLAG_RESERVED,
-	RX_FLAG_RESERVED,
-	RX_FLAG_RESERVED,
-	RX_FLAG_RESERVED,
-	RX_FLAG_RESERVED,
-};
-
-RxReg rx_cr_map[32] = {
-	RX_REG_PSW,
-	RX_REG_PC,
-	RX_REG_USP,
-	RX_REG_FPSW,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_BPSW,
-	RX_REG_BPC,
-	RX_REG_ISP,
-	RX_REG_FINTV,
-	RX_REG_INTB,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-	RX_REG_RESERVED,
-};
+extern RxOperandFlag rx_cb_map[16];
+extern RxReg rx_cr_map[32];
 
 bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *bytes_read, ut64 bytes);
 

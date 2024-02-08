@@ -4,15 +4,113 @@
 #include <rz_util.h>
 
 typedef enum {
-	RX_OP_INVALID
-		RX_OP_ABS,
+	RX_OP_INVALID,
+	RX_OP_ABS,
 	RX_OP_ADC,
 	RX_OP_ADD,
+	RX_OP_ADD_UB,
+	RX_OP_AND,
+	RX_OP_AND_UB,
+	RX_OP_BCLR,
+	RX_OP_BCND_S,
+	RX_OP_BCND_B,
+	RX_OP_BCND_W,
+	RX_OP_BMCND,
+	RX_OP_BNOT,
+	RX_OP_BRA_S,
+	RX_OP_BRA_B,
+	RX_OP_BRA_W,
+	RX_OP_BRA_A,
+	RX_OP_BRA_L,
+	RX_OP_BRK,
+	RX_OP_BSET,
+	RX_OP_BSR_W,
+	RX_OP_BSR_A,
+	RX_OP_BSR_L,
+	RX_OP_BTST,
+	RX_OP_CLRPSW,
+	RX_OP_CMP,
+	RX_OP_CMP_UB,
+	RX_OP_DIV,
+	RX_OP_DIV_UB,
+	RX_OP_DIVU,
+	RX_OP_EMUL,
+	RX_OP_EMULU,
+	RX_OP_FADD,
+	RX_OP_FSUB,
+	RX_OP_FTOI,
+	RX_OP_INT,
+	RX_OP_ITOF,
+	RX_OP_ITOF_UB,
+	RX_OP_JMP,
+	RX_OP_JSR,
+	RX_OP_MACHI,
+	RX_OP_MACLO,
+	RX_OP_MAX,
+	RX_OP_MIN,
+	RX_OP_MOV,
+	RX_OP_MOVU,
+	RX_OP_MUL,
+	RX_OP_MULHI,
+	RX_OP_MULLO,
+	RX_OP_MVFACHI,
+	RX_OP_MVFACMI,
+	RX_OP_MVFC,
+	RX_OP_MVTACHI,
+	RX_OP_MVTACLO,
+	RX_OP_MVTC,
+	RX_OP_MVTIPL,
+	RX_OP_NEG,
+	RX_OP_NOP,
+	RX_OP_NOT,
+	RX_OP_OR,
+	RX_OP_POP,
+	RX_OP_POPC,
+	RX_OP_POPM,
+	RX_OP_PUSH,
+	RX_OP_PUSHC,
+	RX_OP_PUSHM,
+	RX_OP_RACW,
+	RX_OP_REVL,
+	RX_OP_REVW,
+	RX_OP_RMPA,
+	RX_OP_ROLC,
+	RX_OP_RORC,
+	RX_OP_ROTL,
+	RX_OP_ROTR,
+	RX_OP_ROUND,
+	RX_OP_RTE,
+	RX_OP_RTFI,
+	RX_OP_RTS,
+	RX_OP_RTSD,
+	RX_OP_SAT,
+	RX_OP_SATR,
+	RX_OP_SBB,
+	RX_OP_SCCOND,
+	RX_OP_SCMPU,
+	RX_OP_SETPSW,
+	RX_OP_SHAR,
+	RX_OP_SHLL,
+	RX_OP_SHLR,
+	RX_OP_SMOVB,
+	RX_OP_SMOVF,
+	RX_OP_SMOVU,
+	RX_OP_SSTR,
+	RX_OP_STNZ,
+	RX_OP_STZ,
+	RX_OP_SUB,
+	RX_OP_SUNTIL,
+	RX_OP_SWHILE,
+	RX_OP_TST,
+	RX_OP_WAIT,
+	RX_OP_XCHG,
+	RX_OP_XOR,
 } RxOpCode;
 
 typedef enum {
 	// General Purpose Register
-	RX_REG_R0, // SP
+	// R0 as SP
+	RX_REG_R0,
 	RX_REG_R1,
 	RX_REG_R2,
 	RX_REG_R3,
@@ -88,7 +186,11 @@ typedef struct rx_oprand_related_token_t RxRegToken;
 typedef struct rx_oprand_related_token_t RxImmToken;
 typedef struct rx_oprand_related_token_t RxControlRegToken;
 typedef struct rx_oprand_related_token_t RxCondToken;
-typedef struct rx_oprand_related_token_t RxDataToken;
+
+typedef struct {
+	ut8 fixed_len;
+	ut8 vid;
+} RxDataToken;
 
 typedef struct {
 	ut8 tk_len;
@@ -184,16 +286,19 @@ typedef struct rx_desc_t RxDesc;
 	  .tk.dsp_sp.tk_len = (x), .tk.dsp_sp.vid = (v).tk.dsp_sp.tk_len_more = (xx), .tk.dsp_sp.interval = (interval) }
 #define RxIgnore(x) \
 	{ .type = RX_TOKEN_IGNORE, .tk.reserved.tk_len = (x) }
+
+// TODO: Jmp maybe removed or an empty mark
 #define RxJmp(w) \
 	{ .type = RX_TOKEN_JMP, .tk.jmp.tk_len = (w) }
 
-#define ImmData(vid) \
-	{ .type = RX_TOKEN_DATA, .tk.reserved.tk_len = (vid) }
-#define DspData(vid) \
-	{ .type = RX_TOKEN_DATA, .tk.reserved.tk_len = (vid) }
-#define PcDspData(vid) \
-	{ .type = RX_TOKEN_DATA, .tk.reserved.tk_len = (vid) }
-
+#define ImmData(v) \
+	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v) }
+#define DspData(v) \
+	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v) }
+#define PcDspData(v, l) \
+	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.fixed_len = (l) }
+#define ImmFixedData(v, l) \
+	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.fixed_len = (l) }
 #define RxEnd \
 	{ .type = RX_TOKEN_NON }
 
@@ -201,37 +306,6 @@ typedef struct rx_desc_t RxDesc;
 #define V1 1
 #define V2 2
 
-RxDesc rx_inst_descs[RX_DESC_SIZE] = {
-	{ .op = RX_OP_ABS, .tks = { RxCode(12, 0x7e2), RxReg(4), RxEnd } },
-	{ .op = RX_OP_ABS, .tks = { RxCode(16, 0xfcf), RxReg(4), RxReg(4), RxEnd } },
-	{ .op = RX_OP_ADC, .tks = { RxCode(12, 0xfd7), RxLi(2, 0), RxCode(6, 0x02), RxReg(4), RxEnd } },
-	{ .op = RX_OP_ADD, .tks = { RxCode(8, 0x62), RxImm(4), RxReg(4), RxEnd } },
-	{ .op = RX_OP_ADD, .tks = { RxCode(8, 0x06), RxMi(2), RxCode(4, 0x3), RxLd(2, 0), RxReg(4), RxReg(4), RxEnd } },
-};
-
-#undef RxCode
-#undef RxReg
-#undef RxLi
-#undef RxIm
-#undef RxMi
-#undef RxLd
-#undef RxLds
-#undef RxLdd
-#undef RxCond
-#undef RxDsp
-#undef RxSz
-#undef RxAd
-#undef RxCr
-#undef RxCb
-#undef RxDspSplit
-#undef RxIgnore
-#undef RxJmp
-#undef RxEnd
-#undef ImmData
-#undef DspData
-#undef PcDspData
-#undef V0
-#undef V1
-#undef V2
+extern RxDesc rx_inst_descs[RX_DESC_SIZE];
 
 #endif
