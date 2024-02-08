@@ -45,6 +45,8 @@ List classes in header format
 Create [elf, mach0, pe] with Code and Data hexpairs (see -a)
 .It Fl d
 Show debug/dwarf information
+.It Fl dd
+Load debug/dwarf information from debuginfod server
 .It Fl D Ar lang name
 Demangle symbol name (-D all for bin.demangle=true)
 .It Fl e
@@ -155,6 +157,8 @@ RZ_BIN_STRFILTER: e bin.str.filter - rizin -qc 'e bin.str.filter=??' -
 RZ_BIN_STRPURGE: e bin.str.purge - try to purge false positives
 .Pp
 RZ_BIN_DEBASE64: e bin.debase64 - try to debase64 all strings
+.Pp
+RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server
 .Pp
 RZ_BIN_PDBSERVER: e pdb.server - use alternative PDB server
 .Pp
