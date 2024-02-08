@@ -286,3 +286,5 @@ d "set1 lp, [lp]" ffffe000 0x100000 (seq (set _adr (var lp)) (set _val (loadw 0 
 d "tst1 lp, [lp]" ffffe600 0x100000 (seq (set _adr (var lp)) (set _val (loadw 0 8 (var _adr))) (set PSW (<< (ite (! (! (is_zero (& (>> (var _val) (var lp) false) (bv 8 0x1))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false)))
 d "not1 lp, [lp]" ffffe200 0x100000 (seq (set _adr (var lp)) (set _val (loadw 0 8 (var _adr))) (set PSW (<< (ite (! (! (is_zero (& (>> (var _val) (var lp) false) (bv 8 0x1))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false)) (storew 0 (var _adr) (| (var _val) (<< (bv 8 0x1) (var lp) false))))
 d "clr1 lp, [lp]" ffffe400 0x100000 (seq (set _adr (var lp)) (set _val (loadw 0 8 (var _adr))) (set PSW (<< (ite (! (! (is_zero (& (>> (var _val) (var lp) false) (bv 8 0x1))))) (bv 32 0x1) (bv 32 0x0)) (bv 32 0x0) false)) (storew 0 (var _adr) (& (var _val) (~ (<< (bv 8 0x0) (var lp) false)))))
+d "cmpf.d ge, r12, r14, 0" ee673074 0x100000
+d "trfsr 0" e0070004 0x100000

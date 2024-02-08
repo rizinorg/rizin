@@ -1092,7 +1092,7 @@ static ut8 get_reg4(V850_Inst *i) {
 
 static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 	// absf.d
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x0) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x18)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x0) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x18)) {
 		inst->id = V850_ABSF_D;
 		INSTR("absf.d");
 		OPERANDS("%s, %s", R2, R3);
@@ -1106,7 +1106,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// addf.d
-	if ((get_reg2(inst) && get_reg1(inst) && OP(05, 10) == 0x3f) && (get_reg3(inst) && OP(21, 26) == 0x23 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f) && (OP(21, 26) == 0x23 && OP(16, 20) == 0x10)) {
 		inst->id = V850_ADDF_D;
 		INSTR("addf.d");
 		OPERANDS("%s, %s, %s", R1, R2, R3);
@@ -1120,42 +1120,42 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// ceilf.dl
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
 		inst->id = V850_CEILF_DL;
 		INSTR("ceilf.dl");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// ceilf.dul
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x12) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x12) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
 		inst->id = V850_CEILF_DUL;
 		INSTR("ceilf.dul");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// ceilf.duw
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x12) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x12) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
 		inst->id = V850_CEILF_DUW;
 		INSTR("ceilf.duw");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// ceilf.dw
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
 		inst->id = V850_CEILF_DW;
 		INSTR("ceilf.dw");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// ceilf.sl
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
 		inst->id = V850_CEILF_SL;
 		INSTR("ceilf.sl");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// ceilf.sul
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x12) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x12) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
 		inst->id = V850_CEILF_SUL;
 		INSTR("ceilf.sul");
 		OPERANDS("%s, %s", R2, R3);
@@ -1176,98 +1176,98 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// cmovf.d
-	if ((get_reg2(inst) && get_reg1(inst) && OP(05, 10) == 0x3f) && (slice(inst->d, 17, 19) && get_reg3(inst) && OP(21, 26) == 0x20 && OP(20, 20) == 0x1 && OP(16, 16) == 0x0)) {
+	if ((OP(05, 10) == 0x3f) && (OP(21, 26) == 0x20 && OP(20, 20) == 0x1 && OP(16, 16) == 0x0)) {
 		inst->id = V850_CMOVF_D;
 		INSTR("cmovf.d");
 		OPERANDS("%d, %s, %s, %s", slice(inst->d, 17, 19), R2, R1, R3);
 		return true;
 	}
 	// cmovf.s
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && get_reg1(inst)) && (slice(inst->d, 17, 19) && get_reg3(inst) && OP(21, 26) == 0x20 && OP(20, 20) == 0x0 && OP(16, 16) == 0x0)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && get_reg1(inst)) && (get_reg3(inst) && OP(21, 26) == 0x20 && OP(20, 20) == 0x0 && OP(16, 16) == 0x0)) {
 		inst->id = V850_CMOVF_S;
 		INSTR("cmovf.s");
 		OPERANDS("%d, %s, %s, %s", slice(inst->d, 17, 19), R2, R1, R3);
 		return true;
 	}
 	// cmpf.d
-	if ((get_reg2(inst) && get_reg1(inst) && OP(05, 10) == 0x3f) && (slice(inst->d, 17, 19) && slice(inst->d, 27, 30) && OP(31, 31) == 0x0 && OP(21, 26) == 0x21 && OP(20, 20) == 0x1 && OP(16, 16) == 0x0)) {
+	if ((OP(05, 10) == 0x3f) && (OP(31, 31) == 0x0 && OP(21, 26) == 0x21 && OP(20, 20) == 0x1 && OP(16, 16) == 0x0)) {
 		inst->id = V850_CMPF_D;
 		INSTR("cmpf.d");
 		OPERANDS("%s, %s, %s, %d", conds[slice(inst->d, 27, 30)], R2, R1, slice(inst->d, 17, 19));
 		return true;
 	}
 	// cmpf.s
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && get_reg1(inst)) && (slice(inst->d, 17, 19) && slice(inst->d, 27, 30) && OP(31, 31) == 0x0 && OP(21, 26) == 0x21 && OP(20, 20) == 0x0 && OP(16, 16) == 0x0)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && get_reg1(inst)) && (OP(31, 31) == 0x0 && OP(21, 26) == 0x21 && OP(20, 20) == 0x0 && OP(16, 16) == 0x0)) {
 		inst->id = V850_CMPF_S;
 		INSTR("cmpf.s");
 		OPERANDS("%s, %s, %s, %d", conds[slice(inst->d, 27, 30)], R2, R1, slice(inst->d, 17, 19));
 		return true;
 	}
 	// cvtf.dl
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x4) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x4) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
 		inst->id = V850_CVTF_DL;
 		INSTR("cvtf.dl");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.ds
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x3) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x3) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
 		inst->id = V850_CVTF_DS;
 		INSTR("cvtf.ds");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.dul
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x14) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x14) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
 		inst->id = V850_CVTF_DUL;
 		INSTR("cvtf.dul");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.duw
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x14) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x14) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
 		inst->id = V850_CVTF_DUW;
 		INSTR("cvtf.duw");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.dw
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x4) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x4) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
 		inst->id = V850_CVTF_DW;
 		INSTR("cvtf.dw");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.ld
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
 		inst->id = V850_CVTF_LD;
 		INSTR("cvtf.ld");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.ls
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x2)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x2)) {
 		inst->id = V850_CVTF_LS;
 		INSTR("cvtf.ls");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.sd
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
 		inst->id = V850_CVTF_SD;
 		INSTR("cvtf.sd");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.sl
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x4) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x4) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
 		inst->id = V850_CVTF_SL;
 		INSTR("cvtf.sl");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.sul
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x14) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x14) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
 		inst->id = V850_CVTF_SUL;
 		INSTR("cvtf.sul");
 		OPERANDS("%s, %s", R2, R3);
@@ -1288,21 +1288,21 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// cvtf.uld
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
 		inst->id = V850_CVTF_ULD;
 		INSTR("cvtf.uld");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.uls
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x2)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x2)) {
 		inst->id = V850_CVTF_ULS;
 		INSTR("cvtf.uls");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// cvtf.uwd
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x10) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x10) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
 		inst->id = V850_CVTF_UWD;
 		INSTR("cvtf.uwd");
 		OPERANDS("%s, %s", R2, R3);
@@ -1316,7 +1316,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// cvtf.wd
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x0) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x0) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x12)) {
 		inst->id = V850_CVTF_WD;
 		INSTR("cvtf.wd");
 		OPERANDS("%s, %s", R2, R3);
@@ -1330,7 +1330,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// divf.d
-	if ((get_reg1(inst) && get_reg2(inst) && OP(05, 10) == 0x3f) && (get_reg3(inst) && OP(21, 26) == 0x23 && OP(16, 20) == 0x1e)) {
+	if ((OP(05, 10) == 0x3f) && (OP(21, 26) == 0x23 && OP(16, 20) == 0x1e)) {
 		inst->id = V850_DIVF_D;
 		INSTR("divf.d");
 		OPERANDS("%s, %s, %s", R1, R2, R3);
@@ -1344,42 +1344,42 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// floorf.dl
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x3) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x3) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
 		inst->id = V850_FLOORF_DL;
 		INSTR("floorf.dl");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// floorf.dul
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x13) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x13) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
 		inst->id = V850_FLOORF_DUL;
 		INSTR("floorf.dul");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// floorf.duw
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x13) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x13) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
 		inst->id = V850_FLOORF_DUW;
 		INSTR("floorf.duw");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// floorf.dw
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x3) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x3) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
 		inst->id = V850_FLOORF_DW;
 		INSTR("floorf.dw");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// floorf.sl
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x3) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x3) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
 		inst->id = V850_FLOORF_SL;
 		INSTR("floorf.sl");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// floorf.sul
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x13) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x13) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
 		inst->id = V850_FLOORF_SUL;
 		INSTR("floorf.sul");
 		OPERANDS("%s, %s", R2, R3);
@@ -1407,7 +1407,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// maxf.d
-	if ((get_reg1(inst) && get_reg2(inst) && OP(05, 10) == 0x3f) && (get_reg3(inst) && OP(21, 26) == 0x23 && OP(16, 20) == 0x18)) {
+	if ((OP(05, 10) == 0x3f) && (OP(21, 26) == 0x23 && OP(16, 20) == 0x18)) {
 		inst->id = V850_MAXF_D;
 		INSTR("maxf.d");
 		OPERANDS("%s, %s, %s", R1, R2, R3);
@@ -1421,7 +1421,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// minf.d
-	if ((get_reg2(inst) && get_reg1(inst) && OP(05, 10) == 0x3f) && (get_reg3(inst) && OP(21, 26) == 0x23 && OP(16, 20) == 0x1a)) {
+	if ((OP(05, 10) == 0x3f) && (OP(21, 26) == 0x23 && OP(16, 20) == 0x1a)) {
 		inst->id = V850_MINF_D;
 		INSTR("minf.d");
 		OPERANDS("%s, %s, %s", R1, R2, R3);
@@ -1442,7 +1442,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// mulf.d
-	if ((get_reg1(inst) && get_reg2(inst) && OP(05, 10) == 0x3f) && (get_reg3(inst) && OP(21, 26) == 0x23 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f) && (OP(21, 26) == 0x23 && OP(16, 20) == 0x14)) {
 		inst->id = V850_MULF_D;
 		INSTR("mulf.d");
 		OPERANDS("%s, %s, %s", R1, R2, R3);
@@ -1456,7 +1456,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// negf.d
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x18)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x18)) {
 		inst->id = V850_NEGF_D;
 		INSTR("negf.d");
 		OPERANDS("%s, %s", R2, R3);
@@ -1484,7 +1484,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// recipf.d
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x1e)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x1e)) {
 		inst->id = V850_RECIPF_D;
 		INSTR("recipf.d");
 		OPERANDS("%s, %s", R2, R3);
@@ -1498,7 +1498,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// rsqrtf.d
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x1e)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x2) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x1e)) {
 		inst->id = V850_RSQRTF_D;
 		INSTR("rsqrtf.d");
 		OPERANDS("%s, %s", R2, R3);
@@ -1512,7 +1512,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// sqrtf.d
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x0) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x1e)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x0) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x1e)) {
 		inst->id = V850_SQRTF_D;
 		INSTR("sqrtf.d");
 		OPERANDS("%s, %s", R2, R3);
@@ -1526,7 +1526,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// subf.d
-	if ((get_reg1(inst) && get_reg2(inst) && OP(05, 10) == 0x3f) && (get_reg3(inst) && OP(21, 26) == 0x23 && OP(16, 20) == 0x12)) {
+	if ((OP(05, 10) == 0x3f) && (OP(21, 26) == 0x23 && OP(16, 20) == 0x12)) {
 		inst->id = V850_SUBF_D;
 		INSTR("subf.d");
 		OPERANDS("%s, %s, %s", R1, R2, R3);
@@ -1540,49 +1540,49 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		return true;
 	}
 	// trfsr
-	if ((OP(11, 15) == 0x0 && OP(05, 10) == 0x3f && OP(00, 04) == 0x0) && (slice(inst->d, 17, 19) && OP(27, 31) == 0x0 && OP(21, 26) == 0x20 && OP(20, 20) == 0x0 && OP(16, 16) == 0x0)) {
+	if ((OP(11, 15) == 0x0 && OP(05, 10) == 0x3f && OP(00, 04) == 0x0) && (OP(27, 31) == 0x0 && OP(21, 26) == 0x20 && OP(20, 20) == 0x0 && OP(16, 16) == 0x0)) {
 		inst->id = V850_TRFSR;
 		INSTR("trfsr");
 		OPERANDS("%d", slice(inst->d, 17, 19));
 		return true;
 	}
 	// trncf.dl
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
 		inst->id = V850_TRNCF_DL;
 		INSTR("trncf.dl");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// trncf.dul
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x14)) {
 		inst->id = V850_TRNCF_DUL;
 		INSTR("trncf.dul");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// trncf.duw
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
 		inst->id = V850_TRNCF_DUW;
 		INSTR("trncf.duw");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// trncf.dw
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
+	if ((OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x10)) {
 		inst->id = V850_TRNCF_DW;
 		INSTR("trncf.dw");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// trncf.sl
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x1) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
 		inst->id = V850_TRNCF_SL;
 		INSTR("trncf.sl");
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
 	// trncf.sul
-	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (get_reg3(inst) && OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
+	if ((get_reg2(inst) && OP(05, 10) == 0x3f && OP(00, 04) == 0x11) && (OP(21, 26) == 0x22 && OP(16, 20) == 0x4)) {
 		inst->id = V850_TRNCF_SUL;
 		INSTR("trncf.sul");
 		OPERANDS("%s, %s", R2, R3);
@@ -1602,6 +1602,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
+	return true;
 }
 
 int v850_decode_command(const ut8 *bytes, int len, V850_Inst *inst) {
@@ -1618,7 +1619,7 @@ int v850_decode_command(const ut8 *bytes, int len, V850_Inst *inst) {
 		if (!rz_buf_read_le16(b, &tmp)) {
 			goto err;
 		}
-		inst->d |= tmp << (i * 16);
+		inst->d |= (ut64)(tmp) << (i * 16);
 	}
 
 	inst->byte_size = 2;
