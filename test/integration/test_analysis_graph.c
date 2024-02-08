@@ -6,6 +6,7 @@
 #include <rz_project.h>
 
 #include "../unit/minunit.h"
+#include <rz_util/rz_graph_drawable.h>
 
 static inline RzGraph *graph_by_function_name(RzCore *core, RzCoreGraphType t, const char *name) {
 	RzAnalysisFunction *f = rz_analysis_get_function_byname(core->analysis, name);
@@ -191,9 +192,62 @@ bool test_analysis_graph_more() {
 	mu_end;
 }
 
+bool test_analysis_graph_icfg() {
+	// Open the file
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "new RzCore instance");
+	const char *fpath = "bins/elf/analysis/x86_icfg_malloc_test";
+	mu_assert_true(rz_core_file_open_load(core, fpath, 0, RZ_PERM_R, false), "load file");
+
+	// Analyse the file
+	rz_core_analysis_all(core);
+	rz_core_analysis_everything(core, false, "esil");
+	rz_core_analysis_flag_every_function(core);
+
+	RzGraph *g = rz_core_graph_icfg(core);
+	mu_assert_eq(g->n_nodes, 13, "data graph node count");
+	mu_assert_eq(g->n_edges, 6, "data graph edge count");
+
+	// Testing the node content is a little annoying. The nodes
+	// are indexed by their position in the list.
+	// Although in case of a CFG and iCFG it would be better to
+	// have them indexed by their address in the binary.
+	// But the current graph implementation (list and not hashmap based)
+	// doesn't support this.
+	// So, if this test breaks due to some changes in the analysis,
+	// make sure the order of the nodes did not change
+	// (because they might have been added in different order).
+	RzGraphNodeInfo *info = rz_graph_get_node_info_data(rz_graph_get_node(g, 7)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_ICFG, "info type");
+	mu_assert_eq(info->icfg.address, 0x1159, "info address");
+	mu_assert_false(info->icfg.is_malloc, "info address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 8)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_ICFG, "info type");
+	mu_assert_eq(info->icfg.address, 0x1040, "info address");
+	mu_assert_true(info->icfg.is_malloc, "info is_malloc");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 9)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_ICFG, "info type");
+	mu_assert_eq(info->icfg.address, 0x1030, "info address");
+	mu_assert_true(info->icfg.is_malloc, "info is_malloc");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 10)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_ICFG, "info type");
+	mu_assert_eq(info->icfg.address, 0x1050, "info address");
+	mu_assert_true(info->icfg.is_malloc, "info is_malloc");
+
+	rz_graph_free(g);
+
+	// Close the file
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_graph);
 	mu_run_test(test_analysis_graph_more);
+	mu_run_test(test_analysis_graph_icfg);
 	return tests_passed != tests_run;
 }
 

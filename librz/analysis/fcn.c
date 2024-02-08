@@ -2698,7 +2698,7 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
  * \brief Determines if the given function is a memory allocating function (malloc, calloc etc.).
  *
  * The current methods of detection (tested in order):
- * - Name matches regex "([mc]|(re))?alloc.*"
+ * - Name matches regex ".*\.([mc]|(re))?alloc.*"
  *
  * \param fcn The function to test.
  *
@@ -2709,5 +2709,5 @@ RZ_API bool rz_analysis_function_is_malloc(const RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, false);
 	// TODO We need more metrics here. Just the name is pretty naive.
 	// E.g. we should compare it to signatures and other characterisitics.
-	return rz_regex_contains("([mc]|(re))?alloc.*", fcn->name, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	return rz_regex_contains(".*\\.([mc]|(re))?alloc.*", fcn->name, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
 }
