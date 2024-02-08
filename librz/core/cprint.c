@@ -488,6 +488,36 @@ RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hexoffset
 }
 
 /**
+ * \brief Hexdump containing references at \p addr
+ * \param address Dump bytes address
+ * \param len Dump bytes length
+ * \return Hexdump string
+ */
+RZ_IPI RZ_OWN char *rz_core_print_hexdump_refs(RZ_NONNULL RzCore *core, ut64 address, size_t len, int wordsize) {
+	rz_return_val_if_fail(core, NULL);
+	ut8 *buffer = malloc(len);
+	if (!buffer) {
+		return NULL;
+	}
+
+	const int ocols = core->print->cols;
+	int bitsize = core->rasm->bits;
+	/* Thumb is 16bit arm but handles 32bit data */
+	if (bitsize == 16) {
+		bitsize = 32;
+	}
+	core->print->cols = 1;
+	core->print->flags |= RZ_PRINT_FLAGS_REFS;
+	rz_io_read_at(core->io, address, buffer, len);
+	char *hexdump_str = rz_print_hexdump_str(core->print, address, buffer,
+		len, wordsize * 8, bitsize / 8, 1);
+	core->print->flags &= ~RZ_PRINT_FLAGS_REFS;
+	core->print->cols = ocols;
+	free(buffer);
+	return hexdump_str;
+}
+
+/**
  * \brief Bytes string at \p addr with instructions in comments
  */
 RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, ut64 addr, int len) {
@@ -547,7 +577,7 @@ static void core_handle_call(RzCore *core, char *line, char **str) {
  *      and \p inst_len at the same time. Set one of them to zero to
  *      ignore its restriction.
  */
-static char *cons_disassembly(RzCore *core, ut64 addr, ut32 byte_len, ut32 inst_len) {
+RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32 byte_len, ut32 inst_len) {
 	rz_return_val_if_fail(core && (byte_len || inst_len), NULL);
 
 	// cbytes in disasm_options decides whether byte_len constrains inst_len
@@ -626,13 +656,13 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	bool asm_flags = rz_config_get_i(core->config, "asm.flags");
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	// force defaults
-	rz_config_set_i(core->config, "emu.str", true);
-	rz_config_set_i(core->config, "asm.offset", true);
-	rz_config_set_i(core->config, "asm.debuginfo", true);
+	rz_config_set_b(core->config, "emu.str", true);
+	rz_config_set_b(core->config, "asm.offset", true);
+	rz_config_set_b(core->config, "asm.debuginfo", true);
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 	rz_config_set_i(core->config, "asm.tabs", 0);
 	rz_config_set_i(core->config, "scr.html", 0);
-	rz_config_set_i(core->config, "asm.cmt.right", true);
+	rz_config_set_b(core->config, "asm.cmt.right", true);
 
 	char *dump_string = NULL;
 	RzList *lines = NULL;
@@ -640,7 +670,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	case RZ_CORE_DISASM_STRINGS_MODE_BLOCK: {
 		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 		if (bb) {
-			dump_string = cons_disassembly(core, bb->addr, bb->size, 0);
+			dump_string = rz_core_print_cons_disassembly(core, bb->addr, bb->size, 0);
 			if (!dump_string) {
 				goto restore_conf;
 			}
@@ -661,7 +691,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		break;
 	}
 	case RZ_CORE_DISASM_STRINGS_MODE_INST: {
-		dump_string = cons_disassembly(core, core->offset, 0, core->blocksize);
+		dump_string = rz_core_print_cons_disassembly(core, core->offset, 0, core->blocksize);
 		if (!dump_string) {
 			goto restore_conf;
 		}
@@ -669,7 +699,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	}
 	case RZ_CORE_DISASM_STRINGS_MODE_BYTES:
 	default: {
-		dump_string = cons_disassembly(core, core->offset, n_bytes, 0);
+		dump_string = rz_core_print_cons_disassembly(core, core->offset, n_bytes, 0);
 		if (!dump_string) {
 			goto restore_conf;
 		}

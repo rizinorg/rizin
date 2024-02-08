@@ -2469,19 +2469,9 @@ static bool cmd_pxr(RzCore *core, ut64 at, int len, RzCmdStateOutput *state, int
 			rz_strbuf_appendf(sb, "f pxr.%" PFMT64x " @ 0x%" PFMT64x "\n", val, addr);
 		}
 	} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
-		const int ocols = core->print->cols;
-		int bitsize = core->rasm->bits;
-		/* Thumb is 16bit arm but handles 32bit data */
-		if (bitsize == 16) {
-			bitsize = 32;
-		}
-		core->print->cols = 1;
-		core->print->flags |= RZ_PRINT_FLAGS_REFS;
-		char *hexdump_str = rz_print_hexdump_str(core->print, core->offset, core->block, RZ_MIN(len, core->blocksize), wordsize * 8, bitsize / 8, 1);
+		char *hexdump_str = rz_core_print_hexdump_refs(core, core->offset, len, wordsize);
 		rz_strbuf_append(sb, hexdump_str);
 		free(hexdump_str);
-		core->print->flags &= ~RZ_PRINT_FLAGS_REFS;
-		core->print->cols = ocols;
 	} else {
 		rz_warn_if_reached();
 		rz_strbuf_free(sb);
