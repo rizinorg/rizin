@@ -140,7 +140,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 				rz_str_replace_ch(print_node->def.body, '\"', '\'', true);
 				label = rz_str_newf("%s\\n%s", print_node->def.title, print_node->def.body);
 			} else {
-				label = print_node->def.title;
+				label = rz_str_new(print_node->def.title);
 			}
 		}
 
