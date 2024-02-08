@@ -5228,6 +5228,8 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 		pj_a(ds->pj);
 	}
 
+	const ut8 min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+
 toro:
 	// uhm... is this necessary? imho can be removed
 	rz_asm_set_pc(core->rasm, rz_core_pava(core, ds->addr + idx));
@@ -5553,7 +5555,7 @@ toro:
 			inc = skip_bytes_bb;
 		}
 		if (inc < 1) {
-			inc = 1;
+			inc = min_op_size;
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
 	}

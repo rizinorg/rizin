@@ -139,6 +139,100 @@ typedef enum {
 
 	V850_CACHE,
 	V850_PREF,
+
+	V850_ABSF_D,
+	V850_ABSF_S,
+
+	V850_ADDF_D,
+	V850_ADDF_S,
+
+	V850_CEILF_DL,
+	V850_CEILF_DUL,
+	V850_CEILF_DUW,
+	V850_CEILF_DW,
+	V850_CEILF_SL,
+	V850_CEILF_SUL,
+	V850_CEILF_SUW,
+	V850_CEILF_SW,
+
+	V850_CMOVF_D,
+	V850_CMOVF_S,
+
+	V850_CMPF_D,
+	V850_CMPF_S,
+
+	V850_CVTF_DL,
+	V850_CVTF_DS,
+	V850_CVTF_DUL,
+	V850_CVTF_DUW,
+	V850_CVTF_DW,
+	V850_CVTF_LD,
+	V850_CVTF_LS,
+	V850_CVTF_SD,
+	V850_CVTF_SL,
+	V850_CVTF_SUL,
+	V850_CVTF_SUW,
+	V850_CVTF_SW,
+	V850_CVTF_ULD,
+	V850_CVTF_ULS,
+	V850_CVTF_UWD,
+	V850_CVTF_UWS,
+	V850_CVTF_WD,
+	V850_CVTF_WS,
+
+	V850_DIVF_D,
+	V850_DIVF_S,
+
+	V850_FLOORF_DL,
+	V850_FLOORF_DUL,
+	V850_FLOORF_DUW,
+	V850_FLOORF_DW,
+	V850_FLOORF_SL,
+	V850_FLOORF_SUL,
+	V850_FLOORF_SUW,
+	V850_FLOORF_SW,
+
+	V850_MADDF_S,
+
+	V850_MAXF_D,
+	V850_MAXF_S,
+
+	V850_MINF_D,
+	V850_MINF_S,
+
+	V850_MSUBF_S,
+
+	V850_MULF_D,
+	V850_MULF_S,
+
+	V850_NEGF_D,
+	V850_NEGF_S,
+
+	V850_NMADDF_S,
+	V850_NMSUBF_S,
+
+	V850_RECIPF_D,
+	V850_RECIPF_S,
+
+	V850_RSQRTF_D,
+	V850_RSQRTF_S,
+
+	V850_SQRTF_D,
+	V850_SQRTF_S,
+
+	V850_SUBF_D,
+	V850_SUBF_S,
+
+	V850_TRFSR,
+
+	V850_TRNCF_DL,
+	V850_TRNCF_DUL,
+	V850_TRNCF_DUW,
+	V850_TRNCF_DW,
+	V850_TRNCF_SL,
+	V850_TRNCF_SUL,
+	V850_TRNCF_SUW,
+	V850_TRNCF_SW,
 } V850_InstID;
 
 enum v850_conds {
@@ -406,7 +500,10 @@ typedef enum {
 typedef struct {
 	ut64 d;
 	ut32 imm;
-	ut32 disp;
+	union {
+		ut32 disp;
+		st32 sdisp;
+	};
 	V850_Inst_Format format;
 	V850_InstID id;
 	ut64 addr;
@@ -426,7 +523,7 @@ static inline ut16 V850_word(const V850_Inst *i, unsigned index) {
 }
 
 static inline ut16 get_opcode(const V850_Inst *i, unsigned l, unsigned r) {
-	return extract(V850_word(i, 1), l, (r - l + 1));
+	return extract(i->d, l, (r - l + 1));
 }
 
 static inline ut8 get_reg1(const V850_Inst *i) {
@@ -465,8 +562,8 @@ static inline ut16 xi_cond(const V850_Inst *i) {
 	return (i->d >> 17) & 0xf;
 }
 
-static inline ut16 get_disp22(const V850_Inst *i) {
-	return (V850_word(i, 2) & ~1) | ((V850_word(i, 1) & 0x3f) << 16);
+static inline ut32 get_disp22(const V850_Inst *i) {
+	return (((i->d >> 16) & 0xffff) | ((i->d & 0x3f) << 16)) & ~1;
 }
 
 /**
