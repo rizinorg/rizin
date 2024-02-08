@@ -1602,7 +1602,7 @@ static bool v850_decode_formatUnk_float(V850_Inst *inst) {
 		OPERANDS("%s, %s", R2, R3);
 		return true;
 	}
-	return true;
+	return false;
 }
 
 int v850_decode_command(const ut8 *bytes, int len, V850_Inst *inst) {
