@@ -794,10 +794,14 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCor
 
 static RzGraphNode *rz_graph_add_node_info_icfg(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(graph, NULL);
-	RzGraphNodeType flags = RZ_GRAPH_NODE_TYPE_ICFG;
-	flags |= rz_analysis_function_is_malloc(fcn) ? RZ_GRAPH_NODE_TYPE_ICFG_MALLOC : 0;
-	RzGraphNodeInfo *data = rz_graph_create_node_info_icfg(fcn->addr, flags);
+	RzGraphNodeInfo *data = NULL;
+	if (rz_analysis_function_is_malloc(fcn)) {
+		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_TYPE_ICFG, RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
+	} else {
+		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_TYPE_ICFG, RZ_GRAPH_NODE_SUBTYPE_NONE);
+	}
 	if (!data) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 	RzGraphNode *node = rz_graph_add_nodef(graph, data, rz_graph_free_node_info);
@@ -922,29 +926,29 @@ static inline bool ignore_next_instr(const RzAnalysisOp *op) {
 	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)); // Except calls, everything which has set fail
 }
 
-static RzGraphNodeType get_cfg_node_flags(const RzAnalysisOp *op) {
-	rz_return_val_if_fail(op, RZ_GRAPH_NODE_TYPE_NONE);
-	RzGraphNodeType flags = RZ_GRAPH_NODE_TYPE_CFG;
+static RzGraphNodeSubType get_cfg_node_flags(const RzAnalysisOp *op) {
+	rz_return_val_if_fail(op, RZ_GRAPH_NODE_SUBTYPE_NONE);
+	RzGraphNodeSubType subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
 	if (is_call(op)) {
-		flags |= RZ_GRAPH_NODE_TYPE_CFG_CALL;
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_CALL;
 	}
 	if (is_return(op)) {
-		flags |= RZ_GRAPH_NODE_TYPE_CFG_RETURN;
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN;
 	}
 	if (is_cond(op)) {
-		flags |= RZ_GRAPH_NODE_TYPE_CFG_COND;
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_COND;
 	}
-	return flags;
+	return subtype;
 }
 
 static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisOp *op, bool is_entry) {
 	rz_return_val_if_fail(cfg, NULL);
-	RzGraphNodeType flags = get_cfg_node_flags(op);
+	RzGraphNodeSubType subtype = get_cfg_node_flags(op);
 	if (is_entry) {
-		flags |= RZ_GRAPH_NODE_TYPE_CFG_ENTRY;
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
 	}
 	ut64 call_target = is_call(op) ? op->jump : UT64_MAX;
-	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, flags);
+	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, RZ_GRAPH_NODE_TYPE_CFG, subtype);
 	if (!data) {
 		return NULL;
 	}

@@ -13,18 +13,20 @@ extern "C" {
 
 typedef enum {
 	RZ_GRAPH_NODE_TYPE_NONE = 0, ///< No type for this node specified.
-	RZ_GRAPH_NODE_TYPE_DEFAULT = 0x80000000, ///< Node contains a title string, a body string and an absract offset value.
-	RZ_GRAPH_NODE_TYPE_CFG = 0x40000000, ///< Node is part of an control flow graph of a procedure.
-	RZ_GRAPH_NODE_TYPE_CFG_NONE = RZ_GRAPH_NODE_TYPE_CFG | 0, ///< No details given to this CFG node.
-	RZ_GRAPH_NODE_TYPE_CFG_ENTRY = RZ_GRAPH_NODE_TYPE_CFG | 0x1, ///< Entry node of the procedure CFG.
-	RZ_GRAPH_NODE_TYPE_CFG_CALL = RZ_GRAPH_NODE_TYPE_CFG | 0x2, ///> A node which calls another procedure.
-	RZ_GRAPH_NODE_TYPE_CFG_RETURN = RZ_GRAPH_NODE_TYPE_CFG | 0x4, ///< A return node of the procedure.
-	RZ_GRAPH_NODE_TYPE_CFG_EXIT = RZ_GRAPH_NODE_TYPE_CFG | 0x8, ///< A node which exits the program (precedure does not return).
-	RZ_GRAPH_NODE_TYPE_CFG_COND = RZ_GRAPH_NODE_TYPE_CFG | 0x10, ///< A conditional instruction node.
-	RZ_GRAPH_NODE_TYPE_ICFG = 0x20000000, ///< Node is part of an inter-procedural control flow graph.
-	RZ_GRAPH_NODE_TYPE_ICFG_NONE = RZ_GRAPH_NODE_TYPE_ICFG | 0, ///< No details given to this iCFG node.
-	RZ_GRAPH_NODE_TYPE_ICFG_MALLOC = RZ_GRAPH_NODE_TYPE_ICFG | 1, ///< Node represents a memory allocating procedure.
+	RZ_GRAPH_NODE_TYPE_DEFAULT, ///< Node contains a title string, a body string and an absract offset value.
+	RZ_GRAPH_NODE_TYPE_CFG, ///< Node is part of an control flow graph of a procedure.
+	RZ_GRAPH_NODE_TYPE_ICFG, ///< Node is part of an inter-procedural control flow graph.
 } RzGraphNodeType;
+
+typedef enum {
+	RZ_GRAPH_NODE_SUBTYPE_NONE = 0, ///< No details given to this node.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY = 1 << 0, ///< Entry node of the procedure CFG.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_CALL = 1 << 1, ///> A node which calls another procedure.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN = 1 << 2, ///< A return node of the procedure.
+	RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT = 1 << 3, ///< A node which exits the program (precedure does not return).
+	RZ_GRAPH_NODE_SUBTYPE_CFG_COND = 1 << 4, ///< A conditional instruction node.
+	RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC = 1 << 5, ///< Node represents a memory allocating procedure.
+} RzGraphNodeSubType;
 
 typedef struct {
 	char *title;
@@ -55,6 +57,7 @@ typedef struct {
 	 * \brief Address of the node.
 	 */
 	ut64 address;
+	bool is_malloc; ///< Flag set if this node is a memory allocating function.
 } RzGraphNodeInfoDataICFG;
 
 /**
@@ -67,6 +70,7 @@ typedef struct rz_analysis_graph_node_info_t {
 	 * \brief Optional flags which describe the node further.
 	 */
 	RzGraphNodeType type;
+	RzGraphNodeSubType subtype;
 	union {
 		RzGraphNodeInfoDataDefault def;
 		RzGraphNodeInfoDataCFG cfg;
@@ -77,8 +81,8 @@ typedef struct rz_analysis_graph_node_info_t {
 RZ_API RZ_OWN RzStrBuf *rz_graph_get_node_info_str(RzGraphNodeInfo info);
 RZ_API void rz_graph_free_node_info(void *ptr);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, const char *body, ut64 offset);
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType flags);
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType flags);
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType type, RzGraphNodeSubType subtype);
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType type, RzGraphNodeSubType subtype);
 RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset);
 
 /**

@@ -5,12 +5,35 @@
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 
+/**
+ * \brief Casts the given graph node data pointer to a
+ * RzGraphNodeInfo pointer and makes some plausibility tests on the data.
+ *
+ * \param data The data pointer from a graph node.
+ *
+ * \return A pointer to the graph node info struct or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzGraphNodeInfo *rz_graph_get_node_info_data(RZ_BORROW void *data) {
+	rz_return_val_if_fail(data, NULL);
+	RzGraphNodeInfo *info = data;
+	switch (info->type) {
+	default:
+		RZ_LOG_ERROR("Unhandled graph node info type %" PFMT32d "\n", info->type);
+		return NULL;
+	case RZ_GRAPH_NODE_TYPE_DEFAULT:
+	case RZ_GRAPH_NODE_TYPE_CFG:
+	case RZ_GRAPH_NODE_TYPE_ICFG:
+		break;
+	}
+	return info;
+}
+
 RZ_API void rz_graph_free_node_info(void *ptr) {
 	if (!ptr) {
 		return;
 	}
 	RzGraphNodeInfo *info = ptr;
-	switch (info->type & RZ_GRAPH_NODE_TYPE_GROUP_MASK) {
+	switch (info->type) {
 	default:
 		RZ_LOG_WARN("Not handled RzGraphNodeInfoType\n");
 		break;
@@ -38,6 +61,7 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, con
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	if (data) {
 		data->type = RZ_GRAPH_NODE_TYPE_DEFAULT;
+		data->subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
 		data->def.title = RZ_STR_DUP(title);
 		data->def.body = RZ_STR_DUP(body);
 		data->def.offset = offset;
@@ -54,10 +78,11 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, con
  *
  * \return The initialized RzGraphNodeInfo or NULL in case of failure.
  */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType flags) {
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType type, RzGraphNodeSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	if (data) {
 		data->type = RZ_GRAPH_NODE_TYPE_CFG;
+		data->subtype = subtype;
 		data->cfg.address = address;
 		data->cfg.call_address = call_target_addr;
 	}
@@ -72,11 +97,13 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_ta
  *
  * \return The initialized RzGraphNodeInfo or NULL in case of failure.
  */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType flags) {
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType type, RzGraphNodeSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	if (data) {
 		data->type = RZ_GRAPH_NODE_TYPE_ICFG;
+		data->subtype = subtype;
 		data->icfg.address = address;
+		data->icfg.is_malloc = subtype & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC;
 	}
 	return data;
 }
@@ -122,7 +149,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		char *url;
 		char *label;
 
-		switch (print_node->type & RZ_GRAPH_NODE_TYPE_GROUP_MASK) {
+		switch (print_node->type) {
 		default:
 			RZ_LOG_ERROR("Unhandled node type. Graph node either doesn't support dot graph printing or it isn't implemented.\n");
 			return NULL;
@@ -172,7 +199,7 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/
 		RzGraphNodeInfo *print_node = (RzGraphNodeInfo *)node->data;
 		pj_o(pj);
 		pj_kn(pj, "id", node->idx);
-		if (print_node->type & RZ_GRAPH_NODE_TYPE_DEFAULT) {
+		if (print_node->type == RZ_GRAPH_NODE_TYPE_DEFAULT) {
 			if (print_node->def.title) {
 				pj_ks(pj, "title", print_node->def.title);
 			}
@@ -182,18 +209,18 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/
 			if (use_offset) {
 				pj_kn(pj, "offset", print_node->def.offset);
 			}
-		} else if (print_node->type & RZ_GRAPH_NODE_TYPE_ICFG) {
+		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_ICFG) {
 			pj_kn(pj, "address", print_node->icfg.address);
-			pj_kb(pj, "is_malloc", print_node->type & RZ_GRAPH_NODE_TYPE_ICFG_MALLOC);
-		} else if (print_node->type & RZ_GRAPH_NODE_TYPE_CFG) {
+			pj_kb(pj, "is_malloc", print_node->type & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
+		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_CFG) {
 			pj_kn(pj, "address", print_node->cfg.address);
-			pj_kb(pj, "is_call", print_node->type & RZ_GRAPH_NODE_TYPE_CFG_CALL);
-			if (print_node->type & RZ_GRAPH_NODE_TYPE_CFG_CALL && print_node->cfg.call_address != UT64_MAX) {
+			pj_kb(pj, "is_call", print_node->type & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
+			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL && print_node->cfg.call_address != UT64_MAX) {
 				pj_kn(pj, "call_address", print_node->cfg.call_address);
 			}
-			pj_kb(pj, "is_entry", print_node->type & RZ_GRAPH_NODE_TYPE_CFG_ENTRY);
-			pj_kb(pj, "is_exit", print_node->type & RZ_GRAPH_NODE_TYPE_CFG_EXIT);
-			pj_kb(pj, "is_return", print_node->type & RZ_GRAPH_NODE_TYPE_CFG_RETURN);
+			pj_kb(pj, "is_entry", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY);
+			pj_kb(pj, "is_exit", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT);
+			pj_kb(pj, "is_return", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN);
 		}
 		pj_k(pj, "out_nodes");
 		pj_a(pj);
@@ -289,7 +316,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 	rz_list_foreach (graph->nodes, it, graphNode) {
 		RzGraphNodeInfo *print_node = graphNode->data;
 
-		switch (print_node->type & RZ_GRAPH_NODE_TYPE_GROUP_MASK) {
+		switch (print_node->type) {
 		default:
 			RZ_LOG_ERROR("Unhandled node type. Graph node either doesn't support dot graph printing or it isn't implemented.\n");
 			return NULL;
