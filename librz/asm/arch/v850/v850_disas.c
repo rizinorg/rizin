@@ -922,38 +922,56 @@ static bool decode_formatXII(V850_Inst *inst) {
 	return true;
 }
 
+typedef struct {
+	ut8 l;
+	ut8 r;
+} Range;
+
+static void list12_to_range(const ut8 lst[], unsigned n, Range xs[], unsigned *pnxs) {
+	Range *r = xs;
+	for (int i = 0; i < n; ++i) {
+		ut8 x = lst[i];
+		if (r->l == 0) {
+			r->l = r->r = x;
+			continue;
+		}
+		if (x - r->r == 1) {
+			r->r = x;
+			continue;
+		}
+		r++;
+		r->l = r->r = x;
+	}
+	if (pnxs) {
+		*pnxs = r - xs + 1;
+	}
+}
+
 static char *fmt_list(ut32 lst) {
 	ut8 set[12] = { 0 };
 	unsigned n = 0;
 	xiii_sorted_list(lst, set, &n, false);
+	Range xs[12] = { 0 };
+	unsigned nxs = 0;
+	list12_to_range(set, n, xs, &nxs);
+
 	RzStrBuf sb = { 0 };
 	rz_strbuf_initf(&sb, "{");
-	ut8 begin = set[0];
-	ut8 end = set[0];
 	bool sep = false;
-	if (n == 1 && begin < RZ_ARRAY_SIZE(GR)) {
-		rz_strbuf_append(&sb, GR_get(begin));
-	}
-	for (ut32 i = 1; i < n; i++) {
-		ut8 x = set[i];
-		if (x - end == 1) {
-			end = x;
-			continue;
+	for (int i = 0; i < nxs; ++i) {
+		Range *r = xs + i;
+		if (!(r && r->l && r->r)) {
+			break;
 		}
-		if (begin != end) {
-			if (sep) {
-				rz_strbuf_append(&sb, ", ");
-			}
-			rz_strbuf_appendf(&sb, "%s - %s", GR_get(begin), GR_get(end));
-			sep = true;
-		}
-
 		if (sep) {
 			rz_strbuf_append(&sb, ", ");
 		}
-		rz_strbuf_appendf(&sb, "%s", GR_get(x));
+		if (r->l == r->r) {
+			rz_strbuf_appendf(&sb, "%s", GR_get(r->l));
+		} else {
+			rz_strbuf_appendf(&sb, "%s - %s", GR_get(r->l), GR_get(r->r));
+		}
 		sep = true;
-		begin = end = x;
 	}
 	rz_strbuf_append(&sb, "}");
 	return rz_strbuf_drain_nofree(&sb);

@@ -524,6 +524,55 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=v850 disassembly hello-v850e
+FILE=bins/v850/hello-v850e
+CMDS=<<EOF
+pd 10 @ 0x1006da
+pd 10 @ 0x100eb8
+EOF
+EXPECT=<<EOF
+            0x001006da      cmpf.d ge, r12, r14, 0
+            0x001006de      trfsr 0
+        ,=< 0x001006e2      be    0x101336
+        |   0x001006e6      ld.dw 32[sp], r10                          ; vfprintf.c:1230
+        |   0x001006ec      st.w  r0, 20[sp]
+        |   0x001006f0      st.w  r0, 24[sp]
+        |   0x001006f4      ld.dw 20[sp], r12
+        |   0x001006fa      cmpf.d p, r10, r12, 0
+        |   0x001006fe      trfsr 0
+       ,==< 0x00100702      be    0x1018d4
+            0x00100eb8      addi  8, r13, r29
+            0x00100ebc      cmpf.d e, r14, r6, 0
+            0x00100ec0      trfsr 0
+        ,=< 0x00100ec4      be    0x101246
+        |   0x00100ec8      addi  1, r22, r16                          ; vfprintf.c:1751
+        |   0x00100ecc      add   r23, r10                             ; vfprintf.c:1754
+        |   0x00100ece      cmp   7, r17
+        |   0x00100ed0      st.w  r16, 0[r13]
+        |   0x00100ed4      st.w  r23, 4[r13]
+        |   0x00100ed8      st.w  r10, 124[sp]
+EOF
+RUN
+
+NAME=v850 disassembly ired_v850
+FILE=bins/v850/ired_v850
+CMDS=<<EOF
+pd 10 @ 0x0010101e
+EOF
+EXPECT=<<EOF
+            0x0010101e      ld.w  28[r29], r10
+            0x00101022      invalid
+            0x00101023      unaligned
+            0x00101024      st.w  r10, 12[r29]
+            0x00101028      ld.w  28[r29], r10
+            0x0010102c      shl   31, r10
+            0x0010102e      ld.w  24[r29], r11
+            0x00101032      shr   1, r11
+            0x00101034      st.w  r11, 16[r29]
+            0x00101038      ld.w  16[r29], r11
+EOF
+RUN
+
 NAME=v850 s main hello-v850e_stripped
 FILE=bins/v850/hello-v850e_stripped
 CMDS=<<EOF
