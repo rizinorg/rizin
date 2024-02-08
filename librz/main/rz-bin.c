@@ -235,19 +235,19 @@ static int rzbin_show_help(int v) {
 	}
 	if (v) {
 		printf("Environment:\n"
-		       " RZ_NOPLUGINS:                        # do not load shared plugins (speedup loading)\n"
-		       " RZ_BIN_LANG:      e bin.lang         # assume lang for demangling\n"
-		       " RZ_BIN_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
-		       " RZ_BIN_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
-		       " RZ_BIN_STRFILTER: e bin.str.filter   # rizin -qc 'e bin.str.filter=?"
+		       " RZ_NOPLUGINS:                                         # do not load shared plugins (speedup loading)\n"
+		       " RZ_BIN_LANG:      e bin.lang                          # assume lang for demangling\n"
+		       " RZ_BIN_DEMANGLE=0:e bin.demangle                      # do not demangle symbols\n"
+		       " RZ_BIN_MAXSTRBUF: e bin.maxstrbuf                     # specify maximum buffer size\n"
+		       " RZ_BIN_STRFILTER: e bin.str.filter                    # rizin -qc 'e bin.str.filter=?"
 		       "?' -\n"
-		       " RZ_BIN_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
-		       " RZ_BIN_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
-		       " RZ_BIN_PDBSERVER: e pdb.server       # use alternative PDB server\n"
-		       " RZ_BIN_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
-		       " RZ_BIN_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
+		       " RZ_BIN_STRPURGE:  e bin.str.purge                     # try to purge false positives\n"
+		       " RZ_BIN_DEBASE64:  e bin.debase64                      # try to debase64 all strings\n"
+		       " RZ_BIN_PDBSERVER: e pdb.server                        # use alternative PDB server\n"
+		       " RZ_BIN_SYMSTORE:  e pdb.symstore                      # path to downstream symbol store\n"
+		       " RZ_BIN_PREFIX:    e bin.prefix                        # prefix symbols/sections/relocs with a specific string\n"
 		       " RZ_BIN_DEBUGINFOD_URLS: e bin.dbginfo.debuginfod_urls # use alternative debuginfod server\n"
-		       " RZ_CONFIG:        # sdb config file\n");
+		       " RZ_CONFIG:                                            # sdb config file\n");
 	}
 	return 1;
 }
@@ -1314,7 +1314,9 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (action & RZ_BIN_REQ_DEBUGINFOD) {
 		rz_config_set_b(core.config, "bin.dbginfo.debuginfod", true);
 		if ((tmp = rz_sys_getenv("RZ_BIN_DEBUGINFOD_URLS"))) {
-			rz_config_set(core.config, "bin.dbginfo.debuginfod_urls", tmp);
+			if (RZ_STR_ISNOTEMPTY(tmp)) {
+				rz_config_set(core.config, "bin.dbginfo.debuginfod_urls", tmp);
+			}
 			free(tmp);
 		}
 	}
