@@ -223,6 +223,14 @@ static const char *conds[] = {
 #define INSTR(...)    snprintf(inst->instr, V850_INSTR_MAXLEN - 1, __VA_ARGS__);
 #define OPERANDS(...) snprintf(inst->operands, V850_OPERANDS_MAXLEN - 1, __VA_ARGS__);
 #define PRINT_INSTR   INSTR("%s", instrs[inst->id])
+#define ALSO(x, y) \
+	{ \
+		if ((x)) { \
+			inst->id = y; \
+			goto ok; \
+		}; \
+		break; \
+	}
 
 static bool decode_formatI(V850_Inst *inst) {
 	if (V850_word(inst, 1) == 0) {
@@ -232,54 +240,59 @@ static bool decode_formatI(V850_Inst *inst) {
 	ut8 opcode = get_opcode(inst, 5, 10);
 	ut8 r1 = get_reg1(inst);
 	ut8 r2 = get_reg2(inst);
-	if (r1 != 0 && r2 != 0) {
-		switch (opcode) {
-		case V850_ADD:
-		case V850_AND:
-		case V850_CMP:
-		case V850_DIVH:
-		case V850_MOV:
-		case V850_MULH:
-		case V850_NOT:
-		case V850_OR:
-		case V850_SATADD:
-		case V850_SATSUB:
-		case V850_SATSUBR:
-		case V850_SUB:
-		case V850_SUBR:
-		case V850_TST:
-		case V850_XOR: inst->id = opcode; break;
-		default: return false;
-		}
-	} else {
-		ut16 w1 = V850_word(inst, 1);
-		if (w1 == 0b0000000001000000) {
-			inst->id = V850_RIE;
-		} else if (w1 == 0b0000000000011101) {
-			inst->id = V850_SYNCE;
-		} else if (w1 == 0b0000000000011100) {
-			inst->id = V850_SYNCI;
-		} else if (w1 == 0b0000000000011110) {
-			inst->id = V850_SYNCM;
-		} else if (w1 == 0b0000000000011111) {
-			inst->id = V850_SYNCP;
-		} else if ((w1 & ~(0xf << 11)) == 0b0000000001000000) {
-			inst->id = V850_FETRAP;
-		} else if (r2 == 0) {
-			switch (opcode) {
-			case V850_JMP: inst->id = V850_JMP; break;
-			case 0b000010: inst->id = V850_SWITCH; break;
-			case 0b000101: inst->id = V850_SXB; break;
-			case 0b000111: inst->id = V850_SXH; break;
-			case 0b000100: inst->id = V850_ZXB; break;
-			case 0b000110: inst->id = V850_ZXH; break;
-			default: return false;
-			}
-		} else {
-			return false;
-		}
+
+	switch (opcode) {
+	case V850_DIVH: ALSO(r1 && r2, opcode);
+	case V850_MOV:
+	case V850_SATADD:
+	case V850_SATSUB:
+	case V850_SATSUBR:
+	case V850_MULH: ALSO(r2, opcode);
+	case V850_ADD:
+	case V850_AND:
+	case V850_CMP:
+	case V850_NOT:
+	case V850_OR:
+	case V850_SUB:
+	case V850_SUBR:
+	case V850_TST:
+	case V850_XOR: inst->id = opcode; goto ok;
+	default: break;
 	}
 
+	ut16 w1 = V850_word(inst, 1);
+	if (w1 == 0b0000000001000000) {
+		inst->id = V850_RIE;
+		goto ok;
+	} else if (w1 == 0b0000000000011101) {
+		inst->id = V850_SYNCE;
+		goto ok;
+	} else if (w1 == 0b0000000000011100) {
+		inst->id = V850_SYNCI;
+		goto ok;
+	} else if (w1 == 0b0000000000011110) {
+		inst->id = V850_SYNCM;
+		goto ok;
+	} else if (w1 == 0b0000000000011111) {
+		inst->id = V850_SYNCP;
+		goto ok;
+	} else if ((w1 & ~(0xf << 11)) == 0b0000000001000000) {
+		inst->id = V850_FETRAP;
+		goto ok;
+	} else if (r2 == 0) {
+		switch (opcode) {
+		case V850_JMP: inst->id = V850_JMP; goto ok;
+		case 0b000010: inst->id = V850_SWITCH; goto ok;
+		case 0b000101: inst->id = V850_SXB; goto ok;
+		case 0b000111: inst->id = V850_SXH; goto ok;
+		case 0b000100: inst->id = V850_ZXB; goto ok;
+		case 0b000110: inst->id = V850_ZXH; goto ok;
+		default: break;
+		}
+	}
+	return false;
+
+ok:
 	switch (inst->id) {
 	case V850_RIE:
 	case V850_SYNCP:
@@ -300,12 +313,13 @@ static bool decode_formatI(V850_Inst *inst) {
 	case V850_FETRAP:
 		OPERANDS("0x%x", i_vec4(inst));
 		break;
+	case V850_NOP:
+		break;
 	default: {
 		OPERANDS("%s, %s", R1, R2);
 		break;
 	}
 	}
-ok:
 	PRINT_INSTR;
 	inst->format = I_reg_reg;
 	return true;
