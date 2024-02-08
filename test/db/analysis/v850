@@ -531,10 +531,21 @@ RUN
 NAME=v850 disassembly hello-v850e
 FILE=bins/v850/hello-v850e
 CMDS=<<EOF
+pd 10 @ 0x1005e8
 pd 10 @ 0x1006da
 pd 10 @ 0x100eb8
 EOF
 EXPECT=<<EOF
+            0x001005e8      mov   0, r27                               ; vfprintf.c:1064
+            0x001005ea      addi  -48, r23, r12
+            0x001005ee      mov   r27, r10                             ; vfprintf.c:1082
+            0x001005f0      ld.b  0[r21], r23                          ; vfprintf.c:1084
+            0x001005f4      shl   2, r10                               ; vfprintf.c:1083
+            0x001005f6      add   1, r21                               ; vfprintf.c:1084
+            0x001005f8      add   r10, r27                             ; vfprintf.c:1083
+            0x001005fa      add   r27, r27
+            0x001005fc      add   r12, r27
+            0x001005fe      addi  -48, r23, r12                        ; vfprintf.c:1084
             0x001006da      cmpf.d ge, r12, r14, 0
             0x001006de      trfsr 0
         ,=< 0x001006e2      be    0x101336
