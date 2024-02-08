@@ -127,6 +127,9 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			RZ_LOG_ERROR("Unhandled node type. Graph node either doesn't support dot graph printing or it isn't implemented.\n");
 			return NULL;
 		case RZ_GRAPH_NODE_TYPE_CFG:
+			label = rz_str_newf("0x%" PFMT64x, print_node->cfg.address);
+			url = label;
+			break;
 		case RZ_GRAPH_NODE_TYPE_ICFG:
 			label = rz_str_newf("0x%" PFMT64x, print_node->icfg.address);
 			url = label;
@@ -291,6 +294,8 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			RZ_LOG_ERROR("Unhandled node type. Graph node either doesn't support dot graph printing or it isn't implemented.\n");
 			return NULL;
 		case RZ_GRAPH_NODE_TYPE_CFG:
+			label = rz_strf(tmp, "0x%" PFMT64x, print_node->cfg.address);
+			break;
 		case RZ_GRAPH_NODE_TYPE_ICFG:
 			label = rz_strf(tmp, "0x%" PFMT64x, print_node->icfg.address);
 			break;
