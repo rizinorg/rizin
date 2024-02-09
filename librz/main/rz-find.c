@@ -38,6 +38,7 @@ typedef struct {
 	const char *mask;
 	const char *curfile;
 	const char *comma;
+	const char *exec_command;
 } RzfindOptions;
 
 static void rzfind_options_fini(RzfindOptions *ro) {
@@ -536,8 +537,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
 		case 'E':
-			ro.mode = RZ_SEARCH_ESIL;
-			rz_list_append(ro.keywords, (void *)opt.arg);
+			ro.exec_command = opt.arg;
 			break;
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;
@@ -633,6 +633,12 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			return 1;
 		}
 		rzfind_open(&ro, file);
+
+		if (ro.exec_command) {
+			char *command = rz_str_newf("%s %s", ro.exec_command, file);
+			system(command);
+			free(command);
+		}
 	}
 	rz_list_free(ro.keywords);
 	if (ro.json) {
