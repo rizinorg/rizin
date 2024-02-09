@@ -290,9 +290,9 @@ bool match_cond(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64
 			// reserved val for cond
 			return false;
 		}
-		cond_mark = RX_COND_BEQ + cond_bits;
+		cond_mark = RX_COND_EQ + cond_bits;
 	} else {
-		cond_mark = RX_COND_BEQ + cond_bits;
+		cond_mark = RX_COND_EQ + cond_bits;
 	}
 	AssignOpVar(operand_id, v.cond.cond, cond_mark);
 	AssignOpVar(operand_id, v.cond.pc_dsp_len, 8); // known pcdsp len === 8
@@ -374,7 +374,7 @@ bool match_sz(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 		// invalid 11
 		return false;
 	}
-	inst->sz_mark = sz == 2 ? RX_EXT_L : RX_EXT_B + sz;
+	inst->sz_mark = RX_EXT_B + sz;
 	*bits_read += l;
 	return true;
 }
@@ -460,18 +460,6 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 }
 
 bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *bytes_read, ut64 bytes) {
-	/**
-	 * psuedo code
-	 * s = 0
-	 * for tk in tks
-	 *  switch tk.type
-	 *      case code
-	 *          match if tk_bits = code.detail, s += tk.len
-	 *          else return 0 show fail match
-	 *      case mi
-	 *          memex = tk_bits
-	 *          s += tk.len
-	 */
 	ut8 read_bits = 0;
 	bool is_valid = true;
 	inst->op = desc->op;

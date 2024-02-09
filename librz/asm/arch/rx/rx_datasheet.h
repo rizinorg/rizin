@@ -118,6 +118,7 @@ typedef enum {
 	RX_OP_XCHG_UB,
 	RX_OP_XOR,
 	RX_OP_XOR_UB,
+	_RX_OP_COUNT,
 } RxOpCode;
 
 typedef enum {
@@ -154,11 +155,13 @@ typedef enum {
 } RxReg;
 
 typedef enum {
+	RX_EXT_NON,
 	RX_EXT_UB,
 	RX_EXT_B,
 	RX_EXT_W,
+	RX_EXT_L,
 	RX_EXT_UW,
-	RX_EXT_L
+	_RX_EXT_COUNT,
 } RxOpExtMark;
 
 typedef enum {

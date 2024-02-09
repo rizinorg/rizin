@@ -224,6 +224,7 @@ rz_asm_sources = [
   'arch/rx/rx.c',
   'arch/rx/rx_datasheet.c',
   'arch/rx/rx_inst.c',
+  'arch/rx/rx_str.inc',
   'arch/rsp/rsp_idec.c',
   'arch/sh/disassembler.c',
   'arch/sh/assembler.c',
