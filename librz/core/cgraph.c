@@ -1085,6 +1085,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 
 		// Add next instruction
 		ut64 next_addr = cur_addr + disas_bytes;
+		if (rz_io_nread_at(core->io, next_addr, buf, sizeof(buf)) < 0) {
+			RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
+			goto error;
+		}
 		if (rz_analysis_op(core->analysis, &target_op, next_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
 			rz_analysis_op_fini(&target_op);
 			goto error;
