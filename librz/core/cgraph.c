@@ -972,8 +972,8 @@ static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, cons
  * \param graph The graph to work on.
  * \param to_visit The vector with addresses to visit.
  * \param nodes_visited The hash table holding already visited addresses and their node indices in the graph.
- * \param from The parent node.
- * \param to The target node of the edge.
+ * \param op_from The RzAnalysisOp the edge originates from.
+ * \param op_to The RzAnalysisOp the edge goes to.
  *
  * \return true On success.
  * \return false On failure.

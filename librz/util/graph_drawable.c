@@ -28,7 +28,7 @@ RZ_API RZ_OWN RzGraphNodeInfo *rz_graph_get_node_info_data(RZ_BORROW void *data)
 	return info;
 }
 
-RZ_API void rz_graph_free_node_info(void *ptr) {
+RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr) {
 	if (!ptr) {
 		return;
 	}
@@ -59,13 +59,14 @@ RZ_API void rz_graph_free_node_info(void *ptr) {
  */
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, const char *body, ut64 offset) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
-	if (data) {
-		data->type = RZ_GRAPH_NODE_TYPE_DEFAULT;
-		data->subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
-		data->def.title = RZ_STR_DUP(title);
-		data->def.body = RZ_STR_DUP(body);
-		data->def.offset = offset;
+	if (!data) {
+		return NULL;
 	}
+	data->type = RZ_GRAPH_NODE_TYPE_DEFAULT;
+	data->subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
+	data->def.title = RZ_STR_DUP(title);
+	data->def.body = RZ_STR_DUP(body);
+	data->def.offset = offset;
 	return data;
 }
 
@@ -80,12 +81,13 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, con
  */
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType type, RzGraphNodeSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
-	if (data) {
-		data->type = RZ_GRAPH_NODE_TYPE_CFG;
-		data->subtype = subtype;
-		data->cfg.address = address;
-		data->cfg.call_address = call_target_addr;
+	if (!data) {
+		return NULL;
 	}
+	data->type = RZ_GRAPH_NODE_TYPE_CFG;
+	data->subtype = subtype;
+	data->cfg.address = address;
+	data->cfg.call_address = call_target_addr;
 	return data;
 }
 
@@ -99,12 +101,13 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_ta
  */
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType type, RzGraphNodeSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
-	if (data) {
-		data->type = RZ_GRAPH_NODE_TYPE_ICFG;
-		data->subtype = subtype;
-		data->icfg.address = address;
-		data->icfg.is_malloc = subtype & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC;
+	if (!data) {
+		return NULL;
 	}
+	data->type = RZ_GRAPH_NODE_TYPE_ICFG;
+	data->subtype = subtype;
+	data->icfg.address = address;
+	data->icfg.is_malloc = subtype & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC;
 	return data;
 }
 
