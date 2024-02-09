@@ -4388,16 +4388,18 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 	if (!fmt) {
 		return rz_strbuf_drain(sb);
 	}
-	bool usePxr = rz_type_is_strictly_atomic(core->analysis->typedb, var->type) && rz_type_atomic_str_eq(core->analysis->typedb, var->type, "int");
+	bool use_hexval = rz_type_is_strictly_atomic(core->analysis->typedb, var->type) && rz_type_atomic_str_eq(core->analysis->typedb, var->type, "int");
 	if (add_name) {
 		rz_strbuf_appendf(sb, "%s %s = ", rz_analysis_var_is_arg(var) ? "arg" : "var", var->name);
 	}
 	switch (var->storage.type) {
 	case RZ_ANALYSIS_VAR_STORAGE_REG: {
 		char *r;
-		if (usePxr) {
-			// TODO: convert to API
-			r = rz_core_cmd_strf(core, "pxr $w @r:%s", var->storage.reg);
+		if (use_hexval) {
+			int wordsize = rz_analysis_get_address_bits(core->analysis) / 8;
+			// Read register value
+			ut64 regval = rz_debug_reg_get(core->dbg, var->storage.reg);
+			r = rz_core_print_hexdump_refs(core, wordsize, wordsize, regval);
 		} else {
 			// TODO: convert to API
 			r = rz_core_cmd_strf(core, "pf r (%s)", var->storage.reg);
@@ -4409,9 +4411,9 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
 		ut64 addr = rz_core_analysis_var_addr(core, var);
 		char *r;
-		if (usePxr) {
-			// TODO: convert to API
-			r = rz_core_cmd_strf(core, "pxr $w @ 0x%" PFMT64x, addr);
+		if (use_hexval) {
+			int wordsize = rz_analysis_get_address_bits(core->analysis) / 8;
+			r = rz_core_print_hexdump_refs(core, wordsize, wordsize, addr);
 		} else {
 			// TODO: convert to API
 			r = rz_core_cmd_strf(core, "pf %s @ 0x%" PFMT64x, fmt, addr);

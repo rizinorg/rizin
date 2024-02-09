@@ -1242,23 +1242,41 @@ repeat:
 				if (idx == skip) {
 					free(dis);
 					curat = xaddr1;
-					char *res = rz_core_cmd_strf(core, "pd 4 @ 0x%08" PFMT64x "@e:asm.flags.limit=1", xaddr2);
-					// TODO: show disasm with context. not seek addr
-					// dis = rz_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, xaddr);
+					RzConfigHold *hc = rz_config_hold_new(core->config);
+					if (!hc) {
+						return RZ_CMD_STATUS_ERROR;
+					}
+					rz_config_hold_i(hc, "asm.flags.limit", NULL);
+					rz_config_set_i(core->config, "asm.flags.limit", 1);
+					char *res = rz_core_print_cons_disassembly(core, xaddr2, 4, 0);
+					rz_config_hold_restore(hc);
+					rz_config_hold_free(hc);
 					dis = NULL;
-					res = rz_str_appendf(res, "; ---------------------------\n");
+					/* Draw a separator */
+					if (rz_config_get_b(core->config, "scr.utf8")) {
+						char *line = rz_str_repeat("─", w - 5);
+						res = rz_str_appendf(res, ">%s\n", line);
+					} else {
+						char *line = rz_str_repeat("-", w - 5);
+						res = rz_str_appendf(res, "; %s\n", line);
+					}
 					switch (visual->printMode) {
 					case 0:
-						dis = rz_core_cmd_strf(core, "pd $r-4 @ 0x%08" PFMT64x, xaddr1);
+						/* Current reference context */
+						dis = rz_core_print_cons_disassembly(core, xaddr1, rows - 4, 0);
 						break;
 					case 1:
-						dis = rz_core_cmd_strf(core, "pd @ 0x%08" PFMT64x "-32", xaddr1);
+						/* Instructions preceding the reference context */
+						dis = rz_core_print_cons_disassembly(core, xaddr1 - 32, rows - 4, 0);
 						break;
 					case 2:
-						dis = rz_core_cmd_strf(core, "px @ 0x%08" PFMT64x, xaddr1);
+						/* Hexdump of the reference context */
+						dis = rz_core_print_hexdump_or_hexdiff_str(core, RZ_OUTPUT_MODE_STANDARD, xaddr1, core->blocksize, false);
+
 						break;
 					case 3:
-						dis = rz_core_cmd_strf(core, "pds @ 0x%08" PFMT64x, xaddr1);
+						/* Strings near the reference context */
+						dis = rz_core_print_disasm_strings(core, RZ_CORE_DISASM_STRINGS_MODE_INST, 0, NULL);
 						break;
 					}
 					if (dis) {

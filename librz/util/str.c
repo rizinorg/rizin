@@ -3286,17 +3286,18 @@ RZ_API RZ_OWN char *rz_str_pad(const char ch, int sz) {
 	return pad;
 }
 
-RZ_API char *rz_str_repeat(const char *ch, int sz) {
+/**
+ * \brief Repeats specified \p str string \p times
+ */
+RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times) {
+	rz_return_val_if_fail(str, NULL);
 	int i;
-	if (sz < 0) {
-		sz = 0;
-	}
-	if (sz == 0) {
+	if (times == 0) {
 		return strdup("");
 	}
-	RzStrBuf *buf = rz_strbuf_new(ch);
-	for (i = 1; i < sz; i++) {
-		rz_strbuf_append(buf, ch);
+	RzStrBuf *buf = rz_strbuf_new(str);
+	for (i = 1; i < times; i++) {
+		rz_strbuf_append(buf, str);
 	}
 	return rz_strbuf_drain(buf);
 }
