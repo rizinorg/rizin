@@ -264,15 +264,8 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	return dst;
 }
 
-static char colorbuffer[64];
 #define P(x) (p->cons && p->cons->context->pal.x) ? p->cons->context->pal.x
 RZ_API const char *rz_print_byte_color(RzPrint *p, int ch) {
-	if (p->flags & RZ_PRINT_FLAGS_RAINBOW) {
-		// EXPERIMENTAL
-		int bg = (p->flags & RZ_PRINT_FLAGS_NONHEX) ? 48 : 38;
-		snprintf(colorbuffer, sizeof(colorbuffer), "\033[%d;5;%dm", bg, ch);
-		return colorbuffer;
-	}
 	const bool use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	if (!use_color) {
 		return NULL;
@@ -452,16 +445,9 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 			white = allocated = rz_str_pad(' ', w);
 		}
 		if (use_color) {
-			char rgbstr[32] = { 0 };
 			const char *pre = PREOFF(offset)
 			    : Color_GREEN;
 			const char *fin = Color_RESET;
-			if (p && p->flags & RZ_PRINT_FLAGS_RAINBOW) {
-				// pre = rz_cons_rgb_str_off (rgbstr, addr);
-				if (p->cons && p->cons->rgbstr) {
-					pre = p->cons->rgbstr(rgbstr, sizeof(rgbstr), addr);
-				}
-			}
 			if (dec) {
 				rz_strbuf_appendf(sb, "%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
 			} else {

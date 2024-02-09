@@ -27,6 +27,8 @@
  */
 #define define_types_gen_nan(fname, ftype) \
 	RZ_API ftype rz_types_gen_##fname##_nan() { \
+		/* The static modifier is on purpose and necessary for all compilers \
+		 * to avoid optimizing them and generate NaN values portably */ \
 		static ftype zero = 0; \
 		ftype ret = zero / zero; \
 		feclearexcept(FE_ALL_EXCEPT); \
@@ -35,6 +37,8 @@
 
 #define define_types_gen_inf(fname, ftype) \
 	RZ_API ftype rz_types_gen_##fname##_inf() { \
+		/* The static modifier is on purpose and necessary for all compilers \
+		 * to avoid optimizing them and generate NaN values portably */ \
 		static ftype zero = 0; \
 		static ftype one = 1.0; \
 		ftype ret = one / zero; \

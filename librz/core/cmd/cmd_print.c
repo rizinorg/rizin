@@ -3119,12 +3119,8 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 	const char *reset = p->resetbg ? Color_RESET : Color_RESET_NOBG;
 	bool show_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	if (show_color) {
-		char rgbstr[32];
 		const char *k = rz_cons_singleton()->context->pal.offset; // TODO etooslow. must cache
 		const char *inv = invert ? RZ_CONS_INVERT(true, true) : "";
-		if (p->flags & RZ_PRINT_FLAGS_RAINBOW) {
-			k = rz_cons_rgb_str_off(rgbstr, sizeof(rgbstr), off);
-		}
 		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;
