@@ -905,7 +905,14 @@ static inline bool is_leaf_op(const RzAnalysisOp *op) {
 }
 
 static inline bool is_call(const RzAnalysisOp *op) {
-	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_CALL;
+	_RzAnalysisOpType type = (op->type & RZ_ANALYSIS_OP_TYPE_MASK);
+	return type == RZ_ANALYSIS_OP_TYPE_CALL ||
+		type == RZ_ANALYSIS_OP_TYPE_UCALL ||
+		type == RZ_ANALYSIS_OP_TYPE_RCALL ||
+		type == RZ_ANALYSIS_OP_TYPE_ICALL ||
+		type == RZ_ANALYSIS_OP_TYPE_IRCALL ||
+		type == RZ_ANALYSIS_OP_TYPE_CCALL ||
+		type == RZ_ANALYSIS_OP_TYPE_UCCALL;
 }
 
 static inline bool is_uncond_jump(const RzAnalysisOp *op) {
