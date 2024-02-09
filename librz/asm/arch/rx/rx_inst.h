@@ -55,8 +55,10 @@ typedef struct {
 
 typedef struct {
 	bool as_indirect;
+	bool as_base;
 	ut8 dsp_width;
 	RxOpExtMark memex;
+	RxReg ri;
 	RxReg reg;
 	RxOpFixMark fix_mode;
 	ut32 dsp_val;

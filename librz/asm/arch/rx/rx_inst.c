@@ -107,7 +107,6 @@ ut8 bits2dsplen(ut64 bits) {
 	// 01 - dsp: 8, 10 - dsp: 16
 	switch (bits) {
 	case 0:
-	case 3:
 		return 0;
 	case 1:
 		return 8;
@@ -125,27 +124,41 @@ bool match_ld(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 	ut64 ld_bits = getbits(bytes, s, l);
 	ut8 dsp_len;
 
-	// todo: some inst has valid 11 for [Rn]
-	// todo: looks like 11 can be merge to match_ld ?
-	if (ld_bits == 2) {
-		// looks like valid
-		return false;
+	// 11 - Rs
+	switch (ld_bits) {
+	case 3:
+		return true;
+	case 0:
+		dsp_len = 0;
+		break;
+	case 1:
+		dsp_len = 8;
+		break;
+	case 2:
+		dsp_len = 16;
+		break;
+	default:
+		rz_warn_if_reached();
+		return 0;
 	}
 
-	dsp_len = bits2dsplen(getbits(bytes, s, l));
-	AssignOpVar(token->tk.ld.vid, v.reg.dsp_width, dsp_len);
 	AssignOpVar(token->tk.ld.vid, v.reg.as_indirect, true);
+	AssignOpVar(token->tk.ld.vid, v.reg.dsp_width, dsp_len);
+
 	*bits_read += l;
 	return true;
 }
 
-bool match_ldr(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
+bool match_ld_part(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
 	ut8 s = *bits_read;
-	ut8 l = token->tk.ldr.tk_len;
+	ut8 l = token->tk.ld_part.tk_len;
 	ut8 ldr = getbits(bytes, s, l);
 	ut8 dsp_width;
 	// 00 - None, 01 - dsp:8, 10 - dsp:16, 11 - invalid
 	switch (ldr) {
+	case 3:
+		// invalid 11
+		return false;
 	case 0:
 		dsp_width = 0;
 		break;
@@ -155,15 +168,13 @@ bool match_ldr(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 	case 2:
 		dsp_width = 16;
 		break;
-	case 3:
-		return false;
 	default:
 		rz_warn_if_reached();
 		return false;
 	}
 
-	AssignOpVar(token->tk.ldr.vid, v.reg.dsp_width, dsp_width);
-	AssignOpVar(token->tk.ldr.vid, v.reg.as_indirect, true);
+	AssignOpVar(token->tk.ld_part.vid, v.reg.dsp_width, dsp_width);
+	AssignOpVar(token->tk.ld_part.vid, v.reg.as_indirect, true);
 	*bits_read += l;
 	return true;
 }
@@ -182,16 +193,68 @@ bool match_li(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 	return true;
 }
 
-RxReg bits2reg(ut64 bits) {
-	return RX_REG_R0 + bits;
-}
-
 bool match_reg(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
 	ut8 s = *bits_read;
 	ut8 l = token->tk.reg.tk_len;
 	ut8 operand_id = token->tk.reg.vid;
-	AssignOpVar(operand_id, v.reg.reg, bits2reg(getbits(bytes, s, l)));
+	AssignOpVar(operand_id, v.reg.reg, RX_REG_R0 + getbits(bytes, s, l));
 	AssignOpVar(operand_id, kind, RX_OPERAND_REG);
+	*bits_read += l;
+	return true;
+}
+
+bool match_reg_patched(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
+	ut8 s = *bits_read;
+	ut8 l = token->tk.reg.tk_len;
+	ut8 operand_id = token->tk.reg.vid;
+	ut64 reg_bits = getbits(bytes, s, l);
+	RxOpCode op = inst->op;
+	RxReg reg = RX_REG_R0 + reg_bits;
+
+	if (op == RX_OP_PUSHM || op == RX_OP_POPM) {
+		if (operand_id == 0) {
+			// for opr0, R1 -> R14
+			if (reg < RX_REG_R1 || reg > RX_REG_R14) {
+				return false;
+			}
+		}
+		if (operand_id == 1) {
+			// for opr1
+			if (reg < RX_REG_R2 || reg > RX_REG_R15) {
+				return false;
+			}
+		}
+	}
+
+	if (op == RX_OP_EMUL || op == RX_OP_EMULU) {
+		if (operand_id == 1) {
+			// dest reg limit: R0 -> R14
+			if (reg > RX_REG_R14) {
+				return false;
+			}
+		}
+	}
+
+	if (op == RX_OP_RTSD) {
+		if (reg < RX_REG_R1 || reg > RX_REG_R15) {
+			return false;
+		}
+	}
+
+	AssignOpVar(operand_id, v.reg.reg, RX_REG_R0 + reg_bits);
+	AssignOpVar(operand_id, kind, RX_OPERAND_REG);
+	*bits_read += l;
+	return true;
+}
+
+bool match_ri(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
+	ut8 s = *bits_read;
+	ut8 l = token->tk.reg.tk_len;
+	ut8 operand_id = token->tk.reg.vid;
+	ut64 reg_bits = getbits(bytes, s, l);
+	AssignOpVar(operand_id, v.reg.as_indirect, true);
+	AssignOpVar(operand_id, v.reg.as_base, true);
+	AssignOpVar(operand_id, v.reg.ri, RX_REG_R0 + reg_bits);
 	*bits_read += l;
 	return true;
 }
@@ -242,7 +305,6 @@ bool match_jump(RZ_OUT RxInst *inst, RxToken *token) {
 	// judge as a unconditional jump
 	inst->v0.kind = RX_OPERAND_COND;
 	inst->v0.v.cond.cond = RX_COND_JUMP;
-	inst->v0.v.cond.pc_dsp_len = token->tk.jmp.tk_len;
 	return true;
 }
 
@@ -253,6 +315,11 @@ bool match_cb(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 
 	inst->v0.v.flag = rx_cb_map[control_bits];
 	inst->v0.kind = RX_OPERAND_FLAG;
+
+	if (inst->v0.v.flag == RX_FLAG_RESERVED) {
+		// TODO: should we use strict policy ?
+		return false;
+	}
 
 	*bits_read += l;
 	return true;
@@ -303,6 +370,10 @@ bool match_sz(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 	ut8 s = *bits_read;
 	ut8 l = token->tk.sz.tk_len;
 	ut8 sz = getbits(bytes, s, l);
+	if (sz == 3) {
+		// invalid 11
+		return false;
+	}
 	inst->sz_mark = sz == 2 ? RX_EXT_L : RX_EXT_B + sz;
 	*bits_read += l;
 	return true;
@@ -423,8 +494,8 @@ bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *byte
 		case RX_TOKEN_LD:
 			is_valid = match_ld(inst, token, &read_bits, bytes);
 			break;
-		case RX_TOKEN_LDR:
-			is_valid = match_ldr(inst, token, &read_bits, bytes);
+		case RX_TOKEN_LD_PART:
+			is_valid = match_ld_part(inst, token, &read_bits, bytes);
 			break;
 		case RX_TOKEN_LI:
 			is_valid = match_li(inst, token, &read_bits, bytes);
@@ -464,6 +535,12 @@ bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *byte
 			break;
 		case RX_TOKEN_JMP:
 			is_valid = match_jump(inst, token);
+			break;
+		case RX_TOKEN_REG_LIMIT:
+			is_valid = match_reg_patched(inst, token, &read_bits, bytes);
+			break;
+		case RX_TOKEN_RI:
+			is_valid = match_ri(inst, token, &read_bits, bytes);
 			break;
 		case RX_TOKEN_DATA:
 			pack_data(inst, token, &read_bits, bytes);

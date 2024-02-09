@@ -34,9 +34,15 @@ typedef enum {
 	RX_OP_DIV,
 	RX_OP_DIV_UB,
 	RX_OP_DIVU,
+	RX_OP_DIVU_UB,
 	RX_OP_EMUL,
+	RX_OP_EMUL_UB,
 	RX_OP_EMULU,
+	RX_OP_EMULU_UB,
 	RX_OP_FADD,
+	RX_OP_FCMP,
+	RX_OP_FDIV,
+	RX_OP_FMUL,
 	RX_OP_FSUB,
 	RX_OP_FTOI,
 	RX_OP_INT,
@@ -47,10 +53,13 @@ typedef enum {
 	RX_OP_MACHI,
 	RX_OP_MACLO,
 	RX_OP_MAX,
+	RX_OP_MAX_UB,
 	RX_OP_MIN,
+	RX_OP_MIN_UB,
 	RX_OP_MOV,
 	RX_OP_MOVU,
 	RX_OP_MUL,
+	RX_OP_MUL_UB,
 	RX_OP_MULHI,
 	RX_OP_MULLO,
 	RX_OP_MVFACHI,
@@ -64,6 +73,7 @@ typedef enum {
 	RX_OP_NOP,
 	RX_OP_NOT,
 	RX_OP_OR,
+	RX_OP_OR_UB,
 	RX_OP_POP,
 	RX_OP_POPC,
 	RX_OP_POPM,
@@ -99,12 +109,15 @@ typedef enum {
 	RX_OP_STNZ,
 	RX_OP_STZ,
 	RX_OP_SUB,
+	RX_OP_SUB_UB,
 	RX_OP_SUNTIL,
 	RX_OP_SWHILE,
 	RX_OP_TST,
 	RX_OP_WAIT,
 	RX_OP_XCHG,
+	RX_OP_XCHG_UB,
 	RX_OP_XOR,
+	RX_OP_XOR_UB,
 } RxOpCode;
 
 typedef enum {
@@ -153,7 +166,7 @@ typedef enum {
 	RX_TOKEN_INST,
 	RX_TOKEN_LD,
 	RX_TOKEN_LI,
-	RX_TOKEN_LDR,
+	RX_TOKEN_LD_PART,
 	RX_TOKEN_MI,
 	RX_TOKEN_IMM,
 	RX_TOKEN_REG,
@@ -167,6 +180,8 @@ typedef enum {
 	RX_TOKEN_CB,
 	RX_TOKEN_JMP,
 	RX_TOKEN_DATA,
+	RX_TOKEN_RI,
+	RX_TOKEN_REG_LIMIT,
 } RxTokenType;
 
 struct rx_inst_token_t {
@@ -213,10 +228,12 @@ typedef union rx_token_union {
 	RxInstToken inst;
 	RxDispLenToken ld;
 	RxImmLenToken li;
-	RxVarDispLenToken ldr; // lds (ld for src) and ldd (ld for dest)
+	RxVarDispLenToken ld_part; // ld for partial valid bits range
 	RxMemexToken mi;
 	RxImmToken imm;
 	RxRegToken reg;
+	RxRegToken reg_li; // reg for limited range
+	RxRegToken ri;
 	RxCondToken cond;
 	RxDispToken dsp;
 	RxDspSplitToken dsp_sp;
@@ -242,69 +259,13 @@ typedef struct rx_token_t RxToken;
 #define RX_SET_SIZE  RX_SET_V3_SZ
 
 // todo: accurate num
-#define RX_DESC_SIZE (RX_SET_SIZE * 4)
+#define RX_DESC_SIZE (RX_SET_SIZE * 3)
 
 struct rx_desc_t {
 	RxOpCode op;
 	RxToken tks[MAX_TOKEN];
 };
 typedef struct rx_desc_t RxDesc;
-
-#define RxCode(x, y) \
-	{ \
-		.type = RX_TOKEN_INST, .tk.inst = {.tk_len = (x), \
-			.detail = (y) } \
-	}
-#define RxReg(x, v) \
-	{ .type = RX_TOKEN_REG, .tk.reg.tk_len = (x), .tk.reg.vid = (v) }
-#define RxLi(x, v) \
-	{ .type = RX_TOKEN_LI, .tk.li.tk_len = (x), .tk.li.vid = (v) }
-#define RxImm(x, v) \
-	{ .type = RX_TOKEN_IMM, .tk.imm.tk_len = (x), .tk.imm.vid = (v) }
-#define RxMi(x) \
-	{ .type = RX_TOKEN_MI, .tk.mi.tk_len = (x) }
-#define RxLd(x, v) \
-	{ .type = RX_TOKEN_LD, .tk.ld.tk_len = (x), .tk.ld.vid = (v) }
-#define RxLds(x, v) \
-	{ .type = RX_TOKEN_LDR, .tk.ldr.tk_len = (x), .tk.ldr.vid = (v) }
-#define RxLdd(x, v) \
-	{ .type = RX_TOKEN_LDR, .tk.ldr.tk_len = (x), .tk.ldr.vid = (v) }
-#define RxCond(x, v) \
-	{ .type = RX_TOKEN_COND, .tk.cond.tk_len = (x), .tk.cond.vid = (v) }
-#define RxDsp(x) \
-	{ .type = RX_TOKEN_DSP, .tk.dsp.tk_len = (x) }
-#define RxSz(x) \
-	{ .type = RX_TOKEN_SZ, .tk.sz.tk_len = (x) }
-#define RxAd(x) \
-	{ .type = RX_TOKEN_AD, .tk.ad.tk_len = (x) }
-#define RxCr(x, v) \
-	{ .type = RX_TOKEN_CR, .tk.cr.tk_len = (x), .tk.cr.vid = (v) }
-#define RxCb(x) \
-	{ .type = RX_TOKEN_CB, .tk.cb.tk_len = (x) }
-#define RxDspSplit(x, v, interval, xx) \
-	{ .type = RX_TOKEN_DSP_SPLIT, \
-	  .tk.dsp_sp.tk_len = (x), .tk.dsp_sp.vid = (v).tk.dsp_sp.tk_len_more = (xx), .tk.dsp_sp.interval = (interval) }
-#define RxIgnore(x) \
-	{ .type = RX_TOKEN_IGNORE, .tk.reserved.tk_len = (x) }
-
-// TODO: Jmp maybe removed or an empty mark
-#define RxJmp(w) \
-	{ .type = RX_TOKEN_JMP, .tk.jmp.tk_len = (w) }
-
-#define ImmData(v) \
-	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v) }
-#define DspData(v) \
-	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v) }
-#define PcDspData(v, l) \
-	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.fixed_len = (l) }
-#define ImmFixedData(v, l) \
-	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.fixed_len = (l) }
-#define RxEnd \
-	{ .type = RX_TOKEN_NON }
-
-#define V0 0
-#define V1 1
-#define V2 2
 
 extern RxDesc rx_inst_descs[RX_DESC_SIZE];
 
