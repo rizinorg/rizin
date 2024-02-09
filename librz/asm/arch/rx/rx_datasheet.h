@@ -113,6 +113,7 @@ typedef enum {
 	RX_OP_SUNTIL,
 	RX_OP_SWHILE,
 	RX_OP_TST,
+	RX_OP_TST_UB,
 	RX_OP_WAIT,
 	RX_OP_XCHG,
 	RX_OP_XCHG_UB,

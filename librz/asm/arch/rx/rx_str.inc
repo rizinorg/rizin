@@ -109,6 +109,7 @@ const char *opnames[_RX_OP_COUNT] = {
 	"suntil",
 	"swhile",
 	"tst",
+	"tst.UB"
 	"wait",
 	"xchg",
 	"xchg.UB",

@@ -259,6 +259,11 @@ RxDesc rx_inst_descs[RX_DESC_SIZE] = {
 	{ .op = RX_OP_STZ, .tks = { RxCode(12, 0x0fd7), RxLi(2, V0), RxCode(6, 0x0e), RxReg(4, V1), ImmData(V0), RxEnd } },
 	{ .op = RX_OP_SUNTIL, .tks = { RxCode(14, 0x1fe0), RxSz(2), RxEnd } },
 	{ .op = RX_OP_SWHILE, .tks = { RxCode(14, 0x1fe1), RxSz(2), RxEnd } },
+
+	{ .op = RX_OP_TST, .tks = { RxCode(12, 0xfd7), RxLi(2, V0), RxCode(6, 0x0c), RxReg(4, V1), ImmData(V0), RxEnd } },
+	{ .op = RX_OP_TST_UB, .tks = { RxCode(14, 0x3f0c), RxLd(2, V0), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
+	{ .op = RX_OP_TST, .tks = { RxCode(8, 0x06), RxMi(2), RxCode(4, 0x8), RxLd(2, V0), RxCode(8, 0x0c), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
+
 	{ .op = RX_OP_XCHG_UB, .tks = { RxCode(14, 0x3f10), RxLd(2, V0), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
 	{ .op = RX_OP_XCHG, .tks = { RxCode(8, 0x06), RxMi(2), RxCode(4, 0x8), RxLd(2, V0), RxCode(8, 0x10), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
 	{ .op = RX_OP_XOR, .tks = { RxCode(12, 0xfd7), RxLi(2, V0), RxCode(6, 0x0d), RxReg(4, V1), ImmData(V0), RxEnd } },
