@@ -3729,7 +3729,7 @@ RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzA
 	rz_return_val_if_fail(g && info, NULL);
 	RzANode *an = NULL;
 	char title[20] = { 0 };
-	switch(info->type) {
+	switch (info->type) {
 	default:
 		RZ_LOG_ERROR("Node type %d not handled.\n", info->type);
 		break;
