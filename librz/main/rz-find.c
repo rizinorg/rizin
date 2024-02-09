@@ -636,7 +636,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 
 		if (ro.exec_command) {
 			char *command = rz_str_newf("%s %s", ro.exec_command, file);
-			system(command);
+			int status = system(command);
+			if (status == -1) {
+				RZ_LOG_ERROR("Failed to execute command: %s", command);
+			}
 			free(command);
 		}
 	}
