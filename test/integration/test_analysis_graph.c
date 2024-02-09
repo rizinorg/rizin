@@ -244,10 +244,72 @@ bool test_analysis_graph_icfg() {
 	mu_end;
 }
 
+bool test_analysis_graph_cfg() {
+	// Open the file
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "new RzCore instance");
+	const char *fpath = "bins/elf/analysis/x86_cfg_node_details_test";
+	mu_assert_true(rz_core_file_open_load(core, fpath, 0, RZ_PERM_R, false), "load file");
+
+	// Analyse the file
+	rz_core_analysis_all(core);
+	rz_core_analysis_everything(core, false, "esil");
+	rz_core_analysis_flag_every_function(core);
+
+	RzGraph *g = rz_core_graph_cfg(core, 0x117a); // main()
+	mu_assert_eq(g->n_nodes, 26, "data graph node count");
+	mu_assert_eq(g->n_edges, 25, "data graph edge count");
+
+	// Testing the node content is a little annoying. The nodes
+	// are indexed by their position in the list.
+	// Although in case of a CFG and iCFG it would be better to
+	// have them indexed by their address in the binary.
+	// But the current graph implementation (list and not hashmap based)
+	// doesn't support this.
+	// So, if this test breaks due to some changes in the analysis,
+	// make sure the order of the nodes did not change
+	// (because they might have been added in different order).
+	RzGraphNodeInfo *info = rz_graph_get_node_info_data(rz_graph_get_node(g, 0)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x117a, "info address");
+	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 3)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x1182, "info address");
+	mu_assert_eq(info->cfg.call_address, 0x1050, "info call address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 10)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_COND, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x11a7, "info address");
+	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 24)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x11cd, "info address");
+	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 18)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x11d3, "info address");
+	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
+
+	rz_graph_free(g);
+
+	// Close the file
+	rz_core_free(core);
+	mu_end;
+}
 int all_tests() {
 	mu_run_test(test_analysis_graph);
 	mu_run_test(test_analysis_graph_more);
 	mu_run_test(test_analysis_graph_icfg);
+	mu_run_test(test_analysis_graph_cfg);
 	return tests_passed != tests_run;
 }
 
