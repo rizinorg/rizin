@@ -3727,11 +3727,36 @@ RZ_API void rz_agraph_set_title(RzAGraph *g, const char *title) {
  */
 RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info) {
 	rz_return_val_if_fail(g && info, NULL);
-	RzANode *an = rz_agraph_add_node(g, info->title, info->body);
-	if (!an) {
-		return NULL;
+	RzANode *an = NULL;
+	char title[20] = { 0 };
+	switch (info->type) {
+	default:
+		RZ_LOG_ERROR("Node type %d not handled.\n", info->type);
+		break;
+	case RZ_GRAPH_NODE_TYPE_DEFAULT:
+		an = rz_agraph_add_node(g, info->def.title, info->def.body);
+		if (!an) {
+			return NULL;
+		}
+		an->offset = info->def.offset;
+		break;
+	case RZ_GRAPH_NODE_TYPE_CFG:
+		rz_strf(title, "0x%" PFMT64x, info->cfg.address);
+		an = rz_agraph_add_node(g, title, "");
+		if (!an) {
+			return NULL;
+		}
+		an->offset = info->cfg.address;
+		break;
+	case RZ_GRAPH_NODE_TYPE_ICFG:
+		rz_strf(title, "0x%" PFMT64x, info->icfg.address);
+		an = rz_agraph_add_node(g, title, "");
+		if (!an) {
+			return NULL;
+		}
+		an->offset = info->icfg.address;
+		break;
 	}
-	an->offset = info->offset;
 	return an;
 }
 

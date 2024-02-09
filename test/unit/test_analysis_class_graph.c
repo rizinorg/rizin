@@ -28,7 +28,7 @@ bool test_inherit_graph_creation() {
 		RzGraphNodeInfo *info = node->data;
 		switch (i++) {
 		case 0:
-			mu_assert_streq(info->title, "A", "Wrong node name");
+			mu_assert_streq(info->def.title, "A", "Wrong node name");
 			mu_assert_eq(node->out_nodes->length, 2, "Wrong node out-nodes");
 			{
 				RzListIter *iter;
@@ -38,17 +38,17 @@ bool test_inherit_graph_creation() {
 					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
-						mu_assert_streq(info->title, "B", "Wrong node name");
+						mu_assert_streq(info->def.title, "B", "Wrong node name");
 						break;
 					case 1:
-						mu_assert_streq(info->title, "C", "Wrong node name");
+						mu_assert_streq(info->def.title, "C", "Wrong node name");
 						break;
 					}
 				}
 			}
 			break;
 		case 1:
-			mu_assert_streq(info->title, "B", "Wrong node name");
+			mu_assert_streq(info->def.title, "B", "Wrong node name");
 			mu_assert_eq(node->out_nodes->length, 1, "Wrong node out-nodes");
 			mu_assert_eq(node->in_nodes->length, 1, "Wrong node in-nodes");
 			{
@@ -59,14 +59,14 @@ bool test_inherit_graph_creation() {
 					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
-						mu_assert_streq(info->title, "D", "Wrong node name");
+						mu_assert_streq(info->def.title, "D", "Wrong node name");
 						break;
 					}
 				}
 			}
 			break;
 		case 2:
-			mu_assert_streq(info->title, "C", "Wrong node name");
+			mu_assert_streq(info->def.title, "C", "Wrong node name");
 			mu_assert_eq(node->out_nodes->length, 1, "Wrong node out-nodes");
 			mu_assert_eq(node->in_nodes->length, 1, "Wrong node in-nodes");
 			{
@@ -77,14 +77,14 @@ bool test_inherit_graph_creation() {
 					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
-						mu_assert_streq(info->title, "D", "Wrong node name");
+						mu_assert_streq(info->def.title, "D", "Wrong node name");
 						break;
 					}
 				}
 			}
 			break;
 		case 3:
-			mu_assert_streq(info->title, "D", "Wrong node name");
+			mu_assert_streq(info->def.title, "D", "Wrong node name");
 			mu_assert_eq(node->in_nodes->length, 2, "Wrong node in-nodes");
 			break;
 		default:
