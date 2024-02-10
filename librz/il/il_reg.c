@@ -5,7 +5,7 @@
 #include <rz_il/rz_il_vm.h>
 #include <rz_util.h>
 
-static int reg_offset_cmp(const void *value, const void *list_data) {
+static int reg_offset_cmp(const void *value, const void *list_data, void *user) {
 	return ((RzRegItem *)value)->offset - ((RzRegItem *)list_data)->offset;
 }
 
@@ -103,7 +103,7 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 			rz_list_free(flags);
 			continue;
 		}
-		rz_list_sort(items, reg_offset_cmp);
+		rz_list_sort(items, reg_offset_cmp, NULL);
 		const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 		RzRegItem *prev = NULL;
 		rz_list_foreach (items, iter, item) {

@@ -41,7 +41,7 @@ static void read_relocation_info(struct relocation_info *dst, ut8 *src, bool big
 	}
 }
 
-static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
+static int reloc_comparator(struct reloc_t *a, struct reloc_t *b, void *user) {
 	return a->addr - b->addr;
 }
 

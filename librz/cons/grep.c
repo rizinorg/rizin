@@ -445,7 +445,7 @@ RZ_API void rz_cons_grep_process(char *grep) {
 	}
 }
 
-static int cmp(const void *a, const void *b) {
+static int cmp(const void *a, const void *b, void *user) {
 	char *da = NULL;
 	char *db = NULL;
 	const char *ca = rz_str_trim_head_ro(a);
@@ -752,7 +752,7 @@ RZ_API void rz_cons_grepbuf(void) {
 		char *ptr = cons->context->buffer;
 		char *str;
 		sorted_column = grep->sort;
-		rz_list_sort(sorted_lines, cmp);
+		rz_list_sort(sorted_lines, cmp, NULL);
 		if (grep->sort_invert) {
 			rz_list_reverse(sorted_lines);
 		}

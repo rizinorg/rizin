@@ -1467,9 +1467,9 @@ bool test_analysis_load() {
 	rz_vector_free(vals);
 
 	mu_assert_eq(rz_list_length(analysis->imports), 3, "imports count");
-	mu_assert_notnull(rz_list_find(analysis->imports, "pigs", (RzListComparator)strcmp), "import");
-	mu_assert_notnull(rz_list_find(analysis->imports, "dogs", (RzListComparator)strcmp), "import");
-	mu_assert_notnull(rz_list_find(analysis->imports, "sheep", (RzListComparator)strcmp), "import");
+	mu_assert_notnull(rz_list_find(analysis->imports, "pigs", (RzListComparator)strcmp, NULL), "import");
+	mu_assert_notnull(rz_list_find(analysis->imports, "dogs", (RzListComparator)strcmp, NULL), "import");
+	mu_assert_notnull(rz_list_find(analysis->imports, "sheep", (RzListComparator)strcmp, NULL), "import");
 
 	char *cc = rz_analysis_cc_get(analysis, "sectarian");
 	mu_assert_streq(cc, "rax sectarian (rdx, rcx, stack);", "get cc");

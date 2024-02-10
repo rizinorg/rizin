@@ -532,7 +532,7 @@ RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *s
 	rz_cmd_state_output_array_end(state);
 }
 
-static int cmp(const void *a, const void *b) {
+static int cmp(const void *a, const void *b, void *user) {
 	RzDebugMap *ma = (RzDebugMap *)a;
 	RzDebugMap *mb = (RzDebugMap *)b;
 	return ma->addr - mb->addr;
@@ -580,7 +580,7 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 	if (width < 1) {
 		width = 30;
 	}
-	rz_list_sort(maps, cmp);
+	rz_list_sort(maps, cmp, NULL);
 	mul = findMinMax(maps, &min, &max, 0, width);
 	ut64 last = min;
 	if (min != -1 && mul != 0) {

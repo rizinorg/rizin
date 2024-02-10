@@ -89,7 +89,7 @@ bool test_rz_list_sort(void) {
 	rz_list_append(list, (void *)test3);
 	rz_list_append(list, (void *)test2);
 	// Sort.
-	rz_list_sort(list, (RzListComparator)strcmp);
+	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	// Check that the list is actually sorted.
 	mu_assert_streq((char *)list->head->elem, "AAAA", "first value in sorted list");
 	mu_assert_streq((char *)list->head->next->elem, "BBBB", "second value in sorted list");
@@ -108,7 +108,7 @@ bool test_rz_list_sort2(void) {
 	rz_list_append(list, (void *)test2);
 	rz_list_append(list, (void *)test1);
 	// Sort.
-	rz_list_merge_sort(list, (RzListComparator)strcmp);
+	rz_list_merge_sort(list, (RzListComparator)strcmp, NULL);
 	// Check that the list is actually sorted.
 	mu_assert_streq((char *)list->head->elem, "AAAA", "first value in sorted list");
 	mu_assert_streq((char *)list->head->next->elem, "BBBB", "second value in sorted list");
@@ -133,7 +133,7 @@ bool test_rz_list_sort3(void) {
 	rz_list_append(list, (void *)&test3);
 	rz_list_append(list, (void *)&test2);
 	// Sort.
-	rz_list_merge_sort(list, (RzListComparator)cmp_range);
+	rz_list_merge_sort(list, (RzListComparator)cmp_range, NULL);
 	// Check that the list is actually sorted.
 	mu_assert_eq(*(int *)list->head->elem, 33480, "first value in sorted list");
 	mu_assert_eq(*(int *)list->head->next->elem, 33508, "second value in sorted list");
@@ -211,7 +211,7 @@ bool test_rz_list_sort5(void) {
 		rz_list_append(list, (void *)upper[i]);
 	}
 	// add more than 43 elements to trigger merge sort
-	rz_list_sort(list, (RzListComparator)strcmp);
+	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	mu_assert_streq((char *)list->head->elem, upper[0], "First element");
 	mu_assert_streq((char *)list->tail->elem, lower[25], "Last element");
 	rz_list_free(list);
@@ -219,7 +219,7 @@ bool test_rz_list_sort5(void) {
 }
 
 // 3-valued comparator -> {LT,EQ,GT}.
-static int pintcmp(int *a, int *b) {
+static int pintcmp(int *a, int *b, void *user) {
 	return (int)(*a > *b) - (int)(*b > *a);
 }
 
@@ -243,7 +243,7 @@ bool test_rz_list_mergesort_pint() {
 	}
 
 	// invoke sorting
-	rz_list_sort(list, (RzListComparator)pintcmp);
+	rz_list_sort(list, (RzListComparator)pintcmp, NULL);
 
 	// assert the list is sorted as expected
 	RzListIter *iter;
@@ -278,7 +278,7 @@ bool test_rz_list_sort4(void) {
 		rz_list_append(list, (void *)ins_tests_odd[i]);
 	}
 	// Sort.
-	rz_list_merge_sort(list, (RzListComparator)strcmp);
+	rz_list_merge_sort(list, (RzListComparator)strcmp, NULL);
 
 	// Check that the list (odd-length) is actually sorted.
 	RzListIter *next = list->head;
@@ -311,7 +311,7 @@ bool test_rz_list_sort4(void) {
 #endif
 
 	// Sort
-	rz_list_merge_sort(list, (RzListComparator)strcmp);
+	rz_list_merge_sort(list, (RzListComparator)strcmp, NULL);
 
 #if 0 // Debug Printing
 	printf("after sorting 2 \n");

@@ -199,7 +199,7 @@ exit:
 	return fcn;
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
+static int cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzAnalysisFunction *a = _a, *b = _b;
 	return (a->addr > b->addr) ? 1 : (a->addr < b->addr) ? -1
 							     : 0;
@@ -2514,7 +2514,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_until_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
+static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b, void *user) {
 	if (!a || !b) {
 		return 0;
 	}
@@ -2632,7 +2632,7 @@ static void var_list_show(
 	if (!(list && rz_list_length(list) > 0)) {
 		goto fail;
 	}
-	rz_list_sort(list, (RzListComparator)var_comparator);
+	rz_list_sort(list, (RzListComparator)var_comparator, NULL);
 
 	bool color_arg = (rz_config_get_b(core->config, "scr.color") && rz_config_get_b(core->config, "scr.color.args"));
 	VarShowContext ctx = {
@@ -3528,7 +3528,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_xrefs_handler(RzCore *core, int a
 #undef CMD_REGS_REG_PATH
 #undef CMD_REGS_SYNC
 
-static int RzAnalysisRef_cmp(const RzAnalysisXRef *xref1, const RzAnalysisXRef *xref2) {
+static int RzAnalysisRef_cmp(const RzAnalysisXRef *xref1, const RzAnalysisXRef *xref2, void *user) {
 	return xref1->to != xref2->to;
 }
 
@@ -3569,7 +3569,7 @@ static void function_list_print_to_table(RzCore *core, RzList /*<RzAnalysisFunct
 
 		RzList *calls = rz_core_analysis_fcn_get_calls(core, fcn);
 		// Uniquify the list by ref->addr
-		RzList *uniq_calls = rz_list_uniq(calls, (RzListComparator)RzAnalysisRef_cmp);
+		RzList *uniq_calls = rz_list_uniq(calls, (RzListComparator)RzAnalysisRef_cmp, NULL);
 		ut32 calls_num = rz_list_length(uniq_calls);
 		rz_list_free(uniq_calls);
 		rz_list_free(calls);
@@ -3796,7 +3796,7 @@ static void function_list_print_to_json(RzCore *core, RzList /*<RzAnalysisFuncti
 	pj_end(state->d.pj);
 }
 
-static int fcn_cmp_addr(const void *a, const void *b) {
+static int fcn_cmp_addr(const void *a, const void *b, void *user) {
 	const RzAnalysisFunction *fa = a;
 	const RzAnalysisFunction *fb = b;
 	if (fa->addr > fb->addr) {
@@ -3816,7 +3816,7 @@ static RzList /*<RzAnalysisFunction *>*/ *functions_sorted_by_addr(RzAnalysis *a
 	if (!sorted) {
 		return NULL;
 	}
-	rz_list_sort(sorted, fcn_cmp_addr);
+	rz_list_sort(sorted, fcn_cmp_addr, NULL);
 	return sorted;
 }
 
@@ -3895,7 +3895,7 @@ static void function_print_calls(RzCore *core, RzList /*<RzAnalysisFunction *>*/
 		// Get all refs for a function
 		RzList *xrefs = rz_core_analysis_fcn_get_calls(core, fcn);
 		// Uniquify the list by ref->addr
-		RzList *uniq_xrefs = rz_list_uniq(xrefs, (RzListComparator)RzAnalysisRef_cmp);
+		RzList *uniq_xrefs = rz_list_uniq(xrefs, (RzListComparator)RzAnalysisRef_cmp, NULL);
 
 		// don't enter for functions with 0 refs
 		if (!rz_list_empty(uniq_xrefs)) {
@@ -4232,7 +4232,7 @@ static void print_stats(RzCore *core, HtPU *ht, RzAnalysisFunction *fcn, RzCmdSt
 	RzListIter *iter;
 	RzList *list = rz_list_newf(NULL);
 	ht_pu_foreach(ht, (HtPUForeachCallback)list_keys_cb, list);
-	rz_list_sort(list, (RzListComparator)strcmp);
+	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		RzTable *t = state->d.t;
 		RzTableColumnType *typeString = rz_table_type("string");
@@ -4322,7 +4322,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 	}
 
 	ht_pu_foreach(keys_set, (HtPUForeachCallback)list_keys_cb, keys);
-	rz_list_sort(keys, (RzListComparator)strcmp);
+	rz_list_sort(keys, (RzListComparator)strcmp, NULL);
 
 	RzTable *t = state->d.t;
 	RzTableColumnType *typeString = rz_table_type("string");
@@ -6578,7 +6578,7 @@ RZ_IPI RzCmdStatus rz_analysis_data_function_gaps_handler(RzCore *core, int argc
 	RzAnalysisFunction *fcn;
 	RzListIter *iter;
 	int i, wordsize = core->rasm->bits / 8;
-	rz_list_sort(core->analysis->fcns, cmpaddr);
+	rz_list_sort(core->analysis->fcns, cmpaddr, NULL);
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		if (end != UT64_MAX) {
 			int range = fcn->addr - end;

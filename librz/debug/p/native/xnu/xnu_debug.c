@@ -1255,7 +1255,7 @@ static RzDebugMap *moduleAt(RzList *list, ut64 addr) {
 	return NULL;
 }
 
-static int cmp(const void *_a, const void *_b) {
+static int cmp(const void *_a, const void *_b, void *user) {
 	const RzDebugMap *a = _a;
 	const RzDebugMap *b = _b;
 	if (a->addr > b->addr) {
@@ -1408,7 +1408,7 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 		}
 		rz_list_append(list, m2);
 	}
-	rz_list_sort(list, cmp);
+	rz_list_sort(list, cmp, NULL);
 	rz_list_free(modules);
 	return list;
 }

@@ -37,7 +37,7 @@ static void flag_skiplist_free(void *data) {
 	free(data);
 }
 
-static int flag_skiplist_cmp(const void *va, const void *vb) {
+static int flag_skiplist_cmp(const void *va, const void *vb, void *user) {
 	const RzFlagsAtOffset *a = (RzFlagsAtOffset *)va, *b = (RzFlagsAtOffset *)vb;
 	if (a->off == b->off) {
 		return 0;

@@ -2830,7 +2830,7 @@ static void foreachOffset(RzCore *core, const char *_cmd, const char *each) {
 	free(cmd);
 }
 
-static int bb_cmp(const void *a, const void *b) {
+static int bb_cmp(const void *a, const void *b, void *user) {
 	const RzAnalysisBlock *ba = a;
 	const RzAnalysisBlock *bb = b;
 	return ba->addr - bb->addr;
@@ -2873,7 +2873,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
 		int bs = core->blocksize;
 		if (fcn) {
-			rz_list_sort(fcn->bbs, bb_cmp);
+			rz_list_sort(fcn->bbs, bb_cmp, NULL);
 			rz_list_foreach (fcn->bbs, iter, bb) {
 				rz_core_block_size(core, bb->size);
 				rz_core_seek(core, bb->addr, true);
@@ -2917,7 +2917,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		int i;
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
 		if (fcn) {
-			rz_list_sort(fcn->bbs, bb_cmp);
+			rz_list_sort(fcn->bbs, bb_cmp, NULL);
 			rz_list_foreach (fcn->bbs, iter, bb) {
 				for (i = 0; i < bb->op_pos_size; i++) {
 					ut64 addr = bb->addr + bb->op_pos[i];
@@ -4686,7 +4686,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_bbs_stmt) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	RzCmdStatus ret = RZ_CMD_STATUS_OK;
-	rz_list_sort(fcn->bbs, bb_cmp);
+	rz_list_sort(fcn->bbs, bb_cmp, NULL);
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		rz_core_seek(core, bb->addr, true);
 		rz_core_block_size(core, bb->size);
@@ -5613,7 +5613,7 @@ RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	return core_cmd_raw(core, cmd, length);
 }
 
-static int compare_cmd_descriptor_name(const void *a, const void *b) {
+static int compare_cmd_descriptor_name(const void *a, const void *b, void *user) {
 	return strcmp(((RzCmdDescriptor *)a)->cmd, ((RzCmdDescriptor *)b)->cmd);
 }
 
@@ -5622,7 +5622,7 @@ static void cmd_descriptor_init(RzCore *core) {
 	RzListIter *iter;
 	RzCmdDescriptor *x, *y;
 	int n = core->cmd_descriptors->length;
-	rz_list_sort(core->cmd_descriptors, compare_cmd_descriptor_name);
+	rz_list_sort(core->cmd_descriptors, compare_cmd_descriptor_name, NULL);
 	rz_list_foreach (core->cmd_descriptors, iter, y) {
 		if (--n < 0) {
 			break;

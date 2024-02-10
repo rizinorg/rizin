@@ -175,6 +175,6 @@ bool linux_stop_threads(RzDebug *dbg, int except);
 int linux_handle_signals(RzDebug *dbg, int tid);
 RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid);
 char *linux_reg_profile(RzDebug *dbg);
-int match_pid(const void *pid_o, const void *th_o);
+int match_pid(const void *pid_o, const void *th_o, void *user);
 
 #endif

@@ -2537,7 +2537,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_arg_idx(RZ_NONNULL RzAn
 	return rz_pvector_at(args, index);
 }
 
-static int typecmp(const void *a, const void *b) {
+static int typecmp(const void *a, const void *b, void *user) {
 	const RzType *t1 = a;
 	const RzType *t2 = b;
 	return !rz_types_equal(t1, t2);
@@ -2555,7 +2555,7 @@ RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *anal
 		RzAnalysisVar *var = *it;
 		rz_list_append(type_used, var->type);
 	}
-	RzList *uniq = rz_list_uniq(type_used, typecmp);
+	RzList *uniq = rz_list_uniq(type_used, typecmp, NULL);
 	rz_list_free(type_used);
 	return uniq;
 }

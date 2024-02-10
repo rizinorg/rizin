@@ -92,7 +92,7 @@ int w32_init(RzDebug *dbg) {
 	return true;
 }
 
-static int w32_findthread_cmp(int *tid, PTHREAD_ITEM th) {
+static int w32_findthread_cmp(int *tid, PTHREAD_ITEM th, void *user) {
 	return (int)!(*tid == th->tid);
 }
 
@@ -100,7 +100,7 @@ static inline PTHREAD_ITEM find_thread(RzDebug *dbg, int tid) {
 	if (!dbg->threads) {
 		return NULL;
 	}
-	RzListIter *it = rz_list_find(dbg->threads, &tid, (RzListComparator)w32_findthread_cmp);
+	RzListIter *it = rz_list_find(dbg->threads, &tid, (RzListComparator)w32_findthread_cmp, NULL);
 	return it ? rz_list_iter_get_data(it) : NULL;
 }
 
@@ -765,13 +765,13 @@ static void libfree(void *lib) {
 	free(lib_item);
 }
 
-static int findlibcmp(void *BaseOfDll, void *lib) {
+static int findlibcmp(void *BaseOfDll, void *lib, void *user) {
 	PLIB_ITEM lib_item = (PLIB_ITEM)lib;
 	return !lib_item->hFile || lib_item->hFile == INVALID_HANDLE_VALUE || lib_item->BaseOfDll != BaseOfDll;
 }
 
 static void *find_library(void *BaseOfDll) {
-	RzListIter *it = rz_list_find(lib_list, BaseOfDll, (RzListComparator)findlibcmp);
+	RzListIter *it = rz_list_find(lib_list, BaseOfDll, (RzListComparator)findlibcmp, NULL);
 	return it ? rz_list_iter_get_data(it) : NULL;
 }
 

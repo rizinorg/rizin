@@ -2137,7 +2137,7 @@ static void ds_show_comments_right(RzDisasmState *ds) {
 	ds->show_comment_right = scr;
 }
 
-static int flagCmp(const void *a, const void *b) {
+static int flagCmp(const void *a, const void *b, void *user) {
 	const RzFlagItem *fa = a;
 	const RzFlagItem *fb = b;
 	if (fa->realname && fb->realname) {
@@ -2203,7 +2203,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = rz_analysis_get_function_at(ds->core->analysis, ds->at);
 	const RzList *flaglist = rz_flag_get_list(core->flags, ds->at);
-	RzList *uniqlist = flaglist ? rz_list_uniq(flaglist, flagCmp) : NULL;
+	RzList *uniqlist = flaglist ? rz_list_uniq(flaglist, flagCmp, NULL) : NULL;
 	int count = 0;
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
@@ -6556,7 +6556,7 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 	pj_kn(pj, "addr", fcn->addr);
 	pj_k(pj, "ops");
 	pj_a(pj);
-	rz_list_sort(fcn->bbs, bb_cmpaddr);
+	rz_list_sort(fcn->bbs, bb_cmpaddr, NULL);
 	rz_list_foreach (fcn->bbs, locs_it, b) {
 
 		ut8 *buf = malloc(b->size);

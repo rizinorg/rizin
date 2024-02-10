@@ -9,11 +9,11 @@ typedef struct row_info {
 	RzListComparator cmp;
 } row_info_t;
 
-static int sortString(const void *a, const void *b) {
+static int sortString(const void *a, const void *b, void *user) {
 	return strcmp(a, b);
 }
 
-static int sortNumber(const void *a, const void *b) {
+static int sortNumber(const void *a, const void *b, void *user) {
 	return rz_num_get(NULL, a) - rz_num_get(NULL, b);
 }
 
@@ -797,7 +797,7 @@ static int cmp(const void *_a, const void *_b, void *user) {
 	RzTableRow *b = (RzTableRow *)_b;
 	const char *wa = rz_pvector_at(a->items, info->nth);
 	const char *wb = rz_pvector_at(b->items, info->nth);
-	return info->cmp(wa, wb);
+	return info->cmp(wa, wb, NULL);
 }
 
 RZ_API void rz_table_sort(RzTable *t, int nth, bool dec) {
@@ -843,7 +843,7 @@ static int rz_rows_cmp(RzPVector /*<char *>*/ *lhs, RzPVector /*<char *>*/ *rhs,
 		item_col = rz_vector_index_ptr(cols, i);
 
 		if (nth == -1 || i == nth) {
-			tmp = item_col->type->cmp(item_lhs, item_rhs);
+			tmp = item_col->type->cmp(item_lhs, item_rhs, NULL);
 			if (tmp) {
 				return tmp;
 			}

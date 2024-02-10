@@ -206,7 +206,7 @@ static ut64 get_amd64_register(const struct context_type_amd64 *context, ut8 reg
 	}
 }
 
-static int is_pc_inside_module(const void *value, const void *list_data) {
+static int is_pc_inside_module(const void *value, const void *list_data, void *user) {
 	const ut64 pc = *(const ut64 *)value;
 	const RzDebugMap *module = list_data;
 	return !(pc >= module->addr && pc < module->addr_end);
@@ -537,7 +537,7 @@ static bool backtrace_windows_x64(RZ_IN RzDebug *dbg, RZ_INOUT RzList /*<RzDebug
 		rz_list_append(frames, frame);
 
 		// Find in which module current rip is
-		RzListIter *it = rz_list_find(modules, &context->rip, is_pc_inside_module);
+		RzListIter *it = rz_list_find(modules, &context->rip, is_pc_inside_module, NULL);
 		if (!it) {
 			// Either broken stack or module info not avalable (PEB paged out, etc)
 			break;

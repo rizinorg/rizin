@@ -1076,7 +1076,7 @@ typedef struct {
 	RzList /*<RzAnalysisCaseOp *>*/ *switch_path;
 } IterCtx;
 
-static int find_bb(ut64 *addr, RzAnalysisBlock *bb) {
+static int find_bb(ut64 *addr, RzAnalysisBlock *bb, void *user) {
 	return *addr != bb->addr;
 }
 
@@ -1097,14 +1097,14 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			RzListIter *bbit = NULL;
 			if (bb->switch_op) {
 				RzAnalysisCaseOp *cop = rz_list_first(bb->switch_op->cases);
-				bbit = rz_list_find(ctx->bbl, &cop->jump, (RzListComparator)find_bb);
+				bbit = rz_list_find(ctx->bbl, &cop->jump, (RzListComparator)find_bb, NULL);
 				if (bbit) {
 					rz_list_push(ctx->switch_path, bb->switch_op->cases->head);
 				}
 			} else {
-				bbit = rz_list_find(ctx->bbl, &bb->jump, (RzListComparator)find_bb);
+				bbit = rz_list_find(ctx->bbl, &bb->jump, (RzListComparator)find_bb, NULL);
 				if (!bbit && bb->fail != UT64_MAX) {
-					bbit = rz_list_find(ctx->bbl, &bb->fail, (RzListComparator)find_bb);
+					bbit = rz_list_find(ctx->bbl, &bb->fail, (RzListComparator)find_bb, NULL);
 				}
 			}
 			if (!bbit) {
@@ -1114,7 +1114,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 					rz_reg_arena_pop(ctx->fcn->analysis->reg);
 					prev_bb = rz_list_pop(ctx->path);
 					if (prev_bb->fail != UT64_MAX) {
-						bbit = rz_list_find(ctx->bbl, &prev_bb->fail, (RzListComparator)find_bb);
+						bbit = rz_list_find(ctx->bbl, &prev_bb->fail, (RzListComparator)find_bb, NULL);
 						if (bbit) {
 							rz_reg_arena_push(ctx->fcn->analysis->reg);
 							rz_list_push(ctx->path, prev_bb);
@@ -1127,7 +1127,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 							rz_list_pop(ctx->switch_path);
 							rz_list_push(ctx->switch_path, rz_list_iter_get_next(cop_it));
 							cop_it = rz_list_iter_get_next(cop_it);
-							bbit = rz_list_find(ctx->bbl, &cop->jump, (RzListComparator)find_bb);
+							bbit = rz_list_find(ctx->bbl, &cop->jump, (RzListComparator)find_bb, NULL);
 						}
 					}
 					if (cop_it && !rz_list_iter_has_next(cop_it)) {
