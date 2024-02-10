@@ -82,13 +82,13 @@ RUN
 NAME=multiple assignments
 FILE==
 CMDS=<<EOF
-e scr.highlight=" scr.highlight.grep =scr.rainbow =true"
+e scr.highlight=" scr.highlight.grep =scr.utf8 =true"
 e scr.highlight
 e scr.highlight.grep
-e scr.rainbow
+e scr.utf8
 EOF
 EXPECT=<<EOF
- scr.highlight.grep =scr.rainbow =true
+ scr.highlight.grep =scr.utf8 =true
 false
 false
 EOF
@@ -97,12 +97,12 @@ RUN
 NAME=multiple assignments with quotes
 FILE==
 CMDS=<<EOF
-e cmd.prompt='scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.rainbow = true """'
+e cmd.prompt='scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.utf8 = true """'
 e cmd.prompt
 e scr.highlight
 EOF
 EXPECT=<<EOF
-scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.rainbow = true """
+scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.utf8 = true """
 
 EOF
 RUN
