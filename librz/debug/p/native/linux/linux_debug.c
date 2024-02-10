@@ -564,7 +564,7 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 			} else if (WIFSTOPPED(status)) {
 				// If tid is not in the thread list and stopped by SIGSTOP,
 				// handle it as a new task.
-				if (!rz_list_find(dbg->threads, &tid, &match_pid) &&
+				if (!rz_list_find(dbg->threads, &tid, &match_pid, NULL) &&
 					WSTOPSIG(status) == SIGSTOP) {
 					reason = linux_handle_new_task(dbg, tid);
 					if (reason != RZ_DEBUG_REASON_UNKNOWN) {
@@ -605,7 +605,7 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 	return reason;
 }
 
-int match_pid(const void *pid_o, const void *th_o) {
+int match_pid(const void *pid_o, const void *th_o, void *user) {
 	int pid = *(int *)pid_o;
 	RzDebugPid *th = (RzDebugPid *)th_o;
 	return (pid == th->pid) ? 0 : 1;
@@ -722,7 +722,7 @@ int linux_attach(RzDebug *dbg, int pid) {
 	} else {
 		// This means we did a first run, so we probably attached to all possible threads already.
 		// So check if the requested thread is being traced already. If not, attach it
-		if (!rz_list_find(dbg->threads, &pid, &match_pid)) {
+		if (!rz_list_find(dbg->threads, &pid, &match_pid, NULL)) {
 			linux_attach_single_pid(dbg, pid);
 		}
 	}

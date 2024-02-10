@@ -153,12 +153,12 @@ static void __seek_cursor(RzCoreVisualViewGraph *status) {
 	return;
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
+static int cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzCoreVisualViewGraphItem *a = _a, *b = _b;
 	return a->addr - b->addr;
 }
 
-static int cmpname(const void *_a, const void *_b) {
+static int cmpname(const void *_a, const void *_b, void *user) {
 	const RzCoreVisualViewGraphItem *a = _a, *b = _b;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
@@ -170,7 +170,7 @@ static void __sort(RzCoreVisualViewGraph *status, RzList /*<RzCoreVisualViewGrap
 	rz_return_if_fail(status && list);
 	RzListComparator cmp = (status->cur_sort == SORT_ADDRESS) ? cmpaddr : cmpname;
 	list->sorted = false;
-	rz_list_sort(list, cmp);
+	rz_list_sort(list, cmp, NULL);
 }
 
 static void __toggleSort(RzCoreVisualViewGraph *status) {

@@ -11,8 +11,8 @@
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
 
-RZ_IPI int bb_cmpaddr(const void *_a, const void *_b);
-RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b);
+RZ_IPI int bb_cmpaddr(const void *_a, const void *_b, void *user);
+RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user);
 
 RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to);
 RZ_IPI bool rz_core_get_string_at(RzCore *core, ut64 address, char **string, size_t *length, RzStrEnc *encoding, bool can_search);

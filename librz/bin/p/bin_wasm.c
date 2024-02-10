@@ -17,7 +17,7 @@ static bool check_buffer(RzBuffer *rbuf) {
 	return rbuf && rz_buf_read_at(rbuf, 0, buf, 4) == 4 && !memcmp(buf, RZ_BIN_WASM_MAGIC_BYTES, 4);
 }
 
-static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q) {
+static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q, void *user) {
 	if (q->kind != RZ_BIN_WASM_EXTERNALKIND_Function) {
 		return true;
 	}
@@ -190,7 +190,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		if (fcn_name) {
 			ptr->name = strdup(fcn_name);
 
-			is_exp = rz_list_find(exports, &fcn_idx, (RzListComparator)find_export);
+			is_exp = rz_list_find(exports, &fcn_idx, (RzListComparator)find_export, NULL);
 			if (is_exp) {
 				ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			}

@@ -48,11 +48,11 @@ static void print_node_options(RzConfigNode *node) {
 	}
 }
 
-static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	return (a && b && a->name && b->name ? strcmp(a->name, b->name) : 0);
 }
 
-static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	size_t la, lb;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
@@ -62,11 +62,11 @@ static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction 
 	return (la > lb) - (la < lb);
 }
 
-static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
-static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	ut64 sa, sb;
 	// return a && b && a->_size < b->_size;
 	if (!a || !b) {
@@ -3839,11 +3839,11 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_config_in_space(RZ_NONNULL RzCore *co
 		}
 
 		if (RZ_STR_ISNOTEMPTY(space)) {
-			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp)) {
+			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp, NULL)) {
 				rz_list_append(list, strdup(dot + 1));
 			}
 		} else {
-			if (!rz_list_find(list, name, (RzListComparator)strcmp)) {
+			if (!rz_list_find(list, name, (RzListComparator)strcmp, NULL)) {
 				rz_list_append(list, strdup(name));
 			}
 		}

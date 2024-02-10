@@ -753,8 +753,8 @@ bool test_foreach_cmdname(void) {
 	mu_assert_eq(rz_list_length(res), RZ_ARRAY_SIZE(exp_regular), "count regular commands that can be executed");
 
 	RzList *exp_regular_l = rz_list_new_from_array((const void **)exp_regular, RZ_ARRAY_SIZE(exp_regular));
-	rz_list_sort(exp_regular_l, (RzListComparator)strcmp);
-	rz_list_sort(res, (RzListComparator)strcmp);
+	rz_list_sort(exp_regular_l, (RzListComparator)strcmp, NULL);
+	rz_list_sort(res, (RzListComparator)strcmp, NULL);
 
 	RzListIter *it;
 	char *s;
@@ -794,8 +794,8 @@ bool test_foreach_cmdname_begin(void) {
 	mu_assert_eq(rz_list_length(res), RZ_ARRAY_SIZE(exp_regular), "count regular commands that can be executed");
 
 	RzList *exp_regular_l = rz_list_new_from_array((const void **)exp_regular, RZ_ARRAY_SIZE(exp_regular));
-	rz_list_sort(exp_regular_l, (RzListComparator)strcmp);
-	rz_list_sort(res, (RzListComparator)strcmp);
+	rz_list_sort(exp_regular_l, (RzListComparator)strcmp, NULL);
+	rz_list_sort(res, (RzListComparator)strcmp, NULL);
 
 	RzListIter *it;
 	char *s;

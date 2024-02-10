@@ -395,7 +395,7 @@ RZ_IPI RzCmdStatus rz_regs_references_handler(RzCore *core, RzReg *reg, RzCmdReg
 	return r;
 }
 
-static int valgroup_regcmp(const void *a, const void *b) {
+static int valgroup_regcmp(const void *a, const void *b, void *user) {
 	const ut64 *A = (const ut64 *)a;
 	const ut64 *B = (const ut64 *)b;
 	if (*A > *B) {
@@ -410,7 +410,7 @@ static int valgroup_regcmp(const void *a, const void *b) {
 static bool valgroup_regcb(void *u, const ut64 k, const void *v) {
 	RzList *sorted = (RzList *)u;
 	ut64 *n = ut64_new(k);
-	rz_list_add_sorted(sorted, n, valgroup_regcmp);
+	rz_list_add_sorted(sorted, n, valgroup_regcmp, NULL);
 	return true;
 }
 

@@ -15,7 +15,7 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 static void add_hit_to_sorted_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, int len, ut8 is_valid);
 static int prune_hits_in_addr_range(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, ut64 len, ut8 is_valid);
 
-static int rcoreasm_address_comparator(RzCoreAsmHit *a, RzCoreAsmHit *b) {
+static int coreasm_address_comparator(RzCoreAsmHit *a, RzCoreAsmHit *b, void *user) {
 	if (a->addr == b->addr) {
 		return 0;
 	}
@@ -425,7 +425,7 @@ static void add_hit_to_sorted_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr,
 		hit->len = len;
 		hit->valid = is_valid;
 		hit->code = NULL;
-		rz_list_add_sorted(hits, hit, ((RzListComparator)rcoreasm_address_comparator));
+		rz_list_add_sorted(hits, hit, ((RzListComparator)coreasm_address_comparator), NULL);
 	}
 }
 
@@ -484,7 +484,7 @@ static RzCoreAsmHit *find_addr(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr) {
 	RzListIter *addr_iter = NULL;
 	RzCoreAsmHit dummy_value;
 	dummy_value.addr = addr;
-	addr_iter = rz_list_find(hits, &dummy_value, ((RzListComparator)rcoreasm_address_comparator));
+	addr_iter = rz_list_find(hits, &dummy_value, ((RzListComparator)coreasm_address_comparator), NULL);
 	return rz_list_iter_get_data(addr_iter);
 }
 
@@ -529,7 +529,7 @@ static int handle_forward_disassemble(RzCore *core, RzList /*<RzCoreAsmHit *>*/ 
 			prune_results = prune_hits_in_addr_range(hits, temp_instr_addr, temp_instr_len, is_valid);
 			add_hit_to_sorted_hits(hits, temp_instr_addr, temp_instr_len, is_valid);
 			if (prune_results) {
-				rz_list_add_sorted(hits, hit, ((RzListComparator)rcoreasm_address_comparator));
+				rz_list_add_sorted(hits, hit, ((RzListComparator)coreasm_address_comparator), NULL);
 				RZ_LOG_DEBUG("Pruned %u hits from list in fwd sweep.\n", prune_results);
 			} else {
 				RZ_FREE(hit);
@@ -715,7 +715,7 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 		hit->addr = current_instr_addr;
 		hit->len = current_instr_len;
 		hit->code = NULL;
-		rz_list_add_sorted(hits, hit, ((RzListComparator)rcoreasm_address_comparator));
+		rz_list_add_sorted(hits, hit, ((RzListComparator)coreasm_address_comparator), NULL);
 
 		current_buf_pos--;
 		current_instr_addr--;

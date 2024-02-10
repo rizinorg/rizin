@@ -54,7 +54,7 @@ static RzSkipListNode *find_insertpoint(RzSkipList *list, void *data, RzSkipList
 
 	for (i = list->list_level; i >= 0; i--) {
 		if (by_data) {
-			while (x->forward[i] != list->head && list->compare(x->forward[i]->data, data) < 0) {
+			while (x->forward[i] != list->head && list->compare(x->forward[i]->data, data, NULL) < 0) {
 				x = x->forward[i];
 			}
 		} else {
@@ -77,7 +77,7 @@ static bool delete_element(RzSkipList *list, void *data, bool by_data) {
 	// locate delete points in the lists of all levels
 	x = find_insertpoint(list, data, update, by_data);
 	// do nothing if the element is not present in the list
-	if (x == list->head || list->compare(x->data, data) != 0) {
+	if (x == list->head || list->compare(x->data, data, NULL) != 0) {
 		return false;
 	}
 
@@ -161,7 +161,7 @@ RZ_API RzSkipListNode *rz_skiplist_insert(RzSkipList *list, void *data) {
 	// locate insertion points in the lists of all levels
 	x = find_insertpoint(list, data, update, true);
 	// check whether the element is already in the list
-	if (x != list->head && !list->compare(x->data, data)) {
+	if (x != list->head && !list->compare(x->data, data, NULL)) {
 		return x;
 	}
 
@@ -209,7 +209,7 @@ RZ_API bool rz_skiplist_delete_node(RzSkipList *list, RzSkipListNode *node) {
 
 RZ_API RzSkipListNode *rz_skiplist_find(RzSkipList *list, void *data) {
 	RzSkipListNode *x = find_insertpoint(list, data, NULL, true);
-	if (x != list->head && list->compare(x->data, data) == 0) {
+	if (x != list->head && list->compare(x->data, data, NULL) == 0) {
 		return x;
 	}
 	return NULL;
@@ -225,7 +225,7 @@ RZ_API RzSkipListNode *rz_skiplist_find_leq(RzSkipList *list, void *data) {
 	int i;
 
 	for (i = list->list_level; i >= 0; i--) {
-		while (x->forward[i] != list->head && list->compare(x->forward[i]->data, data) <= 0) {
+		while (x->forward[i] != list->head && list->compare(x->forward[i]->data, data, NULL) <= 0) {
 			x = x->forward[i];
 		}
 	}

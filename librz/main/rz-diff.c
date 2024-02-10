@@ -1031,7 +1031,7 @@ static ut32 entry_hash(const RzBinAddr *elem) {
 	return hash;
 }
 
-static int entry_compare(const RzBinAddr *a, const RzBinAddr *b) {
+static int entry_compare(const RzBinAddr *a, const RzBinAddr *b, void *user) {
 	st64 ret;
 	ret = ((st64)b->paddr) - ((st64)a->paddr);
 	if (ret) {
@@ -1086,8 +1086,8 @@ static RzDiff *rz_diff_entries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)entry_compare);
-	rz_list_sort(list_b, (RzListComparator)entry_compare);
+	rz_list_sort(list_a, (RzListComparator)entry_compare, NULL);
+	rz_list_sort(list_b, (RzListComparator)entry_compare, NULL);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
@@ -1914,14 +1914,14 @@ fail:
 	return match;
 }
 
-static int compareBlocks(const RzAnalysisBlock *a, const RzAnalysisBlock *b) {
+static int compareBlocks(const RzAnalysisBlock *a, const RzAnalysisBlock *b, void *user) {
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
-static int comparePairBlocks(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb) {
+static int comparePairBlocks(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb, void *user) {
 	const RzAnalysisBlock *a = ma->pair_a;
 	const RzAnalysisBlock *b = mb->pair_a;
-	return compareBlocks(a, b);
+	return compareBlocks(a, b, user);
 }
 
 /**
@@ -1971,9 +1971,9 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 		return;
 	}
 
-	rz_list_sort(result->matches, (RzListComparator)comparePairBlocks);
-	rz_list_sort(result->unmatch_a, (RzListComparator)compareBlocks);
-	rz_list_sort(result->unmatch_b, (RzListComparator)compareBlocks);
+	rz_list_sort(result->matches, (RzListComparator)comparePairBlocks, NULL);
+	rz_list_sort(result->unmatch_a, (RzListComparator)compareBlocks, NULL);
+	rz_list_sort(result->unmatch_b, (RzListComparator)compareBlocks, NULL);
 
 	switch (mode) {
 	case DIFF_MODE_JSON:
@@ -2064,7 +2064,7 @@ static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFuncti
 	}
 }
 
-static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb) {
+static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb, void *user) {
 	const RzAnalysisFunction *a = ma->pair_a;
 	const RzAnalysisFunction *b = mb->pair_a;
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
@@ -2114,9 +2114,9 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 		goto fail;
 	}
 
-	rz_list_sort(result->matches, (RzListComparator)comparePairFunctions);
-	rz_list_sort(result->unmatch_a, core_a->analysis->columnSort);
-	rz_list_sort(result->unmatch_b, core_b->analysis->columnSort);
+	rz_list_sort(result->matches, (RzListComparator)comparePairFunctions, NULL);
+	rz_list_sort(result->unmatch_a, core_a->analysis->columnSort, NULL);
+	rz_list_sort(result->unmatch_b, core_b->analysis->columnSort, NULL);
 
 	if (mode == DIFF_MODE_JSON) {
 		pj = pj_new();

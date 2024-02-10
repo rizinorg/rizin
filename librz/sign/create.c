@@ -242,7 +242,7 @@ static int flirt_compare_module(const RzFlirtModule *a, const RzFlirtModule *b) 
 	return strcmp(af->name, bf->name);
 }
 
-int flirt_compare_node(const RzFlirtNode *a, const RzFlirtNode *b) {
+int flirt_compare_node(const RzFlirtNode *a, const RzFlirtNode *b, void *user) {
 	if (a->pattern_mask[0] == 0xFF && b->pattern_mask[0] == 0xFF) {
 		return memcmp(a->pattern_bytes, b->pattern_bytes, RZ_MIN(a->length, b->length));
 	}
@@ -282,7 +282,7 @@ static bool flirt_node_shorten_and_insert(const RzFlirtNode *root, RzFlirtNode *
 			// same pattern just merge.
 			rz_list_join(child->module_list, node->module_list);
 			rz_sign_flirt_node_free(node);
-			rz_list_sort(child->module_list, (RzListComparator)flirt_compare_module);
+			rz_list_sort(child->module_list, (RzListComparator)flirt_compare_module, NULL);
 			return true;
 		} else if (child->length == i) {
 			// partial pattern match but matches the child
@@ -290,7 +290,7 @@ static bool flirt_node_shorten_and_insert(const RzFlirtNode *root, RzFlirtNode *
 			if (!flirt_node_shorten_and_insert(child, node)) {
 				return false;
 			}
-			rz_list_sort(child->child_list, (RzListComparator)flirt_compare_node);
+			rz_list_sort(child->child_list, (RzListComparator)flirt_compare_node, NULL);
 		} else if (node->length == i) {
 			// partial pattern match but matches the node
 			rz_list_iter_set_data(it, node);
@@ -320,7 +320,7 @@ static bool flirt_node_shorten_and_insert(const RzFlirtNode *root, RzFlirtNode *
 			}
 			flirt_node_shorten_pattern(node, i);
 			flirt_node_shorten_pattern(child, i);
-			rz_list_sort(middle_node->child_list, (RzListComparator)flirt_compare_node);
+			rz_list_sort(middle_node->child_list, (RzListComparator)flirt_compare_node, NULL);
 		}
 		return true;
 	}
@@ -346,7 +346,7 @@ bool flirt_node_optimize(RzFlirtNode *root) {
 		goto fail;
 	}
 
-	rz_list_sort(childs, (RzListComparator)flirt_compare_node);
+	rz_list_sort(childs, (RzListComparator)flirt_compare_node, NULL);
 
 	RzListIter *it;
 	RzFlirtNode *child;
@@ -508,7 +508,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 	}
 
 	if (optimization == RZ_FLIRT_NODE_OPTIMIZE_NONE) {
-		rz_list_sort(root->child_list, (RzListComparator)flirt_compare_node);
+		rz_list_sort(root->child_list, (RzListComparator)flirt_compare_node, NULL);
 	} else if (!flirt_node_optimize(root)) {
 		goto fail;
 	}

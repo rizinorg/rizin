@@ -60,7 +60,7 @@ bool test_detected_functions_list_size(const char *fpath) {
 }
 
 // compare function for rz_list_find
-int cmp_fcn_name(const void *value, const void *list_data) {
+int cmp_fcn_name(const void *value, const void *list_data, void *user) {
 	RzAnalysisFunction *fcn = (RzAnalysisFunction*)list_data;
 	return strcmp((const char*)value, fcn->name);
 }
@@ -98,7 +98,7 @@ bool test_new_functions_detected_at_level(TestBinFcnLevel testbin) {
 		}
 
 		// search function
-		bool fcn_found = rz_list_find(fcn_list, fcn_name, cmp_fcn_name) != NULL;
+		bool fcn_found = rz_list_find(fcn_list, fcn_name, cmp_fcn_name, NULL) != NULL;
 		mu_assert("function not found at given analysis level", fcn_found);
 	}
 

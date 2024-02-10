@@ -2093,7 +2093,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
-static int bbcmp(RzAnalysisBlock *a, RzAnalysisBlock *b) {
+static int bbcmp(RzAnalysisBlock *a, RzAnalysisBlock *b, void *user) {
 	return a->addr - b->addr;
 }
 
@@ -2246,7 +2246,7 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 	const bool orig_bb_middle = rz_config_get_b(core->config, "asm.bb.middle");
 	rz_config_set_b(core->config, "asm.bb.middle", false);
 
-	rz_list_sort(f->bbs, (RzListComparator)bbcmp);
+	rz_list_sort(f->bbs, (RzListComparator)bbcmp, NULL);
 
 	RzAnalysisBlock *b;
 	RzListIter *iter;
@@ -4323,7 +4323,7 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 		}
 	}
 
-	rz_list_sort(f->bbs, (RzListComparator)bbcmp);
+	rz_list_sort(f->bbs, (RzListComparator)bbcmp, NULL);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		rz_list_foreach (f->bbs, iter, b) {
 			ut8 *buf = malloc(b->size);

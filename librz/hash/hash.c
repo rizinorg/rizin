@@ -123,7 +123,7 @@ RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len) {
 	return e;
 }
 
-static int hash_cfg_config_compare(const void *value, const void *data) {
+static int hash_cfg_config_compare(const void *value, const void *data, void *user) {
 	const HashCfgConfig *mdc = (const HashCfgConfig *)data;
 	const char *name = (const char *)value;
 	return strcmp(name, mdc->plugin->name);
@@ -267,7 +267,7 @@ RZ_API void rz_hash_cfg_free(RZ_NONNULL RzHashCfg *md) {
 RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(md && name, false);
 
-	if (rz_list_find(md->configurations, name, hash_cfg_config_compare)) {
+	if (rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL)) {
 		RZ_LOG_WARN("msg digest: '%s' was already configured; skipping.\n", name);
 		return false;
 	}
@@ -513,7 +513,7 @@ RZ_API bool rz_hash_cfg_iterate(RZ_NONNULL RzHashCfg *md, size_t iterate) {
 RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name, RZ_NONNULL ut32 *size) {
 	rz_return_val_if_fail(md && name && hash_cfg_has_finshed(md), false);
 
-	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return NULL;
@@ -538,7 +538,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 	rz_return_val_if_fail(md && name && hash_cfg_has_finshed(md), false);
 
 	ut32 pos = 0;
-	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return NULL;
@@ -580,7 +580,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 RZ_API RzHashSize rz_hash_cfg_size(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(md && name, 0);
 
-	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return 0;

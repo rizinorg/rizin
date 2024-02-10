@@ -559,12 +559,11 @@ RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list) {
  * \brief Adds an element to a sorted list via the RzListComparator
  *
  **/
-RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONNULL void *data, RZ_NONNULL RzListComparator cmp) {
-	RzListIter *it, *item = NULL;
-
+RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONNULL void *data, RZ_NONNULL RzListComparator cmp, void *user) {
 	rz_return_val_if_fail(list && data && cmp, NULL);
 
-	for (it = list->head; it && it->elem && cmp(data, it->elem) > 0; it = it->next) {
+	RzListIter *it, *item = NULL;
+	for (it = list->head; it && it->elem && cmp(data, it->elem, user) > 0; it = it->next) {
 	}
 	if (it) {
 		item = RZ_NEW0(RzListIter);
@@ -663,21 +662,20 @@ RZ_API RZ_BORROW RzListIter *rz_list_find_ptr(RZ_NONNULL const RzList *list, RZ_
  *
  * \return the first RzListIter that is equall to p w.r.t. cmp.
  */
-RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *p, RZ_NONNULL RzListComparator cmp) {
+RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *p, RZ_NONNULL RzListComparator cmp, void *user) {
+	rz_return_val_if_fail(list && cmp, NULL);
+
 	void *q;
 	RzListIter *iter;
-
-	rz_return_val_if_fail(list, NULL);
-
 	rz_list_foreach (list, iter, q) {
-		if (!cmp(p, q)) {
+		if (!cmp(p, q, user)) {
 			return iter;
 		}
 	}
 	return NULL;
 }
 
-static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparator cmp) {
+static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparator cmp, void *user) {
 	RzListIter *next = NULL, *result = NULL, *head = NULL;
 	while (first || second) {
 		if (!second) {
@@ -686,7 +684,7 @@ static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparato
 		} else if (!first) {
 			next = second;
 			second = second->next;
-		} else if (cmp(first->elem, second->elem) <= 0) {
+		} else if (cmp(first->elem, second->elem, user) <= 0) {
 			next = first;
 			first = first->next;
 		} else {
@@ -726,27 +724,27 @@ static RzListIter *_r_list_half_split(RzListIter *head) {
 	return tmp;
 }
 
-static RzListIter *_merge_sort(RzListIter *head, RzListComparator cmp) {
+static RzListIter *_merge_sort(RzListIter *head, RzListComparator cmp, void *user) {
 	RzListIter *second;
 	if (!head || !head->next) {
 		return head;
 	}
 	second = _r_list_half_split(head);
-	head = _merge_sort(head, cmp);
-	second = _merge_sort(second, cmp);
-	return _merge(head, second, cmp);
+	head = _merge_sort(head, cmp, user);
+	second = _merge_sort(second, cmp, user);
+	return _merge(head, second, cmp, user);
 }
 
 /**
  * \brief Merge sorts the list via the RzListComparator
  *
  **/
-RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp) {
-	rz_return_if_fail(list);
+RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
+	rz_return_if_fail(list && cmp);
 
 	if (!list->sorted && list->head && cmp) {
 		RzListIter *iter;
-		list->head = _merge_sort(list->head, cmp);
+		list->head = _merge_sort(list->head, cmp, user);
 		// update tail reference
 		iter = list->head;
 		while (iter && iter->next) {
@@ -761,37 +759,36 @@ RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompara
  * \brief Insertion sorts the list via the RzListComparator
  *
  **/
-RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp) {
-	rz_return_if_fail(list);
+RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
+	rz_return_if_fail(list && cmp);
 
-	if (!list->sorted) {
-		RzListIter *it;
-		RzListIter *it2;
-		if (cmp) {
-			for (it = list->head; it && it->elem; it = it->next) {
-				for (it2 = it->next; it2 && it2->elem; it2 = it2->next) {
-					if (cmp(it->elem, it2->elem) > 0) {
-						void *t = it->elem;
-						it->elem = it2->elem;
-						it2->elem = t;
-					}
-				}
+	if (list->sorted) {
+		return;
+	}
+	RzListIter *it;
+	RzListIter *it2;
+	for (it = list->head; it && it->elem; it = it->next) {
+		for (it2 = it->next; it2 && it2->elem; it2 = it2->next) {
+			if (cmp(it->elem, it2->elem, user) > 0) {
+				void *t = it->elem;
+				it->elem = it2->elem;
+				it2->elem = t;
 			}
 		}
-		list->sorted = true;
 	}
+	list->sorted = true;
 }
 
 /**
  * \brief Sorts via merge sort or via insertion sort a list
  *
  **/
-RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp) {
-	rz_return_if_fail(list);
+RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
+	rz_return_if_fail(list && cmp);
 	if (list->length > 43) {
-		rz_list_merge_sort(list, cmp);
+		rz_list_merge_sort(list, cmp, user);
 	} else {
-		rz_list_insertion_sort(list, cmp);
+		rz_list_insertion_sort(list, cmp, user);
 	}
 }
 
@@ -799,12 +796,11 @@ RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cm
  * \brief Returns a new RzList which contains only unique values
  *
  **/
-RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzListComparator cmp) {
-	RzListIter *iter, *iter2;
-	void *item, *item2;
-
+RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
 	rz_return_val_if_fail(list && cmp, NULL);
 
+	RzListIter *iter, *iter2;
+	void *item, *item2;
 	RzList *nl = rz_list_newf(NULL);
 	if (!nl) {
 		return NULL;
@@ -812,7 +808,7 @@ RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzL
 	rz_list_foreach (list, iter, item) {
 		bool found = false;
 		rz_list_foreach (nl, iter2, item2) {
-			if (cmp(item, item2) == 0) {
+			if (cmp(item, item2, user) == 0) {
 				found = true;
 				break;
 			}

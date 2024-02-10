@@ -35,7 +35,7 @@ static void rz_graph_node_free(RzGraphNode *n) {
 	free(n);
 }
 
-static int node_cmp(unsigned int idx, RzGraphNode *b) {
+static int node_cmp(unsigned int idx, RzGraphNode *b, void *user) {
 	return idx == b->idx ? 0 : -1;
 }
 
@@ -127,7 +127,7 @@ RZ_API void rz_graph_free(RzGraph *t) {
 }
 
 RZ_API RzGraphNode *rz_graph_get_node(const RzGraph *t, unsigned int idx) {
-	RzListIter *it = rz_list_find(t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp);
+	RzListIter *it = rz_list_find(t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp, NULL);
 	if (!it) {
 		return NULL;
 	}
@@ -135,7 +135,7 @@ RZ_API RzGraphNode *rz_graph_get_node(const RzGraph *t, unsigned int idx) {
 }
 
 RZ_API RzListIter *rz_graph_node_iter(const RzGraph *t, unsigned int idx) {
-	return rz_list_find(t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp);
+	return rz_list_find(t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp, NULL);
 }
 
 RZ_API void rz_graph_reset(RzGraph *t) {
