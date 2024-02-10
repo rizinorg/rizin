@@ -39,7 +39,7 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 		rz_run_tty();
 		return 0;
 #else
-		eprintf("Not supported\n");
+		RZ_LOG_ERROR("Not supported\n");
 		return 1;
 #endif
 	}
@@ -49,6 +49,10 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 		bool noMoreDirectives = false;
 		int directiveIndex = 0;
 		p = rz_run_new(NULL);
+		if (!p) {
+			RZ_LOG_ERROR("Failed to create new RzRunProfile\n");
+			return 1;
+		}
 		for (i = *file ? 1 : 2; i < argc; i++) {
 			if (!strcmp(argv[i], "--")) {
 				noMoreDirectives = true;

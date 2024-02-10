@@ -106,7 +106,7 @@ RZ_API int rz_sys_clearenv(void);
 RZ_API char *rz_sys_whoami(char *buf);
 RZ_API char *rz_sys_getdir(void);
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s);
-RZ_API bool rz_sys_aslr(int val);
+RZ_API bool rz_sys_aslr(bool enable);
 RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname);
 RZ_API void *rz_sys_dlsym(void *handler, const char *name);
 RZ_API int rz_sys_dlclose(void *handler);
