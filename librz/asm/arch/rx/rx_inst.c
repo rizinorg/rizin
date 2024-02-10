@@ -102,22 +102,6 @@ bool match_mi(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 	return true;
 }
 
-ut8 bits2dsplen(ut64 bits) {
-	// 11 - None, 00 - None
-	// 01 - dsp: 8, 10 - dsp: 16
-	switch (bits) {
-	case 0:
-		return 0;
-	case 1:
-		return 8;
-	case 2:
-		return 16;
-	default:
-		rz_warn_if_reached();
-		return 0;
-	}
-}
-
 bool match_ld(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
 	ut8 s = *bits_read;
 	ut8 l = token->tk.ld.tk_len;
@@ -127,6 +111,7 @@ bool match_ld(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 	// 11 - Rs
 	switch (ld_bits) {
 	case 3:
+		*bits_read += l;
 		return true;
 	case 0:
 		dsp_len = 0;
@@ -180,9 +165,21 @@ bool match_ld_part(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, u
 }
 
 ut8 bits2immlen(ut64 bits) {
-	// 00 - SIMM: 8, 01 - SIMM: 16
-	// 02 - SIMM: 24, 03 - IMM: 32
-	return (bits + 1) * 8;
+	// 01 - SIMM: 8, 10 - SIMM: 16
+	// 11 - SIMM: 24, 00 - IMM: 32
+	switch (bits) {
+	case 0:
+		return 32;
+	case 1:
+		return 8;
+	case 2:
+		return 16;
+	case 3:
+		return 24;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
 }
 
 bool match_li(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
@@ -274,6 +271,7 @@ bool match_imm(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 	ut8 l = token->tk.imm.tk_len;
 	ut8 operand_id = token->tk.imm.vid;
 	AssignOpVar(operand_id, v.imm.imm, getbits(bytes, s, l));
+	AssignOpVar(operand_id, v.imm.imm_width, l);
 	AssignOpVar(operand_id, kind, RX_OPERAND_IMM);
 	*bits_read += l;
 	return true;
@@ -420,7 +418,9 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 
 	RxOperand *opr = vid == 0 ? &(inst->v0) : vid == 1 ? &(inst->v1)
 							   : &(inst->v2);
-	if (opr->kind == RX_OPERAND_REG) {
+
+	ut8 data_type = token->tk.data.data_type;
+	if (data_type == 2) {
 		// pack dsp
 		l = opr->v.reg.dsp_width;
 		follow_data = getbits(bytes, s, l);
@@ -429,20 +429,21 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 		return true;
 	}
 
-	if (opr->kind == RX_OPERAND_IMM) {
+	if (data_type == 1) {
 		// pack imm
 		if (token->tk.data.fixed_len) {
 			l = token->tk.data.fixed_len;
 		} else {
 			l = opr->v.imm.imm_width;
 		}
+		opr->kind = RX_OPERAND_IMM;
 		follow_data = getbits(bytes, s, l);
 		opr->v.imm.imm = follow_data;
 		*bits_read += l;
 		return true;
 	}
 
-	if (opr->kind == RX_OPERAND_COND) {
+	if (data_type == 3) {
 		// pack pcdsp
 		if (token->tk.data.fixed_len) {
 			l = token->tk.data.fixed_len;
@@ -540,9 +541,10 @@ bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *byte
 	}
 
 	// assume bits / 8 = bytes should be integer
-	if (read_bits & 0x8) {
+	if ((read_bits & 7)) {
 		// instruction are defined as bytes
 		rz_warn_if_reached();
+		printf("read_bits : %d\n", read_bits);
 		return false;
 	}
 

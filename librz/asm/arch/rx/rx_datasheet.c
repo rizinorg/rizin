@@ -45,13 +45,13 @@
 	{ .type = RX_TOKEN_REG_LIMIT, .tk.reg_li.tk_len = (x), .tk.reg_li.vid = (v) }
 
 #define ImmData(v) \
-	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v) }
+	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.data_type = 1 }
 #define DspData(v) \
-	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v) }
+	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.data_type = 2 }
 #define PcDspData(v, l) \
-	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.fixed_len = (l) }
+	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.fixed_len = (l), .tk.data.data_type = 3 }
 #define ImmFixedData(v, l) \
-	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.fixed_len = (l) }
+	{ .type = RX_TOKEN_DATA, .tk.data.vid = (v), .tk.data.fixed_len = (l), .tk.data.data_type = 1 }
 #define RxEnd \
 	{ .type = RX_TOKEN_NON }
 
@@ -60,17 +60,17 @@
 #define V2 2
 
 RxDesc rx_inst_descs[RX_DESC_SIZE] = {
-	{ .op = RX_OP_ABS, .tks = { RxCode(12, 0x7e20), RxReg(4, V0), RxEnd } },
-	{ .op = RX_OP_ABS, .tks = { RxCode(16, 0xfcf0), RxReg(4, V0), RxReg(4, V1), RxEnd } },
-	{ .op = RX_OP_ADC, .tks = { RxCode(12, 0xfd70), RxLi(2, V0), RxCode(6, 0x02), RxReg(4, V1), ImmData(V0), RxEnd } },
+	{ .op = RX_OP_ABS, .tks = { RxCode(12, 0x07e2), RxReg(4, V0), RxEnd } },
+	{ .op = RX_OP_ABS, .tks = { RxCode(16, 0xfc0f), RxReg(4, V0), RxReg(4, V1), RxEnd } },
+	{ .op = RX_OP_ADC, .tks = { RxCode(12, 0x0fd7), RxLi(2, V0), RxCode(6, 0x02), RxReg(4, V1), ImmData(V0), RxEnd } },
 	{ .op = RX_OP_ADC, .tks = { RxCode(16, 0xfc0b), RxReg(4, V0), RxReg(4, V1), RxEnd } },
 	{ .op = RX_OP_ADC, .tks = { RxCode(8, 0x06), RxMi(2), RxCode(4, 0x08), RxLdPart(2, V0), RxCode(8, 0x02), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
 	{ .op = RX_OP_ADD, .tks = { RxCode(8, 0x62), RxImm(4, V0), RxReg(4, V1), RxEnd } },
-	{ .op = RX_OP_ADD, .tks = { RxCode(6, 0x1c), RxLi(2, V0), RxReg(4, V1), RxReg(4, V1), ImmData(V0), RxEnd } },
+	// { .op = RX_OP_ADD, .tks = { RxCode(6, 0x1c), RxLi(2, V0), RxReg(4, V1), RxReg(4, V1), ImmData(V0), RxEnd } },
 	{ .op = RX_OP_ADD_UB, .tks = { RxCode(6, 0x12), RxLd(2, V0), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
 	{ .op = RX_OP_ADD, .tks = { RxCode(8, 0x06), RxMi(2), RxCode(4, 0x02), RxLd(2, V0), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
 	{ .op = RX_OP_ADD, .tks = { RxCode(6, 0x1c), RxLi(2, V0), RxReg(4, V1), RxReg(4, V2), ImmData(V0), RxEnd } },
-	{ .op = RX_OP_ADD, .tks = { RxCode(16, 0xff20), RxReg(4, V2), RxReg(4, V0), RxReg(4, V1), RxEnd } },
+	{ .op = RX_OP_ADD, .tks = { RxCode(12, 0x0ff2), RxReg(4, V2), RxReg(4, V0), RxReg(4, V1), RxEnd } },
 	{ .op = RX_OP_AND, .tks = { RxCode(8, 0x64), RxImm(4, V0), RxReg(4, V1), RxEnd } },
 	{ .op = RX_OP_AND, .tks = { RxCode(6, 0x1d), RxLi(2, V0), RxCode(4, 0x02), RxReg(4, V1), ImmData(V0), RxEnd } },
 	{ .op = RX_OP_AND_UB, .tks = { RxCode(6, 0x14), RxLd(2, V0), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
@@ -82,7 +82,7 @@ RxDesc rx_inst_descs[RX_DESC_SIZE] = {
 	{ .op = RX_OP_BCLR, .tks = { RxCode(16, 0xfc67), RxReg(4, V1), RxReg(4, V0), RxEnd } },
 	{ .op = RX_OP_BCND_S, .tks = { RxCode(4, 0x1), RxCond(1, V0), RxDsp(3), RxEnd } },
 	{ .op = RX_OP_BCND_B, .tks = { RxCode(4, 0x2), RxCond(4, V0), PcDspData(V0, 8), RxEnd } },
-	{ .op = RX_OP_BCND_W, .tks = { RxCond(7, 0x1d), RxCond(1, V0), PcDspData(V0, 16), RxEnd } },
+	{ .op = RX_OP_BCND_W, .tks = { RxCode(7, 0x1d), RxCond(1, V0), PcDspData(V0, 16), RxEnd } },
 	{ .op = RX_OP_BMCND, .tks = { RxCode(11, 0x7e7), RxImm(3, V1), RxLdPart(2, V2), RxReg(4, V2), RxCond(4, V0), DspData(V2), RxEnd } },
 	{ .op = RX_OP_BMCND, .tks = { RxCode(11, 0x7ef), RxImm(5, V1), RxCond(4, V0), RxReg(4, V1), RxEnd } },
 	{ .op = RX_OP_BNOT, .tks = { RxCode(11, 0x7e7), RxImm(3, V0), RxLdPart(2, V1), RxReg(4, V1), RxCode(4, 0xf), DspData(V1), RxEnd } },
@@ -108,11 +108,12 @@ RxDesc rx_inst_descs[RX_DESC_SIZE] = {
 	{ .op = RX_OP_BTST, .tks = { RxCode(16, 0xfc6b), RxReg(4, V1), RxReg(4, V0), RxEnd } },
 	{ .op = RX_OP_CLRPSW, .tks = { RxCode(12, 0x07fb), RxCb(4), RxEnd } },
 
-	{ .op = RX_OP_CMP, .tks = { RxCode(8, 0x61), RxImm(5, V0), RxReg(4, V1), RxEnd } },
+	{ .op = RX_OP_CMP, .tks = { RxCode(8, 0x61), RxImm(4, V0), RxReg(4, V1), RxEnd } },
 	{ .op = RX_OP_CMP, .tks = { RxCode(12, 0x0755), RxReg(4, V1), ImmFixedData(V0, 8), RxEnd } },
 	{ .op = RX_OP_CMP, .tks = { RxCode(6, 0x1d), RxLi(2, V0), RxCode(4, 0x0), RxReg(4, V1), ImmData(V0), RxEnd } },
 	{ .op = RX_OP_CMP_UB, .tks = { RxCode(6, 0x11), RxLd(2, V0), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
 	{ .op = RX_OP_CMP, .tks = { RxCode(8, 0x06), RxMi(2), RxCode(4, 0x1), RxLd(2, V0), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
+
 	{ .op = RX_OP_DIV, .tks = { RxCode(12, 0xfd7), RxLi(2, V0), RxCode(6, 0x08), RxReg(4, V1), ImmData(V0), RxEnd } },
 	{ .op = RX_OP_DIV_UB, .tks = { RxCode(14, 0x3f08), RxLd(2, V0), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },
 	{ .op = RX_OP_DIV, .tks = { RxCode(8, 0x06), RxMi(2), RxCode(4, 0x08), RxLd(2, V0), RxCode(8, 0x08), RxReg(4, V0), RxReg(4, V1), DspData(V0), RxEnd } },

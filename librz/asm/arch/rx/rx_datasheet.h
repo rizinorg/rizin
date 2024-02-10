@@ -209,6 +209,7 @@ typedef struct rx_oprand_related_token_t RxCondToken;
 typedef struct {
 	ut8 fixed_len;
 	ut8 vid;
+	ut8 data_type;
 } RxDataToken;
 
 typedef struct {

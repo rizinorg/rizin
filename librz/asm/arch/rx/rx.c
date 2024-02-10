@@ -19,7 +19,6 @@ bool rx_operand_stringify(RxInst *inst, RxOperand *opr, RZ_OUT RzStrBuf *buf) {
 	}
 
 	if (opr->kind == RX_OPERAND_COND) {
-
 		if (opr->v.cond.pc_dsp_len) {
 			rz_strf(buf->buf, "%s #0x%" PFMT32x,
 				RxNameCond(opr->v.cond.cond),
@@ -86,11 +85,15 @@ bool rx_inst_stringify(RxInst *inst, RzStrBuf *buf) {
 	rz_return_val_if_fail(inst->op != RX_OP_INVALID, false);
 
 	RzStrBuf opr0_buf, opr1_buf, opr2_buf;
-	bool has_opr0 = inst->v0.kind != RX_OPERAND_NULL ||
+	rz_strbuf_init(&opr0_buf);
+	rz_strbuf_init(&opr1_buf);
+	rz_strbuf_init(&opr2_buf);
+
+	bool has_opr0 = inst->v0.kind != RX_OPERAND_NULL &&
 		rx_operand_stringify(inst, &inst->v0, &opr0_buf);
-	bool has_opr1 = inst->v1.kind != RX_OPERAND_NULL ||
+	bool has_opr1 = inst->v1.kind != RX_OPERAND_NULL &&
 		rx_operand_stringify(inst, &inst->v1, &opr1_buf);
-	bool has_opr2 = inst->v2.kind != RX_OPERAND_NULL ||
+	bool has_opr2 = inst->v2.kind != RX_OPERAND_NULL &&
 		rx_operand_stringify(inst, &inst->v2, &opr2_buf);
 
 	if (inst->sz_mark != RX_EXT_NON) {
@@ -115,7 +118,6 @@ bool rx_inst_stringify(RxInst *inst, RzStrBuf *buf) {
 		rz_strbuf_appendf(buf, "%s",
 			opr0_buf.buf);
 	} else {
-		rz_strbuf_appendf(buf, "");
 	}
 
 	return true;
