@@ -96,6 +96,9 @@ typedef struct rz_cons_grep_t {
 	int begin;
 	int end;
 	int icase;
+	int sorted_column;
+	RzList /*<char *>*/ *sorted_lines;
+	RzList /*<char *>*/ *unsorted_lines;
 } RzConsGrep;
 
 #if 0
