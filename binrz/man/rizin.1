@@ -18,19 +18,19 @@
 .Op Fl e Ar k=v
 .Ar file|pid|-|--|=
 .Sh DESCRIPTION
-       Rizin is a command-line reverse engineering framework designed to analyze and
-       disassemble binary files. It provides various tools and features for analyzing
-       and understanding the structure, behavior, and logic of executable files.
+Rizin is a command-line reverse engineering framework designed to analyze and
+disassemble binary files. It provides various tools and features for analyzing
+and understanding the structure, behavior, and logic of executable files.
 .Pp
 The options are:
 .Bl -tag -width Fl
-.It Fl Fl
+.It Ar --
 Run rizin without opening any file
-.It =
+.It Ar =
 Equivalent of 'rizin malloc://512'
-.It -
+.It Ar -
 Read file from stdin
-.It -=
+.It Ar -=
 Perform R=! command to run all commands remotely
 .It Fl 0
 Print \\x00 after initialization and after every command executed
@@ -113,16 +113,19 @@ Same as -e bin.usextr=false, do not use extract plugins, useful for dyldcache
 .It Fl z, zz
 do not load strings or load them even in raw
 .Sh EXAMPLE
-       This will start rizin in analysis mode (-A) on the /bin/ls executable:
-              rizin -A /bin/ls
-
-       This will open the file /bin/ls in write mode, allowing you to make changes to the binary:
-              rizin -w /bin/ls
-
-       This starts rizin's debugger (-d) on /bin/ls and passes arguments "-l" and "/tmp" to the program for debugging:
-              rizin -d /bin/ls -l /tmp
+.Pp
+This will start rizin in analysis mode (-A) on the /bin/ls executable:
+.Pp
+.Nm rizin Fl A Ar /bin/ls
+.Pp
+This will open the file /bin/ls in write mode, allowing you to make changes to the binary:
+.Pp
+.Nm rizin Fl w Ar /bin/ls
+.Pp
+This starts rizin's debugger (-d) on /bin/ls and passes arguments "-l" and "/tmp" to the program for debugging:
+.Pp
+.Nm rizin Fl d Ar /bin/ls Fl l Ar /tmp
 .El
-
 .Pp
 .Sh SEE ALSO
 .Pp

@@ -141,8 +141,9 @@ Sample rz-run script
 .Pp
 Connecting a program to a socket
 .Pp
-  $ nc \-l 9999
-  $ rz-run program=/bin/ls connect=localhost:9999
+.Nm nc Fl l Cm 9999
+.Pp
+.Nm rz-run Cm program=/bin/ls Cm connect=localhost:9999
 .Pp
 Debugging a program redirecting io to another terminal
 .Pp
@@ -159,11 +160,11 @@ Debugging a program redirecting io to another terminal
 .Pp
 You can also use the -- flag to specify program and arguments in a more natural way:
 .Pp
-  $ rz-run timeout=2 -- sleep 4
+.Nm rz-run Cm timeout=2 Ar -- sleep 4
 .Pp
 Run a library function
 .Pp
-  $ rz-run runlib=/lib/libc-2.25.so runlib.fcn=system arg1="ls /"
+.Nm rz-run Cm runlib=/lib/libc-2.25.so Cm runlib.fcn=system Cm arg1="ls /"
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
