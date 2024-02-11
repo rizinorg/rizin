@@ -293,14 +293,14 @@ static void setup_sdb_for_base_types_all(Sdb *res) {
 }
 
 // RzBaseType name comparator
-static int basetypenamecmp(const void *a, const void *b) {
+static int basetypenamecmp(const void *a, const void *b, void *user) {
 	const char *name = (const char *)a;
 	const RzBaseType *btype = (const RzBaseType *)b;
 	return !(btype->name && !strcmp(name, btype->name));
 }
 
 static bool typelist_has(RzList *types, const char *name) {
-	return (rz_list_find(types, name, basetypenamecmp) != NULL);
+	return (rz_list_find(types, name, basetypenamecmp, NULL) != NULL);
 }
 
 static bool test_types_get_base_types(void) {

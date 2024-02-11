@@ -17,11 +17,11 @@ typedef struct refline_end {
 	RzAnalysisRefline *r;
 } ReflineEnd;
 
-static int cmp_asc(const struct refline_end *a, const struct refline_end *b) {
+static int cmp_asc(const struct refline_end *a, const struct refline_end *b, void *user) {
 	return (a->val > b->val) - (a->val < b->val);
 }
 
-static int cmp_by_ref_lvl(const RzAnalysisRefline *a, const RzAnalysisRefline *b) {
+static int cmp_by_ref_lvl(const RzAnalysisRefline *a, const RzAnalysisRefline *b, void *user) {
 	return (a->level < b->level) - (a->level > b->level);
 }
 
@@ -55,7 +55,7 @@ static bool add_refline(RzList /*<RzAnalysisRefline *>*/ *list, RzList /*<Reflin
 		free(item);
 		return false;
 	}
-	rz_list_add_sorted(sten, re1, (RzListComparator)cmp_asc);
+	rz_list_add_sorted(sten, re1, (RzListComparator)cmp_asc, NULL);
 
 	re2 = refline_end_new(item->to, false, item);
 	if (!re2) {
@@ -63,7 +63,7 @@ static bool add_refline(RzList /*<RzAnalysisRefline *>*/ *list, RzList /*<Reflin
 		free(item);
 		return false;
 	}
-	rz_list_add_sorted(sten, re2, (RzListComparator)cmp_asc);
+	rz_list_add_sorted(sten, re2, (RzListComparator)cmp_asc, NULL);
 	return true;
 }
 
@@ -371,7 +371,7 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 			return NULL;
 		}
 		if (in_refline(addr, ref) && refline_kept(ref, middle_after, addr)) {
-			rz_list_add_sorted(lvls, (void *)ref, (RzListComparator)cmp_by_ref_lvl);
+			rz_list_add_sorted(lvls, (void *)ref, (RzListComparator)cmp_by_ref_lvl, NULL);
 		}
 	}
 	b = rz_buf_new_with_bytes(NULL, 0);

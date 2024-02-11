@@ -559,7 +559,7 @@ static char *get_lib_name(RzBuffer *cache_buf, cache_img_t *img) {
 	return strdup("FAIL");
 }
 
-static int string_contains(const void *a, const void *b) {
+static int string_contains(const void *a, const void *b, void *user) {
 	return !strstr((const char *)a, (const char *)b);
 }
 
@@ -697,7 +697,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 				if (strstr(lib_name, "libobjc.A.dylib")) {
 					deps[j]++;
 				}
-				if (!rz_list_find(target_lib_names, lib_name, string_contains)) {
+				if (!rz_list_find(target_lib_names, lib_name, string_contains, NULL)) {
 					RZ_FREE(lib_name);
 					continue;
 				}

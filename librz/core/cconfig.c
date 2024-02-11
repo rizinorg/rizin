@@ -48,11 +48,11 @@ static void print_node_options(RzConfigNode *node) {
 	}
 }
 
-static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	return (a && b && a->name && b->name ? strcmp(a->name, b->name) : 0);
 }
 
-static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	size_t la, lb;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
@@ -62,11 +62,11 @@ static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction 
 	return (la > lb) - (la < lb);
 }
 
-static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
-static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	ut64 sa, sb;
 	// return a && b && a->_size < b->_size;
 	if (!a || !b) {
@@ -348,20 +348,6 @@ static bool cb_scr_wideoff(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->print->wide_offsets = node->i_value;
-	return true;
-}
-
-static bool cb_scrrainbow(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value) {
-		core->print->flags |= RZ_PRINT_FLAGS_RAINBOW;
-		rz_cons_pal_random();
-	} else {
-		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
-		rz_core_theme_load(core, rz_core_theme_get(core));
-	}
-	rz_print_set_flags(core->print, core->print->flags);
 	return true;
 }
 
@@ -3147,7 +3133,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.prompt.vi", "false", &cb_scr_vi, "Use vi mode for input prompt");
 	SETCB("scr.prompt.mode", "false", &cb_scr_prompt_mode, "Set prompt color based on vi mode");
 	SETCB("scr.wideoff", "false", &cb_scr_wideoff, "Adjust offsets to match asm.bits");
-	SETCB("scr.rainbow", "false", &cb_scrrainbow, "Shows rainbow colors depending of address");
 	SETCB("scr.last", "true", &cb_scrlast, "Cache last output after flush to make _ command work (disable for performance)");
 	SETBPREF("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETBPREF("asm.reloff.flags", "false", "Show relative offsets to flags (not only functions)");
@@ -3854,11 +3839,11 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_config_in_space(RZ_NONNULL RzCore *co
 		}
 
 		if (RZ_STR_ISNOTEMPTY(space)) {
-			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp)) {
+			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp, NULL)) {
 				rz_list_append(list, strdup(dot + 1));
 			}
 		} else {
-			if (!rz_list_find(list, name, (RzListComparator)strcmp)) {
+			if (!rz_list_find(list, name, (RzListComparator)strcmp, NULL)) {
 				rz_list_append(list, strdup(name));
 			}
 		}

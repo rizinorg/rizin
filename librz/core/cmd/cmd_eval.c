@@ -166,7 +166,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 	rz_list_append(list, strdup("default"));
 	ht_pu_foreach(themes, dict2keylist, list);
 
-	rz_list_sort(list, (RzListComparator)strcmp);
+	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	ht_pu_free(themes);
 	return list;
 }

@@ -14,13 +14,13 @@ static void rz_config_hold_num_free(RzConfigHoldNum *hc) {
 	free(hc);
 }
 
-static int key_cmp_hold_s(const void *a, const void *b) {
+static int key_cmp_hold_s(const void *a, const void *b, void *user) {
 	const char *a_s = (const char *)a;
 	const RzConfigHoldChar *b_s = (const RzConfigHoldChar *)b;
 	return strcmp(a_s, b_s->key);
 }
 
-static int key_cmp_hold_i(const void *a, const void *b) {
+static int key_cmp_hold_i(const void *a, const void *b, void *user) {
 	const char *a_s = (const char *)a;
 	const RzConfigHoldNum *b_s = (const RzConfigHoldNum *)b;
 	return strcmp(a_s, b_s->key);
@@ -49,7 +49,7 @@ RZ_API bool rz_config_hold_s(RzConfigHold *h, ...) {
 		}
 	}
 	while ((key = va_arg(ap, char *))) {
-		if (rz_list_find(h->list_char, key, key_cmp_hold_s)) {
+		if (rz_list_find(h->list_char, key, key_cmp_hold_s, NULL)) {
 			continue;
 		}
 		const char *val = rz_config_get(h->cfg, key);
@@ -92,7 +92,7 @@ RZ_API bool rz_config_hold_i(RzConfigHold *h, ...) {
 	}
 	va_start(ap, h);
 	while ((key = va_arg(ap, char *))) {
-		if (rz_list_find(h->list_num, key, key_cmp_hold_i)) {
+		if (rz_list_find(h->list_num, key, key_cmp_hold_i, NULL)) {
 			continue;
 		}
 		RzConfigHoldNum *hc = RZ_NEW0(RzConfigHoldNum);

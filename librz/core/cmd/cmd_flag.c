@@ -319,7 +319,7 @@ RZ_IPI RzCmdStatus rz_flag_relocate_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-static int cmpflag(const void *_a, const void *_b) {
+static int cmpflag(const void *_a, const void *_b, void *user) {
 	const RzFlagItem *flag1 = _a, *flag2 = _b;
 	return (flag1->offset - flag2->offset);
 }
@@ -413,7 +413,7 @@ RZ_IPI RzCmdStatus rz_flag_describe_closest_handler(RzCore *core, int argc, cons
 	char *lmatch = NULL, *umatch = NULL;
 	RzFlagItem *flag;
 	RzListIter *iter;
-	rz_list_sort(temp, &cmpflag);
+	rz_list_sort(temp, &cmpflag, NULL);
 	rz_list_foreach (temp, iter, flag) {
 		if (strstr(flag->name, argv[1]) != NULL) {
 			if (flag->offset < core->offset) {

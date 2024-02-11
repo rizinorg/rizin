@@ -237,7 +237,7 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	reg->size = 0;
 }
 
-static int regcmp(RzRegItem *a, RzRegItem *b) {
+static int regcmp(RzRegItem *a, RzRegItem *b, void *user) {
 	int offa = (a->offset * 16) + a->size;
 	int offb = (b->offset * 16) + b->size;
 	return (offa > offb) - (offa < offb);
@@ -253,7 +253,7 @@ RZ_API void rz_reg_reindex(RzReg *reg) {
 			rz_list_append(all, r);
 		}
 	}
-	rz_list_sort(all, (RzListComparator)regcmp);
+	rz_list_sort(all, (RzListComparator)regcmp, NULL);
 	index = 0;
 	rz_list_foreach (all, iter, r) {
 		r->index = index++;

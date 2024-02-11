@@ -110,7 +110,7 @@ static int prot2perm(int x);
 
 static void rz_kext_free(RKext *kext);
 static void rz_kext_fill_text_range(RKext *kext);
-static int kexts_sort_vaddr_func(const void *a, const void *b);
+static int kexts_sort_vaddr_func(const void *a, const void *b, void *user);
 static struct MACH0_(obj_t) * create_kext_mach0(RzXNUKernelCacheObj *obj, RKext *kext);
 static struct MACH0_(obj_t) * create_kext_shared_mach0(RzXNUKernelCacheObj *obj, RKext *kext);
 
@@ -382,7 +382,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 
 	if (!is_sorted) {
 		eprintf("SORTING KEXTs...\n");
-		rz_list_sort(kexts, kexts_sort_vaddr_func);
+		rz_list_sort(kexts, kexts_sort_vaddr_func, NULL);
 	}
 	return kexts;
 }
@@ -676,7 +676,7 @@ static void rz_kext_fill_text_range(RKext *kext) {
 	RZ_FREE(sections);
 }
 
-static int kexts_sort_vaddr_func(const void *a, const void *b) {
+static int kexts_sort_vaddr_func(const void *a, const void *b, void *user) {
 	RKext *A = (RKext *)a;
 	RKext *B = (RKext *)b;
 	int vaddr_compare = A->vaddr - B->vaddr;

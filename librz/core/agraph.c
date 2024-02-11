@@ -670,12 +670,12 @@ static void assign_layers(const RzAGraph *g) {
 	rz_list_free(topological_sort);
 }
 
-static int find_edge(const RzGraphEdge *a, const RzGraphEdge *b) {
+static int find_edge(const RzGraphEdge *a, const RzGraphEdge *b, void *user) {
 	return a->from == b->to && a->to == b->from ? 0 : 1;
 }
 
 static bool is_reversed(const RzAGraph *g, const RzGraphEdge *e) {
-	return (bool)rz_list_find(g->back_edges, e, (RzListComparator)find_edge);
+	return (bool)rz_list_find(g->back_edges, e, (RzListComparator)find_edge, NULL);
 }
 
 /* add dummy nodes when there are edges that span multiple layers */
@@ -823,7 +823,7 @@ static int dist_nodes(const RzAGraph *g, const RzGraphNode *a, const RzGraphNode
 	if (g->dists) {
 		d.from = a;
 		d.to = b;
-		it = rz_list_find(g->dists, &d, (RzListComparator)find_dist);
+		it = rz_list_find(g->dists, &d, (RzListComparator)find_dist, NULL);
 		if (it) {
 			struct dist_t *old = (struct dist_t *)rz_list_iter_get_data(it);
 			return old->dist;
@@ -846,7 +846,7 @@ static int dist_nodes(const RzAGraph *g, const RzGraphNode *a, const RzGraphNode
 			if (g->dists) {
 				d.from = cur;
 				d.to = next;
-				it = rz_list_find(g->dists, &d, (RzListComparator)find_dist);
+				it = rz_list_find(g->dists, &d, (RzListComparator)find_dist, NULL);
 				if (it) {
 					struct dist_t *old = (struct dist_t *)rz_list_iter_get_data(it);
 					res += old->dist;
@@ -890,7 +890,7 @@ static void set_dist_nodes(const RzAGraph *g, int l, int cur, int next) {
 
 	find_el.from = vi;
 	find_el.to = vip;
-	it = rz_list_find(g->dists, &find_el, (RzListComparator)find_dist);
+	it = rz_list_find(g->dists, &find_el, (RzListComparator)find_dist, NULL);
 	d = it ? (struct dist_t *)rz_list_iter_get_data(it) : RZ_NEW0(struct dist_t);
 
 	d->from = vi;
@@ -1098,7 +1098,7 @@ static void adjust_class(const RzAGraph *g, int is_left, RzList /*<RzGraphNode *
 		if (len == 0) {
 			dist = 0;
 		} else {
-			rz_list_sort(heap, (RzListComparator)cmp_dist);
+			rz_list_sort(heap, (RzListComparator)cmp_dist, NULL);
 			dist = (int)(size_t)rz_list_get_n(heap, len / 2);
 		}
 
@@ -1420,7 +1420,7 @@ static void collect_changes(const RzAGraph *g, int l, const RzGraphNode *b, int 
 				} else {
 					cx->pos -= dist_nodes(g, vtp, vi);
 				}
-				rz_list_add_sorted(list, cx, lcmp);
+				rz_list_add_sorted(list, cx, lcmp, NULL);
 			}
 		}
 
@@ -1432,7 +1432,7 @@ static void collect_changes(const RzAGraph *g, int l, const RzGraphNode *b, int 
 		} else {
 			cx->pos -= dist_nodes(g, vtp, vi);
 		}
-		rz_list_add_sorted(list, cx, lcmp);
+		rz_list_add_sorted(list, cx, lcmp, NULL);
 	}
 
 	if (b) {
@@ -1446,7 +1446,7 @@ static void collect_changes(const RzAGraph *g, int l, const RzGraphNode *b, int 
 			} else {
 				cx->pos -= dist_nodes(g, vtp, b);
 			}
-			rz_list_add_sorted(list, cx, lcmp);
+			rz_list_add_sorted(list, cx, lcmp, NULL);
 		}
 	}
 }
@@ -2239,7 +2239,7 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		RZ_FREE(saved_arena);
 		return;
 	}
-	rz_list_sort(fcn->bbs, (RzListComparator)bbcmp);
+	rz_list_sort(fcn->bbs, (RzListComparator)bbcmp, NULL);
 
 	shortcuts = rz_config_get_i(core->config, "graph.nodejmps");
 	rz_list_foreach (fcn->bbs, iter, bb) {
@@ -2353,7 +2353,7 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	if (emu) {
 		saved_arena = rz_reg_arena_peek(core->analysis->reg);
 	}
-	rz_list_sort(fcn->bbs, (RzListComparator)bbcmp);
+	rz_list_sort(fcn->bbs, (RzListComparator)bbcmp, NULL);
 	RzAnalysisBlock *curbb = NULL;
 	if (few) {
 		rz_list_foreach (fcn->bbs, iter, bb) {
@@ -2801,7 +2801,7 @@ struct tmpbackedgeinfo {
 	RzCanvasLineStyle style;
 };
 
-int tmplayercmp(const void *a, const void *b) {
+int tmplayercmp(const void *a, const void *b, void *user) {
 	return ((struct tmplayer *)a)->layer > ((struct tmplayer *)b)->layer;
 }
 
@@ -2837,7 +2837,7 @@ static void agraph_print_edges_simple(RzAGraph *g) {
 	}
 }
 
-static int first_x_cmp(const void *_a, const void *_b) {
+static int first_x_cmp(const void *_a, const void *_b, void *user) {
 	RzGraphNode *ga = (RzGraphNode *)_a;
 	RzGraphNode *gb = (RzGraphNode *)_b;
 	RzANode *a = (RzANode *)ga->data;
@@ -2923,7 +2923,7 @@ static void agraph_print_edges(RzAGraph *g) {
 					tm->minx = a->y;
 					tm->maxx = a->y + a->h;
 				}
-				rz_list_add_sorted(lyr, tm, tmplayercmp);
+				rz_list_add_sorted(lyr, tm, tmplayercmp, NULL);
 			}
 		}
 
@@ -2931,7 +2931,7 @@ static void agraph_print_edges(RzAGraph *g) {
 
 		if (many && !g->is_callgraph) {
 			ga->out_nodes->sorted = false;
-			rz_list_sort(neighbours, first_x_cmp);
+			rz_list_sort(neighbours, first_x_cmp, NULL);
 		}
 
 		rz_list_foreach (neighbours, itn, gb) {

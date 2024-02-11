@@ -190,7 +190,7 @@ static void copy_sym_name_with_namespace(char *class_name, char *read_name, RzBi
 	sym->name = strdup(read_name);
 }
 
-static int sort_by_offset(const void *_a, const void *_b) {
+static int sort_by_offset(const void *_a, const void *_b, void *user) {
 	RzBinClassField *a = (RzBinClassField *)_a;
 	RzBinClassField *b = (RzBinClassField *)_b;
 	return a->paddr - b->paddr;
@@ -348,7 +348,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		offset += sizeof(struct MACH0_(SIVar));
 	}
 	if (!rz_list_empty(klass->fields)) {
-		rz_list_sort(klass->fields, sort_by_offset);
+		rz_list_sort(klass->fields, sort_by_offset, NULL);
 	}
 	field = rz_bin_class_field_new(UT64_MAX, UT64_MAX, "isa", klass->name, NULL, "struct objc_class *");
 	rz_list_prepend(klass->fields, field);
