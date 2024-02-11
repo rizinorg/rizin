@@ -82,7 +82,9 @@ bool rx_operand_stringify(RxInst *inst, RxOperand *opr, RZ_OUT RzStrBuf *buf) {
 
 bool rx_inst_stringify(RxInst *inst, RzStrBuf *buf) {
 	// construct string output to RzStrBuf
-	rz_return_val_if_fail(inst->op != RX_OP_INVALID, false);
+	if (inst->op == RX_OP_INVALID) {
+		return false;
+	}
 
 	RzStrBuf opr0_buf, opr1_buf, opr2_buf;
 	rz_strbuf_init(&opr0_buf);
@@ -137,6 +139,7 @@ bool rx_dis(RxInst RZ_OUT *inst, st32 RZ_OUT *bytes_read, const ut8 *buf, size_t
 	RxInst current_inst = { 0 };
 	st32 bytes_read_real = 0;
 	for (ut32 desc_id = 0; desc_id < RX_DESC_SIZE; ++desc_id) {
+		memset(&current_inst, 0, sizeof(RxInst));
 		bool is_valid = rx_try_match_and_parse(&current_inst, &rx_inst_descs[desc_id],
 			&bytes_read_real, prefetched_bytes);
 		if (is_valid) {

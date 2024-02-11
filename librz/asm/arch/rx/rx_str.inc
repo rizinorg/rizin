@@ -109,7 +109,7 @@ const char *opnames[_RX_OP_COUNT] = {
 	"suntil",
 	"swhile",
 	"tst",
-	"tst.UB"
+	"tst.UB",
 	"wait",
 	"xchg",
 	"xchg.UB",
@@ -118,7 +118,6 @@ const char *opnames[_RX_OP_COUNT] = {
 };
 
 const char *extmark_names[_RX_EXT_COUNT] = {
-	"",
 	"B",
 	"W",
 	"L",
@@ -163,7 +162,7 @@ const char *cond_names[RX_COND_RESERVED] = {
 };
 
 #define RxNameOp(op)     ((op) < _RX_OP_COUNT ? opnames[(op)] : "invalid")
-#define RxNameExt(ext)   ((ext) < _RX_EXT_COUNT ? extmark_names[(ext)] : "invalid")
-#define RxNameReg(reg)   ((reg) < RX_REG_RESERVED ? reg_names[(reg)] : "invalid")
+#define RxNameExt(ext)   ((ext) < _RX_EXT_COUNT ? extmark_names[((ext)-RX_EXT_B)] : "invalid")
+#define RxNameReg(reg)   ((reg) < RX_REG_RESERVED ? reg_names[(reg)-RX_REG_R0] : "invalid")
 #define RxNameFlag(flag) ((flag) < 7 ? flag_names[(flag)] : "invalid")
 #define RxNameCond(cond) ((cond) < RX_COND_RESERVED ? cond_names[(cond)] : "invalid")

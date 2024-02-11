@@ -382,6 +382,13 @@ bool match_ad(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 	ut8 l = token->tk.ad.tk_len;
 	ut8 addr_bits = getbits(bytes, s, l);
 
+	if (inst->op == RX_OP_MOVU) {
+		// 10 [Rs+] and 11 [-Rs] is allowed
+		if (addr_bits < 2) {
+			return false;
+		}
+	}
+
 	// 00 Rs, [Rd+], 01: Rs, [-Rd], inc/dec on Rd
 	// 10 [Rs+], Rd, 11: [-Rs], Rd, inc/dec on Rs
 	switch (addr_bits) {
@@ -460,6 +467,28 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 	return false;
 }
 
+bool check_some(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
+	// a token hook for parser loop
+	if (inst->op == RX_OP_MOV) {
+		// check order of src and dest
+		// for ad[1:0], if 00 or 01, mov dst, src
+		// for ad[0:1], if 10 or 11, mov src, dst
+		if (inst->v1.kind == RX_OPERAND_REG) {
+			// parse RegBist[3:0] as dest(V1)
+			if (inst->v0.v.reg.fix_mode != RX_FIXOP_NON) {
+				// but set src fixed, parse failed
+				return false;
+			}
+		}
+		if (inst->v0.kind == RX_OPERAND_REG) {
+			if (inst->v1.v.reg.fix_mode != RX_FIXOP_NON) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *bytes_read, ut64 bytes) {
 	ut8 read_bits = 0;
 	bool is_valid = true;
@@ -528,6 +557,9 @@ bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *byte
 		case RX_TOKEN_REG_LIMIT:
 			is_valid = match_reg_patched(inst, token, &read_bits, bytes);
 			break;
+		case RX_TOKEN_HOOK:
+			is_valid = check_some(inst, token, &read_bits, bytes);
+			break;
 		case RX_TOKEN_RI:
 			is_valid = match_ri(inst, token, &read_bits, bytes);
 			break;
@@ -544,7 +576,6 @@ bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *byte
 	if ((read_bits & 7)) {
 		// instruction are defined as bytes
 		rz_warn_if_reached();
-		printf("read_bits : %d\n", read_bits);
 		return false;
 	}
 

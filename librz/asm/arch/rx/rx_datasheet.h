@@ -186,6 +186,7 @@ typedef enum {
 	RX_TOKEN_DATA,
 	RX_TOKEN_RI,
 	RX_TOKEN_REG_LIMIT,
+	RX_TOKEN_HOOK, // for validation at the end of token
 } RxTokenType;
 
 struct rx_inst_token_t {
