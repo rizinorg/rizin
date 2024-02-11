@@ -40,7 +40,7 @@ jobs:
     name: ubuntu-muon
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
           sudo apt-get --assume-yes update
@@ -65,7 +65,7 @@ jobs:
       run: ninja -C build && sudo muon -C build install
 
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins

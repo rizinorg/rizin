@@ -29,8 +29,8 @@ jobs:
     outputs:
       edited: ${{ steps.filter.outputs.edited }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
           base: ${{ github.ref }}
@@ -174,7 +174,7 @@ jobs:
       - name: Show available memory on Linux
         if: matrix.os != 'macos-12' && matrix.enabled
         run: free -h
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         if: matrix.enabled
         with:
           fetch-depth: 2
@@ -189,7 +189,7 @@ jobs:
         run: pip3 install --user meson ninja PyYAML
       - name: Checkout rzpipe
         if: matrix.enabled
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: rizinorg/rz-pipe
           path: test/rz-pipe
@@ -259,13 +259,13 @@ jobs:
           CC: ${{ matrix.compiler }}
       - name: Checkout our Testsuite Binaries
         if: matrix.enabled
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: rizinorg/rizin-testbins
           path: test/bins
       - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: rizinorg/rizin-fuzztargets
           path: test/fuzz/targets
@@ -312,7 +312,7 @@ jobs:
           CC: ${{ matrix.compiler }}
       - name: Upload test results
         if: always() && matrix.run_tests && matrix.enabled
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.name }}
           path: test/results.json
@@ -568,12 +568,12 @@ jobs:
         working-directory: rizin
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-static
           path: rizin/test/results.json
       - name: Upload static build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rizin-static.tar.xz
           path: rizin/rizin-static.tar.xz
@@ -589,7 +589,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
         run: pip3 install --user meson ninja PyYAML
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Extract rizin version
         run: echo "version=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
@@ -601,7 +601,7 @@ jobs:
           meson dist --include-subprojects --no-tests
           ls -l meson-dist
           mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: rizin-src.tar.xz
           path: build/meson-dist/rizin-src.tar.xz
@@ -616,7 +616,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
         run: sudo pip3 install meson ninja PyYAML
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -650,7 +650,7 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install pkg-config with Homebrew
         run: brew install pkg-config
       - name: Install meson and ninja
@@ -662,7 +662,7 @@ jobs:
           ./dist/osx/build_osx_package.sh
           mv rizin-*.pkg rizin.pkg
       - name: Upload .pkg file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rizin.pkg
           path: ./rizin.pkg
@@ -690,8 +690,8 @@ jobs:
             meson_options: --default-library=shared -Dportable=true
             bits: 32
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -703,11 +703,11 @@ jobs:
       - name: Build and create zip/installer
         shell: pwsh
         run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
           path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: .\dist\windows\Output\rizin.exe
@@ -722,7 +722,7 @@ jobs:
       matrix:
         name: [ x86_64, arm, aarch64 ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
       - name: Compile with meson
@@ -736,7 +736,7 @@ jobs:
           cd /tmp
           rm -rf android-dir/include android-dir/lib
           tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvzf rizin-android-${{ matrix.name }}.tar.gz android-dir/
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: rizin-android-${{ matrix.name }}
           path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
@@ -747,7 +747,7 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
@@ -773,7 +773,7 @@ jobs:
     if: contains(github.head_ref, 'dist') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
@@ -799,7 +799,7 @@ jobs:
     env:
       RZPIPE_TESTS: "rz-pipe-py rz-pipe-go"
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -826,7 +826,7 @@ jobs:
     needs: [ test-tarball ]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -843,7 +843,7 @@ jobs:
           meson setup --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
       - name: Checkout rz-bindgen
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: rizinorg/rz-bindgen
           path: rz-bindgen
@@ -871,7 +871,7 @@ jobs:
     steps:
       - name: Install pkg-config with Homebrew
         run: brew install pkg-config
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: rizin.pkg
           path: ./
@@ -898,8 +898,8 @@ jobs:
           - name: clang_cl_x86
             bits: 32
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
       - name: Install pkg-config and cmake
         shell: pwsh
         run: |
@@ -909,7 +909,7 @@ jobs:
         shell: pwsh
         run: echo "branch=$(python sys/version.py)" >> $Env:GITHUB_OUTPUT
         id: extract_version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: ./
@@ -960,11 +960,11 @@ jobs:
         build-rzpipe,
       ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Extract rizin version
         run: echo "branch=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
       - name: Rename artifacts for release
         run: |
           mv ./rizin-src.tar.xz/rizin-src.tar.xz rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
@@ -1004,7 +1004,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
       - name: Download subprojects
