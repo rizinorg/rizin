@@ -34,6 +34,14 @@ static void process_class_field(RzBinObject *o, RzBinClassField *field) {
 	free(key);
 }
 
+static int bin_compare_method(RzBinSymbol *a, RzBinSymbol *b, void *user) {
+	return rz_bin_compare_method(a, b);
+}
+
+static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void *user) {
+	return rz_bin_compare_class_field(a, b);
+}
+
 static void process_handle_class(RzBinObject *o, RzBinClass *klass) {
 	if (!klass->name) {
 		klass->name = rz_str_dup("unknown_class");
@@ -57,8 +65,8 @@ static void process_handle_class(RzBinObject *o, RzBinClass *klass) {
 		process_class_field(o, field);
 	}
 
-	rz_list_sort(klass->methods, (RzListComparator)rz_bin_compare_method);
-	rz_list_sort(klass->fields, (RzListComparator)rz_bin_compare_class_field);
+	rz_list_sort(klass->methods, (RzListComparator)bin_compare_method, NULL);
+	rz_list_sort(klass->fields, (RzListComparator)bin_compare_class_field, NULL);
 }
 
 RZ_IPI void rz_bin_set_and_process_classes(RzBinFile *bf, RzBinObject *o) {

@@ -4,7 +4,7 @@
 #include <rz_core.h>
 #include <errno.h>
 
-static int cmpstr(const void *_a, const void *_b) {
+static int cmpstr(const void *_a, const void *_b, void *user) {
 	const char *a = _a, *b = _b;
 	return (int)strcmp(a, b);
 }
@@ -27,7 +27,7 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file) {
 			eprintf("No such file or directory\n");
 		} else {
 			list = rz_str_split_list(data, "\n", 0);
-			rz_list_sort(list, cmpstr);
+			rz_list_sort(list, cmpstr, NULL);
 			data = rz_list_to_str(list, '\n');
 			rz_list_free(list);
 		}
@@ -109,7 +109,7 @@ RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file) {
 			eprintf("No such file or directory\n");
 		} else {
 			list = rz_str_split_list(data, "\n", 0);
-			RzList *uniq_list = rz_list_uniq(list, cmpstr);
+			RzList *uniq_list = rz_list_uniq(list, cmpstr, NULL);
 			data = rz_list_to_str(uniq_list, '\n');
 			rz_list_free(uniq_list);
 			rz_list_free(list);

@@ -251,9 +251,9 @@ static void types_xrefs_all(RzCore *core) {
 		}
 		rz_list_free(types);
 	}
-	RzList *uniq_types = rz_list_uniq(types_list, (RzListComparator)strcmp);
+	RzList *uniq_types = rz_list_uniq(types_list, (RzListComparator)strcmp, NULL);
 	rz_list_free(types_list);
-	rz_list_sort(uniq_types, (RzListComparator)strcmp);
+	rz_list_sort(uniq_types, (RzListComparator)strcmp, NULL);
 	char *typestr;
 	rz_list_foreach (uniq_types, iter, typestr) {
 		rz_cons_printf("%s\n", typestr);

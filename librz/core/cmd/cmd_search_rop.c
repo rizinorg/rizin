@@ -255,7 +255,7 @@ static char *rop_classify_constant(RzCore *core, RzList /*<char *>*/ *ropList) {
 		reg_write = parse_list(strstr(out, "reg.write"));
 		mem_read = parse_list(strstr(out, "mem.read"));
 		mem_write = parse_list(strstr(out, "mem.write"));
-		if (!rz_list_find(ops_list, "=", (RzListComparator)strcmp)) {
+		if (!rz_list_find(ops_list, "=", (RzListComparator)strcmp, NULL)) {
 			goto continue_error;
 		}
 		head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
@@ -265,7 +265,7 @@ static char *rop_classify_constant(RzCore *core, RzList /*<char *>*/ *ropList) {
 		rz_list_foreach (head, iter_dst, item_dst) {
 			ut64 diff_dst, value_dst;
 			if (!rz_list_find(reg_write, item_dst->name,
-				    (RzListComparator)strcmp)) {
+				    (RzListComparator)strcmp, NULL)) {
 				continue;
 			}
 
@@ -336,7 +336,7 @@ static char *rop_classify_mov(RzCore *core, RzList /*<char *>*/ *ropList) {
 			goto continue_error;
 		}
 
-		if (!rz_list_find(ops_list, "=", (RzListComparator)strcmp)) {
+		if (!rz_list_find(ops_list, "=", (RzListComparator)strcmp, NULL)) {
 			goto continue_error;
 		}
 
@@ -347,7 +347,7 @@ static char *rop_classify_mov(RzCore *core, RzList /*<char *>*/ *ropList) {
 		rz_list_foreach (head, iter_dst, item_dst) {
 			ut64 diff_dst, value_dst;
 			if (!rz_list_find(reg_write, item_dst->name,
-				    (RzListComparator)strcmp)) {
+				    (RzListComparator)strcmp, NULL)) {
 				continue;
 			}
 
@@ -363,7 +363,7 @@ static char *rop_classify_mov(RzCore *core, RzList /*<char *>*/ *ropList) {
 			rz_list_foreach (head, iter_src, item_src) {
 				ut64 diff_src, value_src;
 				if (!rz_list_find(reg_read, item_src->name,
-					    (RzListComparator)strcmp)) {
+					    (RzListComparator)strcmp, NULL)) {
 					continue;
 				}
 				// you never mov from flags
@@ -448,7 +448,7 @@ static char *rop_classify_arithmetic(RzCore *core, RzList /*<char *>*/ *ropList)
 				diff_src1 = rz_reg_get_value(core->analysis->reg, item_src1);
 				rz_reg_arena_swap(core->analysis->reg, false);
 				if (!rz_list_find(reg_read, item_src1->name,
-					    (RzListComparator)strcmp)) {
+					    (RzListComparator)strcmp, NULL)) {
 					continue;
 				}
 
@@ -459,7 +459,7 @@ static char *rop_classify_arithmetic(RzCore *core, RzList /*<char *>*/ *ropList)
 					diff_src2 = rz_reg_get_value(core->analysis->reg, item_src2);
 
 					if (!rz_list_find(reg_read, item_src2->name,
-						    (RzListComparator)strcmp)) {
+						    (RzListComparator)strcmp, NULL)) {
 						continue;
 					}
 					// TODO check condition
@@ -474,7 +474,7 @@ static char *rop_classify_arithmetic(RzCore *core, RzList /*<char *>*/ *ropList)
 						value_dst = rz_reg_get_value(core->analysis->reg, item_dst);
 						rz_reg_arena_swap(core->analysis->reg, false);
 						if (!rz_list_find(reg_write, item_dst->name,
-							    (RzListComparator)strcmp)) {
+							    (RzListComparator)strcmp, NULL)) {
 							continue;
 						}
 						// don't check flags for arithmetic
@@ -584,7 +584,7 @@ static char *rop_classify_arithmetic_const(RzCore *core, RzList /*<char *>*/ *ro
 				rz_reg_arena_swap(core->analysis->reg, false);
 
 				if (!rz_list_find(reg_read, item_src1->name,
-					    (RzListComparator)strcmp)) {
+					    (RzListComparator)strcmp, NULL)) {
 					continue;
 				}
 				rz_list_foreach (head, iter_dst, item_dst) {
@@ -595,7 +595,7 @@ static char *rop_classify_arithmetic_const(RzCore *core, RzList /*<char *>*/ *ro
 					diff_dst = rz_reg_get_value(core->analysis->reg, item_dst);
 					rz_reg_arena_swap(core->analysis->reg, false);
 					if (!rz_list_find(reg_write, item_dst->name,
-						    (RzListComparator)strcmp)) {
+						    (RzListComparator)strcmp, NULL)) {
 						continue;
 					}
 					// don't check flags for arithmetic

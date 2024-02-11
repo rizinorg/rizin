@@ -273,8 +273,16 @@ RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b) {
 	return 0;
 }
 
+static int bin_compare_method(RzBinSymbol *a, RzBinSymbol *b, void *user) {
+	return rz_bin_compare_method(a, b);
+}
+
 static int bin_compare_class(RzBinClass *a, RzBinClass *b, void *user) {
 	return rz_bin_compare_class(a, b);
+}
+
+static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void *user) {
+	return rz_bin_compare_class_field(a, b);
 }
 
 /**
@@ -387,9 +395,9 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 	symbol->classname = rz_str_dup(klass);
 
 	if (!c->methods->sorted) {
-		rz_list_sort(c->methods, (RzListComparator)rz_bin_compare_method);
+		rz_list_sort(c->methods, (RzListComparator)bin_compare_method, NULL);
 	}
-	rz_list_add_sorted(c->methods, symbol, (RzListComparator)rz_bin_compare_method);
+	rz_list_add_sorted(c->methods, symbol, (RzListComparator)bin_compare_method, NULL);
 
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method);
 	if (key) {
@@ -465,9 +473,9 @@ RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject
 	}
 
 	if (!c->fields->sorted) {
-		rz_list_sort(c->fields, (RzListComparator)rz_bin_compare_class_field);
+		rz_list_sort(c->fields, (RzListComparator)bin_compare_class_field, NULL);
 	}
-	rz_list_add_sorted(c->fields, field, (RzListComparator)rz_bin_compare_class_field);
+	rz_list_add_sorted(c->fields, field, (RzListComparator)bin_compare_class_field, NULL);
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name);
 	if (key) {
 		ht_pp_insert(o->glue_to_class_field, key, field);

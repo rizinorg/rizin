@@ -245,7 +245,7 @@ RZ_API int rz_range_contains(RRange *rgs, ut64 addr) {
 	return false;
 }
 
-static int cmp_ranges(void *a, void *b) {
+static int cmp_ranges(void *a, void *b, void *user) {
 	RRangeItem *first = (RRangeItem *)a;
 	RRangeItem *second = (RRangeItem *)b;
 	return (first->fr > second->fr) - (first->fr < second->fr);
@@ -257,7 +257,7 @@ RZ_API int rz_range_sort(RRange *rgs) {
 		return false;
 	}
 	rgs->changed = false;
-	rz_list_sort(rgs->ranges, (RzListComparator)cmp_ranges);
+	rz_list_sort(rgs->ranges, (RzListComparator)cmp_ranges, NULL);
 	if (ch != rgs->ranges->sorted) {
 		rgs->changed = true;
 	}

@@ -602,7 +602,7 @@ int winkd_write_at_uva(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address, RZ_BORRO
 	return winkd_op_at_uva(ctx, address, (ut8 *)buf, count, true);
 }
 
-int map_comparator(const void *m1, const void *m2) {
+int map_comparator(const void *m1, const void *m2, void *user) {
 	const RzDebugMap *map1 = m1;
 	const RzDebugMap *map2 = m2;
 	return map1->addr > map2->addr ? 1 : map1->addr < map2->addr ? -1
@@ -739,7 +739,7 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 		}
 		rz_str_utf16_to_utf8((ut8 *)mod->name, length + 1, unname, length + 2, true);
 		free(unname);
-		rz_list_add_sorted(ret, mod, map_comparator);
+		rz_list_add_sorted(ret, mod, map_comparator, NULL);
 
 		ptr = next;
 	} while (ptr != base);

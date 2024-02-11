@@ -19,13 +19,13 @@ enum {
 	SORT_OFFSET
 };
 
-static int flag_name_sort(const void *a, const void *b) {
+static int flag_name_sort(const void *a, const void *b, void *user) {
 	const RzFlagItem *fa = (const RzFlagItem *)a;
 	const RzFlagItem *fb = (const RzFlagItem *)b;
 	return strcmp(fa->name, fb->name);
 }
 
-static int flag_offset_sort(const void *a, const void *b) {
+static int flag_offset_sort(const void *a, const void *b, void *user) {
 	const RzFlagItem *fa = (const RzFlagItem *)a;
 	const RzFlagItem *fb = (const RzFlagItem *)b;
 	if (fa->offset < fb->offset) {
@@ -40,10 +40,10 @@ static int flag_offset_sort(const void *a, const void *b) {
 static void sort_flags(RzList /*<RzFlagItem *>*/ *l, int sort) {
 	switch (sort) {
 	case SORT_NAME:
-		rz_list_sort(l, flag_name_sort);
+		rz_list_sort(l, flag_name_sort, NULL);
 		break;
 	case SORT_OFFSET:
-		rz_list_sort(l, flag_offset_sort);
+		rz_list_sort(l, flag_offset_sort, NULL);
 		break;
 	case SORT_NONE:
 	default:

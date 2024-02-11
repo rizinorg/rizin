@@ -218,7 +218,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr) {
 		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), NULL);
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
+static int cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzListInfo *a = _a, *b = _b;
 	return (rz_itv_begin(a->pitv) > rz_itv_begin(b->pitv)) ? 1 : (rz_itv_begin(a->pitv) < rz_itv_begin(b->pitv)) ? -1
 														     : 0;
@@ -257,7 +257,7 @@ RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64
 		rz_list_append(info_list, info);
 	}
 
-	rz_list_sort(info_list, cmpaddr);
+	rz_list_sort(info_list, cmpaddr, NULL);
 	return info_list;
 }
 

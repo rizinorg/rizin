@@ -63,7 +63,7 @@ static bool mylistrefs_cb(void *list, const ut64 k, const void *v) {
 	return true;
 }
 
-static int ref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b) {
+static int ref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b, void *user) {
 	if (a->from < b->from) {
 		return -1;
 	}
@@ -80,7 +80,7 @@ static int ref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b) {
 }
 
 static void sortxrefs(RzList /*<RzAnalysisXRef *>*/ *list) {
-	rz_list_sort(list, (RzListComparator)ref_cmp);
+	rz_list_sort(list, (RzListComparator)ref_cmp, NULL);
 }
 
 static void listxrefs(HtUP *m, ut64 addr, RzList /*<RzAnalysisXRef *>*/ *list) {

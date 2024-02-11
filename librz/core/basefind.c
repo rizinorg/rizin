@@ -202,7 +202,7 @@ static bool basefind_pointer_map_iter(BaseFindData *bfd, const ut64 address, con
 	return true;
 }
 
-static int basefind_score_compare(const RzBaseFindScore *a, const RzBaseFindScore *b) {
+static int basefind_score_compare(const RzBaseFindScore *a, const RzBaseFindScore *b, void *user) {
 	if (b->score == a->score) {
 		if (b->candidate == a->candidate) {
 			return 0;
@@ -469,7 +469,7 @@ RZ_API RZ_OWN RzList /*<RzBaseFindScore *>*/ *rz_basefind(RZ_NONNULL RzCore *cor
 		}
 	}
 
-	rz_list_sort(scores, (RzListComparator)basefind_score_compare);
+	rz_list_sort(scores, (RzListComparator)basefind_score_compare, NULL);
 
 rz_basefind_end:
 	if (pool) {

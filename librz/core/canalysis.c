@@ -32,12 +32,12 @@ static void loganalysis(ut64 from, ut64 to, int depth) {
 	eprintf("0x%08" PFMT64x " > 0x%08" PFMT64x " %d\r", from, to, depth);
 }
 
-RZ_IPI int bb_cmpaddr(const void *_a, const void *_b) {
+RZ_IPI int bb_cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzAnalysisBlock *a = _a, *b = _b;
 	return (a->addr > b->addr) - (a->addr < b->addr);
 }
 
-RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b) {
+RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzAnalysisFunction *a = _a, *b = _b;
 	return (a->addr > b->addr) - (a->addr < b->addr);
 }
@@ -347,7 +347,7 @@ RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) 
 	}
 }
 
-static int casecmp(const void *_a, const void *_b) {
+static int casecmp(const void *_a, const void *_b, void *user) {
 	const RzAnalysisCaseOp *a = _a;
 	const RzAnalysisCaseOp *b = _b;
 	return a->addr != b->addr;
@@ -378,7 +378,7 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		inputs += (bb2->jump == bb->addr) + (bb2->fail == bb->addr);
 	}
 	if (bb->switch_op) {
-		RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp);
+		RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp, NULL);
 		outputs += rz_list_length(unique_cases);
 		rz_list_free(unique_cases);
 	}
@@ -400,7 +400,7 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		if (bb->switch_op) {
 			RzAnalysisCaseOp *cop;
 			RzListIter *iter;
-			RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp);
+			RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp, NULL);
 			rz_list_foreach (unique_cases, iter, cop) {
 				rz_cons_printf(" s 0x%08" PFMT64x, cop->addr);
 			}
@@ -476,7 +476,7 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 	}
 }
 
-static int bb_cmp(const void *a, const void *b) {
+static int bb_cmp(const void *a, const void *b, void *user) {
 	const RzAnalysisBlock *ba = a;
 	const RzAnalysisBlock *bb = b;
 	return ba->addr - bb->addr;
@@ -492,7 +492,7 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 		rz_cons_printf("fs blocks\n");
 	}
 
-	rz_list_sort(fcn->bbs, bb_cmp);
+	rz_list_sort(fcn->bbs, bb_cmp, NULL);
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		bb_info_print(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
 	}
@@ -1480,7 +1480,7 @@ RZ_API int rz_core_analysis_esil_fcn(RzCore *core, ut64 at, ut64 from, int refty
 	return 0;
 }
 
-static int find_sym_flag(const void *a1, const void *a2) {
+static int find_sym_flag(const void *a1, const void *a2, void *user) {
 	const RzFlagItem *f = (const RzFlagItem *)a2;
 	return f->space && !strcmp(f->space->name, RZ_FLAGS_FS_SYMBOLS) ? 0 : 1;
 }
@@ -1494,7 +1494,7 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 		return true;
 	}
 	const RzList *flags = rz_flag_get_list(core->flags, addr);
-	return !(flags && rz_list_find(flags, fcn, find_sym_flag));
+	return !(flags && rz_list_find(flags, fcn, find_sym_flag, NULL));
 }
 
 // XXX: This function takes sometimes forever

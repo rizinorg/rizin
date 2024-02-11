@@ -525,7 +525,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	rz_cons_break_pop();
 }
 
-static int bb_cmpaddr(const void *_a, const void *_b) {
+static int bb_cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzAnalysisBlock *a = _a, *b = _b;
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
@@ -870,7 +870,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		goto out_function;
 	}
 	rz_cons_break_push(NULL, NULL);
-	rz_list_sort(fcn->bbs, bb_cmpaddr);
+	rz_list_sort(fcn->bbs, bb_cmpaddr, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, it, bb) {

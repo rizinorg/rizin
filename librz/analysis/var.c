@@ -1594,7 +1594,7 @@ static int regvar_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 	return (a && b) ? (a->argnum > b->argnum) - (a->argnum < b->argnum) : 0;
 }
 
-static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
+static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b, void *user) {
 	if (a->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF && b->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF) {
 		return (int)a->origin.dw_var->offset - b->origin.dw_var->offset;
 	}
@@ -1630,8 +1630,8 @@ RZ_API void rz_analysis_fcn_vars_cache_init(
 			rz_list_append(cache->arg_vars, var);
 		}
 	}
-	rz_list_sort(cache->sorted_vars, (RzListComparator)var_comparator);
-	rz_list_sort(cache->arg_vars, (RzListComparator)var_comparator);
+	rz_list_sort(cache->sorted_vars, (RzListComparator)var_comparator, NULL);
+	rz_list_sort(cache->arg_vars, (RzListComparator)var_comparator, NULL);
 }
 
 /**
