@@ -182,6 +182,7 @@ static int show_help(const char *argv0, int line) {
 		"-a",    "[align]", "Only accept aligned hits",
 		"-b",    "[size]",  "Set block size",
 		"-e",    "[regex]", "Search for regex matches (can be used multiple times)",
+        "-E",    "[cmd]",   "Execute command for each file found",		
 		"-f",    "[from]",  "Start searching from address 'from'",
 		"-F",    "[file]",  "Read the contents of the file and use it as keyword",
 		"-h",    "",        "Show this help",
@@ -636,7 +637,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 
 		if (ro.exec_command) {
 			char *command = rz_str_newf("%s %s", ro.exec_command, file);
-			int status = system(command);
+			int status = rz_sys_system(command);
 			if (status == -1) {
 				RZ_LOG_ERROR("Failed to execute command: %s", command);
 			}

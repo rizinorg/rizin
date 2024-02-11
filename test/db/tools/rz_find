@@ -260,3 +260,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-find -E with echo as a command
+FILE==
+CMDS=!rz-find -E "echo" bins/arm/README
+EXPECT=<<EOF
+bins/arm/README
+README
+======
+
+This directory contains binaries for tests on the arm architecture. So far the
+executable format supported is elf.
+
+The source code for the binaries are stored in src/
+EOF
+RUN
