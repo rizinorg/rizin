@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "rx_datasheet.h"
 #define RxCode(x, y) \
 	{ \
@@ -86,7 +88,7 @@ RxDesc rx_inst_descs[RX_DESC_SIZE] = {
 	{ .op = RX_OP_BCND_B, .tks = { RxCode(4, 0x2), RxCond(4, V0), PcDspData(V0, 8), RxEnd } },
 	{ .op = RX_OP_BCND_W, .tks = { RxCode(7, 0x1d), RxCond(1, V0), PcDspData(V0, 16), RxEnd } },
 	{ .op = RX_OP_BMCND, .tks = { RxCode(11, 0x7e7), RxImm(3, V1), RxLdPart(2, V2), RxReg(4, V2), RxCond(4, V0), DspData(V2), RxEnd } },
-	{ .op = RX_OP_BMCND, .tks = { RxCode(11, 0x7ef), RxImm(5, V1), RxCond(4, V0), RxReg(4, V1), RxEnd } },
+	{ .op = RX_OP_BMCND, .tks = { RxCode(11, 0x7ef), RxImm(5, V1), RxCond(4, V0), RxReg(4, V2), RxEnd } },
 	{ .op = RX_OP_BNOT, .tks = { RxCode(11, 0x7e7), RxImm(3, V0), RxLdPart(2, V1), RxReg(4, V1), RxCode(4, 0xf), DspData(V1), RxEnd } },
 	{ .op = RX_OP_BNOT, .tks = { RxCode(14, 0x3f1b), RxLdPart(2, V1), RxReg(4, V1), RxReg(4, V0), DspData(V1), RxEnd } },
 	{ .op = RX_OP_BNOT, .tks = { RxCode(11, 0x7ef), RxImm(5, V0), RxCode(4, 0xf), RxReg(4, V0), RxEnd } },
@@ -198,7 +200,7 @@ RxDesc rx_inst_descs[RX_DESC_SIZE] = {
 	{ .op = RX_OP_OR, .tks = { RxCode(12, 0xff5), RxReg(4, V2), RxReg(4, V0), RxReg(4, V1), RxEnd } },
 	{ .op = RX_OP_MVFACHI, .tks = { RxCode(20, 0xfd1f0), RxReg(4, V0), RxEnd } },
 	{ .op = RX_OP_MVFACMI, .tks = { RxCode(20, 0xfd1f2), RxReg(4, V0), RxEnd } },
-	{ .op = RX_OP_MVFC, .tks = { RxCode(16, 0xfd6a), RxCond(4, V0), RxReg(4, V1), RxEnd } },
+	{ .op = RX_OP_MVFC, .tks = { RxCode(16, 0xfd6a), RxCr(4, V0), RxReg(4, V1), RxEnd } },
 	{ .op = RX_OP_MVTACHI, .tks = { RxCode(20, 0xfd170), RxReg(4, V0), RxEnd } },
 	{ .op = RX_OP_MVTACLO, .tks = { RxCode(20, 0xfd171), RxReg(4, V0), RxEnd } },
 	{ .op = RX_OP_MVTC, .tks = { RxCode(12, 0xfd7), RxLi(2, V0), RxCode(6, 0x30), RxCr(4, V1), ImmData(V0), RxEnd } },
@@ -231,7 +233,7 @@ RxDesc rx_inst_descs[RX_DESC_SIZE] = {
 	{ .op = RX_OP_SAT, .tks = { RxCode(12, 0x7e3), RxReg(4, V0), RxEnd } },
 	{ .op = RX_OP_SATR, .tks = { RxCode(16, 0x7f93), RxEnd } },
 	{ .op = RX_OP_WAIT, .tks = { RxCode(16, 0x7f96), RxEnd } },
-	{ .op = RX_OP_SCCOND, .tks = { RxCode(12, 0xfcd), RxSz(2), RxLd(2, V1), RxReg(4, V1), RxReg(4, V0), DspData(V1), RxEnd } },
+	{ .op = RX_OP_SCCOND, .tks = { RxCode(12, 0xfcd), RxSz(2), RxLd(2, V1), RxReg(4, V1), RxCond(4, V0), DspData(V1), RxEnd } },
 	{ .op = RX_OP_SCMPU, .tks = { RxCode(16, 0x7f83), RxEnd } },
 	{ .op = RX_OP_SETPSW, .tks = { RxCode(12, 0x7fa), RxCb(4), RxEnd } },
 	{ .op = RX_OP_SHAR, .tks = { RxCode(7, 0x35), RxImm(5, V0), RxReg(4, V1), RxEnd } },

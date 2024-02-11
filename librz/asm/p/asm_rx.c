@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Heersin <teablearcher@gmail.com>
+// SPDX-FileCopyrightText: 2024 Heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

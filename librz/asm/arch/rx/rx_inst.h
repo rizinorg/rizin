@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 #ifndef RX_ARCH_INST_H
 #define RX_ARCH_INST_H
 

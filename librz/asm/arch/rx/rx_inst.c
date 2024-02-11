@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "rx_inst.h"
 
 #define AssignOpVar(vid, field, expr) \
@@ -293,7 +295,6 @@ bool match_cond(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64
 		cond_mark = RX_COND_EQ + cond_bits;
 	}
 	AssignOpVar(operand_id, v.cond.cond, cond_mark);
-	AssignOpVar(operand_id, v.cond.pc_dsp_len, 8); // known pcdsp len === 8
 	AssignOpVar(operand_id, kind, RX_OPERAND_COND);
 	*bits_read += l;
 	return true;
@@ -440,6 +441,7 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 		// pack imm
 		if (token->tk.data.fixed_len) {
 			l = token->tk.data.fixed_len;
+			opr->v.imm.imm_width = l;
 		} else {
 			l = opr->v.imm.imm_width;
 		}
@@ -454,6 +456,7 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 		// pack pcdsp
 		if (token->tk.data.fixed_len) {
 			l = token->tk.data.fixed_len;
+			opr->v.cond.pc_dsp_len = l;
 		} else {
 			l = opr->v.cond.pc_dsp_len;
 		}

@@ -8,10 +8,10 @@ const char *opnames[_RX_OP_COUNT] = {
 	"and.UB",
 	"bclr",
 	// bcnd.s, cnd provided by cond_names
-	"bcnd.S",
-	"bcnd.B",
-	"bcnd.W",
-	"bmcnd",
+	"b%s.S",
+	"b%s.B",
+	"b%s.W",
+	"bm%s",
 	"bnot",
 	"bra.S",
 	"bra.B",
@@ -92,7 +92,7 @@ const char *opnames[_RX_OP_COUNT] = {
 	"sat",
 	"satr",
 	"sbb",
-	"sccnd",
+	"sc%s",
 	"scmpu",
 	"setpsw",
 	"shar",
@@ -127,9 +127,9 @@ const char *extmark_names[_RX_EXT_COUNT] = {
 const char *reg_names[RX_REG_RESERVED] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
 	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
-	"RX_REG_ISP", "RX_REG_USP", "RX_REG_INTB", "RX_REG_PC",
-	"RX_REG_PSW", "RX_REG_BPC", "RX_REG_BPSW", "RX_REG_FINTV",
-	"RX_REG_FPSW", "RX_REG_ACC"
+	"isp", "usp", "intb", "pc",
+	"psw", "bpc", "bpsw", "fintv",
+	"fpsw", "acc"
 };
 
 const char *flag_names[7] = {

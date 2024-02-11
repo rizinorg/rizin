@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "rx.h"
 #include "rx_str.inc"
 
@@ -20,12 +22,7 @@ bool rx_operand_stringify(RxInst *inst, RxOperand *opr, RZ_OUT RzStrBuf *buf) {
 
 	if (opr->kind == RX_OPERAND_COND) {
 		if (opr->v.cond.pc_dsp_len) {
-			rz_strf(buf->buf, "%s #0x%" PFMT32x,
-				RxNameCond(opr->v.cond.cond),
-				opr->v.cond.pc_dsp_val);
-		} else {
-			rz_strf(buf->buf, "%s",
-				RxNameCond(opr->v.cond.cond));
+			rz_strbuf_appendf(buf, " #0x%" PFMT32x, opr->v.cond.pc_dsp_val);
 		}
 		return true;
 	}
@@ -58,7 +55,7 @@ bool rx_operand_stringify(RxInst *inst, RxOperand *opr, RZ_OUT RzStrBuf *buf) {
 		}
 
 		if (opr->v.reg.as_base) {
-			rz_strbuf_appendf(buf, "%s, %s",
+			rz_strbuf_appendf(buf, "%s,%s",
 				RxNameReg(opr->v.reg.ri),
 				RxNameReg(opr->v.reg.reg));
 		} else {
@@ -98,28 +95,40 @@ bool rx_inst_stringify(RxInst *inst, RzStrBuf *buf) {
 	bool has_opr2 = inst->v2.kind != RX_OPERAND_NULL &&
 		rx_operand_stringify(inst, &inst->v2, &opr2_buf);
 
-	if (inst->sz_mark != RX_EXT_NON) {
-		rz_strbuf_appendf(buf, "%s.%s ",
-			RxNameOp(inst->op),
-			RxNameExt(inst->sz_mark));
+	if (inst->op == RX_OP_BCND_W || inst->op == RX_OP_BCND_B || inst->op == RX_OP_BCND_S ||
+		inst->op == RX_OP_BMCND || inst->op == RX_OP_SCCOND) {
+		if (has_opr0 && inst->v0.kind == RX_OPERAND_COND) {
+			// build b[cnd]
+			RzStrBuf cond_buf;
+			rz_strbuf_init(&cond_buf);
+			rz_strf(cond_buf.buf, "%s", RxNameCond(inst->v0.v.cond.cond));
+			rz_strbuf_appendf(buf, RxNameOp(inst->op), cond_buf.buf);
+
+			if (!inst->v0.v.cond.pc_dsp_len) {
+				has_opr0 = false;
+			}
+		} else {
+			rz_strbuf_appendf(buf, "%s[invalid]",
+				RxNameOp(inst->op));
+		}
 	} else {
-		rz_strbuf_appendf(buf, "%s ",
-			RxNameOp(inst->op));
+		rz_strbuf_appendf(buf, "%s", RxNameOp(inst->op));
 	}
 
-	if (has_opr0 && has_opr1 && has_opr2) {
-		rz_strbuf_appendf(buf, "%s, %s, %s",
-			opr0_buf.buf,
-			opr1_buf.buf,
-			opr2_buf.buf);
-	} else if (has_opr0 && has_opr1) {
-		rz_strbuf_appendf(buf, "%s, %s",
-			opr0_buf.buf,
-			opr1_buf.buf);
-	} else if (has_opr0) {
-		rz_strbuf_appendf(buf, "%s",
-			opr0_buf.buf);
+	if (inst->sz_mark != RX_EXT_NON) {
+		rz_strbuf_appendf(buf, ".%s ", RxNameExt(inst->sz_mark));
 	} else {
+		rz_strbuf_appendf(buf, " ");
+	}
+
+	if (has_opr0) {
+		rz_strbuf_appendf(buf, "%s, ", opr0_buf.buf);
+	}
+	if (has_opr1) {
+		rz_strbuf_appendf(buf, "%s, ", opr1_buf.buf);
+	}
+	if (has_opr2) {
+		rz_strbuf_appendf(buf, "%s", opr2_buf.buf);
 	}
 
 	return true;
