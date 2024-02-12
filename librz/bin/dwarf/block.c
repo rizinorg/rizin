@@ -4,7 +4,8 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-RZ_API const ut8 *rz_bin_dwarf_block_data(const RzBinDwarfBlock *self) {
+RZ_API RZ_BORROW const ut8 *rz_bin_dwarf_block_data(RZ_NONNULL const RzBinDwarfBlock *self) {
+	rz_return_val_if_fail(self, NULL);
 	return self->length < RZ_ARRAY_SIZE(self->data) ? self->data : self->ptr;
 }
 
@@ -33,8 +34,8 @@ RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_cpy(RzBinDwarfBlock *self, RzBinDwarfBlo
 	return out;
 }
 
-RZ_API bool rz_bin_dwarf_block_valid(const RzBinDwarfBlock *self) {
-	rz_return_val_if_fail(self, NULL);
+RZ_API bool rz_bin_dwarf_block_valid(RZ_NONNULL const RzBinDwarfBlock *self) {
+	rz_return_val_if_fail(self, false);
 	if (self->length == 0) {
 		return true;
 	}
@@ -44,8 +45,8 @@ RZ_API bool rz_bin_dwarf_block_valid(const RzBinDwarfBlock *self) {
 	return true;
 }
 
-RZ_API bool rz_bin_dwarf_block_empty(const RzBinDwarfBlock *self) {
-	rz_return_val_if_fail(self, NULL);
+RZ_API bool rz_bin_dwarf_block_empty(RZ_NONNULL const RzBinDwarfBlock *self) {
+	rz_return_val_if_fail(self, false);
 	return self->length == 0;
 }
 
@@ -70,7 +71,8 @@ RZ_IPI bool RzBinDwarfBlock_move(RzBinDwarfBlock *self, RzBinDwarfBlock *out) {
 	return true;
 }
 
-RZ_API void rz_bin_dwarf_block_dump(const RzBinDwarfBlock *self, RzStrBuf *sb) {
+RZ_API void rz_bin_dwarf_block_dump(RZ_NONNULL const RzBinDwarfBlock *self, RZ_NONNULL RzStrBuf *sb) {
+	rz_return_if_fail(self && sb);
 	if (self->length == 0) {
 		rz_strbuf_appendf(sb, " <null>");
 		return;

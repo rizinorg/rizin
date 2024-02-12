@@ -135,38 +135,38 @@ RZ_IPI bool Value_parse_into(
 	value->type = value_type;
 	switch (value_type) {
 	case RzBinDwarfValueType_I8:
-		READ8_OR(st8, value->i8, return NULL);
+		READ8_OR(st8, value->i8, return false);
 		break;
 	case RzBinDwarfValueType_U8:
-		READ8_OR(ut8, value->u8, return NULL);
+		READ8_OR(ut8, value->u8, return false);
 		break;
 	case RzBinDwarfValueType_I16:
-		READ_T_OR(16, st16, value->i16, return NULL);
+		READ_T_OR(16, st16, value->i16, return false);
 		break;
 	case RzBinDwarfValueType_U16:
-		READ_T_OR(16, ut16, value->u16, return NULL);
+		READ_T_OR(16, ut16, value->u16, return false);
 		break;
 	case RzBinDwarfValueType_I32:
-		READ_T_OR(32, st32, value->i32, return NULL);
+		READ_T_OR(32, st32, value->i32, return false);
 		break;
 	case RzBinDwarfValueType_U32:
-		READ_T_OR(32, ut32, value->u32, return NULL);
+		READ_T_OR(32, ut32, value->u32, return false);
 		break;
 	case RzBinDwarfValueType_I64:
-		READ_T_OR(64, st64, value->i64, return NULL);
+		READ_T_OR(64, st64, value->i64, return false);
 		break;
 	case RzBinDwarfValueType_U64:
-		READ_UT_OR(64, value->u64, return NULL);
+		READ_UT_OR(64, value->u64, return false);
 		break;
 	case RzBinDwarfValueType_I128:
 	case RzBinDwarfValueType_U128:
 		RZ_LOG_ERROR("I128/U128 not supported\n")
-		return NULL;
+		return false;
 	case RzBinDwarfValueType_F32:
-		READ_T_OR(32, float, value->f32, return NULL);
+		READ_T_OR(32, float, value->f32, return false);
 		break;
 	case RzBinDwarfValueType_F64:
-		READ_T_OR(64, double, value->f64, return NULL);
+		READ_T_OR(64, double, value->f64, return false);
 		break;
 	default:
 		return false;

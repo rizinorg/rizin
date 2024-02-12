@@ -174,7 +174,7 @@ static bool hexagon_fini(void *user) {
 	return true;
 }
 
-RZ_API RZ_BORROW RzConfig *hexagon_get_config() {
+RZ_API RZ_BORROW RzConfig *hexagon_get_config(void) {
 	HexState *state = hexagon_get_state();
 	rz_return_val_if_fail(state, NULL);
 	return state->cfg;
