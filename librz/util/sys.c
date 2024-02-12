@@ -1710,7 +1710,7 @@ RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const 
  * \return Returns -1 on failure otherwise the exit(n) value returned by the executed program.
  */
 RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
-	rz_return_val_if_fail(!pathname || !argv || RZ_STR_ISEMPTY(argv[0]), -1);
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(pathname) && argv && RZ_STR_ISNOTEMPTY(argv[0]), -1);
 
 	if (!rz_subprocess_init()) {
 		RZ_LOG_ERROR("Cannot initialize subprocess in execv.\n");
