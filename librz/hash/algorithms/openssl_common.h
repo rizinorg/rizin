@@ -9,6 +9,9 @@
 #include <openssl/sha.h>
 #include <openssl/md4.h>
 #include <openssl/md5.h>
+#include <openssl/err.h>
+
+#include <rz_util.h>
 
 #define rz_openssl_plugin_context_new(pluginname) \
 	static void *openssl_plugin_##pluginname##_context_new() { \
@@ -35,6 +38,10 @@
 	static bool openssl_plugin_##pluginname##_init(void *context) { \
 		rz_return_val_if_fail(context, false); \
 		if (EVP_DigestInit_ex((EVP_MD_CTX *)context, evpmd(), NULL) != 1) { \
+			char emsg[256] = { 0 }; \
+			ERR_error_string_n(ERR_get_error(), emsg, sizeof(emsg)); \
+			RZ_LOG_ERROR("openssl: %s\n", emsg); \
+			ERR_clear_error(); \
 			return false; \
 		} \
 		return true; \
@@ -47,6 +54,10 @@
 			return true; \
 		} \
 		if (EVP_DigestUpdate((EVP_MD_CTX *)context, data, size) != 1) { \
+			char emsg[256] = { 0 }; \
+			ERR_error_string_n(ERR_get_error(), emsg, sizeof(emsg)); \
+			RZ_LOG_ERROR("openssl: %s\n", emsg); \
+			ERR_clear_error(); \
 			return false; \
 		} \
 		return true; \
@@ -56,6 +67,10 @@
 	static bool openssl_plugin_##pluginname##_final(void *context, ut8 *digest) { \
 		rz_return_val_if_fail((context) && (digest), false); \
 		if (EVP_DigestFinal_ex((EVP_MD_CTX *)context, digest, NULL) != 1) { \
+			char emsg[256] = { 0 }; \
+			ERR_error_string_n(ERR_get_error(), emsg, sizeof(emsg)); \
+			RZ_LOG_ERROR("openssl: %s\n", emsg); \
+			ERR_clear_error(); \
 			return false; \
 		} \
 		return true; \
