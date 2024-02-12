@@ -8251,3 +8251,21 @@ EXPECT=<<EOF
  4 fd: 6 +0x00000d98 0x00200d98 - 0x0020100f r-- vmap.LOAD1
 EOF
 RUN
+
+NAME=Typeclasses - tk
+FILE=--
+CMDS=<<EOF
+tk char8_t 
+tk "unsigned long long"
+tk pid_t
+tk double
+tk void
+EOF
+EXPECT=<<EOF
+Signed Integral
+Unsigned Integral
+Integral
+Floating
+None
+EOF
+RUN
