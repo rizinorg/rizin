@@ -62,7 +62,7 @@ RZ_API int rz_sys_pipe_close(int fd);
 #define rz_sys_pipe_close close
 #endif
 #if !HAVE_EXECV || (__UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2)
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]);
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]);
 #else
 #define rz_sys_execv execv
 #endif

@@ -609,53 +609,53 @@ RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 
 /**
  * \brief Enable or disable ASLR for the calling process
- * 
+ *
  * Host is Linux:
- * 
+ *
  * We can disable ASLR using the personlity flags (does not require root) or
  * system-wide by setting /proc/sys/kernel/randomize_va_space to 0.
  * If we want to enable it we must write 1 or 2 into /proc/sys/kernel/randomize_va_space
  * ASLR support was added in linux 2.6 (year 2005)
- * 
+ *
  * Host is NetBSD:
- * 
+ *
  * We can enable/disable ASLR by calling sysctlbyname("security.pax.aslr.enabled").
  * May require root/super-user priviledges.
- * 
+ *
  * Host is DragonFly:
- * 
- * We can enable/disable ASLR by calling sysctlbyname("vm.randomize_mmap") 
+ *
+ * We can enable/disable ASLR by calling sysctlbyname("vm.randomize_mmap")
  * May require root/super-user priviledges.
- * 
+ *
  * Host is FreeBSD (since version 13.0):
- * 
+ *
  * We can enable/disable ASLR by calling sysctlbyname("kern.elf32.aslr.enable") and
  * sysctlbyname("kern.elf64.aslr.enable")
  * May require root/super-user priviledges.
- * 
+ *
  * Host is Windows:
- * 
+ *
  * We can only enable ASLR and not disable it.
  * To enable it we just need to initialize PROCESS_MITIGATION_ASLR_POLICY by setting to true
  * EnableBottomUpRandomization, EnableForceRelocateImages and EnableHighEntropy, and then call
  * SetProcessMitigationPolicy(ProcessASLRPolicy).
  * https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setprocessmitigationpolicy
- * 
+ *
  * This feature is available since _WIN32_WINNT >= 0x0602 (Windows 8, Windows Server 2012)
  * It is possible to manually disable ASLR on a binary by removing the PE flags called DLL Characteristics:
  * - IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE
  * - IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
  * or as admin from PowerShell by running `Set-ProcessMitigation -Name file.exe -Disable ForceRelocateImages`
- * 
+ *
  * Host is Apple:
- * 
+ *
  * We can enable/disable ASRL when we spawn a process by adding the flag called _POSIX_SPAWN_DISABLE_ASLR (0x0100) to
  * the flag field of posix_spawnattr_setflags.
  * This was reverse engineered and documented in: https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/macosx/macosx-nat-inferior.c.auto.html
- * 
+ *
  * It is possible to manually disable ASLR on a binary by removing the MH_PIE flag from the mach0 header.
  * https://web.archive.org/web/20140906073648/http://src.chromium.org:80/svn/trunk/src/build/mac/change_mach_o_flags.py
- * 
+ *
  * On Snow Leopard this also can be achieved by setting the environment variable DYLD_NO_PIE to 1 (export DYLD_NO_PIE=1)
  */
 RZ_API bool rz_sys_aslr(bool enable) {
@@ -1680,14 +1680,16 @@ RZ_API int rz_sys_pipe_close(int fd) {
 #endif
 
 #if __UNIX__ && HAVE_EXECV && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(pathname) && argv && RZ_STR_ISNOTEMPTY(argv[0]), -1);
 	parent_lock_enter();
 	int res = execv(pathname, argv);
 	parent_lock_leave();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(pathname) && argv && RZ_STR_ISNOTEMPTY(argv[0]), -1);
 	parent_lock_enter();
 	close_fds();
 	int res = execv(pathname, argv);
@@ -1695,7 +1697,19 @@ RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
 	return res;
 }
 #elif !HAVE_EXECV
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
+/**
+ * \brief Executes a program with a given set of arguments.
+ * This is an implementation of execv on systems that do not have support for this function by using
+ * RzSubprocess as layer of compatibility.
+ *
+ * Beware that argv[0] must be always allocated and should match pathname.
+ *
+ * \param pathname The path of the new program to execute
+ * \param argv The array of pointers to null-terminated strings that represent the argument list available to the new program.
+ *
+ * \return Returns -1 on failure otherwise the exit(n) value returned by the executed program.
+ */
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
 	rz_return_val_if_fail(!pathname || !argv || RZ_STR_ISEMPTY(argv[0]), -1);
 
 	if (!rz_subprocess_init()) {
