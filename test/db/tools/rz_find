@@ -262,9 +262,8 @@ RUN
 
 NAME=rz-find -E with echo as a command
 FILE==
-CMDS=!rz-find -s "README" -E "echo" bins/arm
+CMDS=!rz-find -s "README" -E "echo" bins/arm/README
 EXPECT=<<EOF
-bins/arm/README
 0x0
 EOF
 RUN
