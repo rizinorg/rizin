@@ -943,6 +943,81 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisDataType datatype;
 } RzAnalysisOp;
 
+static inline bool rz_analysis_op_is_call(const RzAnalysisOp *op) {
+	bool is_call = (op->type == RZ_ANALYSIS_OP_TYPE_CALL ||
+		op->type == RZ_ANALYSIS_OP_TYPE_UCALL ||
+		op->type == RZ_ANALYSIS_OP_TYPE_RCALL ||
+		op->type == RZ_ANALYSIS_OP_TYPE_ICALL ||
+		op->type == RZ_ANALYSIS_OP_TYPE_IRCALL);
+	return is_call;
+}
+
+static inline bool rz_analysis_op_is_jump(const RzAnalysisOp *op) {
+	bool is_jump = (op->type == RZ_ANALYSIS_OP_TYPE_JMP ||
+		op->type == RZ_ANALYSIS_OP_TYPE_UJMP ||
+		op->type == RZ_ANALYSIS_OP_TYPE_RJMP ||
+		op->type == RZ_ANALYSIS_OP_TYPE_IJMP ||
+		op->type == RZ_ANALYSIS_OP_TYPE_IRJMP);
+	return is_jump;
+}
+
+static inline bool rz_analysis_op_is_return(const RzAnalysisOp *op) {
+	return (op->type == RZ_ANALYSIS_OP_TYPE_RET);
+}
+
+static inline bool rz_analysis_op_is_creturn(const RzAnalysisOp *op) {
+	return (op->type == RZ_ANALYSIS_OP_TYPE_CRET);
+}
+
+static inline bool rz_analysis_op_is_cjump(const RzAnalysisOp *op) {
+	return rz_analysis_op_is_jump(op) && op->type & RZ_ANALYSIS_OP_TYPE_COND;
+}
+
+static inline bool rz_analysis_op_is_ccall(const RzAnalysisOp *op) {
+	return rz_analysis_op_is_call(op) && op->type & RZ_ANALYSIS_OP_TYPE_COND;
+}
+
+/**
+ * \brief Property flags for instruction words.
+ */
+typedef enum {
+	RZ_ANALYSIS_IWORD_COND = 0x80000000, ///< Conditional property.
+	RZ_ANALYSIS_IWORD_TAIL = 0x40000000, ///< Tail call property.
+	RZ_ANALYSIS_IWORD_NONE = 0, ///< Unset property
+	RZ_ANALYSIS_IWORD_R_MEM = 1 << 0, ///< Reads memory
+	RZ_ANALYSIS_IWORD_W_MEM = 1 << 1, ///< Writes memory
+	RZ_ANALYSIS_IWORD_JUMP = 1 << 2, ///< Jumps to a different address (no call)
+	RZ_ANALYSIS_IWORD_CALL = 1 << 3, ///< Calls a sub-procedure.
+	RZ_ANALYSIS_IWORD_RET = 1 << 4, ///< Returns from a sub-procedure.
+	RZ_ANALYSIS_IWORD_EXIT = 1 << 5, ///< Exits the program.
+	RZ_ANALYSIS_IWORD_CR_MEM = RZ_ANALYSIS_IWORD_R_MEM | RZ_ANALYSIS_IWORD_COND, ///< Conditionally reads memory
+	RZ_ANALYSIS_IWORD_CW_MEM = RZ_ANALYSIS_IWORD_W_MEM | RZ_ANALYSIS_IWORD_COND, ///< Conditionally writes memory
+	RZ_ANALYSIS_IWORD_CJUMP = RZ_ANALYSIS_IWORD_JUMP | RZ_ANALYSIS_IWORD_COND, ///< Conditionally jumps to a different address.
+	RZ_ANALYSIS_IWORD_CCALL = RZ_ANALYSIS_IWORD_CALL | RZ_ANALYSIS_IWORD_COND, ///< Conditionally jumps to a different address.
+	RZ_ANALYSIS_IWORD_CRET = RZ_ANALYSIS_IWORD_RET | RZ_ANALYSIS_IWORD_COND, ///< Conditionally returns from a sub-procedure.
+} RzAnalysisIWordProperties;
+
+/**
+ * \brief An instruction word. It is atomically executed on the processor.
+ * Might contain multiple instructions.
+ */
+typedef struct {
+	ut32 size_bits; ///< Instruction word size in bits.
+	ut32 size_bytes; ///< Instruction word size in bytes.
+	ut64 addr; ///< Address the instruction word is located.
+	RzStrBuf *asm_str; ///< The whole asm string. Single instructions are separated by a newline.
+	RzPVector /*<RzAnalysisOp *>*/ *insns; ///< Instructions forming the instruction word.
+	RzSetU *jump_targets; ///< Set of addresses this iword possibly jumps to. This includes the next instr. word if there is any.
+	RzSetU *call_targets; ///< Set of addresses this iword calls.
+	RzAnalysisLiftedILOp il_op; ///< The complete IL operation of this instr. word.
+	RzAnalysisIWordProperties props; ///< Properties of this instruction word.
+} RzAnalysisInsnWord;
+
+RZ_API RZ_OWN RzAnalysisInsnWord *rz_analysis_insn_word_new();
+RZ_API void rz_analysis_insn_word_setup(RZ_BORROW RZ_NONNULL RzAnalysisInsnWord *iword);
+RZ_API void rz_analysis_insn_word_free(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iword);
+RZ_API void rz_analysis_insn_word_fini(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iword);
+
 #define RZ_TYPE_COND_SINGLE(x) (!x->arg[1] || x->arg[0] == x->arg[1])
 
 typedef struct rz_analysis_cond_t {
@@ -1346,6 +1421,22 @@ typedef struct rz_analysis_esil_memory_region_t {
 // TODO: rm data + len
 typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
 
+/**
+ * \brief The callback to decode a single instruction word.
+ *
+ * \param a The RzAnalysis to use.
+ * \param iword The pre-allocated instruction word struct to fill.
+ * \param addr The address where the instruction word is starts.
+ * \param buf The buffer with the bytes to decode.
+ * \param len The total length of the buffer in bytes.
+ * \param buf_off_iword Offset into \p buf, where the instruction word bytes start. The bytes before can be used for context.
+ * TODO: Should be replaced with a proper view into the IO layer? Something more sophisticated for sure.
+ *
+ * \return true On successful decoding.
+ * \return false One failure
+ */
+typedef bool (*RzAnalysisIWordCallback)(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword);
+
 typedef bool (*RzAnalysisRegProfCallback)(RzAnalysis *a);
 typedef char *(*RzAnalysisRegProfGetCallback)(RzAnalysis *a);
 typedef int (*RzAnalysisFPBBCallback)(RzAnalysis *a, RzAnalysisBlock *bb);
@@ -1382,6 +1473,7 @@ typedef struct rz_analysis_plugin_t {
 
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
+	RzAnalysisIWordCallback decode_iword;
 
 	RzAnalysisRegProfGetCallback get_reg_profile;
 
@@ -2355,6 +2447,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_arg_idx(RZ_NONNULL RzAn
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f);
 RZ_API bool rz_analysis_function_is_malloc(const RzAnalysisFunction *fcn);
+RZ_API bool rz_analysis_function_is_input(const RzAnalysisFunction *fcn);
 
 /* PDB */
 RZ_API RzType *rz_type_db_pdb_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);

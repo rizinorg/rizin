@@ -295,6 +295,13 @@ static bool rz_io_vwrite_at(RzIO *io, ut64 vaddr, const ut8 *buf, size_t len) {
 // For physical mode, the interface is broken because the actual read bytes are
 // not available. This requires fixes in all call sites.
 RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
+	// NOTE:
+	// Greetings! If you reached this code with your debugger, because
+	// "something is not read from memory", step no further!
+	// First try to replace the call with `rz_io_nread_at()`,
+	// it maybe fixes it already.
+	// If not, you can still venture downwards of course.
+	// Good luck!
 	rz_return_val_if_fail(io && buf && len >= 0, false);
 	if (len == 0) {
 		return false;

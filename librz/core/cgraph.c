@@ -9,6 +9,8 @@
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 #include "core_private.h"
+#include <rz_util/rz_iterator.h>
+#include <rz_util/rz_set.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/ht_uu.h>
@@ -502,7 +504,20 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCor
 		graph = rz_core_graph_icfg(core);
 		break;
 	case RZ_CORE_GRAPH_TYPE_CFG:
-		graph = rz_core_graph_cfg(core, addr);
+		if (core->analysis->cur && core->analysis->cur->decode_iword) {
+			// Build the instruction word graph.
+			graph = rz_core_graph_cfg_iwords(core, addr, false);
+		} else {
+			graph = rz_core_graph_cfg(core, addr, false);
+		}
+		break;
+	case RZ_CORE_GRAPH_TYPE_CFG_FCN:
+		if (core->analysis->cur && core->analysis->cur->decode_iword) {
+			// Build the instruction word graph.
+			graph = rz_core_graph_cfg_iwords(core, addr, true);
+		} else {
+			graph = rz_core_graph_cfg(core, addr, true);
+		}
 		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF:
 	default:
@@ -798,9 +813,9 @@ static RzGraphNode *rz_graph_add_node_info_icfg(RzGraph /*<RzGraphNodeInfo *>*/ 
 	rz_return_val_if_fail(graph, NULL);
 	RzGraphNodeInfo *data = NULL;
 	if (rz_analysis_function_is_malloc(fcn)) {
-		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_TYPE_ICFG, RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
+		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
 	} else {
-		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_TYPE_ICFG, RZ_GRAPH_NODE_SUBTYPE_NONE);
+		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_SUBTYPE_ICFG_NONE);
 	}
 	if (!data) {
 		rz_warn_if_reached();
@@ -850,7 +865,8 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 	RzGraphNode *from_node = get_graph_node_of_fcn(icfg, graph_idx, fcn);
 	RzListIter *it;
 	const RzAnalysisXRef *xref;
-	rz_list_foreach (rz_analysis_function_get_xrefs_from(fcn), it, xref) {
+	RzList *fcn_xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (fcn_xrefs, it, xref) {
 		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
 			continue;
 		}
@@ -860,6 +876,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 			continue;
 		}
 		RzGraphNode *to_node = get_graph_node_of_fcn(icfg, graph_idx, called_fcn);
+		assert(to_node && from_node);
 		if (rz_graph_adjacent(icfg, from_node, to_node)) {
 			// Edge already added and walked. Don't recurse.
 			continue;
@@ -868,6 +885,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 		// Recurse into called function.
 		extend_icfg(analysis, icfg, graph_idx, called_fcn);
 	}
+	rz_list_free(fcn_xrefs);
 }
 
 /**
@@ -900,12 +918,6 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzC
 	return graph;
 }
 
-static inline bool is_leaf_op(const RzAnalysisOp *op) {
-	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_ILL ||
-		(op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_RET ||
-		(op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_UNK;
-}
-
 static inline bool is_call(const RzAnalysisOp *op) {
 	_RzAnalysisOpType type = (op->type & RZ_ANALYSIS_OP_TYPE_MASK);
 	return type == RZ_ANALYSIS_OP_TYPE_CALL ||
@@ -917,9 +929,32 @@ static inline bool is_call(const RzAnalysisOp *op) {
 		type == RZ_ANALYSIS_OP_TYPE_UCCALL;
 }
 
+static inline bool is_tail(const RzAnalysisOp *op) {
+	return op->type & RZ_ANALYSIS_OP_TYPE_TAIL;
+}
+
+static inline bool is_jump(const RzAnalysisOp *op) {
+	_RzAnalysisOpType type = (op->type & RZ_ANALYSIS_OP_TYPE_MASK);
+	return type == RZ_ANALYSIS_OP_TYPE_JMP ||
+		type == RZ_ANALYSIS_OP_TYPE_UJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_RJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_IJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_IRJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_CJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_RCJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_MJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_MCJMP ||
+		type == RZ_ANALYSIS_OP_TYPE_UCJMP;
+}
+
 static inline bool is_uncond_jump(const RzAnalysisOp *op) {
-	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_JMP &&
+	ut32 op_type = op->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	return (op_type == RZ_ANALYSIS_OP_TYPE_JMP || op_type == RZ_ANALYSIS_OP_TYPE_UJMP) &&
 		!((op->type & RZ_ANALYSIS_OP_HINT_MASK) & RZ_ANALYSIS_OP_TYPE_COND);
+}
+
+static inline bool is_invalid(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_ILL;
 }
 
 static inline bool is_return(const RzAnalysisOp *op) {
@@ -930,16 +965,34 @@ static inline bool is_cond(const RzAnalysisOp *op) {
 	return (op->type & RZ_ANALYSIS_OP_HINT_MASK) == RZ_ANALYSIS_OP_TYPE_COND;
 }
 
-static inline bool ignore_next_instr(const RzAnalysisOp *op) {
-	// Ignore if:
-	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)); // Except calls, everything which has set fail
+static inline bool is_exit(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_ILL;
 }
 
-static RzGraphNodeSubType get_cfg_node_flags(const RzAnalysisOp *op) {
-	rz_return_val_if_fail(op, RZ_GRAPH_NODE_SUBTYPE_NONE);
-	RzGraphNodeSubType subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
+static inline bool is_leaf_op(const RzAnalysisOp *op) {
+	return is_return(op) || is_exit(op);
+}
+
+
+static inline bool ignore_next_instr(const RzAnalysisOp *op) {
+	// Ignore if:
+	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)) || is_invalid(op); // Except calls, everything which has set fail
+}
+
+static RzGraphNodeCFGSubType get_cfg_node_flags(const RzAnalysisOp *op, bool is_entry) {
+	rz_return_val_if_fail(op, RZ_GRAPH_NODE_SUBTYPE_CFG_NONE);
+	RzGraphNodeCFGSubType subtype = RZ_GRAPH_NODE_SUBTYPE_CFG_NONE;
+	if (is_entry) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
+	}
 	if (is_call(op)) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_CALL;
+	}
+	if (is_tail(op)) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_TAIL;
+	}
+	if (is_jump(op)) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_JUMP;
 	}
 	if (is_return(op)) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN;
@@ -947,17 +1000,64 @@ static RzGraphNodeSubType get_cfg_node_flags(const RzAnalysisOp *op) {
 	if (is_cond(op)) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_COND;
 	}
+	if (is_exit(op)) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT;
+	}
 	return subtype;
+}
+
+static RzGraphNodeCFGIWordSubType get_cfg_iword_node_flags(const RzAnalysisInsnWord *iword) {
+	rz_return_val_if_fail(iword, RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_NONE);
+	RzGraphNodeCFGIWordSubType subtype = RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_NONE;
+	if (iword->props & RZ_ANALYSIS_IWORD_RET) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_RETURN;
+	}
+	if (iword->props & RZ_ANALYSIS_IWORD_COND) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_COND;
+	}
+	if (iword->props & RZ_ANALYSIS_IWORD_TAIL) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_TAIL;
+	}
+	return subtype;
+}
+
+/**
+ * \brief Initializes a instruction word node info struct of a CFG node.
+ *
+ * \param iword The instructoin word to build the node from.
+ * \param subtype The sub types of the node.
+ *
+ * \return The initialized RzGraphNodeInfo or NULL in case of failure.
+ */
+static RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsnWord *iword, RzGraphNodeCFGIWordSubType subtype) {
+	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
+	rz_graph_node_info_data_cfg_iword_init(&data->cfg_iword);
+	data->type = RZ_GRAPH_NODE_TYPE_CFG_IWORD;
+	data->cfg_iword.subtype = subtype;
+	data->cfg_iword.address = iword->addr;
+	bool is_entry = subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY;
+	void **it;
+	rz_pvector_foreach (iword->insns, it) {
+		const RzAnalysisOp *op = *it;
+		RzGraphNodeInfoDataCFG *info = RZ_NEW0(RzGraphNodeInfoDataCFG);
+		info->address = op->addr;
+		info->call_address = (rz_analysis_op_is_call(op) || rz_analysis_op_is_ccall(op)) ? op->jump : UT64_MAX;
+		info->jump_address = is_jump(op) ? op->jump : UT64_MAX;
+		info->next = is_return(op) || is_uncond_jump(op) || is_tail(op) ? UT64_MAX : op->addr + op->size;
+		info->subtype = get_cfg_node_flags(op, is_entry);
+		rz_pvector_push(data->cfg_iword.insn, info);
+		is_entry = false;
+	}
+	return data;
 }
 
 static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisOp *op, bool is_entry) {
 	rz_return_val_if_fail(cfg, NULL);
-	RzGraphNodeSubType subtype = get_cfg_node_flags(op);
-	if (is_entry) {
-		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
-	}
+	RzGraphNodeCFGSubType subtype = get_cfg_node_flags(op, is_entry);
 	ut64 call_target = is_call(op) ? op->jump : UT64_MAX;
-	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, RZ_GRAPH_NODE_TYPE_CFG, subtype);
+	ut64 jump_target = rz_analysis_op_is_jump(op) ? op->jump : UT64_MAX;
+	ut64 next = is_return(op) || is_uncond_jump(op) ? UT64_MAX : op->addr + op->size;
+	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, jump_target, next, subtype);
 	if (!data) {
 		return NULL;
 	}
@@ -976,6 +1076,8 @@ static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, cons
  * \param nodes_visited The hash table holding already visited addresses and their node indices in the graph.
  * \param op_from The RzAnalysisOp the edge originates from.
  * \param op_to The RzAnalysisOp the edge goes to.
+ * \param fcn Check the function if it contains \p op_to. \p op_to will not be added to \p to_visit, if it is not within the function.
+ * If \p fcn is NULL it assumes \p op_to is always added, if it wasn't before.
  *
  * \return true On success.
  * \return false On failure.
@@ -984,10 +1086,14 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	RZ_NONNULL RzVector /*<ut64>*/ *to_visit,
 	RZ_NONNULL HtUU *nodes_visited,
 	const RzAnalysisOp *op_from,
-	const RzAnalysisOp *op_to) {
+	const RzAnalysisOp *op_to,
+	bool to_node_within_fcn) {
 	rz_return_val_if_fail(graph && to_visit && nodes_visited && op_from && op_to, -1);
 	ut64 from = op_from->addr;
 	ut64 to = op_to->addr;
+	if (!to_node_within_fcn) {
+		return true;
+	}
 	bool visited = false;
 	ut64 from_idx = ht_uu_find(nodes_visited, from, &visited);
 	if (!visited && from != to) {
@@ -1023,20 +1129,85 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	return true;
 }
 
+static bool read_aligned_to_mapped(RzIO *io, ut64 addr, ut8 *buf, size_t *buf_len, size_t leading_bytes) {
+	if (!rz_io_addr_is_mapped(io, addr)) {
+		// Invalid read, but it will fill the buffer with invalid data.
+		rz_io_read_at_mapped(io, addr - leading_bytes, buf, *buf_len);
+		return false;
+	}
+	// Align the address for decoding start to a mapped region.
+	while (!rz_io_addr_is_mapped(io, addr - leading_bytes) && addr - leading_bytes < addr) {
+		leading_bytes -= 1;
+	}
+	// Align the end of the buffer read to a mapped region.
+	while (!rz_io_addr_is_mapped(io, addr + *buf_len) && addr + *buf_len > addr) {
+		*buf_len -= 1;
+	}
+	rz_io_read_at_mapped(io, addr - leading_bytes, buf, *buf_len);
+	return true;
+}
+
+static st32 decode_op_at(RZ_BORROW RzCore *core,
+	ut64 addr,
+	RZ_BORROW ut8 *buf,
+	size_t buf_len,
+	RZ_OUT RzAnalysisOp *target_op) {
+	rz_return_val_if_fail(core && core->analysis && core->io && buf, -1);
+	size_t bl = buf_len;
+	if (!read_aligned_to_mapped(core->io, addr, buf, &bl, 0)) {
+		RZ_LOG_ERROR("read_aligned_to_mapped() read from unmapped region at 0x%" PFMT64x ".\n", addr);
+	}
+	int disas_bytes = rz_analysis_op(core->analysis, target_op, addr, buf, bl, RZ_ANALYSIS_OP_MASK_DISASM);
+	if (disas_bytes <= 0 && target_op->type == RZ_ANALYSIS_OP_TYPE_ILL) {
+		// Illegal instruction, return something positive
+		return 1;
+	}
+	return disas_bytes;
+}
+
+static void assign_tails_exits(RZ_BORROW RzGraph *graph, HtUU *nodes_visited, const RzAnalysisOp *ana_op) {
+	rz_return_if_fail(graph && ana_op);
+	bool found = false;
+	ut64 addr = ana_op->addr;
+	ut64 node_idx = ht_uu_find(nodes_visited, addr, &found);
+	RzGraphNode *node = rz_graph_get_node(graph, node_idx);
+	rz_return_if_fail(node && found);
+	RzGraphNodeInfo *data = node->data;
+	if (is_call(ana_op)) {
+		// Calls an exit procedure like abort, stack_chk_fail etc.
+		data->cfg.subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT;
+	} else if (is_jump(ana_op)) {
+		// tail call
+		data->cfg.subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_TAIL;
+	}
+}
+
+static inline bool tail_exit_candidate(bool to_node_within_fcn, bool next_within_fcn, const RzAnalysisOp *curr_op) {
+	return (is_call(curr_op) && !next_within_fcn) || (!to_node_within_fcn && is_jump(curr_op) && !is_cond(curr_op));
+}
+
 /**
  * \brief Get the procedual control flow graph (CFG) at an address.
  * Calls are not followed.
  *
  * \param core The current core.
  * \param addr The CFG entry point.
+ * \param within_fcn If true, only nodes within the function at \p addr are added to the CFG.
  *
  * \return The CFG at address \p addr or NULL in case of failure.
  */
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr, bool within_fcn) {
 	rz_return_val_if_fail(core && core->analysis && core->io, NULL);
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
+	}
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	if (within_fcn && !fcn) {
+		RZ_LOG_WARN("Cannot generate CFG for 0x%" PFMT64x ". addr doesn't point to a function entrypoint.", addr);
+		return NULL;
+	} else if (!within_fcn) {
+		fcn = NULL;
 	}
 
 	// Visited instructions. Indexed by instruction address, value is index in graph.
@@ -1046,14 +1217,13 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 
 	// Add entry node
 	ut8 buf[64] = { 0 };
-	if (rz_io_nread_at(core->io, addr, buf, sizeof(buf)) < 0) {
-		RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, addr);
-		goto error;
-	}
 	RzAnalysisOp curr_op = { 0 };
 	RzAnalysisOp target_op = { 0 };
-	int disas_bytes = rz_analysis_op(core->analysis, &curr_op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
+	st32 disas_bytes = decode_op_at(core, addr, buf, sizeof(buf), &curr_op);
 	RzGraphNode *entry = add_node_info_cfg(graph, &curr_op, true);
+	if (disas_bytes <= 0) {
+		goto fini;
+	}
 	ht_uu_insert(nodes_visited, addr, entry->idx);
 	rz_vector_push(to_visit, &addr);
 
@@ -1061,45 +1231,45 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 		ut64 cur_addr = 0;
 		rz_vector_pop(to_visit, &cur_addr);
 
-		if (rz_io_nread_at(core->io, cur_addr, buf, sizeof(buf)) < 0) {
-			RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
-			goto error;
-		}
-
-		disas_bytes = rz_analysis_op(core->analysis, &curr_op, cur_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
+		disas_bytes = decode_op_at(core, cur_addr, buf, sizeof(buf), &curr_op);
 		if (disas_bytes <= 0 || is_leaf_op(&curr_op)) {
 			// A leaf. It was added before to the graph by the parent node.
 			rz_analysis_op_fini(&curr_op);
 			continue;
 		}
 
-		if (curr_op.jump != UT64_MAX && !is_call(&curr_op)) {
-			if (rz_io_nread_at(core->io, curr_op.jump, buf, sizeof(buf)) < 0) {
-				RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
-				goto error;
-			}
-			if (rz_analysis_op(core->analysis, &target_op, curr_op.jump, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+		bool to_node_within_fcn = true;
+		bool add_jump = curr_op.jump != UT64_MAX && !is_call(&curr_op);
+		bool add_fail = curr_op.fail != UT64_MAX && !is_call(&curr_op);
+		if (add_jump) {
+			if (decode_op_at(core, curr_op.jump, buf, sizeof(buf), &target_op) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
-			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+			to_node_within_fcn = fcn ? rz_analysis_function_contains(fcn, target_op.addr) : true;
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, to_node_within_fcn)) {
 				goto error;
 			}
 			rz_analysis_op_fini(&target_op);
 		}
-		if (curr_op.fail != UT64_MAX && !is_call(&curr_op)) {
-			if (rz_io_nread_at(core->io, curr_op.fail, buf, sizeof(buf)) < 0) {
-				RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
-				goto error;
-			}
-			if (rz_analysis_op(core->analysis, &target_op, curr_op.fail, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+		if (add_fail) {
+			if (decode_op_at(core, curr_op.fail, buf, sizeof(buf), &target_op) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
-			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+			to_node_within_fcn = fcn ? rz_analysis_function_contains(fcn, target_op.addr) : true;
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, to_node_within_fcn)) {
 				goto error;
 			}
 			rz_analysis_op_fini(&target_op);
+		}
+
+		ut64 next_addr = cur_addr + disas_bytes;
+		bool next_within_fcn = fcn ? rz_analysis_function_contains(fcn, next_addr) : true;
+		if (within_fcn && !next_within_fcn && tail_exit_candidate(to_node_within_fcn && add_jump, next_within_fcn, &curr_op)) {
+			assign_tails_exits(graph, nodes_visited, &curr_op);
+			rz_analysis_op_fini(&curr_op);
+			continue;
 		}
 
 		if (ignore_next_instr(&curr_op)) {
@@ -1108,16 +1278,11 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 		}
 
 		// Add next instruction
-		ut64 next_addr = cur_addr + disas_bytes;
-		if (rz_io_nread_at(core->io, next_addr, buf, sizeof(buf)) < 0) {
-			RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
-			goto error;
-		}
-		if (rz_analysis_op(core->analysis, &target_op, next_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+		if (decode_op_at(core, next_addr, buf, sizeof(buf), &target_op) <= 0) {
 			rz_analysis_op_fini(&target_op);
 			goto error;
 		}
-		if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+		if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, to_node_within_fcn)) {
 			goto error;
 		}
 		rz_analysis_op_fini(&target_op);
@@ -1130,6 +1295,178 @@ fini:
 	return graph;
 
 error:
+	rz_warn_if_reached();
+	rz_graph_free(graph);
+	graph = NULL;
+	goto fini;
+}
+
+static RzGraphNode *add_iword_to_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisInsnWord *iword, bool is_entry) {
+	rz_return_val_if_fail(cfg, NULL);
+	RzGraphNodeCFGIWordSubType subtype = get_cfg_iword_node_flags(iword);
+	if (is_entry) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY;
+	}
+	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg_iword(iword, subtype);
+	if (!data) {
+		return NULL;
+	}
+	RzGraphNode *node = rz_graph_add_nodef(cfg, data, rz_graph_free_node_info);
+	if (!node) {
+		rz_graph_free_node_info(data);
+	}
+	return node;
+}
+
+static bool add_iword_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
+	RZ_NONNULL RzVector /*<ut64>*/ *to_visit,
+	RZ_NONNULL HtUU *nodes_visited,
+	const RzAnalysisInsnWord *irowrd_from,
+	const RzAnalysisInsnWord *iword_to,
+	bool to_node_in_fcn) {
+	if (!to_node_in_fcn) {
+		return true;
+	}
+	rz_return_val_if_fail(graph && to_visit && nodes_visited && irowrd_from && iword_to, -1);
+	ut64 from = irowrd_from->addr;
+	ut64 to = iword_to->addr;
+	bool visited = false;
+	ut64 from_idx = ht_uu_find(nodes_visited, from, &visited);
+	if (!visited && from != to) {
+		RZ_LOG_ERROR("'from' node should have been added before. 0x%" PFMT64x " -> 0x%" PFMT64x "\n", from, to);
+		return false;
+	}
+	ut64 to_idx = ht_uu_find(nodes_visited, to, &visited);
+
+	RzGraphNode *to_node = NULL;
+	if (visited) {
+		to_node = rz_graph_get_node(graph, to_idx);
+	} else {
+		to_node = add_iword_to_cfg(graph, iword_to, false);
+	}
+	if (!to_node) {
+		RZ_LOG_ERROR("Could not add node at 0x%" PFMT64x "\n", to);
+		return false;
+	}
+	to_idx = to_node->idx;
+	if (from == to) {
+		from_idx = to_idx;
+	}
+
+	if (from != to && !visited) {
+		// The target node wasn't visited before. Otherwise this is a back-edge.
+		rz_vector_push(to_visit, &to);
+	}
+
+	ht_uu_insert(nodes_visited, to, to_node->idx);
+	if (!rz_graph_adjacent(graph, rz_graph_get_node(graph, from_idx), to_node)) {
+		rz_graph_add_edge(graph, rz_graph_get_node(graph, from_idx), to_node);
+	}
+	return true;
+}
+
+static st32 decode_iword_at(RZ_BORROW RzCore *core,
+	ut64 addr,
+	RZ_BORROW ut8 *buf,
+	size_t buf_len,
+	RZ_OUT RzAnalysisInsnWord *target_iword) {
+	rz_return_val_if_fail(core && core->analysis && core->io && buf && core->analysis->cur && core->analysis->cur->decode_iword, -1);
+	size_t leading_bytes = addr < 8 ? addr : 8;
+	size_t bl = buf_len;
+	if (!read_aligned_to_mapped(core->io, addr, buf, &bl, leading_bytes)) {
+		RZ_LOG_ERROR("read_aligned_to_mapped() read from unmapped region at 0x%" PFMT64x ".\n", addr);
+		return -1;
+	}
+	bool success = core->analysis->cur->decode_iword(core->analysis, target_iword, addr, buf, bl, leading_bytes);
+	return success ? target_iword->size_bytes : -1;
+}
+
+/**
+ * \brief Get the procedual control flow graph (CFG) of instruction words at an address.
+ * Calls are not followed.
+ *
+ * \param core The current core.
+ * \param addr The CFG entry point.
+ * \param within_fcn If true, only nodes within the function at \p addr are added to the CFG.
+ *
+ * \return The CFG at address \p addr or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNULL RzCore *core, ut64 addr, bool within_fcn) {
+	rz_return_val_if_fail(core && core->analysis && core->io, NULL);
+	RzGraph *graph = rz_graph_new();
+	if (!graph) {
+		return NULL;
+	}
+
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	if (within_fcn && !fcn) {
+		RZ_LOG_WARN("Cannot generate CFG for 0x%" PFMT64x ". addr doesn't point to a function entrypoint.", addr);
+		return NULL;
+	} else if (!within_fcn) {
+		fcn = NULL;
+	}
+
+	// Visited instructions. Indexed by instruction address, value is index in graph.
+	HtUU *nodes_visited = ht_uu_new();
+	// Addresses to visit.
+	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
+
+	// Add entry node
+	ut8 buf[64] = { 0 };
+	RzAnalysisInsnWord cur_iword = { 0 };
+	rz_analysis_insn_word_setup(&cur_iword);
+
+	st32 disas_bytes = decode_iword_at(core, addr, buf, sizeof(buf), &cur_iword);
+	RzGraphNode *entry = add_iword_to_cfg(graph, &cur_iword, true);
+	if (disas_bytes <= 0) {
+		goto fini;
+	}
+	ht_uu_insert(nodes_visited, addr, entry->idx);
+	rz_vector_push(to_visit, &addr);
+
+	while (rz_vector_len(to_visit) > 0) {
+		ut64 cur_addr = 0;
+		rz_vector_pop(to_visit, &cur_addr);
+		rz_analysis_insn_word_setup(&cur_iword);
+
+		disas_bytes = decode_iword_at(core, cur_addr, buf, sizeof(buf), &cur_iword);
+		if (disas_bytes <= 0) {
+			// If the decoding was invalid we do not add it to the graph.
+			rz_analysis_insn_word_fini(&cur_iword);
+			continue;
+		}
+		// Add all neighbors to graph
+		RzAnalysisInsnWord target_iword = { 0 };
+		RzIterator *iter = rz_set_u_as_iter(cur_iword.jump_targets);
+		ut64 *target;
+		rz_iterator_foreach(iter, target) {
+			rz_analysis_insn_word_setup(&target_iword);
+			if (decode_iword_at(core, *target, buf, sizeof(buf), &target_iword) <= 0) {
+				rz_analysis_insn_word_fini(&target_iword);
+				continue;
+			}
+			bool target_within_fcn = fcn ? rz_analysis_function_contains(fcn, *target) : true;
+			bool found = false;
+			ht_uu_find(nodes_visited, *target, &found);
+			if (!found && target_within_fcn) {
+				rz_vector_push(to_visit, &target);
+			}
+			if (!add_iword_edge_to_cfg(graph, to_visit, nodes_visited, &cur_iword, &target_iword, target_within_fcn)) {
+				rz_analysis_insn_word_fini(&target_iword);
+				goto error;
+			}
+			rz_analysis_insn_word_fini(&target_iword);
+		}
+	}
+
+fini:
+	rz_analysis_insn_word_fini(&cur_iword);
+	rz_vector_free(to_visit);
+	ht_uu_free(nodes_visited);
+	return graph;
+
+error:
+	rz_analysis_insn_word_fini(&cur_iword);
 	rz_warn_if_reached();
 	rz_graph_free(graph);
 	graph = NULL;
