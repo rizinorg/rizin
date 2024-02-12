@@ -91,6 +91,7 @@ typedef struct rz_lib_struct_t {
 	void *data; ///< pointer to data handled by plugin handler (e.g. RzBinPlugin, RzAsmPlugin, etc.)
 	const char *version; ///< rizin version this plugin was compiled for
 	void (*free)(void *data);
+	bool is_plugin_owned; ///< If true, Rizin must not free this object. If false, Rizin must free it.
 } RzLibStruct;
 
 typedef RzLibStruct *(*RzLibStructFunc)(void);

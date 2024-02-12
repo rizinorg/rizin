@@ -225,6 +225,7 @@ static const RzCmdDescArg analysis_graph_callgraph_function_args[2];
 static const RzCmdDescArg analysis_graph_callgraph_global_args[2];
 static const RzCmdDescArg analysis_graph_icfg_args[2];
 static const RzCmdDescArg analysis_graph_cfg_args[2];
+static const RzCmdDescArg analysis_graph_cfg_fcn_args[2];
 static const RzCmdDescArg analysis_graph_bb_function_args[2];
 static const RzCmdDescArg analysis_graph_imports_args[2];
 static const RzCmdDescArg analysis_graph_refs_args[2];
@@ -4256,6 +4257,21 @@ static const RzCmdDescArg analysis_graph_cfg_args[] = {
 static const RzCmdDescHelp analysis_graph_cfg_help = {
 	.summary = "Control flow graph (without calls)",
 	.args = analysis_graph_cfg_args,
+};
+
+static const RzCmdDescArg analysis_graph_cfg_fcn_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices_cb = rz_analysis_graph_format_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_graph_cfg_fcn_help = {
+	.summary = "Control flow graph (without calls) of a function",
+	.args = analysis_graph_cfg_fcn_args,
 };
 
 static const RzCmdDescArg analysis_graph_bb_function_args[] = {
@@ -19848,6 +19864,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_graph_cfg_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agF", rz_analysis_graph_cfg_handler, &analysis_graph_cfg_help);
 	rz_warn_if_fail(analysis_graph_cfg_cd);
+
+	RzCmdDesc *analysis_graph_cfg_fcn_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agFf", rz_analysis_graph_cfg_fcn_handler, &analysis_graph_cfg_fcn_help);
+	rz_warn_if_fail(analysis_graph_cfg_fcn_cd);
 
 	RzCmdDesc *analysis_graph_bb_function_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agf", rz_analysis_graph_bb_function_handler, &analysis_graph_bb_function_help);
 	rz_warn_if_fail(analysis_graph_bb_function_cd);
