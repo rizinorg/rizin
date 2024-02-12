@@ -24,6 +24,52 @@ typedef struct hash_cfg_config_t {
 	const RzHashPlugin *plugin;
 } HashCfgConfig;
 
+#if HAVE_LIB_SSL
+#include <openssl/opensslv.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+/**
+ * From openssl 3.0 some algos got moved to the legacy provider.
+ * this means that their availability requires to preload a provider
+ * before calling the initialization of each algorithms.
+ */
+
+#define REQUIRE_OPENSSL_PROVIDER 1
+#include <openssl/provider.h>
+
+typedef struct {
+	OSSL_PROVIDER *provider;
+	size_t counter;
+} RzHashOpenSSL;
+
+static RzHashOpenSSL *openssl_lib = NULL;
+
+static void rz_hash_init_openssl_lib(void) {
+	if (!openssl_lib) {
+		openssl_lib = RZ_NEW0(RzHashOpenSSL);
+		if (!openssl_lib) {
+			RZ_LOG_ERROR("Cannot allocate RzHashOpenSSL\n");
+			return;
+		}
+		openssl_lib->provider = OSSL_PROVIDER_try_load(NULL, "legacy", 1);
+		if (!OSSL_PROVIDER_available(NULL, "legacy")) {
+			RZ_LOG_WARN("Cannot load openssl legacy provider. Some algorithm might not be available.\n");
+		}
+	}
+	openssl_lib->counter++;
+}
+
+static void rz_hash_fini_openssl_lib(void) {
+	if (!openssl_lib || (--openssl_lib->counter) > 0) {
+		return;
+	}
+	OSSL_PROVIDER_unload(openssl_lib->provider);
+	free(openssl_lib);
+	openssl_lib = NULL;
+}
+
+#endif /* OPENSSL_VERSION_NUMBER >= 0x30000000L */
+#endif /* HAVE_LIB_SSL */
+
 static RzHashPlugin *hash_static_plugins[] = { RZ_HASH_STATIC_PLUGINS };
 
 /**
@@ -659,6 +705,9 @@ RZ_API RzHash *rz_hash_new(void) {
 	if (!rh) {
 		return NULL;
 	}
+#if REQUIRE_OPENSSL_PROVIDER
+	rz_hash_init_openssl_lib();
+#endif /* REQUIRE_OPENSSL_PROVIDER */
 	rh->plugins = rz_list_new();
 	for (int i = 0; i < RZ_ARRAY_SIZE(hash_static_plugins); i++) {
 		rz_hash_plugin_add(rh, hash_static_plugins[i]);
@@ -666,12 +715,15 @@ RZ_API RzHash *rz_hash_new(void) {
 	return rh;
 }
 
-RZ_API void rz_hash_free(RzHash *rh) {
+RZ_API void rz_hash_free(RZ_NULLABLE RzHash *rh) {
 	if (!rh) {
 		return;
 	}
 	rz_list_free(rh->plugins);
 	free(rh);
+#if REQUIRE_OPENSSL_PROVIDER
+	rz_hash_fini_openssl_lib();
+#endif /* REQUIRE_OPENSSL_PROVIDER */
 }
 
 /**

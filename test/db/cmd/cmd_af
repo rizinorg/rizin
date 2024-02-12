@@ -381,10 +381,9 @@ EOF
 EXPECT=<<EOF
 0x00001337    0 0            func
 EOF
+REGEXP_FILTER_ERR=ERROR.*
 EXPECT_ERR=<<EOF
-ERROR: Invalid function name 'func' at 0x00001337
 ERROR: Cannot add function (duplicated)
-ERROR: Invalid function name 'func' at 0x00001337
 ERROR: Cannot add function (duplicated)
 EOF
 RUN

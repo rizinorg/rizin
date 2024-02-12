@@ -19,16 +19,19 @@
 		: vec->capacity <= 12 ? vec->capacity * 2 \
 				      : vec->capacity + (vec->capacity >> 1))
 
-#define RESIZE_OR_RETURN_NULL(next_capacity) \
+#define RESIZE_OR_RETURN_VAL(next_capacity, retval) \
 	do { \
 		size_t new_capacity = next_capacity; \
 		void **new_a = realloc(vec->a, vec->elem_size * new_capacity); \
 		if (!new_a && new_capacity) { \
-			return NULL; \
+			return retval; \
 		} \
 		vec->a = new_a; \
 		vec->capacity = new_capacity; \
 	} while (0)
+
+#define RESIZE_OR_RETURN_NULL(next_capacity)  RESIZE_OR_RETURN_VAL(next_capacity, NULL)
+#define RESIZE_OR_RETURN_FALSE(next_capacity) RESIZE_OR_RETURN_VAL(next_capacity, false)
 
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
@@ -456,7 +459,7 @@ RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *p
 	}
 
 	RzVector *vec = &pvec1->v;
-	RESIZE_OR_RETURN_NULL(RZ_MAX(NEXT_VECTOR_CAPACITY, pvec1->v.len + pvec2->v.len));
+	RESIZE_OR_RETURN_FALSE(RZ_MAX(NEXT_VECTOR_CAPACITY, pvec1->v.len + pvec2->v.len));
 	memmove((void **)pvec1->v.a + pvec1->v.len, pvec2->v.a, pvec2->v.elem_size * pvec2->v.len);
 	pvec1->v.len += pvec2->v.len;
 

@@ -145,7 +145,7 @@ static void break_debugger(void *user) {
 	do_break = true;
 }
 
-static int windbg_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType windbg_wait(RzDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG Type, ProcessId, ThreadId;

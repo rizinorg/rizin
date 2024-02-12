@@ -42,7 +42,7 @@ jobs:
     name: ubuntu-tcc-test
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Checkout TinyCC repository
       run: |
@@ -74,7 +74,7 @@ jobs:
           sudo python3 setup.py install
 
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins

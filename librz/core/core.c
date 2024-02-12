@@ -2987,36 +2987,6 @@ reaccept:
 					cmd_output = strdup("");
 					cmd_len = 0;
 				}
-#if DEMO_SERVER_SENDS_CMD_TO_CLIENT
-				static bool once = true;
-				/* TODO: server can reply a command request to the client only here */
-				if (once) {
-					const char *cmd = "pd 4";
-					int cmd_len = strlen(cmd) + 1;
-					ut8 *b = malloc(cmd_len + 5);
-					b[0] = RAP_PACKET_CMD;
-					rz_write_be32(b + 1, cmd_len);
-					strcpy((char *)b + 5, cmd);
-					rz_socket_write(c, b, 5 + cmd_len);
-					rz_socket_flush(c);
-
-					/* read response */
-					rz_socket_read_block(c, b, 5);
-					if (b[0] == (RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
-						ut32 n = rz_read_be32(b + 1);
-						RZ_LOG_DEBUG("core: rap: reply %d\n", n);
-						if (n > 0) {
-							ut8 *res = calloc(1, n);
-							rz_socket_read_block(c, res, n);
-							RZ_LOG_DEBUG("core: rap: response(%s)\n", (const char *)res);
-							free(res);
-						}
-					}
-					rz_socket_flush(c);
-					free(b);
-					once = false;
-				}
-#endif
 				bufw = malloc(cmd_len + 5);
 				bufw[0] = (ut8)(RAP_PACKET_CMD | RAP_PACKET_REPLY);
 				rz_write_be32(bufw + 1, cmd_len);

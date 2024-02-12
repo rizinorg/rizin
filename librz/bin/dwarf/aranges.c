@@ -23,9 +23,8 @@ RZ_API void rz_bin_dwarf_aranges_free(RZ_OWN RZ_NULLABLE RzBinDwarfARanges *aran
 	free(aranges);
 }
 
-static bool RzBinDwarfARanges_parse(
-	RzBinDwarfARanges *aranges) {
-	rz_return_val_if_fail(aranges, NULL);
+static bool RzBinDwarfARanges_parse(RzBinDwarfARanges *aranges) {
+	rz_return_val_if_fail(aranges, false);
 	RzBinEndianReader *reader = aranges->reader;
 	// DWARF 3 Standard Section 6.1.2 Lookup by Address
 	// also useful to grep for display_debug_aranges in binutils
