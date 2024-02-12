@@ -208,11 +208,11 @@ RZ_IPI bool hex_shuffle_insns(RZ_INOUT HexPkt *p) {
 }
 
 static RzILOpEffect *hex_il_op_to_effect(const HexILOp *il_op, HexPkt *pkt) {
-	rz_return_val_if_fail(il_op && il_op->get_il_op, NULL);
+	rz_return_val_if_fail(il_op, NULL);
 	HexInsnPktBundle bundle = { 0 };
 	bundle.insn = (HexInsn *)il_op->hi;
 	bundle.pkt = pkt;
-	return il_op->get_il_op(&bundle);
+	return il_op->get_il_op ? il_op->get_il_op(&bundle) : EMPTY();
 }
 
 /**
@@ -228,7 +228,7 @@ static RZ_OWN RzILOpEffect *hex_pkt_to_il_seq(HexPkt *pkt) {
 		rz_pvector_clear(pkt->il_ops);
 		// We need at least the instruction op and the packet commit.
 		// So if there aren't at least two ops something went wrong.
-		RZ_LOG_WARN("Invalid il ops sequence! There should be at least two il ops per packet.\n");
+		RZ_LOG_DEBUG("Invalid il ops sequence! There should be at least two il ops per packet.\n");
 		return NULL;
 	}
 	RzILOpEffect *complete_seq = EMPTY();

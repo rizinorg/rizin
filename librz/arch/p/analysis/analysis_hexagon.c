@@ -38,6 +38,18 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	return HEX_INSN_SIZE;
 }
 
+RZ_API bool rz_hexagon_decode_iword(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword) {
+	rz_return_val_if_fail(a && iword && buf, false);
+
+	RzAnalysisOp aop = { 0 };
+	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = &aop, .asm_op = NULL, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = len };
+	bool success = hexagon_decode_iword(a, &rev, iword, addr);
+	if (success) {
+		iword->il_op = hex_get_il_op(addr, true, rev.state);
+	}
+	return success;
+}
+
 static RzAnalysisILConfig *rz_hexagon_il_config(RzAnalysis *a) {
 	rz_return_val_if_fail(a, NULL);
 	// Hacky getter for the plugin data until RzArch is implemented
@@ -749,4 +761,5 @@ RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.esil = false,
 	.get_reg_profile = get_reg_profile,
 	.il_config = rz_hexagon_il_config,
+	.decode_iword = rz_hexagon_decode_iword,
 };

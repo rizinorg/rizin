@@ -1083,6 +1083,14 @@ commands:
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
             choices_cb: rz_analysis_graph_format_choices
+      - name: agFf
+        summary: Control flow graph (without calls) of a function
+        cname: analysis_graph_cfg_fcn
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
       - name: agf
         summary: Basic blocks function graph
         cname: analysis_graph_bb_function

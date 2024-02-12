@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: 2007-2018 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_log.h"
 #include <rz_cons.h>
 #include <rz_util.h>
 #include <rz_th.h>
@@ -66,6 +67,14 @@ RZ_API void rz_log_set_level(RzLogLevel level) {
 	rz_th_lock_enter(logcfg.lock);
 	logcfg.level = level;
 	rz_th_lock_leave(logcfg.lock);
+}
+
+RZ_API RzLogLevel rz_log_get_level() {
+	log_init();
+	rz_th_lock_enter(logcfg.lock);
+	RzLogLevel level = logcfg.level;
+	rz_th_lock_leave(logcfg.lock);
+	return level;
 }
 
 /**

@@ -427,12 +427,14 @@ RZ_API const char *hex_get_reg_in_class(HexRegClass cls, int reg_num, bool get_a
 int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p) {
 	// .new values are documented in Programmers Reference Manual
 	if (reg_num <= 1 || reg_num >= 8) {
+		RZ_LOG_DEBUG("n_register reg_num out of range.\n");
 		return UT32_MAX;
 	}
 
 	ut8 ahead = (reg_num >> 1);
 	ut8 i = hexagon_get_pkt_index_of_addr(addr, p);
 	if (i == UT8_MAX) {
+		RZ_LOG_DEBUG("Could not get n_register instruction packet index.\n");
 		return UT32_MAX;
 	}
 

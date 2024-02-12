@@ -1052,7 +1052,7 @@ RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 			goto err_op;
 		}
 	} else {
-		if (!rz_io_read_at(core->io, addr, buf, sizeof(buf))) {
+		if (!rz_io_nread_at(core->io, addr, buf, sizeof(buf))) {
 			goto err_op;
 		}
 		ptr = buf;

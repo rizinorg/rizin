@@ -65,6 +65,7 @@ extern "C" {
 
 // Called by rz_core to set the configuration variables
 RZ_API void rz_log_set_level(RzLogLevel level);
+RZ_API RzLogLevel rz_log_get_level();
 RZ_API void rz_log_set_abortlevel(RzLogLevel level);
 RZ_API bool rz_log_set_file(RZ_NULLABLE const char *filename);
 RZ_API void rz_log_set_show_sources(bool show_sources);
