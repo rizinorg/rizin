@@ -609,6 +609,54 @@ RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 
 /**
  * \brief Enable or disable ASLR for the calling process
+ * 
+ * Host is Linux:
+ * 
+ * We can disable ASLR using the personlity flags (does not require root) or
+ * system-wide by setting /proc/sys/kernel/randomize_va_space to 0.
+ * If we want to enable it we must write 1 or 2 into /proc/sys/kernel/randomize_va_space
+ * ASLR support was added in linux 2.6 (year 2005)
+ * 
+ * Host is NetBSD:
+ * 
+ * We can enable/disable ASLR by calling sysctlbyname("security.pax.aslr.enabled").
+ * May require root/super-user priviledges.
+ * 
+ * Host is DragonFly:
+ * 
+ * We can enable/disable ASLR by calling sysctlbyname("vm.randomize_mmap") 
+ * May require root/super-user priviledges.
+ * 
+ * Host is FreeBSD (since version 13.0):
+ * 
+ * We can enable/disable ASLR by calling sysctlbyname("kern.elf32.aslr.enable") and
+ * sysctlbyname("kern.elf64.aslr.enable")
+ * May require root/super-user priviledges.
+ * 
+ * Host is Windows:
+ * 
+ * We can only enable ASLR and not disable it.
+ * To enable it we just need to initialize PROCESS_MITIGATION_ASLR_POLICY by setting to true
+ * EnableBottomUpRandomization, EnableForceRelocateImages and EnableHighEntropy, and then call
+ * SetProcessMitigationPolicy(ProcessASLRPolicy).
+ * https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setprocessmitigationpolicy
+ * 
+ * This feature is available since _WIN32_WINNT >= 0x0602 (Windows 8, Windows Server 2012)
+ * It is possible to manually disable ASLR on a binary by removing the PE flags called DLL Characteristics:
+ * - IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE
+ * - IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
+ * or as admin from PowerShell by running `Set-ProcessMitigation -Name file.exe -Disable ForceRelocateImages`
+ * 
+ * Host is Apple:
+ * 
+ * We can enable/disable ASRL when we spawn a process by adding the flag called _POSIX_SPAWN_DISABLE_ASLR (0x0100) to
+ * the flag field of posix_spawnattr_setflags.
+ * This was reverse engineered and documented in: https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/macosx/macosx-nat-inferior.c.auto.html
+ * 
+ * It is possible to manually disable ASLR on a binary by removing the MH_PIE flag from the mach0 header.
+ * https://web.archive.org/web/20140906073648/http://src.chromium.org:80/svn/trunk/src/build/mac/change_mach_o_flags.py
+ * 
+ * On Snow Leopard this also can be achieved by setting the environment variable DYLD_NO_PIE to 1 (export DYLD_NO_PIE=1)
  */
 RZ_API bool rz_sys_aslr(bool enable) {
 #if __linux__
@@ -740,7 +788,10 @@ RZ_API bool rz_sys_aslr(bool enable) {
 
 	memset(&policy, 0, sizeof(policy));
 	if (enable) {
+		policy.EnableBottomUpRandomization = 1;
 		policy.EnableForceRelocateImages = 1;
+		policy.EnableHighEntropy = 1;
+		policy.DisallowStrippedImages = 0;
 	}
 	if (!setProcessMitigationPolicy(ProcessASLRPolicy, &policy, sizeof(policy))) {
 		DWORD dw = GetLastError();
@@ -750,9 +801,11 @@ RZ_API bool rz_sys_aslr(bool enable) {
 		return false;
 	}
 #elif __APPLE__
-	// Apple supports this by using the spawn api.
-	// https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/macosx/macosx-nat-inferior.c.auto.html
-	// so we always return true.
+	/**
+	 * Apple supports this by using the spawn api.
+	 * https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/macosx/macosx-nat-inferior.c.auto.html
+	 * so we always return true.
+	 */
 #else /* any other platform */
 	/* not supported on the platform */
 	RZ_LOG_INFO("ASLR support is not available on this platform.\n");
