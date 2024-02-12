@@ -557,6 +557,20 @@ static const ut32 colormap[256] = {
 	0xffffff,
 };
 
+static inline char *get_section_name(RzCore *core, ut64 offset) {
+	char *csection = rz_core_get_section_name(core, offset);
+	if (RZ_STR_ISEMPTY(csection)) {
+		free(csection);
+		return rz_str_dup("unknown");
+	}
+	rz_str_trim(csection);
+	if (RZ_STR_ISEMPTY(csection)) {
+		free(csection);
+		return rz_str_dup("unknown");
+	}
+	return csection;
+}
+
 static void colordump(RzCore *core, const ut8 *block, int len) {
 	const char *chars = " .,:;!O@#";
 	bool square = rz_config_get_i(core->config, "scr.square");
@@ -574,8 +588,9 @@ static void colordump(RzCore *core, const ut8 *block, int len) {
 	}
 	for (i = 0; i < len; i += cols) {
 		if (show_section) {
-			const char *name = rz_core_get_section_name(core, core->offset + i);
+			char *name = get_section_name(core, core->offset + i);
 			rz_cons_printf("%20s ", name ? name : "");
+			free(name);
 		}
 		if (show_offset) {
 			rz_print_addr(core->print, core->offset + i);
@@ -1403,10 +1418,11 @@ static void annotated_hexdump(RzCore *core, int len) {
 			append(ebytes, core->cons->context->pal.offset);
 		}
 		if (showSection) {
-			const char *name = rz_core_get_section_name(core, ea);
+			char *name = get_section_name(core, ea);
 			char *s = rz_str_newf("%20s ", name);
 			append(ebytes, s);
 			free(s);
+			free(name);
 		}
 		ebytes += sprintf(ebytes, "0x%08" PFMT64x, ea);
 		if (usecolor) {
@@ -2305,23 +2321,8 @@ static inline int cmd_pxb_k(const ut8 *buffer, int x) {
 	return buffer[3 - x] << (8 * x);
 }
 
-static inline char *get_section_name(RzCore *core) {
-	const char *csection = rz_core_get_section_name(core, core->offset);
-	if (RZ_STR_ISEMPTY(csection)) {
-		return strdup("unknown");
-	}
-	csection = rz_str_trim_head_ro(csection);
-	char *section_name = strdup(csection);
-	rz_str_trim_tail(section_name);
-	if (RZ_STR_ISEMPTY(section_name)) {
-		free(section_name);
-		return strdup("unknown");
-	}
-	return section_name;
-}
-
 static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc encoding, bool stop_at_nil) {
-	char *section = get_section_name(core);
+	char *section = get_section_name(core, core->offset);
 	if (!section) {
 		return;
 	}
