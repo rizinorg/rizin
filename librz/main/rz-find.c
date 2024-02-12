@@ -498,7 +498,7 @@ static int rzfind_open(RzfindOptions *ro, const char *file) {
 		free(buf);
 		return res;
 	}
-	if (ro->exec_command){
+	if (ro->exec_command) {
 		char *command = rz_str_newf("%s %s", ro->exec_command, file);
 		int status = rz_sys_system(command);
 		if (status == -1) {
