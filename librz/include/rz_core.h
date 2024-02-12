@@ -413,7 +413,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core);
 RZ_API char *rz_core_theme_get(RzCore *core);
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name);
 RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode);
-RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr);
+RZ_API RZ_OWN char *rz_core_get_section_name(RzCore *core, ut64 addr);
 RZ_API RzCons *rz_core_get_cons(RzCore *core);
 RZ_API RzBin *rz_core_get_bin(RzCore *core);
 RZ_API RzConfig *rz_core_get_config(RzCore *core);

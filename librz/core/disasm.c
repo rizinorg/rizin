@@ -425,29 +425,23 @@ static void get_bits_comment(RzCore *core, RzAnalysisFunction *f, char *cmt, int
 	}
 }
 
-RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr) {
-	static char section[128] = "";
-	static ut64 oaddr = UT64_MAX;
-	if (oaddr == addr) {
-		return section;
-	}
+RZ_API RZ_OWN char *rz_core_get_section_name(RzCore *core, ut64 addr) {
+	char *section = NULL;
 	RzBinObject *bo = rz_bin_cur_object(core->bin);
 	RzBinSection *s = bo ? rz_bin_get_section_at(bo, addr, core->io->va) : NULL;
-	if (s && s->name && *s->name) {
-		snprintf(section, sizeof(section) - 1, "%10s ", s->name);
+	if (s && RZ_STR_ISNOTEMPTY(s->name)) {
+		return rz_str_dup(s->name);
 	} else {
 		RzListIter *iter;
 		RzDebugMap *map;
-		*section = 0;
 		rz_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				const char *mn = rz_str_lchr(map->name, '/');
-				rz_str_ncpy(section, mn ? mn + 1 : map->name, sizeof(section));
+				section = rz_str_dup(mn ? mn + 1 : map->name);
 				break;
 			}
 		}
 	}
-	oaddr = addr;
 	return section;
 }
 
@@ -458,14 +452,15 @@ static void _ds_comment_align_(RzDisasmState *ds, bool up, bool nl) {
 		theme_print_color(comment);
 		return;
 	}
-	const char *sn = ds->show_section ? rz_core_get_section_name(ds->core, ds->at) : "";
+	char *sn = ds->show_section ? rz_core_get_section_name(ds->core, ds->at) : NULL;
 	ds_align_comment(ds);
 	ds_align_comment(ds);
 	rz_cons_print(COLOR_RESET(ds));
 	ds_print_pre(ds, true);
-	rz_cons_printf("%s%s", nl ? "\n" : "", sn);
+	rz_cons_printf("%s%s", nl ? "\n" : "", rz_str_get(sn));
 	ds_print_ref_lines(ds->refline, ds->line_col, ds);
 	rz_cons_printf("  %s %s", up ? "" : ".-", COLOR(ds, comment));
+	free(sn);
 }
 #define CMT_ALIGN _ds_comment_align_(ds, true, false)
 
