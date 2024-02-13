@@ -1335,7 +1335,6 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 	line->vi_mode = CONTROL_MODE;
 	__update_prompt_color(line);
 	const char *gcomp_line = "";
-	static int gcomp = 0;
 	for (;;) {
 		int rep = 0;
 		if (line->echo) {
@@ -1369,7 +1368,7 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 			}
 			line->buffer.index = line->buffer.length = 0;
 			*line->buffer.data = '\0';
-			gcomp = 0;
+			line->gcomp = 0;
 			return;
 		case 'D':
 			delete_till_end(line);
@@ -1442,11 +1441,11 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 			/* fall through */
 		case '^':
 		case '0':
-			if (gcomp) {
+			if (line->gcomp) {
 				strcpy(line->buffer.data, gcomp_line);
 				line->buffer.length = strlen(line->buffer.data);
 				line->buffer.index = 0;
-				gcomp = false;
+				line->gcomp = 0;
 			}
 			line->buffer.index = 0;
 			break;
@@ -1454,11 +1453,11 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 			line->vi_mode = INSERT_MODE;
 			/* fall through */
 		case '$':
-			if (gcomp) {
+			if (line->gcomp) {
 				strcpy(line->buffer.data, gcomp_line);
 				line->buffer.index = strlen(line->buffer.data);
 				line->buffer.length = line->buffer.index;
-				gcomp = false;
+				line->gcomp = 0;
 			} else {
 				line->buffer.index = line->buffer.length;
 			}
@@ -1547,16 +1546,13 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 	rz_return_val_if_fail(line, NULL);
 	int rows;
 	const char *gcomp_line = "";
-	static int gcomp_idx = 0;
-	static bool yank_flag = 0;
-	static int gcomp = 0;
-	static int gcomp_is_rev = true;
 	char buf[10];
 	int utflen;
 	int ch = 0, key, i = 0; /* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
 	bool enable_yank_pop = false;
+	bool gcomp_is_rev = true;
 
 	RzCons *cons = rz_cons_singleton();
 
@@ -1593,7 +1589,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 	}
 	rz_cons_break_push(NULL, NULL);
 	for (;;) {
-		yank_flag = 0;
+		line->yank_flag = false;
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -1622,11 +1618,11 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			/* ignore atm */
 			break;
 		case 1: // ^A
-			if (gcomp) {
+			if (line->gcomp) {
 				strcpy(line->buffer.data, gcomp_line);
 				line->buffer.length = strlen(line->buffer.data);
 				line->buffer.index = 0;
-				gcomp = false;
+				line->gcomp = 0;
 			}
 			line->buffer.index = 0;
 			break;
@@ -1634,11 +1630,11 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			__move_cursor_left(NULL);
 			break;
 		case 5: // ^E
-			if (gcomp) {
+			if (line->gcomp) {
 				strcpy(line->buffer.data, gcomp_line);
 				line->buffer.index = strlen(line->buffer.data);
 				line->buffer.length = line->buffer.index;
-				gcomp = false;
+				line->gcomp = 0;
 			} else if (prev == 24) { // ^X = 0x18
 				line->buffer.data[line->buffer.length] = 0; // probably unnecessary
 				tmp_ed_cmd = line->cb_editor(line->user, line->buffer.data);
@@ -1669,7 +1665,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			}
 			line->buffer.index = line->buffer.length = 0;
 			*line->buffer.data = '\0';
-			gcomp = 0;
+			line->gcomp = 0;
 			goto _end;
 		case 4: // ^D
 			if (!line->buffer.data[0]) { /* eof */
@@ -1702,16 +1698,16 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			fflush(stdout);
 			break;
 		case 18: // ^R -- reverse-search
-			if (gcomp) {
-				gcomp_idx++;
+			if (line->gcomp) {
+				line->gcomp_idx++;
 			}
 			gcomp_is_rev = true;
-			gcomp = 1;
+			line->gcomp = 1;
 			break;
 		case 19: // ^S -- forward-search
-			if (gcomp) {
-				if (gcomp_idx > 0) {
-					gcomp_idx--;
+			if (line->gcomp) {
+				if (line->gcomp_idx > 0) {
+					line->gcomp_idx--;
 				}
 				gcomp_is_rev = false;
 			} else {
@@ -1774,11 +1770,11 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			break;
 		case 25: // ^Y - paste
 			paste(line, &enable_yank_pop);
-			yank_flag = 1;
+			line->yank_flag = true;
 			break;
 		case 29: // ^^ - rotate kill ring
 			rotate_kill_ring(line, &enable_yank_pop);
-			yank_flag = enable_yank_pop ? 1 : 0;
+			line->yank_flag = enable_yank_pop;
 			break;
 		case 20: // ^t Kill from point to the end of the current word,
 			kill_word(line, MINOR_BREAK);
@@ -1794,9 +1790,9 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			} else if (line->sel_widget) {
 				selection_widget_down(line, 1);
 				selection_widget_draw(line);
-			} else if (gcomp) {
-				if (gcomp_idx > 0) {
-					gcomp_idx--;
+			} else if (line->gcomp) {
+				if (line->gcomp_idx > 0) {
+					line->gcomp_idx--;
 				}
 			} else {
 				undo_reset(line);
@@ -1812,8 +1808,8 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			} else if (line->sel_widget) {
 				selection_widget_up(line, 1);
 				selection_widget_draw(line);
-			} else if (gcomp) {
-				gcomp_idx++;
+			} else if (line->gcomp) {
+				line->gcomp_idx++;
 			} else {
 				undo_reset(line);
 				line->history.do_setup_match = o_do_setup_match;
@@ -1821,7 +1817,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			}
 			break;
 		case 31: // ^_ ctrl-/ or ctrl-_
-			if (!gcomp && !line->hud && !line->sel_widget) {
+			if (!line->gcomp && !line->hud && !line->sel_widget) {
 				line_undo(line);
 			}
 			break;
@@ -1879,7 +1875,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				break;
 			case 63: // ^[? Meta-/
 			case 95: // ^[_ Meta-_
-				if (!gcomp && !line->hud && !line->sel_widget) {
+				if (!line->gcomp && !line->hud && !line->sel_widget) {
 					line_redo(line);
 				}
 				break;
@@ -1955,8 +1951,8 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 						} else if (line->sel_widget) {
 							selection_widget_up(line, 1);
 							selection_widget_draw(line);
-						} else if (gcomp) {
-							gcomp_idx++;
+						} else if (line->gcomp) {
+							line->gcomp_idx++;
 						} else {
 							undo_reset(line);
 							line->history.do_setup_match = o_do_setup_match;
@@ -1974,9 +1970,9 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 						} else if (line->sel_widget) {
 							selection_widget_down(line, 1);
 							selection_widget_draw(line);
-						} else if (gcomp) {
-							if (gcomp_idx > 0) {
-								gcomp_idx--;
+						} else if (line->gcomp) {
+							if (line->gcomp_idx > 0) {
+								line->gcomp_idx--;
 							}
 						} else {
 							undo_reset(line);
@@ -2106,16 +2102,17 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				selection_widget_select(line);
 				break;
 			}
-			if (gcomp && line->buffer.length > 0) {
+			if (line->gcomp && line->buffer.length > 0) {
 				strncpy(line->buffer.data, gcomp_line, RZ_LINE_BUFSIZE - 1);
 				line->buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
 				line->buffer.length = strlen(gcomp_line);
 			}
-			gcomp_idx = gcomp = 0;
+			line->gcomp_idx = 0;
+			line->gcomp = 0;
 			goto _end;
 		default:
-			if (gcomp) {
-				gcomp++;
+			if (line->gcomp) {
+				line->gcomp++;
 			}
 			{
 				int size = utflen;
@@ -2154,7 +2151,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 		}
 		prev = buf[0];
 		if (line->echo) {
-			if (gcomp) {
+			if (line->gcomp) {
 				gcomp_line = "";
 				int counter = 0;
 				if (line->history.data != NULL) {
@@ -2164,13 +2161,13 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 						}
 						if (strstr(line->history.data[i], line->buffer.data)) {
 							gcomp_line = line->history.data[i];
-							if (++counter > gcomp_idx) {
+							if (++counter > line->gcomp_idx) {
 								break;
 							}
 						}
 						if (i == 0) {
 							if (gcomp_is_rev) {
-								gcomp_idx--;
+								line->gcomp_idx--;
 							}
 						}
 					}
@@ -2182,7 +2179,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			}
 			fflush(stdout);
 		}
-		enable_yank_pop = yank_flag ? 1 : 0;
+		enable_yank_pop = line->yank_flag;
 		if (line->hud) {
 			goto _end;
 		}
