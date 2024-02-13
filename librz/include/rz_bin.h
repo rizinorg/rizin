@@ -910,6 +910,11 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin
 RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);
 RZ_API void rz_bin_file_hash_free(RZ_NULLABLE RzBinFileHash *fhash);
 
+static inline bool rz_bin_file_rclass_is(RzBinFile *bf, const char *x) {
+	const char *rc = (bf && bf->o && bf->o->info) ? bf->o->info->rclass : NULL;
+	return RZ_STR_EQ(rc, x);
+}
+
 // binobject functions
 RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);

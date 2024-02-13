@@ -6,6 +6,7 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 #include "../format/elf/elf.h"
+#include "../format/mach0/mach0.h"
 
 RZ_IPI bool RzBinDwarfEncoding_from_file(RzBinDwarfEncoding *encoding, RzBinFile *bf) {
 	if (!(encoding && bf)) {
@@ -157,6 +158,89 @@ static inline RzBinDWARF *dwarf_from_build_id(
 	return NULL;
 }
 
+static const char *mach0_uuid(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+	if (!rz_bin_file_rclass_is(bf, "mach0")) {
+		return NULL;
+	}
+	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
+	if (mo->uuidn <= 0) {
+		RZ_LOG_WARN("mach0 file don't contains uuid\n");
+		return NULL;
+	}
+	char key[32];
+	if (mo->uuidn > 1) {
+		RZ_LOG_WARN("mach0 file contains multiple uuids\n");
+	}
+	snprintf(key, sizeof(key) - 1, "uuid.%d", mo->uuidn - 1);
+	return sdb_const_get(mo->kv, key, 0);
+}
+
+typedef struct {
+	RzIO *io;
+	RzBin *bin;
+	RzBinFile *bf;
+} DwBinary;
+
+static bool binary_from_path(DwBinary *b, const char *filepath) {
+	b->io = rz_io_new();
+	if (!b->io) {
+		return false;
+	}
+	b->bin = rz_bin_new();
+	if (!b->bin) {
+		return false;
+	}
+	rz_io_bind(b->io, &b->bin->iob);
+
+	RzBinOptions bopt = { 0 };
+	rz_bin_options_init(&bopt, 0, 0, 0, false);
+	b->bf = rz_bin_open(b->bin, filepath, &bopt);
+
+	return b->bf;
+}
+
+static void binary_close(DwBinary *b) {
+	if (!b) {
+		return;
+	}
+	rz_io_free(b->io);
+	rz_bin_free(b->bin);
+}
+
+RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_load_dsym(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+
+	RzBinDWARF *dw = NULL;
+	RzStrBuf path_buf = { 0 };
+	DwBinary binary = { 0 };
+	char *file_abspath = rz_file_abspath(bf->file);
+	const char *filename = rz_str_rchr(bf->file, NULL, '/');
+	if (RZ_STR_ISEMPTY(filename)) {
+		goto out;
+	}
+	rz_strbuf_initf(&path_buf, "%s%s%s", file_abspath, ".dSYM/Contents/Resources/DWARF", filename);
+	if (!rz_file_exists(rz_strbuf_get(&path_buf))) {
+		goto out;
+	}
+
+	if (!binary_from_path(&binary, rz_strbuf_get(&path_buf))) {
+		goto out;
+	}
+
+	const char *uuid = mach0_uuid(bf);
+	const char *uuid_dw = mach0_uuid(binary.bf);
+	if ((uuid && uuid_dw && RZ_STR_EQ(uuid_dw, uuid))) {
+		dw = dwarf_from_file(binary.bf, false);
+	}
+
+out:
+	free(file_abspath);
+	rz_strbuf_fini(&path_buf);
+	binary_close(&binary);
+	return dw;
+}
+
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debug_file_directorys) {
@@ -226,21 +310,14 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_path(
 	rz_return_val_if_fail(filepath, NULL);
 
 	RzBinDWARF *dwo = NULL;
-	RzIO *io_tmp = rz_io_new();
-	RzBin *bin_tmp = rz_bin_new();
-	rz_io_bind(io_tmp, &bin_tmp->iob);
-
-	RzBinOptions bopt = { 0 };
-	rz_bin_options_init(&bopt, 0, 0, 0, false);
-	RzBinFile *bf = rz_bin_open(bin_tmp, filepath, &bopt);
-	if (!bf) {
+	DwBinary binary = { 0 };
+	if (!binary_from_path(&binary, filepath)) {
 		goto beach;
 	}
-	dwo = dwarf_from_file(bf, is_dwo);
+	dwo = dwarf_from_file(binary.bf, is_dwo);
 
 beach:
-	rz_bin_free(bin_tmp);
-	rz_io_free(io_tmp);
+	binary_close(&binary);
 	return dwo;
 }
 

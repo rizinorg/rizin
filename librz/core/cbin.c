@@ -638,6 +638,15 @@ static inline RzBinDWARF *load_dwarf(RzCore *core, RzBinFile *binfile) {
 			return dwo;
 		}
 	}
+
+	if (rz_bin_file_rclass_is(binfile, "mach0")) {
+		RzBinDWARF *dsym_dw = rz_bin_dwarf_load_dsym(binfile);
+		if (dsym_dw) {
+			dsym_dw->parent = dw;
+			return dsym_dw;
+		}
+	}
+
 	const char *debug_file_directory = rz_config_get(
 		core->config, "bin.dbginfo.debug_file_directory");
 	if (RZ_STR_ISNOTEMPTY(debug_file_directory)) {
