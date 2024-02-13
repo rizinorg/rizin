@@ -2913,8 +2913,8 @@ bool __check_func_diff(RzCore *core, RzPanel *p) {
 	}
 	if (!p->model->funcName || strcmp(p->model->funcName, func->name)) {
 		char *tmp = rz_str_dup(func->name);
-		free(p->model->cmd);
-		p->model->cmd = tmp;
+		free(p->model->funcName);
+		p->model->funcName = tmp;
 		return true;
 	}
 	return false;
@@ -4511,7 +4511,7 @@ bool __init_panels_menu(RzCore *core) {
 	while (menus_Tools[i]) {
 		if (!strcmp(menus_Tools[i], "Calculator")) {
 			__add_menu(core, parent, menus_Tools[i], __calculator_cb);
-		} else if (!strcmp(menus_Tools[i], "R2 Shell")) {
+		} else if (!strcmp(menus_Tools[i], "Rizin Shell")) {
 			__add_menu(core, parent, menus_Tools[i], __rz_shell_cb);
 		} else if (!strcmp(menus_Tools[i], "System Shell")) {
 			__add_menu(core, parent, menus_Tools[i], __system_shell_cb);
@@ -6746,12 +6746,6 @@ repeat:
 		__handle_refs(core, cur, UT64_MAX);
 		break;
 	case 'X':
-#if 0
-// already accessible via xX
-		rz_core_visual_xrefs (core, false, true);
-		cur->model->addr = core->offset;
-		set_refresh_all (panels, false);
-#endif
 		__dismantle_del_panel(panels, cur, panels->curnode);
 		break;
 	case 9: // TAB
@@ -6997,16 +6991,7 @@ repeat:
 	case -1: // EOF
 		__set_root_state(core, DEL);
 		goto exit;
-#if 0
-	case 27: // ESC
-		if (rz_cons_readchar () == 91) {
-			if (rz_cons_readchar () == 90) {}
-		}
-		break;
-#endif
 	default:
-		// eprintf ("Key %d\n", key);
-		// sleep (1);
 		break;
 	}
 	goto repeat;
