@@ -74,6 +74,14 @@ struct rz_cons_pipe_t {
 	int file_fd; ///< File descriptor of the opened file.
 };
 
+/**
+ * \brief Pipes the content of a given file descriptor to a file.
+ *
+ * \param file File name to open where to redirect the file descriptor.
+ * \param fd The file descriptor to pipe
+ * \param append When true, the data written to the file is appended.
+ * \return On success a valid pointer, otherwise NULL.
+ */
 RZ_API RZ_OWN RzConsPipe *rz_cons_pipe_open(RZ_NONNULL const char *file, int fd, bool append) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(file), NULL);
 
@@ -121,6 +129,11 @@ RZ_API RZ_OWN RzConsPipe *rz_cons_pipe_open(RZ_NONNULL const char *file, int fd,
 	return cpipe;
 }
 
+/**
+ * \brief Closes a given RzConsPipe and restores the file descriptor.
+ *
+ * \param cpipe The console pipe to close.
+ */
 RZ_API void rz_cons_pipe_close(RZ_NULLABLE RzConsPipe *cpipe) {
 	if (!cpipe) {
 		return;
