@@ -75,7 +75,7 @@ struct rz_cons_pipe_t {
 };
 
 /**
- * \brief Pipes the content of a given file descriptor to a file.
+ * \brief Redirects the data flow from a file descriptor to a file.
  *
  * \param file File name to open where to redirect the file descriptor.
  * \param fd The file descriptor to pipe
