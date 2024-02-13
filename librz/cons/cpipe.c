@@ -7,11 +7,65 @@
 
 #if __WINDOWS__
 #include <io.h>
-#define pipe_dup_fd(old_fd)          _dup(old_fd)
-#define pipe_dup2_fd(old_fd, new_fd) _dup2(old_fd, new_fd)
-#else
-#define pipe_dup_fd(old_fd)          dup(old_fd)
-#define pipe_dup2_fd(old_fd, new_fd) dup2(old_fd, new_fd)
+
+/**
+ * \brief Duplicates a file descriptor and returns the new one.
+ *
+ * \param old_fd File descriptor to duplicate
+ * \return On success is a positive integer, otherwise -1
+ */
+static int pipe_dup_fd(int old_fd) {
+	int new_fd = _dup(old_fd);
+	if (new_fd < 0) {
+		return -1;
+	}
+	return new_fd;
+}
+
+/**
+ * \brief Duplicates a file descriptor by assigning a given one.
+ *
+ * \param old_fd Old file descriptor to duplicate
+ * \param new_fd New file descriptor
+ * \return true on success, otherwise false.
+ */
+static bool pipe_dup2_fd(int old_fd, int new_fd) {
+	if (!_dup2(old_fd, new_fd)) {
+		return true;
+	}
+	return false;
+}
+
+#else /* !__WINDOWS__ */
+
+/**
+ * \brief Duplicates a file descriptor and returns the new one.
+ *
+ * \param old_fd File descriptor to duplicate
+ * \return On success is a positive integer, otherwise -1
+ */
+static int pipe_dup_fd(int old_fd) {
+	int new_fd = dup(old_fd);
+	if (new_fd < 0) {
+		return -1;
+	}
+	return new_fd;
+}
+
+/**
+ * \brief Duplicates a file descriptor by assigning a given one.
+ *
+ * \param old_fd Old file descriptor to duplicate
+ * \param new_fd New file descriptor
+ * \return true on success, otherwise false.
+ */
+static bool pipe_dup2_fd(int old_fd, int new_fd) {
+	if (dup2(old_fd, new_fd) == new_fd) {
+		return true;
+	}
+	return false;
+}
+
 #endif /* __WINDOWS__ */
 
 struct rz_cons_pipe_t {
@@ -53,7 +107,7 @@ RZ_API RZ_OWN RzConsPipe *rz_cons_pipe_open(RZ_NONNULL const char *file, int fd,
 	}
 
 	// override file descriptor with the opened file one.
-	if (pipe_dup2_fd(file_fd, fd)) {
+	if (!pipe_dup2_fd(file_fd, fd)) {
 		RZ_LOG_ERROR("cpipe: Cannot duplicate %d to %d\n", file_fd, fd);
 		close(copy_fd);
 		close(file_fd);
@@ -73,7 +127,7 @@ RZ_API void rz_cons_pipe_close(RZ_NULLABLE RzConsPipe *cpipe) {
 	}
 
 	// restore file descriptor from copy.
-	if (pipe_dup2_fd(cpipe->copy_fd, cpipe->fd)) {
+	if (!pipe_dup2_fd(cpipe->copy_fd, cpipe->fd)) {
 		RZ_LOG_ERROR("cpipe: Cannot duplicate %d to %d\n", cpipe->copy_fd, cpipe->fd);
 	}
 
