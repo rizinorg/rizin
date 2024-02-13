@@ -1,62 +1,84 @@
-// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
 #include <limits.h>
 
-// TODO: remove globals, and make this stackable
-// cons_pipe should be using a stack pipe_push, pipe_pop
-static int backup_fd = -1;
-static int backup_fdn = 1;
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
-
-static bool __dupDescriptor(int fd, int fdn) {
 #if __WINDOWS__
-	backup_fd = 2002 - (fd - 2); // windows xp has 2048 as limit fd
-	return _dup2(fdn, backup_fd) != -1;
+#include <io.h>
+#define pipe_dup_fd(old_fd)          _dup(old_fd)
+#define pipe_dup2_fd(old_fd, new_fd) _dup2(old_fd, new_fd)
 #else
-	backup_fd = sysconf(_SC_OPEN_MAX) - (fd - 2); // portable getdtablesize()
-	if (backup_fd < 2) {
-		backup_fd = 2002 - (fd - 2); // fallback
+#define pipe_dup_fd(old_fd)          dup(old_fd)
+#define pipe_dup2_fd(old_fd, new_fd) dup2(old_fd, new_fd)
+#endif /* __WINDOWS__ */
+
+struct rz_cons_pipe_t {
+	int fd; ///< File descriptor number to override.
+	int copy_fd; ///< Copy of the file descriptor.
+	int file_fd; ///< File descriptor of the opened file.
+};
+
+RZ_API RZ_OWN RzConsPipe *rz_cons_pipe_open(RZ_NONNULL const char *file, int fd, bool append) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(file), NULL);
+
+	if (fd < 1) {
+		RZ_LOG_ERROR("cpipe: invalid file descriptor '%d'\n", fd);
+		return NULL;
 	}
-	return dup2(fdn, backup_fd) != -1;
-#endif
+
+	RzConsPipe *cpipe = RZ_NEW0(RzConsPipe);
+	if (!cpipe) {
+		RZ_LOG_ERROR("cpipe: cannot allocate RzConsPipe\n");
+		return NULL;
+	}
+
+	// open file to which we pipe all the data from fd
+	const int file_flags = O_BINARY | O_RDWR | O_CREAT | (append ? O_APPEND : O_TRUNC);
+	int file_fd = rz_sys_open(file, file_flags, 0644);
+	if (file_fd < 0) {
+		RZ_LOG_ERROR("cpipe: Cannot open file '%s'\n", file);
+		free(cpipe);
+		return NULL;
+	}
+
+	// save the original file descriptor by making a copy
+	int copy_fd = pipe_dup_fd(fd);
+	if (copy_fd < 0) {
+		RZ_LOG_ERROR("cpipe: Cannot duplicate %d\n", fd);
+		close(file_fd);
+		free(cpipe);
+		return NULL;
+	}
+
+	// override file descriptor with the opened file one.
+	if (pipe_dup2_fd(file_fd, fd)) {
+		RZ_LOG_ERROR("cpipe: Cannot duplicate %d to %d\n", file_fd, fd);
+		close(copy_fd);
+		close(file_fd);
+		free(cpipe);
+		return NULL;
+	}
+
+	cpipe->fd = fd;
+	cpipe->copy_fd = copy_fd;
+	cpipe->file_fd = file_fd;
+	return cpipe;
 }
 
-RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append) {
-	if (fdn < 1) {
-		return -1;
+RZ_API void rz_cons_pipe_close(RZ_NULLABLE RzConsPipe *cpipe) {
+	if (!cpipe) {
+		return;
 	}
-	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append ? O_APPEND : O_TRUNC);
-	int fd = rz_sys_open(file, fd_flags, 0644);
-	if (fd == -1) {
-		eprintf("rz_cons_pipe_open: Cannot open file '%s'\n", file);
-		return -1;
-	}
-	if (backup_fd != -1) {
-		close(backup_fd);
-		// already set in __dupDescriptor // backup_fd = -1;
-	}
-	backup_fdn = fdn;
-	if (!__dupDescriptor(fd, fdn)) {
-		eprintf("Cannot dup stdout to %d\n", fdn);
-		return -1;
-	}
-	close(fdn);
-	dup2(fd, fdn);
-	return fd;
-}
 
-RZ_API void rz_cons_pipe_close(int fd) {
-	if (fd != -1) {
-		close(fd);
-		if (backup_fd != -1) {
-			dup2(backup_fd, backup_fdn);
-			close(backup_fd);
-			backup_fd = -1;
-		}
+	// restore file descriptor from copy.
+	if (pipe_dup2_fd(cpipe->copy_fd, cpipe->fd)) {
+		RZ_LOG_ERROR("cpipe: Cannot duplicate %d to %d\n", cpipe->copy_fd, cpipe->fd);
 	}
+
+	// close the opened file descriptors
+	close(cpipe->copy_fd);
+	close(cpipe->file_fd);
+	free(cpipe);
 }
