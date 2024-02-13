@@ -1178,11 +1178,14 @@ struct rz_line_t {
 	// RzLineFunctionKeyCb cb_fkey;
 	RzConsFunctionKey cb_fkey;
 	/* state , TODO: use more bool */
+	int gcomp;
+	int gcomp_idx;
 	int echo;
 	int has_echo;
 	char *prompt;
 	RzList /*<char *>*/ *kill_ring;
 	int kill_ring_ptr;
+	bool yank_flag;
 	int undo_cursor;
 	bool undo_continue;
 	char *clipboard;
