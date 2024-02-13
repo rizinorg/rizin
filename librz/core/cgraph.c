@@ -1065,6 +1065,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 		}
 
 		if (curr_op.jump != UT64_MAX && !is_call(&curr_op)) {
+			if (rz_io_nread_at(core->io, curr_op.jump, buf, sizeof(buf)) < 0) {
+				RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
+				goto error;
+			}
 			if (rz_analysis_op(core->analysis, &target_op, curr_op.jump, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
@@ -1075,6 +1079,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 			rz_analysis_op_fini(&target_op);
 		}
 		if (curr_op.fail != UT64_MAX && !is_call(&curr_op)) {
+			if (rz_io_nread_at(core->io, curr_op.fail, buf, sizeof(buf)) < 0) {
+				RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
+				goto error;
+			}
 			if (rz_analysis_op(core->analysis, &target_op, curr_op.fail, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
