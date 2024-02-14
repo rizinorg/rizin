@@ -1442,7 +1442,8 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 	char *grep = NULL;
 	RzIODesc *tmpdesc = NULL;
 	int pamode = !core->io->va;
-	int i, ret = 0, pipefd;
+	int i, ret = 0;
+	RzConsPipe *cpipe = NULL;
 	bool usemyblock = false;
 	int scr_html = -1;
 	int scr_color = -1;
@@ -1482,7 +1483,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 		break;
 	case '"':
 		for (; *cmd;) {
-			int pipefd = -1;
+			RzConsPipe *cpipe = NULL;
 			ut64 oseek = UT64_MAX;
 			char *line, *p;
 			haveQuote = *cmd == '"';
@@ -1543,7 +1544,8 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					str = (char *)rz_str_trim_head_ro(str);
 					rz_cons_flush();
 					const bool append = p[2] == '>';
-					pipefd = rz_cons_pipe_open(str, 1, append);
+					/* pipe stdout */
+					cpipe = rz_cons_pipe_open(str, 1, append);
 				}
 			}
 			line = strdup(cmd);
@@ -1558,9 +1560,10 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			if (oseek != UT64_MAX) {
 				rz_core_seek(core, oseek, true);
 			}
-			if (pipefd != -1) {
+			if (cpipe) {
 				rz_cons_flush();
-				rz_cons_pipe_close(pipefd);
+				rz_cons_pipe_close(cpipe);
+				cpipe = NULL;
 			}
 			if (!p) {
 				break;
@@ -1813,14 +1816,14 @@ escape_pipe:
 			free(o);
 		} else if (fdn > 0) {
 			// pipe to file (or append)
-			pipefd = rz_cons_pipe_open(str, fdn, appendResult);
-			if (pipefd != -1) {
+			cpipe = rz_cons_pipe_open(str, fdn, appendResult);
+			if (cpipe) {
 				if (!pipecolor) {
 					rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 				}
 				ret = rz_core_cmd_subst(core, cmd);
 				rz_cons_flush();
-				rz_cons_pipe_close(pipefd);
+				rz_cons_pipe_close(cpipe);
 			}
 		}
 		rz_cons_set_last_interactive();
@@ -3884,17 +3887,17 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	} else {
 		rz_cons_flush();
 		RZ_LOG_DEBUG("redirect_stmt: fdn = %d, is_append = %d\n", fdn, is_append);
-		int pipefd = rz_cons_pipe_open(arg_str, fdn, is_append);
-		if (pipefd != -1) {
+		RzConsPipe *cpipe = rz_cons_pipe_open(arg_str, fdn, is_append);
+		if (cpipe) {
 			if (!pipecolor) {
 				rz_config_set_i(state->core->config, "scr.color", COLOR_MODE_DISABLED);
 			}
 			TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
 			res = handle_ts_stmt(state, command);
 			rz_cons_flush();
-			rz_cons_pipe_close(pipefd);
+			rz_cons_pipe_close(cpipe);
 		} else {
-			RZ_LOG_WARN("Could not open pipe to %d", fdn);
+			RZ_LOG_WARN("Could not open pipe to %d\n", fdn);
 		}
 	}
 	free(arg_str);
@@ -5533,8 +5536,8 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	}
 	rz_cons_reset();
 	if (rz_file_mkstemp("cmd", &tmp) != -1) {
-		int pipefd = rz_cons_pipe_open(tmp, 1, 0);
-		if (pipefd == -1) {
+		RzConsPipe *cpipe = rz_cons_pipe_open(tmp, 1, 0);
+		if (!cpipe) {
 			rz_file_rm(tmp);
 			free(tmp);
 			return rz_core_cmd_str(core, cmd);
@@ -5542,7 +5545,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 		char *_cmd = strdup(cmd);
 		rz_core_cmd(core, _cmd, 0);
 		rz_cons_flush();
-		rz_cons_pipe_close(pipefd);
+		rz_cons_pipe_close(cpipe);
 		if (rz_file_exists(tmp)) {
 			char *s = rz_file_slurp(tmp, NULL);
 			rz_file_rm(tmp);
