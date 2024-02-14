@@ -107,7 +107,7 @@ RZ_API const char *rz_str_trim_head_wp(RZ_NONNULL const char *str) {
 
 /**
  * \brief Removes whitespace characters (space, tab, newline etc.)
- * from the end of a string.
+ * from the beginning of a string.
  * The string is changed in place.
  *
  * \param str The string to trim.
