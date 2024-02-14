@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Billow <billow.fun@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 static const char *
 v850_register_name(ut32 regnum) {
 	static const char *v850_reg_names[] = { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",

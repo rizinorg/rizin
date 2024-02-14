@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2012-2020 houndthe <cgkajm@gmail.com>
+// SPDX-FileCopyrightText: 2024 Billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
