@@ -91,7 +91,7 @@ RxDesc rx_inst_descs[RX_DESC_SIZE] = {
 	{ .op = RX_OP_BMCND, .tks = { RxCode(11, 0x7ef), RxImm(5, V1), RxCond(4, V0), RxReg(4, V2), RxEnd } },
 	{ .op = RX_OP_BNOT, .tks = { RxCode(11, 0x7e7), RxImm(3, V0), RxLdPart(2, V1), RxReg(4, V1), RxCode(4, 0xf), DspData(V1), RxEnd } },
 	{ .op = RX_OP_BNOT, .tks = { RxCode(14, 0x3f1b), RxLdPart(2, V1), RxReg(4, V1), RxReg(4, V0), DspData(V1), RxEnd } },
-	{ .op = RX_OP_BNOT, .tks = { RxCode(11, 0x7ef), RxImm(5, V0), RxCode(4, 0xf), RxReg(4, V0), RxEnd } },
+	{ .op = RX_OP_BNOT, .tks = { RxCode(11, 0x7ef), RxImm(5, V0), RxCode(4, 0xf), RxReg(4, V1), RxEnd } },
 	{ .op = RX_OP_BNOT, .tks = { RxCode(16, 0xfc6f), RxReg(4, V1), RxReg(4, V0), RxEnd } },
 	{ .op = RX_OP_BRA_S, .tks = { RxCode(5, 0x1), RxJmp, RxDsp(3), RxEnd } },
 	{ .op = RX_OP_BRA_B, .tks = { RxCode(8, 0x2e), RxJmp, PcDspData(V0, 8), RxEnd } },
