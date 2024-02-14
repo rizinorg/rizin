@@ -5,7 +5,23 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
-static ut64 calculate_jmp_addr(RxInst *inst, RzAnalysisOp *op) {
+static void calculate_jmp_addr(RxInst *inst, RzAnalysisOp *op) {
+	if (inst->v0.kind == RX_OPERAND_COND) {
+		ut8 pcdsp_l = inst->v0.v.cond.pc_dsp_len;
+		ut32 pcdsp_val = inst->v0.v.cond.pc_dsp_val;
+		if (pcdsp_l >= 8) {
+			// as SIMM, use signed extend
+			ut8 shift = pcdsp_l - 1;
+			ut64 addr_inc = pcdsp_val;
+			if ((1 << shift) & pcdsp_val) {
+				// as negative
+				ut32 mask = 0xffffffff << shift;
+				addr_inc = abs((st32)(pcdsp_val | mask));
+			}
+			op->jump = op->addr + addr_inc;
+		}
+	}
+	op->fail = op->addr + op->size;
 }
 
 static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
@@ -31,14 +47,12 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case RX_OP_BSR_A:
 	case RX_OP_BSR_L:
 	case RX_OP_BSR_W:
-	case RX_OP_JSR:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		calculate_jmp_addr(&inst, op);
 		break;
 	case RX_OP_BCND_W:
 	case RX_OP_BCND_B:
 	case RX_OP_BCND_S:
-	case RX_OP_BMCND:
 	case RX_OP_SCCOND:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		calculate_jmp_addr(&inst, op);
@@ -48,9 +62,13 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case RX_OP_BRA_B:
 	case RX_OP_BRA_S:
 	case RX_OP_BRA_W:
-	case RX_OP_JMP:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		calculate_jmp_addr(&inst, op);
+		break;
+	case RX_OP_JMP:
+	case RX_OP_JSR:
+		// use register
+		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
 	// normal instruction
 	case RX_OP_ADD:
@@ -155,6 +173,8 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	default:
 		break;
 	}
+
+	return op->size;
 }
 
 static char *analysis_rx_reg_profile(RzAnalysis *analysis) {

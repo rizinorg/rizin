@@ -142,7 +142,7 @@ bool rx_inst_stringify(RxInst *inst, RzStrBuf *buf) {
  * \param buf_len
  * \return
  */
-bool rx_dis(RxInst RZ_OUT *inst, st32 RZ_OUT *bytes_read, const ut8 *buf, size_t buf_len) {
+RZ_API bool rx_dis(RxInst RZ_OUT *inst, st32 RZ_OUT *bytes_read, const ut8 *buf, size_t buf_len) {
 	// rx instruction length vary from 1 to 8 Bytes
 	ut64 prefetched_bytes = prefetch_bytes(buf, buf_len);
 	RxInst current_inst = { 0 };
