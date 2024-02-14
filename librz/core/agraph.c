@@ -3747,8 +3747,10 @@ RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzA
 		an->offset = info->def.offset;
 		break;
 	case RZ_GRAPH_NODE_TYPE_CFG: {
-		char *cfg_title = rz_str_appendf(NULL, "0x%" PFMT64x "%s", info->cfg.address, rz_graph_get_node_subtype_annotation(info->subtype, utf8));
+		char *annotation = rz_graph_get_node_subtype_annotation(info->subtype, utf8);
+		char *cfg_title = rz_str_appendf(NULL, "0x%" PFMT64x "%s", info->cfg.address, annotation);
 		an = rz_agraph_add_node(g, cfg_title, "");
+		free(annotation);
 		free(cfg_title);
 		if (!an) {
 			return NULL;
