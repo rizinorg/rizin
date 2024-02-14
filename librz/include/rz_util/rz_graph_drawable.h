@@ -78,6 +78,7 @@ typedef struct rz_analysis_graph_node_info_t {
 	};
 } RzGraphNodeInfo;
 
+RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation(RzGraphNodeSubType subtype, bool utf8);
 RZ_API RZ_OWN RzGraphNodeInfo *rz_graph_get_node_info_data(RZ_BORROW void *data);
 RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, const char *body, ut64 offset);

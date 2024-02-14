@@ -5,6 +5,30 @@
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 
+RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation(RzGraphNodeSubType subtype, bool utf8) {
+	char *annotation = rz_str_newf(" ");
+	if (subtype == RZ_GRAPH_NODE_SUBTYPE_NONE) {
+		rz_str_append(annotation, utf8 ? "○" : ".");
+		return annotation;
+	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY) {
+		rz_str_append(annotation, utf8 ? "↓" : "e");
+	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL) {
+		rz_str_append(annotation, utf8 ? "⇢" : "C");
+	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN) {
+		rz_str_append(annotation, utf8 ? "↑" : "r");
+	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_COND) {
+		rz_str_append(annotation, utf8 ? "⤹" : "c");
+	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT) {
+		rz_str_append(annotation, utf8 ? "⭳" : "E");
+	}
+	return annotation;
+}
+
 /**
  * \brief Casts the given graph node data pointer to a
  * RzGraphNodeInfo pointer and makes some plausibility tests on the data.
@@ -179,7 +203,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		case RZ_GRAPH_NODE_TYPE_ICFG:
 			rz_strbuf_appendf(label, "0x%" PFMT64x, print_node->icfg.address);
 			if (print_node->subtype == RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC) {
-				rz_strbuf_append(label, " (malloc)");
+				rz_strbuf_append(label, " (alloc)");
 			}
 			url = rz_strbuf_get(label);
 			break;

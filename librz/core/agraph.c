@@ -3725,10 +3725,10 @@ RZ_API void rz_agraph_set_title(RzAGraph *g, const char *title) {
 /**
  * \brief Convert a RzGraphNodeInfo \p info to RzANode and add to \p g.
  */
-RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info) {
+RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info, bool utf8) {
 	rz_return_val_if_fail(g && info, NULL);
 	RzANode *an = NULL;
-	char title[20] = { 0 };
+	char title[64] = { 0 };
 	switch (info->type) {
 	default:
 		RZ_LOG_ERROR("Node type %d not handled.\n", info->type);
@@ -3740,16 +3740,20 @@ RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzA
 		}
 		an->offset = info->def.offset;
 		break;
-	case RZ_GRAPH_NODE_TYPE_CFG:
-		rz_strf(title, "0x%" PFMT64x, info->cfg.address);
-		an = rz_agraph_add_node(g, title, "");
+	case RZ_GRAPH_NODE_TYPE_CFG: {
+		char *cfg_title = rz_str_newf("0x%" PFMT64x, info->cfg.address);
+		rz_str_append(cfg_title, rz_graph_get_node_subtype_annotation(info->subtype, utf8));
+		an = rz_agraph_add_node(g, cfg_title, "");
+		free(cfg_title);
 		if (!an) {
 			return NULL;
 		}
 		an->offset = info->cfg.address;
 		break;
+	}
 	case RZ_GRAPH_NODE_TYPE_ICFG:
-		rz_strf(title, "0x%" PFMT64x, info->icfg.address);
+		rz_strf(title, "0x%" PFMT64x "%s", info->icfg.address,
+			info->subtype & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC ? " (alloc)" : "");
 		an = rz_agraph_add_node(g, title, "");
 		if (!an) {
 			return NULL;
@@ -4962,7 +4966,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
  * \brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data at \p ag from \p g
  * \return Success
  */
-RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail) {
+RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail, bool utf8) {
 	rz_return_val_if_fail(ag && g, false);
 	ag->need_reload_nodes = false;
 	// Cache lookup to build edges
@@ -4978,7 +4982,7 @@ RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL cons
 	// Traverse the list, create new ANode for each Node
 	rz_list_foreach (g->nodes, iter, node) {
 		RzGraphNodeInfo *info = node->data;
-		RzANode *a_node = rz_agraph_add_node_from_node_info(ag, info);
+		RzANode *a_node = rz_agraph_add_node_from_node_info(ag, info, utf8);
 		if (!a_node) {
 			goto failure;
 		}
@@ -5021,14 +5025,14 @@ failure:
  * \param graph <RzGraphNodeInfo>
  * \return RzAGraph* NULL if failure
  */
-RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
+RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph, bool utf8) {
 	rz_return_val_if_fail(graph, NULL);
 
 	RzAGraph *result_agraph = rz_agraph_new(rz_cons_canvas_new(1, 1));
 	if (!result_agraph) {
 		return NULL;
 	}
-	if (!create_agraph_from_graph_at(result_agraph, graph, true)) {
+	if (!create_agraph_from_graph_at(result_agraph, graph, true, utf8)) {
 		return NULL;
 	}
 	return result_agraph;
