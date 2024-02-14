@@ -1023,7 +1023,7 @@ RZ_API int rz_cons_get_buffer_len(void);
 RZ_API void rz_cons_grep_help(void);
 RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr);
 RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr);
-RZ_API void rz_cons_grep_process(char *grep);
+RZ_API void rz_cons_grep_process(RZ_OWN char *grep);
 RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
 RZ_API void rz_cons_grepbuf(void);
 
