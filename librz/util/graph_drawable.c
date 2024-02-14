@@ -16,32 +16,32 @@
 RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation(RzGraphNodeSubType subtype, bool utf8) {
 	char *annotation = rz_str_newf(" ");
 	if (!utf8) {
-		rz_str_append(annotation, "(");
-	}
+		annotation = rz_str_append(annotation, "(");
+		}
 	if (subtype == RZ_GRAPH_NODE_SUBTYPE_NONE) {
-		rz_str_append(annotation, utf8 ? "○" : ".");
+		annotation = rz_str_append(annotation, utf8 ? "○" : ".");
 		if (!utf8) {
-			rz_str_append(annotation, ")");
+			annotation = rz_str_append(annotation, ")");
 		}
 		return annotation;
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY) {
-		rz_str_append(annotation, utf8 ? "↓" : "e");
+		annotation = rz_str_append(annotation, utf8 ? "↓" : "e");
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL) {
-		rz_str_append(annotation, utf8 ? "⇢" : "C");
+		annotation = rz_str_append(annotation, utf8 ? "⇢" : "C");
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN) {
-		rz_str_append(annotation, utf8 ? "↑" : "r");
+		annotation = rz_str_append(annotation, utf8 ? "↑" : "r");
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_COND) {
-		rz_str_append(annotation, utf8 ? "⤹" : "c");
+		annotation = rz_str_append(annotation, utf8 ? "⤹" : "c");
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT) {
-		rz_str_append(annotation, utf8 ? "⭳" : "E");
+		annotation = rz_str_append(annotation, utf8 ? "⭳" : "E");
 	}
 	if (!utf8) {
-		rz_str_append(annotation, ")");
+		annotation = rz_str_append(annotation, ")");
 	}
 	return annotation;
 }
