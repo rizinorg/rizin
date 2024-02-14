@@ -433,11 +433,13 @@ RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr) {
 	return ptr;
 }
 
-RZ_API void rz_cons_grep_process(char *grep) {
-	if (grep) {
-		parse_grep_expression(grep);
-		free(grep);
+RZ_API void rz_cons_grep_process(RZ_OWN char *grep) {
+	if (!grep) {
+		return;
 	}
+	rz_str_trim_tail(grep);
+	parse_grep_expression(grep);
+	free(grep);
 }
 
 static int cmp(const void *a, const void *b, void *user) {
