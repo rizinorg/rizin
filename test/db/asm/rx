@@ -97,7 +97,7 @@ d "tst.UB dsp:8(#0x1)[r1], r2," fc311201
 d "sbb [r1], r2," 06a00012
 d "sub #IMM:4(#0xf), r2," 60f2
 d "mul r1, r2, r3" ff3312
-d "bra.W  #0xc80f," 38c80f
+d "bra.W  #0xfc8," 38c80f
 d "and #IMM:4(#0xf), r2," 64f2
 d "btst r1, [r2]," fc6821
 d "mulhi r0, r0," fd0000
@@ -161,7 +161,7 @@ d "rtsd #IMM:8(#0x4), r7," 3f5704
 d "smovu" 7f87
 d "pop r1," 7eb1
 d "scne.W [r2]," fcd421
-d "mvtc #IMM:16(#0xf0), intb," fd7b0c00f0
+d "mvtc #IMM:16(#0xf000), intb," fd7b0c00f0
 d "mov #IMM:8(#0x80), r2," 754280
 d "pushc psw," 7ec0
 d "rotl #IMM:5(#0x1), r1," fd6e11

@@ -418,6 +418,15 @@ bool match_ad(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 b
 	return true;
 }
 
+static ut32 pack_big(ut32 raw_data, ut8 len_in_bytes) {
+	ut32 result = 0;
+	for (int i = 0; i < len_in_bytes; i++) {
+		ut32 byte = (raw_data >> (8 * i)) & 0xFF;
+		result = (result << 8) | byte;
+	}
+	return result;
+}
+
 bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 bytes) {
 	ut8 s = *bits_read;
 	ut8 vid = token->tk.data.vid;
@@ -432,7 +441,7 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 		// pack dsp
 		l = opr->v.reg.dsp_width;
 		follow_data = getbits(bytes, s, l);
-		opr->v.reg.dsp_val = follow_data;
+		opr->v.reg.dsp_val = pack_big(follow_data, l / 8);
 		*bits_read += l;
 		return true;
 	}
@@ -447,7 +456,7 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 		}
 		opr->kind = RX_OPERAND_IMM;
 		follow_data = getbits(bytes, s, l);
-		opr->v.imm.imm = follow_data;
+		opr->v.imm.imm = pack_big(follow_data, l / 8);
 		*bits_read += l;
 		return true;
 	}
@@ -461,7 +470,7 @@ bool pack_data(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64 
 			l = opr->v.cond.pc_dsp_len;
 		}
 		follow_data = getbits(bytes, s, l);
-		opr->v.cond.pc_dsp_val = follow_data;
+		opr->v.cond.pc_dsp_val = pack_big(follow_data, l / 8);
 		*bits_read += l;
 		return true;
 	}

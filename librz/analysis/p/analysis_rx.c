@@ -9,17 +9,19 @@ static void calculate_jmp_addr(RxInst *inst, RzAnalysisOp *op) {
 	if (inst->v0.kind == RX_OPERAND_COND) {
 		ut8 pcdsp_l = inst->v0.v.cond.pc_dsp_len;
 		ut32 pcdsp_val = inst->v0.v.cond.pc_dsp_val;
+		ut64 addr_inc = pcdsp_val;
 		if (pcdsp_l >= 8) {
 			// as SIMM, use signed extend
 			ut8 shift = pcdsp_l - 1;
-			ut64 addr_inc = pcdsp_val;
 			if ((1 << shift) & pcdsp_val) {
 				// as negative
 				ut32 mask = 0xffffffff << shift;
 				addr_inc = abs((st32)(pcdsp_val | mask));
+				op->jump = op->addr - addr_inc;
+				return;
 			}
-			op->jump = op->addr + addr_inc;
 		}
+		op->jump = op->addr + addr_inc;
 	}
 	op->fail = op->addr + op->size;
 }
@@ -32,7 +34,6 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	RxInst inst = { 0 };
 	st32 bytes_read = 0;
 	if (!rx_dis(&inst, &bytes_read, buf, len)) {
-		op->size = bytes_read;
 		return bytes_read;
 	} else {
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
@@ -47,13 +48,13 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case RX_OP_BSR_A:
 	case RX_OP_BSR_L:
 	case RX_OP_BSR_W:
+	case RX_OP_JSR:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		calculate_jmp_addr(&inst, op);
 		break;
 	case RX_OP_BCND_W:
 	case RX_OP_BCND_B:
 	case RX_OP_BCND_S:
-	case RX_OP_SCCOND:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		calculate_jmp_addr(&inst, op);
 		break;
@@ -66,7 +67,6 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		calculate_jmp_addr(&inst, op);
 		break;
 	case RX_OP_JMP:
-	case RX_OP_JSR:
 		// use register
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
@@ -187,10 +187,11 @@ static char *analysis_rx_reg_profile(RzAnalysis *analysis) {
 		"=SF    sf\n"
 		"=OF    of\n"
 		// ABI: https://www.renesas.com/us/en/document/mat/cc-rx-compiler-users-manual
-		"=A1    r1\n"
-		"=A2    r2\n"
-		"=A3    r3\n"
-		"=A4    r4\n"
+		"=R0    r1\n"
+		"=A0    r1\n"
+		"=A1    r2\n"
+		"=A2    r3\n"
+		"=A3    r4\n"
 		// general
 		"gpr    r0   .32    0    0\n"
 		"gpr    r1   .32    4    0\n"

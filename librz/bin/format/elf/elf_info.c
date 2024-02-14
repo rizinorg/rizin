@@ -269,6 +269,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_MICROBLAZE, "microblaze.gnu" },
 	{ EM_RISCV, "riscv" },
 	{ EM_RL78, "rl78" },
+	{ EM_RX, "rx" },
 	{ EM_VAX, "vax" },
 	{ EM_XTENSA, "xtensa" },
 	{ EM_LANAI, "lanai" },
