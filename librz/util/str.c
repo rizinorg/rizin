@@ -1086,11 +1086,17 @@ RZ_API char *rz_str_append_owned(char *ptr, char *string) {
 	return r;
 }
 
-/*
- * first argument must be allocated
- * return: the pointer ptr resized to string size.
+/**
+ * \brief Appends \p string to \p ptr. If \p ptr is NULL, \p string is duplicated and returned.
+ * Note: If \p ptr is not NULL, it might be freed by realloc and the returned pointer
+ * should be used from here on.
+ *
+ * \param ptr Pointer to the string to append to.
+ * \param string The string to append.
+ *
+ * \return The concatenation of \p ptr + \p string or NULL in case of failure.
  */
-RZ_API char *rz_str_append(char *ptr, const char *string) {
+RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *string) {
 	if (string && !ptr) {
 		return strdup(string);
 	}
@@ -1109,7 +1115,17 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 	return ptr;
 }
 
-RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
+/**
+ * \brief Appends a formatted string to \p ptr. If \p ptr is NULL, the formatted string is returned.
+ * Note: If \p ptr is not NULL, it might be freed by realloc and the returned pointer
+ * should be used from here on.
+ *
+ * \param ptr Pointer to the string to append to.
+ * \param fmt The formatting string.
+ *
+ * \return The concatenation of \p ptr + the formatted string or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_appendf(RZ_OWN RZ_NULLABLE char *ptr, const char *fmt, ...) {
 	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
