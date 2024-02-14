@@ -1187,7 +1187,7 @@ static const char *signal_option(int opt) {
 }
 
 static bool siglistcb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {
@@ -1208,7 +1208,7 @@ static bool siglistcb(void *p, const char *k, const char *v) {
 }
 
 static bool siglistjsoncb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {
@@ -1229,7 +1229,7 @@ static bool siglistjsoncb(void *p, const char *k, const char *v) {
 }
 
 static bool siglisttblcb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {
