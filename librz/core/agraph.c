@@ -3724,6 +3724,12 @@ RZ_API void rz_agraph_set_title(RzAGraph *g, const char *title) {
 
 /**
  * \brief Convert a RzGraphNodeInfo \p info to RzANode and add to \p g.
+ *
+ * \param g The agraph to append the nodes to.
+ * \param info The node info to add.
+ * \param utf8 If true, the node title can contain UTF-8 characters. If false, it will only contain ASCII.
+ *
+ * \return Pointer to the added node. Or NULL in case of failure.
  */
 RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info, bool utf8) {
 	rz_return_val_if_fail(g && info, NULL);
@@ -4963,7 +4969,15 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 
 /**
  * \brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data at \p ag from \p g
- * \return Success
+ *
+ * \param ag The RzAGraph to append the nodes to.
+ * \param g The graph to build the RzAGraph from.
+ * \param info The node info to add.
+ * \param free_on_fail If true, \p ag will be freed in case of failure. If false, \p ag is not freed.
+ * \param utf8 If true, the node titles can contain UTF-8 characters. If false, they will only contain ASCII.
+ *
+ * \return true In case of success.
+ * \return false In case of failure.
  */
 RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail, bool utf8) {
 	rz_return_val_if_fail(ag && g, false);
@@ -5021,8 +5035,10 @@ failure:
 /**
  * \brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data
  *
- * \param graph <RzGraphNodeInfo>
- * \return RzAGraph* NULL if failure
+ * \param graph The graph to create the RzAGraph from.
+ * \param utf8 If true, the node titles can contain UTF-8 characters. If false, they are ASCII only.
+ *
+ * \return RzAGraph* The agraph or NULL in case of failure
  */
 RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph, bool utf8) {
 	rz_return_val_if_fail(graph, NULL);

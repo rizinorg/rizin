@@ -5,6 +5,14 @@
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 
+/**
+ * \brief Translates the \p subtype flags of a node to its annotation symbols.
+ *
+ * \param subtype The sub-type flags of the node.
+ * \param utf8 If true, the symbols will be UTF-8 characters. If false, they are in ASCII.
+ *
+ * \return A string with all symbols.
+ */
 RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation(RzGraphNodeSubType subtype, bool utf8) {
 	char *annotation = rz_str_newf(" ");
 	if (subtype == RZ_GRAPH_NODE_SUBTYPE_NONE) {
