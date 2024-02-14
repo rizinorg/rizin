@@ -113,7 +113,7 @@ static const char *pclntab_version_str(GoPcLnTab *pclntab) {
 	case GO_1_18:
 		return "go 1.18-1.19";
 	case GO_1_20:
-		return "go 1.20-1.21";
+		return "go 1.20+";
 	default:
 		return "go unknown";
 	}
@@ -176,6 +176,90 @@ static void add_new_func_symbol(RzCore *core, const char *name, ut64 vaddr) {
 	}
 }
 
+static char *detect_go_package_from_name(const char *string) {
+	/**
+	 * Ignore names that starts with:
+	 * - `main.` because is related to the main package.
+	 * - `type..` because is just the definition of a function linked to a defined go `typedef`
+	 */
+	if (rz_str_startswith(string, "main.") ||
+		rz_str_startswith(string, "type..")) {
+		return NULL;
+	}
+
+	// remove `vendor/` because is useless.
+	if (rz_str_startswith(string, "vendor/")) {
+		string += strlen("vendor/");
+	}
+
+	size_t length = strlen(string);
+	const char *end = NULL;
+
+	for (size_t i = 0; i < length; i++) {
+		if (string[i] == '.' && !end) {
+			end = string + i;
+		} else if (string[i] == '.' && end) {
+			break;
+		} else if (string[i] == '/') {
+			end = NULL;
+		} else if (string[i] == '(') {
+			if (!end) {
+				end = string + i;
+			}
+			break;
+		} else if (string[i] == '{') {
+			if (!end) {
+				end = string + i;
+			}
+			break;
+		}
+	}
+
+	if (!end) {
+		// a end was not found, so we fail.
+		return NULL;
+	}
+
+	size_t new_len = end - string;
+	char *libname = rz_str_ndup(string, new_len);
+	if (!libname) {
+		RZ_LOG_ERROR("Failed to duplicate libname\n");
+		return NULL;
+	}
+
+	return libname;
+}
+
+static int compare_string(const char *s1, const char *s2, void *user) {
+	return strcmp(s1, s2);
+}
+
+static void add_new_library_from_name(RzCore *core, const char *name) {
+	char *libname = detect_go_package_from_name(name);
+	if (!libname) {
+		return;
+	}
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o) {
+		return;
+	}
+
+	if (!bf->o->libs) {
+		bf->o->libs = rz_pvector_new(free);
+	}
+
+	if (rz_pvector_find(bf->o->libs, libname, (RzPVectorComparator)compare_string, NULL)) {
+		free(libname);
+		return;
+	}
+
+	if (!rz_pvector_push(bf->o->libs, libname)) {
+		RZ_LOG_ERROR("Failed append new go libname to libs list\n");
+		free(libname);
+	}
+}
+
 static ut32 core_recover_golang_functions_go_1_18_plus(RzCore *core, GoPcLnTab *pclntab) {
 	const char *go_ver = pclntab_version_str(pclntab);
 	rz_core_notify_done(core, "Found %s pclntab data.", go_ver);
@@ -232,6 +316,8 @@ static ut32 core_recover_golang_functions_go_1_18_plus(RzCore *core, GoPcLnTab *
 		(void)rz_io_nread_at(pclntab->io, name_off, (ut8 *)name, sizeof(name));
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
+
+		add_new_library_from_name(core, name);
 		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
@@ -309,6 +395,7 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
+		add_new_library_from_name(core, name);
 		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
@@ -397,6 +484,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
+		add_new_library_from_name(core, name);
 		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
@@ -433,6 +521,21 @@ static void analyse_golang_symbols(RzCore *core) {
 		return;
 	}
 	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, analyse_golang_symgo_function, core);
+}
+
+/**
+ * \brief Sorts the recovered libraries.
+ *
+ * \param core RzCore Pointer
+ * \return Number of recovered libraries
+ */
+static ut32 sort_recovered_library(RzCore *core) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o || !bf->o->libs) {
+		return 0;
+	}
+	rz_pvector_sort(bf->o->libs, (RzPVectorComparator)compare_string, NULL);
+	return rz_pvector_len(bf->o->libs);
 }
 
 /**
@@ -519,7 +622,9 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	}
 
 	if (num_syms) {
+		ut32 num_libs = sort_recovered_library(core);
 		rz_core_notify_done(core, "Recovered %u symbols and saved them at sym.go.*", num_syms);
+		rz_core_notify_done(core, "Recovered %u go packages", num_libs);
 		rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		analyse_golang_symbols(core);
 		rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
