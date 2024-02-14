@@ -17,7 +17,7 @@ RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation(RzGraphNodeSubType subt
 	char *annotation = rz_str_newf(" ");
 	if (!utf8) {
 		annotation = rz_str_append(annotation, "(");
-		}
+	}
 	if (subtype == RZ_GRAPH_NODE_SUBTYPE_NONE) {
 		annotation = rz_str_append(annotation, utf8 ? "○" : ".");
 		if (!utf8) {
