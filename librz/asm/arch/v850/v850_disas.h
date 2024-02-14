@@ -7,16 +7,6 @@
 #define V850_INSTR_MAXLEN    16
 #define V850_OPERANDS_MAXLEN 32
 
-static inline ut32 SIGN_EXT_T5(ut32 imm) {
-	return (imm & 0x10) ? (imm | 0xE0) : imm;
-}
-static inline ut32 SIGN_EXT_T9(ut32 imm) {
-	return (imm & 0x100) ? (imm | 0xFFFFFE00) : imm;
-}
-static inline ut32 SIGN_EXT_T26(ut32 imm) {
-	return (imm & 0x2000000) ? (imm | 0xFC000000) : imm;
-}
-
 typedef enum {
 	V850_MOV = 0x0,
 	V850_NOT = 0x1,

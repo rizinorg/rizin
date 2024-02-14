@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2012-2020 houndthe <cgkajm@gmail.com>
+// SPDX-FileCopyrightText: 2024 Billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -735,6 +736,7 @@ static const char *map_dwarf_reg_to_arm64(ut32 reg_num) {
 }
 
 #include "hexagon_dwarf_reg_num_table.inc"
+#include "librz/analysis/arch/v850/v850_dwarf_reg_num_table.h"
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name
@@ -743,24 +745,40 @@ static const char *map_dwarf_reg_to_arm64(ut32 reg_num) {
  * \return The function that maps a DWARF register number to a register name
  */
 static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch, int bits) {
-	if (!strcmp(arch, "x86")) {
+	if (RZ_STR_EQ(arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg;
 		} else {
 			return map_dwarf_reg_to_x86_reg;
 		}
-	} else if (!strcmp(arch, "ppc") && bits == 64) {
+	}
+	if (RZ_STR_EQ(arch, "ppc") && bits == 64) {
 		return map_dwarf_reg_to_ppc64_reg;
-	} else if (!strcmp(arch, "tricore")) {
+	}
+	if (RZ_STR_EQ(arch, "tricore")) {
 		return map_dwarf_reg_to_tricore_reg;
-	} else if (strcmp(arch, "arm") == 0) {
+	}
+	if (RZ_STR_EQ(arch, "arm")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_arm64;
 		} else if (bits <= 32) {
 			return map_dwarf_reg_to_arm32;
 		}
-	} else if (RZ_STR_EQ(arch, "hexagon")) {
+	}
+	if (RZ_STR_EQ(arch, "hexagon")) {
 		return map_dwarf_reg_to_hexagon_reg;
+	}
+	if (RZ_STR_EQ(arch, "v850e3v5")) {
+		return v850e3v5_register_name;
+	}
+	if (RZ_STR_EQ(arch, "v850e2")) {
+		return v850e2_register_name;
+	}
+	if (RZ_STR_EQ(arch, "v850e")) {
+		return v850e_register_name;
+	}
+	if (RZ_STR_EQ(arch, "v850")) {
+		return v850_register_name;
 	}
 	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
 	return map_dwarf_register_dummy;
