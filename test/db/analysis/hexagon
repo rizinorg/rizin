@@ -30,7 +30,7 @@ pi 4
 EOF
 EXPECT=<<EOF
 ?   immext(##0xb0c0)
-?   R0 = ##0xb0d0
+?   R0 = ##loc._MSG_BASE
 ?   immext(##0xd180)
 ?   R2 = ##0xd1ac
 ?   immext(##0xfe105000)
@@ -566,10 +566,10 @@ EOF
 EXPECT=<<EOF
 / sym.sys_deinit_tls();
 |           0x00005344      ?       R2 = UGP
-|           0x00005348      /       immext(##0x1100)                   ; loc.CoreDump
-|           0x0000534c      |       R3 = memw(GP+##0x1110)             ; loc._TLSEnd
-|           0x00005350      |       immext(##0x1100)                   ; loc.CoreDump
-|           0x00005354      \       R4 = memw(GP+##0x1108)             ; loc._TLSStart
+|           0x00005348      /       immext(##loc.CoreDump)             ; 0x1100
+|           0x0000534c      |       R3 = memw(GP+##loc._TLSEnd)        ; 0x1110
+|           0x00005350      |       immext(##loc.CoreDump)             ; 0x1100
+|           0x00005354      \       R4 = memw(GP+##loc._TLSStart)      ; 0x1108
 |           0x00005358      [   R2 = sub(R2,R3)
 |       ,=< 0x0000535c      /       jump sym.free
 |       |   0x00005360      \       R0 = add(R2,R4)
@@ -665,8 +665,8 @@ fs strings
 fl
 EOF
 EXPECT=<<EOF
-            0x00000000      ?       R1 = ##0xc                         ; "Where is Wally?"
-            0x00000004      [   memw(R17+#0x0) = ##0x1c                ; "There is Wally!"
+            0x00000000      ?       R1 = ##str.Where_is_Wally          ; 0xc ; "Where is Wally?"
+            0x00000004      [   memw(R17+#0x0) = ##str.There_is_Wally  ; 0x1c ; "There is Wally!"
 0x0000000c 16 str.Where_is_Wally
 0x0000001c 16 str.There_is_Wally
 EOF
@@ -1382,8 +1382,8 @@ EXPECT=<<EOF
 [   R0 = #0x0 ; jump loc.test_sym
 /   immext(##0xffffffc0)
 \   jump loc.test_sym
-/   immext(##0x8000000)
-\   R0 = ##0x8000034
+/   immext(##segment.ehdr)
+\   R0 = ##loc.test_sym
 /   immext(##0xffffffc0)
 \   jump loc.test_sym
 /   immext(##0xffffff80)
@@ -1393,12 +1393,12 @@ EXPECT=<<EOF
 [   jump loc.test_sym
 /   immext(##0xffffff80)
 \   R0 = ##0xffffffa8 ; R1 = R1
-/   immext(##0x8000000)
-\   R0 = ##0x8000034
-/   immext(##0x8000000)
-\   R0 = ##0x8000034
-/   immext(##0x8000000)
-\   R0 = memw(R0+##0x8000034)
+/   immext(##segment.ehdr)
+\   R0 = ##loc.test_sym
+/   immext(##segment.ehdr)
+\   R0 = ##loc.test_sym
+/   immext(##segment.ehdr)
+\   R0 = memw(R0+##loc.test_sym)
 offset - 0 1 2 3 4 5
 3400 0008 3400 0000 3400 0000 7cff ffff
 EOF
