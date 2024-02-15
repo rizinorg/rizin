@@ -368,7 +368,6 @@ RZ_API bool rz_regex_contains(RZ_NONNULL const char *pattern, RZ_NONNULL const c
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
  * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
- * \param text_offset The offset into \p text from where the search starts.
  * \param cflags Compile flags.
  * \param mflags Match flags.
  * \param separator A string to separate the matches.
@@ -408,4 +407,34 @@ RZ_API RZ_OWN RzStrBuf *rz_regex_full_match_str(RZ_NONNULL const char *pattern, 
 fini:
 	rz_pvector_free(matches);
 	return sbuf;
+}
+
+/**
+ * \brief Searches for the given \p pattern in \p text and
+ * returns an byte offset into the string where the pattern was found.
+ *
+ * \param pattern The regex pattern to match.
+ * \param text The text to search in.
+ * \param text_size The length of the buffer pointed to by \p text.
+ * Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
+ * \param text_offset The offset into \p text from where the search starts.
+ * \param cflags Compile flags.
+ * \param mflags Match flags.
+ *
+ * \return Offset into the string, or SZT_MAX if pattern was not found.
+ */
+RZ_API RzRegexSize rz_regex_find(RZ_NONNULL const char *pattern, RZ_NONNULL RZ_BORROW char *text,
+	RzRegexSize text_size, RzRegexSize text_offset,
+	RzRegexFlags cflags, RzRegexFlags mflags) {
+	rz_return_val_if_fail(pattern && text, SZT_MAX);
+	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT);
+	RzPVector *matches = rz_regex_match_first(regex, text, text_size, text_offset, mflags);
+	if (rz_pvector_empty(matches)) {
+		rz_regex_free(regex);
+		return SZT_MAX;
+	}
+	RzRegexSize off = ((RzRegexMatch *)rz_pvector_head(matches))->start;
+	rz_pvector_free(matches);
+	rz_regex_free(regex);
+	return off;
 }

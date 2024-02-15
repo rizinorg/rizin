@@ -151,6 +151,21 @@ bool test_rz_regex_capture(void) {
 	mu_end;
 }
 
+bool test_rz_regex_find(void) {
+	char *str = "\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR0\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[90m##\x1b[0m\x1b[33m0x17\x1b[0m";
+
+	RzRegexSize num_offset = rz_regex_find("(\\W|m)((0x[a-fA-F0-9]+)|\\d+)(\x1b|[^\\w;])", str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	mu_assert_eq(num_offset, 78, "Wrong offset");
+
+	num_offset = rz_regex_find("\\d+", str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	mu_assert_eq(num_offset, 2, "Wrong offset");
+
+	num_offset = rz_regex_find("0x111+", str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	mu_assert_eq(num_offset, SZT_MAX, "Wrong offset");
+
+	mu_end;
+}
+
 bool test_rz_regex_named_matches(void) {
 	RzRegex *reg = rz_regex_new("(?<proto>^\\w+)(:\\/\\/)(?<domain>\\w+)\\.(?<tdomain>\\w+)", RZ_REGEX_EXTENDED, 0);
 	mu_assert_notnull(reg, "Regex was NULL");
@@ -185,4 +200,5 @@ int main() {
 	mu_run_test(test_rz_regex_all_to_str);
 	mu_run_test(test_rz_regex_named_matches);
 	mu_run_test(test_rz_regex_posix_blank);
+	mu_run_test(test_rz_regex_find);
 }
