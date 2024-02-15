@@ -761,7 +761,7 @@ static bool decode_formatIX(V850_Inst *inst) {
 	case V850_TST1:
 	case V850_SET1: OPERANDS("%s, [%s]", R2, R1); break;
 	case V850_SASF:
-	case V850_SETF: OPERANDS("%s, %s", conds[get_reg1(inst)], R2); break;
+	case V850_SETF: OPERANDS("%s, %s", conds[get_cond(inst)], R2); break;
 	case V850_BINS: OPERANDS("%s, %d, %d, %s", R1, bins_pos(inst), bins_width(inst), R2); break;
 	case V850_SCH0L:
 	case V850_SCH0R:
