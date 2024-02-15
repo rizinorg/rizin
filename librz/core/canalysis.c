@@ -5119,7 +5119,7 @@ static void *AnalysisBytesContext_next(RzIterator *it) {
 		ab->opcode = "invalid";
 		ab->disasm = "invalid";
 		ab->bytes = rz_asm_op_get_hex(asmop);
-		return ab;
+		goto out;
 	}
 	ab->oplen = rz_asm_op_get_size(asmop);
 
@@ -5171,6 +5171,7 @@ static void *AnalysisBytesContext_next(RzIterator *it) {
 
 	ab->bytes = rz_asm_op_get_hex(asmop);
 
+out:
 	inner->offset += ab->oplen;
 	++inner->iops;
 	return ab;
