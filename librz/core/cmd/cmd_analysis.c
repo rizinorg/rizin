@@ -508,20 +508,15 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 }
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
-	RzPVector *vec = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
-	if (!vec) {
+	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
+	if (!iter) {
 		return;
 	}
 
-	void **iter;
 	RzAnalysisBytes *ab;
 
 	pj_a(pj);
-	rz_pvector_foreach (vec, iter) {
-		if (!iter) {
-			break;
-		}
-		ab = *iter;
+	rz_iterator_foreach(iter, ab) {
 		if (!ab || !ab->op) {
 			break;
 		}
@@ -587,7 +582,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	}
 
 	pj_end(pj);
-	rz_pvector_free(vec);
+	rz_iterator_free(iter);
 }
 
 #define PRINTF_LN(k, fmt, arg) \
@@ -617,21 +612,19 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	}
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
-	RzPVector *vec = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
-	if (!vec) {
+	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
+	if (!iter) {
 		return;
 	}
 
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	const char *color = use_color ? core->cons->context->pal.label : "";
 
-	void **iter;
 	RzAnalysisBytes *ab;
-	rz_pvector_foreach (vec, iter) {
-		if (!(iter && *iter && ((RzAnalysisBytes *)*iter)->op)) {
+	rz_iterator_foreach(iter, ab) {
+		if (!ab->op) {
 			break;
 		}
-		ab = *iter;
 		RzAnalysisOp *op = ab->op;
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
 		RzAnalysisHint *hint = ab->hint;
@@ -690,7 +683,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		PRINTF_LN_STR("stackop", op->stackop != RZ_ANALYSIS_STACK_NULL ? rz_analysis_stackop_tostring(op->stackop) : NULL);
 		PRINTF_LN_NOT("stackptr", "%" PFMT64u "\n", op->stackptr, 0);
 	}
-	rz_pvector_free(vec);
+	rz_iterator_free(iter);
 }
 
 #undef PJ_KS

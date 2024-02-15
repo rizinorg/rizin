@@ -13,12 +13,11 @@ RZ_API RzIterator *rz_iterator_new(F_RzIterator next, F_RzIterator_FREE free, F_
 
 RZ_API void *rz_iterator_next(RzIterator *it) {
 	rz_return_val_if_fail(it && it->next, NULL);
-	void *cur = it->next(it);
 	if (it->free) {
 		it->free(it->cur);
 	}
-	it->cur = cur;
-	return cur;
+	it->cur = it->next(it);
+	return it->cur;
 }
 
 RZ_API void rz_iterator_free(RzIterator *it) {
