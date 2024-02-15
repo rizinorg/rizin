@@ -33,7 +33,7 @@ inline static arm_cc ARMCC_getOppositeCondition(arm_cc cc) {
 	switch (cc) {
 	default:
 		// llvm_unreachable("Unknown condition code");
-		assert(0);
+		rz_warn_if_reached();
 		return ARM_CC_INVALID;
 	case ARM_CC_EQ:
 		return ARM_CC_NE;

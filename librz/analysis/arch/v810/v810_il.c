@@ -112,7 +112,7 @@ static const char **SR = registers + 32;
 
 RzAnalysisILConfig *v810_il_config(RzAnalysis *a) {
 	rz_return_val_if_fail(a, NULL);
-	assert(RZ_STR_EQ(SR[0], "EIPC"));
+	rz_return_val_if_fail(RZ_STR_EQ(SR[0], "EIPC"), NULL);
 
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, false, 32);
 	cfg->reg_bindings = registers;

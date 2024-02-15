@@ -18,7 +18,7 @@
 inline static const char *ARMCondCodeToString(arm_cc cc) {
 	switch (cc) {
 	default:
-		assert(0 && "Unknown condition code");
+		rz_warn_if_reached();
 		return "";
 	case ARM_CC_EQ:
 		return "eq";

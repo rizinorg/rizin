@@ -56,7 +56,7 @@ static st64 score(RzRune *buff, const int len) {
 		}
 
 		ut8 i = compute_index(c1, c2);
-		assert(i < 49);
+		rz_return_val_if_fail(i < 49, ST64_MIN);
 		ut8 y = LATIN1[i];
 		if (y == 0) {
 			score += -100;

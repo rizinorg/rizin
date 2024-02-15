@@ -542,7 +542,7 @@ bool v13_v14_foreach_cb(void *user, const char *k, const char *v) {
 	Sdb *fn_db = user;
 	if (rz_str_startswith(k, "0x")) {
 		RzJson *fn_j = rz_json_parse((char *)v);
-		assert(fn_j->type == RZ_JSON_OBJECT);
+		rz_return_val_if_fail(fn_j->type == RZ_JSON_OBJECT, false);
 
 		PJ *j = pj_new();
 		pj_o(j);

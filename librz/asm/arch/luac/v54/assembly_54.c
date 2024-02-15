@@ -88,7 +88,7 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 			return instruction;
 		}
 	}
-	assert(cur_cnt == arg_num);
+	rz_return_val_if_fail(cur_cnt == arg_num, -1);
 
 	return instruction;
 }
