@@ -116,8 +116,8 @@ bool test_rz_core_analysis_bytes() {
 	mu_assert_streq(ab->opcode, "mov dword [rbp - 4], edi", "rz_core_analysis_bytes opcode");
 	mu_assert_streq(ab->pseudo, "dword [rbp - 4] = edi", "rz_core_analysis_bytes pseudo");
 
-	rz_core_free(core);
 	rz_iterator_free(iter);
+	rz_core_free(core);
 	mu_end;
 }
 
