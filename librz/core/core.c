@@ -2350,9 +2350,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->offname = rz_core_print_offname;
 	core->print->offsize = rz_core_print_offsize;
 	core->print->cb_printf = rz_cons_printf;
-#if __WINDOWS__
-	core->print->cb_eprintf = win_eprintf;
-#endif
 	core->print->cb_color = rz_cons_rainbow_get;
 	core->print->write = mywrite;
 	core->print->exists_var = exists_var;

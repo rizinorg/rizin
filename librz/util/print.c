@@ -32,14 +32,6 @@ static int libc_printf(const char *format, ...) {
 	return 0;
 }
 
-static int libc_eprintf(const char *format, ...) {
-	va_list ap;
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-	return 0;
-}
-
 static RzPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 RZ_API bool rz_print_is_interrupted(void) {
@@ -63,7 +55,6 @@ RZ_API RzPrint *rz_print_new(void) {
 	p->pairs = true;
 	p->resetbg = true;
 	p->cb_printf = libc_printf;
-	p->cb_eprintf = libc_eprintf;
 	p->oprintf = nullprinter;
 	p->bits = 32;
 	p->stride = 0;
