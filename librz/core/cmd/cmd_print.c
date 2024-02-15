@@ -4016,12 +4016,13 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const char **argv) {
-	RzPVector *ops = rz_core_analysis_op_function(core, RZ_ANALYSIS_OP_MASK_IL);
+	RzIterator *ops = rz_core_analysis_op_function_iter(core, RZ_ANALYSIS_OP_MASK_IL);
 	if (!ops) {
 		goto exit;
 	}
 
 	rz_core_il_cons_print(core, ops, false);
+	rz_iterator_free(ops);
 	return RZ_CMD_STATUS_OK;
 exit:
 	return RZ_CMD_STATUS_ERROR;

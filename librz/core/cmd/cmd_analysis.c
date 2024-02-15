@@ -5656,13 +5656,13 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
  */
 RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty) {
 	rz_return_if_fail(core);
-	RzPVector *ops = rz_core_analysis_op_bytes(core, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
-	if (!ops) {
+	RzIterator *iter = rz_core_analysis_op_bytes_iter(core, core->offset, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
+	if (!iter) {
 		return;
 	}
 
-	rz_core_il_cons_print(core, ops, pretty);
-	rz_pvector_free(ops);
+	rz_core_il_cons_print(core, iter, pretty);
+	rz_iterator_free(iter);
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_il_handler(RzCore *core, int argc, const char **argv) {

@@ -5164,6 +5164,59 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(
 	return vec;
 }
 
+typedef struct {
+	RzCore *core;
+	ut64 offset_orig;
+	int max_op_size;
+	ut64 len;
+	ut64 nops;
+	ut64 offset;
+	ut64 iops;
+	ut64 offset_block;
+	RzAnalysisOp op;
+	RzAnalysisOpMask mask;
+} AnalysisOpContext;
+
+static void AnalysisOpContext_free(void *x) {
+	if (!x) {
+		return;
+	}
+	AnalysisOpContext *ctx = x;
+	rz_analysis_op_fini(&ctx->op);
+	if (ctx->offset_orig != ctx->core->offset) {
+		rz_core_seek(ctx->core, ctx->offset_orig, true);
+	}
+	free(x);
+}
+
+static void *analysis_op_next(RzIterator *it) {
+	AnalysisOpContext *ctx = it->u;
+	if ((ctx->offset >= ctx->len) || (ctx->nops && (ctx->iops >= ctx->nops))) {
+		return NULL;
+	}
+
+	ut64 addr = ctx->core->offset + ctx->offset_block;
+	if (ctx->max_op_size + addr > ctx->core->offset + ctx->core->blocksize) {
+		if (!rz_core_seek(ctx->core, addr, true)) {
+			return NULL;
+		}
+		ctx->offset_block = 0;
+	}
+
+	rz_analysis_op_fini(&ctx->op);
+	rz_analysis_op_init(&ctx->op);
+	ut8 *ptr = ctx->core->block + ctx->offset_block;
+	if (rz_analysis_op(ctx->core->analysis, &ctx->op, addr, ptr, ctx->max_op_size, ctx->mask) < 1) {
+		RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", addr);
+		return NULL;
+	}
+
+	ctx->offset += ctx->op.size;
+	ctx->offset_block += ctx->op.size;
+	++ctx->iops;
+	return &ctx->op;
+}
+
 /**
  * \brief Parse \p len bytes and \p nops RzAnalysisOps,
  *        restricted by \p len and \p nops at the same time
@@ -5172,8 +5225,8 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(
  * \param len Maximum length read from \p buf in bytes. set to 0 to disable it (only use \p nops).
  * \param nops Maximum number of instruction, set to 0 to disable it (only use \p len).
  */
-RZ_API RzPVector *rz_core_analysis_op_bytes(
-	RZ_NONNULL RzCore *core, ut64 len, ut64 nops, RzAnalysisOpMask mask) {
+RZ_API RzIterator *rz_core_analysis_op_bytes_iter(
+	RZ_NONNULL RzCore *core, ut64 offset, ut64 len, ut64 nops, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(core, NULL);
 
 	int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
@@ -5184,38 +5237,18 @@ RZ_API RzPVector *rz_core_analysis_op_bytes(
 		return NULL;
 	}
 
-	RzPVector *ops = rz_pvector_new(rz_analysis_op_free);
-	ut64 offset_orig = core->offset;
+	AnalysisOpContext *ctx = RZ_NEW0(AnalysisOpContext);
+	ctx->core = core;
+	ctx->offset_orig = core->offset;
+	ctx->nops = nops;
+	ctx->len = len;
+	ctx->max_op_size = max_op_size;
+	ctx->mask = mask;
 
-	for (ut64 off = 0, iops = 0; off < len && (nops && iops < nops); ++iops) {
-		ut64 addr = core->offset + off;
-		if (max_op_size + addr > core->offset + core->blocksize) {
-			if (!rz_core_seek(core, addr, true)) {
-				break;
-			}
-		}
-
-		RzAnalysisOp *op = RZ_NEW0(RzAnalysisOp);
-		if (!op) {
-			break;
-		}
-
-		rz_analysis_op_init(op);
-		ut8 *ptr = core->block + off;
-		if (rz_analysis_op(core->analysis, op, addr, ptr, max_op_size, mask) < 1) {
-			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", addr);
-			goto err;
-		}
-
-		off += op->size;
-		rz_pvector_push(ops, op);
-		continue;
-	err:
-		rz_analysis_op_free(op);
-		break;
+	if (offset != core->offset) {
+		rz_core_seek(core, offset, true);
 	}
-	rz_core_seek(core, offset_orig, true);
-	return ops;
+	return rz_iterator_new(analysis_op_next, NULL, AnalysisOpContext_free, ctx);
 }
 
 /**
@@ -5223,11 +5256,10 @@ RZ_API RzPVector *rz_core_analysis_op_bytes(
  *
  * \param core RzCore
  */
-RZ_API RzPVector *rz_core_analysis_op_function(RZ_NONNULL RzCore *core, RzAnalysisOpMask mask) {
+RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(core, NULL);
 
-	RzPVector *ops = NULL;
-	ut64 oldoff = core->offset;
+	RzIterator *ops = NULL;
 	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No function found in 0x%08" PFMT64x ".\n", core->offset);
@@ -5252,10 +5284,7 @@ RZ_API RzPVector *rz_core_analysis_op_function(RZ_NONNULL RzCore *core, RzAnalys
 		goto exit;
 	}
 	ut64 size = end - start;
-	rz_core_seek(core, start, true);
-	ops = rz_core_analysis_op_bytes(core, size, 0, mask);
-	rz_core_seek(core, oldoff, true);
-
+	ops = rz_core_analysis_op_bytes_iter(core, start, size, 0, mask);
 exit:
 	rz_list_free(list);
 	return ops;

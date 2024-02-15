@@ -820,16 +820,20 @@ static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, 
 	rz_cons_newline();
 }
 
-RZ_API void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzPVector *ops, bool pretty) {
-	rz_return_if_fail(core && ops);
+RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty) {
+	rz_return_if_fail(core && iter);
 	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;
 	const char *il_stmt = NULL;
 	const char delim = pretty ? '\n' : ' ';
 	RzStrBuf sb;
 
-	void **it;
-	rz_pvector_foreach (ops, it) {
-		RzAnalysisOp *op = *it;
+	RzAnalysisOp *op = NULL;
+	rz_iterator_foreach(RzAnalysisOp *, iter, op) {
+		if (!op->il_op) {
+			RZ_LOG_DEBUG("Empty IL at 0x%08" PFMT64x "...\n", op->addr);
+			break;
+		}
+
 		rz_strbuf_init(&sb);
 		rz_il_op_effect_stringify(op->il_op, &sb, pretty);
 		il_stmt = rz_strbuf_get(&sb);
