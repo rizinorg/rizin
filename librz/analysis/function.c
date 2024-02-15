@@ -26,6 +26,23 @@ RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_functions_in(RzAnalysi
 	return list;
 }
 
+static bool get_function_block_cb(RzAnalysisBlock *block, void *user) {
+	RzAnalysisFunction **pfcn = user;
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (block->fcns, iter, fcn) {
+		*pfcn = fcn;
+		break;
+	}
+	return true;
+}
+
+RZ_API RzAnalysisFunction *rz_analysis_first_function_in(RzAnalysis *analysis, ut64 addr) {
+	RzAnalysisFunction *fcn = NULL;
+	rz_analysis_blocks_foreach_in(analysis, addr, get_function_block_cb, &fcn);
+	return fcn;
+}
+
 // check if name is already registered
 static bool function_name_exists(RzAnalysis *analysis, const char *name, ut64 addr) {
 	bool found = false;

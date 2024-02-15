@@ -430,7 +430,8 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 	rz_list_free(list);
 }
 
-RZ_IPI void rz_core_analysis_il_reinit(RzCore *core) {
+RZ_API void rz_core_analysis_il_reinit(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
 	rz_analysis_il_vm_setup(core->analysis);
 	if (core->analysis->il_vm) {
 		// initialize the program counter with the current offset
@@ -694,7 +695,8 @@ static bool step_cond_n(RzAnalysisILVM *vm, void *user) {
  * Perform \p n steps starting at the PC given by analysis->reg in RzIL
  * \return false if an error occured (e.g. invalid op)
  */
-RZ_IPI bool rz_core_il_step(RzCore *core, ut64 n) {
+RZ_API bool rz_core_il_step(RZ_NONNULL RzCore *core, ut64 n) {
+	rz_return_val_if_fail(core && n, false);
 	if (!step_assert_vm(core)) {
 		return false;
 	}
@@ -719,7 +721,8 @@ static bool step_cond_until(RzAnalysisILVM *vm, void *user) {
  * \param until destination address where to stop
  * \return false if an error occured (e.g. invalid op)
  */
-RZ_IPI bool rz_core_il_step_until(RzCore *core, ut64 until) {
+RZ_API bool rz_core_il_step_until(RZ_NONNULL RzCore *core, ut64 until) {
+	rz_return_val_if_fail(core && until, false);
 	if (!step_assert_vm(core)) {
 		return false;
 	}
@@ -828,7 +831,7 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 	RzStrBuf sb;
 
 	RzAnalysisOp *op = NULL;
-	rz_iterator_foreach(RzAnalysisOp *, iter, op) {
+	rz_iterator_foreach(iter, op) {
 		if (!op->il_op) {
 			RZ_LOG_DEBUG("Empty IL at 0x%08" PFMT64x "...\n", op->addr);
 			break;

@@ -21,8 +21,8 @@ typedef struct rz_iterator_t {
 	F_RzIterator_FREE free_u;
 } RzIterator;
 
-#define rz_iterator_foreach(T, iter, val) \
-	for ((val) = (T)rz_iterator_next(iter); (val) != NULL; (val) = (T)rz_iterator_next(iter))
+#define rz_iterator_foreach(iter, val) \
+	for ((val) = rz_iterator_next(iter); (val) != NULL; (val) = rz_iterator_next(iter))
 
 RZ_API RzIterator *rz_iterator_new(F_RzIterator next, F_RzIterator_FREE free, F_RzIterator_FREE free_u, void *u);
 RZ_API void *rz_iterator_next(RzIterator *it);

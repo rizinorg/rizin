@@ -62,6 +62,8 @@ static bool test_analysis_il() {
 	RzStrBuf sb = { 0 };
 	RzAnalysisOp op = { 0 };
 
+	// extract and evaluate a single instruction
+	rz_core_analysis_il_reinit(core);
 	rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_IL);
 	rz_il_op_effect_stringify(op.il_op, &sb, false);
 	mu_assert_streq(rz_strbuf_get(&sb), "(seq "
@@ -69,14 +71,37 @@ static bool test_analysis_il() {
 					    "(storew 0 (+ (- (var sp) (bv 64 0x20)) (bv 64 0x8)) (var x30)) "
 					    "(set sp (- (var sp) (bv 64 0x20))))",
 		"stringify il op");
+	mu_assert("eval rzil", rz_core_il_step(core, 1));
+	RzILVal *v = rz_il_vm_get_var_value(core->analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, "sp");
+	mu_assert_notnull(v, "RzIL vm var value");
+	mu_assert_eq(v->type, RZ_IL_TYPE_PURE_BITVECTOR, "var type");
+	mu_assert_eq(rz_bv_to_ut64(v->data.bv), -0x20, "var value");
 
-	ut64 addr = rz_num_math(core->num, "sym.decrypt");
-	rz_core_seek(core, addr, true);
-	RzIterator *iter = rz_core_analysis_op_function_iter(core, RZ_ANALYSIS_OP_MASK_IL);
+	// extract and evaluate a whole function
+	RzAnalysisFunction *f = rz_analysis_get_function_byname(core->analysis, "sym.decrypt");
+	mu_assert_notnull(v, "get function");
+	rz_core_seek(core, f->addr, true);
+	rz_config_set_b(core->config, "io.cache", true);
+	rz_core_cmd_lines(core,
+		"o malloc://0x1000 0x40000\n"
+		"o malloc://0x10 0x50000\n"
+		"oC 0x10 @ obj.seckrit   # New file mapping from 0x0-0xf\n"
+		"omb. obj.seckrit @ 0x0\n"
+		"w AnyColourYouLike @ 0x50000\n"
+		"ar sp=0x41000\n"
+		"ar x0=0x50000\n");
+	rz_core_analysis_il_reinit(core);
+	mu_assert("eval rzil", rz_core_il_step_until(core, 0x914));
+	char buf[0x20];
+	ut64 addr = rz_num_get(core->num, "obj.seckrit");
+	rz_io_read_at(core->io, addr, (ut8 *)buf, RZ_ARRAY_SIZE(buf));
+	mu_assert_streq(buf, "Hello from RzIL!", "eval rzil in function");
+
+	RzIterator *iter = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
 	mu_assert_notnull(iter, "function rzil");
 	ut64 count = 0;
 	RzAnalysisOp *pop = NULL;
-	rz_iterator_foreach(RzAnalysisOp *, iter, pop) {
+	rz_iterator_foreach(iter, pop) {
 		if (op.addr == 0x804) {
 			rz_strbuf_fini(&sb);
 			rz_il_op_effect_stringify(pop->il_op, &sb, false);
@@ -93,10 +118,11 @@ static bool test_analysis_il() {
 	mu_assert_eq(count, 69, "il op count of function");
 	rz_iterator_free(iter);
 
+	// extract and evaluate a chunk of instructions
 	count = 0;
 	iter = rz_core_analysis_op_chunk_iter(core, 0x918, 0, 30, RZ_ANALYSIS_OP_MASK_IL);
 	mu_assert_notnull(iter, "chunk rzil");
-	rz_iterator_foreach(RzAnalysisOp *, iter, pop) {
+	rz_iterator_foreach(iter, pop) {
 		if (op.addr == 0x918) {
 			rz_strbuf_fini(&sb);
 			rz_il_op_effect_stringify(pop->il_op, &sb, false);
@@ -112,6 +138,10 @@ static bool test_analysis_il() {
 	}
 	mu_assert_eq(count, 30, "il op count of function");
 	rz_iterator_free(iter);
+
+	rz_core_seek(core, 0x918, true);
+	rz_core_analysis_il_reinit(core);
+	mu_assert("eval rzil", rz_core_il_step(core, 3));
 
 	rz_core_free(core);
 	mu_end;

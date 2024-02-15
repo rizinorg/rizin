@@ -5256,27 +5256,10 @@ RZ_API RzIterator *rz_core_analysis_op_chunk_iter(
  *
  * \param core RzCore
  */
-RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(core, NULL);
+RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(core && fcn, NULL);
 
 	RzIterator *ops = NULL;
-	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
-	if (rz_list_empty(list)) {
-		RZ_LOG_ERROR("No function found in 0x%08" PFMT64x ".\n", core->offset);
-		goto exit;
-	}
-	if (rz_list_length(list) > 1) {
-		RZ_LOG_ERROR("Multiple overlapping functions found at 0x%" PFMT64x ". "
-			     "Re-run this command at the entrypoint of one of them to disambiguate.\n",
-			core->offset);
-		goto exit;
-	}
-	RzAnalysisFunction *fcn = rz_list_first(list);
-	if (!fcn) {
-		rz_warn_if_reached();
-		goto exit;
-	}
-
 	ut64 start = fcn->addr;
 	ut64 end = rz_analysis_function_max_addr(fcn);
 	if (end <= start) {
@@ -5286,7 +5269,6 @@ RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RzAnalysi
 	ut64 size = end - start;
 	ops = rz_core_analysis_op_chunk_iter(core, start, size, 0, mask);
 exit:
-	rz_list_free(list);
 	return ops;
 }
 
