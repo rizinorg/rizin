@@ -643,6 +643,121 @@ static const char *map_dwarf_reg_to_s390_reg(ut32 reg_num) {
 	}
 }
 
+/**
+ * https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-dwarf.adoc
+ */
+static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
+	switch (reg_num) {
+	// Integer Registers
+	case 0: return "x0";
+	case 1: return "x1";
+	case 2: return "x2";
+	case 3: return "x3";
+	case 4: return "x4";
+	case 5: return "x5";
+	case 6: return "x6";
+	case 7: return "x7";
+	case 8: return "x8";
+	case 9: return "x9";
+	case 10: return "x10";
+	case 11: return "x11";
+	case 12: return "x12";
+	case 13: return "x13";
+	case 14: return "x14";
+	case 15: return "x15";
+	case 16: return "x16";
+	case 17: return "x17";
+	case 18: return "x18";
+	case 19: return "x19";
+	case 20: return "x20";
+	case 21: return "x21";
+	case 22: return "x22";
+	case 23: return "x23";
+	case 24: return "x24";
+	case 25: return "x25";
+	case 26: return "x26";
+	case 27: return "x27";
+	case 28: return "x28";
+	case 29: return "x29";
+	case 30: return "x30";
+	case 31: return "x31";
+	// Floating-point Registers
+	case 32: return "f0";
+	case 33: return "f1";
+	case 34: return "f2";
+	case 35: return "f3";
+	case 36: return "f4";
+	case 37: return "f5";
+	case 38: return "f6";
+	case 39: return "f7";
+	case 40: return "f8";
+	case 41: return "f9";
+	case 42: return "f10";
+	case 43: return "f11";
+	case 44: return "f12";
+	case 45: return "f13";
+	case 46: return "f14";
+	case 47: return "f15";
+	case 48: return "f16";
+	case 49: return "f17";
+	case 50: return "f18";
+	case 51: return "f19";
+	case 52: return "f20";
+	case 53: return "f21";
+	case 54: return "f22";
+	case 55: return "f23";
+	case 56: return "f24";
+	case 57: return "f25";
+	case 58: return "f26";
+	case 59: return "f27";
+	case 60: return "f28";
+	case 61: return "f29";
+	case 62: return "f30";
+	case 63: return "f31";
+	// 64 Alternate Frame Return Column
+	// 65 - 95 Reserved for future standard extensions
+	// 96 - 127 Vector Registers
+	case 96: return "v0";
+	case 97: return "v1";
+	case 98: return "v2";
+	case 99: return "v3";
+	case 100: return "v4";
+	case 101: return "v5";
+	case 102: return "v6";
+	case 103: return "v7";
+	case 104: return "v8";
+	case 105: return "v9";
+	case 106: return "v10";
+	case 107: return "v11";
+	case 108: return "v12";
+	case 109: return "v13";
+	case 110: return "v14";
+	case 111: return "v15";
+	case 112: return "v16";
+	case 113: return "v17";
+	case 114: return "v18";
+	case 115: return "v19";
+	case 116: return "v20";
+	case 117: return "v21";
+	case 118: return "v22";
+	case 119: return "v23";
+	case 120: return "v24";
+	case 121: return "v25";
+	case 122: return "v26";
+	case 123: return "v27";
+	case 124: return "v28";
+	case 125: return "v29";
+	case 126: return "v30";
+	case 127: return "v31";
+	// 128 - 3071 Reserved for future standard extensions
+	// 3072 - 4095 Reserved for custom extensions
+	// 4096 - 8191 CSRs
+	default:
+		rz_warn_if_reached();
+		return "unsupported_reg";
+	}
+}
+
 /// 4.5.1 DWARF Register Numbers https://www.infineon.com/dgdl/Infineon-TC2xx_EABI-UM-v02_09-EN.pdf?fileId=5546d46269bda8df0169ca1bfc7d24ab
 static const char *map_dwarf_reg_to_tricore_reg(ut32 reg_num) {
 	switch (reg_num) {
@@ -1012,6 +1127,9 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch,
 	}
 	if (RZ_STR_EQ(arch, "s390")) {
 		return map_dwarf_reg_to_s390_reg;
+	}
+	if (RZ_STR_EQ(arch, "riscv")) {
+		return map_dwarf_reg_to_riscv_reg;
 	}
 	if (RZ_STR_EQ(arch, "tricore")) {
 		return map_dwarf_reg_to_tricore_reg;
