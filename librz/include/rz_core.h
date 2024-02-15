@@ -667,6 +667,9 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 RZ_API void rz_core_analysis_esil_init_mem_del(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size);
 RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 
+RZ_API RzPVector *rz_core_analysis_op_bytes(RZ_NONNULL RzCore *core, ut64 len, ut64 nops, RzAnalysisOpMask mask);
+RZ_API RzPVector *rz_core_analysis_op_function(RZ_NONNULL RzCore *core, RzAnalysisOpMask mask);
+
 /* canalysis.c */
 typedef enum rz_core_analysis_name_type {
 	RZ_CORE_ANALYSIS_NAME_TYPE_VAR = 0,
@@ -1310,7 +1313,7 @@ RZ_API ut64 rz_core_analysis_var_addr(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnal
 RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NONNULL RzBinSymbol *symbol, bool demangle);
 RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names);
 
-RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, ut32 num_ops, bool pretty);
+RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty);
 
 #endif
 

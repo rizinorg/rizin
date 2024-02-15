@@ -5643,46 +5643,6 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
-static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
-	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
-	if (RZ_STR_ISEMPTY(il_stmt)) {
-		rz_cons_newline();
-		return;
-	}
-	const char *color = NULL;
-	size_t prev = 0, len = strlen(il_stmt);
-	for (size_t i = 0; i < len; ++i) {
-		const char ch = il_stmt[i];
-		if (ch == '(') {
-			color = ctx->pal.flow;
-			int plen = i - prev;
-			rz_cons_printf("%.*s(", plen, il_stmt + prev);
-			prev = i + 1;
-		} else if (ch == ')' && color) {
-			int plen = i - prev;
-			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
-			prev = i;
-			color = NULL;
-		} else if (ch == ' ' && color) {
-			int plen = i - prev;
-			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
-			prev = i;
-			color = NULL;
-		} else if ((i - 1) == prev && il_stmt[prev] == ' ') {
-			color = IS_DIGIT(ch) ? ctx->pal.num : ctx->pal.comment;
-		}
-	}
-	if (prev < len) {
-		int plen = len - prev;
-		if (color) {
-			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
-		} else {
-			rz_cons_printf("%.*s", plen, il_stmt + prev);
-		}
-	}
-	rz_cons_newline();
-}
-
 /**
  * \brief Parse and print \p len bytes and \p num_ops
  *      RzIL instructions of data in \p buf, restricted by
@@ -5694,51 +5654,19 @@ static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, 
  * \param num_ops Maximum number of instruction, set to 0 to disable it (only use \p len).
  * \param pretty Pretty-printing
  */
-RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, ut32 num_ops, bool pretty) {
-	rz_return_if_fail(core && buf);
-	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;
-	const char *il_stmt = NULL;
-	const char delim = pretty ? '\n' : ' ';
-	RzAnalysisOp op;
-	RzStrBuf sb;
-
-	for (size_t i = 0, idx = 0; idx < len && (!num_ops || (num_ops && i < num_ops)); i++) {
-		ut64 addr = core->offset + idx;
-
-		rz_analysis_op_init(&op);
-		if (rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx, RZ_ANALYSIS_OP_MASK_IL) < 1) {
-			RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", core->offset + idx);
-			rz_analysis_op_fini(&op);
-			break;
-		}
-		// Just empty RzIL
-		if (!op.il_op) {
-			RZ_LOG_DEBUG("Empty IL at 0x%08" PFMT64x "...\n", core->offset + idx);
-			break;
-		}
-
-		if (!op.il_op) {
-			rz_cons_printf("0x%" PFMT64x "%c%s\n", core->offset + idx, delim, "()");
-			goto loop_continue;
-		}
-		rz_strbuf_init(&sb);
-		rz_il_op_effect_stringify(op.il_op, &sb, pretty);
-		il_stmt = rz_strbuf_get(&sb);
-		if (colorize) {
-			core_colorify_il_statement(core->cons->context, il_stmt, delim, core->offset + idx);
-		} else {
-			rz_cons_printf("0x%" PFMT64x "%c%s\n", core->offset + idx, delim, il_stmt);
-		}
-		rz_strbuf_fini(&sb);
-	loop_continue:
-		idx += op.size;
-		rz_analysis_op_fini(&op);
+RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty) {
+	rz_return_if_fail(core);
+	RzPVector *ops = rz_core_analysis_op_bytes(core, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
+	if (!ops) {
+		return;
 	}
+
+	rz_core_il_cons_print(core, ops, pretty);
+	rz_pvector_free(ops);
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_il_handler(RzCore *core, int argc, const char **argv) {
-	ut32 count = 1, obs = core->blocksize;
-
+	ut32 count = 1;
 	if (argc > 1) {
 		st32 l = (st32)rz_num_math(core->num, argv[1]);
 		if (l <= 0) {
@@ -5746,23 +5674,14 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_il_handler(RzCore *core, int argc, const cha
 			return RZ_CMD_STATUS_ERROR;
 		}
 		count = l;
-		l *= 8;
-		if (l > obs) {
-			rz_core_block_size(core, l);
-		}
 	}
 
-	rz_core_analysis_bytes_il(core, core->block, core->blocksize, count, false);
-
-	if (obs != core->blocksize) {
-		rz_core_block_size(core, obs);
-	}
+	rz_core_analysis_bytes_il(core, 0, count, false);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_il_pretty_handler(RzCore *core, int argc, const char **argv) {
-	ut32 count = 1, obs = core->blocksize;
-
+	ut32 count = 1;
 	if (argc > 1) {
 		st32 l = (st32)rz_num_math(core->num, argv[1]);
 		if (l <= 0) {
@@ -5770,17 +5689,9 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_il_pretty_handler(RzCore *core, int argc, co
 			return RZ_CMD_STATUS_ERROR;
 		}
 		count = l;
-		l *= 8;
-		if (l > obs) {
-			rz_core_block_size(core, l);
-		}
 	}
 
-	rz_core_analysis_bytes_il(core, core->block, core->blocksize, count, true);
-
-	if (obs != core->blocksize) {
-		rz_core_block_size(core, obs);
-	}
+	rz_core_analysis_bytes_il(core, 0, count, true);
 	return RZ_CMD_STATUS_OK;
 }
 

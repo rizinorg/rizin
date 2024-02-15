@@ -780,6 +780,68 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 	return true;
 }
 
+static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
+	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	if (RZ_STR_ISEMPTY(il_stmt)) {
+		rz_cons_newline();
+		return;
+	}
+	const char *color = NULL;
+	size_t prev = 0, len = strlen(il_stmt);
+	for (size_t i = 0; i < len; ++i) {
+		const char ch = il_stmt[i];
+		if (ch == '(') {
+			color = ctx->pal.flow;
+			int plen = i - prev;
+			rz_cons_printf("%.*s(", plen, il_stmt + prev);
+			prev = i + 1;
+		} else if (ch == ')' && color) {
+			int plen = i - prev;
+			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
+			prev = i;
+			color = NULL;
+		} else if (ch == ' ' && color) {
+			int plen = i - prev;
+			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
+			prev = i;
+			color = NULL;
+		} else if ((i - 1) == prev && il_stmt[prev] == ' ') {
+			color = IS_DIGIT(ch) ? ctx->pal.num : ctx->pal.comment;
+		}
+	}
+	if (prev < len) {
+		int plen = len - prev;
+		if (color) {
+			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
+		} else {
+			rz_cons_printf("%.*s", plen, il_stmt + prev);
+		}
+	}
+	rz_cons_newline();
+}
+
+RZ_API void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzPVector *ops, bool pretty) {
+	rz_return_if_fail(core && ops);
+	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;
+	const char *il_stmt = NULL;
+	const char delim = pretty ? '\n' : ' ';
+	RzStrBuf sb;
+
+	void **it;
+	rz_pvector_foreach (ops, it) {
+		RzAnalysisOp *op = *it;
+		rz_strbuf_init(&sb);
+		rz_il_op_effect_stringify(op->il_op, &sb, pretty);
+		il_stmt = rz_strbuf_get(&sb);
+		if (colorize) {
+			core_colorify_il_statement(core->cons->context, il_stmt, delim, op->addr);
+		} else {
+			rz_cons_printf("0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
+		}
+		rz_strbuf_fini(&sb);
+	}
+}
+
 // used to speedup strcmp with rz_config_get in loops
 enum {
 	RZ_ARCH_THUMB,

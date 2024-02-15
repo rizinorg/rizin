@@ -50,8 +50,24 @@ static bool test_analysis_il_vm_step() {
 	mu_end;
 }
 
+static bool test_analysis_il() {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "init core");
+	RzCoreFile *cf = rz_core_file_open(core, "bins/elf/emulateme.arm64", RZ_PERM_RWX, 0);
+	mu_assert_notnull(cf, "open file");
+	mu_assert("load file", rz_core_bin_load(core, NULL, 0));
+	mu_assert("il vm setup", rz_analysis_il_vm_setup(core->analysis));
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_DEEP);
+
+//	rz_core_analysis_bytes_il();
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_analysis_il_vm_step);
+	mu_run_test(test_analysis_il);
 	return tests_passed != tests_run;
 }
 

@@ -107,7 +107,7 @@ static int defaultCycles(RzAnalysisOp *op) {
  *
  * \return The number of bytes which were disassembled. -1 in case of failure.
  */
-RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(analysis && op && len > 0, -1);
 
 	rz_analysis_op_init(op);
