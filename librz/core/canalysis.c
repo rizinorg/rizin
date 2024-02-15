@@ -5225,7 +5225,7 @@ static void *analysis_op_next(RzIterator *it) {
  * \param len Maximum length read from \p buf in bytes. set to 0 to disable it (only use \p nops).
  * \param nops Maximum number of instruction, set to 0 to disable it (only use \p len).
  */
-RZ_API RzIterator *rz_core_analysis_op_bytes_iter(
+RZ_API RzIterator *rz_core_analysis_op_chunk_iter(
 	RZ_NONNULL RzCore *core, ut64 offset, ut64 len, ut64 nops, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(core, NULL);
 
@@ -5284,7 +5284,7 @@ RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RzAnalysi
 		goto exit;
 	}
 	ut64 size = end - start;
-	ops = rz_core_analysis_op_bytes_iter(core, start, size, 0, mask);
+	ops = rz_core_analysis_op_chunk_iter(core, start, size, 0, mask);
 exit:
 	rz_list_free(list);
 	return ops;

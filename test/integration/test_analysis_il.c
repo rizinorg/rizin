@@ -59,7 +59,59 @@ static bool test_analysis_il() {
 	mu_assert("il vm setup", rz_analysis_il_vm_setup(core->analysis));
 	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_DEEP);
 
-//	rz_core_analysis_bytes_il();
+	RzStrBuf sb = { 0 };
+	RzAnalysisOp op = { 0 };
+
+	rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_IL);
+	rz_il_op_effect_stringify(op.il_op, &sb, false);
+	mu_assert_streq(rz_strbuf_get(&sb), "(seq "
+					    "(storew 0 (- (var sp) (bv 64 0x20)) (var x29)) "
+					    "(storew 0 (+ (- (var sp) (bv 64 0x20)) (bv 64 0x8)) (var x30)) "
+					    "(set sp (- (var sp) (bv 64 0x20))))",
+		"stringify il op");
+
+	ut64 addr = rz_num_math(core->num, "sym.decrypt");
+	rz_core_seek(core, addr, true);
+	RzIterator *iter = rz_core_analysis_op_function_iter(core, RZ_ANALYSIS_OP_MASK_IL);
+	mu_assert_notnull(iter, "function rzil");
+	ut64 count = 0;
+	RzAnalysisOp *pop = NULL;
+	rz_iterator_foreach(RzAnalysisOp *, iter, pop) {
+		if (op.addr == 0x804) {
+			rz_strbuf_fini(&sb);
+			rz_il_op_effect_stringify(pop->il_op, &sb, false);
+			mu_assert_streq(rz_strbuf_get(&sb), "(set sp (- (var sp) (bv 64 0x30)))",
+				"stringify il op");
+		} else if (op.addr == 0x888) {
+			rz_strbuf_fini(&sb);
+			rz_il_op_effect_stringify(pop->il_op, &sb, false);
+			mu_assert_streq(rz_strbuf_get(&sb), "(set x0 (loadw 0 64 (+ (var sp) (bv 64 0x20))))",
+				"stringify il op");
+		}
+		++count;
+	}
+	mu_assert_eq(count, 69, "il op count of function");
+	rz_iterator_free(iter);
+
+	count = 0;
+	iter = rz_core_analysis_op_chunk_iter(core, 0x918, 0, 30, RZ_ANALYSIS_OP_MASK_IL);
+	mu_assert_notnull(iter, "chunk rzil");
+	rz_iterator_foreach(RzAnalysisOp *, iter, pop) {
+		if (op.addr == 0x918) {
+			rz_strbuf_fini(&sb);
+			rz_il_op_effect_stringify(pop->il_op, &sb, false);
+			mu_assert_streq(rz_strbuf_get(&sb), "(seq (storew 0 (- (var sp) (bv 64 0x30)) (var x29)) (storew 0 (+ (- (var sp) (bv 64 0x30)) (bv 64 0x8)) (var x30)) (set sp (- (var sp) (bv 64 0x30))))",
+				"stringify il op");
+		} else if (op.addr == 0x954) {
+			rz_strbuf_fini(&sb);
+			rz_il_op_effect_stringify(pop->il_op, &sb, false);
+			mu_assert_streq(rz_strbuf_get(&sb), "(set x0 (loadw 0 64 (+ (var sp) (bv 64 0x10))))",
+				"stringify il op");
+		}
+		++count;
+	}
+	mu_assert_eq(count, 30, "il op count of function");
+	rz_iterator_free(iter);
 
 	rz_core_free(core);
 	mu_end;

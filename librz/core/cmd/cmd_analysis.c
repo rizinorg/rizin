@@ -5656,7 +5656,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
  */
 RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty) {
 	rz_return_if_fail(core);
-	RzIterator *iter = rz_core_analysis_op_bytes_iter(core, core->offset, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
+	RzIterator *iter = rz_core_analysis_op_chunk_iter(core, core->offset, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
 	if (!iter) {
 		return;
 	}
