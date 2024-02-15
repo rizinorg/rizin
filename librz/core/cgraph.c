@@ -993,12 +993,19 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 		return false;
 	}
 
-	RzGraphNode *to_node = add_node_info_cfg(graph, op_to, false);
+	RzGraphNode *to_node = NULL;
+	bool found = false;
+	ut64 to_idx = ht_uu_find(nodes_visited, to, &found);
+	if (found) {
+		to_node = rz_graph_get_node(graph, to_idx);
+	} else {
+		to_node = add_node_info_cfg(graph, op_to, false);
+	}
 	if (!to_node) {
 		RZ_LOG_ERROR("Could not add node at 0x%" PFMT64x "\n", to);
 		return false;
 	}
-	ut64 to_idx = to_node->idx;
+	to_idx = to_node->idx;
 	if (from == to) {
 		from_idx = to_idx;
 	}

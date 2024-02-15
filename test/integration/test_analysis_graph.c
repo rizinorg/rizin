@@ -261,7 +261,7 @@ bool test_analysis_graph_cfg() {
 
 	RzGraph *g = rz_core_graph_cfg(core, 0x117a); // main()
 	mu_assert_notnull(g, "Graph was NULL");
-	mu_assert_eq(g->n_nodes, 26, "data graph node count");
+	mu_assert_eq(g->n_nodes, 24, "data graph node count");
 	mu_assert_eq(g->n_edges, 25, "data graph edge count");
 
 	// Testing the node content is a little annoying. The nodes
@@ -291,7 +291,7 @@ bool test_analysis_graph_cfg() {
 	mu_assert_eq(info->cfg.address, 0x11a7, "info address");
 	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
 
-	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 24)->data);
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 23)->data);
 	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
 	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
 	mu_assert_eq(info->cfg.address, 0x11cd, "info address");
