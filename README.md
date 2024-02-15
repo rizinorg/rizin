@@ -12,6 +12,21 @@ editor able to open disk files, and much more!
 To learn more on Rizin you may want to read the
 [official Rizin book](https://book.rizin.re).
 
+# Table of Contents
+
+1. [Rizin](#rizin)
+2. [How to Install](#how-to-install)
+3. [How to Build](#how-to-build)
+4. [Contributing](#contributing)
+    - [Tests](#tests)
+5. [Supported Features](#supported-features)
+    - [Supported Operating Systems](#supported-operating-systems)
+    - [Supported Architectures](#supported-architectures)
+    - [Supported File Formats](#supported-file-formats)
+    - [Tools](#tools)
+    - [Scripting](#scripting)
+6. [Community](#community)
+
 # How to install
 
 Look at [install instructions](https://rizin.re/install/) on our web page.
