@@ -173,6 +173,11 @@ bool test_rz_regex_named_matches(void) {
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 3), "domain", "domain name not set.");
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 4), "tdomain", "tdomain name not set.");
 
+	mu_assert_eq(rz_regex_get_group_idx_by_name(reg, "proto"), 1, "proto name not set.");
+	mu_assert_eq(rz_regex_get_group_idx_by_name(reg, "domain"), 3, "domain name not set.");
+	mu_assert_eq(rz_regex_get_group_idx_by_name(reg, "tdomain"), 4, "tdomain name not set.");
+	mu_assert_eq(rz_regex_get_group_idx_by_name(reg, "nonexistent"), -1, "shouldn't exis");
+
 	RzPVector *matches = rz_regex_match_all_not_grouped(reg, "https://rizin.re", RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 	mu_assert_true(matches && !rz_pvector_empty(matches), "Regex match failed");
 	mu_assert_eq(rz_pvector_len(matches), 5, "Regex match count failed.");

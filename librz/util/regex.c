@@ -178,6 +178,46 @@ RZ_API const ut8 *rz_regex_get_match_name(RZ_NONNULL const RzRegex *regex, ut32 
 }
 
 /**
+ * \brief Returns the name of a group.
+ *
+ * \param regex The regex expression with named groups.
+ * \param group_idx The index of the group to get the name for.
+ *
+ * \return The index of the group or RZ_REGEX_ERROR_NOMATCH in case of failure or if no name was given.
+ */
+RZ_API RzRegexStatus rz_regex_get_group_idx_by_name(RZ_NONNULL const RzRegex *regex, const char *group) {
+	rz_return_val_if_fail(regex, RZ_REGEX_ERROR_NOMATCH);
+
+	ut32 namecount;
+	ut32 name_entry_size;
+	PCRE2_SPTR nametable_ptr;
+
+	pcre2_pattern_info(
+		regex,
+		PCRE2_INFO_NAMECOUNT,
+		&namecount);
+
+	pcre2_pattern_info(
+		regex,
+		PCRE2_INFO_NAMETABLE,
+		&nametable_ptr);
+
+	pcre2_pattern_info(
+		regex,
+		PCRE2_INFO_NAMEENTRYSIZE,
+		&name_entry_size);
+
+	for (size_t i = 0; i < namecount; i++) {
+		int n = (nametable_ptr[0] << 8) | nametable_ptr[1];
+		if (RZ_STR_EQ((const char *)nametable_ptr + 2, group)) {
+			return n;
+		}
+		nametable_ptr += name_entry_size;
+	}
+	return RZ_REGEX_ERROR_NOMATCH;
+}
+
+/**
  * \brief Finds the first match in a text and returns it as a pvector.
  * First element in the vector is always the whole match, the following possible groups.
  *
