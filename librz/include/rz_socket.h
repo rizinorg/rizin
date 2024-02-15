@@ -275,7 +275,6 @@ RZ_API RzRunProfile *rz_run_new(const char *str);
 RZ_API bool rz_run_parse(RzRunProfile *pf, const char *profile);
 RZ_API void rz_run_free(RzRunProfile *r);
 RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b);
-RZ_API const char *rz_run_help(void);
 RZ_API int rz_run_config_env(RzRunProfile *p);
 RZ_API int rz_run_start(RzRunProfile *p);
 RZ_API void rz_run_reset(RzRunProfile *p);

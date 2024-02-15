@@ -655,54 +655,6 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	return true;
 }
 
-RZ_API const char *rz_run_help(void) {
-	return "program=/bin/ls\n"
-	       "arg1=/bin\n"
-	       "# arg2=hello\n"
-	       "# arg3=\"hello\\nworld\"\n"
-	       "# arg4=:048490184058104849\n"
-	       "# arg5=:!rz-gg -p n50 -d 10:0x8048123\n"
-	       "# arg6=@arg.txt\n"
-	       "# arg7=@300@ABCD # 300 chars filled with ABCD pattern\n"
-	       "# system=rizin -\n"
-	       "# daemon=false\n"
-	       "# aslr=no\n"
-	       "setenv=FOO=BAR\n"
-	       "# unsetenv=FOO\n"
-	       "# clearenv=true\n"
-	       "# envfile=environ.txt\n"
-	       "timeout=3\n"
-	       "# timeoutsig=SIGTERM # or 15\n"
-	       "# connect=localhost:8080\n"
-	       "# listen=8080\n"
-	       "# pty=false\n"
-	       "# fork=true\n"
-	       "# bits=32\n"
-	       "# pid=0\n"
-	       "# pidfile=/tmp/foo.pid\n"
-	       "# #sleep=0\n"
-	       "# #maxfd=0\n"
-	       "# #execve=false\n"
-	       "# #maxproc=0\n"
-	       "# #maxstack=0\n"
-	       "# #core=false\n"
-	       "# #stdio=blah.txt\n"
-	       "# #stderr=foo.txt\n"
-	       "# stdout=foo.txt\n"
-	       "# stdin=input.txt # or !program to redirect input from another program\n"
-	       "# input=input.txt\n"
-	       "# chdir=/\n"
-	       "# chroot=/mnt/chroot\n"
-	       "# libpath=$PWD:/tmp/lib\n"
-	       "# rzpreload=yes\n"
-	       "# preload=/lib/libfoo.so\n"
-	       "# setuid=2000\n"
-	       "# seteuid=2000\n"
-	       "# setgid=2001\n"
-	       "# setegid=2001\n"
-	       "# nice=5\n";
-}
-
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 static int fd_forward(int in_fd, int out_fd, char **buff) {
 	int size = 0;
