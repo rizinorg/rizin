@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2024 maijin <maijin21@gmail.com>
 // SPDX-FileCopyrightText: 2013-2017 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -66,93 +68,3 @@ const ut8 lic[] = {
 	0xbb, 0x67, 0x63, 0x6e, 0x0e, 0xec, 0xcc, 0xdd, 0xdc, 0x99, 0x9f,
 	0xbb, 0xb9, 0x33, 0x3e
 };
-
-const char *gb_card_type_str[] = {
-	"ROM",
-	"ROM+MBC1",
-	"ROM+MBC1+RAM",
-	"ROM+MBC1+RAM+BATT",
-	"ROM+MBC2",
-	"ROM+MBC2+BATT",
-	"ROM+RAM",
-	"ROM+RAM+BATT",
-	"ROM+MMM01",
-	"ROM+MMM01+SRAM",
-	"ROM+MMM01+SRAM+BATT",
-	"ROM+MBC3+TIMER+BATT",
-	"ROM+MBC3+TIMER+RAM+BATT",
-	"ROM+MBC3",
-	"ROM+MBC3+RAM",
-	"ROM+MBC3+RAM+BATT",
-	"ROM+MBC5",
-	"ROM+MBC5+RAM",
-	"ROM+MBC5+RAM+BATT",
-	"ROM+MBC5+RUMBLE",
-	"ROM+MBC5+RUMBLE+SRAM",
-	"ROM+MBC5+RUMBLE+SRAM+BATT",
-	"Pocket Camera",
-	"Bandai TAMA5",
-	"Hudson HuC-3",
-	"Hudson HuC-1"
-};
-
-void gb_add_cardtype(char *type, ut8 cardcode) {
-	strcat(type, "\ncard\t");
-	switch (cardcode) {
-	case GB_TAMA5:
-	case GB_HUC3:
-	case GB_HUC1:
-		strcat(type, gb_card_type_str[cardcode - 240]);
-		break;
-	case 0x15:
-	case 0x16:
-	case 0x17:
-		strcat(type, "XXX");
-		break;
-	default:
-		if (cardcode > GB_CAM) {
-			strcat(type, "XXX");
-			return;
-		}
-		strcat(type, gb_card_type_str[cardcode]);
-		break;
-	}
-}
-
-int gb_get_rombanks(ut8 id) {
-	switch (id) {
-	case GB_ROM_BANKS_2:
-		return 2;
-	case GB_ROM_BANKS_4:
-		return 4;
-	case GB_ROM_BANKS_8:
-		return 8;
-	case GB_ROM_BANKS_16:
-		return 16;
-	case GB_ROM_BANKS_32:
-		return 32;
-	case GB_ROM_BANKS_64:
-		return 64;
-	case GB_ROM_BANKS_128:
-		return 128;
-	case GB_ROM_BANKS_72:
-		return 72;
-	case GB_ROM_BANKS_80:
-		return 80;
-	case GB_ROM_BANKS_96:
-		return 96;
-	}
-	return 2;
-}
-
-void gb_get_gbtype(char *type, ut8 foo, ut8 bar) {
-	if (foo == GB_SGB) {
-		strcpy(type, "SuperGameboy-Rom");
-	} else {
-		if (bar == GB_GBC) {
-			strcpy(type, "GameboyColor-Rom");
-		} else {
-			strcpy(type, "Gameboy-Rom");
-		}
-	}
-}
