@@ -1588,6 +1588,7 @@ RZ_IPI bool tpi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 			goto err;
 		}
 		rz_buf_free(b);
+		b = NULL;
 		rz_rbtree_insert(&s->types, &type->index, &type->rb, tpi_type_node_cmp, NULL);
 		continue;
 	err:
