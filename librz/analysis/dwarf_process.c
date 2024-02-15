@@ -217,8 +217,11 @@ static const char *map_dwarf_reg_to_x86_reg(ut32 reg_num) {
  *
  * But there are some different mapping in the PPC ELF ABI v2
  * https://ftp.rtems.org/pub/rtems/people/sebh/ABI64BitOpenPOWERv1.1_16July2015_pub.pdf
+ *
+ * Also 32bit registers matches these
+ * http://refspecs.linux-foundation.org/elf/elfspec_ppc.pdf
  */
-static const char *map_dwarf_reg_to_ppc64_reg(ut32 reg_num) {
+static const char *map_dwarf_reg_to_ppc_reg(ut32 reg_num) {
 	switch (reg_num) {
 	// General Register
 	case 0: return "r0";
@@ -394,6 +397,361 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut32 reg_num) {
 	// Reserved 1232-2047
 	// Device control registers 3072–4095 DCRs
 	// Performance monitor registers 4096-5120 PMRs
+	default:
+		rz_warn_if_reached();
+		return "unsupported_reg";
+	}
+}
+
+/**
+ * Found in GDB and in the linux kernel perf tools.
+ * linux/latest/source/tools/perf/arch/mips/include/dwarf-regs-table.h
+ *
+ * https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/mips-tdep.c.auto.html
+ * check the mips_dwarf_dwarf2_ecoff_reg_to_regnum function.
+ */
+static const char *map_dwarf_reg_to_mips_reg(ut32 reg_num) {
+	switch (reg_num) {
+	// General Register
+	case 0: return "zero";
+	case 1: return "at";
+	case 2: return "v0";
+	case 3: return "v1";
+	case 4: return "a0";
+	case 5: return "a1";
+	case 6: return "a2";
+	case 7: return "a3";
+	case 8: return "t0";
+	case 9: return "t1";
+	case 10: return "t2";
+	case 11: return "t3";
+	case 12: return "t4";
+	case 13: return "t5";
+	case 14: return "t6";
+	case 15: return "t7";
+	case 16: return "s0";
+	case 17: return "s1";
+	case 18: return "s2";
+	case 19: return "s3";
+	case 20: return "s4";
+	case 21: return "s5";
+	case 22: return "s6";
+	case 23: return "s7";
+	case 24: return "t8";
+	case 25: return "t9";
+	case 26: return "k0";
+	case 27: return "k1";
+	case 28: return "gp";
+	case 29: return "sp";
+	case 30: return "fp";
+	case 31: return "ra";
+	// Floating Register
+	case 32: return "fp0";
+	case 33: return "fp1";
+	case 34: return "fp2";
+	case 35: return "fp3";
+	case 36: return "fp4";
+	case 37: return "fp5";
+	case 38: return "fp6";
+	case 39: return "fp7";
+	case 40: return "fp8";
+	case 41: return "fp9";
+	case 42: return "fp10";
+	case 43: return "fp11";
+	case 44: return "fp12";
+	case 45: return "fp13";
+	case 46: return "fp14";
+	case 47: return "fp15";
+	case 48: return "fp16";
+	case 49: return "fp17";
+	case 50: return "fp18";
+	case 51: return "fp19";
+	case 52: return "fp20";
+	case 53: return "fp21";
+	case 54: return "fp22";
+	case 55: return "fp23";
+	case 56: return "fp24";
+	case 57: return "fp25";
+	case 58: return "fp26";
+	case 59: return "fp27";
+	case 60: return "fp28";
+	case 61: return "fp29";
+	case 62: return "fp30";
+	case 63: return "fp31";
+	// Special Register
+	case 64: return "hi"; // Hi register
+	case 65: return "lo"; // Low Register
+	default:
+		rz_warn_if_reached();
+		return "unsupported_reg";
+	}
+}
+
+/**
+ * Found in the linux kernel perf tools.
+ * latest/source/tools/perf/arch/sh/include/dwarf-regs-table.h
+ */
+static const char *map_dwarf_reg_to_sh_reg(ut32 reg_num) {
+	switch (reg_num) {
+	// General Register
+	case 0: return "r0";
+	case 1: return "r1";
+	case 2: return "r2";
+	case 3: return "r3";
+	case 4: return "r4";
+	case 5: return "r5";
+	case 6: return "r6";
+	case 7: return "r7";
+	case 8: return "r8";
+	case 9: return "r9";
+	case 10: return "r10";
+	case 11: return "r11";
+	case 12: return "r12";
+	case 13: return "r13";
+	case 14: return "r14";
+	case 15: return "r15";
+	case 16: return "pc";
+	case 17: return "pr";
+	default:
+		rz_warn_if_reached();
+		return "unsupported_reg";
+	}
+}
+
+/**
+ * Found in the linux kernel perf tools.
+ * latest/source/tools/perf/arch/sparc/include/dwarf-regs-table.h
+ */
+static const char *sparc_dwarf_table[] = {
+	"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
+	"o0", "o1", "o2", "o3", "o4", "o5", "sp", "o7",
+	"l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7",
+	"i0", "i1", "i2", "i3", "i4", "i5", "fp", "i7",
+	"f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
+	"f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",
+	"f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23",
+	"f24", "f25", "f26", "f27", "f28", "f29", "f30", "f31",
+	"f32", "f33", "f34", "f35", "f36", "f37", "f38", "f39",
+	"f40", "f41", "f42", "f43", "f44", "f45", "f46", "f47",
+	"f48", "f49", "f50", "f51", "f52", "f53", "f54", "f55",
+	"f56", "f57", "f58", "f59", "f60", "f61", "f62", "f63"
+};
+
+static const char *map_dwarf_reg_to_sparc_reg(ut32 reg_num) {
+	if (reg_num < RZ_ARRAY_SIZE(sparc_dwarf_table)) {
+		return sparc_dwarf_table[reg_num];
+	}
+	rz_warn_if_reached();
+	return "unsupported_reg";
+}
+
+/**
+ * Found in the linux kernel perf tools.
+ * latest/source/tools/perf/arch/loongarch/include/dwarf-regs-table.h
+ */
+static const char *loongarch_dwarf_table[] = {
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+	"r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
+	"r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"
+};
+
+static const char *map_dwarf_reg_to_loongarch_reg(ut32 reg_num) {
+	if (reg_num < RZ_ARRAY_SIZE(loongarch_dwarf_table)) {
+		return loongarch_dwarf_table[reg_num];
+	}
+	rz_warn_if_reached();
+	return "unsupported_reg";
+}
+
+/**
+ * Found in the linux kernel perf tools.
+ * latest/source/tools/perf/arch/s390/include/dwarf-regs-table.h
+ */
+static const char *map_dwarf_reg_to_s390_reg(ut32 reg_num) {
+	switch (reg_num) {
+	// General Register
+	case 0: return "r0";
+	case 1: return "r1";
+	case 2: return "r2";
+	case 3: return "r3";
+	case 4: return "r4";
+	case 5: return "r5";
+	case 6: return "r6";
+	case 7: return "r7";
+	case 8: return "r8";
+	case 9: return "r9";
+	case 10: return "r10";
+	case 11: return "r11";
+	case 12: return "r12";
+	case 13: return "r13";
+	case 14: return "r14";
+	case 15: return "r15";
+	case 16: return "f0";
+	case 17: return "f2";
+	case 18: return "f4";
+	case 19: return "f6";
+	case 20: return "f1";
+	case 21: return "f3";
+	case 22: return "f5";
+	case 23: return "f7";
+	case 24: return "f8";
+	case 25: return "f10";
+	case 26: return "f12";
+	case 27: return "f14";
+	case 28: return "f9";
+	case 29: return "f11";
+	case 30: return "f13";
+	case 31: return "f15";
+	case 32: return "c0";
+	case 33: return "c1";
+	case 34: return "c2";
+	case 35: return "c3";
+	case 36: return "c4";
+	case 37: return "c5";
+	case 38: return "c6";
+	case 39: return "c7";
+	case 40: return "c8";
+	case 41: return "c9";
+	case 42: return "c10";
+	case 43: return "c11";
+	case 44: return "c12";
+	case 45: return "c13";
+	case 46: return "c14";
+	case 47: return "c15";
+	case 48: return "a0";
+	case 49: return "a1";
+	case 50: return "a2";
+	case 51: return "a3";
+	case 52: return "a4";
+	case 53: return "a5";
+	case 54: return "a6";
+	case 55: return "a7";
+	case 56: return "a8";
+	case 57: return "a9";
+	case 58: return "a10";
+	case 59: return "a11";
+	case 60: return "a12";
+	case 61: return "a13";
+	case 62: return "a14";
+	case 63: return "a15";
+	case 64: return "pswm";
+	case 65: return "pswa";
+	default:
+		rz_warn_if_reached();
+		return "unsupported_reg";
+	}
+}
+
+/**
+ * https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-dwarf.adoc
+ */
+static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
+	switch (reg_num) {
+	// Integer Registers
+	case 0: return "x0";
+	case 1: return "x1";
+	case 2: return "x2";
+	case 3: return "x3";
+	case 4: return "x4";
+	case 5: return "x5";
+	case 6: return "x6";
+	case 7: return "x7";
+	case 8: return "x8";
+	case 9: return "x9";
+	case 10: return "x10";
+	case 11: return "x11";
+	case 12: return "x12";
+	case 13: return "x13";
+	case 14: return "x14";
+	case 15: return "x15";
+	case 16: return "x16";
+	case 17: return "x17";
+	case 18: return "x18";
+	case 19: return "x19";
+	case 20: return "x20";
+	case 21: return "x21";
+	case 22: return "x22";
+	case 23: return "x23";
+	case 24: return "x24";
+	case 25: return "x25";
+	case 26: return "x26";
+	case 27: return "x27";
+	case 28: return "x28";
+	case 29: return "x29";
+	case 30: return "x30";
+	case 31: return "x31";
+	// Floating-point Registers
+	case 32: return "f0";
+	case 33: return "f1";
+	case 34: return "f2";
+	case 35: return "f3";
+	case 36: return "f4";
+	case 37: return "f5";
+	case 38: return "f6";
+	case 39: return "f7";
+	case 40: return "f8";
+	case 41: return "f9";
+	case 42: return "f10";
+	case 43: return "f11";
+	case 44: return "f12";
+	case 45: return "f13";
+	case 46: return "f14";
+	case 47: return "f15";
+	case 48: return "f16";
+	case 49: return "f17";
+	case 50: return "f18";
+	case 51: return "f19";
+	case 52: return "f20";
+	case 53: return "f21";
+	case 54: return "f22";
+	case 55: return "f23";
+	case 56: return "f24";
+	case 57: return "f25";
+	case 58: return "f26";
+	case 59: return "f27";
+	case 60: return "f28";
+	case 61: return "f29";
+	case 62: return "f30";
+	case 63: return "f31";
+	// 64 Alternate Frame Return Column
+	// 65 - 95 Reserved for future standard extensions
+	// 96 - 127 Vector Registers
+	case 96: return "v0";
+	case 97: return "v1";
+	case 98: return "v2";
+	case 99: return "v3";
+	case 100: return "v4";
+	case 101: return "v5";
+	case 102: return "v6";
+	case 103: return "v7";
+	case 104: return "v8";
+	case 105: return "v9";
+	case 106: return "v10";
+	case 107: return "v11";
+	case 108: return "v12";
+	case 109: return "v13";
+	case 110: return "v14";
+	case 111: return "v15";
+	case 112: return "v16";
+	case 113: return "v17";
+	case 114: return "v18";
+	case 115: return "v19";
+	case 116: return "v20";
+	case 117: return "v21";
+	case 118: return "v22";
+	case 119: return "v23";
+	case 120: return "v24";
+	case 121: return "v25";
+	case 122: return "v26";
+	case 123: return "v27";
+	case 124: return "v28";
+	case 125: return "v29";
+	case 126: return "v30";
+	case 127: return "v31";
+	// 128 - 3071 Reserved for future standard extensions
+	// 3072 - 4095 Reserved for custom extensions
+	// 4096 - 8191 CSRs
 	default:
 		rz_warn_if_reached();
 		return "unsupported_reg";
@@ -752,8 +1110,26 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch,
 			return map_dwarf_reg_to_x86_reg;
 		}
 	}
-	if (RZ_STR_EQ(arch, "ppc") && bits == 64) {
-		return map_dwarf_reg_to_ppc64_reg;
+	if (RZ_STR_EQ(arch, "ppc")) {
+		return map_dwarf_reg_to_ppc_reg;
+	}
+	if (RZ_STR_EQ(arch, "mips")) {
+		return map_dwarf_reg_to_mips_reg;
+	}
+	if (RZ_STR_EQ(arch, "sh")) {
+		return map_dwarf_reg_to_sh_reg;
+	}
+	if (RZ_STR_EQ(arch, "sparc")) {
+		return map_dwarf_reg_to_sparc_reg;
+	}
+	if (RZ_STR_EQ(arch, "loongarch")) {
+		return map_dwarf_reg_to_loongarch_reg;
+	}
+	if (RZ_STR_EQ(arch, "s390")) {
+		return map_dwarf_reg_to_s390_reg;
+	}
+	if (RZ_STR_EQ(arch, "riscv")) {
+		return map_dwarf_reg_to_riscv_reg;
 	}
 	if (RZ_STR_EQ(arch, "tricore")) {
 		return map_dwarf_reg_to_tricore_reg;
