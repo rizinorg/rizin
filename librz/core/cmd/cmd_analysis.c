@@ -1015,13 +1015,13 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	esil->nowrite = true;
 	for (ops = ptr = 0; ptr < buf_sz && hasNext(mode); ops++, ptr += len) {
 		len = rz_analysis_op(core->analysis, &aop, addr + ptr, buf + ptr, buf_sz - ptr, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
+		if (len < 1) {
+			RZ_LOG_ERROR("core: Invalid 0x%08" PFMT64x " instruction %02x %02x\n",
+				addr + ptr, buf[ptr], buf[ptr + 1]);
+			break;
+		}
 		esilstr = RZ_STRBUF_SAFEGET(&aop.esil);
 		if (RZ_STR_ISNOTEMPTY(esilstr)) {
-			if (len < 1) {
-				RZ_LOG_ERROR("core: Invalid 0x%08" PFMT64x " instruction %02x %02x\n",
-					addr + ptr, buf[ptr], buf[ptr + 1]);
-				break;
-			}
 			rz_analysis_esil_parse(esil, esilstr);
 			rz_analysis_esil_stack_free(esil);
 		}
