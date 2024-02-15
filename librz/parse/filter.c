@@ -81,67 +81,33 @@ static void replaceWords(char *s, const char *k, const char *v) {
 	}
 }
 
-static char *findNextNumber(char *op) {
-	if (!op) {
+/**
+ * \brief Returns a pointer to the next number in the string.
+ * This function ignores numbers from ansi excape codes.
+ *
+ * \param str The string to search the number in.
+ *
+ * \return Pointer into \p str there the number starts or NULL if not found or a failure occured.
+ */
+static char *find_next_number(char *str) {
+	rz_return_val_if_fail(str, NULL);
+	bool ansi = false;
+	if (rz_regex_contains("\x1b\\[[0-9;]*m", str, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, 0)) {
+		ansi = true;
+	}
+	const char *search = ansi ? "(\x1b\\[[0-9;]*m)(?<number>(0x[a-fA-F0-9]+)|\\d+)" : "(\\W(?<number>(0x[a-fA-F0-9]+)|\\d+))";
+	RzRegex *re = rz_regex_new(search, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	RzPVector *match = rz_regex_match_first(re, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	if (rz_pvector_empty(match)) {
+		rz_pvector_free(match);
+		rz_regex_free(re);
 		return NULL;
 	}
-	bool ansi_found = false;
-	char *p = op;
-	const char *o = NULL;
-	while (*p) {
-		if (p[0] == 0x1b && p[1] == '[') {
-			ansi_found = true;
-			p += 2;
-			for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++) {
-				;
-			}
-			if (*p) {
-				p++;
-				if (!*p) {
-					break;
-				}
-			}
-			o = p - 1;
-		} else {
-			bool isSpace = ansi_found;
-			ansi_found = false;
-			if (!isSpace) {
-				isSpace = p == op;
-				if (!isSpace && o) {
-					isSpace = (*o == ' ' || *o == ',' || *o == '[');
-				}
-			}
-			if (*p == '[') {
-				p++;
-				if (!*p) {
-					break;
-				}
-				if (!IS_DIGIT(*p)) {
-					char *t = p;
-					for (; *t && *t != ']'; t++) {
-						;
-					}
-					if (*t == ']') {
-						continue;
-					}
-					p = t;
-					if (!*p) {
-						break;
-					}
-				}
-			}
-			if (isSpace) {
-				if (IS_DIGIT(*p)) {
-					return p;
-				}
-				if ((*p == '-') && IS_DIGIT(p[1])) {
-					return p + 1;
-				}
-			}
-			o = p++;
-		}
-	}
-	return NULL;
+	RzRegexMatch *m = rz_pvector_at(match, rz_regex_get_group_idx_by_name(re, "number"));
+	char *number_ptr = str + m->start;
+	rz_pvector_free(match);
+	rz_regex_free(re);
+	return number_ptr;
 }
 
 static void __replaceRegisters(RzReg *reg, char *s, bool x86) {
@@ -223,7 +189,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 	// remove "dword" 2
 	char *nptr;
 	int count = 0;
-	for (count = 0; (nptr = findNextNumber(ptr)); count++) {
+	for (count = 0; (nptr = find_next_number(ptr)); count++) {
 		ptr = nptr;
 
 		// Skip floats
