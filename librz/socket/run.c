@@ -176,33 +176,6 @@ static char *resolve_value(const char *src, size_t *result_len) {
 	const char *end = copy + src_len;
 
 	switch (*copy) {
-	case '@': {
-		char *at_end = NULL;
-		size_t at_size = strtol(copy + 1, &at_end, 10);
-		if (!at_size || *at_end != '@') {
-			RZ_LOG_ERROR("rz-run: invalid @<num>@ in `%s`\n", copy);
-			free(copy);
-			return NULL;
-		}
-		at_end++;
-		size_t suffix_len = end - at_end;
-		if (suffix_len < 1) {
-			RZ_LOG_ERROR("rz-run: invalid string after @<num>@ in `%s`\n", copy);
-			free(copy);
-			return NULL;
-		}
-		char *buf = malloc(at_size + 1);
-		if (buf) {
-			buf[at_size] = 0;
-			for (size_t i = 0; i < at_size; i++) {
-				buf[i] = at_end[i % suffix_len];
-			}
-		}
-		free(copy);
-		copy = buf;
-		copy_len = at_size;
-		break;
-	}
 	case '`': {
 		char *backtick_end = strchr(src + 1, '`');
 		if (!backtick_end) {
@@ -238,7 +211,7 @@ static char *resolve_value(const char *src, size_t *result_len) {
 			copy[src_len] = 0;
 		} else {
 			if (copy + 2 >= end) {
-				RZ_LOG_ERROR("rz-run: missing strin after `!` in `%s`\n", copy);
+				RZ_LOG_ERROR("rz-run: missing string after `!` in `%s`\n", copy);
 				free(copy);
 				return NULL;
 			}
