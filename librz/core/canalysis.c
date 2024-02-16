@@ -5044,13 +5044,13 @@ RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
 
 typedef struct {
 	RzCore *core;
-	ut64 offset_orig;
 	int max_op_size;
 	ut64 len;
 	ut64 nops;
+	ut8 *buf;
+	ut64 begin;
 	ut64 offset;
 	ut64 iops;
-	ut64 offset_block;
 	RzAnalysisOp op;
 	RzAnalysisOpMask mask;
 } AnalysisOpContext;
@@ -5061,9 +5061,7 @@ static void AnalysisOpContext_fini(void *x) {
 	}
 	AnalysisOpContext *ctx = x;
 	rz_analysis_op_fini(&ctx->op);
-	if (ctx->offset_orig != ctx->core->offset) {
-		rz_core_seek(ctx->core, ctx->offset_orig, true);
-	}
+	free(ctx->buf);
 }
 
 static void AnalysisOpContext_free(void *x) {
@@ -5100,7 +5098,7 @@ static void *AnalysisBytesContext_next(RzIterator *it) {
 	RzAnalysisBytes *ab = &ctx->ab;
 	RzAnalysisOp *op = ab->op = &inner->op;
 
-	ut64 addr = inner->offset_orig + inner->offset;
+	ut64 addr = inner->begin + inner->offset;
 	ut64 remain = inner->len - inner->offset;
 	const ut8 *ptr = ctx->buf + inner->offset;
 
@@ -5184,7 +5182,6 @@ static void AnalysisBytesContext_free(void *x) {
 	AnalysisBytesContext *ctx1 = x;
 	AnalysisOpContext *inner = &ctx1->inner;
 	inner->op.mnemonic = NULL;
-	inner->offset_orig = inner->core->offset;
 
 	AnalysisOpContext_fini(inner);
 	rz_asm_op_fini(&ctx1->asmop);
@@ -5231,7 +5228,7 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
 
 	ctx->inner.core = core;
 	ctx->inner.mask = mask;
-	ctx->inner.offset_orig = start_addr;
+	ctx->inner.begin = start_addr;
 	ctx->inner.nops = nops;
 	ctx->inner.len = len;
 
@@ -5244,15 +5241,9 @@ static void *analysis_op_next(RzIterator *it) {
 		return NULL;
 	}
 
-	if (ctx->max_op_size + ctx->offset_block >= ctx->core->blocksize && ctx->len > ctx->core->blocksize) {
-		if (!rz_core_seek(ctx->core, ctx->core->offset + ctx->offset_block, true)) {
-			return NULL;
-		}
-		ctx->offset_block = 0;
-	}
-	ut64 addr = ctx->core->offset + ctx->offset_block;
-	ut8 *ptr = ctx->core->block + ctx->offset_block;
-	ut64 remain = ctx->core->blocksize - ctx->offset_block;
+	ut64 addr = ctx->begin + ctx->offset;
+	ut8 *ptr = ctx->buf + ctx->offset;
+	ut64 remain = ctx->len - ctx->offset;
 
 	rz_analysis_op_fini(&ctx->op);
 	rz_analysis_op_init(&ctx->op);
@@ -5262,7 +5253,6 @@ static void *analysis_op_next(RzIterator *it) {
 	}
 
 	ctx->offset += ctx->op.size;
-	ctx->offset_block += ctx->op.size;
 	++ctx->iops;
 	return &ctx->op;
 }
@@ -5289,18 +5279,32 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(
 		return NULL;
 	}
 
-	AnalysisOpContext *ctx = RZ_NEW0(AnalysisOpContext);
+	AnalysisOpContext *ctx = NULL;
+	ut8 *buf = RZ_NEWS0(ut8, len);
+	if (!buf) {
+		goto cleanup;
+	}
+	ctx = RZ_NEW0(AnalysisOpContext);
+	if (!ctx) {
+		goto cleanup;
+	}
+	if (!rz_io_read_at(core->io, offset, buf, len)) {
+		goto cleanup;
+	}
+
 	ctx->core = core;
-	ctx->offset_orig = core->offset;
 	ctx->nops = nops;
-	ctx->len = len;
 	ctx->max_op_size = max_op_size;
 	ctx->mask = mask;
+	ctx->buf = buf;
+	ctx->len = len;
+	ctx->begin = offset;
 
-	if (offset != core->offset) {
-		rz_core_seek(core, offset, true);
-	}
 	return rz_iterator_new(analysis_op_next, NULL, AnalysisOpContext_free, ctx);
+cleanup:
+	free(buf);
+	free(ctx);
+	return NULL;
 }
 
 /**
