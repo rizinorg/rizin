@@ -5609,7 +5609,7 @@ toro:
 /**
  * \brief Is \p i_opcodes \< \p nb_opcodes and \p i_bytes \< \p nb_bytes ?
  */
-RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes) {
+RZ_IPI bool rz_disasm_check_end(st64 nb_opcodes, st64 i_opcodes, st64 nb_bytes, st64 i_bytes) {
 	if (nb_opcodes > 0) {
 		if (nb_bytes > 0) {
 			return i_opcodes < nb_opcodes && i_bytes < nb_bytes;
@@ -5853,10 +5853,10 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	bool res = true;
-	RzPVector *vec = NULL;
+	RzIterator *iter = NULL;
 	ut64 offset = rz_core_backward_offset(core, addr, &nb_opcodes, &nb_bytes);
-	vec = rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes);
-	if (!vec) {
+	iter = rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes);
+	if (!iter) {
 		res = false;
 		goto clean_return;
 	}
@@ -5864,12 +5864,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	bool asm_pseudo = rz_config_get_i(core->config, "asm.pseudo");
 
 	RzAnalysisBytes *ab;
-	void **p;
-	rz_pvector_foreach (vec, p) {
-		if (!p || !*p) {
-			continue;
-		}
-		ab = *p;
+	rz_iterator_foreach(iter, ab) {
 		RzAnalysisOp *op = ab->op;
 		if (!op) {
 			continue;
@@ -6002,7 +5997,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_end(pj);
 	}
 clean_return:
-	rz_pvector_free(vec);
+	rz_iterator_free(iter);
 	return res;
 }
 

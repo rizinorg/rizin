@@ -96,6 +96,7 @@ rz_util_files = [
   'rz_util/rz_range.h',
   'rz_util/rz_rbtree.h',
   'rz_util/rz_regex.h',
+  'rz_util/rz_iterator.h',
   'rz_util/rz_serialize.h',
   'rz_util/rz_signal.h',
   'rz_util/rz_spaces.h',

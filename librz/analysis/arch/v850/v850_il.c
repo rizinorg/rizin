@@ -1029,7 +1029,7 @@ RzAnalysisLiftedILOp v850_il_op(const V850AnalysisContext *ctx) {
 	switch (ctx->x->id) {
 	case V850_MOV: return lift_mov(ctx);
 	case V850_MOVEA: return SETG(R2, ADD(R1V, SEXT16));
-	case V850_MOVHI: return SETG(R2, ADD(R1V, U32(I16 << 16)));
+	case V850_MOVHI: return SETG(R2, ADD(R1V, U32((ut32)(I16) << 16)));
 	case V850_SSTB:
 	case V850_SSTH:
 	case V850_SSTW:

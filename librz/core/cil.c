@@ -430,7 +430,17 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 	rz_list_free(list);
 }
 
-RZ_IPI void rz_core_analysis_il_reinit(RzCore *core) {
+/**
+ * \brief Re-initializes the intermediate language virtual machine for analysis
+ *
+ * This function re-initializes the IL (Intermediate Language) virtual machine for the analysis module.
+ * The initial PC (Program Counter) is set with the current offset.
+ * It then updates the register flags and syncs the register info back to the IL VM.
+ *
+ * \param core The RzCore object, which contains all the rizin classes and their functions.
+ */
+RZ_API void rz_core_analysis_il_reinit(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
 	rz_analysis_il_vm_setup(core->analysis);
 	if (core->analysis->il_vm) {
 		// initialize the program counter with the current offset
@@ -694,7 +704,8 @@ static bool step_cond_n(RzAnalysisILVM *vm, void *user) {
  * Perform \p n steps starting at the PC given by analysis->reg in RzIL
  * \return false if an error occured (e.g. invalid op)
  */
-RZ_IPI bool rz_core_il_step(RzCore *core, ut64 n) {
+RZ_API bool rz_core_il_step(RZ_NONNULL RzCore *core, ut64 n) {
+	rz_return_val_if_fail(core && n, false);
 	if (!step_assert_vm(core)) {
 		return false;
 	}
@@ -719,7 +730,8 @@ static bool step_cond_until(RzAnalysisILVM *vm, void *user) {
  * \param until destination address where to stop
  * \return false if an error occured (e.g. invalid op)
  */
-RZ_IPI bool rz_core_il_step_until(RzCore *core, ut64 until) {
+RZ_API bool rz_core_il_step_until(RZ_NONNULL RzCore *core, ut64 until) {
+	rz_return_val_if_fail(core && until, false);
 	if (!step_assert_vm(core)) {
 		return false;
 	}
@@ -778,6 +790,72 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 		rz_strbuf_free(sb);
 	}
 	return true;
+}
+
+static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
+	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	if (RZ_STR_ISEMPTY(il_stmt)) {
+		rz_cons_newline();
+		return;
+	}
+	const char *color = NULL;
+	size_t prev = 0, len = strlen(il_stmt);
+	for (size_t i = 0; i < len; ++i) {
+		const char ch = il_stmt[i];
+		if (ch == '(') {
+			color = ctx->pal.flow;
+			int plen = i - prev;
+			rz_cons_printf("%.*s(", plen, il_stmt + prev);
+			prev = i + 1;
+		} else if (ch == ')' && color) {
+			int plen = i - prev;
+			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
+			prev = i;
+			color = NULL;
+		} else if (ch == ' ' && color) {
+			int plen = i - prev;
+			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
+			prev = i;
+			color = NULL;
+		} else if ((i - 1) == prev && il_stmt[prev] == ' ') {
+			color = IS_DIGIT(ch) ? ctx->pal.num : ctx->pal.comment;
+		}
+	}
+	if (prev < len) {
+		int plen = len - prev;
+		if (color) {
+			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev);
+		} else {
+			rz_cons_printf("%.*s", plen, il_stmt + prev);
+		}
+	}
+	rz_cons_newline();
+}
+
+RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty) {
+	rz_return_if_fail(core && iter);
+	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;
+	const char *il_stmt = NULL;
+	const char delim = pretty ? '\n' : ' ';
+	RzStrBuf sb;
+
+	RzAnalysisOp *op = NULL;
+	rz_iterator_foreach(iter, op) {
+		if (!op->il_op) {
+			RZ_LOG_DEBUG("Empty IL at 0x%08" PFMT64x "...\n", op->addr);
+			break;
+		}
+
+		rz_strbuf_init(&sb);
+		rz_il_op_effect_stringify(op->il_op, &sb, pretty);
+		il_stmt = rz_strbuf_get(&sb);
+		if (colorize) {
+			core_colorify_il_statement(core->cons->context, il_stmt, delim, op->addr);
+		} else {
+			rz_cons_printf("0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
+		}
+		rz_strbuf_fini(&sb);
+	}
 }
 
 // used to speedup strcmp with rz_config_get in loops
