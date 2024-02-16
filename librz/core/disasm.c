@@ -4512,11 +4512,18 @@ static void print_fcn_arg(RzCore *core, RzType *type, const char *name,
 		free(typestr);
 	}
 	if (addr != UT32_MAX && addr != UT64_MAX && addr != 0) {
-		char *res = rz_core_cmd_strf(core, "pf%s %s%s %s @ 0x%08" PFMT64x,
-			(asm_types == 2) ? "" : "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
-		rz_str_trim(res);
-		rz_cons_printf("%s", res);
-		free(res);
+		char *realfmt = NULL;
+		if (on_stack == 1) {
+			realfmt = rz_str_newf("*%s %s", fmt, name);
+		} else {
+			realfmt = rz_str_newf("%s %s", fmt, name);
+		}
+		int mode = (asm_types == 2) ? RZ_PRINT_MUSTSEE : RZ_PRINT_QUIET | RZ_PRINT_MUSTSEE;
+		char *format = rz_core_print_format(core, realfmt, mode, addr);
+		rz_str_trim(format);
+		rz_cons_print(format);
+		free(realfmt);
+		free(format);
 	} else {
 		rz_cons_printf("-1");
 	}
