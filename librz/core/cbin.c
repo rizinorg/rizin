@@ -4109,7 +4109,7 @@ RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 	rz_pvector_foreach (fields, iter) {
 		field = *iter;
 		switch (state->mode) {
-		case RZ_OUTPUT_MODE_JSON:
+		case RZ_OUTPUT_MODE_JSON: {
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "name", field->name);
 			pj_kn(state->d.pj, "vaddr", field->vaddr);
@@ -4120,16 +4120,19 @@ RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 			if (field->format && *field->format) {
 				pj_ks(state->d.pj, "format", field->format);
 			}
-			char *o = rz_core_cmd_strf(core, "pfj%c%s@ 0x%" PFMT64x,
-				field->format_named ? '.' : ' ', field->format, field->vaddr);
-			if (o && *o) {
-				rz_str_trim_tail(o);
+			int mode = RZ_PRINT_JSON;
+			char *realfmt = field->format_named ? rz_str_prepend(field->format, ".") : rz_str_dup(field->format);
+			char *format = rz_core_print_format(core, realfmt, mode, field->vaddr);
+			free(realfmt);
+			if (RZ_STR_ISNOTEMPTY(format)) {
+				rz_str_trim_tail(format);
 				pj_k(state->d.pj, "pf");
-				pj_j(state->d.pj, o);
+				pj_j(state->d.pj, format);
 			}
-			free(o);
+			free(format);
 			pj_end(state->d.pj);
 			break;
+		}
 		case RZ_OUTPUT_MODE_TABLE:
 			rz_table_add_rowf(state->d.t, "XsXs", field->paddr, field->name, field->vaddr, field->comment);
 			break;
