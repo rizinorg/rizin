@@ -1160,6 +1160,7 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 			iword->props |= RZ_ANALYSIS_IWORD_COND;
 		}
 		if (aop->type & RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
+			iword->call_target = aop->jump;
 			iword->props |= RZ_ANALYSIS_IWORD_CALL;
 		}
 		if (aop->type & RZ_ANALYSIS_OP_TYPE_JMP || aop->type & RZ_ANALYSIS_OP_TYPE_UJMP) {
