@@ -82,19 +82,24 @@ static bool test_analysis_il() {
 	mu_assert_notnull(v, "get function");
 	rz_core_seek(core, f->addr, true);
 	rz_config_set_b(core->config, "io.cache", true);
-	rz_core_cmd_lines(core,
-		"o malloc://0x1000 0x40000\n"
-		"o malloc://0x10 0x50000\n"
-		"oC 0x10 @ obj.seckrit   # New file mapping from 0x0-0xf\n"
-		"omb. obj.seckrit @ 0x0\n"
-		"w AnyColourYouLike @ 0x50000\n"
-		"ar sp=0x41000\n"
-		"ar x0=0x50000\n");
+	rz_core_file_open_load(core, "malloc://0x1000", 0x40000, RZ_PERM_R, false);
+	rz_core_file_open_load(core, "malloc://0x10", 0x50000, RZ_PERM_R, false);
+
+	rz_core_cmd_lines(core, "oC 0x10 @ obj.seckrit   # New file mapping from 0x0-0xf\n");
+
+	ut64 obj_seckrit = rz_num_get(core->num, "obj.seckrit");
+	RzIOMap *map = rz_io_map_get(core->io, 0);
+	rz_io_map_remap(core->io, map->id, obj_seckrit);
+
+	rz_core_cmd_lines(core, "ar sp=0x41000\n"
+				"ar x0=0x50000\n");
+	rz_core_write_string_at(core, 0x50000, "AnyColourYouLike");
+
 	rz_core_analysis_il_reinit(core);
 	mu_assert("eval rzil", rz_core_il_step_until(core, 0x914));
 	char buf[0x20];
-	ut64 addr = rz_num_get(core->num, "obj.seckrit");
-	rz_io_read_at(core->io, addr, (ut8 *)buf, RZ_ARRAY_SIZE(buf));
+	obj_seckrit = rz_num_get(core->num, "obj.seckrit");
+	rz_io_read_at(core->io, obj_seckrit, (ut8 *)buf, RZ_ARRAY_SIZE(buf));
 	mu_assert_streq(buf, "Hello from RzIL!", "eval rzil in function");
 
 	RzIterator *iter = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
