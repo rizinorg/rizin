@@ -583,7 +583,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 			pj_free(pj);
 		} break;
 		case RZ_OUTPUT_MODE_RIZIN: {
-			rz_cons_printf("pf.%s %s\n", name, fmt);
+			rz_cons_printf("pfn %s %s\n", name, fmt);
 		} break;
 		case RZ_OUTPUT_MODE_STANDARD: {
 			// FIXME: Not really a standard format

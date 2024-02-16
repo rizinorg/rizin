@@ -61,6 +61,7 @@ static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
+static const RzCmdDescDetail pf_details[3];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
 static const RzCmdDescDetail write_details[3];
 static const RzCmdDescDetail write_bits_details[2];
@@ -602,6 +603,16 @@ static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[2];
 static const RzCmdDescArg cmd_sizes_of_n_instructions_args[2];
 static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
 static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
+static const RzCmdDescArg cmd_print_format_args[2];
+static const RzCmdDescArg cmd_print_format_delete_args[2];
+static const RzCmdDescArg cmd_print_format_c_args[2];
+static const RzCmdDescArg cmd_print_format_dot_args[2];
+static const RzCmdDescArg cmd_print_format_named_dot_args[2];
+static const RzCmdDescArg cmd_print_format_named_args[3];
+static const RzCmdDescArg cmd_print_format_file_args[2];
+static const RzCmdDescArg cmd_print_format_size_args[2];
+static const RzCmdDescArg cmd_print_format_value_args[2];
+static const RzCmdDescArg cmd_print_format_write_args[3];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
@@ -13264,6 +13275,240 @@ static const RzCmdDescHelp cmd_disassemble_summarize_block_help = {
 	.args = cmd_disassemble_summarize_block_args,
 };
 
+static const RzCmdDescDetailEntry pf_Formats_detail_entries[] = {
+	{ .text = "b", .arg_str = NULL, .comment = "byte (unsigned)" },
+	{ .text = "B", .arg_str = NULL, .comment = "resolve enum bitfield (see t?)" },
+	{ .text = "c", .arg_str = NULL, .comment = "char (signed byte)" },
+	{ .text = "C", .arg_str = NULL, .comment = "byte in decimal" },
+	{ .text = "d", .arg_str = NULL, .comment = "0xHEX value (4 bytes) (see 'i' and 'x' formats)" },
+	{ .text = "D", .arg_str = NULL, .comment = "disassemble one opcode" },
+	{ .text = "e", .arg_str = NULL, .comment = "temporarily swap endian" },
+	{ .text = "E", .arg_str = NULL, .comment = "resolve enum name (see t?)" },
+	{ .text = "f", .arg_str = NULL, .comment = "float value (4 bytes)" },
+	{ .text = "F", .arg_str = NULL, .comment = "double float value (8 bytes)" },
+	{ .text = "i", .arg_str = NULL, .comment = "signed integer value (4 bytes) (see 'd' and 'x' formats)" },
+	{ .text = "n", .arg_str = NULL, .comment = "next char specifies size of signed value (1, 2, 4, or 8 byte(s))" },
+	{ .text = "N", .arg_str = NULL, .comment = "next char specifies size of unsigned value (1, 2, 4, or 8 byte(s))" },
+	{ .text = "o", .arg_str = NULL, .comment = "octal value (4 bytes)" },
+	{ .text = "p", .arg_str = NULL, .comment = "pointer reference (2, 4, or 8 bytes)" },
+	{ .text = "q", .arg_str = NULL, .comment = "quadword (8 bytes)" },
+	{ .text = "Q", .arg_str = NULL, .comment = "octoword (uint128_t) (16 bytes)" },
+	{ .text = "r", .arg_str = NULL, .comment = "CPU register (`pf r (eax)plop`)" },
+	{ .text = "s", .arg_str = NULL, .comment = "32 bit pointer to string (4 bytes)" },
+	{ .text = "s", .arg_str = NULL, .comment = "32 bit pointer to string (4 bytes)" },
+	{ .text = "t", .arg_str = NULL, .comment = "32 bit UNIX timestamp (4 bytes)" },
+	{ .text = "T", .arg_str = NULL, .comment = "show ten first bytes of buffer" },
+	{ .text = "u", .arg_str = NULL, .comment = "uleb128 (variable length)" },
+	{ .text = "w", .arg_str = NULL, .comment = "word (2 bytes unsigned short in hex)" },
+	{ .text = "x", .arg_str = NULL, .comment = "0xHEX value and flag (fd @ addr) (see 'd' and 'i' formats)" },
+	{ .text = "X", .arg_str = NULL, .comment = "show formatted hexpairs" },
+	{ .text = "z", .arg_str = NULL, .comment = "null terminated string" },
+	{ .text = "Z", .arg_str = NULL, .comment = "null terminated wide string" },
+	{ .text = "?", .arg_str = NULL, .comment = "data structure `pf ? (struct_name)example_name`" },
+	{ .text = "*", .arg_str = NULL, .comment = "next char is pointer (honors 'asm.bits')" },
+	{ .text = "+", .arg_str = NULL, .comment = "toggle show flags for each offset" },
+	{ .text = ":", .arg_str = NULL, .comment = "skip 4 bytes" },
+	{ .text = ".", .arg_str = NULL, .comment = "skip 1 byte" },
+	{ .text = ";", .arg_str = NULL, .comment = "rewind 4 bytes" },
+	{ .text = ",", .arg_str = NULL, .comment = "rewind 1 byte" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry pf_Example_space_of_space_usages_detail_entries[] = {
+	{ .text = "pf '3xi foo bar'", .arg_str = NULL, .comment = "3-array of structures, each with named fields: 'foo' as hex, 'bar' as int" },
+	{ .text = "pf 'B (BitFldType)arg_name'", .arg_str = NULL, .comment = "Resolve bitfield enum type for the arg_name" },
+	{ .text = "pf 'E (EnumType)arg_name'", .arg_str = NULL, .comment = "Resolve enum type for the arg_name" },
+	{ .text = "pf '*z*i*w nb name blob'", .arg_str = NULL, .comment = "Print pointers with the given labels" },
+	{ .text = "pf 'iwq foo bar troll'", .arg_str = NULL, .comment = "Print the iwq format with foo, bar, troll as respective fields" },
+	{ .text = "pf '0iwq foo bar troll'", .arg_str = NULL, .comment = "Same as above but considered as a union (all fields at offset 0)" },
+	{ .text = "pfn obj 'xxdz prev next size name'", .arg_str = NULL, .comment = "Define the obj format as xxdz" },
+	{ .text = "pf. 'plop ? (troll)mystruct'", .arg_str = NULL, .comment = "Use previously defined structure 'troll'" },
+	{ .text = "pf.j plop @ 0x14", .arg_str = NULL, .comment = "Apply format object at the given offset" },
+	{ .text = "pf {N} (bifc)", .arg_str = NULL, .comment = "Print N times the following format (bifc)" },
+	{ .text = "pf [4]w[7]i", .arg_str = NULL, .comment = "Print an array of 4 words and then an array of 7 integers" },
+	{ .text = "pf ic...?i foo bar \"(pf xw yo foo)troll\" yo", .arg_str = NULL, .comment = "Print nested anonymous structures" },
+	{ .text = "pf ;..x", .arg_str = NULL, .comment = "Print value located 6 bytes from the current offset" },
+	{ .text = "pf [10]z[3]i[10]Zb", .arg_str = NULL, .comment = "Print a fixed size string, widechar, and var" },
+	{ .text = "pfj +F @ 0x14", .arg_str = NULL, .comment = "Print the content at given offset with a flag" },
+	{ .text = "pf n2", .arg_str = NULL, .comment = "Print signed short (2 bytes) value. Use N instead of n for printing unsigned values" },
+	{ .text = "pf [2]? (plop)structname @ 0x10", .arg_str = NULL, .comment = "Print an array of structures at the given offset" },
+	{ .text = "pf eqew bigWord beef", .arg_str = NULL, .comment = "Swap endianness and print with given labels" },
+	{ .text = "pfn foo 'rr (eax)reg1 (eip)reg2'", .arg_str = NULL, .comment = "Create obect foo referencing to register values" },
+	{ .text = "pf tt troll plop", .arg_str = NULL, .comment = "Print time stamps with labels 'troll' and 'plop'" },
+	{ 0 },
+};
+static const RzCmdDescDetail pf_details[] = {
+	{ .name = "Formats", .entries = pf_Formats_detail_entries },
+	{ .name = "Example of usages", .entries = pf_Example_space_of_space_usages_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp pf_help = {
+	.summary = "Print formatted data",
+	.details = pf_details,
+};
+static const RzCmdDescArg cmd_print_format_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_help = {
+	.summary = "Show data using given format string",
+	.args = cmd_print_format_args,
+};
+
+static const RzCmdDescArg cmd_print_format_delete_args[] = {
+	{
+		.name = "formatname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_delete_help = {
+	.summary = "Remove named format",
+	.args = cmd_print_format_delete_args,
+};
+
+static const RzCmdDescArg cmd_print_format_delete_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_delete_all_help = {
+	.summary = "Remove all named formats",
+	.args = cmd_print_format_delete_all_args,
+};
+
+static const RzCmdDescArg cmd_print_format_c_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_c_help = {
+	.summary = "Show data using given format string with C syntax",
+	.args = cmd_print_format_c_args,
+};
+
+static const RzCmdDescArg cmd_print_format_dot_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_dot_help = {
+	.summary = "Show data using given format string as DOT",
+	.args = cmd_print_format_dot_args,
+};
+
+static const RzCmdDescArg cmd_print_format_named_dot_args[] = {
+	{
+		.name = "formatname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_named_dot_help = {
+	.summary = "Show data using given named format",
+	.args = cmd_print_format_named_dot_args,
+};
+
+static const RzCmdDescArg cmd_print_format_named_args[] = {
+	{
+		.name = "formatname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "formatstring",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_named_help = {
+	.summary = "List named formats/Print named format string/Define a new named format",
+	.args = cmd_print_format_named_args,
+};
+
+static const RzCmdDescArg cmd_print_format_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_file_help = {
+	.summary = "Load a Format Definition File (FDF)",
+	.args = cmd_print_format_file_args,
+};
+
+static const RzCmdDescArg cmd_print_format_size_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_size_help = {
+	.summary = "Print the size of format in bytes",
+	.args = cmd_print_format_size_args,
+};
+
+static const RzCmdDescArg cmd_print_format_value_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_value_help = {
+	.summary = "Print the value for named format",
+	.args = cmd_print_format_value_args,
+};
+
+static const RzCmdDescArg cmd_print_format_write_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_write_help = {
+	.summary = "Write data using given format string",
+	.args = cmd_print_format_write_args,
+};
+
 static const RzCmdDescHelp pF_help = {
 	.summary = "Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats",
 };
@@ -21419,6 +21664,38 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_disassemble_summarize_block_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassemble_summarize_cd, "pdsb", rz_cmd_disassemble_summarize_block_handler, &cmd_disassemble_summarize_block_help);
 	rz_warn_if_fail(cmd_disassemble_summarize_block_cd);
+
+	RzCmdDesc *pf_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "pf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_format_handler, &cmd_print_format_help, &pf_help);
+	rz_warn_if_fail(pf_cd);
+	RzCmdDesc *cmd_print_format_delete_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pf-", rz_cmd_print_format_delete_handler, &cmd_print_format_delete_help);
+	rz_warn_if_fail(cmd_print_format_delete_cd);
+
+	RzCmdDesc *cmd_print_format_delete_all_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pf-*", rz_cmd_print_format_delete_all_handler, &cmd_print_format_delete_all_help);
+	rz_warn_if_fail(cmd_print_format_delete_all_cd);
+
+	RzCmdDesc *cmd_print_format_c_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfc", rz_cmd_print_format_c_handler, &cmd_print_format_c_help);
+	rz_warn_if_fail(cmd_print_format_c_cd);
+
+	RzCmdDesc *cmd_print_format_dot_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfd", rz_cmd_print_format_dot_handler, &cmd_print_format_dot_help);
+	rz_warn_if_fail(cmd_print_format_dot_cd);
+
+	RzCmdDesc *cmd_print_format_named_dot_cd = rz_cmd_desc_argv_state_new(core->rcmd, pf_cd, "pf.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_format_named_dot_handler, &cmd_print_format_named_dot_help);
+	rz_warn_if_fail(cmd_print_format_named_dot_cd);
+
+	RzCmdDesc *cmd_print_format_named_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfn", rz_cmd_print_format_named_handler, &cmd_print_format_named_help);
+	rz_warn_if_fail(cmd_print_format_named_cd);
+
+	RzCmdDesc *cmd_print_format_file_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfo", rz_cmd_print_format_file_handler, &cmd_print_format_file_help);
+	rz_warn_if_fail(cmd_print_format_file_cd);
+
+	RzCmdDesc *cmd_print_format_size_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfs", rz_cmd_print_format_size_handler, &cmd_print_format_size_help);
+	rz_warn_if_fail(cmd_print_format_size_cd);
+
+	RzCmdDesc *cmd_print_format_value_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfv", rz_cmd_print_format_value_handler, &cmd_print_format_value_help);
+	rz_warn_if_fail(cmd_print_format_value_cd);
+
+	RzCmdDesc *cmd_print_format_write_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfw", rz_cmd_print_format_write_handler, &cmd_print_format_write_help);
+	rz_warn_if_fail(cmd_print_format_write_cd);
 
 	RzCmdDesc *pF_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pF", NULL, NULL, &pF_help);
 	rz_warn_if_fail(pF_cd);

@@ -435,6 +435,209 @@ commands:
             summary: Summarize current block
             cname: cmd_disassemble_summarize_block
             args: []
+  - name: pf
+    summary: Print formatted data
+    subcommands:
+      - name: pf
+        summary: Show data using given format string
+        cname: cmd_print_format
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: pf-
+        summary: Remove named format
+        cname: cmd_print_format_delete
+        args:
+          - name: formatname
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: pf-*
+        summary: Remove all named formats
+        cname: cmd_print_format_delete_all
+        args: []
+      - name: pfc
+        summary: Show data using given format string with C syntax
+        cname: cmd_print_format_c
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: pfd
+        summary: Show data using given format string as DOT
+        cname: cmd_print_format_dot
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: pf.
+        summary: Show data using given named format
+        cname: cmd_print_format_named_dot
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: formatname
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: pfn
+        summary: List named formats/Print named format string/Define a new named format
+        cname: cmd_print_format_named
+        args:
+          - name: formatname
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: formatstring
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: pfo
+        summary: Load a Format Definition File (FDF)
+        cname: cmd_print_format_file
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: pfs
+        summary: Print the size of format in bytes
+        cname: cmd_print_format_size
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: pfv
+        summary: Print the value for named format
+        cname: cmd_print_format_value
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: pfw
+        summary: Write data using given format string
+        cname: cmd_print_format_write
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: value
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+    details:
+      - name: Formats
+        entries:
+          - text: "b"
+            comment: "byte (unsigned)"
+          - text: "B"
+            comment: "resolve enum bitfield (see t?)"
+          - text: "c"
+            comment: "char (signed byte)"
+          - text: "C"
+            comment: "byte in decimal"
+          - text: "d"
+            comment: "0xHEX value (4 bytes) (see 'i' and 'x' formats)"
+          - text: "D"
+            comment: "disassemble one opcode"
+          - text: "e"
+            comment: "temporarily swap endian"
+          - text: "E"
+            comment: "resolve enum name (see t?)"
+          - text: "f"
+            comment: "float value (4 bytes)"
+          - text: "F"
+            comment: "double float value (8 bytes)"
+          - text: "i"
+            comment: "signed integer value (4 bytes) (see 'd' and 'x' formats)"
+          - text: "n"
+            comment: "next char specifies size of signed value (1, 2, 4, or 8 byte(s))"
+          - text: "N"
+            comment: "next char specifies size of unsigned value (1, 2, 4, or 8 byte(s))"
+          - text: "o"
+            comment: "octal value (4 bytes)"
+          - text: "p"
+            comment: "pointer reference (2, 4, or 8 bytes)"
+          - text: "q"
+            comment: "quadword (8 bytes)"
+          - text: "Q"
+            comment: "octoword (uint128_t) (16 bytes)"
+          - text: "r"
+            comment: "CPU register (`pf r (eax)plop`)"
+          - text: "s"
+            comment: "32 bit pointer to string (4 bytes)"
+          - text: "s"
+            comment: "32 bit pointer to string (4 bytes)"
+          - text: "t"
+            comment: "32 bit UNIX timestamp (4 bytes)"
+          - text: "T"
+            comment: "show ten first bytes of buffer"
+          - text: "u"
+            comment: "uleb128 (variable length)"
+          - text: "w"
+            comment: "word (2 bytes unsigned short in hex)"
+          - text: "x"
+            comment: "0xHEX value and flag (fd @ addr) (see 'd' and 'i' formats)"
+          - text: "X"
+            comment: "show formatted hexpairs"
+          - text: "z"
+            comment: "null terminated string"
+          - text: "Z"
+            comment: "null terminated wide string"
+          - text: "?"
+            comment: "data structure `pf ? (struct_name)example_name`"
+          - text: "*"
+            comment: "next char is pointer (honors 'asm.bits')"
+          - text: "+"
+            comment: "toggle show flags for each offset"
+          - text: ":"
+            comment: "skip 4 bytes"
+          - text: "."
+            comment: "skip 1 byte"
+          - text: ";"
+            comment: "rewind 4 bytes"
+          - text: ","
+            comment: "rewind 1 byte"
+      - name: Example of usages
+        entries:
+          - text: "pf '3xi foo bar'"
+            comment: "3-array of structures, each with named fields: 'foo' as hex, 'bar' as int"
+          - text: "pf 'B (BitFldType)arg_name'"
+            comment: "Resolve bitfield enum type for the arg_name"
+          - text: "pf 'E (EnumType)arg_name'"
+            comment: "Resolve enum type for the arg_name"
+          - text: "pf '*z*i*w nb name blob'"
+            comment: "Print pointers with the given labels"
+          - text: "pf 'iwq foo bar troll'"
+            comment: "Print the iwq format with foo, bar, troll as respective fields"
+          - text: "pf '0iwq foo bar troll'"
+            comment: "Same as above but considered as a union (all fields at offset 0)"
+          - text: "pfn obj 'xxdz prev next size name'"
+            comment: "Define the obj format as xxdz"
+          - text: "pf. 'plop ? (troll)mystruct'"
+            comment: "Use previously defined structure 'troll'"
+          - text: "pf.j plop @ 0x14"
+            comment: "Apply format object at the given offset"
+          - text: "pf {N} (bifc)"
+            comment: "Print N times the following format (bifc)"
+          - text: "pf [4]w[7]i"
+            comment: "Print an array of 4 words and then an array of 7 integers"
+          - text: "pf ic...?i foo bar \"(pf xw yo foo)troll\" yo"
+            comment: "Print nested anonymous structures"
+          - text: "pf ;..x"
+            comment: "Print value located 6 bytes from the current offset"
+          - text: "pf [10]z[3]i[10]Zb"
+            comment: "Print a fixed size string, widechar, and var"
+          - text: "pfj +F @ 0x14"
+            comment: "Print the content at given offset with a flag"
+          - text: "pf n2"
+            comment: "Print signed short (2 bytes) value. Use N instead of n for printing unsigned values"
+          - text: "pf [2]? (plop)structname @ 0x10"
+            comment: "Print an array of structures at the given offset"
+          - text: "pf eqew bigWord beef"
+            comment: "Swap endianness and print with given labels"
+          - text: "pfn foo 'rr (eax)reg1 (eip)reg2'"
+            comment: "Create obect foo referencing to register values"
+          - text: "pf tt troll plop"
+            comment: "Print time stamps with labels 'troll' and 'plop'"
   - name: pF
     summary: Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats
     subcommands:

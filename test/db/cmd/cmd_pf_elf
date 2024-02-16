@@ -2,7 +2,7 @@ NAME=32: Elf header size
 FILE=malloc://1024
 CMDS=<<EOF
 pfo elf32
-pfs.elf_header
+pfs elf_header
 EOF
 EXPECT=<<EOF
 52
@@ -13,7 +13,7 @@ NAME=64: Elf header size
 FILE=malloc://1024
 CMDS=<<EOF
 pfo elf64
-pfs.elf_header
+pfs elf_header
 EOF
 EXPECT=<<EOF
 64
@@ -24,7 +24,7 @@ NAME=32: Elf program header size
 FILE=malloc://1024
 CMDS=<<EOF
 pfo elf32
-pfs.elf_phdr
+pfs elf_phdr
 EOF
 EXPECT=<<EOF
 32
@@ -35,7 +35,7 @@ NAME=64: Elf program header size
 FILE=malloc://1024
 CMDS=<<EOF
 pfo elf64
-pfs.elf_phdr
+pfs elf_phdr
 EOF
 EXPECT=<<EOF
 56
@@ -46,7 +46,7 @@ NAME=32: Elf section header size
 FILE=malloc://1024
 CMDS=<<EOF
 pfo elf32
-pfs.elf_shdr
+pfs elf_shdr
 EOF
 EXPECT=<<EOF
 40
@@ -57,7 +57,7 @@ NAME=64: Elf section header size
 FILE=malloc://1024
 CMDS=<<EOF
 pfo elf64
-pfs.elf_shdr
+pfs elf_shdr
 EOF
 EXPECT=<<EOF
 64
@@ -68,7 +68,7 @@ NAME=32: Multiple section headers
 FILE=malloc://1024
 CMDS=<<EOF
 pfo elf32
-pf [2]? (elf_shdr)sections
+pf "[2]? (elf_shdr)sections"
 EOF
 EXPECT=<<EOF
  sections : 
@@ -104,7 +104,7 @@ NAME=64: Multiple section headers
 FILE=malloc://1024
 CMDS=<<EOF
 pfo elf64
-pf [2]? (elf_shdr)sections
+pf "[2]? (elf_shdr)sections"
 EOF
 EXPECT=<<EOF
  sections : 
@@ -149,7 +149,7 @@ NAME=32: Elf header
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
 pfo elf32
-pf.elf_header @ 0x8048000
+pf. elf_header @ 0x8048000
 EOF
 EXPECT=<<EOF
      ident : 
@@ -178,7 +178,7 @@ NAME=64: Elf header
 FILE=bins/elf/analysis/x64-simple
 CMDS=<<EOF
 pfo elf64
-pf.elf_header @ `i~baddr[1]`
+pf. elf_header @ `i~baddr[1]`
 EOF
 EXPECT=<<EOF
      ident : 
@@ -208,9 +208,9 @@ FILE=bins/elf/analysis/tiny1
 ARGS=-nn
 CMDS=<<EOF
 e io.va=0
-pf.elf_header @ elf_header
+pf. elf_header @ elf_header
 echo
-pfj.elf_header @ elf_header ~{}
+pf.j elf_header @ elf_header ~{}
 EOF
 EXPECT=<<EOF
      ident : 
@@ -364,7 +364,7 @@ FILE=bins/elf/analysis/x64-simple
 ARGS=-nn
 CMDS=<<EOF
 e io.va=0
-pf.elf_header @ elf_header
+pf. elf_header @ elf_header
 EOF
 EXPECT=<<EOF
      ident : 
@@ -393,11 +393,11 @@ NAME=pf elf_header times fix
 FILE==
 CMDS=<<EOF
 pfo elf32
-pf? elf_header
-pfs.elf_header
+pfn elf_header
+pfs elf_header
 echo
-wz `pf? elf_header`
-(pfelf num; pf.elf_header${num} {${num}}`ps`; pf? elf_header${num}; pfs.elf_header${num})
+wz `pfn elf_header`
+(pfelf num; pfn elf_header${num} {${num}}`ps`; pfn elf_header${num}; pfs elf_header${num})
 .(pfelf 1)
 echo
 .(pfelf 2)
@@ -418,7 +418,7 @@ NAME=32: normal elf header
 FILE=bins/elf/hello_world32
 CMDS=<<EOF
 pfo elf32
-pf.elf_header @ segment.ehdr
+pf. elf_header @ segment.ehdr
 EOF
 EXPECT=<<EOF
      ident : 
@@ -447,7 +447,7 @@ NAME=64: normal elf header
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 pfo elf64
-pf.elf_header @ segment.ehdr
+pf. elf_header @ segment.ehdr
 EOF
 EXPECT=<<EOF
      ident : 

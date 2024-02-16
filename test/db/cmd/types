@@ -2211,7 +2211,7 @@ tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pf.foo dc a b
+pfn foo dc a b
 pf dc a b
 pf dc a b
 EOF

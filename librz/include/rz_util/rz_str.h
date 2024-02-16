@@ -177,8 +177,9 @@ RZ_API const char *rz_str_strchr(RZ_NONNULL const char *str, RZ_NONNULL const ch
 RZ_API const char *rz_str_nstr(const char *from, const char *to, int size);
 RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *from, RZ_NONNULL const char *to, int size);
 RZ_API const char *rz_str_lchr(const char *str, char chr);
-RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr);
-RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr);
+RZ_API const char *rz_sub_str_lchr(RZ_NONNULL const char *str, int start, int end, char chr);
+RZ_API const char *rz_sub_str_rchr(RZ_NONNULL const char *str, int start, int end, char chr);
+RZ_API RZ_OWN char *rz_sub_str_ptr(RZ_NONNULL const char *str, RZ_NONNULL const char *start, RZ_NONNULL const char *end);
 RZ_API char *rz_str_ichr(char *str, char chr);
 RZ_API bool rz_str_ccmp(const char *dst, const char *orig, int ch);
 RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep);

@@ -153,102 +153,6 @@ static const char *help_msg_pj[] = {
 	NULL
 };
 
-static const char *help_msg_pf[] = {
-	"pf:", PF_USAGE_STR, "",
-	"Commands:", "", "",
-	"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
-	"pf", "?", "Show this help",
-	"pf", "??", "Format characters",
-	"pf", "???", "pf usage examples",
-	"pf* ", "fmt_name|fmt", "Show data using (named) format as rizin flag create commands",
-	"pf.", "", "List all format definitions",
-	"pf.", "fmt_name", "Show data using named format",
-	"pf.", "fmt_name.field_name", "Show specific data field using named format",
-	"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
-	"pf.", "fmt_name.field_name[i]", "Show element i of array field_name",
-	"pf.", "name [0|cnt]fmt", "Define a new named format",
-	"pf?", "fmt_name", "Show the definition of a named format",
-	"pfc ", "fmt_name|fmt", "Show data using (named) format as C string",
-	"pfd.", "fmt_name", "Show data using named format as graphviz commands",
-	"pfj ", "fmt_name|fmt", "Show data using (named) format in JSON",
-	"pfo", " fdf_name", "Load a Format Definition File (fdf)",
-	"pfo", "", "List all format definition files (fdf)",
-	"pfq", " fmt ...", "Quiet print format (do now show address)",
-	"pfs", "[.fmt_name| fmt]", "Print the size of (named) format in bytes",
-	"pfv.", "fmt_name[.field]", "Print value(s) only for named format. Useful for one-liners",
-	NULL
-};
-
-static const char *help_detail_pf[] = {
-	"pf:", PF_USAGE_STR, "",
-	"Format:", "", "",
-	" ", "b", "byte (unsigned)",
-	" ", "B", "resolve enum bitfield (see t?)",
-	" ", "c", "char (signed byte)",
-	" ", "C", "byte in decimal",
-	" ", "d", "0xHEX value (4 bytes) (see 'i' and 'x')",
-	" ", "D", "disassemble one opcode",
-	" ", "e", "temporally swap endian",
-	" ", "E", "resolve enum name (see t?)",
-	" ", "f", "float value (4 bytes)",
-	" ", "F", "double value (8 bytes)",
-	" ", "i", "signed integer value (4 bytes) (see 'd' and 'x')",
-	" ", "n", "next char specifies size of signed value (1, 2, 4 or 8 byte(s))",
-	" ", "N", "next char specifies size of unsigned value (1, 2, 4 or 8 byte(s))",
-	" ", "o", "octal value (4 byte)",
-	" ", "p", "pointer reference (2, 4 or 8 bytes)",
-	" ", "q", "quadword (8 bytes)",
-	" ", "Q", "uint128_t (16 bytes)",
-	" ", "r", "CPU register `pf r (eax)plop`",
-	" ", "s", "32bit pointer to string (4 bytes)",
-	" ", "S", "64bit pointer to string (8 bytes)",
-	" ", "t", "UNIX timestamp (4 bytes)",
-	" ", "T", "show Ten first bytes of buffer",
-	" ", "u", "uleb128 (variable length)",
-	" ", "w", "word (2 bytes unsigned short in hex)",
-	" ", "x", "0xHEX value and flag (fd @ addr) (see 'd' and 'i')",
-	" ", "X", "show formatted hexpairs",
-	" ", "z", "null terminated string",
-	" ", "Z", "null terminated wide string",
-	" ", "?", "data structure `pf ? (struct_name)example_name`",
-	" ", "*", "next char is pointer (honors asm.bits)",
-	" ", "+", "toggle show flags for each offset",
-	" ", ":", "skip 4 bytes",
-	" ", ".", "skip 1 byte",
-	" ", ";", "rewind 4 bytes",
-	" ", ",", "rewind 1 byte",
-	NULL
-};
-
-static const char *help_detail2_pf[] = {
-	"pf:", PF_USAGE_STR, "",
-	"Examples:", "", "",
-	"pf", " 3xi foo bar", "3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int",
-	"pf", " B (BitFldType)arg_name`", "bitfield type",
-	"pf", " E (EnumType)arg_name`", "enum type",
-	"pf", " obj=xxdz prev next size name", "Same as above",
-	"pf", " *z*i*w nb name blob", "Print the pointers with given labels",
-	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
-	"pf", " 0iwq foo bar troll", "Same as above, but considered as a union (all fields at offset 0)",
-	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
-	"pf.", "plop ? (troll)mystruct", "Use structure troll previously defined",
-	"pfj.", "plop @ 0x14", "Apply format object at the given offset",
-	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
-	"pf", " 5sqw string quad word", "Print an array with sqw struct along with its field names",
-	"pf", " {integer}? (bifc)", "Print integer times the following format (bifc)",
-	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
-	"pf", " ic...%i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structures",
-	"pf", " :..x", "Print value located 6 bytes from current offset",
-	"pf", " [10]z[3]i[10]Zb", "Print an fixed size str, widechar, and var",
-	"pfj", " +F @ 0x14", "Print the content at given offset with flag",
-	"pf", " n2", "print signed short (2 bytes) value. Use N instead of n for printing unsigned values",
-	"pf", " [2]? (plop)structname @ 0", "Prints an array of structs",
-	"pf", " eqew bigWord beef", "Swap endianness and print with given labels",
-	"pf", ".foo rr (eax)reg1 (eip)reg2", "Create object referencing to register values ",
-	"pf", " tt troll plop", "print time stamps with labels troll and plop",
-	NULL
-};
-
 static const char *help_msg_px[] = {
 	"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
 	"px", "", "show hexdump",
@@ -718,14 +622,6 @@ RZ_API void rz_core_set_asm_configs(RzCore *core, char *arch, ut32 bits, int seg
 	rz_config_set_i(core->config, "asm.segoff", segoff);
 }
 
-static void print_format_help_help_help_help(RzCore *core) {
-	const char *help_msg[] = {
-		"    STAHP IT!!!", "", "",
-		NULL
-	};
-	rz_core_cmd_help(core, help_msg);
-}
-
 /**
  * \brief Frees a visual print gadget
  *
@@ -981,320 +877,6 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
-static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block, int len) {
-	char *input = NULL;
-	int mode = RZ_PRINT_MUSTSEE;
-	switch (_input[1]) {
-	case '*': // "pf*"
-		_input++;
-		mode = RZ_PRINT_SEEFLAGS;
-		break;
-	case 'q': // "pfq"
-		_input++;
-		mode = RZ_PRINT_QUIET | RZ_PRINT_MUSTSEE;
-		break;
-	case 'd': // "pfd"
-		_input++;
-		mode = RZ_PRINT_DOT;
-		break;
-	case 'j': // "pfj"
-		_input++;
-		mode = RZ_PRINT_JSON;
-		break;
-	case 'v': // "pfv"
-		_input++;
-		mode = RZ_PRINT_VALUE | RZ_PRINT_MUSTSEE;
-		break;
-	case 'c': // "pfc"
-		_input++;
-		mode = RZ_PRINT_STRUCT;
-		break;
-	case 's': { // "pfs"
-		const char *val = NULL;
-		_input += 2;
-		if (*_input == '.') {
-			_input++;
-			val = rz_type_db_format_get(core->analysis->typedb, _input);
-			if (val) {
-				rz_cons_printf("%d\n", rz_type_format_struct_size(core->analysis->typedb, val, mode, 0));
-			} else {
-				RZ_LOG_ERROR("core: Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
-			}
-		} else if (*_input == ' ') {
-			while (*_input == ' ' && *_input != '\0') {
-				_input++;
-			}
-			if (*_input) {
-				rz_cons_printf("%d\n", rz_type_format_struct_size(core->analysis->typedb, _input, mode, 0));
-			} else {
-				RZ_LOG_ERROR("core: Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
-			}
-		} else {
-			RZ_LOG_ERROR("core: Usage: pfs.struct_name | pfs format\n");
-		}
-		return;
-	}
-	case '?': // "pf?"
-		_input += 2;
-		if (*_input) {
-			if (*_input == '?') {
-				_input++;
-				if (_input && *_input == '?') {
-					_input++;
-					if (_input && *_input == '?') {
-						print_format_help_help_help_help(core);
-					} else {
-						rz_core_cmd_help(core, help_detail2_pf);
-					}
-				} else {
-					rz_core_cmd_help(core, help_detail_pf);
-				}
-			} else {
-				const char *struct_name = rz_str_trim_head_ro(_input);
-				const char *val = rz_type_db_format_get(core->analysis->typedb, struct_name);
-				if (val) {
-					rz_cons_printf("%s\n", val);
-				} else {
-					RZ_LOG_ERROR("core: Struct %s is not defined\n", _input);
-				}
-			}
-		} else {
-			rz_core_cmd_help(core, help_msg_pf);
-		}
-		return;
-	case 'o': // "pfo"
-		if (_input[2] == '?') {
-			char *prefix = rz_path_prefix(NULL);
-			char *sdb_format = rz_path_home_prefix(RZ_SDB_FORMAT);
-			eprintf("|Usage: pfo [format-file]\n"
-				" %s\n"
-				" " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
-				sdb_format, prefix);
-			free(sdb_format);
-			free(prefix);
-		} else if (_input[2] == ' ') {
-			const char *fname = rz_str_trim_head_ro(_input + 3);
-			char *home_formats = rz_path_home_prefix(RZ_SDB_FORMAT);
-			char *home = rz_file_path_join(home_formats, fname);
-			free(home_formats);
-			char *system_formats = rz_path_system(RZ_SDB_FORMAT);
-			char *path = rz_file_path_join(system_formats, fname);
-			free(system_formats);
-			if (rz_str_endswith(_input, ".h")) {
-				char *error_msg = NULL;
-				const char *dir = rz_config_get(core->config, "dir.types");
-				int result = rz_type_parse_file(core->analysis->typedb, path, dir, &error_msg);
-				if (!result) {
-					rz_core_cmd0(core, ".ts*");
-				} else {
-					RZ_LOG_ERROR("core: Parse error: %s\n", error_msg);
-					free(error_msg);
-				}
-			} else {
-				if (!rz_core_cmd_file(core, home) && !rz_core_cmd_file(core, path)) {
-					if (!rz_core_cmd_file(core, _input + 3)) {
-						RZ_LOG_ERROR("core: pfo: cannot open format file at '%s'\n", path);
-					}
-				}
-			}
-			free(home);
-			free(path);
-		} else {
-			RzList *files;
-			RzListIter *iter;
-			const char *fn;
-			char *home = rz_path_home_prefix(RZ_SDB_FORMAT);
-			if (home) {
-				files = rz_sys_dir(home);
-				rz_list_foreach (files, iter, fn) {
-					if (*fn && *fn != '.') {
-						rz_cons_println(fn);
-					}
-				}
-				rz_list_free(files);
-				free(home);
-			}
-			char *path = rz_path_system(RZ_SDB_FORMAT);
-			if (path) {
-				files = rz_sys_dir(path);
-				rz_list_foreach (files, iter, fn) {
-					if (*fn && *fn != '.') {
-						rz_cons_println(fn);
-					}
-				}
-				rz_list_free(files);
-				free(path);
-			}
-		}
-		free(input);
-		return;
-	} // switch
-
-	input = strdup(_input);
-	/* syntax aliasing bridge for 'pf foo=xxd' -> 'pf.foo xxd' */
-	if (input[1] == ' ') {
-		char *eq = strchr(input + 2, '=');
-		if (eq) {
-			input[1] = '.';
-			*eq = ' ';
-		}
-	}
-
-	bool listFormats = false;
-	if (input[1] == '.') {
-		listFormats = true;
-	} else if (!strcmp(input, "*") && mode == RZ_PRINT_SEEFLAGS) {
-		listFormats = true;
-	}
-
-	core->print->reg = rz_core_reg_default(core);
-	core->print->get_register = rz_reg_get;
-	core->print->get_register_value = rz_reg_get_value;
-
-	int o_blocksize = core->blocksize;
-
-	if (listFormats) {
-		core->print->num = core->num;
-		/* print all stored format */
-		if (!input[1] || !input[2]) { // "pf."
-			RzListIter *iter;
-			char *fmt = NULL;
-			RzList *fmtl = rz_type_db_format_all(core->analysis->typedb);
-			rz_list_foreach (fmtl, iter, fmt) {
-				rz_cons_printf("pf.%s\n", fmt);
-			}
-			rz_list_free(fmtl);
-			/* delete a format */
-		} else if (input[1] && input[2] == '-') { // "pf-"
-			if (input[3] == '*') { // "pf-*"
-				rz_type_db_format_purge(core->analysis->typedb);
-			} else { // "pf-xxx"
-				rz_type_db_format_delete(core->analysis->typedb, input + 3);
-			}
-		} else {
-			char *name = strdup(input + (input[1] ? 2 : 1));
-			char *space = strchr(name, ' ');
-			char *eq = strchr(name, '=');
-			char *dot = strchr(name, '.');
-
-			if (eq && !dot) {
-				*eq = ' ';
-				space = eq;
-				eq = NULL;
-			}
-
-			/* store a new format */
-			if (space && (!eq || space < eq)) {
-				*space++ = 0;
-				if (strchr(name, '.')) {
-					RZ_LOG_ERROR("core: Struct or fields name can not contain dot symbol (.)\n");
-				} else {
-					// pf.foo=xxx
-					rz_type_db_format_set(core->analysis->typedb, name, space);
-				}
-				free(name);
-				free(input);
-				return;
-			}
-
-			if (!strchr(name, '.') &&
-				!rz_type_db_format_get(core->analysis->typedb, name)) {
-				RZ_LOG_ERROR("core: Cannot find '%s' format.\n", name);
-				free(name);
-				free(input);
-				return;
-			}
-
-			char *delim = strchr(name, '.');
-			if (delim) {
-				int len = delim - name;
-				if (len > 0) {
-					name[len] = '\0';
-				}
-			}
-
-			/* Load format from name into fmt to get the size */
-			/* This make sure the whole structure will be printed */
-			const char *fmt = NULL;
-			fmt = rz_type_db_format_get(core->analysis->typedb, name);
-			if (fmt) {
-				int size = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0) + 10;
-				if (size > core->blocksize) {
-					rz_core_block_size(core, size);
-				}
-			}
-			/* display a format */
-			if (dot) {
-				*dot++ = 0;
-				eq = strchr(dot, '=');
-				if (eq) { // Write mode (pf.field=value)
-					*eq++ = 0;
-					mode = RZ_PRINT_MUSTSET;
-					char *format = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
-						core->block, core->blocksize, name, mode, eq, dot);
-					if (format) {
-						rz_cons_print(format);
-						free(format);
-					}
-				} else {
-					char *format = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
-						core->block, core->blocksize, name, mode, NULL, dot);
-					if (format) {
-						rz_cons_print(format);
-						free(format);
-					}
-				}
-			} else {
-				char *format = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
-					core->block, core->blocksize, name, mode, NULL, NULL);
-				if (format) {
-					rz_cons_print(format);
-					free(format);
-				}
-			}
-			free(name);
-		}
-	} else {
-		/* This make sure the structure will be printed entirely */
-		const char *fmt = rz_str_trim_head_ro(input + 1);
-		int struct_sz = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0);
-		size_t size = RZ_MAX(core->blocksize, struct_sz);
-		ut8 *buf = calloc(1, size);
-		if (!buf) {
-			RZ_LOG_ERROR("core: cannot allocate %zu byte(s)\n", size);
-			goto stage_left;
-		}
-		memcpy(buf, core->block, core->blocksize);
-		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
-		bool syntax_ok = true;
-		char *args = strdup(fmt);
-		if (!args) {
-			RZ_LOG_ERROR("core: Mem Allocation.");
-			free(args);
-			free(buf);
-			goto stage_left;
-		}
-		const char *arg1 = strtok(args, " ");
-		if (arg1 && rz_str_isnumber(arg1)) {
-			syntax_ok = false;
-			RZ_LOG_ERROR("core: Usage: pf [0|cnt][format-string]\n");
-		}
-		free(args);
-		if (syntax_ok) {
-			char *format = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
-				buf, size, fmt, mode, NULL, NULL);
-			if (format) {
-				rz_cons_print(format);
-				free(format);
-			}
-		}
-		free(buf);
-	}
-stage_left:
-	free(input);
-	rz_core_block_size(core, o_blocksize);
-}
-
 // > pxa
 /* In this function, most of the buffers have 4 times
  * the required length. This is because we supports colours,
@@ -1439,8 +1021,11 @@ static void annotated_hexdump(RzCore *core, int len) {
 			RzAnalysisMetaItem *meta = meta_node ? meta_node->data : NULL;
 			if (meta && meta->type == RZ_META_TYPE_FORMAT && meta_node->start == addr + j) {
 				rz_cons_printf(".format %s ; size=", meta->str);
+				// TODO: Convert to the API
 				rz_core_cmdf(core, "pfs %s", meta->str);
-				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x, meta->str, meta_node->start);
+				char *r = rz_core_print_format(core, meta->str, RZ_PRINT_MUSTSEE, meta_node->start);
+				rz_cons_print(r);
+				free(r);
 				if (usecolor) {
 					append(ebytes, Color_INVERT);
 					append(echars, Color_INVERT);
@@ -3078,9 +2663,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		break;
 	case 'g': // "pg"
 		cmd_print_gadget(core, input + 1);
-		break;
-	case 'f': // "pf"
-		cmd_print_format(core, input, block, len);
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_p);
@@ -7061,6 +6643,54 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_printable_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
+static RzCmdStatus print_format(RzCore *core, const char *fmt, int mode, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(fmt, RZ_CMD_STATUS_ERROR);
+
+	if (state) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			mode = RZ_PRINT_JSON;
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			mode = RZ_PRINT_SEEFLAGS;
+			break;
+		case RZ_OUTPUT_MODE_QUIET:
+			mode |= RZ_PRINT_QUIET | RZ_PRINT_MUSTSEE;
+			break;
+		default:
+			break;
+		}
+		// Temporary workaround until `librz/type/format.c` is rewritten properly
+		if (state->mode != RZ_OUTPUT_MODE_JSON) {
+			rz_cmd_state_output_array_start(state);
+		}
+	}
+	char *format = rz_core_print_format(core, fmt, mode, core->offset);
+	if (!format) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (state) {
+		// Temporary workaround until `librz/type/format.c` is rewritten properly
+		if (state->mode != RZ_OUTPUT_MODE_JSON) {
+			rz_cmd_state_output_array_end(state);
+		}
+	}
+	rz_cons_print(format);
+	free(format);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus print_format_write(RzCore *core, const char *fmt, const char *value) {
+	rz_return_val_if_fail(fmt, RZ_CMD_STATUS_ERROR);
+	char *format = rz_core_print_format_write(core, fmt, value, core->offset);
+	if (!format) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(format);
+	free(format);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const char **argv) {
 	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 0) {
@@ -7068,4 +6698,137 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const
 	}
 	printraw(core, len, true);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	int mode = RZ_PRINT_MUSTSEE;
+	return print_format(core, argv[1], mode, state);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_delete_handler(RzCore *core, int argc, const char **argv) {
+	rz_type_db_format_delete(core->analysis->typedb, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_delete_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_type_db_format_purge(core->analysis->typedb);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_named_dot_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	int mode = RZ_PRINT_MUSTSEE;
+	return print_format(core, argv[1], mode, state);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		// List all named formats
+		RzListIter *iter;
+		RzTypeFormat *fmt = NULL;
+		RzList *formats = rz_type_db_format_all(core->analysis->typedb);
+		rz_list_foreach (formats, iter, fmt) {
+			rz_cons_printf("%s \"%s\"\n", fmt->name, fmt->body);
+		}
+		rz_list_free(formats);
+		return RZ_CMD_STATUS_OK;
+	} else if (argc < 3) {
+		// Show the format string for a named format
+		const char *fmt = rz_type_db_format_get(core->analysis->typedb, argv[1]);
+		if (RZ_STR_ISEMPTY(fmt)) {
+			RZ_LOG_ERROR("Format with \"%s\" name not found\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_printf("%s\n", fmt);
+		return RZ_CMD_STATUS_OK;
+	}
+	rz_type_db_format_set(core->analysis->typedb, argv[1], argv[2]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_c_handler(RzCore *core, int argc, const char **argv) {
+	int mode = RZ_PRINT_STRUCT;
+	return print_format(core, argv[1], mode, NULL);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_dot_handler(RzCore *core, int argc, const char **argv) {
+	int mode = RZ_PRINT_DOT;
+	return print_format(core, argv[1], mode, NULL);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_file_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		RzList *files;
+		RzListIter *iter;
+		const char *fn;
+		char *home = rz_path_home_prefix(RZ_SDB_FORMAT);
+		if (home) {
+			files = rz_sys_dir(home);
+			rz_list_foreach (files, iter, fn) {
+				if (*fn && *fn != '.') {
+					rz_cons_println(fn);
+				}
+			}
+			rz_list_free(files);
+			free(home);
+		}
+		char *path = rz_path_system(RZ_SDB_FORMAT);
+		if (path) {
+			files = rz_sys_dir(path);
+			rz_list_foreach (files, iter, fn) {
+				if (*fn && *fn != '.') {
+					rz_cons_println(fn);
+				}
+			}
+			rz_list_free(files);
+			free(path);
+		}
+		return RZ_CMD_STATUS_OK;
+	}
+	char *home_formats = rz_path_home_prefix(RZ_SDB_FORMAT);
+	char *home = rz_file_path_join(home_formats, argv[1]);
+	free(home_formats);
+	char *system_formats = rz_path_system(RZ_SDB_FORMAT);
+	char *path = rz_file_path_join(system_formats, argv[1]);
+	free(system_formats);
+	if (rz_str_endswith(argv[1], ".h")) {
+		char *error_msg = NULL;
+		const char *dir = rz_config_get(core->config, "dir.types");
+		int result = rz_type_parse_file(core->analysis->typedb, path, dir, &error_msg);
+		if (!result) {
+			// TODO: Use the API here
+			rz_core_cmd0(core, ".ts*");
+		} else {
+			RZ_LOG_ERROR("core: Parse error: %s\n", error_msg);
+			free(error_msg);
+		}
+	} else {
+		if (!rz_core_cmd_file(core, home) && !rz_core_cmd_file(core, path)) {
+			if (!rz_core_cmd_file(core, argv[1])) {
+				RZ_LOG_ERROR("core: pfo: cannot open format file at '%s'\n", path);
+			}
+		}
+	}
+	free(home);
+	free(path);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_size_handler(RzCore *core, int argc, const char **argv) {
+	const char *format = rz_type_db_format_get(core->analysis->typedb, argv[1]);
+	if (!format) {
+		RZ_LOG_ERROR("Format \"%s\" could not be found\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int fmtsz = rz_type_format_struct_size(core->analysis->typedb, format, RZ_PRINT_MUSTSEE, 0);
+	rz_cons_printf("%d\n", fmtsz);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_value_handler(RzCore *core, int argc, const char **argv) {
+	int mode = RZ_PRINT_VALUE | RZ_PRINT_MUSTSEE;
+	return print_format(core, argv[1], mode, NULL);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_format_write_handler(RzCore *core, int argc, const char **argv) {
+	return print_format_write(core, argv[1], argv[2]);
 }

@@ -5297,8 +5297,9 @@ toro:
 			const char *typename = rz_type_identifier(gv->type);
 			if (fmt && typename) {
 				rz_cons_printf("(%s %s)\n", typename, gv->name);
-				// TODO: Use the API directly here
-				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
+				char *r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, ds->addr + idx);
+				rz_cons_print(r);
+				free(r);
 				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, gv->type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry

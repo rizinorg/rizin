@@ -12,9 +12,9 @@ RUN
 NAME=oonn
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
-pf.~?
+pfn~?
 oonn
-pf.~?
+pfn~?
 ol~?
 EOF
 EXPECT=<<EOF
