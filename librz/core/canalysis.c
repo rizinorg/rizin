@@ -5213,7 +5213,7 @@ static void RzAnalysisBytes_free_mod(void *x) {
  * \param nops analysis n ops
  * \return list of RzAnalysisBytes
  */
-RZ_API RZ_OWN RzIterator /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(
+RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
 	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, int len, int nops) {
 	rz_return_val_if_fail(core && buf, NULL);
 

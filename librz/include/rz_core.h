@@ -743,7 +743,7 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, ut64 addr);
 
 RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr);
-RZ_API RZ_OWN RzIterator /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, int len, int nops);
+RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, int len, int nops);
 RZ_API RzIterator *rz_core_analysis_op_chunk_iter(RZ_NONNULL RzCore *core, ut64 offset, ut64 len, ut64 nops, RzAnalysisOpMask mask);
 RZ_API RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisOpMask mask);
 
