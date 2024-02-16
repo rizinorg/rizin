@@ -351,10 +351,15 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 	RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
-	if (var && !rz_analysis_var_storage_equals(&var->storage, stor)) {
-		// var name already exists at a different kind+delta
-		RZ_LOG_INFO("var name %s already exists at a different kind+delta\n", name);
-		return NULL;
+	if (var) {
+		if (!rz_analysis_var_storage_equals(&var->storage, stor)) {
+			// var name already exists at a different kind+delta
+			RZ_LOG_INFO("var name %s already exists at a different kind+delta\n", name);
+			return NULL;
+		} else {
+			// We already have a variable with the same name and storage.
+			return NULL;
+		}
 	}
 	var = rz_analysis_function_get_var_at(fcn, stor);
 	if (!var) {
@@ -385,22 +390,25 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 
 static bool var_clean(RzAnalysisVar *var) {
 	void **it;
-	RzPVector *removed = rz_pvector_new((RzPVectorFree)rz_analysis_var_delete);
+	RzPVector *remove_plan = rz_pvector_new((RzPVectorFree)rz_analysis_var_delete);
 	rz_pvector_foreach (&var->fcn->vars, it) {
 		RzAnalysisVar *p = *it;
 		if (p->origin.kind == var->origin.kind) {
 			if (RZ_STR_EQ(p->name, var->name) && rz_analysis_var_storage_equals(&p->storage, &var->storage)) {
 				goto beach;
 			}
-		} else if (RZ_STR_EQ(p->name, var->name) || rz_analysis_var_storage_equals(&p->storage, &var->storage)) {
-			rz_pvector_push(removed, p);
+		} else {
+			if (RZ_STR_EQ(p->name, var->name) || rz_analysis_var_storage_equals(&p->storage, &var->storage)) {
+				rz_pvector_push(remove_plan, p);
+			}
 		}
 	}
-	rz_pvector_free(removed);
+	rz_pvector_free(remove_plan);
 	return true;
 beach:
 	rz_analysis_var_free(var);
-	rz_pvector_free(removed);
+	remove_plan->v.free_user = NULL;
+	rz_pvector_free(remove_plan);
 	return false;
 }
 
