@@ -502,7 +502,12 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCor
 		graph = rz_core_graph_icfg(core);
 		break;
 	case RZ_CORE_GRAPH_TYPE_CFG:
-		graph = rz_core_graph_cfg(core, addr);
+		if (core->analysis->cur && core->analysis->cur->decode_iword) {
+			// Build the instruction word graph.
+			graph = rz_core_graph_cfg_iwords(core, addr);
+		} else {
+			graph = rz_core_graph_cfg(core, addr);
+		}
 		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF:
 	default:
@@ -950,6 +955,21 @@ static RzGraphNodeSubType get_cfg_node_flags(const RzAnalysisOp *op) {
 	return subtype;
 }
 
+static RzGraphNodeSubType get_cfg_iword_node_flags(const RzAnalysisInsnWord *iword) {
+	rz_return_val_if_fail(iword, RZ_GRAPH_NODE_SUBTYPE_NONE);
+	RzGraphNodeSubType subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
+	if (iword->props & RZ_ANALYSIS_IWORD_CALL) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_CALL;
+	}
+	if (iword->props & RZ_ANALYSIS_IWORD_RET) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN;
+	}
+	if (iword->props & RZ_ANALYSIS_IWORD_COND) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_COND;
+	}
+	return subtype;
+}
+
 static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisOp *op, bool is_entry) {
 	rz_return_val_if_fail(cfg, NULL);
 	RzGraphNodeSubType subtype = get_cfg_node_flags(op);
@@ -1124,6 +1144,147 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 	}
 
 fini:
+	rz_vector_free(to_visit);
+	ht_uu_free(nodes_visited);
+	return graph;
+
+error:
+	rz_warn_if_reached();
+	rz_graph_free(graph);
+	graph = NULL;
+	goto fini;
+}
+
+static RzGraphNode *add_iword_to_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisInsnWord *iword, bool is_entry) {
+	rz_return_val_if_fail(cfg, NULL);
+	RzGraphNodeSubType subtype = get_cfg_iword_node_flags(iword);
+	if (is_entry) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
+	}
+	ut64 call_target = (iword->props & RZ_ANALYSIS_IWORD_CALL) ? iword->call_target : UT64_MAX;
+	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(iword->addr, call_target, RZ_GRAPH_NODE_TYPE_CFG, subtype);
+	if (!data) {
+		return NULL;
+	}
+	RzGraphNode *node = rz_graph_add_nodef(cfg, data, rz_graph_free_node_info);
+	if (!node) {
+		rz_graph_free_node_info(data);
+	}
+	return node;
+}
+
+static bool add_iword_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
+	RZ_NONNULL RzVector /*<ut64>*/ *to_visit,
+	RZ_NONNULL HtUU *nodes_visited,
+	const RzAnalysisInsnWord *irowrd_from,
+	const RzAnalysisInsnWord *iword_to) {
+	rz_return_val_if_fail(graph && to_visit && nodes_visited && irowrd_from && iword_to, -1);
+	ut64 from = irowrd_from->addr;
+	ut64 to = iword_to->addr;
+	bool visited = false;
+	ut64 from_idx = ht_uu_find(nodes_visited, from, &visited);
+	if (!visited && from != to) {
+		RZ_LOG_ERROR("'from' node should have been added before. 0x%" PFMT64x " -> 0x%" PFMT64x "\n", from, to);
+		return false;
+	}
+
+	RzGraphNode *to_node = add_iword_to_cfg(graph, iword_to, false);
+	if (!to_node) {
+		RZ_LOG_ERROR("Could not add node at 0x%" PFMT64x "\n", to);
+		return false;
+	}
+	ut64 to_idx = to_node->idx;
+	if (from == to) {
+		from_idx = to_idx;
+	}
+	to_idx = ht_uu_find(nodes_visited, to, &visited);
+
+	if (from != to && !visited) {
+		// The target node wasn't visited before. Otherwise this is a back-edge.
+		rz_vector_push(to_visit, &to);
+	}
+
+	ht_uu_insert(nodes_visited, to, to_node->idx);
+	rz_graph_add_edge(graph, rz_graph_get_node(graph, from_idx), to_node);
+	return true;
+}
+
+static st32 decode_iword_at(RZ_BORROW RzCore *core,
+	ut64 addr,
+	RZ_BORROW ut8 *buf,
+	size_t buf_len,
+	RZ_OUT RzAnalysisInsnWord *target_iword) {
+	rz_return_val_if_fail(core && core->analysis && core->io && buf && core->analysis->cur && core->analysis->cur->decode_iword, -1);
+	size_t leading_bytes = addr < 8 ? addr : 8;
+	if (rz_io_nread_at(core->io, addr - leading_bytes, buf, buf_len) < 0) {
+		RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, addr);
+		return -1;
+	}
+	bool success = core->analysis->cur->decode_iword(core->analysis, target_iword, addr, buf, buf_len, leading_bytes);
+	return success ? target_iword->size_bytes : -1;
+}
+
+/**
+ * \brief Get the procedual control flow graph (CFG) of instruction words at an address.
+ * Calls are not followed.
+ *
+ * \param core The current core.
+ * \param addr The CFG entry point.
+ *
+ * \return The CFG at address \p addr or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis && core->io, NULL);
+	RzGraph *graph = rz_graph_new();
+	if (!graph) {
+		return NULL;
+	}
+
+	// Visited instructions. Indexed by instruction address, value is index in graph.
+	HtUU *nodes_visited = ht_uu_new0();
+	// Addresses to visit.
+	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
+
+	// Add entry node
+	RzAnalysisInsnWord cur_iword = { 0 };
+	ut8 buf[64] = { 0 };
+	// Decode iword
+	RzGraphNode *entry = add_iword_to_cfg(graph, &cur_iword, true);
+	ht_uu_insert(nodes_visited, addr, entry->idx);
+	rz_vector_push(to_visit, &addr);
+
+	while (rz_vector_len(to_visit) > 0) {
+		ut64 cur_addr = 0;
+		rz_vector_pop(to_visit, &cur_addr);
+		rz_analysis_insn_word_setup(&cur_iword);
+
+		st32 disas_bytes = decode_iword_at(core, cur_addr, buf, sizeof(buf), &cur_iword);
+		if (disas_bytes <= 0) {
+			// If the decoding was invalid we do not add it to the graph.
+			rz_analysis_insn_word_fini(&cur_iword);
+			continue;
+		}
+		// Add all neighbors to graph
+		RzAnalysisInsnWord target_iword = { 0 };
+		ut64 *it;
+		rz_vector_foreach(cur_iword.jump_targets, it) {
+			ut64 target = *it;
+			rz_analysis_insn_word_setup(&target_iword);
+			if (decode_iword_at(core, target, buf, sizeof(buf), &target_iword) <= 0) {
+				rz_analysis_insn_word_fini(&target_iword);
+				continue;
+			}
+			rz_vector_push(to_visit, &target);
+			if (!add_iword_edge_to_cfg(graph, to_visit, nodes_visited, &cur_iword, &target_iword)) {
+				rz_analysis_insn_word_fini(&target_iword);
+				goto error;
+			}
+			rz_analysis_insn_word_fini(&target_iword);
+		}
+	}
+
+fini:
+	rz_analysis_insn_word_fini(&cur_iword);
 	rz_vector_free(to_visit);
 	ht_uu_free(nodes_visited);
 	return graph;

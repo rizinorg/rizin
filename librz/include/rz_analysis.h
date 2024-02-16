@@ -966,6 +966,7 @@ typedef struct {
 	ut32 size_bits; ///< Instruction word size in bits.
 	ut32 size_bytes; ///< Instruction word size in bytes.
 	ut64 addr; ///< Address the instruction word is located.
+	ut64 call_target; ///< Sub-procedure address this iword calls.
 	RzStrBuf *asm_str; ///< The whole asm string. Single instructions are separated by a newline.
 	RzPVector /*<RzAnalysisOp *>*/ *insns; ///< Instructions forming the instruction word.
 	RzVector /* ut64 */ *jump_targets; ///< Vector of addresses this iword possibly jumps to. This includes the next instr. word if there is any.
@@ -974,7 +975,9 @@ typedef struct {
 } RzAnalysisInsnWord;
 
 RZ_API RZ_OWN RzAnalysisInsnWord *rz_analysis_insn_word_new();
+RZ_API void rz_analysis_insn_word_setup(RZ_BORROW RZ_NONNULL RzAnalysisInsnWord *iword);
 RZ_API void rz_analysis_insn_word_free(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iword);
+RZ_API void rz_analysis_insn_word_fini(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iword);
 
 #define RZ_TYPE_COND_SINGLE(x) (!x->arg[1] || x->arg[0] == x->arg[1])
 
