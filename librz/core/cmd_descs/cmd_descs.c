@@ -566,6 +566,8 @@ static const RzCmdDescArg open_maps_prioritize_binid_args[2];
 static const RzCmdDescArg open_maps_deprioritize_args[2];
 static const RzCmdDescArg open_maps_prioritize_fd_args[2];
 static const RzCmdDescArg open_exchange_args[3];
+static const RzCmdDescArg cmd_print_2bpp_tiles_args[2];
+static const RzCmdDescArg cmd_print_8bit_hexpair_args[2];
 static const RzCmdDescArg print_bitstream_args[3];
 static const RzCmdDescArg print_byte_bitstream_args[2];
 static const RzCmdDescArg hex_of_assembly_args[2];
@@ -12568,6 +12570,47 @@ static const RzCmdDescHelp open_exchange_help = {
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
+static const RzCmdDescArg cmd_print_2bpp_tiles_args[] = {
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_2bpp_tiles_help = {
+	.summary = "Print 8x8 2bpp tiles.",
+	.args = cmd_print_2bpp_tiles_args,
+};
+
+static const RzCmdDescHelp p8_help = {
+	.summary = "Print 8bit hexpair list of bytes.",
+};
+static const RzCmdDescArg cmd_print_8bit_hexpair_args[] = {
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_8bit_hexpair_help = {
+	.summary = "Print 8bit hexpair list of bytes.",
+	.args = cmd_print_8bit_hexpair_args,
+};
+
+static const RzCmdDescArg cmd_print_8bit_hexpair_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_8bit_hexpair_function_help = {
+	.summary = "Print 8bit hexpair list of bytes in function (linear).",
+	.args = cmd_print_8bit_hexpair_function_args,
+};
+
 static const RzCmdDescArg print_bitstream_args[] = {
 	{
 		.name = "n",
@@ -21521,6 +21564,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
+	RzCmdDesc *cmd_print_2bpp_tiles_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "p2", rz_cmd_print_2bpp_tiles_handler, &cmd_print_2bpp_tiles_help);
+	rz_warn_if_fail(cmd_print_2bpp_tiles_cd);
+
+	RzCmdDesc *p8_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "p8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_8bit_hexpair_handler, &cmd_print_8bit_hexpair_help, &p8_help);
+	rz_warn_if_fail(p8_cd);
+	RzCmdDesc *cmd_print_8bit_hexpair_function_cd = rz_cmd_desc_argv_new(core->rcmd, p8_cd, "p8f", rz_cmd_print_8bit_hexpair_function_handler, &cmd_print_8bit_hexpair_function_help);
+	rz_warn_if_fail(cmd_print_8bit_hexpair_function_cd);
+
 	RzCmdDesc *print_bitstream_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pb", RZ_OUTPUT_MODE_STANDARD, rz_print_bitstream_handler, &print_bitstream_help);
 	rz_warn_if_fail(print_bitstream_cd);
 
