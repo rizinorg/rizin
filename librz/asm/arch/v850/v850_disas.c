@@ -508,7 +508,7 @@ static bool decode_formatVI(V850_Inst *inst, RzBuffer *b) {
 		}
 		inst->byte_size += 2;
 		inst->d |= ((ut64)(tmp) << 32);
-		inst->imm |= (st32)(V850_word(inst, 3)) << 16;
+		inst->imm |= (ut32)(V850_word(inst, 3)) << 16;
 	} else {
 		switch (opcode) {
 		case V850_ADDI:

@@ -5244,18 +5244,19 @@ static void *analysis_op_next(RzIterator *it) {
 		return NULL;
 	}
 
-	ut64 addr = ctx->core->offset + ctx->offset_block;
-	if (ctx->max_op_size + addr > ctx->core->offset + ctx->core->blocksize) {
-		if (!rz_core_seek(ctx->core, addr, true)) {
+	if (ctx->max_op_size + ctx->offset_block >= ctx->core->blocksize && ctx->len > ctx->core->blocksize) {
+		if (!rz_core_seek(ctx->core, ctx->core->offset + ctx->offset_block, true)) {
 			return NULL;
 		}
 		ctx->offset_block = 0;
 	}
+	ut64 addr = ctx->core->offset + ctx->offset_block;
 	ut8 *ptr = ctx->core->block + ctx->offset_block;
+	ut64 remain = ctx->core->blocksize - ctx->offset_block;
 
 	rz_analysis_op_fini(&ctx->op);
 	rz_analysis_op_init(&ctx->op);
-	if (rz_analysis_op(ctx->core->analysis, &ctx->op, addr, ptr, ctx->max_op_size, ctx->mask) < 1) {
+	if (rz_analysis_op(ctx->core->analysis, &ctx->op, addr, ptr, remain, ctx->mask) < 1) {
 		RZ_LOG_ERROR("Invalid instruction at 0x%08" PFMT64x "...\n", addr);
 		return NULL;
 	}
