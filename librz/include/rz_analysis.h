@@ -966,12 +966,15 @@ typedef struct {
 	ut32 size_bits; ///< Instruction word size in bits.
 	ut32 size_bytes; ///< Instruction word size in bytes.
 	ut64 addr; ///< Address the instruction word is located.
-	char *asm_str; ///< The whole asm string. Single instructions are separated by a newline.
+	RzStrBuf *asm_str; ///< The whole asm string. Single instructions are separated by a newline.
 	RzPVector /*<RzAnalysisOp *>*/ *insns; ///< Instructions forming the instruction word.
 	RzVector /* ut64 */ *jump_targets; ///< Vector of addresses this iword possibly jumps to. This includes the next instr. word if there is any.
 	RzAnalysisLiftedILOp il_op; ///< The complete IL operation of this instr. word.
 	RzAnalysisIWordProperties props; ///< Properties of this instruction word.
 } RzAnalysisInsnWord;
+
+RZ_API RZ_OWN RzAnalysisInsnWord *rz_analysis_insn_word_new();
+RZ_API void rz_analysis_insn_word_free(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iword);
 
 #define RZ_TYPE_COND_SINGLE(x) (!x->arg[1] || x->arg[0] == x->arg[1])
 
@@ -1390,7 +1393,7 @@ typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, 
  * \return true On successful decoding.
  * \return false One failure
  */
-typedef bool (*RzAnalysisIWordCallback)(const RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword);
+typedef bool (*RzAnalysisIWordCallback)(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword);
 
 typedef bool (*RzAnalysisRegProfCallback)(RzAnalysis *a);
 typedef char *(*RzAnalysisRegProfGetCallback)(RzAnalysis *a);
