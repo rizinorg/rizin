@@ -1023,6 +1023,23 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	return true;
 }
 
+static st32 decode_op_at(RZ_BORROW RzCore *core,
+	ut64 addr,
+	RZ_BORROW ut8 *buf,
+	size_t buf_len,
+	RZ_OUT RzAnalysisOp *target_op) {
+	rz_return_val_if_fail(core && core->analysis && core->io && buf, -1);
+	if (rz_io_nread_at(core->io, addr, buf, buf_len) < 0) {
+		RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, addr);
+		return -1;
+	}
+	int disas_bytes = rz_analysis_op(core->analysis, target_op, addr, buf, buf_len, RZ_ANALYSIS_OP_MASK_DISASM);
+	if (disas_bytes <= 0) {
+		return -1;
+	}
+	return disas_bytes;
+}
+
 /**
  * \brief Get the procedual control flow graph (CFG) at an address.
  * Calls are not followed.
@@ -1046,13 +1063,12 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 
 	// Add entry node
 	ut8 buf[64] = { 0 };
-	if (rz_io_nread_at(core->io, addr, buf, sizeof(buf)) < 0) {
-		RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, addr);
-		goto error;
-	}
 	RzAnalysisOp curr_op = { 0 };
 	RzAnalysisOp target_op = { 0 };
-	int disas_bytes = rz_analysis_op(core->analysis, &curr_op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
+	st32 disas_bytes = decode_op_at(core, addr, buf, sizeof(buf), &curr_op);
+	if (disas_bytes <= 0) {
+		goto error;
+	}
 	RzGraphNode *entry = add_node_info_cfg(graph, &curr_op, true);
 	ht_uu_insert(nodes_visited, addr, entry->idx);
 	rz_vector_push(to_visit, &addr);
@@ -1061,12 +1077,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 		ut64 cur_addr = 0;
 		rz_vector_pop(to_visit, &cur_addr);
 
-		if (rz_io_nread_at(core->io, cur_addr, buf, sizeof(buf)) < 0) {
-			RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
-			goto error;
-		}
-
-		disas_bytes = rz_analysis_op(core->analysis, &curr_op, cur_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
+		disas_bytes = decode_op_at(core, cur_addr, buf, sizeof(buf), &curr_op);
 		if (disas_bytes <= 0 || is_leaf_op(&curr_op)) {
 			// A leaf. It was added before to the graph by the parent node.
 			rz_analysis_op_fini(&curr_op);
@@ -1074,11 +1085,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 		}
 
 		if (curr_op.jump != UT64_MAX && !is_call(&curr_op)) {
-			if (rz_io_nread_at(core->io, curr_op.jump, buf, sizeof(buf)) < 0) {
-				RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
-				goto error;
-			}
-			if (rz_analysis_op(core->analysis, &target_op, curr_op.jump, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+			if (decode_op_at(core, curr_op.jump, buf, sizeof(buf), &target_op) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
@@ -1088,11 +1095,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 			rz_analysis_op_fini(&target_op);
 		}
 		if (curr_op.fail != UT64_MAX && !is_call(&curr_op)) {
-			if (rz_io_nread_at(core->io, curr_op.fail, buf, sizeof(buf)) < 0) {
-				RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
-				goto error;
-			}
-			if (rz_analysis_op(core->analysis, &target_op, curr_op.fail, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+			if (decode_op_at(core, curr_op.fail, buf, sizeof(buf), &target_op) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
@@ -1109,11 +1112,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 
 		// Add next instruction
 		ut64 next_addr = cur_addr + disas_bytes;
-		if (rz_io_nread_at(core->io, next_addr, buf, sizeof(buf)) < 0) {
-			RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
-			goto error;
-		}
-		if (rz_analysis_op(core->analysis, &target_op, next_addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
+		if (decode_op_at(core, next_addr, buf, sizeof(buf), &target_op) <= 0) {
 			rz_analysis_op_fini(&target_op);
 			goto error;
 		}
