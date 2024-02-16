@@ -1069,8 +1069,11 @@ static void copy_asm_ana_ops(const HexState *state, RZ_BORROW HexReversedOpcode 
  * \param buf The buffer which stores the current opcode.
  * \param addr The address of the current opcode.
  * \param copy_result If set, it copies the result. Otherwise it only buffers it in the internal state.
+ *
+ * \return true If the decoded instruction was the last instruction in a _valid_ packet.
+ * \return false Otherwise.
  */
-RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result) {
+RZ_API bool hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result) {
 	HexState *state = hexagon_state(false);
 	if (!state) {
 		RZ_LOG_FATAL("HexState was NULL.");
@@ -1095,7 +1098,7 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 		if (copy_result) {
 			copy_asm_ana_ops(state, rz_reverse, hic);
 		}
-		return;
+		return hic->pkt_info.last_insn;
 	}
 
 	ut32 data = rz_read_le32(buf);
@@ -1105,7 +1108,7 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	// Add to state
 	hic = hex_add_hic_to_state(state, &hic_new);
 	if (!hic) {
-		return;
+		return false;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);
 
@@ -1115,4 +1118,65 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	if (copy_result) {
 		copy_asm_ana_ops(state, rz_reverse, hic);
 	}
+	return hic->pkt_info.last_insn;
+}
+
+RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword) {
+	rz_return_val_if_fail(iword && buf, false);
+
+	if (len < 5 * HEX_INSN_SIZE || (buf_off_iword < HEX_INSN_SIZE && addr >= HEX_INSN_SIZE)) {
+		// At a minimum we require on previous instruction as context and four instructions.
+		RZ_LOG_WARN("Hexagon needs at least 5 * %" PFMT32d " bytes to decode an instr. word.\n", HEX_INSN_SIZE);
+		return false;
+	}
+	iword->addr = addr;
+	RzAnalysisOp prev_op = { 0 };
+	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = &prev_op, .asm_op = NULL };
+	hexagon_reverse_opcode(NULL, &rev, buf, addr - buf_off_iword, false);
+
+	ut32 buf_offset = buf_off_iword;
+	while (buf_offset + HEX_INSN_SIZE <= len && buf_offset <= HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT) {
+		const ut32 buf_ptr = rz_read_at_le32(buf, buf_offset);
+		if (buf_offset > 0 && (buf_ptr == HEX_INVALID_INSN_0 || buf_ptr == HEX_INVALID_INSN_F)) {
+			RZ_LOG_WARN("Attemt to decode an invalid instruction for a instruction word. Is the address 0x%" PFMT64x " in valid memory?\n", addr);
+			return false;
+		}
+
+		RzAnalysisOp *aop = RZ_NEW0(RzAnalysisOp);
+		HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = aop, .asm_op = NULL };
+		bool last_insn = hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + buf_offset, true);
+		rz_pvector_push(iword->insns, aop);
+		if (aop->jump) {
+			rz_vector_push(iword->jump_targets, &aop->jump);
+		}
+		if (aop->fail) {
+			rz_vector_push(iword->jump_targets, &aop->fail);
+		}
+		rz_strbuf_appendf(iword->asm_str, "%s\n", aop->mnemonic);
+		iword->size_bytes += 4;
+		iword->size_bits += 32;
+
+		if (aop->type & RZ_ANALYSIS_OP_TYPE_COND) {
+			iword->props |= RZ_ANALYSIS_IWORD_COND;
+		}
+		if (aop->type & RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
+			iword->props |= RZ_ANALYSIS_IWORD_CALL;
+		}
+		if (aop->type & RZ_ANALYSIS_OP_TYPE_JMP || aop->type & RZ_ANALYSIS_OP_TYPE_UJMP) {
+			iword->props |= RZ_ANALYSIS_IWORD_JUMP;
+		}
+		if (aop->type & RZ_ANALYSIS_OP_TYPE_RET) {
+			iword->props |= RZ_ANALYSIS_IWORD_RET;
+		}
+
+		if (last_insn) {
+			if (!(aop->type & RZ_ANALYSIS_OP_TYPE_RET)) {
+				ut64 next_insn_addr = addr + iword->size_bytes;
+				rz_vector_push(iword->jump_targets, &next_insn_addr);
+			}
+			return true;
+		}
+		buf_offset += HEX_INSN_SIZE;
+	}
+	return true;
 }
