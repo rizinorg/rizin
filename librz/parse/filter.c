@@ -82,8 +82,9 @@ static void replaceWords(char *s, const char *k, const char *v) {
 }
 
 /**
- * \brief Returns a pointer to the next number in the string.
+ * \brief Returns a pointer to the next number (hex and decimal) in the string.
  * This function ignores numbers from ansi excape codes.
+ * It also ignroes numbers with a prefix of: '\w', '*', '.'.
  *
  * \param str The string to search the number in.
  *
@@ -95,7 +96,14 @@ static char *find_next_number(char *str) {
 	if (rz_regex_contains("\x1b\\[[0-9;]*m", str, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, 0)) {
 		ansi = true;
 	}
-	const char *search = ansi ? "(\x1b\\[[0-9;]*m)(?<number>(0x[a-fA-F0-9]+)|\\d+)" : "(\\W(?<number>(0x[a-fA-F0-9]+)|\\d+))";
+	const char *search = (ansi ? "(\x1b\\[[0-9;]*m)(?<number>(0x[a-fA-F0-9]+)|\\d+)" :
+				   // The exclusion pattern [^\w.*] excludes all numbers with a '\w', '.' and '*' prefix.
+				   // This is only done because the previous parsing did it like this.
+				   // And not doing it, breaks substitutions from before.
+				   // Because previously inserted flag names in the opstr, can contain numbers
+				   // (e.g. case labels like: case.<switch-address>.<case-number>).
+			// See: https://github.com/rizinorg/rizin/issues/4238 for more details of this problem.
+			"(([^\\w.*]|^)(?<number>(0x[a-fA-F0-9]+)|\\d+))");
 	RzRegex *re = rz_regex_new(search, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
 	RzPVector *match = rz_regex_match_first(re, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 	if (rz_pvector_empty(match)) {
