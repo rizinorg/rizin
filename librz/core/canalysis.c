@@ -5211,10 +5211,10 @@ static void RzAnalysisBytes_free_mod(void *x) {
  * \param buf data to analysis
  * \param len analysis len bytes
  * \param nops analysis n ops
- * \return list of RzAnalysisBytes
+ * \return RzIterator of RzAnalysisBytes
  */
 RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
-	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, int len, int nops) {
+	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops) {
 	rz_return_val_if_fail(core && buf, NULL);
 
 	static const int mask = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT;
@@ -5274,8 +5274,10 @@ static void *analysis_op_next(RzIterator *it) {
  * \param core RzCore
  * \param len Maximum length read from \p buf in bytes. set to 0 to disable it (only use \p nops).
  * \param nops Maximum number of instruction, set to 0 to disable it (only use \p len).
+ * \param mask The which analysis details should be disassembled.
+ * \return RzIterator of RzAnalysisOp
  */
-RZ_API RzIterator *rz_core_analysis_op_chunk_iter(
+RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(
 	RZ_NONNULL RzCore *core, ut64 offset, ut64 len, ut64 nops, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(core, NULL);
 
@@ -5305,8 +5307,11 @@ RZ_API RzIterator *rz_core_analysis_op_chunk_iter(
  * \brief Parse RzAnalysisOps of function at core->offset
  *
  * \param core RzCore
+ * \param fcn Pointer to `RzAnalysisFunction` used to analysis.
+ * \param mask The which analysis details should be disassembled.
+ * \return RzIterator of RzAnalysisOp
  */
-RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
+RZ_API RZ_OWN RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(core && fcn, NULL);
 
 	RzIterator *ops = NULL;

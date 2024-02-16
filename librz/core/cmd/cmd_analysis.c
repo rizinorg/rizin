@@ -5637,15 +5637,16 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
 }
 
 /**
- * \brief Parse and print \p len bytes and \p num_ops
- *      RzIL instructions of data in \p buf, restricted by
- *      \p len and \p num_ops at the same time
+ * \brief Analyzes a block of bytes in Intermediate Language (IL)
  *
- * \param core RzCore
- * \param buf Buffer holding the instruction bytes.
- * \param len Maximum length read from \p buf in bytes.
- * \param num_ops Maximum number of instruction, set to 0 to disable it (only use \p len).
- * \param pretty Pretty-printing
+ * This function is used to analyze a given block of bytes in Intermediate Language (IL)
+ * using length, and number of operations as parameters, restricted by \p len and \p num_ops
+ * at the same time. The analysis result is the pretty-printed if the 'pretty' parameter is true.
+ *
+ * \param core   The main Rizin object
+ * \param len    The length of bytes to analyze, set to 0 to disable it.
+ * \param num_ops The number of operations to analyze from the beginning of the block, set to 0 to disable it.
+ * \param pretty If true, the output will be in a pretty format.
  */
 RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty) {
 	rz_return_if_fail(core);

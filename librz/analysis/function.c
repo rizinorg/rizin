@@ -37,7 +37,16 @@ static bool get_function_block_cb(RzAnalysisBlock *block, void *user) {
 	return true;
 }
 
-RZ_API RzAnalysisFunction *rz_analysis_first_function_in(RzAnalysis *analysis, ut64 addr) {
+/**
+ * \brief Returns the first function that have a basic block containing the given address \p addr
+ *
+ * \param analysis A pointer to the `RzAnalysis` object used for analysis.
+ * \param addr The address to find the function in.
+ *
+ * \return RzAnalysisFunction* Pointer to the `RzAnalysisFunction` object if found, otherwise NULL.
+ */
+RZ_API RZ_BORROW RzAnalysisFunction *rz_analysis_first_function_in(RZ_NONNULL RZ_BORROW RzAnalysis *analysis, ut64 addr) {
+	rz_return_val_if_fail(analysis, NULL);
 	RzAnalysisFunction *fcn = NULL;
 	rz_analysis_blocks_foreach_in(analysis, addr, get_function_block_cb, &fcn);
 	return fcn;

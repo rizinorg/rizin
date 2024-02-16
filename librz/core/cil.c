@@ -430,6 +430,15 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 	rz_list_free(list);
 }
 
+/**
+ * \brief Re-initializes the intermediate language virtual machine for analysis
+ *
+ * This function re-initializes the IL (Intermediate Language) virtual machine for the analysis module.
+ * The initial PC (Program Counter) is set with the current offset.
+ * It then updates the register flags and syncs the register info back to the IL VM.
+ *
+ * \param core The RzCore object, which contains all the rizin classes and their functions.
+ */
 RZ_API void rz_core_analysis_il_reinit(RZ_NONNULL RzCore *core) {
 	rz_return_if_fail(core);
 	rz_analysis_il_vm_setup(core->analysis);
