@@ -10,7 +10,7 @@ EXPECT=<<EOF
             ;-- _start:
             0x0000077c      movw  spl, #0xfedc
             0x00000780      mov   es, #0x0
-            0x00000782      movw  bc, #0x472
+            0x00000782      movw  bc, #loc.__romdatacopysize
             0x00000785      clrw  ax
 arch     rl78
 cpu      N/A
@@ -124,10 +124,10 @@ EXPECT=<<EOF
 |           0x000006c2      movw  [sp+0x4], ax
 |           0x000006c4      movw  ax, !0x3004                          ; caesar.c:44
 |           0x000006c7      movw  [sp+0x8], ax
-|           0x000006c9      movw  ax, !0x3002
+|           0x000006c9      movw  ax, !obj.L___const.main.ops
 |           0x000006cc      movw  [sp+0x6], ax
 |           0x000006ce      movw  ax, !0x5700                          ; caesar.c:49
-|           0x000006d1      call  !0x84e                               ; sym._strlen ; size_t strlen(const char *s)
+|           0x000006d1      call  !sym._strlen                         ; size_t strlen(const char *s)
 |           0x000006d4      movw  [sp+0xa], ax
 |           0x000006d6      movw  ax, [sp+0xa]                         ; caesar.c:50
 |           0x000006d8      cmpw  ax, #0x41
@@ -137,7 +137,7 @@ EXPECT=<<EOF
 |      |`-> 0x000006e3      dec   c
 |      |    0x000006e4      nop
 |      |    0x000006e5      movw  ax, [sp+0xa]                         ; caesar.c:54
-|      |    0x000006e7      call  !0xb18                               ; sym._malloc ; void *malloc(size_t size)
+|      |    0x000006e7      call  !sym._malloc                         ; void *malloc(size_t size)
 |      |    0x000006ea      movw  [sp+0xc], ax
 |      |    0x000006ec      movw  ax, [sp+0x6]                         ; caesar.c:55
 |      |    0x000006ee      movw  [sp+0x16], ax
