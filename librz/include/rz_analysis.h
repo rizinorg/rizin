@@ -924,6 +924,39 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisDataType datatype;
 } RzAnalysisOp;
 
+/**
+ * \brief Property flags for instruction words.
+ */
+typedef enum {
+	RZ_ANALYSIS_IWORD_COND = 0x80000000, ///< Conditional property.
+	RZ_ANALYSIS_IWORD_NONE = 0, ///< Unset property
+	RZ_ANALYSIS_IWORD_R_MEM = 1 << 0, ///< Reads memory
+	RZ_ANALYSIS_IWORD_W_MEM = 1 << 1, ///< Writes memory
+	RZ_ANALYSIS_IWORD_JUMP = 1 << 2, ///< Jumps to a different address (no call)
+	RZ_ANALYSIS_IWORD_CALL = 1 << 3, ///< Calls a sub-procedure.
+	RZ_ANALYSIS_IWORD_RET = 1 << 4, ///< Returns from a sub-procedure.
+	RZ_ANALYSIS_IWORD_CR_MEM = RZ_ANALYSIS_IWORD_R_MEM | RZ_ANALYSIS_IWORD_COND, ///< Conditionally reads memory
+	RZ_ANALYSIS_IWORD_CW_MEM = RZ_ANALYSIS_IWORD_W_MEM | RZ_ANALYSIS_IWORD_COND, ///< Conditionally writes memory
+	RZ_ANALYSIS_IWORD_CJUMP = RZ_ANALYSIS_IWORD_JUMP | RZ_ANALYSIS_IWORD_COND, ///< Conditionally jumps to a different address.
+	RZ_ANALYSIS_IWORD_CCALL = RZ_ANALYSIS_IWORD_CALL | RZ_ANALYSIS_IWORD_COND, ///< Conditionally jumps to a different address.
+	RZ_ANALYSIS_IWORD_CRET = RZ_ANALYSIS_IWORD_RET | RZ_ANALYSIS_IWORD_COND, ///< Conditionally returns from a sub-procedure.
+} RzAnalysisIWordProperties;
+
+/**
+ * \brief An instruction word. It is atomically executed on the processor.
+ * Might contain multiple instructions.
+ */
+typedef struct {
+	ut32 size_bits; ///< Instruction word size in bits.
+	ut32 size_bytes; ///< Instruction word size in bytes.
+	ut64 addr; ///< Address the instruction word is located.
+	char *asm_str; ///< The whole asm string. Single instructions are separated by a newline.
+	RzPVector /*<RzAnalysisOp *>*/ *insns; ///< Instructions forming the instruction word.
+	RzVector /* ut64 */ *jump_targets; ///< Vector of addresses this iword possibly jumps to. This includes the next instr. word if there is any.
+	RzAnalysisLiftedILOp il_op; ///< The complete IL operation of this instr. word.
+	RzAnalysisIWordProperties props; ///< Properties of this instruction word.
+} RzAnalysisInsnWord;
+
 #define RZ_TYPE_COND_SINGLE(x) (!x->arg[1] || x->arg[0] == x->arg[1])
 
 typedef struct rz_analysis_cond_t {
@@ -1327,6 +1360,22 @@ typedef struct rz_analysis_esil_memory_region_t {
 // TODO: rm data + len
 typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
 
+/**
+ * \brief The callback to decode a single instruction word.
+ *
+ * \param a The RzAnalysis to use.
+ * \param iword The pre-allocated instruction word struct to fill.
+ * \param addr The address where the instruction word is starts.
+ * \param buf The buffer with the bytes to decode.
+ * \param len The total length of the buffer in bytes.
+ * \param buf_off_iword Offset into \p buf, where the instruction word bytes start. The bytes before can be used for context.
+ * TODO: Should be replaced with a proper view into the IO layer? Something more sophisticated for sure.
+ *
+ * \return true On successful decoding.
+ * \return false One failure
+ */
+typedef bool (*RzAnalysisIWordCallback)(const RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword);
+
 typedef bool (*RzAnalysisRegProfCallback)(RzAnalysis *a);
 typedef char *(*RzAnalysisRegProfGetCallback)(RzAnalysis *a);
 typedef int (*RzAnalysisFPBBCallback)(RzAnalysis *a, RzAnalysisBlock *bb);
@@ -1363,6 +1412,7 @@ typedef struct rz_analysis_plugin_t {
 
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
+	RzAnalysisIWordCallback decode_iword;
 
 	RzAnalysisRegProfGetCallback get_reg_profile;
 
