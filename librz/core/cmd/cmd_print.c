@@ -650,15 +650,6 @@ RZ_API void rz_core_gadget_print(RzCore *core) {
 	}
 }
 
-static const char *help_msg_pg[] = {
-	"Usage: pg[-]", "[asm|hex]", "print (dis)assembled",
-	"pg", " [x y w h cmd]", "add a new gadget",
-	"pg", "", "print them all",
-	"pg", "*", "print the gadgets as rizin commands",
-	"pg-", "*", "remove all the gadgets",
-	NULL
-};
-
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_print_as_rizin_handler(RzCore *core, int argc, const char **argv) {
 	RzCoreGadget *g;
 	RzListIter *iter;
@@ -713,81 +704,6 @@ RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const
 		}
 	}
 	return RZ_CMD_STATUS_OK;
-}
-
-static void cmd_print_gadget(RzCore *core, const char *_input) {
-	if (*_input == '?') { // "pg?"
-		rz_core_cmd_help(core, help_msg_pg);
-		return;
-	}
-	if (*_input == '-') { // "pg-"
-		// TODO support selecting one
-		rz_list_free(core->gadgets);
-		core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
-	} else if (*_input == '*') { // "pg*"
-		RzCoreGadget *g;
-		RzListIter *iter;
-		rz_list_foreach (core->gadgets, iter, g) {
-			rz_cons_printf("\"pg %d %d %d %d %s\"\n", g->x, g->y, g->w, g->h, g->cmd);
-		}
-	} else if (*_input == 'b') { // "pgb"
-		RZ_LOG_WARN("core: change gadget background color has not been implemented\n");
-	} else if (*_input == 'm') { // "pgm"
-		int nth = atoi(_input + 1);
-		RzCoreGadget *g = rz_list_get_n(core->gadgets, nth);
-		if (g) {
-			char *input = strdup(_input);
-			char *space = strchr(input, ' ');
-			if (space) {
-				space++;
-			} else {
-				space = "";
-			}
-			RzList *args = rz_str_split_list(space, " ", 0);
-			char *x = rz_list_pop_head(args);
-			char *y = rz_list_pop_head(args);
-			char *w = rz_list_pop_head(args);
-			char *h = rz_list_pop_head(args);
-			if (x && y && w && h) {
-				g->x = rz_num_math(core->num, x);
-				g->y = rz_num_math(core->num, y);
-				g->w = rz_num_math(core->num, w);
-				g->h = rz_num_math(core->num, h);
-			}
-			rz_list_free(args);
-			free(input);
-		}
-	} else if (*_input == ' ') { // "pg "
-		char *input = strdup(_input);
-		RzList *args = rz_str_split_list(input, " ", 0);
-		char *x = rz_list_pop_head(args);
-		char *y = rz_list_pop_head(args);
-		char *w = rz_list_pop_head(args);
-		char *h = rz_list_pop_head(args);
-		if (x && y && w && h) {
-			int X = rz_num_math(core->num, x);
-			int Y = rz_num_math(core->num, y);
-			int W = rz_num_math(core->num, w);
-			int H = rz_num_math(core->num, h);
-			char *cmd = rz_str_list_join(args, " ");
-			if (cmd) {
-				//		eprintf ("%d %d %d %d (%s)\n", X, Y, W, H, cmd);
-				RzCoreGadget *g = RZ_NEW0(RzCoreGadget);
-				g->x = X;
-				g->y = Y;
-				g->w = W;
-				g->h = H;
-				g->cmd = cmd;
-				rz_list_append(core->gadgets, g);
-			}
-		}
-		rz_list_free(args);
-		free(input);
-	} else if (!*_input) { // "pg"
-		rz_core_gadget_print(core);
-	} else {
-		rz_core_cmd_help(core, help_msg_pg);
-	}
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, const char **argv) {
@@ -2579,28 +2495,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'm': // "pm"
-		if (input[1] == '?') {
-			rz_cons_printf("|Usage: pm [file|directory]\n"
-				       "| rz_magic will use given file/dir as reference\n"
-				       "| output of those magic can contain expressions like:\n"
-				       "|   foo@ 0x40   # use 'foo' magic file on address 0x40\n"
-				       "|   @ 0x40      # use current magic file on address 0x40\n"
-				       "|   \\n         # append newline\n"
-				       "| e dir.magic  # defaults to " RZ_JOIN_2_PATHS("{RZ_PREFIX}", RZ_SDB_MAGIC) "\n"
-														    "| /m           # search for magic signatures\n");
-		} else if (input[1] == 'j') { // "pmj"
-			const char *filename = rz_str_trim_head_ro(input + 2);
-			PJ *pj = pj_new();
-			rz_core_magic(core, filename, true, pj);
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
-		} else {
-			// XXX: need cmd_magic header for rz_core_magic
-			const char *filename = rz_str_trim_head_ro(input + 1);
-			rz_core_magic(core, filename, true, NULL);
-		}
-		break;
 	case 'x': // "px"
 	{
 		bool show_offset = rz_config_get_i(core->config, "hex.offset");
@@ -2660,9 +2554,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_print_bytes(core->print, block, len, "%02x");
 			}
 		}
-		break;
-	case 'g': // "pg"
-		cmd_print_gadget(core, input + 1);
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_p);
