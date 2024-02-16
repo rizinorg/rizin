@@ -178,10 +178,10 @@ RZ_API const ut8 *rz_regex_get_match_name(RZ_NONNULL const RzRegex *regex, ut32 
 }
 
 /**
- * \brief Returns the name of a group.
+ * \brief Returns the index of a group in the pattern \p regex.
  *
  * \param regex The regex expression with named groups.
- * \param group_idx The index of the group to get the name for.
+ * \param group The group name to get the index for.
  *
  * \return The index of the group or RZ_REGEX_ERROR_NOMATCH in case of failure or if no name was given.
  */
