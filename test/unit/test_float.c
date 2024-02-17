@@ -618,8 +618,17 @@ bool float_print_num(void) {
 	rz_float_free(f64);
 
 	RzFloat *f80 = rz_float_new_from_f80(13.0335l);
+	/* Need the check since ARM does not support 128-bit long doubles and Windows ignores it. */
+#if __arm__ || __arm64__ || __WINDOWS__
+	mu_assert_streq_free(rz_float_as_hex_string(f80, true), "0x4002d089374bc6a7f000", "float80 hex value");
+#else
 	mu_assert_streq_free(rz_float_as_hex_string(f80, true), "0x4002d089374bc6a7ef9e", "float80 hex value");
+#endif
+#if __arm__ || __arm64__ || __WINDOWS__
+	mu_assert_streq_free(rz_float_as_string(f80), "+100000000000010|1101000010001001001101110100101111000110101001111111000000000000", "float80 bit value");
+#else
 	mu_assert_streq_free(rz_float_as_string(f80), "+100000000000010|1101000010001001001101110100101111000110101001111110111110011110", "float80 bit value");
+#endif
 	mu_assert_streq_free(rz_float_as_dec_string(f80), "13.0335", "float80 numeric value");
 	rz_float_free(f80);
 
