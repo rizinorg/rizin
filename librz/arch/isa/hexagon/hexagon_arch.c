@@ -208,9 +208,9 @@ RZ_API ut8 hexagon_get_pkt_index_of_addr(const ut32 addr, const HexPkt *p) {
  *
  * \param p The packet to clear.
  */
-static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
+static void hex_clear_pkt(RZ_NONNULL HexPkt *p, bool assume_valid_pkt) {
 	p->last_instr_present = false;
-	p->is_valid = false;
+	p->is_valid = assume_valid_pkt;
 	p->last_access = 0;
 	rz_list_purge(p->bin);
 	rz_pvector_clear(p->il_ops);
@@ -222,7 +222,7 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
  * \param state The state to operate on.
  * \return HexPkt* Pointer to the least used packet.
  */
-static HexPkt *hex_get_stale_pkt(HexState *state) {
+static HexPkt *hex_get_stale_pkt(HexState *state, bool assume_valid_pkt) {
 	HexPkt *stale_state_pkt = &state->pkts[0];
 	ut64 oldest = UT64_MAX;
 
@@ -232,7 +232,7 @@ static HexPkt *hex_get_stale_pkt(HexState *state) {
 			stale_state_pkt = &state->pkts[i];
 		}
 	}
-	hex_clear_pkt(stale_state_pkt);
+	hex_clear_pkt(stale_state_pkt, assume_valid_pkt);
 	return stale_state_pkt;
 }
 
@@ -349,7 +349,7 @@ RZ_API HexState *hexagon_state(bool reset) {
 		if (!state->pkts[i].bin) {
 			RZ_LOG_FATAL("Could not initialize instruction list!");
 		}
-		hex_clear_pkt(&(state->pkts[i]));
+		hex_clear_pkt(&(state->pkts[i]), false);
 	}
 	state->const_ext_l = rz_list_newf((RzListFree)hex_const_ext_free);
 	state->token_patterns = NULL;
@@ -726,8 +726,8 @@ static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer 
  * \param new_pkt The new packet will hold the instruction container.
  * \return HexInsnContainer* Pointer to the copied instruction container on the heap.
  */
-static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer *new_hic, const HexPkt *pkt, RZ_INOUT HexPkt *new_pkt) {
-	hex_clear_pkt(new_pkt);
+static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer *new_hic, const HexPkt *pkt, RZ_INOUT HexPkt *new_pkt, bool assume_valid_pkt) {
+	hex_clear_pkt(new_pkt, assume_valid_pkt);
 
 	HexInsnContainer *hic = hexagon_alloc_instr_container();
 	hex_move_insn_container(hic, new_hic);
@@ -754,9 +754,9 @@ static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer 
  * \param new_hic The instruction container to copy.
  * \return HexInsnContainer* Pointer to the copied instruction container on the heap.
  */
-static HexInsnContainer *hex_add_to_stale_pkt(HexState *state, const HexInsnContainer *new_hic) {
-	HexPkt *pkt = hex_get_stale_pkt(state);
-	hex_clear_pkt(pkt);
+static HexInsnContainer *hex_add_to_stale_pkt(HexState *state, const HexInsnContainer *new_hic, bool assume_valid_pkt) {
+	HexPkt *pkt = hex_get_stale_pkt(state, assume_valid_pkt);
+	hex_clear_pkt(pkt, assume_valid_pkt);
 
 	HexInsnContainer *hic = hexagon_alloc_instr_container();
 	hex_move_insn_container(hic, new_hic);
@@ -860,7 +860,7 @@ static void print_state_pkt(const HexState *state, st32 index, HexBufferAction a
  * \param new_hic The instruction continer to be copied.
  * \return The pointer to the added instruction. Null if the instruction could not be copied.
  */
-static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnContainer *new_hic) {
+static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnContainer *new_hic, bool assume_valid_pkt) {
 	if (!new_hic) {
 		return NULL;
 	}
@@ -872,7 +872,7 @@ static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnCont
 
 	HexPkt *p;
 	if (new_hic->addr == 0x0) {
-		return hex_add_to_stale_pkt(state, new_hic);
+		return hex_add_to_stale_pkt(state, new_hic, assume_valid_pkt);
 	}
 
 	ut32 i = 0;
@@ -925,11 +925,11 @@ static HexInsnContainer *hex_add_hic_to_state(HexState *state, const HexInsnCont
 		return result_hic;
 	} else if (new_pkt) {
 		ut8 ni = (get_state_pkt_index(state, p) + 1) % HEXAGON_STATE_PKTS;
-		HexInsnContainer *result_hic = hex_to_new_pkt(state, new_hic, p, &state->pkts[ni]);
+		HexInsnContainer *result_hic = hex_to_new_pkt(state, new_hic, p, &state->pkts[ni], assume_valid_pkt);
 		print_state_pkt(state, ni, HEX_BUF_NEW, result_hic);
 		return result_hic;
 	}
-	HexInsnContainer *result_hic = hex_add_to_stale_pkt(state, new_hic);
+	HexInsnContainer *result_hic = hex_add_to_stale_pkt(state, new_hic, assume_valid_pkt);
 	print_state_pkt(state, -1, HEX_BUF_STALE, result_hic);
 	return result_hic;
 }
@@ -1073,7 +1073,7 @@ static void copy_asm_ana_ops(const HexState *state, RZ_BORROW HexReversedOpcode 
  * \return true If the decoded instruction was the last instruction in a _valid_ packet.
  * \return false Otherwise.
  */
-RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result) {
+RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result, bool assume_valid_pkt) {
 	HexState *state = hexagon_state(false);
 	if (!state) {
 		RZ_LOG_FATAL("HexState was NULL.");
@@ -1106,7 +1106,7 @@ RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversed
 	HexInsnContainer hic_new = { 0 };
 	setup_new_hic(&hic_new, rz_reverse, addr, parse_bits, data);
 	// Add to state
-	hic = hex_add_hic_to_state(state, &hic_new);
+	hic = hex_add_hic_to_state(state, &hic_new, assume_valid_pkt);
 	if (!hic) {
 		return NULL;
 	}
@@ -1131,7 +1131,7 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 	}
 	RzAnalysisOp prev_op = { 0 };
 	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = &prev_op, .asm_op = NULL };
-	if (!hexagon_reverse_opcode(NULL, &rev, buf + (buf_off_iword - 4), addr - 4, false)) {
+	if (!hexagon_reverse_opcode(NULL, &rev, buf + (buf_off_iword - 4), addr - 4, false, false)) {
 		RZ_LOG_WARN("Cannot decode an iword if the last previous instruction was not an end of a packet.\n");
 		return false;
 	}
@@ -1148,7 +1148,7 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 
 		RzAnalysisOp *aop = RZ_NEW0(RzAnalysisOp);
 		HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = aop, .asm_op = NULL };
-		HexInsnContainer *hic = hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + addr_offset, true);
+		HexInsnContainer *hic = hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + addr_offset, true, true);
 		rz_pvector_push(iword->insns, aop);
 		if (aop->jump && aop->jump != UT64_MAX) {
 			rz_vector_push(iword->jump_targets, &aop->jump);
