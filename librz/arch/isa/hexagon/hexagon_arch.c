@@ -1188,10 +1188,7 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 		HexInsnContainer *hic = hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + addr_offset, true, true);
 		rz_pvector_push(iword->insns, aop);
 		if (aop->jump && aop->jump != UT64_MAX) {
-			rz_vector_push(iword->jump_targets, &aop->jump);
-		}
-		if (aop->fail && aop->fail != UT64_MAX) {
-			rz_vector_push(iword->jump_targets, &aop->fail);
+			rz_vector_push_front(iword->jump_targets, &aop->jump);
 		}
 		rz_strbuf_appendf(iword->asm_str, "%s\n", hic->text);
 		iword->size_bytes += 4;
