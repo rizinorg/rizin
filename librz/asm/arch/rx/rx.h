@@ -7,7 +7,7 @@
 #include <rz_util.h>
 #include "rx_inst.h"
 
-RZ_API bool rx_dis(RxInst RZ_OUT *inst, st32 RZ_OUT *bytes_read, const ut8 *buf, size_t buf_len);
+RZ_API bool rx_dis(RZ_NONNULL RxInst RZ_OUT *inst, RZ_NONNULL st32 RZ_OUT *bytes_read, RZ_NONNULL const ut8 *buf, size_t buf_len);
 bool rx_inst_stringify(RxInst *inst, RzStrBuf *buf);
 
 #endif

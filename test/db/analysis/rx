@@ -16,8 +16,8 @@ EXPECT=<<EOF
             ;-- _start:
             0xfff40000      mvtc  #0x0, psw,                           ; crt0.S:36 ; [00] -r-x section size 20866 named .text
             0xfff40004      mvtc  #0x100, fpsw,                        ; crt0.S:39
-            0xfff40009      mov   #0x20000, r0,                        ; crt0.S:40
-            0xfff4000f      mvtc  #0xffffffd0, intb,                   ; crt0.S:41
+            0xfff40009      mov   #loc.__stack, r0,                        ; crt0.S:40
+            0xfff4000f      mvtc  #loc.__vectors, intb,                   ; crt0.S:41
 arch     rx
 cpu      N/A
 baddr    0xfff40000
@@ -78,7 +78,7 @@ EXPECT=<<EOF
 |           0xfff40275      add   #0x4, r5, 
 |           0xfff40277      mov.L r10, r1, 
 |           0xfff40279      bsr.A  #0xfffecf,                          ; sym._text_to_morse
-|           0xfff4027d      mov   #0xfff451f8, r3, 
+|           0xfff4027d      mov   #loc..LC28, r3, 
 |           0xfff40283      mov   #0x2c, r4, 
 |           0xfff40286      add   #0xc, r10, r5
 |           0xfff40289      mov.L r5, r1, 
@@ -115,7 +115,7 @@ EXPECT=<<EOF
 |    ||:|   0xfff40173      mov   #0x10, r4, 
 |    ||:|   0xfff40179      mov.L [r5,r4], r5, 
 |    ||:|   0xfff4017c      mov.L r5, 0x1[r0], 
-|    ||:|   0xfff4017e      mov.L #loc..LC26], 
+|    ||:|   0xfff4017e      mov.L #loc..LC26, [r0], 
 |    ||:|   0xfff40184      bsr.A  #0x14d,                             ; sym._printf ; int printf(const char *format)
 |   ,=====< 0xfff40188      bra.B  #0x3e, 
 |   |``---> 0xfff4018a      mov.L [r10], r5, 
@@ -135,7 +135,7 @@ EXPECT=<<EOF
 |   |||:|   0xfff401a9      mov   #0x10, r4, 
 |   |||:|   0xfff401af      mov.L [r5,r4], r5, 
 |   |||:|   0xfff401b2      mov.L r5, 0x1[r0], 
-|   |||:|   0xfff401b4      mov.L #loc..LC26], 
+|   |||:|   0xfff401b4      mov.L #loc..LC26, [r0], 
 |   |||:|   0xfff401ba      bsr.A  #0x117,                             ; sym._printf ; int printf(const char *format)
 ..
 |   |``---> 0xfff401bf      mov   #0x20, r1, 
@@ -154,7 +154,7 @@ EXPECT=<<EOF
 |           0xfff401e2      add   #0xf4, r0, r10
 |           0xfff401e5      mov.L r10, r0, 
 |           0xfff401e7      mov.L r1, 0x2[r10], 
-|           0xfff401ea      mov   #0xfff451f4, r2, 
+|           0xfff401ea      mov   #loc..LC27, r2, 
 |           0xfff401f0      mov.L 0x2[r10], r1, 
 |           0xfff401f3      bsr.A  #0x178,                             ; sym._strtok ; char *strtok(char *s1, const char *s2)
 |           0xfff401f7      mov.L r1, [r10], 
@@ -181,7 +181,7 @@ EXPECT=<<EOF
 |  | :`---> 0xfff40231      mov.L 0x1[r10], r5, 
 |  | : :|   0xfff40234      cmp   #0x19, r5, 
 |  | `====< 0xfff40237      ble.B  #0xca, 
-|  `------> 0xfff40239      mov   #0xfff451f4, r2, 
+|  `------> 0xfff40239      mov   #loc..LC27, r2, 
 |      :|   0xfff4023f      mov   #0x0, r1, 
 |      :|   0xfff40241      bsr.A  #0x12a,                             ; sym._strtok ; char *strtok(char *s1, const char *s2)
 |      :|   0xfff40245      mov.L r1, [r10], 
@@ -193,7 +193,7 @@ EXPECT=<<EOF
 |           0xfff402a3      mov.L r1, r7, 
 |           0xfff402a5      mov   #0x0, r2, 
 |           0xfff402a7      bsr.A  #0x132b,                            ; sym.___call_exitprocs
-|           0xfff402ab      mov   #0xfff45224, r5, 
+|           0xfff402ab      mov   #obj.__global_impure_ptr, r5, 
 |           0xfff402b1      mov.L [r5], r1, 
 |           0xfff402b3      mov.L 0xf[r1], r5, 
 |           0xfff402b5      cmp   #0x0, r5, 
