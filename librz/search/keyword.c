@@ -13,9 +13,20 @@ static int ignoreMask(const ut8 *bm, int len) {
 	return 1;
 }
 
-RZ_API RzSearchKeyword *rz_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut8 *bmbuf, int bmlen, const char *data) {
+/**
+ * \brief Initializes a RzSearchKeyword with keyword bytes, optional bitmask and optional data.
+ *
+ * \param kw_buf Byte buffer of the keyword.
+ * \param kw_buf_len Length of \p kw_buf in bytes.
+ * \param bm_buf A bitmask. It is applied the bytes before comparing it to the keyword bytes.
+ * \param bm_buf_len Length of the bitmask buffer \p bm_buf in bytes.
+ * \param data Pointer to the data to search in.
+ *
+ * \return The initialized RzSearchKeyword or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new(const ut8 *kw_buf, int kw_len, RZ_NULLABLE const ut8 *bm_buf, int bm_buf_len, RZ_NULLABLE const char *data) {
 	RzSearchKeyword *kw;
-	if (kwlen < 1 || bmlen < 0) {
+	if (kw_len < 1 || bm_buf_len < 0) {
 		return NULL;
 	}
 	kw = RZ_NEW0(RzSearchKeyword);
@@ -24,21 +35,21 @@ RZ_API RzSearchKeyword *rz_search_keyword_new(const ut8 *kwbuf, int kwlen, const
 	}
 	kw->type = RZ_SEARCH_KEYWORD_TYPE_BINARY;
 	kw->data = (void *)data;
-	kw->keyword_length = kwlen;
-	kw->bin_keyword = malloc(kwlen);
+	kw->keyword_length = kw_len;
+	kw->bin_keyword = malloc(kw_len);
 	if (!kw->bin_keyword) {
 		rz_search_keyword_free(kw);
 		return NULL;
 	}
-	memcpy(kw->bin_keyword, kwbuf, kwlen);
-	if (bmbuf && bmlen > 0 && !ignoreMask(bmbuf, bmlen)) {
-		kw->bin_binmask = malloc(bmlen);
+	memcpy(kw->bin_keyword, kw_buf, kw_len);
+	if (bm_buf && bm_buf_len > 0 && !ignoreMask(bm_buf, bm_buf_len)) {
+		kw->bin_binmask = malloc(bm_buf_len);
 		if (!kw->bin_binmask) {
 			rz_search_keyword_free(kw);
 			return NULL;
 		}
-		memcpy(kw->bin_binmask, bmbuf, bmlen);
-		kw->binmask_length = bmlen;
+		memcpy(kw->bin_binmask, bm_buf, bm_buf_len);
+		kw->binmask_length = bm_buf_len;
 	} else {
 		kw->bin_binmask = NULL;
 		kw->binmask_length = 0;
