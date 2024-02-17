@@ -2620,6 +2620,7 @@ static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 		KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
 		break;
 	case 64:
+		KW("\x7f\x23\x03\xd5", 4, "\xff\xff\xff\xff", 4); // pacibsp - Pointer auth
 		KW("\xf0\x0f\x00\xf8", 4, "\xf0\x0f\x00\xff", 4);
 		KW("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
 		KW("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
