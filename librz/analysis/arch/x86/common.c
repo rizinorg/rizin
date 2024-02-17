@@ -1489,9 +1489,6 @@ RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc)
 		break;
 	case X86_OP_INVALID:
 	case X86_OP_IMM:
-#if CS_API_MAJOR <= 3
-	case X86_OP_FP:
-#endif
 	default:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", op.type);
 	}

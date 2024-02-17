@@ -164,7 +164,6 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_INC] = x86_il_inc,
 	[X86_INS_INT] = x86_il_int,
 	[X86_INS_INTO] = x86_il_into,
-	[X86_INS_IRET] = x86_il_unimpl,
 	[X86_INS_JA] = x86_il_ja,
 	[X86_INS_JAE] = x86_il_jae,
 	[X86_INS_JB] = x86_il_jb,
@@ -226,8 +225,6 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_ROL] = x86_il_rol,
 	[X86_INS_ROR] = x86_il_ror,
 	[X86_INS_RET] = x86_il_ret,
-	[X86_INS_RETF] = x86_il_unimpl,
-	[X86_INS_RETFQ] = x86_il_unimpl,
 	[X86_INS_SAHF] = x86_il_sahf,
 	[X86_INS_SAL] = x86_il_sal,
 	[X86_INS_SAR] = x86_il_sar,
@@ -254,10 +251,6 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_XOR] = x86_il_xor,
 	[X86_INS_BOUND] = x86_il_bound,
 	[X86_INS_ENTER] = x86_il_enter,
-	[X86_INS_INSB] = x86_il_unimpl,
-	[X86_INS_INSW] = x86_il_unimpl,
-	[X86_INS_OUTSB] = x86_il_unimpl,
-	[X86_INS_OUTSW] = x86_il_unimpl,
 	[X86_INS_LEAVE] = x86_il_leave,
 
 	/* floating-point instructions */
@@ -266,10 +259,6 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FNSTCW] = x86_il_fnstcw,
 	[X86_INS_FNSTSW] = x86_il_fnstsw,
 	[X86_INS_FNCLEX] = x86_il_fnclex,
-	[X86_INS_FLDENV] = x86_il_unimpl,
-	[X86_INS_FNSTENV] = x86_il_unimpl,
-	[X86_INS_FNSAVE] = x86_il_unimpl,
-	[X86_INS_FRSTOR] = x86_il_unimpl,
 	[X86_INS_FLD] = x86_il_fld,
 	[X86_INS_FST] = x86_il_fst,
 	[X86_INS_FSTP] = x86_il_fstp,
@@ -326,7 +315,20 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FRNDINT] = x86_il_frndint,
 	[X86_INS_FSQRT] = x86_il_fsqrt,
 	[X86_INS_FNOP] = x86_il_fnop,
-	[X86_INS_FISTTP] = x86_il_fisttp
+	[X86_INS_FISTTP] = x86_il_fisttp,
+
+	/* unimplemented instructions */
+	[X86_INS_IRET] = x86_il_unimpl,
+	[X86_INS_RETF] = x86_il_unimpl,
+	[X86_INS_RETFQ] = x86_il_unimpl,
+	[X86_INS_INSB] = x86_il_unimpl,
+	[X86_INS_INSW] = x86_il_unimpl,
+	[X86_INS_OUTSB] = x86_il_unimpl,
+	[X86_INS_OUTSW] = x86_il_unimpl,
+	[X86_INS_FLDENV] = x86_il_unimpl,
+	[X86_INS_FNSTENV] = x86_il_unimpl,
+	[X86_INS_FNSAVE] = x86_il_unimpl,
+	[X86_INS_FRSTOR] = x86_il_unimpl
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
