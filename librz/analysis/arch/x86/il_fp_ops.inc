@@ -204,7 +204,7 @@ IL_LIFTER(fxch) {
 		/* Use ST1 as the default reg in case no operand is provided. */
 		reg = X86_REG_ST1;
 	} else {
-		reg = ins->structure->operands[0].reg;
+		reg = ins->structure->operands[1].reg;
 	}
 
 	/* TODO: The IL generated from the following code is too verbose because of

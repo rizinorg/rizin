@@ -314,7 +314,7 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FICOMP] = x86_il_ficomp,
 	[X86_INS_FCOMI] = x86_il_fcomi,
 	[X86_INS_FCOMPI] = x86_il_fcomip,
-	/* Using the same FCOM & FCOMI family IL lifters for FUCOM FUCOMI family instructions
+	/* Using the same FCOM & FCOMI family IL lifters for FUCOM & FUCOMI family instructions
 	 * since we don't support invalid arithmetic operand exceptions (#IA) anyways. */
 	[X86_INS_FUCOM] = x86_il_fcom,
 	[X86_INS_FUCOMP] = x86_il_fcomp,
