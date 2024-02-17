@@ -1121,6 +1121,43 @@ RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversed
 	return hic;
 }
 
+static void set_iword_properties(ut32 anaop_type, RzAnalysisInsnWord *iword, ut64 jump_target) {
+	rz_return_if_fail(iword);
+	if (anaop_type & RZ_ANALYSIS_OP_TYPE_COND) {
+		iword->props |= RZ_ANALYSIS_IWORD_COND;
+	}
+
+	switch (anaop_type) {
+	default:
+		break;
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCCALL:
+		iword->call_target = jump_target;
+		iword->props |= RZ_ANALYSIS_IWORD_CALL;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_RJMP:
+	case RZ_ANALYSIS_OP_TYPE_IJMP:
+	case RZ_ANALYSIS_OP_TYPE_IRJMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_RCJMP:
+	case RZ_ANALYSIS_OP_TYPE_MJMP:
+	case RZ_ANALYSIS_OP_TYPE_MCJMP:
+	case RZ_ANALYSIS_OP_TYPE_UCJMP:
+		iword->props |= RZ_ANALYSIS_IWORD_JUMP;
+		break;
+	case RZ_ANALYSIS_OP_TYPE_RET:
+		iword->props |= RZ_ANALYSIS_IWORD_RET;
+		break;
+	}
+}
+
 RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword) {
 	rz_return_val_if_fail(iword && buf, false);
 
@@ -1161,19 +1198,7 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 		iword->size_bits += 32;
 		addr_offset += 4;
 
-		if (aop->type & RZ_ANALYSIS_OP_TYPE_COND) {
-			iword->props |= RZ_ANALYSIS_IWORD_COND;
-		}
-		if (aop->type & RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
-			iword->call_target = aop->jump;
-			iword->props |= RZ_ANALYSIS_IWORD_CALL;
-		}
-		if (aop->type & RZ_ANALYSIS_OP_TYPE_JMP || aop->type & RZ_ANALYSIS_OP_TYPE_UJMP) {
-			iword->props |= RZ_ANALYSIS_IWORD_JUMP;
-		}
-		if (aop->type & RZ_ANALYSIS_OP_TYPE_RET) {
-			iword->props |= RZ_ANALYSIS_IWORD_RET;
-		}
+		set_iword_properties(aop->type, iword, aop->jump);
 
 		if (hic->pkt_info.last_insn) {
 			if (!(aop->type & RZ_ANALYSIS_OP_TYPE_RET)) {
