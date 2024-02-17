@@ -735,7 +735,5 @@ RZ_API void rz_analysis_insn_word_fini(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iw
 	rz_strbuf_free(iword->asm_str);
 	rz_pvector_free(iword->insns);
 	rz_vector_free(iword->jump_targets);
-	iword->asm_str = NULL;
-	iword->insns = NULL;
-	iword->jump_targets = NULL;
+	rz_mem_memzero(iword, sizeof(RzAnalysisInsnWord));
 }
