@@ -2459,6 +2459,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_riscv;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_rl78;
 extern RzAnalysisPlugin rz_analysis_plugin_rsp;
+extern RzAnalysisPlugin rz_analysis_plugin_rx;
 extern RzAnalysisPlugin rz_analysis_plugin_sh;
 extern RzAnalysisPlugin rz_analysis_plugin_snes;
 extern RzAnalysisPlugin rz_analysis_plugin_sparc_cs;
