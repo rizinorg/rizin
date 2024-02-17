@@ -16,8 +16,8 @@ EXPECT=<<EOF
             ;-- _start:
             0xfff40000      mvtc  #0x0, psw,                           ; crt0.S:36 ; [00] -r-x section size 20866 named .text
             0xfff40004      mvtc  #0x100, fpsw,                        ; crt0.S:39
-            0xfff40009      mov   #loc.__stack, r0,                        ; crt0.S:40
-            0xfff4000f      mvtc  #loc.__vectors, intb,                   ; crt0.S:41
+            0xfff40009      mov   #loc.__stack, r0,                    ; crt0.S:40
+            0xfff4000f      mvtc  #loc.__vectors, intb,                ; crt0.S:41
 arch     rx
 cpu      N/A
 baddr    0xfff40000
