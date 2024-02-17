@@ -68,6 +68,9 @@ static inline ut32 rz_float_info_bin80(RzFloatInfo which_info) {
 	case RZ_FLOAT_INFO_EXP_LEN:
 		return 15;
 	case RZ_FLOAT_INFO_MAN_LEN:
+		/* The mantissa is actually 63 bits, but we also include the integer bit
+		 * in the mantissa. Doing this so that the invariant of
+		 * man_len + exp_len + 1 == total_len holds true. */
 		return 64;
 	case RZ_FLOAT_INFO_TOTAL_LEN:
 		return 80;
@@ -271,14 +274,26 @@ static RzFloat *rz_half_float(RzFloat *f) {
  * \param format format of float
  * \return RzBitVector the final bitvector representation of RzFloat
  */
-static RZ_OWN RzBitVector *pack_float_bv(bool sign, RzBitVector *exp, RzBitVector *sig, RzFloatFormat format) {
+static RZ_OWN RzBitVector *pack_float_bv(bool sign, RZ_BORROW RZ_NONNULL const RzBitVector *exp, RZ_BORROW RZ_NONNULL const RzBitVector *sig, RzFloatFormat format) {
 	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
-	ut32 total = man_len + exp_len + 1;
+	ut32 total = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	RzBitVector *ret = rz_bv_new(total);
+
 	// copy exp to ret
 	rz_bv_copy_nbits(exp, 0, ret, man_len, exp_len);
-	rz_bv_copy_nbits(sig, 0, ret, 0, man_len);
+
+	if (format == RZ_FLOAT_IEEE754_BIN_80) {
+		/* 80-bit floats have a special bit at position 63 (man_len) which is
+		 * called the integer bit. We need to account for that, hence the
+		 * branching here. See https://en.wikipedia.org/wiki/Extended_precision
+		 * for more. */
+		rz_bv_set(ret, man_len - 1, true);
+		rz_bv_copy_nbits(sig, 1, ret, 0, man_len - 1);
+	} else {
+		rz_bv_copy_nbits(sig, 0, ret, 0, man_len);
+	}
+
 	rz_bv_set(ret, total - 1, sign);
 
 	return ret;

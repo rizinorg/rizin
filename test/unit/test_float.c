@@ -617,9 +617,9 @@ bool float_print_num(void) {
 	mu_assert_streq_free(rz_float_as_dec_string(f64), "1.55678", "float64 numeric value");
 	rz_float_free(f64);
 
-	RzFloat *f80 = rz_float_new_from_f80(13.0335);
-	mu_assert_streq_free(rz_float_as_hex_string(f80, true), "0x4002a1126e978d4fe000", "float80 hex value");
-	mu_assert_streq_free(rz_float_as_string(f80), "+100000000000010|1010000100010010011011101001011110001101010011111110000000000000", "float80 bit value");
+	RzFloat *f80 = rz_float_new_from_f80(13.0335l);
+	mu_assert_streq_free(rz_float_as_hex_string(f80, true), "0x4002d089374bc6a7ef9e", "float80 hex value");
+	mu_assert_streq_free(rz_float_as_string(f80), "+100000000000010|1101000010001001001101110100101111000110101001111110111110011110", "float80 bit value");
 	mu_assert_streq_free(rz_float_as_dec_string(f80), "13.0335", "float80 numeric value");
 	rz_float_free(f80);
 
