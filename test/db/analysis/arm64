@@ -254,3 +254,21 @@ EXPECT=<<EOF
 |           0x0000000c      stp   x24, x23, [sp, 0x20]
 EOF
 RUN
+
+NAME=pacibsp identified as function prologue
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 7f2303d5fc6fbaa9fa6701a9f85f02a9ff0f5fd6
+aap
+pd 5
+EOF
+EXPECT=<<EOF
+/ fcn.00000000();
+|           0x00000000      pacibsp
+|           0x00000004      stp   x28, x27, [sp, -0x60]!
+|           0x00000008      stp   x26, x25, [sp, 0x10]
+|           0x0000000c      stp   x24, x23, [sp, 0x20]
+\           0x00000010      retab
+EOF
+RUN
