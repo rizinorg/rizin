@@ -12,6 +12,7 @@
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR   -0x6
 #define X86_PLT_ENTRY_SIZE                   0x10
+#define ALPHA_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
 	((rel->vaddr - pltgot_addr - n_initial_unused_entries * sizeof(Elf_(Addr))) / sizeof(Elf_(Addr)))
@@ -271,6 +272,17 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 	return UT64_MAX;
 }
 
+// FIXME: For now it's completely wrong.
+static ut64 get_import_addr_alpha(ELFOBJ *bin, RzBinElfReloc *rel) {
+	if (rel->type != RZ_ALPHA_JMP_SLOT) {
+		RZ_LOG_WARN("Unknown alpha reloc type %d\n", rel->type);
+		return UT64_MAX;
+	}
+	ut64 tmp = get_got_entry(bin, rel);
+
+	return (tmp == UT64_MAX) ? UT64_MAX : tmp + ALPHA_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
+}
+
 /**
  * \brief Determines and returns the import address for the given relocation.
  *
@@ -284,6 +296,8 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	case EM_ARM:
 	case EM_AARCH64:
 		return get_import_addr_arm(bin, reloc);
+	case EM_ALPHA:
+		return get_import_addr_alpha(bin, reloc);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
 		return get_import_addr_mips(bin, reloc);
 	case EM_RISCV:

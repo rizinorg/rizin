@@ -56,6 +56,7 @@ asm_plugins_list = [
 ]
 
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
+  asm_plugins_list += 'alpha_cs'
   asm_plugins_list += 'riscv_cs'
   asm_plugins_list += 'tricore'
 endif
@@ -242,6 +243,7 @@ rz_asm_sources = [
 ]
 
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
+  rz_asm_sources += 'p/asm_alpha_cs.c'
   rz_asm_sources += 'p/asm_riscv_cs.c'
   rz_asm_sources += 'p/asm_tricore_cs.c'
 endif

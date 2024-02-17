@@ -2426,6 +2426,7 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 extern RzAnalysisPlugin rz_analysis_plugin_null;
 extern RzAnalysisPlugin rz_analysis_plugin_6502;
 extern RzAnalysisPlugin rz_analysis_plugin_8051;
+extern RzAnalysisPlugin rz_analysis_plugin_alpha_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_amd29k;
 extern RzAnalysisPlugin rz_analysis_plugin_arc;
 extern RzAnalysisPlugin rz_analysis_plugin_arm_cs;

@@ -217,6 +217,7 @@ RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf 
 /* plugin pointers */
 extern RzAsmPlugin rz_asm_plugin_6502;
 extern RzAsmPlugin rz_asm_plugin_8051;
+extern RzAsmPlugin rz_asm_plugin_alpha_cs;
 extern RzAsmPlugin rz_asm_plugin_amd29k;
 extern RzAsmPlugin rz_asm_plugin_arc;
 extern RzAsmPlugin rz_asm_plugin_arm_as;
