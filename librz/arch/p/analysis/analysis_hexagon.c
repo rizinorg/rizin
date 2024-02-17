@@ -38,12 +38,12 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 		}
 
 		HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = op, .asm_op = NULL };
-		hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + buf_offset, false);
+		hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + buf_offset, false, false);
 		buf_offset += HEX_INSN_SIZE;
 	}
 	// Copy operation actually requested.
 	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = op, .asm_op = NULL };
-	hexagon_reverse_opcode(NULL, &rev, buf, addr, true);
+	hexagon_reverse_opcode(NULL, &rev, buf, addr, true, false);
 	bool decoded_packet = len > HEX_INSN_SIZE;
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		op->il_op = hex_get_il_op(addr, decoded_packet);

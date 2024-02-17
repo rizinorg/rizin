@@ -204,12 +204,12 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
 		}
 
 		HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
-		hexagon_reverse_opcode(a, &rev, buf + buf_offset, addr + buf_offset, false);
+		hexagon_reverse_opcode(a, &rev, buf + buf_offset, addr + buf_offset, false, false);
 		buf_offset += HEX_INSN_SIZE;
 	}
 	// Copy operation actually requested.
 	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
-	hexagon_reverse_opcode(a, &rev, buf, addr, true);
+	hexagon_reverse_opcode(a, &rev, buf, addr, true, false);
 	return HEX_INSN_SIZE;
 }
 
