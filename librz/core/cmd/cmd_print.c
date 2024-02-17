@@ -2335,7 +2335,7 @@ RZ_IPI RzCmdStatus rz_print_instructions_function_handler(RzCore *core, int argc
 	const RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
 		RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 	if (!f) {
-		RZ_LOG_ERROR("Cannot function at the specified address\n");
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 fcn_size = rz_analysis_function_linear_size((RzAnalysisFunction *)f);
@@ -2375,7 +2375,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	st64 l;
 	int i, len, ret;
-	ut8 *block;
 	ut32 tbs = core->blocksize;
 	ut64 n, off;
 	ut64 tmpseek = UT64_MAX;
@@ -2458,8 +2457,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		rz_core_seek(core, off, SEEK_SET);
 		rz_core_block_read(core);
 	}
-	// TODO After core->block is removed, this should be changed to a block read.
-	block = core->block;
 	switch (*input) {
 	case 'j': // "pj"
 		if (input[1] == '?') {
@@ -2523,37 +2520,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		}
 		rz_cons_break_pop();
-		break;
-	case '2': // "p2"
-		if (l) {
-			if (input[1] == '?') {
-				rz_cons_printf("|Usage: p2 [number of bytes representing tiles]\n"
-					       "NOTE: Only full tiles will be printed\n");
-			} else {
-				core_print_2bpp_tiles(core, len / 16);
-			}
-		}
-		break;
-	case '8': // "p8"
-		if (input[1] == '?') {
-			rz_cons_printf("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
-			rz_cons_printf(" p8  : print hexpairs string\n");
-			rz_cons_printf(" p8f : print hexpairs of function (linear)\n");
-			rz_cons_printf(" p8j : print hexpairs in JSON array\n");
-		} else if (l) {
-			if (!rz_core_block_size(core, len)) {
-				len = core->blocksize;
-			}
-			if (input[1] == 'j') { // "p8j"
-				rz_core_cmdf(core, "pcj %s", input + 2);
-			} else if (input[1] == 'f') { // "p8f"
-				rz_core_cmdf(core, "p8 $FS @ $FB");
-			} else {
-				rz_core_block_read(core);
-				block = core->block;
-				rz_print_bytes(core->print, block, len, "%02x");
-			}
-		}
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_p);
@@ -6701,4 +6667,53 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_value_handler(RzCore *core, int argc, con
 
 RZ_IPI RzCmdStatus rz_cmd_print_format_write_handler(RzCore *core, int argc, const char **argv) {
 	return print_format_write(core, argv[1], argv[2]);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_2bpp_tiles_handler(RzCore *core, int argc, const char **argv) {
+	size_t len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len == 0) {
+		return RZ_CMD_STATUS_OK;
+	}
+	core_print_2bpp_tiles(core, len / 16);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus print_8bit_hexpair(RzCore *core, ut64 addr, size_t len) {
+	ut8 *buf = malloc(len);
+	if (!buf) {
+		RZ_LOG_ERROR("core: cannot allocate %zu byte(s)\n", len);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_read_at(core->io, addr, buf, len);
+	rz_print_bytes(core->print, buf, len, "%02x");
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	size_t len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len == 0) {
+		return RZ_CMD_STATUS_OK;
+	}
+	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
+		return print_8bit_hexpair(core, core->offset, len);
+	}
+	char *code = rz_lang_byte_array(core->block, len, RZ_LANG_BYTE_ARRAY_JSON);
+	if (RZ_STR_ISEMPTY(code)) {
+		free(code);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(code);
+	free(code);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_function_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *f = rz_analysis_first_function_in(core->analysis, core->offset);
+	if (!f) {
+		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	size_t len = rz_analysis_function_linear_size(f);
+	ut64 addr = rz_analysis_function_min_addr(f);
+	return print_8bit_hexpair(core, addr, len);
 }
