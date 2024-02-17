@@ -28,6 +28,7 @@ libpcre2_c_args = [
 pcre2_files = [
   'src/pcre2_auto_possess.c',
   pcre2_chartables,
+  'src/pcre2_chkdint.c',
   'src/pcre2_compile.c',
   'src/pcre2_config.c',
   'src/pcre2_context.c',
