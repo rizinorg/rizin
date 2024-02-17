@@ -1398,6 +1398,37 @@ bool f32_ieee_cast_test(void) {
 	mu_end;
 }
 
+bool f80_round_test(void) {
+	/* To 80-bit */
+	RzFloat *old_f = rz_float_new_from_f64(14.285714285714286);
+	RzFloat *expect_f = rz_float_new_from_f80(14.2857142857142864756l);
+	RzFloat *new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 14.285714285714286d to 14.2857142857142864756l");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
+
+	/* From 80-bit */
+	old_f = rz_float_new_from_f80(13.37l);
+	expect_f = rz_float_new_from_f32(13.37f);
+	new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 13.37l to 13.37f");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
+	mu_end;
+
+	/* From 80-bit to 80-bit (should lead to the same value) */
+	old_f = rz_float_new_from_f80(66668466788774.6870804l);
+	expect_f = rz_float_new_from_f80(66668466788774.6870804l);
+	new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 66668466788774.6870804l to itself");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(rz_float_new_from_hex_test);
 	mu_run_test(f32_ieee_format_test);
@@ -1421,6 +1452,7 @@ bool all_tests() {
 	mu_run_test(f32_new_round_test);
 	mu_run_test(f32_ieee_fround_test);
 	mu_run_test(f32_ieee_cast_test);
+	mu_run_test(f80_round_test);
 	return tests_passed != tests_run;
 }
 

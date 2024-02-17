@@ -2639,6 +2639,10 @@ RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat for
 	RzFloatFormat old_format = f->r;
 	bool sign = get_sign(f->s, old_format);
 	ut32 man_len = rz_float_get_format_info(old_format, RZ_FLOAT_INFO_MAN_LEN);
+	if (old_format == RZ_FLOAT_IEEE754_BIN_80) {
+		/* Special case, see [rz_float_info_bin80] for more. */
+		man_len--;
+	}
 
 	// recover hidden bit if it's a normal float
 	// for sub-normal, we also set a fake hidden bit 1 to use round_float
