@@ -1133,7 +1133,7 @@ RZ_IPI void hexagon_pkt_mark_tail_calls(HexPkt *pkt) {
  * \return true If the decoded instruction was the last instruction in a _valid_ packet.
  * \return false Otherwise.
  */
-RZ_API bool hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result) {
+RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result) {
 	HexState *state = hexagon_state(false);
 	if (!state) {
 		RZ_LOG_FATAL("HexState was NULL.");
@@ -1159,7 +1159,7 @@ RZ_API bool hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 		if (copy_result) {
 			copy_asm_ana_ops(state, rz_reverse, hic);
 		}
-		return hic->pkt_info.last_insn;
+		return hic;
 	}
 
 	ut32 data = rz_read_le32(buf);
@@ -1169,7 +1169,7 @@ RZ_API bool hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	// Add to state
 	hic = hex_add_hic_to_state(state, &hic_new);
 	if (!hic) {
-		return false;
+		return NULL;
 	}
 	HexPkt *p = hex_get_pkt(state, hic->addr);
 
@@ -1179,7 +1179,7 @@ RZ_API bool hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	if (copy_result) {
 		copy_asm_ana_ops(state, rz_reverse, hic);
 	}
-	return hic->pkt_info.last_insn;
+	return hic;
 }
 
 RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword) {
@@ -1190,32 +1190,37 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 		RZ_LOG_WARN("Hexagon needs at least 5 * %" PFMT32d " bytes to decode an instr. word.\n", HEX_INSN_SIZE);
 		return false;
 	}
-	iword->addr = addr;
 	RzAnalysisOp prev_op = { 0 };
 	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = &prev_op, .asm_op = NULL };
-	hexagon_reverse_opcode(NULL, &rev, buf, addr - buf_off_iword, false);
+	if (!hexagon_reverse_opcode(NULL, &rev, buf + (buf_off_iword - 4), addr - 4, false)) {
+		RZ_LOG_WARN("Cannot decode an iword if the last previous instruction was not an end of a packet.\n");
+		return false;
+	}
 
+	iword->addr = addr;
 	ut32 buf_offset = buf_off_iword;
-	while (buf_offset + HEX_INSN_SIZE <= len && buf_offset <= HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT) {
-		const ut32 buf_ptr = rz_read_at_le32(buf, buf_offset);
-		if (buf_offset > 0 && (buf_ptr == HEX_INVALID_INSN_0 || buf_ptr == HEX_INVALID_INSN_F)) {
-			RZ_LOG_WARN("Attemt to decode an invalid instruction for a instruction word. Is the address 0x%" PFMT64x " in valid memory?\n", addr);
+	ut64 addr_offset = 0;
+	while (buf_offset + HEX_INSN_SIZE <= len) {
+		const ut32 insn_bytes = rz_read_at_le32(buf, buf_offset);
+		if (insn_bytes == HEX_INVALID_INSN_0 || insn_bytes == HEX_INVALID_INSN_F) {
+			RZ_LOG_WARN("Attempt to decode an invalid instruction for a instruction word. Is the address 0x%" PFMT64x " in valid memory?\n", addr);
 			return false;
 		}
 
 		RzAnalysisOp *aop = RZ_NEW0(RzAnalysisOp);
 		HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = aop, .asm_op = NULL };
-		bool last_insn = hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + buf_offset, true);
+		HexInsnContainer *hic = hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + addr_offset, true);
 		rz_pvector_push(iword->insns, aop);
-		if (aop->jump) {
+		if (aop->jump && aop->jump != UT64_MAX) {
 			rz_vector_push(iword->jump_targets, &aop->jump);
 		}
-		if (aop->fail) {
+		if (aop->fail && aop->fail != UT64_MAX) {
 			rz_vector_push(iword->jump_targets, &aop->fail);
 		}
-		rz_strbuf_appendf(iword->asm_str, "%s\n", aop->mnemonic);
+		rz_strbuf_appendf(iword->asm_str, "%s\n", hic->text);
 		iword->size_bytes += 4;
 		iword->size_bits += 32;
+		addr_offset += 4;
 
 		if (aop->type & RZ_ANALYSIS_OP_TYPE_COND) {
 			iword->props |= RZ_ANALYSIS_IWORD_COND;
@@ -1231,10 +1236,10 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 			iword->props |= RZ_ANALYSIS_IWORD_RET;
 		}
 
-		if (last_insn) {
+		if (hic->pkt_info.last_insn) {
 			if (!(aop->type & RZ_ANALYSIS_OP_TYPE_RET)) {
-				ut64 next_insn_addr = addr + iword->size_bytes;
-				rz_vector_push(iword->jump_targets, &next_insn_addr);
+				ut64 next_iword_addr = addr + iword->size_bytes;
+				rz_vector_push(iword->jump_targets, &next_iword_addr);
 			}
 			return true;
 		}

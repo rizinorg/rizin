@@ -69,7 +69,7 @@ RZ_API void hex_insn_container_free(RZ_NULLABLE HexInsnContainer *c);
 RZ_API void hex_const_ext_free(RZ_NULLABLE HexConstExt *ce);
 RZ_API HexState *hexagon_state(bool reset);
 RZ_IPI void hexagon_state_fini(HexState *state);
-RZ_API bool hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result);
+RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_reverse, const ut8 *buf, const ut64 addr, const bool copy_result);
 RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword);
 RZ_API ut8 hexagon_get_pkt_index_of_addr(const ut32 addr, const HexPkt *p);
 RZ_API HexLoopAttr hex_get_loop_flag(const HexPkt *p);
