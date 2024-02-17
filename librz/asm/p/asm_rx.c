@@ -12,7 +12,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	st32 bytes_read;
 
 	if (!rx_dis(&inst, &bytes_read, buf, len)) {
-		rz_strbuf_set(&op->buf_asm, "(invalid)");
+		rz_asm_op_set_asm(op, "(invalid)");
 		return bytes_read;
 	}
 

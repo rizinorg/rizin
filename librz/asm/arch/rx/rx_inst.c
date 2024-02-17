@@ -502,6 +502,14 @@ bool check_some(RZ_OUT RxInst *inst, RxToken *token, RZ_OUT ut8 *bits_read, ut64
 	return true;
 }
 
+/**
+ * \brief Parse bytes according to the given RX instruction description to see if it matches
+ * \param inst an empty RxInst to be filled
+ * \param desc an RxDesc to be matched
+ * \param bytes_read bytes read
+ * \param bytes prefetched bytes
+ * \return true if parse success, false otherwise
+ */
 bool rx_try_match_and_parse(RZ_OUT RxInst *inst, RxDesc *desc, st32 RZ_OUT *bytes_read, ut64 bytes) {
 	ut8 read_bits = 0;
 	bool is_valid = true;

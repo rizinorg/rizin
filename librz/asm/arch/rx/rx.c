@@ -34,8 +34,7 @@ bool rx_operand_stringify(RxInst *inst, RxOperand *opr, RZ_OUT RzStrBuf *buf) {
 	}
 
 	if (opr->kind == RX_OPERAND_IMM) {
-		rz_strf(buf->buf, "#IMM:%d(#0x%" PFMT32x ")",
-			opr->v.imm.imm_width,
+		rz_strf(buf->buf, "#0x%" PFMT32x,
 			opr->v.imm.imm);
 		return true;
 	}
@@ -43,16 +42,15 @@ bool rx_operand_stringify(RxInst *inst, RxOperand *opr, RZ_OUT RzStrBuf *buf) {
 	if (opr->kind == RX_OPERAND_REG) {
 		if (opr->v.reg.dsp_width) {
 			// dsp value
-			rz_strbuf_appendf(buf, "dsp:%d(#0x%" PFMT32x ")",
-				opr->v.reg.dsp_width,
+			rz_strbuf_appendf(buf, "0x%" PFMT32x,
 				opr->v.reg.dsp_val);
 		}
 
 		if (opr->v.reg.as_indirect) {
-			rz_strbuf_appendf(buf, "[");
+			rz_strbuf_append(buf, "[");
 		}
 		if (opr->v.reg.fix_mode == RX_FIXOP_PRE_DEC) {
-			rz_strbuf_appendf(buf, "-");
+			rz_strbuf_append(buf, "-");
 		}
 
 		if (opr->v.reg.as_base) {
@@ -64,10 +62,10 @@ bool rx_operand_stringify(RxInst *inst, RxOperand *opr, RZ_OUT RzStrBuf *buf) {
 		}
 
 		if (opr->v.reg.fix_mode == RX_FIXOP_POST_INC) {
-			rz_strbuf_appendf(buf, "+");
+			rz_strbuf_append(buf, "+");
 		}
 		if (opr->v.reg.as_indirect) {
-			rz_strbuf_appendf(buf, "]");
+			rz_strbuf_append(buf, "]");
 		}
 
 		if (opr->v.reg.memex != RX_EXT_NON) {
@@ -119,7 +117,7 @@ bool rx_inst_stringify(RxInst *inst, RzStrBuf *buf) {
 	if (inst->sz_mark != RX_EXT_NON) {
 		rz_strbuf_appendf(buf, ".%s ", RxNameExt(inst->sz_mark));
 	} else {
-		rz_strbuf_appendf(buf, " ");
+		rz_strbuf_append(buf, " ");
 	}
 
 	if (has_opr0) {
@@ -136,14 +134,18 @@ bool rx_inst_stringify(RxInst *inst, RzStrBuf *buf) {
 }
 
 /**
- * Parse binary data to RxInst according to RxDesc
- * \param inst
- * \param bytes_read
- * \param buf
- * \param buf_len
- * \return
+ * \brief Parse binary data to RxInst according to RxDesc
+ * \details RX instruction can be 1-8 Bytes, consisted by 2 main parts: [(code) (code data)],
+ * in rizin rx plugin, we defined an `RX instruction description` as an array of tokens, with RxEnd as the end mark.
+ * The parser will fetch 8Bytes, and try to match a predefined instruction description to get a valid interpretation.
+ * \param inst RxInst to be filled
+ * \param bytes_read count bytes read from buf
+ * \param buf rz raw binary data, provided by rizin
+ * \param buf_len length of buf, provided by rizin
+ * \return true if parse success, false otherwise
  */
-RZ_API bool rx_dis(RxInst RZ_OUT *inst, st32 RZ_OUT *bytes_read, const ut8 *buf, size_t buf_len) {
+RZ_API bool rx_dis(RZ_NONNULL RxInst RZ_OUT *inst, RZ_NONNULL st32 RZ_OUT *bytes_read, RZ_NONNULL const ut8 *buf, size_t buf_len) {
+	rz_return_val_if_fail(inst && bytes_read && buf, false);
 	// rx instruction length vary from 1 to 8 Bytes
 	ut64 prefetched_bytes = prefetch_bytes(buf, buf_len);
 	RxInst current_inst = { 0 };

@@ -14,10 +14,10 @@ EXPECT=<<EOF
             ;-- L0:
             ;-- .LFB2:
             ;-- _start:
-            0xfff40000      mvtc  #IMM:8(#0x0), psw,                   ; crt0.S:36 ; [00] -r-x section size 20866 named .text
-            0xfff40004      mvtc  #IMM:16(#0x100), fpsw,               ; crt0.S:39
-            0xfff40009      mov   #IMM:32(#0x20000), r0,               ; crt0.S:40
-            0xfff4000f      mvtc  #IMM:32(#0xffffffd0), intb,          ; crt0.S:41
+            0xfff40000      mvtc  #0x0, psw,                           ; crt0.S:36 ; [00] -r-x section size 20866 named .text
+            0xfff40004      mvtc  #0x100, fpsw,                        ; crt0.S:39
+            0xfff40009      mov   #0x20000, r0,                        ; crt0.S:40
+            0xfff4000f      mvtc  #0xffffffd0, intb,                   ; crt0.S:41
 arch     rx
 cpu      N/A
 baddr    0xfff40000
@@ -67,136 +67,136 @@ EOF
 EXPECT=<<EOF
 / int sym._main(int argc, char **argv, char **envp);
 |           0xfff40257      push.L r10, 
-|           0xfff40259      add   #IMM:8(#0xc8), r0, r10
+|           0xfff40259      add   #0xc8, r0, r10
 |           0xfff4025c      mov.L r10, r0, 
 |           0xfff4025e      mov.L r10, r5, 
-|           0xfff40260      mov.L #IMM:32(#0x6c6c6548), [r5], 
-|           0xfff40266      add   #IMM:4(#0x4), r5, 
-|           0xfff40268      mov.L #IMM:32(#0x6f57206f), [r5], 
-|           0xfff4026e      add   #IMM:4(#0x4), r5, 
-|           0xfff40270      mov.L #IMM:24(#0x646c72), [r5], 
-|           0xfff40275      add   #IMM:4(#0x4), r5, 
+|           0xfff40260      mov.L #0x6c6c6548, [r5], 
+|           0xfff40266      add   #0x4, r5, 
+|           0xfff40268      mov.L #0x6f57206f, [r5], 
+|           0xfff4026e      add   #0x4, r5, 
+|           0xfff40270      mov.L #0x646c72, [r5], 
+|           0xfff40275      add   #0x4, r5, 
 |           0xfff40277      mov.L r10, r1, 
 |           0xfff40279      bsr.A  #0xfffecf,                          ; sym._text_to_morse
-|           0xfff4027d      mov   #IMM:32(#0xfff451f8), r3, 
-|           0xfff40283      mov   #IMM:8(#0x2c), r4, 
-|           0xfff40286      add   #IMM:8(#0xc), r10, r5
+|           0xfff4027d      mov   #0xfff451f8, r3, 
+|           0xfff40283      mov   #0x2c, r4, 
+|           0xfff40286      add   #0xc, r10, r5
 |           0xfff40289      mov.L r5, r1, 
 |           0xfff4028b      mov.L r3, r2, 
 |           0xfff4028d      mov.L r4, r3, 
 |           0xfff4028f      smovf 
-|           0xfff40291      add   #IMM:8(#0xc), r10, r5
+|           0xfff40291      add   #0xc, r10, r5
 |           0xfff40294      mov.L r5, r1, 
 |           0xfff40296      bsr.A  #0xffff4a,                          ; sym._morse_to_text
-|           0xfff4029a      mov   #IMM:4(#0x0), r5, 
+|           0xfff4029a      mov   #0x0, r5, 
 |           0xfff4029c      mov.L r5, r1, 
-\           0xfff4029e      rtsd  #IMM:8(#0xf), r10, 
+\           0xfff4029e      rtsd  #0xf, r10, 
             ; CALL XREF from sym._main @ 0xfff40279
 / sym._text_to_morse();
 |           0xfff40148      push.L r10, 
-|           0xfff4014a      add   #IMM:8(#0xfc), r0, r10
-|           0xfff4014d      add   #IMM:8(#0xf8), r10, r0
+|           0xfff4014a      add   #0xfc, r0, r10
+|           0xfff4014d      add   #0xf8, r10, r0
 |           0xfff40150      mov.L r1, [r10], 
 |       ,=< 0xfff40152      bra.B  #0x7a, 
 |      .--> 0xfff40154      mov.L [r10], r5, 
 |      :|   0xfff40156      mov.B [r5], r5, 
 |      :|   0xfff40158      movu.B r5, r5, 
-|      :|   0xfff4015a      cmp   #IMM:8(#0x60), r5, 
+|      :|   0xfff4015a      cmp   #0x60, r5, 
 |     ,===< 0xfff4015d      bleu.B  #0x2d, 
 |     |:|   0xfff4015f      mov.L [r10], r5, 
 |     |:|   0xfff40161      mov.B [r5], r5, 
 |     |:|   0xfff40163      movu.B r5, r5, 
-|     |:|   0xfff40165      cmp   #IMM:8(#0x7a), r5, 
+|     |:|   0xfff40165      cmp   #0x7a, r5, 
 |    ,====< 0xfff40168      bgtu.B  #0x22, 
 |    ||:|   0xfff4016a      mov.L [r10], r5, 
 |    ||:|   0xfff4016c      mov.B [r5], r5, 
 |    ||:|   0xfff4016e      movu.B r5, r5, 
-|    ||:|   0xfff40170      add   #IMM:8(#0x9f), r5, r5
-|    ||:|   0xfff40173      mov   #IMM:32(#0x10), r4, 
+|    ||:|   0xfff40170      add   #0x9f, r5, r5
+|    ||:|   0xfff40173      mov   #0x10, r4, 
 |    ||:|   0xfff40179      mov.L [r5,r4], r5, 
-|    ||:|   0xfff4017c      mov.L r5, dsp:5(#0x1)[r0], 
-|    ||:|   0xfff4017e      mov.L #IMM:32(#loc..LC26], 
+|    ||:|   0xfff4017c      mov.L r5, 0x1[r0], 
+|    ||:|   0xfff4017e      mov.L #loc..LC26], 
 |    ||:|   0xfff40184      bsr.A  #0x14d,                             ; sym._printf ; int printf(const char *format)
 |   ,=====< 0xfff40188      bra.B  #0x3e, 
 |   |``---> 0xfff4018a      mov.L [r10], r5, 
 |   |  :|   0xfff4018c      mov.B [r5], r5, 
 |   |  :|   0xfff4018e      movu.B r5, r5, 
-|   |  :|   0xfff40190      cmp   #IMM:8(#0x40), r5, 
+|   |  :|   0xfff40190      cmp   #0x40, r5, 
 |   | ,===< 0xfff40193      bleu.B  #0x2c, 
 |   | |:|   0xfff40195      mov.L [r10], r5, 
 |   | |:|   0xfff40197      mov.B [r5], r5, 
 |   | |:|   0xfff40199      movu.B r5, r5, 
-|   | |:|   0xfff4019b      cmp   #IMM:8(#0x5a), r5, 
+|   | |:|   0xfff4019b      cmp   #0x5a, r5, 
 |   |,====< 0xfff4019e      bgtu.B  #0x21, 
 |   |||:|   0xfff401a0      mov.L [r10], r5, 
 |   |||:|   0xfff401a2      mov.B [r5], r5, 
 |   |||:|   0xfff401a4      movu.B r5, r5, 
-|   |||:|   0xfff401a6      add   #IMM:8(#0xbf), r5, r5
-|   |||:|   0xfff401a9      mov   #IMM:32(#0x10), r4, 
+|   |||:|   0xfff401a6      add   #0xbf, r5, r5
+|   |||:|   0xfff401a9      mov   #0x10, r4, 
 |   |||:|   0xfff401af      mov.L [r5,r4], r5, 
-|   |||:|   0xfff401b2      mov.L r5, dsp:5(#0x1)[r0], 
-|   |||:|   0xfff401b4      mov.L #IMM:32(#loc..LC26], 
+|   |||:|   0xfff401b2      mov.L r5, 0x1[r0], 
+|   |||:|   0xfff401b4      mov.L #loc..LC26], 
 |   |||:|   0xfff401ba      bsr.A  #0x117,                             ; sym._printf ; int printf(const char *format)
 ..
-|   |``---> 0xfff401bf      mov   #IMM:8(#0x20), r1, 
+|   |``---> 0xfff401bf      mov   #0x20, r1, 
 |   |  :|   0xfff401c2      bsr.A  #0x12e,                             ; sym._putchar ; int putchar(int c)
 |   `-----> 0xfff401c6      mov.L [r10], r5, 
-|      :|   0xfff401c8      add   #IMM:4(#0x1), r5, 
+|      :|   0xfff401c8      add   #0x1, r5, 
 |      :|   0xfff401ca      mov.L r5, [r10], 
 |      :`-> 0xfff401cc      mov.L [r10], r5, 
 |      :    0xfff401ce      mov.B [r5], r5, 
 |      :    0xfff401d0      movu.B r5, r5, 
-|      :    0xfff401d2      cmp   #IMM:4(#0x0), r5, 
+|      :    0xfff401d2      cmp   #0x0, r5, 
 \      `==< 0xfff401d4      bne.B  #0x80, 
             ; CALL XREF from sym._main @ 0xfff40296
 / sym._morse_to_text();
 |           0xfff401e0      push.L r10, 
-|           0xfff401e2      add   #IMM:8(#0xf4), r0, r10
+|           0xfff401e2      add   #0xf4, r0, r10
 |           0xfff401e5      mov.L r10, r0, 
-|           0xfff401e7      mov.L r1, dsp:8(#0x2)[r10], 
-|           0xfff401ea      mov   #IMM:32(#0xfff451f4), r2, 
-|           0xfff401f0      mov.L dsp:8(#0x2)[r10], r1, 
+|           0xfff401e7      mov.L r1, 0x2[r10], 
+|           0xfff401ea      mov   #0xfff451f4, r2, 
+|           0xfff401f0      mov.L 0x2[r10], r1, 
 |           0xfff401f3      bsr.A  #0x178,                             ; sym._strtok ; char *strtok(char *s1, const char *s2)
 |           0xfff401f7      mov.L r1, [r10], 
 |       ,=< 0xfff401f9      bra.B  #0x4e, 
-|      .--> 0xfff401fb      mov.L #IMM:8(#0x0), dsp:8(#0x1)[r10], 
+|      .--> 0xfff401fb      mov.L #0x0, 0x1[r10], 
 |     ,===< 0xfff401ff      bra.B  #0x32, 
-|    .----> 0xfff40201      mov   #IMM:32(#0x10), r5, 
-|    :|:|   0xfff40207      mov.L dsp:8(#0x1)[r10], r4, 
+|    .----> 0xfff40201      mov   #0x10, r5, 
+|    :|:|   0xfff40207      mov.L 0x1[r10], r4, 
 |    :|:|   0xfff4020a      mov.L [r4,r5], r5, 
 |    :|:|   0xfff4020d      mov.L r5, r2, 
 |    :|:|   0xfff4020f      mov.L [r10], r1, 
 |    :|:|   0xfff40211      bsr.A  #0x14b,                             ; sym._strcmp ; int strcmp(const char *s1, const char *s2)
 |    :|:|   0xfff40215      mov.L r1, r5, 
-|    :|:|   0xfff40217      cmp   #IMM:4(#0x0), r5, 
+|    :|:|   0xfff40217      cmp   #0x0, r5, 
 |   ,=====< 0xfff40219      bne.B  #0x10, 
-|   |:|:|   0xfff4021b      mov.L dsp:8(#0x1)[r10], r5, 
-|   |:|:|   0xfff4021e      add   #IMM:8(#0x41), r5, r5
+|   |:|:|   0xfff4021b      mov.L 0x1[r10], r5, 
+|   |:|:|   0xfff4021e      add   #0x41, r5, r5
 |   |:|:|   0xfff40221      mov.L r5, r1, 
 |   |:|:|   0xfff40223      bsr.A  #0xcd,                              ; sym._putchar ; int putchar(int c)
 |  ,======< 0xfff40227      bra.B  #0x12, 
-|  |`-----> 0xfff40229      mov.L dsp:8(#0x1)[r10], r5, 
-|  | :|:|   0xfff4022c      add   #IMM:4(#0x1), r5, 
-|  | :|:|   0xfff4022e      mov.L r5, dsp:8(#0x1)[r10], 
-|  | :`---> 0xfff40231      mov.L dsp:8(#0x1)[r10], r5, 
-|  | : :|   0xfff40234      cmp   #IMM:8(#0x19), r5, 
+|  |`-----> 0xfff40229      mov.L 0x1[r10], r5, 
+|  | :|:|   0xfff4022c      add   #0x1, r5, 
+|  | :|:|   0xfff4022e      mov.L r5, 0x1[r10], 
+|  | :`---> 0xfff40231      mov.L 0x1[r10], r5, 
+|  | : :|   0xfff40234      cmp   #0x19, r5, 
 |  | `====< 0xfff40237      ble.B  #0xca, 
-|  `------> 0xfff40239      mov   #IMM:32(#0xfff451f4), r2, 
-|      :|   0xfff4023f      mov   #IMM:4(#0x0), r1, 
+|  `------> 0xfff40239      mov   #0xfff451f4, r2, 
+|      :|   0xfff4023f      mov   #0x0, r1, 
 |      :|   0xfff40241      bsr.A  #0x12a,                             ; sym._strtok ; char *strtok(char *s1, const char *s2)
 |      :|   0xfff40245      mov.L r1, [r10], 
 |      :`-> 0xfff40247      mov.L [r10], r5, 
-|      :    0xfff40249      cmp   #IMM:4(#0x0), r5, 
+|      :    0xfff40249      cmp   #0x0, r5, 
 \      `==< 0xfff4024b      bne.B  #0xb0, 
 / void sym._exit(int status);
 |           0xfff402a1      push.L r7, 
 |           0xfff402a3      mov.L r1, r7, 
-|           0xfff402a5      mov   #IMM:4(#0x0), r2, 
+|           0xfff402a5      mov   #0x0, r2, 
 |           0xfff402a7      bsr.A  #0x132b,                            ; sym.___call_exitprocs
-|           0xfff402ab      mov   #IMM:32(#0xfff45224), r5, 
+|           0xfff402ab      mov   #0xfff45224, r5, 
 |           0xfff402b1      mov.L [r5], r1, 
-|           0xfff402b3      mov.L dsp:5(#0xf)[r1], r5, 
-|           0xfff402b5      cmp   #IMM:4(#0x0), r5, 
+|           0xfff402b3      mov.L 0xf[r1], r5, 
+|           0xfff402b5      cmp   #0x0, r5, 
 |       ,=< 0xfff402b7      beq.S  #0x3, 
 |       |   0xfff402b8      jsr   r5, 
 |       `-> 0xfff402ba      mov.L r7, r1, 
