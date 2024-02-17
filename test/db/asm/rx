@@ -1,0 +1,204 @@
+d "itof.UB r1, r2," fc4712
+d "mov.W [r1], r2," dc12
+d "bclr r1, r2," fc6721
+d "itof 0x4[r1].L, r2," 06a1111204
+d "sub r1, r2, r3" ff0312
+d "xor.UB r1, r2," fc3712
+d "sub.UB r1, r2," 4312
+d "bmgeu #0x7, [r2]" fcfc22
+d "rts" 02
+d "emulu 0x4[r1].UW, r2," 06e1071204
+d "shlr #0x3, r1, r2" fd8312
+d "bset #0x7, [r2]," f027
+d "div 0x3[r1].B, r2," 0621081203
+d "divu.UB 0x3[r1], r2," fc251203
+d "divu [r1].L, r2," 06a00912
+d "mvtipl #0x2," 757002
+d "racw #0x0," fd1800
+d "mul.UB r1, r2," 4f12
+d "setpsw C," 7fa0
+d "add [r1].L, r2," 068812
+d "bltu.B  #0x5," 2305
+d "mov.W [r1,r2], r3," fe5123
+d "or #0x8, r1," 6581
+d "bnot #0x1f, r2," fdfff2
+d "rmpa.W" 7f8d
+d "bclr r1, [r2]," fc6421
+d "cmp #0x7, r2," 6172
+d "emul #0xa, r2," fd74620a
+d "max #0xa, r2," fd74420a
+d "or r1, r2, r3" ff5312
+d "revw r1, r2," fd6512
+d "shlr #0x3, r2," 6832
+d "shar #0x3, r2," 6a32
+d "rtfi" 7f94
+d "shar r1, r2," fd6112
+d "or 0x2[r1].L, r2," 06951202
+d "smovb" 7f8b
+d "xor 0x4[r1].L, r2," 06a10d1204
+d "btst #0x7, [r2]," f427
+d "emul [r1].L, r2," 06a00612
+d "push.B r1," 7e81
+d "setpsw Z," 7fa1
+d "bra.L r2," 7f42
+d "mov #0x0, r2," 6602
+d "mov.W r1, [r2]," d321
+d "max 0x3[r1].B, r2," 0621041203
+d "max.UB r1, r2," fc1312
+d "fmul [r1], r2," fc8c12
+d "bra.L r1," 7f41
+d "mullo r1, r2," fd0112
+d "bsr.L r2," 7f52
+d "satr" 7f93
+d "add #0x7f, r1, r2" 71127f
+d "mov.B [-r1], r2," fd2c12
+d "and [r1].UW, r2," 06d012
+d "mvfachi r1," fd1f01
+d "clrpsw C," 7fb0
+d "bmeq #0x1f, r2" fdff02
+d "round [r1], r2," fc9812
+d "rotl r1, r2," fd6612
+d "btst r1, r2," fc6b21
+d "emul 0x4[r1].W, r2," 0661061204
+d "popc psw," 7ee0
+d "fdiv [r1], r2," fc9012
+d "neg r1, r2," fc0712
+d "emul.UB r1, r2," fc1b12
+d "mov.L r1, r2," ef12
+d "bnot r1, [r2]," fc6c21
+d "or [r1].L, r2," 069412
+d "movu.W 0x1[r1], r2," b81a
+d "mul #0xa, r2," 63a2
+d "bnot r1, r2," fc6f21
+d "mov.B r1, [r2+]," fd2021
+d "abs r0," 7e20
+d "neg r1," 7e11
+d "min #0xa, r2," fd74520a
+d "bsr.L r1," 7f51
+d "div.UB r1, r2," fc2312
+d "add #0xf, r2," 62f2
+d "rorc r1," 7e41
+d "scgeu.L r2," fcdb22
+d "suntil.W" 7f81
+d "or.UB r1, r2," 5712
+d "tst #0x7, r2," fd74c207
+d "add r1, r2, r3" ff2312
+d "mvtc r1, usp," fd6812
+d "divu.UB r1, r2," fc2712
+d "revl r1, r2," fd6712
+d "adc [r1].L, r2," 06a00212
+d "ftoi [r1], r2," fc9412
+d "machi r1, r2," fd0412
+d "sat r1," 7e31
+d "max [r1].L, r2," 06a00412
+d "mul [r1].L, r2," 068c12
+d "fsub [r1], r2," fc8012
+d "tst.UB 0x1[r1], r2," fc311201
+d "sbb [r1], r2," 06a00012
+d "sub #0xf, r2," 60f2
+d "mul r1, r2, r3" ff3312
+d "bra.W  #0xfc8," 38c80f
+d "and #0xf, r2," 64f2
+d "btst r1, [r2]," fc6821
+d "mulhi r0, r0," fd0000
+d "rolc r1," 7e51
+d "bnot #0x7, [r2]," fcfc2f
+d "not r1," 7e01
+d "adc r1, r2," fc0b12
+d "emulu.UB r1, r2," fc1f12
+d "add.UB [r1], r2," 4812
+d "mul 0x2[r1].W, r2," 064d1202
+d "adc #0x7f, r2," fd74227f
+d "fmul r1, r2," fc8f12
+d "mvfacmi r1," fd1f21
+d "abs r1, r0," fc0f10
+d "cmp.UB r1, r2," 4712
+d "push.L [r1]," f41a
+d "btst #0x1f, r2," 7df2
+d "xor #0x8, r1," fd74d108
+d "maclo r1, r2," fd0512
+d "popm r4, r8," 6f48
+d "mov.B [r1+], r2," fd2812
+d "ftoi r1, r2," fc9712
+d "mvfc usp, r1," fd6a21
+d "rotr #0x1, r1," fd6c11
+d "bra.A  #0x0," 04000000
+d "rtsd #0x1," 6701
+d "not r1, r2," fc3b12
+d "stz #0x1, r2," fd74e201
+d "swhile.W" 7f85
+d "div #0xa, r2," fd74820a
+d "fcmp r1, r2," fc8712
+d "bset r1, [r2]," fc6021
+d "emulu #0xa, r2," fd74720a
+d "bset r1, r2," fc6321
+d "fadd r1, r2," fc8b12
+d "itof [r1].L, r2," 06a01112
+d "cmp [r1].L, r2," 068412
+d "jmp r1," 7f01
+d "add.UB r1, r2," 4b12
+d "fcmp [r1], r2," fc8412
+d "mvtachi r1," fd1701
+d "clrpsw Z," 7fb1
+d "scmpu" 7f83
+d "rte" 7f95
+d "bclr #0x7, [r2]," f02f
+d "min 0x3[r1].B, r2," 0621051203
+d "mov.W r1, [r2,r3]," fe1231
+d "mvtaclo r1," fd1711
+d "round r1, r2," fc9b12
+d "bclr #0x1f, r2," 7bf2
+d "pushm r4, r8," 6e48
+d "rotr r1, r2," fd6412
+d "shar #0x3, r1, r2" fda312
+d "mov #0x80, r2," fb2680
+d "shll #0x3, r2," 6c32
+d "stnz #0x1, r2," fd74f201
+d "fsub r1, r2," fc8312
+d "pushm r1, r3," 6e13
+d "emulu [r1].L, r2," 06a00712
+d "rtsd #0x4, r7," 3f5704
+d "smovu" 7f87
+d "pop r1," 7eb1
+d "scne.W [r2]," fcd421
+d "mvtc #0xf000, intb," fd7b0c00f0
+d "mov #0x80, r2," 754280
+d "pushc psw," 7ec0
+d "rotl #0x1, r1," fd6e11
+d "and [r1].L, r2," 069012
+d "nop" 03
+d "shll #0x3, r1, r2" fdc312
+d "tst [r1].L, r2," 06a00c12
+d "brk" 00
+d "sub 0x1[r1].B, r2," 06011201
+d "wait" 7f96
+d "fadd [r1], r2," fc8812
+d "fdiv r1, r2," fc9312
+d "sstr.W" 7f89
+d "shll r1, r2," fd6212
+d "tst.UB r1, r2," fc3312
+d "sub [r1].L, r2," 068012
+d "sbb r1, r2," fc0312
+d "movu.W r1, r2," 5f12
+d "div [r1].L, r2," 06a00812
+d "mov.W [r1], [r2]," d012
+d "bset #0x1f, r2," 79f2
+d "int #0x0," 756000
+d "divu #0xa, r2," fd74920a
+d "smovf" 7f8f
+d "jsr r1," 7f11
+d "mulhi r1, r2," fd0012
+d "xchg.UB r1, r2," fc4312
+d "racw #0x1," fd1810
+d "movu.B [-r1], r2," fd3c12
+d "xchg [r1].W, r2," 06601012
+d "mov.L #0x0, [r2]," f82600
+d "xor [r1].L, r2," 06a00d12
+d "and.UB r1, r2," 5312
+d "and r1, r2, r3" ff4312
+d "min [r1].L, r2," 06a00512
+d "movu.B [r1+], r2," fd3812
+d "mov.B r1, [-r2]," fd2421
+d "popm r1, r3," 6f13
+d "bsr.A  #0x0," 05000000
+d "min.UB r1, r2," fc1712

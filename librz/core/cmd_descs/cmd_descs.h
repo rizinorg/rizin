@@ -1728,6 +1728,12 @@ RZ_IPI RzCmdStatus rz_open_maps_deprioritize_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_open_maps_prioritize_fd_handler(RzCore *core, int argc, const char **argv);
 // "ox"
 RZ_IPI RzCmdStatus rz_open_exchange_handler(RzCore *core, int argc, const char **argv);
+// "p2"
+RZ_IPI RzCmdStatus rz_cmd_print_2bpp_tiles_handler(RzCore *core, int argc, const char **argv);
+// "p8"
+RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "p8f"
+RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_function_handler(RzCore *core, int argc, const char **argv);
 // "pb"
 RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "pB"

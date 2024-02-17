@@ -1,0 +1,9 @@
+default.cc=rx
+
+rx=cc
+cc.rx.arg0=r1
+cc.rx.arg1=r2
+cc.rx.arg2=r3
+cc.rx.arg3=r4
+cc.rx.argn=stack_rev
+cc.rx.ret=r1

@@ -3,6 +3,31 @@
 ---
 name: cmd_print
 commands:
+  - name: p2
+    summary: Print 8x8 2bpp tiles.
+    cname: cmd_print_2bpp_tiles
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: p8
+    summary: Print 8bit hexpair list of bytes.
+    subcommands:
+      - name: p8
+        summary: Print 8bit hexpair list of bytes.
+        cname: cmd_print_8bit_hexpair
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p8f
+        summary: Print 8bit hexpair list of bytes in function (linear).
+        cname: cmd_print_8bit_hexpair_function
+        args: []
   - name: pb
     summary: Print bitstream of <n> bits, skipping the first <skip> bits.
     cname: print_bitstream
