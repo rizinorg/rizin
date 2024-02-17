@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
-#include "rx_datasheet.h"
+
+#include "rx_opcode_detail.h"
 #define RxCode(x, y) \
 	{ \
 		.type = RX_TOKEN_INST, .tk.inst = {.tk_len = (x), \

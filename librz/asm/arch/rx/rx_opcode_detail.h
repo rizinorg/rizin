@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2024 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
-#ifndef RX_DATASHEET_H
-#define RX_DATASHEET_H
+
+#ifndef RX_OPCODE_DETAIL_H
+#define RX_OPCODE_DETAIL_H
 
 #include <rz_util.h>
 

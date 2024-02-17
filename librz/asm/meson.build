@@ -223,7 +223,7 @@ rz_asm_sources = [
   'arch/rl78/rl78_operand.c',
   'arch/rl78/rl78.c',
   'arch/rx/rx.c',
-  'arch/rx/rx_datasheet.c',
+  'arch/rx/rx_opcode_detail.c',
   'arch/rx/rx_inst.c',
   'arch/rsp/rsp_idec.c',
   'arch/sh/disassembler.c',
