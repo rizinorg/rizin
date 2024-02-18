@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_util/set.h>
 #include "minunit.h"
 
 bool test_file_slurp(void) {
@@ -62,7 +63,80 @@ bool test_leading_zeros(void) {
 	mu_end;
 }
 
+bool test_set_u(void) {
+	SetU *set_u = set_u_new();
+	set_u_add(set_u, 0x5050505);
+	set_u_add(set_u, 0x5050505);
+	set_u_add(set_u, 0x6060606);
+	set_u_add(set_u, 0x7070707);
+	set_u_add(set_u, 0x7070707);
+	mu_assert_eq(set_u_size(set_u), 3, "Length wrong.");
+	mu_assert_true(set_u_contains(set_u, 0x5050505), "Value was not added.");
+	mu_assert_true(set_u_contains(set_u, 0x6060606), "Value was not added.");
+	mu_assert_true(set_u_contains(set_u, 0x7070707), "Value was not added.");
+
+	set_u_delete(set_u, 0x7070707);
+	mu_assert_false(set_u_contains(set_u, 0x7070707), "Value was not deleted.");
+	mu_assert_eq(set_u_size(set_u), 2, "Length wrong.");
+
+	// Double delete
+	set_u_delete(set_u, 0x7070707);
+	mu_assert_eq(set_u_size(set_u), 2, "Length wrong.");
+
+	size_t x = 0;
+	SetUIter it;
+	set_u_iter_reset(it);
+	set_u_foreach(set_u, it) {
+		x++;
+		bool matches = it.v == 0x5050505 || it.v == 0x6060606;
+		mu_assert_true(matches, "Set contained ill-formed value.");
+	}
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+
+	set_u_delete(set_u, 0x6060606);
+	mu_assert_eq(set_u_size(set_u), 1, "Length wrong.");
+	set_u_delete(set_u, 0x5050505);
+	mu_assert_eq(set_u_size(set_u), 0, "Length wrong.");
+
+	set_u_iter_reset(it);
+	set_u_foreach(set_u, it) {
+		mu_assert("Should not be reached.", false);
+	}
+	set_u_add(set_u, 0x53e0);
+	set_u_add(set_u, 0x53bc);
+	x = 0;
+	set_u_iter_reset(it);
+	set_u_foreach(set_u, it) {
+		x++;
+	}
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+	set_u_delete(set_u, 0x53e0);
+	set_u_delete(set_u, 0x53bc);
+
+	set_u_add(set_u, 0);
+	set_u_add(set_u, 1);
+	set_u_add(set_u, 2);
+	set_u_add(set_u, 3);
+
+	// Add an address as key which is far away from the heap addresses.
+	set_u_add(set_u, 100000000);
+	mu_assert_true(set_u_contains(set_u, 100000000), "Not contained.");
+	mu_assert_eq(set_u->count, 5, "count");
+	mu_assert_false(set_u_contains(set_u, 6), "should not be here.");
+
+	x = 0;
+	set_u_iter_reset(it);
+	set_u_foreach(set_u, it) {
+		x++;
+	}
+	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
+
+	set_u_free(set_u);
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_set_u);
 	mu_run_test(test_file_slurp);
 	mu_run_test(test_leading_zeros);
 	return tests_passed != tests_run;

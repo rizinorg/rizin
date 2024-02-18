@@ -24,9 +24,32 @@ typedef HtUP SetU;
 
 RZ_API RZ_OWN SetU *set_u_new(void);
 RZ_API void set_u_add(RZ_NONNULL SetU *set, ut64 u);
+RZ_API ut64 set_u_size(SetU *s);
 RZ_API bool set_u_contains(RZ_NONNULL SetU *set, ut64 u);
 RZ_API void set_u_delete(RZ_NONNULL SetU *set, ut64 u);
 RZ_API void set_u_free(RZ_NULLABLE SetU *set);
+
+typedef struct {
+	st64 ti; ///< Table index
+	ut64 bi; ///< Bucket index
+	ut64 v; ///< Current value of the iteration
+} SetUIter;
+
+RZ_API void advance_set_u_iter(SetU *s, SetUIter *it);
+
+#define set_u_iter_reset(iter) \
+	do { \
+		iter.ti = 0; \
+		iter.bi = 0; \
+		iter.v = 0; \
+	} while (0)
+/**
+ * The adcvance_set_u_iter() sets iter.ti always to the entry of the next table to check.
+ * So our condition checks if ti <= set->size.
+ */
+#define set_u_foreach(set, iter) \
+	if (set) \
+		for (advance_set_u_iter(set, &iter); iter.ti <= set->size && set_u_size(set) > 0; advance_set_u_iter(set, &iter))
 
 #ifdef __cplusplus
 }

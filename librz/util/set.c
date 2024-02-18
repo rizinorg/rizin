@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: MIT
 
+#include <rz_util/rz_assert.h>
 #include <rz_util/set.h>
 #include <rz_util/rz_assert.h>
 
@@ -57,6 +58,14 @@ RZ_API void set_u_add(RZ_NONNULL SetU *set, ut64 u) {
 }
 
 /**
+ * \brief Get the size of set \s.
+ */
+RZ_API ut64 set_u_size(SetU *s) {
+	rz_return_val_if_fail(s, 0);
+	return s->count;
+}
+
+/**
  * \brief Check if hash set \p set contains element \p u.
  */
 RZ_API bool set_u_contains(RZ_NONNULL SetU *set, ut64 u) {
@@ -74,4 +83,23 @@ RZ_API void set_u_delete(RZ_NONNULL SetU *set, ut64 u) {
 
 RZ_API void set_u_free(RZ_NULLABLE SetU *set) {
 	ht_up_free((HtUP *)set);
+}
+
+RZ_API void advance_set_u_iter(SetU *s, SetUIter *it) {
+	if (it->ti >= s->size) {
+		it->ti++;
+		return;
+	}
+	for (; it->ti < s->size; it->ti++) {
+		if (s->table[it->ti].count == 0) {
+			continue;
+		}
+		for (; it->bi < s->table[it->ti].count;) {
+			it->v = s->table[it->ti].arr[it->bi].key;
+			it->bi++;
+			return;
+		}
+		it->bi = 0;
+	}
+	it->ti++;
 }
