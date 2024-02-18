@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: MIT
 
+#include <rz_util/rz_assert.h>
 #include <rz_util/rz_set.h>
 #include <rz_util/rz_assert.h>
 
@@ -96,6 +97,14 @@ RZ_API RZ_OWN RzSetU *rz_set_u_new(void) {
 RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
 	rz_return_if_fail(set);
 	ht_up_insert(set, u, (void *)1);
+}
+
+/**
+ * \brief Get the size of set \s.
+ */
+RZ_API ut64 set_u_size(SetU *s) {
+	rz_return_val_if_fail(s, 0);
+	return s->count;
 }
 
 /**
