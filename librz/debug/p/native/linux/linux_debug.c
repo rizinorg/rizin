@@ -706,7 +706,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	return true;
 }
 
-static RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RzDebug *dbg, int main_pid) {
+RZ_API RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RzDebug *dbg, int main_pid) {
 	RzList *list = rz_list_new();
 	if (list) {
 		list = linux_thread_list(dbg, main_pid, list);
@@ -877,6 +877,7 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 	char *ptr, buf[PATH_MAX];
 	RzDebugPid *pid_info = NULL;
 	ut64 pc = 0;
+	ut64 tls = 0;
 	int prev_tid = dbg->tid;
 
 	if (!pid) {
@@ -922,6 +923,17 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 
 			rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 			pc = rz_debug_reg_get(dbg, "PC");
+			RzRegItem *ri = rz_reg_get(dbg->reg, "fs", RZ_REG_TYPE_ANY);
+			RZ_DEBUG_REG_T regs;
+			// Fetch gs_base from a ptrace call
+			if (ri == NULL && !strcmp(dbg->arch, "x86")) {
+				if (rz_debug_ptrace(dbg, PTRACE_GETREGS, dbg->tid, NULL, &regs) != -1) {
+					tls = regs.gs_base;
+				}
+			} else {
+				tls = rz_reg_get_value(dbg->reg, ri);
+			}
+			// int ret_3 = rz_debug_ptrace(dbg, PTRACE_ARCH_PRCTL, dbg->pid, NULL, &gs);
 
 			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
 				// Get information about pid (status, pc, etc.)
@@ -930,9 +942,11 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 			} else {
 				pid_info = rz_debug_pid_new(NULL, tid, uid, 's', pc);
 			}
+			// Handle it in the caller if tls is not found. Setting it here anyways.
+			pid_info->tls = tls;
 			rz_list_append(list, pid_info);
-			dbg->n_threads++;
 		}
+		dbg->n_threads = list->length;
 		closedir(dh);
 		// Return to the original thread
 		linux_attach_single_pid(dbg, prev_tid);

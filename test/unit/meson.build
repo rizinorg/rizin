@@ -51,6 +51,7 @@ if get_option('enable_tests')
     'flirt',
     'float',
     'glob',
+    'glibc_version',
     'graph',
     'hash',
     'hex',

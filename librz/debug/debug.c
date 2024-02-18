@@ -411,6 +411,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->call_frames = NULL;
 	dbg->main_arena_resolved = false;
 	dbg->glibc_version = 231; /* default version ubuntu 20 */
+	dbg->is_glibc_resolved = false;
 	rz_debug_signal_init(dbg);
 	dbg->bp = rz_bp_new(bp_ctx);
 	rz_debug_plugin_init(dbg);
