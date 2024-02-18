@@ -845,8 +845,27 @@ static char *get_cpu_mips(ELFOBJ *bin) {
 	return strdup(" Unknown mips ISA");
 }
 
-static char *read_arm_attributes_section(char *ptr, ut32 bytes_to_read, bool isbig) {
-	/* TODO */
+static char *read_arm_build_attributes(char *ptr, ut32 bytes_to_read, bool isbig) {
+	while (bytes_to_read > 0) {
+		/* TODO: Search for TAG_CPU_ARCH and Tag_CPU_ARCH_PROFILE */
+	}
+	return strdup(" Unknown arm ISA");
+}
+
+static char *read_arm_aeabi_section(char *ptr, ut32 bytes_to_read, bool isbig) {
+	while (bytes_to_read > 0) {
+		ut8 sub_subsection = *ptr;
+		ut32 sub_subsection_size = rz_read_ble32(ptr + 1, isbig);
+
+		if (sub_subsection == ARM_TAG_FILE) {
+			char *str = read_arm_build_attributes(ptr + 5, sub_subsection_size - 5, isbig);
+			if (strcmp(str, " Unknown arm ISA")) {
+				return str;
+			}
+		}
+		ptr += sub_subsection_size;
+		bytes_to_read -= sub_subsection_size;
+	}
 	return strdup(" Unknown arm ISA");
 }
 
@@ -887,7 +906,7 @@ static char *get_cpu_arm(ELFOBJ *bin) {
 
 		if (!strcmp(ptr, "aeabi")) {
 			ptr += strlen("aeabi") + 1; // +1 for the null byte
-			return read_arm_attributes_section(ptr, subsection_size - 10, isbig);
+			return read_arm_aeabi_section(ptr, subsection_size - 10, isbig);
 		}
 		subsection_ptr += subsection_size;
 	}
