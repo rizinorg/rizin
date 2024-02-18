@@ -1423,6 +1423,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			}
+			break;
 		}
 		if (ISIMM(1)) {
 			op->val = IMM(1);
