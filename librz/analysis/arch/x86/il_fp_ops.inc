@@ -627,6 +627,7 @@ IL_LIFTER(fcomi) {
 	return fcomi_helper(ins, pc, analysis);
 }
 
+#if CS_API_MAJOR > 4
 /**
  * FCOMIP
  * Compare ST(0) and ST(i), set the EFLAGS accordingly and pop the stack
@@ -634,6 +635,7 @@ IL_LIFTER(fcomi) {
 IL_LIFTER(fcomip) {
 	return SEQ2(fcomi_helper(ins, pc, analysis), x86_il_st_pop());
 }
+#endif
 
 /**
  * FCHS
