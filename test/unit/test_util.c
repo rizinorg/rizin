@@ -84,7 +84,8 @@ bool test_set_u(void) {
 	mu_assert_eq(set_u_size(set_u), 2, "Length wrong.");
 
 	size_t x = 0;
-	set_u_iter_init(it);
+	SetUIter it;
+	set_u_iter_reset(it);
 	set_u_foreach(set_u, it) {
 		x++;
 		bool matches = it.v == 0x5050505 || it.v == 0x6060606;
@@ -126,8 +127,8 @@ bool test_set_u(void) {
 	x = 0;
 	set_u_iter_reset(it);
 	set_u_foreach(set_u, it) {
-			x++;
-		}
+		x++;
+	}
 	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
 
 	set_u_free(set_u);
