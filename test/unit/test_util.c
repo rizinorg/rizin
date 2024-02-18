@@ -62,7 +62,28 @@ bool test_leading_zeros(void) {
 	mu_end;
 }
 
+
+bool test_htpp_anomaly(void) {
+	HtPP *ht = ht_pp_new0();
+	void *p1 = malloc(0x10);
+	void *p2 = malloc(0x20);
+	void *p3 = malloc(0x30);
+	ut64 p4 = 0x50505050505;
+	ht_pp_insert(ht, p1, (void *) 1);
+	ht_pp_insert(ht, p2, (void *) 1);
+	printf("\nht->count should be 2, but is = %d\n", ht->count);
+
+	// Add an address as key which is far away from the heap addresses.
+	ht_pp_insert(ht, &p4, (void *) 1);
+	printf("ht->count should be 3, but is = %d (stack addr is treaded as unique key)\n", ht->count);
+	bool found = false;
+	ht_pp_find(ht, p3, &found);
+	mu_assert_false(found, "p3 should not be here.");
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_htpp_anomaly);
 	mu_run_test(test_file_slurp);
 	mu_run_test(test_leading_zeros);
 	return tests_passed != tests_run;
