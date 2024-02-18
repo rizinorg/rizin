@@ -3,6 +3,7 @@
 
 #include "x86_il.h"
 #include "il_ops.inc"
+#include "il_fp_ops.inc"
 
 #define COMMON_REGS \
 	"cs", /* X86_REG_CS */ \
@@ -19,6 +20,22 @@
 		"df", /* X86_EFLAGS_DF */ \
 		"of", /* X86_EFLAGS_OF */ \
 		"nt" /* X86_EFLAGS_NT */
+
+#define FPU_REGS \
+	"cwd", /* X86_REG_FPU_CW */ \
+		"swd", /* X86_REG_FPSW */ \
+		"ftw", /* X86_REG_FPU_TW */ \
+		"fop", /* X86_REG_FPU_OP */ \
+		"frip", /* X86_REG_FPU_IP */ \
+		"frdp", /* X86_REG_FPU_DP */ \
+		"st0", /* X86_REG_ST0 */ \
+		"st1", /* X86_REG_ST1 */ \
+		"st2", /* X86_REG_ST2 */ \
+		"st3", /* X86_REG_ST3 */ \
+		"st4", /* X86_REG_ST4 */ \
+		"st5", /* X86_REG_ST5 */ \
+		"st6", /* X86_REG_ST6 */ \
+		"st7" /* X86_REG_ST6 */
 
 /**
  * \brief All registers bound to IL variables for x86 16-bit
@@ -90,10 +107,11 @@ const char *x86_bound_regs_64[] = {
 	"gs", /* X86_REG_GS */
 	"cr0", /* X86_REG_CR0 */
 	"dr0", /* X86_REG_DR0 */
+	FPU_REGS,
 	NULL
 };
 
-typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
+typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *, X86ILContext *);
 
 /**
  * \brief RzIL handlers for x86 instructions
@@ -146,7 +164,6 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_INC] = x86_il_inc,
 	[X86_INS_INT] = x86_il_int,
 	[X86_INS_INTO] = x86_il_into,
-	[X86_INS_IRET] = x86_il_unimpl,
 	[X86_INS_JA] = x86_il_ja,
 	[X86_INS_JAE] = x86_il_jae,
 	[X86_INS_JB] = x86_il_jb,
@@ -208,8 +225,6 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_ROL] = x86_il_rol,
 	[X86_INS_ROR] = x86_il_ror,
 	[X86_INS_RET] = x86_il_ret,
-	[X86_INS_RETF] = x86_il_unimpl,
-	[X86_INS_RETFQ] = x86_il_unimpl,
 	[X86_INS_SAHF] = x86_il_sahf,
 	[X86_INS_SAL] = x86_il_sal,
 	[X86_INS_SAR] = x86_il_sar,
@@ -236,11 +251,84 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_XOR] = x86_il_xor,
 	[X86_INS_BOUND] = x86_il_bound,
 	[X86_INS_ENTER] = x86_il_enter,
+	[X86_INS_LEAVE] = x86_il_leave,
+
+	/* floating-point instructions */
+	[X86_INS_FNINIT] = x86_il_fninit,
+	[X86_INS_FLDCW] = x86_il_fldcw,
+	[X86_INS_FNSTCW] = x86_il_fnstcw,
+	[X86_INS_FNSTSW] = x86_il_fnstsw,
+	[X86_INS_FNCLEX] = x86_il_fnclex,
+	[X86_INS_FLD] = x86_il_fld,
+	[X86_INS_FST] = x86_il_fst,
+	[X86_INS_FSTP] = x86_il_fstp,
+	[X86_INS_FLD1] = x86_il_fld1,
+	[X86_INS_FLDZ] = x86_il_fldz,
+	[X86_INS_FLDL2T] = x86_il_fldl2t,
+	[X86_INS_FLDL2E] = x86_il_fldl2e,
+	[X86_INS_FLDPI] = x86_il_fldpi,
+	[X86_INS_FLDLG2] = x86_il_fldlg2,
+	[X86_INS_FLDLN2] = x86_il_fldln2,
+	[X86_INS_FXCH] = x86_il_fxch,
+	[X86_INS_FILD] = x86_il_fild,
+	[X86_INS_FIST] = x86_il_fist,
+	[X86_INS_FISTP] = x86_il_fistp,
+	[X86_INS_FBLD] = x86_il_fbld,
+	[X86_INS_FBSTP] = x86_il_fbstp,
+	[X86_INS_FABS] = x86_il_fabs,
+	[X86_INS_FADD] = x86_il_fadd,
+#if CS_API_MAJOR <= 4
+	[X86_INS_FADDP] = x86_il_fadd,
+#endif
+	[X86_INS_FIADD] = x86_il_fiadd,
+	[X86_INS_FMUL] = x86_il_fmul,
+	[X86_INS_FMULP] = x86_il_fmulp,
+	[X86_INS_FIMUL] = x86_il_fimul,
+	[X86_INS_FSUB] = x86_il_fsub,
+	[X86_INS_FSUBP] = x86_il_fsubp,
+	[X86_INS_FISUB] = x86_il_fisub,
+	[X86_INS_FSUBR] = x86_il_fsubr,
+	[X86_INS_FSUBRP] = x86_il_fsubrp,
+	[X86_INS_FISUBR] = x86_il_fisubr,
+	[X86_INS_FDIV] = x86_il_fdiv,
+	[X86_INS_FDIVP] = x86_il_fdivp,
+	[X86_INS_FIDIV] = x86_il_fidiv,
+	[X86_INS_FDIVR] = x86_il_fdivr,
+	[X86_INS_FDIVRP] = x86_il_fdivrp,
+	[X86_INS_FIDIVR] = x86_il_fidivr,
+	[X86_INS_FCOM] = x86_il_fcom,
+	[X86_INS_FCOMP] = x86_il_fcomp,
+	[X86_INS_FICOM] = x86_il_ficom,
+	[X86_INS_FCOMPP] = x86_il_fcompp,
+	[X86_INS_FICOMP] = x86_il_ficomp,
+	[X86_INS_FCOMI] = x86_il_fcomi,
+	[X86_INS_FCOMPI] = x86_il_fcomip,
+	/* Using the same FCOM & FCOMI family IL lifters for FUCOM & FUCOMI family instructions
+	 * since we don't support invalid arithmetic operand exceptions (#IA) anyways. */
+	[X86_INS_FUCOM] = x86_il_fcom,
+	[X86_INS_FUCOMP] = x86_il_fcomp,
+	[X86_INS_FUCOMPP] = x86_il_fcompp,
+	[X86_INS_FUCOMI] = x86_il_fcomi,
+	[X86_INS_FUCOMPI] = x86_il_fcomip,
+	[X86_INS_FCHS] = x86_il_fchs,
+	[X86_INS_FTST] = x86_il_ftst,
+	[X86_INS_FRNDINT] = x86_il_frndint,
+	[X86_INS_FSQRT] = x86_il_fsqrt,
+	[X86_INS_FNOP] = x86_il_fnop,
+	[X86_INS_FISTTP] = x86_il_fisttp,
+
+	/* unimplemented instructions */
+	[X86_INS_IRET] = x86_il_unimpl,
+	[X86_INS_RETF] = x86_il_unimpl,
+	[X86_INS_RETFQ] = x86_il_unimpl,
 	[X86_INS_INSB] = x86_il_unimpl,
 	[X86_INS_INSW] = x86_il_unimpl,
 	[X86_INS_OUTSB] = x86_il_unimpl,
 	[X86_INS_OUTSW] = x86_il_unimpl,
-	[X86_INS_LEAVE] = x86_il_leave
+	[X86_INS_FLDENV] = x86_il_unimpl,
+	[X86_INS_FNSTENV] = x86_il_unimpl,
+	[X86_INS_FNSAVE] = x86_il_unimpl,
+	[X86_INS_FRSTOR] = x86_il_unimpl
 };
 
 void label_int(RzILVM *vm, RzILOpEffect *op);
@@ -261,7 +349,15 @@ RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnaly
 		/* For unimplemented instructions */
 		lifter = x86_il_unimpl;
 	}
-	lifted = lifter(ins, pc, analysis);
+
+	X86ILContext ctx = {
+		.use_rmode = false
+	};
+
+	lifted = lifter(ins, pc, analysis, &ctx);
+	if (ctx.use_rmode) {
+		lifted = rz_il_op_new_seq(init_rmode(), lifted);
+	}
 
 	aop->il_op = lifted;
 	return true;
