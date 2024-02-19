@@ -2836,6 +2836,16 @@ static void base_type_to_format_no_unfold(const RzTypeDB *typedb, RZ_NONNULL RzB
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
 		// It might go recursively to find all types behind the alias
+		// So we check first it refers to itself
+		if (rz_type_is_identifier(type->type)) {
+			const char *tidentifier = rz_type_identifier(type->type);
+			if (RZ_STR_EQ(tidentifier, type->name)) {
+				// Show it as a pointer instead
+				rz_strbuf_append(format, "p");
+				rz_strbuf_appendf(fields, "%s ", identifier);
+				break;
+			}
+		}
 		char *fmt = rz_type_as_format(typedb, type->type);
 		if (fmt) {
 			rz_strbuf_append(format, fmt);
