@@ -940,6 +940,32 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisDataType datatype;
 } RzAnalysisOp;
 
+static inline bool rz_analysis_op_is_call(const RzAnalysisOp *op) {
+	bool is_call = (op->type == RZ_ANALYSIS_OP_TYPE_CALL ||
+		op->type == RZ_ANALYSIS_OP_TYPE_UCALL ||
+		op->type == RZ_ANALYSIS_OP_TYPE_RCALL ||
+		op->type == RZ_ANALYSIS_OP_TYPE_ICALL ||
+		op->type == RZ_ANALYSIS_OP_TYPE_IRCALL);
+	return is_call;
+}
+
+static inline bool rz_analysis_op_is_jump(const RzAnalysisOp *op) {
+	bool is_jump = (op->type == RZ_ANALYSIS_OP_TYPE_JMP ||
+		op->type == RZ_ANALYSIS_OP_TYPE_UJMP ||
+		op->type == RZ_ANALYSIS_OP_TYPE_RJMP ||
+		op->type == RZ_ANALYSIS_OP_TYPE_IJMP ||
+		op->type == RZ_ANALYSIS_OP_TYPE_IRJMP);
+	return is_jump;
+}
+
+static inline bool rz_analysis_op_is_cjump(const RzAnalysisOp *op) {
+	return rz_analysis_op_is_jump(op) && op->type & RZ_ANALYSIS_OP_TYPE_COND;
+}
+
+static inline bool rz_analysis_op_is_ccall(const RzAnalysisOp *op) {
+	return rz_analysis_op_is_call(op) && op->type & RZ_ANALYSIS_OP_TYPE_COND;
+}
+
 /**
  * \brief Property flags for instruction words.
  */
