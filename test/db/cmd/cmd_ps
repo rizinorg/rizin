@@ -9,7 +9,7 @@ f obj.short_str1 12 @ 0x0804a034
 f obj.long_str2 12 @ 0x0804a058
 f obj.short_str2 12 @ 0x0804a040
 e asm.bits=32
-e bin.str.enc=utf8
+e str.search.encoding=utf8
 ps+ @ obj.short_str1
 ps+ @ obj.short_str2
 ps+ @ obj.empty_str
@@ -36,7 +36,7 @@ f obj.short_str1 24 @ 0x00601058
 f obj.long_str2 24 @ 0x006010a0
 f obj.short_str2 24 @ 0x00601070
 e asm.bits=64
-e bin.str.enc=utf8
+e str.search.encoding=utf8
 ps+ @ obj.short_str1
 ps+ @ obj.short_str2
 ps+ @ obj.empty_str

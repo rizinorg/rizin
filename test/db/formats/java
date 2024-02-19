@@ -94,7 +94,12 @@ nth paddr      vaddr      len size section             type  string
 13  0x000000b8 0x000000b8 39  39   class.constant_pool mutf8 (Ljava/lang/Object;Ljava/lang/String;)V
 16  0x000000ec 0x000000ec 19  19   class.constant_pool mutf8 [Ljava/lang/String;
 17  0x00000102 0x00000102 17  17   class.constant_pool mutf8 Lkotlin/Metadata;
+18  0x00000116 0x00000116 2   2    class.constant_pool mutf8 mv
+21  0x00000125 0x00000125 2   2    class.constant_pool mutf8 bv
+23  0x0000012f 0x0000012f 1   1    class.constant_pool mutf8 k
+25  0x00000138 0x00000138 2   2    class.constant_pool mutf8 d1
 26  0x0000013d 0x0000013d 53  53   class.constant_pool mutf8 \u0000\u0012\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0010\u0011\n\u0002\u0010\u000e\n\u0000\u001a\u0019\u0010\u0000\u001a\u00020\u00012\f\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003¢\u0006\u0002\u0010\u0005 blocks=Basic Latin,Latin-1 Supplement
+27  0x00000175 0x00000175 2   2    class.constant_pool mutf8 d2
 29  0x0000017d 0x0000017d 5   5    class.constant_pool mutf8 hi.kt
 30  0x00000185 0x00000185 4   4    class.constant_pool mutf8 Code
 31  0x0000018c 0x0000018c 18  18   class.constant_pool mutf8 LocalVariableTable
