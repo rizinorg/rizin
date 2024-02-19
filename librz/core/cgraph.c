@@ -1263,9 +1263,11 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNU
 	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
 
 	// Add entry node
-	RzAnalysisInsnWord cur_iword = { 0 };
 	ut8 buf[64] = { 0 };
-	// Decode iword
+	RzAnalysisInsnWord cur_iword = { 0 };
+	rz_analysis_insn_word_setup(&cur_iword);
+
+	st32 disas_bytes = decode_iword_at(core, addr, buf, sizeof(buf), &cur_iword);
 	RzGraphNode *entry = add_iword_to_cfg(graph, &cur_iword, true);
 	ht_uu_insert(nodes_visited, addr, entry->idx);
 	rz_vector_push(to_visit, &addr);
@@ -1275,7 +1277,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNU
 		rz_vector_pop(to_visit, &cur_addr);
 		rz_analysis_insn_word_setup(&cur_iword);
 
-		st32 disas_bytes = decode_iword_at(core, cur_addr, buf, sizeof(buf), &cur_iword);
+		disas_bytes = decode_iword_at(core, cur_addr, buf, sizeof(buf), &cur_iword);
 		if (disas_bytes <= 0) {
 			// If the decoding was invalid we do not add it to the graph.
 			rz_analysis_insn_word_fini(&cur_iword);
