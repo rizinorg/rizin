@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/set.h>
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_list.h>
@@ -699,7 +700,8 @@ RZ_API RZ_OWN RzAnalysisInsnWord *rz_analysis_insn_word_new() {
 	}
 	iword->asm_str = rz_strbuf_new("");
 	iword->insns = rz_pvector_new(rz_analysis_op_free);
-	iword->jump_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
+	iword->jump_targets = set_u_new();
+	iword->call_targets = set_u_new();
 	if (!iword->asm_str || !iword->insns || !iword->jump_targets) {
 		rz_analysis_insn_word_free(iword);
 		return NULL;
@@ -713,7 +715,8 @@ RZ_API void rz_analysis_insn_word_free(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iw
 	}
 	rz_strbuf_free(iword->asm_str);
 	rz_pvector_free(iword->insns);
-	rz_vector_free(iword->jump_targets);
+	set_u_free(iword->jump_targets);
+	set_u_free(iword->call_targets);
 	free(iword);
 }
 
@@ -722,7 +725,8 @@ RZ_API void rz_analysis_insn_word_setup(RZ_BORROW RZ_NONNULL RzAnalysisInsnWord 
 	rz_analysis_insn_word_fini(iword);
 	iword->asm_str = rz_strbuf_new("");
 	iword->insns = rz_pvector_new(rz_analysis_op_free);
-	iword->jump_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
+	iword->jump_targets = set_u_new();
+	iword->call_targets = set_u_new();
 	if (!iword->asm_str || !iword->insns || !iword->jump_targets) {
 		rz_analysis_insn_word_fini(iword);
 	}
@@ -734,6 +738,7 @@ RZ_API void rz_analysis_insn_word_fini(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iw
 	}
 	rz_strbuf_free(iword->asm_str);
 	rz_pvector_free(iword->insns);
-	rz_vector_free(iword->jump_targets);
+	set_u_free(iword->jump_targets);
+	set_u_free(iword->call_targets);
 	rz_mem_memzero(iword, sizeof(RzAnalysisInsnWord));
 }

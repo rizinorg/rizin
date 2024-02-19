@@ -1162,7 +1162,16 @@ static RzGraphNode *add_iword_to_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const
 	if (is_entry) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
 	}
-	ut64 call_target = (iword->props & RZ_ANALYSIS_IWORD_CALL) ? iword->call_target : UT64_MAX;
+	ut64 call_target = UT64_MAX;
+	set_u_iter_init(it);
+	set_u_foreach(iword->call_targets, it) {
+		size_t ct_num = set_u_size(iword->call_targets);
+		if (ct_num > 1) {
+			RZ_LOG_WARN("TODO: iword contained %zu call targets, but only 1 was added to node.\n", ct_num);
+		}
+		call_target = it.v;
+		break;
+	}
 	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(iword->addr, call_target, RZ_GRAPH_NODE_TYPE_CFG, subtype);
 	if (!data) {
 		return NULL;
@@ -1274,15 +1283,19 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNU
 		}
 		// Add all neighbors to graph
 		RzAnalysisInsnWord target_iword = { 0 };
-		ut64 *it;
-		rz_vector_foreach(cur_iword.jump_targets, it) {
-			ut64 target = *it;
+		set_u_iter_init(it);
+		set_u_foreach(cur_iword.jump_targets, it) {
+			ut64 target = it.v;
 			rz_analysis_insn_word_setup(&target_iword);
 			if (decode_iword_at(core, target, buf, sizeof(buf), &target_iword) <= 0) {
 				rz_analysis_insn_word_fini(&target_iword);
 				continue;
 			}
-			rz_vector_push(to_visit, &target);
+			bool found = false;
+			ht_uu_find(nodes_visited, target, &found);
+			if (!found) {
+				rz_vector_push(to_visit, &target);
+			}
 			if (!add_iword_edge_to_cfg(graph, to_visit, nodes_visited, &cur_iword, &target_iword)) {
 				rz_analysis_insn_word_fini(&target_iword);
 				goto error;
