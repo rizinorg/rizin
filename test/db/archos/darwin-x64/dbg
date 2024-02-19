@@ -82,7 +82,7 @@ dcu main
 3 ds
 dr rip
 dr rdi
-ps @e:bin.str.enc=utf8 @ rdi
+ps @e:str.search.encoding=utf8 @ rdi
 EOF
 EXPECT=<<EOF
 rip = 0x0000000100000f17

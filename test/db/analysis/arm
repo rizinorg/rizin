@@ -1067,13 +1067,13 @@ RUN
 NAME=misaligned arm string xref
 FILE=bins/mach0/misaligned_data-iOS-armv7
 CMDS=<<EOF
-aav
-aae
-af
-axt @ str.helloradareworld
+aaa
+axt @ str.helloradareworl
+pd 1 @ 0xbf9c
 EOF
 EXPECT=<<EOF
-main 0xbf9c [DATA] add r0, pc
+entry0 0xbf9c [DATA] add r0, pc
+|           0x0000bf9c      add   r0, pc                               ; 0xbfed ; "helloradareworld\n" ; const char *format
 EOF
 RUN
 
