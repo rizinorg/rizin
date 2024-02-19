@@ -786,7 +786,7 @@ jobs:
       - name: Compile jsdec in EXTRA_PREFIX
         run: |
           git clone https://github.com/rizinorg/jsdec
-          cd jsdec/p && meson -Djsc_folder=".." --prefix=/usr/local build && meson compile -C build && sudo meson install -C build
+          cd jsdec && meson -Dstandalone=false --prefix=/usr/local build && meson compile -C build && sudo meson install -C build
       - name: Test jsdec plugin is loaded from EXTRA_PREFIX
         run: |
           rizin -qc "Lc~jsdec"
