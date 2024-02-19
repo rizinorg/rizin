@@ -1187,17 +1187,22 @@ static bool add_iword_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *gr
 		RZ_LOG_ERROR("'from' node should have been added before. 0x%" PFMT64x " -> 0x%" PFMT64x "\n", from, to);
 		return false;
 	}
+	ut64 to_idx = ht_uu_find(nodes_visited, to, &visited);
 
-	RzGraphNode *to_node = add_iword_to_cfg(graph, iword_to, false);
+	RzGraphNode *to_node = NULL;
+	if (visited) {
+		to_node = rz_graph_get_node(graph, to_idx);
+	} else {
+		to_node = add_iword_to_cfg(graph, iword_to, false);
+	}
 	if (!to_node) {
 		RZ_LOG_ERROR("Could not add node at 0x%" PFMT64x "\n", to);
 		return false;
 	}
-	ut64 to_idx = to_node->idx;
+	to_idx = to_node->idx;
 	if (from == to) {
 		from_idx = to_idx;
 	}
-	to_idx = ht_uu_find(nodes_visited, to, &visited);
 
 	if (from != to && !visited) {
 		// The target node wasn't visited before. Otherwise this is a back-edge.
