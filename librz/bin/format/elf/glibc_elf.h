@@ -2780,6 +2780,38 @@ enum {
 /* ARM no defaults tag.  */
 #define TAG_NODEFAULTS 64
 
+/* ARM CPU Arch Version  */
+#define ARM_VER_PRE_V4          0
+#define ARM_VER_V4              1
+#define ARM_VER_V4T             2
+#define ARM_VER_V5T             3
+#define ARM_VER_V5TE            4
+#define ARM_VER_V5TEJ           5
+#define ARM_VER_V6              6
+#define ARM_VER_V6KZ            7
+#define ARM_VER_V6T2            8
+#define ARM_VER_V6K             9
+#define ARM_VER_V7              10
+#define ARM_VER_V6_M            11
+#define ARM_VER_V6S_M           12
+#define ARM_VER_V7E_M           13
+#define ARM_VER_V8_A            14
+#define ARM_VER_V8_R            15
+#define ARM_VER_V8_M_BASELINE   16
+#define ARM_VER_V8_M_MAINLINE   17
+#define ARM_VER_V8_1_A          18
+#define ARM_VER_V8_2_A          19
+#define ARM_VER_V8_3_A          20
+#define ARM_VER_V8_1_M_MAINLINE 21
+#define ARM_VER_V9_A            22
+
+/* ARM CPU Arch Profile  */
+#define ARM_PROFILE_0 0
+#define ARM_PROFILE_A 0x41
+#define ARM_PROFILE_R 0x52
+#define ARM_PROFILE_M 0x4d
+#define ARM_PROFILE_S 0x53
+
 
 /* AArch64 relocs.  */
 
