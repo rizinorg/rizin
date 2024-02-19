@@ -210,9 +210,9 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case V850_ADD:
 	case V850_SATADD:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		if (get_reg2(&inst) == V850_SP) {
+		if (inst.format == II_imm_reg && get_reg2(&inst) == V850_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
-			op->stackptr = inst.imm;
+			op->stackptr = (st32)inst.imm;
 			op->val = op->stackptr;
 		}
 		break;
@@ -220,7 +220,7 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		if (get_reg2(&inst) == V850_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
-			op->stackptr = (st64)get_imm16(&inst);
+			op->stackptr = (st16)get_imm16(&inst);
 			op->val = op->stackptr;
 		}
 		break;
