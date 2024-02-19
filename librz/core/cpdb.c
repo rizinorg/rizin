@@ -262,6 +262,15 @@ static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 			addr += ctx->baddr;
 		}
 
+		RzAnalysisVarGlobal *existing_glob = NULL;
+		if ((existing_glob = rz_analysis_var_global_get_byaddr_in(ctx->core->analysis, addr))) {
+			RZ_LOG_INFO("global variable %s at 0x%" PFMT64x " already exists.\n", existing_glob->name, existing_glob->addr);
+			return true;
+		}
+		if ((existing_glob = rz_analysis_var_global_get_byname(ctx->core->analysis, data->name))) {
+			RZ_LOG_INFO("global variable %s at 0x%" PFMT64x " already exists.\n", existing_glob->name, existing_glob->addr);
+			return true;
+		}
 		RzPdbTpiType *t = rz_bin_pdb_get_type_by_index(pdb->s_tpi, data->type_index);
 		if (!t) {
 			return true;
