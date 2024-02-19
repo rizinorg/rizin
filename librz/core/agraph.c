@@ -1133,7 +1133,7 @@ static int place_nodes_sel_p(int newval, int oldval, int is_first, int is_left) 
 }
 
 /* places left/right the nodes of a class */
-static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, HtPP *v_nodes, HtPU *res, SetP *placed) {
+static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, HtPP *v_nodes, HtPU *res, SetU *placed) {
 	const RzList *lv = ht_pp_find(v_nodes, gn, NULL);
 	int p = 0, v, is_first = true;
 	const RzGraphNode *gk;
@@ -1153,7 +1153,7 @@ static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, H
 		}
 		sibl_anode = get_anode(sibling);
 		if (ak->klass == sibl_anode->klass) {
-			if (!set_p_contains(placed, sibling)) {
+			if (!set_u_contains(placed, (ut64)sibling)) {
 				place_nodes(g, sibling, is_left, v_nodes, res, placed);
 			}
 
@@ -1172,7 +1172,7 @@ static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, H
 			break;
 		}
 		ht_pu_update(res, gk, (ut64)(size_t)p);
-		set_p_add(placed, gk);
+		set_u_add(placed, (ut64)gk);
 	}
 }
 
@@ -1186,12 +1186,11 @@ static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP *v_nodes) {
 	}
 
 	HtPUOptions pu_opt = { 0 };
-	HtPPOptions pp_opt = { 0 };
 	HtPU *res = ht_pu_new_opt(&pu_opt);
-	SetP *placed = (SetP *)ht_pp_new_opt(&pp_opt);
+	SetU *placed = set_u_new();
 	if (!res || !placed) {
 		ht_pu_free(res);
-		set_p_free(placed);
+		set_u_free(placed);
 		return NULL;
 	}
 	for (i = 0; i < n_classes; i++) {
@@ -1199,7 +1198,7 @@ static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP *v_nodes) {
 		const RzListIter *it;
 
 		rz_list_foreach (classes[i], it, gn) {
-			if (!set_p_contains(placed, gn)) {
+			if (!set_u_contains(placed, (ut64)gn)) {
 				place_nodes(g, gn, is_left, v_nodes, res, placed);
 			}
 		}
@@ -1207,7 +1206,7 @@ static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP *v_nodes) {
 		adjust_class(g, is_left, classes, res, i);
 	}
 
-	set_p_free(placed);
+	set_u_free(placed);
 	for (i = 0; i < n_classes; i++) {
 		if (classes[i]) {
 			rz_list_free(classes[i]);
