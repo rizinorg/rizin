@@ -211,15 +211,17 @@ static void binary_close(DwBinary *b) {
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_load_dsym(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
+	if (RZ_STR_ISEMPTY(bf->file)) {
+		return NULL;
+	}
+
 	RzBinDWARF *dw = NULL;
 	RzStrBuf path_buf = { 0 };
 	DwBinary binary = { 0 };
 	char *file_abspath = rz_file_abspath(bf->file);
-	const char *filename = rz_str_rchr(bf->file, NULL, '/');
-	if (RZ_STR_ISEMPTY(filename)) {
-		goto out;
-	}
-	rz_strbuf_initf(&path_buf, "%s%s%s", file_abspath, ".dSYM/Contents/Resources/DWARF", filename);
+	const char *filename = rz_file_basename(bf->file);
+	const char *dwarf_path = ".dSYM/Contents/Resources/DWARF/";
+	rz_strbuf_initf(&path_buf, "%s%s%s", file_abspath, dwarf_path, filename);
 	if (!rz_file_exists(rz_strbuf_get(&path_buf))) {
 		goto out;
 	}
