@@ -238,7 +238,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first(
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
 
-	RzPVector *matches = rz_pvector_new(NULL);
+	RzPVector *matches = rz_pvector_new(free);
 	RzRegexMatchData *mdata = pcre2_match_data_create_from_pattern(regex, NULL);
 	RzRegexStatus rc = pcre2_match(regex, (PCRE2_SPTR)text, text_size, text_offset, mflags | PCRE2_NO_UTF_CHECK, mdata, NULL);
 
@@ -316,7 +316,7 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_all_not_grouped(
 	RzRegexFlags mflags) {
 	rz_return_val_if_fail(regex && text, NULL);
 
-	RzPVector *all_matches = rz_pvector_new(NULL);
+	RzPVector *all_matches = rz_pvector_new(free);
 	RzPVector *matches = rz_regex_match_first(regex, text, text_size, text_offset, mflags);
 	while (matches && rz_pvector_len(matches) > 0) {
 		RzRegexMatch *whole_match = rz_pvector_head(matches);
@@ -397,6 +397,7 @@ RZ_API bool rz_regex_contains(RZ_NONNULL const char *pattern, RZ_NONNULL const c
 	RzPVector *matches = rz_regex_match_first(re, text, text_size, 0, mflags);
 	bool found = matches != NULL && !rz_pvector_empty(matches);
 	rz_pvector_free(matches);
+	rz_regex_free(re);
 	return found;
 }
 
@@ -445,6 +446,7 @@ RZ_API RZ_OWN RzStrBuf *rz_regex_full_match_str(RZ_NONNULL const char *pattern, 
 	}
 
 fini:
+	rz_regex_free(re);
 	rz_pvector_free(matches);
 	return sbuf;
 }
@@ -470,6 +472,7 @@ RZ_API RzRegexSize rz_regex_find(RZ_NONNULL const char *pattern, RZ_NONNULL RZ_B
 	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT);
 	RzPVector *matches = rz_regex_match_first(regex, text, text_size, text_offset, mflags);
 	if (rz_pvector_empty(matches)) {
+		rz_pvector_free(matches);
 		rz_regex_free(regex);
 		return SZT_MAX;
 	}
