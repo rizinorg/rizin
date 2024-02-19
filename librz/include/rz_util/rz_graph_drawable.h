@@ -1,7 +1,6 @@
 #ifndef RZ_GRAPH_DRAWABLE_H
 #define RZ_GRAPH_DRAWABLE_H
 
-#include <rz_util/set.h>
 #include <rz_types.h>
 #include <rz_util/rz_graph.h>
 #include <rz_config.h>
@@ -15,8 +14,7 @@ extern "C" {
 typedef enum {
 	RZ_GRAPH_NODE_TYPE_NONE = 0, ///< No type for this node specified.
 	RZ_GRAPH_NODE_TYPE_DEFAULT, ///< Node contains a title string, a body string and an absract offset value.
-	RZ_GRAPH_NODE_TYPE_CFG, ///< Nodes are instructions of a procedure's control flow graph.
-	RZ_GRAPH_NODE_TYPE_CFG_IWORD, ///< Nodes are instruction words of a procedure's control flow graph.
+	RZ_GRAPH_NODE_TYPE_CFG, ///< Node is part of an control flow graph of a procedure.
 	RZ_GRAPH_NODE_TYPE_ICFG, ///< Node is part of an inter-procedural control flow graph.
 } RzGraphNodeType;
 
@@ -51,14 +49,10 @@ typedef struct {
 	 */
 	ut64 address;
 	/**
-	 * \brief Addresses of called procedure(s), if the node is of type RZ_GRAPH_NODE_TYPE_CFG_CALL.
+	 * \brief Address of called procedure, if node is of type RZ_GRAPH_NODE_TYPE_CFG_CALL.
 	 * It is set to UT64_MAX if invalid.
-	 * For instruction word nodes this can hold multiple addresses.
 	 */
-	union {
-		ut64 insn; ///< The call target address of a single instruction.
-		SetU *iword; ///< A set of call target addresses of an instruction word.
-	} call_addresses;
+	ut64 call_address;
 } RzGraphNodeInfoDataCFG;
 
 typedef struct {
@@ -92,8 +86,7 @@ RZ_API RZ_OWN RzGraphNodeInfo *rz_graph_get_node_info_data(RZ_BORROW void *data)
 RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, const char *body, ut64 offset);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType type, RzGraphNodeSubType subtype);
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeSubType subtype);
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(ut64 address, RZ_NULLABLE RZ_BORROW SetU *call_targets, RzGraphNodeSubType subtype);
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType type, RzGraphNodeSubType subtype);
 RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset);
 
 /**

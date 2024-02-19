@@ -4,7 +4,6 @@
 
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
-#include <rz_util/set.h>
 
 /**
  * \brief Translates the \p subtype flags of a node to its annotation symbols.
@@ -64,7 +63,6 @@ RZ_API RZ_OWN RzGraphNodeInfo *rz_graph_get_node_info_data(RZ_BORROW void *data)
 		return NULL;
 	case RZ_GRAPH_NODE_TYPE_DEFAULT:
 	case RZ_GRAPH_NODE_TYPE_CFG:
-	case RZ_GRAPH_NODE_TYPE_CFG_IWORD:
 	case RZ_GRAPH_NODE_TYPE_ICFG:
 		break;
 	}
@@ -82,9 +80,6 @@ RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr) {
 		break;
 	case RZ_GRAPH_NODE_TYPE_CFG:
 	case RZ_GRAPH_NODE_TYPE_ICFG:
-		break;
-	case RZ_GRAPH_NODE_TYPE_CFG_IWORD:
-		set_u_free(info->cfg.call_addresses.iword);
 		break;
 	case RZ_GRAPH_NODE_TYPE_DEFAULT:
 		free(info->def.body);
@@ -125,7 +120,7 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, con
  *
  * \return The initialized RzGraphNodeInfo or NULL in case of failure.
  */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeSubType subtype) {
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType type, RzGraphNodeSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	if (!data) {
 		return NULL;
@@ -133,34 +128,7 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_ta
 	data->type = RZ_GRAPH_NODE_TYPE_CFG;
 	data->subtype = subtype;
 	data->cfg.address = address;
-	data->cfg.call_addresses.insn = call_target_addr;
-	return data;
-}
-
-/**
- * \brief Initializes a info struct for a CFG with instruction words.
- *
- * \param address The address of the instruction this node represents.
- * \param call_targets The addresses of called procedure.
- * \param flags Additional flags which describe the node.
- *
- * \return The initialized RzGraphNodeInfo or NULL in case of failure.
- */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(ut64 address, RZ_NULLABLE RZ_BORROW SetU *call_targets, RzGraphNodeSubType subtype) {
-	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
-	if (!data) {
-		return NULL;
-	}
-	data->type = RZ_GRAPH_NODE_TYPE_CFG_IWORD;
-	data->subtype = subtype;
-	data->cfg.address = address;
-	data->cfg.call_addresses.iword = set_u_new();
-	if (call_targets) {
-		set_u_iter_init(it);
-		set_u_foreach(call_targets, it) {
-			set_u_add(data->cfg.call_addresses.iword, it.v);
-		}
-	}
+	data->cfg.call_address = call_target_addr;
 	return data;
 }
 
@@ -231,7 +199,6 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			rz_strbuf_free(label);
 			return NULL;
 		case RZ_GRAPH_NODE_TYPE_CFG:
-		case RZ_GRAPH_NODE_TYPE_CFG_IWORD:
 			rz_strbuf_appendf(label, "0x%" PFMT64x, print_node->cfg.address);
 			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY) {
 				rz_strbuf_append(label, " (entry)");
@@ -313,23 +280,8 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/
 		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_CFG) {
 			pj_kn(pj, "address", print_node->cfg.address);
 			pj_kb(pj, "is_call", print_node->type & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
-			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL && print_node->cfg.call_addresses.insn != UT64_MAX) {
-				pj_kn(pj, "call_address", print_node->cfg.call_addresses.insn);
-			}
-			pj_kb(pj, "is_entry", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY);
-			pj_kb(pj, "is_exit", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT);
-			pj_kb(pj, "is_return", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN);
-		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_CFG_IWORD) {
-			pj_kn(pj, "address", print_node->cfg.address);
-			pj_kb(pj, "is_call", print_node->type & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
-			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL && set_u_size(print_node->cfg.call_addresses.iword) != 0) {
-				pj_k(pj, "call_targets");
-				pj_a(pj);
-				set_u_iter_init(it);
-				set_u_foreach(print_node->cfg.call_addresses.iword, it) {
-					pj_n(pj, it.v);
-				}
-				pj_end(pj);
+			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL && print_node->cfg.call_address != UT64_MAX) {
+				pj_kn(pj, "call_address", print_node->cfg.call_address);
 			}
 			pj_kb(pj, "is_entry", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY);
 			pj_kb(pj, "is_exit", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT);
@@ -434,7 +386,6 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			RZ_LOG_ERROR("Unhandled node type. Graph node either doesn't support dot graph printing or it isn't implemented.\n");
 			return NULL;
 		case RZ_GRAPH_NODE_TYPE_CFG:
-		case RZ_GRAPH_NODE_TYPE_CFG_IWORD:
 			label = rz_strf(tmp, "0x%" PFMT64x, print_node->cfg.address);
 			break;
 		case RZ_GRAPH_NODE_TYPE_ICFG:
