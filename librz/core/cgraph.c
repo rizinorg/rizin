@@ -9,6 +9,7 @@
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 #include "core_private.h"
+#include <rz_util/set.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/ht_uu.h>
@@ -1210,7 +1211,9 @@ static bool add_iword_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *gr
 	}
 
 	ht_uu_insert(nodes_visited, to, to_node->idx);
-	rz_graph_add_edge(graph, rz_graph_get_node(graph, from_idx), to_node);
+	if (!rz_graph_adjacent(graph, rz_graph_get_node(graph, from_idx), to_node)) {
+		rz_graph_add_edge(graph, rz_graph_get_node(graph, from_idx), to_node);
+	}
 	return true;
 }
 
