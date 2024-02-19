@@ -107,7 +107,6 @@ bool test_set_u(void) {
 	set_u_iter_reset(it);
 	set_u_foreach(set_u, it) {
 		x++;
-		printf("%llu\n", it.v);
 	}
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 	set_u_delete(set_u, 0x53e0);
@@ -126,10 +125,8 @@ bool test_set_u(void) {
 
 	x = 0;
 	set_u_iter_reset(it);
-	if (set_u)
-		for (advance_set_u_iter(set_u, &it); it.ti <= set_u->size && set_u_size(set_u) > 0; advance_set_u_iter(set_u, &it)) {
+	set_u_foreach(set_u, it) {
 			x++;
-			printf("%llu\n", it.v);
 		}
 	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
 
