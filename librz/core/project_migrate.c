@@ -595,7 +595,7 @@ RZ_API bool rz_project_migrate_v13_v14(RzProject *prj, RzSerializeResultInfo *re
 // --
 // Migration 14 -> 15
 //
-// Changes from <commit hash not yet known>:
+// Changes from 0867fd9d3db6f816eaa768f464c6a2919f21209c:
 //	Added serialization functionality for seek history
 //	New namespace: /core/seek
 
@@ -603,6 +603,30 @@ RZ_API bool rz_project_migrate_v14_v15(RzProject *prj, RzSerializeResultInfo *re
 	Sdb *core_db;
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	sdb_ns(core_db, "seek", true);
+
+	return true;
+}
+
+// --
+// Migration 15 -> 16
+//
+// Changes from <commit hash not yet known>:
+//	Removed options:
+//	- `bin.maxstr`
+//	Renamed options:
+//	- `bin.minstr` to `str.search.min_length`
+//	- `bin.str.enc` to `str.search.encoding`
+//	- `bin.maxstrbuf` to `str.search.buffer_size`
+
+RZ_API bool rz_project_migrate_v15_v16(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_rename(config_db, "bin.minstr", "str.search.min_length");
+	sdb_rename(config_db, "bin.str.enc", "str.search.encoding");
+	sdb_rename(config_db, "bin.maxstrbuf", "str.search.buffer_size");
+	sdb_unset(config_db, "bin.maxstr", 0);
 
 	return true;
 }
@@ -622,6 +646,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v12_v13,
 	rz_project_migrate_v13_v14,
 	rz_project_migrate_v14_v15,
+	rz_project_migrate_v15_v16,
 };
 
 /// Migrate the given project to the current version in-place
