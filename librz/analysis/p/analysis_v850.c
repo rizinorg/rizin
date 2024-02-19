@@ -36,25 +36,83 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case V850_SLDB:
+	case V850_SLDBU:
 	case V850_SLDH:
+	case V850_SLDHU:
 	case V850_SLDW:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		if (get_reg2(&inst) == V850_SP) {
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case V850_LDB:
+	case V850_LDBU:
+	case V850_LDH:
+	case V850_LDHU:
+	case V850_LDW:
+	case V850_LDDW: {
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		RzAnalysisValue *v = op->src[0] = rz_analysis_value_new();
+		v->type = RZ_ANALYSIS_VAL_MEM;
+		v->reg = rz_reg_get(analysis->reg, GR_get(get_reg1(&inst)), RZ_REG_TYPE_ANY);
+		v->delta = inst.sdisp;
+
+		v = op->dst = rz_analysis_value_new();
+		v->type = RZ_ANALYSIS_VAL_REG;
+		v->reg = rz_reg_get(analysis->reg, GR_get(get_reg2(&inst)), RZ_REG_TYPE_ANY);
+
+		if (get_reg1(&inst) == V850_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = 0;
+
+			switch (inst.id) {
+			case V850_LDB:
+			case V850_LDBU: op->ptrsize = op->refptr = 1; break;
+			case V850_LDH:
+			case V850_LDHU: op->ptrsize = op->refptr = 2; break;
+			case V850_LDW: op->ptrsize = op->refptr = 4; break;
+			case V850_LDDW: op->ptrsize = op->refptr = 8; break;
+			default: break;
+			}
 		}
 		break;
+	}
 	case V850_SSTB:
 	case V850_SSTH:
 	case V850_SSTW:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		if (get_reg2(&inst) == V850_SP) {
+		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
+		break;
+	case V850_STB:
+	case V850_STH:
+	case V850_STW:
+	case V850_STDW: {
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
+
+		RzAnalysisValue *v = op->dst = rz_analysis_value_new();
+		v->type = RZ_ANALYSIS_VAL_MEM;
+		v->reg = rz_reg_get(analysis->reg, GR_get(get_reg1(&inst)), RZ_REG_TYPE_ANY);
+		v->delta = inst.sdisp;
+
+		v = op->src[0] = rz_analysis_value_new();
+		v->type = RZ_ANALYSIS_VAL_REG;
+		v->reg = rz_reg_get(analysis->reg, GR_get(get_reg2(&inst)), RZ_REG_TYPE_ANY);
+
+		if (get_reg1(&inst) == V850_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_SET;
-			op->stackptr = 0;
 			op->ptr = 0;
+
+			switch (inst.id) {
+			case V850_STB: op->ptrsize = op->stackptr = 1; break;
+			case V850_STH: op->ptrsize = op->stackptr = 2; break;
+			case V850_STW: op->ptrsize = op->stackptr = 4; break;
+			case V850_STDW: op->ptrsize = op->stackptr = 8; break;
+			default: break;
+			}
 		}
 		break;
+	}
 	case V850_NOT:
 	case V850_NOT1:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
@@ -152,9 +210,9 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case V850_ADD:
 	case V850_SATADD:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		if (get_reg2(&inst) == V850_SP) {
+		if (inst.format == II_imm_reg && get_reg2(&inst) == V850_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
-			op->stackptr = inst.imm;
+			op->stackptr = (st32)inst.imm;
 			op->val = op->stackptr;
 		}
 		break;
@@ -162,7 +220,7 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		if (get_reg2(&inst) == V850_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
-			op->stackptr = (st64)get_imm16(&inst);
+			op->stackptr = (st16)get_imm16(&inst);
 			op->val = op->stackptr;
 		}
 		break;

@@ -57,6 +57,14 @@ static void v850_esil(RzStrBuf *out, V850_Inst *x) {
 	case V850_SSTH:
 	case V850_SSTW:
 		break;
+	case V850_STB:
+	case V850_STH:
+	case V850_STW:
+	case V850_STDW:
+		rz_strbuf_appendf(out, "%s,0x%x,%s,+,=[4],",
+			R2, x->disp, R1);
+		break;
+
 	case V850_NOT:
 		rz_strbuf_appendf(out, "%s,0xffffffff,^,%s,=", R1, R2);
 		update_flags(out, V850_FLAG_S | V850_FLAG_Z);
