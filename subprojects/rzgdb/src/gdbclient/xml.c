@@ -894,7 +894,7 @@ static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias) {
 			rz_list_set_n(regs, regnum, tmpreg);
 		}
 		*regstr_end = '/';
-		regstr = regstr_end + 3;
+		regstr = regstr_end + 2;
 		if (rz_str_startswith(regstr, "</feature>")) {
 			regstr += sizeof("</feature>");
 			// Revert to default
