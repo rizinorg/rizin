@@ -1269,6 +1269,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNU
 
 	st32 disas_bytes = decode_iword_at(core, addr, buf, sizeof(buf), &cur_iword);
 	RzGraphNode *entry = add_iword_to_cfg(graph, &cur_iword, true);
+	if (disas_bytes <= 0) {
+		goto fini;
+	}
 	ht_uu_insert(nodes_visited, addr, entry->idx);
 	rz_vector_push(to_visit, &addr);
 

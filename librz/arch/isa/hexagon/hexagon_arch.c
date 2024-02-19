@@ -1238,7 +1238,6 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 	while (buf_offset + HEX_INSN_SIZE <= len) {
 		const ut32 insn_bytes = rz_read_at_le32(buf, buf_offset);
 		if (insn_bytes == HEX_INVALID_INSN_0 || insn_bytes == HEX_INVALID_INSN_F) {
-			RZ_LOG_WARN("Attempt to decode an invalid instruction for a instruction word. Is the address 0x%" PFMT64x " in valid memory?\n", addr);
 			return false;
 		}
 
