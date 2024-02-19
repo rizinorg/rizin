@@ -3650,7 +3650,7 @@ static bool process_refs_cb(void *u, const ut64 k, const void *v) {
 	return true;
 }
 
-static bool reanalyze_fcns_cb(void *u, const ut64 k, const void *v) {
+static bool reanalyze_fcns_cb(void *u, const ut64 k, const ut64 v) {
 	RzCore *core = u;
 	RzAnalysisFunction *fcn = (RzAnalysisFunction *)(size_t)k;
 	if (fcn->addr && analyze_noreturn_function(core, fcn)) {
@@ -3676,7 +3676,7 @@ RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) 
 	core->analysis->bits = bits1;
 	core->rasm->bits = bits2;
 	// For every function in todo list analyze if it's potentially become noreturn
-	ht_up_foreach(todo, reanalyze_fcns_cb, core);
+	ht_uu_foreach(todo, reanalyze_fcns_cb, core);
 	set_u_free(todo);
 }
 
