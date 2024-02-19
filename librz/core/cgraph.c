@@ -1087,10 +1087,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 	RzAnalysisOp curr_op = { 0 };
 	RzAnalysisOp target_op = { 0 };
 	st32 disas_bytes = decode_op_at(core, addr, buf, sizeof(buf), &curr_op);
-	if (disas_bytes <= 0) {
-		goto error;
-	}
 	RzGraphNode *entry = add_node_info_cfg(graph, &curr_op, true);
+	if (disas_bytes <= 0) {
+		goto fini;
+	}
 	ht_uu_insert(nodes_visited, addr, entry->idx);
 	rz_vector_push(to_visit, &addr);
 
