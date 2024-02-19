@@ -2,7 +2,7 @@ NAME=to
 FILE==
 CMDS=to bins/headers/s1.h;t S1
 EXPECT=<<EOF
-pf ddd x y z
+pf "ddd x y z"
 EOF
 RUN
 
@@ -10,7 +10,7 @@ NAME=to
 FILE==
 CMDS=to bins/headers/s2.h; t S1
 EXPECT=<<EOF
-pf ddd x test z
+pf "ddd x test z"
 EOF
 RUN
 
@@ -26,8 +26,8 @@ t S1
 t- S1
 EOF
 EXPECT=<<EOF
-pf ddd x y z
-pf ddd x test z
+pf "ddd x y z"
+pf "ddd x test z"
 EOF
 RUN
 
@@ -44,10 +44,10 @@ t S1
 t Perturbator
 EOF
 EXPECT=<<EOF
-pf ddd x y z
-pf d a
-pf ddd x test z
-pf d a
+pf "ddd x y z"
+pf "d a"
+pf "ddd x test z"
+pf "d a"
 EOF
 RUN
 
@@ -59,7 +59,7 @@ t S1
 tsc S1
 EOF
 EXPECT=<<EOF
-pf [3]d[4]dd x y z
+pf "[3]d[4]dd x y z"
 struct S1 {
 	int x[3];
 	int y[4];
