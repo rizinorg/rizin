@@ -1182,7 +1182,7 @@ RZ_API HexInsnContainer *hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversed
 	return hic;
 }
 
-static void set_iword_properties(ut32 anaop_type, RzAnalysisInsnWord *iword, ut64 jump_target) {
+static void set_iword_properties(ut32 anaop_type, RzAnalysisInsnWord *iword) {
 	rz_return_if_fail(iword);
 	if (anaop_type & RZ_ANALYSIS_OP_TYPE_COND) {
 		iword->props |= RZ_ANALYSIS_IWORD_COND;
@@ -1198,7 +1198,6 @@ static void set_iword_properties(ut32 anaop_type, RzAnalysisInsnWord *iword, ut6
 	case RZ_ANALYSIS_OP_TYPE_IRCALL:
 	case RZ_ANALYSIS_OP_TYPE_CCALL:
 	case RZ_ANALYSIS_OP_TYPE_UCCALL:
-		iword->call_target = jump_target;
 		iword->props |= RZ_ANALYSIS_IWORD_CALL;
 		break;
 	case RZ_ANALYSIS_OP_TYPE_JMP:
@@ -1233,7 +1232,6 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 		RZ_LOG_WARN("Cannot decode an iword if the last previous instruction was not an end of a packet.\n");
 		return false;
 	}
-
 	iword->addr = addr;
 	ut32 buf_offset = buf_off_iword;
 	ut64 addr_offset = 0;
@@ -1248,20 +1246,22 @@ RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, co
 		HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = aop, .asm_op = NULL };
 		HexInsnContainer *hic = hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + addr_offset, true, true);
 		rz_pvector_push(iword->insns, aop);
-		if (aop->jump && aop->jump != UT64_MAX) {
-			rz_vector_push_front(iword->jump_targets, &aop->jump);
-		}
 		rz_strbuf_appendf(iword->asm_str, "%s\n", hic->text);
 		iword->size_bytes += 4;
 		iword->size_bits += 32;
 		addr_offset += 4;
 
-		set_iword_properties(aop->type, iword, aop->jump);
+		set_iword_properties(aop->type, iword);
+		if (iword->props & RZ_ANALYSIS_IWORD_CALL && aop->jump != UT64_MAX) {
+			set_u_add(iword->call_targets, aop->jump);
+		} else if (aop->jump != UT64_MAX) {
+			set_u_add(iword->jump_targets, aop->jump);
+		}
 
 		if (hic->pkt_info.last_insn) {
-			if (!(aop->type & RZ_ANALYSIS_OP_TYPE_RET)) {
+			if (aop->type != RZ_ANALYSIS_OP_TYPE_RET && !rz_analysis_op_is_jump(aop)) {
 				ut64 next_iword_addr = addr + iword->size_bytes;
-				rz_vector_push(iword->jump_targets, &next_iword_addr);
+				set_u_add(iword->jump_targets, next_iword_addr);
 			}
 			return true;
 		}
