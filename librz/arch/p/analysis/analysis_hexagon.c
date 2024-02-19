@@ -54,9 +54,11 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 
 RZ_API bool rz_hexagon_decode_iword(RzAnalysis *a, RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword) {
 	rz_return_val_if_fail(a && iword && buf, false);
-	bool result = hexagon_decode_iword(iword, addr, buf, len, buf_off_iword);
-	iword->il_op = hex_get_il_op(addr, true);
-	return result;
+	bool success = hexagon_decode_iword(iword, addr, buf, len, buf_off_iword);
+	if (success) {
+		iword->il_op = hex_get_il_op(addr, true);
+	}
+	return success;
 }
 
 static RzAnalysisILConfig *rz_hexagon_il_config(RzAnalysis *a) {

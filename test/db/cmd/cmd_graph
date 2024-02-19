@@ -1021,3 +1021,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Test CFG generation - invalid iwords
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+s 0x5000000000
+agF
+s 0xffffffffffffffff
+agF
+EOF
+EXPECT=<<EOF
+.--------------------.
+|  0x5000000000 (e)  |
+`--------------------'
+.--------------------------.
+|  0xffffffffffffffff (e)  |
+`--------------------------'
+EOF
+RUN
+
