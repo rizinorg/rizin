@@ -64,6 +64,27 @@ RZ_API RZ_BORROW void *rz_iterator_next(RZ_NONNULL RZ_BORROW RzIterator *it) {
 	return it->cur;
 }
 
+/**
+ * \brief Fetches the last element with the RzIterator
+ *
+ * This function retrieves the last element in the sequence for a given RzIterator.
+ * It doesn't free any elements.
+ *
+ * \param it A pointer to the RzIterator object.
+ *
+ * \return void* Pointer to the element gotten as the last object in the sequence or NULL if operation failed.
+ */
+RZ_API RZ_BORROW void *rz_iterator_last(RZ_NONNULL RZ_BORROW RzIterator *it) {
+	rz_return_val_if_fail(it && it->next, NULL);
+	void *elem = NULL;
+	void *tail = it->next(it);
+	while (tail) {
+		elem = tail;
+		tail = it->next(it);
+	}
+	return elem;
+}
+
 RZ_API void rz_iterator_free(RzIterator *it) {
 	if (!it) {
 		return;

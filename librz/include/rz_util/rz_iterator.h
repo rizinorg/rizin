@@ -31,6 +31,7 @@ RZ_API RZ_OWN RzIterator *rz_iterator_new(
 	RZ_NULLABLE rz_iterator_free_cb free_u,
 	RZ_NONNULL RZ_OWN void *u);
 RZ_API RZ_BORROW void *rz_iterator_next(RZ_NONNULL RZ_BORROW RzIterator *it);
+RZ_API RZ_BORROW void *rz_iterator_last(RZ_NONNULL RZ_BORROW RzIterator *it);
 RZ_API void rz_iterator_free(RzIterator *it);
 
 #ifdef __cplusplus
