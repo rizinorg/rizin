@@ -1095,6 +1095,7 @@ static const char *map_dwarf_reg_to_arm64(ut32 reg_num) {
 
 #include "hexagon_dwarf_reg_num_table.inc"
 #include "librz/analysis/arch/v850/v850_dwarf_reg_num_table.h"
+#include "librz/analysis/arch/rl78/rl78_dwarf_reg.h"
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name
@@ -1155,6 +1156,9 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch,
 	}
 	if (RZ_STR_EQ(arch, "v850")) {
 		return v850_register_name;
+	}
+	if (RZ_STR_EQ(arch, "rl78")) {
+		return rl78_register_name;
 	}
 	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
 	return map_dwarf_register_dummy;
