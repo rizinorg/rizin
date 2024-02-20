@@ -1159,8 +1159,8 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch,
 		return v850_register_name;
 	}
 	if (RZ_STR_EQ(arch, "rl78")) {
-        return rl78_register_name;
-    }
+		return rl78_register_name;
+	}
 	if (RZ_STR_EQ(arch, "rx")) {
 		return map_dwarf_reg_to_rx_reg;
 	}
