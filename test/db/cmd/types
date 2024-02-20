@@ -12,8 +12,8 @@ EOF
 EXPECT=<<EOF
 Foo = struct anonymous struct 0
 Bar = struct anonymous struct 1
-pf d a
-pf z[0]d hello world
+pf "d a"
+pf "z[0]d hello world"
 EOF
 RUN
 
@@ -198,7 +198,6 @@ t long
 t "long long"
 t size_t
 t uid_t
-t void
 t int8_t
 t uint8_t
 t int16_t
@@ -208,28 +207,28 @@ t uint32_t
 t int64_t
 t uint64_t
 t char16_t
+t void
 EOF
 EXPECT=<<EOF
-pf c char
-pf F double
-pf F long double
-pf f float
-pf d int
-pf w short
-pf x long
-pf q long long
-pf q size_t
-pf q uid_t
-pf 
-pf b int8_t
-pf b uint8_t
-pf w int16_t
-pf w uint16_t
-pf d int32_t
-pf d uint32_t
-pf q int64_t
-pf q uint64_t
-pf c char16_t
+pf "c char"
+pf "F double"
+pf "F long double"
+pf "f float"
+pf "d int"
+pf "w short"
+pf "x long"
+pf "q long long"
+pf "q size_t"
+pf "q uid_t"
+pf "b int8_t"
+pf "b uint8_t"
+pf "w int16_t"
+pf "w uint16_t"
+pf "d int32_t"
+pf "d uint32_t"
+pf "q int64_t"
+pf "q uint64_t"
+pf "c char16_t"
 EOF
 RUN
 
@@ -241,7 +240,7 @@ t-*
 t int
 EOF
 EXPECT=<<EOF
-pf d int
+pf "d int"
 EOF
 EXPECT_ERR=<<EOF
 ERROR: core: cannot find 'int' type
@@ -286,7 +285,7 @@ tu xoo
 tuc xoo
 EOF
 EXPECT=<<EOF
-pf ddd x y z
+pf "ddd x y z"
 union xoo {
 	int x;
 	int y;
@@ -314,11 +313,11 @@ te bar
 tec bar
 EOF
 EXPECT=<<EOF
-pf i b
+pf "i b"
 union bla {
 	uint b;
 };
-pf i[5]*c b foo
+pf "i[5]*c b foo"
 struct foo {
 	uint b;
 	char *foo[5];
@@ -387,7 +386,7 @@ EOF
 EXPECT=<<EOF
 const_reference = struct const_reference_0
 typedef struct const_reference_0 const_reference;
-pf d a
+pf "d a"
 const_reference;
 struct const_reference_0 {
 	int a;
@@ -502,9 +501,9 @@ ts test_struct2
 tsd test_struct2
 EOF
 EXPECT=<<EOF
-pf dd x y
+pf "dd x y"
 struct test_struct { int x; int y; };
-pf w[5]ww[10]wd a (word)b c (word)d e
+pf "w[5]ww[10]wd a (word)b c (word)d e"
 struct test_struct2 { word a; word b[5]; word c; word d[10]; dword e; };
 EOF
 RUN
@@ -517,7 +516,7 @@ ts test_struct
 tsd test_struct
 EOF
 EXPECT=<<EOF
-pf dd x y
+pf "dd x y"
 struct test_struct { int x; int y; };
 EOF
 RUN
@@ -670,7 +669,7 @@ dox
 dox_t
 name
 name_t
-pf [127]z[40]zd street city zip
+pf "[127]z[40]zd street city zip"
 EOF
 RUN
 
@@ -699,21 +698,21 @@ tt dox_t
 ttc dox_t
 EOF
 EXPECT=<<EOF
-pf [40]c[40]c[40]c first middle last
+pf "[40]c[40]c[40]c first middle last"
 struct name { char first[40]; char middle[40]; char last[40]; };
 struct name {
 	char first[40];
 	char middle[40];
 	char last[40];
 };
-pf bbw day month year
+pf "bbw day month year"
 struct date { uint8_t day; uint8_t month; uint16_t year; };
 struct date {
 	uint8_t day;
 	uint8_t month;
 	uint16_t year;
 };
-pf [127]c[40]cd street city zip
+pf "[127]c[40]cd street city zip"
 struct addr { char street[127]; char city[40]; uint32_t zip; };
 struct addr {
 	char street[127];
@@ -745,7 +744,7 @@ tu x
 tuc x
 EOF
 EXPECT=<<EOF
-pf fd a b
+pf "fd a b"
 union x {
 	float a;
 	int b;
@@ -774,7 +773,7 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf d? x (bar)moo
+pf "d? x (bar)moo"
    x : 0x00000000 = 0
  moo : 
                 struct<bar>
@@ -792,7 +791,7 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf d[2]? x (bar)moo
+pf "d[2]? x (bar)moo"
    x : 0x00000000 = 0
  moo : 
 [
@@ -1258,7 +1257,7 @@ s 0x000006d2
 pd 1
 EOF
 EXPECT=<<EOF
-pf [50]c[50]c[100]c title author subject
+pf "[50]c[50]c[100]c title author subject"
 var union Books books @ stack - 0x78
 |           0x000006d2      488d4590       lea   rax, [books.title]
 EOF
@@ -1314,7 +1313,7 @@ tsc boo
 #tsc moo
 EOF
 EXPECT=<<EOF
-pf dpz x (fp)fp b
+pf "dpz x (fp)fp b"
 struct foo { int x; int (*fp)(int a, int b); char *b; };
 struct foo {
 	int x;
@@ -1324,7 +1323,7 @@ struct foo {
   x : 0x00000000 = 0
 (fp)fp : 0x00000004 = (qword)0x0000000000000000
   b : 0x0000000c = "\x05hello"
-pf dpz x (ffp)ffp b
+pf "dpz x (ffp)ffp b"
 struct boo { int x; int (***ffp)(int a, int b); char *b; };
 struct boo {
 	int x;
@@ -1346,8 +1345,8 @@ ts normal
 ts pointer
 EOF
 EXPECT=<<EOF
-pf dc a b
-pf z*? y (normal)obj
+pf "dc a b"
+pf "z*? y (normal)obj"
 EOF
 RUN
 
@@ -1497,9 +1496,9 @@ tt B
 tt O
 EOF
 EXPECT=<<EOF
-pf f num
-pf dF num num2
-pf c ch
+pf "f num"
+pf "dF num num2"
+pf "c ch"
 ----
 struct A {
 	float num;
@@ -1534,10 +1533,10 @@ tsc "anonymous struct 0"
 tsc "anonymous struct 1"
 EOF
 EXPECT=<<EOF
-pf f num
-pf c ch
-pf f num
-pf c ch
+pf "f num"
+pf "c ch"
+pf "f num"
+pf "c ch"
 typedef struct anonymous struct 0 A;
 typedef struct anonymous struct 1 B;
 struct anonymous struct 0 {
@@ -2057,7 +2056,7 @@ td "struct s1 { int a; int size; int b; };"
 ts s1
 EOF
 EXPECT=<<EOF
-pf ddd a size b
+pf "ddd a size b"
 EOF
 RUN
 
@@ -2211,9 +2210,9 @@ tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pfn foo dc a b
-pf dc a b
-pf dc a b
+pfn "foo" "dc a b"
+pf "dc a b"
+pf "dc a b"
 EOF
 RUN
 
