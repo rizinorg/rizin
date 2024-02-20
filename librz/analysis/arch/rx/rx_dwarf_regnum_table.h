@@ -42,6 +42,6 @@ static const char *map_dwarf_reg_to_rx_reg(ut32 regnum) {
 		KASE(47, dr15);
 	default:
 		rz_warn_if_reached();
-		return "Undefined dwarf2 register mapping for rx";
+		return "Undefined DWARF2 register mapping for RX";
 	}
 }
