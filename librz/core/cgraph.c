@@ -804,9 +804,9 @@ static RzGraphNode *rz_graph_add_node_info_icfg(RzGraph /*<RzGraphNodeInfo *>*/ 
 	rz_return_val_if_fail(graph, NULL);
 	RzGraphNodeInfo *data = NULL;
 	if (rz_analysis_function_is_malloc(fcn)) {
-		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_TYPE_ICFG, RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
+		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
 	} else {
-		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_TYPE_ICFG, RZ_GRAPH_NODE_SUBTYPE_NONE);
+		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_SUBTYPE_NONE);
 	}
 	if (!data) {
 		rz_warn_if_reached();
@@ -978,7 +978,7 @@ static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, cons
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
 	}
 	ut64 call_target = is_call(op) ? op->jump : UT64_MAX;
-	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, RZ_GRAPH_NODE_TYPE_CFG, subtype);
+	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, subtype);
 	if (!data) {
 		return NULL;
 	}
@@ -1162,17 +1162,7 @@ static RzGraphNode *add_iword_to_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const
 	if (is_entry) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
 	}
-	ut64 call_target = UT64_MAX;
-	set_u_iter_init(it);
-	set_u_foreach(iword->call_targets, it) {
-		size_t ct_num = set_u_size(iword->call_targets);
-		if (ct_num > 1) {
-			RZ_LOG_WARN("TODO: iword contained %zu call targets, but only 1 was added to node.\n", ct_num);
-		}
-		call_target = it.v;
-		break;
-	}
-	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(iword->addr, call_target, RZ_GRAPH_NODE_TYPE_CFG, subtype);
+	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg_iword(iword, subtype);
 	if (!data) {
 		return NULL;
 	}
