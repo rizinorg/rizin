@@ -2,8 +2,10 @@
 // SPDX-FileCopyrightText: 2020 karliss <karlis3p70l1ij@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_analysis.h>
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
+#include <rz_vector.h>
 
 /**
  * \brief Translates the \p subtype flags of a node to its annotation symbols.
@@ -63,6 +65,7 @@ RZ_API RZ_OWN RzGraphNodeInfo *rz_graph_get_node_info_data(RZ_BORROW void *data)
 		return NULL;
 	case RZ_GRAPH_NODE_TYPE_DEFAULT:
 	case RZ_GRAPH_NODE_TYPE_CFG:
+	case RZ_GRAPH_NODE_TYPE_CFG_IWORD:
 	case RZ_GRAPH_NODE_TYPE_ICFG:
 		break;
 	}
@@ -80,6 +83,9 @@ RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr) {
 		break;
 	case RZ_GRAPH_NODE_TYPE_CFG:
 	case RZ_GRAPH_NODE_TYPE_ICFG:
+		break;
+	case RZ_GRAPH_NODE_TYPE_CFG_IWORD:
+		rz_graph_node_info_data_cfg_iword_fini(&info->cfg_iword);
 		break;
 	case RZ_GRAPH_NODE_TYPE_DEFAULT:
 		free(info->def.body);
@@ -120,7 +126,7 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, con
  *
  * \return The initialized RzGraphNodeInfo or NULL in case of failure.
  */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType type, RzGraphNodeSubType subtype) {
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	if (!data) {
 		return NULL;
@@ -132,6 +138,41 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_ta
 	return data;
 }
 
+RZ_API void rz_graph_node_info_data_cfg_iword_init(RZ_BORROW RzGraphNodeInfoDataCFGIWord *info) {
+	info->address = 0;
+	info->insn = rz_pvector_new(free);
+}
+
+RZ_API void rz_graph_node_info_data_cfg_iword_fini(RZ_NULLABLE RZ_OWN RzGraphNodeInfoDataCFGIWord *node_info) {
+	if (!node_info) {
+		return;
+	}
+	rz_pvector_free(node_info->insn);
+}
+
+/**
+ * \brief Initializes a instruction word node info struct of a CFG node.
+ *
+ *
+ * \return The initialized RzGraphNodeInfo or NULL in case of failure.
+ */
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsnWord *iword, RzGraphNodeSubType subtype) {
+	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
+	rz_graph_node_info_data_cfg_iword_init(&data->cfg_iword);
+	data->type = RZ_GRAPH_NODE_TYPE_CFG_IWORD;
+	data->subtype = subtype;
+	data->cfg_iword.address = iword->addr;
+	void **it;
+	rz_pvector_foreach (iword->insns, it) {
+		const RzAnalysisOp *op = *it;
+		RzGraphNodeInfoDataCFG *info = RZ_NEW0(RzGraphNodeInfoDataCFG);
+		info->address = op->addr;
+		info->call_address = (rz_analysis_op_is_call(op) || rz_analysis_op_is_ccall(op)) ? op->jump : UT64_MAX;
+		rz_pvector_push(data->cfg_iword.insn, info);
+	}
+	return data;
+}
+
 /**
  * \brief Initializes a node info struct of an iCFG node.
  *
@@ -140,7 +181,7 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_ta
  *
  * \return The initialized RzGraphNodeInfo or NULL in case of failure.
  */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType type, RzGraphNodeSubType subtype) {
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	if (!data) {
 		return NULL;
@@ -199,7 +240,9 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			rz_strbuf_free(label);
 			return NULL;
 		case RZ_GRAPH_NODE_TYPE_CFG:
-			rz_strbuf_appendf(label, "0x%" PFMT64x, print_node->cfg.address);
+		case RZ_GRAPH_NODE_TYPE_CFG_IWORD: {
+			ut64 addr = print_node->type == RZ_GRAPH_NODE_TYPE_CFG_IWORD ? print_node->cfg_iword.address : print_node->cfg.address;
+			rz_strbuf_appendf(label, "0x%" PFMT64x, addr);
 			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY) {
 				rz_strbuf_append(label, " (entry)");
 			}
@@ -217,6 +260,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			}
 			url = rz_strbuf_get(label);
 			break;
+		}
 		case RZ_GRAPH_NODE_TYPE_ICFG:
 			rz_strbuf_appendf(label, "0x%" PFMT64x, print_node->icfg.address);
 			if (print_node->subtype == RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC) {
@@ -279,13 +323,32 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/
 			pj_kb(pj, "is_malloc", print_node->type & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
 		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_CFG) {
 			pj_kn(pj, "address", print_node->cfg.address);
-			pj_kb(pj, "is_call", print_node->type & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
+			pj_kb(pj, "is_call", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
 			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL && print_node->cfg.call_address != UT64_MAX) {
 				pj_kn(pj, "call_address", print_node->cfg.call_address);
 			}
 			pj_kb(pj, "is_entry", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY);
 			pj_kb(pj, "is_exit", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT);
 			pj_kb(pj, "is_return", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN);
+		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_CFG_IWORD) {
+			pj_kn(pj, "address", print_node->cfg_iword.address);
+			pj_kb(pj, "is_call", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
+			pj_kb(pj, "is_entry", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY);
+			pj_kb(pj, "is_exit", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT);
+			pj_kb(pj, "is_return", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN);
+			pj_k(pj, "instructions");
+			pj_a(pj);
+			void **it;
+			rz_pvector_foreach (print_node->cfg_iword.insn, it) {
+				RzGraphNodeInfoDataCFG *inode = *it;
+				pj_o(pj);
+				pj_kn(pj, "address", inode->address);
+				if (inode->call_address != UT64_MAX) {
+					pj_kn(pj, "call_address", inode->call_address);
+				}
+				pj_end(pj);
+			}
+			pj_end(pj);
 		}
 		pj_k(pj, "out_nodes");
 		pj_a(pj);
@@ -387,6 +450,9 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			return NULL;
 		case RZ_GRAPH_NODE_TYPE_CFG:
 			label = rz_strf(tmp, "0x%" PFMT64x, print_node->cfg.address);
+			break;
+		case RZ_GRAPH_NODE_TYPE_CFG_IWORD:
+			label = rz_strf(tmp, "0x%" PFMT64x, print_node->cfg_iword.address);
 			break;
 		case RZ_GRAPH_NODE_TYPE_ICFG:
 			label = rz_strf(tmp, "0x%" PFMT64x, print_node->icfg.address);

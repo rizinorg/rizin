@@ -1,6 +1,7 @@
 #ifndef RZ_GRAPH_DRAWABLE_H
 #define RZ_GRAPH_DRAWABLE_H
 
+#include <rz_analysis.h>
 #include <rz_types.h>
 #include <rz_util/rz_graph.h>
 #include <rz_config.h>
@@ -15,6 +16,7 @@ typedef enum {
 	RZ_GRAPH_NODE_TYPE_NONE = 0, ///< No type for this node specified.
 	RZ_GRAPH_NODE_TYPE_DEFAULT, ///< Node contains a title string, a body string and an absract offset value.
 	RZ_GRAPH_NODE_TYPE_CFG, ///< Node is part of an control flow graph of a procedure.
+	RZ_GRAPH_NODE_TYPE_CFG_IWORD, ///< Node is part of an control flow graph of instruction words.
 	RZ_GRAPH_NODE_TYPE_ICFG, ///< Node is part of an inter-procedural control flow graph.
 } RzGraphNodeType;
 
@@ -55,6 +57,16 @@ typedef struct {
 	ut64 call_address;
 } RzGraphNodeInfoDataCFG;
 
+/**
+ * \brief A node of a CFG with instruction words.
+ * Each instruction word can consist of multiiple instructions.
+ * So an instruction word node is an unification of all it's member instructions.
+ */
+typedef struct {
+	ut64 address; ///< Address of the instruction word.
+	RzPVector /* RzGraphNodeInfoDataCFG * */ *insn; ///< Single instruction nodes.
+} RzGraphNodeInfoDataCFGIWord;
+
 typedef struct {
 	/**
 	 * \brief Address of the node.
@@ -77,6 +89,7 @@ typedef struct rz_analysis_graph_node_info_t {
 	union {
 		RzGraphNodeInfoDataDefault def;
 		RzGraphNodeInfoDataCFG cfg;
+		RzGraphNodeInfoDataCFGIWord cfg_iword;
 		RzGraphNodeInfoDataICFG icfg;
 	};
 } RzGraphNodeInfo;
@@ -85,9 +98,12 @@ RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation(RzGraphNodeSubType subt
 RZ_API RZ_OWN RzGraphNodeInfo *rz_graph_get_node_info_data(RZ_BORROW void *data);
 RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, const char *body, ut64 offset);
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeType type, RzGraphNodeSubType subtype);
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeType type, RzGraphNodeSubType subtype);
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeSubType subtype);
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeSubType subtype);
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsnWord *iword, RzGraphNodeSubType subtype);
 RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset);
+RZ_API void rz_graph_node_info_data_cfg_iword_init(RZ_BORROW RzGraphNodeInfoDataCFGIWord *info);
+RZ_API void rz_graph_node_info_data_cfg_iword_fini(RZ_NULLABLE RZ_OWN RzGraphNodeInfoDataCFGIWord *node_info);
 
 /**
  * @brief Convert graph to Graphviz dot format.
