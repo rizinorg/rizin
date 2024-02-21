@@ -5036,6 +5036,53 @@ RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
 	free(ptr);
 }
 
+static ut64 analysis_bytes_oplen(RzCore *core, const ut8 *ptr, ut64 addr, int len, int min_op_size,
+	int mask) {
+	int oplen = 0;
+	RzAsmOp asmop;
+	RzAnalysisOp op;
+	rz_asm_op_init(&asmop);
+	rz_analysis_op_init(&op);
+	rz_asm_set_pc(core->rasm, addr);
+	int reta = rz_analysis_op(core->analysis, &op, addr, ptr, len, mask);
+	int ret = rz_asm_disassemble(core->rasm, &asmop, ptr, len);
+	if (reta < 1 || ret < 1) {
+		return min_op_size;
+	}
+	oplen = rz_asm_op_get_size(&asmop);
+	rz_core_asm_bb_middle(core, addr, &oplen, &ret);
+	return oplen;
+}
+
+/**
+ *
+ * Analyze and disassemble bytes use rz_analysis_op and rz_asm_disassemble
+ * and return how many bytes were consumed
+ *
+ * \param core The RzCore instance
+ * \param buf data to analysis
+ * \param len analysis len bytes
+ * \param nops analysis n ops
+ * \return amount of the bytes consumed
+ */
+RZ_API ut64 rz_core_analysis_ops_size(
+	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops) {
+	static const int mask = RZ_ANALYSIS_OP_MASK_HINT;
+	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	ut64 end_offset = start_addr + len;
+	ut64 offset = start_addr;
+	int consumed = 0;
+	int remain = len;
+	while (offset < end_offset && nops > 0) {
+		const ut8 *ptr = buf + consumed;
+		remain = len - consumed;
+		consumed += analysis_bytes_oplen(core, ptr, offset, remain, min_op_size, mask);
+		offset += consumed;
+		nops--;
+	}
+	return consumed;
+}
+
 typedef struct {
 	RzCore *core;
 	int max_op_size;
