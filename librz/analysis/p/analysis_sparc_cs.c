@@ -70,25 +70,39 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
-static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
-	static RzRegItem reg;
+typedef struct {
+	RzRegItem *reg;
+	csh handle;
+	int omode;
+} RzAnalysisValueSPARC;
+
+static bool sparc_init(void **user) {
+	RzAnalysisValueSPARC *sparc = RZ_NEW0(RzAnalysisValueSPARC);
+	rz_return_val_if_fail(sparc, false);
+	sparc->handle = 0;
+	*user = sparc;
+	return true;
+}
+
+static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh handle, cs_insn *insn) {
+	RzAnalysisValueSPARC *sparc = (RzAnalysisValueSPARC *)a->plugin_data;
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
 		if (INSOP(0).type == SPARC_OP_MEM) {
-			ZERO_FILL(reg);
+			ZERO_FILL(sparc->reg);
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
-			op->src[0]->reg = &reg;
+			op->src[0]->reg = sparc->reg;
 			parse_reg_name(op->src[0]->reg, handle, insn, 0);
 			op->src[0]->delta = INSOP(0).mem.disp;
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_STORE:
 		if (INSOP(1).type == SPARC_OP_MEM) {
-			ZERO_FILL(reg);
+			ZERO_FILL(sparc->reg);
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_MEM;
-			op->dst->reg = &reg;
+			op->dst->reg = sparc->reg;
 			parse_reg_name(op->dst->reg, handle, insn, 1);
 			op->dst->delta = INSOP(1).mem.disp;
 		}
@@ -97,8 +111,7 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 }
 
 static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	static csh handle = 0;
-	static int omode;
+	RzAnalysisValueSPARC *sparc = (RzAnalysisValueSPARC *)a->plugin_data;
 	cs_insn *insn;
 	int mode, n, ret;
 
@@ -110,25 +123,25 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	if (!strcmp(a->cpu, "v9")) {
 		mode |= CS_MODE_V9;
 	}
-	if (mode != omode) {
-		cs_close(&handle);
-		handle = 0;
-		omode = mode;
+	if (mode != sparc->omode) {
+		cs_close(&sparc->handle);
+		sparc->handle = 0;
+		sparc->omode = mode;
 	}
-	if (handle == 0) {
-		ret = cs_open(CS_ARCH_SPARC, mode, &handle);
+	if (sparc->handle == 0) {
+		ret = cs_open(CS_ARCH_SPARC, mode, &sparc->handle);
 		if (ret != CS_ERR_OK) {
 			return -1;
 		}
-		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(sparc->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	// capstone-next
-	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
+	n = cs_disasm(sparc->handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	} else {
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-			opex(&op->opex, handle, insn);
+			opex(&op->opex, sparc->handle, insn);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
@@ -317,7 +330,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-			op_fillval(op, handle, insn);
+			op_fillval(a, op, sparc->handle, insn);
 		}
 		cs_free(insn, n);
 	}
@@ -398,6 +411,14 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
+static bool sparc_fini(void *user) {
+	RzAnalysisValueSPARC *sparc = (RzAnalysisValueSPARC *)user;
+	if (sparc) {
+		RZ_FREE(sparc);
+	}
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 	.name = "sparc",
 	.desc = "Capstone SPARC analysis",
@@ -407,6 +428,8 @@ RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 	.bits = 32 | 64,
 	.archinfo = archinfo,
 	.op = &analyze_op,
+	.init = sparc_init,
+	.fini = sparc_fini,
 	.get_reg_profile = &get_reg_profile,
 };
 

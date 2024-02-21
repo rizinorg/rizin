@@ -29,7 +29,7 @@ typedef struct _pic_midrange_op_analysis_info {
 } PicMidrangeOpAnalInfo;
 
 #define INST_HANDLER(OPCODE_NAME) \
-	static void _inst__##OPCODE_NAME(RzAnalysis *analysis, RzAnalysisOp *op, \
+	void _inst__##OPCODE_NAME(RzAnalysis *analysis, RzAnalysisOp *op, \
 		ut64 addr, \
 		PicMidrangeOpArgsVal *args)
 #define INST_DECL(NAME, ARGS) \
@@ -659,10 +659,24 @@ static bool pic_midrange_reg_write(RzReg *reg, const char *regname, ut32 num) {
 	return false;
 }
 
-static void analysis_pic_midrange_malloc(RzAnalysis *analysis, bool force) {
-	static bool init_done = false;
+typedef struct {
+	bool init_done;
+} PicContext;
 
-	if (!init_done || force) {
+static bool pic_init(void **user) {
+	PicContext *ctx = RZ_NEW0(PicContext);
+	if (!ctx) {
+		return false;
+	}
+	ctx->init_done = false;
+	*user = ctx;
+	return true;
+}
+
+static void analysis_pic_midrange_malloc(RzAnalysis *analysis, bool force) {
+	PicContext *ctx = (PicContext *)analysis->plugin_data;
+
+	if (!ctx->init_done || force) {
 		// Allocate memory as needed.
 		// We assume that code is already allocated with firmware
 		// image
@@ -679,7 +693,7 @@ static void analysis_pic_midrange_malloc(RzAnalysis *analysis, bool force) {
 			PIC_MIDRANGE_ESIL_CSTACK_TOP);
 		pic_midrange_reg_write(analysis->reg, "stkptr", 0x1f);
 
-		init_done = true;
+		ctx->init_done = true;
 	}
 }
 
@@ -1184,6 +1198,14 @@ static char *analysis_pic_get_reg_profile(RzAnalysis *analysis) {
 	return NULL;
 }
 
+static bool pic_fini(void *user) {
+	PicContext *ctx = (PicContext *)user;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_pic = {
 	.name = "pic",
 	.desc = "PIC analysis plugin",
@@ -1191,6 +1213,8 @@ RzAnalysisPlugin rz_analysis_plugin_pic = {
 	.arch = "pic",
 	.bits = 8,
 	.op = &analysis_pic_op,
+	.init = pic_init,
+	.fini = pic_fini,
 	.get_reg_profile = &analysis_pic_get_reg_profile,
 	.esil = true
 };
