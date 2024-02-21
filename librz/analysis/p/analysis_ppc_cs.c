@@ -120,7 +120,7 @@ static char *getarg2(RzAnalysis *a, struct Getarg *gop, int n, const char *setst
 		break;
 #if CS_NEXT_VERSION < 6
 	case PPC_OP_CRX: // Condition Register field
-		snprintf(words[n], sizeof(words[n]),
+		snprintf(ctx->words[n], sizeof(ctx->words[n]),
 			"%" PFMT64d "%s", (ut64)op.imm, setstr);
 		break;
 #endif
