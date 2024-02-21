@@ -12,9 +12,25 @@
 #define CM                ","
 #define XTENSA_MAX_LENGTH 8
 
-static int xtensa_length(const ut8 *insn) {
-	static int length_table[16] = { 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 };
-	return length_table[*insn & 0xf];
+typedef struct {
+	int length_table[16];
+	xtensa_insnbuf insn_buffer;
+	xtensa_insnbuf slot_buffer;
+} XtensaContext;
+
+static bool xtensa_init(void **user) {
+	XtensaContext *ctx = RZ_NEW0(XtensaContext);
+	rz_return_val_if_fail(ctx, false);
+	memcpy(ctx->length_table, (int[16]){ 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 }, sizeof(ctx->length_table));
+	ctx->insn_buffer = NULL;
+	ctx->slot_buffer = NULL;
+	*user = ctx;
+	return true;
+}
+
+static int xtensa_length(RzAnalysis *a, const ut8 *insn) {
+	XtensaContext *ctx = (XtensaContext *)a->plugin_data;
+	return ctx->length_table[*insn & 0xf];
 }
 
 static inline ut64 xtensa_offset(ut64 addr, const ut8 *buf) {
@@ -1941,11 +1957,12 @@ static void analyze_op_esil(xtensa_isa isa, xtensa_opcode opcode, xtensa_format 
 }
 
 static int xtensa_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf_original, int len_original, RzAnalysisOpMask mask) {
+	XtensaContext *ctx = (XtensaContext *)analysis->plugin_data;
 	if (!op) {
 		return 1;
 	}
 
-	op->size = xtensa_length(buf_original);
+	op->size = xtensa_length(analysis, buf_original);
 	if (op->size > len_original) {
 		return 1;
 	}
@@ -1966,18 +1983,15 @@ static int xtensa_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	xtensa_format format;
 	int nslots;
 
-	static xtensa_insnbuf insn_buffer = NULL;
-	static xtensa_insnbuf slot_buffer = NULL;
-
-	if (!insn_buffer) {
-		insn_buffer = xtensa_insnbuf_alloc(isa);
-		slot_buffer = xtensa_insnbuf_alloc(isa);
+	if (!ctx->insn_buffer) {
+		ctx->insn_buffer = xtensa_insnbuf_alloc(isa);
+		ctx->slot_buffer = xtensa_insnbuf_alloc(isa);
 	}
 
-	memset(insn_buffer, 0, xtensa_insnbuf_size(isa) * sizeof(xtensa_insnbuf_word));
+	memset(ctx->insn_buffer, 0, xtensa_insnbuf_size(isa) * sizeof(xtensa_insnbuf_word));
 
-	xtensa_insnbuf_from_chars(isa, insn_buffer, buffer, len);
-	format = xtensa_format_decode(isa, insn_buffer);
+	xtensa_insnbuf_from_chars(isa, ctx->insn_buffer, buffer, len);
+	format = xtensa_format_decode(isa, ctx->insn_buffer);
 
 	if (format == XTENSA_UNDEFINED) {
 		return op->size;
@@ -1989,15 +2003,15 @@ static int xtensa_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	}
 
 	for (i = 0; i < nslots; i++) {
-		xtensa_format_get_slot(isa, format, i, insn_buffer, slot_buffer);
-		opcode = xtensa_opcode_decode(isa, format, i, slot_buffer);
+		xtensa_format_get_slot(isa, format, i, ctx->insn_buffer, ctx->slot_buffer);
+		opcode = xtensa_opcode_decode(isa, format, i, ctx->slot_buffer);
 
 		if (opcode == 39) { /* addi */
-			xtensa_check_stack_op(isa, opcode, format, i, slot_buffer, op);
+			xtensa_check_stack_op(isa, opcode, format, i, ctx->slot_buffer, op);
 		}
 
 		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			analyze_op_esil(isa, opcode, format, i, slot_buffer, op);
+			analyze_op_esil(isa, opcode, format, i, ctx->slot_buffer, op);
 		}
 	}
 
@@ -2045,6 +2059,14 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	sar	.32	72	0\n");
 }
 
+static bool xtensa_fini(void *user) {
+	XtensaContext *ctx = (XtensaContext *)user;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_xtensa = {
 	.name = "xtensa",
 	.desc = "Xtensa disassembler",
@@ -2053,6 +2075,8 @@ RzAnalysisPlugin rz_analysis_plugin_xtensa = {
 	.bits = 8,
 	.esil = true,
 	.op = &xtensa_op,
+	.init = xtensa_init,
+	.fini = xtensa_fini,
 	.get_reg_profile = get_reg_profile,
 };
 
