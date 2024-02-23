@@ -112,20 +112,20 @@ Open the file without the execute flag
 Same as -e bin.usextr=false, do not use extract plugins, useful for dyldcache
 .It Fl z, zz
 do not load strings or load them even in raw
+.El
 .Sh EXAMPLE
 .Pp
-This will start rizin in analysis mode (-A) on the /bin/ls executable:
+Start rizin in analysis mode (-A) on the /bin/ls executable:
 .Pp
 .Nm rizin Fl A Ar /bin/ls
 .Pp
-This will open the file /bin/ls in write mode, allowing you to make changes to the binary:
+Open the file /bin/ls in write mode, allowing you to make changes to the binary:
 .Pp
 .Nm rizin Fl w Ar /bin/ls
 .Pp
-This starts rizin's debugger (-d) on /bin/ls and passes arguments "-l" and "/tmp" to the program for debugging:
+Start rizin's debugger (-d) on /bin/ls and passes arguments "-l" and "/tmp" to the program for debugging:
 .Pp
 .Nm rizin Fl d Ar /bin/ls Fl l Ar /tmp
-.El
 .Pp
 .Sh SEE ALSO
 .Pp
