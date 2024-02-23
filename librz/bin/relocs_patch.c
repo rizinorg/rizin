@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 /// Finm a suitable location for putting the artificial reloc targets map
-RZ_API ut64 rz_bin_relocs_patch_find_targets_map_base(RzList /*<RzBinMap *>*/ *maps, ut64 target_sz) {
+RZ_API ut64 rz_bin_relocs_patch_find_targets_map_base(RzPVector /*<RzBinMap *>*/ *maps, ut64 target_sz) {
 	// find the lowest unmapped address
 	ut64 max = 0;
 	if (maps) {
-		RzListIter *it;
+		void **it;
 		RzBinMap *map;
-		rz_list_foreach (maps, it, map) {
+		rz_pvector_foreach (maps, it) {
+			map = *it;
 			ut64 addr = map->vaddr + map->vsize;
 			if (addr > max) {
 				max = addr;
@@ -83,7 +84,7 @@ RZ_API ut64 rz_bin_reloc_target_builder_get_target(RzBinRelocTargetBuilder *buil
  * \param buf_patched_offset the offset of the data in buf_patched inside the real file.
  *        This is especially relevant for fatmach0 where the buf starts further into the fat file.
  */
-RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /*<RzBinMap *>*/ *maps,
+RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzPVector /*<RzBinMap *>*/ *maps,
 	RZ_NULLABLE RzBuffer *buf_patched, ut64 buf_patched_offset,
 	ut64 target_vfile_base, ut64 target_vfile_size,
 	RZ_NONNULL const char *vfile_name_patched, RZ_NONNULL const char *vfile_name_reloc_targets) {
@@ -91,9 +92,10 @@ RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /*<RzBinMap *>*/ *maps,
 
 	// if relocs should be patched, use the patched vfile for everything from the file
 	if (buf_patched) {
-		RzListIter *it;
+		void **it;
 		RzBinMap *map;
-		rz_list_foreach (maps, it, map) {
+		rz_pvector_foreach (maps, it) {
+			map = *it;
 			if (map->vfile_name) {
 				// For mach0, this skips rebased+stripped maps, preventing reloc patching there.
 				// But as far as we can tell, these two features are mutually exclusive in practice.
@@ -122,6 +124,6 @@ RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /*<RzBinMap *>*/ *maps,
 		map->vsize = target_vfile_size;
 		map->perm = RZ_PERM_R;
 		map->vfile_name = strdup(vfile_name_reloc_targets);
-		rz_list_prepend(maps, map);
+		rz_pvector_push_front(maps, map);
 	}
 }

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2020 HoundThe <cgkajm@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_core.h>
 #include <rz_analysis.h>
 #include <rz_bin.h>
 #include <rz_type.h>
@@ -9,21 +10,22 @@
 #include "test_types.h"
 #include "../unit/minunit.h"
 
-#define check_kv(k, v) \
-	do { \
-		value = sdb_get(sdb, k, NULL); \
-		mu_assert_nullable_streq(value, v, "Wrong key - value pair"); \
-	} while (0)
+#define check_fn(addr, name, sig) \
+	{ \
+		RzAnalysisDwarfFunction *f = ht_up_find(analysis->debug_info->function_by_addr, addr, NULL); \
+		mu_assert_notnull(f, "No function at 0x401300"); \
+		mu_assert_streq(f->prefer_name, name, "fn name"); \
+		RzCallable *c = rz_type_func_get(analysis->typedb, f->prefer_name); \
+		mu_assert_streq_free(rz_type_callable_as_string(analysis->typedb, c), sig, "fn sig"); \
+	}
 
 static bool test_parse_dwarf_types(void) {
-	RzBin *bin = rz_bin_new();
-	mu_assert_notnull(bin, "Couldn't create new RzBin");
-	RzIO *io = rz_io_new();
-	mu_assert_notnull(io, "Couldn't create new RzIO");
-	RzAnalysis *analysis = rz_analysis_new();
-	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
-	rz_io_bind(io, &bin->iob);
-	analysis->binb.demangle = rz_bin_demangle;
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
+	mu_assert_notnull(core->io, "Couldn't create new RzIO");
+	mu_assert_notnull(core->analysis, "Couldn't create new RzAnalysis");
+	RzAnalysis *analysis = core->analysis;
+	RzBin *bin = core->bin;
 
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
@@ -38,22 +40,17 @@ static bool test_parse_dwarf_types(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 32);
-	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
-	mu_assert_notnull(info, "Couldn't parse debug_info section");
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
 
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 4);
-	mu_assert_notnull(loc_table, "Couldn't parse loc section");
+	mu_assert_notnull(dw->abbrev, "Couldn't parse Abbreviations");
+	mu_assert_notnull(dw->info, "Couldn't parse debug_info section");
+	mu_assert_notnull(dw->loclists, "Couldn't parse loc section");
 
-	RzAnalysisDwarfContext ctx = {
-		.info = info,
-		.loc = loc_table
-	};
-	rz_analysis_dwarf_process_info(analysis, &ctx);
+	rz_analysis_dwarf_process_info(analysis, dw);
 
 	// Check the enum presence and validity
 	RzBaseType *cairo = rz_type_db_get_base_type(analysis->typedb, "_cairo_status");
+	mu_assert_notnull(cairo, "Couldn't find _cairo_status");
 	mu_assert_eq(cairo->kind, RZ_BASE_TYPE_KIND_ENUM, "_cairo_status is enum");
 	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_SUCCESS", 0), "CAIRO_STATUS_SUCCESS = 0x0");
 	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_INVALID_PATH_DATA", 0x9), "CAIRO_STATUS_INVALID_PATH_DATA = 0x9");
@@ -123,24 +120,19 @@ static bool test_parse_dwarf_types(void) {
 	// check_kv("union.unaligned.u2", "short unsigned int,0,0");
 	// check_kv("union.unaligned.s8", "long long int,0,0");
 
-	rz_bin_dwarf_debug_info_free(info);
-	rz_bin_dwarf_debug_abbrev_free(abbrevs);
-	rz_analysis_free(analysis);
-	rz_bin_free(bin);
-	rz_io_free(io);
+	rz_bin_dwarf_free(dw);
+	rz_core_free(core);
 	mu_end;
 }
 
 static bool test_dwarf_function_parsing_cpp(void) {
 #if WITH_GPL
-	RzBin *bin = rz_bin_new();
-	mu_assert_notnull(bin, "Couldn't create new RzBin");
-	RzIO *io = rz_io_new();
-	mu_assert_notnull(io, "Couldn't create new RzIO");
-	RzAnalysis *analysis = rz_analysis_new();
-	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
-	rz_io_bind(io, &bin->iob);
-	analysis->binb.demangle = rz_bin_demangle;
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
+	mu_assert_notnull(core->io, "Couldn't create new RzIO");
+	mu_assert_notnull(core->analysis, "Couldn't create new RzAnalysis");
+	RzAnalysis *analysis = core->analysis;
+	RzBin *bin = core->bin;
 
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
@@ -154,57 +146,32 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
-	mu_assert_notnull(info, "Couldn't parse debug_info section");
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
+	mu_assert_notnull(dw->abbrev, "Couldn't parse Abbreviations");
+	mu_assert_notnull(dw->info, "Couldn't parse debug_info section");
 
-	RzAnalysisDwarfContext ctx = {
-		.info = info,
-		.loc = loc_table
-	};
-	rz_analysis_dwarf_process_info(analysis, &ctx);
+	rz_analysis_dwarf_process_info(analysis, dw);
 
-	Sdb *sdb = sdb_ns(analysis->sdb, "dwarf", 0);
-	mu_assert_notnull(sdb, "No dwarf function information in db");
-	char *value = NULL;
-	check_kv("Mammal", "fcn");
-	check_kv("fcn.Mammal.addr", "0x401300");
-	check_kv("fcn.Mammal.sig", "void Mammal(struct Mammal *this);");
-	check_kv("fcn.Dog::walk__.addr", "0x401380");
-	check_kv("fcn.Dog::walk__.sig", "int Dog::walk()(struct Dog *this);");
-	check_kv("fcn.Dog::walk__.name", "Dog::walk()");
-	check_kv("fcn.Mammal::walk__.args", "this");
-	check_kv("fcn.Mammal::walk__.arg.this", "b,-8,struct Mammal *");
+	mu_assert_notnull(analysis->debug_info, "Couldn't get debug info");
 
-	check_kv("main", "fcn");
-	check_kv("fcn.main.addr", "0x401160");
-	check_kv("fcn.main.sig", "int main();");
-	check_kv("fcn.main.vars", "b,m,output");
-	check_kv("fcn.main.var.output", "b,-40,int");
+	check_fn(0x401300, "Mammal::Mammal()", "void Mammal::Mammal()(struct Mammal *this)");
+	check_fn(0x401380, "Dog::walk()", "int Dog::walk()(struct Dog *this)");
+	check_fn(0x401390, "Mammal::~Mammal()", "void Mammal::~Mammal()(struct Mammal *this)");
+	check_fn(0x401160, "main", "int main()");
 
-	rz_bin_dwarf_debug_info_free(info);
-	rz_bin_dwarf_debug_abbrev_free(abbrevs);
-	if (loc_table) {
-		rz_bin_dwarf_loc_free(loc_table);
-	}
-	rz_analysis_free(analysis);
-	rz_bin_free(bin);
-	rz_io_free(io);
+	rz_bin_dwarf_free(dw);
+	rz_core_free(core);
 #endif
 	mu_end;
 }
 
 static bool test_dwarf_function_parsing_go(void) {
-	RzBin *bin = rz_bin_new();
-	mu_assert_notnull(bin, "Couldn't create new RzBin");
-	RzIO *io = rz_io_new();
-	mu_assert_notnull(io, "Couldn't create new RzIO");
-	RzAnalysis *analysis = rz_analysis_new();
-	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
-	rz_io_bind(io, &bin->iob);
-	analysis->binb.demangle = rz_bin_demangle;
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
+	mu_assert_notnull(core->io, "Couldn't create new RzIO");
+	mu_assert_notnull(core->analysis, "Couldn't create new RzAnalysis");
+	RzAnalysis *analysis = core->analysis;
+	RzBin *bin = core->bin;
 
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
@@ -217,53 +184,32 @@ static bool test_dwarf_function_parsing_go(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
-	mu_assert_notnull(info, "Couldn't parse debug_info section");
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
-	mu_assert_notnull(loc_table, "Couldn't parse loc section");
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
+	mu_assert_notnull(dw->abbrev, "Couldn't parse Abbreviations");
+	mu_assert_notnull(dw->info, "Couldn't parse debug_info section");
+	mu_assert_notnull(dw->loclists, "Couldn't parse loc section");
 
-	RzAnalysisDwarfContext ctx = {
-		.info = info,
-		.loc = loc_table
-	};
-	rz_analysis_dwarf_process_info(analysis, &ctx);
+	rz_analysis_dwarf_process_info(analysis, dw);
 
-	Sdb *sdb = sdb_ns(analysis->sdb, "dwarf", 0);
-	mu_assert_notnull(sdb, "No dwarf function information in db");
-	char *value = NULL;
-
-	check_kv("main_main", "fcn");
-	check_kv("fcn.main_main.name", "main.main");
-	check_kv("fcn.main_main.addr", "0x491980");
-
-	check_kv("main_tree_iterInorder", "fcn");
-	check_kv("fcn.main_tree_iterInorder.name", "main.tree.iterInorder");
-	check_kv("fcn.main_tree_iterInorder.addr", "0x491d90");
-	check_kv("fcn.main_tree_iterInorder.sig", "void main.tree.iterInorder(struct main.tree t, func(int) visit);");
+	mu_assert_notnull(analysis->debug_info, "Couldn't get debug info");
+	check_fn(0x491980, "main.main", "void main.main()");
+	check_fn(0x491d90, "main.tree.iterInorder", "void main.tree.iterInorder(main.tree t, func(int) visit)");
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	   don't check variable information and add it in the future */
 
-	rz_bin_dwarf_debug_info_free(info);
-	rz_bin_dwarf_debug_abbrev_free(abbrevs);
-	rz_bin_dwarf_loc_free(loc_table);
-	rz_analysis_free(analysis);
-	rz_bin_free(bin);
-	rz_io_free(io);
+	rz_bin_dwarf_free(dw);
+	rz_core_free(core);
 	mu_end;
 }
 
 static bool test_dwarf_function_parsing_rust(void) {
-	RzBin *bin = rz_bin_new();
-	mu_assert_notnull(bin, "Couldn't create new RzBin");
-	RzIO *io = rz_io_new();
-	mu_assert_notnull(io, "Couldn't create new RzIO");
-	RzAnalysis *analysis = rz_analysis_new();
-	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
-	rz_io_bind(io, &bin->iob);
-	analysis->binb.demangle = rz_bin_demangle;
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core->bin, "Couldn't create new RzBin");
+	mu_assert_notnull(core->io, "Couldn't create new RzIO");
+	mu_assert_notnull(core->analysis, "Couldn't create new RzAnalysis");
+	RzAnalysis *analysis = core->analysis;
+	RzBin *bin = core->bin;
 
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
@@ -279,45 +225,40 @@ static bool test_dwarf_function_parsing_rust(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
-	mu_assert_notnull(info, "Couldn't parse debug_info section");
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
-	mu_assert_notnull(loc_table, "Couldn't parse loc section");
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf);
 
-	RzAnalysisDwarfContext ctx = {
-		.info = info,
-		.loc = loc_table
+	mu_assert_notnull(dw->abbrev, "Couldn't parse Abbreviations");
+	mu_assert_notnull(dw->info, "Couldn't parse debug_info section");
+	mu_assert_notnull(dw->loclists, "Couldn't parse loc section");
+
+	rz_analysis_dwarf_process_info(analysis, dw);
+
+	mu_assert_notnull(analysis->debug_info, "Couldn't get debug info");
+	check_fn(0x5750, "main", "void main()");
+	check_fn(0x5270, "bubble_sort<i32>", "void bubble_sort<i32>(struct &mut [i32] values)");
+	check_fn(0x8730, "lang_start_internal", "isize lang_start_internal(struct &Fn<()> main, isize argc, u8 **argv)");
+
+	RzBinDwarfCompUnit *cu = ht_up_find(dw->info->unit_by_offset, 0x4151, NULL);
+	mu_assert_notnull(cu, "Couldn't get compunit");
+	RzBinDwarfLocList *loclist = rz_bin_dwarf_loclists_get(dw->loclists, dw->addr, cu, 0xd973);
+	mu_assert_notnull(loclist, "Couldn't get loclist");
+	RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
+	mu_assert_notnull(entry, "Couldn't get entry");
+	mu_assert_notnull(entry->range, "Couldn't get entry range");
+	mu_assert_notnull(entry->expression, "Couldn't get entry expression");
+	mu_assert_eq(entry->range->begin, 0x84e1, "Err entry begin");
+	mu_assert_eq(entry->range->end, 0x84fc, "Err entry end");
+	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
+	mu_assert_notnull(loc, "Couldn't get location");
+	RzBinDWARFDumpOption dump_option = {
+		.composite_sep = ", "
 	};
-	rz_analysis_dwarf_process_info(analysis, &ctx);
+	char *locstr = rz_bin_dwarf_location_to_string(loc, &dump_option);
+	mu_assert_streq_free(locstr, "composite: [(.0, 64): stack+18, (.0, 64): stack+8]", "Error location string");
+	rz_bin_dwarf_location_free(loc);
 
-	Sdb *sdb = sdb_ns(analysis->sdb, "dwarf", 0);
-	mu_assert_notnull(sdb, "No dwarf function information in db");
-	char *value = NULL;
-
-	check_kv("fcn.main.addr", "0x5750");
-	check_kv("fcn.main.name", "main");
-	check_kv("fcn.main.var.numbers", "s,128,i32 [11]");
-	check_kv("fcn.main.var.strings", "s,312,&str [6]");
-	// check_kv ("fcn.main.vars", "numbers,arg0,arg0,strings,arg0,arg0"); Fix these collision by unique renaming in future
-	check_kv("fcn.lang_start_internal.sig", "isize lang_start_internal(&Fn<()> main, isize argc, u8 **argv);");
-
-	check_kv("bubble_sort__str_", "fcn");
-	check_kv("bubble_sort_i32_", "fcn");
-	check_kv("fcn.bubble_sort_i32_.args", "values");
-	check_kv("fcn.bubble_sort_i32_.vars", "n,swapped,iter,__next,val,i");
-	check_kv("fcn.bubble_sort_i32_.var.iter", "s,112,Range<usize>");
-	check_kv("fcn.bubble_sort_i32_.var.i", "s,176,usize");
-	check_kv("fcn.bubble_sort_i32_.name", "bubble_sort<i32>");
-	check_kv("fcn.bubble_sort_i32_.addr", "0x5270");
-
-	rz_bin_dwarf_debug_info_free(info);
-	rz_bin_dwarf_debug_abbrev_free(abbrevs);
-	rz_bin_dwarf_loc_free(loc_table);
-	rz_analysis_free(analysis);
-	rz_bin_free(bin);
-	rz_io_free(io);
+	rz_bin_dwarf_free(dw);
+	rz_core_free(core);
 	mu_end;
 }
 

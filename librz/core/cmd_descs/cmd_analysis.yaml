@@ -418,7 +418,7 @@ commands:
       - name: afv
         summary: Manipulate arguments/variables in a function
         subcommands:
-          - name: afv
+          - name: afvl
             cname: analysis_function_vars
             summary: List all variables and arguments of the current function
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
@@ -426,6 +426,8 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_TABLE
+              - RZ_OUTPUT_MODE_LONG
             args: []
           - name: afv=
             cname: analysis_function_vars_dis_refs
@@ -1058,6 +1060,22 @@ commands:
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
             choices_cb: rz_analysis_graph_format_choices
+      - name: agCi
+        summary: Inter-procedual control flow graph
+        cname: analysis_graph_icfg
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agF
+        summary: Control flow graph (without calls)
+        cname: analysis_graph_cfg
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
       - name: agf
         summary: Basic blocks function graph
         cname: analysis_graph_bb_function
@@ -1562,6 +1580,13 @@ commands:
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
               - name: new_var_name
                 type: RZ_CMD_ARG_TYPE_STRING
+          - name: avgp
+            summary: print the global variable value
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_print
+            args:
+              - name: name
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
           - name: avgt
             summary: change the global variable type
             type: RZ_CMD_DESC_TYPE_ARGV
@@ -1571,6 +1596,18 @@ commands:
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
               - name: type
                 type: RZ_CMD_ARG_TYPE_ANY_TYPE
+          - name: avgx
+            summary: print all xrefs to the global variable
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: analysis_global_variable_xrefs
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_RIZIN
+            args:
+              - name: name
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
       - name: avr
         summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
         type: RZ_CMD_DESC_TYPE_ARGV_MODES

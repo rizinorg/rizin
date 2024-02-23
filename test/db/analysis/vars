@@ -328,7 +328,7 @@ s sym.rarg_detection.dll_funcB
 af
 s sym.rarg_detection.dll_funcC
 af
-afv
+afvl
 EOF
 EXPECT=<<EOF
 arg int64_t arg3 @ r8
@@ -342,7 +342,7 @@ FILE=bins/pe/testx64.exe
 CMDS=<<EOF
 s 0x14000184c
 af
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var int64_t var_8h @ stack + 0x8
@@ -408,7 +408,6 @@ afvW
 EOF
 RUN
 
-
 NAME=Variable access with misc registers (ARM)
 FILE==
 ARGS=-a arm -b 16
@@ -427,11 +426,11 @@ afvR
       arg1  0x6
       arg2  0x8
       arg3  0xc
-   var_10h  0x4,0x2c
+   var_10h
     var_ch  0x18,0x22
     var_eh  0x16,0x1e
     var_fh  0x10
-    var_4h  0x2c
+    var_4h
 afvW
       arg1
       arg2
@@ -445,11 +444,11 @@ afvW
 |           ; arg int16_t arg1 @ r0
 |           ; arg int16_t arg2 @ r1
 |           ; arg int16_t arg3 @ r2
-|           ; var int16_t var_10h @ stack - 0x10
+|           ; var int32_t var_10h @ stack - 0x10
 |           ; var int8_t var_fh @ stack - 0xf
 |           ; var int16_t var_eh @ stack - 0xe
 |           ; var int32_t var_ch @ stack - 0xc
-|           ; var int16_t var_4h @ stack - 0x4
+|           ; var int32_t var_4h @ stack - 0x4
 |           0x00000000      80b4           push  {r7}
 |           0x00000002      83b0           sub   sp, 0xc
 |           0x00000004      00af           add   r7, var_10h
@@ -472,7 +471,7 @@ afvW
 |      `--> 0x00000026      00bf           nop
 |           0x00000028      0c37           adds  r7, 0xc
 |           0x0000002a      bd46           mov   sp, r7
-|           0x0000002c      5df8047b       ldr   r7, [sp], 4
+|           0x0000002c      5df8047b       pop   {r7}
 \           0x00000030      7047           bx    lr
 EOF
 RUN
@@ -483,9 +482,9 @@ ARGS=-a x86 -b 32
 CMDS=<<EOF
 wx e805000000e80600000039d1742577145589e583ec048b5d088b4d0c895dfc83f90174098b45fc8945fc49ebf28b45fc89ec5dc3
 aac
-afv  @ 10
+afvl  @ 10
 afvx @ 10
-afv  @ 16
+afvl  @ 16
 afvx @ 16
 EOF
 EXPECT=<<EOF
@@ -522,7 +521,7 @@ FILE=bins/elf/vars-x86_64-bp
 CMDS=<<EOF
 s sym.varfunc
 af
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var int64_t var_18h @ stack - 0x18
@@ -541,25 +540,24 @@ e asm.comments=0
 pdf
 EOF
 EXPECT=<<EOF
-            ;-- varfunc:
-/ int dbg.varfunc();
+/ int varfunc()
 |           ; var int lightbulb @ stack - 0x18
 |           ; var int sun @ stack - 0x14
 |           ; var int last @ stack - 0x10
 |           ; var int chance @ stack - 0xc
-|           0x0000113c      push  rbp
+|           0x0000113c      push  rbp                                  ; main.c:9
 |           0x0000113d      mov   rbp, rsp
 |           0x00001140      sub   rsp, 0x10
-|           0x00001144      mov   dword [lightbulb], 1
-|           0x0000114b      mov   dword [sun], 2
-|           0x00001152      mov   dword [last], 3
-|           0x00001159      mov   dword [chance], 4
-|           0x00001160      mov   eax, 0
+|           0x00001144      mov   dword [lightbulb], 1                 ; main.c:15
+|           0x0000114b      mov   dword [sun], 2                       ; main.c:16
+|           0x00001152      mov   dword [last], 3                      ; main.c:17
+|           0x00001159      mov   dword [chance], 4                    ; main.c:18
+|           0x00001160      mov   eax, 0                               ; main.c:20
 |           0x00001165      call  dbg.leaffunc
-|           0x0000116a      mov   eax, dword [chance]
+|           0x0000116a      mov   eax, dword [chance]                  ; main.c:22
 |           0x0000116d      mov   dword [sun], eax
-|           0x00001170      mov   eax, dword [lightbulb]
-|           0x00001173      leave
+|           0x00001170      mov   eax, dword [lightbulb]               ; main.c:23
+|           0x00001173      leave                                      ; main.c:24
 \           0x00001174      ret
 EOF
 RUN
@@ -569,7 +567,7 @@ FILE=bins/elf/vars-x86_64-sp
 CMDS=<<EOF
 s sym.varfunc
 af
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var int64_t var_10h @ stack - 0x10
@@ -588,23 +586,22 @@ e asm.comments=0
 pdf
 EOF
 EXPECT=<<EOF
-            ;-- varfunc:
-/ int dbg.varfunc();
+/ int varfunc()
 |           ; var int lightbulb @ stack - 0x10
 |           ; var int sun @ stack - 0xc
 |           ; var int last @ stack - 0x8
 |           ; var int chance @ stack - 0x4
-|           0x00001137      sub   rsp, 0x10
-|           0x0000113b      mov   dword [rsp], 1
-|           0x00001142      mov   dword [sun], 2
-|           0x0000114a      mov   dword [last], 3
-|           0x00001152      mov   dword [chance], 4
-|           0x0000115a      mov   eax, 0
+|           0x00001137      sub   rsp, 0x10                            ; main.c:9
+|           0x0000113b      mov   dword [rsp], 1                       ; main.c:15
+|           0x00001142      mov   dword [sun], 2                       ; main.c:16
+|           0x0000114a      mov   dword [last], 3                      ; main.c:17
+|           0x00001152      mov   dword [chance], 4                    ; main.c:18
+|           0x0000115a      mov   eax, 0                               ; main.c:20
 |           0x0000115f      call  dbg.leaffunc
-|           0x00001164      mov   eax, dword [chance]
+|           0x00001164      mov   eax, dword [chance]                  ; main.c:22
 |           0x00001168      mov   dword [sun], eax
-|           0x0000116c      mov   eax, dword [rsp]
-|           0x0000116f      add   rsp, 0x10
+|           0x0000116c      mov   eax, dword [rsp]                     ; main.c:23
+|           0x0000116f      add   rsp, 0x10                            ; main.c:24
 \           0x00001173      ret
 EOF
 RUN
@@ -618,35 +615,35 @@ pdf
 EOF
 EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x11c0
-            ;-- foo:
-/ int dbg.foo(int num);
+/ int foo(int num)
+|           ; var int64_t arg1 @ rdi
 |           ; arg int num @ stack - 0x2c
-|           ; var short int minus_seven @ stack - 0x24
-|           ; var short int sub_short @ stack - 0x22
 |           ; var int int_one @ stack - 0x20
-|           ; var int mult_int @ stack - 0x1c
 |           ; var long int long_twenty @ stack - 0x18
+|           ; var short int minus_seven @ stack - 0x24
+|           ; var int mult_int @ stack - 0x1c
 |           ; var long int add_long @ stack - 0x10
-|           0x00001139      push  rbp                                  ; int foo(int num);
+|           ; var short int sub_short @ stack - 0x22
+|           0x00001139      push  rbp                                  ; example.c:3
 |           0x0000113a      mov   rbp, rsp
 |           0x0000113d      sub   rsp, 0x30
 |           0x00001141      mov   dword [num], edi                     ; arg1
-|           0x00001144      mov   dword [int_one], 1
-|           0x0000114b      mov   qword [long_twenty], 0x14
-|           0x00001153      mov   word [minus_seven], 0xfff9
-|           0x00001159      mov   edx, dword [int_one]
+|           0x00001144      mov   dword [int_one], 1                   ; example.c:4
+|           0x0000114b      mov   qword [long_twenty], 0x14            ; example.c:5
+|           0x00001153      mov   word [minus_seven], 0xfff9           ; example.c:6
+|           0x00001159      mov   edx, dword [int_one]                 ; example.c:7
 |           0x0000115c      mov   eax, edx
 |           0x0000115e      add   eax, eax
 |           0x00001160      add   eax, edx
 |           0x00001162      add   eax, eax
 |           0x00001164      mov   dword [mult_int], eax
-|           0x00001167      mov   rax, qword [long_twenty]
+|           0x00001167      mov   rax, qword [long_twenty]             ; example.c:8
 |           0x0000116b      add   rax, 7
 |           0x0000116f      mov   qword [add_long], rax
-|           0x00001173      movzx eax, word [minus_seven]
+|           0x00001173      movzx eax, word [minus_seven]              ; example.c:9
 |           0x00001177      sub   eax, 9
 |           0x0000117a      mov   word [sub_short], ax
-|           0x0000117e      movsx esi, word [sub_short]
+|           0x0000117e      movsx esi, word [sub_short]                ; example.c:11
 |           0x00001182      mov   rcx, qword [add_long]
 |           0x00001186      mov   edx, dword [mult_int]
 |           0x00001189      mov   eax, dword [num]
@@ -656,8 +653,8 @@ EXPECT=<<EOF
 |           0x00001198      mov   rdi, rax                             ; const char *format
 |           0x0000119b      mov   eax, 0
 |           0x000011a0      call  sym.imp.printf                       ; int printf(const char *format)
-|           0x000011a5      mov   eax, 0xa
-|           0x000011aa      leave
+|           0x000011a5      mov   eax, 0xa                             ; example.c:13
+|           0x000011aa      leave                                      ; example.c:14
 \           0x000011ab      ret
 EOF
 RUN
@@ -863,81 +860,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Function arguments from DWARF (hightec)
-FILE=bins/elf/float_ex1/float_ex1_hightec
-CMDS=<<EOF
-aaa
-s sym.fn1
-e asm.comments=0
-pdf
-EOF
-EXPECT=<<EOF
-            ;-- fn1:
-/ _Bool dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
-|           ; arg some_t **out @ stack - 0x18
-|           ; arg struct Some *gg @ stack - 0x14
-|           ; arg double q @ stack - 0x10
-|           ; arg char *g @ stack - 0x8
-|           ; arg int a @ stack - 0x4
-|           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15
-|           0x8000041e      sub.a sp, 24
-|           0x80000420      st.w  [a14]-4, d4
-|           0x80000424      st.a  [a14]-8, a4
-|           0x80000428      st.d  [a14]-16, e6
-|           0x8000042c      st.a  [a14]-20, a5
-|           0x80000430      st.a  [a14]-24, a6
-|           0x80000434      ld.w  d15, [a14]-20                        ; float_ex1.c:16
-|           0x80000438      jz    d15, 0x80000440
-|           0x8000043a      ld.w  d15, [a14]-24
-|           0x8000043e      jnz   d15, 0x80000444
-|           0x80000440      mov   d15, 0                               ; float_ex1.c:17
-|           0x80000442      j     0x800004a8
-|           0x80000444      mov   d4, 20                               ; float_ex1.c:19
-|           0x80000448      call  dbg.malloc
-|           0x8000044c      mov.aa a15, a2
-|           0x8000044e      mov.d d2, a15
-|           0x80000450      ld.w  d15, [a14]-24
-|           0x80000454      mov.a a15, d15
-|           0x80000456      st.w  [a15]0, d2
-|           0x80000458      ld.w  d15, [a14]-24                        ; float_ex1.c:20
-|           0x8000045c      mov.a a15, d15
-|           0x8000045e      ld.w  d15, [a15]0
-|           0x80000460      ld.w  d2, [a14]-4
-|           0x80000464      mov.a a15, d15
-|           0x80000466      st.w  [a15]0, d2
-|           0x80000468      ld.w  d15, [a14]-24                        ; float_ex1.c:21
-|           0x8000046c      mov.a a15, d15
-|           0x8000046e      ld.w  d15, [a15]0
-|           0x80000470      add   d15, 4
-|           0x80000472      mov.a a4, d15
-|           0x80000474      ld.a  a5, [a14]-8
-|           0x80000478      mov   d4, 5
-|           0x8000047a      call  dbg.strncpy
-|           0x8000047e      ld.w  d15, [a14]-24                        ; float_ex1.c:22
-|           0x80000482      mov.a a15, d15
-|           0x80000484      ld.w  d15, [a15]0
-|           0x80000486      ld.d  e4, [a14]-16
-|           0x8000048a      call  dbg.__truncdfsf2
-|           0x8000048e      mov   d3, d2
-|           0x80000490      mov.a a15, d15
-|           0x80000492      st.w  [a15]12, d3
-|           0x80000494      ld.w  d15, [a14]-24                        ; float_ex1.c:23
-|           0x80000498      mov.a a15, d15
-|           0x8000049a      ld.w  d15, [a15]0
-|           0x8000049c      ld.w  d2, [a14]-20
-|           0x800004a0      mov   d3, d2
-|           0x800004a2      mov.a a15, d15
-|           0x800004a4      st.w  [a15]16, d3
-|           0x800004a6      mov   d15, 1                               ; float_ex1.c:24
-|           0x800004a8      mov   d2, d15                              ; float_ex1.c:25
-|           0x800004aa      ret
-EOF
-
 NAME=Function va_args arguments from DWARF
 FILE=bins/elf/float_ex1/float_ex1_hightec
 CMDS=<<EOF
 aaa
-(sig; afv; afs; pd 1; echo "---------")
+(sig; afvl; afvlt; afs; pd 1; echo "---------")
 s dbg.printf
 .(sig)
 s dbg.prout
@@ -954,112 +881,208 @@ s dbg.feraiseexcept
 .(sig)
 s dbg._Atrealloc
 .(sig)
+s dbg.fn1
+.(sig)
 EOF
 EXPECT=<<EOF
 var va_list ap @ stack + 0x4
-arg const char *fmt @ a6
-int printf(const char *format);
+arg const char *fmt @ a4
+var int ans @ ...
+is_arg name type         constraints origin addr                                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------
+false  ap   va_list                  DWARF  loclist: [(0x80000c22, 20): CFA+0,	(0x80000c36, 5): a7,	(0x80000c3b, 1): CFA+0]
+true   fmt  const char *             DWARF  loclist: [(0x80000c22, 10): a4,	(0x80000c2c, 15): a6,	(0x80000c3b, 1): <evaluation waiting>]
+false  ans  int                      DWARF  empty
+int printf(const char *fmt, ...);
             ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
-            ;-- printf:
-/ int dbg.printf(const char *fmt, va_args ..);
-|           ; arg const char *fmt @ a6
+/ int printf(const char *fmt, ...)
+|           ; arg const char *fmt @ a4
+|           ; var int ans @ ...
 |           ; var va_list ap @ stack + 0x4
-|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, va_args ..);
+|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5
 ---------
-arg void *str @ a15
-arg const char *buf @ a5
-arg size_t n @ d4
-void dbg.prout(const char *buf);
-            ;-- prout:
-/ void *dbg.prout(void *str, const char *buf, size_t n);
-|           ; arg void *str @ a15
-|           ; arg size_t n @ d4
-|           ; arg const char *buf @ a5
-|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void *prout(void *str, const char *buf, size_t n);
+arg void *str @ a4
+arg const char *buf @ a4
+var int32_t arg6 @ a5
+arg size_t n @ d5
+is_arg name type         constraints origin addr                                                                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+true   str  void *                   DWARF  loclist: [(0x80000c04, 6): a4,	(0x80000c0a, 24): a15]
+true   buf  const char *             DWARF  loclist: [(0x80000c04, 12): a5,	(0x80000c10, 3): a4,	(0x80000c13, 15): <evaluation waiting>]
+false  arg6 int32_t                  rizin  a5
+true   n    size_t                   DWARF  loclist: [(0x80000c04, 10): d4,	(0x80000c0e, 5): d5,	(0x80000c13, 7): d15,	(0x80000c1a, 8): <evaluation waiting>]
+void * prout(void *str, const char *buf, size_t n);
+/ void * prout(void *str, const char *buf, size_t n)
+|           ; var int32_t arg6 @ a5
+|           ; arg void *str @ a4
+|           ; arg const char *buf @ a4
+|           ; arg size_t n @ d5
+|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5
 ---------
-arg fp_number_type *b @ a12
-arg fp_number_type *a @ a13
-arg fp_number_type *tmp @ a15
-var fractype a_fraction @ d11
-var int diff @ d12
-var int a_normal_exp @ d15
+arg fp_number_type *b @ a2
+arg fp_number_type *a @ a4
+var int32_t arg6 @ a5
+arg fp_number_type *tmp @ a6
 var int b_normal_exp @ d2
-var intfrac tfraction @ d3
-var fractype b_fraction @ d9
-void dbg._fpadd_parts();
+var intfrac tfraction @ COMPOSITE
+var fractype b_fraction @ COMPOSITE
+var int a_normal_exp @ LOCLIST
+var fractype a_fraction @ LOCLIST
+is_arg name         type             constraints origin addr                                                                                                                                                                                                                                                                                                                                          
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+true   b            fp_number_type *             DWARF  loclist: [(0x80003c60, 44): a5,	(0x80003c8c, 2): a2,	(0x80003c8e, 4): a5,	(0x80003c92, 6): a2,	(0x80003c98, 28): a5,	(0x80003cb4, 2): a2,	(0x80003cb6, 4): a5,	(0x80003cba, 47): a2,	(0x80003ce9, 39): a12,	(0x80003d10, 13): a2,	(0x80003d1d, 41): a12,	(0x80003d46, 16): a2,	(0x80003d56, 172): a12,	(0x80003e02, 2): <evaluation waiting>]
+true   a            fp_number_type *             DWARF  loclist: [(0x80003c60, 60): a4,	(0x80003c9c, 18): a2,	(0x80003cae, 6): <evaluation waiting>,	(0x80003cb4, 53): a4,	(0x80003ce9, 39): a13,	(0x80003d10, 13): a4,	(0x80003d1d, 41): a13,	(0x80003d46, 16): a4,	(0x80003d56, 172): a13,	(0x80003e02, 2): <evaluation waiting>]
+false  arg6         int32_t                      rizin  a5
+true   tmp          fp_number_type *             DWARF  loclist: [(0x80003c60, 137): a6,	(0x80003ce9, 39): a15,	(0x80003d10, 13): a6,	(0x80003d1d, 41): a15,	(0x80003d46, 16): a6,	(0x80003d56, 148): a15,	(0x80003dea, 24): a2,	(0x80003e02, 2): <evaluation waiting>]
+false  b_normal_exp int                          DWARF  loclist: [(0x80003cc0, 32): d2,	(0x80003ce0, 9): <evaluation waiting>,	(0x80003d10, 13): d2,	(0x80003d46, 16): d2]
+false  tfraction    intfrac                      DWARF  composite: [(.0, 32): d2,	(.0, 32): d3]
+false  b_fraction   fractype                     DWARF  loclist: [(0x80003cd8, 48): composite: [(.0, 32): d8,	(.0, 32): d9],	(0x80003d0e, 244): composite: [(.0, 32): d8,	(.0, 32): d9]]
+false  a_normal_exp int                          DWARF  loclist: [(0x80003cbc, 144): d15,	(0x80003d4c, 6): a4+8,	(0x80003d52, 54): d15,	(0x80003d88, 16): a15+8,	(0x80003dc6, 10): d15,	(0x80003dd0, 6): a15+8]
+false  a_fraction   fractype                     DWARF  loclist: [(0x80003cd4, 104): composite: [(.0, 32): d10,	(.0, 32): d11],	(0x80003d44, 12): composite: [(.0, 32): d10,	(.0, 32): d11],	(0x80003d50, 2): a4+12,	(0x80003d52, 176): composite: [(.0, 32): d10,	(.0, 32): d11]]
+fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
-            ;-- _fpadd_parts:
-/ fp_number_type *dbg._fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
-|           ; arg fp_number_type *a @ a13
-|           ; arg fp_number_type *b @ a12
-|           ; arg fp_number_type *tmp @ a15
-|           ; var intfrac tfraction @ d3
-|           ; var int a_normal_exp @ d15
+/ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
+|           ; var int32_t arg6 @ a5
+|           ; arg fp_number_type *a @ a4
+|           ; arg fp_number_type *b @ a2
+|           ; arg fp_number_type *tmp @ a6
+|           ; var intfrac tfraction @ COMPOSITE
+|           ; var int a_normal_exp @ LOCLIST
 |           ; var int b_normal_exp @ d2
-|           ; var fractype a_fraction @ d11
-|           ; var fractype b_fraction @ d9
-|           ; var int diff @ d12
-|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type *_fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
+|           ; var fractype a_fraction @ LOCLIST
+|           ; var fractype b_fraction @ COMPOSITE
+|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5
 ---------
+arg const char *s @ a2
 var const char *sc @ a2
-arg const char *s @ a4
+var int32_t arg5 @ a4
 arg size_t maxsize @ d4
-void dbg.strnlen_s(const char *s);
+is_arg name    type         constraints origin addr                                                                                                              
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+true   s       const char *             DWARF  loclist: [(0x800030ca, 18): a4,	(0x800030dc, 4): <evaluation waiting>,	(0x800030e0, 10): a4,	(0x800030ea, 2): a2]
+false  sc      const char *             DWARF  a2
+false  arg5    int32_t                  rizin  a4
+true   maxsize size_t                   DWARF  loclist: [(0x800030ca, 8): d4,	(0x800030ea, 2): d4]
+size_t strnlen_s(const char *s, size_t maxsize);
             ; CALL XREF from dbg._Fail_s @ 0x8000191e
-            ;-- strnlen_s:
-/ size_t dbg.strnlen_s(const char *s, size_t maxsize);
+/ size_t strnlen_s(const char *s, size_t maxsize)
+|           ; var int32_t arg5 @ a4
+|           ; arg const char *s @ a2
 |           ; arg size_t maxsize @ d4
 |           ; var const char *sc @ a2
-|           ; arg const char *s @ a4
-|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize);
+|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6
+---------
+var _Statab *pwcstate @ a13
+arg char *s @ a4
+arg mbstate_t *pst @ a5
+arg wchar_t wc @ d4
+var _Statab *pmbstate @ ...
+is_arg name     type        constraints origin addr                                                   
+------------------------------------------------------------------------------------------------------
+false  pwcstate _Statab *               DWARF  a13
+true   s        char *                  DWARF  loclist: [(0x800018a6, 21): a4,	(0x800018bb, 49): a15]
+true   pst      mbstate_t *             DWARF  loclist: [(0x800018a6, 21): a5,	(0x800018bb, 49): a12]
+true   wc       wchar_t                 DWARF  loclist: [(0x800018a6, 21): d4,	(0x800018bb, 49): d15]
+false  pmbstate _Statab *               DWARF  empty
+int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
+            ; CALL XREF from dbg._Putstr @ 0x800014d2
+/ int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
+|           ; arg char *s @ a4
+|           ; arg wchar_t wc @ d4
+|           ; arg mbstate_t *pst @ a5
+|           ; var _Statab *pmbstate @ ...
+|           ; var _Statab *pwcstate @ a13
+|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123
 ---------
 arg mbstate_t *pst @ a12
-var _Statab *pwcstate @ a13
-arg char *s @ a15
-arg wchar_t wc @ d15
-void dbg._Wctomb();
-            ; CALL XREF from dbg._Putstr @ 0x800014d2
-            ;-- _Wctomb:
-/ int dbg._Wctomb(char *s, wchar_t wc, mbstate_t *pst);
-|           ; arg char *s @ a15
-|           ; arg wchar_t wc @ d15
-|           ; arg mbstate_t *pst @ a12
-|           ; var _Statab *pwcstate @ a13
-|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
----------
-arg wchar_t *pwc @ a4
-arg const char *s @ a5
-arg mbstate_t *pst @ a6
-arg size_t nin @ d4
-void dbg._Mbtowc(wchar_t *pwc, const char *s, mbstate_t *pst);
+arg const char *s @ a13
+arg wchar_t *pwc @ a14
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
+var int32_t arg7 @ a6
+arg size_t nin @ d15
+is_arg name type         constraints origin addr                                                   
+---------------------------------------------------------------------------------------------------
+true   pst  mbstate_t *              DWARF  loclist: [(0x80003084, 23): a6,	(0x8000309b, 21): a12]
+true   s    const char *             DWARF  loclist: [(0x80003084, 23): a5,	(0x8000309b, 21): a13]
+true   pwc  wchar_t *                DWARF  loclist: [(0x80003084, 23): a4,	(0x8000309b, 21): a14]
+false  arg5 int32_t                  rizin  a4
+false  arg6 int32_t                  rizin  a5
+false  arg7 int32_t                  rizin  a6
+true   nin  size_t                   DWARF  loclist: [(0x80003084, 23): d4,	(0x8000309b, 21): d15]
+int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
             ; CALL XREF from dbg._Printf @ 0x80000d02
-            ;-- _Mbtowc:
-/ int dbg._Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
-|           ; arg size_t nin @ d4
-|           ; arg wchar_t *pwc @ a4
-|           ; arg const char *s @ a5
-|           ; arg mbstate_t *pst @ a6
-|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
+/ int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
+|           ; var int32_t arg7 @ a6
+|           ; arg wchar_t *pwc @ a14
+|           ; arg const char *s @ a13
+|           ; arg size_t nin @ d15
+|           ; arg mbstate_t *pst @ a12
+|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150
 ---------
 arg int except @ d4
-int feraiseexcept(int excepts);
+is_arg name   type constraints origin addr 
+-------------------------------------------
+true   except int              DWARF  d4
+int feraiseexcept(int except);
             ; CALL XREF from dbg._Feraise @ 0x8000343e
-            ;-- feraiseexcept:
-/ int dbg.feraiseexcept(int except);
+/ int feraiseexcept(int except)
 |           ; arg int except @ d4
-|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except);
+|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173
 ---------
-var Ppvoidfn newfuns @ a12
+var size_t size_arg @ a0
+var Ppvoidfn newfuns @ a2
 var size_t inc @ d15
-void dbg._Atrealloc();
+is_arg name     type     constraints origin addr                                                    
+----------------------------------------------------------------------------------------------------
+false  size_arg size_t               rizin  a0
+false  newfuns  Ppvoidfn             DWARF  loclist: [(0x800019aa, 14): a2,	(0x800019b8, 100): a12]
+false  inc      size_t               DWARF  d15
+int _Atrealloc();
             ; CALL XREF from dbg.atexit @ 0x80001a4c
             ; CALL XREF from dbg._Atexit @ 0x800033b8
-            ;-- _Atrealloc:
-/ int dbg._Atrealloc();
+/ int _Atrealloc()
+|           ; var size_t size_arg @ a0
 |           ; var size_t inc @ d15
-|           ; var Ppvoidfn newfuns @ a12
-|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc();
+|           ; var Ppvoidfn newfuns @ a2
+|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22
+---------
+arg some_t **out @ stack - 0x18
+arg struct Some *gg @ stack - 0x14
+arg double q @ stack - 0x10
+arg char *g @ stack - 0x8
+arg int a @ stack - 0x4
+var size_t size_arg @ a0
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
+var int32_t arg7 @ a6
+is_arg name     type          constraints origin addr   
+--------------------------------------------------------
+true   out      some_t **                 DWARF  a14-24
+true   gg       struct Some *             DWARF  a14-20
+true   q        double                    DWARF  a14-16
+true   g        char *                    DWARF  a14-8
+true   a        int                       DWARF  a14-4
+false  size_arg size_t                    rizin  a0
+false  arg5     int32_t                   rizin  a4
+false  arg6     int32_t                   rizin  a5
+false  arg7     int32_t                   rizin  a6
+void dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
+            ; CALL XREF from dbg.main @ 0x8000059e
+/ _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
+|           ; var int32_t arg7 @ a6
+|           ; var size_t size_arg @ a0
+|           ; arg int a @ stack - 0x4
+|           ; arg char *g @ stack - 0x8
+|           ; arg double q @ stack - 0x10
+|           ; arg struct Some *gg @ stack - 0x14
+|           ; arg some_t **out @ stack - 0x18
+|           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15
 ---------
 EOF
 RUN
@@ -1073,8 +1096,8 @@ e asm.comments=0
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.fn1(size_t size, int32_t arg5, int32_t arg6, int32_t arg7);
-|           ; arg size_t size @ a0
+/ sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7);
+|           ; arg size_t nbytes @ a0
 |           ; arg int32_t arg5 @ a4
 |           ; arg int32_t arg6 @ a5
 |           ; arg int32_t arg7 @ a6
@@ -1126,133 +1149,101 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Function va_args arguments from DWARF
-FILE=bins/elf/float_ex1/float_ex1_hightec
+NAME=Repeated function analysis - arguments and vars
+FILE=bins/elf/analysis/001.make.elf.x86_64
 CMDS=<<EOF
 aaa
-(sig; afv; afs; pd 1; echo "")
-s dbg.printf
-.(sig)
-s dbg.prout
-.(sig)
-s dbg._fpadd_parts
-.(sig)
-s dbg.strnlen_s
-.(sig)
-s dbg._Wctomb
-.(sig)
-s dbg._Mbtowc
-.(sig)
-s dbg.feraiseexcept
-.(sig)
-s dbg._Atrealloc
-.(sig)
+s 0x0040bbe0
+afi
+echo ---
+afvl
+pd 1
+aaa
+afvl
+pd 1
+aaa
+afvl
+pd 1
 EOF
 EXPECT=<<EOF
-var va_list ap @ stack + 0x4
-arg const char *fmt @ a6
-int printf(const char *format);
-            ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
-            ;-- printf:
-/ int dbg.printf(const char *fmt, va_args ..);
-|           ; arg const char *fmt @ a6
-|           ; var va_list ap @ stack + 0x4
-|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, va_args ..);
-
-arg void *str @ a15
-arg const char *buf @ a5
-arg size_t n @ d4
-void dbg.prout(const char *buf);
-            ;-- prout:
-/ void *dbg.prout(void *str, const char *buf, size_t n);
-|           ; arg void *str @ a15
-|           ; arg size_t n @ d4
-|           ; arg const char *buf @ a5
-|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void *prout(void *str, const char *buf, size_t n);
-
-arg fp_number_type *b @ a12
-arg fp_number_type *a @ a13
-arg fp_number_type *tmp @ a15
-var fractype a_fraction @ d11
-var int diff @ d12
-var int a_normal_exp @ d15
-var int b_normal_exp @ d2
-var intfrac tfraction @ d3
-var fractype b_fraction @ d9
-void dbg._fpadd_parts();
-            ; CALL XREF from dbg.__adddf3 @ 0x80003e32
-            ; CALL XREF from dbg.__subdf3 @ 0x80003e72
-            ;-- _fpadd_parts:
-/ fp_number_type *dbg._fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
-|           ; arg fp_number_type *a @ a13
-|           ; arg fp_number_type *b @ a12
-|           ; arg fp_number_type *tmp @ a15
-|           ; var intfrac tfraction @ d3
-|           ; var int a_normal_exp @ d15
-|           ; var int b_normal_exp @ d2
-|           ; var fractype a_fraction @ d11
-|           ; var fractype b_fraction @ d9
-|           ; var int diff @ d12
-|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type *_fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
-
-var const char *sc @ a2
-arg const char *s @ a4
-arg size_t maxsize @ d4
-void dbg.strnlen_s(const char *s);
-            ; CALL XREF from dbg._Fail_s @ 0x8000191e
-            ;-- strnlen_s:
-/ size_t dbg.strnlen_s(const char *s, size_t maxsize);
-|           ; arg size_t maxsize @ d4
-|           ; var const char *sc @ a2
-|           ; arg const char *s @ a4
-|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize);
-
-arg mbstate_t *pst @ a12
-var _Statab *pwcstate @ a13
-arg char *s @ a15
-arg wchar_t wc @ d15
-void dbg._Wctomb();
-            ; CALL XREF from dbg._Putstr @ 0x800014d2
-            ;-- _Wctomb:
-/ int dbg._Wctomb(char *s, wchar_t wc, mbstate_t *pst);
-|           ; arg char *s @ a15
-|           ; arg wchar_t wc @ d15
-|           ; arg mbstate_t *pst @ a12
-|           ; var _Statab *pwcstate @ a13
-|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
-
-arg wchar_t *pwc @ a4
-arg const char *s @ a5
-arg mbstate_t *pst @ a6
-arg size_t nin @ d4
-void dbg._Mbtowc(wchar_t *pwc, const char *s, mbstate_t *pst);
-            ; CALL XREF from dbg._Printf @ 0x80000d02
-            ;-- _Mbtowc:
-/ int dbg._Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
-|           ; arg size_t nin @ d4
-|           ; arg wchar_t *pwc @ a4
-|           ; arg const char *s @ a5
-|           ; arg mbstate_t *pst @ a6
-|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
-
-arg int except @ d4
-int feraiseexcept(int excepts);
-            ; CALL XREF from dbg._Feraise @ 0x8000343e
-            ;-- feraiseexcept:
-/ int dbg.feraiseexcept(int except);
-|           ; arg int except @ d4
-|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except);
-
-var Ppvoidfn newfuns @ a12
-var size_t inc @ d15
-void dbg._Atrealloc();
-            ; CALL XREF from dbg.atexit @ 0x80001a4c
-            ; CALL XREF from dbg._Atexit @ 0x800033b8
-            ;-- _Atrealloc:
-/ int dbg._Atrealloc();
-|           ; var size_t inc @ d15
-|           ; var Ppvoidfn newfuns @ a12
-|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc();
-
+offset: 0x0040bbe0
+name: sym.variable_expand_for_file
+size: 129
+is-pure: false
+realsz: 120
+stackframe: 0
+call-convention: amd64
+cyclomatic-cost: 37
+cyclomatic-complexity: 3
+loops: 1
+bits: 64
+type: sym
+num-bbs: 5
+edges: 6
+end-bbs: 1
+call-refs: 0x0040b0f0 C 0x0040b0f0 J
+data-refs: 0x006331a0 0x00636050 0x006331a0 0x00636050 0x006331a0 0x00636050
+code-xrefs: 0x0040cc17 C 0x00412775 C
+noreturn: false
+in-degree: 2
+out-degree: 1
+data-xrefs:
+locals: 4
+args: 2
+var char *result @ rax
+var struct variable_set_list *savev @ rbp
+var floc *savef @ rbx
+arg struct file *file @ rsi
+arg const char *line @ rsi
+var int64_t var_60h @ stack - 0x60
+---
+var int64_t var_60h @ stack - 0x60
+var char *result @ rax
+var struct variable_set_list *savev @ rbp
+var floc *savef @ rbx
+arg struct file *file @ rsi
+arg const char *line @ rsi
+            ; CALL XREF from dbg.expand_deps @ 0x40cc17
+            ; CALL XREF from dbg.pattern_search @ 0x412775
+/ char *sym.variable_expand_for_file(const char *line, struct file *file);
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; arg const char *line @ rsi
+|           ; arg struct file *file @ rsi
+|           ; var char *result @ rax
+|           ; var struct variable_set_list *savev @ rbp
+|           ; var floc *savef @ rbx
+|           0x0040bbe0      test  rsi, rsi                             ; expand.c:458 ; file
+var int64_t var_60h @ stack - 0x60
+var char *result @ rax
+var struct variable_set_list *savev @ rbp
+var floc *savef @ rbx
+arg struct file *file @ rsi
+arg const char *line @ rsi
+            ; CALL XREF from dbg.expand_deps @ 0x40cc17
+            ; CALL XREF from dbg.pattern_search @ 0x412775
+/ char *sym.variable_expand_for_file(const char *line, struct file *file);
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; arg const char *line @ rsi
+|           ; arg struct file *file @ rsi
+|           ; var char *result @ rax
+|           ; var struct variable_set_list *savev @ rbp
+|           ; var floc *savef @ rbx
+|           0x0040bbe0      test  rsi, rsi                             ; expand.c:458 ; file
+var int64_t var_60h @ stack - 0x60
+var char *result @ rax
+var struct variable_set_list *savev @ rbp
+var floc *savef @ rbx
+arg struct file *file @ rsi
+arg const char *line @ rsi
+            ; CALL XREF from dbg.expand_deps @ 0x40cc17
+            ; CALL XREF from dbg.pattern_search @ 0x412775
+/ char *sym.variable_expand_for_file(const char *line, struct file *file);
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; arg const char *line @ rsi
+|           ; arg struct file *file @ rsi
+|           ; var char *result @ rax
+|           ; var struct variable_set_list *savev @ rbp
+|           ; var floc *savef @ rbx
+|           0x0040bbe0      test  rsi, rsi                             ; expand.c:458 ; file
 EOF
 RUN

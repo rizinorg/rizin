@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 static bool rtr_visual(RzCore *core, TextLog T, const char *cmd) {
+	RzLine *line = core->cons->line;
 	bool autorefresh = false;
 	if (cmd) {
 		rz_cons_break_push(NULL, NULL);
@@ -78,9 +79,9 @@ TODO:
 #endif
 				char buf[1024];
 				if (COLORFLAGS) {
-					rz_line_set_prompt(Color_RESET ":> ");
+					rz_line_set_prompt(line, Color_RESET ":> ");
 				} else {
-					rz_line_set_prompt(":> ");
+					rz_line_set_prompt(line, ":> ");
 				}
 				showcursor(core, true);
 				rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL);
@@ -109,14 +110,14 @@ TODO:
 				do {
 					char buf[1024];
 #if __UNIX__
-					rz_line_set_prompt(Color_RESET ":> ");
+					rz_line_set_prompt(line, Color_RESET ":> ");
 #else
-					rz_line_set_prompt(":> ");
+					rz_line_set_prompt(line, ":> ");
 #endif
 					showcursor(core, true);
 					rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 					if (*buf) {
-						rz_line_hist_add(buf);
+						rz_line_hist_add(line, buf);
 						char *res = rtrcmd(T, buf);
 						if (res) {
 							rz_cons_println(res);
@@ -188,14 +189,15 @@ static void __rtr_shell(RzCore *core, int nth) {
 	int len;
 	const char *res;
 	RzSocket *s = NULL;
+	RzLine *line = core->cons->line;
 
 	TextLog T = { host, port, file };
 	snprintf(prompt, sizeof(prompt), "[%s://%s:%s/%s]> ",
 		proto, host, port, file);
 	snprintf(prompt2, sizeof(prompt2), "[%s:%s]$ ", host, port);
 	for (;;) {
-		rz_line_set_prompt(prompt);
-		res = rz_line_readline();
+		rz_line_set_prompt(line, prompt);
+		res = rz_line_readline(line);
 		if (!res || !*res) {
 			break;
 		}
@@ -204,8 +206,8 @@ static void __rtr_shell(RzCore *core, int nth) {
 		}
 		if (!strcmp(res, "!sh")) {
 			for (;;) {
-				rz_line_set_prompt(prompt2);
-				res = rz_line_readline();
+				rz_line_set_prompt(line, prompt2);
+				res = rz_line_readline(line);
 				if (!res || !*res || !strcmp(res, "exit")) {
 					break;
 				}
@@ -221,7 +223,7 @@ static void __rtr_shell(RzCore *core, int nth) {
 					res = res ? res + 2 : str;
 					const char *tail = (res[strlen(res) - 1] == '\n') ? "" : "\n";
 					printf("%s%s", res, tail);
-					rz_line_hist_add(str);
+					rz_line_hist_add(line, str);
 					free(str);
 				}
 				free(ptr);
@@ -237,7 +239,7 @@ static void __rtr_shell(RzCore *core, int nth) {
 			char *cmdline = rz_str_newf("%d %s", nth, res);
 			rz_core_rtr_cmd(core, cmdline);
 			rz_cons_flush();
-			rz_line_hist_add(res);
+			rz_line_hist_add(line, res);
 		}
 	}
 	rz_socket_free(s);

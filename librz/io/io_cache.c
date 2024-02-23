@@ -90,7 +90,7 @@ RZ_API int rz_io_cache_invalidate(RzIO *io, ut64 from, ut64 to) {
 	return invalidated;
 }
 
-RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
+RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf, false);
 	RzIOCache *ch = RZ_NEW0(RzIOCache);
 	if (!ch) {
@@ -128,7 +128,7 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	return true;
 }
 
-RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, int len) {
+RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 	rz_return_val_if_fail(io && buf, false);
 	RzSkyline *skyline = &io->cache_skyline;
 	if (!len) {

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 #define HASH_NCHAIN_OFFSET(x) ((x) + 4)
 
@@ -196,7 +196,7 @@ static bool is_section_local_symbol(ELFOBJ *bin, Elf_(Sym) * symbol) {
 
 static bool set_elf_symbol_name(ELFOBJ *bin, struct symbols_segment *segment, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, RzBinElfSection *section) {
 	if (section && is_section_local_symbol(bin, symbol)) {
-		elf_symbol->name = rz_str_new(section->name);
+		elf_symbol->name = rz_str_dup(section->name);
 		return elf_symbol->name;
 	}
 

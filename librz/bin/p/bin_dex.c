@@ -68,7 +68,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bf->sdb;
 }
 
-static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
+static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -77,7 +77,7 @@ static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	return rz_bin_dex_classes(dex);
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -86,7 +86,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return rz_bin_dex_imports(dex);
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -95,7 +95,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_dex_sections(dex);
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -104,7 +104,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return rz_bin_dex_symbols(dex);
 }
 
-static RzList /*<char *>*/ *libraries(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libraries(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -131,7 +131,7 @@ static RzList /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	return rz_bin_dex_entrypoints(dex);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -140,7 +140,7 @@ static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_dex_strings(dex);
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -151,7 +151,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzList *vfiles = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	RzPVector *vfiles = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!vfiles) {
 		return NULL;
 	}
@@ -165,7 +165,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	vf->buf_owned = false;
 	vf->name = strdup(RZ_DEX_RELOC_TARGETS);
 
-	rz_list_push(vfiles, vf);
+	rz_pvector_push(vfiles, vf);
 	return vfiles;
 }
 
@@ -214,12 +214,13 @@ static ut64 get_offset(RzBinFile *bf, int type, int index) {
 	}
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
-	RzList *maps = rz_bin_maps_of_file_sections(bf);
-	RzListIter *iter;
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+	RzPVector *maps = rz_bin_maps_of_file_sections(bf);
+	void **iter;
 	RzBinMap *map;
 
-	rz_list_foreach (maps, iter, map) {
+	rz_pvector_foreach (maps, iter) {
+		map = *iter;
 		if (strcmp(map->name, RZ_DEX_RELOC_TARGETS)) {
 			continue;
 		}
@@ -251,7 +252,6 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.libs = libraries,
 	.classes = classes,
 	.demangle_type = demangle_type,
-	.minstrlen = 0,
 };
 
 #ifndef RZ_PLUGIN_INCORE

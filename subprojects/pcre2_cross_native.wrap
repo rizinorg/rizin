@@ -1,0 +1,9 @@
+[wrap-git]
+url = https://github.com/PCRE2Project/pcre2.git
+revision = 3864abdb713f78831dd12d898ab31bbb0fa630b6
+directory = pcre2_cross_native
+patch_directory = pcre2_cross_native
+
+[provide]
+dependency_names = pcre2_cross_native
+pcre2_cross_native = pcre2_cross_native_dep

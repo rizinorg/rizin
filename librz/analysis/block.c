@@ -4,8 +4,7 @@
 
 #include <rz_analysis.h>
 #include <rz_hash.h>
-#include <ht_uu.h>
-#include <assert.h>
+#include <rz_util/ht_uu.h>
 
 #define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzAnalysisBlock, _rb) : NULL)
 
@@ -38,7 +37,7 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 #define D if (analysis && analysis->verbose)
 
 RZ_API void rz_analysis_block_ref(RzAnalysisBlock *bb) {
-	assert(bb->ref > 0); // 0-refd must already be freed.
+	rz_return_if_fail(bb->ref > 0); // 0-refd must already be freed.
 	bb->ref++;
 }
 
@@ -376,12 +375,12 @@ RZ_API void rz_analysis_block_unref(RzAnalysisBlock *bb) {
 	if (!bb) {
 		return;
 	}
-	assert(bb->ref > 0);
+	rz_return_if_fail(bb->ref > 0);
 	bb->ref--;
-	assert(bb->ref >= rz_list_length(bb->fcns)); // all of the block's functions must hold a reference to it
+	rz_return_if_fail(bb->ref >= rz_list_length(bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
 		RzAnalysis *analysis = bb->analysis;
-		assert(!bb->fcns || rz_list_empty(bb->fcns));
+		rz_return_if_fail(!bb->fcns || rz_list_empty(bb->fcns));
 		rz_rbtree_aug_delete(&analysis->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 	}
 }
@@ -496,14 +495,14 @@ typedef struct {
 
 RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnalysisBlockCb cb, RZ_NULLABLE RzAnalysisBlockCb on_exit, void *user) {
 	rz_return_val_if_fail(block && cb, true);
+	RzVector path;
 	bool breaked = false;
 	HtUP *visited = ht_up_new0();
+	rz_vector_init(&path, sizeof(RecurseDepthFirstCtx), NULL, NULL);
 	if (!visited) {
 		goto beach;
 	}
 	RzAnalysis *analysis = block->analysis;
-	RzVector path;
-	rz_vector_init(&path, sizeof(RecurseDepthFirstCtx), NULL, NULL);
 	RzAnalysisBlock *cur_bb = block;
 	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 	rz_vector_push(&path, &ctx);
@@ -807,10 +806,8 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
-	RzList merge_blocks;
-	rz_list_init(&merge_blocks);
-	merge_blocks.free = (RzListFree)rz_analysis_block_unref;
-	ht_up_foreach(succs, noreturn_get_blocks_cb, &merge_blocks);
+	RzList *merge_blocks = rz_list_newf((RzListFree)rz_analysis_block_unref);
+	ht_up_foreach(succs, noreturn_get_blocks_cb, merge_blocks);
 
 	// Free/unref BEFORE doing the merge!
 	// Some of the blocks might not be valid anymore later!
@@ -820,11 +817,11 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 	ut64 block_addr = block->addr; // save the addr to identify the block. the automerge might free it so we must not use the pointer!
 
 	// Do the actual merge
-	rz_analysis_block_automerge(&merge_blocks);
+	rz_analysis_block_automerge(merge_blocks);
 
 	// No try to recover the pointer to the block if it still exists
 	RzAnalysisBlock *ret = NULL;
-	for (it = merge_blocks.head; it && (block = it->data, 1); it = it->n) {
+	rz_list_foreach (merge_blocks, it, block) {
 		if (block->addr == block_addr) {
 			// block is still there
 			ret = block;
@@ -832,7 +829,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 		}
 	}
 
-	rz_list_purge(&merge_blocks);
+	rz_list_free(merge_blocks);
 	return ret;
 }
 
@@ -941,7 +938,7 @@ RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks) 
 		// we would uaf after the merge since block will be freed.
 		RzListIter *bit;
 		RzAnalysisBlock *clock;
-		for (bit = it->n; bit && (clock = bit->data, 1); bit = bit->n) {
+		rz_list_foreach_iter(rz_list_iter_get_next(it), bit, clock) {
 			RzAnalysisBlock *fixup_pred = ht_up_find(ctx.predecessors, (ut64)(size_t)clock, NULL);
 			if (fixup_pred == block) {
 				rz_list_push(fixup_candidates, clock);

@@ -213,7 +213,7 @@ struct MACH0_(obj_t) {
 	struct symbol_t *symbols;
 	ut64 main_addr;
 
-	RzList /*<RzBinSection *>*/ *sections_cache;
+	RzPVector /*<RzBinSection *>*/ *sections_cache;
 	RzSkipList /* struct reloc_t * */ *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
 	bool relocs_parsed; ///< whether relocs have already been parsed and relocs is filled (or NULL on error)
 	bool reloc_targets_map_base_calculated;
@@ -233,10 +233,10 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin);
 char *MACH0_(section_type_to_string)(ut64 type);
 RzList /*<char *>*/ *MACH0_(section_flag_to_rzlist)(ut64 flag);
-RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf);
-RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf);
-RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf);
-RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf);
+RzPVector /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf);
+RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf);
+RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf);
+RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
 void MACH0_(imports_foreach)(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user);
@@ -262,7 +262,7 @@ const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) * hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr);
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf);
 void MACH0_(mach_headerfields)(RzBinFile *bf);
-RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf);
+RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf);
 RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, bool filter);
 RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);
 RZ_API ut64 MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * bin, ut64 addr);

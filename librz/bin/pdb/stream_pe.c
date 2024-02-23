@@ -17,7 +17,7 @@ static bool parse_image_header(PeImageSectionHeader *hdr, RzBuffer *buf) {
 		rz_buf_read_le32(buf, &hdr->charactestics);
 }
 
-RZ_IPI bool parse_pe_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+RZ_IPI bool pe_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	rz_return_val_if_fail(pdb && stream, false);
 	if (!pdb->s_pe) {
 		pdb->s_pe = RZ_NEW0(RzPdbPeStream);
@@ -50,7 +50,7 @@ RZ_IPI bool parse_pe_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	}
 	return true;
 }
-RZ_IPI void free_pe_stream(RzPdbPeStream *stream) {
+RZ_IPI void pe_stream_free(RzPdbPeStream *stream) {
 	if (!stream) {
 		return;
 	}

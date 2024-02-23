@@ -13,6 +13,7 @@ typedef union arm_cs_itcond_t {
 	struct {
 		ut32 cond; ///< arm_cc
 		ut8 off; ///< offset of this instruction from the it, for back-referencing to the ArmCSITBlock
+		ut8 vpt; ///< >0 if it is a VCC condition. 0 otherwise.
 	};
 	ut64 packed; ///< for putting into HtUU
 } ArmCSITCond;
@@ -27,12 +28,56 @@ RZ_API void rz_arm_it_context_fini(RzArmITContext *ctx) {
 	ht_uu_free(ctx->ht_itcond);
 }
 
+#if CS_NEXT_VERSION < 6
+inline static arm_cc ARMCC_getOppositeCondition(arm_cc cc) {
+	switch (cc) {
+	default:
+		// llvm_unreachable("Unknown condition code");
+		rz_warn_if_reached();
+		return ARM_CC_INVALID;
+	case ARM_CC_EQ:
+		return ARM_CC_NE;
+	case ARM_CC_NE:
+		return ARM_CC_EQ;
+	case ARM_CC_HS:
+		return ARM_CC_LO;
+	case ARM_CC_LO:
+		return ARM_CC_HS;
+	case ARM_CC_MI:
+		return ARM_CC_PL;
+	case ARM_CC_PL:
+		return ARM_CC_MI;
+	case ARM_CC_VS:
+		return ARM_CC_VC;
+	case ARM_CC_VC:
+		return ARM_CC_VS;
+	case ARM_CC_HI:
+		return ARM_CC_LS;
+	case ARM_CC_LS:
+		return ARM_CC_HI;
+	case ARM_CC_GE:
+		return ARM_CC_LT;
+	case ARM_CC_LT:
+		return ARM_CC_GE;
+	case ARM_CC_GT:
+		return ARM_CC_LE;
+	case ARM_CC_LE:
+		return ARM_CC_GT;
+	}
+}
+#endif
+
 /**
  * Signal a newly detected IT block
  * \p insn must be ARM_INS_IT
  */
 RZ_API void rz_arm_it_update_block(RzArmITContext *ctx, cs_insn *insn) {
-	rz_return_if_fail(ctx && insn && insn->id == ARM_INS_IT);
+#if CS_NEXT_VERSION >= 6
+	rz_return_if_fail(ctx && insn && (insn->id == ARM_INS_IT || insn->id == ARM_INS_VPT));
+	bool is_vpt = insn->id == ARM_INS_VPT;
+#else
+	rz_return_if_fail(ctx && insn && (insn->id == ARM_INS_IT));
+#endif
 	bool found;
 	ht_uu_find(ctx->ht_itblock, insn->address, &found);
 	if (found) {
@@ -48,15 +93,39 @@ RZ_API void rz_arm_it_update_block(RzArmITContext *ctx, cs_insn *insn) {
 		ArmCSITCond cond = { 0 };
 		cond.off = block.off[i - 1] = 2 * i;
 		switch (insn->mnemonic[i]) {
+#if CS_NEXT_VERSION >= 6
+		case 0x74: //'t'
+			cond.cond = is_vpt ? insn->detail->arm.vcc : insn->detail->arm.cc;
+			break;
+		case 0x65: //'e'
+			if (is_vpt) {
+				cond.cond = insn->detail->arm.vcc;
+			} else if (insn->detail->arm.cc == ARMCC_AL) {
+				cond.cond = ARMCC_AL;
+			} else {
+				cond.cond = ARMCC_getOppositeCondition(insn->detail->arm.cc);
+			}
+			break;
+#else
 		case 0x74: //'t'
 			cond.cond = insn->detail->arm.cc;
 			break;
 		case 0x65: //'e'
-			cond.cond = (insn->detail->arm.cc % 2) ? insn->detail->arm.cc + 1 : insn->detail->arm.cc - 1;
+			if (insn->detail->arm.cc == ARM_CC_AL) {
+				cond.cond = ARM_CC_AL;
+			} else {
+				cond.cond = ARMCC_getOppositeCondition(insn->detail->arm.cc);
+			}
 			break;
+#endif
 		default:
 			break;
 		}
+#if CS_NEXT_VERSION >= 6
+		cond.vpt = is_vpt ? 1 : 0;
+#else
+		cond.vpt = 0;
+#endif
 		RZ_STATIC_ASSERT(sizeof(cond) == sizeof(cond.packed));
 		ht_uu_update(ctx->ht_itcond, insn->address + cond.off, cond.packed);
 	}
@@ -91,7 +160,15 @@ RZ_API bool rz_arm_it_apply_cond(RzArmITContext *ctx, cs_insn *insn) {
 	if (!found) {
 		return false;
 	}
+#if CS_NEXT_VERSION >= 6
+	if (cond.vpt) {
+		insn->detail->arm.vcc = cond.cond;
+	} else {
+		insn->detail->arm.cc = cond.cond;
+	}
+#else
 	insn->detail->arm.cc = cond.cond;
+#endif
 	insn->detail->arm.update_flags = 0;
 
 	// Readjust if we detected that the previous assumption of all-2-byte instructions in

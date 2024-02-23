@@ -1,6 +1,7 @@
-platform: darwin/arm64
+labels:
+  platform: darwin/arm64
 
-pipeline:
+steps:
   build:
     image: /bin/bash
     commands:
@@ -12,6 +13,12 @@ pipeline:
     commands:
       - cd test
       - git clone --depth=1 https://github.com/rizinorg/rizin-testbins bins
+  install-rzpipe:
+    image: /bin/bash
+    commands:
+      - cd test
+      - git clone --depth=1 https://github.com/rizinorg/rz-pipe
+      - pip3 install --user "file://`pwd`/rz-pipe#egg=rzpipe&subdirectory=python"
   unit-test:
     image: /bin/bash
     commands:

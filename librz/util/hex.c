@@ -550,11 +550,19 @@ RZ_API st64 rz_hex_bin_truncate(ut64 in, int n) {
 	return in;
 }
 
-// Check if str contains only hexadecimal characters and return length of bytes
-RZ_API int rz_hex_str_is_valid(const char *str) {
+/**
+ * \brief Check if \p str contains only hexadecimal characters
+ *
+ * Check that the input string is in the hexadecimal form (e.g. "41424344", with whitespace ignored), and return the number of bytes of its raw binary form (4 for the previous example), or an error if non-hexadecimal characters were found
+ *
+ * \param str Input string in hexadecimal form.
+ * \param allow_prefix Whether an optional "0x" prefix may be present at the start of \p str.
+ * \return number of bytes in the raw binary form of \p str, or -1 if invalid characters were found
+ */
+RZ_API int rz_hex_str_is_valid(const char *str, bool allow_prefix) {
 	int i;
 	int len = 0;
-	if (!strncmp(str, "0x", 2)) {
+	if (allow_prefix && !strncmp(str, "0x", 2)) {
 		str += 2;
 	}
 	for (i = 0; str[i] != '\0'; i++) {

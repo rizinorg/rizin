@@ -5,8 +5,13 @@
 #include <rz_analysis.h>
 #include <rz_asm.h>
 
-static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
-	static RzPVector *pvec = NULL;
+typedef struct {
+	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
+} BfContext;
+
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) {
+	BfContext *ctx = (BfContext *)a->plugin_data;
+	RzPVector *pvec = ctx->token_patterns;
 	if (pvec) {
 		return pvec;
 	}
@@ -25,14 +30,14 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
 	pat->pattern = strdup(
-		"(ptr)");
+		"ptr");
 	rz_pvector_push(pvec, pat);
 
 	// reference pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_OPERATOR;
 	pat->pattern = strdup(
-		"(\\[)|(\\])" // Matches a single bracket
+		"\\[|\\]" // Matches a single bracket
 	);
 	rz_pvector_push(pvec, pat);
 
@@ -40,7 +45,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_SEPARATOR;
 	pat->pattern = strdup(
-		"([[:blank:]]+)");
+		"\\s+");
 	rz_pvector_push(pvec, pat);
 
 	return pvec;
@@ -95,7 +100,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	rz_strbuf_set(&op->buf_asm, buf_asm);
 
-	RzPVector *token_patterns = get_token_patterns();
+	RzPVector *token_patterns = get_token_patterns(a);
 	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, token_patterns);
 	op->asm_toks->op_type = op_type;
 
@@ -164,6 +169,23 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	return n;
 }
 
+static bool bf_init(void **user) {
+	BfContext *ctx = RZ_NEW0(BfContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->token_patterns = NULL;
+	*user = ctx;
+	return true;
+}
+
+static bool bf_fini(void *user) {
+	BfContext *ctx = (BfContext *)user;
+	if (ctx) {
+		rz_pvector_free(ctx->token_patterns);
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_bf = {
 	.name = "bf",
 	.author = "pancake, nibble",
@@ -173,6 +195,8 @@ RzAsmPlugin rz_asm_plugin_bf = {
 	.bits = 16 | 32 | 64,
 	.endian = RZ_SYS_ENDIAN_NONE,
 	.desc = "Brainfuck",
+	.init = bf_init,
+	.fini = bf_fini,
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };

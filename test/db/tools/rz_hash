@@ -62,6 +62,14 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 sha512: 2640b1ff9687
 EOF
 RUN
 
+NAME=rz-hash -a sm3
+FILE==
+CMDS=!rz-hash -a sm3 bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 sm3: 76a9114ffbb126d855c146b37f99b696a3754e1935ac4850f95d15b91a97e8db
+EOF
+RUN
+
 NAME=rz-hash -h
 FILE==
 CMDS=!rz-hash~Usage
@@ -205,6 +213,7 @@ ____hm sha1           LGPL3      deroad
 ____hm sha256         BSD-3      Aaron D. Gifford
 ____hm sha384         BSD-3      Aaron D. Gifford
 ____hm sha512         BSD-3      Aaron D. Gifford
+____hm sm3            LGPL2      FSF/deroad
 ____h_ blake3         CC0        Samuel Neves,Jack O'Connor
 ____h_ fletcher8      LGPL3      deroad
 ____h_ fletcher16     LGPL3      deroad
@@ -285,6 +294,7 @@ _D____ ror            LGPL-3     pancake
 ED____ rot            LGPL-3     pancake
 ED____ serpent-ecb    LGPL-3     NicsTr
 ED____ xor            LGPL-3     pancake
+ED____ sm4-ecb        LGPL-3     0xSh4dy
 
 flags legenda:
     E = encryption, D = decryption
@@ -673,6 +683,7 @@ string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha384: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha512: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sm3: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 blake3: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher8: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher16: computed hash doesn't match the expected one
@@ -1239,6 +1250,22 @@ FILE==
 CMDS=!rz-hash -a fletcher64 -s hello-world
 EXPECT=<<EOF
 string: 0x00000000-0x0000000b fletcher64: 49ff47dc88f79724
+EOF
+RUN
+
+NAME=rz-hash -qqE sm4-ecb
+FILE==
+CMDS=!rz-hash  -qqE sm4-ecb -K eb54a02a277466043a8045838590d7f8 -x 0f297f79fd109457bbd23ad98f8a6ee1460558 | rz-ax -S
+EXPECT=<<EOF
+5cfb54093f02dea448d0cf68117215a60587fa2786d0c30062b1fc974f07c51f
+EOF
+RUN
+
+NAME=rz-hash -qqD sm4-ecb
+FILE==
+CMDS=!rz-hash  -qqD sm4-ecb -K eb54a02a277466043a8045838590d7f8 -x 5cfb54093f02dea448d0cf68117215a60587fa2786d0c30062b1fc974f07c51f | rz-ax -S
+EXPECT=<<EOF
+0f297f79fd109457bbd23ad98f8a6ee146055800000000000000000000000000
 EOF
 RUN
 

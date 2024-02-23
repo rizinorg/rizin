@@ -268,6 +268,8 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_PROPELLER, "propeller" },
 	{ EM_MICROBLAZE, "microblaze.gnu" },
 	{ EM_RISCV, "riscv" },
+	{ EM_RL78, "rl78" },
+	{ EM_RX, "rx" },
 	{ EM_VAX, "vax" },
 	{ EM_XTENSA, "xtensa" },
 	{ EM_LANAI, "lanai" },
@@ -275,6 +277,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_VIDEOCORE4, "vc4" },
 	{ EM_MSP430, "msp430" },
 	{ EM_SH, "sh" },
+	{ EM_V810, "v810" },
 	{ EM_V800, "v850" },
 	{ EM_V850, "v850" },
 	{ EM_IA_64, "ia64" },
@@ -438,6 +441,29 @@ static ut64 get_main_offset_mips(ELFOBJ *bin, ut64 entry, ut8 *buf, size_t size)
 	}
 
 	return 0;
+}
+
+static ut64 get_main_offset_v850(ELFOBJ *bin, ut64 entry, ut8 *buf) {
+	size_t delta = 0;
+
+	/* distinguish by the first two instructions */
+
+	if (!memcmp(buf, "\x20\xa6\xff\x00\x35\x06\xff\xff\x00\x00", 10)) {
+		/* movea 0xFF, r0, r20; mov 0xFFFF, r21 */
+		delta = 0x64;
+	} else if (!memcmp(buf, "\x20\xa6\xff\x00\x00\xa8", 6)) {
+		/* movea 0xFF, r0, r20 ; mov r0, r21 */
+		delta = 0x4e;
+	}
+
+	if (!delta) {
+		return UT64_MAX;
+	}
+
+	ut16 jmp_offset = rz_read_le16(buf + delta);
+	ut64 entry_vaddr = Elf_(rz_bin_elf_p2v)(bin, entry);
+	ut64 vaddr = (entry_vaddr + (delta - 2) + jmp_offset) & ~1;
+	return Elf_(rz_bin_elf_v2p)(bin, vaddr);
 }
 
 static ut64 get_main_offset_arm_glibc_thumb(ELFOBJ *bin, ut64 entry, ut8 *buf) {
@@ -870,11 +896,11 @@ static char *get_abi_mips(ELFOBJ *bin) {
 /**
  * \brief List all imported lib
  * \param elf binary
- * \return an allocated list of char*
+ * \return an allocated pvector of char*
  *
  * Use dynamic information (dt_needed) to generate a list of imported lib
  */
-RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzPVector /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !bin->dynstr) {
@@ -886,7 +912,7 @@ RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	RzList *result = rz_list_newf(free);
+	RzPVector *result = rz_pvector_new(free);
 	if (!result) {
 		return NULL;
 	}
@@ -895,12 +921,12 @@ RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_vector_foreach(dt_needed, iter) {
 		char *tmp = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, *iter);
 		if (!tmp) {
-			rz_list_free(result);
+			rz_pvector_free(result);
 			return NULL;
 		}
 
-		if (!rz_list_append(result, tmp)) {
-			rz_list_free(result);
+		if (!rz_pvector_push(result, tmp)) {
+			rz_pvector_free(result);
 			return NULL;
 		}
 	}
@@ -1958,6 +1984,11 @@ ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin) {
 	}
 
 	main_addr = get_main_offset_linux_64_pie(bin, entry, buf);
+	if (main_addr != UT64_MAX) {
+		return main_addr;
+	}
+
+	main_addr = get_main_offset_v850(bin, entry, buf);
 	if (main_addr != UT64_MAX) {
 		return main_addr;
 	}

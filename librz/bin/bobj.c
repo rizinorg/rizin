@@ -41,9 +41,10 @@ RZ_API void rz_bin_mem_free(RZ_NULLABLE void *data) {
 		return;
 	}
 	RzBinMem *mem = (RzBinMem *)data;
+	free(mem->name);
 	if (mem->mirrors) {
-		mem->mirrors->free = rz_bin_mem_free;
-		rz_list_free(mem->mirrors);
+		mem->mirrors->v.free_user = rz_bin_mem_free;
+		rz_pvector_free(mem->mirrors);
 	}
 	free(mem);
 }
@@ -72,7 +73,7 @@ RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc) {
 		} \
 	} while (0);
 
-static int reloc_cmp(const void *a, const void *b) {
+static int reloc_cmp(const void *a, const void *b, void *user) {
 	const RzBinReloc *ar = a;
 	const RzBinReloc *br = b;
 	CMP_CHECK(vaddr);
@@ -82,7 +83,7 @@ static int reloc_cmp(const void *a, const void *b) {
 	return 0;
 }
 
-static int reloc_target_cmp(const void *a, const void *b) {
+static int reloc_target_cmp(const void *a, const void *b, void *user) {
 	const RzBinReloc *ar = a;
 	const RzBinReloc *br = b;
 	CMP_CHECK(target_vaddr);
@@ -94,32 +95,33 @@ static int reloc_target_cmp(const void *a, const void *b) {
 
 #undef CMP_CHECK
 
-RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList /*<RzBinReloc *>*/ *relocs) {
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs) {
 	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
 	if (!ret) {
 		return NULL;
 	}
 	RzPVector sorter;
 	rz_pvector_init(&sorter, NULL);
-	rz_pvector_reserve(&sorter, rz_list_length(relocs));
+	rz_pvector_reserve(&sorter, rz_pvector_len(relocs));
 	RzPVector target_sorter;
 	rz_pvector_init(&target_sorter, NULL);
-	rz_pvector_reserve(&target_sorter, rz_list_length(relocs));
-	RzListIter *it;
+	rz_pvector_reserve(&target_sorter, rz_pvector_len(relocs));
+	void **it;
 	RzBinReloc *reloc;
-	rz_list_foreach (relocs, it, reloc) {
+	rz_pvector_foreach (relocs, it) {
+		reloc = *it;
 		rz_pvector_push(&sorter, reloc);
 		if (rz_bin_reloc_has_target(reloc)) {
 			rz_pvector_push(&target_sorter, reloc);
 		}
 	}
-	relocs->free = NULL; // ownership of relocs transferred
-	rz_list_free(relocs);
-	rz_pvector_sort(&sorter, reloc_cmp);
+	relocs->v.free = NULL; // ownership of relocs transferred
+	rz_pvector_free(relocs);
+	rz_pvector_sort(&sorter, reloc_cmp, NULL);
 	ret->relocs_count = rz_pvector_len(&sorter);
 	ret->relocs = (RzBinReloc **)rz_pvector_flush(&sorter);
 	rz_pvector_fini(&sorter);
-	rz_pvector_sort(&target_sorter, reloc_target_cmp);
+	rz_pvector_sort(&target_sorter, reloc_target_cmp, NULL);
 	ret->target_relocs_count = rz_pvector_len(&target_sorter);
 	ret->target_relocs = (RzBinReloc **)rz_pvector_flush(&target_sorter);
 	rz_pvector_fini(&target_sorter);
@@ -191,17 +193,17 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_bin_reloc_storage_free(o->relocs);
 	rz_bin_source_line_info_free(o->lines);
 	rz_bin_string_database_free(o->strings);
-	rz_list_free(o->classes);
+	rz_pvector_free(o->classes);
 	rz_list_free(o->entries);
-	rz_list_free(o->fields);
-	rz_list_free(o->imports);
-	rz_list_free(o->libs);
-	rz_list_free(o->maps);
-	rz_list_free(o->mem);
-	rz_list_free(o->sections);
-	rz_list_free(o->symbols);
-	rz_list_free(o->vfiles);
-	rz_list_free(o->resources);
+	rz_pvector_free(o->fields);
+	rz_pvector_free(o->imports);
+	rz_pvector_free(o->libs);
+	rz_pvector_free(o->maps);
+	rz_pvector_free(o->mem);
+	rz_pvector_free(o->sections);
+	rz_pvector_free(o->symbols);
+	rz_pvector_free(o->vfiles);
+	rz_pvector_free(o->resources);
 	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
 	}
@@ -228,7 +230,7 @@ static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *s
 	}
 
 	c->name = strdup(name);
-	c->super = rz_str_new(super);
+	c->super = rz_str_dup(super);
 	c->methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	c->fields = rz_list_newf((RzListFree)rz_bin_class_field_free);
 	c->addr = address;
@@ -271,6 +273,18 @@ RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b) {
 	return 0;
 }
 
+static int bin_compare_method(RzBinSymbol *a, RzBinSymbol *b, void *user) {
+	return rz_bin_compare_method(a, b);
+}
+
+static int bin_compare_class(RzBinClass *a, RzBinClass *b, void *user) {
+	return rz_bin_compare_class(a, b);
+}
+
+static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void *user) {
+	return rz_bin_compare_class_field(a, b);
+}
+
 /**
  * \brief      Tries to add a new class unless its name is found and returns it.
  *
@@ -300,10 +314,8 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 		return NULL;
 	}
 
-	if (!o->classes->sorted) {
-		rz_list_sort(o->classes, (RzListComparator)rz_bin_compare_class);
-	}
-	rz_list_add_sorted(o->classes, oclass, (RzListComparator)rz_bin_compare_class);
+	rz_pvector_push(o->classes, oclass);
+	rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
 	ht_pp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }
@@ -380,12 +392,12 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 	if (!symbol) {
 		return NULL;
 	}
-	symbol->classname = rz_str_new(klass);
+	symbol->classname = rz_str_dup(klass);
 
 	if (!c->methods->sorted) {
-		rz_list_sort(c->methods, (RzListComparator)rz_bin_compare_method);
+		rz_list_sort(c->methods, (RzListComparator)bin_compare_method, NULL);
 	}
-	rz_list_add_sorted(c->methods, symbol, (RzListComparator)rz_bin_compare_method);
+	rz_list_add_sorted(c->methods, symbol, (RzListComparator)bin_compare_method, NULL);
 
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method);
 	if (key) {
@@ -461,9 +473,9 @@ RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject
 	}
 
 	if (!c->fields->sorted) {
-		rz_list_sort(c->fields, (RzListComparator)rz_bin_compare_class_field);
+		rz_list_sort(c->fields, (RzListComparator)bin_compare_class_field, NULL);
 	}
-	rz_list_add_sorted(c->fields, field, (RzListComparator)rz_bin_compare_class_field);
+	rz_list_add_sorted(c->fields, field, (RzListComparator)bin_compare_class_field, NULL);
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name);
 	if (key) {
 		ht_pp_insert(o->glue_to_class_field, key, field);
@@ -532,20 +544,17 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
 	rz_return_val_if_fail(bf && o, NULL);
 
-	static bool first = true;
 	// rz_bin_object_set_items set o->relocs but there we don't have access
 	// to io so we need to be run from bin_relocs, free the previous reloc and get
 	// the patched ones
-	if (first && o->plugin && o->plugin->patch_relocs) {
-		RzList *tmp = o->plugin->patch_relocs(bf);
-		first = false;
+	if (!bf->rbin->is_reloc_patched && o->plugin && o->plugin->patch_relocs) {
+		RzPVector *tmp = o->plugin->patch_relocs(bf);
 		if (!tmp) {
 			return o->relocs;
 		}
 		rz_bin_reloc_storage_free(o->relocs);
 		REBASE_PADDR(o, tmp, RzBinReloc);
 		o->relocs = rz_bin_reloc_storage_new(tmp);
-		first = false;
 		bf->rbin->is_reloc_patched = true;
 	}
 	return o->relocs;
@@ -568,9 +577,10 @@ RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const ch
 	if (!o->vfiles) {
 		return NULL;
 	}
-	RzListIter *it;
+	void **it;
 	RzBinVirtualFile *vf;
-	rz_list_foreach (o->vfiles, it, vf) {
+	rz_pvector_foreach (o->vfiles, it) {
+		vf = *it;
 		if (!strcmp(vf->name, name)) {
 			return vf;
 		}
@@ -655,9 +665,9 @@ RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBi
 }
 
 /**
- * \brief Get list of \p RzBinField representing the fields of the binary object.
+ * \brief Get pvector of \p RzBinField representing the fields of the binary object.
  */
-RZ_API const RzList /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->fields;
 }
@@ -665,7 +675,7 @@ RZ_API const RzList /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBi
 /**
  * \brief Get list of \p RzBinImport representing the imports of the binary object.
  */
-RZ_API const RzList /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->imports;
 }
@@ -679,49 +689,50 @@ RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj) {
 }
 
 /**
- * \brief Get list of \p char* representing the libraries used by the binary object.
+ * \brief Get pvector of \p char* representing the libraries used by the binary object.
  */
-RZ_API const RzList /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<char *>*/ *rz_bin_object_get_libs(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->libs;
 }
 
 /**
- * \brief Get list of \p RzBinSection representing both the sections and the segments of the binary object.
+ * \brief Get pvector of \p RzBinSection representing both the sections and the segments of the binary object.
  */
-RZ_API const RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->sections;
 }
 
-static RzList /*<RzBinSection *>*/ *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
-	RzList *res = rz_list_new();
+static RzPVector /*<RzBinSection *>*/ *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
+	RzPVector *res = rz_pvector_new(NULL);
 	if (!res) {
 		return NULL;
 	}
-	const RzList *all = rz_bin_object_get_sections_all(obj);
-	RzListIter *it;
+	const RzPVector *all = rz_bin_object_get_sections_all(obj);
+	void **it;
 	RzBinSection *sec;
-	rz_list_foreach (all, it, sec) {
+	rz_pvector_foreach (all, it) {
+		sec = *it;
 		if (sec->is_segment == is_segment) {
-			rz_list_append(res, sec);
+			rz_pvector_push(res, sec);
 		}
 	}
 	return res;
 }
 
 /**
- * \brief Get list of \p RzBinSection representing only the sections of the binary object.
+ * \brief Get pvector of \p RzBinSection representing only the sections of the binary object.
  */
-RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_sections(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return get_sections_or_segment(obj, false);
 }
 
 /**
- * \brief Get list of \p RzBinSection representing only the segments of the binary object.
+ * \brief Get pvector of \p RzBinSection representing only the segments of the binary object.
  */
-RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return get_sections_or_segment(obj, true);
 }
@@ -729,7 +740,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL
 /**
  * \brief Get list of \p RzBinMap representing only the maps of the binary object.
  */
-RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->maps;
 }
@@ -737,42 +748,42 @@ RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinOb
 /**
  * \brief Get list of \p RzBinClass representing the classes (e.g. C++ classes) defined in the binary object.
  */
-RZ_API const RzList /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->classes;
 }
 
 /**
- * \brief Get list of \p RzBinString representing the strings identified in the binary object.
+ * \brief Get RzPVector of \p RzBinString representing the strings identified in the binary object.
  */
-RZ_API const RzList /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinString *>*/ *rz_bin_object_get_strings(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	if (!obj->strings) {
 		return NULL;
 	}
-	return obj->strings->list;
+	return obj->strings->pvec;
 }
 
 /**
  * \brief Get list of \p RzBinMem representing the memory regions identified in the binary object.
  */
-RZ_API const RzList /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_BORROW const RzPVector /*<RzBinMem *>*/ *rz_bin_object_get_mem(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->mem;
 }
 
 /**
- * \brief Get list of \p RzBinSymbol representing the symbols in the binary object.
+ * \brief Get pvector of \p RzBinSymbol representing the symbols in the binary object.
  */
-RZ_API const RzList /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinSymbol *>*/ *rz_bin_object_get_symbols(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->symbols;
 }
 
 /**
- * \brief Get a list of \p RzBinResource representing the resources in the binary object.
+ * \brief Get a pvector of \p RzBinResource representing the resources in the binary object.
  */
-RZ_API const RzList /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj) {
+RZ_API const RzPVector /*<RzBinResource *>*/ *rz_bin_object_get_resources(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->resources;
 }
@@ -804,7 +815,7 @@ RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj) {
  */
 RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, false);
-	if (obj->libs && rz_list_length(obj->libs) > 0) {
+	if (obj->libs && rz_pvector_len(obj->libs) > 0) {
 		return RZ_BIN_DBG_STATIC & obj->info->dbg_info;
 	}
 	return true;
@@ -824,7 +835,7 @@ static void bin_section_map_fini(void *e, void *user) {
 RZ_API RZ_OWN RzVector /*<RzBinSectionMap>*/ *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 
-	const RzList *all = rz_bin_object_get_sections_all(obj);
+	const RzPVector *all = rz_bin_object_get_sections_all(obj);
 	if (!all) {
 		return NULL;
 	}
@@ -834,7 +845,9 @@ RZ_API RZ_OWN RzVector /*<RzBinSectionMap>*/ *rz_bin_object_sections_mapping_lis
 	RzBinSection *section, *segment;
 	RzListIter *iter;
 
-	rz_list_foreach (all, iter, section) {
+	void **it;
+	rz_pvector_foreach (all, it) {
+		section = *it;
 		RzList *list = section->is_segment ? segments : sections;
 		rz_list_append(list, section);
 	}
@@ -951,29 +964,36 @@ RZ_API ut64 rz_bin_object_v2p(RZ_NONNULL RzBinObject *obj, ut64 vaddr) {
 /**
  * \brief   Allocates and initializes the RzBinStrDb structure with the given list of strings
  *
- * \param   list  The list of strings to initialize the database with
+ * \param   pvector  The pvector of strings to initialize the database with
  *
  * \return  On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzList /*<RzBinString *>*/ *list) {
+RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVector /*<RzBinString *>*/ *pvector) {
 	RzBinStrDb *db = RZ_NEW0(RzBinStrDb);
 	if (!db) {
 		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb\n");
-		rz_list_free(list);
+		rz_pvector_free(pvector);
 		return NULL;
 	}
 
-	db->list = list ? list : rz_list_newf((RzListFree)rz_bin_string_free);
+	void **it;
+	RzBinString *bstr;
+	db->pvec = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	if (pvector) {
+		rz_pvector_foreach (pvector, it) {
+			bstr = *it;
+			rz_pvector_push(db->pvec, bstr);
+		}
+	}
 	db->phys = ht_up_new0();
 	db->virt = ht_up_new0();
-	if (!db->list || !db->phys || !db->virt) {
+	if (!db->pvec || !db->phys || !db->virt) {
 		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb internal data structure.\n");
 		goto fail;
 	}
 
-	RzListIter *it;
-	RzBinString *bstr;
-	rz_list_foreach (list, it, bstr) {
+	rz_pvector_foreach (pvector, it) {
+		bstr = *it;
 		if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
 			RZ_LOG_ERROR("rz_bin: Cannot insert/update RzBinString in RzBinStrDb (phys)\n");
 			goto fail;
@@ -999,7 +1019,7 @@ RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db) {
 	if (!db) {
 		return;
 	}
-	rz_list_free(db->list);
+	rz_pvector_free(db->pvec);
 	ht_up_free(db->phys);
 	ht_up_free(db->virt);
 	free(db);
@@ -1016,7 +1036,7 @@ RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db) {
 RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr) {
 	rz_return_val_if_fail(db && bstr, false);
 
-	if (!rz_list_append(db->list, bstr)) {
+	if (!rz_pvector_push(db->pvec, bstr)) {
 		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (list)\n");
 		return false;
 	}
@@ -1046,6 +1066,6 @@ RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 addres
 
 	ht_up_delete(db->virt, bstr->vaddr);
 	ht_up_delete(db->phys, bstr->paddr);
-	rz_list_delete_data(db->list, bstr);
+	rz_pvector_remove_data(db->pvec, bstr);
 	return true;
 }

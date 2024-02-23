@@ -5,51 +5,51 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone/capstone.h>
 
-static csh cd = 0;
+#include "cs_helper.h"
 
-static bool the_end(void *p) {
-	if (cd) {
-		cs_close(&cd);
-		cd = 0;
-	}
-	return true;
-}
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(sysz);
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	static int omode = 0;
-	int mode, n, ret;
+static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
+	int n, ret;
 	ut64 off = a->pc;
 	cs_insn *insn = NULL;
-	mode = CS_MODE_BIG_ENDIAN;
-	if (cd && mode != omode) {
-		cs_close(&cd);
-		cd = 0;
-	}
+	cs_mode mode = CS_MODE_BIG_ENDIAN;
 	op->size = 0;
-	omode = mode;
-	if (cd == 0) {
-		ret = cs_open(CS_ARCH_SYSZ, mode, &cd);
-		if (ret) {
-			return 0;
-		}
-		cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
+
+	if (ctx->omode != mode) {
+		cs_close(&ctx->handle);
+		ctx->omode = -1;
 	}
-	n = cs_disasm(cd, (const ut8 *)buf, len, off, 1, &insn);
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_SYSZ, mode, &ctx->handle);
+		if (ret) {
+			return -1;
+		}
+		ctx->omode = mode;
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
+	}
+
+	n = cs_disasm(ctx->handle, (const ut8 *)buf, len, off, 1, &insn);
 	if (n > 0) {
 		if (insn->size > 0) {
 			op->size = insn->size;
-			char *buf_asm = sdb_fmt("%s%s%s",
+			rz_asm_op_setf_asm(op, "%s%s%s",
 				insn->mnemonic, insn->op_str[0] ? " " : "",
 				insn->op_str);
-			char *ptrstr = strstr(buf_asm, "ptr ");
-			if (ptrstr) {
-				memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
+			char *str = rz_asm_op_get_asm(op);
+			if (str) {
+				char *ptrstr = strstr(str, "ptr ");
+				if (ptrstr) {
+					memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
+				}
 			}
-			rz_asm_op_set_asm(op, buf_asm);
 		}
 		cs_free(insn, n);
+	} else {
+		rz_asm_op_set_asm(op, "invalid");
+		return -1;
 	}
 	return op->size;
 }
@@ -61,8 +61,10 @@ RzAsmPlugin rz_asm_plugin_sysz = {
 	.arch = "sysz",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG,
-	.fini = the_end,
-	.disassemble = &disassemble,
+	.init = sysz_init,
+	.fini = sysz_fini,
+	.disassemble = &sysz_disassemble,
+	.mnemonics = sysz_mnemonics,
 };
 
 #ifndef RZ_PLUGIN_INCORE

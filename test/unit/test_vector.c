@@ -220,6 +220,12 @@ static bool test_vector_clone(void) {
 	mu_end;
 }
 
+static int compare_string(const char *a, const char *b, void *user) {
+	int *num = user;
+	*num = 44;
+	return strcmp(a, b);
+}
+
 static bool test_vector_sort(void) {
 	RzVector *v = rz_vector_new(sizeof("aaa"), NULL, NULL);
 	rz_vector_push(v, "abb");
@@ -228,14 +234,18 @@ static bool test_vector_sort(void) {
 	rz_vector_push(v, "ccc");
 
 	// do inc sort
-	rz_vector_sort(v, (RzVectorComparator)strcmp, false);
+	int num = 88;
+	rz_vector_sort(v, (RzVectorComparator)compare_string, false, &num);
+	mu_assert_eq(num, 44, "check user pointer");
 	mu_assert_streq(rz_vector_index_ptr(v, 0), "abb", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 1), "abb", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 2), "caa", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 3), "ccc", "sorted strings");
 
 	// do dec sort
-	rz_vector_sort(v, (RzVectorComparator)strcmp, true);
+	num = 55;
+	rz_vector_sort(v, (RzVectorComparator)compare_string, true, &num);
+	mu_assert_eq(num, 44, "check user pointer");
 	mu_assert_streq(rz_vector_index_ptr(v, 0), "ccc", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 1), "caa", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 2), "abb", "sorted strings");
@@ -629,6 +639,42 @@ static bool test_vector_push_front(void) {
 	mu_end;
 }
 
+static bool test_vector_swap(void) {
+	RzVector v;
+	init_test_vector(&v, 3, 0, NULL, NULL);
+
+	rz_vector_swap(&v, 0, 2);
+	mu_assert_eq(v.len, 3UL, "rz_vector_swap (valid indexes) => len == 3");
+	ut32 e = *((ut32 *)rz_vector_index_ptr(&v, 0));
+	mu_assert_eq(e, 2, "rz_vector_swap (valid indexes) => content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 1));
+	mu_assert_eq(e, 1, "rz_vector_swap (valid indexes) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
+	mu_assert_eq(e, 0, "rz_vector_swap (valid indexes) => content");
+
+	rz_vector_swap(&v, 2, 2);
+	mu_assert_eq(v.len, 3UL, "rz_vector_swap (same index) => len == 3");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 0));
+	mu_assert_eq(e, 2, "rz_vector_swap (same index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 1));
+	mu_assert_eq(e, 1, "rz_vector_swap (same index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
+	mu_assert_eq(e, 0, "rz_vector_swap (same index) => content");
+
+	rz_vector_swap(&v, 1, 2);
+	mu_assert_eq(v.len, 3UL, "rz_vector_swap (bad index) => len == 3");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 0));
+	mu_assert_eq(e, 2, "rz_vector_swap (bad index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 1));
+	mu_assert_eq(e, 0, "rz_vector_swap (bad index) => old content");
+	e = *((ut32 *)rz_vector_index_ptr(&v, 2));
+	mu_assert_eq(e, 1, "rz_vector_swap (bad index) => old content");
+
+	rz_vector_clear(&v);
+
+	mu_end;
+}
+
 static bool test_vector_reserve(void) {
 	RzVector v;
 	rz_vector_init(&v, 4, NULL, NULL);
@@ -854,6 +900,35 @@ static bool test_pvector_set(void) {
 	rz_pvector_set(&v, 3, NULL);
 	mu_assert_null(((void **)v.v.a)[3], "set");
 	rz_pvector_clear(&v);
+	mu_end;
+}
+
+static int compare_int(const void *a, const void *b, void *user) {
+	int *num = user;
+	*num = 44;
+	return *(ut32 *)a - *(ut32 *)b;
+}
+
+static bool test_pvector_find(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+	void *e = ((void **)v.v.a)[3];
+	int num = 77;
+	ut32 e_val = 3;
+	void **p = rz_pvector_find(&v, &e_val, compare_int, &num);
+	mu_assert_eq(*p, e, "find");
+	mu_assert_eq(num, 44, "ensure user is passed");
+	mu_end;
+}
+
+static bool test_pvector_join(void) {
+	RzPVector m, n;
+	init_test_pvector(&m, 5, 0);
+	init_test_pvector(&n, 3, 0);
+	mu_assert_eq(rz_pvector_len(&m), 5, "length is 5 before join");
+	rz_pvector_join(&m, &n);
+	mu_assert_eq(rz_pvector_len(&m), 8, "length is 8 after join");
+	mu_assert_eq(*((ut32 *)rz_pvector_at(&m, 6)), 1, "m[6] = n[1]");
 	mu_end;
 }
 
@@ -1149,6 +1224,7 @@ static bool test_pvector_push_front(void) {
 }
 
 static bool test_pvector_sort(void) {
+	int num = 66;
 	RzPVector v;
 	rz_pvector_init(&v, free);
 	rz_pvector_push(&v, strdup("Charmander"));
@@ -1156,9 +1232,10 @@ static bool test_pvector_sort(void) {
 	rz_pvector_push(&v, strdup("Bulbasaur"));
 	rz_pvector_push(&v, strdup("Meowth"));
 	rz_pvector_push(&v, strdup("Caterpie"));
-	rz_pvector_sort(&v, (RzPVectorComparator)strcmp);
+	rz_pvector_sort(&v, (RzPVectorComparator)compare_string, &num);
 
 	mu_assert_eq(v.v.len, 5UL, "sort len");
+	mu_assert_eq(num, 44, "sort user pointer check");
 	mu_assert_streq((const char *)((void **)v.v.a)[0], "Bulbasaur", "sorted strings");
 	mu_assert_streq((const char *)((void **)v.v.a)[1], "Caterpie", "sorted strings");
 	mu_assert_streq((const char *)((void **)v.v.a)[2], "Charmander", "sorted strings");
@@ -1343,6 +1420,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_pop_front);
 	mu_run_test(test_vector_push);
 	mu_run_test(test_vector_push_front);
+	mu_run_test(test_vector_swap);
 	mu_run_test(test_vector_reserve);
 	mu_run_test(test_vector_shrink);
 	mu_run_test(test_vector_flush);
@@ -1356,6 +1434,8 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_free);
 	mu_run_test(test_pvector_at);
 	mu_run_test(test_pvector_set);
+	mu_run_test(test_pvector_find);
+	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
 	mu_run_test(test_pvector_insert);

@@ -17,19 +17,18 @@
 // s/index/base|reg/
 #define HASMEMINDEX(x)   (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
-#define MEMDISP(x)       insn->detail->arm.operands[x].mem.disp
+#define MEMDISP(x)       (ISMEMINDEXSUB(x) ? -insn->detail->arm.operands[x].mem.disp : insn->detail->arm.operands[x].mem.disp)
+#define MEMDISP_BV(x)    (HASMEMINDEX(x) ? REG_VAL(insn->detail->arm.operands[x].mem.index) : U32(MEMDISP(x)))
 #define ISIMM(x)         (insn->detail->arm.operands[x].type == ARM_OP_IMM || insn->detail->arm.operands[x].type == ARM_OP_FP)
 #define ISREG(x)         (insn->detail->arm.operands[x].type == ARM_OP_REG)
-#define ISMEM(x)         (insn->detail->arm.operands[x].type == ARM_OP_MEM)
-#define ISFPIMM(x)       (insn->detail->arm.operands[x].type == ARM_OP_FP)
-
-#if CS_API_MAJOR > 3
-#define LSHIFT(x)  insn->detail->arm.operands[x].mem.lshift
-#define LSHIFT2(x) insn->detail->arm.operands[x].shift.value // Dangerous, returns value even if isn't LSL
-#else
-#define LSHIFT(x)  0
-#define LSHIFT2(x) 0
+#if CS_NEXT_VERSION >= 6
+#define ISPSRFLAGS(x) (insn->detail->arm.operands[x].type == ARM_OP_CPSR || insn->detail->arm.operands[x].type == ARM_OP_SPSR)
 #endif
+#define ISMEM(x)   (insn->detail->arm.operands[x].type == ARM_OP_MEM)
+#define ISFPIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_FP)
+
+#define LSHIFT(x)       insn->detail->arm.operands[x].mem.lshift
+#define LSHIFT2(x)      insn->detail->arm.operands[x].shift.value // Dangerous, returns value even if isn't LSL
 #define OPCOUNT()       insn->detail->arm.op_count
 #define ISSHIFTED(x)    (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
 #define SHIFTTYPE(x)    insn->detail->arm.operands[x].shift.type
@@ -38,6 +37,12 @@
 	SHIFTTYPE(x) == ARM_SFT_RRX_REG)
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
+#if CS_NEXT_VERSION >= 6
+#define CS_ARMCC(CC)    ARMCC_##CC
+#define ISWRITEBACK32() insn->detail->writeback
+#define ISPOSTINDEX32() insn->detail->arm.post_index
+#else
+#define CS_ARMCC(CC)    ARM_CC_##CC
 #define ISWRITEBACK32() insn->detail->arm.writeback
-#define ISPREINDEX32()  (((OPCOUNT() == 2) && (ISMEM(1)) && (ISWRITEBACK32())) || ((OPCOUNT() == 3) && (ISMEM(2)) && (ISWRITEBACK32())))
 #define ISPOSTINDEX32() (((OPCOUNT() == 3) && (ISIMM(2) || ISREG(2)) && (ISWRITEBACK32())) || ((OPCOUNT() == 4) && (ISIMM(3) || ISREG(3)) && (ISWRITEBACK32())))
+#endif

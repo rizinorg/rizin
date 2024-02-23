@@ -66,12 +66,12 @@ static RzPVector /*<char *>*/ *capture_filter_keywords(char *inputing) {
 		return NULL;
 	}
 	char *processing = rz_str_trim_dup(inputing);
-	char *buf = rz_str_new("");
+	char *buf = rz_str_dup("");
 	for (int i = 0; i < strlen(processing); i++) {
 		if (IS_WHITESPACE(processing[i])) {
 			if (strlen(buf)) {
 				rz_pvector_push(keywords, buf);
-				buf = rz_str_new("");
+				buf = rz_str_dup("");
 			}
 		} else {
 			buf = rz_str_appendch(buf, processing[i]);
@@ -236,24 +236,12 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 			}
 			if (show) {
 				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-				switch (var->storage.type) {
-				case RZ_ANALYSIS_VAR_STORAGE_REG: {
-					rz_cons_printf("%sarg %s %s @ %s\n",
-						i == *vindex ? "* " : "  ",
-						vartype, var->name,
-						var->storage.reg);
-				} break;
-				case RZ_ANALYSIS_VAR_STORAGE_STACK:
-					rz_cons_printf("%s%s %s %s @ %s%s0x%" PFMT64x "\n",
-						i == *vindex ? "* " : "  ",
-						rz_analysis_var_is_arg(var) ? "arg" : "var",
-						vartype, var->name,
-						core->analysis->reg->name[RZ_REG_NAME_BP],
-						"+",
-						var->storage.stack_off);
-					break;
-				}
+				rz_cons_printf("%s%s %s %s @ ", i == *vindex ? "* " : "  ", rz_analysis_var_is_arg(var) ? "arg" : "var", vartype, var->name);
 				free(vartype);
+
+				char *storage_str = rz_analysis_var_storage_to_string(core->analysis, var, &var->storage);
+				rz_cons_strcat(storage_str);
+				free(storage_str);
 			}
 		}
 		++i;
@@ -316,9 +304,9 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 static const char *help_fun_visual[] = {
 	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to ", "(X)", "xrefs from\n",
 	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(:)", "shell ", "(v)", "vars\n",
-	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", " help\n",
+	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", "help\n",
 	"(f/F)", "set/reset filter ", "(s)", "function signature ", "(q)", "quit\n",
-	"(=)", "show/hide legend\n\n",
+	"(=)", "show/hide legend ", "(h/l)", "short/full function name\n\n",
 	NULL
 };
 
@@ -568,7 +556,7 @@ static char *__prompt(const char *msg, void *p) {
 	char res[128];
 	rz_cons_show_cursor(true);
 	rz_cons_set_raw(false);
-	rz_line_set_prompt(msg);
+	rz_line_set_prompt(rz_cons_singleton()->line, msg);
 	res[0] = 0;
 	if (!rz_cons_fgets(res, sizeof(res), 0, NULL)) {
 		res[0] = 0;
@@ -604,8 +592,9 @@ static void set_current_option_to_seek(RzCore *core) {
 /* Like emenu but for real */
 RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 	char old[218];
-	int nfcns, ch, _option = 0;
+	int nfcns, ch = 0;
 
+	RzLine *line = core->cons->line;
 	RzCoreVisual *visual = core->visual;
 	RzConsEvent olde = core->cons->event_resize;
 	void *olde_user = core->cons->event_data;
@@ -685,7 +674,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				// add new keyword
 				visual->is_inputing = true;
 				if (!visual->inputing) {
-					visual->inputing = rz_str_new("");
+					visual->inputing = rz_str_dup("");
 				}
 				option = 0;
 			}
@@ -758,7 +747,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			case 1:
 				rz_cons_show_cursor(true);
 				rz_cons_set_raw(false);
-				rz_line_set_prompt("New name: ");
+				rz_line_set_prompt(line, "New name: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;
@@ -767,7 +756,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				}
 				break;
 			default:
-				rz_line_set_prompt("New name: ");
+				rz_line_set_prompt(line, "New name: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;
@@ -783,7 +772,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			if (level == 1) {
 				rz_cons_show_cursor(true);
 				rz_cons_set_raw(false);
-				rz_line_set_prompt("New type: ");
+				rz_line_set_prompt(line, "New type: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;
@@ -942,13 +931,13 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			goto beach;
 			break;
 		case 'l':
-			level = 1;
-			_option = option;
+			rz_cons_singleton()->show_vals = true;
 			break;
 		case 'h':
+			rz_cons_singleton()->show_vals = false;
+			break;
 		case 'b': // back
 			level = 0;
-			option = _option;
 			break;
 		case 'Q':
 		case 'q':

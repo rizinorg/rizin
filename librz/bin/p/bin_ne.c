@@ -99,19 +99,19 @@ RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return rz_bin_ne_get_entrypoints(bf->o->bin_obj);
 }
 
-RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return rz_bin_ne_get_symbols(bf->o->bin_obj);
 }
 
-RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return rz_bin_ne_get_imports(bf->o->bin_obj);
 }
 
-RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_ne_get_segments(bf->o->bin_obj);
 }
 
-RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return rz_bin_ne_get_relocs(bf->o->bin_obj);
 }
 
@@ -130,7 +130,6 @@ RzBinPlugin rz_bin_plugin_ne = {
 	.symbols = &symbols,
 	.imports = &imports,
 	.relocs = &relocs,
-	.minstrlen = 4
 };
 
 #ifndef RZ_PLUGIN_INCORE

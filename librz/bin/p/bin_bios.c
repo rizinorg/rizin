@@ -59,7 +59,7 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 /* accelerate binary load */
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 
@@ -84,12 +84,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	RzBuffer *obj = bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	// program headers is another section
@@ -101,7 +101,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = rz_buf_size(bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = RZ_PERM_RWX;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -112,7 +112,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = rz_buf_size(obj) - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;
 		ptr->perm = RZ_PERM_RWX;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

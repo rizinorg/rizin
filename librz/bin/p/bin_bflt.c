@@ -33,16 +33,16 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
 
 	RzBinMap *map = RZ_NEW0(RzBinMap);
 	if (!map) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	map->paddr = 0;
@@ -52,11 +52,11 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->perm = RZ_PERM_RWX;
 	map->name = strdup("hdr+text");
 	map->vfile_name = obj->buf_patched ? strdup(VFILE_NAME_PATCHED) : NULL;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
 	if (!map) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	map->paddr = obj->hdr.data_start;
@@ -66,14 +66,14 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->perm = RZ_PERM_RWX;
 	map->name = strdup("data+bss");
 	map->vfile_name = obj->buf_patched ? strdup(VFILE_NAME_PATCHED) : NULL;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -91,7 +91,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("TEXT");
 	sec->is_segment = true;
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
 	if (!sec) {
@@ -104,7 +104,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("DATA");
 	sec->is_segment = true;
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	// sections
 
@@ -118,7 +118,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->vsize = BFLT_HDR_SIZE;
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("header");
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
 	if (!sec) {
@@ -130,7 +130,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->vsize = obj->hdr.data_start - BFLT_HDR_SIZE;
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("text");
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
 	if (!sec) {
@@ -143,7 +143,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("data");
 	sec->is_data = true;
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	sec = RZ_NEW0(RzBinSection);
 	if (!sec) {
@@ -156,17 +156,17 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sec->perm = RZ_PERM_RWX;
 	sec->name = strdup("bss");
 	sec->is_data = true;
-	rz_list_push(ret, sec);
+	rz_pvector_push(ret, sec);
 
 	return ret;
 beach:
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
-	RzList *r = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	RzPVector *r = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!r) {
 		return NULL;
 	}
@@ -177,12 +177,12 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = obj->buf_patched;
 		vf->name = strdup(VFILE_NAME_PATCHED);
-		rz_list_push(r, vf);
+		rz_pvector_push(r, vf);
 	}
 	return r;
 }
 
-static void convert_relocs(RzBfltObj *bin, RzList /*<RzBinReloc *>*/ *out, RzVector /*<RzBfltReloc>*/ *relocs) {
+static void convert_relocs(RzBfltObj *bin, RzPVector /*<RzBinReloc *>*/ *out, RzVector /*<RzBfltReloc>*/ *relocs) {
 	RzBfltReloc *br;
 	rz_vector_foreach(relocs, br) {
 		RzBinReloc *r = RZ_NEW0(RzBinReloc);
@@ -196,20 +196,20 @@ static void convert_relocs(RzBfltObj *bin, RzList /*<RzBinReloc *>*/ *out, RzVec
 		// 0 preserved, see also patching in bflt.c
 		r->target_vaddr = br->value_orig ? rz_bflt_paddr_to_vaddr(bin, br->value_orig) : 0;
 
-		rz_list_push(out, r);
+		rz_pvector_push(out, r);
 	}
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	RzBfltObj *obj = (RzBfltObj *)bf->o->bin_obj;
-	RzList *list = rz_list_newf((RzListFree)free);
-	if (!list || !obj) {
-		rz_list_free(list);
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)free);
+	if (!vec || !obj) {
+		rz_pvector_free(vec);
 		return NULL;
 	}
-	convert_relocs(obj, list, &obj->got_relocs);
-	convert_relocs(obj, list, &obj->relocs);
-	return list;
+	convert_relocs(obj, vec, &obj->got_relocs);
+	convert_relocs(obj, vec, &obj->relocs);
+	return vec;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -248,10 +248,6 @@ static void destroy(RzBinFile *bf) {
 	rz_bflt_free(bf->o->bin_obj);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
-}
-
 RzBinPlugin rz_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT uClinux executable",
@@ -263,7 +259,6 @@ RzBinPlugin rz_bin_plugin_bflt = {
 	.maps = &maps,
 	.entries = &entries,
 	.sections = &sections,
-	.strings = &strings,
 	.info = &info,
 	.relocs = &relocs
 };

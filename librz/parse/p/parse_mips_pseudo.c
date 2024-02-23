@@ -13,6 +13,7 @@
 #include <rz_parse.h>
 
 #include "parse_common.c"
+#include <rz_util/rz_regex.h>
 
 static RzList /*<char *>*/ *mips_tokenize(const char *assembly, size_t length);
 
@@ -155,7 +156,7 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 	if (!p->pseudo) {
 		// match e.g. -0x18(fp)
 		// capturing "-0x18", "0x", "fp"
-		re_str = "(-?(0x)?[0-9a-f]+)\\(([a-z][0-9a-z]))";
+		re_str = "(-?(0x)?[0-9a-f]+)\\(([a-z][0-9a-z])\\)";
 		group_idx_reg = 3;
 		group_idx_sign = -1;
 		group_idx_addend = 1;
@@ -168,39 +169,36 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 		group_idx_addend = 3;
 	}
 
-	RzRegex var_re;
-	if (rz_regex_comp(&var_re, re_str, RZ_REGEX_EXTENDED | RZ_REGEX_ICASE) != 0) {
-		rz_regex_fini(&var_re);
+	RzRegex *var_re = rz_regex_new(re_str, RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
+	if (!var_re) {
 		return tstr;
 	}
-	RzRegexMatch match[4];
-	if (rz_regex_exec(&var_re, tstr, RZ_ARRAY_SIZE(match), match, 0) != 0) {
-		rz_regex_fini(&var_re);
+	RzPVector *matches = rz_regex_match_first(var_re, tstr, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	if (!matches || rz_pvector_empty(matches)) {
+		rz_regex_free(var_re);
+		rz_pvector_free(matches);
 		return tstr;
 	}
-	for (size_t i = 0; i < RZ_ARRAY_SIZE(match); i++) {
-		char *s = rz_regex_match_extract(tstr, &match[i]);
-		free(s);
-	}
-	rz_regex_fini(&var_re);
+	rz_regex_free(var_re);
 
-	rz_return_val_if_fail(match[group_idx_reg].rm_so >= 0, tstr);
-	char *reg_str = rz_regex_match_extract(tstr, &match[group_idx_reg]);
+	rz_return_val_if_fail(rz_pvector_len(matches) > group_idx_reg, tstr);
+	RzRegexMatch *match = rz_pvector_at(matches, group_idx_reg);
+	char *reg_str = rz_str_ndup(tstr + match->start, match->len);
 	if (!reg_str) {
+		rz_pvector_free(matches);
 		return tstr;
 	}
 
-	char *addend_str = rz_regex_match_extract(tstr, &match[group_idx_addend]);
-	if (!addend_str) {
-		free(reg_str);
-		return tstr;
-	}
+	rz_return_val_if_fail(rz_pvector_len(matches) >= group_idx_addend, tstr);
+	match = rz_pvector_at(matches, group_idx_addend);
+	const char *addend_str = tstr + match->start;
 	st64 reg_addend = strtoll(addend_str, NULL, 0);
-	free(addend_str);
 
 	if (group_idx_sign >= 0) {
-		rz_return_val_if_fail(match[group_idx_sign].rm_so >= 0, tstr);
-		if (tstr[match[group_idx_sign].rm_so] == '-') {
+		rz_return_val_if_fail(rz_pvector_len(matches) >= group_idx_sign, tstr);
+		match = rz_pvector_at(matches, group_idx_sign);
+		char sign = tstr[match->start];
+		if (sign == '-') {
 			reg_addend = -reg_addend;
 		}
 	}
@@ -208,15 +206,18 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 	char *varstr = p->var_expr_for_reg_access(f, addr, reg_str, reg_addend);
 	if (!varstr) {
 		free(reg_str);
+		rz_pvector_free(matches);
 		return tstr;
 	}
 
 	// information gathered, now perform the replacement in the string
-	size_t tail_len = strlen(tstr) - match[0].rm_eo;
+	RzRegexMatch *match_full = rz_pvector_at(matches, 0);
+	size_t tail_len = strlen(tstr) - (match_full->start + match_full->len);
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
-	rz_strbuf_reserve(&sb, match[0].rm_so + strlen(varstr) + tail_len + 32);
-	rz_strbuf_append_n(&sb, tstr, match[0].rm_so);
+	// reserve with a bit of padding for brackets, reg, whitespace, ...
+	rz_strbuf_reserve(&sb, match_full->start + strlen(varstr) + tail_len + 32);
+	rz_strbuf_append_n(&sb, tstr, match_full->start);
 	if (p->localvar_only) {
 		if (p->pseudo) {
 			rz_strbuf_append(&sb, varstr);
@@ -230,10 +231,11 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 			rz_strbuf_appendf(&sb, "%s(%s)", varstr, reg_str);
 		}
 	}
-	rz_strbuf_append_n(&sb, tstr + match[0].rm_eo, tail_len);
+	rz_strbuf_append_n(&sb, tstr + match_full->start + match_full->len, tail_len);
 	free(reg_str);
 	free(varstr);
 	free(tstr);
+	rz_pvector_free(matches);
 	return rz_strbuf_drain_nofree(&sb);
 }
 

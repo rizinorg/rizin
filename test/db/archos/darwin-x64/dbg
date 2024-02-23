@@ -44,11 +44,10 @@ ARGS=-d
 CMDS=<<EOF
 dm~hello
 EOF
-REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
 EXPECT=<<EOF
-0x0000000100000000 - 0x0000000100001000 - usr     4K u r-x hello-objc-osx hello-objc-osx hello_objc_osx.r_x
-0x0000000100001000 - 0x0000000100002000 - usr     4K u rw- hello-objc-osx hello-objc-osx hello_objc_osx.rw
-0x0000000100002000 - 0x0000000100003000 - usr     4K u r-- hello-objc-osx hello-objc-osx hello_objc_osx.r
+0x0000000100000000 - 0x0000000100001000 - usr     4K u r-x hello-objc-osx /Users/runner/work/rizin/rizin/test/bins/mach0/hello-objc-osx ; hello_objc_osx.r_x
+0x0000000100001000 - 0x0000000100002000 - usr     4K u rw- hello-objc-osx /Users/runner/work/rizin/rizin/test/bins/mach0/hello-objc-osx ; hello_objc_osx.rw
+0x0000000100002000 - 0x0000000100003000 - usr     4K u r-- hello-objc-osx /Users/runner/work/rizin/rizin/test/bins/mach0/hello-objc-osx ; hello_objc_osx.r
 EOF
 EXPECT_ERR=
 RUN
@@ -83,7 +82,7 @@ dcu main
 3 ds
 dr rip
 dr rdi
-ps @e:bin.str.enc=utf8 @ rdi
+ps @e:str.search.encoding=utf8 @ rdi
 EOF
 EXPECT=<<EOF
 rip = 0x0000000100000f17
@@ -139,21 +138,36 @@ dc
 dr rip
 dr rax
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|r[^i][a-z]+ = [a-z0-9]+)\s+)
+# Due to ASLR only the last 12bits are stable and get tested here.
+REGEXP_FILTER_OUT=((r[ai][xp])|([0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT=<<EOF
-rip = f20
---
-rip = f34
-rax = 0x0000000000000000
---
-rip = f38
-rax = 0x0000000000000064
+rip
+f20
+
+rip
+f34
+
+rax
+000
+
+rip
+f38
+
+rax
+064
+
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_ERR=((hit\sbreakpoint\sat:)|([0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-hit breakpoint at: f20
-hit breakpoint at: f34
-hit breakpoint at: f38
+hit breakpoint at:
+f20
+
+hit breakpoint at:
+f34
+
+hit breakpoint at:
+f38
+
 EOF
 RUN
 
@@ -175,20 +189,34 @@ dc
 dr rip
 dr rax
 EOF
-REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|r[^i][a-z]+ = [a-z0-9]+)\s+)
+REGEXP_FILTER_OUT=((r[ia][px])|([0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT=<<EOF
-rip = ea0
---
-rip = edd
-rax = 0x0000000000000190
---
-rip = ee3
-rax = 0x00000000000000a0
+rip
+ea0
+
+rip
+edd
+
+rax
+190
+
+rip
+ee3
+
+rax
+0a0
+
 EOF
-REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+REGEXP_FILTER_ERR=((hit\sbreakpoint\sat:)|([0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-hit breakpoint at: ea0
-hit breakpoint at: edd
-hit breakpoint at: ee3
+hit breakpoint at:
+ea0
+
+hit breakpoint at:
+edd
+
+hit breakpoint at:
+ee3
+
 EOF
 RUN

@@ -107,8 +107,8 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	ut8 buf[64] = { 0 };
 	const int buf_size = RZ_MIN(sizeof(buf), rz_buf_size(bf->buf));
@@ -118,7 +118,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	// add text segment
@@ -131,7 +131,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = rz_read_ble32(buf + 12, false);
 	ptr->vaddr = ptr->paddr + baddr(bf);
 	ptr->perm = RZ_PERM_RX; // r-x
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (MENUET_VERSION(buf)) {
 		/* add data section */
@@ -146,7 +146,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = rz_read_ble32(buf + 40, false);
 		ptr->vaddr = ptr->paddr + baddr(bf);
 		ptr->perm = RZ_PERM_R; // r--
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;

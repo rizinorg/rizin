@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_regex.h>
 #include <rz_core.h>
 #include <rz_debug.h>
 #include <sdb.h>
@@ -315,7 +316,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 		if (ret > 0) {
 			const char *buf_asm = rz_asm_op_get_asm(&asmop);
 			if (regex) {
-				if (rz_regex_match(instr, "e", buf_asm)) {
+				if (rz_regex_contains(instr, buf_asm, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT)) {
 					RZ_LOG_ERROR("core: esil: stop.\n");
 					break;
 				}
@@ -454,7 +455,9 @@ static bool step_line(RzCore *core, int times) {
 	}
 	file[0] = 0;
 	file2[0] = 0;
-	if (rz_bin_addr2line(core->bin, off, file, sizeof(file), &line)) {
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzBinSourceLineInfo *sl = o ? o->lines : NULL;
+	if (sl && rz_bin_source_line_addr2line(sl, off, file, sizeof(file), &line)) {
 		char *ptr = rz_file_slurp_line(file, line, 0);
 		RZ_LOG_INFO("--> 0x%08" PFMT64x " %s : %d\n", off, file, line);
 		RZ_LOG_INFO("--> %s\n", ptr);
@@ -467,7 +470,7 @@ static bool step_line(RzCore *core, int times) {
 	do {
 		rz_debug_step(core->dbg, 1);
 		off = rz_debug_reg_get(core->dbg, "PC");
-		if (!rz_bin_addr2line(core->bin, off, file2, sizeof(file2), &line2)) {
+		if (!(sl && rz_bin_source_line_addr2line(sl, off, file2, sizeof(file2), &line2))) {
 			if (find_meta) {
 				continue;
 			}
@@ -831,7 +834,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int arg
 RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	CMD_CHECK_DEBUG_DEAD(core);
-	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr = core->offset;
 	switch (input[0]) {
@@ -960,10 +962,13 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 		map = get_closest_map(core, addr);
 		if (map) {
 			ut64 closest_addr = UT64_MAX;
-			RzList *symbols = rz_bin_get_symbols(core->bin);
+			RzBinObject *o = rz_bin_cur_object(core->bin);
+			RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 			RzBinSymbol *symbol, *closest_symbol = NULL;
+			void **iter;
 
-			rz_list_foreach (symbols, iter, symbol) {
+			rz_pvector_foreach (symbols, iter) {
+				symbol = *iter;
 				if (symbol->vaddr > addr) {
 					if (symbol->vaddr - addr < closest_addr) {
 						closest_addr = symbol->vaddr - addr;
@@ -1261,9 +1266,10 @@ RZ_IPI void rz_core_static_debug_stop(void *u) {
 #include "..\debug\p\native\windows\windows_message.h"
 #endif
 
-RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, bool hwbp, bool watch) {
+RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, const char *arg_size, bool hwbp, bool watch) {
 	RzBreakpointItem *bpi;
 	int rw = 0;
+	ut64 size = 0;
 
 	if (watch) {
 		rw = rz_str_rwx(arg_perm);
@@ -1273,7 +1279,10 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 			rw = RZ_PERM_RW;
 		}
 	}
-	bpi = rz_debug_bp_add(core->dbg, addr, hwbp, watch, rw, NULL, 0);
+	if (arg_size) {
+		size = rz_num_math(core->num, arg_size);
+	}
+	bpi = rz_debug_bp_add(core->dbg, addr, size, hwbp, watch, rw, NULL, 0);
 	if (!bpi) {
 		RZ_LOG_ERROR("Cannot set breakpoint at 0x%" PFMT64x "\n", addr);
 		return;
@@ -1453,7 +1462,7 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	rz_reg_arena_swap(core->dbg->reg, true);
 	if (final_addr != UT64_MAX) {
 		bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-		bp_final = rz_debug_bp_add(core->dbg, final_addr, hwbp, false, 0, NULL, 0);
+		bp_final = rz_debug_bp_add(core->dbg, final_addr, 0, hwbp, false, 0, NULL, 0);
 		if (!bp_final) {
 			RZ_LOG_ERROR("core: Cannot set breakpoint at final address (%" PFMT64x ")\n", final_addr);
 		}
@@ -1802,7 +1811,7 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 // db
 RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_handler(RzCore *core, int argc, const char **argv) {
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-	rz_core_debug_bp_add(core, core->offset, NULL, hwbp, false);
+	rz_core_debug_bp_add(core, core->offset, NULL, NULL, hwbp, false);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1875,7 +1884,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 
 // dbH
 RZ_IPI RzCmdStatus rz_cmd_debug_add_hw_bp_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_debug_bp_add(core, core->offset, NULL, true, false);
+	rz_core_debug_bp_add(core, core->offset, NULL, NULL, true, false);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1967,7 +1976,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_noreturn_func_handler(RzCore *core, int a
 RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_module_handler(RzCore *core, int argc, const char **argv) {
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
 	ut64 delta = rz_num_math(core->num, argv[2]);
-	RzBreakpointItem *bp = rz_debug_bp_add(core->dbg, 0, hwbp, false, 0, argv[1], delta);
+	RzBreakpointItem *bp = rz_debug_bp_add(core->dbg, 0, 0, hwbp, false, 0, argv[1], delta);
 	if (!bp) {
 		RZ_LOG_ERROR("Cannot set breakpoint.\n");
 	}
@@ -2320,7 +2329,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_bp_set_expr_cur_offset_handler(RzCore *core, int
 // dbw
 RZ_IPI RzCmdStatus rz_cmd_debug_add_watchpoint_handler(RzCore *core, int argc, const char **argv) {
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-	rz_core_debug_bp_add(core, core->offset, argv[1], hwbp, true);
+	rz_core_debug_bp_add(core, core->offset, argv[1], argc > 2 ? argv[2] : NULL, hwbp, true);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2373,6 +2382,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_back_handler(RzCore *core, int argc, co
 
 	if (!rz_debug_continue_back(core->dbg)) {
 		RZ_LOG_ERROR("core: cannot continue back\n");
+		rz_cons_break_pop();
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -2459,7 +2469,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_send_signal_handler(RzCore *core, int a
 // dcp
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_mapped_io_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 	RzIOMap *s;
 	ut64 pc;
 	int n = 0;

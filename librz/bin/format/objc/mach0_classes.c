@@ -119,7 +119,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *class_name, RzBinClass *klass, bool is_static, objc_cache_opt_info *oi);
 static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, objc_cache_opt_info *oi);
 static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_meta_class, RzBinClass *klass, objc_cache_opt_info *oi);
-static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi);
+static RzPVector /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RzBinFile *bf, RzBuffer *buf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RzBinFile *bf, RzBuffer *buf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RzBinFile *bf, RzBuffer *buf, mach0_ut p, ut32 *offset, ut32 *left);
@@ -140,7 +140,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	mach0_ut r;
 	mach0_ut addr;
 
-	RzListIter *iter = NULL;
+	void **iter = NULL;
 	RzBinSection *s = NULL;
 	RzBinObject *obj = bf->o;
 
@@ -149,7 +149,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 		return bin->va2pa(p, offset, left, bf);
 	}
 
-	const RzList *sctns = bin->sections_cache;
+	const RzPVector *sctns = bin->sections_cache;
 	if (!sctns) {
 		sctns = rz_bin_plugin_mach.sections(bf);
 		if (!sctns) {
@@ -158,7 +158,8 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	}
 
 	addr = p;
-	rz_list_foreach (sctns, iter, s) {
+	rz_pvector_foreach (sctns, iter) {
+		s = *iter;
 		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
 			if (offset) {
 				*offset = addr - s->vaddr;
@@ -189,7 +190,7 @@ static void copy_sym_name_with_namespace(char *class_name, char *read_name, RzBi
 	sym->name = strdup(read_name);
 }
 
-static int sort_by_offset(const void *_a, const void *_b) {
+static int sort_by_offset(const void *_a, const void *_b, void *user) {
 	RzBinClassField *a = (RzBinClassField *)_a;
 	RzBinClassField *b = (RzBinClassField *)_b;
 	return a->paddr - b->paddr;
@@ -347,7 +348,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		offset += sizeof(struct MACH0_(SIVar));
 	}
 	if (!rz_list_empty(klass->fields)) {
-		rz_list_sort(klass->fields, sort_by_offset);
+		rz_list_sort(klass->fields, sort_by_offset, NULL);
 	}
 	field = rz_bin_class_field_new(UT64_MAX, UT64_MAX, "isa", klass->name, NULL, "struct objc_class *");
 	rz_list_prepend(klass->fields, field);
@@ -995,6 +996,7 @@ static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_me
 	int len;
 	bool bigendian;
 	ut8 scro[sizeof(struct MACH0_(SClassRoT))] = { 0 };
+	char tmpbuf[2048];
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
 		RZ_LOG_ERROR("Invalid RzBinFile pointer\n");
@@ -1074,12 +1076,12 @@ static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_me
 				free(name);
 			}
 		}
-		sdb_num_set(bin->kv, sdb_fmt("objc_class_%s.offset", klass->name), s, 0);
+		sdb_num_set(bin->kv, rz_strf(tmpbuf, "objc_class_%s.offset", klass->name), s, 0);
 	}
 #ifdef RZ_BIN_MACH064
-	sdb_set(bin->kv, sdb_fmt("objc_class.format"), "lllll isa super cache vtable data", 0);
+	sdb_set(bin->kv, "objc_class.format", "lllll isa super cache vtable data", 0);
 #else
-	sdb_set(bin->kv, sdb_fmt("objc_class.format"), "xxxxx isa super cache vtable data", 0);
+	sdb_set(bin->kv, "objc_class.format", "xxxxx isa super cache vtable data", 0);
 #endif
 
 	if (cro.baseMethods > 0) {
@@ -1224,8 +1226,8 @@ static RzList *parse_swift_classes(RzBinFile *bf) {
 }
 #endif
 
-RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
-	RzList /*<RzBinClass *>*/ *ret = NULL;
+RZ_API RZ_OWN RzPVector /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
+	RzPVector /*<RzBinClass *>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RzBinClass *klass = NULL;
 	ut32 i = 0, size = 0;
@@ -1281,7 +1283,7 @@ RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cach
 	}
 	// end of seaching of section with name __objc_classlist
 
-	if (!ret && !(ret = rz_list_newf((RzListFree)rz_bin_class_free))) {
+	if (!ret && !(ret = rz_pvector_new((RzPVectorFree)rz_bin_class_free))) {
 		// retain just for debug
 		// RZ_LOG_ERROR("RzList<RzBinClass> allocation error\n");
 		goto get_classes_error;
@@ -1329,21 +1331,21 @@ RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cach
 			}
 			num_of_unnamed_class++;
 		}
-		rz_list_append(ret, klass);
+		rz_pvector_push(ret, klass);
 	}
 	return ret;
 
 get_classes_error:
 	rz_list_free(sctns);
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	// XXX DOUBLE FREE rz_bin_class_free (klass);
 	return NULL;
 }
 
-static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi) {
+static RzPVector /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj && bf->o->info, NULL);
 
-	RzList /*<RzBinClass>*/ *ret = NULL;
+	RzPVector /*<RzBinClass>*/ *ret = NULL;
 	RzBinObject *obj = bf->o;
 	const ut32 ptr_size = sizeof(mach0_ut);
 	bool is_found = false;
@@ -1371,7 +1373,7 @@ static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuff
 		goto error;
 	}
 
-	if (!ret && !(ret = rz_list_newf((RzListFree)rz_bin_class_free))) {
+	if (!ret && !(ret = rz_pvector_new((RzPVectorFree)rz_bin_class_free))) {
 		goto error;
 	}
 
@@ -1408,12 +1410,12 @@ static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuff
 			RZ_FREE(klass);
 			continue;
 		}
-		rz_list_append(ret, klass);
+		rz_pvector_push(ret, klass);
 	}
 	return ret;
 
 error:
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 

@@ -1507,3 +1507,162 @@ RZ_API bool rz_bv_is_all_one(RZ_NONNULL const RzBitVector *x) {
 	}
 	return true;
 }
+
+/**
+ * get predecessor of bv (dec 1) in 2^n modulo
+ * \param bv
+ * \return predecessor of bv
+ */
+RZ_API RZ_OWN RzBitVector *rz_bv_pred(RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, NULL);
+	ut32 len = bv->len;
+	if (len <= 64) {
+		ut64 val = rz_bv_to_ut64(bv);
+		val -= 1;
+		return rz_bv_new_from_ut64(len, val);
+	}
+
+	RzBitVector *one = rz_bv_new_one(len);
+	RzBitVector *result = rz_bv_sub(bv, one, NULL);
+	rz_bv_free(one);
+
+	return result;
+}
+
+/**
+ * get successor of bv (inc 1) in 2^n modulo
+ * \param bv
+ * \return successor of bv
+ */
+RZ_API RZ_OWN RzBitVector *rz_bv_succ(RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, NULL);
+	ut32 len = bv->len;
+	if (len <= 64) {
+		ut64 val = rz_bv_to_ut64(bv);
+		val += 1;
+		return rz_bv_new_from_ut64(len, val);
+	}
+
+	RzBitVector *one = rz_bv_new_one(len);
+	RzBitVector *result = rz_bv_sub(bv, one, NULL);
+	rz_bv_free(one);
+
+	return result;
+}
+
+/**
+ * Arithmetic right shift of bv, shift right with (msb bv) bit filled
+ * \param bv
+ * \param dist shift distance
+ * \return true if success
+ */
+RZ_API bool rz_bv_arshift(RZ_NONNULL RzBitVector *bv, ut32 dist) {
+	rz_return_val_if_fail(bv, false);
+	bool msb = rz_bv_msb(bv);
+	return rz_bv_rshift_fill(bv, dist, msb);
+}
+
+/**
+ * cast bv to sort (to_size), fill with fill_bit. fill_bit has no effect if it's a narrowing cast
+ * If m = size s - size (sort b) > 0 then m bits b are prepended to the most significant part of the vector.
+ * \param bv
+ * \param to_size new bitvector length
+ * \param fill_bit specify filling bit if extend
+ * \return new bv with length (to_size)
+ */
+RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit) {
+	rz_return_val_if_fail(bv, NULL);
+
+	RzBitVector *ret = rz_bv_new(to_size);
+	rz_bv_set_all(ret, fill_bit);
+	rz_bv_copy_nbits(bv, 0, ret, 0, RZ_MIN(bv->len, to_size));
+
+	return ret;
+}
+
+/**
+ * signed cast of bv, (signed_cast x n) = (cast x n (msb x))
+ * \param bv
+ * \param to_size cast bitvector length
+ * \return new bv with length (to_size)
+ */
+RZ_API RZ_OWN RzBitVector *rz_bv_signed_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size) {
+	return rz_bv_cast(bv, to_size, rz_bv_msb(bv));
+}
+
+/**
+ * unsigned cast of bv, (unsigned_cast x n) = (cast x n 0)
+ * \param bv
+ * \param to_size cast bitvector length
+ * \return new bv with length (to_size)
+ */
+RZ_API RZ_OWN RzBitVector *rz_bv_unsigned_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size) {
+	return rz_bv_cast(bv, to_size, false);
+}
+
+/**
+ * strict signed less than, x < y
+ * \param x bv as signed value
+ * \param y bv as signed value
+ * \return compare result as bool value
+ */
+RZ_API bool rz_bv_slt(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	// x < y === !(x >= y) === !(y <= x)
+	return !rz_bv_sle(y, x);
+}
+
+/**
+ * strict unsigned less than, x < y
+ * \param x bv as unsigned
+ * \param y bv as unsigned
+ * \return
+ */
+RZ_API bool rz_bv_ult(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	return !rz_bv_ule(y, x);
+}
+
+/**
+ * strict signed great then, x > y
+ * \param x bv as signed
+ * \param y bv as signed
+ * \return
+ */
+RZ_API bool rz_bv_sgt(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	return !rz_bv_sle(x, y);
+}
+
+/**
+ * strict unsigned great than, x > y
+ * \param x bv as unsigned
+ * \param y bv as unsigned
+ * \return
+ */
+RZ_API bool rz_bv_ugt(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	return !rz_bv_ule(x, y);
+}
+
+/**
+ * strict signed great than or equal, x >= y
+ * \param x bv as signed
+ * \param y bv as signed
+ * \return
+ */
+RZ_API bool rz_bv_sge(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	return rz_bv_sle(y, x);
+}
+
+/**
+ * strict unsigned great than or equal, x >= y
+ * \param x bv as unsigned
+ * \param y bv as unsigned
+ * \return
+ */
+RZ_API bool rz_bv_uge(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	return rz_bv_ule(y, x);
+}

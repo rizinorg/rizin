@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_regex.h>
+#include <rz_vector.h>
 #include <rz_types.h>
 #include <rz_core.h>
 #include <rz_asm.h>
@@ -13,7 +15,7 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 static void add_hit_to_sorted_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, int len, ut8 is_valid);
 static int prune_hits_in_addr_range(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, ut64 len, ut8 is_valid);
 
-static int rcoreasm_address_comparator(RzCoreAsmHit *a, RzCoreAsmHit *b) {
+static int coreasm_address_comparator(RzCoreAsmHit *a, RzCoreAsmHit *b, void *user) {
 	if (a->addr == b->addr) {
 		return 0;
 	}
@@ -258,6 +260,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				ut64 len = RZ_MIN(15, core->blocksize - idx);
 				if (rz_analysis_op(core->analysis, &aop, addr, buf + idx, len, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
 					idx++; // TODO: honor mininstrsz
+					rz_analysis_op_fini(&aop);
 					continue;
 				}
 				ut64 val = aop.val; // Referenced value
@@ -285,18 +288,21 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 					if (!(hit = rz_core_asm_hit_new())) {
 						rz_list_purge(hits);
 						RZ_FREE(hits);
+						rz_analysis_op_fini(&aop);
 						goto beach;
 					}
 					hit->addr = addr;
 					hit->len = aop.size; //  idx + len - tidx;
 					if (hit->len == -1) {
 						rz_core_asm_hit_free(hit);
+						rz_analysis_op_fini(&aop);
 						goto beach;
 					}
 					rz_asm_disassemble(core->rasm, &op, buf + addrbytes * idx,
 						core->blocksize - addrbytes * idx);
-					hit->code = rz_str_new(rz_strbuf_get(&op.buf_asm));
+					hit->code = rz_str_dup(rz_strbuf_get(&op.buf_asm));
 					rz_asm_op_fini(&op);
+					rz_analysis_op_fini(&aop);
 					idx = (matchcount) ? tidx + 1 : idx + 1;
 					matchcount = 0;
 					rz_list_append(hits, hit);
@@ -309,6 +315,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				RzAnalysisOp aop = { 0 };
 				if (rz_analysis_op(core->analysis, &aop, addr, buf + idx, 15, RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 					idx++; // TODO: honor mininstrsz
+					rz_analysis_op_fini(&aop);
 					continue;
 				}
 				// opsz = aop.size;
@@ -337,9 +344,11 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				} else if (!regexp) {
 					matches = strstr(opst, tokens[matchcount]) != NULL;
 				} else {
-					rx = rz_regex_new(tokens[matchcount], "es");
-					matches = rz_regex_exec(rx, opst, 0, 0, 0) == 0;
+					rx = rz_regex_new(tokens[matchcount], RZ_REGEX_EXTENDED, 0);
+					RzPVector *tmp_m = rz_regex_match_first(rx, opst, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+					matches = (!rz_pvector_empty(tmp_m) && tmp_m != NULL) ? 1 : 0;
 					rz_regex_free(rx);
+					rz_pvector_free(tmp_m);
 				}
 			}
 			if (align && align > 1) {
@@ -416,7 +425,7 @@ static void add_hit_to_sorted_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr,
 		hit->len = len;
 		hit->valid = is_valid;
 		hit->code = NULL;
-		rz_list_add_sorted(hits, hit, ((RzListComparator)rcoreasm_address_comparator));
+		rz_list_add_sorted(hits, hit, ((RzListComparator)coreasm_address_comparator), NULL);
 	}
 }
 
@@ -475,7 +484,7 @@ static RzCoreAsmHit *find_addr(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr) {
 	RzListIter *addr_iter = NULL;
 	RzCoreAsmHit dummy_value;
 	dummy_value.addr = addr;
-	addr_iter = rz_list_find(hits, &dummy_value, ((RzListComparator)rcoreasm_address_comparator));
+	addr_iter = rz_list_find(hits, &dummy_value, ((RzListComparator)coreasm_address_comparator), NULL);
 	return rz_list_iter_get_data(addr_iter);
 }
 
@@ -520,7 +529,7 @@ static int handle_forward_disassemble(RzCore *core, RzList /*<RzCoreAsmHit *>*/ 
 			prune_results = prune_hits_in_addr_range(hits, temp_instr_addr, temp_instr_len, is_valid);
 			add_hit_to_sorted_hits(hits, temp_instr_addr, temp_instr_len, is_valid);
 			if (prune_results) {
-				rz_list_add_sorted(hits, hit, ((RzListComparator)rcoreasm_address_comparator));
+				rz_list_add_sorted(hits, hit, ((RzListComparator)coreasm_address_comparator), NULL);
 				RZ_LOG_DEBUG("Pruned %u hits from list in fwd sweep.\n", prune_results);
 			} else {
 				RZ_FREE(hit);
@@ -706,7 +715,7 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 		hit->addr = current_instr_addr;
 		hit->len = current_instr_len;
 		hit->code = NULL;
-		rz_list_add_sorted(hits, hit, ((RzListComparator)rcoreasm_address_comparator));
+		rz_list_add_sorted(hits, hit, ((RzListComparator)coreasm_address_comparator), NULL);
 
 		current_buf_pos--;
 		current_instr_addr--;

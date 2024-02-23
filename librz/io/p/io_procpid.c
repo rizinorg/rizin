@@ -34,7 +34,7 @@ static int debug_os_read_at(int fdn, void *buf, int sz, ut64 addr) {
 	return read(fdn, buf, sz);
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int len) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t len) {
 	memset(buf, 0xff, len); // TODO: only memset the non-readed bytes
 	return debug_os_read_at(RzIOPROCPID_FD(fd), buf, len, io->off);
 }
@@ -46,7 +46,7 @@ static int procpid_write_at(int fd, const ut8 *buf, int sz, ut64 addr) {
 	return write(fd, buf, sz);
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int len) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t len) {
 	return procpid_write_at(RzIOPROCPID_FD(fd), buf, len, io->off);
 }
 

@@ -6,7 +6,7 @@
 
 #include "dyldcache.h"
 
-#include <ht_pu.h>
+#include <rz_util/ht_pu.h>
 
 #define MAX_N_HDR 16
 
@@ -356,12 +356,13 @@ static void populate_cache_maps(RzDyldCache *cache) {
 	}
 }
 
-static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, RzDyldCacheHeader *hdr, cache_map_t *maps) {
+static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, RzDyldCacheHeader *hdr, cache_map_t *maps, size_t n_maps) {
 	if (!cache_buf || !hdr || !rz_dyldcache_header_may_have_accel(hdr) || !hdr->accelerateInfoSize || !hdr->accelerateInfoAddr) {
 		return NULL;
 	}
 
-	ut64 offset = va2pa(hdr->accelerateInfoAddr, hdr->mappingCount, maps, cache_buf, 0, NULL, NULL);
+	size_t map_count = RZ_MIN(hdr->mappingCount, n_maps);
+	ut64 offset = va2pa(hdr->accelerateInfoAddr, map_count, maps, cache_buf, 0, NULL, NULL);
 	if (!offset) {
 		return NULL;
 	}
@@ -507,7 +508,7 @@ static void match_bin_entries(RzDyldCache *cache, void *entries) {
 		if (!it) {
 			break;
 		}
-		bin = it->data;
+		bin = rz_list_iter_get_data(it);
 		if (!bin) {
 			break;
 		}
@@ -521,7 +522,8 @@ static void match_bin_entries(RzDyldCache *cache, void *entries) {
 				bin->nlist_start_index = e->nlistStartIndex;
 				bin->nlist_count = e->nlistCount;
 			}
-			it = it->n;
+
+			it = rz_list_iter_get_next(it);
 		}
 	}
 
@@ -557,7 +559,7 @@ static char *get_lib_name(RzBuffer *cache_buf, cache_img_t *img) {
 	return strdup("FAIL");
 }
 
-static int string_contains(const void *a, const void *b) {
+static int string_contains(const void *a, const void *b, void *user) {
 	return !strstr((const char *)a, (const char *)b);
 }
 
@@ -633,6 +635,8 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 		return NULL;
 	}
 
+	ut16 *dep_array = NULL;
+	cache_imgxtr_t *extras = NULL;
 	char *target_libs = NULL;
 	RzList *target_lib_names = NULL;
 	int *deps = NULL;
@@ -662,8 +666,6 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 			goto next;
 		}
 
-		ut16 *dep_array = NULL;
-		cache_imgxtr_t *extras = NULL;
 		if (target_libs) {
 			HtPU *path_to_idx = NULL;
 			size_t dep_array_count = 0;
@@ -695,7 +697,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 				if (strstr(lib_name, "libobjc.A.dylib")) {
 					deps[j]++;
 				}
-				if (!rz_list_find(target_lib_names, lib_name, string_contains)) {
+				if (!rz_list_find(target_lib_names, lib_name, string_contains, NULL)) {
 					RZ_FREE(lib_name);
 					continue;
 				}
@@ -1277,7 +1279,7 @@ RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache) {
 	return 0;
 }
 
-RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzPVector /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
 	RzDyldLocSym *locsym = cache->locsym;
 	if (!locsym) {
 		return;
@@ -1324,11 +1326,11 @@ RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage 
 		if (symstr) {
 			sym->name = symstr;
 		} else {
-			static ut32 k = 0;
-			sym->name = rz_str_newf("unk_local%d", k++);
+			sym->name = rz_str_newf("unk_local%" PFMT32u, cache->unk_local_n);
+			cache->unk_local_n++;
 		}
 
-		rz_list_append(symbols, sym);
+		rz_pvector_push(symbols, sym);
 	}
 
 	free(nlists);
@@ -1349,13 +1351,14 @@ RZ_API RzDyldCache *rz_dyldcache_new_buf(RzBuffer *buf) {
 	if (!cache->maps) {
 		goto cupertino;
 	}
-	cache->accel = read_cache_accel(cache->buf, cache->hdr, cache->maps);
+	cache->accel = read_cache_accel(cache->buf, cache->hdr, cache->maps, cache->n_maps);
 	cache->bins = create_cache_bins(cache);
 	if (!cache->bins) {
 		goto cupertino;
 	}
 	cache->locsym = rz_dyld_locsym_new(cache);
 	cache->rebase_infos = get_rebase_infos(cache);
+	cache->unk_local_n = 0;
 	return cache;
 cupertino:
 	rz_dyldcache_free(cache);

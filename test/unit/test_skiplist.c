@@ -4,7 +4,7 @@
 #include <rz_skiplist.h>
 #include "minunit.h"
 
-int cmp_int(int a, int b) {
+int cmp_int(int a, int b, void *user) {
 	return (a > b) - (a < b);
 }
 

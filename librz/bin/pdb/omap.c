@@ -5,7 +5,7 @@
 
 #include "pdb.h"
 
-RZ_IPI bool parse_omap_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+RZ_IPI bool omap_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	rz_return_val_if_fail(pdb && stream, false);
 	if (!pdb->s_omap) {
 		pdb->s_omap = RZ_NEW0(RzPdbOmapStream);
@@ -39,7 +39,7 @@ RZ_IPI bool parse_omap_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	return true;
 }
 
-RZ_IPI void free_omap_stream(RzPdbOmapStream *stream) {
+RZ_IPI void omap_stream_free(RzPdbOmapStream *stream) {
 	if (!stream) {
 		return;
 	}
@@ -52,33 +52,16 @@ RZ_IPI void free_omap_stream(RzPdbOmapStream *stream) {
 	free(stream);
 }
 
-// inclusive indices
-//   0 <= imin when using truncate toward zero divide
-//     imid = (imin+imax)/2;
-//   imin unrestricted when using truncate toward minus infinity divide
-//     imid = (imin+imax)>>1; or
-//     imid = (int)floor((imin+imax)/2.0);
-static int binary_search(unsigned int *A, int key, int imin, int imax) {
-	int imid;
-
-	// continually narrow search until just one element remains
-	while (imin < imax) {
-		imid = (imin + imax) / 2;
-		if (A[imid] < key) {
-			imin = imid + 1;
-		} else {
-			imax = imid;
-		}
+static int cmp_ut64(const void *pa, const void *pb) {
+	ut64 a = *(ut64 *)pb;
+	ut64 b = *(ut64 *)pa;
+	if (a < b) {
+		return -1;
 	}
-	// At exit of while:
-	//   if A[] is empty, then imax < imin
-	//   otherwise imax == imin
-
-	// deferred test for equality
-	if ((imax == imin) && (A[imin] == key)) {
-		return imin;
+	if (a > b) {
+		return 1;
 	}
-	return -1;
+	return 0;
 }
 
 /**
@@ -88,21 +71,19 @@ static int binary_search(unsigned int *A, int key, int imin, int imax) {
  * \param address Where to remap
  * \return int
  */
-RZ_API int rz_bin_pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, int address) {
+static ut64 pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, ut64 address) {
 	OmapEntry *omap_entry = 0;
 	RzListIter *it = 0;
 	int i = 0;
-	int pos = 0;
-	int len = 0;
 
 	if (!omap_stream) {
 		return address;
 	}
 
-	len = rz_list_length(omap_stream->entries);
+	ut32 len = rz_list_length(omap_stream->entries);
 
 	if (omap_stream->froms == 0) {
-		omap_stream->froms = (unsigned int *)malloc(4 * len);
+		omap_stream->froms = (ut64 *)malloc(sizeof(ut64) * len);
 		if (!omap_stream->froms) {
 			return -1;
 		}
@@ -114,17 +95,12 @@ RZ_API int rz_bin_pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, int ad
 		}
 	}
 
-	// mb (len -1) ???
-	pos = binary_search(omap_stream->froms, address, 0, (len));
-
-	if (pos == -1) {
+	const ut64 *p = bsearch(&address, omap_stream->froms, len, sizeof(ut64), cmp_ut64);
+	if (!p) {
 		return -1;
 	}
 
-	if (omap_stream->froms[pos] != address) {
-		pos -= 1;
-	}
-	omap_entry = (OmapEntry *)rz_list_get_n(omap_stream->entries, pos);
+	omap_entry = (OmapEntry *)rz_list_get_n(omap_stream->entries, *p);
 	if (!omap_entry) {
 		return -1;
 	}
@@ -132,4 +108,27 @@ RZ_API int rz_bin_pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, int ad
 		return omap_entry->to;
 	}
 	return omap_entry->to + (address - omap_entry->from);
+}
+
+/**
+ * \brief Convert the section offset to relative virtual address
+ *
+ * \param pdb The PDB reference
+ * \param section_offset The section offset
+ * \return The relative virtual address
+ */
+RZ_API ut64 rz_bin_pdb_to_rva(
+	RZ_BORROW RZ_NONNULL const RzPdb *pdb,
+	RZ_BORROW RZ_NONNULL const PDBSectionOffset *section_offset) {
+	static const ut64 DEFAULT = UT64_MAX;
+	rz_return_val_if_fail(pdb && pdb->s_pe && section_offset, DEFAULT);
+	PeImageSectionHeader *section_hdr = pdb_section_hdr_by_index(pdb->s_pe, section_offset->section_index);
+	if (!section_hdr) {
+		return DEFAULT;
+	}
+	ut64 internal_rva = section_offset->offset + section_hdr->virtual_address;
+	if (pdb->s_omap) {
+		return pdb_omap_remap(pdb->s_omap, internal_rva);
+	}
+	return internal_rva;
 }

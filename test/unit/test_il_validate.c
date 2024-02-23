@@ -1086,6 +1086,18 @@ static bool test_il_validate_effect_repeat() {
 	mu_assert_streq_free(report, "Body operand of repeat op does not only perform data effects.", "report");
 	rz_il_op_effect_free(op);
 
+	//////////////////////////
+	// malformed effect handling
+
+	op = rz_il_op_new_seqn(2,
+		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(32, 1)),
+		rz_il_op_new_repeat(rz_il_op_new_non_zero(rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)),
+			rz_il_op_new_set("x", true, rz_il_op_new_sub(rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b1()))));
+	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &t, &report);
+	mu_assert_false(val, "invalid");
+	mu_assert_streq_free(report, "Right operand of sub op is not a bitvector.", "report");
+	rz_il_op_effect_free(op);
+
 	rz_il_validate_global_context_free(ctx);
 	mu_end;
 }
@@ -1325,6 +1337,21 @@ static bool test_il_validate_pure_float() {
 	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_float80() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	RzILOpPure *op = rz_il_op_new_float_from_f80(4.2L);
+	RzILSortPure sort;
+	RzILValidateReport report;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_80)), "sort");
 	mu_assert_null(report, "no report");
 	rz_il_op_pure_free(op);
 
@@ -1733,6 +1760,7 @@ bool all_tests() {
 	mu_run_test(test_il_validate_effect_repeat);
 	mu_run_test(test_il_validate_effect_branch);
 	mu_run_test(test_il_validate_pure_float);
+	mu_run_test(test_il_validate_pure_float80);
 	mu_run_test(test_il_validate_pure_fbits);
 	mu_run_test(test_il_validate_pure_float_bool_uop);
 	mu_run_test(test_il_validate_pure_float_uop);

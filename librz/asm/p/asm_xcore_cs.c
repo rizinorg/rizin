@@ -3,21 +3,33 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone/capstone.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	csh handle;
+#include "cs_helper.h"
+
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(xcore);
+
+static int xcore_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	cs_insn *insn;
-	int mode, n, ret = -1;
-	mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	int n, ret = -1;
+	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	memset(op, 0, sizeof(RzAsmOp));
 	op->size = 4;
-	ret = cs_open(CS_ARCH_XCORE, mode, &handle);
-	if (ret) {
-		goto fin;
+
+	if (ctx->omode != mode) {
+		cs_close(&ctx->handle);
+		ctx->omode = -1;
 	}
-	cs_option(handle, CS_OPT_DETAIL, CS_OPT_OFF);
-	n = cs_disasm(handle, (ut8 *)buf, len, a->pc, 1, &insn);
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_XCORE, mode, &ctx->handle);
+		if (ret) {
+			goto fin;
+		}
+		ctx->omode = mode;
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
+	}
+
+	n = cs_disasm(ctx->handle, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
 		op->size = 4;
@@ -29,11 +41,16 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	rz_asm_op_set_asm(op, sdb_fmt("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str));
+
+	if (insn->op_str[0]) {
+		rz_asm_op_setf_asm(op, "%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+	} else {
+		rz_asm_op_set_asm(op, insn->mnemonic);
+	}
+
 // TODO: remove the '$'<registername> in the string
 beach:
 	cs_free(insn, n);
-	cs_close(&handle);
 fin:
 	return ret;
 }
@@ -46,7 +63,10 @@ RzAsmPlugin rz_asm_plugin_xcore_cs = {
 	.arch = "xcore",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
-	.disassemble = &disassemble,
+	.init = &xcore_init,
+	.fini = &xcore_fini,
+	.disassemble = &xcore_disassemble,
+	.mnemonics = &xcore_mnemonics,
 };
 
 #ifndef RZ_PLUGIN_INCORE

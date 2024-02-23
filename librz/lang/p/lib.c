@@ -12,7 +12,7 @@ static int lang_lib_init(RzLang *user) {
 static int lang_lib_file_run(RzLang *user, const char *file) {
 	char *libpath;
 	void *lib;
-	if (!(libpath = rz_str_new(file))) {
+	if (!(libpath = rz_str_dup(file))) {
 		return -1;
 	}
 	if (!rz_str_startswith(libpath, "/") && !rz_str_startswith(libpath, "./")) {

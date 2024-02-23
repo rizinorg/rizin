@@ -1,117 +1,151 @@
-.Dd Oct 30, 2018
+.Dd Jan 22, 2024
 .Dt RZ_ASM 1
 .Sh NAME
 .Nm rz-asm
 .Nd rizin assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rz-asm
-.Op Fl ABdDeEfCLvwrqx
+.Op Fl ABCdDeIEhjLpqrvxw
 .Op Fl a Ar arch
 .Op Fl b Ar bits
-.Op Fl c Ar cpu
+.Op Fl c Ar CPU
+.Op Fl O Ar file
+.Op Fl o Ar addr
+.Op Fl @ Ar addr
+.Op Fl f Ar file
 .Op Fl F Ar in:out
-.Op Fl o Ar offset
-.Op Fl @ Ar offset
-.Op Fl O Ar ofile
+.Op Fl i Ar len
+.Op Fl k Ar kernel
 .Op Fl s Ar syntax
-.Op Fl i Ar int
-.Op Fl l Ar int
-.Op ARG
+.Op Fl l Ar len
 .Sh DESCRIPTION
-This tool uses r_asm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
+This command is part of the Rizin project.
+.Pp
+This tool uses RzAsm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
 .Pp
 .Bl -tag -width Fl
 .It Fl a Ar arch
-Set architecture plugin
+Set architecture to assemble/disassemble (see -L)
 .It Fl A
-Show analysis information of given hexpair string
+Show analysis information from given hexpairs
 .It Fl b Ar bits
-Set architecture bits
+Set CPU register size (8, 16, 32, 64) (RZ_ASM_BITS)
 .It Fl B
-Binary input/output (\-l is mandatory for binary input)
-.It Fl c Ar cpu
-Select specific CPU (depends on \-a arch)
+Binary input/output (-l is mandatory for binary input)
+.It Fl c Ar CPU
+Select specific CPU (depends on the arch)
 .It Fl C
 Output in C format
-.It Fl d
-Disassemble hexpair bytes. rz-asm \-d 9090
-.It Fl D
-Disassemble showing hexpair and opcode
+.It Fl d, D
+Disassemble from hexpair bytes (-D show hexpairs)
 .It Fl e
-Use big endian (or swap endianness if used more than once)
+Use big endian instead of little endian
+.It Fl I
+Display lifted RzIL code (same input as in -d, IL is also validated)
 .It Fl E
-Output disassembled instructions in ESIL format.
-.It Fl f
-Read data from file instead of ARG.
+Display ESIL expression (same input as in -d)
+.It Fl f Ar file
+Read data from file
 .It Fl F Ar in:out
 Specify input and/or output filters (att2intel, x86.pseudo, ...)
-.It Fl h
-Show usage help message.
-.It Fl hh
-Show long help message including supported assembler directives
-.It Fl l Ar int
+.It Fl h, hh
+Show usage help message, hh for long
+.It Fl i Ar len
+Ignore N bytes of the input buffer
+.It Fl j
+Output in JSON format
+.It Fl k Ar kernel
+Select operating system (linux, windows, darwin, ..)
+.It Fl l Ar len
 Input/Output length
-.It Fl i Ar int
-Ignore/skip N bytes from the beginning of the input buffer
 .It Fl L
-List supported asm plugins
-.It Fl o Ar offset
-Offset of the opcode to assemble (default is 0)
-.It Fl @ Ar offset
-Alias for -o
-.It Fl O Ar ofile
-output to file, for example 'rz-asm \-BF a a.asm'
-.It Fl r
-Show output in rizin script
-.It Fl s Ar syntax
-Select syntax output (intel, att)
-.It Fl w
-Describe opcode (whats op)
-.It Fl x
-Use hex dwords instead of hexpairs in the assembler output
+List asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)
+.It Fl o, @ Ar addr
+Set start address for code (default 0)
+.It Fl O Ar file
+Output file name (rz-asm -Bf a.asm -O a)
+.It Fl p
+Run SPP over input for assembly
 .It Fl q
-Quiet output (handy for -L, -v, ...)
+Quiet mode
+.It Fl r
+Output in rizin commands
+.It Fl s Ar syntax
+Select syntax (intel, att)
+.It Fl v
+Show version information
+.It Fl x
+Use hex dwords instead of hex pairs when assembling
+.It Fl w
+Describe opcode
 .El
-.Sh different than filename
+.Sh Directives
 .Pp
-.Bl -tag -width Fl
-.It Fl .intel_syntax
-Use intel syntax rather than att:w
-.It Fl .att_syntax
-Use ATT syntax rather than flu :w
-dentify the region fof aslerrger
-.It Fl string
-dentify the region fof aslerrger
-.It Fl .align
-.It Fl .arch
-.It Fl .arm
-.It Fl .ascii
-.It Fl .bits
-.It Fl .data
-.It Fl .equ
-.It Fl .fill
-.It Fl .glob
-.It Fl .hex
-.It Fl .int16
-.It Fl .int32
-.It Fl .int64
-.It Fl .kernel
-.It Fl .offset
-.It Fl .org
-.It Fl .os
-.It Fl .short
-.It Fl .text
-.It Fl .thumb
+.Bl -tag -width
+.It Ic .intel_syntax
+Use Intel syntax rather than AT&T
+.It Ic .att_syntax
+Use AT&T syntax rather than Intel
+.It Ic .align Ar number
+Set the code or data alignment
+.It Ic .arch Ar name
+Set the code architecture
+.It Ic .arm
+Set the ARM mode (as opposed to Thumb) for ARM architecture
+.It Ic .ascii Ar string
+Define the ASCII string
+.It Ic .asciz Ar string
+Define the zero-ending ASCII string
+.It Ic .bits Ar number
+Define the code bitness
+.It Ic .big_endian
+Set the BE (big endian) byte order
+.It Ic .cpu Ar name
+Set the CPU for the chosen architecture
+.It Ic .data
+Mark the start of the data section
+.It Ic .endian Ar 1|0
+Set the endianness (the byte order) - 1 is BE, 0 is LE
+.It Ic .equ Ar name Ar value
+Define the constant
+.It Ic .fill Ar repeat,size,value
+Fill the data with the repeating value pattern
+.It Ic .hex Ar data
+Define the data in hexadecimal format
+.It Ic .incbin Ar filename
+Include binary file
+.It Ic .int16 Ar number
+Define 16-bit integer
+.It Ic .int32 Ar number
+Define 32-bit integer
+.It Ic .int64 Ar number
+Define 64-bit integer
+.It Ic .kernel Ar name
+Set the kernel for syscalls
+.It Ic .little_endian
+Set the LE (little endian) byte order
+.It Ic .org Ar value
+Set the value of the PC (Program Counter) register
+.It Ic .os Ar name
+Set the operating system for syscalls
+.It Ic .short Ar number
+Define 16-bit integer
+.It Ic .string Ar string
+Define the ASCII string
+.It Ic .text
+Mark the start of the text section
+.It Ic .thumb
+Set the Thumb mode (as opposed to ARM) for ARM architecture
 .El
 .Sh EXAMPLES
 .Pp
 Assemble opcode:
 .Pp
-  $ rz-asm \-a x86 \-b 32 'mov eax, 33'
+.Nm rz-asm Fl a Cm x86 Fl b Cm 32 Ar 'mov eax, 33'
 .Pp
 Disassemble opcode:
 .Pp
-  $ rz-asm \-d 90
+.Nm rz-asm Fl d Cm 90
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
@@ -125,3 +159,5 @@ Disassemble opcode:
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

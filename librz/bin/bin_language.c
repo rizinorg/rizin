@@ -87,7 +87,7 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	RzBinSymbol *sym;
 	RzBinImport *imp;
 	RzBinSection *section;
-	RzListIter *iter;
+	void **iter;
 
 	if (!info) {
 		return RZ_BIN_LANGUAGE_UNKNOWN;
@@ -116,7 +116,9 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	}
 
 	if (is_macho || is_elf) {
-		rz_list_foreach (o->imports, iter, imp) {
+		void **vec_it;
+		rz_pvector_foreach (o->imports, vec_it) {
+			imp = *vec_it;
 			const char *name = imp->name;
 			if (!strcmp(name, "_NSConcreteGlobalBlock")) {
 				is_blocks = true;
@@ -125,7 +127,9 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 			}
 		}
 	}
-	rz_list_foreach (o->libs, iter, lib) {
+	void **vec_it = NULL;
+	rz_pvector_foreach (o->libs, vec_it) {
+		lib = *vec_it;
 		if (is_macho && strstr(lib, "swift")) {
 			info->lang = "swift";
 			return language_apply_blocks_mask(RZ_BIN_LANGUAGE_SWIFT, is_blocks);
@@ -144,7 +148,8 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 		return language_apply_blocks_mask(RZ_BIN_LANGUAGE_OBJC, is_blocks);
 	}
 
-	rz_list_foreach (o->symbols, iter, sym) {
+	rz_pvector_foreach (o->symbols, iter) {
+		sym = *iter;
 		if (!sym->name) {
 			continue;
 		}
@@ -187,7 +192,8 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	}
 
 	if (is_macho || is_elf) {
-		rz_list_foreach (o->sections, iter, section) {
+		rz_pvector_foreach (o->sections, iter) {
+			section = *iter;
 			if (!section->name) {
 				continue;
 			}

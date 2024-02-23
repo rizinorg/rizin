@@ -60,8 +60,8 @@
 #include <rz_diff.h>
 #include <rz_util.h>
 /**/
-#include <ht_pp.h>
-#include <ht_uu.h>
+#include <rz_util/ht_pp.h>
+#include <rz_util/ht_uu.h>
 
 #define NUM2PTR(x) ((void *)(intptr_t)(x))
 #define PTR2NUM(x) ((intptr_t)(void *)(x))
@@ -471,7 +471,7 @@ find_longest_match_fail:
 	return NULL;
 }
 
-static int cmp_matches(RzDiffMatch *m0, RzDiffMatch *m1) {
+static int cmp_matches(RzDiffMatch *m0, RzDiffMatch *m1, void *user) {
 	if (m0->a > m1->a) {
 		return 1;
 	} else if (m0->a < m1->a) {
@@ -557,7 +557,7 @@ RZ_API RZ_OWN RzList /*<RzDiffMatch *>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff 
 		}
 		free(block);
 	}
-	rz_list_sort(matches, (RzListComparator)cmp_matches);
+	rz_list_sort(matches, (RzListComparator)cmp_matches, NULL);
 
 	adj_a = 0;
 	adj_b = 0;

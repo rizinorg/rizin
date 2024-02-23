@@ -24,15 +24,6 @@
 #define DCACHE_LINE_SIZE 128
 
 /**
- * \brief Writes to the info log that an unimplemented instruction was encountered and returns an EMPTY() effect.
- */
-#define NOT_IMPLEMENTED \
-	do { \
-		RZ_LOG_INFO("IL instruction not implemented."); \
-		return NULL; \
-	} while (0)
-
-/**
  * \brief Unsigned value \p i which is PPC_ARCH_BITS (32 or 64) wide.
  */
 #define UA(i) (IN_64BIT_MODE ? U64(i) : U32(i))
@@ -163,7 +154,11 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id);
 RZ_IPI bool ppc_updates_ra_with_ea(ut32 insn_id);
 RZ_IPI bool ppc_is_algebraic(ut32 insn_id);
 RZ_IPI bool ppc_sets_lr(ut32 insn_id);
+RZ_IPI bool ppc_insn_sets_lr(const cs_insn *insn);
 RZ_IPI bool ppc_is_conditional(ut32 insn_id);
+#if CS_NEXT_VERSION >= 6
+RZ_IPI bool ppc_insn_is_conditional(const cs_insn *insn);
+#endif
 RZ_IPI bool ppc_moves_to_spr(ut32 insn_id);
 RZ_IPI bool ppc_is_mul_div_d(const ut32 id, const cs_mode mode);
 RZ_IPI bool ppc_is_mul_div_u(const ut32 id);

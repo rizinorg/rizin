@@ -363,9 +363,9 @@ w 0123456789abcde
 w a\57b\0
 w 1\0532\0 @ 0x4
 w 0\1741\0 @ 0x8
-ps @e:bin.str.enc=utf8
-ps @ 0x4 @e:bin.str.enc=utf8
-ps @ 0x8 @e:bin.str.enc=utf8
+ps @e:str.search.encoding=utf8
+ps @ 0x4 @e:str.search.encoding=utf8
+ps @ 0x8 @e:str.search.encoding=utf8
 EOF
 EXPECT=<<EOF
 a/b
@@ -464,7 +464,7 @@ afvn test var_4h
 wa "jne 0" @ 4
 pdr
 wx 00000000
-afv # check var was deleted
+afvl # check var was deleted
 EOF
 EXPECT=<<EOF
 / fcn.00000000();

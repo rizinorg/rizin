@@ -63,7 +63,7 @@ static bool mylistrefs_cb(void *list, const ut64 k, const void *v) {
 	return true;
 }
 
-static int ref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b) {
+static int ref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b, void *user) {
 	if (a->from < b->from) {
 		return -1;
 	}
@@ -80,7 +80,7 @@ static int ref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b) {
 }
 
 static void sortxrefs(RzList /*<RzAnalysisXRef *>*/ *list) {
-	rz_list_sort(list, (RzListComparator)ref_cmp);
+	rz_list_sort(list, (RzListComparator)ref_cmp, NULL);
 }
 
 static void listxrefs(HtUP *m, ut64 addr, RzList /*<RzAnalysisXRef *>*/ *list) {
@@ -274,7 +274,7 @@ RZ_API ut64 rz_analysis_xrefs_count(RzAnalysis *analysis) {
 	return ret;
 }
 
-static RZ_OWN RzList /*<RzAnalysisXRef *>*/ *fcn_get_refs(RzAnalysisFunction *fcn, HtUP *ht) {
+static RZ_OWN RzList /*<RzAnalysisXRef *>*/ *fcn_get_refs(const RzAnalysisFunction *fcn, HtUP *ht) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	RzList *list = rz_analysis_xref_list_new();
@@ -293,12 +293,12 @@ static RZ_OWN RzList /*<RzAnalysisXRef *>*/ *fcn_get_refs(RzAnalysisFunction *fc
 	return list;
 }
 
-RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn) {
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_from(const RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, NULL);
 	return fcn_get_refs(fcn, fcn->analysis->ht_xrefs_from);
 }
 
-RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn) {
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(const RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, NULL);
 	return fcn_get_refs(fcn, fcn->analysis->ht_xrefs_to);
 }

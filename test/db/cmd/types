@@ -12,8 +12,8 @@ EOF
 EXPECT=<<EOF
 Foo = struct anonymous struct 0
 Bar = struct anonymous struct 1
-pf d a
-pf z[0]d hello world
+pf "d a"
+pf "z[0]d hello world"
 EOF
 RUN
 
@@ -198,7 +198,6 @@ t long
 t "long long"
 t size_t
 t uid_t
-t void
 t int8_t
 t uint8_t
 t int16_t
@@ -208,28 +207,28 @@ t uint32_t
 t int64_t
 t uint64_t
 t char16_t
+t void
 EOF
 EXPECT=<<EOF
-pf c char
-pf F double
-pf F long double
-pf f float
-pf d int
-pf w short
-pf x long
-pf q long long
-pf q size_t
-pf q uid_t
-pf 
-pf b int8_t
-pf b uint8_t
-pf w int16_t
-pf w uint16_t
-pf d int32_t
-pf d uint32_t
-pf q int64_t
-pf q uint64_t
-pf c char16_t
+pf "c char"
+pf "F double"
+pf "F long double"
+pf "f float"
+pf "d int"
+pf "w short"
+pf "x long"
+pf "q long long"
+pf "q size_t"
+pf "q uid_t"
+pf "b int8_t"
+pf "b uint8_t"
+pf "w int16_t"
+pf "w uint16_t"
+pf "d int32_t"
+pf "d uint32_t"
+pf "q int64_t"
+pf "q uint64_t"
+pf "c char16_t"
 EOF
 RUN
 
@@ -241,7 +240,7 @@ t-*
 t int
 EOF
 EXPECT=<<EOF
-pf d int
+pf "d int"
 EOF
 EXPECT_ERR=<<EOF
 ERROR: core: cannot find 'int' type
@@ -286,7 +285,7 @@ tu xoo
 tuc xoo
 EOF
 EXPECT=<<EOF
-pf ddd x y z
+pf "ddd x y z"
 union xoo {
 	int x;
 	int y;
@@ -314,11 +313,11 @@ te bar
 tec bar
 EOF
 EXPECT=<<EOF
-pf i b
+pf "i b"
 union bla {
 	uint b;
 };
-pf i[5]*c b foo
+pf "i[5]*c b foo"
 struct foo {
 	uint b;
 	char *foo[5];
@@ -382,12 +381,16 @@ tt const_reference
 ttc const_reference
 t const_reference
 tc const_reference
+tc const_reference_0
 EOF
 EXPECT=<<EOF
-const_reference = const_reference
-typedef const_reference const_reference;
-pf 
+const_reference = struct const_reference_0
+typedef struct const_reference_0 const_reference;
+pf "d a"
 const_reference;
+struct const_reference_0 {
+	int a;
+};
 EOF
 RUN
 
@@ -491,10 +494,17 @@ CMDS=<<EOF
 td "struct test_struct{int x;int y;};"
 ts test_struct
 tsd test_struct
+td "typedef uint16_t word;"
+td "typedef uint32_t dword;"
+td "struct test_struct2{word a; word b[5]; word c; word d[10]; dword e;};"
+ts test_struct2
+tsd test_struct2
 EOF
 EXPECT=<<EOF
-pf dd x y
+pf "dd x y"
 struct test_struct { int x; int y; };
+pf "w[5]ww[10]wd a (word)b c (word)d e"
+struct test_struct2 { word a; word b[5]; word c; word d[10]; dword e; };
 EOF
 RUN
 
@@ -506,7 +516,7 @@ ts test_struct
 tsd test_struct
 EOF
 EXPECT=<<EOF
-pf dd x y
+pf "dd x y"
 struct test_struct { int x; int y; };
 EOF
 RUN
@@ -659,7 +669,7 @@ dox
 dox_t
 name
 name_t
-pf [127]z[40]zd street city zip
+pf "[127]z[40]zd street city zip"
 EOF
 RUN
 
@@ -688,21 +698,21 @@ tt dox_t
 ttc dox_t
 EOF
 EXPECT=<<EOF
-pf [40]c[40]c[40]c first middle last
+pf "[40]c[40]c[40]c first middle last"
 struct name { char first[40]; char middle[40]; char last[40]; };
 struct name {
 	char first[40];
 	char middle[40];
 	char last[40];
 };
-pf bbw day month year
+pf "bbw day month year"
 struct date { uint8_t day; uint8_t month; uint16_t year; };
 struct date {
 	uint8_t day;
 	uint8_t month;
 	uint16_t year;
 };
-pf [127]c[40]cd street city zip
+pf "[127]c[40]cd street city zip"
 struct addr { char street[127]; char city[40]; uint32_t zip; };
 struct addr {
 	char street[127];
@@ -734,7 +744,7 @@ tu x
 tuc x
 EOF
 EXPECT=<<EOF
-pf fd a b
+pf "fd a b"
 union x {
 	float a;
 	int b;
@@ -763,7 +773,7 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf d? x (bar)moo
+pf "d? x (bar)moo"
    x : 0x00000000 = 0
  moo : 
                 struct<bar>
@@ -781,7 +791,7 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf d[2]? x (bar)moo
+pf "d[2]? x (bar)moo"
    x : 0x00000000 = 0
  moo : 
 [
@@ -1242,12 +1252,12 @@ tu Books
 s main
 afvt var_78h "union Books"
 afvn books var_78h
-afv~Books
+afvl~Books
 s 0x000006d2
 pd 1
 EOF
 EXPECT=<<EOF
-pf [50]c[50]c[100]c title author subject
+pf "[50]c[50]c[100]c title author subject"
 var union Books books @ stack - 0x78
 |           0x000006d2      488d4590       lea   rax, [books.title]
 EOF
@@ -1303,7 +1313,7 @@ tsc boo
 #tsc moo
 EOF
 EXPECT=<<EOF
-pf dpz x (fp)fp b
+pf "dpz x (fp)fp b"
 struct foo { int x; int (*fp)(int a, int b); char *b; };
 struct foo {
 	int x;
@@ -1313,7 +1323,7 @@ struct foo {
   x : 0x00000000 = 0
 (fp)fp : 0x00000004 = (qword)0x0000000000000000
   b : 0x0000000c = "\x05hello"
-pf dpz x (ffp)ffp b
+pf "dpz x (ffp)ffp b"
 struct boo { int x; int (***ffp)(int a, int b); char *b; };
 struct boo {
 	int x;
@@ -1335,8 +1345,8 @@ ts normal
 ts pointer
 EOF
 EXPECT=<<EOF
-pf dc a b
-pf z*? y (normal)obj
+pf "dc a b"
+pf "z*? y (normal)obj"
 EOF
 RUN
 
@@ -1486,9 +1496,9 @@ tt B
 tt O
 EOF
 EXPECT=<<EOF
-pf f num
-pf dF num num2
-pf c ch
+pf "f num"
+pf "dF num num2"
+pf "c ch"
 ----
 struct A {
 	float num;
@@ -1523,10 +1533,10 @@ tsc "anonymous struct 0"
 tsc "anonymous struct 1"
 EOF
 EXPECT=<<EOF
-pf f num
-pf c ch
-pf f num
-pf c ch
+pf "f num"
+pf "c ch"
+pf "f num"
+pf "c ch"
 typedef struct anonymous struct 0 A;
 typedef struct anonymous struct 1 B;
 struct anonymous struct 0 {
@@ -1543,9 +1553,9 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 aaa
 s 0x4070
-afv
+afvl
 afvt var_70h "char [20]"
-afv
+afvl
 ar bp=0x98
 afvd var_70h
 EOF
@@ -1587,7 +1597,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var size_t size @ stack - 0x1c
@@ -1602,7 +1612,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var size_t size @ stack - 0x1c
@@ -1617,7 +1627,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var size_t var_24h @ stack - 0x24
@@ -1633,7 +1643,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var size_t var_28h @ stack - 0x28
@@ -1650,7 +1660,7 @@ CMDS=<<EOF
 aa
 s main
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var const char *src @ stack - 0x24
@@ -1796,7 +1806,7 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv~ptr
+afvl~ptr
 EOF
 EXPECT=<<EOF
 var char **ptr @ stack - 0x20
@@ -1809,9 +1819,9 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv~var_3ch
-afv~var_38h
-afv~var_30h
+afvl~var_3ch
+afvl~var_38h
+afvl~var_30h
 EOF
 EXPECT=<<EOF
 var int var_3ch @ stack - 0x3c
@@ -1826,7 +1836,7 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var void *va_args @ stack - 0x3c
@@ -1858,9 +1868,9 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv
+afvl
 s sym.processCmd
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var char **var_14e8h @ stack - 0x14e8
@@ -1926,29 +1936,29 @@ CMDS=<<EOF
 s main
 af
 aaft
-afv
+afvl
 EOF
 EXPECT=<<EOF
-var int32_t var_1454h @ stack - 0x1454
-var void *var_1438h @ stack - 0x1438
-var const char *s1 @ stack - 0x1038
-var int *wstatus @ stack - 0x44
+var int32_t var_1460h @ stack - 0x1460
+var void *var_1444h @ stack - 0x1444
+var const char *s1 @ stack - 0x1044
+var int *wstatus @ stack - 0x50
+var int32_t var_4ch @ stack - 0x4c
+var const char *var_48h @ stack - 0x48
+var int32_t var_44h @ stack - 0x44
 var int32_t var_40h @ stack - 0x40
-var const char *var_3ch @ stack - 0x3c
-var int32_t var_38h @ stack - 0x38
-var int32_t var_34h @ stack - 0x34
+var int32_t var_3ch @ stack - 0x3c
+var pid_t pid @ stack - 0x38
+var const char *v2 @ stack - 0x34
 var int32_t var_30h @ stack - 0x30
-var pid_t pid @ stack - 0x2c
-var const char *v2 @ stack - 0x28
+var const char *src @ stack - 0x2c
+var int32_t var_28h @ stack - 0x28
 var int32_t var_24h @ stack - 0x24
-var const char *src @ stack - 0x20
-var int32_t var_1ch @ stack - 0x1c
+var const char *s @ stack - 0x20
+var const char *var_1ch @ stack - 0x1c
 var int32_t var_18h @ stack - 0x18
-var const char *s @ stack - 0x14
-var const char *var_10h @ stack - 0x10
-var int32_t var_ch @ stack - 0xc
-var int32_t var_8h @ stack - 0x8
-var const char *option @ stack - 0x4
+var int32_t var_14h @ stack - 0x14
+var const char *option @ stack - 0x10
 arg int argc @ r0
 arg char **argv @ r1
 EOF
@@ -1960,7 +1970,7 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var int64_t var_2dh @ stack - 0x2d
@@ -1979,7 +1989,7 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var char **var_30h @ stack - 0x30
@@ -2020,7 +2030,7 @@ FILE=bins/elf/movstr
 CMDS=<<EOF
 aaa
 s main
-afv~var_28h
+afvl~var_28h
 EOF
 EXPECT=<<EOF
 var const char *var_28h @ stack - 0x28
@@ -2032,7 +2042,7 @@ FILE=bins/elf/tie-test
 CMDS=<<EOF
 aaa
 s sym.foo
-afv~var_28h
+afvl~var_28h
 EOF
 EXPECT=<<EOF
 var size_t *var_28h @ stack - 0x28
@@ -2046,7 +2056,7 @@ td "struct s1 { int a; int size; int b; };"
 ts s1
 EOF
 EXPECT=<<EOF
-pf ddd a size b
+pf "ddd a size b"
 EOF
 RUN
 
@@ -2130,7 +2140,7 @@ af
 afc fastcall
 afs "int fastcalled(int sarg0, int sarg1, int sarg2, int sarg3)"
 afs
-afv
+afvl
 afi~name,convention
 EOF
 EXPECT=<<EOF
@@ -2200,9 +2210,9 @@ tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pf.foo dc a b
-pf dc a b
-pf dc a b
+pfn "foo" "dc a b"
+pf "dc a b"
+pf "dc a b"
 EOF
 RUN
 

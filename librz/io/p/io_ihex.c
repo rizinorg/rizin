@@ -43,7 +43,7 @@ typedef struct {
 
 static bool ihex_write(RzIODesc *desc, Rihex *rih);
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd || !fd->data || (fd->perm & RZ_PERM_W) == 0 || count <= 0) {
 		return -1;
 	}
@@ -121,7 +121,7 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut32 size) {
 	return 0;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!fd || !fd->data || (count <= 0)) {
 		return -1;
 	}

@@ -273,7 +273,7 @@ RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key
  */
 RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
 	rz_return_if_fail(vm && vm->events && evt);
-	if (!rz_list_append(vm->events, evt)) {
+	if (!rz_pvector_push(vm->events, evt)) {
 		rz_warn_if_reached();
 		rz_il_event_free(evt);
 	}
@@ -283,7 +283,7 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
  * Remove any recorded events from `vm->events`
  */
 RZ_API void rz_il_vm_clear_events(RzILVM *vm) {
-	rz_list_purge(vm->events);
+	rz_pvector_clear(vm->events);
 }
 
 /**

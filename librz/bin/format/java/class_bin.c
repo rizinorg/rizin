@@ -721,16 +721,17 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 	char *tmp = NULL;
 	ut16 index;
 
-	RzListIter *iter;
-	RzList *list = rz_bin_java_class_as_libraries(bin);
-	rz_list_foreach (list, iter, tmp) {
+	void **iter;
+	RzPVector *vec = rz_bin_java_class_as_libraries(bin);
+	rz_pvector_foreach (vec, iter) {
+		tmp = *iter;
 		rz_str_replace_char(tmp, '/', '.');
 		rz_strbuf_appendf(sb, "import %s;\n", tmp);
 	}
-	if (rz_list_length(list) > 0) {
+	if (rz_pvector_len(vec) > 0) {
 		rz_strbuf_appendf(sb, "\n");
 	}
-	rz_list_free(list);
+	rz_pvector_free(vec);
 
 	rz_strbuf_append(sb, "class");
 
@@ -992,11 +993,11 @@ RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_java_class_entrypoints(RZ_NONNULL
 /**
  * \brief Returns a RzList<RzBinString*> containing the strings
  */
-RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf(rz_bin_string_free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	if (!vec) {
 		return NULL;
 	}
 
@@ -1024,7 +1025,7 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL R
 			bstr->size = cpool->size;
 			bstr->string = string;
 			bstr->type = RZ_STRING_ENC_MUTF8;
-			rz_list_append(list, bstr);
+			rz_pvector_push(vec, bstr);
 		}
 	}
 
@@ -1042,10 +1043,10 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL R
 			bstr->size = attr->attribute_length;
 			bstr->string = strdup(attr->info);
 			bstr->type = RZ_STRING_ENC_UTF8;
-			rz_list_append(list, bstr);
+			rz_pvector_push(vec, bstr);
 		}
 	}
-	return list;
+	return vec;
 }
 
 static char *add_class_name_to_name(char *name, char *classname) {
@@ -1551,12 +1552,12 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbol
 }
 
 /**
- * \brief Returns a RzList<RzBinImport*> containing the class const pool
+ * \brief Returns a RzPVector<RzBinImport*> containing the class const pool
  */
-RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *imports = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
 	}
@@ -1604,7 +1605,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_import
 			import->type = is_main ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
 			import->descriptor = java_class_constant_pool_stringify_at(bin, descriptor_index);
 			import->ordinal = i;
-			rz_list_append(imports, import);
+			rz_pvector_push(imports, import);
 			free(object);
 		}
 	}
@@ -1638,7 +1639,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_import
 			import->bind = RZ_BIN_BIND_WEAK_STR;
 			import->type = RZ_BIN_TYPE_IFACE_STR;
 			import->ordinal = i;
-			rz_list_append(imports, import);
+			rz_pvector_push(imports, import);
 			free(object);
 		}
 	}
@@ -1760,12 +1761,12 @@ static int compare_section_names(const void *a, const void *b) {
 }
 
 /**
- * \brief Returns a RzList<RzBinSection*> containing the class sections
+ * \brief Returns a RzPVector<RzBinSection*> containing the class sections
  */
-RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *sections = rz_list_newf(section_free);
+	RzPVector *sections = rz_pvector_new(section_free);
 	if (!sections) {
 		return NULL;
 	}
@@ -1774,14 +1775,14 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 	char secname[512];
 	ut64 end_offset;
 	if (bin->constant_pool) {
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.constant_pool",
 				bin->constant_pool_offset,
 				bin->interfaces_offset,
 				RZ_PERM_R));
 	}
 	if (bin->interfaces) {
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.interfaces",
 				bin->interfaces_offset,
 				bin->fields_offset,
@@ -1804,20 +1805,20 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 			} else {
 				end_offset = bin->methods_offset;
 			}
-			for (iname = 0; rz_list_find(sections, secname, compare_section_names); iname++) {
+			for (iname = 0; rz_pvector_find(sections, secname, (RzPVectorComparator)compare_section_names, NULL); iname++) {
 				snprintf(secname, sizeof(secname), "class.fields.%s_%d.attr", tmp, iname);
 			}
 			free(tmp);
-			rz_list_append(sections, new_section(secname, field->offset, end_offset, RZ_PERM_R));
+			rz_pvector_push(sections, new_section(secname, field->offset, end_offset, RZ_PERM_R));
 		}
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.fields",
 				bin->fields_offset,
 				bin->methods_offset,
 				RZ_PERM_R));
 	}
 	if (bin->methods) {
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.methods",
 				bin->methods_offset,
 				bin->attributes_offset,
@@ -1834,7 +1835,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 				continue;
 			}
 			snprintf(secname, sizeof(secname), "class.methods.%s.attr", tmp);
-			for (iname = 0; rz_list_find(sections, secname, compare_section_names); iname++) {
+			for (iname = 0; rz_pvector_find(sections, secname, (RzPVectorComparator)compare_section_names, NULL); iname++) {
 				snprintf(secname, sizeof(secname), "class.methods.%s_%d.attr", tmp, iname);
 			}
 
@@ -1848,7 +1849,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 			} else {
 				snprintf(secname, sizeof(secname), "class.methods.%s.attr", tmp);
 			}
-			rz_list_append(sections, new_section(secname, method->offset, end_offset, RZ_PERM_R));
+			rz_pvector_push(sections, new_section(secname, method->offset, end_offset, RZ_PERM_R));
 
 			if (!method->attributes) {
 				free(tmp);
@@ -1865,7 +1866,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 						snprintf(secname, sizeof(secname), "class.methods.%s.attr.%d.code", tmp, k);
 					}
 					ut64 size = ac->code_offset + attr->attribute_length;
-					rz_list_append(sections, new_section(secname, ac->code_offset, size, RZ_PERM_R | RZ_PERM_X));
+					rz_pvector_push(sections, new_section(secname, ac->code_offset, size, RZ_PERM_R | RZ_PERM_X));
 					break;
 				}
 			}
@@ -1873,7 +1874,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 		}
 	}
 	if (bin->attributes) {
-		rz_list_append(sections,
+		rz_pvector_push(sections,
 			new_section("class.attr",
 				bin->attributes_offset,
 				bin->class_end_offset,
@@ -1883,18 +1884,18 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 	return sections;
 }
 
-static int compare_strings(const void *a, const void *b) {
+static int compare_strings(const void *a, const void *b, void *user) {
 	return strcmp((const char *)a, (const char *)b);
 }
 
 /**
- * \brief Returns a RzList<char*> containing the class libraries
+ * \brief Returns a RzPVector<char*> containing the class libraries
  */
-RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf(free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new(free);
+	if (!vec) {
 		return NULL;
 	}
 	ut16 arg0, arg1;
@@ -1929,14 +1930,14 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL RzB
 				// arg0 is name_index
 				tmp = java_class_constant_pool_stringify_at(bin, arg0);
 			}
-			if (tmp && !rz_list_find(list, tmp, compare_strings)) {
-				rz_list_append(list, tmp);
+			if (tmp && !rz_pvector_find(vec, tmp, compare_strings, NULL)) {
+				rz_pvector_push(vec, tmp);
 			} else {
 				free(tmp);
 			}
 		}
 	}
-	return list;
+	return vec;
 }
 
 /**
@@ -2002,23 +2003,23 @@ RZ_API void rz_bin_java_class_interfaces_as_json(RZ_NONNULL RzBinJavaClass *bin,
 }
 
 /**
- * \brief Returns a RzList<RzBinClass*> containing only the class of the bin
+ * \brief Returns a RzPVector<RzBinClass*> containing only the class of the bin
  */
-RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzBinClass *bclass = NULL;
-	RzList *list = rz_list_newf((RzListFree)rz_bin_class_free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_bin_class_free);
+	if (!vec) {
 		return NULL;
 	}
 
 	bclass = RZ_NEW0(RzBinClass);
 	if (!bclass) {
-		rz_list_free(list);
+		rz_pvector_free(vec);
 		return NULL;
 	}
-	rz_list_append(list, bclass);
+	rz_pvector_push(vec, bclass);
 
 	bclass->name = demangle_java_and_free(rz_bin_java_class_name(bin));
 	bclass->super = demangle_java_and_free(rz_bin_java_class_super(bin));
@@ -2028,9 +2029,9 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL
 	bclass->methods = rz_bin_java_class_methods_as_symbols(bin);
 	bclass->fields = rz_bin_java_class_fields_as_binfields(bin);
 	if (!bclass->methods || !bclass->fields) {
-		rz_list_free(list);
+		rz_pvector_free(vec);
 		return NULL;
 	}
 
-	return list;
+	return vec;
 }

@@ -26,7 +26,7 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 	}
 	switch (mode) {
 	case RZ_CONS_PAL_SEEK_PREVIOUS: {
-		const char *next_fn = iter->n ? iter->n->data : NULL;
+		const char *next_fn = rz_list_iter_get_next_data(iter);
 		if (!core->curtheme) {
 			return true;
 		}
@@ -38,7 +38,7 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 		break;
 	}
 	case RZ_CONS_PAL_SEEK_NEXT: {
-		const char *prev_fn = iter->p ? iter->p->data : NULL;
+		const char *prev_fn = rz_list_iter_get_prev_data(iter);
 		if (!core->curtheme) {
 			return true;
 		}
@@ -59,11 +59,14 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 		return false;
 	}
 	if (!rz_str_cmp(name, "default", strlen(name))) {
-		core->curtheme = rz_str_dup(core->curtheme, name);
+		char *tmp = rz_str_dup(name);
+		free(core->curtheme);
+		core->curtheme = tmp;
 		rz_cons_pal_init(core->cons->context);
 		return true;
 	}
 
+	char *tmp = NULL;
 	char *home_themes = rz_path_home_prefix(RZ_THEMES);
 	char *system_themes = rz_path_system(RZ_THEMES);
 	char *extra_themes = rz_path_extra(RZ_THEMES);
@@ -95,7 +98,9 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	goto fail;
 
 success:
-	core->curtheme = rz_str_dup(core->curtheme, name);
+	tmp = rz_str_dup(name);
+	free(core->curtheme);
+	core->curtheme = tmp;
 fail:
 	free(home_file);
 	free(system_file);
@@ -161,7 +166,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 	rz_list_append(list, strdup("default"));
 	ht_pu_foreach(themes, dict2keylist, list);
 
-	rz_list_sort(list, (RzListComparator)strcmp);
+	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	ht_pu_free(themes);
 	return list;
 }

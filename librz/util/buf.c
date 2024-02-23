@@ -628,6 +628,32 @@ RZ_API RZ_OWN char *rz_buf_get_string(RZ_NONNULL RzBuffer *b, ut64 addr) {
 }
 
 /**
+ * \brief Get a string from the buffer
+ * \param b RzBuffer pointer
+ * \param s The pointer to output the string
+ * \return Length of the string
+ *
+ * Return an heap-allocated string read from \p b. The length depends on
+ * the first '\0' found in the buffer. If there is no '\0' in
+ * the buffer, there is no string, thus 0 is returned.
+ */
+RZ_API ut64 rz_buf_read_string(RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE char **s) {
+	rz_return_val_if_fail(b, 0);
+	char *tmp = rz_buf_get_string(b, rz_buf_tell(b));
+	if (!tmp) {
+		return 0;
+	}
+	const ut64 string_len = strlen(tmp) + 1;
+	rz_buf_seek(b, string_len, RZ_BUF_CUR);
+	if (s) {
+		*s = tmp;
+	} else {
+		free(tmp);
+	}
+	return string_len;
+}
+
+/**
  * \brief Stringify the buffer
  * \param b RzBuffer pointer
  * \return Return an allocated string.

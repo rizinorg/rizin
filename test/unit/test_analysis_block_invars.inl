@@ -20,7 +20,7 @@ static bool block_check_invariants(RzAnalysis *analysis) {
 		rz_list_foreach (block->fcns, fcniter, fcn) {
 			RzListIter *fcniter2;
 			RzAnalysisFunction *fcn2;
-			for (fcniter2 = fcniter->n; fcniter2 && (fcn2 = fcniter2->data, 1); fcniter2 = fcniter2->n) {
+			rz_list_foreach_iter(rz_list_iter_get_next(fcniter), fcniter2, fcn2) {
 				mu_assert_ptrneq (fcn, fcn2, "duplicate function in basic block");
 			}
 			mu_assert ("block references function, but function does not reference block", rz_list_contains (fcn->bbs, block));
@@ -44,7 +44,7 @@ static bool block_check_invariants(RzAnalysis *analysis) {
 				max = block->addr + block->size;
 			}
 			realsz += block->size;
-			for (blockiter2 = blockiter->n; blockiter2 && (block2 = blockiter2->data, 1); blockiter2 = blockiter2->n) {
+			rz_list_foreach_iter(rz_list_iter_get_next(blockiter), blockiter2, block2) {
 				mu_assert_ptrneq (block, block2, "duplicate basic block in function");
 			}
 			mu_assert ("function references block, but block does not reference function", rz_list_contains (block->fcns, fcn));

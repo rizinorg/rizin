@@ -19,8 +19,8 @@
 #include "hexagon_insn.h"
 #include "hexagon_arch.h"
 
-static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
-	static RzPVector *pvec = NULL;
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(HexState *state) {
+	RzPVector *pvec = state->token_patterns;
 	if (pvec) {
 		return pvec;
 	}
@@ -30,15 +30,15 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_META;
 	pat->pattern = strdup(
-		"(^[\\[\\?\\/\\|\\\\\\{])|(┌)|(│)|(└)|" // Packet prefix
-		"((∎)|[<\\}])([ :])(endloop[01]{1,2})" // Endloop markers
+		"^[\\[\\?\\/\\|\\\\\\{┌│└]|" // Packet prefix
+		"(∎|[<\\}])[\\s:]endloop[01]{1,2}" // Endloop markers
 	);
 	rz_pvector_push(pvec, pat);
 
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_META;
 	pat->pattern = strdup(
-		"(#{1,2})|(\\}$)|" // Immediate prefix, Closing packet bracket
+		"\\#{1,2}|\\}$|" // Immediate prefix, Closing packet bracket
 		"\\.new|:n?t|:raw|<err>" // .new and jump hints
 	);
 	rz_pvector_push(pvec, pat);
@@ -46,7 +46,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
 	pat->pattern = strdup(
-		"([CNPRMQVO][[:digit:]]{1,2}(:[[:digit:]]{1,2})?(in)?)" // Registers and double registers
+		"[CNPRMQVO]\\d{1,2}(:\\d{1,2})?(in)?" // Registers and double registers
 	);
 	rz_pvector_push(pvec, pat);
 
@@ -60,51 +60,50 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_NUMBER;
 	pat->pattern = strdup(
-		"(0x[[:digit:]abcdef]+)" // Hexadecimal numbers
+		"0x(\\d|[abcdef])+" // Hexadecimal numbers
 	);
 	rz_pvector_push(pvec, pat);
 
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_MNEMONIC;
 	pat->pattern = strdup(
-		"([[:alpha:]]+[[:digit:]]+[[:alpha:]]*)" // Mnemonics with a decimal number in the name.
+		"\\w+_\\w+|[a-zA-Z]+\\d+[a-zA-Z]*" // Mnemonics with a decimal number in the name.
 	);
 	rz_pvector_push(pvec, pat);
 
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_NUMBER;
 	pat->pattern = strdup(
-		"([[:digit:]]+)" // Decimal numbers
+		"\\d+" // Decimal numbers
 	);
 	rz_pvector_push(pvec, pat);
 
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_SEPARATOR;
 	pat->pattern = strdup(
-		"([[:blank:]]+)|" // Spaces and tabs
-		"([,;\\.\\(\\)\\{\\}:])" // Brackets and others
+		"\\s+|" // Spaces and tabs
+		"[,;\\.\\(\\)\\{\\}:]" // Brackets and others
 	);
 	rz_pvector_push(pvec, pat);
 
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_OPERATOR;
 	pat->pattern = strdup(
-		"(\\+)|(=)|(!)|(-)" // +,-,=,],[, ! (not the packet prefix)
+		"[+*&+?=!^\\/|-]{1,2}" // +,-,=,],[, ! (not the packet prefix)
 	);
 	rz_pvector_push(pvec, pat);
 
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_OPERATOR;
 	pat->pattern = strdup(
-		"(\\])|(\\[|<{1,2}|>{1,2})" // +,-,=,],[, ! (not the packet prefix)
+		"\\]|\\[|<{1,2}|>{1,2}" // +,-,=,],[, ! (not the packet prefix)
 	);
 	rz_pvector_push(pvec, pat);
 
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_MNEMONIC;
 	pat->pattern = strdup(
-		"([[:alnum:]]+)|" // Alphanumeric mnemonics
-		"([[:alnum:]]+_[[:alnum:]]+)" // Menmonics with "_" e.g dealloc_return
+		"\\w+" // Alphanumeric mnemonics
 	);
 	rz_pvector_push(pvec, pat);
 
@@ -156,13 +155,25 @@ static bool hexagon_init(void **user) {
 	SETCB("plugins.hexagon.sdk", "false", &hex_cfg_set, "Print packet syntax in objdump style.");
 	SETCB("plugins.hexagon.reg.alias", "true", &hex_cfg_set, "Print the alias of registers (Alias from C0 = SA0).");
 
-	state->token_patterns = get_token_patterns();
+	state->token_patterns = get_token_patterns(state);
 	rz_asm_compile_token_patterns(state->token_patterns);
 
 	return true;
 }
 
-RZ_API RZ_BORROW RzConfig *hexagon_get_config() {
+static bool hexagon_fini(void *user) {
+	HexState *state = (HexState *)user;
+	rz_return_val_if_fail(state, false);
+
+	if (state->token_patterns) {
+		rz_pvector_free(state->token_patterns);
+		state->token_patterns = NULL;
+	}
+
+	return true;
+}
+
+RZ_API RZ_BORROW RzConfig *hexagon_get_config(void) {
 	HexState *state = hexagon_get_state();
 	rz_return_val_if_fail(state, NULL);
 	return state->cfg;
@@ -197,6 +208,7 @@ RzAsmPlugin rz_asm_plugin_hexagon = {
 	.bits = 32,
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
 	.init = &hexagon_init,
+	.fini = hexagon_fini,
 	.disassemble = &disassemble,
 	.get_config = &hexagon_get_config,
 };

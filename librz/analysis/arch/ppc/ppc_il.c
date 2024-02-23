@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ppc_il.h"
+#include "capstone.h"
 #include "ppc_analysis.h"
 #include <capstone/ppc.h>
 #include <rz_il/rz_il_opcodes.h>
@@ -11,7 +12,6 @@
 #include <rz_analysis.h>
 #include <rz_il.h>
 #include <rz_types.h>
-#include <errno.h>
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(64, big_endian, 64);
@@ -60,7 +60,6 @@ RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	case PPC_INS_STDX:
 	case PPC_INS_STDCX:
 	case PPC_INS_STWCX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LDCIX:
 	case PPC_INS_LHZCIX:
@@ -69,7 +68,6 @@ RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
-#endif
 		return true;
 	}
 }
@@ -87,8 +85,10 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	default:
 		RZ_LOG_INFO("Memory access size for instruction %d requested. But it is not in the switch case.\n", insn_id);
 		return -1;
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_LI:
 	case PPC_INS_LIS:
+#endif
 		// Doesn't read from memory.
 		return 0;
 	case PPC_INS_LBZ:
@@ -99,10 +99,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STBU:
 	case PPC_INS_STBUX:
 	case PPC_INS_STBX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_STBCIX:
 	case PPC_INS_LBZCIX:
-#endif
 		return PPC_BYTE;
 	case PPC_INS_LHA:
 	case PPC_INS_LHAU:
@@ -118,10 +116,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STHU:
 	case PPC_INS_STHUX:
 	case PPC_INS_STHX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LHZCIX:
 	case PPC_INS_STHCIX:
-#endif
 		return PPC_HWORD;
 	case PPC_INS_LWA:
 	case PPC_INS_LWARX:
@@ -140,10 +136,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STWUX:
 	case PPC_INS_STWX:
 	case PPC_INS_STMW:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LWZCIX:
 	case PPC_INS_STWCIX:
-#endif
 		return PPC_WORD;
 	case PPC_INS_LD:
 	case PPC_INS_LDARX:
@@ -157,10 +151,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_STDU:
 	case PPC_INS_STDUX:
 	case PPC_INS_STDX:
-#if CS_API_MAJOR > 3
 	case PPC_INS_LDCIX:
 	case PPC_INS_STDCIX:
-#endif
 		return PPC_DWORD;
 	}
 }
@@ -236,11 +228,28 @@ RZ_IPI bool ppc_is_algebraic(ut32 insn_id) {
  * \param insn_id The instruction id.
  * \return bool True if the branch instruction writes the LR register. False otherwise.
  */
+RZ_IPI bool ppc_insn_sets_lr(const cs_insn *insn) {
+	rz_return_val_if_fail(insn, false);
+	for (int i = 0; i < insn->detail->regs_write_count; ++i) {
+		ppc_reg reg = insn->detail->regs_write[i];
+		if (reg == PPC_REG_LR) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Returns true if the given branch instruction sets the LR register.
+ *
+ * \param insn_id The instruction id.
+ * \return bool True if the branch instruction writes the LR register. False otherwise.
+ */
 RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTRL:
 	case PPC_INS_BGECTRL:
@@ -258,21 +267,12 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BGEL:
 	case PPC_INS_BGELRL:
 	case PPC_INS_BGELA:
-#endif
-	case PPC_INS_BCCTRL:
-	case PPC_INS_BCL:
-	case PPC_INS_BCLRL:
-	case PPC_INS_BCTRL:
 	case PPC_INS_BDNZL:
 	case PPC_INS_BDNZLA:
 	case PPC_INS_BDNZLRL:
 	case PPC_INS_BDZL:
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLRL:
-	case PPC_INS_BL:
-	case PPC_INS_BLA:
-	case PPC_INS_BLRL:
-	case PPC_INS_BCLA:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTLA:
 	case PPC_INS_BDNZFL:
@@ -281,9 +281,31 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BDZTLA:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
+#endif
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCTRL:
+	case PPC_INS_BL:
+	case PPC_INS_BLA:
+	case PPC_INS_BLRL:
+	case PPC_INS_BCLA:
 		return true;
 	}
 }
+
+#if CS_NEXT_VERSION >= 6
+/**
+ * \brief Returns true if the given branch instruction is conditional.
+ *
+ * \param insn_id The instruction id.
+ * \return bool True if the branch instruction only branches if a condition is met. False otherwise.
+ */
+RZ_IPI bool ppc_insn_is_conditional(const cs_insn *insn) {
+	rz_return_val_if_fail(insn, false);
+	return PPC_DETAIL(insn).bc.pred_cr != PPC_PRED_INVALID || PPC_DETAIL(insn).bc.pred_ctr != PPC_PRED_INVALID;
+}
+#endif
 
 /**
  * \brief Returns true if the given branch instruction is conditional.
@@ -295,7 +317,15 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
-#if CS_API_MAJOR > 4
+	case PPC_INS_BC:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCA:
+	case PPC_INS_BCLA:
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -330,27 +360,6 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BGELRL:
 	case PPC_INS_BGECTR:
 	case PPC_INS_BGECTRL:
-#endif
-	case PPC_INS_BC:
-	case PPC_INS_BCCTR:
-	case PPC_INS_BCCTRL:
-	case PPC_INS_BCL:
-	case PPC_INS_BCLR:
-	case PPC_INS_BCLRL:
-	case PPC_INS_BCA:
-	case PPC_INS_BCLA:
-	case PPC_INS_BDNZ:
-	case PPC_INS_BDNZA:
-	case PPC_INS_BDNZL:
-	case PPC_INS_BDNZLA:
-	case PPC_INS_BDNZLR:
-	case PPC_INS_BDNZLRL:
-	case PPC_INS_BDZ:
-	case PPC_INS_BDZA:
-	case PPC_INS_BDZL:
-	case PPC_INS_BDZLA:
-	case PPC_INS_BDZLR:
-	case PPC_INS_BDZLRL:
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
@@ -367,6 +376,16 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZLR:
+	case PPC_INS_BDNZLRL:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BDZLRL:
+#endif
 		return true;
 	}
 }
@@ -395,6 +414,7 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTSR:
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_MTCR:
 	case PPC_INS_MTBR0:
 	case PPC_INS_MTBR1:
@@ -427,6 +447,7 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTESR:
 	case PPC_INS_MTSPEFSCR:
 	case PPC_INS_MTTCR:
+#endif
 	case PPC_INS_MFSRIN:
 		return true;
 	}
@@ -441,21 +462,24 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
  */
 RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, false);
+#if CS_NEXT_VERSION >= 6
+	return cs_ppc_bc_decr_ctr(PPC_DETAIL(insn).bc.bo);
+#else
 	ut32 id = insn->id;
 
 	switch (id) {
 	default:
 		return false;
-#if CS_API_MAJOR > 4
-	case PPC_INS_BGEL:
-	case PPC_INS_BGELA:
-#endif
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
 	case PPC_INS_BCA:
 	case PPC_INS_BCLA:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
+#if CS_API_MAJOR == 5
+	case PPC_INS_BGEL:
+	case PPC_INS_BGELA:
+#endif
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZL:
@@ -487,6 +511,7 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	case PPC_INS_BDZFLA:
 		return true;
 	}
+#endif
 }
 
 //
@@ -589,6 +614,7 @@ RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
 		(fmx & 0x01 ? x : 0));
 }
 
+#if CS_NEXT_VERSION < 6
 static const char *get_crx_reg(const csh handle, cs_insn *insn, size_t n) {
 #if CS_API_MAJOR == 5 && CS_API_MINOR == 0
 	// bug on crx not being populated in capstone v5.0
@@ -629,13 +655,14 @@ static ut32 get_crx_cond(const csh handle, cs_insn *insn, size_t n) {
 	return INSOP(n).crx.cond;
 #endif
 }
+#endif
 
 /**
  * \brief Get the branch condition for a given instruction.
  * Checkout the "Simple Branch Mnemonics" in Appendix C in PowerISA v3.1B and
  * the chapter about branch instructions for an overview of possible conditions.
  *
- * NODE: This function *does not* decrement CTR, if required by the instruction.
+ * NOTE: This function *does not* decrement CTR, if required by the instruction.
  * This should have been done before.
  *
  * \param insn The capstone instructions.
@@ -646,16 +673,25 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;
 
+#if CS_NEXT_VERSION >= 6
+	ut8 bi = PPC_DETAIL(insn).bc.bi;
+	ut8 bo = PPC_DETAIL(insn).bc.bo;
+	RzILOpBool *decr_ctr = cs_ppc_bc_decr_ctr(bo) ? IL_TRUE : IL_FALSE;
+	RzILOpBool *test_cr_bit = cs_ppc_bc_cr_is_tested(bo) ? IL_TRUE : IL_FALSE;
+	RzILOpBool *check_ctr_is_zero = cs_ppc_bc_tests_ctr_is_zero(bo) ? IL_TRUE : IL_FALSE;
+	RzILOpBool *check_cr_bit_is_one = cs_ppc_bc_cr_bit_is_one(bo) ? IL_TRUE : IL_FALSE;
+#else
 	ut8 bo = PPC_READ_BO_FIELD;
 	ut8 bi = PPC_READ_BI_FIELD;
-	RzILOpPure *ctr_ok;
-	RzILOpPure *cond_ok;
 	RzILOpPure *bo_0;
 	RzILOpPure *bo_1;
 	RzILOpPure *bo_2;
 	RzILOpPure *bo_3;
 	RzILOpPure *cr;
 	RzILOpPure *cr_bit;
+#endif
+	RzILOpPure *ctr_cond_fullfilled;
+	RzILOpPure *cr_cond_fullfilled;
 
 	switch (id) {
 	default:
@@ -663,7 +699,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		return IL_FALSE;
 		// For learning how the conditions of BCxxx branch instructions are
 		// formed see the Power ISA
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -703,6 +739,11 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BCLA:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
+#if CS_NEXT_VERSION >= 6
+		ctr_cond_fullfilled = ITE(decr_ctr, XOR(NON_ZERO(VARG("ctr")), check_ctr_is_zero), IL_TRUE);
+		cr_cond_fullfilled = ITE(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_one)), IL_TRUE);
+		return AND(ctr_cond_fullfilled, cr_cond_fullfilled);
+#else
 		// BO_2 == 0: Decrement CTR
 		// BO_2 == 1: Don't use CTR
 		bo_2 = NON_ZERO(LOGAND(UN(5, 0b00100), VARLP("bo")));
@@ -710,7 +751,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		// BO_3 == 0: Check CTR != 0
 		// BO_3 == 1: Check CTR == 0
 		bo_3 = NON_ZERO(LOGAND(UN(5, 0b00010), VARLP("bo")));
-		ctr_ok = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
+		ctr_cond_fullfilled = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
 
 		// BO_0 == 0: Check CR_bi
 		// BO_0 == 1: Don't check CR_bi
@@ -719,12 +760,12 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		// BO_1 == 0: Check CR_bi == 0
 		// BO_1 == 1: Check CR_bi == 1
 		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
-		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
-
-		return LET("bo", UN(5, bo), AND(cond_ok, ctr_ok));
+		cr_cond_fullfilled = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
+		return LET("bo", UN(5, bo), AND(cr_cond_fullfilled, ctr_cond_fullfilled));
+#endif
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQCTR:
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTR:
@@ -754,11 +795,15 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BGECTR:
 	case PPC_INS_BGECTRL:
 #endif
+#if CS_NEXT_VERSION >= 6
+		cr_cond_fullfilled = AND(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_one)));
+		return cr_cond_fullfilled;
+#else
 		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
 		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
-		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
+		cr_cond_fullfilled = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
 
-		return LET("bo", UN(5, bo), cond_ok);
+		return LET("bo", UN(5, bo), cr_cond_fullfilled);
 	// CTR != 0
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
@@ -822,6 +867,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 			return AND(IS_ZERO(VARG("ctr")), IS_ZERO(LOGAND(cr, cr_bit)));
 		}
 		return AND(NON_ZERO(VARG("ctr")), IS_ZERO(LOGAND(cr, cr_bit)));
+#endif
 	}
 }
 
@@ -858,6 +904,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BLA:
 	case PPC_INS_BCA:
 	case PPC_INS_BCLA:
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_BDNZTA:
 	case PPC_INS_BDNZTLA:
 	case PPC_INS_BDNZFA:
@@ -866,9 +913,10 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDZTLA:
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFLA:
+#endif
 		// EXTS(LI || 0b00)
 		// Branch to relative address
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -900,6 +948,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 #endif
 	case PPC_INS_B:
 	case PPC_INS_BL:
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_BDZF:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZT:
@@ -908,23 +957,29 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDNZFL:
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
+#endif
 		// CIA + EXTS(LI || 0b00)
 		if (insn->detail->ppc.op_count == 2) {
 			return UA(INSOP(1).imm);
 		} else {
 			return UA(INSOP(0).imm);
 		}
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_BDZA:
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZLA:
+#endif
 		// EXTS(BD || 0b00)
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BGEL:
 	case PPC_INS_BGELA:
 #endif
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
+#if CS_NEXT_VERSION >= 6
+		return UA(INSOP(2).imm);
+#else
 	case PPC_INS_BDZ:
 	case PPC_INS_BDZL:
 	case PPC_INS_BDNZ:
@@ -936,8 +991,9 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 		} else {
 			return UA(INSOP(0).imm);
 		}
+#endif
 		// Branch to LR
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQLR:
 	case PPC_INS_BEQLRL:
 	case PPC_INS_BLELR:
@@ -950,15 +1006,17 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BLR:
 	case PPC_INS_BLRL:
 	case PPC_INS_BCLR:
-	case PPC_INS_BDZLR:
 	case PPC_INS_BCLRL:
+#if CS_NEXT_VERSION < 6
+	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
 	case PPC_INS_BDNZLR:
 	case PPC_INS_BDNZLRL:
+#endif
 		//  LR_0:61 || 0b00
 		return LOGAND(UA(-4), VARG("lr"));
 		// Branch to CTR
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQCTR:
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTR:

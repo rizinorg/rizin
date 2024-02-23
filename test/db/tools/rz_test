@@ -1,26 +1,26 @@
 NAME=Only EXPECT_ERR<<EOF
 FILE==
 CMDS=<<EOF
-pf?cat_sat_on_keyboard
-pf?CAT_SAT_ON_KEYBOARD
+pfs cat_sat_on_keyboard
+pfs CAT_SAT_ON_KEYBOARD
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: Struct cat_sat_on_keyboard is not defined
-ERROR: core: Struct CAT_SAT_ON_KEYBOARD is not defined
+ERROR: Format "cat_sat_on_keyboard" could not be found
+ERROR: Format "CAT_SAT_ON_KEYBOARD" could not be found
 EOF
 RUN
 
 NAME=EXPECT<<EOF empty and EXPECT_ERR<<EOF non-empty
 FILE==
 CMDS=<<EOF
-pf?cat_sat_on_keyboard
-pf?CAT_SAT_ON_KEYBOARD
+pfs cat_sat_on_keyboard
+pfs CAT_SAT_ON_KEYBOARD
 EOF
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: Struct cat_sat_on_keyboard is not defined
-ERROR: core: Struct CAT_SAT_ON_KEYBOARD is not defined
+ERROR: Format "cat_sat_on_keyboard" could not be found
+ERROR: Format "CAT_SAT_ON_KEYBOARD" could not be found
 EOF
 RUN
 

@@ -469,12 +469,12 @@ beach:
 	return node;
 }
 
-static int cmp(RzConfigNode *a, RzConfigNode *b) {
+static int cmp(RzConfigNode *a, RzConfigNode *b, void *user) {
 	return strcmp(a->name, b->name);
 }
 
 RZ_API void rz_config_lock(RzConfig *cfg, int l) {
-	rz_list_sort(cfg->nodes, (RzListComparator)cmp);
+	rz_list_sort(cfg->nodes, (RzListComparator)cmp, NULL);
 	cfg->lock = l;
 }
 

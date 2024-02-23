@@ -6,7 +6,7 @@ Rizin is a fork of the radare2 reverse engineering framework with a focus on
 usability, working features and code cleanliness.
 
 Rizin is portable and it can be used to analyze binaries, disassemble code,
-debug programs, as a forensics tool, as a scriptable command-line hexadecimal
+debug programs, as a forensic tool, as a scriptable command-line hexadecimal
 editor able to open disk files, and much more!
 
 To learn more on Rizin you may want to read the
@@ -20,7 +20,7 @@ Look at [install instructions](https://rizin.re/install/) on our web page.
 
 Use `meson` to compile and install Rizin. Please make sure to get an updated
 `meson` (e.g. get it with `pip install meson` if your system does not provide
-one that is at least version 0.55.0).
+one that is at least version `0.55.0`).
 
 Clone this repository:
 ```
@@ -29,9 +29,9 @@ $ git clone https://github.com/rizinorg/rizin
 
 Then compile and install with:
 ```
-$ meson build
-$ ninja -C build
-$ sudo ninja -C build install
+$ meson setup build
+$ meson compile -C build
+$ sudo meson install -C build
 ```
 
 Now you can use `rizin`:
@@ -70,9 +70,9 @@ GNU/Darwin, GNU/Hurd.
 
 i386, x86-64, ARM/ARM64, RISC-V, PowerPC, MIPS, AVR, SPARC, System Z (S390),
 SuperH, m68k, m680x, XAP, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300,
-V810, V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
+Renesas (V810, V850, RL78), CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
-NIOS II, TMS320 (c54x, c55x, c55+, c66), Hexagon, DCPU16, LANAI,
+NIOS II, TMS320 (c54x, c55x, c55+, c64x), Hexagon, DCPU16, LANAI,
 MCORE, mcs96, RSP, C-SKY(MCore), VAX, AMD Am29000.
 
 There is also support for the following bytecode formats:
@@ -86,6 +86,21 @@ Dyldcache, DEX, ART, CGC, ELF, Java class, Android boot image, Plan9 executable,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), DMP (Windows pagedump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
+
+## Tools
+
+Apart from the main tool `rizin`, there are also other tools tailored for specific purposes and 
+useful for shell scripting or as separate standalone tools:
+
+- `rz-bin` - provides all kind of information about binary formats
+- `rz-asm` - a command-line assembler and disassemblers
+- `rz-diff` - a tool to compare two binaries as raw data or analyzed executables
+- `rz-hash` - allows to calculate different hashes or even encrypt data
+- `rz-gg` - a small "eggs" code generator useful for exploitation purposes
+- `rz-find` - binary analog of `find` tool, allowing to search patterns and bit masks
+- `rz-sign` - tool to create, convert and parse FLIRT signatures
+- `rz-ax` - a calculator and number format converter
+- `rz-run` - a tool that allows to specify running environment and arguments for debugged file
 
 ## Scripting
 

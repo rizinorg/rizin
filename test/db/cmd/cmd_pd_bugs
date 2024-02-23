@@ -120,7 +120,7 @@ e asm.bytes=true
 e asm.bits=32
 e asm.lines.bb=false
 e asm.comments=false
-pD@x:8d15d0830408
+pD 6@x:8d15d0830408
 EOF
 EXPECT=<<EOF
   0x00000000      8d15d0830408   lea   edx, [0x80483d0]

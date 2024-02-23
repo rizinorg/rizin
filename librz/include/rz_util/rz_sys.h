@@ -62,7 +62,7 @@ RZ_API int rz_sys_pipe_close(int fd);
 #define rz_sys_pipe_close close
 #endif
 #if !HAVE_EXECV || (__UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2)
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]);
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]);
 #else
 #define rz_sys_execv execv
 #endif
@@ -106,7 +106,7 @@ RZ_API int rz_sys_clearenv(void);
 RZ_API char *rz_sys_whoami(char *buf);
 RZ_API char *rz_sys_getdir(void);
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s);
-RZ_API bool rz_sys_aslr(int val);
+RZ_API bool rz_sys_aslr(bool enable);
 RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname);
 RZ_API void *rz_sys_dlsym(void *handler, const char *name);
 RZ_API int rz_sys_dlclose(void *handler);

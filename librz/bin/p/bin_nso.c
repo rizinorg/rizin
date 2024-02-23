@@ -241,8 +241,8 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return kv;
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -255,13 +255,13 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		vf->buf = bin->decompressed;
 		vf->buf_owned = false;
 		vf->name = strdup(VFILE_NAME_DECOMPRESSED);
-		rz_list_push(ret, vf);
+		rz_pvector_push(ret, vf);
 	}
 	return ret;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -280,7 +280,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vaddr = hdr->text_loc + ba;
 	map->perm = RZ_PERM_RX;
 	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	// add ro segment
 	map = RZ_NEW0(RzBinMap);
@@ -293,7 +293,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vaddr = hdr->ro_loc + ba;
 	map->perm = RZ_PERM_R;
 	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	// add data segment
 	map = RZ_NEW0(RzBinMap);
@@ -306,15 +306,15 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vaddr = hdr->data_loc + ba;
 	map->perm = RZ_PERM_RW;
 	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	RzBuffer *b = bf->buf;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -324,13 +324,13 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->name = strdup("header");
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	ptr->size = tmp;
 
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	ptr->vsize = tmp;
@@ -338,16 +338,22 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
-	RzList *mappies = maps(bf);
+	RzPVector *mappies = maps(bf);
 	if (mappies) {
-		RzList *msecs = rz_bin_sections_of_maps(mappies);
+		RzPVector *msecs = rz_bin_sections_of_maps(mappies);
 		if (msecs) {
-			rz_list_join(ret, msecs);
-			rz_list_free(msecs);
+			void **iter;
+			RzBinSection *section;
+			rz_pvector_foreach (msecs, iter) {
+				section = *iter;
+				rz_pvector_push(ret, section);
+			}
+			msecs->v.len = 0;
+			rz_pvector_free(msecs);
 		}
-		rz_list_free(mappies);
+		rz_pvector_free(mappies);
 	}
 	return ret;
 }

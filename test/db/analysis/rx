@@ -1,0 +1,367 @@
+NAME=RX morse info
+FILE=bins/rx/morse
+ARGS=
+CMDS=<<EOF
+pd 4 @ entry0
+iI
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section..text:
+            ;-- segment.LOAD0:
+            ;-- segment.ehdr:
+            ;-- .text:
+            ;-- L0:
+            ;-- .LFB2:
+            ;-- _start:
+            0xfff40000      mvtc  #0x0, psw,                           ; crt0.S:36 ; [00] -r-x section size 20866 named .text
+            0xfff40004      mvtc  #0x100, fpsw,                        ; crt0.S:39
+            0xfff40009      mov   #loc.__stack, r0,                    ; crt0.S:40
+            0xfff4000f      mvtc  #loc.__vectors, intb,                ; crt0.S:41
+arch     rx
+cpu      N/A
+baddr    0xfff40000
+binsz    0x0000a623
+bintype  elf
+bits     32
+class    ELF32
+compiler GCC: (GCC_Build_20231120) 8.3.0.202311-GNURX 20190222
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     c
+machine  Renesas RX family
+minopsz  1
+os       linux
+cc       N/A
+rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       false
+EOF
+RUN
+
+NAME=RX morse function
+FILE=bins/rx/morse
+ARGS=
+CMDS=<<EOF
+aaa
+pdf @ sym._main
+pdf @ sym._text_to_morse
+pdf @ sym._morse_to_text
+pdf @ sym._exit
+EOF
+EXPECT=<<EOF
+/ int sym._main(int argc, char **argv, char **envp);
+|           0xfff40257      push.L r10, 
+|           0xfff40259      add   #0xc8, r0, r10
+|           0xfff4025c      mov.L r10, r0, 
+|           0xfff4025e      mov.L r10, r5, 
+|           0xfff40260      mov.L #0x6c6c6548, [r5], 
+|           0xfff40266      add   #0x4, r5, 
+|           0xfff40268      mov.L #0x6f57206f, [r5], 
+|           0xfff4026e      add   #0x4, r5, 
+|           0xfff40270      mov.L #0x646c72, [r5], 
+|           0xfff40275      add   #0x4, r5, 
+|           0xfff40277      mov.L r10, r1, 
+|           0xfff40279      bsr.A  #0xfffecf,                          ; sym._text_to_morse
+|           0xfff4027d      mov   #loc..LC28, r3, 
+|           0xfff40283      mov   #0x2c, r4, 
+|           0xfff40286      add   #0xc, r10, r5
+|           0xfff40289      mov.L r5, r1, 
+|           0xfff4028b      mov.L r3, r2, 
+|           0xfff4028d      mov.L r4, r3, 
+|           0xfff4028f      smovf 
+|           0xfff40291      add   #0xc, r10, r5
+|           0xfff40294      mov.L r5, r1, 
+|           0xfff40296      bsr.A  #0xffff4a,                          ; sym._morse_to_text
+|           0xfff4029a      mov   #0x0, r5, 
+|           0xfff4029c      mov.L r5, r1, 
+\           0xfff4029e      rtsd  #0xf, r10, 
+            ; CALL XREF from sym._main @ 0xfff40279
+/ sym._text_to_morse();
+|           0xfff40148      push.L r10, 
+|           0xfff4014a      add   #0xfc, r0, r10
+|           0xfff4014d      add   #0xf8, r10, r0
+|           0xfff40150      mov.L r1, [r10], 
+|       ,=< 0xfff40152      bra.B  #0x7a, 
+|      .--> 0xfff40154      mov.L [r10], r5, 
+|      :|   0xfff40156      mov.B [r5], r5, 
+|      :|   0xfff40158      movu.B r5, r5, 
+|      :|   0xfff4015a      cmp   #0x60, r5, 
+|     ,===< 0xfff4015d      bleu.B  #0x2d, 
+|     |:|   0xfff4015f      mov.L [r10], r5, 
+|     |:|   0xfff40161      mov.B [r5], r5, 
+|     |:|   0xfff40163      movu.B r5, r5, 
+|     |:|   0xfff40165      cmp   #0x7a, r5, 
+|    ,====< 0xfff40168      bgtu.B  #0x22, 
+|    ||:|   0xfff4016a      mov.L [r10], r5, 
+|    ||:|   0xfff4016c      mov.B [r5], r5, 
+|    ||:|   0xfff4016e      movu.B r5, r5, 
+|    ||:|   0xfff40170      add   #0x9f, r5, r5
+|    ||:|   0xfff40173      mov   #0x10, r4, 
+|    ||:|   0xfff40179      mov.L [r5,r4], r5, 
+|    ||:|   0xfff4017c      mov.L r5, 0x1[r0], 
+|    ||:|   0xfff4017e      mov.L #loc..LC26, [r0], 
+|    ||:|   0xfff40184      bsr.A  #0x14d,                             ; sym._printf ; int printf(const char *format)
+|   ,=====< 0xfff40188      bra.B  #0x3e, 
+|   |``---> 0xfff4018a      mov.L [r10], r5, 
+|   |  :|   0xfff4018c      mov.B [r5], r5, 
+|   |  :|   0xfff4018e      movu.B r5, r5, 
+|   |  :|   0xfff40190      cmp   #0x40, r5, 
+|   | ,===< 0xfff40193      bleu.B  #0x2c, 
+|   | |:|   0xfff40195      mov.L [r10], r5, 
+|   | |:|   0xfff40197      mov.B [r5], r5, 
+|   | |:|   0xfff40199      movu.B r5, r5, 
+|   | |:|   0xfff4019b      cmp   #0x5a, r5, 
+|   |,====< 0xfff4019e      bgtu.B  #0x21, 
+|   |||:|   0xfff401a0      mov.L [r10], r5, 
+|   |||:|   0xfff401a2      mov.B [r5], r5, 
+|   |||:|   0xfff401a4      movu.B r5, r5, 
+|   |||:|   0xfff401a6      add   #0xbf, r5, r5
+|   |||:|   0xfff401a9      mov   #0x10, r4, 
+|   |||:|   0xfff401af      mov.L [r5,r4], r5, 
+|   |||:|   0xfff401b2      mov.L r5, 0x1[r0], 
+|   |||:|   0xfff401b4      mov.L #loc..LC26, [r0], 
+|   |||:|   0xfff401ba      bsr.A  #0x117,                             ; sym._printf ; int printf(const char *format)
+..
+|   |``---> 0xfff401bf      mov   #0x20, r1, 
+|   |  :|   0xfff401c2      bsr.A  #0x12e,                             ; sym._putchar ; int putchar(int c)
+|   `-----> 0xfff401c6      mov.L [r10], r5, 
+|      :|   0xfff401c8      add   #0x1, r5, 
+|      :|   0xfff401ca      mov.L r5, [r10], 
+|      :`-> 0xfff401cc      mov.L [r10], r5, 
+|      :    0xfff401ce      mov.B [r5], r5, 
+|      :    0xfff401d0      movu.B r5, r5, 
+|      :    0xfff401d2      cmp   #0x0, r5, 
+\      `==< 0xfff401d4      bne.B  #0x80, 
+            ; CALL XREF from sym._main @ 0xfff40296
+/ sym._morse_to_text();
+|           0xfff401e0      push.L r10, 
+|           0xfff401e2      add   #0xf4, r0, r10
+|           0xfff401e5      mov.L r10, r0, 
+|           0xfff401e7      mov.L r1, 0x2[r10], 
+|           0xfff401ea      mov   #loc..LC27, r2, 
+|           0xfff401f0      mov.L 0x2[r10], r1, 
+|           0xfff401f3      bsr.A  #0x178,                             ; sym._strtok ; char *strtok(char *s1, const char *s2)
+|           0xfff401f7      mov.L r1, [r10], 
+|       ,=< 0xfff401f9      bra.B  #0x4e, 
+|      .--> 0xfff401fb      mov.L #0x0, 0x1[r10], 
+|     ,===< 0xfff401ff      bra.B  #0x32, 
+|    .----> 0xfff40201      mov   #0x10, r5, 
+|    :|:|   0xfff40207      mov.L 0x1[r10], r4, 
+|    :|:|   0xfff4020a      mov.L [r4,r5], r5, 
+|    :|:|   0xfff4020d      mov.L r5, r2, 
+|    :|:|   0xfff4020f      mov.L [r10], r1, 
+|    :|:|   0xfff40211      bsr.A  #0x14b,                             ; sym._strcmp ; int strcmp(const char *s1, const char *s2)
+|    :|:|   0xfff40215      mov.L r1, r5, 
+|    :|:|   0xfff40217      cmp   #0x0, r5, 
+|   ,=====< 0xfff40219      bne.B  #0x10, 
+|   |:|:|   0xfff4021b      mov.L 0x1[r10], r5, 
+|   |:|:|   0xfff4021e      add   #0x41, r5, r5
+|   |:|:|   0xfff40221      mov.L r5, r1, 
+|   |:|:|   0xfff40223      bsr.A  #0xcd,                              ; sym._putchar ; int putchar(int c)
+|  ,======< 0xfff40227      bra.B  #0x12, 
+|  |`-----> 0xfff40229      mov.L 0x1[r10], r5, 
+|  | :|:|   0xfff4022c      add   #0x1, r5, 
+|  | :|:|   0xfff4022e      mov.L r5, 0x1[r10], 
+|  | :`---> 0xfff40231      mov.L 0x1[r10], r5, 
+|  | : :|   0xfff40234      cmp   #0x19, r5, 
+|  | `====< 0xfff40237      ble.B  #0xca, 
+|  `------> 0xfff40239      mov   #loc..LC27, r2, 
+|      :|   0xfff4023f      mov   #0x0, r1, 
+|      :|   0xfff40241      bsr.A  #0x12a,                             ; sym._strtok ; char *strtok(char *s1, const char *s2)
+|      :|   0xfff40245      mov.L r1, [r10], 
+|      :`-> 0xfff40247      mov.L [r10], r5, 
+|      :    0xfff40249      cmp   #0x0, r5, 
+\      `==< 0xfff4024b      bne.B  #0xb0, 
+/ void sym._exit(int status);
+|           0xfff402a1      push.L r7, 
+|           0xfff402a3      mov.L r1, r7, 
+|           0xfff402a5      mov   #0x0, r2, 
+|           0xfff402a7      bsr.A  #0x132b,                            ; sym.___call_exitprocs
+|           0xfff402ab      mov   #obj.__global_impure_ptr, r5, 
+|           0xfff402b1      mov.L [r5], r1, 
+|           0xfff402b3      mov.L 0xf[r1], r5, 
+|           0xfff402b5      cmp   #0x0, r5, 
+|       ,=< 0xfff402b7      beq.S  #0x3, 
+|       |   0xfff402b8      jsr   r5, 
+|       `-> 0xfff402ba      mov.L r7, r1, 
+\           0xfff402bc      bsr.A  #0x471c,                            ; sym.__exit ; void _exit(int status)
+EOF
+RUN
+
+NAME=RX morse function list
+FILE=bins/rx/morse
+ARGS=
+CMDS=<<EOF
+aaa
+afl
+EOF
+EXPECT=<<EOF
+0xfff40000    1 94           entry0
+0xfff4005e    7 75   -> 42   sym._rx_run_preinit_array
+0xfff4006e    1 18           sym._rx_run_init_array
+0xfff40080    1 15           sym._rx_run_fini_array
+0xfff400b0    3 32   -> 23   sym._deregister_tm_clones
+0xfff400d0    4 43           sym._register_tm_clones
+0xfff400fb    5 43           sym.___do_global_dtors_aux
+0xfff40126    1 1            sym._call___do_global_dtors_aux
+0xfff40127    3 28           sym._frame_dummy
+0xfff40143    1 1            sym._call_frame_dummy
+0xfff40148   10 142  -> 141  sym._text_to_morse
+0xfff401e0    8 109          sym._morse_to_text
+0xfff40257    1 74           sym._main
+0xfff402a1    3 31           sym._exit
+0xfff402c0    1 17           sym.__printf_r
+0xfff402d1    1 25           sym._printf
+0xfff402ea    1 6            sym.__putchar_r
+0xfff402f0    1 18           sym._putchar
+0xfff40302    8 74           sym.__putc_r
+0xfff4034c    1 16           sym._putc
+0xfff4035c    1 15           sym._strcmp
+0xfff4036b    1 17           sym._strtok
+0xfff4037c   13 103  -> 81   sym.___strtok_r
+0xfff403e3    1 6            sym._strtok_r
+0xfff403e9   35 4023 -> 411  sym.__vfprintf_r
+0xfff413ee    1 18           sym._vfprintf
+0xfff41400    5 119          sym.___sbprintf
+0xfff41477    1 10           sym.___swbuf_r
+0xfff41511    1 16           sym.___swbuf
+0xfff41521    1 16           sym.___swsetup_r
+0xfff415d2   11 112  -> 79   sym.___call_exitprocs
+0xfff41657   11 263  -> 215  sym._quorem
+0xfff4175e   33 2479 -> 400  sym.__dtoa_r
+0xfff4210d    6 223  -> 53   sym.___sflush_r
+0xfff42229    5 43   -> 34   sym.__fflush_r
+0xfff42254    3 35           sym._fflush
+0xfff42277    1 3            sym.___fp_lock
+0xfff4227a    1 73           sym._std
+0xfff422c3    1 10           sym.__cleanup_r
+0xfff422cd    1 3            sym.___fp_unlock
+0xfff422d0    3 46           sym.___sfmoreglue
+0xfff422fe    1 12           sym.__cleanup
+0xfff4230a    3 69           sym.___sinit
+0xfff4234f   11 132          sym.___sfp
+0xfff423d8    1 1            sym.___sfp_lock_acquire
+0xfff423d9    1 1            sym.___sfp_lock_release
+0xfff423da    1 1            sym.___sinit_lock_acquire
+0xfff423db    1 1            sym.___sinit_lock_release
+0xfff423dc    1 18           sym.___fp_lock_all
+0xfff423ee    1 18           sym.___fp_unlock_all
+0xfff42400    3 74           sym.__malloc_trim_r
+0xfff424a3   19 392  -> 214  sym.__free_r
+0xfff4262b   10 57           sym.__fwalk
+0xfff42664    9 61   -> 52   sym.__fwalk_reent
+0xfff426a1    1 5            sym.___localeconv_l
+0xfff426a6    1 7            sym.__localeconv_r
+0xfff426ad    1 7            sym._localeconv
+0xfff426b4    4 40           sym.__setlocale_r
+0xfff42700    1 11           sym.___locale_mb_cur_max
+0xfff4270b    1 16           sym._setlocale
+0xfff4271b    6 76   -> 51   sym.___swhatbuf_r
+0xfff42767    8 123  -> 104  sym.___smakebuf_r
+0xfff427e2    5 34           sym.__malloc_r
+0xfff42c16    1 18           sym.__mbtowc_r
+0xfff42c28    8 37           sym.___ascii_mbtowc
+0xfff42c4d    1 11           sym._memchr
+0xfff42c58    1 7            sym._memcpy
+0xfff42c5f    1 7            sym._memset
+0xfff42c66    1 1            sym.___malloc_lock
+0xfff42c67    1 1            sym.___malloc_unlock
+0xfff42c68    9 84           sym.__Balloc
+0xfff42cbc    3 17           sym.__Bfree
+0xfff42ccd    2 59           sym.___multadd
+0xfff42d60   13 156  -> 151  sym.___s2b
+0xfff42dfc   12 72           sym.___hi0bits
+0xfff42e44   18 100  -> 85   sym.___lo0bits
+0xfff42ea8    3 44           sym.___i2b
+0xfff42ed4   22 291  -> 287  sym.___multiply
+0xfff42ffc   13 122  -> 98   sym.___pow5mult
+0xfff43076   12 179  -> 153  sym.___lshift
+0xfff4312b    7 45           sym.___mcmp
+0xfff4315a   12 190          sym.___mdiff
+0xfff43251    3 37   -> 25   sym.___ulp
+0xfff43276    7 86   -> 71   sym.___b2d
+0xfff432cc    8 124          sym.___d2b
+0xfff43348    4 69           sym.___ratio
+0xfff4338d    4 34           sym.__mprec_log10
+0xfff433b0    6 50           sym.___copybits
+0xfff433e2   10 59           sym.___any_on
+0xfff4341d    1 22           sym.__sbrk_r
+0xfff4343e    7 50           sym.___fpclassifyf
+0xfff43470    4 31           sym.___sread
+0xfff4348f    1 3            sym.___seofread
+0xfff43492    3 48           sym.___swrite
+0xfff434c2    1 15           sym.___sseek
+0xfff434e1    1 6            sym.___sclose
+0xfff434e7    1 13           sym._strlen
+0xfff434f4    1 9            sym.___sprint_r
+0xfff43554  139 2076 -> 1058 sym.__vfiprintf_r
+0xfff43d70    1 18           sym._vfiprintf
+0xfff43d82    5 119          sym.___sbprintf_0xfff43d82
+0xfff43df9    1 12           sym.__wctomb_r
+0xfff43e05    5 25           sym.___ascii_wctomb
+0xfff43e1e    1 26           sym.__write_r
+0xfff43e43    4 60           sym.___assert_func
+0xfff43e7f    1 8            sym.___assert
+0xfff43e87    4 32           sym.__calloc_r
+0xfff43efa    1 22           sym.__close_r
+0xfff43f1b    1 9            sym.___errno
+0xfff43f24    1 4            sym.__fclose_r
+0xfff43fa1    1 14           sym._fclose
+0xfff43faf    1 15           sym.__fiprintf_r
+0xfff43fbe    1 25           sym._fiprintf
+0xfff43fd7   13 115  -> 109  sym.___fputwc
+0xfff4404c    3 26           sym.__fputwc_r
+0xfff44066    4 41           sym._fputwc
+0xfff4408f    1 24           sym.__fstat_r
+0xfff440b2   39 671  -> 320  sym.___sfvwrite_r
+0xfff44351    1 22           sym.__isatty_r
+0xfff44372    1 26           sym.__lseek_r
+0xfff44397    3 24           sym._memmove
+0xfff443af    1 26           sym.__read_r
+0xfff443d4    1 10           sym.__realloc_r
+0xfff446f8    3 25           sym._cleanup_glue
+0xfff44711   18 151  -> 129  sym.__reclaim_reent
+0xfff447a8    3 29           sym.__wcrtomb_r
+0xfff447d0    1 18           sym._wcrtomb
+0xfff447e2    1 12           sym._abort
+0xfff447ee    7 52   -> 50   sym.__init_signal_r
+0xfff44822    6 50           sym.__signal_r
+0xfff44856    9 81   -> 75   sym.__raise_r
+0xfff448a7   12 81   -> 78   sym.___sigtramp_r
+0xfff448f8    1 14           sym._raise
+0xfff44906    1 16           sym._signal
+0xfff44916    1 12           sym.__init_signal
+0xfff44922    1 14           sym.___sigtramp
+0xfff44930    1 24           sym.__kill_r
+0xfff44953    1 4            sym.__getpid_r
+0xfff44957    1 13           sym._close
+0xfff44964    1 13           sym._fstat
+0xfff44971    1 13           sym._getpid
+0xfff4497e    1 12           sym._isatty
+0xfff4498a    1 13           sym._kill
+0xfff44997    1 13           sym._lseek
+0xfff449a4    1 13           sym._read
+0xfff449b1    3 26           sym._sbrk
+0xfff449cb    1 13           sym._write
+0xfff449d8    2 8            sym.__exit
+0xfff449e0  104 971  -> 944  sym.___udivdi3
+0xfff44db0   97 938          sym.__COM_MOD64u
+0xfff45548    1 4            loc..LANCHOR0_0xfff45548
+EOF
+RUN

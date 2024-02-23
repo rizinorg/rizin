@@ -13,7 +13,7 @@
 #include <rz_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 #define rz_bin_file_get_elf(bf) ((ELFOBJ *)bf->o->bin_obj)
 
@@ -153,7 +153,7 @@ typedef struct rz_bin_reloc_formular_symbols_t {
 
 static RzBinInfo *info(RzBinFile *bf);
 static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin);
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf);
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf);
 
 struct special_symbol_translation {
 	RzBinSpecialSymbol symbol;
@@ -496,7 +496,7 @@ static RzBinSymbol *convert_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
 
 	result->paddr = elf_symbol->paddr;
 	result->vaddr = elf_symbol->vaddr;
-	result->name = rz_str_new(elf_symbol->name);
+	result->name = rz_str_dup(elf_symbol->name);
 	result->forwarder = "NONE";
 	result->bind = elf_symbol->bind;
 	result->type = elf_symbol->type;
@@ -526,7 +526,7 @@ static RzBinImport *convert_import(RzBinElfSymbol *symbol) {
 		return NULL;
 	}
 
-	result->name = rz_str_new(symbol->name);
+	result->name = rz_str_dup(symbol->name);
 	result->bind = symbol->bind;
 	result->type = symbol->type;
 	result->ordinal = symbol->ordinal;
@@ -650,12 +650,12 @@ static ut32 section_perms_from_flags(ut32 flags) {
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	if (!obj) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -695,7 +695,7 @@ static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 				map->name = rz_str_newf("LOAD%d", n);
 			}
 			n++;
-			rz_list_append(ret, map);
+			rz_pvector_push(ret, map);
 		}
 	} else {
 		// Load sections if there is no PHDR
@@ -707,17 +707,17 @@ static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 				break;
 			}
 
-			map->name = rz_str_new(section->name);
+			map->name = rz_str_dup(section->name);
 			map->paddr = section->offset;
 			map->psize = section->type != SHT_NOBITS ? section->size : 0;
 			map->vsize = section->size;
 			map->vaddr = section->rva;
 			map->perm = section_perms_from_flags(section->flags);
-			rz_list_append(ret, map);
+			rz_pvector_push(ret, map);
 		}
 	}
 
-	if (rz_list_empty(ret)) {
+	if (rz_pvector_empty(ret)) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			return ret;
@@ -728,7 +728,7 @@ static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		map->vaddr = 0x10000;
 		map->vsize = bf->size;
 		map->perm = RZ_PERM_RWX;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	if (obj->ehdr.e_type == ET_REL) {
@@ -746,7 +746,7 @@ static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 		map->vaddr = obj->baddr;
 		map->vsize = ehdr_size;
 		map->perm = RZ_PERM_RW;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 	return ret;
 }
@@ -1020,6 +1020,14 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 	}
 }
 
+// AARCH64-specific defines
+// Take the PAGE component of an address or offset.
+#define PG(x)         ((x) & ~0xFFFULL)
+#define PG_OFFSET(x)  ((x)&0xFFFULL)
+#define ADR_IMM_MASK1 (((1U << 2) - 1) << 29)
+#define ADR_IMM_MASK2 (((1U << 19) - 1) << 5)
+#define ADR_IMM_MASK3 (((1U << 19) - 1) << 2)
+
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
 	ut64 val = 0;
@@ -1040,11 +1048,81 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		}
 		rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
 		break;
-	case EM_AARCH64:
-		val = S + A;
-		rz_write_le64(buf, val);
-		rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
+	case EM_AARCH64: {
+		ut32 keep;
+		ut32 nbytes = 4;
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 8);
+		switch (rel->type) {
+		case RZ_AARCH64_ABS16:
+			val = S + A;
+			rz_write_le16(buf, val);
+			nbytes = 2;
+			break;
+		case RZ_AARCH64_ABS32:
+			val = S + A;
+			rz_write_le32(buf, val);
+			break;
+		case RZ_AARCH64_GLOB_DAT:
+		case RZ_AARCH64_ABS64:
+		case RZ_AARCH64_JUMP_SLOT:
+			val = S + A;
+			rz_write_le64(buf, val);
+			nbytes = 8;
+			break;
+		case RZ_AARCH64_PREL16:
+			val = S + A - P;
+			rz_write_le16(buf, val);
+			nbytes = 2;
+			break;
+		case RZ_AARCH64_PREL32:
+			val = S + A - P;
+			rz_write_le32(buf, val);
+			break;
+		case RZ_AARCH64_PREL64:
+			val = S + A - P;
+			rz_write_le64(buf, val);
+			nbytes = 8;
+			break;
+		case RZ_AARCH64_RELATIVE:
+			val = B + A;
+			rz_write_le64(buf, val);
+			nbytes = 8;
+			break;
+		case RZ_AARCH64_ADR_PREL_PG_HI21:
+		case RZ_AARCH64_ADR_PREL_PG_HI21_NC:
+		case RZ_AARCH64_ADR_GOT_PAGE:
+			// Reencode ADR imm
+			keep = rz_read_le32(buf) & ~(ADR_IMM_MASK1 | ADR_IMM_MASK2);
+			val = ((st64)(PG(S + A) - PG(P))) >> 12;
+			rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(2, 0)) << 29) | ((val & ADR_IMM_MASK3) << 3));
+			break;
+		case RZ_AARCH64_JUMP26:
+		case RZ_AARCH64_CALL26:
+			// Reencode 26 bits of the offset
+			keep = rz_read_le32(buf) & ~RZ_BIT_MASK32(26, 0);
+			val = ((st64)(S + A - P)) >> 2;
+			rz_write_le32(buf, keep | (val & RZ_BIT_MASK32(26, 0)));
+			break;
+		case RZ_AARCH64_LDST8_ABS_LO12_NC:
+		case RZ_AARCH64_ADD_ABS_LO12_NC:
+			keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
+			val = PG_OFFSET(S + A);
+			rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+			break;
+		case RZ_AARCH64_LD64_GOT_LO12_NC:
+		case RZ_AARCH64_LDST64_ABS_LO12_NC:
+			// Reencode LD/ST imm
+			keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
+			val = PG_OFFSET(S + A) >> 3;
+			rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+			break;
+		default:
+			nbytes = 0;
+			break;
+		}
+		rz_buf_write_at(obj->buf_patched, patch_addr, buf, nbytes);
 		break;
+	}
 	case EM_PPC64: {
 		int low = 0, word = 0;
 		switch (rel->type) {
@@ -1251,6 +1329,11 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	r->paddr = rel->paddr;
 	r->target_vaddr = rel->target_vaddr;
 
+	RzBinElfSection *section = rel->section > 0 ? Elf_(rz_bin_elf_get_section)(bin, rel->section) : NULL;
+	if (section) {
+		r->section_vaddr = section->rva;
+	}
+
 #define SET(T) \
 	r->type = RZ_BIN_RELOC_##T; \
 	r->additive = 0; \
@@ -1276,9 +1359,11 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_386_PC16: ADD(16, -P);
 		case RZ_386_8: ADD(8, 0);
 		case RZ_386_PC8: ADD(8, -P);
-		case RZ_386_COPY: ADD(32, 0); // XXX: copy symbol at runtime
+		case RZ_386_COPY: ADD(32, 0); // copy symbol at runtime
 		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
-		default: break;
+		default:
+			RZ_LOG_WARN("unimplemented ELF/X86_32 reloc type %d\n", rel->type);
+			break;
 		}
 		break;
 	case EM_X86_64:
@@ -1298,9 +1383,11 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_X86_64_8: ADD(8, 0);
 		case RZ_X86_64_PC8: ADD(8, -P);
 		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P);
-		case RZ_X86_64_COPY: ADD(64, 0); // XXX: copy symbol at runtime
+		case RZ_X86_64_COPY: ADD(64, 0); // copy symbol at runtime
 		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
-		default: break;
+		default:
+			RZ_LOG_WARN("unimplemented ELF/X86_64 reloc type %d\n", rel->type);
+			break;
 		}
 		break;
 	case EM_ARM:
@@ -1353,12 +1440,28 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_AARCH64:
 		switch (rel->type) {
 		case RZ_AARCH64_NONE: break;
+		case RZ_AARCH64_ABS64: ADD(64, 0);
 		case RZ_AARCH64_ABS32: ADD(32, 0);
 		case RZ_AARCH64_ABS16: ADD(16, 0);
+		case RZ_AARCH64_PREL64: ADD(64, 0);
+		case RZ_AARCH64_PREL32: ADD(32, 0);
+		case RZ_AARCH64_PREL16: ADD(16, 0);
 		case RZ_AARCH64_GLOB_DAT: SET(64);
 		case RZ_AARCH64_JUMP_SLOT: SET(64);
 		case RZ_AARCH64_RELATIVE: ADD(64, B);
-		default: break; // reg relocations
+		case RZ_AARCH64_LDST8_ABS_LO12_NC: ADD(16, 0);
+		case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0);
+		case RZ_AARCH64_JUMP26: ADD(32, 0);
+		case RZ_AARCH64_CALL26: ADD(32, 0);
+		case RZ_AARCH64_LDST64_ABS_LO12_NC: ADD(32, 0);
+		case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0);
+		// Page-relative relocations
+		case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0);
+		case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0);
+		case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0);
+		default:
+			RZ_LOG_WARN("unimplemented ELF/AARCH64 reloc type %d\n", rel->type);
+			break;
 		}
 		break;
 	case EM_PPC:
@@ -1443,8 +1546,8 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
-	RzList *r = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+	RzPVector *r = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!r) {
 		return NULL;
 	}
@@ -1469,7 +1572,7 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		vf->buf = buf;
 		vf->buf_owned = true;
 		vf->name = strdup(VFILE_NAME_RELOC_TARGETS);
-		rz_list_push(r, vf);
+		rz_pvector_push(r, vf);
 	}
 	// virtual file mirroring the raw file, but with relocs patched
 	if (obj->buf_patched) {
@@ -1479,17 +1582,17 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = obj->buf_patched;
 		vf->name = strdup(VFILE_NAME_PATCHED);
-		rz_list_push(r, vf);
+		rz_pvector_push(r, vf);
 	}
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	if (!obj) {
 		return NULL;
 	}
-	RzList *ret = maps_unpatched(bf);
+	RzPVector *ret = maps_unpatched(bf);
 	if (!ret) {
 		return NULL;
 	}
@@ -1503,12 +1606,12 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ELFOBJ *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	RzBinSection *ptr = NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 
-	if (!obj || !(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!obj || !(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -1520,9 +1623,9 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		ptr->name = rz_str_new(section->name);
+		ptr->name = rz_str_dup(section->name);
 		if (!ptr->name) {
-			ptr->name = rz_str_new("");
+			ptr->name = rz_str_dup("");
 		}
 		if (strstr(ptr->name, "data") && !strstr(ptr->name, "rel") && !strstr(ptr->name, "pydata")) {
 			ptr->is_data = true;
@@ -1539,7 +1642,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->type = section->type;
 		ptr->flags = section->flags;
 		ptr->perm = section_perms_from_flags(section->flags);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	// program headers is another section
@@ -1610,7 +1713,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 			}
 			break;
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	// add entry for ehdr
@@ -1627,17 +1730,17 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->vsize = ehdr_size;
 		ptr->perm = RZ_PERM_RW;
 		ptr->is_segment = true;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1646,30 +1749,30 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_bin_elf_foreach_symbols(bin, symbol) {
 		RzBinSymbol *tmp = convert_symbol(bin, symbol);
 		if (!tmp) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 
-		rz_list_append(ret, tmp);
+		rz_pvector_push(ret, tmp);
 	}
 
 	RzBinElfSymbol *import;
 	rz_bin_elf_foreach_imports(bin, import) {
 		RzBinSymbol *tmp = convert_symbol(bin, import);
 		if (!tmp) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 
 		tmp->is_imported = true;
 
-		rz_list_append(ret, tmp);
+		rz_pvector_push(ret, tmp);
 	}
 
 	return ret;
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
@@ -1678,7 +1781,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzList *result = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *result = rz_pvector_new((RzPVectorFree)rz_bin_import_free);
 	if (!result) {
 		return NULL;
 	}
@@ -1687,24 +1790,24 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	rz_bin_elf_foreach_imports(bin, import) {
 		RzBinImport *tmp = convert_import(import);
 		if (!tmp) {
-			rz_list_free(result);
+			rz_pvector_free(result);
 			return NULL;
 		}
 
-		rz_list_append(result, tmp);
+		rz_pvector_push(result, tmp);
 	}
 
 	return result;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinReloc *ptr = NULL;
 
 	if (!bf->o) {
@@ -1718,7 +1821,7 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 
 	patch_relocs(bf, bin);
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
 		return NULL;
 	}
 
@@ -1734,19 +1837,20 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 			continue;
 		}
 
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;
 }
 
 static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
-	RzList *symbols_list = symbols(bf);
-	RzListIter *iter;
+	RzPVector *symbols_vec = symbols(bf);
+	void **iter;
 	RzBinSymbol *symbol;
 	bool is_rust = false;
-	if (symbols_list) {
-		rz_list_foreach (symbols_list, iter, symbol) {
+	if (symbols_vec) {
+		rz_pvector_foreach (symbols_vec, iter) {
+			symbol = *iter;
 			if (ret->has_canary && is_rust) {
 				break;
 			}
@@ -1763,16 +1867,17 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 				ret->lang = "rust";
 			}
 		}
-		rz_list_free(symbols_list);
+		rz_pvector_free(symbols_vec);
 	}
 }
 
 static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
-	RzList *sections_list = sections(bf);
-	RzListIter *iter;
+	RzPVector *sections_vec = sections(bf);
+	void **iter;
 	RzBinSection *section;
 	ret->has_retguard = -1;
-	rz_list_foreach (sections_list, iter, section) {
+	rz_pvector_foreach (sections_vec, iter) {
+		section = *iter;
 		if (ret->has_retguard != -1) {
 			break;
 		}
@@ -1783,22 +1888,26 @@ static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 			break;
 		}
 	}
-	rz_list_free(sections_list);
+	rz_pvector_free(sections_vec);
 }
 
 static bool has_sanitizers(RzBinFile *bf) {
 	bool ret = false;
-	RzList *imports_list = imports(bf);
-	RzListIter *iter;
+	RzPVector *imports_vec = imports(bf);
+	if (!imports_vec) {
+		return ret;
+	}
+	void **iter;
 	RzBinImport *import;
-	rz_list_foreach (imports_list, iter, import) {
+	rz_pvector_foreach (imports_vec, iter) {
+		import = *iter;
 		if (strstr(import->name, "__sanitizer") ||
 			strstr(import->name, "__ubsan")) {
 			ret = true;
 			break;
 		}
 	}
-	rz_list_free(imports_list);
+	rz_pvector_free(imports_vec);
 	return ret;
 }
 
@@ -1890,7 +1999,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool add_fields_aux(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ *bin), const char *fmt) {
+static bool add_fields_aux(ELFOBJ *bin, RzPVector /*<RzBinField *>*/ *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ *bin), const char *fmt) {
 	char *value = get_value(bin);
 	if (!value) {
 		return false;
@@ -1902,7 +2011,7 @@ static bool add_fields_aux(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result, ut64 
 		return false;
 	}
 
-	if (!rz_list_append(result, field)) {
+	if (!rz_pvector_push(result, field)) {
 		rz_bin_field_free(field);
 		free(value);
 		return false;
@@ -1912,7 +2021,7 @@ static bool add_fields_aux(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result, ut64 
 	return true;
 }
 
-static bool add_fields(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result) {
+static bool add_fields(ELFOBJ *bin, RzPVector /*<RzBinField *>*/ *result) {
 	size_t size = bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64 ? 8 : 4;
 
 	return add_fields_aux(bin, result, E_IDENT_OFFSET, 16, "MAGIC", Elf_(rz_bin_elf_get_e_indent_as_string), "x") &&
@@ -1931,18 +2040,18 @@ static bool add_fields(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result) {
 		add_fields_aux(bin, result, E_SHSTRNDX_OFFSET, 2, "ShStrndx", Elf_(rz_bin_elf_get_e_shstrndx_as_string), "d");
 }
 
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
 
-	RzList *result = rz_list_newf((RzListFree)rz_bin_field_free);
+	RzPVector *result = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	if (!result) {
 		return NULL;
 	}
 
 	if (!add_fields(bin, result)) {
-		rz_list_free(result);
+		rz_pvector_free(result);
 		return NULL;
 	}
 
@@ -1953,10 +2062,11 @@ static ut64 size(RzBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!bf->o->sections) {
-		RzListIter *iter;
+		void **iter;
 		RzBinSection *section;
 		bf->o->sections = sections(bf);
-		rz_list_foreach (bf->o->sections, iter, section) {
+		rz_pvector_foreach (bf->o->sections, iter) {
+			section = *iter;
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;
@@ -1964,8 +2074,4 @@ static ut64 size(RzBinFile *bf) {
 		}
 	}
 	return off + len;
-}
-
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }

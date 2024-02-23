@@ -25,6 +25,7 @@ static void config_visual_hit_i(RzCore *core, const char *name, int delta) {
 static void config_visual_hit(RzCore *core, const char *name, int editor) {
 	char buf[1024];
 	RzConfigNode *node;
+	RzLine *line = core->cons->line;
 
 	if (!(node = rz_config_node_get(core->config, name))) {
 		return;
@@ -35,7 +36,9 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 		// XXX: must use config_set () to run callbacks!
 		if (editor) {
 			char *buf = rz_core_editor(core, NULL, node->value);
-			node->value = rz_str_dup(node->value, buf);
+			char *tmp = rz_str_dup(buf);
+			free(node->value);
+			node->value = tmp;
 			free(buf);
 		} else {
 			// FGETS AND SO
@@ -43,7 +46,7 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 			rz_cons_show_cursor(true);
 			rz_cons_flush();
 			rz_cons_set_raw(0);
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			rz_cons_fgets(buf, sizeof(buf), 0, 0);
 			rz_cons_set_raw(1);
 			rz_cons_show_cursor(false);
@@ -61,7 +64,7 @@ static void show_config_options(RzCore *core, const char *opt) {
 		RzListIter *iter;
 		RzStrBuf *sb = rz_strbuf_new(" Options: ");
 		rz_list_foreach (node->options, iter, item) {
-			rz_strbuf_appendf(sb, "%s%s", iter->p ? ", " : "", item);
+			rz_strbuf_appendf(sb, "%s%s", rz_list_iter_has_prev(iter) ? ", " : "", item);
 			if (rz_strbuf_length(sb) + 5 >= w) {
 				char *s = rz_strbuf_drain(sb);
 				rz_cons_println(s);

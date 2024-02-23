@@ -14,75 +14,105 @@ rz-diff compares two files or binary programs and highlights the differences bet
 .Pp
 .Bl -tag -width Fl
 .It Fl A
-compare virtual addresses from file0 with physical addresses in file1.
+Compare virtual addresses from file0 with physical addresses in file1
 .It Fl a Ar [arch]	
-specify the architecture plugin to use for analysis (e.g., x86, arm).
+Specify the architecture plugin to use for analysis (e.g., x86, arm)
 .It Fl b Ar [bits]
-specify the register size for the chosen architecture (e.g., 16, 32, 64).
+Specify the register size for the chosen architecture (e.g., 16, 32, 64)
 .It Fl B
-run 'aaa' when loading the binary.
+Run 'aaa' when loading the binary
 .It Fl C
-disable the use of colors in the output.
+Disable the use of colors in the output
 .It Fl d Ar [algo]
-compute the edit distance between files using the chosen algorithm:
-                myers | Eugene W. Myers' O(ND) algorithm (no substitution)
-                leven | Levenshtein O(N^2) algorithm (with substitution
-               ssdeep | Context triggered piecewise hashing comparison
-.It Fl e Ar [k=v]
-set an evaluable config variable.
-.It Fl H 
-enable hexadecimal visual mode for comparing files in hexadecimal format.
-.It Fl h
-display the help message.
-.It Fl i 
-use command line arguments instead of files (only for -d).
-.It Fl j
-output the comparison results in JSON format.
-.It Fl q
-generate quiet output with minimal information.
-.It Fl 0 Ar [cmd]
-input for file0 when option -t 'commands' is given.
-.It Fl 1 Ar [cmd]
-input for file1 when option -t 'commands' is given.
-.It Fl S Ar [WxH]
-set the width and height of the terminal for visual mode.
-.It Fl t Ar [type]
-compute the difference between two files based on the specified type:
-              bytes      | Compares raw bytes in the files (only for small files)
-              lines      | Compares text files
-              functions  | Compares functions found in the files
-              classes    | Compares classes found in the files
-              command    | Compares command output returned when executed in both files
-                         | Requires -0 <cmd>, -1 <cmd> is optional
-              entries    | Compares entries found in the files
-              fields     | Compares fields found in the files
-              graphs     | Compares 2 functions and outputs in graphviz/dot format
-                         | Requires -0 <fcn name|offset>, -1 <fcn name|offset> is optional
-              imports    | Compares imports found in the files
-              libraries  | Compares libraries found in the files
-              sections   | Compares sections found in the files
-              strings    | Compares strings found in the files
-              symbols    | Compares symbols found in the files
-.It Fl T
-show timestamp information in the output.
-.It Fl v
-show version information for rz-diff.
-.Pp 
-palette colors can be changed by adding the following lines
-          inside the $HOME/.rizinrc file
-  ec diff.unknown blue   | offset color
-  ec diff.match   green  | match color
-  ec diff.unmatch red    | mismatch color	
-.Sh EXAMPLE
-       Compare two binary files using the default settings:
-              rz-diff file1.bin file2.bin
-
-       Compare two text files and display the output in JSON format:
-              rz-diff -j -t lines file1.txt file2.txt
-
-       Compare two functions from an architecture plugin:
-              rz-diff -t graphs -0 function1 -1 function2 binary1 binary2
+Compute the edit distance between files using the chosen algorithm:
+.Bl -tag -width
+.It Ic myers
+Eugene W. Myers' O(ND) algorithm (no substitution)
+.It Ic leven
+Levenshtein O(N^2) algorithm (with substitution)
+.It Ic ssdeep
+Context triggered piecewise hashing comparison
 .El
+.It Fl e Ar [k=v]
+Set an evaluable config variable
+.It Fl H 
+Enable hexadecimal visual mode for comparing files in hexadecimal format
+.It Fl h
+Display the help message
+.It Fl i 
+Use command line arguments instead of files (only for -d)
+.It Fl j
+Output the comparison results in JSON format
+.It Fl q
+Generate quiet output with minimal information
+.It Fl 0 Ar [cmd]
+Input for file0 when option -t 'commands' is given
+.It Fl 1 Ar [cmd]
+Input for file1 when option -t 'commands' is given
+.It Fl S Ar [WxH]
+Set the width and height of the terminal for visual mode
+.It Fl t Ar [type]
+Compute the difference between two files based on the specified type:
+.Bl -tag -width
+.It Ic bytes
+Compare raw bytes in the files (only for small files)
+.It Ic lines
+Compare text files
+.It Ic functions
+Compare functions found in the files
+.It Ic classes
+Compare classes found in the files
+.It Ic command
+Compare command output returned when executed in both files.
+Requires -0 <cmd>, -1 <cmd> is optional.
+.It Ic entries
+Compare entries found in the files
+.It Ic fields
+Compare fields found in the files
+.It Ic graphs
+Compare 2 functions and outputs in graphviz/dot format.
+Requires -0 <fcnname|offset>, -1 <fcn name|offset> is optional.
+.It Ic imports
+Compare imports found in the files
+.It Ic libraries
+Compare libraries found in the files
+.It Ic sections
+Compare sections found in the files
+.It Ic strings
+Compare strings found in the files
+.It Ic symbols
+Compare symbols found in the files
+.El
+.It Fl T
+Show timestamp information in the output
+.It Fl V
+Show version information for rz-diff
+.It Fl v
+be more verbose (stderr output)
+.El
+.Pp 
+Palette colors can be changed by adding the following lines inside the $HOME/.rizinrc file
+.Bl -tag
+.It Ic ec diff.unknown blue
+offset color
+.It Ic ec diff.match green
+match color
+.It Ic ec diff.unmatch red
+mismatch color	
+.El
+.Sh EXAMPLE
+.Pp
+Compare two binary files using the default settings:
+.Pp
+.Nm rz-diff Ar file1.bin Ar file2.bin
+.Pp
+Compare two text files and display the output in JSON format:
+.Pp
+.Nm rz-diff Fl j Fl t Cm lines Ar file1.txt Ar file2.txt
+.Pp
+Compare two functions from an architecture plugin:
+.Pp
+.Nm rz-diff Fl t Cm graphs Fl 0 Cm function1 Fl 1 Cm function2 Ar binary1 Ar binary2
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
@@ -97,4 +127,4 @@ palette colors can be changed by adding the following lines
 .Pp
 pancake <pancake@nopcode.org>
 .It  
-Sohail  <sksohail.swaraj@gmail.com>
+byteninjaa0

@@ -145,10 +145,10 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	char tmp[0x100];
 	int i, r;
 	ut32 addr;
@@ -161,11 +161,10 @@ static RzList /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 	if (h->sections < 1) {
 		return NULL;
 	}
-	ret = rz_list_new();
+	ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	if (h->sections < 1 || h->sections > 255) {
 		goto out_error;
 	}
@@ -204,11 +203,11 @@ static RzList /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 		if (sect.flags & SECT_FLAG_W) {
 			item->perm |= RZ_PERM_W;
 		}
-		rz_list_append(ret, item);
+		rz_pvector_push(ret, item);
 	}
 	return ret;
 out_error:
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 
@@ -232,13 +231,13 @@ static char *describe_xbe_lib_at(RzBuffer *b, ut64 off, ut64 filesz) {
 	return rz_str_newf("%s %i.%i.%i", name, lib.major, lib.minor, lib.build);
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
 	xbe_header *h = &obj->header;
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -253,16 +252,16 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 		if (!lib) {
 			break;
 		}
-		rz_list_push(ret, lib);
+		rz_pvector_push(ret, lib);
 	}
 
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj;
 	xbe_header *h;
-	RzList *ret;
+	RzPVector *ret;
 	ut32 kt_addr;
 	ut32 addr;
 
@@ -273,7 +272,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	obj = bf->o->bin_obj;
 	h = &obj->header;
 	kt_addr = h->kernel_thunk_addr ^ obj->kt_key;
-	ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -319,14 +318,14 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			sym->paddr = sym->vaddr - h->base;
 			sym->size = 4;
 			sym->ordinal = i;
-			rz_list_append(ret, sym);
+			rz_pvector_push(ret, sym);
 		} else {
 			free(sym);
 		}
 	}
 	return ret;
 out_error:
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 

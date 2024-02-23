@@ -13,6 +13,23 @@ RZ_LIB_VERSION(rz_analysis);
 
 static RzAnalysisPlugin *analysis_static_plugins[] = { RZ_ANALYSIS_STATIC_PLUGINS };
 
+/**
+ * \brief Returns the default size byte width of memory access operations.
+ * The size is just a best guess.
+ *
+ * \param analysis The current RzAnalysis in use.
+ *
+ * \return The default width of a memory access in bytes.
+ */
+RZ_API ut32 rz_analysis_guessed_mem_access_width(RZ_NONNULL const RzAnalysis *analysis) {
+	if (analysis->bits == 16 && RZ_STR_EQ(analysis->cur->arch, "arm")) {
+		// Thumb access is usually 4 bytes of memory by default.
+		return 4;
+	}
+	// Best guess for variable size.
+	return analysis->bits / 8;
+}
+
 RZ_API void rz_analysis_set_limits(RzAnalysis *analysis, ut64 from, ut64 to) {
 	free(analysis->limit);
 	analysis->limit = RZ_NEW0(RzAnalysisRange);
@@ -44,16 +61,13 @@ void rz_analysis_hint_storage_init(RzAnalysis *a);
 
 void rz_analysis_hint_storage_fini(RzAnalysis *a);
 
-static void rz_meta_item_fini(RzAnalysisMetaItem *item) {
-	free(item->str);
-}
-
-static void rz_meta_item_free(void *_item) {
-	if (_item) {
-		RzAnalysisMetaItem *item = _item;
-		rz_meta_item_fini(item);
-		free(item);
+static void meta_item_free(void *item) {
+	if (!item) {
+		return;
 	}
+	RzAnalysisMetaItem *it = item;
+	free(it->str);
+	free(it);
 }
 
 static void global_kv_free(HtPPKv *kv) {
@@ -68,6 +82,11 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 		return NULL;
 	}
 	if (!rz_str_constpool_init(&analysis->constpool)) {
+		free(analysis);
+		return NULL;
+	}
+	analysis->esilinterstate = RZ_NEW0(RzAnalysisEsilInterState);
+	if (!analysis->esilinterstate) {
 		free(analysis);
 		return NULL;
 	}
@@ -88,7 +107,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_event_hook(analysis->meta_spaces.event, RZ_SPACE_EVENT_COUNT, meta_count_for, NULL);
 
 	rz_analysis_hint_storage_init(analysis);
-	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
+	rz_interval_tree_init(&analysis->meta, meta_item_free);
 	analysis->typedb = rz_type_db_new();
 	analysis->sdb_fmts = sdb_ns(analysis->sdb, "spec", 1);
 	analysis->sdb_cc = sdb_ns(analysis->sdb, "cc", 1);
@@ -118,6 +137,9 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
+	analysis->debug_info = rz_analysis_debug_info_new();
+	analysis->cmpval = UT64_MAX;
+	analysis->lea_jmptbl_ip = UT64_MAX;
 	return analysis;
 }
 
@@ -163,11 +185,13 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 		rz_analysis_esil_free(a->esil);
 		a->esil = NULL;
 	}
+	free(a->esilinterstate);
 	free(a->last_disasm_reg);
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
 	ht_pp_free(a->ht_global_var);
 	rz_list_free(a->plugins);
+	rz_analysis_debug_info_free(a->debug_info);
 	free(a);
 	return NULL;
 }
@@ -315,6 +339,9 @@ RZ_API int rz_analysis_get_address_bits(RzAnalysis *analysis) {
 }
 
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
+	if (RZ_STR_EQ(cpu, analysis->cpu)) {
+		return;
+	}
 	free(analysis->cpu);
 	analysis->cpu = cpu ? strdup(cpu) : NULL;
 	int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
@@ -322,6 +349,10 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 		analysis->pcalign = v;
 	}
 	rz_analysis_set_reg_profile(analysis);
+	if (RZ_STR_EQ(cpu, analysis->typedb->target->cpu)) {
+		return;
+	}
+
 	rz_type_db_set_cpu(analysis->typedb, cpu);
 	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_reload(analysis->typedb, types_dir);
@@ -439,7 +470,7 @@ RZ_API bool rz_analysis_op_is_eob(RzAnalysisOp *op) {
 RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_analysis_hint_clear(analysis);
 	rz_interval_tree_fini(&analysis->meta);
-	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
+	rz_interval_tree_init(&analysis->meta, meta_item_free);
 	rz_type_db_purge(analysis->typedb);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);

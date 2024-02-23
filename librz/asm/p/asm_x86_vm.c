@@ -29,84 +29,84 @@
 #define VPCEXT2(y, x) ((y)[2] == (x))
 
 void decompile_vm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	const char *buf_asm = "invalid";
 	if (len > 3 && buf[0] == 0x0F && buf[1] == 0x3F && (VPCEXT2(buf, 0x01) || VPCEXT2(buf, 0x05) || VPCEXT2(buf, 0x07) || VPCEXT2(buf, 0x0D) || VPCEXT2(buf, 0x10))) {
 		if (a->syntax == RZ_ASM_SYNTAX_ATT) {
-			buf_asm = sdb_fmt("vpcext $0x%x, $0x%x", buf[3], buf[2]);
+			rz_asm_op_setf_asm(op, "vpcext $0x%x, $0x%x", buf[3], buf[2]);
 		} else {
-			buf_asm = sdb_fmt("vpcext %xh, %xh", buf[2], buf[3]);
+			rz_asm_op_setf_asm(op, "vpcext %xh, %xh", buf[2], buf[3]);
 		}
 		op->size = 4;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x00) {
 		/* 0F C6 28 00 00 vmgetinfo */
-		buf_asm = "vmgetinfo";
+		rz_asm_op_set_asm(op, "vmgetinfo");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x01) {
 		/* 0F C6 28 00 01 vmsetinfo */
-		buf_asm = "vmsetinfo";
+		rz_asm_op_set_asm(op, "vmsetinfo");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x02) {
 		/* 0F C6 28 00 02 vmdxdsbl */
-		buf_asm = "vmdxdsbl";
+		rz_asm_op_set_asm(op, "vmdxdsbl");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x03) {
 		/* 0F C6 28 00 03 vmdxenbl */
-		buf_asm = "vmdxenbl";
+		rz_asm_op_set_asm(op, "vmdxenbl");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x01 && buf[4] == 0x00) {
 		/* 0F C6 28 01 00 vmcpuid */
-		buf_asm = "vmcpuid";
+		rz_asm_op_set_asm(op, "vmcpuid");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x01 && buf[4] == 0x01) {
 		/* 0F C6 28 01 01 vmhlt */
-		buf_asm = "vmhlt";
+		rz_asm_op_set_asm(op, "vmhlt");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x01 && buf[4] == 0x02) {
 		/* 0F C6 28 01 02 vmsplaf */
-		buf_asm = "vmsplaf";
+		rz_asm_op_set_asm(op, "vmsplaf");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x00) {
 		/* 0F C6 28 02 00 vmpushfd */
-		buf_asm = "vmpushfd";
+		rz_asm_op_set_asm(op, "vmpushfd");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x01) {
 		/* 0F C6 28 02 01 vmpopfd */
-		buf_asm = "vmpopfd";
+		rz_asm_op_set_asm(op, "vmpopfd");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x02) {
 		/* 0F C6 28 02 02 vmcli */
-		buf_asm = "vmcli";
+		rz_asm_op_set_asm(op, "vmcli");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x03) {
 		/* 0F C6 28 02 03 vmsti */
-		buf_asm = "vmsti";
+		rz_asm_op_set_asm(op, "vmsti");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x04) {
 		/* 0F C6 28 02 04 vmiretd */
-		buf_asm = "vmiretd";
+		rz_asm_op_set_asm(op, "vmiretd");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x03 && buf[4] == 0x00) {
 		/* 0F C6 28 03 00 vmsgdt */
-		buf_asm = "vmsgdt";
+		rz_asm_op_set_asm(op, "vmsgdt");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x03 && buf[4] == 0x01) {
 		/* 0F C6 28 03 01 vmsidt */
-		buf_asm = "vmsidt";
+		rz_asm_op_set_asm(op, "vmsidt");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x03 && buf[4] == 0x02) {
 		/* 0F C6 28 03 02 vmsldt */
-		buf_asm = "vmsldt";
+		rz_asm_op_set_asm(op, "vmsldt");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x03 && buf[4] == 0x03) {
 		/* 0F C6 28 03 03 vmstr */
-		buf_asm = "vmstr";
+		rz_asm_op_set_asm(op, "vmstr");
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x04 && buf[4] == 0x00) {
 		/* 0F C6 28 04 00 vmsdte */
-		buf_asm = "vmsdte";
+		rz_asm_op_set_asm(op, "vmsdte");
 		op->size = 5;
+	} else {
+		rz_asm_op_set_asm(op, "invalid");
 	}
-	rz_asm_op_set_asm(op, buf_asm);
 }
 
 #undef VPCEXT2

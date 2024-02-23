@@ -7,12 +7,13 @@
 #include "../core_private.h"
 #include "modes.h"
 
+/* Modes used in the simple visual mode triggered by "V" hotkey */
 const char *printfmtSingle[NPF] = {
 	"xc", // HEXDUMP
 	"pd $r", // ASSEMBLY
 	("pxw 64@r:SP;" CMD_REGISTERS ";pd $r"), // DEBUGGER
 	"prc", // OVERVIEW
-	"pss", // PC//  copypasteable views
+	"pxi", // HexII format, for better visualization
 };
 
 const char *printfmtColumns[NPF] = {
@@ -51,4 +52,10 @@ const char *print5Formats[PRINT_5_FORMATS] = {
 
 const char *printCmds[lastPrintMode] = {
 	"pdf", "pd $r", "agf", "agl", "afi", "pxa"
+};
+
+// the pd* commands that support <n_instr> as argument
+const char *printDisOptimized[] = {
+	"pd", "pda", "pdC", "pde", "pdJ", "pdl",
+	NULL
 };

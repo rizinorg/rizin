@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZIL_ANALYSIS_X86_IL_H
@@ -23,6 +23,14 @@ typedef struct x86_il_instruction_t {
 	X86InsMnem mnem; ///< Instruction mnemonic (enum)
 	ut8 ins_size; ///< Size of instruction (in bytes)
 } X86ILIns;
+
+/**
+ * \brief To store the context of the IL lifter ; Used to pass around information outside effects
+ * Other context variables *may* be added in the future when the rest of the instructions are lifted
+ */
+typedef struct x86_il_context_t {
+	bool use_rmode; ///< Set to true whenever the rounding mode is calculated (used to add a `SETL` effect for the rounding mode local variable, in case it is used) ; Set to false (by default)
+} X86ILContext;
 
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins);
 RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis);

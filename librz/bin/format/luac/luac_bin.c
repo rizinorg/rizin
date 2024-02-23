@@ -3,14 +3,14 @@
 
 #include "luac_common.h"
 
-void luac_add_section(RzList /*<RzBinSection *>*/ *section_list, char *name, ut64 offset, ut32 size, bool is_func) {
+void luac_add_section(RzPVector /*<RzBinSection *>*/ *section_vec, char *name, ut64 offset, ut32 size, bool is_func) {
 	RzBinSection *bin_sec = RZ_NEW0(RzBinSection);
 	if (!bin_sec || !name) {
 		free(bin_sec);
 		return;
 	}
 
-	bin_sec->name = rz_str_new(name);
+	bin_sec->name = rz_str_dup(name);
 	bin_sec->vaddr = bin_sec->paddr = offset;
 	bin_sec->size = bin_sec->vsize = size;
 	bin_sec->is_data = false;
@@ -25,7 +25,7 @@ void luac_add_section(RzList /*<RzBinSection *>*/ *section_list, char *name, ut6
 		bin_sec->perm = RZ_PERM_R;
 	}
 
-	if (!rz_list_append(section_list, bin_sec)) {
+	if (!rz_pvector_push(section_vec, bin_sec)) {
 		rz_bin_section_free(bin_sec);
 	}
 }
@@ -36,7 +36,7 @@ void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 o
 		return;
 	}
 
-	bin_sym->name = rz_str_new(name);
+	bin_sym->name = rz_str_dup(name);
 	bin_sym->vaddr = bin_sym->paddr = offset;
 	bin_sym->size = size;
 	bin_sym->type = type;
@@ -67,7 +67,7 @@ void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64
 	bin_string->vaddr = offset;
 	bin_string->size = size;
 	bin_string->length = size;
-	bin_string->string = rz_str_new(string);
+	bin_string->string = rz_str_dup(string);
 	bin_string->type = RZ_STRING_ENC_UTF8;
 
 	rz_list_append(string_list, bin_string);
@@ -114,7 +114,7 @@ void luac_build_info_free(LuacBinInfo *bin_info) {
 	}
 	rz_list_free(bin_info->entry_list);
 	rz_list_free(bin_info->symbol_list);
-	rz_list_free(bin_info->section_list);
+	rz_pvector_free(bin_info->section_vec);
 	rz_list_free(bin_info->string_list);
 	free(bin_info);
 }
@@ -132,13 +132,13 @@ LuacBinInfo *luac_build_info(LuaProto *proto) {
 
 	ret->entry_list = rz_list_newf((RzListFree)free_rz_addr);
 	ret->symbol_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
-	ret->section_list = rz_list_newf((RzListFree)free_rz_section);
+	ret->section_vec = rz_pvector_new((RzPVectorFree)free_rz_section);
 	ret->string_list = rz_list_newf((RzListFree)free_rz_string);
 
-	if (!(ret->entry_list && ret->symbol_list && ret->section_list && ret->string_list)) {
+	if (!(ret->entry_list && ret->symbol_list && ret->section_vec && ret->string_list)) {
 		rz_list_free(ret->entry_list);
 		rz_list_free(ret->symbol_list);
-		rz_list_free(ret->section_list);
+		rz_pvector_free(ret->section_vec);
 		rz_list_free(ret->string_list);
 	}
 
@@ -247,49 +247,49 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 		// replace name with current offset
 		proto_name = rz_str_newf("fcn.%08llx", proto->offset);
 	} else {
-		proto_name = rz_str_new((char *)proto->proto_name);
+		proto_name = rz_str_dup((char *)proto->proto_name);
 	}
 
 	// 1.1 set section name as function_name.header
 	current_offset = proto->offset;
 	current_size = proto->size;
 	section_name = rz_str_newf("%s.header", proto_name);
-	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
+	luac_add_section(info->section_vec, section_name, current_offset, current_size, false);
 	RZ_FREE(section_name);
 
 	// 1.2 set section name as function_name.code
 	current_offset = proto->code_offset;
 	current_size = proto->code_size;
 	section_name = rz_str_newf("%s.code", proto_name);
-	luac_add_section(info->section_list, section_name, current_offset, current_size, true);
+	luac_add_section(info->section_vec, section_name, current_offset, current_size, true);
 	RZ_FREE(section_name);
 
 	// 1.3 set const section
 	current_offset = proto->const_offset;
 	current_size = proto->const_size;
 	section_name = rz_str_newf("%s.const", proto_name);
-	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
+	luac_add_section(info->section_vec, section_name, current_offset, current_size, false);
 	RZ_FREE(section_name);
 
 	// 1.4 upvalue section
 	current_offset = proto->upvalue_offset;
 	current_size = proto->upvalue_size;
 	section_name = rz_str_newf("%s.upvalues", proto_name);
-	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
+	luac_add_section(info->section_vec, section_name, current_offset, current_size, false);
 	RZ_FREE(section_name);
 
 	// 1.5 inner protos section
 	current_offset = proto->inner_proto_offset;
 	current_size = proto->inner_proto_size;
 	section_name = rz_str_newf("%s.protos", proto_name);
-	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
+	luac_add_section(info->section_vec, section_name, current_offset, current_size, false);
 	RZ_FREE(section_name);
 
 	// 1.6 debug section
 	current_offset = proto->debug_offset;
 	current_size = proto->debug_size;
 	section_name = rz_str_newf("%s.debug", proto_name);
-	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
+	luac_add_section(info->section_vec, section_name, current_offset, current_size, false);
 	RZ_FREE(section_name);
 
 	// 2.1 parse local var info

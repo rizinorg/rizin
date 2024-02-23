@@ -359,7 +359,6 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char 
  * \param types_dir Directory where all type libraries are installed
  */
 RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *types_dir) {
-	rz_type_db_purge(typedb);
 	rz_type_db_init(typedb, types_dir, typedb->target->cpu, typedb->target->bits, typedb->target->os);
 }
 
@@ -1184,7 +1183,7 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
 		newtype->kind = type->kind;
 		newtype->identifier.kind = type->identifier.kind;
 		newtype->identifier.is_const = type->identifier.is_const;
-		newtype->identifier.name = rz_str_new(type->identifier.name);
+		newtype->identifier.name = rz_str_dup(type->identifier.name);
 		break;
 	case RZ_TYPE_KIND_ARRAY:
 		newtype->kind = RZ_TYPE_KIND_ARRAY;

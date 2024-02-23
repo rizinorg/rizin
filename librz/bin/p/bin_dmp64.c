@@ -80,15 +80,11 @@ static void header(RzBinFile *bf) {
 	}
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
-}
-
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
-	RzList *fields = rz_list_newf((RzListFree)rz_bin_field_free);
+static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
+	RzPVector *fields = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 #define FIELD_COMMENT(header, field, comment) \
-	rz_list_append(fields, rz_bin_field_new(rz_offsetof(header, field), rz_offsetof(header, field), sizeof(((header *)0)->field), #field, comment, sizeof(((header *)0)->field) == 4 ? "x" : "q", false));
+	rz_pvector_push(fields, rz_bin_field_new(rz_offsetof(header, field), rz_offsetof(header, field), sizeof(((header *)0)->field), #field, comment, sizeof(((header *)0)->field) == 4 ? "x" : "q", false));
 #define FIELD(header, field) FIELD_COMMENT(header, field, NULL)
 
 	FIELD(dmp64_header, MajorVersion);
@@ -185,14 +181,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	dmp_page_desc *page;
 	dmp64_triage_datablock *datablock;
-	RzList *ret;
+	RzPVector *ret;
 	RzListIter *it;
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_map_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free))) {
 		return NULL;
 	}
 
@@ -207,7 +203,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->vaddr = page->start;
 		map->vsize = page->size;
 		map->perm = RZ_PERM_R;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	rz_list_foreach (obj->datablocks, it, datablock) {
@@ -221,18 +217,18 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->vaddr = datablock->virtualAddress;
 		map->vsize = datablock->size;
 		map->perm = RZ_PERM_R;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	return ret;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 	if (!obj->drivers) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	RzListIter *it;
 	dmp_driver_desc *driver;
 	rz_list_foreach (obj->drivers, it, driver) {
@@ -240,7 +236,7 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 		if (!file) {
 			break;
 		}
-		rz_list_append(ret, file);
+		rz_pvector_push(ret, file);
 	}
 	return ret;
 }
@@ -280,7 +276,6 @@ RzBinPlugin rz_bin_plugin_dmp64 = {
 	.destroy = &destroy,
 	.get_sdb = &get_sdb,
 	.header = &header,
-	.strings = &strings,
 	.info = &info,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,

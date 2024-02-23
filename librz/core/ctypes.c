@@ -567,36 +567,42 @@ RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mod
 
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode) {
 	char *fmt = rz_type_format(core->analysis->typedb, name);
-	if (fmt) {
-		switch (mode) {
-		case RZ_OUTPUT_MODE_JSON: {
-			PJ *pj = pj_new();
-			if (!pj) {
-				free(fmt);
-				return;
-			}
-			pj_o(pj);
-			pj_ks(pj, "name", name);
-			pj_ks(pj, "format", fmt);
-			pj_end(pj);
-			rz_cons_printf("%s", pj_string(pj));
-			pj_free(pj);
-		} break;
-		case RZ_OUTPUT_MODE_RIZIN: {
-			rz_cons_printf("pf.%s %s\n", name, fmt);
-		} break;
-		case RZ_OUTPUT_MODE_STANDARD: {
-			// FIXME: Not really a standard format
-			// We should think about better representation by default here
-			rz_cons_printf("pf %s\n", fmt);
-		} break;
-		default:
-			break;
-		}
-		free(fmt);
-	} else {
+	if (!fmt) {
 		RZ_LOG_ERROR("core: cannot find '%s' type\n", name);
+		return;
 	}
+	// Simply skip types with empty format
+	if (RZ_STR_ISEMPTY(fmt)) {
+		RZ_LOG_WARN("core: '%s' type has empty format\n", name);
+		free(fmt);
+		return;
+	}
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = pj_new();
+		if (!pj) {
+			free(fmt);
+			return;
+		}
+		pj_o(pj);
+		pj_ks(pj, "name", name);
+		pj_ks(pj, "format", fmt);
+		pj_end(pj);
+		rz_cons_printf("%s", pj_string(pj));
+		pj_free(pj);
+	} break;
+	case RZ_OUTPUT_MODE_RIZIN: {
+		rz_cons_printf("pfn \"%s\" \"%s\"\n", name, fmt);
+	} break;
+	case RZ_OUTPUT_MODE_STANDARD: {
+		// FIXME: Not really a standard format
+		// We should think about better representation by default here
+		rz_cons_printf("pf \"%s\"\n", fmt);
+	} break;
+	default:
+		break;
+	}
+	free(fmt);
 }
 
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core) {
@@ -766,7 +772,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 	ut64 oldoff = core->offset;
 	rz_cons_break_push(NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
-	rz_list_sort(fcn->bbs, bb_cmpaddr);
+	rz_list_sort(fcn->bbs, bb_cmpaddr, NULL);
 	rz_list_foreach (fcn->bbs, it, bb) {
 		ut64 at = bb->addr;
 		ut64 to = bb->addr + bb->size;
@@ -909,10 +915,12 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	case RZ_OUTPUT_MODE_RIZIN:
 		rz_list_foreach (types, it, btype) {
 			char *fmt = rz_type_format(core->analysis->typedb, btype->name);
-			if (fmt) {
-				rz_cons_printf("pf.%s %s\n", btype->name, fmt);
-				free(fmt);
+			if (RZ_STR_ISNOTEMPTY(fmt)) {
+				rz_cons_printf("pfn \"%s\" \"%s\"\n", btype->name, fmt);
+			} else {
+				RZ_LOG_WARN("core: '%s' type has empty format\n", btype->name);
 			}
+			free(fmt);
 		}
 		break;
 	default:

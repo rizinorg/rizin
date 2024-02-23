@@ -6,6 +6,7 @@
 #include <rz_project.h>
 
 #include "../unit/minunit.h"
+#include <rz_util/rz_graph_drawable.h>
 
 static inline RzGraph *graph_by_function_name(RzCore *core, RzCoreGraphType t, const char *name) {
 	RzAnalysisFunction *f = rz_analysis_get_function_byname(core->analysis, name);
@@ -36,6 +37,7 @@ bool test_analysis_graph() {
 
 	// 3 dataref graph
 	RzGraph *g = graph_by_function_name(core, RZ_CORE_GRAPH_TYPE_DATAREF, "entry0");
+	mu_assert_notnull(g, "Graph was NULL");
 	mu_assert_eq(g->n_nodes, 1, "data graph node count");
 	mu_assert_eq(g->n_edges, 0, "data graph edge count");
 	mu_assert_streq_free(rz_graph_drawable_to_json_str(g, true),
@@ -98,6 +100,7 @@ bool test_analysis_graph_more() {
 
 	// 3.1 dataref graph
 	RzGraph *g = graph_by_function_name(core, RZ_CORE_GRAPH_TYPE_DATAREF, "main");
+	mu_assert_notnull(g, "Graph was NULL");
 	mu_assert_eq(g->n_nodes, 6, "data graph node count");
 	mu_assert_eq(g->n_edges, 5, "data graph edge count");
 	mu_assert_streq_free(rz_graph_drawable_to_json_str(g, true),
@@ -122,7 +125,7 @@ bool test_analysis_graph_more() {
 
 	RzGraphNodeInfo *ni = n->data;
 	mu_assert_notnull(ni, "graph node info");
-	mu_assert_streq(ni->title, "0x8048be4", "graph node");
+	mu_assert_streq(ni->def.title, "0x8048be4", "graph node");
 
 	const RzList *list = rz_graph_get_neighbours(g, n);
 	mu_assert_notnull(list, "node neighbours");
@@ -139,7 +142,7 @@ bool test_analysis_graph_more() {
 
 	ni = n->data;
 	mu_assert_notnull(ni, "graph node info");
-	mu_assert_streq(ni->title, "main", "graph node");
+	mu_assert_streq(ni->def.title, "main", "graph node");
 
 	list = rz_graph_get_neighbours(g, n);
 	mu_assert_notnull(list, "node neighbours");
@@ -162,7 +165,7 @@ bool test_analysis_graph_more() {
 
 	ni = n->data;
 	mu_assert_notnull(ni, "graph node info");
-	mu_assert_streq(ni->title, "sym.main", "graph node");
+	mu_assert_streq(ni->def.title, "sym.main", "graph node");
 
 	list = rz_graph_get_neighbours(g, n);
 	mu_assert_notnull(list, "node neighbours");
@@ -179,7 +182,7 @@ bool test_analysis_graph_more() {
 
 	ni = n->data;
 	mu_assert_notnull(ni, "graph node info");
-	mu_assert_streq(ni->title, "0x08048a3e", "graph node");
+	mu_assert_streq(ni->def.title, "0x08048a3e", "graph node");
 
 	list = rz_graph_get_neighbours(g, n);
 	mu_assert_notnull(list, "node neighbours");
@@ -191,9 +194,126 @@ bool test_analysis_graph_more() {
 	mu_end;
 }
 
+bool test_analysis_graph_icfg() {
+	// Open the file
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "new RzCore instance");
+	const char *fpath = "bins/elf/analysis/x86_icfg_malloc_test";
+	mu_assert_true(rz_core_file_open_load(core, fpath, 0, RZ_PERM_R, false), "load file");
+
+	// Analyse the file
+	rz_core_analysis_all(core);
+	rz_core_analysis_everything(core, false, "esil");
+	rz_core_analysis_flag_every_function(core);
+
+	RzGraph *g = rz_core_graph_icfg(core);
+	mu_assert_notnull(g, "Graph was NULL");
+	mu_assert_eq(g->n_nodes, 13, "data graph node count");
+	mu_assert_eq(g->n_edges, 6, "data graph edge count");
+
+	// Testing the node content is a little annoying. The nodes
+	// are indexed by their position in the list.
+	// Although in case of a CFG and iCFG it would be better to
+	// have them indexed by their address in the binary.
+	// But the current graph implementation (list and not hashmap based)
+	// doesn't support this.
+	// So, if this test breaks due to some changes in the analysis,
+	// make sure the order of the nodes did not change
+	// (because they might have been added in different order).
+	RzGraphNodeInfo *info = rz_graph_get_node_info_data(rz_graph_get_node(g, 7)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_ICFG, "info type");
+	mu_assert_eq(info->icfg.address, 0x1159, "info address");
+	mu_assert_false(info->icfg.is_malloc, "info address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 8)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_ICFG, "info type");
+	mu_assert_eq(info->icfg.address, 0x1040, "info address");
+	mu_assert_true(info->icfg.is_malloc, "info is_malloc");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 9)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_ICFG, "info type");
+	mu_assert_eq(info->icfg.address, 0x1030, "info address");
+	mu_assert_true(info->icfg.is_malloc, "info is_malloc");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 10)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_ICFG, "info type");
+	mu_assert_eq(info->icfg.address, 0x1050, "info address");
+	mu_assert_true(info->icfg.is_malloc, "info is_malloc");
+
+	rz_graph_free(g);
+
+	// Close the file
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_analysis_graph_cfg() {
+	// Open the file
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "new RzCore instance");
+	const char *fpath = "bins/elf/analysis/x86_cfg_node_details_test";
+	mu_assert_true(rz_core_file_open_load(core, fpath, 0, RZ_PERM_R, false), "load file");
+
+	// Analyse the file
+	rz_core_analysis_all(core);
+	rz_core_analysis_everything(core, false, "esil");
+	rz_core_analysis_flag_every_function(core);
+
+	RzGraph *g = rz_core_graph_cfg(core, 0x117a); // main()
+	mu_assert_notnull(g, "Graph was NULL");
+	mu_assert_eq(g->n_nodes, 24, "data graph node count");
+	mu_assert_eq(g->n_edges, 25, "data graph edge count");
+
+	// Testing the node content is a little annoying. The nodes
+	// are indexed by their position in the list.
+	// Although in case of a CFG and iCFG it would be better to
+	// have them indexed by their address in the binary.
+	// But the current graph implementation (list and not hashmap based)
+	// doesn't support this.
+	// So, if this test breaks due to some changes in the analysis,
+	// make sure the order of the nodes did not change
+	// (because they might have been added in different order).
+	RzGraphNodeInfo *info = rz_graph_get_node_info_data(rz_graph_get_node(g, 0)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x117a, "info address");
+	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 3)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x1182, "info address");
+	mu_assert_eq(info->cfg.call_address, 0x1050, "info call address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 10)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_COND, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x11a7, "info address");
+	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 23)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x11cd, "info address");
+	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
+
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 18)->data);
+	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
+	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN, "info subtype");
+	mu_assert_eq(info->cfg.address, 0x11d3, "info address");
+	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
+
+	rz_graph_free(g);
+
+	// Close the file
+	rz_core_free(core);
+	mu_end;
+}
 int all_tests() {
 	mu_run_test(test_analysis_graph);
 	mu_run_test(test_analysis_graph_more);
+	mu_run_test(test_analysis_graph_icfg);
+	mu_run_test(test_analysis_graph_cfg);
 	return tests_passed != tests_run;
 }
 

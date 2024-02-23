@@ -88,6 +88,7 @@ extern RzCryptoPlugin rz_crypto_plugin_punycode;
 extern RzCryptoPlugin rz_crypto_plugin_rc6;
 extern RzCryptoPlugin rz_crypto_plugin_cps2;
 extern RzCryptoPlugin rz_crypto_plugin_serpent;
+extern RzCryptoPlugin rz_crypto_plugin_sm4_ecb;
 
 #define RZ_CRYPTO_NONE     0ULL
 #define RZ_CRYPTO_RC2      1ULL
@@ -103,6 +104,7 @@ extern RzCryptoPlugin rz_crypto_plugin_serpent;
 #define RZ_CRYPTO_DES_ECB  1ULL << 10
 #define RZ_CRYPTO_XOR      1ULL << 11
 #define RZ_CRYPTO_SERPENT  1ULL << 12
+#define RZ_CRYPTO_SM4_ECB  1ULL << 13
 #define RZ_CRYPTO_ALL      0xFFFF
 
 #define RZ_CODEC_NONE     0ULL

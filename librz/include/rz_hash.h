@@ -51,7 +51,7 @@ typedef struct rz_hash_cfg_t {
 #ifdef RZ_API
 
 RZ_API RzHash *rz_hash_new(void);
-RZ_API void rz_hash_free(RzHash *rh);
+RZ_API void rz_hash_free(RZ_NULLABLE RzHash *rh);
 RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN RzHashPlugin *plugin);
 RZ_API bool rz_hash_plugin_del(RZ_NONNULL RzHash *rh, RZ_NONNULL RzHashPlugin *plugin);
 RZ_API RZ_BORROW const RzHashPlugin *rz_hash_plugin_by_index(RZ_NONNULL RzHash *rh, size_t index);
@@ -155,6 +155,7 @@ extern RzHashPlugin rz_hash_plugin_entropy;
 extern RzHashPlugin rz_hash_plugin_entropy_fract;
 extern RzHashPlugin rz_hash_plugin_blake3;
 extern RzHashPlugin rz_hash_plugin_ssdeep;
+extern RzHashPlugin rz_hash_plugin_sm3;
 
 #ifdef __cplusplus
 }

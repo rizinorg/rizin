@@ -179,7 +179,7 @@ RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset
 		return false;
 	}
 	if (header.fixups_version > 0) {
-		eprintf("Unsupported fixups version: %u\n", header.fixups_version);
+		RZ_LOG_ERROR("Unsupported fixups version: %u\n", header.fixups_version);
 		return false;
 	}
 	ut64 starts_at = offset + header.starts_offset;
@@ -197,14 +197,15 @@ RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset
 		return false;
 	}
 	ut64 cursor = starts_at + sizeof(ut32);
-	for (size_t i = 0; i < cf->starts_count; i++) {
-		ut32 seg_off;
-		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off) || !seg_off) {
+	size_t max_count = RZ_MAX(bin->nsegs, cf->starts_count);
+	for (size_t i = 0; i < max_count; i++) {
+		ut32 seg_off = 0;
+		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off)) {
+			RZ_LOG_ERROR("Failed to read segment offset at: %" PFMT64x "\n", cursor);
+			return false;
+		} else if (!seg_off) {
 			cursor += sizeof(ut32);
 			continue;
-		}
-		if (i >= bin->nsegs) {
-			break;
 		}
 		struct rz_dyld_chained_starts_in_segment *cur_seg = RZ_NEW0(struct rz_dyld_chained_starts_in_segment);
 		if (!cur_seg) {

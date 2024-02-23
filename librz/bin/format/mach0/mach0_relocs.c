@@ -6,7 +6,7 @@
 
 #include <rz_util.h>
 #include "mach0.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 #include "mach0_utils.inc"
 
@@ -41,7 +41,7 @@ static void read_relocation_info(struct relocation_info *dst, ut8 *src, bool big
 	}
 }
 
-static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
+static int reloc_comparator(struct reloc_t *a, struct reloc_t *b, void *user) {
 	return a->addr - b->addr;
 }
 
@@ -597,9 +597,9 @@ RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) *
 	if (obj->reloc_targets_map_base_calculated) {
 		return obj->reloc_targets_map_base;
 	}
-	RzList *maps = MACH0_(get_maps_unpatched)(bf);
+	RzPVector *maps = MACH0_(get_maps_unpatched)(bf);
 	obj->reloc_targets_map_base = rz_bin_relocs_patch_find_targets_map_base(maps, MACH0_(reloc_target_size)(obj));
-	rz_list_free(maps);
+	rz_pvector_free(maps);
 	obj->reloc_targets_map_base_calculated = true;
 	return obj->reloc_targets_map_base;
 }

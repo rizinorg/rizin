@@ -169,46 +169,65 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 
 static int rasm_show_help(int v) {
 	if (v < 2) {
-		printf("Usage: rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
-		       "             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
+		printf("%s%s", Color_CYAN, "Usage: ");
+		printf(Color_RESET "rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
+				   "             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	}
+	const char *options[] = {
+		// clang-format off
+		"-a",       "[arch]",           "Set architecture to assemble/disassemble (see -L)",
+		"-A",       "",                 "Show Analysis information from given hexpairs",
+		"-b",       "[bits]",           "Set cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)",
+		"-B",       "",                 "Binary input/output (-l is mandatory for binary input)",
+		"-c",       "[cpu]",            "Select specific CPU (depends on arch)",
+		"-C",       "",                 "Output in C format",
+		"-d, -D",   "",                 "Disassemble from hexpair bytes (-D show hexpairs)",
+		"-e",       "",                 "Use big endian instead of little endian",
+		"-I",       "",                 "Display lifted RzIL code (same input as in -d, IL is also validated)",
+		"-E",       "",                 "Display ESIL expression (same input as in -d)",
+		"-f",       "[file]",           "Read data from file",
+		"-F",       "[in:out]",         "Specify input and/or output filters (att2intel, x86.pseudo, ...)",
+		"-h, -hh",  "",                 "Show this help, -hh for long",
+		"-i",       "[len]",            "Ignore N bytes of the input buffer",
+		"-j",       "",                 "Output in JSON format",
+		"-k",       "[kernel]",         "Select operating system (linux, windows, darwin, ..)",
+		"-l",       "[len]",            "Input/Output length",
+		"-L",       "",                 "List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)",
+		"-o, -@",   "[addr]",           "Set start address for code (default 0)",
+		"-O",       "[file]",           "Output file name (rz-asm -Bf a.asm -O a)",
+		"-p",       "",                 "Run SPP over input for assembly",
+		"-q",       "",                 "Quiet mode",
+		"-r",       "",                 "Output in rizin commands",
+		"-s",       "[syntax]",         "Select syntax (intel, att)",
+		"-v",       "",                 "Show version information",
+		"-x",       "",                 "Use hex dwords instead of hex pairs when assembling.",
+		"-w",       "",                 "Describe opcode",
+		// clang-format on
+	};
 	if (v != 1) {
-		printf(" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
-		       " -A           Show Analysis information from given hexpairs\n"
-		       " -b [bits]    Set cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)\n"
-		       " -B           Binary input/output (-l is mandatory for binary input)\n"
-		       " -c [cpu]     Select specific CPU (depends on arch)\n"
-		       " -C           Output in C format\n"
-		       " -d, -D       Disassemble from hexpair bytes (-D show hexpairs)\n"
-		       " -e           Use big endian instead of little endian\n"
-		       " -I           Display lifted RzIL code (same input as in -d, IL is also validated)\n"
-		       " -E           Display ESIL expression (same input as in -d)\n"
-		       " -f [file]    Read data from file\n"
-		       " -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
-		       " -h, -hh      Show this help, -hh for long\n"
-		       " -i [len]     ignore/skip N bytes of the input buffer\n"
-		       " -j           output in json format\n"
-		       " -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
-		       " -l [len]     Input/Output length\n"
-		       " -L           List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
-		       " -o,-@ [addr] Set start address for code (default 0)\n"
-		       " -O [file]    Output file name (rz-asm -Bf a.asm -O a)\n"
-		       " -p           Run SPP over input for assembly\n"
-		       " -q           quiet mode\n"
-		       " -r           output in rizin commands\n"
-		       " -s [syntax]  Select syntax (intel, att)\n"
-		       " -v           Show version information\n"
-		       " -x           Use hex dwords instead of hex pairs when assembling.\n"
-		       " -w           What's this instruction for? describe opcode\n"
-		       " If '-l' value is greater than output length, output is padded with nops\n"
-		       " If the last argument is '-' reads from stdin\n");
-		printf("Environment:\n"
-		       " RZ_ASM_NOPLUGINS  do not load shared plugins (speedup loading)\n"
-		       " RZ_ASM_ARCH       same as rz-asm -a\n"
-		       " RZ_ASM_BITS       same as rz-asm -b\n"
-		       " RZ_DEBUG          if defined, show error messages and crash signal\n"
-		       "");
+		size_t maxOptionAndArgLength = 0;
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			size_t optionLength = strlen(options[i]);
+			size_t argLength = strlen(options[i + 1]);
+			size_t totalLength = optionLength + argLength;
+			if (totalLength > maxOptionAndArgLength) {
+				maxOptionAndArgLength = totalLength;
+			}
+		}
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			if (i + 1 < sizeof(options) / sizeof(options[0])) {
+				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+			}
+		}
 	}
+	printf(" If '-l' value is greater than output length, output is padded with nops\n"
+	       " If the last argument is '-' reads from stdin\n"
+	       "Environment:\n"
+	       " RZ_NOPLUGINS      do not load shared plugins (speedup loading)\n"
+	       " RZ_ASM_ARCH       same as rz-asm -a\n"
+	       " RZ_ASM_BITS       same as rz-asm -b\n"
+	       " RZ_DEBUG          if defined, show error messages and crash signal\n"
+	       "");
 	if (v == 2) {
 		printf("Supported Assembler directives:\n");
 		rz_asm_list_directives();
@@ -477,7 +496,7 @@ static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, u
 }
 
 static void __load_plugins(RzAsmState *as) {
-	char *tmp = rz_sys_getenv("RZ_ASM_NOPLUGINS");
+	char *tmp = rz_sys_getenv("RZ_NOPLUGINS");
 	if (tmp) {
 		free(tmp);
 		return;

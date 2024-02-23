@@ -115,7 +115,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	ut64 addr = io->off;
 	if (!desc) {
 		return -1;
@@ -127,7 +127,7 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	memset(buf, 0xff, count);
 	ut64 addr = io->off;
 	if (!desc) {

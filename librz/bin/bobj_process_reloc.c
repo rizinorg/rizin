@@ -29,20 +29,21 @@ static void process_handle_reloc(RzBinReloc *reloc,
 RZ_IPI void rz_bin_set_and_process_relocs(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
 	RzBin *bin = bf->rbin;
 	RzBinPlugin *plugin = o->plugin;
-	RzList *relocs = NULL;
+	RzPVector *relocs = NULL;
 
 	rz_bin_reloc_storage_free(o->relocs);
 	if (!(bin->filter_rules & (RZ_BIN_REQ_RELOCS | RZ_BIN_REQ_IMPORTS)) ||
 		!plugin->relocs || !(relocs = plugin->relocs(bf))) {
-		relocs = rz_list_newf((RzListFree)rz_bin_reloc_free);
+		relocs = rz_pvector_new((RzListFree)rz_bin_reloc_free);
 	}
 
 	RzBinProcessLanguage imp_cb = rz_bin_process_language_import(o);
 	RzBinProcessLanguage sym_cb = rz_bin_process_language_symbol(o);
 
-	RzListIter *it;
+	void **it;
 	RzBinReloc *element;
-	rz_list_foreach (relocs, it, element) {
+	rz_pvector_foreach (relocs, it) {
+		element = *it;
 		process_handle_reloc(element, o, demangler, flags, imp_cb, sym_cb);
 	}
 

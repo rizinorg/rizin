@@ -302,7 +302,7 @@ static void flirt_print_module(const RzFlirtModule *module) {
 			rz_cons_printf(")");
 		}
 		rz_cons_printf("%04X:%s", func->offset, func->name);
-		if (pub_func_it->n) {
+		if (rz_list_iter_has_next(pub_func_it)) {
 			rz_cons_printf(" ");
 		}
 	}
@@ -315,7 +315,7 @@ static void flirt_print_module(const RzFlirtModule *module) {
 		rz_cons_printf(" (REF ");
 		rz_list_foreach (module->referenced_functions, ref_func_it, ref_func) {
 			rz_cons_printf("%04X: %s", ref_func->offset, ref_func->name);
-			if (ref_func_it->n) {
+			if (rz_list_iter_has_next(ref_func_it)) {
 				rz_cons_printf(" ");
 			}
 		}
@@ -336,7 +336,9 @@ static void flirt_print_node_pattern(const RzFlirtNode *node) {
 }
 
 static void flirt_print_indentation(int indent) {
-	rz_cons_printf("%s", rz_str_pad(' ', indent));
+	char *pad = rz_str_pad(' ', indent);
+	rz_cons_printf("%s", pad);
+	free(pad);
 }
 
 static void flirt_print_node(const RzFlirtNode *node, int indent) {

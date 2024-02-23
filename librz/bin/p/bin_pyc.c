@@ -34,20 +34,20 @@ static bool init_pyc_cache(RzBinPycObj *pyc, RzBuffer *buf) {
 	rz_list_append(shared, cobjs);
 	rz_list_append(shared, pyc->interned_table);
 	pyc->shared = shared;
-	RzList *sections = rz_list_newf((RzListFree)free);
+	RzPVector *sections = rz_pvector_new((RzPVectorFree)free);
 	if (!sections) {
 		rz_list_free(shared);
 		return false;
 	}
 	pyc->sections_cache = sections;
-	RzList *symbols = rz_list_newf((RzListFree)free);
+	RzPVector *symbols = rz_pvector_new((RzPVectorFree)free);
 	if (!symbols) {
 		rz_list_free(shared);
-		rz_list_free(sections);
+		rz_pvector_free(sections);
 		return false;
 	}
 	pyc->symbols_cache = symbols;
-	RzList *strings = rz_list_newf((RzListFree)free);
+	RzPVector *strings = rz_pvector_new((RzPVectorFree)free);
 	if (!strings) {
 		rz_list_free(shared);
 		return false;
@@ -146,17 +146,17 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *arch) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *arch) {
 	RzBinPycObj *ctx = arch->o->bin_obj;
 	return ctx->sections_cache;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *arch) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *arch) {
 	RzBinPycObj *pyc = arch->o->bin_obj;
 	return pyc->symbols_cache;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinPycObj *pyc = bf->o->bin_obj;
 	return pyc->strings_cache;
 }

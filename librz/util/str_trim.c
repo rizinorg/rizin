@@ -81,9 +81,11 @@ RZ_API char *rz_str_trim_dup(const char *str) {
 	return a;
 }
 
-// Returns a pointer to the first non-whitespace character of str.
-// TODO: Find a better name: to rz_str_trim_head_ro(), rz_str_skip_head or so
-RZ_API const char *rz_str_trim_head_ro(const char *str) {
+/* \brief Returns a pointer to the first non-whitespace character of \p str
+ *
+ * It considers space, TAB, and newline characters as the whitespace
+ */
+RZ_API const char *rz_str_trim_head_ro(RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(str, NULL);
 	for (; *str && IS_WHITECHAR(*str); str++) {
 		;
@@ -91,8 +93,11 @@ RZ_API const char *rz_str_trim_head_ro(const char *str) {
 	return str;
 }
 
-// TODO: find better name
-RZ_API const char *rz_str_trim_head_wp(const char *str) {
+/* \brief Returns a pointer to the first non-whitespace character of \p str
+ *
+ * It considers only space and TAB as the whitespace
+ */
+RZ_API const char *rz_str_trim_head_wp(RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(str, NULL);
 	for (; *str && !IS_WHITESPACE(*str); str++) {
 		;
@@ -102,12 +107,13 @@ RZ_API const char *rz_str_trim_head_wp(const char *str) {
 
 /**
  * \brief Removes whitespace characters (space, tab, newline etc.)
- * from the end of a string.
+ * from the beginning of a string.
  * The string is changed in place.
  *
  * \param str The string to trim.
  */
-RZ_API void rz_str_trim_head(RZ_NONNULL char *str) {
+RZ_API void rz_str_trim_head(RZ_NONNULL RZ_INOUT char *str) {
+	rz_return_if_fail(str);
 	char *p = (char *)rz_str_trim_head_ro(str);
 	if (p) {
 		memmove(str, p, strlen(p) + 1);
@@ -123,7 +129,7 @@ RZ_API void rz_str_trim_head(RZ_NONNULL char *str) {
  * \return The edited string.
  */
 RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str) {
-	rz_return_val_if_fail(str, str);
+	rz_return_val_if_fail(str, NULL);
 	size_t length = strlen(str);
 	while (length-- > 0) {
 		if (IS_WHITECHAR(str[length])) {
@@ -188,6 +194,7 @@ RZ_API void rz_str_trim_char(RZ_NONNULL RZ_INOUT char *str, const char c) {
  * \param str The string to trim.
  */
 RZ_API void rz_str_trim(RZ_NONNULL RZ_INOUT char *str) {
+	rz_return_if_fail(str);
 	rz_str_trim_head(str);
 	rz_str_trim_tail(str);
 }

@@ -253,10 +253,14 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
 	ut64 dst = 0;
 	RzDetectedString *dstr = NULL;
 	bool big_endian = analysis->big_endian;
-	RzStrEnc encoding = analysis->binb.bin ? rz_str_enc_string_as_type(analysis->binb.bin->strenc) : RZ_STRING_ENC_GUESS;
+	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
 	int n = 0;
 	int bits = analysis->bits;
 	int word = wordsize > 0 ? wordsize : RZ_MIN(8, bits / 8);
+
+	if (analysis->binb.bin) {
+		encoding = analysis->binb.bin->str_search_cfg.string_encoding;
+	}
 
 	if (size < 4) {
 		return NULL;

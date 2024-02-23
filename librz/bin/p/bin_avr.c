@@ -157,32 +157,33 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr) {
+static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr) {
 	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 	if (ptr) {
 		ptr->name = strdup(name ? name : "");
 		ptr->paddr = ptr->vaddr = addr;
 		ptr->size = 0;
 		ptr->ordinal = 0;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 }
 
-static void addptr(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, RzBuffer *b) {
+static void addptr(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, RzBuffer *b) {
 	if (b && rjmp(b, 0)) {
-		addsym(ret, sdb_fmt("vector.%s", name), addr);
+		char tmpbuf[128];
+		addsym(ret, rz_strf(tmpbuf, "vector.%s", name), addr);
 		ut64 ptr_addr;
 		if (rjmp_dest(b, addr, &ptr_addr)) {
-			addsym(ret, sdb_fmt("syscall.%s", name), ptr_addr);
+			addsym(ret, rz_strf(tmpbuf, "syscall.%s", name), ptr_addr);
 		}
 	}
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBuffer *obj = bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	/* atmega8 */
@@ -195,9 +196,9 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	// we dont want to find strings in avr bins because there are lot of false positives
-	return rz_list_newf((RzListFree)rz_bin_string_free);
+	return rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 }
 
 RzBinPlugin rz_bin_plugin_avr = {

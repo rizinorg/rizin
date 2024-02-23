@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "pe.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 static void _free_resource(rz_pe_resource *rs) {
 	if (rs) {
@@ -1501,19 +1501,20 @@ static void _store_resource_sdb(RzBinPEObj *bin) {
 	if (!sdb) {
 		return;
 	}
+	char tmpbuf[64];
 	rz_list_foreach (bin->resources, iter, rs) {
-		key = sdb_fmt("resource.%d.timestr", index);
+		key = rz_strf(tmpbuf, "resource.%d.timestr", index);
 		sdb_set(sdb, key, rs->timestr, 0);
-		key = sdb_fmt("resource.%d.vaddr", index);
+		key = rz_strf(tmpbuf, "resource.%d.vaddr", index);
 		vaddr = PE_(bin_pe_rva_to_va)(bin, rs->data->OffsetToData);
 		sdb_num_set(sdb, key, vaddr, 0);
-		key = sdb_fmt("resource.%d.name", index);
+		key = rz_strf(tmpbuf, "resource.%d.name", index);
 		sdb_set(sdb, key, rs->name, 0);
-		key = sdb_fmt("resource.%d.size", index);
+		key = rz_strf(tmpbuf, "resource.%d.size", index);
 		sdb_num_set(sdb, key, rs->data->Size, 0);
-		key = sdb_fmt("resource.%d.type", index);
+		key = rz_strf(tmpbuf, "resource.%d.type", index);
 		sdb_set(sdb, key, rs->type, 0);
-		key = sdb_fmt("resource.%d.language", index);
+		key = rz_strf(tmpbuf, "resource.%d.language", index);
 		sdb_set(sdb, key, rs->language, 0);
 		index++;
 	}

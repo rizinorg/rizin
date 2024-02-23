@@ -40,7 +40,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, ut32 size) {
+static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, ut32 size) {
 	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 	if (!ptr) {
 		return;
@@ -49,12 +49,12 @@ static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr,
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
 	ptr->ordinal = 0;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *ret = NULL;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	addsym(ret, "NMI_VECTOR_START_ADDRESS", NMI_VECTOR_START_ADDRESS, 2);
@@ -82,8 +82,8 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	ines_hdr ihdr;
 	memset(&ihdr, 0, INES_HDR_SIZE);
@@ -92,7 +92,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		RZ_LOG_ERROR("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -105,7 +105,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vaddr = ROM_START_ADDRESS;
 	ptr->vsize = mirror ? ROM_MIRROR_ADDRESS - ROM_START_ADDRESS : ROM_SIZE; // make sure the ROM zero excess does not overlap the mirror
 	ptr->perm = RZ_PERM_RX;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	if (mirror) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
@@ -116,38 +116,37 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->vaddr = ROM_MIRROR_ADDRESS;
 		ptr->vsize = ROM_MIRROR_SIZE;
 		ptr->perm = RZ_PERM_RX;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
 
-static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinMem *m, *n;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(rz_bin_mem_free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("RAM");
 	m->addr = RAM_START_ADDRESS;
 	m->size = RAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	if (!(n = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
-	m->mirrors = rz_list_new();
+	m->mirrors = rz_pvector_new(rz_bin_mem_free);
 	n->name = strdup("RAM_MIRROR_2");
 	n->addr = RAM_MIRROR_2_ADDRESS;
 	n->size = RAM_MIRROR_2_SIZE;
 	n->perms = rz_str_rwx("rwx");
-	rz_list_append(m->mirrors, n);
+	rz_pvector_push(m->mirrors, n);
 	if (!(n = RZ_NEW0(RzBinMem))) {
-		rz_list_free(m->mirrors);
+		rz_pvector_free(m->mirrors);
 		m->mirrors = NULL;
 		return ret;
 	}
@@ -155,21 +154,21 @@ static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	n->addr = RAM_MIRROR_3_ADDRESS;
 	n->size = RAM_MIRROR_3_SIZE;
 	n->perms = rz_str_rwx("rwx");
-	rz_list_append(m->mirrors, n);
+	rz_pvector_push(m->mirrors, n);
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("PPU_REG");
 	m->addr = PPU_REG_ADDRESS;
 	m->size = PPU_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
-	m->mirrors = rz_list_new();
+	rz_pvector_push(ret, m);
+	m->mirrors = rz_pvector_new(rz_bin_mem_free);
 	int i;
 	for (i = 1; i < 1024; i++) {
 		if (!(n = RZ_NEW0(RzBinMem))) {
-			rz_list_free(m->mirrors);
+			rz_pvector_free(m->mirrors);
 			m->mirrors = NULL;
 			return ret;
 		}
@@ -177,26 +176,26 @@ static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		n->addr = PPU_REG_ADDRESS + i * PPU_REG_SIZE;
 		n->size = PPU_REG_SIZE;
 		n->perms = rz_str_rwx("rwx");
-		rz_list_append(m->mirrors, n);
+		rz_pvector_push(m->mirrors, n);
 	}
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("APU_AND_IOREGS");
 	m->addr = APU_AND_IOREGS_START_ADDRESS;
 	m->size = APU_AND_IOREGS_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("SRAM");
 	m->addr = SRAM_START_ADDRESS;
 	m->size = SRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	return ret;
 }
 

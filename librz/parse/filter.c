@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_util/rz_str.h"
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include <stdio.h>
 
 #include <rz_types.h>
@@ -81,67 +81,41 @@ static void replaceWords(char *s, const char *k, const char *v) {
 	}
 }
 
-static char *findNextNumber(char *op) {
-	if (!op) {
+/**
+ * \brief Returns a pointer to the next number (hex and decimal) in the string.
+ * This function ignores numbers from ansi excape codes.
+ * It also ignroes numbers with a prefix of: '\w', '*', '.'.
+ *
+ * \param str The string to search the number in.
+ *
+ * \return Pointer into \p str there the number starts or NULL if not found or a failure occured.
+ */
+static char *find_next_number(char *str) {
+	rz_return_val_if_fail(str, NULL);
+	bool ansi = false;
+	if (rz_regex_contains("\x1b\\[[0-9;]*m", str, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, 0)) {
+		ansi = true;
+	}
+	const char *search = (ansi ? "(\x1b\\[[0-9;]*m)(?<number>(0x[a-fA-F0-9]+)|\\d+)" :
+				   // The exclusion pattern [^\w.*] excludes all numbers with a '\w', '.' and '*' prefix.
+				   // This is only done because the previous parsing did it like this.
+				   // And not doing it, breaks substitutions from before.
+				   // Because previously inserted flag names in the opstr, can contain numbers
+				   // (e.g. case labels like: case.<switch-address>.<case-number>).
+			// See: https://github.com/rizinorg/rizin/issues/4238 for more details of this problem.
+			"(([^\\w.*]|^)(?<number>(0x[a-fA-F0-9]+)|\\d+))");
+	RzRegex *re = rz_regex_new(search, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	RzPVector *match = rz_regex_match_first(re, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	if (rz_pvector_empty(match)) {
+		rz_pvector_free(match);
+		rz_regex_free(re);
 		return NULL;
 	}
-	bool ansi_found = false;
-	char *p = op;
-	const char *o = NULL;
-	while (*p) {
-		if (p[0] == 0x1b && p[1] == '[') {
-			ansi_found = true;
-			p += 2;
-			for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++) {
-				;
-			}
-			if (*p) {
-				p++;
-				if (!*p) {
-					break;
-				}
-			}
-			o = p - 1;
-		} else {
-			bool isSpace = ansi_found;
-			ansi_found = false;
-			if (!isSpace) {
-				isSpace = p == op;
-				if (!isSpace && o) {
-					isSpace = (*o == ' ' || *o == ',' || *o == '[');
-				}
-			}
-			if (*p == '[') {
-				p++;
-				if (!*p) {
-					break;
-				}
-				if (!IS_DIGIT(*p)) {
-					char *t = p;
-					for (; *t && *t != ']'; t++) {
-						;
-					}
-					if (*t == ']') {
-						continue;
-					}
-					p = t;
-					if (!*p) {
-						break;
-					}
-				}
-			}
-			if (isSpace) {
-				if (IS_DIGIT(*p)) {
-					return p;
-				}
-				if ((*p == '-') && IS_DIGIT(p[1])) {
-					return p + 1;
-				}
-			}
-			o = p++;
-		}
-	}
-	return NULL;
+	RzRegexMatch *m = rz_pvector_at(match, rz_regex_get_group_idx_by_name(re, "number"));
+	char *number_ptr = str + m->start;
+	rz_pvector_free(match);
+	rz_regex_free(re);
+	return number_ptr;
 }
 
 static void __replaceRegisters(RzReg *reg, char *s, bool x86) {
@@ -179,7 +153,13 @@ static bool is_lea(const char *asm_str) {
 	if (!colored) {
 		return strlen(asm_str) > 4 && rz_str_startswith_icase(asm_str, "lea") && asm_str[3] == ' ';
 	}
-	return rz_regex_match("(^\x1b\\[[[:digit:]]{1,3}mlea\x1b\\[0m.+)", "ei", asm_str) != RZ_REGEX_NOMATCH;
+	RzRegex *re = rz_regex_new("(^\x1b\\[\\d{1,3}mlea\x1b\\[0m.+)", RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
+	if (!re) {
+		return false;
+	}
+	bool res = rz_regex_match(re, asm_str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT) != RZ_REGEX_ERROR_NOMATCH;
+	rz_regex_free(re);
+	return res;
 }
 
 static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian) {
@@ -217,7 +197,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 	// remove "dword" 2
 	char *nptr;
 	int count = 0;
-	for (count = 0; (nptr = findNextNumber(ptr)); count++) {
+	for (count = 0; (nptr = find_next_number(ptr)); count++) {
 		ptr = nptr;
 
 		// Skip floats
@@ -306,14 +286,14 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 						}
 					}
 					*ptr = 0;
-					char *flagname;
+					char *flagname = NULL;
 					if (label) {
 						flagname = rz_str_newf(".%s", label);
 					} else {
-						flagname = strdup(f->realnames ? flag->realname : flag->name);
+						flagname = rz_str_dup(f->realnames ? flag->realname : flag->name);
 					}
 					int maxflagname = p->maxflagnamelen;
-					if (maxflagname > 0 && strlen(flagname) > maxflagname) {
+					if (maxflagname > 0 && flagname && strlen(flagname) > maxflagname) {
 						char *doublelower = (char *)rz_str_rstr(flagname, "__");
 						char *doublecolon = (char *)rz_str_rstr(flagname, "::");
 						char *token = NULL;
@@ -339,7 +319,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 							flagname = newstr;
 						}
 					}
-					snprintf(str, len, "%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
+					snprintf(str, len, "%s%s%s", data, rz_str_get(flagname), (ptr != ptr2) ? ptr2 : "");
 					free(flagname);
 					bool banned = false;
 					{

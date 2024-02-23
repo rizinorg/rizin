@@ -92,7 +92,7 @@ int w32_init(RzDebug *dbg) {
 	return true;
 }
 
-static int w32_findthread_cmp(int *tid, PTHREAD_ITEM th) {
+static int w32_findthread_cmp(int *tid, PTHREAD_ITEM th, void *user) {
 	return (int)!(*tid == th->tid);
 }
 
@@ -100,8 +100,8 @@ static inline PTHREAD_ITEM find_thread(RzDebug *dbg, int tid) {
 	if (!dbg->threads) {
 		return NULL;
 	}
-	RzListIter *it = rz_list_find(dbg->threads, &tid, (RzListComparator)w32_findthread_cmp);
-	return it ? it->data : NULL;
+	RzListIter *it = rz_list_find(dbg->threads, &tid, (RzListComparator)w32_findthread_cmp, NULL);
+	return it ? rz_list_iter_get_data(it) : NULL;
 }
 
 static PTHREAD_ITEM add_thread(RzDebug *dbg, DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
@@ -706,7 +706,7 @@ err_get_file_name_from_handle:
 		CloseHandle(handle_file_map);
 	}
 	if (filename) {
-		char *ret = rz_sys_conv_win_to_utf8(filename);
+		char *ret = rz_utf16_to_utf8(filename);
 		free(filename);
 		return ret;
 	}
@@ -765,14 +765,14 @@ static void libfree(void *lib) {
 	free(lib_item);
 }
 
-static int findlibcmp(void *BaseOfDll, void *lib) {
+static int findlibcmp(void *BaseOfDll, void *lib, void *user) {
 	PLIB_ITEM lib_item = (PLIB_ITEM)lib;
 	return !lib_item->hFile || lib_item->hFile == INVALID_HANDLE_VALUE || lib_item->BaseOfDll != BaseOfDll;
 }
 
 static void *find_library(void *BaseOfDll) {
-	RzListIter *it = rz_list_find(lib_list, BaseOfDll, (RzListComparator)findlibcmp);
-	return it ? it->data : NULL;
+	RzListIter *it = rz_list_find(lib_list, BaseOfDll, (RzListComparator)findlibcmp, NULL);
+	return it ? rz_list_iter_get_data(it) : NULL;
 }
 
 static void remove_library(PLIB_ITEM library) {
@@ -809,7 +809,7 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 }
 
 static void *last_library(void) {
-	return rz_list_tail(lib_list) ? rz_list_tail(lib_list)->data : NULL;
+	return lib_list ? rz_list_get_tail_data(lib_list) : NULL;
 }
 
 static bool breaked = false;
@@ -938,6 +938,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 	do {
 		/* do not continue when already exited but still open for examination */
 		if (exited_already == pid) {
+			rz_cons_break_pop();
 			return RZ_DEBUG_REASON_DEAD;
 		}
 		memset(&de, 0, sizeof(DEBUG_EVENT));

@@ -12,10 +12,11 @@
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ebc_command_t cmd = { { 0 }, { 0 } };
 	int ret = ebc_decode_command(buf, len, &cmd);
-	const char *buf_asm = (cmd.operands[0])
-		? sdb_fmt("%s %s", cmd.instr, cmd.operands)
-		: cmd.instr;
-	rz_asm_op_set_asm(op, buf_asm);
+	if (cmd.operands[0]) {
+		rz_asm_op_setf_asm(op, "%s %s", cmd.instr, cmd.operands);
+	} else {
+		rz_asm_op_set_asm(op, cmd.instr);
+	}
 	return op->size = ret;
 }
 

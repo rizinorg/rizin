@@ -89,11 +89,11 @@ bool test_rz_list_sort(void) {
 	rz_list_append(list, (void *)test3);
 	rz_list_append(list, (void *)test2);
 	// Sort.
-	rz_list_sort(list, (RzListComparator)strcmp);
+	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	// Check that the list is actually sorted.
-	mu_assert_streq((char *)list->head->data, "AAAA", "first value in sorted list");
-	mu_assert_streq((char *)list->head->n->data, "BBBB", "second value in sorted list");
-	mu_assert_streq((char *)list->head->n->n->data, "CCCC", "third value in sorted list");
+	mu_assert_streq((char *)list->head->elem, "AAAA", "first value in sorted list");
+	mu_assert_streq((char *)list->head->next->elem, "BBBB", "second value in sorted list");
+	mu_assert_streq((char *)list->head->next->next->elem, "CCCC", "third value in sorted list");
 	rz_list_free(list);
 	mu_end;
 }
@@ -108,11 +108,11 @@ bool test_rz_list_sort2(void) {
 	rz_list_append(list, (void *)test2);
 	rz_list_append(list, (void *)test1);
 	// Sort.
-	rz_list_merge_sort(list, (RzListComparator)strcmp);
+	rz_list_merge_sort(list, (RzListComparator)strcmp, NULL);
 	// Check that the list is actually sorted.
-	mu_assert_streq((char *)list->head->data, "AAAA", "first value in sorted list");
-	mu_assert_streq((char *)list->head->n->data, "BBBB", "second value in sorted list");
-	mu_assert_streq((char *)list->head->n->n->data, "CCCC", "third value in sorted list");
+	mu_assert_streq((char *)list->head->elem, "AAAA", "first value in sorted list");
+	mu_assert_streq((char *)list->head->next->elem, "BBBB", "second value in sorted list");
+	mu_assert_streq((char *)list->head->next->next->elem, "CCCC", "third value in sorted list");
 	rz_list_free(list);
 	mu_end;
 }
@@ -133,11 +133,11 @@ bool test_rz_list_sort3(void) {
 	rz_list_append(list, (void *)&test3);
 	rz_list_append(list, (void *)&test2);
 	// Sort.
-	rz_list_merge_sort(list, (RzListComparator)cmp_range);
+	rz_list_merge_sort(list, (RzListComparator)cmp_range, NULL);
 	// Check that the list is actually sorted.
-	mu_assert_eq(*(int *)list->head->data, 33480, "first value in sorted list");
-	mu_assert_eq(*(int *)list->head->n->data, 33508, "second value in sorted list");
-	mu_assert_eq(*(int *)list->head->n->n->data, 33964, "third value in sorted list");
+	mu_assert_eq(*(int *)list->head->elem, 33480, "first value in sorted list");
+	mu_assert_eq(*(int *)list->head->next->elem, 33508, "second value in sorted list");
+	mu_assert_eq(*(int *)list->head->next->next->elem, 33964, "third value in sorted list");
 	rz_list_free(list);
 	mu_end;
 }
@@ -157,7 +157,7 @@ bool test_rz_list_length(void) {
 	iter = list->head;
 	while (iter) {
 		count++;
-		iter = iter->n;
+		iter = iter->next;
 	}
 	mu_assert_eq(list->length, 3, "First length check");
 
@@ -191,7 +191,7 @@ bool test_rz_list_length(void) {
 	count = 0;
 	while (iter) {
 		count++;
-		iter = iter->n;
+		iter = iter->next;
 	}
 	mu_assert_eq(list->length, count, "Tenth length check");
 	rz_list_free(list);
@@ -211,15 +211,15 @@ bool test_rz_list_sort5(void) {
 		rz_list_append(list, (void *)upper[i]);
 	}
 	// add more than 43 elements to trigger merge sort
-	rz_list_sort(list, (RzListComparator)strcmp);
-	mu_assert_streq((char *)list->head->data, upper[0], "First element");
-	mu_assert_streq((char *)list->tail->data, lower[25], "Last element");
+	rz_list_sort(list, (RzListComparator)strcmp, NULL);
+	mu_assert_streq((char *)list->head->elem, upper[0], "First element");
+	mu_assert_streq((char *)list->tail->elem, lower[25], "Last element");
 	rz_list_free(list);
 	mu_end;
 }
 
 // 3-valued comparator -> {LT,EQ,GT}.
-static int pintcmp(int *a, int *b) {
+static int pintcmp(int *a, int *b, void *user) {
 	return (int)(*a > *b) - (int)(*b > *a);
 }
 
@@ -243,12 +243,12 @@ bool test_rz_list_mergesort_pint() {
 	}
 
 	// invoke sorting
-	rz_list_sort(list, (RzListComparator)pintcmp);
+	rz_list_sort(list, (RzListComparator)pintcmp, NULL);
 
 	// assert the list is sorted as expected
 	RzListIter *iter;
-	for (i = 0, iter = list->head; i < RZ_ARRAY_SIZE(expected); i++, iter = iter->n) {
-		mu_assert_eq(*(int *)iter->data, expected[i], "array content mismatch");
+	for (i = 0, iter = list->head; i < RZ_ARRAY_SIZE(expected); i++, iter = iter->next) {
+		mu_assert_eq(*(int *)iter->elem, expected[i], "array content mismatch");
 	}
 
 	rz_list_free(list);
@@ -278,15 +278,15 @@ bool test_rz_list_sort4(void) {
 		rz_list_append(list, (void *)ins_tests_odd[i]);
 	}
 	// Sort.
-	rz_list_merge_sort(list, (RzListComparator)strcmp);
+	rz_list_merge_sort(list, (RzListComparator)strcmp, NULL);
 
 	// Check that the list (odd-length) is actually sorted.
 	RzListIter *next = list->head;
 	for (i = 0; i < RZ_ARRAY_SIZE(exp_tests_odd); ++i) {
 		char buf[BUF_LENGTH];
 		snprintf(buf, BUF_LENGTH, "%d-th value in sorted list", i);
-		mu_assert_streq((char *)next->data, exp_tests_odd[i], buf);
-		next = next->n;
+		mu_assert_streq((char *)next->elem, exp_tests_odd[i], buf);
+		next = next->next;
 	}
 
 #if 0 // Debug Print
@@ -311,7 +311,7 @@ bool test_rz_list_sort4(void) {
 #endif
 
 	// Sort
-	rz_list_merge_sort(list, (RzListComparator)strcmp);
+	rz_list_merge_sort(list, (RzListComparator)strcmp, NULL);
 
 #if 0 // Debug Printing
 	printf("after sorting 2 \n");
@@ -325,8 +325,8 @@ bool test_rz_list_sort4(void) {
 	for (i = 0; i < RZ_ARRAY_SIZE(exp_tests_even); ++i) {
 		char buf[BUF_LENGTH];
 		snprintf(buf, BUF_LENGTH, "%d-th value in sorted list", i);
-		mu_assert_streq((char *)next->data, exp_tests_even[i], buf);
-		next = next->n;
+		mu_assert_streq((char *)next->elem, exp_tests_even[i], buf);
+		next = next->next;
 	}
 	rz_list_free(list);
 	mu_end;
@@ -359,16 +359,16 @@ bool test_rz_list_append_prepend(void) {
 	iter = list->head;
 	for (i = 0; i < RZ_ARRAY_SIZE(test); ++i) {
 		snprintf(buf, BUF_LENGTH, "%d-th value in list from head", i);
-		mu_assert_streq((char *)iter->data, test[i], buf);
-		iter = iter->n;
+		mu_assert_streq((char *)iter->elem, test[i], buf);
+		iter = iter->next;
 	}
 
 	// Check that the previous sequence is correct
 	iter = list->tail;
 	for (i = (RZ_ARRAY_SIZE(test)) - 1; i > 0; --i) {
 		snprintf(buf, BUF_LENGTH, "%d-th value in list from tail", i);
-		mu_assert_streq((char *)iter->data, test[i], buf);
-		iter = iter->p;
+		mu_assert_streq((char *)iter->elem, test[i], buf);
+		iter = iter->prev;
 	}
 
 	rz_list_free(list);
@@ -423,8 +423,8 @@ bool test_rz_list_reverse(void) {
 	RzListIter *iter = list->head;
 	for (i = 0; i < RZ_ARRAY_SIZE(test); ++i) {
 		snprintf(buf, BUF_LENGTH, "%d-th value in list after reverse", i);
-		mu_assert_streq((char *)iter->data, test[i], buf);
-		iter = iter->n;
+		mu_assert_streq((char *)iter->elem, test[i], buf);
+		iter = iter->next;
 	}
 
 	rz_list_free(list);
@@ -450,9 +450,9 @@ bool test_rz_list_clone(void) {
 	RzListIter *iter2 = list2->head;
 	for (i = 0; i < RZ_ARRAY_SIZE(test); ++i) {
 		snprintf(buf, BUF_LENGTH, "%d-th value after clone", i);
-		mu_assert_streq((char *)iter2->data, (char *)iter1->data, buf);
-		iter1 = iter1->n;
-		iter2 = iter2->n;
+		mu_assert_streq((char *)iter2->elem, (char *)iter1->elem, buf);
+		iter1 = iter1->next;
+		iter2 = iter2->next;
 	}
 
 	rz_list_free(list1);

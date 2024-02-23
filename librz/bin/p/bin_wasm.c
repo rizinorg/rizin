@@ -17,7 +17,7 @@ static bool check_buffer(RzBuffer *rbuf) {
 	return rbuf && rz_buf_read_at(rbuf, 0, buf, 4) == 4 && !memcmp(buf, RZ_BIN_WASM_MAGIC_BYTES, 4);
 }
 
-static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q) {
+static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q, void *user) {
 	if (q->kind != RZ_BIN_WASM_EXTERNALKIND_Function) {
 		return true;
 	}
@@ -46,7 +46,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL; // TODO
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf);
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf);
 
 static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
@@ -83,25 +83,25 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzList *secs = NULL;
 	RzBinSection *ptr = NULL;
 	RzBinWasmSection *sec;
 
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
 		return NULL;
 	}
 	if (!(secs = rz_bin_wasm_get_sections(bin))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	RzListIter *iter;
 	rz_list_foreach (secs, iter, sec) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			rz_list_free(secs);
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		ptr->name = strdup((char *)sec->name);
@@ -114,21 +114,22 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = sec->offset;
 		// TODO permissions
 		ptr->perm = 0;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
-	RzList *ret = NULL, *codes = NULL, *imports = NULL, *exports = NULL;
+	RzList *codes = NULL, *imports = NULL, *exports = NULL;
+	RzPVector *ret = NULL;
 	RzBinSymbol *ptr = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	if (!(codes = rz_bin_wasm_get_codes(bin))) {
@@ -174,7 +175,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		ptr->paddr = -1;
 		ptr->ordinal = i;
 		i += 1;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	RzListIter *is_exp = NULL;
@@ -189,7 +190,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		if (fcn_name) {
 			ptr->name = strdup(fcn_name);
 
-			is_exp = rz_list_find(exports, &fcn_idx, (RzListComparator)find_export);
+			is_exp = rz_list_find(exports, &fcn_idx, (RzListComparator)find_export, NULL);
 			if (is_exp) {
 				ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			}
@@ -209,7 +210,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		ptr->ordinal = i;
 		i++;
 		fcn_idx++;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	// TODO: globals, tables and memories
@@ -218,11 +219,11 @@ bad_alloc:
 	// not so sure if imports should be freed.
 	rz_list_free(exports);
 	rz_list_free(codes);
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *imports = NULL;
 	RzBinImport *ptr = NULL;
@@ -231,7 +232,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -264,16 +265,16 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 			ptr->type = "GLOBAL";
 			break;
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 bad_alloc:
 	rz_list_free(imports);
-	rz_list_free(ret);
+	rz_pvector_free(ret);
 	return NULL;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return NULL;
 }
 

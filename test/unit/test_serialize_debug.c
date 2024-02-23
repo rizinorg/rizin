@@ -28,7 +28,7 @@ bool test_debug_serialize_save() {
 	RzDebug *debug = core->dbg;
 	mu_assert_notnull(debug, "debug null");
 
-	RzBreakpointItem *bp_item = rz_debug_bp_add(debug, 0x1337, 0, false, 1, "hax", 42);
+	RzBreakpointItem *bp_item = rz_debug_bp_add(debug, 0x1337, 0, false, false, 1, "hax", 42);
 	mu_assert_notnull(bp_item, "bp_item null");
 	bool set = rz_bp_item_set_cond(bp_item, "bp_cond");
 	mu_assert_true(set, "failed to set cond");

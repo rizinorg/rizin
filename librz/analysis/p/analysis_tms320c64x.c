@@ -59,31 +59,43 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free(pj);
 }
 
+typedef struct {
+	csh handle;
+	int omode;
+} TMSContext;
+
+static bool tmsctx_init(void **user) {
+	TMSContext *ctx = RZ_NEW0(TMSContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->handle = 0;
+	*user = ctx;
+	return true;
+}
+
 static int tms320c64x_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	static csh handle = 0;
-	static int omode;
+	TMSContext *ctx = (TMSContext *)a->plugin_data;
 	cs_insn *insn;
 	int mode = 0, n, ret;
 
-	if (mode != omode) {
-		cs_close(&handle);
-		handle = 0;
-		omode = mode;
+	if (mode != ctx->omode) {
+		cs_close(&ctx->handle);
+		ctx->handle = 0;
+		ctx->omode = mode;
 	}
-	if (handle == 0) {
-		ret = cs_open(CS_ARCH_TMS320C64X, mode, &handle);
+	if (ctx->handle == 0) {
+		ret = cs_open(CS_ARCH_TMS320C64X, mode, &ctx->handle);
 		if (ret != CS_ERR_OK) {
 			return -1;
 		}
-		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	// capstone-next
-	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
+	n = cs_disasm(ctx->handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	} else {
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-			opex(&op->opex, handle, insn);
+			opex(&op->opex, ctx->handle, insn);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
@@ -180,4 +192,32 @@ static int tms320c64x_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, con
 	}
 	return op->size;
 }
+#endif
+
+static bool tmsctx_fini(void *user) {
+	TMSContext *ctx = (TMSContext *)user;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
+RzAnalysisPlugin rz_analysis_plugin_tms320c64x = {
+	.name = "tms320c64x",
+	.desc = "Capstone TMS320C64X analysis",
+	.license = "BSD",
+	.esil = false,
+	.arch = "tms320c64x",
+	.bits = 32,
+	.op = &tms320c64x_analyze_op,
+	.init = tmsctx_init,
+	.fini = tmsctx_fini,
+};
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_ANALYSIS,
+	.data = &rz_analysis_plugin_tms320c64x,
+	.version = RZ_VERSION
+};
 #endif

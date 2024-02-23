@@ -27,7 +27,7 @@ static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, RZ_OWN Rz
 
 bool rz_il_handler_empty(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
-	char *pc = rz_bv_as_string(vm->pc);
+	char *pc = rz_bv_as_hex_string(vm->pc, true);
 	RZ_LOG_INFO("Encountered an empty instruction at %s\n", pc);
 	free(pc);
 	return true;
@@ -109,7 +109,10 @@ bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op) {
 		if (!condition->b) {
 			break;
 		}
-		res = res && rz_il_evaluate_effect(vm, op_repeat->data_eff);
+		if (!rz_il_evaluate_effect(vm, op_repeat->data_eff)) {
+			res = false;
+			break;
+		}
 		rz_il_bool_free(condition);
 	}
 	rz_il_bool_free(condition);

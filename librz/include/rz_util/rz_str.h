@@ -67,11 +67,13 @@ typedef int (*RzStrRangeCallback)(void *, int);
 #define RZ_STR_ISEMPTY(x)    (!(x) || !*(x))
 #define RZ_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define RZ_STR_DUP(x)        ((x) ? strdup((x)) : NULL)
+#define RZ_STR_EQ(x, y)      (rz_str_cmp((x), (y), -1) == 0)
+#define RZ_STR_NE(x, y)      (rz_str_cmp((x), (y), -1) != 0)
 #define rz_str_array(x, y)   ((y >= 0 && y < (sizeof(x) / sizeof(*x))) ? x[y] : "")
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc);
 RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *enc);
-RZ_API char *rz_str_repeat(const char *ch, int sz);
-RZ_API const char *rz_str_pad(const char ch, int len);
+RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times);
+RZ_API RZ_OWN char *rz_str_pad(const char ch, int len);
 RZ_API const char *rz_str_rstr(const char *base, const char *p);
 RZ_API const char *rz_strstr_ansi(RZ_NONNULL const char *a, RZ_NONNULL const char *b, bool icase);
 RZ_API const char *rz_str_rchr(const char *base, const char *p, int ch);
@@ -103,7 +105,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *str, const char *c,
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim);
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count);
-RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g);
+RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char *val, int g);
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
 RZ_API char *rz_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 #define rz_str_cpy(x, y) memmove((x), (y), strlen(y) + 1);
@@ -122,7 +124,6 @@ RZ_API char *rz_str_arg_escape(const char *arg);
 RZ_API int rz_str_arg_unescape(char *arg);
 RZ_API char **rz_str_argv(const char *str, int *_argc);
 RZ_API void rz_str_argv_free(char **argv);
-RZ_API char *rz_str_new(const char *str);
 RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API bool rz_str_is_whitespace(RZ_NONNULL const char *str);
 RZ_API bool rz_str_is_ascii(const char *str);
@@ -160,10 +161,10 @@ RZ_API void rz_str_trim(RZ_NONNULL RZ_INOUT char *str);
 RZ_API void rz_str_trim_char(RZ_NONNULL RZ_INOUT char *str, const char c);
 RZ_API char *rz_str_trim_dup(const char *str);
 RZ_API char *rz_str_trim_lines(char *str);
-RZ_API void rz_str_trim_head(RZ_NONNULL char *str);
+RZ_API void rz_str_trim_head(RZ_NONNULL RZ_INOUT char *str);
 RZ_API void rz_str_trim_head_char(RZ_NONNULL RZ_INOUT char *str, const char c);
-RZ_API const char *rz_str_trim_head_ro(const char *str);
-RZ_API const char *rz_str_trim_head_wp(const char *str);
+RZ_API const char *rz_str_trim_head_ro(RZ_NONNULL const char *str);
+RZ_API const char *rz_str_trim_head_wp(RZ_NONNULL const char *str);
 RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str);
 RZ_API void rz_str_trim_tail_char(RZ_NONNULL RZ_INOUT char *str, const char c);
 RZ_API ut64 rz_str_djb2_hash(const char *str);
@@ -176,8 +177,9 @@ RZ_API const char *rz_str_strchr(RZ_NONNULL const char *str, RZ_NONNULL const ch
 RZ_API const char *rz_str_nstr(const char *from, const char *to, int size);
 RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *from, RZ_NONNULL const char *to, int size);
 RZ_API const char *rz_str_lchr(const char *str, char chr);
-RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr);
-RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr);
+RZ_API const char *rz_sub_str_lchr(RZ_NONNULL const char *str, int start, int end, char chr);
+RZ_API const char *rz_sub_str_rchr(RZ_NONNULL const char *str, int start, int end, char chr);
+RZ_API RZ_OWN char *rz_sub_str_ptr(RZ_NONNULL const char *str, RZ_NONNULL const char *start, RZ_NONNULL const char *end);
 RZ_API char *rz_str_ichr(char *str, char chr);
 RZ_API bool rz_str_ccmp(const char *dst, const char *orig, int ch);
 RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep);
@@ -192,7 +194,7 @@ static inline const char *rz_str_get_null(const char *str) {
 	return str ? str : "(null)";
 }
 RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len);
-RZ_API char *rz_str_dup(char *ptr, const char *string);
+RZ_API RZ_OWN char *rz_str_dup(RZ_NULLABLE const char *str);
 RZ_API int rz_str_delta(char *p, char a, char b);
 RZ_API void rz_str_filter(char *str);
 RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len);
@@ -231,9 +233,9 @@ RZ_API size_t rz_str_nlen_w(const char *s, int n);
 RZ_API size_t rz_wstr_clen(const char *s);
 RZ_API char *rz_str_prepend(char *ptr, const char *string);
 RZ_API char *rz_str_prefix_all(const char *s, const char *pfx);
-RZ_API char *rz_str_append(char *ptr, const char *string);
+RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *string);
 RZ_API char *rz_str_append_owned(char *ptr, char *string);
-RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API RZ_OWN char *rz_str_appendf(RZ_OWN RZ_NULLABLE char *ptr, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_str_appendch(char *x, char y);
 RZ_API void rz_str_case(char *str, bool up);
 RZ_API void rz_str_trim_path(char *s);
@@ -273,6 +275,8 @@ typedef struct rz_str_stringify_opt_t {
 
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length);
+
+RZ_API const char *rz_str_indent(int indent);
 
 #ifdef __cplusplus
 }

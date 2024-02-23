@@ -28,9 +28,9 @@ RZ_IPI void rz_bin_set_and_process_file(RzBinFile *bf, RzBinObject *o) {
 	}
 
 	// set the virtual files.
-	rz_list_free(o->vfiles);
+	rz_pvector_free(o->vfiles);
 	if (!plugin->virtual_files || !(o->vfiles = plugin->virtual_files(bf))) {
-		o->vfiles = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+		o->vfiles = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	}
 
 	// set the special symbols from the plugin
@@ -41,9 +41,9 @@ RZ_IPI void rz_bin_set_and_process_file(RzBinFile *bf, RzBinObject *o) {
 		}
 	}
 
-	rz_list_free(o->libs);
+	rz_pvector_free(o->libs);
 	if (!plugin->libs || !(o->libs = plugin->libs(bf))) {
-		o->libs = rz_list_newf(free);
+		o->libs = rz_pvector_new(free);
 	}
 
 	rz_bin_info_free(o->info);
@@ -61,13 +61,13 @@ RZ_IPI void rz_bin_set_and_process_file(RzBinFile *bf, RzBinObject *o) {
 		o->kv = sdb_new0();
 	}
 
-	rz_list_free(o->mem);
+	rz_pvector_free(o->mem);
 	if (!plugin->mem || !(o->mem = plugin->mem(bf))) {
-		o->mem = rz_list_newf((RzListFree)rz_bin_mem_free);
+		o->mem = rz_pvector_new((RzPVectorFree)rz_bin_mem_free);
 	}
 
-	rz_list_free(o->resources);
+	rz_pvector_free(o->resources);
 	if (!plugin->resources || !(o->resources = plugin->resources(bf))) {
-		o->resources = rz_list_newf((RzListFree)rz_bin_resource_free);
+		o->resources = rz_pvector_new((RzPVectorFree)rz_bin_resource_free);
 	}
 }

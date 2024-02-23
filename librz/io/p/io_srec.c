@@ -45,7 +45,7 @@ static void write_S3_record(FILE *fd, ut32 address, const ut8 *buffer, ut16 size
 	fprintf(fd, "%02x\n", checksum);
 }
 
-static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, st32 count) {
+static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	rz_return_val_if_fail(fd && fd->data && fd->perm & RZ_PERM_W && count > 0, -1);
 
 	const char *pathname = NULL;
@@ -99,7 +99,7 @@ static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, st32 count) {
 	return 0;
 }
 
-static st32 __read(RzIO *io, RzIODesc *fd, ut8 *buf, st32 count) {
+static st32 __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	rz_return_val_if_fail(io && fd && fd->data && buf && count > 0, -1);
 
 	SRecord *srec = (SRecord *)fd->data;

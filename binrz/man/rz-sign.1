@@ -1,34 +1,30 @@
-.Dd Aug 6, 2020
+.Dd Jan 21, 2024
 .Dt RZ_SIGN 1
 .Sh NAME
 .Nm RZ_SIGN
-.Nd rizin zignature utility
+.Nd rizin signature utility
 .Sh SYNOPSIS
 .Nm rz-sign
-.Op Fl afhjqrv
-.Op Fl s Ar space
+.Op Fl acehoqv
 .Op Fl o Ar outfile
 .Ar file
 .Sh DESCRIPTION
-rz-diff implements many binary diffing algorithms for data and code.
+rz-sign allows to create and inspect FLIRT code signatures.
 .Pp
 .Bl -tag -width Fl
 .It Fl a
-Analyze binary after loading it with RzCore and use -AA to run aaaa instead of aaa.
-.It Fl f
-Interpret the input file as a flirt database and dump the signatures.
+Analyze binary after loading it with RzCore and use -AA to run aaaa instead of aaa. Available only
+together with the o option.
+.It Fl c
+Interpret the input file as a FLIRT signature file and dump the pattern format
+.It Fl e
+Set an evaluable config variable. Available only together with the o option
 .It Fl h
 Show usage help message.
-.It Fl j
-Show output in JSON.
-.It Fl o Ar file.sdb
-Add signatures to file, create if it does not exist.
+.It Fl o Ar file.sig
+Perform an analysis of a binary and generate FLIRT signatures for all functions inside it
 .It Fl q
 Enable quiet mode.
-.It Fl r
-Show output in rizin commands.
-.It Fl s Ar space
-Add signatures save all signatures under this signspace.
 .It Fl v
 Show version information.
 .El

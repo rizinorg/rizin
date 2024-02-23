@@ -71,16 +71,15 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	struct rz_bin_te_section_t *sections = NULL;
 	int i;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(sections = rz_bin_te_get_sections(bf->o->bin_obj))) {
 		free(ret);
 		return NULL;
@@ -112,7 +111,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!strncmp(ptr->name, "_TEXT_RE", 8)) {
 			ptr->bits = RZ_SYS_BITS_16;
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	free(sections);
 	return ret;
@@ -163,7 +162,6 @@ RzBinPlugin rz_bin_plugin_te = {
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
-	.minstrlen = 4,
 };
 
 #ifndef RZ_PLUGIN_INCORE

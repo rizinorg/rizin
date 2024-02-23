@@ -736,14 +736,14 @@ RZ_API RZ_OWN char *rz_bin_dex_access_flags_readable(ut32 access_flags) {
 }
 
 /**
- * \brief Returns a RzList<RzBinString*> containing the dex strings
+ * \brief Returns a RzPVector<RzBinString*> containing the dex strings
  */
-RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexString *string;
 	void **it;
-	RzList *strings = rz_list_newf(rz_bin_string_free);
+	RzPVector *strings = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 	if (!strings) {
 		return NULL;
 	}
@@ -762,7 +762,7 @@ RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex
 		bstr->size = string->size;
 		bstr->string = rz_str_ndup(string->data, string->size);
 		bstr->type = RZ_STRING_ENC_UTF8;
-		if (!rz_list_append(strings, bstr)) {
+		if (!rz_pvector_push(strings, bstr)) {
 			free(bstr);
 		}
 		ordinal++;
@@ -1143,14 +1143,14 @@ static RzList /*<RzBinSymbol *>*/ *dex_resolve_fields_in_class_as_symbols(RzBinD
 }
 
 /**
- * \brief Returns a RzList<RzBinClass*> containing the dex classes
+ * \brief Returns a RzPVector<RzBinClass*> containing the dex classes
  */
-RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
 	RzBinClass *bclass = NULL;
-	RzList *classes = NULL;
+	RzPVector *classes = NULL;
 	void **it;
 
 	ut32 n_methods = rz_pvector_len(dex->method_ids);
@@ -1164,7 +1164,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 		return NULL;
 	}
 
-	classes = rz_list_newf((RzListFree)rz_bin_class_free);
+	classes = rz_pvector_new((RzPVectorFree)rz_bin_class_free);
 	if (!classes) {
 		free(inserted_fields);
 		free(inserted_methods);
@@ -1186,7 +1186,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 		bclass->methods = dex_resolve_methods_in_class(dex, class_def, inserted_methods);
 		bclass->fields = dex_resolve_fields_in_class(dex, class_def, inserted_fields);
 
-		if (!rz_list_append(classes, bclass)) {
+		if (!rz_pvector_push(classes, bclass)) {
 			rz_bin_class_free(bclass);
 			break;
 		}
@@ -1211,30 +1211,30 @@ static RzBinSection *section_new(const char *name, ut32 perm, ut32 size, ut64 pa
 }
 
 /**
- * \brief Returns a RzList<RzBinSection*> containing the dex sections
+ * \brief Returns a RzPVector<RzBinSection*> containing the dex sections
  */
-RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	RzBinSection *section;
-	RzList *sections = NULL;
+	RzPVector *sections = NULL;
 
-	sections = rz_list_newf((RzListFree)rz_bin_section_free);
+	sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!sections) {
 		return NULL;
 	}
 	section = section_new("data", RZ_PERM_RWX, dex->data_size, dex->data_offset, RZ_DEX_VIRT_ADDRESS + dex->data_offset);
-	if (section && !rz_list_append(sections, section)) {
+	if (section && !rz_pvector_push(sections, section)) {
 		rz_bin_section_free(section);
 	}
 	section = section_new("file", RZ_PERM_R, dex->file_size, dex->header_offset, 0);
-	if (section && !rz_list_append(sections, section)) {
+	if (section && !rz_pvector_push(sections, section)) {
 		rz_bin_section_free(section);
 	}
 
 	if (dex->relocs_code) {
 		section = section_new(RZ_DEX_RELOC_TARGETS, RZ_PERM_RWX, dex->relocs_size, 0, dex->relocs_offset);
-		if (section && !rz_list_append(sections, section)) {
+		if (section && !rz_pvector_push(sections, section)) {
 			rz_bin_section_free(section);
 		}
 	}
@@ -1278,16 +1278,16 @@ RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBin
 }
 
 /**
- * \brief Returns a RzList<RzBinSymbol*> containing the dex symbols
+ * \brief Returns a RzPVector<RzBinSymbol*> containing the dex symbols
  */
-RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
 	DexFieldId *field_id;
 	DexMethodId *method_id;
 	RzList *class_symbols = NULL;
-	RzList *symbols = NULL;
+	RzPVector *symbols = NULL;
 	void **vit;
 	ut8 *inserted_methods = NULL;
 	ut8 *inserted_fields = NULL;
@@ -1302,7 +1302,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		return NULL;
 	}
 
-	symbols = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	symbols = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!symbols) {
 		free(inserted_fields);
 		free(inserted_methods);
@@ -1311,16 +1311,26 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 
 	rz_pvector_foreach (dex->class_defs, vit) {
 		class_def = (DexClassDef *)*vit;
+		RzListIter *iter;
+		RzBinSymbol *sym;
 
 		class_symbols = dex_resolve_fields_in_class_as_symbols(dex, class_def, inserted_fields);
 		if (class_symbols) {
-			rz_list_join(symbols, class_symbols);
+			rz_list_foreach (class_symbols, iter, sym) {
+				rz_pvector_push(symbols, sym);
+			}
+			class_symbols->length = 0;
+			class_symbols->head = class_symbols->tail = NULL;
 			rz_list_free(class_symbols);
 		}
 
 		class_symbols = dex_resolve_methods_in_class(dex, class_def, inserted_methods);
 		if (class_symbols) {
-			rz_list_join(symbols, class_symbols);
+			rz_list_foreach (class_symbols, iter, sym) {
+				rz_pvector_push(symbols, sym);
+			}
+			class_symbols->length = 0;
+			class_symbols->head = class_symbols->tail = NULL;
 			rz_list_free(class_symbols);
 		}
 	}
@@ -1346,7 +1356,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		field->vaddr = UT64_MAX;
 		field->paddr = UT64_MAX;
 
-		if (!rz_list_append(symbols, field)) {
+		if (!rz_pvector_push(symbols, field)) {
 			rz_bin_symbol_free(field);
 			break;
 		}
@@ -1380,7 +1390,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		}
 		method->size = method_id->code_size;
 
-		if (!rz_list_append(symbols, method)) {
+		if (!rz_pvector_push(symbols, method)) {
 			rz_bin_symbol_free(method);
 			break;
 		}
@@ -1392,21 +1402,21 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 }
 
 /**
- * \brief Returns a RzList<RzBinImport*> containing the dex imports
+ * \brief Returns a RzPVector<RzBinImport*> containing the dex imports
  */
-RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexFieldId *field_id;
 	DexMethodId *method_id;
 	DexClassDef *class_def;
-	RzList *imports = NULL;
+	RzPVector *imports = NULL;
 	ut32 *class_ids = NULL;
 	void **vit;
 
 	ut32 n_classes = rz_pvector_len(dex->class_defs);
 	if (n_classes < 1) {
-		return rz_list_newf((RzListFree)rz_bin_import_free);
+		return rz_pvector_new((RzPVectorFree)rz_bin_import_free);
 	}
 
 	class_ids = RZ_NEWS0(ut32, n_classes);
@@ -1421,7 +1431,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 		j++;
 	}
 
-	imports = rz_list_newf((RzListFree)rz_bin_import_free);
+	imports = rz_pvector_new((RzPVectorFree)rz_bin_import_free);
 	if (!imports) {
 		free(class_ids);
 		return NULL;
@@ -1453,7 +1463,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 		import->type = RZ_BIN_TYPE_FIELD_STR;
 		import->ordinal = ordinal;
 
-		if (!rz_list_append(imports, import)) {
+		if (!rz_pvector_push(imports, import)) {
 			rz_bin_import_free(import);
 			break;
 		}
@@ -1487,7 +1497,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 		import->ordinal = ordinal;
 		free(name);
 
-		if (!rz_list_append(imports, import)) {
+		if (!rz_pvector_push(imports, import)) {
 			rz_bin_import_free(import);
 			break;
 		}
@@ -1498,25 +1508,25 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 	return imports;
 }
 
-static int compare_strings(const void *a, const void *b) {
+static int compare_strings(const void *a, const void *b, void *user) {
 	return strcmp((const char *)a, (const char *)b);
 }
 
 /**
- * \brief Returns a RzList<char*> containing the dex libraries
+ * \brief Returns a RzPVector<char*> containing the dex libraries
  */
-RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexMethodId *method_id;
 	DexClassDef *class_def;
-	RzList *libraries = NULL;
+	RzPVector *libraries = NULL;
 	ut32 *class_ids = NULL;
 	void **vit;
 
 	ut32 n_classes = rz_pvector_len(dex->class_defs);
 	if (n_classes < 1) {
-		return rz_list_newf((RzListFree)free);
+		return rz_pvector_new((RzPVectorFree)free);
 	}
 
 	class_ids = RZ_NEWS0(ut32, n_classes);
@@ -1531,7 +1541,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex
 		j++;
 	}
 
-	libraries = rz_list_newf((RzListFree)free);
+	libraries = rz_pvector_new((RzPVectorFree)free);
 	if (!libraries) {
 		free(class_ids);
 		return NULL;
@@ -1564,12 +1574,12 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex
 			object = p;
 		}
 
-		if (rz_list_find(libraries, object, compare_strings)) {
+		if (rz_pvector_find(libraries, object, compare_strings, NULL)) {
 			free(object);
 			continue;
 		}
 
-		if (!rz_list_append(libraries, object)) {
+		if (!rz_pvector_push(libraries, object)) {
 			free(object);
 			break;
 		}

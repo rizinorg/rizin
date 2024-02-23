@@ -530,6 +530,107 @@ RZ_API bool rz_project_migrate_v12_v13(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 13 -> 14
+//
+// Changes from 8e29b959b86a35bbbfed599989f077dba6e0ebd5:
+//	Removed {stack,reg} from "/core/analysis/functions/vars"
+//	and converted into storage object { ..., storage: { type: ... }  }
+
+bool v13_v14_foreach_cb(void *user, const char *k, const char *v) {
+	static const char *types[] = { "stack", "reg" };
+	Sdb *fn_db = user;
+	if (rz_str_startswith(k, "0x")) {
+		RzJson *fn_j = rz_json_parse((char *)v);
+		rz_return_val_if_fail(fn_j->type == RZ_JSON_OBJECT, false);
+
+		PJ *j = pj_new();
+		pj_o(j);
+
+		for (RzJson *body = fn_j->children.first; body; body = body->next) {
+			bool filtered = false;
+			for (int i = 0; i < RZ_ARRAY_SIZE(types); ++i) {
+				const char *type = types[i];
+				if (rz_str_cmp(body->key, type, -1) != 0) {
+					continue;
+				}
+				filtered = true;
+				pj_ko(j, "storage");
+				pj_ks(j, "type", types[i]);
+				switch (body->type) {
+				case RZ_JSON_INTEGER:
+					pj_kn(j, types[i], body->num.s_value);
+					break;
+				case RZ_JSON_STRING:
+					pj_ks(j, types[i], body->str_value);
+					break;
+				default: rz_warn_if_reached();
+				}
+				pj_end(j);
+			}
+
+			if (!filtered) {
+				rz_json_to_pj(body, j, true);
+			}
+		}
+
+		pj_end(j);
+		sdb_set(fn_db, k, pj_string(j), 0);
+		pj_free(j);
+		rz_json_free(fn_j);
+	}
+	return true;
+}
+
+RZ_API bool rz_project_migrate_v13_v14(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	Sdb *fn_db = sdb_ns(analysis_db, "functions", true);
+	sdb_foreach(fn_db, v13_v14_foreach_cb, fn_db);
+	return true;
+}
+
+// --
+// Migration 14 -> 15
+//
+// Changes from 0867fd9d3db6f816eaa768f464c6a2919f21209c:
+//	Added serialization functionality for seek history
+//	New namespace: /core/seek
+
+RZ_API bool rz_project_migrate_v14_v15(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	sdb_ns(core_db, "seek", true);
+
+	return true;
+}
+
+// --
+// Migration 15 -> 16
+//
+// Changes from <commit hash not yet known>:
+//	Removed options:
+//	- `bin.maxstr`
+//	Renamed options:
+//	- `bin.minstr` to `str.search.min_length`
+//	- `bin.str.enc` to `str.search.encoding`
+//	- `bin.maxstrbuf` to `str.search.buffer_size`
+
+RZ_API bool rz_project_migrate_v15_v16(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_rename(config_db, "bin.minstr", "str.search.min_length");
+	sdb_rename(config_db, "bin.str.enc", "str.search.encoding");
+	sdb_rename(config_db, "bin.maxstrbuf", "str.search.buffer_size");
+	sdb_unset(config_db, "bin.maxstr", 0);
+
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -542,7 +643,10 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v9_v10,
 	rz_project_migrate_v10_v11,
 	rz_project_migrate_v11_v12,
-	rz_project_migrate_v12_v13
+	rz_project_migrate_v12_v13,
+	rz_project_migrate_v13_v14,
+	rz_project_migrate_v14_v15,
+	rz_project_migrate_v15_v16,
 };
 
 /// Migrate the given project to the current version in-place

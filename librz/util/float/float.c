@@ -27,6 +27,8 @@
  */
 #define define_types_gen_nan(fname, ftype) \
 	RZ_API ftype rz_types_gen_##fname##_nan() { \
+		/* The static modifier is on purpose and necessary for all compilers \
+		 * to avoid optimizing them and generate NaN values portably */ \
 		static ftype zero = 0; \
 		ftype ret = zero / zero; \
 		feclearexcept(FE_ALL_EXCEPT); \
@@ -35,6 +37,8 @@
 
 #define define_types_gen_inf(fname, ftype) \
 	RZ_API ftype rz_types_gen_##fname##_inf() { \
+		/* The static modifier is on purpose and necessary for all compilers \
+		 * to avoid optimizing them and generate INF values portably */ \
 		static ftype zero = 0; \
 		static ftype one = 1.0; \
 		ftype ret = one / zero; \
@@ -151,6 +155,10 @@ static bool float_is_mantissa_zero(RzFloat *f) {
 		} \
 		int bias = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_BIAS) - 1; \
 		ut32 manl = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN); \
+		if (f->r == RZ_FLOAT_IEEE754_BIN_80) { \
+			/* Special case, see [rz_float_info_bin80] for more. */ \
+			manl--; \
+		} \
 		int exponent = float_exponent(f) - bias; \
 		ftype fractional = 0.0; \
 		for (ut32 i = 0; i < manl; ++i) { \
@@ -372,23 +380,28 @@ RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f) {
 			fractional /= two; \
 			exponent++; \
 		} \
+		/* manbv is the significand's bitvector. */ \
+		RzBitVector *manbv = rz_bv_new_from_ut64(manl + 1, 0); \
+		if (!manbv) { \
+			return false; \
+		} \
 		for (ut32 i = 0; i < manl && fractional != zero; ++i) { \
 			fractional *= two; \
 			if (fractional >= one) { \
 				fractional -= one; \
-				rz_bv_set(f->s, manl - i, true); \
+				rz_bv_set(manbv, manl - i, true); \
 			} \
 		} \
 		if (roundl(fractional) > 0.5l) { \
-			rz_bv_set(f->s, 0, true); \
+			rz_bv_set(manbv, 0, true); \
 		} \
 		RzBitVector *expbv = rz_bv_new_from_ut64(expl, exponent); \
 		if (!expbv) { \
 			return false; \
 		} \
-		rz_bv_copy_nbits(expbv, 0, f->s, manl, expl); \
+		f->s = pack_float_bv(is_negative, expbv, manbv, f->r); \
+		rz_bv_free(manbv); \
 		rz_bv_free(expbv); \
-		rz_bv_set(f->s, f->s->len - 1, is_negative); \
 		return true; \
 	}
 
@@ -2626,6 +2639,10 @@ RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat for
 	RzFloatFormat old_format = f->r;
 	bool sign = get_sign(f->s, old_format);
 	ut32 man_len = rz_float_get_format_info(old_format, RZ_FLOAT_INFO_MAN_LEN);
+	if (old_format == RZ_FLOAT_IEEE754_BIN_80) {
+		/* Special case, see [rz_float_info_bin80] for more. */
+		man_len--;
+	}
 
 	// recover hidden bit if it's a normal float
 	// for sub-normal, we also set a fake hidden bit 1 to use round_float

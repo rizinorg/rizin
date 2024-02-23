@@ -2,7 +2,7 @@ NAME=fatmach0 string location
 FILE=bins/mach0/BatteryLife
 CMDS=<<EOF
 s str.batteryLevel
-ps @e:bin.str.enc=utf8
+ps @e:str.search.encoding=utf8
 EOF
 EXPECT=<<EOF
 batteryLevel
@@ -42,7 +42,7 @@ NAME=fatmach0 arm32 string location
 FILE=bins/mach0/BatteryLife.arm_32.0
 CMDS=<<EOF
 s str.batteryLevel
-ps @e:bin.str.enc=utf8
+ps @e:str.search.encoding=utf8
 EOF
 EXPECT=<<EOF
 batteryLevel
@@ -80,7 +80,7 @@ s sym._call
 pi 1
 EOF
 EXPECT=<<EOF
-stp x29, x30, [sp, -0x10]!
+stp fp, lr, [sp, -0x10]!
 EOF
 RUN
 
@@ -91,7 +91,7 @@ s sym._call
 pi 1
 EOF
 EXPECT=<<EOF
-stp x29, x30, [sp, -0x10]!
+stp fp, lr, [sp, -0x10]!
 EOF
 RUN
 

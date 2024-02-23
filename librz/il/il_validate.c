@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rz_il_validate.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 /////////////////////////////////////////////////////////
 // ---------------------- context -----------------------
@@ -279,6 +279,7 @@ typedef bool (*ValidatePureFn)(VALIDATOR_PURE_ARGS);
 #define VALIDATOR_ASSERT(condition, ...) \
 	do { \
 		if (!(condition)) { \
+			rz_warn_if_reached(); \
 			rz_strbuf_appendf(report_builder, __VA_ARGS__); \
 			return false; \
 		} \

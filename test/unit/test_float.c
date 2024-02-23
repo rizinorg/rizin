@@ -617,9 +617,25 @@ bool float_print_num(void) {
 	mu_assert_streq_free(rz_float_as_dec_string(f64), "1.55678", "float64 numeric value");
 	rz_float_free(f64);
 
-	RzFloat *f80 = rz_float_new_from_f80(13.0335);
-	mu_assert_streq_free(rz_float_as_hex_string(f80, true), "0x4002a1126e978d4fe000", "float80 hex value");
-	mu_assert_streq_free(rz_float_as_string(f80), "+100000000000010|1010000100010010011011101001011110001101010011111110000000000000", "float80 bit value");
+	RzFloat *f80 = rz_float_new_from_f80(13.0335l);
+	// Need the check since 80-bit long double is an x86 speciality and MSVC ignores it.
+#if (__i386__ || __x86_64__) && !__WINDOWS__
+	mu_assert_streq_free(rz_float_as_hex_string(f80, true), "0x4002d089374bc6a7ef9e", "float80 hex value");
+	mu_assert_streq_free(rz_float_as_string(f80), "+100000000000010|1101000010001001001101110100101111000110101001111110111110011110", "float80 bit value");
+#else
+	char *str = rz_float_as_hex_string(f80, true);
+	if (str && strlen(str) == 22) {
+		// Mask away anything beyond 64-bit influence because it differs between sparc and arm for example.
+		memset(str + 18, 'x', 4);
+	}
+	mu_assert_streq_free(str, "0x4002d089374bc6a7xxxx", "float80 hex value");
+	str = rz_float_as_string(f80);
+	if (str && strlen(str) == 81) {
+		// Mask away anything beyond 64-bit influence because it differs between sparc and arm for example.
+		memset(str + 60, 'x', 81 - 60);
+	}
+	mu_assert_streq_free(str, "+100000000000010|1101000010001001001101110100101111000110101xxxxxxxxxxxxxxxxxxxxx", "float80 bit value");
+#endif
 	mu_assert_streq_free(rz_float_as_dec_string(f80), "13.0335", "float80 numeric value");
 	rz_float_free(f80);
 
@@ -1398,6 +1414,37 @@ bool f32_ieee_cast_test(void) {
 	mu_end;
 }
 
+bool f80_round_test(void) {
+	/* To 80-bit */
+	RzFloat *old_f = rz_float_new_from_f64(14.285714285714286);
+	RzFloat *expect_f = rz_float_new_from_f80(14.2857142857142864756l);
+	RzFloat *new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 14.285714285714286d to 14.2857142857142864756l");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
+
+	/* From 80-bit */
+	old_f = rz_float_new_from_f80(13.37l);
+	expect_f = rz_float_new_from_f32(13.37f);
+	new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 13.37l to 13.37f");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
+	mu_end;
+
+	/* From 80-bit to 80-bit (should lead to the same value) */
+	old_f = rz_float_new_from_f80(66668466788774.6870804l);
+	expect_f = rz_float_new_from_f80(66668466788774.6870804l);
+	new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 66668466788774.6870804l to itself");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(rz_float_new_from_hex_test);
 	mu_run_test(f32_ieee_format_test);
@@ -1421,6 +1468,7 @@ bool all_tests() {
 	mu_run_test(f32_new_round_test);
 	mu_run_test(f32_ieee_fround_test);
 	mu_run_test(f32_ieee_cast_test);
+	mu_run_test(f80_round_test);
 	return tests_passed != tests_run;
 }
 

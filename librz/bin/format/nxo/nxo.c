@@ -96,8 +96,8 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 			if (!imp->bind) {
 				goto out_walk_symbol;
 			}
-			imp->ordinal = bin->imports_list->length;
-			rz_list_append(bin->imports_list, imp);
+			imp->ordinal = bin->imports_vec->v.len;
+			rz_pvector_push(bin->imports_vec, imp);
 			sym->is_imported = true;
 			sym->name = strdup(symName);
 			if (!sym->name) {
@@ -116,7 +116,7 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 			sym->vaddr = sym->paddr + baddr;
 			RZ_LOG_INFO("f sym.%s %" PFMT64u " @ 0x%" PFMT64x "\n", symName, size, addr);
 		}
-		rz_list_append(bin->methods_list, sym);
+		rz_pvector_push(bin->methods_vec, sym);
 		i += 8 - 1;
 	}
 	return;

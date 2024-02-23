@@ -116,10 +116,6 @@ static void le_header(RzBinFile *bf) {
 	p("Stack Size: 0x%x\n", h->stacksize);
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
-}
-
 RzBinPlugin rz_bin_plugin_le = {
 	.name = "le",
 	.desc = "LE/LX format plugin",
@@ -136,10 +132,8 @@ RzBinPlugin rz_bin_plugin_le = {
 	.entries = &rz_bin_le_get_entry_points,
 	.symbols = &rz_bin_le_get_symbols,
 	.imports = &rz_bin_le_get_imports,
-	.strings = &strings,
 	.libs = &rz_bin_le_get_libs,
 	.relocs = &rz_bin_le_get_relocs,
-	.minstrlen = 4
 	// .regstate = &regstate
 };
 

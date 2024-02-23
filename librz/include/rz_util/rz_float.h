@@ -9,6 +9,7 @@
 #ifndef RZ_FLOAT_H
 #define RZ_FLOAT_H
 #include <rz_types.h>
+#include <rz_util/rz_bitvector.h>
 
 /**
  *

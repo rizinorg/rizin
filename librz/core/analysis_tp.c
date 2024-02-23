@@ -5,7 +5,7 @@
 
 #include <rz_analysis.h>
 #include <rz_util.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 #include <rz_core.h>
 #define LOOP_MAX 10
 
@@ -224,6 +224,7 @@ static RzList /*<char *>*/ *parse_format(RzCore *core, char *fmt) {
 	Sdb *s = core->analysis->sdb_fmts;
 	const char *spec = rz_config_get(core->config, "analysis.types.spec");
 	char arr[10] = { 0 };
+	char tmpbuf[0x300]; // caller has the size limit of 0x200
 	char *ptr = strchr(fmt, '%');
 	fmt[strlen(fmt) - 1] = '\0';
 	while (ptr) {
@@ -238,7 +239,7 @@ static RzList /*<char *>*/ *parse_format(RzCore *core, char *fmt) {
 			tmp++;
 		}
 		*tmp = '\0';
-		const char *query = sdb_fmt("spec.%s.%s", spec, arr);
+		const char *query = rz_strf(tmpbuf, "spec.%s.%s", spec, arr);
 		char *type = (char *)sdb_const_get(s, query, 0);
 		if (type) {
 			rz_list_append(ret, type);
@@ -344,6 +345,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	RzTypeDB *typedb = core->analysis->typedb;
 	RzAnalysis *analysis = core->analysis;
 	RzList *types = NULL;
+	char tmpbuf[1024];
 
 	int idx = rz_pvector_len(etrace->instructions) - 1;
 
@@ -441,7 +443,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 					char *typestr = rz_type_as_string(analysis->typedb, type);
 					const char *maybe_space = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 					rz_meta_set_string(analysis, RZ_META_TYPE_VARTYPE, instr_addr,
-						sdb_fmt("%s%s%s", typestr, maybe_space, name));
+						rz_strf(tmpbuf, "%s%s%s", typestr, maybe_space, name));
 					cmt_set = true;
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp(name, "format")) {
 						RzFlagItem *f = rz_flag_get_by_spaces(core->flags, op->ptr, RZ_FLAGS_FS_STRINGS, NULL);
@@ -523,7 +525,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	rz_cons_break_pop();
 }
 
-static int bb_cmpaddr(const void *_a, const void *_b) {
+static int bb_cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzAnalysisBlock *a = _a, *b = _b;
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
@@ -868,7 +870,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		goto out_function;
 	}
 	rz_cons_break_push(NULL, NULL);
-	rz_list_sort(fcn->bbs, bb_cmpaddr);
+	rz_list_sort(fcn->bbs, bb_cmpaddr, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, it, bb) {

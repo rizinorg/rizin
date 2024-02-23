@@ -20,6 +20,7 @@ environment:
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
       RUN_TESTS: false
+      TEST_INCLUDE_HEADERS_CPP: false
     # VS2022 64
     - builder: vs2022_64
       PYTHON: 'C:\\Python38-x64'
@@ -27,6 +28,7 @@ environment:
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
       BUILD_DIR: build
       RUN_TESTS: true
+      TEST_INCLUDE_HEADERS_CPP: true
     # VS2017 64 (Dynamic linking)
     - builder: vs2017_64_dyn
       PYTHON: 'C:\\Python37'
@@ -34,6 +36,7 @@ environment:
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
       RUN_TESTS: false
+      TEST_INCLUDE_HEADERS_CPP: false
     # Clang-cl 64 (Dynamic linking)
     - builder: clang_cl_64_dyn
       PYTHON: 'C:\\Python38'
@@ -41,6 +44,7 @@ environment:
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
       RUN_TESTS: true
+      TEST_INCLUDE_HEADERS_CPP: false
 
 only_commits:
   files:
@@ -79,12 +83,11 @@ build_script:
 
   - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && %PYTHON%\Scripts\meson setup --buildtype=release --prefix="%CD%\%DIST_FOLDER%" build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-# Run tests only conditionally
 for:
--
-    matrix:
-        only:
-            - RUN_TESTS: true
+  # Run tests only conditionally
+  - matrix:
+      only:
+        - RUN_TESTS: true
 
     test_script:
       - if %builder% == vs2017_64 ( call "%VSVARSALLPATH2017%" x64 )
@@ -97,6 +100,7 @@ for:
       - rizin -v
       - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
       - python3 -m pip install "git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
+      - python3 -m pip install requests
       - cd test
       - git clone -q --depth 1 -c core.symlinks=true https://github.com/rizinorg/rizin-testbins bins
       - cd ..
@@ -104,6 +108,25 @@ for:
       - cd test
       - rz-test -o results.json -L db
       - cd ..
+
+  # Include header files from C++
+  - matrix:
+      only:
+        - TEST_INCLUDE_HEADERS_CPP: true
+
+    test_script:
+      - if %builder% == vs2017_64 ( call "%VSVARSALLPATH2017%" x64 )
+      - if %builder% == vs2022_64 ( call "%VSVARSALLPATH2022%" x64 )
+      - if %builder% == vs2017_64_dyn ( call "%VSVARSALLPATH2017%" x64 )
+      - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2019%" x64 )
+      - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\Python38-x64;C:\msys64\mingw64\bin;%PATH%
+      - echo %PATH%
+      - where rizin
+      - rizin -v
+      - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
+      - "%PYTHON%\\Scripts\\meson setup build-cpp-test ./test/unit/cpp"
+      - "%PYTHON%\\Scripts\\meson compile -C build-cpp-test"
+      - "%PYTHON%\\Scripts\\meson test -C build-cpp-test --print-errorlogs"
 
 # Artifacts
 artifacts:

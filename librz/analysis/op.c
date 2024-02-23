@@ -31,6 +31,7 @@ RZ_API void rz_analysis_op_init(RzAnalysisOp *op) {
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
 		op->mmio_address = UT64_MAX;
+		op->stackptr = RZ_ANALYSIS_OP_INVALID_STACKPTR;
 	}
 }
 
@@ -93,7 +94,20 @@ static int defaultCycles(RzAnalysisOp *op) {
 	}
 }
 
-RZ_API int rz_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+/**
+ * \brief Disassemble the given \p data at \p addr to an RzAnalysisOp.
+ * Note: \p op will be set to an invalid operation in case of failure.
+ *
+ * \param analysis The RzAnalysis to use.
+ * \param op An _uninitialized_ RzAnalysisOp to save the result into.
+ * \param addr The address the data is located.
+ * \param data The buffer with the bytes to disassemble.
+ * \param len Length of the \p data in bytes.
+ * \param mask The which analysis details should be disassembled.
+ *
+ * \return The number of bytes which were disassembled. -1 in case of failure.
+ */
+RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(analysis && op && len > 0, -1);
 
 	rz_analysis_op_init(op);
@@ -213,6 +227,8 @@ RZ_API bool rz_analysis_op_ismemref(int t) {
 	case RZ_ANALYSIS_OP_TYPE_STORE:
 	case RZ_ANALYSIS_OP_TYPE_LEA:
 	case RZ_ANALYSIS_OP_TYPE_CMP:
+	case RZ_ANALYSIS_OP_TYPE_POP:
+	case RZ_ANALYSIS_OP_TYPE_PUSH:
 		return true;
 	default:
 		return false;

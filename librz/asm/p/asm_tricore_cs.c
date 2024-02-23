@@ -10,46 +10,36 @@
 #include <capstone/capstone.h>
 
 #include "../arch/tricore/tricore.inc"
-#include <librz/asm/arch/tricore/tricore.h>
 
 #define TRICORE_LONGEST_INSTRUCTION  4
 #define TRICORE_SHORTEST_INSTRUCTION 2
 
-static RzAsmTriCoreState *get_state() {
-	static RzAsmTriCoreState *state = NULL;
-	if (state) {
-		return state;
-	}
-
-	state = RZ_NEW0(RzAsmTriCoreState);
-	if (!state) {
-		RZ_LOG_FATAL("Could not allocate memory for HexState!");
-	}
-	return state;
-}
-
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	if (!buf || len < TRICORE_SHORTEST_INSTRUCTION) {
+	if (!buf || len < TRICORE_SHORTEST_INSTRUCTION || !a->plugin_data) {
 		return -1;
 	}
 
-	csh handle = tricore_setup_cs_handle(a->cpu, a->features);
-	if (handle == 0) {
+	RzAsmTriCoreContext *ctx = a->plugin_data;
+	if (!tricore_setup_cs_handle(ctx, a->cpu, a->features)) {
 		return -1;
 	}
 
-	cs_insn *insn = NULL;
-	unsigned count = cs_disasm(handle, buf, len, a->pc, 1, &insn);
-	if (count <= 0) {
-		return -1;
+	ctx->insn = NULL;
+	ctx->count = cs_disasm(ctx->h, buf, len, a->pc, 1, &ctx->insn);
+	if (ctx->count <= 0) {
+		goto beach;
 	}
 
-	op->size = insn->size;
-	char *asmstr = rz_str_newf("%s%s%s", insn->mnemonic,
-		RZ_STR_ISNOTEMPTY(insn->op_str) ? " " : "", insn->op_str);
-	rz_asm_op_set_asm(op, asmstr);
-	free(asmstr);
-	cs_free(insn, count);
+	op->size = ctx->insn->size;
+	rz_asm_op_setf_asm(op, "%s%s%s",
+		ctx->insn->mnemonic, RZ_STR_ISNOTEMPTY(ctx->insn->op_str) ? " " : "", ctx->insn->op_str);
+
+	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, ctx->token_patterns);
+
+beach:
+	cs_free(ctx->insn, ctx->count);
+	ctx->insn = NULL;
+	ctx->count = 0;
 	return op->size;
 }
 
@@ -62,21 +52,19 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	} while (0)
 
 static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
-	static RzPVector *pvec = NULL;
-	if (pvec) {
-		return pvec;
+	RzPVector *pvec = rz_pvector_new(rz_asm_token_pattern_free);
+	if (!pvec) {
+		return NULL;
 	}
-
-	pvec = rz_pvector_new(rz_asm_token_pattern_free);
 
 	TOKEN(META, "(\\[|\\]|-)");
 	TOKEN(META, "(\\+[rc]?)");
 
 	TOKEN(NUMBER, "(0x[[:digit:]abcdef]+)");
 
-	TOKEN(MNEMONIC, "([[:alpha:]]+[[:alnum:]\\.]*[[:alnum:]]+)|([[:alpha:]]+)");
-
 	TOKEN(REGISTER, "([adep][[:digit:]]{1,2})|(sp|psw|pcxi|pc|fcx|lcx|isp|icr|pipn|biv|btv)");
+
+	TOKEN(MNEMONIC, "([[:alpha:]]+[[:alnum:]\\.]*[[:alnum:]]+)|([[:alpha:]]+)");
 
 	TOKEN(SEPARATOR, "([[:blank:]]+)|([,;#\\(\\)\\{\\}:])");
 
@@ -85,14 +73,35 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	return pvec;
 }
 
-static bool init(void **user) {
-	RzAsmTriCoreState *state = get_state();
-	rz_return_val_if_fail(state, false);
+static bool init(void **u) {
+	if (!u) {
+		return false;
+	}
+	// u = RzAsm.plugin_data
+	RzAsmTriCoreContext *ctx = NULL;
+	if (*u) {
+		rz_mem_memzero(*u, sizeof(RzAsmTriCoreContext));
+		ctx = *u;
+	} else {
+		ctx = RZ_NEW0(RzAsmTriCoreContext);
+		if (!ctx) {
+			return false;
+		}
+		*u = ctx;
+	}
+	ctx->token_patterns = get_token_patterns();
+	rz_asm_compile_token_patterns(ctx->token_patterns);
+	return true;
+}
 
-	*user = state; // user = RzAsm.plugin_data
-
-	state->token_patterns = get_token_patterns();
-	rz_asm_compile_token_patterns(state->token_patterns);
+static bool fini(void *u) {
+	if (!u) {
+		return true;
+	}
+	RzAsmTriCoreContext *ctx = u;
+	cs_close(&ctx->h);
+	rz_pvector_free(ctx->token_patterns);
+	free(u);
 	return true;
 }
 
@@ -106,6 +115,7 @@ RzAsmPlugin rz_asm_plugin_tricore = {
 	.desc = "Siemens TriCore CPU",
 	.disassemble = &disassemble,
 	.init = &init,
+	.fini = &fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

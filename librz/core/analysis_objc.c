@@ -172,7 +172,8 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 }
 
 static RzCoreObjc *core_objc_new(RzCore *core) {
-	RzList *sections = rz_bin_get_sections(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
 	if (!sections) {
 		return false;
 	}
@@ -184,8 +185,9 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 	}
 
 	RzBinSection *s;
-	RzListIter *iter;
-	rz_list_foreach (sections, iter, s) {
+	void **iter;
+	rz_pvector_foreach (sections, iter) {
+		s = *iter;
 		const char *name = s->name;
 		if (strstr(name, "__objc_data")) {
 			o->_data = s;
@@ -353,7 +355,7 @@ static const ut8 objc_stubs_mask_arm64[] = {
 	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
 	0xff, 0x03, 0xc0, 0xff, // ldr   x1, [x1, <selector string ptr offset>]
 	0x1f, 0x00, 0x00, 0x9f, // adrp  x16, <reloc base>
-	0xff, 0x0f, 0xe0, 0xff, // ldr   x16, [x16, <reloc offset>]
+	0xff, 0x03, 0xc0, 0xff, // ldr   x16, [x16, <reloc offset>]
 	0xff, 0xff, 0xff, 0xff, // br    x16
 	0xff, 0xff, 0xff, 0xff, // brk   1
 	0xff, 0xff, 0xff, 0xff, // brk   1
@@ -386,7 +388,7 @@ static const ut8 objc_stubs_mask_arm64_32[] = {
 	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
 	0xff, 0x03, 0xc0, 0xff, // ldr   w1, [x1, <selector string ptr offset>]
 	0x1f, 0x00, 0x00, 0x9f, // adrp  x16, <reloc base>
-	0xff, 0x0f, 0xe0, 0xff, // ldr   w16, [x16, <reloc offset>]
+	0xff, 0x03, 0xc0, 0xff, // ldr   w16, [x16, <reloc offset>]
 	0xff, 0xff, 0xff, 0xff, // br    x16
 	0xff, 0xff, 0xff, 0xff, // brk   1
 	0xff, 0xff, 0xff, 0xff, // brk   1
@@ -575,6 +577,9 @@ static void analyze_objc_stubs(RzCore *core, ut64 start, ut64 size) {
 			break;
 		}
 		if (!stride) {
+			RZ_LOG_ERROR("Failed to match any known pattern against __objc_stubs contents. "
+				     "If this is not a manually modified binary, please consider opening an "
+				     "issue to let the rizin team know about this new format.\n");
 			// no pattern matched, cancel the entire search because the section is not in a known format.
 			break;
 		}
@@ -591,13 +596,15 @@ static void analyze_objc_stubs(RzCore *core, ut64 start, ut64 size) {
  */
 RZ_API void rz_core_analysis_objc_stubs(RzCore *core) {
 	rz_return_if_fail(core);
-	RzList *sections = rz_bin_get_sections(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
 	if (!sections) {
 		return;
 	}
 	RzBinSection *stubs_section;
-	RzListIter *iter;
-	rz_list_foreach (sections, iter, stubs_section) {
+	void **iter;
+	rz_pvector_foreach (sections, iter) {
+		stubs_section = *iter;
 		if (strstr(stubs_section->name, "__objc_stubs")) {
 			goto found;
 		}

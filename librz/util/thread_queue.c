@@ -50,24 +50,60 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzList
 /**
  * \brief  Allocates and initializes a new fifo queue using a user-defined list
  *
- * \param  list  Pointer to the list that will be owned by the queue.
+ * \param  list  Pointer to the list that will be used to initialize the queue.
  *
  * \return On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new2(RZ_NONNULL RZ_OWN RzList /*<void *>*/ *list) {
+RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_list(RZ_NONNULL RZ_BORROW RzList /*<void *>*/ *list, RZ_NULLABLE RzListFree qfree) {
 	rz_return_val_if_fail(list, NULL);
 	RzThreadQueue *queue = RZ_NEW0(RzThreadQueue);
 	if (!queue) {
 		return NULL;
 	}
 
+	queue->list = rz_list_clone(list);
+	if (!queue->list) {
+		free(queue);
+		return NULL;
+	}
+
+	queue->list->free = qfree;
 	queue->max_size = rz_list_length(list);
-	queue->list = list;
 	queue->lock = rz_th_lock_new(false);
 	queue->cond = rz_th_cond_new();
 	if (!queue->list || !queue->lock || !queue->cond) {
 		rz_th_queue_free(queue);
 		return NULL;
+	}
+
+	return queue;
+}
+
+/**
+ * \brief  Allocates and initializes a new fifo queue using a user-defined vector
+ *
+ * \param  vector  Pointer to the vector that will be used to initialize the queue.
+ * \param  qfree   Pointer to a custom free function to free the queue if not empty.
+ *
+ * \return On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_pvector(RZ_NONNULL RZ_BORROW RzPVector /*<void *>*/ *vector, RZ_NULLABLE RzListFree qfree) {
+	rz_return_val_if_fail(vector, NULL);
+	RzThreadQueue *queue = rz_th_queue_new(rz_pvector_len(vector), qfree);
+	if (!queue) {
+		return NULL;
+	}
+
+	void **it;
+	rz_pvector_foreach (vector, it) {
+		void *value = *it;
+		if (!value) {
+			continue;
+		}
+		if (!rz_list_append(queue->list, value)) {
+			rz_th_queue_free(queue);
+			return NULL;
+		}
 	}
 
 	return queue;
@@ -194,6 +230,22 @@ RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue) {
 	bool is_full = queue->max_size != RZ_THREAD_QUEUE_UNLIMITED && rz_list_length(queue->list) >= queue->max_size;
 	rz_th_lock_leave(queue->lock);
 	return is_full;
+}
+
+/**
+ * \brief  Returns the total number of element in the queue (thread-safe)
+ *
+ * \param  queue The RzThreadQueue to use
+ *
+ * \return Returns the total number of element in the queue
+ */
+RZ_API size_t rz_th_queue_size(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_val_if_fail(queue, false);
+
+	rz_th_lock_enter(queue->lock);
+	size_t size = rz_list_length(queue->list);
+	rz_th_lock_leave(queue->lock);
+	return size;
 }
 
 /**

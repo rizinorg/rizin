@@ -215,12 +215,12 @@ static int help(void) {
 		"  -E      base64 encode        ;\n"
 		"  -f      floating point       ;  rz-ax -f 6.3+2.1\n"
 		"  -F      stdin slurp code hex ;  rz-ax -F < shellcode.[c/py/js]\n"
-		"  -h      help                 ;  rz-ax -h\n"
+		"  -h      show this help       ;  rz-ax -h\n"
 		"  -i      dump as C byte array ;  rz-ax -i < bytes\n"
 		"  -I      IP address <-> LONG  ;  rz-ax -I 3530468537\n"
 		"  -k      keep base            ;  rz-ax -k 33+3 -> 36\n"
 		"  -L      bin -> hex(bignum)   ;  rz-ax -L 111111111 # 0x1ff\n"
-		"  -n      binary number        ;  rz-ax -n 0x1234 # 34120000\n"
+		"  -n      int value -> hexpairs;  rz-ax -n 0x1234 # 34120000\n"
 		"  -o      octalstr -> raw      ;  rz-ax -o \\162 \\172 # rz\n"
 		"  -N      binary number        ;  rz-ax -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -r      rz style output      ;  rz-ax -r 0x1234\n"
@@ -497,10 +497,11 @@ dotherax:
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR)) { // -t
 		RzList *split = rz_str_split_list(str, "GMT", 0);
-		char *ts = rz_list_head(split)->data;
-		const char *gmt = NULL;
-		if (rz_list_length(split) >= 2 && strlen(rz_list_head(split)->n->data) >= 2) {
-			gmt = (const char *)rz_list_head(split)->n->data;
+		RzListIter *head = rz_list_head(split);
+		char *ts = rz_list_iter_get_data(head);
+		const char *gmt = rz_list_iter_get_next_data(head);
+		if (gmt && strlen(gmt) < 2) {
+			gmt = NULL;
 		}
 		ut32 n = rz_num_math(num, ts);
 		int timezone = (int)rz_num_math(num, gmt);
@@ -643,7 +644,7 @@ dotherax:
 		if (*str != '0') {
 			modified_str = rz_str_newf("0%s", str);
 		} else {
-			modified_str = rz_str_new(str);
+			modified_str = rz_str_dup(str);
 		}
 
 		ut64 n = rz_num_math(num, modified_str);

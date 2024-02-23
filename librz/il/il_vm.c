@@ -77,7 +77,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 	vm->addr_size = addr_size;
 	vm->big_endian = big_endian;
 
-	vm->events = rz_list_newf((RzListFree)rz_il_event_free);
+	vm->events = rz_pvector_new((RzPVectorFree)rz_il_event_free);
 	if (!vm->events) {
 		RZ_LOG_ERROR("RzIL: cannot allocate VM event list\n");
 		rz_il_vm_fini(vm);
@@ -108,7 +108,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	rz_bv_free(vm->pc);
 	vm->pc = NULL;
 
-	rz_list_free(vm->events);
+	rz_pvector_free(vm->events);
 	vm->events = NULL;
 }
 

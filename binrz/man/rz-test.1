@@ -1,52 +1,59 @@
-.Dd Mar 31, 2020
+.Dd Jan 24, 2024
 .Dt RZ_TEST 1
 .Sh NAME
 .Nm rz-test
 .Nd rizin regression testsuite
 .Sh SYNOPSIS
 .Nm rz-test
-.Op Fl h
-.Op Fl i
-.Op Fl n
-.Op Fl q
-.Op Fl v
-.Op Fl V
+.Op Fl qvVnL
 .Op Fl j Ar threads
-.Op Fl r Ar rz-path
-.Op Fl m Ar rz-asm-pth
-.Op Fl f Ar bin-for-json-tests
-.Op Fl C Ar chdir
-.Op [test-(dir|file) ...]
+.Op Fl test Ar file/dir | @test-type
 .Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
 Run all the rizin-regressions tests matching a specific word in the name.
 .Pp
 You need rizin to be available in $PATH.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl h
-Show the help/usage message
+Show usage help message
+.It Fl v
+Show version information
+.It Fl q
+Quiet mode
+.It Fl V
+Be verbose
 .It Fl i
 Interactive mode
 .It Fl n
-Do not run any test, just load/parse them
-.It Fl q
-Quiet mode (use like this: rz-test -qv)
-.It Fl v
-Show version number
-.It Fl V
-Be verbose
+Do nothing (don't run any test, just load/parse them)
+.It Fl L
+Log mode (better printing for CI, logfiles, etc.)
+.It Fl F Ar dir
+Run fuzz tests (open and default analysis) on all files in the given dir
 .It Fl j Ar threads
-Specify the number of tasks to run in parallel
-.It Fl r Ar rz-path
-Set path to rizin executable
-.It Fl n Ar rz-asm-path
-Set path to rz-asmexecutable
-.It Fl m Ar rz-asm-path
-Set path to rz-asmexecutable
-.It Fl f Ar bin-for-json-tests
-Load the given binary when running the JSON tests
-.It Fl C Ar directory
-Early chdir before running any test
+How many threads to use for running tests concurrently (default is 8)
+.It Fl r Ar rizin
+Set path to rizin executable (default is rizin)
+.It Fl m Ar rz-asm
+Set path to rz-asm executable (default is rz-asm)
+.It Fl f Ar file
+File to use for JSON tests (default is bins/elf/crackme0x00b)
+.It Fl C Ar dir
+Chdir before running rz-test (default follows executable symlink + test/new)
+.It Fl t Ar seconds
+Timeout per test (default is 960 seconds)
+.It Fl o Ar file
+Output test run information in JSON format to file
+.It Fl e Ar dir
+Exclude a particular directory while testing (this option can appear many times)
+.It Fl s Ar num.
+Number of expected successful tests
+.It Fl x Ar num
+Number of expected failed tests
+.Pp
+Supported test types: @JSON @unit @fuzz @cmds
 .El
 .Sh USAGE
 .Pp
@@ -54,7 +61,6 @@ Use the -n flag to dont run any test. Just load them.
 .Pp
   $ rz-test -n
   [rz-test] Loading tests...
-.Pp
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
@@ -66,4 +72,6 @@ Use the -n flag to dont run any test. Just load them.
 .Xr rz-asm(1) ,
 .Sh AUTHORS
 .Pp
-Written by pancake <pancake@nopcode.org>.
+pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

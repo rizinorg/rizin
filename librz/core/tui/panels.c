@@ -5,6 +5,7 @@
 #include <rz_core.h>
 #include <rz_cmd.h>
 #include "../core_private.h"
+#include "modes.h"
 
 #define PANEL_NUM_LIMIT 9
 
@@ -161,7 +162,7 @@ static const char *menus_settings_screen[] = {
 
 static const char *menus_Help[] = {
 	"Toggle Help",
-	"License", "Version",
+	"Version",
 	"Fortune",
 	NULL
 };
@@ -227,7 +228,7 @@ static const char *help_msg_panels[] = {
 	"q", "quit, or close a tab",
 	"Q", "close all the tabs and quit",
 	"r", "toggle callhints/jmphints/leahints",
-	"R", "randomize color palette (ecr)",
+	"R", "changes the theme or randomizes colors if scr.randpal option is true.",
 	"s/S", "step in / step over",
 	"t/T", "tab prompt / close a tab",
 	"u/U", "undo / redo seek",
@@ -508,7 +509,6 @@ static int __watch_points_cb(void *user);
 static int __references_cb(void *user);
 static int __help_cb(void *user);
 static int __fortune_cb(void *user);
-static int __license_cb(void *user);
 static int __version_cb(void *user);
 static int __quit_cb(void *user);
 static int __io_cache_on_cb(void *user);
@@ -560,7 +560,7 @@ static void __clear_panels_menu(RzCore *core);
 static void __clear_panels_menuRec(RzPanelsMenuItem *pmi);
 static RzStrBuf *__draw_menu(RzCore *core, RzPanelsMenuItem *item);
 static void __handle_menu(RzCore *core, const int key);
-static int cmpstr(const void *_a, const void *_b);
+static int cmpstr(const void *_a, const void *_b, void *user);
 static RzList /*<char *>*/ *__sorted_list(RzCore *core, char *menu[], int count);
 
 /* config */
@@ -792,7 +792,7 @@ bool __check_panel_type(RzPanel *panel, const char *type) {
 	if (!panel->model->cmd || !type) {
 		return false;
 	}
-	char *tmp = rz_str_new(panel->model->cmd);
+	char *tmp = rz_str_dup(panel->model->cmd);
 	int n = rz_str_split(tmp, ' ');
 	if (!n) {
 		free(tmp);
@@ -891,7 +891,7 @@ void __set_cmd_str_cache(RzCore *core, RzPanel *p, char *s) {
 
 void __set_read_only(RzCore *core, RzPanel *p, char *s) {
 	free(p->model->readOnly);
-	p->model->readOnly = rz_str_new(s);
+	p->model->readOnly = rz_str_dup(s);
 	__set_dcb(core, p);
 	__set_pcb(p);
 }
@@ -998,9 +998,8 @@ void __update_help_contents(RzPanels *panels, RzPanel *panel) {
 	RzConsCanvas *can = panels->can;
 	(void)rz_cons_canvas_gotoxy(can, x + 2, y + 2);
 	if (sx < 0) {
-		char *white = (char *)rz_str_pad(' ', 128);
-		int idx = RZ_MIN(-sx, strlen(white) - 1);
-		white[idx] = 0;
+		int idx = RZ_MIN(-sx, 127);
+		char *white = rz_str_pad(' ', idx);
 		text = rz_str_ansi_crop(read_only,
 			0, sy, w + sx - 3, h - 2 + sy);
 		char *newText = rz_str_prefix_all(text, white);
@@ -1008,6 +1007,7 @@ void __update_help_contents(RzPanels *panels, RzPanel *panel) {
 			free(text);
 			text = newText;
 		}
+		free(white);
 	} else {
 		text = rz_str_ansi_crop(read_only,
 			sx, sy, w + sx - 3, h - 2 + sy);
@@ -1062,9 +1062,8 @@ void __update_panel_contents(RzCore *core, RzPanel *panel, const char *cmdstr) {
 	RzConsCanvas *can = panels->can;
 	(void)rz_cons_canvas_gotoxy(can, x + 2, y + 2);
 	if (sx < 0) {
-		char *white = (char *)rz_str_pad(' ', 128);
-		int idx = RZ_MIN(-sx, strlen(white) - 1);
-		white[idx] = 0;
+		int idx = RZ_MIN(-sx, 127);
+		char *white = rz_str_pad(' ', idx);
 		text = rz_str_ansi_crop(cmdstr,
 			0, sy + graph_pad, w + sx - 3, h - 2 + sy);
 		char *newText = rz_str_prefix_all(text, white);
@@ -1072,6 +1071,7 @@ void __update_panel_contents(RzCore *core, RzPanel *panel, const char *cmdstr) {
 			free(text);
 			text = newText;
 		}
+		free(white);
 	} else {
 		text = rz_str_ansi_crop(cmdstr, sx, sy + graph_pad, w + sx - 3, h - 2 + sy);
 	}
@@ -1639,7 +1639,7 @@ void __handleComment(RzCore *core) {
 	}
 	char buf[4095];
 	int i;
-	rz_line_set_prompt("[Comment]> ");
+	rz_line_set_prompt(core->cons->line, "[Comment]> ");
 	strcpy(buf, "\"CC ");
 	i = strlen(buf);
 	if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
@@ -2846,8 +2846,12 @@ void __replace_cmd(RzCore *core, const char *title, const char *cmd) {
 	RzPanel *cur = __get_cur_panel(panels);
 	__free_panel_model(cur);
 	cur->model = RZ_NEW0(RzPanelModel);
-	cur->model->title = rz_str_dup(cur->model->title, title);
-	cur->model->cmd = rz_str_dup(cur->model->cmd, cmd);
+	char *tmp = rz_str_dup(title);
+	free(cur->model->title);
+	cur->model->title = tmp;
+	tmp = rz_str_dup(cmd);
+	free(cur->model->cmd);
+	cur->model->cmd = tmp;
 	__set_cmd_str_cache(core, cur, NULL);
 	__set_panel_addr(core, cur, core->offset);
 	cur->model->type = PANEL_TYPE_DEFAULT;
@@ -2908,7 +2912,9 @@ bool __check_func_diff(RzCore *core, RzPanel *p) {
 		return true;
 	}
 	if (!p->model->funcName || strcmp(p->model->funcName, func->name)) {
-		p->model->funcName = rz_str_dup(p->model->funcName, func->name);
+		char *tmp = rz_str_dup(func->name);
+		free(p->model->funcName);
+		p->model->funcName = tmp;
 		return true;
 	}
 	return false;
@@ -3007,18 +3013,32 @@ void __init_panel_param(RzCore *core, RzPanel *p, const char *title, const char 
 	v->refresh = true;
 	v->edge = 0;
 	if (title) {
-		m->title = rz_str_dup(m->title, title);
+		char *tmp = rz_str_dup(title);
+		free(m->title);
+		m->title = tmp;
 		if (cmd) {
-			m->cmd = rz_str_dup(m->cmd, cmd);
+			char *tmp = rz_str_dup(cmd);
+			free(m->cmd);
+			m->cmd = tmp;
 		} else {
-			m->cmd = rz_str_dup(m->cmd, "");
+			char *tmp = rz_str_dup("");
+			free(m->cmd);
+			m->cmd = tmp;
 		}
 	} else if (cmd) {
-		m->title = rz_str_dup(m->title, cmd);
-		m->cmd = rz_str_dup(m->cmd, cmd);
+		char *tmp = rz_str_dup(cmd);
+		free(m->title);
+		m->title = tmp;
+		tmp = rz_str_dup(cmd);
+		free(m->cmd);
+		m->cmd = tmp;
 	} else {
-		m->title = rz_str_dup(m->title, "");
-		m->cmd = rz_str_dup(m->cmd, "");
+		char *tmp = rz_str_dup("");
+		free(m->title);
+		m->title = tmp;
+		tmp = rz_str_dup("");
+		free(m->cmd);
+		m->cmd = tmp;
 	}
 	__set_pcb(p);
 	if (RZ_STR_ISNOTEMPTY(m->cmd)) {
@@ -3538,8 +3558,12 @@ void __update_help(RzCore *core, RzPanels *ps) {
 				msg = help_msg_panels;
 				break;
 			}
-			p->model->title = rz_str_dup(p->model->title, cmd);
-			p->model->cmd = rz_str_dup(p->model->cmd, cmd);
+			char *tmp = rz_str_dup(cmd);
+			free(p->model->title);
+			p->model->title = tmp;
+			tmp = rz_str_dup(cmd);
+			free(p->model->cmd);
+			p->model->cmd = tmp;
 			rz_core_visual_append_help(rsb, title, msg);
 			if (!rsb) {
 				return;
@@ -3613,7 +3637,7 @@ int __watch_points_cb(void *user) {
 	__panel_prompt(rwPrompt, perm, sizeof(perm));
 	ut64 addr = rz_num_math(core->num, addrBuf);
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-	rz_core_debug_bp_add(core, addr, perm, hwbp, true);
+	rz_core_debug_bp_add(core, addr, perm, NULL, hwbp, true);
 	return 0;
 }
 
@@ -3634,11 +3658,6 @@ int __fortune_cb(void *user) {
 int __help_cb(void *user) {
 	RzCore *core = (RzCore *)user;
 	__toggle_help(core);
-	return 0;
-}
-
-int __license_cb(void *user) {
-	rz_cons_message("Copyright 2006-2020 - pancake - LGPL");
 	return 0;
 }
 
@@ -4038,8 +4057,16 @@ void __print_disassembly_cb(void *user, void *p) {
 		__update_panel_contents(core, panel, cmdstr);
 		return;
 	}
+	// optimize the commands that support setting the number of instr
 	char *ocmd = panel->model->cmd;
-	panel->model->cmd = rz_str_newf("%s %d", panel->model->cmd, panel->view->pos.h - 3);
+	ut32 i = 0;
+	while (printDisOptimized[i]) {
+		if (!strcmp(printDisOptimized[i++], ocmd)) {
+			panel->model->cmd = rz_str_newf("%s %d", ocmd, panel->view->pos.h - 3);
+			free(ocmd);
+			break;
+		}
+	}
 	ut64 o_offset = core->offset;
 	core->offset = panel->model->addr;
 	rz_core_seek(core, panel->model->addr, true);
@@ -4048,8 +4075,6 @@ void __print_disassembly_cb(void *user, void *p) {
 	}
 	cmdstr = __handle_cmd_str_cache(core, panel, false);
 	core->offset = o_offset;
-	free(panel->model->cmd);
-	panel->model->cmd = ocmd;
 	__update_panel_contents(core, panel, cmdstr);
 }
 
@@ -4181,20 +4206,21 @@ void __add_menu(RzCore *core, const char *parent, const char *name, RzPanelsMenu
 	RzCoreVisual *visual = core->visual;
 	RzPanels *panels = visual->panels;
 	RzPanelsMenuItem *p_item, *item = RZ_NEW0(RzPanelsMenuItem);
+	char tmpbuf[512];
 	if (!item) {
 		return;
 	}
 	if (parent) {
 		void *addr = ht_pp_find(panels->mht, parent, NULL);
 		p_item = (RzPanelsMenuItem *)addr;
-		ht_pp_insert(panels->mht, sdb_fmt("%s.%s", parent, name), item);
+		ht_pp_insert(panels->mht, rz_strf(tmpbuf, "%s.%s", parent, name), item);
 	} else {
 		p_item = panels->panels_menu->root;
-		ht_pp_insert(panels->mht, sdb_fmt("%s", name), item);
+		ht_pp_insert(panels->mht, rz_strf(tmpbuf, "%s", name), item);
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
-	item->name = name ? rz_str_new(name) : NULL;
+	item->name = name ? rz_str_dup(name) : NULL;
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = RZ_NEW0(RzPanel);
@@ -4224,9 +4250,10 @@ void __update_menu(RzCore *core, const char *parent, RZ_NULLABLE RzPanelMenuUpda
 	void *addr = ht_pp_find(panels->mht, parent, NULL);
 	RzPanelsMenuItem *p_item = (RzPanelsMenuItem *)addr;
 	int i;
+	char tmpbuf[512];
 	for (i = 0; i < p_item->n_sub; i++) {
 		RzPanelsMenuItem *sub = p_item->sub[i];
-		ht_pp_delete(visual->panels->mht, sdb_fmt("%s.%s", parent, sub->name));
+		ht_pp_delete(visual->panels->mht, rz_strf(tmpbuf, "%s.%s", parent, sub->name));
 	}
 	p_item->sub = NULL;
 	p_item->n_sub = 0;
@@ -4484,7 +4511,7 @@ bool __init_panels_menu(RzCore *core) {
 	while (menus_Tools[i]) {
 		if (!strcmp(menus_Tools[i], "Calculator")) {
 			__add_menu(core, parent, menus_Tools[i], __calculator_cb);
-		} else if (!strcmp(menus_Tools[i], "R2 Shell")) {
+		} else if (!strcmp(menus_Tools[i], "Rizin Shell")) {
 			__add_menu(core, parent, menus_Tools[i], __rz_shell_cb);
 		} else if (!strcmp(menus_Tools[i], "System Shell")) {
 			__add_menu(core, parent, menus_Tools[i], __system_shell_cb);
@@ -4565,9 +4592,7 @@ bool __init_panels_menu(RzCore *core) {
 	parent = "Help";
 	i = 0;
 	while (menus_Help[i]) {
-		if (!strcmp(menus_Help[i], "License")) {
-			__add_menu(core, parent, menus_Help[i], __license_cb);
-		} else if (!strcmp(menus_Help[i], "Version")) {
+		if (!strcmp(menus_Help[i], "Version")) {
 			__add_menu(core, parent, menus_Help[i], __version_cb);
 		} else if (!strcmp(menus_Help[i], "Fortune")) {
 			__add_menu(core, parent, menus_Help[i], __fortune_cb);
@@ -4622,7 +4647,7 @@ bool __init_panels_menu(RzCore *core) {
 	return true;
 }
 
-int cmpstr(const void *_a, const void *_b) {
+int cmpstr(const void *_a, const void *_b, void *user) {
 	char *a = (char *)_a, *b = (char *)_b;
 	return strcmp(a, b);
 }
@@ -4635,7 +4660,7 @@ RzList /*<char *>*/ *__sorted_list(RzCore *core, char *menu[], int count) {
 			(void)rz_list_append(list, menu[i]);
 		}
 	}
-	rz_list_sort(list, cmpstr);
+	rz_list_sort(list, cmpstr, NULL);
 	return list;
 }
 
@@ -4975,7 +5000,7 @@ void __init_almighty_db(RzCore *core) {
 	SdbList *sdb_list = sdb_foreach_list(visual->panels->db, true);
 	ls_foreach (sdb_list, sdb_iter, kv) {
 		const char *key = sdbkv_key(kv);
-		sdb_ptr_set(db, rz_str_new(key), &__create_panel_db, 0);
+		sdb_ptr_set(db, rz_str_dup(key), &__create_panel_db, 0);
 	}
 	sdb_ptr_set(db, "Search strings in data sections", &__search_strings_data_create, 0);
 	sdb_ptr_set(db, "Search strings in the whole bin", &__search_strings_bin_create, 0);
@@ -5510,8 +5535,12 @@ RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name) {
 		__set_geometry(&p->view->pos, x, y, w, h);
 		__init_panel_param(core, p, title, cmd);
 		if (rz_str_endswith(cmd, "Help")) {
-			p->model->title = rz_str_dup(p->model->title, "Help");
-			p->model->cmd = rz_str_dup(p->model->cmd, "Help");
+			char *tmp = rz_str_dup("Help");
+			free(p->model->title);
+			p->model->title = tmp;
+			tmp = rz_str_dup("Help");
+			free(p->model->cmd);
+			p->model->cmd = tmp;
 			RzStrBuf *rsb = rz_strbuf_new(NULL);
 			rz_core_visual_append_help(rsb, "Visual Ascii Art Panels", help_msg_panels);
 			if (!rsb) {
@@ -5974,7 +6003,9 @@ void __rotate_panel_cmds(RzCore *core, const char **cmds, const int cmdslen, con
 		snprintf(replace, sizeof(replace), "%s%s", prefix, between);
 		p->model->cmd = rz_str_replace(p->model->cmd, replace, tmp, 1);
 	} else {
-		p->model->cmd = rz_str_dup(p->model->cmd, tmp);
+		char *tmp1 = rz_str_dup(tmp);
+		free(p->model->cmd);
+		p->model->cmd = tmp1;
 	}
 	__set_cmd_str_cache(core, p, NULL);
 	p->view->refresh = true;
@@ -6303,8 +6334,8 @@ void __handle_tab_new_with_cur_panel(RzCore *core) {
 	RzPanel *new_panel = __get_panel(new_panels, 0);
 	__init_panel_param(core, new_panel, cur->model->title, cur->model->cmd);
 	new_panel->model->cache = cur->model->cache;
-	new_panel->model->funcName = rz_str_new(cur->model->funcName);
-	__set_cmd_str_cache(core, new_panel, rz_str_new(cur->model->cmdStrCache));
+	new_panel->model->funcName = rz_str_dup(cur->model->funcName);
+	__set_cmd_str_cache(core, new_panel, rz_str_dup(cur->model->cmdStrCache));
 	__maximize_panel_size(new_panels);
 
 	visual->panels = prev;
@@ -6317,7 +6348,7 @@ void __handle_tab_new_with_cur_panel(RzCore *core) {
 }
 
 void __panel_prompt(const char *prompt, char *buf, int len) {
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(rz_cons_singleton()->line, prompt);
 	*buf = 0;
 	rz_cons_fgets(buf, len, 0, NULL);
 }
@@ -6715,12 +6746,6 @@ repeat:
 		__handle_refs(core, cur, UT64_MAX);
 		break;
 	case 'X':
-#if 0
-// already accessible via xX
-		rz_core_visual_xrefs (core, false, true);
-		cur->model->addr = core->offset;
-		set_refresh_all (panels, false);
-#endif
 		__dismantle_del_panel(panels, cur, panels->curnode);
 		break;
 	case 9: // TAB
@@ -6966,16 +6991,7 @@ repeat:
 	case -1: // EOF
 		__set_root_state(core, DEL);
 		goto exit;
-#if 0
-	case 27: // ESC
-		if (rz_cons_readchar () == 91) {
-			if (rz_cons_readchar () == 90) {}
-		}
-		break;
-#endif
 	default:
-		// eprintf ("Key %d\n", key);
-		// sleep (1);
 		break;
 	}
 	goto repeat;

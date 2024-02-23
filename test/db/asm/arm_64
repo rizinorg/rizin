@@ -137,8 +137,8 @@ ad "ldrb w5, [x7, -0x100]!" e50c5038
 ad "ldrb w6, [x7], 0x71" e6144738
 ad "ldrb w7, [x7]" e7004039
 ad "ldrb w7, [x7, 0xfff]" e7fc7f39
-ad "ldrb w8, [x30, -0xa]!" c86f5f38
-ad "ldrb w9, [x29, -0x85]!" a9bf5738
+ad "ldrb w8, [lr, -0xa]!" c86f5f38
+ad "ldrb w9, [fp, -0x85]!" a9bf5738
 ad "ldrb w10, [x28, -0x100]!" 8a0f5038
 ad "ldrb w11, [x27, 0x71]" 6bc74139
 ad "ldrb w12, [x26], 0xec" 4cc74e38
@@ -296,7 +296,7 @@ ad "strh w2, [x7, 0x1ffe]" e2fc3f79
 ad "strh w3, [x8, x2]" 03692278
 ad "strh w20, [sp, w19, uxtw]" f44b3378
 ad "strh w28, [sp, x26, lsl 1]" fc7b3a78
-ad "strh w18, [x30, w0, sxtw]" d2cb2078
+ad "strh w18, [lr, w0, sxtw]" d2cb2078
 ad "strh w16, [x25, x5, sxtx 1]" 30fb2578
 a "stur w2, [x7, -10]" e2601fb8
 a "stur w2, [x7, -133]" e2b017b8
@@ -326,24 +326,24 @@ a "msr SP_EL0, x3" 034118d5
 a "msr sp_el0, x3" 034118d5
 a "cbnz w3, 0x1fffd4" a3feff35
 a "cbz x3, 0x1fffe8" 43ffffb4
-d "addg x0, sp, 0x80, 0x4" e0138891
-dE "addg x12, x8, 0x0, 0x2" 91a0090c
+d "addg x0, sp, 0x80, 4" e0138891
+dE "addg x12, x8, 0x200, 2" 91a0090c
 d "subg x0, sp, 0x20, 0xf" e03f82d1
 d "irg sp, x0" 1f10df9a
 d "irg x13, x3, x7" 6d10c79a
 d "subp x13, x7, sp" ed00df9a
 d "gmi x13, x3, x7" 6d14c79a
 d "subps x13, x3, x7" 6d00c7ba
-d "cmpp sp, x13" ff03cdba
-d "stg x13, [x3], 0x0" 6d0420d9
+d "subps xzr, sp, x13" ff03cdba
+d "stg x13, [x3], 0" 6d0420d9
 d "stg x13, [x3, 0x10]" 6d1820d9
 d "stg x13, [x3, 0x10]!" 6d1c20d9
 d "stzgm x12, [x0]" 0c0020d9
 d "ldg x13, [x3, 0x10]" 6d1060d9
-d "ldg x13, [x3, 0x0]" 6d0060d9
+d "ldg x13, [x3]" 6d0060d9
 d "stzg x13, [x3], 0x10" 6d1460d9
-d "stzg x13, [x3, 0x0]" 6d0860d9
-d "stzg x13, [x3, 0x0]!" 6d0c60d9
+d "stzg x13, [x3]" 6d0860d9
+d "stzg x13, [x3, 0]!" 6d0c60d9
 d "st2g sp, [sp], 0x20" ff27a0d9
 d "stgm x0, [x1]" 2000a0d9
 d "stz2g sp, [sp], 0x50" ff57e0d9
@@ -402,21 +402,21 @@ d "add x27, x28, w29, uxtb" 9b033d8b 0x0 (set x27 (+ (var x28) (cast 64 false (c
 d "add x27, x28, w29, uxtb 3" 9b0f3d8b 0x0 (set x27 (+ (var x28) (<< (cast 64 false (cast 8 false (var x29))) (bv 6 0x3) false)))
 d "add x27, x28, w29, uxth" 9b233d8b 0x0 (set x27 (+ (var x28) (cast 64 false (cast 16 false (var x29)))))
 d "add x27, x28, w29, uxtw" 9b433d8b 0x0 (set x27 (+ (var x28) (cast 64 false (cast 32 false (var x29)))))
-d "add x27, x28, x29, uxtx" 9b633d8b 0x0 (set x27 (+ (var x28) (cast 64 false (cast 64 false (var x29)))))
-d "add x27, x28, x29, uxtx 2" 9b6b3d8b 0x0 (set x27 (+ (var x28) (<< (cast 64 false (cast 64 false (var x29))) (bv 6 0x2) false)))
+d "add x27, x28, fp, uxtx" 9b633d8b 0x0 (set x27 (+ (var x28) (var x29)))
+d "add x27, x28, fp, uxtx 2" 9b6b3d8b 0x0 (set x27 (+ (var x28) (<< (var x29) (bv 6 0x2) false)))
 d "add x1, x2, w3, sxtb" 4180238b 0x0 (set x1 (+ (var x2) (cast 64 (msb (cast 8 false (var x3))) (cast 8 false (var x3)))))
 d "add x1, x2, w3, sxtb 1" 4184238b 0x0 (set x1 (+ (var x2) (<< (cast 64 (msb (cast 8 false (var x3))) (cast 8 false (var x3))) (bv 6 0x1) false)))
 d "add x1, x2, w3, sxth" 41a0238b 0x0 (set x1 (+ (var x2) (cast 64 (msb (cast 16 false (var x3))) (cast 16 false (var x3)))))
 d "add x1, x2, w3, sxtw" 41c0238b 0x0 (set x1 (+ (var x2) (cast 64 (msb (cast 32 false (var x3))) (cast 32 false (var x3)))))
-d "add x1, x2, x3, sxtx" 41e0238b 0x0 (set x1 (+ (var x2) (cast 64 (msb (cast 64 false (var x3))) (cast 64 false (var x3)))))
-d "add x1, x2, x3, sxtx 4" 41f0238b 0x0 (set x1 (+ (var x2) (<< (cast 64 (msb (cast 64 false (var x3))) (cast 64 false (var x3))) (bv 6 0x4) false)))
+d "add x1, x2, x3, sxtx" 41e0238b 0x0 (set x1 (+ (var x2) (cast 64 (msb (var x3)) (var x3))))
+d "add x1, x2, x3, sxtx 4" 41f0238b 0x0 (set x1 (+ (var x2) (<< (cast 64 (msb (var x3)) (var x3)) (bv 6 0x4) false)))
 d "add x1, sp, x3, lsl 2" e16b238b 0x0 (set x1 (+ (var sp) (<< (var x3) (bv 6 0x2) false)))
 d "add x1, sp, x3" e163238b 0x0 (set x1 (+ (var sp) (var x3)))
 d "add w27, w28, w29, uxtb" 9b033d0b 0x0 (set x27 (cast 64 false (+ (cast 32 false (var x28)) (cast 32 false (cast 8 false (var x29))))))
 d "add w27, w28, w29, uxtb 2" 9b0b3d0b 0x0 (set x27 (cast 64 false (+ (cast 32 false (var x28)) (<< (cast 32 false (cast 8 false (var x29))) (bv 6 0x2) false))))
 d "add w27, w28, w29, uxth" 9b233d0b 0x0 (set x27 (cast 64 false (+ (cast 32 false (var x28)) (cast 32 false (cast 16 false (var x29))))))
-d "add w27, w28, w29, uxtw" 9b433d0b 0x0 (set x27 (cast 64 false (+ (cast 32 false (var x28)) (cast 32 false (cast 32 false (var x29))))))
-d "add w27, w28, w29, uxtw 1" 9b473d0b 0x0 (set x27 (cast 64 false (+ (cast 32 false (var x28)) (<< (cast 32 false (cast 32 false (var x29))) (bv 6 0x1) false))))
+d "add w27, w28, w29, uxtw" 9b433d0b 0x0 (set x27 (cast 64 false (+ (cast 32 false (var x28)) (cast 32 false (var x29)))))
+d "add w27, w28, w29, uxtw 1" 9b473d0b 0x0 (set x27 (cast 64 false (+ (cast 32 false (var x28)) (<< (cast 32 false (var x29)) (bv 6 0x1) false))))
 d "add w27, w28, w29, uxtx" 9b633d0b 0x0 (set x27 (cast 64 false (+ (cast 32 false (var x28)) (cast 32 false (cast 64 false (var x29))))))
 d "add w30, w1, w2, sxtb" 3e80220b 0x0 (set x30 (cast 64 false (+ (cast 32 false (var x1)) (cast 32 (msb (cast 8 false (var x2))) (cast 8 false (var x2))))))
 d "add w30, w1, w2, sxth" 3ea0220b 0x0 (set x30 (cast 64 false (+ (cast 32 false (var x1)) (cast 32 (msb (cast 16 false (var x2))) (cast 16 false (var x2))))))
@@ -437,13 +437,13 @@ d "ands x1, x2, x3" 410003ea 0x0 (seq (set x1 (& (var x2) (var x3))) (set zf (is
 d "ands w1, w2, w3" 4100036a 0x0 (seq (set x1 (cast 64 false (& (cast 32 false (var x2)) (cast 32 false (var x3))))) (set zf (is_zero (cast 32 false (var x1)))) (set nf (msb (cast 32 false (var x1)))) (set cf false) (set vf false))
 d "asr x1, x2, x3" 4128c39a 0x0 (set x1 (>> (var x2) (cast 6 false (var x3)) (msb (var x2))))
 d "asr w1, w2, w3" 4128c31a 0x0 (set x1 (cast 64 false (>> (cast 32 false (var x2)) (cast 5 false (var x3)) (msb (cast 32 false (var x2))))))
-d "asr w1, w2, 3" 417c0313 0x0 (set x1 (cast 64 false (>> (cast 32 false (var x2)) (bv 5 0x3) (msb (cast 32 false (var x2))))))
+d "asr w1, w2, 3" 417c0313 0x0 (set x1 (cast 64 false (>> (cast 32 false (var x2)) (bv 6 0x3) (msb (cast 32 false (var x2))))))
 d "lsl x1, x2, x3" 4120c39a 0x0 (set x1 (<< (var x2) (cast 6 false (var x3)) false))
 d "lsl w1, w2, w3" 4120c31a 0x0 (set x1 (cast 64 false (<< (cast 32 false (var x2)) (cast 5 false (var x3)) false)))
-d "lsl w1, w2, 0x1f" 41000153 0x0 (set x1 (cast 64 false (<< (cast 32 false (var x2)) (bv 5 0x1f) false)))
+d "lsl w1, w2, 31" 41000153 0x0 (set x1 (cast 64 false (<< (cast 32 false (var x2)) (bv 6 0x1f) false)))
 d "lsr x1, x2, x3" 4124c39a 0x0 (set x1 (>> (var x2) (cast 6 false (var x3)) false))
 d "lsr w1, w2, w3" 4124c31a 0x0 (set x1 (cast 64 false (>> (cast 32 false (var x2)) (cast 5 false (var x3)) false)))
-d "lsr x1, x2, 0xd" 41fc4dd3 0x0 (set x1 (>> (var x2) (bv 6 0xd) false))
+d "lsr x1, x2, 13" 41fc4dd3 0x0 (set x1 (>> (var x2) (bv 6 0xd) false))
 d "ror x1, x2, 0x2a" 41a8c293 0x0 (set x1 (| (>> (var x2) (bv 6 0x2a) false) (<< (var x2) (~- (bv 6 0x2a)) false)))
 d "ror x1, x2, x3" 412cc39a 0x0 (set x1 (| (>> (var x2) (cast 6 false (var x3)) false) (<< (var x2) (~- (cast 6 false (var x3))) false)))
 d "b 0x1c0ffe0" f83f3014 0x1000000 (jmp (bv 64 0x1c0ffe0))
@@ -469,10 +469,10 @@ a "b.cc 0x11234" a3910054 0x10000# same as b.lo
 # Capstone v5 required for these:
 # d "bfc x1, 3, 5" e1137db3 0x0 (set x1 (& (var x1) (bv 64 0xf8)))
 # d "bfc w1, 3, 5" e1131d33 0x0 (set x1 (cast 64 false (& (cast 32 false (var x1)) (bv 32 0xf8))))
-d "bfi x1, x2, 0x16, 0xe" 41346ab3 0x0 (set x1 (| (& (var x1) (bv 64 0xfffffff0003fffff)) (<< (& (var x2) (bv 64 0x3fff)) (bv 6 0x16) false)))
-d "bfi w1, w2, 0xa, 0xe" 41341633 0x0 (set x1 (cast 64 false (| (& (cast 32 false (var x1)) (bv 32 0xff0003ff)) (<< (& (cast 32 false (var x2)) (bv 32 0x3fff)) (bv 6 0xa) false))))
-d "bfxil x1, x2, 0xd, 0x1e" 41a84db3 0x0 (set x1 (| (& (var x1) (bv 64 0xffffffffc0000000)) (>> (& (var x2) (bv 64 0x7ffffffe000)) (bv 6 0xd) false)))
-d "bfxil w1, w2, 0xd, 0xa" 41580d33 0x0 (set x1 (cast 64 false (| (& (cast 32 false (var x1)) (bv 32 0xfffffc00)) (>> (& (cast 32 false (var x2)) (bv 32 0x7fe000)) (bv 6 0xd) false))))
+d "bfi x1, x2, 22, 14" 41346ab3 0x0 (set x1 (| (& (var x1) (bv 64 0xfffffff0003fffff)) (<< (& (var x2) (bv 64 0x3fff)) (bv 6 0x16) false)))
+d "bfi w1, w2, 10, 14" 41341633 0x0 (set x1 (cast 64 false (| (& (cast 32 false (var x1)) (bv 32 0xff0003ff)) (<< (& (cast 32 false (var x2)) (bv 32 0x3fff)) (bv 6 0xa) false))))
+d "bfxil x1, x2, 13, 30" 41a84db3 0x0 (set x1 (| (& (var x1) (bv 64 0xffffffffc0000000)) (>> (& (var x2) (bv 64 0x7ffffffe000)) (bv 6 0xd) false)))
+d "bfxil w1, w2, 13, 10" 41580d33 0x0 (set x1 (cast 64 false (| (& (cast 32 false (var x1)) (bv 32 0xfffffc00)) (>> (& (cast 32 false (var x2)) (bv 32 0x7fe000)) (bv 6 0xd) false))))
 d "bic x0, x1, x2" 2000228a 0x0 (set x0 (& (var x1) (~ (var x2))))
 d "bic x0, x0, x2" 0000228a 0x0 (set x0 (& (var x0) (~ (var x2))))
 d "bic w0, w1, w2" 2000220a 0x0 (set x0 (cast 64 false (& (cast 32 false (var x1)) (~ (cast 32 false (var x2))))))
@@ -537,7 +537,7 @@ d "ldr x1, [x2, 0x18]" 410c40f9 0x0 (set x1 (loadw 0 64 (+ (var x2) (bv 64 0x18)
 d "ldr x1, [x2, 0x18]!" 418c41f8 0x0 (seq (set x1 (loadw 0 64 (+ (var x2) (bv 64 0x18)))) (set x2 (+ (var x2) (bv 64 0x18))))
 d "ldr x1, [x2, -0x18]!" 418c5ef8 0x0 (seq (set x1 (loadw 0 64 (- (var x2) (bv 64 0x18)))) (set x2 (- (var x2) (bv 64 0x18))))
 d "ldr x1, [x2], 0x18" 418441f8 0x0 (seq (set x1 (loadw 0 64 (var x2))) (set x2 (+ (var x2) (bv 64 0x18))))
-d "ldr x1, [x2], 0xffffffffffffffe8" 41845ef8 0x0 (seq (set x1 (loadw 0 64 (var x2))) (set x2 (- (var x2) (bv 64 0x18))))
+d "ldr x1, [x2], -0x18" 41845ef8 0x0 (seq (set x1 (loadw 0 64 (var x2))) (set x2 (- (var x2) (bv 64 0x18))))
 d "ldr x1, 0x1028" 41010058 0x1000 (set x1 (loadw 0 64 (bv 64 0x1028)))
 d "ldr w1, 0x1044" 21020018 0x1000 (set x1 (cast 64 false (loadw 0 32 (bv 64 0x1044))))
 d "ldrb w1, [x2]" 41004039 0x0 (set x1 (cast 64 false (load 0 (var x2))))
@@ -552,7 +552,7 @@ d "ldr x8, [x25, x8, lsl 3]" 287b68f8 0x0 (set x8 (loadw 0 64 (+ (var x25) (<< (
 d "ldr x0, [x1, w2, uxtw]" 204862f8 0x0 (set x0 (loadw 0 64 (+ (var x1) (cast 64 false (cast 32 false (var x2))))))
 d "ldr x0, [x1, w2, sxtw]" 20c862f8 0x0 (set x0 (loadw 0 64 (+ (var x1) (cast 64 (msb (cast 32 false (var x2))) (cast 32 false (var x2))))))
 d "ldr x0, [x1, w2, sxtw 3]" 20d862f8 0x0 (set x0 (loadw 0 64 (+ (var x1) (<< (cast 64 (msb (cast 32 false (var x2))) (cast 32 false (var x2))) (bv 6 0x3) false))))
-d "ldr x0, [x1, x2, sxtx]" 20e862f8 0x0 (set x0 (loadw 0 64 (+ (var x1) (cast 64 (msb (cast 64 false (var x2))) (cast 64 false (var x2))))))
+d "ldr x0, [x1, x2, sxtx]" 20e862f8 0x0 (set x0 (loadw 0 64 (+ (var x1) (cast 64 (msb (var x2)) (var x2)))))
 d "ldrsb x0, [x1]" 20008039 0x0 (set x0 (cast 64 (msb (load 0 (var x1))) (load 0 (var x1))))
 d "ldrsh x0, [x1]" 20008079 0x0 (set x0 (cast 64 (msb (loadw 0 16 (var x1))) (loadw 0 16 (var x1))))
 d "ldrsw x0, [x1]" 200080b9 0x0 (set x0 (cast 64 (msb (loadw 0 32 (var x1))) (loadw 0 32 (var x1))))
@@ -635,8 +635,8 @@ d "movn x0, 0, lsl 16" 0000a092 0x0 (set x0 (bv 64 0xffffffffffffffff))
 d "movn w0, 0, lsl 16" 0000a012 0x0 (set x0 (cast 64 false (bv 32 0xffffffff)))
 d "movz x0, 0, lsl 16" 0000a0d2 0x0 (set x0 (bv 64 0x0))
 d "movz w0, 0, lsl 16" 0000a052 0x0 (set x0 (cast 64 false (bv 32 0x0)))
-d "msr nzcv, x1" 01421bd5 0x0 (seq (set nf (! (is_zero (& (var x1) (bv 64 0x80000000))))) (set zf (! (is_zero (& (var x1) (bv 64 0x40000000))))) (set cf (! (is_zero (& (var x1) (bv 64 0x20000000))))) (set vf (! (is_zero (& (var x1) (bv 64 0x10000000))))))
-d "mrs x1, nzcv" 01423bd5 0x0 (set x1 (| (ite (var nf) (bv 64 0x80000000) (bv 64 0x0)) (| (ite (var zf) (bv 64 0x40000000) (bv 64 0x0)) (| (ite (var cf) (bv 64 0x20000000) (bv 64 0x0)) (ite (var vf) (bv 64 0x10000000) (bv 64 0x0))))))
+d "msr NZCV, x1" 01421bd5 0x0 (seq (set nf (! (is_zero (& (var x1) (bv 64 0x80000000))))) (set zf (! (is_zero (& (var x1) (bv 64 0x40000000))))) (set cf (! (is_zero (& (var x1) (bv 64 0x20000000))))) (set vf (! (is_zero (& (var x1) (bv 64 0x10000000))))))
+d "mrs x1, NZCV" 01423bd5 0x0 (set x1 (| (ite (var nf) (bv 64 0x80000000) (bv 64 0x0)) (| (ite (var zf) (bv 64 0x40000000) (bv 64 0x0)) (| (ite (var cf) (bv 64 0x20000000) (bv 64 0x0)) (ite (var vf) (bv 64 0x10000000) (bv 64 0x0))))))
 d "mvn x1, x2" e10322aa 0x0 (set x1 (~ (var x2)))
 d "mvn w1, w2" e103222a 0x0 (set x1 (cast 64 false (~ (cast 32 false (var x2)))))
 d "mvn x1, x2, lsl 3" e10f22aa 0x0 (set x1 (~ (<< (var x2) (bv 6 0x3) false)))
@@ -733,9 +733,9 @@ d "uxtb w1, w2" 411c0053 0x0 (set x1 (cast 64 false (cast 32 false (cast 8 false
 d "uxtb w1, w2" 411c0053 0x0 (set x1 (cast 64 false (cast 32 false (cast 8 false (var x2)))))
 d "uxth w1, w2" 413c0053 0x0 (set x1 (cast 64 false (cast 32 false (cast 16 false (var x2)))))
 d "uxth w1, w2" 413c0053 0x0 (set x1 (cast 64 false (cast 32 false (cast 16 false (var x2)))))
-d "tbz w1, 0xd, 0x100100" 01086836 0x100000 (branch (lsb (>> (cast 64 false (var x1)) (bv 6 0xd) false)) nop (jmp (bv 64 0x100100)))
+d "tbz w1, 0xd, 0x100100" 01086836 0x100000 (branch (lsb (>> (cast 64 false (cast 32 false (var x1))) (bv 6 0xd) false)) nop (jmp (bv 64 0x100100)))
 d "tbz x1, 0x2a, 0x100100" 010850b6 0x100000 (branch (lsb (>> (var x1) (bv 6 0x2a) false)) nop (jmp (bv 64 0x100100)))
-d "tbnz w1, 0xd, 0x100100" 01086837 0x100000 (branch (lsb (>> (cast 64 false (var x1)) (bv 6 0xd) false)) (jmp (bv 64 0x100100)) nop)
+d "tbnz w1, 0xd, 0x100100" 01086837 0x100000 (branch (lsb (>> (cast 64 false (cast 32 false (var x1))) (bv 6 0xd) false)) (jmp (bv 64 0x100100)) nop)
 d "tbnz x1, 0x2a, 0x100100" 010850b7 0x100000 (branch (lsb (>> (var x1) (bv 6 0x2a) false)) (jmp (bv 64 0x100100)) nop)
 d "tst x0, 6" 1f047ff2 0x0 (seq (set zf (is_zero (& (var x0) (bv 64 0x6)))) (set nf (msb (& (var x0) (bv 64 0x6)))) (set cf false) (set vf false))
 d "tst w0, 6" 1f041f72 0x0 (seq (set zf (is_zero (& (cast 32 false (var x0)) (bv 32 0x6)))) (set nf (msb (& (cast 32 false (var x0)) (bv 32 0x6)))) (set cf false) (set vf false))

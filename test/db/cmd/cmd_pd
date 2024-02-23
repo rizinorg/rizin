@@ -32,7 +32,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd V8 and Cortex-M profiles 
+NAME=pd V8 and Cortex-M profiles
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
@@ -119,7 +119,7 @@ e asm.bits=64
 wx 90
 e asm.lines.bb=0
 b 1
-pd
+pd 1
 pd 1
 EOF
 EXPECT=<<EOF
@@ -151,7 +151,7 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e asm.lines.bb=0
-pd@x:90
+pd 1@x:90
 EOF
 EXPECT=<<EOF
   0x00000000      90             nop
@@ -642,7 +642,7 @@ s sym.func.100004401
 af
 afn newname
 s entry0
-pds
+pds 0x420
 EOF
 EXPECT=<<EOF
 0x100001085 call newname
@@ -951,7 +951,7 @@ CMDS=<<EOF
 e asm.bytes=false
 e asm.cmt.off=false
 e str.escbslash=true
-e bin.str.enc=8bit
+e str.search.encoding=8bit
 e scr.strconv=asciiesc
 pd 1 @ 0x0040169d
 e scr.strconv=asciidot
@@ -959,11 +959,11 @@ pd 1 @ 0x0040169d
 e asm.sub.names=false
 e asm.noisy=false
 pd 1 @ 0x00401693
-e bin.str.enc=utf8
+e str.search.encoding=utf8
 pd 1 @ 0x00401693
-e bin.str.enc=utf16le
+e str.search.encoding=utf16le
 pd 1 @ 0x004016ac
-e bin.str.enc=utf32le
+e str.search.encoding=utf32le
 pd 1 @ 0x004016ed
 pd 1 @ 0x004016f7
 EOF
@@ -978,18 +978,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc utf8
+NAME=str.search.encoding utf8
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
 e asm.sub.names=false
 e asm.noisy=false
 e str.escbslash=true
-e bin.str.enc=utf8
+e str.search.encoding=utf8
 pd 1 @ 0x00401693
-e bin.str.enc=8bit
+e str.search.encoding=8bit
 pd 1 @ 0x00401693
-e bin.str.enc=guess
+e str.search.encoding=guess
 pd 1 @ 0x00401693
 EOF
 EXPECT=<<EOF
@@ -999,15 +999,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc 8bit
+NAME=str.search.encoding 8bit
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e asm.sub.names=false
 e asm.bytes=true
 e asm.noisy=false
-e bin.str.enc=8bit
+e str.search.encoding=8bit
 pd 1 @ 0x140001058
-e bin.str.enc=utf8
+e str.search.encoding=utf8
 pd 1 @ 0x140001058
 EOF
 EXPECT=<<EOF
@@ -1016,24 +1016,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc utf16le
+NAME=str.search.encoding utf16le
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
 e asm.sub.names=false
 e asm.noisy=false
 e str.escbslash=true
-e bin.str.enc=guess
+e str.search.encoding=guess
 pd 1 @ 0x004016ac
 e asm.sub.names=true
 e asm.cmt.off=false
-e bin.str.enc=guess
+e str.search.encoding=guess
 pd 1 @ 0x004016b6
-e bin.str.enc=utf16le
+e str.search.encoding=utf16le
 pd 1 @ 0x004016b6
-e bin.str.enc=guess
+e str.search.encoding=guess
 pd 1 @ 0x004016c0
-e bin.str.enc=utf16le
+e str.search.encoding=utf16le
 pd 1 @ 0x004016c0
 pd 1 @ 0x004016ca
 pd 1 @ 0x004016d4
@@ -1049,23 +1049,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc utf32le
+NAME=str.search.encoding utf32le
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
 e asm.cmt.off=false
 e str.escbslash=true
-e bin.str.enc=utf16le
+e str.search.encoding=utf16le
 pd 1 @ 0x004016de
-e bin.str.enc=utf32le
+e str.search.encoding=utf32le
 pd 1 @ 0x004016de
 e asm.sub.names=false
 e asm.noisy=false
-e bin.str.enc=guess
+e str.search.encoding=guess
 pd 1 @ 0x004016ed
 pd 1 @ 0x004016f7
 pd 1 @ 0x00401701
-e bin.str.enc=utf32le
+e str.search.encoding=utf32le
 pd 1 @ 0x00401701
 EOF
 EXPECT=<<EOF
@@ -1078,15 +1078,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc guess utf16le
+NAME=str.search.encoding guess utf16le
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e asm.bytes=true
 e asm.sub.names=false
 e asm.noisy=false
-e bin.str.enc=guess
+e str.search.encoding=guess
 pd 1 @ 0x14000104c
-e bin.str.enc=utf16le
+e str.search.encoding=utf16le
 pd 1 @ 0x14000104c
 EOF
 EXPECT=<<EOF
@@ -1095,14 +1095,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc guess utf32le
+NAME=str.search.encoding guess utf32le
 FILE=bins/elf/strenc-guess-utf32le
 CMDS=<<EOF
 e asm.cmt.off=false
 e asm.bytes=false
-e bin.str.enc=guess
+e str.search.encoding=guess
 pd 1 @ 0x00400463
-e bin.str.enc=utf32le
+e str.search.encoding=utf32le
 pd 1 @ 0x00400463
 EOF
 EXPECT=<<EOF
@@ -1111,7 +1111,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc alias
+NAME=str.search.encoding alias
 FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.sub.names=false
@@ -1119,16 +1119,16 @@ e asm.noisy=false
 e asm.bytes=false
 e asm.cmt.off=false
 e str.escbslash=true
-(test_str.enc enc; e bin.str.enc=${enc}; e bin.str.enc)
+(test_str.enc enc; e str.search.encoding=${enc}; e str.search.encoding)
 .(test_str.enc guess)
-.(test_str.enc utf-8)
-.(test_str.enc utf-16le)
+.(test_str.enc utf8)
+.(test_str.enc utf16le)
 pd 1 @ 0x004016c0
-.(test_str.enc utf32-le)
+.(test_str.enc utf32le)
 pd 1 @ 0x004016ed
 echo
 .(test_str.enc UTF32BE)
-.(test_str.enc UTF16-LE)
+.(test_str.enc UTF16LE)
 EOF
 EXPECT=<<EOF
 guess
@@ -1143,11 +1143,11 @@ utf16le
 EOF
 RUN
 
-NAME=bin.str.enc error handling
+NAME=str.search.encoding error handling
 FILE==
 CMDS=<<EOF
-(test_str.enc enc; e bin.str.enc=${enc}; e bin.str.enc)
-.(test_str.enc UTF-32LE)
+(test_str.enc enc; e str.search.encoding=${enc}; e str.search.encoding)
+.(test_str.enc UTF32LE)
 .(test_str.enc cat_sat_on_keyboard)
 .(test_str.enc CAT_SAT_ON_KEYBOARD)
 EOF
@@ -1157,8 +1157,8 @@ utf32le
 utf32le
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: bin.str.enc: unknown encoding: cat_sat_on_keyboard
-ERROR: core: bin.str.enc: unknown encoding: CAT_SAT_ON_KEYBOARD
+ERROR: Invalid value for str.search.encoding (cat_sat_on_keyboard).
+ERROR: Invalid value for str.search.encoding (CAT_SAT_ON_KEYBOARD).
 EOF
 RUN
 
@@ -1943,7 +1943,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ with backslashes, quotation marks, str.escbslash and bin.str.enc
+NAME=pdJ with backslashes, quotation marks, str.escbslash and str.search.encoding
 FILE==
 CMDS=<<EOF
 e io.cache=true
@@ -1966,13 +1966,13 @@ ww "path\"C:\\Program\r"
 f wide_str
 s 0x4000
 wa "mov ebx, 0x3000"
-e bin.str.enc=guess
+e str.search.encoding=guess
 pd 1
 pdJ 1
-e bin.str.enc=8bit
+e str.search.encoding=8bit
 pd 1
 pdJ 1
-e bin.str.enc=utf16le
+e str.search.encoding=utf16le
 e str.escbslash=true
 pd 1
 pdJ 1
@@ -2151,7 +2151,7 @@ FILE=bins/elf/strenc
 CMDS=<<EOF
 e asm.bytes=false
 e asm.imm.str=true
-e bin.str.enc=utf16le
+e str.search.encoding=utf16le
 pd 1 @ 0x004016ca
 f str.fence @ 0x40235a
 e asm.cmt.off=false
@@ -2524,7 +2524,7 @@ NAME=pd is not limited by blocksize
 FILE==
 CMDS=<<EOF
 b 10
-pd~?
+pd 10~?
 pd 3~?
 pd 20~?
 EOF

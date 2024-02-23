@@ -288,7 +288,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 			continue;
 		}
 		if (rz_str_strchr(line, "#")) {
-			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "#", 0, true);
+			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "\\#", 0, true);
 			char *raw_comment = strdup(rz_list_get_top(line_and_cmt));
 			if (!raw_comment) {
 				RZ_LOG_WARN("Comment could not be split from register definition. Line: \"%s\"\n", line);
@@ -299,11 +299,11 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 				RZ_LOG_WARN("Could not prepend # to comment. Line: \"%s\".\n", line);
 				continue;
 			}
-			toks = rz_str_split_duplist_n_regex(rz_list_get_bottom(line_and_cmt), "[[:blank:]]+", 0, true);
+			toks = rz_str_split_duplist_n_regex(rz_list_get_bottom(line_and_cmt), "\\s+", 0, true);
 			rz_list_append(toks, comment);
 			rz_list_free(line_and_cmt);
 		} else {
-			toks = rz_str_split_duplist_n_regex(line, "[[:blank:]]+", 0, true);
+			toks = rz_str_split_duplist_n_regex(line, "\\s+", 0, true);
 		}
 		ut32 toks_len = rz_list_length(toks);
 		if (rz_list_empty(toks)) {

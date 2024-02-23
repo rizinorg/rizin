@@ -200,7 +200,7 @@ static const char *__core_visual_print_command(RzCore *core) {
 	}
 	if (rz_config_get_i(core->config, "scr.dumpcols")) {
 		free(core->stkcmd);
-		core->stkcmd = rz_str_new(stackPrintCommand(core));
+		core->stkcmd = rz_str_dup(stackPrintCommand(core));
 		return printfmtColumns[PIDX];
 	}
 	return printfmtSingle[PIDX];
@@ -303,7 +303,7 @@ static const char *help_msg_visual[] = {
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to rizin shell",
 	"r", "toggle call/jmp/lea hints",
-	"R", "randomize color palette (ecr)",
+	"R", "changes the theme or randomizes colors if scr.randpal option is true.",
 	"sS", "step / step over",
 	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
 	"uU", "undo/redo seek",
@@ -565,7 +565,7 @@ static void prompt_read(const char *p, char *buf, int buflen) {
 		return;
 	}
 	*buf = 0;
-	rz_line_set_prompt(p);
+	rz_line_set_prompt(rz_cons_singleton()->line, p);
 	rz_core_visual_showcursor(NULL, true);
 	rz_cons_fgets(buf, buflen, 0, NULL);
 	rz_core_visual_showcursor(NULL, false);
@@ -657,20 +657,21 @@ RZ_IPI void rz_core_visual_prompt_input(RzCore *core) {
 RZ_IPI int rz_core_visual_prompt(RzCore *core) {
 	char buf[1024];
 	int ret;
+	RzLine *line = core->cons->line;
 	if (PIDX != 2) {
 		core->seltab = 0;
 	}
 #if __UNIX__
-	rz_line_set_prompt(Color_RESET ":> ");
+	rz_line_set_prompt(line, Color_RESET ":> ");
 #else
-	rz_line_set_prompt(":> ");
+	rz_line_set_prompt(line, ":> ");
 #endif
 	rz_core_visual_showcursor(core, true);
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (!strcmp(buf, "q")) {
 		ret = false;
 	} else if (*buf) {
-		rz_line_hist_add(buf);
+		rz_line_hist_add(line, buf);
 		rz_core_cmd(core, buf, 0);
 		rz_cons_echo(NULL);
 		rz_cons_flush();
@@ -905,7 +906,7 @@ static void visual_search(RzCore *core) {
 	int len, d = core->print->cur;
 	char str[128], buf[sizeof(str) * 2 + 1];
 
-	rz_line_set_prompt("search byte/string in block: ");
+	rz_line_set_prompt(core->cons->line, "search byte/string in block: ");
 	rz_cons_fgets(str, sizeof(str), 0, NULL);
 	len = rz_hex_str2bin(str, (ut8 *)buf);
 	if (*str == '"') {
@@ -1055,12 +1056,13 @@ RZ_IPI int rz_line_hist_offset_down(RzLine *line) {
 
 RZ_IPI void rz_core_visual_offset(RzCore *core) {
 	char buf[256];
+	RzLine *line = core->cons->line;
 
-	core->cons->line->prompt_type = RZ_LINE_PROMPT_OFFSET;
-	rz_line_set_hist_callback(core->cons->line,
+	line->prompt_type = RZ_LINE_PROMPT_OFFSET;
+	rz_line_set_hist_callback(line,
 		&rz_line_hist_offset_up,
 		&rz_line_hist_offset_down);
-	rz_line_set_prompt("[offset]> ");
+	rz_line_set_prompt(line, "[offset]> ");
 	if (rz_cons_fgets(buf, sizeof(buf) - 1, 0, NULL) > 0) {
 		if (!strcmp(buf, "g") || !strcmp(buf, "G")) {
 			__core_visual_gogo(core, buf[0]);
@@ -1074,8 +1076,8 @@ RZ_IPI void rz_core_visual_offset(RzCore *core) {
 		}
 		reset_print_cur(core->print);
 	}
-	rz_line_set_hist_callback(core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
-	core->cons->line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
+	rz_line_set_hist_callback(line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
+	line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
 }
 
 RZ_IPI int rz_core_visual_prevopsz(RzCore *core, ut64 addr) {
@@ -1089,7 +1091,7 @@ static void add_comment(RzCore *core, ut64 addr, const char *prompt) {
 	rz_core_visual_showcursor(core, true);
 	rz_cons_flush();
 	rz_cons_set_raw(false);
-	rz_line_set_prompt(":> ");
+	rz_line_set_prompt(core->cons->line, ":> ");
 	rz_cons_enable_mouse(false);
 	if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 0) {
 		buf[0] = '\0';
@@ -1196,7 +1198,7 @@ repeat:
 				rz_cons_printf("...");
 				break;
 			}
-			if (!iter->n && idx < skip) {
+			if (!rz_list_iter_has_next(iter) && idx < skip) {
 				skip = idx;
 			}
 			if (idx >= skip) {
@@ -1240,23 +1242,41 @@ repeat:
 				if (idx == skip) {
 					free(dis);
 					curat = xaddr1;
-					char *res = rz_core_cmd_strf(core, "pd 4 @ 0x%08" PFMT64x "@e:asm.flags.limit=1", xaddr2);
-					// TODO: show disasm with context. not seek addr
-					// dis = rz_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, xaddr);
+					RzConfigHold *hc = rz_config_hold_new(core->config);
+					if (!hc) {
+						return RZ_CMD_STATUS_ERROR;
+					}
+					rz_config_hold_i(hc, "asm.flags.limit", NULL);
+					rz_config_set_i(core->config, "asm.flags.limit", 1);
+					char *res = rz_core_print_cons_disassembly(core, xaddr2, 4, 0);
+					rz_config_hold_restore(hc);
+					rz_config_hold_free(hc);
 					dis = NULL;
-					res = rz_str_appendf(res, "; ---------------------------\n");
+					/* Draw a separator */
+					if (rz_config_get_b(core->config, "scr.utf8")) {
+						char *line = rz_str_repeat("─", w - 5);
+						res = rz_str_appendf(res, ">%s\n", line);
+					} else {
+						char *line = rz_str_repeat("-", w - 5);
+						res = rz_str_appendf(res, "; %s\n", line);
+					}
 					switch (visual->printMode) {
 					case 0:
-						dis = rz_core_cmd_strf(core, "pd $r-4 @ 0x%08" PFMT64x, xaddr1);
+						/* Current reference context */
+						dis = rz_core_print_cons_disassembly(core, xaddr1, rows - 4, 0);
 						break;
 					case 1:
-						dis = rz_core_cmd_strf(core, "pd @ 0x%08" PFMT64x "-32", xaddr1);
+						/* Instructions preceding the reference context */
+						dis = rz_core_print_cons_disassembly(core, xaddr1 - 32, rows - 4, 0);
 						break;
 					case 2:
-						dis = rz_core_cmd_strf(core, "px @ 0x%08" PFMT64x, xaddr1);
+						/* Hexdump of the reference context */
+						dis = rz_core_print_hexdump_or_hexdiff_str(core, RZ_OUTPUT_MODE_STANDARD, xaddr1, core->blocksize, false);
+
 						break;
 					case 3:
-						dis = rz_core_cmd_strf(core, "pds @ 0x%08" PFMT64x, xaddr1);
+						/* Strings near the reference context */
+						dis = rz_core_print_disasm_strings(core, RZ_CORE_DISASM_STRINGS_MODE_INST, 0, NULL);
 						break;
 					}
 					if (dis) {
@@ -1281,9 +1301,9 @@ repeat:
 				rz_cons_newline();
 			}
 			/* prepare highlight */
-			char *cmd = strdup(rz_cons_singleton()->highlight);
+			char *cmd = rz_str_dup(rz_cons_singleton()->highlight);
 			char *ats = rz_str_newf("%" PFMT64x, curat);
-			if (ats && !*cmd) {
+			if (ats && RZ_STR_ISEMPTY(cmd)) {
 				rz_cons_highlight(ats);
 			}
 			/* print disasm */
@@ -2048,6 +2068,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 	RzAsmOp op;
 	ut64 offset = core->offset;
 	RzCoreVisual *visual = core->visual;
+	RzLine *line = core->cons->line;
 	char buf[4096];
 	const char *key_s;
 	int i, cols = core->print->cols;
@@ -2202,7 +2223,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_cons_flush();
 			rz_cons_set_raw(false);
 			strcpy(buf, "\"wa ");
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			rz_cons_enable_mouse(false);
 			if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
@@ -2231,9 +2252,9 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			const char *buf = NULL;
 #define I core->cons
 			const char *cmd = rz_config_get(core->config, "cmd.vprompt");
-			rz_line_set_prompt("cmd.vprompt> ");
+			rz_line_set_prompt(line, "cmd.vprompt> ");
 			I->line->contents = strdup(cmd);
-			buf = rz_line_readline();
+			buf = rz_line_readline(line);
 			I->line->contents = NULL;
 			(void)rz_config_set(core->config, "cmd.vprompt", buf);
 			rz_core_visual_showcursor(core, false);
@@ -2243,16 +2264,16 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			const char *buf = NULL;
 #define I core->cons
 			const char *cmd = rz_config_get(core->config, "cmd.cprompt");
-			rz_line_set_prompt("cmd.cprompt> ");
-			I->line->contents = strdup(cmd);
-			buf = rz_line_readline();
+			rz_line_set_prompt(line, "cmd.cprompt> ");
+			line->contents = strdup(cmd);
+			buf = rz_line_readline(line);
 			if (buf && !strcmp(buf, "|")) {
-				RZ_FREE(I->line->contents);
+				RZ_FREE(line->contents);
 				core->print->cur_enabled = true;
 				core->print->cur = 0;
 				(void)rz_config_set(core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
-				RZ_FREE(I->line->contents);
+				RZ_FREE(line->contents);
 				(void)rz_config_set(core->config, "cmd.cprompt", buf ? buf : "");
 			}
 			rz_core_visual_showcursor(core, false);
@@ -2328,7 +2349,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			bool mouse_state = __holdMouseState(core);
 			int range, min, max;
 			char name[256], *n;
-			rz_line_set_prompt("flag name: ");
+			rz_line_set_prompt(line, "flag name: ");
 			rz_core_visual_showcursor(core, true);
 			if (rz_cons_fgets(name, sizeof(name), 0, NULL) >= 0 && *name) {
 				n = name;
@@ -2459,7 +2480,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_cons_set_raw(0);
 			if (ch == 'I') {
 				strcpy(buf, "wb ");
-				rz_line_set_prompt("insert hexpair block: ");
+				rz_line_set_prompt(line, "insert hexpair block: ");
 				if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
@@ -2476,13 +2497,13 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			if (core->print->col == 2) {
 				strcpy(buf, "\"w ");
-				rz_line_set_prompt("insert string: ");
+				rz_line_set_prompt(line, "insert string: ");
 				if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				strcat(buf, "\"");
 			} else {
-				rz_line_set_prompt("insert hex: ");
+				rz_line_set_prompt(line, "insert hex: ");
 				if (core->print->ocur != -1) {
 					int bs = RZ_ABS(core->print->cur - core->print->ocur) + 1;
 					core->blocksize = bs;
@@ -3078,14 +3099,16 @@ static void visual_flagzone(RzCore *core) {
 		char *title = rz_str_newf("[ 0x%08" PFMT64x " ]", core->offset);
 		title_size = strlen(title);
 		padsize -= strlen(title) / 2;
-		const char *halfpad = rz_str_pad(' ', padsize);
+		char *halfpad = rz_str_pad(' ', padsize);
 		rz_cons_printf("%s%s", halfpad, title);
 		free(title);
+		free(halfpad);
 	}
 	if (b) {
 		padsize = (w / 2) - title_size - strlen(b) - 4;
-		const char *halfpad = padsize > 1 ? rz_str_pad(' ', padsize) : "";
+		char *halfpad = rz_str_pad(' ', padsize);
 		rz_cons_printf("%s[%s >>]", halfpad, b);
+		free(halfpad);
 	}
 	if (a || b) {
 		rz_cons_newline();

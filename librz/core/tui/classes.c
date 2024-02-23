@@ -16,7 +16,7 @@
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
 // Segfaults - stack overflow, because of recursion
-static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const char *grep, RzList /*<RzBinClass *>*/ *list) {
+static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const char *grep, const RzPVector /*<RzBinClass *>*/ *vec) {
 	bool show_color = rz_config_get_i(core->config, "scr.color");
 	RzListIter *iter;
 	RzBinClass *c, *cur = NULL;
@@ -29,7 +29,9 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 	switch (mode) {
 	case 'c':
 		rz_cons_printf("[hjkl_/Cfm]> classes:\n\n");
-		rz_list_foreach (list, iter, c) {
+		void **vec_it;
+		rz_pvector_foreach (vec, vec_it) {
+			c = *vec_it;
 			if (grep) {
 				if (!rz_str_casestr(c->name, grep)) {
 					i++;
@@ -200,8 +202,10 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 	int oldcur = 0;
 	char *grep = NULL;
 	bool grepmode = false;
-	RzList *list = rz_bin_get_classes(core->bin);
-	if (rz_list_empty(list)) {
+	RzLine *line = core->cons->line;
+	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
+	const RzPVector *vec = rz_bin_object_get_classes(bin_obj);
+	if (!vec || rz_pvector_empty(vec)) {
 		rz_cons_message("No Classes");
 		return false;
 	}
@@ -211,7 +215,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 		if (grepmode) {
 			rz_cons_printf("Grep: %s\n", grep ? grep : "");
 		}
-		ptr = show_class(core, mode, &index, cur, grep, list);
+		ptr = show_class(core, mode, &index, cur, grep, vec);
 		switch (mode) {
 		case 'f':
 			fur = (RzBinClassField *)ptr;
@@ -287,7 +291,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 			index = 0;
 			break;
 		case 'G':
-			index = rz_list_length(list) - 1;
+			index = rz_pvector_len(vec) - 1;
 			break;
 		case 'i': {
 			char *num = rz_cons_prompt("Index:", NULL);
@@ -365,7 +369,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			cmd[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
@@ -487,6 +491,7 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 	int oldcur = 0;
 	char mode = ' ';
 	const char *class_name = "";
+	RzLine *line = core->cons->line;
 
 	if (rz_list_empty(list)) {
 		rz_cons_message("No Classes");
@@ -574,7 +579,7 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			command[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(command, sizeof(command), 0, NULL) < 0) {
 				command[0] = '\0';
 			}

@@ -10,30 +10,28 @@ agI
 EOF
 EXPECT=<<EOF
 -- oneline
-0x100508 (seq (set r2 (let v (append (bv 16 0x1e) (bv 16 0x0)) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v))))) empty)
+0x100508 (set r2 (let v (append (bv 16 0x1e) (bv 16 0x0)) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v)))))
 0x10050c (seq (set a (var r2)) (set b (let v (bv 16 0x7c00) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v))))) empty (set r2 (+ (var a) (var b))) empty empty empty)
 0x100510 (seq (set res (| (var r1) (var r1))) (set r9 (var res)) empty)
 0x100514 (seq (set mstart (bv 8 0x0)) (set mstop (bv 8 0x3b)) (set m (bv 64 0x0)) (repeat (! (== (var mstart) (var mstop))) (seq (set m (| (var m) (>> (>> (bv 64 0x0) (bv 8 0x1) true) (var mstart) false))) (set mstart (mod (+ (var mstart) (bv 8 0x1)) (bv 8 0x40))))) (set m (| (var m) (>> (>> (bv 64 0x0) (bv 8 0x1) true) (var mstop) false))) (set mask (cast 64 false (var m))) empty (set result (& (let rotl64_x (var r1) (let rotl64_y (& (bv 8 0x3f) (bv 8 0x0)) (| (<< (var rotl64_x) (var rotl64_y) false) (>> (var rotl64_x) (- (bv 8 0x40) (cast 8 false (var rotl64_y))) false)))) (var mask))) (set r1 (var result)) empty)
-0x100518 (seq (set r0 (let v (bv 16 0x0) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v))))) empty)
+0x100518 (set r0 (let v (bv 16 0x0) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v)))))
 -- pretty
 0x100508
-(seq
-  (set r2
-    (let v
-      (append
-        (bv 16 0x1e)
-        (bv 16 0x0))
-      (ite
+(set r2
+  (let v
+    (append
+      (bv 16 0x1e)
+      (bv 16 0x0))
+    (ite
+      (msb
+        (var v))
+      (cast 64
         (msb
           (var v))
-        (cast 64
-          (msb
-            (var v))
-          (var v))
-        (cast 64
-          false
-          (var v)))))
-  empty)
+        (var v))
+      (cast 64
+        false
+        (var v)))))
 0x10050c
 (seq
   (set a
@@ -139,33 +137,29 @@ EXPECT=<<EOF
     (var result))
   empty)
 0x100518
-(seq
-  (set r0
-    (let v
-      (bv 16 0x0)
-      (ite
+(set r0
+  (let v
+    (bv 16 0x0)
+    (ite
+      (msb
+        (var v))
+      (cast 64
         (msb
           (var v))
-        (cast 64
-          (msb
-            (var v))
-          (var v))
-        (cast 64
-          false
-          (var v)))))
-  empty)
+        (var v))
+      (cast 64
+        false
+        (var v)))))
 -- graph
-                                                 .-----------.
-                                                 |  lis      |
-                                                 `-----------'
-                                                       v v
-                                                       | |
-                                       .---------------' |
-                                       |                 '----------.
-                                       |                            |
-                                   .-----------.                .----------.
-                                   |  set: r2  |                |  empty   |
-                                   `-----------'                `----------'
+                                   .----------.
+                                   |  lis     |
+                                   `----------'
+                                       v
+                                       |
+                                       |
+                                   .-----------.
+                                   |  set: r2  |
+                                   `-----------'
                                        v
                                        |
                                        |
@@ -548,7 +542,6 @@ RUN
 
 NAME=ppc CR logical instructions
 FILE=bins/elf/ppc/ppc64le_uplifted
-BROKEN=1
 ARGS=-appc
 CMDS=<<EOF
 s sym.cr_logical_insns
@@ -799,7 +792,7 @@ w AnyColourYouLike @ 0x500000
 ar r1=0x400000
 ar r3=0x500000
 aezsu 0x001005a8
-e bin.str.enc=utf8
+e str.search.encoding=utf8
 ps @ obj.seckrit
 EOF
 EXPECT=<<EOF
@@ -815,7 +808,7 @@ TIMEOUT=30
 ARGS=-T
 CMDS=<<EOF
 s sym.decrypt
-e bin.str.enc=utf8
+e str.search.encoding=utf8
 ps @ obj.seckrit
 aezi
 o malloc://0x1000 0x400000
@@ -831,5 +824,10 @@ EXPECT=<<EOF
 QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
 Hello from RzIL!
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+ERROR: I128/U128 not supported
+ERROR: I128/U128 not supported
+ERROR: I128/U128 not supported
+ERROR: I128/U128 not supported
+EOF
 RUN

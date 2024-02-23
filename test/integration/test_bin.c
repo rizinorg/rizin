@@ -8,6 +8,8 @@
 
 bool test_rz_bin(void) {
 	RzBin *bin = rz_bin_new();
+	const char* default_algos[] = {"md5", "sha1", "sha256", "crc32", "entropy"};
+	bin->default_hashes = rz_list_new_from_array((const void**)default_algos, RZ_ARRAY_SIZE(default_algos));
 	RzIO *io = rz_io_new();
 	rz_io_bind(io, &bin->iob);
 
@@ -19,13 +21,13 @@ bool test_rz_bin(void) {
 
 	RzBinObject *obj = rz_bin_cur_object(bin);
 
-	RzList *sections = rz_bin_object_get_sections(obj);
-	mu_assert_eq(rz_list_length(sections), 29, "rz_bin_object_get_sections");
-	rz_list_free(sections);
+	RzPVector *sections = rz_bin_object_get_sections(obj);
+	mu_assert_eq(rz_pvector_len(sections), 29, "rz_bin_object_get_sections");
+	rz_pvector_free(sections);
 
-	RzList *segments = rz_bin_object_get_segments(obj);
-	mu_assert_eq(rz_list_length(segments), 10, "rz_bin_object_get_segments");
-	rz_list_free(segments);
+	RzPVector *segments = rz_bin_object_get_segments(obj);
+	mu_assert_eq(rz_pvector_len(segments), 10, "rz_bin_object_get_segments");
+	rz_pvector_free(segments);
 
 	const RzList *entries = rz_bin_object_get_entries(obj);
 	mu_assert_eq(rz_list_length(entries), 1, "rz_bin_object_get_entries");
@@ -33,13 +35,15 @@ bool test_rz_bin(void) {
 	mu_assert_eq(entry->vaddr, 0x8048360, "entry virtual address");
 	mu_assert_eq(entry->paddr, 0x360, "entry file offset");
 
-	const RzList *imports = rz_bin_object_get_imports(obj);
-	mu_assert_eq(rz_list_length(imports), 5, "rz_bin_object_get_imports");
+	const RzPVector *imports = rz_bin_object_get_imports(obj);
+	mu_assert_eq(rz_pvector_len(imports), 5, "rz_bin_object_get_imports");
 	const char *import_names[] = { "__libc_start_main", "printf", "scanf", "strcmp", "__gmon_start__" };
 	bool has_import_names[sizeof(import_names)] = { 0 };
 	RzBinImport *import;
-	RzListIter *it;
-	rz_list_foreach (imports, it, import) {
+	void **it;
+	void **vec_it;
+	rz_pvector_foreach (imports, vec_it) {
+		import = *vec_it;
 		for (int i = 0; i < RZ_ARRAY_SIZE(import_names); ++i) {
 			if (!strcmp(import->name, import_names[i])) {
 				has_import_names[i] = true;
@@ -51,8 +55,8 @@ bool test_rz_bin(void) {
 		mu_assert_true(has_import_names[i], "Import name was not found");
 	}
 
-	const RzList *strings = rz_bin_object_get_strings(obj);
-	mu_assert_eq(rz_list_length(strings), 5, "rz_bin_object_get_strings");
+	const RzPVector *strings = rz_bin_object_get_strings(obj);
+	mu_assert_eq(rz_pvector_len(strings), 5, "rz_bin_object_get_strings");
 	const char *exp_strings[] = {
 		"IOLI Crackme Level 0x00\n",
 		"Password: ",
@@ -63,7 +67,8 @@ bool test_rz_bin(void) {
 	};
 	RzBinString *s;
 	int i = 0;
-	rz_list_foreach (strings, it, s) {
+	rz_pvector_foreach (strings, it) {
+                s = *it;
 		mu_assert_streq(s->string, exp_strings[i], "String not found");
 		mu_assert_true(rz_bin_object_get_string_at(obj, s->vaddr, true) != NULL, "is_string (virt) should be true");
 		mu_assert_false(rz_bin_object_get_string_at(obj, s->vaddr, false) != NULL, "is_string (phys) should be false");
@@ -72,36 +77,38 @@ bool test_rz_bin(void) {
 		i++;
 	}
 
-	RzList *hashes = rz_bin_file_compute_hashes(bin, bf, UT64_MAX);
-	mu_assert_eq(rz_list_length(hashes), 5, "rz_bin_file_get_hashes");
+	RzPVector *hashes = rz_bin_file_compute_hashes(bin, bf, UT64_MAX);
+	mu_assert_eq(rz_pvector_len(hashes), 5, "rz_bin_file_get_hashes");
 	const char *hash_names[] = { "md5", "sha1", "sha256", "crc32", "entropy" };
 	const char *hash_hexes[] = { "99327411dd72a11d7198b54298648adf", "f2bf1c7758c7b1e22bdea1d7681882783b658705", "3aed9a3821134a2ab1d69cb455e5e9d80bb651a1c97af04cdba4f3bb0adaa37b", "cf8cb28a", "3.484857" };
 	RzBinFileHash *hash;
 	i = 0;
-	rz_list_foreach (hashes, it, hash) {
+        void **v_it;
+	rz_pvector_foreach (hashes, v_it) {
+                hash = *v_it;
 		mu_assert_streq(hash->type, hash_names[i], "hash name is wrong");
 		mu_assert_streq(hash->hex, hash_hexes[i], "hash digest is wrong");
 		i++;
 	}
-	rz_list_free(hashes);
+	rz_pvector_free(hashes);
 
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
 }
 
-static RzBinReloc *add_reloc(RzList *l, ut64 paddr, ut64 vaddr, ut64 target_vaddr) {
+static RzBinReloc *add_reloc(RzPVector *l, ut64 paddr, ut64 vaddr, ut64 target_vaddr) {
 	RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
 	reloc->type = RZ_BIN_RELOC_8;
 	reloc->paddr = paddr;
 	reloc->vaddr = vaddr;
 	reloc->target_vaddr = target_vaddr;
-	rz_list_push(l, reloc);
+	rz_pvector_push(l, reloc);
 	return reloc;
 }
 
 bool test_rz_bin_reloc_storage(void) {
-	RzList *l = rz_list_new();
+	RzPVector *l = rz_pvector_new(NULL);
 	RzBinReloc *r0 = add_reloc(l, 0x108, 0x1000, 0x2004);
 	mu_assert_notnull(r0, "reloc");
 	RzBinReloc *r1 = add_reloc(l, 0x2002, 0x1003, 0x2008);

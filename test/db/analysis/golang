@@ -5,6 +5,7 @@ aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
+ilq
 EOF
 EXPECT=<<EOF
 4759
@@ -17,7 +18,113 @@ EXPECT=<<EOF
 0x0063e49b str.version
 0x0063e4ac str.HTTP_version
 0x0063e566 str.
-14294
+14974
+bufio
+bytes
+compress/flate
+compress/gzip
+container/list
+context
+crypto
+crypto/aes
+crypto/cipher
+crypto/des
+crypto/dsa
+crypto/ecdsa
+crypto/ed25519
+crypto/ed25519/internal/edwards25519
+crypto/ed25519/internal/edwards25519/field
+crypto/elliptic
+crypto/elliptic/internal/fiat
+crypto/elliptic/internal/nistec
+crypto/hmac
+crypto/internal/randutil
+crypto/md5
+crypto/rand
+crypto/rc4
+crypto/rsa
+crypto/sha1
+crypto/sha256
+crypto/sha512
+crypto/tls
+crypto/x509
+crypto/x509/pkix
+encoding/asn1
+encoding/base64
+encoding/binary
+encoding/hex
+encoding/pem
+errors
+flag
+fmt
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/chacha20poly1305
+golang.org/x/crypto/cryptobyte
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/curve25519/internal/field
+golang.org/x/crypto/hkdf
+golang.org/x/crypto/internal/poly1305
+golang.org/x/net/dns/dnsmessage
+golang.org/x/net/http/httpguts
+golang.org/x/net/http/httpproxy
+golang.org/x/net/http2
+golang.org/x/net/http2/hpack
+golang.org/x/net/idna
+golang.org/x/sys/cpu
+golang.org/x/text/secure/bidirule
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+hash/crc32
+internal/bytealg
+internal/cpu
+internal/fmtsort
+internal/godebug
+internal/intern
+internal/itoa
+internal/oserror
+internal/poll
+internal/reflectlite
+internal/singleflight
+internal/syscall/unix
+internal/testlog
+io
+io/fs
+io/ioutil
+libc.so.6
+log
+math
+math/big
+math/rand
+mime
+mime/multipart
+net
+net/http
+net/http/internal
+net/http/internal/ascii
+net/netip
+net/textproto
+net/url
+os
+path
+path/filepath
+reflect
+runtime
+runtime/debug
+runtime/internal/atomic
+runtime/internal/sys
+runtime/internal/syscall
+sort
+strconv
+strings
+sync
+sync/atomic
+syscall
+time
+unicode
+unicode/utf16
+unicode/utf8
+x_cgo_munmap
 EOF
 RUN
 
@@ -28,6 +135,7 @@ aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
+ilq
 EOF
 EXPECT=<<EOF
 4657
@@ -42,7 +150,103 @@ EXPECT=<<EOF
 0x0066dc76 str.
 0x0066e68d str.Addr
 ;-- str.flag:
-13495
+14186
+bufio
+bytes
+compress/flate
+compress/gzip
+container/list
+context
+crypto
+crypto/aes
+crypto/cipher
+crypto/des
+crypto/dsa
+crypto/ecdsa
+crypto/ed25519
+crypto/ed25519/internal/edwards25519
+crypto/elliptic
+crypto/hmac
+crypto/internal/randutil
+crypto/md5
+crypto/rand
+crypto/rc4
+crypto/rsa
+crypto/sha1
+crypto/sha256
+crypto/sha512
+crypto/tls
+crypto/x509
+crypto/x509/pkix
+encoding/asn1
+encoding/base64
+encoding/binary
+encoding/hex
+encoding/pem
+errors
+flag
+fmt
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/chacha20poly1305
+golang.org/x/crypto/cryptobyte
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/hkdf
+golang.org/x/crypto/poly1305
+golang.org/x/net/dns/dnsmessage
+golang.org/x/net/http/httpguts
+golang.org/x/net/http/httpproxy
+golang.org/x/net/http2
+golang.org/x/net/http2/hpack
+golang.org/x/net/idna
+golang.org/x/sys/cpu
+golang.org/x/text/secure/bidirule
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+hash/crc32
+internal/bytealg
+internal/cpu
+internal/fmtsort
+internal/oserror
+internal/poll
+internal/reflectlite
+internal/singleflight
+internal/syscall/unix
+internal/testlog
+io
+io/fs
+io/ioutil
+libc.so.6
+libpthread.so.0
+log
+math
+math/big
+math/rand
+mime
+mime/multipart
+net
+net/http
+net/http/internal
+net/textproto
+net/url
+os
+path
+path/filepath
+reflect
+runtime
+runtime/debug
+runtime/internal/atomic
+runtime/internal/sys
+sort
+strconv
+strings
+sync
+sync/atomic
+syscall
+time
+unicode
+unicode/utf16
+unicode/utf8
 EOF
 RUN
 
@@ -53,6 +257,7 @@ aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
+ilq
 EOF
 EXPECT=<<EOF
 5406
@@ -65,7 +270,108 @@ EXPECT=<<EOF
 0x0065de6d str.version
 0x0065de8a str.HTTP_version
 0x0065dfe6 str.
-14341
+15161
+bufio
+bytes
+compress/flate
+compress/gzip
+container/list
+context
+crypto
+crypto/aes
+crypto/cipher
+crypto/des
+crypto/dsa
+crypto/ecdsa
+crypto/elliptic
+crypto/hmac
+crypto/internal/randutil
+crypto/md5
+crypto/rand
+crypto/rc4
+crypto/rsa
+crypto/sha1
+crypto/sha256
+crypto/sha512
+crypto/subtle
+crypto/tls
+crypto/x509
+crypto/x509/pkix
+encoding/asn1
+encoding/base64
+encoding/binary
+encoding/hex
+encoding/pem
+errors
+flag
+fmt
+go
+golang.org/x/net/http/httpguts
+golang.org/x/net/http2
+golang.org/x/net/http2/hpack
+golang.org/x/net/idna
+golang.org/x/text/secure/bidirule
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+hash
+hash/crc32
+internal/bytealg
+internal/cpu
+internal/fmtsort
+internal/poll
+internal/singleflight
+internal/syscall/unix
+internal/testlog
+internal/x/crypto/chacha20poly1305
+internal/x/crypto/cryptobyte
+internal/x/crypto/curve25519
+internal/x/crypto/hkdf
+internal/x/crypto/internal/chacha20
+internal/x/crypto/poly1305
+internal/x/net/dns/dnsmessage
+internal/x/net/http/httpguts
+internal/x/net/http/httpproxy
+internal/x/net/http2/hpack
+internal/x/net/idna
+internal/x/text/secure/bidirule
+internal/x/text/transform
+internal/x/text/unicode/bidi
+internal/x/text/unicode/norm
+io
+io/ioutil
+libc.so.6
+libpthread.so.0
+log
+math
+math/big
+math/rand
+mime
+mime/multipart
+mime/quotedprintable
+net
+net/http
+net/http/httptrace
+net/http/internal
+net/textproto
+net/url
+os
+path
+path/filepath
+reflect
+runtime
+runtime/cgo
+runtime/debug
+runtime/internal/atomic
+sort
+strconv
+strings
+sync
+sync/atomic
+syscall
+time
+unicode
+unicode/utf8
 EOF
 RUN
 
@@ -76,6 +382,7 @@ aalg
 fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
+ilq
 EOF
 EXPECT=<<EOF
 5124
@@ -127,7 +434,116 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-14104
+15843
+bufio
+bytes
+compress/flate
+compress/gzip
+compress/zlib
+container/list
+context
+crypto
+crypto/aes
+crypto/cipher
+crypto/des
+crypto/dsa
+crypto/ecdsa
+crypto/ed25519
+crypto/ed25519/internal/edwards25519
+crypto/elliptic
+crypto/hmac
+crypto/internal/randutil
+crypto/md5
+crypto/rand
+crypto/rc4
+crypto/rsa
+crypto/sha1
+crypto/sha256
+crypto/sha512
+crypto/tls
+crypto/x509
+crypto/x509/pkix
+encoding/asn1
+encoding/base64
+encoding/binary
+encoding/hex
+encoding/json
+encoding/pem
+errors
+fmt
+github.com/btcsuite/btcd/btcec
+github.com/btcsuite/btcd/btcjson
+github.com/btcsuite/btcd/chaincfg
+github.com/btcsuite/btcd/chaincfg/chainhash
+github.com/btcsuite/btcd/txscript
+github.com/btcsuite/btcd/wire
+github.com/btcsuite/btclog
+github.com/btcsuite/btcutil
+github.com/btcsuite/btcutil/base58
+github.com/btcsuite/go-socks/socks
+github.com/jessevdk/go-flags
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/chacha20poly1305
+golang.org/x/crypto/cryptobyte
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/hkdf
+golang.org/x/crypto/poly1305
+golang.org/x/crypto/ripemd160
+golang.org/x/net/dns/dnsmessage
+golang.org/x/net/http/httpguts
+golang.org/x/net/http/httpproxy
+golang.org/x/net/http2/hpack
+golang.org/x/net/idna
+golang.org/x/text/secure/bidirule
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+hash/adler32
+hash/crc32
+internal/bytealg
+internal/cpu
+internal/fmtsort
+internal/oserror
+internal/poll
+internal/reflectlite
+internal/singleflight
+internal/syscall/unix
+internal/testlog
+io
+io/fs
+io/ioutil
+log
+math
+math/big
+math/bits
+math/rand
+mime
+mime/multipart
+net
+net/http
+net/http/internal
+net/textproto
+net/url
+os
+os/user
+path
+path/filepath
+reflect
+regexp
+regexp/syntax
+runtime
+runtime/debug
+runtime/internal/atomic
+sort
+strconv
+strings
+sync
+sync/atomic
+syscall
+time
+unicode
+unicode/utf16
+unicode/utf8
 EOF
 RUN
 
@@ -210,7 +626,7 @@ EXPECT=<<EOF
 0x0026e4b8 str.btcctl.conf
 0x0026e53c str.rpc.cert
 0x0026e5c0 str.rpc.cert
-15678
+16166
 EOF
 RUN
 
@@ -223,6 +639,7 @@ pdfs @ sym.go.runtime.panicwrap ~str.
 izq~?
 izq~ slice bounds out of range
 iI~compiler
+ilq
 EOF
 EXPECT=<<EOF
 1429
@@ -231,7 +648,7 @@ EXPECT=<<EOF
 0x100006e64 str.pointer
 0x100006eac str.panicwrap:_no___in
 0x1000076d0 str.internal_error___misuse_of_itab
-1710
+1709
 0x10008bada 31 31 slice bounds out of range [:%x]
 0x10008babb 31 31 slice bounds out of range [%x:]
 0x10008be19 32 32 slice bounds out of range [::%x]
@@ -246,6 +663,34 @@ EXPECT=<<EOF
 0x10008c57e 34 34 slice bounds out of range [%x:%y:]
 0x10008a871 25 25 slice bounds out of range
 compiler go1.18 (cmd -compiler=gc CGO_ENABLED=1 CGO_CFLAGS= CGO_CPPFLAGS= CGO_CXXFLAGS= CGO_LDFLAGS= GOARCH=arm64 GOOS=darwin)
+/usr/lib/libSystem.B.dylib
+errors
+fmt
+go
+internal/bytealg
+internal/cpu
+internal/fmtsort
+internal/itoa
+internal/oserror
+internal/poll
+internal/reflectlite
+internal/syscall/unix
+internal/testlog
+io
+io/fs
+os
+path
+reflect
+runtime
+runtime/debug
+sort
+strconv
+sync
+sync/atomic
+syscall
+time
+unicode
+unicode/utf8
 EOF
 RUN
 
@@ -257,12 +702,43 @@ fl~sym.go.~?
 pdfs @ main ~str.
 izq~?
 iI~compiler
+ilq
 EOF
 EXPECT=<<EOF
 1788
 0x004a699b str.hello__hacktivity
 9222
 compiler go1.15
+errors
+fmt
+go
+internal/bytealg
+internal/cpu
+internal/fmtsort
+internal/oserror
+internal/poll
+internal/reflectlite
+internal/syscall/windows
+internal/syscall/windows/registry
+internal/syscall/windows/sysdll
+io
+kernel32.dll
+math
+os
+reflect
+runtime
+runtime/debug
+runtime/internal/atomic
+runtime/internal/sys
+sort
+strconv
+sync
+sync/atomic
+syscall
+time
+unicode
+unicode/utf16
+unicode/utf8
 EOF
 RUN
 
@@ -390,7 +866,7 @@ EOF
 EXPECT=<<EOF
 | 0x00099f7c      lis   r5, 0xb ; 0xb7d3f ; "foogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
 | 0x00099fec      lis   r4, 0xc ; 0xb8198 ; "enableerrno objectpower9selectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs "
-| 0x0009a00c      lis   r4, 0xb ; 0xb7e32 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
+| 0x0009a00c      lis   r4, 0xb ; go-re-sample.go:12 ; 0xb7e32 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
 | 0x0009a050      lis   r9, 0xb ; 0xb7d36 ; "barendfinfoogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
 | 0x0009a0c0      lis   r4, 0xb ; 0xb7f48 ; "levellink mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26  r27"
 | 0x0009a108      lis   r9, 0xd ; 0xbd867 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
@@ -416,7 +892,7 @@ EOF
 EXPECT=<<EOF
 | 0x00099eac      lis   r5, 0xb ; 0xb7d60 ; "foogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=AhomChamDashG"
 | 0x00099f1c      lis   r4, 0xc ; 0xb81b9 ; "enableerrno objectpower9selectstringstructsweep sysmontimersuint16uint32uint64  name:  tail: (scan  (scan) MB in  Value> allocs "
-| 0x00099f3c      lis   r4, 0xb ; 0xb7e53 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
+| 0x00099f3c      lis   r4, 0xb ; go-re-sample.go:12 ; 0xb7e53 ; "nameprofroots + sbrktrueuint  -%s ...\n MB,  and  cnt= max= ms,  ptr  tab= top=(nil), fp:1562578125<nil>AdlamBamumBatakBuhidDogr"
 | 0x00099f80      lis   r9, 0xb ; 0xb7d57 ; "barendfinfoogc gp in intmapnilobjpc=ptrscv\u00b5s\u03bcs <== at  fp= is  lr: of  on  pc= sp: sp=) = ) m=+Inf,r2=-Inf3125: p=Ahom"
 | 0x00099ff0      lis   r4, 0xb ; 0xb7f69 ; "levellink mheappanicpc   r0   r1   r10  r11  r12  r13  r14  r15  r16  r17  r18  r19  r2   r20  r21  r22  r23  r24  r25  r26  r27"
 | 0x0009a038      lis   r9, 0xd ; 0xbd845 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
@@ -454,5 +930,65 @@ EXPECT=<<EOF
 | 0x00099dd0      auipc t1, 0x3e ; 0xb7fbc ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
 | 0x00099e64      auipc s0, 0x3e ; 0xb7fc3 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
 | 0x00099edc      auipc t0, 0x3e ; 0xbd602 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Resolve all symbols on a stripped windows go1.21 binary
+FILE=bins/golang/go-re-sample-windows-amd64-go121.exe
+CMDS=<<EOF
+aalg
+fl~sym.go.~?
+pdfs @ main ~str.
+izq~?
+EOF
+EXPECT=<<EOF
+1604
+0x00490237 str.foo
+0x00490292 str.enable
+0x004902a0 str.enable
+0x004902b0 str.name
+0x004902c0 str.name
+0x004902f2 str.bar
+0x0049034d str.level
+0x0049035b str.level
+0x00490448 str.subcommand__bar
+0x00490495 str.level:
+0x0049051d str.tail:
+0x004905c2 str.subcommand__foo
+0x00490615 str.enable:
+0x00490692 str.name:
+0x0049071e str.tail:
+0x00490780 str.expected__foo__or__bar__subcommands
+20633
+EOF
+RUN
+
+NAME=Resolve all symbols on a stripped linux go1.21 binary
+FILE=bins/golang/go-re-sample-linux-amd64-go121
+CMDS=<<EOF
+aalg
+fl~sym.go.~?
+pdfs @ main ~str.
+izq~?
+EOF
+EXPECT=<<EOF
+1587
+0x004875b7 str.foo
+0x00487612 str.enable
+0x00487620 str.enable
+0x00487630 str.name
+0x00487640 str.name
+0x00487672 str.bar
+0x004876cd str.level
+0x004876db str.level
+0x004877c8 str.subcommand__bar
+0x00487815 str.level:
+0x0048789d str.tail:
+0x00487942 str.subcommand__foo
+0x00487995 str.enable:
+0x00487a12 str.name:
+0x00487a9e str.tail:
+0x00487b00 str.expected__foo__or__bar__subcommands
+3616
 EOF
 RUN

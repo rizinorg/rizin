@@ -76,9 +76,9 @@ FILE=bins/elf/hello_world
 ARGS=-d
 CMDS=<<EOF
 aa
-afv @ main
+afvl @ main
 doc
-afv @ main
+afvl @ main
 EOF
 EXPECT=<<EOF
 var int64_t var_28h @ stack - 0x28

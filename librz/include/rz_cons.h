@@ -21,7 +21,7 @@ extern "C" {
 #include <rz_util/rz_file.h>
 #include <rz_vector.h>
 #include <sdb.h>
-#include <ht_up.h>
+#include <rz_util/ht_up.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -96,6 +96,9 @@ typedef struct rz_cons_grep_t {
 	int begin;
 	int end;
 	int icase;
+	int sorted_column;
+	RzList /*<char *>*/ *sorted_lines;
+	RzList /*<char *>*/ *unsorted_lines;
 } RzConsGrep;
 
 #if 0
@@ -901,8 +904,9 @@ RZ_API void rz_cons_break_end(void);
 RZ_API void rz_cons_break_timeout(int timeout);
 
 /* pipe */
-RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append);
-RZ_API void rz_cons_pipe_close(int fd);
+typedef struct rz_cons_pipe_t RzConsPipe;
+RZ_API RZ_OWN RzConsPipe *rz_cons_pipe_open(RZ_NONNULL const char *file, int old_fd, bool append);
+RZ_API void rz_cons_pipe_close(RZ_NULLABLE RzConsPipe *cpipe);
 
 #if __WINDOWS__
 RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void);
@@ -1019,7 +1023,7 @@ RZ_API int rz_cons_get_buffer_len(void);
 RZ_API void rz_cons_grep_help(void);
 RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr);
 RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr);
-RZ_API void rz_cons_grep_process(char *grep);
+RZ_API void rz_cons_grep_process(RZ_OWN char *grep);
 RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
 RZ_API void rz_cons_grepbuf(void);
 
@@ -1175,11 +1179,14 @@ struct rz_line_t {
 	// RzLineFunctionKeyCb cb_fkey;
 	RzConsFunctionKey cb_fkey;
 	/* state , TODO: use more bool */
+	int gcomp;
+	int gcomp_idx;
 	int echo;
 	int has_echo;
 	char *prompt;
 	RzList /*<char *>*/ *kill_ring;
 	int kill_ring_ptr;
+	bool yank_flag;
 	int undo_cursor;
 	bool undo_continue;
 	char *clipboard;
@@ -1203,29 +1210,28 @@ struct rz_line_t {
 
 #ifdef RZ_API
 
-RZ_API RzLine *rz_line_new(void);
-RZ_API RzLine *rz_line_singleton(void);
-RZ_API void rz_line_free(void);
-RZ_API RZ_OWN char *rz_line_get_prompt(void);
-RZ_API void rz_line_set_prompt(const char *prompt);
-RZ_API bool rz_line_dietline_init(void);
-RZ_API void rz_line_clipboard_push(const char *str);
-RZ_API void rz_line_hist_free(void);
-RZ_API void rz_line_autocomplete(void);
+RZ_API RZ_OWN RzLine *rz_line_new(void);
+RZ_API void rz_line_free(RZ_NULLABLE RzLine *line);
+RZ_API RZ_OWN char *rz_line_get_prompt(RZ_NONNULL RzLine *line);
+RZ_API void rz_line_set_prompt(RZ_NONNULL RzLine *line, RZ_NONNULL const char *prompt);
+RZ_API bool rz_line_dietline_init(RZ_NONNULL RzLine *line);
+RZ_API void rz_line_clipboard_push(RZ_NONNULL RzLine *line, RZ_NONNULL const char *str);
+RZ_API void rz_line_hist_free(RZ_NULLABLE RzLine *line);
+RZ_API void rz_line_autocomplete(RZ_NONNULL RzLine *line);
 
 typedef int(RzLineReadCallback)(void *user, const char *line);
-RZ_API const char *rz_line_readline(void);
-RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user);
+RZ_API const char *rz_line_readline(RZ_NONNULL RzLine *line);
+RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallback cb, void *user);
 
-RZ_API int rz_line_hist_load(RZ_NONNULL const char *file);
-RZ_API int rz_line_hist_add(const char *line);
-RZ_API int rz_line_hist_save(RZ_NONNULL const char *file);
-RZ_API int rz_line_hist_list(void);
-RZ_API const char *rz_line_hist_get(int n);
+RZ_API bool rz_line_hist_load(RZ_NONNULL RzLine *line, RZ_NONNULL const char *file);
+RZ_API bool rz_line_hist_add(RZ_NONNULL RzLine *line, RZ_NONNULL const char *str);
+RZ_API bool rz_line_hist_save(RZ_NONNULL RzLine *line, const char *file);
+RZ_API int rz_line_hist_list(RZ_NONNULL RzLine *line);
+RZ_API const char *rz_line_hist_get(RZ_NONNULL RzLine *line, int n);
 
-RZ_API int rz_line_set_hist_callback(RzLine *line, RzLineHistoryUpCb cb_up, RzLineHistoryDownCb cb_down);
-RZ_API int rz_line_hist_cmd_up(RzLine *line);
-RZ_API int rz_line_hist_cmd_down(RzLine *line);
+RZ_API int rz_line_set_hist_callback(RZ_NONNULL RzLine *line, RzLineHistoryUpCb cb_up, RzLineHistoryDownCb cb_down);
+RZ_API int rz_line_hist_cmd_up(RZ_NONNULL RzLine *line);
+RZ_API int rz_line_hist_cmd_down(RZ_NONNULL RzLine *line);
 
 RZ_API void rz_line_completion_init(RzLineCompletion *completion, size_t args_limit);
 RZ_API void rz_line_completion_fini(RzLineCompletion *completion);

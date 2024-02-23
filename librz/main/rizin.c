@@ -90,58 +90,77 @@ static int rz_main_version_verify(int show) {
 }
 
 static int main_help(int line) {
+
 	if (line < 2) {
-		printf("Usage: rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-		       "             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+		printf("%s%s", Color_CYAN, "Usage: ");
+		printf(Color_RESET "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
+				   "             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
-		printf(
-			" --           run rizin without opening any file\n"
-			" =            same as 'rizin malloc://512'\n"
-			" -            read file from stdin \n"
-			" -=           perform R=! command to run all commands remotely\n"
-			" -0           print \\x00 after init and every command\n"
-			" -2           close stderr file descriptor (silent warning messages)\n"
-			" -a [arch]    set asm.arch\n"
-			" -A           run 'aaa' command to analyze all referenced code\n"
-			" -b [bits]    set asm.bits\n"
-			" -B [baddr]   set base address for PIE binaries\n"
-			" -c 'cmd..'   execute rizin command\n"
-			" -C           file is host:port (alias for -cR+http://%%s/cmd/)\n"
-			" -d           debug the executable 'file' or running process 'pid'\n"
-			" -D [backend] enable debug mode (e cfg.debug=true)\n"
-			" -e k=v       evaluate config var\n"
-			" -f           block size = file size\n"
-			" -F [binplug] force to use that rbin plugin\n"
-			" -h, -hh      show help message, -hh for long\n"
-			" -H ([var])   display variable\n"
-			" -i [file]    run script file\n"
-			" -I [file]    run script file before the file is opened\n"
-			" -k [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
-			" -l [lib]     load plugin file\n"
-			" -L           list supported IO plugins\n"
-			" -m [addr]    map file at given address (loadaddr)\n"
-			" -M           do not demangle symbol names\n"
-			" -n, -nn      do not load RzBin info (-nn only load bin structures)\n"
-			" -N           do not load user settings and scripts\n"
-			" -NN          do not load any script or plugin\n"
-			" -q           quiet mode (no prompt) and quit after -i\n"
-			" -qq          quit after running all -c and -i\n"
-			" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
-			" -p [p.rzdb]  load project file\n"
-			" -r [rz-run]  specify rz-run profile to load (same as -e dbg.profile=X)\n"
-			" -R [rule]    specify custom rz-run directive\n"
-			" -s [addr]    initial seek\n"
-#if USE_THREADS && ALLOW_THREADED
-			" -t           load rz-bin info in thread\n"
-#endif
-			" -T           do not compute file hashes\n"
-			" -u           set bin.filter=false to get raw sym/sec/cls names\n"
-			" -v, -V       show rizin version (-V show lib versions)\n"
-			" -w           open file in write mode\n"
-			" -x           open without exec-flag (asm.emu will not work), See io.exec\n"
-			" -X           same as -e bin.usextr=false (useful for dyldcache)\n"
-			" -z, -zz      do not load strings or load them even in raw\n");
+		const char *options[] = {
+			// clang-format off
+			"--",          "",          "Run rizin without opening any file",
+			"=",           "",          "Same as 'rizin malloc://512",
+			"- ",          "",          "Read file from stdin",
+			"-=",          "",          "Perform R=! command to run all commands remotely",
+			"-0",          "",          "Print \\x00 after init and every command",
+			"-2",          "",          "Close stderr file descriptor (silent warning messages)",
+			"-a",          "[arch]",    "Set asm.arch",
+			"-A",          "",          "Run 'aaa' command to analyze all referenced code",
+			"-b",          "[bits]",    "Set asm.bits",
+			"-B",          "[baddr]",   "Set base address for PIE binaries",
+			"-c 'cmd..'",  "",          "Execute rizin command",
+			"-C",          "",          "File is host:port (alias for -cR+http://%%s/cmd/)",
+			"-d",          "",          "Debug the executable 'file' or running process 'pid",
+			"-D",          "[backend]", "Enable debug mode (e cfg.debug=true)",
+			"-e k=v",      "",          "Evaluate config var",
+			"-f",          "",          "Block size = file size",
+			"-F",          "[binplug]", "Force to use that rbin plugin",
+			"-h, -hh",     "",          "Show help message, -hh for long",
+			"-H",          "([var])",   "Display variable",
+			"-i",          "[file]",    "Run script file",
+			"-I",          "[file]",    "Run script file before the file is opened",
+			"-k",          "[OS/kern]", "Set asm.os (linux, macos, w32, netbsd, ...)",
+			"-l",          "[lib]",     "Load plugin file",
+			"-L",          "",          "List supported IO plugins",
+			"-m",          "[addr]",    "Map file at given address (loadaddr)",
+			"-M",          "",          "Do not demangle symbol names",
+			"-n, -nn",     "",          "Do not load RzBin info (-nn only load bin structures)",
+			"-N",          "",          "Do not load user settings and scripts",
+			"-NN",         "",          "Do not load any script or plugin",
+			"-q",          "",          "Quiet mode (no prompt) and quit after -i",
+			"-qq",         "",          "Quit after running all -c and -i",
+			"-Q",          "",          "Quiet mode (no prompt) and quit faster (quickLeak=true)",
+			"-p",          "[p.rzdb]",  "Load project file",
+			"-r",          "[rz-run]",  "Specify rz-run profile to load (same as -e dbg.profile=X)",
+			"-R",          "[rule]",    "Specify custom rz-run directive",
+			"-s",          "[addr]",    "Initial seek",
+		#if USE_THREADS && ALLOW_THREADED
+			"-t",          "",          "load rz-bin info in thread",
+		#endif
+			"-T",          "",          "Do not compute file hashes",
+			"-u",          "",          "Set bin.filter=false to get raw sym/sec/cls names",
+			"-v, -V",      "",          "Show rizin version (-V show lib versions)",
+			"-w",          "",          "Open file in write mode",
+			"-x",          "",          "Open without exec-flag (asm.emu will not work), See io.exec",
+			"-X",          "",          "Same as -e bin.usextr=false (useful for dyldcache)",
+			"-z, -zz",     "",          "Do not load strings or load them even in raw",
+			// clang-format on
+		};
+		size_t maxOptionAndArgLength = 0;
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			size_t optionLength = strlen(options[i]);
+			size_t argLength = strlen(options[i + 1]);
+			size_t totalLength = optionLength + argLength;
+			if (totalLength > maxOptionAndArgLength) {
+				maxOptionAndArgLength = totalLength;
+			}
+		}
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			if (i + 1 < sizeof(options) / sizeof(options[0])) {
+				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+			}
+		}
 	}
 	if (line == 2) {
 		char *datahome = rz_path_home_prefix(RZ_DATADIR);
@@ -170,7 +189,7 @@ static int main_help(int line) {
 			"Plugins:\n"
 			" binrc        %s (elf, elf64, mach0, ..)\n"
 			" RZ_USER_PLUGINS %s\n"
-			" RZ_LIBR_PLUGINS %s\n"
+			" RZ_LIB_PLUGINS %s\n"
 			" RZ_EXTRA_PLUGINS %s\n"
 			"Environment:\n"
 			" RZ_DEBUG      if defined, show error messages and crash signal\n"
@@ -178,7 +197,7 @@ static int main_help(int line) {
 			" RZ_MAGICPATH %s\n"
 			" RZ_NOPLUGINS do not load rizin shared plugins\n"
 			" RZ_RCFILE    %s (user preferences, batch script)\n"
-			" RZ_RDATAHOME %s\n"
+			" RZ_DATAHOME %s\n"
 			" RZ_VERSION   contains the current version of rizin\n"
 			"Paths:\n"
 			" RZ_PREFIX       %s\n"
@@ -254,10 +273,10 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_SIGDB", sigdbdir },
 		{ "RZ_EXTRA_SIGDB", rz_str_get(extrasigdbdir) },
 		{ "RZ_LIBEXT", RZ_LIB_EXT },
-		{ "RZ_RCONFIGHOME", confighome },
-		{ "RZ_RDATAHOME", datahome },
-		{ "RZ_RCACHEHOME", cachehome },
-		{ "RZ_LIBR_PLUGINS", plugins },
+		{ "RZ_CONFIGHOME", confighome },
+		{ "RZ_DATAHOME", datahome },
+		{ "RZ_CACHEHOME", cachehome },
+		{ "RZ_LIB_PLUGINS", plugins },
 		{ "RZ_EXTRA_PLUGINS", rz_str_get(extraplugins) },
 		{ "RZ_USER_PLUGINS", homeplugins },
 		{ "RZ_IS_PORTABLE", is_portable },
@@ -1280,10 +1299,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				rz_core_seek(r, fi->offset, true);
 			} else {
 				if (o) {
-					RzList *sections = rz_bin_get_sections(r->bin);
-					RzListIter *iter;
+					RzBinObject *obj = rz_bin_cur_object(r->bin);
+					const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
+					void **iter;
 					RzBinSection *s;
-					rz_list_foreach (sections, iter, s) {
+					rz_pvector_foreach (sections, iter) {
+						s = *iter;
 						if (s->perm & RZ_PERM_X) {
 							ut64 addr = s->vaddr ? s->vaddr : s->paddr;
 							rz_core_seek(r, addr, true);
@@ -1298,8 +1319,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			ut64 limit = rz_config_get_i(r->config, "bin.hashlimit");
 			RzBinFile *bf = r->bin->cur;
 			if (bf) {
-				RzList *old_hashes = rz_bin_file_set_hashes(r->bin, rz_bin_file_compute_hashes(r->bin, bf, limit));
-				rz_list_free(old_hashes);
+				RzPVector *old_hashes = rz_bin_file_set_hashes(r->bin, rz_bin_file_compute_hashes(r->bin, bf, limit));
+				rz_pvector_free(old_hashes);
 			}
 		}
 		if (s_seek) {
@@ -1453,24 +1474,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			}
 
-			if (debug) {
-				if (no_question_debug) {
-					if (rz_config_get_i(r->config, "dbg.exitkills") && y_kill_debug) {
-						rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-					}
-				} else {
-					if (rz_cons_yesno('y', "Do you want to quit? (Y/n)")) {
-						if (rz_config_get_i(r->config, "dbg.exitkills") &&
-							rz_debug_can_kill(r->dbg) &&
-							rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
-							rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-						}
-					} else {
-						continue;
-					}
-				}
-			}
-
 			prj = rz_config_get(r->config, "prj.file");
 			bool compress = rz_config_get_b(r->config, "prj.compress");
 			RzProjectErr prj_err = RZ_PROJECT_ERR_SUCCESS;
@@ -1495,6 +1498,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					continue;
 				}
 			}
+
+			if (debug) {
+				if (no_question_debug) {
+					if (rz_config_get_i(r->config, "dbg.exitkills") && y_kill_debug) {
+						rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
+					}
+				} else if (rz_config_get_i(r->config, "dbg.exitkills") &&
+					rz_debug_can_kill(r->dbg) &&
+					rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
+					rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
+				}
+			}
 		} else {
 			// rz_core_project_save (r, prj);
 			if (debug && rz_config_get_i(r->config, "dbg.exitkills")) {
@@ -1506,7 +1521,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (mustSaveHistory(r->config)) {
 		char *history = rz_path_home_history();
-		rz_line_hist_save(history);
+		rz_line_hist_save(r->cons->line, history);
 		free(history);
 	}
 

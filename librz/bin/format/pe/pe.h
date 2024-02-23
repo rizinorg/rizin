@@ -20,15 +20,25 @@
 #define RZ_BIN_PE_SCN_IS_WRITABLE(x)   x &PE_IMAGE_SCN_MEM_WRITE
 
 // SECTION FLAGS FOR EXE/PE/DLL START
+#define IMAGE_SCN_TYPE_REG               0x00000000 // Reserved
+#define IMAGE_SCN_TYPE_D_SECT            0x00000001 // Reserved
+#define IMAGE_SCN_TYPE_NO_LOAD           0x00000002 // Reserved
+#define IMAGE_SCN_TYPE_GROUP             0x00000004 // Reserved
 #define IMAGE_SCN_TYPE_NO_PAD            0x00000008 // The section should not be padded to the next boundary. This flag is obsolete and is replaced by #define IMAGE_SCN_ALIGN_1BYTES. This is valid only for object files.
+#define IMAGE_SCN_TYPE_COPY              0x00000010 // Reserved
 #define IMAGE_SCN_CNT_CODE               0x00000020 // The section contains executable code.
 #define IMAGE_SCN_CNT_INITIALIZED_DATA   0x00000040 // The section contains initialized data.
 #define IMAGE_SCN_CNT_UNINITIALIZED_DATA 0x00000080 // The section contains uninitialized data.
 #define IMAGE_SCN_LNK_OTHER              0x00000100 // Reserved for future use.
 #define IMAGE_SCN_LNK_INFO               0x00000200 // The section contains comments or other information. The .drectve section has this type. This is valid for object files only.
+#define IMAGE_SCN_TYPE_OVER              0x00000400 // Reserved
 #define IMAGE_SCN_LNK_REMOVE             0x00000800 // The section will not become part of the image. This is valid only for object files.
 #define IMAGE_SCN_LNK_COMDAT             0x00001000 // The section contains COMDAT data. For more information, see COMDAT Sections (Object Only). This is valid only for object files.
+#define IMAGE_SCN_NO_DEFER_SPEC_EXC      0x00004000 // Reset speculative exceptions handling bits in the TLB entries for this section.
+#define IMAGE_SCN_MEM_PROTECTED          0x00004000
 #define IMAGE_SCN_GPREL                  0x00008000 // The section contains data referenced through the global pointer (GP).
+#define IMAGE_SCN_MEM_FARDATA            0x00008000
+#define IMAGE_SCN_MEM_SYSHEAP            0x00010000
 #define IMAGE_SCN_MEM_PURGEABLE          0x00020000 // Reserved for future use.
 #define IMAGE_SCN_MEM_16BIT              0x00020000 // Reserved for future use.
 #define IMAGE_SCN_MEM_LOCKED             0x00040000 // Reserved for future use.
@@ -51,6 +61,10 @@
 #define IMAGE_SCN_MEM_DISCARDABLE        0x02000000 // The section can be discarded as needed.
 #define IMAGE_SCN_MEM_NOT_CACHED         0x04000000 // The section cannot be cached.
 #define IMAGE_SCN_MEM_NOT_PAGED          0x08000000 // The section is not pageable.
+#define IMAGE_SCN_MEM_SHARED             0x10000000 // Section is shareable.
+#define IMAGE_SCN_MEM_EXECUTE            0x20000000 // Section is executable.
+#define IMAGE_SCN_MEM_READ               0x40000000 // Section is readable.
+#define IMAGE_SCN_MEM_WRITE              0x80000000 // Section is writable.
 
 #define PE_SCN_ALIGN_MASK 0x00F00000
 
@@ -159,7 +173,7 @@ struct PE_(rz_bin_pe_obj_t) {
 	bool verbose;
 	int big_endian;
 	RzList /*<Pe_image_rich_entry *>*/ *rich_entries;
-	RzList /*<RzBinReloc *>*/ *relocs;
+	RzPVector /*<RzBinReloc *>*/ *relocs;
 	RzList /*<rz_pe_resource *>*/ *resources;
 	const char *file;
 	RzBuffer *b;

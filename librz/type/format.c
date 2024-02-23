@@ -1911,20 +1911,23 @@ RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *nam
 
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
 	rz_return_if_fail(typedb && name && fmt);
+	// TODO: We should check if the file format is valid (e.g. syntax) before storing it
 	ht_pp_insert(typedb->formats, name, strdup(fmt));
 }
 
 static bool format_collect_cb(void *user, const void *k, const void *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	RzList *l = user;
-	char *fmt = rz_str_newf("%s %s", (const char *)k, (const char *)v);
+	RzTypeFormat *fmt = RZ_NEW0(RzTypeFormat);
+	fmt->name = (const char *)k;
+	fmt->body = (const char *)v;
 	rz_list_append(l, fmt);
 	return true;
 }
 
-RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
-	RzList *formats = rz_list_newf(free);
+	RzList *formats = rz_list_new();
 	ht_pp_foreach(typedb->formats, format_collect_cb, formats);
 	return formats;
 }
@@ -2724,7 +2727,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 		oldslide = 0;
 	}
 	if (mode & RZ_PRINT_JSON && slide == 0) {
-		rz_strbuf_append(outbuf, "]\n");
+		rz_strbuf_append(outbuf, "]");
 	}
 	if (MUSTSEESTRUCT && slide == 0) {
 		rz_strbuf_append(outbuf, "}\n");
@@ -2745,6 +2748,19 @@ beach:
 	return i;
 }
 
+/**
+ * \brief Applies `pf` format string to a data
+ *
+ * \param typedb Types Database instance
+ * \param p RzPrint instance
+ * \param seek An offset in the binary to which apply the format
+ * \param b A buffer from which take the data
+ * \param len Length of the data
+ * \param formatname Format name
+ * \param mode RzPrint mode
+ * \param setval Format field value in the writing mode
+ * \param ofield Format field
+ */
 RZ_API RZ_OWN char *rz_type_format_data(const RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	RzStrBuf *outbuf = rz_strbuf_new("");
@@ -2820,6 +2836,16 @@ static void base_type_to_format_no_unfold(const RzTypeDB *typedb, RZ_NONNULL RzB
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
 		// It might go recursively to find all types behind the alias
+		// So we check first it refers to itself
+		if (rz_type_is_identifier(type->type)) {
+			const char *tidentifier = rz_type_identifier(type->type);
+			if (RZ_STR_EQ(tidentifier, type->name)) {
+				// Show it as a pointer instead
+				rz_strbuf_append(format, "p");
+				rz_strbuf_appendf(fields, "%s ", identifier);
+				break;
+			}
+		}
 		char *fmt = rz_type_as_format(typedb, type->type);
 		if (fmt) {
 			rz_strbuf_append(format, fmt);
@@ -2977,6 +3003,13 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 				rz_strbuf_append(buf, "?");
 			} else if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_ENUM) {
 				rz_strbuf_append(buf, "E");
+			} else {
+				RzBaseType *btyp = rz_type_get_base_type(typedb, type);
+				if (btyp) {
+					RzStrBuf *fields = rz_strbuf_new("");
+					base_type_to_format_no_unfold(typedb, btyp, type->identifier.name, buf, fields);
+					rz_strbuf_free(fields);
+				}
 			}
 		}
 	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {

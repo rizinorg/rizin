@@ -55,17 +55,18 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 		return NULL;
 	}
 
+	char tmpbuf[32];
 	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	ret->big_endian = false;
-	ret->claimed_checksum = strdup(sdb_fmt("0x%08x", obj->hdr->check_sum)); // FIXME: Leaks
+	ret->claimed_checksum = rz_str_newf("0x%08x", obj->hdr->check_sum);
 	ret->file = bf->file ? strdup(bf->file) : NULL;
 	ret->has_va = true;
 	ret->rclass = strdup("mdmp");
 	ret->rpath = strdup("NONE");
 	ret->type = strdup("MDMP (MiniDump crash report data)");
 
-	sdb_set(bf->sdb, "mdmp.flags", sdb_fmt("0x%08" PFMT64x, obj->hdr->flags), 0);
+	sdb_set(bf->sdb, "mdmp.flags", rz_strf(tmpbuf, "0x%08" PFMT64x, obj->hdr->flags), 0);
 	sdb_num_set(bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
 	if (obj->streams.system_info) {
@@ -121,20 +122,20 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 	char *ptr = NULL;
 	int i;
 	MiniDmpObj *obj;
 	struct rz_bin_pe_lib_t *libs = NULL;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzListIter *it;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 
@@ -148,7 +149,7 @@ static RzList /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 		}
 		for (i = 0; !libs[i].last; i++) {
 			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, libs[i].name);
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(libs);
 	}
@@ -158,7 +159,7 @@ static RzList /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 		}
 		for (i = 0; !libs[i].last; i++) {
 			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe64_bin->vaddr, libs[i].name);
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(libs);
 	}
@@ -176,9 +177,9 @@ static bool mdmp_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 	return false;
 }
 
-static RzList /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 	MiniDmpObj *obj = (MiniDmpObj *)bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -196,7 +197,7 @@ static RzList /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 		map->vsize = (memory->memory).data_size;
 		map->perm = rz_bin_mdmp_get_perm(obj, map->vaddr);
 		map->name = rz_str_newf("memory.0x%" PFMT64x, map->vaddr);
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 
 	ut64 index = obj->streams.memories64.base_rva;
@@ -212,19 +213,20 @@ static RzList /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
 		map->vsize = memory64->data_size;
 		map->perm = rz_bin_mdmp_get_perm(obj, map->vaddr);
 		map->name = rz_str_newf("memory64.0x%" PFMT64x, map->vaddr);
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 		index += memory64->data_size;
 	}
 
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 	MiniDmpModule *module;
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *ret, *pe_secs;
+	RzPVector *pe_secs;
+	RzPVector *ret;
 	RzListIter *it, *it0;
 	RzBinSection *ptr;
 	ut8 str_buffer[512];
@@ -232,7 +234,7 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 
 	obj = (MiniDmpObj *)bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -276,7 +278,7 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 		/* As this is an encompassing section we will set the RWX to 0 */
 		ptr->perm = 0;
 
-		if (!rz_list_append(ret, ptr)) {
+		if (!rz_pvector_push(ret, ptr)) {
 			free(ptr);
 			break;
 		}
@@ -285,15 +287,15 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 		rz_list_foreach (obj->pe32_bins, it0, pe32_bin) {
 			if (pe32_bin->vaddr == module->base_of_image && pe32_bin->bin) {
 				pe_secs = Pe32_rz_bin_mdmp_pe_get_sections(pe32_bin);
-				rz_list_join(ret, pe_secs);
-				rz_list_free(pe_secs);
+				rz_pvector_join(ret, pe_secs);
+				rz_pvector_free(pe_secs);
 			}
 		}
 		rz_list_foreach (obj->pe64_bins, it0, pe64_bin) {
 			if (pe64_bin->vaddr == module->base_of_image && pe64_bin->bin) {
 				pe_secs = Pe64_rz_bin_mdmp_pe_get_sections(pe64_bin);
-				rz_list_join(ret, pe_secs);
-				rz_list_free(pe_secs);
+				rz_pvector_join(ret, pe_secs);
+				rz_pvector_free(pe_secs);
 			}
 		}
 	}
@@ -302,19 +304,19 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
+static RzPVector /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 	MiniDmpLocDescr32 *location = NULL;
 	MiniDmpMemDescr32 *module;
 	MiniDmpMemDescr64 *module64;
 	MiniDmpMemInfo *mem_info;
 	MiniDmpObj *obj;
-	RzList *ret;
+	RzPVector *ret;
 	RzListIter *it;
 	RzBinMem *ptr;
 	ut64 index;
 	ut64 state, type, a_protect;
 
-	if (!(ret = rz_list_newf(rz_bin_mem_free))) {
+	if (!(ret = rz_pvector_new(rz_bin_mem_free))) {
 		return NULL;
 	}
 
@@ -338,11 +340,11 @@ static RzList /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 			a_protect = mem_info->allocation_protect;
 		}
 		location = &(module->memory);
-		ptr->name = strdup(sdb_fmt("paddr=0x%08" PFMT32x " state=0x%08" PFMT64x
-					   " type=0x%08" PFMT64x " allocation_protect=0x%08" PFMT64x " Memory_Section",
-			location->rva, state, type, a_protect));
+		ptr->name = rz_str_newf("paddr=0x%08" PFMT32x " state=0x%08" PFMT64x
+					" type=0x%08" PFMT64x " allocation_protect=0x%08" PFMT64x " Memory_Section",
+			location->rva, state, type, a_protect);
 
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	index = obj->streams.memories64.base_rva;
@@ -361,25 +363,26 @@ static RzList /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 			type = mem_info->type;
 			a_protect = mem_info->allocation_protect;
 		}
-		ptr->name = strdup(sdb_fmt("paddr=0x%08" PFMT64x " state=0x%08" PFMT64x
-					   " type=0x%08" PFMT64x " allocation_protect=0x%08" PFMT64x " Memory_Section",
-			index, state, type, a_protect));
+		ptr->name = rz_str_newf("paddr=0x%08" PFMT64x " state=0x%08" PFMT64x
+					" type=0x%08" PFMT64x " allocation_protect=0x%08" PFMT64x " Memory_Section",
+			index, state, type, a_protect);
 
 		index += module64->data_size;
 
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;
 }
 
-static RzList /*<RzBinReloc *>*/ *mdmp_relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *mdmp_relocs(RzBinFile *bf) {
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzListIter *it;
+	void **vit;
 
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -388,26 +391,32 @@ static RzList /*<RzBinReloc *>*/ *mdmp_relocs(RzBinFile *bf) {
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		if (pe32_bin->bin && pe32_bin->bin->relocs) {
-			rz_list_join(ret, pe32_bin->bin->relocs);
+			rz_pvector_foreach (pe32_bin->bin->relocs, vit) {
+				RzBinReloc *reloc = *vit;
+				rz_pvector_push(ret, reloc);
+			}
 		}
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		if (pe64_bin->bin && pe64_bin->bin->relocs) {
-			rz_list_join(ret, pe64_bin->bin->relocs);
+			rz_pvector_foreach (pe64_bin->bin->relocs, vit) {
+				RzBinReloc *reloc = *vit;
+				rz_pvector_push(ret, reloc);
+			}
 		}
 	}
 
 	return ret;
 }
 
-static RzList /*<RzBinImport *>*/ *mdmp_imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *mdmp_imports(RzBinFile *bf) {
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *list;
+	RzPVector *vec;
 	RzListIter *it;
 
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -415,30 +424,42 @@ static RzList /*<RzBinImport *>*/ *mdmp_imports(RzBinFile *bf) {
 	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		list = Pe32_rz_bin_mdmp_pe_get_imports(pe32_bin);
-		if (list) {
-			rz_list_join(ret, list);
-			rz_list_free(list);
+		vec = Pe32_rz_bin_mdmp_pe_get_imports(pe32_bin);
+		if (vec) {
+			void **vec_it;
+			rz_pvector_foreach (vec, vec_it) {
+				RzBinImport *import = *vec_it;
+				rz_pvector_push(ret, import);
+			}
+			// this won't free import
+			rz_pvector_free(vec);
 		}
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		list = Pe64_rz_bin_mdmp_pe_get_imports(pe64_bin);
-		if (list) {
-			rz_list_join(ret, list);
-			rz_list_free(list);
+		vec = Pe64_rz_bin_mdmp_pe_get_imports(pe64_bin);
+		if (vec) {
+			void **vec_it;
+			rz_pvector_foreach (vec, vec_it) {
+				RzBinImport *import = *vec_it;
+				rz_pvector_push(ret, import);
+			}
+			// this won't free import
+			rz_pvector_free(vec);
 		}
 	}
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *mdmp_symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *mdmp_symbols(RzBinFile *bf) {
 	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *ret, *list;
-	RzListIter *it;
+	RzList *list;
+	RzPVector *ret;
+	RzListIter *it, *iter;
+	RzBinSymbol *sym;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 
@@ -446,12 +467,20 @@ static RzList /*<RzBinSymbol *>*/ *mdmp_symbols(RzBinFile *bf) {
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_rz_bin_mdmp_pe_get_symbols(bf->rbin, pe32_bin);
-		rz_list_join(ret, list);
+		rz_list_foreach (list, iter, sym) {
+			rz_pvector_push(ret, sym);
+		}
+		list->length = 0;
+		list->head = list->tail = NULL;
 		rz_list_free(list);
 	}
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		list = Pe64_rz_bin_mdmp_pe_get_symbols(bf->rbin, pe64_bin);
-		rz_list_join(ret, list);
+		rz_list_foreach (list, iter, sym) {
+			rz_pvector_push(ret, sym);
+		}
+		list->length = 0;
+		list->head = list->tail = NULL;
 		rz_list_free(list);
 	}
 	return ret;
@@ -463,10 +492,6 @@ static bool mdmp_check_buffer(RzBuffer *b) {
 		return !memcmp(magic, MDMP_MAGIC, 6);
 	}
 	return false;
-}
-
-static RzList /*<RzBinString *>*/ *mdmp_strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
 RzBinPlugin rz_bin_plugin_mdmp = {
@@ -486,7 +511,6 @@ RzBinPlugin rz_bin_plugin_mdmp = {
 	.maps = &mdmp_maps,
 	.sections = &mdmp_sections,
 	.symbols = &mdmp_symbols,
-	.strings = &mdmp_strings,
 };
 
 #ifndef RZ_PLUGIN_INCORE

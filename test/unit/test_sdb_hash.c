@@ -3,10 +3,10 @@
 
 #include "minunit.h"
 #include <sdb.h>
-#include <ht_uu.h>
-#include <ht_up.h>
-#include <ht_pp.h>
-#include <ht_pu.h>
+#include <rz_util/ht_uu.h>
+#include <rz_util/ht_up.h>
+#include <rz_util/ht_pp.h>
+#include <rz_util/ht_pu.h>
 
 typedef struct _test_struct {
 	char *name;

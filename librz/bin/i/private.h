@@ -71,7 +71,7 @@ RZ_IPI RzBinProcessLanguage rz_bin_process_language_symbol(RzBinObject *o);
 RZ_IPI RzBinProcessLanguage rz_bin_process_language_import(RzBinObject *o);
 
 struct rz_bin_string_database_t {
-	RzList /*<RzBinString *>*/ *list; ///< Contains all the strings in list form
+	RzPVector /*<RzBinString *>*/ *pvec; ///< Contains all the strings in list form
 	HtUP /*<ut64, RzBinString*>*/ *phys; ///< Contains all the strings but mapped by physical address
 	HtUP /*<ut64, RzBinString*>*/ *virt; ///< Contains all the strings but mapped by virtual address
 };

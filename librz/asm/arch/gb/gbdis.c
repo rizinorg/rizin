@@ -156,28 +156,29 @@ static int gbDisass(RzAsmOp *op, const ut8 *buf, int len) {
 	if (len < foo) {
 		return 0;
 	}
-	const char *buf_asm = "invalid";
 	char reg[32];
 	memset(reg, '\0', sizeof(reg));
 	switch (gb_op[buf[0]].type) {
 	case GB_8BIT:
-		buf_asm = sdb_fmt("%s", gb_op[buf[0]].name);
+		rz_asm_op_setf_asm(op, "%s", gb_op[buf[0]].name);
 		break;
 	case GB_16BIT:
-		buf_asm = sdb_fmt("%s %s", cb_ops[buf[1] >> 3u], cb_regs[buf[1] & 7u]);
+		rz_asm_op_setf_asm(op, "%s %s", cb_ops[buf[1] >> 3u], cb_regs[buf[1] & 7u]);
 		break;
 	case GB_8BIT + ARG_8:
-		buf_asm = sdb_fmt(gb_op[buf[0]].name, buf[1]);
+		rz_asm_op_setf_asm(op, gb_op[buf[0]].name, buf[1]);
 		break;
 	case GB_8BIT + ARG_16:
-		buf_asm = sdb_fmt(gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
+		rz_asm_op_setf_asm(op, gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
 		break;
 	case GB_8BIT + ARG_8 + GB_IO:
 		gb_hardware_register_name(reg, buf[1]);
-		buf_asm = sdb_fmt(gb_op[buf[0]].name, reg);
+		rz_asm_op_setf_asm(op, gb_op[buf[0]].name, reg);
+		break;
+	default:
+		rz_asm_op_set_asm(op, "invalid");
 		break;
 	}
-	rz_strbuf_set(&op->buf_asm, buf_asm);
 	return foo;
 }
 #endif

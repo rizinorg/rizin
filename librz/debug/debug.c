@@ -266,10 +266,25 @@ static int rz_debug_recoil(RzDebug *dbg, RzDebugRecoilMode rc_mode) {
 	return rz_debug_bps_enable(dbg);
 }
 
-/* add a breakpoint with some typical values */
-RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, RZ_NULLABLE const char *module, st64 m_delta) {
+/**
+ * Add a breakpoint with some typical values
+ *
+ * \param addr where to place the breakpoint
+ * \param size the size of the breakpoint or 0 for auto-detection, relevant for watchpoints
+ * \param hw whether to set a hardware breakpoint instead of a software one
+ * \param watch whether to set a watchpoint
+ * \param perm if \p watch is true, rwx permissions for the watchpoint
+ * \param module if not null, in which module to set the breakpoint
+ * \param m_delta offset inside \p module
+ */
+RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64 addr, ut64 size, bool hw, bool watch, int perm, RZ_NULLABLE const char *module, st64 m_delta) {
 	rz_return_val_if_fail(dbg, NULL);
-	int bpsz = rz_bp_size_at(dbg->bp, addr);
+	if (watch) {
+		// Software watchpoints not supported
+		hw = true;
+	}
+	int bpsz = size ? size : (hw && !watch) ? 1
+						: rz_bp_size_at(dbg->bp, addr);
 	RzBreakpointItem *bpi;
 	const char *module_name = module;
 	RzListIter *iter;
@@ -329,8 +344,7 @@ RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64
 		}
 	}
 	if (watch) {
-		hw = 1; // XXX
-		bpi = rz_bp_watch_add(dbg->bp, addr, bpsz, hw, rw);
+		bpi = rz_bp_watch_add(dbg->bp, addr, bpsz, hw, perm);
 	} else {
 		bpi = hw
 			? rz_bp_add_hw(dbg->bp, addr, bpsz, RZ_PERM_X)
@@ -589,6 +603,7 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 	ut64 pc = 0;
 	int prev_pid = dbg->pid;
 	int prev_tid = dbg->tid;
+	char tmpbuf[32];
 
 	if (pid < 0) {
 		return false;
@@ -613,7 +628,7 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 		dbg->tid = tid;
 	}
 
-	rz_io_system(dbg->iob.io, sdb_fmt("pid %d", dbg->tid));
+	rz_io_system(dbg->iob.io, rz_strf(tmpbuf, "pid %d", dbg->tid));
 
 	// Synchronize with the current thread's data
 	if (dbg->corebind.core) {

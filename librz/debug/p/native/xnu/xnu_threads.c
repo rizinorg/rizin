@@ -279,7 +279,7 @@ static int xnu_update_thread_info(RzDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static int thread_find(thread_t *port, xnu_thread_t *a) {
+static int thread_find(thread_t *port, xnu_thread_t *a, void *user) {
 	return (a && port && (a->port == *port)) ? 0 : 1;
 }
 
@@ -351,7 +351,7 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 		for (i = 0; i < thread_count; i++) {
 			xnu_thread_t *t;
 			iter = rz_list_find(dbg->threads, &thread_list[i],
-				(RzListComparator)&thread_find);
+				(RzListComparator)&thread_find, NULL);
 			// it means is already in our list
 			if (iter) {
 				// free the ownership over the thread
@@ -383,17 +383,17 @@ RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid) {
 	}
 	// TODO get the current thread
 	RzListIter *it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
-		(RzListComparator)&thread_find);
+		(RzListComparator)&thread_find, NULL);
 	if (!it) {
 		tid = rz_xnu_get_cur_thread(dbg);
 		it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
-			(RzListComparator)&thread_find);
+			(RzListComparator)&thread_find, NULL);
 		if (!it) {
 			eprintf("Thread not found get_xnu_thread\n");
 			return NULL;
 		}
 	}
-	return (xnu_thread_t *)it->data;
+	return (xnu_thread_t *)rz_list_iter_get_data(it);
 }
 
 /* XXX: right now it just returns the first thread, not the one selected in dbg->tid */

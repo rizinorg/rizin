@@ -37,7 +37,7 @@ static void flag_skiplist_free(void *data) {
 	free(data);
 }
 
-static int flag_skiplist_cmp(const void *va, const void *vb) {
+static int flag_skiplist_cmp(const void *va, const void *vb, void *user) {
 	const RzFlagsAtOffset *a = (RzFlagsAtOffset *)va, *b = (RzFlagsAtOffset *)vb;
 	if (a->off == b->off) {
 		return 0;
@@ -454,6 +454,96 @@ RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest) {
 	return nice ? evalFlag(f, nice) : NULL;
 }
 
+static bool flag_space_is_in_list(RzList /*<RzSpace *>*/ *spaces, RzFlagItem *item) {
+	RzListIter *it;
+	RzSpace *space;
+	rz_list_foreach (spaces, it, space) {
+		if (IS_FI_IN_SPACE(item, space)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief      Returns the last flag item close or at the specified offset within the given spaces.
+ *
+ * \param      f        RzFlag object to use
+ * \param[in]  closest  When true returns the first flag found at the closest offset
+ * \param[in]  off      Offset of the flag to search
+ * \param[in]  ...      Spaces to search into (must contain a NULL value).
+ *
+ * \return     On success returns the flag item close or at the specified offset, otherwise NULL.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool closest, ut64 off, ...) {
+	va_list ap;
+	RzList *spaces = rz_list_new();
+	if (!spaces) {
+		return NULL;
+	}
+
+	va_start(ap, off);
+	const char *space_name = va_arg(ap, const char *);
+	while (space_name) {
+		RzSpace *space = rz_flag_space_get(f, space_name);
+		if (space) {
+			rz_list_append(spaces, space);
+		}
+		space_name = va_arg(ap, const char *);
+	}
+	va_end(ap);
+
+	RzFlagItem *nice = NULL;
+	RzListIter *iter;
+	const RzFlagsAtOffset *flags_at = rz_flag_get_nearest_list(f, off, -1);
+	if (!flags_at) {
+		return NULL;
+	}
+	if (flags_at->off == off) {
+		RzFlagItem *item;
+		rz_list_foreach (flags_at->flags, iter, item) {
+			if (!flag_space_is_in_list(spaces, item)) {
+				continue;
+			}
+			if (nice) {
+				if (isFunctionFlag(nice->name)) {
+					nice = item;
+				}
+			} else {
+				nice = item;
+			}
+		}
+		if (nice) {
+			return evalFlag(f, nice);
+		}
+	}
+
+	if (!closest) {
+		rz_list_free(spaces);
+		return NULL;
+	}
+	while (!nice && flags_at) {
+		RzFlagItem *item;
+		rz_list_foreach (flags_at->flags, iter, item) {
+			if (!flag_space_is_in_list(spaces, item)) {
+				continue;
+			}
+			if (item->offset == off) {
+				return evalFlag(f, item);
+			}
+			nice = item;
+			break;
+		}
+		if (!nice && flags_at->off) {
+			flags_at = rz_flag_get_nearest_list(f, flags_at->off - 1, -1);
+		} else {
+			flags_at = NULL;
+		}
+	}
+	rz_list_free(spaces);
+	return nice ? evalFlag(f, nice) : NULL;
+}
+
 static bool append_to_list(RzFlagItem *fi, void *user) {
 	RzList *ret = (RzList *)user;
 	rz_list_append(ret, fi);
@@ -484,35 +574,60 @@ RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off) {
 	char *p = NULL;
 	rz_list_foreach (list, iter, fi) {
 		p = rz_str_appendf(p, "%s%s",
-			fi->realname, iter->n ? "," : "");
+			fi->realname, rz_list_iter_has_next(iter) ? "," : "");
 	}
 	return p;
 }
 
-// Set a new flag named `name` at offset `off`. If there's already a flag with
-// the same name, slightly change the name by appending ".%d" as suffix
+/**
+ * Set a flag if there is not already a flag with the same name that does
+ * not match the given \p off and \p size.
+ * \return whether to stop searching for another name, using bool instead of returning
+ *         a pointer to distinguish between existing name and failed malloc.
+ */
+bool try_set_flag(RzFlag *f, const char *name, ut64 off, ut32 size, RzFlagItem **r) {
+	RzFlagItem *fi = rz_flag_get(f, name);
+	if (fi) {
+		if (fi->offset == off && fi->size == size) {
+			*r = fi;
+			return true;
+		}
+		return false;
+	}
+	*r = rz_flag_set(f, name, off, size);
+	return true;
+}
+
+/**
+ * Set a new flag named \p name at \p off. If there's already a flag with
+ * the same name, slightly change the name by appending the address or ".%d" as suffix.
+ * If there is a flag at \p off of size \p size and a matching name, that flag is returned
+ * instead of creating a new one.
+ */
 RZ_API RzFlagItem *rz_flag_set_next(RzFlag *f, const char *name, ut64 off, ut32 size) {
 	rz_return_val_if_fail(f && name, NULL);
-	if (!rz_flag_get(f, name)) {
-		return rz_flag_set(f, name, off, size);
+	RzFlagItem *r = NULL;
+	if (try_set_flag(f, name, off, size, &r)) {
+		return r;
 	}
-	int i, newNameSize = strlen(name);
-	char *newName = malloc(newNameSize + 16);
-	if (!newName) {
+	size_t name_len = strlen(name);
+	static const size_t suffix_size = 16 + 2; // max size of a 64bit addr + '.' + '\0'
+	char *new_name = malloc(name_len + suffix_size);
+	if (!new_name) {
 		return NULL;
 	}
-	strcpy(newName, name);
-	for (i = 0;; i++) {
-		snprintf(newName + newNameSize, 15, ".%d", i);
-		if (!rz_flag_get(f, newName)) {
-			RzFlagItem *fi = rz_flag_set(f, newName, off, size);
-			if (fi) {
-				free(newName);
-				return fi;
+	memcpy(new_name, name, name_len);
+	snprintf(new_name + name_len, suffix_size, ".%" PFMT64x, off);
+	if (!try_set_flag(f, new_name, off, size, &r)) {
+		for (int i = 0; i < 1024 /* some upper bound to prevent unreasonable looping */; i++) {
+			snprintf(new_name + name_len, 17, ".%d", i);
+			if (try_set_flag(f, new_name, off, size, &r)) {
+				break;
 			}
 		}
 	}
-	return NULL;
+	free(new_name);
+	return r;
 }
 
 /* create or modify an existing flag item with the given name and parameters.

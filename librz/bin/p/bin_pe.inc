@@ -66,21 +66,22 @@ static void add_tls_callbacks(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *list) {
 	RzBinAddr *ptr = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)(bf->o->bin_obj);
 	char *key;
+	char tmpbuf[128];
 
 	do {
-		key = sdb_fmt("pe.tls_callback%d_paddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
 		paddr = sdb_num_get(bin->kv, key, 0);
 		if (!paddr) {
 			break;
 		}
 
-		key = sdb_fmt("pe.tls_callback%d_vaddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
 		vaddr = sdb_num_get(bin->kv, key, 0);
 		if (!vaddr) {
 			break;
 		}
 
-		key = sdb_fmt("pe.tls_callback%d_haddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
 		haddr = sdb_num_get(bin->kv, key, 0);
 		if (!haddr) {
 			break;
@@ -139,13 +140,13 @@ static ut32 perm_of_section_perm(ut64 perm) {
 	return r;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	struct rz_bin_pe_section_t *sections = NULL;
 	if (!bin || !(sections = bin->sections)) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -164,7 +165,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vaddr = ba;
 	map->vsize = RZ_ROUND(map->psize, 4096);
 	map->perm = RZ_PERM_R;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 	PE_(rz_bin_pe_check_sections)
 	(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
@@ -189,24 +190,24 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		}
 		map->vaddr = sections[i].vaddr + ba;
 		map->perm = perm_of_section_perm(sections[i].perm);
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	struct rz_bin_pe_section_t *sections = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	ut64 ba = baddr(bf);
 	int n_nonzero = 0;
 	int i;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	if (!bin || !(sections = bin->sections)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	PE_(rz_bin_pe_check_sections)
@@ -228,7 +229,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (ptr->size != 0) {
 			n_nonzero++;
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	if (n_nonzero == 1 && ptr && ptr->perm & RZ_PERM_R) {
 		// if there is only one section, then we expect to have data in here also.
@@ -263,15 +264,20 @@ static bool is_go_pclntab(ut8 *magic) {
 #define IS_GOPCLNTAB_1_16_BE(x) (x[3] == 0xfa && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
 #define IS_GOPCLNTAB_1_18_LE(x) (x[0] == 0xf0 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
 #define IS_GOPCLNTAB_1_18_BE(x) (x[3] == 0xf0 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_20_LE(x) (x[0] == 0xf1 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff && x[4] == 0x00 && x[5] == 0x00)
+#define IS_GOPCLNTAB_1_20_BE(x) (x[3] == 0xf1 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff && x[4] == 0x00 && x[5] == 0x00)
 	return IS_GOPCLNTAB_1_2_LE(magic) || IS_GOPCLNTAB_1_2_BE(magic) ||
 		IS_GOPCLNTAB_1_16_LE(magic) || IS_GOPCLNTAB_1_16_BE(magic) ||
-		IS_GOPCLNTAB_1_18_LE(magic) || IS_GOPCLNTAB_1_18_BE(magic);
+		IS_GOPCLNTAB_1_18_LE(magic) || IS_GOPCLNTAB_1_18_BE(magic) ||
+		IS_GOPCLNTAB_1_20_LE(magic) || IS_GOPCLNTAB_1_20_BE(magic);
 #undef IS_GOPCLNTAB_1_2_LE
 #undef IS_GOPCLNTAB_1_2_BE
 #undef IS_GOPCLNTAB_1_16_LE
 #undef IS_GOPCLNTAB_1_16_BE
 #undef IS_GOPCLNTAB_1_18_LE
 #undef IS_GOPCLNTAB_1_18_BE
+#undef IS_GOPCLNTAB_1_20_LE
+#undef IS_GOPCLNTAB_1_20_BE
 }
 
 static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
@@ -311,8 +317,8 @@ static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
 	return 0;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	ut64 go_pclntab_paddr = 0;
 	ut64 go_pclntab_vaddr = 0;
 	ut32 go_pclntab_size = 0;
@@ -322,7 +328,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	int i;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	int file_bits = PE_(rz_bin_pe_get_bits(bin));
@@ -348,7 +354,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 				ptr->paddr = symbols[i].paddr;
 			}
 			ptr->ordinal = symbols[i].ordinal;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(symbols);
 	}
@@ -364,7 +370,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		ptr->bits = file_bits;
 		ptr->vaddr = go_pclntab_vaddr;
 		ptr->paddr = go_pclntab_paddr;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	if ((imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
@@ -383,16 +389,22 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			ptr->vaddr = imports[i].vaddr;
 			ptr->paddr = imports[i].paddr;
 			ptr->ordinal = imports[i].ordinal;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(imports);
 	}
 
 	// CLR symbols
 	RzList *clr_symbols = PE_(rz_bin_pe_get_clr_symbols)(bf->o->bin_obj);
+	RzListIter *iter;
+	RzBinSymbol *sym;
 	if (clr_symbols) {
-		rz_list_join(ret, clr_symbols);
-		free(clr_symbols);
+		rz_list_foreach (clr_symbols, iter, sym) {
+			rz_pvector_push(ret, sym);
+		}
+		clr_symbols->length = 0;
+		clr_symbols->head = clr_symbols->tail = NULL;
+		rz_list_free(clr_symbols);
 	}
 
 	find_pe_overlay(bf);
@@ -409,8 +421,8 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
-	RzList *relocs = NULL;
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+	RzPVector *relocs = NULL;
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
@@ -419,18 +431,18 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
 
 	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
 	if (((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs) {
-		rz_list_free(((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs);
+		rz_pvector_free(((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs);
 	}
 
-	if (!(relocs = rz_list_newf(free))) {
-		free(ret);
+	if (!(relocs = rz_pvector_new(free))) {
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs = relocs;
@@ -451,7 +463,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
 		// index for the import. There is no point in exposing it.
 		// ptr->hint = imports[i].hint;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 
 		if (!(rel = RZ_NEW0(RzBinReloc))) {
 			break;
@@ -471,13 +483,13 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 			rel->vaddr = newaddr;
 		}
 		rel->paddr = imports[i].paddr;
-		rz_list_append(relocs, rel);
+		rz_pvector_push(relocs, rel);
 	}
 	free(imports);
 	return ret;
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (obj) {
 		return obj->relocs;
@@ -485,34 +497,33 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	char *ptr = NULL;
 	int i;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
 		return ret;
 	}
 	for (i = 0; !libs[i].last; i++) {
 		ptr = strdup(libs[i].name);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	free(libs);
 	return ret;
 }
 
-static RzList /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
+static RzPVector /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (!obj) {
 		return NULL;
 	}
 
-	RzList *res = rz_list_newf((RzListFree)rz_bin_resource_free);
+	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_resource_free);
 	if (!res) {
 		return NULL;
 	}
@@ -549,12 +560,12 @@ static RzList /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
 			goto err;
 		}
 
-		rz_list_append(res, br);
+		rz_pvector_push(res, br);
 	}
 	return res;
 
 err:
-	rz_list_free(res);
+	rz_pvector_free(res);
 	return NULL;
 }
 
@@ -593,23 +604,25 @@ static bool is_vb6(RzBinFile *bf) {
 static int has_canary(RzBinFile *bf) {
 	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
-	RzListIter *iter;
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
+	void **it;
 	if (bin) {
-		const RzList *relocs_list = bin->relocs;
+		const RzPVector *relocs_vec = bin->relocs;
 		RzBinReloc *rel;
-		if (relocs_list) {
-			rz_list_foreach (relocs_list, iter, rel) {
+		if (relocs_vec) {
+			rz_pvector_foreach (relocs_vec, it) {
+				rel = *it;
 				if (!strcmp(rel->import->name, "__security_init_cookie")) {
 					return true;
 				}
 			}
 		}
 	} else { // rz_bin needs this as it will not initialise bin
-		const RzList *imports_list = imports(bf);
+		const RzPVector *imports_vec = imports(bf);
 		RzBinImport *imp;
-		if (imports_list) {
-			rz_list_foreach (imports_list, iter, imp) {
+		if (imports_vec) {
+			rz_pvector_foreach (imports_vec, it) {
+				imp = *it;
 				if (!strcmp(imp->name, "__security_init_cookie")) {
 					return true;
 				}
@@ -662,8 +675,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_canary = has_canary(bf);
 	ret->has_nx = haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
-	ret->claimed_checksum = strdup(sdb_fmt("0x%08x", claimed_checksum));
-	ret->actual_checksum = strdup(sdb_fmt("0x%08x", actual_checksum));
+	ret->claimed_checksum = rz_str_newf("0x%08x", claimed_checksum);
+	ret->actual_checksum = rz_str_newf("0x%08x", actual_checksum);
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
@@ -715,23 +728,19 @@ static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
 }
 
-static RzList /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
-	RzList *file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
+static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
+	RzPVector *file_hashes = rz_pvector_new((RzPVectorFree)rz_bin_file_hash_free);
 	const char *authentihash = PE_(bin_pe_get_authentihash)(bf->o->bin_obj);
 	if (authentihash) {
 		RzBinFileHash *authhash = RZ_NEW0(RzBinFileHash);
 		if (authhash) {
 			authhash->type = strdup("authentihash");
 			authhash->hex = strdup(authentihash);
-			rz_list_push(file_hashes, authhash);
+			rz_pvector_push(file_hashes, authhash);
 		}
 	}
 
 	return file_hashes;
-}
-
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
 /**

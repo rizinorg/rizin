@@ -102,23 +102,22 @@ bool test_rz_core_analysis_bytes() {
 	rz_core_set_asm_configs(core, "x86", 64, 0);
 	ut8 buf[128];
 	int len = rz_hex_str2bin("554889e5897dfc", buf);
-	RzPVector *vec = rz_core_analysis_bytes(core, buf, len, 0);
-	mu_assert_notnull(vec, "rz_core_analysis_bytes");
-	mu_assert_eq(rz_pvector_len(vec), 3, "rz_core_analysis_bytes len");
+	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, 0);
+	mu_assert_notnull(iter, "rz_core_analysis_bytes");
 
-	RzAnalysisBytes *ab = rz_pvector_at(vec, 0);
+	RzAnalysisBytes *ab = rz_iterator_next(iter);
 	mu_assert_streq(ab->opcode, "push rbp", "rz_core_analysis_bytes opcode");
 
-	ab = rz_pvector_at(vec, 1);
+	ab = rz_iterator_next(iter);
 	mu_assert_streq(ab->opcode, "mov rbp, rsp", "rz_core_analysis_bytes opcode");
 	mu_assert_streq(ab->pseudo, "rbp = rsp", "rz_core_analysis_bytes pseudo");
 
-	ab = rz_pvector_at(vec, 2);
+	ab = rz_iterator_next(iter);
 	mu_assert_streq(ab->opcode, "mov dword [rbp - 4], edi", "rz_core_analysis_bytes opcode");
 	mu_assert_streq(ab->pseudo, "dword [rbp - 4] = edi", "rz_core_analysis_bytes pseudo");
 
+	rz_iterator_free(iter);
 	rz_core_free(core);
-	rz_pvector_free(vec);
 	mu_end;
 }
 

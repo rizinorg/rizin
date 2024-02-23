@@ -48,11 +48,11 @@ static void print_node_options(RzConfigNode *node) {
 	}
 }
 
-static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	return (a && b && a->name && b->name ? strcmp(a->name, b->name) : 0);
 }
 
-static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	size_t la, lb;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
@@ -62,11 +62,11 @@ static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction 
 	return (la > lb) - (la < lb);
 }
 
-static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
-static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
+static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
 	ut64 sa, sb;
 	// return a && b && a->_size < b->_size;
 	if (!a || !b) {
@@ -351,20 +351,6 @@ static bool cb_scr_wideoff(void *user, void *data) {
 	return true;
 }
 
-static bool cb_scrrainbow(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value) {
-		core->print->flags |= RZ_PRINT_FLAGS_RAINBOW;
-		rz_cons_pal_random();
-	} else {
-		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
-		rz_core_theme_load(core, rz_core_theme_get(core));
-	}
-	rz_print_set_flags(core->print, core->print->flags);
-	return true;
-}
-
 static bool cb_asmpseudo(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -474,6 +460,19 @@ static void update_syscall_ns(RzCore *core) {
 	} else {
 		sdb_ns_unset(core->sdb, "syscall", NULL);
 	}
+}
+
+static bool cb_asm_varfold(void *core, void *node) {
+	char *choice[] = { "none", "group", "hide" };
+	RzConfigNode *n = node;
+	const char *user_choice = n->value;
+	for (int i = 0; i < sizeof(choice) / sizeof(choice[0]); i++) {
+		if (!strcmp(choice[i], user_choice)) {
+			return true;
+		}
+	}
+	RZ_LOG_ERROR("asm.var.fold: Invalid choice. Only support `none, group, hide`\n");
+	return false;
 }
 
 static bool cb_asmarch(void *user, void *data) {
@@ -880,64 +879,6 @@ static bool cb_asmparser(void *user, void *data) {
 	return rz_parse_use(core->parser, node->value);
 }
 
-typedef struct {
-	const char *name;
-	const char *aliases;
-} namealiases_pair;
-
-static bool cb_binstrenc(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?') {
-		print_node_options(node);
-		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
-			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
-			       "if utf8 char detected then utf8 else 8bit\n");
-		return false;
-	}
-	const namealiases_pair names[] = {
-		{ "guess", NULL },
-		{ "8bit", "ascii" },
-		{ "utf8", "utf-8" },
-		{ "utf16le", "utf-16le,utf16-le" },
-		{ "utf32le", "utf-32le,utf32-le" },
-		{ "utf16be", "utf-16be,utf16-be" },
-		{ "utf32be", "utf-32be,utf32-be" },
-		{ "ibm037", "ebcdic" },
-		{ "ibm290", NULL },
-		{ "ebcdices", NULL },
-		{ "ebcdicuk", NULL },
-		{ "ebcdicus", NULL },
-
-	};
-	int i;
-	char *enc = strdup(node->value);
-	if (!enc) {
-		return false;
-	}
-	rz_str_case(enc, false);
-	for (i = 0; i < RZ_ARRAY_SIZE(names); i++) {
-		const namealiases_pair *pair = &names[i];
-		if (!strcmp(pair->name, enc) || rz_str_cmp_list(pair->aliases, enc, ',')) {
-			free(node->value);
-			node->value = strdup(pair->name);
-			free(enc);
-			if (core->bin) {
-				free(core->bin->strenc);
-				core->bin->strenc = !strcmp(node->value, "guess") ? NULL : strdup(node->value);
-				RzBinFile *bf = rz_bin_cur(core->bin);
-				if (bf && bf->o) {
-					rz_bin_object_reset_strings(core->bin, bf, bf->o);
-				}
-			}
-			return true;
-		}
-	}
-	RZ_LOG_ERROR("core: bin.str.enc: unknown encoding: %s\n", node->value);
-	free(enc);
-	return false;
-}
-
 static bool cb_binfilter(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -1170,11 +1111,188 @@ static bool cb_str_escbslash(void *user, void *data) {
 	return true;
 }
 
-static bool cb_strsearch_check_ascii_freq(void *user, void *data) {
+static bool cb_str_search_max_threads(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->bin->strseach_check_ascii_freq = node->i_value;
+	size_t max_threads = rz_th_physical_core_number();
+	if (node->value[0] == '?') {
+		rz_cons_printf("%" PFMTSZu "\n", max_threads);
+		return false;
+	}
+	core->bin->str_search_cfg.max_threads = RZ_MIN(max_threads, node->i_value);
 	return true;
+}
+
+static bool cb_str_search_min_length(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < 1) {
+		RZ_LOG_ERROR("str.search.min_length cannot be less than 1.\n");
+		return false;
+	} else if (node->i_value >= core->bin->str_search_cfg.buffer_size) {
+		RZ_LOG_ERROR("str.search.buffer_size cannot be greater or equal to %" PFMTSZu ".\n", core->bin->str_search_cfg.buffer_size);
+		return false;
+	}
+
+	core->bin->str_search_cfg.min_length = node->i_value;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_buffer_size(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+
+	size_t min_buffer_size = RZ_MIN(core->bin->str_search_cfg.min_length, RZ_BIN_STRING_SEARCH_BUFFER_SIZE);
+	if (node->i_value < min_buffer_size) {
+		RZ_LOG_ERROR("str.search.buffer_size cannot be less than %" PFMTSZu ".\n", min_buffer_size);
+		return false;
+	}
+
+	core->bin->str_search_cfg.buffer_size = node->i_value;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_max_uni_blocks(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < 1) {
+		RZ_LOG_ERROR("str.search.max_uni_blocks cannot be less than 1.\n");
+		return false;
+	}
+	core->bin->str_search_cfg.max_uni_blocks = node->i_value;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_max_region_size(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) {
+		RZ_LOG_ERROR("str.search.max_region_size cannot be less than " RZ_STR(RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) ".\n");
+		return false;
+	}
+	core->bin->str_search_cfg.max_region_size = node->i_value;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_raw_alignment(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < 8) {
+		RZ_LOG_ERROR("str.search.raw_alignment cannot be less than 8.\n");
+		return false;
+	}
+	core->bin->str_search_cfg.raw_alignment = node->i_value;
+	return true;
+}
+
+static bool cb_str_search_check_ascii_freq(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] == '?') {
+		rz_cons_printf("true\nfalse\n");
+		return false;
+	} else if (!rz_str_is_bool(node->value)) {
+		RZ_LOG_ERROR("Invalid value for str.search.check_ascii_freq (%s).\n", node->value);
+		return false;
+	}
+	core->bin->str_search_cfg.check_ascii_freq = rz_str_is_true(node->value);
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
+	RzListIter *iter;
+	const char *option;
+	rz_list_foreach (node->options, iter, option) {
+		if (rz_str_casecmp(option, node->value)) {
+			continue;
+		}
+		free(node->value);
+		node->value = rz_str_dup(option);
+		*encoding = rz_str_enc_string_as_type(option);
+		return true;
+	}
+	return false;
+}
+
+static bool cb_str_search_encoding(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
+	if (node->value[0] == '?') {
+		print_node_options(node);
+		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
+			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
+			       "if utf8 char detected then utf8 else 8bit\n");
+		return false;
+	} else if (rz_str_casecmp("guess", node->value) && !find_encoding(node, &encoding)) {
+		RZ_LOG_ERROR("Invalid value for str.search.encoding (%s).\n", node->value);
+		return false;
+	}
+
+	core->bin->str_search_cfg.string_encoding = encoding;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_mode(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] == '?') {
+		print_node_options(node);
+		return false;
+	} else if (!rz_str_casecmp("auto", node->value)) {
+		core->bin->str_search_cfg.mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
+		return true;
+	} else if (!rz_str_casecmp("rosections", node->value)) {
+		core->bin->str_search_cfg.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+		return true;
+	} else if (!rz_str_casecmp("raw", node->value)) {
+		core->bin->str_search_cfg.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+		return true;
+	}
+	RZ_LOG_ERROR("Invalid value for str.search.mode (%s).\n", node->value);
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return false;
 }
 
 static bool cb_completion_maxtab(void *user, void *data) {
@@ -2139,17 +2257,18 @@ static bool scr_vtmode(void *user, void *data) {
 		node->i_value = RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
 	node->i_value = node->i_value > RZ_VIRT_TERM_MODE_COMPLETE ? RZ_VIRT_TERM_MODE_COMPLETE : node->i_value;
-	rz_line_singleton()->vtmode = rz_cons_singleton()->vtmode = node->i_value;
+	RzCons *cons = rz_cons_singleton();
+	cons->line->vtmode = cons->vtmode = node->i_value;
 
 	DWORD mode;
 	HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(input, &mode);
 	if (node->i_value == RZ_VIRT_TERM_MODE_COMPLETE) {
 		SetConsoleMode(input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
-		rz_cons_singleton()->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+		cons->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	} else {
 		SetConsoleMode(input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
-		rz_cons_singleton()->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
+		cons->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
 	HANDLE streams[] = { GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE) };
 	int i;
@@ -2283,14 +2402,15 @@ static bool cb_scrprompt(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->print->scr_prompt = node->i_value;
-	rz_line_singleton()->echo = node->i_value;
+	core->cons->line->echo = node->i_value;
 	return true;
 }
 
 static bool cb_scrrows(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	int n = atoi(node->value);
-	((RzCore *)user)->cons->force_rows = n;
+	core->cons->force_rows = n;
 	return true;
 }
 
@@ -2437,6 +2557,22 @@ static bool cb_binverbose(void *user, void *data) {
 	return true;
 }
 
+static bool cb_binhashesdefault(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (*node->value == '?') {
+		print_node_options(node);
+		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
+		return false;
+	}
+	rz_list_free(core->bin->default_hashes);
+	core->bin->default_hashes = rz_str_split_duplist(node->value, ",", true);
+	if (!core->bin->default_hashes) {
+		core->bin->default_hashes = rz_list_new();
+	}
+	return true;
+}
+
 static bool cb_debase64(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2487,67 +2623,6 @@ static bool cb_binprefix(void *user, void *data) {
 		} else {
 			core->bin->prefix = node->value;
 		}
-	}
-	return true;
-}
-
-static bool cb_binmaxstrbuf(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (core->bin) {
-		int v = (int)node->i_value;
-		ut64 old_v = core->bin->maxstrbuf;
-		if (v < 1) {
-			// when less than 1 always enforce 4 as the min string length.
-			v = 4;
-		}
-		core->bin->maxstrbuf = v;
-		if (v > old_v) {
-			RzBinFile *bf = rz_bin_cur(core->bin);
-			if (bf && bf->o) {
-				rz_bin_object_reset_strings(core->bin, bf, bf->o);
-			}
-		}
-		return true;
-	}
-	return true;
-}
-
-static bool cb_binmaxstr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (core->bin) {
-		int v = (int)node->i_value;
-		if (v < 1) {
-			v = 0;
-		}
-		core->bin->maxstrlen = v;
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			bf->maxstrlen = v;
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-		return true;
-	}
-	return true;
-}
-
-static bool cb_binminstr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (core->bin) {
-		int v = (int)node->i_value;
-		if (v < 1) {
-			// when less than 1 always enforce 4 as the min string length.
-			v = 4;
-		}
-		core->bin->minstrlen = v;
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			bf->minstrlen = v;
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-		return true;
 	}
 	return true;
 }
@@ -3117,7 +3192,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.prompt.vi", "false", &cb_scr_vi, "Use vi mode for input prompt");
 	SETCB("scr.prompt.mode", "false", &cb_scr_prompt_mode, "Set prompt color based on vi mode");
 	SETCB("scr.wideoff", "false", &cb_scr_wideoff, "Adjust offsets to match asm.bits");
-	SETCB("scr.rainbow", "false", &cb_scrrainbow, "Shows rainbow colors depending of address");
 	SETCB("scr.last", "true", &cb_scrlast, "Cache last output after flush to make _ command work (disable for performance)");
 	SETBPREF("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETBPREF("asm.reloff.flags", "false", "Show relative offsets to flags (not only functions)");
@@ -3142,6 +3216,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.var.access", "false", "Show accesses of local variables");
 	SETBPREF("asm.sub.var", "true", "Substitute variables in disassembly");
 	SETI("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
+	n = NODECB("asm.var.fold", "none", &cb_asm_varfold);
+	SETDESC(n, "Fold same-typed variables (support none, group, hide)");
+	SETOPTIONS(n, "none", "group", "hide", NULL);
 	SETBPREF("asm.sub.varonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETBPREF("asm.sub.reg", "false", "Substitute register names with their associated role name (drp~=)");
 	SETBPREF("asm.sub.rel", "true", "Substitute pc relative expressions in disasm");
@@ -3214,18 +3291,20 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETCB("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");
+	SETCB("bin.dbginfo.dwo_path", "", NULL, "Load separate debug information (DWARF) file if available");
+	SETCB("bin.dbginfo.debug_file_directory", "/usr/lib/debug", NULL,
+		"Set the directories which searches for separate debugging information files to directory");
+	SETCB("bin.dbginfo.debuginfod", "false", NULL,
+		"Load debug file from bin.dbginfo.debuginfod_urls or DEBUGINFOD_URLS environment variable");
+	SETCB("bin.dbginfo.debuginfod_urls", "http://debuginfod.elfutils.org/", NULL,
+		"Looks for debug symbols on the debuginfod servers, the value is a string of a space separated URLs");
 	SETBPREF("bin.relocs", "true", "Load relocs information at startup if available");
-	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for strings in bin plugins");
-	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for strings in bin plugins");
-	SETICB("bin.maxstrbuf", 1024 * 1024 * 10, &cb_binmaxstrbuf, "Maximum size of range to load strings from");
-	n = NODECB("bin.str.enc", "guess", &cb_binstrenc);
-	SETDESC(n, "Default string encoding of binary");
-	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB("bin.prefix", "", &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETCB("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
+	SETCB("bin.hashes.default", "md5,sha1,sha256,crc32,entropy", &cb_binhashesdefault, "Select hash algorithms");
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");
@@ -3603,8 +3682,22 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
-	SETCB("str.search.check_ascii_freq", "true", &cb_strsearch_check_ascii_freq,
-		"Perform ASCII frequency analysis when looking for false positives during string search");
+
+	/* string search options */
+	SETB("str.search.reload", true, "When enabled, any change to any option `str.search.*` will reload the bin strings.");
+	SETICB("str.search.max_threads", RZ_THREAD_POOL_ALL_CORES, &cb_str_search_max_threads, "Maximum core number (0 for all cores).");
+	SETICB("str.search.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_str_search_min_length, "Smallest string length that is possible to find.");
+	SETICB("str.search.buffer_size", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_str_search_buffer_size, "Maximum buffer size, which will also determine the maximum string length.");
+	SETICB("str.search.max_uni_blocks", RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS, &cb_str_search_max_uni_blocks, "Maximum number of unicode blocks.");
+	SETICB("str.search.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_str_search_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
+	SETICB("str.search.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_str_search_raw_alignment, "Memory sector alignment used for the raw string search.");
+	SETICB("str.search.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_str_search_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
+	n = NODECB("str.search.encoding", "guess", &cb_str_search_encoding);
+	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
+	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
+	n = NODECB("str.search.mode", "auto", &cb_str_search_mode);
+	SETDESC(n, "String search mode which can override how strings are found (auto, rosections or raw)");
+	SETOPTIONS(n, "auto", "rosections", "raw", NULL);
 
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
@@ -3813,11 +3906,11 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_config_in_space(RZ_NONNULL RzCore *co
 		}
 
 		if (RZ_STR_ISNOTEMPTY(space)) {
-			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp)) {
+			if (0 == strcmp(name, space) && dot && !rz_list_find(list, dot + 1, (RzListComparator)strcmp, NULL)) {
 				rz_list_append(list, strdup(dot + 1));
 			}
 		} else {
-			if (!rz_list_find(list, name, (RzListComparator)strcmp)) {
+			if (!rz_list_find(list, name, (RzListComparator)strcmp, NULL)) {
 				rz_list_append(list, strdup(name));
 			}
 		}

@@ -32,23 +32,23 @@ RZ_IPI RzBinProcessLanguage rz_bin_process_language_import(RzBinObject *o) {
 RZ_IPI void rz_bin_set_imports_from_plugin(RzBinFile *bf, RzBinObject *o) {
 	RzBinPlugin *plugin = o->plugin;
 
-	rz_list_free(o->imports);
+	rz_pvector_free(o->imports);
 	if (!plugin->imports || !(o->imports = plugin->imports(bf))) {
-		o->imports = rz_list_newf((RzListFree)rz_bin_import_free);
+		o->imports = rz_pvector_new((RzPVectorFree)rz_bin_import_free);
 	}
-	rz_warn_if_fail(o->imports->free);
 }
 
 RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
-	if (!demangler || rz_list_length(o->imports) < 1) {
+	if (!demangler || rz_pvector_len(o->imports) < 1) {
 		return;
 	}
 
 	RzBinProcessLanguage language_cb = rz_bin_process_language_import(o);
 
-	RzListIter *it;
+	void **it;
 	RzBinImport *element;
-	rz_list_foreach (o->imports, it, element) {
+	rz_pvector_foreach (o->imports, it) {
+		element = *it;
 		if (!element->name) {
 			continue;
 		}
@@ -67,9 +67,10 @@ RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemang
 }
 
 RZ_IPI void rz_bin_demangle_imports_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
-	RzListIter *it;
+	void **it;
 	RzBinImport *element;
-	rz_list_foreach (o->imports, it, element) {
+	rz_pvector_foreach (o->imports, it) {
+		element = *it;
 		if (!element->name) {
 			continue;
 		}

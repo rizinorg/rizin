@@ -69,7 +69,7 @@ fs *
 fsl~?*
 EOF
 EXPECT=<<EOF
-8
+9
 EOF
 RUN
 
@@ -268,7 +268,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 f a
 fC a blabla
-pd~?blabla
+pd 0x100~?blabla
 EOF
 EXPECT=<<EOF
 1
@@ -717,5 +717,45 @@ EXPECT=<<EOF
         ..fini
         ..eh_frame
         ..bss
+EOF
+RUN
+
+NAME=pd shows real names and flag name in comments
+FILE=bins/elf/demangle-test-cpp
+CMDS=<<EOF
+pd 1 @ 0x000011ef @e:asm.flags.real=true
+pd 1 @ 0x000011ef @e:asm.flags.real=false
+EOF
+EXPECT=<<EOF
+            0x000011ef      call  std::vector<int, std::allocator<int> >::vector() ; method.std::vector_int__std::allocator_int___.vector
+            0x000011ef      call  method.std::vector_int__std::allocator_int___.vector
+EOF
+RUN
+
+NAME=Unicode grapheme clusters in flags
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+s 0x100
+wx f80202a9
+f flag_name
+pd 1
+fN flag_name "(🎈️)"
+pd 1
+e asm.flags.real=false
+fl.
+fl.j
+e asm.flags.real=true
+fl.
+EOF
+EXPECT=<<EOF
+            ;-- flag_name:
+            0x00000100      stp   x24, x0, [x23, 0x20]
+            ;-- (🎈️):
+            0x00000100      stp   x24, x0, [x23, 0x20]
+0x00000100 1 flag_name
+[{"name":"flag_name","realname":"(🎈\ufe0f)","size":1,"offset":256}]
+0x00000100 1 (🎈️)
 EOF
 RUN

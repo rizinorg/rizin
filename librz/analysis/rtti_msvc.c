@@ -190,6 +190,7 @@ static RZ_OWN RzList /*<rtti_base_class_descriptor *>*/ *rtti_msvc_read_base_cla
 			ut8 tmp[4] = { 0 };
 			if (!context->analysis->iob.read_at(context->analysis->iob.io, addr, tmp, 4)) {
 				rz_list_free(ret);
+				rz_cons_break_pop();
 				return NULL;
 			}
 			ut32 (*read_32)(const void *src) = context->analysis->big_endian ? rz_read_be32 : rz_read_le32;
@@ -830,16 +831,16 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 			meth.addr = vmeth->addr;
 			meth.vtable_offset = vmeth->vtable_offset;
 			RzAnalysisFunction *fcn = rz_analysis_get_function_at(context->analysis, vmeth->addr);
-			meth.name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+			meth.name = fcn ? rz_str_dup(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
 			// Temporarily set as attr name
-			meth.real_name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+			meth.real_name = fcn ? rz_str_dup(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
 			meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
 		} else {
 			RzAnalysisMethod exist_meth;
 			if (rz_analysis_class_method_get_by_addr(context->analysis, class_name, vmeth->addr, &exist_meth) == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 				meth.addr = vmeth->addr;
-				meth.name = rz_str_new(exist_meth.name);
-				meth.real_name = rz_str_new(exist_meth.real_name);
+				meth.name = rz_str_dup(exist_meth.name);
+				meth.real_name = rz_str_dup(exist_meth.real_name);
 				meth.vtable_offset = vmeth->vtable_offset;
 				meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
 				rz_analysis_class_method_fini(&exist_meth);

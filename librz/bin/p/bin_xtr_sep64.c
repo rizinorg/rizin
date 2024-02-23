@@ -186,6 +186,9 @@ static RzBinXtrData *oneshot_buffer(RzBin *bin, RzBuffer *b, int idx) {
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = sep64_xtr_ctx_new(b);
 	}
+	if (!bin->cur->xtr_obj) {
+		return NULL;
+	}
 	RSepXtr64Ctx *ctx = bin->cur->xtr_obj;
 
 	RSepSlice64 *slice = sep64_xtr_ctx_get_slice(ctx, b, idx);
@@ -198,22 +201,22 @@ static RzBinXtrData *oneshot_buffer(RzBin *bin, RzBuffer *b, int idx) {
 
 static RzList /*<RzBinXtrData *>*/ *oneshotall_buffer(RzBin *bin, RzBuffer *b) {
 	RzBinXtrData *data = oneshot_buffer(bin, b, 0);
-	if (data) {
-		int narch = data->file_count;
-		RzList *res = rz_list_newf(rz_bin_xtrdata_free);
-		if (!res) {
-			rz_bin_xtrdata_free(data);
-			return NULL;
-		}
-		rz_list_append(res, data);
-		int i;
-		for (i = 1; data && i < narch; i++) {
-			data = oneshot_buffer(bin, b, i);
-			rz_list_append(res, data);
-		}
-		return res;
+	if (!data) {
+		return NULL;
 	}
-	return NULL;
+	int narch = data->file_count;
+	RzList *res = rz_list_newf(rz_bin_xtrdata_free);
+	if (!res) {
+		rz_bin_xtrdata_free(data);
+		return NULL;
+	}
+	rz_list_append(res, data);
+	int i;
+	for (i = 1; data && i < narch; i++) {
+		data = oneshot_buffer(bin, b, i);
+		rz_list_append(res, data);
+	}
+	return res;
 }
 
 static RSepXtr64Ctx *sep64_xtr_ctx_new(RzBuffer *buf) {

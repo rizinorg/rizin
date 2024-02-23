@@ -148,7 +148,9 @@ static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, con
 			rz_cons_printf("agn %s %s\n", fn, fn + name_len);
 			rz_cons_printf("age %s %s\n", RZ_STR_ISNOTEMPTY(name) ? name : "root", fn);
 		} else {
-			rz_cons_printf("%s %s\n", rz_str_pad(' ', name_len), fn + name_len);
+			char *pad = rz_str_pad(' ', name_len);
+			rz_cons_printf("%s %s\n", pad, fn + name_len);
+			free(pad);
 		}
 		// rz_cons_printf (".fg %s\n", fn);
 		__printRecursive(core, flags, fn, mode, depth + 1);
@@ -317,7 +319,7 @@ RZ_IPI RzCmdStatus rz_flag_relocate_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-static int cmpflag(const void *_a, const void *_b) {
+static int cmpflag(const void *_a, const void *_b, void *user) {
 	const RzFlagItem *flag1 = _a, *flag2 = _b;
 	return (flag1->offset - flag2->offset);
 }
@@ -411,7 +413,7 @@ RZ_IPI RzCmdStatus rz_flag_describe_closest_handler(RzCore *core, int argc, cons
 	char *lmatch = NULL, *umatch = NULL;
 	RzFlagItem *flag;
 	RzListIter *iter;
-	rz_list_sort(temp, &cmpflag);
+	rz_list_sort(temp, &cmpflag, NULL);
 	rz_list_foreach (temp, iter, flag) {
 		if (strstr(flag->name, argv[1]) != NULL) {
 			if (flag->offset < core->offset) {

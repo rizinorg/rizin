@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2023 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_OPENSSL_COMMON_H
@@ -9,21 +9,9 @@
 #include <openssl/sha.h>
 #include <openssl/md4.h>
 #include <openssl/md5.h>
+#include <openssl/err.h>
 
-/*
-EVP_md2
-EVP_md5
-EVP_sha
-EVP_sha1
-EVP_dss
-EVP_dss1
-EVP_mdc2
-EVP_ripemd160
-EVP_sha224
-EVP_sha256
-EVP_sha384
-EVP_sha512
-*/
+#include <rz_util.h>
 
 #define rz_openssl_plugin_context_new(pluginname) \
 	static void *openssl_plugin_##pluginname##_context_new() { \
@@ -50,6 +38,10 @@ EVP_sha512
 	static bool openssl_plugin_##pluginname##_init(void *context) { \
 		rz_return_val_if_fail(context, false); \
 		if (EVP_DigestInit_ex((EVP_MD_CTX *)context, evpmd(), NULL) != 1) { \
+			char emsg[256] = { 0 }; \
+			ERR_error_string_n(ERR_get_error(), emsg, sizeof(emsg)); \
+			RZ_LOG_ERROR("openssl: %s\n", emsg); \
+			ERR_clear_error(); \
 			return false; \
 		} \
 		return true; \
@@ -62,6 +54,10 @@ EVP_sha512
 			return true; \
 		} \
 		if (EVP_DigestUpdate((EVP_MD_CTX *)context, data, size) != 1) { \
+			char emsg[256] = { 0 }; \
+			ERR_error_string_n(ERR_get_error(), emsg, sizeof(emsg)); \
+			RZ_LOG_ERROR("openssl: %s\n", emsg); \
+			ERR_clear_error(); \
 			return false; \
 		} \
 		return true; \
@@ -71,6 +67,10 @@ EVP_sha512
 	static bool openssl_plugin_##pluginname##_final(void *context, ut8 *digest) { \
 		rz_return_val_if_fail((context) && (digest), false); \
 		if (EVP_DigestFinal_ex((EVP_MD_CTX *)context, digest, NULL) != 1) { \
+			char emsg[256] = { 0 }; \
+			ERR_error_string_n(ERR_get_error(), emsg, sizeof(emsg)); \
+			RZ_LOG_ERROR("openssl: %s\n", emsg); \
+			ERR_clear_error(); \
 			return false; \
 		} \
 		return true; \

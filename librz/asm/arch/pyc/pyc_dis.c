@@ -99,7 +99,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList /*<pyc_ob
 			arg = rz_str_newf("'%s'", (char *)t->data);
 			break;
 		default:
-			arg = rz_str_new(t->data);
+			arg = rz_str_dup(t->data);
 		}
 	}
 	if (op->type & HASNAME) {
@@ -107,7 +107,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList /*<pyc_ob
 		if (t == NULL) {
 			return NULL;
 		}
-		arg = rz_str_new(t->data);
+		arg = rz_str_dup(t->data);
 	}
 	if ((op->type & HASJREL) || (op->type & HASJABS)) {
 		arg = rz_str_newf("%u", oparg);
@@ -116,10 +116,10 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList /*<pyc_ob
 		t = (pyc_object *)rz_list_get_n(varnames, oparg);
 		if (!t)
 			return NULL;
-		arg = rz_str_new(t->data);
+		arg = rz_str_dup(t->data);
 	}
 	if (op->type & HASCOMPARE) {
-		arg = rz_str_new(cmp_op[oparg]);
+		arg = rz_str_dup(cmp_op[oparg]);
 	}
 	if (op->type & HASFREE) {
 		if (!cellvars || !freevars) {
@@ -139,7 +139,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList /*<pyc_ob
 			return NULL;
 		}
 
-		arg = rz_str_new(t->data);
+		arg = rz_str_dup(t->data);
 	}
 	if (op->type & HASNARGS) {
 		arg = rz_str_newf("%u", oparg);

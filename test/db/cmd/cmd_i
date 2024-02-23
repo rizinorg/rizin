@@ -2988,7 +2988,7 @@ NAME=iSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSj
 EXPECT=<<EOF
-[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","paddr":0,"vaddr":-1},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":-1},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","paddr":1733,"vaddr":-1},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","paddr":3196,"vaddr":-1},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","paddr":4300,"vaddr":-1}]
+[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","paddr":0,"vaddr":18446744073709551615},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":18446744073709551615},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","paddr":1733,"vaddr":18446744073709551615},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","paddr":3196,"vaddr":18446744073709551615},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","paddr":4300,"vaddr":18446744073709551615}]
 EOF
 RUN
 
@@ -3204,25 +3204,20 @@ RUN
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
+e str.search.encoding=ascii
 echo -- default --
 iz
 echo -- geq 12 --
-e bin.minstr=12
+e str.search.min_length=12
 iz
 echo -- geq 13 --
-e bin.minstr=13
+e str.search.min_length=13
 iz
 echo -- geq 0 --
-e bin.minstr=0
+e str.search.min_length=1
 iz
-echo -- leq 12 --
-e bin.maxstr=12
-iz
-echo -- leq 11 --
-e bin.maxstr=11
-iz
-echo -- no limit --
-e bin.maxstr=0
+echo -- small buffer 12 --
+e str.search.buffer_size=13
 iz
 EOF
 EXPECT=<<EOF
@@ -3241,17 +3236,11 @@ nth paddr vaddr len size section type string
 nth paddr      vaddr      len size section type  string       
 --------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
--- leq 12 --
-nth paddr      vaddr      len size section type  string       
---------------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
--- leq 11 --
-nth paddr vaddr len size section type string 
----------------------------------------------
--- no limit --
-nth paddr      vaddr      len size section type  string       
---------------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- small buffer 12 --
+nth paddr      vaddr      len size section type  string    
+-----------------------------------------------------------
+0   0x000004b0 0x080484b0 9   9    .rodata ascii Hello wor
+1   0x000004b9 0x080484b9 3   4    .rodata ascii ld!
 EOF
 RUN
 
@@ -3261,10 +3250,7 @@ CMDS=<<EOF
 echo -- default --
 iz
 echo -- geq 12 --
-e bin.minstr=12
-iz
-echo -- leq 13 --
-e bin.maxstr=12
+e str.search.min_length=12
 iz
 EOF
 EXPECT=<<EOF
@@ -3293,11 +3279,6 @@ nth paddr      vaddr       len size section             type  string
 --------------------------------------------------------------------------------
 0   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
 1   0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
-2   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
--- leq 13 --
-nth paddr      vaddr       len size section             type  string            
---------------------------------------------------------------------------------
-0   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
 2   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 EOF
 RUN
@@ -3848,11 +3829,11 @@ nth paddr      vaddr      len size section type  string
 EOF
 RUN
 
-NAME=izz and bin.str.enc
+NAME=izz and str.search.encoding
 FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e bin.str.enc=${enc}; izz:quiet)
+(izzenc enc; e str.search.encoding=${enc}; izz:quiet)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -3880,7 +3861,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc string reset
+NAME=str.search.encoding string reset
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
@@ -3889,7 +3870,7 @@ o+ .tmp/strenc-bin
 iz:quiet
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e bin.str.enc=${enc}; iz:quiet)
+(izenc enc; e str.search.encoding=${enc}; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
 o--
@@ -4415,7 +4396,7 @@ EXPECT=<<EOF
     "vsize": 4096,
     "perm": "-rw-",
     "flags": [
-      "CNT_UNINITIALIZED",
+      "CNT_UNINITIALIZED_DATA",
       "ALIGN_8BYTES"
     ],
     "paddr": 0,
@@ -4503,7 +4484,7 @@ EXPECT=<<EOF
 6   0x100001010 -----------------------#------ 0x100001018 rw-   8     6.__DATA.__la_symbol_ptr
 7   0x100001020 ------------------------####-- 0x100001048 rw-   40    7.__DATA.__program_vars
 8   0x100001048 ----------------------------## 0x100001068 rw-   32    8.__DATA.__data
-=>  0x100000ef8 ------------------------------ 0x100000ef7             
+=>  0x100000ef8 ------------------------------ 0x100000ef9             
 
 EOF
 RUN
@@ -4637,7 +4618,7 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
-NAME=it2
+NAME=iT2
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
@@ -4668,6 +4649,23 @@ sha1 9016e215a321184c42c28ab03847554851932713
 sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
 crc32 611b58cd
 entropy 2.959094
+EOF
+RUN
+
+NAME=iT3
+FILE==
+CMDS=iT; e bin.hashes.default=sm3,sha1; iT; e bin.hashes.default=blake3,md5,sha256; iT;
+EXPECT=<<EOF
+md5 bf619eac0cdf3f68d496ea9344137e8b
+sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
+sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
+crc32 b2aa7578
+entropy 0.000000
+sm3 8b63e00c479bc948f58d360e3831bc32e3924fa25d126a221ec9ad7fc6223462
+sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
+blake3 bfa6121552003fe68f6c0727a5b39d380a891397b05494901f86446039c56c24
+md5 bf619eac0cdf3f68d496ea9344137e8b
+sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
 EOF
 RUN
 
@@ -4886,76 +4884,76 @@ ixfj
 EOF
 EXPECT=<<EOF
 -- Everything
-0x0000118a	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
-0x00001196	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
-0x000011a4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
-0x000011a8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
-0x000011b8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
-0x000011d8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
-0x000011e4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
-0x000011e9	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
-0x000011eb	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10
-0x000011f7	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10
-0x00001206	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	12
-0x00001212	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	13
-0x00001228	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
-0x00001234	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
-0x00001239	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
-0x0000123b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	15
-0x00001248	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18
-0x0000125d	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18
-0x00001261	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19
-0x00001276	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19
-0x0000127a	/home/hound/r2test/dwarf/cpp/dump/main.cpp	20
-0x00001281	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
-0x0000128f	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
-0x00001298	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
-0x0000129b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
-0x000012a9	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
-0x000012b2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
-0x000012b5	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23
-0x000012ba	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23
-0x000012bf	/home/hound/r2test/dwarf/cpp/dump/main.cpp	24
-0x000012c6	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
-0x000012d2	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
-0x000012e0	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
-0x000012e3	-	-
-0x000012e4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
-0x000012f4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
-0x0000130e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
-0x00001311	-	-
-0x00001312	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x00001322	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x0000133c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x0000133f	-	-
-0x00001340	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x00001350	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x0000136f	-	-
-0x00001370	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
-0x0000137c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
-0x00001381	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
-0x00001383	-	-
-0x00001384	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
-0x00001390	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
-0x0000139e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
-0x000013a1	-	-
-0x000013a2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013ae	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013bc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013bf	-	-
-0x000013c0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013d0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013ef	-	-
-0x000013f0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
-0x000013fc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
-0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
-0x00001403	-	-
+0x0000118a	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	3
+0x00001196	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	19
+0x000011a4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	22
+0x000011a8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	3
+0x000011b8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3	22
+0x000011d8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4	22
+0x000011e4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4	31
+0x000011e9	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4	34
+0x000011eb	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10	12
+0x000011f7	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10	12
+0x00001206	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	12	23
+0x00001212	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	13	1
+0x00001228	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7	6
+0x00001234	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7	26
+0x00001239	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7	28
+0x0000123b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	15	12
+0x00001248	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18	16
+0x0000125d	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18	5
+0x00001261	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19	15
+0x00001276	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19	5
+0x0000127a	/home/hound/r2test/dwarf/cpp/dump/main.cpp	20	7
+0x00001281	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21	20
+0x0000128f	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21	19
+0x00001298	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21	10
+0x0000129b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22	21
+0x000012a9	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22	20
+0x000012b2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22	10
+0x000012b5	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23	23
+0x000012ba	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23	24
+0x000012bf	/home/hound/r2test/dwarf/cpp/dump/main.cpp	24	1
+0x000012c6	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2	3
+0x000012d2	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2	12
+0x000012e0	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2	15
+0x000012e3	-	0	0
+0x000012e4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4	3
+0x000012f4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4	9
+0x0000130e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4	12
+0x00001311	-	0	0
+0x00001312	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	11
+0x00001322	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	18
+0x0000133c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	19
+0x0000133f	-	0	0
+0x00001340	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	11
+0x00001350	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5	19
+0x0000136f	-	0	0
+0x00001370	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6	15
+0x0000137c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6	31
+0x00001381	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6	34
+0x00001383	-	0	0
+0x00001384	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10	3
+0x00001390	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10	10
+0x0000139e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10	13
+0x000013a1	-	0	0
+0x000013a2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	11
+0x000013ae	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	19
+0x000013bc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	20
+0x000013bf	-	0	0
+0x000013c0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	11
+0x000013d0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11	20
+0x000013ef	-	0	0
+0x000013f0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12	15
+0x000013fc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12	30
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12	33
+0x00001403	-	0	0
 -- Everything in json
 [{"file":"mammal.cpp","line":3,"column":3,"addr":4490},{"file":"mammal.cpp","line":3,"column":19,"addr":4502},{"file":"mammal.cpp","line":3,"column":22,"addr":4516},{"file":"mammal.cpp","line":3,"column":3,"addr":4520},{"file":"mammal.cpp","line":3,"column":22,"addr":4536},{"file":"mammal.cpp","line":4,"column":22,"addr":4568},{"file":"mammal.cpp","line":4,"column":31,"addr":4580},{"file":"mammal.cpp","line":4,"column":34,"addr":4585},{"file":"mammal.cpp","line":10,"column":12,"addr":4587},{"file":"mammal.cpp","line":10,"column":12,"addr":4599},{"file":"mammal.cpp","line":12,"column":23,"addr":4614},{"file":"mammal.cpp","line":13,"column":1,"addr":4626},{"file":"mammal.cpp","line":7,"column":6,"addr":4648},{"file":"mammal.cpp","line":7,"column":26,"addr":4660},{"file":"mammal.cpp","line":7,"column":28,"addr":4665},{"file":"main.cpp","line":15,"column":12,"addr":4667},{"file":"main.cpp","line":18,"column":16,"addr":4680},{"file":"main.cpp","line":18,"column":5,"addr":4701},{"file":"main.cpp","line":19,"column":15,"addr":4705},{"file":"main.cpp","line":19,"column":5,"addr":4726},{"file":"main.cpp","line":20,"column":7,"addr":4730},{"file":"main.cpp","line":21,"column":20,"addr":4737},{"file":"main.cpp","line":21,"column":19,"addr":4751},{"file":"main.cpp","line":21,"column":10,"addr":4760},{"file":"main.cpp","line":22,"column":21,"addr":4763},{"file":"main.cpp","line":22,"column":20,"addr":4777},{"file":"main.cpp","line":22,"column":10,"addr":4786},{"file":"main.cpp","line":23,"column":23,"addr":4789},{"file":"main.cpp","line":23,"column":24,"addr":4794},{"file":"main.cpp","line":24,"column":1,"addr":4799},{"file":"mammal.h","line":2,"column":3,"addr":4806},{"file":"mammal.h","line":2,"column":12,"addr":4818},{"file":"mammal.h","line":2,"column":15,"addr":4832},{"line":0,"addr":4835},{"file":"main.cpp","line":4,"column":3,"addr":4836},{"file":"main.cpp","line":4,"column":9,"addr":4852},{"file":"main.cpp","line":4,"column":12,"addr":4878},{"line":0,"addr":4881},{"file":"main.cpp","line":5,"column":11,"addr":4882},{"file":"main.cpp","line":5,"column":18,"addr":4898},{"file":"main.cpp","line":5,"column":19,"addr":4924},{"line":0,"addr":4927},{"file":"main.cpp","line":5,"column":11,"addr":4928},{"file":"main.cpp","line":5,"column":19,"addr":4944},{"line":0,"addr":4975},{"file":"main.cpp","line":6,"column":15,"addr":4976},{"file":"main.cpp","line":6,"column":31,"addr":4988},{"file":"main.cpp","line":6,"column":34,"addr":4993},{"line":0,"addr":4995},{"file":"main.cpp","line":10,"column":3,"addr":4996},{"file":"main.cpp","line":10,"column":10,"addr":5008},{"file":"main.cpp","line":10,"column":13,"addr":5022},{"line":0,"addr":5025},{"file":"main.cpp","line":11,"column":11,"addr":5026},{"file":"main.cpp","line":11,"column":19,"addr":5038},{"file":"main.cpp","line":11,"column":20,"addr":5052},{"line":0,"addr":5055},{"file":"main.cpp","line":11,"column":11,"addr":5056},{"file":"main.cpp","line":11,"column":20,"addr":5072},{"line":0,"addr":5103},{"file":"main.cpp","line":12,"column":15,"addr":5104},{"file":"main.cpp","line":12,"column":30,"addr":5116},{"file":"main.cpp","line":12,"column":33,"addr":5121},{"line":0,"addr":5123}]
 -- Single address (exact match)
-0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12	33
 -- Single address (still covered)
-0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12	33
 -- Single address (not covered anymore)
 -- Single address in json
 [{"file":"main.cpp","line":11,"column":11,"addr":5026}]
@@ -4977,10 +4975,10 @@ echo --
 ix.j @ 0x00091004
 EOF
 EXPECT=<<EOF
-0x00091004	/build/gcc/src/gcc/libstdc++-v3/libsupc++/new	57
-0x00091004	/build/gcc/src/gcc/libstdc++-v3/libsupc++/new	57
-0x00091004	/build/gcc/src/gcc-build/x86_64-pc-linux-gnu/libstdc++-v3/include/bits/exception.h	63
-0x00091004	/build/gcc/src/gcc-build/x86_64-pc-linux-gnu/libstdc++-v3/include/bits/exception.h	63
+0x00091004	/build/gcc/src/gcc/libstdc++-v3/libsupc++/new	57	5
+0x00091004	/build/gcc/src/gcc/libstdc++-v3/libsupc++/new	57	25
+0x00091004	/build/gcc/src/gcc-build/x86_64-pc-linux-gnu/libstdc++-v3/include/bits/exception.h	63	5
+0x00091004	/build/gcc/src/gcc-build/x86_64-pc-linux-gnu/libstdc++-v3/include/bits/exception.h	63	5
 --
 [{"file":"new","line":57,"column":5,"addr":593924},{"file":"new","line":57,"column":25,"addr":593924},{"file":"exception.h","line":63,"column":5,"addr":593924},{"file":"exception.h","line":63,"column":5,"addr":593924}]
 EOF
@@ -5013,11 +5011,11 @@ bits 64
 EOF
 RUN
 
-NAME=print elf strings but with bin.minstr=2
+NAME=print elf strings but with str.search.min_length=2
 FILE=bins/elf/smallstrings.elf
 CMDS=<<EOF
 iz
-iz @e:bin.minstr=2
+iz @e:str.search.min_length=2
 EOF
 EXPECT=<<EOF
 nth paddr      vaddr      len size section type  string 
@@ -5028,6 +5026,37 @@ nth paddr      vaddr      len size section type  string
 0   0x00002006 0x00002006 2   3    .rodata ascii 22
 1   0x00002009 0x00002009 3   4    .rodata ascii 333
 2   0x0000200d 0x0000200d 4   5    .rodata ascii 4444
-3   0x00003008 0x00004008 2   3    .data   ascii \b@
+EOF
+RUN
+
+NAME=Test for big strings
+FILE=malloc://8192
+CMDS=<<EOF
+wD 6140
+px
+e str.search.buffer_size=8000
+iz
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  4141 4142 4141 4341 4144 4141 4541 4146  AAABAACAADAAEAAF
+0x00000010  4141 4741 4148 4141 4941 414a 4141 4b41  AAGAAHAAIAAJAAKA
+0x00000020  414c 4141 4d41 414e 4141 4f41 4150 4141  ALAAMAANAAOAAPAA
+0x00000030  5141 4152 4141 5341 4154 4141 5541 4156  QAARAASAATAAUAAV
+0x00000040  4141 5741 4158 4141 5941 415a 4141 6141  AAWAAXAAYAAZAAaA
+0x00000050  4162 4141 6341 4164 4141 6541 4166 4141  AbAAcAAdAAeAAfAA
+0x00000060  6741 4168 4141 6941 416a 4141 6b41 416c  gAAhAAiAAjAAkAAl
+0x00000070  4141 6d41 416e 4141 6f41 4170 4141 7141  AAmAAnAAoAApAAqA
+0x00000080  4172 4141 7341 4174 4141 7541 4176 4141  ArAAsAAtAAuAAvAA
+0x00000090  7741 4178 4141 7941 417a 4141 3141 4132  wAAxAAyAAzAA1AA2
+0x000000a0  4141 3341 4134 4141 3541 4136 4141 3741  AA3AA4AA5AA6AA7A
+0x000000b0  4138 4141 3941 4130 4142 4241 4243 4142  A8AA9AA0ABBABCAB
+0x000000c0  4441 4245 4142 4641 4247 4142 4841 4249  DABEABFABGABHABI
+0x000000d0  4142 4a41 424b 4142 4c41 424d 4142 4e41  ABJABKABLABMABNA
+0x000000e0  424f 4142 5041 4251 4142 5241 4253 4142  BOABPABQABRABSAB
+0x000000f0  5441 4255 4142 5641 4257 4142 5841 4259  TABUABVABWABXABY
+nth paddr      vaddr      len  size section type  string                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0   0x00000000 0x00000000 6140 6141         ascii AAABAACAADAAEAAFAAGAAHAAIAAJAAKAALAAMAANAAOAAPAAQAARAASAATAAUAAVAAWAAXAAYAAZAAaAAbAAcAAdAAeAAfAAgAAhAAiAAjAAkAAlAAmAAnAAoAApAAqAArAAsAAtAAuAAvAAwAAxAAyAAzAA1AA2AA3AA4AA5AA6AA7AA8AA9AA0ABBABCABDABEABFABGABHABIABJABKABLABMABNABOABPABQABRABSABTABUABVABWABXABYABZABaABbABcABdABeABfABgABhABiABjABkABlABmABnABoABpABqABrABsABtABuABvABwABxAByABzAB1AB2AB3AB4AB5AB6AB7AB8AB9AB0ACBACCACDACEACFACGACHACIACJACKACLACMACNACOACPACQACRACSACTACUACVACWACXACYACZACaACbACcACdACeACfACgAChACiACjACkAClACmACnACoACpACqACrACsACtACuACvACwACxACyACzAC1AC2AC3AC4AC5AC6AC7AC8AC9AC0ADBADCADDADEADFADGADHADIADJADKADLADMADNADOADPADQADRADSADTADUADVADWADXADYADZADaADbADcADdADeADfADgADhADiADjADkADlADmADnADoADpADqADrADsADtADuADvADwADxADyADzAD1AD2AD3AD4AD5AD6AD7AD8AD9AD0AEBAECAEDAEEAEFAEGAEHAEIAEJAEKAELAEMAENAEOAEPAEQAERAESAETAEUAEVAEWAEXAEYAEZAEaAEbAEcAEdAEeAEfAEgAEhAEiAEjAEkAElAEmAEnAEoAEpAEqAErAEsAEtAEuAEvAEwAExAEyAEzAE1AE2AE3AE4AE5AE6AE7AE8AE9AE0AFBAFCAFDAFEAFFAFGAFHAFIAFJAFKAFLAFMAFNAFOAFPAFQAFRAFSAFTAFUAFVAFWAFXAFYAFZAFaAFbAFcAFdAFeAFfAFgAFhAFiAFjAFkAFlAFmAFnAFoAFpAFqAFrAFsAFtAFuAFvAFwAFxAFyAFzAF1AF2AF3AF4AF5AF6AF7AF8AF9AF0AGBAGCAGDAGEAGFAGGAGHAGIAGJAGKAGLAGMAGNAGOAGPAGQAGRAGSAGTAGUAGVAGWAGXAGYAGZAGaAGbAGcAGdAGeAGfAGgAGhAGiAGjAGkAGlAGmAGnAGoAGpAGqAGrAGsAGtAGuAGvAGwAGxAGyAGzAG1AG2AG3AG4AG5AG6AG7AG8AG9AG0AHBAHCAHDAHEAHFAHGAHHAHIAHJAHKAHLAHMAHNAHOAHPAHQAHRAHSAHTAHUAHVAHWAHXAHYAHZAHaAHbAHcAHdAHeAHfAHgAHhAHiAHjAHkAHlAHmAHnAHoAHpAHqAHrAHsAHtAHuAHvAHwAHxAHyAHzAH1AH2AH3AH4AH5AH6AH7AH8AH9AH0AIBAICAIDAIEAIFAIGAIHAIIAIJAIKAILAIMAINAIOAIPAIQAIRAISAITAIUAIVAIWAIXAIYAIZAIaAIbAIcAIdAIeAIfAIgAIhAIiAIjAIkAIlAImAInAIoAIpAIqAIrAIsAItAIuAIvAIwAIxAIyAIzAI1AI2AI3AI4AI5AI6AI7AI8AI9AI0AJBAJCAJDAJEAJFAJGAJHAJIAJJAJKAJLAJMAJNAJOAJPAJQAJRAJSAJTAJUAJVAJWAJXAJYAJZAJaAJbAJcAJdAJeAJfAJgAJhAJiAJjAJkAJlAJmAJnAJoAJpAJqAJrAJsAJtAJuAJvAJwAJxAJyAJzAJ1AJ2AJ3AJ4AJ5AJ6AJ7AJ8AJ9AJ0AKBAKCAKDAKEAKFAKGAKHAKIAKJAKKAKLAKMAKNAKOAKPAKQAKRAKSAKTAKUAKVAKWAKXAKYAKZAKaAKbAKcAKdAKeAKfAKgAKhAKiAKjAKkAKlAKmAKnAKoAKpAKqAKrAKsAKtAKuAKvAKwAKxAKyAKzAK1AK2AK3AK4AK5AK6AK7AK8AK9AK0ALBALCALDALEALFALGALHALIALJALKALLALMALNALOALPALQALRALSALTALUALVALWALXALYALZALaALbALcALdALeALfALgALhALiALjALkALlALmALnALoALpALqALrALsALtALuALvALwALxALyALzAL1AL2AL3AL4AL5AL6AL7AL8AL9AL0AMBAMCAMDAMEAMFAMGAMHAMIAMJAMKAMLAMMAMNAMOAMPAMQAMRAMSAMTAMUAMVAMWAMXAMYAMZAMaAMbAMcAMdAMeAMfAMgAMhAMiAMjAMkAMlAMmAMnAMoAMpAMqAMrAMsAMtAMuAMvAMwAMxAMyAMzAM1AM2AM3AM4AM5AM6AM7AM8AM9AM0ANBANCANDANEANFANGANHANIANJANKANLANMANNANOANPANQANRANSANTANUANVANWANXANYANZANaANbANcANdANeANfANgANhANiANjANkANlANmANnANoANpANqANrANsANtANuANvANwANxANyANzAN1AN2AN3AN4AN5AN6AN7AN8AN9AN0AOBAOCAODAOEAOFAOGAOHAOIAOJAOKAOLAOMAONAOOAOPAOQAORAOSAOTAOUAOVAOWAOXAOYAOZAOaAObAOcAOdAOeAOfAOgAOhAOiAOjAOkAOlAOmAOnAOoAOpAOqAOrAOsAOtAOuAOvAOwAOxAOyAOzAO1AO2AO3AO4AO5AO6AO7AO8AO9AO0APBAPCAPDAPEAPFAPGAPHAPIAPJAPKAPLAPMAPNAPOAPPAPQAPRAPSAPTAPUAPVAPWAPXAPYAPZAPaAPbAPcAPdAPeAPfAPgAPhAPiAPjAPkAPlAPmAPnAPoAPpAPqAPrAPsAPtAPuAPvAPwAPxAPyAPzAP1AP2AP3AP4AP5AP6AP7AP8AP9AP0AQBAQCAQDAQEAQFAQGAQHAQIAQJAQKAQLAQMAQNAQOAQPAQQAQRAQSAQTAQUAQVAQWAQXAQYAQZAQaAQbAQcAQdAQeAQfAQgAQhAQiAQjAQkAQlAQmAQnAQoAQpAQqAQrAQsAQtAQuAQvAQwAQxAQyAQzAQ1AQ2AQ3AQ4AQ5AQ6AQ7AQ8AQ9AQ0ARBARCARDAREARFARGARHARIARJARKARLARMARNAROARPARQARRARSARTARUARVARWARXARYARZARaARbARcARdAReARfARgARhARiARjARkARlARmARnARoARpARqARrARsARtARuARvARwARxARyARzAR1AR2AR3AR4AR5AR6AR7AR8AR9AR0ASBASCASDASEASFASGASHASIASJASKASLASMASNASOASPASQASRASSASTASUASVASWASXASYASZASaASbAScASdASeASfASgAShASiASjASkASlASmASnASoASpASqASrASsAStASuASvASwASxASyASzAS1AS2AS3AS4AS5AS6AS7AS8AS9AS0ATBATCATDATEATFATGATHATIATJATKATLATMATNATOATPATQATRATSATTATUATVATWATXATYATZATaATbATcATdATeATfATgAThATiATjATkATlATmATnAToAT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
 EOF
 RUN

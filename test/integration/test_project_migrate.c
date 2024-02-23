@@ -535,6 +535,23 @@ static bool test_migrate_v9_v10_v11_stack_vars_sp() {
 	mu_end;
 }
 
+static bool test_migrate_v14_v15() {
+	RzProject *prj = rz_project_load_file_raw("prj/v14-float_ex1_hightec.rzdb.gz");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v14_v15(prj, res);
+	mu_assert_true(s, "migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *seek_db = sdb_ns(core_db, "seek", false);
+	mu_assert_notnull(seek_db, "seek ns");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
 	do { \
@@ -845,7 +862,6 @@ static bool test_load_v9_v10_stack_vars_sp(int version, const char *prj_file) {
 
 	rz_core_free(core);
 	mu_end;
-	mu_end;
 }
 
 static bool test_load_v12() {
@@ -856,6 +872,50 @@ static bool test_load_v12() {
 	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.abspath"), "asm.debuginfo.abspath");
 	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.file"), "asm.debuginfo.file");
 	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.lines"), "asm.debuginfo.lines");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_load_v14() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 14, "prj/v14-float_ex1_hightec.rzdb.gz");
+	RzAnalysisFunction *f = rz_analysis_get_function_byname(core->analysis, "dbg.printf");
+	mu_assert_notnull(f, "function");
+	mu_assert_eq(rz_pvector_len(&f->vars), 3, "vars count");
+	mu_assert_eq(rz_analysis_arg_count(f), 1, "args count");
+
+	RzAnalysisVar *v = rz_analysis_function_get_var_byname(f, "ans");
+	mu_assert_notnull(v, "var");
+	mu_assert_eq(v->storage.type, RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING, "var storage");
+	mu_assert_eq(v->storage.dw_var_off, 14178, "var storage dw_var_off");
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_load_v15_seek_history() {
+	RzCore *core = rz_core_new();
+
+	// enable the cursor so we can check the deserialized value
+	rz_print_set_cursor(core->print, true, 0, 0);
+
+	BEGIN_LOAD_TEST(core, 15, "prj/v15-seek-history.rzdb");
+
+	mu_assert_eq(rz_vector_len(&core->seek_history.undos), 1, "bad number of undos");
+	RzCoreSeekItem *item = rz_vector_index_ptr(&core->seek_history.undos, 0);
+	mu_assert_eq(item->offset, 0x5ae0, "bad undo offset");
+	mu_assert_eq(item->cursor, 1, "bad undo cursor");
+
+	mu_assert_eq(rz_vector_len(&core->seek_history.redos), 2, "bad number of redos");
+	item = rz_vector_index_ptr(&core->seek_history.redos, 1);
+	mu_assert_eq(item->offset, 0x5b00, "bad first redo offset");
+	mu_assert_eq(item->cursor, 3, "bad first redo cursor");
+	item = rz_vector_index_ptr(&core->seek_history.redos, 0);
+	mu_assert_eq(item->offset, 0x5b10, "bad second redo offset");
+	mu_assert_eq(item->cursor, 4, "bad second redo cursor");
+
+	// core offset not restored from current seek history item, so not checked
+	mu_assert_eq(rz_print_get_cursor(core->print), 2, "bad current cursor");
 
 	rz_core_free(core);
 	mu_end;
@@ -878,6 +938,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v9_v10_v11_stack_vars_bp);
 	mu_run_test(test_migrate_v9_v10_v11_stack_vars_sp);
 	mu_run_test(test_migrate_v2_v12);
+	mu_run_test(test_migrate_v14_v15);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -896,6 +957,8 @@ int all_tests() {
 	mu_run_test(test_load_v9_v10_stack_vars_bp, 10, "prj/v10-bp-vars.rzdb");
 	mu_run_test(test_load_v9_v10_stack_vars_sp, 10, "prj/v10-sp-vars.rzdb");
 	mu_run_test(test_load_v12);
+	mu_run_test(test_load_v14);
+	mu_run_test(test_load_v15_seek_history);
 	return tests_passed != tests_run;
 }
 

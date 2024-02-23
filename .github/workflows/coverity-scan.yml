@@ -16,7 +16,7 @@ jobs:
         id: "determine-repo"
         run: echo "repo=${GITHUB_REPOSITORY}" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Download Coverity Build Tool
         run: |
           wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=rizinorg%2Frizin" -O cov-analysis-linux64.tar.gz

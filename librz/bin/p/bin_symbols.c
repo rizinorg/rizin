@@ -5,7 +5,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 #include "../i/private.h"
 #include "mach0/coresymbolication.h"
 
@@ -300,8 +300,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return obj->bin_obj != NULL;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *res = rz_list_newf((RzListFree)rz_bin_section_free);
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
@@ -309,14 +309,14 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		RzCoreSymCacheElementSegment *seg = &element->segments[i];
 		RzBinSection *s = bin_section_from_segment(seg);
 		if (s) {
-			rz_list_append(res, s);
+			rz_pvector_push(res, s);
 		}
 	}
 	for (i = 0; i < element->hdr->n_sections; i++) {
 		RzCoreSymCacheElementSection *sect = &element->sections[i];
 		RzBinSection *s = bin_section_from_section(sect);
 		if (s) {
-			rz_list_append(res, s);
+			rz_pvector_push(res, s);
 		}
 	}
 	return res;
@@ -353,8 +353,8 @@ static bool check_buffer(RzBuffer *b) {
 	return !memcmp(buf, "\x02\xff\x01\xff", 4);
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *res = rz_list_newf((RzListFree)rz_bin_symbol_free);
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
@@ -371,7 +371,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		RzBinSymbol *s = bin_symbol_from_symbol(element, sym);
 		if (s) {
-			rz_list_append(res, s);
+			rz_pvector_push(res, s);
 			ht_uu_insert(hash, sym->paddr, 1);
 		}
 	}
@@ -383,7 +383,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		RzBinSymbol *s = bin_symbol_from_symbol(element, sym);
 		if (s) {
-			rz_list_append(res, s);
+			rz_pvector_push(res, s);
 		}
 	}
 	ht_uu_free(hash);

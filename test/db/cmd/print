@@ -197,11 +197,11 @@ struct {
 EOF
 RUN
 
-NAME=mac ls pfc.fmt
+NAME=mac ls pfc .fmt
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
-pf.fmt bcFiuf foo bar baz cow one two
-pfc.fmt
+pfn fmt "bcFiuf foo bar baz cow one two"
+pfc .fmt
 EOF
 EXPECT=<<EOF
 struct fmt {
@@ -245,4 +245,26 @@ struct elf_header {
     uint16_t shstrndx; // 24
 }
 EOF
+RUN
+
+NAME=pr cmd with offset 0 
+FILE=bins/elf/ls
+CMDS=<<EOF
+s 0
+pr 100 | rz-ax -S
+EOF
+EXPECT=<<EOF
+7f454c4602010100000000000000000003003e0001000000e05a0000000000004000000000000000681302000000000000000000400038000b00400019001800060000000400000040000000000000004000000000000000400000000000000068020000
+EOF 
+RUN
+
+NAME=prz cmd with offset 0
+FILE=bins/elf/ls
+CMDS=<<EOF
+s 0
+prz 100 | rz-ax -S
+EOF
+EXPECT=<<EOF
+7f454c46020101
+EOF 
 RUN

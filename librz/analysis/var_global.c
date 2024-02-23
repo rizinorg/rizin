@@ -404,3 +404,15 @@ RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVa
 	}
 	return rz_strbuf_drain_nofree(&sb);
 }
+
+/**
+ * \brief Get the list of x-references to the global variable
+ *
+ * \param analysis RzAnalysis
+ * \param glob Global variable
+ * \return RzList *
+ */
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_var_global_xrefs(RzAnalysis *analysis, RZ_NONNULL const RzAnalysisVarGlobal *glob) {
+	rz_return_val_if_fail(analysis && glob, NULL);
+	return rz_analysis_xrefs_get_to(analysis, glob->addr);
+}

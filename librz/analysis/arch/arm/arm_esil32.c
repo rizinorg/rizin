@@ -59,72 +59,76 @@ static unsigned int regsize32(cs_insn *insn, int n) {
 
 #define REGSIZE32(x) regsize32(insn, x)
 
+#if CS_NEXT_VERSION >= 6
 // return postfix
-RZ_IPI const char *rz_arm_cs_esil_prefix_cond(RzAnalysisOp *op, int cond_type) {
+RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, ARMCC_CondCodes cond_type) {
+#else
+RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, arm_cc cond_type) {
+#endif
 	const char *close_cond[2];
 	close_cond[0] = "";
 	close_cond[1] = ",}";
 	int close_type = 0;
 	switch (cond_type) {
-	case ARM_CC_EQ:
+	case CS_ARMCC(EQ):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,?{,");
 		break;
-	case ARM_CC_NE:
+	case CS_ARMCC(NE):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,!,?{,");
 		break;
-	case ARM_CC_HS:
+	case CS_ARMCC(HS):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,?{,");
 		break;
-	case ARM_CC_LO:
+	case CS_ARMCC(LO):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,!,?{,");
 		break;
-	case ARM_CC_MI:
+	case CS_ARMCC(MI):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,?{,");
 		break;
-	case ARM_CC_PL:
+	case CS_ARMCC(PL):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,!,?{,");
 		break;
-	case ARM_CC_VS:
+	case CS_ARMCC(VS):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "vf,?{,");
 		break;
-	case ARM_CC_VC:
+	case CS_ARMCC(VC):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "vf,!,?{,");
 		break;
-	case ARM_CC_HI:
+	case CS_ARMCC(HI):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,zf,!,&,?{,");
 		break;
-	case ARM_CC_LS:
+	case CS_ARMCC(LS):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,!,zf,|,?{,");
 		break;
-	case ARM_CC_GE:
+	case CS_ARMCC(GE):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,vf,^,!,?{,");
 		break;
-	case ARM_CC_LT:
+	case CS_ARMCC(LT):
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,vf,^,?{,");
 		break;
-	case ARM_CC_GT:
+	case CS_ARMCC(GT):
 		// zf == 0 && nf == vf
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
-	case ARM_CC_LE:
+	case CS_ARMCC(LE):
 		// zf == 1 || nf != vf
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,nf,vf,^,|,?{,");
 		break;
-	case ARM_CC_AL:
+	case CS_ARMCC(AL):
 		// always executed
 		break;
 	default:
@@ -256,7 +260,7 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 
 	rz_strbuf_init(&op->esil);
 	rz_strbuf_set(&op->esil, "");
-	postfix = rz_arm_cs_esil_prefix_cond(op, insn->detail->arm.cc);
+	postfix = rz_arm32_cs_esil_prefix_cond(op, insn->detail->arm.cc);
 
 	switch (insn->id) {
 	case ARM_INS_CLZ:
@@ -268,7 +272,11 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case ARM_INS_BKPT:
 		rz_strbuf_setf(&op->esil, "%d,%d,TRAP", IMM(0), IMM(0));
 		break;
+#if CS_NEXT_VERSION < 6
 	case ARM_INS_NOP:
+#else
+	case ARM_INS_HINT:
+#endif
 		rz_strbuf_setf(&op->esil, ",");
 		break;
 	case ARM_INS_BL:
@@ -391,7 +399,7 @@ PUSH { r4, r5, r6, r7, lr }
 			rz_strbuf_appendf(&op->esil, "%s,%s,%d,+,=[4],",
 				REG(i), ARG(0), (i + offset) * 4);
 		}
-		if (insn->detail->arm.writeback == true) { // writeback, reg should be incremented
+		if (ISWRITEBACK32() == true) { // writeback, reg should be incremented
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,",
 				direction * (insn->detail->arm.op_count - 1) * 4, ARG(0));
 		}
@@ -406,7 +414,7 @@ PUSH { r4, r5, r6, r7, lr }
 			width += REGSIZE32(i);
 		}
 		// increment if writeback
-		if (insn->detail->arm.writeback) {
+		if (ISWRITEBACK32()) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,", width, ARG(0));
 		}
 		break;
@@ -430,7 +438,7 @@ PUSH { r4, r5, r6, r7, lr }
 			width += REGSIZE32(i);
 		}
 		// increment if writeback
-		if (insn->detail->arm.writeback) {
+		if (ISWRITEBACK32()) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,", width, ARG(0));
 		}
 		break;
@@ -489,7 +497,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			rz_strbuf_appendf(&op->esil, "%s,%d,+,[4],%s,=,", ARG(0), (i + offset) * 4, REG(i));
 		}
-		if (insn->detail->arm.writeback) {
+		if (ISWRITEBACK32()) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,",
 				direction * (insn->detail->arm.op_count - 1) * 4, ARG(0));
 		}
@@ -545,14 +553,14 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		default:
 			str_ldr_bytes = 4;
 		}
-		if (OPCOUNT() == 2) {
+		if (!ISPOSTINDEX32()) {
 			if (ISMEM(1) && !HASMEMINDEX(1)) {
 				int disp = MEMDISP(1);
 				char sign = disp >= 0 ? '+' : '-';
 				disp = disp >= 0 ? disp : -disp;
 				rz_strbuf_appendf(&op->esil, "%s,0x%x,%s,%c,0xffffffff,&,=[%d]",
 					REG(0), disp, MEMBASE(1), sign, str_ldr_bytes);
-				if (insn->detail->arm.writeback) {
+				if (ISWRITEBACK32()) {
 					rz_strbuf_appendf(&op->esil, ",%d,%s,%c,%s,=",
 						disp, MEMBASE(1), sign, MEMBASE(1));
 				}
@@ -563,7 +571,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_LSL:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,<<,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->arm.writeback) { // e.g. 'str r2, [r3, r1, lsl 4]!'
+						if (ISWRITEBACK32()) { // e.g. 'str r2, [r3, r1, lsl 4]!'
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,<<,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -571,7 +579,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_LSR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->arm.writeback) {
+						if (ISWRITEBACK32()) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -579,7 +587,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_ASR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->arm.writeback) {
+						if (ISWRITEBACK32()) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -587,7 +595,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_ROR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->arm.writeback) {
+						if (ISWRITEBACK32()) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -602,35 +610,35 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				} else { // No shift
 					rz_strbuf_appendf(&op->esil, "%s,%s,%s,+,0xffffffff,&,=[%d]",
 						REG(0), MEMINDEX(1), MEMBASE(1), str_ldr_bytes);
-					if (insn->detail->arm.writeback) {
+					if (ISWRITEBACK32()) {
 						rz_strbuf_appendf(&op->esil, ",%s,%s,+,%s,=",
 							MEMINDEX(1), MEMBASE(1), MEMBASE(1));
 					}
 				}
 			}
 		}
-		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
-			if (ISIMM(2) && str_ldr_bytes != 8) { // e.g. 'str r2, [r3], 4
+		if (ISPOSTINDEX32()) { // e.g. 'str r2, [r3], 4
+			if (!HASMEMINDEX(1) && (str_ldr_bytes != 8)) { // e.g. 'str r2, [r3], 4
 				rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%d,%s,+=",
-					REG(0), MEMBASE(1), str_ldr_bytes, IMM(2), MEMBASE(1));
-			} else if (str_ldr_bytes != 8) {
-				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
-					switch (SHIFTTYPE(2)) {
+					REG(0), MEMBASE(1), str_ldr_bytes, MEMDISP(1), MEMBASE(1));
+			} else if (str_ldr_bytes != 8) { // e.g. 'str r2, [r3], r1
+				if (ISSHIFTED(1)) { // e.g. 'str r2, [r3], r1, lsl 4'
+					switch (SHIFTTYPE(1)) {
 					case ARM_SFT_LSL:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,<<,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_LSR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_ASR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_ROR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_RRX:
 						// TODO
@@ -641,17 +649,16 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					}
 				} else { // No shift
 					rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%s,+=",
-						REG(0), MEMBASE(1), str_ldr_bytes, REG(2), MEMBASE(1));
+						REG(0), MEMBASE(1), str_ldr_bytes, MEMINDEX(1), MEMBASE(1));
 				}
-			}
-			if (ISREG(1) && str_ldr_bytes == 8) { // e.g. 'strd r2, r3, [r4]', normally should be the only case for ISREG(1).
+			} else if (ISREG(1) && str_ldr_bytes == 8) { // e.g. 'strd r2, r3, [r4]', normally should be the only case for ISREG(1).
 				if (!HASMEMINDEX(2)) {
 					int disp = MEMDISP(2);
 					char sign = disp >= 0 ? '+' : '-';
 					disp = disp >= 0 ? disp : -disp;
-					rz_strbuf_appendf(&op->esil, "%s,%d,%s,%c,0xffffffff,&,=[4],%s,4,%d,+,%s,%c,0xffffffff,&,=[4]",
-						REG(0), disp, MEMBASE(2), sign, REG(1), disp, MEMBASE(2), sign);
-					if (insn->detail->arm.writeback) {
+					rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
+						REG(0), MEMBASE(2), REG(1), MEMBASE(2));
+					if (ISWRITEBACK32()) {
 						rz_strbuf_appendf(&op->esil, ",%d,%s,%c,%s,=",
 							disp, MEMBASE(2), sign, MEMBASE(2));
 					}
@@ -659,28 +666,14 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					if (ISSHIFTED(2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
-						rz_strbuf_appendf(&op->esil, "%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
+						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
 							REG(0), MEMBASE(2), REG(1), MEMBASE(2));
-						if (insn->detail->arm.writeback) {
+						if (ISWRITEBACK32()) {
 							const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c=",
 								MEMINDEX(2), MEMBASE(2), sign);
 						}
 					}
-				}
-			}
-		}
-		if (OPCOUNT() == 4) { // e.g. 'strd r2, r3, [r4], 4' or 'strd r2, r3, [r4], r5'
-			if (ISIMM(3)) { // e.g. 'strd r2, r3, [r4], 4'
-				rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,4,%s,+,0xffffffff,&,=[%d],%d,%s,+=,",
-					REG(0), MEMBASE(2), str_ldr_bytes, REG(1), MEMBASE(2), str_ldr_bytes, IMM(3), MEMBASE(2));
-			}
-			if (ISREG(3)) { // e.g. 'strd r2, r3, [r4], r5'
-				if (ISSHIFTED(3)) {
-					// same as above
-				} else {
-					rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,4,%s,+,0xffffffff,&,=[%d],%s,%s,+=",
-						REG(0), MEMBASE(2), str_ldr_bytes, REG(1), MEMBASE(2), str_ldr_bytes, REG(3), MEMBASE(2));
 				}
 			}
 		}
@@ -698,15 +691,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",2,2,%s,%d,+,>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 					(ut64)MEMDISP(2), pc, pcdelta, REG(0), REG(1));
 			} else {
-				int disp = MEMDISP(2);
+				int disp = ISPOSTINDEX32() ? 0 : MEMDISP(2);
 				// not refptr, because we can't grab the reg value statically op->refptr = 4;
-				if (disp < 0) {
-					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						(ut64)-disp, MEMBASE(2), REG(0), REG(1));
-				} else {
-					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						(ut64)disp, MEMBASE(2), REG(0), REG(1));
-				}
+				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+					(ut64)-disp, MEMBASE(2), REG(0), REG(1));
 			}
 		} else {
 			if (REGBASE(2) == ARM_REG_PC) {
@@ -722,25 +710,27 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						pcdelta, pc, MEMDISP(2), REG(0), REG(1));
 				}
 			} else {
-				if (HASMEMINDEX(2)) { // e.g. `ldrd r2, r3 [r4, r1]`
+				if (HASMEMINDEX(2)) { // e.g. `ldrd r2, r3 [r4, r1]` or `ldrd r2, r3 [r4], r1`
 					const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
+					const char *mem_index = ISPOSTINDEX32() ? "0" : MEMINDEX(2);
 					rz_strbuf_appendf(&op->esil, "%s,%s,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						MEMINDEX(2), MEMBASE(2), op_index, REG(0), REG(1));
+						mem_index, MEMBASE(2), op_index, REG(0), REG(1));
 				} else {
+					int disp = ISPOSTINDEX32() ? 0 : MEMDISP(2);
 					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						MEMDISP(2), MEMBASE(2), REG(0), REG(1));
+						disp, MEMBASE(2), REG(0), REG(1));
 				}
-				if (insn->detail->arm.writeback) {
+				if (ISWRITEBACK32()) {
 					if (ISPOSTINDEX32()) {
-						if (ISIMM(3)) {
+						if (!HASMEMINDEX(2)) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
-								MEMBASE(2), IMM(3), MEMBASE(2));
+								MEMBASE(2), MEMDISP(2), MEMBASE(2));
 						} else {
-							const char op_index = ISMEMINDEXSUB(3) ? '-' : '+';
+							const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c,%s,=",
-								REG(3), MEMBASE(2), op_index, MEMBASE(2));
+								MEMINDEX(2), MEMBASE(2), op_index, MEMBASE(2));
 						}
-					} else if (ISPREINDEX32()) {
+					} else {
 						if (HASMEMINDEX(2)) {
 							const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c,%s,=",
@@ -763,16 +753,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				MEMINDEX(1), MEMBASE(1), REG(0));
 		} else {
 			rz_strbuf_appendf(&op->esil, "%s,%d,+,[1],%s,=",
-				MEMBASE(1), MEMDISP(1), REG(0));
+				MEMBASE(1), ISPOSTINDEX32() ? 0 : MEMDISP(1), REG(0));
 		}
-		if (insn->detail->arm.writeback) {
-			if (ISIMM(2)) {
-				rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
-					MEMBASE(1), IMM(2), MEMBASE(1));
-			} else {
-				rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
-					MEMBASE(1), MEMDISP(1), MEMBASE(1));
-			}
+		if (ISWRITEBACK32()) {
+			rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
+				MEMBASE(1), MEMDISP(1), MEMBASE(1));
 		}
 		break;
 	case ARM_INS_SXTH:
@@ -820,15 +805,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",2,2,%s,>>,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
 					(ut64)MEMDISP(1), pc, mask, REG(0));
 			} else {
-				int disp = MEMDISP(1);
+				st64 disp = MEMDISP(1);
 				// not refptr, because we can't grab the reg value statically op->refptr = 4;
-				if (disp < 0) {
-					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,[4],0x%x,&,%s,=",
-						(ut64)-disp, MEMBASE(1), mask, REG(0));
-				} else {
-					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
-						(ut64)disp, MEMBASE(1), mask, REG(0));
-				}
+				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,[4],0x%x,&,%s,=",
+					(ut64)-disp, MEMBASE(1), mask, REG(0));
 			}
 		} else {
 			if (ISMEM(1) && REGBASE(1) == ARM_REG_PC) {
@@ -854,18 +834,16 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				} else if (HASMEMINDEX(1)) { // e.g. `ldr r2, [r3, r1]`
 					rz_strbuf_appendf(&op->esil, "%s,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 						MEMINDEX(1), MEMBASE(1), mask, REG(0));
+				} else if (ISPOSTINDEX32()) {
+					rz_strbuf_appendf(&op->esil, "%s,0xffffffff,&,[4],0x%x,&,%s,=",
+						MEMBASE(1), mask, REG(0));
 				} else {
 					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 						MEMDISP(1), MEMBASE(1), mask, REG(0));
 				}
-				if (insn->detail->arm.writeback) {
-					if (ISIMM(2)) {
-						rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
-							MEMBASE(1), IMM(2), MEMBASE(1));
-					} else {
-						rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
-							MEMBASE(1), MEMDISP(1), MEMBASE(1));
-					}
+				if (ISWRITEBACK32()) {
+					rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
+						MEMBASE(1), MEMDISP(1), MEMBASE(1));
 				}
 			}
 		}
@@ -874,7 +852,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		// TODO: esil for MRS
 		break;
 	case ARM_INS_MSR:
+#if CS_NEXT_VERSION >= 6
+		msr_flags = insn->detail->arm.operands[0].sysop.msr_mask;
+#else
 		msr_flags = insn->detail->arm.operands[0].reg >> 4;
+#endif
 		rz_strbuf_appendf(&op->esil, "0,");
 		if (msr_flags & 1) {
 			rz_strbuf_appendf(&op->esil, "0xFF,|,");
@@ -1006,6 +988,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	// many errors
 	if (insn->detail->arm.update_flags) {
 		switch (insn->id) {
+		case ARM_INS_MSR:
+			// Updates flags manually
+			break;
 		case ARM_INS_CMP:
 			rz_strbuf_appendf(&op->esil, ",$z,zf,:=,31,$s,nf,:=,32,$b,!,cf,:=,31,$o,vf,:=");
 			break;
@@ -1017,6 +1002,30 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_CMN:
 			rz_strbuf_appendf(&op->esil, ",$z,zf,:=,31,$s,nf,:=,31,$c,cf,:=,31,$o,vf,:=");
 			break;
+		case ARM_INS_MOV: {
+			// Move has already set the dest register at this point.
+			// But mind that ARG() always includes the shift of the source register.
+			// If the source register is the same as the destination register it would shift the value twice.
+			// We need to prepend the move (already in op->esil) to the flag check.
+			char move_esil[64];
+			switch (SHIFTTYPE(1)) {
+			default:
+				break;
+			case ARM_SFT_LSL:
+			case ARM_SFT_LSL_REG:
+				rz_strf(move_esil, "%s", rz_strbuf_drain_nofree(&op->esil));
+				rz_strbuf_appendf(&op->esil, ",%s,!,!,?{,%s,32,-,%s,>>,cf,:=,},%s", ARG(1), ARG(1), ARG(0), move_esil);
+				break;
+			case ARM_SFT_LSR:
+			case ARM_SFT_LSR_REG:
+			case ARM_SFT_ASR:
+			case ARM_SFT_ASR_REG:
+				rz_strf(move_esil, "%s", rz_strbuf_drain_nofree(&op->esil));
+				rz_strbuf_appendf(&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},%s", ARG(1), ARG(0), ARG(1), move_esil);
+				break;
+			}
+		}
+		// fallthrough
 		default:
 			rz_strbuf_appendf(&op->esil, ",$z,zf,:=,31,$s,nf,:=");
 		}

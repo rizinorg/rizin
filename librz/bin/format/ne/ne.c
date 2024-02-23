@@ -75,12 +75,12 @@ static char *__func_name_from_ord(char *module, ut16 ordinal) {
 	return name;
 }
 
-RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
+RzPVector /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	int i;
 	if (!bin) {
 		return NULL;
 	}
-	RzList *segments = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *segments = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!segments) {
 		return NULL;
 	}
@@ -99,13 +99,13 @@ RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 		bs->paddr = (ut64)se->offset * bin->alignment;
 		bs->name = rz_str_newf("%s.%" PFMT64d, se->flags & IS_MOVEABLE ? "MOVEABLE" : "FIXED", bs->paddr);
 		bs->is_segment = true;
-		rz_list_append(segments, bs);
+		rz_pvector_push(segments, bs);
 	}
 	bin->segments = segments;
 	return segments;
 }
 
-static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
+static int __find_symbol_by_paddr(const void *paddr, const void *sym, void *user) {
 	return (int)!(*(ut64 *)paddr == ((RzBinSymbol *)sym)->paddr);
 }
 
@@ -118,10 +118,10 @@ static void ne_sanitize_name(char *name, ut16 count) {
 	}
 }
 
-RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
+RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinSymbol *sym;
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
-	RzList *symbols = rz_list_newf(free);
+	RzPVector *symbols = rz_pvector_new(free);
 	if (!symbols) {
 		return NULL;
 	}
@@ -177,14 +177,14 @@ RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 			sym->paddr = -1;
 		}
 		sym->ordinal = entry_off;
-		rz_list_append(symbols, sym);
+		rz_pvector_push(symbols, sym);
 		first = false;
 	}
 	RzListIter *it;
 	RzBinAddr *en;
 	int i = 1;
 	rz_list_foreach (entries, it, en) {
-		if (!rz_list_find(symbols, &en->paddr, __find_symbol_by_paddr)) {
+		if (!rz_pvector_find(symbols, &en->paddr, __find_symbol_by_paddr, NULL)) {
 			sym = RZ_NEW0(RzBinSymbol);
 			if (!sym) {
 				break;
@@ -193,7 +193,7 @@ RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 			sym->paddr = en->paddr;
 			sym->bind = RZ_BIN_BIND_GLOBAL_STR;
 			sym->ordinal = i;
-			rz_list_append(symbols, sym);
+			rz_pvector_push(symbols, sym);
 		}
 		i++;
 	}
@@ -354,8 +354,8 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 	return true;
 }
 
-RzList /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
-	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
+RzPVector /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
+	RzPVector *imports = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
 	}
@@ -383,7 +383,7 @@ RzList /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 		name[sz] = '\0';
 		imp->name = name;
 		imp->ordinal = i + 1;
-		rz_list_append(imports, imp);
+		rz_pvector_push(imports, imp);
 		off += sz;
 	}
 	bin->imports = imports;
@@ -396,7 +396,7 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 	RzBinAddr *entry;
-	RzList *segments = rz_bin_ne_get_segments(bin);
+	RzPVector *segments = rz_bin_ne_get_segments(bin);
 	if (!segments) {
 		rz_list_free(entries);
 		return NULL;
@@ -405,11 +405,11 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		entry = RZ_NEW0(RzBinAddr);
 		if (!entry) {
 			rz_list_free(entries);
-			rz_list_free(segments);
+			rz_pvector_free(segments);
 			return NULL;
 		}
 		entry->bits = 16;
-		RzBinSection *s = rz_list_get_n(segments, bin->ne_header->csEntryPoint - 1);
+		RzBinSection *s = (RzBinSection *)rz_pvector_at(segments, bin->ne_header->csEntryPoint - 1);
 		entry->paddr = bin->ne_header->ipEntryPoint + (s ? s->paddr : 0);
 		rz_list_append(entries, entry);
 	}
@@ -430,7 +430,7 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 			entry = RZ_NEW0(RzBinAddr);
 			if (!entry) {
 				rz_list_free(entries);
-				rz_list_free(segments);
+				rz_pvector_free(segments);
 				return NULL;
 			}
 			off++;
@@ -469,13 +469,13 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		}
 	}
 end:
-	rz_list_free(segments);
+	rz_pvector_free(segments);
 	bin->entries = entries;
 	return entries;
 }
 
-RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
-	RzList *segments = bin->segments;
+RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
+	RzPVector *segments = bin->segments;
 	if (!segments) {
 		return NULL;
 	}
@@ -483,7 +483,7 @@ RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	if (!entries) {
 		return NULL;
 	}
-	RzList *symbols = bin->symbols;
+	RzPVector *symbols = bin->symbols;
 	if (!symbols) {
 		return NULL;
 	}
@@ -494,17 +494,18 @@ RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	}
 	rz_buf_read_at(bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, bin->ne_header->ModRefs * sizeof(ut16));
 
-	RzList *relocs = rz_list_newf(free);
+	RzPVector *relocs = rz_pvector_new(free);
 	if (!relocs) {
 		free(modref);
 		return NULL;
 	}
 
 	ut64 bufsz = rz_buf_size(bin->buf);
-	RzListIter *it;
+	void **it;
 	RzBinSection *seg;
 	int index = -1;
-	rz_list_foreach (segments, it, seg) {
+	rz_pvector_foreach (segments, it) {
+		seg = *it;
 		index++;
 		if (!(bin->segment_entries[index].flags & RELOCINFO)) {
 			continue;
@@ -581,7 +582,7 @@ RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				// TODO
 			} else {
 				if (strstr(seg->name, "FIXED")) {
-					RzBinSection *s = rz_list_get_n(segments, rel.segnum - 1);
+					RzBinSection *s = (RzBinSection *)rz_pvector_at(segments, rel.segnum - 1);
 					if (s) {
 						offset = s->paddr + rel.segoff;
 					} else {
@@ -597,8 +598,9 @@ RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				}
 				reloc->addend = offset;
 				RzBinSymbol *sym = NULL;
-				RzListIter *sit;
-				rz_list_foreach (symbols, sit, sym) {
+				void **sit;
+				rz_pvector_foreach (symbols, sit) {
+					sym = *sit;
 					if (sym->paddr == reloc->addend) {
 						reloc->symbol = sym;
 						break;
@@ -608,10 +610,10 @@ RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 
 			if (rel.flags & ADDITIVE) {
 				reloc->additive = 1;
-				rz_list_append(relocs, reloc);
+				rz_pvector_push(relocs, reloc);
 			} else {
 				do {
-					rz_list_append(relocs, reloc);
+					rz_pvector_push(relocs, reloc);
 					ut16 tmp_offset;
 					if (!rz_buf_read_le16_at(bin->buf, reloc->paddr, &tmp_offset)) {
 						reloc = NULL;

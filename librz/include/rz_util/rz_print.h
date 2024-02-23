@@ -26,7 +26,6 @@ extern "C" {
 #define RZ_PRINT_FLAGS_COMPACT  0x00000800
 #define RZ_PRINT_FLAGS_NONHEX   0x00001000
 #define RZ_PRINT_FLAGS_SECSUB   0x00002000
-#define RZ_PRINT_FLAGS_RAINBOW  0x00004000
 #define RZ_PRINT_FLAGS_HDROFF   0x00008000
 #define RZ_PRINT_FLAGS_STYLE    0x00010000
 #define RZ_PRINT_FLAGS_NONASCII 0x00020000
@@ -116,7 +115,6 @@ typedef struct rz_print_t {
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
 	PrintfCallback cb_printf;
-	PrintfCallback cb_eprintf;
 	char *(*cb_color)(int idx, int last, bool bg);
 	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
@@ -239,6 +237,7 @@ RZ_API char *rz_print_json_human(const char *s);
 RZ_API char *rz_print_json_path(const char *s, int pos);
 
 RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
+RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength);
 #endif
 
 #ifdef __cplusplus

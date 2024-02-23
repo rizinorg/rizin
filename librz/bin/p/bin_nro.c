@@ -61,8 +61,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 	}
 
 	ut64 ba = baddr(bf);
-	bin->methods_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
-	bin->imports_list = rz_list_newf((RzListFree)rz_bin_import_free);
+	bin->methods_vec = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
+	bin->imports_vec = rz_pvector_new((RzListFree)rz_bin_import_free);
 	parseMod(b, bin, mod0, ba);
 	obj->bin_obj = bin;
 
@@ -100,9 +100,9 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return kv;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzBuffer *b = bf->buf;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -112,7 +112,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 
 	ut32 sig0;
 	if (!rz_buf_read_le32_at(bf->buf, 0x18, &sig0)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
@@ -125,7 +125,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 
 		ut32 sig0sz;
 		if (!rz_buf_read_le32_at(bf->buf, sig0 + 4, &sig0sz)) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			ret = NULL;
 			goto maps_err;
 		}
@@ -136,7 +136,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->vsize = sig0sz;
 		map->vaddr = sig0 + ba;
 		map->perm = RZ_PERM_R;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	} else {
 		RZ_LOG_ERROR("Invalid SIG0 address\n");
 	}
@@ -160,7 +160,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vsize = map->psize;
 	map->vaddr = map->paddr + ba;
 	map->perm = RZ_PERM_RX;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	// add ro segment
 	if (!(map = RZ_NEW0(RzBinMap))) {
@@ -180,7 +180,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vsize = map->psize;
 	map->vaddr = map->paddr + ba;
 	map->perm = RZ_PERM_R;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 
 	// add data segment
 	if (!(map = RZ_NEW0(RzBinMap))) {
@@ -200,7 +200,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vsize = map->psize;
 	map->vaddr = map->paddr + ba;
 	map->perm = RZ_PERM_RW;
-	rz_list_append(ret, map);
+	rz_pvector_push(ret, map);
 	return ret;
 
 maps_err:
@@ -208,10 +208,10 @@ maps_err:
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -226,7 +226,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	int bufsz = rz_buf_size(bf->buf);
 
@@ -251,42 +251,48 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = mod0;
 		ptr->vaddr = mod0 + ba;
 		ptr->perm = RZ_PERM_R; // rw-
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	} else {
 		RZ_LOG_ERROR("Invalid MOD0 address\n");
 	}
 
-	RzList *mappies = maps(bf);
+	RzPVector *mappies = maps(bf);
 	if (mappies) {
-		RzList *msecs = rz_bin_sections_of_maps(mappies);
+		RzPVector *msecs = rz_bin_sections_of_maps(mappies);
 		if (msecs) {
-			rz_list_join(ret, msecs);
-			rz_list_free(msecs);
+			void **iter;
+			RzBinSection *section;
+			rz_pvector_foreach (msecs, iter) {
+				section = *iter;
+				rz_pvector_push(ret, section);
+			}
+			msecs->v.len = 0;
+			rz_pvector_free(msecs);
 		}
-		rz_list_free(mappies);
+		rz_pvector_free(mappies);
 	}
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	bin = (RzBinNXOObj *)bf->o->bin_obj;
-	return bin->methods_list;
+	return bin->methods_vec;
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	bin = (RzBinNXOObj *)bf->o->bin_obj;
-	return bin->imports_list;
+	return bin->imports_vec;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return NULL;
 }
 

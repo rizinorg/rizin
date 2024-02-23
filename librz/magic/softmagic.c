@@ -34,7 +34,7 @@
 #if !USE_LIB_MAGIC
 
 #include "file.h"
-#include "rz_regex.h"
+#include <rz_util/rz_regex.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -274,24 +274,17 @@ static int match(RzMagic *ms, struct rz_magic *magic, ut32 nmagic, const ut8 *s,
 }
 
 static int check_fmt(RzMagic *ms, struct rz_magic *m) {
-	RzRegex rx;
-	int rc;
-
 	if (!strchr(RZ_MAGIC_DESC, '%')) {
 		return 0;
 	}
 
-	rc = rz_regex_comp(&rx, "%[-0-9\\.]*s", RZ_REGEX_EXTENDED | RZ_REGEX_NOSUB);
-	if (rc) {
-		char errmsg[512];
-		rz_regex_error(rc, &rx, errmsg, sizeof(errmsg) - 1);
-		file_magerror(ms, "regex error %d, (%s)", rc, errmsg);
+	RzRegex *re = rz_regex_new("%[-0-9\\.]*s", RZ_REGEX_EXTENDED, 0);
+	if (!re) {
 		return -1;
-	} else {
-		rc = rz_regex_exec(&rx, RZ_MAGIC_DESC, 0, 0, 0);
-		rz_regex_fini(&rx);
-		return !rc;
 	}
+	RzRegexStatus rc = rz_regex_match(re, RZ_MAGIC_DESC, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	rz_regex_free(re);
+	return rc > 0 ? 1 : 0;
 }
 
 char *strdupn(const char *str, size_t n) {
@@ -1412,59 +1405,32 @@ static int magiccheck(RzMagic *ms, struct rz_magic *m) {
 		break;
 	}
 	case FILE_REGEX: {
-		int rc;
-		RzRegex rx;
-		char errmsg[512];
-
 		if (!ms->search.s) {
 			return 0;
 		}
 
 		l = 0;
-		rc = rz_regex_comp(&rx, m->value.s,
-			RZ_REGEX_EXTENDED | RZ_REGEX_NEWLINE |
-				((m->str_flags & STRING_IGNORE_CASE) ? RZ_REGEX_ICASE : 0));
-		if (rc) {
-			(void)rz_regex_error(rc, &rx, errmsg, sizeof(errmsg) - 1);
-			file_magerror(ms, "regex error %d, (%s)",
-				rc, errmsg);
-			v = (ut64)-1;
-		} else {
-			RzRegexMatch pmatch[1];
-#ifndef RZ_REGEX_STARTEND
-#define RZ_REGEX_STARTEND 0
-			size_t l = ms->search.s_len - 1;
-			char c = ms->search.s[l];
-			((char *)(intptr_t)ms->search.s)[l] = '\0';
-#else
-			pmatch[0].rm_so = 0;
-			pmatch[0].rm_eo = ms->search.s_len;
-#endif
-			rc = rz_regex_exec(&rx, (const char *)ms->search.s, 1, pmatch, RZ_REGEX_STARTEND);
-#if RZ_REGEX_STARTEND == 0
-			((char *)(intptr_t)ms->search.s)[l] = c;
-#endif
-			switch (rc) {
-			case 0:
-				ms->search.s += (int)pmatch[0].rm_so;
-				ms->search.offset += (size_t)pmatch[0].rm_so;
-				ms->search.rm_len = (size_t)(pmatch[0].rm_eo - pmatch[0].rm_so);
-				v = 0;
-				break;
-			case RZ_REGEX_NOMATCH:
-				v = 1;
-				break;
-			default:
-				(void)rz_regex_error(rc, &rx, errmsg, sizeof(errmsg) - 1);
-				file_magerror(ms, "regexec error %d, (%s)", rc, errmsg);
-				v = UT64_MAX;
-				break;
-			}
-			rz_regex_fini(&rx);
-		}
-		if (v == (ut64)-1) {
+		RzRegex *rx = rz_regex_new(m->value.s,
+			RZ_REGEX_EXTENDED |
+				((m->str_flags & STRING_IGNORE_CASE) ? RZ_REGEX_CASELESS : 0),
+			0);
+		if (!rx) {
 			return -1;
 		}
+		RzPVector *matches = rz_regex_match_first(rx, (const char *)ms->search.s, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+		rz_regex_free(rx);
+		if (!matches) {
+			return -1;
+		} else if (rz_pvector_len(matches) == 0) {
+			v = 1;
+			break;
+		}
+		RzRegexMatch *m = rz_pvector_head(matches);
+		ms->search.s += (int)m->start;
+		ms->search.offset += (size_t)m->start;
+		ms->search.rm_len = (size_t)m->len;
+		rz_pvector_free(matches);
+		v = 0;
 		break;
 	}
 	default:

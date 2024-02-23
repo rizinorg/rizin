@@ -59,9 +59,9 @@ static RzBinSection *rz_bin_mz_init_section(const struct rz_bin_mz_obj_t *bin,
 	return section;
 }
 
-RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin) {
-	RzList *seg_list;
-	RzListIter *iter;
+RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin) {
+	RzPVector *seg_vec;
+	void **iter;
 	RzBinSection *section;
 	MZ_image_relocation_entry *relocs;
 	int i, num_relocs, section_number;
@@ -71,8 +71,8 @@ RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t
 		return NULL;
 	}
 
-	seg_list = rz_list_newf((RzListFree)rz_bin_section_free);
-	if (!seg_list) {
+	seg_vec = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+	if (!seg_vec) {
 		return NULL;
 	}
 
@@ -83,7 +83,8 @@ RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t
 	if (!section) {
 		goto err_out;
 	}
-	rz_list_add_sorted(seg_list, section, cmp_sections);
+	rz_pvector_push(seg_vec, section);
+	rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
 
 	relocs = bin->relocation_entries;
 	num_relocs = bin->dos_header->num_relocs;
@@ -112,7 +113,7 @@ RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t
 		}
 
 		c.vaddr = section_laddr;
-		if (rz_list_find(seg_list, &c, cmp_sections)) {
+		if (rz_pvector_find(seg_vec, &c, (RzPVectorComparator)cmp_sections, NULL)) {
 			continue;
 		}
 
@@ -120,7 +121,8 @@ RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t
 		if (!section) {
 			goto err_out;
 		}
-		rz_list_add_sorted(seg_list, section, cmp_sections);
+		rz_pvector_push(seg_vec, section);
+		rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
 	}
 
 	/* Add address of stack segment if it's inside the load module. */
@@ -130,15 +132,25 @@ RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t
 		if (!section) {
 			goto err_out;
 		}
-		rz_list_add_sorted(seg_list, section, cmp_sections);
+		rz_pvector_push(seg_vec, section);
+		rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
 	}
 
 	/* Fixup sizes and addresses, set name, permissions and set add flag */
 	section_number = 0;
-	rz_list_foreach (seg_list, iter, section) {
+	rz_pvector_foreach (seg_vec, iter) {
+		section = *iter;
 		section->name = rz_str_newf("seg_%03d", section_number);
 		if (section_number) {
-			RzBinSection *p_section = iter->p->data;
+			// calculate current index in loop by subtracting base ptr
+			ut32 ptr_gap = iter - (void **)seg_vec->v.a;
+			ut32 cur_index = ptr_gap / sizeof(void **);
+			RzBinSection *p_section = NULL;
+			if (cur_index == 0) {
+				p_section = *rz_pvector_index_ptr(seg_vec, rz_pvector_len(seg_vec) - 1);
+			} else {
+				p_section = *rz_pvector_index_ptr(seg_vec, cur_index - 1);
+			}
 			p_section->size = section->vaddr - p_section->vaddr;
 			p_section->vsize = p_section->size;
 		}
@@ -147,15 +159,15 @@ RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t
 		section->perm = rz_str_rwx("rwx");
 		section_number++;
 	}
-	section = rz_list_get_top(seg_list);
+	section = *rz_pvector_index_ptr(seg_vec, rz_pvector_len(seg_vec) - 1);
 	section->size = bin->load_module_size - section->vaddr;
 	section->vsize = section->size;
 
-	return seg_list;
+	return seg_vec;
 
 err_out:
 	RZ_LOG_ERROR("Failed to get segment list\n");
-	rz_list_free(seg_list);
+	rz_pvector_free(seg_vec);
 
 	return NULL;
 }

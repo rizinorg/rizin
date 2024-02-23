@@ -33,18 +33,19 @@ static bool lmf_header_load(lmf_header *lmfh, RzBuffer *buf, Sdb *db) {
 	if (!read_lmf_header(lmfh, buf, QNX_HEADER_ADDR)) {
 		return false;
 	}
-	sdb_set(db, "qnx.version", sdb_fmt("0x%xH", lmfh->version), 0);
-	sdb_set(db, "qnx.cflags", sdb_fmt("0x%xH", lmfh->cflags), 0);
-	sdb_set(db, "qnx.cpu", sdb_fmt("0x%xH", lmfh->cpu), 0);
-	sdb_set(db, "qnx.fpu", sdb_fmt("0x%xH", lmfh->fpu), 0);
-	sdb_set(db, "qnx.code_index", sdb_fmt("0x%x", lmfh->code_index), 0);
-	sdb_set(db, "qnx.stack_index", sdb_fmt("0x%x", lmfh->stack_index), 0);
-	sdb_set(db, "qnx.heap_index", sdb_fmt("0x%x", lmfh->heap_index), 0);
-	sdb_set(db, "qnx.argv_index", sdb_fmt("0x%x", lmfh->argv_index), 0);
-	sdb_set(db, "qnx.code_offset", sdb_fmt("0x%x", lmfh->code_offset), 0);
-	sdb_set(db, "qnx.stack_nbytes", sdb_fmt("0x%x", lmfh->stack_nbytes), 0);
-	sdb_set(db, "qnx.heap_nbytes", sdb_fmt("0x%x", lmfh->heap_nbytes), 0);
-	sdb_set(db, "qnx.image_base", sdb_fmt("0x%x", lmfh->image_base), 0);
+	char tmpbuf[32];
+	sdb_set(db, "qnx.version", rz_strf(tmpbuf, "0x%xH", lmfh->version), 0);
+	sdb_set(db, "qnx.cflags", rz_strf(tmpbuf, "0x%xH", lmfh->cflags), 0);
+	sdb_set(db, "qnx.cpu", rz_strf(tmpbuf, "0x%xH", lmfh->cpu), 0);
+	sdb_set(db, "qnx.fpu", rz_strf(tmpbuf, "0x%xH", lmfh->fpu), 0);
+	sdb_set(db, "qnx.code_index", rz_strf(tmpbuf, "0x%x", lmfh->code_index), 0);
+	sdb_set(db, "qnx.stack_index", rz_strf(tmpbuf, "0x%x", lmfh->stack_index), 0);
+	sdb_set(db, "qnx.heap_index", rz_strf(tmpbuf, "0x%x", lmfh->heap_index), 0);
+	sdb_set(db, "qnx.argv_index", rz_strf(tmpbuf, "0x%x", lmfh->argv_index), 0);
+	sdb_set(db, "qnx.code_offset", rz_strf(tmpbuf, "0x%x", lmfh->code_offset), 0);
+	sdb_set(db, "qnx.stack_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->stack_nbytes), 0);
+	sdb_set(db, "qnx.heap_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->heap_nbytes), 0);
+	sdb_set(db, "qnx.image_base", rz_strf(tmpbuf, "0x%x", lmfh->image_base), 0);
 	return true;
 }
 
@@ -56,8 +57,8 @@ static bool check_buffer(RzBuffer *buf) {
 
 static void destroy(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
-	rz_list_free(qo->sections);
-	rz_list_free(qo->maps);
+	rz_pvector_free(qo->sections);
+	rz_pvector_free(qo->maps);
 	rz_list_free(qo->fixups);
 	bf->o->bin_obj = NULL;
 	free(qo);
@@ -74,8 +75,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		return false;
 	}
 
-	RzList *sections = rz_list_newf((RzListFree)rz_bin_section_free);
-	RzList *maps = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+	RzPVector *maps = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	RzList *fixups = rz_list_newf(free);
 	if (!sections || !maps || !fixups) {
 		goto beach;
@@ -127,7 +128,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			ptr->paddr = offset;
 			ptr->vsize = lrec.data_nbytes - LMF_RESOURCE_SIZE;
 			ptr->size = ptr->vsize;
-			rz_list_append(sections, ptr);
+			rz_pvector_push(sections, ptr);
 
 			RzBinMap *map = RZ_NEW0(RzBinMap);
 			if (!map) {
@@ -137,7 +138,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			map->paddr = ptr->paddr;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
-			rz_list_append(maps, map);
+			rz_pvector_push(maps, map);
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
 			if (lrec.data_nbytes <= LMF_DATA_SIZE) {
 				goto beach;
@@ -157,7 +158,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			ptr->vaddr = ldata.offset;
 			ptr->vsize = lrec.data_nbytes - LMF_DATA_SIZE;
 			ptr->size = ptr->vsize;
-			rz_list_append(sections, ptr);
+			rz_pvector_push(sections, ptr);
 
 			RzBinMap *map = RZ_NEW0(RzBinMap);
 			if (!map) {
@@ -167,7 +168,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			map->paddr = ptr->paddr;
 			map->psize = ptr->size;
 			map->vsize = ptr->vsize;
-			rz_list_append(maps, map);
+			rz_pvector_push(maps, map);
 		} else if (lrec.rec_type == LMF_FIXUP_REC) {
 			RzBinReloc *ptr = RZ_NEW0(RzBinReloc);
 			if (!ptr) {
@@ -214,8 +215,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 beach:
 	free(qo);
 	rz_list_free(fixups);
-	rz_list_free(maps);
-	rz_list_free(sections);
+	rz_pvector_free(maps);
+	rz_pvector_free(sections);
 	return false;
 }
 
@@ -243,12 +244,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	RzBinReloc *reloc = NULL;
 	RzListIter *it = NULL;
-	RzList *relocs = rz_list_newf(free);
+	RzPVector *relocs = rz_pvector_new(free);
 	if (!relocs) {
 		return NULL;
 	}
@@ -261,7 +262,7 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 		copy->vaddr = reloc->vaddr;
 		copy->paddr = reloc->paddr;
 		copy->type = reloc->type;
-		rz_list_append(relocs, copy);
+		rz_pvector_push(relocs, copy);
 	}
 	return relocs;
 }
@@ -290,21 +291,21 @@ static void header(RzBinFile *bf) {
 /*
  * No mention of symbols in the doc
  */
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
-	return rz_list_clone(qo->maps);
+	return rz_pvector_clone(qo->maps);
 }
 
 // Returns the sections
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
-	return rz_list_clone(qo->sections);
+	return rz_pvector_clone(qo->sections);
 }
 
 /*
@@ -367,7 +368,7 @@ static char *signature(RzBinFile *bf, bool json) {
 		pj_n(pj, qo->rwend.signature);
 		return pj_drain(pj);
 	} else {
-		return rz_str_dup(NULL, sdb_itoa(qo->rwend.signature, buf, 10));
+		return rz_str_dup(sdb_itoa(qo->rwend.signature, buf, 10));
 	}
 }
 

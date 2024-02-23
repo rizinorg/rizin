@@ -3,11 +3,13 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone/capstone.h>
-static csh cd = 0;
-#include "cs_mnemonics.c"
+#include "cs_helper.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(sparc);
+
+static int sparc_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
+
 	cs_insn *insn;
 	int n = -1, ret = -1;
 	int mode = CS_MODE_BIG_ENDIAN;
@@ -20,41 +22,45 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		memset(op, 0, sizeof(RzAsmOp));
 		op->size = 4;
 	}
-	if (cd != 0) {
-		cs_close(&cd);
+	if (ctx->omode != mode) {
+		cs_close(&ctx->handle);
+		ctx->omode = -1;
 	}
-	ret = cs_open(CS_ARCH_SPARC, mode, &cd);
-	if (ret) {
-		goto fin;
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_SPARC, mode, &ctx->handle);
+		if (ret) {
+			goto fin;
+		}
+		ctx->omode = mode;
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	if (!op) {
 		return 0;
 	}
 	if (a->big_endian) {
-		n = cs_disasm(cd, buf, len, a->pc, 1, &insn);
+		n = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
 	}
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
 		op->size = 4;
 		ret = -1;
-		goto beach;
+		goto fin;
 	} else {
 		ret = 4;
 	}
 	if (insn->size < 1) {
-		goto beach;
+		goto fin;
 	}
 	op->size = insn->size;
-	char *buf_asm = sdb_fmt("%s%s%s",
+	rz_asm_op_setf_asm(op, "%s%s%s",
 		insn->mnemonic, insn->op_str[0] ? " " : "",
 		insn->op_str);
-	rz_str_replace_char(buf_asm, '%', 0);
-	rz_asm_op_set_asm(op, buf_asm);
-	// TODO: remove the '$'<registername> in the string
+	char *buf_asm = rz_asm_op_get_asm(op);
+	if (buf_asm) {
+		rz_str_replace_char(buf_asm, '%', 0);
+		// TODO: remove the '$'<registername> in the string
+	}
 	cs_free(insn, n);
-beach:
-// cs_close (&cd);
 fin:
 	return ret;
 }
@@ -67,8 +73,10 @@ RzAsmPlugin rz_asm_plugin_sparc_cs = {
 	.cpus = "v9",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
-	.disassemble = &disassemble,
-	.mnemonics = mnemonics
+	.init = sparc_init,
+	.fini = sparc_fini,
+	.disassemble = &sparc_disassemble,
+	.mnemonics = sparc_mnemonics
 };
 
 #ifndef RZ_PLUGIN_INCORE

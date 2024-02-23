@@ -19,16 +19,19 @@
 		: vec->capacity <= 12 ? vec->capacity * 2 \
 				      : vec->capacity + (vec->capacity >> 1))
 
-#define RESIZE_OR_RETURN_NULL(next_capacity) \
+#define RESIZE_OR_RETURN_VAL(next_capacity, retval) \
 	do { \
 		size_t new_capacity = next_capacity; \
 		void **new_a = realloc(vec->a, vec->elem_size * new_capacity); \
 		if (!new_a && new_capacity) { \
-			return NULL; \
+			return retval; \
 		} \
 		vec->a = new_a; \
 		vec->capacity = new_capacity; \
 	} while (0)
+
+#define RESIZE_OR_RETURN_NULL(next_capacity)  RESIZE_OR_RETURN_VAL(next_capacity, NULL)
+#define RESIZE_OR_RETURN_FALSE(next_capacity) RESIZE_OR_RETURN_VAL(next_capacity, false)
 
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
@@ -79,7 +82,17 @@ RZ_API void rz_vector_free(RzVector *vec) {
 	}
 }
 
-static bool vector_clone(RzVector *dst, RzVector *src) {
+/**
+ * \brief Clone the contents of \p src into \p dst.
+ * \param dst The vector to clone into.
+ * \param src The vector to clone from.
+ * \param item_cpy The function to copy every element of \p src into \p dst
+ * \return true on success, false on failure.
+ */
+RZ_API bool rz_vector_clone_intof(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src,
+	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy) {
 	rz_return_val_if_fail(dst && src, false);
 	dst->capacity = src->capacity;
 	dst->len = src->len;
@@ -93,29 +106,69 @@ static bool vector_clone(RzVector *dst, RzVector *src) {
 		if (!dst->a) {
 			return false;
 		}
-		memcpy(dst->a, src->a, src->elem_size * src->len);
+		const ut64 len = rz_vector_len(src);
+		if (item_cpy) {
+			for (ut64 i = 0; i < len; ++i) {
+				item_cpy((ut8 *)(dst->a) + i * src->elem_size,
+					(ut8 *)(src->a) + i * src->elem_size);
+			}
+		} else {
+			memcpy(dst->a, src->a, src->elem_size * len);
+		}
 	}
 	return true;
 }
 
 /**
  * Construct a new vector with the same contents and capacity as \p vec.
- *
+ * \param vec The source vector
+ * \return The new vector
+ */
+RZ_API RZ_OWN RzVector *rz_vector_clonef(
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec,
+	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy) {
+	rz_return_val_if_fail(vec, NULL);
+	RzVector *dst = RZ_NEW(RzVector);
+	if (!dst) {
+		return NULL;
+	}
+	if (!rz_vector_clone_intof(dst, vec, item_cpy)) {
+		free(dst);
+		return NULL;
+	}
+	return dst;
+}
+
+/**
+ * \brief Clone the contents of \p src into \p dst.
+ * \param dst The vector to clone into.
+ * \param src The vector to clone from.
+ * \return true on success, false on failure.
+ */
+RZ_API bool rz_vector_clone_into(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src) {
+	const bool ret = rz_vector_clone_intof(dst, src, NULL);
+	dst->free = NULL;
+	dst->free_user = NULL;
+	return ret;
+}
+
+/**
+ * \brief Construct a new vector with the same contents and capacity as \p vec.
  * The free function of the resulting vector will be NULL, so if elements are considered
  * to be owned and freed by \p vec, this will still be the case and the returned vector
  * only borrows them.
+ *
+ * \param vec The source vector
+ * \return The new vector
  */
-RZ_API RzVector *rz_vector_clone(RzVector *vec) {
-	rz_return_val_if_fail(vec, NULL);
-	RzVector *ret = RZ_NEW(RzVector);
-	if (!ret) {
-		return NULL;
-	}
-	if (!vector_clone(ret, vec)) {
-		free(ret);
-		return NULL;
-	}
-	return ret;
+RZ_API RZ_OWN RzVector *rz_vector_clone(
+	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec) {
+	RzVector *dst = rz_vector_clonef(vec, NULL);
+	dst->free = NULL;
+	dst->free_user = NULL;
+	return dst;
 }
 
 RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem) {
@@ -218,6 +271,21 @@ RZ_API void *rz_vector_push_front(RzVector *vec, void *x) {
 	return rz_vector_insert(vec, 0, x);
 }
 
+RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
+	rz_return_val_if_fail(vec && index_a < vec->len && index_b < vec->len, false);
+	ut8 *tmp = malloc(vec->elem_size);
+	if (!tmp) {
+		return false;
+	}
+	void *elem_a = rz_vector_index_ptr(vec, index_a);
+	void *elem_b = rz_vector_index_ptr(vec, index_b);
+	memcpy(tmp, elem_a, vec->elem_size);
+	memcpy(elem_a, elem_b, vec->elem_size);
+	memcpy(elem_b, tmp, vec->elem_size);
+	free(tmp);
+	return true;
+}
+
 RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity) {
 	rz_return_val_if_fail(vec, NULL);
 	if (vec->capacity < capacity) {
@@ -245,7 +313,7 @@ RZ_API void *rz_vector_flush(RzVector *vec) {
 
 // CLRS Quicksort. It is slow, but simple.
 #define VEC_INDEX(a, i) (char *)a + elem_size *(i)
-static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorComparator cmp, bool reverse) {
+static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(a);
 	if (len <= 1) {
 		return;
@@ -265,8 +333,8 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorCo
 	memcpy(pivot, VEC_INDEX(a, i), elem_size);
 	memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
 	for (i = 0; i < len - 1; i++) {
-		if ((cmp(VEC_INDEX(a, i), pivot) < 0 && !reverse) ||
-			(cmp(VEC_INDEX(a, i), pivot) > 0 && reverse)) {
+		if ((cmp(VEC_INDEX(a, i), pivot, user) < 0 && !reverse) ||
+			(cmp(VEC_INDEX(a, i), pivot, user) > 0 && reverse)) {
 			memcpy(t, VEC_INDEX(a, i), elem_size);
 			memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
 			memcpy(VEC_INDEX(a, j), t, elem_size);
@@ -277,8 +345,8 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorCo
 	memcpy(VEC_INDEX(a, j), pivot, elem_size);
 	RZ_FREE(t);
 	RZ_FREE(pivot);
-	vector_quick_sort(a, elem_size, j, cmp, reverse);
-	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse);
+	vector_quick_sort(a, elem_size, j, cmp, reverse, user);
+	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user);
 }
 #undef VEC_INDEX
 
@@ -288,10 +356,11 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzPVectorCo
  * \param vec pointer to RzVector
  * \param cmp function used for comparing elements while sorting
  * \param reverse sort order, ascending order when reverse = False
+ * \param user user pointer to extra data.
  */
-RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse) {
+RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(vec && cmp);
-	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse);
+	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse, user);
 }
 
 // pvector
@@ -359,6 +428,47 @@ RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 	return NULL;
 }
 
+/**
+ * \brief Find the \p element in the \p vec
+ * \param vec the RzPVector to search in
+ * \param value the value that elements in pvector compare against by \p cmp
+ * \param cmp the comparator function
+ * \return the iter of the element if found, NULL otherwise
+ */
+RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *value, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec, NULL);
+
+	void **iter;
+	rz_pvector_foreach (vec, iter) {
+		if (!cmp(value, *iter, user)) {
+			return iter;
+		}
+	}
+	return NULL;
+}
+
+/**
+ * \brief Joins 2 pvector into one (pvec2 pointer needs to be freed by the user)
+ *
+ **/
+RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *pvec2) {
+	rz_return_val_if_fail(pvec1 && pvec2, 0);
+
+	if (rz_pvector_empty(pvec2)) {
+		return false;
+	}
+
+	RzVector *vec = &pvec1->v;
+	RESIZE_OR_RETURN_FALSE(RZ_MAX(NEXT_VECTOR_CAPACITY, pvec1->v.len + pvec2->v.len));
+	memmove((void **)pvec1->v.a + pvec1->v.len, pvec2->v.a, pvec2->v.elem_size * pvec2->v.len);
+	pvec1->v.len += pvec2->v.len;
+
+	// element in pvec2 is freed by pvec1
+	pvec2->v.len = 0;
+
+	return true;
+}
+
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
 	rz_return_val_if_fail(vec, NULL);
 	void *r = rz_pvector_at(vec, index);
@@ -391,7 +501,7 @@ RZ_API void *rz_pvector_pop_front(RzPVector *vec) {
 }
 
 // CLRS Quicksort. It is slow, but simple.
-static void quick_sort(void **a, size_t n, RzPVectorComparator cmp) {
+static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) {
 	if (n <= 1) {
 		return;
 	}
@@ -399,7 +509,7 @@ static void quick_sort(void **a, size_t n, RzPVectorComparator cmp) {
 	void *t, *pivot = a[i];
 	a[i] = a[n - 1];
 	for (i = 0; i < n - 1; i++) {
-		if (cmp(a[i], pivot) < 0) {
+		if (cmp(a[i], pivot, user) < 0) {
 			t = a[i];
 			a[i] = a[j];
 			a[j] = t;
@@ -408,11 +518,11 @@ static void quick_sort(void **a, size_t n, RzPVectorComparator cmp) {
 	}
 	a[n - 1] = a[j];
 	a[j] = pivot;
-	quick_sort(a, j, cmp);
-	quick_sort(a + j + 1, n - j - 1, cmp);
+	quick_sort(a, j, cmp, user);
+	quick_sort(a + j + 1, n - j - 1, cmp, user);
 }
 
-RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp) {
+RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
 	rz_return_if_fail(vec && cmp);
-	quick_sort(vec->v.a, vec->v.len, cmp);
+	quick_sort(vec->v.a, vec->v.len, cmp, user);
 }

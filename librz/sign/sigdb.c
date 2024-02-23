@@ -21,7 +21,7 @@ RZ_API void rz_sign_sigdb_signature_free(RZ_NULLABLE RzSigDBEntry *entry) {
 	free(entry);
 }
 
-static int sigdb_signature_cmp(const RzSigDBEntry *a, const RzSigDBEntry *b) {
+static int sigdb_signature_cmp(const RzSigDBEntry *a, const RzSigDBEntry *b, void *user) {
 	return strcmp(a->short_path, b->short_path);
 }
 
@@ -299,6 +299,6 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_sign_sigdb_list(RZ_NONNULL const R
 		return NULL;
 	}
 	ht_pu_foreach(db->entries, sigdb_to_list, res);
-	rz_list_sort(res, (RzListComparator)sigdb_signature_cmp);
+	rz_list_sort(res, (RzListComparator)sigdb_signature_cmp, NULL);
 	return res;
 }

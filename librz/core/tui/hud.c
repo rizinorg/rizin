@@ -57,7 +57,8 @@ RZ_IPI bool rz_core_visual_hud(RzCore *core) {
 }
 
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core) {
-	RzListIter *iter, *iter2;
+	void **iter;
+	RzListIter *iter2;
 	RzBinClass *c;
 	RzBinClassField *f;
 	RzBinSymbol *m;
@@ -68,8 +69,13 @@ RZ_IPI bool rz_core_visual_hudclasses(RzCore *core) {
 		return false;
 	}
 	list->free = free;
-	RzList *classes = rz_bin_get_classes(core->bin);
-	rz_list_foreach (classes, iter, c) {
+	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
+	const RzPVector *classes = rz_bin_object_get_classes(bin_obj);
+	if (!classes) {
+		return false;
+	}
+	rz_pvector_foreach (classes, iter) {
+		c = *iter;
 		rz_list_foreach (c->fields, iter2, f) {
 			rz_list_append(list, rz_str_newf("0x%08" PFMT64x "  %s %s", f->vaddr, c->name, f->name));
 		}
@@ -158,7 +164,7 @@ RZ_IPI bool rz_core_visual_config_hud(RzCore *core) {
 		rz_cons_set_raw(false);
 		cmd[0] = '\0';
 		eprintf("Set new value for %s (old=%s)\n", res, oldvalue);
-		rz_line_set_prompt(":> ");
+		rz_line_set_prompt(core->cons->line, ":> ");
 		if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 			cmd[0] = '\0';
 		}

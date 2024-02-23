@@ -95,7 +95,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static void addrom(RzList /*<RzBinSection *>*/ *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
+static void addrom(RzPVector /*<RzBinSection *>*/ *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
 	RzBinSection *ptr = RZ_NEW0(RzBinSection);
 	if (!ptr) {
 		return;
@@ -105,7 +105,7 @@ static void addrom(RzList /*<RzBinSection *>*/ *ret, const char *name, int i, ut
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;
 	ptr->perm = RZ_PERM_RX;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 }
 
 #if 0
@@ -122,12 +122,12 @@ static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
 }
 #endif
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	// RzBinSection *ptr = NULL;
 	int hdroffset = 0;
 	bool is_hirom = false;
@@ -163,7 +163,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		is_hirom = true;
 	}
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 
@@ -185,43 +185,42 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinMem *m;
 	RzBinMem *m_bak;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(rz_bin_mem_free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("LOWRAM");
 	m->addr = LOWRAM_START_ADDRESS;
 	m->size = LOWRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
-	m->mirrors = rz_list_new();
+	m->mirrors = rz_pvector_new(rz_bin_mem_free);
 	m->name = strdup("LOWRAM_MIRROR");
 	m->addr = LOWRAM_MIRROR_START_ADDRESS;
 	m->size = LOWRAM_MIRROR_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(m->mirrors, m);
+	rz_pvector_push(m->mirrors, m);
 	m_bak = m;
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(m_bak->mirrors);
+		rz_pvector_free(m_bak->mirrors);
 		return ret;
 	}
 	m->name = strdup("HIRAM");
 	m->addr = HIRAM_START_ADDRESS;
 	m->size = HIRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
@@ -229,7 +228,7 @@ static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	m->addr = EXTRAM_START_ADDRESS;
 	m->size = EXTRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	if (!(m = RZ_NEW0(RzBinMem))) {
 		return ret;
 	}
@@ -237,34 +236,34 @@ static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	m->addr = PPU1_REG_ADDRESS;
 	m->size = PPU1_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("DSP_REG");
 	m->addr = DSP_REG_ADDRESS;
 	m->size = DSP_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("OLDJOY_REG");
 	m->addr = OLDJOY_REG_ADDRESS;
 	m->size = OLDJOY_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	if (!(m = RZ_NEW0(RzBinMem))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	m->name = strdup("PPU2_REG");
 	m->addr = PPU2_REG_ADDRESS;
 	m->size = PPU2_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
-	rz_list_append(ret, m);
+	rz_pvector_push(ret, m);
 	return ret;
 }
 

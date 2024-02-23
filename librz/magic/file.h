@@ -41,7 +41,7 @@
 #include <errno.h>
 #include <fcntl.h> /* For open and flags */
 #include <inttypes.h> // TODO: use utX
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include <sys/types.h>
 /* Do this here and now, because struct stat gets re-defined on solaris */
 #include <sys/stat.h>

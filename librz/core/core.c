@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_regex.h>
+#include <rz_vector.h>
 #include <rz_core.h>
 #include <rz_socket.h>
 #include <rz_cmp.h>
@@ -892,7 +894,7 @@ static const char *rizin_argv[] = {
 	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",
 	"aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
 	"aF",
-	"ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
+	"ag?", "ag", "aga", "agA", "agc", "agC", "agCi", "agF", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
 	"agn?", "agn", "agn-", "age?", "age", "age-",
 	"agl", "agfl",
 	"ah?", "ah", "ah.", "ah-", "ah*", "aha", "ahb", "ahc", "ahe", "ahf", "ahh", "ahi?", "ahi", "ahj", "aho",
@@ -1049,7 +1051,7 @@ static void autocomplete_process_path(RzLineCompletion *completion, const char *
 		goto out;
 	}
 
-	lpath = rz_str_new(path);
+	lpath = rz_str_dup(path);
 #if __WINDOWS__
 	rz_str_replace_ch(lpath, '/', '\\', true);
 #endif
@@ -1060,7 +1062,7 @@ static void autocomplete_process_path(RzLineCompletion *completion, const char *
 #if __WINDOWS__
 			dirname = strdup("\\.\\");
 #else
-			dirname = rz_str_new(RZ_SYS_DIR);
+			dirname = rz_str_dup(RZ_SYS_DIR);
 #endif
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
 			dirname = rz_str_home(lpath + 2);
@@ -1081,10 +1083,10 @@ static void autocomplete_process_path(RzLineCompletion *completion, const char *
 #endif
 			dirname = rz_str_newf(fmt, RZ_SYS_DIR, lpath, RZ_SYS_DIR);
 		}
-		basename = rz_str_new(p + 1);
+		basename = rz_str_dup(p + 1);
 	} else { // xxx
 		dirname = rz_str_newf(".%s", RZ_SYS_DIR);
-		basename = rz_str_new(lpath);
+		basename = rz_str_dup(lpath);
 	}
 
 	if (!dirname || !basename) {
@@ -1124,9 +1126,9 @@ static void autocompleteFilename(RzLineCompletion *completion, RzLineBuffer *buf
 	int n = 0, i = 0;
 	char *pipe = strchr(buf->data, '>');
 	if (pipe) {
-		args = rz_str_new(pipe + 1);
+		args = rz_str_dup(pipe + 1);
 	} else {
-		args = rz_str_new(buf->data);
+		args = rz_str_dup(buf->data);
 	}
 	if (!args) {
 		goto out;
@@ -1137,7 +1139,7 @@ static void autocompleteFilename(RzLineCompletion *completion, RzLineBuffer *buf
 		goto out;
 	}
 
-	input = rz_str_new(rz_str_word_get0(args, narg));
+	input = rz_str_dup(rz_str_word_get0(args, narg));
 	if (!input) {
 		goto out;
 	}
@@ -1256,7 +1258,7 @@ static void autocomplete_sdb(RzCore *core, RzLineCompletion *completion, const c
 	if (pipe) {
 		str = rz_str_trim_head_ro(pipe + 1);
 	}
-	lpath = rz_str_new(str);
+	lpath = rz_str_dup(str);
 	p1 = strchr(lpath, '/');
 	if (p1) {
 		*p1 = 0;
@@ -1377,17 +1379,17 @@ static void autocomplete_theme(RzCore *core, RzLineCompletion *completion, const
 
 static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf) {
 	const char *pattern = "e (.*)=";
-	RzRegex *rx = rz_regex_new(pattern, "e");
-	const size_t nmatch = 2;
-	RzRegexMatch pmatch[2] = { 0 };
+	RzRegex *rx = rz_regex_new(pattern, RZ_REGEX_EXTENDED, 0);
 	bool ret = false;
 
-	if (rz_regex_exec(rx, buf->data, nmatch, pmatch, 1)) {
+	RzPVector *matches = rz_regex_match_all_not_grouped(rx, buf->data, buf->length, 0, RZ_REGEX_DEFAULT);
+	if (!matches || rz_pvector_empty(matches) || rz_pvector_len(matches) < 2) {
 		goto out;
 	}
 	int i;
 	char *str = NULL, *sp;
-	for (i = pmatch[1].rm_so; i < pmatch[1].rm_eo; i++) {
+	RzRegexMatch *m1 = rz_pvector_at(matches, 1);
+	for (i = m1->start; i < m1->start + m1->len; i++) {
 		str = rz_str_appendch(str, buf->data[i]);
 	}
 	if (!str) {
@@ -1403,7 +1405,8 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 		*sp = ' ';
 	}
 	if (!node) {
-		return false;
+		ret = false;
+		goto out;
 	}
 	RzListIter *iter;
 	char *option;
@@ -1420,6 +1423,7 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 
 out:
 	rz_regex_free(rx);
+	rz_pvector_free(matches);
 	return ret;
 }
 
@@ -1660,7 +1664,7 @@ static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLineP
 
 RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	RzCore *core = (RzCore *)user;
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = core->cons;
 	RzLine *rzline = cons->line;
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
@@ -1674,7 +1678,7 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 		rzline->completion.run = NULL;
 		rzline->completion.run_user = NULL;
 	}
-	const char *ptr = rz_line_readline();
+	const char *ptr = rz_line_readline(rzline);
 	if (!ptr) {
 		return -1;
 	}
@@ -1986,7 +1990,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 	}
 	{
 		ut8 buf[128];
-		RzStrEnc encoding = rz_str_enc_string_as_type(core->bin->strenc);
+		RzStrEnc encoding = core->bin->str_search_cfg.string_encoding;
 		const char *c = rz_config_get_i(core->config, "scr.color") ? core->cons->context->pal.ai_ascii : "";
 		const char *cend = (c && *c) ? Color_RESET : "";
 		RzDetectedString *dstr = NULL;
@@ -2346,9 +2350,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->offname = rz_core_print_offname;
 	core->print->offsize = rz_core_print_offsize;
 	core->print->cb_printf = rz_cons_printf;
-#if __WINDOWS__
-	core->print->cb_eprintf = win_eprintf;
-#endif
 	core->print->cb_color = rz_cons_rainbow_get;
 	core->print->write = mywrite;
 	core->print->exists_var = exists_var;
@@ -2399,7 +2400,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		core->cons->user_fgets_user = core;
 #endif
 		char *history = rz_path_home_history();
-		rz_line_hist_load(history);
+		rz_line_hist_load(core->cons->line, history);
 		free(history);
 	}
 	core->print->cons = core->cons;
@@ -2707,6 +2708,7 @@ static bool prompt_add_offset(RzCore *core, RzStrBuf *sb, bool add_sep) {
 }
 
 static void set_prompt(RzCore *r) {
+	RzLine *line = r->cons->line;
 	const char *cmdprompt = rz_config_get(r->config, "cmd.prompt");
 	const char *BEGIN = "";
 	const char *END = "";
@@ -2737,7 +2739,7 @@ static void set_prompt(RzCore *r) {
 	rz_strbuf_appendf(&prompt_ct, "]>%s ", END);
 
 	char *prompt = rz_strbuf_drain_nofree(&prompt_ct);
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(line, prompt);
 	free(prompt);
 }
 
@@ -2782,16 +2784,11 @@ RZ_API bool rz_core_block_size(RzCore *core, ut32 bsize) {
 	ut8 *bump;
 	if (bsize == core->blocksize) {
 		return true;
-	}
-	if (bsize > core->blocksize_max) {
-		RZ_LOG_ERROR("Block size %d is too big\n", bsize);
-		return false;
-	}
-	if (bsize < 1) {
+	} else if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize > core->blocksize_max) {
-		RZ_LOG_ERROR("block size is bigger than its max (check `bm` command). set to 0x%x\n", core->blocksize_max);
-		bsize = core->blocksize_max;
+		RZ_LOG_ERROR("block size is bigger than its max 0x%x (check `bm` command)\n", core->blocksize_max);
+		return false;
 	}
 	bump = realloc(core->block, bsize + 1);
 	if (!bump) {
@@ -2987,36 +2984,6 @@ reaccept:
 					cmd_output = strdup("");
 					cmd_len = 0;
 				}
-#if DEMO_SERVER_SENDS_CMD_TO_CLIENT
-				static bool once = true;
-				/* TODO: server can reply a command request to the client only here */
-				if (once) {
-					const char *cmd = "pd 4";
-					int cmd_len = strlen(cmd) + 1;
-					ut8 *b = malloc(cmd_len + 5);
-					b[0] = RAP_PACKET_CMD;
-					rz_write_be32(b + 1, cmd_len);
-					strcpy((char *)b + 5, cmd);
-					rz_socket_write(c, b, 5 + cmd_len);
-					rz_socket_flush(c);
-
-					/* read response */
-					rz_socket_read_block(c, b, 5);
-					if (b[0] == (RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
-						ut32 n = rz_read_be32(b + 1);
-						RZ_LOG_DEBUG("core: rap: reply %d\n", n);
-						if (n > 0) {
-							ut8 *res = calloc(1, n);
-							rz_socket_read_block(c, res, n);
-							RZ_LOG_DEBUG("core: rap: response(%s)\n", (const char *)res);
-							free(res);
-						}
-					}
-					rz_socket_flush(c);
-					free(b);
-					once = false;
-				}
-#endif
 				bufw = malloc(cmd_len + 5);
 				bufw[0] = (ut8)(RAP_PACKET_CMD | RAP_PACKET_REPLY);
 				rz_write_be32(bufw + 1, cmd_len);

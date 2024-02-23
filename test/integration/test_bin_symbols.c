@@ -51,14 +51,15 @@ bool test_rz_bin_symbols(void) {
 	mu_assert_notnull(bf->o, "bin object");
 
 	RzBinObject *obj = rz_bin_cur_object(bin);
-	const RzList *symbols = rz_bin_object_get_symbols(obj);
+	const RzPVector *symbols = rz_bin_object_get_symbols(obj);
 	mu_assert_notnull(symbols, "mipsbe-ip symbols");
 
-	mu_assert_eq(rz_list_length(symbols), 204, "symbols count");
+	mu_assert_eq(rz_pvector_len(symbols), 204, "symbols count");
 	size_t matches = 0, expected = RZ_ARRAY_SIZE(mipsbe_ip_symbols) - 1;
-	RzListIter *it;
+	void **it;
 	RzBinSymbol *sym;
-	rz_list_foreach (symbols, it, sym) {
+	rz_pvector_foreach (symbols, it) {
+                sym = *it;
 		for (int i = 0; i < expected; i++) {
 			if (sym && sym->name && !strcmp(sym->name, mipsbe_ip_symbols[i].name) &&
 					sym->vaddr == mipsbe_ip_symbols[i].addr) {
@@ -67,12 +68,14 @@ bool test_rz_bin_symbols(void) {
 		}
 	}
 	mu_assert_eq(matches, expected, "all checked symbols match");
-	
-	const RzList *imports = rz_bin_object_get_imports(obj);
+
+	const RzPVector *imports = rz_bin_object_get_imports(obj);
+	void **vec_it = NULL;
 	mu_assert_notnull(symbols, "mipsbe-ip imports");
 	matches = 0;
 	expected = RZ_ARRAY_SIZE(mipsbe_ip_imports) - 1;
-	rz_list_foreach (imports, it, sym) {
+	rz_pvector_foreach (imports, vec_it) {
+		sym = *vec_it;
 		for (int i = 0; i < expected; i++) {
 			if (sym && sym->name && !strcmp(sym->name, mipsbe_ip_imports[i].name)) {
 				matches++;
@@ -80,7 +83,7 @@ bool test_rz_bin_symbols(void) {
 		}
 	}
 	mu_assert_eq(matches, expected, "all checked imports match");
-	
+
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;

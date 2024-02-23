@@ -9,6 +9,7 @@
 #include <rz_util/rz_json.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_pj.h>
+#include <float.h>
 
 #if 0
 // optional error printing
@@ -566,4 +567,70 @@ RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json, bool with_key) {
 	}
 	json_pj_recurse(json, pj, with_key);
 	return pj_drain(pj);
+}
+
+/**
+ * \brief Check if two RzJson objects are equal
+ * \param a the first RzJson object
+ * \param b the second RzJson object
+ * \return true if the objects are equal, false otherwise
+ */
+RZ_API bool rz_json_eq(RZ_NONNULL RZ_BORROW const RzJson *a, RZ_NONNULL RZ_BORROW const RzJson *b) {
+	rz_return_val_if_fail(a && b, false);
+	if (a->type != b->type) {
+		return false;
+	}
+	if (a->key && b->key && RZ_STR_NE(a->key, b->key)) {
+		return false;
+	}
+	switch (a->type) {
+	case RZ_JSON_NULL: return true;
+	case RZ_JSON_OBJECT:
+	case RZ_JSON_ARRAY: {
+		RzJson *a_child, *b_child;
+		for (a_child = a->children.first, b_child = b->children.first;
+			a_child && b_child;
+			a_child = a_child->next, b_child = b_child->next) {
+			if (!rz_json_eq(a_child, b_child)) {
+				return false;
+			}
+		}
+		return !a_child && !b_child;
+	}
+	case RZ_JSON_STRING: return RZ_STR_EQ(a->str_value, b->str_value);
+	case RZ_JSON_INTEGER: return a->num.u_value == b->num.u_value;
+	case RZ_JSON_DOUBLE: return fabs(a->num.dbl_value - b->num.dbl_value) < FLT_EPSILON;
+	case RZ_JSON_BOOLEAN: return a->num.u_value == b->num.u_value;
+	default: break;
+	}
+	return false;
+}
+
+/**
+ * \brief Check if two RzJson objects are equal in JSON value
+ * \param a the first JSON string
+ * \param b the second JSON string
+ * \return true if they are equal in JSON value, false if they are NULL or not valid JSON or not equal
+ */
+RZ_API bool rz_json_string_eq(RZ_NONNULL RZ_BORROW const char *sa, RZ_NONNULL RZ_BORROW const char *sb) {
+	rz_return_val_if_fail(sa && sb, false);
+	char *sa_dup = strdup(sa);
+	char *sb_dup = strdup(sb);
+	RzJson *a = rz_json_parse(sa_dup);
+	RzJson *b = NULL;
+	bool ret = false;
+	if (!a) {
+		goto beach;
+	}
+	b = rz_json_parse(sb_dup);
+	if (!b) {
+		goto beach;
+	}
+	ret = rz_json_eq(a, b);
+beach:
+	free(sa_dup);
+	free(sb_dup);
+	rz_json_free(a);
+	rz_json_free(b);
+	return ret;
 }

@@ -105,12 +105,13 @@ RZ_IPI RzCmdStatus rz_list_rizin_vars_handler(RzCore *core, int argc, const char
 		if (argc > 1 && strcmp(argv[1], var->name)) {
 			continue;
 		}
-		const char *pad = rz_str_pad(' ', 6 - strlen(var->name));
+		char *pad = rz_str_pad(' ', 6 - strlen(var->name));
 		if (wideOffsets) {
 			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
 		} else {
 			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
 		}
+		free(pad);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -159,7 +160,6 @@ RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 	}
 
 	if (pj) {
-		;
 		pj_o(pj);
 		if (n >> 32) {
 			pj_ks(pj, "int32", rz_strf(number, "%d", (st32)(n & UT32_MAX)));
@@ -583,7 +583,7 @@ static bool get_prompt(RzCore *core, char *prompt, char *output, size_t output_s
 		return false;
 	}
 	rz_cons_flush();
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(rz_cons_singleton()->line, prompt);
 	rz_cons_fgets(output, output_sz, 0, NULL);
 	output[output_sz - 1] = 0;
 	return true;

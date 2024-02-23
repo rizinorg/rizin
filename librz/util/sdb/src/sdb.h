@@ -55,10 +55,11 @@ extern char *strdup(const char *);
 #define SDB_OPTION_SYNC    (1 << 0)
 #define SDB_OPTION_NOSTAMP (1 << 1)
 #define SDB_OPTION_FS      (1 << 2)
-#define SDB_OPTION_JOURNAL (1 << 3)
 
 #define SDB_LIST_UNSORTED 0
 #define SDB_LIST_SORTED   1
+
+typedef bool (*VALUE_EQ_F)(const char *, const char *);
 
 typedef struct sdb_t {
 	char *dir; // path+name
@@ -67,7 +68,6 @@ typedef struct sdb_t {
 	int fd;
 	int refs; // reference counter
 	int lock;
-	int journal;
 	struct cdb db;
 	struct cdb_make m;
 	HtPP *ht;
@@ -148,6 +148,8 @@ typedef void (*SdbDiffCallback)(const SdbDiff *diff, void *user);
 // If cb is non-null, it will be called subsequently with differences.
 RZ_API bool sdb_diff(Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user);
 
+RZ_API bool sdb_diff_eq(Sdb *a, Sdb *b, VALUE_EQ_F eq, SdbDiffCallback cb, void *cb_user);
+
 // Gets a pointer to the value associated with `key`.
 RZ_API char *sdb_get(Sdb *, const char *key, ut32 *cas);
 
@@ -200,14 +202,6 @@ RZ_API bool sdb_text_load(Sdb *s, const char *file);
 RZ_API void sdb_dump_begin(Sdb *s);
 RZ_API SdbKv *sdb_dump_next(Sdb *s);
 RZ_API bool sdb_dump_dupnext(Sdb *s, char *key, char **value, int *_vlen);
-
-/* journaling */
-RZ_API bool sdb_journal_close(Sdb *s);
-RZ_API bool sdb_journal_open(Sdb *s);
-RZ_API int sdb_journal_load(Sdb *s);
-RZ_API bool sdb_journal_log(Sdb *s, const char *key, const char *val);
-RZ_API bool sdb_journal_clear(Sdb *s);
-RZ_API bool sdb_journal_unlink(Sdb *s);
 
 /* numeric */
 RZ_API char *sdb_itoa(ut64 n, char *s, int base);
@@ -307,7 +301,6 @@ RZ_API char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas);
 
 typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
 
-RZ_API void sdb_global_hook(SdbHook hook, void *user);
 RZ_API bool sdb_hook(Sdb *s, SdbHook cb, void *user);
 RZ_API bool sdb_unhook(Sdb *s, SdbHook h);
 RZ_API int sdb_hook_call(Sdb *s, const char *k, const char *v);

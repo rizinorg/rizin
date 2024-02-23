@@ -73,7 +73,7 @@ paddr      size  vaddr      vsize  align perm name   type flags                 
 0x00000400 0xa00 0x00401000 0x1000 0x0   -r-x .text       CNT_CODE,CNT_INITIALIZED_DATA,ALIGN_16BYTES 3d6a5b8dc5e41b09659638ad5735e5b5
 0x00000e00 0x200 0x00402000 0x1000 0x0   -rw- .data       CNT_INITIALIZED_DATA,ALIGN_4BYTES           b3c542ba67f2d1a949fa1a25ce22f7e3
 0x00001000 0x200 0x00403000 0x1000 0x0   -r-- .rdata      CNT_INITIALIZED_DATA,ALIGN_4BYTES           c9a877a4e945b087b8323830442c88d6
-0x00000000 0x0   0x00404000 0x1000 0x0   -rw- .bss        CNT_UNINITIALIZED,ALIGN_8BYTES
+0x00000000 0x0   0x00404000 0x1000 0x0   -rw- .bss        CNT_UNINITIALIZED_DATA,ALIGN_8BYTES
 0x00001200 0x400 0x00405000 0x1000 0x0   -rw- .idata      CNT_INITIALIZED_DATA,ALIGN_4BYTES           963212dc58a74f32e0f6ffce84dcf7ea
 
 EOF
@@ -1037,7 +1037,7 @@ RUN
 
 NAME=rz-bin -d
 FILE=bins/elf/analysis/dwarftest
-CMDS=!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
+CMDS=!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/./dwarftest.c"
 EXPECT=<<EOF
 1
 EOF
@@ -1068,6 +1068,22 @@ EOF
 EXPECT=<<EOF
 {
   "pdb": [
+    {
+      "modules": [
+        {
+          "module_name": "* Linker Generated Manifest RES *",
+          "object_file_name": ""
+        },
+        {
+          "module_name": "C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj",
+          "object_file_name": "C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"
+        },
+        {
+          "module_name": "* Linker *",
+          "object_file_name": ""
+        }
+      ]
+    },
     {
       "types": [
         {
@@ -1162,31 +1178,31 @@ EXPECT=<<EOF
       "gvars": [
         {
           "address": 12292,
-          "symtype": 0,
+          "symtype": 4366,
           "section_name": ".data",
           "gdata_name": "_uninitialized_global"
         },
         {
           "address": 12288,
-          "symtype": 0,
+          "symtype": 4366,
           "section_name": ".data",
           "gdata_name": "_initialized_global"
         },
         {
           "address": 4096,
-          "symtype": 2,
+          "symtype": 4366,
           "section_name": ".text",
           "gdata_name": "_function"
         },
         {
           "address": 4182,
-          "symtype": 2,
+          "symtype": 4366,
           "section_name": ".text",
           "gdata_name": "_mainCRTStartup"
         },
         {
           "address": 4120,
-          "symtype": 2,
+          "symtype": 4366,
           "section_name": ".text",
           "gdata_name": "_main"
         }
@@ -1223,7 +1239,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-bin load elf but with bin.minstr=2
+NAME=rz-bin load elf but with str.search.min_length=2
 FILE=bins/elf/smallstrings.elf
 CMDS=!rz-bin -z -N2 ${RZ_FILE}
 EXPECT=<<EOF
@@ -1233,7 +1249,6 @@ nth paddr      vaddr      len size section type  string
 0   0x00002006 0x00002006 2   3    .rodata ascii 22
 1   0x00002009 0x00002009 3   4    .rodata ascii 333
 2   0x0000200d 0x0000200d 4   5    .rodata ascii 4444
-3   0x00003008 0x00004008 2   3    .data   ascii \b@
 
 EOF
 RUN

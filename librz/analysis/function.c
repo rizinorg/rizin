@@ -26,8 +26,34 @@ RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_functions_in(RzAnalysi
 	return list;
 }
 
-static bool __fcn_exists(RzAnalysis *analysis, const char *name, ut64 addr) {
-	// check if name is already registered
+static bool get_function_block_cb(RzAnalysisBlock *block, void *user) {
+	RzAnalysisFunction **pfcn = user;
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (block->fcns, iter, fcn) {
+		*pfcn = fcn;
+		break;
+	}
+	return true;
+}
+
+/**
+ * \brief Returns the first function that have a basic block containing the given address \p addr
+ *
+ * \param analysis A pointer to the `RzAnalysis` object used for analysis.
+ * \param addr The address to find the function in.
+ *
+ * \return RzAnalysisFunction* Pointer to the `RzAnalysisFunction` object if found, otherwise NULL.
+ */
+RZ_API RZ_BORROW RzAnalysisFunction *rz_analysis_first_function_in(RZ_NONNULL RZ_BORROW RzAnalysis *analysis, ut64 addr) {
+	rz_return_val_if_fail(analysis, NULL);
+	RzAnalysisFunction *fcn = NULL;
+	rz_analysis_blocks_foreach_in(analysis, addr, get_function_block_cb, &fcn);
+	return fcn;
+}
+
+// check if name is already registered
+static bool function_name_exists(RzAnalysis *analysis, const char *name, ut64 addr) {
 	bool found = false;
 	if (addr == UT64_MAX) {
 		RZ_LOG_ERROR("Invalid function address (-1) '%s'\n", name);
@@ -39,14 +65,16 @@ static bool __fcn_exists(RzAnalysis *analysis, const char *name, ut64 addr) {
 	}
 	RzAnalysisFunction *f = ht_pp_find(analysis->ht_name_fun, name, &found);
 	if (f && found) {
-		RZ_LOG_ERROR("Invalid function name '%s' at 0x%08" PFMT64x "\n", name, addr);
 		return true;
 	}
-	// check if there's a function already in the given address
-	found = false;
-	f = ht_up_find(analysis->ht_addr_fun, addr, &found);
+	return false;
+}
+
+// check if there's a function already in the given address
+static bool function_already_defined_at(RzAnalysis *analysis, const char *name, ut64 addr) {
+	bool found = false;
+	RzAnalysisFunction *f = ht_up_find(analysis->ht_addr_fun, addr, &found);
 	if (f && found) {
-		RZ_LOG_ERROR("Function already defined in 0x%08" PFMT64x "\n", addr);
 		return true;
 	}
 	return false;
@@ -118,8 +146,23 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 	free(fcn);
 }
 
+/**
+ * \brief Adds a new function to the analysis
+ *
+ * \param analysis The current RzAnalysis.
+ * \param fcn The RzAnalysisFunction to add.
+ *
+ * \return True in case of success or false if it already exists.
+ */
 RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	if (__fcn_exists(analysis, fcn->name, fcn->addr)) {
+	rz_return_val_if_fail(analysis && fcn, false);
+	if (function_name_exists(analysis, fcn->name, fcn->addr)) {
+		RZ_LOG_WARN("Function name '%s' already exists\n", fcn->name);
+		return false;
+	}
+	if (function_already_defined_at(analysis, fcn->name, fcn->addr)) {
+		RZ_LOG_WARN("Function '%s' already defined at specified address 0x%08" PFMT64x "\n",
+			fcn->name, fcn->addr);
 		return false;
 	}
 	if (analysis->cb.on_fcn_new) {
@@ -130,9 +173,7 @@ RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 	fcn->is_noreturn = rz_analysis_noreturn_at_addr(analysis, fcn->addr);
 	rz_list_append(analysis->fcns, fcn);
-	ht_pp_insert(analysis->ht_name_fun, fcn->name, fcn);
-	ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
-	return true;
+	return ht_pp_insert(analysis->ht_name_fun, fcn->name, fcn) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, RzAnalysisFcnType type) {
@@ -165,7 +206,15 @@ RZ_API bool rz_analysis_function_delete(RzAnalysisFunction *fcn) {
 	return rz_list_delete_data(fcn->analysis->fcns, fcn);
 }
 
-RZ_API RzAnalysisFunction *rz_analysis_get_function_at(RzAnalysis *analysis, ut64 addr) {
+/**
+ * \brief Returns the function which has its entrypoint at \p addr or NULL if non was found.
+ *
+ * \param analysis The current RzAnalysis.
+ * \param addr The address of the function to get.
+ *
+ * \return The function with an entrypoint at \p addr or NULL if non was found.
+ */
+RZ_API RzAnalysisFunction *rz_analysis_get_function_at(const RzAnalysis *analysis, ut64 addr) {
 	bool found = false;
 	RzAnalysisFunction *f = ht_up_find(analysis->ht_addr_fun, addr, &found);
 	if (f && found) {

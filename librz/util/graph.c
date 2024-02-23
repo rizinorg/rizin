@@ -35,7 +35,7 @@ static void rz_graph_node_free(RzGraphNode *n) {
 	free(n);
 }
 
-static int node_cmp(unsigned int idx, RzGraphNode *b) {
+static int node_cmp(unsigned int idx, RzGraphNode *b, void *user) {
 	return idx == b->idx ? 0 : -1;
 }
 
@@ -127,15 +127,15 @@ RZ_API void rz_graph_free(RzGraph *t) {
 }
 
 RZ_API RzGraphNode *rz_graph_get_node(const RzGraph *t, unsigned int idx) {
-	RzListIter *it = rz_list_find(t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp);
+	RzListIter *it = rz_list_find(t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp, NULL);
 	if (!it) {
 		return NULL;
 	}
-	return (RzGraphNode *)it->data;
+	return (RzGraphNode *)rz_list_iter_get_data(it);
 }
 
 RZ_API RzListIter *rz_graph_node_iter(const RzGraph *t, unsigned int idx) {
-	return rz_list_find(t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp);
+	return rz_list_find(t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp, NULL);
 }
 
 RZ_API void rz_graph_reset(RzGraph *t) {
@@ -172,12 +172,17 @@ RZ_API RzGraphNode *rz_graph_add_nodef(RzGraph *graph, void *data, RzListFree us
 	return node;
 }
 
-/* remove the node from the graph and free the node */
-/* users of this function should be aware they can't access n anymore */
-RZ_API void rz_graph_del_node(RzGraph *t, RzGraphNode *n) {
+/**
+ * \brief Deletes the node \p n from the graph \p t and frees the \p n.
+ *
+ * \param t The graph to operate on.
+ * \param n The node to delete.
+ */
+RZ_API void rz_graph_del_node(RzGraph *t, RZ_OWN RzGraphNode *n) {
+	rz_return_if_fail(t);
 	RzGraphNode *gn;
 	RzListIter *it;
-	if (!n) {
+	if (!n || !rz_list_contains(t->nodes, n)) {
 		return;
 	}
 	rz_list_foreach (n->in_nodes, it, gn) {

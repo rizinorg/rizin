@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022-2024 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -9,6 +9,7 @@
 #define GO_1_2  (12)
 #define GO_1_16 (116)
 #define GO_1_18 (118)
+#define GO_1_20 (120)
 
 #define IS_GOPCLNTAB_1_2_LE(x)  (x[0] == 0xfb && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff)
 #define IS_GOPCLNTAB_1_2_BE(x)  (x[3] == 0xfb && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff)
@@ -16,6 +17,8 @@
 #define IS_GOPCLNTAB_1_16_BE(x) (x[3] == 0xfa && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff)
 #define IS_GOPCLNTAB_1_18_LE(x) (x[0] == 0xf0 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff)
 #define IS_GOPCLNTAB_1_18_BE(x) (x[3] == 0xf0 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff)
+#define IS_GOPCLNTAB_1_20_LE(x) (x[0] == 0xf1 && x[1] == 0xff && x[2] == 0xff && x[3] == 0xff)
+#define IS_GOPCLNTAB_1_20_BE(x) (x[3] == 0xf1 && x[2] == 0xff && x[1] == 0xff && x[0] == 0xff)
 
 typedef struct go_pc_line_table_t {
 	RzIO *io;
@@ -101,6 +104,21 @@ ut64 go_data(GoPcLnTab *pclntab, ut32 n_word) {
 	return pclntab->vaddr + offset;
 }
 
+static const char *pclntab_version_str(GoPcLnTab *pclntab) {
+	switch (pclntab->version) {
+	case GO_1_2:
+		return "go 1.2";
+	case GO_1_16:
+		return "go 1.16-1.17";
+	case GO_1_18:
+		return "go 1.18-1.19";
+	case GO_1_20:
+		return "go 1.20+";
+	default:
+		return "go unknown";
+	}
+}
+
 #define is_addr_outside(x) ((x) <= begin || (x) >= end)
 static bool is_pclntab_valid(GoPcLnTab *pclntab) {
 	ut64 begin = pclntab->vaddr + 8;
@@ -148,7 +166,7 @@ static void add_new_func_symbol(RzCore *core, const char *name, ut64 vaddr) {
 
 	symbol->bind = RZ_BIN_BIND_GLOBAL_STR;
 	symbol->type = RZ_BIN_TYPE_FUNC_STR;
-	if (!rz_list_append(bf->o->symbols, symbol)) {
+	if (!rz_pvector_push(bf->o->symbols, symbol)) {
 		RZ_LOG_ERROR("Failed append new go symbol to symbols list\n");
 		rz_bin_symbol_free(symbol);
 	}
@@ -158,8 +176,93 @@ static void add_new_func_symbol(RzCore *core, const char *name, ut64 vaddr) {
 	}
 }
 
-static ut32 core_recover_golang_functions_go_1_18(RzCore *core, GoPcLnTab *pclntab) {
-	rz_core_notify_done(core, "Found go 1.18 pclntab data.");
+static char *detect_go_package_from_name(const char *string) {
+	/**
+	 * Ignore names that starts with:
+	 * - `main.` because is related to the main package.
+	 * - `type..` because is just the definition of a function linked to a defined go `typedef`
+	 */
+	if (rz_str_startswith(string, "main.") ||
+		rz_str_startswith(string, "type..")) {
+		return NULL;
+	}
+
+	// remove `vendor/` because is useless.
+	if (rz_str_startswith(string, "vendor/")) {
+		string += strlen("vendor/");
+	}
+
+	size_t length = strlen(string);
+	const char *end = NULL;
+
+	for (size_t i = 0; i < length; i++) {
+		if (string[i] == '.' && !end) {
+			end = string + i;
+		} else if (string[i] == '.' && end) {
+			break;
+		} else if (string[i] == '/') {
+			end = NULL;
+		} else if (string[i] == '(') {
+			if (!end) {
+				end = string + i;
+			}
+			break;
+		} else if (string[i] == '{') {
+			if (!end) {
+				end = string + i;
+			}
+			break;
+		}
+	}
+
+	if (!end) {
+		// a end was not found, so we fail.
+		return NULL;
+	}
+
+	size_t new_len = end - string;
+	char *libname = rz_str_ndup(string, new_len);
+	if (!libname) {
+		RZ_LOG_ERROR("Failed to duplicate libname\n");
+		return NULL;
+	}
+
+	return libname;
+}
+
+static int compare_string(const char *s1, const char *s2, void *user) {
+	return strcmp(s1, s2);
+}
+
+static void add_new_library_from_name(RzCore *core, const char *name) {
+	char *libname = detect_go_package_from_name(name);
+	if (!libname) {
+		return;
+	}
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o) {
+		return;
+	}
+
+	if (!bf->o->libs) {
+		bf->o->libs = rz_pvector_new(free);
+	}
+
+	if (rz_pvector_find(bf->o->libs, libname, (RzPVectorComparator)compare_string, NULL)) {
+		free(libname);
+		return;
+	}
+
+	if (!rz_pvector_push(bf->o->libs, libname)) {
+		RZ_LOG_ERROR("Failed append new go libname to libs list\n");
+		free(libname);
+	}
+}
+
+static ut32 core_recover_golang_functions_go_1_18_plus(RzCore *core, GoPcLnTab *pclntab) {
+	const char *go_ver = pclntab_version_str(pclntab);
+	rz_core_notify_done(core, "Found %s pclntab data.", go_ver);
 	ut8 tmp8[8];
 	char name[256];
 	char *flag = NULL;
@@ -178,7 +281,7 @@ static ut32 core_recover_golang_functions_go_1_18(RzCore *core, GoPcLnTab *pclnt
 	pclntab->ptrsize = 4; // GO 1.18+ uses ut32 words.
 
 	if (!is_pclntab_valid(pclntab)) {
-		rz_core_notify_error(core, "Invalid go 1.18 pclntab (invalid table).");
+		rz_core_notify_error(core, "Invalid %s pclntab (invalid table).", go_ver);
 		return 0;
 	}
 
@@ -213,6 +316,8 @@ static ut32 core_recover_golang_functions_go_1_18(RzCore *core, GoPcLnTab *pclnt
 		(void)rz_io_nread_at(pclntab->io, name_off, (ut8 *)name, sizeof(name));
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
+
+		add_new_library_from_name(core, name);
 		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
@@ -234,7 +339,8 @@ static ut32 core_recover_golang_functions_go_1_18(RzCore *core, GoPcLnTab *pclnt
 }
 
 static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclntab) {
-	rz_core_notify_done(core, "Found go 1.16 pclntab data.");
+	const char *go_ver = pclntab_version_str(pclntab);
+	rz_core_notify_done(core, "Found %s pclntab data.", go_ver);
 	ut8 tmp8[8];
 	char name[256];
 	char *flag = NULL;
@@ -252,7 +358,7 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 	pclntab->functabsize = ((pclntab->nfunctab * 2) + 1) * go_func_tab_field_size(pclntab);
 
 	if (!is_pclntab_valid(pclntab)) {
-		rz_core_notify_error(core, "Invalid go 1.16 pclntab (invalid table).");
+		rz_core_notify_error(core, "Invalid %s pclntab (invalid table).", go_ver);
 		return 0;
 	}
 
@@ -289,6 +395,7 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
+		add_new_library_from_name(core, name);
 		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
@@ -311,7 +418,8 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 
 // Valid for golang 1.2 -> 1.15
 static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclntab) {
-	rz_core_notify_done(core, "Found go 1.12 pclntab data.");
+	const char *go_ver = pclntab_version_str(pclntab);
+	rz_core_notify_done(core, "Found %s pclntab data.", go_ver);
 	ut8 tmp8[8];
 	char name[256];
 	char *flag = NULL;
@@ -339,7 +447,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 	pclntab->nfiletab = rz_read_ble32(tmp8, pclntab->big_endian);
 
 	if (!is_pclntab_valid(pclntab)) {
-		rz_core_notify_error(core, "Invalid go 1.12 pclntab (invalid table).");
+		rz_core_notify_error(core, "Invalid %s pclntab (invalid table).", go_ver);
 		return 0;
 	}
 
@@ -376,6 +484,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 		name[sizeof(name) - 1] = 0;
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
+		add_new_library_from_name(core, name);
 		if (rz_str_len_utf8_ansi(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
@@ -415,6 +524,21 @@ static void analyse_golang_symbols(RzCore *core) {
 }
 
 /**
+ * \brief Sorts the recovered libraries.
+ *
+ * \param core RzCore Pointer
+ * \return Number of recovered libraries
+ */
+static ut32 sort_recovered_library(RzCore *core) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o || !bf->o->libs) {
+		return 0;
+	}
+	rz_pvector_sort(bf->o->libs, (RzPVectorComparator)compare_string, NULL);
+	return rz_pvector_len(bf->o->libs);
+}
+
+/**
  * \brief      reads pclntab table in go binaries and recovers functions.
  * Follows the code https://github.com/golang/go/blob/master/src/debug/gosym/pclntab.go#L188
  * \param      core  The RzCore to use
@@ -424,15 +548,17 @@ static void analyse_golang_symbols(RzCore *core) {
 RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	rz_return_val_if_fail(core && core->bin && core->io, false);
 
-	RzList *section_list = rz_bin_get_sections(core->bin);
-	RzList *symbols_list = rz_bin_get_symbols(core->bin);
-	RzListIter *iter;
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	const RzPVector *sections = o ? rz_bin_object_get_sections_all(o) : NULL;
+	RzPVector *symbols_vec = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+	void **iter;
 	RzBinSection *section;
 	ut32 num_syms = 0;
 	GoPcLnTab pclntab = { 0 };
 	ut8 header[8] = { 0 };
 
-	rz_list_foreach (section_list, iter, section) {
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
 		// on ELF files the pclntab sections is named .gopclntab, but on macho is __gopclntab
 		if (section->vsize >= 16 && strstr(section->name, "gopclntab")) {
 			pclntab.vaddr = section->vaddr;
@@ -445,7 +571,8 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 
 	if (!pclntab.vaddr) {
 		RzBinSymbol *symbol;
-		rz_list_foreach (symbols_list, iter, symbol) {
+		rz_pvector_foreach (symbols_vec, iter) {
+			symbol = *iter;
 			// on PE files the pclntab sections is inside .rdata, so rizin creates a symbol for it
 			if (symbol->size >= 16 && !strcmp(symbol->name, "gopclntab")) {
 				pclntab.vaddr = symbol->vaddr;
@@ -472,10 +599,14 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	pclntab.quantum = header[6];
 	pclntab.ptrsize = header[7];
 
-	if (IS_GOPCLNTAB_1_18_BE(header) || IS_GOPCLNTAB_1_18_LE(header)) {
+	if (IS_GOPCLNTAB_1_20_BE(header) || IS_GOPCLNTAB_1_20_LE(header)) {
+		pclntab.version = GO_1_20;
+		pclntab.big_endian = IS_GOPCLNTAB_1_20_BE(header);
+		num_syms = core_recover_golang_functions_go_1_18_plus(core, &pclntab);
+	} else if (IS_GOPCLNTAB_1_18_BE(header) || IS_GOPCLNTAB_1_18_LE(header)) {
 		pclntab.version = GO_1_18;
 		pclntab.big_endian = IS_GOPCLNTAB_1_18_BE(header);
-		num_syms = core_recover_golang_functions_go_1_18(core, &pclntab);
+		num_syms = core_recover_golang_functions_go_1_18_plus(core, &pclntab);
 	} else if (IS_GOPCLNTAB_1_16_BE(header) || IS_GOPCLNTAB_1_16_LE(header)) {
 		pclntab.version = GO_1_16;
 		pclntab.big_endian = IS_GOPCLNTAB_1_16_BE(header);
@@ -486,12 +617,14 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 		num_syms = core_recover_golang_functions_go_1_2(core, &pclntab);
 	} else {
 		ut32 magic = rz_read_be32(header);
-		rz_core_notify_error(core, "Invalid go pclntab (unknown version: 0x%x).", magic);
+		rz_core_notify_error(core, "Invalid go pclntab (unknown version: 0x%x). Please open an issue.", magic);
 		return false;
 	}
 
 	if (num_syms) {
+		ut32 num_libs = sort_recovered_library(core);
 		rz_core_notify_done(core, "Recovered %u symbols and saved them at sym.go.*", num_syms);
+		rz_core_notify_done(core, "Recovered %u go packages", num_libs);
 		rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		analyse_golang_symbols(core);
 		rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
@@ -518,8 +651,8 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 		return true;
 	}
 
-	const RzList *strings = rz_bin_object_get_strings(bf->o);
-	ordinal = rz_list_length(strings);
+	const RzPVector *strings = rz_bin_object_get_strings(bf->o);
+	ordinal = rz_pvector_len(strings);
 
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
@@ -1638,13 +1771,13 @@ static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRe
 
 	RzAnalysis *analysis = core->analysis;
 	const ut32 word_size = analysis->bits / 8;
-	RzListIter *iter;
+	void **iter;
 	RzBinMap *map;
 	ut8 *buffer = NULL;
 	ut64 string_addr, string_size;
 	RzBinObject *object = rz_bin_cur_object(core->bin);
-	RzList *map_list = object ? rz_bin_object_get_maps(object) : NULL;
-	if (!map_list) {
+	RzPVector *map_vec = object ? rz_bin_object_get_maps(object) : NULL;
+	if (!map_vec) {
 		RZ_LOG_ERROR("Failed to get the RzBinMap list\n");
 		goto end;
 	}
@@ -1655,7 +1788,8 @@ static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRe
 		goto end;
 	}
 
-	rz_list_foreach (map_list, iter, map) {
+	rz_pvector_foreach (map_vec, iter) {
+		map = *iter;
 		if (!rz_bin_map_is_data(map) || map->psize < (word_size * 2)) {
 			continue;
 		}

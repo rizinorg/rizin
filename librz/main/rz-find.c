@@ -171,34 +171,52 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
+	printf("%s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
-	printf(
-		" -a [align] only accept aligned hits\n"
-		" -b [size]  set block size\n"
-		" -e [regex] search for regex matches (can be used multiple times)\n"
-		" -f [from]  start searching from address 'from'\n"
-		" -F [file]  read the contents of the file and use it as keyword\n"
-		" -h         show this help\n"
-		" -i         identify filetype (rizin -nqcpm file)\n"
-		" -j         output in JSON\n"
-		" -m         magic search, file-type carver\n"
-		" -M [str]   set a binary mask to be applied on keywords\n"
-		" -n         do not stop on read errors\n"
-		" -r         print using rizin commands\n"
-		" -s [str]   search for a specific string (can be used multiple times)\n"
-		" -w [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
-		" -I [str]   search for an entry in import table.\n"
-		" -S [str]   search for a symbol in symbol table.\n"
-		" -t [to]    stop search at address 'to'\n"
-		" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
-		" -v         print version and exit\n"
-		" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
-		" -X         show hexdump of search results\n"
-		" -z         search for zero-terminated strings\n"
-		" -Z         show string found on each search hit\n");
+	const char *options[] = {
+		// clang-format off
+		"-a",    "[align]", "Only accept aligned hits",
+		"-b",    "[size]",  "Set block size",
+		"-e",    "[regex]", "Search for regex matches (can be used multiple times)",
+		"-f",    "[from]",  "Start searching from address 'from'",
+		"-F",    "[file]",  "Read the contents of the file and use it as keyword",
+		"-h",    "",        "Show this help",
+		"-i",    "",        "Identify filetype (rizin -nqcpm file)",
+		"-j",    "",        "Output in JSON",
+		"-m",    "",        "Magic search, file-type carver",
+		"-M",    "[str]",   "Set a binary mask to be applied on keywords",
+		"-n",    "",        "Do not stop on read errors",
+		"-r",    "",        "Print using rizin commands",
+		"-s",    "[str]",   "Search for a specific string (can be used multiple times)",
+		"-w",    "[str]",   "Search for a specific wide string (can be used multiple times). Assumes str is UTF-8.",
+		"-I",    "[str]",   "Search for an entry in import table.",
+		"-S",    "[str]",   "Search for a symbol in symbol table.",
+		"-t",    "[to]",    "Stop search at address 'to'",
+		"-q",    "",        "Quiet - do not show headings (filenames) above matching contents (default for searching a single file)",
+		"-v",    "",        "Show version information",
+		"-x",    "[hex]",   "Search for hexpair string (909090) (can be used multiple times)",
+		"-X",    "",        "Show hexdump of search results",
+		"-z",    "",        "Search for zero-terminated strings",
+		"-Z",    "",        "Show string found on each search hit",
+		// clang-format on
+	};
+	size_t maxOptionAndArgLength = 0;
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		size_t optionLength = strlen(options[i]);
+		size_t argLength = strlen(options[i + 1]);
+		size_t totalLength = optionLength + argLength;
+		if (totalLength > maxOptionAndArgLength) {
+			maxOptionAndArgLength = totalLength;
+		}
+	}
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		if (i + 1 < sizeof(options) / sizeof(options[0])) {
+			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+		}
+	}
 	return 0;
 }
 
@@ -226,8 +244,11 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 	if (ro->import || ro->symbol) {
 		RzBinFile *bf;
-		const RzList *symbols, *imports;
-		RzListIter *iter, *it;
+		const RzPVector *symbols;
+		const RzPVector *imports;
+		RzListIter *iter;
+		void **it;
+		void **vec_it;
 		RzBinSymbol *symbol;
 		RzBinImport *import;
 		RzBin *bin = rz_bin_new();
@@ -254,7 +275,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				if (!kw) {
 					continue;
 				}
-				rz_list_foreach (imports, it, import) {
+				rz_pvector_foreach (imports, vec_it) {
+					import = *vec_it;
 					if (!strcmp(import->name, kw)) {
 						printf("ordinal: %d %s\n", import->ordinal, kw);
 					}
@@ -268,7 +290,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				if (!kw) {
 					continue;
 				}
-				rz_list_foreach (symbols, it, symbol) {
+				rz_pvector_foreach (symbols, it) {
+					symbol = *it;
 					if (!symbol->name) {
 						continue;
 					}
@@ -347,13 +370,19 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			}
 			pj_a(pj);
 		}
-		RzList *list = rz_bin_file_strings(bf, bin->minstrlen, true);
-		RzListIter *it;
+
+		RzBinStringSearchOpt opt = bin->str_search_cfg;
+		// enforce raw binary search
+		opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+
+		RzPVector *vec = rz_bin_file_strings(bf, &opt);
+		void **it;
 		RzBinString *string;
-		rz_list_foreach (list, it, string) {
+		rz_pvector_foreach (vec, it) {
+			string = *it;
 			print_bin_string(bf, string, pj);
 		}
-		rz_list_free(list);
+		rz_pvector_free(vec);
 		if (pj) {
 			pj_end(pj);
 			printf("%s", pj_string(pj));

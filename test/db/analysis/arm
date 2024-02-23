@@ -590,21 +590,21 @@ aa
 afl
 EOF
 EXPECT=<<EOF
-0x000102c8    1 44           entry0
+0x00010278    1 12           sym._init
+0x00010298    1 12           sym.imp.printf
 0x000102a4    1 12           sym.imp.__libc_start_main
+0x000102bc    1 12           sym.imp.abort
+0x000102c8    1 44           entry0
 0x00010304    1 28           sym.call_weak_fn
 0x00010328    1 36           sym.deregister_tm_clones
 0x00010358    1 44           sym.register_tm_clones
 0x00010390    1 36           sym.__do_global_dtors_aux
 0x000103b8    4 44           entry.init0
+0x000103ec    1 28           sym.func
+0x00010408    1 40           main
+0x00010434    3 88           sym.__libc_csu_init
 0x00010494    1 4            sym.__libc_csu_fini
 0x00010498    1 8            sym._fini
-0x000103ec    1 28           sym.func
-0x00010434    3 88           sym.__libc_csu_init
-0x00010278    1 12           sym._init
-0x00010408    1 40           main
-0x00010298    1 12           sym.imp.printf
-0x000102bc    1 12           sym.imp.abort
 EOF
 RUN
 
@@ -745,31 +745,31 @@ e asm.arch=arm
 e asm.bits=16
 wx f0b503af2de9000d95b0002001210222032340f2040940f2050c40f2060e0724082509261490139112921193cdf80090cdf804c0cdf808e0039404950596ddf85080cdf81880ddf84ca0cdf81ca0ddf848b0cdf820b0ddf84480cdf82480cdf82890cdf82cc0cdf830e00d940e950f96fff740ff00211090084615b0bde8000df0bd
 aa
-afv~var
+afvl~var
 EOF
 EXPECT=<<EOF
-var int16_t var_74h @ stack - 0x74
-var int16_t var_70h @ stack - 0x70
-var int16_t var_6ch @ stack - 0x6c
-var int16_t var_68h @ stack - 0x68
-var int16_t var_64h @ stack - 0x64
-var int16_t var_60h @ stack - 0x60
-var int16_t var_5ch @ stack - 0x5c
-var int16_t var_58h @ stack - 0x58
-var int16_t var_54h @ stack - 0x54
-var int16_t var_50h @ stack - 0x50
-var int16_t var_4ch @ stack - 0x4c
-var int16_t var_48h @ stack - 0x48
-var int16_t var_44h @ stack - 0x44
-var int16_t var_40h @ stack - 0x40
-var int16_t var_3ch @ stack - 0x3c
-var int16_t var_38h @ stack - 0x38
-var int16_t var_34h @ stack - 0x34
-var int16_t var_30h @ stack - 0x30
-var int16_t var_2ch @ stack - 0x2c
-var int16_t var_28h @ stack - 0x28
-var int16_t var_24h @ stack - 0x24
-var int16_t var_8h @ stack - 0x8
+var int32_t var_74h @ stack - 0x74
+var int32_t var_70h @ stack - 0x70
+var int32_t var_6ch @ stack - 0x6c
+var int32_t var_68h @ stack - 0x68
+var int32_t var_64h @ stack - 0x64
+var int32_t var_60h @ stack - 0x60
+var int32_t var_5ch @ stack - 0x5c
+var int32_t var_58h @ stack - 0x58
+var int32_t var_54h @ stack - 0x54
+var int32_t var_50h @ stack - 0x50
+var int32_t var_4ch @ stack - 0x4c
+var int32_t var_48h @ stack - 0x48
+var int32_t var_44h @ stack - 0x44
+var int32_t var_40h @ stack - 0x40
+var int32_t var_3ch @ stack - 0x3c
+var int32_t var_38h @ stack - 0x38
+var int32_t var_34h @ stack - 0x34
+var int32_t var_30h @ stack - 0x30
+var int32_t var_2ch @ stack - 0x2c
+var int32_t var_28h @ stack - 0x28
+var int32_t var_24h @ stack - 0x24
+var int32_t var_8h @ stack - 0x8
 EOF
 RUN
 
@@ -906,21 +906,22 @@ EOF
 EXPECT=<<EOF
 address: 0x568
 opcode: push {r3, lr}
-esilcost: 16
+esilcost: 24
 disasm: push {r3, lr}
 pseudo: push (r3, lr)
 mnemonic: push
 mask: ffffffff
 prefix: 0
-id: 128
+id: 438
 bytes: 08402de9
 refptr: 0
 size: 4
 sign: false
 type: push
 cycles: 1
-esil: 8,sp,-=,lr,r3,2,sp,=[*]
+esil: r3,sp,-8,+,=[4],lr,sp,-4,+,=[4],-8,sp,+=,
 rzil: (seq (storew 0 (- (var sp) (bv 32 0x8)) (var r3)) (storew 0 (- (var sp) (bv 32 0x4)) (var lr)) (set sp (- (var sp) (bv 32 0x8))))
+direction: write
 family: cpu
 stackop: inc
 stackptr: 8
@@ -934,7 +935,7 @@ mnemonic: add
 description: add two values
 mask: ffff
 prefix: 0
-id: 2
+id: 31
 bytes: 00af
 refptr: 0
 size: 2
@@ -1066,13 +1067,13 @@ RUN
 NAME=misaligned arm string xref
 FILE=bins/mach0/misaligned_data-iOS-armv7
 CMDS=<<EOF
-aav
-aae
-af
-axt @ str.helloradareworld
+aaa
+axt @ str.helloradareworl
+pd 1 @ 0xbf9c
 EOF
 EXPECT=<<EOF
-main 0xbf9c [DATA] add r0, pc
+entry0 0xbf9c [DATA] add r0, pc
+|           0x0000bf9c      add   r0, pc                               ; 0xbfed ; "helloradareworld\n" ; const char *format
 EOF
 RUN
 
@@ -1237,5 +1238,82 @@ afl~?
 EOF
 EXPECT=<<EOF
 94
+EOF
+RUN
+
+NAME=add/adc pc, pc issue #3965
+FILE==
+ARGS=-a arm -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+wx ffff8f024fffaf02
+pd 2
+aa
+ags
+EOF
+EXPECT=<<EOF
+            0x00000000      addeq pc, pc, 0x3fc                        ; [0x8:4]=0
+            0x00000004      adceq pc, pc, 0x13c                        ; [0xc:4]=0
+        .-----------.
+        |  0x0      |
+        `-----------'
+              t f
+              | |
+    .---------' |
+    |           '---.
+    |               |
+.----------.    .-----------.
+|  0x404   |    |  0x4      |
+`----------'    `-----------'
+                        f t
+                        | |
+                        | |
+              .---------' |
+              |           |
+          .----------.    |
+          |  0x8     |    |
+          `----------'    |
+              v           |
+              |           |
+              '------.    |
+                     | .--'
+                     | |
+               .-----------.
+               |  0x148    |
+               `-----------'
+EOF
+RUN
+
+NAME=Check MOV gets identified as JUMP if it moves to PC
+FILE==
+ARGS=-a arm -b 16
+CMDS=<<EOF
+s 0x100
+wx bff36f8f2548874680bd000072b680bd
+s 0x19c
+wx 0x0c010000
+s 0x100
+aaa
+pd 10 @ 0x100
+px 4 @ 0x19c
+EOF
+EXPECT=<<EOF
+            ;-- pc:
+            ;-- r15:
+/ fcn.00000100();
+|           0x00000100      isb   sy
+|           0x00000104      ldr   r0, aav.0x0000010c                   ; [0x10c:4]=0xbd80b672 ; "r\xb6\x80\xbd"
+\           0x00000106      mov   pc, r0
+            0x00000108      pop   {r7, pc}
+            0x0000010a      movs  r0, r0
+            ; CODE XREFS from fcn.00000100 @ 0x104, 0x106
+            ; UNKNOWN XREF from aav.0x0000010c @ +0x90
+/ aav.0x0000010c();
+|           0x0000010c      cpsid i
+\           0x0000010e      pop   {r7, pc}
+            0x00000110      movs  r0, r0
+            0x00000112      movs  r0, r0
+            0x00000114      movs  r0, r0
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000019c  0c01 0000                                ....
 EOF
 RUN

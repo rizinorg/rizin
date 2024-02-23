@@ -24,6 +24,52 @@ typedef struct hash_cfg_config_t {
 	const RzHashPlugin *plugin;
 } HashCfgConfig;
 
+#if HAVE_LIB_SSL
+#include <openssl/opensslv.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+/**
+ * From openssl 3.0 some algos got moved to the legacy provider.
+ * this means that their availability requires to preload a provider
+ * before calling the initialization of each algorithms.
+ */
+
+#define REQUIRE_OPENSSL_PROVIDER 1
+#include <openssl/provider.h>
+
+typedef struct {
+	OSSL_PROVIDER *provider;
+	size_t counter;
+} RzHashOpenSSL;
+
+static RzHashOpenSSL *openssl_lib = NULL;
+
+static void rz_hash_init_openssl_lib(void) {
+	if (!openssl_lib) {
+		openssl_lib = RZ_NEW0(RzHashOpenSSL);
+		if (!openssl_lib) {
+			RZ_LOG_ERROR("Cannot allocate RzHashOpenSSL\n");
+			return;
+		}
+		openssl_lib->provider = OSSL_PROVIDER_try_load(NULL, "legacy", 1);
+		if (!OSSL_PROVIDER_available(NULL, "legacy")) {
+			RZ_LOG_WARN("Cannot load openssl legacy provider. Some algorithm might not be available.\n");
+		}
+	}
+	openssl_lib->counter++;
+}
+
+static void rz_hash_fini_openssl_lib(void) {
+	if (!openssl_lib || (--openssl_lib->counter) > 0) {
+		return;
+	}
+	OSSL_PROVIDER_unload(openssl_lib->provider);
+	free(openssl_lib);
+	openssl_lib = NULL;
+}
+
+#endif /* OPENSSL_VERSION_NUMBER >= 0x30000000L */
+#endif /* HAVE_LIB_SSL */
+
 static RzHashPlugin *hash_static_plugins[] = { RZ_HASH_STATIC_PLUGINS };
 
 /**
@@ -123,7 +169,7 @@ RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len) {
 	return e;
 }
 
-static int hash_cfg_config_compare(const void *value, const void *data) {
+static int hash_cfg_config_compare(const void *value, const void *data, void *user) {
 	const HashCfgConfig *mdc = (const HashCfgConfig *)data;
 	const char *name = (const char *)value;
 	return strcmp(name, mdc->plugin->name);
@@ -261,13 +307,13 @@ RZ_API void rz_hash_cfg_free(RZ_NONNULL RzHashCfg *md) {
 /**
  * \brief Allocates and configures the plugin message digest context
  *
- * message digest allocates internally a HashCfgConfig which
- * contains all the needed informations to the plugin to work.
+ * message digest internally allocates a HashCfgConfig which
+ * contains all the information needed for the plugin to work.
  * */
 RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(md && name, false);
 
-	if (rz_list_find(md->configurations, name, hash_cfg_config_compare)) {
+	if (rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL)) {
 		RZ_LOG_WARN("msg digest: '%s' was already configured; skipping.\n", name);
 		return false;
 	}
@@ -513,7 +559,7 @@ RZ_API bool rz_hash_cfg_iterate(RZ_NONNULL RzHashCfg *md, size_t iterate) {
 RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name, RZ_NONNULL ut32 *size) {
 	rz_return_val_if_fail(md && name && hash_cfg_has_finshed(md), false);
 
-	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return NULL;
@@ -538,7 +584,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 	rz_return_val_if_fail(md && name && hash_cfg_has_finshed(md), false);
 
 	ut32 pos = 0;
-	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return NULL;
@@ -580,7 +626,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 RZ_API RzHashSize rz_hash_cfg_size(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(md && name, 0);
 
-	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare);
+	RzListIter *it = rz_list_find(md->configurations, name, hash_cfg_config_compare, NULL);
 	if (!it) {
 		RZ_LOG_ERROR("msg digest: cannot find configuration for '%s' algorithm.\n", name);
 		return 0;
@@ -659,6 +705,9 @@ RZ_API RzHash *rz_hash_new(void) {
 	if (!rh) {
 		return NULL;
 	}
+#if REQUIRE_OPENSSL_PROVIDER
+	rz_hash_init_openssl_lib();
+#endif /* REQUIRE_OPENSSL_PROVIDER */
 	rh->plugins = rz_list_new();
 	for (int i = 0; i < RZ_ARRAY_SIZE(hash_static_plugins); i++) {
 		rz_hash_plugin_add(rh, hash_static_plugins[i]);
@@ -666,12 +715,15 @@ RZ_API RzHash *rz_hash_new(void) {
 	return rh;
 }
 
-RZ_API void rz_hash_free(RzHash *rh) {
+RZ_API void rz_hash_free(RZ_NULLABLE RzHash *rh) {
 	if (!rh) {
 		return;
 	}
 	rz_list_free(rh->plugins);
 	free(rh);
+#if REQUIRE_OPENSSL_PROVIDER
+	rz_hash_fini_openssl_lib();
+#endif /* REQUIRE_OPENSSL_PROVIDER */
 }
 
 /**

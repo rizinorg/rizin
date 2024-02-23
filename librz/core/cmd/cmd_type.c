@@ -92,7 +92,9 @@ static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 addres
 		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, address);
+	char *r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, address);
+	rz_cons_print(r);
+	free(r);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
@@ -117,7 +119,9 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 addr = rz_core_analysis_var_addr(core, var);
-	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+	char *r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, addr);
+	rz_cons_print(r);
+	free(r);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
@@ -129,6 +133,7 @@ static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 
 		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	// TODO: Convert to the API
 	rz_core_cmdf(core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
@@ -141,6 +146,7 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	// TODO: Convert to the API
 	rz_core_cmdf(core, "pf %s @x:%s", fmt, hexpairs);
 	free(fmt);
 	return RZ_CMD_STATUS_OK;
@@ -185,7 +191,7 @@ static void types_xrefs_summary(RzCore *core) {
 		rz_list_foreach (uniq, iter2, type) {
 			char *str = rz_type_as_string(analysis->typedb, type);
 			if (str) {
-				rz_cons_printf("%s%s", str, iter2->n ? "," : "\n");
+				rz_cons_printf("%s%s", str, rz_list_iter_has_next(iter2) ? "," : "\n");
 			}
 			free(str);
 		}
@@ -247,9 +253,9 @@ static void types_xrefs_all(RzCore *core) {
 		}
 		rz_list_free(types);
 	}
-	RzList *uniq_types = rz_list_uniq(types_list, (RzListComparator)strcmp);
+	RzList *uniq_types = rz_list_uniq(types_list, (RzListComparator)strcmp, NULL);
 	rz_list_free(types_list);
-	rz_list_sort(uniq_types, (RzListComparator)strcmp);
+	rz_list_sort(uniq_types, (RzListComparator)strcmp, NULL);
 	char *typestr;
 	rz_list_foreach (uniq_types, iter, typestr) {
 		rz_cons_printf("%s\n", typestr);

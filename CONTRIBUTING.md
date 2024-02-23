@@ -70,7 +70,7 @@ This is discouraged, as it produces ugly hard-to-maintain commit history.
 
 ## Commit message rules
 
-When commiting your changes into the repository you may want to follow some
+When committing your changes into the repository you may want to follow some
 rules to make the git history more readable and consistent:
 
 * Start the message capitalized (only the first character must be in uppercase)
@@ -78,41 +78,6 @@ rules to make the git history more readable and consistent:
 * If a command is inlined, use backticks
 * For extra details, add an empty line and use asterisk item list below
 * Use present simple grammar tense (Add vs Added, Fix vs Fixed/Fixes)
-* Add a double-hashtag if the change matters for the changelog (See below)
-
-### Commit message hashtag list:
-
-* ##analysis - analysis related
-* ##asm      - assembler
-* ##bin      - binary parsing
-* ##build    - build fixes/changes
-* ##config   - config variables changes/additions/renamings
-* ##cons     - console/terminal-related
-* ##crypto   - cryptography
-* ##debug    - debugger stuff
-* ##diff     - diffing code, strings, basic blocks, ...
-* ##disasm   - disassembler
-* ##doc      - documentation
-* ##egg      - the `rz_lang` compiler
-* ##emu      - emulation, including esil
-* ##graph    - basic block graph, callgraph, ...
-* ##io       - related to the `rz_io` library
-* ##json     - json fixes/changes
-* ##lang     - bindings
-* ##meta     - metadata handling other than printing
-* ##optimization-space/time optimizations
-* ##port     - portability (new OS/architectures)
-* ##print    - printing data, structures, strings, tables, types ..
-* ##projects - saving/loading state
-* ##refactor - improve code quality
-* ##remote   - rizin over tcp, http, rap, serial .. including collaboration
-* ##search   - rz-find, / command, ..
-* ##shell    - commandline, rzshell, ..
-* ##signatures-searching/generating them
-* ##test     - testing infrastructure fixes/changes
-* ##tools    - rz-run, rz-ax ... that don't fit in other categories
-* ##util     - core APIs
-* ##visual   - visual UI, including panels
 
 # Additional resources
 

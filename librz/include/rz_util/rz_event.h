@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#include <ht_up.h>
+#include <rz_util/ht_up.h>
 #include <rz_vector.h>
 
 typedef struct rz_event_t {

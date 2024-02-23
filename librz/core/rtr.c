@@ -683,7 +683,6 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		if (!rz_socket_connect_unix(fd, host)) {
 			core->num->value = 1;
 			RZ_LOG_ERROR("core: Cannot connect to 'unix://%s'\n", host);
-			rz_socket_free(fd);
 			return;
 		}
 		core->num->value = 0;
@@ -790,6 +789,7 @@ static void *rz_core_rtr_rap_thread(RapThread *rt) {
 
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 	unsigned int cmd_len = 0;
+	char tmpbuf[8];
 	int fd = atoi(input);
 	if (!fd && *input != '0') {
 		fd = -1;
@@ -860,7 +860,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			return;
 		}
 		rz_socket_close(s);
-		if (!rz_socket_connect(s, rh->host, sdb_fmt("%d", rh->port), RZ_SOCKET_PROTO_TCP, 0)) {
+		if (!rz_socket_connect(s, rh->host, rz_strf(tmpbuf, "%d", rh->port), RZ_SOCKET_PROTO_TCP, 0)) {
 			RZ_LOG_ERROR("core: Cannot connect to '%s' (%d)\n", rh->host, rh->port);
 			rz_socket_free(s);
 			return;

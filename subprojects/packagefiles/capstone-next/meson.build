@@ -3,10 +3,13 @@ project('capstone', 'c', version: 'next', meson_version: '>=0.55.0')
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
   'arch/AArch64/AArch64Disassembler.c',
+  'arch/AArch64/AArch64DisassemblerExtension.c',
   'arch/AArch64/AArch64InstPrinter.c',
   'arch/AArch64/AArch64Mapping.c',
   'arch/AArch64/AArch64Module.c',
+  'arch/ARM/ARMBaseInfo.c',
   'arch/ARM/ARMDisassembler.c',
+  'arch/ARM/ARMDisassemblerExtension.c',
   'arch/ARM/ARMInstPrinter.c',
   'arch/ARM/ARMMapping.c',
   'arch/ARM/ARMModule.c',
@@ -53,11 +56,12 @@ cs_files = [
   'arch/TriCore/TriCoreMapping.c',
   'arch/TriCore/TriCoreModule.c',
   'cs.c',
+  'Mapping.c',
   'MCInst.c',
   'MCInstrDesc.c',
+  'MCInstPrinter.c',
   'MCRegisterInfo.c',
   'SStream.c',
-  'Mapping.c',
   'utils.c',
 ]
 
@@ -69,7 +73,7 @@ libcapstone_c_args = [
   '-DCAPSTONE_USE_SYS_DYN_MEM',
   '-DCAPSTONE_DIET_NO',
   '-DCAPSTONE_HAS_ARM',
-  '-DCAPSTONE_HAS_ARM64',
+  '-DCAPSTONE_HAS_AARCH64',
   '-DCAPSTONE_HAS_M68K',
   '-DCAPSTONE_HAS_M680X',
   '-DCAPSTONE_HAS_MIPS',
@@ -81,6 +85,10 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_TMS320C64X',
   '-DCAPSTONE_HAS_TRICORE',
 ]
+
+if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')
+  libcapstone_c_args += '-Wno-maybe-uninitialized'
+endif
 
 libcapstone = library('capstone', cs_files,
   c_args: libcapstone_c_args,

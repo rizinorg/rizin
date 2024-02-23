@@ -34,9 +34,17 @@ static void process_class_field(RzBinObject *o, RzBinClassField *field) {
 	free(key);
 }
 
+static int bin_compare_method(RzBinSymbol *a, RzBinSymbol *b, void *user) {
+	return rz_bin_compare_method(a, b);
+}
+
+static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void *user) {
+	return rz_bin_compare_class_field(a, b);
+}
+
 static void process_handle_class(RzBinObject *o, RzBinClass *klass) {
 	if (!klass->name) {
-		klass->name = rz_str_new("unknown_class");
+		klass->name = rz_str_dup("unknown_class");
 	}
 	RzBinClass *found = ht_pp_find(o->name_to_class_object, klass->name, NULL);
 	if (!found) {
@@ -57,20 +65,20 @@ static void process_handle_class(RzBinObject *o, RzBinClass *klass) {
 		process_class_field(o, field);
 	}
 
-	rz_list_sort(klass->methods, (RzListComparator)rz_bin_compare_method);
-	rz_list_sort(klass->fields, (RzListComparator)rz_bin_compare_class_field);
+	rz_list_sort(klass->methods, (RzListComparator)bin_compare_method, NULL);
+	rz_list_sort(klass->fields, (RzListComparator)bin_compare_class_field, NULL);
 }
 
 RZ_IPI void rz_bin_set_and_process_classes(RzBinFile *bf, RzBinObject *o) {
 	RzBin *bin = bf->rbin;
 	RzBinPlugin *plugin = o->plugin;
 
-	rz_list_free(o->classes);
+	rz_pvector_free(o->classes);
 	if (!(bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) ||
 		!plugin->classes || !(o->classes = plugin->classes(bf))) {
-		o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
+		o->classes = rz_pvector_new((RzPVectorFree)rz_bin_class_free);
 	}
-	rz_warn_if_fail(o->classes->free);
+	rz_warn_if_fail(o->classes->v.free_user);
 
 	ht_pp_free(o->name_to_class_object);
 	ht_pp_free(o->glue_to_class_method);
@@ -82,9 +90,10 @@ RZ_IPI void rz_bin_set_and_process_classes(RzBinFile *bf, RzBinObject *o) {
 	o->glue_to_class_field = ht_pp_new0();
 	o->vaddr_to_class_method = ht_up_new0();
 
-	RzListIter *it;
+	void **it;
 	RzBinClass *element;
-	rz_list_foreach (o->classes, it, element) {
+	rz_pvector_foreach (o->classes, it) {
+		element = *it;
 		process_handle_class(o, element);
 	}
 }

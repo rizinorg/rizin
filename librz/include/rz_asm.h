@@ -189,18 +189,19 @@ RZ_API char *rz_asm_code_equ_replace(RzAsmCode *code, char *str);
 RZ_API char *rz_asm_code_get_hex(RzAsmCode *acode);
 
 /* op.c */
-RZ_API RzAsmOp *rz_asm_op_new(void);
-RZ_API void rz_asm_op_init(RzAsmOp *op);
-RZ_API void rz_asm_op_free(RzAsmOp *op);
-RZ_API void rz_asm_op_fini(RzAsmOp *op);
-RZ_API char *rz_asm_op_get_hex(RzAsmOp *op);
-RZ_API char *rz_asm_op_get_asm(RzAsmOp *op);
-RZ_API int rz_asm_op_get_size(RzAsmOp *op);
-RZ_API void rz_asm_op_set_asm(RzAsmOp *op, const char *str);
-RZ_API int rz_asm_op_set_hex(RzAsmOp *op, const char *str);
-RZ_API int rz_asm_op_set_hexbuf(RzAsmOp *op, const ut8 *buf, int len);
-RZ_API void rz_asm_op_set_buf(RzAsmOp *op, const ut8 *str, int len);
-RZ_API ut8 *rz_asm_op_get_buf(RzAsmOp *op);
+RZ_API RZ_OWN RzAsmOp *rz_asm_op_new(void);
+RZ_API void rz_asm_op_init(RZ_NULLABLE RzAsmOp *op);
+RZ_API void rz_asm_op_free(RZ_NULLABLE RzAsmOp *op);
+RZ_API void rz_asm_op_fini(RZ_NULLABLE RzAsmOp *op);
+RZ_API RZ_OWN char *rz_asm_op_get_hex(RZ_NONNULL RzAsmOp *op);
+RZ_API RZ_BORROW char *rz_asm_op_get_asm(RZ_NONNULL RzAsmOp *op);
+RZ_API int rz_asm_op_get_size(RZ_NONNULL RzAsmOp *op);
+RZ_API void rz_asm_op_set_asm(RZ_NONNULL RzAsmOp *op, RZ_NONNULL const char *str);
+RZ_API void rz_asm_op_setf_asm(RZ_NONNULL RzAsmOp *op, RZ_NONNULL const char *fmt, ...);
+RZ_API int rz_asm_op_set_hex(RZ_NONNULL RzAsmOp *op, RZ_NONNULL const char *str);
+RZ_API int rz_asm_op_set_hexbuf(RZ_NONNULL RzAsmOp *op, RZ_NONNULL const ut8 *buf, int len);
+RZ_API void rz_asm_op_set_buf(RZ_NONNULL RzAsmOp *op, RZ_NONNULL const ut8 *str, int len);
+RZ_API RZ_BORROW ut8 *rz_asm_op_get_buf(RZ_NONNULL RzAsmOp *op);
 
 // String tokenizing
 RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_new(const char *asm_str);
@@ -258,7 +259,9 @@ extern RzAsmPlugin rz_asm_plugin_ppc_cs;
 extern RzAsmPlugin rz_asm_plugin_propeller;
 extern RzAsmPlugin rz_asm_plugin_riscv;
 extern RzAsmPlugin rz_asm_plugin_riscv_cs;
+extern RzAsmPlugin rz_asm_plugin_rl78;
 extern RzAsmPlugin rz_asm_plugin_rsp;
+extern RzAsmPlugin rz_asm_plugin_rx;
 extern RzAsmPlugin rz_asm_plugin_sh;
 extern RzAsmPlugin rz_asm_plugin_snes;
 extern RzAsmPlugin rz_asm_plugin_sparc_cs;

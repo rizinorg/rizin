@@ -23,9 +23,10 @@ static RzBinVirtualFile *find_vfile(RzBinFile *bf, const char *name) {
 	if (!bf->o || !bf->o->vfiles) {
 		return NULL;
 	}
-	RzListIter *it;
+	void **it;
 	RzBinVirtualFile *vfile;
-	rz_list_foreach (bf->o->vfiles, it, vfile) {
+	rz_pvector_foreach (bf->o->vfiles, it) {
+		vfile = *it;
 		if (!strcmp(vfile->name, name)) {
 			return vfile;
 		}
@@ -76,7 +77,7 @@ beach:
 	return desc;
 }
 
-static int vf_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int vf_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	if (!(fd->perm & RZ_PERM_W)) {
 		return -1;
@@ -85,7 +86,7 @@ static int vf_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return rz_buf_write_at(ctx->vfile->buf, ctx->off, buf, count);
 }
 
-static int vf_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int vf_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	VFileCtx *ctx = fd->data;
 	return rz_buf_read_at(ctx->vfile->buf, ctx->off, buf, count);

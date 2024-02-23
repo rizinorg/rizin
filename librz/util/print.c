@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <rz_util/rz_str.h>
 #include <rz_list.h>
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_log.h>
@@ -32,14 +32,6 @@ static int libc_printf(const char *format, ...) {
 	return 0;
 }
 
-static int libc_eprintf(const char *format, ...) {
-	va_list ap;
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-	return 0;
-}
-
 static RzPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 RZ_API bool rz_print_is_interrupted(void) {
@@ -63,7 +55,6 @@ RZ_API RzPrint *rz_print_new(void) {
 	p->pairs = true;
 	p->resetbg = true;
 	p->cb_printf = libc_printf;
-	p->cb_eprintf = libc_eprintf;
 	p->oprintf = nullprinter;
 	p->bits = 32;
 	p->stride = 0;
@@ -264,15 +255,8 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	return dst;
 }
 
-static char colorbuffer[64];
 #define P(x) (p->cons && p->cons->context->pal.x) ? p->cons->context->pal.x
 RZ_API const char *rz_print_byte_color(RzPrint *p, int ch) {
-	if (p->flags & RZ_PRINT_FLAGS_RAINBOW) {
-		// EXPERIMENTAL
-		int bg = (p->flags & RZ_PRINT_FLAGS_NONHEX) ? 48 : 38;
-		snprintf(colorbuffer, sizeof(colorbuffer), "\033[%d;5;%dm", bg, ch);
-		return colorbuffer;
-	}
 	const bool use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	if (!use_color) {
 		return NULL;
@@ -405,6 +389,7 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 		0
 	};
 	const char *white = "";
+	char *allocated = NULL;
 #define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x) ? p->cons->context->pal.x
 	bool use_segoff = p ? (p->flags & RZ_PRINT_FLAGS_SEGOFF) : false;
 	bool use_color = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
@@ -425,8 +410,8 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 		a = addr & 0xffff;
 		s = (addr - a) >> (p ? p->seggrn : 0);
 		if (dec) {
-			snprintf(space, sizeof(space), "%d:%d", s & 0xffff, a & 0xffff);
-			white = rz_str_pad(' ', 9 - strlen(space));
+			rz_strf(space, "%d:%d", s & 0xffff, a & 0xffff);
+			white = allocated = rz_str_pad(' ', 9 - strlen(space));
 		}
 		if (use_color) {
 			const char *pre = PREOFF(offset)
@@ -446,21 +431,14 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 		}
 	} else {
 		if (dec) {
-			snprintf(space, sizeof(space), "%" PFMT64d, addr);
+			rz_strf(space, "%" PFMT64d, addr);
 			int w = RZ_MAX(10 - strlen(space), 0);
-			white = rz_str_pad(' ', w);
+			white = allocated = rz_str_pad(' ', w);
 		}
 		if (use_color) {
 			const char *pre = PREOFF(offset)
 			    : Color_GREEN;
 			const char *fin = Color_RESET;
-			if (p && p->flags & RZ_PRINT_FLAGS_RAINBOW) {
-				// pre = rz_cons_rgb_str_off (rgbstr, addr);
-				if (p->cons && p->cons->rgbstr) {
-					static char rgbstr[32];
-					pre = p->cons->rgbstr(rgbstr, sizeof(rgbstr), addr);
-				}
-			}
 			if (dec) {
 				rz_strbuf_appendf(sb, "%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
 			} else {
@@ -484,6 +462,7 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 			}
 		}
 	}
+	free(allocated);
 }
 
 RZ_API void rz_print_addr(RzPrint *p, ut64 addr) {
@@ -1481,4 +1460,18 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 		rz_strbuf_append(out, reset);
 	}
 	return out;
+}
+
+// Prints a help option with the option/arg strings colorized and aligned to a max length.
+RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
+	size_t optionWidth = strlen(option);
+	size_t maxSpaces = maxOptionAndArgLength + 2;
+	printf(Color_GREEN " %-.*s" Color_RESET, (int)optionWidth, option);
+	size_t remainingSpaces = maxSpaces - optionWidth;
+	if (RZ_STR_ISNOTEMPTY(arg)) {
+		printf(Color_YELLOW " %-s " Color_RESET, arg);
+		remainingSpaces -= strlen(arg) + 2;
+	}
+	printf("%-*.*s", (int)remainingSpaces, (int)remainingSpaces, "");
+	printf(Color_RESET "%s\n", description);
 }

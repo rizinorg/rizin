@@ -21,7 +21,7 @@ e asm.bits
 EOF
 EXPECT=<<EOF
 32
-0x00401000  2  .text  void __cdecl SomeCoolFunction(void)
+0x00401000  4366  .text  void __cdecl SomeCoolFunction(void)
 32
 EOF
 RUN
@@ -31,6 +31,22 @@ FILE==
 CMDS=idpij bins/pdb/minimal.pdb~{}
 EXPECT=<<EOF
 [
+  {
+    "modules": [
+      {
+        "module_name": "* Linker Generated Manifest RES *",
+        "object_file_name": ""
+      },
+      {
+        "module_name": "C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj",
+        "object_file_name": "C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"
+      },
+      {
+        "module_name": "* Linker *",
+        "object_file_name": ""
+      }
+    ]
+  },
   {
     "types": [
       {
@@ -125,31 +141,31 @@ EXPECT=<<EOF
     "gvars": [
       {
         "address": 12292,
-        "symtype": 0,
+        "symtype": 4366,
         "section_name": ".data",
         "gdata_name": "_uninitialized_global"
       },
       {
         "address": 12288,
-        "symtype": 0,
+        "symtype": 4366,
         "section_name": ".data",
         "gdata_name": "_initialized_global"
       },
       {
         "address": 4096,
-        "symtype": 2,
+        "symtype": 4366,
         "section_name": ".text",
         "gdata_name": "_function"
       },
       {
         "address": 4182,
-        "symtype": 2,
+        "symtype": 4366,
         "section_name": ".text",
         "gdata_name": "_mainCRTStartup"
       },
       {
         "address": 4120,
-        "symtype": 2,
+        "symtype": 4366,
         "section_name": ".text",
         "gdata_name": "_main"
       }

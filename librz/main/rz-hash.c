@@ -71,40 +71,58 @@ typedef struct rz_hash_context {
 typedef bool (*RzHashRun)(RzHashContext *ctx, RzIO *io, const char *filename);
 
 static void rz_hash_show_help(bool usage_only) {
-	printf("Usage: rz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...\n");
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
+	printf("rz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...\n");
 	if (usage_only) {
 		return;
 	}
-	printf(
-		" -v          Shows version\n"
-		" -h          Shows this help page\n"
-		" -           Input read from stdin instead from a file\n"
-		" -a algo     Hash algorithm to use and you can specify multiple ones by\n"
-		"             appending a comma (example: sha1,md4,md5,sha256)\n"
-		" -B          Outputs the calculated value for each block\n"
-		" -b size     Sets the block size\n"
-		" -c value    Compare calculated value with a given one (hexadecimal)\n"
-		" -e endian   Sets the endianness (default: 'big' accepted: 'big' or 'little')\n"
-		" -D algo     Decrypt the given input; use -S to set key and -I to set IV (if needed)\n"
-		" -E algo     Encrypt the given input; use -S to set key and -I to set IV (if needed)\n"
-		" -f from     Starts the calculation at given offset\n"
-		" -t to       Stops the calculation at given offset\n"
-		" -I iv       Sets the initialization vector (IV)\n"
-		" -i times    Repeat the calculation N times\n"
-		" -j          Outputs the result as a JSON structure\n"
-		" -k          Outputs the calculated value using openssh's randomkey algorithm\n"
-		" -L          List all algorithms\n"
-		" -q          Sets quiet mode (use -qq to get only the calculated value)\n"
-		" -S seed     Sets the seed for -a, use '^' to append it before the input, use '@'\n"
-		"             prefix to load it from a file and '-' from read it\n"
-		" -K key      Sets the hmac key for -a and the key for -E/-D, use '@' prefix to\n"
-		"             load it from a file and '-' from read it\n"
-		"             from stdin (you can combine them)\n"
-		" -s string   Input read from a zero-terminated string instead from a file\n"
-		" -x hex      Input read from a hexadecimal value instead from a file\n"
-		"\n"
-		"             All the inputs (besides -s/-x/-c) can be hexadecimal or strings\n"
-		"             if 's:' prefix is specified\n");
+	const char *options[] = {
+		// clang-format off
+		"-v",     "",       "Show version information",
+		"-h",     "",       "Show this help",
+		"-",      "",       "Input read from stdin instead from a file",
+		"-a",     "algo",   "Hash algorithm to use and you can specify multiple ones by",
+		"",       "",       "Appending a comma (example: sha1,md4,md5,sha256)",
+		"-B",     "",       "Output the calculated value for each block",
+		"-b",     "size",   "Set the block size",
+		"-c",     "value",  "Compare calculated value with a given one (hexadecimal)",
+		"-e",     "endian", "Set the endianness (default: 'big' accepted: 'big' or 'little')",
+		"-D",     "algo",   "Decrypt the given input; use -S to set key and -I to set IV (if needed)",
+		"-E",     "algo",   "Encrypt the given input; use -S to set key and -I to set IV (if needed)",
+		"-f",     "from",   "Start the calculation at given offset",
+		"-t",     "to",     "Stop the calculation at given offset",
+		"-I",     "iv",     "Set the initialization vector (IV)",
+		"-i",     "times",  "Repeat the calculation N times",
+		"-j",     "",       "Output the result as a JSON structure",
+		"-k",     "",       "Output the calculated value using openssh's randomkey algorithm",
+		"-L",     "",       "List all algorithms",
+		"-q",     "",       "Set quiet mode (use -qq to get only the calculated value)",
+		"-S",     "seed",   "Set the seed for -a, use '^' to append it before the input, use '@'",
+		"",       "",       "Prefix to load it from a file and '-' from read it",
+		"-K",     "key",    "Set the hmac key for -a and the key for -E/-D, use '@' prefix to",
+		"",       "",       "Load it from a file and '-' from read it",
+		"",       "",       "From stdin (you can combine them)",
+		"-s",     "string", "Input read from a zero-terminated string instead from a file",
+		"-x",     "hex",    "Input read from a hexadecimal value instead from a file",
+		"",       "",       "",
+		"",       "",       "All the input (besides -s/-x/-c) can be hexadecimal or strings",
+		"",       "",       "If 's:' prefix is specified",
+		// clang-format on
+	};
+	size_t maxOptionAndArgLength = 0;
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		size_t optionLength = strlen(options[i]);
+		size_t argLength = strlen(options[i + 1]);
+		size_t totalLength = optionLength + argLength;
+		if (totalLength > maxOptionAndArgLength) {
+			maxOptionAndArgLength = totalLength;
+		}
+	}
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		if (i + 1 < sizeof(options) / sizeof(options[0])) {
+			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+		}
+	}
 }
 
 static void rz_hash_show_algorithms(RzHashContext *ctx) {
@@ -1170,7 +1188,7 @@ static bool lib_crypto_cb(RzLibPlugin *pl, void *user, void *data) {
 }
 
 static void hash_load_plugins(RzHashContext *ctx) {
-	char *tmp = rz_sys_getenv("RZ_ASM_NOPLUGINS");
+	char *tmp = rz_sys_getenv("RZ_NOPLUGINS");
 	if (tmp) {
 		free(tmp);
 		return;

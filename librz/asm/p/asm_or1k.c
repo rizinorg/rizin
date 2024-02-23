@@ -42,70 +42,69 @@ static int insn_to_str(RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra
 
 	if (!name || !type_descr->format) {
 		/* this should not happen, give up */
-		*line = sdb_fmt("invalid");
 		return 4;
 	}
 
 	switch (type) {
 	case INSN_X:
-		*line = sdb_fmt(type_descr->format, name);
+		*line = rz_str_newf(type_descr->format, name);
 		break;
 	case INSN_N:
-		*line = sdb_fmt(type_descr->format, name,
+		*line = rz_str_newf(type_descr->format, name,
 			(sign_extend(o.n, get_operand_mask(type_descr, INSN_OPER_N)) << 2) +
 				a->pc);
 		break;
 	case INSN_K:
-		*line = sdb_fmt(type_descr->format, name, o.k);
+		*line = rz_str_newf(type_descr->format, name, o.k);
 		break;
 	case INSN_DK:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.k);
+		*line = rz_str_newf(type_descr->format, name, o.rd, o.k);
 		break;
 	case INSN_DN:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.n << 13);
+		*line = rz_str_newf(type_descr->format, name, o.rd, o.n << 13);
 		break;
 	case INSN_B:
-		*line = sdb_fmt(type_descr->format, name, o.rb);
+		*line = rz_str_newf(type_descr->format, name, o.rb);
 		break;
 	case INSN_D:
-		*line = sdb_fmt(type_descr->format, name, o.rd);
+		*line = rz_str_newf(type_descr->format, name, o.rd);
 		break;
 	case INSN_AI:
-		*line = sdb_fmt(type_descr->format, name, o.ra, o.i);
+		*line = rz_str_newf(type_descr->format, name, o.ra, o.i);
 		break;
 	case INSN_DAI:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra, o.i);
+		*line = rz_str_newf(type_descr->format, name, o.rd, o.ra, o.i);
 		break;
 	case INSN_DAK:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra, o.i);
+		*line = rz_str_newf(type_descr->format, name, o.rd, o.ra, o.i);
 		break;
 	case INSN_DAL:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra, o.l);
+		*line = rz_str_newf(type_descr->format, name, o.rd, o.ra, o.l);
 		break;
 	case INSN_DA:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra);
+		*line = rz_str_newf(type_descr->format, name, o.rd, o.ra);
 		break;
 	case INSN_DAB:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra, o.rb);
+		*line = rz_str_newf(type_descr->format, name, o.rd, o.ra, o.rb);
 		break;
 	case INSN_AB:
-		*line = sdb_fmt(type_descr->format, name, o.ra, o.rb);
+		*line = rz_str_newf(type_descr->format, name, o.ra, o.rb);
 		break;
 	case INSN_IABI:
-		*line = sdb_fmt(type_descr->format, name,
+		*line = rz_str_newf(type_descr->format, name,
 			o.ra, o.rb, (o.k1 << 11) | o.k2);
 		break;
 	case INSN_KABK:
-		*line = sdb_fmt(type_descr->format, name,
+		*line = rz_str_newf(type_descr->format, name,
 			o.ra, o.rb, (o.k1 << 11) | o.k2);
 		break;
 	default:
-		*line = sdb_fmt("invalid");
+		break;
 	}
 	return 4;
 }
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int or1k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ut32 insn, opcode;
 	ut8 opcode_idx;
 	char *line = NULL;
@@ -115,8 +114,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = -1;
 
 	if (len < 4) {
-		line = sdb_fmt("invalid");
-		rz_strbuf_set(&op->buf_asm, line);
+		rz_asm_op_set_asm(op, "invalid");
 		return op->size;
 	}
 
@@ -128,16 +126,14 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	/* make sure instruction descriptor table is not overflowed */
 	if (opcode_idx >= insns_count) {
-		line = sdb_fmt("invalid");
-		rz_strbuf_set(&op->buf_asm, line);
+		rz_asm_op_set_asm(op, "invalid");
 		return op->size;
 	}
 
 	/* if instruction is marked as invalid finish processing now */
 	insn_descr = &or1k_insns[opcode_idx];
 	if (insn_descr->type == INSN_INVAL) {
-		line = sdb_fmt("invalid");
-		rz_strbuf_set(&op->buf_asm, line);
+		rz_asm_op_set_asm(op, "invalid");
 		return op->size;
 	}
 
@@ -146,14 +142,16 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!insn_descr->name && insn_descr->extra) {
 		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn)) != NULL) {
 			insn_to_str(a, &line, insn_descr, extra_descr, insn);
-		} else {
-			line = "invalid";
 		}
-		rz_strbuf_set(&op->buf_asm, line);
 	} else {
 		/* otherwise basic descriptor is enough */
 		insn_to_str(a, &line, insn_descr, NULL, insn);
-		rz_strbuf_set(&op->buf_asm, line);
+	}
+	if (line) {
+		rz_asm_op_set_asm(op, line);
+		free(line);
+	} else {
+		rz_asm_op_set_asm(op, "invalid");
 	}
 	return op->size;
 }
@@ -165,7 +163,7 @@ RzAsmPlugin rz_asm_plugin_or1k = {
 	.arch = "or1k",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BIG,
-	.disassemble = &disassemble,
+	.disassemble = &or1k_disassemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE

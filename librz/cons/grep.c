@@ -62,11 +62,6 @@ static const char *help_detail_tilde[] = {
 	NULL
 };
 
-/* TODO: remove globals */
-static RzList *sorted_lines = NULL;
-static RzList *unsorted_lines = NULL;
-static int sorted_column = -1;
-
 RZ_API void rz_cons_grep_help(void) {
 	rz_cons_cmd_help(help_detail_tilde, true);
 }
@@ -84,7 +79,7 @@ static void parse_grep_expression(const char *str) {
 	}
 	RzCons *cons = rz_cons_singleton();
 	RzConsGrep *grep = &cons->context->grep;
-	sorted_column = 0;
+	grep->sorted_column = 0;
 	bool first = true;
 
 	// setup cons->context->grep.icase according to cons->grep_icase
@@ -438,14 +433,16 @@ RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr) {
 	return ptr;
 }
 
-RZ_API void rz_cons_grep_process(char *grep) {
-	if (grep) {
-		parse_grep_expression(grep);
-		free(grep);
+RZ_API void rz_cons_grep_process(RZ_OWN char *grep) {
+	if (!grep) {
+		return;
 	}
+	rz_str_trim_tail(grep);
+	parse_grep_expression(grep);
+	free(grep);
 }
 
-static int cmp(const void *a, const void *b) {
+static int cmp(const void *a, const void *b, void *user) {
 	char *da = NULL;
 	char *db = NULL;
 	const char *ca = rz_str_trim_head_ro(a);
@@ -453,13 +450,14 @@ static int cmp(const void *a, const void *b) {
 	if (!a || !b) {
 		return (int)(size_t)((char *)a - (char *)b);
 	}
-	if (sorted_column > 0) {
+	RzConsGrep *grep = user;
+	if (grep->sorted_column > 0) {
 		da = strdup(ca);
 		db = strdup(cb);
 		int colsa = rz_str_word_set0(da);
 		int colsb = rz_str_word_set0(db);
-		ca = (colsa > sorted_column) ? rz_str_word_get0(da, sorted_column) : "";
-		cb = (colsb > sorted_column) ? rz_str_word_get0(db, sorted_column) : "";
+		ca = (colsa > grep->sorted_column) ? rz_str_word_get0(da, grep->sorted_column) : "";
+		cb = (colsb > grep->sorted_column) ? rz_str_word_get0(db, grep->sorted_column) : "";
 	}
 	if (IS_DIGIT(*ca) && IS_DIGIT(*cb)) {
 		ut64 na = rz_num_get(NULL, ca);
@@ -751,18 +749,18 @@ RZ_API void rz_cons_grepbuf(void) {
 		int nl = 0;
 		char *ptr = cons->context->buffer;
 		char *str;
-		sorted_column = grep->sort;
-		rz_list_sort(sorted_lines, cmp);
+		grep->sorted_column = grep->sort;
+		rz_list_sort(grep->sorted_lines, cmp, grep);
 		if (grep->sort_invert) {
-			rz_list_reverse(sorted_lines);
+			rz_list_reverse(grep->sorted_lines);
 		}
-		INSERT_LINES(unsorted_lines);
-		INSERT_LINES(sorted_lines);
+		INSERT_LINES(grep->unsorted_lines);
+		INSERT_LINES(grep->sorted_lines);
 		cons->lines = nl;
-		rz_list_free(sorted_lines);
-		sorted_lines = NULL;
-		rz_list_free(unsorted_lines);
-		unsorted_lines = NULL;
+		rz_list_free(grep->sorted_lines);
+		grep->sorted_lines = NULL;
+		rz_list_free(grep->unsorted_lines);
+		grep->unsorted_lines = NULL;
 	}
 }
 
@@ -870,16 +868,16 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 	if (grep->sort != -1) {
 		char ch = buf[len];
 		buf[len] = 0;
-		if (!sorted_lines) {
-			sorted_lines = rz_list_newf(free);
+		if (!grep->sorted_lines) {
+			grep->sorted_lines = rz_list_newf(free);
 		}
-		if (!unsorted_lines) {
-			unsorted_lines = rz_list_newf(free);
+		if (!grep->unsorted_lines) {
+			grep->unsorted_lines = rz_list_newf(free);
 		}
 		if (cons->lines >= grep->sort_row) {
-			rz_list_append(sorted_lines, strdup(buf));
+			rz_list_append(grep->sorted_lines, strdup(buf));
 		} else {
-			rz_list_append(unsorted_lines, strdup(buf));
+			rz_list_append(grep->unsorted_lines, strdup(buf));
 		}
 		buf[len] = ch;
 	}

@@ -615,25 +615,36 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
+typedef struct {
+	RzRegItem reg;
+} MIPSContext;
+
+static bool mips_init(void **user) {
+	MIPSContext *ctx = RZ_NEW0(MIPSContext);
+	rz_return_val_if_fail(ctx, false);
+	*user = ctx;
+	return true;
+}
+
 static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_insn *insn) {
-	static RzRegItem reg;
+	MIPSContext *ctx = (MIPSContext *)analysis->plugin_data;
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
-			ZERO_FILL(reg);
+			ZERO_FILL(ctx->reg);
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
-			op->src[0]->reg = &reg;
+			op->src[0]->reg = &ctx->reg;
 			parse_reg_name(op->src[0]->reg, *handle, insn, 1);
 			op->src[0]->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_STORE:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
-			ZERO_FILL(reg);
+			ZERO_FILL(ctx->reg);
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_MEM;
-			op->dst->reg = &reg;
+			op->dst->reg = &ctx->reg;
 			parse_reg_name(op->dst->reg, *handle, insn, 1);
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
@@ -733,9 +744,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		} else if (!strcmp(analysis->cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
 		} else if (!strcmp(analysis->cpu, "v2")) {
-#if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
-#endif
 		}
 	}
 	switch (analysis->bits) {
@@ -1227,6 +1236,14 @@ static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
+static bool mips_fini(void *user) {
+	MIPSContext *ctx = (MIPSContext *)user;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
@@ -1238,6 +1255,8 @@ RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 	.preludes = analysis_preludes,
 	.bits = 16 | 32 | 64,
 	.op = &analyze_op,
+	.init = mips_init,
+	.fini = mips_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

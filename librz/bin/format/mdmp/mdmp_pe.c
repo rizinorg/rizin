@@ -12,21 +12,22 @@ static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList /*<
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
 	RzBinAddr *ptr = NULL;
+	char tmpbuf[64];
 
 	do {
-		key = sdb_fmt("pe.tls_callback%d_paddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
 		paddr = sdb_num_get(bin->kv, key, 0);
 		if (!paddr) {
 			break;
 		}
 
-		key = sdb_fmt("pe.tls_callback%d_vaddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
 		vaddr = sdb_num_get(bin->kv, key, 0);
 		if (!vaddr) {
 			break;
 		}
 
-		key = sdb_fmt("pe.tls_callback%d_haddr", count);
+		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
 		haddr = sdb_num_get(bin->kv, key, 0);
 		if (!haddr) {
 			break;
@@ -87,17 +88,18 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-RzList /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct rz_bin_pe_import_t *imports = NULL;
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel;
-	RzList *ret, *relocs;
+	RzPVector *ret;
+	RzPVector *relocs;
 
 	imports = PE_(rz_bin_pe_get_imports)(pe_bin->bin);
-	ret = rz_list_new();
-	relocs = rz_list_newf(free);
+	ret = rz_pvector_new(NULL);
+	relocs = rz_pvector_new(free);
 
 	if (!imports || !ret || !relocs) {
 		free(imports);
@@ -117,7 +119,7 @@ RzList /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_md
 		ptr->bind = "NONE";
 		ptr->type = RZ_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = imports[i].ordinal;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 
 		if (!(rel = RZ_NEW0(RzBinReloc))) {
 			break;
@@ -136,26 +138,26 @@ RzList /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_md
 		rel->addend = 0;
 		rel->vaddr = offset + pe_bin->vaddr;
 		rel->paddr = imports[i].paddr + pe_bin->paddr;
-		rz_list_append(relocs, rel);
+		rz_pvector_push(relocs, rel);
 	}
 	free(imports);
 
 	return ret;
 }
 
-RzList /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzPVector /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	/* TODO: Vet code, taken verbatim(ish) from bin_pe.c */
 	int i;
 	ut64 ba = pe_bin->vaddr; // baddr (arch);
 	struct rz_bin_pe_section_t *sections = NULL;
 	RzBinSection *ptr;
-	RzList *ret;
+	RzPVector *ret;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	if (!pe_bin->bin || !(sections = pe_bin->bin->sections)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	PE_(rz_bin_pe_check_sections)
@@ -204,7 +206,7 @@ RzList /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_
 				ptr->is_data = true;
 			}
 		}
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

@@ -83,7 +83,7 @@ RZ_API bool rz_io_desc_cache_init(RzIODesc *desc) {
 	return (desc->cache = ht_up_new(NULL, pcache_kv_free, NULL)) ? true : false;
 }
 
-RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, int len) {
+RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, size_t len) {
 	RzIODescCache *cache;
 	ut64 caddr, desc_sz = rz_io_desc_size(desc);
 	int cbaddr, written = 0;
@@ -139,7 +139,7 @@ RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, in
 	return written;
 }
 
-RZ_API int rz_io_desc_cache_read(RzIODesc *desc, ut64 paddr, ut8 *buf, int len) {
+RZ_API int rz_io_desc_cache_read(RzIODesc *desc, ut64 paddr, ut8 *buf, size_t len) {
 	RzIODescCache *cache;
 	ut8 *ptr = buf;
 	ut64 caddr, desc_sz = rz_io_desc_size(desc);

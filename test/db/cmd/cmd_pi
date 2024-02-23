@@ -17,3 +17,32 @@ EXPECT=<<EOF
 [36mxor[0m[37m [0m[36mebp[0m[37m, [0m[36mebp[0m
 EOF
 RUN
+
+NAME=negative pi
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 0x90
+s 0x1
+pi -1
+EOF
+EXPECT=<<EOF
+nop
+EOF
+RUN
+
+NAME=negative pI
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 0x9090
+s 0x2
+pI -2
+EOF
+EXPECT=<<EOF
+nop
+nop
+EOF
+RUN

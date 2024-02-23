@@ -145,7 +145,7 @@ static void break_debugger(void *user) {
 	do_break = true;
 }
 
-static int windbg_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType windbg_wait(RzDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG Type, ProcessId, ThreadId;
@@ -420,6 +420,7 @@ static RzList *windbg_map_get(RzDebug *dbg) {
 	PIMAGE_SECTION_HEADER *s = RZ_NEWS0(PIMAGE_SECTION_HEADER, mod_cnt);
 	RzListIter *it;
 	RzDebugMap *mod = NULL;
+	char tmpbuf[512];
 	size_t i = 0;
 	rz_list_foreach (mod_list, it, mod) {
 		if (FAILED(ITHISCALL(dbgData, ReadImageNtHeaders, mod->addr, h + i))) {
@@ -467,7 +468,7 @@ static RzList *windbg_map_get(RzDebug *dbg) {
 					ut64 sect_vaddr = mod->addr + s[i][j].VirtualAddress;
 					ut64 sect_vsize = (((ut64)s[i][j].Misc.VirtualSize) + p_mask) & ~p_mask;
 					if (mbi.BaseAddress >= sect_vaddr && mbi.BaseAddress < sect_vaddr + sect_vsize) {
-						name = sdb_fmt("%s | %.8s", mod->name, s[i][j].Name);
+						name = rz_strf(tmpbuf, "%s | %.8s", mod->name, s[i][j].Name);
 						break;
 					}
 				}

@@ -120,7 +120,7 @@ static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 f
 	item->size = to - from + 1;
 	free(item->str);
 	if (is_string_with_zeroes(type, subtype)) {
-		item->str = str ? rz_str_ndup(str, item->size) : NULL;
+		item->str = rz_str_ndup(str, item->size);
 	} else {
 		item->str = str ? strdup(str) : NULL;
 	}
@@ -138,7 +138,8 @@ static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 f
 	return true;
 }
 
-RZ_API bool rz_meta_set_string(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, const char *s) {
+RZ_API bool rz_meta_set_string(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, RZ_NULLABLE const char *s) {
+	rz_return_val_if_fail(a, false);
 	// By default all strings are UTF-8
 	return meta_set(a, type, RZ_STRING_ENC_UTF8, addr, addr, s);
 }

@@ -6,7 +6,6 @@
 
 #include <rz_types.h>
 #include <rz_diff.h>
-#include <rz_regex.h>
 #include <rz_getopt.h>
 #include <rz_list.h> // rizin linked list
 #include <rz_skiplist.h> // skiplist
@@ -33,6 +32,7 @@
 #include "rz_util/rz_base64.h"
 #include "rz_util/rz_base91.h"
 #include "rz_util/rz_buf.h"
+#include "rz_util/rz_bits.h"
 #include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_time.h"
 #include "rz_util/rz_debruijn.h"
@@ -49,6 +49,7 @@
 #include "rz_util/rz_panels.h"
 #include "rz_util/rz_punycode.h"
 #include "rz_util/rz_range.h"
+#include "rz_util/rz_regex.h"
 #include "rz_util/rz_signal.h"
 #include "rz_util/rz_spaces.h"
 #include "rz_util/rz_stack.h"
@@ -75,6 +76,7 @@
 #include "rz_util/rz_luhn.h"
 #include "rz_util/rz_version.h"
 #include "rz_util/rz_lang_byte_array.h"
+#include "rz_util/rz_iterator.h"
 // requires io, core, ... #include "rz_util/rz_print.h"
 
 #ifdef __cplusplus

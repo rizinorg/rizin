@@ -5,7 +5,7 @@
 #include "rz_util/rz_print.h"
 #include <rz_vector.h>
 #include <rz_util/rz_strbuf.h>
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include <rz_util/rz_assert.h>
 #include <rz_list.h>
 #include <stdio.h>
@@ -85,6 +85,24 @@ static bool is_register(const char *name, RZ_BORROW const RzRegSet *regset) {
 		}
 	}
 	return false;
+}
+
+/**
+ * \brief Checks if the provided token string fits in any known asm token type.
+ *
+ * If the prev byte is not an operator or a separator and next byte is NULL(eg: "push rsp") , don't consider it as unknown
+ * If the prev byte or next byte is not an operator or a separator, don't consider it as unknown.
+ *
+ * \param str The parsed asm token.
+ * \param prev index of the prev byte of the token
+ * \param next index of the next byte of the token
+ * \return true The given token cannot be parsed to any known asm token type.
+ * \return false Otherwise.
+ */
+static bool is_not_unknown(const char *str, size_t prev, size_t next) {
+	rz_return_val_if_fail(str, false);
+	return (is_operator(str + prev - 1) || is_separator(str + prev - 1)) &&
+		(!*(str + next) || (is_operator(str + next) || is_separator(str + next)));
 }
 
 static char *directives[] = {
@@ -258,6 +276,7 @@ static void plugin_fini(RzAsm *a) {
 	if (a->cur && a->cur->fini && !a->cur->fini(a->plugin_data)) {
 		RZ_LOG_ERROR("asm plugin '%s' failed to terminate.\n", a->cur->name);
 	}
+	a->plugin_data = NULL;
 }
 
 RZ_API RzAsm *rz_asm_new(void) {
@@ -398,8 +417,7 @@ static void set_plugin_configs(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg
 	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
 	RzConfigNode *n;
 	RzListIter *it;
-	rz_list_foreach_iter(pcfg->nodes, it) {
-		n = it->data;
+	rz_list_foreach (pcfg->nodes, it, n) {
 		if (!rz_config_add_node(conf, rz_config_node_clone(n))) {
 			RZ_LOG_WARN("Failed to add \"%s\" to the global config.\n", n->name)
 		}
@@ -418,8 +436,7 @@ static void unset_plugins_config(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pc
 	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
 	RzConfigNode *n;
 	RzListIter *it;
-	rz_list_foreach_iter(pcfg->nodes, it) {
-		n = it->data;
+	rz_list_foreach (pcfg->nodes, it, n) {
 		if (!rz_config_rm(conf, n->name)) {
 			RZ_LOG_WARN("Failed to remove \"%s\" from the global config.", n->name)
 		}
@@ -496,7 +513,9 @@ static bool has_bits(RzAsmPlugin *h, int bits) {
 
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits) {
 	if (has_bits(a->cur, bits)) {
-		a->bits = bits; // TODO : use OR? :)
+		if (a->bits != bits) {
+			a->bits = bits; // TODO : use OR? :)
+		}
 		return true;
 	}
 	return false;
@@ -598,14 +617,14 @@ RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		if (a->invhex) {
 			if (a->bits == 16) {
 				ut16 b = rz_read_le16(buf);
-				rz_strbuf_set(&op->buf_asm, sdb_fmt(".word 0x%04x", b));
+				rz_asm_op_setf_asm(op, ".word 0x%04x", b);
 			} else {
 				ut32 b = rz_read_le32(buf);
-				rz_strbuf_set(&op->buf_asm, sdb_fmt(".dword 0x%08x", b));
+				rz_asm_op_setf_asm(op, ".dword 0x%08x", b);
 			}
 			// TODO: something for 64bits too?
 		} else {
-			rz_strbuf_set(&op->buf_asm, "invalid");
+			rz_asm_op_set_asm(op, "invalid");
 		}
 	}
 	if (a->ofilter) {
@@ -1441,7 +1460,7 @@ static bool overlaps_with_token(RZ_BORROW RzVector /*<RzAsmTokenString>*/ *toks,
  * \return 1 If a.start > b.start
  * \return 0 If a.start == b.start
  */
-static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
+static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b, void *user) {
 	rz_return_val_if_fail(a && b, 0);
 	if (a->start < b->start) {
 		return -1;
@@ -1526,7 +1545,7 @@ RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPatter
 	rz_pvector_foreach (patterns, it) {
 		RzAsmTokenPattern *pat = *it;
 		if (!pat->regex) {
-			pat->regex = rz_regex_new(pat->pattern, "e");
+			pat->regex = rz_regex_new(pat->pattern, RZ_REGEX_EXTENDED, 0);
 			if (!pat->regex) {
 				RZ_LOG_WARN("Did not compile regex pattern %s.\n", pat->pattern);
 				rz_warn_if_reached();
@@ -1565,35 +1584,34 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 			}
 		}
 
-		/// Start pattern search from the beginning
-		size_t asm_str_off = 0;
-
 		// Search for token pattern.
-		RzRegexMatch match[1];
-		while (rz_regex_exec(pattern->regex, asm_str + asm_str_off, 1, match, 0) == 0) {
-			st64 match_start = match[0].rm_so; // Token start
-			st64 match_end = match[0].rm_eo; // Token end
-			st64 len = match_end - match_start; // Length of token
-			st64 tok_offset = asm_str_off + match_start; // Token offset in str
+		RzPVector *match_sets = rz_regex_match_all(pattern->regex, asm_str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+		void **grouped_match;
+		rz_pvector_foreach (match_sets, grouped_match) {
+			if (rz_pvector_empty(*grouped_match)) {
+				continue;
+			}
+			RzRegexMatch *match = rz_pvector_at(*grouped_match, 0);
+			st64 match_start = match->start; // Token start
+			st64 len = match->len; // Length of token
+			st64 tok_offset = match_start; // Token offset in str
 			if (overlaps_with_token(toks->tokens, tok_offset, tok_offset + len - 1)) {
 				// If this is true a token with higher priority was matched before.
-				asm_str_off = tok_offset + len;
 				continue;
 			}
 
 			// New token found, add it.
 			if (!is_num(asm_str + tok_offset)) {
 				add_token(toks, tok_offset, len, pattern->type, 0);
-				asm_str_off = tok_offset + len;
 				continue;
 			}
 			ut64 number = strtoull(asm_str + tok_offset, NULL, 0);
 			add_token(toks, tok_offset, len, pattern->type, number);
-			asm_str_off = tok_offset + len;
 		}
+		rz_pvector_free(match_sets);
 	}
 
-	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false);
+	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false, NULL);
 	check_token_coverage(toks);
 
 	return toks;
@@ -1742,11 +1760,11 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 				// B: If it could be a hex number but has no prefix, a flag is set.
 				//    In this case we only mark it as number if it is not in the register profile.
 
+				// Handles cases where the string can be of: sym.foo_bar_ADC_dfg, sym_foo_bar_0x80
+				// 1) If the next byte after seek is not an operator or a separator and
+				// 2) if the hex string is not unknown then we can consider it as a number.
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_NUMBER);
-				if (!str[i + l]) { // End of asm string => token is number.
-					prefix_less_hex = !rz_num_is_hex_prefix(str + i);
-					is_number = true;
-				} else if (!isalpha(str[i + l])) { // Next char is something non alphabetic => Treat as number.
+				if ((!str[i + l] || is_separator(str + i + l) || is_operator(str + i + l)) && is_not_unknown(str, i, i + l)) {
 					prefix_less_hex = !rz_num_is_hex_prefix(str + i);
 					is_number = true;
 				}
@@ -1758,7 +1776,7 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 			} else if (mnemonic_parsed) {
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_REGISTER);
 				char *op_name = rz_str_ndup(str + i, l);
-				if (param && is_register(op_name, param->reg_sets)) {
+				if (param && is_register(op_name, param->reg_sets) && is_not_unknown(str, i, i + l)) {
 					add_token(toks, i, l, RZ_ASM_TOKEN_REGISTER, 0);
 				} else if (prefix_less_hex) {
 					// It wasn't a register but still could be a prefixless hex number.

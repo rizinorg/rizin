@@ -229,7 +229,7 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 		return true;
 	}
 	/* init line */
-	RzLine *line = rz_line_singleton();
+	RzLine *line = rz_cons_singleton()->line;
 	RzLineHistory hist = line->history;
 	RzLineHistory histnull = { 0 };
 	RzLineCompletion oc = line->completion;
@@ -242,12 +242,12 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 	for (;;) {
 		rz_cons_flush();
 		snprintf(buf, sizeof(buf) - 1, "%s> ", lang->cur->name);
-		rz_line_set_prompt(buf);
-		p = rz_line_readline();
+		rz_line_set_prompt(line, buf);
+		p = rz_line_readline(line);
 		if (!p) {
 			break;
 		}
-		rz_line_hist_add(p);
+		rz_line_hist_add(line, p);
 		strncpy(buf, p, sizeof(buf) - 1);
 		if (*buf == '!') {
 			if (buf[1]) {
@@ -289,7 +289,7 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 		}
 	}
 	// XXX: leaking history
-	rz_line_set_prompt(prompt);
+	rz_line_set_prompt(line, prompt);
 	line->completion = oc;
 	line->history = hist;
 	clearerr(stdin);

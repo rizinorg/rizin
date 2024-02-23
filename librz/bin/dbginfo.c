@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
-#include <rz_bin.h>
+#include <rz_bin_source_line.h>
+#include <ctype.h>
 
 RZ_API void rz_bin_source_line_info_builder_init(RzBinSourceLineInfoBuilder *builder) {
 	rz_vector_init(&builder->samples, sizeof(RzBinSourceLineSample), NULL, NULL);
@@ -36,7 +37,7 @@ RZ_API void rz_bin_source_line_info_builder_push_sample(RzBinSourceLineInfoBuild
 	sample->file = file ? rz_str_constpool_get(&builder->filename_pool, file) : NULL;
 }
 
-static int line_sample_cmp(const void *a, const void *b) {
+static int line_sample_cmp(const void *a, const void *b, void *user) {
 	const RzBinSourceLineSample *sa = a;
 	const RzBinSourceLineSample *sb = b;
 	// first, sort by addr
@@ -106,7 +107,7 @@ RZ_API RzBinSourceLineInfo *rz_bin_source_line_info_builder_build_and_fini(RzBin
 		for (size_t i = 0; i < initial_samples_count; i++) {
 			rz_pvector_push(&sorter, &initial_samples[i]);
 		}
-		rz_pvector_sort(&sorter, line_sample_cmp);
+		rz_pvector_sort(&sorter, line_sample_cmp, NULL);
 
 		r->samples_count = 0;
 		for (size_t i = 0; i < initial_samples_count; i++) {
@@ -141,6 +142,31 @@ RZ_API void rz_bin_source_line_info_free(RzBinSourceLineInfo *sli) {
 	free(sli->samples);
 	rz_str_constpool_fini(&sli->filename_pool);
 	free(sli);
+}
+
+/**
+ * \brief Merge two RzBinSourceLineInfo, save to \p dst
+ * \param dst the RzBinSourceLineInfo destination
+ * \param src the RzBinSourceLineInfo source
+ * \return true if success else false
+ */
+RZ_API bool rz_bin_source_line_info_merge(RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *dst, RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *src) {
+	rz_return_val_if_fail(dst && src, false);
+	RzBinSourceLineSample *tmp = realloc(dst->samples, sizeof(RzBinSourceLineSample) * (dst->samples_count + src->samples_count));
+	if (!tmp) {
+		return false;
+	}
+	dst->samples = tmp;
+	for (int i = 0; i < src->samples_count; ++i) {
+		RzBinSourceLineSample *sample_src = src->samples + i;
+		RzBinSourceLineSample *sample_dst = dst->samples + dst->samples_count + i;
+		if (!rz_mem_copy(sample_dst, sizeof(RzBinSourceLineSample), sample_src, sizeof(RzBinSourceLineSample))) {
+			return false;
+		}
+		sample_dst->file = sample_src->file ? rz_str_constpool_get(&dst->filename_pool, sample_src->file) : NULL;
+	}
+	dst->samples_count += src->samples_count;
+	return true;
 }
 
 /**
@@ -191,12 +217,14 @@ RZ_API const RzBinSourceLineSample *rz_bin_source_line_info_get_next(const RzBin
 	return next;
 }
 
-RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line) {
-	rz_return_val_if_fail(bin, false);
-	if (!bin->cur || !bin->cur->o || !bin->cur->o->lines) {
-		return false;
-	}
-	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(bin->cur->o->lines, addr);
+RZ_API bool rz_bin_source_line_addr2line(
+	RZ_BORROW RZ_IN RZ_NONNULL const RzBinSourceLineInfo *sl,
+	ut64 addr,
+	RZ_BORROW RZ_OUT RZ_NULLABLE char *file,
+	int len,
+	RZ_BORROW RZ_OUT RZ_NULLABLE int *line) {
+	rz_return_val_if_fail(sl, false);
+	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(sl, addr);
 	if (!s || s->address != addr) {
 		// consider only exact matches, not inside of samples
 		return false;
@@ -211,50 +239,112 @@ RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int
 			*file = 0;
 		}
 	}
-	return false;
+	return true;
 }
 
-RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin) {
-	rz_return_val_if_fail(bin, NULL);
-	if (!bin->cur || !bin->cur->o || !bin->cur->o->lines) {
-		return NULL;
+static char *str_trim_left_right(char *l, char *r) {
+	l = (char *)rz_str_trim_head_ro(l);
+	for (; r > l && isspace(*r); --r) {
+		*r = '\0';
 	}
-	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(bin->cur->o->lines, addr);
-	if (s && s->address != addr) {
+	return l;
+}
+
+static void cache_lines(RzBinSourceLineCacheItem *x) {
+	if (!x->file_content) {
+		return;
+	}
+
+	char *p = x->file_content;
+	char *q = NULL;
+	do {
+		q = strchr(p, '\n');
+		if (!q) {
+			break;
+		}
+		*q = '\0';
+		p = str_trim_left_right(p, q);
+		rz_pvector_push(x->line_by_ln, p);
+		p = q + 1;
+	} while ((p && p - x->file_content < x->file_size));
+}
+
+static const char *read_line(const char *file, int line, RzBinSourceLineCache *cache) {
+	rz_return_val_if_fail(file && line >= 1, NULL);
+	if (!(cache && cache->items)) {
+		return rz_file_slurp_line(file, line, 0);
+	}
+	bool found = false;
+	char *content = NULL;
+	size_t sz = 0;
+	RzBinSourceLineCacheItem *item = ht_pp_find(cache->items, file, &found);
+	if (found) {
+		if (!(item && item->file_content)) {
+			return NULL;
+		} else {
+			return rz_pvector_at(item->line_by_ln, line - 1);
+		}
+	} else {
+		content = rz_file_slurp(file, &sz);
+		if (!content) {
+			ht_pp_insert(cache->items, file, NULL);
+			return NULL;
+		}
+		item = RZ_NEW0(RzBinSourceLineCacheItem);
+		if (!item) {
+			goto err;
+		}
+		item->file_content = content;
+		item->file_size = sz;
+		item->line_by_ln = rz_pvector_new(NULL);
+		if (!item->line_by_ln) {
+			goto err;
+		}
+		ht_pp_update(cache->items, file, item);
+
+		rz_pvector_reserve(item->line_by_ln, line);
+		cache_lines(item);
+		return rz_pvector_at(item->line_by_ln, line - 1);
+	}
+err:
+	if (item) {
+		rz_pvector_free(item->line_by_ln);
+	}
+	free(content);
+	free(item);
+	return NULL;
+}
+
+RZ_API RZ_OWN char *rz_bin_source_line_addr2text(
+	RZ_BORROW RZ_IN RZ_NONNULL const RzBinSourceLineInfo *sl, ut64 addr, RzDebugInfoOption opt) {
+	rz_return_val_if_fail(sl, NULL);
+	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(sl, addr);
+	if (!(s && s->address == addr)) {
 		// consider only exact matches, not inside of samples
 		return NULL;
 	}
 	while (s && !s->file) {
-		s = rz_bin_source_line_info_get_next(bin->cur->o->lines, s);
+		s = rz_bin_source_line_info_get_next(sl, s);
 	}
 	if (!s) {
 		return NULL;
 	}
-	const char *file_nopath;
-	if (origin > 1) {
-		file_nopath = s->file;
-	} else {
-		file_nopath = strrchr(s->file, '/');
-		if (file_nopath) {
-			file_nopath++;
-		} else {
-			file_nopath = s->file;
-		}
-	}
+	const char *filepath = opt.abspath ? s->file : rz_file_basename(s->file);
 	if (!s->line) {
-		return strdup(file_nopath);
+		return strdup(filepath);
 	}
-	char *out = rz_file_slurp_line(s->file, s->line, 0);
-	if (out) {
-		rz_str_trim(out);
-		if (origin) {
-			char *res = rz_str_newf("%s:%d %s",
-				file_nopath, s->line,
-				out ? out : "");
-			free(out);
-			out = res;
-		}
-		return out;
+
+	RzStrBuf sb = { 0 };
+	rz_strbuf_initf(&sb, "%s:%" PFMT32u, filepath, s->line);
+	if (!opt.file) {
+		return rz_strbuf_drain_nofree(&sb);
 	}
-	return rz_str_newf("%s:%" PFMT32u, file_nopath, s->line);
+
+	const char *out = read_line(s->file, s->line, &opt.cache);
+	if (!out) {
+		return rz_strbuf_drain_nofree(&sb);
+	}
+
+	rz_strbuf_appendf(&sb, " %s", out);
+	return rz_strbuf_drain_nofree(&sb);
 }

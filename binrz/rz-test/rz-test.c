@@ -6,6 +6,7 @@
 #include <rz_cons.h>
 #include <rz_main.h>
 #include <rz_windows.h>
+#include <rz_util/rz_print.h>
 
 #define Color_INSERT   Color_BGREEN
 #define Color_DELETE   Color_BRED
@@ -60,30 +61,47 @@ static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultIn
 static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 
 static int help(bool verbose) {
-	printf("Usage: rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
+	printf("rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
-		printf(
-			" -h           print this help\n"
-			" -v           show version\n"
-			" -q           quiet\n"
-			" -V           verbose\n"
-			" -i           interactive mode\n"
-			" -n           do nothing (don't run any test, just load/parse them)\n"
-			" -L           log mode (better printing for CI, logfiles, etc.)\n"
-			" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
-			" -j [threads] how many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")\n"
-			" -r [rizin]   path to rizin executable (default is " RIZIN_CMD_DEFAULT ")\n"
-			" -m [rz-asm]  path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")\n"
-			" -f [file]    file to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")\n"
-			" -C [dir]     chdir before running rz-test (default follows executable symlink + test/new\n"
-			" -t [seconds] timeout per test (default is " TIMEOUT_DEFAULT_STR ")\n"
-			" -o [file]    output test run information in JSON format to file\n"
-			" -e [dir]     exclude a particular directory while testing (this option can appear many times)\n"
-			" -s [num]     number of expected successful tests\n"
-			" -x [num]     number of expected failed tests"
-			"\n"
-			"Supported test types: @json @unit @fuzz @cmds\n"
-			"OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
+		const char *options[] = {
+			// clang-format off
+			"-h",           "",               "Show this help",
+			"-v",           "",               "Show version information",
+			"-q",           "",               "Quiet mode",
+			"-V",           "",               "Be verbose",
+			"-i",           "",               "Interactive mode",
+			"-n",           "",               "Do nothing (don't run any test, just load/parse them)",
+			"-L",           "",               "Log mode (better printing for CI, logfiles, etc.)",
+			"-F",           "[dir]",          "Run fuzz tests (open and default analysis) on all files in the given dir",
+			"-j",           "[threads]",      "How many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")",
+			"-r",           "[rizin]",        "Path to rizin executable (default is " RIZIN_CMD_DEFAULT ")",
+			"-m",           "[rz-asm]",       "Path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")",
+			"-f",           "[file]",         "File to use for JSON tests (default is " JSON_TEST_FILE_DEFAULT ")",
+			"-C",           "[dir]",          "Chdir before running rz-test (default follows executable symlink + test/new)",
+			"-t",           "[seconds]",      "Timeout per test (default is " TIMEOUT_DEFAULT_STR " seconds)",
+			"-o",           "[file]",         "Output test run information in JSON format to file",
+			"-e",           "[dir]",          "Exclude a particular directory while testing (this option can appear many times)",
+			"-s",           "[num]",          "Number of expected successful tests",
+			"-x",           "[num]",          "Number of expected failed tests",
+			// clang-format on
+		};
+		size_t maxOptionAndArgLength = 0;
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			size_t optionLength = strlen(options[i]);
+			size_t argLength = strlen(options[i + 1]);
+			size_t totalLength = optionLength + argLength;
+			if (totalLength > maxOptionAndArgLength) {
+				maxOptionAndArgLength = totalLength;
+			}
+		}
+		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+			if (i + 1 < sizeof(options) / sizeof(options[0])) {
+				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+			}
+		}
+		printf("Supported test types: @json @unit @fuzz @cmds\n"
+		       "OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
 	}
 	return 1;
 }
@@ -725,9 +743,8 @@ static void print_diff(const char *actual, const char *expected, const char *reg
 	const char *output = actual;
 
 	if (regexp) {
-		RzList *matches = rz_regex_get_match_list(regexp, "e", actual);
-		output = rz_list_to_str(matches, '\0');
-		rz_list_free(matches);
+		RzStrBuf *match_str = rz_regex_full_match_str(regexp, actual, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, "\n");
+		output = rz_strbuf_drain(match_str);
 	}
 
 	d = rz_diff_lines_new(expected, output, NULL);
@@ -972,7 +989,9 @@ static void interact(RzTestState *state) {
 	printf(" %" PFMT64u " failed test(s) " UTF8_POLICE_CARS_REVOLVING_LIGHT "\n",
 		(ut64)rz_pvector_len(&failed_results));
 
+	ut32 cnt = 0;
 	rz_pvector_foreach (&failed_results, it) {
+		cnt++;
 		RzTestResultInfo *result = *it;
 		if (result->test->type != RZ_TEST_TYPE_CMD && result->test->type != RZ_TEST_TYPE_ASM) {
 			continue;
@@ -981,7 +1000,7 @@ static void interact(RzTestState *state) {
 		printf("#####################\n\n");
 		char *name = rz_test_test_name(result->test);
 		if (name) {
-			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
+			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET " (%d/%zu)\n", result->test->path, name, cnt, rz_pvector_len(&failed_results));
 			free(name);
 		}
 		print_result_diff(&state->run_config, result);

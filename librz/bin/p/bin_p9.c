@@ -44,29 +44,29 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	if (!bf->o->info) {
 		return NULL;
 	}
 
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
 		return NULL;
 	}
 	if (rz_buf_size(bf->buf) < 28) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	// add text segment
 	ut32 textsize;
 	if (!rz_buf_read_le32_at(bf->buf, 4, &textsize)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	ptr->name = strdup("text");
@@ -75,11 +75,11 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = 8 * 4;
 	ptr->vaddr = ptr->paddr;
 	ptr->perm = RZ_PERM_RX; // r-x
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	// add data segment
 	ut32 datasize;
 	if (!rz_buf_read_le32_at(bf->buf, 8, &datasize)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	if (datasize > 0) {
@@ -92,13 +92,13 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_RW;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	// ignore bss or what
 	// add syms segment
 	ut32 symssize;
 	if (!rz_buf_read_le32_at(bf->buf, 16, &symssize)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
@@ -112,12 +112,12 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	// add spsz segment
 	ut32 spszsize;
 	if (!rz_buf_read_le32_at(bf->buf, 24, &spszsize)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	if (spszsize) {
@@ -130,13 +130,13 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	// add pcsz segment
 	ut32 pcszsize;
 	if (!rz_buf_read_le32_at(bf->buf, 24, &pcszsize)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
@@ -150,21 +150,21 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	// TODO: parse symbol table
 	return NULL;
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return NULL;
 }
 

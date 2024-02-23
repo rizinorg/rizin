@@ -156,14 +156,14 @@ const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
 	return &pic_midrange_op_info[opcode];
 }
 
-int pic_midrange_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l) {
+int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l) {
 	char fsr_op[6];
 	st16 branch;
 
 #define EMIT_INVALID \
 	{ \
 		op->size = 2; \
-		strcpy(opbuf, "invalid"); \
+		rz_asm_op_set_asm(op, "invalid"); \
 		return 1; \
 	}
 	if (!b || l < 2) {
@@ -185,53 +185,52 @@ int pic_midrange_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l) {
 
 	op->size = 2;
 
-	const char *buf_asm = NULL;
 	switch (op_info->args) {
 	case PIC_MIDRANGE_OP_ARGS_NONE:
-		buf_asm = op_info->mnemonic;
+		rz_asm_op_set_asm(op, op_info->mnemonic);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_2F:
-		buf_asm = sdb_fmt("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_2F_MASK_F);
+		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_2F_MASK_F);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_7F:
-		buf_asm = sdb_fmt("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_7F_MASK_F);
+		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_7F_MASK_F);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1D_7F:
-		buf_asm = sdb_fmt("%s 0x%x, %c", op_info->mnemonic,
+		rz_asm_op_setf_asm(op, "%s 0x%x, %c", op_info->mnemonic,
 			instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_F,
 			(instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D) >> 7 ? 'f' : 'w');
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1N_6K:
 		if (opcode == PIC_MIDRANGE_OPCODE_ADDFSR) {
-			buf_asm = sdb_fmt("%s FSR%d, 0x%x", op_info->mnemonic,
+			rz_asm_op_setf_asm(op, "%s FSR%d, 0x%x", op_info->mnemonic,
 				(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >>
 					6,
 				instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K);
 		} else {
-			buf_asm = sdb_fmt("%s 0x%x[FSR%d]", op_info->mnemonic,
+			rz_asm_op_setf_asm(op, "%s 0x%x[FSR%d]", op_info->mnemonic,
 				instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K,
 				(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >> 6);
 		}
 		break;
 	case PIC_MIDRANGE_OP_ARGS_3B_7F:
-		buf_asm = sdb_fmt("%s 0x%x, %d", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F,
+		rz_asm_op_setf_asm(op, "%s 0x%x, %d", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F,
 			(instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B) >> 7);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_4K:
-		buf_asm = sdb_fmt("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_4K_MASK_K);
+		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_4K_MASK_K);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_8K:
-		buf_asm = sdb_fmt("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_8K_MASK_K);
+		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_8K_MASK_K);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_9K:
 		branch = (instr & PIC_MIDRANGE_OP_ARGS_9K_MASK_K);
 		branch |= ((branch & 0x100) ? 0xfe00 : 0);
-		buf_asm = sdb_fmt("%s %s0x%x",
+		rz_asm_op_setf_asm(op, "%s %s0x%x",
 			op_info->mnemonic, branch < 0 ? "-" : "",
 			branch < 0 ? -branch : branch);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_11K:
-		buf_asm = sdb_fmt("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_11K_MASK_K);
+		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_11K_MASK_K);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1N_2M:
 		snprintf(
@@ -239,11 +238,12 @@ int pic_midrange_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l) {
 			PicMidrangeFsrOps[instr &
 				PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M],
 			(instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N) >> 2);
-		buf_asm = sdb_fmt("%s %s", op_info->mnemonic, fsr_op);
+		rz_asm_op_setf_asm(op, "%s %s", op_info->mnemonic, fsr_op);
+		break;
+	default:
+		rz_asm_op_set_asm(op, "invalid");
 		break;
 	}
-	if (buf_asm) {
-		strcpy(opbuf, buf_asm);
-	}
+
 	return op->size;
 }

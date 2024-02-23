@@ -47,7 +47,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, i
 			rz_list_free(list_fds);
 			return NULL;
 		}
-		it->data = NULL;
+		rz_list_iter_set_data(it, NULL);
 	}
 	rz_list_free(all);
 	return list_fds;
@@ -109,7 +109,7 @@ static ut64 rz_io_ar_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int rz_io_ar_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int rz_io_ar_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
@@ -120,7 +120,7 @@ static int rz_io_ar_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	return res;
 }
 
-static int rz_io_ar_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int rz_io_ar_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}

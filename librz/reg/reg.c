@@ -139,7 +139,9 @@ RZ_API int rz_reg_get_name_idx(const char *type) {
 RZ_API bool rz_reg_set_name(RZ_NONNULL RzReg *reg, RzRegisterId role, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(reg && name, false);
 	if (role >= 0 && role < RZ_REG_NAME_LAST) {
-		reg->name[role] = rz_str_dup(reg->name[role], name);
+		char *tmp = rz_str_dup(name);
+		free(reg->name[role]);
+		reg->name[role] = tmp;
 		return true;
 	}
 	return false;
@@ -235,7 +237,7 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	reg->size = 0;
 }
 
-static int regcmp(RzRegItem *a, RzRegItem *b) {
+static int regcmp(RzRegItem *a, RzRegItem *b, void *user) {
 	int offa = (a->offset * 16) + a->size;
 	int offb = (b->offset * 16) + b->size;
 	return (offa > offb) - (offa < offb);
@@ -251,7 +253,7 @@ RZ_API void rz_reg_reindex(RzReg *reg) {
 			rz_list_append(all, r);
 		}
 	}
-	rz_list_sort(all, (RzListComparator)regcmp);
+	rz_list_sort(all, (RzListComparator)regcmp, NULL);
 	index = 0;
 	rz_list_foreach (all, iter, r) {
 		r->index = index++;

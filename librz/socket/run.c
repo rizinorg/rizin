@@ -49,17 +49,8 @@
 #include <errno.h>
 #if defined(__sun)
 #include <sys/filio.h>
-#endif
-#if __linux__ && !__ANDROID__
-#include <sys/personality.h>
-#endif
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-#if HAVE_DECL_PROCCTL_ASLR_CTL
-#include <sys/procctl.h>
-#endif
-#include <sys/sysctl.h>
-#endif
-#endif
+#endif /* __sun */
+#endif /* __UNIX__ */
 #ifdef _MSC_VER
 #include <direct.h> // to compile chdir in msvc windows
 #include <process.h> // to compile execv in msvc windows
@@ -292,44 +283,6 @@ static bool parse_bool(const char *value) {
 		!rz_str_casecmp(value, "1");
 }
 
-// TODO: move into rz_util? rz_run_... ? with the rest of funcs?
-static void setASLR(RzRunProfile *r, int enabled) {
-#if __linux__
-	rz_sys_aslr(enabled);
-#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
-	if (personality(ADDR_NO_RANDOMIZE) == -1) {
-#endif
-		rz_sys_aslr(0);
-#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
-	}
-#endif
-#elif __APPLE__
-	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
-	// disable this because its
-	const char *argv0 = r->_system ? r->_system
-		: r->_program          ? r->_program
-		: r->_args[0]          ? r->_args[0]
-				       : "/path/to/exec";
-	RZ_LOG_WARN("rz-run: to disable aslr patch mach0.hdr.flags with:\n"
-		    "rizin -qwnc 'wx 000000 @ 0x18' %s\n",
-		argv0);
-	// f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
-	// for osxver>=10.7
-	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
-	// the right way is to disable the aslr bit in the spawn call
-#elif __FreeBSD__ || __NetBSD__ || __DragonFly__
-	rz_sys_aslr(enabled);
-#if HAVE_DECL_PROCCTL_ASLR_CTL
-	int disabled = PROC_ASLR_FORCE_DISABLE;
-	if (procctl(P_PID, getpid(), PROC_ASLR_CTL, &disabled) == -1) {
-		rz_sys_aslr(0);
-	}
-#endif
-#else
-	// not supported for this platform
-#endif
-}
-
 #if __APPLE__
 #else
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
@@ -537,7 +490,7 @@ static bool parse_key_value(const char *input, char **key, char **value) {
 	if (equal[1] == '$') {
 		s_value = rz_sys_getenv(equal + 1);
 	} else {
-		s_value = rz_str_new(equal + 1);
+		s_value = rz_str_dup(equal + 1);
 	}
 
 	if (!s_key || !s_value) {
@@ -565,7 +518,8 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	}
 
 	if (!strcmp(key, "program")) {
-		p->_args[0] = p->_program = strdup(value);
+		p->_args[0] = strdup(value);
+		p->_program = strdup(value);
 	} else if (!strcmp(key, "daemon")) {
 		p->_daemon = true;
 	} else if (!strcmp(key, "system")) {
@@ -699,54 +653,6 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	free(key);
 	free(value);
 	return true;
-}
-
-RZ_API const char *rz_run_help(void) {
-	return "program=/bin/ls\n"
-	       "arg1=/bin\n"
-	       "# arg2=hello\n"
-	       "# arg3=\"hello\\nworld\"\n"
-	       "# arg4=:048490184058104849\n"
-	       "# arg5=:!rz-gg -p n50 -d 10:0x8048123\n"
-	       "# arg6=@arg.txt\n"
-	       "# arg7=@300@ABCD # 300 chars filled with ABCD pattern\n"
-	       "# system=rizin -\n"
-	       "# daemon=false\n"
-	       "# aslr=no\n"
-	       "setenv=FOO=BAR\n"
-	       "# unsetenv=FOO\n"
-	       "# clearenv=true\n"
-	       "# envfile=environ.txt\n"
-	       "timeout=3\n"
-	       "# timeoutsig=SIGTERM # or 15\n"
-	       "# connect=localhost:8080\n"
-	       "# listen=8080\n"
-	       "# pty=false\n"
-	       "# fork=true\n"
-	       "# bits=32\n"
-	       "# pid=0\n"
-	       "# pidfile=/tmp/foo.pid\n"
-	       "# #sleep=0\n"
-	       "# #maxfd=0\n"
-	       "# #execve=false\n"
-	       "# #maxproc=0\n"
-	       "# #maxstack=0\n"
-	       "# #core=false\n"
-	       "# #stdio=blah.txt\n"
-	       "# #stderr=foo.txt\n"
-	       "# stdout=foo.txt\n"
-	       "# stdin=input.txt # or !program to redirect input from another program\n"
-	       "# input=input.txt\n"
-	       "# chdir=/\n"
-	       "# chroot=/mnt/chroot\n"
-	       "# libpath=$PWD:/tmp/lib\n"
-	       "# rzpreload=yes\n"
-	       "# preload=/lib/libfoo.so\n"
-	       "# setuid=2000\n"
-	       "# seteuid=2000\n"
-	       "# setgid=2001\n"
-	       "# setegid=2001\n"
-	       "# nice=5\n";
 }
 
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
@@ -905,7 +811,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		return 1;
 	}
 	if (p->_aslr != -1) {
-		setASLR(p, p->_aslr);
+		rz_sys_aslr(p->_aslr);
 	}
 #if __UNIX__
 	set_limit(p->_docore, RLIMIT_CORE, RLIM_INFINITY);
@@ -1153,11 +1059,9 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 RZ_API int rz_run_start(RzRunProfile *p) {
-#if HAVE_EXECVE
 	if (p->_execve) {
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 	}
-#endif
 #if __APPLE__ && HAVE_FORK
 	posix_spawnattr_t attr = { 0 };
 	pid_t pid = -1;
@@ -1165,11 +1069,13 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 	posix_spawnattr_init(&attr);
 	if (p->_args[0]) {
 		char **envp = rz_sys_get_environ();
-		ut32 spflags = 0; // POSIX_SPAWN_START_SUSPENDED;
-		spflags |= POSIX_SPAWN_SETEXEC;
-		if (p->_aslr == 0) {
+		short spflags = POSIX_SPAWN_SETEXEC;
+
+		// https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/macosx/macosx-nat-inferior.c.auto.html
+		if (p->_aslr != -1 && p->_aslr) {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 			spflags |= _POSIX_SPAWN_DISABLE_ASLR;
+#undef _POSIX_SPAWN_DISABLE_ASLR
 		}
 		(void)posix_spawnattr_setflags(&attr, spflags);
 		if (p->_bits) {
@@ -1186,14 +1092,9 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 			posix_spawnattr_setbinpref_np(
 				&attr, 1, &cpu, &copied);
 		}
-		ret = posix_spawnp(&pid, p->_args[0],
-			NULL, &attr, p->_args, envp);
-		switch (ret) {
-		case 0:
-			break;
-		default:
+		ret = posix_spawnp(&pid, p->_args[0], NULL, &attr, p->_args, envp);
+		if (ret) {
 			RZ_LOG_ERROR("rz-run: posix_spawnp: %s\n", strerror(ret));
-			break;
 		}
 		exit(ret);
 	}
@@ -1327,14 +1228,10 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				}
 			}
 			setsid();
-#if HAVE_EXECVE
 			exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 #endif
-#endif
 		}
-#if HAVE_EXECVE
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
-#endif
 	}
 	if (p->_runlib) {
 		if (!p->_runlib_fcn) {

@@ -22,14 +22,14 @@ bool test_graph_to_agraph() {
 	mu_assert_notnull(graph, "Couldn't create the graph");
 	mu_assert_eq(graph->nodes->length, 4, "Wrong node count");
 
-	RzAGraph *agraph = create_agraph_from_graph(graph);
+	RzAGraph *agraph = create_agraph_from_graph(graph, false);
 	mu_assert_notnull(agraph, "Couldn't create the graph");
 	mu_assert_eq(agraph->graph->nodes->length, 4, "Wrong node count");
 
 	RzListIter *iter;
 	RzGraphNode *node;
 	int i = 0;
-	ls_foreach (agraph->graph->nodes, iter, node) {
+	rz_list_foreach (agraph->graph->nodes, iter, node) {
 		RzANode *info = node->data;
 		switch (i++) {
 		case 0:
@@ -39,7 +39,7 @@ bool test_graph_to_agraph() {
 				RzListIter *iter;
 				RzGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				rz_list_foreach (node->out_nodes, iter, out_node) {
 					RzANode *info = out_node->data;
 					switch (i++) {
 					case 0:
@@ -60,7 +60,7 @@ bool test_graph_to_agraph() {
 				RzListIter *iter;
 				RzGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				rz_list_foreach (node->out_nodes, iter, out_node) {
 					RzANode *info = out_node->data;
 					switch (i++) {
 					case 0:
@@ -78,7 +78,7 @@ bool test_graph_to_agraph() {
 				RzListIter *iter;
 				RzGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				rz_list_foreach (node->out_nodes, iter, out_node) {
 					RzANode *info = out_node->data;
 					switch (i++) {
 					case 0:

@@ -38,8 +38,12 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
+typedef struct {
+	struct disassemble_info disasm_obj;
+} SparcGnuContext;
+
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	static struct disassemble_info disasm_obj;
+	SparcGnuContext *ctx = (SparcGnuContext *)a->plugin_data;
 	if (len < 4) {
 		return -1;
 	}
@@ -51,20 +55,20 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	rz_strbuf_set(&op->buf_asm, "");
 	/* prepare disassembler */
-	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
-	disasm_obj.buffer = bytes;
-	disasm_obj.read_memory_func = &sparc_buffer_read_memory;
-	disasm_obj.symbol_at_address_func = &symbol_at_address;
-	disasm_obj.memory_error_func = &memory_error_func;
-	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = a->big_endian;
-	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
-	disasm_obj.mach = ((a->bits == 64)
+	memset(&ctx->disasm_obj, '\0', sizeof(struct disassemble_info));
+	ctx->disasm_obj.buffer = bytes;
+	ctx->disasm_obj.read_memory_func = &sparc_buffer_read_memory;
+	ctx->disasm_obj.symbol_at_address_func = &symbol_at_address;
+	ctx->disasm_obj.memory_error_func = &memory_error_func;
+	ctx->disasm_obj.print_address_func = &generic_print_address_func;
+	ctx->disasm_obj.endian = a->big_endian;
+	ctx->disasm_obj.fprintf_func = &generic_fprintf_func;
+	ctx->disasm_obj.stream = stdout;
+	ctx->disasm_obj.mach = ((a->bits == 64)
 			? bfd_mach_sparc_v9b
 			: 0);
 
-	op->size = print_insn_sparc((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_sparc((bfd_vma)Offset, &ctx->disasm_obj);
 
 	if (!strncmp(rz_strbuf_get(&op->buf_asm), "unknown", 7)) {
 		rz_asm_op_set_asm(op, "invalid");
@@ -75,12 +79,29 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static bool sparc_gnu_init(void **user) {
+	SparcGnuContext *ctx = RZ_NEW0(SparcGnuContext);
+	rz_return_val_if_fail(ctx, false);
+	*user = ctx;
+	return true;
+}
+
+static bool sparc_gnu_fini(void *user) {
+	SparcGnuContext *ctx = (SparcGnuContext *)user;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.arch = "sparc",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
 	.license = "GPL3",
+	.init = sparc_gnu_init,
+	.fini = sparc_gnu_fini,
 	.desc = "Scalable Processor Architecture",
 	.disassemble = &disassemble,
 };

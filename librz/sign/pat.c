@@ -53,7 +53,7 @@
 
 extern void module_free(RzFlirtModule *module);
 extern bool flirt_node_optimize(RzFlirtNode *root);
-extern int flirt_compare_node(const RzFlirtNode *a, const RzFlirtNode *b);
+extern int flirt_compare_node(const RzFlirtNode *a, const RzFlirtNode *b, void *user);
 
 static inline ut8 decode_byte(char b) {
 	if (b >= '0' && b <= '9') {
@@ -426,7 +426,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NON
 	rz_strbuf_free(line);
 
 	if (optimization == RZ_FLIRT_NODE_OPTIMIZE_NONE) {
-		rz_list_sort(root->child_list, (RzListComparator)flirt_compare_node);
+		rz_list_sort(root->child_list, (RzListComparator)flirt_compare_node, NULL);
 	} else if (!flirt_node_optimize(root)) {
 		rz_sign_flirt_node_free(root);
 		return NULL;
@@ -467,8 +467,9 @@ static bool flirt_pat_write_line(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL 
 	}
 
 	if (prelude_len < (RZ_FLIRT_MAX_PRELUDE_SIZE << 1)) {
-		const char *pad = rz_str_pad('.', (RZ_FLIRT_MAX_PRELUDE_SIZE << 1) - prelude_len);
+		char *pad = rz_str_pad('.', (RZ_FLIRT_MAX_PRELUDE_SIZE << 1) - prelude_len);
 		rz_strbuf_append(prelude, pad);
+		free(pad);
 	}
 
 	char tmp[32];

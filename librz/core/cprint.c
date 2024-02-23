@@ -400,7 +400,9 @@ static inline char *ut64_to_hex(const ut64 x, const ut8 width) {
 	rz_strbuf_appendf(sb, "%" PFMT64x, x);
 	ut8 len = rz_strbuf_length(sb);
 	if (len < width) {
-		rz_strbuf_prepend(sb, rz_str_pad('0', width - len));
+		char *pad = rz_str_pad('0', width - len);
+		rz_strbuf_prepend(sb, pad);
+		free(pad);
 	}
 	rz_strbuf_prepend(sb, "0x");
 	return rz_strbuf_drain(sb);
@@ -486,6 +488,36 @@ RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hexoffset
 }
 
 /**
+ * \brief Hexdump containing references at \p addr
+ * \param address Dump bytes address
+ * \param len Dump bytes length
+ * \return Hexdump string
+ */
+RZ_IPI RZ_OWN char *rz_core_print_hexdump_refs(RZ_NONNULL RzCore *core, ut64 address, size_t len, int wordsize) {
+	rz_return_val_if_fail(core, NULL);
+	ut8 *buffer = malloc(len);
+	if (!buffer) {
+		return NULL;
+	}
+
+	const int ocols = core->print->cols;
+	int bitsize = core->rasm->bits;
+	/* Thumb is 16bit arm but handles 32bit data */
+	if (bitsize == 16) {
+		bitsize = 32;
+	}
+	core->print->cols = 1;
+	core->print->flags |= RZ_PRINT_FLAGS_REFS;
+	rz_io_read_at(core->io, address, buffer, len);
+	char *hexdump_str = rz_print_hexdump_str(core->print, address, buffer,
+		len, wordsize * 8, bitsize / 8, 1);
+	core->print->flags &= ~RZ_PRINT_FLAGS_REFS;
+	core->print->cols = ocols;
+	free(buffer);
+	return hexdump_str;
+}
+
+/**
  * \brief Bytes string at \p addr with instructions in comments
  */
 RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, ut64 addr, int len) {
@@ -540,22 +572,44 @@ static void core_handle_call(RzCore *core, char *line, char **str) {
 }
 
 /**
- *  \brief Get the console output of disassembling \p byte_len bytes at \p addr
+ *  \brief Get the console output of disassembling \p byte_len bytes
+ *      or \p inst_len opcodes at \p addr. Restricted by \p byte_len
+ *      and \p inst_len at the same time. Set one of them to zero to
+ *      ignore its restriction.
  */
-static char *cons_dis_n_bytes(RzCore *core, ut64 addr, ut32 byte_len) {
+RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32 byte_len, ut32 inst_len) {
+	rz_return_val_if_fail(core && (byte_len || inst_len), NULL);
+
+	// cbytes in disasm_options decides whether byte_len constrains inst_len
+	bool cbytes = true;
+
+	if (byte_len == 0) {
+		cbytes = false;
+		byte_len = inst_len;
+	}
+
+	if (inst_len == 0) {
+		inst_len = byte_len;
+	}
+
 	ut8 *block = malloc(byte_len + 1);
 	if (!block) {
 		RZ_LOG_ERROR("Cannot allocate buffer\n");
 		return NULL;
 	}
 
-	rz_io_read_at(core->io, addr, block, byte_len);
+	if (rz_io_nread_at(core->io, addr, block, byte_len) == -1) {
+		RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".", addr);
+		free(block);
+		return NULL;
+	}
+
 	RzCoreDisasmOptions disasm_options = {
-		.cbytes = true,
+		.cbytes = cbytes,
 	};
 
 	rz_cons_push();
-	rz_core_print_disasm(core, addr, block, byte_len, 9999, NULL, &disasm_options);
+	rz_core_print_disasm(core, addr, block, byte_len, inst_len, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *cons_str = rz_str_get(rz_cons_get_buffer());
 	char *ret = strdup(cons_str);
@@ -602,13 +656,13 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	bool asm_flags = rz_config_get_i(core->config, "asm.flags");
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	// force defaults
-	rz_config_set_i(core->config, "emu.str", true);
-	rz_config_set_i(core->config, "asm.offset", true);
-	rz_config_set_i(core->config, "asm.debuginfo", true);
+	rz_config_set_b(core->config, "emu.str", true);
+	rz_config_set_b(core->config, "asm.offset", true);
+	rz_config_set_b(core->config, "asm.debuginfo", true);
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 	rz_config_set_i(core->config, "asm.tabs", 0);
 	rz_config_set_i(core->config, "scr.html", 0);
-	rz_config_set_i(core->config, "asm.cmt.right", true);
+	rz_config_set_b(core->config, "asm.cmt.right", true);
 
 	char *dump_string = NULL;
 	RzList *lines = NULL;
@@ -616,7 +670,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	case RZ_CORE_DISASM_STRINGS_MODE_BLOCK: {
 		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 		if (bb) {
-			dump_string = cons_dis_n_bytes(core, bb->addr, bb->size);
+			dump_string = rz_core_print_cons_disassembly(core, bb->addr, bb->size, 0);
 			if (!dump_string) {
 				goto restore_conf;
 			}
@@ -637,12 +691,15 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		break;
 	}
 	case RZ_CORE_DISASM_STRINGS_MODE_INST: {
-		dump_string = rz_core_cmd_str(core, "pd");
+		dump_string = rz_core_print_cons_disassembly(core, core->offset, 0, core->blocksize);
+		if (!dump_string) {
+			goto restore_conf;
+		}
 		break;
 	}
 	case RZ_CORE_DISASM_STRINGS_MODE_BYTES:
 	default: {
-		dump_string = cons_dis_n_bytes(core, core->offset, n_bytes);
+		dump_string = rz_core_print_cons_disassembly(core, core->offset, n_bytes, 0);
 		if (!dump_string) {
 			goto restore_conf;
 		}
@@ -926,4 +983,138 @@ RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core) {
 	case 32: return "pxw"; break;
 	}
 	return "px";
+}
+
+///< Pointers to different components of the pf format string
+typedef struct {
+	char *name; ///< format name
+	char *field; ///< format field (e.g. structure field)
+	char *value; ///< value to write (after "=")
+} pf_components;
+
+// Parses the string into three component's
+// to support also the `pfw bla.foo.goo=1235` syntax
+static RZ_OWN pf_components *parse_named_pf_string(const char *fmt) {
+	pf_components *comp = RZ_NEW0(pf_components);
+	if (!comp) {
+		return NULL;
+	}
+	// Format name could be after first dot
+	// Note, that regular `pf` format also can start from the dot
+	char *cur = (char *)fmt;
+	if (fmt[0] == '.') {
+		cur++;
+	}
+	// There is a format field specified
+	const char *dot = strchr(cur, '.');
+	if (dot) {
+		comp->name = rz_sub_str_ptr(fmt, cur, dot - 1);
+		cur = (char *)dot;
+	} else {
+		comp->name = rz_sub_str_ptr(fmt, cur, cur + strlen(cur));
+	}
+	// Name is mandatory
+	if (!comp->name) {
+		free(comp);
+		return NULL;
+	}
+	// There is a value to write specified
+	const char *eq = strchr(cur, '=');
+	if (eq) {
+		comp->field = rz_sub_str_ptr(fmt, cur + 1, eq - 1);
+		comp->value = rz_sub_str_ptr(fmt, eq + 1, eq + strlen(eq));
+	} else {
+		comp->field = rz_sub_str_ptr(fmt, cur + 1, cur + strlen(cur));
+	}
+	return comp;
+}
+
+static RZ_OWN char *pf_get_format_name(const char *fmt) {
+	// Format name could be after first dot
+	// Note, that regular `pf` format also can start from the dot
+	char *start = (char *)fmt;
+	char *end = (char *)fmt + strlen(fmt);
+	if (fmt[0] == '.') {
+		start++;
+	}
+	// There is a format field specified
+	const char *dot = strchr(start, '.');
+	if (dot) {
+		end = (char *)dot - 1;
+	}
+	return rz_sub_str_ptr(fmt, start, end);
+}
+
+/* Function allows to parse and print format in different syntaxes:
+ * `pf .bla`
+ * `pf foo.goo`
+ * `pfw foo.goo=15`
+ * `pfw foo.goo 15`
+ *  ...
+ */
+static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char *value, int mode, ut64 address) {
+	int o_blocksize = core->blocksize;
+	ut64 old_offset = core->offset;
+	core->print->reg = rz_core_reg_default(core);
+	core->print->get_register = rz_reg_get;
+	core->print->get_register_value = rz_reg_get_value;
+
+	rz_core_seek(core, address, true);
+
+	// Try to parse the format string and detect if there is a possible name
+	pf_components *comp = NULL;
+	char *fmtname = pf_get_format_name(fmt);
+	if (fmtname) {
+		// To be sure it's the format name, receive the format string
+		const char *format = rz_type_db_format_get(core->analysis->typedb, fmtname);
+		if (format) {
+			comp = parse_named_pf_string(fmt);
+			// Value was passed not through "="
+			if (value && comp && !comp->value) {
+				comp->value = rz_str_dup(value);
+			}
+		}
+	}
+	int struct_sz = 0;
+	if (comp) {
+		// If the split into components is finished, use the only format name
+		struct_sz = rz_type_format_struct_size(core->analysis->typedb, comp->name, mode, 0);
+	} else {
+		struct_sz = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0);
+	}
+	size_t size = RZ_MAX(core->blocksize, struct_sz);
+	// Make sure the whole format will be processed
+	if (size > core->blocksize) {
+		rz_core_block_size(core, size);
+	}
+	char *result = NULL;
+	ut8 *buf = calloc(1, size);
+	if (!buf) {
+		RZ_LOG_ERROR("core: cannot allocate %zu byte(s)\n", size);
+		goto stage_left;
+	}
+	memcpy(buf, core->block, core->blocksize);
+	free(fmtname);
+	// Use the component-based data formatting if split was correct
+	if (comp) {
+		result = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
+			buf, size, comp->name, mode, comp->value, comp->field);
+	} else {
+		result = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
+			buf, size, fmt, mode, value, NULL);
+	}
+	free(buf);
+
+stage_left:
+	rz_core_seek(core, old_offset, true);
+	rz_core_block_size(core, o_blocksize);
+	return result;
+}
+
+RZ_IPI RZ_OWN char *rz_core_print_format(RzCore *core, const char *fmt, int mode, ut64 address) {
+	return core_print_format(core, fmt, NULL, mode, address);
+}
+
+RZ_IPI RZ_OWN char *rz_core_print_format_write(RzCore *core, const char *fmt, const char *value, ut64 address) {
+	return core_print_format(core, fmt, value, RZ_PRINT_MUSTSET, address);
 }

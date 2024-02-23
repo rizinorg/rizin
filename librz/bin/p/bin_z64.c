@@ -103,14 +103,14 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList /*<RzBinSection *>*/ *ret = rz_list_new();
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector /*<RzBinSection *>*/ *ret = rz_pvector_new(NULL);
 	if (!ret) {
 		return NULL;
 	}
 	RzBinSection *text = RZ_NEW0(RzBinSection);
 	if (!text) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	text->name = strdup("text");
@@ -119,7 +119,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	text->paddr = N64_ROM_START;
 	text->vaddr = baddr(bf);
 	text->perm = RZ_PERM_RX;
-	rz_list_append(ret, text);
+	rz_pvector_push(ret, text);
 	return ret;
 }
 

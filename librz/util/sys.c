@@ -1,29 +1,36 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util.h>
 #include <rz_userconf.h>
 #include <stdlib.h>
 #include <string.h>
+
 #if defined(__NetBSD__)
 #include <sys/param.h>
 #include <sys/sysctl.h>
-#endif
+#endif /* defined(__NetBSD__) */
+
 #if defined(__FreeBSD__)
 #include <sys/param.h>
 #include <sys/sysctl.h>
-#endif
+#endif /* defined(__FreeBSD__) */
+
 #if defined(__DragonFly__)
 #include <sys/param.h>
 #include <sys/sysctl.h>
-#endif
+#endif /* defined(__DragonFly__) */
+
 #if defined(__OpenBSD__)
 #include <sys/sysctl.h>
 #include <sys/stat.h>
-#endif
+#endif /* defined(__OpenBSD__) */
+
 #if defined(__HAIKU__)
 #include <kernel/image.h>
 #include <sys/param.h>
-#endif
+#endif /* defined(__HAIKU__) */
+
 #include <sys/types.h>
 #include <rz_types.h>
 #include <rz_util.h>
@@ -31,15 +38,28 @@
 
 static char **env = NULL;
 
+#if HAVE_DECL_ADDR_NO_RANDOMIZE
+#include <sys/personality.h>
+#endif /* HAVE_DECL_ADDR_NO_RANDOMIZE */
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if HAVE_DECL_PROCCTL_ASLR_CTL
+#include <sys/procctl.h>
+#endif /* HAVE_DECL_PROCCTL_ASLR_CTL */
+#include <sys/sysctl.h>
+#endif /* defined(__FreeBSD__) || defined(__DragonFly__) */
+
 #if HAVE_BACKTRACE
 #include <execinfo.h>
-#endif
+#endif /* HAVE_BACKTRACE */
+
 #if __APPLE__
 #include <errno.h>
 
-#if HAVE_ENVIRON || __APPLE__
+#if HAVE_ENVIRON
 #include <execinfo.h>
 #endif
+
 // iOS don't have this we can't hardcode
 // #include <crt_externs.h>
 extern char ***_NSGetEnviron(void);
@@ -47,8 +67,9 @@ extern char ***_NSGetEnviron(void);
 #define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void *buffer, ut32 buffersize);
 // #  include <libproc.h>
-#endif
-#endif
+#endif /* PROC_PIDPATHINFO_MAXSIZE */
+#endif /* __APPLE__ */
+
 #if __UNIX__
 #include <sys/utsname.h>
 #include <sys/wait.h>
@@ -59,8 +80,9 @@ extern char **environ;
 
 #ifdef __HAIKU__
 #define Sleep sleep
-#endif
-#endif
+#endif /* __HAIKU__ */
+#endif /* __UNIX__ */
+
 #if __WINDOWS__
 #include <io.h>
 #include <rz_windows.h>
@@ -71,8 +93,20 @@ extern char **environ;
 #include <psapi.h>
 #include <process.h> // to allow getpid under windows msvc compilation
 #include <direct.h> // to allow getcwd under windows msvc compilation
-#endif
-#endif
+#endif /* _MSC_VER */
+
+typedef BOOL(WINAPI *SetProcessMitigationPolicy_t)(
+	PROCESS_MITIGATION_POLICY mitigation_policy,
+	PVOID buffer,
+	SIZE_T length);
+
+typedef BOOL(WINAPI *GetProcessMitigationPolicy_t)(
+	HANDLE h_process,
+	PROCESS_MITIGATION_POLICY mitigation_policy,
+	PVOID buffer,
+	SIZE_T length);
+
+#endif /* __WINDOWS__ */
 
 /* For "openpty" family of funtcions */
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
@@ -83,15 +117,15 @@ extern char **environ;
 #else
 #include <pty.h>
 #include <utmp.h>
-#endif
-#endif
+#endif /* defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__) */
+#endif /* HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY */
 
 RZ_LIB_VERSION(rz_util);
 
 #ifdef __x86_64__
 #ifdef _MSC_VER
 #define RZ_SYS_ASM_START_ROP() \
-	eprintf("rz_sys_run_rop: Unsupported arch\n");
+	RZ_LOG_ERROR("rz_sys_run_rop: Unsupported architecture\n");
 #else
 #define RZ_SYS_ASM_START_ROP() \
 	__asm__ __volatile__("leaq %0, %%rsp; ret" \
@@ -113,7 +147,7 @@ RZ_LIB_VERSION(rz_util);
 #endif
 #else
 #define RZ_SYS_ASM_START_ROP() \
-	eprintf("rz_sys_run_rop: Unsupported arch\n");
+	RZ_LOG_ERROR("rz_sys_run_rop: Unsupported architecture\n");
 #endif
 
 static const struct {
@@ -145,6 +179,26 @@ static const struct {
 	{ NULL, 0 }
 };
 
+#if __WINDOWS__
+static char *sys_windows_error_msg(DWORD dw) {
+	LPTSTR lpMsgBuf;
+	if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			    FORMAT_MESSAGE_FROM_SYSTEM |
+			    FORMAT_MESSAGE_IGNORE_INSERTS,
+		    NULL,
+		    dw,
+		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		    (LPTSTR)&lpMsgBuf,
+		    0, NULL)) {
+		char *message = rz_sys_conv_win_to_utf8(lpMsgBuf);
+		LocalFree(lpMsgBuf);
+		rz_str_trim_tail(message);
+		return message;
+	}
+	return NULL;
+}
+#endif /* __WINDOWS__ */
+
 #if HAVE_SIGACTION
 RZ_API int rz_sys_sigaction(int *sig, void (*handler)(int)) {
 	struct sigaction sigact = {};
@@ -164,7 +218,7 @@ RZ_API int rz_sys_sigaction(int *sig, void (*handler)(int)) {
 	for (i = 0; sig[i] != 0; i++) {
 		ret = sigaction(sig[i], &sigact, NULL);
 		if (ret) {
-			eprintf("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
+			RZ_LOG_ERROR("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
 			return ret;
 		}
 	}
@@ -180,7 +234,7 @@ RZ_API int rz_sys_sigaction(int *sig, void (*handler)(int)) {
 	for (i = 0; sig[i] != 0; i++) {
 		void (*ret)(int) = signal(sig[i], handler);
 		if (ret == SIG_ERR) {
-			eprintf("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
+			RZ_LOG_ERROR("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
 			return -1;
 		}
 	}
@@ -300,9 +354,9 @@ RZ_API void rz_sys_backtrace(void) {
 	}
 #else
 #ifdef _MSC_VER
-#pragma message("TODO: rz_sys_bt : unimplemented")
+#pragma message("TODO: rz_sys_backtrace : unimplemented")
 #else
-#warning TODO: rz_sys_bt : unimplemented
+#warning TODO: rz_sys_backtrace : unimplemented
 #endif
 #endif
 }
@@ -555,49 +609,208 @@ RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 
 /**
  * \brief Enable or disable ASLR for the calling process
+ *
+ * Host is Linux:
+ *
+ * We can disable ASLR using the personlity flags (does not require root) or
+ * system-wide by setting /proc/sys/kernel/randomize_va_space to 0.
+ * If we want to enable it we must write 1 or 2 into /proc/sys/kernel/randomize_va_space
+ * ASLR support was added in linux 2.6 (year 2005)
+ *
+ * Host is NetBSD:
+ *
+ * We can enable/disable ASLR by calling sysctlbyname("security.pax.aslr.enabled").
+ * May require root/super-user priviledges.
+ *
+ * Host is DragonFly:
+ *
+ * We can enable/disable ASLR by calling sysctlbyname("vm.randomize_mmap")
+ * May require root/super-user priviledges.
+ *
+ * Host is FreeBSD (since version 13.0):
+ *
+ * We can enable/disable ASLR by calling sysctlbyname("kern.elf32.aslr.enable") and
+ * sysctlbyname("kern.elf64.aslr.enable")
+ * May require root/super-user priviledges.
+ *
+ * Host is Windows:
+ *
+ * We can only enable ASLR and not disable it.
+ * To enable it we just need to initialize PROCESS_MITIGATION_ASLR_POLICY by setting to true
+ * EnableBottomUpRandomization, EnableForceRelocateImages and EnableHighEntropy, and then call
+ * SetProcessMitigationPolicy(ProcessASLRPolicy).
+ * https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setprocessmitigationpolicy
+ *
+ * This feature is available since _WIN32_WINNT >= 0x0602 (Windows 8, Windows Server 2012)
+ * It is possible to manually disable ASLR on a binary by removing the PE flags called DLL Characteristics:
+ * - IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE
+ * - IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
+ * or as admin from PowerShell by running `Set-ProcessMitigation -Name file.exe -Disable ForceRelocateImages`
+ *
+ * Host is Apple:
+ *
+ * We can enable/disable ASRL when we spawn a process by adding the flag called _POSIX_SPAWN_DISABLE_ASLR (0x0100) to
+ * the flag field of posix_spawnattr_setflags.
+ * This was reverse engineered and documented in: https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/macosx/macosx-nat-inferior.c.auto.html
+ *
+ * It is possible to manually disable ASLR on a binary by removing the MH_PIE flag from the mach0 header.
+ * https://web.archive.org/web/20140906073648/http://src.chromium.org:80/svn/trunk/src/build/mac/change_mach_o_flags.py
+ *
+ * On Snow Leopard this also can be achieved by setting the environment variable DYLD_NO_PIE to 1 (export DYLD_NO_PIE=1)
  */
-RZ_API bool rz_sys_aslr(int val) {
-	bool ret = true;
+RZ_API bool rz_sys_aslr(bool enable) {
 #if __linux__
-	const char *rva = "/proc/sys/kernel/randomize_va_space";
-	char buf[3] = { 0 };
-	snprintf(buf, sizeof(buf), "%d\n", val != 0 ? 2 : 0);
-	int fd = rz_sys_open(rva, O_WRONLY, 0644);
-	if (fd != -1) {
-		if (write(fd, (ut8 *)buf, sizeof(buf)) != sizeof(buf)) {
-			eprintf("Failed to set RVA\n");
-			ret = false;
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
+	if (!enable) {
+		/*
+		 * https://manpages.debian.org/testing/manpages-dev/personality.2.en.html
+		 * Disable ASLR using personality flags and avoids to change the OS
+		 * value system-wide, which may require to have root priviledges.
+		 */
+		if (personality(ADDR_NO_RANDOMIZE) < 0) {
+			RZ_LOG_ERROR("Cannot set personality as ADDR_NO_RANDOMIZE\n");
+			return false;
 		}
-		close(fd);
+		return true;
 	}
-#elif __FreeBSD__ && __FreeBSD_version >= 1300000
-	size_t vlen = sizeof(val);
-	if (sysctlbyname("kern.elf32.aslr.enable", NULL, 0, &val, vlen) == -1) {
-		eprintf("Failed to set RVA 32 bits\n");
+#endif /* HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__ */
+	const char *proc_file = "/proc/sys/kernel/randomize_va_space";
+	char *contents = rz_file_slurp(proc_file, NULL);
+
+	// best effort at reading current value
+	if (RZ_STR_ISNOTEMPTY(contents)) {
+		if (enable && (contents[0] == '1' || contents[0] == '2')) {
+			// already enabled.
+			return true;
+		} else if (!enable && contents[0] == '0') {
+			// already disabled.
+			return true;
+		}
+	}
+	free(contents);
+
+	char buf[8] = { 0 };
+	snprintf(buf, sizeof(buf), "%d\n", enable ? 2 : 0);
+	int fd = rz_sys_open(proc_file, O_WRONLY, 0644);
+	if (fd == -1) {
+		RZ_LOG_ERROR("Cannot open /proc/sys/kernel/randomize_va_space\n");
 		return false;
 	}
 
+	int n_bytes = write(fd, (ut8 *)buf, sizeof(buf));
+	close(fd);
+	if (n_bytes != sizeof(buf)) {
+		RZ_LOG_ERROR("Cannot write %s to /proc/sys/kernel/randomize_va_space\n", buf);
+		return false;
+	}
+#if __FreeBSD__ || __NetBSD__ || __DragonFly__
+	int value = enable ? 1 : 0;
+	size_t vlen = sizeof(value);
+#if __NetBSD__
+	const char *ctl_name = "security.pax.aslr.enabled";
+#elif __DragonFly__
+	const char *ctl_name = "vm.randomize_mmap";
+#elif __FreeBSD__ && __FreeBSD_version >= 1300000
+	const char *ctl_name = "kern.elf32.aslr.enable";
 #if __LP64__
-	if (sysctlbyname("kern.elf64.aslr.enable", NULL, 0, &val, vlen) == -1) {
-		eprintf("Failed to set RVA 64 bits\n");
-		ret = false;
+	if (sysctlbyname("kern.elf64.aslr.enable", NULL, 0, &value, vlen) == -1) {
+		RZ_LOG_ERROR("Cannot set kern.elf64.aslr.enable\n");
+		return false;
 	}
-#endif
-#elif __NetBSD__
-	size_t vlen = sizeof(val);
-	if (sysctlbyname("security.pax.aslr.enabled", NULL, 0, &val, vlen) == -1) {
-		eprintf("Failed to set RVA\n");
-		ret = false;
+#endif /* __LP64__ */
+#else /* __FreeBSD__ */
+	const char *ctl_name = NULL;
+	RZ_LOG_DEBUG("ASLR support is not supported on this FreeBSD version\n");
+#endif /* __FreeBSD__ && __FreeBSD_version >= 1300000 */
+	// allow to fail.
+	if (ctl_name && sysctlbyname(ctl_name, NULL, 0, &value, vlen) == -1) {
+		RZ_LOG_ERROR("Cannot set %s\n", ctl_name);
+		return false;
 	}
-#elif __DragonFly__
-	size_t vlen = sizeof(val);
-	if (sysctlbyname("vm.randomize_mmap", NULL, 0, &val, vlen) == -1) {
-		eprintf("Failed to set RVA\n");
-		ret = false;
+#if HAVE_DECL_PROCCTL_ASLR_CTL
+	int set_aslr = enable ? PROC_ASLR_FORCE_ENABLE : PROC_ASLR_FORCE_DISABLE;
+	if (procctl(P_PID, getpid(), PROC_ASLR_CTL, &set_aslr) == -1) {
+		return false;
 	}
-#elif __DragonFly__
-#endif
-	return ret;
+#endif /* HAVE_DECL_PROCCTL_ASLR_CTL */
+#endif /* __FreeBSD__ || __NetBSD__ || __DragonFly__ */
+#elif __WINDOWS__
+	/*
+	 * https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_aslr_policy
+	 * SetProcessMitigationPolicy allows to enable or disable ASLR on windows per process, but
+	 * ASLR mitigation policies cannot be made less restrictive after they have been applied.
+	 * so a process that has already ASLR enable, cannot disable ASLR programmatically.
+	 * ASLR is also set in the PE flags called DLL Characteristics:
+	 * - IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE
+	 * - IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
+	 */
+	HMODULE module = GetModuleHandleA("kernel32.dll");
+	if (!module) {
+		RZ_LOG_ERROR("Cannot get kernel32.dll module pointer\n");
+		return false;
+	}
+	SetProcessMitigationPolicy_t setProcessMitigationPolicy = (SetProcessMitigationPolicy_t)GetProcAddress(module, "SetProcessMitigationPolicy");
+	GetProcessMitigationPolicy_t getProcessMitigationPolicy = (GetProcessMitigationPolicy_t)GetProcAddress(module, "GetProcessMitigationPolicy");
+
+	if (!setProcessMitigationPolicy || !getProcessMitigationPolicy) {
+		RZ_LOG_INFO("Get/SetProcessMitigationPolicy is not supported in this kernel32.dll, thus ASLR cannot be handled\n");
+		return true;
+	}
+
+	PROCESS_MITIGATION_ASLR_POLICY policy = { 0 };
+
+	HANDLE handle = GetCurrentProcess();
+
+	if (!getProcessMitigationPolicy(handle, ProcessASLRPolicy, &policy, sizeof(policy))) {
+		DWORD dw = GetLastError();
+		char *err = sys_windows_error_msg(dw);
+		RZ_LOG_ERROR("Cannot get ProcessASLRPolicy: %s (0x%x)\n", err, dw);
+		free(err);
+		return false;
+	}
+
+	if (enable && policy.EnableForceRelocateImages) {
+		// ASLR is already enabled.
+		RZ_LOG_INFO("ASLR is already enabled in the current process\n");
+		return true;
+	} else if (!enable && !policy.EnableForceRelocateImages) {
+		// ASLR is already disabled.
+		RZ_LOG_INFO("ASLR is already disabled in the current process\n");
+		return true;
+	} else if (!enable && policy.EnableForceRelocateImages) {
+		RZ_LOG_ERROR("On Windows, ASLR mitigation policies cannot be made less restrictive if they are already enabled.\n");
+		RZ_LOG_ERROR("It is possible to disable ASLR by modifying the PE header and removing the following flags:\n");
+		RZ_LOG_ERROR("- IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE\n");
+		RZ_LOG_ERROR("- IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA.\n");
+		RZ_LOG_ERROR("Or as Administrator from PowerShell by running: `Set-ProcessMitigation -Name file.exe -Disable ForceRelocateImages`\n");
+		return true;
+	}
+
+	memset(&policy, 0, sizeof(policy));
+	if (enable) {
+		policy.EnableBottomUpRandomization = 1;
+		policy.EnableForceRelocateImages = 1;
+		policy.EnableHighEntropy = 1;
+		policy.DisallowStrippedImages = 0;
+	}
+	if (!setProcessMitigationPolicy(ProcessASLRPolicy, &policy, sizeof(policy))) {
+		DWORD dw = GetLastError();
+		char *err = sys_windows_error_msg(dw);
+		RZ_LOG_ERROR("Cannot set ProcessASLRPolicy: %s (0x%x)\n", err, dw);
+		free(err);
+		return false;
+	}
+#elif __APPLE__
+	/**
+	 * Apple supports this by using the spawn api.
+	 * https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/macosx/macosx-nat-inferior.c.auto.html
+	 * so we always return true.
+	 */
+#else /* any other platform */
+	/* not supported on the platform */
+	RZ_LOG_INFO("ASLR support is not available on this platform.\n");
+#endif /* __linux__ */
+	return true;
 }
 
 RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
@@ -616,6 +829,8 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 		.stdin_pipe = input ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
 		.stdout_pipe = output ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
 		.stderr_pipe = sterr ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.pty = NULL,
+		.make_raw = false,
 	};
 
 	if (!rz_subprocess_init()) {
@@ -706,7 +921,7 @@ RZ_API bool rz_sys_mkdirp(const char *dir) {
 	char slash = RZ_SYS_DIR[0];
 	char *path = strdup(dir), *ptr = path;
 	if (!path) {
-		eprintf("rz_sys_mkdirp: Unable to allocate memory\n");
+		RZ_LOG_ERROR("rz_sys_mkdirp: Unable to allocate memory\n");
 		return false;
 	}
 	if (*ptr == slash) {
@@ -733,7 +948,7 @@ RZ_API bool rz_sys_mkdirp(const char *dir) {
 		}
 		*ptr = 0;
 		if (!rz_sys_mkdir(path) && rz_sys_mkdir_failed()) {
-			eprintf("rz_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
+			RZ_LOG_ERROR("rz_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
 			free(path);
 			return false;
 		}
@@ -746,26 +961,6 @@ RZ_API bool rz_sys_mkdirp(const char *dir) {
 	free(path);
 	return ret;
 }
-
-#if __WINDOWS__
-static char *sys_windows_error_msg(DWORD dw) {
-	LPTSTR lpMsgBuf;
-	if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			    FORMAT_MESSAGE_FROM_SYSTEM |
-			    FORMAT_MESSAGE_IGNORE_INSERTS,
-		    NULL,
-		    dw,
-		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		    (LPTSTR)&lpMsgBuf,
-		    0, NULL)) {
-		char *message = rz_sys_conv_win_to_utf8(lpMsgBuf);
-		LocalFree(lpMsgBuf);
-		rz_str_trim_tail(message);
-		return message;
-	}
-	return NULL;
-}
-#endif /* __WINDOWS__ */
 
 RZ_API void rz_sys_perror_str(const char *fun) {
 #if __UNIX__
@@ -840,7 +1035,7 @@ RZ_API int rz_sys_run(const ut8 *buf, int len) {
 		ptr += (4096 - pdelta);
 	}
 	if (!ptr || !buf) {
-		eprintf("rz_sys_run: Cannot run empty buffer\n");
+		RZ_LOG_ERROR("rz_sys_run: Cannot run empty buffer\n");
 		free(p);
 		return false;
 	}
@@ -866,7 +1061,7 @@ RZ_API int rz_sys_run(const ut8 *buf, int len) {
 	waitpid(pid, &st, 0);
 	if (WIFSIGNALED(st)) {
 		int num = WTERMSIG(st);
-		eprintf("Got signal %d\n", num);
+		RZ_LOG_WARN("Got signal %d\n", num);
 		ret = num;
 	} else {
 		ret = WEXITSTATUS(st);
@@ -885,12 +1080,12 @@ RZ_API int rz_sys_run_rop(const ut8 *buf, int len) {
 	// TODO: define RZ_SYS_ALIGN_FORWARD in rz_util.h
 	ut8 *bufptr = malloc(len);
 	if (!bufptr) {
-		eprintf("rz_sys_run_rop: Cannot allocate buffer\n");
+		RZ_LOG_ERROR("rz_sys_run_rop: Cannot allocate buffer\n");
 		return false;
 	}
 
 	if (!buf) {
-		eprintf("rz_sys_run_rop: Cannot execute empty rop chain\n");
+		RZ_LOG_ERROR("rz_sys_run_rop: Cannot execute empty rop chain\n");
 		free(bufptr);
 		return false;
 	}
@@ -910,13 +1105,13 @@ RZ_API int rz_sys_run_rop(const ut8 *buf, int len) {
 	}
 	st = 0;
 	if (waitpid(pid, &st, 0) == -1) {
-		eprintf("rz_sys_run_rop: waitpid failed\n");
+		RZ_LOG_ERROR("rz_sys_run_rop: waitpid failed\n");
 		free(bufptr);
 		return -1;
 	}
 	if (WIFSIGNALED(st)) {
 		int num = WTERMSIG(st);
-		eprintf("Got signal %d\n", num);
+		RZ_LOG_WARN("Got signal %d\n", num);
 		ret = num;
 	} else {
 		ret = WEXITSTATUS(st);
@@ -947,7 +1142,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 
 	processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!processHandle) {
-		eprintf("rz_sys_pid_to_path: Cannot open process.\n");
+		RZ_LOG_ERROR("rz_sys_pid_to_path: Cannot open process.\n");
 		return NULL;
 	}
 	DWORD length = GetModuleFileNameExW(processHandle, NULL, filename, maxlength);
@@ -956,32 +1151,32 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		length = GetProcessImageFileNameW(processHandle, filename, maxlength);
 		CloseHandle(processHandle);
 		if (length == 0) {
-			eprintf("rz_sys_pid_to_path: Error calling GetProcessImageFileName\n");
+			RZ_LOG_ERROR("rz_sys_pid_to_path: Error calling GetProcessImageFileName\n");
 			return NULL;
 		}
 		// Convert NT path to win32 path
 		char *name = rz_utf16_to_utf8(filename);
 		if (!name) {
-			eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
+			RZ_LOG_ERROR("rz_sys_pid_to_path: Error converting to utf8\n");
 			return NULL;
 		}
 		char *tmp = strchr(name + 1, '\\');
 		if (!tmp) {
 			free(name);
-			eprintf("rz_sys_pid_to_path: Malformed NT path\n");
+			RZ_LOG_ERROR("rz_sys_pid_to_path: Malformed NT path\n");
 			return NULL;
 		}
 		tmp = strchr(tmp + 1, '\\');
 		if (!tmp) {
 			free(name);
-			eprintf("rz_sys_pid_to_path: Malformed NT path\n");
+			RZ_LOG_ERROR("rz_sys_pid_to_path: Malformed NT path\n");
 			return NULL;
 		}
 		length = tmp - name;
 		tmp = malloc(length + 1);
 		if (!tmp) {
 			free(name);
-			eprintf("rz_sys_pid_to_path: Error allocating memory\n");
+			RZ_LOG_ERROR("rz_sys_pid_to_path: Error allocating memory\n");
 			return NULL;
 		}
 		strncpy(tmp, name, length);
@@ -993,7 +1188,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 				if (!dvc) {
 					free(name);
 					free(tmp);
-					eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
+					RZ_LOG_ERROR("rz_sys_pid_to_path: Error converting to utf8\n");
 					return NULL;
 				}
 				if (!strcmp(tmp, dvc)) {
@@ -1002,14 +1197,14 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 					char *d = rz_utf16_to_utf8(drv);
 					if (!d) {
 						free(name);
-						eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
+						RZ_LOG_ERROR("rz_sys_pid_to_path: Error converting to utf8\n");
 						return NULL;
 					}
 					tmp = rz_str_newf("%s%s", d, &name[length]);
 					free(d);
 					if (!tmp) {
 						free(name);
-						eprintf("rz_sys_pid_to_path: Error calling rz_str_newf\n");
+						RZ_LOG_ERROR("rz_sys_pid_to_path: Error calling rz_str_newf\n");
 						return NULL;
 					}
 					result = strdup(tmp);
@@ -1364,7 +1559,7 @@ RZ_API int rz_sys_pipe_close(int fd) {
 }
 
 #elif __UNIX__ && HAVE_PIPE
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 static HtUU *fd2close;
 // Use this lock to wraps pipe, close, exec*, system to ensure all pipe file
 // descriptors are either created AND added to fd2close or not created at all.
@@ -1485,14 +1680,16 @@ RZ_API int rz_sys_pipe_close(int fd) {
 #endif
 
 #if __UNIX__ && HAVE_EXECV && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(pathname) && argv && RZ_STR_ISNOTEMPTY(argv[0]), -1);
 	parent_lock_enter();
 	int res = execv(pathname, argv);
 	parent_lock_leave();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(pathname) && argv && RZ_STR_ISNOTEMPTY(argv[0]), -1);
 	parent_lock_enter();
 	close_fds();
 	int res = execv(pathname, argv);
@@ -1500,8 +1697,58 @@ RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
 	return res;
 }
 #elif !HAVE_EXECV
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
-	return -1;
+/**
+ * \brief Executes a program with a given set of arguments.
+ * This is an implementation of execv on systems that do not have support for this function by using
+ * RzSubprocess as layer of compatibility.
+ *
+ * Beware that argv[0] must be always allocated and should match pathname.
+ *
+ * \param pathname The path of the new program to execute
+ * \param argv The array of pointers to null-terminated strings that represent the argument list available to the new program.
+ *
+ * \return Returns -1 on failure otherwise the exit(n) value returned by the executed program.
+ */
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(pathname) && argv && RZ_STR_ISNOTEMPTY(argv[0]), -1);
+
+	if (!rz_subprocess_init()) {
+		RZ_LOG_ERROR("Cannot initialize subprocess in execv.\n");
+		return -1;
+	}
+
+	int argc = 0;
+	for (int i = 0; argv[i]; ++i) {
+		argc = i + 1;
+	}
+
+	RzSubprocessOpt opt = {
+		.file = pathname,
+		.args = (const char **)&argv[1],
+		.args_size = argc - 1,
+		.envvars = NULL,
+		.envvals = NULL,
+		.env_size = 0,
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.pty = NULL,
+		.make_raw = false,
+	};
+
+	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
+	if (!proc) {
+		RZ_LOG_ERROR("Cannot start subprocess in execv.\n");
+		rz_subprocess_fini();
+		return -1;
+	}
+
+	rz_subprocess_wait(proc, UT64_MAX);
+
+	int ret = rz_subprocess_ret(proc);
+	rz_subprocess_free(proc);
+	rz_subprocess_fini();
+	return ret;
 }
 #endif
 
@@ -1642,7 +1889,7 @@ RZ_API int rz_sys_system(const char *command) {
 		if (argv) {
 			char *argv0 = rz_file_path(argv[0]);
 			if (!argv0) {
-				eprintf("Cannot find '%s'\n", argv[0]);
+				RZ_LOG_ERROR("Cannot find '%s'\n", argv[0]);
 				return -1;
 			}
 			pid = 0;
@@ -1657,7 +1904,7 @@ RZ_API int rz_sys_system(const char *command) {
 			free(argv0);
 			return rc;
 		}
-		eprintf("Error parsing command arguments\n");
+		RZ_LOG_ERROR("Error parsing command arguments\n");
 		return -1;
 	}
 	int child = rz_sys_fork();
@@ -1786,7 +2033,7 @@ RZ_API int rz_sys_truncate(const char *file, int sz) {
 	}
 	int r = rz_sys_truncate_fd(fd, sz);
 	if (r != 0) {
-		eprintf("Could not resize '%s' file\n", file);
+		RZ_LOG_ERROR("Could not resize '%s' file\n", file);
 		close(fd);
 		return false;
 	}

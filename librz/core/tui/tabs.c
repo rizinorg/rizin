@@ -12,7 +12,7 @@ static void prompt_read(const char *p, char *buf, int buflen) {
 		return;
 	}
 	*buf = 0;
-	rz_line_set_prompt(p);
+	rz_line_set_prompt(rz_cons_singleton()->line, p);
 	rz_core_visual_showcursor(NULL, true);
 	rz_cons_fgets(buf, buflen, 0, NULL);
 	rz_core_visual_showcursor(NULL, false);
@@ -71,7 +71,9 @@ RZ_IPI RZ_OWN char *rz_core_visual_tab_string(RzCore *core, const char *kolor) {
 	if (str) {
 		int n = 79 - rz_str_ansi_len(str);
 		if (n > 0) {
-			str = rz_str_append(str, rz_str_pad('_', n));
+			char *pad = rz_str_pad('_', n);
+			str = rz_str_append(str, pad);
+			free(pad);
 		}
 		str = rz_str_append(str, "\n" Color_RESET);
 	}

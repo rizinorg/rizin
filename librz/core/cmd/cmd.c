@@ -81,7 +81,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 #include "cmd_math.c"
 
 static const char *help_msg_dollar[] = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
+	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See %$? for help on $variables)",
 	"$", "", "list all defined aliases",
 	"$*", "", "list all the aliases as rizin commands in base64",
 	"$**", "", "same as above, but using plain text",
@@ -612,21 +612,21 @@ static bool callback_foreach_kv(void *user, const char *k, const char *v) {
 }
 
 RZ_API int rz_line_hist_sdb_up(RzLine *line) {
-	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->n) {
+	if (!rz_list_iter_get_next(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = line->sdbshell_hist_iter->n;
-	strncpy(line->buffer.data, line->sdbshell_hist_iter->data, RZ_LINE_BUFSIZE - 1);
+	line->sdbshell_hist_iter = rz_list_iter_get_next(line->sdbshell_hist_iter);
+	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
 
 RZ_API int rz_line_hist_sdb_down(RzLine *line) {
-	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->p) {
+	if (!rz_list_iter_get_prev(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = line->sdbshell_hist_iter->p;
-	strncpy(line->buffer.data, line->sdbshell_hist_iter->data, RZ_LINE_BUFSIZE - 1);
+	line->sdbshell_hist_iter = rz_list_iter_get_prev(line->sdbshell_hist_iter);
+	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
@@ -744,7 +744,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		RzList *sdb_hist = line->sdbshell_hist;
 		rz_line_set_hist_callback(line, &rz_line_hist_sdb_up, &rz_line_hist_sdb_down);
 		for (;;) {
-			rz_line_set_prompt(p);
+			rz_line_set_prompt(line, p);
 			if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 1) {
 				break;
 			}
@@ -921,18 +921,37 @@ static RzCmdStatus pointer_read(RzCore *core, const char *expr) {
 	return RZ_CMD_STATUS_OK;
 }
 
+static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char *value_arg) {
+	bool ok;
+	ut64 addr = rz_num_math(core->num, addr_arg);
+	if (core->num->nc.errors) {
+		RZ_LOG_ERROR("Could not convert address argument to number");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (rz_hex_str_is_valid(value_arg, false) > 0) {
+		// write a byte sequence
+		ok = rz_core_write_hexpair(core, addr, value_arg) > 0;
+	} else {
+		// write a numerical value
+		ut64 value = rz_num_math(core->num, value_arg);
+		if (core->num->nc.errors) {
+			RZ_LOG_ERROR("Could not convert value argument to number");
+			return RZ_CMD_STATUS_ERROR;
+		}
+
+		ok = rz_core_write_value_at(core, addr, value, core->rasm->bits / 8);
+	}
+
+	return bool2status(ok);
+}
+
 RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv) {
-	int ret;
 	switch (argc) {
 	case 2:
 		return pointer_read(core, argv[1]);
 	case 3:
-		if (rz_str_startswith(argv[2], "0x")) {
-			ret = rz_core_cmdf(core, "wv %s @ %s", argv[2], argv[1]);
-		} else {
-			ret = rz_core_cmdf(core, "wx %s @ %s", argv[2], argv[1]);
-		}
-		return rz_cmd_int2status(ret);
+		return pointer_write(core, argv[1], argv[2]);
 	default:
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
@@ -1346,8 +1365,6 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 		free(cr);
 	}
 
-	rz_cons_break_pop();
-
 	if (tmpseek) {
 		rz_core_seek(core, orig_offset, true);
 		core->tmpseek = original_tmpseek;
@@ -1366,6 +1383,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 		}
 	}
 beach:
+	rz_cons_break_pop();
 	free(icmd);
 	return ret;
 }
@@ -1423,7 +1441,8 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 	char *grep = NULL;
 	RzIODesc *tmpdesc = NULL;
 	int pamode = !core->io->va;
-	int i, ret = 0, pipefd;
+	int i, ret = 0;
+	RzConsPipe *cpipe = NULL;
 	bool usemyblock = false;
 	int scr_html = -1;
 	int scr_color = -1;
@@ -1463,7 +1482,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 		break;
 	case '"':
 		for (; *cmd;) {
-			int pipefd = -1;
+			RzConsPipe *cpipe = NULL;
 			ut64 oseek = UT64_MAX;
 			char *line, *p;
 			haveQuote = *cmd == '"';
@@ -1524,7 +1543,8 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					str = (char *)rz_str_trim_head_ro(str);
 					rz_cons_flush();
 					const bool append = p[2] == '>';
-					pipefd = rz_cons_pipe_open(str, 1, append);
+					/* pipe stdout */
+					cpipe = rz_cons_pipe_open(str, 1, append);
 				}
 			}
 			line = strdup(cmd);
@@ -1539,9 +1559,10 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			if (oseek != UT64_MAX) {
 				rz_core_seek(core, oseek, true);
 			}
-			if (pipefd != -1) {
+			if (cpipe) {
 				rz_cons_flush();
-				rz_cons_pipe_close(pipefd);
+				rz_cons_pipe_close(cpipe);
+				cpipe = NULL;
 			}
 			if (!p) {
 				break;
@@ -1794,14 +1815,14 @@ escape_pipe:
 			free(o);
 		} else if (fdn > 0) {
 			// pipe to file (or append)
-			pipefd = rz_cons_pipe_open(str, fdn, appendResult);
-			if (pipefd != -1) {
+			cpipe = rz_cons_pipe_open(str, fdn, appendResult);
+			if (cpipe) {
 				if (!pipecolor) {
 					rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 				}
 				ret = rz_core_cmd_subst(core, cmd);
 				rz_cons_flush();
-				rz_cons_pipe_close(pipefd);
+				rz_cons_pipe_close(cpipe);
 			}
 		}
 		rz_cons_set_last_interactive();
@@ -2581,9 +2602,12 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 	{
 		RzBinImport *imp;
 		ut64 offorig = core->offset;
-		list = rz_bin_get_imports(core->bin);
+		RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
+		const RzPVector *imports = rz_bin_object_get_imports(bin_obj);
+		void **vec_iter = NULL;
 		RzList *lost = rz_list_newf(free);
-		rz_list_foreach (list, iter, imp) {
+		rz_pvector_foreach (imports, vec_iter) {
+			imp = *vec_iter;
 			char *impflag = rz_str_newf("sym.imp.%s", imp->name);
 			ut64 addr = rz_num_math(core->num, impflag);
 			ut64 *n = RZ_NEW(ut64);
@@ -2609,8 +2633,9 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			ut64 offorig = core->offset;
 			ut64 bszorig = core->blocksize;
 			RzBinSection *sec;
-			RzListIter *iter;
-			rz_list_foreach (obj->sections, iter, sec) {
+			void **iter;
+			rz_pvector_foreach (obj->sections, iter) {
+				sec = *iter;
 				rz_core_seek(core, sec->vaddr, true);
 				rz_core_block_size(core, sec->vsize);
 				rz_core_cmd0(core, cmd);
@@ -2641,13 +2666,16 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 's':
 		if (each[1] == 't') { // strings
-			list = rz_bin_get_strings(core->bin);
-			if (list) {
+			RzBinObject *o = rz_bin_cur_object(core->bin);
+			RzPVector *pvec = o ? (RzPVector *)rz_bin_object_get_strings(o) : NULL;
+			if (pvec) {
 				ut64 offorig = core->offset;
 				ut64 obs = core->blocksize;
 				RzBinString *s;
 				RzList *lost = rz_list_newf(free);
-				rz_list_foreach (list, iter, s) {
+				void **it;
+				rz_pvector_foreach (pvec, it) {
+					s = *it;
 					RzBinString *bs = rz_mem_dup(s, sizeof(RzBinString));
 					rz_list_append(lost, bs);
 				}
@@ -2665,10 +2693,13 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			RzBinSymbol *sym;
 			ut64 offorig = core->offset;
 			ut64 obs = core->blocksize;
-			list = rz_bin_get_symbols(core->bin);
+			RzBinObject *o = rz_bin_cur_object(core->bin);
+			RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+			void **it;
 			rz_cons_break_push(NULL, NULL);
 			RzList *lost = rz_list_newf(free);
-			rz_list_foreach (list, iter, sym) {
+			rz_pvector_foreach (symbols, it) {
+				sym = *it;
 				RzBinSymbol *bs = rz_mem_dup(sym, sizeof(RzBinSymbol));
 				rz_list_append(lost, bs);
 			}
@@ -2801,7 +2832,7 @@ static void foreachOffset(RzCore *core, const char *_cmd, const char *each) {
 	free(cmd);
 }
 
-static int bb_cmp(const void *a, const void *b) {
+static int bb_cmp(const void *a, const void *b, void *user) {
 	const RzAnalysisBlock *ba = a;
 	const RzAnalysisBlock *bb = b;
 	return ba->addr - bb->addr;
@@ -2833,6 +2864,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		free(cmdhit);
 	}
 		free(ostr);
+		rz_cons_break_pop();
 		return 0;
 	case '?': // "@@?"
 		rz_core_cmd_help(core, help_msg_at_at);
@@ -2844,7 +2876,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
 		int bs = core->blocksize;
 		if (fcn) {
-			rz_list_sort(fcn->bbs, bb_cmp);
+			rz_list_sort(fcn->bbs, bb_cmp, NULL);
 			rz_list_foreach (fcn->bbs, iter, bb) {
 				rz_core_block_size(core, bb->size);
 				rz_core_seek(core, bb->addr, true);
@@ -2888,7 +2920,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		int i;
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
 		if (fcn) {
-			rz_list_sort(fcn->bbs, bb_cmp);
+			rz_list_sort(fcn->bbs, bb_cmp, NULL);
 			rz_list_foreach (fcn->bbs, iter, bb) {
 				for (i = 0; i < bb->op_pos_size; i++) {
 					ut64 addr = bb->addr + bb->op_pos[i];
@@ -3855,17 +3887,17 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	} else {
 		rz_cons_flush();
 		RZ_LOG_DEBUG("redirect_stmt: fdn = %d, is_append = %d\n", fdn, is_append);
-		int pipefd = rz_cons_pipe_open(arg_str, fdn, is_append);
-		if (pipefd != -1) {
+		RzConsPipe *cpipe = rz_cons_pipe_open(arg_str, fdn, is_append);
+		if (cpipe) {
 			if (!pipecolor) {
 				rz_config_set_i(state->core->config, "scr.color", COLOR_MODE_DISABLED);
 			}
 			TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
 			res = handle_ts_stmt(state, command);
 			rz_cons_flush();
-			rz_cons_pipe_close(pipefd);
+			rz_cons_pipe_close(cpipe);
 		} else {
-			RZ_LOG_WARN("Could not open pipe to %d", fdn);
+			RZ_LOG_WARN("Could not open pipe to %d\n", fdn);
 		}
 	}
 	free(arg_str);
@@ -4657,7 +4689,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_bbs_stmt) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	RzCmdStatus ret = RZ_CMD_STATUS_OK;
-	rz_list_sort(fcn->bbs, bb_cmp);
+	rz_list_sort(fcn->bbs, bb_cmp, NULL);
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		rz_core_seek(core, bb->addr, true);
 		rz_core_block_size(core, bb->size);
@@ -4778,14 +4810,16 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_import_stmt) {
 	TSNode command = ts_node_named_child(node, 0);
 	RzBinSymbol *imp;
 	ut64 offorig = core->offset;
-	RzList *list = rz_bin_get_symbols(core->bin);
-	if (!list) {
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
+	if (!symbols) {
 		return RZ_CMD_STATUS_OK;
 	}
 
 	RzList *lost = rz_list_newf(free);
-	RzListIter *iter;
-	rz_list_foreach (list, iter, imp) {
+	void **it;
+	rz_pvector_foreach (symbols, it) {
+		imp = *it;
 		if (!imp->is_imported) {
 			continue;
 		}
@@ -4794,6 +4828,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_import_stmt) {
 		rz_list_append(lost, n);
 	}
 	ut64 *naddr;
+	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_list_foreach (lost, iter, naddr) {
 		ut64 addr = *naddr;
@@ -4855,11 +4890,14 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_symbol_stmt) {
 	RzBinSymbol *sym;
 	ut64 offorig = core->offset;
 	ut64 obs = core->blocksize;
-	RzList *list = rz_bin_get_symbols(core->bin);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	RzListIter *iter;
+	void **it;
 	rz_cons_break_push(NULL, NULL);
 	RzList *lost = rz_list_newf(free);
-	rz_list_foreach (list, iter, sym) {
+	rz_pvector_foreach (symbols, it) {
+		sym = *it;
 		RzBinSymbol *bs = rz_mem_dup(sym, sizeof(RzBinSymbol));
 		rz_list_append(lost, bs);
 	}
@@ -4884,15 +4922,20 @@ err:
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_string_stmt) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child(node, 0);
-	RzList *list = rz_bin_get_strings(core->bin);
+
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *vec = o ? (RzPVector *)rz_bin_object_get_strings(o) : NULL;
+
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	if (list) {
+	if (vec) {
 		ut64 offorig = core->offset;
 		ut64 obs = core->blocksize;
 		RzBinString *s;
 		RzList *lost = rz_list_newf(free);
 		RzListIter *iter;
-		rz_list_foreach (list, iter, s) {
+		void **it;
+		rz_pvector_foreach (vec, it) {
+			s = *it;
 			RzBinString *bs = rz_mem_dup(s, sizeof(RzBinString));
 			rz_list_append(lost, bs);
 		}
@@ -4921,8 +4964,9 @@ static RzCmdStatus do_iter_sections(struct tsr2cmd_state *state, TSNode node, bo
 	ut64 offorig = core->offset;
 	ut64 bszorig = core->blocksize;
 	RzBinSection *sec;
-	RzListIter *iter;
-	rz_list_foreach (obj->sections, iter, sec) {
+	void **iter;
+	rz_pvector_foreach (obj->sections, iter) {
+		sec = *iter;
 		if ((sec->is_segment && show_sections) || (!sec->is_segment && !show_sections)) {
 			continue;
 		}
@@ -5305,6 +5349,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	}
 
 	TSNode root = ts_tree_root_node(tree);
+	RzLine *line = core->cons->line;
 
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	struct tsr2cmd_state state;
@@ -5318,7 +5363,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	rz_pvector_init(&state.saved_tree, NULL);
 
 	if (state.log) {
-		rz_line_hist_add(state.input);
+		rz_line_hist_add(line, state.input);
 	}
 
 	char *ts_str = ts_node_string(root);
@@ -5491,8 +5536,8 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	}
 	rz_cons_reset();
 	if (rz_file_mkstemp("cmd", &tmp) != -1) {
-		int pipefd = rz_cons_pipe_open(tmp, 1, 0);
-		if (pipefd == -1) {
+		RzConsPipe *cpipe = rz_cons_pipe_open(tmp, 1, 0);
+		if (!cpipe) {
 			rz_file_rm(tmp);
 			free(tmp);
 			return rz_core_cmd_str(core, cmd);
@@ -5500,7 +5545,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 		char *_cmd = strdup(cmd);
 		rz_core_cmd(core, _cmd, 0);
 		rz_cons_flush();
-		rz_cons_pipe_close(pipefd);
+		rz_cons_pipe_close(cpipe);
 		if (rz_file_exists(tmp)) {
 			char *s = rz_file_slurp(tmp, NULL);
 			rz_file_rm(tmp);
@@ -5571,7 +5616,7 @@ RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	return core_cmd_raw(core, cmd, length);
 }
 
-static int compare_cmd_descriptor_name(const void *a, const void *b) {
+static int compare_cmd_descriptor_name(const void *a, const void *b, void *user) {
 	return strcmp(((RzCmdDescriptor *)a)->cmd, ((RzCmdDescriptor *)b)->cmd);
 }
 
@@ -5580,7 +5625,7 @@ static void cmd_descriptor_init(RzCore *core) {
 	RzListIter *iter;
 	RzCmdDescriptor *x, *y;
 	int n = core->cmd_descriptors->length;
-	rz_list_sort(core->cmd_descriptors, compare_cmd_descriptor_name);
+	rz_list_sort(core->cmd_descriptors, compare_cmd_descriptor_name, NULL);
 	rz_list_foreach (core->cmd_descriptors, iter, y) {
 		if (--n < 0) {
 			break;

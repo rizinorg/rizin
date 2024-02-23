@@ -31,14 +31,6 @@ static inline int nextcas(void) {
 	return cas++;
 }
 
-static SdbHook global_hook = NULL;
-static void *global_user = NULL;
-
-RZ_API void sdb_global_hook(SdbHook hook, void *user) {
-	global_hook = hook;
-	global_user = user;
-}
-
 // TODO: use mmap instead of read.. much faster!
 RZ_API Sdb *sdb_new0(void) {
 	return sdb_new(NULL, NULL, 0);
@@ -92,7 +84,6 @@ RZ_API Sdb *sdb_new(const char *path, const char *name, int lock) {
 		s->last = s->timestamped ? sdb_now() : 0LL;
 		s->fd = -1;
 	}
-	s->journal = -1;
 	s->fdump = -1;
 	s->depth = 0;
 	s->ndump = NULL;
@@ -107,9 +98,6 @@ RZ_API Sdb *sdb_new(const char *path, const char *name, int lock) {
 	s->ht = sdb_ht_new();
 	s->lock = lock;
 	// if open fails ignore
-	if (global_hook) {
-		sdb_hook(s, global_hook, global_user);
-	}
 	cdb_init(&s->db, s->fd);
 	return s;
 fail:
@@ -191,7 +179,6 @@ static void sdb_fini(Sdb *s, int donull) {
 	free(s->path);
 	ls_free(s->ns);
 	sdb_ht_free(s->ht);
-	sdb_journal_close(s);
 	if (s->fd != -1) {
 		close(s->fd);
 		s->fd = -1;
@@ -546,9 +533,6 @@ static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32
 	// XXX strlen computed twice.. because of check_*()
 	klen = strlen(key);
 	vlen = strlen(val);
-	if (s->journal != -1) {
-		sdb_journal_log(s, key, val);
-	}
 	cdb_findstart(&s->db);
 	kv = sdb_ht_find_kvp(s->ht, key, &found);
 	if (found && sdbkv_value(kv)) {
@@ -827,7 +811,6 @@ RZ_API bool sdb_sync(Sdb *s) {
 		}
 	}
 	sdb_disk_finish(s);
-	sdb_journal_clear(s);
 	// TODO: sdb_reset memory state?
 	return true;
 }
@@ -1042,15 +1025,6 @@ RZ_API void sdb_config(Sdb *s, int options) {
 	s->options = options;
 	if (options & SDB_OPTION_SYNC) {
 		// sync on every query
-	}
-	if (options & SDB_OPTION_JOURNAL) {
-		// sync on every query
-		sdb_journal_open(s);
-		// load journaling if exists
-		sdb_journal_load(s);
-		sdb_journal_clear(s);
-	} else {
-		sdb_journal_close(s);
 	}
 	if (options & SDB_OPTION_NOSTAMP) {
 		// sync on every query

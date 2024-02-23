@@ -33,21 +33,30 @@ typedef struct shared_context_t {
 	RzThreadLock *lock_b;
 	RzAnalysis *analysis_a;
 	RzAnalysis *analysis_b;
+	RzAtomicBool *loop;
 } SharedContext;
+
+typedef struct match_ui_info_t {
+	SharedContext *shared;
+	void *user;
+	RzAnalysisMatchThreadInfoCb callback;
+} MatchUIInfo;
 
 static bool shared_context_init(SharedContext *context, RzAnalysis *analysis_a, RzAnalysis *analysis_b, RzList /*<void *>*/ *list_a, RzList /*<void *>*/ *list_b, AllocateBuffer alloc_cb) {
 	RzThreadLock *lock_a = rz_th_lock_new(true);
 	RzThreadLock *lock_b = analysis_a == analysis_b ? lock_a : rz_th_lock_new(true);
-	RzThreadQueue *queue = rz_th_queue_new2(rz_list_clone(list_a));
+	RzThreadQueue *queue = rz_th_queue_from_list(list_a, NULL);
 	RzThreadQueue *matches = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
 	RzThreadQueue *unmatch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
-	if (!lock_a || !lock_b || !queue || !matches || !unmatch) {
+	RzAtomicBool *loop = rz_atomic_bool_new(true);
+	if (!lock_a || !lock_b || !queue || !matches || !unmatch || !loop) {
 		rz_th_lock_free(lock_a);
 		lock_a = NULL;
 		rz_th_lock_free(lock_b);
 		rz_th_queue_free(queue);
 		rz_th_queue_free(matches);
 		rz_th_queue_free(unmatch);
+		rz_atomic_bool_free(loop);
 		return false;
 	}
 	context->queue = queue;
@@ -59,6 +68,7 @@ static bool shared_context_init(SharedContext *context, RzAnalysis *analysis_a, 
 	context->lock_b = lock_b;
 	context->analysis_a = analysis_a;
 	context->analysis_b = analysis_b;
+	context->loop = loop;
 	return true;
 }
 
@@ -238,7 +248,26 @@ static RZ_OWN RzAnalysisMatchPair *match_pair_new(const void *pair_a, const void
 	return result;
 }
 
-static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzList /*<void *>*/ *list_a, RZ_NONNULL RzList /*<void *>*/ *list_b, RzThreadFunction thread_cb, AllocateBuffer alloc_cb) {
+// this thread does not care about thread-safety since it only prints
+// data that will always be available during its lifetime.
+static void *match_thread_ui(MatchUIInfo *ui_info) {
+	SharedContext *shared = ui_info->shared;
+	RzAnalysisMatchThreadInfoCb callback = ui_info->callback;
+	void *user = ui_info->user;
+	do {
+		size_t n_left = rz_th_queue_size(shared->queue);
+		size_t n_matches = rz_th_queue_size(shared->matches);
+		if (!callback(n_left, n_matches, user)) {
+			rz_atomic_bool_set(shared->loop, false);
+			rz_list_free(rz_th_queue_pop_all(shared->queue));
+			break;
+		}
+		rz_sys_usleep(100000);
+	} while (!rz_th_queue_is_empty(shared->queue));
+	return NULL;
+}
+
+static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnalysisMatchOpt *opt, RZ_NONNULL RzList /*<void *>*/ *list_a, RZ_NONNULL RzList /*<void *>*/ *list_b, RzThreadFunction thread_cb, AllocateBuffer alloc_cb) {
 	size_t pool_size = 1;
 	RzListIter *iter;
 	RzAnalysisMatchPair *pair = NULL;
@@ -246,9 +275,11 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	RzList *unmatch_a = rz_list_newf((RzListFree)free);
 	RzList *unmatch_b = rz_list_clone(list_b);
 	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES);
+	RzThread *user_thread = NULL;
 	SharedContext shared = { 0 };
+	MatchUIInfo ui_info = { 0 };
 
-	if (!unmatch_a || !unmatch_b || !pool || !shared_context_init(&shared, analysis_a, analysis_b, list_a, list_b, alloc_cb)) {
+	if (!unmatch_a || !unmatch_b || !pool || !shared_context_init(&shared, opt->analysis_a, opt->analysis_b, list_a, list_b, alloc_cb)) {
 		RZ_LOG_ERROR("analysis_match: cannot initialize search context\n");
 		goto fail;
 	}
@@ -259,7 +290,27 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 		rz_th_pool_add_thread(pool, rz_th_new((RzThreadFunction)thread_cb, &shared));
 	}
 
+	if (opt->callback) {
+		ui_info.shared = &shared;
+		ui_info.user = opt->user;
+		ui_info.callback = opt->callback;
+		user_thread = rz_th_new((RzThreadFunction)match_thread_ui, &ui_info);
+		if (!user_thread) {
+			rz_atomic_bool_set(shared.loop, false);
+			rz_list_free(rz_th_queue_pop_all(shared.queue));
+			rz_th_pool_wait(pool);
+			goto fail;
+		}
+	}
+
 	rz_th_pool_wait(pool);
+
+	if (!rz_atomic_bool_get(shared.loop)) {
+		if (user_thread) {
+			rz_th_wait(user_thread);
+		}
+		goto fail;
+	}
 
 	result = RZ_NEW0(RzAnalysisMatchResult);
 	if (!result) {
@@ -270,12 +321,18 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	result->unmatch_a = rz_th_queue_pop_all(shared.unmatch);
 	result->unmatch_b = unmatch_b;
 
+	if (user_thread) {
+		rz_th_wait(user_thread);
+		opt->callback(0, rz_list_length(result->matches), opt->user);
+	}
+
 	// there is no need to sort unmatch_b because it is already sorted.
 	rz_list_foreach (result->matches, iter, pair) {
 		rz_list_delete_data(unmatch_b, (void *)pair->pair_b);
 	}
 
 	rz_th_pool_free(pool);
+	rz_th_free(user_thread);
 	shared_context_fini(&shared);
 	return result;
 
@@ -284,6 +341,7 @@ fail:
 	shared_context_fini(&shared);
 	rz_list_free(unmatch_a);
 	rz_list_free(unmatch_b);
+	rz_th_free(user_thread);
 	return NULL;
 }
 
@@ -310,7 +368,7 @@ static void *analysis_match_basic_blocks(SharedContext *shared) {
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
 
-	while ((bb_a = rz_th_queue_pop(shared->queue, false))) {
+	while (rz_atomic_bool_get(shared->loop) && (bb_a = rz_th_queue_pop(shared->queue, false))) {
 		if (!shared_context_alloc_a(shared, bb_a, &buf_a, &size_a)) {
 			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for block 0x%08" PFMT64x " (A)\n", bb_a->addr);
 			rz_th_queue_push(shared->unmatch, bb_a, true);
@@ -320,7 +378,9 @@ static void *analysis_match_basic_blocks(SharedContext *shared) {
 		match = NULL;
 		max_similarity = 0.0;
 		rz_list_foreach (shared->list_b, iter, bb_b) {
-			if (!shared_context_alloc_b(shared, bb_b, &buf_b, &size_b)) {
+			if (!rz_atomic_bool_get(shared->loop)) {
+				break;
+			} else if (!shared_context_alloc_b(shared, bb_b, &buf_b, &size_b)) {
 				RZ_LOG_ERROR("analysis_match: cannot allocate buffer for block 0x%08" PFMT64x " (B)\n", bb_b->addr);
 				continue;
 			}
@@ -352,15 +412,15 @@ static void *analysis_match_basic_blocks(SharedContext *shared) {
 /**
  * \brief      Finds matching basic blocks of 2 given functions using the same RzAnalysis core
  *
- * \param      analysis  The RzAnalysis struct to use
- * \param      fcn_a     The input function A
- * \param      fcn_b     The input function B
+ * \param      fcn_a  The input function A
+ * \param      fcn_b  The input function B
+ * \param      opt    The RzAnalysisMatchOpt struct to use
  *
  * \return     On success returns a valid pointer to RzAnalysisMatchResult otherwise NULL
  */
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b) {
-	rz_return_val_if_fail(analysis && fcn_a && fcn_b, NULL);
-	return analysis_match_result_new(analysis, analysis, fcn_a->bbs, fcn_b->bbs, (RzThreadFunction)analysis_match_basic_blocks, (AllocateBuffer)basic_block_data_new);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b, RZ_NONNULL RzAnalysisMatchOpt *opt) {
+	rz_return_val_if_fail(opt && opt->analysis_a && opt->analysis_b && fcn_a && fcn_b, NULL);
+	return analysis_match_result_new(opt, fcn_a->bbs, fcn_b->bbs, (RzThreadFunction)analysis_match_basic_blocks, (AllocateBuffer)basic_block_data_new);
 }
 
 static bool function_name_cmp(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b) {
@@ -382,7 +442,7 @@ static void *analysis_match_functions(SharedContext *shared) {
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
 
-	while ((fcn_a = rz_th_queue_pop(shared->queue, false))) {
+	while (rz_atomic_bool_get(shared->loop) && (fcn_a = rz_th_queue_pop(shared->queue, false))) {
 		if (!shared_context_alloc_a(shared, fcn_a, &buf_a, &size_a)) {
 			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (A)\n", fcn_a->name);
 			rz_th_queue_push(shared->unmatch, fcn_a, true);
@@ -392,7 +452,9 @@ static void *analysis_match_functions(SharedContext *shared) {
 		match = NULL;
 		max_similarity = 0.0;
 		rz_list_foreach (shared->list_b, iter, fcn_b) {
-			if (!shared_context_alloc_b(shared, fcn_b, &buf_b, &size_b)) {
+			if (!rz_atomic_bool_get(shared->loop)) {
+				break;
+			} else if (!shared_context_alloc_b(shared, fcn_b, &buf_b, &size_b)) {
 				RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (B)\n", fcn_b->name);
 				continue;
 			}
@@ -428,43 +490,13 @@ static void *analysis_match_functions(SharedContext *shared) {
 /**
  * \brief      Finds matching functions of 2 given lists of functions using the same RzAnalysis core
  *
- * \param      analysis  The RzAnalysis struct to use
- * \param      fcn_a     The input list A of functions
- * \param      fcn_b     The input list B of functions
+ * \param      list_a  The input list A of functions
+ * \param      list_b  The input list B of functions
+ * \param      opt     The RzAnalysisMatchOpt struct to use
  *
  * \return     On success returns a valid pointer to RzAnalysisMatchResult otherwise NULL
  */
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RZ_NONNULL RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b) {
-	rz_return_val_if_fail(analysis && list_a && list_b, NULL);
-	return analysis_match_result_new(analysis, analysis, list_a, list_b, (RzThreadFunction)analysis_match_functions, (AllocateBuffer)function_data_new);
-}
-
-/**
- * \brief      Finds matching basic blocks of 2 given functions using two different RzAnalysis cores
- *
- * \param      analysis_a  The RzAnalysis struct for fcn_a to use
- * \param      fcn_a       The input function A
- * \param      analysis_b  The RzAnalysis struct for fcn_b to use
- * \param      fcn_b       The input function B
- *
- * \return     On success returns a valid pointer to RzAnalysisMatchResult otherwise NULL
- */
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisFunction *fcn_b) {
-	rz_return_val_if_fail(analysis_a && analysis_b && fcn_a && fcn_b, NULL);
-	return analysis_match_result_new(analysis_a, analysis_b, fcn_a->bbs, fcn_b->bbs, (RzThreadFunction)analysis_match_basic_blocks, (AllocateBuffer)basic_block_data_new);
-}
-
-/**
- * \brief      Finds matching functions of 2 given lists of functions using two different RzAnalysis cores
- *
- * \param      analysis_a  The RzAnalysis struct for list_a to use
- * \param      list_a      The input list A of functions
- * \param      analysis_b  The RzAnalysis struct for list_b to use
- * \param      list_b      The input list B of functions
- *
- * \return     On success returns a valid pointer to RzAnalysisMatchResult otherwise NULL
- */
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions_2(RZ_NONNULL RzAnalysis *analysis_a, RzList /*<RzAnalysisFunction *>*/ *list_a, RZ_NONNULL RzAnalysis *analysis_b, RzList /*<RzAnalysisFunction *>*/ *list_b) {
-	rz_return_val_if_fail(analysis_a && analysis_b && list_a && list_b, NULL);
-	return analysis_match_result_new(analysis_a, analysis_b, list_a, list_b, (RzThreadFunction)analysis_match_functions, (AllocateBuffer)function_data_new);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b, RZ_NONNULL RzAnalysisMatchOpt *opt) {
+	rz_return_val_if_fail(opt && opt->analysis_a && opt->analysis_b && list_a && list_b, NULL);
+	return analysis_match_result_new(opt, list_a, list_b, (RzThreadFunction)analysis_match_functions, (AllocateBuffer)function_data_new);
 }

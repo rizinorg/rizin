@@ -3,36 +3,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <rz_endian.h>
+#include <rz_util/rz_alloc.h>
 #include "sdb.h"
 #include "cdb.h"
 #include "cdb_make.h"
 #include "sdb_private.h"
 
-#if __APPLE__
-// for MAC_OS_X_VERSION_10_6
-#include <AvailabilityMacros.h>
-#endif
-
-#define ALIGNMENT sizeof(void *)
-
-char *cdb_alloc(ut32 n) {
-#if __APPLE__ && defined(MAC_OS_X_VERSION_10_6)
-	void *ret = NULL;
-	return posix_memalign(&ret, ALIGNMENT, n) ? NULL : ret;
-#elif __WINDOWS__ && !__CYGWIN__
-	return _aligned_malloc(n, ALIGNMENT);
-#else
-	return malloc(n);
-#endif
-}
-
-void cdb_alloc_free(void *x) {
-#if __WINDOWS__ && !__CYGWIN__
-	_aligned_free(x);
-#else
-	free(x);
-#endif
-}
+#define ALIGNMENT     sizeof(void *)
+#define RZ_ANEW(x, n) (x *)rz_malloc_aligned(n * sizeof(x), ALIGNMENT)
 
 int cdb_make_start(struct cdb_make *c, int fd) {
 	int i;
@@ -59,12 +38,11 @@ static inline int incpos(struct cdb_make *c, ut32 len) {
 	return 1;
 }
 
-#define R_ANEW(x) (x *)cdb_alloc(sizeof(x))
 int cdb_make_addend(struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
 	ut32 u;
 	struct cdb_hplist *head = c->head;
 	if (!head || (head->num >= CDB_HPLIST)) {
-		if (!(head = R_ANEW(struct cdb_hplist))) {
+		if (!(head = RZ_ANEW(struct cdb_hplist, 1))) {
 			return 0;
 		}
 		head->num = 0;
@@ -132,7 +110,7 @@ int cdb_make_finish(struct cdb_make *c) {
 	if (memsize > (UT32_MAX / sizeof(struct cdb_hp))) {
 		return 0;
 	}
-	c->split = (struct cdb_hp *)cdb_alloc(memsize * sizeof(struct cdb_hp));
+	c->split = (struct cdb_hp *)RZ_ANEW(struct cdb_hp, memsize);
 	if (!c->split) {
 		return 0;
 	}
@@ -153,7 +131,7 @@ int cdb_make_finish(struct cdb_make *c) {
 	for (i = 0; i < 256; i++) {
 		count = c->count[i];
 		len = count << 1;
-		ut32_pack(c->final + 4 * i, c->pos);
+		rz_write_at_le32(c->final, c->pos, 4 * i);
 		for (u = 0; u < len; u++) {
 			c->hash[u].h = c->hash[u].p = 0;
 		}
@@ -168,8 +146,8 @@ int cdb_make_finish(struct cdb_make *c) {
 			c->hash[where] = *hp++;
 		}
 		for (u = 0; u < len; u++) {
-			ut32_pack(buf, c->hash[u].h);
-			ut32_pack(buf + 4, c->hash[u].p);
+			rz_write_le32(buf, c->hash[u].h);
+			rz_write_at_le32(buf, c->hash[u].p, 4);
 			if (!buffer_putalign(&c->b, buf, 8)) {
 				return 0;
 			}
@@ -185,12 +163,12 @@ int cdb_make_finish(struct cdb_make *c) {
 	if (!seek_set(c->fd, 0)) {
 		return 0;
 	}
-	// free childs
+	// free children
 	for (x = c->head; x;) {
 		n = x->next;
-		cdb_alloc_free(x);
+		rz_free_aligned(x);
 		x = n;
 	}
-	cdb_alloc_free(c->split);
+	rz_free_aligned(c->split);
 	return buffer_putflush(&c->b, c->final, sizeof c->final);
 }

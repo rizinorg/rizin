@@ -7,12 +7,14 @@ This file is aimed at developers who want to work on the Rizin code base.
 There is support for Doxygen document generation in this repo.
 By running `doxygen` in the root of this repository, it will autodetect the
 Doxyfile and generate HTML documentation into
-[doc/doxygen/html/index.html](./doc/doxygen/html/index.html)
+[doc/doxygen/html/index.html](./doc/doxygen/html/index.html).
 
 If you're contributing code or willing to update existing code, you should use the
 doxygen C-style comments to improve documentation and comments in code.
 See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
-for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
+for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html).
+
+Documentation goes into the source files (not the header files).
 
 ```c
 /**
@@ -27,7 +29,7 @@ for more info. Example usage can be found [here](http://www.doxygen.nl/manual/do
  * Used to determine the min & max addresses of maps and
  * scale the ascii bar to the width of the terminal
  */
-static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
+static int find_min_max(RzList *maps, ut64 *min, ut64 *max, int skip, int width) { /* ... */ }
 ```
 
 In order to improve the documentation and help newcomers, documenting code is mandatory.
@@ -56,6 +58,15 @@ coding style as the rest of the code base.
 
 ```bash
 git-clang-format-16 --extensions c,cpp,h,hpp,inc --style file dev
+```
+
+  There is a script available to run on all source files; you will need python and
+  the gitpython python library, which you may install e.g. from pip. Invoke it as
+  follows (after making sure that your local copy of `dev` is up-to-date and your
+  branch is up-to-date with `dev`):
+
+```bash
+./sys/clang-format.py
 ```
 
 * Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes
@@ -167,7 +178,7 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 * Function names should be explicit enough to not require a comment
   explaining what it does when seen elsewhere in code.
 
-* Use `RZ_API` define to mark exportable (public) methods only for module APIs
+* Use `RZ_API` define to mark exportable (public) methods only for module APIs.
 
 * The rest of functions must be static, to avoid polluting the global space.
 
@@ -175,7 +186,7 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
 * Do not write ultra-large functions: split them into multiple or simplify
   the algorithm, only external-copy-pasted-not-going-to-be-maintained code
-  can be accepted in this way (gnu code, external disassemblers, etc..)
+  can be accepted in this way. (gnu code, external disassemblers, etc..)
 
 * Use the Rizin types instead of the ones in `<stdint.h>`, which are known to cause some
   portability issues. So, instead of `uint8_t`, use `ut8`, etc.. As a bonus point they
@@ -192,13 +203,15 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 int sum = 0; // set sum to 0
 ```
 
+* If you need bitmaps, do not shift and OR the bits manually on `ut32`. Use bit vectors from `rz_bitvector.h` instead.
+
 ### Shell Scripts
 
 * Use `#!/bin/sh`
 
 * Do not use bashisms `[[`, `$'...'` etc.
 
-* Use our [shellcheck.sh](https://github.com/rizinorg/rizin/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
+* Use our [shellcheck.sh](https://github.com/rizinorg/rizin/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms.
 
 ### Python Scripts
 
@@ -377,7 +390,7 @@ You can use the two modifiers in two places and their explanations are as below:
 - before the return type of function
   - `RZ_OWN`: the ownership of the returned object is transferred to the caller. The caller *owns* the object, so it must free it (or ensure that something else frees it).
   - `RZ_BORROW`: the ownership of the returned object is not transferred. The caller can use the object, but it does not own it, so it should not free it.
-- before the parameter of function
+- before the parameter of function.
   - `RZ_OWN`: the ownership of the passed argument is transferred to the callee. The callee now owns the object and it is its duty to free it (or ensure that something else frees it). In any case, the caller should not care anymore about freeing that passed object.
   - `RZ_BORROW`: the ownership of the passed argument is *not* transferred to the callee, which can use it but it should not free it. After calling this function, the caller still owns the passed object and it should ensure that at some point it is freed.
 

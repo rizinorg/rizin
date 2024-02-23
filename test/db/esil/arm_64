@@ -899,3 +899,31 @@ EXPECT=<<EOF
 x0 = 0x0000000000000005
 EOF
 RUN
+
+NAME=orr   v22.4h, 0, lsl 8
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 16b4000f # orr   v22.4h, 0, lsl 8
+pd 1
+pie 1
+EOF
+EXPECT=<<EOF
+            0x00000000      orr   v22.4h, 0, lsl 8
+0x00000000 
+EOF
+RUN
+
+NAME=bic	v0.4s, #0, lsl #24
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 0x0074006f # bic	v0.4s, #0, lsl #24
+pie 1
+EOF
+EXPECT=<<EOF
+0x00000000 0x0,0xffffffffffffffff,^,q0,&=
+EOF
+RUN

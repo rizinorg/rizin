@@ -198,7 +198,7 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 	resource_value_t *value) {
 	switch (value->type) {
 	case RESOURCE_NULL:
-		return rz_str_new("");
+		return rz_str_dup("");
 	case RESOURCE_REFERENCE:
 		return rz_str_newf("@0x%x", value->data.d);
 	case RESOURCE_STRING:
@@ -215,7 +215,7 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 		RZ_LOG_WARN("Resource type is not recognized: %#x\n", value->type);
 		break;
 	}
-	return rz_str_new("null");
+	return rz_str_dup("null");
 }
 
 static bool dump_element(RzStrBuf *sb, string_pool_t *pool, namespace_t *namespace,

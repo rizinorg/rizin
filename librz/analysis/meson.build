@@ -29,6 +29,8 @@ analysis_plugins_list = [
   'ppc_cs',
   'propeller',
   'pyc',
+  'rl78',
+  'rx',
   'rsp',
   'snes',
   'sparc_cs',
@@ -102,7 +104,7 @@ rz_analysis_sources = [
   'serialize_analysis.c',
   'similarity.c',
   'switch.c',
-  'type_pdb.c',
+  'pdb_process.c',
   'types.c',
   'value.c',
   'var.c',
@@ -139,7 +141,9 @@ rz_analysis_sources = [
   'p/analysis_ppc_cs.c',
   'p/analysis_propeller.c',
   'p/analysis_pyc.c',
+  'p/analysis_rl78.c',
   'p/analysis_rsp.c',
+  'p/analysis_rx.c',
   'p/analysis_snes.c',
   'p/analysis_sparc_cs.c',
   'p/analysis_spc700.c',
@@ -164,9 +168,12 @@ rz_analysis_sources = [
   'arch/ppc/ppc_il_ops.c',
   'arch/ppc/ppc_il_flag_ops.c',
   'arch/sh/sh_il.c',
+  'arch/x86/common.c',
   'arch/x86/x86_il.c',
   'arch/8051/8051_il.c',
   'arch/8051/8051_parse.c',
+  'arch/v810/v810_il.c',
+  'arch/v850/v850_il.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cil/cil_dis.c',
@@ -229,12 +236,17 @@ rz_analysis_sources = [
   '../asm/arch/luac/v54/analysis_54.c',
   '../asm/arch/luac/v54/opcode_54.c',
   '../asm/arch/luac/v53/analysis_53.c',
-  '../asm/arch/luac/v53/opcode_53.c'
+  '../asm/arch/luac/v53/opcode_53.c',
+  '../asm/arch/rl78/rl78_instr.c',
+  '../asm/arch/rl78/rl78_maps.c',
+  '../asm/arch/rl78/rl78_operand.c',
+  '../asm/arch/rl78/rl78.c'
 ]
 
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   rz_analysis_sources += 'p/analysis_riscv_cs.c'
   rz_analysis_sources += 'p/analysis_tricore_cs.c'
+  rz_analysis_sources +='arch/tricore/tricore_il.c'
 endif
 
 if get_option('use_gpl')

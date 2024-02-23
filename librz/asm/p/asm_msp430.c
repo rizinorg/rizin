@@ -12,21 +12,23 @@
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct msp430_cmd cmd;
 	int ret = msp430_decode_command(buf, len, &cmd);
-	if (ret > 0) {
-		if (cmd.operands[0]) {
-			rz_strbuf_set(&op->buf_asm, sdb_fmt("%s %s", cmd.instr, cmd.operands));
-		} else {
-			rz_strbuf_set(&op->buf_asm, sdb_fmt("%s", cmd.instr));
-		}
+	if (ret < 1) {
+		rz_asm_op_set_asm(op, "invalid");
+		goto fail;
 	}
+	if (cmd.operands[0]) {
+		rz_asm_op_setf_asm(op, "%s %s", cmd.instr, cmd.operands);
+	} else {
+		rz_asm_op_set_asm(op, cmd.instr);
+	}
+	char *buf_asm = rz_strbuf_get(&op->buf_asm);
 	if (a->syntax != RZ_ASM_SYNTAX_ATT) {
-		char *ba = (char *)rz_strbuf_get(&op->buf_asm);
-		rz_str_replace_ch(ba, '#', 0, 1);
-		// rz_str_replace_ch (ba, "$", "$$", 1);
-		rz_str_replace_ch(ba, '&', 0, 1);
-		rz_str_replace_ch(ba, '%', 0, 1);
+		rz_str_replace_ch(buf_asm, '#', 0, 1);
+		// rz_str_replace_ch (buf_asm, "$", "$$", 1);
+		rz_str_replace_ch(buf_asm, '&', 0, 1);
+		rz_str_replace_ch(buf_asm, '%', 0, 1);
 	}
-
+fail:
 	return op->size = ret;
 }
 

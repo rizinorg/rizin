@@ -41,19 +41,20 @@ static int art_header_load(ArtObj *ao, Sdb *db) {
 	if (rz_buf_size(ao->buf) < sizeof(ARTHeader)) {
 		return false;
 	}
+	char tmpbuf[32];
 	ARTHeader *art = &ao->art;
 	(void)rz_buf_fread_at(ao->buf, 0, (ut8 *)art, "IIiiiiiiiiiiii", 1);
-	sdb_set(db, "img.base", sdb_fmt("0x%x", art->image_base), 0);
-	sdb_set(db, "img.size", sdb_fmt("0x%x", art->image_size), 0);
-	sdb_set(db, "art.checksum", sdb_fmt("0x%x", art->checksum), 0);
-	sdb_set(db, "art.version", sdb_fmt("%c%c%c", art->version[0], art->version[1], art->version[2]), 0);
-	sdb_set(db, "oat.begin", sdb_fmt("0x%x", art->oat_file_begin), 0);
-	sdb_set(db, "oat.end", sdb_fmt("0x%x", art->oat_file_end), 0);
-	sdb_set(db, "oat_data.begin", sdb_fmt("0x%x", art->oat_data_begin), 0);
-	sdb_set(db, "oat_data.end", sdb_fmt("0x%x", art->oat_data_end), 0);
-	sdb_set(db, "patch_delta", sdb_fmt("0x%x", art->patch_delta), 0);
-	sdb_set(db, "image_roots", sdb_fmt("0x%x", art->image_roots), 0);
-	sdb_set(db, "compile_pic", sdb_fmt("0x%x", art->compile_pic), 0);
+	sdb_set(db, "img.base", rz_strf(tmpbuf, "0x%x", art->image_base), 0);
+	sdb_set(db, "img.size", rz_strf(tmpbuf, "0x%x", art->image_size), 0);
+	sdb_set(db, "art.checksum", rz_strf(tmpbuf, "0x%x", art->checksum), 0);
+	sdb_set(db, "art.version", rz_strf(tmpbuf, "%c%c%c", art->version[0], art->version[1], art->version[2]), 0);
+	sdb_set(db, "oat.begin", rz_strf(tmpbuf, "0x%x", art->oat_file_begin), 0);
+	sdb_set(db, "oat.end", rz_strf(tmpbuf, "0x%x", art->oat_file_end), 0);
+	sdb_set(db, "oat_data.begin", rz_strf(tmpbuf, "0x%x", art->oat_data_begin), 0);
+	sdb_set(db, "oat_data.end", rz_strf(tmpbuf, "0x%x", art->oat_data_end), 0);
+	sdb_set(db, "patch_delta", rz_strf(tmpbuf, "0x%x", art->patch_delta), 0);
+	sdb_set(db, "image_roots", rz_strf(tmpbuf, "0x%x", art->image_roots), 0);
+	sdb_set(db, "compile_pic", rz_strf(tmpbuf, "0x%x", art->compile_pic), 0);
 	return true;
 }
 
@@ -94,7 +95,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return ao ? ao->art.image_base : 0;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 
@@ -144,19 +145,18 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ArtObj *ao = bf->o->bin_obj;
 	if (!ao) {
 		return NULL;
 	}
 	ARTHeader art = ao->art;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -167,7 +167,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
 	ptr->perm = RZ_PERM_R; // r--
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -178,7 +178,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->perm = RZ_PERM_RX; // r-x
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -189,7 +189,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
 	ptr->perm = RZ_PERM_RX; // r-x
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -200,7 +200,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;
 	ptr->perm = RZ_PERM_R; // r--
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	return ret;
 }

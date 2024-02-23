@@ -10,7 +10,7 @@
 
 #include "pdb.h"
 
-static bool parse_pdb_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+static bool pdb_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	if (!pdb || !stream) {
 		return false;
 	}
@@ -35,58 +35,71 @@ static bool parse_pdb_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	return true;
 }
 
+static bool parse_stream(
+	RzPdb *pdb, ut32 index, bool (*f)(RzPdb *, RzPdbMsfStream *), bool try) {
+	RzPdbMsfStream *stream = pdb_raw_steam(pdb, index);
+	if (!stream) {
+		return try;
+	}
+	return f(pdb, stream);
+}
+
 static bool parse_streams(RzPdb *pdb) {
-	RzListIter *it;
-	RzPdbMsfStream *ms;
-	rz_list_foreach (pdb->streams, it, ms) {
-		switch (ms->stream_idx) {
-		case PDB_STREAM_ROOT:
-			break;
-		case PDB_STREAM_PDB:
-			if (!parse_pdb_stream(pdb, ms)) {
-				RZ_LOG_ERROR("Parse pdb stream failed.");
+	if (!(parse_stream(pdb, PDB_STREAM_PDB, pdb_stream_parse, false) &&
+		    parse_stream(pdb, PDB_STREAM_TPI, tpi_stream_parse, false) &&
+		    parse_stream(pdb, PDB_STREAM_DBI, dbi_stream_parse, false))) {
+		return false;
+	}
+	if (!(parse_stream(pdb, pdb->s_dbi->hdr.sym_record_stream, gdata_stream_parse, true) &&
+		    parse_stream(pdb, pdb->s_dbi->dbg_hdr.sn_section_hdr, pe_stream_parse, true) &&
+		    parse_stream(pdb, pdb->s_dbi->dbg_hdr.sn_section_hdr_orig, pe_stream_parse, true) &&
+		    parse_stream(pdb, pdb->s_dbi->dbg_hdr.sn_omap_to_src, omap_stream_parse, true) &&
+		    parse_stream(pdb, pdb->s_dbi->dbg_hdr.sn_omap_from_src, omap_stream_parse, true))) {
+		return false;
+	}
+	if (pdb->s_dbi->modules) {
+		pdb->module_infos = rz_pvector_new(NULL);
+		void **modit;
+		rz_pvector_foreach (pdb->s_dbi->modules, modit) {
+			const PDB_DBIModule *m = *modit;
+			PDBModuleInfo *modi = RZ_NEW0(PDBModuleInfo);
+			if (!modi) {
 				return false;
 			}
-			break;
-		case PDB_STREAM_TPI:
-			if (!parse_tpi_stream(pdb, ms)) {
-				RZ_LOG_ERROR("Parse tpi stream failed.");
+			if (!PDBModuleInfo_parse(pdb, m, modi)) {
+				free(modi);
 				return false;
 			}
-			break;
-		case PDB_STREAM_DBI:
-			if (!parse_dbi_stream(pdb, ms)) {
-				RZ_LOG_ERROR("Parse dbi stream failed.");
-				return false;
-			}
-			break;
-		default: {
-			if (!pdb->s_dbi) {
-				break;
-			}
-			if (ms->stream_idx == pdb->s_dbi->hdr.sym_record_stream) {
-				if (!parse_gdata_stream(pdb, ms)) {
-					RZ_LOG_ERROR("Parse gdata stream failed.");
-					return false;
-				}
-			} else if (ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_section_hdr ||
-				ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_section_hdr_orig) {
-				if (!parse_pe_stream(pdb, ms)) {
-					RZ_LOG_ERROR("Parse pe stream failed.");
-					return false;
-				}
-			} else if (ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_omap_to_src ||
-				ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_omap_from_src) {
-				if (!parse_omap_stream(pdb, ms)) {
-					RZ_LOG_ERROR("Parse omap stream failed.");
-					return false;
-				}
-			}
-			break;
-		}
+			rz_pvector_push(pdb->module_infos, modi);
 		}
 	}
 	return true;
+}
+
+RZ_IPI RzPdbMsfStream *pdb_raw_steam(const RzPdb *pdb, ut16 index) {
+	if (!(pdb && pdb->streams && pdb->msd)) {
+		return NULL;
+	}
+	if (index >= pdb->msd->NumStreams) {
+		return NULL;
+	}
+	return rz_pvector_at(pdb->streams, index);
+}
+
+RZ_IPI PDBSymbolTable *pdb_global_symbols(const RzPdb *pdb) {
+	if (!(pdb && pdb->s_dbi)) {
+		return NULL;
+	}
+	RzPdbMsfStream *steam = pdb_raw_steam(pdb, pdb->s_dbi->hdr.sym_record_stream);
+	if (!steam) {
+		return NULL;
+	}
+	PDBSymbolTable *symbols = RZ_NEW0(PDBSymbolTable);
+	if (!symbols) {
+		return NULL;
+	}
+	symbols->b = steam->stream_data;
+	return symbols;
 }
 
 static void msf_stream_free(void *data) {
@@ -113,29 +126,28 @@ static ut64 count_blocks(ut64 length, ut64 block_size) {
 	return num_blocks;
 }
 
-static RzList /*<RzPdbMsfStream *>*/ *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfStreamDirectory *msd) {
-	RzList *streams = rz_list_newf(msf_stream_free);
+static RzPVector /*<RzPdbMsfStream *>*/ *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfStreamDirectory *msd) {
+	RzPVector *streams = rz_pvector_new_with_len(msf_stream_free, msd->NumStreams);
 	if (!streams) {
 		goto error_memory;
 	}
 	for (size_t i = 0; i < msd->NumStreams; i++) {
 		RzPdbMsfStream *stream = RZ_NEW0(RzPdbMsfStream);
 		if (!stream) {
-			rz_list_free(streams);
+			rz_pvector_free(streams);
 			goto error_memory;
 		}
 		stream->stream_idx = i;
 		stream->stream_size = msd->StreamSizes[i];
 		stream->blocks_num = count_blocks(stream->stream_size, pdb->super_block->block_size);
 		if (!stream->stream_size) {
-			stream->stream_data = NULL;
-			rz_list_append(streams, stream);
+			rz_pvector_set(streams, stream->stream_idx, stream);
 			continue;
 		}
 		ut8 *stream_data = (ut8 *)malloc((size_t)stream->blocks_num * pdb->super_block->block_size);
 		if (!stream_data) {
 			RZ_FREE(stream);
-			rz_list_free(streams);
+			rz_pvector_free(streams);
 			RZ_LOG_ERROR("Error allocating memory.\n");
 			return NULL;
 		}
@@ -144,7 +156,7 @@ static RzList /*<RzPdbMsfStream *>*/ *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfS
 			if (!rz_buf_read_le32(msd->sd, &block_idx)) {
 				RZ_FREE(stream);
 				RZ_FREE(stream_data);
-				rz_list_free(streams);
+				rz_pvector_free(streams);
 				return NULL;
 			}
 			rz_buf_seek(pdb->buf, (long long)block_idx * pdb->super_block->block_size, RZ_BUF_SET);
@@ -154,12 +166,11 @@ static RzList /*<RzPdbMsfStream *>*/ *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfS
 		if (!stream->stream_data) {
 			RZ_FREE(stream);
 			RZ_FREE(stream_data);
-			rz_list_free(streams);
+			rz_pvector_free(streams);
 			goto error_memory;
 		}
-		rz_list_append(streams, stream);
+		rz_pvector_set(streams, stream->stream_idx, stream);
 	}
-	msf_stream_directory_free(msd);
 	return streams;
 
 error_memory:
@@ -261,9 +272,9 @@ static bool pdb7_parse(RzPdb *pdb) {
 		RZ_LOG_ERROR("Error extracting stream directory.\n");
 		goto error;
 	}
+	pdb->msd = msd;
 	pdb->streams = pdb7_extract_streams(pdb, msd);
 	if (!pdb->streams) {
-		msf_stream_directory_free(msd);
 		RZ_LOG_ERROR("Error extracting streams.\n");
 		goto error;
 	}
@@ -369,12 +380,14 @@ RZ_API void rz_bin_pdb_free(RzPdb *pdb) {
 	}
 	rz_buf_free(pdb->buf);
 	free(pdb->super_block);
-	rz_list_free(pdb->streams);
+	msf_stream_directory_free(pdb->msd);
+	rz_pvector_free(pdb->streams);
+	rz_pvector_free(pdb->module_infos);
 	free(pdb->s_pdb);
-	free_dbi_stream(pdb->s_dbi);
-	free_gdata_stream(pdb->s_gdata);
-	free_omap_stream(pdb->s_omap);
-	free_tpi_stream(pdb->s_tpi);
-	free_pe_stream(pdb->s_pe);
+	dbi_stream_free(pdb->s_dbi);
+	gdata_stream_free(pdb->s_gdata);
+	omap_stream_free(pdb->s_omap);
+	tpi_stream_free(pdb->s_tpi);
+	pe_stream_free(pdb->s_pe);
 	free(pdb);
 }

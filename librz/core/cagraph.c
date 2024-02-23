@@ -243,7 +243,9 @@ RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, 
 	if (!shortcut) {
 		return false;
 	}
-	sdb_set(g->db, sdb_fmt("agraph.nodes.%s.shortcut", title), shortcut, 0);
+	char *key = rz_str_newf("agraph.nodes.%s.shortcut", title);
+	sdb_set(g->db, key, shortcut, 0);
+	free(key);
 	// title + "[o{shortcut}]", so w + 3 ?
 	an->shortcut_w = strlen(shortcut) + 3;
 	free(shortcut);
@@ -266,7 +268,7 @@ RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *
 	if (!(core && core->graph && graph)) {
 		return false;
 	}
-	if (!create_agraph_from_graph_at(core->graph, graph, false)) {
+	if (!create_agraph_from_graph_at(core->graph, graph, false, rz_config_get_b(core->config, "scr.utf8"))) {
 		return false;
 	}
 	if (rz_core_agraph_is_shortcuts(core, core->graph)) {

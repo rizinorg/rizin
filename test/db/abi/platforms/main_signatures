@@ -55,7 +55,7 @@ e scr.utf8=false
 afs @ main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main();
 EOF
 RUN
 

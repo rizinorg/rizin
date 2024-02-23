@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_test.h"
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_regex.h>
 #include <rz_cons.h>
 
 #if __WINDOWS__
@@ -193,11 +195,16 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 
 RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp) {
 	if (regexp) {
-		RzList *matches = rz_regex_get_match_list(regexp, "e", output);
-		const char *match = rz_list_to_str(matches, '\0');
-		bool equal = (0 == strcmp(expect, match));
-		rz_list_free(matches);
-		RZ_FREE(match);
+		RzStrBuf *match_str = rz_regex_full_match_str(regexp, output, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, "\n");
+		bool equal = false;
+		ut32 expect_len = strlen(expect);
+		if (expect_len > 0 && expect[expect_len - 1] == '\n') {
+			// Ignore newline
+			equal = (rz_str_cmp(expect, rz_strbuf_get(match_str), expect_len - 1) == 0);
+		} else {
+			equal = RZ_STR_EQ(expect, rz_strbuf_get(match_str));
+		}
+		rz_strbuf_free(match_str);
 		return equal;
 	}
 	return (0 == strcmp(expect, output));

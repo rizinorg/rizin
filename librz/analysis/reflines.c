@@ -17,11 +17,11 @@ typedef struct refline_end {
 	RzAnalysisRefline *r;
 } ReflineEnd;
 
-static int cmp_asc(const struct refline_end *a, const struct refline_end *b) {
+static int cmp_asc(const struct refline_end *a, const struct refline_end *b, void *user) {
 	return (a->val > b->val) - (a->val < b->val);
 }
 
-static int cmp_by_ref_lvl(const RzAnalysisRefline *a, const RzAnalysisRefline *b) {
+static int cmp_by_ref_lvl(const RzAnalysisRefline *a, const RzAnalysisRefline *b, void *user) {
 	return (a->level < b->level) - (a->level > b->level);
 }
 
@@ -55,7 +55,7 @@ static bool add_refline(RzList /*<RzAnalysisRefline *>*/ *list, RzList /*<Reflin
 		free(item);
 		return false;
 	}
-	rz_list_add_sorted(sten, re1, (RzListComparator)cmp_asc);
+	rz_list_add_sorted(sten, re1, (RzListComparator)cmp_asc, NULL);
 
 	re2 = refline_end_new(item->to, false, item);
 	if (!re2) {
@@ -63,7 +63,7 @@ static bool add_refline(RzList /*<RzAnalysisRefline *>*/ *list, RzList /*<Reflin
 		free(item);
 		return false;
 	}
-	rz_list_add_sorted(sten, re2, (RzListComparator)cmp_asc);
+	rz_list_add_sorted(sten, re2, (RzListComparator)cmp_asc, NULL);
 	return true;
 }
 
@@ -258,6 +258,7 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 
 sten_err:
 list_err:
+	rz_cons_break_pop();
 	rz_list_free(sten);
 	rz_list_free(list);
 	return NULL;
@@ -302,8 +303,9 @@ static void add_spaces(RzBuffer *b, int level, int pos, bool wide) {
 			level *= 2;
 		}
 		if (pos > level + 1) {
-			const char *pd = rz_str_pad(' ', pos - level - 1);
-			rz_buf_append_string(b, pd);
+			char *pad = rz_str_pad(' ', pos - level - 1);
+			rz_buf_append_string(b, pad);
+			free(pad);
 		}
 	}
 }
@@ -313,15 +315,16 @@ static void fill_level(RzBuffer *b, int pos, char ch, RzAnalysisRefline *r, bool
 	if (wide) {
 		sz *= 2;
 	}
-	const char *pd = rz_str_pad(ch, sz - 1);
+	char *pad = rz_str_pad(ch, sz - 1);
 	if (pos == -1) {
-		rz_buf_append_string(b, pd);
+		rz_buf_append_string(b, pad);
 	} else {
-		int pdlen = strlen(pd);
+		int pdlen = strlen(pad);
 		if (pdlen > 0) {
-			rz_buf_write_at(b, pos, (const ut8 *)pd, pdlen);
+			rz_buf_write_at(b, pos, (const ut8 *)pad, pdlen);
 		}
 	}
+	free(pad);
 }
 
 static inline bool refline_kept(RzAnalysisRefline *ref, bool middle_after, ut64 addr) {
@@ -369,7 +372,7 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 			return NULL;
 		}
 		if (in_refline(addr, ref) && refline_kept(ref, middle_after, addr)) {
-			rz_list_add_sorted(lvls, (void *)ref, (RzListComparator)cmp_by_ref_lvl);
+			rz_list_add_sorted(lvls, (void *)ref, (RzListComparator)cmp_by_ref_lvl, NULL);
 		}
 	}
 	b = rz_buf_new_with_bytes(NULL, 0);

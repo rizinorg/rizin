@@ -153,12 +153,12 @@ static void __seek_cursor(RzCoreVisualViewGraph *status) {
 	return;
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
+static int cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzCoreVisualViewGraphItem *a = _a, *b = _b;
 	return a->addr - b->addr;
 }
 
-static int cmpname(const void *_a, const void *_b) {
+static int cmpname(const void *_a, const void *_b, void *user) {
 	const RzCoreVisualViewGraphItem *a = _a, *b = _b;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
@@ -170,7 +170,7 @@ static void __sort(RzCoreVisualViewGraph *status, RzList /*<RzCoreVisualViewGrap
 	rz_return_if_fail(status && list);
 	RzListComparator cmp = (status->cur_sort == SORT_ADDRESS) ? cmpaddr : cmpname;
 	list->sorted = false;
-	rz_list_sort(list, cmp);
+	rz_list_sort(list, cmp, NULL);
 }
 
 static void __toggleSort(RzCoreVisualViewGraph *status) {
@@ -242,11 +242,26 @@ RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 	rz_cons_strcat_at(mainColstr, colx, 2, colw * 2, colh);
 	rz_cons_strcat_at(refsColstr, colx * 2, 2, colw, colh);
 
-	char *output = rz_core_cmd_strf(core, "pd %d @e:asm.flags=0 @ 0x%08" PFMT64x "; pds 256 @ 0x%08" PFMT64x "\n",
-		32, status->addr, status->addr);
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	if (!hc) {
+		return 0;
+	}
+	rz_config_hold_i(hc, "asm.flags", NULL);
+	rz_config_set_i(core->config, "asm.flags", 0);
+	char *output1 = rz_core_print_cons_disassembly(core, status->addr, 32, 0);
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
+
+	ut64 oldoff = core->offset;
+	rz_core_seek(core, status->addr, true);
+	char *output2 = rz_core_print_disasm_strings(core, RZ_CORE_DISASM_STRINGS_MODE_BYTES, 256, NULL);
+	rz_core_seek(core, oldoff, true);
+
+	output1 = rz_str_append(output1, output2);
 	int disy = colh + 2;
-	rz_cons_strcat_at(output, 10, disy, w, h - disy);
-	free(output);
+	rz_cons_strcat_at(output1, 10, disy, w, h - disy);
+	free(output1);
+	free(output2);
 	rz_cons_flush();
 
 	free(xrefsColstr);
@@ -257,6 +272,7 @@ RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 
 RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 	RzCoreVisualViewGraph status = { 0 };
+	RzLine *line = core->cons->line;
 	status.core = core;
 	status.cur_sort = SORT_NAME;
 	__reset_status(&status);
@@ -381,7 +397,7 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			cmd[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
@@ -398,7 +414,7 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 			rz_cons_show_cursor(true);
 			rz_cons_set_raw(0);
 			cmd[0] = '\0';
-			rz_line_set_prompt(":> ");
+			rz_line_set_prompt(line, ":> ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}

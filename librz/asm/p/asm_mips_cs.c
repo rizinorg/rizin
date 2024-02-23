@@ -3,14 +3,15 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone/capstone.h>
+#include "cs_helper.h"
+
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(mips);
 
 RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
-static csh cd = 0;
-#include "cs_mnemonics.c"
+static int mips_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	cs_insn *insn;
 	int mode, n, ret = -1;
 	mode = (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
@@ -25,47 +26,47 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		} else if (!strcmp(a->cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
 		} else if (!strcmp(a->cpu, "v2")) {
-#if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
-#endif
 		}
 	}
 	mode |= (a->bits == 64) ? CS_MODE_MIPS64 : CS_MODE_MIPS32;
 	memset(op, 0, sizeof(RzAsmOp));
 	op->size = 4;
-	if (cd != 0) {
-		cs_close(&cd);
+	if (ctx->omode != mode) {
+		cs_close(&ctx->handle);
+		ctx->handle = 0;
+		ctx->omode = -1;
 	}
-	ret = cs_open(CS_ARCH_MIPS, mode, &cd);
-	if (ret) {
-		goto fin;
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_MIPS, mode, &ctx->handle);
+		if (ret) {
+			goto fin;
+		}
+		ctx->omode = mode;
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	if (a->syntax == RZ_ASM_SYNTAX_REGNUM) {
-		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+		cs_option(ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
 	} else {
-		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+		cs_option(ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	}
-	cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
-	n = cs_disasm(cd, (ut8 *)buf, len, a->pc, 1, &insn);
+	n = cs_disasm(ctx->handle, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
 		op->size = 4;
-		goto beach;
+		goto fin;
 	}
 	if (insn->size < 1) {
-		goto beach;
+		goto fin;
 	}
 	op->size = insn->size;
-	char *str = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+	rz_asm_op_setf_asm(op, "%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+	char *str = rz_asm_op_get_asm(op);
 	if (str) {
-		rz_str_replace_char(str, '$', 0);
 		// remove the '$'<registername> in the string
-		rz_asm_op_set_asm(op, str);
-		free(str);
+		rz_str_replace_char(str, '$', 0);
 	}
 	cs_free(insn, n);
-beach:
-	// cs_close (&cd);
 fin:
 	return op->size;
 }
@@ -93,8 +94,10 @@ RzAsmPlugin rz_asm_plugin_mips_cs = {
 	.cpus = "mips32/64,micro,r6,v3,v2",
 	.bits = 16 | 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
-	.disassemble = &disassemble,
-	.mnemonics = mnemonics,
+	.init = mips_init,
+	.fini = mips_fini,
+	.disassemble = &mips_disassemble,
+	.mnemonics = mips_mnemonics,
 	.assemble = &assemble
 };
 

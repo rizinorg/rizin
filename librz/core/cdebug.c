@@ -6,6 +6,7 @@
 #include <rz_core.h>
 #include <rz_debug.h>
 #include "core_private.h"
+#include "rz_bin.h"
 
 /**
  * \brief Check whether the core is in debug mode (equivalent to cfg.debug)
@@ -230,7 +231,7 @@ RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr) 
 		rz_bp_del(core->dbg->bp, addr);
 	} else {
 		bool hwbp = (int)rz_config_get_b(core->config, "dbg.hwbp");
-		bpi = rz_debug_bp_add(core->dbg, addr, hwbp ? 1 : 0, false, 0, NULL, 0);
+		bpi = rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);
 		if (!bpi) {
 			RZ_LOG_ERROR("core: cannot set breakpoint at 0x%" PFMT64x "\n", addr);
 		}
@@ -245,19 +246,21 @@ RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr) 
  * \return void
  */
 RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
-	RzList *symbols = rz_bin_get_symbols(core->bin);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	if (!symbols) {
 		RZ_LOG_ERROR("Unable to find symbols in the binary\n");
 		return;
 	}
 	RzBinSymbol *symbol;
-	RzListIter *iter;
+	void **iter;
 	RzBreakpointItem *bp;
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
-	rz_list_foreach (symbols, iter, symbol) {
+	rz_pvector_foreach (symbols, iter) {
+		symbol = *iter;
 		if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
 			if (rz_analysis_noreturn_at(core->analysis, symbol->vaddr)) {
-				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, hwbp ? 1 : 0, false, 0, NULL, 0);
+				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, 0, hwbp, false, 0, NULL, 0);
 				if (!bp) {
 					RZ_LOG_ERROR("Unable to add a breakpoint into a noreturn function %s at addr 0x%" PFMT64x "\n", symbol->name, symbol->vaddr);
 					return;
@@ -529,7 +532,7 @@ RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *s
 	rz_cmd_state_output_array_end(state);
 }
 
-static int cmp(const void *a, const void *b) {
+static int cmp(const void *a, const void *b, void *user) {
 	RzDebugMap *ma = (RzDebugMap *)a;
 	RzDebugMap *mb = (RzDebugMap *)b;
 	return ma->addr - mb->addr;
@@ -577,7 +580,7 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 	if (width < 1) {
 		width = 30;
 	}
-	rz_list_sort(maps, cmp);
+	rz_list_sort(maps, cmp, NULL);
 	mul = findMinMax(maps, &min, &max, 0, width);
 	ut64 last = min;
 	if (min != -1 && mul != 0) {
@@ -819,7 +822,7 @@ RZ_API bool rz_core_debug_step_over(RzCore *core, int steps) {
 	rz_reg_arena_swap(core->dbg->reg, true);
 	rz_debug_step_over(core->dbg, steps);
 	if (bpi) {
-		(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+		(void)rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);
 	}
 	rz_core_reg_update_flags(core);
 	return true;
@@ -847,7 +850,7 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 	rz_reg_setv(core->analysis->reg, "PC", addr);
 	rz_core_reg_update_flags(core);
 	if (bpi) {
-		(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+		(void)rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);
 	}
 	return true;
 }
@@ -867,7 +870,19 @@ RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt) {
 
 static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
 	char **flagdesc, char **flagdesc2, char **pcstr, char **spstr) {
-	RzFlagItem *f = rz_flag_get_at(core->flags, frame->addr, true);
+	RzFlagItem *f = rz_flag_get_at_by_spaces(core->flags, true, frame->addr,
+		RZ_FLAGS_FS_CLASSES,
+		RZ_FLAGS_FS_FUNCTIONS,
+		RZ_FLAGS_FS_IMPORTS,
+		RZ_FLAGS_FS_RELOCS,
+		RZ_FLAGS_FS_RESOURCES,
+		RZ_FLAGS_FS_SECTIONS,
+		RZ_FLAGS_FS_SEGMENTS,
+		RZ_FLAGS_FS_SYMBOLS,
+		RZ_FLAGS_FS_SYMBOLS_SECTIONS,
+		RZ_FLAGS_FS_DEBUG_MAPS,
+		RZ_FLAGS_FS_POINTERS,
+		NULL);
 	RzFlagItem *f2 = NULL;
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
@@ -1184,7 +1199,7 @@ static const char *signal_option(int opt) {
 }
 
 static bool siglistcb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {
@@ -1205,7 +1220,7 @@ static bool siglistcb(void *p, const char *k, const char *v) {
 }
 
 static bool siglistjsoncb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {
@@ -1226,7 +1241,7 @@ static bool siglistjsoncb(void *p, const char *k, const char *v) {
 }
 
 static bool siglisttblcb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {

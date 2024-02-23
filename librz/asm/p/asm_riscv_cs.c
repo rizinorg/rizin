@@ -3,50 +3,53 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
-#include <capstone/capstone.h>
+#include "cs_helper.h"
 
-static csh cd = 0;
-#include "cs_mnemonics.c"
+CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(riscv);
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
+
+	int ret = -1;
 	cs_insn *insn;
-	int mode = (a->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
+	cs_mode mode = (a->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
 	op->size = 4;
-	if (cd != 0) {
-		cs_close(&cd);
+	if (ctx->omode != mode) {
+		cs_close(&ctx->handle);
+		ctx->omode = -1;
 	}
-	int ret = cs_open(CS_ARCH_RISCV, mode, &cd);
-	if (ret) {
-		goto fin;
+	if (!ctx->handle) {
+		ret = cs_open(CS_ARCH_RISCV, mode, &ctx->handle);
+		if (ret) {
+			goto fin;
+		}
+		ctx->omode = mode;
+		// cs_option (ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 #if 0
 	if (a->syntax == RZ_ASM_SYNTAX_REGNUM) {
-		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+		cs_option (ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
 	} else {
-		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+		cs_option (ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	}
-	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 #endif
-	int n = cs_disasm(cd, (ut8 *)buf, len, a->pc, 1, &insn);
+	int n = cs_disasm(ctx->handle, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
 		op->size = 2;
-		goto beach;
+		goto fin;
 	}
 	if (insn->size < 1) {
-		goto beach;
+		goto fin;
 	}
 	op->size = insn->size;
-	char *str = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+	rz_asm_op_setf_asm(op, "%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+	char *str = rz_asm_op_get_asm(op);
 	if (str) {
-		rz_str_replace_char(str, '$', 0);
 		// remove the '$'<registername> in the string
-		rz_asm_op_set_asm(op, str);
-		free(str);
+		rz_str_replace_char(str, '$', 0);
 	}
 	cs_free(insn, n);
-beach:
-	// cs_close (&cd);
 fin:
 	return op->size;
 }
@@ -59,8 +62,10 @@ RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	.cpus = "",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
-	.disassemble = &disassemble,
-	.mnemonics = mnemonics,
+	.init = riscv_init,
+	.fini = riscv_fini,
+	.disassemble = &riscv_disassemble,
+	.mnemonics = riscv_mnemonics,
 };
 
 #ifndef RZ_PLUGIN_INCORE

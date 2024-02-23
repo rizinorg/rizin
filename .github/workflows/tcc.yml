@@ -42,7 +42,7 @@ jobs:
     name: ubuntu-tcc-test
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Checkout TinyCC repository
       run: |
@@ -74,7 +74,7 @@ jobs:
           sudo python3 setup.py install
 
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins
@@ -90,9 +90,9 @@ jobs:
 
     - name: Install test dependencies
       run: |
-          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
           sudo apt-get update
-          sudo apt-get --assume-yes install libc6 libc6-i386
+          sudo apt-get --assume-yes install libc6 libc6-i386 debuginfod
 
     - name: Run tests
       env:

@@ -4,15 +4,16 @@
 #include <rz_util/rz_table.h>
 #include "rz_cons.h"
 
-// cant do that without globals because RzList doesnt have void *user :(
-static int Gnth = 0;
-static RzListComparator Gcmp = NULL;
+typedef struct row_info {
+	int nth;
+	RzListComparator cmp;
+} row_info_t;
 
-static int sortString(const void *a, const void *b) {
+static int sortString(const void *a, const void *b, void *user) {
 	return strcmp(a, b);
 }
 
-static int sortNumber(const void *a, const void *b) {
+static int sortNumber(const void *a, const void *b, void *user) {
 	return rz_num_get(NULL, a) - rz_num_get(NULL, b);
 }
 
@@ -251,7 +252,7 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 			rz_pvector_push(row, strdup(arg ? arg : "")); \
 			break; \
 		case 'b': \
-			rz_pvector_push(row, rz_str_new(rz_str_bool(va_arg(ap, int)))); \
+			rz_pvector_push(row, rz_str_dup(rz_str_bool(va_arg(ap, int)))); \
 			break; \
 		case 'i': \
 		case 'd': \
@@ -790,44 +791,45 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 	}
 }
 
-static int cmp(const void *_a, const void *_b) {
+static int cmp(const void *_a, const void *_b, void *user) {
+	row_info_t *info = (row_info_t *)user;
 	RzTableRow *a = (RzTableRow *)_a;
 	RzTableRow *b = (RzTableRow *)_b;
-	const char *wa = rz_pvector_at(a->items, Gnth);
-	const char *wb = rz_pvector_at(b->items, Gnth);
-	int res = Gcmp(wa, wb);
-	return res;
+	const char *wa = rz_pvector_at(a->items, info->nth);
+	const char *wb = rz_pvector_at(b->items, info->nth);
+	return info->cmp(wa, wb, NULL);
 }
 
 RZ_API void rz_table_sort(RzTable *t, int nth, bool dec) {
 	RzTableColumn *col = rz_vector_index_ptr(t->cols, nth);
-	if (col) {
-		Gnth = nth;
-		if (col->type && col->type->cmp) {
-			Gcmp = col->type->cmp;
-			rz_vector_sort(t->rows, cmp, dec);
-		}
-		Gnth = 0;
-		Gcmp = NULL;
+	if (!(col && col->type && col->type->cmp)) {
+		return;
 	}
+
+	row_info_t info = { 0 };
+	info.nth = nth;
+	info.cmp = col->type->cmp;
+	rz_vector_sort(t->rows, cmp, dec, &info);
 }
 
-static int cmplen(const void *_a, const void *_b) {
+static int cmplen(const void *_a, const void *_b, void *user) {
+	row_info_t *info = (row_info_t *)user;
 	RzTableRow *a = (RzTableRow *)_a;
 	RzTableRow *b = (RzTableRow *)_b;
-	const char *wa = rz_pvector_at(a->items, Gnth);
-	const char *wb = rz_pvector_at(b->items, Gnth);
-	int res = strlen(wa) - strlen(wb);
-	return res;
+	const char *wa = rz_pvector_at(a->items, info->nth);
+	const char *wb = rz_pvector_at(b->items, info->nth);
+	return strlen(wa) - strlen(wb);
 }
 
 RZ_API void rz_table_sortlen(RzTable *t, int nth, bool dec) {
 	RzTableColumn *col = rz_vector_index_ptr(t->cols, nth);
-	if (col) {
-		Gnth = nth;
-		rz_vector_sort(t->rows, cmplen, dec);
-		Gnth = 0;
+	if (!col) {
+		return;
 	}
+
+	row_info_t info = { 0 };
+	info.nth = nth;
+	rz_vector_sort(t->rows, cmplen, dec, &info);
 }
 
 static int rz_rows_cmp(RzPVector /*<char *>*/ *lhs, RzPVector /*<char *>*/ *rhs, RzVector /*<RzTableColumn>*/ *cols, int nth) {
@@ -841,7 +843,7 @@ static int rz_rows_cmp(RzPVector /*<char *>*/ *lhs, RzPVector /*<char *>*/ *rhs,
 		item_col = rz_vector_index_ptr(cols, i);
 
 		if (nth == -1 || i == nth) {
-			tmp = item_col->type->cmp(item_lhs, item_rhs);
+			tmp = item_col->type->cmp(item_lhs, item_rhs, NULL);
 			if (tmp) {
 				return tmp;
 			}
@@ -1311,8 +1313,13 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list
 				rz_strbuf_append(buf, ((j * mul) + min >= seek && (j * mul) + min <= seek + len) ? "^" : h_line);
 			}
 			char *s = rz_strbuf_drain(buf);
-			rz_table_add_rowf(table, "sssssss", "=>", sdb_fmt("0x%08" PFMT64x, seek),
-				s, sdb_fmt("0x%08" PFMT64x, seek + len), "", "", "");
+			char *seekstart = rz_str_newf("0x%08" PFMT64x, seek);
+			char *seekend = rz_str_newf("0x%08" PFMT64x, seek + len);
+
+			rz_table_add_rowf(table, "sssssss", "=>", seekstart, s, seekend, "", "", "");
+
+			free(seekend);
+			free(seekstart);
 			free(s);
 		} else {
 			rz_strbuf_free(buf);
@@ -1362,12 +1369,12 @@ RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	if (row_name && t->rows) {
 		iter = row_name->head;
 		if (iter) {
-			item = iter->data;
+			item = rz_list_iter_get_data(iter);
 			for (i = 0; i < t->totalCols; i++) {
 				rz_table_add_row(transpose, item, NULL);
-				if (iter->n) {
-					iter = iter->n;
-					item = iter->data;
+				if (rz_list_iter_has_next(iter)) {
+					iter = rz_list_iter_get_next(iter);
+					item = rz_list_iter_get_data(iter);
 				}
 			}
 		}

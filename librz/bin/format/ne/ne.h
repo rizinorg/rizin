@@ -28,20 +28,20 @@ typedef struct {
 	ut8 *entry_table;
 	ut8 *resident_name_table;
 	RzBuffer *buf;
-	RzList /*<RzBinSection *>*/ *segments;
+	RzPVector /*<RzBinSection *>*/ *segments;
 	RzList /*<RzBinAddr *>*/ *entries;
 	RzList /*<rz_ne_resource *>*/ *resources;
-	RzList /*<RzBinImport *>*/ *imports;
-	RzList /*<RzBinSymbol *>*/ *symbols;
+	RzPVector /*<RzBinImport *>*/ *imports;
+	RzPVector /*<RzBinSymbol *>*/ *symbols;
 	char *os;
 } rz_bin_ne_obj_t;
 
 void rz_bin_ne_free(rz_bin_ne_obj_t *bin);
 rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose);
-RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin);
-RzList /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin);
-RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin);
-RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin);
+RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin);
+RzPVector /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin);
+RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin);
+RzPVector /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin);
 RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin);
 
 #endif

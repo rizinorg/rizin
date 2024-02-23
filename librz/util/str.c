@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_regex.h>
+#include <rz_util/rz_regex.h>
 #include "rz_list.h"
 #include "rz_types.h"
 #include "rz_util.h"
 #include "rz_cons.h"
 #include "rz_bin.h"
 #include "rz_util/rz_assert.h"
+#include <rz_vector.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -687,7 +688,8 @@ RZ_API const char *rz_str_lchr(const char *str, char chr) {
 }
 
 /* find the last char chr in the substring str[start:end] with end not included */
-RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr) {
+RZ_API const char *rz_sub_str_lchr(RZ_NONNULL const char *str, int start, int end, char chr) {
+	rz_return_val_if_fail(str, NULL);
 	do {
 		end--;
 	} while (str[end] != chr && end >= start);
@@ -695,11 +697,33 @@ RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr
 }
 
 /* find the first char chr in the substring str[start:end] with end not included */
-RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr) {
+RZ_API const char *rz_sub_str_rchr(RZ_NONNULL const char *str, int start, int end, char chr) {
+	rz_return_val_if_fail(str, NULL);
 	while (str[start] && str[start] != chr && start < end) {
 		start++;
 	}
 	return str[start] == chr ? str + start : NULL;
+}
+
+/* \brief Extract a substring between two pointers inside some strings
+ *
+ * \param str A source string
+ * \param start Pointer inside the source string from where substring starts
+ * \param end Pointer inside the source string where substring ends
+ */
+RZ_API RZ_OWN char *rz_sub_str_ptr(RZ_NONNULL const char *str, RZ_NONNULL const char *start, RZ_NONNULL const char *end) {
+	rz_return_val_if_fail(str && start && end, NULL);
+	ssize_t len = end - start + 1;
+	if (len < 1 || len > strlen(str)) {
+		return NULL;
+	}
+	char *result = malloc(len + 1);
+	if (!result) {
+		return NULL;
+	}
+	memcpy(result, start, len);
+	result[len] = '\0';
+	return result;
 }
 
 /**
@@ -889,12 +913,6 @@ RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *s, RZ_NONNULL const c
 	return res;
 }
 
-// Returns a new heap-allocated copy of str.
-// XXX what's the diff with rz_str_dup ?
-RZ_API char *rz_str_new(const char *str) {
-	return str ? strdup(str) : NULL;
-}
-
 // Returns a new heap-allocated copy of str, sets str[len] to '\0'.
 // If the input str is longer than len, it will be truncated.
 RZ_API char *rz_str_newlen(const char *str, int len) {
@@ -1046,11 +1064,17 @@ RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len) {
 	return out;
 }
 
-// TODO: deprecate?
-RZ_API char *rz_str_dup(char *ptr, const char *string) {
-	char *str = rz_str_new(string);
-	free(ptr); // in case ptr == string
-	return str;
+/**
+ * \brief Duplicates a string.
+ *
+ * This function duplicates the given string. If the input string is NULL,
+ * the function will return NULL.
+ *
+ * \param str The string to duplicate. Can be NULL.
+ * \return A new string which is a duplicate of the input string, or NULL if the input string was NULL.
+ */
+RZ_API RZ_OWN char *rz_str_dup(RZ_NULLABLE const char *str) {
+	return str ? strdup(str) : NULL;
 }
 
 RZ_API char *rz_str_prepend(char *ptr, const char *string) {
@@ -1085,11 +1109,17 @@ RZ_API char *rz_str_append_owned(char *ptr, char *string) {
 	return r;
 }
 
-/*
- * first argument must be allocated
- * return: the pointer ptr resized to string size.
+/**
+ * \brief Appends \p string to \p ptr. If \p ptr is NULL, \p string is duplicated and returned.
+ * Note: If \p ptr is not NULL, it might be freed by realloc and the returned pointer
+ * should be used from here on.
+ *
+ * \param ptr Pointer to the string to append to.
+ * \param string The string to append.
+ *
+ * \return The concatenation of \p ptr + \p string or NULL in case of failure.
  */
-RZ_API char *rz_str_append(char *ptr, const char *string) {
+RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *string) {
 	if (string && !ptr) {
 		return strdup(string);
 	}
@@ -1108,7 +1138,17 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 	return ptr;
 }
 
-RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
+/**
+ * \brief Appends a formatted string to \p ptr. If \p ptr is NULL, the formatted string is returned.
+ * Note: If \p ptr is not NULL, it might be freed by realloc and the returned pointer
+ * should be used from here on.
+ *
+ * \param ptr Pointer to the string to append to.
+ * \param fmt The formatting string.
+ *
+ * \return The concatenation of \p ptr + the formatted string or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_appendf(RZ_OWN RZ_NULLABLE char *ptr, const char *fmt, ...) {
 	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
@@ -1136,48 +1176,59 @@ RZ_API char *rz_str_appendch(char *x, char y) {
 	return rz_str_append(x, b);
 }
 
-RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g) {
+/**
+ * \brief In-place replacement of string \p key with \p val in \p str.
+ * In case of realloc \p str is freed and NULL is returned.
+ *
+ * \param str The string to replace the sub-string in.
+ * \param key The sub-string to replace.
+ * \param val The sub-string to replace \p key with.
+ * \param g If 'i' it does an "ignore case" replacement. If 0 it replaces only the first occurance.
+ *
+ * \return Pointer to the given string but replaced sub_strings. And NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char *val, int g) {
 	if (g == 'i') {
 		return rz_str_replace_icase(str, key, val, g, true);
 	}
 	rz_return_val_if_fail(str && key && val, NULL);
 
-	int off, i, slen;
-	char *newstr, *p = str;
-	int klen = strlen(key);
-	int vlen = strlen(val);
-	if (klen == 1 && vlen < 2) {
+	int key_off, i, str_len;
+	char *newstr, *key_ptr = str;
+	int key_len = strlen(key);
+	int val_len = strlen(val);
+	if (key_len == 1 && val_len < 2) {
 		rz_str_replace_char(str, *key, *val);
 		return str;
 	}
-	if (klen == vlen && !strcmp(key, val)) {
+	if (key_len == val_len && !strcmp(key, val)) {
 		return str;
 	}
-	slen = strlen(str);
+	str_len = strlen(str);
 	char *q = str;
 	for (;;) {
-		p = strstr(q, key);
-		if (!p) {
+		key_ptr = strstr(q, key);
+		if (!key_ptr) {
 			break;
 		}
-		off = (int)(size_t)(p - str);
-		if (vlen != klen) {
-			int tlen = slen - (off + klen);
-			slen += vlen - klen;
-			if (vlen > klen) {
-				newstr = realloc(str, slen + 1);
+		key_off = (int)(size_t)(key_ptr - str);
+		if (val_len != key_len) {
+			int tail_len = str_len - (key_off + key_len);
+			str_len += val_len - key_len;
+			if (val_len > key_len) {
+				newstr = realloc(str, str_len + 1);
 				if (!newstr) {
 					eprintf("realloc fail\n");
 					RZ_FREE(str);
-					break;
+					return NULL;
 				}
 				str = newstr;
 			}
-			p = str + off;
-			memmove(p + vlen, p + klen, tlen + 1);
+			key_ptr = str + key_off;
+			memmove(key_ptr + val_len, key_ptr + key_len, tail_len + 1);
 		}
-		memcpy(p, val, vlen);
-		i = off + vlen;
+		memcpy(key_ptr, val, val_len);
+		i = key_off + val_len;
 		q = str + i;
 		if (!g) {
 			break;
@@ -3261,30 +3312,31 @@ RZ_API int rz_str_do_until_token(str_operation op, char *str, const char tok) {
 	return ret;
 }
 
-RZ_API const char *rz_str_pad(const char ch, int sz) {
-	static char pad[1024];
+RZ_API RZ_OWN char *rz_str_pad(const char ch, int sz) {
 	if (sz < 0) {
 		sz = 0;
 	}
-	memset(pad, ch, RZ_MIN(sz, sizeof(pad)));
-	if (sz < sizeof(pad)) {
-		pad[sz] = 0;
+	char *pad = malloc(sz + 1);
+	if (!pad) {
+		return NULL;
 	}
-	pad[sizeof(pad) - 1] = 0;
+	memset(pad, ch, sz);
+	pad[sz] = 0;
 	return pad;
 }
 
-RZ_API char *rz_str_repeat(const char *ch, int sz) {
+/**
+ * \brief Repeats specified \p str string \p times
+ */
+RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times) {
+	rz_return_val_if_fail(str, NULL);
 	int i;
-	if (sz < 0) {
-		sz = 0;
-	}
-	if (sz == 0) {
+	if (times == 0) {
 		return strdup("");
 	}
-	RzStrBuf *buf = rz_strbuf_new(ch);
-	for (i = 1; i < sz; i++) {
-		rz_strbuf_append(buf, ch);
+	RzStrBuf *buf = rz_strbuf_new(str);
+	for (i = 1; i < times; i++) {
+		rz_strbuf_append(buf, str);
 	}
 	return rz_strbuf_drain(buf);
 }
@@ -3398,31 +3450,35 @@ static RzList /*<char *>*/ *str_split_list_common(char *str, const char *c, int 
 static RzList /*<char *>*/ *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRegex *r, int n, bool trim, bool dup) {
 	rz_return_val_if_fail(str && r, NULL);
 	RzList *lst = rz_list_newf(dup ? free : NULL);
-	RzRegexMatch m[1];
 	char *aux;
 	int i = 0;
 	int s = 0, e = 0;
 	int j = 0;
-	while (rz_regex_exec(r, str + j, 1, m, 0) == 0) {
+	void **it;
+	RzPVector *matches = rz_regex_match_all(r, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	rz_pvector_foreach (matches, it) {
+		RzPVector *m = (RzPVector *)*it;
+		RzRegexMatch *group0 = rz_pvector_head(m);
 		if (n == i && n > 0) {
 			break;
 		}
-		s = m[0].rm_so; // Match start (inclusive) in string str + j
-		e = m[0].rm_eo; // Match end (exclusive) in string str + j
+		s = group0->start; // Match start (inclusive) in string str + j
+		e = group0->start + group0->len; // Match end (exclusive) in string str + j
 		if (dup) {
-			aux = rz_str_ndup(str + j, s);
+			aux = rz_str_ndup(str + j, s - j);
 		} else {
 			// Overwrite split chararcters.
-			memset(str + j + s, 0, e - s);
+			memset(str + s, 0, e - s);
 			aux = str + j;
 		}
 		if (trim) {
 			rz_str_trim(aux);
 		}
 		rz_list_append(lst, aux);
-		j += e;
+		j = e;
 		++i;
 	}
+	rz_pvector_free(matches);
 	if (*(str + j) == 0 || (n == i && n > 0) || rz_list_length(lst) == 0) {
 		// No token left.
 		return lst;
@@ -3472,7 +3528,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n) {
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
 	rz_return_val_if_fail(str && r, NULL);
-	RzRegex *regex = rz_regex_new(r, "e");
+	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
 	RzList *res = str_split_list_common_regex(str, regex, n, false, false);
 	rz_regex_free(regex);
 	return res;
@@ -3534,7 +3590,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char 
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
 	rz_return_val_if_fail(_str && r, NULL);
 	char *str = strdup(_str);
-	RzRegex *regex = rz_regex_new(r, "e");
+	RzRegex *regex = rz_regex_new(r, RZ_REGEX_EXTENDED, 0);
 	RzList *res = str_split_list_common_regex(str, regex, n, trim, true);
 	free(str);
 	rz_regex_free(regex);
@@ -3898,7 +3954,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 	RzList *out = rz_list_newf(free);
 
 	int curline = -1;
-	char *linetext = (char *)rz_str_pad(' ', w);
+	char *linetext = rz_str_pad(' ', w);
 	for (i = 0; i < h; i++) {
 		int zoomedline = i * (int)((float)rows / h);
 		const char *srcline = rz_list_get_n(lines, zoomedline);
@@ -3913,6 +3969,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 		}
 		memset(linetext, ' ', w);
 	}
+	free(linetext);
 	free(str);
 
 	char *join = rz_str_list_join(out, "\n");
@@ -4215,4 +4272,28 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		*length = n_runes;
 	}
 	return rz_strbuf_drain_nofree(&sb);
+}
+
+/**
+ * \brief Get the indent string
+ * \param indent indent level, max 9
+ * \return indent string
+ */
+RZ_API const char *rz_str_indent(int indent) {
+	static const char *indent_tbl[] = {
+		"",
+		"\t",
+		"\t\t",
+		"\t\t\t",
+		"\t\t\t\t",
+		"\t\t\t\t\t",
+		"\t\t\t\t\t\t",
+		"\t\t\t\t\t\t\t",
+		"\t\t\t\t\t\t\t\t",
+		"\t\t\t\t\t\t\t\t\t",
+	};
+	if (indent < 0 || indent >= RZ_ARRAY_SIZE(indent_tbl)) {
+		return "";
+	}
+	return indent_tbl[indent];
 }

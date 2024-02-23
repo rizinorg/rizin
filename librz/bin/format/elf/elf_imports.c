@@ -57,6 +57,38 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
 	return plt_addr;
 }
 
+/**
+ * \brief Determines and returns the import address for the given relocation
+ * for the Hexagon architecture.
+ *
+ * \param eo The ElfObject.
+ * \param rel The Elf relocation to get the address for.
+ *
+ * \return The import address or UT64_MAX in case of failure.
+ */
+static ut64 get_import_addr_hexagon(ELFOBJ *eo, RzBinElfReloc *rel) {
+	ut64 got_addr = 0;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(eo, DT_PLTGOT, &got_addr) || got_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 plt_addr = get_got_entry(eo, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	const ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+
+	switch (rel->type) {
+	default:
+		RZ_LOG_WARN("Unhandled hexagon reloc type %d\n", rel->type);
+		return UT64_MAX;
+	case R_HEX_JMP_SLOT:
+		return plt_addr + pos * 16 + 32;
+	}
+}
+
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
 	ut64 got_addr;
 
@@ -239,6 +271,14 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 	return UT64_MAX;
 }
 
+/**
+ * \brief Determines and returns the import address for the given relocation.
+ *
+ * \param eo The Elf object.
+ * \param rel The Elf relocation to get the address for.
+ *
+ * \return The import address or UT64_MAX in case of failure.
+ */
 static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	switch (bin->ehdr.e_machine) {
 	case EM_ARM:
@@ -258,6 +298,8 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	case EM_386:
 	case EM_X86_64:
 		return get_import_addr_x86(bin, reloc);
+	case EM_QDSP6:
+		return get_import_addr_hexagon(bin, reloc);
 	default:
 		RZ_LOG_WARN("Unsupported relocs type %" PFMT64u " for arch %d\n",
 			(ut64)reloc->type, bin->ehdr.e_machine);

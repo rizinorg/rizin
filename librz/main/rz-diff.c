@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021 deroad <wargiof@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -78,6 +78,7 @@ typedef struct diff_context_t {
 	bool colors;
 	bool analyze_all;
 	bool command_line;
+	bool verbose;
 	const char *architecture;
 	const char *input_a;
 	const char *input_b;
@@ -182,7 +183,7 @@ typedef struct diff_hex_view_t {
 
 #define rz_diff_ctx_add_evar(x, o) \
 	do { \
-		char *copy = rz_str_new(o); \
+		char *copy = rz_str_dup(o); \
 		if (!copy || !rz_list_append((x)->evars, copy)) { \
 			free(copy); \
 			rz_diff_error_opt(x, DIFF_OPT_ERROR, "cannot add evar '%s' to list\n", o); \
@@ -195,54 +196,74 @@ typedef struct diff_hex_view_t {
 #define rz_diff_ctx_set_opt(x, o)  rz_diff_ctx_set_def(x, option, DIFF_OPT_UNKNOWN, o)
 
 static void rz_diff_show_help(bool usage_only) {
-	printf("Usage: rz-diff [options] <file0> <file1>\n");
+	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
+	printf("rz-diff [options] <file0> <file1>\n");
 	if (usage_only) {
 		return;
 	}
+	const char *options[] = {
+		// clang-format off
+		"-a",       "[arch]",       "Specify architecture plugin to use (x86, arm, ..)",
+		"-b",       "[bits]",       "Specify register size for arch (16 (thumb), 32, 64, ..)",
+		"-d",       "[algo]",       "Compute edit distance based on the chosen algorithm:",
+		"",         "",             "   myers  | Eugene W. Myers' O(ND) algorithm (no substitution)",
+		"",         "",             "   leven  | Levenshtein O(N^2) algorithm (with substitution)",
+		"",         "",             "   ssdeep | Context triggered piecewise hashing comparison",
+		"-i",       "",             "Use command line arguments instead of files (only for -d)",
+		"-H",       "",             "Hexadecimal visual mode",
+		"-h",       "",             "Show this help",
+		"-j",       "",             "JSON output",
+		"-q",       "",             "Quite output",
+		"-V",       "",             "Show version information",
+		"-v",       "",             "Be more verbose (stderr output)",
+		"-e",       "[k=v]",        "Set an evaluable config variable",
+		"-A",       "",             "Compare virtual and physical addresses",
+		"-B",       "",             "Run 'aaa' when loading the bin",
+		"-C",       "",             "Disable colors",
+		"-T",       "",             "Show timestamp information",
+		"-S",       "[WxH]",        "Set the width and height of the terminal for visual mode",
+		"-0",       "[cmd]",        "Input for file0 when option -t 'commands' is given.",
+		"",         "",             "The same value will be set for file1, if -1 is not set.",
+		"-1",       "[cmd]",        "Input for file1 when option -t 'commands' is given.",
+		"-t",       "[type]",       "Compute the difference between two files based on its type:",
+		"",         "",             "   bytes      | compare raw bytes in the files (only for small files)",
+		"",         "",             "   lines      | compare text files",
+		"",         "",             "   functions  | compare functions found in the files",
+		"",         "",             "   classes    | compare classes found in the files",
+		"",         "",             "   command    | compare command output returned when executed in both files",
+		"",         "",             "              | require -0 <cmd> and -1 <cmd> is optional",
+		"",         "",             "   entries    | compare entries found in the files",
+		"",         "",             "   fields     | compare fields found in the files",
+		"",         "",             "   graphs     | compare 2 functions and outputs in graphviz/dot format",
+		"",         "",             "              | require -0 <fcn name|offset> and -1 <fcn name|offset> is optional",
+		"",         "",             "   imports    | compare imports found in the files",
+		"",         "",             "   libraries  | compare libraries found in the files",
+		"",         "",             "   sections   | compare sections found in the files",
+		"",         "",             "   strings    | compare strings found in the files",
+		"",         "",             "   symbols    | compare symbols found in the files",
+		// clang-format on
+	};
+	size_t maxOptionAndArgLength = 0;
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		size_t optionLength = strlen(options[i]);
+		size_t argLength = strlen(options[i + 1]);
+		size_t totalLength = optionLength + argLength;
+		if (totalLength > maxOptionAndArgLength) {
+			maxOptionAndArgLength = totalLength;
+		}
+	}
+	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
+		if (i + 1 < sizeof(options) / sizeof(options[0])) {
+			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
+		}
+	}
+
 	printf(
-		"  -a [arch] specify architecture plugin to use (x86, arm, ..)\n"
-		"  -b [bits] specify register size for arch (16 (thumb), 32, 64, ..)\n"
-		"  -d [algo] compute edit distance based on the choosen algorithm:\n"
-		"              myers  | Eugene W. Myers' O(ND) algorithm (no substitution)\n"
-		"              leven  | Levenshtein O(N^2) algorithm (with substitution)\n"
-		"              ssdeep | Context triggered piecewise hashing comparison\n"
-		"  -i        use command line arguments instead of files (only for -d)\n"
-		"  -H        hexadecimal visual mode\n"
-		"  -h        show the help message\n"
-		"  -j        json output\n"
-		"  -q        quite output\n"
-		"  -v        show version information\n"
-		"  -e [k=v]  set an evaluable config variable\n"
-		"  -A        compare virtual and physical addresses\n"
-		"  -B        run 'aaa' when loading the bin\n"
-		"  -C        disable colors\n"
-		"  -T        show timestamp information\n"
-		"  -S [WxH]  sets the width and height of the terminal for visual mode\n"
-		"  -0 [cmd]  input for file0 when option -t 'commands' is given.\n"
-		"            the same value will be set for file1, if -1 is not set.\n"
-		"  -1 [cmd]  input for file1 when option -t 'commands' is given.\n"
-		"  -t [type] compute the difference between two files based on its type:\n"
-		"              bytes      | compares raw bytes in the files (only for small files)\n"
-		"              lines      | compares text files\n"
-		"              functions  | compares functions found in the files\n"
-		"              classes    | compares classes found in the files\n"
-		"              command    | compares command output returned when executed in both files\n"
-		"                         | requires -0 <cmd> and -1 <cmd> is optional\n"
-		"              entries    | compares entries found in the files\n"
-		"              fields     | compares fields found in the files\n"
-		"              graphs     | compares 2 functions and outputs in graphviz/dot format\n"
-		"                         | requires -0 <fcn name|offset> and -1 <fcn name|offset> is optional\n"
-		"              imports    | compares imports found in the files\n"
-		"              libraries  | compares libraries found in the files\n"
-		"              sections   | compares sections found in the files\n"
-		"              strings    | compares strings found in the files\n"
-		"              symbols    | compares symbols found in the files\n"
-		"  palette colors can be changed by adding the following lines\n"
-		"          inside the $HOME/.rizinrc file\n"
-		"  ec diff.unknown blue   | offset color\n"
-		"  ec diff.match   green  | match color\n"
-		"  ec diff.unmatch red    | mismatch color\n"
-		"");
+		"palette colors can be changed by adding the following lines\n"
+		"inside the $HOME/.rizinrc file\n"
+		"ec diff.unknown blue   | offset color\n"
+		"ec diff.match   green  | match color\n"
+		"ec diff.unmatch red    | mismatch color\n");
 }
 
 static bool rz_diff_is_file(const char *file) {
@@ -270,7 +291,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hHjqviABCTa:b:e:d:t:0:1:S:");
+	rz_getopt_init(&opt, argc, argv, "hHjqvViABCTa:b:e:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
@@ -287,7 +308,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'j': rz_diff_ctx_set_mode(ctx, DIFF_MODE_JSON); break;
 		case 'q': rz_diff_ctx_set_mode(ctx, DIFF_MODE_QUIET); break;
 		case 't': rz_diff_set_def(type, NULL, opt.arg); break;
-		case 'v': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'V': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'v': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
 		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
 		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
 		case 'e': rz_diff_ctx_add_evar(ctx, opt.arg); break;
@@ -584,12 +606,16 @@ static inline RzBinFile *core_get_file(RzCoreFile *cfile) {
 	return rz_pvector_at(&cfile->binfiles, 0);
 }
 
-static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits, RzList /*<char *>*/ *evars, bool colors) {
+static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits, RzList /*<char *>*/ *evars, bool colors, bool verbose) {
 	RzCore *core = NULL;
 	RzCoreFile *cfile = NULL;
 	RzBinFile *bfile = NULL;
 	RzListIter *it;
 	char *config;
+
+	if (verbose) {
+		fprintf(stderr, "rz-diff: loading file '%s'\n", filename);
+	}
 
 	core = rz_core_new();
 	if (!core) {
@@ -625,7 +651,7 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 		goto rz_diff_load_file_with_core_fail;
 	}
 
-	if (rz_list_empty(bfile->o->maps)) {
+	if (rz_pvector_empty(bfile->o->maps)) {
 		rz_config_set_i(core->config, "io.va", false);
 	}
 
@@ -707,6 +733,12 @@ static const void *rz_diff_list_elem_at(const RzList /*<void *>*/ *array, ut32 i
 	return rz_list_get_n(array, index);
 }
 
+/**************************************** rzpvector ***************************************/
+
+static const void *rz_diff_pvector_elem_at(const RzPVector /*<void *>*/ *array, ut32 index) {
+	return rz_pvector_at(array, index);
+}
+
 /**************************************** imports ***************************************/
 
 static ut32 import_hash(const RzBinImport *elem) {
@@ -729,32 +761,36 @@ static int import_compare(const RzBinImport *a, const RzBinImport *b) {
 	return 0;
 }
 
-static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+static int import_compare_vec(const RzBinImport *a, const RzBinImport *b, void *user) {
+	return import_compare(a, b);
+}
 
-	list_a = rz_diff_file_get(dfile_a, imports);
-	if (!list_a) {
+static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
+
+	vec_a = rz_diff_file_get(dfile_a, imports);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, imports);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, imports);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)import_compare);
-	rz_list_sort(list_b, (RzListComparator)import_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)import_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)import_compare_vec, NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)import_hash,
 		.compare = (RzDiffMethodCompare)import_compare,
 		.stringify = (RzDiffMethodStringify)import_stringify,
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** symbols ***************************************/
@@ -798,36 +834,40 @@ static int symbol_compare(const RzBinSymbol *a, const RzBinSymbol *b) {
 	return 0;
 }
 
+static int symbol_compare_vec(const RzBinSymbol *a, const RzBinSymbol *b, void *user) {
+	return symbol_compare(a, b);
+}
+
 static void symbol_stringify(const RzBinSymbol *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s %s\n", elem->libname, elem->classname, elem->name);
 }
 
 static RzDiff *rz_diff_symbols_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, symbols);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, symbols);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, symbols);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, symbols);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)symbol_compare);
-	rz_list_sort(list_b, (RzListComparator)symbol_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)symbol_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)symbol_compare_vec, NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? symbol_hash_addr : symbol_hash),
 		.compare = (RzDiffMethodCompare)(compare_addr ? symbol_compare_addr : symbol_compare),
 		.stringify = (RzDiffMethodStringify)(compare_addr ? symbol_stringify_addr : symbol_stringify),
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** strings ***************************************/
@@ -877,32 +917,36 @@ static void string_stringify(const RzBinString *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s\n", elem->string);
 }
 
-static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+static int string_compare_vec(const RzBinString *a, const RzBinString *b, void *user) {
+	return string_compare(a, b);
+}
 
-	list_a = (RzList *)rz_bin_object_get_strings(dfile_a->file->o);
-	if (!list_a) {
+static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
+
+	vec_a = (RzPVector *)rz_bin_object_get_strings(dfile_a->file->o);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = (RzList *)rz_bin_object_get_strings(dfile_b->file->o);
-	if (!list_b) {
+	vec_b = (RzPVector *)rz_bin_object_get_strings(dfile_b->file->o);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)string_compare);
-	rz_list_sort(list_b, (RzListComparator)string_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)string_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)string_compare_vec, NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? string_hash_addr : string_hash),
 		.compare = (RzDiffMethodCompare)(compare_addr ? string_compare_addr : string_compare),
 		.stringify = (RzDiffMethodStringify)(compare_addr ? string_stringify_addr : string_stringify),
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** classes ***************************************/
@@ -939,36 +983,40 @@ static int class_compare(const RzBinClass *a, const RzBinClass *b) {
 	return 0;
 }
 
+static int class_compare_vec(const RzBinClass *a, const RzBinClass *b, void *user) {
+	return class_compare(a, b);
+}
+
 static void class_stringify(const RzBinClass *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s\n", SAFE_STR(elem->super), elem->name);
 }
 
 static RzDiff *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, classes);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, classes);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, classes);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, classes);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)class_compare);
-	rz_list_sort(list_b, (RzListComparator)class_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)class_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)class_compare_vec, NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? class_hash_addr : class_hash),
 		.compare = (RzDiffMethodCompare)(compare_addr ? class_compare_addr : class_compare),
 		.stringify = (RzDiffMethodStringify)(compare_addr ? class_stringify_addr : class_stringify),
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** entries ***************************************/
@@ -983,7 +1031,7 @@ static ut32 entry_hash(const RzBinAddr *elem) {
 	return hash;
 }
 
-static int entry_compare(const RzBinAddr *a, const RzBinAddr *b) {
+static int entry_compare(const RzBinAddr *a, const RzBinAddr *b, void *user) {
 	st64 ret;
 	ret = ((st64)b->paddr) - ((st64)a->paddr);
 	if (ret) {
@@ -1038,8 +1086,8 @@ static RzDiff *rz_diff_entries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)entry_compare);
-	rz_list_sort(list_b, (RzListComparator)entry_compare);
+	rz_list_sort(list_a, (RzListComparator)entry_compare, NULL);
+	rz_list_sort(list_b, (RzListComparator)entry_compare, NULL);
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
@@ -1064,36 +1112,40 @@ static int libs_compare(const char *a, const char *b) {
 	return 0;
 }
 
+static int libs_compare_vec(const char *a, const char *b, void *user) {
+	return libs_compare(a, b);
+}
+
 static void libs_stringify(const char *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s\n", SAFE_STR(elem));
 }
 
 static RzDiff *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, libs);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, libs);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, libs);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, libs);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)libs_compare);
-	rz_list_sort(list_b, (RzListComparator)libs_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)libs_compare_vec, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)libs_compare_vec, NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)libs_hash,
 		.compare = (RzDiffMethodCompare)libs_compare,
 		.stringify = (RzDiffMethodStringify)libs_stringify,
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** sections ***************************************/
@@ -1184,31 +1236,31 @@ static void section_stringify(const RzBinSection *elem, RzStrBuf *sb) {
 }
 
 static RzDiff *rz_diff_sections_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, sections);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, sections);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get sections from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, sections);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, sections);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get sections from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)section_compare);
-	rz_list_sort(list_b, (RzListComparator)section_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)section_compare, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)section_compare, NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? section_hash_addr : section_hash),
 		.compare = (RzDiffMethodCompare)(compare_addr ? section_compare_addr : section_compare),
 		.stringify = (RzDiffMethodStringify)(compare_addr ? section_stringify_addr : section_stringify),
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** fields ***************************************/
@@ -1256,48 +1308,61 @@ static int field_compare(const RzBinField *a, const RzBinField *b) {
 	return 0;
 }
 
+static int field_compare_addr_vec(const RzBinField *a, const RzBinField *b, void *user) {
+	return field_compare_addr(a, b);
+}
+
+static int field_compare_vec(const RzBinField *a, const RzBinField *b, void *user) {
+	return field_compare(a, b);
+}
+
 static void field_stringify(const RzBinField *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s\n", SAFE_STR(elem->type), elem->name);
 }
 
 static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, fields);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, fields);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, fields);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, fields);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)field_compare);
-	rz_list_sort(list_b, (RzListComparator)field_compare);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)(compare_addr ? field_compare_addr_vec : field_compare_vec), NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)(compare_addr ? field_compare_addr_vec : field_compare_vec), NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? field_hash_addr : field_hash),
 		.compare = (RzDiffMethodCompare)(compare_addr ? field_compare_addr : field_compare),
 		.stringify = (RzDiffMethodStringify)(compare_addr ? field_stringify_addr : field_stringify),
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** commands ***************************************/
 
 static char *execute_command(const char *command, const char *filename, DiffContext *ctx) {
-	RzCoreFile *cfile = rz_diff_load_file_with_core(filename, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
+	RzCoreFile *cfile = rz_diff_load_file_with_core(filename, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors, ctx->verbose);
 	if (!cfile) {
 		return NULL;
 	}
 
-	if (ctx->analyze_all && !rz_core_analysis_everything(cfile->core, false, NULL)) {
-		rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
+	if (ctx->analyze_all) {
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: analysing file '%s'\n", filename);
+		}
+		if (!rz_core_analysis_everything(cfile->core, false, NULL)) {
+			rz_diff_error("cannot analyze binary '%s'\n", filename);
+		}
 	}
 
 	char *output = rz_core_cmd_str(cfile->core, command);
@@ -1812,17 +1877,32 @@ static void diff_graph_as_json(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 	pj_end(pj);
 }
 
-static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, RzAnalysis *analysis_b, RzAnalysisFunction *find) {
+static bool diff_progess_status(const size_t n_left, const size_t n_matches, void *user) {
+	rz_cons_clear_line(true);
+	fprintf(stderr, "rz-diff: to check %" PFMTSZu " | matches %" PFMTSZu "\r", n_left, n_matches);
+	return !rz_cons_is_breaked();
+}
+
+static bool diff_check_ctrl_c(const size_t n_left, const size_t n_matches, void *user) {
+	return !rz_cons_is_breaked();
+}
+
+static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, RzAnalysis *analysis_b, RzAnalysisFunction *find, bool verbose) {
 	RzAnalysisMatchPair *pair = NULL;
 	RzAnalysisFunction *match = NULL;
 	RzAnalysisMatchResult *result = NULL;
+	RzAnalysisMatchOpt opts = { 0 };
 	RzList *list_a = rz_list_new();
 	if (!list_a || !rz_list_append(list_a, find)) {
 		RZ_LOG_ERROR("rz-diff: cannot allocate and initialize RzList for function search\n");
 		goto fail;
 	}
 
-	result = rz_analysis_match_functions_2(analysis_a, list_a, analysis_b, analysis_b->fcns);
+	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
+	opts.analysis_a = analysis_a;
+	opts.analysis_b = analysis_b;
+
+	result = rz_analysis_match_functions(list_a, analysis_b->fcns, &opts);
 	if (result && rz_list_length(result->matches) > 0) {
 		pair = (RzAnalysisMatchPair *)rz_list_first(result->matches);
 		match = (RzAnalysisFunction *)pair->pair_b;
@@ -1834,14 +1914,14 @@ fail:
 	return match;
 }
 
-static int compareBlocks(const RzAnalysisBlock *a, const RzAnalysisBlock *b) {
+static int compareBlocks(const RzAnalysisBlock *a, const RzAnalysisBlock *b, void *user) {
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
-static int comparePairBlocks(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb) {
+static int comparePairBlocks(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb, void *user) {
 	const RzAnalysisBlock *a = ma->pair_a;
 	const RzAnalysisBlock *b = mb->pair_a;
-	return compareBlocks(a, b);
+	return compareBlocks(a, b, user);
 }
 
 /**
@@ -1850,12 +1930,13 @@ static int comparePairBlocks(const RzAnalysisMatchPair *ma, const RzAnalysisMatc
  * Each node that doesn't match 100% with the other function will include
  * a unified diff of the assembly of the same basic block.
  * */
-static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b, ut64 addr_b, DiffMode mode) {
+static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b, ut64 addr_b, DiffMode mode, bool verbose) {
 	rz_return_if_fail(core_a && core_b);
 
 	PJ *pj = NULL;
 	RzAnalysisFunction *fcn_b = NULL, *fcn_a = NULL;
 	RzAnalysisMatchResult *result = NULL;
+	RzAnalysisMatchOpt opts = { 0 };
 
 	// find function
 	fcn_a = rz_analysis_get_function_at(core_a->analysis, addr_a);
@@ -1866,7 +1947,7 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 
 	if (addr_b == UT64_MAX) {
 		// find matching function on core B
-		fcn_b = find_best_matching_function(core_a->analysis, core_b->analysis, fcn_a);
+		fcn_b = find_best_matching_function(core_a->analysis, core_b->analysis, fcn_a, verbose);
 		if (!fcn_b) {
 			RZ_LOG_ERROR("rz-diff: cannot find best matching function for function at 0x%" PFMT64x "\n", addr_a);
 			return;
@@ -1879,16 +1960,20 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 		}
 	}
 
+	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
+	opts.analysis_a = core_a->analysis;
+	opts.analysis_b = core_b->analysis;
+
 	// calculate all the matches between the basic blocks of the 2 functions.
-	result = rz_analysis_match_basic_blocks_2(core_a->analysis, fcn_a, core_b->analysis, fcn_b);
+	result = rz_analysis_match_basic_blocks(fcn_a, fcn_b, &opts);
 	if (!result) {
 		RZ_LOG_ERROR("rz-diff: cannot calculate matching basic blocks for function at 0x%" PFMT64x "\n", addr_a);
 		return;
 	}
 
-	rz_list_sort(result->matches, (RzListComparator)comparePairBlocks);
-	rz_list_sort(result->unmatch_a, (RzListComparator)compareBlocks);
-	rz_list_sort(result->unmatch_b, (RzListComparator)compareBlocks);
+	rz_list_sort(result->matches, (RzListComparator)comparePairBlocks, NULL);
+	rz_list_sort(result->unmatch_a, (RzListComparator)compareBlocks, NULL);
+	rz_list_sort(result->unmatch_b, (RzListComparator)compareBlocks, NULL);
 
 	switch (mode) {
 	case DIFF_MODE_JSON:
@@ -1979,7 +2064,7 @@ static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFuncti
 	}
 }
 
-static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb) {
+static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb, void *user) {
 	const RzAnalysisFunction *a = ma->pair_a;
 	const RzAnalysisFunction *b = mb->pair_a;
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
@@ -1992,7 +2077,7 @@ static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisM
  * Then the scores are shown in a table (when in quiet mode, the table
  * is headerless)
  * */
-static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
+static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool verbose) {
 	rz_return_if_fail(core_a && core_b);
 
 	char *output = NULL;
@@ -2001,6 +2086,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
 	RzTable *table = NULL;
 	RzAnalysisMatchResult *result = NULL;
 	RzAnalysisMatchPair *pair = NULL;
+	RzAnalysisMatchOpt opts = { 0 };
 	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
 	RzListIter *iter = NULL;
 	bool color = false, no_name = false;
@@ -2017,16 +2103,20 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
 		goto fail;
 	}
 
+	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
+	opts.analysis_a = core_a->analysis;
+	opts.analysis_b = core_b->analysis;
+
 	// calculate all the matches between the functions of the 2 different core files.
-	result = rz_analysis_match_functions_2(core_a->analysis, fcns_a, core_b->analysis, fcns_b);
+	result = rz_analysis_match_functions(fcns_a, fcns_b, &opts);
 	if (!result) {
 		RZ_LOG_ERROR("rz-diff: cannot perform matching functions search\n");
 		goto fail;
 	}
 
-	rz_list_sort(result->matches, (RzListComparator)comparePairFunctions);
-	rz_list_sort(result->unmatch_a, core_a->analysis->columnSort);
-	rz_list_sort(result->unmatch_b, core_b->analysis->columnSort);
+	rz_list_sort(result->matches, (RzListComparator)comparePairFunctions, NULL);
+	rz_list_sort(result->unmatch_a, core_a->analysis->columnSort, NULL);
+	rz_list_sort(result->unmatch_b, core_b->analysis->columnSort, NULL);
 
 	if (mode == DIFF_MODE_JSON) {
 		pj = pj_new();
@@ -2139,12 +2229,12 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 	RzCoreFile *a = NULL;
 	RzCoreFile *b = NULL;
 
-	a = rz_diff_load_file_with_core(ctx->file_a, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
+	a = rz_diff_load_file_with_core(ctx->file_a, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors, ctx->verbose);
 	if (!a) {
 		goto rz_diff_graphs_files_bad;
 	}
 
-	b = rz_diff_load_file_with_core(ctx->file_b, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
+	b = rz_diff_load_file_with_core(ctx->file_b, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors, ctx->verbose);
 	if (!b) {
 		goto rz_diff_graphs_files_bad;
 	}
@@ -2164,9 +2254,15 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 		}
 
 		if (ctx->analyze_all) {
+			if (ctx->verbose) {
+				fprintf(stderr, "rz-diff: analysing file '%s'\n", ctx->file_a);
+			}
 			if (!rz_core_analysis_everything(a->core, false, NULL)) {
 				rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
 				goto rz_diff_graphs_files_bad;
+			}
+			if (ctx->verbose) {
+				fprintf(stderr, "rz-diff: analysing file '%s'\n", ctx->file_b);
 			}
 			if (!rz_core_analysis_everything(b->core, false, NULL)) {
 				rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
@@ -2183,17 +2279,29 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 				goto rz_diff_graphs_files_bad;
 			}
 		}
-		core_show_function_diff(a->core, address_a, b->core, address_b, ctx->mode);
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: start diffing.\n");
+		}
+		core_show_function_diff(a->core, address_a, b->core, address_b, ctx->mode, ctx->verbose);
 	} else {
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: analysing file '%s'\n", ctx->file_a);
+		}
 		if (!rz_core_analysis_everything(a->core, false, NULL)) {
 			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
 			goto rz_diff_graphs_files_bad;
+		}
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: analysing file '%s'\n", ctx->file_b);
 		}
 		if (!rz_core_analysis_everything(b->core, false, NULL)) {
 			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
 			goto rz_diff_graphs_files_bad;
 		}
-		core_diff_show(a->core, b->core, ctx->mode);
+		if (ctx->verbose) {
+			fprintf(stderr, "rz-diff: start diffing.\n");
+		}
+		core_diff_show(a->core, b->core, ctx->mode, ctx->verbose);
 	}
 
 	success = true;
@@ -2557,7 +2665,7 @@ static char *visual_prompt(DiffHexView *hview, const char *prompt) {
 	rz_cons_gotoxy(0, hview->screen.height);
 	rz_cons_clear_line(0);
 	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
-	rz_line_set_prompt(":> ");
+	rz_line_set_prompt(rz_cons_singleton()->line, ":> ");
 	rz_cons_flush();
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (*buf) {

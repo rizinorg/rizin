@@ -10,7 +10,7 @@
 #include "../i/private.h"
 #include "mach0/mach0.h"
 #include "objc/mach0_classes.h"
-#include <ht_uu.h>
+#include <rz_util/ht_uu.h>
 
 // wip settings
 
@@ -36,7 +36,7 @@ static char *entitlements(RzBinFile *bf, bool json) {
 		pj_s(pj, (const char *)bin->signature);
 		return pj_drain(pj);
 	} else {
-		return rz_str_dup(NULL, (const char *)bin->signature);
+		return rz_str_dup((const char *)bin->signature);
 	}
 }
 
@@ -65,15 +65,15 @@ static ut64 baddr(RzBinFile *bf) {
 	return MACH0_(get_baddr)(bin);
 }
 
-static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
+static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return MACH0_(get_virtual_files)(bf);
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return MACH0_(get_maps)(bf);
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return MACH0_(get_segments)(bf);
 }
 
@@ -95,11 +95,12 @@ static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 }
 
 static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, int bits) {
-	RzList *secs = sections(bf);
-	RzListIter *iter;
+	RzPVector *secs = sections(bf);
+	void **iter;
 	RzBinSection *sec;
 	int i, type;
-	rz_list_foreach (secs, iter, sec) {
+	rz_pvector_foreach (secs, iter) {
+		sec = *iter;
 		type = -1;
 		if (strstr(sec->name, "_mod_fini_func")) {
 			type = RZ_BIN_ENTRY_TYPE_FINI;
@@ -185,13 +186,13 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) * bin, RzBinSymbol **p) {
 	}
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	struct MACH0_(obj_t) * bin;
 	int i;
 	const struct symbol_t *syms = NULL;
 	RzBinSymbol *ptr = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	int wordsize = 0;
 	if (!ret) {
 		return NULL;
@@ -231,7 +232,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp(ptr->name, "radr://", 7) ? 0 : 1;
 		set_u_add(symcache, ptr->vaddr);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	// functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
@@ -256,7 +257,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 				_handle_arm_thumb(bin, &ptr);
 			}
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
 				if (!set_u_contains(symcache, ptr->vaddr)) {
@@ -319,7 +320,7 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *i
 typedef struct {
 	RzBin *bin;
 	struct MACH0_(obj_t) * obj;
-	RzList /*<RzBinImport *>*/ *imports_dst;
+	RzPVector /*<RzBinImport *>*/ *imports_dst;
 } ImportsForeachCtx;
 
 static void imports_foreach_cb(char *name, int ord, void *user) {
@@ -343,11 +344,11 @@ static void imports_foreach_cb(char *name, int ord, void *user) {
 	if (!strcmp(name, "_NSConcreteGlobalBlock")) {
 		ctx->obj->has_blocks_ext = true;
 	}
-	rz_list_append(ctx->imports_dst, ptr);
+	rz_pvector_push(ctx->imports_dst, ptr);
 	free(name);
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
+static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinObject *obj = bf ? bf->o : NULL;
 	struct MACH0_(obj_t) *bin = bf ? bf->o->bin_obj : NULL;
 	if (!obj || !bin || !obj->bin_obj) {
@@ -357,7 +358,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	bin->has_retguard = -1;
 	bin->has_sanitizers = false;
 	bin->has_blocks_ext = false;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -377,17 +378,16 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	struct MACH0_(obj_t) *bin = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
 	if (bf && bf->o) {
 		bin = bf->o->bin_obj;
 	}
-	if (!obj || !obj->bin_obj || !(ret = rz_list_newf(free))) {
+	if (!obj || !obj->bin_obj || !(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	RzSkipList *relocs = MACH0_(get_relocs)(bf->o->bin_obj);
 	if (!relocs) {
@@ -416,25 +416,25 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 		ptr->vaddr = reloc->addr;
 		ptr->paddr = reloc->offset;
 		ptr->target_vaddr = reloc->target;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	int i;
 	char *ptr = NULL;
 	struct lib_t *libs;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = rz_list_newf(free))) {
+	if (!obj || !obj->bin_obj || !(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if ((libs = MACH0_(get_libs)(obj->bin_obj))) {
 		for (i = 0; !libs[i].last; i++) {
 			ptr = strdup(libs[i].name);
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 		free(libs);
 	}
@@ -465,8 +465,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
 	}
-	ret->intrp = rz_str_dup(NULL, MACH0_(get_intrp)(bf->o->bin_obj));
-	ret->compiler = rz_str_dup(NULL, "");
+	ret->intrp = rz_str_dup(MACH0_(get_intrp)(bf->o->bin_obj));
+	ret->compiler = rz_str_dup("");
 	ret->rclass = strdup("mach0");
 	ret->os = strdup("darwin");
 	ret->subsystem = strdup(MACH0_(get_platform)(bf->o->bin_obj));
@@ -488,7 +488,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
+static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	return MACH0_(parse_classes)(bf, NULL);
 }
 
@@ -801,10 +801,11 @@ static ut64 size(RzBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!bf->o->sections) {
-		RzListIter *iter;
+		void **iter;
 		RzBinSection *section;
 		bf->o->sections = sections(bf);
-		rz_list_foreach (bf->o->sections, iter, section) {
+		rz_pvector_foreach (bf->o->sections, iter) {
+			section = *iter;
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;
@@ -812,10 +813,6 @@ static ut64 size(RzBinFile *bf) {
 		}
 	}
 	return off + len;
-}
-
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
 RzBinPlugin rz_bin_plugin_mach0 = {
@@ -835,7 +832,6 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
-	.strings = &strings,
 	.size = &size,
 	.info = &info,
 	.header = MACH0_(mach_headerfields),

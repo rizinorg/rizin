@@ -1,0 +1,124 @@
+dE "qvfabs q3, q5" 10602a10
+dE "qvfabs q3, q5" 10602a10
+dE "qvfadd q3, q4, q5" 1064282a
+dE "qvfadds q3, q4, q5" 0064282a
+dE "qvfandc q3, q4, q5" 10642a08
+dE "qvfand q3, q4, q5" 10642888
+dE "qvfcfid q3, q5" 10602e9c
+dE "qvfcfids q3, q5" 00602e9c
+dE "qvfcfidu q3, q5" 10602f9c
+dE "qvfcfidus q3, q5" 00602f9c
+dE "qvfclr q3" 10631808
+dE "qvfcpsgn q3, q4, q5" 10642810
+dE "qvfctfb q3, q4" 10642288
+dE "qvfctid q3, q5" 10602e5c
+dE "qvfctidu q3, q5" 10602f5c
+dE "qvfctiduz q3, q5" 10602f5e
+dE "qvfctidz q3, q5" 10602e5e
+dE "qvfctiw q3, q5" 1060281c
+dE "qvfctiwu q3, q5" 1060291c
+dE "qvfctiwuz q3, q5" 1060291e
+dE "qvfctiwz q3, q5" 1060281e
+dE "qvfequ q3, q4, q5" 10642c88
+dE "qvflogical q3, q4, q5, 0xc" 10642e08
+dE "qvfmadd q3, q4, q6, q5" 106429ba
+dE "qvfmadds q3, q4, q6, q5" 006429ba
+dE "qvfmr q3, q5" 10602890
+dE "qvfmsub q3, q4, q6, q5" 106429b8
+dE "qvfmsubs q3, q4, q6, q5" 006429b8
+dE "qvfmul q3, q4, q6" 106401b2
+dE "qvfmuls q3, q4, q6" 006401b2
+dE "qvfnabs q3, q5" 10602910
+dE "qvfnand q3, q4, q5" 10642f08
+dE "qvfneg q3, q5" 10602850
+dE "qvfnmadd q3, q4, q6, q5" 106429be
+dE "qvfnmadds q3, q4, q6, q5" 006429be
+dE "qvfnmsub q3, q4, q6, q5" 106429bc
+dE "qvfnmsubs q3, q4, q6, q5" 006429bc
+dE "qvfnor q3, q4, q5" 10642c08
+dE "qvfnot q3, q4" 10642508
+dE "qvforc q3, q4, q5" 10642e88
+dE "qvfor q3, q4, q5" 10642b88
+dE "qvfperm q3, q4, q5, q6" 1064298c
+dE "qvfre q3, q5" 10602830
+dE "qvfres q3, q5" 00602830
+dE "qvfrim q3, q5" 10602bd0
+dE "qvfrin q3, q5" 10602b10
+dE "qvfrip q3, q5" 10602b90
+dE "qvfriz q3, q5" 10602b50
+dE "qvfrsp q3, q5" 10602818
+dE "qvfrsqrte q3, q5" 10602834
+dE "qvfrsqrtes q3, q5" 00602834
+dE "qvfsel q3, q4, q6, q5" 106429ae
+dE "qvfset q3" 10631f88
+dE "qvfsub q3, q4, q5" 10642828
+dE "qvfsubs q3, q4, q5" 00642828
+dE "qvfxmadd q3, q4, q6, q5" 10642992
+dE "qvfxmadds q3, q4, q6, q5" 00642992
+dE "qvfxmul q3, q4, q6" 106401a2
+dE "qvfxmuls q3, q4, q6" 006401a2
+dE "qvfxor q3, q4, q5" 10642b08
+dE "qvfxxcpnmadd q3, q4, q6, q5" 10642986
+dE "qvfxxcpnmadds q3, q4, q6, q5" 00642986
+dE "qvfxxmadd q3, q4, q6, q5" 10642982
+dE "qvfxxmadds q3, q4, q6, q5" 00642982
+dE "qvfxxnpmadd q3, q4, q6, q5" 10642996
+dE "qvfxxnpmadds q3, q4, q6, q5" 00642996
+dE "qvlfcduxa q3, r9, r11" 7c6958cf
+dE "qvlfcdux q3, r9, r11" 7c6958ce
+dE "qvlfcdxa q3, r10, r11" 7c6a588f
+dE "qvlfcdx q3, r10, r11" 7c6a588e
+dE "qvlfcsuxa q3, r9, r11" 7c69584f
+dE "qvlfcsux q3, r9, r11" 7c69584e
+dE "qvlfcsxa q3, r10, r11" 7c6a580f
+dE "qvlfcsx q3, r10, r11" 7c6a580e
+dE "qvlfduxa q3, r9, r11" 7c695ccf
+dE "qvlfdux q3, r9, r11" 7c695cce
+dE "qvlfdxa q3, r10, r11" 7c6a5c8f
+dE "qvlfdx q3, r10, r11" 7c6a5c8e
+dE "qvlfiwaxa q3, r10, r11" 7c6a5ecf
+dE "qvlfiwax q3, r10, r11" 7c6a5ece
+dE "qvlfiwzxa q3, r10, r11" 7c6a5e8f
+dE "qvlfiwzx q3, r10, r11" 7c6a5e8e
+dE "qvlfsuxa q3, r9, r11" 7c695c4f
+dE "qvlfsux q3, r9, r11" 7c695c4e
+dE "qvlfsxa q3, r10, r11" 7c6a5c0f
+dE "qvlfsx q3, r10, r11" 7c6a5c0e
+dE "qvlpcldx q3, r10, r11" 7c6a5c8c
+dE "qvlpclsx q3, r10, r11" 7c6a5c0c
+dE "qvlpcrdx q3, r10, r11" 7c6a588c
+dE "qvlpcrsx q3, r10, r11" 7c6a580c
+dE "qvstfcduxa q2, r9, r11" 7c4959cf
+dE "qvstfcduxia q2, r9, r11" 7c4959cb
+dE "qvstfcduxi q2, r9, r11" 7c4959ca
+dE "qvstfcdux q2, r9, r11" 7c4959ce
+dE "qvstfcdxa q2, r10, r11" 7c4a598f
+dE "qvstfcdxia q2, r10, r11" 7c4a598b
+dE "qvstfcdxi q2, r10, r11" 7c4a598a
+dE "qvstfcdx q2, r10, r11" 7c4a598e
+dE "qvstfcsuxa q2, r9, r11" 7c49594f
+dE "qvstfcsuxia q2, r9, r11" 7c49594b
+dE "qvstfcsuxi q2, r9, r11" 7c49594a
+dE "qvstfcsux q2, r9, r11" 7c49594e
+dE "qvstfcsxa q2, r10, r11" 7c4a590f
+dE "qvstfcsxia q2, r10, r11" 7c4a590b
+dE "qvstfcsxi q2, r10, r11" 7c4a590a
+dE "qvstfcsx q2, r10, r11" 7c4a590e
+dE "qvstfduxa q2, r9, r11" 7c495dcf
+dE "qvstfduxia q2, r9, r11" 7c495dcb
+dE "qvstfduxi q2, r9, r11" 7c495dca
+dE "qvstfdux q2, r9, r11" 7c495dce
+dE "qvstfdxa q2, r10, r11" 7c4a5d8f
+dE "qvstfdxia q2, r10, r11" 7c4a5d8b
+dE "qvstfdxi q2, r10, r11" 7c4a5d8a
+dE "qvstfdx q2, r10, r11" 7c4a5d8e
+dE "qvstfiwxa q2, r10, r11" 7c4a5f8f
+dE "qvstfiwx q2, r10, r11" 7c4a5f8e
+dE "qvstfsuxa q2, r9, r11" 7c495d4f
+dE "qvstfsuxia q2, r9, r11" 7c495d4b
+dE "qvstfsuxi q2, r9, r11" 7c495d4a
+dE "qvstfsux q2, r9, r11" 7c495d4e
+dE "qvstfsxa q2, r10, r11" 7c4a5d0f
+dE "qvstfsxia q2, r10, r11" 7c4a5d0b
+dE "qvstfsxi q2, r10, r11" 7c4a5d0a
+dE "qvstfsx q2, r10, r11" 7c4a5d0e

@@ -496,7 +496,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 		free(name);
 		return false;
 	}
-	RzBreakpointItem *b = rz_debug_bp_add(dbg, offset, 0, 0, 0, NULL, 0);
+	RzBreakpointItem *b = rz_debug_bp_add(dbg, offset, 0, false, false, 0, NULL, 0);
 	if (!b) {
 		free(name);
 		return false;

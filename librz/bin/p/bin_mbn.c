@@ -99,14 +99,13 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	SblHeader *sb = mbn_file_get_hdr(bf);
 	RzBinSection *ptr = NULL;
-	RzList *ret = NULL;
-	if (!(ret = rz_list_new())) {
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	// add text segment
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -119,7 +118,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vaddr = sb->vaddr;
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->has_strings = true;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -131,7 +130,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vaddr = sb->sign_va;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->has_strings = true;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (sb->cert_sz && sb->cert_va > sb->vaddr) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -144,7 +143,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->vaddr = sb->cert_va;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->has_strings = true;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
@@ -183,11 +182,19 @@ static void destroy(RzBinFile *bf) {
 	free(sb);
 }
 
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 10 bytes.
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+	opt.min_length = 10;
+	return rz_bin_file_strings(bf, &opt);
+}
+
 RzBinPlugin rz_bin_plugin_mbn = {
 	.name = "mbn",
 	.desc = "MBN/SBL bootloader things",
 	.license = "LGPL3",
-	.minstrlen = 10,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.size = &size,
@@ -196,6 +203,7 @@ RzBinPlugin rz_bin_plugin_mbn = {
 	.entries = &entries,
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
+	.strings = &strings,
 	.info = &info,
 };
 

@@ -1,0 +1,125 @@
+NAME="Debugging Information in debuginfod"
+FILE=
+CMDS=<<EOF
+& !debuginfod -vvv -F bins/elf/float_ex1/float_ex1_buildid bins/elf/float_ex1/float_ex1_split-dwarf.debug
+sleep 10
+e bin.dbginfo.debuginfod=true
+e bin.dbginfo.debuginfod_urls=http://127.0.0.1:8002
+o bins/elf/float_ex1/float_ex1_buildid
+aaa
+iS
+afl
+pdf @ dbg.fn1
+qyn
+EOF
+EXPECT=<<EOF
+paddr      size  vaddr      vsize align perm name               type       flags         
+-----------------------------------------------------------------------------------------
+0x00000000 0x0   ---------- 0x0   0x0   ----                    NULL       
+0x00000318 0x1c  0x00000318 0x1c  0x0   -r-- .interp            PROGBITS   alloc
+0x00000338 0x20  0x00000338 0x20  0x0   -r-- .note.gnu.property NOTE       alloc
+0x00000358 0x24  0x00000358 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
+0x0000037c 0x20  0x0000037c 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
+0x000003a0 0x40  0x000003a0 0x40  0x0   -r-- .hash              HASH       alloc
+0x000003e0 0x24  0x000003e0 0x24  0x0   -r-- .gnu.hash          GNU_HASH   alloc
+0x00000408 0x108 0x00000408 0x108 0x0   -r-- .dynsym            DYNSYM     alloc
+0x00000510 0xac  0x00000510 0xac  0x0   -r-- .dynstr            STRTAB     alloc
+0x000005bc 0x16  0x000005bc 0x16  0x0   -r-- .gnu.version       VERSYM     alloc
+0x000005d8 0x30  0x000005d8 0x30  0x0   -r-- .gnu.version_r     VERNEED    alloc
+0x00000608 0xc0  0x00000608 0xc0  0x0   -r-- .rela.dyn          RELA       alloc
+0x000006c8 0x78  0x000006c8 0x78  0x0   -r-- .rela.plt          RELA       alloc,info
+0x00001000 0x17  0x00001000 0x17  0x0   -r-x .init              PROGBITS   alloc,execute
+0x00001020 0x60  0x00001020 0x60  0x0   -r-x .plt               PROGBITS   alloc,execute
+0x00001080 0x8   0x00001080 0x8   0x0   -r-x .plt.got           PROGBITS   alloc,execute
+0x00001090 0x31f 0x00001090 0x31f 0x0   -r-x .text              PROGBITS   alloc,execute
+0x000013b0 0x9   0x000013b0 0x9   0x0   -r-x .fini              PROGBITS   alloc,execute
+0x00002000 0x58  0x00002000 0x58  0x0   -r-- .rodata            PROGBITS   alloc
+0x00002058 0x3c  0x00002058 0x3c  0x0   -r-- .eh_frame_hdr      PROGBITS   alloc
+0x00002098 0xec  0x00002098 0xec  0x0   -r-- .eh_frame          PROGBITS   alloc
+0x00002dc0 0x8   0x00003dc0 0x8   0x0   -rw- .init_array        INIT_ARRAY write,alloc
+0x00002dc8 0x8   0x00003dc8 0x8   0x0   -rw- .fini_array        FINI_ARRAY write,alloc
+0x00002dd0 0x1f0 0x00003dd0 0x1f0 0x0   -rw- .dynamic           DYNAMIC    write,alloc
+0x00002fc0 0x28  0x00003fc0 0x28  0x0   -rw- .got               PROGBITS   write,alloc
+0x00002fe8 0x40  0x00003fe8 0x40  0x0   -rw- .got.plt           PROGBITS   write,alloc
+0x00003028 0x10  0x00004028 0x10  0x0   -rw- .data              PROGBITS   write,alloc
+0x00003038 0x0   0x00004038 0x8   0x0   -rw- .bss               NOBITS     write,alloc
+0x00003038 0x3b  ---------- 0x3b  0x0   ---- .comment           PROGBITS   merge,strings
+0x00003078 0x378 ---------- 0x378 0x0   ---- .symtab            SYMTAB     
+0x000033f0 0x21c ---------- 0x21c 0x0   ---- .strtab            STRTAB     
+0x0000360c 0x11a ---------- 0x11a 0x0   ---- .shstrtab          STRTAB     
+0x00001000    3 23           sym._init
+0x00001030    1 6            sym.imp.strncpy
+0x00001040    1 6            sym.imp.printf
+0x00001050    1 6            sym.imp.memset
+0x00001060    1 6            sym.imp.malloc
+0x00001070    1 6            sym.imp.strdup
+0x00001080    1 6            sym.imp.__cxa_finalize
+0x00001090    1 33           entry0
+0x000010c0    4 41   -> 34   sym.deregister_tm_clones
+0x000010f0    4 57   -> 51   sym.register_tm_clones
+0x00001130    5 57   -> 54   sym.__do_global_dtors_aux
+0x00001170    1 9            entry.init0
+0x00001180    5 170          dbg.fn1
+0x00001230    1 48           dbg.new_some
+0x00001260    6 335          dbg.main
+0x000013b0    1 9            sym._fini
+            ; CALL XREF from dbg.main @ 0x132a
+/ _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
+|           ; var char **arg1 @ rdi
+|           ; var const char *arg2 @ rsi
+|           ; var int64_t arg7 @ xmm0
+|           ; var uintmax_t arg3 @ rdx
+|           ; var some_t *arg4 @ rcx
+|           ; arg int a @ stack - 0x10
+|           ; arg char *g @ stack - 0x18
+|           ; arg double q @ stack - 0x20
+|           ; arg struct Some *gg @ stack - 0x28
+|           ; arg some_t **out @ stack - 0x30
+|           0x00001180      push  rbp                                  ; float_ex1.c:15
+|           0x00001181      mov   rbp, rsp
+|           0x00001184      sub   rsp, 0x30
+|           0x00001188      mov   dword [a], edi                       ; arg1
+|           0x0000118b      mov   qword [g], rsi                       ; arg2
+|           0x0000118f      movsd qword [q], xmm0                      ; arg7
+|           0x00001194      mov   qword [gg], rdx                      ; arg3
+|           0x00001198      mov   qword [out], rcx                     ; arg4
+|           0x0000119c      cmp   qword [gg], 0                        ; float_ex1.c:16
+|       ,=< 0x000011a1      je    0x11b2
+|       |   0x000011a7      cmp   qword [out], 0
+|      ,==< 0x000011ac      jne   0x11bb
+|      |`-> 0x000011b2      mov   byte [a + 0x7], 0                    ; float_ex1.c:17
+|      |,=< 0x000011b6      jmp   0x121c
+|      `--> 0x000011bb      mov   edi, 0x18                            ; float_ex1.c:19 ; size_t size
+|       |   0x000011c0      call  sym.imp.malloc                       ; void *malloc(size_t size)
+|       |   0x000011c5      mov   rcx, rax
+|       |   0x000011c8      mov   rax, qword [out]
+|       |   0x000011cc      mov   qword [rax], rcx
+|       |   0x000011cf      mov   ecx, dword [a]                       ; float_ex1.c:20
+|       |   0x000011d2      mov   rax, qword [out]
+|       |   0x000011d6      mov   rax, qword [rax]
+|       |   0x000011d9      mov   dword [rax], ecx
+|       |   0x000011db      mov   rax, qword [out]                     ; float_ex1.c:21
+|       |   0x000011df      mov   rdi, qword [rax]
+|       |   0x000011e2      add   rdi, 4                               ; char *dest
+|       |   0x000011e6      mov   rsi, qword [g]                       ; const char *src
+|       |   0x000011ea      mov   edx, 5                               ; size_t  n
+|       |   0x000011ef      call  sym.imp.strncpy                      ; char *strncpy(char *dest, const char *src, size_t  n)
+|       |   0x000011f4      movsd xmm0, qword [q]                      ; float_ex1.c:22
+|       |   0x000011f9      cvtsd2ss xmm0, xmm0
+|       |   0x000011fd      mov   rax, qword [out]
+|       |   0x00001201      mov   rax, qword [rax]
+|       |   0x00001204      movss dword [rax + 0xc], xmm0
+|       |   0x00001209      mov   rcx, qword [gg]                      ; float_ex1.c:23
+|       |   0x0000120d      mov   rax, qword [out]
+|       |   0x00001211      mov   rax, qword [rax]
+|       |   0x00001214      mov   qword [rax + 0x10], rcx
+|       |   0x00001218      mov   byte [a + 0x7], 1                    ; float_ex1.c:24
+|       |   ; CODE XREF from dbg.fn1 @ 0x11b6
+|       `-> 0x0000121c      mov   al, byte [a + 0x7]                   ; float_ex1.c:25
+|           0x0000121f      and   al, 1
+|           0x00001221      movzx eax, al
+|           0x00001224      add   rsp, 0x30
+|           0x00001228      pop   rbp
+\           0x00001229      ret
+EOF
+RUN

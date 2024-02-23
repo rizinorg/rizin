@@ -280,6 +280,7 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 	ut32 size_sects;
 	ut8 segcom[sizeof(struct MACH0_(segment_command))] = { 0 };
 	ut8 sec[sizeof(struct MACH0_(section))] = { 0 };
+	char tmpbuf[128];
 
 	if (!UT32_MUL(&size_sects, bin->nsegs, sizeof(struct MACH0_(segment_command)))) {
 		return false;
@@ -335,9 +336,9 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 	bin->segs[j].flags = rz_read_ble32(&segcom[i], bin->big_endian);
 
 #if RZ_BIN_MACH064
-	sdb_num_set(bin->kv, sdb_fmt("mach0_segment64_%zu.offset", j), off, 0);
+	sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_segment64_%zu.offset", j), off, 0);
 #else
-	sdb_num_set(bin->kv, sdb_fmt("mach0_segment_%zu.offset", j), off, 0);
+	sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_segment_%zu.offset", j), off, 0);
 #endif
 
 	sdb_num_set(bin->kv, "mach0_segments.count", 0, 0);
@@ -397,11 +398,11 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 			memcpy(&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
 
-			sdb_num_set(bin->kv, sdb_fmt("mach0_section_%.16s_%.16s.offset", bin->sects[k].segname, bin->sects[k].sectname), offset, 0);
+			sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.offset", bin->sects[k].segname, bin->sects[k].sectname), offset, 0);
 #if RZ_BIN_MACH064
-			sdb_set(bin->kv, sdb_fmt("mach0_section_%.16s_%.16s.format", bin->sects[k].segname, bin->sects[k].sectname), "mach0_section64", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.format", bin->sects[k].segname, bin->sects[k].sectname), "mach0_section64", 0);
 #else
-			sdb_set(bin->kv, sdb_fmt("mach0_section_%.16s_%.16s.format", bin->sects[k].segname, bin->sects[k].sectname), "mach0_section", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.format", bin->sects[k].segname, bin->sects[k].sectname), "mach0_section", 0);
 #endif
 
 #if RZ_BIN_MACH064
@@ -1441,6 +1442,7 @@ static bool read_load_command(struct load_command *lc, RzBuffer *buf, ut64 base,
 static int init_items(struct MACH0_(obj_t) * bin) {
 	struct load_command lc = { 0, 0 };
 	bool is_first_thread = true;
+	char tmpbuf[64];
 
 	bin->uuidn = 0;
 	bin->platform = UT32_MAX;
@@ -1468,70 +1470,68 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		}
 
-		sdb_num_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".offset", i), off, 0);
+		sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".offset", i), off, 0);
 		const char *format_name = cmd_to_pf_definition(lc.cmd);
 		if (format_name) {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".format", i), format_name, 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), format_name, 0);
 		} else {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
 		}
 
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code", 0);
 			break;
 		case LC_RPATH:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "rpath", 0);
-			// bprintf ("--->\n");
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "rpath", 0);
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "segment", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "segment", 0);
 			bin->nsegs++;
 			if (!parse_segments(bin, off)) {
-				bprintf("error parsing segment\n");
+				RZ_LOG_ERROR("mach0: error parsing segment\n");
 				bin->nsegs--;
 				return false;
 			}
 			break;
 		case LC_SYMTAB:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "symtab", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "symtab", 0);
 			if (!parse_symtab(bin, off)) {
-				bprintf("error parsing symtab\n");
+				RZ_LOG_ERROR("mach0: error parsing symtab\n");
 				return false;
 			}
 			break;
 		case LC_DYSYMTAB:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dysymtab", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dysymtab", 0);
 			if (!parse_dysymtab(bin, off)) {
-				bprintf("error parsing dysymtab\n");
+				RZ_LOG_ERROR("mach0: error parsing dysymtab\n");
 				return false;
 			}
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dylib_code_sign_drs", 0);
-			// bprintf ("[mach0] code is signed\n");
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylib_code_sign_drs", 0);
 			break;
 		case LC_VERSION_MIN_MACOSX:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_macosx", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_macosx", 0);
 			if (bin->platform == UT32_MAX) {
 				bin->platform = MACH0_PLATFORM_MACOS;
 			}
 			break;
 		case LC_VERSION_MIN_IPHONEOS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_iphoneos", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_iphoneos", 0);
 			if (bin->platform == UT32_MAX) {
 				bin->platform = MACH0_PLATFORM_IOS;
 			}
 			break;
 		case LC_VERSION_MIN_TVOS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_tvos", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_tvos", 0);
 			if (bin->platform == UT32_MAX) {
 				bin->platform = MACH0_PLATFORM_TVOS;
 			}
 			break;
 		case LC_VERSION_MIN_WATCHOS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_watchos", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_watchos", 0);
 			if (bin->platform == UT32_MAX) {
 				bin->platform = MACH0_PLATFORM_WATCHOS;
 			}
@@ -1545,11 +1545,11 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		}
 		case LC_UUID:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "uuid", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "uuid", 0);
 			{
 				struct uuid_command uc = { 0 };
 				if (off + sizeof(struct uuid_command) > bin->size) {
-					bprintf("UUID out of bounds\n");
+					RZ_LOG_ERROR("mach0: UUID out of bounds\n");
 					return false;
 				}
 				if (rz_buf_fread_at(bin->b, off, (ut8 *)&uc, "24c", 1) != -1) {
@@ -1565,12 +1565,12 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		case LC_ENCRYPTION_INFO_64:
 			/* TODO: the struct is probably different here */
 		case LC_ENCRYPTION_INFO:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "encryption_info", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "encryption_info", 0);
 			{
 				struct MACH0_(encryption_info_command) eic = { 0 };
 				ut8 seic[sizeof(struct MACH0_(encryption_info_command))] = { 0 };
 				if (off + sizeof(struct MACH0_(encryption_info_command)) > bin->size) {
-					bprintf("encryption info out of bounds\n");
+					RZ_LOG_ERROR("mach0: encryption info out of bounds\n");
 					return false;
 				}
 				if (rz_buf_read_at(bin->b, off, seic, sizeof(struct MACH0_(encryption_info_command))) != -1) {
@@ -1590,17 +1590,17 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			}
 			break;
 		case LC_LOAD_DYLINKER: {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dylinker", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylinker", 0);
 			RZ_FREE(bin->intrp);
 			// bprintf ("[mach0] load dynamic linker\n");
 			struct dylinker_command dy = { 0 };
 			ut8 sdy[sizeof(struct dylinker_command)] = { 0 };
 			if (off + sizeof(struct dylinker_command) > bin->size) {
-				bprintf("Warning: Cannot parse dylinker command\n");
+				RZ_LOG_ERROR("mach0: Cannot parse dylinker command\n");
 				return false;
 			}
 			if (rz_buf_read_at(bin->b, off, sdy, sizeof(struct dylinker_command)) == -1) {
-				bprintf("Warning: read (LC_DYLD_INFO) at 0x%08" PFMT64x "\n", off);
+				RZ_LOG_ERROR("mach0: read (LC_DYLD_INFO) at 0x%08" PFMT64x "\n", off);
 			} else {
 				dy.cmd = rz_read_ble32(&sdy[0], bin->big_endian);
 				dy.cmdsize = rz_read_ble32(&sdy[4], bin->big_endian);
@@ -1623,14 +1623,14 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 				ut64 ss;
 			} ep = { 0 };
 			ut8 sep[2 * sizeof(ut64)] = { 0 };
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "main", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "main", 0);
 
 			if (!is_first_thread) {
-				bprintf("Error: LC_MAIN with other threads\n");
+				RZ_LOG_ERROR("mach0: LC_MAIN with other threads\n");
 				return false;
 			}
 			if (off + 8 > bin->size || off + sizeof(ep) > bin->size) {
-				bprintf("invalid command size for main\n");
+				RZ_LOG_ERROR("mach0: invalid command size for main\n");
 				return false;
 			}
 			rz_buf_read_at(bin->b, off + 8, sep, 2 * sizeof(ut64));
@@ -1646,26 +1646,26 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			is_first_thread = false;
 		} break;
 		case LC_UNIXTHREAD:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "unixthread", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "unixthread", 0);
 			if (!is_first_thread) {
-				bprintf("Error: LC_UNIXTHREAD with other threads\n");
+				RZ_LOG_ERROR("mach0: LC_UNIXTHREAD with other threads\n");
 				return false;
 			}
 			// fallthrough
 		case LC_THREAD:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "thread", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "thread", 0);
 			if (!parse_thread(bin, &lc, off, is_first_thread)) {
-				bprintf("Cannot parse thread\n");
+				RZ_LOG_ERROR("mach0: Cannot parse thread\n");
 				return false;
 			}
 			is_first_thread = false;
 			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "load_dylib", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "load_dylib", 0);
 			bin->nlibs++;
 			if (!parse_dylib(bin, off)) {
-				bprintf("Cannot parse dylib\n");
+				RZ_LOG_ERROR("mach0: Cannot parse dylib\n");
 				bin->nlibs--;
 				return false;
 			}
@@ -1673,17 +1673,17 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY: {
 			ut8 dyldi[sizeof(struct dyld_info_command)] = { 0 };
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dyld_info", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dyld_info", 0);
 			bin->dyld_info = calloc(1, sizeof(struct dyld_info_command));
 			if (bin->dyld_info) {
 				if (off + sizeof(struct dyld_info_command) > bin->size) {
-					bprintf("Cannot parse dyldinfo\n");
+					RZ_LOG_ERROR("mach0: Cannot parse dyldinfo\n");
 					RZ_FREE(bin->dyld_info);
 					return false;
 				}
 				if (rz_buf_read_at(bin->b, off, dyldi, sizeof(struct dyld_info_command)) == -1) {
 					RZ_FREE(bin->dyld_info);
-					bprintf("Error: read (LC_DYLD_INFO) at 0x%08" PFMT64x "\n", off);
+					RZ_LOG_ERROR("mach0: read (LC_DYLD_INFO) at 0x%08" PFMT64x "\n", off);
 				} else {
 					bin->dyld_info->cmd = rz_read_ble32(&dyldi[0], bin->big_endian);
 					bin->dyld_info->cmdsize = rz_read_ble32(&dyldi[4], bin->big_endian);
@@ -1702,32 +1702,31 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		} break;
 		case LC_CODE_SIGNATURE:
 			parse_signature(bin, off);
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "signature", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "signature", 0);
 			/* ut32 dataoff
 			// ut32 datasize */
 			break;
 		case LC_SOURCE_VERSION:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version", 0);
 			/* uint64_t  version;  */
 			/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
-			// bprintf ("mach0: TODO: Show source version\n");
 			break;
 		case LC_SEGMENT_SPLIT_INFO:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "split_info", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "split_info", 0);
 			/* TODO */
 			break;
 		case LC_FUNCTION_STARTS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "function_starts", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "function_starts", 0);
 			if (!parse_function_starts(bin, off)) {
-				bprintf("Cannot parse LC_FUNCTION_STARTS\n");
+				RZ_LOG_ERROR("mach0: Cannot parse LC_FUNCTION_STARTS\n");
 			}
 			break;
 		case LC_REEXPORT_DYLIB:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dylib", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylib", 0);
 			/* TODO */
 			break;
 		default:
-			// bprintf ("mach0: Unknown header command %x\n", lc.cmd);
+			// RZ_LOG_ERROR("mach0: Unknown header command %x\n", lc.cmd);
 			break;
 		}
 	}
@@ -1746,17 +1745,17 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		}
 
-		sdb_num_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".offset", i), off, 0);
+		sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".offset", i), off, 0);
 		const char *format_name = cmd_to_pf_definition(lc.cmd);
 		if (format_name) {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".format", i), format_name, 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), format_name, 0);
 		} else {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
 		}
 
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code", 0);
 			if (bin->options.verbose) {
 				ut8 buf[8];
 				rz_buf_read_at(bin->b, off + 8, buf, sizeof(buf));
@@ -1931,9 +1930,9 @@ static bool __isDataSection(RzBinSection *sect) {
 	return false;
 }
 
-RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
+RzPVector /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_virtual_file_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1959,7 +1958,7 @@ RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 		vf->buf = buf;
 		vf->buf_owned = true;
 		vf->name = strdup(MACH0_VFILE_NAME_RELOC_TARGETS);
-		rz_list_push(ret, vf);
+		rz_pvector_push(ret, vf);
 	}
 	// virtual file mirroring the raw file, but with relocs patched
 	if (obj->buf_patched) {
@@ -1970,15 +1969,15 @@ RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 		vf->buf = obj->buf_patched;
 		vf->buf_owned = false;
 		vf->name = strdup(MACH0_VFILE_NAME_PATCHED);
-		rz_list_push(ret, vf);
+		rz_pvector_push(ret, vf);
 	}
 	return ret;
 }
 
-RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
+RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -2000,13 +1999,13 @@ RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 		// boffset is relevant for fatmach0 where the mach0 is located boffset into the whole file
 		// the rebasing vfile above however is based at the mach0 already
 		map->paddr = seg->fileoff + bf->o->boffset;
-		rz_list_append(ret, map);
+		rz_pvector_push(ret, map);
 	}
 	return ret;
 }
 
-RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
-	RzList *ret = MACH0_(get_maps_unpatched)(bf);
+RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
+	RzPVector *ret = MACH0_(get_maps_unpatched)(bf);
 	if (!ret) {
 		return NULL;
 	}
@@ -2020,12 +2019,12 @@ RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
 	return ret;
 }
 
-RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
+RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	if (bin->sections_cache) {
-		return rz_list_clone(bin->sections_cache);
+		return rz_pvector_clone(bin->sections_cache);
 	}
-	RzList *list = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	size_t i, j;
 
 	if (bin->nsegs > 0) {
@@ -2049,7 +2048,7 @@ RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 			s->is_segment = true;
 			rz_str_filter(s->name);
 			s->perm = prot2perm(seg->initprot);
-			rz_list_append(list, s);
+			rz_pvector_push(vec, s);
 		}
 	}
 	if (bin->nsects > 0) {
@@ -2091,41 +2090,41 @@ RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 #endif
 				s->format = rz_str_newf("Cd %d[%" PFMT64d "]", ws, s->vsize / ws);
 			}
-			rz_list_append(list, s);
+			rz_pvector_push(vec, s);
 			free(segment_name);
 			free(section_name);
 		}
 	}
-	bin->sections_cache = list;
-	return rz_list_clone(list);
+	bin->sections_cache = vec;
+	return rz_pvector_clone(vec);
 }
 
 char *MACH0_(section_type_to_string)(ut64 type) {
 	switch (type) {
 	case S_REGULAR:
-		return rz_str_new("REGULAR");
+		return rz_str_dup("REGULAR");
 	case S_ZEROFILL:
-		return rz_str_new("ZEROFILL");
+		return rz_str_dup("ZEROFILL");
 	case S_CSTRING_LITERALS:
-		return rz_str_new("CSTRING_LITERALS");
+		return rz_str_dup("CSTRING_LITERALS");
 	case S_4BYTE_LITERALS:
-		return rz_str_new("4BYTE_LITERALS");
+		return rz_str_dup("4BYTE_LITERALS");
 	case S_LITERAL_POINTERS:
-		return rz_str_new("LITERAL_POINTERS");
+		return rz_str_dup("LITERAL_POINTERS");
 	case S_NON_LAZY_SYMBOL_POINTERS:
-		return rz_str_new("NON_LAZY_SYMBOL_POINTERS");
+		return rz_str_dup("NON_LAZY_SYMBOL_POINTERS");
 	case S_LAZY_SYMBOL_POINTERS:
-		return rz_str_new("LAZY_SYMBOL_POINTERS");
+		return rz_str_dup("LAZY_SYMBOL_POINTERS");
 	case S_SYMBOL_STUBS:
-		return rz_str_new("SYMBOL_STUBS");
+		return rz_str_dup("SYMBOL_STUBS");
 	case S_MOD_INIT_FUNC_POINTERS:
-		return rz_str_new("MOD_INIT_FUNC_POINTERS");
+		return rz_str_dup("MOD_INIT_FUNC_POINTERS");
 	case S_MOD_TERM_FUNC_POINTERS:
-		return rz_str_new("MOD_TERM_FUNC_POINTERS");
+		return rz_str_dup("MOD_TERM_FUNC_POINTERS");
 	case S_COALESCED:
-		return rz_str_new("COALESCED");
+		return rz_str_dup("COALESCED");
 	case S_GB_ZEROFILL:
-		return rz_str_new("GB_ZEROFILL");
+		return rz_str_dup("GB_ZEROFILL");
 	default:
 		return rz_str_newf("0x%" PFMT64x, type);
 	}
@@ -2800,8 +2799,9 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin) {
 
 void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) * bin) {
 	int i;
+	char tmpbuf[32];
 	for (i = 0; i < bin->nlibs; i++) {
-		sdb_set(bin->kv, sdb_fmt("libs.%d.name", i), bin->libs[i], 0);
+		sdb_set(bin->kv, rz_strf(tmpbuf, "libs.%d.name", i), bin->libs[i], 0);
 	}
 }
 
@@ -2815,8 +2815,9 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin) {
 	if (!(libs = calloc((bin->nlibs + 1), sizeof(struct lib_t)))) {
 		return NULL;
 	}
+	char tmpbuf[32];
 	for (i = 0; i < bin->nlibs; i++) {
-		sdb_set(bin->kv, sdb_fmt("libs.%d.name", i), bin->libs[i], 0);
+		sdb_set(bin->kv, rz_strf(tmpbuf, "libs.%d.name", i), bin->libs[i], 0);
 		strncpy(libs[i].name, bin->libs[i], RZ_BIN_MACH0_STRING_LENGTH - 1);
 		libs[i].name[RZ_BIN_MACH0_STRING_LENGTH - 1] = '\0';
 		libs[i].last = 0;
@@ -2842,9 +2843,9 @@ ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) * bin) {
 
 char *MACH0_(get_class)(struct MACH0_(obj_t) * bin) {
 #if RZ_BIN_MACH064
-	return rz_str_new("MACH064");
+	return rz_str_dup("MACH064");
 #else
-	return rz_str_new("MACH0");
+	return rz_str_dup("MACH0");
 #endif
 }
 
@@ -3325,14 +3326,14 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	free(mh);
 }
 
-RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
+RzPVector /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 	RzBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size(buf);
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
 	if (!mh) {
 		return NULL;
 	}
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	if (!ret) {
 		free(mh);
 		return NULL;
@@ -3340,7 +3341,7 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 	ut64 addr = pa2va(bf, 0);
 	ut64 paddr = 0;
 
-	rz_list_append(ret, rz_bin_field_new(addr, addr, 1, "header", "mach0_header", "mach0_header", true));
+	rz_pvector_push(ret, rz_bin_field_new(addr, addr, 1, "header", "mach0_header", "mach0_header", true));
 	addr += 0x20 - 4;
 	paddr += 0x20 - 4;
 	bool is64 = mh->cputype >> 16;
@@ -3358,6 +3359,7 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 	}
 
 	int n;
+	char tmpbuf[128];
 	for (n = 0; n < mh->ncmds; n++) {
 		ut32 lcType;
 		if (!rz_buf_read_ble32_at(buf, paddr, &lcType, isBe)) {
@@ -3381,7 +3383,7 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 		}
 		const char *pf_definition = cmd_to_pf_definition(lcType);
 		if (pf_definition) {
-			rz_list_append(ret, rz_bin_field_new(addr, addr, 1, sdb_fmt("load_command_%d_%s", n, cmd_to_string(lcType)), pf_definition, pf_definition, true));
+			rz_pvector_push(ret, rz_bin_field_new(addr, addr, 1, rz_strf(tmpbuf, "load_command_%d_%s", n, cmd_to_string(lcType)), pf_definition, pf_definition, true));
 		}
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
@@ -3392,7 +3394,7 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 			ut64 off = 24;
 			int j = 0;
 			while (off < lcSize && ntools--) {
-				rz_list_append(ret, rz_bin_field_new(addr + off, addr + off, 1, sdb_fmt("tool_%d", j++), "mach0_build_version_tool", "mach0_build_version_tool", true));
+				rz_pvector_push(ret, rz_bin_field_new(addr + off, addr + off, 1, rz_strf(tmpbuf, "tool_%d", j++), "mach0_build_version_tool", "mach0_build_version_tool", true));
 				off += 8;
 			}
 			break;
@@ -3408,8 +3410,8 @@ RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
 				const char *sname = is64 ? "mach0_section64" : "mach0_section";
 				RzBinField *f = rz_bin_field_new(addr + off, addr + off, 1,
-					sdb_fmt("section_%zu", j++), sname, sname, true);
-				rz_list_append(ret, f);
+					rz_strf(tmpbuf, "section_%zu", j++), sname, sname, true);
+				rz_pvector_push(ret, f);
 				off += is64 ? 80 : 68;
 			}
 			break;

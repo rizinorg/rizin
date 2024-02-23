@@ -232,6 +232,9 @@ commands:
               - r
               - w
               - rw
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
         details:
           - name: Valid permission arguments
             entries:
@@ -241,6 +244,16 @@ commands:
                 comment: "write only"
               - text: "rw"
                 comment: "read-write"
+          - name: Example sizes
+            entries:
+              - text: "1"
+                comment: "watch only a single byte"
+              - text: "2"
+                comment: "watch a 16-bit value"
+              - text: "4"
+                comment: "watch a 32-bit value"
+              - text: "8"
+                comment: "watch a 64-bit value"
       - name: dbW
         summary: Set conditional breakpoint on a window message handler (only for Windows)
         cname: cmd_debug_set_cond_bp_win

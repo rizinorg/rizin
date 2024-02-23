@@ -151,11 +151,12 @@ static STDMETHODIMP __system_error_cb(PDEBUG_EVENT_CALLBACKS This, ULONG Error, 
 
 static STDMETHODIMP __input_cb(PDEBUG_INPUT_CALLBACKS This, ULONG BufferSize) {
 	char prompt[512];
+	RzLine *line = rz_cons_singleton()->line;
 	PDEBUG_INPUT_CALLBACKS_IMPL impl = (PDEBUG_INPUT_CALLBACKS_IMPL)This;
 	DbgEngContext *idbg = impl->m_idbg;
 	ITHISCALL(dbgCtrl, GetPromptText, prompt, sizeof(prompt), NULL);
-	rz_line_set_prompt(prompt);
-	const char *str = rz_line_readline();
+	rz_line_set_prompt(line, prompt);
+	const char *str = rz_line_readline(line);
 	char *ret = rz_str_ndup(str, RZ_MIN(strlen(str), BufferSize));
 	ITHISCALL(dbgCtrl, ReturnInput, ret);
 	return S_OK;
@@ -615,7 +616,7 @@ static ut64 windbg_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int windbg_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int windbg_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	DbgEngContext *idbg = fd->data;
 	ULONG bytesRead = 0ULL;
 	if (FAILED(ITHISCALL(dbgData, ReadVirtual, io->off, (PVOID)buf, count, &bytesRead))) {
@@ -633,7 +634,7 @@ static int windbg_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	return bytesRead;
 }
 
-static int windbg_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int windbg_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	DbgEngContext *idbg = fd->data;
 	ULONG bytesWritten = 0ULL;
 	ITHISCALL(dbgData, WriteVirtual, io->off, (PVOID)buf, count, &bytesWritten);

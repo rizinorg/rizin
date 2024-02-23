@@ -5,21 +5,6 @@
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 
-#if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
-#define CAPSTONE_HAS_M680X 1
-#else
-#define CAPSTONE_HAS_M680X 0
-#endif
-
-#if !CAPSTONE_HAS_M680X
-#ifdef _MSC_VER
-#pragma message("Cannot find support for m680x in capstone")
-#else
-#warning Cannot find capstone-m680x support
-#endif
-#endif
-
-#if CAPSTONE_HAS_M680X
 #include <capstone/m680x.h>
 
 static int m680xmode(const char *str) {
@@ -60,30 +45,44 @@ static int m680xmode(const char *str) {
 #define IMM(x) insn->detail->m680x.operands[x].imm
 #define REL(x) insn->detail->m680x.operands[x].rel
 
+typedef struct {
+	csh handle;
+	int omode;
+	int obits;
+} M680XContext;
+
+static bool m680x_init(void **user) {
+	M680XContext *ctx = RZ_NEW0(M680XContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->handle = 0;
+	ctx->omode = -1;
+	ctx->obits = 32;
+	*user = ctx;
+	return true;
+}
+
 static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	M680XContext *ctx = (M680XContext *)a->plugin_data;
 	int n, ret, opsize = -1;
-	static csh handle = 0;
-	static int omode = -1;
-	static int obits = 32;
 	cs_insn *insn;
 
 	int mode = m680xmode(a->cpu);
 
-	if (mode != omode || a->bits != obits) {
-		cs_close(&handle);
-		handle = 0;
-		omode = mode;
-		obits = a->bits;
+	if (mode != ctx->omode || a->bits != ctx->obits) {
+		cs_close(&ctx->handle);
+		ctx->handle = 0;
+		ctx->omode = mode;
+		ctx->obits = a->bits;
 	}
 	op->size = 4;
-	if (handle == 0) {
-		ret = cs_open(CS_ARCH_M680X, mode, &handle);
+	if (ctx->handle == 0) {
+		ret = cs_open(CS_ARCH_M680X, mode, &ctx->handle);
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
-		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm(handle, (ut8 *)buf, len, addr, 1, &insn);
+	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 2;
@@ -528,6 +527,14 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
+static bool m680x_fini(void *user) {
+	M680XContext *ctx = (M680XContext *)user;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_m680x_cs = {
 	.name = "m680x",
 	.desc = "Capstone M680X analysis plugin",
@@ -537,16 +544,9 @@ RzAnalysisPlugin rz_analysis_plugin_m680x_cs = {
 	.get_reg_profile = &get_reg_profile,
 	.bits = 16 | 32,
 	.op = &analyze_op,
+	.init = m680x_init,
+	.fini = m680x_fini,
 };
-#else
-RzAnalysisPlugin rz_analysis_plugin_m680x_cs = {
-	.name = "m680x (unsupported)",
-	.desc = "Capstone M680X analyzer (unsupported)",
-	.license = "BSD",
-	.arch = "m680x",
-	.bits = 32,
-};
-#endif
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {

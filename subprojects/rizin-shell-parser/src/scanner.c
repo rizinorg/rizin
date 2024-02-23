@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <tree_sitter/parser.h>
+#include "tree_sitter/parser.h"
 #include <ctype.h>
 #include <wctype.h>
 #include <stdio.h>
@@ -16,7 +16,6 @@ enum TokenType {
 	FILE_DESCRIPTOR,
 	EQ_SEP_CONCAT,
 	CONCAT,
-	CONCAT_PF_DOT,
 	SPEC_SEP,
 };
 
@@ -32,10 +31,6 @@ unsigned tree_sitter_rzcmd_external_scanner_serialize(void *payload, char *buffe
 }
 
 void tree_sitter_rzcmd_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
-}
-
-static bool is_pf_cmd(const char *s) {
-	return (strcmp (s, "pfo") && !strncmp (s, "pf", 2)) || !strcmp (s, "Cf");
 }
 
 static bool is_env_cmd(const char *s) {
@@ -94,10 +89,6 @@ static bool is_concat(const int32_t ch) {
 		ch != ')' && ch != '`' && ch != '~' && ch != '\\';
 }
 
-static bool is_concat_pf_dot(const int32_t ch) {
-	return is_concat(ch) && ch != '=';
-}
-
 static bool is_concat_eq_sep(const int32_t ch) {
 	return is_concat(ch) && ch != '=';
 }
@@ -148,9 +139,6 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 	} else if (valid_symbols[CONCAT] && is_concat(lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
 		return true;
-	} else if (valid_symbols[CONCAT_PF_DOT] && is_concat_pf_dot(lexer->lookahead)) {
-		lexer->result_symbol = CONCAT_PF_DOT;
-		return true;
 	} else if (valid_symbols[EQ_SEP_CONCAT] && is_concat_eq_sep(lexer->lookahead)) {
 		lexer->result_symbol = EQ_SEP_CONCAT;
 		return true;
@@ -188,7 +176,7 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 			}
 			lexer->result_symbol = HELP_STMT;
 		} else {
-			if ((is_special_start(res[0]) && strcmp(res, "R=!")) || is_pf_cmd(res) || is_env_cmd(res) || is_at_cmd(res) || !valid_symbols[CMD_IDENTIFIER]) {
+			if ((is_special_start(res[0]) && strcmp(res, "R=!")) || is_env_cmd(res) || is_at_cmd(res) || !valid_symbols[CMD_IDENTIFIER]) {
 				return false;
 			}
 			lexer->result_symbol = CMD_IDENTIFIER;

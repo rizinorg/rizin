@@ -57,6 +57,7 @@
 #define BV2F(fmt, bv)              rz_il_op_new_float(fmt, bv)
 #define F32(f32)                   rz_il_op_new_float_from_f32(f32)
 #define F64(f64)                   rz_il_op_new_float_from_f64(f64)
+#define F80(f80)                   rz_il_op_new_float_from_f80(f80)
 #define F2BV(fl)                   rz_il_op_new_fbits(fl)
 #define IS_FINITE(fl)              rz_il_op_new_is_finite(fl)
 #define IS_FNAN(fl)                rz_il_op_new_is_nan(fl)
@@ -98,8 +99,12 @@
 #define AND(x, y) rz_il_op_new_bool_and(x, y)
 #define OR(x, y)  rz_il_op_new_bool_or(x, y)
 
-#define FNEQ(flx, fly) OR(FORDER(flx, fly), FORDER(DUP(flx), DUP(fly)))
-#define FEQ(flx, fly)  INV(FNEQ(flx, fly))
+#define FNEQ(flx, fly) OR(OR(IS_FNAN(flx), IS_FNAN(fly)), OR(FORDER(DUP(flx), DUP(fly)), FORDER(DUP(fly), DUP(flx))))
+#define FEQ(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), INV(FNEQ(DUP(flx), DUP(fly))))
+#define FLT(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), FORDER(DUP(flx), DUP(fly)))
+#define FLE(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), OR(FLT(DUP(flx), DUP(fly)), FEQ(DUP(flx), DUP(fly))))
+#define FGT(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), INV(FLE(DUP(flx), DUP(fly))))
+#define FGE(flx, fly)  AND(INV(OR(IS_FNAN(flx), IS_FNAN(fly))), INV(FLT(DUP(flx), DUP(fly))))
 
 #define UNSIGNED(n, x)    rz_il_op_new_unsigned(n, x)
 #define SIGNED(n, x)      rz_il_op_new_signed(n, x)
@@ -165,5 +170,22 @@
 #define REPEAT(c, b)    rz_il_op_new_repeat(c, b)
 #define JMP(tgt)        rz_il_op_new_jmp(tgt)
 #define GOTO(lbl)       rz_il_op_new_goto(lbl)
+
+#define NOT_IMPLEMENTED \
+	do { \
+		RZ_LOG_INFO("IL instruction not implemented."); \
+		return NULL; \
+	} while (0)
+
+#define EXTRACT32(value, start, length)           rz_il_extract32(value, start, length)
+#define EXTRACT64(value, start, length)           rz_il_extract64(value, start, length)
+#define SEXTRACT32(value, start, length)          rz_il_sextract32(value, start, length)
+#define SEXTRACT64(value, start, length)          rz_il_sextract64(value, start, length)
+#define DEPOSIT32(value, start, length, fieldval) rz_il_deposit32(value, start, length, fieldval)
+#define DEPOSIT64(value, start, length, fieldval) rz_il_deposit64(value, start, length, fieldval)
+#define BSWAP16(t)                                rz_il_bswap16(t)
+#define BSWAP32(t)                                rz_il_bswap32(t)
+#define BSWAP64(t)                                rz_il_bswap64(t)
+#define NE(x, y)                                  rz_il_op_new_ne(x, y)
 
 #endif

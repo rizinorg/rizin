@@ -1,66 +1,72 @@
-.Dd Jun 24, 2020
+.Dd Jan 24, 2024
 .Dt RZ_FIND 1
 .Sh NAME
 .Nm rz-find
-.Nd Advanced commandline hexadecimal editor
+.Nd Find byte patterns in files
 .Sh SYNOPSIS
 .Nm rz-find
-.Op Fl ijzZXnrhqv
+.Op Fl hijmnrqvxzZ
+.Op Fl a Ar align
 .Op Fl b Ar size
-.Op Fl f Ar from
-.Op Fl F Ar file
-.Op Fl t Ar to
-.Op Fl [m|s|e] Ar str
+.Op Fl f/t Ar from/to
+.Op Fl  Ar [e|s|w|S|I] str
 .Op Fl x Ar hex
-.Ar file|dir
+.Op Fl  Ar |file|dir ..
 .Sh DESCRIPTION
-rz-find is a program to find byte patterns into files
+This command is part of the Rizin project.
+.Pp
+.Nm rz-find
+Searches for specified byte patterns, strings, or hexpairs in the given files.
 .Pp
 The options are:
 .Bl -tag -width Fl
-.It Fl z
-Search for zero-terminated strings
-.It Fl j
-Output in JSON format
 .It Fl a Ar align
 Only accept aligned hits
-.It Fl s Ar str
-Search for a specific string
-.It Fl S Ar str
-Search for a specific wide string
+.It Fl b Ar size
+Set block size
 .It Fl e Ar regex
-Search for a regular expression string matches
-.It Fl x Ar hex
-Search for an hexpair string
-.It Fl i
-Identify filetype (like file, uses rizin -qcpm)
-.It Fl m
-Carve for known file-types using the r_magic signatures
-.It Fl M Ar mask
-Set binary mask to be applied
+Search for regex matches (can be used multiple times)
 .It Fl f Ar from
-Specify the source adddress
+Start searching from address 'from'
 .It Fl F Ar file
-Read the keyword to search from the contents of the given file
-.It Fl t Ar to
-Specify the target adddress
-.It Fl X
-Display hexdump of search results
-.It Fl Z
-Display zero-terminated strings results
+Read the contents of the file and use it as a keyword
+.It Fl h
+Show usage help message
+.It Fl i
+Identify filetype (rizin -nqcpm file)
+.It Fl j
+Output in JSON
+.It Fl m
+Magic search, file-type carver
+.It Fl M Ar str
+Set a binary mask to be applied on keywords
 .It Fl n
 Do not stop the search when a read error occurs
 .It Fl r
-Show output in rizin commands
-.It Fl b Ar size
-Define block size
+Print using rizin commands
+.It Fl s Ar str
+Search for a specific string (can be used multiple times)
+.It Fl w Ar str
+Search for a specific wide string (can be used multiple times). Assumes str is UTF-8
+.It Fl I Ar str
+Search for an entry in import table
+.It Fl S Ar str
+Search for a symbol in symbol table
+.It Fl t Ar to
+Stop search at address 'to'
 .It Fl q
 Quiet mode - do not show headings (filenames) above matching contents (default for searching a single file)
-.It Fl h
-Show help message
 .It Fl v
-Print version and exit
-.El
+Show version information
+.It Fl x Ar hex
+Search for an hexpair string (can be used multiple times)
+.It Fl X
+Show hexdump of search results
+.It Fl z
+Search for zero-terminated strings
+.It Fl Z
+Show string found on each search hit
+.Pp
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
@@ -70,7 +76,9 @@ Print version and exit
 .Xr rz-asm(1) ,
 .Xr rz-gg(1) ,
 .Xr rz-run(1) ,
-.Xr rz-ax(1) ,
+.Xr rz-ax(1)
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

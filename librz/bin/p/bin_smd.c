@@ -128,7 +128,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr) {
+static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr) {
 	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 	if (!ptr) {
 		return;
@@ -137,7 +137,7 @@ static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr)
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 }
 
 static void showstr(const char *str, const ut8 *s, int len) {
@@ -146,12 +146,12 @@ static void showstr(const char *str, const ut8 *s, int len) {
 	free(msg);
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	const char *name = NULL;
 	int i;
 
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	SMD_Header hdr;
@@ -252,9 +252,9 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
-	if (!(ret = rz_list_new())) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	RzBinSection *ptr;
@@ -265,7 +265,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -274,7 +274,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof(SMD_Header);
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -289,7 +289,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	ptr->size = ptr->vsize = rz_buf_size(bf->buf) - ptr->paddr;
 	ptr->perm = RZ_PERM_RX;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 
@@ -315,8 +315,13 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets
 	return ret;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 10 bytes.
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+	opt.min_length = 10;
+	return rz_bin_file_strings(bf, &opt);
 }
 
 RzBinPlugin rz_bin_plugin_smd = {
@@ -332,7 +337,6 @@ RzBinPlugin rz_bin_plugin_smd = {
 	.symbols = &symbols,
 	.strings = &strings,
 	.info = &info,
-	.minstrlen = 10,
 	.strfilter = 'U'
 };
 

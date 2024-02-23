@@ -9,18 +9,17 @@
 
 #include <v850_disas.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	struct v850_cmd cmd = {
-		.addr = a->pc,
-		.instr = "",
-		.operands = ""
-	};
+static int v850_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	V850_Inst inst = { 0 };
+	inst.addr = a->pc;
 	if (len < 2) {
 		return -1;
 	}
-	int ret = v850_decode_command(buf, len, &cmd);
+	int ret = v850_decode_command(buf, len, &inst);
 	if (ret > 0) {
-		rz_asm_op_set_asm(op, sdb_fmt("%s %s", cmd.instr, cmd.operands));
+		rz_asm_op_setf_asm(op, "%s %s", inst.instr, inst.operands);
+	} else {
+		rz_asm_op_set_asm(op, "invalid");
 	}
 	return op->size = ret;
 }
@@ -32,7 +31,7 @@ RzAsmPlugin rz_asm_plugin_v850 = {
 	.arch = "v850",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
-	.disassemble = &disassemble
+	.disassemble = &v850_disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE

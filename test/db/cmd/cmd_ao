@@ -117,7 +117,7 @@ aoj~{[0].opex}
 EOF
 EXPECT=<<EOF
 stclhs p12, c6, [r4, -0xbc]!
-{"operands":[{"type":"pimm","value":12},{"type":"cimm","value":6},{"type":"mem","base":"r4","scale":1,"disp":-188}],"writeback":true,"cc":"hs"}
+{"operands":[{"type":"pimm","value":12},{"type":"cimm","value":6},{"type":"mem","base":"r4","scale":1,"disp":188,"subtracted":true}],"writeback":true,"cc":"hs"}
 EOF
 RUN
 

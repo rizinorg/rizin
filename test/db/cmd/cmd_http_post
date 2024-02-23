@@ -1,0 +1,10 @@
+NAME=http-post-cmd
+FILE==
+CMDS=<<EOF
+!python3 scripts/http_post_cmd_upload.py
+EOF
+REGEXP_FILTER_OUT=(Test succ.+)
+EXPECT=<<EOF
+Test succeeded
+EOF
+RUN

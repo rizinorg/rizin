@@ -55,7 +55,7 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 /* accelerate binary load */
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 
@@ -87,19 +87,18 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ut64 textsize = UT64_MAX;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	PebbleAppInfo pai = { { 0 } };
 	if (!rz_buf_read_at(bf->buf, 0, (ut8 *)&pai, sizeof(pai))) {
 		RZ_LOG_ERROR("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	// TODO: load all relocs
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -108,7 +107,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof(ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
 	ptr->perm = RZ_PERM_RW;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
 	}
@@ -121,7 +120,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
 	}
@@ -133,7 +132,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
 	ptr->perm = RZ_PERM_RWX;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -142,7 +141,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->vsize = ptr->size = sizeof(PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
 	ptr->perm = RZ_PERM_R;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	return ret;
 }

@@ -1,0 +1,76 @@
+add=byte data addition
+addc=addition of byte data with carry
+addw=word data addition
+addw=addition of stack pointer
+and=logical product of byte data
+and1=1 bit data logical product
+bc=conditional branch with carry flag (cy = 1)
+bf=conditional branch by bit test (byte data bit = 0)
+bh=conditional branch by numeric value comparison ((z | cy) = 0)
+bnc=conditional branch with carry flag (cy = 0)
+bnh=conditional branch by numeric value comparison ((z | cy) = 1)
+bnz=conditional branch with zero flag (z = 0)
+br=unconditional branch
+brk=software vectored interrupt
+bt=conditional branch by bit test (byte data bit = 1)
+btclr=conditional branch and clear by bit test (byte data bit =1)
+bz=conditional branch with zero flag (z = 1)
+call=subroutine call
+callt=subroutine call (refer to the call table)
+clrb=byte data clear
+clrw=word data clear
+clr1=1 bit data clear
+cmp=byte data comparison
+cmps=byte data comparison
+cmpw=word data comparison
+cmp0=byte data zero comparison
+dec=byte data decrement
+decw=word data decrement
+di=interrupt disabled
+divhu=unsigned division of data
+divwu=unsigned division of data
+ei=interrupt enabled
+halt=halt mode set
+inc=byte data increment
+incw=word data increment
+mach=signed multiplication and accumulation of data
+machu=unsigned multiplication and accumulation of data
+mov=byte data transfer
+movs=byte data transfer and psw change
+movw=word data transfer
+movw=rp, sp word data transfer with stack pointer
+movw=sp, src word data transfer with stack pointer
+mov1=1 bit data transfer
+mulh=signed multiplication of data
+mulhu=unsigned multiplication of data
+mulu=unsigned multiplication of data
+nop=no operation
+not1=1 bit data logical negation
+oneb=byte data 01h set
+onew=word data 0001h set
+or=logical sum of byte data
+or1=1 bit data logical sum
+pop=pop
+push=push
+ret=return from subroutine
+retb=return from software vectored interrupt
+reti=return from hardware vectored interrupt
+rol=byte data rotation to the left
+rolc=byte data rotation to the left with carry
+rolwc=word data rotation to the left with carry
+ror=byte data rotation to the right
+rorc=byte data rotation to the right with carry
+sar=arithmetic shift to the right
+sarw=arithmetic shift to the right
+sel=rbn register bank selection
+set1=1 bit data set
+shl=logical shift to the left
+shlw=logical shift to the left
+shr=logical shift to the right
+shrw=logical shift to the right
+skc=skip with carry flag (cy = 1)
+skh=skip with numeric value comparison ((z | cy) = 0)
+sknc=skip with carry flag (cy = 0)
+sknh=skip with numeric value comparison ((z | cy) = 1)
+sknz=skip with zero flag (z = 0)
+skz=skip with zero flag (z = 1)

@@ -3,7 +3,7 @@
 
 #include "rz_types.h"
 #include "rz_list.h"
-#include <ht_pu.h>
+#include <rz_util/ht_pu.h>
 
 #if __UNIX__
 #include <dlfcn.h>
@@ -18,7 +18,7 @@ RZ_LIB_VERSION_HEADER(rz_lib);
 #define RZ_LIB_SYMNAME "rizin_plugin"
 #define RZ_LIB_SYMFUNC "rizin_plugin_function"
 
-#define RZ_LIB_ENV "RZ_LIBR_PLUGINS"
+#define RZ_LIB_ENV "RZ_LIB_PLUGINS"
 
 /* TODO: This must depend on HOST_OS, and maybe move into rz_types */
 #if __WINDOWS__

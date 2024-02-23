@@ -1,95 +1,98 @@
-.Dd Sep 29, 2016
+.Dd Jan 24, 2024
 .Dt RZ_BIN 1
 .Sh NAME
-.Nm RZ_BIN
+.Nm rz-bin
 .Nd Binary program info extractor
 .Sh SYNOPSIS
 .Nm rz-bin
-.Op Fl AceghHiIsSMzlpRrLxvhqQTuUwV
+.Op Fl AcdeEghHiIjlLMqrRsSUvVxzZ
+.Op Fl @ Ar at
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
-.Op Fl C Ar fmt:C:[D]
-.Op Fl D Ar lang sym|-
-.Op Fl f Ar subbin
-.Op Fl k Ar query
-.Op Fl K Ar algo
-.Op Fl O Ar binop
-.Op Fl o Ar str
+.Op Fl C Ar F:C:D
+.Op Fl f Ar str
 .Op Fl m Ar addr
-.Op Fl @ Ar addr
 .Op Fl n Ar str
-.Op Fl X Ar fmt file ...
+.Op Fl N Ar m:M
+.Op Fl P Ar pdb  
+.Op Fl o Ar str
+.Op Fl O Ar str
+.Op Fl k Ar query
+.Op Fl D Ar lang symname
 .Ar file
 .Sh DESCRIPTION
-This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
+This command is part of the Rizin project.
 .Pp
-All those commandline flags are also available under the i command in rizin. Type i? for help.
+rz-bin can analyze and extract useful information from binary executable files like ELF, PE, Mach-O, etc. It supports multiple architectures like x86, ARM, MIPS, PowerPC, etc.
+.Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl @ Ar addr
-Show information (symbol, section, import) of the given address
+Show section, symbol, or import at the given address
 .It Fl A
-List sub-binaries and their associated arch-bits pairs
+List sub-binaries and their arch-bits pairs
 .It Fl a Ar arch
-Set arch (x86, arm, .. accepts underscore for bits x86_32)
+Set architecture (x86, arm, .. or <arch>_<bits>)
 .It Fl b Ar bits
-Set bits (32, 64, ...)
+Set bits (32, 64 ...)
 .It Fl B Ar addr
-Override baddr
+Override base address (PIE bins)
 .It Fl c
 List classes
 .It Fl cc
 List classes in header format
-.It Fl C Ar [fmt:C[:D]]
-Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
+.It Fl C Ar fmt:C:D
+Create [elf, mach0, pe] with Code and Data hexpairs (see -a)
 .It Fl d
 Show debug/dwarf information
-.It Fl D Ar lang symbolname|-
-Demangle symbol name (or - to read from stdin) for lang (cxx, swift, java, cxx, ..)
+.It Fl dd
+Load debug/dwarf information from debuginfod server
+.It Fl D Ar lang name
+Demangle symbol name (-D all for bin.demangle=true)
 .It Fl e
-Show entrypoints for disk and on-memory
-.It Fl ee
-Show constructor/destructors (extended entrypoints)
-.It Fl f Ar subbin
-Select sub-binary architecture. Useful for fat-mach0 binaries
+Entrypoint
+.It Fl E
+Globally exportable symbols
+.It Fl f Ar str
+Select sub-bin named str
 .It Fl F Ar binfmt
 Force to use that bin plugin (ignore header check)
 .It Fl g
-Show all possible information
+Same as -SMZIHVResizcld -SS -SSS -ee (show all information)
 .It Fl G Ar addr
 Load address . offset to header
 .It Fl h
-Show usage help message.
+Show usage help message
 .It Fl H
-Show header fields (see ih command in rizin)
-.It Fl I
-Show binary info (iI in rizin)
+Header fields
 .It Fl i
-Show imports (symbols imported from libraries) (ii)
+Import (symbols imported from libraries)
+.It Fl I
+Binary info
 .It Fl j
-Output in json
-.It Fl k Ar query
-Perform SDB query on loaded file
+Output in JSON
+.It Fl k Ar sdb-query
+Run sdb query. for example: '*'
 .It Fl K Ar algo
-Select a rz-hash checksum algorithm to be performed on sections listing (and maybe others in the future) i.e 'rz-bin -K md5 -S /bin/ls'
+Calculate checksums (md5, sha1, ..)
 .It Fl l
-List linked libraries to the binary
-.It Fl L
-List supported bin plugins
-.It Fl M
-Show address of 'main' symbol
+Linked libraries
+.It Fl L Ar plugin
+List supported bin plugins or plugin details
 .It Fl m Ar addr
-Show source line reference from a given address
-.It Fl N Ar minlen:maxlen
-Force minimum and maximum number of chars per string (see -z and -zz). if (strlen>minlen && (!maxlen || strlen<=maxlen))
+Show source line at addr
+.It Fl M
+Main (show address of main symbol)
 .It Fl n Ar str
-Show information (symbol, section, import) at string offset
+Show section, symbol, or import named str
+.It Fl N Ar min:max
+Force min:max number of chars per string (see -z and -zz)
 .It Fl o Ar str
 Output file/folder for write operations (out by default)
-.It Fl O Ar binop
-Perform binary operation on target binary (dump, resize, change sections, ...) see '-O help' for more information
+.It Fl O Ar str
+Write/extract operations (-O help)
 .It Fl p
-Disable VA. Show physical addresses
+Show physical addresses
 .It Fl P
 Show debug/pdb information
 .It Fl PP
@@ -105,69 +108,85 @@ Show output in rizin format
 .It Fl R
 Show relocations
 .It Fl s
-Show exported symbols
+Symbols
 .It Fl S
-Show sections
+Sections
 .It Fl SS
-Show segments
-.It Fl t
-Show file hashes
+Segments
+.It Fl SSS
+Sections mapping to segments
 .It Fl T
-Show Certificates
+Display file signature
 .It Fl u
 Unfiltered (no rename duplicated symbols/sections)
 .It Fl U
-Show Resources
+Resources
 .It Fl v
 Show version information
 .It Fl V
 Show binary version information
 .It Fl w
-Show try/catch blocks
+Display try/catch blocks
 .It Fl x
-Extract all sub binaries from a fat binary (f.ex: fatmach0)
-.It Fl X Ar format file ...
-Package a fat or zip containing all the files passed (fat, zip)
+Extract bins contained in file
+.It Fl X Ar fmt [f] ..
+Package in fat or zip the given files and bins contained in file
+.It Fl Y Ar fw file
+Calculate all the possibles base address candidates of a firmware bin
 .It Fl z
-Show strings inside .data section (like gnu strings does)
-.It Fl Z
-Guess size of binary program
+Show strings (from data section)
 .It Fl zz
-Shows strings from raw bins
+Show strings (from raw strings from bin)
 .It Fl zzz
 Dump raw strings to stdout (for huge files)
+.It Fl Z
+Guess size of binary program
 .El
 .Sh ENVIRONMENT
 .Pp
-RZ_BIN_LANG same as rizin -e bin.lang for rz-bin
+RZ_NOPLUGINS: do not load shared plugins (speedup loading)
 .Pp
-RZ_BIN_DEMANGLE demangle symbols
+RZ_BIN_LANG: e bin.lang - assume lang for demangling
 .Pp
-RZ_BIN_MAXSTRBUF same as rizin -e bin.maxstrbuf for rz-bin
+RZ_BIN_DEMANGLE: e bin.demangle - do not demangle symbols
 .Pp
-RZ_BIN_DEBASE64 try to decode all strings as base64 if possible
+RZ_BIN_MAXSTRBUF: e bin.maxstrbuf - specify maximum buffer size
 .Pp
-RZ_BIN_STRFILTER same as rizin -e bin.str.filter for rz-bin
+RZ_BIN_STRFILTER: e bin.str.filter - rizin -qc 'e bin.str.filter=??' -
 .Pp
-RZ_BIN_STRPURGE same as rizin -e bin.str.purge for rz-bin
+RZ_BIN_STRPURGE: e bin.str.purge - try to purge false positives
+.Pp
+RZ_BIN_DEBASE64: e bin.debase64 - try to debase64 all strings
+.Pp
+RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server
+.Pp
+RZ_BIN_PDBSERVER: e pdb.server - use alternative PDB server
+.Pp
+RZ_BIN_SYMSTORE:  e pdb.symstore - path to downstream symbol store
+.Pp
+RZ_BIN_PREFIX:    e bin.prefix - prefix symbols/sections/relocs with a specific string
+.Pp
+RZ_CONFIG: sdb config file
+
 .Sh EXAMPLES
 .Pp
-List symbols of a program
+List symbols of a program:
 .Pp
-  $ rz-bin \-s a.out
+.Nm rz-bin Fl s Ar a.out
 .Pp
-Get offset of symbol
+Get offset of symbol:
 .Pp
-  $ rz-bin \-n _main a.out
+.Nm rz-bin Fl n Cm _main Ar a.out
 .Pp
-Get entrypoint
+Get entrypoint:
 .Pp
-  $ rz-bin \-e a.out
+.Nm rz-bin Fl e Ar a.out
 .Pp
-Load symbols and imports from rizin
+Load symbols and imports from rizin:
 .Pp
-  $ rizin -n /bin/ls
-  [0x00000000]> .!rz-bin \-prsi $FILE
+.Nm rizin Fl n Ar /bin/ls
+.Pp
+[0x00000000]> .!rz-bin -prsi $FILE
 .Sh SEE ALSO
 .Pp
 .Xr rz-hash(1) ,
@@ -176,9 +195,10 @@ Load symbols and imports from rizin
 .Xr rz-diff(1) ,
 .Xr rz-asm(1) ,
 .Xr rz-ax(1) ,
-.Xr rsc2(1) ,
 .Xr rz-gg(1) ,
-.Xr rz-run(1) ,
+.Xr rz-run(1)
 .Sh AUTHORS
 .Pp
-Written by pancake <pancake@nopcode.org>.
+pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

@@ -690,9 +690,9 @@ afr
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
-0x00001f50    1 47           sym._foo
 0x00001f00    4 73           sym._bar
+0x00001f50    1 47           sym._foo
+0x00001f80    1 41           main
 EOF
 RUN
 
@@ -1418,7 +1418,7 @@ FILE=bins/mach0/arg
 CMDS=<<EOF
 s sym._call
 af
-afv
+afvl
 EOF
 EXPECT=<<EOF
 var int64_t var_1ch @ stack - 0x1c
@@ -1434,9 +1434,9 @@ FILE=bins/mach0/macho
 CMDS=<<EOF
 s 0x100000b60
 af
-afv~var_30h
+afvl~var_30h
 afvt var_30h char
-afv~var_30h
+afvl~var_30h
 EOF
 EXPECT=<<EOF
 var int64_t var_30h @ stack - 0x30
@@ -1449,9 +1449,9 @@ FILE=bins/mach0/macho
 CMDS=<<EOF
 s 0x100000b60
 af
-afv~var_30h
+afvl~var_30h
 afvn mylocal var_30h
-afv~mylocal
+afvl~mylocal
 EOF
 EXPECT=<<EOF
 var int64_t var_30h @ stack - 0x30
@@ -1464,10 +1464,10 @@ FILE=bins/mach0/macho
 CMDS=<<EOF
 s 0x100000b60
 af
-afv~var_30h
+afvl~var_30h
 afvn mylocal var_30h
 afvn var_30h mylocal
-afv~var_30h
+afvl~var_30h
 EOF
 EXPECT=<<EOF
 var int64_t var_30h @ stack - 0x30
@@ -1480,10 +1480,10 @@ FILE=bins/mach0/macho
 CMDS=<<EOF
 s 0x100000b60
 af
-afv~var_30h
+afvl~var_30h
 afvn mylocal var_30h
 afvt mylocal char
-afv~mylocal
+afvl~mylocal
 EOF
 EXPECT=<<EOF
 var int64_t var_30h @ stack - 0x30
@@ -1496,10 +1496,10 @@ FILE=bins/mach0/macho
 CMDS=<<EOF
 s 0x100000b60
 af
-afv~var_30h
+afvl~var_30h
 afvt var_30h char
 afvn mylocal var_30h
-afv~mylocal
+afvl~mylocal
 EOF
 EXPECT=<<EOF
 var int64_t var_30h @ stack - 0x30
@@ -1512,10 +1512,10 @@ FILE=bins/mach0/macho
 CMDS=<<EOF
 s 0x100000b60
 af
-afv~var_30h
+afvl~var_30h
 afvt var_30h char
 afvt var_30h int
-afv~var_30h
+afvl~var_30h
 EOF
 EXPECT=<<EOF
 var int64_t var_30h @ stack - 0x30
@@ -4281,10 +4281,10 @@ CMDS=<<EOF
 s 0x10270
 af
 afs
-afv
+afvl
 aaft
 afs
-afv
+afvl
 EOF
 EXPECT=<<EOF
 void fcn.00010270(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5);

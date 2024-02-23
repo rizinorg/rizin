@@ -14,13 +14,13 @@ typedef struct {
 } RzIOW32;
 #define RzIOW32_HANDLE(x) (((RzIOW32 *)x)->hnd)
 
-static int w32__write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int w32__write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd || !fd->data)
 		return -1;
 	return WriteFile(RzIOW32_HANDLE(fd), buf, count, NULL, NULL);
 }
 
-static int w32__read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int w32__read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	DWORD ret;
 	return ReadFile(RzIOW32_HANDLE(fd), buf, count, &ret, NULL) ? ret : -1;
 }

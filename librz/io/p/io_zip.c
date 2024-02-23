@@ -596,7 +596,7 @@ static ut64 rz_io_zip_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	return seek_val;
 }
 
-static int rz_io_zip_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int rz_io_zip_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	RzIOZipFileObj *zfo = NULL;
 	if (!fd || !fd->data || !buf) {
 		return -1;
@@ -612,7 +612,7 @@ static int rz_io_zip_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	return r;
 }
 
-static int rz_io_zip_realloc_buf(RzIOZipFileObj *zfo, int count) {
+static int rz_io_zip_realloc_buf(RzIOZipFileObj *zfo, size_t count) {
 	return rz_buf_resize(zfo->b, rz_buf_tell(zfo->b) + count);
 }
 
@@ -634,7 +634,7 @@ static bool rz_io_zip_resize(RzIO *io, RzIODesc *fd, ut64 size) {
 	return false;
 }
 
-static int rz_io_zip_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int rz_io_zip_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	RzIOZipFileObj *zfo;
 	int ret = 0;
 	if (!fd || !fd->data || !buf) {

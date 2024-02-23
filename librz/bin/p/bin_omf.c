@@ -86,8 +86,8 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret;
 	ut32 ct_omf_sect = 0;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
@@ -95,7 +95,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	rz_bin_omf_obj *obj = bf->o->bin_obj;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 
@@ -108,15 +108,15 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinSymbol *sym;
 	OMF_symbol *sym_omf;
 	int ct_sym = 0;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 
@@ -131,7 +131,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		sym->vaddr = rz_bin_omf_get_vaddr_sym(bf->o->bin_obj, sym_omf);
 		sym->ordinal = ct_sym;
 		sym->size = 0;
-		rz_list_append(ret, sym);
+		rz_pvector_push(ret, sym);
 	}
 	return ret;
 }

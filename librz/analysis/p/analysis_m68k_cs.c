@@ -32,19 +32,12 @@ static inline ut64 make_64bits_address(ut64 address) {
 }
 
 static inline void handle_branch_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
-#if CS_API_MAJOR >= 4
 	if (m68k->operands[index].type == M68K_OP_BR_DISP) {
 		op->type = type;
 		// TODO: disp_size is ignored
 		op->jump = make_64bits_address(addr + m68k->operands[index].br_disp.disp + 2);
 		op->fail = make_64bits_address(addr + op->size);
 	}
-#else
-	op->type = type;
-	// TODO: disp_size is ignored
-	op->jump = make_64bits_address(addr + m68k->operands[index].br_disp.disp + 2);
-	op->fail = make_64bits_address(addr + op->size);
-#endif
 }
 
 static inline void handle_jump_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {
@@ -134,31 +127,48 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
-static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
-	static RzRegItem reg;
+typedef struct {
+	RzRegItem reg;
+	csh handle;
+	int omode;
+	int obits;
+} M68KContext;
+
+static bool m68k_init(void **user) {
+	M68KContext *ctx = RZ_NEW0(M68KContext);
+	rz_return_val_if_fail(ctx, false);
+	ctx->handle = 0;
+	ctx->omode = -1;
+	ctx->obits = 32;
+	*user = ctx;
+	return true;
+}
+
+static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh handle, cs_insn *insn) {
+	M68KContext *ctx = (M68KContext *)a->plugin_data;
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		ZERO_FILL(reg);
+		ZERO_FILL(ctx->reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
-			op->src[0]->reg = &reg;
+			op->src[0]->reg = &ctx->reg;
 			parse_reg_name(op->src[0]->reg, handle, insn, 1);
 			op->src[0]->delta = OPERAND(0).mem.disp;
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_MEM;
-			op->dst->reg = &reg;
+			op->dst->reg = &ctx->reg;
 			parse_reg_name(op->dst->reg, handle, insn, 0);
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_LEA:
-		ZERO_FILL(reg);
+		ZERO_FILL(ctx->reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_MEM;
-			op->dst->reg = &reg;
+			op->dst->reg = &ctx->reg;
 			parse_reg_name(op->dst->reg, handle, insn, 1);
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
@@ -167,10 +177,8 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 }
 
 static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	M68KContext *ctx = (M68KContext *)a->plugin_data;
 	int n, ret, opsize = -1;
-	static csh handle = 0;
-	static int omode = -1;
-	static int obits = 32;
 	cs_insn *insn;
 	cs_m68k *m68k;
 	cs_detail *detail;
@@ -178,11 +186,11 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	int mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	// mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
-	if (mode != omode || a->bits != obits) {
-		cs_close(&handle);
-		handle = 0;
-		omode = mode;
-		obits = a->bits;
+	if (mode != ctx->omode || a->bits != ctx->obits) {
+		cs_close(&ctx->handle);
+		ctx->handle = 0;
+		ctx->omode = mode;
+		ctx->obits = a->bits;
 	}
 	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	// replace this with the asm.features?
@@ -205,14 +213,14 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		mode |= CS_MODE_M68K_060;
 	}
 	op->size = 4;
-	if (handle == 0) {
-		ret = cs_open(CS_ARCH_M68K, mode, &handle);
+	if (ctx->handle == 0) {
+		ret = cs_open(CS_ARCH_M68K, mode, &ctx->handle);
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
-		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm(handle, (ut8 *)buf, len, addr, 1, &insn);
+	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 2;
@@ -230,7 +238,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		opex(&op->opex, handle, insn);
+		opex(&op->opex, ctx->handle, insn);
 	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
@@ -702,7 +710,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		break;
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-		op_fillval(op, handle, insn);
+		op_fillval(a, op, ctx->handle, insn);
 	}
 beach:
 	cs_free(insn, n);
@@ -769,6 +777,14 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
+static bool m68k_fini(void *user) {
+	M68KContext *ctx = (M68KContext *)user;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
@@ -778,6 +794,8 @@ RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.get_reg_profile = &get_reg_profile,
 	.bits = 32,
 	.op = &analyze_op,
+	.init = m68k_init,
+	.fini = m68k_fini,
 };
 #else
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {

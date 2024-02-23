@@ -673,7 +673,7 @@ RZ_API RzCons *rz_cons_free(void) {
 	restore_console_state();
 #endif
 	if (I.line) {
-		rz_line_free();
+		rz_line_free(I.line);
 		I.line = NULL;
 	}
 	RZ_FREE(I.input->readbuffer);
@@ -801,9 +801,12 @@ RZ_API void rz_cons_clear(void) {
 
 static void cons_grep_reset(RzConsGrep *grep) {
 	RZ_FREE(grep->str);
+	RZ_FREE(grep->sorted_lines);
+	RZ_FREE(grep->unsorted_lines);
 	ZERO_FILL(*grep);
 	grep->line = -1;
 	grep->sort = -1;
+	grep->sorted_column = -1;
 	grep->sort_invert = false;
 }
 

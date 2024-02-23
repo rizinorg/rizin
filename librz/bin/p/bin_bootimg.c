@@ -116,7 +116,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return bio ? bio->bi.kernel_addr : 0;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 
@@ -173,19 +173,18 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	if (!bio) {
 		return NULL;
 	}
 	BootImage *bi = &bio->bi;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -196,7 +195,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R; // r--
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -207,7 +206,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
 	ptr->perm = RZ_PERM_R; // r--
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
@@ -220,7 +219,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = ROUND_DOWN(base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->perm = RZ_PERM_RX; // r-x
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	if (bi->second_size > 0) {
@@ -234,7 +233,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		ptr->paddr = ROUND_DOWN(base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
 		ptr->perm = RZ_PERM_RX; // r-x
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	return ret;

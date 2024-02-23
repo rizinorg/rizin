@@ -50,6 +50,7 @@
 #define COFF_SCN_TYPE_NO_PAD     0x00000008
 #define COFF_SCN_CNT_CODE        0x00000020
 #define COFF_SCN_CNT_INIT_DATA   0x00000040
+#define COFF_SCN_CNT_UNIN_DATA   0x00000080 // The section contains uninitialized data.
 #define COFF_SCN_LNK_OTHER       0x00000100
 #define COFF_SCN_LNK_INFO        0x00000200
 #define COFF_SCN_LNK_REMOVE      0x00000800
@@ -81,6 +82,8 @@
 #define COFF_SCN_MEM_EXECUTE     0x20000000
 #define COFF_SCN_MEM_READ        0x40000000
 #define COFF_SCN_MEM_WRITE       0x80000000
+
+#define COFF_SCN_ALIGN_MASK 0x00F00000
 
 #define COFF_SYM_SCNUM_UNDEF 0
 #define COFF_SYM_SCNUM_ABS   0xffff

@@ -438,8 +438,8 @@ static bool add_string_to_cache(RzBinPycObj *pyc, ut64 addr, const char *data, u
 	string->length = length;
 	string->ordinal = 0;
 	string->type = type;
-	string->string = rz_str_new(data);
-	if (!rz_list_append(pyc->strings_cache, string)) {
+	string->string = rz_str_dup(data);
+	if (!rz_pvector_push(pyc->strings_cache, string)) {
 		return false;
 	}
 	return true;
@@ -679,10 +679,11 @@ static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, 
 
 static pyc_object *get_ascii_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_ut32(buffer, &error);
-	if (error) {
+	ut32 n = get_ut32(buffer, &error);
+	if (n > ST32_MAX) {
+		RZ_LOG_ERROR("bad marshal data (string size out of range)\n");
+		return NULL;
+	} else if (error) {
 		return NULL;
 	}
 	return get_ascii_object_generic(pyc, buffer, n, true);
@@ -690,10 +691,11 @@ static pyc_object *get_ascii_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 static pyc_object *get_ascii_interned_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
-	ut32 n;
-
-	n = get_ut32(buffer, &error);
-	if (error) {
+	ut32 n = get_ut32(buffer, &error);
+	if (n > ST32_MAX) {
+		RZ_LOG_ERROR("bad marshal data (string size out of range)\n");
+		return NULL;
+	} else if (error) {
 		return NULL;
 	}
 	return get_ascii_object_generic(pyc, buffer, n, true);
@@ -1149,13 +1151,15 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 
 	if (flag && ref_idx) {
-		free_object(ref_idx->data);
-		ref_idx->data = copy_object(ret);
+		void *p = rz_list_iter_get_data(ref_idx);
+		free_object(p);
+		p = copy_object(ret);
+		rz_list_iter_set_data(ref_idx, p);
 	}
 	return ret;
 }
 
-static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzList /*<RzBinSection *>*/ *sections, RzList /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, char *prefix) {
+static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzPVector /*<RzBinSection *>*/ *sections, RzPVector /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, char *prefix) {
 	pyc_code_object *cobj = NULL;
 	RzBinSection *section = NULL;
 	RzBinSymbol *symbol = NULL;
@@ -1191,7 +1195,7 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzList /
 	section->vaddr = cobj->start_offset;
 	section->size = cobj->end_offset - cobj->start_offset;
 	section->vsize = cobj->end_offset - cobj->start_offset;
-	if (!rz_list_append(sections, section)) {
+	if (!rz_pvector_push(sections, section)) {
 		goto fail;
 	}
 	section = NULL;
@@ -1206,7 +1210,7 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzList /
 	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
 		goto fail;
 	}
-	if (!rz_list_append(symbols, symbol)) {
+	if (!rz_pvector_push(symbols, symbol)) {
 		goto fail;
 	}
 	rz_list_foreach (((RzList *)(cobj->consts->data)), i, obj)
@@ -1221,7 +1225,7 @@ fail:
 	return false;
 }
 
-bool get_sections_symbols_from_code_objects(RzBinPycObj *pyc, RzBuffer *buffer, RzList /*<RzBinSection *>*/ *sections, RzList /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, ut32 magic) {
+bool get_sections_symbols_from_code_objects(RzBinPycObj *pyc, RzBuffer *buffer, RzPVector /*<RzBinSection *>*/ *sections, RzPVector /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, ut32 magic) {
 	bool ret;
 	pyc->magic_int = magic;
 	pyc->refs = rz_list_newf((RzListFree)free_object);

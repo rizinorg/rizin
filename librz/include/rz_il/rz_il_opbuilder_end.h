@@ -24,6 +24,7 @@
 #undef BV2F
 #undef F32
 #undef F64
+#undef F80
 #undef F2BV
 #undef IS_FINITE
 #undef IS_FNAN
@@ -56,6 +57,10 @@
 #undef FMAD
 #undef FNEQ
 #undef FEQ
+#undef FLT
+#undef FLE
+#undef FGE
+#undef FGT
 
 #undef IL_FALSE
 #undef IL_TRUE
@@ -128,5 +133,18 @@
 #undef REPEAT
 #undef JMP
 #undef GOTO
+
+#undef NOT_IMPLEMENTED
+
+#undef EXTRACT32
+#undef EXTRACT64
+#undef SEXTRACT32
+#undef SEXTRACT64
+#undef DEPOSIT32
+#undef DEPOSIT64
+#undef BSWAP16
+#undef BSWAP32
+#undef BSWAP64
+#undef NE
 
 #undef RZ_IL_OPBUILDER_BEGIN_H

@@ -44,25 +44,25 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinSection *sect = NULL;
 	psxexe_header psxheader;
 	ut64 sz = 0;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 
 	if (!(sect = RZ_NEW0(RzBinSection))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
 	if (rz_buf_fread_at(bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof(psxexe_header)) {
 		RZ_LOG_ERROR("Truncated Header\n");
 		free(sect);
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
@@ -76,7 +76,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	sect->perm = RZ_PERM_RX;
 	sect->has_strings = true;
 
-	rz_list_append(ret, sect);
+	rz_pvector_push(ret, sect);
 	return ret;
 }
 
@@ -108,10 +108,13 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	// hardcode minstrlen = 20
-	int minstrlen = bf->minstrlen ? bf->minstrlen : 20;
-	return rz_bin_file_strings(bf, minstrlen, true);
+static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 20 bytes.
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+	opt.min_length = 20;
+	return rz_bin_file_strings(bf, &opt);
 }
 
 RzBinPlugin rz_bin_plugin_psxexe = {

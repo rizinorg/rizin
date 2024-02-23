@@ -148,7 +148,8 @@ typedef struct rz_callable_at {
 	RZ_NULLABLE RzType *ret; /// optional for the time being
 	RzPVector /*<RzCallableArg *>*/ *args;
 	RZ_NULLABLE const char *cc; // optional
-	bool noret; // Does not return
+	bool noret : 1; // Does not return
+	bool has_unspecified_parameters : 1;
 } RzCallable;
 
 struct rz_type_t {
@@ -230,6 +231,14 @@ typedef enum {
 	RZ_TYPE_PRINT_ALLOW_NON_EXISTENT_BASE_TYPE = 1 << 8 // print identifiers even if there is no base type of that name in the db (otherwise "unknown_t")
 } RzTypePrintOpts;
 
+/**
+ * \brief structure to save format name and definition
+ */
+typedef struct rz_type_format_t {
+	const char *name;
+	const char *body;
+} RzTypeFormat;
+
 #ifdef RZ_API
 
 RZ_API RzTypeDB *rz_type_db_new();
@@ -253,7 +262,10 @@ RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *dir_prefix);
 RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 
 // Base types
-
+RZ_API bool rz_base_type_clone_into(
+	RZ_NONNULL RZ_BORROW RZ_OUT RzBaseType *dst,
+	RZ_NONNULL RZ_BORROW RZ_IN RzBaseType *src);
+RZ_API RZ_OWN RzBaseType *rz_base_type_clone(RZ_NULLABLE RZ_BORROW RzBaseType *b);
 RZ_API void rz_type_base_type_free(RzBaseType *type);
 RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind);
 RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kind);
@@ -384,7 +396,7 @@ RZ_API RZ_BORROW RzBaseType *rz_type_get_base_type(const RzTypeDB *typedb, RZ_NO
 // Type formats (`tp` and `pf` commands)
 RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt);
-RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_format_all(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb);
 RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_format_purge(RzTypeDB *typedb);
 

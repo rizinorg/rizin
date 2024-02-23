@@ -212,12 +212,13 @@ RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str) {
 }
 
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr) {
+	char tmpbuf[64];
 	int tag = dbg->trace->tag;
 	return ht_pp_find(dbg->trace->ht,
-		sdb_fmt("trace.%d.%" PFMT64x, tag, addr), NULL);
+		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), NULL);
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
+static int cmpaddr(const void *_a, const void *_b, void *user) {
 	const RzListInfo *a = _a, *b = _b;
 	return (rz_itv_begin(a->pitv) > rz_itv_begin(b->pitv)) ? 1 : (rz_itv_begin(a->pitv) < rz_itv_begin(b->pitv)) ? -1
 														     : 0;
@@ -256,7 +257,7 @@ RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64
 		rz_list_append(info_list, info);
 	}
 
-	rz_list_sort(info_list, cmpaddr);
+	rz_list_sort(info_list, cmpaddr, NULL);
 	return info_list;
 }
 
@@ -274,6 +275,7 @@ static int rz_debug_trace_is_traceable(RzDebug *dbg, ut64 addr) {
 
 RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) {
 	RzDebugTracepoint *tp;
+	char tmpbuf[64];
 	int tag = dbg->trace->tag;
 	if (!rz_debug_trace_is_traceable(dbg, addr)) {
 		return NULL;
@@ -291,7 +293,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) 
 	tp->times = 1;
 	rz_list_append(dbg->trace->traces, tp);
 	ht_pp_update(dbg->trace->ht,
-		sdb_fmt("trace.%d.%" PFMT64x, tag, addr), tp);
+		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), tp);
 	return tp;
 }
 

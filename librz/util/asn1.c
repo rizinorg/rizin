@@ -199,9 +199,10 @@ static void asn1_print_hex(RzASN1Object *object, char *buffer, ut32 size, ut32 d
 	char *p = buffer;
 	char *end = buffer + size;
 	if (depth > 0 && !structured) {
-		const char *pad = rz_str_pad(' ', (depth * 2) - 2);
+		char *pad = rz_str_pad(' ', (depth * 2) - 2);
 		snprintf(p, end - p, "%s", pad);
 		p += strlen(pad);
+		free(pad);
 	}
 	for (ut32 i = 0; i < object->length && p < end; i++) {
 		snprintf(p, end - p, "%02x", object->sector[i]);
@@ -214,7 +215,6 @@ static void asn1_print_hex(RzASN1Object *object, char *buffer, ut32 size, ut32 d
 }
 
 static void asn1_print_padded(RzStrBuf *sb, RzASN1Object *object, int depth, const char *k, const char *v) {
-	const char *pad = rz_str_pad(' ', (depth * 2) - 2);
 	if (object->form && !*v) {
 		return;
 	}
@@ -225,20 +225,25 @@ static void asn1_print_padded(RzStrBuf *sb, RzASN1Object *object, int depth, con
 	case RZ_ASN1_TAG_INTEGER:
 	case RZ_ASN1_TAG_REAL:
 		if (*rz_str_trim_head_ro(v)) {
+			char *pad = rz_str_pad(' ', (depth * 2) - 2);
 			rz_strbuf_appendf(sb, "%s%s\n%s%s\n", pad, k, pad, v);
+			free(pad);
 		}
 		break;
 	case RZ_ASN1_TAG_BITSTRING:
 	default:
 		if (*rz_str_trim_head_ro(v)) {
+			char *pad = rz_str_pad(' ', (depth * 2) - 2);
 			rz_strbuf_appendf(sb, "%s%s\n", pad, v);
+			free(pad);
 		}
 		break;
 	}
 }
 
 static RzASN1String *asn1_print_hexdump_padded(RzASN1Object *object, ut32 depth, bool structured) {
-	const char *pad;
+	const char *pad = NULL;
+	char *allocated = NULL;
 	ut32 i, j;
 	char readable[20] = { 0 };
 	if (!object || !object->sector || object->length < 1) {
@@ -248,7 +253,7 @@ static RzASN1String *asn1_print_hexdump_padded(RzASN1Object *object, ut32 depth,
 	if (structured) {
 		pad = "                                        : ";
 	} else {
-		pad = rz_str_pad(' ', depth * 2);
+		pad = allocated = rz_str_pad(' ', depth * 2);
 		rz_strbuf_appendf(sb, "  ");
 	}
 
@@ -262,6 +267,7 @@ static RzASN1String *asn1_print_hexdump_padded(RzASN1Object *object, ut32 depth,
 		rz_strbuf_appendf(sb, "%02x ", c);
 		readable[j] = IS_PRINTABLE(c) ? c : '.';
 	}
+	free(allocated);
 
 	while ((i % 16) != 0) {
 		rz_strbuf_appendf(sb, "   ");

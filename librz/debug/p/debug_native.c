@@ -317,31 +317,34 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	}
 
 	reason = w32_dbg_wait(dbg, pid);
-	RzDebugInfo *r = rz_debug_native_info(dbg, "");
+	RzDebugInfo *native_info = rz_debug_native_info(dbg, "");
 	if (reason == RZ_DEBUG_REASON_NEW_LIB) {
-		if (r && r->lib) {
-			if (tracelib(dbg, "load", r->lib)) {
-				reason = RZ_DEBUG_REASON_TRAP;
-			}
-
+		if (native_info && native_info->lib) {
 			/* Check if autoload PDB is set, and load PDB information if yes */
 			RzCore *core = dbg->corebind.core;
 			bool autoload_pdb = dbg->corebind.cfggeti(core, "pdb.autoload");
 			if (autoload_pdb) {
-				PLIB_ITEM lib = r->lib;
-				RzBinOptions opts = { 0 };
-				opts.obj_opts.baseaddr = (uintptr_t)lib->BaseOfDll;
-				RzBinFile *cur = rz_bin_cur(core->bin);
-				RzBinFile *bf = rz_bin_open(core->bin, lib->Path, &opts);
-				if (bf) {
-					const RzBinInfo *info = rz_bin_object_get_info(bf->o);
-					if (RZ_STR_ISNOTEMPTY(info->debug_file_name)) {
-						if (!rz_file_exists(info->debug_file_name)) {
-							dbg->corebind.cmdf(core, "idpd");
-						}
-						dbg->corebind.cmd(core, "idp");
+				PLIB_ITEM lib = native_info->lib;
+				if (rz_file_exists(lib->Path)) {
+					if (tracelib(dbg, "load", native_info->lib)) {
+						reason = RZ_DEBUG_REASON_TRAP;
 					}
-					rz_bin_file_set_cur_binfile(core->bin, cur);
+					RzBinOptions opts = { 0 };
+					opts.obj_opts.baseaddr = (uintptr_t)lib->BaseOfDll;
+					RzBinFile *cur = rz_bin_cur(core->bin);
+					RzBinFile *bf = rz_bin_open(core->bin, lib->Path, &opts);
+					if (bf) {
+						const RzBinInfo *info = rz_bin_object_get_info(bf->o);
+						if (RZ_STR_ISNOTEMPTY(info->debug_file_name)) {
+							if (!rz_file_exists(info->debug_file_name)) {
+								dbg->corebind.cmdf(core, "idpd");
+							}
+							dbg->corebind.cmd(core, "idp");
+						}
+						rz_bin_file_set_cur_binfile(core->bin, cur);
+					}
+				} else {
+					RZ_LOG_ERROR("The library %s does not exist.\n", lib->Path);
 				}
 			}
 		} else {
@@ -359,34 +362,34 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		}
 		restore_thread = true;
 	} else if (reason == RZ_DEBUG_REASON_NEW_PID) {
-		if (r && r->thread) {
-			PTHREAD_ITEM item = r->thread;
+		if (native_info && native_info->thread) {
+			PTHREAD_ITEM item = native_info->thread;
 			RZ_LOG_INFO("(%d) Created process %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
 		}
 	} else if (reason == RZ_DEBUG_REASON_NEW_TID) {
-		if (r && r->thread) {
-			PTHREAD_ITEM item = r->thread;
+		if (native_info && native_info->thread) {
+			PTHREAD_ITEM item = native_info->thread;
 			RZ_LOG_INFO("(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
 		}
 		restore_thread = true;
 	} else if (reason == RZ_DEBUG_REASON_EXIT_TID) {
-		PTHREAD_ITEM item = r->thread;
-		if (r && r->thread) {
+		PTHREAD_ITEM item = native_info->thread;
+		if (native_info && native_info->thread) {
 			RZ_LOG_INFO("(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
 		}
 		if (dbg->tid != orig_tid && item->tid != orig_tid) {
 			restore_thread = true;
 		}
 	} else if (reason == RZ_DEBUG_REASON_DEAD) {
-		if (r && r->thread) {
-			PTHREAD_ITEM item = r->thread;
+		if (native_info && native_info->thread) {
+			PTHREAD_ITEM item = native_info->thread;
 			RZ_LOG_INFO("(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
 		}
 		dbg->pid = -1;
 		dbg->tid = -1;
 	} else if (reason == RZ_DEBUG_REASON_USERSUSP && dbg->tid != orig_tid) {
-		if (r && r->thread) {
-			PTHREAD_ITEM item = r->thread;
+		if (native_info && native_info->thread) {
+			PTHREAD_ITEM item = native_info->thread;
 			RZ_LOG_INFO("(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
 		}
 		// DebugProcessBreak creates a new thread that will trigger a breakpoint. We record the
@@ -398,7 +401,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		reason = RZ_DEBUG_REASON_NONE;
 		restore_thread = true;
 	}
-	rz_debug_info_free(r);
+	rz_debug_info_free(native_info);
 
 	if (restore_thread) {
 		// Attempt to return to the original thread after handling the event
@@ -1032,7 +1035,9 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 #endif
 	fd = rz_sys_fopen(path, "r");
 	if (!fd) {
-		perror(sdb_fmt("Cannot open '%s'", path));
+		char *errmsg = rz_str_newf("Cannot open '%s'", path);
+		perror(errmsg);
+		free(errmsg);
 		return NULL;
 	}
 

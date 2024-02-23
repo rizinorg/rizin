@@ -55,7 +55,7 @@ static char *runcmd(const char *cmd) {
 	return NULL;
 }
 
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -82,7 +82,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return count;
 }
 
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -229,6 +229,7 @@ static struct winedbg_x86_32 regState(void) {
 }
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
+	char tmpbuf[64];
 	if (!strcmp(cmd, "")) {
 		return NULL;
 	}
@@ -316,7 +317,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	} else if (!strncmp(cmd, "dr", 2)) {
 		printcmd(io, "info reg");
 	} else if (!strncmp(cmd, "db ", 3)) {
-		free(runcmd(sdb_fmt("break *%x", rz_num_get(NULL, cmd + 3) || io->off)));
+		free(runcmd(rz_strf(tmpbuf, "break *%x", rz_num_get(NULL, cmd + 3) || io->off)));
 	} else if (!strncmp(cmd, "ds", 2)) {
 		free(runcmd("stepi"));
 	} else if (!strncmp(cmd, "dc", 2)) {
