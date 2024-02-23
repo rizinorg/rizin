@@ -2382,6 +2382,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_back_handler(RzCore *core, int argc, co
 
 	if (!rz_debug_continue_back(core->dbg)) {
 		RZ_LOG_ERROR("core: cannot continue back\n");
+		rz_cons_break_pop();
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -2468,7 +2469,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_send_signal_handler(RzCore *core, int a
 // dcp
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_mapped_io_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
-	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 	RzIOMap *s;
 	ut64 pc;
 	int n = 0;

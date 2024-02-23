@@ -938,6 +938,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 	do {
 		/* do not continue when already exited but still open for examination */
 		if (exited_already == pid) {
+			rz_cons_break_pop();
 			return RZ_DEBUG_REASON_DEAD;
 		}
 		memset(&de, 0, sizeof(DEBUG_EVENT));

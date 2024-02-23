@@ -190,6 +190,7 @@ static RZ_OWN RzList /*<rtti_base_class_descriptor *>*/ *rtti_msvc_read_base_cla
 			ut8 tmp[4] = { 0 };
 			if (!context->analysis->iob.read_at(context->analysis->iob.io, addr, tmp, 4)) {
 				rz_list_free(ret);
+				rz_cons_break_pop();
 				return NULL;
 			}
 			ut32 (*read_32)(const void *src) = context->analysis->big_endian ? rz_read_be32 : rz_read_le32;

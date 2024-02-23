@@ -2801,6 +2801,7 @@ RZ_API RzList /*<RzAnalysisCycleHook *>*/ *rz_core_analysis_cycles(RzCore *core,
 			if (!ch) {
 				rz_analysis_cycle_frame_free(cf);
 				rz_list_free(hooks);
+				rz_cons_break_pop();
 				return NULL;
 			}
 			ch->addr = addr;
@@ -2986,7 +2987,8 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	rz_cons_break_push(NULL, NULL);
 
 	if (!rz_io_is_valid_offset(core->io, from, 0)) {
-		return -1;
+		hitctr = -1;
+		goto beach;
 	}
 	while (from < to) {
 		size = RZ_MIN(to - from, sizeof(buf));
@@ -3045,7 +3047,8 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 				break;
 			default:
 				RZ_LOG_ERROR("core: unknown vsize %d (supported only 1,2,4,8)\n", vsize);
-				return -1;
+				hitctr = -1;
+				goto beach;
 			}
 			if (match && !vinfun) {
 				if (vinfunr) {
