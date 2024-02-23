@@ -2565,6 +2565,7 @@ static bool cb_binhashesdefault(void *user, void *data) {
 		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
 		return false;
 	}
+	rz_list_free(core->bin->default_hashes);
 	core->bin->default_hashes = rz_str_split_duplist(node->value, ",", true);
 	if (!core->bin->default_hashes) {
 		core->bin->default_hashes = rz_list_new();
