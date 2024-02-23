@@ -47,6 +47,12 @@ RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
 	if (flags & COFF_SCN_MEM_SHARED) {
 		r |= RZ_PERM_SHAR;
 	}
+	if (flags & COFF_SCN_CNT_CODE) {
+		r |= RZ_PERM_RX;
+	}
+	if (flags & (COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA)) {
+		r |= RZ_PERM_R;
+	}
 	return r;
 }
 
@@ -94,7 +100,7 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	}
 	/* Simplest case, the header provides the entrypoint address */
 	if (obj->hdr.f_opthdr) {
-		addr->paddr = obj->opt_hdr.entry;
+		addr->vaddr = obj->opt_hdr.entry;
 		return addr;
 	}
 	/* No help from the header eh? Use the address of the symbols '_start'
@@ -171,6 +177,9 @@ static bool rz_bin_coff_init_opt_hdr(struct rz_bin_coff_obj *obj) {
 	if (ret != sizeof(struct coff_opt_hdr)) {
 		return false;
 	}
+	if (obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) {
+		obj->is_executable = true;
+	}
 	return true;
 }
 
@@ -226,9 +235,17 @@ static bool rz_bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	if (!obj->scn_va) {
 		return false;
 	}
-	int i;
 	ut64 va = 0;
-	for (i = 0; i < obj->hdr.f_nscns; i++) {
+	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
+		const struct coff_scn_hdr *scn = &obj->scn_hdrs[i];
+		if (obj->is_executable) {
+			if (scn->s_flags & (COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA)) {
+				obj->scn_va[i] = scn->s_vaddr;
+			} else {
+				obj->scn_va[i] = UT64_MAX;
+			}
+			continue;
+		}
 		obj->scn_va[i] = va;
 		va += obj->scn_hdrs[i].s_size ? obj->scn_hdrs[i].s_size : 16;
 		va = RZ_ROUND(va, 16ULL);

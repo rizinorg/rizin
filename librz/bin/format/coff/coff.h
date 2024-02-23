@@ -37,6 +37,7 @@ struct rz_bin_coff_obj {
 	bool reloc_targets_map_base_calculated;
 	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
 	bool relocs_patched;
+	bool is_executable;
 };
 
 RZ_API bool rz_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */

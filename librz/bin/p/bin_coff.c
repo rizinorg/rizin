@@ -79,9 +79,14 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
 		// first index is 0 that is why -1
 		sc_hdr = &bin->scn_hdrs[s->n_scnum - 1];
-		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
-		if (bin->scn_va) {
-			ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
+		if (bin->is_executable) {
+			ptr->paddr = s->n_value;
+			ptr->vaddr = s->n_value;
+		} else {
+			ptr->paddr = sc_hdr->s_scnptr + s->n_value;
+			if (bin->scn_va) {
+				ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
+			}
 		}
 	}
 	if (ptr->is_imported) {
@@ -111,7 +116,7 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 		} else {
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 		}
-		ptr->type = (DTYPE_IS_FUNCTION(s->n_type) || !strcmp(coffname, "main"))
+		ptr->type = (DTYPE_IS_FUNCTION(s->n_type) || (sc_hdr && sc_hdr->s_flags & COFF_SCN_CNT_CODE))
 			? RZ_BIN_TYPE_FUNC_STR
 			: RZ_BIN_TYPE_UNKNOWN_STR;
 		break;
@@ -393,7 +398,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->file = bf->file ? strdup(bf->file) : NULL;
 	ret->rclass = strdup("coff");
 	ret->bclass = strdup("coff");
-	ret->type = strdup("COFF (Executable file)");
+	ret->type = rz_str_newf("COFF (%s file)", obj->is_executable ? "Executable" : "Object");
 	ret->os = strdup("any");
 	ret->subsystem = strdup("any");
 	ret->big_endian = obj->endian;
