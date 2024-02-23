@@ -1365,8 +1365,6 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 		free(cr);
 	}
 
-	rz_cons_break_pop();
-
 	if (tmpseek) {
 		rz_core_seek(core, orig_offset, true);
 		core->tmpseek = original_tmpseek;
@@ -1385,6 +1383,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 		}
 	}
 beach:
+	rz_cons_break_pop();
 	free(icmd);
 	return ret;
 }
@@ -2865,6 +2864,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		free(cmdhit);
 	}
 		free(ostr);
+		rz_cons_break_pop();
 		return 0;
 	case '?': // "@@?"
 		rz_core_cmd_help(core, help_msg_at_at);

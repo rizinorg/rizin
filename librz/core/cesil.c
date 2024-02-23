@@ -150,7 +150,7 @@ repeat:
 			} else {
 				rz_reg_setv(core->analysis->reg, "PC", op.addr + op.size);
 			}
-			return 1;
+			return_tail(1);
 		}
 	}
 	rz_reg_setv(core->analysis->reg, name, addr + op.size);
