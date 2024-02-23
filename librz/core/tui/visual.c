@@ -166,6 +166,15 @@ RZ_IPI void rz_core_visual_applyDisMode(RzCore *core, int disMode) {
 	}
 }
 
+RZ_API void rz_core_debug_switch_to_first_thread(RzCore *core) {
+	RzList *threads = rz_debug_pids(core->dbg, core->dbg->pid);
+	if (rz_list_length(threads) > 0) {
+		RzDebugPid *th = rz_list_first(threads);
+		rz_debug_select(core->dbg, core->dbg->pid, th->pid);
+	}
+	rz_list_free(threads);
+}
+
 static void nextPrintCommand(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	visual->current0format++;
@@ -1984,7 +1993,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_cmd0(core, "eco $(eco~...)");
 			break;
 		case 'p':
-			rz_core_cmd0(core, "dpt=$(dpt~[1-])");
+			rz_core_debug_switch_to_first_thread(core);
 			break;
 		case 'b':
 			rz_core_cmd0(core, "s $(afb~...)");
