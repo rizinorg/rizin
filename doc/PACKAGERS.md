@@ -75,7 +75,7 @@ At the time of writing, these are:
 * `use_sys_lzma`
 * `use_sys_zlib`
 * `use_sys_lz4`
-* `use_sys_zstd`
+* `use_sys_libzstd`
 * `use_sys_xxhash`
 * `use_sys_openssl`
 * `use_sys_libmspack`
