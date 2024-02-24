@@ -78,7 +78,7 @@ At the time of writing, these are:
 * `use_sys_zstd`
 * `use_sys_xxhash`
 * `use_sys_openssl`
-* `use_sys_mspack`
+* `use_sys_libmspack`
 * `use_sys_pcre2`
 * `use_sys_tree_sitter`
 
