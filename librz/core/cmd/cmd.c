@@ -3597,7 +3597,8 @@ err:
 	return res;
 }
 
-static RzCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx, bool do_unwrap) {
+static RzCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx, bool do_unwrap,
+	char **new_command_str, bool *has_space_after_new_cmd) {
 	RzCmdParsedArgs *res = NULL;
 	TSNode new_command;
 	substitute_args_init(state, command);
@@ -3605,6 +3606,21 @@ static RzCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, T
 	if (!ok) {
 		RZ_LOG_ERROR("Error while substituting arguments\n");
 		goto err;
+	}
+
+	if (new_command_str || has_space_after_new_cmd) {
+		TSNode new_command_node = ts_node_child_by_field_name(new_command, "command", strlen("command"));
+		if (ts_node_is_null(new_command_node)) {
+			goto err;
+		}
+		if (new_command_str) {
+			*new_command_str = ts_node_sub_string(new_command_node, state->input);
+		}
+		if (has_space_after_new_cmd) {
+			TSNode args_node = ts_node_child_by_field_name(new_command, "args", strlen("args"));
+			*has_space_after_new_cmd = !ts_node_is_null(args_node) &&
+				ts_node_end_byte(new_command_node) < ts_node_start_byte(args_node);
+		}
 	}
 
 	arg = ts_node_named_child(new_command, child_idx);
@@ -3619,7 +3635,7 @@ err:
 }
 
 static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx) {
-	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, command, arg, child_idx, true);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, command, arg, child_idx, true, NULL, NULL);
 	char *str = rz_cmd_parsed_args_argstr(a);
 	rz_cmd_parsed_args_free(a);
 	return str;
@@ -3668,6 +3684,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	RZ_LOG_DEBUG("arged_stmt command: '%s'\n", command_str);
 	TSNode args = ts_node_child_by_field_name(node, "args", strlen("args"));
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
+	bool has_space_after_cmd = !ts_node_is_null(args) && ts_node_end_byte(command) < ts_node_start_byte(args);
 
 	// FIXME: this special handling should be removed once we have a proper
 	//        command tree
@@ -3686,7 +3703,23 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	if (!ts_node_is_null(args)) {
 		RzCmdDesc *cd = rz_cmd_get_desc(state->core->rcmd, command_str);
 		bool do_unwrap = cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT;
-		pr_args = ts_node_handle_arg_prargs(state, node, args, 1, do_unwrap);
+		if (rz_str_startswith(command_str, "$") && strstr(command_str, "=$")) {
+			// Special handling for $alias=$`cmd`.  For current code
+			// to work properly, "command_str" has to change after
+			// substitution to include the first token of `cmd`.
+			//
+			// FIXME: Convert to rzshell and/or simplify syntax.
+			char *new_command_str = NULL;
+			pr_args = ts_node_handle_arg_prargs(state, node, args, 1, do_unwrap,
+				&new_command_str, &has_space_after_cmd);
+			if (!new_command_str) {
+				goto err;
+			}
+			free(command_str);
+			command_str = new_command_str;
+		} else {
+			pr_args = ts_node_handle_arg_prargs(state, node, args, 1, do_unwrap, NULL, NULL);
+		}
 		if (!pr_args) {
 			goto err;
 		}
@@ -3699,7 +3732,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	}
 
 	pr_args->extra = command_extra_str;
-	pr_args->has_space_after_cmd = !ts_node_is_null(args) && ts_node_end_byte(command) < ts_node_start_byte(args);
+	pr_args->has_space_after_cmd = has_space_after_cmd;
 	res = rz_cmd_call_parsed_args(state->core->rcmd, pr_args);
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
 		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
@@ -3999,7 +4032,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	if (!ts_node_is_null(args)) {
 		RzCmdDesc *cd = rz_cmd_get_desc(state->core->rcmd, command_str);
 		bool do_unwrap = cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT;
-		pr_args = ts_node_handle_arg_prargs(state, node, args, 1, do_unwrap);
+		pr_args = ts_node_handle_arg_prargs(state, node, args, 1, do_unwrap, NULL, NULL);
 		if (!pr_args) {
 			goto err_else;
 		}
@@ -4067,7 +4100,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_stmt) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child(node, 0);
 	TSNode fromto = ts_node_named_child(node, 1);
-	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, fromto, 1, true);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, fromto, 1, true, NULL, NULL);
 	if (!a || a->argc != 2 + 1) {
 		rz_cmd_parsed_args_free(a);
 		return RZ_CMD_STATUS_INVALID;
@@ -4569,7 +4602,7 @@ static RzCmdStatus iter_offsets_common(struct tsr2cmd_state *state, TSNode node,
 
 	TSNode args = ts_node_named_child(node, 1);
 
-	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, args, 1, true);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, args, 1, true, NULL, NULL);
 	if (!a || (has_size && (a->argc - 1) % 2 != 0)) {
 		RZ_LOG_ERROR("Cannot parse args\n");
 		rz_cmd_parsed_args_free(a);
@@ -4627,7 +4660,7 @@ err:
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_stmt) {
 	TSNode command = ts_node_named_child(node, 0);
 	TSNode args = ts_node_named_child(node, 1);
-	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, args, 1, true);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, args, 1, true, NULL, NULL);
 	if (!a || a->argc != 3 + 1) {
 		rz_cmd_parsed_args_free(a);
 		return RZ_CMD_STATUS_INVALID;
@@ -5160,7 +5193,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_stmt) {
 	TSNode command_pipe = ts_node_named_child(node, 1);
 
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
-	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, command_pipe, 1, true);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, command_pipe, 1, true, NULL, NULL);
 	if (a && a->argc > 1) {
 		res = core_cmd_pipe(state->core, state, command_rizin, a->argc - 1, a->argv + 1);
 	}
