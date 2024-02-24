@@ -230,6 +230,7 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 						hashname, hashstr, from + i);
 					free(s);
 					free(buf);
+					rz_cons_break_pop();
 					return 1;
 				}
 				free(s);
@@ -241,6 +242,7 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 	eprintf("No hashes found\n");
 	return 0;
 fail:
+	rz_cons_break_pop();
 	return -1;
 }
 
@@ -1557,12 +1559,12 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 	if (rz_cons_is_breaked()) {
 		eprintf("\n");
 	}
-	rz_cons_break_pop();
 
 	if (param->outmode == RZ_MODE_JSON) {
 		pj_end(param->pj);
 	}
 bad:
+	rz_cons_break_pop();
 	rz_list_free(rx_list);
 	rz_list_free(end_list);
 	free(grep_arg);

@@ -483,6 +483,7 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	}
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->plugins);
+	rz_list_free(bin->default_hashes);
 	sdb_free(bin->sdb);
 	rz_id_storage_free(bin->ids);
 	rz_hash_free(bin->hash);
