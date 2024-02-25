@@ -191,32 +191,30 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL; // TODO
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBuffer *b = bf->buf;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 
-	ret->free = free;
-
 	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 	if (!ptr) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		free(ptr);
 		return NULL;
 	}
 	ptr->paddr = tmp;
 
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_loc), &tmp)) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		free(ptr);
 		return NULL;
 	}
@@ -224,7 +222,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 
 	ptr->vaddr += baddr(bf);
 
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	return ret;
 }

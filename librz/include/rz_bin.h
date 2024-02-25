@@ -303,7 +303,7 @@ typedef struct rz_bin_object_t {
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
 	 */
 	HtPP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
-	RzList /*<RzBinAddr *>*/ *entries;
+	RzPVector /*<RzBinAddr *>*/ *entries;
 	RzPVector /*<RzBinField *>*/ *fields;
 	RzPVector /*<char *>*/ *libs;
 	RzBinRelocStorage *relocs;
@@ -473,7 +473,7 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<RzBinVirtualFile *>*/ *(*virtual_files)(RzBinFile *bf);
 	RzPVector /*<RzBinMap *>*/ *(*maps)(RzBinFile *bf);
 	RzBinAddr *(*binsym)(RzBinFile *bf, RzBinSpecialSymbol num);
-	RzList /*<RzBinAddr *>*/ *(*entries)(RzBinFile *bf);
+	RzPVector /*<RzBinAddr *>*/ *(*entries)(RzBinFile *bf);
 	RzPVector /*<RzBinSection *>*/ *(*sections)(RzBinFile *bf);
 	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
 	RzPVector /*<RzBinSymbol *>*/ *(*symbols)(RzBinFile *bf);
@@ -865,11 +865,10 @@ RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt);
 RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBinFile *bf, RZ_NONNULL const RzBinStringSearchOpt *opt);
 
 // use RzBinFile instead
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinAddr *>*/ *rz_bin_get_entries(RZ_NONNULL RzBin *bin);
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin);
 RZ_API RZ_OWN RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
 
-RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj);

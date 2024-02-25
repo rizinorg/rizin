@@ -737,12 +737,13 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 	if (!o) {
 		return false;
 	}
-	RzList *entries = o->entries;
-	RzListIter *iter;
+	RzPVector *entries = o->entries;
+	void **iter;
 	RzBinAddr *entry = NULL;
 	int i = 0, init_i = 0, fini_i = 0, preinit_i = 0;
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
-	rz_list_foreach (entries, iter, entry) {
+	rz_pvector_foreach (entries, iter) {
+		entry = *iter;
 		ut64 paddr = entry->paddr;
 		ut64 hpaddr = UT64_MAX;
 		ut64 hvaddr = UT64_MAX;
@@ -1484,7 +1485,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	RzPVector *symbols = obj ? (RzPVector *)rz_bin_object_get_symbols(obj) : NULL;
-	RzListIter *iter;
+	void **iter;
 	void **it;
 	RzBinSymbol *symbol;
 	rz_pvector_foreach (symbols, it) {
@@ -1578,7 +1579,8 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	// handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
 		RzBinAddr *entry;
-		rz_list_foreach (o->entries, iter, entry) {
+		rz_pvector_foreach (o->entries, iter) {
+			entry = *iter;
 			handle_arm_entry(core, o, entry, va);
 		}
 	}
@@ -1880,8 +1882,8 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 
 static bool entries_initfini_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, bool initfini) {
 	RzBinObject *o = bf->o;
-	const RzList *entries = rz_bin_object_get_entries(o);
-	RzListIter *iter;
+	const RzPVector *entries = rz_bin_object_get_entries(o);
+	void **iter;
 	RzBinAddr *entry = NULL;
 	ut64 baddr = rz_bin_get_baddr(core->bin);
 	ut64 laddr = rz_bin_get_laddr(core->bin);
@@ -1890,7 +1892,8 @@ static bool entries_initfini_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "XXXXs", "vaddr", "paddr", "hvaddr", "haddr", "type");
 
-	rz_list_foreach (entries, iter, entry) {
+	rz_pvector_foreach (entries, iter) {
+		entry = *iter;
 		ut64 paddr = entry->paddr;
 		ut64 hpaddr = UT64_MAX;
 		ut64 hvaddr = UT64_MAX;
@@ -3079,7 +3082,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 	bool havecode;
 	int bits;
 
-	havecode = is_executable(obj) || rz_list_length(obj->entries) > 0;
+	havecode = is_executable(obj) || rz_pvector_len(obj->entries) > 0;
 	compiled = rz_core_bin_get_compile_time(bf);
 	bits = (plugin && !strcmp(plugin->name, "any")) ? rz_config_get_i(core->config, "asm.bits") : info->bits;
 	const char *endian = info->big_endian ? "BE" : "LE";

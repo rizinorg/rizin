@@ -500,16 +500,16 @@ static void destroy(RzBinFile *bf) {
 	free(obj);
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	struct rz_bin_vsf_obj *vsf_obj = (struct rz_bin_vsf_obj *)bf->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
 	const int m_idx = vsf_obj->machine_idx;
 
-	RzList *ret;
+	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	int offset = _machines[m_idx].offset_mem;
@@ -519,7 +519,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	}
 	ptr->paddr = vsf_obj->mem + offset;
 	ptr->vaddr = vsf_obj->maincpu ? vsf_obj->maincpu->pc : 0;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 
 	// IRQ: 0xFFFE or 0x0314 ?
 	//	if (!(ptr = RZ_NEW0 (RzBinAddr)))

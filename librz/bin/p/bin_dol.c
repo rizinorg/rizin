@@ -134,14 +134,14 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-	RzList *ret = rz_list_new();
+	RzPVector *ret = rz_pvector_new(NULL);
 	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	DolHeader *dol = bf->o->bin_obj;
 	addr->vaddr = (ut64)dol->entrypoint;
 	addr->paddr = addr->vaddr & 0xFFFF;
-	rz_list_append(ret, addr);
+	rz_pvector_push(ret, addr);
 	return ret;
 }
 

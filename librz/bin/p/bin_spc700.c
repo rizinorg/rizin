@@ -66,14 +66,14 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(free);
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new(free);
 	if (ret) {
 		RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 		if (ptr) {
 			ptr->paddr = RAM_START_ADDRESS;
 			ptr->vaddr = 0;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 	}
 	return ret;

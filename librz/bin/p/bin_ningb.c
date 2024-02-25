@@ -110,20 +110,19 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_new();
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new(free);
 	RzBinAddr *ptr = NULL;
 
 	if (bf && bf->buf != NULL) {
 		if (!ret) {
 			return NULL;
 		}
-		ret->free = free;
 		if (!(ptr = RZ_NEW0(RzBinAddr))) {
 			return ret;
 		}
 		ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

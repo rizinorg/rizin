@@ -152,16 +152,16 @@ static bool check_buffer(RzBuffer *buf) {
 	return r > 12 && !strncmp((const char *)tmp, "ANDROID!", 8);
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	RzBinAddr *ptr = NULL;
 	if (!bio) {
 		return NULL;
 	}
 	BootImage *bi = &bio->bi;
-	RzList *ret;
+	RzPVector *ret;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinAddr))) {
@@ -169,7 +169,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	}
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 

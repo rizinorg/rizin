@@ -48,14 +48,14 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 
 static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf);
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	// TODO
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 	RzBinAddr *ptr = NULL;
 	ut64 addr = 0x0;
 
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
 		return NULL;
 	}
 
@@ -71,14 +71,14 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 			}
 		}
 		if (!addr) {
-			rz_list_free(ret);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 	}
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ptr->paddr = addr;
 		ptr->vaddr = addr;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

@@ -267,9 +267,9 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
-	RzList *ret;
-	if (!(ret = rz_list_new())) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+	RzPVector *ret;
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	/*

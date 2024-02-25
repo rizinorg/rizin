@@ -80,23 +80,23 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret = NULL;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret = NULL;
 	RzBinAddr *addr = NULL;
 	psxexe_header psxheader;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 
 	if (!(addr = RZ_NEW0(RzBinAddr))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
 	if (rz_buf_fread_at(bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof(psxexe_header)) {
 		RZ_LOG_ERROR("Truncated Header\n");
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		free(addr);
 		return NULL;
 	}
@@ -104,7 +104,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	addr->paddr = (psxheader.pc0 - psxheader.t_addr) + PSXEXE_TEXTSECTION_OFFSET;
 	addr->vaddr = psxheader.pc0;
 
-	rz_list_append(ret, addr);
+	rz_pvector_push(ret, addr);
 	return ret;
 }
 
