@@ -727,12 +727,6 @@ static void rz_diff_file_close(DiffFile *file) {
 
 #define rz_diff_file_get(df, n) ((df)->file->o->n)
 
-/**************************************** rzlists ***************************************/
-
-static const void *rz_diff_list_elem_at(const RzList /*<void *>*/ *array, ut32 index) {
-	return rz_list_get_n(array, index);
-}
-
 /**************************************** rzpvector ***************************************/
 
 static const void *rz_diff_pvector_elem_at(const RzPVector /*<void *>*/ *array, ut32 index) {
@@ -1073,31 +1067,31 @@ static void entry_stringify(const RzBinAddr *elem, RzStrBuf *sb) {
 }
 
 static RzDiff *rz_diff_entries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
-	RzList *list_a = NULL;
-	RzList *list_b = NULL;
+	RzPVector *vec_a = NULL;
+	RzPVector *vec_b = NULL;
 
-	list_a = rz_diff_file_get(dfile_a, entries);
-	if (!list_a) {
+	vec_a = rz_diff_file_get(dfile_a, entries);
+	if (!vec_a) {
 		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_a->dio->filename);
 	}
 
-	list_b = rz_diff_file_get(dfile_b, entries);
-	if (!list_b) {
+	vec_b = rz_diff_file_get(dfile_b, entries);
+	if (!vec_b) {
 		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_b->dio->filename);
 	}
 
-	rz_list_sort(list_a, (RzListComparator)entry_compare, NULL);
-	rz_list_sort(list_b, (RzListComparator)entry_compare, NULL);
+	rz_pvector_sort(vec_a, (RzPVectorComparator)entry_compare, NULL);
+	rz_pvector_sort(vec_b, (RzPVectorComparator)entry_compare, NULL);
 
 	RzDiffMethods methods = {
-		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
+		.elem_at = (RzDiffMethodElemAt)rz_diff_pvector_elem_at,
 		.elem_hash = (RzDiffMethodElemHash)entry_hash,
 		.compare = (RzDiffMethodCompare)entry_compare,
 		.stringify = (RzDiffMethodStringify)entry_stringify,
 		.ignore = NULL,
 	};
 
-	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
+	return rz_diff_generic_new(vec_a, rz_pvector_len(vec_a), vec_b, rz_pvector_len(vec_b), &methods);
 }
 
 /**************************************** libraries ***************************************/

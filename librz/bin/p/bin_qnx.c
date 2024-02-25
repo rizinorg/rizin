@@ -336,20 +336,19 @@ static ut64 baddr(RzBinFile *bf) {
  * Currently both physical and virtual address are set to 0
  * The memory map has different values for entry
  */
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
 	QnxObj *qo = bf->o->bin_obj;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(ptr = RZ_NEW0(RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = qo->lmfh.code_offset;
 	ptr->vaddr = qo->lmfh.code_offset + baddr(bf);
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 

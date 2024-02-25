@@ -67,21 +67,21 @@ static ut64 baddr(RzBinFile *bf) {
 	return OMF_BASE_ADDR;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinAddr *addr;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if (!(addr = RZ_NEW0(RzBinAddr))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	if (!rz_bin_omf_get_entry(bf->o->bin_obj, addr)) {
 		RZ_FREE(addr);
 	} else {
-		rz_list_append(ret, addr);
+		rz_pvector_push(ret, addr);
 	}
 	return ret;
 }

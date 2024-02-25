@@ -20,7 +20,7 @@ struct PE_(rz_bin_mdmp_pe_bin) {
 	struct PE_(rz_bin_pe_obj_t) * bin;
 };
 
-RzList /*<RzBinAddr *>*/ *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin);
+RzPVector /*<RzBinAddr *>*/ *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin);
 RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin);
 RzPVector /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin);
 RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct PE_(rz_bin_mdmp_pe_bin) * pe_bin);

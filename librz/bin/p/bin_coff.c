@@ -167,15 +167,15 @@ static RzBinImport *_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
 	return ptr;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
-	RzList *ret;
-	if (!(ret = rz_list_newf(free))) {
+	RzPVector *ret;
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	RzBinAddr *ptr = rz_coff_get_entry(obj);
 	if (ptr) {
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

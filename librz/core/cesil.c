@@ -43,14 +43,15 @@ static ut64 initializeEsil(RzCore *core) {
 		}
 	}
 	esil->exectrap = exectrap;
-	RzList *entries = rz_bin_get_entries(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzPVector *entries = obj ? (RzPVector *)rz_bin_object_get_entries(obj) : NULL;
 	RzBinAddr *entry = NULL;
 	RzBinInfo *info = NULL;
-	if (entries && !rz_list_empty(entries)) {
-		entry = (RzBinAddr *)rz_list_pop_head(entries);
+	if (entries && !rz_pvector_empty(entries)) {
+		entry = (RzBinAddr *)rz_pvector_pop_front(entries);
 		info = rz_bin_get_info(core->bin);
 		addr = info->has_va ? entry->vaddr : entry->paddr;
-		rz_list_push(entries, entry);
+		rz_pvector_push(entries, entry);
 	} else {
 		addr = core->offset;
 	}

@@ -29,7 +29,7 @@ typedef struct {
 	ut8 *resident_name_table;
 	RzBuffer *buf;
 	RzPVector /*<RzBinSection *>*/ *segments;
-	RzList /*<RzBinAddr *>*/ *entries;
+	RzPVector /*<RzBinAddr *>*/ *entries;
 	RzList /*<rz_ne_resource *>*/ *resources;
 	RzPVector /*<RzBinImport *>*/ *imports;
 	RzPVector /*<RzBinSymbol *>*/ *symbols;
@@ -42,6 +42,6 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin);
 RzPVector /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin);
 RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin);
 RzPVector /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin);
-RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin);
+RzPVector /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin);
 
 #endif

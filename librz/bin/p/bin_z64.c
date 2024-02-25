@@ -89,8 +89,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 	return false;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList /*<RzBinAddr *>*/ *ret = rz_list_newf(free);
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector /*<RzBinAddr *>*/ *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -98,7 +98,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	if (ptr) {
 		ptr->paddr = N64_ROM_START;
 		ptr->vaddr = baddr(bf);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

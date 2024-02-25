@@ -160,24 +160,23 @@ static RzList* relocs(RzBinFile *bf) {
 }
 #endif
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
-	RzList *ret;
+	RzPVector *ret;
 	PebbleAppInfo pai;
 	if (!rz_buf_read_at(bf->buf, 0, (ut8 *)&pai, sizeof(pai))) {
 		RZ_LOG_ERROR("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if (!(ptr = RZ_NEW0(RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = pai.offset;
 	ptr->vaddr = pai.offset;
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 

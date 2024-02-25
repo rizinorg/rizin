@@ -269,7 +269,10 @@ static inline size_t rz_pvector_len(const RzPVector *vec) {
 }
 
 static inline void *rz_pvector_at(const RzPVector *vec, size_t index) {
-	rz_return_val_if_fail(vec && index < vec->v.len, NULL);
+	rz_return_val_if_fail(vec, NULL);
+	if (index >= vec->v.len) {
+		return NULL;
+	}
 	return ((void **)vec->v.a)[index];
 }
 
