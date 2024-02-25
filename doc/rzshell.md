@@ -193,6 +193,8 @@ Usage: w[?]   # Write commands
 | wD[/]             # Write de Bruijn pattern
 | wd <src> <len>    # Duplicate <len> bytes from <src> offset to current seek
 | ws <string>       # Write 1 byte for length and then the string
+
+Detailed help for w <string> is provided by w??.
 ```
 ```
 [0x00000000]> w??
