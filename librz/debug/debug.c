@@ -1758,10 +1758,11 @@ RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base) {
 }
 
 /**
- * @brief Switches to the first thread in the given debug context.
- * @param debug The debug context.
+ * \brief Switches to the first thread in the given debug context.
+ * \param debug The debug context.
  */
 RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
+	rz_return_if_fail(debug);
 	RzList *threads = rz_debug_pids(debug, debug->pid);
 	if (rz_list_length(threads) > 0) {
 		RzDebugPid *th = rz_list_first(threads);
