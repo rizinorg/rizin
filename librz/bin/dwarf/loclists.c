@@ -10,29 +10,11 @@ static void RawLocListEntry_free(RzBinDwarfRawLocListEntry *self) {
 	if (!self) {
 		return;
 	}
-	if (self->is_address_or_offset_pair) {
-		RzBinDwarfBlock_fini(&self->address_or_offset_pair.data);
-	} else {
-		switch (self->encoding) {
-		case DW_LLE_end_of_list:
-		case DW_LLE_base_addressx: break;
-		case DW_LLE_startx_endx: RzBinDwarfBlock_fini(&self->startx_endx.data); break;
-		case DW_LLE_startx_length: RzBinDwarfBlock_fini(&self->startx_length.data); break;
-		case DW_LLE_offset_pair: RzBinDwarfBlock_fini(&self->offset_pair.data); break;
-		case DW_LLE_default_location: RzBinDwarfBlock_fini(&self->default_location.data); break;
-		case DW_LLE_base_address: break;
-		case DW_LLE_start_end: RzBinDwarfBlock_fini(&self->start_end.data); break;
-		case DW_LLE_start_length: RzBinDwarfBlock_fini(&self->start_length.data); break;
-		case DW_LLE_GNU_view_pair: break;
-		}
-	}
-
 	free(self);
 }
 
 static void LocListEntry_fini(RzBinDwarfLocListEntry *self) {
 	Range_free(self->range);
-	RzBinDwarfBlock_free(self->expression);
 	rz_bin_dwarf_location_free(self->location);
 }
 
@@ -45,25 +27,25 @@ static void LocListEntry_free(RzBinDwarfLocListEntry *self) {
 }
 
 static inline bool parse_data(
-	RzBinEndianReader *reader, RzBinDwarfBlock *block, RzBinDwarfEncoding *encoding) {
+	RzBinEndianReader *R, RzBinDwarfBlock *block, RzBinDwarfEncoding *encoding) {
 	if (encoding->version >= 5) {
 		ULE128_OR_RET_FALSE(block->length);
 	} else {
 		U_OR_RET_FALSE(16, block->length);
 	}
-	RET_FALSE_IF_FAIL(read_block(reader, block));
+	RET_FALSE_IF_FAIL(R_read_block(R, block));
 	return true;
 }
 
 static bool RawLocListEntry_parse(
 	RzBinDwarfRawLocListEntry *raw,
-	RzBinEndianReader *reader,
+	RzBinEndianReader *R,
 	RzBinDwarfEncoding *encoding,
 	RzBinDwarfLocListsFormat format) {
 	switch (format) {
 	case RzBinDwarfLocListsFormat_BARE: {
 		RzBinDwarfRange range = { 0 };
-		RET_FALSE_IF_FAIL(Range_parse(&range, reader, encoding->address_size));
+		RET_FALSE_IF_FAIL(Range_parse(&range, R, encoding->address_size));
 		if (Range_is_end(&range)) {
 			return true;
 		} else if (Range_is_base_address(&range, encoding->address_size)) {
@@ -74,7 +56,7 @@ static bool RawLocListEntry_parse(
 			raw->address_or_offset_pair.begin = range.begin;
 			raw->address_or_offset_pair.end = range.end;
 			RET_FALSE_IF_FAIL(parse_data(
-				reader, &raw->address_or_offset_pair.data, encoding));
+				R, &raw->address_or_offset_pair.data, encoding));
 		}
 		break;
 	}
@@ -88,7 +70,7 @@ static bool RawLocListEntry_parse(
 		case DW_LLE_startx_endx:
 			ULE128_OR_RET_FALSE(raw->startx_endx.begin);
 			ULE128_OR_RET_FALSE(raw->startx_endx.end);
-			RET_FALSE_IF_FAIL(parse_data(reader, &raw->startx_endx.data, encoding));
+			RET_FALSE_IF_FAIL(parse_data(R, &raw->startx_endx.data, encoding));
 			break;
 		case DW_LLE_startx_length:
 			ULE128_OR_RET_FALSE(raw->startx_length.begin);
@@ -97,28 +79,28 @@ static bool RawLocListEntry_parse(
 			} else {
 				U_OR_RET_FALSE(32, raw->startx_length.length);
 			}
-			RET_FALSE_IF_FAIL(parse_data(reader, &raw->startx_length.data, encoding));
+			RET_FALSE_IF_FAIL(parse_data(R, &raw->startx_length.data, encoding));
 			break;
 		case DW_LLE_offset_pair:
 			ULE128_OR_RET_FALSE(raw->offset_pair.begin);
 			ULE128_OR_RET_FALSE(raw->offset_pair.end);
-			RET_FALSE_IF_FAIL(parse_data(reader, &raw->offset_pair.data, encoding));
+			RET_FALSE_IF_FAIL(parse_data(R, &raw->offset_pair.data, encoding));
 			break;
 		case DW_LLE_default_location:
-			RET_FALSE_IF_FAIL(parse_data(reader, &raw->default_location.data, encoding));
+			RET_FALSE_IF_FAIL(parse_data(R, &raw->default_location.data, encoding));
 			break;
 		case DW_LLE_base_address:
-			RET_FALSE_IF_FAIL(read_address(reader, &raw->base_address.addr, encoding->address_size));
+			RET_FALSE_IF_FAIL(R_read_address(R, &raw->base_address.addr, encoding->address_size));
 			break;
 		case DW_LLE_start_end:
-			RET_FALSE_IF_FAIL(read_address(reader, &raw->start_end.begin, encoding->address_size));
-			RET_FALSE_IF_FAIL(read_address(reader, &raw->start_end.end, encoding->address_size));
-			RET_FALSE_IF_FAIL(parse_data(reader, &raw->start_end.data, encoding));
+			RET_FALSE_IF_FAIL(R_read_address(R, &raw->start_end.begin, encoding->address_size));
+			RET_FALSE_IF_FAIL(R_read_address(R, &raw->start_end.end, encoding->address_size));
+			RET_FALSE_IF_FAIL(parse_data(R, &raw->start_end.data, encoding));
 			break;
 		case DW_LLE_start_length:
-			RET_FALSE_IF_FAIL(read_address(reader, &raw->start_length.begin, encoding->address_size));
+			RET_FALSE_IF_FAIL(R_read_address(R, &raw->start_length.begin, encoding->address_size));
 			ULE128_OR_RET_FALSE(raw->start_length.length);
-			RET_FALSE_IF_FAIL(parse_data(reader, &raw->start_length.data, encoding));
+			RET_FALSE_IF_FAIL(parse_data(R, &raw->start_length.data, encoding));
 			break;
 		case DW_LLE_GNU_view_pair:
 			RZ_LOG_ERROR("GNU_view_pair not implemented");
@@ -142,7 +124,7 @@ static bool convert_raw(
 	ut64 tombstone = encoding->version <= 4 ? mask - 1
 						: mask;
 	RzBinDwarfRange *range = NULL;
-	RzBinDwarfBlock *data = NULL;
+	const RzBinDwarfBlock *data = NULL;
 	if (raw->is_address_or_offset_pair) {
 		if (self->base_address == tombstone) {
 			*entry = NULL;
@@ -153,8 +135,7 @@ static bool convert_raw(
 		range->begin = raw->address_or_offset_pair.begin;
 		range->end = raw->address_or_offset_pair.end;
 		Range_add_base_address(range, self->base_address, encoding->address_size);
-		data = RzBinDwarfBlock_clone(&raw->address_or_offset_pair.data);
-		ERR_IF_FAIL(data);
+		data = &raw->address_or_offset_pair.data;
 	} else {
 		switch (raw->encoding) {
 		case DW_LLE_end_of_list: break;
@@ -168,9 +149,6 @@ static bool convert_raw(
 			ERR_IF_FAIL(rz_bin_dwarf_addr_get(
 				addr, &self->base_address,
 				encoding->address_size, cu->addr_base, raw->base_addressx.addr));
-			return true;
-			return true;
-			*entry = NULL;
 			return true;
 		case DW_LLE_startx_endx:
 			range = RZ_NEW0(RzBinDwarfRange);
@@ -200,7 +178,7 @@ static bool convert_raw(
 			range->begin = raw->address_or_offset_pair.begin;
 			range->end = raw->address_or_offset_pair.end;
 			Range_add_base_address(range, self->base_address, encoding->address_size);
-			data = RzBinDwarfBlock_clone(&raw->address_or_offset_pair.data);
+			data = &raw->address_or_offset_pair.data;
 			ERR_IF_FAIL(data);
 			break;
 		case DW_LLE_default_location: break;
@@ -225,7 +203,6 @@ static bool convert_raw(
 	ERR_IF_FAIL(range);
 	if (range->begin == tombstone) {
 		Range_free(range);
-		RzBinDwarfBlock_free(data);
 		*entry = NULL;
 		return true;
 	}
@@ -241,7 +218,6 @@ static bool convert_raw(
 	return true;
 err:
 	Range_free(range);
-	RzBinDwarfBlock_free(data);
 	return false;
 }
 
@@ -254,27 +230,36 @@ static void LocList_free(RzBinDwarfLocList *self) {
 	free(self);
 }
 
-static bool LocList_parse_at(
-	RzBinDwarfLocLists *self, RzBinDwarfAddr *addr, RzBinDwarfCompUnit *cu, ut64 offset) {
-	rz_return_val_if_fail(self && cu, false);
-	RzBinEndianReader *reader = cu->hdr.encoding.version <= 4
+/**
+ * \brief Parse a location list table at the given offset
+ * \param self RzBinDwarfLocListTable instance
+ * \param cu RzBinDwarfCompUnit instance
+ * \param offset The offset to parse at
+ * \param out Pointer to output the location list
+ * \return true on success, false otherwise
+ */
+static bool LocList_at(
+	RzBinDwarfLocLists *self, RzBinDwarfAddr *addr, RzBinDwarfCompUnit *cu, ut64 offset,
+	RzBinDwarfLocList **out) {
+	rz_return_val_if_fail(self && cu && out, false);
+	RzBinEndianReader *R = cu->hdr.encoding.version <= 4
 		? self->loc
 		: self->loclists;
 	RzBinDwarfLocListsFormat format = cu->hdr.encoding.version <= 4
 		? RzBinDwarfLocListsFormat_BARE
 		: RzBinDwarfLocListsFormat_LLE;
-	OK_OR(reader && rz_buf_seek(reader->buffer, offset, RZ_BUF_SET) >= 0, return false);
+	OK_OR(R && R_seek(R, offset, RZ_BUF_SET), return false);
 
 	RzBinDwarfLocList *loclist = RZ_NEW0(RzBinDwarfLocList);
 	RET_FALSE_IF_FAIL(loclist);
 	self->base_address = cu->low_pc;
-	loclist->offset = rz_buf_tell(reader->buffer);
+	loclist->offset = R_tell(R);
 	rz_pvector_init(&loclist->raw_entries, (RzPVectorFree)RawLocListEntry_free);
 	rz_pvector_init(&loclist->entries, (RzPVectorFree)LocListEntry_free);
 	while (true) {
 		RzBinDwarfRawLocListEntry *raw = RZ_NEW0(RzBinDwarfRawLocListEntry);
 		RzBinDwarfLocListEntry *entry = NULL;
-		ERR_IF_FAIL(raw && RawLocListEntry_parse(raw, reader, &cu->hdr.encoding, format) &&
+		ERR_IF_FAIL(raw && RawLocListEntry_parse(raw, R, &cu->hdr.encoding, format) &&
 			rz_pvector_push(&loclist->raw_entries, raw));
 		if (raw->encoding == DW_LLE_end_of_list && !raw->is_address_or_offset_pair) {
 			break;
@@ -294,27 +279,9 @@ static bool LocList_parse_at(
 		LocList_free(loclist);
 		return false;
 	}
-	ht_up_update(self->loclist_by_offset, loclist->offset, loclist);
+	ht_up_update(self->by_offset, loclist->offset, loclist);
+	*out = loclist;
 	return true;
-}
-
-/**
- * \brief Parse a location list table at the given offset
- * \param self RzBinDwarfLocListTable instance
- * \param cu RzBinDwarfCompUnit instance
- * \param offset The offset to parse at
- * \return true on success, false otherwise
- */
-RZ_API bool rz_bin_dwarf_loclists_parse_at(
-	RZ_BORROW RZ_NONNULL RzBinDwarfLocLists *self,
-	RZ_BORROW RZ_NONNULL RzBinDwarfAddr *addr,
-	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
-	ut64 offset) {
-	rz_return_val_if_fail(self && cu, false);
-	ERR_IF_FAIL(LocList_parse_at(self, addr, cu, offset));
-	return true;
-err:
-	return false;
 }
 
 RZ_API RzBinDwarfLocList *rz_bin_dwarf_loclists_get(
@@ -323,12 +290,12 @@ RZ_API RzBinDwarfLocList *rz_bin_dwarf_loclists_get(
 	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
 	ut64 offset) {
 	rz_return_val_if_fail(self && cu, false);
-	RzBinDwarfLocList *loclist = ht_up_find(self->loclist_by_offset, offset, NULL);
+	RzBinDwarfLocList *loclist = ht_up_find(self->by_offset, offset, NULL);
 	if (loclist) {
 		return loclist;
 	}
-	if (rz_bin_dwarf_loclists_parse_at(self, addr, cu, offset)) {
-		return ht_up_find(self->loclist_by_offset, offset, NULL);
+	if (LocList_at(self, addr, cu, offset, &loclist)) {
+		return loclist;
 	}
 	return NULL;
 }
@@ -349,7 +316,7 @@ RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(RzBinEndianReader *l
 	RET_NULL_IF_FAIL(self);
 	self->loclists = loclists;
 	self->loc = loc;
-	self->loclist_by_offset = ht_up_new(NULL, HtUP_LocList_free, NULL);
+	self->by_offset = ht_up_new(NULL, HtUP_LocList_free, NULL);
 	return self;
 }
 
@@ -365,8 +332,8 @@ RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(
 	RzBinEndianReader *loclists = RzBinEndianReader_from_file(bf, ".debug_loclists", is_dwo);
 	RzBinEndianReader *loc = RzBinEndianReader_from_file(bf, ".debug_loc", is_dwo);
 	if (!(loclists || loc)) {
-		RzBinEndianReader_free(loclists);
-		RzBinEndianReader_free(loc);
+		R_free(loclists);
+		R_free(loc);
 		return NULL;
 	}
 	return rz_bin_dwarf_loclists_new(loclists, loc);
@@ -376,9 +343,9 @@ RZ_API void rz_bin_dwarf_loclists_free(RZ_OWN RZ_NULLABLE RzBinDwarfLocLists *se
 	if (!self) {
 		return;
 	}
-	ht_up_free(self->loclist_by_offset);
-	RzBinEndianReader_free(self->loclists);
-	RzBinEndianReader_free(self->loc);
+	ht_up_free(self->by_offset);
+	R_free(self->loclists);
+	R_free(self->loc);
 	free(self);
 }
 
@@ -387,9 +354,6 @@ RZ_API void rz_bin_dwarf_location_fini(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *
 		return;
 	}
 	switch (self->kind) {
-	case RzBinDwarfLocationKind_BYTES:
-		RzBinDwarfBlock_fini(&self->bytes);
-		break;
 	case RzBinDwarfLocationKind_EVALUATION_WAITING:
 		rz_bin_dwarf_evaluation_free(self->eval_waiting.eval);
 		RzBinDwarfEvaluationResult_free(self->eval_waiting.result);
@@ -415,7 +379,8 @@ RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *
  * \param self RzBinDwarfLocation instance
  * \return RzBinDwarfLocation instance on success, NULL otherwise
  */
-RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_clone(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self) {
+RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_clone(
+	RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self) {
 	rz_return_val_if_fail(self &&
 			self->kind != RzBinDwarfLocationKind_EVALUATION_WAITING,
 		NULL);
@@ -435,7 +400,7 @@ RZ_IPI void Location_cpy(Location *dst, Location *src) {
 	memcpy(dst, src, sizeof(Location));
 	switch (src->kind) {
 	case RzBinDwarfLocationKind_BYTES:
-		RzBinDwarfBlock_cpy(&dst->bytes, &src->bytes);
+		memcpy(&dst->bytes, &src->bytes, sizeof(RzBinDwarfBlock));
 		break;
 	case RzBinDwarfLocationKind_EVALUATION_WAITING:
 		rz_bin_dwarf_evaluation_cpy(dst->eval_waiting.eval, src->eval_waiting.eval);
@@ -447,14 +412,66 @@ RZ_IPI void Location_cpy(Location *dst, Location *src) {
 	case RzBinDwarfLocationKind_LOCLIST:
 		rz_warn_if_reached();
 		break;
-	case RzBinDwarfLocationKind_EMPTY: break;
-	case RzBinDwarfLocationKind_DECODE_ERROR: break;
-	case RzBinDwarfLocationKind_REGISTER: break;
-	case RzBinDwarfLocationKind_REGISTER_OFFSET: break;
-	case RzBinDwarfLocationKind_ADDRESS: break;
-	case RzBinDwarfLocationKind_VALUE: break;
-	case RzBinDwarfLocationKind_IMPLICIT_POINTER: break;
-	case RzBinDwarfLocationKind_CFA_OFFSET: break;
+	case RzBinDwarfLocationKind_EMPTY:
+	case RzBinDwarfLocationKind_DECODE_ERROR:
+	case RzBinDwarfLocationKind_REGISTER:
+	case RzBinDwarfLocationKind_REGISTER_OFFSET:
+	case RzBinDwarfLocationKind_ADDRESS:
+	case RzBinDwarfLocationKind_VALUE:
+	case RzBinDwarfLocationKind_IMPLICIT_POINTER:
+	case RzBinDwarfLocationKind_CFA_OFFSET:
 	case RzBinDwarfLocationKind_FB_OFFSET: break;
 	}
+}
+
+typedef struct {
+	RzBinDWARF *dw;
+	RzStrBuf *sb;
+} DumpContext;
+
+static bool cb_loclist_dump(void *u, ut64 k, const void *v) {
+	const RzBinDwarfLocList *loclist = v;
+	DumpContext *ctx = u;
+	if (!(loclist && ctx && ctx->sb && ctx->dw)) {
+		return false;
+	}
+	RzStrBuf *sb = ctx->sb;
+	rz_strbuf_appendf(sb, "0x%" PFMT64x "\n", loclist->offset);
+	void **it;
+	rz_pvector_foreach (&loclist->entries, it) {
+		RzBinDwarfLocListEntry *entry = *it;
+		rz_strbuf_appendf(sb, "\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t", entry->range->begin, entry->range->end);
+		if (entry->expression) {
+			const RzBinDwarfEncoding *enc = ht_up_find(
+				ctx->dw->info->location_encoding, k, NULL);
+			if (!enc) {
+				continue;
+			}
+			RzBinDWARFDumpOption dump_opt = {
+				.loclist_sep = ",\t",
+				.loclist_indent = "",
+				.expr_sep = ", "
+			};
+			rz_bin_dwarf_expression_dump(
+				enc, entry->expression, ctx->sb, &dump_opt);
+		}
+		rz_strbuf_append(sb, "\n");
+	}
+	return true;
+}
+
+RZ_API void rz_bin_dwarf_loclists_dump(
+	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists,
+	RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
+	rz_return_if_fail(dw && loclists && loclists->by_offset && sb);
+	if (loclists->by_offset->count > 0) {
+		rz_strbuf_append(sb, ".debug_loclists content:\n");
+	}
+	DumpContext ctx = {
+		.dw = dw,
+		.sb = sb,
+	};
+	ht_up_foreach(loclists->by_offset, cb_loclist_dump, &ctx);
+	rz_strbuf_append(sb, "\n");
 }

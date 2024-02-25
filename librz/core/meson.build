@@ -27,7 +27,6 @@ rz_core_sources = [
   'cconfig.c',
   'ccrypto.c',
   'cdebug.c',
-  'cdwarf.c',
   'cesil.c',
   'cfile.c',
   'cflag.c',
