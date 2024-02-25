@@ -598,12 +598,6 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
 	}
 }
 
-RZ_DEPRECATE RZ_API RZ_BORROW RzBinInfo *rz_bin_get_info(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
-}
-
 /**
  * \brief Find the binary section at offset \p off.
  *

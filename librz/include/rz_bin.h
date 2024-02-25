@@ -855,7 +855,6 @@ RZ_API void rz_bin_force_plugin(RzBin *bin, const char *pname);
 RZ_API ut64 rz_bin_get_baddr(RzBin *bin);
 RZ_API ut64 rz_bin_file_get_baddr(RzBinFile *bf);
 RZ_API void rz_bin_set_user_ptr(RzBin *bin, void *user);
-RZ_DEPRECATE RZ_API RZ_BORROW RzBinInfo *rz_bin_get_info(RzBin *bin);
 RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr);
 RZ_API ut64 rz_bin_get_laddr(RzBin *bin);
 RZ_API ut64 rz_bin_get_size(RzBin *bin);

@@ -2971,7 +2971,8 @@ RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 	rz_return_val_if_fail(core && core->file && state, false);
 
 	bool io_cache = rz_config_get_i(core->config, "io.cache");
-	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzBinInfo *info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
 	int fd = rz_io_fd_get_current(core->io);
 	RzIODesc *desc = rz_io_desc_get(core->io, fd);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(binfile);
@@ -3071,7 +3072,8 @@ static const char *str2na(const char *s) {
 RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
-	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	RzBinInfo *info = o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 	ut64 laddr = rz_bin_get_laddr(core->bin);
 	if (!bf) {
@@ -4494,7 +4496,8 @@ static void bin_mach0_versioninfo(RzCore *r, PJ *pj, int mode) {
 }
 
 static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
-	const RzBinInfo *info = rz_bin_get_info(r->bin);
+	RzBinObject *obj = rz_bin_cur_object(r->bin);
+	const RzBinInfo *info = obj ? rz_bin_object_get_info(obj) : NULL;
 	if (!info || !info->rclass) {
 		return false;
 	}
@@ -4604,7 +4607,8 @@ static void core_bin_file_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *s
 	rz_return_if_fail(core && bf && bf->o);
 
 	const char *name = bf ? bf->file : NULL;
-	(void)rz_bin_get_info(core->bin); // XXX is this necssary for proper iniitialization
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	(void)rz_bin_object_get_info(o); // XXX is this necssary for proper iniitialization
 	ut32 bin_sz = bf ? bf->size : 0;
 	RzBinObject *obj = bf->o;
 	RzBinInfo *info = obj->info;
@@ -4937,7 +4941,8 @@ RZ_API bool rz_core_bin_dwarf_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 }
 
 RZ_API RZ_OWN char *rz_core_bin_pdb_get_filename(RZ_NONNULL RzCore *core) {
-	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzBinInfo *info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
 	/* Autodetect local file */
 	if (!info || !info->debug_file_name) {
 		return NULL;
