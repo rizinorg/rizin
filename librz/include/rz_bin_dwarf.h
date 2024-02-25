@@ -471,6 +471,13 @@ typedef enum {
 	DW_AT_LLVM_include_path = 0x3e00,
 	DW_AT_LLVM_config_macros = 0x3e01,
 	DW_AT_LLVM_isysroot = 0x3e02,
+	DW_AT_LLVM_tag_offset = 0x3e03,
+	DW_AT_LLVM_ptrauth_key = 0x3e04,
+	DW_AT_LLVM_ptrauth_address_discriminated = 0x3e05,
+	DW_AT_LLVM_ptrauth_extra_discriminator = 0x3e06,
+	DW_AT_LLVM_apinotes = 0x3e07,
+	DW_AT_LLVM_ptrauth_isa_pointer = 0x3e08,
+	DW_AT_LLVM_ptrauth_authenticates_null_values = 0x3e09,
 
 	// Apple extensions.
 	DW_AT_APPLE_optimized = 0x3fe1,
@@ -486,6 +493,9 @@ typedef enum {
 	DW_AT_APPLE_property_attribute = 0x3feb,
 	DW_AT_APPLE_objc_complete_type = 0x3fec,
 	DW_AT_APPLE_property = 0x3fed,
+	DW_AT_APPLE_objc_direct = 0x3fee,
+	DW_AT_APPLE_sdk = 0x3fef,
+	DW_AT_APPLE_origin = 0x3ff0,
 	DW_AT_hi_user = 0x3fff,
 } DW_AT;
 
@@ -970,9 +980,11 @@ typedef enum {
 struct rz_bin_section_t;
 
 typedef struct {
-	RzBuffer *buffer;
+	ut8 *data;
+	bool owned;
+	ut64 length;
+	ut64 offset;
 	bool big_endian;
-	char *section_name;
 	HtUP *relocations;
 } RzBinEndianReader;
 
@@ -982,14 +994,7 @@ typedef struct {
 	st64 special; // Used for values coded directly into abbrev
 } RzBinDwarfAttrSpec;
 
-typedef struct {
-	ut64 length;
-	bool big_endian;
-	union {
-		ut8 *ptr;
-		ut8 data[sizeof(ut8 *)];
-	};
-} RzBinDwarfBlock;
+typedef RzBinEndianReader RzBinDwarfBlock;
 
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
 typedef enum {
@@ -1021,7 +1026,7 @@ typedef struct {
 		ut128 u128;
 		st64 s64;
 		ut8 flag;
-		char *string;
+		const char *string;
 	};
 } RzBinDwarfAttrValue;
 
@@ -1071,10 +1076,10 @@ typedef struct rz_bin_dwarf_comp_unit_t {
 	ut64 offset;
 	RzBinDwarfCompUnitHdr hdr;
 	RzVector /*<RzBinDwarfDie>*/ dies;
-	char *name;
-	char *comp_dir;
-	char *producer;
-	char *dwo_name;
+	const char *name;
+	const char *comp_dir;
+	const char *producer;
+	const char *dwo_name;
 	DW_LANG language;
 	ut64 low_pc;
 	ut64 high_pc;
@@ -1086,7 +1091,7 @@ typedef struct rz_bin_dwarf_comp_unit_t {
 } RzBinDwarfCompUnit;
 
 typedef struct {
-	RzBinEndianReader *reader;
+	RzBinEndianReader *R;
 	RzVector /*<RzBinDwarfCompUnit>*/ units;
 	HtUP /*<ut64, DwarfDie *>*/ *die_by_offset;
 	HtUP /*<ut64, RzBinDwarfCompUnit *>*/ *unit_by_offset;
@@ -1114,8 +1119,8 @@ typedef struct {
 } RzBinDwarfAbbrevTable;
 
 typedef struct {
-	RzBinEndianReader *reader;
-	HtUP /*<size_t,RzBinDwarfDebugAbbrevTable*>*/ *tbl_by_offset;
+	RzBinEndianReader *R;
+	HtUP /*<size_t,RzBinDwarfDebugAbbrevTable*>*/ *by_offset;
 	size_t count;
 } RzBinDwarfAbbrev;
 
@@ -1125,7 +1130,7 @@ typedef struct rz_bin_dwarf_line_file_entry_format_t {
 } RzBinDwarfFileEntryFormat;
 
 typedef struct {
-	char *path_name;
+	const char *path_name;
 	ut64 directory_index;
 	ut64 timestamp;
 	ut64 size;
@@ -1152,13 +1157,13 @@ typedef struct {
 	 * and the last element corresponds to the opcode whose value is opcode_base - 1.
 	 * Thus, the size of this array is opcode_base - 1.
 	 */
-	ut8 *std_opcode_lengths;
+	const ut8 *std_opcode_lengths;
 
 	RzVector /*<RzBinDwarfFileEntryFormat>*/ directory_entry_formats;
-	RzPVector /*<char *>*/ directories;
+	RzPVector /*<const char *>*/ directories;
 	RzVector /*<RzBinDwarfFileEntryFormat>*/ file_name_entry_formats;
 	RzVector /*<RzBinDwarfFileEntry>*/ file_names;
-} RzBinDwarfLineHdr;
+} RzBinDwarfLineUnitHdr;
 
 typedef enum {
 	RZ_BIN_DWARF_LINE_OP_TYPE_SPEC, //< single byte op, no args
@@ -1194,7 +1199,7 @@ typedef struct {
  * This contains the entire raw line info for one compilation unit.
  */
 typedef struct {
-	RzBinDwarfLineHdr hdr;
+	RzBinDwarfLineUnitHdr hdr;
 	RzVector /*<RzBinDwarfLineOp>*/ ops;
 } RzBinDwarfLineUnit;
 
@@ -1202,7 +1207,7 @@ typedef struct {
  * \brief Line info of all compilation units from the entire debug_line section
  */
 typedef struct {
-	RzBinEndianReader *reader;
+	RzBinEndianReader *R;
 	RzList /*<RzBinDwarfLineUnit *>*/ *units;
 	RzBinSourceLineInfo *lines;
 } RzBinDwarfLine;
@@ -1227,7 +1232,7 @@ typedef struct rz_bin_dwarf_arange_set_t {
 } RzBinDwarfARangeSet;
 
 typedef struct {
-	RzBinEndianReader *reader;
+	RzBinEndianReader *R;
 	RzList /*<RzBinDwarfARangeSet *>*/ *list;
 } RzBinDwarfARanges;
 
@@ -1241,22 +1246,20 @@ typedef struct {
 
 /// The raw contents of the `.debug_addr` section.
 typedef struct {
-	RzBinEndianReader *reader;
+	RzBinEndianReader *R;
 } RzBinDwarfAddr;
 
 typedef struct {
-	RzBinEndianReader *reader;
-	HtUP /*<ut64, const char* *>*/ *str_by_offset;
+	RzBinEndianReader *R;
 } RzBinDwarfStr;
 
 typedef RzBinDwarfStr RzBinDwarfLineStr;
 
 typedef struct {
-	RzBinEndianReader *reader;
+	RzBinEndianReader *R;
 	RzBinDwarfEncoding encoding;
 	ut64 unit_length;
 	ut16 padding;
-	RzVector /*<ut64>*/ *offsets;
 } RzBinDwarfStrOffsets;
 
 /// A raw address range from the `.debug_ranges` section.
@@ -1331,7 +1334,7 @@ typedef struct {
 	RzBinEndianReader *ranges;
 	ut64 base_address;
 	RzBinDwarfListsHdr hdr;
-	HtUP /*<ut64, RzBinDwarfLocList>*/ *rnglist_by_offset;
+	HtUP /*<ut64, RzBinDwarfLocList>*/ *by_offset;
 } RzBinDwarfRngLists;
 
 typedef enum {
@@ -1401,7 +1404,7 @@ struct rz_bin_dwarf_location_t;
 
 typedef struct {
 	RzBinDwarfRange *range;
-	RzBinDwarfBlock *expression;
+	const RzBinDwarfBlock *expression;
 	struct rz_bin_dwarf_location_t *location;
 } RzBinDwarfLocListEntry;
 
@@ -1417,7 +1420,7 @@ typedef struct {
 	RzBinEndianReader *loc;
 	ut64 base_address;
 	RzBinDwarfListsHdr hdr;
-	HtUP /*<ut64, RzBinDwarfLocList>*/ *loclist_by_offset;
+	HtUP /*<ut64, RzBinDwarfLocList>*/ *by_offset;
 } RzBinDwarfLocLists;
 
 struct rz_core_bin_dwarf_t;
@@ -1448,20 +1451,21 @@ RZ_API const char *rz_bin_dwarf_lns(DW_LNS lns);
 RZ_API const char *rz_bin_dwarf_lne(DW_LNE lne);
 RZ_API const char *rz_bin_dwarf_lnct(DW_LNCT lnct);
 RZ_API const char *rz_bin_dwarf_op(DW_OP op);
+RZ_API const char *rz_bin_dwarf_ate(DW_ATE op);
 
 /// .debug_str
-RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_new(RZ_NONNULL RZ_OWN RzBinEndianReader *R);
 RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf, bool is_dwo);
 RZ_API void rz_bin_dwarf_str_free(RZ_NULLABLE RzBinDwarfStr *str);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfStr *str, ut64 offset);
 
-RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_new(RZ_NONNULL RZ_OWN RzBinEndianReader *R);
 RZ_API RZ_OWN RzBinDwarfLineStr *rz_bin_dwarf_line_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
 RZ_API void rz_bin_dwarf_line_str_free(RZ_NULLABLE RzBinDwarfLineStr *str);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_line_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfLineStr *str, ut64 offset);
 
 /// .debug_str_offsets
-RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_new(RZ_NONNULL RZ_OWN RzBinEndianReader *R);
 RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_from_file(
 	RZ_NONNULL RZ_BORROW RzBinFile *bf, bool is_dwo);
 RZ_API void rz_bin_dwarf_str_offsets_free(RZ_NULLABLE RzBinDwarfStrOffsets *str_offsets);
@@ -1471,13 +1475,16 @@ RZ_API RZ_BORROW const char *rz_bin_dwarf_str_offsets_get(
 	ut64 base, ut64 index);
 
 /// .debug_aranges
-RZ_API RZ_OWN RzBinDwarfARanges *rz_bin_dwarf_aranges_new(RZ_NONNULL RZ_OWN RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfARanges *rz_bin_dwarf_aranges_new(RZ_NONNULL RZ_OWN RzBinEndianReader *R);
 RZ_API RZ_OWN RzBinDwarfARanges *rz_bin_dwarf_aranges_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 RZ_API void rz_bin_dwarf_arange_set_free(RZ_OWN RZ_NULLABLE RzBinDwarfARangeSet *set);
 RZ_API void rz_bin_dwarf_aranges_free(RZ_OWN RZ_NULLABLE RzBinDwarfARanges *aranges);
+RZ_API void rz_bin_dwarf_aranges_dump(
+	RZ_NONNULL RZ_BORROW RzBinDwarfARanges *aranges,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 
 /// .debug_abbrev
-RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *R);
 RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo);
 
@@ -1488,32 +1495,40 @@ RZ_API RZ_BORROW RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(
 RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *decl);
 RZ_API RZ_BORROW RzBinDwarfAttrSpec *rz_bin_dwarf_abbrev_attr_by_name(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, DW_AT name);
-
+RZ_API void rz_core_bin_dwarf_abbrevs_dump(
+	RZ_NONNULL RZ_BORROW const RzBinDwarfAbbrev *abbrevs,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 /// .debug_info
 RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
-	RZ_OWN RZ_NONNULL RzBinEndianReader *reader,
+	RZ_OWN RZ_NONNULL RzBinEndianReader *R,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw);
 RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw,
 	bool is_dwo);
-
 RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfInfo *info);
 RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, DW_AT name);
+RZ_API void rz_bin_dwarf_debug_info_dump(
+	RZ_NONNULL RZ_BORROW const RzBinDwarfInfo *info,
+	RZ_NONNULL RZ_BORROW const RzBinDWARF *dw,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 
 /// .debug_line
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
-	RZ_BORROW RZ_NONNULL RzBinEndianReader *reader,
+	RZ_BORROW RZ_NONNULL RzBinEndianReader *R,
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw,
 	bool is_dwo);
-RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
+RZ_API void rz_bin_dwarf_line_units_dump(
+	RZ_NONNULL RZ_BORROW RzBinDwarfLine *line,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 
+/// dwarf
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_path(
 	RZ_BORROW RZ_NONNULL const char *filepath, bool is_dwo);
@@ -1524,8 +1539,10 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_debuginfod(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NONNULL RzList /*<const char *>*/ *debuginfod_urls);
-
 RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw);
+RZ_API void rz_bin_dwarf_dump(
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw,
+	RZ_BORROW RZ_NONNULL RzStrBuf *sb);
 
 // Assuming ValueType is an enum defined elsewhere
 typedef enum {
@@ -1611,7 +1628,7 @@ typedef struct {
 	const RzBinDWARF *dw;
 	const RzBinDwarfCompUnit *unit;
 	const RzBinDwarfDie *fn_die;
-	RzBinEndianReader *bytecode;
+	RzBinEndianReader bytecode;
 	const RzBinDwarfEncoding *encoding;
 	ut64 *object_address;
 	ut32 max_iterations;
@@ -1626,7 +1643,7 @@ typedef struct {
 	RzVector /*<RzBinDwarfValue>*/ stack;
 
 	// The next operation to decode and evaluate.
-	RzBinEndianReader *pc;
+	RzBinEndianReader pc;
 
 	// If we see a DW_OP_call* operation, the previous PC and bytecode
 	// is stored here while evaluating the subroutine.
@@ -1713,7 +1730,7 @@ RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit,
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *fn_die);
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(
-	RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block,
+	RZ_BORROW RZ_NONNULL RzBinDwarfBlock *block,
 	RZ_BORROW RZ_NONNULL const RzBinDWARF *dw,
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit,
 	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
@@ -1774,28 +1791,28 @@ RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *
 RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_clone(
 	RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self);
 RZ_API void rz_bin_dwarf_loclists_free(RZ_OWN RZ_NULLABLE RzBinDwarfLocLists *self);
-
-RZ_API bool rz_bin_dwarf_loclists_parse_at(
-	RZ_BORROW RZ_NONNULL RzBinDwarfLocLists *self,
-	RZ_BORROW RZ_NONNULL RzBinDwarfAddr *addr,
-	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
-	ut64 offset);
+RZ_API void rz_bin_dwarf_loclists_dump(
+	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists,
+	RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 RZ_API RzBinDwarfLocList *rz_bin_dwarf_loclists_get(
 	RZ_BORROW RZ_NONNULL RzBinDwarfLocLists *self,
 	RZ_BORROW RZ_NONNULL RzBinDwarfAddr *addr,
 	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
 	ut64 offset);
-
 RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(
 	RzBinEndianReader *loclists, RzBinEndianReader *loc);
 RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo);
 
-RZ_API bool rz_bin_dwarf_rnglists_parse_at(
+RZ_API RzBinDwarfRngList *rz_bin_dwarf_rnglists_get(
 	RZ_BORROW RZ_NONNULL RzBinDwarfRngLists *self,
 	RZ_BORROW RZ_NONNULL RzBinDwarfAddr *addr,
 	RZ_BORROW RZ_NONNULL RzBinDwarfCompUnit *cu,
 	ut64 offset);
+RZ_API void rz_bin_dwarf_rnglists_dump(
+	RZ_NONNULL RZ_BORROW RzBinDwarfRngLists *rnglists,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 /// rnglists
 RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(
 	RZ_OWN RZ_NULLABLE RzBinEndianReader *rnglists, RZ_OWN RZ_NULLABLE RzBinEndianReader *ranges);
@@ -1814,10 +1831,14 @@ RZ_API bool rz_bin_dwarf_addr_get(
 	RZ_BORROW RZ_NONNULL ut64 *address,
 	ut8 address_size, ut64 base, ut64 index);
 RZ_API void rz_bin_dwarf_addr_free(RzBinDwarfAddr *self);
-RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_new(RZ_OWN RZ_NONNULL RzBinEndianReader *reader);
+RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_new(RZ_OWN RZ_NONNULL RzBinEndianReader *R);
 RZ_API RZ_OWN RzBinDwarfAddr *rz_bin_dwarf_addr_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
-RZ_API RZ_OWN char *rz_bin_dwarf_attr_string(
+RZ_API const char *rz_bin_dwarf_attr_string(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfAttr *attr,
+	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
+	ut64 str_offsets_base);
+RZ_API RZ_OWN char *rz_bin_dwarf_attr_string_escaped(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfAttr *attr,
 	RZ_BORROW RZ_NULLABLE const RzBinDWARF *dw,
 	ut64 str_offsets_base);
@@ -1867,6 +1888,12 @@ static inline const RzBinDwarfBlock *rz_bin_dwarf_attr_block(
 	rz_return_val_if_fail(attr && attr->value.kind == RzBinDwarfAttr_Block, NULL);
 	return &attr->value.block;
 }
+
+RZ_API void rz_bin_dwarf_attr_dump(
+	RZ_NONNULL RZ_BORROW const RzBinDwarfAttr *attr,
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw,
+	ut64 str_offsets_base,
+	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 
 #ifdef __cplusplus
 }

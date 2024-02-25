@@ -220,9 +220,8 @@ ESIL:
   - librz/core/cil.c
 
 DWARF:
-  - librz/bin/dwarf.c
+  - librz/bin/dwarf/*
   - librz/arch/dwarf_process.c
-  - librz/core/cdwarf.c
 
 PDB:
   - librz/bin/pdb/**/*
