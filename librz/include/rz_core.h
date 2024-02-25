@@ -402,12 +402,13 @@ RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
  */
 RZ_API void rz_core_gadget_free(RzCoreGadget *g);
 RZ_API void rz_core_gadget_print(RzCore *core);
-RZ_API void rz_core_debug_switch_to_first_thread(RzCore *core);
 
 RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
+
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug);
 
 // #define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core);

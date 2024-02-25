@@ -166,11 +166,15 @@ RZ_IPI void rz_core_visual_applyDisMode(RzCore *core, int disMode) {
 	}
 }
 
-RZ_API void rz_core_debug_switch_to_first_thread(RzCore *core) {
-	RzList *threads = rz_debug_pids(core->dbg, core->dbg->pid);
+/**
+ * @brief Switches to the first thread in the given debug context.
+ * @param debug The debug context.
+ */
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
+	RzList *threads = rz_debug_pids(debug, debug->pid);
 	if (rz_list_length(threads) > 0) {
 		RzDebugPid *th = rz_list_first(threads);
-		rz_debug_select(core->dbg, core->dbg->pid, th->pid);
+		rz_debug_select(debug, debug->pid, th->pid);
 	}
 	rz_list_free(threads);
 }
@@ -1993,7 +1997,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_cmd0(core, "eco $(eco~...)");
 			break;
 		case 'p':
-			rz_core_debug_switch_to_first_thread(core);
+			rz_debug_switch_to_first_thread(core->dbg);
 			break;
 		case 'b':
 			rz_core_cmd0(core, "s $(afb~...)");
