@@ -1756,3 +1756,16 @@ RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base) {
 		bp->delta = bp->addr - dbg->bp->baddr;
 	}
 }
+
+/**
+ * @brief Switches to the first thread in the given debug context.
+ * @param debug The debug context.
+ */
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
+	RzList *threads = rz_debug_pids(debug, debug->pid);
+	if (rz_list_length(threads) > 0) {
+		RzDebugPid *th = rz_list_first(threads);
+		rz_debug_select(debug, debug->pid, th->pid);
+	}
+	rz_list_free(threads);
+}
