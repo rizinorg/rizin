@@ -2721,7 +2721,7 @@ enum {
 #define TAG_CPU_RAW_NAME         4
 #define TAG_CPU_NAME             5
 #define TAG_CPU_ARCH             6
-#define Tag_CPU_ARCH_PROFILE     7
+#define TAG_CPU_ARCH_PROFILE     7
 #define TAG_ARM_ISA_USE          8
 #define TAG_THUMB_ISA_USE        9
 #define TAG_FP_ARCH              10
@@ -2729,7 +2729,6 @@ enum {
 #define TAG_ADVANCED_SIMD_ARCH   12
 #define TAG_CPU_UNALIGNED_ACCESS 34
 #define TAG_FP_HP_EXTENSION      36
-#define TAG_VFP_HP_EXTENSION     36 /* Deprecated version of TAG_FP_HP_EXTENSION */
 #define TAG_MPEXTENSION_USE      42
 #define TAG_DIV_USE              44
 #define TAG_DSP_EXTENSION        46
