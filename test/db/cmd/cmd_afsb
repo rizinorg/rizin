@@ -1,0 +1,18 @@
+NAME=Check function signature flirt and rizin (not really test now, just testing output)
+FILE=bins/arm/elf/hello_world-buildroot-201402
+CMDS=<<EOF
+e log.level=1
+e asm.bytes=1
+aaa
+s 0x00008370
+pdf
+afsb
+Ff
+EOF
+EXPECT=<<EOF
+pattern 08402de908009fe5ceffffeb0000a0e30880bde8
+mask ffffffffffffffffffffffffffffffffffffffff
+search 08402de908009fe5ceffffeb0000a0e30880bde8
+---
+EOF
+RUN

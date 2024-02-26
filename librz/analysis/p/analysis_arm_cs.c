@@ -2541,6 +2541,7 @@ static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 }
 
 static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at) {
+	RZ_LOG_DEBUG("Entering ARM analysis_mask on 0x%08x\n, size=%d\n", (ut32)at, size);
 	RzAnalysisOp *op = NULL;
 	ut8 *ret = NULL;
 	int oplen, idx = 0, obits = analysis->bits;
@@ -2555,6 +2556,7 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 	memset(ret, 0xff, size);
 
 	while (idx < size) {
+		RZ_LOG_DEBUG("analysing at 0x%08x + %d iteration: 2245\n", at, idx);
 		hint = rz_analysis_hint_get(analysis, at + idx);
 		if (hint) {
 			if (hint->bits != 0) {
@@ -2562,21 +2564,28 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 			}
 			free(hint);
 		}
-
+		RZ_LOG_DEBUG("analysis bits: %d\n", analysis->bits);
 		if ((oplen = analysis_op(analysis, op, at + idx, data + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
+			RZ_LOG_DEBUG("Broke on analysis op\n");
 			break;
 		}
+		RZ_LOG_DEBUG("oplen is %d   \n", oplen);
 		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
-			if ((oplen * 8) > size - idx) {
+			RZ_LOG_DEBUG("Entering big IF\n");
+			//if ((oplen * 8) > size - idx) { -> this is wrong currently, size - idx is bytes, not bits. after this mask is really computed
+			if ((oplen) > size - idx) {
+				RZ_LOG_DEBUG("Broke on oplen, oplen is %d and size-idx is %d \n", oplen * 8, size - idx);
 				break;
 			}
 			ut32 opcode = rz_read_ble(data + idx, analysis->big_endian, oplen * 8);
 			switch (oplen) {
 			case 2:
+				RZ_LOG_DEBUG("DID ARM thumb mask\n");
 				memcpy(ret + idx, "\xf0\x00", 2);
 				break;
 			case 4:
 				if (analysis->bits == 64) {
+					RZ_LOG_DEBUG("DID ARM 64 mask\n");
 					switch (op->id) {
 					case CS_AARCH64(_INS_LDP):
 					case CS_AARCH64(_INS_LDXP):
@@ -2648,11 +2657,21 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 					default:
 						rz_write_ble(ret + idx, 0xfff00000, analysis->big_endian, 32);
 					}
+
 				} else {
+					/* Tried to implement less architecture-dependend mask algo. 
+						consider ARM32 experimental, if it will be successful - this 
+						approach can be populated on other archs.*/
+					ut32 mask = 0;
+
 					rz_write_ble(ret + idx, 0xfff00000, analysis->big_endian, 32);
+
+					RZ_LOG_DEBUG("WROTE ARM 32 MASK 0x%08X to 0x%08X!", mask, (ut32)(at + idx));
 				}
 				break;
 			}
+		} else {
+			RZ_LOG_DEBUG("Skipped big IF\n");
 		}
 		idx += oplen;
 	}
