@@ -171,7 +171,8 @@ static bool is_valid_guid(const char *guid) {
 RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options) {
 	rz_return_val_if_fail(bin && options, 1);
 	SPDBDownloaderOpt opt;
-	RzBinInfo *info = rz_bin_get_info(bin);
+	RzBinObject *obj = rz_bin_cur_object(bin);
+	RzBinInfo *info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
 
 	if (!info || !info->debug_file_name) {
 		RZ_LOG_ERROR("Can't find debug filename\n");

@@ -1688,12 +1688,12 @@ RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzB
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, DexClassDef *class_def) {
+static RzPVector /*<RzBinAddr *>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, DexClassDef *class_def) {
 	RzListIter *it;
 	DexEncodedMethod *encoded_method = NULL;
-	RzList *entrypoints = NULL;
+	RzPVector *entrypoints = NULL;
 
-	entrypoints = rz_list_newf((RzListFree)free);
+	entrypoints = rz_pvector_new((RzPVectorFree)free);
 	if (!entrypoints) {
 		return NULL;
 	}
@@ -1732,7 +1732,7 @@ static RzList /*<RzBinAddr *>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex,
 			entrypoint->vaddr = encoded_method->code_offset;
 			entrypoint->paddr = 0;
 		}
-		if (entrypoint && !rz_list_append(entrypoints, entrypoint)) {
+		if (entrypoint && !rz_pvector_push(entrypoints, entrypoint)) {
 			free(entrypoint);
 		}
 	}
@@ -1776,7 +1776,7 @@ static RzList /*<RzBinAddr *>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex,
 			entrypoint->vaddr = encoded_method->code_offset;
 			entrypoint->paddr = 0;
 		}
-		if (entrypoint && !rz_list_append(entrypoints, entrypoint)) {
+		if (entrypoint && !rz_pvector_push(entrypoints, entrypoint)) {
 			free(entrypoint);
 		}
 	}
@@ -1785,27 +1785,26 @@ static RzList /*<RzBinAddr *>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex,
 }
 
 /**
- * \brief Returns a RzList<RzBinAddr*> containing the dex entripoints
+ * \brief Returns a RzPVector<RzBinAddr*> containing the dex entripoints
  */
-RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
-	RzList *list = NULL;
-	RzList *entrypoints = NULL;
+	RzPVector *entrypoints = NULL, *vec = NULL;
 	void **it;
 
-	entrypoints = rz_list_newf((RzListFree)free);
+	entrypoints = rz_pvector_new((RzPVectorFree)free);
 	if (!entrypoints) {
 		return NULL;
 	}
 
 	rz_pvector_foreach (dex->class_defs, it) {
 		class_def = (DexClassDef *)*it;
-		list = dex_resolve_entrypoints_in_class(dex, class_def);
-		if (list) {
-			rz_list_join(entrypoints, list);
-			rz_list_free(list);
+		vec = dex_resolve_entrypoints_in_class(dex, class_def);
+		if (vec) {
+			rz_pvector_join(entrypoints, vec);
+			rz_pvector_free(vec);
 		}
 	}
 

@@ -19,8 +19,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return check_buffer(buf);
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(free);
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new(free);
 	RzBinAddr *ptr = NULL;
 
 	if (bf && bf->buf) {
@@ -31,7 +31,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 			return ret;
 		}
 		ptr->paddr = ptr->vaddr = 0x8000000;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

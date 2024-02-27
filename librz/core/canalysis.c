@@ -2357,7 +2357,7 @@ static bool isSkippable(RzBinSymbol *s) {
 }
 
 RZ_API int rz_core_analysis_all(RzCore *core) {
-	RzList *list;
+	RzPVector *vector;
 	RzListIter *iter;
 	RzFlagItem *item;
 	RzAnalysisFunction *fcni;
@@ -2384,10 +2384,9 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzBinFile *bf = core->bin->cur;
 	RzBinObject *o = bf ? bf->o : NULL;
 	/* Symbols (Imports are already analyzed by rz_bin on init) */
-	RzPVector *vec = NULL;
 	void **it;
-	if (o && (vec = o->symbols) != NULL) {
-		rz_pvector_foreach (vec, it) {
+	if (o && (vector = o->symbols) != NULL) {
+		rz_pvector_foreach (vector, it) {
 			symbol = *it;
 			if (rz_cons_is_breaked()) {
 				break;
@@ -2411,8 +2410,11 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 		}
 	}
 	rz_core_task_yield(&core->tasks);
-	if ((list = rz_bin_get_entries(core->bin))) {
-		rz_list_foreach (list, iter, entry) {
+	RzBinObject *bin = rz_bin_cur_object(core->bin);
+	vector = bin ? (RzPVector *)rz_bin_object_get_entries(bin) : NULL;
+	if (vector) {
+		rz_pvector_foreach (vector, it) {
+			entry = *it;
 			if (entry->paddr == UT64_MAX) {
 				continue;
 			}
@@ -2801,6 +2803,7 @@ RZ_API RzList /*<RzAnalysisCycleHook *>*/ *rz_core_analysis_cycles(RzCore *core,
 			if (!ch) {
 				rz_analysis_cycle_frame_free(cf);
 				rz_list_free(hooks);
+				rz_cons_break_pop();
 				return NULL;
 			}
 			ch->addr = addr;
@@ -2986,7 +2989,8 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	rz_cons_break_push(NULL, NULL);
 
 	if (!rz_io_is_valid_offset(core->io, from, 0)) {
-		return -1;
+		hitctr = -1;
+		goto beach;
 	}
 	while (from < to) {
 		size = RZ_MIN(to - from, sizeof(buf));
@@ -3045,7 +3049,8 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 				break;
 			default:
 				RZ_LOG_ERROR("core: unknown vsize %d (supported only 1,2,4,8)\n", vsize);
-				return -1;
+				hitctr = -1;
+				goto beach;
 			}
 			if (match && !vinfun) {
 				if (vinfunr) {

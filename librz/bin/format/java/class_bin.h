@@ -83,7 +83,7 @@ RZ_API RZ_OWN char *rz_bin_java_class_const_pool_resolve_index(RZ_NONNULL RzBinJ
 RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
 RZ_API RZ_OWN RzBinAddr *rz_bin_java_class_resolve_symbol(RZ_NONNULL RzBinJavaClass *bin, RzBinSpecialSymbol resolve);
 RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin);
-RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *bin);
 RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_methods_as_symbols(RZ_NONNULL RzBinJavaClass *bin);
 RZ_API void rz_bin_java_class_methods_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_bin_java_class_methods_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);

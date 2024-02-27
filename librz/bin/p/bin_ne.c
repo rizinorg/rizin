@@ -95,7 +95,7 @@ RzBinInfo *info(RzBinFile *bf) {
 	return i;
 }
 
-RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return rz_bin_ne_get_entrypoints(bf->o->bin_obj);
 }
 

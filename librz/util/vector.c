@@ -458,8 +458,10 @@ RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *p
 		return false;
 	}
 
-	RzVector *vec = &pvec1->v;
-	RESIZE_OR_RETURN_FALSE(RZ_MAX(NEXT_VECTOR_CAPACITY, pvec1->v.len + pvec2->v.len));
+	if (pvec1->v.len + pvec2->v.len > pvec1->v.capacity) {
+		RzVector *vec = &pvec1->v;
+		RESIZE_OR_RETURN_NULL(RZ_MAX(NEXT_VECTOR_CAPACITY, pvec1->v.len + pvec2->v.len));
+	}
 	memmove((void **)pvec1->v.a + pvec1->v.len, pvec2->v.a, pvec2->v.elem_size * pvec2->v.len);
 	pvec1->v.len += pvec2->v.len;
 

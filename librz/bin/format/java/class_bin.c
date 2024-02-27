@@ -932,13 +932,13 @@ RZ_API RZ_OWN RzBinAddr *rz_bin_java_class_resolve_symbol(RZ_NONNULL RzBinJavaCl
 }
 
 /**
- * \brief Returns a RzList<RzBinAddr*> containing the entrypoints
+ * \brief Returns a RzPVector<RzBinAddr*> containing the entrypoints
  */
-RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf(free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new(free);
+	if (!vec) {
 		return NULL;
 	}
 
@@ -984,10 +984,10 @@ RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_java_class_entrypoints(RZ_NONNULL
 				continue;
 			}
 			entrypoint->vaddr = entrypoint->paddr = addr;
-			rz_list_append(list, entrypoint);
+			rz_pvector_push(vec, entrypoint);
 		}
 	}
-	return list;
+	return vec;
 }
 
 /**

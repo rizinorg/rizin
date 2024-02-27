@@ -648,7 +648,7 @@ EXPECT=<<EOF
 0x100006e64 str.pointer
 0x100006eac str.panicwrap:_no___in
 0x1000076d0 str.internal_error___misuse_of_itab
-1710
+1709
 0x10008bada 31 31 slice bounds out of range [:%x]
 0x10008babb 31 31 slice bounds out of range [%x:]
 0x10008be19 32 32 slice bounds out of range [::%x]

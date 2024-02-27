@@ -124,8 +124,7 @@ static RKext *rz_kext_index_vget(RKextIndex *index, ut64 vaddr);
 
 static void process_kmod_init_term(RzXNUKernelCacheObj *obj, RKext *kext, RzPVector /*<RzBinSymbol *>*/ *ret, ut64 **inits, ut64 **terms);
 static void create_initterm_syms(RKext *kext, RzPVector /*<RzBinSymbol *>*/ *ret, int type, ut64 *pointers);
-static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzList /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
-RZ_DEPRECATE static void process_constructors_vector(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzPVector /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
+static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzPVector /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
 static RzBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type);
 static void ensure_kexts_initialized(RzXNUKernelCacheObj *obj);
 
@@ -776,11 +775,11 @@ static struct MACH0_(obj_t) * create_kext_shared_mach0(RzXNUKernelCacheObj *obj,
 	return mach0;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinObject *obj = bf ? bf->o : NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = rz_list_newf(free))) {
+	if (!obj || !obj->bin_obj || !(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 
@@ -790,7 +789,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 		ut64 entry_paddr = entry_vaddr - kobj->pa2va_exec;
 		RzBinAddr *ba = newEntry(entry_paddr, entry_vaddr, 0);
 		if (ba) {
-			rz_list_append(ret, ba);
+			rz_pvector_push(ret, ba);
 		}
 	}
 
@@ -904,66 +903,7 @@ static void create_initterm_syms(RKext *kext, RzPVector /*<RzBinSymbol *>*/ *ret
 	}
 }
 
-static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzList /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections)(mach0))) {
-		return;
-	}
-	int i, type;
-	for (i = 0; !sections[i].last; i++) {
-		if (sections[i].size == 0) {
-			continue;
-		}
-
-		if (strstr(sections[i].name, "_mod_fini_func") || strstr(sections[i].name, "_mod_term_func")) {
-			type = RZ_BIN_ENTRY_TYPE_FINI;
-		} else if (strstr(sections[i].name, "_mod_init_func")) {
-			type = is_first ? 0 : RZ_BIN_ENTRY_TYPE_INIT;
-			is_first = false;
-		} else {
-			continue;
-		}
-
-		ut8 *buf = calloc(sections[i].size, 1);
-		if (!buf) {
-			break;
-		}
-		if (rz_buf_read_at(obj->cache_buf, sections[i].offset + paddr, buf, sections[i].size) < sections[i].size) {
-			free(buf);
-			break;
-		}
-		int j;
-		int count = 0;
-		for (j = 0; j < sections[i].size; j += 8) {
-			ut64 addr64 = K_RPTR(buf + j);
-			ut64 paddr64 = sections[i].offset + paddr + j;
-			if (mode == RZ_K_CONSTRUCTOR_TO_ENTRY) {
-				RzBinAddr *ba = newEntry(paddr64, addr64, type);
-				rz_list_append(ret, ba);
-			} else if (mode == RZ_K_CONSTRUCTOR_TO_SYMBOL) {
-				RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
-				if (!sym) {
-					break;
-				}
-
-				sym->name = rz_str_newf("%s.%s.%d", prefix, (type == RZ_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++);
-				sym->vaddr = addr64;
-				sym->paddr = paddr64;
-				sym->size = 0;
-				sym->forwarder = "NONE";
-				sym->bind = "GLOBAL";
-				sym->type = "FUNC";
-
-				rz_list_append(ret, sym);
-			}
-		}
-		free(buf);
-	}
-	free(sections);
-}
-
-// this function will be removed once the transition of entries (RzBinPlugin) from RzList to RzPVector is done
-RZ_DEPRECATE static void process_constructors_vector(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzPVector /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
+static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzPVector /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(mach0))) {
 		return;
@@ -1293,7 +1233,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		case MH_MAGIC_64:
 			symbols_from_mach0(ret, kext->mach0, bf, kext->range.offset, rz_pvector_len(ret));
 			symbols_from_stubs(ret, kernel_syms_by_addr, obj, bf, kext, rz_pvector_len(ret));
-			process_constructors_vector(obj, kext->mach0, ret, kext->range.offset, false, RZ_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name(kext));
+			process_constructors(obj, kext->mach0, ret, kext->range.offset, false, RZ_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name(kext));
 			process_kmod_init_term(obj, kext, ret, &inits, &terms);
 
 			break;

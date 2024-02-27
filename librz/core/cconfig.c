@@ -2565,6 +2565,7 @@ static bool cb_binhashesdefault(void *user, void *data) {
 		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
 		return false;
 	}
+	rz_list_free(core->bin->default_hashes);
 	core->bin->default_hashes = rz_str_split_duplist(node->value, ",", true);
 	if (!core->bin->default_hashes) {
 		core->bin->default_hashes = rz_list_new();
@@ -3313,7 +3314,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("cfg.plugins", "true", "Load plugins at startup");
 	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
-	SETBPREF("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = rz_sys_getenv("EDITOR");
 #if __WINDOWS__

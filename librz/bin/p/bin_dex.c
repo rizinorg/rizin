@@ -122,7 +122,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_dex_resolve_symbol(dex, sym);
 }
 
-static RzList /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;

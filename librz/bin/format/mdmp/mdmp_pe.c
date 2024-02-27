@@ -7,7 +7,7 @@
 
 #include "mdmp_pe.h"
 
-static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList /*<RzBinAddr *>*/ *list) {
+static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzPVector /*<RzBinAddr *>*/ *vec) {
 	char *key;
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
@@ -37,22 +37,22 @@ static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList /*<
 			ptr->vaddr = vaddr;
 			ptr->hpaddr = haddr;
 			ptr->type = RZ_BIN_ENTRY_TYPE_TLS;
-			rz_list_append(list, ptr);
+			rz_pvector_push(vec, ptr);
 		}
 		count++;
 	} while (vaddr);
 }
 
-RzList /*<RzBinAddr *>*/ *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzPVector /*<RzBinAddr *>*/ *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	ut64 offset;
 	struct rz_bin_pe_addr_t *entry = NULL;
 	RzBinAddr *ptr = NULL;
-	RzList *ret;
+	RzPVector *ret;
 
 	if (!(entry = PE_(rz_bin_pe_get_entrypoint)(pe_bin->bin))) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		free(entry);
 		return NULL;
 	}
@@ -67,7 +67,7 @@ RzList /*<RzBinAddr *>*/ *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bin_m
 		ptr->hpaddr = pe_bin->paddr + entry->haddr;
 		ptr->type = RZ_BIN_ENTRY_TYPE_PROGRAM;
 
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 
 	PE_(add_tls_callbacks)

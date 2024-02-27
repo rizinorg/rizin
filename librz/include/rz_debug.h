@@ -473,6 +473,8 @@ RZ_API void rz_debug_info_free(RzDebugInfo *rdi);
 
 RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file);
 
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug);
+
 /* send signals */
 RZ_API void rz_debug_signal_init(RzDebug *dbg);
 RZ_API int rz_debug_signal_send(RzDebug *dbg, int num);

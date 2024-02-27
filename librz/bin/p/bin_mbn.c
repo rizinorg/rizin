@@ -85,15 +85,15 @@ static ut64 baddr(RzBinFile *bf) {
 	return sb->vaddr;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	SblHeader *sb = mbn_file_get_hdr(bf);
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (ret) {
 		RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 		if (ptr) {
 			ptr->paddr = 40 + sb->code_pa;
 			ptr->vaddr = 40 + sb->code_pa + sb->vaddr;
-			rz_list_append(ret, ptr);
+			rz_pvector_push(ret, ptr);
 		}
 	}
 	return ret;

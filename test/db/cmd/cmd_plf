@@ -59,7 +59,7 @@ EXPECT=<<EOF
 0x30 (seq (set addr (+ (var x8) (bv 64 0x8))) (set x14 (cast 64 false (loadw 0 32 (var addr)))) (set x8 (cast 64 false (loadw 0 32 (+ (var addr) (bv 64 0x4))))))
 0x34 (set x14 (cast 64 false (^ (cast 32 false (var x10)) (cast 32 false (var x14)))))
 0x38 (set x15 (cast 64 false (^ (cast 32 false (var x11)) (cast 32 false (var x8)))))
-0x3c (set x8 (bv 64 0x5fe60))
+0x3c (set x8 (bv 64 0x5fe9c))
 0x40 nop
 0x44 (seq (set a (cast 32 false (var x9))) (set b (bv 32 0xa)) (set r (- (var a) (var b))) (set cf (ule (var b) (var a))) (set vf (&& (^^ (msb (var a)) (msb (var b))) (^^ (msb (var a)) (msb (var r))))) (set zf (is_zero (var r))) (set nf (msb (var r))))
 0x48 (branch (var zf) (jmp (bv 64 0x394)) nop)
@@ -727,7 +727,7 @@ EXPECT=<<EOF
 0xaa0 (set x8 (cast 64 false (^ (cast 32 false (var x8)) (cast 32 false (var x10)))))
 0xaa4 (set x8 (cast 64 false (^ (cast 32 false (var x8)) (cast 32 false (var x11)))))
 0xaa8 (set x9 (cast 64 false (& (cast 32 false (var x15)) (bv 32 0xff))))
-0xaac (set x10 (bv 64 0x603f0))
+0xaac (set x10 (bv 64 0x60e9c))
 0xab0 nop
 0xab4 (set x9 (cast 64 false (loadw 0 32 (+ (var x10) (<< (cast 64 false (cast 32 false (var x9))) (bv 6 0x2) false)))))
 0xab8 (set x11 (cast 64 false (let res (cast 8 false (>> (cast 32 false (var x8)) (bv 6 0x8) false)) (cast 32 false (var res)))))

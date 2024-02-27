@@ -13,13 +13,16 @@ This command is part of the Rizin project.
 .Pp
 This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
 .Pp
-rz-run -l lists all the supported profile options.
+.Bl -tag -width Fl
+.It Fl l
+List all the supported profile options.
 .Pp
+.It Fl t
+Output a base template profile. Try rz-run -d > profile.rz
 .Pp
-rz-run -t outputs a base template profile. Try rz-run -d > profile.rz
-.Pp
-.Pp
-rz-run -w shows the terminal name and wait for a connection from another process. Try rz-run stdio=<ttypath> program=/bin/sh
+.It Fl w
+Show the terminal name and wait for a connection from another process. Try rz-run stdio=<ttypath> program=/bin/sh
+.El
 .Pp
 The program just accepts a single argument which is the filename of the configuration file to run the program.
 .Pp
@@ -182,6 +185,6 @@ Run a library function
 .Xr rz-asm(1) ,
 .Sh AUTHORS
 .Pp
-Written by pancake <pancake@nopcode.org>.
+pancake <pancake@nopcode.org>
 .Pp
-byteninjaa0.
+byteninjaa0

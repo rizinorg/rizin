@@ -104,7 +104,7 @@ bool rz_bin_le_check_buffer(RzBuffer *b);
 bool rz_bin_le_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb);
 void rz_bin_le_destroy(RzBinFile *bf);
 RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf);
-RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf);
+RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf);
 RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf);
 RZ_OWN RzPVector /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(RzBinFile *bf);
 RZ_OWN RzPVector /*<RzBinImport *>*/ *rz_bin_le_get_imports(RzBinFile *bf);

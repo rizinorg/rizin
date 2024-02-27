@@ -258,6 +258,7 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 
 sten_err:
 list_err:
+	rz_cons_break_pop();
 	rz_list_free(sten);
 	rz_list_free(list);
 	return NULL;
