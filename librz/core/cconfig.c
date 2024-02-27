@@ -3314,7 +3314,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("cfg.plugins", "true", "Load plugins at startup");
 	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
-	SETBPREF("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = rz_sys_getenv("EDITOR");
 #if __WINDOWS__
