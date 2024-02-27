@@ -1035,6 +1035,11 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	}
 	RzCore *core = ctx->analysis->core;
 	addr = rz_num_math(core->num, addr_s);
+	if (rz_analysis_var_global_get_byaddr_in(ctx->analysis, addr) ||
+		rz_analysis_var_global_get_byname(ctx->analysis, name)) {
+		return true;
+	}
+
 	glob = rz_analysis_var_global_new(name, addr);
 	if (!glob) {
 		goto beach;
@@ -1065,7 +1070,7 @@ RZ_API bool rz_serialize_analysis_global_var_load(RZ_NONNULL Sdb *db, RZ_NONNULL
 	}
 	ret = sdb_foreach(db, global_var_load_cb, &ctx);
 	if (!ret) {
-		RZ_SERIALIZE_ERR(res, "functions parsing failed");
+		RZ_SERIALIZE_ERR(res, "global var parsing failed");
 	}
 beach:
 	rz_key_parser_free(ctx.parser);
