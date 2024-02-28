@@ -1,6 +1,7 @@
 #include <rz_core.h>
 #include <rz_types.h>
 #include <rz_config.h>
+#include <rz_endian.h>
 
 #ifdef KHEAP64
 #include "linux_heap_slub64.h"
@@ -15,14 +16,14 @@ typedef enum {
 	FREELIST_OK = 0,
 	FREELIST_CORRUPTED,
 	FREELIST_CYCLE,
-} GH(FreelistState);
+} GH_(FreelistState);
 
 typedef struct {
-	GH(FreelistState) state;
+	GH_(FreelistState) state;
 	RzVector* freelist_vector;
-} GH(Freelist);
+} GH_(Freelist);
 
-static ut8 GH(size_index)[24] = {
+static ut8 GH_(size_index)[24] = {
 	3,	/* 8 */
 	4,	/* 16 */
 	5,	/* 24 */
@@ -49,11 +50,11 @@ static ut8 GH(size_index)[24] = {
 	2	/* 192 */
 };
 
-static inline unsigned int GH(size_index_elem)(unsigned int bytes) {
+static inline unsigned int GH_(size_index_elem)(unsigned int bytes) {
 	return (bytes - 1) / 8;
 }
 
-static int GH(fls)(unsigned int x) {
+static int GH_(fls)(unsigned int x) {
 	int r = 32;
 
 	if (!x)
@@ -81,7 +82,7 @@ static int GH(fls)(unsigned int x) {
 	return r;
 }
 
-static RzBinSymbol* GH(get_symbol_by_name)(RzCore *core, const char *sym_name) {
+static RzBinSymbol* GH_(get_symbol_by_name)(RzCore *core, const char *sym_name) {
     RzBin *bin = core->bin;
     RzBinObject *o = rz_bin_cur_object(bin);
 	RzPVector *syms = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
@@ -113,7 +114,7 @@ static RzBinSymbol* GH(get_symbol_by_name)(RzCore *core, const char *sym_name) {
  * 		// the rest
  * }
 */
-static size_t GH(offset_in_struct)(RzCore* core, const char* typename, const char* membname) {
+static size_t GH_(offset_in_struct)(RzCore* core, const char* typename, const char* membname) {
 	RzTypeDB* typedb = core->analysis->typedb;
 	RzBaseType* btype = rz_type_db_get_base_type(typedb, typename);
 	RzTypeStructMember* memb_iter;
@@ -129,12 +130,12 @@ static size_t GH(offset_in_struct)(RzCore* core, const char* typename, const cha
 	return memb->offset;
 }
 
-static size_t GH(offset_in_2d_arr)(size_t size2, size_t elem_size, size_t idx1, size_t idx2) {
+static size_t GH_(offset_in_2d_arr)(size_t size2, size_t elem_size, size_t idx1, size_t idx2) {
 	return idx1 * size2 * elem_size + idx2 * elem_size;
 }
 
 
-static size_t GH(offset_in_arr)(size_t elem_size, size_t idx) {
+static size_t GH_(offset_in_arr)(size_t elem_size, size_t idx) {
 	return elem_size * idx;
 }
 
@@ -146,19 +147,19 @@ static size_t GH(offset_in_arr)(size_t elem_size, size_t idx) {
  * 
  * Reimplementation of `kmalloc_slab` from https://elixir.bootlin.com/linux/v6.1.58/source/mm/slab_common.c#L719.
  */
-static GHT GH(get_kmem_cache)(RzCore *core, size_t cache_size) {
+static GHT GH_(get_kmem_cache)(RzCore *core, size_t cache_size) {
     int cache_type = 0; // KMALLOC_NORMAL
     ut8 index;
 
     if (cache_size <= 192) {
-        index = GH(size_index)[GH(size_index_elem)(cache_size)];
+        index = GH_(size_index)[GH_(size_index_elem)(cache_size)];
     } else {
-        index = GH(fls)(cache_size - 1);
+        index = GH_(fls)(cache_size - 1);
     }
 #ifdef SLUB_DEBUG
 	printf("index in kmalloc_caches: %lu\n", index);
 #endif
-    RzBinSymbol *kmalloc_caches = GH(get_symbol_by_name)(core, "kmalloc_caches");
+    RzBinSymbol *kmalloc_caches = GH_(get_symbol_by_name)(core, "kmalloc_caches");
     if (kmalloc_caches == NULL) {
         return GHT_MAX;
     }
@@ -171,19 +172,19 @@ static GHT GH(get_kmem_cache)(RzCore *core, size_t cache_size) {
     // deref 2d array: kmalloc_caches[cache_type][index]
 	size_t size2 = 12 + 1 + 1; // PAGE_SHIFT + 1 + 1
 #ifdef SLUB_DEBUG
-	printf("offset in 2d addr: %lu\n", GH(offset_in_2d_arr)(size2, sizeof(GHT), cache_type, index));
+	printf("offset in 2d addr: %lu\n", GH_(offset_in_2d_arr)(size2, sizeof(GHT), cache_type, index));
 #endif
     rz_io_read_at_mapped(
         core->io, 
-        kmalloc_caches->vaddr + GH(offset_in_2d_arr)(size2, sizeof(GHT), cache_type, index),
+        kmalloc_caches->vaddr + GH_(offset_in_2d_arr)(size2, sizeof(GHT), cache_type, index),
         &kmem_cache,
         sizeof(GHT)
     );
     return kmem_cache;
 }
 
-static GHT GH(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
-    RzBinSymbol *per_cpu_offset = GH(get_symbol_by_name)(core, "__per_cpu_offset");
+static GHT GH_(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
+    RzBinSymbol *per_cpu_offset = GH_(get_symbol_by_name)(core, "__per_cpu_offset");
 #ifdef SLUB_DEBUG
 	printf("__per_cpu_offset: 0x%lx\n", per_cpu_offset->vaddr);
 #endif
@@ -191,7 +192,7 @@ static GHT GH(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
 	GHT percpu_n;
 	rz_io_read_at_mapped(
 		core->io,
-		per_cpu_offset->vaddr + GH(offset_in_arr)(sizeof(GHT), n_cpu),
+		per_cpu_offset->vaddr + GH_(offset_in_arr)(sizeof(GHT), n_cpu),
 		&percpu_n,
 		sizeof(GHT)
 	);
@@ -199,7 +200,7 @@ static GHT GH(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
 	GHT cpu_slab;
 	rz_io_read_at_mapped(
 		core->io,
-		kmem_cache + GH(offset_in_struct)(core, "kmem_cache", "cpu_slab"),
+		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "cpu_slab"),
 		&cpu_slab,
 		sizeof(GHT)
 	);
@@ -209,25 +210,25 @@ static GHT GH(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
 	return kmem_cache_cpu;
 }
 
-static GHT GH(get_kmem_cache_node)(RzCore* core, GHT kmem_cache, size_t node_n) {
+static GHT GH_(get_kmem_cache_node)(RzCore* core, GHT kmem_cache, size_t node_n) {
 	RzBaseType *kmem_cache_node_btype = rz_type_db_get_base_type(core->analysis->typedb, "kmem_cache_node");
 	GHT kmem_cache_node_n;
 	rz_io_read_at_mapped(
 		core->io,
-		kmem_cache + GH(offset_in_struct)(core, "kmem_cache", "node") + offset_in_arr(kmem_cache_node_btype->size, node_n),
+		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "node") + offset_in_arr(kmem_cache_node_btype->size, node_n),
 		&kmem_cache_node_n,
 		sizeof(GHT)
 	);
 	return kmem_cache_node_n;
 }
 
-static inline GHT GH(decode_freelist)(GHT freelist, GHT p_freelist, GHT cache_rand) {
-	return GH(rz_swab)(p_freelist) ^ cache_rand ^ freelist;
+static inline GHT GH_(decode_freelist)(GHT freelist, GHT p_freelist, GHT cache_rand) {
+	return GH(rz_swap_ut)(p_freelist) ^ cache_rand ^ freelist;
 }
 
-static GH(Freelist)* GH(collect_freelist)(RzCore* core, GHT freelist, size_t freelist_offset, GHT cache_rand) {
+static GH_(Freelist)* GH_(collect_freelist)(RzCore* core, GHT freelist, size_t freelist_offset, GHT cache_rand) {
 	bool read_ok;
-	GH(Freelist)* result = rz_mem_alloc(sizeof(GH(Freelist)));
+	GH_(Freelist)* result = rz_mem_alloc(sizeof(GH_(Freelist)));
 
 	SetU* prev = set_u_new();
 	result->freelist_vector = rz_vector_new(sizeof(GHT), NULL, NULL);
@@ -253,7 +254,7 @@ static GH(Freelist)* GH(collect_freelist)(RzCore* core, GHT freelist, size_t fre
 #ifdef SLUB_DEBUG
 		printf("obfuscated freelist: %lx\n", freelist);
 #endif
-		freelist = GH(decode_freelist)(freelist, chunk_base + freelist_offset, cache_rand);
+		freelist = GH_(decode_freelist)(freelist, chunk_base + freelist_offset, cache_rand);
 #ifdef SLUB_DEBUG
 		printf("deobfuscated freelist: %lx\n", freelist);
 #endif
@@ -299,7 +300,7 @@ out:
 	return result;
 }
 
-static void GH(dump_freelist)(GH(Freelist)* freelist) {
+static void GH_(dump_freelist)(GH_(Freelist)* freelist) {
 	RzVector* freelist_vector = freelist->freelist_vector;
 	GHT* it;
 	size_t i = 0;
@@ -330,7 +331,7 @@ static void GH(dump_freelist)(GH(Freelist)* freelist) {
 
 
 // TODO: replace struct member type with their actual type (using typedb)
-static void GH(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache_cpu) {
+static void GH_(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache_cpu) {
 	GHT freelist;
 	// Dirty hardcode: offsetof(kmem_cache_cpu, freelist)=0.
 	// Can't use offset_in_struct since it does not yet support anonymous member unwrapping.
@@ -348,7 +349,7 @@ static void GH(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT kme
 	unsigned int freelist_offset;
 	rz_io_read_at_mapped(
 		core->io,
-		kmem_cache + GH(offset_in_struct)(core, "kmem_cache", "offset"),
+		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "offset"),
 		&freelist_offset,
 		sizeof(unsigned int)
 	);
@@ -359,7 +360,7 @@ static void GH(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT kme
 	GHT cache_rand;
 	rz_io_read_at_mapped(
 		core->io,
-		kmem_cache + GH(offset_in_struct)(core, "kmem_cache", "random"),
+		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "random"),
 		&cache_rand,
 		sizeof(GHT)
 	);
@@ -367,11 +368,11 @@ static void GH(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT kme
 	printf("cache random: 0x%lx\n", cache_rand);
 #endif
 
-	GH(Freelist)* fl = GH(collect_freelist)(core, freelist, freelist_offset, cache_rand);
-	GH(dump_freelist)(fl);
+	GH_(Freelist)* fl = GH_(collect_freelist)(core, freelist, freelist_offset, cache_rand);
+	GH_(dump_freelist)(fl);
 }
 
-RZ_IPI RzCmdStatus GH(rz_cmd_debug_slub_dump_freelist_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput* output_state) {
+RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_freelist_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput* output_state) {
 	(void)output_state;
 	size_t n_cpu;
 	size_t cache_size;
@@ -397,14 +398,14 @@ RZ_IPI RzCmdStatus GH(rz_cmd_debug_slub_dump_freelist_handler)(RzCore *core, int
 	printf("vmlinux baddr: 0x%lx\n", rz_bin_get_baddr(core->bin));
 #endif
 	
-	GHT kmem_cache = GH(get_kmem_cache)(core, cache_size);
+	GHT kmem_cache = GH_(get_kmem_cache)(core, cache_size);
 #ifdef SLUB_DEBUG
 	printf("kmem_cache: 0x%lx\n", kmem_cache);
 #endif
-	GHT kmem_cache_cpu = GH(get_kmem_cache_cpu)(core, kmem_cache, n_cpu);
+	GHT kmem_cache_cpu = GH_(get_kmem_cache_cpu)(core, kmem_cache, n_cpu);
 #ifdef SLUB_DEBUG
 	printf("kmem_cache_cpu: 0x%lx\n", kmem_cache_cpu);
 #endif
-	GH(dump_cpu_lockless_freelist)(core, kmem_cache, kmem_cache_cpu);
+	GH_(dump_cpu_lockless_freelist)(core, kmem_cache, kmem_cache_cpu);
 	return RZ_CMD_STATUS_OK;
 }
