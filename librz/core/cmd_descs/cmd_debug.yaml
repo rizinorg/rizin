@@ -850,6 +850,9 @@ commands:
       - name: dmh
         summary: Glibc heap commands
         subcommands: cmd_heap_glibc
+      - name: dms
+        summary: Dump SLUB contents
+        subcommands: cmd_slub
       - name: dmi
         summary: List/Load symbols
         cname: cmd_debug_dmi

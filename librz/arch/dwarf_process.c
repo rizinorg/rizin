@@ -1718,6 +1718,35 @@ static void die_parse(DwContext *ctx, RzBinDwarfDie *die) {
 	}
 }
 
+static void die_parse_lazy(Context *ctx, RzBinDwarfDie *die) {
+	if (set_u_contains(ctx->analysis->debug_info->visited, die->offset)) {
+		return;
+	}
+	set_u_add(ctx->analysis->debug_info->visited, die->offset);
+	switch (die->tag) {
+	case DW_TAG_structure_type:
+	case DW_TAG_union_type:
+	case DW_TAG_class_type:
+	case DW_TAG_enumeration_type:
+	case DW_TAG_typedef:
+	case DW_TAG_unspecified_type:
+	case DW_TAG_base_type: {
+		RzBaseType_from_die(ctx, die);
+		break;
+	}
+	case DW_TAG_entry_point:
+	case DW_TAG_subprogram:
+		function_from_die(ctx, die);
+		break;
+	case DW_TAG_variable:
+		variable_from_die(ctx, die);
+		break;
+	default:
+		break;
+	}
+}
+
+
 static RzBinDwarfDie *die_next(RzBinDwarfDie *die, RzBinDWARF *dw) {
 	return (die->sibling > die->offset)
 		? ht_up_find(dw->info->die_by_offset, die->sibling, NULL)
@@ -1750,11 +1779,13 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		.unit = NULL,
 	};
 	RzBinDwarfCompUnit *unit;
+	
 	rz_vector_foreach(&dw->info->units, unit) {
 		if (rz_vector_empty(&unit->dies)) {
 			continue;
 		}
 		ctx.unit = unit;
+		
 		for (RzBinDwarfDie *die = rz_vector_head(&unit->dies);
 			die && die < die_end(unit);
 			die = die_next(die, dw)) {
@@ -1763,6 +1794,84 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		}
 	}
 	ht_up_free(ctx.str_escaped);
+}
+
+
+
+
+RZ_API void rz_analysis_dwarf_preprocess_comp_units(RzAnalysis* analysis, RzBinDWARF* dw, RzVector* comp_unit_names) {
+	rz_return_if_fail(analysis && dw);
+	if (!dw->info) {
+		return;
+	}
+	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cpu, analysis->bits);
+	Context ctx = {
+		.analysis = analysis,
+		.dw = dw,
+		.unit = NULL,
+	};
+	RzBinDwarfCompUnit *unit;
+	
+	rz_vector_foreach(&dw->info->units, unit) {
+		if (rz_vector_empty(&unit->dies)) {
+			continue;
+		}
+
+		char** comp_unit_name;
+		bool found = false;
+		rz_vector_foreach(comp_unit_names, comp_unit_name) {
+			if (rz_str_endswith(unit->name, *comp_unit_name)) {
+				found = true;
+			}
+		}
+
+		if (!found) {
+			continue;
+		}
+
+		printf("[*] processing '%s'\n", unit->name);
+
+		ctx.unit = unit;
+		
+		for (RzBinDwarfDie *die = rz_vector_head(&unit->dies);
+			die && (ut8 *)die < (ut8 *)unit->dies.a + unit->dies.len * unit->dies.elem_size;
+			die = die_next(die, dw)) {
+			die_parse(&ctx, die);
+		}
+	}
+}
+
+RZ_API void rz_analysis_dwarf_lazy_preprocess_info(
+	RZ_NONNULL RZ_BORROW RzAnalysis *analysis,
+	RZ_NONNULL RZ_BORROW RzBinDWARF *dw) {
+	rz_return_if_fail(analysis && dw);
+	if (!dw->info) {
+		return;
+	}
+	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cpu, analysis->bits);
+	Context ctx = {
+		.analysis = analysis,
+		.dw = dw,
+		.unit = NULL,
+	};
+	RzBinDwarfCompUnit *unit;
+	
+	size_t n_comp_units = dw->info->units.len;
+	size_t i_comp_unit = 0;
+	rz_vector_foreach(&dw->info->units, unit) {
+		if (rz_vector_empty(&unit->dies)) {
+			continue;
+		}
+		ctx.unit = unit;
+		
+		for (RzBinDwarfDie *die = rz_vector_head(&unit->dies);
+			die && (ut8 *)die < (ut8 *)unit->dies.a + unit->dies.len * unit->dies.elem_size;
+			die = die_next(die, dw)) {
+			die_parse_lazy(&ctx, die);
+		}
+		printf("[*] parsed comp unit %lu/%lu\n", i_comp_unit, n_comp_units);
+		++i_comp_unit;
+	}
 }
 
 #define SWAP(T, a, b) \
@@ -1798,6 +1907,7 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 	RzAnalysis *analysis = u;
 	const char *name = k;
 	RzPVector *types = (RzPVector *)v;
+	printf("[*] storing base type '%s'\n", name);
 	const ut32 len = rz_pvector_len(types);
 	if (len == 0) {
 		RZ_LOG_WARN("BaseType %s has nothing", name);
@@ -1855,9 +1965,21 @@ static bool store_callable(void *u, ut64 k, const void *v) {
  */
 RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
-	rz_analysis_dwarf_preprocess_info(analysis, dw);
+	// rz_analysis_dwarf_preprocess_info(analysis, dw);
+	
+	printf("here\n");
+	RzVector* comp_unit_names = rz_vector_new(sizeof(char*), NULL, NULL);
+	char* slub = "slub.c";
+	rz_vector_push(comp_unit_names, &slub);
+	printf("here\n");
+	char** comp_unit;
+	rz_vector_foreach(comp_unit_names, comp_unit) {
+		printf("%s\n", *comp_unit);
+	}
+	rz_analysis_dwarf_preprocess_comp_units(analysis, dw, comp_unit_names);
+	
 	ht_pp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
-	ht_up_foreach(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
+	// ht_up_foreach(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
 }
 
 static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f,

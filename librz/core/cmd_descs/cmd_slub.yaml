@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
+---
+name: cmd_slub
+commands:
+  - name: dmsf
+    cname: cmd_debug_slub_dump_freelist
+    summary: Dump lockless cpu freelist
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: cache_size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n_cpu
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true

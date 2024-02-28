@@ -355,6 +355,7 @@ RZ_API bool Ht_(delete)(HtName_(Ht) * ht, const KEY_TYPE key) {
 RZ_API void Ht_(foreach)(HtName_(Ht) * ht, HT_(ForeachCallback) cb, void *user) {
 	ut32 i;
 
+	printf("[*] processing ht of size %u\n", ht->size);
 	for (i = 0; i < ht->size; ++i) {
 		HT_(Bucket) *bt = &ht->table[i];
 		HT_(Kv) * kv;
