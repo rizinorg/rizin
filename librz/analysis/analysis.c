@@ -75,6 +75,10 @@ static void global_kv_free(HtPPKv *kv) {
 	rz_analysis_var_global_free(kv->value);
 }
 
+static void exception_scope_kv_free(HtUPKv *kv) {
+	rz_list_free(kv->value);
+}
+
 RZ_API RzAnalysis *rz_analysis_new(void) {
 	int i;
 	RzAnalysis *analysis = RZ_NEW0(RzAnalysis);
@@ -102,6 +106,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->cpp_abi = RZ_ANALYSIS_CPP_ABI_ITANIUM;
 	analysis->opt.depth = 32;
 	analysis->opt.noncode = false; // do not analyze data by default
+	analysis->exception_scopes_ht = ht_up_new(NULL, exception_scope_kv_free, NULL);
 	rz_spaces_init(&analysis->meta_spaces, "CS");
 	rz_event_hook(analysis->meta_spaces.event, RZ_SPACE_EVENT_UNSET, meta_unset_for, NULL);
 	rz_event_hook(analysis->meta_spaces.event, RZ_SPACE_EVENT_COUNT, meta_count_for, NULL);
@@ -192,6 +197,9 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	ht_pp_free(a->ht_global_var);
 	rz_list_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
+	// TODO (Jared): Implement
+	rz_rbtree_itv_free(&a->exception_scopes_tree);
+	ht_up_free(a->exception_scopes_ht);
 	free(a);
 	return NULL;
 }

@@ -26,6 +26,10 @@ typedef struct rz_ascii_node_t {
 	ut32 shortcut_w;
 	bool is_mini;
 	ut64 offset;
+	bool is_unconditional_jmp;
+	ut64 address;
+	ut64 jump;
+	ut64 fail;
 } RzANode;
 
 typedef struct rz_core_graph_hits_t {

@@ -899,6 +899,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API bool rz_core_binfiles_print(RzCore *core, RzCmdStateOutput *state);
 RZ_API bool rz_core_binfiles_delete(RzCore *core, RzBinFile *bf);
 RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList /*<char *>*/ *digests);
+RZ_API bool rz_core_bin_apply_trycatch(RzCore *core, RzBinFile *binfile);
+// RZ_API bool
 
 RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzCmdStateOutput *state);
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);
@@ -973,7 +975,8 @@ RZ_API RZ_OWN RzList /*<RzWindowsHeapInfo *>*/ *rz_heap_windows_heap_list(RzCore
 #define RZ_CORE_BIN_ACC_TRYCATCH         0x20000000
 #define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
 #define RZ_CORE_BIN_ACC_MAPS             0x80000000
-#define RZ_CORE_BIN_ACC_ALL              0x80504FFF
+// TODO (Jared): OR together all the above stuff
+#define RZ_CORE_BIN_ACC_ALL 0xA0504FFF
 
 #define RZ_CORE_PRJ_FLAGS           0x0001
 #define RZ_CORE_PRJ_EVAL            0x0002

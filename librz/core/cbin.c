@@ -23,14 +23,14 @@
 
 #define LOAD_BSS_MALLOC 0
 
-#define IS_MODE_SET(mode)       ((mode)&RZ_MODE_SET)
-#define IS_MODE_SIMPLE(mode)    ((mode)&RZ_MODE_SIMPLE)
-#define IS_MODE_SIMPLEST(mode)  ((mode)&RZ_MODE_SIMPLEST)
-#define IS_MODE_JSON(mode)      ((mode)&RZ_MODE_JSON)
-#define IS_MODE_RZCMD(mode)     ((mode)&RZ_MODE_RIZINCMD)
-#define IS_MODE_EQUAL(mode)     ((mode)&RZ_MODE_EQUAL)
+#define IS_MODE_SET(mode)       ((mode) & RZ_MODE_SET)
+#define IS_MODE_SIMPLE(mode)    ((mode) & RZ_MODE_SIMPLE)
+#define IS_MODE_SIMPLEST(mode)  ((mode) & RZ_MODE_SIMPLEST)
+#define IS_MODE_JSON(mode)      ((mode) & RZ_MODE_JSON)
+#define IS_MODE_RZCMD(mode)     ((mode) & RZ_MODE_RIZINCMD)
+#define IS_MODE_EQUAL(mode)     ((mode) & RZ_MODE_EQUAL)
 #define IS_MODE_NORMAL(mode)    (!(mode))
-#define IS_MODE_CLASSDUMP(mode) ((mode)&RZ_MODE_CLASSDUMP)
+#define IS_MODE_CLASSDUMP(mode) ((mode) & RZ_MODE_CLASSDUMP)
 
 // dup from cmd_info
 #define PAIR_WIDTH "9"
@@ -278,6 +278,9 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	}
 	if (mask & RZ_CORE_BIN_ACC_RESOURCES) {
 		rz_core_bin_apply_resources(r, binfile);
+	}
+	if (mask & RZ_CORE_BIN_ACC_TRYCATCH) {
+		rz_core_bin_apply_trycatch(r, binfile);
 	}
 
 	return true;
@@ -1665,6 +1668,40 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 		index++;
 	}
 	rz_flag_space_pop(core->flags);
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_trycatch(RzCore *core, RzBinFile *binfile) {
+	rz_return_val_if_fail(core && binfile, false);
+	RzListIter *it;
+	RzPVector *vec = rz_bin_file_get_trycatch(binfile);
+	RzBinTrycatch *trycatch = NULL;
+	rz_pvector_foreach (vec, it) {
+		RzList *scopes = ht_up_find(core->analysis->exception_scopes_ht, trycatch->source, NULL);
+		if (!scopes) {
+			scopes = rz_list_newf(free);
+			if (!scopes) {
+				return false;
+			}
+			if (!ht_up_insert(core->analysis->exception_scopes_ht, trycatch->source, scopes)) {
+				rz_list_free(scopes);
+				return false;
+			}
+		}
+		RzBinTrycatch *tc = RZ_NEW(RzBinTrycatch);
+		if (!tc) {
+			return false;
+		}
+		*tc = *trycatch;
+		if (!rz_list_append(scopes, tc)) {
+			free(tc);
+			return false;
+		}
+		RzInterval itv = { tc->from, tc->to - tc->from - 1 };
+		if (!rz_rbtree_itv_insert(&core->analysis->exception_scopes_tree, itv, tc)) {
+			return false;
+		}
+	}
 	return true;
 }
 
