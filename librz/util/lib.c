@@ -168,11 +168,14 @@ static bool lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruc
 	p->free = stru->free;
 
 	bool ret = lib_run_handler(lib, p, stru);
-	if (ret) {
-		rz_list_append(lib->plugins, p);
+	if (!ret) {
+		free(p->file);
+		free(p);
+		return false;
 	}
 
-	return ret;
+	rz_list_append(lib->plugins, p);
+	return true;
 }
 
 /**
