@@ -554,6 +554,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
 		case 'E':
+			ro.quiet = true;
 			if (opt.arg) {
 				ro.exec_command = opt.arg;
 				rz_list_append(ro.keywords, (void *)opt.arg);
