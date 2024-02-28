@@ -26,6 +26,7 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool json;
+	bool match_found;
 	int mode;
 	int align;
 	ut8 *buf;
@@ -52,6 +53,7 @@ static void rzfind_options_init(RzfindOptions *ro) {
 	ro->bsize = 4096;
 	ro->to = UT64_MAX;
 	ro->keywords = rz_list_newf(NULL);
+	ro->exec_command = NULL;
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file);
@@ -59,6 +61,7 @@ static int rzfind_open(RzfindOptions *ro, const char *file);
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzfindOptions *ro = (RzfindOptions *)user;
 	int delta = addr - ro->cur;
+	ro->match_found = true;
 	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
 		// This case occurs when there is hit in search left over
 		delta = ro->cur - addr;
@@ -228,6 +231,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	const char *kw;
 	bool last = false;
 	int ret, result = 0;
+	ro->match_found = false;
 
 	ro->buf = NULL;
 	if (!ro->quiet) {
@@ -454,8 +458,15 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 		if (rz_search_update(rs, ro->cur, ro->buf, ret) == -1) {
 			eprintf("search: update read error at 0x%08" PFMT64x "\n", ro->cur);
-			break;
 		}
+	}
+	if (ro->match_found && ro->exec_command) {
+		char *command = rz_str_newf("%s %s", ro->exec_command, ro->curfile);
+		int status = rz_sys_system(command);
+		if (status == -1) {
+			RZ_LOG_ERROR("Failed to execute command: %s", command);
+		}
+		free(command);
 	}
 done:
 	rz_cons_free();
@@ -503,14 +514,6 @@ static int rzfind_open(RzfindOptions *ro, const char *file) {
 		free(buf);
 		return res;
 	}
-	if (ro->exec_command) {
-		char *command = rz_str_newf("%s %s", ro->exec_command, file);
-		int status = rz_sys_system(command);
-		if (status == -1) {
-			RZ_LOG_ERROR("Failed to execute command: %s", command);
-		}
-		free(command);
-	}
 	return rz_file_is_directory(file)
 		? rzfind_open_dir(ro, file)
 		: rzfind_open_file(ro, file, NULL, -1);
@@ -551,7 +554,12 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
 		case 'E':
-			ro.exec_command = opt.arg;
+			if (opt.arg) {
+				ro.exec_command = opt.arg;
+				rz_list_append(ro.keywords, (void *)opt.arg);
+			} else {
+				ro.mode = RZ_SEARCH_ESIL;
+			}
 			break;
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;
