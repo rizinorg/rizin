@@ -149,30 +149,6 @@ CONVERT_TO_TWO_COMPLEMENT(16)
 CONVERT_TO_TWO_COMPLEMENT(32)
 CONVERT_TO_TWO_COMPLEMENT(64)
 
-/**
- * Swap bytes. For example:
- * 0x1122334455667788 --> 0x8877665544332211
- */
-#define rz_swab_64(x) ((ut64)(								\
-	(((ut64)(x) & (ut64)0x00000000000000ffULL) << 56) |	\
-	(((ut64)(x) & (ut64)0x000000000000ff00ULL) << 40) |	\
-	(((ut64)(x) & (ut64)0x0000000000ff0000ULL) << 24) |	\
-	(((ut64)(x) & (ut64)0x00000000ff000000ULL) <<  8) |	\
-	(((ut64)(x) & (ut64)0x000000ff00000000ULL) >>  8) |	\
-	(((ut64)(x) & (ut64)0x0000ff0000000000ULL) >> 24) |	\
-	(((ut64)(x) & (ut64)0x00ff000000000000ULL) >> 40) |	\
-	(((ut64)(x) & (ut64)0xff00000000000000ULL) >> 56)))
-
-#define rz_swab_32(x) ((ut32)(						\
-	(((ut32)(x) & (ut32)0x000000ffULL) << 24) 	|	\
-	(((ut32)(x) & (ut32)0x0000ff00ULL) << 8) 	|	\
-	(((ut32)(x) & (ut32)0x00ff0000ULL) >> 8) 	|	\
-	(((ut32)(x) & (ut32)0xff000000ULL) >> 24)))
-
-#define rz_swab_16(x) ((ut16)(				\
-	(((ut16)(x) & (ut16)0x00ffULL) << 8) |	\
-	(((ut16)(x) & (ut16)0xff00ULL) >> 8)))
-
 /// Typical comparison (1/0/-1) for two numbers of arbitrary types, including unsigned
 #define RZ_NUM_CMP(a, b) ((a) > (b) ? 1 : ((b) > (a) ? -1 : 0))
 
