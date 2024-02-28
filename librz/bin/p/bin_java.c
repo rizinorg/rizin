@@ -149,7 +149,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_java_class_resolve_symbol(jclass, sym);
 }
 
-static RzList /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -218,7 +218,6 @@ RzBinPlugin rz_bin_plugin_java = {
 	.libs = libs,
 	.classes = classes,
 	.demangle_type = demangle_type,
-	.minstrlen = 3,
 };
 
 #ifndef RZ_PLUGIN_INCORE

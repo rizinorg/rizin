@@ -156,7 +156,7 @@ IL_LIFTER(adc) {
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_op(1));
 	RzILOpPure *cf = VARG(EFLAGS(CF));
 
-	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), x86_bool_to_bv(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
+	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), BOOL_TO_BV(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("sum"));
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("sum"));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("sum"), VARL("op1"), VARL("op2"), true);
@@ -633,25 +633,20 @@ IL_LIFTER(div) {
 	return SEQ2(op, BRANCH(IS_ZERO(VARL("_src")), NULL, ret));
 }
 
-// /**
-//  * ESC
-//  * Escape to coprocessor instruction set
-//  * To be used with floating-point unit
-//  */
-// IL_LIFTER(esc) {
-// 	/* Not necessary to implement for binary analysis */
-// 	return EMPTY();
-// }
+/**
+ * ESC
+ * Escape to coprocessor instruction set
+ * To be used with floating-point unit
+ * Not necessary to implement for binary analysis
+ */
 
 /**
  * HLT
  * Enter HALT state
  */
 IL_LIFTER(hlt) {
-	/* It just jumps to an empty goto label "halt"
-	Also need an EMPTY() instruction after it to denote
-	the end of analysis and restart all IL analysis */
-	return SEQ2(GOTO("halt"), EMPTY());
+	/* It just jumps to an empty goto label "halt" */
+	return GOTO("halt");
 }
 
 void label_halt(RzILVM *vm, RzILOpEffect *op) {
@@ -827,10 +822,8 @@ IL_LIFTER(imul) {
  * Encodings: I, ZO
  */
 IL_LIFTER(in) {
-	/* It just jumps to an empty goto label "port"
-	Also need an EMPTY() instruction after it to denote
-	the end of analysis and restart all IL analysis */
-	return SEQ2(GOTO("port"), EMPTY());
+	/* It just jumps to an empty goto label "port" */
+	return GOTO("port");
 }
 
 void label_port(RzILVM *vm, RzILOpEffect *op) {
@@ -860,10 +853,8 @@ IL_LIFTER(inc) {
  * Encodings: I, ZO
  */
 IL_LIFTER(int) {
-	/* For now, it just jumps to an empty goto label "int"
-	Also need an EMPTY() instruction after it to denote
-	the end of analysis and restart all IL analysis */
-	return SEQ2(GOTO("int"), EMPTY());
+	/* For now, it just jumps to an empty goto label "int" */
+	return GOTO("int");
 }
 
 void label_int(RzILVM *vm, RzILOpEffect *op) {
@@ -876,17 +867,14 @@ void label_int(RzILVM *vm, RzILOpEffect *op) {
  * Call to interrupt if overflow flag set
  */
 IL_LIFTER(into) {
-	return BRANCH(VARG(EFLAGS(OF)), SEQ2(GOTO("int"), EMPTY()), NOP());
+	return BRANCH(VARG(EFLAGS(OF)), GOTO("int"), NOP());
 }
 
-// /**
-//  * IRET
-//  * Return from interrupt
-//  */
-// IL_LIFTER(iret) {
-// 	/* TODO: Implement IRET properly */
-// 	return EMPTY();
-// }
+// TODO: Implement IRET
+/**
+ * IRET
+ * Return from interrupt
+ */
 
 #define JUMP_IL() \
 	do { \
@@ -1527,10 +1515,8 @@ IL_LIFTER(or) {
  * Encodings: I, ZO
  */
 IL_LIFTER(out) {
-	/* It just jumps to an empty goto label "port"
-	Also need an EMPTY() instruction after it to denote
-	the end of analysis and restart all IL analysis */
-	return SEQ2(GOTO("port"), EMPTY());
+	/* It just jumps to an empty goto label "port" */
+	return GOTO("port");
 }
 
 typedef struct pop_helper_t {
@@ -1663,15 +1649,8 @@ IL_LIFTER(call) {
 	 * We also need to push the code segment register in case 16 and 32 bit modes.
 	 */
 
-	RzILOpEffect *push_stuff = NULL;
-
-	if (analysis->bits == 64) {
-		push_stuff = x86_push_helper(U64(pc), 8);
-	} else {
-		push_stuff = SEQ4(SETL("_cs", UNSIGNED(analysis->bits, x86_il_get_reg(X86_REG_CS))), x86_push_helper(VARL("_cs"), analysis->bits / BITS_PER_BYTE), SETL("_pc", UN(analysis->bits, pc)), x86_push_helper(VARL("_pc"), analysis->bits / BITS_PER_BYTE));
-	}
-
-	return SEQ2(push_stuff, JMP(x86_il_get_op(0)));
+	RzILOpEffect *push_pc = x86_push_helper(UN(analysis->bits, pc), analysis->bits / BITS_PER_BYTE);
+	return SEQ2(push_pc, JMP(x86_il_get_op(0)));
 }
 
 /**
@@ -1800,7 +1779,7 @@ IL_LIFTER(rcl) {
 
 	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
 	RzILOpEffect *repeat = SETL("_tmp_cf", MSB(VARL("_dest")));
-	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), x86_bool_to_bv(VARG(EFLAGS(CF)), BITS_PER_BYTE * size))));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), BOOL_TO_BV(VARG(EFLAGS(CF)), BITS_PER_BYTE * size))));
 	repeat = SEQ2(repeat, SETG(EFLAGS(CF), VARL("_tmp_cf")));
 	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(tmp_count_size, 1))));
 
@@ -1826,7 +1805,7 @@ IL_LIFTER(rcr) {
 
 	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
 	RzILOpEffect *repeat = SETL("_tmp_cf", LSB(VARL("_dest")));
-	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(x86_bool_to_bv(VARG(EFLAGS(CF)), BITS_PER_BYTE * size), U8(size)))));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(BOOL_TO_BV(VARG(EFLAGS(CF)), BITS_PER_BYTE * size), U8(size)))));
 	repeat = SEQ2(repeat, SETG(EFLAGS(CF), VARL("_tmp_cf")));
 	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(tmp_count_size, 1))));
 
@@ -1862,7 +1841,7 @@ IL_LIFTER(rol) {
 
 	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
 	RzILOpEffect *repeat = SETL("_tmp_cf", MSB(VARL("_dest")));
-	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), x86_bool_to_bv(VARL("_tmp_cf"), BITS_PER_BYTE * size))));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), BOOL_TO_BV(VARL("_tmp_cf"), BITS_PER_BYTE * size))));
 	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(cnt_size, 1))));
 
 	RzILOpBool *if_cond1 = NON_ZERO(VARL("_masked"));
@@ -1887,7 +1866,7 @@ IL_LIFTER(ror) {
 
 	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
 	RzILOpEffect *repeat = SETL("_tmp_cf", LSB(VARL("_dest")));
-	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(x86_bool_to_bv(VARL("_tmp_cf"), BITS_PER_BYTE * size), U8(size)))));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(BOOL_TO_BV(VARL("_tmp_cf"), BITS_PER_BYTE * size), U8(size)))));
 	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(cnt_size, 1))));
 
 	RzILOpBool *if_cond1 = NON_ZERO(VARL("_masked"));
@@ -1912,39 +1891,31 @@ IL_LIFTER(ror) {
  */
 IL_LIFTER(ret) {
 	PopHelper ph = x86_pop_helper(analysis->bits / BITS_PER_BYTE /* BYTES */);
-	RzILOpEffect *ret = ph.eff;
-	/* We can use RSP, and the correct stack pointer will be resolved depending on bitness */
-	ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ph.val));
+
+	RzILOpEffect *ret = SEQ2(SETL("tgt", ph.val), ph.eff);
 
 	if (ins->structure->op_count == 1) {
-		/* Immediate operand (Encondig: I) */
+		/* Immediate operand (Encoding: I)
+		 * Reduce RSP by that many bytes. */
 		ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ADD(x86_il_get_reg(X86_REG_RSP), UN(analysis->bits, ins->structure->operands[0].imm))));
 	}
 
-	return ret;
+	return SEQ2(ret, JMP(VARL("tgt")));
 }
 
-// /**
-//  * RETF
-//  * Return far pointer
-//  * Encoding: ZO, I
-//  * Rarely found in modern programs
-//  */
-// IL_LIFTER(retf) {
-// 	/* Unimplemented: Too rare and cumbersome to implement */
-// 	return EMPTY();
-// }
+/**
+ * RETF
+ * Return far pointer
+ * Encoding: ZO, I
+ * Rarely found in modern programs
+ */
 
-// /**
-//  * RETFQ
-//  * Return far pointer (size: qword)
-//  * Encoding: ZO, I
-//  * Rarely found in modern programs
-//  */
-// IL_LIFTER(retfq) {
-// 	/* Unimplemented: Too rare and cumbersome to implement */
-// 	return EMPTY();
-// }
+/**
+ * RETFQ
+ * Return far pointer (size: qword)
+ * Encoding: ZO, I
+ * Rarely found in modern programs
+ */
 
 /**
  * SAHF
@@ -2066,7 +2037,7 @@ IL_LIFTER(sbb) {
 	RzILOpEffect *op2 = SETL("_op2", x86_il_get_op(1));
 	RzILOpPure *cf = VARG(EFLAGS(CF));
 
-	RzILOpEffect *diff = SETL("_diff", SUB(SUB(VARL("_op1"), VARL("_op2")), x86_bool_to_bv(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
+	RzILOpEffect *diff = SETL("_diff", SUB(SUB(VARL("_op1"), VARL("_op2")), BOOL_TO_BV(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_diff"));
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("_diff"));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("_diff"), VARL("_op1"), VARL("_op2"), false);
@@ -2431,7 +2402,7 @@ IL_LIFTER(bound) {
 	RzILOpBool *cond = OR(ULT(VARL("_index"), VARL("_lower")), UGT(VARL("_index"), VARL("_upper")));
 
 	/* Interrupt if out of bounds, NOP otherwise */
-	return SEQ4(index, lower, upper, BRANCH(cond, SEQ2(GOTO("int"), EMPTY()), NOP()));
+	return SEQ4(index, lower, upper, BRANCH(cond, GOTO("int"), NOP()));
 }
 
 /**

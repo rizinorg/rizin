@@ -44,6 +44,7 @@ rz_util_common_sources = [
   'range.c',
   'rbtree.c',
   'regex.c',
+  'iterator.c',
   'serialize_spaces.c',
   'signal.c',
   'skiplist.c',

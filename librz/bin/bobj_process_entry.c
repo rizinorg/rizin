@@ -7,15 +7,16 @@
 RZ_IPI void rz_bin_set_and_process_entries(RzBinFile *bf, RzBinObject *o) {
 	RzBinPlugin *plugin = o->plugin;
 
-	rz_list_free(o->entries);
+	rz_pvector_free(o->entries);
 	if (!plugin->entries || !(o->entries = plugin->entries(bf))) {
-		o->entries = rz_list_newf(free);
+		o->entries = rz_pvector_new(free);
 		return;
 	}
 
-	RzListIter *it;
+	void **it;
 	RzBinAddr *element;
-	rz_list_foreach (o->entries, it, element) {
+	rz_pvector_foreach (o->entries, it) {
+		element = *it;
 		// rebase physical address
 		element->paddr += o->opts.loadaddr;
 	}

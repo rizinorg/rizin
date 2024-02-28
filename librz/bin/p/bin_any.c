@@ -67,7 +67,6 @@ RzBinPlugin rz_bin_plugin_any = {
 	.destroy = &destroy,
 	.baddr = &baddr,
 	.info = info,
-	.minstrlen = 0,
 };
 
 #ifndef RZ_PLUGIN_INCORE

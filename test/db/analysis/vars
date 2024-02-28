@@ -1148,3 +1148,102 @@ EXPECT=<<EOF
 \           0x8000054e      ret
 EOF
 RUN
+
+NAME=Repeated function analysis - arguments and vars
+FILE=bins/elf/analysis/001.make.elf.x86_64
+CMDS=<<EOF
+aaa
+s 0x0040bbe0
+afi
+echo ---
+afvl
+pd 1
+aaa
+afvl
+pd 1
+aaa
+afvl
+pd 1
+EOF
+EXPECT=<<EOF
+offset: 0x0040bbe0
+name: sym.variable_expand_for_file
+size: 129
+is-pure: false
+realsz: 120
+stackframe: 0
+call-convention: amd64
+cyclomatic-cost: 37
+cyclomatic-complexity: 3
+loops: 1
+bits: 64
+type: sym
+num-bbs: 5
+edges: 6
+end-bbs: 1
+call-refs: 0x0040b0f0 C 0x0040b0f0 J
+data-refs: 0x006331a0 0x00636050 0x006331a0 0x00636050 0x006331a0 0x00636050
+code-xrefs: 0x0040cc17 C 0x00412775 C
+noreturn: false
+in-degree: 2
+out-degree: 1
+data-xrefs:
+locals: 4
+args: 2
+var char *result @ rax
+var struct variable_set_list *savev @ rbp
+var floc *savef @ rbx
+arg struct file *file @ rsi
+arg const char *line @ rsi
+var int64_t var_60h @ stack - 0x60
+---
+var int64_t var_60h @ stack - 0x60
+var char *result @ rax
+var struct variable_set_list *savev @ rbp
+var floc *savef @ rbx
+arg struct file *file @ rsi
+arg const char *line @ rsi
+            ; CALL XREF from dbg.expand_deps @ 0x40cc17
+            ; CALL XREF from dbg.pattern_search @ 0x412775
+/ char *sym.variable_expand_for_file(const char *line, struct file *file);
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; arg const char *line @ rsi
+|           ; arg struct file *file @ rsi
+|           ; var char *result @ rax
+|           ; var struct variable_set_list *savev @ rbp
+|           ; var floc *savef @ rbx
+|           0x0040bbe0      test  rsi, rsi                             ; expand.c:458 ; file
+var int64_t var_60h @ stack - 0x60
+var char *result @ rax
+var struct variable_set_list *savev @ rbp
+var floc *savef @ rbx
+arg struct file *file @ rsi
+arg const char *line @ rsi
+            ; CALL XREF from dbg.expand_deps @ 0x40cc17
+            ; CALL XREF from dbg.pattern_search @ 0x412775
+/ char *sym.variable_expand_for_file(const char *line, struct file *file);
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; arg const char *line @ rsi
+|           ; arg struct file *file @ rsi
+|           ; var char *result @ rax
+|           ; var struct variable_set_list *savev @ rbp
+|           ; var floc *savef @ rbx
+|           0x0040bbe0      test  rsi, rsi                             ; expand.c:458 ; file
+var int64_t var_60h @ stack - 0x60
+var char *result @ rax
+var struct variable_set_list *savev @ rbp
+var floc *savef @ rbx
+arg struct file *file @ rsi
+arg const char *line @ rsi
+            ; CALL XREF from dbg.expand_deps @ 0x40cc17
+            ; CALL XREF from dbg.pattern_search @ 0x412775
+/ char *sym.variable_expand_for_file(const char *line, struct file *file);
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; arg const char *line @ rsi
+|           ; arg struct file *file @ rsi
+|           ; var char *result @ rax
+|           ; var struct variable_set_list *savev @ rbp
+|           ; var floc *savef @ rbx
+|           0x0040bbe0      test  rsi, rsi                             ; expand.c:458 ; file
+EOF
+RUN

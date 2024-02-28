@@ -504,8 +504,6 @@ RZ_API RZ_OWN char *rz_core_types_as_c_all(RZ_NONNULL RzCore *core, bool multili
 
 RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core);
 RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core);
-RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr);
-RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, int len, int nops);
 
 RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallback cb);
 RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
@@ -667,6 +665,10 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 RZ_API void rz_core_analysis_esil_init_mem_del(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size);
 RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 
+RZ_API void rz_core_analysis_il_reinit(RZ_NONNULL RzCore *core);
+RZ_API bool rz_core_il_step(RZ_NONNULL RzCore *core, ut64 n);
+RZ_API bool rz_core_il_step_until(RZ_NONNULL RzCore *core, ut64 until);
+
 /* canalysis.c */
 typedef enum rz_core_analysis_name_type {
 	RZ_CORE_ANALYSIS_NAME_TYPE_VAR = 0,
@@ -739,6 +741,12 @@ RZ_API RZ_BORROW const char *rz_core_analysis_name_type_to_str(RzCoreAnalysisNam
 RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p);
 RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, ut64 addr);
+
+RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr);
+RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops);
+RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(RZ_NONNULL RzCore *core, ut64 offset, ut64 len, ut64 nops, RzAnalysisOpMask mask);
+RZ_API RZ_OWN RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask);
+RZ_API ut64 rz_core_analysis_ops_size(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops);
 
 /* cgraph.c */
 /**
@@ -1216,11 +1224,6 @@ RZ_API void rz_core_task_list(RzCore *core, int mode);
 RZ_API bool rz_core_task_is_cmd(RzCore *core, int id);
 RZ_API void rz_core_task_del_all_done(RzCore *core);
 
-RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char *cmd, int type, bool lock);
-RZ_API void rz_core_autocomplete_free(RzCoreAutocomplete *obj);
-RZ_API void rz_core_autocomplete_reload(RzCore *core);
-RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent, const char *cmd, bool exact);
-RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd);
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
 RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file);
@@ -1310,7 +1313,7 @@ RZ_API ut64 rz_core_analysis_var_addr(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnal
 RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NONNULL RzBinSymbol *symbol, bool demangle);
 RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names);
 
-RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, ut32 num_ops, bool pretty);
+RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty);
 
 #endif
 

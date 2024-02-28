@@ -150,17 +150,17 @@ static RzPVector /*<RzBinSection *>*/ *nds_sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *nds_entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *nds_entries(RzBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return NULL;
 	}
 	RzBinAddr *ptr9 = NULL, *ptr7 = NULL;
-	RzList *ret = NULL;
+	RzPVector *ret = NULL;
 
-	if (!(ret = rz_list_newf(free)) ||
+	if (!(ret = rz_pvector_new(free)) ||
 		!(ptr9 = RZ_NEW0(RzBinAddr)) ||
 		!(ptr7 = RZ_NEW0(RzBinAddr))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		free(ptr9);
 		return NULL;
 	}
@@ -169,12 +169,12 @@ static RzList /*<RzBinAddr *>*/ *nds_entries(RzBinFile *bf) {
 	/* ARM9 entry point */
 	ptr9->vaddr = hdr->arm9_entry_address;
 	ptr9->paddr = hdr->arm9_rom_offset + (hdr->arm9_entry_address - hdr->arm9_ram_address);
-	rz_list_append(ret, ptr9);
+	rz_pvector_push(ret, ptr9);
 
 	/* ARM7 entry point */
 	ptr7->vaddr = hdr->arm7_entry_address;
 	ptr7->paddr = hdr->arm7_rom_offset + (hdr->arm7_entry_address - hdr->arm7_ram_address);
-	rz_list_append(ret, ptr7);
+	rz_pvector_push(ret, ptr7);
 	return ret;
 }
 

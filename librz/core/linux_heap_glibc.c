@@ -84,7 +84,8 @@ static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
 			main_arena = base_addr + off;
 			goto beach;
 		}
-		RzBinInfo *info = rz_bin_get_info(core->bin);
+		RzBinObject *o = rz_bin_cur_object(core->bin);
+		RzBinInfo *info = o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
 		if (!strcmp(info->arch, "x86") && info->bits == 64 &&
 			// Assumes that the vaddr of LOAD0 is 0x0
 			(off = GH(get_va_symbol)(core, path, "mallopt")) != GHT_MAX) {

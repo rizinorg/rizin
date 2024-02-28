@@ -1649,14 +1649,14 @@ RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {
 	return sections;
 }
 
-RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
+RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	LE_header *h = bin->header;
 	RzBinAddr *addr = NULL;
-	RzList *entries = rz_list_newf((RzListFree)free);
+	RzPVector *entries = rz_pvector_new((RzPVectorFree)free);
 	if (!entries) {
 	fail_cleanup:
-		rz_list_free(entries);
+		rz_pvector_free(entries);
 		free(addr);
 		return NULL;
 	}
@@ -1667,7 +1667,7 @@ RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 		CHECK(addr = RZ_NEW0(RzBinAddr));
 		addr->vaddr = bin->objects[h->startobj - 1].reloc_base_addr + h->eip;
 		addr->paddr = le_vaddr_to_paddr(bin, addr->vaddr);
-		CHECK(rz_list_append(entries, addr));
+		CHECK(rz_pvector_push(entries, addr));
 		addr = NULL;
 	}
 
@@ -1678,7 +1678,7 @@ RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 			CHECK(addr = RZ_NEW0(RzBinAddr));
 			addr->vaddr = e->symbol->vaddr;
 			addr->paddr = le_vaddr_to_paddr(bin, addr->vaddr);
-			CHECK(rz_list_append(entries, addr));
+			CHECK(rz_pvector_push(entries, addr));
 			addr = NULL;
 		}
 	}

@@ -54,8 +54,8 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(free);
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new(free);
 	if (ret) {
 		RzBinAddr *entry = rz_bin_te_get_entrypoint(bf->o->bin_obj);
 		if (entry) {
@@ -63,7 +63,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 			if (ptr) {
 				ptr->paddr = entry->paddr;
 				ptr->vaddr = entry->vaddr;
-				rz_list_append(ret, ptr);
+				rz_pvector_push(ret, ptr);
 			}
 			free(entry);
 		}
@@ -162,7 +162,6 @@ RzBinPlugin rz_bin_plugin_te = {
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
-	.minstrlen = 4,
 };
 
 #ifndef RZ_PLUGIN_INCORE

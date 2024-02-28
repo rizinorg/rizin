@@ -1067,13 +1067,13 @@ RUN
 NAME=misaligned arm string xref
 FILE=bins/mach0/misaligned_data-iOS-armv7
 CMDS=<<EOF
-aav
-aae
-af
-axt @ str.helloradareworld
+aaa
+axt @ str.helloradareworl
+pd 1 @ 0xbf9c
 EOF
 EXPECT=<<EOF
-main 0xbf9c [DATA] add r0, pc
+entry0 0xbf9c [DATA] add r0, pc
+|           0x0000bf9c      add   r0, pc                               ; 0xbfed ; "helloradareworld\n" ; const char *format
 EOF
 RUN
 
@@ -1280,5 +1280,40 @@ EXPECT=<<EOF
                .-----------.
                |  0x148    |
                `-----------'
+EOF
+RUN
+
+NAME=Check MOV gets identified as JUMP if it moves to PC
+FILE==
+ARGS=-a arm -b 16
+CMDS=<<EOF
+s 0x100
+wx bff36f8f2548874680bd000072b680bd
+s 0x19c
+wx 0x0c010000
+s 0x100
+aaa
+pd 10 @ 0x100
+px 4 @ 0x19c
+EOF
+EXPECT=<<EOF
+            ;-- pc:
+            ;-- r15:
+/ fcn.00000100();
+|           0x00000100      isb   sy
+|           0x00000104      ldr   r0, aav.0x0000010c                   ; [0x10c:4]=0xbd80b672 ; "r\xb6\x80\xbd"
+\           0x00000106      mov   pc, r0
+            0x00000108      pop   {r7, pc}
+            0x0000010a      movs  r0, r0
+            ; CODE XREFS from fcn.00000100 @ 0x104, 0x106
+            ; UNKNOWN XREF from aav.0x0000010c @ +0x90
+/ aav.0x0000010c();
+|           0x0000010c      cpsid i
+\           0x0000010e      pop   {r7, pc}
+            0x00000110      movs  r0, r0
+            0x00000112      movs  r0, r0
+            0x00000114      movs  r0, r0
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000019c  0c01 0000                                ....
 EOF
 RUN

@@ -5,7 +5,6 @@
 #include <rz_analysis.h>
 #include <rz_hash.h>
 #include <rz_util/ht_uu.h>
-#include <assert.h>
 
 #define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzAnalysisBlock, _rb) : NULL)
 
@@ -38,7 +37,7 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 #define D if (analysis && analysis->verbose)
 
 RZ_API void rz_analysis_block_ref(RzAnalysisBlock *bb) {
-	assert(bb->ref > 0); // 0-refd must already be freed.
+	rz_return_if_fail(bb->ref > 0); // 0-refd must already be freed.
 	bb->ref++;
 }
 
@@ -376,12 +375,12 @@ RZ_API void rz_analysis_block_unref(RzAnalysisBlock *bb) {
 	if (!bb) {
 		return;
 	}
-	assert(bb->ref > 0);
+	rz_return_if_fail(bb->ref > 0);
 	bb->ref--;
-	assert(bb->ref >= rz_list_length(bb->fcns)); // all of the block's functions must hold a reference to it
+	rz_return_if_fail(bb->ref >= rz_list_length(bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
 		RzAnalysis *analysis = bb->analysis;
-		assert(!bb->fcns || rz_list_empty(bb->fcns));
+		rz_return_if_fail(!bb->fcns || rz_list_empty(bb->fcns));
 		rz_rbtree_aug_delete(&analysis->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 	}
 }
@@ -496,14 +495,14 @@ typedef struct {
 
 RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnalysisBlockCb cb, RZ_NULLABLE RzAnalysisBlockCb on_exit, void *user) {
 	rz_return_val_if_fail(block && cb, true);
+	RzVector path;
 	bool breaked = false;
 	HtUP *visited = ht_up_new0();
+	rz_vector_init(&path, sizeof(RecurseDepthFirstCtx), NULL, NULL);
 	if (!visited) {
 		goto beach;
 	}
 	RzAnalysis *analysis = block->analysis;
-	RzVector path;
-	rz_vector_init(&path, sizeof(RecurseDepthFirstCtx), NULL, NULL);
 	RzAnalysisBlock *cur_bb = block;
 	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 	rz_vector_push(&path, &ctx);

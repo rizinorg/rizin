@@ -699,13 +699,7 @@ static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *fi
 	rz_core_bin_apply_all_info(r, binfile);
 	rz_debug_reg_profile_sync(r->dbg);
 	plugin = rz_bin_file_cur_plugin(binfile);
-	if (plugin && !strcmp(plugin->name, "any")) {
-		// set use of raw strings
-		// rz_config_set_i (r->config, "io.va", false);
-		// get bin.minstr
-		r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
-		r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
-	} else if (binfile) {
+	if (!(plugin && !strcmp(plugin->name, "any")) && binfile) {
 		RzBinObject *obj = rz_bin_cur_object(r->bin);
 		RzBinInfo *info = obj ? obj->info : NULL;
 		if (plugin && info) {
@@ -746,12 +740,7 @@ static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loada
 			return false;
 		}
 		info->bits = r->rasm->bits;
-		// set use of raw strings
 		rz_core_bin_set_arch_bits(r, binfile->file, info->arch, info->bits);
-		// rz_config_set_i (r->config, "io.va", false);
-		// get bin.minstr
-		r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
-		r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
 	} else if (binfile) {
 		RzBinObject *obj = rz_bin_cur_object(r->bin);
 		RzBinInfo *info = obj ? obj->info : NULL;
@@ -970,8 +959,6 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 		return false;
 	}
 
-	r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
-	r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
 	if (is_io_load) {
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
@@ -1019,11 +1006,6 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			} else {
 				rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 			}
-			// set use of raw strings
-			// rz_config_set_i (r->config, "io.va", false);
-			// get bin.minstr
-			r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
-			r->bin->maxstrbuf = rz_config_get_i(r->config, "bin.maxstrbuf");
 		} else if (binfile) {
 			RzBinObject *obj = rz_bin_cur_object(r->bin);
 			if (obj) {

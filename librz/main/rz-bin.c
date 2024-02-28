@@ -238,7 +238,7 @@ static int rzbin_show_help(int v) {
 		       " RZ_NOPLUGINS:                                         # do not load shared plugins (speedup loading)\n"
 		       " RZ_BIN_LANG:      e bin.lang                          # assume lang for demangling\n"
 		       " RZ_BIN_DEMANGLE=0:e bin.demangle                      # do not demangle symbols\n"
-		       " RZ_BIN_MAXSTRBUF: e bin.maxstrbuf                     # specify maximum buffer size\n"
+		       " RZ_BIN_MAXSTRBUF: e str.search.buffer_size            # specify maximum buffer size\n"
 		       " RZ_BIN_STRFILTER: e bin.str.filter                    # rizin -qc 'e bin.str.filter=?"
 		       "?' -\n"
 		       " RZ_BIN_STRPURGE:  e bin.str.purge                     # try to purge false positives\n"
@@ -781,7 +781,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		free(tmp);
 	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_MAXSTRBUF"))) {
-		rz_config_set(core.config, "bin.maxstrbuf", tmp);
+		if (rz_num_is_valid_input(NULL, tmp)) {
+			ut64 value = rz_num_math(NULL, tmp);
+			rz_config_set_i(core.config, "str.search.buffer_size", value);
+		}
 		free(tmp);
 	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_STRFILTER"))) {
@@ -983,11 +986,11 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			break;
 		case 'N': {
 			tmp = strchr(opt.arg, ':');
-			int bin_strlen = rz_num_math(NULL, opt.arg);
-			rz_config_set_i(core.config, "bin.minstr", bin_strlen);
+			size_t value = rz_num_math(NULL, opt.arg);
+			rz_config_set_i(core.config, "str.search.min_length", value);
 			if (tmp) {
-				bin_strlen = rz_num_math(NULL, tmp + 1);
-				rz_config_set_i(core.config, "bin.maxstr", bin_strlen);
+				value = rz_num_math(NULL, tmp + 1);
+				rz_config_set_i(core.config, "str.search.buffer_size", value);
 			}
 			break;
 		}
@@ -1217,10 +1220,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_bin_set_baddr(bin, baddr);
 	}
 
-	bf->minstrlen = bin->minstrlen = rz_config_get_i(core.config, "bin.minstr");
-	bf->maxstrlen = bin->maxstrlen = rz_config_get_i(core.config, "bin.maxstr");
-	bin->maxstrbuf = rz_config_get_i(core.config, "bin.maxstrbuf");
-
 	if (rawstr) {
 		PJ *pj = NULL;
 		if (out_mode == RZ_MODE_JSON) {
@@ -1232,7 +1231,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			pj_a(pj);
 		}
-		RzPVector *vec = rz_bin_file_strings(bf, bin->minstrlen, true);
+		RzBinStringSearchOpt opt = bin->str_search_cfg;
+		// enforce raw binary search
+		opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+		RzPVector *vec = rz_bin_file_strings(bf, &opt);
 		void **it;
 		RzBinString *string;
 		rz_pvector_foreach (vec, it) {

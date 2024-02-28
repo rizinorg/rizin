@@ -870,7 +870,19 @@ RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt) {
 
 static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
 	char **flagdesc, char **flagdesc2, char **pcstr, char **spstr) {
-	RzFlagItem *f = rz_flag_get_at(core->flags, frame->addr, true);
+	RzFlagItem *f = rz_flag_get_at_by_spaces(core->flags, true, frame->addr,
+		RZ_FLAGS_FS_CLASSES,
+		RZ_FLAGS_FS_FUNCTIONS,
+		RZ_FLAGS_FS_IMPORTS,
+		RZ_FLAGS_FS_RELOCS,
+		RZ_FLAGS_FS_RESOURCES,
+		RZ_FLAGS_FS_SECTIONS,
+		RZ_FLAGS_FS_SEGMENTS,
+		RZ_FLAGS_FS_SYMBOLS,
+		RZ_FLAGS_FS_SYMBOLS_SECTIONS,
+		RZ_FLAGS_FS_DEBUG_MAPS,
+		RZ_FLAGS_FS_POINTERS,
+		NULL);
 	RzFlagItem *f2 = NULL;
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
@@ -1187,7 +1199,7 @@ static const char *signal_option(int opt) {
 }
 
 static bool siglistcb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {
@@ -1208,7 +1220,7 @@ static bool siglistcb(void *p, const char *k, const char *v) {
 }
 
 static bool siglistjsoncb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {
@@ -1229,7 +1241,7 @@ static bool siglistjsoncb(void *p, const char *k, const char *v) {
 }
 
 static bool siglisttblcb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
+	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
 	if (atoi(k) > 0) {

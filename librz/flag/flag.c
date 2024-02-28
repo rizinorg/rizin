@@ -454,6 +454,96 @@ RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest) {
 	return nice ? evalFlag(f, nice) : NULL;
 }
 
+static bool flag_space_is_in_list(RzList /*<RzSpace *>*/ *spaces, RzFlagItem *item) {
+	RzListIter *it;
+	RzSpace *space;
+	rz_list_foreach (spaces, it, space) {
+		if (IS_FI_IN_SPACE(item, space)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief      Returns the last flag item close or at the specified offset within the given spaces.
+ *
+ * \param      f        RzFlag object to use
+ * \param[in]  closest  When true returns the first flag found at the closest offset
+ * \param[in]  off      Offset of the flag to search
+ * \param[in]  ...      Spaces to search into (must contain a NULL value).
+ *
+ * \return     On success returns the flag item close or at the specified offset, otherwise NULL.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool closest, ut64 off, ...) {
+	va_list ap;
+	RzList *spaces = rz_list_new();
+	if (!spaces) {
+		return NULL;
+	}
+
+	va_start(ap, off);
+	const char *space_name = va_arg(ap, const char *);
+	while (space_name) {
+		RzSpace *space = rz_flag_space_get(f, space_name);
+		if (space) {
+			rz_list_append(spaces, space);
+		}
+		space_name = va_arg(ap, const char *);
+	}
+	va_end(ap);
+
+	RzFlagItem *nice = NULL;
+	RzListIter *iter;
+	const RzFlagsAtOffset *flags_at = rz_flag_get_nearest_list(f, off, -1);
+	if (!flags_at) {
+		return NULL;
+	}
+	if (flags_at->off == off) {
+		RzFlagItem *item;
+		rz_list_foreach (flags_at->flags, iter, item) {
+			if (!flag_space_is_in_list(spaces, item)) {
+				continue;
+			}
+			if (nice) {
+				if (isFunctionFlag(nice->name)) {
+					nice = item;
+				}
+			} else {
+				nice = item;
+			}
+		}
+		if (nice) {
+			return evalFlag(f, nice);
+		}
+	}
+
+	if (!closest) {
+		rz_list_free(spaces);
+		return NULL;
+	}
+	while (!nice && flags_at) {
+		RzFlagItem *item;
+		rz_list_foreach (flags_at->flags, iter, item) {
+			if (!flag_space_is_in_list(spaces, item)) {
+				continue;
+			}
+			if (item->offset == off) {
+				return evalFlag(f, item);
+			}
+			nice = item;
+			break;
+		}
+		if (!nice && flags_at->off) {
+			flags_at = rz_flag_get_nearest_list(f, flags_at->off - 1, -1);
+		} else {
+			flags_at = NULL;
+		}
+	}
+	rz_list_free(spaces);
+	return nice ? evalFlag(f, nice) : NULL;
+}
+
 static bool append_to_list(RzFlagItem *fi, void *user) {
 	RzList *ret = (RzList *)user;
 	rz_list_append(ret, fi);

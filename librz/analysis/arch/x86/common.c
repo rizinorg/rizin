@@ -38,7 +38,7 @@ const char *x86_registers[X86_REG_ENDING] = {
 	[X86_REG_ES] = "es",
 	[X86_REG_ESI] = "esi",
 	[X86_REG_ESP] = "esp",
-	[X86_REG_FPSW] = "fpsw",
+	[X86_REG_FPSW] = "swd",
 	[X86_REG_FS] = "fs",
 	[X86_REG_GS] = "gs",
 	[X86_REG_IP] = "ip",
@@ -611,7 +611,7 @@ int get_extreg_ind(X86Reg reg) {
  * \param bits bitness
  * \param pc Program counter
  */
-RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc) {
+RZ_IPI RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc) {
 	if (is_pc_reg(reg)) {
 		return UN(bits, pc);
 	}
@@ -643,7 +643,8 @@ RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc) {
  * \param val Value to be stored
  * \param bits bitness
  */
-RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) {
+RZ_IPI RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpPure *val, int bits) {
+	rz_return_val_if_fail(val, NULL);
 	int ind = -1;
 
 	if (x86_il_is_gpr(reg)) {
@@ -670,7 +671,7 @@ RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) {
  * \param segment
  * \param bits bitness
  */
-RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits, ut64 pc) {
+RZ_IPI RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits, ut64 pc) {
 	RzILOpPure *offset = NULL;
 	if (mem.base != X86_REG_INVALID) {
 		offset = x86_il_get_reg_bits(mem.base, bits, pc);
@@ -708,11 +709,12 @@ RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits
 	return offset;
 }
 
-RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits, ut64 pc) {
+RZ_IPI RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits, ut64 pc) {
 	return x86_il_get_memaddr_segment_bits(mem, mem.segment, bits, pc);
 }
 
-RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits, ut64 pc) {
+RZ_IPI RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RZ_OWN RZ_NONNULL RzILOpPure *val, int bits, ut64 pc) {
+	rz_return_val_if_fail(val, NULL);
 	return STOREW(x86_il_get_memaddr_bits(mem, bits, pc), val);
 }
 
@@ -725,7 +727,7 @@ RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits, ut64 pc
  * \param op
  * \param analysis_bits bitness
  */
-RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size) {
+RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size) {
 	switch (op.type) {
 	case X86_OP_INVALID:
 		if (implicit_size) {
@@ -754,7 +756,9 @@ RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int im
  * \param op
  * \param analysis_bits bitness
  */
-RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits, ut64 pc) {
+RZ_IPI RzILOpEffect *x86_il_set_operand_bits(X86Op op, RZ_OWN RZ_NONNULL RzILOpPure *val, int bits, ut64 pc) {
+	rz_return_val_if_fail(val, NULL);
+
 	RzILOpEffect *ret = NULL;
 	switch (op.type) {
 	case X86_OP_REG:
@@ -780,7 +784,9 @@ RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits, ut64 
  * \param x
  * \param y
  */
-RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+RZ_IPI RzILOpBool *x86_il_is_add_carry(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(res && x && y, NULL);
+
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -809,7 +815,9 @@ RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ
  * \param x
  * \param y
  */
-RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+RZ_IPI RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(res && x && y, NULL);
+
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -838,7 +846,9 @@ RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, R
  * \param x
  * \param y
  */
-RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+RZ_IPI RzILOpBool *x86_il_is_add_overflow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(res && x && y, NULL);
+
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -861,7 +871,9 @@ RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x,
  * \param x
  * \param y
  */
-RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+RZ_IPI RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y) {
+	rz_return_val_if_fail(res && x && y, NULL);
+
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -875,16 +887,6 @@ RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x
 	RzILOpBool * or = OR(nrxny, rnxy);
 
 	return or ;
-}
-
-/**
- * \brief Convert a bool \p b to a bitvector of length \p bits
- *
- * \param b
- * \param bits
- */
-RzILOpBitVector *x86_bool_to_bv(RzILOpBool *b, unsigned int bits) {
-	return ITE(b, UN(bits, 1), UN(bits, 0));
 }
 
 struct x86_parity_helper_t {
@@ -906,7 +908,7 @@ struct x86_parity_helper_t x86_il_get_parity(RZ_OWN RzILOpPure *val) {
 	since the value of "_popcnt" wouldn't change any further */
 	RzILOpBool *condition = NON_ZERO(VARL("_val"));
 
-	RzILOpEffect *popcnt = SETL("_popcnt", ADD(VARL("_popcnt"), x86_bool_to_bv(LSB(VARL("_val")), 8)));
+	RzILOpEffect *popcnt = SETL("_popcnt", ADD(VARL("_popcnt"), BOOL_TO_BV(LSB(VARL("_val")), 8)));
 	popcnt = SEQ2(popcnt, SETL("_val", SHIFTR0(VARL("_val"), U8(1))));
 
 	RzILOpEffect *repeat_eff = REPEAT(condition, popcnt);
@@ -922,7 +924,9 @@ struct x86_parity_helper_t x86_il_get_parity(RZ_OWN RzILOpPure *val) {
 /**
  * \brief Sets the value of PF, ZF, SF according to the \p result
  */
-RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RzILOpPure *result, int bits) {
+RZ_IPI RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RZ_NONNULL RzILOpPure *result, int bits) {
+	rz_return_val_if_fail(result, NULL);
+
 	RzILOpEffect *set = SETL("_result", result);
 	struct x86_parity_helper_t pf = x86_il_get_parity(UNSIGNED(8, VARL("_result")));
 	RzILOpBool *zf = IS_ZERO(VARL("_result"));
@@ -937,7 +941,9 @@ RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RzILOpPure *result, int bits) 
 /**
  * \brief Sets the value of CF, OF, AF according to the \p res
  */
-RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits) {
+RZ_IPI RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y, bool addition, int bits) {
+	rz_return_val_if_fail(res && x && y, NULL);
+
 	RzILOpBool *cf = NULL;
 	RzILOpBool *of = NULL;
 	RzILOpBool *af = NULL;
@@ -965,7 +971,9 @@ RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ_OWN Rz
 /**
  * \brief Set OF and AF according to \p res
  */
-RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits) {
+RZ_IPI RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN RZ_NONNULL RzILOpPure *x, RZ_OWN RZ_NONNULL RzILOpPure *y, bool addition, int bits) {
+	rz_return_val_if_fail(res && x && y, NULL);
+
 	RzILOpBool *of = NULL;
 	RzILOpBool *af = NULL;
 
@@ -991,7 +999,7 @@ RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPure *res,
  *
  * \param size size of flags needed
  */
-RzILOpPure *x86_il_get_flags(unsigned int size) {
+RZ_IPI RzILOpPure *x86_il_get_flags(unsigned int size) {
 	/* We really don't care about bits higher than 16 for now */
 	RzILOpPure *val;
 	if (size == 8) {
@@ -1002,30 +1010,30 @@ RzILOpPure *x86_il_get_flags(unsigned int size) {
 	always 1 on 8086 and 186,
 	always 0 on later models
 	Assuming 0 */
-	val = x86_bool_to_bv(IL_FALSE, size);
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(NT)), size));
+	val = BOOL_TO_BV(IL_FALSE, size);
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(NT)), size));
 
 	/** Bit 12-13: IOPL,
 	I/O privilege level (286+ only),
 	always 1 on 8086 and 186
 	Assuming all 1 */
 	val = LOGOR(SHIFTL0(val, UN(size, 2)), UN(size, 0x3));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(OF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(DF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(IF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(TF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(OF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(DF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(IF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(TF)), size));
 
 lower_half:
 	if (size == 8) {
-		val = x86_bool_to_bv(VARG(EFLAGS(SF)), size);
+		val = BOOL_TO_BV(VARG(EFLAGS(SF)), size);
 	} else {
-		val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(ZF)), size));
+		val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(ZF)), size));
 	}
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(ZF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(EFLAGS(AF)), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(EFLAGS(PF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(ZF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), BOOL_TO_BV(VARG(EFLAGS(AF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), BOOL_TO_BV(VARG(EFLAGS(PF)), size));
 	val = LOGOR(SHIFTL0(val, UN(size, 1)), UN(size, 1));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(CF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), BOOL_TO_BV(VARG(EFLAGS(CF)), size));
 
 	return val;
 }
@@ -1036,7 +1044,9 @@ lower_half:
  * \param val value to set the FLAGS register to
  * \param size size of \p val
  */
-RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
+RZ_IPI RzILOpEffect *x86_il_set_flags(RZ_OWN RZ_NONNULL RzILOpPure *val, unsigned int size) {
+	rz_return_val_if_fail(val, NULL);
+
 	RzILOpEffect *set_val = SETL("_flags", val);
 
 	RzILOpEffect *eff = SETG(EFLAGS(CF), LSB(VARL("_flags")));
@@ -1068,6 +1078,489 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
 	/* Again, we will be ignoring bits over 16 and also ignore IOPL */
 
 	return SEQ2(set_val, eff);
+}
+
+/**
+ * \brief Check whether \p reg is an FPU stack register (ST0 - ST7)
+ *
+ * \param reg
+ */
+RZ_IPI bool x86_il_is_st_reg(X86Reg reg) {
+	return reg >= X86_REG_ST0 && reg <= X86_REG_ST7;
+}
+
+/**
+ * \brief Get the 11th and 12th bit which stores the rounding mode from the FPU
+ * control word
+ *
+ * \return RzILOpPure* 2 bit rounding mode
+ */
+RZ_IPI RzILOpPure *x86_il_fpu_get_rmode() {
+	return UNSIGNED(2, SHIFTR0(VARG(X86_REG_FPU_CW), UN(8, 10)));
+}
+
+/**
+ * \brief Get the float stored in FPU stack \p reg
+ *
+ * \param reg
+ * \return RzILOpFloat* IEEE754 80 bit float
+ */
+RZ_IPI RzILOpFloat *x86_il_get_st_reg(X86Reg reg) {
+	rz_return_val_if_fail(x86_il_is_st_reg(reg), NULL);
+	return BV2F(RZ_FLOAT_IEEE754_BIN_80, VARG(x86_registers[reg]));
+}
+
+/**
+ * \brief Set the local variable to the value of "_rmode" computed using control
+ * word bits
+ *
+ * \return RzILOpEffect*
+ */
+RZ_IPI RzILOpEffect *init_rmode() {
+	return SETL("_rmode", x86_il_fpu_get_rmode());
+}
+
+/**
+ * \brief Execute the function \p f with the correct op mode argument
+ *
+ * \param f function which takes in the rounding mode as the first argument
+ *
+ * 0 -> RNE
+ * 1 -> RTN
+ * 2 -> RTP
+ * 3 -> RTZ
+ *
+ * I hate this, but this is the only way to conditionally use the correct rmode.
+ */
+#define EXEC_WITH_RMODE(f, ...) \
+	ITE(EQ(VARL("_rmode"), UN(2, 0)), f(RZ_FLOAT_RMODE_RNE, __VA_ARGS__), \
+		(EQ(VARL("_rmode"), UN(2, 1)), f(RZ_FLOAT_RMODE_RTN, __VA_ARGS__), \
+			(EQ(VARL("_rmode"), UN(2, 2)), f(RZ_FLOAT_RMODE_RTP, __VA_ARGS__), \
+				(f(RZ_FLOAT_RMODE_RTZ, __VA_ARGS__)))))
+
+RzILOpFloat *resize_floating_helper(RzFloatRMode rmode, RzFloatFormat format, RzILOpFloat *val) {
+	return FCONVERT(format, rmode, val);
+}
+
+/**
+ * \brief Resize the float \p val to \p width
+ * You need to have initialized a local variable "_rmode" set with the rounding
+ * mode before you call this function.
+ *
+ * \param val Desirable that it is a small expression since it will be duped
+ * \param format Output float format
+ * \param ctx use_rmode gets set to true
+ * \return RzILOpFloat*
+ */
+RZ_IPI RzILOpFloat *x86_il_resize_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(val && ctx, NULL);
+	ctx->use_rmode = true;
+
+	/* TODO: Figure out a more elegant solution than to `DUP` the input val. */
+	RzILOpFloat *ret = EXEC_WITH_RMODE(resize_floating_helper, format, DUP(val));
+	rz_il_op_pure_free(val);
+	return ret;
+}
+
+RzILOpFloat *sint2f_floating_helper(RzFloatRMode rmode, RzFloatFormat format, RzILOpBitVector *val) {
+	return SINT2F(format, rmode, val);
+}
+
+/**
+ * \brief Convert the integer \p int_val to a RzILOpFloat of format \p fmt
+ * You need to have initialized a local variable "_rmode" set with the rounding
+ * mode before you call this function.
+ *
+ * \param int_val Desirable that it is a small expression since it will be duped
+ * \param format Output float format
+ * \param ctx use_rmode gets set to true
+ * \return RzILOpFloat*
+ */
+RZ_IPI RzILOpFloat *x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBitVector *int_val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(int_val && ctx, NULL);
+
+	ctx->use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(sint2f_floating_helper, format, DUP(int_val));
+	rz_il_op_pure_free(int_val);
+	return ret;
+}
+
+RzILOpFloat *f2sint_floating_helper(RzFloatRMode rmode, ut32 width, RzILOpFloat *val) {
+	return F2SINT(width, rmode, val);
+}
+
+/**
+ * \brief Convert the floating \p float_val to a RzILOpBitVector of size \p width
+ * You need to have initialized a local variable "_rmode" set with the rounding
+ * mode before you call this function.
+ *
+ * \param float_val Desirable that it is a small expression since it will be duped
+ * \param width Output bitvector width
+ * \param ctx use_rmode gets set to true
+ * \return RzILOpBitVector*
+ */
+RZ_IPI RzILOpBitVector *x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(float_val && ctx, NULL);
+	ctx->use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(f2sint_floating_helper, width, DUP(float_val));
+	rz_il_op_pure_free(float_val);
+	return ret;
+}
+
+/**
+ * \brief Add \p x and \p y with the correct rounding mode as determined from
+ * the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \param ctx use_rmode gets set to true
+ * \return RzILOpFloat* sum
+ */
+RZ_IPI RzILOpFloat *x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(x && y && ctx, NULL);
+	ctx->use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FADD, DUP(x), DUP(y));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
+/**
+ * \brief Multiply \p x and \p y with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \param ctx use_rmode gets set to true
+ * \return RzILOpFloat* product
+ */
+RZ_IPI RzILOpFloat *x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(x && y && ctx, NULL);
+	ctx->use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FMUL, DUP(x), DUP(y));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
+/**
+ * \brief Subtract \p x from \p y with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \param ctx use_rmode gets set to true
+ * \return RzILOpFloat* difference
+ */
+RZ_IPI RzILOpFloat *x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(x && y && ctx, NULL);
+	ctx->use_rmode = true;
+	// y - x, hence y is the first argument
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FSUB, DUP(y), DUP(x));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
+/**
+ * \brief Subtract \p y from \p x (reverse of \ref x86_il_fsub_with_rmode)
+ */
+RZ_IPI RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(x && y && ctx, NULL);
+	return x86_il_fsub_with_rmode(y, x);
+}
+
+/**
+ * \brief Divide \p x from \p y with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param y Desirable that it is a small expression since it will be duped
+ * \param ctx use_rmode gets set to true
+ * \return RzILOpFloat* division
+ */
+RZ_IPI RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(x && y && ctx, NULL);
+	ctx->use_rmode = true;
+	// y / x, hence y is the first argument
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FDIV, DUP(y), DUP(x));
+
+	rz_il_op_pure_free(x);
+	rz_il_op_pure_free(y);
+
+	return ret;
+}
+
+/**
+ * \brief Divide \p y from \p x (reverse of \ref x86_il_fdiv_with_rmode)
+ */
+RZ_IPI RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(x && y && ctx, NULL);
+	return x86_il_fdiv_with_rmode(y, x);
+}
+
+/**
+ * \brief Calculate the square root of \p x with the correct rounding mode as determined
+ * from the FPU control word
+ *
+ * \param x Desirable that it is a small expression since it will be duped
+ * \param ctx  use_rmode gets set to true
+ * \return RzILOpFloat* square root
+ */
+RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(x && ctx, NULL);
+	ctx->use_rmode = true;
+	RzILOpFloat *ret = EXEC_WITH_RMODE(FSQRT, DUP(x));
+
+	rz_il_op_pure_free(x);
+
+	return ret;
+}
+
+/**
+ * \brief Store a float \p val at FPU stack \p reg
+ *
+ * \param reg
+ * \param val
+ * \param val_format Format of \p val
+ * \param ctx use_rmode gets set to true if any resizing of \p val is required
+ * \return RzILOpFloat*
+ */
+RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW X86ILContext *ctx) {
+	rz_return_val_if_fail(val && x86_il_is_st_reg(reg), NULL);
+
+	if (val_format == RZ_FLOAT_IEEE754_BIN_80) {
+		return SETG(x86_registers[reg], F2BV(val));
+	} else {
+		RzILOpFloat *converted_val = x86_il_resize_floating(val, RZ_FLOAT_IEEE754_BIN_80);
+
+		return SETG(x86_registers[reg], F2BV(converted_val));
+	}
+}
+
+/**
+ * \brief Get the stack TOP stored in the FPU status word.
+ * TOP = FPU[12:15] (bits 12, 13 & 14)
+ * 12th bit is the least significant bit.
+ *
+ * \return RzILOpPure* Bitvector of length 3
+ */
+RZ_IPI RzILOpPure *x86_il_get_fpu_stack_top() {
+	RzILOpPure *status_word = x86_il_get_reg_bits(X86_REG_FPSW, 0, 0);
+	return UNSIGNED(3, SHIFTR0(status_word, UN(8, 11)));
+}
+
+/**
+ * \brief Set the value of FPU status word.
+ * See \ref x86_il_get_fpu_stack_top() for the structure of FPU status word and
+ * stack TOP.
+ *
+ * \param top Value to be stored as the new TOP (bitvector length = 3)
+ * \return RzILOpEffect*
+ */
+RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RZ_OWN RZ_NONNULL RzILOpPure *top) {
+	rz_return_val_if_fail(top, NULL);
+
+	RzILOpPure *shifted_top = SHIFTL0(UNSIGNED(16, top), UN(8, 11));
+	/* 0x3800 only has the 12, 13 & 14 bits set, so we take its negation for the
+	 * mask. */
+	RzILOpPure *mask = UN(16, ~(0x3800));
+	RzILOpPure *new_fpsw = LOGOR(shifted_top, LOGAND(mask, x86_il_get_reg_bits(X86_REG_FPSW, 0, 0)));
+	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
+}
+
+#define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l), RZ_FLOAT_IEEE754_BIN_80)
+
+/**
+ * \brief Push \p val on the FPU stack
+ *
+ * \param val
+ * \param val_format Format of \p val
+ * \param ctx use_rmode gets set to true if any resizing of \p val is required
+ * \return RzILOpEffect* Push effect
+ */
+RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW X86ILContext *ctx) {
+	rz_return_val_if_fail(val, NULL);
+
+	/* No need for a modulo here since the bitvector width will truncate any top
+	 * value > 7 */
+	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(SUB(x86_il_get_fpu_stack_top(), UN(3, 1)));
+	RzILOpEffect *st_shift = SEQ8(
+		ST_MOVE_RIGHT(6, 7),
+		ST_MOVE_RIGHT(5, 6),
+		ST_MOVE_RIGHT(4, 5),
+		ST_MOVE_RIGHT(3, 4),
+		ST_MOVE_RIGHT(2, 3),
+		ST_MOVE_RIGHT(1, 2),
+		ST_MOVE_RIGHT(0, 1),
+		x86_il_set_st_reg(X86_REG_ST0, val, val_format));
+
+	/* Set C1 if stack overflow. If stack overflow occurred, then the value of
+	 * stack TOP must be 0x7. */
+	RzILOpEffect *set_overflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 7)));
+
+	return SEQ3(set_top, st_shift, set_overflow);
+}
+
+#define ST_MOVE_LEFT(l, r) x86_il_set_st_reg(X86_REG_ST##l, x86_il_get_st_reg(X86_REG_ST##r), RZ_FLOAT_IEEE754_BIN_80)
+
+/**
+ * \brief Pop a value from the FPU stack
+ *
+ * \return RzILOpEffect* Pop effect
+ */
+RZ_IPI RzILOpEffect *x86_il_st_pop() {
+	/* We actually don't need a context here because we will never need to resize
+	 * any value. */
+	X86ILContext *ctx = NULL;
+
+	RzILOpEffect *set_top = x86_il_set_fpu_stack_top(ADD(x86_il_get_fpu_stack_top(), UN(3, 1)));
+	RzILOpEffect *st_shift = SEQ7(
+		ST_MOVE_LEFT(0, 1),
+		ST_MOVE_LEFT(1, 2),
+		ST_MOVE_LEFT(2, 3),
+		ST_MOVE_LEFT(3, 4),
+		ST_MOVE_LEFT(4, 5),
+		ST_MOVE_LEFT(5, 6),
+		ST_MOVE_LEFT(6, 7));
+
+	/* Set C1 if stack underflow. If stack underflow occurred, then the value of
+	 * stack TOP must be 0x0. */
+	RzILOpEffect *set_underflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 0)));
+
+	return SEQ3(set_top, st_shift, set_underflow);
+}
+
+RZ_IPI RzILOpBool *x86_il_get_fpu_flag(X86FPUFlags flag) {
+	RzILOpPure *shifted_fpsw = SHIFTR0(x86_il_get_reg_bits(X86_REG_FPSW, 0, 0), UN(8, flag));
+	return NON_ZERO(UNSIGNED(1, shifted_fpsw));
+}
+
+RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RZ_OWN RZ_NONNULL RzILOpBool *value) {
+	rz_return_val_if_fail(value, NULL);
+
+	RzILOpPure *zero_mask = UN(16, ~(1 << flag));
+	RzILOpPure *value_mask = SHIFTL0(BOOL_TO_BV(value, 16), UN(8, flag));
+	RzILOpPure *new_fpsw = LOGOR(value_mask, LOGAND(zero_mask, x86_il_get_reg_bits(X86_REG_FPSW, 0, 0)));
+	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
+}
+
+#define FLOATING_OP_MEM_WIDTH_CASE(n) \
+	do { \
+	case n: \
+		return BV2F(RZ_FLOAT_IEEE754_BIN_##n, LOADW(n, x86_il_get_memaddr_bits(op.mem, bits, pc))); \
+	} while (0)
+
+/**
+ * \brief Get the value of the floating point operand \p op
+ * This function takes care of everything, like choosing
+ * the correct typem returning the correct value and
+ * converting to the correct FP format
+ * Use the wrapper `x86_il_get_floating_op`
+ *
+ * \param op Operand to get
+ * \param bits bitness
+ * \param pc
+ */
+RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc) {
+	switch (op.type) {
+	case X86_OP_REG:
+		if (x86_il_is_st_reg(op.reg)) {
+			return x86_il_get_st_reg(op.reg);
+		} else {
+			RZ_LOG_ERROR("x86: RzIL: Invalid register passed as a floating point operand: %d\n", op.reg);
+		}
+		break;
+	case X86_OP_MEM:
+		switch (op.size * BITS_PER_BYTE) {
+			/* ~Duff's~ DMaroo's device */
+			FLOATING_OP_MEM_WIDTH_CASE(32);
+			FLOATING_OP_MEM_WIDTH_CASE(64);
+			FLOATING_OP_MEM_WIDTH_CASE(80);
+		default:
+			RZ_LOG_ERROR("x86: RzIL: Invalid memory operand width for a floating point operand: %d\n", op.size);
+		}
+		break;
+	case X86_OP_INVALID:
+	case X86_OP_IMM:
+	default:
+		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", op.type);
+	}
+
+	return NULL;
+}
+
+#define FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(n) \
+	do { \
+	case n: \
+		return RZ_FLOAT_IEEE754_BIN_##n; \
+	} while (0)
+
+RZ_IPI RzFloatFormat x86_width_to_format(ut8 width) {
+	switch (width) {
+		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(32);
+		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(64);
+		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(80);
+		FLOAT_WIDTH_TO_FORMAT_SWITCH_CASE(128);
+	default:
+		rz_warn_if_reached();
+		return RZ_FLOAT_UNK;
+	}
+}
+
+#define FLOAT_FORMAT_TO_WIDTH_SWITCH_CASE(n) \
+	do { \
+	case RZ_FLOAT_IEEE754_BIN_##n: \
+		return n; \
+	} while (0)
+
+RZ_IPI ut8 x86_format_to_width(RzFloatFormat format) {
+	return rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+}
+
+/**
+ * \brief Set the value of the floating point operand \p op
+ * This function takes care of everything, like choosing
+ * the correct type, setting the correct value and
+ * converting to the correct FP format
+ * Use the wrapper `x86_il_set_floating_op`
+ *
+ * \param op Operand to be set
+ * \param val Value to be used
+ * \param val_format Format of \p val
+ * \param bits Bitness
+ * \param pc
+ * \param ctx use_rmode gets set to true if any resizing of \p val is required
+ */
+RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, int bits, ut64 pc, RZ_BORROW X86ILContext *ctx) {
+	rz_return_val_if_fail(val, NULL);
+	RzILOpEffect *ret = NULL;
+
+	switch (op.type) {
+	case X86_OP_REG:
+		return x86_il_set_st_reg(op.reg, val, val_format);
+	case X86_OP_MEM: {
+		ut64 required_format = x86_width_to_format(op.size * BITS_PER_BYTE);
+
+		RzILOpPure *resized_val = required_format == val_format ? val : x86_il_resize_floating(val, required_format);
+		return x86_il_set_mem_bits(op.mem, F2BV(resized_val), bits, pc);
+	}
+	case X86_OP_IMM:
+	default:
+		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", X86_OP_IMM);
+		return ret;
+	}
+}
+
+RZ_IPI RzILOpEffect *x86_il_clear_fpsw_flags() {
+	RzILOpPure *new_fpsw = LOGAND(x86_il_get_reg_bits(X86_REG_FPSW, 0, 0), UN(16, 0x3f80));
+	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

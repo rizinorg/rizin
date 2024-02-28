@@ -80,10 +80,6 @@ static void header(RzBinFile *bf) {
 	}
 }
 
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
-}
-
 static RzPVector /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzPVector *fields = rz_pvector_new((RzPVectorFree)rz_bin_field_free);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
@@ -280,7 +276,6 @@ RzBinPlugin rz_bin_plugin_dmp64 = {
 	.destroy = &destroy,
 	.get_sdb = &get_sdb,
 	.header = &header,
-	.strings = &strings,
 	.info = &info,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,

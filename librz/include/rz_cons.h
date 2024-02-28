@@ -904,8 +904,9 @@ RZ_API void rz_cons_break_end(void);
 RZ_API void rz_cons_break_timeout(int timeout);
 
 /* pipe */
-RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append);
-RZ_API void rz_cons_pipe_close(int fd);
+typedef struct rz_cons_pipe_t RzConsPipe;
+RZ_API RZ_OWN RzConsPipe *rz_cons_pipe_open(RZ_NONNULL const char *file, int old_fd, bool append);
+RZ_API void rz_cons_pipe_close(RZ_NULLABLE RzConsPipe *cpipe);
 
 #if __WINDOWS__
 RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void);
@@ -1022,7 +1023,7 @@ RZ_API int rz_cons_get_buffer_len(void);
 RZ_API void rz_cons_grep_help(void);
 RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr);
 RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr);
-RZ_API void rz_cons_grep_process(char *grep);
+RZ_API void rz_cons_grep_process(RZ_OWN char *grep);
 RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
 RZ_API void rz_cons_grepbuf(void);
 
@@ -1178,11 +1179,14 @@ struct rz_line_t {
 	// RzLineFunctionKeyCb cb_fkey;
 	RzConsFunctionKey cb_fkey;
 	/* state , TODO: use more bool */
+	int gcomp;
+	int gcomp_idx;
 	int echo;
 	int has_echo;
 	char *prompt;
 	RzList /*<char *>*/ *kill_ring;
 	int kill_ring_ptr;
+	bool yank_flag;
 	int undo_cursor;
 	bool undo_continue;
 	char *clipboard;

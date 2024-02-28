@@ -29,9 +29,9 @@ bool test_rz_bin(void) {
 	mu_assert_eq(rz_pvector_len(segments), 10, "rz_bin_object_get_segments");
 	rz_pvector_free(segments);
 
-	const RzList *entries = rz_bin_object_get_entries(obj);
-	mu_assert_eq(rz_list_length(entries), 1, "rz_bin_object_get_entries");
-	RzBinAddr *entry = rz_list_first(entries);
+	const RzPVector *entries = rz_bin_object_get_entries(obj);
+	mu_assert_eq(rz_pvector_len(entries), 1, "rz_bin_object_get_entries");
+	RzBinAddr *entry = (RzBinAddr *)rz_pvector_at(entries, 0);
 	mu_assert_eq(entry->vaddr, 0x8048360, "entry virtual address");
 	mu_assert_eq(entry->paddr, 0x360, "entry file offset");
 

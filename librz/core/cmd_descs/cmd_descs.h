@@ -1728,6 +1728,12 @@ RZ_IPI RzCmdStatus rz_open_maps_deprioritize_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_open_maps_prioritize_fd_handler(RzCore *core, int argc, const char **argv);
 // "ox"
 RZ_IPI RzCmdStatus rz_open_exchange_handler(RzCore *core, int argc, const char **argv);
+// "p2"
+RZ_IPI RzCmdStatus rz_cmd_print_2bpp_tiles_handler(RzCore *core, int argc, const char **argv);
+// "p8"
+RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "p8f"
+RZ_IPI RzCmdStatus rz_cmd_print_8bit_hexpair_function_handler(RzCore *core, int argc, const char **argv);
 // "pb"
 RZ_IPI RzCmdStatus rz_print_bitstream_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "pB"
@@ -1828,6 +1834,28 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, in
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_function_handler(RzCore *core, int argc, const char **argv);
 // "pdsb"
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_block_handler(RzCore *core, int argc, const char **argv);
+// "pf"
+RZ_IPI RzCmdStatus rz_cmd_print_format_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pf-"
+RZ_IPI RzCmdStatus rz_cmd_print_format_delete_handler(RzCore *core, int argc, const char **argv);
+// "pf-*"
+RZ_IPI RzCmdStatus rz_cmd_print_format_delete_all_handler(RzCore *core, int argc, const char **argv);
+// "pfc"
+RZ_IPI RzCmdStatus rz_cmd_print_format_c_handler(RzCore *core, int argc, const char **argv);
+// "pfd"
+RZ_IPI RzCmdStatus rz_cmd_print_format_dot_handler(RzCore *core, int argc, const char **argv);
+// "pf."
+RZ_IPI RzCmdStatus rz_cmd_print_format_named_dot_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pfn"
+RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, const char **argv);
+// "pfo"
+RZ_IPI RzCmdStatus rz_cmd_print_format_file_handler(RzCore *core, int argc, const char **argv);
+// "pfs"
+RZ_IPI RzCmdStatus rz_cmd_print_format_size_handler(RzCore *core, int argc, const char **argv);
+// "pfv"
+RZ_IPI RzCmdStatus rz_cmd_print_format_value_handler(RzCore *core, int argc, const char **argv);
+// "pfw"
+RZ_IPI RzCmdStatus rz_cmd_print_format_write_handler(RzCore *core, int argc, const char **argv);
 // "pFa"
 RZ_IPI RzCmdStatus rz_cmd_print_asn1_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "pFb"

@@ -37,6 +37,7 @@ bool test_analysis_graph() {
 
 	// 3 dataref graph
 	RzGraph *g = graph_by_function_name(core, RZ_CORE_GRAPH_TYPE_DATAREF, "entry0");
+	mu_assert_notnull(g, "Graph was NULL");
 	mu_assert_eq(g->n_nodes, 1, "data graph node count");
 	mu_assert_eq(g->n_edges, 0, "data graph edge count");
 	mu_assert_streq_free(rz_graph_drawable_to_json_str(g, true),
@@ -99,6 +100,7 @@ bool test_analysis_graph_more() {
 
 	// 3.1 dataref graph
 	RzGraph *g = graph_by_function_name(core, RZ_CORE_GRAPH_TYPE_DATAREF, "main");
+	mu_assert_notnull(g, "Graph was NULL");
 	mu_assert_eq(g->n_nodes, 6, "data graph node count");
 	mu_assert_eq(g->n_edges, 5, "data graph edge count");
 	mu_assert_streq_free(rz_graph_drawable_to_json_str(g, true),
@@ -205,6 +207,7 @@ bool test_analysis_graph_icfg() {
 	rz_core_analysis_flag_every_function(core);
 
 	RzGraph *g = rz_core_graph_icfg(core);
+	mu_assert_notnull(g, "Graph was NULL");
 	mu_assert_eq(g->n_nodes, 13, "data graph node count");
 	mu_assert_eq(g->n_edges, 6, "data graph edge count");
 
@@ -257,7 +260,8 @@ bool test_analysis_graph_cfg() {
 	rz_core_analysis_flag_every_function(core);
 
 	RzGraph *g = rz_core_graph_cfg(core, 0x117a); // main()
-	mu_assert_eq(g->n_nodes, 26, "data graph node count");
+	mu_assert_notnull(g, "Graph was NULL");
+	mu_assert_eq(g->n_nodes, 24, "data graph node count");
 	mu_assert_eq(g->n_edges, 25, "data graph edge count");
 
 	// Testing the node content is a little annoying. The nodes
@@ -287,7 +291,7 @@ bool test_analysis_graph_cfg() {
 	mu_assert_eq(info->cfg.address, 0x11a7, "info address");
 	mu_assert_eq(info->cfg.call_address, UT64_MAX, "info call address");
 
-	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 24)->data);
+	info = rz_graph_get_node_info_data(rz_graph_get_node(g, 23)->data);
 	mu_assert_eq(info->type, RZ_GRAPH_NODE_TYPE_CFG, "info type");
 	mu_assert_eq(info->subtype, RZ_GRAPH_NODE_SUBTYPE_CFG_CALL, "info subtype");
 	mu_assert_eq(info->cfg.address, 0x11cd, "info address");

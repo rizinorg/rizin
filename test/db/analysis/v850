@@ -609,3 +609,35 @@ EXPECT=<<EOF
 0x104adc
 EOF
 RUN
+
+NAME=v850 local variables
+FILE=bins/v850/emulateme.v850
+CMDS=<<EOF
+aaa
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from entry0 @ 0x100062
+            ;-- _main:
+/ int main(int argc, char **argv, char **envp);
+|           ; arg char **envp @ stack + 0x8
+|           ; arg int32_t arg_ch @ stack + 0xc
+|           ; arg int32_t arg_18h @ stack + 0x18
+|           ; arg int32_t arg_1ch @ stack + 0x1c
+|           0x0010016a      add   -8, sp
+|           0x0010016c      st.w  lp, 4[sp]
+|           0x00100170      st.w  r29, 0[sp]
+|           0x00100174      add   -8, sp
+|           0x00100176      mov   sp, r29
+|           0x00100178      st.w  r6, 4[r29]
+|           0x0010017c      st.w  r7, 0[r29]
+|           0x00100180      mov   sym._decrypt, r10
+|           0x00100186      jarl  [r10], lp
+|           0x0010018a      mov   0, r10
+|           0x0010018c      mov   r29, sp
+|           0x0010018e      ld.w  12[sp], lp
+|           0x00100192      ld.w  8[sp], r29
+|           0x00100196      addi  16, sp, sp
+\           0x0010019a      jmp   [lp]
+EOF
+RUN

@@ -22,8 +22,6 @@ static const char *mousemodes[] = {
 	NULL
 };
 
-#define GRAPH_MERGE_FEATURE 0
-
 #define BORDER                  3
 #define BORDER_WIDTH            2
 #define BORDER_HEIGHT           3
@@ -246,13 +244,17 @@ static void update_node_dimension(const RzGraph /*<RzANode *>*/ *g, int is_mini,
 }
 
 static void append_shortcut(const RzAGraph *g, char *title, char *nodetitle, int left) {
-	const char *shortcut = sdb_const_get(g->db, sdb_fmt("agraph.nodes.%s.shortcut", nodetitle), 0);
+	char buf[127] = { 0 };
+	rz_strf(buf, "agraph.nodes.%s.shortcut", nodetitle);
+	const char *shortcut = sdb_const_get(g->db, buf, 0);
 	if (shortcut) {
 		if (g->can->color) {
 			// XXX: do not hardcode color here
-			strncat(title, sdb_fmt(Color_YELLOW "[o%s]" Color_RESET, shortcut), left);
+			rz_strf(buf, Color_YELLOW "[o%s]" Color_RESET, shortcut);
+			strncat(title, buf, left);
 		} else {
-			strncat(title, sdb_fmt("[o%s]", shortcut), left);
+			rz_strf(buf, "[o%s]", shortcut);
+			strncat(title, buf, left);
 		}
 	}
 }
@@ -2252,7 +2254,9 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		if (shortcuts) {
 			shortcut = rz_core_add_asmqjmp(core, bb->addr);
 			if (shortcut) {
-				sdb_set(g->db, sdb_fmt("agraph.nodes.%s.shortcut", title), shortcut, 0);
+				char buf[384] = { 0 };
+				rz_strf(buf, "agraph.nodes.%s.shortcut", title);
+				sdb_set(g->db, buf, shortcut, 0);
 				free(shortcut);
 			}
 		}
@@ -2731,15 +2735,15 @@ static void agraph_set_layout(RzAGraph *g) {
 		if (a->is_dummy) {
 			continue;
 		}
-		const char *k;
-		k = sdb_fmt("agraph.nodes.%s.x", a->title);
-		sdb_num_set(g->db, k, rebase(g, a->x), 0);
-		k = sdb_fmt("agraph.nodes.%s.y", a->title);
-		sdb_num_set(g->db, k, rebase(g, a->y), 0);
-		k = sdb_fmt("agraph.nodes.%s.w", a->title);
-		sdb_num_set(g->db, k, a->w, 0);
-		k = sdb_fmt("agraph.nodes.%s.h", a->title);
-		sdb_num_set(g->db, k, a->h, 0);
+		char buf[384] = { 0 };
+		rz_strf(buf, "agraph.nodes.%s.x", a->title);
+		sdb_num_set(g->db, buf, rebase(g, a->x), 0);
+		rz_strf(buf, "agraph.nodes.%s.y", a->title);
+		sdb_num_set(g->db, buf, rebase(g, a->y), 0);
+		rz_strf(buf, "agraph.nodes.%s.w", a->title);
+		sdb_num_set(g->db, buf, a->w, 0);
+		rz_strf(buf, "agraph.nodes.%s.h", a->title);
+		sdb_num_set(g->db, buf, a->h, 0);
 	}
 }
 
@@ -3212,38 +3216,6 @@ static void move_current_node(RzAGraph *g, int xdiff, int ydiff) {
 		n->y += ydiff;
 	}
 }
-
-#if GRAPH_MERGE_FEATURE
-#define K_NEIGHBOURS(x) (sdb_fmt("agraph.nodes.%s.neighbours", x->title))
-static void agraph_merge_child(RzAGraph *g, int idx) {
-	const RzGraphNode *nn = rz_graph_nth_neighbour(g->graph, g->curnode, idx);
-	const RzGraphNode *cn = g->curnode;
-	if (cn && nn) {
-		RzANode *ann = get_anode(nn);
-		RzANode *acn = get_anode(cn);
-		acn->body = rz_str_append(acn->body, ann->title);
-		acn->body = rz_str_append(acn->body, "\n");
-		acn->body = rz_str_append(acn->body, ann->body);
-		/* remove node from the graph */
-		acn->h += ann->h - 3;
-		free(ann->body);
-		// TODO: do not merge nodes if those have edges targeting them
-		// TODO: Add children neighbours to current one
-		// nn->body
-		// rz_agraph_set_curnode (g, get_anode (cn));
-		// agraph_refresh (grd);
-		// rz_agraph_add_edge (g, from, to);
-		char *neis = sdb_get(g->db, K_NEIGHBOURS(ann), 0);
-		if (neis) {
-			sdb_set_owned(g->db, K_NEIGHBOURS(ann), neis, 0);
-			rz_agraph_del_node(g, ann->title);
-			agraph_print_nodes(g);
-			agraph_print_edges(g);
-		}
-	}
-	// agraph_update_seek (g, get_anode (g->curnode), false);
-}
-#endif
 
 static void agraph_toggle_mini(RzAGraph *g) {
 	RzANode *n = get_anode(g->curnode);
@@ -3724,11 +3696,17 @@ RZ_API void rz_agraph_set_title(RzAGraph *g, const char *title) {
 
 /**
  * \brief Convert a RzGraphNodeInfo \p info to RzANode and add to \p g.
+ *
+ * \param g The agraph to append the nodes to.
+ * \param info The node info to add.
+ * \param utf8 If true, the node title can contain UTF-8 characters. If false, it will only contain ASCII.
+ *
+ * \return Pointer to the added node. Or NULL in case of failure.
  */
-RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info) {
+RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info, bool utf8) {
 	rz_return_val_if_fail(g && info, NULL);
 	RzANode *an = NULL;
-	char title[20] = { 0 };
+	char title[64] = { 0 };
 	switch (info->type) {
 	default:
 		RZ_LOG_ERROR("Node type %d not handled.\n", info->type);
@@ -3740,16 +3718,23 @@ RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzA
 		}
 		an->offset = info->def.offset;
 		break;
-	case RZ_GRAPH_NODE_TYPE_CFG:
-		rz_strf(title, "0x%" PFMT64x, info->cfg.address);
-		an = rz_agraph_add_node(g, title, "");
+	case RZ_GRAPH_NODE_TYPE_CFG: {
+		char *annotation = rz_graph_get_node_subtype_annotation(info->subtype, utf8);
+		rz_return_val_if_fail(annotation, NULL);
+		char *cfg_title = rz_str_appendf(NULL, "0x%" PFMT64x "%s", info->cfg.address, annotation);
+		rz_return_val_if_fail(cfg_title, NULL);
+		an = rz_agraph_add_node(g, cfg_title, "");
+		free(annotation);
+		free(cfg_title);
 		if (!an) {
 			return NULL;
 		}
 		an->offset = info->cfg.address;
 		break;
+	}
 	case RZ_GRAPH_NODE_TYPE_ICFG:
-		rz_strf(title, "0x%" PFMT64x, info->icfg.address);
+		rz_strf(title, "0x%" PFMT64x "%s", info->icfg.address,
+			info->subtype & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC ? " (alloc)" : "");
 		an = rz_agraph_add_node(g, title, "");
 		if (!an) {
 			return NULL;
@@ -3791,11 +3776,12 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 			b[len - 1] = '\0';
 		}
 		estr = sdb_encode((const void *)b, -1);
-		// s = sdb_fmt ("base64:%s", estr);
 		s = rz_str_newf("base64:%s", estr);
 		free(estr);
 		free(b);
-		sdb_set_owned(g->db, sdb_fmt("agraph.nodes.%s.body", res->title), s, 0);
+		char buf[384] = { 0 };
+		rz_strf(buf, "agraph.nodes.%s.body", res->title);
+		sdb_set_owned(g->db, buf, s, 0);
 	}
 	return res;
 }
@@ -3810,21 +3796,30 @@ RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title) {
 	if (!res) {
 		return false;
 	}
+	char buf[384] = { 0 };
 	sdb_array_remove(g->db, "agraph.nodes", res->title, 0);
-	sdb_set(g->db, sdb_fmt("agraph.nodes.%s", res->title), NULL, 0);
-	sdb_set(g->db, sdb_fmt("agraph.nodes.%s.body", res->title), 0, 0);
-	sdb_set(g->db, sdb_fmt("agraph.nodes.%s.x", res->title), NULL, 0);
-	sdb_set(g->db, sdb_fmt("agraph.nodes.%s.y", res->title), NULL, 0);
-	sdb_set(g->db, sdb_fmt("agraph.nodes.%s.w", res->title), NULL, 0);
-	sdb_set(g->db, sdb_fmt("agraph.nodes.%s.h", res->title), NULL, 0);
-	sdb_set(g->db, sdb_fmt("agraph.nodes.%s.neighbours", res->title), NULL, 0);
+	rz_strf(buf, "agraph.nodes.%s", res->title);
+	sdb_set(g->db, buf, NULL, 0);
+	rz_strf(buf, "agraph.nodes.%s.body", res->title);
+	sdb_set(g->db, buf, 0, 0);
+	rz_strf(buf, "agraph.nodes.%s.x", res->title);
+	sdb_set(g->db, buf, NULL, 0);
+	rz_strf(buf, "agraph.nodes.%s.y", res->title);
+	sdb_set(g->db, buf, NULL, 0);
+	rz_strf(buf, "agraph.nodes.%s.w", res->title);
+	sdb_set(g->db, buf, NULL, 0);
+	rz_strf(buf, "agraph.nodes.%s.h", res->title);
+	sdb_set(g->db, buf, NULL, 0);
+	rz_strf(buf, "agraph.nodes.%s.neighbours", res->title);
+	sdb_set(g->db, buf, NULL, 0);
 
 	const RzList *innodes = rz_graph_innodes(g->graph, res->gnode);
 	rz_list_foreach (innodes, it, gn) {
 		if (!(an = gn->data)) {
 			break;
 		}
-		const char *key = sdb_fmt("agraph.nodes.%s.neighbours", an->title);
+		rz_strf(buf, "agraph.nodes.%s.neighbours", res->title);
+		const char *key = buf;
 		sdb_array_remove(g->db, key, res->title, 0);
 	}
 
@@ -3902,7 +3897,9 @@ RZ_API void rz_agraph_add_edge(const RzAGraph *g, RzANode *a, RzANode *b) {
 	rz_return_if_fail(g && a && b);
 	rz_graph_add_edge(g->graph, a->gnode, b->gnode);
 	if (a->title && b->title) {
-		char *k = sdb_fmt("agraph.nodes.%s.neighbours", a->title);
+		char buf[384] = { 0 };
+		rz_strf(buf, "agraph.nodes.%s.neighbours", a->title);
+		char *k = buf;
 		sdb_array_add(g->db, k, b->title, 0);
 	}
 }
@@ -3910,7 +3907,9 @@ RZ_API void rz_agraph_add_edge(const RzAGraph *g, RzANode *a, RzANode *b) {
 RZ_API void rz_agraph_add_edge_at(const RzAGraph *g, RzANode *a, RzANode *b, int nth) {
 	rz_return_if_fail(g && a && b);
 	if (a->title && b->title) {
-		char *k = sdb_fmt("agraph.nodes.%s.neighbours", a->title);
+		char buf[384] = { 0 };
+		rz_strf(buf, "agraph.nodes.%s.neighbours", a->title);
+		char *k = buf;
 		sdb_array_insert(g->db, k, nth, b->title, 0);
 	}
 	rz_graph_add_edge_at(g->graph, a->gnode, b->gnode, nth);
@@ -3919,7 +3918,9 @@ RZ_API void rz_agraph_add_edge_at(const RzAGraph *g, RzANode *a, RzANode *b, int
 RZ_API void rz_agraph_del_edge(const RzAGraph *g, RzANode *a, RzANode *b) {
 	rz_return_if_fail(g && a && b);
 	if (a->title && b->title) {
-		const char *k = sdb_fmt("agraph.nodes.%s.neighbours", a->title);
+		char buf[384] = { 0 };
+		rz_strf(buf, "agraph.nodes.%s.neighbours", a->title);
+		char *k = buf;
 		sdb_array_remove(g->db, k, b->title, 0);
 	}
 	rz_graph_del_edge(g->graph, a->gnode, b->gnode);
@@ -4960,9 +4961,17 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 
 /**
  * \brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data at \p ag from \p g
- * \return Success
+ *
+ * \param ag The RzAGraph to append the nodes to.
+ * \param g The graph to build the RzAGraph from.
+ * \param info The node info to add.
+ * \param free_on_fail If true, \p ag will be freed in case of failure. If false, \p ag is not freed.
+ * \param utf8 If true, the node titles can contain UTF-8 characters. If false, they will only contain ASCII.
+ *
+ * \return true In case of success.
+ * \return false In case of failure.
  */
-RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail) {
+RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail, bool utf8) {
 	rz_return_val_if_fail(ag && g, false);
 	ag->need_reload_nodes = false;
 	// Cache lookup to build edges
@@ -4978,7 +4987,7 @@ RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL cons
 	// Traverse the list, create new ANode for each Node
 	rz_list_foreach (g->nodes, iter, node) {
 		RzGraphNodeInfo *info = node->data;
-		RzANode *a_node = rz_agraph_add_node_from_node_info(ag, info);
+		RzANode *a_node = rz_agraph_add_node_from_node_info(ag, info, utf8);
 		if (!a_node) {
 			goto failure;
 		}
@@ -5018,17 +5027,19 @@ failure:
 /**
  * \brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data
  *
- * \param graph <RzGraphNodeInfo>
- * \return RzAGraph* NULL if failure
+ * \param graph The graph to create the RzAGraph from.
+ * \param utf8 If true, the node titles can contain UTF-8 characters. If false, they are ASCII only.
+ *
+ * \return RzAGraph* The agraph or NULL in case of failure
  */
-RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
+RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph, bool utf8) {
 	rz_return_val_if_fail(graph, NULL);
 
 	RzAGraph *result_agraph = rz_agraph_new(rz_cons_canvas_new(1, 1));
 	if (!result_agraph) {
 		return NULL;
 	}
-	if (!create_agraph_from_graph_at(result_agraph, graph, true)) {
+	if (!create_agraph_from_graph_at(result_agraph, graph, true, utf8)) {
 		return NULL;
 	}
 	return result_agraph;

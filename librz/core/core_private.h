@@ -27,12 +27,10 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state);
 
-RZ_IPI void rz_core_analysis_il_reinit(RzCore *core);
 RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value);
 RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
-RZ_IPI bool rz_core_il_step(RzCore *core, ut64 n);
-RZ_IPI bool rz_core_il_step_until(RzCore *core, ut64 until);
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
+RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
@@ -152,7 +150,7 @@ RZ_IPI void rz_core_flag_real_name_print(RzFlag *f, RzCmdStateOutput *state);
 RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
 
 /* cdisasm.c */
-RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes);
+RZ_IPI bool rz_disasm_check_end(st64 nb_opcodes, st64 i_opcodes, st64 nb_bytes, st64 i_bytes);
 RZ_IPI void rz_core_asm_bb_middle(RZ_NONNULL RzCore *core, ut64 at, RZ_INOUT RZ_NONNULL int *oplen, RZ_NONNULL int *ret);
 RZ_IPI ut64 rz_core_backward_offset(RZ_NONNULL RzCore *core, ut64 cur_offset, RZ_NONNULL RZ_INOUT int *pn_opcodes, RZ_NONNULL RZ_INOUT int *pn_bytes);
 
@@ -164,6 +162,8 @@ RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hex_offse
 RZ_IPI RZ_OWN char *rz_core_print_hexdump_refs(RZ_NONNULL RzCore *core, ut64 address, size_t len, int wordsize);
 RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core);
 RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32 byte_len, ut32 inst_len);
+RZ_IPI RZ_OWN char *rz_core_print_format(RzCore *core, const char *fmt, int mode, ut64 address);
+RZ_IPI RZ_OWN char *rz_core_print_format_write(RzCore *core, const char *fmt, const char *value, ut64 address);
 
 /* cmd_seek.c */
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);

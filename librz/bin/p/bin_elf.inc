@@ -273,7 +273,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_addr_new_from_paddr(bin, paddr);
 }
 
-static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList /*<RzBinAddr *>*/ *result) {
+static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzPVector /*<RzBinAddr *>*/ *result) {
 	ut64 constructor_offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (constructor_offset == UT64_MAX) {
 		return;
@@ -303,13 +303,13 @@ static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList 
 		tmp->hvaddr = addr + pos;
 		tmp->type = type;
 
-		rz_list_append(result, tmp);
+		rz_pvector_push(result, tmp);
 
 		pos += sizeof(Elf_(Addr));
 	}
 }
 
-static void add_constructors(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
+static void add_constructors(ELFOBJ *bin, RzPVector /*<RzBinAddr *>*/ *result) {
 	ut64 addr, size;
 
 	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_PREINIT_ARRAY, &addr) && Elf_(rz_bin_elf_get_dt_info)(bin, DT_PREINIT_ARRAYSZ, &size)) {
@@ -325,7 +325,7 @@ static void add_constructors(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
 	}
 }
 
-static void add_entry_offset(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
+static void add_entry_offset(ELFOBJ *bin, RzPVector /*<RzBinAddr *>*/ *result) {
 	ut64 paddr = Elf_(rz_bin_elf_get_entry_offset)(bin);
 	if (paddr == UT64_MAX) {
 		return;
@@ -343,28 +343,28 @@ static void add_entry_offset(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
 		RZ_LOG_ERROR("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", tmp->vaddr);
 	}
 
-	rz_list_append(result, tmp);
+	rz_pvector_push(result, tmp);
 }
 
-static void add_java_libraries(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
+static void add_java_libraries(ELFOBJ *bin, RzPVector /*<RzBinAddr *>*/ *result) {
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_symbols(bin, symbol) {
 		if (symbol->name && rz_str_startswith(symbol->name, "Java") && rz_str_endswith(symbol->name, "_init")) {
 			RzBinAddr *tmp = rz_bin_addr_new_from_paddr(bin, symbol->paddr);
 			tmp->type = RZ_BIN_ENTRY_TYPE_INIT;
 
-			rz_list_append(result, tmp);
+			rz_pvector_push(result, tmp);
 			break;
 		}
 	}
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
 
-	RzList *result = rz_list_newf((RzListFree)free);
+	RzPVector *result = rz_pvector_new((RzPVectorFree)free);
 	if (!result) {
 		return NULL;
 	}
@@ -2074,8 +2074,4 @@ static ut64 size(RzBinFile *bf) {
 		}
 	}
 	return off + len;
-}
-
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }

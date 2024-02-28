@@ -688,7 +688,8 @@ RZ_API const char *rz_str_lchr(const char *str, char chr) {
 }
 
 /* find the last char chr in the substring str[start:end] with end not included */
-RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr) {
+RZ_API const char *rz_sub_str_lchr(RZ_NONNULL const char *str, int start, int end, char chr) {
+	rz_return_val_if_fail(str, NULL);
 	do {
 		end--;
 	} while (str[end] != chr && end >= start);
@@ -696,11 +697,33 @@ RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr
 }
 
 /* find the first char chr in the substring str[start:end] with end not included */
-RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr) {
+RZ_API const char *rz_sub_str_rchr(RZ_NONNULL const char *str, int start, int end, char chr) {
+	rz_return_val_if_fail(str, NULL);
 	while (str[start] && str[start] != chr && start < end) {
 		start++;
 	}
 	return str[start] == chr ? str + start : NULL;
+}
+
+/* \brief Extract a substring between two pointers inside some strings
+ *
+ * \param str A source string
+ * \param start Pointer inside the source string from where substring starts
+ * \param end Pointer inside the source string where substring ends
+ */
+RZ_API RZ_OWN char *rz_sub_str_ptr(RZ_NONNULL const char *str, RZ_NONNULL const char *start, RZ_NONNULL const char *end) {
+	rz_return_val_if_fail(str && start && end, NULL);
+	ssize_t len = end - start + 1;
+	if (len < 1 || len > strlen(str)) {
+		return NULL;
+	}
+	char *result = malloc(len + 1);
+	if (!result) {
+		return NULL;
+	}
+	memcpy(result, start, len);
+	result[len] = '\0';
+	return result;
 }
 
 /**
@@ -1086,11 +1109,17 @@ RZ_API char *rz_str_append_owned(char *ptr, char *string) {
 	return r;
 }
 
-/*
- * first argument must be allocated
- * return: the pointer ptr resized to string size.
+/**
+ * \brief Appends \p string to \p ptr. If \p ptr is NULL, \p string is duplicated and returned.
+ * Note: If \p ptr is not NULL, it might be freed by realloc and the returned pointer
+ * should be used from here on.
+ *
+ * \param ptr Pointer to the string to append to.
+ * \param string The string to append.
+ *
+ * \return The concatenation of \p ptr + \p string or NULL in case of failure.
  */
-RZ_API char *rz_str_append(char *ptr, const char *string) {
+RZ_API RZ_OWN char *rz_str_append(RZ_OWN RZ_NULLABLE char *ptr, const char *string) {
 	if (string && !ptr) {
 		return strdup(string);
 	}
@@ -1109,7 +1138,17 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 	return ptr;
 }
 
-RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
+/**
+ * \brief Appends a formatted string to \p ptr. If \p ptr is NULL, the formatted string is returned.
+ * Note: If \p ptr is not NULL, it might be freed by realloc and the returned pointer
+ * should be used from here on.
+ *
+ * \param ptr Pointer to the string to append to.
+ * \param fmt The formatting string.
+ *
+ * \return The concatenation of \p ptr + the formatted string or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_str_appendf(RZ_OWN RZ_NULLABLE char *ptr, const char *fmt, ...) {
 	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 

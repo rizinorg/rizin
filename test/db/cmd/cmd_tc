@@ -7,8 +7,8 @@ ts Employee
 ts NSString
 EOF
 EXPECT=<<EOF
-pf pppp*?w*?*?q firstName shortWord username wideWord (objc_class)isa _shortWord (NSString)_username (NSString)_firstName _wideWord
-pf pqzd p0 p1 str len
+pf "pppp*?w*?*?q firstName shortWord username wideWord (objc_class)isa _shortWord (NSString)_username (NSString)_firstName _wideWord"
+pf "pqzd p0 p1 str len"
 EOF
 RUN
 

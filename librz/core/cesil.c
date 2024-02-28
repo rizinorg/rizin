@@ -43,14 +43,16 @@ static ut64 initializeEsil(RzCore *core) {
 		}
 	}
 	esil->exectrap = exectrap;
-	RzList *entries = rz_bin_get_entries(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzPVector *entries = obj ? (RzPVector *)rz_bin_object_get_entries(obj) : NULL;
 	RzBinAddr *entry = NULL;
 	RzBinInfo *info = NULL;
-	if (entries && !rz_list_empty(entries)) {
-		entry = (RzBinAddr *)rz_list_pop_head(entries);
-		info = rz_bin_get_info(core->bin);
+	if (entries && !rz_pvector_empty(entries)) {
+		entry = (RzBinAddr *)rz_pvector_pop_front(entries);
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
 		addr = info->has_va ? entry->vaddr : entry->paddr;
-		rz_list_push(entries, entry);
+		rz_pvector_push(entries, entry);
 	} else {
 		addr = core->offset;
 	}
@@ -150,7 +152,7 @@ repeat:
 			} else {
 				rz_reg_setv(core->analysis->reg, "PC", op.addr + op.size);
 			}
-			return 1;
+			return_tail(1);
 		}
 	}
 	rz_reg_setv(core->analysis->reg, name, addr + op.size);

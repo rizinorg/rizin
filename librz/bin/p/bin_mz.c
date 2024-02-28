@@ -149,15 +149,15 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return mzaddr;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
-	RzList *res = NULL;
-	if (!(res = rz_list_newf(free))) {
+	RzPVector *res = NULL;
+	if (!(res = rz_pvector_new(free))) {
 		return NULL;
 	}
 	ptr = rz_bin_mz_get_entrypoint(bf->o->bin_obj);
 	if (ptr) {
-		rz_list_append(res, ptr);
+		rz_pvector_push(res, ptr);
 	}
 	return res;
 }
@@ -269,7 +269,6 @@ RzBinPlugin rz_bin_plugin_mz = {
 	.info = &info,
 	.header = &header,
 	.relocs = &relocs,
-	.minstrlen = 4,
 };
 
 #ifndef RZ_PLUGIN_INCORE

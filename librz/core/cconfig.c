@@ -879,64 +879,6 @@ static bool cb_asmparser(void *user, void *data) {
 	return rz_parse_use(core->parser, node->value);
 }
 
-typedef struct {
-	const char *name;
-	const char *aliases;
-} namealiases_pair;
-
-static bool cb_binstrenc(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?') {
-		print_node_options(node);
-		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
-			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
-			       "if utf8 char detected then utf8 else 8bit\n");
-		return false;
-	}
-	const namealiases_pair names[] = {
-		{ "guess", NULL },
-		{ "8bit", "ascii" },
-		{ "utf8", "utf-8" },
-		{ "utf16le", "utf-16le,utf16-le" },
-		{ "utf32le", "utf-32le,utf32-le" },
-		{ "utf16be", "utf-16be,utf16-be" },
-		{ "utf32be", "utf-32be,utf32-be" },
-		{ "ibm037", "ebcdic" },
-		{ "ibm290", NULL },
-		{ "ebcdices", NULL },
-		{ "ebcdicuk", NULL },
-		{ "ebcdicus", NULL },
-
-	};
-	int i;
-	char *enc = strdup(node->value);
-	if (!enc) {
-		return false;
-	}
-	rz_str_case(enc, false);
-	for (i = 0; i < RZ_ARRAY_SIZE(names); i++) {
-		const namealiases_pair *pair = &names[i];
-		if (!strcmp(pair->name, enc) || rz_str_cmp_list(pair->aliases, enc, ',')) {
-			free(node->value);
-			node->value = strdup(pair->name);
-			free(enc);
-			if (core->bin) {
-				free(core->bin->strenc);
-				core->bin->strenc = !strcmp(node->value, "guess") ? NULL : strdup(node->value);
-				RzBinFile *bf = rz_bin_cur(core->bin);
-				if (bf && bf->o) {
-					rz_bin_object_reset_strings(core->bin, bf, bf->o);
-				}
-			}
-			return true;
-		}
-	}
-	RZ_LOG_ERROR("core: bin.str.enc: unknown encoding: %s\n", node->value);
-	free(enc);
-	return false;
-}
-
 static bool cb_binfilter(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -1169,11 +1111,188 @@ static bool cb_str_escbslash(void *user, void *data) {
 	return true;
 }
 
-static bool cb_strsearch_check_ascii_freq(void *user, void *data) {
+static bool cb_str_search_max_threads(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->bin->strseach_check_ascii_freq = node->i_value;
+	size_t max_threads = rz_th_physical_core_number();
+	if (node->value[0] == '?') {
+		rz_cons_printf("%" PFMTSZu "\n", max_threads);
+		return false;
+	}
+	core->bin->str_search_cfg.max_threads = RZ_MIN(max_threads, node->i_value);
 	return true;
+}
+
+static bool cb_str_search_min_length(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < 1) {
+		RZ_LOG_ERROR("str.search.min_length cannot be less than 1.\n");
+		return false;
+	} else if (node->i_value >= core->bin->str_search_cfg.buffer_size) {
+		RZ_LOG_ERROR("str.search.buffer_size cannot be greater or equal to %" PFMTSZu ".\n", core->bin->str_search_cfg.buffer_size);
+		return false;
+	}
+
+	core->bin->str_search_cfg.min_length = node->i_value;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_buffer_size(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+
+	size_t min_buffer_size = RZ_MIN(core->bin->str_search_cfg.min_length, RZ_BIN_STRING_SEARCH_BUFFER_SIZE);
+	if (node->i_value < min_buffer_size) {
+		RZ_LOG_ERROR("str.search.buffer_size cannot be less than %" PFMTSZu ".\n", min_buffer_size);
+		return false;
+	}
+
+	core->bin->str_search_cfg.buffer_size = node->i_value;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_max_uni_blocks(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < 1) {
+		RZ_LOG_ERROR("str.search.max_uni_blocks cannot be less than 1.\n");
+		return false;
+	}
+	core->bin->str_search_cfg.max_uni_blocks = node->i_value;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_max_region_size(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) {
+		RZ_LOG_ERROR("str.search.max_region_size cannot be less than " RZ_STR(RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE) ".\n");
+		return false;
+	}
+	core->bin->str_search_cfg.max_region_size = node->i_value;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_raw_alignment(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value < 8) {
+		RZ_LOG_ERROR("str.search.raw_alignment cannot be less than 8.\n");
+		return false;
+	}
+	core->bin->str_search_cfg.raw_alignment = node->i_value;
+	return true;
+}
+
+static bool cb_str_search_check_ascii_freq(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] == '?') {
+		rz_cons_printf("true\nfalse\n");
+		return false;
+	} else if (!rz_str_is_bool(node->value)) {
+		RZ_LOG_ERROR("Invalid value for str.search.check_ascii_freq (%s).\n", node->value);
+		return false;
+	}
+	core->bin->str_search_cfg.check_ascii_freq = rz_str_is_true(node->value);
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
+	RzListIter *iter;
+	const char *option;
+	rz_list_foreach (node->options, iter, option) {
+		if (rz_str_casecmp(option, node->value)) {
+			continue;
+		}
+		free(node->value);
+		node->value = rz_str_dup(option);
+		*encoding = rz_str_enc_string_as_type(option);
+		return true;
+	}
+	return false;
+}
+
+static bool cb_str_search_encoding(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
+	if (node->value[0] == '?') {
+		print_node_options(node);
+		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
+			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
+			       "if utf8 char detected then utf8 else 8bit\n");
+		return false;
+	} else if (rz_str_casecmp("guess", node->value) && !find_encoding(node, &encoding)) {
+		RZ_LOG_ERROR("Invalid value for str.search.encoding (%s).\n", node->value);
+		return false;
+	}
+
+	core->bin->str_search_cfg.string_encoding = encoding;
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return true;
+}
+
+static bool cb_str_search_mode(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] == '?') {
+		print_node_options(node);
+		return false;
+	} else if (!rz_str_casecmp("auto", node->value)) {
+		core->bin->str_search_cfg.mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
+		return true;
+	} else if (!rz_str_casecmp("rosections", node->value)) {
+		core->bin->str_search_cfg.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+		return true;
+	} else if (!rz_str_casecmp("raw", node->value)) {
+		core->bin->str_search_cfg.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+		return true;
+	}
+	RZ_LOG_ERROR("Invalid value for str.search.mode (%s).\n", node->value);
+	if (core->bin && rz_config_get_b(core->config, "str.search.reload")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && bf->o) {
+			rz_bin_object_reset_strings(core->bin, bf, bf->o);
+		}
+	}
+	return false;
 }
 
 static bool cb_completion_maxtab(void *user, void *data) {
@@ -2446,6 +2565,7 @@ static bool cb_binhashesdefault(void *user, void *data) {
 		rz_cons_printf("Multiple algorithms can be specified in a comma-separated list (no spaces).\n");
 		return false;
 	}
+	rz_list_free(core->bin->default_hashes);
 	core->bin->default_hashes = rz_str_split_duplist(node->value, ",", true);
 	if (!core->bin->default_hashes) {
 		core->bin->default_hashes = rz_list_new();
@@ -2503,67 +2623,6 @@ static bool cb_binprefix(void *user, void *data) {
 		} else {
 			core->bin->prefix = node->value;
 		}
-	}
-	return true;
-}
-
-static bool cb_binmaxstrbuf(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (core->bin) {
-		int v = (int)node->i_value;
-		ut64 old_v = core->bin->maxstrbuf;
-		if (v < 1) {
-			// when less than 1 always enforce 4 as the min string length.
-			v = 4;
-		}
-		core->bin->maxstrbuf = v;
-		if (v > old_v) {
-			RzBinFile *bf = rz_bin_cur(core->bin);
-			if (bf && bf->o) {
-				rz_bin_object_reset_strings(core->bin, bf, bf->o);
-			}
-		}
-		return true;
-	}
-	return true;
-}
-
-static bool cb_binmaxstr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (core->bin) {
-		int v = (int)node->i_value;
-		if (v < 1) {
-			v = 0;
-		}
-		core->bin->maxstrlen = v;
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			bf->maxstrlen = v;
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-		return true;
-	}
-	return true;
-}
-
-static bool cb_binminstr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (core->bin) {
-		int v = (int)node->i_value;
-		if (v < 1) {
-			// when less than 1 always enforce 4 as the min string length.
-			v = 4;
-		}
-		core->bin->minstrlen = v;
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		if (bf && bf->o) {
-			bf->minstrlen = v;
-			rz_bin_object_reset_strings(core->bin, bf, bf->o);
-		}
-		return true;
 	}
 	return true;
 }
@@ -3240,12 +3299,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.dbginfo.debuginfod_urls", "http://debuginfod.elfutils.org/", NULL,
 		"Looks for debug symbols on the debuginfod servers, the value is a string of a space separated URLs");
 	SETBPREF("bin.relocs", "true", "Load relocs information at startup if available");
-	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for strings in bin plugins");
-	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for strings in bin plugins");
-	SETICB("bin.maxstrbuf", 1024 * 1024 * 10, &cb_binmaxstrbuf, "Maximum size of range to load strings from");
-	n = NODECB("bin.str.enc", "guess", &cb_binstrenc);
-	SETDESC(n, "Default string encoding of binary");
-	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB("bin.prefix", "", &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
@@ -3261,7 +3314,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("cfg.plugins", "true", "Load plugins at startup");
 	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
-	SETBPREF("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = rz_sys_getenv("EDITOR");
 #if __WINDOWS__
@@ -3629,8 +3681,22 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
-	SETCB("str.search.check_ascii_freq", "true", &cb_strsearch_check_ascii_freq,
-		"Perform ASCII frequency analysis when looking for false positives during string search");
+
+	/* string search options */
+	SETB("str.search.reload", true, "When enabled, any change to any option `str.search.*` will reload the bin strings.");
+	SETICB("str.search.max_threads", RZ_THREAD_POOL_ALL_CORES, &cb_str_search_max_threads, "Maximum core number (0 for all cores).");
+	SETICB("str.search.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_str_search_min_length, "Smallest string length that is possible to find.");
+	SETICB("str.search.buffer_size", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_str_search_buffer_size, "Maximum buffer size, which will also determine the maximum string length.");
+	SETICB("str.search.max_uni_blocks", RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS, &cb_str_search_max_uni_blocks, "Maximum number of unicode blocks.");
+	SETICB("str.search.max_region_size", RZ_BIN_STRING_SEARCH_MAX_REGION_SIZE, &cb_str_search_max_region_size, "Maximum allowable size for the string search interval between two memory regions.");
+	SETICB("str.search.raw_alignment", RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT, &cb_str_search_raw_alignment, "Memory sector alignment used for the raw string search.");
+	SETICB("str.search.check_ascii_freq", RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ, &cb_str_search_check_ascii_freq, "If true, perform check on ASCII frequencies when looking for false positives during string search");
+	n = NODECB("str.search.encoding", "guess", &cb_str_search_encoding);
+	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
+	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
+	n = NODECB("str.search.mode", "auto", &cb_str_search_mode);
+	SETDESC(n, "String search mode which can override how strings are found (auto, rosections or raw)");
+	SETOPTIONS(n, "auto", "rosections", "raw", NULL);
 
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");

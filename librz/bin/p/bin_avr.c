@@ -139,20 +139,19 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return bi;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
 	if (tmp_entry == UT64_MAX) {
 		return false;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ut64 addr = tmp_entry;
 		ptr->vaddr = ptr->paddr = addr;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

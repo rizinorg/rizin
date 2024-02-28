@@ -194,7 +194,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_bin_source_line_info_free(o->lines);
 	rz_bin_string_database_free(o->strings);
 	rz_pvector_free(o->classes);
-	rz_list_free(o->entries);
+	rz_pvector_free(o->entries);
 	rz_pvector_free(o->fields);
 	rz_pvector_free(o->imports);
 	rz_pvector_free(o->libs);
@@ -657,9 +657,9 @@ RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSp
 }
 
 /**
- * \brief Get list of \p RzBinAddr representing the entry points of the binary object.
+ * \brief Get pvector of \p RzBinAddr representing the entry points of the binary object.
  */
-RZ_API const RzList /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj) {
+RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->entries;
 }

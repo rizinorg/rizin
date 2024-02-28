@@ -473,7 +473,6 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	bin->file = NULL;
 	free(bin->force);
 	free(bin->srcdir);
-	free(bin->strenc);
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 
@@ -484,6 +483,7 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	}
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->plugins);
+	rz_list_free(bin->default_hashes);
 	sdb_free(bin->sdb);
 	rz_id_storage_free(bin->ids);
 	rz_hash_free(bin->hash);
@@ -596,19 +596,6 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
 		o->opts.baseaddr = baddr;
 		o->baddr_shift = baddr - file_baddr;
 	}
-}
-
-// XXX: those accessors are redundant
-RZ_DEPRECATE RZ_API RZ_BORROW RzList /*<RzBinAddr *>*/ *rz_bin_get_entries(RZ_NONNULL RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? (RzList *)rz_bin_object_get_entries(o) : NULL;
-}
-
-RZ_DEPRECATE RZ_API RZ_BORROW RzBinInfo *rz_bin_get_info(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
 }
 
 /**
@@ -758,13 +745,12 @@ RZ_API RzBin *rz_bin_new(void) {
 	if (!bin->event) {
 		goto trashbin_constpool;
 	}
+	rz_bin_string_search_opt_init(&bin->str_search_cfg);
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0();
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->minstrlen = 0;
 	bin->strpurge = NULL;
-	bin->strenc = NULL;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
 	bin->hash = rz_hash_new();
@@ -779,6 +765,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->plugins = rz_list_new_from_array((const void **)bin_static_plugins, RZ_ARRAY_SIZE(bin_static_plugins));
 	/* extractors */
 	bin->binxtrs = rz_list_new_from_array((const void **)bin_xtr_static_plugins, RZ_ARRAY_SIZE(bin_xtr_static_plugins));
+
 	return bin;
 
 trashbin_event:

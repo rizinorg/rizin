@@ -2,7 +2,7 @@
 # Because Meson currently doesn't support subprojects to be native and non-native:
 # https://github.com/mesonbuild/meson/issues/10947
 
-project('pcre2_cross_native', 'c', version: '10.42')
+project('pcre2_cross_native', 'c', version: '10.43')
 
 cc = meson.get_compiler('c')
 
@@ -32,6 +32,7 @@ libpcre2_c_args = [
 pcre2_files = [
   'src/pcre2_auto_possess.c',
   pcre2_chartables,
+  'src/pcre2_chkdint.c',
   'src/pcre2_compile.c',
   'src/pcre2_config.c',
   'src/pcre2_context.c',
@@ -67,9 +68,12 @@ if cc.get_id() != 'tcc' and target_machine.cpu_family() in cpu_jit_supported
   pcre2_files += ['src/pcre2_jit_compile.c']
 endif
 
-if target_machine.system() == 'openbsd' or target_machine.system() == 'netbsd'
+if target_machine.system() == 'openbsd'
   # jit compilation fails with "no more memory" if wx allocations are allowed.
   libpcre2_c_args += ['-DSLJIT_WX_EXECUTABLE_ALLOCATOR']
+elif target_machine.system() == 'netbsd'
+  # jit compilation fails with "no more memory" if wx allocations are allowed.
+  libpcre2_c_args += ['-DSLJIT_PROT_EXECUTABLE_ALLOCATOR']
 endif
 
 pcre2_includes = [

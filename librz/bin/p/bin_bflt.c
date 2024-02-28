@@ -16,20 +16,20 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return obj->bin_obj;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
-	RzList *ret;
+	RzPVector *ret;
 	RzBinAddr *ptr;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	ptr = rz_bflt_get_entry(obj);
 	if (!ptr) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
-	rz_list_append(ret, ptr);
+	rz_pvector_push(ret, ptr);
 	return ret;
 }
 
@@ -248,10 +248,6 @@ static void destroy(RzBinFile *bf) {
 	rz_bflt_free(bf->o->bin_obj);
 }
 
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
-}
-
 RzBinPlugin rz_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT uClinux executable",
@@ -263,7 +259,6 @@ RzBinPlugin rz_bin_plugin_bflt = {
 	.maps = &maps,
 	.entries = &entries,
 	.sections = &sections,
-	.strings = &strings,
 	.info = &info,
 	.relocs = &relocs
 };

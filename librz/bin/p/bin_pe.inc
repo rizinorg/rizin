@@ -60,7 +60,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return ret;
 }
 
-static void add_tls_callbacks(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *list) {
+static void add_tls_callbacks(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *vec) {
 	PE_DWord paddr, vaddr, haddr;
 	int count = 0;
 	RzBinAddr *ptr = NULL;
@@ -91,18 +91,18 @@ static void add_tls_callbacks(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *list) {
 			ptr->vaddr = vaddr;
 			ptr->hpaddr = haddr;
 			ptr->type = RZ_BIN_ENTRY_TYPE_TLS;
-			rz_list_append(list, ptr);
+			rz_pvector_push(vec, ptr);
 		}
 		count++;
 	} while (vaddr);
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	struct rz_bin_pe_addr_t *entry = NULL;
 	RzBinAddr *ptr = NULL;
-	RzList *ret;
+	RzPVector *ret;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if (!(entry = PE_(rz_bin_pe_get_entrypoint)(bf->o->bin_obj))) {
@@ -113,7 +113,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 		ptr->vaddr = entry->vaddr;
 		ptr->hpaddr = entry->haddr;
 		ptr->type = RZ_BIN_ENTRY_TYPE_PROGRAM;
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	free(entry);
 	// get TLS callback addresses
@@ -741,10 +741,6 @@ static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
 	}
 
 	return file_hashes;
-}
-
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
 /**

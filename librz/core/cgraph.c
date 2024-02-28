@@ -993,12 +993,19 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 		return false;
 	}
 
-	RzGraphNode *to_node = add_node_info_cfg(graph, op_to, false);
+	RzGraphNode *to_node = NULL;
+	bool found = false;
+	ut64 to_idx = ht_uu_find(nodes_visited, to, &found);
+	if (found) {
+		to_node = rz_graph_get_node(graph, to_idx);
+	} else {
+		to_node = add_node_info_cfg(graph, op_to, false);
+	}
 	if (!to_node) {
 		RZ_LOG_ERROR("Could not add node at 0x%" PFMT64x "\n", to);
 		return false;
 	}
-	ut64 to_idx = to_node->idx;
+	to_idx = to_node->idx;
 	if (from == to) {
 		from_idx = to_idx;
 	}
@@ -1065,6 +1072,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 		}
 
 		if (curr_op.jump != UT64_MAX && !is_call(&curr_op)) {
+			if (rz_io_nread_at(core->io, curr_op.jump, buf, sizeof(buf)) < 0) {
+				RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
+				goto error;
+			}
 			if (rz_analysis_op(core->analysis, &target_op, curr_op.jump, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;
@@ -1075,6 +1086,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 			rz_analysis_op_fini(&target_op);
 		}
 		if (curr_op.fail != UT64_MAX && !is_call(&curr_op)) {
+			if (rz_io_nread_at(core->io, curr_op.fail, buf, sizeof(buf)) < 0) {
+				RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, cur_addr);
+				goto error;
+			}
 			if (rz_analysis_op(core->analysis, &target_op, curr_op.fail, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM) <= 0) {
 				rz_analysis_op_fini(&target_op);
 				goto error;

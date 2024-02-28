@@ -50,6 +50,7 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
 RZ_API void rz_regex_free(RZ_OWN RzRegex *regex);
 RZ_API void rz_regex_error_msg(RzRegexStatus errcode, RZ_OUT char *errbuf, RzRegexSize errbuf_size);
 RZ_API const ut8 *rz_regex_get_match_name(RZ_NONNULL const RzRegex *regex, ut32 name_idx);
+RZ_API st32 rz_regex_get_group_idx_by_name(RZ_NONNULL const RzRegex *regex, const char *group);
 RZ_API RzRegexStatus rz_regex_match(RZ_NONNULL const RzRegex *regex, RZ_NONNULL const char *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
@@ -74,6 +75,9 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
 	RzRegexFlags mflags);
 RZ_API bool rz_regex_contains(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text,
 	RzRegexSize text_size,
+	RzRegexFlags cflags, RzRegexFlags mflags);
+RZ_API RzRegexSize rz_regex_find(RZ_NONNULL const char *pattern, RZ_NONNULL RZ_BORROW char *text,
+	RzRegexSize text_size, RzRegexSize text_offset,
 	RzRegexFlags cflags, RzRegexFlags mflags);
 RZ_API RZ_OWN RzStrBuf *rz_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text,
 	RzRegexSize text_size,

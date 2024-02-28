@@ -84,8 +84,8 @@ static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	return UT64_MAX;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzPVector *ret;
 	ut8 buf[64] = { 0 };
 	RzBinAddr *ptr = NULL;
 	const int buf_size = RZ_MIN(sizeof(buf), rz_buf_size(bf->buf));
@@ -95,14 +95,13 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	if (entry == UT64_MAX) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ptr->paddr = rz_read_ble32(buf + 12, false);
 		ptr->vaddr = ptr->paddr + baddr(bf);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }

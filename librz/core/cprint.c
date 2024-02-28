@@ -984,3 +984,137 @@ RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core) {
 	}
 	return "px";
 }
+
+///< Pointers to different components of the pf format string
+typedef struct {
+	char *name; ///< format name
+	char *field; ///< format field (e.g. structure field)
+	char *value; ///< value to write (after "=")
+} pf_components;
+
+// Parses the string into three component's
+// to support also the `pfw bla.foo.goo=1235` syntax
+static RZ_OWN pf_components *parse_named_pf_string(const char *fmt) {
+	pf_components *comp = RZ_NEW0(pf_components);
+	if (!comp) {
+		return NULL;
+	}
+	// Format name could be after first dot
+	// Note, that regular `pf` format also can start from the dot
+	char *cur = (char *)fmt;
+	if (fmt[0] == '.') {
+		cur++;
+	}
+	// There is a format field specified
+	const char *dot = strchr(cur, '.');
+	if (dot) {
+		comp->name = rz_sub_str_ptr(fmt, cur, dot - 1);
+		cur = (char *)dot;
+	} else {
+		comp->name = rz_sub_str_ptr(fmt, cur, cur + strlen(cur));
+	}
+	// Name is mandatory
+	if (!comp->name) {
+		free(comp);
+		return NULL;
+	}
+	// There is a value to write specified
+	const char *eq = strchr(cur, '=');
+	if (eq) {
+		comp->field = rz_sub_str_ptr(fmt, cur + 1, eq - 1);
+		comp->value = rz_sub_str_ptr(fmt, eq + 1, eq + strlen(eq));
+	} else {
+		comp->field = rz_sub_str_ptr(fmt, cur + 1, cur + strlen(cur));
+	}
+	return comp;
+}
+
+static RZ_OWN char *pf_get_format_name(const char *fmt) {
+	// Format name could be after first dot
+	// Note, that regular `pf` format also can start from the dot
+	char *start = (char *)fmt;
+	char *end = (char *)fmt + strlen(fmt);
+	if (fmt[0] == '.') {
+		start++;
+	}
+	// There is a format field specified
+	const char *dot = strchr(start, '.');
+	if (dot) {
+		end = (char *)dot - 1;
+	}
+	return rz_sub_str_ptr(fmt, start, end);
+}
+
+/* Function allows to parse and print format in different syntaxes:
+ * `pf .bla`
+ * `pf foo.goo`
+ * `pfw foo.goo=15`
+ * `pfw foo.goo 15`
+ *  ...
+ */
+static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char *value, int mode, ut64 address) {
+	int o_blocksize = core->blocksize;
+	ut64 old_offset = core->offset;
+	core->print->reg = rz_core_reg_default(core);
+	core->print->get_register = rz_reg_get;
+	core->print->get_register_value = rz_reg_get_value;
+
+	rz_core_seek(core, address, true);
+
+	// Try to parse the format string and detect if there is a possible name
+	pf_components *comp = NULL;
+	char *fmtname = pf_get_format_name(fmt);
+	if (fmtname) {
+		// To be sure it's the format name, receive the format string
+		const char *format = rz_type_db_format_get(core->analysis->typedb, fmtname);
+		if (format) {
+			comp = parse_named_pf_string(fmt);
+			// Value was passed not through "="
+			if (value && comp && !comp->value) {
+				comp->value = rz_str_dup(value);
+			}
+		}
+	}
+	int struct_sz = 0;
+	if (comp) {
+		// If the split into components is finished, use the only format name
+		struct_sz = rz_type_format_struct_size(core->analysis->typedb, comp->name, mode, 0);
+	} else {
+		struct_sz = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0);
+	}
+	size_t size = RZ_MAX(core->blocksize, struct_sz);
+	// Make sure the whole format will be processed
+	if (size > core->blocksize) {
+		rz_core_block_size(core, size);
+	}
+	char *result = NULL;
+	ut8 *buf = calloc(1, size);
+	if (!buf) {
+		RZ_LOG_ERROR("core: cannot allocate %zu byte(s)\n", size);
+		goto stage_left;
+	}
+	memcpy(buf, core->block, core->blocksize);
+	free(fmtname);
+	// Use the component-based data formatting if split was correct
+	if (comp) {
+		result = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
+			buf, size, comp->name, mode, comp->value, comp->field);
+	} else {
+		result = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
+			buf, size, fmt, mode, value, NULL);
+	}
+	free(buf);
+
+stage_left:
+	rz_core_seek(core, old_offset, true);
+	rz_core_block_size(core, o_blocksize);
+	return result;
+}
+
+RZ_IPI RZ_OWN char *rz_core_print_format(RzCore *core, const char *fmt, int mode, ut64 address) {
+	return core_print_format(core, fmt, NULL, mode, address);
+}
+
+RZ_IPI RZ_OWN char *rz_core_print_format_write(RzCore *core, const char *fmt, const char *value, ut64 address) {
+	return core_print_format(core, fmt, value, RZ_PRINT_MUSTSET, address);
+}

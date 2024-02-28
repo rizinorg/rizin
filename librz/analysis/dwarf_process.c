@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2012-2020 houndthe <cgkajm@gmail.com>
+// SPDX-FileCopyrightText: 2024 Billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -129,95 +130,141 @@ static const char *map_dwarf_register_dummy(ut32 reg_num) {
 	}
 }
 
-/* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
-static const char *map_dwarf_reg_to_x86_64_reg(ut32 reg_num) {
+/**
+ * Found in GDB and in the linux kernel perf tools.
+ * linux/latest/source/tools/perf/arch/mips/include/dwarf-regs-table.h
+ *
+ * https://opensource.apple.com/source/gdb/gdb-2831/src/gdb/mips-tdep.c.auto.html
+ * check the mips_dwarf_dwarf2_ecoff_reg_to_regnum function.
+ */
+static const char *map_dwarf_reg_to_mips_reg(ut32 reg_num) {
 	switch (reg_num) {
-	case 0: return "rax";
-	case 1: return "rdx";
-	case 2: return "rcx";
-	case 3: return "rbx";
-	case 4: return "rsi";
-	case 5: return "rdi";
-	case 6: return "rbp";
-	case 7: return "rsp";
-	case 8: return "r8";
-	case 9: return "r9";
-	case 10: return "r10";
-	case 11: return "r11";
-	case 12: return "r12";
-	case 13: return "r13";
-	case 14: return "r14";
-	case 15: return "r15";
-	case 17: return "xmm0";
-	case 18: return "xmm1";
-	case 19: return "xmm2";
-	case 20: return "xmm3";
-	case 21: return "xmm4";
-	case 22: return "xmm5";
-	case 23: return "xmm6";
-	case 24: return "xmm7";
-	default:
-		return "unsupported_reg";
-	}
-}
-
-/* x86 https://01.org/sites/default/files/file_attach/intel386-psabi-1.0.pdf */
-static const char *map_dwarf_reg_to_x86_reg(ut32 reg_num) {
-	switch (reg_num) {
-	case 0: /* fall-thru */
-	case 8: return "eax";
-	case 1: return "edx";
-	case 2: return "ecx";
-	case 3: return "ebx";
-	case 4: return "esp";
-	case 5: return "ebp";
-	case 6: return "esi";
-	case 7: return "edi";
-	case 9: return "EFLAGS";
-	case 11: return "st0";
-	case 12: return "st1";
-	case 13: return "st2";
-	case 14: return "st3";
-	case 15: return "st4";
-	case 16: return "st5";
-	case 17: return "st6";
-	case 18: return "st7";
-	case 21: return "xmm0";
-	case 22: return "xmm1";
-	case 23: return "xmm2";
-	case 24: return "xmm3";
-	case 25: return "xmm4";
-	case 26: return "xmm5";
-	case 27: return "xmm6";
-	case 28: return "xmm7";
-	case 29: return "mm0";
-	case 30: return "mm1";
-	case 31: return "mm2";
-	case 32: return "mm3";
-	case 33: return "mm4";
-	case 34: return "mm5";
-	case 35: return "mm6";
-	case 36: return "mm7";
-	case 40: return "es";
-	case 41: return "cs";
-	case 42: return "ss";
-	case 43: return "ds";
-	case 44: return "fs";
-	case 45: return "gs";
+	// General Register
+	case 0: return "zero";
+	case 1: return "at";
+	case 2: return "v0";
+	case 3: return "v1";
+	case 4: return "a0";
+	case 5: return "a1";
+	case 6: return "a2";
+	case 7: return "a3";
+	case 8: return "t0";
+	case 9: return "t1";
+	case 10: return "t2";
+	case 11: return "t3";
+	case 12: return "t4";
+	case 13: return "t5";
+	case 14: return "t6";
+	case 15: return "t7";
+	case 16: return "s0";
+	case 17: return "s1";
+	case 18: return "s2";
+	case 19: return "s3";
+	case 20: return "s4";
+	case 21: return "s5";
+	case 22: return "s6";
+	case 23: return "s7";
+	case 24: return "t8";
+	case 25: return "t9";
+	case 26: return "k0";
+	case 27: return "k1";
+	case 28: return "gp";
+	case 29: return "sp";
+	case 30: return "fp";
+	case 31: return "ra";
+	// Floating Register
+	case 32: return "fp0";
+	case 33: return "fp1";
+	case 34: return "fp2";
+	case 35: return "fp3";
+	case 36: return "fp4";
+	case 37: return "fp5";
+	case 38: return "fp6";
+	case 39: return "fp7";
+	case 40: return "fp8";
+	case 41: return "fp9";
+	case 42: return "fp10";
+	case 43: return "fp11";
+	case 44: return "fp12";
+	case 45: return "fp13";
+	case 46: return "fp14";
+	case 47: return "fp15";
+	case 48: return "fp16";
+	case 49: return "fp17";
+	case 50: return "fp18";
+	case 51: return "fp19";
+	case 52: return "fp20";
+	case 53: return "fp21";
+	case 54: return "fp22";
+	case 55: return "fp23";
+	case 56: return "fp24";
+	case 57: return "fp25";
+	case 58: return "fp26";
+	case 59: return "fp27";
+	case 60: return "fp28";
+	case 61: return "fp29";
+	case 62: return "fp30";
+	case 63: return "fp31";
+	// Special Register
+	case 64: return "hi"; // Hi register
+	case 65: return "lo"; // Low Register
 	default:
 		rz_warn_if_reached();
 		return "unsupported_reg";
 	}
 }
 
-/*
- * Most of the registers comes from the PPC ELF ABI v1
- * https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#DW-REG
- *
- * But there are some different mapping in the PPC ELF ABI v2
- * https://ftp.rtems.org/pub/rtems/people/sebh/ABI64BitOpenPOWERv1.1_16July2015_pub.pdf
+/**
+ * Found in the linux kernel perf tools.
+ * latest/source/tools/perf/arch/sparc/include/dwarf-regs-table.h
  */
-static const char *map_dwarf_reg_to_ppc64_reg(ut32 reg_num) {
+static const char *sparc_dwarf_table[] = {
+	"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
+	"o0", "o1", "o2", "o3", "o4", "o5", "sp", "o7",
+	"l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7",
+	"i0", "i1", "i2", "i3", "i4", "i5", "fp", "i7",
+	"f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
+	"f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",
+	"f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23",
+	"f24", "f25", "f26", "f27", "f28", "f29", "f30", "f31",
+	"f32", "f33", "f34", "f35", "f36", "f37", "f38", "f39",
+	"f40", "f41", "f42", "f43", "f44", "f45", "f46", "f47",
+	"f48", "f49", "f50", "f51", "f52", "f53", "f54", "f55",
+	"f56", "f57", "f58", "f59", "f60", "f61", "f62", "f63"
+};
+
+static const char *map_dwarf_reg_to_sparc_reg(ut32 reg_num) {
+	if (reg_num < RZ_ARRAY_SIZE(sparc_dwarf_table)) {
+		return sparc_dwarf_table[reg_num];
+	}
+	rz_warn_if_reached();
+	return "unsupported_reg";
+}
+
+/**
+ * Found in the linux kernel perf tools.
+ * latest/source/tools/perf/arch/loongarch/include/dwarf-regs-table.h
+ */
+static const char *loongarch_dwarf_table[] = {
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+	"r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
+	"r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"
+};
+
+static const char *map_dwarf_reg_to_loongarch_reg(ut32 reg_num) {
+	if (reg_num < RZ_ARRAY_SIZE(loongarch_dwarf_table)) {
+		return loongarch_dwarf_table[reg_num];
+	}
+	rz_warn_if_reached();
+	return "unsupported_reg";
+}
+
+/**
+ * Found in the linux kernel perf tools.
+ * latest/source/tools/perf/arch/s390/include/dwarf-regs-table.h
+ */
+static const char *map_dwarf_reg_to_s390_reg(ut32 reg_num) {
 	switch (reg_num) {
 	// General Register
 	case 0: return "r0";
@@ -236,23 +283,101 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut32 reg_num) {
 	case 13: return "r13";
 	case 14: return "r14";
 	case 15: return "r15";
-	case 16: return "r16";
-	case 17: return "r17";
-	case 18: return "r18";
-	case 19: return "r19";
-	case 20: return "r20";
-	case 21: return "r21";
-	case 22: return "r22";
-	case 23: return "r23";
-	case 24: return "r24";
-	case 25: return "r25";
-	case 26: return "r26";
-	case 27: return "r27";
-	case 28: return "r28";
-	case 29: return "r29";
-	case 30: return "r30";
-	case 31: return "r31";
-	// Floating Register
+	case 16: return "f0";
+	case 17: return "f2";
+	case 18: return "f4";
+	case 19: return "f6";
+	case 20: return "f1";
+	case 21: return "f3";
+	case 22: return "f5";
+	case 23: return "f7";
+	case 24: return "f8";
+	case 25: return "f10";
+	case 26: return "f12";
+	case 27: return "f14";
+	case 28: return "f9";
+	case 29: return "f11";
+	case 30: return "f13";
+	case 31: return "f15";
+	case 32: return "c0";
+	case 33: return "c1";
+	case 34: return "c2";
+	case 35: return "c3";
+	case 36: return "c4";
+	case 37: return "c5";
+	case 38: return "c6";
+	case 39: return "c7";
+	case 40: return "c8";
+	case 41: return "c9";
+	case 42: return "c10";
+	case 43: return "c11";
+	case 44: return "c12";
+	case 45: return "c13";
+	case 46: return "c14";
+	case 47: return "c15";
+	case 48: return "a0";
+	case 49: return "a1";
+	case 50: return "a2";
+	case 51: return "a3";
+	case 52: return "a4";
+	case 53: return "a5";
+	case 54: return "a6";
+	case 55: return "a7";
+	case 56: return "a8";
+	case 57: return "a9";
+	case 58: return "a10";
+	case 59: return "a11";
+	case 60: return "a12";
+	case 61: return "a13";
+	case 62: return "a14";
+	case 63: return "a15";
+	case 64: return "pswm";
+	case 65: return "pswa";
+	default:
+		rz_warn_if_reached();
+		return "unsupported_reg";
+	}
+}
+
+/**
+ * https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-dwarf.adoc
+ */
+static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
+	switch (reg_num) {
+	// Integer Registers
+	case 0: return "x0";
+	case 1: return "x1";
+	case 2: return "x2";
+	case 3: return "x3";
+	case 4: return "x4";
+	case 5: return "x5";
+	case 6: return "x6";
+	case 7: return "x7";
+	case 8: return "x8";
+	case 9: return "x9";
+	case 10: return "x10";
+	case 11: return "x11";
+	case 12: return "x12";
+	case 13: return "x13";
+	case 14: return "x14";
+	case 15: return "x15";
+	case 16: return "x16";
+	case 17: return "x17";
+	case 18: return "x18";
+	case 19: return "x19";
+	case 20: return "x20";
+	case 21: return "x21";
+	case 22: return "x22";
+	case 23: return "x23";
+	case 24: return "x24";
+	case 25: return "x25";
+	case 26: return "x26";
+	case 27: return "x27";
+	case 28: return "x28";
+	case 29: return "x29";
+	case 30: return "x30";
+	case 31: return "x31";
+	// Floating-point Registers
 	case 32: return "f0";
 	case 33: return "f1";
 	case 34: return "f2";
@@ -285,173 +410,44 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut32 reg_num) {
 	case 61: return "f29";
 	case 62: return "f30";
 	case 63: return "f31";
-	// Special Register
-	case 64: return "cr"; // Condition Register
-	case 65: return "fpscr"; // Floating-Point Status and Control Register
-	case 66: return "msr"; // Machine State Register
-	case 70: return "sr0"; // Segment Register 0
-	case 71: return "sr1"; // Segment Register 1
-	case 72: return "sr2"; // Segment Register 2
-	case 73: return "sr3"; // Segment Register 3
-	case 74: return "sr4"; // Segment Register 4
-	case 75: return "sr5"; // Segment Register 5
-	case 76: return "sr6"; // Segment Register 6
-	case 77: return "sr7"; // Segment Register 7
-	case 78: return "sr8"; // Segment Register 8
-	case 79: return "sr9"; // Segment Register 9
-	case 80: return "sr10"; // Segment Register 10
-	case 81: return "sr11"; // Segment Register 11
-	case 82: return "sr12"; // Segment Register 12
-	case 83: return "sr13"; // Segment Register 13
-	case 84: return "sr14"; // Segment Register 14
-	case 85: return "sr15"; // Segment Register 15
-	case 99:
-		return "acc"; // Accumulator Register
-	// SPRs 100–1123
-	case 100: return "mq"; // MQ Register
-	case 101: return "xer"; // Fixed-Point Exception Register
-	case 104: return "rtcu"; // Real Time Clock Upper Register
-	case 105: return "rtcl"; // Real Time Clock Lower Register
-	case 108: return "lr"; // Link Register
-	case 109: return "ctr"; // Count Register
-	case 118: return "dsisr"; // Data Storage Interrupt Status Register
-	case 119: return "dar"; // Data Address Register
-	case 122: return "dec"; // Decrement Register
-	case 125: return "sdr1"; // Storage Description Register 1
-	case 126: return "srr0"; // Machine Status Save/Restore Register 0
-	case 127: return "srr1"; // Machine Status Save/Restore Register 1
-	case 356: return "vrsave"; // Vector Save/Restore Register
-	case 372: return "sprg0"; // Software-use Special Purpose Register 0
-	case 373: return "sprg1"; // Software-use Special Purpose Register 1
-	case 374: return "sprg2"; // Software-use Special Purpose Register 2
-	case 375: return "sprg3"; // Software-use Special Purpose Register 3
-	case 380: return "asr"; // Address Space Register
-	case 382: return "ear"; // External Access Register
-	case 384: return "tb"; // Time Base
-	case 385: return "tbu"; // Time Base Upper
-	case 387: return "pvr"; // Processor Version Register
-	case 612: return "spefscr"; // Signal processing and embedded floating-point status and control register
-	case 628: return "ibat0u"; // Instruction BAT Upper Register 0
-	case 629: return "ibat0l"; // Instruction BAT Lower Register 0
-	case 630: return "ibat1u"; // Instruction BAT Upper Register 1
-	case 631: return "ibat1l"; // Instruction BAT Lower Register 1
-	case 632: return "ibat2u"; // Instruction BAT Upper Register 2
-	case 633: return "ibat2l"; // Instruction BAT Lower Register 2
-	case 634: return "ibat3u"; // Instruction BAT Upper Register 3
-	case 635: return "ibat3l"; // Instruction BAT Lower Register 3
-	case 636: return "dbat0u"; // Data BAT Upper Register 0
-	case 637: return "dbat0l"; // Data BAT Lower Register 0
-	case 638: return "dbat1u"; // Data BAT Upper Register 1
-	case 639: return "dbat1l"; // Data BAT Lower Register 1
-	case 640: return "dbat2u"; // Data BAT Upper Register 2
-	case 641: return "dbat2l"; // Data BAT Lower Register 2
-	case 642: return "dbat3u"; // Data BAT Upper Register 3
-	case 643: return "dbat3l"; // Data BAT Lower Register 3
-	case 1108: return "hid0"; // Hardware Implementation Register 0
-	case 1109: return "hid1"; // Hardware Implementation Register 1
-	case 1110: return "hid2"; // Hardware Implementation Register 2
-	case 1113: return "hid5"; // Hardware Implementation Register 5
-	case 1123:
-		return "hid15"; // Hardware Implementation Register 15
-	// AltiVec registers 1124–1155
-	case 1124: return "vr0"; // Vector Registers 0
-	case 1125: return "vr1"; // Vector Registers 1
-	case 1126: return "vr2"; // Vector Registers 2
-	case 1127: return "vr3"; // Vector Registers 3
-	case 1128: return "vr4"; // Vector Registers 4
-	case 1129: return "vr5"; // Vector Registers 5
-	case 1130: return "vr6"; // Vector Registers 6
-	case 1131: return "vr7"; // Vector Registers 7
-	case 1132: return "vr8"; // Vector Registers 8
-	case 1133: return "vr9"; // Vector Registers 9
-	case 1134: return "vr10"; // Vector Registers 10
-	case 1135: return "vr11"; // Vector Registers 11
-	case 1136: return "vr12"; // Vector Registers 12
-	case 1137: return "vr13"; // Vector Registers 13
-	case 1138: return "vr14"; // Vector Registers 14
-	case 1139: return "vr15"; // Vector Registers 15
-	case 1140: return "vr16"; // Vector Registers 16
-	case 1141: return "vr17"; // Vector Registers 17
-	case 1142: return "vr18"; // Vector Registers 18
-	case 1143: return "vr19"; // Vector Registers 19
-	case 1144: return "vr20"; // Vector Registers 20
-	case 1145: return "vr21"; // Vector Registers 21
-	case 1146: return "vr22"; // Vector Registers 22
-	case 1147: return "vr23"; // Vector Registers 23
-	case 1148: return "vr24"; // Vector Registers 24
-	case 1149: return "vr25"; // Vector Registers 25
-	case 1150: return "vr26"; // Vector Registers 26
-	case 1151: return "vr27"; // Vector Registers 27
-	case 1152: return "vr28"; // Vector Registers 28
-	case 1153: return "vr29"; // Vector Registers 29
-	case 1154: return "vr30"; // Vector Registers 30
-	case 1155:
-		return "vr31"; // Vector Registers 31
-	// From ABI v1
-	// Reserved 1156–1199
-	// Most-significant 32 bits of gpr r0-r31 1200-1231
-	// Reserved 1232-2047
-	// Device control registers 3072–4095 DCRs
-	// Performance monitor registers 4096-5120 PMRs
-	default:
-		rz_warn_if_reached();
-		return "unsupported_reg";
-	}
-}
-
-/// 4.5.1 DWARF Register Numbers https://www.infineon.com/dgdl/Infineon-TC2xx_EABI-UM-v02_09-EN.pdf?fileId=5546d46269bda8df0169ca1bfc7d24ab
-static const char *map_dwarf_reg_to_tricore_reg(ut32 reg_num) {
-	switch (reg_num) {
-	case 0: return "d0";
-	case 1: return "d1";
-	case 2: return "d2";
-	case 3: return "d3";
-	case 4: return "d4";
-	case 5: return "d5";
-	case 6: return "d6";
-	case 7: return "d7";
-	case 8: return "d8";
-	case 9: return "d9";
-	case 10: return "d10";
-	case 11: return "d11";
-	case 12: return "d12";
-	case 13: return "d13";
-	case 14: return "d14";
-	case 15: return "d15";
-	case 16: return "a0";
-	case 17: return "a1";
-	case 18: return "a2";
-	case 19: return "a3";
-	case 20: return "a4";
-	case 21: return "a5";
-	case 22: return "a6";
-	case 23: return "a7";
-	case 24: return "a8";
-	case 25: return "a9";
-	case 26: return "a10";
-	case 27: return "a11";
-	case 28: return "a12";
-	case 29: return "a13";
-	case 30: return "a14";
-	case 31: return "a15";
-	case 32: return "e0";
-	case 33: return "e2";
-	case 34: return "e4";
-	case 35: return "e6";
-	case 36: return "e8";
-	case 37: return "e10";
-	case 38: return "e12";
-	case 39: return "e14";
-	case 40: return "psw";
-	case 41: return "pcxi";
-	case 42: return "pc";
-	case 43: return "pcx";
-	case 44: return "lcx";
-	case 45: return "isp";
-	case 46: return "icr";
-	case 47: return "pipn";
-	case 48: return "biv";
-	case 49: return "btv";
+	// 64 Alternate Frame Return Column
+	// 65 - 95 Reserved for future standard extensions
+	// 96 - 127 Vector Registers
+	case 96: return "v0";
+	case 97: return "v1";
+	case 98: return "v2";
+	case 99: return "v3";
+	case 100: return "v4";
+	case 101: return "v5";
+	case 102: return "v6";
+	case 103: return "v7";
+	case 104: return "v8";
+	case 105: return "v9";
+	case 106: return "v10";
+	case 107: return "v11";
+	case 108: return "v12";
+	case 109: return "v13";
+	case 110: return "v14";
+	case 111: return "v15";
+	case 112: return "v16";
+	case 113: return "v17";
+	case 114: return "v18";
+	case 115: return "v19";
+	case 116: return "v20";
+	case 117: return "v21";
+	case 118: return "v22";
+	case 119: return "v23";
+	case 120: return "v24";
+	case 121: return "v25";
+	case 122: return "v26";
+	case 123: return "v27";
+	case 124: return "v28";
+	case 125: return "v29";
+	case 126: return "v30";
+	case 127: return "v31";
+	// 128 - 3071 Reserved for future standard extensions
+	// 3072 - 4095 Reserved for custom extensions
+	// 4096 - 8191 CSRs
 	default:
 		rz_warn_if_reached();
 		return "unsupported_reg";
@@ -461,280 +457,15 @@ static const char *map_dwarf_reg_to_tricore_reg(ut32 reg_num) {
 #define KASE(_num, _reg) \
 	case _num: return #_reg;
 
-/// 4.1 https://github.com/ARM-software/abi-aa/blob/2982a9f3b512a5bfdc9e3fea5d3b298f9165c36b/aadwarf32/aadwarf32.rst
-static const char *map_dwarf_reg_to_arm32(ut32 reg_num) {
-	switch (reg_num) {
-		KASE(0, r0);
-		KASE(1, r1);
-		KASE(2, r2);
-		KASE(3, r3);
-		KASE(4, r4);
-		KASE(5, r5);
-		KASE(6, r6);
-		KASE(7, r7);
-		KASE(8, r8);
-		KASE(9, r9);
-		KASE(10, r10);
-		KASE(11, r11);
-		KASE(12, r12);
-		KASE(13, r13);
-		KASE(14, r14);
-		KASE(15, r15);
-		/*16-63 None*/
-		KASE(64, s0);
-		KASE(65, s1);
-		KASE(66, s2);
-		KASE(67, s3);
-		KASE(68, s4);
-		KASE(69, s5);
-		KASE(70, s6);
-		KASE(71, s7);
-		KASE(72, s8);
-		KASE(73, s9);
-		KASE(74, s10);
-		KASE(75, s11);
-		KASE(76, s12);
-		KASE(77, s13);
-		KASE(78, s14);
-		KASE(79, s15);
-		KASE(80, s16);
-		KASE(81, s17);
-		KASE(82, s18);
-		KASE(83, s19);
-		KASE(84, s20);
-		KASE(85, s21);
-		KASE(86, s22);
-		KASE(87, s23);
-		KASE(88, s24);
-		KASE(89, s25);
-		KASE(90, s26);
-		KASE(91, s27);
-		KASE(92, s28);
-		KASE(93, s29);
-		KASE(94, s30);
-		KASE(95, s31);
-		KASE(96, f0);
-		KASE(97, f1);
-		KASE(98, f2);
-		KASE(99, f3);
-		KASE(100, f4);
-		KASE(101, f5);
-		KASE(102, f6);
-		KASE(103, f7);
-		KASE(104, wCGR0);
-		KASE(105, wCGR1);
-		KASE(106, wCGR2);
-		KASE(107, wCGR3);
-		KASE(108, wCGR4);
-		KASE(109, wCGR5);
-		KASE(110, wCGR6);
-		KASE(111, wCGR7);
-		KASE(112, wR0);
-		KASE(113, wR1);
-		KASE(114, wR2);
-		KASE(115, wR3);
-		KASE(116, wR4);
-		KASE(117, wR5);
-		KASE(118, wR6);
-		KASE(119, wR7);
-		KASE(120, wR8);
-		KASE(121, wR9);
-		KASE(122, wR10);
-		KASE(123, wR11);
-		KASE(124, wR12);
-		KASE(125, wR13);
-		KASE(126, wR14);
-		KASE(127, wR15);
-		KASE(128, SPSR);
-		KASE(129, SPSR_FIQ);
-		KASE(130, SPSR_IRQ);
-		KASE(131, SPSR_ABT);
-		KASE(132, SPSR_UND);
-		KASE(133, SPSR_SVC);
-		/*134-142 None*/
-		KASE(143, RA_AUTH_CODE);
-		KASE(144, R8_USR);
-		KASE(145, R9_USR);
-		KASE(146, R10_USR);
-		KASE(147, R11_USR);
-		KASE(148, R12_USR);
-		KASE(149, R13_USR);
-		KASE(150, R14_USR);
-		KASE(151, R8_FIQ);
-		KASE(152, R9_FIQ);
-		KASE(153, R10_FIQ);
-		KASE(154, R11_FIQ);
-		KASE(155, R12_FIQ);
-		KASE(156, R13_FIQ);
-		KASE(157, R14_FIQ);
-		KASE(158, R13_IRQ);
-		KASE(159, R14_IRQ);
-		KASE(160, R13_ABT);
-		KASE(161, R14_ABT);
-		KASE(162, R13_UND);
-		KASE(163, R14_UND);
-		KASE(164, R13_SVC);
-		KASE(165, R14_SVC);
-		/*166-191 None*/
-		KASE(192, wC0);
-		KASE(193, wC1);
-		KASE(194, wC2);
-		KASE(195, wC3);
-		KASE(196, wC4);
-		KASE(197, wC5);
-		KASE(198, wC6);
-		KASE(199, wC7);
-		/*288-319 None*/
-		KASE(320, TPIDRURO);
-		KASE(321, TPIDRURW);
-		KASE(322, TPIDPR);
-		KASE(323, HTPIDPR);
-		/*324-8191 None*/
-	case 8192: return "Vendor co-processor";
-	default:
-		rz_warn_if_reached();
-		return "unsupported_reg";
-	}
-}
-
-/// 4.1 https://github.com/ARM-software/abi-aa/blob/2982a9f3b512a5bfdc9e3fea5d3b298f9165c36b/aadwarf64/aadwarf64.rst
-static const char *map_dwarf_reg_to_arm64(ut32 reg_num) {
-	switch (reg_num) {
-		KASE(0, X0);
-		KASE(1, X1);
-		KASE(2, X2);
-		KASE(3, X3);
-		KASE(4, X4);
-		KASE(5, X5);
-		KASE(6, X6);
-		KASE(7, X7);
-		KASE(8, X8);
-		KASE(9, X9);
-		KASE(10, X10);
-		KASE(11, X11);
-		KASE(12, X12);
-		KASE(13, X13);
-		KASE(14, X14);
-		KASE(15, X15);
-		KASE(16, X16);
-		KASE(17, X17);
-		KASE(18, X18);
-		KASE(19, X19);
-		KASE(20, X20);
-		KASE(21, X21);
-		KASE(22, X22);
-		KASE(23, X23);
-		KASE(24, X24);
-		KASE(25, X25);
-		KASE(26, X26);
-		KASE(27, X27);
-		KASE(28, X28);
-		KASE(29, X29);
-		KASE(30, X30);
-		KASE(31, SP);
-		KASE(32, PC);
-		KASE(33, ELR_mode);
-		KASE(34, RA_SIGN_STATE);
-		KASE(35, TPIDRRO_ELO);
-		KASE(36, TPIDR_ELO);
-		KASE(37, TPIDR_EL1);
-		KASE(38, TPIDR_EL2);
-		KASE(39, TPIDR_EL3);
-	case 40:
-	case 41:
-	case 42:
-	case 43:
-	case 44:
-		KASE(45, Reserved);
-		KASE(46, VG);
-		KASE(47, FFR);
-		KASE(48, P0);
-		KASE(49, P1);
-		KASE(50, P2);
-		KASE(51, P3);
-		KASE(52, P4);
-		KASE(53, P5);
-		KASE(54, P6);
-		KASE(55, P7);
-		KASE(56, P8);
-		KASE(57, P9);
-		KASE(58, P10);
-		KASE(59, P11);
-		KASE(60, P12);
-		KASE(61, P13);
-		KASE(62, P14);
-		KASE(63, P15);
-		KASE(64, V0);
-		KASE(65, V1);
-		KASE(66, V2);
-		KASE(67, V3);
-		KASE(68, V4);
-		KASE(69, V5);
-		KASE(70, V6);
-		KASE(71, V7);
-		KASE(72, V8);
-		KASE(73, V9);
-		KASE(74, V10);
-		KASE(75, V11);
-		KASE(76, V12);
-		KASE(77, V13);
-		KASE(78, V14);
-		KASE(79, V15);
-		KASE(80, V16);
-		KASE(81, V17);
-		KASE(82, V18);
-		KASE(83, V19);
-		KASE(84, V20);
-		KASE(85, V21);
-		KASE(86, V22);
-		KASE(87, V23);
-		KASE(88, V24);
-		KASE(89, V25);
-		KASE(90, V26);
-		KASE(91, V27);
-		KASE(92, V28);
-		KASE(93, V29);
-		KASE(94, V30);
-		KASE(95, V31);
-		KASE(96, Z0);
-		KASE(97, Z1);
-		KASE(98, Z2);
-		KASE(99, Z3);
-		KASE(100, Z4);
-		KASE(101, Z5);
-		KASE(102, Z6);
-		KASE(103, Z7);
-		KASE(104, Z8);
-		KASE(105, Z9);
-		KASE(106, Z10);
-		KASE(107, Z11);
-		KASE(108, Z12);
-		KASE(109, Z13);
-		KASE(110, Z14);
-		KASE(111, Z15);
-		KASE(112, Z16);
-		KASE(113, Z17);
-		KASE(114, Z18);
-		KASE(115, Z19);
-		KASE(116, Z20);
-		KASE(117, Z21);
-		KASE(118, Z22);
-		KASE(119, Z23);
-		KASE(120, Z24);
-		KASE(121, Z25);
-		KASE(122, Z26);
-		KASE(123, Z27);
-		KASE(124, Z28);
-		KASE(125, Z29);
-		KASE(126, Z30);
-		KASE(127, Z31);
-	default:
-		rz_warn_if_reached();
-		return "unsupported_reg";
-	}
-}
-
+#include "librz/analysis/arch/arm/arm_dwarf_regnum_table.h"
 #include "hexagon_dwarf_reg_num_table.inc"
+#include "librz/analysis/arch/ppc/ppc_dwarf_regnum_table.h"
+#include "librz/analysis/arch/v850/v850_dwarf_reg_num_table.h"
+#include "librz/analysis/arch/rl78/rl78_dwarf_reg.h"
+#include "librz/analysis/arch/rx/rx_dwarf_regnum_table.h"
+#include "librz/analysis/arch/sh/sh_dwarf_regnum_table.h"
+#include "librz/analysis/arch/tricore/tricore_dwarf_regnum_table.h"
+#include "librz/analysis/arch/x86/x86_dwarf_regnum_table.h"
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name
@@ -743,24 +474,64 @@ static const char *map_dwarf_reg_to_arm64(ut32 reg_num) {
  * \return The function that maps a DWARF register number to a register name
  */
 static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch, int bits) {
-	if (!strcmp(arch, "x86")) {
+	if (RZ_STR_EQ(arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg;
 		} else {
 			return map_dwarf_reg_to_x86_reg;
 		}
-	} else if (!strcmp(arch, "ppc") && bits == 64) {
-		return map_dwarf_reg_to_ppc64_reg;
-	} else if (!strcmp(arch, "tricore")) {
+	}
+	if (RZ_STR_EQ(arch, "ppc")) {
+		return map_dwarf_reg_to_ppc_reg;
+	}
+	if (RZ_STR_EQ(arch, "mips")) {
+		return map_dwarf_reg_to_mips_reg;
+	}
+	if (RZ_STR_EQ(arch, "sh")) {
+		return map_dwarf_reg_to_sh_reg;
+	}
+	if (RZ_STR_EQ(arch, "sparc")) {
+		return map_dwarf_reg_to_sparc_reg;
+	}
+	if (RZ_STR_EQ(arch, "loongarch")) {
+		return map_dwarf_reg_to_loongarch_reg;
+	}
+	if (RZ_STR_EQ(arch, "s390")) {
+		return map_dwarf_reg_to_s390_reg;
+	}
+	if (RZ_STR_EQ(arch, "riscv")) {
+		return map_dwarf_reg_to_riscv_reg;
+	}
+	if (RZ_STR_EQ(arch, "tricore")) {
 		return map_dwarf_reg_to_tricore_reg;
-	} else if (strcmp(arch, "arm") == 0) {
+	}
+	if (RZ_STR_EQ(arch, "arm")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_arm64;
 		} else if (bits <= 32) {
 			return map_dwarf_reg_to_arm32;
 		}
-	} else if (RZ_STR_EQ(arch, "hexagon")) {
+	}
+	if (RZ_STR_EQ(arch, "hexagon")) {
 		return map_dwarf_reg_to_hexagon_reg;
+	}
+	if (RZ_STR_EQ(arch, "v850e3v5")) {
+		return v850e3v5_register_name;
+	}
+	if (RZ_STR_EQ(arch, "v850e2")) {
+		return v850e2_register_name;
+	}
+	if (RZ_STR_EQ(arch, "v850e")) {
+		return v850e_register_name;
+	}
+	if (RZ_STR_EQ(arch, "v850")) {
+		return v850_register_name;
+	}
+	if (RZ_STR_EQ(arch, "rl78")) {
+		return rl78_register_name;
+	}
+	if (RZ_STR_EQ(arch, "rx")) {
+		return map_dwarf_reg_to_rx_reg;
 	}
 	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
 	return map_dwarf_register_dummy;

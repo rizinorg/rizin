@@ -75,10 +75,10 @@ At the time of writing, these are:
 * `use_sys_lzma`
 * `use_sys_zlib`
 * `use_sys_lz4`
-* `use_sys_zstd`
+* `use_sys_libzstd`
 * `use_sys_xxhash`
 * `use_sys_openssl`
-* `use_sys_mspack`
+* `use_sys_libmspack`
 * `use_sys_pcre2`
 * `use_sys_tree_sitter`
 
@@ -99,7 +99,7 @@ distribution you are targeting.
 
 Recall in the building step how we defined a `--prefix` to choose where the
 software was going to be installed? If we just ran `ninja -C build install`
-then we would install the software into that prefix, '/usr` using
+then we would install the software into that prefix, `/usr` using
 the example above. That isn't what we want when we are packaging software for
 distributions! Defining `DESTDIR` allows us to choose a base location to install
 to that isn't our system root. It could be something as simple as `rizin` which

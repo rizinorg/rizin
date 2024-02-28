@@ -22,7 +22,7 @@ bool test_graph_to_agraph() {
 	mu_assert_notnull(graph, "Couldn't create the graph");
 	mu_assert_eq(graph->nodes->length, 4, "Wrong node count");
 
-	RzAGraph *agraph = create_agraph_from_graph(graph);
+	RzAGraph *agraph = create_agraph_from_graph(graph, false);
 	mu_assert_notnull(agraph, "Couldn't create the graph");
 	mu_assert_eq(agraph->graph->nodes->length, 4, "Wrong node count");
 

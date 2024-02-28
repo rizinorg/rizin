@@ -31,7 +31,7 @@ d "and byte [eax], al" 2000 0x0 (seq (set and_ (& (loadw 0 8 (+ (var eax) (bv 32
 d "and dword [eax], eax" 2100 0x0 (seq (set and_ (& (loadw 0 32 (+ (var eax) (bv 32 0x0))) (var eax))) (storew 0 (+ (var eax) (bv 32 0x0)) (var and_)) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "and eax, dword [eax]" 2300 0x0 (seq (set and_ (& (var eax) (loadw 0 32 (+ (var eax) (bv 32 0x0))))) (set eax (var and_)) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "arpl word [eax], ax" 6300
-d "bound eax, qword [eax]" 6200 0x0 (seq (set _index (var eax)) (set _lower (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (set _upper (loadw 0 32 (+ (var eax) (bv 32 0x8)))) (branch (|| (&& (ule (var _index) (var _lower)) (! (== (var _index) (var _lower)))) (! (ule (var _index) (var _upper)))) (seq (goto int) empty) nop))
+d "bound eax, qword [eax]" 6200 0x0 (seq (set _index (var eax)) (set _lower (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (set _upper (loadw 0 32 (+ (var eax) (bv 32 0x8)))) (branch (|| (&& (ule (var _index) (var _lower)) (! (== (var _index) (var _lower)))) (! (ule (var _index) (var _upper)))) (goto int) nop))
 d "bsf eax, dword [eax]" 0fbc00
 d "bsr eax, dword [eax]" 0fbd00
 d "bswap eax" 0fc8
@@ -145,7 +145,7 @@ d "fxsave [eax]" 0fae00
 d "getsec" 0f37
 d "haddpd xmm0, xmmword [eax]" 660f7c00
 d "haddps xmm0, xmmword [eax]" f20f7c00
-d "hlt" f4 0x0 (seq (goto halt) empty)
+d "hlt" f4 0x0 (goto halt)
 d "hsubpd xmm0, xmmword [eax]" 660f7d00
 d "hsubps xmm0, xmmword [eax]" f20f7d00
 d "idiv byte [eax]" f638 0x0 (seq (set _src (cast 16 false (loadw 0 8 (+ (var eax) (bv 32 0x0))))) (branch (is_zero (var _src)) nop (seq (set _ax (cast 16 false (var eax))) (set _temp (cast 8 false (sdiv (var _ax) (var _src)))) (branch (|| (! (sle (var _temp) (bv 8 0x7f))) (&& (sle (var _temp) (bv 8 0x80)) (! (== (var _temp) (bv 8 0x80))))) nop (seq (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var _temp)))) (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (smod (var _ax) (var _src))) (bv 8 0x8) false))))))))
@@ -156,11 +156,11 @@ d "imul eax, dword [eax]" 0faf00 0x0 (seq (set _dest (var eax)) (set _tmp_xp (* 
 d "imul eax, dword [eax], 0" 690000000000 0x0 (seq (set _tmp_xp (* (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (cast 64 (msb (bv 32 0x0)) (bv 32 0x0)))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
 d "imul eax, dword [eax], 0" 6b0000 0x0 (seq (set _tmp_xp (* (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (cast 64 (msb (bv 32 0x0)) (bv 32 0x0)))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
 ad "imul ax" 66f7e8 0x0 (seq (set _tmp_xp (* (cast 32 (msb (cast 16 false (var eax))) (cast 16 false (var eax))) (cast 32 (msb (cast 16 false (var eax))) (cast 16 false (var eax))))) (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (cast 16 false (var _tmp_xp))))) (set edx (| (& (var edx) (~ (bv 32 0xffff))) (cast 32 false (cast 32 false (>> (var _tmp_xp) (bv 8 0x10) false))))) (branch (== (cast 32 (msb (cast 16 false (var _tmp_xp))) (cast 16 false (var _tmp_xp))) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
-d "in al, 0" e400 0x0 (seq (goto port) empty)
-d "in al, dx" ec 0x0 (seq (goto port) empty)
-d "in eax, 0" e500 0x0 (seq (goto port) empty)
-d "in eax, 0x8c" e58c 0x0 (seq (goto port) empty)
-d "in eax, dx" ed 0x0 (seq (goto port) empty)
+d "in al, 0" e400 0x0 (goto port)
+d "in al, dx" ec 0x0 (goto port)
+d "in eax, 0" e500 0x0 (goto port)
+d "in eax, 0x8c" e58c 0x0 (goto port)
+d "in eax, dx" ed 0x0 (goto port)
 d "inc byte [eax]" fe00 0x0 (seq (set _op (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set _result (+ (var _op) (bv 8 0x1))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 8 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "inc dword [eax]" ff00 0x0 (seq (set _op (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (set _result (+ (var _op) (bv 32 0x1))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "inc eax" 40 0x0 (seq (set _op (var eax)) (set _result (+ (var _op) (bv 32 0x1))) (set eax (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
@@ -173,11 +173,11 @@ d "inc esi" 46 0x0 (seq (set _op (var esi)) (set _result (+ (var _op) (bv 32 0x1
 d "inc esp" 44 0x0 (seq (set _op (var esp)) (set _result (+ (var _op) (bv 32 0x1))) (set esp (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "insb byte es:[edi], dx" 6c
 d "insd dword es:[edi], dx" 6d
-d "int 1" cd01 0x0 (seq (goto int) empty)
-d "int 3" cd03 0x0 (seq (goto int) empty)
+d "int 1" cd01 0x0 (goto int)
+d "int 3" cd03 0x0 (goto int)
 d "int1" F1
 d "int3" CC
-d "into" ce 0x0 (branch (var of) (seq (goto int) empty) nop)
+d "into" ce 0x0 (branch (var of) (goto int) nop)
 d "invd" 0f08
 d "invlpg byte [eax]" 0f0138
 d "iret" 66cf 0x0 empty
@@ -341,11 +341,11 @@ d "or al, 0" 0c00 0x0 (seq (set _or (| (cast 8 false (var eax)) (bv 8 0x0))) (se
 d "or byte [eax], al" 0800 0x0 (seq (set _or (| (loadw 0 8 (+ (var eax) (bv 32 0x0))) (cast 8 false (var eax)))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "or dword [eax], eax" 0900 0x0 (seq (set _or (| (loadw 0 32 (+ (var eax) (bv 32 0x0))) (var eax))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "or eax, dword [eax]" 0b00 0x0 (seq (set _or (| (var eax) (loadw 0 32 (+ (var eax) (bv 32 0x0))))) (set eax (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
-d "out 0, al" e600 0x0 (seq (goto port) empty)
-d "out 0, eax" e700 0x0 (seq (goto port) empty)
-d "out 0x84, eax" e784 0x0 (seq (goto port) empty)
-ad "out dx, al" ee 0x0 (seq (goto port) empty)
-ad "out dx, eax" ef 0x0 (seq (goto port) empty)
+d "out 0, al" e600 0x0 (goto port)
+d "out 0, eax" e700 0x0 (goto port)
+d "out 0x84, eax" e784 0x0 (goto port)
+ad "out dx, al" ee 0x0 (goto port)
+ad "out dx, eax" ef 0x0 (goto port)
 d "outsb dx, byte [esi]" 6e
 d "outsd dx, dword [esi]" 6f
 d "paddq xmm0, xmmword [eax]" 660fd400
@@ -430,7 +430,7 @@ d "rdpmc" 0f33
 d "rdtsc" 0f31
 d "rdtscp" 0f01f9
 d "repne movsb byte es:[edi], byte ptr [esi]" f2a4
-d "ret" c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
+d "ret" c3 0x0 (seq (set tgt (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))) (jmp (var tgt)))
 d "retf 0" ca0000 0x0 empty
 d "retf" cb 0x0 empty
 d "rol byte [eax], 0" c00000
@@ -1056,11 +1056,11 @@ aB "bt edx, 59" 0fbae23b
 aB "bt ebp, -20" 0fbae5e0
 aB "btr dword [eax], eax" 0fb300
 aB "bts dword [eax], eax" 0fab00
-a "call 0x8049100" e8fb900408 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x5)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (bv 32 0x8049100)))
-a "call 4" e8ffffffff 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x5)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (bv 32 0x4)))
-a "call 5" e800000000 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x5)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (bv 32 0x5)))
-a "call dword [eax]" ff10 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x2)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (loadw 0 32 (+ (var eax) (bv 32 0x0)))))
-a "call ebx" ffd3 0x0 (seq (set _cs (cast 32 false (var cs))) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _cs))) (set esp (var final)) (set _pc (bv 32 0x2)) (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (var _pc))) (set esp (var final)) (jmp (var ebx)))
+a "call 0x8049100" e8fb900408 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x5))) (set esp (var final)) (jmp (bv 32 0x8049100)))
+a "call 4" e8ffffffff 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x5))) (set esp (var final)) (jmp (bv 32 0x4)))
+a "call 5" e800000000 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x5))) (set esp (var final)) (jmp (bv 32 0x5)))
+a "call dword [eax]" ff10 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x2))) (set esp (var final)) (jmp (loadw 0 32 (+ (var eax) (bv 32 0x0)))))
+a "call ebx" ffd3 0x0 (seq (set final (- (var esp) (bv 32 0x4))) (storew 0 (var final) (cast 32 false (bv 32 0x2))) (set esp (var final)) (jmp (var ebx)))
 a "bnd call ebx" f2ffd3
 a "cbw" 6698
 a "cdq" 99
@@ -1235,8 +1235,8 @@ a "imul ebx, dword [edx], 0" 6b1a00 0x0 (seq (set _tmp_xp (* (cast 64 (msb (load
 a "imul ebx, edx, 4" 6bda04 0x0 (seq (set _tmp_xp (* (cast 64 (msb (var edx)) (var edx)) (cast 64 (msb (bv 32 0x4)) (bv 32 0x4)))) (set _dest (cast 32 false (var _tmp_xp))) (set ebx (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
 a "imul eax, dword [eax]" 0faf00 0x0 (seq (set _dest (var eax)) (set _tmp_xp (* (cast 64 (msb (var _dest)) (var _dest)) (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
 a "imul eax, [eax], 0" 6b0000 0x0 (seq (set _tmp_xp (* (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (cast 64 (msb (bv 32 0x0)) (bv 32 0x0)))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
-a "in al,0" e400 0x0 (seq (goto port) empty)
-a "in al,dx" ec 0x0 (seq (goto port) empty)
+a "in al,0" e400 0x0 (goto port)
+a "in al,dx" ec 0x0 (goto port)
 a "inc byte [eax]" fe00 0x0 (seq (set _op (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set _result (+ (var _op) (bv 8 0x1))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 8 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 a "inc dword [eax]" ff00 0x0 (seq (set _op (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (set _result (+ (var _op) (bv 32 0x1))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 a "inc eax" 40 0x0 (seq (set _op (var eax)) (set _result (+ (var _op) (bv 32 0x1))) (set eax (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
@@ -1247,17 +1247,17 @@ a "inc edi" 47 0x0 (seq (set _op (var edi)) (set _result (+ (var _op) (bv 32 0x1
 a "inc edx" 42 0x0 (seq (set _op (var edx)) (set _result (+ (var _op) (bv 32 0x1))) (set edx (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 a "inc esi" 46 0x0 (seq (set _op (var esi)) (set _result (+ (var _op) (bv 32 0x1))) (set esi (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 a "inc esp" 44 0x0 (seq (set _op (var esp)) (set _result (+ (var _op) (bv 32 0x1))) (set esp (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
-a "in eax, 0" e500 0x0 (seq (goto port) empty)
-a "in eax, 0x8c" e58c 0x0 (seq (goto port) empty)
-a "in eax, dx" ed 0x0 (seq (goto port) empty)
+a "in eax, 0" e500 0x0 (goto port)
+a "in eax, 0x8c" e58c 0x0 (goto port)
+a "in eax, dx" ed 0x0 (goto port)
 a "insb byte es:[edi], dx" 6c
 a "insd dword es:[edi], dx" 6d
 aB "insertps xmm0, xmm0, 0" 660f3a21c000
-a "int 0x21" cd21 0x0 (seq (goto int) empty)
-a "int 1" cd01 0x0 (seq (goto int) empty)
+a "int 0x21" cd21 0x0 (goto int)
+a "int 1" cd01 0x0 (goto int)
 a "int1" f1
 a "int3" cc
-a "int 3" cd03 0x0 (seq (goto int) empty)
+a "int 3" cd03 0x0 (goto int)
 a "into" ce
 a "invd" 0f08
 aB "invlpga" 0f01df
@@ -1629,9 +1629,9 @@ a "or dword [eax], eax" 0900 0x0 (seq (set _or (| (loadw 0 32 (+ (var eax) (bv 3
 a "or eax, dword [eax]" 0b00 0x0 (seq (set _or (| (var eax) (loadw 0 32 (+ (var eax) (bv 32 0x0))))) (set eax (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (! (is_zero (var _val))) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 aB "orpd xmm0, xmmword [eax]" 660f5600
 aB "orps xmm0, xmmword [eax]" 0f5600
-a "out 0, al" e600 0x0 (seq (goto port) empty)
-a "out 0, eax" e700 0x0 (seq (goto port) empty)
-a "out 0x84, eax" e784 0x0 (seq (goto port) empty)
+a "out 0, al" e600 0x0 (goto port)
+a "out 0, eax" e700 0x0 (goto port)
+a "out 0x84, eax" e784 0x0 (goto port)
 a "outsb dx, byte [esi]" 6e
 a "outsd dx, dword [esi]" 6f
 aB "pabsb xmm0, xmm0" 660f381cc0
@@ -1900,12 +1900,12 @@ a "rdtsc" 0f31
 a "rdtscp" 0f01f9
 a "repne movsb byte es:[edi], byte ptr [esi]" f2a4
 a "repz movsb" f3a4
-a "ret" c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
-ad "ret 0xff" c2ff00 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0xff))))
+a "ret" c3 0x0 (seq (set tgt (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))) (jmp (var tgt)))
+ad "ret 0xff" c2ff00 0x0 (seq (set tgt (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))) (set esp (+ (var esp) (bv 32 0xff))) (jmp (var tgt)))
 a "bnd ret" f2c3
 a "retf 0" ca0000
 a "retf" cb 0x0 empty
-a "retw" 66c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
+a "retw" 66c3 0x0 (seq (set tgt (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))) (jmp (var tgt)))
 ad "rcl byte [eax], cl" d210 0x0 (seq (set _dest (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set _tmp_cnt (mod (cast 5 false (cast 8 false (var ecx))) (bv 5 0x9))) (set _cnt_mask (cast 5 false (cast 8 false (var ecx)))) (repeat (! (is_zero (var _tmp_cnt))) (seq (set _tmp_cf (msb (var _dest))) (set _dest (+ (<< (var _dest) (bv 8 0x1) false) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (set cf (var _tmp_cf)) (set _tmp_cnt (- (var _tmp_cnt) (bv 5 0x1))))) (branch (== (var _cnt_mask) (bv 5 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop) (storew 0 (+ (var eax) (bv 32 0x0)) (var _dest)))
 # capstone v5 removes the `, 1` and makes it implicit.
 ad "rcl byte [eax]" d010 0x0 (seq (set _dest (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set _tmp_cnt (mod (cast 5 false (bv 8 0x1)) (bv 5 0x9))) (set _cnt_mask (cast 5 false (bv 8 0x1))) (repeat (! (is_zero (var _tmp_cnt))) (seq (set _tmp_cf (msb (var _dest))) (set _dest (+ (<< (var _dest) (bv 8 0x1) false) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (set cf (var _tmp_cf)) (set _tmp_cnt (- (var _tmp_cnt) (bv 5 0x1))))) (branch (== (var _cnt_mask) (bv 5 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop) (storew 0 (+ (var eax) (bv 32 0x0)) (var _dest)))
@@ -2210,7 +2210,7 @@ aB "xorps xmm0, xmmword [eax]" 0f5700
 aB "xrstor [eax]" 0fae28
 aB "xsave [eax]" 0fae20
 a "xsetbv" 0f01d1
-a "int 0x80" cd80 0x0 (seq (goto int) empty)
+a "int 0x80" cd80 0x0 (goto int)
 a "mov eax, 33" b821000000 0x0 (set eax (bv 32 0x21))
 aB "mov rax, 33" 48c7c021000000 0x0 (set eax (bv 32 0x21))
 a "mov [ebp+4],0" c7450400000000 0x0 (storew 0 (+ (var ebp) (bv 32 0x4)) (bv 32 0x0))

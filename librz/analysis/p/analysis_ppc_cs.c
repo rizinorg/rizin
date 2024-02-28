@@ -39,8 +39,30 @@ static ut32 mask32(ut32 mb, ut32 me) {
 	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
-static const char *cmask64(const char *mb_c, const char *me_c) {
-	static char cmask[32];
+typedef struct {
+	char cmask1[32];
+	char cmask2[32];
+	char words[8][64];
+	char cspr[16];
+	csh handle;
+	int omode;
+	int obits;
+} PPCContext;
+
+static bool ppc_init(void **user) {
+	PPCContext *ctx = RZ_NEW0(PPCContext);
+	if (!ctx) {
+		return false;
+	}
+	ctx->handle = 0;
+	ctx->omode = -1;
+	ctx->obits = -1;
+	*user = ctx;
+	return true;
+}
+
+static const char *cmask64(RzAnalysis *a, const char *mb_c, const char *me_c) {
+	PPCContext *ctx = (PPCContext *)a->plugin_data;
 	ut64 mb = 0;
 	ut64 me = 0;
 	if (mb_c) {
@@ -49,12 +71,12 @@ static const char *cmask64(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol(me_c, NULL, 16);
 	}
-	snprintf(cmask, sizeof(cmask), "0x%" PFMT64x "", mask64(mb, me));
-	return cmask;
+	snprintf(ctx->cmask1, sizeof(ctx->cmask1), "0x%" PFMT64x "", mask64(mb, me));
+	return ctx->cmask1;
 }
 
-static const char *cmask32(const char *mb_c, const char *me_c) {
-	static char cmask[32];
+static const char *cmask32(RzAnalysis *a, const char *mb_c, const char *me_c) {
+	PPCContext *ctx = (PPCContext *)a->plugin_data;
 	ut32 mb = 0;
 	ut32 me = 0;
 	if (mb_c) {
@@ -63,14 +85,14 @@ static const char *cmask32(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol(me_c, NULL, 16);
 	}
-	snprintf(cmask, sizeof(cmask), "0x%" PFMT32x "", mask32(mb, me));
-	return cmask;
+	snprintf(ctx->cmask2, sizeof(ctx->cmask2), "0x%" PFMT32x "", mask32(mb, me));
+	return ctx->cmask2;
 }
 
-static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
+static char *getarg2(RzAnalysis *a, struct Getarg *gop, int n, const char *setstr) {
+	PPCContext *ctx = (PPCContext *)a->plugin_data;
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
-	static char words[8][64];
 	cs_ppc_op op;
 
 	if (n < 0 || n >= 8) {
@@ -79,31 +101,31 @@ static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 	op = INSOP(n);
 	switch (op.type) {
 	case PPC_OP_INVALID:
-		words[n][0] = '\0';
+		ctx->words[n][0] = '\0';
 		// strcpy (words[n], "invalid");
 		break;
 	case PPC_OP_REG:
-		snprintf(words[n], sizeof(words[n]),
+		snprintf(ctx->words[n], sizeof(ctx->words[n]),
 			"%s%s", cs_reg_name(handle, op.reg), setstr);
 		break;
 	case PPC_OP_IMM:
-		snprintf(words[n], sizeof(words[n]),
+		snprintf(ctx->words[n], sizeof(ctx->words[n]),
 			"0x%" PFMT64x "%s", (ut64)op.imm, setstr);
 		break;
 	case PPC_OP_MEM:
-		snprintf(words[n], sizeof(words[n]),
+		snprintf(ctx->words[n], sizeof(ctx->words[n]),
 			"%" PFMT64d ",%s,+,%s",
 			(ut64)op.mem.disp,
 			cs_reg_name(handle, op.mem.base), setstr);
 		break;
 #if CS_NEXT_VERSION < 6
 	case PPC_OP_CRX: // Condition Register field
-		snprintf(words[n], sizeof(words[n]),
+		snprintf(ctx->words[n], sizeof(ctx->words[n]),
 			"%" PFMT64d "%s", (ut64)op.imm, setstr);
 		break;
 #endif
 	}
-	return words[n];
+	return ctx->words[n];
 }
 
 static ut64 getarg(struct Getarg *gop, int n) {
@@ -137,8 +159,8 @@ static ut64 getarg(struct Getarg *gop, int n) {
 	return value;
 }
 
-static const char *getspr(struct Getarg *gop, int n) {
-	static char cspr[16];
+static const char *getspr(RzAnalysis *a, struct Getarg *gop, int n) {
+	PPCContext *ctx = (PPCContext *)a->plugin_data;
 	ut32 spr = 0;
 	if (n < 0 || n >= 8) {
 		return NULL;
@@ -158,10 +180,10 @@ static const char *getspr(struct Getarg *gop, int n) {
 	case SPR_HID6:
 		return "hid6";
 	default:
-		snprintf(cspr, sizeof(cspr), "spr_%u", spr);
+		snprintf(ctx->cspr, sizeof(ctx->cspr), "spr_%u", spr);
 		break;
 	}
-	return cspr;
+	return ctx->cspr;
 }
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
@@ -206,9 +228,9 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free(pj);
 }
 
-#define PPCSPR(n)  getspr(&gop, n)
-#define ARG(n)     getarg2(&gop, n, "")
-#define ARG2(n, m) getarg2(&gop, n, m)
+#define PPCSPR(n)  getspr(a, &gop, n)
+#define ARG(n)     getarg2(a, &gop, n, "")
+#define ARG2(n, m) getarg2(a, &gop, n, m)
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p = NULL;
@@ -922,8 +944,7 @@ static char *shrink(char *op) {
 }
 
 static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	static csh handle = 0;
-	static int omode = -1, obits = -1;
+	PPCContext *ctx = (PPCContext *)a->plugin_data;
 	int n, ret;
 	cs_insn *insn;
 	char *op1;
@@ -944,39 +965,39 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		mode |= CS_MODE_QPX;
 	}
 
-	if (mode != omode || a->bits != obits) {
-		cs_close(&handle);
-		handle = 0;
-		omode = mode;
-		obits = a->bits;
+	if (mode != ctx->omode || a->bits != ctx->obits) {
+		cs_close(&ctx->handle);
+		ctx->handle = 0;
+		ctx->omode = mode;
+		ctx->obits = a->bits;
 	}
-	if (handle == 0) {
-		ret = cs_open(CS_ARCH_PPC, mode, &handle);
+	if (ctx->handle == 0) {
+		ret = cs_open(CS_ARCH_PPC, mode, &ctx->handle);
 		if (ret != CS_ERR_OK) {
 			return -1;
 		}
-		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 #if CS_NEXT_VERSION >= 6
-		cs_option(handle, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL);
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL);
 #endif
 	}
 	op->size = 4;
 
 	// capstone-next
-	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
+	n = cs_disasm(ctx->handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->il_op = rz_il_op_new_empty();
 	} else {
-		op->il_op = rz_ppc_cs_get_il_op(handle, insn, mode);
+		op->il_op = rz_ppc_cs_get_il_op(ctx->handle, insn, mode);
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = strdup(insn->mnemonic);
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-			opex(&op->opex, handle, insn);
+			opex(&op->opex, ctx->handle, insn);
 		}
 		struct Getarg gop = {
-			.handle = handle,
+			.handle = ctx->handle,
 			.insn = insn,
 			.bits = a->bits
 		};
@@ -1029,12 +1050,12 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		case PPC_INS_CLRLWI:
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
-			esilprintf(op, "%s,%s,&,%s,=", ARG(1), cmask32(ARG(2), "0x1F"), ARG(0));
+			esilprintf(op, "%s,%s,&,%s,=", ARG(1), cmask32(a, ARG(2), "0x1F"), ARG(0));
 			break;
 #endif
 		case PPC_INS_RLWINM:
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-			esilprintf(op, "%s,%s,<<<,%s,&,%s,=", ARG(2), ARG(1), cmask32(ARG(3), ARG(4)), ARG(0));
+			esilprintf(op, "%s,%s,<<<,%s,&,%s,=", ARG(2), ARG(1), cmask32(a, ARG(3), ARG(4)), ARG(0));
 			break;
 		case PPC_INS_SC:
 			op->type = RZ_ANALYSIS_OP_TYPE_SWI;
@@ -1445,7 +1466,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 #if CS_NEXT_VERSION >= 6
 			switch (insn->detail->ppc.bc.pred_cr) {
 			case PPC_PRED_LT:
-				esilprintf(op, "2,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+				esilprintf(op, "2,%s,&,", cs_reg_name(ctx->handle, insn->detail->ppc.bc.crX));
 #else
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_LT:
@@ -1458,7 +1479,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_LE:
-				esilprintf(op, "3,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+				esilprintf(op, "3,%s,&,", cs_reg_name(ctx->handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_LE:
 				/* 0b01 == equal
@@ -1472,7 +1493,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_EQ:
-				esilprintf(op, "1,%s,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+				esilprintf(op, "1,%s,&,", cs_reg_name(ctx->handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_EQ:
 				if (ARG(1)[0] == '\0') {
@@ -1484,7 +1505,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_GE:
-				esilprintf(op, "2,%s,^,3,&,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+				esilprintf(op, "2,%s,^,3,&,", cs_reg_name(ctx->handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_GE:
 				if (ARG(1)[0] == '\0') {
@@ -1496,7 +1517,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_GT:
-				esilprintf(op, "2,%s,&,!,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+				esilprintf(op, "2,%s,&,!,", cs_reg_name(ctx->handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_GT:
 				if (ARG(1)[0] == '\0') {
@@ -1508,7 +1529,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				break;
 #if CS_NEXT_VERSION >= 6
 			case PPC_PRED_NE:
-				esilprintf(op, "%s,1,&,!,", cs_reg_name(handle, insn->detail->ppc.bc.crX));
+				esilprintf(op, "%s,1,&,!,", cs_reg_name(ctx->handle, insn->detail->ppc.bc.crX));
 #else
 			case PPC_BC_NE:
 				if (ARG(1)[0] == '\0') {
@@ -1698,7 +1719,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 #if CS_NEXT_VERSION < 6
 		case PPC_INS_CLRLDI:
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
-			esilprintf(op, "%s,%s,&,%s,=", ARG(1), cmask64(ARG(2), "0x3F"), ARG(0));
+			esilprintf(op, "%s,%s,&,%s,=", ARG(1), cmask64(a, ARG(2), "0x3F"), ARG(0));
 			break;
 		case PPC_INS_ROTLDI:
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
@@ -1708,16 +1729,16 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case PPC_INS_RLDCL:
 		case PPC_INS_RLDICL:
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-			esilprintf(op, "%s,%s,<<<,%s,&,%s,=", ARG(2), ARG(1), cmask64(ARG(3), "0x3F"), ARG(0));
+			esilprintf(op, "%s,%s,<<<,%s,&,%s,=", ARG(2), ARG(1), cmask64(a, ARG(3), "0x3F"), ARG(0));
 			break;
 		case PPC_INS_RLDCR:
 		case PPC_INS_RLDICR:
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-			esilprintf(op, "%s,%s,<<<,%s,&,%s,=", ARG(2), ARG(1), cmask64(0, ARG(3)), ARG(0));
+			esilprintf(op, "%s,%s,<<<,%s,&,%s,=", ARG(2), ARG(1), cmask64(a, 0, ARG(3)), ARG(0));
 			break;
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-			op_fillval(op, handle, insn);
+			op_fillval(op, ctx->handle, insn);
 		}
 		if (!(mask & RZ_ANALYSIS_OP_MASK_ESIL)) {
 			rz_strbuf_fini(&op->esil);
@@ -1757,6 +1778,14 @@ static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
 	return rz_ppc_cs_32_il_config(analysis->big_endian);
 }
 
+static bool ppc_fini(void *user) {
+	PPCContext *ctx = (PPCContext *)user;
+	if (ctx) {
+		RZ_FREE(ctx);
+	}
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone PowerPC analysis",
@@ -1767,6 +1796,8 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.archinfo = archinfo,
 	.preludes = analysis_preludes,
 	.op = &analyze_op,
+	.init = ppc_init,
+	.fini = ppc_fini,
 	.get_reg_profile = &get_reg_profile,
 	.il_config = il_config,
 };

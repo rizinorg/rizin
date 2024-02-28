@@ -18,7 +18,7 @@
 inline static const char *ARMCondCodeToString(arm_cc cc) {
 	switch (cc) {
 	default:
-		assert(0 && "Unknown condition code");
+		rz_warn_if_reached();
 		return "";
 	case ARM_CC_EQ:
 		return "eq";
@@ -52,7 +52,15 @@ inline static const char *ARMCondCodeToString(arm_cc cc) {
 		return "al";
 	}
 }
-#endif
+#else /* CS_NEXT_VERSION >= 6 */
+static inline bool is_alias64(cs_insn *insn, aarch64_insn alias_id) {
+	return insn->is_alias && (insn->alias_id == alias_id);
+}
+
+static inline bool is_alias32(cs_insn *insn, arm_insn alias_id) {
+	return insn->is_alias && (insn->alias_id == alias_id);
+}
+#endif /* CS_NEXT_VERSION < 6 */
 
 typedef struct arm_cs_context_t {
 	RzArmITContext it; ///< Save IT values between instruction disassembly.
@@ -991,8 +999,43 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	case CS_AARCH64(_INS_CMN):
 	case CS_AARCH64(_INS_TST):
 #endif
+		if (ISIMM64(1)) {
+			op->val = IMM64(1);
+		}
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
+#if CS_NEXT_VERSION >= 6
+	case CS_AARCH64(_INS_ADDS):
+		if (is_alias64(insn, AArch64_INS_ALIAS_CMN)) {
+			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		}
+		if (ISIMM64(1)) {
+			op->val = IMM64(1);
+		}
+		break;
+	case CS_AARCH64(_INS_SUBS):
+		if (is_alias64(insn, AArch64_INS_ALIAS_CMP)) {
+			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		}
+		if (ISIMM64(1)) {
+			op->val = IMM64(1);
+		}
+		break;
+	case CS_AARCH64(_INS_ANDS):
+		if (is_alias64(insn, AArch64_INS_ALIAS_TST)) {
+			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_AND;
+		}
+		if (ISIMM64(1)) {
+			op->val = IMM64(1);
+		}
+		break;
+#endif
 	case CS_AARCH64(_INS_ROR):
 		op->cycles = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
@@ -1175,8 +1218,13 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 			op->jump = IMM64(0);
 		}
 		break;
+#if CS_NEXT_VERSION >= 6
+	case CS_AARCH64(_INS_UDF):
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		break;
+#endif
 	default:
-		RZ_LOG_DEBUG("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
+		RZ_LOG_DEBUG("ARM64 analysis: Op type %d (%s) at 0x%" PFMT64x " not handled\n", insn->id, insn->mnemonic, op->addr);
 		break;
 	}
 }
@@ -1293,7 +1341,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_NOP:
 #else
 	case ARM_INS_HINT:
-		if (insn->alias_id != ARM_INS_ALIAS_NOP) {
+		if (!is_alias32(insn, ARM_INS_ALIAS_NOP)) {
 			break;
 		}
 #endif
@@ -1313,7 +1361,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_LDMIB:
 	case ARM_INS_LDM:
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == ARM_INS_ALIAS_POP || insn->alias_id == ARM_INS_ALIAS_POPW || insn->alias_id == ARM_INS_ALIAS_VPOP) {
+		if (is_alias32(insn, ARM_INS_ALIAS_POP) ||
+			is_alias32(insn, ARM_INS_ALIAS_POPW) ||
+			is_alias32(insn, ARM_INS_ALIAS_VPOP)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_POP;
 			op->stackop = RZ_ANALYSIS_STACK_DEC;
 			op->stackptr = -4LL * (insn->detail->arm.op_count - 1);
@@ -1423,6 +1473,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			}
+			break;
 		}
 		if (ISIMM(1)) {
 			op->val = IMM(1);
@@ -1500,7 +1551,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_STMDA:
 	case ARM_INS_STMDB:
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == ARM_INS_ALIAS_PUSH || insn->alias_id == ARM_INS_ALIAS_PUSHW || insn->alias_id == ARM_INS_ALIAS_VPUSH) {
+		if (is_alias32(insn, ARM_INS_ALIAS_PUSH) ||
+			is_alias32(insn, ARM_INS_ALIAS_PUSHW) ||
+			is_alias32(insn, ARM_INS_ALIAS_VPUSH)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = 4LL * (insn->detail->arm.op_count - 1);
@@ -1533,7 +1586,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_STRT:
 		op->cycles = 4;
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == ARM_INS_ALIAS_PUSH || insn->alias_id == ARM_INS_ALIAS_PUSHW) {
+		if (is_alias32(insn, ARM_INS_ALIAS_PUSH) ||
+			is_alias32(insn, ARM_INS_ALIAS_PUSHW)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = 4LL * (insn->detail->arm.op_count - 1);
@@ -1571,7 +1625,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_LDRT:
 		op->cycles = 4;
 #if CS_NEXT_VERSION >= 6
-		if (insn->alias_id == ARM_INS_ALIAS_POP || insn->alias_id == ARM_INS_ALIAS_POPW) {
+		if (is_alias32(insn, ARM_INS_ALIAS_POP) ||
+			is_alias32(insn, ARM_INS_ALIAS_POPW)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_POP;
 			op->stackop = RZ_ANALYSIS_STACK_DEC;
 			op->stackptr = -4LL * (insn->detail->arm.op_count - 1);
@@ -2620,6 +2675,7 @@ static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 		KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
 		break;
 	case 64:
+		KW("\x7f\x23\x03\xd5", 4, "\xff\xff\xff\xff", 4); // pacibsp - Pointer auth
 		KW("\xf0\x0f\x00\xf8", 4, "\xf0\x0f\x00\xff", 4);
 		KW("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
 		KW("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);

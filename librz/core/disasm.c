@@ -268,7 +268,10 @@ typedef struct {
 	int maxflags;
 	int asm_types;
 
+	bool sparse;
+
 	RzPVector /*<RzAnalysisDisasmText *>*/ *vec;
+	RzFlagItem lastflagitem;
 } RzDisasmState;
 
 static void ds_setup_print_pre(RzDisasmState *ds, bool tail, bool middle);
@@ -713,7 +716,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_functions = rz_config_get_b(core->config, "asm.functions");
 	ds->nbytes = rz_config_get_i(core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp(core->print->strconv_mode, "asciidot");
-	ds->strenc = rz_str_enc_string_as_type(rz_config_get(core->config, "bin.str.enc"));
+	ds->strenc = core->bin->str_search_cfg.string_encoding;
 	core->print->bytespace = rz_config_get_i(core->config, "asm.bytes.space");
 	ds->cursor = 0;
 	ds->nb = 0;
@@ -1081,23 +1084,12 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 }
 
 RZ_API RzAnalysisHint *rz_core_hint_begin(RzCore *core, RzAnalysisHint *hint, ut64 at) {
-	static char *hint_syntax = NULL;
 	rz_analysis_hint_free(hint);
 	hint = rz_analysis_hint_get(core->analysis, at);
-	if (hint_syntax) {
-		rz_config_set(core->config, "asm.syntax", hint_syntax);
-		hint_syntax = NULL;
-	}
 	if (hint) {
 		/* syntax */
 		if (hint->syntax) {
-			if (!hint_syntax) {
-				hint_syntax = strdup(rz_config_get(core->config, "asm.syntax"));
-			}
 			rz_config_set(core->config, "asm.syntax", hint->syntax);
-		}
-		if (hint->high) {
-			/* TODO: do something here */
 		}
 	}
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, at, 0);
@@ -2674,19 +2666,18 @@ static void ds_print_lines_left(RzDisasmState *ds) {
 		free(sect);
 	}
 	if (ds->show_symbols) {
-		static RzFlagItem sfi = RZ_EMPTY;
 		const char *name = "";
 		int delta = 0;
 		if (ds->fcn) {
-			sfi.offset = ds->fcn->addr;
-			sfi.name = ds->fcn->name;
-			ds->lastflag = &sfi;
+			ds->lastflagitem.offset = ds->fcn->addr;
+			ds->lastflagitem.name = ds->fcn->name;
+			ds->lastflag = &ds->lastflagitem;
 		} else {
 			RzFlagItem *fi = rz_flag_get_at(core->flags, ds->at, !ds->lastflag);
 			if (fi) { // && (!ds->lastflag || fi->offset != ds->at))
-				sfi.offset = fi->offset;
-				sfi.name = fi->name;
-				ds->lastflag = &sfi;
+				ds->lastflagitem.offset = fi->offset;
+				ds->lastflagitem.name = fi->name;
+				ds->lastflag = &ds->lastflagitem;
 			}
 		}
 		if (ds->lastflag && ds->lastflag->name) {
@@ -2788,7 +2779,6 @@ static void ds_print_offset(RzDisasmState *ds) {
 	}
 	rz_print_set_screenbounds(core->print, at);
 	if (ds->show_offset) {
-		static RzFlagItem sfi = RZ_EMPTY;
 		const char *label = NULL;
 		RzFlagItem *fi;
 		int delta = -1;
@@ -2802,9 +2792,9 @@ static void ds_print_offset(RzDisasmState *ds) {
 			}
 			if (f) {
 				delta = at - f->addr;
-				sfi.name = f->name;
-				sfi.offset = f->addr;
-				ds->lastflag = &sfi;
+				ds->lastflagitem.name = f->name;
+				ds->lastflagitem.offset = f->addr;
+				ds->lastflag = &ds->lastflagitem;
 				label = f->name;
 			} else {
 				if (ds->show_reloff_flags) {
@@ -3834,7 +3824,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 }
 
 static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refaddr) {
-	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, -1, refaddr)) {
+	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, refaddr)) {
 		return;
 	}
 	// do not resolve strings on arm64 pointed with ADRP
@@ -4522,11 +4512,18 @@ static void print_fcn_arg(RzCore *core, RzType *type, const char *name,
 		free(typestr);
 	}
 	if (addr != UT32_MAX && addr != UT64_MAX && addr != 0) {
-		char *res = rz_core_cmd_strf(core, "pf%s %s%s %s @ 0x%08" PFMT64x,
-			(asm_types == 2) ? "" : "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
-		rz_str_trim(res);
-		rz_cons_printf("%s", res);
-		free(res);
+		char *realfmt = NULL;
+		if (on_stack == 1) {
+			realfmt = rz_str_newf("*%s %s", fmt, name);
+		} else {
+			realfmt = rz_str_newf("%s %s", fmt, name);
+		}
+		int mode = (asm_types == 2) ? RZ_PRINT_MUSTSEE : RZ_PRINT_QUIET | RZ_PRINT_MUSTSEE;
+		char *format = rz_core_print_format(core, realfmt, mode, addr);
+		rz_str_trim(format);
+		rz_cons_print(format);
+		free(realfmt);
+		free(format);
 	} else {
 		rz_cons_printf("-1");
 	}
@@ -5307,8 +5304,9 @@ toro:
 			const char *typename = rz_type_identifier(gv->type);
 			if (fmt && typename) {
 				rz_cons_printf("(%s %s)\n", typename, gv->name);
-				// TODO: Use the API directly here
-				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
+				char *r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, ds->addr + idx);
+				rz_cons_print(r);
+				free(r);
 				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, gv->type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
@@ -5369,7 +5367,6 @@ toro:
 			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {
-			static bool sparse = false;
 			RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in(core->analysis, ds->pdf, ds->at);
 			if (!bb) {
 				for (inc = 1; inc < ds->oplen; inc++) {
@@ -5380,13 +5377,13 @@ toro:
 				}
 				rz_analysis_op_fini(&ds->analysis_op);
 				RZ_FREE(ds->opstr);
-				if (!sparse) {
+				if (!ds->sparse) {
 					rz_cons_printf("..\n");
-					sparse = true;
+					ds->sparse = true;
 				}
 				continue;
 			}
-			sparse = false;
+			ds->sparse = false;
 		}
 		ds_control_flow_comments(ds);
 		ds_adistrick_comments(ds);
@@ -5612,7 +5609,7 @@ toro:
 /**
  * \brief Is \p i_opcodes \< \p nb_opcodes and \p i_bytes \< \p nb_bytes ?
  */
-RZ_IPI bool rz_disasm_check_end(int nb_opcodes, int i_opcodes, int nb_bytes, int i_bytes) {
+RZ_IPI bool rz_disasm_check_end(st64 nb_opcodes, st64 i_opcodes, st64 nb_bytes, st64 i_bytes) {
 	if (nb_opcodes > 0) {
 		if (nb_bytes > 0) {
 			return i_opcodes < nb_opcodes && i_bytes < nb_bytes;
@@ -5856,10 +5853,10 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	bool res = true;
-	RzPVector *vec = NULL;
+	RzIterator *iter = NULL;
 	ut64 offset = rz_core_backward_offset(core, addr, &nb_opcodes, &nb_bytes);
-	vec = rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes);
-	if (!vec) {
+	iter = rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes);
+	if (!iter) {
 		res = false;
 		goto clean_return;
 	}
@@ -5867,12 +5864,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	bool asm_pseudo = rz_config_get_i(core->config, "asm.pseudo");
 
 	RzAnalysisBytes *ab;
-	void **p;
-	rz_pvector_foreach (vec, p) {
-		if (!p || !*p) {
-			continue;
-		}
-		ab = *p;
+	rz_iterator_foreach(iter, ab) {
 		RzAnalysisOp *op = ab->op;
 		if (!op) {
 			continue;
@@ -6005,7 +5997,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_end(pj);
 	}
 clean_return:
-	rz_pvector_free(vec);
+	rz_iterator_free(iter);
 	return res;
 }
 

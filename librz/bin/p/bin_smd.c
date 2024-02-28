@@ -293,10 +293,10 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
-	RzList *ret;
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_pvector_new(NULL))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinAddr))) {
@@ -305,18 +305,23 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets
 	if (bf->size < sizeof(SMD_Vectors)) {
 		eprintf("ERR: binfile too small!\n");
 		ptr->paddr = ptr->vaddr = 0x100 + sizeof(SMD_Header);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	} else {
 		SMD_Vectors vectors;
 		rz_buf_read_at(bf->buf, 0, (ut8 *)&vectors, sizeof(vectors));
 		ptr->paddr = ptr->vaddr = rz_read_be32(&vectors.Reset);
-		rz_list_append(ret, ptr);
+		rz_pvector_push(ret, ptr);
 	}
 	return ret;
 }
 
 static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, bf->minstrlen, false);
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	// we only search strings with a minimum length of 10 bytes.
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
+	opt.min_length = 10;
+	return rz_bin_file_strings(bf, &opt);
 }
 
 RzBinPlugin rz_bin_plugin_smd = {
@@ -332,7 +337,6 @@ RzBinPlugin rz_bin_plugin_smd = {
 	.symbols = &symbols,
 	.strings = &strings,
 	.info = &info,
-	.minstrlen = 10,
 	.strfilter = 'U'
 };
 

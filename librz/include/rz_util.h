@@ -76,6 +76,7 @@
 #include "rz_util/rz_luhn.h"
 #include "rz_util/rz_version.h"
 #include "rz_util/rz_lang_byte_array.h"
+#include "rz_util/rz_iterator.h"
 // requires io, core, ... #include "rz_util/rz_print.h"
 
 #ifdef __cplusplus

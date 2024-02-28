@@ -13,7 +13,8 @@ bool exec_regex(RzRegex *regex, const char *str, RzRegexMatch **out) {
 	if (!matches || rz_pvector_empty(matches)) {
 		return false;
 	}
-	*out = (RzRegexMatch *)rz_pvector_at(matches, 0);
+	*out = (RzRegexMatch *)rz_pvector_pop_front(matches);
+	rz_pvector_free(matches);
 	return true;
 }
 
@@ -25,6 +26,7 @@ bool test_rz_regex_all_match(void) {
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 0, "Start of match is not 0");
 	mu_assert_eq(match->len, 4, "Len of match is not 4");
+	free(match);
 	rz_regex_free(reg);
 	mu_end;
 }
@@ -37,6 +39,7 @@ bool test_rz_regex_posix_blank(void) {
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 4, "Start of match is not 4");
 	mu_assert_eq(match->len, 1, "Len of match is not 1");
+	free(match);
 	rz_regex_free(reg);
 	mu_end;
 }
@@ -50,6 +53,7 @@ bool test_rz_regex_extend_space(void) {
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 0, "Start of match is not 0");
 	mu_assert_eq(match->len, 8, "Len of match is not 8");
+	free(match);
 	rz_regex_free(reg);
 	mu_end;
 }
@@ -84,26 +88,32 @@ bool test_rz_reg_exec(void) {
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 0, "Start of match is not 0");
 	mu_assert_eq(match->len, 3, "Len of match is not 3");
+	free(match);
 	mu_assert_true(exec_regex(reg, "zabc", &match), "Regex match failed");
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 1, "Start of match is not 1");
 	mu_assert_eq(match->len, 3, "Len of match is not 3");
+	free(match);
 	mu_assert_true(exec_regex(reg, "abcz", &match), "Regex match failed");
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 0, "Start of match is not 0");
 	mu_assert_eq(match->len, 3, "Len of match is not 3");
+	free(match);
 	mu_assert_true(exec_regex(reg, "123", &match), "Regex match failed");
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 0, "Start of match is not 0");
 	mu_assert_eq(match->len, 3, "Len of match is not 3");
+	free(match);
 	mu_assert_true(exec_regex(reg, "z123", &match), "Regex match failed");
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 1, "Start of match is not 1");
 	mu_assert_eq(match->len, 3, "Len of match is not 3");
+	free(match);
 	mu_assert_true(exec_regex(reg, "123z", &match), "Regex match failed");
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 0, "Start of match is not 0");
 	mu_assert_eq(match->len, 3, "Len of match is not 3");
+	free(match);
 	rz_regex_free(reg);
 	const char *p_big = "\\d+(([abc]*d[efg])+|[123]4[567]+)*|[zyx]+(test)+[mnb]";
 	reg = rz_regex_new(p_big, RZ_REGEX_EXTENDED, 0);
@@ -111,10 +121,12 @@ bool test_rz_reg_exec(void) {
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 1, "Start of match is not 1");
 	mu_assert_eq(match->len, 6, "Len of match is not 6");
+	free(match);
 	mu_assert_true(exec_regex(reg, "ayztesttestb123z", &match), "Regex match failed");
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 1, "Start of match is not 1");
 	mu_assert_eq(match->len, 11, "Len of match is not 11");
+	free(match);
 	rz_regex_free(reg);
 	mu_end;
 }
@@ -148,6 +160,22 @@ bool test_rz_regex_capture(void) {
 	mu_assert_streq_free(s, "42", "capture 2 extract");
 
 	rz_regex_free(re);
+	rz_pvector_free(matches);
+	mu_end;
+}
+
+bool test_rz_regex_find(void) {
+	char *str = "\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR0\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[90m##\x1b[0m\x1b[33m0x17\x1b[0m";
+
+	RzRegexSize num_offset = rz_regex_find("(\\W|m)((0x[a-fA-F0-9]+)|\\d+)(\x1b|[^\\w;])", str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	mu_assert_eq(num_offset, 78, "Wrong offset");
+
+	num_offset = rz_regex_find("\\d+", str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	mu_assert_eq(num_offset, 2, "Wrong offset");
+
+	num_offset = rz_regex_find("0x111+", str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	mu_assert_eq(num_offset, SZT_MAX, "Wrong offset");
+
 	mu_end;
 }
 
@@ -157,6 +185,11 @@ bool test_rz_regex_named_matches(void) {
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 1), "proto", "proto name not set.");
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 3), "domain", "domain name not set.");
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 4), "tdomain", "tdomain name not set.");
+
+	mu_assert_eq(rz_regex_get_group_idx_by_name(reg, "proto"), 1, "proto name not set.");
+	mu_assert_eq(rz_regex_get_group_idx_by_name(reg, "domain"), 3, "domain name not set.");
+	mu_assert_eq(rz_regex_get_group_idx_by_name(reg, "tdomain"), 4, "tdomain name not set.");
+	mu_assert_eq(rz_regex_get_group_idx_by_name(reg, "nonexistent"), -1, "shouldn't exis");
 
 	RzPVector *matches = rz_regex_match_all_not_grouped(reg, "https://rizin.re", RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 	mu_assert_true(matches && !rz_pvector_empty(matches), "Regex match failed");
@@ -174,6 +207,7 @@ bool test_rz_regex_named_matches(void) {
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, match->group_idx), "tdomain", "tdomain was not matched.");
 
 	rz_regex_free(reg);
+	rz_pvector_free(matches);
 	mu_end;
 }
 
@@ -185,4 +219,5 @@ int main() {
 	mu_run_test(test_rz_regex_all_to_str);
 	mu_run_test(test_rz_regex_named_matches);
 	mu_run_test(test_rz_regex_posix_blank);
+	mu_run_test(test_rz_regex_find);
 }

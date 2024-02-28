@@ -161,17 +161,17 @@ static RzPVector /*<RzBinSection *>*/ *n3ds_sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinAddr *>*/ *n3ds_entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *n3ds_entries(RzBinFile *bf) {
 	if (!bf || !bf->o) {
 		return NULL;
 	}
 
 	RzBinAddr *ptr9 = NULL, *ptr11 = NULL;
-	RzList *ret = rz_list_newf(free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret ||
 		!(ptr9 = RZ_NEW0(RzBinAddr)) ||
 		!(ptr11 = RZ_NEW0(RzBinAddr))) {
-		rz_list_free(ret);
+		rz_pvector_free(ret);
 		free(ptr9);
 		return NULL;
 	}
@@ -179,11 +179,11 @@ static RzList /*<RzBinAddr *>*/ *n3ds_entries(RzBinFile *bf) {
 
 	/* ARM9 entry point */
 	ptr9->vaddr = hdr->arm9_ep;
-	rz_list_append(ret, ptr9);
+	rz_pvector_push(ret, ptr9);
 
 	/* ARM11 entry point */
 	ptr11->vaddr = hdr->arm11_ep;
-	rz_list_append(ret, ptr11);
+	rz_pvector_push(ret, ptr11);
 
 	for (size_t i = 0; i < 4; i++) {
 		N3DSFirmSectHdr *shdr = &hdr->sections[i];

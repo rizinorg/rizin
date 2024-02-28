@@ -683,7 +683,6 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		if (!rz_socket_connect_unix(fd, host)) {
 			core->num->value = 1;
 			RZ_LOG_ERROR("core: Cannot connect to 'unix://%s'\n", host);
-			rz_socket_free(fd);
 			return;
 		}
 		core->num->value = 0;

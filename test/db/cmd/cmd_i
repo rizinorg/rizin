@@ -3204,25 +3204,20 @@ RUN
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
+e str.search.encoding=ascii
 echo -- default --
 iz
 echo -- geq 12 --
-e bin.minstr=12
+e str.search.min_length=12
 iz
 echo -- geq 13 --
-e bin.minstr=13
+e str.search.min_length=13
 iz
 echo -- geq 0 --
-e bin.minstr=0
+e str.search.min_length=1
 iz
-echo -- leq 12 --
-e bin.maxstr=12
-iz
-echo -- leq 11 --
-e bin.maxstr=11
-iz
-echo -- no limit --
-e bin.maxstr=0
+echo -- small buffer 12 --
+e str.search.buffer_size=13
 iz
 EOF
 EXPECT=<<EOF
@@ -3241,17 +3236,11 @@ nth paddr vaddr len size section type string
 nth paddr      vaddr      len size section type  string       
 --------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
--- leq 12 --
-nth paddr      vaddr      len size section type  string       
---------------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
--- leq 11 --
-nth paddr vaddr len size section type string 
----------------------------------------------
--- no limit --
-nth paddr      vaddr      len size section type  string       
---------------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- small buffer 12 --
+nth paddr      vaddr      len size section type  string    
+-----------------------------------------------------------
+0   0x000004b0 0x080484b0 9   9    .rodata ascii Hello wor
+1   0x000004b9 0x080484b9 3   4    .rodata ascii ld!
 EOF
 RUN
 
@@ -3261,10 +3250,7 @@ CMDS=<<EOF
 echo -- default --
 iz
 echo -- geq 12 --
-e bin.minstr=12
-iz
-echo -- leq 13 --
-e bin.maxstr=12
+e str.search.min_length=12
 iz
 EOF
 EXPECT=<<EOF
@@ -3293,11 +3279,6 @@ nth paddr      vaddr       len size section             type  string
 --------------------------------------------------------------------------------
 0   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
 1   0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
-2   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
--- leq 13 --
-nth paddr      vaddr       len size section             type  string            
---------------------------------------------------------------------------------
-0   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
 2   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 EOF
 RUN
@@ -3848,11 +3829,11 @@ nth paddr      vaddr      len size section type  string
 EOF
 RUN
 
-NAME=izz and bin.str.enc
+NAME=izz and str.search.encoding
 FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e bin.str.enc=${enc}; izz:quiet)
+(izzenc enc; e str.search.encoding=${enc}; izz:quiet)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -3880,7 +3861,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bin.str.enc string reset
+NAME=str.search.encoding string reset
 FILE=--
 CMDS=<<EOF
 mkdir .tmp
@@ -3889,7 +3870,7 @@ o+ .tmp/strenc-bin
 iz:quiet
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e bin.str.enc=${enc}; iz:quiet)
+(izenc enc; e str.search.encoding=${enc}; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
 o--
@@ -5030,11 +5011,11 @@ bits 64
 EOF
 RUN
 
-NAME=print elf strings but with bin.minstr=2
+NAME=print elf strings but with str.search.min_length=2
 FILE=bins/elf/smallstrings.elf
 CMDS=<<EOF
 iz
-iz @e:bin.minstr=2
+iz @e:str.search.min_length=2
 EOF
 EXPECT=<<EOF
 nth paddr      vaddr      len size section type  string 
@@ -5045,6 +5026,37 @@ nth paddr      vaddr      len size section type  string
 0   0x00002006 0x00002006 2   3    .rodata ascii 22
 1   0x00002009 0x00002009 3   4    .rodata ascii 333
 2   0x0000200d 0x0000200d 4   5    .rodata ascii 4444
-3   0x00003008 0x00004008 2   3    .data   ascii \b@
+EOF
+RUN
+
+NAME=Test for big strings
+FILE=malloc://8192
+CMDS=<<EOF
+wD 6140
+px
+e str.search.buffer_size=8000
+iz
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  4141 4142 4141 4341 4144 4141 4541 4146  AAABAACAADAAEAAF
+0x00000010  4141 4741 4148 4141 4941 414a 4141 4b41  AAGAAHAAIAAJAAKA
+0x00000020  414c 4141 4d41 414e 4141 4f41 4150 4141  ALAAMAANAAOAAPAA
+0x00000030  5141 4152 4141 5341 4154 4141 5541 4156  QAARAASAATAAUAAV
+0x00000040  4141 5741 4158 4141 5941 415a 4141 6141  AAWAAXAAYAAZAAaA
+0x00000050  4162 4141 6341 4164 4141 6541 4166 4141  AbAAcAAdAAeAAfAA
+0x00000060  6741 4168 4141 6941 416a 4141 6b41 416c  gAAhAAiAAjAAkAAl
+0x00000070  4141 6d41 416e 4141 6f41 4170 4141 7141  AAmAAnAAoAApAAqA
+0x00000080  4172 4141 7341 4174 4141 7541 4176 4141  ArAAsAAtAAuAAvAA
+0x00000090  7741 4178 4141 7941 417a 4141 3141 4132  wAAxAAyAAzAA1AA2
+0x000000a0  4141 3341 4134 4141 3541 4136 4141 3741  AA3AA4AA5AA6AA7A
+0x000000b0  4138 4141 3941 4130 4142 4241 4243 4142  A8AA9AA0ABBABCAB
+0x000000c0  4441 4245 4142 4641 4247 4142 4841 4249  DABEABFABGABHABI
+0x000000d0  4142 4a41 424b 4142 4c41 424d 4142 4e41  ABJABKABLABMABNA
+0x000000e0  424f 4142 5041 4251 4142 5241 4253 4142  BOABPABQABRABSAB
+0x000000f0  5441 4255 4142 5641 4257 4142 5841 4259  TABUABVABWABXABY
+nth paddr      vaddr      len  size section type  string                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0   0x00000000 0x00000000 6140 6141         ascii AAABAACAADAAEAAFAAGAAHAAIAAJAAKAALAAMAANAAOAAPAAQAARAASAATAAUAAVAAWAAXAAYAAZAAaAAbAAcAAdAAeAAfAAgAAhAAiAAjAAkAAlAAmAAnAAoAApAAqAArAAsAAtAAuAAvAAwAAxAAyAAzAA1AA2AA3AA4AA5AA6AA7AA8AA9AA0ABBABCABDABEABFABGABHABIABJABKABLABMABNABOABPABQABRABSABTABUABVABWABXABYABZABaABbABcABdABeABfABgABhABiABjABkABlABmABnABoABpABqABrABsABtABuABvABwABxAByABzAB1AB2AB3AB4AB5AB6AB7AB8AB9AB0ACBACCACDACEACFACGACHACIACJACKACLACMACNACOACPACQACRACSACTACUACVACWACXACYACZACaACbACcACdACeACfACgAChACiACjACkAClACmACnACoACpACqACrACsACtACuACvACwACxACyACzAC1AC2AC3AC4AC5AC6AC7AC8AC9AC0ADBADCADDADEADFADGADHADIADJADKADLADMADNADOADPADQADRADSADTADUADVADWADXADYADZADaADbADcADdADeADfADgADhADiADjADkADlADmADnADoADpADqADrADsADtADuADvADwADxADyADzAD1AD2AD3AD4AD5AD6AD7AD8AD9AD0AEBAECAEDAEEAEFAEGAEHAEIAEJAEKAELAEMAENAEOAEPAEQAERAESAETAEUAEVAEWAEXAEYAEZAEaAEbAEcAEdAEeAEfAEgAEhAEiAEjAEkAElAEmAEnAEoAEpAEqAErAEsAEtAEuAEvAEwAExAEyAEzAE1AE2AE3AE4AE5AE6AE7AE8AE9AE0AFBAFCAFDAFEAFFAFGAFHAFIAFJAFKAFLAFMAFNAFOAFPAFQAFRAFSAFTAFUAFVAFWAFXAFYAFZAFaAFbAFcAFdAFeAFfAFgAFhAFiAFjAFkAFlAFmAFnAFoAFpAFqAFrAFsAFtAFuAFvAFwAFxAFyAFzAF1AF2AF3AF4AF5AF6AF7AF8AF9AF0AGBAGCAGDAGEAGFAGGAGHAGIAGJAGKAGLAGMAGNAGOAGPAGQAGRAGSAGTAGUAGVAGWAGXAGYAGZAGaAGbAGcAGdAGeAGfAGgAGhAGiAGjAGkAGlAGmAGnAGoAGpAGqAGrAGsAGtAGuAGvAGwAGxAGyAGzAG1AG2AG3AG4AG5AG6AG7AG8AG9AG0AHBAHCAHDAHEAHFAHGAHHAHIAHJAHKAHLAHMAHNAHOAHPAHQAHRAHSAHTAHUAHVAHWAHXAHYAHZAHaAHbAHcAHdAHeAHfAHgAHhAHiAHjAHkAHlAHmAHnAHoAHpAHqAHrAHsAHtAHuAHvAHwAHxAHyAHzAH1AH2AH3AH4AH5AH6AH7AH8AH9AH0AIBAICAIDAIEAIFAIGAIHAIIAIJAIKAILAIMAINAIOAIPAIQAIRAISAITAIUAIVAIWAIXAIYAIZAIaAIbAIcAIdAIeAIfAIgAIhAIiAIjAIkAIlAImAInAIoAIpAIqAIrAIsAItAIuAIvAIwAIxAIyAIzAI1AI2AI3AI4AI5AI6AI7AI8AI9AI0AJBAJCAJDAJEAJFAJGAJHAJIAJJAJKAJLAJMAJNAJOAJPAJQAJRAJSAJTAJUAJVAJWAJXAJYAJZAJaAJbAJcAJdAJeAJfAJgAJhAJiAJjAJkAJlAJmAJnAJoAJpAJqAJrAJsAJtAJuAJvAJwAJxAJyAJzAJ1AJ2AJ3AJ4AJ5AJ6AJ7AJ8AJ9AJ0AKBAKCAKDAKEAKFAKGAKHAKIAKJAKKAKLAKMAKNAKOAKPAKQAKRAKSAKTAKUAKVAKWAKXAKYAKZAKaAKbAKcAKdAKeAKfAKgAKhAKiAKjAKkAKlAKmAKnAKoAKpAKqAKrAKsAKtAKuAKvAKwAKxAKyAKzAK1AK2AK3AK4AK5AK6AK7AK8AK9AK0ALBALCALDALEALFALGALHALIALJALKALLALMALNALOALPALQALRALSALTALUALVALWALXALYALZALaALbALcALdALeALfALgALhALiALjALkALlALmALnALoALpALqALrALsALtALuALvALwALxALyALzAL1AL2AL3AL4AL5AL6AL7AL8AL9AL0AMBAMCAMDAMEAMFAMGAMHAMIAMJAMKAMLAMMAMNAMOAMPAMQAMRAMSAMTAMUAMVAMWAMXAMYAMZAMaAMbAMcAMdAMeAMfAMgAMhAMiAMjAMkAMlAMmAMnAMoAMpAMqAMrAMsAMtAMuAMvAMwAMxAMyAMzAM1AM2AM3AM4AM5AM6AM7AM8AM9AM0ANBANCANDANEANFANGANHANIANJANKANLANMANNANOANPANQANRANSANTANUANVANWANXANYANZANaANbANcANdANeANfANgANhANiANjANkANlANmANnANoANpANqANrANsANtANuANvANwANxANyANzAN1AN2AN3AN4AN5AN6AN7AN8AN9AN0AOBAOCAODAOEAOFAOGAOHAOIAOJAOKAOLAOMAONAOOAOPAOQAORAOSAOTAOUAOVAOWAOXAOYAOZAOaAObAOcAOdAOeAOfAOgAOhAOiAOjAOkAOlAOmAOnAOoAOpAOqAOrAOsAOtAOuAOvAOwAOxAOyAOzAO1AO2AO3AO4AO5AO6AO7AO8AO9AO0APBAPCAPDAPEAPFAPGAPHAPIAPJAPKAPLAPMAPNAPOAPPAPQAPRAPSAPTAPUAPVAPWAPXAPYAPZAPaAPbAPcAPdAPeAPfAPgAPhAPiAPjAPkAPlAPmAPnAPoAPpAPqAPrAPsAPtAPuAPvAPwAPxAPyAPzAP1AP2AP3AP4AP5AP6AP7AP8AP9AP0AQBAQCAQDAQEAQFAQGAQHAQIAQJAQKAQLAQMAQNAQOAQPAQQAQRAQSAQTAQUAQVAQWAQXAQYAQZAQaAQbAQcAQdAQeAQfAQgAQhAQiAQjAQkAQlAQmAQnAQoAQpAQqAQrAQsAQtAQuAQvAQwAQxAQyAQzAQ1AQ2AQ3AQ4AQ5AQ6AQ7AQ8AQ9AQ0ARBARCARDAREARFARGARHARIARJARKARLARMARNAROARPARQARRARSARTARUARVARWARXARYARZARaARbARcARdAReARfARgARhARiARjARkARlARmARnARoARpARqARrARsARtARuARvARwARxARyARzAR1AR2AR3AR4AR5AR6AR7AR8AR9AR0ASBASCASDASEASFASGASHASIASJASKASLASMASNASOASPASQASRASSASTASUASVASWASXASYASZASaASbAScASdASeASfASgAShASiASjASkASlASmASnASoASpASqASrASsAStASuASvASwASxASyASzAS1AS2AS3AS4AS5AS6AS7AS8AS9AS0ATBATCATDATEATFATGATHATIATJATKATLATMATNATOATPATQATRATSATTATUATVATWATXATYATZATaATbATcATdATeATfATgAThATiATjATkATlATmATnAToAT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
 EOF
 RUN

@@ -1,12 +1,12 @@
 NAME=pf xxd=123
 FILE==
 CMDS=<<EOF
-pf foo=xxd foo bar cow
-pf.foo
-pf.foo.foo
-.pf.foo.foo=123
-pf.foo.foo
-pf.foo
+pfn foo "xxd foo bar cow"
+pf. foo
+pf. foo.foo
+.pfw foo.foo 123
+pf. foo.foo
+pf. foo
 EOF
 EXPECT=<<EOF
  foo : 0x00000000 = 0x00000000
@@ -23,10 +23,10 @@ RUN
 NAME=pf xxd.cow=123
 FILE==
 CMDS=<<EOF
-pf foo=[2]xxd foo bar cow
-pf.foo.cow
-.pf.foo.cow=123
-pf.foo.cow
+pfn foo "[2]xxd foo bar cow"
+pf. foo.cow
+.pfw foo.cow 123
+pf. foo.cow
 EOF
 EXPECT=<<EOF
  cow : 0x0000000c = 0
@@ -37,9 +37,9 @@ RUN
 NAME=pf array with one write
 FILE==
 CMDS=<<EOF
-pf foo=[3]x foo
-.pf.foo.foo=1
-pf.foo
+pfn foo "[3]x foo"
+.pfw foo.foo 1
+pf. foo
 EOF
 EXPECT=<<EOF
  foo : 0x00000000 = [ 0x00000001, 0x00000000, 0x00000000 ]
@@ -50,9 +50,9 @@ NAME=pf array not in meta
 FILE==
 BROKEN=1
 CMDS=<<EOF
-pf foo=[3]x foo
-.pf.foo.foo=1
-.pf*.foo
+pfn foo "[3]x foo"
+.pf foo.foo 1
+.pf* .foo
 e asm.lines=0
 pd 1
 EOF
@@ -64,10 +64,10 @@ RUN
 NAME=pf xxd print happy
 FILE==
 CMDS=<<EOF
-pf foo=xxd foo bar cow
+pfn foo "xxd foo bar cow"
 w hello happy world
 e asm.lines=0
-.pf*.foo
+.pf* .foo
 pd 3
 EOF
 EXPECT=<<EOF
@@ -84,11 +84,11 @@ NAME=pf xxd print
 BROKEN=1
 FILE==
 CMDS=<<EOF
-pf foo=[2]xxd foo bar cow
+pfn foo "[2]xxd foo bar cow"
 w hello happy world
 e asm.lines=0
 e asm.flags.inbytes=1
-.pf*.foo
+.pf* .foo
 pd 3
 EOF
 EXPECT=<<EOF
