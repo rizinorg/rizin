@@ -117,6 +117,11 @@ typedef struct rz_lib_t {
 		rz_list_append(plugins, plugin); \
 	} while (0)
 
+#define RZ_PLUGIN_REMOVE(plugins, plugin) \
+	do { \
+		rz_list_delete_data(plugins, plugin); \
+	} while (0)
+
 #ifdef RZ_API
 RZ_API RzLib *rz_lib_new(RZ_NULLABLE const char *symname, RZ_NULLABLE const char *symnamefunc);
 RZ_API void rz_lib_free(RzLib *lib);
