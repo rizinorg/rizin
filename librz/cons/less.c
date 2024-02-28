@@ -3,10 +3,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
-#include <rz_util/rz_regex.h>
 #include <rz_util.h>
+#include <rz_vector.h>
 #include "pager_private.h"
-#include "rz_vector.h"
 
 #define I(x) rz_cons_singleton()->x
 
