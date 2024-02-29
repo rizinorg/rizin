@@ -26,7 +26,6 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool json;
-	bool match_found;
 	int mode;
 	int align;
 	ut8 *buf;
@@ -61,7 +60,6 @@ static int rzfind_open(RzfindOptions *ro, const char *file);
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzfindOptions *ro = (RzfindOptions *)user;
 	int delta = addr - ro->cur;
-	ro->match_found = true;
 	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
 		// This case occurs when there is hit in search left over
 		delta = ro->cur - addr;
@@ -143,6 +141,15 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 				free(dump);
 			}
 		}
+	}
+	if (ro->exec_command) {
+		char *command = rz_str_newf("%s %s", ro->exec_command, ro->curfile);
+		int status = rz_sys_system(command);
+		if (status == -1) {
+			RZ_LOG_ERROR("Failed to execute command: %s", command);
+		}
+		free(command);
+		return 1;
 	}
 	return 1;
 }
@@ -231,7 +238,6 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	const char *kw;
 	bool last = false;
 	int ret, result = 0;
-	ro->match_found = false;
 
 	ro->buf = NULL;
 	if (!ro->quiet) {
@@ -460,14 +466,6 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			eprintf("search: update read error at 0x%08" PFMT64x "\n", ro->cur);
 		}
 	}
-	if (ro->match_found && ro->exec_command) {
-		char *command = rz_str_newf("%s %s", ro->exec_command, ro->curfile);
-		int status = rz_sys_system(command);
-		if (status == -1) {
-			RZ_LOG_ERROR("Failed to execute command: %s", command);
-		}
-		free(command);
-	}
 done:
 	rz_cons_free();
 	rz_bin_free(bin);
@@ -555,12 +553,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			break;
 		case 'E':
 			ro.quiet = true;
-			if (opt.arg) {
-				ro.exec_command = opt.arg;
-				rz_list_append(ro.keywords, (void *)opt.arg);
-			} else {
-				ro.mode = RZ_SEARCH_ESIL;
-			}
+			ro.exec_command = opt.arg;
 			break;
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;
