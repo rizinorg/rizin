@@ -217,17 +217,13 @@ EXPECT=<<EOF
 / sym.__x86.get_pc_thunk.bx();
 |           0x08049140      mov   ebx, dword [esp]
 
-.------------------------------------------------------------------.
-|  0x8049140                                                       |
-|   ; CALL XREF from sym._init @ 0x8049008                         |
-|   ; CALL XREF from method.QtPrivate::RefCount.deref @ 0x8049349  |
-|   ; CALL XREF from method.QString.QString_char_const @ 0x804939d |
-|   ; CALL XREF from method.QString._QString @ 0x80493e5           |
-|   ; CALL XREF from sym._fini @ 0x80495d4                         |
-| sym.__x86.get_pc_thunk.bx();                                     |
-| mov ebx, dword [esp]                                             |
-| ret                                                              |
-`------------------------------------------------------------------'
+.------------------------------.
+|  0x8049140                   |
+|   ; XREFS(5)                 |
+| sym.__x86.get_pc_thunk.bx(); |
+| mov ebx, dword [esp]         |
+| ret                          |
+`------------------------------'
 
             ; CALL XREF from sym._init @ 0x8049008
             ; CALL XREF from method.QtPrivate::RefCount.deref @ 0x8049349
