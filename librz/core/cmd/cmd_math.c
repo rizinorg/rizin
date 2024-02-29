@@ -74,7 +74,7 @@ struct rz_core_var core_vars[] = {
 struct rz_core_var help_core_vars[] = {
 	{ "flag", "offset of flag" },
 	{ "${ev}", "get value of eval <config variable <ev>" },
-	{ "$alias", "alias commands (simple macros)" },
+	{ "$alias", "alias commands (simple macros, see $?)" },
 	{ "$e{flag}", "end of <flag> (flag->offset + flag->size)" },
 	{ "$k{kv}", "get value of an sdb query value" },
 	{ "$r{reg}", "get value of named register <reg>" },
