@@ -205,7 +205,7 @@ endif
 pcre2_dep_opt = get_option('use_sys_pcre2')
 pcre2_dep = disabler()
 if (pcre2_dep_opt.enabled() or pcre2_dep_opt.auto()) and not meson.is_cross_build()
-  pcre2_dep = dependency('libpcre2-8', required: false, static: true)
+  pcre2_dep = dependency('libpcre2-8', required: false, static: false)
   if not pcre2_dep.found()
     pcre2_dep = cc.find_library('pcre2', required: true, static: true)
   endif
