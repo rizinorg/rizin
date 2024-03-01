@@ -4,6 +4,7 @@
 #undef GH_
 #undef GHT
 #undef GHT_MAX
+#undef GHFMTx
 #undef read_le
 
 #ifdef KHEAP64
@@ -26,4 +27,4 @@
 
 #endif
 
-RZ_IPI RzCmdStatus GH(rz_cmd_debug_slub_dump_freelist_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput* output_state);
+RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_freelist_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput* output_state);

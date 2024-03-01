@@ -114,9 +114,8 @@ static RzBinSymbol* GH_(get_symbol_by_name)(RzCore *core, const char *sym_name) 
  * 		// the rest
  * }
 */
-static size_t GH_(offset_in_struct)(RzCore* core, const char* typename, const char* membname) {
-	RzTypeDB* typedb = core->analysis->typedb;
-	RzBaseType* btype = rz_type_db_get_base_type(typedb, typename);
+
+static RzTypeStructMember* GH_(find_member_in_btype)(RzCore* core, RzBaseType* btype, const char* membname) {
 	RzTypeStructMember* memb_iter;
 	RzTypeStructMember* memb = NULL;
 	rz_vector_foreach(&btype->struct_data.members, memb_iter) {
@@ -124,9 +123,39 @@ static size_t GH_(offset_in_struct)(RzCore* core, const char* typename, const ch
 			memb = memb_iter;
 		}
 	}
+
+	bool is_anon;
+	RzTypeDB* typedb = core->analysis->typedb;
 	if (memb == NULL) {
-		return (size_t)-1;
+		rz_vector_foreach(&btype->struct_data.members, memb_iter) {
+			is_anon = !strncmp(memb_iter->type->identifier.name, "anonymous ", strlen("anonymous "));
+			if (!is_anon) { // don't unwrap not-anon structs/unions
+				continue;
+			}
+			
+			char* memb_typename = memb_iter->type->identifier.name;
+			btype = rz_type_db_get_base_type(typedb, memb_typename);
+			if (!btype) {
+				continue;
+			}
+
+			memb = GH_(find_member_in_btype)(core, btype, membname);
+			if (memb) {
+				break;
+			}
+		}
 	}
+	return memb;
+}
+
+static size_t GH_(offset_in_struct)(RzCore* core, const char* typename, const char* membname) {
+	RzTypeDB* typedb = core->analysis->typedb;
+	RzBaseType* btype = rz_type_db_get_base_type(typedb, typename);
+	RzTypeStructMember* memb = GH_(find_member_in_btype)(core, btype, membname);
+	if (!memb) {
+		return -1;
+	}
+
 	return memb->offset;
 }
 
@@ -177,7 +206,7 @@ static GHT GH_(get_kmem_cache)(RzCore *core, size_t cache_size) {
     rz_io_read_at_mapped(
         core->io, 
         kmalloc_caches->vaddr + GH_(offset_in_2d_arr)(size2, sizeof(GHT), cache_type, index),
-        &kmem_cache,
+        (void*)&kmem_cache,
         sizeof(GHT)
     );
     return kmem_cache;
@@ -193,7 +222,7 @@ static GHT GH_(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
 	rz_io_read_at_mapped(
 		core->io,
 		per_cpu_offset->vaddr + GH_(offset_in_arr)(sizeof(GHT), n_cpu),
-		&percpu_n,
+		(void*)&percpu_n,
 		sizeof(GHT)
 	);
 
@@ -201,7 +230,7 @@ static GHT GH_(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
 	rz_io_read_at_mapped(
 		core->io,
 		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "cpu_slab"),
-		&cpu_slab,
+		(void*)&cpu_slab,
 		sizeof(GHT)
 	);
 
@@ -215,8 +244,8 @@ static GHT GH_(get_kmem_cache_node)(RzCore* core, GHT kmem_cache, size_t node_n)
 	GHT kmem_cache_node_n;
 	rz_io_read_at_mapped(
 		core->io,
-		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "node") + offset_in_arr(kmem_cache_node_btype->size, node_n),
-		&kmem_cache_node_n,
+		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "node") + GH_(offset_in_arr)(kmem_cache_node_btype->size, node_n),
+		(void*)&kmem_cache_node_n,
 		sizeof(GHT)
 	);
 	return kmem_cache_node_n;
@@ -247,14 +276,16 @@ static GH_(Freelist)* GH_(collect_freelist)(RzCore* core, GHT freelist, size_t f
 		read_ok = rz_io_read_at_mapped(
 			core->io,
 			chunk_base + freelist_offset,
-			&freelist,
+			(void*)&freelist,
 			sizeof(GHT)
 		);
 
 #ifdef SLUB_DEBUG
 		printf("obfuscated freelist: %lx\n", freelist);
 #endif
-		freelist = GH_(decode_freelist)(freelist, chunk_base + freelist_offset, cache_rand);
+		if (core->analysis->vmlinux_config->config_tbl->config_slab_freelist_hardened) {
+			freelist = GH_(decode_freelist)(freelist, chunk_base + freelist_offset, cache_rand);
+		}
 #ifdef SLUB_DEBUG
 		printf("deobfuscated freelist: %lx\n", freelist);
 #endif
@@ -333,40 +364,96 @@ static void GH_(dump_freelist)(GH_(Freelist)* freelist) {
 // TODO: replace struct member type with their actual type (using typedb)
 static void GH_(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache_cpu) {
 	GHT freelist;
+	unsigned int freelist_offset;
+	GHT cache_rand;
+	
+	// get "freelist" from "kmem_cache_cpu".
 	// Dirty hardcode: offsetof(kmem_cache_cpu, freelist)=0.
 	// Can't use offset_in_struct since it does not yet support anonymous member unwrapping.
-	GHT p_freelist = kmem_cache_cpu + 0;
 	rz_io_read_at_mapped(
 		core->io,
-		p_freelist,
-		&freelist,
+		kmem_cache_cpu + 0,
+		(void*)&freelist,
 		sizeof(GHT)
 	);
 #ifdef SLUB_DEBUG
 	printf("freelist: 0x%lx\n", freelist);
 #endif
 
-	unsigned int freelist_offset;
+	// get "offset" from "kmem_cache"
 	rz_io_read_at_mapped(
 		core->io,
 		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "offset"),
-		&freelist_offset,
+		(void*)&freelist_offset,
 		sizeof(unsigned int)
 	);
 #ifdef SLUB_DEBUG
 	printf("freelist_offset: %lu\n", freelist_offset);
 #endif
 
+	if (core->analysis->vmlinux_config->config_tbl->config_slab_freelist_hardened) {
+		// get "random" from "kmem_cache"	
+		rz_io_read_at_mapped(
+			core->io,
+			kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "random"),
+			(void*)&cache_rand,
+			sizeof(GHT)
+		);
+		#ifdef SLUB_DEBUG
+			printf("cache random: 0x%lx\n", cache_rand);
+		#endif
+	}
+
+	GH_(Freelist)* fl = GH_(collect_freelist)(core, freelist, freelist_offset, cache_rand);
+	GH_(dump_freelist)(fl);
+}
+
+// TODO: replace struct member type with their actual type (using typedb)
+static void GH_(dump_cpu_regular_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache_cpu) {
+	GHT freelist, slab;
 	GHT cache_rand;
+	unsigned int freelist_offset;
+	char* slab_member;
+
+	if (vmlinux_vercmp_with_str(core->analysis->vmlinux_config->version, "5.17")) {
+		slab_member = "slab";
+	} else {
+		slab_member = "page";
+	}
+
+	// get "slab" from "kmem_cache_cpu"
 	rz_io_read_at_mapped(
 		core->io,
-		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "random"),
-		&cache_rand,
+		kmem_cache_cpu + GH_(offset_in_struct)(core, "kmem_cache_cpu", slab_member),
+		(void*)&slab,
 		sizeof(GHT)
 	);
-#ifdef SLUB_DEBUG
-	printf("cache random: 0x%lx\n", cache_rand);
-#endif
+
+	// get "freelist" from "slab"
+	rz_io_read_at_mapped(
+		core->io,
+		slab + GH_(offset_in_struct)(core, "kmem_cache_cpu", "freelist"),
+		(void*)&freelist,
+		sizeof(GHT)
+	);
+
+	// get "freelist_offset" from "kmem_cache"
+	rz_io_read_at_mapped(
+		core->io,
+		kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "offset"),
+		(void*)&freelist_offset,
+		sizeof(unsigned int)
+	);
+
+	if (core->analysis->vmlinux_config->config_tbl->config_slab_freelist_hardened) {
+		// get "random" from "kmem_cache"
+		rz_io_read_at_mapped(
+			core->io,
+			kmem_cache + GH_(offset_in_struct)(core, "kmem_cache", "random"),
+			(void*)&cache_rand,
+			sizeof(GHT)
+		);
+	}
 
 	GH_(Freelist)* fl = GH_(collect_freelist)(core, freelist, freelist_offset, cache_rand);
 	GH_(dump_freelist)(fl);

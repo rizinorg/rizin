@@ -29,7 +29,7 @@ RZ_IPI bool vmlinux_parse_apply_config_file(const char* config_filepath, RzVmlin
         if (line[0] == '#' || !line[0]) {
             continue;
         } else if (rz_str_split_by_first_dupstr(line, "=", true, &config_name, &config_value)) {
-            add_config(&config_tbl, config_name, config_value);
+            add_config(config_tbl, config_name, config_value);
         } else {
             RZ_LOG_WARN("Skipping line '%s'", line);
             continue;
@@ -47,14 +47,23 @@ out:
 RZ_IPI bool vmlinux_parse_version(const char* version_string, unsigned long version[3]) {
     RzList* version_list = rz_str_split_duplist_n(version_string, ".", 3, 1);
     RzListIter* it;
-    char** str;
+    char** pstr;
+    char* str;
+
+    for (size_t i = 0; i < 3; ++i) version[i] = 0;
 
     size_t v = 0;
-    rz_list_foreach(version_list, it, str) {
-        size_t i;
-        for (i = 0; str[i] != '0'; ++i) if (!isdigit(i)) break;
+    rz_list_foreach(version_list, it, pstr) {
+        if (v == 3) { // 3 dots? 
+            break;
+        }
 
-        if (str[i] == '0') { // is number
+        size_t i;
+        str = *pstr;
+
+        for (i = 0; str[i] != '\0'; ++i) if (!isdigit(i)) break;
+
+        if (str[i] == '\0') { // is number
             unsigned long numbr = strtoul(str, NULL, 10);
             version[v] = numbr;
         } else {
@@ -66,7 +75,7 @@ RZ_IPI bool vmlinux_parse_version(const char* version_string, unsigned long vers
     return true;
 }
 
-#define SET_VMLINUX_CONFIG(config_var, config_name, config_value)   \
+#define SET_VMLINUX_CONFIG(config_var, config_value)   \
     do {                                                            \
         if (!strcmp(config_value, "y")) {                           \
             config_var = VMLINUX_CONFIG_VALUE_Y;                    \
@@ -79,13 +88,13 @@ RZ_IPI bool vmlinux_parse_version(const char* version_string, unsigned long vers
 
 static void add_config(RzVmlinuxConfigTable* config_tbl, char* config_name, char* config_value) {
     if (!strcmp(config_name, "CONFIG_SLAB_FREELIST_RANDOM")) {
-        SET_VMLINUX_CONFIG(config_tbl->config_slab_freelist_random, config_name, config_value);
+        SET_VMLINUX_CONFIG(config_tbl->config_slab_freelist_random, config_value);
     } else if (!strcmp(config_name, "CONFIG_SLAB_FREELIST_HARDENED")) {
-        SET_VMLINUX_CONFIG(config_tbl->config_slab_freelist_hardened, config_name, config_value);
+        SET_VMLINUX_CONFIG(config_tbl->config_slab_freelist_hardened, config_value);
     } else if (!strcmp(config_name, "CONFIG_MEMCG")) {
-        SET_VMLINUX_CONFIG(config_tbl->config_memcg, config_name, config_value);
+        SET_VMLINUX_CONFIG(config_tbl->config_memcg, config_value);
     } else if (!strcmp(config_name, "CONFIG_MEMCG_KMEM")) {
-        SET_VMLINUX_CONFIG(config_tbl->config_memcg_kmem, config_name, config_value);
+        SET_VMLINUX_CONFIG(config_tbl->config_memcg_kmem, config_value);
     }
 }
 
@@ -102,4 +111,37 @@ RZ_IPI RzVmlinuxConfigTable* rz_vmlinux_config_table_new() {
 RZ_IPI RzVmlinuxConfig* rz_vmlinux_config_new() {
     RzVmlinuxConfig* config = malloc(sizeof(RzVmlinuxConfig));
     return config;
+}
+
+
+RZ_IPI int vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]) {
+    size_t diff_idx;
+    for (diff_idx = 0; diff_idx < 3; ++diff_idx) if (v1[diff_idx] != v2[diff_idx]) break;
+
+    if (diff_idx == 3) {
+        return 0;
+    }
+
+    if (v1[diff_idx] > v2[diff_idx]) {
+        return 1;
+    } 
+
+    return -1;
+}
+
+
+RZ_IPI int vmlinux_vercmp_with_str(unsigned long v1[3], const char* v2_str) {
+    unsigned long v2[3];
+    vmlinux_parse_version(v2_str, v2);
+    return vmlinux_vercmp(v1, v2);
+}
+
+
+RZ_IPI void rz_vmlinux_config_free(RzVmlinuxConfig* vmlinux_config) {
+    rz_vmlinux_config_table_free(vmlinux_config->config_tbl);
+    free(vmlinux_config);
+}
+
+RZ_IPI void rz_vmlinux_config_table_free(RzVmlinuxConfigTable* config_tbl) {
+    free(config_tbl);
 }
