@@ -64,7 +64,7 @@ if cc.get_id() != 'tcc' and target_machine.cpu_family() in cpu_jit_supported
   pcre2_files += ['src/pcre2_jit_compile.c']
 endif
 
-if target_machine.system() == 'openbsd'
+if target_machine.system() == 'openbsd' or target_machine.system() == 'darwin'
   # jit compilation fails with "no more memory" if wx allocations are allowed.
   libpcre2_c_args += ['-DSLJIT_WX_EXECUTABLE_ALLOCATOR']
 elif target_machine.system() == 'netbsd'
