@@ -125,6 +125,7 @@ rz_core_sources = [
   'tui/panels.c',
   'tui/tabs.c',
   'tui/rop.c',
+  'vmlinux.c',
 ]
 
 rz_core_inc = ['.']
