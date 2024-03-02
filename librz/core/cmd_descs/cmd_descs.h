@@ -20,7 +20,11 @@ RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdDescDetail *rz_hash_bang_details_cb(RzCore *core, int argc, const char **argv);
 // "$"
-RZ_IPI int rz_cmd_alias(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv);
+// "$*"
+RZ_IPI RzCmdStatus rz_alias_list_cmd_base64_handler(RzCore *core, int argc, const char **argv);
+// "$**"
+RZ_IPI RzCmdStatus rz_alias_list_cmd_plain_handler(RzCore *core, int argc, const char **argv);
 // "&"
 RZ_IPI RzCmdStatus rz_tasks_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "&t"

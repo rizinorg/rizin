@@ -1622,6 +1622,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "_alias_arged_stmt"
+        },
+        {
+          "type": "SYMBOL",
           "name": "_system_stmt"
         },
         {
@@ -1698,6 +1702,71 @@
           ]
         }
       ]
+    },
+    "_alias_arged_stmt": {
+      "type": "PREC_LEFT",
+      "value": 1,
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "command",
+            "content": {
+              "type": "ALIAS",
+              "content": {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "$*"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": "$**"
+                  }
+                ]
+              },
+              "named": true,
+              "value": "cmd_identifier"
+            }
+          },
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "command",
+                "content": {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "STRING",
+                    "value": "$"
+                  },
+                  "named": true,
+                  "value": "cmd_identifier"
+                }
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "FIELD",
+                    "name": "args",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "args"
+                    }
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     },
     "_simple_arged_stmt_question": {
       "type": "PREC_LEFT",

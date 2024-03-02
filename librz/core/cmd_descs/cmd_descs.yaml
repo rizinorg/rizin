@@ -96,9 +96,8 @@ commands:
             comment: Run foo.py python script and pass it arg1 as argument
     details_cb: rz_hash_bang_details_cb
   - name: $
-    cname: cmd_alias
     summary: Alias commands and strings
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_alias
   - name: "&"
     summary: Manage tasks
     subcommands: cmd_tasks

@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_alias
+commands:
+  - name: "$"
+    cname: alias
+    summary: List all defined aliases / Define alias (see %$? for help on $variables)
+    args_str: "[alias[=cmd] [args...]]"
+    args:
+      - name: args
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_LAST
+        no_space: true
+        optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "$"
+            comment: "List all defined aliases"
+          - text: "$"
+            arg_str: "foo:=123"
+            comment: "Alias for 'f foo @ 123'"
+          - text: "$"
+            arg_str: "foo-=4"
+            comment: "Alias for 'fm $$-4 @ foo'"
+          - text: "$"
+            arg_str: "foo+=4"
+            comment: "Alias for 'fm $$+4 @ foo'"
+          - text: "$"
+            arg_str: "foo"
+            comment: "Alias for 's foo' (note that command aliases can override flag resolution)"
+          - text: "$"
+            arg_str: "dis=base64:cGRm"
+            comment: "Alias this base64 encoded text to be executed when $dis is called"
+          - text: "$"
+            arg_str: "dis=$hello world"
+            comment: "Alias this text to be printed when $dis is called"
+          - text: "$"
+            arg_str: "dis=-"
+            comment: "Open cfg.editor to set the new value for dis alias"
+          - text: "$"
+            arg_str: "dis=\"af;pdf\""
+            comment: "Create command - analyze to show function"
+          - text: "$"
+            arg_str: "test=\\#!pipe node /tmp/test.js"
+            comment: "Create command - rlangpipe script"
+          - text: "$"
+            arg_str: "dis="
+            comment: "Undefine alias"
+          - text: "$"
+            arg_str: "dis"
+            comment: "Execute the previously defined alias"
+          - text: "$"
+            arg_str: "dis?"
+            comment: "Show commands aliased by $dis"
+          - text: "$"
+            arg_str: "dis?n"
+            comment: "Show commands aliased by $dis, without a new line"
+  - name: "$*"
+    cname: alias_list_cmd_base64
+    summary: List all the aliases as rizin commands in base64
+    args: []
+  - name: "$**"
+    cname: alias_list_cmd_plain
+    summary: Same as above, but using plain text
+    args: []
