@@ -285,7 +285,7 @@ tu xoo
 tuc xoo
 EOF
 EXPECT=<<EOF
-pf "ddd x y z"
+pf "0ddd x y z"
 union xoo {
 	int x;
 	int y;
@@ -313,7 +313,7 @@ te bar
 tec bar
 EOF
 EXPECT=<<EOF
-pf "i b"
+pf "0i b"
 union bla {
 	uint b;
 };
@@ -744,7 +744,7 @@ tu x
 tuc x
 EOF
 EXPECT=<<EOF
-pf "fd a b"
+pf "0fd a b"
 union x {
 	float a;
 	int b;
@@ -842,7 +842,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tp
+NAME=tp struct
 FILE==
 CMDS=<<EOF
 td "struct person { int age; char name[10]; }"
@@ -858,6 +858,59 @@ EXPECT=<<EOF
  name : 0x0000000e = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
   age : 0x0000000a = 19
  name : 0x0000000e = [ 'C', 'a', 'r', 'l', 'o', 's', '.', '.', '.', '.' ]
+EOF
+RUN
+
+NAME=tp union
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+td "union bla { int a; int b; float c; }"
+td "struct foo { union poo { int a; int b; long long c; } q; char *p; }"
+td "struct alb { int a; union moo { int t; char b; long long c; } f; void *goo; }"
+td "struct simple { union y { int a; int b; } g; void *val_4; void *val_5; void *val_6; }"
+wx 13ffaa00
+s 8
+w Carlossssssssssssssssssssssssssssss
+s 10
+t bla
+tp bla @ 0
+t foo
+tp foo @ 0
+t alb
+tp alb @ 0
+t simple
+tp simple @ 0
+EOF
+EXPECT=<<EOF
+pf "0ddf a b c"
+ a : 0x00000000 = 11206419
+ b : 0x00000000 = 11206419
+ c : 0x00000000 = 1.57035377e-38
+pf "?z (poo)q p"
+ q : 
+                 union<poo>
+   a : 0x00000000 = 11206419
+   b : 0x00000000 = 11206419
+   c : 0x00000000 = (qword)0x0000000000aaff13
+ p : 0x00000008 = "Carlossssssssssssssssssssssssssssss"
+pf "d?p a (moo)f goo"
+   a : 0x00000000 = 11206419
+   f : 
+                 union<moo>
+   t : 0x00000004 = 0
+   b : 0x00000004 = '.'
+   c : 0x00000004 = (qword)0x6c72614300000000
+ goo : 0x0000000c = (qword)0x737373737373736f
+pf "?ppp (y)g val_4 val_5 val_6"
+     g : 
+                 union<y>
+   a : 0x00000000 = 11206419
+   b : 0x00000000 = 11206419
+ val_4 : 0x00000004 = (qword)0x6c72614300000000
+ val_5 : 0x0000000c = (qword)0x737373737373736f
+ val_6 : 0x00000014 = (qword)0x7373737373737373
 EOF
 RUN
 
@@ -1257,7 +1310,7 @@ s 0x000006d2
 pd 1
 EOF
 EXPECT=<<EOF
-pf "[50]c[50]c[100]c title author subject"
+pf "0[50]c[50]c[100]c title author subject"
 var union Books books @ stack - 0x78
 |           0x000006d2      488d4590       lea   rax, [books.title]
 EOF
@@ -2210,9 +2263,9 @@ tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pfn "foo" "dc a b"
-pf "dc a b"
-pf "dc a b"
+pfn "foo" "0dc a b"
+pf "0dc a b"
+pf "0dc a b"
 EOF
 RUN
 
