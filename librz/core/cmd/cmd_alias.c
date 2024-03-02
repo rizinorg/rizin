@@ -4,6 +4,7 @@
 #include "rz_cmd.h"
 #include "rz_core.h"
 
+// TODO: Refactor out code for $* and $**
 static int rz_cmd_alias(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int i = strlen(input);
