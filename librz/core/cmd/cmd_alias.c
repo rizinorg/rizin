@@ -4,33 +4,8 @@
 #include "rz_cmd.h"
 #include "rz_core.h"
 
-static const char *help_msg_dollar[] = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (see %$? for help on $variables)",
-	"$", "", "list all defined aliases",
-	"$*", "", "list all the aliases as rizin commands in base64",
-	"$**", "", "same as above, but using plain text",
-	"$", "foo:=123", "alias for 'f foo @ 123'",
-	"$", "foo-=4", "alias for 'fm $$-4 @ foo'",
-	"$", "foo+=4", "alias for 'fm $$+4 @ foo'",
-	"$", "foo", "alias for 's foo' (note that command aliases can override flag resolution)",
-	"$", "dis=base64:cGRm", "alias this base64 encoded text to be executed when $dis is called",
-	"$", "dis=$hello world", "alias this text to be printed when $dis is called",
-	"$", "dis=-", "open cfg.editor to set the new value for dis alias",
-	"\"$", "dis=af;pdf\"", "create command - analyze to show function", // Move quotation marks inside
-	"\"$", "test=#!pipe node /tmp/test.js\"", "create command - rlangpipe script", // Move quotation marks inside
-	"$", "dis=", "undefine alias",
-	"$", "dis", "execute the previously defined alias",
-	"$", "dis?", "show commands aliased by $dis",
-	"$", "dis?n", "show commands aliased by $dis, without a new line",
-	NULL
-};
-
 static int rz_cmd_alias(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
-	if (*input == '?') {
-		rz_core_cmd_help(core, help_msg_dollar);
-		return 0;
-	}
 	int i = strlen(input);
 	char *buf = malloc(i + 2);
 	if (!buf) {
