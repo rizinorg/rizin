@@ -10,6 +10,7 @@
 static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
+static const RzCmdDescDetail alias_details[2];
 static const RzCmdDescDetail oparen__details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
@@ -85,6 +86,7 @@ static const RzCmdDescDetail cmd_shell_env_details[3];
 static const RzCmdDescArg system_args[3];
 static const RzCmdDescArg system_to_cons_args[3];
 static const RzCmdDescArg hash_bang_args[3];
+static const RzCmdDescArg alias_args[2];
 static const RzCmdDescArg tasks_args[2];
 static const RzCmdDescArg tasks_transient_args[2];
 static const RzCmdDescArg tasks_output_args[2];
@@ -961,8 +963,62 @@ static const RzCmdDescHelp hash_bang_help = {
 	.args = hash_bang_args,
 };
 
-static const RzCmdDescHelp cmd_alias_help = {
+static const RzCmdDescHelp dollar__help = {
 	.summary = "Alias commands and strings",
+};
+static const RzCmdDescDetailEntry alias_Examples_detail_entries[] = {
+	{ .text = "$", .arg_str = NULL, .comment = "List all defined aliases" },
+	{ .text = "$", .arg_str = "foo:=123", .comment = "Alias for 'f foo @ 123'" },
+	{ .text = "$", .arg_str = "foo-=4", .comment = "Alias for 'fm $$-4 @ foo'" },
+	{ .text = "$", .arg_str = "foo+=4", .comment = "Alias for 'fm $$+4 @ foo'" },
+	{ .text = "$", .arg_str = "foo", .comment = "Alias for 's foo' (note that command aliases can override flag resolution)" },
+	{ .text = "$", .arg_str = "dis=base64:cGRm", .comment = "Alias this base64 encoded text to be executed when $dis is called" },
+	{ .text = "$", .arg_str = "dis=$hello world", .comment = "Alias this text to be printed when $dis is called" },
+	{ .text = "$", .arg_str = "dis=-", .comment = "Open cfg.editor to set the new value for dis alias" },
+	{ .text = "$", .arg_str = "\"dis=af;pdf\"", .comment = "Create command - analyze to show function" },
+	{ .text = "$", .arg_str = "\"test=#!pipe node /tmp/test.js\"", .comment = "Create command - rlangpipe script" },
+	{ .text = "$", .arg_str = "dis=", .comment = "Undefine alias" },
+	{ .text = "$", .arg_str = "dis", .comment = "Execute the previously defined alias" },
+	{ .text = "$", .arg_str = "dis?", .comment = "Show commands aliased by $dis" },
+	{ .text = "$", .arg_str = "dis?n", .comment = "Show commands aliased by $dis, without a new line" },
+	{ 0 },
+};
+static const RzCmdDescDetail alias_details[] = {
+	{ .name = "Examples", .entries = alias_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg alias_args[] = {
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+		.no_space = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp alias_help = {
+	.summary = "List all defined aliases / Define alias (see %$? for help on $variables)",
+	.args_str = "[alias[=cmd] [args...]]",
+	.details = alias_details,
+	.args = alias_args,
+};
+
+static const RzCmdDescArg alias_list_cmd_base64_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp alias_list_cmd_base64_help = {
+	.summary = "List all the aliases as rizin commands in base64",
+	.args = alias_list_cmd_base64_args,
+};
+
+static const RzCmdDescArg alias_list_cmd_plain_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp alias_list_cmd_plain_help = {
+	.summary = "Same as above, but using plain text",
+	.args = alias_list_cmd_plain_args,
 };
 
 static const RzCmdDescHelp and__help = {
@@ -19028,8 +19084,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *hash_bang_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "#!", rz_hash_bang_handler, &hash_bang_help);
 	rz_warn_if_fail(hash_bang_cd);
 
-	RzCmdDesc *cmd_alias_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "$", rz_cmd_alias, &cmd_alias_help);
-	rz_warn_if_fail(cmd_alias_cd);
+	RzCmdDesc *dollar__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "$", rz_alias_handler, &alias_help, &dollar__help);
+	rz_warn_if_fail(dollar__cd);
+	RzCmdDesc *alias_list_cmd_base64_cd = rz_cmd_desc_argv_new(core->rcmd, dollar__cd, "$*", rz_alias_list_cmd_base64_handler, &alias_list_cmd_base64_help);
+	rz_warn_if_fail(alias_list_cmd_base64_cd);
+
+	RzCmdDesc *alias_list_cmd_plain_cd = rz_cmd_desc_argv_new(core->rcmd, dollar__cd, "$**", rz_alias_list_cmd_plain_handler, &alias_list_cmd_plain_help);
+	rz_warn_if_fail(alias_list_cmd_plain_cd);
 
 	RzCmdDesc *and__cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "&", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_tasks_handler, &tasks_help, &and__help);
 	rz_warn_if_fail(and__cd);

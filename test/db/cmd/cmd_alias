@@ -12,7 +12,7 @@ RUN
 NAME=test $alias quotes
 FILE==
 CMDS=<<EOF
-"$foo=echo hello;echo world"
+$foo="echo hello;echo world"
 $foo
 EOF
 EXPECT=<<EOF

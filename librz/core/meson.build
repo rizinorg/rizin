@@ -66,6 +66,7 @@ rz_core_sources = [
   'p/core_java.c',
   cmd_descs_ch,
   'cmd/cmd.c',
+  'cmd/cmd_alias.c',
   #'cmd/cmd_analysis.c',
   'cmd/cmd_api.c',
   'cmd/cmd_block.c',
