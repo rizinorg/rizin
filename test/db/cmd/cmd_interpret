@@ -25,7 +25,7 @@ CMDS=<<EOF
 $foo=#!pipe echo hello
 $foo
 echo --
-"$foo=#!pipe echo hello"
+$foo="#!pipe echo hello"
 $foo
 echo --
 $-*

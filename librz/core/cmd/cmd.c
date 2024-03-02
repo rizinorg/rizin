@@ -61,16 +61,6 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 		} \
 	}
 
-#define DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL(core, cmd_, named_cmd) \
-	{ \
-		RzCmdDescriptor *d = RZ_NEW0(RzCmdDescriptor); \
-		if (d) { \
-			d->cmd = #cmd_; \
-			d->help_msg = help_msg_##named_cmd; \
-			rz_list_append((core)->cmd_descriptors, d); \
-		} \
-	}
-
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek);
 
 #include "cmd_debug.c"
@@ -79,27 +69,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
 #include "cmd_math.c"
-
-static const char *help_msg_dollar[] = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (see %$? for help on $variables)",
-	"$", "", "list all defined aliases",
-	"$*", "", "list all the aliases as rizin commands in base64",
-	"$**", "", "same as above, but using plain text",
-	"$", "foo:=123", "alias for 'f foo @ 123'",
-	"$", "foo-=4", "alias for 'fm $$-4 @ foo'",
-	"$", "foo+=4", "alias for 'fm $$+4 @ foo'",
-	"$", "foo", "alias for 's foo' (note that command aliases can override flag resolution)",
-	"$", "dis=base64:cGRm", "alias this base64 encoded text to be executed when $dis is called",
-	"$", "dis=$hello world", "alias this text to be printed when $dis is called",
-	"$", "dis=-", "open cfg.editor to set the new value for dis alias",
-	"\"$", "dis=af;pdf\"", "create command - analyze to show function",
-	"\"$", "test=#!pipe node /tmp/test.js\"", "create command - rlangpipe script",
-	"$", "dis=", "undefine alias",
-	"$", "dis", "execute the previously defined alias",
-	"$", "dis?", "show commands aliased by $dis",
-	"$", "dis?n", "show commands aliased by $dis, without a new line",
-	NULL
-};
 
 static const char *help_msg_k[] = {
 	"Usage:",
@@ -272,149 +241,6 @@ static int rz_core_cmd_nullcallback(void *data) {
 	}
 	rz_core_cmd_lastcmd_repeat(core, true);
 	return 1;
-}
-
-RZ_IPI int rz_cmd_alias(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (*input == '?') {
-		rz_core_cmd_help(core, help_msg_dollar);
-		return 0;
-	}
-	int i = strlen(input);
-	char *buf = malloc(i + 2);
-	if (!buf) {
-		return 0;
-	}
-	*buf = '$'; // prefix aliases with a dollar
-	memcpy(buf + 1, input, i + 1);
-	char *q = strchr(buf, ' ');
-	char *def = strchr(buf, '=');
-	char *desc = strchr(buf, '?');
-	char *nonl = strchr(buf, 'n');
-
-	int defmode = 0;
-	if (def && def > buf) {
-		char *prev = def - 1;
-		switch (*prev) {
-		case ':':
-			defmode = *prev;
-			*prev = 0;
-			break;
-		case '+':
-			defmode = *prev;
-			*prev = 0;
-			break;
-		case '-':
-			defmode = *prev;
-			*prev = 0;
-			break;
-		}
-	}
-
-	/* create alias */
-	if ((def && q && (def < q)) || (def && !q)) {
-		*def++ = 0;
-		size_t len = strlen(def);
-		if (defmode) {
-			ut64 at = rz_num_math(core->num, def);
-			switch (defmode) {
-			case ':':
-				rz_flag_set(core->flags, buf + 1, at, 1);
-				return 1;
-			case '+':
-				at = rz_num_get(core->num, buf + 1) + at;
-				rz_flag_set(core->flags, buf + 1, at, 1);
-				return 1;
-			case '-':
-				at = rz_num_get(core->num, buf + 1) - at;
-				rz_flag_set(core->flags, buf + 1, at, 1);
-				return 1;
-			}
-		}
-		/* Remove quotes */
-		if (len > 0 && (def[0] == '\'') && (def[len - 1] == '\'')) {
-			def[len - 1] = 0x00;
-			def++;
-		}
-		if (!q || (q && q > def)) {
-			if (*def) {
-				if (!strcmp(def, "-")) {
-					char *v = rz_cmd_alias_get(core->rcmd, buf, 0);
-					char *n = rz_core_editor(core, NULL, v);
-					if (n) {
-						rz_cmd_alias_set(core->rcmd, buf, n, 0);
-						free(n);
-					}
-				} else {
-					rz_cmd_alias_set(core->rcmd, buf, def, 0);
-				}
-			} else {
-				rz_cmd_alias_del(core->rcmd, buf);
-			}
-		}
-		/* Show command for alias */
-	} else if (desc && !q) {
-		*desc = 0;
-		char *v = rz_cmd_alias_get(core->rcmd, buf, 0);
-		if (v) {
-			if (nonl == desc + 1) {
-				rz_cons_print(v);
-			} else {
-				rz_cons_println(v);
-			}
-			free(buf);
-			return 1;
-		} else {
-			RZ_LOG_ERROR("core: unknown key '%s'\n", buf);
-		}
-	} else if (buf[1] == '*') {
-		/* Show aliases */
-		int i, count = 0;
-		char **keys = rz_cmd_alias_keys(core->rcmd, &count);
-		for (i = 0; i < count; i++) {
-			char *v = rz_cmd_alias_get(core->rcmd, keys[i], 0);
-			char *q = rz_base64_encode_dyn((const ut8 *)v, strlen(v));
-			if (buf[2] == '*') {
-				rz_cons_printf("%s=%s\n", keys[i], v);
-			} else {
-				rz_cons_printf("%s=base64:%s\n", keys[i], q);
-			}
-			free(q);
-		}
-	} else if (!buf[1]) {
-		int i, count = 0;
-		char **keys = rz_cmd_alias_keys(core->rcmd, &count);
-		for (i = 0; i < count; i++) {
-			rz_cons_println(keys[i]);
-		}
-	} else {
-		/* Execute alias */
-		if (q) {
-			*q = 0;
-		}
-		char *v = rz_cmd_alias_get(core->rcmd, buf, 0);
-		if (v) {
-			if (*v == '$') {
-				rz_cons_strcat(v + 1);
-				rz_cons_newline();
-			} else if (q) {
-				char *out = rz_str_newf("%s %s", v, q + 1);
-				rz_core_cmd0(core, out);
-				free(out);
-			} else {
-				rz_core_cmd0(core, v);
-			}
-		} else {
-			ut64 at = rz_num_get(core->num, buf + 1);
-			if (at != UT64_MAX) {
-				rz_core_seek(core, at, true);
-			} else {
-				RZ_LOG_ERROR("core: unknown alias '%s'\n", buf + 1);
-			}
-		}
-	}
-	free(buf);
-	return 0;
 }
 
 static int lang_run_file(RzCore *core, RzLang *lang, const char *file) {
@@ -5687,7 +5513,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		const char *description;
 		RzCmdCb cb;
 	} cmds[] = {
-		{ "$", "alias", rz_cmd_alias },
 		{ "/", "search kw, pattern aes", rz_cmd_search },
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "k", "perform sdb query", rz_cmd_kuery },
@@ -5707,7 +5532,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 			rz_cmd_add(core->rcmd, cmds[i].cmd, cmds[i].cb);
 		}
 	}
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL(core, $, dollar);
 
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, k);
 	cmd_descriptor_init(core);

@@ -201,6 +201,7 @@ module.exports = grammar({
         $._simple_arged_stmt,
         $._pointer_arged_stmt,
         $._macro_arged_stmt,
+        $._alias_arged_stmt,
         $._system_stmt,
         $._interpret_stmt,
         $._env_stmt,
@@ -212,6 +213,14 @@ module.exports = grammar({
       choice(
         field("command", alias(choice("(", "(-*", "(*"), $.cmd_identifier)),
         seq(field("command", alias("(-", $.cmd_identifier)), field("args", $.args)),
+      ),
+    _alias_arged_stmt: ($) =>
+      prec.left(
+        1,
+        choice(
+          field("command", alias(choice("$*", "$**"), $.cmd_identifier)),
+          seq(field("command", alias("$", $.cmd_identifier)), optional(field("args", $.args))),
+        ),
       ),
     _simple_arged_stmt_question: ($) =>
       prec.left(1, seq(field("command", alias($._help_stmt, $.cmd_identifier)), field("args", $.args))),
