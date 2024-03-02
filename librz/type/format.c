@@ -2817,8 +2817,9 @@ static void base_type_to_format_no_unfold(const RzTypeDB *typedb, RZ_NONNULL RzB
 	}
 	case RZ_BASE_TYPE_KIND_UNION: {
 		// In `pf` unions defined like structs but all have 0 offset,
-		// which is why it uses `0` character as a marker
-		rz_strbuf_append(format, "0");
+		// which is why it uses `0` character as a marker when being unfolded,
+		// but when folded, they use the same `?` character as structures.
+		rz_strbuf_append(format, "?");
 		rz_strbuf_appendf(fields, "(%s)%s ", type->name, identifier);
 		break;
 	}
@@ -2905,6 +2906,7 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 	case RZ_BASE_TYPE_KIND_UNION: {
 		// In `pf` unions defined like structs but all have 0 offset,
 		// which is why it uses `0` character as a marker
+		rz_strbuf_append(format, "0");
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&type->union_data.members, memb) {
 			const char *membtype = type_to_identifier(typedb, memb->type);
@@ -2999,7 +3001,8 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 		if (format) {
 			rz_strbuf_append(buf, format);
 		} else {
-			if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT) {
+			if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT ||
+				type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNION) {
 				rz_strbuf_append(buf, "?");
 			} else if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_ENUM) {
 				rz_strbuf_append(buf, "E");
