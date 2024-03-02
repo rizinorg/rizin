@@ -57,4 +57,3 @@ EXPECT=<<EOF
 {"string":"w0wgreat","offset":134520893,"section":".data","length":8,"type":"utf32be"}
 EOF
 RUN
-
