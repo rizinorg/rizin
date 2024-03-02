@@ -500,13 +500,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		}
 		SearchThreadData *std = (SearchThreadData *)rz_th_get_user(th);
 		if (std) {
-			void **iter;
-			RzBinString *bstr;
-			rz_pvector_foreach (std->results, iter) {
-				bstr = *iter;
-				rz_pvector_push(results, bstr);
-			}
-			std->results->v.len = 0;
+			rz_pvector_join(results, std->results);
 		}
 	}
 
