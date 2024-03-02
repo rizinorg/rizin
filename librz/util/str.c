@@ -4068,31 +4068,31 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 		ut32 leftovers = length - i;
 		if (leftovers > 4 && IS_PRINTABLE(buffer[i]) && buffer[i + 1] == 0 && buffer[i + 2] == 0 && buffer[i + 3] == 0) {
 			utf32le++;
-			if (utf32le > 2) {
+			if (utf32le > 2 && i > ascii + 1) {
 				enc = RZ_STRING_ENC_UTF32LE;
 				break;
 			}
 		} else if (leftovers > 4 && buffer[i] == 0 && buffer[i + 1] == 0 && buffer[i + 2] == 0 && IS_PRINTABLE(buffer[i + 3])) {
 			utf32be++;
-			if (utf32be > 2) {
+			if (utf32be > 2 && i > ascii + 1) {
 				enc = RZ_STRING_ENC_UTF32BE;
 				break;
 			}
 		}
 		if (leftovers > 2 && IS_PRINTABLE(buffer[i]) && buffer[i + 1] == 0) {
 			utf16le++;
-			if (utf16le > 2) {
+			if (utf16le > 2 && i > ascii + 1) {
 				enc = RZ_STRING_ENC_UTF16LE;
 				break;
 			}
 		} else if (leftovers > 2 && buffer[i] == 0 && IS_PRINTABLE(buffer[i + 1])) {
 			utf16be++;
-			if (utf16be > 2) {
+			if (utf16be > 2 && i > ascii + 1) {
 				enc = RZ_STRING_ENC_UTF16BE;
 				break;
 			}
 		}
-		if (IS_PRINTABLE(buffer[i]) || buffer[i] == ' ') {
+		if (IS_PRINTABLE(buffer[i]) || buffer[i] == ' ' || buffer[i] == '\0') {
 			ascii++;
 			if (ascii > length - 1) {
 				enc = RZ_STRING_ENC_8BIT;
