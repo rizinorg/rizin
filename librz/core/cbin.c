@@ -1671,6 +1671,7 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 	return true;
 }
 
+// TODO: (Jared) Analyze this function closely
 RZ_API bool rz_core_bin_apply_trycatch(RzCore *core, RzBinFile *binfile) {
 	rz_return_val_if_fail(core && binfile, false);
 	RzListIter *it;
@@ -1698,7 +1699,7 @@ RZ_API bool rz_core_bin_apply_trycatch(RzCore *core, RzBinFile *binfile) {
 			return false;
 		}
 		RzInterval itv = { tc->from, tc->to - tc->from - 1 };
-		if (!rz_rbtree_itv_insert(&core->analysis->exception_scopes_tree, itv, tc)) {
+		if (!rz_interval_tree_insert(&core->analysis->exception_scopes_tree, itv, tc)) {
 			return false;
 		}
 	}

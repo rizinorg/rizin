@@ -198,7 +198,8 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_list_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	// TODO (Jared): Implement
-	rz_rbtree_itv_free(&a->exception_scopes_tree);
+	// free a->exception_scopes_tree
+	// rz_rbtree_itv_free(&a->exception_scopes_tree);
 	ht_up_free(a->exception_scopes_ht);
 	free(a);
 	return NULL;

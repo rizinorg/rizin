@@ -2415,7 +2415,7 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		RzInterval itv = { rz_analysis_function_min_addr(fcn),
 			rz_analysis_function_max_addr(fcn) - rz_analysis_function_min_addr(fcn) };
 		// TODO (Jared): Implement exception_scopes_tree
-		exception_scopes = rz_rbtree_itv_all_intersect(fcn->analysis->exception_scopes_tree, itv);
+		exception_scopes = rz_interval_tree_all_intersect(fcn->analysis->exception_scopes_tree, itv);
 	}
 
 	rz_list_foreach (fcn->bbs, iter, bb) {

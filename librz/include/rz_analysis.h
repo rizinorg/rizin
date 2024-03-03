@@ -532,8 +532,9 @@ typedef struct rz_analysis_t {
 	HtPP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
-	RBItvTree /*<RzBinTrycatch *>*/ exception_scopes_tree;
-	// TODO (Jared): Find out the meanings of these. And why they're here (i.e., could they go somewhere else)
+	// TODO: (Jared) Find out the meanings of this. And why they're here (i.e., could they go somewhere else)
+	RzIntervalTree /*<RzBinTrycatch *>*/ exception_scopes_tree;
+	// TODO: (Jared) Find out the meanings of this. And why they're here (i.e., could they go somewhere else)
 	HtUP /*<ut64, RzList<RzBinTrycatch *> *>*/ *exception_scopes_ht;
 	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..
 	ut64 cmpval; ///< last compare value for jump table.
