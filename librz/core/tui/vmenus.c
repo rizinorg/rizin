@@ -890,7 +890,6 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			break;
 		case 'J':
 			if (selectPanel) {
-				printMode = 1;
 				delta += 40;
 			} else {
 				int rows = 0;
@@ -903,8 +902,9 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			break;
 		case 'K':
 			if (selectPanel) {
-				printMode = 1;
-				delta -= 40;
+				if (delta > 40) {
+					delta -= 40;
+				}
 			} else {
 				int rows = 0;
 				rz_cons_get_size(&rows);
