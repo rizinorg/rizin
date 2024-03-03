@@ -3,7 +3,7 @@
 
 #include "pic_midrange.h"
 
-static const PicMidrangeOpInfo
+static const PicMidrangeOpAsmInfo
 	pic_midrange_op_info[PIC_MIDRANGE_OPCODE_INVALID] = {
 		{ "nop", PIC_MIDRANGE_OP_ARGS_NONE },
 		{ "return", PIC_MIDRANGE_OP_ARGS_NONE },
@@ -11,6 +11,8 @@ static const PicMidrangeOpInfo
 		{ "option", PIC_MIDRANGE_OP_ARGS_NONE },
 		{ "sleep", PIC_MIDRANGE_OP_ARGS_NONE },
 		{ "clrwdt", PIC_MIDRANGE_OP_ARGS_NONE },
+		{ "clrf", PIC_MIDRANGE_OP_ARGS_7F },
+		{ "clrw", PIC_MIDRANGE_OP_ARGS_NONE },
 		{ "tris", PIC_MIDRANGE_OP_ARGS_2F },
 		{ "movwf", PIC_MIDRANGE_OP_ARGS_7F },
 		{ "clr", PIC_MIDRANGE_OP_ARGS_1D_7F },
@@ -118,6 +120,8 @@ PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr) {
 
 	switch (instr >> 7) { // 7 first MSB bits
 	case 0x1: return PIC_MIDRANGE_OPCODE_MOVWF;
+	case 0x2: return PIC_MIDRANGE_OPCODE_CLRW;
+	case 0x3: return PIC_MIDRANGE_OPCODE_CLRF;
 	case 0x62: return PIC_MIDRANGE_OPCODE_ADDFSR;
 	case 0x63: return PIC_MIDRANGE_OPCODE_MOVLP;
 	case 0x7e: return PIC_MIDRANGE_OPCODE_MOVIW_2;
@@ -153,26 +157,13 @@ PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr) {
 }
 
 /**
- * \brief Get \c PicMidrangeOpArgs corresponding to given \c PicMidrangeOpcode.
- *
- * \param opcode
- * \return Corresponding \c OpArgs enum, -1 on failure.
- * */
-PicMidrangeOpArgs pic_midrange_get_opargs(PicMidrangeOpcode opcode) {
-	if (opcode >= PIC_MIDRANGE_OPCODE_INVALID) {
-		return -1;
-	}
-	return pic_midrange_op_info[opcode].args;
-}
-
-/**
  * \brief Get opcode information (mnemonic and arguments) corresponding
  * to a given \c PicMidrangeOpcode.
  *
  * \param opcode
  * \return \c PicMidrangeOpInfo pointer.
  * */
-const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
+const PicMidrangeOpAsmInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
 	if (opcode >= PIC_MIDRANGE_OPCODE_INVALID) {
 		return NULL;
 	}
@@ -189,7 +180,7 @@ const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
  *
  * \return Number of decoded bytes (2 on success, 1 on failure).
  * */
-int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l) {
+int pic_midrange_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	char fsr_op[6];
 	st16 branch;
 
@@ -209,7 +200,7 @@ int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l) {
 		EMIT_INVALID
 	}
 
-	const PicMidrangeOpInfo *op_info = pic_midrange_get_op_info(opcode);
+	const PicMidrangeOpAsmInfo *op_info = pic_midrange_get_op_info(opcode);
 	if (!op_info) {
 		EMIT_INVALID
 	}
@@ -223,16 +214,20 @@ int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l) {
 		rz_asm_op_set_asm(op, op_info->mnemonic);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_2F:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic,
+		rz_asm_op_setf_asm(op, "%s 0x%x",
+			op_info->mnemonic,
 			PIC_MIDRANGE_OP_ARGS_2F_GET_F(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_7F:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic,
+		rz_asm_op_setf_asm(op, "%s 0x%x",
+			op_info->mnemonic,
 			PIC_MIDRANGE_OP_ARGS_7F_GET_F(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1D_7F:
-		rz_asm_op_setf_asm(op, "%s 0x%x, %c", op_info->mnemonic,
-			PIC_MIDRANGE_OP_ARGS_7F_GET_F(instr));
+		rz_asm_op_setf_asm(op, "%s 0x%x, %c",
+			op_info->mnemonic,
+			PIC_MIDRANGE_OP_ARGS_7F_GET_F(instr),
+			PIC_MIDRANGE_OP_ARGS_7F_GET_F(instr) >> 7 ? 'f' : 'w');
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1N_6K:
 		if (opcode == PIC_MIDRANGE_OPCODE_ADDFSR) {

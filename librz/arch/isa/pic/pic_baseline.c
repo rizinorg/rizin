@@ -197,7 +197,7 @@ const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	return &pic_baseline_op_info[opcode];
 }
 
-int pic_baseline_disassemble(RzAsmOp *op, const ut8 *b, int l) {
+int pic_baseline_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 #define EMIT_INVALID \
 	{ \
 		op->size = 1; \

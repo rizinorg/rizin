@@ -12,11 +12,11 @@
 static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	int res = -1;
 	if (a->cpu && strcasecmp(a->cpu, "baseline") == 0) {
-		res = pic_baseline_disassemble(op, b, l);
+		res = pic_baseline_disassemble(a, op, b, l);
 	} else if (a->cpu && strcasecmp(a->cpu, "midrange") == 0) {
-		res = pic_midrange_disassemble(op, b, l);
-	} else if (a->cpu && strcasecmp(a->cpu, "pic18") == 0) {
-		res = pic_pic18_disassemble(op, b, l);
+		res = pic_midrange_disassemble(a, op, b, l);
+	} else if (a->cpu && (strcasecmp(a->cpu, "pic18") == 0 || RZ_STR_EQ(a->cpu, "pic"))) {
+		res = pic_pic18_disassemble(a, op, b, l);
 	}
 	return op->size = res;
 }
@@ -24,7 +24,7 @@ static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 RzAsmPlugin rz_asm_plugin_pic = {
 	.name = "pic",
 	.arch = "pic",
-	.cpus = "baseline,midrange,pic18",
+	.cpus = "pic18,baseline,midrange",
 	.bits = 8,
 	.license = "LGPL3",
 	.desc = "PIC disassembler",

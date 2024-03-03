@@ -5,7 +5,7 @@ d "andwf 0x85, 1, 1" 8517
 d "bcf 0x42, 7, 1" 429f
 d "bnn 0xfa" fae7
 d "bra 0x51e" 1ed5
-d "call 0x612a1, 1" a1ed12f6
+d "call 0xc2542, 1" a1ed12f6
 d "clrf 0x15, 0" 156a
 d "comf 0x48, 0, 0" 481c
 d "cpfseq 0x71, 1" 7163
