@@ -14399,7 +14399,7 @@ static const RzCmdDescArg print_string_auto_detect_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_string_auto_detect_help = {
-	.summary = "Print the autodetected string at the current offset (not zero-terminated)",
+	.summary = "Print the autodetected string at the current offset (null->zero-terminated, block->block-terminated)",
 	.args = print_string_auto_detect_args,
 };
 

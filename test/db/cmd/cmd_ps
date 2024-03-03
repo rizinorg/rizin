@@ -118,3 +118,36 @@ const char s[STRING_SIZE] = "\x90\x91\x92\x41\x42\x43\x22\x90\x91\x92\x41\x42\x4
                             "\x92\x41\x42\x43\x22";
 EOF
 RUN
+
+NAME=ps ascii detection with block/zero-terminated
+FILE==
+CMDS=<<EOF
+o malloc://512
+wx 4a757374206c696b652070696e656170 ; sd +16
+wx 706c65206f6e2070697a7a612c207468 ; sd +16
+wx 6973207461736b2f7468726561642070 ; sd +16
+wx 6f727420646f65736e27742062656c6f ; sd +16
+wx 6e6720686572652e204025733a256400 ; sd +16
+wx 636f6d2e6170706c652e707269766174 ; sd +16
+wx 652e7461736b5f706f6c696379007374 ; sd +16
+wx 72616e6765207461736b20666c61766f ; sd +16
+wx 72204025733a25640075736572737061 ; sd +16
+wx 63652068617320636f6e74726f6c2061 ; sd +16
+wx 636365737320746f2061206b65726e65 ; sd +16
+wx 6c206d6170202570207468726f756768 ; sd +16
+wx 207461736b202570204025733a256400 ; sd +16
+wx 737472616e6765207468726561642066 ; sd +16
+wx 6c61766f72204025733a256400736861 ; sd +16
+wx 7265642e00646174612e007368617265 ; sd -256
+
+ps block
+echo \n
+ps null
+EOF
+EXPECT=<<EOF
+Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d\x00com.apple.private.task_policy\x00strange task flavor @%s:%d\x00userspace has control access to a kernel map %p through task %p @%s:%d\x00strange thread flavor @%s:%d\x00shared.\x00data.\x00share
+
+
+Just like pineapple on pizza, this task/thread port doesn't belong here. @%s:%d
+EOF
+RUN

@@ -207,13 +207,15 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 			goto java_class_parse_bad;
 		}
 		for (ut32 i = 0; i < bin->methods_count; ++i) {
+			if (is_eob(buf)) {
+				goto java_class_parse_bad;
+			}
 			offset = rz_buf_tell(buf) + base;
 			bin->methods[i] = java_method_new(bin->constant_pool,
 				bin->constant_pool_count, buf, offset, is_oak);
-		}
-		if (is_eob(buf)) {
-			rz_warn_if_reached();
-			goto java_class_parse_bad;
+			if (!bin->methods[i]) {
+				goto java_class_parse_bad;
+			}
 		}
 	}
 

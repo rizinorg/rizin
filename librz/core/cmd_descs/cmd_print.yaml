@@ -1093,7 +1093,7 @@ commands:
     summary: Print string at the current offset
     subcommands:
       - name: ps
-        summary: Print the autodetected string at the current offset (not zero-terminated)
+        summary: Print the autodetected string at the current offset (null->zero-terminated, block->block-terminated)
         cname: print_string_auto_detect
         modes:
           - RZ_OUTPUT_MODE_STANDARD

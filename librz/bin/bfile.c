@@ -456,12 +456,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 
 	if (o->plugin && o->plugin->hashes) {
 		RzPVector *plugin_hashes = o->plugin->hashes(bf);
-		void **it;
-		rz_pvector_foreach (plugin_hashes, it) {
-			RzBinFileHash *h = *it;
-			rz_pvector_push(file_hashes, h);
-		}
-		plugin_hashes->v.free = NULL;
+		rz_pvector_join(file_hashes, plugin_hashes);
 		rz_pvector_free(plugin_hashes);
 	}
 
