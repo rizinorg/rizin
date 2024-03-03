@@ -457,15 +457,15 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 #define KASE(_num, _reg) \
 	case _num: return #_reg;
 
-#include "librz/analysis/arch/arm/arm_dwarf_regnum_table.h"
-#include "hexagon_dwarf_reg_num_table.inc"
-#include "librz/analysis/arch/ppc/ppc_dwarf_regnum_table.h"
-#include "librz/analysis/arch/v850/v850_dwarf_reg_num_table.h"
-#include "librz/analysis/arch/rl78/rl78_dwarf_reg.h"
-#include "librz/analysis/arch/rx/rx_dwarf_regnum_table.h"
-#include "librz/analysis/arch/sh/sh_dwarf_regnum_table.h"
-#include "librz/analysis/arch/tricore/tricore_dwarf_regnum_table.h"
-#include "librz/analysis/arch/x86/x86_dwarf_regnum_table.h"
+#include <arm/arm_dwarf_regnum_table.h>
+#include <hexagon/hexagon_dwarf_reg_num_table.inc>
+#include <ppc/ppc_dwarf_regnum_table.h>
+#include <v850/v850_dwarf_reg_num_table.h>
+#include <rl78/rl78_dwarf_reg.h>
+#include <rx/rx_dwarf_regnum_table.h>
+#include <sh/sh_dwarf_regnum_table.h>
+#include <tricore/tricore_dwarf_regnum_table.h>
+#include <x86/x86_dwarf_regnum_table.h>
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name

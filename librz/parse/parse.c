@@ -8,7 +8,7 @@
 #include <rz_types.h>
 #include <rz_parse.h>
 #include <rz_lib.h>
-#include <config.h>
+#include "rz_parse_plugins.h"
 
 RZ_LIB_VERSION(rz_parse);
 

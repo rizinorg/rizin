@@ -1,7 +1,7 @@
 project('rizin', 'c',
   version: 'v0.8.0',
   license: 'LGPL3',
-  meson_version: '>=0.55.0',
+  meson_version: '>=0.57.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
@@ -686,8 +686,7 @@ test_env_common_path = []
 build_root = meson.current_build_dir()
 if host_machine.system() == 'windows'
   test_env_common_path += [
-    build_root / 'librz' / 'analysis',
-    build_root / 'librz' / 'asm',
+    build_root / 'librz' / 'arch',
     build_root / 'librz' / 'bin',
     build_root / 'librz' / 'bp',
     build_root / 'librz' / 'config',
@@ -817,8 +816,7 @@ foreach plugin : hash_plugins.get('list')
 endforeach
 
 summary({
-  'Analysis Plugins': analysis_plugins.get('list'),
-  'Assembler Plugins': asm_plugins.get('list'),
+  'Arch Plugins': arch_plugins.get('list'),
   'Binary Plugins': bin_plugins.get('list'),
   'BinXtr Plugins': bin_xtr_plugins.get('list'),
   'Breakpoint Plugins': bp_plugins.get('list'),
@@ -832,4 +830,3 @@ summary({
   'Parse Plugins': parse_plugins.get('list'),
   'Demangler Plugins': demangler_plugins.get('list'),
 }, section: 'Plugins', list_sep: ', ')
-

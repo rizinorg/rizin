@@ -8,7 +8,7 @@
 #include <rz_bin.h>
 
 #include "../format/java/class_bin.h"
-#include "../../asm/arch/java/const.h"
+#include "../../arch/isa/java/const.h"
 
 #define rz_bin_file_get_java_class(bf) ((RzBinJavaClass *)bf->o->bin_obj)
 

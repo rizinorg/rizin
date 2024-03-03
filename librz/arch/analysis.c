@@ -6,12 +6,8 @@
 #include <rz_util.h>
 #include <rz_list.h>
 #include <rz_util/rz_path.h>
+#include <rz_arch.h>
 #include <rz_lib.h>
-#include <config.h>
-
-RZ_LIB_VERSION(rz_analysis);
-
-static RzAnalysisPlugin *analysis_static_plugins[] = { RZ_ANALYSIS_STATIC_PLUGINS };
 
 /**
  * \brief Returns the default size byte width of memory access operations.
@@ -76,7 +72,6 @@ static void global_kv_free(HtPPKv *kv) {
 }
 
 RZ_API RzAnalysis *rz_analysis_new(void) {
-	int i;
 	RzAnalysis *analysis = RZ_NEW0(RzAnalysis);
 	if (!analysis) {
 		return NULL;
@@ -129,8 +124,13 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_analysis_set_bits(analysis, 32);
 	analysis->plugins = rz_list_new();
 	if (analysis->plugins) {
-		for (i = 0; i < RZ_ARRAY_SIZE(analysis_static_plugins); i++) {
-			rz_analysis_plugin_add(analysis, analysis_static_plugins[i]);
+		const size_t n_plugins = rz_arch_get_n_plugins();
+		for (size_t i = 0; i < n_plugins; i++) {
+			RzAnalysisPlugin *plugin = rz_arch_get_analysis_plugin(i);
+			if (!plugin) {
+				continue;
+			}
+			rz_analysis_plugin_add(analysis, plugin);
 		}
 	}
 	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);

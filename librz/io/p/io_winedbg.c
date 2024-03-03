@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "rz_io_plugins.h"
+
 static RzSocket *gs = NULL;
 
 RZ_PACKED(struct winedbg_x86_32 {

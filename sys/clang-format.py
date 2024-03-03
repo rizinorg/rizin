@@ -25,12 +25,8 @@ dirlist = [
 
 skiplist = [
     "/gnu/",
-    "librz/asm/arch/vax/",
-    "librz/asm/arch/riscv/",
-    "librz/asm/arch/sh/gnu/",
+    "librz/arch/isa_gnu/",
     "librz/asm/arch/i8080/",
-    "librz/asm/arch/z80/",
-    "librz/asm/arch/avr/",
     "librz/asm/arch/arm/aarch64/",
     "librz/hash/xxhash/",
     "librz/bin/mangling/cxx/",
@@ -38,7 +34,6 @@ skiplist = [
     "librz/util/bdiff.c",
     "librz/asm/arch/tms320/c55x/table.h",
     "librz/include/sflib/",
-    "librz/asm/arch/include/opcode/",
 ]
 
 patterns = ["*.c", "*.cpp", "*.h", "*.hpp", "*.inc"]

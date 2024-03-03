@@ -16,9 +16,6 @@
 #include <rz_asm.h>
 #define USE_R2 1
 #include <spp.h>
-#include <config.h>
-
-RZ_LIB_VERSION(rz_asm);
 
 /**
  * \brief Checks if the first character of \p c is a digit character
@@ -110,8 +107,6 @@ static char *directives[] = {
 	".echo", ".if", ".ifeq", ".endif",
 	".else", ".set", ".get", NULL
 };
-
-static RzAsmPlugin *asm_static_plugins[] = { RZ_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RzParse *p, RzStrBuf *s) {
 	char *op_buf_asm = rz_strbuf_get(s);
@@ -280,7 +275,6 @@ static void plugin_fini(RzAsm *a) {
 }
 
 RZ_API RzAsm *rz_asm_new(void) {
-	int i;
 	RzAsm *a = RZ_NEW0(RzAsm);
 	if (!a) {
 		return NULL;
@@ -294,8 +288,14 @@ RZ_API RzAsm *rz_asm_new(void) {
 		free(a);
 		return NULL;
 	}
-	for (i = 0; i < RZ_ARRAY_SIZE(asm_static_plugins); i++) {
-		rz_asm_plugin_add(a, asm_static_plugins[i]);
+
+	const size_t n_plugins = rz_arch_get_n_plugins();
+	for (size_t i = 0; i < n_plugins; i++) {
+		RzAsmPlugin *plugin = rz_arch_get_asm_plugin(i);
+		if (!plugin) {
+			continue;
+		}
+		rz_asm_plugin_add(a, plugin);
 	}
 	return a;
 }

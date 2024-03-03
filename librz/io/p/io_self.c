@@ -6,6 +6,8 @@
 #include <rz_lib.h>
 #include <rz_cons.h>
 
+#include "rz_io_plugins.h"
+
 #if DEBUGGER
 #if __APPLE__
 #include <mach/vm_map.h>

@@ -37,10 +37,9 @@ static int rz_main_version_verify(int show) {
 		const char *name;
 		vc callback;
 	} vcs[] = {
-		{ "rz_analysis", rz_analysis_version },
 		{ "rz_lib", rz_lib_version },
 		{ "rz_egg", rz_egg_version },
-		{ "rz_asm", rz_asm_version },
+		{ "rz_arch", rz_arch_version },
 		{ "rz_bin", rz_bin_version },
 		{ "rz_cons", rz_cons_version },
 		{ "rz_flag", rz_flag_version },

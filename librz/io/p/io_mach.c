@@ -7,6 +7,8 @@
 #include <rz_lib.h>
 #include <rz_cons.h>
 
+#include "rz_io_plugins.h"
+
 #if __APPLE__ && DEBUGGER
 
 static int __get_pid(RzIODesc *desc);

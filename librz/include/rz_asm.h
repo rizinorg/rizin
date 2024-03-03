@@ -17,8 +17,6 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER(rz_asm);
-
 /* backward compatibility */
 #define RZ_ASM_ARCH_NONE  RZ_SYS_ARCH_NONE
 #define RZ_ASM_ARCH_X86   RZ_SYS_ARCH_X86
@@ -213,77 +211,6 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(RZ_NULLABLE const RzReg *reg, ut32 ana_op_type);
 RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORROW RzStrBuf *asm_str, RZ_NULLABLE const RzAsmParseParam *param);
 RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NULLABLE const RzAsmParseParam *param, RZ_NULLABLE const RzAsmTokenString *toks);
-
-/* plugin pointers */
-extern RzAsmPlugin rz_asm_plugin_6502;
-extern RzAsmPlugin rz_asm_plugin_8051;
-extern RzAsmPlugin rz_asm_plugin_amd29k;
-extern RzAsmPlugin rz_asm_plugin_arc;
-extern RzAsmPlugin rz_asm_plugin_arm_as;
-extern RzAsmPlugin rz_asm_plugin_arm_cs;
-extern RzAsmPlugin rz_asm_plugin_avr;
-extern RzAsmPlugin rz_asm_plugin_bf;
-extern RzAsmPlugin rz_asm_plugin_null;
-extern RzAsmPlugin rz_asm_plugin_chip8;
-extern RzAsmPlugin rz_asm_plugin_cil;
-extern RzAsmPlugin rz_asm_plugin_cr16;
-extern RzAsmPlugin rz_asm_plugin_cris_gnu;
-extern RzAsmPlugin rz_asm_plugin_dalvik;
-extern RzAsmPlugin rz_asm_plugin_dcpu16;
-extern RzAsmPlugin rz_asm_plugin_ebc;
-extern RzAsmPlugin rz_asm_plugin_gb;
-extern RzAsmPlugin rz_asm_plugin_h8300;
-extern RzAsmPlugin rz_asm_plugin_hexagon;
-extern RzAsmPlugin rz_asm_plugin_hexagon_gnu;
-extern RzAsmPlugin rz_asm_plugin_hppa_gnu;
-extern RzAsmPlugin rz_asm_plugin_i4004;
-extern RzAsmPlugin rz_asm_plugin_i8080;
-extern RzAsmPlugin rz_asm_plugin_java;
-extern RzAsmPlugin rz_asm_plugin_lanai_gnu;
-extern RzAsmPlugin rz_asm_plugin_lh5801;
-extern RzAsmPlugin rz_asm_plugin_lm32;
-extern RzAsmPlugin rz_asm_plugin_luac;
-extern RzAsmPlugin rz_asm_plugin_m68k_cs;
-extern RzAsmPlugin rz_asm_plugin_m680x_cs;
-extern RzAsmPlugin rz_asm_plugin_malbolge;
-extern RzAsmPlugin rz_asm_plugin_mcore;
-extern RzAsmPlugin rz_asm_plugin_mcs96;
-extern RzAsmPlugin rz_asm_plugin_mips_cs;
-extern RzAsmPlugin rz_asm_plugin_mips_gnu;
-extern RzAsmPlugin rz_asm_plugin_msp430;
-extern RzAsmPlugin rz_asm_plugin_nios2;
-extern RzAsmPlugin rz_asm_plugin_or1k;
-extern RzAsmPlugin rz_asm_plugin_pic;
-extern RzAsmPlugin rz_asm_plugin_ppc_as;
-extern RzAsmPlugin rz_asm_plugin_ppc_cs;
-extern RzAsmPlugin rz_asm_plugin_propeller;
-extern RzAsmPlugin rz_asm_plugin_riscv;
-extern RzAsmPlugin rz_asm_plugin_riscv_cs;
-extern RzAsmPlugin rz_asm_plugin_rl78;
-extern RzAsmPlugin rz_asm_plugin_rsp;
-extern RzAsmPlugin rz_asm_plugin_rx;
-extern RzAsmPlugin rz_asm_plugin_sh;
-extern RzAsmPlugin rz_asm_plugin_snes;
-extern RzAsmPlugin rz_asm_plugin_sparc_cs;
-extern RzAsmPlugin rz_asm_plugin_sparc_gnu;
-extern RzAsmPlugin rz_asm_plugin_spc700;
-extern RzAsmPlugin rz_asm_plugin_sysz;
-extern RzAsmPlugin rz_asm_plugin_tms320;
-extern RzAsmPlugin rz_asm_plugin_tms320c64x;
-extern RzAsmPlugin rz_asm_plugin_tricore;
-extern RzAsmPlugin rz_asm_plugin_v810;
-extern RzAsmPlugin rz_asm_plugin_v850;
-extern RzAsmPlugin rz_asm_plugin_vax;
-extern RzAsmPlugin rz_asm_plugin_wasm;
-extern RzAsmPlugin rz_asm_plugin_x86_as;
-extern RzAsmPlugin rz_asm_plugin_x86_cs;
-extern RzAsmPlugin rz_asm_plugin_x86_nasm;
-extern RzAsmPlugin rz_asm_plugin_x86_nz;
-extern RzAsmPlugin rz_asm_plugin_xap;
-extern RzAsmPlugin rz_asm_plugin_xcore_cs;
-extern RzAsmPlugin rz_asm_plugin_xtensa;
-extern RzAsmPlugin rz_asm_plugin_z80;
-extern RzAsmPlugin rz_asm_plugin_pyc;
 
 #endif
 

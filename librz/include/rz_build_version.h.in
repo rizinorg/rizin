@@ -8,4 +8,4 @@
 #define RZ_VERSION "@RZ_VERSION@"
 #mesondefine RZ_PACKAGER_VERSION
 #mesondefine RZ_PACKAGER
-#endif
+#endif /* RZ_BUILD_VERSION_H */

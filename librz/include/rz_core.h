@@ -5,6 +5,7 @@
 #define RZ_CORE_H
 
 #include <rz_main.h>
+#include <rz_arch.h>
 #include <rz_types.h>
 #include <rz_magic.h>
 #include <rz_agraph.h>
@@ -1233,10 +1234,6 @@ RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch);
 RZ_API ut32 rz_core_flirt_file_from_option_list(RZ_NONNULL const char *file_list);
 RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
 RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
-
-/* PLUGINS */
-extern RzCorePlugin rz_core_plugin_java;
-extern RzCorePlugin rz_core_plugin_dex;
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**
