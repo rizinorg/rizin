@@ -130,7 +130,6 @@
 
 #define NON_ZERO(x) rz_il_op_new_non_zero(x)
 #define IS_ZERO(x)  rz_il_op_new_is_zero(x)
-#define BITN(x, n)  IZ_ZERO(AND(SHIFTR0(x, n)), U8(1))
 #define MSB(x)      rz_il_op_new_msb(x)
 #define LSB(x)      rz_il_op_new_lsb(x)
 #define EQ(x, y)    rz_il_op_new_eq(x, y)
