@@ -30,7 +30,7 @@
 
 // TODO REWRITE THIS IS BECOMING A NIGHTMARE
 
-static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *addr64) {
+static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *addr64, bool read_float) {
 	float f = 0.0;
 	// assert sizeof (float) == sizeof (ut32))
 	// XXX 999 is used as an implicit buffer size, we should pass the buffer size to every function too, otherwise this code will give us some problems
@@ -42,7 +42,7 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 	if (len < 1) {
 		return 0;
 	}
-	if (len >= sizeof(float)) {
+	if (read_float && len >= sizeof(float)) {
 		f = rz_read_ble_float(buf, endian);
 	}
 	if (addr && len > 3) {
@@ -60,7 +60,7 @@ static int rz_get_size(RzNum *num, ut8 *buf, int endian, const char *s) {
 	if (s[0] == '*' && len >= 4) { // value pointed by the address
 		ut64 addr;
 		int offset = (int)rz_num_math(num, s + 1);
-		(void)updateAddr(buf + offset, 999, endian, &addr, NULL);
+		(void)updateAddr(buf + offset, 999, endian, &addr, NULL, false);
 		return addr;
 	}
 	// flag handling doesnt seems to work here
@@ -97,7 +97,7 @@ static void rz_type_format_quadword(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	updateAddr(buf + i, size - i, endian, NULL, &addr64);
+	updateAddr(buf + i, size - i, endian, NULL, &addr64, false);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv8 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 8 : 0));
 	} else if (MUSTSEE) {
@@ -116,7 +116,7 @@ static void rz_type_format_quadword(RzStrBuf *outbuf, int endian, int mode,
 				rz_strbuf_append(outbuf, "[ ");
 			}
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, NULL, &addr64);
+				updateAddr(buf + i, size - i, endian, NULL, &addr64, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "0x%016" PFMT64x, addr64);
 					if (elem == 0) {
@@ -141,7 +141,7 @@ static void rz_type_format_quadword(RzStrBuf *outbuf, int endian, int mode,
 		} else {
 			rz_strbuf_append(outbuf, "[ ");
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, NULL, &addr64);
+				updateAddr(buf + i, size - i, endian, NULL, &addr64, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr64);
 					if (elem == 0) {
@@ -499,7 +499,7 @@ static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL);
+	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
 	} else if (MUSTSEE) {
@@ -519,7 +519,7 @@ static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
 				rz_strbuf_appendf(outbuf, "[ ");
 			}
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
 				*(timestr + 24) = '\0';
 				if (elem == -1 || elem == 0) {
@@ -553,7 +553,7 @@ static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
 		} else {
 			rz_strbuf_append(outbuf, "[ ");
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
 				*(timestr + 24) = '\0';
 				if (elem == -1 || elem == 0) {
@@ -588,7 +588,7 @@ static void rz_type_format_hex(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL);
+	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
 	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
@@ -608,7 +608,7 @@ static void rz_type_format_hex(RzStrBuf *outbuf, int endian, int mode,
 				rz_strbuf_append(outbuf, "[ ");
 			}
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				if (elem == -1 || elem == 0) {
 					if (ISQUIET) {
 						if (addr == UT64_MAX || addr == UT32_MAX) {
@@ -641,7 +641,7 @@ static void rz_type_format_hex(RzStrBuf *outbuf, int endian, int mode,
 		} else {
 			rz_strbuf_append(outbuf, "[ ");
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
 					if (elem == 0) {
@@ -670,7 +670,7 @@ static void rz_type_format_int(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL);
+	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv4 %s @ %" PFMT64d "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
 	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
@@ -686,7 +686,7 @@ static void rz_type_format_int(RzStrBuf *outbuf, int endian, int mode,
 				rz_strbuf_append(outbuf, "[ ");
 			}
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%" PFMT64d, (st64)(st32)addr);
 					if (elem == 0) {
@@ -711,7 +711,7 @@ static void rz_type_format_int(RzStrBuf *outbuf, int endian, int mode,
 		} else {
 			rz_strbuf_append(outbuf, "[ ");
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
 					if (elem == 0) {
@@ -758,7 +758,7 @@ static void rz_type_format_octal(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL);
+	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
 	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
@@ -777,7 +777,7 @@ static void rz_type_format_octal(RzStrBuf *outbuf, int endian, int mode,
 				rz_strbuf_append(outbuf, "[ ");
 			}
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "0%08" PFMT64o, addr);
 					if (elem == 0) {
@@ -802,7 +802,7 @@ static void rz_type_format_octal(RzStrBuf *outbuf, int endian, int mode,
 		} else {
 			rz_strbuf_append(outbuf, "[ ");
 			while (size--) {
-				updateAddr(buf, i, endian, &addr, NULL);
+				updateAddr(buf, i, endian, &addr, NULL, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
 					if (elem == 0) {
@@ -831,7 +831,7 @@ static void rz_type_format_hexflag(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	updateAddr(buf + i, size - i, endian, &addr, NULL);
+	updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 4 : 0));
 	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
@@ -852,7 +852,7 @@ static void rz_type_format_hexflag(RzStrBuf *outbuf, int endian, int mode,
 				rz_strbuf_append(outbuf, "[ ");
 			}
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "0x%08" PFMT64x, addr);
 					if (elem == 0) {
@@ -877,7 +877,7 @@ static void rz_type_format_hexflag(RzStrBuf *outbuf, int endian, int mode,
 		} else {
 			rz_strbuf_append(outbuf, "[ ");
 			while (size--) {
-				updateAddr(buf + i, size - i, endian, &addr, NULL);
+				updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
 					if (elem == 0) {
@@ -1000,7 +1000,7 @@ static void rz_type_format_float(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	val_f = updateAddr(buf + i, 999, endian, &addr, NULL);
+	val_f = updateAddr(buf + i, 999, endian, &addr, NULL, true);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv4 %s @ 0x%08" PFMT64x "\n", setval,
 			seeki + ((elem >= 0) ? elem * 4 : 0));
@@ -1020,7 +1020,7 @@ static void rz_type_format_float(RzStrBuf *outbuf, int endian, int mode,
 				rz_strbuf_append(outbuf, "[ ");
 			}
 			while (size--) {
-				val_f = updateAddr(buf + i, 9999, endian, &addr, NULL);
+				val_f = updateAddr(buf + i, 9999, endian, &addr, NULL, true);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%.9g", val_f);
 					if (elem == 0) {
@@ -1054,7 +1054,7 @@ static void rz_type_format_double(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	updateAddr(buf + i, 999, endian, &addr, NULL);
+	updateAddr(buf + i, 999, endian, &addr, NULL, false);
 	val_f = rz_read_at_ble_double(buf, i, endian);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv8 %s @ 0x%08" PFMT64x "\n", setval,
@@ -1076,7 +1076,7 @@ static void rz_type_format_double(RzStrBuf *outbuf, int endian, int mode,
 			}
 			while (size--) {
 				// XXX this 999 is scary
-				updateAddr(buf + i, 9999, endian, &addr, NULL);
+				updateAddr(buf + i, 9999, endian, &addr, NULL, false);
 				val_f = rz_read_at_ble_double(buf, i, endian);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%.17g", val_f);
@@ -1438,9 +1438,9 @@ static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const cha
 		size %= ARRAYINDEX_COEF;
 	}
 	if (bytes == 8) {
-		updateAddr(buf + i, size - i, endian, NULL, &addr);
+		updateAddr(buf + i, size - i, endian, NULL, &addr, false);
 	} else {
-		updateAddr(buf + i, size - i, endian, &addr, NULL);
+		updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 	}
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv%d %s @ 0x%08" PFMT64x "\n", bytes, setval, seeki + ((elem >= 0) ? elem * (bytes) : 0));
@@ -1458,9 +1458,9 @@ static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const cha
 			}
 			while (size--) {
 				if (bytes == 8) {
-					updateAddr(buf + i, size - i, endian, NULL, &addr);
+					updateAddr(buf + i, size - i, endian, NULL, &addr, false);
 				} else {
-					updateAddr(buf + i, size - i, endian, &addr, NULL);
+					updateAddr(buf + i, size - i, endian, &addr, NULL, false);
 				}
 				if (elem == -1 || elem == 0) {
 					rz_type_format_num_specifier(outbuf, addr, bytes, sign);
@@ -1487,9 +1487,9 @@ static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const cha
 			rz_strbuf_append(outbuf, "[ ");
 			while (size--) {
 				if (bytes == 8) {
-					updateAddr(buf + i, size, endian, NULL, &addr);
+					updateAddr(buf + i, size, endian, NULL, &addr, false);
 				} else {
-					updateAddr(buf + i, size, endian, &addr, NULL);
+					updateAddr(buf + i, size, endian, &addr, NULL, false);
 				}
 				if (elem == -1 || elem == 0) {
 					rz_type_format_num_specifier(outbuf, addr, bytes, sign);
@@ -2128,9 +2128,9 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 			if (i + fs - 1 < len) { // should be +7 to avoid oobread on 'q'
 				// Max byte number where updateAddr will look into
 				if (len - i < 7) {
-					updateAddr(buf + i, THRESHOLD - (len - i), endian, &addr, &addr64);
+					updateAddr(buf + i, THRESHOLD - (len - i), endian, &addr, &addr64, false);
 				} else {
-					updateAddr(buf + i, len - i, endian, &addr, &addr64);
+					updateAddr(buf + i, len - i, endian, &addr, &addr64, false);
 				}
 				if (typedb->target->bits == 64) {
 					addr = addr64;
@@ -2223,7 +2223,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 				if (((i + 3) < len) || ((i + 7) < len)) {
 					// XXX this breaks pf *D
 					if (tmp != 'D') {
-						updateAddr(buf + i, len - i, endian, &addr, &addr64);
+						updateAddr(buf + i, len - i, endian, &addr, &addr64, false);
 					}
 				} else {
 					eprintf("(cannot read at 0x%08" PFMT64x ", block: %s, blocksize: 0x%x)\n",
