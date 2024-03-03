@@ -58,19 +58,20 @@ Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 off
 	ut64 base = offset - rz_buf_tell(buf);
 
 	if (!java_method_new_aux(buf, method)) {
-		free(method);
-		return NULL;
+		goto err;
 	}
 
 	if (method->attributes_count < 1) {
 		return method;
 	}
+	if (method->attributes_count * 6 + rz_buf_tell(buf) >= rz_buf_size(buf)) {
+		goto err;
+	}
 
 	method->attributes = RZ_NEWS0(Attribute *, method->attributes_count);
 	if (!method->attributes) {
-		free(method);
 		rz_warn_if_reached();
-		return NULL;
+		goto err;
 	}
 
 	for (ut32 i = 0; i < method->attributes_count; ++i) {
@@ -84,6 +85,9 @@ Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 off
 		}
 	}
 	return method;
+err:
+	free(method);
+	return NULL;
 }
 
 void java_method_free(Method *method) {
