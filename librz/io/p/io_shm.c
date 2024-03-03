@@ -1,9 +1,11 @@
 // SPDX-FileCopyrightText: 2008-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_io.h"
-#include "rz_lib.h"
+#include <rz_io.h>
+#include <rz_lib.h>
 #include <sys/types.h>
+
+#include "rz_io_plugins.h"
 
 #if HAVE_HEADER_LINUX_ASHMEM_H || HAVE_HEADER_SYS_SHM_H || __WINDOWS__
 #if HAVE_HEADER_LINUX_ASHMEM_H

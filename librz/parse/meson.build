@@ -4,28 +4,16 @@ parse_plugins_list = [
   'att2intel',
   'avr_pseudo',
   'chip8_pseudo',
-  'tms320_pseudo',
   'dalvik_pseudo',
   'm68k_pseudo',
   'mips_pseudo',
   'ppc_pseudo',
+  'sh_pseudo',
+  'tms320_pseudo',
   'v850_pseudo',
   'wasm_pseudo',
   'x86_pseudo',
 ]
-if get_option('use_gpl')
-  parse_plugins_list += [
-    'sh_pseudo',
-    'riscv_pseudo',
-    'z80_pseudo'
-  ]
-endif
-
-parse_plugins = {
-  'conf_name': 'plugins_parse',
-  'base_cname': 'rz_parse_plugin_',
-  'list': parse_plugins_list,
-}
 
 rz_parse_sources = [
   'filter.c',
@@ -44,9 +32,25 @@ rz_parse_sources = [
   'p/parse_v850_pseudo.c',
   'p/parse_wasm_pseudo.c',
   'p/parse_x86_pseudo.c',
-  'p/parse_riscv_pseudo.c',
-  'p/parse_z80_pseudo.c'
 ]
+
+if get_option('use_gpl')
+  parse_plugins_list += [
+    'riscv_pseudo',
+    'z80_pseudo',
+  ]
+
+  rz_parse_sources += [
+    'p/parse_riscv_pseudo.c',
+    'p/parse_z80_pseudo.c',
+  ]
+endif
+
+parse_plugins = {
+  'base_name': 'rz_parse',
+  'base_struct': 'RzParsePlugin',
+  'list': parse_plugins_list,
+}
 
 rz_parse = library('rz_parse', rz_parse_sources,
   include_directories: platform_inc,

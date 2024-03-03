@@ -3,7 +3,7 @@
 
 #include <rz_lib.h>
 #include <rz_egg.h>
-#include <config.h>
+#include "rz_egg_plugins.h"
 
 RZ_LIB_VERSION(rz_egg);
 

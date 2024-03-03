@@ -11,6 +11,8 @@
 #include <rz_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
 
+#include "rz_io_plugins.h"
+
 #define USE_RARUN 0
 
 #if __linux__ || __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__

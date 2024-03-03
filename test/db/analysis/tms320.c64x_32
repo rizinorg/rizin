@@ -211,8 +211,8 @@ RUN
 NAME=arp TMS320
 FILE==
 CMDS=<<EOF
-e asm.arch=tms320c64x
-e analysis.arch=tms320
+e asm.arch=tms320
+e asm.cpu=c64x
 arp
 EOF
 EXPECT=<<EOF

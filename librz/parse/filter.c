@@ -9,7 +9,6 @@
 
 #include <rz_types.h>
 #include <rz_parse.h>
-#include <config.h>
 
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \

@@ -34,6 +34,8 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 
+#include "rz_io_plugins.h"
+
 #define BOCHS_URI_PREFIX "bochs://"
 #define BOCHS_URI_SIZE   strlen(BOCHS_URI_PREFIX)
 #define BOCHS_STDIN_SIZE 256

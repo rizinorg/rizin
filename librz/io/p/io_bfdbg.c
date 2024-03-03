@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2011-2013 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_io.h"
-#include "rz_lib.h"
+#include <rz_io.h>
+#include <rz_lib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -10,6 +10,8 @@
 #define RZ_API static inline
 #include "../debug/p/bfvm.h"
 #include "../debug/p/bfvm.c"
+
+#include "rz_io_plugins.h"
 
 typedef struct {
 	ut32 magic;

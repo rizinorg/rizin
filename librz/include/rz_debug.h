@@ -613,19 +613,6 @@ static inline void *rz_debug_ptrace_func(RzDebug *dbg, void *(*func)(void *), vo
 }
 #endif
 
-/* plugin pointers */
-extern RzDebugPlugin rz_debug_plugin_native;
-extern RzDebugPlugin rz_debug_plugin_esil;
-extern RzDebugPlugin rz_debug_plugin_dmp;
-extern RzDebugPlugin rz_debug_plugin_rap;
-extern RzDebugPlugin rz_debug_plugin_gdb;
-extern RzDebugPlugin rz_debug_plugin_bf;
-extern RzDebugPlugin rz_debug_plugin_io;
-extern RzDebugPlugin rz_debug_plugin_winkd;
-extern RzDebugPlugin rz_debug_plugin_windbg;
-extern RzDebugPlugin rz_debug_plugin_bochs;
-extern RzDebugPlugin rz_debug_plugin_qnx;
-extern RzDebugPlugin rz_debug_plugin_null;
 #endif
 
 #ifdef __cplusplus
