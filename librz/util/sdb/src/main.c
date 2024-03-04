@@ -181,27 +181,12 @@ static int sdb_dump(const char *db, int fmt) {
 	return sdb_grep_dump(db, fmt, false, NULL);
 }
 
-static int insertkeys(Sdb *s, const char **args, int nargs, int mode) {
+static int insertkeys(Sdb *s, const char **args, int nargs) {
 	int must_save = 0;
 	if (args && nargs > 0) {
 		int i;
 		for (i = 0; i < nargs; i++) {
-			switch (mode) {
-			case '-':
-				must_save |= sdb_query(s, args[i]);
-				break;
-			case '=':
-				if (strchr(args[i], '=')) {
-					char *v, *kv = (char *)strdup(args[i]);
-					v = strchr(kv, '=');
-					if (v) {
-						*v++ = 0;
-						sdb_disk_insert(s, kv, v);
-					}
-					free(kv);
-				}
-				break;
-			}
+			must_save |= sdb_query(s, args[i]);
 		}
 	}
 	return must_save;
@@ -415,7 +400,7 @@ int main(int argc, const char **argv) {
 			sdb_config(s, options);
 			int kvs = db0 + 2;
 			if (kvs < argc) {
-				save |= insertkeys(s, argv + argi + 2, argc - kvs, '-');
+				save |= insertkeys(s, argv + argi + 2, argc - kvs);
 			}
 			for (; (line = slurp(stdin, NULL));) {
 				save |= sdb_query(s, line);
