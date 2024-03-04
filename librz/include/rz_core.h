@@ -480,7 +480,6 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const
 RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len);
 RZ_API bool rz_core_write_seq_at(RzCore *core, ut64 addr, ut64 from, ut64 to, ut64 step, int value_size);
 RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
-RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_DEPRECATE RZ_API void rz_core_help_vars_print(RzCore *core);
 RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, RZ_OUT RZ_BORROW RZ_NONNULL ut64 *prev_addr);
