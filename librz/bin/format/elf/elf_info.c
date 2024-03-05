@@ -39,6 +39,11 @@ struct cpu_mips_translation {
 	const char *name;
 };
 
+struct cpu_arm_translation {
+	Elf_(Half) arch;
+	const char *name;
+};
+
 struct arch_translation {
 	Elf_(Half) arch;
 	const char *name;
@@ -241,6 +246,32 @@ static const struct cpu_mips_translation cpu_mips_translation_table[] = {
 	{ EF_MIPS_ARCH_64, "mips64" },
 	{ EF_MIPS_ARCH_32R2, "mips32r2" },
 	{ EF_MIPS_ARCH_64R2, "mips64r2" },
+};
+
+static const struct cpu_arm_translation cpu_arm_translation_table[] = {
+	{ ARM_VER_PRE_V4, "ARM Pre-v4"},
+	{ ARM_VER_V4, "ARM v4"},
+	{ ARM_VER_V4T, "ARM v4T"},
+	{ ARM_VER_V5T, "ARM v5T"},
+	{ ARM_VER_V5TE, "ARM v5TE"},
+	{ ARM_VER_V5TEJ, "ARM v5TEJ"},
+	{ ARM_VER_V6, "ARM v6"},
+	{ ARM_VER_V6KZ, "ARM v6KZ"},
+	{ ARM_VER_V6T2, "ARM v6T2"},
+	{ ARM_VER_V6K, "ARM v6K"},
+	{ ARM_VER_V7, "ARM v7"},
+	{ ARM_VER_V6_M, "ARM v6-M"},
+	{ ARM_VER_V6S_M, "ARM v6S-M"},
+	{ ARM_VER_V7E_M, "ARM v7E-M"},
+	{ ARM_VER_V8_A, "ARM v8-A"},
+	{ ARM_VER_V8_R, "ARM v8-R"},
+	{ ARM_VER_V8_M_BASELINE, "ARM v8-M.baseline"},
+	{ ARM_VER_V8_M_MAINLINE, "ARM v8-M.mainline"},
+	{ ARM_VER_V8_1_A, "ARM v8.1-A"},
+	{ ARM_VER_V8_2_A, "ARM v8.2-A"},
+	{ ARM_VER_V8_3_A, "ARM v8.3-A"},
+	{ ARM_VER_V8_1_M_MAINLINE, "ARM v8.1-M.mainline"},
+	{ ARM_VER_V9_A, "ARM v9-A"},
 };
 
 static const struct arch_translation arch_translation_table[] = {
