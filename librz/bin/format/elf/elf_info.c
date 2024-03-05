@@ -892,14 +892,12 @@ static char *read_arm_build_attributes(char *ptr, ut32 bytes_to_read, bool isbig
 			rz_uleb128_decode((ut8 *)ptr, &len, &cpu_arch);
 			ptr += len;
 			bytes_to_read -= len;
-			switch (cpu_arch) {
-			case ARM_VER_V8_A:
-			case ARM_VER_V8_1_A:
-			case ARM_VER_V8_2_A:
-			case ARM_VER_V8_3_A:
-			case ARM_VER_V9_A:
-				break;
+			for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_arm_translation_table); i++) {
+				if (cpu_arch == cpu_arm_translation_table[i].arch) {
+					return strdup(cpu_arm_translation_table[i].name);
+				}
 			}
+			break;
 		}
 		case TAG_CPU_ARCH_PROFILE:
 			return strdup("Tag_CPU_ARCH_PROFILE");
