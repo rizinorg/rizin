@@ -6,6 +6,7 @@
 #include <stddef.h>
 
 #include "rz_list.h"
+#include <rz_util/rz_itv.h>
 
 #ifdef __cplusplus
 extern "C" {
