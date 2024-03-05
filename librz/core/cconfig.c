@@ -9,7 +9,7 @@
 #include <rz_config.h>
 
 #include "core_private.h"
-#include <core/vmlinux.h>
+#include <vmlinux.h>
 
 static bool boolify_var_cb(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -97,6 +97,9 @@ static bool cb_vmlinux(void *_core, void *_node) {
 
 	printf("Parsing version '%s'\n", vmlinux_version);
 	vmlinux_parse_version(vmlinux_version, core->analysis->vmlinux_config->version);
+
+	unsigned long *v = core->analysis->vmlinux_config->version;
+	printf("version: %lu %lu %lu\n", v[0], v[1], v[2]);
 
 	const char* apply_config_file = rz_config_get(core->config, "bin.elf.vmlinux.apply_config");
 

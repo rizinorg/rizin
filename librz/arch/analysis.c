@@ -140,6 +140,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->debug_info = rz_analysis_debug_info_new();
 	analysis->cmpval = UT64_MAX;
 	analysis->lea_jmptbl_ip = UT64_MAX;
+	analysis->vmlinux_config = NULL;
 	return analysis;
 }
 

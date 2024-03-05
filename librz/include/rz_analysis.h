@@ -28,7 +28,7 @@
 #include <rz_platform.h>
 #include <rz_cmd.h>
 
-#include <core/vmlinux.h>
+#include <vmlinux.h>
 
 #define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 

@@ -17,6 +17,18 @@
 		} \
 	}
 
-RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output_state) {
-	call_handler(rz_cmd_debug_slub_dump_freelist_handler, argc, argv, output_state);
+RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_lockless_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output_state) {
+	call_handler(rz_cmd_debug_slub_dump_lockless_freelist_handler, argc, argv, output_state);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_regular_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output_state) {
+	call_handler(rz_cmd_debug_slub_dump_regular_freelist_handler, argc, argv, output_state);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_partial_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output_state) {
+	call_handler(rz_cmd_debug_slub_dump_partial_freelist_handler, argc, argv, output_state);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_node_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output_state) {
+	call_handler(rz_cmd_debug_slub_dump_node_freelist_handler, argc, argv, output_state);
 }

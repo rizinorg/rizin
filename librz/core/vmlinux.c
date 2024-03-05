@@ -45,23 +45,21 @@ out:
  * Numeric 90+
 */
 RZ_IPI bool vmlinux_parse_version(const char* version_string, unsigned long version[3]) {
-    RzList* version_list = rz_str_split_duplist_n(version_string, ".", 3, 1);
+    RzList* version_list = rz_str_split_duplist_n(version_string, ".", 3, true);
     RzListIter* it;
-    char** pstr;
     char* str;
 
     for (size_t i = 0; i < 3; ++i) version[i] = 0;
 
     size_t v = 0;
-    rz_list_foreach(version_list, it, pstr) {
+    rz_list_foreach(version_list, it, str) {
         if (v == 3) { // 3 dots? 
             break;
         }
 
         size_t i;
-        str = *pstr;
 
-        for (i = 0; str[i] != '\0'; ++i) if (!isdigit(i)) break;
+        for (i = 0; str[i] != '\0'; ++i) if (!isdigit(str[i])) break;
 
         if (str[i] == '\0') { // is number
             unsigned long numbr = strtoul(str, NULL, 10);
@@ -114,7 +112,7 @@ RZ_IPI RzVmlinuxConfig* rz_vmlinux_config_new() {
 }
 
 
-RZ_IPI int vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]) {
+RZ_API int vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]) {
     size_t diff_idx;
     for (diff_idx = 0; diff_idx < 3; ++diff_idx) if (v1[diff_idx] != v2[diff_idx]) break;
 
@@ -130,7 +128,7 @@ RZ_IPI int vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]) {
 }
 
 
-RZ_IPI int vmlinux_vercmp_with_str(unsigned long v1[3], const char* v2_str) {
+RZ_API int vmlinux_vercmp_with_str(unsigned long v1[3], const char* v2_str) {
     unsigned long v2[3];
     vmlinux_parse_version(v2_str, v2);
     return vmlinux_vercmp(v1, v2);

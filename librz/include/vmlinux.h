@@ -15,7 +15,6 @@ typedef struct vmlinux_config_table {
 
 typedef struct vmlinux_config {
     RzVmlinuxConfigTable* config_tbl;
-
     unsigned long version[3];
 } RzVmlinuxConfig;
 
@@ -25,5 +24,5 @@ RZ_IPI void rz_vmlinux_config_free(RzVmlinuxConfig* vmlinux_config);
 RZ_IPI void rz_vmlinux_config_table_free(RzVmlinuxConfigTable* config_tbl);
 RZ_IPI bool vmlinux_parse_apply_config_file(const char* config_filepath, RzVmlinuxConfigTable* config_tbl);
 RZ_IPI bool vmlinux_parse_version(const char* version_string, unsigned long version[3]);
-RZ_IPI int vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]);
-RZ_IPI int vmlinux_vercmp_with_str(unsigned long v1[3], const char* v2_str);
+RZ_API int vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]);
+RZ_API int vmlinux_vercmp_with_str(unsigned long v1[3], const char* v2_str);
