@@ -18,9 +18,8 @@ the parser. The process works as follows:
 
 1. Do changes as needed to grammar.js and/or src/scanner.c
 2. Install npm dependencies with: `cd subprojects/rizin-shell-parser ; npm install`
-3. Make sure tree-sitter is in PATH: `export PATH=$PATH:./node_modules/.bin`
-4. Re-generate the parser files: `tree-sitter generate`
-5. Check tests still pass: `tree-sitter test`. Use `tree-sitter parse
+3. Re-generate the parser files: `npx tree-sitter generate`
+4. Check tests still pass: `npx tree-sitter test`. Use `npx tree-sitter parse
    ./example-file` if you want to see the syntax tree of a custom input provided
    in `./example-file`
-6. Commit auto-generated files and modified grammar.js and src/scanner.c into git.
+5. Commit auto-generated files and modified grammar.js and src/scanner.c into git.
