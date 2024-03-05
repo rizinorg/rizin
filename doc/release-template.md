@@ -24,7 +24,16 @@ content. Go step-by-step through it.
 - [ ] Replace `RZ_PIPE_PY_VERSION` and `RZ_GHIDRA_VERSION` in [`Dockerfile`](https://github.com/rizinorg/rizin/blob/dev/Dockerfile) with the right commits from those repositories. Merge the commit with the Rizin changes in the `stable` branch.
 - [ ] Quick test again that Rizin and Cutter work together.
 - [ ] Finalize release notes.
-- [ ] Release Rizin and Cutter by making their release public on GitHub.
+- [ ] Wait until all runs completed and succeeded on `stable`.
+- [ ] Tag procedure (assumes remote `upstream` is set to `git@github.com:rizinorg/rizin.git`)
+  - [ ] Make sure local `git` is set up with a GPG key for signing, and it is known to Github (sign a test commit on a dummy branch, push and check for `verified` label on Github).
+  - [ ] Ensure you have the latest `stable` branch *locally*: `git fetch upstream && git checkout upstream/stable`
+  - [ ] Use git *locally* to create an annotated tag: `git tag -a vX.Y.Z` (editor will open for tag message).
+    - [ ] Add the release notes as tag message.
+  - [ ] Push tag `git push upstream vX.Y.Z`
+- [ ] Repeat for Cutter
+- [ ] Check on Github: tags point to the correct commit in the stable branch.
+  - [ ] If incorrect, delete tag on `upstream` and do it again.
 - [ ] Tag rz-pipe for the new version.
 - [ ] Tag [rz-bindgen](https://github.com/rizinorg/rz-bindgen) for the new version.
 - [ ] Tag rz-ghidra for the new version.
