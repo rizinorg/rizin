@@ -8,4 +8,4 @@
 
 RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out);
 
-#endif /* ASSEMBLE_MIPS_H */ 
+#endif /* ASSEMBLE_MIPS_H */

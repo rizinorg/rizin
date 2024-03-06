@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
-#include <rz_util.h> 
+#include <rz_util.h>
 
 static const char *const regs[33] = {
 	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",

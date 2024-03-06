@@ -133,6 +133,6 @@ typedef struct avr_opcode_t {
 	ut16 size;
 } AVROp;
 
-ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, AVROp* aop, RzStrBuf *sb);
+ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, AVROp *aop, RzStrBuf *sb);
 
 #endif /* RZ_ASM_AVR_DISASSEMBLER_H */
