@@ -20,10 +20,10 @@
  * - q = displacement const
  */
 
-typedef ut32 (*Decode)(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb);
+typedef ut32 (*Decode)(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb);
 
 typedef struct avr_decoder_t {
-	cchar* name; /*  instruction name */
+	cchar *name; /*  instruction name */
 	AVROpMnem id; /* instruction identifier */
 	ut32 cycles; /*  number of execution cycles */
 	ut16 cbits; /*   constant bits */
@@ -32,13 +32,13 @@ typedef struct avr_decoder_t {
 	Decode decode;
 } AvrInstruction;
 
-static ut32 avr_unique(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_unique(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	aop->mnemonic = id;
 	rz_strbuf_set(sb, name);
 	return 2;
 }
 
-static ut32 avr_rdddddrrrr(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rdddddrrrr(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = data[0] & 0x000F;
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 	Rr |= ((data[0] & 0x0200) >> 5);
@@ -71,8 +71,7 @@ static ut32 avr_rdddddrrrr(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVR
 	return 2;
 }
 
-
-static ut32 avr_KKddKKKK(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_KKddKKKK(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 K = data[0] & 0x000F;
 	ut16 Rd = 24 + ((data[0] & 0x0030) >> 3);
 	K |= ((data[0] & 0x00C0) >> 2);
@@ -85,8 +84,7 @@ static ut32 avr_KKddKKKK(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp
 	return 2;
 }
 
-
-static ut32 avr_KKKKddddKKKK(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_KKKKddddKKKK(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 K = data[0] & 0x000F;
 	ut16 Rd = 16 + ((data[0] & 0x00F0) >> 4);
 	K |= ((data[0] & 0x0F00) >> 4);
@@ -104,8 +102,7 @@ static ut32 avr_KKKKddddKKKK(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -114,8 +111,7 @@ static ut32 avr_dddddcccc(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVRO
 	return 2;
 }
 
-
-static ut32 avr_dddddcbbb(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcbbb(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 b = data[0] & 0x0007;
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
@@ -126,8 +122,7 @@ static ut32 avr_dddddcbbb(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVRO
 	return 2;
 }
 
-
-static ut32 avr_kkkkkkkccc(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_kkkkkkkccc(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	st16 k = (data[0] & 0x03F8) >> 3;
 	k *= 2;
 	if (k & 0x0080) {
@@ -145,8 +140,7 @@ static ut32 avr_kkkkkkkccc(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVR
 	return 2;
 }
 
-
-static ut32 avr_kkkkkccck(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_kkkkkccck(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	st32 k = data[0] & 0x0001;
 	k |= ((data[0] & 0x01F0) >> 3);
 	k <<= 16;
@@ -160,8 +154,7 @@ static ut32 avr_kkkkkccck(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVRO
 	return 4;
 }
 
-
-static ut32 avr_AAAAAbbb(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_AAAAAbbb(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 b = data[0] & 0x0007;
 	ut16 A = ((data[0] & 0x00F8) >> 3);
 
@@ -172,8 +165,7 @@ static ut32 avr_AAAAAbbb(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp
 	return 2;
 }
 
-
-static ut32 avr_KKKKcccc(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_KKKKcccc(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 K = ((data[0] & 0x00F0) >> 4);
 
 	aop->mnemonic = id;
@@ -182,8 +174,7 @@ static ut32 avr_KKKKcccc(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_z(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -193,8 +184,7 @@ static ut32 avr_dddddcccc_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_zp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_zp(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -206,8 +196,7 @@ static ut32 avr_dddddcccc_zp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_dddcrrr(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddcrrr(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = 16 + (data[0] & 0x0007);
 	ut16 Rd = 16 + ((data[0] & 0x0070) >> 4);
 
@@ -218,8 +207,7 @@ static ut32 avr_dddcrrr(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp 
 	return 2;
 }
 
-
-static ut32 avr_AAdddddAAAA(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_AAdddddAAAA(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 A = data[0] & 0x000F;
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 	A |= ((data[0] & 0x0600) >> 5);
@@ -231,8 +219,7 @@ static ut32 avr_AAdddddAAAA(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_x(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_x(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -242,8 +229,7 @@ static ut32 avr_dddddcccc_x(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_xp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_xp(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -255,8 +241,7 @@ static ut32 avr_dddddcccc_xp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_xm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_xm(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -268,8 +253,7 @@ static ut32 avr_dddddcccc_xm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_y(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -279,8 +263,7 @@ static ut32 avr_dddddcccc_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_yp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_yp(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -292,8 +275,7 @@ static ut32 avr_dddddcccc_yp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_ym(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_ym(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -305,8 +287,7 @@ static ut32 avr_dddddcccc_ym(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_qcqqcdddddcqqq_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_qcqqcdddddcqqq_y(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 q = data[0] & 0x0007;
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 	q |= ((data[0] & 0x0C00) >> 7);
@@ -321,8 +302,7 @@ static ut32 avr_qcqqcdddddcqqq_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 p
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_zm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_zm(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -334,8 +314,7 @@ static ut32 avr_dddddcccc_zm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_qcqqcdddddcqqq_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_qcqqcdddddcqqq_z(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 q = data[0] & 0x0007;
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 	q |= ((data[0] & 0x0C00) >> 7);
@@ -350,8 +329,7 @@ static ut32 avr_qcqqcdddddcqqq_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 p
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_load32(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_load32(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 	aop->mnemonic = id;
 	aop->param[0] = Rd;
@@ -360,8 +338,7 @@ static ut32 avr_dddddcccc_load32(cchar* name, AVROpMnem id, ut16 data[2], ut64 p
 	return 4;
 }
 
-
-static ut32 avr_kkkddddkkkk_load16(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_kkkddddkkkk_load16(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 k = data[0] & 0x000F;
 	ut16 Rd = 16 + ((data[0] & 0x00F0) >> 4);
 	k |= ((data[0] & 0x0700) >> 4);
@@ -372,8 +349,7 @@ static ut32 avr_kkkddddkkkk_load16(cchar* name, AVROpMnem id, ut16 data[2], ut64
 	return 2;
 }
 
-
-static ut32 avr_ddddrrrr(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_ddddrrrr(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = data[0] & 0x000F;
 	ut16 Rd = ((data[0] & 0x00F0) >> 4);
 
@@ -387,8 +363,7 @@ static ut32 avr_ddddrrrr(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp
 	return 2;
 }
 
-
-static ut32 avr_ddddrrrr_2x(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_ddddrrrr_2x(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = data[0] & 0x000F;
 	ut16 Rd = ((data[0] & 0x00F0) >> 4);
 	Rr += 16;
@@ -401,8 +376,7 @@ static ut32 avr_ddddrrrr_2x(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_AArrrrrAAAA(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_AArrrrrAAAA(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 A = data[0] & 0x000F;
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 	A |= ((data[0] & 0x0600) >> 5);
@@ -414,8 +388,7 @@ static ut32 avr_AArrrrrAAAA(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_kkkkkkkkkkkk(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_kkkkkkkkkkkk(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	st16 k = data[0] & 0x0FFF;
 	k *= 2;
 	if (k & 0x1000) {
@@ -434,8 +407,7 @@ static ut32 avr_kkkkkkkkkkkk(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcbbb(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcbbb(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 b = data[0] & 0x0007;
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
@@ -446,8 +418,7 @@ static ut32 avr_rrrrrcbbb(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVRO
 	return 2;
 }
 
-
-static ut32 avr_ddddcccc(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_ddddcccc(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = 16 + ((data[0] & 0x00F0) >> 4);
 
 	aop->mnemonic = id;
@@ -456,8 +427,7 @@ static ut32 avr_ddddcccc(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp
 	return 2;
 }
 
-
-static ut32 avr_spmz(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_spmz(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	aop->mnemonic = id;
 	aop->param[0] = 'Z';
 	aop->param[1] = '+';
@@ -465,8 +435,7 @@ static ut32 avr_spmz(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *ao
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_x(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_x(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -476,8 +445,7 @@ static ut32 avr_rrrrrcccc_x(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_xp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_xp(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -489,8 +457,7 @@ static ut32 avr_rrrrrcccc_xp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_xm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_xm(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -502,8 +469,7 @@ static ut32 avr_rrrrrcccc_xm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_y(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -513,8 +479,7 @@ static ut32 avr_rrrrrcccc_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_yp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_yp(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -526,8 +491,7 @@ static ut32 avr_rrrrrcccc_yp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_ym(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_ym(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -539,8 +503,7 @@ static ut32 avr_rrrrrcccc_ym(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_qcqqcrrrrrcqqq_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_qcqqcrrrrrcqqq_y(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 q = data[0] & 0x0007;
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 	q |= ((data[0] & 0x0C00) >> 7);
@@ -555,8 +518,7 @@ static ut32 avr_qcqqcrrrrrcqqq_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 p
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_z(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -566,8 +528,7 @@ static ut32 avr_rrrrrcccc_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_zp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_zp(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -579,8 +540,7 @@ static ut32 avr_rrrrrcccc_zp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_rrrrrcccc_zm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_rrrrrcccc_zm(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -592,8 +552,7 @@ static ut32 avr_rrrrrcccc_zm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	return 2;
 }
 
-
-static ut32 avr_qcqqcrrrrrcqqq_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_qcqqcrrrrrcqqq_z(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 q = data[0] & 0x0007;
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 	q |= ((data[0] & 0x0C00) >> 7);
@@ -608,8 +567,7 @@ static ut32 avr_qcqqcrrrrrcqqq_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 p
 	return 2;
 }
 
-
-static ut32 avr_dddddcccc_store32(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_dddddcccc_store32(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
@@ -619,8 +577,7 @@ static ut32 avr_dddddcccc_store32(cchar* name, AVROpMnem id, ut16 data[2], ut64 
 	return 4;
 }
 
-
-static ut32 avr_kkkddddkkkk_store16(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
+static ut32 avr_kkkddddkkkk_store16(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
 	ut16 k = data[0] & 0x000F;
 	ut16 Rd = 16 + ((data[0] & 0x00F0) >> 4);
 	k |= ((data[0] & 0x0700) >> 4);
@@ -632,7 +589,7 @@ static ut32 avr_kkkddddkkkk_store16(cchar* name, AVROpMnem id, ut16 data[2], ut6
 	return 2;
 }
 
-
+// clang-format off
 static const AvrInstruction instructions[] = {
 	{ "adc", AVR_OP_ADC /*       000111rdddddrrrr                  */, 2, 0x1C00, 0xFC00, 2, avr_rdddddrrrr },
 	{ "add", AVR_OP_ADD /*       000011rdddddrrrr                  */, 2, 0x0C00, 0xFC00, 2, avr_rdddddrrrr },
@@ -769,6 +726,7 @@ static const AvrInstruction instructions[] = {
 	{ "wdr", AVR_OP_WDR /*       1001010110101000                  */, 2, 0x95A8, 0xFFFF, 2, avr_unique },
 	{ "xch", AVR_OP_XCH /*       1001001rrrrr0100                  */, 2, 0x9204, 0xFE0F, 2, avr_rrrrrcccc_z }
 };
+// clang-format on
 
 ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, AVROp *aop, RzStrBuf *sb) {
 	rz_return_val_if_fail(buffer && size && aop && sb, false);
@@ -777,7 +735,7 @@ ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, AVRO
 	}
 
 	ut16 masked;
-	ut16 data[2] = {0};
+	ut16 data[2] = { 0 };
 
 	data[0] = rz_read_ble16(buffer, be);
 
