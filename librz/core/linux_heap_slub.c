@@ -19,28 +19,84 @@ typedef enum {
 
 typedef struct {
 	GH_(LinkedListState) state;
-	RzVector* freelist_vector;
+	RzVector /* <GHT> */ *freelist_vector;
 } GH_(Freelist);
 
 typedef struct {
-	GHT slab_addr; /* base of current struct slab */
-	GHT next; /* slab->next */
-	GHT freelist; /* slab->freelist */
-	bool is_corrupted; /* true if current struct slab is in an unmapped memory */
+	GHT slab_addr; ///< base of current struct slab
+	GHT next; ///< pointer to the next slab in slab list (`.next` or `.slab_list` in `struct slab`)
+	GHT freelist; ///< slab.freelist
+	bool is_corrupted; ///< true if current struct slab is in an unmapped memory (i.e. \p slab_addr is corrupted) */
 } GH_(Slab);
 
 typedef struct {
 	GH_(LinkedListState) state;
-	RzVector* /* <Slab> */ slablist_vector;
+	RzVector /* <Slab> */ *slablist_vector;
 } GH_(Slablist);
 
-static void GH_(freelist_new)() {
-	return rz_mem_alloc(sizeof(GH_(Freelist)));
+static GH_(Freelist)* GH_(freelist_new)() {
+	GH_(Freelist) *freelist = rz_mem_alloc(sizeof(GH_(Freelist)));
+	freelist->freelist_vector = rz_vector_new(sizeof(GHT), NULL, NULL);
+	return freelist;
 }
 
 static void GH_(freelist_free) (GH_(Freelist)* fl) {
 	rz_vector_free(fl->freelist_vector);
 	free(fl);
+}
+
+static GH_(Slablist)* GH_(slab_list_new)() {
+	GH_(Slablist) *slablist = rz_mem_alloc(sizeof(GH_(Slablist)));
+	slablist->slablist_vector = rz_vector_new(sizeof(GH_(Slab)), NULL, NULL);
+	return slablist;
+}
+
+static void GH_(slab_list_free) (GH_(Slablist)* slablist) {
+	rz_vector_free(slablist->slablist_vector);
+	free(slablist);
+}
+
+/**
+ * \brief Searches for the element which duplicates the last one.
+*/
+static size_t GH_(slab_list_find_duplicate)(GH_(Slablist)* slablist) {
+	GH_(Slab)* slab_it;
+	GH_(Slab)* last = rz_vector_tail(slablist->slablist_vector);
+
+	size_t dup_idx = -1;
+	size_t i = 0;
+	size_t slablist_len = slablist->slablist_vector->len;
+	
+	rz_vector_foreach(slablist->slablist_vector, slab_it) {
+		if (i + 1 < slablist_len && slab_it->slab_addr == last->slab_addr) {
+			dup_idx = i;
+			break;
+		}
+		++i;
+	}
+	return dup_idx;
+}
+
+
+/**
+ * \brief Searches for the element which duplicates the last one.
+*/
+static size_t GH_(freelist_find_duplicate)(GH_(Freelist)* freelist) {
+	GHT* it;
+	GHT* last = rz_vector_tail(freelist->freelist_vector);
+
+	size_t dup_idx = -1;
+	size_t i = 0;
+	size_t freelist_len = freelist->freelist_vector->len;
+	
+	rz_vector_foreach(freelist->freelist_vector, it) {
+		if (i + 1 < freelist_len && *it == *last) {
+			dup_idx = i;
+			break;
+		}
+		++i;
+	}
+	return dup_idx;
 }
 
 static ut8 GH_(size_index)[24] = {
@@ -233,7 +289,7 @@ static GHT GH_(get_kmem_cache)(RzCore *core, size_t cache_size) {
 
 static GHT GH_(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
     RzBinSymbol *per_cpu_offset = GH_(get_symbol_by_name)(core, "__per_cpu_offset");
-	
+
 	GHT percpu_n;
 	rz_io_read_at_mapped(
 		core->io,
@@ -273,8 +329,7 @@ static inline GHT GH_(decode_freelist)(GHT freelist, GHT p_freelist, GHT cache_r
 
 static GH_(Freelist)* GH_(collect_freelist)(RzCore* core, GHT freelist, size_t freelist_offset, GHT cache_rand) {
 	bool read_ok;
-	GH_(Freelist)* result = freelist_new();
-	result->freelist_vector = rz_vector_new(sizeof(GHT), NULL, NULL);
+	GH_(Freelist)* result = GH_(freelist_new)();
 	RzVector* freelist_vector = result->freelist_vector;
 
 	if (!freelist) {
@@ -332,8 +387,20 @@ static void GH_(dump_freelist)(GH_(Freelist)* freelist) {
 	RzVector* freelist_vector = freelist->freelist_vector;
 	GHT* it;
 	size_t i = 0;
+
+	size_t dup_idx = -1;
+	size_t freelist_len = freelist->freelist_vector->len;
+
+	if (freelist->state == LINKED_LIST_CYCLE) {
+		printf("NOTE: freelist is cycled\n");
+		dup_idx = GH_(freelist_find_duplicate)(freelist);
+	} else if (freelist->state == LINKED_LIST_CORRUPTED) {
+		printf("NOTE: freelist is corrupted\n");
+	}
+
+	printf("Freelist len: %lu\n", freelist_len);
 	rz_vector_foreach(freelist_vector, it) {
-		printf("0x%" GHFMTx, *it);
+		printf("\t0x%" GHFMTx "%s", *it, dup_idx == i ? " *" : "");
 		if (i + 1 == freelist_vector->len) {
 			switch(freelist->state) {
 					case LINKED_LIST_OK:
@@ -342,7 +409,7 @@ static void GH_(dump_freelist)(GH_(Freelist)* freelist) {
 						printf(" (corrupted)");
 						break;
 					case LINKED_LIST_CYCLE:
-						printf(" (cycle)");
+						printf(" *(cycle)");
 						break;
 			}
 		}
@@ -359,8 +426,7 @@ static void GH_(dump_freelist)(GH_(Freelist)* freelist) {
  * \param next_membname Member of `struct slab` which points to the next slab in a list. Either "next" (for partial freelist) or "slab_list".
 */
 static GH_(Slablist)* GH_(collect_slablist)(RzCore* core, GHT first_slab_addr, GHT slablist_head_addr, const char* next_membname) {
-	GH_(Slablist)* slablist = rz_mem_alloc(sizeof(GH_(Slablist)));
-	slablist->slablist_vector = rz_vector_new(sizeof(GH_(Slab)), NULL, NULL);
+	GH_(Slablist)* slablist = GH_(slab_list_new)();
 	RzVector* slablist_vector = slablist->slablist_vector;
 
 	if (!first_slab_addr) {
@@ -474,10 +540,9 @@ static void GH_(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT km
 
 	GH_(Freelist)* fl = GH_(collect_freelist)(core, freelist, freelist_offset, cache_rand);
 	GH_(dump_freelist)(fl);
-	freelist_free(fl);
+	GH_(freelist_free)(fl);
 }
 
-// TODO: replace struct member type with their actual type (using typedb)
 static void GH_(dump_cpu_regular_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache_cpu) {
 	GHT freelist, slab;
 	GHT cache_rand;
@@ -528,23 +593,33 @@ static void GH_(dump_cpu_regular_freelist)(RzCore* core, GHT kmem_cache, GHT kme
 
 	GH_(Freelist)* fl = GH_(collect_freelist)(core, freelist, freelist_offset, cache_rand);
 	GH_(dump_freelist)(fl);
-	freelist_free(fl);
+	GH_(freelist_free)(fl);
 }
 
 static void GH_(dump_partial)(RzCore* core, GH_(Slablist) *partials, unsigned int freelist_offset, GHT cache_rand) {
 	GHT freelist;
 	GH_(Slab)* slab_it;
 
-	// TODO: what if partials->state->LINKED_LIST_CORRUPTED/LINKED_LIST_CYCLE ?
-
 	size_t slablist_len = rz_vector_len(partials->slablist_vector);
 	size_t i = 0;
 	rz_vector_foreach(partials->slablist_vector, slab_it) {
-		printf("=============== Partial list %ld/%ld ===============\n", i, slablist_len);
+		printf("=============== Partial list #%ld/%ld ===============\n", i + 1, slablist_len);
+		if (slab_it->is_corrupted) {
+			printf("ERROR: corresponding slab is corrupted\n");
+			continue;
+		}
+
+		if (i + 1 == rz_vector_len(partials->slablist_vector) && partials->state == LINKED_LIST_CYCLE) {
+			// slab list is cycled.
+			// last element is duplicate of some previous.
+			size_t dup_idx = GH_(slab_list_find_duplicate)(partials);
+			printf("NOTE: corresponding slab duplicates #%ld (slab list is cycled)\n", dup_idx + 1);
+		}
+
 		freelist = slab_it->freelist;
 		GH_(Freelist)* fl = GH_(collect_freelist)(core, freelist, freelist_offset, cache_rand);
 		GH_(dump_freelist)(fl);
-		freelist_free(fl);
+		GH_(freelist_free)(fl);
 		
 		++i;
 	}
@@ -583,6 +658,7 @@ static void GH_(dump_cpu_partial_freelist)(RzCore* core, GHT kmem_cache, GHT kme
 
 	GH_(Slablist)* partials = GH_(collect_slablist)(core, partial, 0, "next");
 	GH_(dump_partial)(core, partials, freelist_offset, cache_rand);
+	GH_(slab_list_free)(partials);
 }
 
 static void GH_(dump_node_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache_node) {
@@ -619,10 +695,11 @@ static void GH_(dump_node_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache
 	GHT slablist_head_addr = kmem_cache_node + GH_(offset_in_struct)(core, "kmem_cache_node", "partial");
 	GH_(Slablist)* partials = GH_(collect_slablist)(core, partial, slablist_head_addr, "slab_list");
 	GH_(dump_partial)(core, partials, freelist_offset, cache_rand);
+	GH_(slab_list_free)(partials);
 }
 
 /**
- * \brief dump lockless freelist command
+ * \brief Dump lockless freelist command
 */
 RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_lockless_freelist_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput* output_state) {
 	rz_return_val_if_fail(core->analysis->vmlinux_config, RZ_CMD_STATUS_INVALID);
@@ -645,7 +722,7 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_lockless_freelist_handler)(RzCore 
 }
 
 /**
- * \brief dump regular (locking) freelist command
+ * \brief Dump regular (locking) freelist command
 */
 RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_regular_freelist_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput* output_state) {
 	rz_return_val_if_fail(core->analysis->vmlinux_config, RZ_CMD_STATUS_INVALID);
@@ -667,7 +744,6 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_regular_freelist_handler)(RzCore *
 	return RZ_CMD_STATUS_OK;
 }
 
-// TODO: fail if bin.elf.vmlinux=false
 /**
  * \brief Dump partial freelists command
 */
@@ -693,6 +769,9 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_partial_freelist_handler)(RzCore *
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Dump node freelists command
+*/
 RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_node_freelist_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput* output_state) {
 	rz_return_val_if_fail(core->analysis->vmlinux_config, RZ_CMD_STATUS_INVALID);
 

@@ -92,14 +92,10 @@ static bool cb_vmlinux(void *_core, void *_node) {
 	const char* vmlinux_config = rz_config_get(core->config, "bin.elf.vmlinux.config");
 	const char* vmlinux_version = rz_config_get(core->config, "bin.elf.vmlinux.version");
 
-	printf("Parsing config file '%s'\n", vmlinux_config);
+	printf("Parsing config file '%s'...", vmlinux_config);
 	vmlinux_parse_apply_config_file(vmlinux_config, core->analysis->vmlinux_config->config_tbl);
 
-	printf("Parsing version '%s'\n", vmlinux_version);
 	vmlinux_parse_version(vmlinux_version, core->analysis->vmlinux_config->version);
-
-	unsigned long *v = core->analysis->vmlinux_config->version;
-	printf("version: %lu %lu %lu\n", v[0], v[1], v[2]);
 
 	const char* apply_config_file = rz_config_get(core->config, "bin.elf.vmlinux.apply_config");
 
