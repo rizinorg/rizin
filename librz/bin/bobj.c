@@ -976,15 +976,7 @@ RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVecto
 		return NULL;
 	}
 
-	void **it;
-	RzBinString *bstr;
-	db->pvec = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
-	if (pvector) {
-		rz_pvector_foreach (pvector, it) {
-			bstr = *it;
-			rz_pvector_push(db->pvec, bstr);
-		}
-	}
+	db->pvec = pvector ? pvector : rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 	db->phys = ht_up_new0();
 	db->virt = ht_up_new0();
 	if (!db->pvec || !db->phys || !db->virt) {
@@ -992,6 +984,8 @@ RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVecto
 		goto fail;
 	}
 
+	void **it;
+	RzBinString *bstr;
 	rz_pvector_foreach (pvector, it) {
 		bstr = *it;
 		if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
