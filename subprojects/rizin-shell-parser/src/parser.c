@@ -1,4 +1,4 @@
-#include <tree_sitter/parser.h>
+#include "tree_sitter/parser.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
@@ -16,7 +16,7 @@
 #define MAX_ALIAS_SEQUENCE_LENGTH 5
 #define PRODUCTION_ID_COUNT 22
 
-enum {
+enum ts_symbol_identifiers {
   anon_sym_DQUOTE = 1,
   aux_sym_legacy_quoted_stmt_token1 = 2,
   anon_sym_TILDE = 3,
@@ -1525,7 +1525,7 @@ static const TSSymbolMetadata ts_symbol_metadata[] = {
   },
 };
 
-enum {
+enum ts_field_identifiers {
   field_arg = 1,
   field_args = 2,
   field_argv = 3,
@@ -2091,50 +2091,48 @@ static inline bool sym_grep_specifier_identifier_character_set_3(int32_t c) {
 }
 
 static inline bool aux_sym_tmp_eval_arg_token1_character_set_1(int32_t c) {
-  return (c < ';'
-    ? (c < '"'
+  return (c < '>'
+    ? (c < '\''
       ? (c < '\n'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
-      : (c <= '$' || (c < ','
-        ? (c >= '\'' && c <= ')')
-        : c <= ',')))
-    : (c <= ';' || (c < '`'
-      ? (c < '@'
-        ? c == '>'
-        : (c <= '@' || c == '\\'))
+        : (c <= '\r' || (c >= '"' && c <= '$')))
+      : (c <= ')' || (c < ';'
+        ? c == ','
+        : c <= ';')))
+    : (c <= '>' || (c < '`'
+      ? (c < '\\'
+        ? c == '@'
+        : c <= '\\')
       : (c <= '`' || (c < '~'
         ? c == '|'
         : c <= '~')))));
 }
 
 static inline bool sym__eq_sep_key_identifier_character_set_1(int32_t c) {
-  return (c < ';'
-    ? (c < '\r'
+  return (c < '='
+    ? (c < '('
       ? (c < '\n'
         ? c == 0
-        : c <= '\n')
-      : (c <= '\r' || (c < ','
-        ? (c >= '(' && c <= ')')
-        : c <= ',')))
-    : (c <= ';' || (c < '\\'
-      ? (c < '@'
-        ? (c >= '=' && c <= '>')
-        : c <= '@')
-      : (c <= '\\' || (c < '~'
-        ? c == '|'
-        : c <= '~')))));
+        : c <= '\r')
+      : (c <= ')' || (c < ';'
+        ? c == ','
+        : c <= ';')))
+    : (c <= '>' || (c < '|'
+      ? (c < '\\'
+        ? c == '@'
+        : c <= '\\')
+      : (c <= '|' || c == '~'))));
 }
 
 static inline bool sym__eq_sep_key_identifier_character_set_2(int32_t c) {
   return (c < ';'
-    ? (c < ' '
+    ? (c < '"'
       ? (c < '\t'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
-      : (c <= ' ' || (c < '\''
-        ? (c >= '"' && c <= '#')
-        : (c <= ')' || c == ','))))
+        : (c <= '\r' || c == ' '))
+      : (c <= '#' || (c < ','
+        ? (c >= '\'' && c <= ')')
+        : c <= ',')))
     : (c <= ';' || (c < '`'
       ? (c < '@'
         ? (c >= '=' && c <= '>')
@@ -2146,13 +2144,13 @@ static inline bool sym__eq_sep_key_identifier_character_set_2(int32_t c) {
 
 static inline bool sym__eq_sep_key_identifier_character_set_3(int32_t c) {
   return (c < ';'
-    ? (c < ' '
+    ? (c < '"'
       ? (c < '\t'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
-      : (c <= ' ' || (c < '\''
-        ? (c >= '"' && c <= '#')
-        : (c <= ')' || c == ','))))
+        : (c <= '\r' || c == ' '))
+      : (c <= '#' || (c < ','
+        ? (c >= '\'' && c <= ')')
+        : c <= ',')))
     : (c <= ';' || (c < '`'
       ? (c < '@'
         ? c == '='
@@ -2163,18 +2161,18 @@ static inline bool sym__eq_sep_key_identifier_character_set_3(int32_t c) {
 }
 
 static inline bool aux_sym_arg_identifier_token1_character_set_1(int32_t c) {
-  return (c < ';'
-    ? (c < ' '
+  return (c < '>'
+    ? (c < '"'
       ? (c < '\t'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
-      : (c <= ' ' || (c < '\''
-        ? (c >= '"' && c <= '#')
-        : c <= ')')))
-    : (c <= ';' || (c < '`'
-      ? (c < '@'
-        ? c == '>'
-        : (c <= '@' || c == '\\'))
+        : (c <= '\r' || c == ' '))
+      : (c <= '#' || (c < ';'
+        ? (c >= '\'' && c <= ')')
+        : c <= ';')))
+    : (c <= '>' || (c < '`'
+      ? (c < '\\'
+        ? c == '@'
+        : c <= '\\')
       : (c <= '`' || (c < '~'
         ? c == '|'
         : c <= '~')))));
@@ -2185,7 +2183,7 @@ static inline bool aux_sym_arg_identifier_token1_character_set_2(int32_t c) {
     ? (c < ' '
       ? (c < '\t'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
+        : c <= '\r')
       : (c <= ' ' || (c < '\''
         ? (c >= '"' && c <= '#')
         : c <= ')')))
@@ -2199,18 +2197,18 @@ static inline bool aux_sym_arg_identifier_token1_character_set_2(int32_t c) {
 }
 
 static inline bool aux_sym_arg_identifier_token1_character_set_3(int32_t c) {
-  return (c < ','
-    ? (c < ' '
+  return (c < ';'
+    ? (c < '"'
       ? (c < '\t'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
-      : (c <= ' ' || (c < '\''
-        ? (c >= '"' && c <= '#')
-        : c <= ')')))
-    : (c <= ',' || (c < '`'
-      ? (c < '>'
-        ? c == ';'
-        : (c <= '>' || c == '@'))
+        : (c <= '\r' || c == ' '))
+      : (c <= '#' || (c < ','
+        ? (c >= '\'' && c <= ')')
+        : c <= ',')))
+    : (c <= ';' || (c < '`'
+      ? (c < '@'
+        ? c == '>'
+        : c <= '@')
       : (c <= '`' || (c < '~'
         ? c == '|'
         : c <= '~')))));
@@ -2218,11 +2216,13 @@ static inline bool aux_sym_arg_identifier_token1_character_set_3(int32_t c) {
 
 static inline bool aux_sym_arg_identifier_token1_character_set_4(int32_t c) {
   return (c < ';'
-    ? (c < '\''
-      ? (c < '"'
+    ? (c < '"'
+      ? (c < 11
         ? c == '\t'
-        : c <= '#')
-      : (c <= ')' || c == ','))
+        : c <= '\f')
+      : (c <= '#' || (c < ','
+        ? (c >= '\'' && c <= ')')
+        : c <= ',')))
     : (c <= ';' || (c < '`'
       ? (c < '@'
         ? c == '>'
@@ -2235,7 +2235,7 @@ static inline bool aux_sym_arg_identifier_token1_character_set_5(int32_t c) {
     ? (c < ' '
       ? (c < '\t'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
+        : c <= '\r')
       : (c <= ' ' || (c < '\''
         ? (c >= '"' && c <= '#')
         : c <= ')')))
@@ -2253,7 +2253,7 @@ static inline bool aux_sym_spec_arg_identifier_token1_character_set_1(int32_t c)
     ? (c < '"'
       ? (c < '\n'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
+        : c <= '\r')
       : (c <= '"' || (c < ','
         ? (c >= '\'' && c <= ')')
         : c <= ',')))
@@ -2267,18 +2267,18 @@ static inline bool aux_sym_spec_arg_identifier_token1_character_set_1(int32_t c)
 }
 
 static inline bool aux_sym_spec_arg_identifier_token1_character_set_2(int32_t c) {
-  return (c < ','
-    ? (c < ' '
+  return (c < ':'
+    ? (c < '"'
       ? (c < '\t'
         ? c == 0
-        : (c <= '\n' || c == '\r'))
-      : (c <= ' ' || (c < '\''
-        ? (c >= '"' && c <= '#')
-        : c <= ')')))
-    : (c <= ',' || (c < '`'
-      ? (c < '>'
-        ? (c >= ':' && c <= ';')
-        : (c <= '>' || c == '@'))
+        : (c <= '\r' || c == ' '))
+      : (c <= '#' || (c < ','
+        ? (c >= '\'' && c <= ')')
+        : c <= ',')))
+    : (c <= ';' || (c < '`'
+      ? (c < '@'
+        ? c == '>'
+        : c <= '@')
       : (c <= '`' || (c < '~'
         ? c == '|'
         : c <= '~')))));
@@ -2286,11 +2286,13 @@ static inline bool aux_sym_spec_arg_identifier_token1_character_set_2(int32_t c)
 
 static inline bool aux_sym_spec_arg_identifier_token1_character_set_3(int32_t c) {
   return (c < ':'
-    ? (c < '\''
-      ? (c < '"'
+    ? (c < '"'
+      ? (c < 11
         ? c == '\t'
-        : c <= '#')
-      : (c <= ')' || c == ','))
+        : c <= '\f')
+      : (c <= '#' || (c < ','
+        ? (c >= '\'' && c <= ')')
+        : c <= ',')))
     : (c <= ';' || (c < '`'
       ? (c < '@'
         ? c == '>'
@@ -2330,7 +2332,9 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '~') ADVANCE(61);
       if (lookahead == '\t' ||
           lookahead == ' ') SKIP(0)
-      if (lookahead != 0) ADVANCE(151);
+      if (lookahead != 0 &&
+          lookahead != 11 &&
+          lookahead != '\f') ADVANCE(151);
       END_STATE();
     case 1:
       if (lookahead == ' ') ADVANCE(100);
@@ -2670,7 +2674,9 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '~') ADVANCE(61);
       if (lookahead == '\t' ||
           lookahead == ' ') SKIP(52)
-      if (lookahead != 0) ADVANCE(159);
+      if (lookahead != 0 &&
+          lookahead != 11 &&
+          lookahead != '\f') ADVANCE(159);
       END_STATE();
     case 53:
       if (eof) ADVANCE(57);
@@ -2689,6 +2695,8 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '\t' ||
           lookahead == ' ') SKIP(53)
       if (lookahead != 0 &&
+          lookahead != 11 &&
+          lookahead != '\f' &&
           lookahead != '>' &&
           lookahead != '@' &&
           lookahead != '|' &&
@@ -2714,6 +2722,8 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '\t' ||
           lookahead == ' ') SKIP(54)
       if (lookahead != 0 &&
+          lookahead != 11 &&
+          lookahead != '\f' &&
           lookahead != '(' &&
           lookahead != ',' &&
           lookahead != '=' &&
@@ -2756,6 +2766,8 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '\t' ||
           lookahead == ' ') SKIP(56)
       if (lookahead != 0 &&
+          lookahead != 11 &&
+          lookahead != '\f' &&
           (lookahead < '"' || '$' < lookahead) &&
           lookahead != '\'' &&
           lookahead != '(' &&
@@ -3243,8 +3255,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '}') ADVANCE(159);
       if (aux_sym_arg_identifier_token1_character_set_4(lookahead)) ADVANCE(37);
       if (lookahead != 0 &&
-          lookahead != '\n' &&
-          lookahead != '\r' &&
+          (lookahead < '\n' || '\r' < lookahead) &&
           lookahead != ' ') ADVANCE(160);
       END_STATE();
     case 161:
@@ -3289,8 +3300,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '}') ADVANCE(165);
       if (aux_sym_spec_arg_identifier_token1_character_set_3(lookahead)) ADVANCE(39);
       if (lookahead != 0 &&
-          lookahead != '\n' &&
-          lookahead != '\r' &&
+          (lookahead < '\n' || '\r' < lookahead) &&
           lookahead != ' ') ADVANCE(166);
       END_STATE();
     case 167:
@@ -3818,74 +3828,6 @@ static const TSLexMode ts_lex_modes[STATE_COUNT] = {
   [389] = {.lex_state = 0},
   [390] = {.lex_state = 0, .external_lex_state = 11},
   [391] = {.lex_state = 0},
-};
-
-enum {
-  ts_external_token__cmd_identifier = 0,
-  ts_external_token__help_stmt = 1,
-  ts_external_token_file_descriptor = 2,
-  ts_external_token__eq_sep_concat = 3,
-  ts_external_token__concat = 4,
-  ts_external_token__spec_sep = 5,
-};
-
-static const TSSymbol ts_external_scanner_symbol_map[EXTERNAL_TOKEN_COUNT] = {
-  [ts_external_token__cmd_identifier] = sym__cmd_identifier,
-  [ts_external_token__help_stmt] = sym__help_stmt,
-  [ts_external_token_file_descriptor] = sym_file_descriptor,
-  [ts_external_token__eq_sep_concat] = sym__eq_sep_concat,
-  [ts_external_token__concat] = sym__concat,
-  [ts_external_token__spec_sep] = sym__spec_sep,
-};
-
-static const bool ts_external_scanner_states[12][EXTERNAL_TOKEN_COUNT] = {
-  [1] = {
-    [ts_external_token__cmd_identifier] = true,
-    [ts_external_token__help_stmt] = true,
-    [ts_external_token_file_descriptor] = true,
-    [ts_external_token__eq_sep_concat] = true,
-    [ts_external_token__concat] = true,
-    [ts_external_token__spec_sep] = true,
-  },
-  [2] = {
-    [ts_external_token__cmd_identifier] = true,
-    [ts_external_token__help_stmt] = true,
-  },
-  [3] = {
-    [ts_external_token__cmd_identifier] = true,
-    [ts_external_token__help_stmt] = true,
-    [ts_external_token_file_descriptor] = true,
-  },
-  [4] = {
-    [ts_external_token_file_descriptor] = true,
-  },
-  [5] = {
-    [ts_external_token_file_descriptor] = true,
-    [ts_external_token__spec_sep] = true,
-  },
-  [6] = {
-    [ts_external_token_file_descriptor] = true,
-    [ts_external_token__concat] = true,
-  },
-  [7] = {
-    [ts_external_token_file_descriptor] = true,
-    [ts_external_token__eq_sep_concat] = true,
-    [ts_external_token__concat] = true,
-  },
-  [8] = {
-    [ts_external_token_file_descriptor] = true,
-    [ts_external_token__eq_sep_concat] = true,
-  },
-  [9] = {
-    [ts_external_token__concat] = true,
-  },
-  [10] = {
-    [ts_external_token__eq_sep_concat] = true,
-    [ts_external_token__concat] = true,
-  },
-  [11] = {
-    [ts_external_token__eq_sep_concat] = true,
-  },
 };
 
 static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
@@ -23131,6 +23073,74 @@ static const TSParseActionEntry ts_parse_actions[] = {
   [1183] = {.entry = {.count = 1, .reusable = true}}, SHIFT(273),
   [1185] = {.entry = {.count = 1, .reusable = true}}, SHIFT(75),
   [1187] = {.entry = {.count = 1, .reusable = true}}, SHIFT(150),
+};
+
+enum ts_external_scanner_symbol_identifiers {
+  ts_external_token__cmd_identifier = 0,
+  ts_external_token__help_stmt = 1,
+  ts_external_token_file_descriptor = 2,
+  ts_external_token__eq_sep_concat = 3,
+  ts_external_token__concat = 4,
+  ts_external_token__spec_sep = 5,
+};
+
+static const TSSymbol ts_external_scanner_symbol_map[EXTERNAL_TOKEN_COUNT] = {
+  [ts_external_token__cmd_identifier] = sym__cmd_identifier,
+  [ts_external_token__help_stmt] = sym__help_stmt,
+  [ts_external_token_file_descriptor] = sym_file_descriptor,
+  [ts_external_token__eq_sep_concat] = sym__eq_sep_concat,
+  [ts_external_token__concat] = sym__concat,
+  [ts_external_token__spec_sep] = sym__spec_sep,
+};
+
+static const bool ts_external_scanner_states[12][EXTERNAL_TOKEN_COUNT] = {
+  [1] = {
+    [ts_external_token__cmd_identifier] = true,
+    [ts_external_token__help_stmt] = true,
+    [ts_external_token_file_descriptor] = true,
+    [ts_external_token__eq_sep_concat] = true,
+    [ts_external_token__concat] = true,
+    [ts_external_token__spec_sep] = true,
+  },
+  [2] = {
+    [ts_external_token__cmd_identifier] = true,
+    [ts_external_token__help_stmt] = true,
+  },
+  [3] = {
+    [ts_external_token__cmd_identifier] = true,
+    [ts_external_token__help_stmt] = true,
+    [ts_external_token_file_descriptor] = true,
+  },
+  [4] = {
+    [ts_external_token_file_descriptor] = true,
+  },
+  [5] = {
+    [ts_external_token_file_descriptor] = true,
+    [ts_external_token__spec_sep] = true,
+  },
+  [6] = {
+    [ts_external_token_file_descriptor] = true,
+    [ts_external_token__concat] = true,
+  },
+  [7] = {
+    [ts_external_token_file_descriptor] = true,
+    [ts_external_token__eq_sep_concat] = true,
+    [ts_external_token__concat] = true,
+  },
+  [8] = {
+    [ts_external_token_file_descriptor] = true,
+    [ts_external_token__eq_sep_concat] = true,
+  },
+  [9] = {
+    [ts_external_token__concat] = true,
+  },
+  [10] = {
+    [ts_external_token__eq_sep_concat] = true,
+    [ts_external_token__concat] = true,
+  },
+  [11] = {
+    [ts_external_token__eq_sep_concat] = true,
+  },
 };
 
 #ifdef __cplusplus
