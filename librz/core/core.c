@@ -2441,3 +2441,17 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
+
+/**
+ * \brief Seeks to the first basic block of the current function.
+ *
+ * \param core The RzCore instance.
+ */
+RZ_API void rz_core_seek_first_bb(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	if (fcn) {
+		ut64 min_addr = rz_analysis_function_min_addr(fcn);
+		rz_core_seek(core, min_addr, true);
+	}
+}
