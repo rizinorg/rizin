@@ -121,34 +121,12 @@ static RzBinSymbol* GH_(get_symbol_by_name)(RzCore *core, const char *sym_name) 
 
 
 
-/**
- * \brief Returns offset to member from struct base
- * \param typename
- * \param membname
- * 
- * TODO: unwrap anonymous members. For example extract 'freelist' from here:
- * struct kmem_cache_cpu {
- * 		union { 
- * 			struct { void** freelist; unsigned long tid; };
- * 			freelist_aba_t freelist_tid; 
- * 		}
- * 		struct slab* slab;
- * 		// the rest
- * }
-*/
-
 static RzTypeStructMember* GH_(find_member_in_btype)(RzCore* core, RzBaseType* btype, const char* membname, size_t base_offset, size_t *p_memb_offset) {
 	RzTypeStructMember* memb_iter;
 	RzTypeStructMember* memb = NULL;
 
-#ifdef SLUB_DEBUG
-	printf("find_member_in_btype(btype='%s', membname='%s', base_offset=%lu)\n", btype->name, membname, base_offset);
-#endif
 	RzTypeDB* typedb = core->analysis->typedb;
 	rz_vector_foreach(&btype->struct_data.members, memb_iter) {
-#ifdef SLUB_DEBUG
-		printf("processing member '%s' at offset %lu\n", memb_iter->name, memb_iter->offset);
-#endif
 		if (!strcmp(memb_iter->name, membname)) {
 			memb = memb_iter;
 			*p_memb_offset = base_offset + memb->offset;
@@ -156,9 +134,6 @@ static RzTypeStructMember* GH_(find_member_in_btype)(RzCore* core, RzBaseType* b
 		}
 
 		if (!memb_iter->type) {
-#ifdef SLUB_DEBUG
-			printf("typename for '%s' is NULL\n", memb_iter->name);
-#endif
 			continue;
 		}
 
@@ -168,30 +143,17 @@ static RzTypeStructMember* GH_(find_member_in_btype)(RzCore* core, RzBaseType* b
 			continue;
 		}
 		bool is_anon = !strncmp(memb_iter_typename, "anonymous", strlen("anonymous")); // TODO: fix false positives
-		if (!is_anon) { // don't unwrap not-anon structs/unions
-#ifdef SLUB_DEBUG
-			printf("[-] typename '%s' for member '%s' is not anonymous\n", memb_iter_typename, memb_iter->name);
-#endif
+		if (!is_anon) { // don't unwrap non-anon structs/unions
 			continue;
-		} else {
-#ifdef SLUB_DEBUG
-			printf("[+] typename '%s' for member '%s' is anonymous\n", memb_iter_typename, memb_iter->name);
-#endif
 		}
 		
 		RzBaseType* memb_iter_btype = rz_type_db_get_base_type(typedb, memb_iter_typename);
 		if (!memb_iter_btype) {
-#ifdef SLUB_DEBUG
-			printf("Could not find corresponding btype for '%s'\n", memb_iter_typename);
-#endif
 			continue;
 		}
 
 		memb = GH_(find_member_in_btype)(core, memb_iter_btype, membname, base_offset + memb_iter->offset, p_memb_offset);
 		if (memb) {
-#ifdef SLUB_DEBUG
-			printf("found member '%s' at offset %lu\n", membname, base_offset + memb->offset);
-#endif
 			break;
 		}
 	}
@@ -199,6 +161,21 @@ static RzTypeStructMember* GH_(find_member_in_btype)(RzCore* core, RzBaseType* b
 	return memb;
 }
 
+/**
+ * \brief Returns offset to member from struct base. Unwraps anonymous members.
+ * \param typename
+ * \param membname
+ * 
+ * For this:
+ * struct S {
+ *     int32_t a;
+ *     struct {
+ *         uint32_t b;
+ *         uint32_t c;
+ *     };
+ * };
+ * function called with \p typename="S" and \p membname="b" returns 4.
+*/
 static size_t GH_(offset_in_struct)(RzCore* core, const char* typename, const char* membname) {
 	RzTypeDB* typedb = core->analysis->typedb;
 	RzBaseType* btype = rz_type_db_get_base_type(typedb, typename);
@@ -235,16 +212,11 @@ static GHT GH_(get_kmem_cache)(RzCore *core, size_t cache_size) {
     } else {
         index = GH_(fls)(cache_size - 1);
     }
-#ifdef SLUB_DEBUG
-	printf("index in kmalloc_caches: %u\n", index);
-#endif
+
     RzBinSymbol *kmalloc_caches = GH_(get_symbol_by_name)(core, "kmalloc_caches");
     if (kmalloc_caches == NULL) {
         return GHT_MAX;
     }
-#ifdef SLUB_DEBUG
-	printf("kmalloc_caches: 0x%llx\n", kmalloc_caches->vaddr + rz_bin_get_baddr(core->bin));
-#endif
     
     GHT kmem_cache;
 	
@@ -261,9 +233,6 @@ static GHT GH_(get_kmem_cache)(RzCore *core, size_t cache_size) {
 
 static GHT GH_(get_kmem_cache_cpu)(RzCore *core, GHT kmem_cache, size_t n_cpu) {
     RzBinSymbol *per_cpu_offset = GH_(get_symbol_by_name)(core, "__per_cpu_offset");
-#ifdef SLUB_DEBUG
-	printf("__per_cpu_offset: 0x%llx\n", per_cpu_offset->vaddr);
-#endif
 	
 	GHT percpu_n;
 	rz_io_read_at_mapped(
@@ -317,17 +286,9 @@ static GH_(Freelist)* GH_(collect_freelist)(RzCore* core, GHT freelist, size_t f
 	set_u_add(prev, freelist);
 	rz_vector_push(freelist_vector, &freelist);
 
-#ifdef SLUB_DEBUG
-	printf("================ COLLECT FREELIST(freelist=0x%" GHFMTx ", freelist_offset=%lu, cache_rand=0x%" GHFMTx ") ==============\n",
-			freelist, freelist_offset, cache_rand);
-#endif
-
 	while (true) {
 		GHT chunk_base = freelist;
-#ifdef SLUB_DEBUG
-		printf("chunk_base: 0x%" GHFMTx "\n", chunk_base);
-		printf("reading freelist @ p_freelist: 0x%" GHFMTx "\n", chunk_base + (GHT)freelist_offset);
-#endif
+
 		read_ok = rz_io_read_at_mapped(
 			core->io,
 			chunk_base + freelist_offset,
@@ -335,40 +296,24 @@ static GH_(Freelist)* GH_(collect_freelist)(RzCore* core, GHT freelist, size_t f
 			sizeof(GHT)
 		);
 
-#ifdef SLUB_DEBUG
-		printf("obfuscated freelist: 0x%" GHFMTx "\n", freelist);
-#endif
 		if (core->analysis->vmlinux_config->config_tbl->config_slab_freelist_hardened) {
 			freelist = GH_(decode_freelist)(freelist, chunk_base + freelist_offset, cache_rand);
 		}
-#ifdef SLUB_DEBUG
-		printf("deobfuscated freelist: 0x%" GHFMTx "\n", freelist);
-#endif
 
 		// check if freelist was corrupted
 		if (!read_ok) {
-			// TODO
-#ifdef SLUB_DEBUG
-			printf("[!] freelist corrupted\n");
-#endif
 			result->state = LINKED_LIST_CORRUPTED;
 			goto out;
 		}
 
 		// check if end
 		if (!freelist) {
-#ifdef SLUB_DEBUG
-			printf("[*] freelist ok\n");
-#endif
 			result->state = LINKED_LIST_OK;
 			goto out;
 		}
 
 		// check if cycle
 		if (set_u_contains(prev, freelist)) {
-#ifdef SLUB_DEBUG
-			printf("[!] freelist cycle\n");
-#endif
 			result->state = LINKED_LIST_CYCLE;
 			rz_vector_push(freelist_vector, &freelist);
 			goto out;
@@ -379,9 +324,6 @@ static GH_(Freelist)* GH_(collect_freelist)(RzCore* core, GHT freelist, size_t f
 	}
 
 out:
-#ifdef SLUB_DEBUG
-	printf("[*] returning from freelist collect\n");
-#endif
 	set_u_free(prev);
 	return result;
 }
@@ -390,9 +332,6 @@ static void GH_(dump_freelist)(GH_(Freelist)* freelist) {
 	RzVector* freelist_vector = freelist->freelist_vector;
 	GHT* it;
 	size_t i = 0;
-#ifdef SLUB_DEBUG
-	printf("[*] dumping freelist\n");
-#endif
 	rz_vector_foreach(freelist_vector, it) {
 		printf("0x%" GHFMTx, *it);
 		if (i + 1 == freelist_vector->len) {
@@ -410,17 +349,14 @@ static void GH_(dump_freelist)(GH_(Freelist)* freelist) {
 		printf("\n");
 		++i;
 	}
-#ifdef SLUB_DEBUG
-	printf("[*] exit from freelist dump\n");
-#endif
 }
 
 /**
- * \brief collects slablist until it encounters \p slablist_head_addr
+ * \brief collects slablist until it encounters \p slablist_head_addr .
  * \param core
  * \param first_slab_addr
  * \param slablist_head_addr
- * \param next_membname either "next" (for partial freelist) or "slab_list"
+ * \param next_membname Member of `struct slab` which points to the next slab in a list. Either "next" (for partial freelist) or "slab_list".
 */
 static GH_(Slablist)* GH_(collect_slablist)(RzCore* core, GHT first_slab_addr, GHT slablist_head_addr, const char* next_membname) {
 	GH_(Slablist)* slablist = rz_mem_alloc(sizeof(GH_(Slablist)));
@@ -505,25 +441,18 @@ out:
 }
 
 
-
-// TODO: replace struct member type with their actual type (using typedb)
 static void GH_(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache_cpu) {
 	GHT freelist;
 	unsigned long freelist_offset;
 	GHT cache_rand;
 	
 	// get "freelist" from "kmem_cache_cpu".
-	// Dirty hardcode: offsetof(kmem_cache_cpu, freelist)=0.
-	// Can't use offset_in_struct since it does not yet support anonymous member unwrapping.
 	rz_io_read_at_mapped(
 		core->io,
 		kmem_cache_cpu + GH_(offset_in_struct)(core, "kmem_cache_cpu", "freelist"),
 		(void*)&freelist,
 		sizeof(GHT)
 	);
-#ifdef SLUB_DEBUG
-	printf("freelist: 0x%" GHFMTx "\n", freelist);
-#endif
 
 	// get "offset" from "kmem_cache"
 	rz_io_read_at_mapped(
@@ -532,9 +461,6 @@ static void GH_(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT km
 		(void*)&freelist_offset,
 		sizeof(unsigned int)
 	);
-#ifdef SLUB_DEBUG
-	printf("freelist_offset: %lu\n", freelist_offset);
-#endif
 
 	if (core->analysis->vmlinux_config->config_tbl->config_slab_freelist_hardened) {
 		// get "random" from "kmem_cache"	
@@ -544,9 +470,6 @@ static void GH_(dump_cpu_lockless_freelist)(RzCore* core, GHT kmem_cache, GHT km
 			(void*)&cache_rand,
 			sizeof(GHT)
 		);
-		#ifdef SLUB_DEBUG
-			printf("cache random: 0x%" GHFMTx "\n", cache_rand);
-		#endif
 	}
 
 	GH_(Freelist)* fl = GH_(collect_freelist)(core, freelist, freelist_offset, cache_rand);
@@ -568,9 +491,6 @@ static void GH_(dump_cpu_regular_freelist)(RzCore* core, GHT kmem_cache, GHT kme
 		slab_member = "page";
 		slab_member_type = "page";
 	}
-#ifdef SLUB_DEBUG
-	printf("[*] Selected slab member: '%s'\n", slab_member);
-#endif
 
 	// get "slab" from "kmem_cache_cpu"
 	rz_io_read_at_mapped(
@@ -620,19 +540,6 @@ static void GH_(dump_partial)(RzCore* core, GH_(Slablist) *partials, unsigned in
 	size_t slablist_len = rz_vector_len(partials->slablist_vector);
 	size_t i = 0;
 	rz_vector_foreach(partials->slablist_vector, slab_it) {
-#ifdef SLUB_DEBUG
-		printf(
-			"[*] processing freelist {.slab_addr=%" GHFMTx 
-			", .next=%" GHFMTx
-			", .freelist=%" GHFMTx
-			", .is_corrupted=%s}\n",
-			slab_it->slab_addr,
-			slab_it->next,
-			slab_it->freelist,
-			slab_it->is_corrupted ? "true" : "false"
-		);
-#endif
-
 		printf("=============== Partial list %ld/%ld ===============\n", i, slablist_len);
 		freelist = slab_it->freelist;
 		GH_(Freelist)* fl = GH_(collect_freelist)(core, freelist, freelist_offset, cache_rand);
@@ -643,7 +550,6 @@ static void GH_(dump_partial)(RzCore* core, GH_(Slablist) *partials, unsigned in
 	}
 }
 
-// TODO: replace struct member type with their actual type (using typedb)
 static void GH_(dump_cpu_partial_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache_cpu) {
 	GHT partial;
 	GHT cache_rand;
@@ -656,10 +562,6 @@ static void GH_(dump_cpu_partial_freelist)(RzCore* core, GHT kmem_cache, GHT kme
 		(void*)&partial,
 		sizeof(GHT)
 	);
-
-#ifdef SLUB_DEBUG
-	printf("partial: %" GHFMTx "\n", partial);
-#endif
 
 	// get "freelist_offset" from "kmem_cache"
 	rz_io_read_at_mapped(
@@ -696,10 +598,6 @@ static void GH_(dump_node_freelist)(RzCore* core, GHT kmem_cache, GHT kmem_cache
 		sizeof(GHT)
 	);
 
-#ifdef SLUB_DEBUG
-	printf("partial: %" GHFMTx "\n", partial);
-#endif
-
 	// get "freelist_offset" from "kmem_cache"
 	rz_io_read_at_mapped(
 		core->io,
@@ -732,16 +630,6 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_lockless_freelist_handler)(RzCore 
 	(void)output_state;
 	size_t n_cpu;
 	size_t cache_size;
-
-#ifdef SLUB_DEBUG
-	for (size_t i  = 0; i < argc; ++i) {
-		printf("argv[%lu] == '%s'\n", i, argv[i]);
-	}
-#endif
-
-#ifdef SLUB_DEBUG
-	printf("target bits: %d\n", core->rasm->bits);
-#endif
 	
 	cache_size = rz_num_get(NULL, argv[1]);
 	n_cpu = 0; // default
@@ -749,19 +637,9 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_lockless_freelist_handler)(RzCore 
 	if (argc >= 2) {
 		n_cpu = rz_num_get(NULL, argv[2]);
 	}
-#ifdef SLUB_DEBUG
-	printf("cache_size=%lu, n_cpu=%lu\n", cache_size, n_cpu);
-	printf("vmlinux baddr: 0x%llx\n", rz_bin_get_baddr(core->bin));
-#endif
 	
 	GHT kmem_cache = GH_(get_kmem_cache)(core, cache_size);
-#ifdef SLUB_DEBUG
-	printf("kmem_cache: 0x%" GHFMTx "\n", kmem_cache);
-#endif
 	GHT kmem_cache_cpu = GH_(get_kmem_cache_cpu)(core, kmem_cache, n_cpu);
-#ifdef SLUB_DEBUG
-	printf("kmem_cache_cpu: 0x%" GHFMTx "\n", kmem_cache_cpu);
-#endif
 	GH_(dump_cpu_lockless_freelist)(core, kmem_cache, kmem_cache_cpu);
 	return RZ_CMD_STATUS_OK;
 }
@@ -775,16 +653,6 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_regular_freelist_handler)(RzCore *
 	(void)output_state;
 	size_t n_cpu;
 	size_t cache_size;
-
-#ifdef SLUB_DEBUG
-	for (size_t i  = 0; i < argc; ++i) {
-		printf("argv[%lu] == '%s'\n", i, argv[i]);
-	}
-#endif
-
-#ifdef SLUB_DEBUG
-	printf("target bits: %d\n", core->rasm->bits);
-#endif
 	
 	cache_size = rz_num_get(NULL, argv[1]);
 	n_cpu = 0; // default
@@ -792,19 +660,9 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_regular_freelist_handler)(RzCore *
 	if (argc >= 2) {
 		n_cpu = rz_num_get(NULL, argv[2]);
 	}
-#ifdef SLUB_DEBUG
-	printf("cache_size=%lu, n_cpu=%lu\n", cache_size, n_cpu);
-	printf("vmlinux baddr: 0x%llx\n", rz_bin_get_baddr(core->bin));
-#endif
 	
 	GHT kmem_cache = GH_(get_kmem_cache)(core, cache_size);
-#ifdef SLUB_DEBUG
-	printf("kmem_cache: 0x%" GHFMTx "\n", kmem_cache);
-#endif
 	GHT kmem_cache_cpu = GH_(get_kmem_cache_cpu)(core, kmem_cache, n_cpu);
-#ifdef SLUB_DEBUG
-	printf("kmem_cache_cpu: 0x%" GHFMTx "\n", kmem_cache_cpu);
-#endif
 	GH_(dump_cpu_regular_freelist)(core, kmem_cache, kmem_cache_cpu);
 	return RZ_CMD_STATUS_OK;
 }
@@ -819,16 +677,6 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_partial_freelist_handler)(RzCore *
 	(void)output_state;
 	size_t n_cpu;
 	size_t cache_size;
-
-#ifdef SLUB_DEBUG
-	for (size_t i  = 0; i < argc; ++i) {
-		printf("argv[%lu] == '%s'\n", i, argv[i]);
-	}
-#endif
-
-#ifdef SLUB_DEBUG
-	printf("target bits: %d\n", core->rasm->bits);
-#endif
 	
 	cache_size = rz_num_get(NULL, argv[1]);
 	n_cpu = 0; // default
@@ -836,19 +684,9 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_partial_freelist_handler)(RzCore *
 	if (argc >= 2) {
 		n_cpu = rz_num_get(NULL, argv[2]);
 	}
-#ifdef SLUB_DEBUG
-	printf("cache_size=%lu, n_cpu=%lu\n", cache_size, n_cpu);
-	printf("vmlinux baddr: 0x%llx\n", rz_bin_get_baddr(core->bin));
-#endif
 	
 	GHT kmem_cache = GH_(get_kmem_cache)(core, cache_size);
-#ifdef SLUB_DEBUG
-	printf("kmem_cache: 0x%" GHFMTx "\n", kmem_cache);
-#endif
 	GHT kmem_cache_cpu = GH_(get_kmem_cache_cpu)(core, kmem_cache, n_cpu);
-#ifdef SLUB_DEBUG
-	printf("kmem_cache_cpu: 0x%" GHFMTx "\n", kmem_cache_cpu);
-#endif
 
 	GH_(dump_cpu_partial_freelist)(core, kmem_cache, kmem_cache_cpu);
 	
@@ -862,16 +700,6 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_node_freelist_handler)(RzCore *cor
 
 	size_t n_node;
 	size_t cache_size;
-
-#ifdef SLUB_DEBUG
-	for (size_t i  = 0; i < argc; ++i) {
-		printf("argv[%lu] == '%s'\n", i, argv[i]);
-	}
-#endif
-
-#ifdef SLUB_DEBUG
-	printf("target bits: %d\n", core->rasm->bits);
-#endif
 	
 	cache_size = rz_num_get(NULL, argv[1]);
 	n_node = 0; // default
@@ -879,19 +707,9 @@ RZ_IPI RzCmdStatus GH_(rz_cmd_debug_slub_dump_node_freelist_handler)(RzCore *cor
 	if (argc >= 2) {
 		n_node = rz_num_get(NULL, argv[2]);
 	}
-#ifdef SLUB_DEBUG
-	printf("cache_size=%lu, n_node=%lu\n", cache_size, n_node);
-	printf("vmlinux baddr: 0x%llx\n", rz_bin_get_baddr(core->bin));
-#endif
 	
 	GHT kmem_cache = GH_(get_kmem_cache)(core, cache_size);
-#ifdef SLUB_DEBUG
-	printf("kmem_cache: 0x%" GHFMTx "\n", kmem_cache);
-#endif
 	GHT kmem_cache_node = GH_(get_kmem_cache_node)(core, kmem_cache, n_node);
-#ifdef SLUB_DEBUG
-	printf("kmem_cache_node: 0x%" GHFMTx "\n", kmem_cache_node);
-#endif
 
 	GH_(dump_node_freelist)(core, kmem_cache, kmem_cache_node);
 
