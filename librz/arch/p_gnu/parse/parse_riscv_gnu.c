@@ -219,16 +219,8 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	return true;
 }
 
-RzParsePlugin rz_parse_plugin_riscv_pseudo = {
+RzParsePlugin rz_parse_plugin_riscv_gnu_pseudo = {
 	.name = "riscv.pseudo",
 	.desc = "riscv pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_riscv_pseudo,
-	.version = RZ_VERSION
-};
-#endif

@@ -10,5 +10,6 @@
 
 #include "analysis/analysis_riscv_gnu.c"
 #include "asm/asm_riscv_gnu.c"
+#include "parse/parse_riscv_gnu.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(riscv_gnu);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(riscv_gnu);

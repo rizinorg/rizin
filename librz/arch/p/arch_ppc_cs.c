@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_ppc_cs.c"
 #include "asm/asm_ppc_cs.c"
+#include "parse/parse_ppc_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(ppc_cs);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(ppc_cs);

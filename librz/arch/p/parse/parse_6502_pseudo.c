@@ -11,7 +11,7 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-#include "parse_common.c"
+#include "parse_helper.h"
 
 static RzList /*<char *>*/ *_6502_tokenize(const char *assembly, size_t length);
 
@@ -123,11 +123,3 @@ RzParsePlugin rz_parse_plugin_6502_pseudo = {
 	.desc = "6502 pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_6502_pseudo,
-	.version = RZ_VERSION
-};
-#endif

@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_mips_cs.c"
 #include "asm/asm_mips_cs.c"
+#include "parse/parse_mips_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(mips_cs);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(mips_cs);

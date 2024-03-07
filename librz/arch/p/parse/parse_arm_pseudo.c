@@ -13,7 +13,7 @@
 #include <rz_util/rz_regex.h>
 #include <rz_vector.h>
 
-#include "parse_common.c"
+#include "parse_helper.h"
 
 static RzList /*<char *>*/ *arm_tokenize(const char *assembly, size_t length);
 
@@ -392,17 +392,9 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 	return true;
 }
 
-RzParsePlugin rz_parse_plugin_arm_pseudo = {
+RzParsePlugin rz_parse_plugin_arm_cs_pseudo = {
 	.name = "arm.pseudo",
 	.desc = "ARM/ARM64 pseudo syntax",
 	.parse = parse,
 	.subvar = &subvar,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_arm_pseudo,
-	.version = RZ_VERSION
-};
-#endif

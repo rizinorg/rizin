@@ -96,18 +96,6 @@
 #define PPC_UT64(x) (strtol(x, NULL, 16))
 #define PPC_UT32(x) ((ut32)PPC_UT64(x))
 
-static ut64 mask64(ut64 mb, ut64 me) {
-	ut64 maskmb = UT64_MAX >> mb;
-	ut64 maskme = UT64_MAX << (63 - me);
-	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
-}
-
-static ut32 mask32(ut32 mb, ut32 me) {
-	ut32 maskmb = UT32_MAX >> mb;
-	ut32 maskme = UT32_MAX << (31 - me);
-	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
-}
-
 static int can_replace(const char *str, int idx, int max_operands) {
 	if (str[idx] < 'A' || str[idx] > 'J') {
 		return false;
@@ -121,7 +109,7 @@ static int can_replace(const char *str, int idx, int max_operands) {
 	return true;
 }
 
-static const char *getspr(const char *reg) {
+static const char *getspr_pseudo(const char *reg) {
 	static char cspr[16];
 	ut32 spr = 0;
 	if (!reg) {
@@ -1587,7 +1575,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 								break;
 							}
 						} else if ((i == 44 && letter == 2) || (i == 45 && letter == 1)) { // spr
-							w = getspr(w);
+							w = getspr_pseudo(w);
 						}
 						if (w != NULL) {
 							strcpy(newstr + k, w);
@@ -1754,16 +1742,8 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	return true;
 }
 
-RzParsePlugin rz_parse_plugin_ppc_pseudo = {
+RzParsePlugin rz_parse_plugin_ppc_cs_pseudo = {
 	.name = "ppc.pseudo",
 	.desc = "PowerPC pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_ppc_pseudo,
-	.version = RZ_VERSION
-};
-#endif

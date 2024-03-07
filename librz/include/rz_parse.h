@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER(rz_parse);
-
 typedef struct rz_parse_t {
 	void *user;
 	RzSpace *flagspace;

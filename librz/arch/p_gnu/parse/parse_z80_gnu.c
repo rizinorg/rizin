@@ -11,7 +11,7 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-#include "parse_common.c"
+#include "parse_helper.h"
 
 static RzList /*<char *>*/ *z80_tokenize(const char *assembly, size_t length);
 
@@ -153,18 +153,10 @@ static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
 	return rz_pseudo_convert(&z80_config, assembly, sb);
 }
 
-RzParsePlugin rz_parse_plugin_z80_pseudo = {
+RzParsePlugin rz_parse_plugin_z80_gnu_pseudo = {
 	.name = "z80.pseudo",
 	.desc = "z80 pseudo syntax",
 	.init = NULL,
 	.fini = NULL,
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_z80_pseudo,
-	.version = RZ_VERSION
-};
-#endif

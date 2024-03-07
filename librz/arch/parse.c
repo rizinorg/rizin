@@ -6,16 +6,10 @@
 #include <stdio.h>
 
 #include <rz_types.h>
-#include <rz_parse.h>
+#include <rz_arch.h>
 #include <rz_lib.h>
-#include "rz_parse_plugins.h"
-
-RZ_LIB_VERSION(rz_parse);
-
-static RzParsePlugin *parse_static_plugins[] = { RZ_PARSE_STATIC_PLUGINS };
 
 RZ_API RzParse *rz_parse_new(void) {
-	int i;
 	RzParse *p = RZ_NEW0(RzParse);
 	if (!p) {
 		return NULL;
@@ -32,8 +26,14 @@ RZ_API RzParse *rz_parse_new(void) {
 	p->subtail = false;
 	p->minval = 0x100;
 	p->localvar_only = false;
-	for (i = 0; i < RZ_ARRAY_SIZE(parse_static_plugins); i++) {
-		rz_parse_plugin_add(p, parse_static_plugins[i]);
+
+	const size_t n_plugins = rz_arch_get_n_plugins();
+	for (size_t i = 0; i < n_plugins; i++) {
+		RzParsePlugin *plugin = rz_arch_get_parse_plugin(i);
+		if (!plugin) {
+			continue;
+		}
+		rz_parse_plugin_add(p, plugin);
 	}
 	return p;
 }

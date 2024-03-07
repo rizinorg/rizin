@@ -42,16 +42,17 @@ CB(hash, hash)
 static bool lib_arch_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzArchPlugin *hand = (RzArchPlugin *)data;
 	RzCore *core = (RzCore *)user;
-	if (!hand->p_asm && !hand->p_analysis) {
-		// TODO: add new structure.
-		// return rz_arch_plugin_add(core->arch, hand);
-		return false;
-	}
+	// TODO: add new structure.
+	// return rz_arch_plugin_add(core->arch, hand);
 	if (hand->p_asm && !rz_asm_plugin_add(core->rasm, hand->p_asm)) {
 		// deprecated structure
 		return false;
 	}
 	if (hand->p_analysis && !rz_analysis_plugin_add(core->analysis, hand->p_analysis)) {
+		// deprecated structure
+		return false;
+	}
+	if (hand->p_parse && !rz_parse_plugin_add(core->parser, hand->p_parse)) {
 		// deprecated structure
 		return false;
 	}

@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_v850.c"
 #include "asm/asm_v850.c"
+#include "parse/parse_v850_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(v850);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(v850);

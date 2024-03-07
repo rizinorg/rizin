@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_x86_cs.c"
 #include "asm/asm_x86_cs.c"
+#include "parse/parse_x86_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(x86_cs);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(x86_cs);

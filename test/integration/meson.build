@@ -53,7 +53,6 @@ if get_option('enable_tests')
         rz_reg_dep,
         rz_syscall_dep,
         rz_type_dep,
-        rz_parse_dep,
         rz_egg_dep,
         rz_search_dep,
         rz_hash_dep,

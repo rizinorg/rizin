@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_tms320.c"
 #include "asm/asm_tms320.c"
+#include "parse/parse_tms320_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(tms320);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(tms320);

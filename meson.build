@@ -827,6 +827,5 @@ summary({
   'IO Plugins': io_plugins.get('list'),
   'Lang Plugins': lang_plugins.get('list'),
   'Hash Plugins': comb_hash_plugins,
-  'Parse Plugins': parse_plugins.get('list'),
   'Demangler Plugins': demangler_plugins.get('list'),
 }, section: 'Plugins', list_sep: ', ')

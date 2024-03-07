@@ -11,7 +11,7 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-#include "parse_common.c"
+#include "parse_helper.h"
 
 static RzList /*<char *>*/ *m68k_tokenize(const char *assembly, size_t length);
 
@@ -99,16 +99,8 @@ static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
 	return res;
 }
 
-RzParsePlugin rz_parse_plugin_m68k_pseudo = {
+RzParsePlugin rz_parse_plugin_m68k_cs_pseudo = {
 	.name = "m68k.pseudo",
 	.desc = "M68K pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_m68k_pseudo,
-	.version = RZ_VERSION
-};
-#endif
