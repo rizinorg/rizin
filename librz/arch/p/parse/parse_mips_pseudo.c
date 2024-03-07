@@ -11,9 +11,9 @@
 #include <rz_flag.h>
 #include <rz_analysis.h>
 #include <rz_parse.h>
-
-#include "parse_common.c"
 #include <rz_util/rz_regex.h>
+
+#include "parse_helper.h"
 
 static RzList /*<char *>*/ *mips_tokenize(const char *assembly, size_t length);
 
@@ -253,7 +253,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 	return ret;
 }
 
-RzParsePlugin rz_parse_plugin_mips_pseudo = {
+RzParsePlugin rz_parse_plugin_mips_cs_pseudo = {
 	.name = "mips.pseudo",
 	.desc = "MIPS pseudo syntax",
 	.init = NULL,
@@ -261,11 +261,3 @@ RzParsePlugin rz_parse_plugin_mips_pseudo = {
 	.parse = parse,
 	.subvar = subvar,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_mips_pseudo,
-	.version = RZ_VERSION
-};
-#endif

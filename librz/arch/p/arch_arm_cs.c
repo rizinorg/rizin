@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_arm_cs.c"
 #include "asm/asm_arm_cs.c"
+#include "parse/parse_arm_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(arm_cs);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(arm_cs);

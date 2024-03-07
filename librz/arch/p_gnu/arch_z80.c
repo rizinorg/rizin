@@ -6,7 +6,9 @@
 
 #include "../isa_gnu/z80/z80.c"
 #include "../isa_gnu/z80/z80asm.c"
+
 #include "analysis/analysis_z80_gnu.c"
 #include "asm/asm_z80_gnu.c"
+#include "parse/parse_z80_gnu.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(z80_gnu);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(z80_gnu);

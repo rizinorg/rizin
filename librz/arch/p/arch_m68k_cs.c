@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_m68k_cs.c"
 #include "asm/asm_m68k_cs.c"
+#include "parse/parse_m68k_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(m68k_cs);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(m68k_cs);

@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_sh.c"
 #include "asm/asm_sh.c"
+#include "parse/parse_sh_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(sh);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(sh);

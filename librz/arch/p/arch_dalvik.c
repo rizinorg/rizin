@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_dalvik.c"
 #include "asm/asm_dalvik.c"
+#include "parse/parse_dalvik_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(dalvik);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(dalvik);

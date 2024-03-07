@@ -53,7 +53,6 @@ static int rz_main_version_verify(int show) {
 #if !USE_LIB_MAGIC
 		{ "rz_magic", rz_magic_version },
 #endif
-		{ "rz_parse", rz_parse_version },
 		{ "rz_reg", rz_reg_version },
 		{ "rz_sign", rz_sign_version },
 		{ "rz_search", rz_search_version },

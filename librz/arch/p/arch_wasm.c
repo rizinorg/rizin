@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_wasm.c"
 #include "asm/asm_wasm.c"
+#include "parse/parse_wasm_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(wasm);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(wasm);

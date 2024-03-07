@@ -4,7 +4,6 @@ CMDS=Lp
 EXPECT=<<EOF
 6502.pseudo
 arm.pseudo
-att2intel
 avr.pseudo
 chip8.pseudo
 dalvik.pseudo
@@ -25,7 +24,7 @@ NAME=Print the parser plugins in JSON
 FILE==
 CMDS=Lpj
 EXPECT=<<EOF
-[{"name":"6502.pseudo"},{"name":"arm.pseudo"},{"name":"att2intel"},{"name":"avr.pseudo"},{"name":"chip8.pseudo"},{"name":"dalvik.pseudo"},{"name":"m68k.pseudo"},{"name":"mips.pseudo"},{"name":"ppc.pseudo"},{"name":"sh.pseudo"},{"name":"tms320.pseudo"},{"name":"v850.pseudo"},{"name":"wasm.pseudo"},{"name":"x86.pseudo"},{"name":"riscv.pseudo"},{"name":"z80.pseudo"}]
+[{"name":"6502.pseudo"},{"name":"arm.pseudo"},{"name":"avr.pseudo"},{"name":"chip8.pseudo"},{"name":"dalvik.pseudo"},{"name":"m68k.pseudo"},{"name":"mips.pseudo"},{"name":"ppc.pseudo"},{"name":"sh.pseudo"},{"name":"tms320.pseudo"},{"name":"v850.pseudo"},{"name":"wasm.pseudo"},{"name":"x86.pseudo"},{"name":"riscv.pseudo"},{"name":"z80.pseudo"}]
 EOF
 RUN
 

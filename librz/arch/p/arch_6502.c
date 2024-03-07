@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_6502.c"
 #include "asm/asm_6502.c"
+#include "parse/parse_6502_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(6502);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(6502);

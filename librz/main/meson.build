@@ -26,7 +26,6 @@ rz_main_deps = [
   rz_reg_dep,
   rz_bp_dep,
   rz_syscall_dep,
-  rz_parse_dep,
   rz_arch_dep,
   rz_egg_dep,
   rz_search_dep,

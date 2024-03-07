@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_chip8.c"
 #include "asm/asm_chip8.c"
+#include "parse/parse_chip8_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(chip8);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(chip8);

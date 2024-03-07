@@ -7,7 +7,7 @@
 #include <rz_parse.h>
 
 // https://www.ti.com/lit/ug/spru732j/spru732j.pdf
-#include "parse_common.c"
+#include "parse_helper.h"
 
 static RzList /*<char *>*/ *tms320_tokenize(const char *assembly, size_t length);
 
@@ -122,11 +122,3 @@ RzParsePlugin rz_parse_plugin_tms320_pseudo = {
 	.desc = "tms320 pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_tms320_pseudo,
-	.version = RZ_VERSION
-};
-#endif

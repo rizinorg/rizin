@@ -11,12 +11,21 @@
 	RzArchPlugin rz_arch_plugin_##name = { \
 		.p_asm = &rz_asm_plugin_##name, \
 		.p_analysis = &rz_analysis_plugin_##name, \
+		.p_parse = &rz_parse_plugin_##name##_pseudo, \
+	}
+
+#define DEPRECATED_OLD_ARCH_NO_PARSE_PLUGIN(name) \
+	RzArchPlugin rz_arch_plugin_##name = { \
+		.p_asm = &rz_asm_plugin_##name, \
+		.p_analysis = &rz_analysis_plugin_##name, \
+		.p_parse = NULL, \
 	}
 
 #define DEPRECATED_OLD_ARCH_ASM_ONLY_PLUGIN(name) \
 	RzArchPlugin rz_arch_plugin_##name = { \
 		.p_asm = &rz_asm_plugin_##name, \
 		.p_analysis = NULL, \
+		.p_parse = NULL, \
 	}
 
 #ifndef RZ_PLUGIN_INCORE
@@ -30,8 +39,12 @@
 #define ARCH_PLUGIN_LIB_STRUCT(name)
 #endif
 
-#define RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(name) \
+#define RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(name) \
 	DEPRECATED_OLD_ARCH_PLUGIN(name); \
+	ARCH_PLUGIN_LIB_STRUCT(name)
+
+#define RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(name) \
+	DEPRECATED_OLD_ARCH_NO_PARSE_PLUGIN(name); \
 	ARCH_PLUGIN_LIB_STRUCT(name)
 
 #define RZ_ARCH_ASM_ONLY_PLUGIN_DEFINE_DEPRECATED(name) \

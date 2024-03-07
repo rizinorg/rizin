@@ -3,12 +3,12 @@
 // SPDX-FileCopyrightText: 2009-2019 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_str.h"
-#include <rz_util/rz_regex.h>
 #include <stdio.h>
 
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_regex.h>
 #include <rz_types.h>
-#include <rz_parse.h>
+#include <rz_arch.h>
 
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \

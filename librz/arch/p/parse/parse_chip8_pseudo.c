@@ -112,11 +112,3 @@ RzParsePlugin rz_parse_plugin_chip8_pseudo = {
 	.desc = "chip8 pseudo syntax",
 	.parse = parse,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_PARSE,
-	.data = &rz_parse_plugin_chip8_pseudo,
-	.version = RZ_VERSION
-};
-#endif

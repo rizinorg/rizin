@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_avr.c"
 #include "asm/asm_avr.c"
+#include "parse/parse_avr_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(avr);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(avr);

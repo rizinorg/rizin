@@ -28,3 +28,10 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisPlugin *rz_arch_get_analysis_plugin(size
 	}
 	return arch_static_plugins[index]->p_analysis;
 }
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzParsePlugin *rz_arch_get_parse_plugin(size_t index) {
+	if (index >= RZ_ARRAY_SIZE(arch_static_plugins)) {
+		return NULL;
+	}
+	return arch_static_plugins[index]->p_parse;
+}
