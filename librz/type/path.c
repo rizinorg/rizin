@@ -36,74 +36,160 @@ RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath) {
 	free(tpath);
 }
 
+static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent, const char *path, size_t *i, st64 *offset) {
+	size_t nd = 0;
+	RzType *typd = parent;
+	st64 curd_off = 1; // prod of all dim sizes
+	while (typd->kind == RZ_TYPE_KIND_ARRAY) {
+		++nd;
+		curd_off *= typd->array.count; // TODO: overflow
+
+		typd = typd->array.type;
+	}
+	curd_off *= rz_type_get_base_type(typedb, typd)->size; // elem size in bits
+
+	typd = parent;
+	for (size_t id = 0; id < nd; ++id) {
+
+		if (path[*i] != '[') {
+			eprintf("Expected '[' got '%c'\n", path[*i]);
+			*offset = -1;
+			return NULL;
+		}
+
+		++*i;
+		size_t tok_beg = *i;
+		for (; isdigit(path[*i]); ++*i)
+			;
+
+		if (path[*i] != ']') {
+			eprintf("Expected ']' got '%c'\n", path[*i]);
+			*offset = -1;
+			return NULL;
+		}
+
+		size_t idx = strtoull(strndup(&path[tok_beg], *i - tok_beg), NULL, 10);
+		curd_off /= typd->array.count;
+
+		*offset += curd_off * idx;
+		typd = typd->array.type;
+
+		// DONT check for "idx < array size"
+		// because guy may be exploiting OOB or something else.
+		// so just continue.
+
+		++*i; // skip ']'
+	}
+
+	return typd;
+}
+
+static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, const char *path, size_t *i, st64 *offset) {
+	++*i;
+
+	size_t tok_beg = *i;
+	for (; isalnum(path[*i]); ++*i)
+		;
+
+	const char *tok = strndup(&path[tok_beg], *i - tok_beg);
+
+	RzBaseType *parent_btype = rz_type_get_base_type(typedb, parent);
+	if (!parent_btype) {
+		eprintf("Could not found btype for parent\n");
+		*offset = -1;
+		return NULL;
+	}
+
+	RzTypeStructMember *memb_it;
+	RzType *cur_type = NULL;
+	size_t cur_offset = -1;
+	rz_vector_foreach(&parent_btype->struct_data.members, memb_it) {
+
+		if (!strcmp(memb_it->name, tok)) {
+			cur_type = memb_it->type;
+
+			cur_offset = memb_it->offset; // in bytes
+			cur_offset *= 8; // in bits
+			break;
+		}
+	}
+
+	if (!cur_type) {
+		eprintf("Invalid member '%s' for parent type\n", tok);
+		*offset = -1;
+		return NULL;
+	}
+
+	*offset += cur_offset;
+
+	if (path[*i] == '[') {
+
+		parent = cur_type;
+
+		if (parent->kind != RZ_TYPE_KIND_ARRAY) {
+			eprintf("Expected array, got another type\n");
+			*offset = -1;
+			return NULL;
+		}
+
+		path_walker_parse_bracket(typedb, parent, path, i, offset);
+		if (*offset == -1) {
+			return NULL;
+		}
+
+		// unwrap array
+		while (parent->kind == RZ_TYPE_KIND_ARRAY) {
+			parent = parent->array.type;
+		}
+
+		return parent;
+	} else if (path[*i] == '.' || path[*i] == '\0') {
+		return cur_type;
+	} else {
+		eprintf("Unexpected character '%c' at position %lu\n", path[*i], *i);
+		*offset = -1;
+		return NULL;
+	}
+}
+
 static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 	rz_return_val_if_fail(typedb && path, -1);
-	const char *member;
-	size_t membsize;
-	ut64 index;
+
+	size_t i;
+	for (i = 0; isalnum(path[i]); ++i)
+		;
+
+	if (path[i] != '.') {
+		eprintf("Unexpected character '%c' at position %lu\n", path[i], i);
+		return -1;
+	}
+
+	RzType *parent = rz_type_identifier_of_base_type_str(typedb, strndup(path, i));
+
 	st64 offset = 0;
-	RzType *parent = NULL;
-	const char *path_begin = path;
-	while (*path) {
-		switch (*path++) {
-		case '\0':
-			break;
-		case '[':
-			member = path;
-			index = (ut64)strtoull(member, (char **)&path, 10);
-			if (member == path || *path != ']') {
-				eprintf("Type path: expected ] (\"%s\")", path - 1);
-				return -1;
-			}
-			++path;
-			if (!parent || parent->kind != RZ_TYPE_KIND_ARRAY) {
-				return -1;
-			}
-			offset += rz_type_db_get_bitsize(typedb, parent) * index;
-			break;
-		case '.':
-			member = path;
-			for (membsize = 0; member[membsize]; ++membsize) {
-				if (strchr(".[", member[membsize])) {
-					break;
-				}
-			}
-			if (membsize == 0) {
-				eprintf("Type path: expected member (\"%s\")", path - 1);
-				return -1;
-			}
-			if (!parent) {
-				if (member <= path) {
-					return -1;
-				}
-				size_t typenamesize = member - path_begin;
-				char *typename = malloc(typenamesize + 1);
-				if (!typename) {
-					return -1;
-				}
-				strncpy(typename, path_begin, typenamesize);
-				typename[typenamesize] = '\0';
-				parent = rz_type_identifier_of_base_type_str(typedb, typename);
-				free(typename);
-				if (!parent) {
-					return -1;
-				}
-			} else {
-				if (parent->kind != RZ_TYPE_KIND_IDENTIFIER) {
-					return -1;
-				}
-				if (parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_STRUCT && parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNION) {
-					return -1;
-				}
-			}
-			offset += rz_type_db_struct_member_packed_offset(typedb, parent->identifier.name, member);
-			path = member + membsize;
-			break;
-		default:
-			eprintf("Type path: unexpected char (\"%s\")", path - 1);
+	while (path[i] != '\0') {
+
+		if (path[i] != '.') {
+			eprintf("Unexpected character '%c' at position %lu\n", path[i], i);
+			return -1;
+		}
+
+		if (parent->kind != RZ_TYPE_KIND_IDENTIFIER) {
+			eprintf("parent is not identifier\n");
+			return -1;
+		}
+
+		if (parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_STRUCT && parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNION) {
+			eprintf("parent type kind is not struct or union\n");
+			return -1;
+		}
+
+		parent = path_walker_parse_dot(typedb, parent, path, &i, &offset);
+		if (offset == -1) {
 			return -1;
 		}
 	}
+
 	return offset;
 }
 
@@ -289,10 +375,18 @@ RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_db_get_by_offset(const RzTypeDB
  */
 RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member) {
 	rz_return_val_if_fail(typedb && name && member, 0);
+	eprintf("here\n");
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	eprintf("here\n");
 	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+		if (!btype) {
+			eprintf("return offset 0: !btype\n");
+		} else {
+			eprintf("return offset 0: btype->kind != RZ_BASE_TYPE_KIND_STRUCT\n");
+		}
 		return 0;
 	}
+	eprintf("here\n");
 	RzTypeStructMember *memb;
 	ut64 result = 0;
 	rz_vector_foreach(&btype->struct_data.members, memb) {
