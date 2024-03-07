@@ -1705,6 +1705,146 @@ bool test_path_by_offset_typedef(void) {
 	mu_end;
 }
 
+bool test_offset_by_path_struct(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// simple
+
+	// eprintf("=============== SIMPLE ===============\n");
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int32_t a; uint32_t b; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
+
+	/**
+	 * Set offsets manually.
+	 * Since parse_struct_node() in librz/type/parser/types_parser.c sets them to 0.
+	 */
+	RzBaseType *btype = rz_type_get_base_type(typedb, ttype);
+	mu_assert_notnull(btype, "btype get successful");
+	RzTypeStructMember *memb_it;
+	rz_vector_foreach(&btype->struct_data.members, memb_it) {
+		if (!strcmp(memb_it->name, "a")) {
+			memb_it->offset = 0;
+		} else if (!strcmp(memb_it->name, "b")) {
+			memb_it->offset = 4;
+		}
+	}
+
+	long long offset;
+	offset = rz_type_offset_by_path(typedb, "Hello.a");
+	mu_assert_eq(offset, 0, "offset");
+	offset = rz_type_offset_by_path(typedb, "Hello.b");
+	mu_assert_eq(offset, 32, "offset");
+
+	// recursive
+
+	// eprintf("============= RECURSIVE ==============\n");
+	ttype = rz_type_parse_string_single(typedb->parser, "union World { uint64_t ulu; Hello mulu; int32_t urshak; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "World", "parsed type");
+
+	btype = rz_type_get_base_type(typedb, ttype);
+	mu_assert_notnull(btype, "btype get successful");
+	RzTypeUnionMember *umemb_it;
+	rz_vector_foreach(&btype->struct_data.members, umemb_it) {
+		if (!strcmp(umemb_it->name, "ulu")) {
+			umemb_it->offset = 0;
+		} else if (!strcmp(umemb_it->name, "mulu")) {
+			umemb_it->offset = 0;
+		} else if (!strcmp(umemb_it->name, "urshak")) {
+			umemb_it->offset = 0;
+		};
+	}
+
+	offset = rz_type_offset_by_path(typedb, "World.ulu");
+	mu_assert_eq(offset, 0, "offset");
+	offset = rz_type_offset_by_path(typedb, "World.mulu");
+	mu_assert_eq(offset, 0, "offset");
+	offset = rz_type_offset_by_path(typedb, "World.urshak");
+	mu_assert_eq(offset, 0, "offset");
+
+	offset = rz_type_offset_by_path(typedb, "World.mulu.a");
+	mu_assert_eq(offset, 0, "offset");
+	offset = rz_type_offset_by_path(typedb, "World.mulu.b");
+	mu_assert_eq(offset, 32, "offset");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_offset_by_path_array(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	RzBaseType *btype;
+	RzType *ttype;
+
+	// simple
+
+	// eprintf("=============== SIMPLE ===============\n");
+	char *error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int32_t a; uint32_t b; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
+
+	/**
+	 * Set offsets manually.
+	 * Since parse_struct_node() in librz/type/parser/types_parser.c sets them to 0.
+	 */
+	btype = rz_type_get_base_type(typedb, ttype);
+	mu_assert_notnull(btype, "btype get successful");
+	RzTypeStructMember *memb_it;
+	rz_vector_foreach(&btype->struct_data.members, memb_it) {
+		if (!strcmp(memb_it->name, "a")) {
+			memb_it->offset = 0;
+		} else if (!strcmp(memb_it->name, "b")) {
+			memb_it->offset = 4;
+		}
+	}
+	btype->size = 64;
+
+	ttype = rz_type_parse_string_single(typedb->parser, "struct HelloWrap { int32_t a; Hello harr[20]; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "HelloWrap", "parsed type");
+
+	/**
+	 * Set offsets manually.
+	 * Since parse_struct_node() in librz/type/parser/types_parser.c sets them to 0.
+	 */
+	btype = rz_type_get_base_type(typedb, ttype);
+	mu_assert_notnull(btype, "btype get successful");
+	rz_vector_foreach(&btype->struct_data.members, memb_it) {
+		if (!strcmp(memb_it->name, "a")) {
+			memb_it->offset = 0;
+		} else if (!strcmp(memb_it->name, "harr")) {
+			memb_it->offset = 4;
+		}
+	}
+
+	long long offset;
+	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr");
+	mu_assert_eq(offset, 4 * 8, "offset HelloWrap.harr");
+
+	eprintf("===\n");
+	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr[3]");
+	mu_assert_eq(offset, 28 * 8, "offset HelloWrap.harr[3]");
+
+	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr[3].a");
+	mu_assert_eq(offset, 28 * 8, "offset HelloWrap.harr[3].a");
+
+	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr[3].b");
+	mu_assert_eq(offset, 32 * 8, "offset HelloWrap.harr[3].b");
+
+	mu_end;
+}
+
 bool test_callable_unspecified_parameters(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
@@ -1758,6 +1898,8 @@ int all_tests() {
 	mu_run_test(test_path_by_offset_union);
 	mu_run_test(test_path_by_offset_array);
 	mu_run_test(test_path_by_offset_typedef);
+	mu_run_test(test_offset_by_path_struct);
+	mu_run_test(test_offset_by_path_array);
 	mu_run_test(test_callable_unspecified_parameters);
 	return tests_passed != tests_run;
 }
