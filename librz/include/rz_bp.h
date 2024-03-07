@@ -172,13 +172,6 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 RZ_API RzSerializeBpParser rz_serialize_bp_parser_new(void);
 RZ_API bool rz_serialize_bp_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp, RZ_NULLABLE RzSerializeResultInfo *res);
 
-/* plugin pointers */
-extern RzBreakpointPlugin rz_bp_plugin_x86;
-extern RzBreakpointPlugin rz_bp_plugin_arm;
-extern RzBreakpointPlugin rz_bp_plugin_mips;
-extern RzBreakpointPlugin rz_bp_plugin_ppc;
-extern RzBreakpointPlugin rz_bp_plugin_sh;
-extern RzBreakpointPlugin rz_bp_plugin_bf;
 #endif
 #ifdef __cplusplus
 }

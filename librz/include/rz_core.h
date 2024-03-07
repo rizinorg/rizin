@@ -5,6 +5,7 @@
 #define RZ_CORE_H
 
 #include <rz_main.h>
+#include <rz_arch.h>
 #include <rz_types.h>
 #include <rz_magic.h>
 #include <rz_agraph.h>
@@ -480,7 +481,6 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const
 RZ_API bool rz_core_write_block(RzCore *core, ut64 addr, ut8 *data, size_t len);
 RZ_API bool rz_core_write_seq_at(RzCore *core, ut64 addr, ut64 from, ut64 to, ut64 step, int value_size);
 RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
-RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_DEPRECATE RZ_API void rz_core_help_vars_print(RzCore *core);
 RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, RZ_OUT RZ_BORROW RZ_NONNULL ut64 *prev_addr);
@@ -1234,10 +1234,6 @@ RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch);
 RZ_API ut32 rz_core_flirt_file_from_option_list(RZ_NONNULL const char *file_list);
 RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
 RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
-
-/* PLUGINS */
-extern RzCorePlugin rz_core_plugin_java;
-extern RzCorePlugin rz_core_plugin_dex;
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**

@@ -8,6 +8,8 @@
 #include <rz_cons.h>
 #include <rz_debug.h>
 
+#include "rz_io_plugins.h"
+
 #if DEBUGGER && (__linux__ || __BSD__)
 
 #include <sys/ptrace.h>

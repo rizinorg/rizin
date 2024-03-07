@@ -973,66 +973,6 @@ RZ_API void rz_bin_string_database_free(RZ_NULLABLE RzBinStrDb *db);
 RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzBinString *bstr);
 RZ_API bool rz_bin_string_database_remove(RZ_NONNULL RzBinStrDb *db, ut64 address, bool is_va);
 
-/* plugin pointers */
-extern RzBinPlugin rz_bin_plugin_any;
-extern RzBinPlugin rz_bin_plugin_fs;
-extern RzBinPlugin rz_bin_plugin_cgc;
-extern RzBinPlugin rz_bin_plugin_elf;
-extern RzBinPlugin rz_bin_plugin_elf64;
-extern RzBinPlugin rz_bin_plugin_p9;
-extern RzBinPlugin rz_bin_plugin_ne;
-extern RzBinPlugin rz_bin_plugin_le;
-extern RzBinPlugin rz_bin_plugin_luac;
-extern RzBinPlugin rz_bin_plugin_pe;
-extern RzBinPlugin rz_bin_plugin_mz;
-extern RzBinPlugin rz_bin_plugin_pe64;
-extern RzBinPlugin rz_bin_plugin_pebble;
-extern RzBinPlugin rz_bin_plugin_bios;
-extern RzBinPlugin rz_bin_plugin_bf;
-extern RzBinPlugin rz_bin_plugin_te;
-extern RzBinPlugin rz_bin_plugin_symbols;
-extern RzBinPlugin rz_bin_plugin_mach0;
-extern RzBinPlugin rz_bin_plugin_mach064;
-extern RzBinPlugin rz_bin_plugin_mdmp;
-extern RzBinPlugin rz_bin_plugin_java;
-extern RzBinPlugin rz_bin_plugin_dex;
-extern RzBinPlugin rz_bin_plugin_coff;
-extern RzBinPlugin rz_bin_plugin_ningb;
-extern RzBinPlugin rz_bin_plugin_ningba;
-extern RzBinPlugin rz_bin_plugin_ninds;
-extern RzBinPlugin rz_bin_plugin_nin3ds;
-extern RzBinPlugin rz_bin_plugin_xbe;
-extern RzBinPlugin rz_bin_plugin_bflt;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64;
-extern RzBinPlugin rz_bin_plugin_zimg;
-extern RzBinPlugin rz_bin_plugin_omf;
-extern RzBinPlugin rz_bin_plugin_art;
-extern RzBinPlugin rz_bin_plugin_bootimg;
-extern RzBinPlugin rz_bin_plugin_dol;
-extern RzBinPlugin rz_bin_plugin_nes;
-extern RzBinPlugin rz_bin_plugin_qnx;
-extern RzBinPlugin rz_bin_plugin_mbn;
-extern RzBinPlugin rz_bin_plugin_smd;
-extern RzBinPlugin rz_bin_plugin_sms;
-extern RzBinPlugin rz_bin_plugin_psxexe;
-extern RzBinPlugin rz_bin_plugin_spc700;
-extern RzBinPlugin rz_bin_plugin_vsf;
-extern RzBinPlugin rz_bin_plugin_dyldcache;
-extern RzBinPlugin rz_bin_plugin_xnu_kernelcache;
-extern RzBinPlugin rz_bin_plugin_avr;
-extern RzBinPlugin rz_bin_plugin_menuet;
-extern RzBinPlugin rz_bin_plugin_wasm;
-extern RzBinPlugin rz_bin_plugin_nro;
-extern RzBinPlugin rz_bin_plugin_nso;
-extern RzBinPlugin rz_bin_plugin_sfc;
-extern RzBinPlugin rz_bin_plugin_z64;
-extern RzBinPlugin rz_bin_plugin_prg;
-extern RzBinPlugin rz_bin_plugin_dmp64;
-extern RzBinPlugin rz_bin_plugin_pyc;
-
 #ifdef __cplusplus
 }
 #endif

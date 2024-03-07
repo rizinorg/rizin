@@ -5,6 +5,8 @@
 #include <rz_io.h>
 #include <rz_lib.h>
 
+#include "rz_io_plugins.h"
+
 typedef struct {
 	ut64 size;
 	ut64 offset;

@@ -3,6 +3,8 @@
 
 #define INITGUID
 #include <rz_core.h>
+#include "rz_io_plugins.h"
+
 #include <DbgEng.h>
 
 typedef HRESULT(__stdcall *DebugCreate_t)(

@@ -215,10 +215,6 @@ RZ_API int rz_egg_lang_parsechar(RzEgg *egg, char c);
 RZ_API void rz_egg_lang_include_path(RzEgg *egg, const char *path);
 RZ_API void rz_egg_lang_include_init(RzEgg *egg);
 
-/* plugin pointers */
-extern RzEggPlugin rz_egg_plugin_xor;
-extern RzEggPlugin rz_egg_plugin_shya;
-extern RzEggPlugin rz_egg_plugin_exec;
 #endif
 
 #ifdef __cplusplus

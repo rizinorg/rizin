@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "config.h"
 #include <rz_hash.h>
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <xxhash.h>
 #include "algorithms/ssdeep/ssdeep.h"
+#include "rz_hash_plugins.h"
 
 RZ_LIB_VERSION(rz_hash);
 

@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include "../io_memory.h"
 
+#include "rz_io_plugins.h"
+
 static bool __check(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "http://", 7));
 }

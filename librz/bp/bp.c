@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bp.h>
-#include <config.h>
+#include "rz_bp_plugins.h"
 
 RZ_LIB_VERSION(rz_bp);
 

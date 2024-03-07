@@ -243,8 +243,6 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #endif
 #ifdef RZ_BINDINGS
 #define RZ_API __attribute__((annotate("RZ_API")))
-#elif RZ_INLINE
-#define RZ_API inline
 #else
 #if defined(__GNUC__) && __GNUC__ >= 4
 #define RZ_API __attribute__((visibility("default")))
