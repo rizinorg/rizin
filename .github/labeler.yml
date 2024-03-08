@@ -39,14 +39,14 @@ rz-sign:
   - librz/main/rz-sign.c
 
 RzAnalysis:
-  - librz/analysis/**/*
+  - librz/arch/**/*
 
 RzAsm-Assembler:
-  - librz/asm/**/*ass*
-  - librz/asm/asm_x86_nz.c
+  - librz/arch/**/*ass*
+  - librz/arch/p/asm/asm_x86_nz.c
 
 RzAsm-Disassembler:
-  - librz/asm/**/*dis*
+  - librz/arch/**/*dis*
 
 RzBin:
   - librz/bin/**/*
@@ -88,7 +88,8 @@ RzMagic:
   - librz/magic/**/*
 
 RzParse:
-  - librz/parse/**/*
+  - librz/arch/p/parse/**/*
+  - librz/arch/p_gnu/parse/**/*
 
 RzDiff:
   - librz/diff/**/*
@@ -125,8 +126,11 @@ documentation:
   - binrz/man/**/*
 
 RZIL:
-  - librz/analysis/rzil/*
+  - librz/arch/il/*
+  - librz/arch/isa/**/*_il*
   - librz/il/**/*
+  - librz/include/rz_il/**/*
+  - librz/include/rz_il.h
   - librz/core/cil.c
 
 FLIRT:
@@ -146,12 +150,14 @@ rz-test:
   - test/**/*
 
 visual:
+  - librz/core/tui/*
   - librz/core/visual.c
   - librz/core/visual_tabs.inc
   - librz/core/vmenus.c
   - librz/core/vmenus_graph.c
 
 panel:
+  - librz/core/tui/*
   - librz/core/panels.c
 
 dietline:
@@ -183,44 +189,45 @@ java:
   - librz/core/p/core_java.*
 
 X86:
-  - librz/asm/p/*_x86_*
-  - librz/analysis/p/*_x86_*
+  - librz/arch/p/asm/*_x86_*
+  - librz/arch/p/analysis/*_x86_*
   - librz/bp/p/bp_x86.c
 
 ARM:
-  - librz/asm/arch/arm/**/*
-  - librz/asm/p/*_arm_*
-  - librz/analysis/p/*_arm_*
+  - librz/arch/is*/arm/**/*
+  - librz/arch/p/asm/*_arm_*
+  - librz/arch/p/analysis/*_arm_*
   - librz/debug/p/native/arm.c
   - librz/bp/p/bp_arm.c
 
 MIPS:
-  - librz/asm/arch/mips/**/*
-  - librz/asm/p/*_mips_*
-  - librz/analysis/p/*_mips_*
+  - librz/arch/isa/mips/**/*
+  - librz/arch/isa_gnu/mips/**/*
+  - librz/arch/p/asm/*_mips_*
+  - librz/arch/p/analysis/*_mips_*
   - librz/bp/p/bp_mips.c
 
 PPC:
-  - librz/asm/arch/ppc/**/*
-  - librz/asm/p/*_ppc_*
-  - librz/analysis/p/*_ppc_*
+  - librz/arch/is*/ppc/**/*
+  - librz/arch/p/asm/*_ppc_*
+  - librz/arch/p/analysis/*_ppc_*
   - librz/bp/p/bp_ppc.c
 
 ESIL:
-  - librz/analysis/esil/*
+  - librz/arch/esil/*
   - librz/debug/p/debug_esil.c
   - librz/debug/desil.c
   - librz/core/cil.c
 
 DWARF:
   - librz/bin/dwarf.c
-  - librz/analysis/dwarf_process.c
+  - librz/arch/dwarf_process.c
   - librz/core/cdwarf.c
 
 PDB:
   - librz/bin/pdb/**/*
   - librz/include/rz_pdb.h
-  - librz/analysis/type_pdb.c
+  - librz/arch/type_pdb.c
   - librz/core/cpdb.c
 
 GDB:
@@ -241,7 +248,7 @@ BSD:
   - librz/syscall/d/*bsd*
 
 Windows:
-  - librz/analysis/d/*windows*
+  - librz/arch/d/*windows*
   - librz/io/p/io_rzk_windows.*
   - librz/debug/p/native/windows/**/*
   - librz/debug/p/native/maps/windows*
@@ -250,7 +257,7 @@ Windows:
   - librz/syscall/d/windows*
 
 MacOS:
-  - librz/analysis/d/*macos*
+  - librz/arch/d/*macos*
   - librz/debug/p/native/xnu/**/*
   - librz/debug/p/native/maps/darwin.c
   - librz/debug/p/native/darwin.c
