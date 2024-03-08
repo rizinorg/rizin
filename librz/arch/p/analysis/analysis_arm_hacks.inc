@@ -147,7 +147,7 @@ static int hack_handle_br_exc_sys(ut32 insn, RzAnalysisOp *op) {
 	return -1;
 }
 
-static inline int hackyArmAnal(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len) {
+static inline int hackyArmAnalysis(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	rz_return_val_if_fail(buf, ret);
 	// Hacky support for ARMv8.3 and ARMv8.5
