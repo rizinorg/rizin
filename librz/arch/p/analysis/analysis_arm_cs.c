@@ -7,7 +7,10 @@
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <rz_util/rz_assert.h>
-#include "./analysis_arm_hacks.inc"
+
+#if CS_NEXT_VERSION < 6
+#include "analysis_arm_hacks.inc"
+#endif
 
 #include "arm/arm_cs.h"
 #include "arm/arm_accessors32.h"
@@ -15,6 +18,7 @@
 #include "arm/arm_it.h"
 
 #if CS_NEXT_VERSION < 6
+
 inline static const char *ARMCondCodeToString(arm_cc cc) {
 	switch (cc) {
 	default:
@@ -736,6 +740,8 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasNEON)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
+	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasMTE)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
 	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasFPARMv8)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 	} else {
@@ -1031,6 +1037,21 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		}
+		if (ISIMM64(1)) {
+			op->val = IMM64(1);
+		}
+		break;
+	case CS_AARCH64(_INS_ADDG):
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		if (ISIMM64(1)) {
+			op->val = IMM64(1);
+		}
+		break;
+	case CS_AARCH64(_INS_IRG):
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		break;
+	case CS_AARCH64(_INS_SUBG):
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		if (ISIMM64(1)) {
 			op->val = IMM64(1);
 		}
@@ -2074,10 +2095,12 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			return -1;
 		}
 	}
-	int haa = hackyArmAnal(a, op, buf, len); // TODO: disable this for capstone 5 after testing that everything works
+#if CS_NEXT_VERSION < 6
+	int haa = hackyArmAnalysis(a, op, buf, len);
 	if (haa > 0) {
 		return haa;
 	}
+#endif
 
 	n = cs_disasm(ctx->handle, (ut8 *)buf, RZ_MIN(4, len), addr, 1, &insn);
 	if (n < 1) {
