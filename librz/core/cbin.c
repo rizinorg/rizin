@@ -1544,13 +1544,13 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 
 				RzFlagItem *fi = rz_flag_get(core->flags, fnp);
 				if (fi) {
+					RZ_FREE(fnp);
 					if (fi->offset == addr) {
 						// we have a duplicate flag which points
 						// at the same address and same name.
 						rz_core_sym_name_fini(&sn);
 						continue;
 					}
-					free(fnp);
 					if (core->bin->prefix) {
 						fnp = rz_str_newf("%s.%s_0x%" PFMT64x, core->bin->prefix, fn, symbol->vaddr);
 					} else {
