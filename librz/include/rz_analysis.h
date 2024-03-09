@@ -168,7 +168,7 @@ typedef struct rz_analysis_function_t {
 	bool bp_frame : 1;
 	bool is_noreturn : 1; // true if function does not return
 	int argnum; // number of arguments;
-	RzList /*<RzAnalysisBlock *>*/ *bbs; // TODO: should be RzPVector
+	RzPVector /*<RzAnalysisBlock *>*/ *bbs;
 	RzAnalysisFcnMeta meta;
 	RzList /*<char *>*/ *imports; // maybe bound to class?
 	struct rz_analysis_t *analysis; // this function is associated with this instance
@@ -1473,7 +1473,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 // Merge every block in blocks with their contiguous predecessor, if possible.
 // IMPORTANT: Merged blocks will be FREED! The blocks list will be updated to contain only the survived blocks.
-RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks);
+RZ_API void rz_analysis_block_automerge(RzPVector /*<RzAnalysisBlock *>*/ *blocks);
 
 // return true iff an instruction in the given basic block starts at the given address
 RZ_API bool rz_analysis_block_op_starts_at(RzAnalysisBlock *block, ut64 addr);
@@ -1558,7 +1558,7 @@ RZ_API ut64 rz_analysis_function_realsize(const RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_function_contains(RzAnalysisFunction *fcn, ut64 addr);
 
 // returns true if function bytes were modified
-RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn);
+RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn);
 
 RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL char *name);
 RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *name);

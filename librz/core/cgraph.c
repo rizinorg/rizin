@@ -286,9 +286,10 @@ static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<
 		return;
 	}
 
-	RzListIter *iter;
 	RzAnalysisBlock *bbi;
-	rz_list_foreach (fcn->bbs, iter, bbi) {
+	void **iter;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bbi = (RzAnalysisBlock *)*iter;
 		if (bbi->addr == UT64_MAX) {
 			continue;
 		}

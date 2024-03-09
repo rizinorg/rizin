@@ -1158,6 +1158,18 @@ static int find_bb(ut64 *addr, RzAnalysisBlock *bb, void *user) {
 	return *addr != bb->addr;
 }
 
+static RzList /*<void *>*/ *pvector_to_list(RzPVector /*<void *>*/ *pvec) {
+	RzList *list = rz_list_new();
+	if (!list) {
+		return NULL;
+	}
+	void **it;
+	rz_pvector_foreach (pvec, it) {
+		rz_list_append(list, *it);
+	}
+	return list;
+}
+
 static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	(*next_i)++;
 	ut64 cur_addr = *next_i + ctx->start_addr;
@@ -1165,7 +1177,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 		if (!ctx->cur_bb) {
 			ctx->path = rz_list_new();
 			ctx->switch_path = rz_list_new();
-			ctx->bbl = rz_list_clone(ctx->fcn->bbs);
+			ctx->bbl = pvector_to_list(ctx->fcn->bbs);
 			ctx->cur_bb = rz_analysis_get_block_at(ctx->fcn->analysis, ctx->fcn->addr);
 			rz_list_push(ctx->path, ctx->cur_bb);
 		}

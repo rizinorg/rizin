@@ -299,7 +299,7 @@ RZ_API RZ_BORROW RzType *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL con
 	if (i >= rz_pvector_len(callable->args)) {
 		return NULL;
 	}
-	RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, i);
+	RzCallableArg *arg = rz_pvector_at(callable->args, i);
 	if (!arg) {
 		rz_warn_if_reached(); // should not happen in the types database
 		return NULL;
@@ -323,7 +323,7 @@ RZ_API RZ_BORROW const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL
 	if (i >= rz_pvector_len(callable->args)) {
 		return NULL;
 	}
-	RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, i);
+	RzCallableArg *arg = rz_pvector_at(callable->args, i);
 	if (!arg) {
 		rz_warn_if_reached(); // should not happen in the types database
 		return NULL;

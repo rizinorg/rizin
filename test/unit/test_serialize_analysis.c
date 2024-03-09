@@ -264,9 +264,9 @@ bool test_analysis_function_load() {
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "hirsch", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_NULL, "type");
-	mu_assert_eq(rz_list_length(f->bbs), 2, "bbs count");
-	mu_assert("bb", rz_list_contains(f->bbs, ba));
-	mu_assert("bb", rz_list_contains(f->bbs, bb));
+	mu_assert_eq(rz_pvector_len(f->bbs), 2, "bbs count");
+	mu_assert("bb", rz_pvector_contains(f->bbs, ba));
+	mu_assert("bb", rz_pvector_contains(f->bbs, bb));
 	mu_assert_eq(f->bits, 16, "bits");
 	mu_assert_ptreq(f->cc, rz_str_constpool_get(&analysis->constpool, "fancycall"), "cc");
 	mu_assert_eq(f->stack, 42, "stack");
@@ -289,8 +289,8 @@ bool test_analysis_function_load() {
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "effekt", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_FCN, "type");
-	mu_assert_eq(rz_list_length(f->bbs), 1, "bbs count");
-	mu_assert("bb", rz_list_contains(f->bbs, ba));
+	mu_assert_eq(rz_pvector_len(f->bbs), 1, "bbs count");
+	mu_assert("bb", rz_pvector_contains(f->bbs, ba));
 	mu_assert_eq(f->bits, 0, "bits");
 	mu_assert_null(f->cc, "cc");
 	mu_assert_eq(f->stack, 0, "stack");
@@ -307,7 +307,7 @@ bool test_analysis_function_load() {
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "hiberno", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_LOC, "type");
-	mu_assert_eq(rz_list_length(f->bbs), 0, "bbs count");
+	mu_assert_eq(rz_pvector_len(f->bbs), 0, "bbs count");
 	mu_assert_eq(f->bits, 32, "bits");
 	mu_assert_null(f->cc, "cc");
 	mu_assert_eq(f->stack, 0, "stack");
@@ -323,7 +323,7 @@ bool test_analysis_function_load() {
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "anamnesis", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_SYM, "type");
-	mu_assert_eq(rz_list_length(f->bbs), 0, "bbs count");
+	mu_assert_eq(rz_pvector_len(f->bbs), 0, "bbs count");
 	mu_assert_eq(f->bits, 32, "bits");
 	mu_assert_null(f->cc, "cc");
 	mu_assert_eq(f->stack, 0, "stack");

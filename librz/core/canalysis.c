@@ -308,9 +308,11 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 	if (!flist) {
 		return;
 	}
-	RzListIter *iter;
+
 	RzAnalysisBlock *b;
-	rz_list_foreach (fcn->bbs, iter, b) {
+	void **iter;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		b = (RzAnalysisBlock *)*iter;
 		RzInterval inter = (RzInterval){ b->addr, b->size };
 		RzListInfo *info = rz_listinfo_new(NULL, inter, inter, -1, NULL);
 		if (!info) {
@@ -327,9 +329,10 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 }
 
 RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) {
-	RzListIter *iter;
 	RzAnalysisBlock *b;
-	rz_list_foreach (fcn->bbs, iter, b) {
+	void **iter;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		b = (RzAnalysisBlock *)*iter;
 		if (b->jump == UT64_MAX) {
 			ut64 retaddr = rz_analysis_block_get_op_addr(b, b->ninstr - 1);
 			if (retaddr == UT64_MAX) {
@@ -364,11 +367,13 @@ static ut64 __opaddr(RzAnalysisBlock *b, ut64 addr) {
 static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *bb,
 	ut64 addr, RzOutputMode mode, PJ *pj, RzTable *t) {
 	RzDebugTracepoint *tp = NULL;
-	RzListIter *iter;
-	RzAnalysisBlock *bb2;
 	int outputs = (bb->jump != UT64_MAX) + (bb->fail != UT64_MAX);
 	int inputs = 0;
-	rz_list_foreach (fcn->bbs, iter, bb2) {
+
+	void **iter;
+	RzAnalysisBlock *bb2;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb2 = (RzAnalysisBlock *)*iter;
 		inputs += (bb2->jump == bb->addr) + (bb2->fail == bb->addr);
 	}
 	if (bb->switch_op) {
@@ -478,7 +483,7 @@ static int bb_cmp(const void *a, const void *b, void *user) {
 
 RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
 	rz_return_if_fail(core && fcn && state);
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *bb;
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
@@ -486,8 +491,9 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 		rz_cons_printf("fs blocks\n");
 	}
 
-	rz_list_sort(fcn->bbs, bb_cmp, NULL);
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_sort(fcn->bbs, bb_cmp, NULL);
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
 		bb_info_print(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
 	}
 
@@ -775,7 +781,7 @@ static void function_rename(RzFlag *flags, RzAnalysisFunction *fcn) {
 }
 
 static void autoname_imp_trampoline(RzCore *core, RzAnalysisFunction *fcn) {
-	if (rz_list_length(fcn->bbs) == 1 && ((RzAnalysisBlock *)rz_list_first(fcn->bbs))->ninstr == 1) {
+	if (rz_pvector_len(fcn->bbs) == 1 && ((RzAnalysisBlock *)rz_pvector_head(fcn->bbs))->ninstr == 1) {
 		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		if (xrefs && rz_list_length(xrefs) == 1) {
 			RzAnalysisXRef *xref = rz_list_first(xrefs);
@@ -2537,7 +2543,8 @@ RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore 
 	RzAnalysisFunction *F;
 	RzAnalysisBlock *B;
 	RzBinSymbol *S;
-	RzListIter *iter, *iter2;
+	RzListIter *iter;
+	void **it;
 	ut64 at;
 	RzCoreAnalysisStats *as = RZ_NEW0(RzCoreAnalysisStats);
 	if (!as) {
@@ -2586,7 +2593,8 @@ RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore 
 			blocks[piece].in_functions++;
 		}
 		// iter all basic blocks
-		rz_list_foreach (F->bbs, iter2, B) {
+		rz_pvector_foreach (F->bbs, it) {
+			B = (RzAnalysisBlock *)*it;
 			if (B->addr < from || B->addr > to) {
 				continue;
 			}
@@ -2595,7 +2603,6 @@ RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore 
 		}
 	}
 	// iter all symbols
-	void **it;
 	RzBinObject *o = rz_bin_cur_object(core->bin);
 	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	rz_pvector_foreach (symbols, it) {
@@ -2858,7 +2865,7 @@ RZ_API void rz_core_analysis_undefine(RzCore *core, ut64 off) {
 /* Join function at addr2 into function at addr */
 // addr use to be core->offset
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2) {
-	RzListIter *iter;
+	void **iter;
 	ut64 min = 0;
 	ut64 max = 0;
 	int first = 1;
@@ -2875,7 +2882,9 @@ RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2) {
 	// join all basic blocks from f1 into f2 if they are not
 	// delete f2
 	RZ_LOG_WARN("core: merging 0x%08" PFMT64x " into 0x%08" PFMT64x "\n", addr, addr2);
-	rz_list_foreach (f1->bbs, iter, bb) {
+
+	rz_pvector_foreach (f1->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
 		if (first) {
 			min = bb->addr;
 			max = bb->addr + bb->size;
@@ -2889,7 +2898,8 @@ RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2) {
 			}
 		}
 	}
-	rz_list_foreach (f2->bbs, iter, bb) {
+	rz_pvector_foreach (f2->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
 		if (first) {
 			min = bb->addr;
 			max = bb->addr + bb->size;
@@ -3237,9 +3247,11 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 }
 
 static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (f->bbs, iter, bb) {
+
+	rz_pvector_foreach (f->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
 		ut64 opaddr = rz_analysis_block_get_op_addr(bb, bb->ninstr - 1);
 		if (opaddr == UT64_MAX) {
 			return false;
@@ -3874,7 +3886,7 @@ RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core) {
 		return;
 	}
 
-	RzListIter *it, *it2;
+	RzListIter *it;
 	RzAnalysisFunction *func = NULL;
 	RzAnalysisBlock *block = NULL;
 	ut8 *bytes = NULL;
@@ -3890,7 +3902,9 @@ RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		rz_list_foreach (func->bbs, it2, block) {
+		void **vit;
+		rz_pvector_foreach (func->bbs, vit) {
+			block = (RzAnalysisBlock *)*vit;
 			if (block->size < 1) {
 				continue;
 			}

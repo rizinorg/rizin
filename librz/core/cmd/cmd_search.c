@@ -833,10 +833,11 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, 
 
 			/* Search only inside the basic block */
 			if (!strcmp(mode, "analysis.bb")) {
-				RzListIter *iter;
+				void **iter;
 				RzAnalysisBlock *bb;
 
-				rz_list_foreach (f->bbs, iter, bb) {
+				rz_pvector_foreach (f->bbs, iter) {
+					bb = (RzAnalysisBlock *)*iter;
 					ut64 at = core->offset;
 					if ((at >= bb->addr) && (at < (bb->addr + bb->size))) {
 						from = bb->addr;

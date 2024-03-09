@@ -80,15 +80,12 @@ static int read_ahead(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut8 *buf, 
 }
 
 RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
-	RzAnalysis *analysis = fcn->analysis;
-	RzAnalysisBlock *bb;
-	RzListIter *iter, *iter2;
-
 	rz_return_val_if_fail(fcn, false);
-
 	if (newsize < 1) {
 		return false;
 	}
+
+	RzAnalysis *analysis = fcn->analysis;
 
 	// XXX this is something we should probably do for all the archs
 	bool is_arm = analysis->cur->arch && !strncmp(analysis->cur->arch, "arm", 3);
@@ -97,9 +94,16 @@ RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
 	}
 
 	ut64 eof = fcn->addr + newsize;
-	rz_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
+
+	// in this loop we remove basic blocks and since we modify the
+	// pvector size we cannot loop normally.
+	size_t count = rz_pvector_len(fcn->bbs);
+	for (size_t i = 0; i < count;) {
+		RzAnalysisBlock *bb = (RzAnalysisBlock *)rz_pvector_at(fcn->bbs, i);
 		if (bb->addr >= eof) {
 			rz_analysis_function_remove_block(fcn, bb);
+			// the size of the pvector is changed, so we update count.
+			count = rz_pvector_len(fcn->bbs);
 			continue;
 		}
 		if (bb->addr + bb->size >= eof) {
@@ -112,7 +116,9 @@ RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
 		if (bb->fail != UT64_MAX && bb->fail >= eof) {
 			bb->fail = UT64_MAX;
 		}
+		i++;
 	}
+
 	return true;
 }
 
@@ -252,19 +258,23 @@ static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 add
 
 static ut64 try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *my_bb, const char *cmp_reg) {
 	rz_return_val_if_fail(fcn && fcn->bbs && cmp_reg, UT64_MAX);
-	RzListIter *iter;
+
 	RzAnalysisBlock *tmp_bb;
-	rz_list_foreach (fcn->bbs, iter, tmp_bb) {
-		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
-			if (tmp_bb->cmpreg == cmp_reg) {
-				if (tmp_bb->cond) {
-					if (tmp_bb->cond->type == RZ_TYPE_COND_HI || tmp_bb->cond->type == RZ_TYPE_COND_GT) {
-						return tmp_bb->cmpval + 1;
-					}
-				}
-				return tmp_bb->cmpval;
-			}
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		tmp_bb = (RzAnalysisBlock *)*it;
+		if (tmp_bb->jump != my_bb->addr && tmp_bb->fail != my_bb->addr) {
+			continue;
 		}
+		if (tmp_bb->cmpreg != cmp_reg) {
+			continue;
+		}
+		if (tmp_bb->cond &&
+			(tmp_bb->cond->type == RZ_TYPE_COND_HI ||
+				tmp_bb->cond->type == RZ_TYPE_COND_GT)) {
+			return tmp_bb->cmpval + 1;
+		}
+		return tmp_bb->cmpval;
 	}
 	return UT64_MAX;
 }
@@ -1760,10 +1770,12 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
  * \brief Returns the amount of loops located in the \p fcn function
  */
 RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
-	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	ut32 loops = 0;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		if (bb->jump != UT64_MAX && bb->jump < bb->addr) {
 			loops++;
 		}
@@ -1789,10 +1801,11 @@ RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
 RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 	RzAnalysis *analysis = fcn->analysis;
 	int E = 0, N = 0, P = 0;
-	RzListIter *iter;
 	RzAnalysisBlock *bb;
 
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		N++; // nodes
 		if (!analysis && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
 			RZ_LOG_DEBUG("invalid bb jump/fail pair at 0x%08" PFMT64x " (fcn 0x%08" PFMT64x "\n", bb->addr, fcn->addr);
@@ -1810,11 +1823,7 @@ RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 		}
 	}
 
-	int result = E - N + (2 * P);
-	if (result < 1 && !analysis) {
-		RZ_LOG_DEBUG("CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08" PFMT64x "\n", E, N, P, fcn->addr);
-	}
-	return result;
+	return E - N + (2 * P);
 }
 
 /**
@@ -1925,7 +1934,7 @@ RZ_API void rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFu
 	}
 	size_t args_count = rz_pvector_len(callable->args);
 	for (size_t index = 0; index < args_count; index++) {
-		RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, index);
+		RzCallableArg *arg = rz_pvector_at(callable->args, index);
 		if (!arg || !arg->type) {
 			continue;
 		}
@@ -2027,9 +2036,10 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_in(const RzAnalysis *analysis, RzA
 		bool is_dalvik = !strncmp(analysis->cur->arch, "dalvik", 6);
 		can_jmpmid = analysis->opt.jmpmid && (is_dalvik || is_x86);
 	}
-	RzListIter *iter;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		if (addr >= bb->addr && addr < (bb->addr + bb->size) && (!can_jmpmid || rz_analysis_block_op_starts_at(bb, addr))) {
 			return bb;
 		}
@@ -2043,9 +2053,10 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysi
 	if (b) {
 		return b;
 	}
-	RzListIter *iter;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		if (addr == bb->addr) {
 			return bb;
 		}
@@ -2055,15 +2066,16 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysi
 
 // compute the cyclomatic cost
 RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn) {
-	RzListIter *iter;
+	RzAnalysisOp op;
 	RzAnalysisBlock *bb;
 	ut32 totalCycles = 0;
 	if (!fcn) {
 		return 0;
 	}
 	RzAnalysis *analysis = fcn->analysis;
-	rz_list_foreach (fcn->bbs, iter, bb) {
-		RzAnalysisOp op;
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc(bb->size);
 		if (!buf) {
@@ -2072,6 +2084,7 @@ RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn) {
 		(void)analysis->iob.read_at(analysis->iob.io, bb->addr, (ut8 *)buf, bb->size);
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
+			rz_analysis_op_init(&op);
 			memset(&op, 0, sizeof(op));
 			(void)rz_analysis_op(analysis, &op, at, buf + idx, bb->size - idx, RZ_ANALYSIS_OP_MASK_BASIC);
 			if (op.size < 1) {
@@ -2089,13 +2102,14 @@ RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn) {
 
 RZ_API int rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NULLABLE int *ebbs) {
 	rz_return_val_if_fail(fcn, 0);
-	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	int edges = 0;
 	if (ebbs) {
 		*ebbs = 0;
 	}
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
 			*ebbs = *ebbs + 1;
 		} else {
@@ -2143,13 +2157,14 @@ static bool can_affect_bp(RzAnalysis *analysis, RzAnalysisOp *op) {
  * and "pop bp" at the end).
  */
 static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	RzListIter *iter;
-	RzAnalysisBlock *bb;
 	if (!fcn) {
 		return;
 	}
-	rz_list_foreach (fcn->bbs, iter, bb) {
-		RzAnalysisOp op;
+	RzAnalysisOp op;
+	RzAnalysisBlock *bb;
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc(bb->size);
 		if (!buf) {
@@ -2158,6 +2173,7 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 		(void)analysis->iob.read_at(analysis->iob.io, bb->addr, (ut8 *)buf, bb->size);
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
+			rz_analysis_op_init(&op);
 			rz_analysis_op(analysis, &op, at, buf + idx, bb->size - idx, RZ_ANALYSIS_OP_MASK_VAL);
 			if (op.size < 1) {
 				op.size = 1;
@@ -2229,10 +2245,10 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 	BlockRecurseCtx *ctx = user;
 	RzAnalysis *analysis = ctx->fcn->analysis;
 	RzAnalysisBlock *existing_bb = rz_analysis_get_block_at(analysis, addr);
-	if (!existing_bb || !rz_list_contains(ctx->fcn->bbs, existing_bb)) {
-		int old_len = rz_list_length(ctx->fcn->bbs);
+	if (!existing_bb || !rz_pvector_contains(ctx->fcn->bbs, existing_bb)) {
+		size_t old_len = rz_pvector_len(ctx->fcn->bbs);
 		analyze_function_locally(ctx->fcn->analysis, ctx->fcn, addr);
-		if (old_len != rz_list_length(ctx->fcn->bbs)) {
+		if (old_len != rz_pvector_len(ctx->fcn->bbs)) {
 			rz_analysis_block_recurse(rz_analysis_get_block_at(analysis, addr), mark_as_visited, user);
 		}
 	}
@@ -2306,7 +2322,7 @@ static void clear_bb_vars(RzAnalysisFunction *fcn, RzAnalysisBlock *bb, ut64 fro
 }
 
 static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *fcns, HtUP *reachable) {
-	RzListIter *it, *it2, *tmp;
+	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	bool old_jmpmid = analysis->opt.jmpmid;
 	analysis->opt.jmpmid = true;
@@ -2326,24 +2342,30 @@ static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *
 		BlockRecurseCtx ctx = { fcn, ht };
 		rz_analysis_block_recurse(bb, analize_descendents, &ctx);
 
-		// Remove non-reachable blocks
-		rz_list_foreach_safe (fcn->bbs, it2, tmp, bb) {
+		// in this loop we remove non-reachable basic blocks and since
+		// we modify the pvector size we cannot loop normally.
+		size_t count = rz_pvector_len(fcn->bbs);
+		for (size_t i = 0; i < count;) {
+			bb = (RzAnalysisBlock *)rz_pvector_at(fcn->bbs, i);
 			if (ht_up_find_kv(ht, bb->addr, NULL)) {
+				i++;
 				continue;
 			}
 			HtUP *o_visited = ht_up_find(reachable, fcn->addr, NULL);
 			if (!ht_up_find_kv(o_visited, bb->addr, NULL)) {
 				// Avoid removing blocks that were already not reachable
+				i++;
 				continue;
 			}
 			fcn->ninstr -= bb->ninstr;
 			rz_analysis_function_remove_block(fcn, bb);
+			count = rz_pvector_len(fcn->bbs);
 		}
 
-		RzList *bbs = rz_list_clone(fcn->bbs);
-		rz_analysis_block_automerge(bbs);
+		RzPVector *dup_bbs = rz_pvector_clone(fcn->bbs);
+		rz_analysis_block_automerge(dup_bbs);
 		rz_analysis_function_delete_unused_vars(fcn);
-		rz_list_free(bbs);
+		rz_pvector_free(dup_bbs);
 	}
 	analysis->opt.jmpmid = old_jmpmid;
 }
@@ -2404,17 +2426,24 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 
 RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
 	rz_return_if_fail(fcn);
-	RzListIter *it, *it2, *tmp, *tmp2;
+	RzListIter *it, *tmp;
 	RzAnalysisBlock *bb;
 	RzAnalysisFunction *f;
 	RzList *fcns = rz_list_new();
 	HtUP *reachable = ht_up_new(NULL, free_ht_up, NULL);
-	rz_list_foreach_safe (fcn->bbs, it, tmp, bb) {
-		if (rz_analysis_block_was_modified(bb)) {
-			rz_list_foreach_safe (bb->fcns, it2, tmp2, f) {
-				calc_reachable_and_remove_block(fcns, f, bb, reachable);
-			}
+
+	// in this loop we modify the pvector size we cannot loop normally.
+	size_t count = rz_pvector_len(fcn->bbs);
+	for (size_t i = 0; i < count;) {
+		bb = (RzAnalysisBlock *)rz_pvector_at(fcn->bbs, i);
+		if (!rz_analysis_block_was_modified(bb)) {
+			i++;
+			continue;
 		}
+		rz_list_foreach_safe (bb->fcns, it, tmp, f) {
+			calc_reachable_and_remove_block(fcns, f, bb, reachable);
+		}
+		count = rz_pvector_len(fcn->bbs);
 	}
 	update_analysis(fcn->analysis, fcns, reachable);
 	ht_up_free(reachable);
