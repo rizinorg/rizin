@@ -28,21 +28,23 @@ RZ_API void set_p_free(SetP *p) {
 // u
 
 RZ_API SetU *set_u_new(void) {
-	return (SetU *)ht_up_new0();
+	return (SetU *)ht_uu_new0();
 }
 
 RZ_API void set_u_add(SetU *s, ut64 u) {
-	ht_up_insert(s, u, (void *)1);
+	ht_uu_insert(s, u, u);
 }
 
 RZ_API bool set_u_contains(SetU *s, ut64 u) {
-	return ht_up_find(s, u, NULL) != NULL;
+	bool found = false;
+	ht_uu_find(s, u, &found);
+	return found;
 }
 
 RZ_API void set_u_delete(SetU *s, ut64 u) {
-	ht_up_delete(s, u);
+	ht_uu_delete(s, u);
 }
 
 RZ_API void set_u_free(SetU *s) {
-	ht_up_free(s);
+	ht_uu_free(s);
 }

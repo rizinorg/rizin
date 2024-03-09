@@ -5,7 +5,7 @@
 #define SDB_SET_H
 
 #include <rz_util/ht_pp.h>
-#include <rz_util/ht_up.h>
+#include <rz_util/ht_uu.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +19,7 @@ RZ_API bool set_p_contains(SetP *s, const void *u);
 RZ_API void set_p_delete(SetP *s, const void *u);
 RZ_API void set_p_free(SetP *p);
 
-typedef HtUP SetU;
+typedef HtUU SetU;
 
 RZ_API SetU *set_u_new(void);
 RZ_API void set_u_add(SetU *p, ut64 u);
