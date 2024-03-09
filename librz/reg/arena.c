@@ -234,7 +234,7 @@ RZ_API void rz_reg_arena_pop(RzReg *reg) {
 		}
 		a = rz_list_pop(reg->regset[i].pool);
 		rz_reg_arena_free(a);
-		a = rz_list_get_tail_data(reg->regset[i].pool);
+		a = rz_list_last(reg->regset[i].pool);
 		if (a) {
 			reg->regset[i].arena = a;
 			reg->regset[i].cur = rz_list_tail(reg->regset[i].pool);

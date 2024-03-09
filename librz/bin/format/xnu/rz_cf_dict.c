@@ -122,7 +122,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 
 		switch (r) {
 		case YXML_ELEMSTART: {
-			RzCFParseState *state = (RzCFParseState *)rz_list_get_top(stack);
+			RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
 			RzCFParseState *next_state = NULL;
 
 			if (!strcmp(x.elem, "dict")) {
@@ -189,7 +189,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 		}
 		case YXML_ELEMEND: {
 			RzCFParseState *state = (RzCFParseState *)rz_list_pop(stack);
-			RzCFParseState *next_state = (RzCFParseState *)rz_list_get_top(stack);
+			RzCFParseState *next_state = (RzCFParseState *)rz_list_last(stack);
 			if (!state || !next_state) {
 				goto beach;
 			}
@@ -317,7 +317,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 			break;
 		}
 		case YXML_CONTENT: {
-			RzCFParseState *state = (RzCFParseState *)rz_list_get_top(stack);
+			RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
 			if (state->phase == RZ_CF_STATE_IN_IGNORE) {
 				break;
 			}

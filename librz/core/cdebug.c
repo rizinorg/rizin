@@ -133,7 +133,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 				old_sp = cur_sp;
 				prev_call = false;
 			} else if (prev_ret) {
-				RzDebugFrame *head = rz_list_get_bottom(core->dbg->call_frames);
+				RzDebugFrame *head = rz_list_first(core->dbg->call_frames);
 				if (head && head->addr != pc) {
 					eprintf("*");
 				} else {

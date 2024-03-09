@@ -4426,7 +4426,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_stmt) {
 		RZ_LOG_ERROR("core: No basic block contains current address\n");
 		return RZ_CMD_STATUS_INVALID;
 	}
-	RzAnalysisBlock *bb = rz_list_get_top(bbl);
+	RzAnalysisBlock *bb = rz_list_last(bbl);
 	rz_analysis_block_ref(bb);
 	rz_list_free(bbl);
 

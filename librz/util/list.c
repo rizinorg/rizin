@@ -477,26 +477,6 @@ RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
 }
 
 /**
- * \brief Returns the last element of the list
- *
- **/
-RZ_API RZ_BORROW void *rz_list_get_top(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-
-	return list->tail ? list->tail->elem : NULL;
-}
-
-/**
- * \brief Returns the first element of the list
- *
- **/
-RZ_API RZ_BORROW void *rz_list_get_bottom(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-
-	return list->head ? list->head->elem : NULL;
-}
-
-/**
  * \brief Reverses the list
  *
  **/
@@ -513,24 +493,6 @@ RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
 	tmp = list->head;
 	list->head = list->tail;
 	list->tail = tmp;
-}
-
-/**
- * \brief Returns the data of the first element of the list
- *
- **/
-RZ_API RZ_BORROW void *rz_list_get_head_data(RZ_NONNULL RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return rz_list_iter_get_data(list->head);
-}
-
-/**
- * \brief Returns the data of the last element of the list
- *
- **/
-RZ_API RZ_BORROW void *rz_list_get_tail_data(RZ_NONNULL RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return rz_list_iter_get_data(list->tail);
 }
 
 /**

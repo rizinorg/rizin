@@ -522,7 +522,7 @@ RZ_API HexLoopAttr hex_get_loop_flag(const HexPkt *p) {
  * \param pkt The packet which predecessor will be updated.
  */
 static void make_next_packet_valid(HexState *state, const HexPkt *pkt) {
-	HexInsnContainer *tmp = rz_list_get_top(pkt->bin);
+	HexInsnContainer *tmp = rz_list_last(pkt->bin);
 	if (!tmp) {
 		return;
 	}
