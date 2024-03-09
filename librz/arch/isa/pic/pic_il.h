@@ -70,6 +70,6 @@ RZ_IPI RzAnalysisILConfig *rz_midrange_il_vm_config(RZ_NONNULL RzAnalysis *analy
 
 // TODO: Add support for PIC18F & other device families
 
-#include "pic_midrange_il.c"
+#include "pic_midrange_il.inc"
 
 #endif // PIC_IL_H_

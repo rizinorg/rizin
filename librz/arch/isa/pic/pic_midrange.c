@@ -180,7 +180,7 @@ const PicMidrangeOpAsmInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
  *
  * \return Number of decoded bytes (2 on success, 1 on failure).
  * */
-int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l) {
+int pic_midrange_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	char fsr_op[6];
 	st16 branch;
 

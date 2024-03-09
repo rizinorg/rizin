@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include "pic_il.h"
-#include "../../asm/arch/pic/pic_midrange.h"
+#include "pic_midrange.h"
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 

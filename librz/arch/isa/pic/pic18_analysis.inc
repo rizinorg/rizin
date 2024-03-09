@@ -3,8 +3,9 @@
 // SPDX-FileCopyrightText: 2015-2018 courk <courk@courk.cc>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "../asm/arch/pic/pic_pic18.h"
+#include "pic_pic18.h"
 #include "pic18_esil.inc"
+#include "pic18_il.inc"
 
 static void pic18_cond_branch(RzAnalysisOp *aop, ut64 addr, const ut8 *buf) {
 	aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -19,7 +20,7 @@ static int analysis_pic_pic18_op(
 
 	aop->size = 2;
 	Pic18Op op = { 0 };
-	if (!pic18_disasm_op(&op, buf, len)) {
+	if (!pic18_disasm_op(&op, addr, buf, len)) {
 		goto err;
 	}
 	aop->size = op.size;
@@ -217,6 +218,10 @@ static int analysis_pic_pic18_op(
 
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		pic18_esil(aop, &op, addr, buf);
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		aop->il_op = pic18_il(&op);
 	}
 
 	return aop->size;

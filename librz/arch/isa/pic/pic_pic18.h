@@ -103,6 +103,7 @@ typedef enum {
 } Pic18ArgsKind;
 
 typedef struct {
+	ut64 addr;
 	Pic18Opcode code;
 	const char *mnemonic;
 	ut8 size;
@@ -118,7 +119,7 @@ typedef struct {
 	};
 } Pic18Op;
 
-bool pic18_disasm_op(Pic18Op *op, const ut8 *buff, ut64 len);
-int pic_pic18_disassemble(RzAsmOp *asm_op, const ut8 *b, int l);
+bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len);
+int pic_pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int l);
 
 #endif // PIC_PIC18_H

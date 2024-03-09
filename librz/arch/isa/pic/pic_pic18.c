@@ -101,7 +101,7 @@ static const Pic18OpDesc ops[] = {
 	{ PIC18_OPCODE_INVALID, 0x0, 0xffff, "invalid", NO_ARG },
 };
 
-bool pic18_disasm_op(Pic18Op *op, const ut8 *buff, ut64 len) {
+bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 #define check_len(x) \
 	if (len < x) { \
 		op->code = PIC18_OPCODE_INVALID; \
@@ -109,6 +109,7 @@ bool pic18_disasm_op(Pic18Op *op, const ut8 *buff, ut64 len) {
 	} \
 	op->size = x;
 
+	op->addr = addr;
 	check_len(2);
 	ut16 word = rz_read_le16(buff);
 	Pic18OpDesc *desc = (Pic18OpDesc *)ops;
@@ -185,15 +186,15 @@ bool pic18_disasm_op(Pic18Op *op, const ut8 *buff, ut64 len) {
 	return true;
 }
 
-int pic_pic18_disassemble(RzAsmOp *asm_op, const ut8 *b, int blen) {
+int pic_pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
 	asm_op->size = 2;
 	Pic18Op op = { 0 };
-	pic18_disasm_op(&op, b, blen);
-
-	if (op.code == PIC18_OPCODE_INVALID) {
+	if (!pic18_disasm_op(&op, a->pc, b, blen) ||
+		op.code == PIC18_OPCODE_INVALID) {
 		rz_asm_op_set_asm(asm_op, op.mnemonic);
 		return -1;
 	}
+	asm_op->size = op.size;
 	switch (op.args_kind) {
 	case NO_ARG:
 		rz_asm_op_set_asm(asm_op, op.mnemonic);
