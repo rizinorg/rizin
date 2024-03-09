@@ -443,7 +443,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 		bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 25, "line units count");
-	RzBinDwarfLineUnit *lunit = rz_list_get_tail_data(li->units);
+	RzBinDwarfLineUnit *lunit = rz_list_last(li->units);
 	mu_assert_notnull(lunit, "line unit");
 
 	RzBinDwarfLineUnitHdr *hdr = &lunit->hdr;

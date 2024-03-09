@@ -3739,7 +3739,7 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 
 	if (rz_list_length(f->bbs) >= 1) {
 		ut32 fcn_size = rz_analysis_function_realsize(f);
-		b = rz_list_get_top(f->bbs);
+		b = rz_list_last(f->bbs);
 		if (b->size > fcn_size) {
 			b->size = fcn_size;
 		}

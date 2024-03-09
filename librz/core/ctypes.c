@@ -665,7 +665,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 		// possible member offset and the global variable at the laddr
 		RzList *paths = rz_analysis_type_paths_by_address(core->analysis, laddr + offimm);
 		if (paths && rz_list_length(paths)) {
-			RzTypePathTuple *match = rz_list_get_top(paths);
+			RzTypePathTuple *match = rz_list_last(paths);
 			rz_analysis_hint_set_offset(core->analysis, at, match->path->path);
 		}
 		rz_list_free(paths);
@@ -693,7 +693,7 @@ static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisCo
 
 	// TODO: Handle register based arg for types offset/path propagation
 	if (vtpaths && rz_list_length(vtpaths) && ctx->var && ctx->var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
-		RzTypePathTuple *vtpath = rz_list_get_top(vtpaths);
+		RzTypePathTuple *vtpath = rz_list_last(vtpaths);
 		// if a var addr matches with compound type, change its type and name
 		// var int local_e0h --> var struct foo
 		if (!*resolved) {
@@ -706,10 +706,10 @@ static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisCo
 			vtpath->root = NULL;
 		}
 	} else if (stpaths && rz_list_length(stpaths)) {
-		RzTypePathTuple *stpath = rz_list_get_top(stpaths);
+		RzTypePathTuple *stpath = rz_list_last(stpaths);
 		set_offset_hint(core, ctx->aop, stpath, ctx->src_addr, at - ret, ctx->src_imm);
 	} else if (dtpaths && rz_list_length(dtpaths)) {
-		RzTypePathTuple *dtpath = rz_list_get_top(dtpaths);
+		RzTypePathTuple *dtpath = rz_list_last(dtpaths);
 		set_offset_hint(core, ctx->aop, dtpath, ctx->dst_addr, at - ret, ctx->dst_imm);
 	}
 	rz_list_free(stpaths);

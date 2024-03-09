@@ -93,15 +93,11 @@ RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *i
 RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2);
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n);
 RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n);
-RZ_API RZ_BORROW void *rz_list_get_top(RZ_NONNULL const RzList *list);
-RZ_API RZ_BORROW void *rz_list_get_bottom(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW RzListIter *rz_list_iterator(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item);
 RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list);
 RZ_API void rz_list_reverse(RZ_NONNULL RzList *list);
-RZ_API RZ_BORROW void *rz_list_get_head_data(RZ_NONNULL RzList *list);
-RZ_API RZ_BORROW void *rz_list_get_tail_data(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list);
 RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch);
 RZ_API RZ_OWN RzList *rz_list_of_sdblist(SdbList *sl);
