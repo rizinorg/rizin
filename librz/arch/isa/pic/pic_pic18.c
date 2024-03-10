@@ -98,7 +98,6 @@ static const Pic18OpDesc ops[] = {
 	{ PIC18_OPCODE_CLRWDT, 0x4, 0x4, "clrwdt", NO_ARG },
 	{ PIC18_OPCODE_SLEEP, 0x3, 0x3, "sleep", NO_ARG },
 	{ PIC18_OPCODE_NOP, 0x0, 0x0, "nop", NO_ARG },
-	{ PIC18_OPCODE_INVALID, 0x0, 0xffff, "invalid", NO_ARG },
 };
 
 bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
