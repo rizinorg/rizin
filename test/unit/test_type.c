@@ -791,11 +791,11 @@ static bool test_struct_func_types(void) {
 	mu_assert_streq_free(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
 	RzCallableArg *arg;
-	arg = *rz_pvector_index_ptr(call->args, 0);
+	arg = rz_pvector_at(call->args, 0);
 	mu_assert_streq(arg->name, "a", "argument \"a\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
 
-	arg = *rz_pvector_index_ptr(call->args, 1);
+	arg = rz_pvector_at(call->args, 1);
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
@@ -829,11 +829,11 @@ static bool test_struct_func_types(void) {
 	call = member->type->pointer.type->pointer.type->callable;
 	mu_assert_streq_free(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
-	arg = *rz_pvector_index_ptr(call->args, 0);
+	arg = rz_pvector_at(call->args, 0);
 	mu_assert_streq(arg->name, "a", "argument \"a\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
 
-	arg = *rz_pvector_index_ptr(call->args, 1);
+	arg = rz_pvector_at(call->args, 1);
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
