@@ -679,7 +679,7 @@ RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char 
 	int delta = 0;
 	ut8 buf[32];
 	analysis->iob.read_at(analysis->iob.io, addr, buf, sizeof(buf));
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	rz_analysis_op_init(&op);
 	if (rz_analysis_op(analysis, &op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ALL) > 0) {
 		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp(op.dst->reg->name, name))) {

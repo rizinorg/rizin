@@ -156,6 +156,7 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 			context->analysis->iob.read_at(context->analysis->iob.io, xref->from, buf, sizeof(buf));
 
 			RzAnalysisOp aop = { 0 };
+			rz_analysis_op_init(&aop);
 			rz_analysis_op(context->analysis, &aop, xref->from, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 
 			if (aop.type == RZ_ANALYSIS_OP_TYPE_MOV || aop.type == RZ_ANALYSIS_OP_TYPE_LEA) {

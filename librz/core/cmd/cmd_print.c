@@ -1255,7 +1255,7 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 	char buf[2];
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut8 *data;
 	int datalen;
 	switch (mode) {
@@ -1310,6 +1310,7 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->analysis, &op, core->offset + i, data + i, len - i, RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;

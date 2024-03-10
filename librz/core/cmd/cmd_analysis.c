@@ -419,6 +419,7 @@ static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int 
 	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
+		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 
@@ -443,6 +444,7 @@ static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int 
 	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
+		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
@@ -485,6 +487,7 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
+		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 		esilstr = RZ_STRBUF_SAFEGET(&op.esil);
@@ -1007,6 +1010,7 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
 	for (ops = ptr = 0; ptr < buf_sz && hasNext(mode); ops++, ptr += len) {
+		rz_analysis_op_init(&aop);
 		len = rz_analysis_op(core->analysis, &aop, addr + ptr, buf + ptr, buf_sz - ptr, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
 		if (len < 1) {
 			RZ_LOG_ERROR("core: Invalid 0x%08" PFMT64x " instruction %02x %02x\n",
@@ -1390,7 +1394,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 			bb = (RzAnalysisBlock *)*iter;
 			ut64 pc = bb->addr;
 			ut64 end = bb->addr + bb->size;
-			RzAnalysisOp op;
+			RzAnalysisOp op = { 0 };
 			int ret, bbs = end - pc;
 			if (bbs < 1 || bbs > 0xfffff || pc >= end) {
 				RZ_LOG_ERROR("core: Invalid block size\n");
@@ -1407,6 +1411,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 			while (pc < end) {
 				left = RZ_MIN(end - pc, 32);
 				// rz_asm_set_pc (core->rasm, pc);
+				rz_analysis_op_init(&op);
 				ret = rz_analysis_op(core->analysis, &op, pc, buf + pc - bb->addr, left, RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL); // read overflow
 				opskip = false;
 				switch (op.type) {
@@ -1638,6 +1643,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 
 		RzAnalysisOp aop = RZ_EMPTY;
 		bufsz = rz_hex_str2bin(hex, (ut8 *)hex);
+		rz_analysis_op_init(&aop);
 		ret = rz_analysis_op(core->analysis, &aop, core->offset,
 			(const ut8 *)hex, bufsz, RZ_ANALYSIS_OP_MASK_ESIL);
 		if (ret > 0) {
@@ -1729,6 +1735,7 @@ static bool print_cmd_analysis_after_traps_print(RZ_NONNULL RzCore *core, ut64 n
 		if (!bufi) {
 			rz_io_read_at(core->io, addr, buf, 4096);
 		}
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->analysis, &op, addr, buf + bufi, 4096 - bufi, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 			if (op.size < 1) {
 				// XXX must be +4 on arm/mips/.. like we do in disasm.c
@@ -3299,10 +3306,12 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 
 			if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
 				RzAnalysisOp aop = { 0 };
+				rz_analysis_op_init(&aop);
 				rz_analysis_op(core->analysis, &aop, xref->to, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 				if (aop.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
 					cmd_analysis_ucall_ref(core, xref->to);
 				}
+				rz_analysis_op_fini(&aop);
 			}
 			rz_cons_newline();
 		}
@@ -5886,9 +5895,10 @@ static RzList /*<ut64 *>*/ *get_calls(RzAnalysisBlock *block) {
 		return NULL;
 	}
 	RzList *list = NULL;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	block->analysis->iob.read_at(block->analysis->iob.io, block->addr, data, block->size);
 	for (size_t i = 0; i < block->size; i++) {
+		rz_analysis_op_init(&op);
 		int ret = rz_analysis_op(block->analysis, &op, block->addr + i, data + i, block->size - i, RZ_ANALYSIS_OP_MASK_HINT);
 		if (ret < 1) {
 			continue;

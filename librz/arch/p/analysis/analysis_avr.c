@@ -370,7 +370,6 @@ static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 }
 
 static ut8 *analysis_mask_avr(RzAnalysis *analysis, int size, const ut8 *data, ut64 at) {
-	RzAnalysisOp *op = NULL;
 	ut8 *ret = NULL;
 	AVROp aop = { 0 };
 	RzStrBuf sb = { 0 };
@@ -380,7 +379,6 @@ static ut8 *analysis_mask_avr(RzAnalysis *analysis, int size, const ut8 *data, u
 
 	if (opsize < 2 || !(ret = malloc(opsize))) {
 		free(ret);
-		rz_analysis_op_free(op);
 		return NULL;
 	}
 

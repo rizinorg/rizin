@@ -1240,7 +1240,7 @@ static void ds_show_refs(RzDisasmState *ds) {
 			ds_comment(ds, true, "; (%s)", cmt);
 		}
 		if (xref->type & RZ_ANALYSIS_XREF_TYPE_CALL) {
-			RzAnalysisOp aop;
+			RzAnalysisOp aop = { 0 };
 			ut8 buf[12];
 			rz_io_read_at(ds->core->io, xref->from, buf, sizeof(buf));
 			rz_analysis_op(ds->core->analysis, &aop, xref->from, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
@@ -5230,6 +5230,7 @@ toro:
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
 		rz_analysis_op_fini(&ds->analysis_op);
+		rz_analysis_op_init(&ds->analysis_op);
 		if (rz_analysis_op(core->analysis, &ds->analysis_op, core->offset + core->print->cur,
 			    buf + core->print->cur, (int)(len - core->print->cur), DS_ANALYSIS_OP_MASK) > 0) {
 			// TODO: check for ds->analysis_op.type and ret
@@ -5288,6 +5289,7 @@ toro:
 		rz_asm_set_pc(core->rasm, ds->at);
 		ds_update_ref_lines(ds);
 		rz_analysis_op_fini(&ds->analysis_op);
+		rz_analysis_op_init(&ds->analysis_op);
 		rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), DS_ANALYSIS_OP_MASK);
 		if (ds_must_strip(ds)) {
 			inc = ds->analysis_op.size;
@@ -5334,6 +5336,7 @@ toro:
 		ds_atabs_option(ds);
 		if (ds->analysis_op.addr != ds->at) {
 			rz_analysis_op_fini(&ds->analysis_op);
+			rz_analysis_op_init(&ds->analysis_op);
 			rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), DS_ANALYSIS_OP_MASK);
 		}
 		if (ret < 1) {
@@ -5708,6 +5711,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 		rz_analysis_op_fini(&ds->analysis_op);
 		if (!hasanalysis) {
 			// XXX we probably don't need MASK_ALL
+			rz_analysis_op_init(&ds->analysis_op);
 			rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + addrbytes * i, len, RZ_ANALYSIS_OP_MASK_ALL);
 			hasanalysis = true;
 		}
@@ -5733,6 +5737,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 			if (ds->decode && !ds->immtrim) {
 				RZ_FREE(ds->opstr);
 				if (!hasanalysis) {
+					rz_analysis_op_init(&ds->analysis_op);
 					rz_analysis_op(core->analysis, &ds->analysis_op, ds->at, buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
 				}
 				tmpopstr = rz_analysis_op_to_string(core->analysis, &ds->analysis_op);
@@ -5743,6 +5748,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 				rz_parse_immtrim(ds->opstr);
 			} else if (ds->use_esil) {
 				if (!hasanalysis) {
+					rz_analysis_op_init(&ds->analysis_op);
 					rz_analysis_op(core->analysis, &ds->analysis_op,
 						ds->at, buf + i,
 						nb_bytes - i, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
@@ -6051,11 +6057,13 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 				rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, rz_asm_op_get_asm(&asmop),
 					str, sizeof(str), core->print->big_endian);
 				if (scr_color) {
-					RzAnalysisOp aop;
+					RzAnalysisOp aop = { 0 };
+					rz_analysis_op_init(&aop);
 					rz_analysis_op(core->analysis, &aop, addr, buf + i, l - i, RZ_ANALYSIS_OP_MASK_ALL);
 					RzStrBuf *colored_asm;
 					RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
 					colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
+					rz_analysis_op_fini(&aop);
 					free(param);
 					if (colored_asm) {
 						rz_cons_printf("%s\n", rz_strbuf_get(colored_asm));
@@ -6297,10 +6305,9 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 			if (!asm_instr) {
 				rz_cons_newline();
 			} else if (!asm_immtrim && (decode || esil)) {
-				RzAnalysisOp analysis_op = {
-					0
-				};
+				RzAnalysisOp analysis_op;
 				char *tmpopstr, *opstr = NULL;
+				rz_analysis_op_init(&analysis_op);
 				rz_analysis_op(core->analysis, &analysis_op, address + i,
 					buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANALYSIS_OP_MASK_ALL);
 				tmpopstr = rz_analysis_op_to_string(core->analysis, &analysis_op);
@@ -6338,9 +6345,8 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 					asm_str = (char *)&opstr;
 				}
 				if (show_color) {
-					RzAnalysisOp aop = {
-						0
-					};
+					RzAnalysisOp aop = { 0 };
+					rz_analysis_op_init(&aop);
 					rz_analysis_op(core->analysis, &aop, address + i,
 						buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANALYSIS_OP_MASK_BASIC);
 					RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(asm_str);
@@ -6432,7 +6438,8 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 		if (!read_ahead(core->io, &buf, &buf_sz, op_addr, block_sz, read_len)) {
 			break;
 		}
-		RzAnalysisOp op;
+		RzAnalysisOp op = { 0 };
+		rz_analysis_op_init(&op);
 		int ret = rz_analysis_op(core->analysis, &op, op_addr, buf + block_sz, read_len, RZ_ANALYSIS_OP_MASK_ESIL);
 		const bool invalid_instr = ret < 1 || op.size < 1 || op.type == RZ_ANALYSIS_OP_TYPE_ILL;
 		bool end_of_block = false;
@@ -6600,7 +6607,8 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	int ba_len = rz_strbuf_length(&asmop.buf_asm) + 128;
 	char *ba = malloc(ba_len);
 	strcpy(ba, rz_strbuf_get(&asmop.buf_asm));
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
+	rz_analysis_op_init(&op);
 	rz_analysis_op(core->analysis, &op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 	if (asm_subvar) {
 		rz_parse_subvar(core->parser, fcn, &op,
@@ -6665,6 +6673,7 @@ RZ_API RZ_OWN RzPVector /*<RzCoreDisasmOp *>*/ *rz_core_disasm_all_possible_opco
 		op->assembly = strdup(op->size > 0 ? rz_asm_op_get_asm(&asm_op) : "illegal");
 
 		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, offset, ptr, length, RZ_ANALYSIS_OP_MASK_ALL);
 		RzStrBuf *bw_str = rz_strbuf_new(op->assembly);
 		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);

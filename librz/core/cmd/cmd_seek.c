@@ -69,7 +69,8 @@ RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent) {
 		rz_core_seek_mark(core);
 	}
 	for (val = i = 0; i < n; i++) {
-		RzAnalysisOp op;
+		RzAnalysisOp op = { 0 };
+		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, core->offset, core->block,
 			core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC);
 		if (ret < 1) {

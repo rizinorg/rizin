@@ -774,7 +774,7 @@ RZ_API bool rz_core_graph_write(RZ_NONNULL RzCore *core, ut64 addr, RzCoreGraphT
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	RzGraph *graph = NULL;
 	ut64 old_offset = core->offset;
 	RzAnalysisOpMask flags = RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL;

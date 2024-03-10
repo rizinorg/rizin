@@ -1038,7 +1038,7 @@ RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	RzAnalysisOp *op = RZ_NEW0(RzAnalysisOp);
+	RzAnalysisOp *op = rz_analysis_op_new();
 	if (!op) {
 		return NULL;
 	}
@@ -1891,7 +1891,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	}
 	int ptrdepth = rz_config_get_i(core->config, "analysis.ptrdepth");
 	int i, count = 0;
-	RzAnalysisOp op = RZ_EMPTY;
+	RzAnalysisOp op = { 0 };
 	ut64 at;
 	char bckwrds, do_bckwrd_srch;
 	int arch = -1;
@@ -1953,6 +1953,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 				case 'r':
 				case 'w':
 				case 'x': {
+					rz_analysis_op_init(&op);
 					rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC);
 					int mask = mode == 'r' ? 1 : mode == 'w' ? 2
 						: mode == 'x'                    ? 4
@@ -1964,6 +1965,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 					continue;
 				} break;
 				default:
+					rz_analysis_op_init(&op);
 					if (rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 						rz_analysis_op_fini(&op);
 						continue;
@@ -2001,6 +2003,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 					}
 					break;
 				default: {
+					rz_analysis_op_init(&op);
 					if (rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 						rz_analysis_op_fini(&op);
 						continue;
@@ -2244,6 +2247,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			continue;
 		}
 		while (i < bsz && !rz_cons_is_breaked()) {
+			rz_analysis_op_init(&op);
 			ret = rz_analysis_op(core->analysis, &op, at + i, buf + i, bsz - i, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 			ret = ret > 0 ? ret : 1;
 			i += ret;
@@ -3635,6 +3639,7 @@ static bool process_reference_noreturn_cb(void *u, const ut64 k, const void *v) 
 		ut8 buf[CALL_BUF_SIZE] = { 0 };
 		RzAnalysisOp op = { 0 };
 		if (core->analysis->iob.read_at(core->analysis->iob.io, addr, buf, CALL_BUF_SIZE)) {
+			rz_analysis_op_init(&op);
 			if (rz_analysis_op(core->analysis, &op, addr, buf, CALL_BUF_SIZE, 0) > 0) {
 				RzBinReloc *rel = rz_core_getreloc(core, addr, op.size);
 				if (rel) {
@@ -3837,7 +3842,7 @@ static bool is_in_data_map(RzCore *core, const ut64 address) {
 
 static ut32 add_data_pointer(RzCore *core, const ut8 *bytes, const ut32 size, ut64 pc, ut32 min_op_size) {
 	RzAnalysis *analysis = core->analysis;
-	RzAnalysisOp aop;
+	RzAnalysisOp aop = { 0 };
 	ut32 isize = 0;
 	ut64 pointer = 0;
 
@@ -5055,15 +5060,15 @@ RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr) {
 	free(ptr);
 }
 
-static ut64 analysis_bytes_oplen(RzCore *core, const ut8 *ptr, ut64 addr, int len, int min_op_size,
-	int mask) {
+static ut64 analysis_bytes_oplen(RzCore *core, const ut8 *ptr, ut64 addr, int len, int min_op_size, int mask) {
 	int oplen = 0;
 	RzAsmOp asmop;
 	RzAnalysisOp op;
 	rz_asm_op_init(&asmop);
-	rz_analysis_op_init(&op);
 	rz_asm_set_pc(core->rasm, addr);
+	rz_analysis_op_init(&op);
 	int reta = rz_analysis_op(core->analysis, &op, addr, ptr, len, mask);
+	rz_analysis_op_fini(&op);
 	int ret = rz_asm_disassemble(core->rasm, &asmop, ptr, len);
 	if (reta < 1 || ret < 1) {
 		return min_op_size;
@@ -5404,6 +5409,7 @@ RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL
 		return false;
 	}
 	bool res = false;
+	rz_analysis_op_init(&op);
 	int ret = rz_analysis_op(core->analysis, &op, core->offset, code, sizeof(code), RZ_ANALYSIS_OP_MASK_VAL);
 	if (ret < 1) {
 		goto exit;
@@ -5623,7 +5629,8 @@ RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 		return false;
 	}
 
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
+	rz_analysis_op_init(&op);
 	rz_analysis_op(core->analysis, &op, core->offset,
 		buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
@@ -5665,7 +5672,8 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 		return NULL;
 	}
 
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
+	rz_analysis_op_init(&op);
 	rz_analysis_op(core->analysis, &op, core->offset,
 		buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 	RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
@@ -5701,7 +5709,7 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 }
 
 static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports_only) {
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	int depth = rz_config_get_i(core->config, "analysis.depth");
 	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
@@ -5748,6 +5756,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 		if (setBits != core->rasm->bits) {
 			rz_config_set_i(core->config, "asm.bits", setBits);
 		}
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->analysis, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
 			if (op.size < 1) {
 				op.size = minop;
@@ -5847,7 +5856,7 @@ RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr) {
 	ut8 buf[OPDELTA * 2];
 	ut64 target, base;
 	RzAnalysisBlock *bb;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	int len, ret, i;
 	int minop = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	int maxop = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
@@ -5876,6 +5885,7 @@ RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr) {
 	base = target > OPDELTA ? target - OPDELTA : 0;
 	rz_io_read_at(core->io, base, buf, sizeof(buf));
 	for (i = 0; i < sizeof(buf); i++) {
+		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, base + i,
 			buf + i, sizeof(buf) - i, RZ_ANALYSIS_OP_MASK_BASIC);
 		if (ret > 0) {
@@ -5883,17 +5893,18 @@ RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr) {
 			if (len < 1) {
 				len = 1;
 			}
-			rz_analysis_op_fini(&op); // XXX
 			if (midflags >= RZ_MIDFLAGS_REALIGN) {
 				int skip_bytes = rz_core_flag_in_middle(core, base + i, len, &midflags);
 				if (skip_bytes && base + i + skip_bytes < target) {
 					i += skip_bytes - 1;
+					rz_analysis_op_fini(&op);
 					continue;
 				}
 			}
 		} else {
 			len = 1;
 		}
+		rz_analysis_op_fini(&op);
 		if (target <= base + i + len) {
 			return base + i;
 		}

@@ -256,6 +256,7 @@ RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(RZ_NONNULL RzAnalysis
 		ut8 code[32] = { 0 };
 		analysis->read_at(analysis, addr, code, sizeof(code));
 		RzAnalysisOp op = { 0 };
+		rz_analysis_op_init(&op);
 		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT);
 		RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
 

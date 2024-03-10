@@ -289,12 +289,16 @@ RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 		RZ_LOG_ERROR("core: hack: write hacks are only supported on x86 arch\n");
 	}
 	if (hack) {
-		RzAnalysisOp aop;
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
+			rz_analysis_op_fini(&aop);
 			RZ_LOG_ERROR("core: hack: analysis op fail\n");
 			return false;
 		}
-		return hack(core, op, &aop);
+		bool ret = hack(core, op, &aop);
+		rz_analysis_op_fini(&aop);
+		return ret;
 	}
 	return false;
 }

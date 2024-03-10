@@ -333,7 +333,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 }
 
 static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
@@ -383,7 +383,7 @@ static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 			pc = rz_reg_getv(core->analysis->reg, "PC");
 		}
 		rz_io_read_at(core->io, pc, buf, sizeof(buf));
-
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			RZ_LOG_ERROR("rz_analysis_op failed\n");
 			res = false;
@@ -399,9 +399,11 @@ static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 				goto cleanup_after_push;
 			}
 		}
+		rz_analysis_op_fini(&op);
 	}
 
 cleanup_after_push:
+	rz_analysis_op_fini(&op);
 	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 end:
@@ -489,7 +491,7 @@ static bool step_line(RzCore *core, int times) {
 }
 
 static void cmd_debug_backtrace(RzCore *core, ut64 len) {
-	RzAnalysisOp aop;
+	RzAnalysisOp aop = { 0 };
 	ut64 addr;
 	if (!len) {
 		rz_bp_traptrace_list(core->dbg->bp);
@@ -517,8 +519,11 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			rz_io_read_at(core->io, addr, buf, 32); // XXX longer opcodes?
+			rz_analysis_op_fini(&aop);
+			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		} while (rz_bp_traptrace_at(core->dbg->bp, addr, aop.size));
+		rz_analysis_op_fini(&aop);
 		rz_bp_traptrace_enable(core->dbg->bp, false);
 	}
 }
@@ -1372,7 +1377,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 
 	while (true) {
 		ut8 buf[32];
-		RzAnalysisOp aop;
+		RzAnalysisOp aop = { 0 };
 		int addr_in_range;
 
 		if (rz_cons_is_breaked()) {
@@ -1399,6 +1404,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 		addr_in_range = addr >= from && addr < to;
 
 		rz_io_read_at(core->io, addr, buf, sizeof(buf));
+		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		eprintf("%d %" PFMT64x "\r", n++, addr);
 		switch (aop.type) {
@@ -1446,6 +1452,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 			}
 			break;
 		}
+		rz_analysis_op_fini(&aop);
 	}
 }
 
@@ -2692,16 +2699,19 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_prog_handler(RzCore *core, int argc, const 
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
 		ut64 addr = rz_debug_reg_get(core->dbg, "PC");
 		rz_io_read_at(core->io, addr, buf, sizeof(buf));
-		RzAnalysisOp aop;
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		if (aop.type == RZ_ANALYSIS_OP_TYPE_CALL) {
 			RzBinObject *o = rz_bin_cur_object(core->bin);
 			RzBinSection *s = rz_bin_get_section_at(o, aop.jump, true);
 			if (!s) {
 				rz_debug_step_over(core->dbg, times);
+				rz_analysis_op_fini(&aop);
 				continue;
 			}
 		}
+		rz_analysis_op_fini(&aop);
 		rz_debug_step(core->dbg, 1);
 	}
 	rz_core_reg_update_flags(core);

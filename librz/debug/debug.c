@@ -796,7 +796,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	ut8 buf[32];
 	ut64 pc, sp, r;
 	ut64 next[2];
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	int br, i, ret;
 	union {
 		ut64 r64;
@@ -827,10 +827,13 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	if (!dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf))) {
 		return false;
 	}
+	rz_analysis_op_init(&op);
 	if (rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
+		rz_analysis_op_fini(&op);
 		return false;
 	}
 	if (op.type == RZ_ANALYSIS_OP_TYPE_ILL) {
+		rz_analysis_op_fini(&op);
 		return false;
 	}
 	switch (op.type) {
@@ -893,6 +896,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		br = 1;
 		break;
 	}
+	rz_analysis_op_fini(&op);
 
 	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	for (i = 0; i < br; i++) {
@@ -1039,7 +1043,7 @@ static bool isStepOverable(ut64 opType) {
 }
 
 RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
 	int steps_taken = 0;
@@ -1085,8 +1089,10 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 			dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 		}
 		// Analyze the opcode
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("debug-step-over: Decode error at %" PFMT64x "\n", pc);
+			rz_analysis_op_fini(&op);
 			return steps_taken;
 		}
 		if (op.fail == -1) {
@@ -1098,6 +1104,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 		// Skip over all the subroutine calls
 		if (isStepOverable(op.type)) {
 			if (!rz_debug_continue_until(dbg, ins_size)) {
+				rz_analysis_op_fini(&op);
 				eprintf("Could not step over call @ 0x%" PFMT64x "\n", pc);
 				return steps_taken;
 			}
@@ -1105,11 +1112,13 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 			// eprintf ("REP: skip to next instruction...\n");
 			if (!rz_debug_continue_until(dbg, ins_size)) {
 				eprintf("step over failed over rep\n");
+				rz_analysis_op_fini(&op);
 				return steps_taken;
 			}
 		} else {
 			rz_debug_step(dbg, 1);
 		}
+		rz_analysis_op_fini(&op);
 	}
 
 	return steps_taken;
@@ -1305,17 +1314,20 @@ repeat:
 			RzAnalysisOp op = { 0 };
 			ut64 pc = rz_debug_reg_get(dbg, "PC");
 			dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
+			rz_analysis_op_init(&op);
 			rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 			if (op.size > 0) {
 				const char *signame = rz_signal_to_string(dbg->reason.signum);
 				rz_debug_reg_set(dbg, "PC", pc + op.size);
 				eprintf("Skip signal %d handler %s\n",
 					dbg->reason.signum, signame);
+				rz_analysis_op_fini(&op);
 				goto repeat;
 			} else {
 				ut64 pc = rz_debug_reg_get(dbg, "PC");
 				eprintf("Stalled with an exception at 0x%08" PFMT64x "\n", pc);
 			}
+			rz_analysis_op_fini(&op);
 		}
 	}
 #if __WINDOWS__
@@ -1353,7 +1365,7 @@ RZ_API int rz_debug_continue_until_nontraced(RzDebug *dbg) {
 RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 	int ret, n = 0;
 	ut64 pc, buf_pc = 0;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut8 buf[DBG_BUF_SIZE];
 
 	if (rz_debug_is_dead(dbg)) {
@@ -1385,13 +1397,17 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 			dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 		}
 		// Analyze the opcode
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("Decode error at %" PFMT64x "\n", pc);
+			rz_analysis_op_fini(&op);
 			return false;
 		}
 		if (op.type == type) {
+			rz_analysis_op_fini(&op);
 			break;
 		}
+		rz_analysis_op_fini(&op);
 		// Step over and repeat
 		ret = over
 			? rz_debug_step_over(dbg, 1)

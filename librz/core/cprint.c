@@ -82,6 +82,7 @@ RZ_API RZ_OWN char *rz_core_esil_of_assembly(RzCore *core, const char *assembly)
 	RzAnalysisOp aop = { 0 };
 	while (printed < bufsz) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset,
 			    (const ut8 *)acode->bytes + printed, bufsz - printed, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 			aop.size < 1) {
@@ -141,6 +142,7 @@ RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len) {
 	RzAnalysisOp aop = { 0 };
 	while (printed < len) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset,
 			    (const ut8 *)hex + printed, len - printed, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 			aop.size < 1) {

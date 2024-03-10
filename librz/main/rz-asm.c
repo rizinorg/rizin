@@ -139,6 +139,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 			eprintf("Error analyzing instruction at 0x%08" PFMT64x "\n", offset);
 			break;
@@ -317,6 +318,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
+			rz_analysis_op_init(&aop);
 			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
 				printf("%s\n", RZ_STRBUF_SAFEGET(&aop.esil));
 			}
@@ -333,6 +335,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
+			rz_analysis_op_init(&aop);
 			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_IL) <= 0) {
 				eprintf("Invalid\n");
 				ret = 0;
