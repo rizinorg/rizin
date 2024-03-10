@@ -311,6 +311,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 	int len = 0;
 	RzRegItem *cmp_reg = NULL;
 	for (i = 0; i + 8 < search_sz; i += len) {
+		rz_analysis_op_init(&tmp_aop);
 		len = rz_analysis_op(analysis, &tmp_aop, lea_address + i, buf + i, search_sz - i, RZ_ANALYSIS_OP_MASK_BASIC);
 		if (len < 1) {
 			len = 1;
@@ -364,6 +365,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 		rz_vector_foreach_prev(&v, it) {
 			const ut64 op_off = *(ut64 *)it;
 			ut64 op_addr = lea_address + op_off;
+			rz_analysis_op_init(&tmp_aop);
 			rz_analysis_op(analysis, &tmp_aop, op_addr,
 				buf + op_off, search_sz - op_off,
 				RZ_ANALYSIS_OP_MASK_VAL);
@@ -511,6 +513,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 			continue;
 		}
 		int buflen = prev_bb->size - prev_pos;
+		rz_analysis_op_init(&tmp_aop);
 		int len = rz_analysis_op(analysis, &tmp_aop, op_addr,
 			bb_buf + prev_pos, buflen,
 			RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
@@ -537,6 +540,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		}
 		if (isValid) {
 			rz_analysis_op_fini(&tmp_aop);
+			rz_analysis_op_init(&tmp_aop);
 			rz_analysis_op(analysis, &tmp_aop, op_addr,
 				bb_buf + prev_pos, buflen,
 				RZ_ANALYSIS_OP_MASK_VAL);
@@ -561,6 +565,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 				continue;
 			}
 			int buflen = prev_bb->size - prev_pos;
+			rz_analysis_op_init(&tmp_aop);
 			rz_analysis_op(analysis, &tmp_aop, op_addr,
 				bb_buf + prev_pos, buflen,
 				RZ_ANALYSIS_OP_MASK_VAL);

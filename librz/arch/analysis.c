@@ -435,7 +435,7 @@ RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_fcns(RzAnalysis *analy
 }
 
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *str) {
-	RzAnalysisOp *op = RZ_NEW0(RzAnalysisOp);
+	RzAnalysisOp *op = rz_analysis_op_new();
 	if (!op) {
 		return NULL;
 	}

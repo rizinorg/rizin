@@ -58,9 +58,9 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 		RZ_LOG_ERROR("dbg->iob.read_at failure -- pc 0x%" PFMT64x "\n", pc);
 		return false;
 	}
-	dbg->cur_op = RZ_NEW0(RzAnalysisOp);
+	dbg->cur_op = rz_analysis_op_new();
 	if (!dbg->cur_op) {
-		RZ_LOG_ERROR("RZ_NEW0 failure\n");
+		RZ_LOG_ERROR("rz_analysis_op_new failure\n");
 		return false;
 	}
 	if (rz_analysis_op(dbg->analysis, dbg->cur_op, pc, buf_pc, sizeof(buf_pc), RZ_ANALYSIS_OP_MASK_VAL) < 1) {

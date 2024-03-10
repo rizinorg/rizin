@@ -1222,8 +1222,10 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 	RzStackAddr sp = init_sp;
 	ut64 addr = block->addr;
 	size_t i = 0;
+
+	RzAnalysisOp op = { 0 };
 	while (addr < block->addr + block->size) {
-		RzAnalysisOp op;
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(block->analysis, &op, addr,
 			    buf + (addr - block->addr), block->addr + block->size - addr, 0) <= 0) {
 			rz_analysis_op_fini(&op);

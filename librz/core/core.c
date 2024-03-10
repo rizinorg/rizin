@@ -510,7 +510,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 	char *ptr, *bptr, *out = NULL;
 	RzFlagItem *flag;
 	RzBinSection *s;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut64 ret = 0;
 
 	if (ok) {
@@ -592,6 +592,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			*ok = 1;
 		}
 		// TODO: group aop-dependant vars after a char, so i can filter
+		rz_analysis_op_init(&op);
 		rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC);
 		rz_analysis_op_fini(&op); // we don't need strings or pointers, just values, which are not nullified in fini
 		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and rz_analysis_op_is_eob()
@@ -1948,7 +1949,7 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 
 RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
 	ut8 buf[64];
-	RzAnalysisOp *op = RZ_NEW(RzAnalysisOp);
+	RzAnalysisOp *op = rz_analysis_op_new();
 	rz_io_read_at(core->io, addr, buf, sizeof(buf));
 	rz_analysis_op(core->analysis, op, addr, buf, sizeof(buf), mask);
 	return op;

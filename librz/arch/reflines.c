@@ -82,7 +82,7 @@ RZ_API void rz_analysis_reflines_free(RzAnalysisRefline *rl) {
 RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	RzList *list, *sten;
 	RzListIter *iter;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	struct refline_end *el;
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
@@ -161,6 +161,7 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 
 		// This can segfault if opcode length and buffer check fails
 		rz_analysis_op_fini(&op);
+		rz_analysis_op_init(&op);
 		rz_analysis_op(analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 		sz = op.size;
 		if (sz <= 0) {

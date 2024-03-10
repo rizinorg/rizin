@@ -209,7 +209,7 @@ RZ_API void rz_debug_esil_prestep(RzDebug *d, int p) {
 }
 
 RZ_API int rz_debug_esil_stepi(RzDebug *d) {
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	ut8 obuf[64];
 	int ret = 1;
 	dbg = d;
@@ -243,7 +243,7 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 		//	npc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	}
-
+	rz_analysis_op_init(&op);
 	if (rz_analysis_op(dbg->analysis, &op, opc, obuf, sizeof(obuf), RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
 		if (esilbreak_check_pc(dbg, opc)) {
 			eprintf("STOP AT 0x%08" PFMT64x "\n", opc);
@@ -257,6 +257,7 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 			ret = 1;
 		}
 	}
+	rz_analysis_op_fini(&op);
 	if (!prestep) {
 		if (ret && !has_match) {
 			if (rz_debug_step(dbg, 1) < 1) {

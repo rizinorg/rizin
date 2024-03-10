@@ -2585,7 +2585,8 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 			}
 			free(hint);
 		}
-
+		rz_analysis_op_fini(op);
+		rz_analysis_op_init(op);
 		if ((oplen = analysis_op(analysis, op, at + idx, data + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
 			break;
 		}

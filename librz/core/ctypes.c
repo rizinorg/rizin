@@ -792,6 +792,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 			if (!i) {
 				rz_io_read_at(core->io, at, buf, bsize);
 			}
+			rz_analysis_op_init(&aop);
 			ret = rz_analysis_op(core->analysis, &aop, at, buf + i, bsize - i, RZ_ANALYSIS_OP_MASK_VAL);
 			if (ret <= 0) {
 				i += minopcode;

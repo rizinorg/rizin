@@ -176,6 +176,7 @@ static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 add
 	for (i = 0; i + 8 < JMPTBL_LEA_SEARCH_SZ; i++) {
 		ut64 at = addr + i;
 		int left = JMPTBL_LEA_SEARCH_SZ - i;
+		rz_analysis_op_init(aop);
 		int len = rz_analysis_op(analysis, aop, at, buf + i, left, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_VAL);
 		if (len < 1) {
 			len = 1;
@@ -372,13 +373,14 @@ static RzAnalysisBlock *bbget(RzAnalysis *analysis, ut64 addr, bool jumpmid) {
 				if (analysis->iob.read_at(analysis->iob.io, bb->addr, buf, bb->size)) {
 					const int last_instr_idx = bb->ninstr - 1;
 					bool in_delay_slot = false;
+					RzAnalysisOp op = { 0 };
 					for (int i = last_instr_idx; i >= 0; i--) {
 						const ut64 off = rz_analysis_block_get_op_offset(bb, i);
 						const ut64 at = bb->addr + off;
 						if (addr <= at || off >= bb->size) {
 							continue;
 						}
-						RzAnalysisOp op;
+						rz_analysis_op_init(&op);
 						int size = rz_analysis_op(analysis, &op, at, buf + off, bb->size - off, RZ_ANALYSIS_OP_MASK_BASIC);
 						if (size > 0 && op.delay) {
 							if (op.delay >= last_instr_idx - i) {
@@ -721,6 +723,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			gotoBeach(RZ_ANALYSIS_RET_ERROR)
 		}
 		rz_analysis_op_fini(&op);
+		rz_analysis_op_init(&op);
 		if ((oplen = rz_analysis_op(analysis, &op, at, buf, bytes_read, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT)) < 1) {
 			RZ_LOG_DEBUG("Invalid instruction at 0x%" PFMT64x " with %d bits\n", at, analysis->bits);
 			// gotoBeach (RZ_ANALYSIS_RET_ERROR);
@@ -1293,6 +1296,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						bool case_table = false;
 						RzAnalysisOp prev_op;
 						analysis->iob.read_at(analysis->iob.io, op.addr - op.size, buf, sizeof(buf));
+						rz_analysis_op_init(&prev_op);
 						if (rz_analysis_op(analysis, &prev_op, op.addr - op.size, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_VAL) > 0) {
 							bool prev_op_has_dst_name = prev_op.dst && prev_op.dst->reg && prev_op.dst->reg->name;
 							bool op_has_src_name = op.src[0] && op.src[0]->reg && op.src[0]->reg->name;
@@ -1536,16 +1540,15 @@ RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *t
 }
 
 RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
-	RzAnalysisOp op = {
-		0
-	};
+	RzAnalysisOp op = { 0 };
 	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0, brcnt = 0;
 	if (rz_analysis_is_prelude(analysis, buf, bufsz)) {
 		return true;
 	}
 	for (i = 0; i < bufsz && opcnt < 10; i += oplen, opcnt++) {
-		rz_analysis_op_fini(&op);
+		rz_analysis_op_init(&op);
 		if ((oplen = rz_analysis_op(analysis, &op, addr + i, buf + i, bufsz - i, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT)) < 1) {
+			rz_analysis_op_fini(&op);
 			return false;
 		}
 		switch (op.type) {
@@ -1562,15 +1565,18 @@ RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
 		case RZ_ANALYSIS_OP_TYPE_CALL:
 			if (op.jump < low || op.jump >= high) {
+				rz_analysis_op_fini(&op);
 				return false;
 			}
 			brcnt++;
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UNK:
+			rz_analysis_op_fini(&op);
 			return false;
 		default:
 			break;
 		}
+		rz_analysis_op_fini(&op);
 	}
 	return (pushcnt + movcnt + brcnt > 5);
 }
@@ -2066,8 +2072,8 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysi
 
 // compute the cyclomatic cost
 RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn) {
-	RzAnalysisOp op;
 	RzAnalysisBlock *bb;
+	RzAnalysisOp op = { 0 };
 	ut32 totalCycles = 0;
 	if (!fcn) {
 		return 0;
@@ -2085,7 +2091,6 @@ RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn) {
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
 			rz_analysis_op_init(&op);
-			memset(&op, 0, sizeof(op));
 			(void)rz_analysis_op(analysis, &op, at, buf + idx, bb->size - idx, RZ_ANALYSIS_OP_MASK_BASIC);
 			if (op.size < 1) {
 				op.size = 1;
@@ -2160,7 +2165,7 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 	if (!fcn) {
 		return;
 	}
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	RzAnalysisBlock *bb;
 	void **it;
 	rz_pvector_foreach (fcn->bbs, it) {
@@ -2281,8 +2286,9 @@ static void update_vars_analysis(RzAnalysisFunction *fcn, RzAnalysisBlock *block
 	if (analysis->iob.read_at(analysis->iob.io, from, buf, len) < len) {
 		return;
 	}
+	RzAnalysisOp op = { 0 };
 	for (cur_addr = from; cur_addr < to; cur_addr += opsz, len -= opsz) {
-		RzAnalysisOp op;
+		rz_analysis_op_init(&op);
 		int ret = rz_analysis_op(analysis->coreb.core, &op, cur_addr, buf, len, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL);
 		if (ret < 1 || op.size < 1) {
 			rz_analysis_op_fini(&op);
