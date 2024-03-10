@@ -102,7 +102,7 @@ RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis) {
 	fcn->addr = UT64_MAX;
 	fcn->cc = rz_str_constpool_get(&analysis->constpool, rz_analysis_cc_default(analysis));
 	fcn->bits = analysis->bits;
-	fcn->bbs = rz_list_new();
+	fcn->bbs = rz_pvector_new(NULL);
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
@@ -121,12 +121,13 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 	}
 
 	RzAnalysisBlock *block;
-	RzListIter *iter;
-	rz_list_foreach (fcn->bbs, iter, block) {
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		block = (RzAnalysisBlock *)*it;
 		rz_list_delete_data(block->fcns, fcn);
 		rz_analysis_block_unref(block);
 	}
-	rz_list_free(fcn->bbs);
+	rz_pvector_free(fcn->bbs);
 
 	RzAnalysis *analysis = fcn->analysis;
 	if (ht_up_find(analysis->ht_addr_fun, fcn->addr, NULL) == _fcn) {
@@ -300,7 +301,7 @@ RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBl
 	}
 	rz_list_append(bb->fcns, fcn); // associate the given fcn with this bb
 	rz_analysis_block_ref(bb);
-	rz_list_append(fcn->bbs, bb);
+	rz_pvector_push(fcn->bbs, bb);
 
 	if (fcn->meta._min != UT64_MAX) {
 		if (bb->addr + bb->size > fcn->meta._max) {
@@ -324,7 +325,7 @@ RZ_API void rz_analysis_function_remove_block(RzAnalysisFunction *fcn, RzAnalysi
 		fcn->meta._min = UT64_MAX;
 	}
 
-	rz_list_delete_data(fcn->bbs, bb);
+	rz_pvector_remove_data(fcn->bbs, bb);
 	rz_analysis_block_unref(bb);
 }
 
@@ -335,8 +336,9 @@ static void ensure_fcn_range(RzAnalysisFunction *fcn) {
 	ut64 minval = UT64_MAX;
 	ut64 maxval = UT64_MIN;
 	RzAnalysisBlock *block;
-	RzListIter *iter;
-	rz_list_foreach (fcn->bbs, iter, block) {
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		block = (RzAnalysisBlock *)*it;
 		if (block->addr < minval) {
 			minval = block->addr;
 		}
@@ -369,15 +371,14 @@ RZ_API ut64 rz_analysis_function_size_from_entry(RzAnalysisFunction *fcn) {
 }
 
 RZ_API ut64 rz_analysis_function_realsize(const RzAnalysisFunction *fcn) {
-	RzListIter *iter;
-	RzAnalysisBlock *bb;
-	ut64 sz = 0;
-	if (!sz) {
-		rz_list_foreach (fcn->bbs, iter, bb) {
-			sz += bb->size;
-		}
+	ut64 realsize = 0;
+	RzAnalysisBlock *block;
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		block = (RzAnalysisBlock *)*it;
+		realsize += block->size;
 	}
-	return sz;
+	return realsize;
 }
 
 static bool fcn_in_cb(RzAnalysisBlock *block, void *user) {
@@ -396,12 +397,13 @@ RZ_API bool rz_analysis_function_contains(RzAnalysisFunction *fcn, ut64 addr) {
 	return !rz_analysis_blocks_foreach_in(fcn->analysis, addr, fcn_in_cb, fcn);
 }
 
-RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn) {
+RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, false);
-	RzListIter *it;
-	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, it, bb) {
-		if (rz_analysis_block_was_modified(bb)) {
+	RzAnalysisBlock *block;
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		block = (RzAnalysisBlock *)*it;
+		if (rz_analysis_block_was_modified(block)) {
 			return true;
 		}
 	}

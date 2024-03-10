@@ -760,10 +760,10 @@ static bool noreturn_remove_unreachable_cb(void *user, const ut64 k, const void 
 }
 
 static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
-	RzList *blocks = user;
+	RzPVector *blocks = user;
 	NoreturnSuccessor *succ = (NoreturnSuccessor *)v;
 	rz_analysis_block_ref(succ->block);
-	rz_list_push(blocks, succ->block);
+	rz_pvector_push(blocks, succ->block);
 	return true;
 }
 
@@ -791,11 +791,11 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 	block->switch_op = NULL;
 
 	// Now, for each fcn, check which of our successors are still reachable in the function remove and the ones that are not.
-	RzListIter *it;
+	RzListIter *lit;
 	RzAnalysisFunction *fcn;
 	// We need to clone the list because block->fcns will get modified in the loop
 	RzList *fcns_cpy = rz_list_clone(block->fcns);
-	rz_list_foreach (fcns_cpy, it, fcn) {
+	rz_list_foreach (fcns_cpy, lit, fcn) {
 		RzAnalysisBlock *entry = rz_analysis_get_block_at(block->analysis, fcn->addr);
 		if (entry && rz_list_contains(entry->fcns, fcn)) {
 			rz_analysis_block_recurse(entry, noreturn_successors_reachable_cb, succs);
@@ -806,7 +806,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
-	RzList *merge_blocks = rz_list_newf((RzListFree)rz_analysis_block_unref);
+	RzPVector *merge_blocks = rz_pvector_new((RzListFree)rz_analysis_block_unref);
 	ht_up_foreach(succs, noreturn_get_blocks_cb, merge_blocks);
 
 	// Free/unref BEFORE doing the merge!
@@ -821,7 +821,9 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 	// No try to recover the pointer to the block if it still exists
 	RzAnalysisBlock *ret = NULL;
-	rz_list_foreach (merge_blocks, it, block) {
+	void **vit;
+	rz_pvector_foreach (merge_blocks, vit) {
+		block = (RzAnalysisBlock *)*vit;
 		if (block->addr == block_addr) {
 			// block is still there
 			ret = block;
@@ -829,7 +831,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 		}
 	}
 
-	rz_list_free(merge_blocks);
+	rz_pvector_free(merge_blocks);
 	return ret;
 }
 
@@ -873,10 +875,11 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *v) {
 	AutomergeCtx *ctx = user;
 	const RzAnalysisFunction *fcn = (const RzAnalysisFunction *)(size_t)k;
-	RzListIter *it;
-	RzAnalysisBlock *block;
-	rz_list_foreach (fcn->bbs, it, block) {
-		bool already_visited;
+
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		RzAnalysisBlock *block = (RzAnalysisBlock *)*it;
+		bool already_visited = false;
 		ht_up_find(ctx->visited_blocks, (ut64)(size_t)block, &already_visited);
 		if (already_visited) {
 			continue;
@@ -891,7 +894,7 @@ static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *
 
 // Try to find the contiguous predecessors of all given blocks and merge them if possible,
 // i.e. if there are no other blocks that have this block as one of their successors
-RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks) {
+RZ_API void rz_analysis_block_automerge(RzPVector /*<RzAnalysisBlock *>*/ *blocks) {
 	rz_return_if_fail(blocks);
 	AutomergeCtx ctx = {
 		.predecessors = ht_up_new0(),
@@ -906,9 +909,10 @@ RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks) 
 	}
 
 	// Get all the functions and prepare ctx.blocks
-	RzListIter *it;
 	RzAnalysisBlock *block;
-	rz_list_foreach (blocks, it, block) {
+	void **it;
+	rz_pvector_foreach (blocks, it) {
+		block = (RzAnalysisBlock *)*it;
 		RzListIter *fit;
 		RzAnalysisFunction *fcn;
 		rz_list_foreach (block->fcns, fit, fcn) {
@@ -921,45 +925,55 @@ RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks) 
 	ht_up_foreach(relevant_fcns, automerge_get_predecessors_cb, &ctx);
 
 	// Now finally do the merging
-	RzListIter *tmp;
-	rz_list_foreach_safe (blocks, it, tmp, block) {
+	// in this loop we remove non-reachable basic blocks and since
+	// we modify the pvector size we cannot loop normally.
+	size_t count = rz_pvector_len(blocks);
+	for (size_t i = 0; i < count;) {
+		block = (RzAnalysisBlock *)rz_pvector_at(blocks, i);
 		RzAnalysisBlock *predecessor = ht_up_find(ctx.predecessors, (ut64)(size_t)block, NULL);
 		if (!predecessor) {
+			i++;
 			continue;
 		}
 		size_t pred_succs_count = (size_t)ht_up_find(ctx.visited_blocks, (ut64)(size_t)predecessor, NULL);
 		if (pred_succs_count != 1) {
 			// we can only merge this predecessor if it has exactly one successor
+			i++;
 			continue;
 		}
 
 		// We are about to merge block into predecessor
 		// However if there are other blocks that have block as the predecessor,
 		// we would uaf after the merge since block will be freed.
-		RzListIter *bit;
 		RzAnalysisBlock *clock;
-		rz_list_foreach_iter(rz_list_iter_get_next(it), bit, clock) {
+		for (size_t j = i + 1; j < count; j++) {
+			clock = (RzAnalysisBlock *)rz_pvector_at(blocks, j);
 			RzAnalysisBlock *fixup_pred = ht_up_find(ctx.predecessors, (ut64)(size_t)clock, NULL);
 			if (fixup_pred == block) {
 				rz_list_push(fixup_candidates, clock);
 			}
 		}
 
-		if (rz_analysis_block_merge(predecessor, block)) { // rz_analysis_block_merge() does checks like contiguous, to that's fine
-			// block was merged into predecessor, it is now freed!
-			// Update number of successors of the predecessor
-			ctx.cur_succ_count = 0;
-			rz_analysis_block_successor_addrs_foreach(predecessor, count_successors_cb, &ctx);
-			ht_up_update(ctx.visited_blocks, (ut64)(size_t)predecessor, (void *)(size_t)ctx.cur_succ_count);
-			rz_list_foreach (fixup_candidates, bit, clock) {
-				// Make sure all previous pointers to block now go to predecessor
-				ht_up_update(ctx.predecessors, (ut64)(size_t)clock, predecessor);
-			}
-			// Remove it from the list
-			rz_list_split_iter(blocks, it);
-			free(it);
+		if (!rz_analysis_block_merge(predecessor, block)) {
+			rz_list_purge(fixup_candidates);
+			i++;
+			continue;
 		}
 
+		// rz_analysis_block_merge() does checks like contiguous, to that's fine
+		// block was merged into predecessor, it is now freed!
+		// Update number of successors of the predecessor
+		ctx.cur_succ_count = 0;
+		rz_analysis_block_successor_addrs_foreach(predecessor, count_successors_cb, &ctx);
+		ht_up_update(ctx.visited_blocks, (ut64)(size_t)predecessor, (void *)(size_t)ctx.cur_succ_count);
+		RzListIter *bit;
+		rz_list_foreach (fixup_candidates, bit, clock) {
+			// Make sure all previous pointers to block now go to predecessor
+			ht_up_update(ctx.predecessors, (ut64)(size_t)clock, predecessor);
+		}
+		// Remove it from the list
+		rz_pvector_remove_at(blocks, i);
+		count = rz_pvector_len(blocks);
 		rz_list_purge(fixup_candidates);
 	}
 

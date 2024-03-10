@@ -973,7 +973,7 @@ RZ_API void rz_table_columns(RzTable *t, RzList /*<char *>*/ *col_names) {
 		RzPVector *new_items = rz_pvector_new(free);
 
 		for (i = 0; i < new_count; i++) {
-			char *item = *rz_pvector_index_ptr(old_items, col_sources[i].oldcol);
+			char *item = rz_pvector_at(old_items, col_sources[i].oldcol);
 			if (!item) {
 				continue;
 			}

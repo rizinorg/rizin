@@ -120,9 +120,10 @@ static bool function_data_new(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut8
 	size_t size = 0, current = 0;
 	ut8 *data = NULL;
 	RzAnalysisBlock *bb = NULL;
-	RzListIter *iter = NULL;
+	void **it;
 
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		size += bb->size;
 	}
 
@@ -131,7 +132,8 @@ static bool function_data_new(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut8
 	}
 
 	current = 0;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
 		if (bb->size > 0 && !iob_read_at(bb->addr, data + current, bb->size)) {
 			goto fail;
 		}
@@ -420,7 +422,31 @@ static void *analysis_match_basic_blocks(SharedContext *shared) {
  */
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b, RZ_NONNULL RzAnalysisMatchOpt *opt) {
 	rz_return_val_if_fail(opt && opt->analysis_a && opt->analysis_b && fcn_a && fcn_b, NULL);
-	return analysis_match_result_new(opt, fcn_a->bbs, fcn_b->bbs, (RzThreadFunction)analysis_match_basic_blocks, (AllocateBuffer)basic_block_data_new);
+
+	// convert RzList functions into RzPVector.
+	RzList *list_a = rz_list_new();
+	RzList *list_b = rz_list_new();
+	void **it;
+
+	if (!list_a || !list_b) {
+		RZ_LOG_ERROR("analysis_match: cannot allocate basic block lists\n");
+		rz_list_free(list_a);
+		rz_list_free(list_b);
+		return NULL;
+	}
+
+	rz_pvector_foreach (fcn_a->bbs, it) {
+		rz_list_append(list_a, *it);
+	}
+
+	rz_pvector_foreach (fcn_b->bbs, it) {
+		rz_list_append(list_b, *it);
+	}
+
+	RzAnalysisMatchResult *res = analysis_match_result_new(opt, list_a, list_b, (RzThreadFunction)analysis_match_basic_blocks, (AllocateBuffer)basic_block_data_new);
+	rz_list_free(list_a);
+	rz_list_free(list_b);
+	return res;
 }
 
 static bool function_name_cmp(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b) {

@@ -412,16 +412,18 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, u
 }
 
 RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr) {
-	RzAnalysisBlock *bbi;
 	RzAnalysisFunction *fcni;
-	RzListIter *iter2;
 	fcni = rz_analysis_get_fcn_in(analysis, addr, 0);
-	if (fcni) {
-		rz_list_foreach (fcni->bbs, iter2, bbi) {
-			if (addr >= bbi->addr && addr < (bbi->addr + bbi->size)) {
-				bbi->traced = true;
-				break;
-			}
+	if (!fcni) {
+		return;
+	}
+
+	void **it;
+	rz_pvector_foreach (fcni->bbs, it) {
+		RzAnalysisBlock *bbi = (RzAnalysisBlock *)*it;
+		if (addr >= bbi->addr && addr < (bbi->addr + bbi->size)) {
+			bbi->traced = true;
+			break;
 		}
 	}
 }

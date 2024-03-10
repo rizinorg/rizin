@@ -878,9 +878,11 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 			if (fcn) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
+
+				void **vit;
 				RzAnalysisBlock *bb;
-				RzListIter *iterb;
-				rz_list_foreach (fcn->bbs, iterb, bb) {
+				rz_pvector_foreach (fcn->bbs, vit) {
+					bb = (RzAnalysisBlock *)*vit;
 					if (addr == bb->jump) {
 						if (show_offset) {
 							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
@@ -893,7 +895,9 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 					rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
 				}
 				if (strstr(line, "=<")) {
-					rz_list_foreach (fcn->bbs, iterb, bb) {
+					RzAnalysisBlock *bb;
+					rz_pvector_foreach (fcn->bbs, vit) {
+						bb = (RzAnalysisBlock *)*vit;
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {

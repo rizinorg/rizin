@@ -428,9 +428,10 @@ static ut64 getref(RzCore *core, int n, char t, int type) {
 }
 
 static ut64 bbInstructions(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->ninstr;
 		}
@@ -439,9 +440,10 @@ static ut64 bbInstructions(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbBegin(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->addr;
 		}
@@ -450,9 +452,10 @@ static ut64 bbBegin(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbJump(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->jump;
 		}
@@ -461,9 +464,10 @@ static ut64 bbJump(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbFail(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->fail;
 		}
@@ -472,9 +476,10 @@ static ut64 bbFail(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbSize(RzAnalysisFunction *fcn, ut64 addr) {
-	RzListIter *iter;
+	void **vit;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		if (RZ_BETWEEN(bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->size;
 		}

@@ -275,16 +275,15 @@ RZ_API ut64 rz_analysis_xrefs_count(RzAnalysis *analysis) {
 }
 
 static RZ_OWN RzList /*<RzAnalysisXRef *>*/ *fcn_get_refs(const RzAnalysisFunction *fcn, HtUP *ht) {
-	RzListIter *iter;
+	void **it;
 	RzAnalysisBlock *bb;
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
 		return NULL;
 	}
-	rz_list_foreach (fcn->bbs, iter, bb) {
-		int i;
-
-		for (i = 0; i < bb->ninstr; i++) {
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = (RzAnalysisBlock *)*it;
+		for (size_t i = 0; i < bb->ninstr; i++) {
 			ut64 at = bb->addr + rz_analysis_block_get_op_offset(bb, i);
 			listxrefs(ht, at, list);
 		}

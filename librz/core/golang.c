@@ -1842,7 +1842,8 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
-	RzListIter *it, *it2;
+	RzListIter *lit;
+	void **vit;
 	RzAnalysisFunction *func;
 	RzAnalysisBlock *block;
 	GoStrRecoverCb recover_cb = NULL;
@@ -1916,11 +1917,12 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 		return;
 	}
 
-	rz_list_foreach (core->analysis->fcns, it, func) {
+	rz_list_foreach (core->analysis->fcns, lit, func) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		rz_list_foreach (func->bbs, it2, block) {
+		rz_pvector_foreach (func->bbs, vit) {
+			block = (RzAnalysisBlock *)*vit;
 			bytes = malloc(block->size);
 			if (!bytes) {
 				RZ_LOG_ERROR("Failed allocate basic block bytes buffer\n");

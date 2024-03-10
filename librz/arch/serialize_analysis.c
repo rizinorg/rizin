@@ -1083,6 +1083,9 @@ static bool store_label_cb(void *j, const ut64 k, const void *v) {
 }
 
 static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFunction *function) {
+	RzAnalysisBlock *block;
+	RzListIter *lit;
+	void **vit;
 	PJ *j = pj_new();
 	if (!j) {
 		return;
@@ -1114,9 +1117,8 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 	}
 
 	pj_ka(j, "bbs");
-	RzListIter *it;
-	RzAnalysisBlock *block;
-	rz_list_foreach (function->bbs, it, block) {
+	rz_pvector_foreach (function->bbs, vit) {
+		block = (RzAnalysisBlock *)*vit;
 		pj_n(j, block->addr);
 	}
 	pj_end(j);
@@ -1124,7 +1126,7 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 	if (!rz_list_empty(function->imports)) {
 		pj_ka(j, "imports");
 		const char *import;
-		rz_list_foreach (function->imports, it, import) {
+		rz_list_foreach (function->imports, lit, import) {
 			pj_s(j, import);
 		}
 		pj_end(j);
@@ -1132,7 +1134,6 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 
 	if (!rz_pvector_empty(&function->vars)) {
 		pj_ka(j, "vars");
-		void **vit;
 		rz_pvector_foreach (&function->vars, vit) {
 			RzAnalysisVar *var = *vit;
 			rz_serialize_analysis_var_save(j, var);

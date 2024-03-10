@@ -147,9 +147,9 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 			ut32 cur_index = ptr_gap / sizeof(void **);
 			RzBinSection *p_section = NULL;
 			if (cur_index == 0) {
-				p_section = *rz_pvector_index_ptr(seg_vec, rz_pvector_len(seg_vec) - 1);
+				p_section = rz_pvector_tail(seg_vec);
 			} else {
-				p_section = *rz_pvector_index_ptr(seg_vec, cur_index - 1);
+				p_section = rz_pvector_at(seg_vec, cur_index - 1);
 			}
 			p_section->size = section->vaddr - p_section->vaddr;
 			p_section->vsize = p_section->size;
@@ -159,7 +159,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 		section->perm = rz_str_rwx("rwx");
 		section_number++;
 	}
-	section = *rz_pvector_index_ptr(seg_vec, rz_pvector_len(seg_vec) - 1);
+	section = rz_pvector_tail(seg_vec);
 	section->size = bin->load_module_size - section->vaddr;
 	section->vsize = section->size;
 
