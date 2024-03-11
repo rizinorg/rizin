@@ -124,7 +124,7 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 }
 
 static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *old_sections, ut64 old_base) {
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;
 	RzBinSection *old_section;
@@ -133,7 +133,8 @@ static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *ol
 		return;
 	}
 	// FUNCTIONS
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, it) {
+		fcn = *it;
 		void **iter;
 		rz_pvector_foreach (old_sections, iter) {
 			old_section = *iter;

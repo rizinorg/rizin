@@ -364,9 +364,10 @@ static bool offset_prompt_add_flag(RzFlagItem *fi, void *user) {
 }
 
 static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		if (fcn->name && !strncmp(fcn->name, s, len)) {
 			rz_line_ns_completion_result_add(res, fcn->name);
 		}

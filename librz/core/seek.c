@@ -201,7 +201,6 @@ static bool seek_flag_offset(RzFlagItem *fi, void *user) {
  * \param save If true save the current state in seek history before seeking
  */
 RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
-	RzListIter *iter;
 	ut64 next = UT64_MAX;
 	if (strstr(type, "opc")) {
 		RzAnalysisOp aop = { 0 };
@@ -213,8 +212,10 @@ RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
 		}
 		rz_analysis_op_fini(&aop);
 	} else if (strstr(type, "fun")) {
+		void **iter;
 		RzAnalysisFunction *fcni;
-		rz_list_foreach (core->analysis->fcns, iter, fcni) {
+		rz_pvector_foreach (core->analysis->fcns, iter) {
+			fcni = *iter;
 			if (fcni->addr < next && fcni->addr > core->offset) {
 				next = fcni->addr;
 			}
@@ -241,13 +242,14 @@ RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
  * \param save If true save the current state in seek history before seeking
  */
 RZ_API bool rz_core_seek_prev(RzCore *core, const char *type, bool save) {
-	RzListIter *iter;
 	ut64 next = 0;
 	if (strstr(type, "opc")) {
 		RZ_LOG_WARN("core: TODO: rz_core_seek_prev (opc)\n");
 	} else if (strstr(type, "fun")) {
+		void **iter;
 		RzAnalysisFunction *fcni;
-		rz_list_foreach (core->analysis->fcns, iter, fcni) {
+		rz_pvector_foreach (core->analysis->fcns, iter) {
+			fcni = *iter;
 			if (fcni->addr > next && fcni->addr < core->offset) {
 				next = fcni->addr;
 			}

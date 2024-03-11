@@ -59,7 +59,7 @@ static RzAnalysisBlock *block_new(RzAnalysis *a, ut64 addr, ut64 size) {
 	block->sp_entry = ST32_MAX;
 	rz_vector_init(&block->sp_delta, sizeof(st16), NULL, NULL);
 	block->cmpval = UT64_MAX;
-	block->fcns = rz_list_new();
+	block->fcns = rz_pvector_new(NULL);
 	if (size) {
 		rz_analysis_block_update_hash(block);
 	}
@@ -73,7 +73,7 @@ static void block_free(RzAnalysisBlock *block) {
 	rz_analysis_cond_free(block->cond);
 	free(block->op_bytes);
 	rz_analysis_switch_op_free(block->switch_op);
-	rz_list_free(block->fcns);
+	rz_pvector_free(block->fcns);
 	free(block->op_pos);
 	rz_vector_fini(&block->sp_delta);
 	free(block->parent_reg_arena);
@@ -183,8 +183,8 @@ RZ_API RzAnalysisBlock *rz_analysis_create_block(RzAnalysis *analysis, ut64 addr
 
 RZ_API void rz_analysis_delete_block(RzAnalysisBlock *bb) {
 	rz_analysis_block_ref(bb);
-	while (!rz_list_empty(bb->fcns)) {
-		rz_analysis_function_remove_block(rz_list_first(bb->fcns), bb);
+	while (!rz_pvector_empty(bb->fcns)) {
+		rz_analysis_function_remove_block(rz_pvector_head(bb->fcns), bb);
 	}
 	rz_analysis_block_unref(bb);
 }
@@ -196,8 +196,9 @@ RZ_API void rz_analysis_block_set_size(RzAnalysisBlock *block, ut64 size) {
 
 	// Update the block's function's cached ranges
 	RzAnalysisFunction *fcn;
-	RzListIter *iter;
-	rz_list_foreach (block->fcns, iter, fcn) {
+	void **iter;
+	rz_pvector_foreach (block->fcns, iter) {
+		fcn = *iter;
 		if (fcn->meta._min != UT64_MAX && fcn->meta._max == block->addr + block->size) {
 			fcn->meta._max = block->addr + size;
 		}
@@ -221,8 +222,9 @@ RZ_API bool rz_analysis_block_relocate(RzAnalysisBlock *block, ut64 addr, ut64 s
 
 	// Update the block's function's cached ranges
 	RzAnalysisFunction *fcn;
-	RzListIter *iter;
-	rz_list_foreach (block->fcns, iter, fcn) {
+	void **iter;
+	rz_pvector_foreach (block->fcns, iter) {
+		fcn = *iter;
 		if (fcn->meta._min != UT64_MAX) {
 			if (addr + size > fcn->meta._max) {
 				// we extend after the maximum, so we are the maximum afterwards.
@@ -284,9 +286,10 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 	rz_rbtree_aug_insert(&analysis->bb_tree, &bb->addr, &bb->_rb, __bb_addr_cmp, NULL, __max_end);
 
 	// insert the second block into all functions of the first
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (bbi->fcns, iter, fcn) {
+	rz_pvector_foreach (bbi->fcns, iter) {
+		fcn = *iter;
 		rz_analysis_function_add_block(fcn, bb);
 	}
 
@@ -325,21 +328,21 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 	}
 
 	// check if function lists are identical
-	if (rz_list_length(a->fcns) != rz_list_length(b->fcns)) {
+	if (rz_pvector_len(a->fcns) != rz_pvector_len(b->fcns)) {
 		return false;
 	}
 	RzAnalysisFunction *fcn;
-	RzListIter *iter;
-	rz_list_foreach (a->fcns, iter, fcn) {
-		if (!rz_list_contains(b->fcns, fcn)) {
+	void **iter;
+	rz_pvector_foreach (a->fcns, iter) {
+		if (!rz_pvector_contains(b->fcns, *iter)) {
 			return false;
 		}
 	}
 
 	// Keep a ref to b, but remove all references of b from its functions
 	rz_analysis_block_ref(b);
-	while (!rz_list_empty(b->fcns)) {
-		rz_analysis_function_remove_block(rz_list_first(b->fcns), b);
+	while (!rz_pvector_empty(b->fcns)) {
+		rz_analysis_function_remove_block(rz_pvector_head(b->fcns), b);
 	}
 
 	// merge ops from b into a
@@ -364,7 +367,8 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 	rz_rbtree_aug_delete(&a->analysis->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 
 	// invalidate ranges of a's functions
-	rz_list_foreach (a->fcns, iter, fcn) {
+	rz_pvector_foreach (a->fcns, iter) {
+		fcn = *iter;
 		fcn->meta._min = UT64_MAX;
 	}
 
@@ -377,10 +381,10 @@ RZ_API void rz_analysis_block_unref(RzAnalysisBlock *bb) {
 	}
 	rz_return_if_fail(bb->ref > 0);
 	bb->ref--;
-	rz_return_if_fail(bb->ref >= rz_list_length(bb->fcns)); // all of the block's functions must hold a reference to it
+	rz_return_if_fail(bb->ref >= rz_pvector_len(bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
 		RzAnalysis *analysis = bb->analysis;
-		rz_return_if_fail(!bb->fcns || rz_list_empty(bb->fcns));
+		rz_return_if_fail(!bb->fcns || rz_pvector_empty(bb->fcns));
 		rz_rbtree_aug_delete(&analysis->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 	}
 }
@@ -752,7 +756,7 @@ static bool noreturn_successors_reachable_cb(RzAnalysisBlock *block, void *user)
 static bool noreturn_remove_unreachable_cb(void *user, const ut64 k, const void *v) {
 	RzAnalysisFunction *fcn = user;
 	NoreturnSuccessor *succ = (NoreturnSuccessor *)v;
-	if (!succ->reachable && rz_list_contains(succ->block->fcns, fcn)) {
+	if (!succ->reachable && rz_pvector_contains(succ->block->fcns, fcn)) {
 		rz_analysis_function_remove_block(fcn, succ->block);
 	}
 	succ->reachable = false; // reset for next iteration
@@ -791,18 +795,19 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 	block->switch_op = NULL;
 
 	// Now, for each fcn, check which of our successors are still reachable in the function remove and the ones that are not.
-	RzListIter *lit;
+	void **vit;
 	RzAnalysisFunction *fcn;
 	// We need to clone the list because block->fcns will get modified in the loop
-	RzList *fcns_cpy = rz_list_clone(block->fcns);
-	rz_list_foreach (fcns_cpy, lit, fcn) {
+	RzPVector *fcns_cpy = rz_pvector_clone(block->fcns);
+	rz_pvector_foreach (fcns_cpy, vit) {
+		fcn = *vit;
 		RzAnalysisBlock *entry = rz_analysis_get_block_at(block->analysis, fcn->addr);
-		if (entry && rz_list_contains(entry->fcns, fcn)) {
+		if (entry && rz_pvector_contains(entry->fcns, fcn)) {
 			rz_analysis_block_recurse(entry, noreturn_successors_reachable_cb, succs);
 		}
 		ht_up_foreach(succs, noreturn_remove_unreachable_cb, fcn);
 	}
-	rz_list_free(fcns_cpy);
+	rz_pvector_free(fcns_cpy);
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
@@ -821,7 +826,6 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 	// No try to recover the pointer to the block if it still exists
 	RzAnalysisBlock *ret = NULL;
-	void **vit;
 	rz_pvector_foreach (merge_blocks, vit) {
 		block = (RzAnalysisBlock *)*vit;
 		if (block->addr == block_addr) {
@@ -913,9 +917,10 @@ RZ_API void rz_analysis_block_automerge(RzPVector /*<RzAnalysisBlock *>*/ *block
 	void **it;
 	rz_pvector_foreach (blocks, it) {
 		block = (RzAnalysisBlock *)*it;
-		RzListIter *fit;
+		void **fit;
 		RzAnalysisFunction *fcn;
-		rz_list_foreach (block->fcns, fit, fcn) {
+		rz_pvector_foreach (block->fcns, fit) {
+			fcn = *fit;
 			ht_up_insert(relevant_fcns, (ut64)(size_t)fcn, NULL);
 		}
 		ht_up_insert(ctx.blocks, block->addr, block);

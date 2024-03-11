@@ -415,8 +415,8 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 	BlockTakeoverCtx *ctx = user;
 	RzAnalysisFunction *our_fcn = ctx->fcn;
 	rz_analysis_block_ref(block);
-	while (!rz_list_empty(block->fcns)) {
-		RzAnalysisFunction *other_fcn = rz_list_first(block->fcns);
+	while (!rz_pvector_empty(block->fcns)) {
+		RzAnalysisFunction *other_fcn = rz_pvector_head(block->fcns);
 		if (other_fcn->addr == block->addr) {
 			return false;
 		}
@@ -623,7 +623,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	if (!bb) {
 		RzAnalysisBlock *existing_bb = bbget(analysis, addr, can_jmpmid);
 		if (existing_bb) {
-			bool existing_in_fcn = rz_list_contains(existing_bb->fcns, fcn);
+			bool existing_in_fcn = rz_pvector_contains(existing_bb->fcns, fcn);
 			existing_bb = rz_analysis_block_split(existing_bb, addr);
 			if (!existing_in_fcn && existing_bb) {
 				if (existing_bb->addr == fcn->addr) {
@@ -1656,18 +1656,23 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 
 // XXX deprecate
 RZ_API int rz_analysis_fcn_del_locs(RzAnalysis *analysis, ut64 addr) {
-	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn, *f = rz_analysis_get_fcn_in(analysis, addr, RZ_ANALYSIS_FCN_TYPE_ROOT);
 	if (!f) {
 		return false;
 	}
-	rz_list_foreach_safe (analysis->fcns, iter, iter2, fcn) {
-		if (fcn->type != RZ_ANALYSIS_FCN_TYPE_LOC) {
+	// in this loop we remove functions and since we modify the
+	// pvector size we cannot loop normally.
+	size_t count = rz_pvector_len(analysis->fcns);
+	for (size_t i = 0; i < count;) {
+		fcn = (RzAnalysisFunction *)rz_pvector_at(analysis->fcns, i);
+		if (fcn->type != RZ_ANALYSIS_FCN_TYPE_LOC ||
+			!rz_analysis_function_contains(fcn, addr)) {
+			// skip only if not loc or address is not a range of the function.
+			i++;
 			continue;
 		}
-		if (rz_analysis_function_contains(fcn, addr)) {
-			rz_analysis_function_delete(fcn);
-		}
+		rz_analysis_function_delete(fcn);
+		count = rz_pvector_len(analysis->fcns);
 	}
 	rz_analysis_fcn_del(analysis, addr);
 	return true;
@@ -1675,12 +1680,18 @@ RZ_API int rz_analysis_fcn_del_locs(RzAnalysis *analysis, ut64 addr) {
 
 RZ_API int rz_analysis_fcn_del(RzAnalysis *a, ut64 addr) {
 	RzAnalysisFunction *fcn;
-	RzListIter *iter, *iter_tmp;
-	rz_list_foreach_safe (a->fcns, iter, iter_tmp, fcn) {
-		RZ_LOG_DEBUG("removing function at %" PFMT64x " %" PFMT64x "\n", fcn->addr, addr);
-		if (fcn->addr == addr) {
-			rz_analysis_function_delete(fcn);
+	// in this loop we remove functions and since we modify the
+	// pvector size we cannot loop normally.
+	size_t count = rz_pvector_len(a->fcns);
+	for (size_t i = 0; i < count;) {
+		fcn = (RzAnalysisFunction *)rz_pvector_at(a->fcns, i);
+		if (fcn->addr != addr) {
+			i++;
+			continue;
 		}
+		RZ_LOG_DEBUG("removing function at %" PFMT64x " %" PFMT64x "\n", fcn->addr, addr);
+		rz_analysis_function_delete(fcn);
+		count = rz_pvector_len(a->fcns);
 	}
 	return true;
 }
@@ -1707,24 +1718,26 @@ RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in(RzAnalysis *analy
 }
 
 RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in_bounds(RzAnalysis *analysis, ut64 addr, int type) {
-	RzAnalysisFunction *fcn, *ret = NULL;
-	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	void **iter;
 	if (type == RZ_ANALYSIS_FCN_TYPE_ROOT) {
-		rz_list_foreach (analysis->fcns, iter, fcn) {
+		rz_pvector_foreach (analysis->fcns, iter) {
+			fcn = *iter;
 			if (addr == fcn->addr) {
 				return fcn;
 			}
 		}
 		return NULL;
 	}
-	rz_list_foreach (analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (analysis->fcns, iter) {
+		fcn = *iter;
 		if (!type || (fcn && fcn->type & type)) {
 			if (rz_analysis_function_contains(fcn, addr)) {
 				return fcn;
 			}
 		}
 	}
-	return ret;
+	return NULL;
 }
 
 /**
@@ -2005,10 +2018,11 @@ RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalys
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr) {
-	RzAnalysisFunction *fcni;
-	RzListIter *iter;
 	RzAnalysisFunction *closer = NULL;
-	rz_list_foreach (analysis->fcns, iter, fcni) {
+	RzAnalysisFunction *fcni;
+	void **iter;
+	rz_pvector_foreach (analysis->fcns, iter) {
+		fcni = *iter;
 		// if (fcni->addr == addr)
 		if (fcni->addr > addr && (!closer || fcni->addr < closer->addr)) {
 			closer = fcni;
@@ -2020,8 +2034,9 @@ RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr)
 RZ_API int rz_analysis_fcn_count(RzAnalysis *analysis, ut64 from, ut64 to) {
 	int n = 0;
 	RzAnalysisFunction *fcni;
-	RzListIter *iter;
-	rz_list_foreach (analysis->fcns, iter, fcni) {
+	void **iter;
+	rz_pvector_foreach (analysis->fcns, iter) {
+		fcni = *iter;
 		if (fcni->addr >= from && fcni->addr < to) {
 			n++;
 		}
@@ -2393,7 +2408,7 @@ static void calc_reachable_and_remove_block(RzList /*<RzAnalysisFunction *>*/ *f
 
 RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size) {
 	rz_return_if_fail(analysis);
-	RzListIter *it, *it2, *tmp;
+	RzListIter *it;
 	RzAnalysisBlock *bb;
 	RzAnalysisFunction *fcn;
 	RzList *blocks = rz_analysis_get_blocks_intersect(analysis, addr, size);
@@ -2410,18 +2425,31 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 		if (!rz_analysis_block_was_modified(bb)) {
 			continue;
 		}
-		rz_list_foreach_safe (bb->fcns, it2, tmp, fcn) {
-			if (align > 1) {
-				if ((end_write < rz_analysis_block_get_op_addr(bb, bb->ninstr - 1)) && (!bb->switch_op || end_write < bb->switch_op->addr)) {
-					// Special case when instructions are aligned and we don't
-					// need to worry about a write messing with the jump instructions
-					clear_bb_vars(fcn, bb, addr > bb->addr ? addr : bb->addr, end_write);
-					update_vars_analysis(fcn, bb, align, addr > bb->addr ? addr : bb->addr, end_write);
-					rz_analysis_function_delete_unused_vars(fcn);
-					continue;
-				}
+		// in this loop we may remove functions and since we modify the
+		// pvector size we cannot loop normally.
+		size_t count = rz_pvector_len(analysis->fcns);
+		for (size_t i = 0; i < count;) {
+			fcn = (RzAnalysisFunction *)rz_pvector_at(analysis->fcns, i);
+			if (align > 1 &&
+				(end_write < rz_analysis_block_get_op_addr(bb, bb->ninstr - 1)) &&
+				(!bb->switch_op || end_write < bb->switch_op->addr)) {
+				// Special case when instructions are aligned and we don't
+				// need to worry about a write messing with the jump instructions
+				clear_bb_vars(fcn, bb, addr > bb->addr ? addr : bb->addr, end_write);
+				update_vars_analysis(fcn, bb, align, addr > bb->addr ? addr : bb->addr, end_write);
+				rz_analysis_function_delete_unused_vars(fcn);
+				i++;
+				continue;
 			}
 			calc_reachable_and_remove_block(fcns, fcn, bb, reachable);
+			size_t n_count = rz_pvector_len(analysis->fcns);
+			if (n_count < count) {
+				// a function was deleted, so we loop from the same position.
+				count = n_count;
+			} else {
+				// nothing was deleted, so we increase i.
+				i++;
+			}
 		}
 	}
 	rz_list_free(blocks); // This will call rz_analysis_block_unref to actually remove blocks from RzAnalysis
@@ -2432,7 +2460,6 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 
 RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
 	rz_return_if_fail(fcn);
-	RzListIter *it, *tmp;
 	RzAnalysisBlock *bb;
 	RzAnalysisFunction *f;
 	RzList *fcns = rz_list_new();
@@ -2446,8 +2473,20 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
 			i++;
 			continue;
 		}
-		rz_list_foreach_safe (bb->fcns, it, tmp, f) {
+		// in this loop we may remove functions and since we modify the
+		// pvector size we cannot loop normally.
+		size_t fcount = rz_pvector_len(bb->fcns);
+		for (size_t j = 0; j < fcount;) {
+			f = (RzAnalysisFunction *)rz_pvector_at(bb->fcns, j);
 			calc_reachable_and_remove_block(fcns, f, bb, reachable);
+			size_t n_fcount = rz_pvector_len(bb->fcns);
+			if (n_fcount < fcount) {
+				// a function was deleted, so we loop from the same position.
+				fcount = n_fcount;
+			} else {
+				// nothing was deleted, so we increase i.
+				i++;
+			}
 		}
 		count = rz_pvector_len(fcn->bbs);
 	}
