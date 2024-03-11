@@ -38,6 +38,7 @@ typedef struct {
 	const char *mask;
 	const char *curfile;
 	const char *comma;
+	const char *exec_command;
 } RzfindOptions;
 
 static void rzfind_options_fini(RzfindOptions *ro) {
@@ -51,6 +52,7 @@ static void rzfind_options_init(RzfindOptions *ro) {
 	ro->bsize = 4096;
 	ro->to = UT64_MAX;
 	ro->keywords = rz_list_newf(NULL);
+	ro->exec_command = NULL;
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file);
@@ -140,6 +142,15 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			}
 		}
 	}
+	if (ro->exec_command) {
+		char *command = rz_str_newf("%s %s", ro->exec_command, ro->curfile);
+		int status = rz_sys_system(command);
+		if (status == -1) {
+			RZ_LOG_ERROR("Failed to execute command: %s", command);
+		}
+		free(command);
+		return 1;
+	}
 	return 1;
 }
 
@@ -181,6 +192,7 @@ static int show_help(const char *argv0, int line) {
 		"-a",    "[align]", "Only accept aligned hits",
 		"-b",    "[size]",  "Set block size",
 		"-e",    "[regex]", "Search for regex matches (can be used multiple times)",
+		"-E",    "[cmd]",   "Execute command for each file found",
 		"-f",    "[from]",  "Start searching from address 'from'",
 		"-F",    "[file]",  "Read the contents of the file and use it as keyword",
 		"-h",    "",        "Show this help",
@@ -452,7 +464,6 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 		if (rz_search_update(rs, ro->cur, ro->buf, ret) == -1) {
 			eprintf("search: update read error at 0x%08" PFMT64x "\n", ro->cur);
-			break;
 		}
 	}
 done:
@@ -541,8 +552,8 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			rz_list_append(ro.keywords, (void *)opt.arg);
 			break;
 		case 'E':
-			ro.mode = RZ_SEARCH_ESIL;
-			rz_list_append(ro.keywords, (void *)opt.arg);
+			ro.quiet = true;
+			ro.exec_command = opt.arg;
 			break;
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;

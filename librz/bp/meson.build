@@ -1,14 +1,16 @@
+bp_plugins_list = [
+  'arm',
+  'bf',
+  'mips',
+  'ppc',
+  'sh',
+  'x86'
+]
+
 bp_plugins = {
-  'conf_name': 'plugins_bp',
-  'base_cname': 'rz_bp_plugin_',
-  'list': [
-    'arm',
-    'bf',
-    'mips',
-    'ppc',
-    'sh',
-    'x86'
-  ],
+  'base_name': 'rz_bp',
+  'base_struct': 'RzBreakpointPlugin',
+  'list': bp_plugins_list,
 }
 
 rz_bp_sources = [

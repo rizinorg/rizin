@@ -5,6 +5,8 @@
 #include <winkd.h>
 #include "librz/bin/format/dmp/dmp_specs.h"
 
+#include "rz_io_plugins.h"
+
 static bool dmp_plugin_open(RzIO *io, const char *file, bool many) {
 	return (!strncmp(file, "dmp://", 6));
 }

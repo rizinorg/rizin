@@ -7,7 +7,7 @@
 RZ_IPI bool ValueType_from_encoding(DW_ATE encoding, ut64 byte_size, RzBinDwarfValueType *out_type);
 RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out);
 RZ_IPI bool Value_parse_into(
-	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBinEndianReader *reader);
+	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBinEndianReader *R);
 RZ_IPI RzBinDwarfValueType Value_type(RzBinDwarfValue *ptr);
 RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, ut64 addr_mask, ut64 *result);
 RZ_IPI bool Value_from_u64(RzBinDwarfValueType value_type, ut64 value, RzBinDwarfValue *result);
@@ -46,7 +46,6 @@ RZ_IPI bool Value_ne(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask
 
 RZ_IPI void Value_fini(RzBinDwarfValue *self);
 RZ_IPI void Value_free(RzBinDwarfValue *self);
-RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self);
 RZ_IPI bool Value_clone_into(RzBinDwarfValue *self, RzBinDwarfValue *val);
 static inline void Value_cpy(RzBinDwarfValue *dst, RzBinDwarfValue *src) {
 	Value_clone_into(src, dst);

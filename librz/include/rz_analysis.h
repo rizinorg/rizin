@@ -34,8 +34,6 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER(rz_analysis);
-
 // TODO: save memory2 : fingerprints must be pointers to a buffer
 // containing a dupped file in memory
 
@@ -170,7 +168,7 @@ typedef struct rz_analysis_function_t {
 	bool bp_frame : 1;
 	bool is_noreturn : 1; // true if function does not return
 	int argnum; // number of arguments;
-	RzList /*<RzAnalysisBlock *>*/ *bbs; // TODO: should be RzPVector
+	RzPVector /*<RzAnalysisBlock *>*/ *bbs;
 	RzAnalysisFcnMeta meta;
 	RzList /*<char *>*/ *imports; // maybe bound to class?
 	struct rz_analysis_t *analysis; // this function is associated with this instance
@@ -1475,7 +1473,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 // Merge every block in blocks with their contiguous predecessor, if possible.
 // IMPORTANT: Merged blocks will be FREED! The blocks list will be updated to contain only the survived blocks.
-RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks);
+RZ_API void rz_analysis_block_automerge(RzPVector /*<RzAnalysisBlock *>*/ *blocks);
 
 // return true iff an instruction in the given basic block starts at the given address
 RZ_API bool rz_analysis_block_op_starts_at(RzAnalysisBlock *block, ut64 addr);
@@ -1560,7 +1558,7 @@ RZ_API ut64 rz_analysis_function_realsize(const RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_function_contains(RzAnalysisFunction *fcn, ut64 addr);
 
 // returns true if function bytes were modified
-RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn);
+RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn);
 
 RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL char *name);
 RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *name);
@@ -1770,8 +1768,6 @@ RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(c
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
-
-RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_fcns(RzAnalysis *analysis);
 
 /* var.c */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
@@ -2422,68 +2418,6 @@ RZ_API bool rz_serialize_analysis_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnaly
 RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
-/* plugin pointers */
-extern RzAnalysisPlugin rz_analysis_plugin_null;
-extern RzAnalysisPlugin rz_analysis_plugin_6502;
-extern RzAnalysisPlugin rz_analysis_plugin_8051;
-extern RzAnalysisPlugin rz_analysis_plugin_amd29k;
-extern RzAnalysisPlugin rz_analysis_plugin_arc;
-extern RzAnalysisPlugin rz_analysis_plugin_arm_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_avr;
-extern RzAnalysisPlugin rz_analysis_plugin_bf;
-extern RzAnalysisPlugin rz_analysis_plugin_chip8;
-extern RzAnalysisPlugin rz_analysis_plugin_cil;
-extern RzAnalysisPlugin rz_analysis_plugin_cr16;
-extern RzAnalysisPlugin rz_analysis_plugin_cris;
-extern RzAnalysisPlugin rz_analysis_plugin_dalvik;
-extern RzAnalysisPlugin rz_analysis_plugin_ebc;
-extern RzAnalysisPlugin rz_analysis_plugin_gb;
-extern RzAnalysisPlugin rz_analysis_plugin_h8300;
-extern RzAnalysisPlugin rz_analysis_plugin_hexagon;
-extern RzAnalysisPlugin rz_analysis_plugin_i4004;
-extern RzAnalysisPlugin rz_analysis_plugin_i8080;
-extern RzAnalysisPlugin rz_analysis_plugin_java;
-extern RzAnalysisPlugin rz_analysis_plugin_m68k_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_m680x_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_malbolge;
-extern RzAnalysisPlugin rz_analysis_plugin_mcore;
-extern RzAnalysisPlugin rz_analysis_plugin_mips_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_mips_gnu;
-extern RzAnalysisPlugin rz_analysis_plugin_msp430;
-extern RzAnalysisPlugin rz_analysis_plugin_nios2;
-extern RzAnalysisPlugin rz_analysis_plugin_or1k;
-extern RzAnalysisPlugin rz_analysis_plugin_pic;
-extern RzAnalysisPlugin rz_analysis_plugin_ppc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_propeller;
-extern RzAnalysisPlugin rz_analysis_plugin_riscv;
-extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_rl78;
-extern RzAnalysisPlugin rz_analysis_plugin_rsp;
-extern RzAnalysisPlugin rz_analysis_plugin_rx;
-extern RzAnalysisPlugin rz_analysis_plugin_sh;
-extern RzAnalysisPlugin rz_analysis_plugin_snes;
-extern RzAnalysisPlugin rz_analysis_plugin_sparc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_sparc_gnu;
-extern RzAnalysisPlugin rz_analysis_plugin_spc700;
-extern RzAnalysisPlugin rz_analysis_plugin_sysz;
-extern RzAnalysisPlugin rz_analysis_plugin_tms320;
-extern RzAnalysisPlugin rz_analysis_plugin_tms320c64x;
-extern RzAnalysisPlugin rz_analysis_plugin_tricore_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_v810;
-extern RzAnalysisPlugin rz_analysis_plugin_v850;
-extern RzAnalysisPlugin rz_analysis_plugin_vax;
-extern RzAnalysisPlugin rz_analysis_plugin_wasm;
-extern RzAnalysisPlugin rz_analysis_plugin_x86;
-extern RzAnalysisPlugin rz_analysis_plugin_x86_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_x86_im;
-extern RzAnalysisPlugin rz_analysis_plugin_x86_simple;
-extern RzAnalysisPlugin rz_analysis_plugin_x86_udis;
-extern RzAnalysisPlugin rz_analysis_plugin_xap;
-extern RzAnalysisPlugin rz_analysis_plugin_xcore_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_xtensa;
-extern RzAnalysisPlugin rz_analysis_plugin_z80;
-extern RzAnalysisPlugin rz_analysis_plugin_pyc;
-extern RzAnalysisPlugin rz_analysis_plugin_luac;
 #ifdef __cplusplus
 }
 #endif

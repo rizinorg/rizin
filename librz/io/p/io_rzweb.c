@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "rz_io_plugins.h"
+
 typedef struct {
 	int fd;
 	char *url;

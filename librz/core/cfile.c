@@ -124,7 +124,7 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 }
 
 static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *old_sections, ut64 old_base) {
-	RzListIter *it, *ititit;
+	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;
 	RzBinSection *old_section;
@@ -141,9 +141,12 @@ static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *ol
 				continue;
 			}
 			rz_analysis_function_relocate(fcn, fcn->addr + diff);
-			RzAnalysisBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
-			rz_list_foreach (fcn->bbs, ititit, bb) {
+
+			void **vit;
+			RzAnalysisBlock *bb;
+			rz_pvector_foreach (fcn->bbs, vit) {
+				bb = (RzAnalysisBlock *)*vit;
 				if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {
 					// Todo: Find better way to check if bb was already rebased
 					continue;

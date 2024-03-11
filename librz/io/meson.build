@@ -41,8 +41,8 @@ if host_machine.system() == 'windows'
 endif
 
 io_plugins = {
-  'conf_name': 'plugins_io',
-  'base_cname': 'rz_io_plugin_',
+  'base_name': 'rz_io',
+  'base_struct': 'RzIOPlugin',
   'list': io_plugins_list,
 }
 

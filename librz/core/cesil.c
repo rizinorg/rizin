@@ -121,6 +121,7 @@ repeat:
 
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
 	// TODO: sometimes this is dupe
+	rz_analysis_op_init(&op);
 	ret = rz_analysis_op(core->analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
 	// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RzAnalysis.op() can change it
@@ -183,11 +184,12 @@ repeat:
 		if (op.delay && !isNextFall) {
 			ut8 code2[32];
 			ut64 naddr = addr + op.size;
-			RzAnalysisOp op2 = { 0 };
+			RzAnalysisOp op2;
 			// emulate only 1 instruction
 			rz_analysis_esil_set_pc(esil, naddr);
 			(void)rz_io_read_at(core->io, naddr, code2, sizeof(code2));
 			// TODO: sometimes this is dupe
+			rz_analysis_op_init(&op2);
 			ret = rz_analysis_op(core->analysis, &op2, naddr, code2, sizeof(code2), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
 			if (ret > 0) {
 				switch (op2.type) {

@@ -520,7 +520,7 @@ static bool read_arm64_ins(RzBuffer *b, int idx, ut64 *result) {
 	return res;
 }
 
-RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64 = {
+RzBinXtrPlugin rz_bin_xtr_plugin_sep64 = {
 	.name = "xtr.sep64",
 	.desc = "64-bit SEP bin extractor plugin",
 	.license = "LGPL3",
@@ -536,7 +536,7 @@ RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64 = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_BIN_XTR,
-	.data = &rz_bin_xtr_plugin_xtr_sep64,
+	.data = &rz_bin_xtr_plugin_sep64,
 	.version = RZ_VERSION
 };
 #endif

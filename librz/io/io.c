@@ -5,7 +5,6 @@
 
 #include <rz_io.h>
 #include <sdb.h>
-#include <config.h>
 #include "io_private.h"
 
 #if __WINDOWS__

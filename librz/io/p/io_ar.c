@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_cons.h>
 #include "ar.h"
+#include "rz_io_plugins.h"
 
 static bool rz_io_ar_plugin_open(RzIO *io, const char *file, bool many) {
 	return !strncmp("ar://", file, 5) || !strncmp("lib://", file, 6);

@@ -419,6 +419,7 @@ static void core_analysis_bytes_size(RzCore *core, const ut8 *buf, int len, int 
 	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
+		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 
@@ -443,6 +444,7 @@ static void core_analysis_bytes_desc(RzCore *core, const ut8 *buf, int len, int 
 	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
+		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf + idx, len - idx);
@@ -485,6 +487,7 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
+		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, addr, buf + idx, len - idx,
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT);
 		esilstr = RZ_STRBUF_SAFEGET(&op.esil);
@@ -1007,6 +1010,7 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
 	for (ops = ptr = 0; ptr < buf_sz && hasNext(mode); ops++, ptr += len) {
+		rz_analysis_op_init(&aop);
 		len = rz_analysis_op(core->analysis, &aop, addr + ptr, buf + ptr, buf_sz - ptr, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
 		if (len < 1) {
 			RZ_LOG_ERROR("core: Invalid 0x%08" PFMT64x " instruction %02x %02x\n",
@@ -1377,7 +1381,7 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 }
 
 static void __analysis_esil_function(RzCore *core, ut64 addr) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *bb;
 	if (!core->analysis->esil) {
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
@@ -1386,10 +1390,11 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 		addr, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 	if (fcn) {
 		// emulate every instruction in the function recursively across all the basic blocks
-		rz_list_foreach (fcn->bbs, iter, bb) {
+		rz_pvector_foreach (fcn->bbs, iter) {
+			bb = (RzAnalysisBlock *)*iter;
 			ut64 pc = bb->addr;
 			ut64 end = bb->addr + bb->size;
-			RzAnalysisOp op;
+			RzAnalysisOp op = { 0 };
 			int ret, bbs = end - pc;
 			if (bbs < 1 || bbs > 0xfffff || pc >= end) {
 				RZ_LOG_ERROR("core: Invalid block size\n");
@@ -1406,6 +1411,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 			while (pc < end) {
 				left = RZ_MIN(end - pc, 32);
 				// rz_asm_set_pc (core->rasm, pc);
+				rz_analysis_op_init(&op);
 				ret = rz_analysis_op(core->analysis, &op, pc, buf + pc - bb->addr, left, RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL); // read overflow
 				opskip = false;
 				switch (op.type) {
@@ -1637,6 +1643,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 
 		RzAnalysisOp aop = RZ_EMPTY;
 		bufsz = rz_hex_str2bin(hex, (ut8 *)hex);
+		rz_analysis_op_init(&aop);
 		ret = rz_analysis_op(core->analysis, &aop, core->offset,
 			(const ut8 *)hex, bufsz, RZ_ANALYSIS_OP_MASK_ESIL);
 		if (ret > 0) {
@@ -1728,6 +1735,7 @@ static bool print_cmd_analysis_after_traps_print(RZ_NONNULL RzCore *core, ut64 n
 		if (!bufi) {
 			rz_io_read_at(core->io, addr, buf, 4096);
 		}
+		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->analysis, &op, addr, buf + bufi, 4096 - bufi, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 			if (op.size < 1) {
 				// XXX must be +4 on arm/mips/.. like we do in disasm.c
@@ -2107,8 +2115,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_all_handler(RzCore *core, int
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	while (!rz_list_empty(fcn->bbs)) {
-		rz_analysis_function_remove_block(fcn, rz_list_first(fcn->bbs));
+	while (!rz_pvector_len(fcn->bbs)) {
+		rz_analysis_function_remove_block(fcn, rz_pvector_head(fcn->bbs));
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -2217,9 +2225,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_setbits_handler(RzCore *core, int argc, 
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
 		rz_analysis_hint_set_bits(core->analysis, bb->addr, bits);
 		rz_analysis_hint_set_bits(core->analysis, bb->addr + bb->size, core->analysis->bits);
 	}
@@ -2230,10 +2239,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_setbits_handler(RzCore *core, int argc, 
 static bool function_byte_signature(RzCore *core, RzAnalysisFunction *fcn, ut8 **buffer, ut32 *buf_sz) {
 	size_t size = 0, current = 0;
 	ut8 *data = NULL;
-	RzAnalysisBlock *bb = NULL;
-	RzListIter *iter = NULL;
+	RzAnalysisBlock *bb;
+	void **iter;
 
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
 		size += bb->size;
 	}
 
@@ -2243,7 +2253,8 @@ static bool function_byte_signature(RzCore *core, RzAnalysisFunction *fcn, ut8 *
 	}
 
 	current = 0;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
 		if (bb->size > 0 && !rz_io_read_at(core->io, bb->addr, data + current, bb->size)) {
 			RZ_LOG_ERROR("core: failed to read at %" PFMT64x "\n", bb->addr);
 			goto fail;
@@ -3295,10 +3306,12 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 
 			if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
 				RzAnalysisOp aop = { 0 };
+				rz_analysis_op_init(&aop);
 				rz_analysis_op(core->analysis, &aop, xref->to, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 				if (aop.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
 					cmd_analysis_ucall_ref(core, xref->to);
 				}
+				rz_analysis_op_fini(&aop);
 			}
 			rz_cons_newline();
 		}
@@ -3577,7 +3590,7 @@ static void function_list_print_to_table(RzCore *core, RzList /*<RzAnalysisFunct
 			rz_table_add_rowf(t, "XsndddddddbXnXdddd", fcn->addr,
 				fcn->name, rz_analysis_function_realsize(fcn),
 				xref_to_num, xref_from_num, calls_num,
-				rz_list_length(fcn->bbs), rz_analysis_function_count_edges(fcn, NULL),
+				rz_pvector_len(fcn->bbs), rz_analysis_function_count_edges(fcn, NULL),
 				rz_analysis_function_complexity(fcn), rz_analysis_function_cost(fcn),
 				fcn->is_noreturn, rz_analysis_function_min_addr(fcn),
 				rz_analysis_function_linear_size(fcn), rz_analysis_function_max_addr(fcn),
@@ -3586,7 +3599,7 @@ static void function_list_print_to_table(RzCore *core, RzList /*<RzAnalysisFunct
 			rz_table_add_rowf(t, "Xsndddddddb", fcn->addr,
 				fcn->name, rz_analysis_function_realsize(fcn),
 				xref_to_num, xref_from_num, calls_num,
-				rz_list_length(fcn->bbs), rz_analysis_function_count_edges(fcn, NULL),
+				rz_pvector_len(fcn->bbs), rz_analysis_function_count_edges(fcn, NULL),
 				rz_analysis_function_complexity(fcn), rz_analysis_function_cost(fcn),
 				fcn->is_noreturn, NULL);
 		}
@@ -3605,8 +3618,8 @@ static void function_list_print(RzCore *core, RzList /*<RzAnalysisFunction *>*/ 
 		} else {
 			msg = rz_str_newf("%-4" PFMT64u " -> %-4" PFMT64u, size, realsize);
 		}
-		rz_cons_printf("0x%08" PFMT64x " %4d %4s %s\n",
-			fcn->addr, rz_list_length(fcn->bbs), msg, fcn->name);
+		rz_cons_printf("0x%08" PFMT64x " %4" PFMTSZu " %4s %s\n",
+			fcn->addr, rz_pvector_len(fcn->bbs), msg, fcn->name);
 		free(msg);
 	}
 }
@@ -3635,9 +3648,10 @@ static char function_type_to_char(RzAnalysisFunction *fcn) {
 
 static void fcn_list_bbs(RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bbi;
-	RzListIter *iter;
+	void **iter;
 
-	rz_list_foreach (fcn->bbs, iter, bbi) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bbi = (RzAnalysisBlock *)*iter;
 		rz_cons_printf("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %" PFMT64u " ",
 			fcn->addr, bbi->addr, bbi->size);
 		rz_cons_printf("0x%08" PFMT64x " ", bbi->jump);
@@ -3697,7 +3711,7 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, RzCmdS
 	pj_ki(state->d.pj, "loops", rz_analysis_function_loops(fcn));
 	pj_ki(state->d.pj, "bits", fcn->bits);
 	pj_ks(state->d.pj, "type", rz_analysis_fcntype_tostring(fcn->type));
-	pj_ki(state->d.pj, "nbbs", rz_list_length(fcn->bbs));
+	pj_ki(state->d.pj, "nbbs", rz_pvector_len(fcn->bbs));
 	pj_ki(state->d.pj, "edges", rz_analysis_function_count_edges(fcn, &ebbs));
 	pj_ki(state->d.pj, "ebbs", ebbs);
 	{
@@ -4031,7 +4045,7 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 	rz_cons_printf("loops: %d\n", rz_analysis_function_loops(fcn));
 	rz_cons_printf("bits: %d\n", fcn->bits);
 	rz_cons_printf("type: %s\n", rz_analysis_fcntype_tostring(fcn->type));
-	rz_cons_printf("num-bbs: %d\n", rz_list_length(fcn->bbs));
+	rz_cons_printf("num-bbs: %" PFMTSZu "\n", rz_pvector_len(fcn->bbs));
 	rz_cons_printf("edges: %d\n", rz_analysis_function_count_edges(fcn, &ebbs));
 	rz_cons_printf("end-bbs: %d\n", ebbs);
 	rz_cons_printf("call-refs:");
@@ -4207,9 +4221,10 @@ static void update_stat_for_op(RzCore *core, HtPU *ht, ut64 addr, int mode) {
 }
 
 static void gather_opcode_stat_for_fcn(RzCore *core, HtPU *ht, RzAnalysisFunction *fcn, int mode) {
+	void **iter;
 	RzAnalysisBlock *bb;
-	RzListIter *iter;
-	rz_list_foreach (fcn->bbs, iter, bb) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = (RzAnalysisBlock *)*iter;
 		update_stat_for_op(core, ht, bb->addr, mode);
 		for (int i = 0; i < bb->op_pos_size; i++) {
 			ut16 op_pos = bb->op_pos[i];
@@ -4409,16 +4424,19 @@ RZ_IPI RzCmdStatus rz_analysis_functions_map_handler(RzCore *core, int argc, con
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzListIter *iter, *iter2;
+	RzListIter *iter;
+	void **vit;
 	RzAnalysisFunction *fcn;
 	RzAnalysisBlock *b;
 	// for each function
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		// for each basic block in the function
-		rz_list_foreach (fcn->bbs, iter2, b) {
+		rz_pvector_foreach (fcn->bbs, vit) {
+			b = (RzAnalysisBlock *)*vit;
 			// if it is not within range, continue
-			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr + code_size))
+			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr + code_size)) {
 				continue;
+			}
 			// otherwise mark each byte in the BB in the bitmap
 			int counter = 1;
 			for (counter = 0; counter < b->size; counter++) {
@@ -5877,9 +5895,10 @@ static RzList /*<ut64 *>*/ *get_calls(RzAnalysisBlock *block) {
 		return NULL;
 	}
 	RzList *list = NULL;
-	RzAnalysisOp op;
+	RzAnalysisOp op = { 0 };
 	block->analysis->iob.read_at(block->analysis->iob.io, block->addr, data, block->size);
 	for (size_t i = 0; i < block->size; i++) {
+		rz_analysis_op_init(&op);
 		int ret = rz_analysis_op(block->analysis, &op, block->addr + i, data + i, block->size - i, RZ_ANALYSIS_OP_MASK_HINT);
 		if (ret < 1) {
 			continue;
@@ -6315,7 +6334,8 @@ RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, c
 	ut64 code_size = rz_num_get(core->num, "$SS");
 	ut64 base_addr = rz_num_get(core->num, "$S");
 	ut64 chunk_size, chunk_offset, i;
-	RzListIter *iter, *iter2;
+	RzListIter *iter;
+	void **iter2;
 	RzAnalysisFunction *fcn;
 	RzAnalysisBlock *b;
 	char *bitmap;
@@ -6335,7 +6355,8 @@ RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, c
 	// for each function
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		// for each basic block in the function
-		rz_list_foreach (fcn->bbs, iter2, b) {
+		rz_pvector_foreach (fcn->bbs, iter2) {
+			b = (RzAnalysisBlock *)*iter2;
 			// if it is not withing range, continue
 			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr + code_size))
 				continue;
@@ -6448,8 +6469,9 @@ RZ_IPI RzCmdStatus rz_analysis_data_function_handler(RzCore *core, int argc, con
 	char *bitmap = calloc(1, fcn_size);
 	if (bitmap) {
 		RzAnalysisBlock *b;
-		RzListIter *iter;
-		rz_list_foreach (fcn->bbs, iter, b) {
+		void **iter;
+		rz_pvector_foreach (fcn->bbs, iter) {
+			b = (RzAnalysisBlock *)*iter;
 			int f = b->addr - fcn->addr;
 			int t = RZ_MIN(f + b->size, fcn_size);
 			if (f >= 0) {

@@ -8,6 +8,8 @@
 #include <rz_cons.h>
 #include <zip.h>
 
+#include "rz_io_plugins.h"
+
 typedef enum {
 	RZ_IO_PARENT_ZIP = 0x0001,
 	RZ_IO_CHILD_FILE = 0x0002,

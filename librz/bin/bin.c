@@ -8,8 +8,11 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_io.h>
-#include <config.h>
 #include "i/private.h"
+
+// include both generated plugin lists.
+#include "rz_bin_plugins.h"
+#include "rz_bin_xtr_plugins.h"
 
 RZ_LIB_VERSION(rz_bin);
 

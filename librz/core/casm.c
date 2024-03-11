@@ -258,6 +258,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 			if (mode == 'i') {
 				RzAnalysisOp aop = { 0 };
 				ut64 len = RZ_MIN(15, core->blocksize - idx);
+				rz_analysis_op_init(&aop);
 				if (rz_analysis_op(core->analysis, &aop, addr, buf + idx, len, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
 					idx++; // TODO: honor mininstrsz
 					rz_analysis_op_fini(&aop);
@@ -313,6 +314,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 				continue;
 			} else if (mode == 'e') {
 				RzAnalysisOp aop = { 0 };
+				rz_analysis_op_init(&aop);
 				if (rz_analysis_op(core->analysis, &aop, addr, buf + idx, 15, RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 					idx++; // TODO: honor mininstrsz
 					rz_analysis_op_fini(&aop);
@@ -877,7 +879,7 @@ RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *instr_len, ut64 *start_addr
 		*instr_len = 0;
 	}
 	if (hits && rz_list_length(hits) > 0) {
-		hit = rz_list_get_bottom(hits);
+		hit = rz_list_first(hits);
 		if (start_addr) {
 			*start_addr = hit->addr;
 		}

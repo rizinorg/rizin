@@ -64,6 +64,7 @@ static bool test_analysis_il() {
 
 	// extract and evaluate a single instruction
 	rz_core_analysis_il_reinit(core);
+	rz_analysis_op_init(&op);
 	rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_IL);
 	rz_il_op_effect_stringify(op.il_op, &sb, false);
 	mu_assert_streq(rz_strbuf_get(&sb), "(seq "

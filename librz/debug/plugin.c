@@ -3,7 +3,7 @@
 
 #include <rz_debug.h>
 #include <rz_lib.h>
-#include <config.h>
+#include "rz_debug_plugins.h"
 
 static RzDebugPlugin *debug_static_plugins[] = { RZ_DEBUG_STATIC_PLUGINS };
 

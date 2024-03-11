@@ -347,6 +347,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 		if (addr == until_addr) {
 			break;
 		}
+		rz_analysis_op_init(&aop);
 		ret = rz_analysis_op(core->analysis, &aop, addr, buf + i, bsize - i, flags);
 		if (ret < 1) {
 			RZ_LOG_ERROR("core: failed esil analysis at 0x%08" PFMT64x "\n", addr);
@@ -1050,7 +1051,7 @@ static void getpcfromstack(RzCore *core, RzAnalysisEsil *esil) {
 	ut64 size;
 	int idx;
 	RzAnalysisEsil esil_cpy;
-	RzAnalysisOp op = RZ_EMPTY;
+	RzAnalysisOp op = { 0 };
 	RzAnalysisFunction *fcn = NULL;
 	ut8 *buf = NULL;
 	char *tmp_esil_str = NULL;
@@ -1084,6 +1085,7 @@ static void getpcfromstack(RzCore *core, RzAnalysisEsil *esil) {
 
 	// TODO Hardcoding for 2 instructions (mov e_p,[esp];ret). More work needed
 	idx = 0;
+	rz_analysis_op_init(&op);
 	if (rz_analysis_op(core->analysis, &op, cur, buf + idx, size - idx, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 		op.size <= 0 ||
 		(op.type != RZ_ANALYSIS_OP_TYPE_MOV && op.type != RZ_ANALYSIS_OP_TYPE_CMOV)) {
@@ -1123,6 +1125,7 @@ static void getpcfromstack(RzCore *core, RzAnalysisEsil *esil) {
 
 	cur = addr + idx;
 	rz_analysis_op_fini(&op);
+	rz_analysis_op_init(&op);
 	if (rz_analysis_op(core->analysis, &op, cur, buf + idx, size - idx, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 		op.size <= 0 ||
 		(op.type != RZ_ANALYSIS_OP_TYPE_RET && op.type != RZ_ANALYSIS_OP_TYPE_CRET)) {
@@ -1158,6 +1161,18 @@ static int find_bb(ut64 *addr, RzAnalysisBlock *bb, void *user) {
 	return *addr != bb->addr;
 }
 
+static RzList /*<void *>*/ *pvector_to_list(RzPVector /*<void *>*/ *pvec) {
+	RzList *list = rz_list_new();
+	if (!list) {
+		return NULL;
+	}
+	void **it;
+	rz_pvector_foreach (pvec, it) {
+		rz_list_append(list, *it);
+	}
+	return list;
+}
+
 static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	(*next_i)++;
 	ut64 cur_addr = *next_i + ctx->start_addr;
@@ -1165,7 +1180,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 		if (!ctx->cur_bb) {
 			ctx->path = rz_list_new();
 			ctx->switch_path = rz_list_new();
-			ctx->bbl = rz_list_clone(ctx->fcn->bbs);
+			ctx->bbl = pvector_to_list(ctx->fcn->bbs);
 			ctx->cur_bb = rz_analysis_get_block_at(ctx->fcn->analysis, ctx->fcn->addr);
 			rz_list_push(ctx->path, ctx->cur_bb);
 		}
@@ -1369,6 +1384,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		if (i >= iend) {
 			goto repeat;
 		}
+		rz_analysis_op_init(&op);
 		rz_analysis_op(core->analysis, &op, cur, buf + i, iend - i, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT);
 		// if (op.type & 0x80000000 || op.type == 0) {
 		if (op.type == RZ_ANALYSIS_OP_TYPE_ILL || op.type == RZ_ANALYSIS_OP_TYPE_UNK) {
