@@ -428,12 +428,6 @@ RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr) {
 	}
 }
 
-RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_fcns(RzAnalysis *analysis) {
-	// avoid received to free this thing
-	analysis->fcns->free = NULL;
-	return analysis->fcns;
-}
-
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *str) {
 	RzAnalysisOp *op = rz_analysis_op_new();
 	if (!op) {

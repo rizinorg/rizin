@@ -2086,13 +2086,13 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 	RzListIter *iter = NULL;
 	bool color = false, no_name = false;
 
-	fcns_a = rz_list_clone(rz_analysis_get_fcns(core_a->analysis));
+	fcns_a = rz_list_clone(rz_analysis_function_list(core_a->analysis));
 	if (rz_list_empty(fcns_a)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file0.\n");
 		goto fail;
 	}
 
-	fcns_b = rz_list_clone(rz_analysis_get_fcns(core_b->analysis));
+	fcns_b = rz_list_clone(rz_analysis_function_list(core_b->analysis));
 	if (rz_list_empty(fcns_b)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file1.\n");
 		goto fail;
