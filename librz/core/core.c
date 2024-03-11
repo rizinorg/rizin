@@ -2448,15 +2448,30 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 }
 
 /**
- * \brief Seeks to the first basic block of the current function.
+ * \brief Seeks to any basic block of the current function.
  *
  * \param core The RzCore instance.
  */
-RZ_API void rz_core_seek_first_bb(RZ_NONNULL RzCore *core) {
+RZ_API void rz_core_seek_bb(RZ_NONNULL RzCore *core) {
 	rz_return_if_fail(core);
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (fcn) {
-		ut64 min_addr = rz_analysis_function_min_addr(fcn);
-		rz_core_seek(core, min_addr, true);
+		RzAnalysisBlock *bb;
+		void **iter;
+		rz_pvector_foreach (fcn->bbs, iter) {
+			bb = *iter;
+			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " 00:0000 %llu\n", bb->addr, bb->addr + bb->size, bb->size);
+		}
+		rz_cons_flush();
+		char *input = rz_cons_input("Enter an address: ");
+		ut64 addr = strtoull(input, NULL, 16);
+		free(input);
+		rz_pvector_foreach (fcn->bbs, iter) {
+			bb = *iter;
+			if (bb->addr <= addr && addr < bb->addr + bb->size) {
+				rz_core_seek(core, addr, true);
+				break;
+			}
+		}
 	}
 }
