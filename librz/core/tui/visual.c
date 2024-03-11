@@ -1987,7 +1987,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_debug_switch_to_first_thread(core->dbg);
 			break;
 		case 'b':
-			rz_core_seek_first_bb(core);
+			rz_core_seek_bb(core);
 			break;
 		case 'i':
 			// XXX ii shows index first and iiq shows no offset :(
