@@ -283,7 +283,7 @@ commands:
         args: []
       - name: dcco
         summary: Continue until call (use step out)
-        cname: cmd_debug_continue_call_over
+        cname: cmd_debug_continue_call_over_h
         args: []
       - name: dccu
         summary: Continue until unknown call (call reg)
