@@ -52,7 +52,7 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent,
 	for (size_t id = 0; id < nd; ++id) {
 
 		if (path[*i] != '[') {
-			eprintf("Expected '[' got '%c'\n", path[*i]);
+			RZ_LOG_ERROR("Expected '[' got '%c'\n", path[*i]);
 			*offset = -1;
 			return NULL;
 		}
@@ -63,7 +63,7 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent,
 			;
 
 		if (path[*i] != ']') {
-			eprintf("Expected ']' got '%c'\n", path[*i]);
+			RZ_LOG_ERROR("Expected ']' got '%c'\n", path[*i]);
 			*offset = -1;
 			return NULL;
 		}
@@ -98,7 +98,7 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 
 	RzBaseType *parent_btype = rz_type_get_base_type(typedb, parent);
 	if (!parent_btype) {
-		eprintf("Could not found btype for parent\n");
+		RZ_LOG_ERROR("Could not found btype for parent '%s'\n", parent->identifier.name);
 		*offset = -1;
 		free(tok);
 		return NULL;
@@ -184,12 +184,12 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 		}
 
 		if (parent->kind != RZ_TYPE_KIND_IDENTIFIER) {
-			eprintf("parent is not identifier\n");
+			RZ_LOG_ERROR("parent is not identifier\n");
 			return -1;
 		}
 
 		if (parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_STRUCT && parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNION) {
-			eprintf("parent type kind is not struct or union\n");
+			RZ_LOG_ERROR("parent type kind is not struct or union\n");
 			return -1;
 		}
 
@@ -386,11 +386,6 @@ RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *ty
 	rz_return_val_if_fail(typedb && name && member, 0);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
-		if (!btype) {
-			eprintf("return offset 0: !btype\n");
-		} else {
-			eprintf("return offset 0: btype->kind != RZ_BASE_TYPE_KIND_STRUCT\n");
-		}
 		return 0;
 	}
 	RzTypeStructMember *memb;
