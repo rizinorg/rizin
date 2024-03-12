@@ -2411,6 +2411,19 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_call_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
+// dcco
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_call_over_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	rz_reg_arena_swap(core->dbg->reg, true);
+
+	rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_CALL, 1);
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
 // dccu
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_unknown_call_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);

@@ -7968,6 +7968,14 @@ static const RzCmdDescHelp cmd_debug_continue_call_help = {
 	.args = cmd_debug_continue_call_args,
 };
 
+static const RzCmdDescArg cmd_debug_continue_call_over_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_call_over_help = {
+	.summary = "Continue until call (use step out)",
+	.args = cmd_debug_continue_call_over_args,
+};
+
 static const RzCmdDescArg cmd_debug_continue_unknown_call_args[] = {
 	{ 0 },
 };
@@ -20548,6 +20556,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_continue_call_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcc", rz_cmd_debug_continue_call_handler, &cmd_debug_continue_call_help);
 	rz_warn_if_fail(cmd_debug_continue_call_cd);
+
+	RzCmdDesc *cmd_debug_continue_call_over_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcco", rz_cmd_debug_continue_call_over_handler, &cmd_debug_continue_call_over_help);
+	rz_warn_if_fail(cmd_debug_continue_call_over_cd);
 
 	RzCmdDesc *cmd_debug_continue_unknown_call_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dccu", rz_cmd_debug_continue_unknown_call_handler, &cmd_debug_continue_unknown_call_help);
 	rz_warn_if_fail(cmd_debug_continue_unknown_call_cd);

@@ -1021,6 +1021,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_execution_handler(RzCore *core, int arg
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_back_handler(RzCore *core, int argc, const char **argv);
 // "dcc"
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_call_handler(RzCore *core, int argc, const char **argv);
+// "dcco"
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_call_over_handler(RzCore *core, int argc, const char **argv);
 // "dccu"
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_unknown_call_handler(RzCore *core, int argc, const char **argv);
 // "dce"
