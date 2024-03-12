@@ -171,18 +171,54 @@ struct reference
   char input[1];		/* variable size buffer containing formula */
 };
 
-/* print an error message, including current line and file */
-static void printerr (int error, const char *fmt, ...);
+typedef struct {
+	/* current line, address and file */
+	int addr, file;
+
+	/* use readbyte instead of (hl) if writebyte is true */
+	int writebyte;
+	const char *readbyte;
+	/* variables which are filled by rd_* functions and used later, like readbyte */
+	const char *readword, *indexjmp, *bitsetres;
+
+	/* 0, 0xdd or 0xfd depening on which index prefix should be given */
+	int indexed;
+
+	/* increased for every -v option on the command line */
+	int verbose;
+
+	/* read commas after indx() if comma > 1. increase for every call */
+	int comma;
+
+	/* address at start of line (for references) */
+	int baseaddr;
+
+	/* set by readword and readbyte, used for new_reference */
+	char mem_delimiter;
+
+	/* line currently being parsed */
+	char *z80buffer;
+
+	/* if a macro is currently being defined */
+	int define_macro;
+
+	unsigned char *obuf;
+	int obuflen;
+
+	/* file (and macro) stack */
+	int sp;
+	struct stack stack[MAX_INCLUDE]; /* maximum level of includes */
+} Z80AssemblerState;
 
 /* skip over spaces in string */
 static const char *delspc (const char *ptr);
 
-static int rd_expr (const char **p, char delimiter, int *valid, int level,
-	     int print_errors);
-static int rd_label (const char **p, int *exists, struct label **previous, int level,
-	      int print_errors);
-static int rd_character (const char **p, int *valid, int print_errors);
+static int rd_expr(Z80AssemblerState *state, const char **p, char delimiter, int *valid, int level,
+	int print_errors);
+static int rd_label(Z80AssemblerState *state, const char **p, int *exists, struct label **previous, int level,
+	int print_errors);
+static int rd_character(Z80AssemblerState *state, const char **p, int *valid, int print_errors);
 
-static int compute_ref (struct reference *ref, int allow_invalid);
+static int compute_ref(Z80AssemblerState *state, struct reference *ref, int allow_invalid);
 
 #endif
