@@ -1712,7 +1712,6 @@ bool test_offset_by_path_struct(void) {
 
 	// simple
 
-	// eprintf("=============== SIMPLE ===============\n");
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int32_t a; uint32_t b; };", &error_msg);
 	mu_assert_notnull(ttype, "type parse successful");
@@ -1742,7 +1741,6 @@ bool test_offset_by_path_struct(void) {
 
 	// recursive
 
-	// eprintf("============= RECURSIVE ==============\n");
 	ttype = rz_type_parse_string_single(typedb->parser, "union World { uint64_t ulu; Hello mulu; int32_t urshak; };", &error_msg);
 	mu_assert_notnull(ttype, "type parse successful");
 	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
@@ -1774,9 +1772,6 @@ bool test_offset_by_path_array(void) {
 	RzBaseType *btype;
 	RzType *ttype;
 
-	// simple
-
-	// eprintf("=============== SIMPLE ===============\n");
 	char *error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int32_t a; uint32_t b; };", &error_msg);
 	mu_assert_notnull(ttype, "type parse successful");
@@ -1785,15 +1780,13 @@ bool test_offset_by_path_array(void) {
 
 	/**
 	 * Set offsets manually.
-	 * Since parse_struct_node() in librz/type/parser/types_parser.c sets them to 0.
+	 * Since rz_type_parse_string_sinble calls parse_struct_node() in librz/type/parser/types_parser.c which sets them to 0.
 	 */
 	btype = rz_type_get_base_type(typedb, ttype);
 	mu_assert_notnull(btype, "btype get successful");
 	RzTypeStructMember *memb_it;
 	rz_vector_foreach(&btype->struct_data.members, memb_it) {
-		if (!strcmp(memb_it->name, "a")) {
-			memb_it->offset = 0;
-		} else if (!strcmp(memb_it->name, "b")) {
+		if (!strcmp(memb_it->name, "b")) {
 			memb_it->offset = 4;
 		}
 	}
@@ -1804,16 +1797,10 @@ bool test_offset_by_path_array(void) {
 	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
 	mu_assert_streq(ttype->identifier.name, "HelloWrap", "parsed type");
 
-	/**
-	 * Set offsets manually.
-	 * Since parse_struct_node() in librz/type/parser/types_parser.c sets them to 0.
-	 */
 	btype = rz_type_get_base_type(typedb, ttype);
 	mu_assert_notnull(btype, "btype get successful");
 	rz_vector_foreach(&btype->struct_data.members, memb_it) {
-		if (!strcmp(memb_it->name, "a")) {
-			memb_it->offset = 0;
-		} else if (!strcmp(memb_it->name, "harr")) {
+		if (!strcmp(memb_it->name, "harr")) {
 			memb_it->offset = 4;
 		}
 	}
