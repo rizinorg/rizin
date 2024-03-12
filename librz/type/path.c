@@ -68,8 +68,8 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent,
 			return NULL;
 		}
 
-		char *idx_str = strndup(&path[tok_beg], *i - tok_beg);
-		size_t idx = strtoull(idx_str, NULL, 10);
+		char *idx_str = rz_str_ndup(&path[tok_beg], *i - tok_beg);
+		size_t idx = rz_num_math(NULL, idx_str);
 		free(idx_str);
 
 		curd_off /= typd->array.count;
@@ -94,7 +94,7 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 	for (; isalnum(path[*i]); ++*i)
 		;
 
-	char *tok = strndup(&path[tok_beg], *i - tok_beg);
+	char *tok = rz_str_ndup(&path[tok_beg], *i - tok_beg);
 
 	RzBaseType *parent_btype = rz_type_get_base_type(typedb, parent);
 	if (!parent_btype) {
@@ -171,7 +171,7 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 		return -1;
 	}
 
-	char *parent_name = strndup(path, i);
+	char *parent_name = rz_str_ndup(path, i);
 	RzType *parent = rz_type_identifier_of_base_type_str(typedb, parent_name);
 	free(parent_name);
 
