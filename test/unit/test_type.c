@@ -1750,16 +1750,6 @@ bool test_offset_by_path_struct(void) {
 
 	btype = rz_type_get_base_type(typedb, ttype);
 	mu_assert_notnull(btype, "btype get successful");
-	RzTypeUnionMember *umemb_it;
-	rz_vector_foreach(&btype->struct_data.members, umemb_it) {
-		if (!strcmp(umemb_it->name, "ulu")) {
-			umemb_it->offset = 0;
-		} else if (!strcmp(umemb_it->name, "mulu")) {
-			umemb_it->offset = 0;
-		} else if (!strcmp(umemb_it->name, "urshak")) {
-			umemb_it->offset = 0;
-		};
-	}
 
 	offset = rz_type_offset_by_path(typedb, "World.ulu");
 	mu_assert_eq(offset, 0, "offset");
