@@ -68,7 +68,10 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent,
 			return NULL;
 		}
 
-		size_t idx = strtoull(strndup(&path[tok_beg], *i - tok_beg), NULL, 10);
+		char *idx_str = strndup(&path[tok_beg], *i - tok_beg);
+		size_t idx = strtoull(idx_str, NULL, 10);
+		free(idx_str);
+
 		curd_off /= typd->array.count;
 
 		*offset += curd_off * idx;
@@ -91,12 +94,13 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 	for (; isalnum(path[*i]); ++*i)
 		;
 
-	const char *tok = strndup(&path[tok_beg], *i - tok_beg);
+	char *tok = strndup(&path[tok_beg], *i - tok_beg);
 
 	RzBaseType *parent_btype = rz_type_get_base_type(typedb, parent);
 	if (!parent_btype) {
 		eprintf("Could not found btype for parent\n");
 		*offset = -1;
+		free(tok);
 		return NULL;
 	}
 
@@ -115,10 +119,13 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 	}
 
 	if (!cur_type) {
-		eprintf("Invalid member '%s' for parent type\n", tok);
+		RZ_LOG_ERROR("Invalid member '%s' for parent type\n", tok);
 		*offset = -1;
+		free(tok);
 		return NULL;
 	}
+
+	free(tok);
 
 	*offset += cur_offset;
 
@@ -127,7 +134,7 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 		parent = cur_type;
 
 		if (parent->kind != RZ_TYPE_KIND_ARRAY) {
-			eprintf("Expected array, got another type\n");
+			RZ_LOG_ERROR("Expected array, got another type\n");
 			*offset = -1;
 			return NULL;
 		}
@@ -146,7 +153,7 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 	} else if (path[*i] == '.' || path[*i] == '\0') {
 		return cur_type;
 	} else {
-		eprintf("Unexpected character '%c' at position %lu\n", path[*i], *i);
+		RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[*i], *i);
 		*offset = -1;
 		return NULL;
 	}
@@ -160,17 +167,19 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 		;
 
 	if (path[i] != '.') {
-		eprintf("Unexpected character '%c' at position %lu\n", path[i], i);
+		RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[i], i);
 		return -1;
 	}
 
-	RzType *parent = rz_type_identifier_of_base_type_str(typedb, strndup(path, i));
+	char *parent_name = strndup(path, i);
+	RzType *parent = rz_type_identifier_of_base_type_str(typedb, parent_name);
+	free(parent_name);
 
 	st64 offset = 0;
 	while (path[i] != '\0') {
 
 		if (path[i] != '.') {
-			eprintf("Unexpected character '%c' at position %lu\n", path[i], i);
+			RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[i], i);
 			return -1;
 		}
 
@@ -375,9 +384,7 @@ RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_db_get_by_offset(const RzTypeDB
  */
 RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member) {
 	rz_return_val_if_fail(typedb && name && member, 0);
-	eprintf("here\n");
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
-	eprintf("here\n");
 	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
 		if (!btype) {
 			eprintf("return offset 0: !btype\n");
@@ -386,7 +393,6 @@ RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *ty
 		}
 		return 0;
 	}
-	eprintf("here\n");
 	RzTypeStructMember *memb;
 	ut64 result = 0;
 	rz_vector_foreach(&btype->struct_data.members, memb) {
