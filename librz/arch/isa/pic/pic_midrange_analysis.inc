@@ -3,8 +3,8 @@
 // SPDX-FileCopyrightText: 2015-2018 courk <courk@courk.cc>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "pic_il.h"
 #include "pic_midrange.h"
+#include "pic_midrange_il.inc"
 
 typedef void (*pic_midrange_inst_handler_t)(RzAnalysis *analysis, RzAnalysisOp *op,
 	ut64 addr,

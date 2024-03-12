@@ -63,6 +63,20 @@ static char *analysis_pic_get_reg_profile(RzAnalysis *analysis) {
 	return NULL;
 }
 
+static RzAnalysisILConfig *pic_il_config(RzAnalysis *a) {
+	if (a->cpu && strcasecmp(a->cpu, "baseline") == 0) {
+		// TODO: We are using the midrange il config as the baseline
+		return pic_midrange_il_config(a);
+	}
+	if (a->cpu && strcasecmp(a->cpu, "midrange") == 0) {
+		return pic_midrange_il_config(a);
+	}
+	if (a->cpu && strcasecmp(a->cpu, "pic18") == 0) {
+		return NULL;
+	}
+	return NULL;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_pic = {
 	.name = "pic",
 	.desc = "PIC analysis plugin",
@@ -72,6 +86,7 @@ RzAnalysisPlugin rz_analysis_plugin_pic = {
 	.op = &analysis_pic_op,
 	.init = pic_init,
 	.fini = pic_fini,
+	.il_config = pic_il_config,
 	.get_reg_profile = &analysis_pic_get_reg_profile,
 	.esil = true
 };
