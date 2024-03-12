@@ -39,18 +39,24 @@ RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath) {
 static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent, const char *path, size_t *i, st64 *offset) {
 	size_t nd = 0;
 	RzType *typd = parent;
-	st64 curd_off = 1; // prod of all dim sizes
+	st64 cur_dim_off = 1; // product of all dimension sizes
 	while (typd->kind == RZ_TYPE_KIND_ARRAY) {
 		++nd;
-		curd_off *= typd->array.count; // TODO: overflow
+
+		if (typd->array.count != 0 && cur_dim_off <= ST64_MAX / typd->array.count) { // check for overflow
+			cur_dim_off *= typd->array.count;
+		} else {
+			RZ_LOG_ERROR("Too many error subscriptions\n");
+			*offset = -1;
+			return NULL;
+		}
 
 		typd = typd->array.type;
 	}
-	curd_off *= rz_type_get_base_type(typedb, typd)->size; // elem size in bits
+	cur_dim_off *= rz_type_get_base_type(typedb, typd)->size; // elem size in bits
 
 	typd = parent;
 	for (size_t id = 0; id < nd; ++id) {
-
 		if (path[*i] != '[') {
 			RZ_LOG_ERROR("Expected '[' got '%c'\n", path[*i]);
 			*offset = -1;
@@ -72,9 +78,8 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent,
 		size_t idx = rz_num_math(NULL, idx_str);
 		free(idx_str);
 
-		curd_off /= typd->array.count;
-
-		*offset += curd_off * idx;
+		cur_dim_off /= typd->array.count;
+		*offset += cur_dim_off * idx;
 		typd = typd->array.type;
 
 		// DONT check for "idx < array size"
@@ -108,10 +113,8 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 	RzType *cur_type = NULL;
 	size_t cur_offset = -1;
 	rz_vector_foreach(&parent_btype->struct_data.members, memb_it) {
-
 		if (!strcmp(memb_it->name, tok)) {
 			cur_type = memb_it->type;
-
 			cur_offset = memb_it->offset; // in bytes
 			cur_offset *= 8; // in bits
 			break;
@@ -128,11 +131,8 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 	free(tok);
 
 	*offset += cur_offset;
-
 	if (path[*i] == '[') {
-
 		parent = cur_type;
-
 		if (parent->kind != RZ_TYPE_KIND_ARRAY) {
 			RZ_LOG_ERROR("Expected array, got another type\n");
 			*offset = -1;
@@ -148,7 +148,6 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 		while (parent->kind == RZ_TYPE_KIND_ARRAY) {
 			parent = parent->array.type;
 		}
-
 		return parent;
 	} else if (path[*i] == '.' || path[*i] == '\0') {
 		return cur_type;
@@ -177,7 +176,6 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 
 	st64 offset = 0;
 	while (path[i] != '\0') {
-
 		if (path[i] != '.') {
 			RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[i], i);
 			return -1;
