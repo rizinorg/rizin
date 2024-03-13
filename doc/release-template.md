@@ -26,10 +26,8 @@ content. Go step-by-step through it.
 - [ ] Finalize release notes.
 - [ ] Wait until all runs completed and succeeded on `stable`.
 - [ ] Tag procedure (assumes remote `upstream` is set to `git@github.com:rizinorg/rizin.git`)
-  - [ ] Make sure local `git` is set up with a GPG key for signing, and it is known to Github (sign a test commit on a dummy branch, push and check for `verified` label on Github).
   - [ ] Ensure you have the latest `stable` branch *locally*: `git fetch upstream && git checkout upstream/stable`
-  - [ ] Use git *locally* to create an annotated tag: `git tag -a vX.Y.Z` (editor will open for tag message).
-    - [ ] Add the release notes as tag message.
+  - [ ] Use git *locally* to create a tag: `git tag vX.Y.Z`.
   - [ ] Push tag `git push upstream vX.Y.Z`
 - [ ] Repeat for Cutter
 - [ ] Check on Github: tags point to the correct commit in the stable branch.
