@@ -302,7 +302,7 @@ RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
 }
 
 /**
- * \brief Parses the single C type definition. 
+ * \brief Parses the single C type definition.
  * \brief Struct member offsets are set to 0. (temporary: see parse_struct_node() in librz/type/parser/types_parser.c)
  *
  * \param parser RzTypeParser parser instance
