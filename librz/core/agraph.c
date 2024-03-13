@@ -3724,9 +3724,16 @@ RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzA
 		break;
 	case RZ_GRAPH_NODE_TYPE_CFG:
 	case RZ_GRAPH_NODE_TYPE_CFG_IWORD: {
-		char *annotation = rz_graph_get_node_subtype_annotation(info->subtype, utf8);
+		char *annotation = NULL;
+		ut64 addr = 0;
+		if (info->type == RZ_GRAPH_NODE_TYPE_CFG) {
+			annotation = rz_graph_get_node_subtype_annotation_cfg(info->cfg.subtype, true, utf8);
+			addr = info->cfg.address;
+		} else {
+			annotation = rz_graph_get_node_subtype_annotation_cfg_iword(info->cfg_iword.subtype, true, utf8);
+			addr = info->cfg_iword.address;
+		}
 		rz_return_val_if_fail(annotation, NULL);
-		ut64 addr = info->type == RZ_GRAPH_NODE_TYPE_CFG ? info->cfg.address : info->cfg_iword.address;
 		char *cfg_title = rz_str_appendf(NULL, "0x%" PFMT64x "%s", addr, annotation);
 		rz_return_val_if_fail(cfg_title, NULL);
 		an = rz_agraph_add_node(g, cfg_title, "");
@@ -3740,7 +3747,7 @@ RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzA
 	}
 	case RZ_GRAPH_NODE_TYPE_ICFG:
 		rz_strf(title, "0x%" PFMT64x "%s", info->icfg.address,
-			info->subtype & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC ? " (alloc)" : "");
+			info->icfg.subtype & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC ? " (alloc)" : "");
 		an = rz_agraph_add_node(g, title, "");
 		if (!an) {
 			return NULL;

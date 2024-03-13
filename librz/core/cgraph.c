@@ -806,7 +806,7 @@ static RzGraphNode *rz_graph_add_node_info_icfg(RzGraph /*<RzGraphNodeInfo *>*/ 
 	if (rz_analysis_function_is_malloc(fcn)) {
 		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
 	} else {
-		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_SUBTYPE_NONE);
+		data = rz_graph_create_node_info_icfg(fcn->addr, RZ_GRAPH_NODE_SUBTYPE_ICFG_NONE);
 	}
 	if (!data) {
 		rz_warn_if_reached();
@@ -941,9 +941,9 @@ static inline bool ignore_next_instr(const RzAnalysisOp *op) {
 	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)); // Except calls, everything which has set fail
 }
 
-static RzGraphNodeSubType get_cfg_node_flags(const RzAnalysisOp *op) {
-	rz_return_val_if_fail(op, RZ_GRAPH_NODE_SUBTYPE_NONE);
-	RzGraphNodeSubType subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
+static RzGraphNodeCFGSubType get_cfg_node_flags(const RzAnalysisOp *op) {
+	rz_return_val_if_fail(op, RZ_GRAPH_NODE_SUBTYPE_CFG_NONE);
+	RzGraphNodeCFGSubType subtype = RZ_GRAPH_NODE_SUBTYPE_CFG_NONE;
 	if (is_call(op)) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_CALL;
 	}
@@ -956,29 +956,28 @@ static RzGraphNodeSubType get_cfg_node_flags(const RzAnalysisOp *op) {
 	return subtype;
 }
 
-static RzGraphNodeSubType get_cfg_iword_node_flags(const RzAnalysisInsnWord *iword) {
-	rz_return_val_if_fail(iword, RZ_GRAPH_NODE_SUBTYPE_NONE);
-	RzGraphNodeSubType subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
-	if (iword->props & RZ_ANALYSIS_IWORD_CALL) {
-		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_CALL;
-	}
+static RzGraphNodeCFGIWordSubType get_cfg_iword_node_flags(const RzAnalysisInsnWord *iword) {
+	rz_return_val_if_fail(iword, RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_NONE);
+	RzGraphNodeCFGIWordSubType subtype = RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_NONE;
 	if (iword->props & RZ_ANALYSIS_IWORD_RET) {
-		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN;
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_RETURN;
 	}
 	if (iword->props & RZ_ANALYSIS_IWORD_COND) {
-		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_COND;
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_COND;
 	}
 	return subtype;
 }
 
 static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisOp *op, bool is_entry) {
 	rz_return_val_if_fail(cfg, NULL);
-	RzGraphNodeSubType subtype = get_cfg_node_flags(op);
+	RzGraphNodeCFGSubType subtype = get_cfg_node_flags(op);
 	if (is_entry) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
 	}
 	ut64 call_target = is_call(op) ? op->jump : UT64_MAX;
-	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, subtype);
+	ut64 jump_target = rz_analysis_op_is_jump(op) ? op->jump : UT64_MAX;
+	ut64 next = is_return(op) ? UT64_MAX : op->addr + op->size;
+	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg(op->addr, call_target, jump_target, next, subtype);
 	if (!data) {
 		return NULL;
 	}
@@ -1158,9 +1157,9 @@ error:
 
 static RzGraphNode *add_iword_to_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisInsnWord *iword, bool is_entry) {
 	rz_return_val_if_fail(cfg, NULL);
-	RzGraphNodeSubType subtype = get_cfg_iword_node_flags(iword);
+	RzGraphNodeCFGIWordSubType subtype = get_cfg_iword_node_flags(iword);
 	if (is_entry) {
-		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY;
 	}
 	RzGraphNodeInfo *data = rz_graph_create_node_info_cfg_iword(iword, subtype);
 	if (!data) {
