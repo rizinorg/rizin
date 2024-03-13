@@ -223,6 +223,7 @@ static void error(RzNum *num, const char *err_str) {
 	}
 }
 
+// FIXME: Rename into `rz_num_value_get()`
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
 RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
@@ -474,7 +475,7 @@ RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
  * \param str Numerical expression.
  * \return Evaluated expression's value.
  **/
-RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
+RZ_API ut64 rz_num_math_ut64(RzNum *num, const char *str) {
 	ut64 ret;
 	const char *err = NULL;
 	if (!str || !*str) {
@@ -494,6 +495,7 @@ RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
 	return ret;
 }
 
+// FIXME: Rename into rz_num_value_get_float()
 RZ_API double rz_num_get_float(RzNum *num, const char *str) {
 	double d = 0.0f;
 	(void)sscanf(str, "%lf", &d);
@@ -567,14 +569,14 @@ RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 		lgt = strchr(p, '<');
 		if (lgt) {
 			*lgt = 0;
-			a = rz_num_math(num, p);
+			a = rz_num_math_ut64(num, p);
 			if (lgt[1] == '=') {
-				b = rz_num_math(num, lgt + 2);
+				b = rz_num_math_ut64(num, lgt + 2);
 				if (a > b) {
 					goto fail;
 				}
 			} else {
-				b = rz_num_math(num, lgt + 1);
+				b = rz_num_math_ut64(num, lgt + 1);
 				if (a >= b) {
 					goto fail;
 				}
@@ -583,14 +585,14 @@ RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 			lgt = strchr(p, '>');
 			if (lgt) {
 				*lgt = 0;
-				a = rz_num_math(num, p);
+				a = rz_num_math_ut64(num, p);
 				if (lgt[1] == '=') {
-					b = rz_num_math(num, lgt + 2);
+					b = rz_num_math_ut64(num, lgt + 2);
 					if (a < b) {
 						goto fail;
 					}
 				} else {
-					b = rz_num_math(num, lgt + 1);
+					b = rz_num_math_ut64(num, lgt + 1);
 					if (a <= b) {
 						goto fail;
 					}
@@ -602,7 +604,7 @@ RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 					if (*lgt == '!') {
 						rz_str_replace_char(p, '!', ' ');
 						rz_str_replace_char(p, '=', '-');
-						n = rz_num_math(num, p);
+						n = rz_num_math_ut64(num, p);
 						if (!n) {
 							goto fail;
 						}
@@ -613,7 +615,7 @@ RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 					*lgt = ' ';
 				}
 				rz_str_replace_char(p, '=', '-');
-				n = rz_num_math(num, p);
+				n = rz_num_math_ut64(num, p);
 				if (n) {
 					goto fail;
 				}
@@ -628,12 +630,12 @@ fail:
 }
 
 RZ_API int rz_num_is_valid_input(RzNum *num, const char *input_value) {
-	ut64 value = input_value ? rz_num_math(num, input_value) : 0;
+	ut64 value = input_value ? rz_num_math_ut64(num, input_value) : 0;
 	return !(value == 0 && input_value && *input_value != '0') || !(value == 0 && input_value && *input_value != '@');
 }
 
 RZ_API ut64 rz_num_get_input_value(RzNum *num, const char *input_value) {
-	ut64 value = input_value ? rz_num_math(num, input_value) : 0;
+	ut64 value = input_value ? rz_num_math_ut64(num, input_value) : 0;
 	return value;
 }
 
@@ -690,12 +692,12 @@ RZ_API bool rz_is_valid_input_num_value(RzNum *num, const char *input_value) {
 	if (!input_value) {
 		return false;
 	}
-	ut64 value = rz_num_math(num, input_value);
+	ut64 value = rz_num_math_ut64(num, input_value);
 	return !(value == 0 && *input_value != '0');
 }
 
 RZ_API ut64 rz_get_input_num_value(RzNum *num, const char *str) {
-	return (str && *str) ? rz_num_math(num, str) : 0;
+	return (str && *str) ? rz_num_math_ut64(num, str) : 0;
 }
 
 static inline ut64 __nth_nibble(ut64 n, ut32 i) {
@@ -741,7 +743,7 @@ RZ_API ut64 rz_num_tail(RzNum *num, ut64 addr, const char *hex) {
 		strcpy(p, "0x");
 		strcpy(p + 2, hex);
 		if (isxdigit((ut8)hex[0])) {
-			n = rz_num_math(num, p);
+			n = rz_num_math_ut64(num, p);
 		} else {
 			eprintf("Invalid argument\n");
 			free(p);
@@ -792,7 +794,7 @@ RZ_API int rz_num_between(RzNum *num, const char *input_value) {
 		len = 3;
 	}
 	for (i = 0; i < len; i++) {
-		ns[i] = rz_num_math(num, rz_list_pop_head(nums));
+		ns[i] = rz_num_math_ut64(num, rz_list_pop_head(nums));
 	}
 	free(str);
 	rz_list_free(nums);
@@ -915,7 +917,7 @@ RZ_API size_t rz_num_base_of_string(RzNum *num, RZ_NONNULL const char *str) {
 			break;
 		default:
 			// syscall
-			base = rz_num_math(num, str);
+			base = rz_num_math_ut64(num, str);
 		}
 	}
 	return base;
