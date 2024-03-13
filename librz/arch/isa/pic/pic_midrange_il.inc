@@ -77,19 +77,20 @@ typedef RzILOpEffect *(*pic_midrange_il_handler)(PicMidrangeILContext *, ut16);
 #define BANK_COMMON_MAP_LOW  cpu_state->selected_bank *BANK_SIZE + 0X70
 #define BANK_COMMON_MAP_HIGH cpu_state->selected_bank *BANK_SIZE + 0X7F
 
-#define K    (ctx->args.k)
-#define D    (ctx->args.d)
-#define F    (ctx->args.f)
-#define B    (ctx->args.b)
-#define N    (ctx->args.n)
-#define PC   (ctx->addr)
+#define K   (ctx->args.k)
+#define D   (ctx->args.d)
+#define F   (ctx->args.f)
+#define B   (ctx->args.b)
+#define N   (ctx->args.n)
+#define PC  (ctx->addr)
+#define VPC (U16(PC))
+
 #define RW   "w"
-#define RF   pic_midrange_regname(F)
-#define RWF  (D ? pic_midrange_regname(F) : "w")
-#define VRF  (VARG(pic_midrange_regname(F)))
 #define VRW  (VARG(RW))
+#define RF   pic_midrange_regname(F)
+#define VRF  (VARG(pic_midrange_regname(F)))
+#define RWF  (D ? pic_midrange_regname(F) : "w")
 #define VRWF (VARG(RWF))
-#define VPC  (U16(PC))
 
 #define INS_LEN 2
 
@@ -535,6 +536,14 @@ IL_LIFTER_IMPL(ADDFSR) {
 IL_LIFTER_IMPL(BRA) {
 	return JMP(U16(PC + SEXT(16, K, 9)));
 }
+
+#undef K
+#undef D
+#undef F
+#undef B
+#undef N
+#undef PC
+#undef VPC
 
 /**
  * Create new Mid-Range device CPU state.
