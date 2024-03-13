@@ -11,38 +11,75 @@
  * \brief Translates the \p subtype flags of a node to its annotation symbols.
  *
  * \param subtype The sub-type flags of the node.
+ * \param letter_abbr If true, a single letter or UTF8 character abbreviation is returned. A word otherwise.
  * \param utf8 If true, the symbols will be UTF-8 characters. If false, they are in ASCII.
  *
  * \return A string with all symbols.
  */
-RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation(RzGraphNodeSubType subtype, bool utf8) {
+RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation_cfg(RzGraphNodeCFGSubType subtype, bool letter_abbr, bool utf8) {
 	char *annotation = rz_str_newf(" ");
-	if (!utf8) {
+	if (!utf8 || !letter_abbr) {
 		annotation = rz_str_append(annotation, "(");
 	}
-	if (subtype == RZ_GRAPH_NODE_SUBTYPE_NONE) {
-		annotation = rz_str_append(annotation, utf8 ? "○" : ".");
-		if (!utf8) {
+	if (subtype == RZ_GRAPH_NODE_SUBTYPE_CFG_NONE) {
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "○" : ".") : "none");
+		if (!utf8 || !letter_abbr) {
 			annotation = rz_str_append(annotation, ")");
 		}
 		return annotation;
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY) {
-		annotation = rz_str_append(annotation, utf8 ? "↓" : "e");
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "↓" : "e") : "entry");
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL) {
-		annotation = rz_str_append(annotation, utf8 ? "⇢" : "C");
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "⇢" : "C") : "call");
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN) {
-		annotation = rz_str_append(annotation, utf8 ? "↑" : "r");
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "↑" : "r") : "return");
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_COND) {
-		annotation = rz_str_append(annotation, utf8 ? "⤹" : "c");
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "⤹" : "c") : "cond");
 	}
 	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT) {
-		annotation = rz_str_append(annotation, utf8 ? "⭳" : "E");
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "⭳" : "E") : "exit");
 	}
-	if (!utf8) {
+	if (!utf8 || !letter_abbr) {
+		annotation = rz_str_append(annotation, ")");
+	}
+	return annotation;
+}
+
+/**
+ * \brief Translates the \p subtype flags of a node to its annotation symbols.
+ *
+ * \param subtype The sub-type flags of the node.
+ * \param letter_abbr If true, a single letter or UTF8 character abbreviation is returned. A word otherwise.
+ * \param utf8 If true, the symbols will be UTF-8 characters. If false, they are in ASCII.
+ *
+ * \return A string with all symbols.
+ */
+RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation_cfg_iword(RzGraphNodeCFGIWordSubType subtype, bool letter_abbr, bool utf8) {
+	char *annotation = rz_str_newf(" ");
+	if (!utf8 || !letter_abbr) {
+		annotation = rz_str_append(annotation, "(");
+	}
+	if (subtype == RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_NONE) {
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "○" : ".") : "none");
+		if (!utf8 || !letter_abbr) {
+			annotation = rz_str_append(annotation, ")");
+		}
+		return annotation;
+	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY) {
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "↓" : "e") : "entry");
+	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_RETURN) {
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "↑" : "r") : "return");
+	}
+	if (subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_COND) {
+		annotation = rz_str_append(annotation, letter_abbr ? (utf8 ? "⤹" : "c") : "cond");
+	}
+	if (!utf8 || !letter_abbr) {
 		annotation = rz_str_append(annotation, ")");
 	}
 	return annotation;
@@ -110,7 +147,6 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, con
 		return NULL;
 	}
 	data->type = RZ_GRAPH_NODE_TYPE_DEFAULT;
-	data->subtype = RZ_GRAPH_NODE_SUBTYPE_NONE;
 	data->def.title = RZ_STR_DUP(title);
 	data->def.body = RZ_STR_DUP(body);
 	data->def.offset = offset;
@@ -122,19 +158,28 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, con
  *
  * \param address The address of the instruction this node represents.
  * \param call_target_addr The address of the procedure called, if this node is a call.
+ * \param jump_target_addr The address of the an instruction, if this node is a jump.
+ * \param next The address of the next instruction, if not a return.
  * \param flags Additional flags which describe the node.
  *
  * \return The initialized RzGraphNodeInfo or NULL in case of failure.
  */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, RzGraphNodeSubType subtype) {
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(
+	ut64 address,
+	ut64 call_target_addr,
+	ut64 jump_target_addr,
+	ut64 next,
+	RzGraphNodeCFGSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	if (!data) {
 		return NULL;
 	}
 	data->type = RZ_GRAPH_NODE_TYPE_CFG;
-	data->subtype = subtype;
+	data->cfg.subtype = subtype;
 	data->cfg.address = address;
 	data->cfg.call_address = call_target_addr;
+	data->cfg.jump_address = jump_target_addr;
+	data->cfg.next = next;
 	return data;
 }
 
@@ -153,14 +198,16 @@ RZ_API void rz_graph_node_info_data_cfg_iword_fini(RZ_NULLABLE RZ_OWN RzGraphNod
 /**
  * \brief Initializes a instruction word node info struct of a CFG node.
  *
+ * \param iword The instructoin word to build the node from.
+ * \param subtype The sub types of the node.
  *
  * \return The initialized RzGraphNodeInfo or NULL in case of failure.
  */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsnWord *iword, RzGraphNodeSubType subtype) {
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsnWord *iword, RzGraphNodeCFGIWordSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	rz_graph_node_info_data_cfg_iword_init(&data->cfg_iword);
 	data->type = RZ_GRAPH_NODE_TYPE_CFG_IWORD;
-	data->subtype = subtype;
+	data->cfg_iword.subtype = subtype;
 	data->cfg_iword.address = iword->addr;
 	void **it;
 	rz_pvector_foreach (iword->insns, it) {
@@ -168,6 +215,8 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsn
 		RzGraphNodeInfoDataCFG *info = RZ_NEW0(RzGraphNodeInfoDataCFG);
 		info->address = op->addr;
 		info->call_address = (rz_analysis_op_is_call(op) || rz_analysis_op_is_ccall(op)) ? op->jump : UT64_MAX;
+		info->jump_address = (rz_analysis_op_is_jump(op) || rz_analysis_op_is_cjump(op)) ? op->jump : RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY;
+		info->next = rz_analysis_op_is_return(op) ? UT64_MAX : op->addr + op->size;
 		rz_pvector_push(data->cfg_iword.insn, info);
 	}
 	return data;
@@ -181,13 +230,13 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsn
  *
  * \return The initialized RzGraphNodeInfo or NULL in case of failure.
  */
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeSubType subtype) {
+RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeiCFGSubType subtype) {
 	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
 	if (!data) {
 		return NULL;
 	}
 	data->type = RZ_GRAPH_NODE_TYPE_ICFG;
-	data->subtype = subtype;
+	data->icfg.subtype = subtype;
 	data->icfg.address = address;
 	data->icfg.is_malloc = subtype & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC;
 	return data;
@@ -240,30 +289,18 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			rz_strbuf_free(label);
 			return NULL;
 		case RZ_GRAPH_NODE_TYPE_CFG:
-		case RZ_GRAPH_NODE_TYPE_CFG_IWORD: {
-			ut64 addr = print_node->type == RZ_GRAPH_NODE_TYPE_CFG_IWORD ? print_node->cfg_iword.address : print_node->cfg.address;
-			rz_strbuf_appendf(label, "0x%" PFMT64x, addr);
-			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY) {
-				rz_strbuf_append(label, " (entry)");
-			}
-			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL) {
-				rz_strbuf_append(label, " (call)");
-			}
-			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN) {
-				rz_strbuf_append(label, " (ret)");
-			}
-			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_COND) {
-				rz_strbuf_append(label, " (cond)");
-			}
-			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT) {
-				rz_strbuf_append(label, " (exit)");
-			}
+			rz_strbuf_appendf(label, "0x%" PFMT64x, print_node->cfg.address);
+			rz_strbuf_append(label, rz_graph_get_node_subtype_annotation_cfg(print_node->cfg.subtype, false, false));
 			url = rz_strbuf_get(label);
 			break;
-		}
+		case RZ_GRAPH_NODE_TYPE_CFG_IWORD:
+			rz_strbuf_appendf(label, "0x%" PFMT64x, print_node->cfg_iword.address);
+			rz_strbuf_append(label, rz_graph_get_node_subtype_annotation_cfg_iword(print_node->cfg_iword.subtype, false, false));
+			url = rz_strbuf_get(label);
+			break;
 		case RZ_GRAPH_NODE_TYPE_ICFG:
 			rz_strbuf_appendf(label, "0x%" PFMT64x, print_node->icfg.address);
-			if (print_node->subtype == RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC) {
+			if (print_node->icfg.subtype == RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC) {
 				rz_strbuf_append(label, " (alloc)");
 			}
 			url = rz_strbuf_get(label);
@@ -323,19 +360,19 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/
 			pj_kb(pj, "is_malloc", print_node->type & RZ_GRAPH_NODE_SUBTYPE_ICFG_MALLOC);
 		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_CFG) {
 			pj_kn(pj, "address", print_node->cfg.address);
-			pj_kb(pj, "is_call", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
-			if (print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL && print_node->cfg.call_address != UT64_MAX) {
+			pj_kb(pj, "is_call", print_node->cfg.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
+			if (print_node->cfg.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL && print_node->cfg.call_address != UT64_MAX) {
 				pj_kn(pj, "call_address", print_node->cfg.call_address);
 			}
-			pj_kb(pj, "is_entry", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY);
-			pj_kb(pj, "is_exit", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT);
-			pj_kb(pj, "is_return", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN);
+			pj_kb(pj, "is_entry", print_node->cfg.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY);
+			pj_kb(pj, "is_exit", print_node->cfg.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT);
+			pj_kb(pj, "is_return", print_node->cfg.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN);
+			pj_kb(pj, "is_cond", print_node->cfg.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_COND);
 		} else if (print_node->type == RZ_GRAPH_NODE_TYPE_CFG_IWORD) {
 			pj_kn(pj, "address", print_node->cfg_iword.address);
-			pj_kb(pj, "is_call", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_CALL);
-			pj_kb(pj, "is_entry", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY);
-			pj_kb(pj, "is_exit", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT);
-			pj_kb(pj, "is_return", print_node->subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN);
+			pj_kb(pj, "is_entry", print_node->cfg_iword.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY);
+			pj_kb(pj, "is_return", print_node->cfg_iword.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_RETURN);
+			pj_kb(pj, "is_cond", print_node->cfg_iword.subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_COND);
 			pj_k(pj, "instructions");
 			pj_a(pj);
 			void **it;
