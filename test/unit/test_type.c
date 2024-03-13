@@ -1710,18 +1710,12 @@ bool test_offset_by_path_struct(void) {
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
-	// simple
-
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int32_t a; uint32_t b; };", &error_msg);
 	mu_assert_notnull(ttype, "type parse successful");
 	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
 	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
 
-	/**
-	 * Set offsets manually.
-	 * Since parse_struct_node() in librz/type/parser/types_parser.c sets them to 0.
-	 */
 	RzBaseType *btype = rz_type_get_base_type(typedb, ttype);
 	mu_assert_notnull(btype, "btype get successful");
 	RzTypeStructMember *memb_it;
@@ -1738,8 +1732,6 @@ bool test_offset_by_path_struct(void) {
 	mu_assert_eq(offset, 0, "offset");
 	offset = rz_type_offset_by_path(typedb, "Hello.b");
 	mu_assert_eq(offset, 32, "offset");
-
-	// recursive
 
 	ttype = rz_type_parse_string_single(typedb->parser, "union World { uint64_t ulu; Hello mulu; int32_t urshak; };", &error_msg);
 	mu_assert_notnull(ttype, "type parse successful");
@@ -1778,10 +1770,6 @@ bool test_offset_by_path_array(void) {
 	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
 	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
 
-	/**
-	 * Set offsets manually.
-	 * Since rz_type_parse_string_sinble calls parse_struct_node() in librz/type/parser/types_parser.c which sets them to 0.
-	 */
 	btype = rz_type_get_base_type(typedb, ttype);
 	mu_assert_notnull(btype, "btype get successful");
 	RzTypeStructMember *memb_it;
