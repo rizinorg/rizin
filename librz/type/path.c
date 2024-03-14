@@ -36,17 +36,34 @@ RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath) {
 	free(tpath);
 }
 
-static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent, const char *path, size_t *i, st64 *offset) {
+/**
+ * \brief False if overflow detected.
+ */
+static inline bool _st64_mult_check_overflow(st64 a, st64 b) {
+	return a == 0 || b >= ST64_MAX / a;
+}
+
+/**
+ * \brief Parses the array subscription 'arr[3]'
+ * \param typedb
+ * \param elem_type Type of array element.
+ * \param path String where struct path is stored.
+ * \param i Index in path pointing to the subscription bracket '['.
+ * \param offset Value to place resulting offset. Set to -1 on error.
+ */
+static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RZ_NONNULL RzType *elem_type, RZ_NONNULL const char *path, RZ_NONNULL RZ_INOUT size_t *i, RZ_OUT st64 *offset) {
+	rz_return_val_if_fail(typedb && path, (*offset = -1, NULL));
+
 	size_t nd = 0;
-	RzType *typd = parent;
+	RzType *typd = elem_type;
 	st64 cur_dim_off = 1; // product of all dimension sizes
 	while (typd->kind == RZ_TYPE_KIND_ARRAY) {
 		++nd;
 
-		if (typd->array.count != 0 && cur_dim_off <= ST64_MAX / typd->array.count) { // check for overflow
+		if (!_st64_mult_check_overflow(cur_dim_off, typd->array.count)) { // check for overflow
 			cur_dim_off *= typd->array.count;
 		} else {
-			RZ_LOG_ERROR("Too many error subscriptions\n");
+			RZ_LOG_ERROR("Too many array subscriptions\n");
 			*offset = -1;
 			return NULL;
 		}
@@ -55,7 +72,7 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent,
 	}
 	cur_dim_off *= rz_type_get_base_type(typedb, typd)->size; // elem size in bits
 
-	typd = parent;
+	typd = elem_type;
 	for (size_t id = 0; id < nd; ++id) {
 		if (path[*i] != '[') {
 			RZ_LOG_ERROR("Expected '[' got '%c'\n", path[*i]);
@@ -63,7 +80,7 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent,
 			return NULL;
 		}
 
-		++*i;
+		++*i; // skip '['
 		size_t tok_beg = *i;
 		for (; isdigit(path[*i]); ++*i)
 			;
@@ -92,9 +109,18 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RzType *parent,
 	return typd;
 }
 
-static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, const char *path, size_t *i, st64 *offset) {
-	++*i;
+/**
+ * \brief Parses the dot-separated token.
+ * \param typedb
+ * \param parent Previous token type.
+ * \param path String where struct path is stored.
+ * \param i Index in path pointing to the dot '.'.
+ * \param offset Value to place resulting offset on success. Set to -1 on error.
+ */
+static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RZ_NONNULL RzType *parent, RZ_NONNULL const char *path, RZ_NONNULL RZ_INOUT size_t *i, RZ_NONNULL RZ_OUT st64 *offset) {
+	rz_return_val_if_fail(typedb && path, (*offset = -1, NULL));
 
+	++*i; // skip '.'
 	size_t tok_beg = *i;
 	for (; isalnum(path[*i]); ++*i)
 		;
@@ -109,7 +135,7 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 		return NULL;
 	}
 
-	RzTypeStructMember *memb_it;
+	RzTypeStructMember *memb_it = NULL;
 	RzType *cur_type = NULL;
 	size_t cur_offset = -1;
 	rz_vector_foreach(&parent_btype->struct_data.members, memb_it) {
@@ -139,8 +165,7 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 			return NULL;
 		}
 
-		path_walker_parse_bracket(typedb, parent, path, i, offset);
-		if (*offset == -1) {
+		if (!path_walker_parse_bracket(typedb, parent, path, i, offset)) {
 			return NULL;
 		}
 
@@ -151,14 +176,21 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RzType *parent, con
 		return parent;
 	} else if (path[*i] == '.' || path[*i] == '\0') {
 		return cur_type;
-	} else {
-		RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[*i], *i);
-		*offset = -1;
-		return NULL;
 	}
+	RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[*i], *i);
+	*offset = -1;
+	return NULL;
 }
 
-static st64 path_walker(const RzTypeDB *typedb, const char *path) {
+/**
+ * \brief Walks through the given struct path and returns offset from base.
+ * \param typedb
+ * \param path Path to walk through (like "Struct.arr[30].member")
+ *
+ * \brief Splits struct path on tokens and iterates over them.
+ * \brief Calls `path_walker_parse_dot` on each.
+ */
+static st64 path_walker(const RzTypeDB *typedb, RZ_NONNULL const char *path) {
 	rz_return_val_if_fail(typedb && path, -1);
 
 	size_t i;
@@ -192,7 +224,7 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 		}
 
 		parent = path_walker_parse_dot(typedb, parent, path, &i, &offset);
-		if (offset == -1) {
+		if (!parent) {
 			return -1;
 		}
 	}
