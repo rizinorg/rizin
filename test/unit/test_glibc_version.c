@@ -2,6 +2,7 @@
 #include <rz_heap_glibc.h>
 #include <rz_core.h>
 
+/* This is done to not link -lm for round(), only works for +ve integers*/
 int int_round(double x) {
 	return (int)(x + 0.5);
 }

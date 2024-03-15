@@ -410,7 +410,7 @@ typedef struct rz_debug_pid_t {
 	int uid;
 	int gid;
 	ut64 pc;
-	ut64 tls;
+	ut64 tls; ///< Thread local storage base used for accessing thread specific variables
 } RzDebugPid;
 
 typedef struct rz_backtrace_t {
