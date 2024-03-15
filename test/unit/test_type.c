@@ -1732,6 +1732,7 @@ bool test_offset_by_path_struct(void) {
 	mu_assert_eq(offset, 0, "offset");
 	offset = rz_type_offset_by_path(typedb, "Hello.b");
 	mu_assert_eq(offset, 32, "offset");
+	rz_type_free(ttype);
 
 	ttype = rz_type_parse_string_single(typedb->parser, "union World { uint64_t ulu; Hello mulu; int32_t urshak; };", &error_msg);
 	mu_assert_notnull(ttype, "type parse successful");
@@ -1752,6 +1753,7 @@ bool test_offset_by_path_struct(void) {
 	mu_assert_eq(offset, 0, "offset");
 	offset = rz_type_offset_by_path(typedb, "World.mulu.b");
 	mu_assert_eq(offset, 32, "offset");
+	rz_type_free(ttype);
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -1779,6 +1781,7 @@ bool test_offset_by_path_array(void) {
 		}
 	}
 	btype->size = 64;
+	rz_type_free(ttype);
 
 	ttype = rz_type_parse_string_single(typedb->parser, "struct HelloWrap { int32_t a; Hello harr[20]; };", &error_msg);
 	mu_assert_notnull(ttype, "type parse successful");
@@ -1806,6 +1809,9 @@ bool test_offset_by_path_array(void) {
 
 	offset = rz_type_offset_by_path(typedb, "HelloWrap.harr[3].b");
 	mu_assert_eq(offset, 32 * 8, "offset HelloWrap.harr[3].b");
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
 
 	mu_end;
 }

@@ -203,32 +203,38 @@ static st64 path_walker(const RzTypeDB *typedb, RZ_NONNULL const char *path) {
 	}
 
 	char *parent_name = rz_str_ndup(path, i);
-	RzType *parent = rz_type_identifier_of_base_type_str(typedb, parent_name);
+	RzType *struct_type = rz_type_identifier_of_base_type_str(typedb, parent_name);
 	free(parent_name);
 
 	st64 offset = 0;
+	RzType *parent = struct_type;
 	while (path[i] != '\0') {
 		if (path[i] != '.') {
 			RZ_LOG_ERROR("Unexpected character '%c' at position %lu\n", path[i], i);
-			return -1;
+			offset = -1;
+			goto out;
 		}
 
 		if (parent->kind != RZ_TYPE_KIND_IDENTIFIER) {
 			RZ_LOG_ERROR("parent is not identifier\n");
-			return -1;
+			offset = -1;
+			goto out;
 		}
 
 		if (parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_STRUCT && parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNION) {
 			RZ_LOG_ERROR("parent type kind is not struct or union\n");
-			return -1;
+			offset = -1;
+			goto out;
 		}
 
 		parent = path_walker_parse_dot(typedb, parent, path, &i, &offset);
 		if (!parent) {
-			return -1;
+			offset = -1;
+			goto out;
 		}
 	}
-
+out:
+	rz_type_free(struct_type);
 	return offset;
 }
 
