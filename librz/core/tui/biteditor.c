@@ -62,7 +62,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 		{
 			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
 			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
-			free(param);
+			rz_asm_parse_param_free(param);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, colored_asm ? rz_strbuf_get(colored_asm) : "");
 			rz_strbuf_free(colored_asm);
 		}

@@ -1866,10 +1866,7 @@ rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NU
  *
  * \param p The parameter struct.
  */
-RZ_API void rz_asm_parse_param_free(RZ_OWN RzAsmParseParam *p) {
-	if (!p) {
-		return;
-	}
+RZ_API void rz_asm_parse_param_free(RZ_OWN RZ_NULLABLE RzAsmParseParam *p) {
 	free(p);
 }
 
