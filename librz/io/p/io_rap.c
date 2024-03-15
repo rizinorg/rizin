@@ -7,6 +7,8 @@
 #include <rz_socket.h>
 #include <sys/types.h>
 
+#include "rz_io_plugins.h"
+
 typedef struct {
 	RzSocket *fd;
 	RzSocket *client;

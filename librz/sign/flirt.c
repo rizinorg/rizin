@@ -428,9 +428,10 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 					if (fcn != next_module_function &&
 						fcn->addr >= next_module_function->addr + next_module_function_size &&
 						fcn->addr < next_module_function->addr + flirt_fcn_size) {
-						RzListIter *iter_bb;
+						void **iter_bb;
 						RzAnalysisBlock *block;
-						rz_list_foreach (fcn->bbs, iter_bb, block) {
+						rz_pvector_foreach (fcn->bbs, iter_bb) {
+							block = (RzAnalysisBlock *)*iter_bb;
 							rz_analysis_function_add_block(next_module_function, block);
 						}
 						next_module_function->ninstr += fcn->ninstr;

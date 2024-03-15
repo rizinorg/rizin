@@ -222,13 +222,13 @@ static bool test_rz_annotated_code_annotations_in(void) {
 	RzPVector *out = rz_annotated_code_annotations_in(code, 11);
 	// Expecting indices = 3, 4, 5
 	mu_assert_eq(out->v.len, 3, "Additional annotations found. Bad output.");
-	if (!test_equal(*rz_pvector_index_ptr(out, 0), rz_vector_index_ptr(test_annotations, 3))) {
+	if (!test_equal(rz_pvector_at(out, 0), rz_vector_index_ptr(test_annotations, 3))) {
 		return false;
 	}
-	if (!test_equal(*rz_pvector_index_ptr(out, 1), rz_vector_index_ptr(test_annotations, 4))) {
+	if (!test_equal(rz_pvector_at(out, 1), rz_vector_index_ptr(test_annotations, 4))) {
 		return false;
 	}
-	if (!test_equal(*rz_pvector_index_ptr(out, 2), rz_vector_index_ptr(test_annotations, 5))) {
+	if (!test_equal(rz_pvector_at(out, 2), rz_vector_index_ptr(test_annotations, 5))) {
 		return false;
 	}
 
@@ -251,16 +251,16 @@ static bool test_rz_annotated_code_annotations_range(void) {
 	RzPVector *out = rz_annotated_code_annotations_range(code, 7, 16);
 	// Expecting indices = 2, 3, 4, 5
 	mu_assert_eq(out->v.len, 4, "Additional annotations found. Bad output.");
-	if (!test_equal(*rz_pvector_index_ptr(out, 0), rz_vector_index_ptr(test_annotations, 2))) {
+	if (!test_equal(rz_pvector_at(out, 0), rz_vector_index_ptr(test_annotations, 2))) {
 		return false;
 	}
-	if (!test_equal(*rz_pvector_index_ptr(out, 1), rz_vector_index_ptr(test_annotations, 3))) {
+	if (!test_equal(rz_pvector_at(out, 1), rz_vector_index_ptr(test_annotations, 3))) {
 		return false;
 	}
-	if (!test_equal(*rz_pvector_index_ptr(out, 2), rz_vector_index_ptr(test_annotations, 4))) {
+	if (!test_equal(rz_pvector_at(out, 2), rz_vector_index_ptr(test_annotations, 4))) {
 		return false;
 	}
-	if (!test_equal(*rz_pvector_index_ptr(out, 3), rz_vector_index_ptr(test_annotations, 5))) {
+	if (!test_equal(rz_pvector_at(out, 3), rz_vector_index_ptr(test_annotations, 5))) {
 		return false;
 	}
 

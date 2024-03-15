@@ -9,9 +9,10 @@
 #include <rz_list.h>
 #include <rz_util/rz_time.h>
 #include <rz_basefind.h>
+#include <rz_vector.h>
 
+#include "../bin/dwarf/dwarf_private.h"
 #include "core_private.h"
-#include "rz_vector.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
 #define is_invalid_address_va2(va, vaddr, paddr) (((va) != VA_FALSE && (vaddr) == UT64_MAX) || ((va) == VA_FALSE && (paddr) == UT64_MAX))
@@ -1544,13 +1545,13 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 
 				RzFlagItem *fi = rz_flag_get(core->flags, fnp);
 				if (fi) {
+					RZ_FREE(fnp);
 					if (fi->offset == addr) {
 						// we have a duplicate flag which points
 						// at the same address and same name.
 						rz_core_sym_name_fini(&sn);
 						continue;
 					}
-					free(fnp);
 					if (core->bin->prefix) {
 						fnp = rz_str_newf("%s.%s_0x%" PFMT64x, core->bin->prefix, fn, symbol->vaddr);
 					} else {
@@ -1788,30 +1789,11 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	if (!dw) {
 		return false;
 	}
-#define print_free(x) \
-	do { \
-		rz_cons_print(x); \
-		free(x); \
-	} while (0)
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
-		if (dw->abbrev) {
-			print_free(rz_core_bin_dwarf_abbrevs_to_string(dw->abbrev));
-		}
-		if (dw->info) {
-			print_free(rz_core_bin_dwarf_debug_info_to_string(dw->info, dw));
-		}
-		if (dw->loclists) {
-			print_free(rz_core_bin_dwarf_loc_to_string(dw->loclists, dw));
-		}
-		if (dw->aranges) {
-			print_free(rz_core_bin_dwarf_aranges_to_string(dw->aranges));
-		}
-		if (dw->rnglists) {
-			print_free(rz_core_bin_dwarf_rnglists_to_string(dw->rnglists));
-		}
-		if (dw->line) {
-			print_free(rz_core_bin_dwarf_line_units_to_string(dw->line));
-		}
+		RzStrBuf sb = { 0 };
+		rz_strbuf_init(&sb);
+		rz_bin_dwarf_dump(dw, &sb);
+		rz_cons_strcat(rz_strbuf_drain_nofree(&sb));
 	}
 	if (dw->line && dw->line->lines) {
 		rz_core_bin_print_source_line_info(core, dw->line->lines, state);
@@ -1826,7 +1808,7 @@ RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSource
 	rz_return_if_fail(core && s && state);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		bool chopPath = !rz_config_get_i(core->config, "dir.dwarf.abspath");
-		char *file = s->file ? strdup(s->file) : NULL;
+		char *file = s->file ? rz_str_escape_utf8_for_json(s->file, -1) : NULL;
 		if (chopPath && file) {
 			const char *slash = rz_str_lchr(file, '/');
 			if (slash) {
@@ -1845,9 +1827,15 @@ RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSource
 		pj_end(state->d.pj);
 		free(file);
 	} else {
-		rz_cons_printf("0x%08" PFMT64x "\t%s\t",
-			s->address, s->file ? s->file : "-");
-		rz_cons_printf("%" PFMT32u "\t", s->line);
+		rz_cons_printf("0x%08" PFMT64x "\t", s->address);
+		if (s->file) {
+			char *file = str_escape_utf8_copy(s->file);
+			rz_cons_print(file);
+			free(file);
+		} else {
+			rz_cons_print("-");
+		}
+		rz_cons_printf("\t%" PFMT32u "\t", s->line);
 		rz_cons_printf("%" PFMT32u "\n", s->column);
 	}
 }

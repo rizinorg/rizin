@@ -6,6 +6,7 @@
 
 #include "mach0/mach0_specs.h"
 #include "mach0/mach0.h"
+#include "rz_bin_plugins.h"
 
 #undef mach0_ut
 #undef rz_bin_plugin_mach

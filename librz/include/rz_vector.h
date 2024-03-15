@@ -285,12 +285,6 @@ static inline bool rz_pvector_empty(const RzPVector *vec) {
 	return rz_pvector_len(vec) == 0;
 }
 
-// returns a pointer to the offset inside the array where the element of the index lies.
-static inline void **rz_pvector_index_ptr(RzPVector *vec, size_t index) {
-	rz_return_val_if_fail(vec && index < vec->v.capacity, NULL);
-	return ((void **)vec->v.a) + index;
-}
-
 // same as rz_pvector_index_ptr(<vec>, 0)
 static inline void **rz_pvector_data(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);

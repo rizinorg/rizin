@@ -139,6 +139,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 			eprintf("Error analyzing instruction at 0x%08" PFMT64x "\n", offset);
 			break;
@@ -317,6 +318,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
+			rz_analysis_op_init(&aop);
 			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
 				printf("%s\n", RZ_STRBUF_SAFEGET(&aop.esil));
 			}
@@ -333,6 +335,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
+			rz_analysis_op_init(&aop);
 			if (rz_analysis_op(as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_IL) <= 0) {
 				eprintf("Invalid\n");
 				ret = 0;
@@ -476,6 +479,26 @@ static bool lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
 	return rz_analysis_plugin_add(as->analysis, hand);
 }
 
+/* arch callback */
+static bool lib_arch_cb(RzLibPlugin *pl, void *user, void *data) {
+	RzArchPlugin *hand = (RzArchPlugin *)data;
+	RzAsmState *as = (RzAsmState *)user;
+	if (!hand->p_asm && !hand->p_analysis) {
+		// TODO: add new structure.
+		// return rz_arch_plugin_add(as->a, hand);
+		return false;
+	}
+	if (hand->p_asm && !rz_asm_plugin_add(as->a, hand->p_asm)) {
+		// deprecated structure
+		return false;
+	}
+	if (hand->p_analysis && !rz_analysis_plugin_add(as->analysis, hand->p_analysis)) {
+		// deprecated structure
+		return false;
+	}
+	return true;
+}
+
 static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
 	int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
 	if (rad) {
@@ -501,8 +524,9 @@ static void __load_plugins(RzAsmState *as) {
 		free(tmp);
 		return;
 	}
-	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins", &lib_asm_cb, NULL, as);
-	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins", &lib_analysis_cb, NULL, as);
+	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins (deprecated)", &lib_asm_cb, NULL, as);
+	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins (deprecated)", &lib_analysis_cb, NULL, as);
+	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ARCH, "(dis)assembly/analysis/emulation plugins", &lib_arch_cb, NULL, as);
 
 	char *path = rz_sys_getenv(RZ_LIB_ENV);
 	if (!RZ_STR_ISEMPTY(path)) {

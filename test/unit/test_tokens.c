@@ -7,7 +7,6 @@
 #include <rz_util.h>
 #include <rz_vector.h>
 #include <rz_list.h>
-#include <config.h>
 #include <minunit.h>
 #include <rz_analysis.h>
 #include <rz_cons.h>

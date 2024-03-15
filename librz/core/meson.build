@@ -1,10 +1,12 @@
+core_plugins_list = [
+  'java',
+  'dex',
+]
+
 core_plugins = {
-  'conf_name': 'plugins_core',
-  'base_cname': 'rz_core_plugin_',
-  'list': [
-    'java',
-    'dex',
-  ],
+  'base_name': 'rz_core',
+  'base_struct': 'RzCorePlugin',
+  'list': core_plugins_list,
 }
 
 subdir('cmd_descs')
@@ -25,7 +27,6 @@ rz_core_sources = [
   'cconfig.c',
   'ccrypto.c',
   'cdebug.c',
-  'cdwarf.c',
   'cesil.c',
   'cfile.c',
   'cflag.c',
@@ -146,13 +147,11 @@ rz_core_deps = [
   rz_reg_dep,
   rz_bp_dep,
   rz_syscall_dep,
-  rz_parse_dep,
-  rz_asm_dep,
   rz_egg_dep,
   rz_search_dep,
   rz_sign_dep,
   rz_il_dep,
-  rz_analysis_dep,
+  rz_arch_dep,
   rz_type_dep,
   rz_debug_dep,
   rz_config_dep,
@@ -192,20 +191,18 @@ modules += { 'rz_core': {
       'rz_syscall',
       'rz_search',
       'rz_cons',
-      'rz_analysis',
       'rz_socket',
       'rz_type',
       'rz_io',
       'rz_lang',
       'rz_hash',
       'rz_flag',
-      'rz_parse',
       'rz_egg',
       'rz_debug',
       'rz_crypto',
       'rz_config',
       'rz_bin',
-      'rz_asm',
+      'rz_arch',
       'rz_bp',
       'rz_sign',
       'rz_il'

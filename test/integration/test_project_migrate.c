@@ -641,10 +641,10 @@ static bool test_load_v2_callables() {
 	mu_assert_streq(chmod->name, "chmod", "is chmod() function");
 	mu_assert_eq(2, rz_type_func_args_count(typedb, "chmod"), "chmod() has 2 arguments");
 	mu_assert_false(chmod->noret, "func \"chmod\" returns");
-	RzCallableArg *arg0 = *rz_pvector_index_ptr(chmod->args, 0);
+	RzCallableArg *arg0 = rz_pvector_at(chmod->args, 0);
 	mu_assert_notnull(arg0, "func \"chmod\" has 1st argument");
 	mu_assert_streq(arg0->name, "path", "has \"path\" argument");
-	RzCallableArg *arg1 = *rz_pvector_index_ptr(chmod->args, 1);
+	RzCallableArg *arg1 = rz_pvector_at(chmod->args, 1);
 	mu_assert_notnull(arg1, "func \"chmod\" has 2nd argument");
 	mu_assert_streq(arg1->name, "mode", "has \"mode\" argument");
 	mu_assert_true(rz_type_atomic_str_eq(typedb, chmod->ret, "int"), "chmod() returns \"int\"");

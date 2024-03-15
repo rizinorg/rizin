@@ -5,6 +5,7 @@
 #define RZ_CORE_H
 
 #include <rz_main.h>
+#include <rz_arch.h>
 #include <rz_types.h>
 #include <rz_magic.h>
 #include <rz_agraph.h>
@@ -904,26 +905,6 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 
 RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s);
 
-// bin_dwarf
-RZ_API RZ_OWN char *rz_core_bin_dwarf_abbrev_decl_to_string(
-	RZ_NONNULL RZ_BORROW RzBinDwarfAbbrevDecl *decl);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_abbrevs_to_string(
-	RZ_NONNULL RZ_BORROW const RzBinDwarfAbbrev *abbrevs);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_attr_to_string(
-	RZ_NONNULL RZ_BORROW const RzBinDwarfAttr *attr,
-	RzBinDWARF *dw, ut64 stroffsets_base);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_debug_info_to_string(
-	RZ_NONNULL RZ_BORROW const RzBinDwarfInfo *info,
-	const RzBinDWARF *dw);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_loc_to_string(
-	RZ_NONNULL RZ_BORROW RzBinDwarfLocLists *loclists,
-	RZ_NONNULL RZ_BORROW RzBinDWARF *dw);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_aranges_to_string(RZ_NONNULL RZ_BORROW RzBinDwarfARanges *aranges);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_line_unit_to_string(RZ_NONNULL RZ_BORROW RzBinDwarfLineUnit *unit);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_line_units_to_string(RZ_NONNULL RZ_BORROW RzBinDwarfLine *line);
-RZ_API RZ_OWN char *rz_core_bin_dwarf_rnglists_to_string(
-	RZ_NONNULL RZ_BORROW RzBinDwarfRngLists *rnglists);
-
 RZ_API void rz_core_sysenv_begin(RzCore *core);
 RZ_API void rz_core_sysenv_end(RzCore *core);
 
@@ -1233,10 +1214,6 @@ RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch);
 RZ_API ut32 rz_core_flirt_file_from_option_list(RZ_NONNULL const char *file_list);
 RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
 RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
-
-/* PLUGINS */
-extern RzCorePlugin rz_core_plugin_java;
-extern RzCorePlugin rz_core_plugin_dex;
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**

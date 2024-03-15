@@ -6,6 +6,8 @@
 #include <rz_lib.h>
 #include <stdio.h>
 
+#include "rz_io_plugins.h"
+
 typedef struct rz_io_mmo_t {
 	char *filename;
 	int mode;

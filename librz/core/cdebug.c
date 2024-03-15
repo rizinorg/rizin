@@ -133,7 +133,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 				old_sp = cur_sp;
 				prev_call = false;
 			} else if (prev_ret) {
-				RzDebugFrame *head = rz_list_get_bottom(core->dbg->call_frames);
+				RzDebugFrame *head = rz_list_first(core->dbg->call_frames);
 				if (head && head->addr != pc) {
 					eprintf("*");
 				} else {
@@ -837,14 +837,16 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
 	ut64 addr = rz_debug_reg_get(core->dbg, "PC");
 	ut8 buf[64];
-	RzAnalysisOp aop;
+	RzAnalysisOp aop = { 0 };
 	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
 	rz_reg_arena_swap(core->dbg->reg, true);
 	for (int i = 0; i < times; i++) {
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
 		rz_io_read_at(core->io, addr, buf, sizeof(buf));
+		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		addr += aop.size;
+		rz_analysis_op_fini(&aop);
 	}
 	rz_debug_reg_set(core->dbg, "PC", addr);
 	rz_reg_setv(core->analysis->reg, "PC", addr);

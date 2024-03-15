@@ -20,7 +20,7 @@ static const char *str_callback(RzNum *user, ut64 off, int *ok) {
 	}
 	if (f) {
 		const RzList *list = rz_flag_get_list(f, off);
-		RzFlagItem *item = rz_list_get_top(list);
+		RzFlagItem *item = rz_list_last(list);
 		if (item) {
 			if (ok) {
 				*ok = true;
@@ -317,7 +317,7 @@ RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name) {
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, NULL);
 	const RzList *list = rz_flag_get_list(f, off);
-	return list ? evalFlag(f, rz_list_get_top(list)) : NULL;
+	return list ? evalFlag(f, rz_list_last(list)) : NULL;
 }
 
 /* return the first flag that matches an offset ordered by the order of
@@ -341,7 +341,7 @@ RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
 		goto beach;
 	}
 	if (rz_list_length(list) == 1) {
-		ret = rz_list_get_top(list);
+		ret = rz_list_last(list);
 		goto beach;
 	}
 

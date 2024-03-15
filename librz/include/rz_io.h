@@ -446,38 +446,6 @@ RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user);
 RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io);
 #endif
 
-extern RzIOPlugin rz_io_plugin_procpid;
-extern RzIOPlugin rz_io_plugin_malloc;
-extern RzIOPlugin rz_io_plugin_sparse;
-extern RzIOPlugin rz_io_plugin_ptrace;
-extern RzIOPlugin rz_io_plugin_w32dbg;
-extern RzIOPlugin rz_io_plugin_windbg;
-extern RzIOPlugin rz_io_plugin_mach;
-extern RzIOPlugin rz_io_plugin_debug;
-extern RzIOPlugin rz_io_plugin_dmp;
-extern RzIOPlugin rz_io_plugin_shm;
-extern RzIOPlugin rz_io_plugin_gdb;
-extern RzIOPlugin rz_io_plugin_rap;
-extern RzIOPlugin rz_io_plugin_http;
-extern RzIOPlugin rz_io_plugin_bfdbg;
-extern RzIOPlugin rz_io_plugin_w32;
-extern RzIOPlugin rz_io_plugin_zip;
-extern RzIOPlugin rz_io_plugin_default;
-extern RzIOPlugin rz_io_plugin_ihex;
-extern RzIOPlugin rz_io_plugin_srec;
-extern RzIOPlugin rz_io_plugin_self;
-extern RzIOPlugin rz_io_plugin_gzip;
-extern RzIOPlugin rz_io_plugin_winkd;
-extern RzIOPlugin rz_io_plugin_rzpipe;
-extern RzIOPlugin rz_io_plugin_rzweb;
-extern RzIOPlugin rz_io_plugin_qnx;
-extern RzIOPlugin rz_io_plugin_tcp;
-extern RzIOPlugin rz_io_plugin_bochs;
-extern RzIOPlugin rz_io_plugin_null;
-extern RzIOPlugin rz_io_plugin_ar;
-extern RzIOPlugin rz_io_plugin_winedbg;
-extern RzIOPlugin rz_io_plugin_fd;
-
 #if __cplusplus
 }
 #endif

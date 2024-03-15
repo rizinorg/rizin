@@ -315,7 +315,7 @@ bool function_argument_type_derive(RZ_NULLABLE const RzCallable *callable, int a
 	if (arg_num >= rz_pvector_len(callable->args)) {
 		return false;
 	}
-	RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, arg_num);
+	RzCallableArg *arg = rz_pvector_at(callable->args, arg_num);
 	if (!arg) {
 		return false;
 	}
@@ -814,8 +814,6 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 #define OP_CACHE_LIMIT 8192
 
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
-	RzListIter *it;
-
 	rz_return_if_fail(core && core->analysis && fcn);
 
 	if (!core->analysis->esil) {
@@ -870,10 +868,13 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		goto out_function;
 	}
 	rz_cons_break_push(NULL, NULL);
-	rz_list_sort(fcn->bbs, bb_cmpaddr, NULL);
+	rz_pvector_sort(fcn->bbs, bb_cmpaddr, NULL);
+
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	RzAnalysisBlock *bb;
-	rz_list_foreach (fcn->bbs, it, bb) {
+	void **vit;
+	rz_pvector_foreach (fcn->bbs, vit) {
+		bb = (RzAnalysisBlock *)*vit;
 		ut64 addr = bb->addr;
 		rz_reg_set_value(reg, r, addr);
 		ht_up_free(op_cache);
@@ -942,7 +943,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 
 	// Type propagation for register based args
-	void **vit;
 	rz_pvector_foreach (&fcn->vars, vit) {
 		RzAnalysisVar *rvar = *vit;
 		if (rvar->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {

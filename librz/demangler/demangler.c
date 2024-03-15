@@ -6,13 +6,14 @@
 #include <rz_util.h>
 #include <rz_libdemangle.h>
 #include <rz_lib.h>
-#include <config.h>
+
+#include "rz_demangler_plugins.h"
 
 #define DEFINE_DEMANGLER_PLUGIN(name, lang, lic, auth, handler) \
 	static char *handler##_cast(const char *symbol, RzDemanglerFlag flags) { \
 		return handler(symbol, (RzDemangleOpts)flags); \
 	} \
-	RZ_API RzDemanglerPlugin rz_demangler_plugin_##name = { \
+	RzDemanglerPlugin rz_demangler_plugin_##name = { \
 		.language = lang, \
 		.license = lic, \
 		.author = auth, \
