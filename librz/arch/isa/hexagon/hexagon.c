@@ -3,7 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -17,10 +17,10 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 #include <rz_util/rz_assert.h>
-#include "hexagon.h"
-#include "hexagon_insn.h"
-#include "hexagon_arch.h"
-#include "hexagon_reg_tables.h"
+#include <hexagon/hexagon.h>
+#include <hexagon/hexagon_insn.h>
+#include <hexagon/hexagon_arch.h>
+#include <hexagon/hexagon_reg_tables.h>
 
 RZ_API ut32 hex_resolve_reg_enum_id(HexRegClass class, ut32 reg_num) {
 	switch (class) {

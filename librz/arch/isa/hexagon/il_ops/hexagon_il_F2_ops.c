@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -22,7 +16,18 @@
 
 // Rdd = convert_d2df(Rss)
 RzILOpEffect *hex_il_op_f2_conv_d2df(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rss = READ_REG(pkt, Rss_op, false);
+
+	// Rdd = ((st64) fUNDOUBLE(HEX_SINT_TO_D(HEX_GET_INSN_RMODE(hi), Rss)));
+	RzILOpEffect *op_ASSIGN_6 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, F2BV(HEX_SINT_TO_D(HEX_GET_INSN_RMODE(hi), Rss))));
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_6;
+	return instruction_sequence;
 }
 
 // Rd = convert_d2sf(Rss)
@@ -210,7 +215,18 @@ RzILOpEffect *hex_il_op_f2_conv_sf2w_chop(HexInsnPktBundle *bundle) {
 
 // Rdd = convert_ud2df(Rss)
 RzILOpEffect *hex_il_op_f2_conv_ud2df(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rss = READ_REG(pkt, Rss_op, false);
+
+	// Rdd = ((st64) fUNDOUBLE(HEX_INT_TO_D(HEX_GET_INSN_RMODE(hi), ((ut64) Rss))));
+	RzILOpEffect *op_ASSIGN_7 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, F2BV(HEX_INT_TO_D(HEX_GET_INSN_RMODE(hi), CAST(64, IL_FALSE, Rss)))));
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_7;
+	return instruction_sequence;
 }
 
 // Rd = convert_ud2sf(Rss)
@@ -220,7 +236,18 @@ RzILOpEffect *hex_il_op_f2_conv_ud2sf(HexInsnPktBundle *bundle) {
 
 // Rdd = convert_uw2df(Rs)
 RzILOpEffect *hex_il_op_f2_conv_uw2df(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rs_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rs = READ_REG(pkt, Rs_op, false);
+
+	// Rdd = ((st64) fUNDOUBLE(HEX_INT_TO_D(HEX_GET_INSN_RMODE(hi), ((ut64) ((ut32) Rs)))));
+	RzILOpEffect *op_ASSIGN_8 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, F2BV(HEX_INT_TO_D(HEX_GET_INSN_RMODE(hi), CAST(64, IL_FALSE, CAST(32, IL_FALSE, Rs))))));
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_8;
+	return instruction_sequence;
 }
 
 // Rd = convert_uw2sf(Rs)
@@ -230,7 +257,18 @@ RzILOpEffect *hex_il_op_f2_conv_uw2sf(HexInsnPktBundle *bundle) {
 
 // Rdd = convert_w2df(Rs)
 RzILOpEffect *hex_il_op_f2_conv_w2df(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rs_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rs = READ_REG(pkt, Rs_op, false);
+
+	// Rdd = ((st64) fUNDOUBLE(HEX_SINT_TO_D(HEX_GET_INSN_RMODE(hi), ((st64) Rs))));
+	RzILOpEffect *op_ASSIGN_7 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, F2BV(HEX_SINT_TO_D(HEX_GET_INSN_RMODE(hi), CAST(64, MSB(Rs), DUP(Rs))))));
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_7;
+	return instruction_sequence;
 }
 
 // Rd = convert_w2sf(Rs)
@@ -240,7 +278,21 @@ RzILOpEffect *hex_il_op_f2_conv_w2sf(HexInsnPktBundle *bundle) {
 
 // Rdd = dfadd(Rss,Rtt)
 RzILOpEffect *hex_il_op_f2_dfadd(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rss = READ_REG(pkt, Rss_op, false);
+	const HexOp *Rtt_op = ISA2REG(hi, 't', false);
+	RzILOpPure *Rtt = READ_REG(pkt, Rtt_op, false);
+
+	// Rdd = ((st64) fUNDOUBLE(DOUBLE(RZ_FLOAT_IEEE754_BIN_64, ((ut64) Rss)) + DOUBLE(RZ_FLOAT_IEEE754_BIN_64, ((ut64) Rtt))));
+	RzILOpPure *op_ADD_7 = FADD(RZ_FLOAT_IEEE754_BIN_64, BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rss)), BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rtt)));
+	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, F2BV(op_ADD_7)));
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_10;
+	return instruction_sequence;
 }
 
 // Pd = dfclass(Rss,Ii)
@@ -450,18 +502,46 @@ RzILOpEffect *hex_il_op_f2_dfmpyll(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_NE_43 = INV(EQ(CAST(64, IL_FALSE, CAST(32, IL_FALSE, op_AND_38)), CAST(64, IL_FALSE, SN(32, 0))));
 	RzILOpEffect *branch_58 = BRANCH(op_NE_43, seq_then_57, EMPTY());
 
-	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_24, op_ASSIGN_31, branch_58, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(3, op_ASSIGN_24, op_ASSIGN_31, branch_58);
 	return instruction_sequence;
 }
 
 // Rdd = dfsub(Rss,Rtt)
 RzILOpEffect *hex_il_op_f2_dfsub(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rss = READ_REG(pkt, Rss_op, false);
+	const HexOp *Rtt_op = ISA2REG(hi, 't', false);
+	RzILOpPure *Rtt = READ_REG(pkt, Rtt_op, false);
+
+	// Rdd = ((st64) fUNDOUBLE(DOUBLE(RZ_FLOAT_IEEE754_BIN_64, ((ut64) Rss)) - DOUBLE(RZ_FLOAT_IEEE754_BIN_64, ((ut64) Rtt))));
+	RzILOpPure *op_SUB_7 = FSUB(RZ_FLOAT_IEEE754_BIN_64, BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rss)), BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rtt)));
+	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, F2BV(op_SUB_7)));
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_10;
+	return instruction_sequence;
 }
 
 // Rd = sfadd(Rs,Rt)
 RzILOpEffect *hex_il_op_f2_sfadd(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rs_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rs = READ_REG(pkt, Rs_op, false);
+	const HexOp *Rt_op = ISA2REG(hi, 't', false);
+	RzILOpPure *Rt = READ_REG(pkt, Rt_op, false);
+
+	// Rd = ((st32) fUNFLOAT(FLOAT(RZ_FLOAT_IEEE754_BIN_32, ((ut32) Rs)) + FLOAT(RZ_FLOAT_IEEE754_BIN_32, ((ut32) Rt))));
+	RzILOpPure *op_ADD_7 = FADD(RZ_FLOAT_IEEE754_BIN_32, BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rs)), BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rt)));
+	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, F2BV(op_ADD_7)));
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_10;
+	return instruction_sequence;
 }
 
 // Pd = sfclass(Rs,Ii)
@@ -654,7 +734,21 @@ RzILOpEffect *hex_il_op_f2_sfrecipa(HexInsnPktBundle *bundle) {
 
 // Rd = sfsub(Rs,Rt)
 RzILOpEffect *hex_il_op_f2_sfsub(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rs_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rs = READ_REG(pkt, Rs_op, false);
+	const HexOp *Rt_op = ISA2REG(hi, 't', false);
+	RzILOpPure *Rt = READ_REG(pkt, Rt_op, false);
+
+	// Rd = ((st32) fUNFLOAT(FLOAT(RZ_FLOAT_IEEE754_BIN_32, ((ut32) Rs)) - FLOAT(RZ_FLOAT_IEEE754_BIN_32, ((ut32) Rt))));
+	RzILOpPure *op_SUB_7 = FSUB(RZ_FLOAT_IEEE754_BIN_32, BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rs)), BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rt)));
+	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, F2BV(op_SUB_7)));
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_10;
+	return instruction_sequence;
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

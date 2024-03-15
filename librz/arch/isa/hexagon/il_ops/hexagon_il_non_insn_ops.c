@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -62,10 +56,10 @@ RzILOpEffect *hex_il_op_j2_endloop01(HexInsnPktBundle *bundle) {
 	// P3 = ((st8) 0xff);
 	RzILOpEffect *op_ASSIGN_22 = WRITE_REG(bundle, &P3_op, CAST(8, MSB(SN(32, 0xff)), SN(32, 0xff)));
 
-	// seq(P3 = ((st8) 0xff); {});
-	RzILOpEffect *seq_then_24 = SEQN(2, op_ASSIGN_22, EMPTY());
+	// seq(P3 = ((st8) 0xff));
+	RzILOpEffect *seq_then_24 = op_ASSIGN_22;
 
-	// if ((h_tmp622 == ((ut32) 0x1))) {seq(P3 = ((st8) 0xff); {})} else {{}};
+	// if ((h_tmp622 == ((ut32) 0x1))) {seq(P3 = ((st8) 0xff))} else {{}};
 	RzILOpPure *op_EQ_18 = EQ(VARL("h_tmp622"), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *branch_25 = BRANCH(op_EQ_18, seq_then_24, EMPTY());
 
@@ -124,20 +118,20 @@ RzILOpEffect *hex_il_op_j2_endloop01(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_SUB_63 = SUB(READ_REG(pkt, &lc1_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *op_ASSIGN_64 = WRITE_REG(bundle, &lc1_op, op_SUB_63);
 
-	// seq(jump(sa1); {}; lc1 = lc1 - ((ut32) 0x1));
-	RzILOpEffect *seq_then_65 = SEQN(3, jump_sa1_59, EMPTY(), op_ASSIGN_64);
+	// seq(jump(sa1); lc1 = lc1 - ((ut32) 0x1));
+	RzILOpEffect *seq_then_65 = SEQN(2, jump_sa1_59, op_ASSIGN_64);
 
-	// if ((lc1 > ((ut32) 0x1))) {seq(jump(sa1); {}; lc1 = lc1 - ((ut32) 0x1))} else {{}};
+	// if ((lc1 > ((ut32) 0x1))) {seq(jump(sa1); lc1 = lc1 - ((ut32) 0x1))} else {{}};
 	RzILOpPure *op_GT_57 = UGT(READ_REG(pkt, &lc1_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *branch_66 = BRANCH(op_GT_57, seq_then_65, EMPTY());
 
-	// seq(jump(sa0); {}; lc0 = lc0 - ((ut32) 0x1));
-	RzILOpEffect *seq_then_67 = SEQN(3, jump_sa0_48, EMPTY(), op_ASSIGN_53);
+	// seq(jump(sa0); lc0 = lc0 - ((ut32) 0x1));
+	RzILOpEffect *seq_then_67 = SEQN(2, jump_sa0_48, op_ASSIGN_53);
 
-	// seq(if ((lc1 > ((ut32) 0x1))) {seq(jump(sa1); {}; lc1 = lc1 - (( ...;
+	// seq(if ((lc1 > ((ut32) 0x1))) {seq(jump(sa1); lc1 = lc1 - ((ut32 ...;
 	RzILOpEffect *seq_else_68 = branch_66;
 
-	// if ((lc0 > ((ut32) 0x1))) {seq(jump(sa0); {}; lc0 = lc0 - ((ut32) 0x1))} else {seq(if ((lc1 > ((ut32) 0x1))) {seq(jump(sa1); {}; lc1 = lc1 - (( ...};
+	// if ((lc0 > ((ut32) 0x1))) {seq(jump(sa0); lc0 = lc0 - ((ut32) 0x1))} else {seq(if ((lc1 > ((ut32) 0x1))) {seq(jump(sa1); lc1 = lc1 - ((ut32 ...};
 	RzILOpPure *op_GT_46 = UGT(READ_REG(pkt, &lc0_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *branch_69 = BRANCH(op_GT_46, seq_then_67, seq_else_68);
 
@@ -160,10 +154,10 @@ RzILOpEffect *hex_il_op_j2_endloop1(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_SUB_9 = SUB(READ_REG(pkt, &lc1_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, &lc1_op, op_SUB_9);
 
-	// seq(jump(sa1); {}; lc1 = lc1 - ((ut32) 0x1));
-	RzILOpEffect *seq_then_11 = SEQN(3, jump_sa1_5, EMPTY(), op_ASSIGN_10);
+	// seq(jump(sa1); lc1 = lc1 - ((ut32) 0x1));
+	RzILOpEffect *seq_then_11 = SEQN(2, jump_sa1_5, op_ASSIGN_10);
 
-	// if ((lc1 > ((ut32) 0x1))) {seq(jump(sa1); {}; lc1 = lc1 - ((ut32) 0x1))} else {{}};
+	// if ((lc1 > ((ut32) 0x1))) {seq(jump(sa1); lc1 = lc1 - ((ut32) 0x1))} else {{}};
 	RzILOpPure *op_GT_3 = UGT(READ_REG(pkt, &lc1_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *branch_12 = BRANCH(op_GT_3, seq_then_11, EMPTY());
 
@@ -210,10 +204,10 @@ RzILOpEffect *hex_il_op_j2_endloop0(HexInsnPktBundle *bundle) {
 	// P3 = ((st8) 0xff);
 	RzILOpEffect *op_ASSIGN_22 = WRITE_REG(bundle, &P3_op, CAST(8, MSB(SN(32, 0xff)), SN(32, 0xff)));
 
-	// seq(P3 = ((st8) 0xff); {});
-	RzILOpEffect *seq_then_24 = SEQN(2, op_ASSIGN_22, EMPTY());
+	// seq(P3 = ((st8) 0xff));
+	RzILOpEffect *seq_then_24 = op_ASSIGN_22;
 
-	// if ((h_tmp626 == ((ut32) 0x1))) {seq(P3 = ((st8) 0xff); {})} else {{}};
+	// if ((h_tmp626 == ((ut32) 0x1))) {seq(P3 = ((st8) 0xff))} else {{}};
 	RzILOpPure *op_EQ_18 = EQ(VARL("h_tmp626"), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *branch_25 = BRANCH(op_EQ_18, seq_then_24, EMPTY());
 
@@ -265,10 +259,10 @@ RzILOpEffect *hex_il_op_j2_endloop0(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_SUB_52 = SUB(READ_REG(pkt, &lc0_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *op_ASSIGN_53 = WRITE_REG(bundle, &lc0_op, op_SUB_52);
 
-	// seq(jump(sa0); {}; lc0 = lc0 - ((ut32) 0x1));
-	RzILOpEffect *seq_then_54 = SEQN(3, jump_sa0_48, EMPTY(), op_ASSIGN_53);
+	// seq(jump(sa0); lc0 = lc0 - ((ut32) 0x1));
+	RzILOpEffect *seq_then_54 = SEQN(2, jump_sa0_48, op_ASSIGN_53);
 
-	// if ((lc0 > ((ut32) 0x1))) {seq(jump(sa0); {}; lc0 = lc0 - ((ut32) 0x1))} else {{}};
+	// if ((lc0 > ((ut32) 0x1))) {seq(jump(sa0); lc0 = lc0 - ((ut32) 0x1))} else {{}};
 	RzILOpPure *op_GT_46 = UGT(READ_REG(pkt, &lc0_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *branch_55 = BRANCH(op_GT_46, seq_then_54, EMPTY());
 
@@ -370,7 +364,16 @@ RZ_OWN RzILOpEffect *hex_fcirc_add(HexInsnPktBundle *bundle, const HexOp *RxV, R
 }
 
 RZ_OWN RzILOpEffect *hex_trap(RZ_BORROW RzILOpPure *trap_type, RZ_BORROW RzILOpPure *imm) {
-	return NOP();
+
+	// READ
+	// Declare: ut32 dummy;
+
+	// dummy = ((ut32) trap_type) + imm;
+	RzILOpPure *op_ADD_1 = ADD(CAST(32, IL_FALSE, trap_type), imm);
+	RzILOpEffect *op_ASSIGN_3 = SETL("dummy", op_ADD_1);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_3;
+	return instruction_sequence;
 }
 
 RZ_OWN RzILOpEffect *hex_clz32(RZ_BORROW RzILOpPure *t) {

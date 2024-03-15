@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -384,7 +378,7 @@ RzILOpEffect *hex_il_op_m5_vdmacbsu(HexInsnPktBundle *bundle) {
 	// seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((st64) ((st32) ((s ...;
 	RzILOpEffect *seq_1121 = SEQN(2, seq_1107, op_ASSIGN_1120);
 
-	RzILOpEffect *instruction_sequence = SEQN(8, seq_281, EMPTY(), seq_561, EMPTY(), seq_841, EMPTY(), seq_1121, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, seq_281, seq_561, seq_841, seq_1121);
 	return instruction_sequence;
 }
 
@@ -703,7 +697,7 @@ RzILOpEffect *hex_il_op_m5_vdmpybsu(HexInsnPktBundle *bundle) {
 	// seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((st64) ((st32) ((s ...;
 	RzILOpEffect *seq_945 = SEQN(2, seq_931, op_ASSIGN_944);
 
-	RzILOpEffect *instruction_sequence = SEQN(8, seq_237, EMPTY(), seq_473, EMPTY(), seq_709, EMPTY(), seq_945, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, seq_237, seq_473, seq_709, seq_945);
 	return instruction_sequence;
 }
 
@@ -787,7 +781,7 @@ RzILOpEffect *hex_il_op_m5_vmacbsu(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_203 = LOGOR(CAST(64, IL_FALSE, op_AND_162), op_LSHIFT_201);
 	RzILOpEffect *op_ASSIGN_205 = WRITE_REG(bundle, Rxx_op, CAST(64, IL_FALSE, op_OR_203));
 
-	RzILOpEffect *instruction_sequence = SEQN(8, op_ASSIGN_52, EMPTY(), op_ASSIGN_103, EMPTY(), op_ASSIGN_154, EMPTY(), op_ASSIGN_205, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_52, op_ASSIGN_103, op_ASSIGN_154, op_ASSIGN_205);
 	return instruction_sequence;
 }
 
@@ -871,7 +865,7 @@ RzILOpEffect *hex_il_op_m5_vmacbuu(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_203 = LOGOR(CAST(64, IL_FALSE, op_AND_162), op_LSHIFT_201);
 	RzILOpEffect *op_ASSIGN_205 = WRITE_REG(bundle, Rxx_op, CAST(64, IL_FALSE, op_OR_203));
 
-	RzILOpEffect *instruction_sequence = SEQN(8, op_ASSIGN_52, EMPTY(), op_ASSIGN_103, EMPTY(), op_ASSIGN_154, EMPTY(), op_ASSIGN_205, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_52, op_ASSIGN_103, op_ASSIGN_154, op_ASSIGN_205);
 	return instruction_sequence;
 }
 
@@ -942,7 +936,7 @@ RzILOpEffect *hex_il_op_m5_vmpybsu(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_159 = LOGOR(CAST(64, IL_FALSE, op_AND_129), op_LSHIFT_157);
 	RzILOpEffect *op_ASSIGN_161 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_159));
 
-	RzILOpEffect *instruction_sequence = SEQN(8, op_ASSIGN_41, EMPTY(), op_ASSIGN_81, EMPTY(), op_ASSIGN_121, EMPTY(), op_ASSIGN_161, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_41, op_ASSIGN_81, op_ASSIGN_121, op_ASSIGN_161);
 	return instruction_sequence;
 }
 
@@ -1013,7 +1007,7 @@ RzILOpEffect *hex_il_op_m5_vmpybuu(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_159 = LOGOR(CAST(64, IL_FALSE, op_AND_129), op_LSHIFT_157);
 	RzILOpEffect *op_ASSIGN_161 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_159));
 
-	RzILOpEffect *instruction_sequence = SEQN(8, op_ASSIGN_41, EMPTY(), op_ASSIGN_81, EMPTY(), op_ASSIGN_121, EMPTY(), op_ASSIGN_161, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_41, op_ASSIGN_81, op_ASSIGN_121, op_ASSIGN_161);
 	return instruction_sequence;
 }
 
@@ -1099,7 +1093,7 @@ RzILOpEffect *hex_il_op_m5_vrmacbsu(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_232 = LOGOR(op_AND_125, op_LSHIFT_231);
 	RzILOpEffect *op_ASSIGN_233 = WRITE_REG(bundle, Rxx_op, op_OR_232);
 
-	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_117, EMPTY(), op_ASSIGN_233, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, op_ASSIGN_117, op_ASSIGN_233);
 	return instruction_sequence;
 }
 
@@ -1185,7 +1179,7 @@ RzILOpEffect *hex_il_op_m5_vrmacbuu(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_232 = LOGOR(op_AND_125, op_LSHIFT_231);
 	RzILOpEffect *op_ASSIGN_233 = WRITE_REG(bundle, Rxx_op, op_OR_232);
 
-	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_117, EMPTY(), op_ASSIGN_233, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, op_ASSIGN_117, op_ASSIGN_233);
 	return instruction_sequence;
 }
 
@@ -1264,7 +1258,7 @@ RzILOpEffect *hex_il_op_m5_vrmpybsu(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_214 = LOGOR(op_AND_116, op_LSHIFT_213);
 	RzILOpEffect *op_ASSIGN_215 = WRITE_REG(bundle, Rdd_op, op_OR_214);
 
-	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_108, EMPTY(), op_ASSIGN_215, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, op_ASSIGN_108, op_ASSIGN_215);
 	return instruction_sequence;
 }
 
@@ -1343,7 +1337,7 @@ RzILOpEffect *hex_il_op_m5_vrmpybuu(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_214 = LOGOR(op_AND_116, op_LSHIFT_213);
 	RzILOpEffect *op_ASSIGN_215 = WRITE_REG(bundle, Rdd_op, op_OR_214);
 
-	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_108, EMPTY(), op_ASSIGN_215, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, op_ASSIGN_108, op_ASSIGN_215);
 	return instruction_sequence;
 }
 

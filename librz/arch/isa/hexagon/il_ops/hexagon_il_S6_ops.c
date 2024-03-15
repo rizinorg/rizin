@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -388,7 +382,7 @@ RzILOpEffect *hex_il_op_s6_vsplatrbp(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_35 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_33));
 
 	// seq(h_tmp609; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8)) ...;
-	RzILOpEffect *seq_37 = SEQN(2, op_ASSIGN_35, EMPTY());
+	RzILOpEffect *seq_37 = op_ASSIGN_35;
 
 	// seq(seq(h_tmp609; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0 ...;
 	RzILOpEffect *seq_38 = SEQN(2, seq_37, seq_8);
@@ -461,7 +455,7 @@ RzILOpEffect *hex_il_op_s6_vtrunehb_ppp(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_70 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_68));
 
 	// seq(h_tmp610; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8)) ...;
-	RzILOpEffect *seq_72 = SEQN(4, op_ASSIGN_37, EMPTY(), op_ASSIGN_70, EMPTY());
+	RzILOpEffect *seq_72 = SEQN(2, op_ASSIGN_37, op_ASSIGN_70);
 
 	// seq(seq(h_tmp610; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0 ...;
 	RzILOpEffect *seq_73 = SEQN(2, seq_72, seq_8);
@@ -536,7 +530,7 @@ RzILOpEffect *hex_il_op_s6_vtrunohb_ppp(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_74 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_72));
 
 	// seq(h_tmp611; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8)) ...;
-	RzILOpEffect *seq_76 = SEQN(4, op_ASSIGN_39, EMPTY(), op_ASSIGN_74, EMPTY());
+	RzILOpEffect *seq_76 = SEQN(2, op_ASSIGN_39, op_ASSIGN_74);
 
 	// seq(seq(h_tmp611; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0 ...;
 	RzILOpEffect *seq_77 = SEQN(2, seq_76, seq_8);

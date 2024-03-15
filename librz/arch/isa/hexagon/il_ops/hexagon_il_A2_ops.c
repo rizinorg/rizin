@@ -3,7 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -756,7 +756,7 @@ RzILOpEffect *hex_il_op_a2_addpsat(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_AND_17 = LOGAND(VARL("__xor"), VARL("__mask"));
 	RzILOpEffect *branch_44 = BRANCH(NON_ZERO(op_AND_17), seq_then_42, seq_else_43);
 
-	RzILOpEffect *instruction_sequence = SEQN(7, op_ASSIGN_3, op_ASSIGN_7, op_ASSIGN_10, op_ASSIGN_13, op_ASSIGN_16, branch_44, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(6, op_ASSIGN_3, op_ASSIGN_7, op_ASSIGN_10, op_ASSIGN_13, op_ASSIGN_16, branch_44);
 	return instruction_sequence;
 }
 
@@ -1069,7 +1069,7 @@ RzILOpEffect *hex_il_op_a2_combineii(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_36 = LOGOR(op_AND_28, op_LSHIFT_35);
 	RzILOpEffect *op_ASSIGN_37 = WRITE_REG(bundle, Rdd_op, op_OR_36);
 
-	RzILOpEffect *instruction_sequence = SEQN(6, imm_assign_0, imm_assign_10, op_ASSIGN_20, EMPTY(), op_ASSIGN_37, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_0, imm_assign_10, op_ASSIGN_20, op_ASSIGN_37);
 	return instruction_sequence;
 }
 
@@ -1102,7 +1102,7 @@ RzILOpEffect *hex_il_op_a2_combinew(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_34 = LOGOR(op_AND_25, op_LSHIFT_33);
 	RzILOpEffect *op_ASSIGN_35 = WRITE_REG(bundle, Rdd_op, op_OR_34);
 
-	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_17, EMPTY(), op_ASSIGN_35, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, op_ASSIGN_17, op_ASSIGN_35);
 	return instruction_sequence;
 }
 
@@ -2328,11 +2328,11 @@ RzILOpEffect *hex_il_op_a2_roundsat(HexInsnPktBundle *bundle) {
 	RzILOpEffect *branch_43 = BRANCH(NON_ZERO(op_AND_17), seq_then_41, seq_else_42);
 
 	// Rd = ((st32) ((st64) ((st32) ((tmp >> 0x20) & 0xffffffff))));
-	RzILOpPure *op_RSHIFT_49 = SHIFTRA(VARL("tmp"), SN(32, 0x20));
-	RzILOpPure *op_AND_51 = LOGAND(op_RSHIFT_49, SN(64, 0xffffffff));
-	RzILOpEffect *op_ASSIGN_55 = WRITE_REG(bundle, Rd_op, CAST(32, MSB(CAST(64, MSB(CAST(32, MSB(op_AND_51), DUP(op_AND_51))), CAST(32, MSB(DUP(op_AND_51)), DUP(op_AND_51)))), CAST(64, MSB(CAST(32, MSB(DUP(op_AND_51)), DUP(op_AND_51))), CAST(32, MSB(DUP(op_AND_51)), DUP(op_AND_51)))));
+	RzILOpPure *op_RSHIFT_48 = SHIFTRA(VARL("tmp"), SN(32, 0x20));
+	RzILOpPure *op_AND_50 = LOGAND(op_RSHIFT_48, SN(64, 0xffffffff));
+	RzILOpEffect *op_ASSIGN_54 = WRITE_REG(bundle, Rd_op, CAST(32, MSB(CAST(64, MSB(CAST(32, MSB(op_AND_50), DUP(op_AND_50))), CAST(32, MSB(DUP(op_AND_50)), DUP(op_AND_50)))), CAST(64, MSB(CAST(32, MSB(DUP(op_AND_50)), DUP(op_AND_50))), CAST(32, MSB(DUP(op_AND_50)), DUP(op_AND_50)))));
 
-	RzILOpEffect *instruction_sequence = SEQN(8, op_ASSIGN_4, op_ASSIGN_7, op_ASSIGN_10, op_ASSIGN_13, op_ASSIGN_16, branch_43, EMPTY(), op_ASSIGN_55);
+	RzILOpEffect *instruction_sequence = SEQN(7, op_ASSIGN_4, op_ASSIGN_7, op_ASSIGN_10, op_ASSIGN_13, op_ASSIGN_16, branch_43, op_ASSIGN_54);
 	return instruction_sequence;
 }
 
@@ -3186,7 +3186,7 @@ RzILOpEffect *hex_il_op_a2_svaddh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_43 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, op_OR_41));
 
 	// seq(h_tmp21; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff << i ...;
-	RzILOpEffect *seq_45 = SEQN(2, op_ASSIGN_43, EMPTY());
+	RzILOpEffect *seq_45 = op_ASSIGN_43;
 
 	// seq(seq(h_tmp21; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff  ...;
 	RzILOpEffect *seq_46 = SEQN(2, seq_45, seq_8);
@@ -3289,7 +3289,7 @@ RzILOpEffect *hex_il_op_a2_svaddhs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_126 = SEQN(2, seq_112, op_ASSIGN_125);
 
 	// seq(h_tmp22; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((st32 ...;
-	RzILOpEffect *seq_128 = SEQN(2, seq_126, EMPTY());
+	RzILOpEffect *seq_128 = seq_126;
 
 	// seq(seq(h_tmp22; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_129 = SEQN(2, seq_128, seq_8);
@@ -3390,7 +3390,7 @@ RzILOpEffect *hex_il_op_a2_svadduhs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_120 = SEQN(2, seq_106, op_ASSIGN_119);
 
 	// seq(h_tmp24; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((st32) ...;
-	RzILOpEffect *seq_122 = SEQN(2, seq_120, EMPTY());
+	RzILOpEffect *seq_122 = seq_120;
 
 	// seq(seq(h_tmp24; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((s ...;
 	RzILOpEffect *seq_123 = SEQN(2, seq_122, seq_8);
@@ -3450,7 +3450,7 @@ RzILOpEffect *hex_il_op_a2_svavgh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_45 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, op_OR_43));
 
 	// seq(h_tmp26; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff << i ...;
-	RzILOpEffect *seq_47 = SEQN(2, op_ASSIGN_45, EMPTY());
+	RzILOpEffect *seq_47 = op_ASSIGN_45;
 
 	// seq(seq(h_tmp26; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff  ...;
 	RzILOpEffect *seq_48 = SEQN(2, seq_47, seq_8);
@@ -3511,7 +3511,7 @@ RzILOpEffect *hex_il_op_a2_svavghs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_47 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, op_OR_45));
 
 	// seq(h_tmp27; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff << i ...;
-	RzILOpEffect *seq_49 = SEQN(2, op_ASSIGN_47, EMPTY());
+	RzILOpEffect *seq_49 = op_ASSIGN_47;
 
 	// seq(seq(h_tmp27; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff  ...;
 	RzILOpEffect *seq_50 = SEQN(2, seq_49, seq_8);
@@ -3571,7 +3571,7 @@ RzILOpEffect *hex_il_op_a2_svnavgh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_45 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, op_OR_43));
 
 	// seq(h_tmp28; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff << i ...;
-	RzILOpEffect *seq_47 = SEQN(2, op_ASSIGN_45, EMPTY());
+	RzILOpEffect *seq_47 = op_ASSIGN_45;
 
 	// seq(seq(h_tmp28; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff  ...;
 	RzILOpEffect *seq_48 = SEQN(2, seq_47, seq_8);
@@ -3630,7 +3630,7 @@ RzILOpEffect *hex_il_op_a2_svsubh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_43 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, op_OR_41));
 
 	// seq(h_tmp29; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff << i ...;
-	RzILOpEffect *seq_45 = SEQN(2, op_ASSIGN_43, EMPTY());
+	RzILOpEffect *seq_45 = op_ASSIGN_43;
 
 	// seq(seq(h_tmp29; Rd = ((st32) (((ut64) (((st64) Rd) & (~(0xffff  ...;
 	RzILOpEffect *seq_46 = SEQN(2, seq_45, seq_8);
@@ -3733,7 +3733,7 @@ RzILOpEffect *hex_il_op_a2_svsubhs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_126 = SEQN(2, seq_112, op_ASSIGN_125);
 
 	// seq(h_tmp30; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((st32 ...;
-	RzILOpEffect *seq_128 = SEQN(2, seq_126, EMPTY());
+	RzILOpEffect *seq_128 = seq_126;
 
 	// seq(seq(h_tmp30; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_129 = SEQN(2, seq_128, seq_8);
@@ -3834,7 +3834,7 @@ RzILOpEffect *hex_il_op_a2_svsubuhs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_120 = SEQN(2, seq_106, op_ASSIGN_119);
 
 	// seq(h_tmp32; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((st32) ...;
-	RzILOpEffect *seq_122 = SEQN(2, seq_120, EMPTY());
+	RzILOpEffect *seq_122 = seq_120;
 
 	// seq(seq(h_tmp32; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((s ...;
 	RzILOpEffect *seq_123 = SEQN(2, seq_122, seq_8);
@@ -3903,7 +3903,7 @@ RzILOpEffect *hex_il_op_a2_swiz(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_114 = LOGOR(CAST(64, IL_FALSE, op_AND_96), op_LSHIFT_112);
 	RzILOpEffect *op_ASSIGN_116 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, op_OR_114));
 
-	RzILOpEffect *instruction_sequence = SEQN(8, op_ASSIGN_29, EMPTY(), op_ASSIGN_58, EMPTY(), op_ASSIGN_87, EMPTY(), op_ASSIGN_116, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, op_ASSIGN_29, op_ASSIGN_58, op_ASSIGN_87, op_ASSIGN_116);
 	return instruction_sequence;
 }
 
@@ -4008,7 +4008,7 @@ RzILOpEffect *hex_il_op_a2_tfrih(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_20 = LOGOR(CAST(64, IL_FALSE, op_AND_8), op_LSHIFT_18);
 	RzILOpEffect *op_ASSIGN_22 = WRITE_REG(bundle, Rx_op, CAST(32, IL_FALSE, op_OR_20));
 
-	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_9, op_ASSIGN_22, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, imm_assign_9, op_ASSIGN_22);
 	return instruction_sequence;
 }
 
@@ -4033,7 +4033,7 @@ RzILOpEffect *hex_il_op_a2_tfril(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_20 = LOGOR(CAST(64, IL_FALSE, op_AND_8), op_LSHIFT_18);
 	RzILOpEffect *op_ASSIGN_22 = WRITE_REG(bundle, Rx_op, CAST(32, IL_FALSE, op_OR_20));
 
-	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_9, op_ASSIGN_22, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, imm_assign_9, op_ASSIGN_22);
 	return instruction_sequence;
 }
 
@@ -4116,7 +4116,7 @@ RzILOpEffect *hex_il_op_a2_vabsh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_54 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_52));
 
 	// seq(h_tmp34; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_56 = SEQN(2, op_ASSIGN_54, EMPTY());
+	RzILOpEffect *seq_56 = op_ASSIGN_54;
 
 	// seq(seq(h_tmp34; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_57 = SEQN(2, seq_56, seq_8);
@@ -4237,7 +4237,7 @@ RzILOpEffect *hex_il_op_a2_vabshsat(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_176 = SEQN(2, seq_162, op_ASSIGN_175);
 
 	// seq(h_tmp35; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((((st ...;
-	RzILOpEffect *seq_178 = SEQN(2, seq_176, EMPTY());
+	RzILOpEffect *seq_178 = seq_176;
 
 	// seq(seq(h_tmp35; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_179 = SEQN(2, seq_178, seq_8);
@@ -4299,7 +4299,7 @@ RzILOpEffect *hex_il_op_a2_vabsw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_49 = WRITE_REG(bundle, Rdd_op, op_OR_48);
 
 	// seq(h_tmp37; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (((((( ...;
-	RzILOpEffect *seq_51 = SEQN(2, op_ASSIGN_49, EMPTY());
+	RzILOpEffect *seq_51 = op_ASSIGN_49;
 
 	// seq(seq(h_tmp37; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (( ...;
 	RzILOpEffect *seq_52 = SEQN(2, seq_51, seq_8);
@@ -4420,7 +4420,7 @@ RzILOpEffect *hex_il_op_a2_vabswsat(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_163 = SEQN(2, seq_154, op_ASSIGN_162);
 
 	// seq(h_tmp38; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((((st ...;
-	RzILOpEffect *seq_165 = SEQN(2, seq_163, EMPTY());
+	RzILOpEffect *seq_165 = seq_163;
 
 	// seq(seq(h_tmp38; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_166 = SEQN(2, seq_165, seq_8);
@@ -4479,7 +4479,7 @@ RzILOpEffect *hex_il_op_a2_vaddh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_44 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_42));
 
 	// seq(h_tmp40; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_46 = SEQN(2, op_ASSIGN_44, EMPTY());
+	RzILOpEffect *seq_46 = op_ASSIGN_44;
 
 	// seq(seq(h_tmp40; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_47 = SEQN(2, seq_46, seq_8);
@@ -4582,7 +4582,7 @@ RzILOpEffect *hex_il_op_a2_vaddhs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_133 = SEQN(2, seq_119, op_ASSIGN_132);
 
 	// seq(h_tmp41; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((st32 ...;
-	RzILOpEffect *seq_135 = SEQN(2, seq_133, EMPTY());
+	RzILOpEffect *seq_135 = seq_133;
 
 	// seq(seq(h_tmp41; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_136 = SEQN(2, seq_135, seq_8);
@@ -4641,7 +4641,7 @@ RzILOpEffect *hex_il_op_a2_vaddub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_45 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_43));
 
 	// seq(h_tmp43; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8))) ...;
-	RzILOpEffect *seq_47 = SEQN(2, op_ASSIGN_45, EMPTY());
+	RzILOpEffect *seq_47 = op_ASSIGN_45;
 
 	// seq(seq(h_tmp43; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x ...;
 	RzILOpEffect *seq_48 = SEQN(2, seq_47, seq_8);
@@ -4742,7 +4742,7 @@ RzILOpEffect *hex_il_op_a2_vaddubs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_126 = SEQN(2, seq_113, op_ASSIGN_125);
 
 	// seq(h_tmp44; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((st32) ...;
-	RzILOpEffect *seq_128 = SEQN(2, seq_126, EMPTY());
+	RzILOpEffect *seq_128 = seq_126;
 
 	// seq(seq(h_tmp44; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((s ...;
 	RzILOpEffect *seq_129 = SEQN(2, seq_128, seq_8);
@@ -4843,7 +4843,7 @@ RzILOpEffect *hex_il_op_a2_vadduhs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_127 = SEQN(2, seq_113, op_ASSIGN_126);
 
 	// seq(h_tmp46; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((st32) ...;
-	RzILOpEffect *seq_129 = SEQN(2, seq_127, EMPTY());
+	RzILOpEffect *seq_129 = seq_127;
 
 	// seq(seq(h_tmp46; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((s ...;
 	RzILOpEffect *seq_130 = SEQN(2, seq_129, seq_8);
@@ -4902,7 +4902,7 @@ RzILOpEffect *hex_il_op_a2_vaddw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_39 = WRITE_REG(bundle, Rdd_op, op_OR_38);
 
 	// seq(h_tmp48; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | ((((st ...;
-	RzILOpEffect *seq_41 = SEQN(2, op_ASSIGN_39, EMPTY());
+	RzILOpEffect *seq_41 = op_ASSIGN_39;
 
 	// seq(seq(h_tmp48; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (( ...;
 	RzILOpEffect *seq_42 = SEQN(2, seq_41, seq_8);
@@ -5005,7 +5005,7 @@ RzILOpEffect *hex_il_op_a2_vaddws(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_120 = SEQN(2, seq_111, op_ASSIGN_119);
 
 	// seq(h_tmp49; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((st64 ...;
-	RzILOpEffect *seq_122 = SEQN(2, seq_120, EMPTY());
+	RzILOpEffect *seq_122 = seq_120;
 
 	// seq(seq(h_tmp49; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_123 = SEQN(2, seq_122, seq_8);
@@ -5065,7 +5065,7 @@ RzILOpEffect *hex_il_op_a2_vavgh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_46 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_44));
 
 	// seq(h_tmp51; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_48 = SEQN(2, op_ASSIGN_46, EMPTY());
+	RzILOpEffect *seq_48 = op_ASSIGN_46;
 
 	// seq(seq(h_tmp51; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_49 = SEQN(2, seq_48, seq_8);
@@ -5143,7 +5143,7 @@ RzILOpEffect *hex_il_op_a2_vavghcr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_87 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_85));
 
 	// seq(h_tmp52; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_89 = SEQN(2, op_ASSIGN_87, EMPTY());
+	RzILOpEffect *seq_89 = op_ASSIGN_87;
 
 	// seq(seq(h_tmp52; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_90 = SEQN(2, seq_89, seq_8);
@@ -5204,7 +5204,7 @@ RzILOpEffect *hex_il_op_a2_vavghr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_48 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_46));
 
 	// seq(h_tmp53; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_50 = SEQN(2, op_ASSIGN_48, EMPTY());
+	RzILOpEffect *seq_50 = op_ASSIGN_48;
 
 	// seq(seq(h_tmp53; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_51 = SEQN(2, seq_50, seq_8);
@@ -5264,7 +5264,7 @@ RzILOpEffect *hex_il_op_a2_vavgub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_47 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_45));
 
 	// seq(h_tmp54; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8))) ...;
-	RzILOpEffect *seq_49 = SEQN(2, op_ASSIGN_47, EMPTY());
+	RzILOpEffect *seq_49 = op_ASSIGN_47;
 
 	// seq(seq(h_tmp54; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x ...;
 	RzILOpEffect *seq_50 = SEQN(2, seq_49, seq_8);
@@ -5325,7 +5325,7 @@ RzILOpEffect *hex_il_op_a2_vavgubr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_49 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_47));
 
 	// seq(h_tmp55; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8))) ...;
-	RzILOpEffect *seq_51 = SEQN(2, op_ASSIGN_49, EMPTY());
+	RzILOpEffect *seq_51 = op_ASSIGN_49;
 
 	// seq(seq(h_tmp55; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x ...;
 	RzILOpEffect *seq_52 = SEQN(2, seq_51, seq_8);
@@ -5385,7 +5385,7 @@ RzILOpEffect *hex_il_op_a2_vavguh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_46 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_44));
 
 	// seq(h_tmp56; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_48 = SEQN(2, op_ASSIGN_46, EMPTY());
+	RzILOpEffect *seq_48 = op_ASSIGN_46;
 
 	// seq(seq(h_tmp56; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_49 = SEQN(2, seq_48, seq_8);
@@ -5446,7 +5446,7 @@ RzILOpEffect *hex_il_op_a2_vavguhr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_48 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_46));
 
 	// seq(h_tmp57; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_50 = SEQN(2, op_ASSIGN_48, EMPTY());
+	RzILOpEffect *seq_50 = op_ASSIGN_48;
 
 	// seq(seq(h_tmp57; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_51 = SEQN(2, seq_50, seq_8);
@@ -5506,7 +5506,7 @@ RzILOpEffect *hex_il_op_a2_vavguw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_58 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_56));
 
 	// seq(h_tmp58; Rdd = ((st64) (((ut64) (Rdd & (~(0xffffffff << i *  ...;
-	RzILOpEffect *seq_60 = SEQN(2, op_ASSIGN_58, EMPTY());
+	RzILOpEffect *seq_60 = op_ASSIGN_58;
 
 	// seq(seq(h_tmp58; Rdd = ((st64) (((ut64) (Rdd & (~(0xffffffff <<  ...;
 	RzILOpEffect *seq_61 = SEQN(2, seq_60, seq_8);
@@ -5567,7 +5567,7 @@ RzILOpEffect *hex_il_op_a2_vavguwr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_61 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_59));
 
 	// seq(h_tmp59; Rdd = ((st64) (((ut64) (Rdd & (~(0xffffffff << i *  ...;
-	RzILOpEffect *seq_63 = SEQN(2, op_ASSIGN_61, EMPTY());
+	RzILOpEffect *seq_63 = op_ASSIGN_61;
 
 	// seq(seq(h_tmp59; Rdd = ((st64) (((ut64) (Rdd & (~(0xffffffff <<  ...;
 	RzILOpEffect *seq_64 = SEQN(2, seq_63, seq_8);
@@ -5627,7 +5627,7 @@ RzILOpEffect *hex_il_op_a2_vavgw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_57 = WRITE_REG(bundle, Rdd_op, op_OR_56);
 
 	// seq(h_tmp60; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (((sex ...;
-	RzILOpEffect *seq_59 = SEQN(2, op_ASSIGN_57, EMPTY());
+	RzILOpEffect *seq_59 = op_ASSIGN_57;
 
 	// seq(seq(h_tmp60; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (( ...;
 	RzILOpEffect *seq_60 = SEQN(2, seq_59, seq_8);
@@ -5705,7 +5705,7 @@ RzILOpEffect *hex_il_op_a2_vavgwcr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_129 = WRITE_REG(bundle, Rdd_op, op_OR_128);
 
 	// seq(h_tmp61; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (((((( ...;
-	RzILOpEffect *seq_131 = SEQN(2, op_ASSIGN_129, EMPTY());
+	RzILOpEffect *seq_131 = op_ASSIGN_129;
 
 	// seq(seq(h_tmp61; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (( ...;
 	RzILOpEffect *seq_132 = SEQN(2, seq_131, seq_8);
@@ -5766,7 +5766,7 @@ RzILOpEffect *hex_il_op_a2_vavgwr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_60 = WRITE_REG(bundle, Rdd_op, op_OR_59);
 
 	// seq(h_tmp62; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (((sex ...;
-	RzILOpEffect *seq_62 = SEQN(2, op_ASSIGN_60, EMPTY());
+	RzILOpEffect *seq_62 = op_ASSIGN_60;
 
 	// seq(seq(h_tmp62; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (( ...;
 	RzILOpEffect *seq_63 = SEQN(2, seq_62, seq_8);
@@ -5823,7 +5823,7 @@ RzILOpEffect *hex_il_op_a2_vcmpbeq(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_37 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_35));
 
 	// seq(h_tmp63; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << i))) ...;
-	RzILOpEffect *seq_39 = SEQN(2, op_ASSIGN_37, EMPTY());
+	RzILOpEffect *seq_39 = op_ASSIGN_37;
 
 	// seq(seq(h_tmp63; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_40 = SEQN(2, seq_39, seq_8);
@@ -5880,7 +5880,7 @@ RzILOpEffect *hex_il_op_a2_vcmpbgtu(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_37 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_35));
 
 	// seq(h_tmp64; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << i))) ...;
-	RzILOpEffect *seq_39 = SEQN(2, op_ASSIGN_37, EMPTY());
+	RzILOpEffect *seq_39 = op_ASSIGN_37;
 
 	// seq(seq(h_tmp64; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_40 = SEQN(2, seq_39, seq_8);
@@ -5959,7 +5959,7 @@ RzILOpEffect *hex_il_op_a2_vcmpheq(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_76 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_74));
 
 	// seq(h_tmp65; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << i *  ...;
-	RzILOpEffect *seq_78 = SEQN(4, op_ASSIGN_41, EMPTY(), op_ASSIGN_76, EMPTY());
+	RzILOpEffect *seq_78 = SEQN(2, op_ASSIGN_41, op_ASSIGN_76);
 
 	// seq(seq(h_tmp65; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_79 = SEQN(2, seq_78, seq_8);
@@ -6038,7 +6038,7 @@ RzILOpEffect *hex_il_op_a2_vcmphgt(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_76 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_74));
 
 	// seq(h_tmp66; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << i *  ...;
-	RzILOpEffect *seq_78 = SEQN(4, op_ASSIGN_41, EMPTY(), op_ASSIGN_76, EMPTY());
+	RzILOpEffect *seq_78 = SEQN(2, op_ASSIGN_41, op_ASSIGN_76);
 
 	// seq(seq(h_tmp66; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_79 = SEQN(2, seq_78, seq_8);
@@ -6117,7 +6117,7 @@ RzILOpEffect *hex_il_op_a2_vcmphgtu(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_76 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_74));
 
 	// seq(h_tmp67; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << i *  ...;
-	RzILOpEffect *seq_78 = SEQN(4, op_ASSIGN_41, EMPTY(), op_ASSIGN_76, EMPTY());
+	RzILOpEffect *seq_78 = SEQN(2, op_ASSIGN_41, op_ASSIGN_76);
 
 	// seq(seq(h_tmp67; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_79 = SEQN(2, seq_78, seq_8);
@@ -6172,7 +6172,7 @@ RzILOpEffect *hex_il_op_a2_vcmpweq(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_39 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_37));
 
 	// seq(h_tmp68; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << j))) ...;
-	RzILOpEffect *seq_41 = SEQN(2, op_ASSIGN_39, EMPTY());
+	RzILOpEffect *seq_41 = op_ASSIGN_39;
 
 	// seq(seq(h_tmp68; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_42 = SEQN(2, seq_41, seq_8);
@@ -6211,7 +6211,7 @@ RzILOpEffect *hex_il_op_a2_vcmpweq(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_81 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_79));
 
 	// seq(h_tmp69; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << j))) ...;
-	RzILOpEffect *seq_83 = SEQN(2, op_ASSIGN_81, EMPTY());
+	RzILOpEffect *seq_83 = op_ASSIGN_81;
 
 	// seq(seq(h_tmp69; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_84 = SEQN(2, seq_83, seq_53);
@@ -6223,7 +6223,7 @@ RzILOpEffect *hex_il_op_a2_vcmpweq(HexInsnPktBundle *bundle) {
 	// seq(j = 0x4; while ((j <= 0x7)) { seq(seq(h_tmp69; Pd = ((st8) ( ...;
 	RzILOpEffect *seq_86 = SEQN(2, op_ASSIGN_47, for_85);
 
-	RzILOpEffect *instruction_sequence = SEQN(3, seq_44, EMPTY(), seq_86);
+	RzILOpEffect *instruction_sequence = SEQN(2, seq_44, seq_86);
 	return instruction_sequence;
 }
 
@@ -6266,7 +6266,7 @@ RzILOpEffect *hex_il_op_a2_vcmpwgt(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_39 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_37));
 
 	// seq(h_tmp70; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << j))) ...;
-	RzILOpEffect *seq_41 = SEQN(2, op_ASSIGN_39, EMPTY());
+	RzILOpEffect *seq_41 = op_ASSIGN_39;
 
 	// seq(seq(h_tmp70; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_42 = SEQN(2, seq_41, seq_8);
@@ -6279,45 +6279,45 @@ RzILOpEffect *hex_il_op_a2_vcmpwgt(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_44 = SEQN(2, op_ASSIGN_2, for_43);
 
 	// j = 0x4;
-	RzILOpEffect *op_ASSIGN_47 = SETL("j", SN(32, 4));
+	RzILOpEffect *op_ASSIGN_46 = SETL("j", SN(32, 4));
 
 	// HYB(++j);
-	RzILOpEffect *op_INC_50 = SETL("j", INC(VARL("j"), 32));
+	RzILOpEffect *op_INC_49 = SETL("j", INC(VARL("j"), 32));
 
 	// h_tmp71 = HYB(++j);
-	RzILOpEffect *op_ASSIGN_hybrid_tmp_52 = SETL("h_tmp71", VARL("j"));
+	RzILOpEffect *op_ASSIGN_hybrid_tmp_51 = SETL("h_tmp71", VARL("j"));
 
 	// seq(h_tmp71 = HYB(++j); HYB(++j));
-	RzILOpEffect *seq_53 = SEQN(2, op_ASSIGN_hybrid_tmp_52, op_INC_50);
+	RzILOpEffect *seq_52 = SEQN(2, op_ASSIGN_hybrid_tmp_51, op_INC_49);
 
 	// Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << j))) | (((((st64) ((st32) ((Rss >> 0x20) & 0xffffffff))) > ((st64) ((st32) ((Rtt >> 0x20) & 0xffffffff)))) ? 0x1 : 0x0) << j)));
-	RzILOpPure *op_LSHIFT_55 = SHIFTL0(UN(64, 1), VARL("j"));
-	RzILOpPure *op_NOT_56 = LOGNOT(op_LSHIFT_55);
-	RzILOpPure *op_AND_59 = LOGAND(CAST(64, IL_FALSE, CAST(32, MSB(READ_REG(pkt, Pd_op, true)), READ_REG(pkt, Pd_op, true))), op_NOT_56);
-	RzILOpPure *op_RSHIFT_63 = SHIFTRA(DUP(Rss), SN(32, 0x20));
-	RzILOpPure *op_AND_65 = LOGAND(op_RSHIFT_63, SN(64, 0xffffffff));
-	RzILOpPure *op_RSHIFT_71 = SHIFTRA(DUP(Rtt), SN(32, 0x20));
-	RzILOpPure *op_AND_73 = LOGAND(op_RSHIFT_71, SN(64, 0xffffffff));
-	RzILOpPure *op_GT_76 = SGT(CAST(64, MSB(CAST(32, MSB(op_AND_65), DUP(op_AND_65))), CAST(32, MSB(DUP(op_AND_65)), DUP(op_AND_65))), CAST(64, MSB(CAST(32, MSB(op_AND_73), DUP(op_AND_73))), CAST(32, MSB(DUP(op_AND_73)), DUP(op_AND_73))));
-	RzILOpPure *ite_cast_ut64_77 = ITE(op_GT_76, UN(64, 1), UN(64, 0));
-	RzILOpPure *op_LSHIFT_78 = SHIFTL0(ite_cast_ut64_77, VARL("j"));
-	RzILOpPure *op_OR_79 = LOGOR(op_AND_59, op_LSHIFT_78);
-	RzILOpEffect *op_ASSIGN_81 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_79));
+	RzILOpPure *op_LSHIFT_54 = SHIFTL0(UN(64, 1), VARL("j"));
+	RzILOpPure *op_NOT_55 = LOGNOT(op_LSHIFT_54);
+	RzILOpPure *op_AND_58 = LOGAND(CAST(64, IL_FALSE, CAST(32, MSB(READ_REG(pkt, Pd_op, true)), READ_REG(pkt, Pd_op, true))), op_NOT_55);
+	RzILOpPure *op_RSHIFT_62 = SHIFTRA(DUP(Rss), SN(32, 0x20));
+	RzILOpPure *op_AND_64 = LOGAND(op_RSHIFT_62, SN(64, 0xffffffff));
+	RzILOpPure *op_RSHIFT_70 = SHIFTRA(DUP(Rtt), SN(32, 0x20));
+	RzILOpPure *op_AND_72 = LOGAND(op_RSHIFT_70, SN(64, 0xffffffff));
+	RzILOpPure *op_GT_75 = SGT(CAST(64, MSB(CAST(32, MSB(op_AND_64), DUP(op_AND_64))), CAST(32, MSB(DUP(op_AND_64)), DUP(op_AND_64))), CAST(64, MSB(CAST(32, MSB(op_AND_72), DUP(op_AND_72))), CAST(32, MSB(DUP(op_AND_72)), DUP(op_AND_72))));
+	RzILOpPure *ite_cast_ut64_76 = ITE(op_GT_75, UN(64, 1), UN(64, 0));
+	RzILOpPure *op_LSHIFT_77 = SHIFTL0(ite_cast_ut64_76, VARL("j"));
+	RzILOpPure *op_OR_78 = LOGOR(op_AND_58, op_LSHIFT_77);
+	RzILOpEffect *op_ASSIGN_80 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_78));
 
 	// seq(h_tmp71; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << j))) ...;
-	RzILOpEffect *seq_83 = SEQN(2, op_ASSIGN_81, EMPTY());
+	RzILOpEffect *seq_82 = op_ASSIGN_80;
 
 	// seq(seq(h_tmp71; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
-	RzILOpEffect *seq_84 = SEQN(2, seq_83, seq_53);
+	RzILOpEffect *seq_83 = SEQN(2, seq_82, seq_52);
 
 	// while ((j <= 0x7)) { seq(seq(h_tmp71; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ... };
-	RzILOpPure *op_LE_49 = SLE(VARL("j"), SN(32, 7));
-	RzILOpEffect *for_85 = REPEAT(op_LE_49, seq_84);
+	RzILOpPure *op_LE_48 = SLE(VARL("j"), SN(32, 7));
+	RzILOpEffect *for_84 = REPEAT(op_LE_48, seq_83);
 
 	// seq(j = 0x4; while ((j <= 0x7)) { seq(seq(h_tmp71; Pd = ((st8) ( ...;
-	RzILOpEffect *seq_86 = SEQN(2, op_ASSIGN_47, for_85);
+	RzILOpEffect *seq_85 = SEQN(2, op_ASSIGN_46, for_84);
 
-	RzILOpEffect *instruction_sequence = SEQN(4, seq_44, EMPTY(), seq_86, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, seq_44, seq_85);
 	return instruction_sequence;
 }
 
@@ -6360,7 +6360,7 @@ RzILOpEffect *hex_il_op_a2_vcmpwgtu(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_39 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_37));
 
 	// seq(h_tmp72; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << j))) ...;
-	RzILOpEffect *seq_41 = SEQN(2, op_ASSIGN_39, EMPTY());
+	RzILOpEffect *seq_41 = op_ASSIGN_39;
 
 	// seq(seq(h_tmp72; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_42 = SEQN(2, seq_41, seq_8);
@@ -6399,7 +6399,7 @@ RzILOpEffect *hex_il_op_a2_vcmpwgtu(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_80 = WRITE_REG(bundle, Pd_op, CAST(8, IL_FALSE, op_OR_78));
 
 	// seq(h_tmp73; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 << j))) ...;
-	RzILOpEffect *seq_82 = SEQN(2, op_ASSIGN_80, EMPTY());
+	RzILOpEffect *seq_82 = op_ASSIGN_80;
 
 	// seq(seq(h_tmp73; Pd = ((st8) ((((ut64) ((st32) Pd)) & (~(0x1 <<  ...;
 	RzILOpEffect *seq_83 = SEQN(2, seq_82, seq_52);
@@ -6411,7 +6411,7 @@ RzILOpEffect *hex_il_op_a2_vcmpwgtu(HexInsnPktBundle *bundle) {
 	// seq(j = 0x4; while ((j <= 0x7)) { seq(seq(h_tmp73; Pd = ((st8) ( ...;
 	RzILOpEffect *seq_85 = SEQN(2, op_ASSIGN_46, for_84);
 
-	RzILOpEffect *instruction_sequence = SEQN(3, seq_44, seq_85, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(2, seq_44, seq_85);
 	return instruction_sequence;
 }
 
@@ -6534,7 +6534,7 @@ RzILOpEffect *hex_il_op_a2_vconj(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_248 = LOGOR(CAST(64, IL_FALSE, op_AND_230), op_LSHIFT_246);
 	RzILOpEffect *op_ASSIGN_250 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_248));
 
-	RzILOpEffect *instruction_sequence = SEQN(8, seq_97, EMPTY(), op_ASSIGN_125, EMPTY(), seq_222, EMPTY(), op_ASSIGN_250, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, seq_97, op_ASSIGN_125, seq_222, op_ASSIGN_250);
 	return instruction_sequence;
 }
 
@@ -6588,7 +6588,7 @@ RzILOpEffect *hex_il_op_a2_vmaxb(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_59 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_57));
 
 	// seq(h_tmp76; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8))) ...;
-	RzILOpEffect *seq_61 = SEQN(2, op_ASSIGN_59, EMPTY());
+	RzILOpEffect *seq_61 = op_ASSIGN_59;
 
 	// seq(seq(h_tmp76; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x ...;
 	RzILOpEffect *seq_62 = SEQN(2, seq_61, seq_8);
@@ -6654,7 +6654,7 @@ RzILOpEffect *hex_il_op_a2_vmaxh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_58 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_56));
 
 	// seq(h_tmp77; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_60 = SEQN(2, op_ASSIGN_58, EMPTY());
+	RzILOpEffect *seq_60 = op_ASSIGN_58;
 
 	// seq(seq(h_tmp77; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_61 = SEQN(2, seq_60, seq_8);
@@ -6720,7 +6720,7 @@ RzILOpEffect *hex_il_op_a2_vmaxub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_59 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_57));
 
 	// seq(h_tmp78; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8))) ...;
-	RzILOpEffect *seq_61 = SEQN(2, op_ASSIGN_59, EMPTY());
+	RzILOpEffect *seq_61 = op_ASSIGN_59;
 
 	// seq(seq(h_tmp78; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x ...;
 	RzILOpEffect *seq_62 = SEQN(2, seq_61, seq_8);
@@ -6786,7 +6786,7 @@ RzILOpEffect *hex_il_op_a2_vmaxuh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_58 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_56));
 
 	// seq(h_tmp79; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_60 = SEQN(2, op_ASSIGN_58, EMPTY());
+	RzILOpEffect *seq_60 = op_ASSIGN_58;
 
 	// seq(seq(h_tmp79; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_61 = SEQN(2, seq_60, seq_8);
@@ -6852,7 +6852,7 @@ RzILOpEffect *hex_il_op_a2_vmaxuw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_57 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_55));
 
 	// seq(h_tmp80; Rdd = ((st64) (((ut64) (Rdd & (~(0xffffffff << i *  ...;
-	RzILOpEffect *seq_59 = SEQN(2, op_ASSIGN_57, EMPTY());
+	RzILOpEffect *seq_59 = op_ASSIGN_57;
 
 	// seq(seq(h_tmp80; Rdd = ((st64) (((ut64) (Rdd & (~(0xffffffff <<  ...;
 	RzILOpEffect *seq_60 = SEQN(2, seq_59, seq_8);
@@ -6918,7 +6918,7 @@ RzILOpEffect *hex_il_op_a2_vmaxw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_54 = WRITE_REG(bundle, Rdd_op, op_OR_53);
 
 	// seq(h_tmp81; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (((((( ...;
-	RzILOpEffect *seq_56 = SEQN(2, op_ASSIGN_54, EMPTY());
+	RzILOpEffect *seq_56 = op_ASSIGN_54;
 
 	// seq(seq(h_tmp81; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (( ...;
 	RzILOpEffect *seq_57 = SEQN(2, seq_56, seq_8);
@@ -6984,7 +6984,7 @@ RzILOpEffect *hex_il_op_a2_vminb(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_59 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_57));
 
 	// seq(h_tmp82; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8))) ...;
-	RzILOpEffect *seq_61 = SEQN(2, op_ASSIGN_59, EMPTY());
+	RzILOpEffect *seq_61 = op_ASSIGN_59;
 
 	// seq(seq(h_tmp82; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x ...;
 	RzILOpEffect *seq_62 = SEQN(2, seq_61, seq_8);
@@ -7050,7 +7050,7 @@ RzILOpEffect *hex_il_op_a2_vminh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_58 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_56));
 
 	// seq(h_tmp83; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_60 = SEQN(2, op_ASSIGN_58, EMPTY());
+	RzILOpEffect *seq_60 = op_ASSIGN_58;
 
 	// seq(seq(h_tmp83; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_61 = SEQN(2, seq_60, seq_8);
@@ -7116,7 +7116,7 @@ RzILOpEffect *hex_il_op_a2_vminub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_59 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_57));
 
 	// seq(h_tmp84; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8))) ...;
-	RzILOpEffect *seq_61 = SEQN(2, op_ASSIGN_59, EMPTY());
+	RzILOpEffect *seq_61 = op_ASSIGN_59;
 
 	// seq(seq(h_tmp84; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x ...;
 	RzILOpEffect *seq_62 = SEQN(2, seq_61, seq_8);
@@ -7182,7 +7182,7 @@ RzILOpEffect *hex_il_op_a2_vminuh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_58 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_56));
 
 	// seq(h_tmp85; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_60 = SEQN(2, op_ASSIGN_58, EMPTY());
+	RzILOpEffect *seq_60 = op_ASSIGN_58;
 
 	// seq(seq(h_tmp85; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_61 = SEQN(2, seq_60, seq_8);
@@ -7248,7 +7248,7 @@ RzILOpEffect *hex_il_op_a2_vminuw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_57 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_55));
 
 	// seq(h_tmp86; Rdd = ((st64) (((ut64) (Rdd & (~(0xffffffff << i *  ...;
-	RzILOpEffect *seq_59 = SEQN(2, op_ASSIGN_57, EMPTY());
+	RzILOpEffect *seq_59 = op_ASSIGN_57;
 
 	// seq(seq(h_tmp86; Rdd = ((st64) (((ut64) (Rdd & (~(0xffffffff <<  ...;
 	RzILOpEffect *seq_60 = SEQN(2, seq_59, seq_8);
@@ -7314,7 +7314,7 @@ RzILOpEffect *hex_il_op_a2_vminw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_54 = WRITE_REG(bundle, Rdd_op, op_OR_53);
 
 	// seq(h_tmp87; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (((((( ...;
-	RzILOpEffect *seq_56 = SEQN(2, op_ASSIGN_54, EMPTY());
+	RzILOpEffect *seq_56 = op_ASSIGN_54;
 
 	// seq(seq(h_tmp87; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (( ...;
 	RzILOpEffect *seq_57 = SEQN(2, seq_56, seq_8);
@@ -7374,7 +7374,7 @@ RzILOpEffect *hex_il_op_a2_vnavgh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_46 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_44));
 
 	// seq(h_tmp88; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x10 ...;
-	RzILOpEffect *seq_48 = SEQN(2, op_ASSIGN_46, EMPTY());
+	RzILOpEffect *seq_48 = op_ASSIGN_46;
 
 	// seq(seq(h_tmp88; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i *  ...;
 	RzILOpEffect *seq_49 = SEQN(2, seq_48, seq_8);
@@ -7553,7 +7553,7 @@ RzILOpEffect *hex_il_op_a2_vnavghcr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_305 = SEQN(2, seq_291, op_ASSIGN_304);
 
 	// seq(h_tmp89; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (((((( ...;
-	RzILOpEffect *seq_307 = SEQN(2, seq_305, EMPTY());
+	RzILOpEffect *seq_307 = seq_305;
 
 	// seq(seq(h_tmp89; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_308 = SEQN(2, seq_307, seq_8);
@@ -7664,7 +7664,7 @@ RzILOpEffect *hex_il_op_a2_vnavghr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_149 = SEQN(2, seq_135, op_ASSIGN_148);
 
 	// seq(h_tmp91; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (((st3 ...;
-	RzILOpEffect *seq_151 = SEQN(2, seq_149, EMPTY());
+	RzILOpEffect *seq_151 = seq_149;
 
 	// seq(seq(h_tmp91; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_152 = SEQN(2, seq_151, seq_8);
@@ -7724,7 +7724,7 @@ RzILOpEffect *hex_il_op_a2_vnavgw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_57 = WRITE_REG(bundle, Rdd_op, op_OR_56);
 
 	// seq(h_tmp93; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (((sex ...;
-	RzILOpEffect *seq_59 = SEQN(2, op_ASSIGN_57, EMPTY());
+	RzILOpEffect *seq_59 = op_ASSIGN_57;
 
 	// seq(seq(h_tmp93; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | (( ...;
 	RzILOpEffect *seq_60 = SEQN(2, seq_59, seq_8);
@@ -7903,7 +7903,7 @@ RzILOpEffect *hex_il_op_a2_vnavgwcr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_480 = SEQN(2, seq_471, op_ASSIGN_479);
 
 	// seq(h_tmp94; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((((se ...;
-	RzILOpEffect *seq_482 = SEQN(2, seq_480, EMPTY());
+	RzILOpEffect *seq_482 = seq_480;
 
 	// seq(seq(h_tmp94; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (( ...;
 	RzILOpEffect *seq_483 = SEQN(2, seq_482, seq_8);
@@ -8014,7 +8014,7 @@ RzILOpEffect *hex_il_op_a2_vnavgwr(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_204 = SEQN(2, seq_195, op_ASSIGN_203);
 
 	// seq(h_tmp96; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (sextr ...;
-	RzILOpEffect *seq_206 = SEQN(2, seq_204, EMPTY());
+	RzILOpEffect *seq_206 = seq_204;
 
 	// seq(seq(h_tmp96; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) (s ...;
 	RzILOpEffect *seq_207 = SEQN(2, seq_206, seq_8);
@@ -8077,7 +8077,7 @@ RzILOpEffect *hex_il_op_a2_vraddub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_56 = WRITE_REG(bundle, Rdd_op, op_OR_55);
 
 	// seq(h_tmp98; Rdd = ((Rdd & (~(0xffffffff << 0x0))) | ((((st64) ( ...;
-	RzILOpEffect *seq_58 = SEQN(2, op_ASSIGN_56, EMPTY());
+	RzILOpEffect *seq_58 = op_ASSIGN_56;
 
 	// seq(seq(h_tmp98; Rdd = ((Rdd & (~(0xffffffff << 0x0))) | ((((st6 ...;
 	RzILOpEffect *seq_59 = SEQN(2, seq_58, seq_12);
@@ -8121,7 +8121,7 @@ RzILOpEffect *hex_il_op_a2_vraddub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_111 = WRITE_REG(bundle, Rdd_op, op_OR_110);
 
 	// seq(h_tmp99; Rdd = ((Rdd & (~(0xffffffff << 0x20))) | ((((st64)  ...;
-	RzILOpEffect *seq_113 = SEQN(2, op_ASSIGN_111, EMPTY());
+	RzILOpEffect *seq_113 = op_ASSIGN_111;
 
 	// seq(seq(h_tmp99; Rdd = ((Rdd & (~(0xffffffff << 0x20))) | ((((st ...;
 	RzILOpEffect *seq_114 = SEQN(2, seq_113, seq_69);
@@ -8182,7 +8182,7 @@ RzILOpEffect *hex_il_op_a2_vraddub_acc(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_53 = WRITE_REG(bundle, Rxx_op, op_OR_52);
 
 	// seq(h_tmp100; Rxx = ((Rxx & (~(0xffffffff << 0x0))) | ((((st64)  ...;
-	RzILOpEffect *seq_55 = SEQN(2, op_ASSIGN_53, EMPTY());
+	RzILOpEffect *seq_55 = op_ASSIGN_53;
 
 	// seq(seq(h_tmp100; Rxx = ((Rxx & (~(0xffffffff << 0x0))) | ((((st ...;
 	RzILOpEffect *seq_56 = SEQN(2, seq_55, seq_8);
@@ -8226,7 +8226,7 @@ RzILOpEffect *hex_il_op_a2_vraddub_acc(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_108 = WRITE_REG(bundle, Rxx_op, op_OR_107);
 
 	// seq(h_tmp101; Rxx = ((Rxx & (~(0xffffffff << 0x20))) | ((((st64) ...;
-	RzILOpEffect *seq_110 = SEQN(2, op_ASSIGN_108, EMPTY());
+	RzILOpEffect *seq_110 = op_ASSIGN_108;
 
 	// seq(seq(h_tmp101; Rxx = ((Rxx & (~(0xffffffff << 0x20))) | ((((s ...;
 	RzILOpEffect *seq_111 = SEQN(2, seq_110, seq_66);
@@ -8306,7 +8306,7 @@ RzILOpEffect *hex_il_op_a2_vrsadub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_94 = WRITE_REG(bundle, Rdd_op, op_OR_93);
 
 	// seq(h_tmp102; Rdd = ((Rdd & (~(0xffffffff << 0x0))) | ((((st64)  ...;
-	RzILOpEffect *seq_96 = SEQN(2, op_ASSIGN_94, EMPTY());
+	RzILOpEffect *seq_96 = op_ASSIGN_94;
 
 	// seq(seq(h_tmp102; Rdd = ((Rdd & (~(0xffffffff << 0x0))) | ((((st ...;
 	RzILOpEffect *seq_97 = SEQN(2, seq_96, seq_12);
@@ -8367,7 +8367,7 @@ RzILOpEffect *hex_il_op_a2_vrsadub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_187 = WRITE_REG(bundle, Rdd_op, op_OR_186);
 
 	// seq(h_tmp103; Rdd = ((Rdd & (~(0xffffffff << 0x20))) | ((((st64) ...;
-	RzILOpEffect *seq_189 = SEQN(2, op_ASSIGN_187, EMPTY());
+	RzILOpEffect *seq_189 = op_ASSIGN_187;
 
 	// seq(seq(h_tmp103; Rdd = ((Rdd & (~(0xffffffff << 0x20))) | ((((s ...;
 	RzILOpEffect *seq_190 = SEQN(2, seq_189, seq_107);
@@ -8445,7 +8445,7 @@ RzILOpEffect *hex_il_op_a2_vrsadub_acc(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_91 = WRITE_REG(bundle, Rxx_op, op_OR_90);
 
 	// seq(h_tmp104; Rxx = ((Rxx & (~(0xffffffff << 0x0))) | ((((st64)  ...;
-	RzILOpEffect *seq_93 = SEQN(2, op_ASSIGN_91, EMPTY());
+	RzILOpEffect *seq_93 = op_ASSIGN_91;
 
 	// seq(seq(h_tmp104; Rxx = ((Rxx & (~(0xffffffff << 0x0))) | ((((st ...;
 	RzILOpEffect *seq_94 = SEQN(2, seq_93, seq_8);
@@ -8506,7 +8506,7 @@ RzILOpEffect *hex_il_op_a2_vrsadub_acc(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_184 = WRITE_REG(bundle, Rxx_op, op_OR_183);
 
 	// seq(h_tmp105; Rxx = ((Rxx & (~(0xffffffff << 0x20))) | ((((st64) ...;
-	RzILOpEffect *seq_186 = SEQN(2, op_ASSIGN_184, EMPTY());
+	RzILOpEffect *seq_186 = op_ASSIGN_184;
 
 	// seq(seq(h_tmp105; Rxx = ((Rxx & (~(0xffffffff << 0x20))) | ((((s ...;
 	RzILOpEffect *seq_187 = SEQN(2, seq_186, seq_104);
@@ -8565,7 +8565,7 @@ RzILOpEffect *hex_il_op_a2_vsubh(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_44 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_42));
 
 	// seq(h_tmp106; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * 0x1 ...;
-	RzILOpEffect *seq_46 = SEQN(2, op_ASSIGN_44, EMPTY());
+	RzILOpEffect *seq_46 = op_ASSIGN_44;
 
 	// seq(seq(h_tmp106; Rdd = ((st64) (((ut64) (Rdd & (~(0xffff << i * ...;
 	RzILOpEffect *seq_47 = SEQN(2, seq_46, seq_8);
@@ -8668,7 +8668,7 @@ RzILOpEffect *hex_il_op_a2_vsubhs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_133 = SEQN(2, seq_119, op_ASSIGN_132);
 
 	// seq(h_tmp107; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((st3 ...;
-	RzILOpEffect *seq_135 = SEQN(2, seq_133, EMPTY());
+	RzILOpEffect *seq_135 = seq_133;
 
 	// seq(seq(h_tmp107; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ( ...;
 	RzILOpEffect *seq_136 = SEQN(2, seq_135, seq_8);
@@ -8727,7 +8727,7 @@ RzILOpEffect *hex_il_op_a2_vsubub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_45 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_43));
 
 	// seq(h_tmp109; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8)) ...;
-	RzILOpEffect *seq_47 = SEQN(2, op_ASSIGN_45, EMPTY());
+	RzILOpEffect *seq_47 = op_ASSIGN_45;
 
 	// seq(seq(h_tmp109; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0 ...;
 	RzILOpEffect *seq_48 = SEQN(2, seq_47, seq_8);
@@ -8828,7 +8828,7 @@ RzILOpEffect *hex_il_op_a2_vsububs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_126 = SEQN(2, seq_113, op_ASSIGN_125);
 
 	// seq(h_tmp110; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((st32 ...;
-	RzILOpEffect *seq_128 = SEQN(2, seq_126, EMPTY());
+	RzILOpEffect *seq_128 = seq_126;
 
 	// seq(seq(h_tmp110; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) (( ...;
 	RzILOpEffect *seq_129 = SEQN(2, seq_128, seq_8);
@@ -8929,7 +8929,7 @@ RzILOpEffect *hex_il_op_a2_vsubuhs(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_127 = SEQN(2, seq_113, op_ASSIGN_126);
 
 	// seq(h_tmp112; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) ((st32 ...;
-	RzILOpEffect *seq_129 = SEQN(2, seq_127, EMPTY());
+	RzILOpEffect *seq_129 = seq_127;
 
 	// seq(seq(h_tmp112; seq(seq(HYB(gcc_expr_if ((extract64(((ut64) (( ...;
 	RzILOpEffect *seq_130 = SEQN(2, seq_129, seq_8);
@@ -8988,7 +8988,7 @@ RzILOpEffect *hex_il_op_a2_vsubw(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_39 = WRITE_REG(bundle, Rdd_op, op_OR_38);
 
 	// seq(h_tmp114; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | ((((s ...;
-	RzILOpEffect *seq_41 = SEQN(2, op_ASSIGN_39, EMPTY());
+	RzILOpEffect *seq_41 = op_ASSIGN_39;
 
 	// seq(seq(h_tmp114; Rdd = ((Rdd & (~(0xffffffff << i * 0x20))) | ( ...;
 	RzILOpEffect *seq_42 = SEQN(2, seq_41, seq_8);
@@ -9091,7 +9091,7 @@ RzILOpEffect *hex_il_op_a2_vsubws(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_120 = SEQN(2, seq_111, op_ASSIGN_119);
 
 	// seq(h_tmp115; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ((st6 ...;
-	RzILOpEffect *seq_122 = SEQN(2, seq_120, EMPTY());
+	RzILOpEffect *seq_122 = seq_120;
 
 	// seq(seq(h_tmp115; seq(seq(HYB(gcc_expr_if ((sextract64(((ut64) ( ...;
 	RzILOpEffect *seq_123 = SEQN(2, seq_122, seq_8);

@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -22,9 +16,9 @@
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_strbuf.h>
 #include <rz_analysis.h>
-#include "hexagon.h"
-#include "hexagon_insn.h"
-#include "hexagon_arch.h"
+#include <hexagon/hexagon.h>
+#include <hexagon/hexagon_insn.h>
+#include <hexagon/hexagon_arch.h>
 
 #if ASAN && !defined(__clang__)
 #define NO_OPT_IF_ASAN __attribute__((optimize(0)))
@@ -33949,7 +33943,7 @@ static const HexInsnTemplate *templates_normal[] = {
 static const HexInsnTemplate *get_sub_template_table(const ut8 duplex_iclass, bool high) {
 	switch (duplex_iclass) {
 	default:
-		RZ_LOG_WARN("IClasses > 0xe are reserved.\n");
+		RZ_LOG_INFO("IClasses > 0xe are reserved.\n");
 		return NULL;
 	case 0:
 		return high ? templates_sub_L1 : templates_sub_L1;
@@ -34268,7 +34262,7 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 
 			ut32 iclass = (((hi_u32 >> 29) & 0xF) << 1) | ((hi_u32 >> 13) & 1);
 			if (iclass == 0xf) {
-				RZ_LOG_WARN("Reserved duplex instruction class used at: 0x%" PFMT32x ".\n", addr);
+				RZ_LOG_INFO("Reserved duplex instruction class used at: 0x%" PFMT32x ".\n", addr);
 			}
 
 			const HexInsnTemplate *tmp_high = get_sub_template_table(iclass, true);
