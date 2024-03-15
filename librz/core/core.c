@@ -2448,29 +2448,61 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 }
 
 /**
+ * \brief Executes a command and returns the filtered output.
+ *
+ * \param core Pointer to RzCore instance.
+ * \param command Command to be executed.
+ * \param filter String used to filter the output.
+ * \return Filtered output of the command. Must be freed by the caller.
+ */
+RZ_API char *rz_core_filter_command_output(RZ_NONNULL RzCore *core, const char *command, const char *filter) {
+	rz_return_val_if_fail(core, NULL);
+	char *output = rz_core_cmd_str(core, command);
+	char *filtered_output = NULL;
+
+	RzList *lines = rz_str_split_list(output, "\n", 0);
+	RzListIter *iter;
+	char *line;
+	rz_list_foreach (lines, iter, line) {
+		if (strstr(line, filter)) {
+			if (filtered_output) {
+				filtered_output = rz_str_append(filtered_output, "\n");
+			} else {
+				filtered_output = rz_str_dup("");
+			}
+			filtered_output = rz_str_append(filtered_output, line);
+		}
+	}
+
+	RZ_FREE(output);
+	return filtered_output;
+}
+
+/**
  * \brief Seeks to any basic block of the current function.
  *
  * \param core The RzCore instance.
  */
-RZ_API void rz_core_seek_bb(RZ_NONNULL RzCore *core) {
+RZ_API void rz_core_view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
 	rz_return_if_fail(core);
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-	if (fcn) {
-		RzAnalysisBlock *bb;
-		void **iter;
-		rz_pvector_foreach (fcn->bbs, iter) {
-			bb = *iter;
-			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " 00:0000 %llu\n", bb->addr, bb->addr + bb->size, bb->size);
-		}
+	char *output = rz_core_filter_command_output(core, "afb", "");
+	if (output) {
+		rz_cons_println(output);
 		rz_cons_flush();
-		char *input = rz_cons_input("Enter an address: ");
+		char *input = rz_cons_input("Seek to address: ");
 		ut64 addr = strtoull(input, NULL, 16);
 		free(input);
-		rz_pvector_foreach (fcn->bbs, iter) {
-			bb = *iter;
-			if (bb->addr <= addr && addr < bb->addr + bb->size) {
-				rz_core_seek(core, addr, true);
-				break;
+		RZ_FREE(output);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+		if (fcn) {
+			RzAnalysisBlock *bb;
+			void **iter;
+			rz_pvector_foreach (fcn->bbs, iter) {
+				bb = *iter;
+				if (bb->addr <= addr && addr < bb->addr + bb->size) {
+					rz_core_seek(core, addr, true);
+					break;
+				}
 			}
 		}
 	}
