@@ -165,7 +165,7 @@ static int analysis_pic_pic18_op(
 	case PIC18_OPCODE_TSTFSZ: // tstfsz
 		aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		break;
-	case PIC18_OPCODE_CPFSQT: // cpfsgt
+	case PIC18_OPCODE_CPFSGT: // cpfsgt
 	case PIC18_OPCODE_CPFSEQ: // cpfseq
 	case PIC18_OPCODE_CPFSLT: // cpfslt
 		aop->type = RZ_ANALYSIS_OP_TYPE_CMP;

@@ -47,7 +47,7 @@ static const Pic18OpDesc ops[] = {
 	{ PIC18_OPCODE_CLRF, 0x6a00, 0x6bff, "clrf", FA_T },
 	{ PIC18_OPCODE_SETF, 0x6800, 0x69ff, "setf", FA_T },
 	{ PIC18_OPCODE_TSTFSZ, 0x6600, 0x67ff, "tstfsz", FA_T },
-	{ PIC18_OPCODE_CPFSQT, 0x6400, 0x65ff, "cpfsgt", FA_T },
+	{ PIC18_OPCODE_CPFSGT, 0x6400, 0x65ff, "cpfsgt", FA_T },
 	{ PIC18_OPCODE_CPFSEQ, 0x6200, 0x63ff, "cpfseq", FA_T },
 	{ PIC18_OPCODE_CPFSLT, 0x6000, 0x61ff, "cpfslt", FA_T },
 	{ PIC18_OPCODE_SUBWF, 0x5c00, 0x5fff, "subwf", FDA_T },

@@ -15,6 +15,8 @@
 #define VROV VARG(ROV)
 #define RZ   "z"
 #define VRZ  VARG(RZ)
+#define RS   "s"
+#define VRS  VARG(RS)
 
 /**
  * The `d` bit selects the destination for the operation.
@@ -39,6 +41,25 @@ static RzILOpEffect *status_res(RzILOpPure *res) {
 	return NOP();
 }
 
+static RzILOpPure *complement_1(RzILOpPure *x) {
+	// TODO: complement_1
+	return NULL;
+}
+
+static RzILOpPure *decimal_adjust(RzILOpPure *x) {
+	return LET(
+		"_x03", UNSIGNED(4, x),
+		LET(
+			"_x47", UNSIGNED(4, SHIFTR0(DUP(x), U8(4))),
+			APPEND(
+				ITE(OR(UGT(VARL("_x47"), UN(4, 9)), VARG("c")),
+					ADD(VARL("_x47"), UN(4, 6)),
+					VARL("_x47")),
+				ITE(OR(UGT(VARL("_x03"), UN(4, 9)), VARG("dc")),
+					ADD(VARL("_x03"), UN(4, 6)),
+					VARL("_x03")))));
+}
+
 static RzILOpEffect *op_add(const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	return SEQ3(
@@ -50,6 +71,18 @@ static RzILOpEffect *op_add(const char *dst,
 static RzILOpEffect *op_branch(Pic18Op *op, RzILOpPure *condition) {
 	return condition ? BRANCH(condition, JMP(U16(PC + 2 + 2 * op->n)), NOP())
 			 : JMP(U16(PC + 2 + 2 * op->n));
+}
+
+static RzILOpEffect *op_call(Pic18Op *op) {
+	return SEQ3(
+		SETG("tos", U16(PC + 4)),
+		JMP(U32(K << 1)),
+		BRANCH(NON_ZERO(VARG("s")),
+			SEQ3(
+				SETG("ws", VRW),
+				SETG("ss", VRS),
+				SETG("bsrs", VARG("bsr"))),
+			NOP()));
 }
 
 static RzILOpEffect *op_and(const char *dst,
@@ -87,14 +120,25 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 	case PIC18_OPCODE_BTFSC: return op_skip_if(op, INV(bit_get(VRF, B)));
 	case PIC18_OPCODE_BTFSS: return op_skip_if(op, bit_get(VRF, B));
 
-	case PIC18_OPCODE_COMF: break;
-	case PIC18_OPCODE_CALL: break;
-	case PIC18_OPCODE_CLRWDT: break;
-	case PIC18_OPCODE_CLRF: break;
-	case PIC18_OPCODE_CPFSQT: break;
-	case PIC18_OPCODE_CPFSEQ: break;
-	case PIC18_OPCODE_CPFSLT: break;
-	case PIC18_OPCODE_DAW: break;
+	case PIC18_OPCODE_CALL: return op_call(op);
+	case PIC18_OPCODE_CLRF: return SEQ2(SETG(RF, U8(0)), SETG("z", IL_TRUE));
+	case PIC18_OPCODE_CLRWDT: return SEQ4(
+		SETG("wdt", U8(0)),
+		SETG("wdt_prescaler_count", IL_FALSE),
+		SETG("to", IL_TRUE),
+		SETG("pd", IL_TRUE));
+	case PIC18_OPCODE_COMF: return SEQ3(
+		SETL("_res", complement_1(VRF)),
+		status_res(VARL("_res")),
+		SETG(op_destination(op), VARL("_res")));
+	case PIC18_OPCODE_CPFSEQ: return op_skip_if(op, EQ(VRW, VRF));
+	case PIC18_OPCODE_CPFSGT: return op_skip_if(op, SGT(VRW, VRF));
+	case PIC18_OPCODE_CPFSLT: return op_skip_if(op, SLT(VRW, VRF));
+	case PIC18_OPCODE_DAW:
+		return SEQ3(
+			SETL("_res", decimal_adjust(VRW)),
+			SETG("c", IL_FALSE), // TODO: status C
+			SETG(RW, VARL("_res")));
 	case PIC18_OPCODE_DECF: break;
 	case PIC18_OPCODE_DECFSZ: break;
 	case PIC18_OPCODE_DCFSNZ: break;
