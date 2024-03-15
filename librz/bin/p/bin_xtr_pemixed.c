@@ -103,7 +103,7 @@ static RzBinXtrData *oneshot(RzBin *bin, const ut8 *buf, ut64 size, int sub_bin_
 	return rz_bin_xtrdata_new(pe->b, 0, pe->size, 3, metadata);
 }
 
-RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed = {
+RzBinXtrPlugin rz_bin_xtr_plugin_pemixed = {
 	.name = "xtr.pemixed",
 	.desc = "Extract sub-binaries in PE files",
 	.load = NULL, // not yet implemented

@@ -82,6 +82,7 @@ RZ_API RZ_OWN char *rz_core_esil_of_assembly(RzCore *core, const char *assembly)
 	RzAnalysisOp aop = { 0 };
 	while (printed < bufsz) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset,
 			    (const ut8 *)acode->bytes + printed, bufsz - printed, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 			aop.size < 1) {
@@ -141,6 +142,7 @@ RZ_API RZ_OWN char *rz_core_esil_of_hex(RzCore *core, ut8 *hex, int len) {
 	RzAnalysisOp aop = { 0 };
 	while (printed < len) {
 		aop.size = 0;
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset,
 			    (const ut8 *)hex + printed, len - printed, RZ_ANALYSIS_OP_MASK_ESIL) <= 0 ||
 			aop.size < 1) {
@@ -878,9 +880,11 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 			if (fcn) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
+
+				void **vit;
 				RzAnalysisBlock *bb;
-				RzListIter *iterb;
-				rz_list_foreach (fcn->bbs, iterb, bb) {
+				rz_pvector_foreach (fcn->bbs, vit) {
+					bb = (RzAnalysisBlock *)*vit;
 					if (addr == bb->jump) {
 						if (show_offset) {
 							rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
@@ -893,7 +897,9 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 					rz_strbuf_appendf(sb, "%s0x%08" PFMT64x ":\n", use_color ? Color_YELLOW : "", addr);
 				}
 				if (strstr(line, "=<")) {
-					rz_list_foreach (fcn->bbs, iterb, bb) {
+					RzAnalysisBlock *bb;
+					rz_pvector_foreach (fcn->bbs, vit) {
+						bb = (RzAnalysisBlock *)*vit;
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {

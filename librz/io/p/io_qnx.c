@@ -8,6 +8,8 @@
 #define IRAPI static inline
 #include <libqnxr.h>
 
+#include "rz_io_plugins.h"
+
 typedef struct {
 	libqnxr_t desc;
 } RzIOQnx;

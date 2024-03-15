@@ -91,13 +91,10 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfAbbrev *da = NULL;
-	// mode = 0, calls
-	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
-	// which prints out all the abbreviation
 	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->by_offset, 0x0, NULL);
 	RzBinDwarfAbbrevDecl *abbrev = NULL;
 	RzBinDwarfAttrSpec *def = NULL;
 
@@ -173,7 +170,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
 	mu_assert("Incorrect number of abbreviation", rz_bin_dwarf_abbrev_count(da) == 32);
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->by_offset, 0x0, NULL);
 	RzBinDwarfAbbrevDecl *abbrev = NULL;
 	RzBinDwarfAttrSpec *def = NULL;
 	mu_assert_notnull(tbl, "abbrev table");
@@ -301,7 +298,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->by_offset, 0x0, NULL);
 	RzBinDwarfAbbrevDecl *abbrev = NULL;
 	RzBinDwarfAttrSpec *def = NULL;
 
@@ -446,10 +443,10 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 		bin->cur, NULL, false);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 25, "line units count");
-	RzBinDwarfLineUnit *lunit = rz_list_get_tail_data(li->units);
+	RzBinDwarfLineUnit *lunit = rz_list_last(li->units);
 	mu_assert_notnull(lunit, "line unit");
 
-	RzBinDwarfLineHdr *hdr = &lunit->hdr;
+	RzBinDwarfLineUnitHdr *hdr = &lunit->hdr;
 	mu_assert_eq(hdr->unit_length, 704, "");
 	mu_assert_eq(hdr->encoding.version, 2, "");
 	mu_assert_eq(hdr->min_inst_len, 1, "");
@@ -550,7 +547,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	da = rz_bin_dwarf_abbrev_from_file(bin->cur, false);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->by_offset, 0x0, NULL);
 	RzBinDwarfAbbrevDecl *abbrev = NULL;
 	RzBinDwarfAttrSpec *def = NULL;
 

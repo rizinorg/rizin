@@ -2565,7 +2565,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (!fun) {
 				rz_cons_message("Not in a function. Type 'df' to define it here");
 				break;
-			} else if (rz_list_empty(fun->bbs)) {
+			} else if (rz_pvector_len(fun->bbs) < 1) {
 				rz_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
 				break;
 			}

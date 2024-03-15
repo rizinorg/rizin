@@ -108,7 +108,7 @@ pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 455
 bytes: e813c89a
 refptr: 0
 size: 4
@@ -125,7 +125,7 @@ pseudo: asm("addg x9, x8, 0x20, 0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 6
 bytes: 09018291
 refptr: 0
 size: 4
@@ -156,7 +156,7 @@ pseudo: asm("addg x12, x8, 0x200, 2")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 6
 bytes: 91a0090c
 refptr: 0
 size: 4
@@ -173,7 +173,7 @@ pseudo: asm("addg x9, x8, 0x20, 0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 6
 bytes: 91820109
 refptr: 0
 size: 4
@@ -190,7 +190,7 @@ pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
-id: 0
+id: 455
 bytes: 9ac813e8
 refptr: 0
 size: 4

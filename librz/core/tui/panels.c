@@ -2895,7 +2895,7 @@ bool __check_func(RzCore *core) {
 		rz_cons_message("Not in a function. Type 'df' to define it here");
 		return false;
 	}
-	if (rz_list_empty(fun->bbs)) {
+	if (rz_pvector_len(fun->bbs) < 1) {
 		rz_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
 		return false;
 	}

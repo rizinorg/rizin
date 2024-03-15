@@ -1658,9 +1658,10 @@ static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 #define PAL_TRUE "#13a10e"
 static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bbi;
-	RzListIter *iter;
+	void **iter;
 
-	rz_list_foreach (fcn->bbs, iter, bbi) {
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bbi = (RzAnalysisBlock *)*iter;
 		if (bbi->jump != UT64_MAX) {
 			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 				bbi->addr, bbi->jump,
@@ -2085,13 +2086,13 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 	RzListIter *iter = NULL;
 	bool color = false, no_name = false;
 
-	fcns_a = rz_list_clone(rz_analysis_get_fcns(core_a->analysis));
+	fcns_a = rz_list_clone(rz_analysis_function_list(core_a->analysis));
 	if (rz_list_empty(fcns_a)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file0.\n");
 		goto fail;
 	}
 
-	fcns_b = rz_list_clone(rz_analysis_get_fcns(core_b->analysis));
+	fcns_b = rz_list_clone(rz_analysis_function_list(core_b->analysis));
 	if (rz_list_empty(fcns_b)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file1.\n");
 		goto fail;

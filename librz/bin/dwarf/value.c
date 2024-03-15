@@ -129,7 +129,7 @@ RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out)
 }
 
 RZ_IPI bool Value_parse_into(
-	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBinEndianReader *reader) {
+	RzBinDwarfValue *value, RzBinDwarfValueType value_type, RzBinEndianReader *R) {
 
 	RET_FALSE_IF_FAIL(value);
 	value->type = value_type;
@@ -1016,17 +1016,6 @@ RZ_IPI void Value_free(RzBinDwarfValue *self) {
 	}
 	Value_fini(self);
 	free(self);
-}
-
-RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self) {
-	rz_return_val_if_fail(self, NULL);
-	RzBinDwarfValue *val = RZ_NEW(RzBinDwarfValue);
-	RET_NULL_IF_FAIL(val);
-	if (!Value_clone_into(self, val)) {
-		Value_free(val);
-		return NULL;
-	}
-	return val;
 }
 
 RZ_IPI bool Value_clone_into(RzBinDwarfValue *self, RzBinDwarfValue *val) {

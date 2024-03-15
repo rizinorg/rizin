@@ -3,7 +3,6 @@
 
 #include <rz_core.h>
 #include <rz_demangler.h>
-#include "config.h"
 
 #define CB(x, y) \
 	static bool lib_##x##_cb(RzLibPlugin *pl, void *user, void *data) { \
@@ -40,8 +39,40 @@ CB(demangler, bin->demangler)
 CB(egg, egg)
 CB(hash, hash)
 
+static bool lib_arch_cb(RzLibPlugin *pl, void *user, void *data) {
+	RzArchPlugin *hand = (RzArchPlugin *)data;
+	RzCore *core = (RzCore *)user;
+	// TODO: add new structure.
+	// return rz_arch_plugin_add(core->arch, hand);
+	if (hand->p_asm && !rz_asm_plugin_add(core->rasm, hand->p_asm)) {
+		// deprecated structure
+		return false;
+	}
+	if (hand->p_analysis && !rz_analysis_plugin_add(core->analysis, hand->p_analysis)) {
+		// deprecated structure
+		return false;
+	}
+	if (hand->p_parse && !rz_parse_plugin_add(core->parser, hand->p_parse)) {
+		// deprecated structure
+		return false;
+	}
+	return true;
+}
+
+static bool lib_arch_dt(RzLibPlugin *pl, void *user, void *data) {
+	RzArchPlugin *hand = (RzArchPlugin *)data;
+	RzCore *core = (RzCore *)user;
+	if (hand->p_asm && hand->p_analysis) {
+		// deprecated structure
+		return rz_asm_plugin_del(core->rasm, hand->p_asm) &&
+			rz_analysis_plugin_del(core->analysis, hand->p_analysis);
+	}
+	// TODO: add new structure.
+	// return rz_arch_plugin_del(core->arch, hand);
+	return false;
+}
+
 static void loadSystemPlugins(RzCore *core, int where) {
-#if RZ_LOADLIBS
 	const char *dir_plugins = rz_config_get(core->config, "dir.plugins");
 	if (where & RZ_CORE_LOADLIBS_CONFIG) {
 		rz_lib_opendir(core->lib, dir_plugins, false);
@@ -70,7 +101,6 @@ static void loadSystemPlugins(RzCore *core, int where) {
 		}
 		free(epd);
 	}
-#endif
 }
 
 RZ_API void rz_core_loadlibs_init(RzCore *core) {
@@ -90,6 +120,7 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF(BIN, "bin plugins", bin);
 	DF(EGG, "egg plugins", egg);
 	DF(HASH, "hash plugins", hash);
+	DF(ARCH, "(dis)assembler & analysis plugins", arch);
 	core->times->loadlibs_init_time = rz_time_now_mono() - prev;
 }
 

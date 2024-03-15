@@ -16,6 +16,8 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 
+#include "rz_io_plugins.h"
+
 #define SREC_SIZE        64
 #define NMAX             100
 #define SREC_PATH_PREFIX "srec://"

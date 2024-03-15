@@ -204,12 +204,14 @@ RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
 	RzListIter *iter;
 	ut64 next = UT64_MAX;
 	if (strstr(type, "opc")) {
-		RzAnalysisOp aop;
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op_init(&aop);
 		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 			next = core->offset + aop.size;
 		} else {
 			RZ_LOG_ERROR("core: invalid opcode\n");
 		}
+		rz_analysis_op_fini(&aop);
 	} else if (strstr(type, "fun")) {
 		RzAnalysisFunction *fcni;
 		rz_list_foreach (core->analysis->fcns, iter, fcni) {

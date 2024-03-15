@@ -376,6 +376,7 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const
 	}
 
 	RzAnalysisOp op = { 0 };
+	rz_analysis_op_init(&op);
 	if (rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		RZ_LOG_ERROR("Invalid instruction at %" PFMT64x "\n", core->offset);
 		goto err;
@@ -393,6 +394,7 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const
 	}
 	ret = acode->len;
 err:
+	rz_analysis_op_fini(&op);
 	rz_asm_code_free(acode);
 	return ret;
 }

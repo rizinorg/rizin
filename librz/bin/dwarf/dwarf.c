@@ -13,6 +13,9 @@ RZ_IPI bool RzBinDwarfEncoding_from_file(RzBinDwarfEncoding *encoding, RzBinFile
 		return false;
 	}
 	RzBinInfo *binfo = bf->o && bf->o->info ? bf->o->info : NULL;
+	if (!binfo) {
+		return false;
+	}
 	encoding->address_size = binfo->bits ? binfo->bits / 8 : 4;
 	return true;
 }
@@ -47,21 +50,24 @@ static inline RZ_OWN RzBinDWARF *dwarf_from_file(
 }
 
 static inline char *read_debuglink(RzBinFile *binfile) {
-	RzBinSection *sect = rz_bin_dwarf_section_by_name(binfile, ".gnu_debuglink", false);
-	RET_NULL_IF_FAIL(sect);
-	RzBuffer *buffer = rz_bin_dwarf_section_buf(binfile, sect);
-	RET_NULL_IF_FAIL(buffer);
-	char *name = rz_buf_get_string(buffer, 0);
+	RzBinSection *sect = NULL;
+	const char *name = NULL;
+	RzBinEndianReader *R = NULL;
+	RET_NULL_IF_FAIL(
+		(sect = rz_bin_dwarf_section_by_name(binfile, ".gnu_debuglink", false)) &&
+		(R = rz_bin_dwarf_section_reader(binfile, sect)) &&
+		R_read_cstring(R, &name));
 	// TODO: Verification the CRC
-	rz_buf_free(buffer);
-	return name;
+	char *debuglink = rz_str_dup(name);
+	R_free(R);
+	return debuglink;
 }
 
 static inline char *read_build_id(RzBinFile *binfile) {
 	RzBinSection *sect = rz_bin_dwarf_section_by_name(binfile, ".note.gnu.build-id", false);
 	RET_NULL_IF_FAIL(sect);
-	RzBuffer *buffer = rz_bin_dwarf_section_buf(binfile, sect);
-	RET_NULL_IF_FAIL(buffer);
+	RzBinEndianReader *R = rz_bin_dwarf_section_reader(binfile, sect);
+	RET_NULL_IF_FAIL(R);
 
 	char *build_id = NULL;
 	/**
@@ -71,21 +77,12 @@ static inline char *read_build_id(RzBinFile *binfile) {
 	 *   uint8_t buf[0];
 	 * };
 	 */
-	size_t nhdr_sz = binfile->o->info->bits == 64 ? sizeof(Elf64_Nhdr) : sizeof(Elf32_Nhdr);
-	size_t begin = nhdr_sz + 4;
-	size_t sz = rz_buf_size(buffer) - begin;
-	ut8 *buf = RZ_NEWS0(ut8, sz);
-	if (!buf) {
-		goto beach;
-	}
-	if (rz_buf_read_at(buffer, begin, buf, sz) != sz) {
-		goto beach;
-	}
-	build_id = rz_hex_bin2strdup(buf, (int)sz);
+	st64 nhdr_sz = binfile->o->info->bits == 64 ? sizeof(Elf64_Nhdr) : sizeof(Elf32_Nhdr);
+	st64 begin = nhdr_sz + 4;
+	R_seek(R, begin, SEEK_SET);
+	build_id = rz_hex_bin2strdup(R_data(R), (int)R_remain(R));
 
-beach:
-	rz_buf_free(buffer);
-	free(buf);
+	R_free(R);
 	return build_id;
 }
 
@@ -201,9 +198,6 @@ static bool binary_from_path(DwBinary *b, const char *filepath) {
 }
 
 static void binary_close(DwBinary *b) {
-	if (!b) {
-		return;
-	}
 	rz_io_free(b->io);
 	rz_bin_free(b->bin);
 }
@@ -334,7 +328,7 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw) {
 	}
 	rz_bin_dwarf_free(dw->parent);
 
-	DebugRngLists_free(dw->rnglists);
+	RngLists_free(dw->rnglists);
 	rz_bin_dwarf_addr_free(dw->addr);
 	rz_bin_dwarf_str_free(dw->str);
 	rz_bin_dwarf_str_offsets_free(dw->str_offsets);
@@ -345,4 +339,28 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw) {
 	rz_bin_dwarf_loclists_free(dw->loclists);
 	rz_bin_dwarf_aranges_free(dw->aranges);
 	free(dw);
+}
+
+RZ_API void rz_bin_dwarf_dump(
+	RZ_BORROW RZ_NONNULL RzBinDWARF *dw,
+	RZ_BORROW RZ_NONNULL RzStrBuf *sb) {
+	rz_return_if_fail(dw && sb);
+	if (dw->abbrev) {
+		rz_core_bin_dwarf_abbrevs_dump(dw->abbrev, sb);
+	}
+	if (dw->info) {
+		rz_bin_dwarf_debug_info_dump(dw->info, dw, sb);
+	}
+	if (dw->loclists) {
+		rz_bin_dwarf_loclists_dump(dw->loclists, dw, sb);
+	}
+	if (dw->aranges) {
+		rz_bin_dwarf_aranges_dump(dw->aranges, sb);
+	}
+	if (dw->rnglists) {
+		rz_bin_dwarf_rnglists_dump(dw->rnglists, sb);
+	}
+	if (dw->line) {
+		rz_bin_dwarf_line_units_dump(dw->line, sb);
+	}
 }

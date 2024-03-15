@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2008-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_lib.h"
+#include <rz_lib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../io_memory.h"
+
+#include "rz_io_plugins.h"
 
 static bool __check(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "malloc://", 9)) || (!strncmp(pathname, "hex://", 6));

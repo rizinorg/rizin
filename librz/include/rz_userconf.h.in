@@ -84,7 +84,7 @@
 #define RZ_FLAGS    "@FLAGS@"
 #define RZ_HUD      "@HUD@"
 
-#define RZ_SDB_ARCH_PLATFORMS RZ_JOIN_3_PATHS(RZ_SDB, "asm", "platforms")
+#define RZ_SDB_ARCH_PLATFORMS RZ_JOIN_3_PATHS(RZ_SDB, "arch", "platforms")
 #define RZ_SDB_ARCH_CPUS      RZ_JOIN_3_PATHS(RZ_SDB, "asm", "cpus")
 #define RZ_SDB_TYPES          RZ_JOIN_2_PATHS(RZ_SDB, "types")
 #define RZ_SDB_OPCODES        RZ_JOIN_2_PATHS(RZ_SDB, "opcodes")

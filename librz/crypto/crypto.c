@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2009-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "config.h"
 #include <rz_crypto.h>
 #include <rz_lib.h>
 #include <rz_util.h>
+#include "rz_crypto_plugins.h"
 
 #define RZ_CRYPTO_OUTPUT_SIZE 4096
 
