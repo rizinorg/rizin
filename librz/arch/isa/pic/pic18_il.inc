@@ -37,6 +37,10 @@ static RzILOpEffect *status_add(RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, R
 	return NOP();
 }
 
+static RzILOpEffect *status_sub(RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+	return NOP();
+}
+
 static RzILOpEffect *status_res(RzILOpPure *res) {
 	return NOP();
 }
@@ -122,15 +126,17 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 
 	case PIC18_OPCODE_CALL: return op_call(op);
 	case PIC18_OPCODE_CLRF: return SEQ2(SETG(RF, U8(0)), SETG("z", IL_TRUE));
-	case PIC18_OPCODE_CLRWDT: return SEQ4(
-		SETG("wdt", U8(0)),
-		SETG("wdt_prescaler_count", IL_FALSE),
-		SETG("to", IL_TRUE),
-		SETG("pd", IL_TRUE));
-	case PIC18_OPCODE_COMF: return SEQ3(
-		SETL("_res", complement_1(VRF)),
-		status_res(VARL("_res")),
-		SETG(op_destination(op), VARL("_res")));
+	case PIC18_OPCODE_CLRWDT:
+		return SEQ4(
+			SETG("wdt", U8(0)),
+			SETG("wdt_prescaler_count", IL_FALSE),
+			SETG("to", IL_TRUE),
+			SETG("pd", IL_TRUE));
+	case PIC18_OPCODE_COMF:
+		return SEQ3(
+			SETL("_res", complement_1(VRF)),
+			status_res(VARL("_res")),
+			SETG(op_destination(op), VARL("_res")));
 	case PIC18_OPCODE_CPFSEQ: return op_skip_if(op, EQ(VRW, VRF));
 	case PIC18_OPCODE_CPFSGT: return op_skip_if(op, SGT(VRW, VRF));
 	case PIC18_OPCODE_CPFSLT: return op_skip_if(op, SLT(VRW, VRF));
@@ -139,10 +145,22 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 			SETL("_res", decimal_adjust(VRW)),
 			SETG("c", IL_FALSE), // TODO: status C
 			SETG(RW, VARL("_res")));
-	case PIC18_OPCODE_DECF: break;
-	case PIC18_OPCODE_DECFSZ: break;
-	case PIC18_OPCODE_DCFSNZ: break;
-	case PIC18_OPCODE_GOTO: break;
+	case PIC18_OPCODE_DECF:
+		return SEQ3(
+			SETG("_res", SUB(VRF, U8(1))),
+			status_sub(VRF, U8(1), VARL("_res"), NULL),
+			SETG(op_destination(op), VARL("_res")));
+	case PIC18_OPCODE_DECFSZ:
+		return SEQ3(
+			SETG("_res", SUB(VRF, U8(1))),
+			SETG(op_destination(op), VARL("_res")),
+			op_skip_if(op, IS_ZERO(VARL("_res"))));
+	case PIC18_OPCODE_DCFSNZ:
+		return SEQ3(
+			SETG("_res", SUB(VRF, U8(1))),
+			SETG(op_destination(op), VARL("_res")),
+			op_skip_if(op, NON_ZERO(VARL("_res"))));
+	case PIC18_OPCODE_GOTO: return JMP(U32((ut32)K << 1));
 	case PIC18_OPCODE_IORWF: break;
 	case PIC18_OPCODE_INFSNZ: break;
 	case PIC18_OPCODE_INCF: break;
