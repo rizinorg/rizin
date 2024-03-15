@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -80,7 +74,7 @@ RzILOpEffect *hex_il_op_m6_vabsdiffb(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_83 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_81));
 
 	// seq(h_tmp449; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8)) ...;
-	RzILOpEffect *seq_85 = SEQN(2, op_ASSIGN_83, EMPTY());
+	RzILOpEffect *seq_85 = op_ASSIGN_83;
 
 	// seq(seq(h_tmp449; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0 ...;
 	RzILOpEffect *seq_86 = SEQN(2, seq_85, seq_8);
@@ -156,7 +150,7 @@ RzILOpEffect *hex_il_op_m6_vabsdiffub(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_83 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_81));
 
 	// seq(h_tmp450; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8)) ...;
-	RzILOpEffect *seq_85 = SEQN(2, op_ASSIGN_83, EMPTY());
+	RzILOpEffect *seq_85 = op_ASSIGN_83;
 
 	// seq(seq(h_tmp450; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0 ...;
 	RzILOpEffect *seq_86 = SEQN(2, seq_85, seq_8);

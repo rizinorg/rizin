@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -19,12 +13,9 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_vector.h>
-#include <string.h>
-#include "hexagon.h"
-#include "hexagon_insn.h"
-#include "rz_list.h"
-#include "rz_util/rz_strbuf.h"
-#include "hexagon_arch.h"
+#include <hexagon/hexagon.h>
+#include <hexagon/hexagon_insn.h>
+#include <hexagon/hexagon_arch.h>
 
 static inline bool is_invalid_insn_data(ut32 data) {
 	return data == HEX_INVALID_INSN_0 || data == HEX_INVALID_INSN_F;
@@ -645,7 +636,7 @@ static void make_packet_valid(RZ_BORROW HexState *state, RZ_BORROW HexPkt *pkt) 
  * \param pkt The packet which predecessor will be updated.
  */
 static void make_next_packet_valid(HexState *state, const HexPkt *pkt) {
-	HexInsnContainer *tmp = rz_list_last(pkt->bin);
+	HexInsnContainer *tmp = rz_list_get_n(pkt->bin, 0);
 	if (!tmp) {
 		return;
 	}

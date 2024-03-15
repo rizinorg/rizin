@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -42,6 +36,10 @@
 #define HEX_F_TO_SINT(mode, fval)                  F2SINT(32, mode, fval)
 #define HEX_D_TO_INT(mode, fval)                   F2INT(64, mode, fval)
 #define HEX_F_TO_INT(mode, fval)                   F2INT(32, mode, fval)
+#define HEX_SINT_TO_D(mode, fval)                  SINT2F(64, mode, fval)
+#define HEX_SINT_TO_F(mode, fval)                  SINT2F(32, mode, fval)
+#define HEX_INT_TO_D(mode, fval)                   INT2F(64, mode, fval)
+#define HEX_INT_TO_F(mode, fval)                   INT2F(32, mode, fval)
 
 #define HEX_IMMUTABLE_REG (~0)
 #define HEX_NOT_MASKED    0

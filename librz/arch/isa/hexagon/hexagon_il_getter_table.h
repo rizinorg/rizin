@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -1002,7 +996,7 @@ static HexILInsn hex_il_getter_lt[] = {
 	{ { (HexILOpGetter)hex_il_op_c4_or_orn, HEX_IL_INSN_ATTR_WPRED },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_f2_conv_d2df, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_f2_conv_d2df, HEX_IL_INSN_ATTR_NONE },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
 	{ { (HexILOpGetter)hex_il_op_f2_conv_d2sf, HEX_IL_INSN_ATTR_INVALID },
@@ -1062,25 +1056,25 @@ static HexILInsn hex_il_getter_lt[] = {
 	{ { (HexILOpGetter)hex_il_op_f2_conv_sf2w_chop, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_f2_conv_ud2df, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_f2_conv_ud2df, HEX_IL_INSN_ATTR_NONE },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
 	{ { (HexILOpGetter)hex_il_op_f2_conv_ud2sf, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_f2_conv_uw2df, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_f2_conv_uw2df, HEX_IL_INSN_ATTR_NONE },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
 	{ { (HexILOpGetter)hex_il_op_f2_conv_uw2sf, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_f2_conv_w2df, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_f2_conv_w2df, HEX_IL_INSN_ATTR_NONE },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
 	{ { (HexILOpGetter)hex_il_op_f2_conv_w2sf, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_f2_dfadd, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_f2_dfadd, HEX_IL_INSN_ATTR_NONE },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
 	{ { (HexILOpGetter)hex_il_op_f2_dfclass, HEX_IL_INSN_ATTR_INVALID },
@@ -1121,10 +1115,10 @@ static HexILInsn hex_il_getter_lt[] = {
 	{ { (HexILOpGetter)hex_il_op_f2_dfmpyll, HEX_IL_INSN_ATTR_COND },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_f2_dfsub, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_f2_dfsub, HEX_IL_INSN_ATTR_NONE },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_f2_sfadd, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_f2_sfadd, HEX_IL_INSN_ATTR_NONE },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
 	{ { (HexILOpGetter)hex_il_op_f2_sfclass, HEX_IL_INSN_ATTR_INVALID },
@@ -1187,7 +1181,7 @@ static HexILInsn hex_il_getter_lt[] = {
 	{ { (HexILOpGetter)hex_il_op_f2_sfrecipa, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_f2_sfsub, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_f2_sfsub, HEX_IL_INSN_ATTR_NONE },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
 	{ { (HexILOpGetter)hex_il_op_g4_tfrgcpp, HEX_IL_INSN_ATTR_INVALID },

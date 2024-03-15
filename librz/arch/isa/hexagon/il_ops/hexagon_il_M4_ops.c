@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -941,7 +935,7 @@ RzILOpEffect *hex_il_op_m4_vpmpyh(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_189 = LOGOR(CAST(64, IL_FALSE, op_AND_171), op_LSHIFT_187);
 	RzILOpEffect *op_ASSIGN_191 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_189));
 
-	RzILOpEffect *instruction_sequence = SEQN(14, op_ASSIGN_16, op_ASSIGN_25, op_ASSIGN_35, op_ASSIGN_44, seq_49, seq_79, op_ASSIGN_107, EMPTY(), op_ASSIGN_135, EMPTY(), op_ASSIGN_163, EMPTY(), op_ASSIGN_191, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(10, op_ASSIGN_16, op_ASSIGN_25, op_ASSIGN_35, op_ASSIGN_44, seq_49, seq_79, op_ASSIGN_107, op_ASSIGN_135, op_ASSIGN_163, op_ASSIGN_191);
 	return instruction_sequence;
 }
 
@@ -1099,7 +1093,7 @@ RzILOpEffect *hex_il_op_m4_vpmpyh_acc(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_229 = LOGOR(CAST(64, IL_FALSE, op_AND_201), op_LSHIFT_227);
 	RzILOpEffect *op_ASSIGN_231 = WRITE_REG(bundle, Rxx_op, CAST(64, IL_FALSE, op_OR_229));
 
-	RzILOpEffect *instruction_sequence = SEQN(14, op_ASSIGN_16, op_ASSIGN_25, op_ASSIGN_35, op_ASSIGN_44, seq_49, seq_79, op_ASSIGN_117, EMPTY(), op_ASSIGN_155, EMPTY(), op_ASSIGN_193, EMPTY(), op_ASSIGN_231, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(10, op_ASSIGN_16, op_ASSIGN_25, op_ASSIGN_35, op_ASSIGN_44, seq_49, seq_79, op_ASSIGN_117, op_ASSIGN_155, op_ASSIGN_193, op_ASSIGN_231);
 	return instruction_sequence;
 }
 

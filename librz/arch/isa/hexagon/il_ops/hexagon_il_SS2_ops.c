@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -55,7 +49,7 @@ RzILOpEffect *hex_il_op_ss2_allocframe(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_SUB_26 = SUB(VARL("EA"), VARL("u"));
 	RzILOpEffect *op_ASSIGN_27 = WRITE_REG(bundle, &sp_op, op_SUB_26);
 
-	RzILOpEffect *instruction_sequence = SEQN(7, imm_assign_24, op_ASSIGN_6, EMPTY(), ms_cast_ut64_20_21, op_ASSIGN_22, EMPTY(), op_ASSIGN_27);
+	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_24, op_ASSIGN_6, ms_cast_ut64_20_21, op_ASSIGN_22, op_ASSIGN_27);
 	return instruction_sequence;
 }
 
@@ -79,7 +73,7 @@ RzILOpEffect *hex_il_op_ss2_storebi0(HexInsnPktBundle *bundle) {
 	// mem_store_ut8(EA, ((ut8) 0x0));
 	RzILOpEffect *ms_cast_ut8_9_10 = STOREW(VARL("EA"), CAST(8, IL_FALSE, SN(32, 0)));
 
-	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_2, op_ASSIGN_6, EMPTY(), ms_cast_ut8_9_10);
+	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_2, op_ASSIGN_6, ms_cast_ut8_9_10);
 	return instruction_sequence;
 }
 
@@ -103,7 +97,7 @@ RzILOpEffect *hex_il_op_ss2_storebi1(HexInsnPktBundle *bundle) {
 	// mem_store_ut8(EA, ((ut8) 0x1));
 	RzILOpEffect *ms_cast_ut8_9_10 = STOREW(VARL("EA"), CAST(8, IL_FALSE, SN(32, 1)));
 
-	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_2, op_ASSIGN_6, EMPTY(), ms_cast_ut8_9_10);
+	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_2, op_ASSIGN_6, ms_cast_ut8_9_10);
 	return instruction_sequence;
 }
 
@@ -129,7 +123,7 @@ RzILOpEffect *hex_il_op_ss2_stored_sp(HexInsnPktBundle *bundle) {
 	// mem_store_ut64(EA, ((ut64) Rtt));
 	RzILOpEffect *ms_cast_ut64_9_10 = STOREW(VARL("EA"), CAST(64, IL_FALSE, Rtt));
 
-	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_2, op_ASSIGN_6, EMPTY(), ms_cast_ut64_9_10);
+	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_2, op_ASSIGN_6, ms_cast_ut64_9_10);
 	return instruction_sequence;
 }
 
@@ -157,7 +151,7 @@ RzILOpEffect *hex_il_op_ss2_storeh_io(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_AND_14 = LOGAND(op_RSHIFT_12, SN(32, 0xffff));
 	RzILOpEffect *ms_cast_ut16_16_17 = STOREW(VARL("EA"), CAST(16, IL_FALSE, CAST(16, MSB(op_AND_14), DUP(op_AND_14))));
 
-	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_2, op_ASSIGN_6, EMPTY(), ms_cast_ut16_16_17);
+	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_2, op_ASSIGN_6, ms_cast_ut16_16_17);
 	return instruction_sequence;
 }
 
@@ -183,7 +177,7 @@ RzILOpEffect *hex_il_op_ss2_storew_sp(HexInsnPktBundle *bundle) {
 	// mem_store_ut32(EA, ((ut32) Rt));
 	RzILOpEffect *ms_cast_ut32_8_9 = STOREW(VARL("EA"), CAST(32, IL_FALSE, Rt));
 
-	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_2, op_ASSIGN_5, EMPTY(), ms_cast_ut32_8_9);
+	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_2, op_ASSIGN_5, ms_cast_ut32_8_9);
 	return instruction_sequence;
 }
 
@@ -207,7 +201,7 @@ RzILOpEffect *hex_il_op_ss2_storewi0(HexInsnPktBundle *bundle) {
 	// mem_store_ut32(EA, ((ut32) 0x0));
 	RzILOpEffect *ms_cast_ut32_9_10 = STOREW(VARL("EA"), CAST(32, IL_FALSE, SN(32, 0)));
 
-	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_2, op_ASSIGN_6, EMPTY(), ms_cast_ut32_9_10);
+	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_2, op_ASSIGN_6, ms_cast_ut32_9_10);
 	return instruction_sequence;
 }
 
@@ -231,7 +225,7 @@ RzILOpEffect *hex_il_op_ss2_storewi1(HexInsnPktBundle *bundle) {
 	// mem_store_ut32(EA, ((ut32) 0x1));
 	RzILOpEffect *ms_cast_ut32_9_10 = STOREW(VARL("EA"), CAST(32, IL_FALSE, SN(32, 1)));
 
-	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_2, op_ASSIGN_6, EMPTY(), ms_cast_ut32_9_10);
+	RzILOpEffect *instruction_sequence = SEQN(3, imm_assign_2, op_ASSIGN_6, ms_cast_ut32_9_10);
 	return instruction_sequence;
 }
 

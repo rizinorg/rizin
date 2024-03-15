@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -54,7 +48,7 @@ RzILOpEffect *hex_il_op_a7_clip(HexInsnPktBundle *bundle) {
 	RzILOpPure *cond_20 = ITE(op_LT_17, VARL("maxv"), cond_19);
 	RzILOpEffect *op_ASSIGN_21 = WRITE_REG(bundle, Rd_op, cond_20);
 
-	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_1, op_ASSIGN_7, op_ASSIGN_12, op_ASSIGN_21, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(4, imm_assign_1, op_ASSIGN_7, op_ASSIGN_12, op_ASSIGN_21);
 	return instruction_sequence;
 }
 
@@ -156,7 +150,7 @@ RzILOpEffect *hex_il_op_a7_vclip(HexInsnPktBundle *bundle) {
 	RzILOpPure *op_OR_150 = LOGOR(op_AND_142, op_LSHIFT_149);
 	RzILOpEffect *op_ASSIGN_151 = WRITE_REG(bundle, Rdd_op, op_OR_150);
 
-	RzILOpEffect *instruction_sequence = SEQN(13, imm_assign_2, op_ASSIGN_8, op_ASSIGN_13, op_ASSIGN_60, EMPTY(), op_ASSIGN_78, EMPTY(), op_ASSIGN_84, op_ASSIGN_88, op_ASSIGN_134, EMPTY(), op_ASSIGN_151, EMPTY());
+	RzILOpEffect *instruction_sequence = SEQN(9, imm_assign_2, op_ASSIGN_8, op_ASSIGN_13, op_ASSIGN_60, op_ASSIGN_78, op_ASSIGN_84, op_ASSIGN_88, op_ASSIGN_134, op_ASSIGN_151);
 	return instruction_sequence;
 }
 

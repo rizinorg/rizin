@@ -3,13 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 20:07:05-05:00
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
-// SPDX-License-Identifier: LGPL-3.0-only
-
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-21 19:58:03-05:00
+// Date of code generation: 2024-03-15 06:38:05-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -194,7 +188,7 @@ RzILOpEffect *hex_il_op_c2_ccombinewf(HexInsnPktBundle *bundle) {
 	RzILOpEffect *nop_42 = NOP();
 
 	// seq(Rdd = ((Rdd & (~(0xffffffff << 0x0))) | ((((st64) Rt) & 0xff ...;
-	RzILOpEffect *seq_then_43 = SEQN(4, op_ASSIGN_22, EMPTY(), op_ASSIGN_40, EMPTY());
+	RzILOpEffect *seq_then_43 = SEQN(2, op_ASSIGN_22, op_ASSIGN_40);
 
 	// seq(nop);
 	RzILOpEffect *seq_else_44 = nop_42;
@@ -243,7 +237,7 @@ RzILOpEffect *hex_il_op_c2_ccombinewnewf(HexInsnPktBundle *bundle) {
 	RzILOpEffect *nop_42 = NOP();
 
 	// seq(Rdd = ((Rdd & (~(0xffffffff << 0x0))) | ((((st64) Rt) & 0xff ...;
-	RzILOpEffect *seq_then_43 = SEQN(4, op_ASSIGN_22, EMPTY(), op_ASSIGN_40, EMPTY());
+	RzILOpEffect *seq_then_43 = SEQN(2, op_ASSIGN_22, op_ASSIGN_40);
 
 	// seq(nop);
 	RzILOpEffect *seq_else_44 = nop_42;
@@ -292,7 +286,7 @@ RzILOpEffect *hex_il_op_c2_ccombinewnewt(HexInsnPktBundle *bundle) {
 	RzILOpEffect *nop_41 = NOP();
 
 	// seq(Rdd = ((Rdd & (~(0xffffffff << 0x0))) | ((((st64) Rt) & 0xff ...;
-	RzILOpEffect *seq_then_42 = SEQN(4, op_ASSIGN_21, EMPTY(), op_ASSIGN_39, EMPTY());
+	RzILOpEffect *seq_then_42 = SEQN(2, op_ASSIGN_21, op_ASSIGN_39);
 
 	// seq(nop);
 	RzILOpEffect *seq_else_43 = nop_41;
@@ -340,7 +334,7 @@ RzILOpEffect *hex_il_op_c2_ccombinewt(HexInsnPktBundle *bundle) {
 	RzILOpEffect *nop_41 = NOP();
 
 	// seq(Rdd = ((Rdd & (~(0xffffffff << 0x0))) | ((((st64) Rt) & 0xff ...;
-	RzILOpEffect *seq_then_42 = SEQN(4, op_ASSIGN_21, EMPTY(), op_ASSIGN_39, EMPTY());
+	RzILOpEffect *seq_then_42 = SEQN(2, op_ASSIGN_21, op_ASSIGN_39);
 
 	// seq(nop);
 	RzILOpEffect *seq_else_43 = nop_41;
@@ -710,7 +704,7 @@ RzILOpEffect *hex_il_op_c2_mask(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_34 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_32));
 
 	// seq(h_tmp153; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8)) ...;
-	RzILOpEffect *seq_36 = SEQN(2, op_ASSIGN_34, EMPTY());
+	RzILOpEffect *seq_36 = op_ASSIGN_34;
 
 	// seq(seq(h_tmp153; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0 ...;
 	RzILOpEffect *seq_37 = SEQN(2, seq_36, seq_8);
@@ -980,7 +974,7 @@ RzILOpEffect *hex_il_op_c2_vmux(HexInsnPktBundle *bundle) {
 	RzILOpEffect *op_ASSIGN_49 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, op_OR_47));
 
 	// seq(h_tmp154; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0x8)) ...;
-	RzILOpEffect *seq_51 = SEQN(2, op_ASSIGN_49, EMPTY());
+	RzILOpEffect *seq_51 = op_ASSIGN_49;
 
 	// seq(seq(h_tmp154; Rdd = ((st64) (((ut64) (Rdd & (~(0xff << i * 0 ...;
 	RzILOpEffect *seq_52 = SEQN(2, seq_51, seq_8);
