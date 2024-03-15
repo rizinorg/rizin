@@ -37,30 +37,24 @@ RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath) {
 }
 
 /**
- * \brief False if overflow detected.
- */
-static inline bool _st64_mult_check_overflow(st64 a, st64 b) {
-	return a == 0 || b >= ST64_MAX / a;
-}
-
-/**
  * \brief Parses the array subscription 'arr[3]'
  * \param typedb
- * \param elem_type Type of array element.
+ * \param arr_type Type of array.
  * \param path String where struct path is stored.
  * \param i Index in path pointing to the subscription bracket '['.
- * \param offset Value to place resulting offset. Set to -1 on error.
+ * \param offset Value to place resulting offset on success. Set to -1 on error.
+ * \return The type (RzType) of array element on success. NULL on error.
  */
-static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RZ_NONNULL RzType *elem_type, RZ_NONNULL const char *path, RZ_NONNULL RZ_INOUT size_t *i, RZ_OUT st64 *offset) {
+static RZ_BORROW RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RZ_BORROW RZ_NONNULL RzType *arr_type, RZ_NONNULL const char *path, RZ_NONNULL RZ_INOUT size_t *i, RZ_OUT st64 *offset) {
 	rz_return_val_if_fail(typedb && path, (*offset = -1, NULL));
 
 	size_t nd = 0;
-	RzType *typd = elem_type;
+	RzType *typd = arr_type;
 	st64 cur_dim_off = 1; // product of all dimension sizes
 	while (typd->kind == RZ_TYPE_KIND_ARRAY) {
 		++nd;
 
-		if (!_st64_mult_check_overflow(cur_dim_off, typd->array.count)) { // check for overflow
+		if (!ST64_MUL_OVFCHK(cur_dim_off, typd->array.count)) { // check for overflow
 			cur_dim_off *= typd->array.count;
 		} else {
 			RZ_LOG_ERROR("Too many array subscriptions\n");
@@ -72,7 +66,7 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RZ_NONNULL RzTy
 	}
 	cur_dim_off *= rz_type_get_base_type(typedb, typd)->size; // elem size in bits
 
-	typd = elem_type;
+	typd = arr_type;
 	for (size_t id = 0; id < nd; ++id) {
 		if (path[*i] != '[') {
 			RZ_LOG_ERROR("Expected '[' got '%c'\n", path[*i]);
@@ -116,8 +110,9 @@ static RzType *path_walker_parse_bracket(const RzTypeDB *typedb, RZ_NONNULL RzTy
  * \param path String where struct path is stored.
  * \param i Index in path pointing to the dot '.'.
  * \param offset Value to place resulting offset on success. Set to -1 on error.
+ * \return On success, the type (RzType) of variable specified by token is returned. If token specifies array, the array's element type is returned. NULL on error.
  */
-static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RZ_NONNULL RzType *parent, RZ_NONNULL const char *path, RZ_NONNULL RZ_INOUT size_t *i, RZ_NONNULL RZ_OUT st64 *offset) {
+static RZ_BORROW RzType *path_walker_parse_dot(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL RzType *parent, RZ_NONNULL RZ_BORROW const char *path, RZ_NONNULL RZ_INOUT size_t *i, RZ_NONNULL RZ_OUT st64 *offset) {
 	rz_return_val_if_fail(typedb && path, (*offset = -1, NULL));
 
 	++*i; // skip '.'
@@ -158,22 +153,13 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RZ_NONNULL RzType *
 
 	*offset += cur_offset;
 	if (path[*i] == '[') {
-		parent = cur_type;
-		if (parent->kind != RZ_TYPE_KIND_ARRAY) {
+		if (cur_type->kind != RZ_TYPE_KIND_ARRAY) {
 			RZ_LOG_ERROR("Expected array, got another type\n");
 			*offset = -1;
 			return NULL;
 		}
 
-		if (!path_walker_parse_bracket(typedb, parent, path, i, offset)) {
-			return NULL;
-		}
-
-		// unwrap array
-		while (parent->kind == RZ_TYPE_KIND_ARRAY) {
-			parent = parent->array.type;
-		}
-		return parent;
+		return path_walker_parse_bracket(typedb, cur_type, path, i, offset);
 	} else if (path[*i] == '.' || path[*i] == '\0') {
 		return cur_type;
 	}
@@ -186,11 +172,9 @@ static RzType *path_walker_parse_dot(const RzTypeDB *typedb, RZ_NONNULL RzType *
  * \brief Walks through the given struct path and returns offset from base.
  * \param typedb
  * \param path Path to walk through (like "Struct.arr[30].member")
- *
- * \brief Splits struct path on tokens and iterates over them.
- * \brief Calls `path_walker_parse_dot` on each.
+ * \return Offset from base.
  */
-static st64 path_walker(const RzTypeDB *typedb, RZ_NONNULL const char *path) {
+static st64 path_walker(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *path) {
 	rz_return_val_if_fail(typedb && path, -1);
 
 	size_t i;
