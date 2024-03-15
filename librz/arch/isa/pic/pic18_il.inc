@@ -60,6 +60,10 @@ static RzILOpEffect *op_and(const char *dst,
 		SETG(dst, VARL("_res")));
 }
 
+static RzILOpEffect *op_skip_if(Pic18Op *op, RzILOpPure *condition) {
+	return BRANCH(condition, JMP(U16(PC + INS_LEN * 2)), NOP());
+}
+
 static RzILOpEffect *pic18_il(Pic18Op *op) {
 	switch (op->code) {
 	case PIC18_OPCODE_ADDLW: return op_add(RW, VRW, U16(K), NULL);
@@ -79,9 +83,9 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 
 	case PIC18_OPCODE_BCF: return regbit_set(RF, B, 0);
 	case PIC18_OPCODE_BSF: return regbit_set(RF, B, 1);
-	case PIC18_OPCODE_BTFSC: break;
-	case PIC18_OPCODE_BTFSS: break;
-	case PIC18_OPCODE_BTG: break;
+	case PIC18_OPCODE_BTG: return regbit_set1(RF, B, INV(bit_get(VRF, B)));
+	case PIC18_OPCODE_BTFSC: return op_skip_if(op, INV(bit_get(VRF, B)));
+	case PIC18_OPCODE_BTFSS: return op_skip_if(op, bit_get(VRF, B));
 
 	case PIC18_OPCODE_COMF: break;
 	case PIC18_OPCODE_CALL: break;
