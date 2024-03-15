@@ -13,7 +13,6 @@
 #define XTENSA_MAX_LENGTH 8
 
 typedef struct {
-	int length_table[16];
 	xtensa_insnbuf insn_buffer;
 	xtensa_insnbuf slot_buffer;
 } XtensaContext;
@@ -21,16 +20,15 @@ typedef struct {
 static bool xtensa_init(void **user) {
 	XtensaContext *ctx = RZ_NEW0(XtensaContext);
 	rz_return_val_if_fail(ctx, false);
-	memcpy(ctx->length_table, (int[16]){ 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 }, sizeof(ctx->length_table));
 	ctx->insn_buffer = NULL;
 	ctx->slot_buffer = NULL;
 	*user = ctx;
 	return true;
 }
 
-static int xtensa_length(RzAnalysis *a, const ut8 *insn) {
-	XtensaContext *ctx = (XtensaContext *)a->plugin_data;
-	return ctx->length_table[*insn & 0xf];
+static int xtensa_length(const ut8 *insn) {
+	static const int length_table[16] = { 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 };
+	return length_table[*insn & 0xf];
 }
 
 static inline ut64 xtensa_offset(ut64 addr, const ut8 *buf) {
@@ -1962,7 +1960,7 @@ static int xtensa_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		return 1;
 	}
 
-	op->size = xtensa_length(analysis, buf_original);
+	op->size = xtensa_length(buf_original);
 	if (op->size > len_original) {
 		return 1;
 	}
