@@ -409,8 +409,8 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
 
-RZ_API void rz_core_view_and_seek_to_bb(RZ_NONNULL RzCore *core);
-RZ_API char *rz_core_filter_command_output(RZ_NONNULL RzCore *core, const char *command, const char *filter);
+RZ_API char *rz_core_filter_string_output(RZ_NONNULL const char *output, const char *filter);
+RZ_API char *rz_core_get_afb_output(RZ_NONNULL RzCore *core);
 
 // #define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core);

@@ -2448,19 +2448,17 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 }
 
 /**
- * \brief Executes a command and returns the filtered output.
+ * \brief Filters the given output string based on the provided filter.
  *
- * \param core Pointer to RzCore instance.
- * \param command Command to be executed.
- * \param filter String used to filter the output.
- * \return Filtered output of the command. Must be freed by the caller.
+ * \param output The output string to be filtered.
+ * \param filter The filter string to be used for filtering the output.
+ * \return char* The filtered output string. The caller is responsible for freeing this string.
  */
-RZ_API char *rz_core_filter_command_output(RZ_NONNULL RzCore *core, const char *command, const char *filter) {
-	rz_return_val_if_fail(core, NULL);
-	char *output = rz_core_cmd_str(core, command);
+RZ_API char *rz_core_filter_string_output(RZ_NONNULL const char *output, const char *filter) {
+	rz_return_val_if_fail(output, NULL);
 	char *filtered_output = NULL;
-
-	RzList *lines = rz_str_split_list(output, "\n", 0);
+	char *output_copy = rz_str_dup(output);
+	RzList *lines = rz_str_split_list(output_copy, "\n", 0);
 	RzListIter *iter;
 	char *line;
 	rz_list_foreach (lines, iter, line) {
@@ -2473,37 +2471,11 @@ RZ_API char *rz_core_filter_command_output(RZ_NONNULL RzCore *core, const char *
 			filtered_output = rz_str_append(filtered_output, line);
 		}
 	}
-
-	RZ_FREE(output);
+	RZ_FREE(output_copy);
 	return filtered_output;
 }
 
-/**
- * \brief Seeks to any basic block of the current function.
- *
- * \param core The RzCore instance.
- */
-RZ_API void rz_core_view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
-	rz_return_if_fail(core);
-	char *output = rz_core_filter_command_output(core, "afb", "");
-	if (output) {
-		rz_cons_println(output);
-		rz_cons_flush();
-		char *input = rz_cons_input("Seek to address: ");
-		ut64 addr = strtoull(input, NULL, 16);
-		free(input);
-		RZ_FREE(output);
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-		if (fcn) {
-			RzAnalysisBlock *bb;
-			void **iter;
-			rz_pvector_foreach (fcn->bbs, iter) {
-				bb = *iter;
-				if (bb->addr <= addr && addr < bb->addr + bb->size) {
-					rz_core_seek(core, addr, true);
-					break;
-				}
-			}
-		}
-	}
+RZ_API char *rz_core_get_afb_output(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, NULL);
+	return rz_core_cmd_str(core, "afb");
 }
