@@ -215,6 +215,8 @@ jobs:
         run: |
           export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/Library/Python/3.12/bin:${HOME}/.local/bin:${PATH}
           if [ "$ASAN" == "true" ]; then
+            # Work-around ASAN bug https://github.com/google/sanitizers/issues/1716
+            sudo sysctl vm.mmap_rnd_bits=28
             export CFLAGS="-DASAN=1 ${CFLAGS}"
             if [ "$CC" == "clang" ]; then
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
@@ -245,6 +247,8 @@ jobs:
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           if [ "$ASAN" == "true" ]; then
+            # Work-aroud ASAN bug https://github.com/google/sanitizers/issues/1716
+            sudo sysctl vm.mmap_rnd_bits=28
             if [ "$CC" == "clang" ]; then
               export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
@@ -277,6 +281,8 @@ jobs:
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           if [ "$ASAN" == "true" ]; then
+            # Work-aroud ASAN bug https://github.com/google/sanitizers/issues/1716
+            sudo sysctl vm.mmap_rnd_bits=28
             if [ "$CC" == "clang" ]; then
               export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
@@ -302,6 +308,8 @@ jobs:
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           if [ "$ASAN" == "true" ] && [ "$CC" == "clang" ]; then
+            # Work-aroud ASAN bug https://github.com/google/sanitizers/issues/1716
+            sudo sysctl vm.mmap_rnd_bits=28
             export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
           fi
           cd test
