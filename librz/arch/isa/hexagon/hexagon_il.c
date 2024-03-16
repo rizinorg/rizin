@@ -854,6 +854,7 @@ RzILOpPure *hex_get_corresponding_cs(RZ_BORROW HexPkt *pkt, const HexOp *Mu) {
 }
 
 RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
+	rz_bv_free(stats->slot_cancelled);
 	rz_bv_free(stats->ctr_written);
 	rz_bv_free(stats->gpr_written);
 	rz_bv_free(stats->pred_written);
@@ -863,6 +864,7 @@ RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
 	rz_bv_free(stats->ctr_tmp_read);
 	rz_bv_free(stats->gpr_tmp_read);
 	rz_bv_free(stats->pred_tmp_read);
+	stats->slot_cancelled = rz_bv_new(32);
 	stats->ctr_written = rz_bv_new(64);
 	stats->gpr_written = rz_bv_new(64);
 	stats->pred_written = rz_bv_new(32);
