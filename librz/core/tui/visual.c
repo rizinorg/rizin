@@ -1901,6 +1901,42 @@ static bool insert_mode_enabled(RzCore *core) {
 	return true;
 }
 
+/**
+ * \brief Seeks to any basic block of the current function.
+ *
+ * \param core The RzCore instance.
+ */
+static void view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	char *afb_output = rz_core_get_afb_output(core);
+	char *output = rz_core_filter_string_output(afb_output, "");
+	RZ_FREE(afb_output);
+	if (output) {
+		rz_cons_println(output);
+		rz_cons_flush();
+		char *input = rz_cons_input("Seek to address: ");
+		if (!input || input[0] == '\0') {
+			return;
+		}
+		ut64 addr = strtoull(input, NULL, 16);
+		RZ_FREE(input);
+		RZ_FREE(output);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+		if (!fcn) {
+			return;
+		}
+		RzAnalysisBlock *bb;
+		void **iter;
+		rz_pvector_foreach (fcn->bbs, iter) {
+			bb = *iter;
+			if (bb->addr <= addr && addr < bb->addr + bb->size) {
+				rz_core_seek(core, addr, true);
+				break;
+			}
+		}
+	}
+}
+
 RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 	const char *browsemsg =
 		"Browse stuff:\n"
@@ -1987,7 +2023,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_debug_switch_to_first_thread(core->dbg);
 			break;
 		case 'b':
-			rz_core_view_and_seek_to_bb(core);
+			view_and_seek_to_bb(core);
 			break;
 		case 'i':
 			// XXX ii shows index first and iiq shows no offset :(
