@@ -3,7 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-15 06:38:05-05:00
+// Date of code generation: 2024-03-16 00:50:15-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -288,7 +288,7 @@ RzILOpEffect *hex_il_op_f2_dfadd(HexInsnPktBundle *bundle) {
 	RzILOpPure *Rtt = READ_REG(pkt, Rtt_op, false);
 
 	// Rdd = ((st64) fUNDOUBLE(DOUBLE(RZ_FLOAT_IEEE754_BIN_64, ((ut64) Rss)) + DOUBLE(RZ_FLOAT_IEEE754_BIN_64, ((ut64) Rtt))));
-	RzILOpPure *op_ADD_7 = FADD(RZ_FLOAT_IEEE754_BIN_64, BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rss)), BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rtt)));
+	RzILOpPure *op_ADD_7 = FADD(HEX_GET_INSN_RMODE(hi), BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rss)), BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rtt)));
 	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, F2BV(op_ADD_7)));
 
 	RzILOpEffect *instruction_sequence = op_ASSIGN_10;
@@ -518,7 +518,7 @@ RzILOpEffect *hex_il_op_f2_dfsub(HexInsnPktBundle *bundle) {
 	RzILOpPure *Rtt = READ_REG(pkt, Rtt_op, false);
 
 	// Rdd = ((st64) fUNDOUBLE(DOUBLE(RZ_FLOAT_IEEE754_BIN_64, ((ut64) Rss)) - DOUBLE(RZ_FLOAT_IEEE754_BIN_64, ((ut64) Rtt))));
-	RzILOpPure *op_SUB_7 = FSUB(RZ_FLOAT_IEEE754_BIN_64, BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rss)), BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rtt)));
+	RzILOpPure *op_SUB_7 = FSUB(HEX_GET_INSN_RMODE(hi), BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rss)), BV2F(RZ_FLOAT_IEEE754_BIN_64, CAST(64, IL_FALSE, Rtt)));
 	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, Rdd_op, CAST(64, IL_FALSE, F2BV(op_SUB_7)));
 
 	RzILOpEffect *instruction_sequence = op_ASSIGN_10;
@@ -537,7 +537,7 @@ RzILOpEffect *hex_il_op_f2_sfadd(HexInsnPktBundle *bundle) {
 	RzILOpPure *Rt = READ_REG(pkt, Rt_op, false);
 
 	// Rd = ((st32) fUNFLOAT(FLOAT(RZ_FLOAT_IEEE754_BIN_32, ((ut32) Rs)) + FLOAT(RZ_FLOAT_IEEE754_BIN_32, ((ut32) Rt))));
-	RzILOpPure *op_ADD_7 = FADD(RZ_FLOAT_IEEE754_BIN_32, BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rs)), BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rt)));
+	RzILOpPure *op_ADD_7 = FADD(HEX_GET_INSN_RMODE(hi), BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rs)), BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rt)));
 	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, F2BV(op_ADD_7)));
 
 	RzILOpEffect *instruction_sequence = op_ASSIGN_10;
@@ -744,7 +744,7 @@ RzILOpEffect *hex_il_op_f2_sfsub(HexInsnPktBundle *bundle) {
 	RzILOpPure *Rt = READ_REG(pkt, Rt_op, false);
 
 	// Rd = ((st32) fUNFLOAT(FLOAT(RZ_FLOAT_IEEE754_BIN_32, ((ut32) Rs)) - FLOAT(RZ_FLOAT_IEEE754_BIN_32, ((ut32) Rt))));
-	RzILOpPure *op_SUB_7 = FSUB(RZ_FLOAT_IEEE754_BIN_32, BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rs)), BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rt)));
+	RzILOpPure *op_SUB_7 = FSUB(HEX_GET_INSN_RMODE(hi), BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rs)), BV2F(RZ_FLOAT_IEEE754_BIN_32, CAST(32, IL_FALSE, Rt)));
 	RzILOpEffect *op_ASSIGN_10 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, F2BV(op_SUB_7)));
 
 	RzILOpEffect *instruction_sequence = op_ASSIGN_10;
