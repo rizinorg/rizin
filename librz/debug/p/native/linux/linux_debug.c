@@ -706,7 +706,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	return true;
 }
 
-RZ_API RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RzDebug *dbg, int main_pid) {
+RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
 	RzList *list = rz_list_new();
 	if (list) {
 		list = linux_thread_list(dbg, main_pid, list);
@@ -872,6 +872,53 @@ RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *li
 	return list;
 }
 
+static int thread_find(int *tid, RzDebugPid *t, void *user) {
+	return (t && (t->pid == *tid)) ? 0 : 1;
+}
+
+RZ_API RZ_OWN RzDebugPid /*<RzDebugPid *>*/ *rz_debug_get_thread(RzList *th_list, int tid) {
+	if (!th_list) {
+		return NULL;
+	}
+
+	RzListIter *it = rz_list_find(th_list, (const void *)(size_t)&tid,
+		(RzListComparator)&thread_find, NULL);
+	if (!it) {
+		return NULL;
+	}
+	return (RzDebugPid *)rz_list_iter_get_data(it);
+}
+
+RZ_API RZ_OWN ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
+	ut64 tls = 0;
+	int prev_tid = dbg->tid;
+
+	if (dbg->tid != tid) {
+		linux_attach_single_pid(dbg, tid);
+		dbg->tid = tid;
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+	}
+
+	RzRegItem *ri = rz_reg_get(dbg->reg, "fs", RZ_REG_TYPE_ANY);
+	RZ_DEBUG_REG_T regs;
+	// Fetch gs_base from a ptrace call
+	if (ri == NULL && !strcmp(dbg->arch, "x86")) {
+		if (rz_debug_ptrace(dbg, PTRACE_GETREGS, dbg->tid, NULL, &regs) != -1) {
+			tls = regs.gs_base;
+		}
+	} else {
+		tls = rz_reg_get_value(dbg->reg, ri);
+	}
+
+	// Must execute this block everytime
+	if (dbg->tid != tid) {
+		linux_attach_single_pid(dbg, prev_tid);
+		dbg->tid = prev_tid;
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+	}
+	return tls;
+}
+
 RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<RzDebugPid *>*/ *list) {
 	int i = 0, thid = 0;
 	char *ptr, buf[PATH_MAX];
@@ -933,7 +980,6 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 			} else {
 				tls = rz_reg_get_value(dbg->reg, ri);
 			}
-			// int ret_3 = rz_debug_ptrace(dbg, PTRACE_ARCH_PRCTL, dbg->pid, NULL, &gs);
 
 			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
 				// Get information about pid (status, pc, etc.)
@@ -946,7 +992,7 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 			pid_info->tls = tls;
 			rz_list_append(list, pid_info);
 		}
-		dbg->n_threads = list->length;
+		dbg->n_threads = rz_list_length(list);
 		closedir(dh);
 		// Return to the original thread
 		linux_attach_single_pid(dbg, prev_tid);

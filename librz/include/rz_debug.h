@@ -410,7 +410,7 @@ typedef struct rz_debug_pid_t {
 	int uid;
 	int gid;
 	ut64 pc;
-	ut64 tls; ///< Thread local storage base used for accessing thread specific variables
+	ut64 tls; ///< Thread local storage base (used for accessing thread specific variables)
 } RzDebugPid;
 
 typedef struct rz_backtrace_t {
@@ -466,6 +466,9 @@ RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char sta
 RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid);
 RZ_API RzList /*<RzDebugPid *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
 RZ_API RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RzDebug *dbg, int main_pid);
+RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid);
+RZ_API RZ_OWN ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid);
+RZ_API RZ_OWN RzDebugPid /*<RzDebugPid *>*/ *rz_debug_get_thread(RzList *th_list, int tid);
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);
 RZ_API bool rz_debug_use(RzDebug *dbg, const char *str);

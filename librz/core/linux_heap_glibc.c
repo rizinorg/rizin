@@ -221,25 +221,6 @@ error:
 	return version;
 }
 
-static RzList *GH(fetch_tls_address_list)(RzDebug *dbg) {
-	RzList *t_list = NULL;
-
-	if (!dbg->threads) {
-		return t_list;
-	}
-
-	RzDebugPid *th;
-	RzListIter *it;
-
-	rz_list_foreach (dbg->threads, it, th) {
-		if (dbg->pid == th->pid && !th->tls) {
-			return get_pid_thread_list(dbg, dbg->pid);
-		}
-	}
-
-	return t_list;
-}
-
 static GHT GH(read_val)(RzCore *core, const void *src, bool is_big_endian) {
 	if (SZ == RZ_SYS_BITS_16) {
 		return rz_read_ble16(src, is_big_endian);
@@ -808,7 +789,6 @@ static bool GH(parse_tcache_from_addr)(RzCore *core, GHT tls_addr, GHT tid) {
 	RzDebugMap *map;
 	RzListIter *iter;
 	ut8 tcache_addr[8] = { 0 };
-	bool is_parsed = false;
 	GH(RTcache) *tcache_heap = NULL;
 
 	rz_list_foreach (core->dbg->maps, iter, map) {
@@ -838,60 +818,65 @@ static bool GH(parse_tcache_from_addr)(RzCore *core, GHT tls_addr, GHT tid) {
 	}
 	if (tcache_heap != NULL) {
 		RzList *bins = GH(fill_tcache_entries)(core, tcache_heap);
-
 		GH(print_tcache)
 		(core, bins, NULL, tid);
 		GH(tcache_free)
 		(tcache_heap);
 		tcache_heap = NULL;
-		is_parsed = true;
+		return true;
 	}
 
-	return is_parsed;
+	return false;
 }
 
-static void GH(parse_tls_data)(RzCore *core, RzDebugPid *th, GHT tid) {
+static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid) {
 	GHT tls_addr = GHT_MAX;
-	ut8 dtv[8] = { 0 };
+	ut8 dtv[sizeof(GHT)] = { 0 };
 
 	rz_io_nread_at(core->io, th->tls + (SZ), dtv, sizeof(GHT));
 	GHT addr = GH(read_val)(core, dtv, false);
 	memset(dtv, 0, sizeof(dtv));
-	/*
-	 * size of dtv is SZ*2
-	 */
+	// size of dtv is SZ*2
 	rz_io_nread_at(core->io, addr + (SZ * 2), dtv, sizeof(GHT));
 	addr = GH(read_val)(core, dtv, false);
 	rz_debug_map_sync(core->dbg);
-	GHT end = addr + 0x10 * (SZ * 2);
-	/*
-	 * Parse tls data and check if it complies with tcache struct
-	 */
+	GHT end = addr + (0x10 * (SZ * 2));
+	// Parse tls data and check if it complies with tcache struct
 	for (tls_addr = addr; tls_addr <= end; tls_addr += SZ) {
 		if (GH(parse_tcache_from_addr)(core, tls_addr, tid)) {
-			return;
+			return true;
 		}
 	}
+
+	return false;
 }
 
 RZ_API bool GH(resolve_heap_tcache)(RzCore *core, MallocState *main_arena) {
 	RzDebugPid *th;
 	RzListIter *it;
 	GHT tid = 1;
+	RzDebug *dbg = core->dbg;
 
-	RzList *list = GH(fetch_tls_address_list)(core->dbg);
-	if (!list) {
+	if (!dbg->threads) {
 		rz_cons_printf("Can't parse tcache metadata\n");
 		free(main_arena);
 		return false;
 	}
 
-	rz_list_foreach (list, it, th) {
+	rz_list_foreach (dbg->threads, it, th) {
+		// First try: fetch tls value and update debug pid
 		if (!th->tls) {
-			continue;
+			th->tls = get_linux_tls_val(core->dbg, th->pid);
 		}
-		GH(parse_tls_data)
-		(core, th, tid++);
+		if (!GH(parse_tls_data)(core, th, tid++)) {
+			// Second try: Update the thread list if the tls parsing fails.
+			RzList *thread_list = get_pid_thread_list(dbg, dbg->pid);
+			RzDebugPid *thread_dbg = rz_debug_get_thread(thread_list, th->pid);
+			if (thread_dbg) {
+				GH(parse_tls_data)
+				(core, thread_dbg, tid);
+			}
+		}
 	}
 
 	return true;
