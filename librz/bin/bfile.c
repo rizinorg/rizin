@@ -410,6 +410,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin 
 		if (bin->verbose) {
 			RZ_LOG_WARN("rz_bin_file_hash: file exceeds bin.hashlimit\n");
 		}
+		rz_buf_free(buf);
 		return NULL;
 	}
 	file_hashes = rz_pvector_new((RzPVectorFree)rz_bin_file_hash_free);
