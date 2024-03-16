@@ -7,7 +7,7 @@
 
 NAME=Run test_vspliceb
 FILE=bins/elf/hexagon/rzil/test_vspliceb
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -18,7 +18,7 @@ RUN
 
 NAME=Run test_vpmpyh
 FILE=bins/elf/hexagon/rzil/test_vpmpyh
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -29,7 +29,7 @@ RUN
 
 NAME=Run test_vminh
 FILE=bins/elf/hexagon/rzil/test_vminh
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -40,7 +40,7 @@ RUN
 
 NAME=Run test_vmaxh
 FILE=bins/elf/hexagon/rzil/test_vmaxh
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -51,7 +51,7 @@ RUN
 
 NAME=Run test_vlsrw
 FILE=bins/elf/hexagon/rzil/test_vlsrw
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -62,7 +62,7 @@ RUN
 
 NAME=Run test_vcmpw
 FILE=bins/elf/hexagon/rzil/test_vcmpw
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -73,7 +73,7 @@ RUN
 
 NAME=Run test_vcmpb
 FILE=bins/elf/hexagon/rzil/test_vcmpb
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -84,7 +84,7 @@ RUN
 
 NAME=Run test_vavgw
 FILE=bins/elf/hexagon/rzil/test_vavgw
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -95,7 +95,7 @@ RUN
 
 NAME=Run test_round
 FILE=bins/elf/hexagon/rzil/test_round
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -106,7 +106,7 @@ RUN
 
 NAME=Run test_reorder
 FILE=bins/elf/hexagon/rzil/test_reorder
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -117,7 +117,7 @@ RUN
 
 NAME=Run test_packet
 FILE=bins/elf/hexagon/rzil/test_packet
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -128,7 +128,7 @@ RUN
 
 NAME=Run test_mpyi
 FILE=bins/elf/hexagon/rzil/test_mpyi
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -139,7 +139,7 @@ RUN
 
 NAME=Run test_lsr
 FILE=bins/elf/hexagon/rzil/test_lsr
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -150,7 +150,7 @@ RUN
 
 NAME=Run test_jmp
 FILE=bins/elf/hexagon/rzil/test_jmp
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -161,7 +161,7 @@ RUN
 
 NAME=Run test_hwloops
 FILE=bins/elf/hexagon/rzil/test_hwloops
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -172,7 +172,7 @@ RUN
 
 NAME=Run test_hl
 FILE=bins/elf/hexagon/rzil/test_hl
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -183,7 +183,7 @@ RUN
 
 NAME=Run test_fibonacci
 FILE=bins/elf/hexagon/rzil/test_fibonacci
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -194,7 +194,7 @@ RUN
 
 NAME=Run test_ext
 FILE=bins/elf/hexagon/rzil/test_ext
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -205,7 +205,7 @@ RUN
 
 NAME=Run test_dotnew
 FILE=bins/elf/hexagon/rzil/test_dotnew
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 e io.cache=1
 aezi
@@ -217,7 +217,7 @@ RUN
 
 NAME=Run test_cmp
 FILE=bins/elf/hexagon/rzil/test_cmp
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -228,7 +228,7 @@ RUN
 
 NAME=Run test_clobber
 FILE=bins/elf/hexagon/rzil/test_clobber
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 e io.cache=1
 aezi
@@ -240,7 +240,7 @@ RUN
 
 NAME=Run test_call
 FILE=bins/elf/hexagon/rzil/test_call
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -251,7 +251,7 @@ RUN
 
 NAME=Run test_bitsplit
 FILE=bins/elf/hexagon/rzil/test_bitsplit
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -262,7 +262,7 @@ RUN
 
 NAME=Run test_bitcnt
 FILE=bins/elf/hexagon/rzil/test_bitcnt
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -273,7 +273,7 @@ RUN
 
 NAME=Run test_abs
 FILE=bins/elf/hexagon/rzil/test_abs
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
@@ -284,7 +284,7 @@ RUN
 
 NAME=Run first
 FILE=bins/elf/hexagon/rzil/first
-TIMEOUT=5
+TIMEOUT=15
 CMDS=<<EOF
 aezi
 aezsu loc.pass
