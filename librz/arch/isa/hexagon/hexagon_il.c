@@ -3,7 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 00:50:15-05:00
+// Date of code generation: 2024-03-16 06:22:39-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -408,9 +408,9 @@ RZ_IPI RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op) {
 		rz_pvector_push(p->il_ops, &hex_endloop01_op);
 	}
 
+	rz_pvector_push(p->il_ops, &hex_pkt_commit);
 	// Add a jump to the next packet.
 	rz_pvector_push(p->il_ops, &hex_next_jump_to_next_pkt);
-	rz_pvector_push(p->il_ops, &hex_pkt_commit);
 
 	check_for_jumps(p, &might_has_jumped);
 
@@ -864,7 +864,7 @@ RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
 	rz_bv_free(stats->ctr_tmp_read);
 	rz_bv_free(stats->gpr_tmp_read);
 	rz_bv_free(stats->pred_tmp_read);
-	stats->slot_cancelled = rz_bv_new(32);
+	stats->slot_cancelled = rz_bv_new(64);
 	stats->ctr_written = rz_bv_new(64);
 	stats->gpr_written = rz_bv_new(64);
 	stats->pred_written = rz_bv_new(32);

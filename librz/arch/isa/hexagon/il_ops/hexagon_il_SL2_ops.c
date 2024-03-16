@@ -3,7 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 00:50:15-05:00
+// Date of code generation: 2024-03-16 06:22:39-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -64,7 +64,7 @@ RzILOpEffect *hex_il_op_sl2_jumpr31(HexInsnPktBundle *bundle) {
 	RzILOpPure *lr = READ_REG(pkt, &lr_op, false);
 
 	// jump(lr);
-	RzILOpEffect *jump_lr_1 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(lr));
+	RzILOpEffect *jump_lr_1 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", lr));
 
 	RzILOpEffect *instruction_sequence = jump_lr_1;
 	return instruction_sequence;
@@ -80,7 +80,7 @@ RzILOpEffect *hex_il_op_sl2_jumpr31_f(HexInsnPktBundle *bundle) {
 	RzILOpPure *lr = READ_REG(pkt, &lr_op, false);
 
 	// jump(lr);
-	RzILOpEffect *jump_lr_7 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(lr));
+	RzILOpEffect *jump_lr_7 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", lr));
 
 	// seq(jump(lr));
 	RzILOpEffect *seq_then_9 = jump_lr_7;
@@ -104,7 +104,7 @@ RzILOpEffect *hex_il_op_sl2_jumpr31_fnew(HexInsnPktBundle *bundle) {
 	RzILOpPure *lr = READ_REG(pkt, &lr_op, false);
 
 	// jump(lr);
-	RzILOpEffect *jump_lr_7 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(lr));
+	RzILOpEffect *jump_lr_7 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", lr));
 
 	// seq(jump(lr));
 	RzILOpEffect *seq_then_9 = jump_lr_7;
@@ -128,7 +128,7 @@ RzILOpEffect *hex_il_op_sl2_jumpr31_t(HexInsnPktBundle *bundle) {
 	RzILOpPure *lr = READ_REG(pkt, &lr_op, false);
 
 	// jump(lr);
-	RzILOpEffect *jump_lr_6 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(lr));
+	RzILOpEffect *jump_lr_6 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", lr));
 
 	// seq(jump(lr));
 	RzILOpEffect *seq_then_8 = jump_lr_6;
@@ -151,7 +151,7 @@ RzILOpEffect *hex_il_op_sl2_jumpr31_tnew(HexInsnPktBundle *bundle) {
 	RzILOpPure *lr = READ_REG(pkt, &lr_op, false);
 
 	// jump(lr);
-	RzILOpEffect *jump_lr_6 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(lr));
+	RzILOpEffect *jump_lr_6 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", lr));
 
 	// seq(jump(lr));
 	RzILOpEffect *seq_then_8 = jump_lr_6;
@@ -335,7 +335,7 @@ RzILOpEffect *hex_il_op_sl2_return(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((tmp >> 0x20) & ((ut64) 0xffffffff))))));
 	RzILOpPure *op_RSHIFT_45 = SHIFTR0(VARL("tmp"), SN(32, 0x20));
 	RzILOpPure *op_AND_48 = LOGAND(op_RSHIFT_45, CAST(64, IL_FALSE, SN(64, 0xffffffff)));
-	RzILOpEffect *jump_cast_ut32_51_52 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_48)), CAST(32, IL_FALSE, DUP(op_AND_48))))));
+	RzILOpEffect *jump_cast_ut32_51_52 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_48)), CAST(32, IL_FALSE, DUP(op_AND_48))))));
 
 	RzILOpEffect *instruction_sequence = SEQN(7, op_ASSIGN_3, op_ASSIGN_7, op_ASSIGN_13, op_ASSIGN_25, op_ASSIGN_36, op_ASSIGN_41, jump_cast_ut32_51_52);
 	return instruction_sequence;
@@ -384,7 +384,7 @@ RzILOpEffect *hex_il_op_sl2_return_f(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((tmp >> 0x20) & ((ut64) 0xffffffff))))));
 	RzILOpPure *op_RSHIFT_52 = SHIFTR0(VARL("tmp"), SN(32, 0x20));
 	RzILOpPure *op_AND_55 = LOGAND(op_RSHIFT_52, CAST(64, IL_FALSE, SN(64, 0xffffffff)));
-	RzILOpEffect *jump_cast_ut32_58_59 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_55)), CAST(32, IL_FALSE, DUP(op_AND_55))))));
+	RzILOpEffect *jump_cast_ut32_58_59 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_55)), CAST(32, IL_FALSE, DUP(op_AND_55))))));
 
 	// nop;
 	RzILOpEffect *nop_61 = NOP();
@@ -447,7 +447,7 @@ RzILOpEffect *hex_il_op_sl2_return_fnew(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((tmp >> 0x20) & ((ut64) 0xffffffff))))));
 	RzILOpPure *op_RSHIFT_51 = SHIFTR0(VARL("tmp"), SN(32, 0x20));
 	RzILOpPure *op_AND_54 = LOGAND(op_RSHIFT_51, CAST(64, IL_FALSE, SN(64, 0xffffffff)));
-	RzILOpEffect *jump_cast_ut32_57_58 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_54)), CAST(32, IL_FALSE, DUP(op_AND_54))))));
+	RzILOpEffect *jump_cast_ut32_57_58 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_54)), CAST(32, IL_FALSE, DUP(op_AND_54))))));
 
 	// nop;
 	RzILOpEffect *nop_60 = NOP();
@@ -510,7 +510,7 @@ RzILOpEffect *hex_il_op_sl2_return_t(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((tmp >> 0x20) & ((ut64) 0xffffffff))))));
 	RzILOpPure *op_RSHIFT_51 = SHIFTR0(VARL("tmp"), SN(32, 0x20));
 	RzILOpPure *op_AND_54 = LOGAND(op_RSHIFT_51, CAST(64, IL_FALSE, SN(64, 0xffffffff)));
-	RzILOpEffect *jump_cast_ut32_57_58 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_54)), CAST(32, IL_FALSE, DUP(op_AND_54))))));
+	RzILOpEffect *jump_cast_ut32_57_58 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_54)), CAST(32, IL_FALSE, DUP(op_AND_54))))));
 
 	// nop;
 	RzILOpEffect *nop_60 = NOP();
@@ -572,7 +572,7 @@ RzILOpEffect *hex_il_op_sl2_return_tnew(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((tmp >> 0x20) & ((ut64) 0xffffffff))))));
 	RzILOpPure *op_RSHIFT_50 = SHIFTR0(VARL("tmp"), SN(32, 0x20));
 	RzILOpPure *op_AND_53 = LOGAND(op_RSHIFT_50, CAST(64, IL_FALSE, SN(64, 0xffffffff)));
-	RzILOpEffect *jump_cast_ut32_56_57 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_53)), CAST(32, IL_FALSE, DUP(op_AND_53))))));
+	RzILOpEffect *jump_cast_ut32_56_57 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, IL_FALSE, op_AND_53)), CAST(32, IL_FALSE, DUP(op_AND_53))))));
 
 	// nop;
 	RzILOpEffect *nop_59 = NOP();
