@@ -980,6 +980,11 @@ VALIDATOR_EFFECT(seq) {
 	VALIDATOR_DESCEND_EFFECT(args->x, &tx, ctx, {});
 	RzILTypeEffect ty;
 	VALIDATOR_DESCEND_EFFECT(args->y, &ty, ctx, {});
+	// Code after a jmp/goto makes no sense because the jmp naturally jumps somewhere else already.
+	// Intuitively, this could be considered just dead code and valid, but because it is not practically useful,
+	// we reject such code completely for now, which gives us more freedom if in the future we do want to define
+	// semantics for code after ctrl in some way.
+	VALIDATOR_ASSERT(!(tx & RZ_IL_TYPE_EFFECT_CTRL) || !ty, "Encountered further effects after a ctrl effect in seq op.");
 	*type_out = tx | ty;
 	return true;
 }
