@@ -107,6 +107,21 @@ Use `-Db_sanitize=address,undefined` during the setup phase.
 $ meson --buildtype=release -Db_sanitize=address,undefined build
 ```
 
+*Note*: Due to [a bug](https://github.com/google/sanitizers/issues/1716) in ASAN,
+ASAN built binaries will crash or endlessly loop randomly, and only report
+`AddressSanitizer:DEADLYSIGNAL`.
+This also effects the build of Rizin, because we run an ASAN compiled binary (`sdb`)
+during the build.
+If this binary stays in an endless loop of `AddressSanitizer:DEADLYSIGNAL`,
+the build will hang up and fill up your memory.
+
+To fix this, you need to lower the size of the random offset applied
+to VMA base addresses with:
+
+```sh
+sudo sysctl vm.mmap_rnd_bits=28
+```
+
 ## Build fully-static binaries
 
 It may be useful to run Rizin just by using a single file, which can be
