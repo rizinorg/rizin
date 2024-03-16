@@ -3,7 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 00:50:15-05:00
+// Date of code generation: 2024-03-16 06:22:39-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -105,14 +105,14 @@ RzILOpEffect *hex_il_op_j2_endloop01(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_42 = SEQN(2, seq_3, branch_41);
 
 	// jump(sa0);
-	RzILOpEffect *jump_sa0_48 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(sa0));
+	RzILOpEffect *jump_sa0_48 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", sa0));
 
 	// lc0 = lc0 - ((ut32) 0x1);
 	RzILOpPure *op_SUB_52 = SUB(READ_REG(pkt, &lc0_op, true), CAST(32, IL_FALSE, SN(32, 1)));
 	RzILOpEffect *op_ASSIGN_53 = WRITE_REG(bundle, &lc0_op, op_SUB_52);
 
 	// jump(sa1);
-	RzILOpEffect *jump_sa1_59 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(sa1));
+	RzILOpEffect *jump_sa1_59 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", sa1));
 
 	// lc1 = lc1 - ((ut32) 0x1);
 	RzILOpPure *op_SUB_63 = SUB(READ_REG(pkt, &lc1_op, true), CAST(32, IL_FALSE, SN(32, 1)));
@@ -148,7 +148,7 @@ RzILOpEffect *hex_il_op_j2_endloop1(HexInsnPktBundle *bundle) {
 	RzILOpPure *sa1 = READ_REG(pkt, &sa1_op, false);
 
 	// jump(sa1);
-	RzILOpEffect *jump_sa1_5 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(sa1));
+	RzILOpEffect *jump_sa1_5 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", sa1));
 
 	// lc1 = lc1 - ((ut32) 0x1);
 	RzILOpPure *op_SUB_9 = SUB(READ_REG(pkt, &lc1_op, true), CAST(32, IL_FALSE, SN(32, 1)));
@@ -253,7 +253,7 @@ RzILOpEffect *hex_il_op_j2_endloop0(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_42 = SEQN(2, seq_3, branch_41);
 
 	// jump(sa0);
-	RzILOpEffect *jump_sa0_48 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(sa0));
+	RzILOpEffect *jump_sa0_48 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", sa0));
 
 	// lc0 = lc0 - ((ut32) 0x1);
 	RzILOpPure *op_SUB_52 = SUB(READ_REG(pkt, &lc0_op, true), CAST(32, IL_FALSE, SN(32, 1)));
@@ -954,19 +954,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_jump_flag_init(HexInsnPktBundle *bundle) {
 }
 
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_next_pkt_jmp(HexInsnPktBundle *bundle) {
-	bool has_direct_jump = false;
-	void **it;
-	rz_pvector_foreach (bundle->pkt->il_ops, it) {
-		HexILOp *op = *it;
-		if (op->attr & HEX_IL_INSN_ATTR_BRANCH && !(op->attr & HEX_IL_INSN_ATTR_COND)) {
-			has_direct_jump = true;
-		}
-	}
-	if (!has_direct_jump) {
-		// Append the jump to the adjacent packet.
-		return BRANCH(VARL("jump_flag"), EMPTY(), JMP(U32(bundle->pkt->pkt_addr + (HEX_INSN_SIZE * rz_list_length(bundle->pkt->bin)))));
-	}
-	return EMPTY();
+	return BRANCH(VARL("jump_flag"), JMP(VARL("jump_target")), JMP(U32(bundle->pkt->pkt_addr + (HEX_INSN_SIZE * rz_list_length(bundle->pkt->bin)))));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

@@ -3,7 +3,7 @@
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 00:50:15-05:00
+// Date of code generation: 2024-03-16 06:22:39-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -887,9 +887,9 @@ RzILOpEffect *hex_il_op_l4_loadbsw2_ap(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_48 = SEQN(2, op_ASSIGN_11, for_47);
 
 	// Re = ((st32) U);
-	RzILOpEffect *op_ASSIGN_52 = WRITE_REG(bundle, Re_op, CAST(32, IL_FALSE, VARL("U")));
+	RzILOpEffect *op_ASSIGN_51 = WRITE_REG(bundle, Re_op, CAST(32, IL_FALSE, VARL("U")));
 
-	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_0, op_ASSIGN_3, op_ASSIGN_9, seq_48, op_ASSIGN_52);
+	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_0, op_ASSIGN_3, op_ASSIGN_9, seq_48, op_ASSIGN_51);
 	return instruction_sequence;
 }
 
@@ -1167,9 +1167,9 @@ RzILOpEffect *hex_il_op_l4_loadbzw2_ap(HexInsnPktBundle *bundle) {
 	RzILOpEffect *seq_48 = SEQN(2, op_ASSIGN_11, for_47);
 
 	// Re = ((st32) U);
-	RzILOpEffect *op_ASSIGN_52 = WRITE_REG(bundle, Re_op, CAST(32, IL_FALSE, VARL("U")));
+	RzILOpEffect *op_ASSIGN_51 = WRITE_REG(bundle, Re_op, CAST(32, IL_FALSE, VARL("U")));
 
-	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_0, op_ASSIGN_3, op_ASSIGN_9, seq_48, op_ASSIGN_52);
+	RzILOpEffect *instruction_sequence = SEQN(5, imm_assign_0, op_ASSIGN_3, op_ASSIGN_9, seq_48, op_ASSIGN_51);
 	return instruction_sequence;
 }
 
@@ -4057,7 +4057,7 @@ RzILOpEffect *hex_il_op_l4_return(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((Rdd >> 0x20) & 0xffffffff)))));
 	RzILOpPure *op_RSHIFT_25 = SHIFTRA(READ_REG(pkt, Rdd_op, true), SN(32, 0x20));
 	RzILOpPure *op_AND_27 = LOGAND(op_RSHIFT_25, SN(64, 0xffffffff));
-	RzILOpEffect *jump_cast_ut32_30_31 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_27), DUP(op_AND_27))), CAST(32, MSB(DUP(op_AND_27)), DUP(op_AND_27))))));
+	RzILOpEffect *jump_cast_ut32_30_31 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_27), DUP(op_AND_27))), CAST(32, MSB(DUP(op_AND_27)), DUP(op_AND_27))))));
 
 	RzILOpEffect *instruction_sequence = SEQN(5, op_ASSIGN_4, op_ASSIGN_8, op_ASSIGN_16, op_ASSIGN_21, jump_cast_ut32_30_31);
 	return instruction_sequence;
@@ -4098,7 +4098,7 @@ RzILOpEffect *hex_il_op_l4_return_f(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((Rdd >> 0x20) & 0xffffffff)))));
 	RzILOpPure *op_RSHIFT_31 = SHIFTRA(READ_REG(pkt, Rdd_op, true), SN(32, 0x20));
 	RzILOpPure *op_AND_33 = LOGAND(op_RSHIFT_31, SN(64, 0xffffffff));
-	RzILOpEffect *jump_cast_ut32_36_37 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_33), DUP(op_AND_33))), CAST(32, MSB(DUP(op_AND_33)), DUP(op_AND_33))))));
+	RzILOpEffect *jump_cast_ut32_36_37 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_33), DUP(op_AND_33))), CAST(32, MSB(DUP(op_AND_33)), DUP(op_AND_33))))));
 
 	// nop;
 	RzILOpEffect *nop_39 = NOP();
@@ -4153,7 +4153,7 @@ RzILOpEffect *hex_il_op_l4_return_fnew_pnt(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((Rdd >> 0x20) & 0xffffffff)))));
 	RzILOpPure *op_RSHIFT_31 = SHIFTRA(READ_REG(pkt, Rdd_op, true), SN(32, 0x20));
 	RzILOpPure *op_AND_33 = LOGAND(op_RSHIFT_31, SN(64, 0xffffffff));
-	RzILOpEffect *jump_cast_ut32_36_37 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_33), DUP(op_AND_33))), CAST(32, MSB(DUP(op_AND_33)), DUP(op_AND_33))))));
+	RzILOpEffect *jump_cast_ut32_36_37 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_33), DUP(op_AND_33))), CAST(32, MSB(DUP(op_AND_33)), DUP(op_AND_33))))));
 
 	// nop;
 	RzILOpEffect *nop_39 = NOP();
@@ -4208,7 +4208,7 @@ RzILOpEffect *hex_il_op_l4_return_fnew_pt(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((Rdd >> 0x20) & 0xffffffff)))));
 	RzILOpPure *op_RSHIFT_31 = SHIFTRA(READ_REG(pkt, Rdd_op, true), SN(32, 0x20));
 	RzILOpPure *op_AND_33 = LOGAND(op_RSHIFT_31, SN(64, 0xffffffff));
-	RzILOpEffect *jump_cast_ut32_36_37 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_33), DUP(op_AND_33))), CAST(32, MSB(DUP(op_AND_33)), DUP(op_AND_33))))));
+	RzILOpEffect *jump_cast_ut32_36_37 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_33), DUP(op_AND_33))), CAST(32, MSB(DUP(op_AND_33)), DUP(op_AND_33))))));
 
 	// nop;
 	RzILOpEffect *nop_39 = NOP();
@@ -4263,7 +4263,7 @@ RzILOpEffect *hex_il_op_l4_return_t(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((Rdd >> 0x20) & 0xffffffff)))));
 	RzILOpPure *op_RSHIFT_30 = SHIFTRA(READ_REG(pkt, Rdd_op, true), SN(32, 0x20));
 	RzILOpPure *op_AND_32 = LOGAND(op_RSHIFT_30, SN(64, 0xffffffff));
-	RzILOpEffect *jump_cast_ut32_35_36 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_32), DUP(op_AND_32))), CAST(32, MSB(DUP(op_AND_32)), DUP(op_AND_32))))));
+	RzILOpEffect *jump_cast_ut32_35_36 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_32), DUP(op_AND_32))), CAST(32, MSB(DUP(op_AND_32)), DUP(op_AND_32))))));
 
 	// nop;
 	RzILOpEffect *nop_38 = NOP();
@@ -4317,7 +4317,7 @@ RzILOpEffect *hex_il_op_l4_return_tnew_pnt(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((Rdd >> 0x20) & 0xffffffff)))));
 	RzILOpPure *op_RSHIFT_30 = SHIFTRA(READ_REG(pkt, Rdd_op, true), SN(32, 0x20));
 	RzILOpPure *op_AND_32 = LOGAND(op_RSHIFT_30, SN(64, 0xffffffff));
-	RzILOpEffect *jump_cast_ut32_35_36 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_32), DUP(op_AND_32))), CAST(32, MSB(DUP(op_AND_32)), DUP(op_AND_32))))));
+	RzILOpEffect *jump_cast_ut32_35_36 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_32), DUP(op_AND_32))), CAST(32, MSB(DUP(op_AND_32)), DUP(op_AND_32))))));
 
 	// nop;
 	RzILOpEffect *nop_38 = NOP();
@@ -4371,7 +4371,7 @@ RzILOpEffect *hex_il_op_l4_return_tnew_pt(HexInsnPktBundle *bundle) {
 	// jump(((ut32) ((st64) ((st32) ((Rdd >> 0x20) & 0xffffffff)))));
 	RzILOpPure *op_RSHIFT_30 = SHIFTRA(READ_REG(pkt, Rdd_op, true), SN(32, 0x20));
 	RzILOpPure *op_AND_32 = LOGAND(op_RSHIFT_30, SN(64, 0xffffffff));
-	RzILOpEffect *jump_cast_ut32_35_36 = SEQ2(SETL("jump_flag", IL_TRUE), JMP(CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_32), DUP(op_AND_32))), CAST(32, MSB(DUP(op_AND_32)), DUP(op_AND_32))))));
+	RzILOpEffect *jump_cast_ut32_35_36 = SEQ2(SETL("jump_flag", IL_TRUE), SETL("jump_target", CAST(32, IL_FALSE, CAST(64, MSB(CAST(32, MSB(op_AND_32), DUP(op_AND_32))), CAST(32, MSB(DUP(op_AND_32)), DUP(op_AND_32))))));
 
 	// nop;
 	RzILOpEffect *nop_38 = NOP();
