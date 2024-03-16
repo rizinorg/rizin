@@ -1361,7 +1361,6 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_386_PC8: ADD(8, -P);
 		case RZ_386_COPY: ADD(32, 0); // copy symbol at runtime
 		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
-		case RZ_386_TLS_TPOFF: break;
 		default:
 			RZ_LOG_WARN("unimplemented ELF/X86_32 reloc type %d\n", rel->type);
 			break;
@@ -1386,7 +1385,6 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P);
 		case RZ_X86_64_COPY: ADD(64, 0); // copy symbol at runtime
 		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
-		case RZ_X86_64_TPOFF64: break;
 		default:
 			RZ_LOG_WARN("unimplemented ELF/X86_64 reloc type %d\n", rel->type);
 			break;

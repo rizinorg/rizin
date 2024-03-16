@@ -404,12 +404,10 @@ static bool GH(is_tcache)(RzCore *core) {
 		}
 
 		v = rz_num_get_float(NULL, fp + 5);
-	} else {
-		if (map && is_libc_map) {
-			v = GH(rz_get_glibc_version)(core, map->file, NULL);
-			if (v) {
-				core->dbg->is_glibc_resolved = true;
-			}
+	} else if (map && is_libc_map) {
+		v = GH(rz_get_glibc_version)(core, map->file, NULL);
+		if (v) {
+			core->dbg->is_glibc_resolved = true;
 		}
 	}
 
@@ -851,17 +849,11 @@ static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid)
 	return false;
 }
 
-RZ_API bool GH(resolve_heap_tcache)(RzCore *core, MallocState *main_arena) {
+static void GH(resolve_tcache_perthread)(RZ_NONNULL RzCore *core) {
 	RzDebugPid *th;
 	RzListIter *it;
 	GHT tid = 1;
 	RzDebug *dbg = core->dbg;
-
-	if (!dbg->threads) {
-		rz_cons_printf("Can't parse tcache metadata\n");
-		free(main_arena);
-		return false;
-	}
 
 	rz_list_foreach (dbg->threads, it, th) {
 		// First try: fetch tls value and update debug pid
@@ -878,6 +870,21 @@ RZ_API bool GH(resolve_heap_tcache)(RzCore *core, MallocState *main_arena) {
 			}
 		}
 	}
+}
+
+RZ_API RZ_OWN bool GH(resolve_heap_tcache)(RZ_NONNULL RzCore *core, GHT arena_base) {
+	RzDebug *dbg = core->dbg;
+
+	if (dbg->threads) {
+		GH(resolve_tcache_perthread)
+		(core);
+		return true;
+	}
+
+	// Only main thread is present
+	RzList *bins = GH(rz_heap_tcache_content)(core, arena_base);
+	GH(print_tcache)
+	(core, bins, NULL, 0);
 
 	return true;
 }
@@ -2608,37 +2615,22 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, const char **argv) {
 	GHT m_arena = GHT_MAX;
-	MallocState *main_arena = RZ_NEW0(MallocState);
-	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
-
-	if (!main_arena) {
-		goto cleanup;
-	}
 
 	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
-		goto cleanup;
-	}
-	if (!GH(rz_heap_update_main_arena)(core, m_arena, main_arena)) {
-		goto cleanup;
+		return RZ_CMD_STATUS_ERROR;
 	}
 
 	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!tc) {
 		rz_cons_printf("No tcache present in this version of libc\n");
-		goto cleanup;
+		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!GH(resolve_heap_tcache)(core, main_arena)) {
-		goto cleanup;
+	if (!GH(resolve_heap_tcache)(core, m_arena)) {
+		return RZ_CMD_STATUS_ERROR;
 	}
 
-	status = RZ_CMD_STATUS_OK;
-
-cleanup:
-	if (main_arena) {
-		free(main_arena);
-	}
-	return status;
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI int GH(rz_cmd_heap_bins_list_print)(RzCore *core, const char *input) {
