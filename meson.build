@@ -467,6 +467,9 @@ foreach it : ccs
       ['__builtin_clzll', '', []],
       ['posix_memalign', '#include <stdlib.h>', []],
       ['_aligned_malloc', '#include <malloc.h>', []],
+      ['__builtin_add_overflow_p', '', []],
+      ['__builtin_sub_overflow_p', '', []],
+      ['__builtin_mul_overflow_p', '', []],
     ]
     func = item[0]
     ok = it_cc.has_function(func, prefix: item[1], dependencies: item[2])
