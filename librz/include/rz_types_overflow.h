@@ -2,10 +2,9 @@
 #define RZ_TYPES_OVERFLOW_H
 
 #include <rz_types.h>
+#include <rz_userconf.h>
 
-// TODO: Use CLANG/GCC builtins if available: __builtin_mul_overflow
-
-//Using CLANG/GCC builtins
+// Using compiler builtins when available
 
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
 #define SZT_ADD_OVFCHK(x, y)  __builtin_add_overflow_p (x, y, (__typeof__ ((x) + (y))) 0)
@@ -32,7 +31,6 @@
 #define ST8_ADD_OVFCHK(a, x)  ((((x) > 0) && ((a) > ST8_MAX - (x))) || ((x) < 0 && (a) < ST8_MIN - (x)))
 #endif
 
-
 // SUB
 #ifdef HAVE___BUILTIN_SUB_OVERFLOW
 #define SZT_SUB_OVFCHK(a, b)  __builtin_sub_overflow_p (a, b, (__typeof__ ((a) - (b))) 0)
@@ -57,8 +55,8 @@
 #define UT8_SUB_OVFCHK(a, b)  UT8_ADD_OVFCHK(a, -(b))
 #define ST8_SUB_OVFCHK(a, b)  ST8_ADD_OVFCHK(a, -(b))
 #endif
-// MUL
 
+// MUL
 #define UNSIGNED_MUL_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
 	static inline bool overflow_name(type_base a, type_base b) { \
 		return (a > 0 && b > 0 && a > type_max / b); \

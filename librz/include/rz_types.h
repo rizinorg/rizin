@@ -14,7 +14,6 @@
 #include <inttypes.h>
 #endif
 
-
 // TODO: fix this to make it crosscompile-friendly: RZ_SYS_OSTYPE ?
 /* operating system */
 #undef __BSD__
