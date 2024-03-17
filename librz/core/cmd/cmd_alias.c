@@ -4,7 +4,6 @@
 #include "rz_cmd.h"
 #include "rz_core.h"
 
-// TODO: Refactor out code for $* and $**
 static int rz_cmd_alias(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int i = strlen(input);
@@ -94,20 +93,6 @@ static int rz_cmd_alias(void *data, const char *input) {
 		} else {
 			RZ_LOG_ERROR("core: unknown key '%s'\n", buf);
 		}
-	} else if (buf[1] == '*') {
-		/* Show aliases */
-		int i, count = 0;
-		char **keys = rz_cmd_alias_keys(core->rcmd, &count);
-		for (i = 0; i < count; i++) {
-			char *v = rz_cmd_alias_get(core->rcmd, keys[i], 0);
-			char *q = rz_base64_encode_dyn((const ut8 *)v, strlen(v));
-			if (buf[2] == '*') {
-				rz_cons_printf("%s=%s\n", keys[i], v);
-			} else {
-				rz_cons_printf("%s=base64:%s\n", keys[i], q);
-			}
-			free(q);
-		}
 	} else if (!buf[1]) {
 		int i, count = 0;
 		char **keys = rz_cmd_alias_keys(core->rcmd, &count);
@@ -149,12 +134,27 @@ RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
+static void list_aliases(RzCore *core, bool base64) {
+	int i, count = 0;
+	char **keys = rz_cmd_alias_keys(core->rcmd, &count);
+	for (i = 0; i < count; i++) {
+		char *v = rz_cmd_alias_get(core->rcmd, keys[i], 0);
+		if (base64) {
+			char *q = rz_base64_encode_dyn((const ut8 *)v, strlen(v));
+			rz_cons_printf("%s=base64:%s\n", keys[i], q);
+			free(q);
+		} else {
+			rz_cons_printf("%s=%s\n", keys[i], v);
+		}
+	}
+}
+
 RZ_IPI RzCmdStatus rz_alias_list_cmd_base64_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_alias(core, "*");
+	list_aliases(core, true);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_alias_list_cmd_plain_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_alias(core, "**");
+	list_aliases(core, false);
 	return RZ_CMD_STATUS_OK;
 }
