@@ -72,3 +72,16 @@ rax = 0x0000000000000000
 rax = 0x0000000000000000
 EOF
 RUN
+
+NAME=$* and $**
+FILE=--
+CMDS=<<EOF
+$dis=pdf
+$*
+$**
+EOF
+EXPECT=<<EOF
+$dis=base64:cGRm
+$dis=pdf
+EOF
+RUN
