@@ -1901,38 +1901,53 @@ static bool insert_mode_enabled(RzCore *core) {
 	return true;
 }
 
+static char *rz_get_afb_output(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(core && fcn, NULL);
+	RzAnalysisBlock *bb;
+	void **it;
+	RzStrBuf *buf = rz_strbuf_new("");
+	rz_pvector_foreach (fcn->bbs, it) {
+		bb = *it;
+		rz_strbuf_appendf(buf, "0x%08" PFMT64x " 0x%08" PFMT64x " 00:0000 %" PFMT64u " j 0x%08" PFMT64x " f 0x%08" PFMT64x "\n",
+			bb->addr, bb->addr + bb->size, bb->size, bb->jump, bb->fail);
+	}
+	char *result = rz_strbuf_drain(buf);
+	return result;
+}
+
 /**
  * \brief Seeks to any basic block of the current function.
  *
  * \param core The RzCore instance.
  */
-static void view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
+static void rz_view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
 	rz_return_if_fail(core);
-	char *afb_output = rz_core_get_afb_output(core);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	if (!fcn) {
+		return;
+	}
+	char *afb_output = rz_get_afb_output(core, fcn);
 	char *output = rz_core_filter_string_output(afb_output, "");
 	RZ_FREE(afb_output);
-	if (output) {
-		rz_cons_println(output);
-		rz_cons_flush();
-		char *input = rz_cons_input("Seek to address: ");
-		if (!input || input[0] == '\0') {
-			return;
-		}
-		ut64 addr = strtoull(input, NULL, 16);
-		RZ_FREE(input);
-		RZ_FREE(output);
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-		if (!fcn) {
-			return;
-		}
-		RzAnalysisBlock *bb;
-		void **iter;
-		rz_pvector_foreach (fcn->bbs, iter) {
-			bb = *iter;
-			if (bb->addr <= addr && addr < bb->addr + bb->size) {
-				rz_core_seek(core, addr, true);
-				break;
-			}
+	if (!output) {
+		return;
+	}
+	rz_cons_println(output);
+	rz_cons_flush();
+	char *input = rz_cons_input("Seek to address: ");
+	if (RZ_STR_ISEMPTY(input)) {
+		return;
+	}
+	ut64 addr = strtoull(input, NULL, 16);
+	RZ_FREE(input);
+	RZ_FREE(output);
+	RzAnalysisBlock *bb;
+	void **iter;
+	rz_pvector_foreach (fcn->bbs, iter) {
+		bb = *iter;
+		if (bb->addr <= addr && addr < bb->addr + bb->size) {
+			rz_core_seek(core, addr, true);
+			break;
 		}
 	}
 }
@@ -2023,7 +2038,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_debug_switch_to_first_thread(core->dbg);
 			break;
 		case 'b':
-			view_and_seek_to_bb(core);
+			rz_view_and_seek_to_bb(core);
 			break;
 		case 'i':
 			// XXX ii shows index first and iiq shows no offset :(

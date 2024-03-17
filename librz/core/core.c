@@ -2448,34 +2448,29 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 }
 
 /**
- * \brief Filters the given output string based on the provided filter.
+ * \brief Filters the given string based on the provided filter.
  *
- * \param output The output string to be filtered.
- * \param filter The filter string to be used for filtering the output.
- * \return char* The filtered output string. The caller is responsible for freeing this string.
+ * \param str RZ_NONNULL The string to be filtered.
+ * \param filter The filter string to be used for filtering the str.
+ * \return RZ_OWN char* The filtered string. The caller is responsible for freeing this string.
  */
-RZ_API char *rz_core_filter_string_output(RZ_NONNULL const char *output, const char *filter) {
-	rz_return_val_if_fail(output, NULL);
-	char *filtered_output = NULL;
-	char *output_copy = rz_str_dup(output);
-	RzList *lines = rz_str_split_list(output_copy, "\n", 0);
+RZ_API RZ_OWN char *rz_core_filter_string_output(RZ_NONNULL const char *str, const char *filter) {
+	rz_return_val_if_fail(str, NULL);
+	char *filtered_str = NULL;
+	char *str_copy = rz_str_dup(str);
+	RzList *lines = rz_str_split_list(str_copy, "\n", 0);
 	RzListIter *iter;
 	char *line;
 	rz_list_foreach (lines, iter, line) {
 		if (strstr(line, filter)) {
-			if (filtered_output) {
-				filtered_output = rz_str_append(filtered_output, "\n");
+			if (filtered_str) {
+				filtered_str = rz_str_append(filtered_str, "\n");
 			} else {
-				filtered_output = rz_str_dup("");
+				filtered_str = rz_str_dup("");
 			}
-			filtered_output = rz_str_append(filtered_output, line);
+			filtered_str = rz_str_append(filtered_str, line);
 		}
 	}
-	RZ_FREE(output_copy);
-	return filtered_output;
-}
-
-RZ_API char *rz_core_get_afb_output(RZ_NONNULL RzCore *core) {
-	rz_return_val_if_fail(core, NULL);
-	return rz_core_cmd_str(core, "afb");
+	RZ_FREE(str_copy);
+	return filtered_str;
 }
