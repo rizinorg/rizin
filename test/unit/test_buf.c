@@ -1051,11 +1051,43 @@ bool test_rz_buf_format(void) {
 	rz_buf_read_at(b, 0, buf, sizeof(buf));
 	mu_assert_memeq(buf, (ut8 *)"\xad\xde\xef\xbe\xfe\xca\xbe\xba", sizeof(buf), "fwrite");
 
+	memset(a, 0, 4 * sizeof(uint16_t));
 	rz_buf_fread_at(b, 0, (ut8 *)a, "S", 4);
 	mu_assert_eq(a[0], 0xadde, "first");
 	mu_assert_eq(a[1], 0xefbe, "second");
 	mu_assert_eq(a[2], 0xfeca, "third");
 	mu_assert_eq(a[3], 0xbeba, "fourth");
+
+	memset(a, 0, 4 * sizeof(uint16_t));
+	rz_buf_fread_at(b, 0, (ut8 *)a, "1S", 4);
+	mu_assert_eq(a[0], 0xadde, "first");
+	mu_assert_eq(a[1], 0xefbe, "second");
+	mu_assert_eq(a[2], 0xfeca, "third");
+	mu_assert_eq(a[3], 0xbeba, "fourth");
+
+	memset(a, 0, 4 * sizeof(uint16_t));
+	rz_buf_fread_at(b, 0, (ut8 *)a, "S2S1S1S", 1);
+	mu_assert_eq(a[0], 0xadde, "first");
+	mu_assert_eq(a[1], 0xefbe, "second");
+	mu_assert_eq(a[2], 0xfeca, "third");
+	mu_assert_eq(a[3], 0xbeba, "fourth");
+
+	st64 ret = rz_buf_fread_at(b, 0, (ut8 *)a, "0S", 4);
+	mu_assert_eq(ret, -1, "Zero repeat count");
+
+	ret = rz_buf_fread_at(b, 0, (ut8 *)a, "16", 1);
+	mu_assert_eq(ret, -1, "No type");
+
+	ret = rz_buf_fread_at(b, 0, (ut8 *)a, "65536c", 1);
+	mu_assert_eq(ret, -1, "Big repeat count");
+
+	uint16_t a2[] = { 0xdead, 0xbeef, 0xcafe, 0xbabe };
+	ut8 buf2[8 * sizeof(uint16_t)];
+
+	rz_buf_fwrite(b, (ut8 *)a2, "4s", 1);
+	memset(buf, 0, 4 * sizeof(uint16_t));
+	rz_buf_fread_at(b, 0, buf2, "13c3c", 1);
+	mu_assert_memeq(buf2, (ut8 *)"\xad\xde\xef\xbe\xfe\xca\xbe\xba\xad\xde\xef\xbe\xfe\xca\xbe\xba", sizeof(buf2), "read block of bytes");
 
 	rz_buf_free(b);
 	mu_end;
@@ -1374,6 +1406,7 @@ bool test_rz_buf_fwd_scan(void) {
 	res = rz_buf_fwd_scan(b, 0, UT64_MAX, fwd_adder, &add_result);
 	mu_assert_eq(res, 0x1004, "rz_buf_fwd_scan should return 0x1004");
 	mu_assert_eq(add_result, 'A' + 'B' + 'C' + 'D' + 'E' + 'F' + 'G' + 'H', "add_result should return be the sum of all bytes");
+	rz_buf_free(b);
 	mu_end;
 }
 
