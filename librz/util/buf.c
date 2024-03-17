@@ -81,97 +81,143 @@ static bool buf_resize(RzBuffer *b, ut64 newsize) {
 	return b->methods->resize ? b->methods->resize(b, newsize) : false;
 }
 
-static st64 buf_format(RzBuffer *dst, RzBuffer *src, const char *fmt, int n) {
-	st64 res = 0;
+typedef struct {
+	ut16 repeat;
+	ut8 type_size;
+	ut8 big_endian;
+} BufFormatToken;
 
+static st64 buf_format(RzBuffer *dst, RzBuffer *src, const char *fmt, int n) {
+	RzVector /*<BufFormatToken>*/ tokens;
+	rz_vector_init(&tokens, sizeof(BufFormatToken), NULL, NULL);
+	unsigned repeat = 1;
+	for (size_t j = 0; fmt[j]; j++) {
+		unsigned tsize = 0;
+		bool bigendian = false;
+		switch (fmt[j]) {
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			if (repeat == 1) {
+				char *end = (char *)&fmt[j + 1];
+				repeat = strtoul(&fmt[j], &end, 10);
+				j += (ptrdiff_t)(end - &fmt[j]) - 1;
+			}
+			continue;
+		case 'S':
+			bigendian = true;
+			/* fall-thru */
+		case 's':
+			tsize = 2;
+			break;
+		case 'I':
+			bigendian = true;
+			/* fall-thru */
+		case 'i':
+			tsize = 4;
+			break;
+		case 'L':
+			bigendian = true;
+			/* fall-thru */
+		case 'l':
+			tsize = 8;
+			break;
+		case 'c':
+			tsize = 1;
+			break;
+		default:
+			goto err_exit;
+		}
+		if (!tsize || repeat > UT16_MAX) {
+			goto err_exit;
+		}
+		BufFormatToken tok = {
+			.repeat = repeat,
+			.type_size = tsize,
+			.big_endian = bigendian
+		};
+		if (!rz_vector_push(&tokens, &tok)) {
+			goto err_exit;
+		}
+		repeat = 1;
+	}
+
+	if (rz_vector_empty(&tokens)) {
+		goto err_exit;
+	}
+
+	st64 res = 0;
 	for (int i = 0; i < n; i++) {
-		int m = 1;
-		int tsize = 2;
-		for (int j = 0; fmt[j]; j++) {
-			bool bigendian = false;
-			switch (fmt[j]) {
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9':
-				if (m == 1) {
-					m = rz_num_get(NULL, &fmt[j]);
+		const BufFormatToken *tok;
+		rz_vector_foreach(&tokens, tok) {
+			if (tok->type_size == 1) {
+				ut8 tmp[8];
+				size_t nbytes = tok->repeat;
+				while (nbytes != 0) {
+					size_t block_sz = RZ_MIN(sizeof(tmp), nbytes);
+					if (rz_buf_read(src, tmp, block_sz) != block_sz) {
+						goto err_exit;
+					}
+					if (rz_buf_write(dst, tmp, block_sz) != block_sz) {
+						goto err_exit;
+					}
+					res += block_sz;
+					nbytes -= block_sz;
 				}
 				continue;
-			case 'S':
-				bigendian = true;
-				/* fall-thru */
-			case 's':
-				tsize = 2;
-				break;
-			case 'I':
-				bigendian = true;
-				/* fall-thru */
-			case 'i':
-				tsize = 4;
-				break;
-			case 'L':
-				bigendian = true;
-				/* fall-thru */
-			case 'l':
-				tsize = 8;
-				break;
-			case 'c':
-				tsize = 1;
-				break;
-			default:
-				return -1;
 			}
-
-			for (int k = 0; k < m; k++) {
+			for (int k = 0; k < tok->repeat; k++) {
 				ut8 tmp[sizeof(ut64)];
-				st64 r = rz_buf_read(src, tmp, tsize);
-				if (r < tsize) {
-					return -1;
+				st64 r = rz_buf_read(src, tmp, tok->type_size);
+				if (r < tok->type_size) {
+					goto err_exit;
 				}
 
-				if (bigendian != RZ_SYS_ENDIAN && tsize > 1) {
+				if (tok->big_endian != RZ_SYS_ENDIAN && tok->type_size > 1) {
 					// just swap endianness if the host endianness
 					// is not the same and is not one byte
-					switch (tsize) {
+					switch (tok->type_size) {
 					case 2: {
-						ut16 value = rz_read_ble16(tmp, bigendian);
+						ut16 value = rz_read_ble16(tmp, tok->big_endian);
 						rz_write_ble16(tmp, value, RZ_SYS_ENDIAN);
 						break;
 					}
 					case 4: {
-						ut32 value = rz_read_ble32(tmp, bigendian);
+						ut32 value = rz_read_ble32(tmp, tok->big_endian);
 						rz_write_ble32(tmp, value, RZ_SYS_ENDIAN);
 						break;
 					}
 					case 8: {
-						ut64 value = rz_read_ble64(tmp, bigendian);
+						ut64 value = rz_read_ble64(tmp, tok->big_endian);
 						rz_write_ble64(tmp, value, RZ_SYS_ENDIAN);
 						break;
 					}
 					default:
-						return -1;
+						goto err_exit;
 					}
 				}
-				r = rz_buf_write(dst, tmp, tsize);
+				r = rz_buf_write(dst, tmp, tok->type_size);
 
-				if (r < 0) {
-					return -1;
+				if (r < tok->type_size) {
+					goto err_exit;
 				}
 				res += r;
 			}
-
-			m = 1;
 		}
 	}
 
+	rz_vector_fini(&tokens);
 	return res;
+
+err_exit:
+	rz_vector_fini(&tokens);
+	return -1;
 }
 
 static bool buf_move_back(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 length) {
