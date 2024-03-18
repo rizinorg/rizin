@@ -4,12 +4,12 @@
 #include "rz_cmd.h"
 #include "rz_core.h"
 
-static int rz_cmd_alias(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv) {
+	const char *input = argc > 1 ? argv[1] : "";
 	int i = strlen(input);
 	char *buf = malloc(i + 2);
 	if (!buf) {
-		return 0;
+		return RZ_CMD_STATUS_ERROR;
 	}
 	*buf = '$'; // prefix aliases with a dollar
 	memcpy(buf + 1, input, i + 1);
@@ -46,15 +46,15 @@ static int rz_cmd_alias(void *data, const char *input) {
 			switch (defmode) {
 			case ':':
 				rz_flag_set(core->flags, buf + 1, at, 1);
-				return 1;
+				return RZ_CMD_STATUS_OK;
 			case '+':
 				at = rz_num_get(core->num, buf + 1) + at;
 				rz_flag_set(core->flags, buf + 1, at, 1);
-				return 1;
+				return RZ_CMD_STATUS_OK;
 			case '-':
 				at = rz_num_get(core->num, buf + 1) - at;
 				rz_flag_set(core->flags, buf + 1, at, 1);
-				return 1;
+				return RZ_CMD_STATUS_OK;
 			}
 		}
 		/* Remove quotes */
@@ -88,10 +88,10 @@ static int rz_cmd_alias(void *data, const char *input) {
 			} else {
 				rz_cons_println(v);
 			}
-			free(buf);
-			return 1;
 		} else {
 			RZ_LOG_ERROR("core: unknown key '%s'\n", buf);
+			free(buf);
+			return RZ_CMD_STATUS_ERROR;
 		}
 	} else if (!buf[1]) {
 		int i, count = 0;
@@ -122,15 +122,12 @@ static int rz_cmd_alias(void *data, const char *input) {
 				rz_core_seek(core, at, true);
 			} else {
 				RZ_LOG_ERROR("core: unknown alias '%s'\n", buf + 1);
+				free(buf);
+				return RZ_CMD_STATUS_ERROR;
 			}
 		}
 	}
 	free(buf);
-	return 0;
-}
-
-RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_alias(core, argc > 1 ? argv[1] : "");
 	return RZ_CMD_STATUS_OK;
 }
 
