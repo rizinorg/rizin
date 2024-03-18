@@ -69,11 +69,23 @@ static const char *has_esil(RzCore *core, const char *name) {
 	RzAnalysisPlugin *h;
 	rz_return_val_if_fail(core && core->analysis && name, NULL);
 	rz_list_foreach (core->analysis->plugins, iter, h) {
-		if (h->name && !strcmp(name, h->name)) {
-			return h->esil ? "Ae" : "A_";
+		if (!h->name || strcmp(name, h->name)) {
+			continue;
 		}
+		if (h->il_config && h->esil) {
+			// Analysis with RzIL and ESIL
+			return "AeI";
+		} else if (h->il_config) {
+			// Analysis with RzIL
+			return "A_I";
+		} else if (h->esil) {
+			// Analysis with ESIL
+			return "Ae_";
+		}
+		// Only the analysis plugin.
+		return "A__";
 	}
-	return "__";
+	return "___";
 }
 
 RZ_API RzCmdStatus rz_core_asm_plugin_print(RzCore *core, RzAsmPlugin *ap, const char *arch, RzCmdStateOutput *state, const char *license) {
@@ -99,7 +111,7 @@ RZ_API RzCmdStatus rz_core_asm_plugin_print(RzCore *core, RzAsmPlugin *ap, const
 			strcat(bits, "32 ");
 		}
 		if (ap->bits & 64) {
-			strcat(bits, "64 ");
+			strcat(bits, "64");
 		}
 	}
 	feat = "__";
@@ -128,7 +140,7 @@ RZ_API RzCmdStatus rz_core_asm_plugin_print(RzCore *core, RzAsmPlugin *ap, const
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
-		rz_cons_printf("%s%s  %-9s  %-11s %-7s %s",
+		rz_cons_printf("%s%s %-10s %-11s %-7s %s",
 			feat, feat2, bits, ap->name, license, ap->desc);
 		if (ap->author) {
 			rz_cons_printf(" (by %s)", ap->author);
