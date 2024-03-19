@@ -136,20 +136,17 @@ beach:
 	return main_arena;
 }
 
-static const ut8 *GH(get_glibc_banner)(RzCore *core, const char *section_name,
+static ut8 *GH(get_glibc_banner)(RzCore *core, const char *section_name,
 	const char *libc_path) {
-	RzBin *bin = NULL;
-	RzBinFile *current_bf = NULL;
-	if (core->bin) {
-		bin = core->bin;
-		current_bf = rz_bin_cur(bin);
-	} else {
-		bin = rz_bin_new();
-	}
+	RzPVector *sections = NULL;
+	RzBin *bin = core->bin;
+	RzBinFile *current_bf = rz_bin_cur(bin);
 
 	void **iter;
-	RzBinSection *rz_section = NULL;
 	ut8 *buf = NULL;
+	ut8 *buf_parse = NULL;
+	ut8 *ret_buf = NULL;
+	RzBinSection *rz_section = NULL;
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, -1, 0, 0, false);
@@ -159,65 +156,89 @@ static const ut8 *GH(get_glibc_banner)(RzCore *core, const char *section_name,
 
 	RzBinFile *libc_buf = rz_bin_open(bin, libc_path, &opt);
 	if (!libc_buf) {
-		return NULL;
+		goto cleanup;
 	}
 
-	RzPVector *sections = rz_bin_object_get_sections(libc_buf->o);
+	sections = rz_bin_object_get_sections(libc_buf->o);
+	if (!sections) {
+		goto cleanup;
+	}
 
 	rz_pvector_foreach (sections, iter) {
 		rz_section = *iter;
 		if (strncmp(rz_section->name, section_name, strlen(section_name))) {
 			continue;
 		}
-		buf = calloc(rz_section->size, 1);
+		buf = calloc(rz_section->size + 1, 1);
 		GHT read_size = rz_buf_read_at(libc_buf->buf, rz_section->paddr, buf, rz_section->size);
 		if (read_size != rz_section->size) {
 			free(buf);
 			buf = NULL;
 			goto cleanup;
 		}
-		buf = (ut8 *)rz_mem_mem((const ut8 *)buf, rz_section->size, (const ut8 *)"GNU C Library", strlen("GNU C Library"));
+		buf_parse = (ut8 *)rz_mem_mem((const ut8 *)buf, rz_section->size, (const ut8 *)"GNU C Library", strlen("GNU C Library"));
+		ret_buf = (ut8 *)strdup((char *)buf_parse);
+		break;
 	}
 
 cleanup:
+	if (buf) {
+		free(buf);
+	}
+	if (sections) {
+		rz_pvector_free(sections);
+	}
+	if (libc_buf) {
+		rz_bin_file_delete(bin, libc_buf);
+		if (current_bf) {
+			rz_bin_file_set_cur_binfile(bin, current_bf);
+		}
+	}
 
-	rz_bin_file_delete(bin, libc_buf);
-	rz_bin_file_set_cur_binfile(bin, current_bf);
-	return buf;
+	return ret_buf;
 }
 
-RZ_API double GH(rz_get_glibc_version)(RzCore *core, const char *libc_path,
-	const ut8 *banner_start) {
+RZ_API double GH(rz_get_glibc_version)(RzCore *core, const char *libc_path, ut8 *banner_start) {
 	double version = 0.0;
+	ut8 *libc_ro_section = NULL;
+	;
 
 	if (!banner_start) {
-		banner_start = GH(get_glibc_banner)(core, ".rodata", libc_path);
-		if (!banner_start) {
-			goto error;
+		libc_ro_section = GH(get_glibc_banner)(core, ".rodata", libc_path);
+		if (libc_ro_section == NULL) {
+			return version;
 		}
 	}
 
 	const char *pattern = "release version (\\d.\\d\\d)";
 	RzRegex *re = rz_regex_new(pattern, RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
-	RzPVector *matches = rz_regex_match_first(re, (const char *)banner_start,
+	if (!re) {
+		return version;
+	}
+	RzPVector *matches = rz_regex_match_first(re, (const char *)libc_ro_section,
 		RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
-	RzRegexMatch *match = rz_pvector_at(matches, 1);
-	if (!match) {
-		return version;
-	}
-	char *version_str = rz_str_ndup((const char *)banner_start + match->start, match->len);
-	if (!version_str) {
-		rz_pvector_free(matches);
-		return version;
-	}
-	version = strtod(version_str, NULL);
-	rz_pvector_free(matches);
-	if (version != 0) {
-		RZ_LOG_INFO("libc version %.2f identified from .rodata banner", version);
-		return version;
+	if (rz_pvector_empty(matches)) {
+		goto cleanup;
 	}
 
-error:
+	RzRegexMatch *match = rz_pvector_at(matches, 1);
+	if (!match) {
+		goto cleanup;
+	}
+	char *version_str = rz_str_ndup((const char *)libc_ro_section + match->start, match->len);
+	if (!version_str) {
+		goto cleanup;
+	}
+	version = strtod(version_str, NULL);
+	if (version != 0) {
+		RZ_LOG_INFO("libc version %.2f identified from .rodata banner", version);
+		goto cleanup;
+	}
+
+cleanup:
+	rz_pvector_free(matches);
+	rz_regex_free(re);
+	free(libc_ro_section);
 	return version;
 }
 
@@ -231,7 +252,7 @@ static GHT GH(read_val)(RzCore *core, const void *src, bool is_big_endian) {
 	}
 }
 
-static RZ_BORROW RzList *GH(fill_tcache_entries)(RzCore *core, GH(RTcache) * tcache) {
+static RZ_BORROW RzList /*<RzList *>*/ *GH(fill_tcache_entries)(RzCore *core, GH(RTcache) * tcache) {
 	RzList *tcache_bins_list = rz_list_newf((RzListFree)GH(rz_heap_bin_free));
 	if (!tcache_bins_list) {
 		goto error;
@@ -301,7 +322,7 @@ error:
 	return NULL;
 }
 
-static RZ_BORROW void GH(print_tcache)(RzCore *core, RzList *bins, PJ *pj, GHT tid) {
+static void GH(print_tcache)(RzCore *core, RzList /*<RzList *>*/ *bins, PJ *pj, GHT tid) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	RzHeapBin *bin;

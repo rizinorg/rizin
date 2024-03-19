@@ -328,8 +328,8 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_32(RzCore *core, 
 
 RZ_API bool rz_heap_resolve_main_arena_64(RzCore *core, ut64 *m_arena);
 RZ_API bool rz_heap_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
-RZ_API double rz_get_glibc_version_64(RzCore *core, const char *libc_path, const ut8 *banner);
-RZ_API double rz_get_glibc_version_32(RzCore *core, const char *libc_path, const ut8 *banner);
+RZ_API double rz_get_glibc_version_64(RzCore *core, const char *libc_path, ut8 *banner);
+RZ_API double rz_get_glibc_version_32(RzCore *core, const char *libc_path, ut8 *banner);
 
 RZ_API bool rz_heap_update_main_arena_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
 RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState *main_arena);

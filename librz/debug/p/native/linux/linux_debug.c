@@ -706,7 +706,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	return true;
 }
 
-RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
+RZ_API RZ_OWN RzList /*<RzList *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
 	RzList *list = rz_list_new();
 	if (list) {
 		list = linux_thread_list(dbg, main_pid, list);
@@ -876,7 +876,7 @@ static int thread_find(int *tid, RzDebugPid *t, void *user) {
 	return (t && (t->pid == *tid)) ? 0 : 1;
 }
 
-RZ_API RZ_OWN RzDebugPid /*<RzDebugPid *>*/ *rz_debug_get_thread(RzList *th_list, int tid) {
+RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) {
 	if (!th_list) {
 		return NULL;
 	}
@@ -889,7 +889,8 @@ RZ_API RZ_OWN RzDebugPid /*<RzDebugPid *>*/ *rz_debug_get_thread(RzList *th_list
 	return (RzDebugPid *)rz_list_iter_get_data(it);
 }
 
-RZ_API RZ_OWN ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
+RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
+	rz_return_val_if_fail(dbg, 0);
 	ut64 tls = 0;
 	int prev_tid = dbg->tid;
 
