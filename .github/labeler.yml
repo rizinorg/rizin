@@ -207,6 +207,11 @@ MIPS:
   - librz/arch/p/analysis/*_mips_*
   - librz/bp/p/bp_mips.c
 
+Hexagon:
+  - librz/arch/isa/hexagon/**/*
+  - librz/arch/p/asm/*_hexagon_*
+  - librz/arch/p/analysis/*_hexagon_*
+
 PPC:
   - librz/arch/is*/ppc/**/*
   - librz/arch/p/asm/*_ppc_*

@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: 2023 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
 // LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2023-11-15 14:59:38-05:00
+// Date of code generation: 2024-03-16 06:22:39-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -86,6 +86,16 @@ static const char *map_dwarf_reg_to_hexagon_reg(ut32 reg_num) {
 	case 84: return "C17";
 	case 85: return "C18";
 	case 86: return "C19";
+	case 87: return "C20";
+	case 88: return "C21";
+	case 89: return "C22";
+	case 90: return "C23";
+	case 91: return "C24";
+	case 92: return "C25";
+	case 93: return "C26";
+	case 94: return "C27";
+	case 95: return "C28";
+	case 96: return "C29";
 	case 97: return "C30";
 	case 98: return "C31";
 	case 99: return "V0";

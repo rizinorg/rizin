@@ -8,6 +8,9 @@
 extern "C" {
 #endif
 
+#include <rz_util/rz_assert.h>
+#include <rz_types_base.h>
+
 /**
  * \brief Get the number of leading zeros of a 64-bit integer in binary representation.
  * \param x the 64-bit integer

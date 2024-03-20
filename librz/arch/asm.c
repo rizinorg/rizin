@@ -1862,6 +1862,15 @@ rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NU
 }
 
 /**
+ * \brief Free a RzAsmParseParam
+ *
+ * \param p The parameter struct.
+ */
+RZ_API void rz_asm_parse_param_free(RZ_OWN RZ_NULLABLE RzAsmParseParam *p) {
+	free(p);
+}
+
+/**
  * \brief Does all kinds of NULL checks on the parameters and returns an initialized RzAsmParseParam or NULL on failure.
  *
  * \param reg The RzReg which holds the reg_set.
