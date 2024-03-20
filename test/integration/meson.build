@@ -22,6 +22,7 @@ if get_option('enable_tests')
     'dwarf',
     'dwarf_info',
     'dwarf_integration',
+    'glibc_version',
     'open_analyse_save_load_project',
     'pdb',
     'project_migrate',

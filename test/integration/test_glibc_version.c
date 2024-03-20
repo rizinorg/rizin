@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 z3phyr <giridh1337@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "../unit/minunit.h"
 #include <rz_heap_glibc.h>
 #include <rz_core.h>

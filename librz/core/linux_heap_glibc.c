@@ -169,7 +169,7 @@ static ut8 *GH(get_glibc_banner)(RzCore *core, const char *section_name,
 		if (strncmp(rz_section->name, section_name, strlen(section_name))) {
 			continue;
 		}
-		buf = calloc(rz_section->size + 1, 1);
+		buf = calloc(rz_section->size, 1);
 		GHT read_size = rz_buf_read_at(libc_buf->buf, rz_section->paddr, buf, rz_section->size);
 		if (read_size != rz_section->size) {
 			free(buf);
@@ -205,7 +205,7 @@ RZ_API double GH(rz_get_glibc_version)(RzCore *core, const char *libc_path, ut8 
 
 	if (!banner_start) {
 		libc_ro_section = GH(get_glibc_banner)(core, ".rodata", libc_path);
-		if (libc_ro_section == NULL) {
+		if (!libc_ro_section) {
 			return version;
 		}
 	}
@@ -232,9 +232,9 @@ RZ_API double GH(rz_get_glibc_version)(RzCore *core, const char *libc_path, ut8 
 	version = strtod(version_str, NULL);
 	if (version != 0) {
 		RZ_LOG_INFO("libc version %.2f identified from .rodata banner", version);
-		goto cleanup;
 	}
 
+	free(version_str);
 cleanup:
 	rz_pvector_free(matches);
 	rz_regex_free(re);
