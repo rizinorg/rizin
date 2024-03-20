@@ -706,7 +706,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	return true;
 }
 
-RZ_API RZ_OWN RzList /*<RzList *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
+static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
 	RzList *list = rz_list_new();
 	if (list) {
 		list = linux_thread_list(dbg, main_pid, list);
@@ -870,23 +870,6 @@ RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *li
 	}
 	closedir(dh);
 	return list;
-}
-
-static int thread_find(int *tid, RzDebugPid *t, void *user) {
-	return (t && (t->pid == *tid)) ? 0 : 1;
-}
-
-RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) {
-	if (!th_list) {
-		return NULL;
-	}
-
-	RzListIter *it = rz_list_find(th_list, (const void *)(size_t)&tid,
-		(RzListComparator)&thread_find, NULL);
-	if (!it) {
-		return NULL;
-	}
-	return (RzDebugPid *)rz_list_iter_get_data(it);
 }
 
 RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {

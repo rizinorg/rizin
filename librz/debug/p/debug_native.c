@@ -598,7 +598,7 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
 	return list;
 }
 
-static RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
+RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		eprintf("No list?\n");
@@ -612,6 +612,14 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid)
 	return linux_thread_list(dbg, pid, list);
 #else
 	return bsd_thread_list(dbg, pid, list);
+#endif
+}
+
+RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
+#if __linux__
+	return get_linux_tls_val(dbg, tid);
+#else
+	return 0;
 #endif
 }
 

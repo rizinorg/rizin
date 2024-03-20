@@ -879,11 +879,11 @@ static void GH(resolve_tcache_perthread)(RZ_NONNULL RzCore *core) {
 	rz_list_foreach (dbg->threads, it, th) {
 		// First try: fetch tls value and update debug pid
 		if (!th->tls) {
-			th->tls = get_linux_tls_val(core->dbg, th->pid);
+			th->tls = rz_debug_get_tls(core->dbg, th->pid);
 		}
 		if (!GH(parse_tls_data)(core, th, tid++)) {
 			// Second try: Update the thread list if the tls parsing fails.
-			RzList *thread_list = get_pid_thread_list(dbg, dbg->pid);
+			RzList *thread_list = rz_debug_native_threads(dbg, dbg->pid);
 			RzDebugPid *thread_dbg = rz_debug_get_thread(thread_list, th->pid);
 			if (thread_dbg) {
 				GH(parse_tls_data)
