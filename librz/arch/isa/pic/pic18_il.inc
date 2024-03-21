@@ -31,7 +31,8 @@ static const char *op_destination(Pic18Op *op) {
 	return NULL;
 }
 
-#define DEST op_destination(op)
+#define R_DEST  op_destination(op)
+#define VR_DEST VARG(R_DEST)
 
 static RzILOpEffect *status_add(RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
 	return NOP();
@@ -161,18 +162,43 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 			SETG(op_destination(op), VARL("_res")),
 			op_skip_if(op, NON_ZERO(VARL("_res"))));
 	case PIC18_OPCODE_GOTO: return JMP(U32((ut32)K << 1));
-	case PIC18_OPCODE_IORWF: break;
-	case PIC18_OPCODE_INFSNZ: break;
-	case PIC18_OPCODE_INCF: break;
-	case PIC18_OPCODE_INCFSZ: break;
-	case PIC18_OPCODE_IORLW: break;
-	case PIC18_OPCODE_LFSR: break;
-	case PIC18_OPCODE_MOVF: break;
-	case PIC18_OPCODE_MOVWF: break;
+	case PIC18_OPCODE_INCF:
+		return SEQ3(
+			SETG("_res", ADD(VRF, U8(1))),
+			status_add(VRF, U8(1), VARL("_res"), NULL),
+			SETG(op_destination(op), VARL("_res")));
+	case PIC18_OPCODE_INCFSZ:
+		return SEQ3(
+			SETG("_res", ADD(VRF, U8(1))),
+			SETG(op_destination(op), VARL("_res")),
+			op_skip_if(op, IS_ZERO(VARL("_res"))));
+	case PIC18_OPCODE_INFSNZ:
+		return SEQ3(
+			SETG("_res", ADD(VRF, U8(1))),
+			SETG(op_destination(op), VARL("_res")),
+			op_skip_if(op, NON_ZERO(VARL("_res"))));
+	case PIC18_OPCODE_IORWF:
+		return SEQ2(
+			SETG(op_destination(op), LOGOR(VRW, VRF)),
+			status_res(VARG(op_destination(op))));
+	case PIC18_OPCODE_IORLW:
+		return SEQ2(
+			SETG(RW, LOGOR(VRW, U16(K))),
+			status_res(VRW));
+	case PIC18_OPCODE_LFSR: return SETG(RFSR(F), U16(K));
+	case PIC18_OPCODE_MOVF:
+		return SEQ2(
+			SETG(R_DEST, VRF),
+			status_res(VR_DEST));
+	case PIC18_OPCODE_MOVFF:
+		return SETG(RFSR(op->d), VARG(RFSR(op->s)));
+	case PIC18_OPCODE_MOVLB:
+		return SETG("bsr", LOGOR(U8(K), LOGAND(VARG("bsr"), U8(0xf0))));
+	case PIC18_OPCODE_MOVLW:
+		return SETG(RW, U8(K));
+	case PIC18_OPCODE_MOVWF:
+		return SETG(RF, VRW);
 	case PIC18_OPCODE_MULWF: break;
-	case PIC18_OPCODE_MOVLB: break;
-	case PIC18_OPCODE_MOVFF: break;
-	case PIC18_OPCODE_MOVLW: break;
 	case PIC18_OPCODE_MULLW: break;
 	case PIC18_OPCODE_NOP: return NOP();
 	case PIC18_OPCODE_NEGF: break;
