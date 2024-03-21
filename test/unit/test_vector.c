@@ -944,6 +944,24 @@ static bool test_pvector_contains(void) {
 	mu_end;
 }
 
+static bool test_pvector_assign_at(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+	ut32 *x = malloc(sizeof(ut32));
+	*x = 123467890;
+	ut32 *e = rz_pvector_assign_at(&v, 3, &x);
+	mu_assert_eq(*e, 3, "assign_at ret");
+	free(e);
+	mu_assert_eq(v.v.len, 5UL, "assign_at => len");
+	mu_assert_eq(*((ut32 **)v.v.a)[0], 0, "assign_at => content at 0");
+	mu_assert_eq(*((ut32 **)v.v.a)[1], 1, "assign_at => content at 1");
+	mu_assert_eq(*((ut32 **)v.v.a)[2], 2, "assign_at => content at 2");
+	mu_assert_eq(*((ut32 **)v.v.a)[3], 123467890, "assign_at => content at 3");
+	mu_assert_eq(*((ut32 **)v.v.a)[4], 4, "assign_at => content at 4");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
 static bool test_pvector_remove_at(void) {
 	RzPVector v;
 	init_test_pvector(&v, 5, 0);
@@ -1438,6 +1456,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
+	mu_run_test(test_pvector_assign_at);
 	mu_run_test(test_pvector_insert);
 	mu_run_test(test_pvector_insert_range);
 	mu_run_test(test_pvector_pop);
