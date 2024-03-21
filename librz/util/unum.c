@@ -456,8 +456,8 @@ RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
 				error(num, "number won't fit into 64 bits");
 			}
 			if (!IS_DIGIT(*str) || (*endptr && *endptr != lch)) {
-				error(num, "unknown symbol");
 				ret = UT64_MAX;
+				error(num, "unknown symbol");
 			}
 			break;
 		}
