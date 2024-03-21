@@ -102,6 +102,13 @@ static RzILOpEffect *op_skip_if(Pic18Op *op, RzILOpPure *condition) {
 	return BRANCH(condition, JMP(U16(PC + INS_LEN * 2)), NOP());
 }
 
+static RzILOpEffect *set_prod16(RzILOpPure *res) {
+	return SEQ3(
+		SETL("_res", res),
+		SETG("prodh", UNSIGNED(8, SHIFTR0(VARL("_res"), U8(8)))),
+		SETG("prodl", UNSIGNED(8, VARL("_res"))));
+}
+
 static RzILOpEffect *pic18_il(Pic18Op *op) {
 	switch (op->code) {
 	case PIC18_OPCODE_ADDLW: return op_add(RW, VRW, U16(K), NULL);
@@ -198,8 +205,10 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 		return SETG(RW, U8(K));
 	case PIC18_OPCODE_MOVWF:
 		return SETG(RF, VRW);
-	case PIC18_OPCODE_MULWF: break;
-	case PIC18_OPCODE_MULLW: break;
+	case PIC18_OPCODE_MULLW:
+		return set_prod16(MUL(UNSIGNED(16, VRW), U16(K)));
+	case PIC18_OPCODE_MULWF:
+		return set_prod16(MUL(UNSIGNED(16, VRW), UNSIGNED(16, VRF)));
 	case PIC18_OPCODE_NOP: return NOP();
 	case PIC18_OPCODE_NEGF: break;
 	case PIC18_OPCODE_POP: break;
