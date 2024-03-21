@@ -457,6 +457,7 @@ RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
 			}
 			if (!IS_DIGIT(*str) || (*endptr && *endptr != lch)) {
 				error(num, "unknown symbol");
+				ret = UT64_MAX;
 			}
 			break;
 		}
