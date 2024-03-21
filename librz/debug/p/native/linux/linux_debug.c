@@ -707,6 +707,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 }
 
 static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
+	rz_return_val_if_fail(dbg, 0);
 	RzList *list = rz_list_new();
 	if (list) {
 		list = linux_thread_list(dbg, main_pid, list);

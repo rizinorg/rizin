@@ -616,6 +616,7 @@ RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, i
 }
 
 RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
+	rz_return_val_if_fail(dbg, 0);
 #if __linux__
 	return get_linux_tls_val(dbg, tid);
 #else

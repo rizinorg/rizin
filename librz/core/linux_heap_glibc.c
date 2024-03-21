@@ -182,18 +182,10 @@ static ut8 *GH(get_glibc_banner)(RzCore *core, const char *section_name,
 	}
 
 cleanup:
-	if (buf) {
-		free(buf);
-	}
-	if (sections) {
-		rz_pvector_free(sections);
-	}
-	if (libc_buf) {
-		rz_bin_file_delete(bin, libc_buf);
-		if (current_bf) {
-			rz_bin_file_set_cur_binfile(bin, current_bf);
-		}
-	}
+	free(buf);
+	rz_pvector_free(sections);
+	rz_bin_file_delete(bin, libc_buf);
+	rz_bin_file_set_cur_binfile(bin, current_bf);
 
 	return ret_buf;
 }
@@ -201,7 +193,6 @@ cleanup:
 RZ_API double GH(rz_get_glibc_version)(RzCore *core, const char *libc_path, ut8 *banner_start) {
 	double version = 0.0;
 	ut8 *libc_ro_section = NULL;
-	;
 
 	if (!banner_start) {
 		libc_ro_section = GH(get_glibc_banner)(core, ".rodata", libc_path);
@@ -316,9 +307,7 @@ static RZ_BORROW RzList /*<RzList *>*/ *GH(fill_tcache_entries)(RzCore *core, GH
 	return tcache_bins_list;
 
 error:
-	if (tcache_bins_list) {
-		rz_list_free(tcache_bins_list);
-	}
+	rz_list_free(tcache_bins_list);
 	return NULL;
 }
 
