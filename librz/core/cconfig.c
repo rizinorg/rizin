@@ -87,7 +87,6 @@ static bool cb_vmlinux(void *_core, void *_node) {
 	}
 
 	core->analysis->vmlinux_config = rz_vmlinux_config_new();
-	core->analysis->vmlinux_config->config_tbl = rz_vmlinux_config_table_new();
 
 	const char *vmlinux_config = rz_config_get(core->config, "bin.elf.vmlinux.config");
 	const char *vmlinux_version = rz_config_get(core->config, "bin.elf.vmlinux.version");
@@ -100,7 +99,7 @@ static bool cb_vmlinux(void *_core, void *_node) {
 	const char *apply_config_file = rz_config_get(core->config, "bin.elf.vmlinux.apply_config");
 
 	if (RZ_STR_ISNOTEMPTY(apply_config_file)) {
-		RZ_LOG_INFO("Parsingconfig file '%s'\n", apply_config_file);
+		RZ_LOG_INFO("Parsing config file '%s'...\n", apply_config_file);
 		vmlinux_parse_apply_config_file(apply_config_file, core->analysis->vmlinux_config->config_tbl);
 	}
 

@@ -1,11 +1,14 @@
 #include <rz_core.h>
 #include <rz_util/rz_str.h>
+#include <rz_util/rz_assert.h>
 #include "vmlinux.h"
 #include <stdio.h>
 
 static void add_config(RzVmlinuxConfigTable* config_tbl, char* config_name, char* config_value);
 
-RZ_IPI bool vmlinux_parse_apply_config_file(const char* config_filepath, RzVmlinuxConfigTable* config_tbl) {
+RZ_API bool vmlinux_parse_apply_config_file(const char* config_filepath, RzVmlinuxConfigTable* config_tbl) {
+    rz_return_val_if_fail(config_filepath && config_tbl, false);
+
     FILE* f = fopen(config_filepath, "r");
     if (!f) {
         return false;
@@ -13,6 +16,10 @@ RZ_IPI bool vmlinux_parse_apply_config_file(const char* config_filepath, RzVmlin
 
     size_t line_size = 256;
     char* line = malloc(line_size);
+    if (!line) {
+        return false;
+    }
+
     int err = 0;
     while (true) {
         ssize_t read_sz = getline(&line, &line_size, f); // reallocs if not enough
@@ -23,16 +30,8 @@ RZ_IPI bool vmlinux_parse_apply_config_file(const char* config_filepath, RzVmlin
 
         rz_str_trim(line);
 
-        char* config_name;
-        char* config_value;
-
-        if (line[0] == '#' || !line[0]) {
-            continue;
-        } else if (rz_str_split_by_first_dupstr(line, "=", true, &config_name, &config_value)) {
-            add_config(config_tbl, config_name, config_value);
-        } else {
+        if (!vmlinux_parse_apply_config_string(line, config_tbl)) {
             RZ_LOG_WARN("Skipping line '%s'", line);
-            continue;
         }
     }
 out:
@@ -41,10 +40,27 @@ out:
     return !err;
 }
 
+RZ_API bool vmlinux_parse_apply_config_string(const char *config_str, RzVmlinuxConfigTable *config_tbl) {
+    rz_return_val_if_fail(config_str && config_tbl, false);
+
+    char* config_name;
+    char* config_value;
+
+    if (config_str[0] == '#' || !config_str[0]) {
+        return true;
+    } else if (rz_str_split_by_first_dupstr(config_str, "=", true, &config_name, &config_value)) {
+        add_config(config_tbl, config_name, config_value);
+        free(config_name);
+        free(config_value);
+        return true;
+    }
+    return false;
+}
+
 /**
  * Numeric 90+
 */
-RZ_IPI bool vmlinux_parse_version(const char* version_string, unsigned long version[3]) {
+RZ_API bool vmlinux_parse_version(const char* version_string, unsigned long version[3]) {
     RzList* version_list = rz_str_split_duplist_n(version_string, ".", 3, true);
     RzListIter* it;
     char* str;
@@ -65,11 +81,13 @@ RZ_IPI bool vmlinux_parse_version(const char* version_string, unsigned long vers
             unsigned long numbr = strtoul(str, NULL, 10);
             version[v] = numbr;
         } else {
+            rz_list_free(version_list);
             return false;
         }
 
         ++v;
     }
+    rz_list_free(version_list);
     return true;
 }
 
@@ -97,7 +115,7 @@ static void add_config(RzVmlinuxConfigTable* config_tbl, char* config_name, char
 }
 
 
-RZ_IPI RzVmlinuxConfigTable* rz_vmlinux_config_table_new() {
+RZ_API RzVmlinuxConfigTable* rz_vmlinux_config_table_new() {
     RzVmlinuxConfigTable* config_tbl = malloc(sizeof(RzVmlinuxConfigTable));
     config_tbl->config_slab_freelist_random = VMLINUX_CONFIG_VALUE_N;
     config_tbl->config_slab_freelist_hardened = VMLINUX_CONFIG_VALUE_N;
@@ -106,8 +124,9 @@ RZ_IPI RzVmlinuxConfigTable* rz_vmlinux_config_table_new() {
     return config_tbl;
 }
 
-RZ_IPI RzVmlinuxConfig* rz_vmlinux_config_new() {
+RZ_API RzVmlinuxConfig* rz_vmlinux_config_new() {
     RzVmlinuxConfig* config = malloc(sizeof(RzVmlinuxConfig));
+    config->config_tbl = rz_vmlinux_config_table_new();
     return config;
 }
 
@@ -135,11 +154,11 @@ RZ_API int vmlinux_vercmp_with_str(unsigned long v1[3], const char* v2_str) {
 }
 
 
-RZ_IPI void rz_vmlinux_config_free(RzVmlinuxConfig* vmlinux_config) {
+RZ_API void rz_vmlinux_config_free(RzVmlinuxConfig* vmlinux_config) {
     rz_vmlinux_config_table_free(vmlinux_config->config_tbl);
     free(vmlinux_config);
 }
 
-RZ_IPI void rz_vmlinux_config_table_free(RzVmlinuxConfigTable* config_tbl) {
+RZ_API void rz_vmlinux_config_table_free(RzVmlinuxConfigTable* config_tbl) {
     free(config_tbl);
 }

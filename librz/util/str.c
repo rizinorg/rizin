@@ -3535,14 +3535,19 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str,
 }
 
 /**
- * \brief Split the string \p str on 2 parts according to the substring \p r . Result is stored in the \p first_half , \p second_half .
+ * \brief Split the string \p str on 2 parts according to the first occurence of the substring \p r . Result is stored in the \p first_half , \p second_half .
  * 
  * \param str Input string to split
  * \param c Delimiter string used to split \p str
  * \param trim If true each half is trimmed after split
+ * \return true on success
 */
 RZ_API RZ_OWN bool rz_str_split_by_first_dupstr(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, bool trim, char** first_half, char** second_half) {
 	char *str = strdup(_str);
+	if (!str) {
+		return false;
+	}
+
 	char* e = strstr(str, r);
 
 	if (!e) {
