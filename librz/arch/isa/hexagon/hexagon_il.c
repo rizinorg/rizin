@@ -76,7 +76,7 @@ static void hex_send_insn_to_i(RzPVector /*<HexILOp *>*/ *ops, ut8 start, ut8 ne
 		direction = -1;
 	}
 	for (i = start; i != newloc; i += direction) {
-		HexILOp *tmp_op = *rz_pvector_assign_at(ops, i, (HexILOp *)rz_pvector_at(ops, i + direction));
+		HexILOp *tmp_op = rz_pvector_assign_at(ops, i, (HexILOp *)rz_pvector_at(ops, i + direction));
 		rz_pvector_assign_at(ops, i + direction, tmp_op);
 	}
 }
