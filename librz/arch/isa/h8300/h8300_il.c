@@ -487,6 +487,5 @@ RZ_IPI bool rz_h8300_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, 
 RZ_IPI RzAnalysisILConfig *rz_h8300_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
-	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(H8300_ADDR_SIZE, analysis->big_endian, H8300_ADDR_SIZE);
-	return cfg;
+	return rz_analysis_il_config_new(H8300_ADDR_SIZE, analysis->big_endian, H8300_ADDR_SIZE);
 }

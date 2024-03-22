@@ -726,7 +726,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
-static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+static int h8300_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		/* fall-thru */
@@ -748,7 +748,7 @@ RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.desc = "H8300 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "h8300",
-	.archinfo = archinfo,
+	.archinfo = h8300_archinfo,
 	.bits = 16,
 	.op = &h8300_op,
 	.esil = true,
