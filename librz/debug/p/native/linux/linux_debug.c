@@ -890,6 +890,7 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 	}
 
+#if (__x86_64__ || __i386__)
 	RzRegItem *ri = rz_reg_get(dbg->reg, "fs", RZ_REG_TYPE_ANY);
 	RZ_DEBUG_REG_T regs;
 	// Fetch gs_base from a ptrace call
@@ -900,6 +901,7 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	} else {
 		tls = rz_reg_get_value(dbg->reg, ri);
 	}
+#endif
 
 	// Must execute this block everytime
 	if (dbg->tid != tid) {
@@ -961,6 +963,8 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 
 			rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 			pc = rz_debug_reg_get(dbg, "PC");
+
+#if (__x86_64__ || __i386__)
 			RzRegItem *ri = rz_reg_get(dbg->reg, "fs", RZ_REG_TYPE_ANY);
 			RZ_DEBUG_REG_T regs;
 			// Fetch gs_base from a ptrace call
@@ -971,6 +975,7 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 			} else {
 				tls = rz_reg_get_value(dbg->reg, ri);
 			}
+#endif
 
 			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
 				// Get information about pid (status, pc, etc.)
