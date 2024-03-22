@@ -186,9 +186,19 @@ cleanup:
 	rz_pvector_free(sections);
 	rz_bin_file_delete(bin, libc_buf);
 	rz_bin_file_set_cur_binfile(bin, current_bf);
-
 	return ret_buf;
 }
+
+/**
+ * \brief Find the glibc version using string search
+ * \param core RzCore Pointer to the Rizin's core
+ * \param libc_path Pointer to the libc binary path.
+ * \param banner_start Pointer to the libc banner start which contains libc details.
+ * \return version
+ *
+ * Used to find the glibc version for the provided libc path or libc banner.
+ *
+ */
 
 RZ_API double GH(rz_get_glibc_version)(RzCore *core, const char *libc_path, ut8 *banner_start) {
 	double version = 0.0;
@@ -242,6 +252,16 @@ static GHT GH(read_val)(RzCore *core, const void *src, bool is_big_endian) {
 		return rz_read_ble64(src, is_big_endian);
 	}
 }
+
+/**
+ * \brief Fill the glibc tcache entries.
+ * \param core RzCore Pointer to the Rizin's core
+ * \param tcache Pointer to the tcache struct.
+ * \return RzList pointer for the list of tcache bins.
+ *
+ * Used to fill the tcache bins for the specific tcache.
+ *
+ */
 
 static RZ_BORROW RzList /*<RzList *>*/ *GH(fill_tcache_entries)(RzCore *core, GH(RTcache) * tcache) {
 	RzList *tcache_bins_list = rz_list_newf((RzListFree)GH(rz_heap_bin_free));
@@ -365,6 +385,14 @@ static void GH(print_tcache)(RzCore *core, RzList /*<RzList *>*/ *bins, PJ *pj, 
 	}
 	rz_list_free(bins);
 }
+
+/**
+ * \brief Checks if the binary is using tcache from glibc.
+ * \param core RzCore Pointer to the Rizin's core
+ * \return True if binary uses tcache else False.
+ *
+ * Find if the binary uses tcache using glibc version parsing.
+ */
 
 static bool GH(is_tcache)(RzCore *core) {
 	// NOTE This method of resolving libc fails in the following cases:
@@ -793,6 +821,16 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	return false;
 }
 
+/**
+ * \brief Parses tcache information from the given address in the target process memory.
+ * \param core RzCore Pointer to the Rizin's core
+ * \param tls_addr Address of the thread-local storage base address.
+ * \param tid Thread ID.
+ * \return True if tcache information was successfully parsed else false.
+ *
+ * Parse the tcache and tcache bins struct for the provided thread local base and print it.
+ */
+
 static bool GH(parse_tcache_from_addr)(RzCore *core, GHT tls_addr, GHT tid) {
 	RzDebugMap *map;
 	RzListIter *iter;
@@ -837,6 +875,16 @@ static bool GH(parse_tcache_from_addr)(RzCore *core, GHT tls_addr, GHT tid) {
 	return false;
 }
 
+/**
+ * \brief Parses Thread-Local Storage (TLS) data for a given thread ID to identify tcache structures.
+ * \param core RzCore Pointer to the Rizin's core
+ * \param th RzDebugPid Pointer to the Rizin's Debug PID structure representing the thread.
+ * \param tid Thread ID.
+ * \return True if tcache and bin structures were successfully parsed from TLS data else False.
+ *
+ * Parse the TLS data and identify the tcache and tcache-bins for the given thread ID.
+ */
+
 static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid) {
 	GHT tls_addr = GHT_MAX;
 	ut8 dtv[sizeof(GHT)] = { 0 };
@@ -858,6 +906,13 @@ static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid)
 
 	return false;
 }
+
+/**
+ * \brief Resolves tcache structures per thread.
+ * \param core RzCore Pointer to the Rizin's core
+ *
+ * Resolves the TLS base for every thread and parse to identify the tcache structures.
+ */
 
 static void GH(resolve_tcache_perthread)(RZ_NONNULL RzCore *core) {
 	RzDebugPid *th;

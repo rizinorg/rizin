@@ -707,7 +707,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 }
 
 static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
-	rz_return_val_if_fail(dbg, 0);
+	rz_return_val_if_fail(dbg, NULL);
 	RzList *list = rz_list_new();
 	if (list) {
 		list = linux_thread_list(dbg, main_pid, list);
@@ -873,6 +873,12 @@ RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *li
 	return list;
 }
 
+/**
+ * \brief Find the TLS base for the provided thread ID
+ * \param dbg RzDebug Pointer.
+ * \param tid Thread ID.
+ * \return TLS base addr
+ */
 RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	rz_return_val_if_fail(dbg, 0);
 	ut64 tls = 0;
