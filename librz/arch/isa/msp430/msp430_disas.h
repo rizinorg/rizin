@@ -7,6 +7,25 @@
 #ifndef MSP430_DISAS_H
 #define MSP430_DISAS_H
 
+static const char *msp430_register_names[] = {
+	"pc",
+	"sp",
+	"sr",
+	"cg",
+	"r4",
+	"r5",
+	"r6",
+	"r7",
+	"r8",
+	"r9",
+	"r10",
+	"r11",
+	"r12",
+	"r13",
+	"r14",
+	"r15",
+};
+
 enum msp430_oneop_opcodes {
 	MSP430_RRC,
 	MSP430_SWPB,
