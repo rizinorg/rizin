@@ -53,7 +53,7 @@ static HexILOp hex_endloop01_op = {
 /**
  * \brief Sends the IL op at \p start to the position \p newloc.
  *
- * Note: THis is a copy of the same function implemented by Qualcomm in QEMU.
+ * Note: This is a copy of the same function implemented by Qualcomm in QEMU.
  * See: https://gitlab.com/qemu-project/qemu/-/blob/master/target/hexagon/decode.c :: decode_send_insn_to
  *
  * \param ops The IL ops list.
@@ -61,10 +61,9 @@ static HexILOp hex_endloop01_op = {
  * \param newloc Position the op shall be moved to.
  */
 static void hex_send_insn_to_i(RzPVector /*<HexILOp *>*/ *ops, ut8 start, ut8 newloc) {
-	rz_return_if_fail(ops);
+	rz_return_if_fail(ops && newloc < rz_pvector_len(ops));
 
 	st32 direction;
-	st32 i;
 	if (start == newloc) {
 		return;
 	}
@@ -75,9 +74,11 @@ static void hex_send_insn_to_i(RzPVector /*<HexILOp *>*/ *ops, ut8 start, ut8 ne
 		/* move towards beginning */
 		direction = -1;
 	}
-	for (i = start; i != newloc; i += direction) {
-		HexILOp *tmp_op = rz_pvector_assign_at(ops, i, (HexILOp *)rz_pvector_at(ops, i + direction));
-		rz_pvector_assign_at(ops, i + direction, tmp_op);
+	for (st32 i = start; i != newloc; i += direction) {
+		HexILOp *neighbor_op = (HexILOp *)rz_pvector_at(ops, i + direction);
+		HexILOp *to_move_op = (HexILOp *)rz_pvector_at(ops, i);
+		rz_pvector_set(ops, i, neighbor_op);
+		rz_pvector_set(ops, i + direction, to_move_op);
 	}
 }
 

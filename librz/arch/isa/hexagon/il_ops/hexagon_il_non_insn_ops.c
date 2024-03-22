@@ -950,7 +950,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_commit_packet(HexInsnPktBundle *bundle) {
 }
 
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_jump_flag_init(HexInsnPktBundle *bundle) {
-	return SETL("jump_flag", IL_FALSE);
+	return SEQ2(SETL("jump_flag", IL_FALSE), SETL("jump_target", U32(0xffffffff)));
 }
 
 RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_next_pkt_jmp(HexInsnPktBundle *bundle) {
