@@ -85,3 +85,11 @@ $dis=base64:cGRm
 $dis=pdf
 EOF
 RUN
+
+NAME=Alias not found
+FILE=--
+CMDS=$dis
+EXPECT_ERR=<<EOF
+ERROR: core: unknown alias 'dis'
+EOF
+RUN
