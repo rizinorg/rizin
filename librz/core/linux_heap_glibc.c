@@ -886,8 +886,13 @@ static bool GH(parse_tcache_from_addr)(RzCore *core, GHT tls_addr, GHT tid) {
  */
 
 static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid) {
+	rz_return_val_if_fail(th, NULL);
 	GHT tls_addr = GHT_MAX;
 	ut8 dtv[sizeof(GHT)] = { 0 };
+
+	if (!th->tls) {
+		return false;
+	}
 
 	rz_io_nread_at(core->io, th->tls + (SZ), dtv, sizeof(GHT));
 	GHT addr = GH(read_val)(core, dtv, false);
