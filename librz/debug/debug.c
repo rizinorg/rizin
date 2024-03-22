@@ -411,6 +411,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->call_frames = NULL;
 	dbg->main_arena_resolved = false;
 	dbg->glibc_version = 231; /* default version ubuntu 20 */
+	dbg->is_glibc_resolved = false;
 	rz_debug_signal_init(dbg);
 	dbg->bp = rz_bp_new(bp_ctx);
 	rz_debug_plugin_init(dbg);
@@ -1785,4 +1786,21 @@ RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
 		rz_debug_select(debug, debug->pid, th->pid);
 	}
 	rz_list_free(threads);
+}
+
+static int thread_find(int *tid, RzDebugPid *t, void *user) {
+	return (t && (t->pid == *tid)) ? 0 : 1;
+}
+
+RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) {
+	if (!th_list) {
+		return NULL;
+	}
+
+	RzListIter *it = rz_list_find(th_list, (const void *)(size_t)&tid,
+		(RzListComparator)&thread_find, NULL);
+	if (!it) {
+		return NULL;
+	}
+	return (RzDebugPid *)rz_list_iter_get_data(it);
 }

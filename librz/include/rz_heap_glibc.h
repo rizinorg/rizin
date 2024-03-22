@@ -49,11 +49,13 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 #define MMAP_ALIGN_64 0x18
 #define MMAP_OFFSET   0x8
 
-#define HDR_SZ_32 0x8
-#define HDR_SZ_64 0x10
-#define TC_HDR_SZ 0x10
-#define TC_SZ_32  0x0
-#define TC_SZ_64  0x10
+#define HDR_SZ_32          0x8
+#define HDR_SZ_64          0x10
+#define TC_HDR_SZ          0x10
+#define TC_SZ_32           0x0
+#define TC_SZ_64           0x10
+#define HEAP_PAGE_SIZE     0x21000
+#define HEAP_PAGE_SIZE_X86 0x22000
 
 // Introduced with glibc 2.32
 
@@ -326,6 +328,8 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_32(RzCore *core, 
 
 RZ_API bool rz_heap_resolve_main_arena_64(RzCore *core, ut64 *m_arena);
 RZ_API bool rz_heap_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
+RZ_API double rz_get_glibc_version_64(RzCore *core, const char *libc_path, ut8 *banner);
+RZ_API double rz_get_glibc_version_32(RzCore *core, const char *libc_path, ut8 *banner);
 
 RZ_API bool rz_heap_update_main_arena_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
 RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState *main_arena);

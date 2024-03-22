@@ -317,7 +317,7 @@ typedef struct rz_debug_t {
 	bool verbose;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
 	int glibc_version;
-
+	bool is_glibc_resolved;
 	bool nt_x86_xstate_supported; ///< Track whether X86_FEATURE_XSAVE feature is supported on current kernel
 } RzDebug;
 
@@ -410,6 +410,7 @@ typedef struct rz_debug_pid_t {
 	int uid;
 	int gid;
 	ut64 pc;
+	ut64 tls; ///< Thread local storage base (used for accessing thread specific variables)
 } RzDebugPid;
 
 typedef struct rz_backtrace_t {
@@ -464,6 +465,9 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
 RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
 RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid);
 RZ_API RzList /*<RzDebugPid *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
+RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid);
+RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
+RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid);
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);
 RZ_API bool rz_debug_use(RzDebug *dbg, const char *str);
