@@ -14,6 +14,66 @@ struct rz_th_pool_t {
 	RzThread **threads;
 };
 
+#ifdef __WINDOWS__
+/// defines the GetLogicalProcessorInformationEx function
+typedef BOOL (*WINAPI glpie_t)(
+	LOGICAL_PROCESSOR_RELATIONSHIP,
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX,
+	PDWORD);
+
+// Classic way to get number of cores in windows.
+static size_t get_windows_compatible_n_cores() {
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	return sysinfo.dwNumberOfProcessors;
+}
+
+/*
+ * Windows NUMA support is particular
+ * https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformationex#remarks
+ *
+ * New api here:
+ * https://learn.microsoft.com/en-us/windows/win32/procthread/numa-support
+ */
+static size_t get_windows_numa_n_cores() {
+	ut8 *buffer = NULL;
+	size_t n_cores = 0;
+	DWORD length = 0;
+	HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+
+	glpie_t GetLogicalProcessorInformationEx = (glpie_t)GetProcAddress(kernel32, "GetLogicalProcessorInformationEx");
+	if (!GetLogicalProcessorInformationEx) {
+		return 0;
+	}
+
+	GetLogicalProcessorInformationEx(RelationAll, NULL, &length);
+	if (length < 1 || GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+		return 0;
+	}
+
+	buffer = malloc(length);
+	if (!buffer || !GetLogicalProcessorInformationEx(RelationAll, (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)buffer, &length)) {
+		free(buffer);
+		return 0;
+	}
+
+	for (DWORD offset = 0; offset < length;) {
+		PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX info = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)(buffer + offset);
+		offset += info->Size;
+		if (info->Relationship != RelationProcessorCore) {
+			continue;
+		}
+		for (WORD group = 0; group < info->Processor.GroupCount; ++group) {
+			for (KAFFINITY mask = info->Processor.GroupMask[group].Mask; mask != 0; mask >>= 1) {
+				n_cores += mask & 1;
+			}
+		}
+	}
+	free(buffer);
+	return n_cores;
+}
+#endif
+
 /**
  * \brief      Returns the number of available physical cores of the host machine
  *
@@ -21,9 +81,11 @@ struct rz_th_pool_t {
  */
 RZ_API size_t rz_th_physical_core_number() {
 #ifdef __WINDOWS__
-	SYSTEM_INFO sysinfo;
-	GetSystemInfo(&sysinfo);
-	return sysinfo.dwNumberOfProcessors;
+	size_t n_cores = get_windows_numa_n_cores();
+	if (n_cores > 0) {
+		return n_cores;
+	}
+	return get_windows_compatible_n_cores();
 #elif __APPLE__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __NetBSD__
 	int os_status = 0;
 	int mib[4];
