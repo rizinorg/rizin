@@ -114,9 +114,11 @@ rz_hash_sources = [
 ]
 
 dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep]
+rz_hash_sys_deps = []
 
 if sys_openssl.found()
   dependencies += [sys_openssl]
+  rz_hash_sys_deps += ['OpenSSL']
 else
   rz_hash_sources += [
     'algorithms/md4/md4.c',
@@ -146,5 +148,6 @@ meson.override_dependency('rz_hash', rz_hash_dep)
 modules += { 'rz_hash': {
     'target': rz_hash,
     'dependencies': ['rz_util'],
+    'sys_dependencies': rz_hash_sys_deps,
     'plugins': [hash_plugins]
 }}

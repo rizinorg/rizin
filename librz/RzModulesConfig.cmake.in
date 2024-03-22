@@ -35,6 +35,7 @@ set_and_check(@RIZIN_MODULE@_LIBRARY_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_LIBDIR
 find_library(@RIZIN_MODULE@_LIBRARY NAMES @RIZIN_MODULE@ HINTS "${@RIZIN_MODULE@_LIBRARY_DIRS}" NO_DEFAULT_PATH REQUIRED)
 set(@RIZIN_MODULE@_LIBRARIES "${@RIZIN_MODULE@_LIBRARY}")
 set(_@RIZIN_MODULE@_DEPENDENCIES @RIZIN_MODULE_DEPS@)
+set(_@RIZIN_MODULE@_SYS_DEPENDENCIES @RIZIN_MODULE_SYS_DEPS@)
 set(@RIZIN_MODULE@_PLUGINDIR @INSTALL_PLUGDIR@)
 
 include(CMakeFindDependencyMacro)
@@ -54,13 +55,28 @@ foreach(_module_dep ${_@RIZIN_MODULE@_DEPENDENCIES})
   list(APPEND @RIZIN_MODULE@_LIBRARIES "${${_module_dep}_LIBRARIES}")
   list(APPEND _@RIZIN_MODULE@_DEPENDENCY_TARGETS "${_module_dep}::${_module_dep}")
 endforeach()
+set(_sys_dependency_targets)
+foreach(_module_dep ${_@RIZIN_MODULE@_SYS_DEPENDENCIES})
+  if (NOT ${_module_dep}_FOUND)
+    find_package(${_module_dep} REQUIRED)
+  endif()
+
+  if (NOT ${_module_dep}_FOUND)
+    set(@RIZIN_MODULE@_FOUND False)
+    return()
+  endif()
+
+  string(TOUPPER ${_module_dep} _module_dep_upper)
+  list(APPEND _sys_dependency_targets ${${_module_dep_upper}_LIBRARIES})
+  list(APPEND @RIZIN_MODULE@_INCLUDE_DIRS ${${_module_dep_upper}_INCLUDE_DIRS})
+endforeach()
 
 list(REMOVE_DUPLICATES @RIZIN_MODULE@_INCLUDE_DIRS)
 list(REMOVE_DUPLICATES @RIZIN_MODULE@_LIBRARIES)
 
 if(NOT TARGET @RIZIN_MODULE@::@RIZIN_MODULE@)
   add_library(@RIZIN_MODULE@::@RIZIN_MODULE@ SHARED IMPORTED)
-  target_link_libraries(@RIZIN_MODULE@::@RIZIN_MODULE@ INTERFACE ${_@RIZIN_MODULE@_DEPENDENCY_TARGETS})
+  target_link_libraries(@RIZIN_MODULE@::@RIZIN_MODULE@ INTERFACE "${_@RIZIN_MODULE@_DEPENDENCY_TARGETS};${_sys_dependency_targets}")
   set_target_properties(@RIZIN_MODULE@::@RIZIN_MODULE@ PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${@RIZIN_MODULE@_INCLUDE_DIRS}")
   set_target_properties(@RIZIN_MODULE@::@RIZIN_MODULE@ PROPERTIES

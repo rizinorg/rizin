@@ -10,9 +10,11 @@ rz_magic_sources = [
 ]
 
 rz_magic_deps = [rz_util_dep]
+rz_magic_sys_deps = []
 if sys_magic.found()
   message('Use system-provided magic library')
   rz_magic_deps += [sys_magic]
+  rz_magic_sys_deps += ['magic']
 else
   message('Use bundled magic library')
 endif
@@ -38,6 +40,7 @@ meson.override_dependency('rz_magic', rz_magic_dep)
 modules += { 'rz_magic': {
     'target': rz_magic,
     'dependencies': ['rz_util']
+    'sys_dependencies': rz_magic_sys_deps,
 }}
 
 subdir('d')
