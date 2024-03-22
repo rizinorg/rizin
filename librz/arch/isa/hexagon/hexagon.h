@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
-// LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-09-12 14:26:04-04:00
+// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
+// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
+// Date of code generation: 2024-03-16 06:22:39-05:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -17,13 +17,43 @@
 #include <rz_list.h>
 #include <rz_types.h>
 #include <rz_util/rz_print.h>
-#include "hexagon_insn.h"
+#include <hexagon/hexagon_insn.h>
 
-#define HEX_MAX_OPERANDS    6
-#define HEX_PARSE_BITS_MASK 0xc000
+#define HEX_INSN_SIZE        4
+#define HEX_MAX_INSN_PER_PKT 4
+
+#define HEX_PC_ALIGNMENT 0x4
+
+#define HEX_PRED_WIDTH  8
+#define HEX_GPR_WIDTH   32
+#define HEX_GPR64_WIDTH 64
+#define HEX_CTR_WIDTH   32
+#define HEX_CTR64_WIDTH 64
+
+#define HEX_INVALID_INSN_0 0x00000000
+#define HEX_INVALID_INSN_F 0xffffffff
 
 #define MAX_CONST_EXT      512
 #define HEXAGON_STATE_PKTS 8
+#define ARRAY_LEN(a)       (sizeof(a) / sizeof((a)[0]))
+
+#define ALIAS2OP(alias, is_new)         hex_alias_to_op(alias, is_new)
+#define EXPLICIT2OP(num, class, is_new) hex_explicit_to_op(num, class, is_new)
+#define NREG2OP(bundle, isa_id)         hex_nreg_to_op(bundle, isa_id)
+#define HEX_MAX_OPERANDS                6
+#define HEX_PARSE_BITS_MASK             0xc000
+
+typedef struct {
+	const char *name;
+	const char *alias;
+	const char *name_tmp;
+	const char *alias_tmp;
+} HexRegNames;
+
+typedef struct {
+	ut32 /* Reg class */ cls;
+	ut32 /* Reg Enum */ reg_enum;
+} HexRegAliasMapping;
 
 typedef enum {
 	HEX_OP_TYPE_IMM,
@@ -65,14 +95,54 @@ typedef struct {
 } HexPktInfo;
 
 typedef struct {
-	ut8 type;
+	ut8 /* HexOpType */ type; ///< Operand type: Immediate or register
+	ut8 class; ///< Equivalent to: HexRegClass (for registers) OR HexOpTemplateFlag (for immediate values).
+	char isa_id; ///< The identifier character in the ISA of this instruction: 'd' for Rdd, I for Ii etc. 0x0 if not known.
 	union {
-		ut8 reg; // + additional Hi or Lo selector // + additional shift // + additional :brev //
-		st64 imm;
-	} op;
-	HexOpAttr attr;
-	ut8 shift;
+		ut8 reg; ///< Register number. E.g. 3 for R3 etc.
+		st64 imm; ///< Immediate value.
+	} op; ///< Actual value of the operand.
+	HexOpAttr attr; ///< Attributes of the operand.
+	ut8 shift; ///< Number of bits to shift the bits in the opcode to retrieve the operand value.
 } HexOp;
+
+typedef RzILOpEffect *(*HexILOpGetter)(void /* HexInsnPktBundle */ *);
+
+typedef enum {
+	HEX_IL_INSN_ATTR_INVALID = 0, ///< Operation was not set or implemented.
+	HEX_IL_INSN_ATTR_NONE = 1 << 0, ///< Nothing special about this operation.
+	HEX_IL_INSN_ATTR_COND = 1 << 1, ///< Executes differently if a certain condition is met.
+	HEX_IL_INSN_ATTR_SUB = 1 << 2, ///< Operation is a sub-instruction.
+	HEX_IL_INSN_ATTR_BRANCH = 1 << 3, ///< Operation contains a branch.
+	HEX_IL_INSN_ATTR_MEM_READ = 1 << 4, ///< Operation reads from the memory.
+	HEX_IL_INSN_ATTR_MEM_WRITE = 1 << 5, ///< Operation writes to the memory.
+	HEX_IL_INSN_ATTR_NEW = 1 << 6, ///< Operation reads a .new value.
+	HEX_IL_INSN_ATTR_WPRED = 1 << 7, ///< Operation writes a predicate register.
+	HEX_IL_INSN_ATTR_WRITE_P0 = 1 << 8, ///< Writes predicate register P0
+	HEX_IL_INSN_ATTR_WRITE_P1 = 1 << 9, ///< Writes predicate register P1
+	HEX_IL_INSN_ATTR_WRITE_P2 = 1 << 10, ///< Writes predicate register P2
+	HEX_IL_INSN_ATTR_WRITE_P3 = 1 << 11, ///< Writes predicate register P3
+} HexILInsnAttr;
+
+/**
+ * \brief Represents a single operation of an instruction.
+ */
+typedef struct {
+	HexILOpGetter get_il_op; ///< Pointer to the getter to retrieve the RzILOpEffects of this operation.
+	HexILInsnAttr attr; ///< Attributes to shuffle it to the correct position in the packets IL ops.
+	void /* HexInsn */ *hi; ///< The instruction this op belongs to.
+} HexILOp;
+
+/**
+ * \brief Struct of instruction operations. Usually an instruction has only one operation
+ * but duplex and compound instructions can have more.
+ * The last op in this struct has all members set to NULL/0.
+ */
+typedef struct {
+	HexILOp op0;
+	HexILOp op1;
+	HexILOp end;
+} HexILInsn;
 
 typedef struct {
 	bool is_sub; ///< Flag for sub-instructions.
@@ -83,6 +153,9 @@ typedef struct {
 	HexInsnID identifier; ///< The instruction identifier
 	char text_infix[128]; ///< Textual disassembly of the instruction.
 	HexOp ops[HEX_MAX_OPERANDS]; ///< The operands of the instructions.
+	HexILInsn il_insn; ///< RZIL instruction. These are not meant for execution! Use the packet ops for that.
+	ut8 slot; ///< The slot the instruction occupies.
+	RzFloatRMode fround_mode; ///< The float rounding mode of the instruction.
 } HexInsn;
 
 /**
@@ -98,7 +171,7 @@ typedef struct {
 		HexInsn *insn; ///< Pointer to instruction if is_duplex = false.
 	} bin;
 	ut32 addr; ///< Address of container. Equals address of instruction or of the high sub-instruction if this is a duplex.
-	ut32 opcode; ///< The instruction opcode.
+	ut32 bytes; ///< The instruction bytes.
 	HexPktInfo pkt_info; ///< Packet related information. First/last instr., prefix and postfix for text etc.
 	// Deprecated members will be removed on RzArch introduction.
 	RZ_DEPRECATE RzAsmOp asm_op; ///< Private copy of AsmOp. Currently only of interest because it holds the utf8 flag.
@@ -106,53 +179,110 @@ typedef struct {
 	char text[296]; ///< Textual disassembly
 } HexInsnContainer;
 
+#define HEX_LOG_SLOT_BIT_OFF   4
+#define HEX_LOG_SLOT_LOG_WIDTH 2
+#define HEX_LOG_SLOT_LOG_MASK  0b11
+
+/**
+ * \brief Holds information about the execution of the packet.
+ */
+typedef struct {
+	RzBitVector *slot_cancelled; ///< Flags for cancelled slots. If bit at (1 << slot i) is set, slot i is cancelled.
+	RzBitVector *pred_read; ///< Predicate register (P0-P3) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *pred_tmp_read; ///< Tmp predicate register (P0-P3) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *pred_written; ///< Predicate register (P0-P3) written, if flags (3:0) are set at (1 << pred_num).
+				   ///< The bits[11:4] are used to indicate the last slot which wrote to the predicate (2bit each).
+				   ///< Details are necessary because, if instructions in different slots
+				   ///< write to the same predicate, the result is ANDed.
+	RzBitVector *gpr_read; ///< GPR register (R0-R31) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *gpr_tmp_read; ///< Tmp GPR register (R0-R31) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *gpr_written; ///< GPR register (R0-R31) written, if flags set at (1 << reg_num) are set.
+	RzBitVector *ctr_read; ///< Control register (C0-C31) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *ctr_tmp_read; ///< Tmp control register (C0-C31) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *ctr_written; ///< Control register (C0-C31) written, if flags set at (1 << reg_num) are set.
+} HexILExecData;
+
 /**
  * \brief Represents an Hexagon instruction packet.
  * We do not assign instructions to slots, but the order of instructions matters nonetheless.
- * The layout of a packet is:
+ * The layout of a real packet is:
  *
  * low addr | Slot 3
  * ---------+----------
  *          | Slot 2
  * ---------+----------
- *          | Slot 1    -> High Sub-Instruction is always in Slot 1
+ *          | Slot 1    -> High Sub-Instruction of Duplex is always in Slot 1
  * ---------+----------
- * high addr| Slot 0    -> Low Sub-Instruction is always in Slot 0
+ * high addr| Slot 0    -> Low Sub-Instruction of Duplex is always in Slot 0
  *
  * Because of this order the textual disassembly of duplex instructions is: "<high-text> ; <low-text>".
  * Also, the high sub-instruction is located at the _lower_ memory address (aligned to 4 bytes).
  * The low sub-instruction at <high.addr + 2>.
  *
  * This said: The HexPkt.bin holds only instruction container, no instructions!
- * The container holds the instructions or sub-instructions.
+ * The container holds a normal instruction or two sub-instructions.
  */
 typedef struct {
-	RzList /*<HexInsnContainer *>*/ *bin; ///< Descending by address sorted list of instruction containers.
 	bool last_instr_present; ///< Has an instruction the parsing bits 0b11 set (is last instruction).
 	bool is_valid; ///< Is it a valid packet? Do we know which instruction is the first?
+	bool is_eob; ///< Is this packet the end of a code block? E.g. contains unconditional jmp.
+	HexLoopAttr hw_loop; ///< If the packet is the end of a hardware loop, it stores here from which one.s
 	ut32 hw_loop0_addr; ///< Start address of hardware loop 0
 	ut32 hw_loop1_addr; ///< Start address of hardware loop 1
-	ut64 last_access; ///< Last time accessed in milliseconds
 	ut32 pkt_addr; ///< Address of the packet. Equals the address of the first instruction.
-	bool is_eob; ///< Is this packet the end of a code block? E.g. contains unconditional jmp.
+	ut64 last_access; ///< Last time accessed in milliseconds
+	RzList /*<HexInsnContainer *>*/ *bin; ///< Descending by address sorted list of instruction containers.
+	RzPVector /*<HexILOp *>*/ *il_ops; ///< Pointer to RZIL ops of the packet. If empty the il ops were not shuffled into order yet.
+	HexILExecData il_op_stats; ///< Meta information about the IL operations executed (register read/written etc.)
 } HexPkt;
 
+/**
+ * \brief This struct is given to the IL getter of each instruction.
+ * They use it for resolving register names, alias and the like.
+ */
 typedef struct {
-	ut32 addr; // Address of the instruction which gets the extender applied.
-	ut32 const_ext; // The constant extender value.
+	const HexInsn *insn;
+	HexPkt *pkt;
+} HexInsnPktBundle;
+
+typedef struct {
+	ut32 addr; ///< Address of the instruction which gets the extender applied.
+	ut32 const_ext; ///< The constant extender value.
 } HexConstExt;
 
 /**
+ * \brief Flags for the debug printing about the state packet buffer.
+ */
+typedef enum {
+	HEX_BUF_ADD = 0, ///< Instruction is added to a specific packet i.
+	HEX_BUF_STALE = 1, ///< Instruction is written to a stale packet (overwrites old one).
+	HEX_BUF_NEW = 2, ///< Instruction is written to a new packet (overwrites old one).
+} HexBufferAction;
+
+/**
  * \brief Buffer packets for reversed instructions.
- *
  */
 typedef struct {
+	bool just_init; ///< Flag indicates if IL VM was just initialized.
 	HexPkt pkts[HEXAGON_STATE_PKTS]; // buffered instructions
 	RzList /*<HexConstExt *>*/ *const_ext_l; // Constant extender values.
 	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns; ///< PVector with token patterns. Priority ordered.
 } HexState;
+
+/**
+ * \brief Register fields of different registers.
+ */
+typedef enum {
+	HEX_REG_FIELD_USR_LPCFG, ///< The LPCFG field of the USR register
+	HEX_REG_FIELD_USR_OVF, ///< The OVF field of the USR register
+} HexRegField;
+
+typedef enum {
+	HEX_RF_WIDTH,
+	HEX_RF_OFFSET,
+} HexRegFieldProperty;
 
 typedef enum {
 	HEX_REG_CLASS_CTR_REGS,
@@ -195,6 +325,16 @@ typedef enum {
 	HEX_REG_CTR_REGS_C17 = 17, // framekey
 	HEX_REG_CTR_REGS_C18 = 18, // pktcountlo
 	HEX_REG_CTR_REGS_C19 = 19, // pktcounthi
+	HEX_REG_CTR_REGS_C20 = 20, // C20
+	HEX_REG_CTR_REGS_C21 = 21,
+	HEX_REG_CTR_REGS_C22 = 22,
+	HEX_REG_CTR_REGS_C23 = 23,
+	HEX_REG_CTR_REGS_C24 = 24,
+	HEX_REG_CTR_REGS_C25 = 25,
+	HEX_REG_CTR_REGS_C26 = 26,
+	HEX_REG_CTR_REGS_C27 = 27,
+	HEX_REG_CTR_REGS_C28 = 28,
+	HEX_REG_CTR_REGS_C29 = 29,
 	HEX_REG_CTR_REGS_C30 = 30, // utimerlo
 	HEX_REG_CTR_REGS_C31 = 31, // utimerhi
 } HEX_CTR_REGS; // CtrRegs
@@ -210,6 +350,11 @@ typedef enum {
 	HEX_REG_CTR_REGS64_C15_14 = 14, // upcycle
 	HEX_REG_CTR_REGS64_C17_16 = 16,
 	HEX_REG_CTR_REGS64_C19_18 = 18, // pktcount
+	HEX_REG_CTR_REGS64_C21_20 = 20,
+	HEX_REG_CTR_REGS64_C23_22 = 22,
+	HEX_REG_CTR_REGS64_C25_24 = 24,
+	HEX_REG_CTR_REGS64_C27_26 = 26,
+	HEX_REG_CTR_REGS64_C29_28 = 28,
 	HEX_REG_CTR_REGS64_C31_30 = 30, // utimer
 } HEX_CTR_REGS64; // CtrRegs64
 
@@ -573,34 +718,127 @@ typedef enum {
 	HEX_REG_SYS_REGS64_S79_78 = 78,
 } HEX_SYS_REGS64; // SysRegs64
 
-#define BIT_MASK(len)          (BIT(len) - 1)
-#define BF_MASK(start, len)    (BIT_MASK(len) << (start))
-#define BF_PREP(x, start, len) (((x)&BIT_MASK(len)) << (start))
-#define BF_GET(y, start, len)  (((y) >> (start)) & BIT_MASK(len))
-#define BF_GETB(y, start, end) (BF_GET((y), (start), (end) - (start) + 1)
+typedef enum {
+	HEX_REG_ALIAS_SA0 = 0,
+	HEX_REG_ALIAS_LC0 = 1,
+	HEX_REG_ALIAS_SA1 = 2,
+	HEX_REG_ALIAS_LC1 = 3,
+	HEX_REG_ALIAS_P3_0 = 4,
+	HEX_REG_ALIAS_C5 = 5,
+	HEX_REG_ALIAS_M0 = 6,
+	HEX_REG_ALIAS_M1 = 7,
+	HEX_REG_ALIAS_USR = 8,
+	HEX_REG_ALIAS_PC = 9,
+	HEX_REG_ALIAS_UGP = 10,
+	HEX_REG_ALIAS_GP = 11,
+	HEX_REG_ALIAS_CS0 = 12,
+	HEX_REG_ALIAS_CS1 = 13,
+	HEX_REG_ALIAS_UPCYCLELO = 14,
+	HEX_REG_ALIAS_UPCYCLEHI = 15,
+	HEX_REG_ALIAS_FRAMELIMIT = 16,
+	HEX_REG_ALIAS_FRAMEKEY = 17,
+	HEX_REG_ALIAS_PKTCOUNTLO = 18,
+	HEX_REG_ALIAS_PKTCOUNTHI = 19,
+	HEX_REG_ALIAS_C20 = 20,
+	HEX_REG_ALIAS_UTIMERLO = 21,
+	HEX_REG_ALIAS_UTIMERHI = 22,
+	HEX_REG_ALIAS_LC0_SA0 = 23,
+	HEX_REG_ALIAS_LC1_SA1 = 24,
+	HEX_REG_ALIAS_M1_0 = 25,
+	HEX_REG_ALIAS_CS1_0 = 26,
+	HEX_REG_ALIAS_UPCYCLE = 27,
+	HEX_REG_ALIAS_PKTCOUNT = 28,
+	HEX_REG_ALIAS_UTIMER = 29,
+	HEX_REG_ALIAS_LR_FP = 30,
+	HEX_REG_ALIAS_GELR = 31,
+	HEX_REG_ALIAS_GSR = 32,
+	HEX_REG_ALIAS_GOSP = 33,
+	HEX_REG_ALIAS_GBADVA = 34,
+	HEX_REG_ALIAS_GPMUCNT4 = 35,
+	HEX_REG_ALIAS_GPMUCNT5 = 36,
+	HEX_REG_ALIAS_GPMUCNT6 = 37,
+	HEX_REG_ALIAS_GPMUCNT7 = 38,
+	HEX_REG_ALIAS_GPCYCLELO = 39,
+	HEX_REG_ALIAS_GPCYCLEHI = 40,
+	HEX_REG_ALIAS_GPMUCNT0 = 41,
+	HEX_REG_ALIAS_GPMUCNT1 = 42,
+	HEX_REG_ALIAS_GPMUCNT2 = 43,
+	HEX_REG_ALIAS_GPMUCNT3 = 44,
+	HEX_REG_ALIAS_SP = 45,
+	HEX_REG_ALIAS_FP = 46,
+	HEX_REG_ALIAS_LR = 47,
+	HEX_REG_ALIAS_SGP0 = 48,
+	HEX_REG_ALIAS_SGP1 = 49,
+	HEX_REG_ALIAS_STID = 50,
+	HEX_REG_ALIAS_ELR = 51,
+	HEX_REG_ALIAS_BADVA0 = 52,
+	HEX_REG_ALIAS_BADVA1 = 53,
+	HEX_REG_ALIAS_SSR = 54,
+	HEX_REG_ALIAS_CCR = 55,
+	HEX_REG_ALIAS_HTID = 56,
+	HEX_REG_ALIAS_BADVA = 57,
+	HEX_REG_ALIAS_IMASK = 58,
+	HEX_REG_ALIAS_EVB = 59,
+	HEX_REG_ALIAS_MODECTL = 60,
+	HEX_REG_ALIAS_SYSCFG = 61,
+	HEX_REG_ALIAS_S19 = 62,
+	HEX_REG_ALIAS_S20 = 63,
+	HEX_REG_ALIAS_VID = 64,
+	HEX_REG_ALIAS_S22 = 65,
+	HEX_REG_ALIAS_CFGBASE = 66,
+	HEX_REG_ALIAS_DIAG = 67,
+	HEX_REG_ALIAS_REV = 68,
+	HEX_REG_ALIAS_PCYCLELO = 69,
+	HEX_REG_ALIAS_PCYCLEHI = 70,
+	HEX_REG_ALIAS_ISDBST = 71,
+	HEX_REG_ALIAS_ISDBCFG0 = 72,
+	HEX_REG_ALIAS_ISDBCFG1 = 73,
+	HEX_REG_ALIAS_BRKPTPC0 = 74,
+	HEX_REG_ALIAS_BRKPTCFG0 = 75,
+	HEX_REG_ALIAS_BRKPTPC1 = 76,
+	HEX_REG_ALIAS_BRKPTCFG1 = 77,
+	HEX_REG_ALIAS_ISDBMBXIN = 78,
+	HEX_REG_ALIAS_ISDBMBXOUT = 79,
+	HEX_REG_ALIAS_ISDBEN = 80,
+	HEX_REG_ALIAS_ISDBGPR = 81,
+	HEX_REG_ALIAS_PMUCNT0 = 82,
+	HEX_REG_ALIAS_PMUCNT1 = 83,
+	HEX_REG_ALIAS_PMUCNT2 = 84,
+	HEX_REG_ALIAS_PMUCNT3 = 85,
+	HEX_REG_ALIAS_PMUEVTCFG = 86,
+	HEX_REG_ALIAS_PMUCFG = 87,
+	HEX_REG_ALIAS_SGP1_0 = 88,
+	HEX_REG_ALIAS_BADVA1_0 = 89,
+	HEX_REG_ALIAS_CCR_SSR = 90,
+	HEX_REG_ALIAS_PCYCLE = 91,
+} HexRegAlias;
 
-char *hex_get_ctr_regs(int opcode_reg, bool get_alias);
-char *hex_get_ctr_regs64(int opcode_reg, bool get_alias);
-char *hex_get_double_regs(int opcode_reg, bool get_alias);
-char *hex_get_general_double_low8_regs(int opcode_reg, bool get_alias);
-char *hex_get_general_sub_regs(int opcode_reg, bool get_alias);
-char *hex_get_guest_regs(int opcode_reg, bool get_alias);
-char *hex_get_guest_regs64(int opcode_reg, bool get_alias);
-char *hex_get_hvx_qr(int opcode_reg, bool get_alias);
-char *hex_get_hvx_vqr(int opcode_reg, bool get_alias);
-char *hex_get_hvx_vr(int opcode_reg, bool get_alias);
-char *hex_get_hvx_wr(int opcode_reg, bool get_alias);
-char *hex_get_int_regs(int opcode_reg, bool get_alias);
-char *hex_get_int_regs_low8(int opcode_reg, bool get_alias);
-char *hex_get_mod_regs(int opcode_reg, bool get_alias);
-char *hex_get_pred_regs(int opcode_reg, bool get_alias);
-char *hex_get_sys_regs(int opcode_reg, bool get_alias);
-char *hex_get_sys_regs64(int opcode_reg, bool get_alias);
-char *hex_get_reg_in_class(HexRegClass cls, int opcode_reg, bool get_alias);
+RZ_API ut32 hex_resolve_reg_enum_id(HexRegClass class, ut32 reg_num);
+const char *hex_get_ctr_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_ctr_regs64(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_double_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_general_double_low8_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_general_sub_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_guest_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_guest_regs64(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_hvx_qr(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_hvx_vqr(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_hvx_vr(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_hvx_wr(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_int_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_int_regs_low8(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_mod_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_pred_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_sys_regs(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+const char *hex_get_sys_regs64(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
+RZ_API const char *hex_get_reg_in_class(HexRegClass cls, int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
 
 RZ_API RZ_BORROW RzConfig *hexagon_get_config();
 RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_new_extender, const ut32 addr);
 int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p);
 int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsnContainer *hi, HexPkt *pkt);
+RZ_API const HexOp hex_alias_to_op(HexRegAlias alias, bool tmp_reg);
+RZ_API const char *hex_alias_to_reg_name(HexRegAlias alias, bool tmp_reg);
+RZ_API const HexOp hex_explicit_to_op(ut32 reg_num, HexRegClass reg_class, bool tmp_reg);
 
 #endif

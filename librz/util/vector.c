@@ -471,6 +471,26 @@ RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *p
 	return true;
 }
 
+/**
+ * \brief Assign the pointer \p ptr at \p index in the pvector.
+ *
+ * \param vec The pvector to assign to.
+ * \param index The index to assign the pointer to.
+ * \param ptr The pointer to assign.
+ *
+ * \return The pointer stored at \p index before. Or NULL in case of failure.
+ */
+RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NONNULL void *ptr) {
+	rz_return_val_if_fail(vec && ptr, NULL);
+	void **p = rz_vector_index_ptr(&vec->v, index);
+	if (!p) {
+		return NULL;
+	}
+	void *prev = *p;
+	rz_vector_assign_at(&vec->v, index, ptr);
+	return prev;
+}
+
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
 	rz_return_val_if_fail(vec, NULL);
 	void *r = rz_pvector_at(vec, index);
