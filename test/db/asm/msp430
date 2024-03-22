@@ -1,54 +1,64 @@
-d "adc r11" 0b63
-d "adc.b r11" 4b63
-d "bic #2, r10" 2ac3
-d "bic #4, r10" 2ac2
-d "bic.b #2, &0x0026" e2c32600
-d "bic.b #4, &0x002e" e2c22e00
-d "bis.b #2, &0x0021" e2d32100
-d "br #0x0021" 30402100
-d "br &0x0003" 10420300
-d "br sp" 0041
-d "br r10" 004a
-d "call #0xc096" b01296c0
-d "clr 0x0033" 80433300
-d "clr 0xfffa(r4)" 8443faff
-d "clrn" 22c2
-d "clrz" 22c3
-d "cmp.b #0x003b, 0x0(r11)" fb903b000000
-d "dadc r11" 0ba3
-d "dadc.b r11" 4ba3
-d "dec r11" 1b83
-d "dec.b r11" 5b83
-d "inc r11" 1b53
-d "inv 0x0003" b0e30300
-d "inv 0x3(r5)" b5e30300
-d "inv r10" 3ae3
-d "jeq $+0x0014" 0924
-d "jmp $+0x0010" 073c
-d "mov #0x0003, 0x5(r9)" b94003000500
-d "mov #0x000a, 0x002a" b0400a002a00
-d "mov #0x0021, 0x6(r11)" bb4021000600
-d "mov #1, 0x002c" 90432c00
-d "mov #8, 0x002c" b0422c00
-d "mov #8, 0x002e" b0422e00
-d "mov &0x0033, &0x002e" 924233002e00
-d "mov &0x0033, 0x002a" 904233002a00
-d "mov 0x3(r6), &0x002e" 924603002e00
-d "mov 0x5(r10), 0x6(r11)" 9b4a05000600
-d "mov 0x6(r11), &0x0033" 924b06003300
-d "mov.b &0x0021, r15" 5f422100
-d "mov.b r15, &0x0021" c24f2100
-d "nop" 0343
-d "pop r11" 3b41
-d "pop r4" 3441
-d "push #1" 1312
-d "ret" 3041
-d "sbc r11" 0b73
-d "sbc.b r11" 4b73
-d "setc" 12d3
-d "setz" 22d3
-d "tst &0x0003" 82930300
-d "tst 0x3(r5)" 85930300
-d "tst r10" 0a93
-d "xor.b #0x0020, r15" 7fe02000
-d "xor.b #8, r15" 7fe2
+d "adc r11" 0b63 0x0 (branch (is_zero (& (var sp) (bv 16 0x1))) nop (seq (set old_destination (var r11)) (set result (+ (bv 16 0x1) (var old_destination))) (set r11 (var result)) (set sr (| (| (ite (== (var old_destination) (bv 16 0xffff)) (bv 16 0x3) (bv 16 0x0)) (| (& (var sr) (bv 16 0xfef8)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))) (<< (ite (== (var old_destination) (bv 16 0x7fff)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)))))
+d "adc.b r11" 4b63 0x0 (branch (is_zero (& (var sp) (bv 16 0x1))) nop (seq (set old_destination (cast 8 false (var r11))) (set result (+ (bv 8 0x1) (var old_destination))) (set r11 (cast 16 false (var result))) (set sr (| (| (ite (== (var old_destination) (bv 8 0xff)) (bv 16 0x3) (bv 16 0x0)) (| (& (var sr) (bv 16 0xfef8)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))) (<< (ite (== (var old_destination) (bv 8 0x7f)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)))))
+d "add #0x0010, r9" 39501000 0x0 (seq (set old_destination (var r9)) (set source (bv 16 0x10)) (set result (+ (var source) (var old_destination))) (set r9 (var result)) (set sr (| (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false)) (ite (|| (|| (&& (msb (var source)) (msb (var old_destination))) (&& (! (msb (var result))) (msb (var source)))) (&& (msb (var old_destination)) (! (msb (var result))))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (&& (! (^^ (msb (var source)) (msb (var old_destination)))) (^^ (msb (var result)) (msb (var source)))) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false))))
+d "and.b #0xf0f0, r12" 7cf0f0f0 0x0 (seq (set old_destination (cast 8 false (var r12))) (set source (bv 8 0xf0)) (set result (& (var source) (var old_destination))) (set r12 (cast 16 false (var result))) (set sr (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false)) (ite (! (is_zero (var result))) (bv 16 0x1) (bv 16 0x0)))))
+d "bic #2, r10" 2ac3 0x0 (set r10 (& (~ (bv 16 0x2)) (var r10)))
+d "bic #4, r10" 2ac2 0x0 (set r10 (& (~ (bv 16 0x4)) (var r10)))
+d "bic.b #2, &0x0026" e2c32600 0x0 (store 0 (bv 16 0x26) (& (~ (bv 8 0x2)) (loadw 0 8 (bv 16 0x26))))
+d "bic.b #4, &0x002e" e2c22e00 0x0 (store 0 (bv 16 0x2e) (& (~ (bv 8 0x4)) (loadw 0 8 (bv 16 0x2e))))
+d "bis.b #2, &0x0021" e2d32100 0x0 (store 0 (bv 16 0x21) (| (bv 8 0x2) (loadw 0 8 (bv 16 0x21))))
+d "bit #0x0015, &0x4242" b2b015004242 0x0 (seq (set result (& (bv 16 0x15) (loadw 0 16 (bv 16 0x4242)))) (set sr (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false)) (ite (! (is_zero (var result))) (bv 16 0x1) (bv 16 0x0)))))
+d "br #0x0021" 30402100 0x0 (jmp (bv 16 0x21))
+d "br &0x0003" 10420300 0x0 (jmp (loadw 0 16 (bv 16 0x3)))
+d "br sp" 0041 0x0 (jmp (var sp))
+d "br r10" 004a 0x0 (jmp (var r10))
+d "call #0xc096" b01296c0 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (+ (bv 16 0x0) (bv 16 0x4))) (jmp (bv 16 0xc096)))
+d "clr 0x0033" 80433300 0x0 (storew 0 (+ (bv 16 0x33) (bv 16 0x0)) (bv 16 0x0))
+d "clr 0xfffa(r4)" 8443faff 0x0 (storew 0 (+ (bv 16 0xfffa) (var r4)) (bv 16 0x0))
+d "clrn" 22c2 0x0 (set sr (& (var sr) (bv 16 0xfffb)))
+d "clrz" 22c3 0x0 (set sr (& (var sr) (bv 16 0xfffd)))
+d "cmp.b #0x003b, 0x0(r11)" fb903b000000 0x0 (seq (set op0 (bv 8 0x3b)) (set op1 (+ (bv 8 0x1) (~ (var op0)))) (set op2 (loadw 0 8 (+ (bv 16 0x0) (var r11)))) (set result (+ (var op1) (var op2))) (set sr (| (| (| (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false)) (ite (|| (|| (&& (msb (var op1)) (msb (var op2))) (&& (! (msb (var result))) (msb (var op1)))) (&& (msb (var op2)) (! (msb (var result))))) (bv 16 0x1) (bv 16 0x0))) (ite (== (var op0) (bv 8 0x0)) (bv 16 0x1) (bv 16 0x0))) (<< (ite (&& (! (^^ (msb (var op1)) (msb (var op2)))) (^^ (msb (var result)) (msb (var op1)))) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)) (<< (ite (== (var op0) (bv 8 0x80)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false))))
+d "dadc r11" 0ba3 0x0 (branch (is_zero (& (var sp) (bv 16 0x1))) nop (seq (set operand (var r11)) (branch (== (& (var operand) (bv 16 0x9)) (bv 16 0x9)) (branch (== (& (var operand) (bv 16 0x90)) (bv 16 0x90)) (branch (== (& (var operand) (bv 16 0x900)) (bv 16 0x900)) (branch (== (& (var operand) (bv 16 0x9000)) (bv 16 0x9000)) (set result (bv 16 0x0)) (set result (& (+ (var operand) (bv 16 0x1000)) (bv 16 0xf000)))) (set result (& (+ (var operand) (bv 16 0x100)) (bv 16 0xff00)))) (set result (& (+ (var operand) (bv 16 0x10)) (bv 16 0xfff0)))) (set result (+ (var operand) (bv 16 0x1))))))
+d "dadc.b r11" 4ba3 0x0 (branch (is_zero (& (var sp) (bv 16 0x1))) nop (seq (set operand (cast 8 false (var r11))) (branch (== (& (var operand) (bv 8 0x9)) (bv 8 0x9)) (branch (== (& (var operand) (bv 8 0x90)) (bv 8 0x90)) (set result (bv 8 0x0)) (set result (& (+ (var operand) (bv 8 0x10)) (bv 8 0xf0)))) (set result (+ (var operand) (bv 8 0x1))))))
+d "dec r11" 1b83 0x0 (seq (set old_destination (var r11)) (set result (- (bv 16 0x1) (var old_destination))) (set r11 (var result)) (set sr (| (| (| (| (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false) (& (var sr) (bv 16 0xfef8))) (ite (! (== (var old_destination) (bv 16 0x0))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (== (var old_destination) (bv 16 0x1)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (== (var old_destination) (bv 16 0x8000)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false))))
+d "dec.b r11" 5b83 0x0 (seq (set old_destination (cast 8 false (var r11))) (set result (- (bv 8 0x1) (var old_destination))) (set r11 (cast 16 false (var result))) (set sr (| (| (| (| (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false) (& (var sr) (bv 16 0xfef8))) (ite (! (== (var old_destination) (bv 8 0x0))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (== (var old_destination) (bv 8 0x1)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (== (var old_destination) (bv 8 0x80)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false))))
+d "inc r11" 1b53 0x0 (seq (set old_destination (var r11)) (set result (+ (bv 16 0x1) (var old_destination))) (set r11 (var result)) (set sr (| (| (ite (== (var old_destination) (bv 16 0xffff)) (bv 16 0x3) (bv 16 0x0)) (| (& (var sr) (bv 16 0xfef8)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))) (<< (ite (== (var old_destination) (bv 16 0x7fff)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false))))
+d "inv 0x0003" b0e30300 0x73 (seq (set old_destination (loadw 0 16 (+ (bv 16 0x3) (bv 16 0x73)))) (set result (~ (var old_destination))) (storew 0 (+ (bv 16 0x3) (bv 16 0x73)) (var result)) (set sr (| (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (msb (var old_destination)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)) (ite (! (is_zero (var result))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))))
+d "inv 0x3(r5)" b5e30300 0x0 (seq (set old_destination (loadw 0 16 (+ (bv 16 0x3) (var r5)))) (set result (~ (var old_destination))) (storew 0 (+ (bv 16 0x3) (var r5)) (var result)) (set sr (| (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (msb (var old_destination)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)) (ite (! (is_zero (var result))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))))
+d "inv r10" 3ae3 0x0 (seq (set old_destination (var r10)) (set result (~ (var old_destination))) (set r10 (var result)) (set sr (| (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (msb (var old_destination)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)) (ite (! (is_zero (var result))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))))
+d "jeq $+0x0014" 0924 0x0 (branch (is_zero (& (var sr) (bv 16 0x2))) nop (jmp (+ (bv 16 0x0) (bv 16 0x14))))
+d "jeq $+0x0400" ff25 0x0 (branch (is_zero (& (var sr) (bv 16 0x2))) nop (jmp (+ (bv 16 0x0) (bv 16 0x400))))
+d "jeq $-0x01fe" 0027 0x0 (branch (is_zero (& (var sr) (bv 16 0x2))) nop (jmp (+ (bv 16 0x0) (bv 16 0xfe02))))
+d "jmp $+0x0010" 073c 0x0 (jmp (+ (bv 16 0x0) (bv 16 0x10)))
+d "mov #0x0003, 0x5(r9)" b94003000500 0x0 (storew 0 (+ (bv 16 0x5) (var r9)) (bv 16 0x3))
+d "mov #0x000a, 0x002a" b0400a002a00 0x0 (storew 0 (+ (bv 16 0x2a) (bv 16 0x0)) (bv 16 0xa))
+d "mov #0x0021, 0x6(r11)" bb4021000600 0x0 (storew 0 (+ (bv 16 0x6) (var r11)) (bv 16 0x21))
+d "mov #1, 0x002c" 90432c00 0x0 (storew 0 (+ (bv 16 0x2c) (bv 16 0x0)) (bv 16 0x1))
+d "mov #8, 0x002c" b0422c00 0x0 (storew 0 (+ (bv 16 0x2c) (bv 16 0x0)) (bv 16 0x8))
+d "mov #8, 0x002e" b0422e00 0x0 (storew 0 (+ (bv 16 0x2e) (bv 16 0x0)) (bv 16 0x8))
+d "mov &0x0033, &0x002e" 924233002e00 0x0 (storew 0 (bv 16 0x2e) (loadw 0 16 (bv 16 0x33)))
+d "mov &0x0033, 0x002a" 904233002a00 0x42 (storew 0 (+ (bv 16 0x2a) (bv 16 0x42)) (loadw 0 16 (bv 16 0x33)))
+d "mov 0x3(r6), &0x002e" 924603002e00 0x0 (storew 0 (bv 16 0x2e) (loadw 0 16 (+ (bv 16 0x3) (var r6))))
+d "mov 0x5(r10), 0x6(r11)" 9b4a05000600 0x0 (storew 0 (+ (bv 16 0x6) (var r11)) (loadw 0 16 (+ (bv 16 0x5) (var r10))))
+d "mov 0x6(r11), &0x0033" 924b06003300 0x0 (storew 0 (bv 16 0x33) (loadw 0 16 (+ (bv 16 0x6) (var r11))))
+d "mov.b &0x0021, r15" 5f422100 0x0 (set r15 (cast 16 false (loadw 0 8 (bv 16 0x21))))
+d "mov.b r15, &0x0021" c24f2100 0x0 (store 0 (bv 16 0x21) (cast 8 false (var r15)))
+d "mov #0x0042, r6" 36404200 0x0 (set r6 (bv 16 0x42))
+d "mov r6, r10" 0a46 0x0 (set r10 (var r6))
+d "nop" 0343 0x0 nop
+d "pop r11" 3b41 0x0 (seq (set r11 (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))))
+d "pop r4" 3441 0x0 (seq (set r4 (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))))
+d "push #1" 1312 0x0 (seq (set sp (- (var sp) (bv 16 0x2))) (storew 0 (var sp) (bv 16 0x1)))
+d "ret" 3041 0x0 (seq (set return_address (loadw 0 16 (var sp))) (set sp (+ (var sp) (bv 16 0x2))) (jmp (var return_address)))
+d "rrc r4" 0410 0x0 (seq (set old_sr (var sr)) (set old_carry (lsb (var old_sr))) (set operand (var r4)) (set result (>> (var operand) (bv 8 0x1) (var old_carry))) (set r4 (var result)) (set sr (| (| (| (| (& (var old_sr) (bv 16 0xfef8)) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false)) (<< (ite (&& (! (msb (var operand))) (var old_carry)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)) (ite (lsb (var operand)) (bv 16 0x1) (bv 16 0x0)))))
+d "sbc r11" 0b73 0x0 (branch (is_zero (& (var sp) (bv 16 0x1))) (seq (set old_destination (var r11)) (set result (- (bv 16 0x1) (var old_destination))) (set r11 (var result)) (set sr (| (| (| (| (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false) (& (var sr) (bv 16 0xfef8))) (ite (! (== (var old_destination) (bv 16 0x0))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (== (var old_destination) (bv 16 0x1)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (== (var old_destination) (bv 16 0x8000)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)))) nop)
+d "sbc.b r11" 4b73 0x0 (branch (is_zero (& (var sp) (bv 16 0x1))) (seq (set old_destination (cast 8 false (var r11))) (set result (- (bv 8 0x1) (var old_destination))) (set r11 (cast 16 false (var result))) (set sr (| (| (| (| (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false) (& (var sr) (bv 16 0xfef8))) (ite (! (== (var old_destination) (bv 8 0x0))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (== (var old_destination) (bv 8 0x1)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (== (var old_destination) (bv 8 0x80)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false)))) nop)
+d "setc" 12d3 0x0 (set sr (| (var sr) (bv 16 0x1)))
+d "setz" 22d3 0x0 (set sr (| (var sr) (bv 16 0x2)))
+d "swpb r15" 8f10 0x0 (set r15 (append (cast 8 false (var r15)) (cast 8 false (>> (var r15) (bv 8 0x8) false))))
+d "sxt r5" 8511 0x0 (seq (set result (cast 16 (msb (cast 8 false (var r5))) (cast 8 false (var r5)))) (set r5 (var result)) (set sr (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false)) (ite (! (is_zero (var result))) (bv 16 0x1) (bv 16 0x0)))))
+d "tst &0x0003" 82930300 0x0 (seq (set operand (loadw 0 16 (bv 16 0x3))) (set sr (| (| (| (& (var sr) (bv 16 0xfef8)) (bv 16 0x1)) (<< (ite (is_zero (var operand)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var operand)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))))
+d "tst 0x3(r5)" 85930300 0x0 (seq (set operand (loadw 0 16 (+ (bv 16 0x3) (var r5)))) (set sr (| (| (| (& (var sr) (bv 16 0xfef8)) (bv 16 0x1)) (<< (ite (is_zero (var operand)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var operand)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))))
+d "tst r10" 0a93 0x0 (seq (set operand (var r10)) (set sr (| (| (| (& (var sr) (bv 16 0xfef8)) (bv 16 0x1)) (<< (ite (is_zero (var operand)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var operand)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false))))
+d "xor.b #0x0020, r15" 7fe02000 0x0 (seq (set old_destination (cast 8 false (var r15))) (set source (bv 8 0x20)) (set result (^ (var source) (var old_destination))) (set r15 (cast 16 false (var result))) (set sr (| (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false)) (ite (! (is_zero (var result))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (&& (msb (var source)) (msb (var old_destination))) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false))))
+d "xor.b #8, r15" 7fe2 0x0 (seq (set old_destination (cast 8 false (var r15))) (set source (bv 8 0x8)) (set result (^ (var source) (var old_destination))) (set r15 (cast 16 false (var result))) (set sr (| (| (| (| (& (var sr) (bv 16 0xfef8)) (<< (ite (is_zero (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x1) false)) (<< (ite (msb (var result)) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x2) false)) (ite (! (is_zero (var result))) (bv 16 0x1) (bv 16 0x0))) (<< (ite (&& (msb (var source)) (msb (var old_destination))) (bv 16 0x1) (bv 16 0x0)) (bv 8 0x8) false))))

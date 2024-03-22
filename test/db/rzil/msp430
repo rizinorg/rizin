@@ -1,0 +1,21 @@
+NAME=Testing the decryption in emulateme
+FILE=bins/msp430/emulateme.msp430
+TIMEOUT=10
+CMDS=<<EOF
+aaaa
+e io.cache=1
+s main
+aezi
+aezv r12 0x2
+aezv r13 0x512
+aezv sp 0x600
+aezsu 0x8104
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+r12 = 0x2
+r13 = 0x512
+sp = 0x600
+Hello from RzIL!
+EOF
+RUN

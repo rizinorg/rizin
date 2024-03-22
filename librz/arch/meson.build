@@ -219,6 +219,7 @@ arch_isa_sources = [
   'isa/mcore/mcore.c',
   'isa/mips/mips_assembler.c',
   'isa/msp430/msp430_disas.c',
+  'isa/msp430/msp430_il.c',
   'isa/or1k/or1k_disas.c',
   'isa/pic/pic14.c',
   'isa/pic/pic16.c',
