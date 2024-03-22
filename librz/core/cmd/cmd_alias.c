@@ -117,9 +117,9 @@ RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv) {
 				rz_core_cmd0(core, v);
 			}
 		} else {
-			ut64 at = rz_num_get(core->num, buf + 1);
-			if (at != UT64_MAX) {
-				rz_core_seek(core, at, true);
+			RzFlagItem *flag = rz_flag_get(core->flags, buf + 1);
+			if (flag) {
+				rz_core_seek(core, flag->offset, true);
 			} else {
 				RZ_LOG_ERROR("core: unknown alias '%s'\n", buf + 1);
 				free(buf);
