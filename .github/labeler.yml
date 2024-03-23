@@ -200,6 +200,12 @@ ARM:
   - librz/debug/p/native/arm.c
   - librz/bp/p/bp_arm.c
 
+MSP430:
+  - librz/arch/isa/msp430/**/*
+  - librz/arch/p/asm/*_msp430_*
+  - librz/arch/p/analysis/*_msp430_*
+  - librz/arch/p/arch_msp430.c
+
 MIPS:
   - librz/arch/isa/mips/**/*
   - librz/arch/isa_gnu/mips/**/*
