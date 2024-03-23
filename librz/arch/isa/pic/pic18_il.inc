@@ -47,8 +47,11 @@ static RzILOpEffect *status_res(RzILOpPure *res) {
 }
 
 static RzILOpPure *complement_1(RzILOpPure *x) {
-	// TODO: complement_1
-	return NULL;
+	return NEG(x);
+}
+
+static RzILOpPure *complement_2(RzILOpPure *x) {
+	return ADD(U8(1), NEG(x));
 }
 
 static RzILOpPure *decimal_adjust(RzILOpPure *x) {
@@ -210,8 +213,8 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 	case PIC18_OPCODE_MULWF:
 		return set_prod16(MUL(UNSIGNED(16, VRW), UNSIGNED(16, VRF)));
 	case PIC18_OPCODE_NOP: return NOP();
-	case PIC18_OPCODE_NEGF: break;
-	case PIC18_OPCODE_POP: break;
+	case PIC18_OPCODE_NEGF: return SETG(RF, complement_2(VRF));
+	case PIC18_OPCODE_POP: break; // TODO: STACK
 	case PIC18_OPCODE_PUSH: break;
 	case PIC18_OPCODE_RETURN: break;
 	case PIC18_OPCODE_RETFIE: break;
@@ -220,7 +223,7 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 	case PIC18_OPCODE_RLCF: break;
 	case PIC18_OPCODE_RRCF: break;
 	case PIC18_OPCODE_RCALL: break;
-	case PIC18_OPCODE_RESET: break;
+	case PIC18_OPCODE_RESET: return NOP();
 	case PIC18_OPCODE_RETLW: break;
 	case PIC18_OPCODE_SLEEP: break;
 	case PIC18_OPCODE_SETF: break;
