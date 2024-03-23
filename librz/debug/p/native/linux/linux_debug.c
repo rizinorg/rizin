@@ -890,7 +890,7 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 	}
 
-#if (__x86_64__ || __i386__)
+#if __x86_64__
 	RzRegItem *ri = rz_reg_get(dbg->reg, "fs", RZ_REG_TYPE_ANY);
 	RZ_DEBUG_REG_T regs;
 	// Fetch gs_base from a ptrace call
