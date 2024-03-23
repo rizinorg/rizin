@@ -21,7 +21,6 @@ static bool test_vmlinux_parse_version(void) {
 	mu_assert_eq(v2[2], 0, "");
 
 	mu_end;
-
 }
 
 static bool test_vmlinux_vercmp(void) {

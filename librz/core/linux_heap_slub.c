@@ -23,7 +23,7 @@ typedef enum {
 typedef struct {
 	GH_(LinkedListState)
 	state;
-	RzVector /* <GHT> */ *freelist_vector;
+	RzVector /*<GHT>*/ *freelist_vector;
 } GH_(Freelist);
 
 typedef struct {
@@ -36,7 +36,7 @@ typedef struct {
 typedef struct {
 	GH_(LinkedListState)
 	state;
-	RzVector /* <Slab> */ *slablist_vector;
+	RzVector /*<Slab>*/ *slablist_vector;
 } GH_(Slablist);
 
 static GH_(Freelist) * GH_(freelist_new)() {
