@@ -1,3 +1,11 @@
+// SPDX-FileCopyrightText: 2024 rockrid3r <rockrid3r@outlook.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+/**
+ * \file
+ * Provides interface for dumping SLUB cmd handlers.
+ */
+
 #include <rz_core.h>
 
 #undef GH

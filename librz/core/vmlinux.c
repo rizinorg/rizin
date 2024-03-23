@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 rockrid3r <rockrid3r@outlook.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_assert.h>
@@ -6,7 +9,13 @@
 
 static void add_config(RzVmlinuxConfigTable* config_tbl, char* config_name, char* config_value);
 
-RZ_API bool vmlinux_parse_apply_config_file(const char* config_filepath, RzVmlinuxConfigTable* config_tbl) {
+/**
+ * \brief Parses the given kernel configuration file. Sets up RzVmlinuxConfigTable object.
+ * \param config_filepath Path to the kernel configuration file.
+ * \param config_tbl RzVmlinuxConfigTable to set up.
+ * \returns true if parsing was successful. false on error.
+*/
+RZ_API bool rz_vmlinux_parse_apply_config_file(RZ_NONNULL const char* config_filepath, RZ_NONNULL RzVmlinuxConfigTable* config_tbl) {
     rz_return_val_if_fail(config_filepath && config_tbl, false);
 
     FILE* f = fopen(config_filepath, "r");
@@ -30,7 +39,7 @@ RZ_API bool vmlinux_parse_apply_config_file(const char* config_filepath, RzVmlin
 
         rz_str_trim(line);
 
-        if (!vmlinux_parse_apply_config_string(line, config_tbl)) {
+        if (!rz_vmlinux_parse_apply_config_string(line, config_tbl)) {
             RZ_LOG_WARN("Skipping line '%s'", line);
         }
     }
@@ -40,7 +49,13 @@ out:
     return !err;
 }
 
-RZ_API bool vmlinux_parse_apply_config_string(const char *config_str, RzVmlinuxConfigTable *config_tbl) {
+/**
+ * \brief Parses the given config line. Sets the corresponding value into RzVmlinuxConfigTable.
+ * \param config_str config line to process. For example: "CONFIG_SLAB_FREELIST_RANDOM=y"
+ * \param config_tbl RzVmlinuxConfigTable to set the value into.
+ * \return true if parsing was successful. false on error.
+*/
+RZ_API bool rz_vmlinux_parse_apply_config_string(RZ_NONNULL const char *config_str, RZ_NONNULL RzVmlinuxConfigTable *config_tbl) {
     rz_return_val_if_fail(config_str && config_tbl, false);
 
     char* config_name;
@@ -58,37 +73,23 @@ RZ_API bool vmlinux_parse_apply_config_string(const char *config_str, RzVmlinuxC
 }
 
 /**
- * Numeric 90+
+ * \brief Parses the vmlinux version.
+ * \param version destination.
+ * \param version_string version string to parse in format "x.x.x". For example: "5" and "5.17" and "5.17.0" are allowed, but "" is not.
+ * \return true if parsing was successful. false on error.
 */
-RZ_API bool vmlinux_parse_version(const char* version_string, unsigned long version[3]) {
-    RzList* version_list = rz_str_split_duplist_n(version_string, ".", 3, true);
-    RzListIter* it;
-    char* str;
+RZ_API bool rz_vmlinux_parse_version(unsigned long version[3], RZ_NONNULL const char* version_string) {
+    rz_return_val_if_fail(version_string, false);
 
-    for (size_t i = 0; i < 3; ++i) version[i] = 0;
-
-    size_t v = 0;
-    rz_list_foreach(version_list, it, str) {
-        if (v == 3) { // 3 dots? 
-            break;
-        }
-
-        size_t i;
-
-        for (i = 0; str[i] != '\0'; ++i) if (!isdigit(str[i])) break;
-
-        if (str[i] == '\0') { // is number
-            unsigned long numbr = strtoul(str, NULL, 10);
-            version[v] = numbr;
-        } else {
-            rz_list_free(version_list);
-            return false;
-        }
-
-        ++v;
+    int n_set = sscanf(version_string, "%lu.%lu.%lu", &version[0], &version[1], &version[2]);
+    if (n_set < 3) {
+        version[2] = 0;
     }
-    rz_list_free(version_list);
-    return true;
+    if (n_set < 2) {
+        version[1] = 0;
+    }
+    
+    return n_set > 0;
 }
 
 #define SET_VMLINUX_CONFIG(config_var, config_value)   \
@@ -114,9 +115,11 @@ static void add_config(RzVmlinuxConfigTable* config_tbl, char* config_name, char
     }
 }
 
-
-RZ_API RzVmlinuxConfigTable* rz_vmlinux_config_table_new() {
-    RzVmlinuxConfigTable* config_tbl = malloc(sizeof(RzVmlinuxConfigTable));
+/**
+ * \brief Allocates a new RzVmlinuxConfigTable. Sets all config values to 'N'.
+*/
+RZ_API RZ_OWN RzVmlinuxConfigTable* rz_vmlinux_config_table_new() {
+    RzVmlinuxConfigTable* config_tbl = RZ_NEW(RzVmlinuxConfigTable);
     config_tbl->config_slab_freelist_random = VMLINUX_CONFIG_VALUE_N;
     config_tbl->config_slab_freelist_hardened = VMLINUX_CONFIG_VALUE_N;
     config_tbl->config_memcg = VMLINUX_CONFIG_VALUE_N;
@@ -124,14 +127,23 @@ RZ_API RzVmlinuxConfigTable* rz_vmlinux_config_table_new() {
     return config_tbl;
 }
 
-RZ_API RzVmlinuxConfig* rz_vmlinux_config_new() {
-    RzVmlinuxConfig* config = malloc(sizeof(RzVmlinuxConfig));
+/**
+ * \brief Allocates a new RzVmlinuxConfig. Sets all config values to 'N'.
+*/
+RZ_API RZ_OWN RzVmlinuxConfig* rz_vmlinux_config_new() {
+    RzVmlinuxConfig* config = RZ_NEW(RzVmlinuxConfig);
     config->config_tbl = rz_vmlinux_config_table_new();
     return config;
 }
 
 
-RZ_API int vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]) {
+/**
+ * \brief Compares 2 passed kernel versions
+ * \param v1 1st linux version
+ * \param v2 2nd linux version
+ * \return Returns a positive value if v1 > v2, negative if v1 < v2, else 0.
+*/
+RZ_API int rz_vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]) {
     size_t diff_idx;
     for (diff_idx = 0; diff_idx < 3; ++diff_idx) if (v1[diff_idx] != v2[diff_idx]) break;
 
@@ -146,19 +158,34 @@ RZ_API int vmlinux_vercmp(unsigned long v1[3], unsigned long v2[3]) {
     return -1;
 }
 
-
-RZ_API int vmlinux_vercmp_with_str(unsigned long v1[3], const char* v2_str) {
+/**
+ * \brief Compares 2 passed kernel versions
+ * \param v1 1st linux version
+ * \param v2 2nd linux version 
+ * \return Returns a positive value if v1 > v2, negative if v1 < v2, else 0.
+*/
+RZ_API int rz_vmlinux_vercmp_with_str(unsigned long v1[3], const char* v2_str) {
     unsigned long v2[3];
-    vmlinux_parse_version(v2_str, v2);
-    return vmlinux_vercmp(v1, v2);
+    rz_vmlinux_parse_version(v2, v2_str);
+    return rz_vmlinux_vercmp(v1, v2);
 }
 
-
-RZ_API void rz_vmlinux_config_free(RzVmlinuxConfig* vmlinux_config) {
+/**
+ * \brief Frees the allocated RzVmlinuxConfig
+ * \param vmlinux_config RzVmlinuxConfig to free
+*/
+RZ_API void rz_vmlinux_config_free(RZ_NULLABLE RzVmlinuxConfig* vmlinux_config) {
+    if (!vmlinux_config) {
+        return;
+    }
     rz_vmlinux_config_table_free(vmlinux_config->config_tbl);
     free(vmlinux_config);
 }
 
-RZ_API void rz_vmlinux_config_table_free(RzVmlinuxConfigTable* config_tbl) {
+/**
+ * \brief Frees the allocated RzVmlinuxConfigTable
+ * \param config_tbl RzVmlinuxConfigTable to free
+*/
+RZ_API void rz_vmlinux_config_table_free(RZ_NULLABLE RzVmlinuxConfigTable* config_tbl) {
     free(config_tbl);
 }

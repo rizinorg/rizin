@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 rockrid3r <rockrid3r@outlook.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
 #include <rz_types.h>
 #include <rz_config.h>
@@ -495,7 +498,7 @@ static GH_(Slablist) * GH_(collect_slablist)(RzCore *core, GHT first_slab_addr, 
 	}
 
 	char *slab_typename;
-	if (vmlinux_vercmp_with_str(core->analysis->vmlinux_config->version, "5.17") > 0) {
+	if (rz_vmlinux_vercmp_with_str(core->analysis->vmlinux_config->version, "5.17") > 0) {
 		slab_typename = "slab";
 	} else {
 		slab_typename = "page";
@@ -635,7 +638,7 @@ static bool GH_(dump_cpu_regular_freelist)(RzCore *core, GHT kmem_cache, GHT kme
 	char *slab_member, *slab_member_type;
 	bool read_ok;
 
-	if (vmlinux_vercmp_with_str(core->analysis->vmlinux_config->version, "5.17") > 0) {
+	if (rz_vmlinux_vercmp_with_str(core->analysis->vmlinux_config->version, "5.17") > 0) {
 		slab_member = "slab";
 		slab_member_type = "slab";
 	} else {
