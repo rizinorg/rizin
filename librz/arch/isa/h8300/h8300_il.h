@@ -1,6 +1,5 @@
-//
-// Created by Ashis Kumar Naik on 21/03/24.
-//
+// SPDX-FileCopyrightText: 2024 Ashis Kumar Naik <ashishami2002@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RIZIN_H8300_IL_H
 #define RIZIN_H8300_IL_H

@@ -1,6 +1,5 @@
-//
-// Created by Ashis Kumar Naik on 21/03/24.
-//
+// SPDX-FileCopyrightText: 2024 Ashis Kumar Naik <ashishami2002@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "h8300_il.h"
 #include "h8300_disas.h"
