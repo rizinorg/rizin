@@ -577,7 +577,7 @@ out:
 static bool GH_(dump_cpu_lockless_freelist)(RzCore *core, GHT kmem_cache, GHT kmem_cache_cpu) {
 	GHT freelist;
 	unsigned long freelist_offset;
-	GHT cache_rand;
+	GHT cache_rand = 0;
 
 	bool read_ok;
 
@@ -633,7 +633,7 @@ static bool GH_(dump_cpu_lockless_freelist)(RzCore *core, GHT kmem_cache, GHT km
 
 static bool GH_(dump_cpu_regular_freelist)(RzCore *core, GHT kmem_cache, GHT kmem_cache_cpu) {
 	GHT freelist, slab;
-	GHT cache_rand;
+	GHT cache_rand = 0;
 	unsigned int freelist_offset;
 	char *slab_member, *slab_member_type;
 	bool read_ok;
@@ -747,7 +747,7 @@ static void GH_(dump_partial)(RzCore *core, GH_(Slablist) * partials, unsigned i
 
 static bool GH_(dump_cpu_partial_freelist)(RzCore *core, GHT kmem_cache, GHT kmem_cache_cpu) {
 	GHT partial;
-	GHT cache_rand;
+	GHT cache_rand = 0;
 	unsigned int freelist_offset;
 	bool read_ok;
 
@@ -802,7 +802,7 @@ static bool GH_(dump_cpu_partial_freelist)(RzCore *core, GHT kmem_cache, GHT kme
 
 static bool GH_(dump_node_freelist)(RzCore *core, GHT kmem_cache, GHT kmem_cache_node) {
 	GHT partial;
-	GHT cache_rand;
+	GHT cache_rand = 0;
 	unsigned int freelist_offset;
 	bool read_ok;
 

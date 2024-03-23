@@ -3536,19 +3536,19 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str,
 
 /**
  * \brief Split the string \p str on 2 parts according to the first occurence of the substring \p r . Result is stored in the \p first_half , \p second_half .
- * 
+ *
  * \param str Input string to split
  * \param c Delimiter string used to split \p str
  * \param trim If true each half is trimmed after split
  * \return true on success
-*/
-RZ_API RZ_OWN bool rz_str_split_by_first_dupstr(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, bool trim, char** first_half, char** second_half) {
+ */
+RZ_API RZ_OWN bool rz_str_split_by_first_dupstr(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, bool trim, char **first_half, char **second_half) {
 	char *str = strdup(_str);
 	if (!str) {
 		return false;
 	}
 
-	char* e = strstr(str, r);
+	char *e = strstr(str, r);
 
 	if (!e) {
 		return false;
@@ -3556,8 +3556,8 @@ RZ_API RZ_OWN bool rz_str_split_by_first_dupstr(RZ_NONNULL const char *_str, RZ_
 
 	*e = '\0';
 
-	char* _first_half = str;
-	char* _second_half = e + strlen(r);
+	char *_first_half = str;
+	char *_second_half = e + strlen(r);
 
 	if (trim) {
 		rz_str_trim(_first_half);
@@ -3566,7 +3566,7 @@ RZ_API RZ_OWN bool rz_str_split_by_first_dupstr(RZ_NONNULL const char *_str, RZ_
 
 	*first_half = strdup(_first_half);
 	*second_half = strdup(_second_half);
-	
+
 	free(str);
 
 	return true;

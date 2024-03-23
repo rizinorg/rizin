@@ -535,7 +535,7 @@ typedef struct rz_analysis_t {
 	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..
 	ut64 cmpval; ///< last compare value for jump table.
 	ut64 lea_jmptbl_ip; ///< jump table x86 lea ip
-	RzVmlinuxConfig* vmlinux_config;
+	RzVmlinuxConfig *vmlinux_config;
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
