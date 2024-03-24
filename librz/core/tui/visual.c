@@ -2033,6 +2033,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			break;
 		case 'b':
 			rz_view_and_seek_to_bb(core);
+			rz_view_and_seek_to_bb(core);
 			break;
 		case 'i':
 			// XXX ii shows index first and iiq shows no offset :(
