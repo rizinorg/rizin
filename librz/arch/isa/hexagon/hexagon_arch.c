@@ -347,7 +347,7 @@ RZ_API HexState *hexagon_state(bool reset) {
 		return state;
 	}
 
-	state = calloc(1, sizeof(HexState));
+	state = RZ_NEW0(HexState);
 	if (!state) {
 		RZ_LOG_FATAL("Could not allocate memory for HexState!");
 	}
@@ -669,7 +669,7 @@ static void make_next_packet_valid(HexState *state, const HexPkt *pkt) {
  * \return HexInsn* The new instruction or NULL on failure.
  */
 RZ_API HexInsn *hexagon_alloc_instr() {
-	HexInsn *hi = calloc(1, sizeof(HexInsn));
+	HexInsn *hi = RZ_NEW0(HexInsn);
 	if (!hi) {
 		RZ_LOG_FATAL("Could not allocate memory for new instruction.\n");
 	}
@@ -683,7 +683,7 @@ RZ_API HexInsn *hexagon_alloc_instr() {
  * \return HexInsnContainer* The new instruction container or NULL on failure.
  */
 RZ_API HexInsnContainer *hexagon_alloc_instr_container() {
-	HexInsnContainer *hic = calloc(1, sizeof(HexInsnContainer));
+	HexInsnContainer *hic = RZ_NEW0(HexInsnContainer);
 	if (!hic) {
 		RZ_LOG_FATAL("Could not allocate memory for new instruction container.\n");
 	}
@@ -1027,7 +1027,7 @@ RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_ne
 
 	HexConstExt *ce;
 	if (set_new_extender) {
-		ce = calloc(1, sizeof(HexConstExt));
+		ce = RZ_NEW0(HexConstExt);
 		ce->addr = addr + 4;
 		ce->const_ext = op->op.imm;
 		rz_list_append(state->const_ext_l, ce);
