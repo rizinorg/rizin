@@ -132,6 +132,7 @@ RZ_IPI bool hex_shuffle_insns(RZ_INOUT HexPkt *p) {
 			op = (HexILOp *)rz_pvector_at(ops, i);
 			if (!op) {
 				RZ_LOG_FATAL("NULL il op at index %" PFMT32d "\n", i);
+				return false;
 			}
 			if (flag && (op->attr & HEX_IL_INSN_ATTR_MEM_WRITE)) {
 				hex_send_insn_to_i(ops, i, last_insn - n_mems);

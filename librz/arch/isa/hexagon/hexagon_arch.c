@@ -350,12 +350,14 @@ RZ_API HexState *hexagon_state(bool reset) {
 	state = RZ_NEW0(HexState);
 	if (!state) {
 		RZ_LOG_FATAL("Could not allocate memory for HexState!");
+		return NULL;
 	}
 	for (int i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		state->pkts[i].bin = rz_list_newf((RzListFree)hex_insn_container_free);
 		state->pkts[i].il_ops = rz_pvector_new(NULL);
 		if (!state->pkts[i].bin) {
 			RZ_LOG_FATAL("Could not initialize instruction list!");
+			return NULL;
 		}
 		hex_clear_pkt(&(state->pkts[i]));
 	}
@@ -672,6 +674,7 @@ RZ_API HexInsn *hexagon_alloc_instr() {
 	HexInsn *hi = RZ_NEW0(HexInsn);
 	if (!hi) {
 		RZ_LOG_FATAL("Could not allocate memory for new instruction.\n");
+		return NULL;
 	}
 	hi->fround_mode = RZ_FLOAT_RMODE_RNE;
 	return hi;
@@ -686,6 +689,7 @@ RZ_API HexInsnContainer *hexagon_alloc_instr_container() {
 	HexInsnContainer *hic = RZ_NEW0(HexInsnContainer);
 	if (!hic) {
 		RZ_LOG_FATAL("Could not allocate memory for new instruction container.\n");
+		return NULL;
 	}
 	return hic;
 }
@@ -702,6 +706,7 @@ RZ_API HexInsnContainer *hexagon_alloc_instr_container() {
 static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer *new_hic, RZ_INOUT HexPkt *pkt, const ut8 k) {
 	if (k > 3) {
 		RZ_LOG_FATAL("Instruction could not be set! A packet can only hold four instructions but k=%d.", k);
+		return NULL;
 	}
 	HexInsnContainer *hic = hexagon_alloc_instr_container();
 	hex_move_insn_container(hic, new_hic);
@@ -1082,6 +1087,7 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	HexState *state = hexagon_state(false);
 	if (!state) {
 		RZ_LOG_FATAL("HexState was NULL.");
+		return;
 	}
 	if (rz_asm) {
 		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
