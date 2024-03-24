@@ -504,7 +504,7 @@ RZ_IPI char *rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *f
 		bb = (RzAnalysisBlock *)*iter;
 		char *bb_info = bb_info_print(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
 		rz_strbuf_append(buf, bb_info);
-		free(bb_info);
+		RZ_FREE(bb_info);
 	}
 
 	rz_cmd_state_output_array_end(state);
@@ -519,7 +519,7 @@ RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut
 	char *bb_info = bb_info_print(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
 	if (bb_info) {
 		rz_cons_printf("%s", bb_info);
-		free(bb_info);
+		RZ_FREE(bb_info);
 	}
 }
 
