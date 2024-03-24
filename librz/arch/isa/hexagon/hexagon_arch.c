@@ -16,6 +16,7 @@
 #include <hexagon/hexagon.h>
 #include <hexagon/hexagon_insn.h>
 #include <hexagon/hexagon_arch.h>
+#include <hexagon/hexagon_il.h>
 
 static inline bool is_invalid_insn_data(ut32 data) {
 	return data == HEX_INVALID_INSN_0 || data == HEX_INVALID_INSN_F;
@@ -211,9 +212,17 @@ RZ_API ut8 hexagon_get_pkt_index_of_addr(const ut32 addr, const HexPkt *p) {
 static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	p->last_instr_present = false;
 	p->is_valid = false;
+	p->is_eob = false;
+	p->hw_loop = HEX_NO_LOOP;
+	p->hw_loop0_addr = 0;
+	p->hw_loop1_addr = 0;
+	p->pkt_addr = 0;
+	p->last_instr_present = false;
+	p->is_valid = false;
 	p->last_access = 0;
 	rz_list_purge(p->bin);
 	rz_pvector_clear(p->il_ops);
+	hex_reset_il_pkt_stats(&p->il_op_stats);
 }
 
 /**
@@ -232,7 +241,6 @@ static HexPkt *hex_get_stale_pkt(HexState *state) {
 			stale_state_pkt = &state->pkts[i];
 		}
 	}
-	hex_clear_pkt(stale_state_pkt);
 	return stale_state_pkt;
 }
 
