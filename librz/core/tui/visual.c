@@ -1901,18 +1901,12 @@ static bool insert_mode_enabled(RzCore *core) {
 	return true;
 }
 
-static char *rz_get_afb_output(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
+static char *get_afb_output(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(core && fcn, NULL);
-	RzAnalysisBlock *bb;
-	void **it;
-	RzStrBuf *buf = rz_strbuf_new("");
-	rz_pvector_foreach (fcn->bbs, it) {
-		bb = *it;
-		rz_strbuf_appendf(buf, "0x%08" PFMT64x " 0x%08" PFMT64x " 00:0000 %" PFMT64u " j 0x%08" PFMT64x " f 0x%08" PFMT64x "\n",
-			bb->addr, bb->addr + bb->size, bb->size, bb->jump, bb->fail);
-	}
-	char *result = rz_strbuf_drain(buf);
-	return result;
+	RzCmdStateOutput state;
+	state.mode = RZ_OUTPUT_MODE_STANDARD;
+	char *fcn_info = rz_core_analysis_bbs_info_print(core, fcn, &state);
+	return fcn_info;
 }
 
 /**
@@ -1926,7 +1920,7 @@ static void rz_view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
 	if (!fcn) {
 		return;
 	}
-	char *afb_output = rz_get_afb_output(core, fcn);
+	char *afb_output = get_afb_output(core, fcn);
 	char *output = rz_core_filter_string_output(afb_output, "");
 	RZ_FREE(afb_output);
 	if (!output) {
