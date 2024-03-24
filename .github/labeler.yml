@@ -187,8 +187,12 @@ java:
   - librz/bin/format/java/**/*
   - librz/bin/p/bin_java.*
   - librz/core/p/core_java.*
+  - librz/arch/is*/java/**/*
+  - librz/arch/p/asm/_*java*_
+  - librz/arch/p/analysis/_*java*_
 
 X86:
+  - librz/arch/is*/x86/**/*
   - librz/arch/p/asm/*_x86_*
   - librz/arch/p/analysis/*_x86_*
   - librz/bp/p/bp_x86.c
@@ -223,6 +227,226 @@ PPC:
   - librz/arch/p/asm/*_ppc_*
   - librz/arch/p/analysis/*_ppc_*
   - librz/bp/p/bp_ppc.c
+
+6502:
+  - librz/arch/is*/6502/**/*
+  - librz/arch/p/asm/_*6502*_
+  - librz/arch/p/analysis/_*6502*_
+
+8051:
+  - librz/arch/is*/8051/**/*
+  - librz/arch/p/asm/_*8051*_
+  - librz/arch/p/analysis/_*8051*_
+
+Am29k:
+  - librz/arch/is*/amd29k/**/*
+  - librz/arch/p/asm/_*amd29k*_
+  - librz/arch/p/analysis/_*amd29k*_
+
+AVR:
+  - librz/arch/is*/avr/**/*
+  - librz/arch/p/asm/_*avr*_
+  - librz/arch/p/analysis/_*avr*_
+
+CIL:
+  - librz/arch/is*/cil/**/*
+  - librz/arch/p/asm/_*cil*_
+  - librz/arch/p/analysis/_*cil*_
+
+CR16:
+  - librz/arch/is*/cr16/**/*
+  - librz/arch/p/asm/_*cr16*_
+  - librz/arch/p/analysis/_*cr16*_
+
+Dalvik:
+  - librz/arch/is*/dalvik/**/*
+  - librz/arch/p/asm/_*dalvik*_
+  - librz/arch/p/analysis/_*dalvik*_
+
+DCPU16:
+  - librz/arch/is*/dcpu16/**/*
+  - librz/arch/p/asm/_*dcpu16*_
+  - librz/arch/p/analysis/_*dcpu16*_
+
+EBC:
+  - librz/arch/is*/ebc/**/*
+  - librz/arch/p/asm/_*ebc*_
+  - librz/arch/p/analysis/_*ebc*_
+
+Gameboy:
+  - librz/arch/is*/gb/**/*
+  - librz/arch/p/asm/_*gb*_
+  - librz/arch/p/analysis/_*gb*_
+
+H8300:
+  - librz/arch/is*/h8300/**/*
+  - librz/arch/p/asm/_*h8300*_
+  - librz/arch/p/analysis/_*h8300*_
+
+i4004:
+  - librz/arch/is*/i4004/**/*
+  - librz/arch/p/asm/_*i4004*_
+  - librz/arch/p/analysis/_*i4004*_
+
+i8080:
+  - librz/arch/is*/i8080/**/*
+  - librz/arch/p/asm/_*i8080*_
+  - librz/arch/p/analysis/_*i8080*_
+
+LH5801:
+  - librz/arch/is*/lh5801/**/*
+  - librz/arch/p/asm/_*lh5801*_
+  - librz/arch/p/analysis/_*lh5801*_
+
+LM32:
+  - librz/arch/is*/lm32/**/*
+  - librz/arch/p/asm/_*lm32*_
+  - librz/arch/p/analysis/_*lm32*_
+
+LUA:
+  - librz/arch/is*/luac/**/*
+  - librz/arch/p/asm/_*luac*_
+  - librz/arch/p/analysis/_*luac*_
+
+MCORE:
+  - librz/arch/is*/mcore/**/*
+  - librz/arch/p/asm/_*mcore*_
+  - librz/arch/p/analysis/_*mcore*_
+
+MCS96:
+  - librz/arch/is*/mcs96/**/*
+  - librz/arch/p/asm/_*mcs96*_
+  - librz/arch/p/analysis/_*mcs96*_
+
+OR1K:
+  - librz/arch/is*/or1k/**/*
+  - librz/arch/p/asm/_*or1k*_
+  - librz/arch/p/analysis/_*or1k*_
+
+PIC:
+  - librz/arch/is*/pic/**/*
+  - librz/arch/p/asm/_*pic*_
+  - librz/arch/p/analysis/_*pic*_
+
+Propeller:
+  - librz/arch/is*/propeller/**/*
+  - librz/arch/p/asm/_*propeller*_
+  - librz/arch/p/analysis/_*propeller*_
+
+PYC:
+  - librz/arch/is*/pyc/**/*
+  - librz/arch/p/asm/_*pyc*_
+  - librz/arch/p/analysis/_*pyc*_
+
+RL78:
+  - librz/arch/is*/rl78/**/*
+  - librz/arch/p/asm/_*rl78*_
+  - librz/arch/p/analysis/_*rl78*_
+
+RSP:
+  - librz/arch/is*/rsp/**/*
+  - librz/arch/p/asm/_*rsp*_
+  - librz/arch/p/analysis/_*rsp*_
+
+RX:
+  - librz/arch/is*/rx/**/*
+  - librz/arch/p/asm/_*rx*_
+  - librz/arch/p/analysis/_*rx*_
+
+SH:
+  - librz/arch/is*/sh/**/*
+  - librz/arch/p/asm/_*sh*_
+  - librz/arch/p/analysis/_*sh*_
+
+SNES:
+  - librz/arch/is*/snes/**/*
+  - librz/arch/p/asm/_*snes*_
+  - librz/arch/p/analysis/_*snes*_
+
+SPC700:
+  - librz/arch/is*/spc700/**/*
+  - librz/arch/p/asm/_*spc700*_
+  - librz/arch/p/analysis/_*spc700*_
+
+TMS320:
+  - librz/arch/is*/tms320/**/*
+  - librz/arch/p/asm/_*tms320*_
+  - librz/arch/p/analysis/_*tms320*_
+
+TriCore:
+  - librz/arch/is*/tricore/**/*
+  - librz/arch/p/asm/_*tricore*_
+  - librz/arch/p/analysis/_*tricore*_
+
+V810:
+  - librz/arch/is*/v810/**/*
+  - librz/arch/p/asm/_*v810*_
+  - librz/arch/p/analysis/_*v810*_
+
+V850:
+  - librz/arch/is*/v850/**/*
+  - librz/arch/p/asm/_*v850*_
+  - librz/arch/p/analysis/_*v850*_
+
+WASM:
+  - librz/arch/is*/wasm/**/*
+  - librz/arch/p/asm/_*wasm*_
+  - librz/arch/p/analysis/_*wasm*_
+
+XAP:
+  - librz/arch/is*/xap/**/*
+  - librz/arch/p/asm/_*xap*_
+  - librz/arch/p/analysis/_*xap*_
+
+ARC:
+  - librz/arch/p/asm/_*arc*_
+  - librz/arch/p/analysis/_*arc*_
+  - librz/arch/is*/arc/**/*
+
+CRIS:
+  - librz/arch/p/asm/_*cris*_
+  - librz/arch/p/analysis/_*cris*_
+  - librz/arch/is*/cris/**/*
+
+HPPA:
+  - librz/arch/p/asm/_*hppa*_
+  - librz/arch/p/analysis/_*hppa*_
+  - librz/arch/is*/hppa/**/*
+
+LANAI:
+  - librz/arch/p/asm/_*lanai*_
+  - librz/arch/p/analysis/_*lanai*_
+  - librz/arch/is*/lanai/**/*
+
+NIOS:
+  - librz/arch/p/asm/_*nios*_
+  - librz/arch/p/analysis/_*nios*_
+  - librz/arch/is*/nios/**/*
+
+RISC-V:
+  - librz/arch/p/asm/_*riscv*_
+  - librz/arch/p/analysis/_*riscv*_
+  - librz/arch/is*/riscv/**/*
+
+SPARC:
+  - librz/arch/p/asm/_*sparc*_
+  - librz/arch/p/analysis/_*sparc*_
+  - librz/arch/is*/sparc/**/*
+
+VAX:
+  - librz/arch/p/asm/_*vax*_
+  - librz/arch/p/analysis/_*vax*_
+  - librz/arch/is*/vax/**/*
+
+Xtensa:
+  - librz/arch/p/asm/_*xtensa*_
+  - librz/arch/p/analysis/_*xtensa*_
+  - librz/arch/is*/xtensa/**/*
+
+Z80:
+  - librz/arch/p/asm/_*z80*_
+  - librz/arch/p/analysis/_*z80*_
+  - librz/arch/is*/z80/**/*
 
 ESIL:
   - librz/arch/esil/*
