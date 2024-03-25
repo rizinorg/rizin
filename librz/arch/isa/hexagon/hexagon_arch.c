@@ -16,6 +16,7 @@
 #include <hexagon/hexagon.h>
 #include <hexagon/hexagon_insn.h>
 #include <hexagon/hexagon_arch.h>
+#include <hexagon/hexagon_il.h>
 
 static inline bool is_invalid_insn_data(ut32 data) {
 	return data == HEX_INVALID_INSN_0 || data == HEX_INVALID_INSN_F;
@@ -90,7 +91,7 @@ RZ_API HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr) {
 		RzListIter *iter = NULL;
 		rz_list_foreach (p->bin, iter, hic) {
 			if (addr == hic->addr) {
-				p->last_access = rz_time_now();
+				p->last_access = rz_time_now_mono();
 				RZ_LOG_DEBUG("===== RET buffed_pkts[%d] hic @ 0x010%x ====> \n", i, addr);
 				return hic;
 			}
@@ -211,9 +212,17 @@ RZ_API ut8 hexagon_get_pkt_index_of_addr(const ut32 addr, const HexPkt *p) {
 static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	p->last_instr_present = false;
 	p->is_valid = false;
+	p->is_eob = false;
+	p->hw_loop = HEX_NO_LOOP;
+	p->hw_loop0_addr = 0;
+	p->hw_loop1_addr = 0;
+	p->pkt_addr = 0;
+	p->last_instr_present = false;
+	p->is_valid = false;
 	p->last_access = 0;
 	rz_list_purge(p->bin);
 	rz_pvector_clear(p->il_ops);
+	hex_reset_il_pkt_stats(&p->il_op_stats);
 }
 
 /**
@@ -232,7 +241,6 @@ static HexPkt *hex_get_stale_pkt(HexState *state) {
 			stale_state_pkt = &state->pkts[i];
 		}
 	}
-	hex_clear_pkt(stale_state_pkt);
 	return stale_state_pkt;
 }
 
@@ -251,7 +259,7 @@ RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr) {
 		p = &state->pkts[i];
 		rz_list_foreach (p->bin, iter, hic) {
 			if (hic_at_addr(hic, addr)) {
-				p->last_access = rz_time_now();
+				p->last_access = rz_time_now_mono();
 				return p;
 			}
 		}
@@ -339,15 +347,17 @@ RZ_API HexState *hexagon_state(bool reset) {
 		return state;
 	}
 
-	state = calloc(1, sizeof(HexState));
+	state = RZ_NEW0(HexState);
 	if (!state) {
 		RZ_LOG_FATAL("Could not allocate memory for HexState!");
+		return NULL;
 	}
 	for (int i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		state->pkts[i].bin = rz_list_newf((RzListFree)hex_insn_container_free);
 		state->pkts[i].il_ops = rz_pvector_new(NULL);
 		if (!state->pkts[i].bin) {
 			RZ_LOG_FATAL("Could not initialize instruction list!");
+			return NULL;
 		}
 		hex_clear_pkt(&(state->pkts[i]));
 	}
@@ -626,7 +636,7 @@ static void make_packet_valid(RZ_BORROW HexState *state, RZ_BORROW HexPkt *pkt) 
 		}
 		++i;
 	}
-	pkt->last_access = rz_time_now();
+	pkt->last_access = rz_time_now_mono();
 }
 
 /**
@@ -661,9 +671,10 @@ static void make_next_packet_valid(HexState *state, const HexPkt *pkt) {
  * \return HexInsn* The new instruction or NULL on failure.
  */
 RZ_API HexInsn *hexagon_alloc_instr() {
-	HexInsn *hi = calloc(1, sizeof(HexInsn));
+	HexInsn *hi = RZ_NEW0(HexInsn);
 	if (!hi) {
 		RZ_LOG_FATAL("Could not allocate memory for new instruction.\n");
+		return NULL;
 	}
 	hi->fround_mode = RZ_FLOAT_RMODE_RNE;
 	return hi;
@@ -675,9 +686,10 @@ RZ_API HexInsn *hexagon_alloc_instr() {
  * \return HexInsnContainer* The new instruction container or NULL on failure.
  */
 RZ_API HexInsnContainer *hexagon_alloc_instr_container() {
-	HexInsnContainer *hic = calloc(1, sizeof(HexInsnContainer));
+	HexInsnContainer *hic = RZ_NEW0(HexInsnContainer);
 	if (!hic) {
 		RZ_LOG_FATAL("Could not allocate memory for new instruction container.\n");
+		return NULL;
 	}
 	return hic;
 }
@@ -694,6 +706,7 @@ RZ_API HexInsnContainer *hexagon_alloc_instr_container() {
 static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer *new_hic, RZ_INOUT HexPkt *pkt, const ut8 k) {
 	if (k > 3) {
 		RZ_LOG_FATAL("Instruction could not be set! A packet can only hold four instructions but k=%d.", k);
+		return NULL;
 	}
 	HexInsnContainer *hic = hexagon_alloc_instr_container();
 	hex_move_insn_container(hic, new_hic);
@@ -710,7 +723,7 @@ static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer 
 		// Update the instruction which was previously the first one.
 		hex_set_pkt_info(&state->rz_asm, rz_list_get_n(pkt->bin, 1), pkt, 1, true);
 	}
-	pkt->last_access = rz_time_now();
+	pkt->last_access = rz_time_now_mono();
 	if (pkt->last_instr_present) {
 		make_next_packet_valid(state, pkt);
 	}
@@ -739,7 +752,7 @@ static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer 
 	new_pkt->hw_loop1_addr = pkt->hw_loop1_addr;
 	new_pkt->is_valid = (pkt->is_valid || pkt->last_instr_present);
 	new_pkt->pkt_addr = hic->addr;
-	new_pkt->last_access = rz_time_now();
+	new_pkt->last_access = rz_time_now_mono();
 	hex_set_pkt_info(&state->rz_asm, hic, new_pkt, 0, false);
 	if (new_pkt->last_instr_present) {
 		make_next_packet_valid(state, new_pkt);
@@ -765,7 +778,7 @@ static HexInsnContainer *hex_add_to_stale_pkt(HexState *state, const HexInsnCont
 	pkt->last_instr_present |= is_last_instr(hic->parse_bits);
 	pkt->pkt_addr = new_hic->addr;
 	// p->is_valid = true; // Setting it true also detects a lot of data as valid assembly.
-	pkt->last_access = rz_time_now();
+	pkt->last_access = rz_time_now_mono();
 	hex_set_pkt_info(&state->rz_asm, hic, pkt, 0, false);
 	if (pkt->last_instr_present) {
 		make_next_packet_valid(state, pkt);
@@ -1019,7 +1032,7 @@ RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_ne
 
 	HexConstExt *ce;
 	if (set_new_extender) {
-		ce = calloc(1, sizeof(HexConstExt));
+		ce = RZ_NEW0(HexConstExt);
 		ce->addr = addr + 4;
 		ce->const_ext = op->op.imm;
 		rz_list_append(state->const_ext_l, ce);
@@ -1074,6 +1087,7 @@ RZ_API void hexagon_reverse_opcode(const RzAsm *rz_asm, HexReversedOpcode *rz_re
 	HexState *state = hexagon_state(false);
 	if (!state) {
 		RZ_LOG_FATAL("HexState was NULL.");
+		return;
 	}
 	if (rz_asm) {
 		memcpy(&state->rz_asm, rz_asm, sizeof(RzAsm));
