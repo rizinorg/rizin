@@ -1672,13 +1672,16 @@ static bool variable_from_die(
 	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die) {
 	RzAnalysisDwarfVariable v = { 0 };
 	if (!function_var_parse(ctx, NULL, NULL, &v, die, NULL)) {
+		variable_fini(&v);
 		return false;
 	}
 	if (!(v.type && v.location->kind == RzBinDwarfLocationKind_ADDRESS)) {
+		variable_fini(&v);
 		return false;
 	}
 
 	if (variable_exist_global(ctx->analysis, &v)) {
+		variable_fini(&v);
 		return false;
 	}
 
