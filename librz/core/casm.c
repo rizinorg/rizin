@@ -742,7 +742,6 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 
 static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
 	RzList *hits;
-	;
 	RzAsmOp op;
 	ut8 *buf = NULL;
 	ut8 max_invalid_b4_exit = 4,
