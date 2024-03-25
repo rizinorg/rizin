@@ -1167,7 +1167,6 @@ RzList /*<RzBinWasmElementEntry *>*/ *rz_bin_wasm_get_elements(RzBinWasmObj *bin
 
 RzList /*<RzBinWasmCodeEntry *>*/ *rz_bin_wasm_get_codes(RzBinWasmObj *bin) {
 	RzBinWasmSection *code = NULL;
-	;
 	RzList *codes = NULL;
 
 	if (!bin || !bin->g_sections) {

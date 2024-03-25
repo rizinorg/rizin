@@ -525,7 +525,6 @@ RZ_API char *rz_table_tostring(RzTable *t) {
 	if (t->showJSON) {
 		char *s = rz_table_tojson(t);
 		char *q = rz_str_newf("%s\n", s);
-		;
 		free(s);
 		return q;
 	}

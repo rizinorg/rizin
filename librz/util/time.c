@@ -30,7 +30,7 @@ RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
 	// ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;
-	FILETIME ft;
+	FILETIME ft = { 0 };
 	if (p) {
 		// Returns a 64-bit value representing the number of
 		// 100-nanosecond intervals since January 1, 1601 (UTC).
@@ -81,7 +81,12 @@ RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
 #endif
 
 /**
- * \brief Returns the current time in microseconds
+ * \brief Returns the current time in microseconds.
+ *
+ * Note: Don't use this for timestamps! The returned time can fluctuate.
+ * Strictly ascending values are not guaranteed with consecutive calls!
+ * So use it only for human-readable date/time information.
+ * For timestamps use rz_time_now_mono().
  *
  * \return The current time
  */
@@ -95,9 +100,11 @@ RZ_API ut64 rz_time_now(void) {
 }
 
 /**
- * \brief Returns the current time in microseconds, using the monotonic clock
+ * \brief Returns microseconds since the start of the
+ * system-wide valid monotonic clock.
+ * Start point of the clock differs from system to system.
  *
- * \return The current time
+ * \return The monotonic clock microseconds
  */
 RZ_API ut64 rz_time_now_mono(void) {
 #if __WINDOWS__

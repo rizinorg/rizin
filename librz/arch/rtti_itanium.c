@@ -564,12 +564,8 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 	if (!context->read_addr(context->analysis, addr, &rtti_vptr)) {
 		return NULL;
 	}
-	RzBinSection *rtti_section = context->analysis->binb.get_vsect_at(context->analysis->binb.bin, rtti_vptr);
-	if (rtti_vptr && !can_section_contain_rtti_vpointer(rtti_section)) {
-		;
-		;
-		; // Right now ignore, seems that some binaries have some weird values inside there....
-	}
+
+	// ignore rtti_section
 	addr += VT_WORD_SIZE(context); // Move to the next member
 
 	ut64 name_addr = 0;
