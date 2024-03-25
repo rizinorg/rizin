@@ -23,7 +23,7 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #if __UNIX__
 #include <errno.h>
 #if !defined(__HAIKU__) && !defined(__sun)
-#include <sys/ptrace.h>
+#include <rz_util/rz_ptrace.h>
 #endif
 #include <sys/wait.h>
 #include <signal.h>
