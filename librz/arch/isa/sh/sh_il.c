@@ -1267,7 +1267,6 @@ static RzILOpEffect *sh_il_shld(const SHOp *op, ut64 pc, RzAnalysis *analysis, S
 	RzILOpPure *shr = SHIFTR0(sh_il_get_pure_param(1), NEG(VARL("shift_")));
 
 	return SEQ2(shift_amount, BRANCH(SGE(sh_il_get_pure_param(0), SN(32, 0)), sh_il_set_pure_param(1, shl), sh_il_set_pure_param(1, shr)));
-	;
 }
 
 /**

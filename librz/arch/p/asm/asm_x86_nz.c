@@ -2494,7 +2494,6 @@ static int oppush(RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
 	st32 immediate = 0;
-	;
 	st32 offset = 0;
 	if (op->operands[0].type & OT_GPREG &&
 		!(op->operands[0].type & OT_MEMORY)) {

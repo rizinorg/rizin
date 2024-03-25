@@ -3225,7 +3225,6 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 	rcap.toBB = b1;
 	rcap.cur = b0;
 	rcap.count = rz_config_get_i(core->config, "search.maxhits");
-	;
 	rcap.followCalls = followCalls;
 	rcap.followDepth = followDepth;
 

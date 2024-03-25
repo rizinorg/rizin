@@ -2578,7 +2578,6 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 				op->refptr = INSOP(1).size;
 				if (INSOP(1).mem.base == X86_REG_RIP) {
 					op->ptr = addr + insn->size + op->disp;
-					;
 				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 					op->type |= RZ_ANALYSIS_OP_TYPE_REG;
 					op->stackop = RZ_ANALYSIS_STACK_SET;

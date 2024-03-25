@@ -333,7 +333,6 @@ RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 
 	RzNumBig *current = rz_big_new();
 	RzNumBig *denom = rz_big_new();
-	;
 	RzNumBig *tmp = rz_big_new();
 	int sign = a->sign * b->sign;
 
