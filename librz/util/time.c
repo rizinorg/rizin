@@ -30,7 +30,7 @@ RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
 	// ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;
-	FILETIME ft;
+	FILETIME ft = { 0 };
 	if (p) {
 		// Returns a 64-bit value representing the number of
 		// 100-nanosecond intervals since January 1, 1601 (UTC).
