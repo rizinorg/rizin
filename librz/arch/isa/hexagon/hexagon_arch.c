@@ -91,7 +91,7 @@ RZ_API HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr) {
 		RzListIter *iter = NULL;
 		rz_list_foreach (p->bin, iter, hic) {
 			if (addr == hic->addr) {
-				p->last_access = rz_time_now();
+				p->last_access = rz_time_now_mono();
 				RZ_LOG_DEBUG("===== RET buffed_pkts[%d] hic @ 0x010%x ====> \n", i, addr);
 				return hic;
 			}
@@ -259,7 +259,7 @@ RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr) {
 		p = &state->pkts[i];
 		rz_list_foreach (p->bin, iter, hic) {
 			if (hic_at_addr(hic, addr)) {
-				p->last_access = rz_time_now();
+				p->last_access = rz_time_now_mono();
 				return p;
 			}
 		}
@@ -636,7 +636,7 @@ static void make_packet_valid(RZ_BORROW HexState *state, RZ_BORROW HexPkt *pkt) 
 		}
 		++i;
 	}
-	pkt->last_access = rz_time_now();
+	pkt->last_access = rz_time_now_mono();
 }
 
 /**
@@ -723,7 +723,7 @@ static HexInsnContainer *hex_add_to_pkt(HexState *state, const HexInsnContainer 
 		// Update the instruction which was previously the first one.
 		hex_set_pkt_info(&state->rz_asm, rz_list_get_n(pkt->bin, 1), pkt, 1, true);
 	}
-	pkt->last_access = rz_time_now();
+	pkt->last_access = rz_time_now_mono();
 	if (pkt->last_instr_present) {
 		make_next_packet_valid(state, pkt);
 	}
@@ -752,7 +752,7 @@ static HexInsnContainer *hex_to_new_pkt(HexState *state, const HexInsnContainer 
 	new_pkt->hw_loop1_addr = pkt->hw_loop1_addr;
 	new_pkt->is_valid = (pkt->is_valid || pkt->last_instr_present);
 	new_pkt->pkt_addr = hic->addr;
-	new_pkt->last_access = rz_time_now();
+	new_pkt->last_access = rz_time_now_mono();
 	hex_set_pkt_info(&state->rz_asm, hic, new_pkt, 0, false);
 	if (new_pkt->last_instr_present) {
 		make_next_packet_valid(state, new_pkt);
@@ -778,7 +778,7 @@ static HexInsnContainer *hex_add_to_stale_pkt(HexState *state, const HexInsnCont
 	pkt->last_instr_present |= is_last_instr(hic->parse_bits);
 	pkt->pkt_addr = new_hic->addr;
 	// p->is_valid = true; // Setting it true also detects a lot of data as valid assembly.
-	pkt->last_access = rz_time_now();
+	pkt->last_access = rz_time_now_mono();
 	hex_set_pkt_info(&state->rz_asm, hic, pkt, 0, false);
 	if (pkt->last_instr_present) {
 		make_next_packet_valid(state, pkt);
