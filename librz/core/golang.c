@@ -183,6 +183,7 @@ static char *detect_go_package_from_name(const char *string) {
 	 * - `type..` because is just the definition of a function linked to a defined go `typedef`
 	 */
 	if (rz_str_startswith(string, "main.") ||
+		rz_str_startswith(string, "type:") ||
 		rz_str_startswith(string, "type..")) {
 		return NULL;
 	}
@@ -203,6 +204,11 @@ static char *detect_go_package_from_name(const char *string) {
 		} else if (string[i] == '/') {
 			end = NULL;
 		} else if (string[i] == '(') {
+			if (!end) {
+				end = string + i;
+			}
+			break;
+		} else if (string[i] == ':') {
 			if (!end) {
 				end = string + i;
 			}
