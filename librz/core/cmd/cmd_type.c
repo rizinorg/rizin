@@ -163,9 +163,11 @@ static void types_xrefs(RzCore *core, const char *typestr) {
 		return;
 	}
 	RzType *type2;
-	RzListIter *iter, *iter2;
+	RzListIter *iter2;
+	void **iter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 		rz_list_foreach (uniq, iter2, type2) {
 			if (rz_types_equal(type2, type)) {
@@ -180,10 +182,12 @@ static void types_xrefs(RzCore *core, const char *typestr) {
 
 static void types_xrefs_summary(RzCore *core) {
 	RzType *type;
-	RzListIter *iter, *iter2;
+	void **iter;
+	RzListIter *iter2;
 	RzAnalysisFunction *fcn;
 	RzAnalysis *analysis = core->analysis;
-	rz_list_foreach (analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (analysis->fcns, iter) {
+		fcn = *iter;
 		RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
 		if (rz_list_length(uniq)) {
 			rz_cons_printf("%s: ", fcn->name);
@@ -220,9 +224,11 @@ static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 
 static void types_xrefs_graph(RzCore *core) {
 	RzType *type;
-	RzListIter *iter, *iter2;
+	void **iter;
+	RzListIter *iter2;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 		if (rz_list_length(uniq)) {
 			rz_cons_printf("agn %s\n", fcn->name);
@@ -240,10 +246,12 @@ static void types_xrefs_graph(RzCore *core) {
 
 static void types_xrefs_all(RzCore *core) {
 	RzType *type;
-	RzListIter *iter, *iter2;
+	void **iter;
+	RzListIter *iter2;
 	RzAnalysisFunction *fcn;
 	RzList *types_list = rz_list_newf(free);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		RzList *types = rz_analysis_types_from_fcn(core->analysis, fcn);
 		rz_list_foreach (types, iter2, type) {
 			const char *ident = rz_type_identifier(type);
@@ -257,7 +265,7 @@ static void types_xrefs_all(RzCore *core) {
 	rz_list_free(types_list);
 	rz_list_sort(uniq_types, (RzListComparator)strcmp, NULL);
 	char *typestr;
-	rz_list_foreach (uniq_types, iter, typestr) {
+	rz_list_foreach (uniq_types, iter2, typestr) {
 		rz_cons_printf("%s\n", typestr);
 	}
 	rz_list_free(uniq_types);

@@ -1887,9 +1887,9 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 	RzAnalysisFunction *match = NULL;
 	RzAnalysisMatchResult *result = NULL;
 	RzAnalysisMatchOpt opts = { 0 };
-	RzList *list_a = rz_list_new();
-	if (!list_a || !rz_list_append(list_a, find)) {
-		RZ_LOG_ERROR("rz-diff: cannot allocate and initialize RzList for function search\n");
+	RzPVector *pvec_a = rz_pvector_new(NULL);
+	if (!pvec_a || !rz_pvector_push(pvec_a, find)) {
+		RZ_LOG_ERROR("rz-diff: cannot allocate and initialize RzPVector for function search\n");
 		goto fail;
 	}
 
@@ -1897,7 +1897,7 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 	opts.analysis_a = analysis_a;
 	opts.analysis_b = analysis_b;
 
-	result = rz_analysis_match_functions(list_a, analysis_b->fcns, &opts);
+	result = rz_analysis_match_functions(pvec_a, analysis_b->fcns, &opts);
 	if (result && rz_list_length(result->matches) > 0) {
 		pair = (RzAnalysisMatchPair *)rz_list_first(result->matches);
 		match = (RzAnalysisFunction *)pair->pair_b;
@@ -1905,7 +1905,7 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 
 fail:
 	rz_analysis_match_result_free(result);
-	rz_list_free(list_a);
+	rz_pvector_free(pvec_a);
 	return match;
 }
 
@@ -2076,7 +2076,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 	rz_return_if_fail(core_a && core_b);
 
 	char *output = NULL;
-	RzList *fcns_a = NULL, *fcns_b = NULL;
+	RzPVector *fcns_a = NULL, *fcns_b = NULL;
 	PJ *pj = NULL;
 	RzTable *table = NULL;
 	RzAnalysisMatchResult *result = NULL;
@@ -2086,14 +2086,14 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 	RzListIter *iter = NULL;
 	bool color = false, no_name = false;
 
-	fcns_a = rz_list_clone(rz_analysis_function_list(core_a->analysis));
-	if (rz_list_empty(fcns_a)) {
+	fcns_a = rz_pvector_clone(rz_analysis_function_list(core_a->analysis));
+	if (rz_pvector_empty(fcns_a)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file0.\n");
 		goto fail;
 	}
 
-	fcns_b = rz_list_clone(rz_analysis_function_list(core_b->analysis));
-	if (rz_list_empty(fcns_b)) {
+	fcns_b = rz_pvector_clone(rz_analysis_function_list(core_b->analysis));
+	if (rz_pvector_empty(fcns_b)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file1.\n");
 		goto fail;
 	}
@@ -2200,8 +2200,8 @@ fail:
 	free(output);
 	rz_table_free(table);
 	rz_analysis_match_result_free(result);
-	rz_list_free(fcns_a);
-	rz_list_free(fcns_b);
+	rz_pvector_free(fcns_a);
+	rz_pvector_free(fcns_b);
 }
 
 static bool convert_offset_from_input(RzCore *core, const char *input, ut64 *offset) {

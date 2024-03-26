@@ -503,16 +503,17 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state) {
 	rz_return_if_fail(core && bb && state);
 	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
-	RzAnalysisFunction *fcn = rz_list_first(bb->fcns);
+	RzAnalysisFunction *fcn = rz_pvector_head(bb->fcns);
 	bb_info_print(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
 }
 
 /*this only autoname those function that start with fcn.* or sym.func.* */
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core) {
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *fcn;
 
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, it) {
+		fcn = *it;
 		if (!strncmp(fcn->name, "fcn.", 4) || !strncmp(fcn->name, "sym.func.", 9)) {
 			RzFlagItem *item = rz_flag_get(core->flags, fcn->name);
 			if (item) {
@@ -1572,27 +1573,6 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 	return false;
 }
 
-/* if addr is 0, remove all functions
- * otherwise remove the function addr falls into */
-RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcni;
-	RzListIter *iter, *iter_tmp;
-
-	if (!addr) {
-		rz_list_purge(core->analysis->fcns);
-		if (!(core->analysis->fcns = rz_list_new())) {
-			return false;
-		}
-	} else {
-		rz_list_foreach_safe (core->analysis->fcns, iter, iter_tmp, fcni) {
-			if (rz_analysis_function_contains(fcni, addr)) {
-				rz_analysis_function_delete(fcni);
-			}
-		}
-	}
-	return true;
-}
-
 /**
  * \brief for a given function returns an RzList of all functions that were called in it
  */
@@ -2368,7 +2348,6 @@ static bool isSkippable(RzBinSymbol *s) {
 
 RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzPVector *vector;
-	RzListIter *iter;
 	RzFlagItem *item;
 	RzAnalysisFunction *fcni;
 	const RzBinAddr *binmain;
@@ -2435,7 +2414,8 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	rz_core_task_yield(&core->tasks);
 	if (analysis_vars) {
 		/* Set fcn type to RZ_ANALYSIS_FCN_TYPE_SYM for symbols */
-		rz_list_foreach_prev(core->analysis->fcns, iter, fcni) {
+		rz_pvector_foreach_prev(core->analysis->fcns, it) {
+			fcni = *it;
 			if (rz_cons_is_breaked()) {
 				break;
 			}
@@ -2547,8 +2527,7 @@ RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore 
 	RzAnalysisFunction *F;
 	RzAnalysisBlock *B;
 	RzBinSymbol *S;
-	RzListIter *iter;
-	void **it;
+	void **it, **iter;
 	ut64 at;
 	RzCoreAnalysisStats *as = RZ_NEW0(RzCoreAnalysisStats);
 	if (!as) {
@@ -2586,7 +2565,8 @@ RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore 
 	struct block_flags_stat_t u = { .step = step, .from = from, .blocks = blocks };
 	rz_flag_foreach_range(core->flags, from, to, block_flags_stat, &u);
 	// iter all functions
-	rz_list_foreach (core->analysis->fcns, iter, F) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		F = *iter;
 		if (F->addr < from || F->addr > to) {
 			continue;
 		}
@@ -3286,10 +3266,11 @@ static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
 
 /* set flags for every function */
 RZ_API void rz_core_analysis_flag_every_function(RzCore *core) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		rz_flag_set(core->flags, fcn->name,
 			fcn->addr, rz_analysis_function_size_from_entry(fcn));
 	}
@@ -3590,9 +3571,10 @@ static void relocation_function_process_noreturn(RzCore *core, RzAnalysisBlock *
 
 	// Add all functions that might have become noreturn by this to the todo list to reanalyze them later.
 	// This must be done before chopping because b might get freed.
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (b->fcns, it, fcn) {
+	rz_pvector_foreach (b->fcns, it) {
+		fcn = *it;
 		set_u_add(todo, (ut64)(size_t)fcn);
 	}
 
@@ -3722,9 +3704,11 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 	rz_core_analysis_propagate_noreturn_relocs(core, addr);
 
 	// find known noreturn functions to propagate
-	RzListIter *iter;
+	void **iter;
+	RzListIter *lit;
 	RzAnalysisFunction *f;
-	rz_list_foreach (core->analysis->fcns, iter, f) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		f = *iter;
 		if (f->is_noreturn) {
 			ut64 *n = ut64_new(f->addr);
 			rz_list_append(todo, n);
@@ -3739,7 +3723,7 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 		}
 		RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, noret_addr);
 		RzAnalysisXRef *xref;
-		rz_list_foreach (xrefs, iter, xref) {
+		rz_list_foreach (xrefs, lit, xref) {
 			RzAnalysisOp *xrefop = rz_core_op_analysis(core, xref->from, RZ_ANALYSIS_OP_MASK_ALL);
 			if (!xrefop) {
 				RZ_LOG_ERROR("core: cannot analyze opcode at 0x%08" PFMT64x "\n", xref->from);
@@ -3758,10 +3742,10 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 				continue;
 			}
 
-			RzList *block_fcns = rz_list_clone(block->fcns);
+			RzList *block_fcns = rz_util_copy_pvector_as_list(block->fcns);
 			if (request_fcn) {
 				// specific function requested, check if it contains the bb
-				if (!rz_list_contains(block->fcns, request_fcn)) {
+				if (!rz_pvector_contains(block->fcns, request_fcn)) {
 					goto kontinue;
 				}
 			} else {
@@ -3890,7 +3874,7 @@ RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core) {
 		return;
 	}
 
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *func = NULL;
 	RzAnalysisBlock *block = NULL;
 	ut8 *bytes = NULL;
@@ -3902,7 +3886,8 @@ RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core) {
 	// ignore any hint.
 	RZ_PTR_MOVE(archbits, analysis->coreb.archbits);
 
-	rz_list_foreach (analysis->fcns, it, func) {
+	rz_pvector_foreach (analysis->fcns, it) {
+		func = *it;
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -4103,8 +4088,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		notify = "Analyze local variables and arguments";
 		rz_core_notify_begin(core, "%s", notify);
 		RzAnalysisFunction *fcni;
-		RzListIter *iter;
-		rz_list_foreach (core->analysis->fcns, iter, fcni) {
+		void **iter;
+		rz_pvector_foreach (core->analysis->fcns, iter) {
+			fcni = *iter;
 			if (rz_cons_is_breaked()) {
 				break;
 			}
@@ -4563,7 +4549,7 @@ RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *an
 }
 
 RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *fcn;
 	ut64 seek;
 	if (rz_config_get_b(core->config, "cfg.debug")) {
@@ -4591,7 +4577,8 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	HtUU *loop_table = ht_uu_new0();
 
 	// Iterating Reverse so that we get function in top-bottom call order
-	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {
+	rz_pvector_foreach_prev(core->analysis->fcns, it) {
+		fcn = *it;
 		int ret = rz_core_seek(core, fcn->addr, true);
 		if (!ret) {
 			continue;
@@ -5528,11 +5515,12 @@ RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core) {
  */
 RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, ST64_MAX);
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
 	st64 cov = 0;
 	cov += (st64)rz_meta_get_size(core->analysis, RZ_META_TYPE_DATA);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		void **it;
 		RzPVector *maps = rz_io_maps(core->io);
 		rz_pvector_foreach (maps, it) {
@@ -5571,10 +5559,11 @@ RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core) {
  */
 RZ_API st64 rz_core_analysis_calls_count(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, ST64_MAX);
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
 	st64 cov = 0;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		if (xrefs) {
 			cov += rz_list_length(xrefs);

@@ -258,7 +258,7 @@ bool test_analysis_function_load() {
 	rz_analysis_block_unref(ba);
 	rz_analysis_block_unref(bb);
 
-	mu_assert_eq(rz_list_length(analysis->fcns), 8, "loaded fcn count");
+	mu_assert_eq(rz_pvector_len(analysis->fcns), 8, "loaded fcn count");
 
 	RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, 1337);
 	mu_assert_notnull(f, "function");
@@ -1445,7 +1445,7 @@ bool test_analysis_load() {
 	}
 
 	mu_assert_eq(blocks_count, 2, "blocks loaded");
-	mu_assert_eq(rz_list_length(analysis->fcns), 2, "functions loaded");
+	mu_assert_eq(rz_pvector_len(analysis->fcns), 2, "functions loaded");
 	mu_assert_eq(rz_analysis_xrefs_count(analysis), 2, "xrefs loaded");
 
 	const char *cmt = rz_meta_get_string(analysis, RZ_META_TYPE_COMMENT, 0x1337);

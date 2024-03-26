@@ -1153,11 +1153,12 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 }
 
 RZ_API void rz_serialize_analysis_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *function;
 	RzStrBuf key;
 	rz_strbuf_init(&key);
-	rz_list_foreach (analysis->fcns, it, function) {
+	rz_pvector_foreach (analysis->fcns, it) {
+		function = *it;
 		rz_strbuf_setf(&key, "0x%" PFMT64x, function->addr);
 		function_store(db, rz_strbuf_get(&key), function);
 	}

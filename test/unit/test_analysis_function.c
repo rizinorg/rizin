@@ -55,20 +55,21 @@ static bool function_check_invariants(RzAnalysis *analysis) {
 		return false;
 	}
 
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (analysis->fcns, it, fcn) {
+	rz_pvector_foreach (analysis->fcns, it) {
+		fcn = *it;
 		mu_assert_ptreq(ht_up_find(analysis->ht_addr_fun, fcn->addr, NULL), fcn, "function in addr ht");
 		mu_assert_ptreq(ht_pp_find(analysis->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
 	}
 
 	size_t addr_count = 0;
 	ht_up_foreach(analysis->ht_addr_fun, ht_up_count, &addr_count);
-	mu_assert_eq(addr_count, rz_list_length(analysis->fcns), "function addr ht count");
+	mu_assert_eq(addr_count, rz_pvector_len(analysis->fcns), "function addr ht count");
 
 	size_t name_count = 0;
 	ht_pp_foreach(analysis->ht_name_fun, ht_pp_count, &name_count);
-	mu_assert_eq(name_count, rz_list_length(analysis->fcns), "function name ht count");
+	mu_assert_eq(name_count, rz_pvector_len(analysis->fcns), "function name ht count");
 
 	return true;
 }

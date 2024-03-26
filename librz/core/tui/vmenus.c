@@ -16,10 +16,11 @@
 
 // helper
 static void function_rename(RzCore *core, ut64 addr, const char *name) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
 
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		if (fcn->addr == addr) {
 			rz_flag_unset_name(core->flags, fcn->name);
 			free(fcn->name);
@@ -93,13 +94,14 @@ static RzPVector /*<char *>*/ *capture_filter_keywords(char *inputing) {
  * \param filter_fcn store the filtered functions
  * \return return the number of functions that conform to the keywords
  */
-static ut32 filter_function(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *filter_fcn, RzPVector /*<char *>*/ *keywords) {
+static ut32 filter_function(RzCore *core, RzPVector /*<RzAnalysisFunction *>*/ *filter_fcn, RzPVector /*<char *>*/ *keywords) {
 	rz_return_val_if_fail(core, 0);
-	RzListIter *iter;
-	RzAnalysisFunction *fcn;
 	size_t num = 0;
+	void **iter;
+	RzAnalysisFunction *fcn;
 
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		bool contain = true;
 		void **it;
 		rz_pvector_foreach (keywords, it) {
@@ -109,7 +111,7 @@ static ut32 filter_function(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *fil
 			continue;
 		}
 		if (filter_fcn) {
-			rz_list_append(filter_fcn, fcn);
+			rz_pvector_push(filter_fcn, fcn);
 		}
 		num++;
 	}
@@ -124,9 +126,9 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList *filter_fcn = core->analysis->fcns, *visual_filter = NULL;
+	RzPVector *filter_fcn = core->analysis->fcns, *visual_filter = NULL;
 	int window, i = 0, print_full_func;
-	RzListIter *iter;
+	void **iter;
 	RzCoreVisual *visual = core->visual;
 
 	// Adjust the windows size automaticaly
@@ -143,7 +145,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	const char *color_fcn = core->cons->context->pal.fname;
 
 	if (visual->inputing) {
-		visual_filter = rz_list_newf(NULL);
+		visual_filter = rz_pvector_new(NULL);
 		if (visual_filter) {
 			RzPVector *keywords = capture_filter_keywords(visual->inputing);
 			if (keywords) {
@@ -154,7 +156,8 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 		}
 	}
 
-	rz_list_foreach (filter_fcn, iter, fcn) {
+	rz_pvector_foreach (filter_fcn, iter) {
+		fcn = *iter;
 		print_full_func = true;
 		if (i >= wdelta) {
 			if (i > window + wdelta - 1) {
@@ -199,7 +202,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 		i++;
 	}
 	if (filter_fcn != core->analysis->fcns) {
-		rz_list_free(filter_fcn);
+		rz_pvector_free(filter_fcn);
 	}
 	return addr;
 }
@@ -578,10 +581,11 @@ static void addVar(RzCore *core, int ch, const char *msg) {
 }
 
 static void set_current_option_to_seek(RzCore *core) {
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
 	int i = 0;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		if (core->offset == fcn->addr) {
 			option = i;
 		}
@@ -611,7 +615,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 	int asmbytes = rz_config_get_i(core->config, "asm.bytes");
 	rz_config_set_i(core->config, "asm.bytes", 0);
 	for (;;) {
-		nfcns = rz_list_length(core->analysis->fcns);
+		nfcns = rz_pvector_len(core->analysis->fcns);
 		if (visual->inputing) {
 			RzPVector *keywords = capture_filter_keywords(visual->inputing);
 			if (keywords) {
@@ -833,9 +837,10 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case '_': {
 			rz_core_cmd0(core, "s $(afl~...)");
 			int n = 0;
-			RzListIter *iter;
+			void **iter;
 			RzAnalysisFunction *fcn;
-			rz_list_foreach (core->analysis->fcns, iter, fcn) {
+			rz_pvector_foreach (core->analysis->fcns, iter) {
+				fcn = *iter;
 				if (fcn->addr == core->offset) {
 					option = n;
 					break;

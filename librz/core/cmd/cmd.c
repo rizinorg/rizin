@@ -2567,9 +2567,10 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		ut64 obs = core->blocksize;
 		ut64 offorig = core->offset;
 		RzAnalysisFunction *fcn;
-		list = core->analysis->fcns;
 		rz_cons_break_push(NULL, NULL);
-		rz_list_foreach (list, iter, fcn) {
+		void **iter;
+		rz_pvector_foreach (core->analysis->fcns, iter) {
+			fcn = *iter;
 			if (rz_cons_is_breaked()) {
 				break;
 			}
@@ -2764,10 +2765,11 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 	} break;
 	case 'f': // "@@f"
 		if (each[1] == ':') {
-			RzAnalysisFunction *fcn;
-			RzListIter *iter;
 			if (core->analysis) {
-				rz_list_foreach (core->analysis->fcns, iter, fcn) {
+				RzAnalysisFunction *fcn;
+				void **iter;
+				rz_pvector_foreach (core->analysis->fcns, iter) {
+					fcn = *iter;
 					if (each[2] && strstr(fcn->name, each + 2)) {
 						rz_core_seek(core, fcn->addr, true);
 						rz_core_cmd(core, cmd, 0);
@@ -2779,11 +2781,12 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 			}
 			goto out_finish;
 		} else {
-			RzAnalysisFunction *fcn;
-			RzListIter *iter;
 			if (core->analysis) {
 				RzConsGrep grep = core->cons->context->grep;
-				rz_list_foreach (core->analysis->fcns, iter, fcn) {
+				RzAnalysisFunction *fcn;
+				void **iter;
+				rz_pvector_foreach (core->analysis->fcns, iter) {
+					fcn = *iter;
 					char *buf;
 					rz_core_seek(core, fcn->addr, true);
 					rz_cons_push();
@@ -4885,11 +4888,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_stmt) {
 	ut64 obs = core->blocksize;
 	ut64 offorig = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList *list = core->analysis->fcns;
-	RzListIter *iter;
+	void **iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_cons_break_push(NULL, NULL);
-	rz_list_foreach (list, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		if (rz_cons_is_breaked()) {
 			break;
 		}

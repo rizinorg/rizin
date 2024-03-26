@@ -1688,7 +1688,7 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {
 			RzAnalysisBlock *jumpbb = rz_analysis_get_block_at(b->analysis, b->jump);
-			if (jumpbb && rz_list_contains(jumpbb->fcns, fcn)) {
+			if (jumpbb && rz_pvector_contains(jumpbb->fcns, fcn)) {
 				if (emu && core->analysis->last_disasm_reg && !jumpbb->parent_reg_arena) {
 					jumpbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
 				}
@@ -1701,7 +1701,7 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 	if (b->fail != UT64_MAX) {
 		if (b->fail > b->addr) {
 			RzAnalysisBlock *failbb = rz_analysis_get_block_at(b->analysis, b->fail);
-			if (failbb && rz_list_contains(failbb->fcns, fcn)) {
+			if (failbb && rz_pvector_contains(failbb->fcns, fcn)) {
 				if (emu && core->analysis->last_disasm_reg && !failbb->parent_reg_arena) {
 					failbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
 				}

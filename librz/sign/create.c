@@ -468,7 +468,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 		return NULL;
 	}
 
-	if (rz_list_length(analysis->fcns) < 1) {
+	if (rz_pvector_len(analysis->fcns) < 1) {
 		RZ_LOG_ERROR("FLIRT: There are no analyzed functions. Have you run 'aa'?\n");
 		return NULL;
 	}
@@ -480,9 +480,10 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 	}
 	root->child_list = rz_list_newf((RzListFree)rz_sign_flirt_node_free);
 
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *func;
-	rz_list_foreach (analysis->fcns, it, func) {
+	rz_pvector_foreach (analysis->fcns, it) {
+		func = *it;
 		if (!func->name) {
 			RZ_LOG_ERROR("FLIRT: function at 0x%" PFMT64x " has a null name. skipping function...\n", func->addr);
 			continue;

@@ -21,9 +21,9 @@ bool test_open_analyse_save() {
 	rz_core_analysis_all(core);
 	rz_core_analysis_everything(core, false, "esil");
 
-	RzList *functionsold = rz_analysis_function_list(core->analysis);
+	RzPVector *functionsold = rz_analysis_function_list(core->analysis);
 	mu_assert_notnull(functionsold, "export functions list");
-	eprintf("functions count = %d\n", rz_list_length(functionsold));
+	eprintf("functions count = %" PFMTSZu "\n", rz_pvector_len(functionsold));
 
 	// 3. Remove the function
 	const char *fcnname = "fcn.0000ebe0";
@@ -32,9 +32,9 @@ bool test_open_analyse_save() {
 	rz_analysis_function_delete(fcn);
 
 	// 3. Export the function list
-	RzList *functions = rz_analysis_function_list(core->analysis);
+	RzPVector *functions = rz_analysis_function_list(core->analysis);
 	mu_assert_notnull(functions, "export functions list");
-	size_t functions_count_expect = rz_list_length(functions);
+	size_t functions_count_expect = rz_pvector_len(functions);
 
 	// 4. Save into the project
 	char *tmpdir = rz_file_tmpdir();
@@ -60,11 +60,11 @@ bool test_open_analyse_save() {
 	free(project_file);
 
 	// 8. Export the function list
-	RzList *functions_load = rz_analysis_function_list(core->analysis);
+	RzPVector *functions_load = rz_analysis_function_list(core->analysis);
 	mu_assert_notnull(functions_load, "export functions list");
 
 	// 9. Compare with the previously saved one
-	mu_assert_eq(rz_list_length(functions_load), functions_count_expect, "compare functions list");
+	mu_assert_eq(rz_pvector_len(functions_load), functions_count_expect, "compare functions list");
 
 	// 10. Exit
 	free(tmpdir);
