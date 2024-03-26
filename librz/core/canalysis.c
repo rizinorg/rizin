@@ -368,6 +368,9 @@ static RZ_OWN char *bb_info_to_string(RzCore *core, RzAnalysisFunction *fcn, RzA
 	ut64 addr, RzOutputMode mode, PJ *pj, RzTable *t) {
 	RzDebugTracepoint *tp = NULL;
 	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		return NULL;
+	}
 	int outputs = (bb->jump != UT64_MAX) + (bb->fail != UT64_MAX);
 	int inputs = 0;
 	char *table_str = NULL;
