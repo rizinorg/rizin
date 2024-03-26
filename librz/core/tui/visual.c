@@ -1901,11 +1901,11 @@ static bool insert_mode_enabled(RzCore *core) {
 	return true;
 }
 
-static char *get_afb_output(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
+static char *function_basic_blocks_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(core && fcn, NULL);
 	RzCmdStateOutput state;
 	state.mode = RZ_OUTPUT_MODE_STANDARD;
-	char *fcn_info = rz_core_analysis_bbs_info_print(core, fcn, &state);
+	char *fcn_info = rz_core_analysis_bbs_as_string(core, fcn, &state);
 	return fcn_info;
 }
 
@@ -1914,15 +1914,15 @@ static char *get_afb_output(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFuncti
  *
  * \param core The RzCore instance.
  */
-static void rz_view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
+static void view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
 	rz_return_if_fail(core);
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
 		return;
 	}
-	char *afb_output = get_afb_output(core, fcn);
-	char *output = rz_core_filter_string_output(afb_output, "");
-	RZ_FREE(afb_output);
+	char *bbs_string = function_basic_blocks_string(core, fcn);
+	char *output = rz_str_filter_apply(bbs_string, "");
+	RZ_FREE(bbs_string);
 	if (!output) {
 		return;
 	}
@@ -2032,7 +2032,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_debug_switch_to_first_thread(core->dbg);
 			break;
 		case 'b':
-			rz_view_and_seek_to_bb(core);
+			view_and_seek_to_bb(core);
 			break;
 		case 'i':
 			// XXX ii shows index first and iiq shows no offset :(

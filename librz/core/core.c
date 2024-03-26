@@ -2446,31 +2446,3 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
-
-/**
- * \brief Filters the given string based on the provided filter.
- *
- * \param str RZ_NONNULL The string to be filtered.
- * \param filter The filter string to be used for filtering the str.
- * \return RZ_OWN char* The filtered string. The caller is responsible for freeing this string.
- */
-RZ_API RZ_OWN char *rz_core_filter_string_output(RZ_NONNULL const char *str, const char *filter) {
-	rz_return_val_if_fail(str, NULL);
-	char *filtered_str = NULL;
-	char *str_copy = rz_str_dup(str);
-	RzList *lines = rz_str_split_list(str_copy, "\n", 0);
-	RzListIter *iter;
-	char *line;
-	rz_list_foreach (lines, iter, line) {
-		if (strstr(line, filter)) {
-			if (filtered_str) {
-				filtered_str = rz_str_append(filtered_str, "\n");
-			} else {
-				filtered_str = rz_str_dup("");
-			}
-			filtered_str = rz_str_append(filtered_str, line);
-		}
-	}
-	RZ_FREE(str_copy);
-	return filtered_str;
-}

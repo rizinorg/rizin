@@ -364,12 +364,13 @@ static ut64 __opaddr(RzAnalysisBlock *b, ut64 addr) {
 	return UT64_MAX;
 }
 
-static char *bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *bb,
+static RZ_OWN char *bb_info_to_string(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *bb,
 	ut64 addr, RzOutputMode mode, PJ *pj, RzTable *t) {
 	RzDebugTracepoint *tp = NULL;
 	RzStrBuf *buf = rz_strbuf_new("");
 	int outputs = (bb->jump != UT64_MAX) + (bb->fail != UT64_MAX);
 	int inputs = 0;
+	char *table_str = NULL;
 
 	void **iter;
 	RzAnalysisBlock *bb2;
@@ -452,7 +453,7 @@ static char *bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBloc
 		return json_str;
 	}
 	case RZ_OUTPUT_MODE_TABLE:
-		char *table_str = rz_table_tostring(t);
+		table_str = rz_table_tostring(t);
 		rz_strbuf_append(buf, table_str);
 		RZ_FREE(table_str);
 		break;
@@ -488,11 +489,14 @@ static int bb_cmp(const void *a, const void *b, void *user) {
 	return ba->addr - bb->addr;
 }
 
-RZ_IPI char *rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
+RZ_IPI RZ_OWN char *rz_core_analysis_bbs_as_string(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && fcn && state, NULL);
 	void **iter;
 	RzAnalysisBlock *bb;
 	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		return NULL;
+	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
 	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
@@ -502,21 +506,20 @@ RZ_IPI char *rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *f
 	rz_pvector_sort(fcn->bbs, bb_cmp, NULL);
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = (RzAnalysisBlock *)*iter;
-		char *bb_info = bb_info_print(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
+		char *bb_info = bb_info_to_string(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
 		rz_strbuf_append(buf, bb_info);
 		RZ_FREE(bb_info);
 	}
 
 	rz_cmd_state_output_array_end(state);
-	char *result = rz_strbuf_drain(buf);
-	return result;
+	return rz_strbuf_drain(buf);
 }
 
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state) {
 	rz_return_if_fail(core && bb && state);
 	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
 	RzAnalysisFunction *fcn = rz_list_first(bb->fcns);
-	char *bb_info = bb_info_print(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
+	char *bb_info = bb_info_to_string(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
 	if (bb_info) {
 		rz_cons_printf("%s", bb_info);
 		RZ_FREE(bb_info);
