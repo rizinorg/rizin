@@ -70,6 +70,7 @@ RZ_API void rz_vector_fini(RzVector *vec);
 RZ_API void rz_vector_free(RzVector *vec);
 
 typedef void (*RzVectorItemCpyFunc)(void *, void *);
+typedef void (*RzPVectorItemCpyFunc)(void *, void *);
 
 RZ_API bool rz_vector_clone_intof(
 	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
@@ -250,14 +251,11 @@ RZ_API void rz_pvector_clear(RzPVector *vec);
 RZ_API void rz_pvector_free(RzPVector *vec);
 
 /// See rz_vector_clone() for detailed semantics
-static inline RzPVector *rz_pvector_clone(
-	RzPVector *vec) {
+static inline RzPVector *rz_pvector_clone(RzPVector *vec) {
 	return (RzPVector *)rz_vector_clone(&vec->v);
 }
 
-static inline RzPVector *rz_pvector_clonef(
-	RzPVector *vec,
-	void (*item_cpy)(void *, void *)) {
+static inline RzPVector *rz_pvector_clonef(RzPVector *vec, RzPVectorItemCpyFunc item_cpy) {
 	return (RzPVector *)rz_vector_clonef(&vec->v, item_cpy);
 }
 

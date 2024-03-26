@@ -285,7 +285,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) 
 	if (!tp) {
 		return NULL;
 	}
-	tp->stamp = rz_time_now();
+	tp->stamp = rz_time_now_mono();
 	tp->addr = addr;
 	tp->tags = tag;
 	tp->size = size;
