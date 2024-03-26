@@ -81,16 +81,20 @@ static RzILOpEffect *op_branch(Pic18Op *op, RzILOpPure *condition) {
 			 : JMP(U16(PC + 2 + 2 * op->n));
 }
 
+static RzILOpEffect *load_shadows_opt() {
+	return BRANCH(NON_ZERO(VARG("s")),
+		SEQ3(
+			SETG("ws", VRW),
+			SETG("ss", VRS),
+			SETG("bsrs", VARG("bsr"))),
+		NOP());
+}
+
 static RzILOpEffect *op_call(Pic18Op *op) {
 	return SEQ3(
 		SETG("tos", U16(PC + 4)),
 		JMP(U32(K << 1)),
-		BRANCH(NON_ZERO(VARG("s")),
-			SEQ3(
-				SETG("ws", VRW),
-				SETG("ss", VRS),
-				SETG("bsrs", VARG("bsr"))),
-			NOP()));
+		load_shadows_opt());
 }
 
 static RzILOpEffect *op_and(const char *dst,
@@ -110,6 +114,26 @@ static RzILOpEffect *set_prod16(RzILOpPure *res) {
 		SETL("_res", res),
 		SETG("prodh", UNSIGNED(8, SHIFTR0(VARL("_res"), U8(8)))),
 		SETG("prodl", UNSIGNED(8, VARL("_res"))));
+}
+
+static RzILOpEffect *op_pop() {
+	return SEQ2(
+		SETG("_stack_ptr", SUB(VARG("_stack_ptr"), U16(4))),
+		SETG("tos", LOADW(32, ADD(VARG("_stack"), VARG("_stack_ptr")))));
+}
+
+static RzILOpEffect *op_pop_jmp() {
+	return SEQ3(
+		SETL("_pc", VARG("tos")),
+		op_pop(),
+		JMP(VARL("_pc")));
+}
+
+static RzILOpEffect *op_push(RzILOpPure *x) {
+	return SEQ3(
+		SETG("_stack_ptr", ADD(VARG("_stack_ptr"), U16(4))),
+		STOREW(ADD(VARG("_stack"), VARG("_stack_ptr")), x),
+		SETG("tos", DUP(x)));
 }
 
 static RzILOpEffect *pic18_il(Pic18Op *op) {
@@ -214,24 +238,41 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 		return set_prod16(MUL(UNSIGNED(16, VRW), UNSIGNED(16, VRF)));
 	case PIC18_OPCODE_NOP: return NOP();
 	case PIC18_OPCODE_NEGF: return SETG(RF, complement_2(VRF));
-	case PIC18_OPCODE_POP:
+	case PIC18_OPCODE_POP: return op_pop();
+	case PIC18_OPCODE_PUSH: return op_push(U32(PC));
+	case PIC18_OPCODE_RCALL:
 		return SEQ2(
-			SETG("_stack_ptr", SUB(VARG("_stack_ptr"), U16(4))),
-			SETG("tos", LOADW(32, ADD(VARG("_stack"), VARG("_stack_ptr")))));
-	case PIC18_OPCODE_PUSH:
+			op_push(U32(PC + 2)),
+			JMP(U32(PC + 2 + 2 * N)));
+	case PIC18_OPCODE_RESET: return NOP();
+	case PIC18_OPCODE_RETFIE:
 		return SEQ3(
-			SETG("_stack_ptr", ADD(VARG("_stack_ptr"), U16(4))),
-			STOREW(ADD(VARG("_stack"), VARG("_stack_ptr")), U32(PC)),
-			SETG("tos", U32(PC)));
-	case PIC18_OPCODE_RETURN: break;
-	case PIC18_OPCODE_RETFIE: break;
+			BRANCH(
+				IS_ZERO(VARG("ipen")),
+				SETG("gie", IL_TRUE),
+				SEQ2(
+					SETL("_g", APPEND(VARG("gieh"), VARG("geil"))),
+					BRANCH(
+						EQ(VARG("_g"), UN(2, 0b11)),
+						SETG("invalid", IL_TRUE),
+						BRANCH(
+							EQ(VARG("_g"), UN(2, 0b10)),
+							SETG("giel", IL_TRUE),
+							SETG("gieh", IL_TRUE), )))),
+			load_shadows_opt(),
+			op_pop_jmp());
+	case PIC18_OPCODE_RETLW:
+		return SEQ2(
+			SETG(RW, U8(K)),
+			op_pop_jmp());
+	case PIC18_OPCODE_RETURN:
+		return SEQ2(
+			load_shadows_opt(),
+			op_pop_jmp());
 	case PIC18_OPCODE_RLNCF: break;
 	case PIC18_OPCODE_RRNCF: break;
 	case PIC18_OPCODE_RLCF: break;
 	case PIC18_OPCODE_RRCF: break;
-	case PIC18_OPCODE_RCALL: break;
-	case PIC18_OPCODE_RESET: return NOP();
-	case PIC18_OPCODE_RETLW: break;
 	case PIC18_OPCODE_SLEEP: break;
 	case PIC18_OPCODE_SETF: break;
 	case PIC18_OPCODE_SUBWF: break;
