@@ -106,12 +106,9 @@ static const char *directory_parse_v5(DWLineContext *ctx, RzBinDwarfLineUnitHdr 
 	return path_name;
 }
 
-static RzBinDwarfFileEntry *FileEntry_parse_v5(
-	DWLineContext *ctx) {
+static bool FileEntry_parse_v5(DWLineContext *ctx, RzBinDwarfFileEntry *entry) {
 	RzBinEndianReader *R = ctx->line->R;
 	RzBinDwarfLineUnitHdr *hdr = ctx->hdr;
-	RzBinDwarfFileEntry *entry = RZ_NEW0(RzBinDwarfFileEntry);
-	RET_FALSE_IF_FAIL(entry);
 	RzBinDwarfFileEntryFormat *format = NULL;
 	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
@@ -119,7 +116,9 @@ static RzBinDwarfFileEntry *FileEntry_parse_v5(
 			.form = format->form,
 			.encoding = &hdr->encoding,
 		};
-		ERR_IF_FAIL(RzBinDwarfAttr_parse(R, &attr, &opt));
+		if (!RzBinDwarfAttr_parse(R, &attr, &opt)) {
+			return false;
+		}
 		switch (format->content_type) {
 		case DW_LNCT_path:
 			entry->path_name = rz_bin_dwarf_attr_string(&attr, ctx->dw, UT64_MAX);
@@ -143,10 +142,7 @@ static RzBinDwarfFileEntry *FileEntry_parse_v5(
 		}
 	}
 
-	return entry;
-err:
-	free(entry);
-	return NULL;
+	return true;
 }
 
 static bool FileEntry_parse_v4(RzBinEndianReader *R, RzBinDwarfFileEntry *entry) {
@@ -181,11 +177,11 @@ static bool LineHdr_parse_v5(DWLineContext *ctx) {
 	RET_FALSE_IF_FAIL(FileEntryFormat_parse(R, &hdr->file_name_entry_formats, hdr));
 	ULE128_OR_RET_FALSE(count);
 	for (ut64 i = 0; i < count; ++i) {
-		RzBinDwarfFileEntry *entry = FileEntry_parse_v5(ctx);
-		if (!entry) {
+		RzBinDwarfFileEntry entry = { 0 };
+		if (!FileEntry_parse_v5(ctx, &entry)) {
 			break;
 		}
-		rz_vector_push(&hdr->file_names, entry);
+		rz_vector_push(&hdr->file_names, &entry);
 	}
 	return true;
 }
