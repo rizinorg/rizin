@@ -76,6 +76,14 @@ static RzILOpEffect *op_add(const char *dst,
 		SETG(dst, VARL("_res")));
 }
 
+static RzILOpEffect *op_sub(const char *dst,
+	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
+	return SEQ3(
+		SETL("_res", SUB(a, curry ? ADD(b, curry) : b)),
+		status_sub(DUP(a), DUP(b), VARL("_res"), curry ? DUP(curry) : NULL),
+		SETG(dst, VARL("_res")));
+}
+
 static RzILOpEffect *op_branch(Pic18Op *op, RzILOpPure *condition) {
 	return condition ? BRANCH(condition, JMP(U16(PC + 2 + 2 * op->n)), NOP())
 			 : JMP(U16(PC + 2 + 2 * op->n));
@@ -269,17 +277,40 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 		return SEQ2(
 			load_shadows_opt(),
 			op_pop_jmp());
-	case PIC18_OPCODE_RLNCF: break;
-	case PIC18_OPCODE_RRNCF: break;
-	case PIC18_OPCODE_RLCF: break;
-	case PIC18_OPCODE_RRCF: break;
-	case PIC18_OPCODE_SLEEP: break;
-	case PIC18_OPCODE_SETF: break;
-	case PIC18_OPCODE_SUBWF: break;
-	case PIC18_OPCODE_SUBWFB: break;
-	case PIC18_OPCODE_SUBFWB: break;
-	case PIC18_OPCODE_SWAPF: break;
-	case PIC18_OPCODE_SUBLW: break;
+	case PIC18_OPCODE_RLNCF:
+		return SEQ2(
+			SETL(R_DEST, LET("_x", VRF, LOGOR(SHIFTL0(VARLP("_x"), U8(7)), BOOL_TO_BV(MSB(VARLP("_x")), 8)))),
+			status_res(VR_DEST));
+	case PIC18_OPCODE_RRNCF:
+		return SEQ2(
+			SETL(R_DEST, LET("_x", VRF, LOGOR(SHIFTR0(VARLP("_x"), U8(7)), BOOL_TO_BV(LSB(VARLP("_x")), 8)))),
+			status_res(VR_DEST));
+	case PIC18_OPCODE_RLCF:
+		return SEQ4(
+			SETL("_x", VRF),
+			SETL(R_DEST, LOGOR(SHIFTL0(VARLP("_x"), U8(7)), BOOL_TO_BV(VRC, 8))),
+			SETG("c", MSB(VARG("_x"))),
+			status_res(VR_DEST));
+	case PIC18_OPCODE_RRCF:
+		return SEQ4(
+			SETL("_x", VRF),
+			SETL(R_DEST, LOGOR(SHIFTR0(VARLP("_x"), U8(7)), BOOL_TO_BV(VRC, 8))),
+			SETG("c", LSB(VARG("_x"))),
+			status_res(VR_DEST));
+	case PIC18_OPCODE_SETF:
+		return SETG(RF, U8(0xff));
+	case PIC18_OPCODE_SLEEP:
+		return SEQ4(
+			SETG("wdt", U8(0)),
+			SETG("wdt_prescaler_count", IL_FALSE),
+			SETG("to", IL_TRUE),
+			SETG("pd", IL_FALSE));
+	case PIC18_OPCODE_SUBFWB: return op_sub(R_DEST, VRW, VRF, VRC);
+	case PIC18_OPCODE_SUBLW: return op_sub(RW, U8(K), VRW, NULL);
+	case PIC18_OPCODE_SUBWF: return op_sub(R_DEST, VRF, VRW, NULL);
+	case PIC18_OPCODE_SUBWFB: return op_sub(R_DEST, VRF, VRW, VRC);
+	case PIC18_OPCODE_SWAPF:
+		return SETG(R_DEST, APPEND(UNSIGNED(4, VRF), UNSIGNED(4, SHIFTR0(VRF, U8(4)))));
 	case PIC18_OPCODE_TBLWTam: break;
 	case PIC18_OPCODE_TBLWTMms: break;
 	case PIC18_OPCODE_TBLWTMma: break;
