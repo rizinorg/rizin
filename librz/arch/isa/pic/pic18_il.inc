@@ -147,10 +147,10 @@ static RzILOpEffect *op_push(RzILOpPure *x) {
 static RzILOpEffect *pic18_il(Pic18Op *op) {
 	switch (op->code) {
 	case PIC18_OPCODE_ADDLW: return op_add(RW, VRW, U16(K), NULL);
-	case PIC18_OPCODE_ADDWF: return op_add(DEST, VRW, VRF, NULL);
-	case PIC18_OPCODE_ADDWFC: return op_add(DEST, VRW, VRF, VRC);
+	case PIC18_OPCODE_ADDWF: return op_add(R_DEST, VRW, VRF, NULL);
+	case PIC18_OPCODE_ADDWFC: return op_add(R_DEST, VRW, VRF, VRC);
 	case PIC18_OPCODE_ANDLW: return op_and(RW, VRW, U16(K));
-	case PIC18_OPCODE_ANDWF: return op_and(DEST, VRW, VRF);
+	case PIC18_OPCODE_ANDWF: return op_and(R_DEST, VRW, VRF);
 	case PIC18_OPCODE_BC: return op_branch(op, VRC);
 	case PIC18_OPCODE_BN: return op_branch(op, VRN);
 	case PIC18_OPCODE_BOV: return op_branch(op, VROV);
@@ -265,8 +265,9 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 						SETG("invalid", IL_TRUE),
 						BRANCH(
 							EQ(VARG("_g"), UN(2, 0b10)),
-							SETG("giel", IL_TRUE),
-							SETG("gieh", IL_TRUE), )))),
+							SEQ2(SETG("giel", IL_TRUE),
+								SETG("gieh", IL_TRUE)),
+							NOP())))),
 			load_shadows_opt(),
 			op_pop_jmp());
 	case PIC18_OPCODE_RETLW:
