@@ -788,6 +788,7 @@ bool test_dwarf4_multidir_comp_units(void) {
 	};
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_dwarf_free(dw);
 	rz_bin_free(bin);
 	rz_io_free(io);
@@ -1379,6 +1380,7 @@ bool test_dwarf5_loclists(void) {
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
 		mu_assert_eq(loc->register_number, 0, "piece reg");
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	{
@@ -1392,6 +1394,7 @@ bool test_dwarf5_loclists(void) {
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
 		mu_assert_eq(loc->register_number, 2, "piece reg");
 		mu_assert_eq(loc->offset, -4, "piece reg");
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	{
@@ -1404,6 +1407,7 @@ bool test_dwarf5_loclists(void) {
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_EVALUATION_WAITING, "piece kind");
 		mu_assert("eval waiting", loc->eval_waiting.eval && loc->eval_waiting.result);
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	rz_bin_dwarf_free(dw);
@@ -1442,6 +1446,7 @@ bool test_dwarf4_loclists(void) {
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
 		mu_assert_eq(loc->register_number, 4, "piece reg");
 		mu_assert_eq(loc->offset, 4, "piece reg offset");
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	{
@@ -1454,6 +1459,7 @@ bool test_dwarf4_loclists(void) {
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
 		mu_assert_eq(loc->register_number, 1, "piece reg");
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	{
@@ -1466,6 +1472,7 @@ bool test_dwarf4_loclists(void) {
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_EVALUATION_WAITING, "piece kind");
 		mu_assert("eval waiting", loc->eval_waiting.eval && loc->eval_waiting.result);
+		rz_bin_dwarf_location_free(loc);
 	}
 
 	rz_bin_dwarf_free(dw);

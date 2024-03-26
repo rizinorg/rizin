@@ -331,6 +331,7 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDWARF *dw) {
 	RngLists_free(dw->rnglists);
 	rz_bin_dwarf_addr_free(dw->addr);
 	rz_bin_dwarf_str_free(dw->str);
+	rz_bin_dwarf_line_str_free(dw->line_str);
 	rz_bin_dwarf_str_offsets_free(dw->str_offsets);
 
 	rz_bin_dwarf_abbrev_free(dw->abbrev);
