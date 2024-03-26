@@ -2727,8 +2727,9 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector
 
 		RzStrEscOptions opt = { 0 };
 		opt.show_asciidot = false;
-		opt.esc_bslash = true;
-		opt.esc_double_quotes = state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON;
+		// For JSON, pj_ks will do the escaping
+		opt.esc_bslash = !(state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON);
+		opt.esc_double_quotes = false;
 		char *escaped_string = rz_str_escape_utf8_keep_printable(string->string, &opt);
 
 		switch (state->mode) {

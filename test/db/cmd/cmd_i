@@ -3950,7 +3950,7 @@ e bin.str.purge=all,!4202996,!4203007,!4203208
 izj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":7,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
+[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":7,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
 EOF
 RUN
 
@@ -5068,6 +5068,6 @@ wz {} \" \#
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":0,"paddr":0,"ordinal":0,"size":7,"length":6,"section":"","type":"ascii","string":"{} \\\" #"}]
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":7,"length":6,"section":"","type":"ascii","string":"{} \" #"}]
 EOF
 RUN
