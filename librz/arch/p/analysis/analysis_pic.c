@@ -72,7 +72,7 @@ static RzAnalysisILConfig *pic_il_config(RzAnalysis *a) {
 		return pic_midrange_il_config(a);
 	}
 	if (a->cpu && strcasecmp(a->cpu, "pic18") == 0) {
-		return NULL;
+		return pic18_il_config(a);
 	}
 	return NULL;
 }

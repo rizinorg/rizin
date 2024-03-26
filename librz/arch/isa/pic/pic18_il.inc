@@ -214,8 +214,15 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 		return set_prod16(MUL(UNSIGNED(16, VRW), UNSIGNED(16, VRF)));
 	case PIC18_OPCODE_NOP: return NOP();
 	case PIC18_OPCODE_NEGF: return SETG(RF, complement_2(VRF));
-	case PIC18_OPCODE_POP: break; // TODO: STACK
-	case PIC18_OPCODE_PUSH: break;
+	case PIC18_OPCODE_POP:
+		return SEQ2(
+			SETG("_stack_ptr", SUB(VARG("_stack_ptr"), U16(4))),
+			SETG("tos", LOADW(32, ADD(VARG("_stack"), VARG("_stack_ptr")))));
+	case PIC18_OPCODE_PUSH:
+		return SEQ3(
+			SETG("_stack_ptr", ADD(VARG("_stack_ptr"), U16(4))),
+			STOREW(ADD(VARG("_stack"), VARG("_stack_ptr")), U32(PC)),
+			SETG("tos", U32(PC)));
 	case PIC18_OPCODE_RETURN: break;
 	case PIC18_OPCODE_RETFIE: break;
 	case PIC18_OPCODE_RLNCF: break;
@@ -255,3 +262,16 @@ static RzILOpEffect *pic18_il(Pic18Op *op) {
 #undef N
 #undef PC
 #undef VPC
+
+static const char *pic18_regnames[] = {
+	"_sram",
+	"_stack",
+	"_stack_ptr",
+};
+
+static RzAnalysisILConfig *pic18_il_config(
+	RZ_NONNULL RzAnalysis *analysis) {
+	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, false, 16);
+	cfg->reg_bindings = pic18_regnames;
+	return cfg;
+}
