@@ -36,10 +36,26 @@ typedef enum {
 #define PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N (1 << 2)
 #define PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M 0x3
 
+/* use the defines instead of polluting the disassembly code with & operations */
+#define PIC_MIDRANGE_OP_ARGS_2F_GET_F(instr)    instr &PIC_MIDRANGE_OP_ARGS_2F_MASK_F
+#define PIC_MIDRANGE_OP_ARGS_7F_GET_F(instr)    instr &PIC_MIDRANGE_OP_ARGS_7F_MASK_F
+#define PIC_MIDRANGE_OP_ARGS_1D_7F_GET_D(instr) instr &PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D
+#define PIC_MIDRANGE_OP_ARGS_1D_7F_GET_F(instr) instr &PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_F
+#define PIC_MIDRANGE_OP_ARGS_1N_6K_GET_N(instr) instr &PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N
+#define PIC_MIDRANGE_OP_ARGS_1N_6K_GET_K(instr) instr &PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K
+#define PIC_MIDRANGE_OP_ARGS_3B_7F_GET_B(instr) instr &PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B
+#define PIC_MIDRANGE_OP_ARGS_3B_7F_GET_F(instr) instr &PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F
+#define PIC_MIDRANGE_OP_ARGS_4K_GET_K(instr)    instr &PIC_MIDRANGE_OP_ARGS_4K_MASK_K
+#define PIC_MIDRANGE_OP_ARGS_8K_GET_K(instr)    instr &PIC_MIDRANGE_OP_ARGS_8K_MASK_K
+#define PIC_MIDRANGE_OP_ARGS_9K_GET_K(instr)    instr &PIC_MIDRANGE_OP_ARGS_9K_MASK_K
+#define PIC_MIDRANGE_OP_ARGS_11K_GET_K(instr)   instr &PIC_MIDRANGE_OP_ARGS_11K_MASK_K
+#define PIC_MIDRANGE_OP_ARGS_1N_2M_GET_N(instr) instr &PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N
+#define PIC_MIDRANGE_OP_ARGS_1N_2M_GET_M(instr) instr &PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M
+
 typedef struct _pic_midrange_op {
 	const char *mnemonic;
 	PicMidrangeOpArgs args;
-} PicMidrangeOpInfo;
+} PicMidrangeOpAsmInfo;
 
 typedef enum {
 	PIC_MIDRANGE_OPCODE_NOP = 0,
@@ -48,6 +64,8 @@ typedef enum {
 	PIC_MIDRANGE_OPCODE_OPTION,
 	PIC_MIDRANGE_OPCODE_SLEEP,
 	PIC_MIDRANGE_OPCODE_CLRWDT,
+	PIC_MIDRANGE_OPCODE_CLRF,
+	PIC_MIDRANGE_OPCODE_CLRW,
 	PIC_MIDRANGE_OPCODE_TRIS,
 	PIC_MIDRANGE_OPCODE_MOVWF,
 	PIC_MIDRANGE_OPCODE_CLR,
@@ -98,7 +116,8 @@ typedef enum {
 } PicMidrangeOpcode;
 
 PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr);
-const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode);
-int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l);
+PicMidrangeOpArgs pic_midrange_get_opargs(PicMidrangeOpcode opcode);
+const PicMidrangeOpAsmInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode);
+int pic_midrange_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l);
 
 #endif // PIC_MIDRANGE_H

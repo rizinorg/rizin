@@ -183,6 +183,13 @@ PicBaselineOpcode pic_baseline_get_opcode(ut16 instr) {
 	}
 }
 
+PicBaselineOpArgs pic_baseline_get_opargs(PicBaselineOpcode opcode) {
+	if (opcode >= PIC_BASELINE_OPCODE_INVALID) {
+		return -1;
+	}
+	return pic_baseline_op_info[opcode].args;
+}
+
 const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	if (opcode >= PIC_BASELINE_OPCODE_INVALID) {
 		return NULL;
@@ -190,7 +197,7 @@ const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	return &pic_baseline_op_info[opcode];
 }
 
-int pic_baseline_disassemble(RzAsmOp *op, const ut8 *b, int l) {
+int pic_baseline_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 #define EMIT_INVALID \
 	{ \
 		op->size = 1; \
