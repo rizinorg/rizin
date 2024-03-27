@@ -125,10 +125,10 @@ typedef struct {
 	struct {
 		ut32 k : 20;
 		ut16 n : 11;
+		ut16 d;
+		ut16 s;
 		ut8 f;
-		ut8 d : 1;
 		ut8 a : 1;
-		ut8 s : 1;
 		ut8 b : 3;
 	};
 } Pic18Op;

@@ -134,7 +134,7 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 		break;
 	case FA_T:
 		op->f = word & 0xff;
-		op->d = (word >> 8) & 1;
+		op->a = (word >> 8) & 1;
 		break;
 	case BAF_T:
 		op->f = word & 0xff;
@@ -158,7 +158,7 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 	}
 	case K20S_T: {
 		check_dword_inst;
-		op->k = (dword & 0xff) | (dword >> 16 & 0xfff);
+		op->k = (dword & 0xff) | ((dword >> 16 & 0xfff) << 8);
 		op->s = (dword >> 8) & 0x1;
 		break;
 	}
@@ -190,7 +190,7 @@ int pic_pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
 	Pic18Op op = { 0 };
 	if (!pic18_disasm_op(&op, a->pc, b, blen) ||
 		op.code == PIC18_OPCODE_INVALID) {
-		rz_asm_op_set_asm(asm_op, op.mnemonic);
+		rz_asm_op_set_asm(asm_op, "invalid");
 		return -1;
 	}
 	asm_op->size = op.size;
@@ -217,10 +217,10 @@ int pic_pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
 		rz_asm_op_setf_asm(asm_op, "%s 0x%x", op.mnemonic, op.n);
 		break;
 	case K20S_T:
-		rz_asm_op_setf_asm(asm_op, "%s 0x%x, %d", op.mnemonic, op.k, op.s);
+		rz_asm_op_setf_asm(asm_op, "%s 0x%x, %d", op.mnemonic, op.k << 1, op.s);
 		break;
 	case K20_T:
-		rz_asm_op_setf_asm(asm_op, "%s 0x%x", op.mnemonic, op.k);
+		rz_asm_op_setf_asm(asm_op, "%s 0x%x", op.mnemonic, op.k << 1);
 		break;
 	case SD_T:
 		rz_asm_op_setf_asm(asm_op, "%s 0x%x, 0x%x", op.mnemonic, op.s, op.d);
@@ -232,7 +232,7 @@ int pic_pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
 		rz_asm_op_setf_asm(asm_op, "%s %d", op.mnemonic, op.s);
 		break;
 	case FK_T: {
-		rz_asm_op_setf_asm(asm_op, "%s %s, %d", op.mnemonic, fsr[op.n], op.k);
+		rz_asm_op_setf_asm(asm_op, "%s %s, %d", op.mnemonic, fsr[op.f], op.k);
 		break;
 	}
 	default:
