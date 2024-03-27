@@ -77,7 +77,7 @@ struct Tag *tags = (struct Tag *)&x##_tags; \
 struct Arg *args = (struct Arg *)&x##_args; \
 struct Proc *proc = &x##_proc;
 
-#if USE_R2
+#if USE_RZ_UTIL
 #include <rz_util.h>
 #define SStrBuf RzStrBuf
 #else

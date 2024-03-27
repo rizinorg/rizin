@@ -14,7 +14,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
-#define USE_R2 1
+#define USE_RZ_UTIL 1
 #include <spp.h>
 
 /**

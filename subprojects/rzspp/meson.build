@@ -11,7 +11,7 @@ rz_util_dep = dependency('rz_util')
 librzspp = static_library('rzspp', spp_files,
   dependencies: [rz_util_dep],
   include_directories: spp_inc,
-  c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
+  c_args: ['-DUSE_RZ_UTIL=1'],
   implicit_include_directories: false
 )
 
