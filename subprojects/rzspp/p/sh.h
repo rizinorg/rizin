@@ -2,28 +2,7 @@
 
 // TODO: use popen for {{pipe/endpipe}}
 
-#if 0
-static char *eof = NULL;
-static char *input = NULL;
-#endif
-
 static TAG_CALLBACK(sh_default) {
-	//if (out != stdout) {
-		// pipe stdout to out fd
-	//}
-#if 0
-	ptr = strstr(buf, "<<");
-	if (ptr) {
-		*ptr='\0';
-		for(ptr = ptr+2;*ptr==' ';ptr=ptr+1);
-		free(eof);
-		eof = strdup(ptr);
-		return;
-	}
-
-	// printf("system(%s)\n", buf);
-	if (eof)
-#endif
 #if HAVE_FORK
 	int r = system (buf);
 	if (errno) {
