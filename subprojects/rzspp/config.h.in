@@ -1,16 +1,10 @@
-#ifndef HAVE_FORK
-#define HAVE_FORK 1
-#endif
+#ifndef SPP_CONFIG_H
+#define SPP_CONFIG_H
 
-#if HAVE_FORK
-# if TARGET_OS_IPHONE || APPLE_SDK_IPHONEOS || APPLE_SDK_IPHONESIMULATOR
-#  define HAVE_SYSTEM 0
-# else
-#  define HAVE_SYSTEM 1
-# endif
-#else
-# define HAVE_SYSTEM 0
-#endif
+// clang-format off
+#define HAVE_SYSTEM                 @HAVE_SYSTEM@
+#define HAVE_FORK                   @HAVE_FORK@
+// clang-format on
 
 #if HAVE_SYSTEM
 #include "p/sh.h"
@@ -34,4 +28,4 @@ struct Proc *procs[] = {
 
 DEFAULT_PROC(spp)
 
-#define DEBUG 0
+#endif
