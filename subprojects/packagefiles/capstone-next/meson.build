@@ -1,6 +1,10 @@
 project('capstone', 'c', version: 'next', meson_version: '>=0.55.0')
 
 cs_files = [
+  'arch/Alpha/AlphaDisassembler.c',
+  'arch/Alpha/AlphaInstPrinter.c',
+  'arch/Alpha/AlphaMapping.c',
+  'arch/Alpha/AlphaModule.c',
   'arch/AArch64/AArch64BaseInfo.c',
   'arch/AArch64/AArch64Disassembler.c',
   'arch/AArch64/AArch64DisassemblerExtension.c',
@@ -13,6 +17,10 @@ cs_files = [
   'arch/ARM/ARMInstPrinter.c',
   'arch/ARM/ARMMapping.c',
   'arch/ARM/ARMModule.c',
+  'arch/HPPA/HPPADisassembler.c',
+  'arch/HPPA/HPPAInstPrinter.c',
+  'arch/HPPA/HPPAMapping.c',
+  'arch/HPPA/HPPAModule.c',
   'arch/M680X/M680XDisassembler.c',
   'arch/M680X/M680XInstPrinter.c',
   'arch/M680X/M680XModule.c',
@@ -72,8 +80,10 @@ libcapstone_c_args = [
   '-DCAPSTONE_X86_REDUCE_NO',
   '-DCAPSTONE_USE_SYS_DYN_MEM',
   '-DCAPSTONE_DIET_NO',
+  '-DCAPSTONE_HAS_ALPHA',
   '-DCAPSTONE_HAS_ARM',
   '-DCAPSTONE_HAS_AARCH64',
+  '-DCAPSTONE_HAS_HPPA',
   '-DCAPSTONE_HAS_M68K',
   '-DCAPSTONE_HAS_M680X',
   '-DCAPSTONE_HAS_MIPS',
