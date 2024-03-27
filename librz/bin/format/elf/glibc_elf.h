@@ -2712,6 +2712,106 @@ enum {
 #define SHT_ARM_PREEMPTMAP (SHT_LOPROC + 2) /* Preemption details.  */
 #define SHT_ARM_ATTRIBUTES (SHT_LOPROC + 3) /* ARM attributes section.  */
 
+/* Constants defining public attributes sub-subsections.  */
+#define ARM_TAG_FILE    1
+#define ARM_TAG_SECTION 2
+#define ARM_TAG_SYMBOL  3
+
+/* ARM target-related attributes.  */
+#define TAG_CPU_RAW_NAME         4
+#define TAG_CPU_NAME             5
+#define TAG_CPU_ARCH             6
+#define TAG_CPU_ARCH_PROFILE     7
+#define TAG_ARM_ISA_USE          8
+#define TAG_THUMB_ISA_USE        9
+#define TAG_FP_ARCH              10
+#define TAG_WMMX_ARCH            11
+#define TAG_ADVANCED_SIMD_ARCH   12
+#define TAG_CPU_UNALIGNED_ACCESS 34
+#define TAG_FP_HP_EXTENSION      36
+#define TAG_MPEXTENSION_USE      42
+#define TAG_DIV_USE              44
+#define TAG_DSP_EXTENSION        46
+#define TAG_MVE_ARCH             48
+#define TAG_PAC_EXTENSION        50
+#define TAG_BTI_EXTENSION        52
+#define TAG_T2EE_USE             66
+#define TAG_VIRTUALIZATION_USE   68
+
+/* ARM procedure call-related attributes.  */
+#define TAG_PCS_CONFIG             13
+#define TAG_ABI_PCS_R9_USE         14
+#define TAG_ABI_PCS_RW_DATA        15
+#define TAG_ABI_PCS_RO_DATA        16
+#define TAG_ABI_PCS_GOT_USE        17
+#define TAG_ABI_PCS_WCHAR_T        18
+#define TAG_ABI_FP_ROUNDING        19
+#define TAG_ABI_FP_DENORMAL        20
+#define TAG_ABI_FP_EXCEPTIONS      21
+#define TAG_ABI_FP_USER_EXCEPTIONS 22
+#define TAG_ABI_FP_NUMBER_MODEL    23
+#define TAG_ABI_ALIGN_NEEDED       24
+#define TAG_ABI_ALIGN_PRESERVED    25
+#define TAG_ABI_ENUM_SIZE          26
+#define TAG_ABI_HARDFP_USE         27
+#define TAG_ABI_VFP_ARGS           28
+#define TAG_ABI_WMMX_ARGS          29
+#define TAG_ABI_FP_16BIT_FORMAT    38
+#define TAG_FRAMEPOINTER_USE       72
+#define TAG_BTI_USE                74
+
+/* ARM miscellaneous attributes.  */
+#define TAG_PACRET_USE 76
+
+/* ARM optimization attributes.  */
+#define TAG_ABI_OPTIMIZATION_GOALS    30
+#define TAG_ABI_FP_OPTIMIZATION_GOALS 31
+
+/* ARM generic compatibility tag.  */
+#define TAG_COMPATIBILITY 32
+
+/* ARM secondary compatibility tag.  */
+#define TAG_ALSO_COMPATIBLE_WITH 65
+
+/* ARM conformance tag.  */
+#define TAG_CONFORMANCE 67
+
+/* ARM no defaults tag.  */
+#define TAG_NODEFAULTS 64
+
+/* ARM CPU Arch Version  */
+#define ARM_VER_PRE_V4          0
+#define ARM_VER_V4              1
+#define ARM_VER_V4T             2
+#define ARM_VER_V5T             3
+#define ARM_VER_V5TE            4
+#define ARM_VER_V5TEJ           5
+#define ARM_VER_V6              6
+#define ARM_VER_V6KZ            7
+#define ARM_VER_V6T2            8
+#define ARM_VER_V6K             9
+#define ARM_VER_V7              10
+#define ARM_VER_V6_M            11
+#define ARM_VER_V6S_M           12
+#define ARM_VER_V7E_M           13
+#define ARM_VER_V8_A            14
+#define ARM_VER_V8_R            15
+#define ARM_VER_V8_M_BASELINE   16
+#define ARM_VER_V8_M_MAINLINE   17
+#define ARM_VER_V8_1_A          18
+#define ARM_VER_V8_2_A          19
+#define ARM_VER_V8_3_A          20
+#define ARM_VER_V8_1_M_MAINLINE 21
+#define ARM_VER_V9_A            22
+
+/* ARM CPU Arch Profile  */
+#define ARM_PROFILE_0 0
+#define ARM_PROFILE_A 0x41
+#define ARM_PROFILE_R 0x52
+#define ARM_PROFILE_M 0x4d
+#define ARM_PROFILE_S 0x53
+
+
 /* AArch64 relocs.  */
 
 #define RZ_AARCH64_NONE 0 /* No relocation.  */
