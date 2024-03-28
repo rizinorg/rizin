@@ -273,6 +273,7 @@ arch_isa_sources = [
   'isa/sh/disassembler.c',
   'isa/sh/lookup.c',
   'isa/sh/sh_il.c',
+  'isa/h8300/h8300_il.c',
   'isa/snes/snesdis.c',
   'isa/spc700/spc700dis.c',
   'isa/tms320/c55x_plus/c55plus.c',
