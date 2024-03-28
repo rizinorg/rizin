@@ -560,6 +560,7 @@ static void RzBinSourceLineCacheItem_HtPPKv_free(HtPPKv *x) {
 	if (!x) {
 		return;
 	}
+	free(x->key);
 	RzBinSourceLineCacheItem_free(x->value);
 }
 
