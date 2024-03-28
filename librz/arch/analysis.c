@@ -140,6 +140,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->debug_info = rz_analysis_debug_info_new();
 	analysis->cmpval = UT64_MAX;
 	analysis->lea_jmptbl_ip = UT64_MAX;
+	analysis->vmlinux_config = NULL;
 	return analysis;
 }
 
@@ -192,6 +193,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	ht_pp_free(a->ht_global_var);
 	rz_list_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
+	// rz_vmlinux_config_free(a->vmlinux_config);
 	free(a);
 	return NULL;
 }

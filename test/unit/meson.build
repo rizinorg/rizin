@@ -112,6 +112,7 @@ if get_option('enable_tests')
     'util',
     'vector',
     'yank',
+    'vmlinux',
   ]
 
   unit_test_env = environment()

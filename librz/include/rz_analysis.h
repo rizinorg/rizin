@@ -28,6 +28,8 @@
 #include <rz_platform.h>
 #include <rz_cmd.h>
 
+#include <vmlinux.h>
+
 #define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 
 #ifdef __cplusplus
@@ -533,6 +535,7 @@ typedef struct rz_analysis_t {
 	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..
 	ut64 cmpval; ///< last compare value for jump table.
 	ut64 lea_jmptbl_ip; ///< jump table x86 lea ip
+	RzVmlinuxConfig *vmlinux_config;
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
