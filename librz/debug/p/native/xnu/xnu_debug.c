@@ -500,7 +500,11 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 #if __arm__ || __arm64__ || __aarch_64__
 #define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.arm64.__pc : state.arm32.__pc
 #elif __POWERPC__
+#if __DARWIN_UNIX03
+#define CPU_PC state.__srr0
+#else
 #define CPU_PC state.srr0
+#endif
 #elif __x86_64__ || __i386__
 #define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.uts.ts64.__rip : state.uts.ts32.__eip
 #endif

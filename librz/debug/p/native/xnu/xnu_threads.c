@@ -109,7 +109,7 @@ RZ_IPI bool rz_xnu_thread_set_drx(RzXnuDebug *ctx, xnu_thread_t *thread) {
 #ifndef PPC_DEBUG_STATE32
 #define PPC_DEBUG_STATE32 1
 #endif
-	ppc_debug_state_t *regs;
+	// ppc_debug_state_t *regs;
 	// thread->flavor = PPC_DEBUG_STATE32;
 	// thread->count  = RZ_MIN (thread->count, sizeof (regs->uds.ds32));
 	return false;
