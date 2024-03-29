@@ -769,6 +769,12 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmad(RzFloatRMode rmode, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frootn(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpown(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fneq(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_feq(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_flt(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fle(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fgt(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fge(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_extract32(RZ_BORROW RzILOpBitVector *value, RZ_BORROW RzILOpBitVector *start, RZ_BORROW RzILOpBitVector *length);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_extract64(RZ_BORROW RzILOpBitVector *value, RZ_BORROW RzILOpBitVector *start, RZ_BORROW RzILOpBitVector *length);
