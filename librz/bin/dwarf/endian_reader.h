@@ -140,7 +140,7 @@ static inline bool R_read_cstring(RzBinEndianReader *R, const char **x) {
 	if (!(R->data && R->offset + 1 <= R->length)) {
 		return false;
 	}
-	ut64 len = strnlen((char *)R_data(R), R_remain(R));
+	ut64 len = rz_str_nlen((char *)R_data(R), R_remain(R));
 	*x = (const char *)R_data(R);
 	R->offset += len + 1;
 	return true;
