@@ -2078,10 +2078,11 @@ Ht_FREE_IMPL(UP, RzAnalysisDwarfFunction, function_free);
 Ht_FREE_IMPL(UP, RzCallable, rz_type_callable_free);
 
 static void HtPP_RzPVector_free(HtPPKv *kv) {
-	if (kv) {
-		free(kv->key);
-		rz_pvector_free(kv->value);
+	if (!kv) {
+		return;
 	}
+	free(kv->key);
+	rz_pvector_free(kv->value);
 }
 
 /**
