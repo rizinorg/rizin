@@ -780,7 +780,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 static bool m68k_fini(void *user) {
 	M68KContext *ctx = (M68KContext *)user;
 	if (ctx) {
-		RZ_FREE(ctx);
+		cs_close(&ctx->handle);
+		free(ctx);
 	}
 	return true;
 }
