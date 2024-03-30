@@ -1,11 +1,11 @@
 [wrap-file]
-directory = xz-5.4.3
-source_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/xz-5.4.3.tar.gz
-source_fallback_url = https://github.com/tukaani-project/xz/releases/download/v5.4.3/xz-5.4.3.tar.gz
-# source_fallback_url = https://tukaani.org/xz/xz-5.4.3.tar.gz // has different hash, let's prefer github
-source_filename = xz-5.4.3.tar.gz
-source_hash = 1c382e0bc2e4e0af58398a903dd62fff7e510171d2de47a1ebe06d1528e9b7e9
-patch_directory = xz-5.4.3
+directory = xz-5.2.9
+source_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/xz-5.2.9.tar.xz
+source_fallback_url = https://github.com/tukaani-project/xz/releases/download/v5.2.9/xz-5.2.9.tar.gz
+# source_fallback_url = https://tukaani.org/xz/xz-5.2.9.tar.gz // possibly has different hash, let's prefer github
+source_filename = xz-5.2.9.tar.gz
+source_hash = 287ef163e7e57561e9de590b2a9037457af24f03a46bbd12bf84f3263679e8d2
+patch_directory = xz-5.2.9
 
 [provide]
 liblzma = lzma_dep
