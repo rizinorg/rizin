@@ -447,6 +447,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=wz macro + \\ esc seq
+FILE==
+CMDS=<<EOF
+b 16
+$addr=$0
+$new_addr=%v \`$addr\`+16
+(wz16 str; wz ${str} @ `$addr`; px~:1 @ `$addr`; $addr=$`$new_addr`)
+.(wz16 \\)
+.(wz16 \\\\)
+.(wz16 \\a)
+.(wz16 "a \\ b")
+.(wz16 a\\)
+EOF
+EXPECT=<<EOF
+0x00000000  2000 0000 0000 0000 0000 0000 0000 0000   ...............
+0x00000010  5c20 0000 0000 0000 0000 0000 0000 0000  \ ..............
+0x00000020  5c61 0000 0000 0000 0000 0000 0000 0000  \a..............
+0x00000030  6120 2062 0000 0000 0000 0000 0000 0000  a  b............
+0x00000040  6120 0000 0000 0000 0000 0000 0000 0000  a ..............
+EOF
+RUN
+
 NAME=Automatically reanalyze function control flow after a write
 FILE==
 ARGS=-a x86 -b 64 -e analysis.detectwrites=true

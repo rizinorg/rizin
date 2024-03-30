@@ -5081,13 +5081,16 @@ nth paddr      vaddr      len  size section type  string
 EOF
 RUN
 
-NAME=izzj double quote escape
+NAME=izzj double quote & backslash escape
 FILE==
 CMDS=<<EOF
-wz {} \" \#
+wz {} \" \\\" \\ \\\\ \n \\n \# \\\# \$ \\$
+px~:1.. @!32
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":0,"paddr":0,"ordinal":0,"size":7,"length":6,"section":"","type":"ascii","string":"{} \" #"}]
+0x00000000  7b7d 2022 205c 2220 205c 200a 205c 6e20  {} " \"  \ . \n 
+0x00000010  2320 5c23 2024 2024 0000 0000 0000 0000  # \# $ $........
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":25,"length":24,"section":"","type":"ascii","string":"{} \" \\\"  \\ \n \\n # \\# $ $"}]
 EOF
 RUN
