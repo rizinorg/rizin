@@ -2327,6 +2327,12 @@ static char *unescape_special_chars(const char *s, const char *special_chars) {
 	int i, j = 0;
 
 	for (i = 0; s[i]; i++) {
+		if (s[i] == '\\' && s[i + 1] == '\\') {
+			dst[j++] = '\\';
+			dst[j++] = '\\';
+			i++;
+			continue;
+		}
 		if (s[i] != '\\' || !strchr(special_chars, s[i + 1])) {
 			dst[j++] = s[i];
 			continue;
