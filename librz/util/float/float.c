@@ -399,6 +399,7 @@ RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f) {
 		if (!expbv) { \
 			return false; \
 		} \
+		rz_bv_free(f->s); \
 		f->s = pack_float_bv(is_negative, expbv, manbv, f->r); \
 		rz_bv_free(manbv); \
 		rz_bv_free(expbv); \
