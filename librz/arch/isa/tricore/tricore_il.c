@@ -484,6 +484,8 @@ static RzILOpPure *VARG_wrap(const char *name) {
 #undef VARG
 #define VARG(n) VARG_wrap(n)
 
+static RzAnalysisLiftedILOp status_conditional(RzILOpPure *cnd);
+
 static RzAnalysisLiftedILOp ST_MB(RzILOpPure *dst, size_t n, ...) {
 	rz_return_val_if_fail(dst && n > 0, rz_il_op_new_nop());
 	va_list args;
@@ -2006,10 +2008,11 @@ static RzILOpEffect *e_op2_cond(
 	const char *r, RzILOpPure *a, RzILOpPure *b, RzILOpPure *cond,
 	RzILOpPure *(*op)(RzILOpPure *x, RzILOpPure *y)) {
 
-	RzILOpEffect *e = SEQ2(
-		SETL("result", ITE(cond, op(a, b), DUP(a))),
-		SETG(r, VARL("result")));
-	return f_overflow32(e);
+	return SEQ4(
+		SETL("condition", cond),
+		SETL("result", ITE(VARL("condition"), op(a, b), DUP(a))),
+		SETG(r, VARL("result")),
+		status_conditional(VARL("condition")));
 }
 
 static RzILOpEffect *packed_op2_sov(
@@ -2193,18 +2196,22 @@ static RzAnalysisLiftedILOp lift_add(RzAsmTriCoreContext *ctx) {
 	return NULL;
 }
 
+static RzAnalysisLiftedILOp status_conditional(RzILOpPure *cnd) {
+	return SEQ6(
+		SETL("overflow", OR(SGT(VARL("result"), S32(0x7FFFFFFF)), SLT(VARL("result"), S32(-80000000)))),
+		BRANCH(cnd, set_PSW_V(BOOL_TO_BV32(VARL("overflow"))), NOP()),
+		BRANCH(AND(DUP(cnd), VARL("overflow")), set_PSW_SV(U32(1)), NOP()),
+		SETL("advanced_overflow", XOR(NON_ZERO(BITS32(VARL("result"), 30, 1)), NON_ZERO(BITS32(VARL("result"), 31, 1)))),
+		BRANCH(DUP(cnd), set_PSW_AV(BOOL_TO_BV32(VARL("advanced_overflow"))), NOP()),
+		BRANCH(AND(DUP(cnd), VARL("advanced_overflow")), set_PSW_SAV(U32(1)), NOP()));
+}
+
 static RzAnalysisLiftedILOp e_cadd(const char *dst, RzILOpPure *cnd, RzILOpPure *a, RzILOpPure *b) {
-	return SEQ9(
+	return SEQ4(
 		SETL("condition", cnd),
 		SETL("result", ITE(VARL("condition"), ADD(a, b), DUP(a))),
 		SETG(dst, VARL("result")),
-		/// Status
-		SETL("overflow", OR(SGT(VARL("result"), S32(0x7FFFFFFF)), SLT(VARL("result"), S32(-80000000)))),
-		BRANCH(VARL("condition"), set_PSW_V(BOOL_TO_BV32(VARL("overflow"))), NOP()),
-		BRANCH(AND(VARL("condition"), VARL("overflow")), set_PSW_SV(U32(1)), NOP()),
-		SETL("advanced_overflow", XOR(NON_ZERO(BITS32(VARL("result"), 30, 1)), NON_ZERO(BITS32(VARL("result"), 31, 1)))),
-		BRANCH(VARL("condition"), set_PSW_AV(BOOL_TO_BV32(VARL("advanced_overflow"))), NOP()),
-		BRANCH(AND(VARL("condition"), VARL("advanced_overflow")), set_PSW_SAV(U32(1)), NOP()));
+		status_conditional(VARL("condition")));
 }
 
 static RzAnalysisLiftedILOp lift_cadd(RzAsmTriCoreContext *ctx) {
