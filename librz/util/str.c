@@ -4310,9 +4310,9 @@ RZ_API const char *rz_str_indent(int indent) {
 /**
  * \brief Filters the given string based on the provided filter.
  *
- * \param str RZ_NONNULL The string to be filtered.
+ * \param str The string to be filtered.
  * \param filter The filter string to be used for filtering the str.
- * \return RZ_OWN char* The filtered string. The caller is responsible for freeing this string.
+ * \return char* The filtered string. The caller is responsible for freeing this string.
  */
 RZ_API RZ_OWN char *rz_str_filter_apply(RZ_NONNULL const char *str, const char *filter) {
 	rz_return_val_if_fail(str, NULL);

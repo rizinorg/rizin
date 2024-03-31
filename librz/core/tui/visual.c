@@ -1946,6 +1946,28 @@ static void view_and_seek_to_bb(RZ_NONNULL RzCore *core) {
 	}
 }
 
+/**
+ * \brief Displays the available themes and sets the chosen theme.
+ *
+ * \param core The RzCore instance.
+ */
+static void view_and_set_theme(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	RzList *themes = rz_core_theme_list(core);
+	char *themes_str = rz_str_list_join(themes, "\n");
+	themes_str = rz_str_append(themes_str, "\n");
+	rz_list_free(themes);
+	rz_cons_println(themes_str);
+	rz_cons_flush();
+	RZ_FREE(themes_str);
+	char *input = rz_cons_input("Choose A Theme: ");
+	if (RZ_STR_ISEMPTY(input)) {
+		return;
+	}
+	rz_core_theme_load(core, input);
+	RZ_FREE(input);
+}
+
 RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 	const char *browsemsg =
 		"Browse stuff:\n"
@@ -2026,7 +2048,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_visual_comments(core);
 			break;
 		case 'T': // "vbT"
-			rz_core_cmd0(core, "eco $(eco~...)");
+			view_and_set_theme(core);
 			break;
 		case 'p':
 			rz_debug_switch_to_first_thread(core->dbg);
