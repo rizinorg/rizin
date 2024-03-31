@@ -451,9 +451,10 @@ static RZ_OWN char *bb_info_to_string(RzCore *core, RzAnalysisFunction *fcn, RzA
 		pj_ki(pj, "ninstr", bb->ninstr);
 		pj_kb(pj, "traced", bb->traced);
 		pj_end(pj);
-		char *json_str = strdup(pj_string(pj));
+		char *json_str = rz_str_dup(pj_string(pj));
 		pj_free(pj);
-		return json_str;
+		rz_strbuf_append(buf, json_str);
+		break;
 	}
 	case RZ_OUTPUT_MODE_TABLE:
 		table_str = rz_table_tostring(t);
