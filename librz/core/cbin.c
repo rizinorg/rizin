@@ -2725,11 +2725,15 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector
 			}
 		}
 
-		RzStrEscOptions opt = { 0 };
-		opt.show_asciidot = false;
-		opt.esc_bslash = true;
-		opt.esc_double_quotes = state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON;
-		char *escaped_string = rz_str_escape_utf8_keep_printable(string->string, &opt);
+		char *escaped_string = NULL;
+		// For JSON, pj_ks does the escaping
+		if (state->mode != RZ_OUTPUT_MODE_JSON && state->mode != RZ_OUTPUT_MODE_LONG_JSON) {
+			RzStrEscOptions opt = { 0 };
+			opt.show_asciidot = false;
+			opt.esc_bslash = true;
+			opt.esc_double_quotes = false;
+			escaped_string = rz_str_escape_utf8_keep_printable(string->string, &opt);
+		}
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON: {
@@ -2743,7 +2747,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector
 			pj_ks(state->d.pj, "section", section_name);
 			pj_ks(state->d.pj, "type", type_string);
 			// data itself may be encoded so use pj_ks
-			pj_ks(state->d.pj, "string", escaped_string);
+			pj_ks(state->d.pj, "string", string->string);
 
 			switch (string->type) {
 			case RZ_STRING_ENC_UTF8:

@@ -2076,7 +2076,14 @@ Ht_FREE_IMPL(UP, RzType, rz_type_free);
 Ht_FREE_IMPL(UP, RzBaseType, rz_type_base_type_free);
 Ht_FREE_IMPL(UP, RzAnalysisDwarfFunction, function_free);
 Ht_FREE_IMPL(UP, RzCallable, rz_type_callable_free);
-Ht_FREE_IMPL(PP, RzPVector, rz_pvector_free);
+
+static void HtPP_RzPVector_free(HtPPKv *kv) {
+	if (!kv) {
+		return;
+	}
+	free(kv->key);
+	rz_pvector_free(kv->value);
+}
 
 /**
  * \brief Create a new debug info

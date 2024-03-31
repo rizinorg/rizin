@@ -4,7 +4,7 @@
 #include "rz_api.h"
 #include "config.h"
 
-#if !USE_R2
+#if !USE_RZ_UTIL
 #include "rz_api.c"
 #endif
 
