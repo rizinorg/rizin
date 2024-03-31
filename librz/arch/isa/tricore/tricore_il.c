@@ -2006,7 +2006,8 @@ static RzILOpEffect *e_op2_cond(
 	const char *r, RzILOpPure *a, RzILOpPure *b, RzILOpPure *cond,
 	RzILOpPure *(*op)(RzILOpPure *x, RzILOpPure *y)) {
 
-	RzILOpEffect *e = SEQ2(SETL("result", op(a, b)),
+	RzILOpEffect *e = SEQ2(
+		SETL("result", ITE(cond, op(a, b), DUP(a))),
 		SETG(r, VARL("result")));
 	return f_overflow32(e);
 }
