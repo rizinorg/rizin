@@ -40,7 +40,7 @@ static void global_var_set_type(RzAnalysisVarGlobal *glob, RzType *type) {
 
 	RzFlagItem *flag = rz_analysis_var_global_get_flag_item(glob);
 	if (flag) {
-		flag->size = rz_type_db_get_bitsize(glob->analysis->typedb, glob->type) / 8;
+		rz_flag_item_set_size(flag, rz_type_db_get_bitsize(glob->analysis->typedb, glob->type) / 8);
 	}
 }
 
@@ -140,7 +140,7 @@ RZ_API RZ_NULLABLE RzFlagItem *rz_analysis_var_global_get_flag_item(RzAnalysisVa
 		return NULL;
 	}
 	RzFlagItem *r = rz_flag_get(a->flb.f, glob->name);
-	if (r && r->offset != glob->addr) {
+	if (r && rz_flag_item_get_offset(r) != glob->addr) {
 		return NULL;
 	}
 	return r;

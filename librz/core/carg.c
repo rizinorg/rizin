@@ -231,7 +231,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			if (core->flags) {
 				RzFlagItem *item = rz_flag_get_i(core->flags, pcv);
 				if (item) {
-					fcn_name = item->name;
+					fcn_name = rz_flag_item_get_name(item);
 				}
 			}
 		}

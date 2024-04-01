@@ -500,7 +500,7 @@ static bool flag_with_space_exists_at(RzCore *core, ut64 addr, RzSpace *space) {
 	RzListIter *it;
 	RzFlagItem *fi;
 	rz_list_foreach (existing, it, fi) {
-		if (fi->space && fi->space == space) {
+		if (rz_flag_item_get_space(fi) && rz_flag_item_get_space(fi) == space) {
 			// Do not create a flag if there is already a symbol (unstripped bin)
 			return true;
 		}
@@ -518,7 +518,7 @@ static void apply_selector_stub_at(RzCore *core, ut64 addr, ut32 size, char *sel
 	// If there is already a function (e.g. from aa), rename it too
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
 	if (fcn) {
-		rz_core_analysis_function_rename(core, addr, fi->name);
+		rz_core_analysis_function_rename(core, addr, rz_flag_item_get_name(fi));
 	}
 }
 

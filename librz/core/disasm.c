@@ -192,7 +192,7 @@ typedef struct {
 	int lbytes;
 	int show_comment_right;
 	int pre;
-	char *ocomment;
+	const char *ocomment;
 	int linesopts;
 	int lastfail;
 	int ocols;
@@ -214,7 +214,10 @@ typedef struct {
 	bool show_noisy_comments;
 	ut64 asm_highlight;
 
-	RzFlagItem *lastflag;
+	struct {
+		const char *name; //< if non-null, lastflag is set
+		ut64 offset;
+	} lastflag;
 	RzAnalysisHint *hint;
 	RzPrint *print;
 
@@ -271,7 +274,9 @@ typedef struct {
 	bool sparse;
 
 	RzPVector /*<RzAnalysisDisasmText *>*/ *vec;
+#if 0 // TODO: remove
 	RzFlagItem lastflagitem;
+#endif
 } RzDisasmState;
 
 static void ds_setup_print_pre(RzDisasmState *ds, bool tail, bool middle);
@@ -366,6 +371,15 @@ static const char *get_utf8_char(const char line, RzDisasmState *ds) {
 	case '@': return ds->core->cons->vline[SELF_LOOP];
 	default: return " ";
 	}
+}
+
+static void ds_set_lastflag(RzDisasmState *ds, RzFlagItem *fi) {
+	if (!fi) {
+		ds->lastflag.name = NULL;
+		return;
+	}
+	ds->lastflag.name = rz_flag_item_get_name(fi);
+	ds->lastflag.offset = rz_flag_item_get_offset(fi);
 }
 
 static void ds_print_ref_lines(char *line, char *line_col, RzDisasmState *ds) {
@@ -1052,7 +1066,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 					if (addr > ds->min_ref_addr) {
 						RzFlagItem *fi = rz_flag_get_i(ds->core->flags, addr);
 						if (fi) {
-							rz_str_cpy(ox, fi->name);
+							rz_str_cpy(ox, rz_flag_item_get_name(fi));
 							rz_str_cat(ox, e);
 						}
 					}
@@ -1231,7 +1245,7 @@ static void ds_show_refs(RzDisasmState *ds) {
 		RzFlagItem *fis;
 		rz_list_foreach (fls, iter2, fis) {
 			ds_begin_comment(ds);
-			ds_comment(ds, true, "; (%s)", fis->name);
+			ds_comment(ds, true, "; (%s)", rz_flag_item_get_name(fis));
 		}
 
 		// ds_align_comment (ds);
@@ -1344,13 +1358,13 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 					if (iter != rz_list_tail(xrefs)) {
 						ut64 next_addr = ((RzAnalysisXRef *)rz_list_iter_get_next_data(iter))->from;
 						next_f = rz_flag_get_at(core->flags, next_addr, true);
-						if (next_f && f->offset == next_f->offset) {
-							rz_list_append(addrs, rz_num_dup(xrefi->from - f->offset));
+						if (next_f && rz_flag_item_get_offset(f) == rz_flag_item_get_offset(next_f)) {
+							rz_list_append(addrs, rz_num_dup(xrefi->from - rz_flag_item_get_offset(f)));
 							continue;
 						}
 					}
-					name = strdup(f->name);
-					rz_list_append(addrs, rz_num_dup(xrefi->from - f->offset));
+					name = strdup(rz_flag_item_get_name(f));
+					rz_list_append(addrs, rz_num_dup(xrefi->from - rz_flag_item_get_offset(f)));
 				} else {
 					name = strdup("unk");
 				}
@@ -1492,21 +1506,21 @@ static int handleMidFlags(RzCore *core, RzDisasmState *ds, bool print) {
 	}
 	for (int i = 1; i < ds->oplen; i++) {
 		RzFlagItem *fi = rz_flag_get_i(core->flags, ds->at + i);
-		if (fi && fi->name) {
+		if (fi && rz_flag_item_get_name(fi)) {
 			if (rz_analysis_find_most_relevant_block_in(core->analysis, ds->at + i)) {
 				ds->midflags = ds->midflags ? RZ_MIDFLAGS_SHOW : RZ_MIDFLAGS_HIDE;
 			}
 			if (ds->midflags == RZ_MIDFLAGS_REALIGN &&
-				((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
+				((rz_flag_item_get_name(fi)[0] == '$') || (rz_flag_item_get_realname(fi) && rz_flag_item_get_realname(fi)[0] == '$'))) {
 				i = 0;
-			} else if (!strncmp(fi->name, "hit.", 4)) { // use search.prefix ?
+			} else if (!strncmp(rz_flag_item_get_name(fi), "hit.", 4)) { // use search.prefix ?
 				i = 0;
-			} else if (!strncmp(fi->name, "str.", 4)) {
+			} else if (!strncmp(rz_flag_item_get_name(fi), "str.", 4)) {
 				ds->midflags = RZ_MIDFLAGS_REALIGN;
-			} else if (fi->space && !strcmp(fi->space->name, RZ_FLAGS_FS_RELOCS)) {
+			} else if (rz_flag_item_get_space(fi) && !strcmp(rz_flag_item_get_space(fi)->name, RZ_FLAGS_FS_RELOCS)) {
 				continue;
 			} else if (ds->midflags == RZ_MIDFLAGS_SYMALIGN) {
-				if (strncmp(fi->name, "sym.", 4)) {
+				if (strncmp(rz_flag_item_get_name(fi), "sym.", 4)) {
 					continue;
 				}
 			}
@@ -1845,8 +1859,7 @@ static void ds_show_fn_vars_lines(
 static void ds_show_functions(RzDisasmState *ds) {
 	RzAnalysisFunction *f;
 	RzCore *core = ds->core;
-	char *fcn_name;
-	bool fcn_name_alloc = false; // whether fcn_name needs to be freed by this function
+	const char *fcn_name;
 
 	if (!ds->show_functions) {
 		return;
@@ -1873,8 +1886,8 @@ static void ds_show_functions(RzDisasmState *ds) {
 	// show function's realname in the signature if realnames are enabled
 	if (core->flags->realnames) {
 		RzFlagItem *flag = rz_flag_get(core->flags, fcn_name);
-		if (flag && flag->realname) {
-			fcn_name = flag->realname;
+		if (flag && rz_flag_item_get_realname(flag)) {
+			fcn_name = rz_flag_item_get_realname(flag);
 		}
 	}
 
@@ -1920,8 +1933,8 @@ static void ds_show_functions(RzDisasmState *ds) {
 	// show function's realname in the signature if realnames are enabled
 	if (core->flags->realnames) {
 		RzFlagItem *flag = rz_flag_get(core->flags, fcn_name);
-		if (flag && flag->realname) {
-			fcn_name = flag->realname;
+		if (flag && rz_flag_item_get_realname(flag)) {
+			fcn_name = rz_flag_item_get_realname(flag);
 		}
 	}
 
@@ -1947,9 +1960,6 @@ static void ds_show_functions(RzDisasmState *ds) {
 	}
 	ds->show_varsum = o_varsum;
 	rz_analysis_fcn_vars_cache_fini(&vars_cache);
-	if (fcn_name_alloc) {
-		free(fcn_name);
-	}
 
 	RzListIter *iter;
 	char *imp;
@@ -2074,9 +2084,12 @@ static void ds_show_comments_right(RzDisasmState *ds) {
 	if (!comment) {
 		if (vartype) {
 			ds->comment = rz_str_newf("%s; %s", COLOR_ARG(ds, func_var_type), vartype);
-		} else if (item && item->comment && *item->comment) {
-			ds->ocomment = item->comment;
-			ds->comment = strdup(item->comment);
+		} else {
+			const char *comment = item ? rz_flag_item_get_comment(item) : NULL;
+			if (comment && *comment) {
+				ds->ocomment = comment;
+				ds->comment = strdup(comment);
+			}
 		}
 	} else if (vartype) {
 		ds->comment = rz_str_newf("%s; %s %s%s; %s", COLOR_ARG(ds, func_var_type), vartype, COLOR_RESET(ds), COLOR(ds, usercomment), comment);
@@ -2111,13 +2124,14 @@ static void ds_show_comments_right(RzDisasmState *ds) {
 		RZ_FREE(ds->comment);
 		ds_newline(ds);
 		/* flag one */
-		if (item && item->comment && ds->ocomment != item->comment) {
+		const char *flagcomment = item ? rz_flag_item_get_comment(item) : NULL;
+		if (flagcomment && ds->ocomment != flagcomment) {
 			ds_begin_line(ds);
 			theme_print_color(comment);
 			ds_newline(ds);
 			ds_begin_line(ds);
 			rz_cons_strcat("  ;  ");
-			rz_cons_strcat_justify(item->comment, mycols, ';');
+			rz_cons_strcat_justify(flagcomment, mycols, ';');
 			ds_newline(ds);
 			ds_print_color_reset(ds);
 		}
@@ -2128,10 +2142,10 @@ static void ds_show_comments_right(RzDisasmState *ds) {
 static int flagCmp(const void *a, const void *b, void *user) {
 	const RzFlagItem *fa = a;
 	const RzFlagItem *fb = b;
-	if (fa->realname && fb->realname) {
-		return strcmp(fa->realname, fb->realname);
+	if (rz_flag_item_get_realname(fa) && rz_flag_item_get_realname(fb)) {
+		return strcmp(rz_flag_item_get_realname(fa), rz_flag_item_get_realname(fb));
 	}
-	return strcmp(fa->name, fb->name);
+	return strcmp(rz_flag_item_get_name(fa), rz_flag_item_get_name(fb));
 }
 
 static void __preline_flag(RzDisasmState *ds, RzFlagItem *flag) {
@@ -2140,12 +2154,12 @@ static void __preline_flag(RzDisasmState *ds, RzFlagItem *flag) {
 	ds_pre_line(ds);
 	if (ds->show_color) {
 		bool hasColor = false;
-		if (flag->color) {
-			char *color = rz_cons_pal_parse(flag->color, NULL);
+		if (rz_flag_item_get_color(flag)) {
+			char *color = rz_cons_pal_parse(rz_flag_item_get_color(flag), NULL);
 			if (color) {
 				rz_cons_strcat(color);
 				free(color);
-				ds->lastflag = flag;
+				ds_set_lastflag(ds, flag);
 				hasColor = true;
 			}
 		}
@@ -2172,8 +2186,8 @@ static bool is_sym_dbg_equal(const char *a, const char *b) {
 }
 
 static inline bool is_flag_overlapped(RzFlagItem *flag, RzAnalysisFunction *f) {
-	const bool name_overlapped = !strcmp(flag->name, f->name) || is_sym_dbg_equal(flag->name, f->name);
-	return f->addr == flag->offset && name_overlapped;
+	const bool name_overlapped = !strcmp(rz_flag_item_get_name(flag), f->name) || is_sym_dbg_equal(rz_flag_item_get_name(flag), f->name);
+	return f->addr == rz_flag_item_get_offset(flag) && name_overlapped;
 }
 
 #define printPre (outline || !*comma)
@@ -2204,7 +2218,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 			// do not show non-overlapped flags that have the same name as the function
 			continue;
 		}
-		bool no_fcn_lines = (!overlapped && f && f->addr == flag->offset);
+		bool no_fcn_lines = (!overlapped && f && f->addr == rz_flag_item_get_offset(flag));
 		if (ds->maxflags && count >= ds->maxflags) {
 			if (printPre) {
 				ds_pre_xrefs(ds, no_fcn_lines);
@@ -2213,8 +2227,8 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 			break;
 		}
 		count++;
-		if (!strncmp(flag->name, "case.", 5)) {
-			sscanf(flag->name + 5, "%63[^.].%d", addr, &case_current);
+		if (!strncmp(rz_flag_item_get_name(flag), "case.", 5)) {
+			sscanf(rz_flag_item_get_name(flag) + 5, "%63[^.].%d", addr, &case_current);
 			ut64 saddr = rz_num_math(core->num, addr);
 			if (case_start == -1) {
 				switch_addr = saddr;
@@ -2251,11 +2265,11 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 		bool hasColor = false;
 		char *color = NULL;
 		if (ds->show_color) {
-			if (flag->color) {
-				color = rz_cons_pal_parse(flag->color, NULL);
+			if (rz_flag_item_get_color(flag)) {
+				color = rz_cons_pal_parse(rz_flag_item_get_color(flag), NULL);
 				if (color) {
 					rz_cons_strcat(color);
-					ds->lastflag = flag;
+					ds_set_lastflag(ds, flag);
 					hasColor = true;
 				}
 			}
@@ -2264,10 +2278,10 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 			}
 		}
 
-		if (flag->realname) {
-			if (!strncmp(flag->name, "switch.", 7)) {
+		if (rz_flag_item_get_realname(flag)) {
+			if (!strncmp(rz_flag_item_get_name(flag), "switch.", 7)) {
 				rz_cons_printf(FLAG_PREFIX "switch");
-			} else if (!strncmp(flag->name, "case.", 5)) {
+			} else if (!strncmp(rz_flag_item_get_name(flag), "case.", 5)) {
 				if (nth > 0) {
 					__preline_flag(ds, flag);
 				}
@@ -2288,9 +2302,9 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 					}
 					rz_list_free(blocks);
 				}
-				if (!strncmp(flag->name + 5, "default", 7)) {
-					rz_cons_printf(FLAG_PREFIX "default:"); // %s:", flag->name);
-					rz_str_ncpy(addr, flag->name + 5 + strlen("default."), sizeof(addr));
+				if (!strncmp(rz_flag_item_get_name(flag) + 5, "default", 7)) {
+					rz_cons_printf(FLAG_PREFIX "default:"); // %s:", rz_flag_item_get_name(flag));
+					rz_str_ncpy(addr, rz_flag_item_get_name(flag) + 5 + strlen("default."), sizeof(addr));
 					nth = 0;
 				} else {
 					const char *case_prev_name = NULL;
@@ -2332,7 +2346,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 				outline = false;
 				docolon = false;
 			} else {
-				char *name = strdup(flag->realname ? flag->realname : flag->name);
+				char *name = strdup(rz_flag_item_get_realname(flag) ? rz_flag_item_get_realname(flag) : rz_flag_item_get_name(flag));
 				if (name) {
 					rz_str_ansi_filter(name, NULL, NULL, -1);
 					if (!ds->flags_inline || nth == 0) {
@@ -2345,16 +2359,16 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 					if (outline) {
 						rz_cons_printf("%s:", name);
 					} else {
-						rz_cons_printf("%s%s", comma, flag->name);
+						rz_cons_printf("%s%s", comma, rz_flag_item_get_name(flag));
 					}
 					RZ_FREE(name);
 				}
 			}
 		} else {
 			if (outline) {
-				rz_cons_printf(FLAG_PREFIX "%s", flag->name);
+				rz_cons_printf(FLAG_PREFIX "%s", rz_flag_item_get_name(flag));
 			} else {
-				rz_cons_printf("%s%s", comma, flag->name);
+				rz_cons_printf("%s%s", comma, rz_flag_item_get_name(flag));
 			}
 		}
 		ds_print_color_reset(ds);
@@ -2591,10 +2605,11 @@ static void ds_control_flow_comments(RzDisasmState *ds) {
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
 		case RZ_ANALYSIS_OP_TYPE_CALL:
 			item = rz_flag_get_i(ds->core->flags, ds->analysis_op.jump);
-			if (item && item->comment) {
+			const char *fcomment = item ? rz_flag_item_get_comment(item) : NULL;
+			if (item && fcomment) {
 				theme_print_color(comment);
 				ds_align_comment(ds);
-				rz_cons_printf("  ; ref to %s: %s\n", item->name, item->comment);
+				rz_cons_printf("  ; ref to %s: %s\n", rz_flag_item_get_name(item), fcomment);
 				ds_print_color_reset(ds);
 			}
 			break;
@@ -2670,20 +2685,17 @@ static void ds_print_lines_left(RzDisasmState *ds) {
 		const char *name = "";
 		int delta = 0;
 		if (ds->fcn) {
-			ds->lastflagitem.offset = ds->fcn->addr;
-			ds->lastflagitem.name = ds->fcn->name;
-			ds->lastflag = &ds->lastflagitem;
+			ds->lastflag.name = ds->fcn->name;
+			ds->lastflag.offset = ds->fcn->addr;
 		} else {
-			RzFlagItem *fi = rz_flag_get_at(core->flags, ds->at, !ds->lastflag);
-			if (fi) { // && (!ds->lastflag || fi->offset != ds->at))
-				ds->lastflagitem.offset = fi->offset;
-				ds->lastflagitem.name = fi->name;
-				ds->lastflag = &ds->lastflagitem;
+			RzFlagItem *fi = rz_flag_get_at(core->flags, ds->at, !ds->lastflag.name);
+			if (fi) { // && (!ds->lastflag || rz_flag_item_get_offset(fi) != ds->at))
+				ds_set_lastflag(ds, fi);
 			}
 		}
-		if (ds->lastflag && ds->lastflag->name) {
-			name = ds->lastflag->name;
-			delta = ds->at - ds->lastflag->offset;
+		if (ds->lastflag.name) {
+			name = ds->lastflag.name;
+			delta = ds->at - ds->lastflag.offset;
 		}
 		{
 			char *str = rz_str_newf("%s + %-4d", name, delta);
@@ -2765,11 +2777,11 @@ static void ds_print_offset(RzDisasmState *ds) {
 	// probably tooslow
 	RzFlagItem *f = rz_flag_get_at(core->flags, at, 1);
 	if (ds->show_color && f) { // ds->lastflag) {
-		const char *color = f->color;
-		if (ds->at >= f->offset && ds->at < f->offset + f->size) {
+		const char *color = rz_flag_item_get_color(f);
+		if (ds->at >= rz_flag_item_get_offset(f) && ds->at < rz_flag_item_get_offset(f) + rz_flag_item_get_offset(f)) {
 			//	if (rz_itv_inrange (f->itv, ds->at))
 			if (color && *color) {
-				char *k = rz_cons_pal_parse(f->color, NULL);
+				char *k = rz_cons_pal_parse(color, NULL);
 				if (k) {
 					rz_cons_printf("%s", k);
 					hasCustomColor = true;
@@ -2793,32 +2805,29 @@ static void ds_print_offset(RzDisasmState *ds) {
 			}
 			if (f) {
 				delta = at - f->addr;
-				ds->lastflagitem.name = f->name;
-				ds->lastflagitem.offset = f->addr;
-				ds->lastflag = &ds->lastflagitem;
+				ds->lastflag.name = f->name;
+				ds->lastflag.offset = f->addr;
 				label = f->name;
 			} else {
 				if (ds->show_reloff_flags) {
 					/* XXX: this is wrong if starting to disasm after a flag */
 					fi = rz_flag_get_i(core->flags, at);
 					if (fi) {
-						ds->lastflag = fi;
+						ds_set_lastflag(ds, fi);
 					}
-					if (ds->lastflag) {
-						if (ds->lastflag->offset == at) {
+					if (ds->lastflag.name) {
+						if (ds->lastflag.offset == at) {
 							delta = 0;
 						} else {
-							delta = at - ds->lastflag->offset;
+							delta = at - ds->lastflag.offset;
 						}
+						label = ds->lastflag.name;
 					} else {
 						delta = at - core->offset;
 					}
-					if (ds->lastflag) {
-						label = ds->lastflag->name;
-					}
 				}
 			}
-			if (!ds->lastflag) {
+			if (!ds->lastflag.name) {
 				delta = 0;
 			}
 		}
@@ -3004,7 +3013,7 @@ static bool ds_print_data_type(RzDisasmState *ds, const ut8 *buf, int ib, int si
 			RzListIter *iter;
 			RzFlagItem *fi;
 			rz_list_foreach (flags, iter, fi) {
-				rz_cons_printf(" ; %s", fi->name);
+				rz_cons_printf(" ; %s", rz_flag_item_get_name(fi));
 			}
 		}
 	}
@@ -3415,14 +3424,15 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 		const char *arch;
 		RzFlagItem *flag = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump,
 			RZ_FLAGS_FS_CLASSES, RZ_FLAGS_FS_SYMBOLS, NULL);
-		if (flag && flag->name && ds->opstr && !strstr(ds->opstr, flag->name) && (rz_str_startswith(flag->name, "sym.") || rz_str_startswith(flag->name, "method.")) && (arch = rz_config_get(ds->core->config, "asm.arch")) && strcmp(arch, "dalvik")) {
+		const char *name = flag ? rz_flag_item_get_name(flag) : NULL;
+		if (name && ds->opstr && !strstr(ds->opstr, name) && (rz_str_startswith(name, "sym.") || rz_str_startswith(name, "method.")) && (arch = rz_config_get(ds->core->config, "asm.arch")) && strcmp(arch, "dalvik")) {
 			RzFlagItem *flag_sym = flag;
-			if (ds->core->vmode && (rz_str_startswith(flag->name, "sym.") || (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL))) && flag_sym->demangled) {
+			if (ds->core->vmode && (rz_str_startswith(name, "sym.") || (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL))) && rz_flag_item_get_demangled(flag_sym)) {
 				return;
 			}
-			if (ds->core->flags->realnames && flag->realname) {
+			if (ds->core->flags->realnames && rz_flag_item_get_realname(flag)) {
 				ds_begin_comment(ds);
-				ds_comment(ds, true, "; %s", flag->name);
+				ds_comment(ds, true, "; %s", name);
 			}
 			return;
 		}
@@ -3448,7 +3458,7 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 			ds_comment(ds, true, "; %s-0x%x", f->name, -delta);
 		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames)) && (!ds->opstr || !strstr(ds->opstr, f->name))) {
 			RzFlagItem *flag_sym;
-			if (ds->core->vmode && (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL)) && flag_sym->demangled) {
+			if (ds->core->vmode && (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL)) && rz_flag_item_get_demangled(flag_sym)) {
 				return;
 			}
 			ds_begin_comment(ds);
@@ -3948,13 +3958,18 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				if (subrel_addr && subrel_addr != p) {
 					f2 = rz_core_flag_get_by_spaces(core->flags, subrel_addr);
 					f2_in_opstr = f2 && ds->opstr &&
-						((f2->name && strstr(ds->opstr, f2->name)) ||
-							(f2->realname && strstr(ds->opstr, f2->realname)));
+						((rz_flag_item_get_name(f2) && strstr(ds->opstr, rz_flag_item_get_name(f2))) ||
+							(rz_flag_item_get_realname(f2) && strstr(ds->opstr, rz_flag_item_get_realname(f2))));
 				}
 				refaddr = p;
-				if (!flag_printed && !is_filtered_flag(ds, f->name) && (!ds->opstr || (!strstr(ds->opstr, f->name) && !strstr(ds->opstr, f->realname))) && !f2_in_opstr) {
+				if (!flag_printed &&
+					!is_filtered_flag(ds, rz_flag_item_get_name(f)) &&
+					(!ds->opstr ||
+						(!strstr(ds->opstr, rz_flag_item_get_name(f)) &&
+							!(rz_flag_item_get_realname(f) && strstr(ds->opstr, rz_flag_item_get_realname(f))))) &&
+					!f2_in_opstr) {
 					ds_begin_comment(ds);
-					ds_comment(ds, true, "; %s", f->name);
+					ds_comment(ds, true, "; %s", rz_flag_item_get_name(f));
 					ds->printed_flag_addr = p;
 					flag_printed = true;
 				}
@@ -3990,7 +4005,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 					char *msg2 = NULL;
 					RzFlagItem *f2_ = rz_flag_get_i(core->flags, n);
 					if (f2_) {
-						flag = f2_->name;
+						flag = rz_flag_item_get_name(f2_);
 					} else {
 						msg2 = calloc(sizeof(char), len);
 						rz_io_read_at(core->io, n, (ut8 *)msg2, len - 1);
@@ -4018,7 +4033,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 						ds_begin_nl_comment(ds);
 						ds_comment_start(ds, "; [");
 						if (f && f2_in_opstr) {
-							ds_comment_middle(ds, "%s", f->name);
+							ds_comment_middle(ds, "%s", rz_flag_item_get_name(f));
 							flag_printed = true;
 						} else {
 							ds_comment_middle(ds, "0x%" PFMT64x, refaddr);
@@ -4081,9 +4096,10 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				if (!string_printed) {
 					ds_print_str(ds, msg, len, refaddr);
 				}
-			} else if (!flag_printed && (!ds->opstr || (!strstr(ds->opstr, f->name) && !strstr(ds->opstr, f->realname)))) {
+			} else if (!flag_printed &&
+				(!ds->opstr || (!strstr(ds->opstr, rz_flag_item_get_name(f)) && !(rz_flag_item_get_realname(f) && strstr(ds->opstr, rz_flag_item_get_realname(f)))))) {
 				ds_begin_nl_comment(ds);
-				ds_comment(ds, true, "; %s", f->name);
+				ds_comment(ds, true, "; %s", rz_flag_item_get_name(f));
 				ds->printed_flag_addr = refaddr;
 			}
 		} else {
@@ -4359,8 +4375,8 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 		RZ_FREE(type);
 		if ((ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr) && (ds->show_emu_strflag || !emu_str_printed)) {
 			RzFlagItem *fi = rz_flag_get_i(esil->analysis->flb.f, *val);
-			if (fi && (!ds->opstr || !strstr(ds->opstr, fi->name))) {
-				msg = rz_str_appendf(msg, "%s%s", msg && *msg ? " " : "", fi->name);
+			if (fi && (!ds->opstr || !strstr(ds->opstr, rz_flag_item_get_name(fi)))) {
+				msg = rz_str_appendf(msg, "%s%s", msg && *msg ? " " : "", rz_flag_item_get_name(fi));
 			}
 		}
 	}
@@ -4399,7 +4415,7 @@ static void ds_pre_emulation(RzDisasmState *ds) {
 	if (!f) {
 		return;
 	}
-	ut64 base = f->offset;
+	ut64 base = rz_flag_item_get_offset(f);
 	RzAnalysisEsil *esil = ds->core->analysis->esil;
 	int i, end = ds->core->offset - base;
 	int maxemu = 1024 * 1024;
@@ -4679,7 +4695,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 		} else {
 			RzFlagItem *item = rz_flag_get_i(core->flags, pcv);
 			if (item) {
-				fcn_name = item->name;
+				fcn_name = rz_flag_item_get_name(item);
 			}
 		}
 		if (fcn_name) {
@@ -4792,7 +4808,7 @@ static void ds_print_calls_hints(RzDisasmState *ds) {
 	}
 	RzAnalysis *analysis = ds->core->analysis;
 	char *name;
-	char *full_name = NULL;
+	const char *full_name = NULL;
 	if (ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_CALL) {
 		// RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (analysis, ds->analysis_op.jump, -1);
 		RzAnalysisFunction *fcn = fcnIn(ds, ds->analysis_op.jump, -1);
@@ -4801,8 +4817,8 @@ static void ds_print_calls_hints(RzDisasmState *ds) {
 		}
 	} else if (ds->analysis_op.ptr != UT64_MAX) {
 		RzFlagItem *flag = rz_flag_get_i(ds->core->flags, ds->analysis_op.ptr);
-		if (flag && flag->space && !strcmp(flag->space->name, RZ_FLAGS_FS_IMPORTS)) {
-			full_name = flag->realname;
+		if (flag && rz_flag_item_get_space(flag) && !strcmp(rz_flag_item_get_space(flag)->name, RZ_FLAGS_FS_IMPORTS)) {
+			full_name = rz_flag_item_get_realname(flag);
 		}
 	}
 	if (!full_name) {
@@ -4974,19 +4990,19 @@ static bool set_jump_realname(RzDisasmState *ds, ut64 addr, const char **kw, con
 		return false;
 	}
 	RzFlagItem *flag_sym = rz_flag_get_by_spaces(f, addr, RZ_FLAGS_FS_FUNCTIONS, RZ_FLAGS_FS_SYMBOLS, NULL);
-	if (!flag_sym || !flag_sym->realname) {
+	if (!flag_sym || !rz_flag_item_get_realname(flag_sym)) {
 		// nothing to replace
 		return false;
 	}
-	if (!flag_sym->demangled && !f->realnames) {
+	if (!rz_flag_item_get_demangled(flag_sym) && !f->realnames) {
 		// realname is not demangled and we don't want to show non-demangled realnames
 		return false;
 	}
-	*name = flag_sym->realname;
+	*name = rz_flag_item_get_realname(flag_sym);
 	RzFlagItem *flag_mthd = rz_flag_get_by_spaces(f, addr, RZ_FLAGS_FS_CLASSES, NULL);
 	if (!f->realnames) {
 		// for asm.flags.real, we don't want these prefixes
-		if (flag_mthd && flag_mthd->name && rz_str_startswith(flag_mthd->name, "method.")) {
+		if (flag_mthd && rz_flag_item_get_name(flag_mthd) && rz_str_startswith(rz_flag_item_get_name(flag_mthd), "method.")) {
 			*kw = "method ";
 		} else {
 			*kw = "sym ";
@@ -5052,10 +5068,10 @@ static void ds_opstr_sub_jumps(RzDisasmState *ds) {
 	} else if (f && !set_jump_realname(ds, addr, &kw, &name)) {
 		RzFlagItem *flag = rz_core_flag_get_by_spaces(f, addr);
 		if (flag) {
-			if (strchr(flag->name, '.')) {
-				name = flag->name;
-				if (f->realnames && flag->realname) {
-					name = flag->realname;
+			if (strchr(rz_flag_item_get_name(flag), '.')) {
+				name = rz_flag_item_get_name(flag);
+				if (f->realnames && rz_flag_item_get_realname(flag)) {
+					name = rz_flag_item_get_realname(flag);
 				}
 			}
 		}
@@ -5949,7 +5965,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 				pj_k(pj, "flags");
 				pj_a(pj);
 				rz_list_foreach (flags, iter2, flag) {
-					pj_s(pj, flag->name);
+					pj_s(pj, rz_flag_item_get_name(flag));
 				}
 				pj_end(pj);
 			}
@@ -6199,7 +6215,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 						unsigned int seggrn = rz_config_get_i(core->config, "asm.seggrn");
 						rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 					}
-					rz_cons_printf("  %s:\n", item->name);
+					rz_cons_printf("  %s:\n", rz_flag_item_get_name(item));
 				}
 			} // do not show flags in pie
 		}

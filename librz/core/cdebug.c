@@ -889,33 +889,33 @@ static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
 	if (f) {
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - f->offset);
+		if (rz_flag_item_get_offset(f) != addr) {
+			int delta = (int)(frame->addr - rz_flag_item_get_offset(f));
 			if (delta > 0) {
-				*flagdesc = rz_str_newf("%s+%d", f->name, delta);
+				*flagdesc = rz_str_newf("%s+%d", rz_flag_item_get_name(f), delta);
 			} else if (delta < 0) {
-				*flagdesc = rz_str_newf("%s%d", f->name, delta);
+				*flagdesc = rz_str_newf("%s%d", rz_flag_item_get_name(f), delta);
 			} else {
-				*flagdesc = rz_str_newf("%s", f->name);
+				*flagdesc = rz_str_newf("%s", rz_flag_item_get_name(f));
 			}
 		} else {
-			*flagdesc = rz_str_newf("%s", f->name);
+			*flagdesc = rz_str_newf("%s", rz_flag_item_get_name(f));
 		}
-		if (!strchr(f->name, '.')) {
+		if (!strchr(rz_flag_item_get_name(f), '.')) {
 			f2 = rz_flag_get_at(core->flags, frame->addr - 1, true);
 		}
 		if (f2 && f2 != f) {
-			if (f2->offset != addr) {
-				int delta = (int)(frame->addr - 1 - f2->offset);
+			if (rz_flag_item_get_offset(f2) != addr) {
+				int delta = (int)(frame->addr - 1 - rz_flag_item_get_offset(f2));
 				if (delta > 0) {
-					*flagdesc2 = rz_str_newf("%s+%d", f2->name, delta + 1);
+					*flagdesc2 = rz_str_newf("%s+%d", rz_flag_item_get_name(f2), delta + 1);
 				} else if (delta < 0) {
-					*flagdesc2 = rz_str_newf("%s%d", f2->name, delta + 1);
+					*flagdesc2 = rz_str_newf("%s%d", rz_flag_item_get_name(f2), delta + 1);
 				} else {
-					*flagdesc2 = rz_str_newf("%s+1", f2->name);
+					*flagdesc2 = rz_str_newf("%s+1", rz_flag_item_get_name(f2));
 				}
 			} else {
-				*flagdesc2 = rz_str_newf("%s", f2->name);
+				*flagdesc2 = rz_str_newf("%s", rz_flag_item_get_name(f2));
 			}
 		}
 	}

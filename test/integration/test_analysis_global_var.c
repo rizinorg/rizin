@@ -30,9 +30,9 @@ bool test_rz_analysis_global_var() {
 	mu_assert_true(added, "add global var");
 	flag = rz_analysis_var_global_get_flag_item(glob);
 	mu_assert_notnull(flag, "global var flag_item");
-	mu_assert_eq(flag->offset, glob->addr, "flag item addr");
-	mu_assert_streq(flag->name, "foo", "flag item name");
-	mu_assert_streq(flag->space->name, RZ_FLAGS_FS_GLOBALS, "flag space");
+	mu_assert_eq(rz_flag_item_get_offset(flag), glob->addr, "flag item addr");
+	mu_assert_streq(rz_flag_item_get_name(flag), "foo", "flag item name");
+	mu_assert_streq(rz_flag_item_get_space(flag)->name, RZ_FLAGS_FS_GLOBALS, "flag space");
 
 	glob = NULL;
 	glob = rz_analysis_var_global_get_byaddr_at(analysis, 0x1337);
@@ -64,7 +64,7 @@ bool test_rz_analysis_global_var() {
 	glob = rz_analysis_var_global_get_byname(analysis, "bar");
 	mu_assert_notnull(glob, "get global var by addr");
 	mu_assert_streq(glob->name, "bar", "global var name");
-	mu_assert_streq(flag->name, "bar", "global flag_item name");
+	mu_assert_streq(rz_flag_item_get_name(flag), "bar", "global flag_item name");
 	RzFlagItem *flag2 = rz_analysis_var_global_get_flag_item(glob);
 	mu_assert_ptreq(flag2, flag, "still same flag");
 
@@ -119,8 +119,8 @@ bool test_rz_analysis_global_var() {
 	mu_assert_true(added, "add global var");
 	flag = rz_analysis_var_global_get_flag_item(glob);
 	mu_assert_notnull(flag, "global var flag_item");
-	mu_assert_eq(flag->offset, glob->addr, "flag item addr");
-	mu_assert_streq(flag->name, "bar", "flag item name");
+	mu_assert_eq(rz_flag_item_get_offset(flag), glob->addr, "flag item addr");
+	mu_assert_streq(rz_flag_item_get_name(flag), "bar", "flag item name");
 
 	glob = NULL;
 	glob = rz_analysis_var_global_get_byname(analysis, "bar");
@@ -148,8 +148,8 @@ bool test_rz_analysis_global_var() {
 
 	flag = rz_analysis_var_global_get_flag_item(glob);
 	mu_assert_notnull(flag, "global var flag_item");
-	mu_assert_eq(flag->offset, glob->addr, "flag item addr");
-	mu_assert_streq(flag->name, "crab", "flag item name");
+	mu_assert_eq(rz_flag_item_get_offset(flag), glob->addr, "flag item addr");
+	mu_assert_streq(rz_flag_item_get_name(flag), "crab", "flag item name");
 
 	rz_type_parser_free(parser);
 	rz_core_free(core);
@@ -169,9 +169,9 @@ bool test_flag_confusion_space_name() {
 	rz_analysis_var_global_add(analysis, glob);
 	RzFlagItem *fi = rz_analysis_var_global_get_flag_item(glob);
 	mu_assert_notnull(fi, "global var flag_item");
-	mu_assert_eq(fi->offset, glob->addr, "flag item addr");
-	mu_assert_streq(fi->name, "foo", "flag item name");
-	mu_assert_streq(fi->space->name, RZ_FLAGS_FS_GLOBALS, "flag space");
+	mu_assert_eq(rz_flag_item_get_offset(fi), glob->addr, "flag item addr");
+	mu_assert_streq(rz_flag_item_get_name(fi), "foo", "flag item name");
+	mu_assert_streq(rz_flag_item_get_space(fi)->name, RZ_FLAGS_FS_GLOBALS, "flag space");
 
 	rz_flag_space_set(core->flags, "ulu-mulu");
 	RzFlagItem *fii = rz_analysis_var_global_get_flag_item(glob);
@@ -198,7 +198,7 @@ bool test_flag_confusion_addr() {
 	rz_analysis_var_global_add(analysis, glob);
 	RzFlagItem *fi = rz_analysis_var_global_get_flag_item(glob);
 
-	rz_flag_set(core->flags, fi->name, 0x31337, fi->size);
+	rz_flag_set(core->flags, rz_flag_item_get_name(fi), 0x31337, rz_flag_item_get_size(fi));
 	fi = rz_analysis_var_global_get_flag_item(glob);
 	mu_assert_null(fi, "flag lost");
 

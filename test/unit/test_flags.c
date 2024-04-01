@@ -47,15 +47,15 @@ bool test_rz_flag_by_spaces(void) {
 
 	fi = rz_flag_get_by_spaces(flags, 1024, "sp2", "sp4", NULL);
 	mu_assert_notnull(fi, "should be retrieved");
-	mu_assert_streq(fi->name, "foo3", "first defined in sp2 should be get");
+	mu_assert_streq(rz_flag_item_get_name(fi), "foo3", "first defined in sp2 should be get");
 
 	fi = rz_flag_get_by_spaces(flags, 1024, NULL);
 	mu_assert_notnull(fi, "something should be retrieved");
-	mu_assert_streq(fi->name, "foo1", "a random one should be get (the first)");
+	mu_assert_streq(rz_flag_item_get_name(fi), "foo1", "a random one should be get (the first)");
 
 	fi = rz_flag_get_by_spaces(flags, 1024, "sp5", "sp8", "sp1", "sp3", "sp10", NULL);
 	mu_assert_notnull(fi, "something should be retrieved");
-	mu_assert_streq(fi->name, "foo1", "first defined in sp1 should be get");
+	mu_assert_streq(rz_flag_item_get_name(fi), "foo1", "first defined in sp1 should be get");
 
 	rz_flag_free(flags);
 	mu_end;
@@ -136,33 +136,33 @@ bool test_rz_flag_set_next() {
 
 	RzFlagItem *fi = rz_flag_set_next(flag, "catastasis", 0x100, 0);
 	mu_assert_notnull(fi, "set flag");
-	mu_assert_streq(fi->name, "catastasis", "flag_name");
+	mu_assert_streq(rz_flag_item_get_name(fi), "catastasis", "flag_name");
 	RzFlagItem *fi2 = rz_flag_set_next(flag, "catastasis", 0xfa1afe1, 0);
 	mu_assert_notnull(fi2, "set flag");
-	mu_assert_streq(fi2->name, "catastasis.fa1afe1", "flag_name");
+	mu_assert_streq(rz_flag_item_get_name(fi2), "catastasis.fa1afe1", "flag_name");
 	fi = rz_flag_set_next(flag, "catastasis", (ut64)-1, 0);
 	mu_assert_notnull(fi, "set flag");
-	mu_assert_streq(fi->name, "catastasis.ffffffffffffffff", "flag_name");
+	mu_assert_streq(rz_flag_item_get_name(fi), "catastasis.ffffffffffffffff", "flag_name");
 	fi = rz_flag_set_next(flag, "catastasis", 0xfa1afe1, 0);
 	mu_assert_ptreq(fi, fi2, "set matching");
 	fi = rz_flag_set_next(flag, "catastasis", 0xfa1afe1, 10);
 	mu_assert_notnull(fi, "set flag");
-	mu_assert_streq(fi->name, "catastasis.0", "flag_name");
+	mu_assert_streq(rz_flag_item_get_name(fi), "catastasis.0", "flag_name");
 	fi = rz_flag_set_next(flag, "catastasis", 0xfa1afe1, 8);
 	mu_assert_notnull(fi, "set flag");
-	mu_assert_streq(fi->name, "catastasis.1", "flag_name");
+	mu_assert_streq(rz_flag_item_get_name(fi), "catastasis.1", "flag_name");
 	fi = rz_flag_set_next(flag, "catastasis.fa1afe1", 0x200, 0);
 	mu_assert_notnull(fi, "set flag");
-	mu_assert_streq(fi->name, "catastasis.fa1afe1.200", "flag_name");
+	mu_assert_streq(rz_flag_item_get_name(fi), "catastasis.fa1afe1.200", "flag_name");
 
 	RzList *all = rz_flag_all_list(flag, false);
 	mu_assert_eq(rz_list_length(all), 6, "all flags count");
-	mu_assert_streq(((RzFlagItem *)rz_list_get_n(all, 0))->name, "catastasis", "flag name");
-	mu_assert_streq(((RzFlagItem *)rz_list_get_n(all, 1))->name, "catastasis.fa1afe1.200", "flag name");
-	mu_assert_streq(((RzFlagItem *)rz_list_get_n(all, 2))->name, "catastasis.fa1afe1", "flag name");
-	mu_assert_streq(((RzFlagItem *)rz_list_get_n(all, 3))->name, "catastasis.0", "flag name");
-	mu_assert_streq(((RzFlagItem *)rz_list_get_n(all, 4))->name, "catastasis.1", "flag name");
-	mu_assert_streq(((RzFlagItem *)rz_list_get_n(all, 5))->name, "catastasis.ffffffffffffffff", "flag name");
+	mu_assert_streq(rz_flag_item_get_name(rz_list_get_n(all, 0)), "catastasis", "flag name");
+	mu_assert_streq(rz_flag_item_get_name(rz_list_get_n(all, 1)), "catastasis.fa1afe1.200", "flag name");
+	mu_assert_streq(rz_flag_item_get_name(rz_list_get_n(all, 2)), "catastasis.fa1afe1", "flag name");
+	mu_assert_streq(rz_flag_item_get_name(rz_list_get_n(all, 3)), "catastasis.0", "flag name");
+	mu_assert_streq(rz_flag_item_get_name(rz_list_get_n(all, 4)), "catastasis.1", "flag name");
+	mu_assert_streq(rz_flag_item_get_name(rz_list_get_n(all, 5)), "catastasis.ffffffffffffffff", "flag name");
 	rz_list_free(all);
 
 	rz_flag_free(flag);

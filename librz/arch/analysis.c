@@ -582,7 +582,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 			RZ_LOG_ERROR("Cannot find function and flag at address 0x%" PFMT64x "\n", addr);
 			return false;
 		}
-		tmp_name = fcn ? fcn->name : fi->name;
+		tmp_name = fcn ? fcn->name : rz_flag_item_get_name(fi);
 		if (fcn) {
 			fcn->is_noreturn = true;
 		}
@@ -707,7 +707,8 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 	}
 	RzFlagItem *fi = analysis->flag_get(analysis->flb.f, addr);
 	if (fi) {
-		if (rz_analysis_noreturn_at_name(analysis, fi->realname ? fi->realname : fi->name)) {
+		const char *rn = rz_flag_item_get_realname(fi);
+		if (rz_analysis_noreturn_at_name(analysis, rn ? rn : rz_flag_item_get_name(fi))) {
 			return true;
 		}
 	}

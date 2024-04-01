@@ -217,8 +217,8 @@ RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core) {
 	ut32 size = 0xf0000;
 	RzFlagItem *fi = rz_flag_get(core->flags, "aeim.stack");
 	if (fi) {
-		addr = fi->offset;
-		size = fi->size;
+		addr = rz_flag_item_get_offset(fi);
+		size = rz_flag_item_get_size(fi);
 	} else {
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
@@ -1513,7 +1513,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 							rz_core_add_string_ref(core, op.addr, dst);
 						}
 						if ((f = rz_core_flag_get_by_spaces(core->flags, dst))) {
-							rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, f->name);
+							rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, rz_flag_item_get_name(f));
 						} else if (rz_core_get_string_at(core, dst, &str, NULL, NULL, true)) {
 							char *str2 = rz_str_newf("esilref: '%s'", str);
 							// HACK avoid format string inside string used later as format

@@ -433,9 +433,10 @@ static int step_until_flag(RzCore *core, const char *flagstr) {
 		pc = rz_debug_reg_get(core->dbg, "PC");
 		list = rz_flag_get_list(core->flags, pc);
 		rz_list_foreach (list, iter, flag) {
-			if (flag->realname && strstr(flag->realname, flagstr)) {
+			const char *rn = rz_flag_item_get_realname(flag);
+			if (rn && strstr(rn, flagstr)) {
 				rz_cons_printf("[ 0x%08" PFMT64x " ] %s\n",
-					flag->offset, flag->realname);
+					rz_flag_item_get_offset(flag), rn);
 				goto beach;
 			}
 		}
@@ -1176,21 +1177,21 @@ static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
 		RzFlagItem *fi = rz_flag_get_at(core->flags, f->addr, true);
 		flagdesc[0] = flagdesc2[0] = 0;
 		if (fi) {
-			if (fi->offset != f->addr) {
-				int delta = (int)(f->addr - fi->offset);
+			if (rz_flag_item_get_offset(fi) != f->addr) {
+				int delta = (int)(f->addr - rz_flag_item_get_offset(fi));
 				if (delta > 0) {
 					snprintf(flagdesc, sizeof(flagdesc),
-						"%s+%d", fi->name, delta);
+						"%s+%d", rz_flag_item_get_name(fi), delta);
 				} else if (delta < 0) {
 					snprintf(flagdesc, sizeof(flagdesc),
-						"%s%d", fi->name, delta);
+						"%s%d", rz_flag_item_get_name(fi), delta);
 				} else {
 					snprintf(flagdesc, sizeof(flagdesc),
-						"%s", fi->name);
+						"%s", rz_flag_item_get_name(fi));
 				}
 			} else {
 				snprintf(flagdesc, sizeof(flagdesc),
-					"%s", fi->name);
+					"%s", rz_flag_item_get_name(fi));
 			}
 		}
 		//////////
@@ -1294,12 +1295,12 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 	}
 	RzFlagItem *f = rz_core_flag_get_by_spaces(core->flags, addr);
 	if (f) {
-		if (addr > f->offset) {
-			char *name = rz_str_newf("%s+0x%" PFMT64x, f->name, addr - f->offset);
+		if (addr > rz_flag_item_get_offset(f)) {
+			char *name = rz_str_newf("%s+0x%" PFMT64x, rz_flag_item_get_name(f), addr - rz_flag_item_get_offset(f));
 			rz_bp_item_set_name(bpi, name);
 			free(name);
 		} else {
-			bpi->name = strdup(f->name);
+			bpi->name = strdup(rz_flag_item_get_name(f));
 		}
 	} else {
 		char *name = rz_str_newf("0x%08" PFMT64x, addr);
@@ -1337,7 +1338,7 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	if (_core) {
 		RzFlagItem *f = rz_flag_get_at(_core->flags, tn->addr, true);
 		if (f) {
-			name = f->name;
+			name = rz_flag_item_get_name(f);
 		}
 	}
 	rz_cons_printf(" 0x%08" PFMT64x " refs %d %s\n", tn->addr, tn->refs, name);

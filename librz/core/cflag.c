@@ -20,30 +20,30 @@ struct print_flag_t {
 
 static bool print_flag_name(RzFlagItem *flag, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
+	if (u->in_range && (rz_flag_item_get_offset(flag) < u->range_from || rz_flag_item_get_offset(flag) >= u->range_to)) {
 		return true;
 	}
-	rz_cons_printf("%s\n", flag->name);
+	rz_cons_printf("%s\n", rz_flag_item_get_name(flag));
 	return true;
 }
 
 static bool print_flag_json(RzFlagItem *flag, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
+	if (u->in_range && (rz_flag_item_get_offset(flag) < u->range_from || rz_flag_item_get_offset(flag) >= u->range_to)) {
 		return true;
 	}
-	const char *realname = RZ_STR_ISEMPTY(flag->realname) ? flag->name : flag->realname;
+	const char *realname = RZ_STR_ISEMPTY(rz_flag_item_get_realname(flag)) ? rz_flag_item_get_name(flag) : rz_flag_item_get_realname(flag);
 	pj_o(u->pj);
-	pj_ks(u->pj, "name", flag->name);
+	pj_ks(u->pj, "name", rz_flag_item_get_name(flag));
 	pj_ks(u->pj, "realname", realname);
-	pj_ki(u->pj, "size", flag->size);
-	if (flag->alias) {
-		pj_ks(u->pj, "alias", flag->alias);
+	pj_ki(u->pj, "size", rz_flag_item_get_size(flag));
+	if (rz_flag_item_get_alias(flag)) {
+		pj_ks(u->pj, "alias", rz_flag_item_get_alias(flag));
 	} else {
-		pj_kn(u->pj, "offset", flag->offset);
+		pj_kn(u->pj, "offset", rz_flag_item_get_offset(flag));
 	}
-	if (flag->comment) {
-		pj_ks(u->pj, "comment", flag->comment);
+	if (rz_flag_item_get_comment(flag)) {
+		pj_ks(u->pj, "comment", rz_flag_item_get_comment(flag));
 	}
 	pj_end(u->pj);
 	return true;
@@ -52,15 +52,15 @@ static bool print_flag_json(RzFlagItem *flag, void *user) {
 static bool print_flag_rizin(RzFlagItem *flag, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
 	char *comment_b64 = NULL, *tmp = NULL;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
+	if (u->in_range && (rz_flag_item_get_offset(flag) < u->range_from || rz_flag_item_get_offset(flag) >= u->range_to)) {
 		return true;
 	}
-	if (!u->fs || flag->space != u->fs) {
-		u->fs = flag->space;
+	if (!u->fs || rz_flag_item_get_space(flag) != u->fs) {
+		u->fs = rz_flag_item_get_space(flag);
 		rz_cons_printf("fs %s\n", u->fs ? u->fs->name : "*");
 	}
-	if (RZ_STR_ISNOTEMPTY(flag->comment)) {
-		comment_b64 = rz_base64_encode_dyn((const ut8 *)flag->comment, strlen(flag->comment));
+	if (RZ_STR_ISNOTEMPTY(rz_flag_item_get_comment(flag))) {
+		comment_b64 = rz_base64_encode_dyn((const ut8 *)rz_flag_item_get_comment(flag), strlen(rz_flag_item_get_comment(flag)));
 		// prefix the armored string with "base64:"
 		if (comment_b64) {
 			tmp = rz_str_newf("base64:%s", comment_b64);
@@ -68,15 +68,15 @@ static bool print_flag_rizin(RzFlagItem *flag, void *user) {
 			comment_b64 = tmp;
 		}
 	}
-	if (flag->alias) {
-		rz_cons_printf("fa %s %s\n", flag->name, flag->alias);
+	if (rz_flag_item_get_alias(flag)) {
+		rz_cons_printf("fa %s %s\n", rz_flag_item_get_name(flag), rz_flag_item_get_alias(flag));
 		if (comment_b64) {
 			rz_cons_printf("\"fC %s %s\"\n",
-				flag->name, rz_str_get(comment_b64));
+				rz_flag_item_get_name(flag), rz_str_get(comment_b64));
 		}
 	} else {
 		rz_cons_printf("f %s %" PFMT64d " 0x%08" PFMT64x " %s\n",
-			flag->name, flag->size, flag->offset,
+			rz_flag_item_get_name(flag), rz_flag_item_get_size(flag), rz_flag_item_get_offset(flag),
 			rz_str_get(comment_b64));
 	}
 
@@ -86,28 +86,29 @@ static bool print_flag_rizin(RzFlagItem *flag, void *user) {
 
 static bool print_flag_orig_name(RzFlagItem *flag, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
+	if (u->in_range && (rz_flag_item_get_offset(flag) < u->range_from || rz_flag_item_get_offset(flag) >= u->range_to)) {
 		return true;
 	}
-	if (flag->alias) {
-		const char *n = u->real ? flag->realname : flag->name;
-		rz_cons_printf("%s %" PFMT64d " %s\n", flag->alias, flag->size, n);
+	if (rz_flag_item_get_alias(flag)) {
+		const char *n = u->real ? rz_flag_item_get_realname(flag) : rz_flag_item_get_name(flag);
+		rz_cons_printf("%s %" PFMT64d " %s\n", rz_flag_item_get_alias(flag), rz_flag_item_get_size(flag), n);
 	} else {
-		const char *n = u->real ? flag->realname : (u->f->realnames ? flag->realname : flag->name);
-		rz_cons_printf("0x%08" PFMT64x " %" PFMT64d " %s\n", flag->offset, flag->size, n);
+		const char *n = u->real ? rz_flag_item_get_realname(flag) : (u->f->realnames ? rz_flag_item_get_realname(flag) : rz_flag_item_get_name(flag));
+		rz_cons_printf("0x%08" PFMT64x " %" PFMT64d " %s\n", rz_flag_item_get_offset(flag), rz_flag_item_get_size(flag), n);
 	}
 	return true;
 }
 
 static bool print_flag_table(RzFlagItem *flag, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
-	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
+	if (u->in_range && (rz_flag_item_get_offset(flag) < u->range_from || rz_flag_item_get_offset(flag) >= u->range_to)) {
 		return true;
 	}
-	if (!RZ_STR_ISEMPTY(flag->name)) {
-		const char *spaceName = (flag->space && flag->space->name) ? flag->space->name : "";
-		const char *realname = RZ_STR_ISEMPTY(flag->realname) ? flag->name : flag->realname;
-		rz_table_add_rowf(u->tbl, "Xdsss", flag->offset, flag->size, spaceName, flag->name, realname);
+	if (!RZ_STR_ISEMPTY(rz_flag_item_get_name(flag))) {
+		RzSpace *space = rz_flag_item_get_space(flag);
+		const char *spaceName = (space && space->name) ? space->name : "";
+		const char *realname = RZ_STR_ISEMPTY(rz_flag_item_get_realname(flag)) ? rz_flag_item_get_name(flag) : rz_flag_item_get_realname(flag);
+		rz_table_add_rowf(u->tbl, "Xdsss", rz_flag_item_get_offset(flag), rz_flag_item_get_size(flag), spaceName, rz_flag_item_get_name(flag), realname);
 	}
 	return true;
 }

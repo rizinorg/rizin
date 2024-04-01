@@ -316,11 +316,11 @@ static const char *getName(RzCore *core, ut64 addr) {
 	RzFlagItem *item = rz_flag_get_i(core->flags, addr);
 	if (item) {
 		if (core->flags->realnames) {
-			return item->realname
-				? item->realname
-				: item->name;
+			return rz_flag_item_get_realname(item)
+				? rz_flag_item_get_realname(item)
+				: rz_flag_item_get_name(item);
 		}
-		return item->name;
+		return rz_flag_item_get_name(item);
 	}
 	return NULL;
 }
@@ -328,13 +328,13 @@ static const char *getName(RzCore *core, ut64 addr) {
 static char *getNameDelta(RzCore *core, ut64 addr) {
 	RzFlagItem *item = rz_flag_get_at(core->flags, addr, true);
 	if (item) {
-		if (item->offset != addr) {
+		if (rz_flag_item_get_offset(item) != addr) {
 			const char *name = core->flags->realnames
-				? item->realname
-				: item->name;
-			return rz_str_newf("%s+%" PFMT64u, name, addr - item->offset);
+				? rz_flag_item_get_realname(item)
+				: rz_flag_item_get_name(item);
+			return rz_str_newf("%s+%" PFMT64u, name, addr - rz_flag_item_get_offset(item));
 		}
-		return strdup(item->name);
+		return strdup(rz_flag_item_get_name(item));
 	}
 	return NULL;
 }
@@ -498,7 +498,7 @@ static const char *str_callback(RzNum *user, ut64 off, int *ok) {
 			if (ok) {
 				*ok = true;
 			}
-			return item->name;
+			return rz_flag_item_get_name(item);
 		}
 	}
 	return NULL;
@@ -666,7 +666,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				RzFlagItem *flag = rz_flag_get(core->flags, flagName);
 				free(flagName);
 				if (flag) {
-					return flag->offset + flag->size;
+					return rz_flag_item_get_offset(flag) + rz_flag_item_get_size(flag);
 				}
 				return UT64_MAX;
 			}
@@ -681,7 +681,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			if (str[2] == 'l') { // $fl flag length
 				RzFlagItem *fi = rz_flag_get_i(core->flags, core->offset);
 				if (fi) {
-					return fi->size;
+					return rz_flag_item_get_size(fi);
 				}
 				return 0;
 			}
@@ -726,7 +726,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				}
 				*ptr = '\0';
 				RzFlagItem *flag = rz_flag_get(core->flags, bptr);
-				ret = flag ? flag->size : 0LL; // flag
+				ret = flag ? rz_flag_item_get_size(flag) : 0LL; // flag
 				free(bptr);
 				free(out);
 				return ret;
@@ -820,7 +820,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			}
 #endif
 			if ((flag = rz_flag_get(core->flags, str))) {
-				ret = flag->offset;
+				ret = rz_flag_item_get_offset(flag);
 				if (ok) {
 					*ok = true;
 				}
@@ -897,13 +897,13 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 static const char *rz_core_print_offname(void *p, ut64 addr) {
 	RzCore *c = (RzCore *)p;
 	RzFlagItem *item = rz_flag_get_i(c->flags, addr);
-	return item ? item->name : NULL;
+	return item ? rz_flag_item_get_name(item) : NULL;
 }
 
 static int rz_core_print_offsize(void *p, ut64 addr) {
 	RzCore *c = (RzCore *)p;
 	RzFlagItem *item = rz_flag_get_i(c->flags, addr);
-	return item ? item->size : -1;
+	return item ? rz_flag_item_get_size(item) : -1;
 }
 
 /**
@@ -983,7 +983,7 @@ RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode) {
 		return res;
 	}
 	RzFlagItem *fi = rz_flag_get_i(core->flags, value);
-	return fi ? strdup(fi->name) : NULL;
+	return fi ? strdup(rz_flag_item_get_name(fi)) : NULL;
 }
 
 static char *getvalue(ut64 value, int bits) {
@@ -1076,7 +1076,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 			if (flags && !rz_list_empty(flags)) {
 				pj_ka(pj, "flags");
 				rz_list_foreach (flags, iter, f) {
-					pj_s(pj, f->name);
+					pj_s(pj, rz_flag_item_get_name(f));
 				}
 				pj_end(pj);
 			}
@@ -1811,10 +1811,10 @@ static bool prompt_add_offset(RzCore *core, RzStrBuf *sb, bool add_sep) {
 	if (rz_config_get_b(core->config, "scr.prompt.flag")) {
 		const RzFlagItem *f = rz_flag_get_at(core->flags, core->offset, true);
 		if (f) {
-			if (f->offset < core->offset) {
-				rz_strbuf_appendf(sb, "%s + %" PFMT64u, f->name, core->offset - f->offset);
+			if (rz_flag_item_get_offset(f) < core->offset) {
+				rz_strbuf_appendf(sb, "%s + %" PFMT64u, rz_flag_item_get_name(f), core->offset - rz_flag_item_get_offset(f));
 			} else {
-				rz_strbuf_appendf(sb, "%s", f->name);
+				rz_strbuf_appendf(sb, "%s", rz_flag_item_get_name(f));
 			}
 			if (rz_config_get_b(core->config, "scr.prompt.flag.only")) {
 				return true;

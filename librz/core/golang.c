@@ -513,7 +513,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 
 static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_analysis_fcn(core, fi->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	rz_core_analysis_fcn(core, rz_flag_item_get_offset(fi), UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
 	return true;
 }
 
@@ -690,7 +690,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 
 	// skip possible pointers that matches to symbols flags, because these are already handled.
 	RzFlagItem *fi = rz_flag_get_by_spaces(ctx->core->flags, str_addr, RZ_FLAGS_FS_SYMBOLS, NULL);
-	if (fi && !strncmp(fi->name, "sym.", 4)) {
+	if (fi && !strncmp(rz_flag_item_get_name(fi), "sym.", 4)) {
 		return false;
 	}
 

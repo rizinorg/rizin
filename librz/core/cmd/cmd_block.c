@@ -49,7 +49,7 @@ RZ_IPI RzCmdStatus rz_block_flag_handler(RzCore *core, int argc, const char **ar
 		RZ_LOG_ERROR("Cannot find flag named \"%s\"", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_block_size(core, flag->size);
+	rz_core_block_size(core, rz_flag_item_get_size(flag));
 	return RZ_CMD_STATUS_OK;
 }
 

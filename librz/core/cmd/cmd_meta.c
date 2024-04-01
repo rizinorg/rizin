@@ -24,7 +24,7 @@ RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 add
 static const char *meta_get_flag(RzCore *core, ut64 addr) {
 	RzFlagItem *fi;
 	fi = rz_flag_get_i(core->flags, addr);
-	return fi ? fi->name : NULL;
+	return fi ? rz_flag_item_get_name(fi) : NULL;
 }
 
 static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdStateOutput *state) {

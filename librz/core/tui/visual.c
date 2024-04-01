@@ -1014,8 +1014,8 @@ static bool fill_hist_offset(RzCore *core, RzLine *line, RzCoreSeekItem *csi) {
 	ut64 off = csi->offset;
 	RzFlagItem *f = rz_flag_get_at(core->flags, off, false);
 	char *command = NULL;
-	if (f && f->offset == off && f->offset > 0) {
-		command = rz_str_newf("%s", f->name);
+	if (f && rz_flag_item_get_offset(f) == off && rz_flag_item_get_offset(f) > 0) {
+		command = rz_str_newf("%s", rz_flag_item_get_name(f));
 	} else {
 		command = rz_str_newf("0x%" PFMT64x, off);
 	}
@@ -1217,7 +1217,7 @@ repeat:
 				} else {
 					RzFlagItem *f = rz_flag_get_at(core->flags, xaddr1, true);
 					if (f) {
-						name = rz_str_newf("%s + %" PFMT64d, f->name, xaddr1 - f->offset);
+						name = rz_str_newf("%s + %" PFMT64d, rz_flag_item_get_name(f), xaddr1 - rz_flag_item_get_offset(f));
 					} else {
 						name = strdup("unk");
 					}
@@ -3198,11 +3198,11 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 			f = rz_flag_get_at(core->flags, addr, showDelta);
 		}
 		if (f) {
-			if (f->offset == addr || !f->offset) {
-				snprintf(pos, sizeof(pos), "@ %s", f->name);
+			if (rz_flag_item_get_offset(f) == addr || !rz_flag_item_get_offset(f)) {
+				snprintf(pos, sizeof(pos), "@ %s", rz_flag_item_get_name(f));
 			} else {
 				snprintf(pos, sizeof(pos), "@ %s+%d # 0x%" PFMT64x,
-					f->name, (int)(addr - f->offset), addr);
+					rz_flag_item_get_name(f), (int)(addr - rz_flag_item_get_offset(f)), addr);
 			}
 		} else {
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);

@@ -545,12 +545,13 @@ static void colordump(RzCore *core, const ut8 *block, int len) {
 				if (show_flags) {
 					RzFlagItem *fi = rz_flag_get_i(core->flags, core->offset + j);
 					if (fi) {
-						if (fi->name[1]) {
-							ch = fi->name[0];
-							ch2 = fi->name[1];
+						const char *n = rz_flag_item_get_name(fi);
+						if (n[0] && n[1]) {
+							ch = n[0];
+							ch2 = n[1];
 						} else {
 							ch = ' ';
-							ch2 = fi->name[0];
+							ch2 = n[0];
 						}
 					} else {
 						ch2 = ch;
@@ -964,10 +965,10 @@ static void annotated_hexdump(RzCore *core, int len) {
 				if (flagsz) {
 					fend = addr + flagsz; // core->blocksize;
 				} else {
-					fend = addr + j + flag->size;
+					fend = addr + j + rz_flag_item_get_size(flag);
 				}
 				free(note[j]);
-				note[j] = rz_str_prepend(strdup(flag->name), "/");
+				note[j] = rz_str_prepend(strdup(rz_flag_item_get_name(flag)), "/");
 				marks = true;
 				color_idx++;
 				color_idx %= 10;
@@ -975,7 +976,7 @@ static void annotated_hexdump(RzCore *core, int len) {
 				if (showSection) {
 					rz_cons_printf("%20s ", "");
 				}
-				if (flag->offset == addr + j) {
+				if (rz_flag_item_get_offset(flag) == addr + j) {
 					if (usecolor) {
 						append(ebytes, Color_INVERT);
 						append(echars, Color_INVERT);
@@ -984,7 +985,7 @@ static void annotated_hexdump(RzCore *core, int len) {
 				}
 			} else {
 				// Are we past the current flag?
-				if (current_flag && addr + j > (current_flag->offset + current_flag->size)) {
+				if (current_flag && addr + j > (rz_flag_item_get_offset(current_flag) + rz_flag_item_get_size(current_flag))) {
 					setcolor = false;
 					current_flag = NULL;
 				}
@@ -1003,8 +1004,9 @@ static void annotated_hexdump(RzCore *core, int len) {
 					}
 				} else if (!hascolor) {
 					hascolor = true;
-					if (current_flag && current_flag->color) {
-						char *ansicolor = rz_cons_pal_parse(current_flag->color, NULL);
+					const char *color = current_flag ? rz_flag_item_get_color(current_flag) : NULL;
+					if (color) {
+						char *ansicolor = rz_cons_pal_parse(color, NULL);
 						if (ansicolor) {
 							append(ebytes, ansicolor);
 							append(echars, ansicolor);
@@ -3148,7 +3150,7 @@ static void disassembly_as_table(RzTable *t, RzCore *core, ut64 addr, int n_inst
 		rz_io_read_at(core->io, offset, buffer, RZ_MIN(op->size, sizeof(buffer)));
 		char *bytes = rz_hex_bin2strdup(buffer, op->size);
 		RzFlagItem *flag = rz_flag_get_i(core->flags, offset);
-		char *function_name = flag ? flag->name : "";
+		const char *function_name = flag ? rz_flag_item_get_name(flag) : "";
 		const char *esil = RZ_STRBUF_SAFEGET(&op->esil);
 		char *refs = __op_refs(core, op, 0);
 		char *xrefs = __op_refs(core, op, 1);
