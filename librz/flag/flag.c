@@ -439,8 +439,8 @@ RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest) {
 				continue;
 			}
 			if (item->offset == off) {
-				eprintf("XXX Should never happend\n");
-				return evalFlag(f, item);
+				rz_warn_if_reached(); // corrupt skiplist
+				return NULL;
 			}
 			nice = item;
 			break;

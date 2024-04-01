@@ -275,34 +275,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fb
-FILE=malloc://1024
-CMDS=<<EOF
-fb 0x100
-f a
-fl
-EOF
-EXPECT=<<EOF
-0x00000100 1 a
-EOF
-RUN
-
-NAME=fb2
-FILE=malloc://1024
-CMDS=<<EOF
-f+ a.0
-f+ a.1
-f+ a.2
-fb 0x100 a.*
-fl
-EOF
-EXPECT=<<EOF
-0x00000100 1 a.0
-0x00000100 1 a.1
-0x00000100 1 a.2
-EOF
-RUN
-
 NAME=f-*
 FILE=malloc://1024
 CMDS=<<EOF

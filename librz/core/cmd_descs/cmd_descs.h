@@ -1379,8 +1379,6 @@ RZ_IPI RzCmdStatus rz_flag_remove_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_flag_remove_all_handler(RzCore *core, int argc, const char **argv);
 // "fa"
 RZ_IPI RzCmdStatus rz_flag_alias_handler(RzCore *core, int argc, const char **argv);
-// "fb"
-RZ_IPI RzCmdStatus rz_flag_base_handler(RzCore *core, int argc, const char **argv);
 // "fe"
 RZ_IPI RzCmdStatus rz_flag_exists_handler(RzCore *core, int argc, const char **argv);
 // "ff"
