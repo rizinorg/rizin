@@ -99,3 +99,13 @@ commands:
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
+  - name: LD
+    cname: plugins_demanglers_print
+    summary: List the demanglers plugins (alias for iDl)
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args: []
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON

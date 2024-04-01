@@ -1610,6 +1610,8 @@ RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "Lp"
 RZ_IPI RzCmdStatus rz_plugins_parser_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "LD"
+RZ_IPI RzCmdStatus rz_plugins_demanglers_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "o"
 RZ_IPI RzCmdStatus rz_open_handler(RzCore *core, int argc, const char **argv);
 // "o+"

@@ -11739,6 +11739,14 @@ static const RzCmdDescHelp plugins_parser_print_help = {
 	.args = plugins_parser_print_args,
 };
 
+static const RzCmdDescArg plugins_demanglers_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_demanglers_print_help = {
+	.summary = "List the demanglers plugins (alias for iDl)",
+	.args = plugins_demanglers_print_args,
+};
+
 static const RzCmdDescHelp o_help = {
 	.summary = "Open files and handle opened files",
 };
@@ -21452,6 +21460,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *plugins_parser_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_parser_print_handler, &plugins_parser_print_help);
 	rz_warn_if_fail(plugins_parser_print_cd);
+
+	RzCmdDesc *plugins_demanglers_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "LD", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_plugins_demanglers_print_handler, &plugins_demanglers_print_help);
+	rz_warn_if_fail(plugins_demanglers_print_cd);
+	rz_cmd_desc_set_default_mode(plugins_demanglers_print_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *o_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "o", rz_open_handler, &open_help, &o_help);
 	rz_warn_if_fail(o_cd);
