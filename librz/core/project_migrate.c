@@ -610,7 +610,7 @@ RZ_API bool rz_project_migrate_v14_v15(RzProject *prj, RzSerializeResultInfo *re
 // --
 // Migration 15 -> 16
 //
-// Changes from <commit hash not yet known>:
+// Changes from f9422ac0cd6922f73208e5f5e6f47b3d64b3bd0d:
 //	Removed options:
 //	- `bin.maxstr`
 //	Renamed options:
@@ -631,6 +631,21 @@ RZ_API bool rz_project_migrate_v15_v16(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 16 -> 17
+//
+// Changes from <commit hash not yet known>:
+//	Removed /core/flags/base key (RzFlag.base)
+
+RZ_API bool rz_project_migrate_v16_v17(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *flags_db;
+	RZ_SERIALIZE_SUB(core_db, flags_db, res, "flags", return false;);
+	sdb_unset(flags_db, "base", 0);
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -647,6 +662,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v13_v14,
 	rz_project_migrate_v14_v15,
 	rz_project_migrate_v15_v16,
+	rz_project_migrate_v16_v17
 };
 
 /// Migrate the given project to the current version in-place

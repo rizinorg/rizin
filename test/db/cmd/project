@@ -374,6 +374,7 @@ Detailed project load info:
   project migrated from version 13 to 14.
   project migrated from version 14 to 15.
   project migrated from version 15 to 16.
+  project migrated from version 16 to 17.
 EOF
 RUN
 

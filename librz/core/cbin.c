@@ -1527,7 +1527,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 				}
 				if (fi) {
 					rz_flag_item_set_realname(fi, sn.methname);
-					if ((fi->offset - core->flags->base) == addr) {
+					if (fi->offset == addr) {
 						rz_flag_unset(core->flags, fi);
 					}
 				} else {

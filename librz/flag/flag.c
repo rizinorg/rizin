@@ -227,7 +227,6 @@ RZ_API RzFlag *rz_flag_new(void) {
 		rz_flag_free(f);
 		return NULL;
 	}
-	f->base = 0;
 	f->zones = NULL;
 	f->tags = sdb_new0();
 	f->ht_name = ht_pp_new(NULL, ht_free_flag, NULL);
@@ -660,7 +659,7 @@ RZ_API RzFlagItem *rz_flag_set(RzFlag *f, const char *name, ut64 off, ut32 size)
 	item->space = rz_flag_space_cur(f);
 	item->size = size;
 
-	update_flag_item_offset(f, item, off + f->base, is_new, true);
+	update_flag_item_offset(f, item, off, is_new, true);
 	update_flag_item_name(f, item, name, true);
 	return item;
 err:
