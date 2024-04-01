@@ -43,7 +43,7 @@ static bool iter_glob_flag(RzFlagItem *fi, void *user) {
 	const char *word;
 
 	rz_list_foreach (u->words, iter, word) {
-		if (rz_str_glob(fi->name, word)) {
+		if (rz_str_glob(rz_flag_item_get_name(fi), word)) {
 			rz_list_append(u->res, fi);
 		}
 	}

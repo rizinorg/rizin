@@ -9,6 +9,18 @@
 
 RZ_LIB_VERSION(rz_flag);
 
+struct rz_flag_item_t {
+	RZ_NONNULL char *name; /* unique name, escaped to avoid issues with rizin shell */
+	char *realname; /* real name, without any escaping */
+	bool demangled; /* real name from demangling? */
+	ut64 offset; /* offset flagged by this item */
+	ut64 size; /* size of the flag item */
+	RzSpace *space; /* flag space this item belongs to */
+	char *color; /* item color */
+	char *comment; /* item comment */
+	char *alias; /* used to define a flag based on a math expression (e.g. foo + 3) */
+};
+
 #define IS_FI_NOTIN_SPACE(f, i) (rz_flag_space_cur(f) && (i)->space != rz_flag_space_cur(f))
 #define IS_FI_IN_SPACE(fi, sp)  (!(sp) || (fi)->space == (sp))
 #define STRDUP_OR_NULL(s)       (!RZ_STR_ISEMPTY(s) ? strdup(s) : NULL)
@@ -668,33 +680,133 @@ err:
 	return NULL;
 }
 
-/* add/replace/remove the alias of a flag item */
+/**
+ * \return the absolute address the flag is located at
+ */
+RZ_API ut64 rz_flag_item_get_offset(const RzFlagItem *item) {
+	rz_return_val_if_fail(item, UT64_MAX);
+	return item->offset;
+}
+
+/**
+ * \return number of bytes covered by the flag
+ */
+RZ_API ut64 rz_flag_item_get_size(const RzFlagItem *item) {
+	rz_return_val_if_fail(item, 0);
+	return item->offset;
+}
+
+/*
+ * \brief set the number of bytes covered by the flag
+ */
+RZ_API void rz_flag_item_set_size(RzFlagItem *item, ut64 size) {
+	rz_return_if_fail(item);
+	item->size = size;
+}
+
+/**
+ * \return the flag space that \p item belongs to
+ */
+RZ_API RzSpace *rz_flag_item_get_space(const RzFlagItem *item) {
+	return item->space;
+}
+
+/**
+ * \brief assign the space that \p item belongs to
+ */
+RZ_API void rz_flag_item_set_space(RzFlagItem *item, RzSpace *space) {
+	item->space = space;
+}
+
+/**
+ * \return the name of the flag that \p item is an alias of
+ */
+RZ_API RZ_NULLABLE const char *rz_flag_item_get_alias(const RzFlagItem *item) {
+	return item->alias;
+}
+
+/**
+ * \brief add/replace/remove the alias of a flag item
+ */
 RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias) {
 	rz_return_if_fail(item);
 	free(item->alias);
 	item->alias = RZ_STR_ISEMPTY(alias) ? NULL : strdup(alias);
 }
 
-/* add/replace/remove the comment of a flag item */
+/**
+ * \return the comment for the given flag item
+ */
+RZ_API RZ_NULLABLE const char *rz_flag_item_get_comment(const RzFlagItem *item) {
+	return item->comment;
+}
+
+/**
+ * \brief add/replace/remove the comment of a flag item
+ */
 RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 	rz_return_if_fail(item);
 	free(item->comment);
 	item->comment = RZ_STR_ISEMPTY(comment) ? NULL : strdup(comment);
 }
 
-/* add/replace/remove the realname of a flag item */
+/**
+ * \return the unique name of the flag
+ */
+RZ_API RZ_NONNULL const char *rz_flag_item_get_name(const RzFlagItem *item) {
+	rz_return_val_if_fail(item, NULL);
+	return item->name;
+}
+
+/**
+ * \return the realname, usually the non-escaped version of the name
+ */
+RZ_API RZ_NULLABLE const char *rz_flag_item_get_realname(const RzFlagItem *item) {
+	rz_return_val_if_fail(item, NULL);
+	return item->realname;
+}
+
+/**
+ * \brief add/replace/remove the realname of a flag item
+ */
 RZ_API void rz_flag_item_set_realname(RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
 	free_item_realname(item);
 	item->realname = RZ_STR_ISEMPTY(realname) ? NULL : strdup(realname);
 }
 
-/* add/replace/remove the color of a flag item */
-RZ_API const char *rz_flag_item_set_color(RzFlagItem *item, const char *color) {
+/**
+ * \return the color of the flag item
+ */
+RZ_API RZ_NULLABLE const char *rz_flag_item_get_color(const RzFlagItem *item) {
+	rz_return_val_if_fail(item, NULL);
+	return item->color;
+}
+
+/**
+ * \brief add/replace/remove the color of a flag item
+ */
+RZ_API RZ_NULLABLE const char *rz_flag_item_set_color(RzFlagItem *item, const char *color) {
 	rz_return_val_if_fail(item, NULL);
 	free(item->color);
 	item->color = (color && *color) ? strdup(color) : NULL;
 	return item->color;
+}
+
+/**
+ * \return whether the realname of the flag is demangled
+ */
+RZ_API bool rz_flag_item_get_demangled(const RzFlagItem *item) {
+	rz_return_val_if_fail(item, false);
+	return item->demangled;
+}
+
+/*
+ * \brief set whether the realname of \p item is demangled
+ */
+RZ_API void rz_flag_item_set_demangled(RzFlagItem *item, bool demangled) {
+	rz_return_if_fail(item);
+	item->demangled = demangled;
 }
 
 /* change the name of a flag item, if the new name is available.

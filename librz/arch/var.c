@@ -1402,7 +1402,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			RzCore *core = (RzCore *)analysis->coreb.core;
 			RzFlagItem *flag = rz_flag_get_by_spaces(core->flags, offset, RZ_FLAGS_FS_IMPORTS, NULL);
 			if (flag) {
-				callee = rz_analysis_function_name_guess(analysis->typedb, flag->name);
+				callee = rz_analysis_function_name_guess(analysis->typedb, rz_flag_item_get_name(flag));
 				if (callee) {
 					const char *cc = rz_analysis_cc_func(analysis, callee);
 					if (cc && !strcmp(fcn->cc, cc)) {

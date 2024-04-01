@@ -1560,8 +1560,8 @@ RZ_API bool rz_analysis_function_contains(RzAnalysisFunction *fcn, ut64 addr);
 // returns true if function bytes were modified
 RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn);
 
-RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL char *name);
-RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *name);
+RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL const char *name);
+RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 /* analysis.c */
 RZ_API RzAnalysis *rz_analysis_new(void);

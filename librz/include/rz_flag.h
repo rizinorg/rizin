@@ -31,17 +31,7 @@ typedef struct rz_flags_at_offset_t {
 	RzList /*<RzFlagItem *>*/ *flags; /* list of RzFlagItem at offset */
 } RzFlagsAtOffset;
 
-typedef struct rz_flag_item_t {
-	char *name; /* unique name, escaped to avoid issues with rizin shell */
-	char *realname; /* real name, without any escaping */
-	bool demangled; /* real name from demangling? */
-	ut64 offset; /* offset flagged by this item */
-	ut64 size; /* size of the flag item */
-	RzSpace *space; /* flag space this item belongs to */
-	char *color; /* item color */
-	char *comment; /* item comment */
-	char *alias; /* used to define a flag based on a math expression (e.g. foo + 3) */
-} RzFlagItem;
+typedef struct rz_flag_item_t RzFlagItem;
 
 typedef struct rz_flag_t {
 	RzSpaces spaces; /* handle flag spaces */
@@ -114,11 +104,23 @@ RZ_API void rz_flag_unset_all(RzFlag *f);
 RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name);
 RZ_API RzFlagItem *rz_flag_set(RzFlag *fo, const char *name, ut64 addr, ut32 size);
 RZ_API RzFlagItem *rz_flag_set_next(RzFlag *fo, const char *name, ut64 addr, ut32 size);
-RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias);
 RZ_API void rz_flag_item_free(RzFlagItem *item);
+RZ_API ut64 rz_flag_item_get_offset(const RzFlagItem *item);
+RZ_API ut64 rz_flag_item_get_size(const RzFlagItem *item);
+RZ_API void rz_flag_item_set_size(RzFlagItem *item, ut64 size);
+RZ_API RzSpace *rz_flag_item_get_space(const RzFlagItem *item);
+RZ_API void rz_flag_item_set_space(RzFlagItem *item, RzSpace *space);
+RZ_API RZ_NULLABLE const char *rz_flag_item_get_alias(const RzFlagItem *item);
+RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias);
+RZ_API RZ_NULLABLE const char *rz_flag_item_get_comment(const RzFlagItem *item);
 RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment);
+RZ_API RZ_NONNULL const char *rz_flag_item_get_name(const RzFlagItem *item);
+RZ_API RZ_NULLABLE const char *rz_flag_item_get_realname(const RzFlagItem *item);
 RZ_API void rz_flag_item_set_realname(RzFlagItem *item, const char *realname);
-RZ_API const char *rz_flag_item_set_color(RzFlagItem *item, const char *color);
+RZ_API RZ_NULLABLE const char *rz_flag_item_get_color(const RzFlagItem *item);
+RZ_API RZ_NULLABLE const char *rz_flag_item_set_color(RzFlagItem *item, const char *color);
+RZ_API bool rz_flag_item_get_demangled(const RzFlagItem *item);
+RZ_API void rz_flag_item_set_demangled(RzFlagItem *item, bool demangled);
 RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item);
 RZ_API int rz_flag_unset_glob(RzFlag *f, const char *name);
 RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name);

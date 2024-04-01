@@ -96,26 +96,26 @@ static bool flag_save_cb(RzFlagItem *flag, void *user) {
 		return false;
 	}
 	pj_o(j);
-	if (flag->realname) {
-		pj_ks(j, "realname", flag->realname);
+	if (rz_flag_item_get_realname(flag)) {
+		pj_ks(j, "realname", rz_flag_item_get_realname(flag));
 	}
-	pj_kb(j, "demangled", flag->demangled);
-	pj_kn(j, "offset", flag->offset);
-	pj_kn(j, "size", flag->size);
-	if (flag->space) {
-		pj_ks(j, "space", flag->space->name);
+	pj_kb(j, "demangled", rz_flag_item_get_demangled(flag));
+	pj_kn(j, "offset", rz_flag_item_get_offset(flag));
+	pj_kn(j, "size", rz_flag_item_get_size(flag));
+	if (rz_flag_item_get_space(flag)) {
+		pj_ks(j, "space", rz_flag_item_get_space(flag)->name);
 	}
-	if (flag->color) {
-		pj_ks(j, "color", flag->color);
+	if (rz_flag_item_get_color(flag)) {
+		pj_ks(j, "color", rz_flag_item_get_color(flag));
 	}
-	if (flag->comment) {
-		pj_ks(j, "comment", flag->comment);
+	if (rz_flag_item_get_comment(flag)) {
+		pj_ks(j, "comment", rz_flag_item_get_comment(flag));
 	}
-	if (flag->alias) {
-		pj_ks(j, "alias", flag->alias);
+	if (rz_flag_item_get_alias(flag)) {
+		pj_ks(j, "alias", rz_flag_item_get_alias(flag));
 	}
 	pj_end(j);
-	sdb_set(db, flag->name, pj_string(j), 0);
+	sdb_set(db, rz_flag_item_get_name(flag), pj_string(j), 0);
 	pj_free(j);
 	return true;
 }
@@ -149,6 +149,18 @@ typedef struct {
 	RzKeyParser *parser;
 } FlagLoadCtx;
 
+typedef struct {
+	char *name; /* unique name, escaped to avoid issues with rizin shell */
+	char *realname; /* real name, without any escaping */
+	bool demangled; /* real name from demangling? */
+	ut64 offset; /* offset flagged by this item */
+	ut64 size; /* size of the flag item */
+	RzSpace *space; /* flag space this item belongs to */
+	char *color; /* item color */
+	char *comment; /* item comment */
+	char *alias; /* used to define a flag based on a math expression (e.g. foo + 3) */
+} FlagItemPrototy;
+
 static bool flag_load_cb(void *user, const char *k, const char *v) {
 	FlagLoadCtx *ctx = user;
 
@@ -162,7 +174,17 @@ static bool flag_load_cb(void *user, const char *k, const char *v) {
 		return false;
 	}
 
-	RzFlagItem proto = { 0 };
+	struct {
+		char *name;
+		char *realname;
+		bool demangled;
+		ut64 offset;
+		ut64 size;
+		RzSpace *space;
+		char *color;
+		char *comment;
+		char *alias;
+	} proto = { 0 };
 	bool offset_set = false;
 	bool size_set = false;
 
@@ -231,8 +253,8 @@ static bool flag_load_cb(void *user, const char *k, const char *v) {
 	if (proto.realname) {
 		rz_flag_item_set_realname(item, proto.realname);
 	}
-	item->demangled = proto.demangled;
-	item->space = proto.space;
+	rz_flag_item_set_demangled(item, proto.demangled);
+	rz_flag_item_set_space(item, proto.space);
 	if (proto.color) {
 		rz_flag_item_set_color(item, proto.color);
 	}

@@ -450,12 +450,12 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 		f = rz_flag_get_at(core->flags, v, true);
 		fn = NULL;
 		if (f) {
-			st64 delta = (st64)(v - f->offset);
+			st64 delta = (st64)(v - rz_flag_item_get_offset(f));
 			if (delta >= 0 && delta < 8192) {
-				if (v == f->offset) {
-					fn = strdup(f->name);
+				if (v == rz_flag_item_get_offset(f)) {
+					fn = strdup(rz_flag_item_get_name(f));
 				} else {
-					fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
+					fn = rz_str_newf("%s+%" PFMT64d, rz_flag_item_get_name(f), v - rz_flag_item_get_offset(f));
 				}
 			}
 		}
@@ -952,14 +952,14 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 						rz_strbuf_appendf(sb, "%s%s%s%s%s%s%s\n",
 							linecolor ? linecolor : "",
 							string2 ? string2 : "", string2 ? " " : "", string,
-							flag ? " " : "", flag ? flag->name : "", Color_RESET);
+							flag ? " " : "", flag ? rz_flag_item_get_name(flag) : "", Color_RESET);
 					} else {
 						if (show_offset) {
 							rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", addr);
 						}
 						rz_strbuf_appendf(sb, "%s%s%s%s%s\n",
 							string2 ? string2 : "", string2 ? " " : "", string,
-							flag ? " " : "", flag ? flag->name : "");
+							flag ? " " : "", flag ? rz_flag_item_get_name(flag) : "");
 					}
 				}
 			}
