@@ -90,15 +90,6 @@ commands:
         type: RZ_CMD_ARG_TYPE_FLAG
       - name: alias
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: fb
-    cname: flag_base
-    summary: Set base address for flags
-    args:
-      - name: address
-        type: RZ_CMD_ARG_TYPE_RZNUM
-      - name: glob
-        type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
   - name: fe
     cname: flag_exists
     summary: Check if flag exists

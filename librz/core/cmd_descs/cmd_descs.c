@@ -475,7 +475,6 @@ static const RzCmdDescArg flag_local_add_args[2];
 static const RzCmdDescArg flag_local_remove_args[2];
 static const RzCmdDescArg flag_remove_args[2];
 static const RzCmdDescArg flag_alias_args[3];
-static const RzCmdDescArg flag_base_args[3];
 static const RzCmdDescArg flag_exists_args[2];
 static const RzCmdDescArg flag_distance_args[2];
 static const RzCmdDescArg flag_graph_args[2];
@@ -10374,26 +10373,6 @@ static const RzCmdDescArg flag_alias_args[] = {
 static const RzCmdDescHelp flag_alias_help = {
 	.summary = "Alias a flag to evaluate an expression",
 	.args = flag_alias_args,
-};
-
-static const RzCmdDescArg flag_base_args[] = {
-	{
-		.name = "address",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-
-	},
-	{
-		.name = "glob",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp flag_base_help = {
-	.summary = "Set base address for flags",
-	.args = flag_base_args,
 };
 
 static const RzCmdDescArg flag_exists_args[] = {
@@ -21086,9 +21065,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *flag_alias_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fa", rz_flag_alias_handler, &flag_alias_help);
 	rz_warn_if_fail(flag_alias_cd);
-
-	RzCmdDesc *flag_base_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fb", rz_flag_base_handler, &flag_base_help);
-	rz_warn_if_fail(flag_base_cd);
 
 	RzCmdDesc *flag_exists_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fe", rz_flag_exists_handler, &flag_exists_help);
 	rz_warn_if_fail(flag_exists_cd);

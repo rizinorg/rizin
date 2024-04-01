@@ -666,12 +666,6 @@ static void flag_ordinals(RzCore *core, const char *glob) {
 	free(pfx);
 }
 
-static bool adjust_offset(RzFlagItem *flag, void *user) {
-	st64 base = *(st64 *)user;
-	flag->offset += base;
-	return true;
-}
-
 static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool selected, RzCmdStateOutput *state) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON: {
@@ -774,17 +768,6 @@ RZ_IPI RzCmdStatus rz_flag_alias_handler(RzCore *core, int argc, const char **ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_flag_item_set_alias(fi, argv[2]);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_flag_base_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 2) {
-		RzFlag *f = core->flags;
-		ut64 base = rz_num_math(core->num, argv[1]);
-		rz_flag_foreach_glob(f, argv[2], adjust_offset, &base);
-	} else {
-		core->flags->base = rz_num_math(core->num, argv[1]);
-	}
 	return RZ_CMD_STATUS_OK;
 }
 
