@@ -889,7 +889,7 @@ msvc   LGPL3        inisider
 objc   LGPL3        pancake
 pascal LGPL3        deroad
 c++    GPL-2,LGPL3  FSF/deroad
-rust   LGPL3        Dhruv Maroo
+rust   LGPL3        Dhruv Maroo/RizinOrg
 swift  MIT          pancake
 EOF
 RUN
