@@ -57,3 +57,18 @@ mov rbp, rsp
 call 0x200019
 EOF
 RUN
+
+NAME=obj function names with .L0 symbols
+FILE=bins/elf/sbi_bitops.o
+CMDS=<<EOF
+aa
+afl
+EOF
+EXPECT=<<EOF
+0x08000040   24 154          sym.find_first_bit
+0x080000da   24 154          sym.find_first_zero_bit
+0x08000174   19 152          sym.find_last_bit
+0x0800020c   28 204          sym.find_next_bit
+0x080002d8   28 216          sym.find_next_zero_bit
+EOF
+RUN
