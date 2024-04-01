@@ -45,7 +45,6 @@ typedef struct rz_flag_item_t {
 
 typedef struct rz_flag_t {
 	RzSpaces spaces; /* handle flag spaces */
-	st64 base; /* base address for all flag items */
 	bool realnames;
 	Sdb *tags;
 	RzNum *num;

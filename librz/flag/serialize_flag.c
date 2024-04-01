@@ -8,7 +8,6 @@
  * SDB Format:
  *
  * /
- *   base=<base>
  *   realnames=<realnames?"1":"0">
  *   /spaces
  *     see spaces.c
@@ -18,7 +17,6 @@
  *     <zone name>={"from":<from>,"to":<to>}
  *   /flags
  *     <flag name>={"realname":<str>,"demangled":<bool>,"offset":<uint>,"size":<uint>,"space":<str>,"color":<str>,"comment":<str>,"alias":<str>}
- *
  */
 
 RZ_API void rz_serialize_flag_zones_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzList /*<RzFlagZoneItem *>*/ *zones) {
@@ -122,11 +120,6 @@ static bool flag_save_cb(RzFlagItem *flag, void *user) {
 
 RZ_API void rz_serialize_flag_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag) {
 	rz_serialize_spaces_save(sdb_ns(db, "spaces", true), &flag->spaces);
-	char buf[32];
-	if (snprintf(buf, sizeof(buf), "%" PFMT64d, flag->base) < 0) {
-		return;
-	}
-	sdb_set(db, "base", buf, 0);
 	sdb_set(db, "realnames", flag->realnames ? "1" : "0", 0);
 	sdb_copy(flag->tags, sdb_ns(db, "tags", true));
 	rz_serialize_flag_zones_save(sdb_ns(db, "zones", true), flag->zones);
@@ -227,7 +220,7 @@ static bool flag_load_cb(void *user, const char *k, const char *v) {
 		goto beach;
 	}
 
-	RzFlagItem *item = rz_flag_set(ctx->flag, k, proto.offset - ctx->flag->base, proto.size);
+	RzFlagItem *item = rz_flag_set(ctx->flag, k, proto.offset, proto.size);
 	if (proto.realname) {
 		rz_flag_item_set_realname(item, proto.realname);
 	}
@@ -270,14 +263,7 @@ static bool load_flags(RZ_NONNULL Sdb *flags_db, RZ_NONNULL RzFlag *flag) {
 RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, RZ_NULLABLE RzSerializeResultInfo *res) {
 	rz_flag_unset_all(flag);
 
-	const char *str = sdb_const_get(db, "base", NULL);
-	if (!str) {
-		RZ_SERIALIZE_ERR(res, "flag base key is missing");
-		return false;
-	}
-	flag->base = strtoll(str, NULL, 0);
-
-	str = sdb_const_get(db, "realnames", 0);
+	const char *str = sdb_const_get(db, "realnames", 0);
 	if (!str) {
 		RZ_SERIALIZE_ERR(res, "flag realnames key is missing");
 		return false;

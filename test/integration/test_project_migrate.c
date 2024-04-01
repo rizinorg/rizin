@@ -574,6 +574,22 @@ static bool test_migrate_v15_v16_str_config() {
 	mu_end;
 }
 
+static bool test_migrate_v16_v17_flags_base() {
+	RzProject *prj = rz_project_load_file_raw("prj/v16-flags-base.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v16_v17(prj, res);
+	mu_assert_true(s, "migrate success");
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "flags", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "base", 0), "flags base");
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
@@ -954,6 +970,14 @@ static bool test_load_v15_str_config() {
 	mu_end;
 }
 
+static bool test_load_v16() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 16, "prj/v16-flags-base.rzdb");
+	// No new or changed info here
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -973,6 +997,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v2_v12);
 	mu_run_test(test_migrate_v14_v15);
 	mu_run_test(test_migrate_v15_v16_str_config);
+	mu_run_test(test_migrate_v16_v17_flags_base);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -994,6 +1019,7 @@ int all_tests() {
 	mu_run_test(test_load_v14);
 	mu_run_test(test_load_v15_seek_history);
 	mu_run_test(test_load_v15_str_config);
+	mu_run_test(test_load_v16);
 	return tests_passed != tests_run;
 }
 
