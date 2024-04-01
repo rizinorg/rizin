@@ -375,6 +375,9 @@ RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
 			if (flg->space == spaces[i]) {
 				break;
 			}
+			if (flg->name && strncmp(flg->name, "loc.", 4) == 0) {
+				i += 10000;
+			}
 			if (i >= min_space_i) {
 				break;
 			}
