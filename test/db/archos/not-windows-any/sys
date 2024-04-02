@@ -2,7 +2,7 @@ NAME=sys/rzshell_which.py ".("
 FILE=--
 CMDS=<<EOF
 cd ..
-!python3 sys/rzshell_which.py ".("
+!sys/rzshell_which.py ".("
 EOF
 EXPECT=<<EOF
 Rizin Command: [91m.([0m
