@@ -94,11 +94,8 @@ IL_LIFTER(fst) {
  * and pops the value off the stack
  */
 IL_LIFTER(fstp) {
-	RzILOpEffect *pop_eff;
-	RzILOpPure *pop_val;
-	X86_IL_ST_POP(pop_val, pop_eff);
-
-	return SEQ2(x86_il_set_floating_op(0, pop_val, RZ_FLOAT_IEEE754_BIN_80), pop_eff);
+	ILPureEffectPair pop = x86_il_st_pop_with_val();
+	return SEQ2(x86_il_set_floating_op(0, pop.val, RZ_FLOAT_IEEE754_BIN_80), pop.eff);
 }
 
 /**
@@ -139,7 +136,7 @@ IL_LIFTER(fldz) {
 #define FPU_LG2 0x3fff9a209a84fbcfULL, 0xf7988f8959ac200dULL
 #define FPU_LN2 0x3ffeb17217f7d1cfULL, 0x79abc9e3b39828efULL
 
-RzILOpFloat *math_const_to_float_ctx(uint64_t upper, uint64_t lower, X86ILContext *ctx) {
+ILPureEffectPair math_const_to_float_ctx(uint64_t upper, uint64_t lower, X86ILContext *ctx) {
 	RzILOpPure *upper_unshifted = UN(128, upper);
 	RzILOpPure *upper_shifted = SHIFTL0(upper_unshifted, UN(8, 8));
 
@@ -158,7 +155,8 @@ RzILOpFloat *math_const_to_float_ctx(uint64_t upper, uint64_t lower, X86ILContex
  * Load log2(10)
  */
 IL_LIFTER(fldl2t) {
-	return x86_il_st_push(math_const_to_float(FPU_L2T), RZ_FLOAT_IEEE754_BIN_80);
+	ILPureEffectPair math_const = math_const_to_float(FPU_L2T);
+	return SEQ2(math_const.eff, x86_il_st_push(math_const.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -166,7 +164,8 @@ IL_LIFTER(fldl2t) {
  * Load log2(e)
  */
 IL_LIFTER(fldl2e) {
-	return x86_il_st_push(math_const_to_float(FPU_L2E), RZ_FLOAT_IEEE754_BIN_80);
+	ILPureEffectPair math_const = math_const_to_float(FPU_L2E);
+	return SEQ2(math_const.eff, x86_il_st_push(math_const.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -174,7 +173,8 @@ IL_LIFTER(fldl2e) {
  * Load pi
  */
 IL_LIFTER(fldpi) {
-	return x86_il_st_push(math_const_to_float(FPU_PI), RZ_FLOAT_IEEE754_BIN_80);
+	ILPureEffectPair math_const = math_const_to_float(FPU_PI);
+	return SEQ2(math_const.eff, x86_il_st_push(math_const.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -182,7 +182,8 @@ IL_LIFTER(fldpi) {
  * Load log10(2)
  */
 IL_LIFTER(fldlg2) {
-	return x86_il_st_push(math_const_to_float(FPU_LG2), RZ_FLOAT_IEEE754_BIN_80);
+	ILPureEffectPair math_const = math_const_to_float(FPU_LG2);
+	return SEQ2(math_const.eff, x86_il_st_push(math_const.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -190,7 +191,8 @@ IL_LIFTER(fldlg2) {
  * Load ln(2)
  */
 IL_LIFTER(fldln2) {
-	return x86_il_st_push(math_const_to_float(FPU_LN2), RZ_FLOAT_IEEE754_BIN_80);
+	ILPureEffectPair math_const = math_const_to_float(FPU_LN2);
+	return SEQ2(math_const.eff, x86_il_st_push(math_const.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -223,9 +225,9 @@ IL_LIFTER(fxch) {
  */
 IL_LIFTER(fild) {
 	RzILOpPure *int_val = x86_il_get_op(0);
-	RzILOpFloat *float_val = x86_il_floating_from_int(int_val, RZ_FLOAT_IEEE754_BIN_80);
+	ILPureEffectPair float_val = x86_il_floating_from_int(int_val, RZ_FLOAT_IEEE754_BIN_80);
 
-	return x86_il_st_push(float_val, RZ_FLOAT_IEEE754_BIN_80);
+	return SEQ2(float_val.eff, x86_il_st_push(float_val.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -233,8 +235,8 @@ IL_LIFTER(fild) {
  * Store float in ST(0) after rounding to integer
  */
 IL_LIFTER(fist) {
-	RzILOpPure *int_val = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->structure->operands[0].size * BITS_PER_BYTE);
-	return x86_il_set_op(0, int_val);
+	ILPureEffectPair int_val = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->structure->operands[0].size * BITS_PER_BYTE);
+	return SEQ2(int_val.eff, x86_il_set_op(0, int_val.val));
 }
 
 /**
@@ -242,12 +244,9 @@ IL_LIFTER(fist) {
  * Store float in ST(0) after rounding to integer, pop the FPU register stack
  */
 IL_LIFTER(fistp) {
-	RzILOpEffect *pop_eff;
-	RzILOpPure *pop_val;
-	X86_IL_ST_POP(pop_val, pop_eff);
-
-	RzILOpPure *int_val = x86_il_int_from_floating(pop_val, ins->structure->operands[0].size * BITS_PER_BYTE);
-	return SEQ2(x86_il_set_op(0, int_val), pop_eff);
+	ILPureEffectPair pop = x86_il_st_pop_with_val();
+	ILPureEffectPair int_val = x86_il_int_from_floating(pop.val, ins->structure->operands[0].size * BITS_PER_BYTE);
+	return SEQ3(int_val.eff, x86_il_set_op(0, int_val.val), pop.eff);
 }
 
 /**
@@ -279,7 +278,8 @@ IL_LIFTER(fbld) {
 			SETL("i", SUB(VARL("i"), UN(mem_size, 1))) // i--
 			));
 
-	RzILOpEffect *f_init = SETL("f", x86_il_floating_from_int(VARL("val"), RZ_FLOAT_IEEE754_BIN_80));
+	ILPureEffectPair fval = x86_il_floating_from_int(VARL("val"), RZ_FLOAT_IEEE754_BIN_80);
+	RzILOpEffect *f_init = SEQ2(fval.eff, SETL("f", fval.val));
 
 	/* Check sign byte (index 9) checking if sign byte is zero */
 	RzILOpPure *sign_byte = LOADW(8, ADD(VARL("mem"), UN(mem_size, 9)));
@@ -300,11 +300,10 @@ IL_LIFTER(fbld) {
 IL_LIFTER(fbstp) {
 	ut8 mem_size = analysis->bits;
 
-	RzILOpEffect *pop_eff;
-	RzILOpPure *pop_val;
-	X86_IL_ST_POP(pop_val, pop_eff);
+	ILPureEffectPair pop = x86_il_st_pop_with_val();
 
-	RzILOpEffect *val_init = SETL("val", x86_il_int_from_floating(pop_val, 64));
+	ILPureEffectPair val = x86_il_int_from_floating(pop.val, 64);
+	RzILOpEffect *val_init = SEQ2(val.eff, SETL("val", val.val));
 	RzILOpEffect *sgn_init = SETL("sgn", MSB(VARL("val")));
 	RzILOpEffect *val_abs = SETL("val", ITE(VARL("sgn"), NEG(VARL("val")), VARL("val")));
 
@@ -338,7 +337,7 @@ IL_LIFTER(fbstp) {
 		noexcept_case);
 
 	return SEQ5(
-		val_init, pop_eff, // get val from ST(0) and pop
+		val_init, pop.eff, // get val from ST(0) and pop
 		sgn_init, val_abs, // val = |val| and store sign
 		maybe_except);
 }
@@ -358,6 +357,7 @@ IL_LIFTER(fabs) {
 	do { \
 		RzILOpFloat *src; \
 		X86Reg dest_reg; \
+		RzILOpEffect *src_eff = NULL; \
 \
 		/* TODO: Check whether all the enumerated cases here are correct, through \
 		 * code coverage. */ \
@@ -365,7 +365,9 @@ IL_LIFTER(fabs) {
 		case 1: \
 			/* Need to convert a 32-bit or 64-bit memory operand */ \
 			dest_reg = X86_REG_ST0; \
-			src = x86_il_resize_floating(x86_il_get_floating_op(0), RZ_FLOAT_IEEE754_BIN_80); \
+			ILPureEffectPair resized = x86_il_resize_floating(x86_il_get_floating_op(0), RZ_FLOAT_IEEE754_BIN_80); \
+			src = resized.val; \
+			src_eff = resized.eff; \
 			break; \
 		case 2: \
 			/* ST(i) operand, so no need for resizing */ \
@@ -377,8 +379,13 @@ IL_LIFTER(fabs) {
 			return NULL; \
 		} \
 \
-		RzILOpFloat *result = x86_il_##op##_with_rmode(src, x86_il_get_st_reg(dest_reg)); \
-		return x86_il_set_st_reg(dest_reg, result, RZ_FLOAT_IEEE754_BIN_80); \
+		ILPureEffectPair result = x86_il_##op##_with_rmode(src, x86_il_get_st_reg(dest_reg)); \
+		RzILOpEffect *ret = SEQ2(result.eff, x86_il_set_st_reg(dest_reg, result.val, RZ_FLOAT_IEEE754_BIN_80)); \
+\
+		if (src_eff) { \
+			ret = SEQ2(src_eff, ret); \
+		} \
+		return ret; \
 	} while (0)
 
 #define FLOATING_ARITHMETIC_POP_IL(op) \
@@ -390,15 +397,15 @@ IL_LIFTER(fabs) {
 			dest_reg = ins->structure->operands[0].reg; \
 		} \
 \
-		RzILOpPure *result = x86_il_##op##_with_rmode(x86_il_get_st_reg(X86_REG_ST0), x86_il_get_st_reg(dest_reg)); \
-		return SEQ2(x86_il_set_st_reg(dest_reg, result, RZ_FLOAT_IEEE754_BIN_80), x86_il_st_pop()); \
+		ILPureEffectPair result = x86_il_##op##_with_rmode(x86_il_get_st_reg(X86_REG_ST0), x86_il_get_st_reg(dest_reg)); \
+		return SEQ3(result.eff, x86_il_set_st_reg(dest_reg, result.val, RZ_FLOAT_IEEE754_BIN_80), x86_il_st_pop()); \
 	} while (0)
 
 #define FLOATING_INT_ARITHMETIC_IL(op) \
 	do { \
-		RzILOpPure *float_val = x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80); \
-		RzILOpPure *result = x86_il_##op##_with_rmode(float_val, x86_il_get_st_reg(X86_REG_ST0)); \
-		return x86_il_set_st_reg(X86_REG_ST0, result, RZ_FLOAT_IEEE754_BIN_80); \
+		ILPureEffectPair float_val = x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80); \
+		ILPureEffectPair result = x86_il_##op##_with_rmode(float_val.val, x86_il_get_st_reg(X86_REG_ST0)); \
+		return SEQ3(float_val.eff, result.eff, x86_il_set_st_reg(X86_REG_ST0, result.val, RZ_FLOAT_IEEE754_BIN_80)); \
 	} while (0)
 
 /**
@@ -587,7 +594,8 @@ IL_LIFTER(fcomp) {
  * Compare the floating point value in ST(0) with an integer and store the result in the FPU control word
  */
 IL_LIFTER(ficom) {
-	return fcom_helper(ins, pc, analysis, x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80));
+	ILPureEffectPair float_val = x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80);
+	return SEQ2(float_val.eff, fcom_helper(ins, pc, analysis, float_val.val));
 }
 
 /**
@@ -604,7 +612,8 @@ IL_LIFTER(fcompp) {
  * Compare the floating point value in ST(0) with an integer, store the result in the FPU control word and pop the stack
  */
 IL_LIFTER(ficomp) {
-	return SEQ2(fcom_helper(ins, pc, analysis, x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80)), x86_il_st_pop());
+	ILPureEffectPair float_val = x86_il_floating_from_int(x86_il_get_op(0), RZ_FLOAT_IEEE754_BIN_80);
+	return SEQ2(float_val.eff, SEQ2(fcom_helper(ins, pc, analysis, float_val.val), x86_il_st_pop()));
 }
 
 RzILOpEffect *fcomi_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
@@ -661,10 +670,11 @@ IL_LIFTER(ftst) {
  * Round ST(0) to an integer
  */
 IL_LIFTER(frndint) {
-	return x86_il_set_st_reg(X86_REG_ST0,
-		/* Not very sure about whether the rounded integer should be limited to 64 bits or not. */
-		x86_il_floating_from_int(x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), 64), RZ_FLOAT_IEEE754_BIN_80),
-		RZ_FLOAT_IEEE754_BIN_80);
+	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), 64);
+	ILPureEffectPair float_from_int = x86_il_floating_from_int(int_from_float.val, RZ_FLOAT_IEEE754_BIN_80);
+
+	/* Not very sure about whether the rounded integer should be limited to 64 bits or not. */
+	return SEQ3(int_from_float.eff, float_from_int.eff, x86_il_set_st_reg(X86_REG_ST0, float_from_int.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -672,7 +682,8 @@ IL_LIFTER(frndint) {
  * Calculate the square root of ST(0)
  */
 IL_LIFTER(fsqrt) {
-	return x86_il_set_st_reg(X86_REG_ST0, x86_il_fsqrt_with_rmode(x86_il_get_st_reg(X86_REG_ST0)), RZ_FLOAT_IEEE754_BIN_80);
+	ILPureEffectPair fsqrt_res = x86_il_fsqrt_with_rmode(x86_il_get_st_reg(X86_REG_ST0));
+	return SEQ2(fsqrt_res.eff, x86_il_set_st_reg(X86_REG_ST0, fsqrt_res.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -688,12 +699,8 @@ IL_LIFTER(fnop) {
  * Round ST(0) to an integer (using RZ_FLOAT_RMODE_RTZ), store the integer in the memory operand and pop the stack
  */
 IL_LIFTER(fisttp) {
-	return SEQ2(
-		x86_il_set_op(0,
-			x86_il_int_from_floating(
-				x86_il_get_st_reg(X86_REG_ST0),
-				ins->structure->operands[0].size * BITS_PER_BYTE)),
-		x86_il_st_pop());
+	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->structure->operands[0].size * BITS_PER_BYTE);
+	return SEQ3(int_from_float.eff, x86_il_set_op(0, int_from_float.val), x86_il_st_pop());
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

@@ -1134,9 +1134,9 @@ RZ_IPI RzILOpEffect *init_rmode() {
  */
 #define EXEC_WITH_RMODE(f, ...) \
 	ITE(EQ(VARL("_rmode"), UN(2, 0)), f(RZ_FLOAT_RMODE_RNE, __VA_ARGS__), \
-		(EQ(VARL("_rmode"), UN(2, 1)), f(RZ_FLOAT_RMODE_RTN, __VA_ARGS__), \
-			(EQ(VARL("_rmode"), UN(2, 2)), f(RZ_FLOAT_RMODE_RTP, __VA_ARGS__), \
-				(f(RZ_FLOAT_RMODE_RTZ, __VA_ARGS__)))))
+		ITE(EQ(VARL("_rmode"), UN(2, 1)), f(RZ_FLOAT_RMODE_RTN, __VA_ARGS__), \
+			ITE(EQ(VARL("_rmode"), UN(2, 2)), f(RZ_FLOAT_RMODE_RTP, __VA_ARGS__), \
+				f(RZ_FLOAT_RMODE_RTZ, __VA_ARGS__))))
 
 RzILOpFloat *resize_floating_helper(RzFloatRMode rmode, RzFloatFormat format, RzILOpFloat *val) {
 	return FCONVERT(format, rmode, val);
@@ -1152,13 +1152,14 @@ RzILOpFloat *resize_floating_helper(RzFloatRMode rmode, RzFloatFormat format, Rz
  * \param ctx use_rmode gets set to true
  * \return RzILOpFloat*
  */
-RZ_IPI RzILOpFloat *x86_il_resize_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(val && ctx, NULL);
-	ctx->use_rmode = true;
+RZ_IPI ILPureEffectPair x86_il_resize_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(val && ctx, ret);
 
-	/* TODO: Figure out a more elegant solution than to `DUP` the input val. */
-	RzILOpFloat *ret = EXEC_WITH_RMODE(resize_floating_helper, format, DUP(val));
-	rz_il_op_pure_free(val);
+	ctx->use_rmode = true;
+	ret.eff = SETL("f_val_rm", val);
+	ret.val = EXEC_WITH_RMODE(resize_floating_helper, format, VARL("f_val_rm"));
+
 	return ret;
 }
 
@@ -1176,12 +1177,14 @@ RzILOpFloat *sint2f_floating_helper(RzFloatRMode rmode, RzFloatFormat format, Rz
  * \param ctx use_rmode gets set to true
  * \return RzILOpFloat*
  */
-RZ_IPI RzILOpFloat *x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBitVector *int_val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(int_val && ctx, NULL);
+RZ_IPI ILPureEffectPair x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBitVector *int_val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(int_val && ctx, ret);
 
 	ctx->use_rmode = true;
-	RzILOpFloat *ret = EXEC_WITH_RMODE(sint2f_floating_helper, format, DUP(int_val));
-	rz_il_op_pure_free(int_val);
+	ret.eff = SETL("i_val_rm", int_val);
+	ret.val = EXEC_WITH_RMODE(sint2f_floating_helper, format, VARL("i_val_rm"));
+
 	return ret;
 }
 
@@ -1199,11 +1202,14 @@ RzILOpFloat *f2sint_floating_helper(RzFloatRMode rmode, ut32 width, RzILOpFloat 
  * \param ctx use_rmode gets set to true
  * \return RzILOpBitVector*
  */
-RZ_IPI RzILOpBitVector *x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(float_val && ctx, NULL);
+RZ_IPI ILPureEffectPair x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(float_val && ctx, ret);
+
 	ctx->use_rmode = true;
-	RzILOpFloat *ret = EXEC_WITH_RMODE(f2sint_floating_helper, width, DUP(float_val));
-	rz_il_op_pure_free(float_val);
+	ret.eff = SETL("f_val_rm", float_val);
+	ret.val = EXEC_WITH_RMODE(f2sint_floating_helper, width, VARL("f_val_rm"));
+
 	return ret;
 }
 
@@ -1216,13 +1222,13 @@ RZ_IPI RzILOpBitVector *x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFlo
  * \param ctx use_rmode gets set to true
  * \return RzILOpFloat* sum
  */
-RZ_IPI RzILOpFloat *x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(x && y && ctx, NULL);
-	ctx->use_rmode = true;
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FADD, DUP(x), DUP(y));
+RZ_IPI ILPureEffectPair x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(x && y && ctx, ret);
 
-	rz_il_op_pure_free(x);
-	rz_il_op_pure_free(y);
+	ctx->use_rmode = true;
+	ret.eff = SEQ2(SETL("x_rm", x), SETL("y_rm", y));
+	ret.val = EXEC_WITH_RMODE(FADD, VARL("x_rm"), VARL("y_rm"));
 
 	return ret;
 }
@@ -1236,13 +1242,13 @@ RZ_IPI RzILOpFloat *x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x,
  * \param ctx use_rmode gets set to true
  * \return RzILOpFloat* product
  */
-RZ_IPI RzILOpFloat *x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(x && y && ctx, NULL);
-	ctx->use_rmode = true;
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FMUL, DUP(x), DUP(y));
+RZ_IPI ILPureEffectPair x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(x && y && ctx, ret);
 
-	rz_il_op_pure_free(x);
-	rz_il_op_pure_free(y);
+	ctx->use_rmode = true;
+	ret.eff = SEQ2(SETL("x_rm", x), SETL("y_rm", y));
+	ret.val = EXEC_WITH_RMODE(FMUL, VARL("x_rm"), VARL("y_rm"));
 
 	return ret;
 }
@@ -1256,14 +1262,14 @@ RZ_IPI RzILOpFloat *x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x,
  * \param ctx use_rmode gets set to true
  * \return RzILOpFloat* difference
  */
-RZ_IPI RzILOpFloat *x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(x && y && ctx, NULL);
-	ctx->use_rmode = true;
-	// y - x, hence y is the first argument
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FSUB, DUP(y), DUP(x));
+RZ_IPI ILPureEffectPair x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(x && y && ctx, ret);
 
-	rz_il_op_pure_free(x);
-	rz_il_op_pure_free(y);
+	ctx->use_rmode = true;
+	ret.eff = SEQ2(SETL("x_rm", x), SETL("y_rm", y));
+	// y - x, hence y is the first argument
+	ret.val = EXEC_WITH_RMODE(FSUB, VARL("y_rm"), VARL("x_rm"));
 
 	return ret;
 }
@@ -1271,8 +1277,9 @@ RZ_IPI RzILOpFloat *x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x,
 /**
  * \brief Subtract \p y from \p x (reverse of \ref x86_il_fsub_with_rmode)
  */
-RZ_IPI RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(x && y && ctx, NULL);
+RZ_IPI ILPureEffectPair x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(x && y && ctx, ret);
 	return x86_il_fsub_with_rmode(y, x);
 }
 
@@ -1285,14 +1292,13 @@ RZ_IPI RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x
  * \param ctx use_rmode gets set to true
  * \return RzILOpFloat* division
  */
-RZ_IPI RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(x && y && ctx, NULL);
-	ctx->use_rmode = true;
-	// y / x, hence y is the first argument
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FDIV, DUP(y), DUP(x));
+RZ_IPI ILPureEffectPair x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(x && y && ctx, ret);
 
-	rz_il_op_pure_free(x);
-	rz_il_op_pure_free(y);
+	ctx->use_rmode = true;
+	ret.eff = SEQ2(SETL("x_rm", x), SETL("y_rm", y));
+	ret.val = EXEC_WITH_RMODE(FDIV, VARL("x_rm"), VARL("y_rm"));
 
 	return ret;
 }
@@ -1300,8 +1306,9 @@ RZ_IPI RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x,
 /**
  * \brief Divide \p y from \p x (reverse of \ref x86_il_fdiv_with_rmode)
  */
-RZ_IPI RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(x && y && ctx, NULL);
+RZ_IPI ILPureEffectPair x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(x && y && ctx, ret);
 	return x86_il_fdiv_with_rmode(y, x);
 }
 
@@ -1313,12 +1320,13 @@ RZ_IPI RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x
  * \param ctx  use_rmode gets set to true
  * \return RzILOpFloat* square root
  */
-RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	rz_return_val_if_fail(x && ctx, NULL);
-	ctx->use_rmode = true;
-	RzILOpFloat *ret = EXEC_WITH_RMODE(FSQRT, DUP(x));
+RZ_IPI ILPureEffectPair x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(x && ctx, ret);
 
-	rz_il_op_pure_free(x);
+	ctx->use_rmode = true;
+	ret.eff = SETL("x_rm", x);
+	ret.val = EXEC_WITH_RMODE(FSQRT, VARL("x_rm"));
 
 	return ret;
 }
@@ -1338,9 +1346,9 @@ RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpF
 	if (val_format == RZ_FLOAT_IEEE754_BIN_80) {
 		return SETG(x86_registers[reg], F2BV(val));
 	} else {
-		RzILOpFloat *converted_val = x86_il_resize_floating(val, RZ_FLOAT_IEEE754_BIN_80);
+		ILPureEffectPair converted_val = x86_il_resize_floating(val, RZ_FLOAT_IEEE754_BIN_80);
 
-		return SETG(x86_registers[reg], F2BV(converted_val));
+		return SEQ2(converted_val.eff, SETG(x86_registers[reg], F2BV(converted_val.val)));
 	}
 }
 
@@ -1435,6 +1443,14 @@ RZ_IPI RzILOpEffect *x86_il_st_pop() {
 	RzILOpEffect *set_underflow = x86_il_set_fpu_flag(X86_FPU_C1, EQ(x86_il_get_fpu_stack_top(), UN(3, 0)));
 
 	return SEQ3(set_top, st_shift, set_underflow);
+}
+
+RZ_IPI ILPureEffectPair x86_il_st_pop_with_val() {
+	ILPureEffectPair ret;
+	ret.val = x86_il_get_st_reg(X86_REG_ST0);
+	ret.eff = x86_il_st_pop();
+
+	return ret;
 }
 
 RZ_IPI RzILOpBool *x86_il_get_fpu_flag(X86FPUFlags flag) {
@@ -1548,8 +1564,24 @@ RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NO
 	case X86_OP_MEM: {
 		ut64 required_format = x86_width_to_format(op.size * BITS_PER_BYTE);
 
-		RzILOpPure *resized_val = required_format == val_format ? val : x86_il_resize_floating(val, required_format);
-		return x86_il_set_mem_bits(op.mem, F2BV(resized_val), bits, pc);
+		RzILOpPure *resized_val;
+		RzILOpEffect *ret = NULL;
+		if (required_format == val_format) {
+			ILPureEffectPair resized = x86_il_resize_floating(val, required_format);
+			resized_val = resized.val;
+			ret = resized.eff;
+		} else {
+			resized_val = val;
+		}
+
+		RzILOpEffect *set_bits = x86_il_set_mem_bits(op.mem, F2BV(resized_val), bits, pc);
+		if (!ret) {
+			ret = set_bits;
+		} else {
+			ret = SEQ2(ret, set_bits);
+		}
+
+		return ret;
 	}
 	case X86_OP_IMM:
 	default:
