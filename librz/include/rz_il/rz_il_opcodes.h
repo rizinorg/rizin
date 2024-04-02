@@ -780,6 +780,12 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap16(RZ_BORROW RzILOpBitVector *t);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap32(RZ_BORROW RzILOpBitVector *t);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap64(RZ_BORROW RzILOpBitVector *t);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ne(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fneq(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_feq(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_flt(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fle(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fgt(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fge(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y);
 
 ///////////////////////////////
 // Opcodes of type 'a effect //
