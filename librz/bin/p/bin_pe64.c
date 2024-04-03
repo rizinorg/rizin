@@ -434,6 +434,7 @@ static bool read_pe64_scope_record(RzBuffer *buf, ut64 base, PE64_SCOPE_RECORD *
 		rz_buf_read_ble32_offset(buf, &offset, &record->JumpTarget, big_endian);
 }
 
+// TODO: (Jared) Analyze this closely
 static RzPVector /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 	ut64 baseAddr = bf->o->opts.baseaddr;
 	ut64 offset;

@@ -1674,7 +1674,7 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 // TODO: (Jared) Analyze this function closely
 RZ_API bool rz_core_bin_apply_trycatch(RzCore *core, RzBinFile *binfile) {
 	rz_return_val_if_fail(core && binfile, false);
-	RzListIter *it;
+	void **it;
 	RzPVector *vec = rz_bin_file_get_trycatch(binfile);
 	RzBinTrycatch *trycatch = NULL;
 	rz_pvector_foreach (vec, it) {
