@@ -248,7 +248,7 @@ static bool test_migrate_v7_v8_zignatures() {
 	mu_assert_null(zigns_db, "zigns ns");
 
 	Sdb *config_db = sdb_ns(core_db, "config", false);
-	mu_assert_notnull(config_db, "analysis ns");
+	mu_assert_notnull(config_db, "config ns");
 	mu_assert_streq_free(sdb_get(config_db, "analysis.apply.signature", 0), "true", "config");
 	mu_assert_null(sdb_get(config_db, "zign.autoload", 0), "config");
 	mu_assert_null(sdb_get(config_db, "zign.diff.bthresh", 0), "config");
@@ -551,6 +551,29 @@ static bool test_migrate_v14_v15() {
 	rz_project_free(prj);
 	mu_end;
 }
+
+static bool test_migrate_v15_v16_str_config() {
+	RzProject *prj = rz_project_load_file_raw("prj/v15-str-config.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v15_v16(prj, res);
+	mu_assert_true(s, "migrate success");
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_notnull(config_db, "config ns");
+	mu_assert_null(sdb_get(config_db, "bin.maxstr", 0), "config");
+	mu_assert_null(sdb_get(config_db, "bin.minstr", 0), "config");
+	mu_assert_null(sdb_get(config_db, "bin.str.enc", 0), "config");
+	mu_assert_null(sdb_get(config_db, "bin.maxstrbuf", 0), "config");
+	mu_assert_streq_free(sdb_get(config_db, "str.search.min_length", 0), "6", "config");
+	mu_assert_streq_free(sdb_get(config_db, "str.search.encoding", 0), "utf8", "config");
+	mu_assert_streq_free(sdb_get(config_db, "str.search.buffer_size", 0), "0x00b00123", "config");
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
@@ -921,6 +944,16 @@ static bool test_load_v15_seek_history() {
 	mu_end;
 }
 
+static bool test_load_v15_str_config() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 15, "prj/v15-str-config.rzdb");
+	mu_assert_eq(rz_config_get_i(core->config, "str.search.min_length"), 6, "str.search.min_length");
+	mu_assert_streq(rz_config_get(core->config, "str.search.encoding"), "utf8", "str.search.encoding");
+	mu_assert_eq(rz_config_get_i(core->config, "str.search.buffer_size"), 0x00b00123, "str.search.buffer_size");
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -939,6 +972,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v9_v10_v11_stack_vars_sp);
 	mu_run_test(test_migrate_v2_v12);
 	mu_run_test(test_migrate_v14_v15);
+	mu_run_test(test_migrate_v15_v16_str_config);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -959,6 +993,7 @@ int all_tests() {
 	mu_run_test(test_load_v12);
 	mu_run_test(test_load_v14);
 	mu_run_test(test_load_v15_seek_history);
+	mu_run_test(test_load_v15_str_config);
 	return tests_passed != tests_run;
 }
 
