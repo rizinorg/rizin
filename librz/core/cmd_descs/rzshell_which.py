@@ -9,7 +9,13 @@ import sys
 import subprocess
 
 import yaml
-from cmd_descs_util import CD_TYPE_OLDINPUT, compute_cname, get_handler_cname
+from cmd_descs_util import (
+    CD_TYPE_OLDINPUT,
+    CD_TYPE_FAKE,
+    CD_TYPE_INNER,
+    compute_cname,
+    get_handler_cname,
+)
 
 
 def get_yaml_files(basedir):
@@ -29,7 +35,8 @@ def find_entry(commands, rzcommand):
             return None
 
         if c["name"] == rzcommand:
-            return c
+            if c.get("type") not in [CD_TYPE_FAKE, CD_TYPE_INNER]:
+                return c
 
     return None
 
