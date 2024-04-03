@@ -35,10 +35,7 @@ def find_entry(commands, rzcommand):
             return None
 
         if c["name"] == rzcommand:
-            if "type" in c:
-                if c["type"] not in [CD_TYPE_FAKE, CD_TYPE_INNER]:
-                    return c
-            else:
+            if c.get("type") not in [CD_TYPE_FAKE, CD_TYPE_INNER]:
                 return c
 
     return None
