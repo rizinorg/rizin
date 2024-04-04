@@ -23,7 +23,7 @@ typedef struct {
 	struct symbol_t *symbols;
 	int j;
 	int symbols_count;
-	HtPP *hash;
+	HtSP *hash;
 } RSymCtx;
 
 typedef void (*RExportsIterator)(struct MACH0_(obj_t) * bin, const char *name, ut64 flags, ut64 offset, void *ctx);
@@ -2294,15 +2294,15 @@ static bool parse_import_stub(struct MACH0_(obj_t) * bin, struct symbol_t *symbo
 	return false;
 }
 
-static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
+static int inSymtab(HtSP *hash, const char *name, ut64 addr) {
 	bool found = false;
 	char *key = rz_str_newf("%" PFMT64x ".%s", addr, name);
-	ht_pp_find(hash, key, &found);
+	ht_sp_find(hash, key, &found);
 	if (found) {
 		free(key);
 		return true;
 	}
-	ht_pp_insert(hash, key, "1");
+	ht_sp_insert(hash, key, "1");
 	free(key);
 	return false;
 }
@@ -2521,7 +2521,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 		return bin->symbols;
 	}
 
-	HtPP *hash = ht_pp_new0();
+	HtSP *hash = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!hash) {
 		return NULL;
 	}
@@ -2541,13 +2541,13 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 		symbols_count += (bin->nsymtab + 1);
 		if (SZT_MUL_OVFCHK(symbols_count, 2)) {
 			RZ_LOG_ERROR("mach0: detected symbols count overflow\n");
-			ht_pp_free(hash);
+			ht_sp_free(hash);
 			return NULL;
 		}
 		symbols_size = symbols_count * 2;
 		symbols = RZ_NEWS0(struct symbol_t, symbols_size);
 		if (!symbols) {
-			ht_pp_free(hash);
+			ht_sp_free(hash);
 			return NULL;
 		}
 		bin->main_addr = 0;
@@ -2667,16 +2667,16 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 			}
 		}
 	} else if (!n_exports) {
-		ht_pp_free(hash);
+		ht_sp_free(hash);
 		return NULL;
 	} else {
 		if (SZT_ADD_OVFCHK(symbols_count, 1)) {
-			ht_pp_free(hash);
+			ht_sp_free(hash);
 			return NULL;
 		}
 		symbols_size = symbols_count + 1;
 		if (!(symbols = RZ_NEWS0(struct symbol_t, symbols_size))) {
-			ht_pp_free(hash);
+			ht_sp_free(hash);
 			return NULL;
 		}
 	}
@@ -2689,7 +2689,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 		walk_exports(bin, assign_export_symbol_t, &sym_ctx);
 		j = sym_ctx.j;
 	}
-	ht_pp_free(hash);
+	ht_sp_free(hash);
 	symbols[j].last = true;
 	bin->symbols = symbols;
 	return symbols;

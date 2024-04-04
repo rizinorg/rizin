@@ -16,8 +16,6 @@ extern "C" {
  */
 #define HT_TYPE 4
 #include <rz_util/ht_inc.h>
-
-RZ_API HtName_(Ht) * Ht_(new0)(void);
 #undef HT_TYPE
 
 #ifdef __cplusplus

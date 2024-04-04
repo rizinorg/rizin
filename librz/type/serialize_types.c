@@ -336,15 +336,15 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 			tpair = get_atomic_type(typedb, sdb, sdbkv_key(kv));
 		}
 		if (tpair && tpair->type) {
-			ht_pp_update(typedb->types, tpair->type->name, tpair->type);
+			ht_sp_update(typedb->types, tpair->type->name, tpair->type);
 			// If the SDB provided the preferred type format then we store it
 			char *format = tpair->format ? tpair->format : NULL;
 			// Format is not always defined, e.g. for types like "void" or anonymous types
 			if (format) {
-				ht_pp_update(typedb->formats, tpair->type->name, format);
+				ht_ss_update(typedb->formats, tpair->type->name, format);
 				RZ_LOG_DEBUG("inserting the \"%s\" type & format: \"%s\"\n", tpair->type->name, format);
 			} else {
-				ht_pp_delete(typedb->formats, tpair->type->name);
+				ht_ss_delete(typedb->formats, tpair->type->name);
 			}
 		} else if (tpair) {
 			free(tpair->format);
@@ -602,7 +602,7 @@ struct typedb_sdb {
 	Sdb *sdb;
 };
 
-static bool export_base_type_cb(void *user, const void *k, const void *v) {
+static bool export_base_type_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	struct typedb_sdb *s = user;
 	RzBaseType *btype = (RzBaseType *)v;
 	sdb_save_base_type(s->typedb, s->sdb, btype);
@@ -611,7 +611,7 @@ static bool export_base_type_cb(void *user, const void *k, const void *v) {
 
 static bool types_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
 	struct typedb_sdb tdb = { typedb, db };
-	ht_pp_foreach(typedb->types, export_base_type_cb, &tdb);
+	ht_sp_foreach(typedb->types, export_base_type_cb, &tdb);
 	return true;
 }
 

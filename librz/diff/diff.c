@@ -131,7 +131,7 @@ static bool set_a(RzDiff *diff, const void *a, ut32 a_size) {
 	return true;
 }
 
-static void free_hits(HtPPKv *kv) {
+static void fini_hits_kv(HtPPKv *kv, RZ_UNUSED void *user) {
 	rz_list_free(kv->value);
 }
 
@@ -146,12 +146,19 @@ static bool set_b(RzDiff *diff, const void *b, ut32 b_size) {
 	RzDiffMethodIgnore ignore = diff->methods.ignore;
 
 	/* we need to generate the hits list for B */
+	HtPPOptions opts = {
+		.cmp = diff->methods.compare,
+		.hashfn = diff->methods.elem_hash,
+		.dupkey = NULL, // avoid to duplicate key
+		.dupvalue = NULL,
+		.calcsizeK = default_ksize,
+		.calcsizeV = NULL,
+		.finiKV = fini_hits_kv,
+		.finiKV_user = NULL,
+		.elem_size = 0,
+	};
 	ht_pp_free(diff->b_hits);
-	diff->b_hits = ht_pp_new(NULL, free_hits, NULL);
-	diff->b_hits->opt.cmp /*      */ = diff->methods.compare;
-	diff->b_hits->opt.calcsizeK /**/ = default_ksize;
-	diff->b_hits->opt.dupkey /*   */ = NULL; // avoid to duplicate key
-	diff->b_hits->opt.hashfn /*   */ = diff->methods.elem_hash;
+	diff->b_hits = ht_pp_new_opt(&opts);
 
 	for (ut64 i = 0; i < diff->b_size; ++i) {
 		const void *elem = elem_at(diff->b, i);
@@ -378,7 +385,7 @@ static RzDiffMatch *find_longest_match(RzDiff *diff, Block *block) {
 	ut32 hit_b = b_low;
 	ut32 hit_size = 0;
 
-	len_map = ht_uu_new0();
+	len_map = ht_uu_new();
 	if (!len_map) {
 		RZ_LOG_ERROR("find_longest_match: cannot allocate len_map\n");
 		goto find_longest_match_fail;
@@ -386,7 +393,7 @@ static RzDiffMatch *find_longest_match(RzDiff *diff, Block *block) {
 
 	for (ut32 a_pos = a_low; a_pos < a_hi; ++a_pos) {
 		elem_a = elem_at(a, a_pos);
-		tmp = ht_uu_new0();
+		tmp = ht_uu_new();
 		if (!tmp) {
 			RZ_LOG_ERROR("find_longest_match: cannot allocate tmp\n");
 			goto find_longest_match_fail;

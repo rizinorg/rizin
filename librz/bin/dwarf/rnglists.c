@@ -112,8 +112,6 @@ static void RngList_free(RzBinDwarfRngList *self) {
 	free(self);
 }
 
-Ht_FREE_IMPL(UP, RngList, RngList_free);
-
 RZ_IPI void RngLists_free(RzBinDwarfRngLists *self) {
 	if (!self) {
 		return;
@@ -278,7 +276,7 @@ RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(
 	RET_NULL_IF_FAIL(self);
 	self->rnglists = rnglists;
 	self->ranges = ranges;
-	self->by_offset = ht_up_new(NULL, HtUP_RngList_free, NULL);
+	self->by_offset = ht_up_new(NULL, (HtUPFreeValue)RngList_free);
 	return self;
 }
 

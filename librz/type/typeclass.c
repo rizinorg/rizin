@@ -296,7 +296,7 @@ struct list_typeclass {
 	RzTypeTypeclass typeclass;
 };
 
-static bool base_type_typeclass_collect_cb(void *user, const void *k, const void *v) {
+static bool base_type_typeclass_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	struct list_typeclass *l = user;
 	RzBaseType *btype = (RzBaseType *)v;
 	RzTypeTypeclass typeclass;
@@ -316,7 +316,7 @@ struct list_typeclass_size {
 	size_t size;
 };
 
-static bool base_type_typeclass_sized_collect_cb(void *user, const void *k, const void *v) {
+static bool base_type_typeclass_sized_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	struct list_typeclass_size *l = user;
 	RzBaseType *btype = (RzBaseType *)v;
 	RzTypeTypeclass typeclass;
@@ -340,7 +340,7 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all(const RzTypeD
 	rz_return_val_if_fail(typeclass < RZ_TYPE_TYPECLASS_INVALID, NULL);
 	RzList *types = rz_list_new();
 	struct list_typeclass lt = { typedb, types, typeclass };
-	ht_pp_foreach(typedb->types, base_type_typeclass_collect_cb, &lt);
+	ht_sp_foreach(typedb->types, base_type_typeclass_collect_cb, &lt);
 	return types;
 }
 
@@ -356,7 +356,7 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all_sized(const R
 	rz_return_val_if_fail(size && typeclass < RZ_TYPE_TYPECLASS_INVALID, NULL);
 	RzList *types = rz_list_new();
 	struct list_typeclass_size lt = { typedb, types, typeclass, size };
-	ht_pp_foreach(typedb->types, base_type_typeclass_sized_collect_cb, &lt);
+	ht_sp_foreach(typedb->types, base_type_typeclass_sized_collect_cb, &lt);
 	return types;
 }
 

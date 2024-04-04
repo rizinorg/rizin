@@ -18,7 +18,7 @@ RZ_API RzDebugTrace *rz_debug_trace_new(void) {
 		return NULL;
 	}
 	t->traces->free = free;
-	t->ht = ht_pp_new0();
+	t->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!t->ht) {
 		rz_debug_trace_free(t);
 		return NULL;
@@ -32,7 +32,7 @@ RZ_API void rz_debug_trace_free(RzDebugTrace *trace) {
 	}
 	rz_list_purge(trace->traces);
 	free(trace->traces);
-	ht_pp_free(trace->ht);
+	ht_sp_free(trace->ht);
 	RZ_FREE(trace);
 }
 
@@ -214,7 +214,7 @@ RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str) {
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr) {
 	char tmpbuf[64];
 	int tag = dbg->trace->tag;
-	return ht_pp_find(dbg->trace->ht,
+	return ht_sp_find(dbg->trace->ht,
 		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), NULL);
 }
 
@@ -292,7 +292,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) 
 	tp->count = ++dbg->trace->count;
 	tp->times = 1;
 	rz_list_append(dbg->trace->traces, tp);
-	ht_pp_update(dbg->trace->ht,
+	ht_sp_update(dbg->trace->ht,
 		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), tp);
 	return tp;
 }
@@ -300,8 +300,8 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) 
 RZ_API void rz_debug_trace_reset(RzDebug *dbg) {
 	RzDebugTrace *t = dbg->trace;
 	rz_list_purge(t->traces);
-	ht_pp_free(t->ht);
-	t->ht = ht_pp_new0();
+	ht_sp_free(t->ht);
+	t->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	t->traces = rz_list_new();
 	t->traces->free = free;
 }

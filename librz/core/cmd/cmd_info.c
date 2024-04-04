@@ -51,7 +51,7 @@ static bool is_equal_file_hashes(RzPVector /*<RzBinFileHash *>*/ *lfile_hashes, 
 	return true;
 }
 
-static bool source_file_collect_cb(void *user, const void *k, const void *v) {
+static bool source_file_collect_cb(void *user, const char *k, const void *v) {
 	RzPVector *r = user;
 	char *f = strdup(k);
 	if (f) {
@@ -84,7 +84,7 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 	switch (type) {
 	case PRINT_SOURCE_INFO_FILES: {
 		// collect all filenames uniquely
-		HtPP *files = ht_pp_new0();
+		HtSP *files = ht_sp_new(HT_STR_DUP, NULL, NULL);
 		if (!files) {
 			return false;
 		}
@@ -93,14 +93,14 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 			if (!s->line || !s->file) {
 				continue;
 			}
-			ht_pp_insert(files, s->file, NULL);
+			ht_sp_insert(files, s->file, NULL);
 		}
 		// sort them alphabetically
 		RzPVector sorter;
 		rz_pvector_init(&sorter, free);
-		ht_pp_foreach(files, source_file_collect_cb, &sorter);
+		ht_sp_foreach(files, source_file_collect_cb, &sorter);
 		rz_pvector_sort(&sorter, (RzPVectorComparator)compare_string, NULL);
-		ht_pp_free(files);
+		ht_sp_free(files);
 		// print them!
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {
 			pj_a(state->d.pj);

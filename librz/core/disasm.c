@@ -556,14 +556,6 @@ static void RzBinSourceLineCacheItem_free(RzBinSourceLineCacheItem *x) {
 	free(x);
 }
 
-static void RzBinSourceLineCacheItem_HtPPKv_free(HtPPKv *x) {
-	if (!x) {
-		return;
-	}
-	free(x->key);
-	RzBinSourceLineCacheItem_free(x->value);
-}
-
 static RzDisasmState *ds_init(RzCore *core) {
 	RzDisasmState *ds = RZ_NEW0(RzDisasmState);
 	if (!ds) {
@@ -633,7 +625,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->debuginfo.file = rz_config_get_b(core->config, "asm.debuginfo.file");
 	ds->debuginfo.abspath = rz_config_get_b(core->config, "asm.debuginfo.abspath");
 	ds->debuginfo.lines = rz_config_get_b(core->config, "asm.debuginfo.lines");
-	ds->debuginfo.cache.items = ht_pp_new(NULL, RzBinSourceLineCacheItem_HtPPKv_free, NULL);
+	ds->debuginfo.cache.items = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)RzBinSourceLineCacheItem_free);
 
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
@@ -837,7 +829,7 @@ static void ds_free(RzDisasmState *ds) {
 	ds_reflines_fini(ds);
 	ds_print_esil_analysis_fini(ds);
 	sdb_free(ds->ssa);
-	ht_pp_free(ds->debuginfo.cache.items);
+	ht_sp_free(ds->debuginfo.cache.items);
 	free(ds->comment);
 	free(ds->line);
 	free(ds->line_col);

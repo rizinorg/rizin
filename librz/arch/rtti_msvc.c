@@ -961,21 +961,17 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	return name;
 }
 
-void str_value_free(HtUPKv *kv) {
-	free(kv->value);
-}
-
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables) {
 	RRTTIMSVCAnalContext context;
 	context.vt_context = vt_context;
 	rz_pvector_init(&context.vtables, (RzPVectorFree)rz_analysis_vtable_info_free);
 
 	rz_pvector_init(&context.complete_object_locators, (RzPVectorFree)recovery_complete_object_locator_free);
-	context.addr_col = ht_up_new0();
+	context.addr_col = ht_up_new(NULL, NULL);
 	rz_pvector_init(&context.type_descriptors, (RzPVectorFree)recovery_type_descriptor_free);
-	context.addr_td = ht_up_new0();
+	context.addr_td = ht_up_new(NULL, NULL);
 
-	context.col_td_classes = ht_up_new(NULL, (HtUPKvFreeFunc)str_value_free, (HtUPCalcSizeV)strlen);
+	context.col_td_classes = ht_up_new(NULL, free);
 
 	RzListIter *vtableIter;
 	RVTableInfo *table;

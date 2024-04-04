@@ -191,11 +191,6 @@ static RzList /*<char *>*/ *hud_filter(RzList /*<char *>*/ *list, char *user_inp
 	return res;
 }
 
-static void mht_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	rz_list_free(kv->value);
-}
-
 // Display a list of entries in the hud, filtered and emphasized based on the user input.
 
 #define HUD_CACHE 0
@@ -204,7 +199,7 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 	char *selected_entry = NULL;
 	RzListIter *iter;
 
-	HtPP *ht = ht_pp_new(NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
+	HtSP *ht = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_list_free);
 	RzLineHud *hud = (RzLineHud *)RZ_NEW(RzLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
@@ -234,12 +229,12 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 		RzList *filtered_list = NULL;
 
 		bool found = false;
-		filtered_list = ht_pp_find(ht, user_input, &found);
+		filtered_list = ht_sp_find(ht, user_input, &found);
 		if (!found) {
 			filtered_list = hud_filter(list, user_input,
 				hud->top_entry_n, &(hud->current_entry_n), &selected_entry);
 #if HUD_CACHE
-			ht_pp_insert(ht, user_input, filtered_list);
+			ht_sp_insert(ht, user_input, filtered_list);
 #endif
 		}
 		rz_list_foreach (filtered_list, iter, row) {
@@ -277,7 +272,7 @@ _beach:
 	rz_cons_show_cursor(true);
 	rz_cons_enable_mouse(false);
 	rz_cons_set_raw(false);
-	ht_pp_free(ht);
+	ht_sp_free(ht);
 	return NULL;
 }
 

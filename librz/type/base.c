@@ -58,7 +58,7 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ
 	rz_return_val_if_fail(typedb && name, NULL);
 
 	bool found = false;
-	RzBaseType *btype = ht_pp_find(typedb->types, name, &found);
+	RzBaseType *btype = ht_sp_find(typedb->types, name, &found);
 	if (!found || !btype) {
 		return NULL;
 	}
@@ -73,7 +73,7 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ
  */
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, false);
-	ht_pp_delete(typedb->types, type->name);
+	ht_sp_delete(typedb->types, type->name);
 	return true;
 }
 
@@ -82,7 +82,7 @@ struct list_kind {
 	RzBaseTypeKind kind;
 };
 
-static bool base_type_kind_collect_cb(void *user, const void *k, const void *v) {
+static bool base_type_kind_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	struct list_kind *l = user;
 	RzBaseType *btype = (RzBaseType *)v;
 	if (l->kind == btype->kind) {
@@ -101,11 +101,11 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types_of_kind(const
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_list_new();
 	struct list_kind lk = { types, kind };
-	ht_pp_foreach(typedb->types, base_type_kind_collect_cb, &lk);
+	ht_sp_foreach(typedb->types, base_type_kind_collect_cb, &lk);
 	return types;
 }
 
-static bool base_type_collect_cb(void *user, const void *k, const void *v) {
+static bool base_type_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	RzList *l = user;
 	rz_list_append(l, (void *)v);
@@ -120,7 +120,7 @@ static bool base_type_collect_cb(void *user, const void *k, const void *v) {
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_list_new();
-	ht_pp_foreach(typedb->types, base_type_collect_cb, types);
+	ht_sp_foreach(typedb->types, base_type_collect_cb, types);
 	return types;
 }
 
@@ -269,7 +269,7 @@ RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
  */
 RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, false);
-	if (!ht_pp_insert(typedb->types, type->name, (void *)type)) {
+	if (!ht_sp_insert(typedb->types, type->name, (void *)type)) {
 		rz_type_base_type_free(type);
 		return false;
 	}
@@ -284,7 +284,7 @@ RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) 
  */
 RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, false);
-	if (!ht_pp_update(typedb->types, type->name, (void *)type)) {
+	if (!ht_sp_update(typedb->types, type->name, (void *)type)) {
 		rz_type_base_type_free(type);
 		return false;
 	}

@@ -11,10 +11,6 @@
  * 4. reg.write name & data
  **/
 
-static void htup_vector_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
-}
-
 /**
  * Create a new trace to collect infos
  * \param analysis pointer to RzAnalysis
@@ -30,12 +26,12 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_
 	}
 
 	// TODO : maybe we could remove memory && register in rzil trace ?
-	trace->registers = ht_up_new(NULL, htup_vector_free, NULL);
+	trace->registers = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!trace->registers) {
 		RZ_LOG_ERROR("rzil: Cannot allocate hasmap for trace registers\n");
 		goto error;
 	}
-	trace->memory = ht_up_new(NULL, htup_vector_free, NULL);
+	trace->memory = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!trace->memory) {
 		RZ_LOG_ERROR("rzil: Cannot allocate hasmap for trace memory\n");
 		goto error;

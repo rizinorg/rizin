@@ -10,10 +10,6 @@ typedef struct rz_event_callback_hook_t {
 	int handle;
 } RzEventCallbackHook;
 
-static void ht_callback_free(HtUPKv *kv) {
-	rz_vector_free((RzVector *)kv->value);
-}
-
 RZ_API RzEvent *rz_event_new(void *user) {
 	RzEvent *ev = RZ_NEW0(RzEvent);
 	if (!ev) {
@@ -22,7 +18,7 @@ RZ_API RzEvent *rz_event_new(void *user) {
 
 	ev->user = user;
 	ev->next_handle = 0;
-	ev->callbacks = ht_up_new(NULL, ht_callback_free, NULL);
+	ev->callbacks = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!ev->callbacks) {
 		goto err;
 	}

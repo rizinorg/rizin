@@ -355,7 +355,7 @@ static RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function_bbs(RZ_NON
 	if (!hc) {
 		goto fail;
 	}
-	cache = ht_up_new0();
+	cache = ht_up_new(NULL, NULL);
 	if (!cache) {
 		goto fail;
 	}
@@ -890,7 +890,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzC
 		return NULL;
 	}
 
-	HtUU *graph_idx = ht_uu_new0();
+	HtUU *graph_idx = ht_uu_new();
 	RzListIter *it;
 	const RzAnalysisFunction *fcn;
 	rz_list_foreach (fcns, it, fcn) {
@@ -1040,7 +1040,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 	}
 
 	// Visited instructions. Indexed by instruction address, value is index in graph.
-	HtUU *nodes_visited = ht_uu_new0();
+	HtUU *nodes_visited = ht_uu_new();
 	// Addresses to visit.
 	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
 

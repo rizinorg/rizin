@@ -16,7 +16,7 @@
 
 RzBaseType *c_parser_base_type_find(CParserState *state, RZ_NONNULL const char *name) {
 	bool found = false;
-	RzBaseType *base_type = ht_pp_find(state->types, name, &found);
+	RzBaseType *base_type = ht_sp_find(state->types, name, &found);
 	if (!found || !base_type) {
 		return NULL;
 	}
@@ -25,7 +25,7 @@ RzBaseType *c_parser_base_type_find(CParserState *state, RZ_NONNULL const char *
 
 bool c_parser_base_type_is_forward_definition(CParserState *state, RZ_NONNULL const char *name) {
 	bool found = false;
-	ht_pp_find(state->forward, name, &found);
+	ht_sp_find(state->forward, name, &found);
 	return found;
 }
 
@@ -43,7 +43,7 @@ bool c_parser_base_type_store(CParserState *state, RZ_NONNULL const char *name, 
 	}
 
 	// We store only RzBaseType part of the type pair
-	ht_pp_insert(state->types, name, tpair->btype);
+	ht_sp_insert(state->types, name, tpair->btype);
 	return true;
 }
 
@@ -63,7 +63,7 @@ bool c_parser_forward_definition_store(CParserState *state, RZ_NONNULL const cha
 	}
 
 	// We store only the type name
-	ht_pp_insert(state->forward, name, NULL);
+	ht_sp_insert(state->forward, name, NULL);
 	return true;
 }
 
@@ -76,7 +76,7 @@ bool c_parser_forward_definition_remove(CParserState *state, RZ_NONNULL const ch
 		return false;
 	}
 
-	ht_pp_delete(state->forward, name);
+	ht_sp_delete(state->forward, name);
 	return true;
 }
 
@@ -84,7 +84,7 @@ bool c_parser_forward_definition_remove(CParserState *state, RZ_NONNULL const ch
 
 RzCallable *c_parser_callable_type_find(CParserState *state, RZ_NONNULL const char *name) {
 	bool found = false;
-	RzCallable *callable = ht_pp_find(state->callables, name, &found);
+	RzCallable *callable = ht_sp_find(state->callables, name, &found);
 	if (!found || !callable) {
 		return NULL;
 	}
@@ -106,7 +106,7 @@ bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *na
 		return false;
 	}
 
-	ht_pp_insert(state->callables, name, type->callable);
+	ht_sp_insert(state->callables, name, type->callable);
 	parser_debug(state, "Stored \"%s\" callable type\n", name);
 	return true;
 }
@@ -807,7 +807,7 @@ RZ_OWN RzType *c_parser_new_callable(CParserState *state, RZ_NONNULL const char 
 	}
 	// We check if there is already a callable in the hashtable with the same name
 	bool found = false;
-	RzCallable *callable = ht_pp_find(state->callables, name, &found);
+	RzCallable *callable = ht_sp_find(state->callables, name, &found);
 	if (!found || !callable) {
 		// If not found - create a new one
 		callable = RZ_NEW0(RzCallable);

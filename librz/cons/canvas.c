@@ -29,10 +29,6 @@ static int __getAnsiPiece(const char *p, char *chr) {
 	return p - q;
 }
 
-static void attribute_free_kv(HtUPKv *kv) {
-	free(kv->value);
-}
-
 static const char *__attributeAt(RzConsCanvas *c, int loc) {
 	if (!c->color) {
 		return NULL;
@@ -259,7 +255,7 @@ RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h) {
 	if (!rz_str_constpool_init(&c->constpool)) {
 		goto beach;
 	}
-	c->attrs = ht_up_new((HtUPDupValue)strdup, attribute_free_kv, NULL);
+	c->attrs = ht_up_new((HtUPDupValue)strdup, free);
 	if (!c->attrs) {
 		goto beach;
 	}

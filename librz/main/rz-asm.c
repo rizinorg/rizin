@@ -410,8 +410,8 @@ static void print_buf(RzAsmState *as, char *str) {
 	}
 }
 
-static bool print_label(void *user, const void *k, const void *v) {
-	printf("f label.%s @ %s\n", (const char *)k, (const char *)v);
+static bool print_label(void *user, const char *k, const char *v) {
+	printf("f label.%s @ %s\n", k, v);
 	return true;
 }
 
@@ -513,7 +513,7 @@ static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, u
 	if (rad) {
 		printf("f entry @ $$\n");
 		printf("f label.main @ $$ + 1\n");
-		ht_pp_foreach(as->a->flags, print_label, NULL);
+		ht_ss_foreach(as->a->flags, print_label, NULL);
 	}
 	return ret;
 }

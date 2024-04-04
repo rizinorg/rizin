@@ -137,7 +137,7 @@ static void cmd_desc_unset_parent(RzCmdDesc *cd) {
 
 static void cmd_desc_remove_from_ht_cmds(RzCmd *cmd, RzCmdDesc *cd) {
 	void **it_cd;
-	ht_pp_delete(cmd->ht_cmds, cd->name);
+	ht_sp_delete(cmd->ht_cmds, cd->name);
 	rz_cmd_desc_children_foreach(cd, it_cd) {
 		RzCmdDesc *child_cd = *it_cd;
 		cmd_desc_remove_from_ht_cmds(cmd, child_cd);
@@ -167,7 +167,7 @@ static RzCmdDesc *create_cmd_desc(RzCmd *cmd, RzCmdDesc *parent, RzCmdDescType t
 	res->n_children = 0;
 	res->help = help ? help : &not_defined_help;
 	rz_pvector_init(&res->children, (RzPVectorFree)cmd_desc_free);
-	if (ht_insert && !ht_pp_insert(cmd->ht_cmds, name, res)) {
+	if (ht_insert && !ht_sp_insert(cmd->ht_cmds, name, res)) {
 		goto err;
 	}
 	cmd_desc_set_parent(cmd, res, parent);
@@ -200,11 +200,6 @@ static void macro_free(RzCmdMacro *macro) {
 	free(macro);
 }
 
-static void free_macro_kv(HtPPKv *kv) {
-	free(kv->key);
-	macro_free(kv->value);
-}
-
 /**
  * \brief Create a generic instance of RzCmd.
  *
@@ -224,8 +219,8 @@ RZ_API RzCmd *rz_cmd_new(RzCore *core, bool has_cons) {
 	}
 	cmd->core = core;
 	cmd->nullcallback = NULL;
-	cmd->macros = ht_pp_new(NULL, free_macro_kv, NULL);
-	cmd->ht_cmds = ht_pp_new0();
+	cmd->macros = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)macro_free);
+	cmd->ht_cmds = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	cmd->root_cmd_desc = create_cmd_desc(cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
 	rz_cmd_alias_init(cmd);
 	return cmd;
@@ -238,13 +233,13 @@ RZ_API RzCmd *rz_cmd_free(RzCmd *cmd) {
 	}
 	ht_up_free(cmd->ts_symbols_ht);
 	rz_cmd_alias_free(cmd);
-	ht_pp_free(cmd->ht_cmds);
+	ht_sp_free(cmd->ht_cmds);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
 			RZ_FREE(cmd->cmds[i]);
 		}
 	}
-	ht_pp_free(cmd->macros);
+	ht_sp_free(cmd->macros);
 	cmd_desc_free(cmd->root_cmd_desc);
 	free(cmd);
 	return NULL;
@@ -335,7 +330,7 @@ static RzCmdDesc *cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier, bool
 	char last_letter = '\0', o_last_letter = end_cmdid > cmdid ? *(end_cmdid - 1) : '\0';
 	// match longer commands first
 	while (*cmdid) {
-		RzCmdDesc *cd = ht_pp_find(cmd->ht_cmds, cmdid, NULL);
+		RzCmdDesc *cd = ht_sp_find(cmd->ht_cmds, cmdid, NULL);
 		if (cd) {
 			switch (cd->type) {
 			case RZ_CMD_DESC_TYPE_ARGV:
@@ -1609,7 +1604,7 @@ RZ_API bool rz_cmd_macro_add(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name,
 			goto err;
 		}
 	}
-	return ht_pp_insert(cmd->macros, macro->name, macro);
+	return ht_sp_insert(cmd->macros, macro->name, macro);
 
 err:
 	macro_free(macro);
@@ -1628,7 +1623,7 @@ err:
 RZ_API bool rz_cmd_macro_update(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, const char **args, RZ_NONNULL const char *code) {
 	rz_return_val_if_fail(cmd && name && args && code, false);
 
-	RzCmdMacro *macro = ht_pp_find(cmd->macros, name, NULL);
+	RzCmdMacro *macro = ht_sp_find(cmd->macros, name, NULL);
 	if (!macro) {
 		return false;
 	}
@@ -1685,7 +1680,7 @@ err:
 RZ_API bool rz_cmd_macro_rm(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cmd && name, false);
 
-	return ht_pp_delete(cmd->macros, name);
+	return ht_sp_delete(cmd->macros, name);
 }
 
 /**
@@ -1698,10 +1693,10 @@ RZ_API bool rz_cmd_macro_rm(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name) 
 RZ_API const RzCmdMacro *rz_cmd_macro_get(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cmd && name, false);
 
-	return ht_pp_find(cmd->macros, name, NULL);
+	return ht_sp_find(cmd->macros, name, NULL);
 }
 
-static bool macros_to_list(void *user, const void *key, const void *value) {
+static bool macros_to_list(void *user, RZ_UNUSED const char *key, const void *value) {
 	RzList *res = (RzList *)user;
 	rz_list_append(res, (void *)value);
 	return true;
@@ -1720,7 +1715,7 @@ RZ_API RZ_OWN RzList /*<RzCmdMacro *>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd
 	if (!res) {
 		return NULL;
 	}
-	ht_pp_foreach(cmd->macros, macros_to_list, res);
+	ht_sp_foreach(cmd->macros, macros_to_list, res);
 	return res;
 }
 
@@ -1817,7 +1812,7 @@ struct macro_foreach_t {
 	void *user;
 };
 
-static bool macro_foreach_cb(void *user, const void *key, const void *value) {
+static bool macro_foreach_cb(void *user, RZ_UNUSED const char *key, const void *value) {
 	struct macro_foreach_t *u = (struct macro_foreach_t *)user;
 	RzCmdMacro *macro = (RzCmdMacro *)value;
 	return u->cb(u->cmd, macro, u->user);
@@ -1838,7 +1833,7 @@ RZ_API void rz_cmd_macro_foreach(RZ_NONNULL RzCmd *cmd, RzCmdForeachMacroCb cb, 
 		.user = user,
 		.cb = cb,
 	};
-	ht_pp_foreach(cmd->macros, macro_foreach_cb, &u);
+	ht_sp_foreach(cmd->macros, macro_foreach_cb, &u);
 }
 
 /* RzCmdParsedArgs */

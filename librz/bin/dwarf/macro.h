@@ -50,7 +50,7 @@
 #define SLE128_OR_GOTO(out, label) SLE128_OR(st64, out, goto label)
 
 #define Ht_FREE_IMPL(V, T, f) \
-	static void Ht##V##_##T##_free(Ht##V##Kv *kv) { \
+	static void Ht##V##_##T##_free(Ht##V##Kv *kv, RZ_UNUSED void *user) { \
 		f(kv->value); \
 	}
 

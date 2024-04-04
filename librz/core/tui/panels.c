@@ -4211,12 +4211,12 @@ void __add_menu(RzCore *core, const char *parent, const char *name, RzPanelsMenu
 		return;
 	}
 	if (parent) {
-		void *addr = ht_pp_find(panels->mht, parent, NULL);
+		void *addr = ht_sp_find(panels->mht, parent, NULL);
 		p_item = (RzPanelsMenuItem *)addr;
-		ht_pp_insert(panels->mht, rz_strf(tmpbuf, "%s.%s", parent, name), item);
+		ht_sp_insert(panels->mht, rz_strf(tmpbuf, "%s.%s", parent, name), item);
 	} else {
 		p_item = panels->panels_menu->root;
-		ht_pp_insert(panels->mht, rz_strf(tmpbuf, "%s", name), item);
+		ht_sp_insert(panels->mht, rz_strf(tmpbuf, "%s", name), item);
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
@@ -4247,13 +4247,13 @@ void __add_menu(RzCore *core, const char *parent, const char *name, RzPanelsMenu
 void __update_menu(RzCore *core, const char *parent, RZ_NULLABLE RzPanelMenuUpdateCallback cb) {
 	RzCoreVisual *visual = core->visual;
 	RzPanels *panels = visual->panels;
-	void *addr = ht_pp_find(panels->mht, parent, NULL);
+	void *addr = ht_sp_find(panels->mht, parent, NULL);
 	RzPanelsMenuItem *p_item = (RzPanelsMenuItem *)addr;
 	int i;
 	char tmpbuf[512];
 	for (i = 0; i < p_item->n_sub; i++) {
 		RzPanelsMenuItem *sub = p_item->sub[i];
-		ht_pp_delete(visual->panels->mht, rz_strf(tmpbuf, "%s.%s", parent, sub->name));
+		ht_sp_delete(visual->panels->mht, rz_strf(tmpbuf, "%s.%s", parent, sub->name));
 	}
 	p_item->sub = NULL;
 	p_item->n_sub = 0;
@@ -5106,11 +5106,6 @@ void __step_over_almighty_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED con
 	__step_over_cb(user);
 }
 
-void __mht_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	__free_menu_item((RzPanelsMenuItem *)kv->value);
-}
-
 bool __init(RzCore *core, RzPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
@@ -5129,7 +5124,7 @@ bool __init(RzCore *core, RzPanels *panels, int w, int h) {
 	panels->db = sdb_new0();
 	panels->rotate_db = sdb_new0();
 	panels->almighty_db = sdb_new0();
-	panels->mht = ht_pp_new(NULL, (HtPPKvFreeFunc)__mht_free_kv, (HtPPCalcSizeV)strlen);
+	panels->mht = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)__free_menu_item);
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	panels->name = NULL;
 	panels->first_run = true;

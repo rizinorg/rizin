@@ -4,20 +4,20 @@
 #ifndef SDB_SET_H
 #define SDB_SET_H
 
-#include <rz_util/ht_pp.h>
+#include <rz_util/ht_sp.h>
 #include <rz_util/ht_up.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef HtPP SetP;
+typedef HtSP SetS;
 
-RZ_API SetP *set_p_new(void);
-RZ_API void set_p_add(SetP *p, const void *u);
-RZ_API bool set_p_contains(SetP *s, const void *u);
-RZ_API void set_p_delete(SetP *s, const void *u);
-RZ_API void set_p_free(SetP *p);
+RZ_API SetS *set_s_new(HtStrOption opt);
+RZ_API void set_s_add(SetS *p, const char *str);
+RZ_API bool set_s_contains(SetS *s, const char *str);
+RZ_API void set_s_delete(SetS *s, const char *str);
+RZ_API void set_s_free(SetS *s);
 
 typedef HtUP SetU;
 

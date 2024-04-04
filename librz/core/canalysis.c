@@ -1767,7 +1767,7 @@ static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList /*<RzA
 static RzList /*<RzAnalysisBlock *>*/ *analysis_graph_to(RzCore *core, ut64 addr, int depth, HtUP *avoid) {
 	RzAnalysisFunction *cur_fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	RzList *list = rz_list_new();
-	HtUP *state = ht_up_new0();
+	HtUP *state = ht_up_new(NULL, NULL);
 
 	if (!list || !state || !cur_fcn) {
 		rz_list_free(list);
@@ -1811,7 +1811,7 @@ static RzList /*<RzAnalysisBlock *>*/ *analysis_graph_to(RzCore *core, ut64 addr
 RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n) {
 	int depth = rz_config_get_i(core->config, "analysis.graph_depth");
 	RzList *path, *paths = rz_list_new();
-	HtUP *avoid = ht_up_new0();
+	HtUP *avoid = ht_up_new(NULL, NULL);
 	while (n) {
 		path = analysis_graph_to(core, addr, depth, avoid);
 		if (path) {
@@ -3216,7 +3216,7 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 		return;
 	}
 	RzCoreAnalPaths rcap = { 0 };
-	rcap.visited = ht_uu_new0();
+	rcap.visited = ht_uu_new();
 	rcap.path = rz_list_new();
 	rcap.core = core;
 	rcap.from = from;
@@ -3701,7 +3701,7 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 		return;
 	}
 
-	HtUU *done = ht_uu_new0();
+	HtUU *done = ht_uu_new();
 	if (!done) {
 		rz_list_free(todo);
 		return;
@@ -4242,7 +4242,7 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_core_analysis_sigdb_list(RZ_NONNUL
 	analysis_sigdb_add(sigs, user_sigdb, with_details);
 
 	RzList *lst = rz_sign_sigdb_list(sigs);
-	sigs->entries->opt.freefn = NULL;
+	sigs->entries->opt.finiKV = NULL;
 	rz_sign_sigdb_free(sigs);
 	return lst;
 }
@@ -4588,7 +4588,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	// loop count of rz_core_analysis_type_match
 	// TODO : figure out the reason to hold a `LOOP COUNT` in type_match
 	// HtUU <addr->loop_count>
-	HtUU *loop_table = ht_uu_new0();
+	HtUU *loop_table = ht_uu_new();
 
 	// Iterating Reverse so that we get function in top-bottom call order
 	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {

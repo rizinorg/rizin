@@ -314,8 +314,8 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 
 static bool info_init(RzBinDwarfInfo *info) {
 	rz_vector_init(&info->units, sizeof(RzBinDwarfCompUnit), (RzVectorFree)CU_fini, NULL);
-	info->offset_comp_dir = ht_up_new(NULL, NULL, NULL);
-	info->location_encoding = ht_up_new0();
+	info->offset_comp_dir = ht_up_new(NULL, NULL);
+	info->location_encoding = ht_up_new(NULL, NULL);
 	if (!info->offset_comp_dir) {
 		goto beach;
 	}
@@ -361,9 +361,9 @@ RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 	};
 	ERR_IF_FAIL(CU_parse_all(&ctx));
 
-	info->die_by_offset = ht_up_new_size(info->die_count, NULL, NULL, NULL);
+	info->die_by_offset = ht_up_new_size(info->die_count, NULL, NULL);
 	ERR_IF_FAIL(info->die_by_offset);
-	info->unit_by_offset = ht_up_new_size(rz_vector_len(&info->units), NULL, NULL, NULL);
+	info->unit_by_offset = ht_up_new_size(rz_vector_len(&info->units), NULL, NULL);
 	ERR_IF_FAIL(info->unit_by_offset);
 
 	// build hashtable after whole parsing because of possible relocations

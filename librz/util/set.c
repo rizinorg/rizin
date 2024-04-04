@@ -3,32 +3,32 @@
 
 #include <rz_util/set.h>
 
-// p
+// s
 
-RZ_API SetP *set_p_new(void) {
-	return ht_pp_new0();
+RZ_API SetS *set_s_new(HtStrOption opt) {
+	return ht_sp_new(opt, NULL, NULL);
 }
 
-RZ_API void set_p_add(SetP *s, const void *u) {
-	ht_pp_insert(s, u, (void *)1);
+RZ_API void set_s_add(SetS *s, const char *str) {
+	ht_sp_insert(s, str, (void *)1);
 }
 
-RZ_API bool set_p_contains(SetP *s, const void *u) {
-	return ht_pp_find(s, u, NULL) != NULL;
+RZ_API bool set_s_contains(SetS *s, const char *str) {
+	return ht_sp_find(s, str, NULL) != NULL;
 }
 
-RZ_API void set_p_delete(SetP *s, const void *u) {
-	ht_pp_delete(s, u);
+RZ_API void set_s_delete(SetS *s, const char *str) {
+	ht_sp_delete(s, str);
 }
 
-RZ_API void set_p_free(SetP *p) {
-	ht_pp_free((HtPP *)p);
+RZ_API void set_s_free(SetS *s) {
+	ht_sp_free((HtSP *)s);
 }
 
 // u
 
 RZ_API SetU *set_u_new(void) {
-	return (SetU *)ht_up_new0();
+	return (SetU *)ht_up_new(NULL, NULL);
 }
 
 RZ_API void set_u_add(SetU *s, ut64 u) {

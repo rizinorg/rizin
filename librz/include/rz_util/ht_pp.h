@@ -16,10 +16,6 @@ extern "C" {
  */
 #define HT_TYPE 1
 #include <rz_util/ht_inc.h>
-
-RZ_API HtName_(Ht) * Ht_(new0)(void);
-RZ_API HtName_(Ht) * Ht_(new)(HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) valueSize);
-RZ_API HtName_(Ht) * Ht_(new_size)(ut32 initial_size, HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) valueSize);
 #undef HT_TYPE
 
 #ifdef __cplusplus

@@ -30,9 +30,9 @@ typedef struct rz_type_parser_t RzTypeParser;
 
 typedef struct rz_type_db_t {
 	void *user;
-	HtPP /*<char *, RzBaseType *>*/ *types; //< name -> base type
-	HtPP /*<char *, char *>*/ *formats; //< name -> `pf` format
-	HtPP /*<char *, RzCallable *>*/ *callables; //< name -> RzCallable (function type)
+	HtSP /*<char *, RzBaseType *>*/ *types; //< name -> base type
+	HtSS /*<char *, char *>*/ *formats; //< name -> `pf` format
+	HtSP /*<char *, RzCallable *>*/ *callables; //< name -> RzCallable (function type)
 	RzTypeTarget *target;
 	RzTypeParser *parser;
 	RzNum *num;
@@ -333,7 +333,7 @@ RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, R
 // Type parser low-level API
 
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_new(void);
-RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtPP *types, HtPP *callables);
+RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtSP *types, HtSP *callables);
 RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser);
 RZ_API void rz_type_parser_free_purge(RZ_NONNULL RzTypeParser *parser);
 

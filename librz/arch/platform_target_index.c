@@ -25,7 +25,7 @@ RZ_API RZ_OWN RzPlatformTargetIndex *rz_platform_target_index_new() {
 	if (!target) {
 		return NULL;
 	}
-	target->platforms = ht_up_new0();
+	target->platforms = ht_up_new(NULL, NULL);
 	if (!target->platforms) {
 		free(target);
 		return NULL;

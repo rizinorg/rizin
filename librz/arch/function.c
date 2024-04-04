@@ -63,7 +63,7 @@ static bool function_name_exists(RzAnalysis *analysis, const char *name, ut64 ad
 		RZ_LOG_INFO("Empty function name, we must auto generate one\n");
 		return true;
 	}
-	RzAnalysisFunction *f = ht_pp_find(analysis->ht_name_fun, name, &found);
+	RzAnalysisFunction *f = ht_sp_find(analysis->ht_name_fun, name, &found);
 	if (f && found) {
 		return true;
 	}
@@ -78,19 +78,6 @@ static bool function_already_defined_at(RzAnalysis *analysis, const char *name, 
 		return true;
 	}
 	return false;
-}
-
-static void inst_vars_kv_free(HtUPKv *kv) {
-	rz_pvector_free(kv->value);
-}
-
-static void labels_kv_free(HtUPKv *kv) {
-	free(kv->value);
-}
-
-static void label_addrs_kv_free(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis) {
@@ -108,9 +95,9 @@ RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis) {
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
 	rz_pvector_init(&fcn->vars, (RzPVectorFree)rz_analysis_var_free);
-	fcn->inst_vars = ht_up_new(NULL, inst_vars_kv_free, NULL);
-	fcn->labels = ht_up_new(NULL, labels_kv_free, NULL);
-	fcn->label_addrs = ht_pp_new(NULL, label_addrs_kv_free, NULL);
+	fcn->inst_vars = ht_up_new(NULL, (HtUPFreeValue)rz_pvector_free);
+	fcn->labels = ht_up_new(NULL, free);
+	fcn->label_addrs = ht_sp_new(HT_STR_DUP, NULL, free);
 	return fcn;
 }
 
@@ -133,14 +120,14 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 	if (ht_up_find(analysis->ht_addr_fun, fcn->addr, NULL) == _fcn) {
 		ht_up_delete(analysis->ht_addr_fun, fcn->addr);
 	}
-	if (ht_pp_find(analysis->ht_name_fun, fcn->name, NULL) == _fcn) {
-		ht_pp_delete(analysis->ht_name_fun, fcn->name);
+	if (ht_sp_find(analysis->ht_name_fun, fcn->name, NULL) == _fcn) {
+		ht_sp_delete(analysis->ht_name_fun, fcn->name);
 	}
 
 	rz_pvector_fini(&fcn->vars);
 	ht_up_free(fcn->inst_vars);
 	ht_up_free(fcn->labels);
-	ht_pp_free(fcn->label_addrs);
+	ht_sp_free(fcn->label_addrs);
 	rz_type_free(fcn->ret_type);
 	free(fcn->name);
 	rz_list_free(fcn->imports);
@@ -174,7 +161,7 @@ RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 	fcn->is_noreturn = rz_analysis_noreturn_at_addr(analysis, fcn->addr);
 	rz_list_append(analysis->fcns, fcn);
-	return ht_pp_insert(analysis->ht_name_fun, fcn->name, fcn) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
+	return ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, RzAnalysisFcnType type) {
@@ -255,13 +242,13 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 		}
 	}
 	InstVarsRelocateCtx ctx = {
-		.inst_vars_new = ht_up_new(NULL, inst_vars_kv_free, NULL),
+		.inst_vars_new = ht_up_new(NULL, (HtUPFreeValue)rz_pvector_free),
 		.delta = delta
 	};
 	if (ctx.inst_vars_new) {
 		ht_up_foreach(fcn->inst_vars, inst_vars_relocate_cb, &ctx);
 		// Do not free the elements of the Ht, because they were moved to ctx.inst_vars_new
-		fcn->inst_vars->opt.freefn = NULL;
+		fcn->inst_vars->opt.finiKV = NULL;
 		ht_up_free(fcn->inst_vars);
 		fcn->inst_vars = ctx.inst_vars_new;
 	}
@@ -273,7 +260,7 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 
 RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *name) {
 	RzAnalysis *analysis = fcn->analysis;
-	RzAnalysisFunction *existing = ht_pp_find(analysis->ht_name_fun, name, NULL);
+	RzAnalysisFunction *existing = ht_sp_find(analysis->ht_name_fun, name, NULL);
 	if (existing) {
 		if (existing == fcn) {
 			// fcn->name == name, nothing to do
@@ -285,12 +272,12 @@ RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *nam
 	if (!newname) {
 		return false;
 	}
-	bool in_tree = ht_pp_delete(analysis->ht_name_fun, fcn->name);
+	bool in_tree = ht_sp_delete(analysis->ht_name_fun, fcn->name);
 	free(fcn->name);
 	fcn->name = newname;
 	if (in_tree) {
 		// only re-insert if it really was in the tree before
-		ht_pp_insert(analysis->ht_name_fun, fcn->name, fcn);
+		ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn);
 	}
 	return true;
 }

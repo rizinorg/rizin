@@ -45,10 +45,6 @@ static void array_add(RzCoreObjc *o, ut64 va, ut64 xrefs_to) {
 	rz_vector_push(vec, &xrefs_to);
 }
 
-static void kv_array_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
-}
-
 static inline bool isValid(ut64 addr) {
 	return (addr != 0LL && addr != UT64_MAX);
 }
@@ -203,7 +199,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 		free(o);
 		return NULL;
 	}
-	o->up = ht_up_new(NULL, kv_array_free, NULL);
+	o->up = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 
 	return o;
 }

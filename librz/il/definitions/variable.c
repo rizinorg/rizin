@@ -39,16 +39,6 @@ RZ_API void rz_il_variable_free(RZ_NULLABLE RzILVar *var) {
 
 // Variable Set
 
-static void var_ht_free(HtPPKv *kv) {
-	free(kv->key);
-	rz_il_variable_free(kv->value);
-}
-
-static void val_ht_free(HtPPKv *kv) {
-	free(kv->key);
-	rz_il_value_free(kv->value);
-}
-
 /**
  * Initialize \p vs as an empty variable set
  *
@@ -60,13 +50,13 @@ static void val_ht_free(HtPPKv *kv) {
 RZ_API bool rz_il_var_set_init(RzILVarSet *vs) {
 	rz_return_val_if_fail(vs, false);
 	memset(vs, 0, sizeof(*vs));
-	vs->vars = ht_pp_new(NULL, var_ht_free, NULL);
+	vs->vars = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_il_variable_free);
 	if (!vs->vars) {
 		return false;
 	}
-	vs->contents = ht_pp_new(NULL, val_ht_free, NULL);
+	vs->contents = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_il_value_free);
 	if (!vs->contents) {
-		ht_pp_free(vs->vars);
+		ht_sp_free(vs->vars);
 		vs->vars = NULL;
 		return false;
 	}
@@ -74,8 +64,8 @@ RZ_API bool rz_il_var_set_init(RzILVarSet *vs) {
 }
 
 RZ_API void rz_il_var_set_fini(RzILVarSet *vs) {
-	ht_pp_free(vs->vars);
-	ht_pp_free(vs->contents);
+	ht_sp_free(vs->vars);
+	ht_sp_free(vs->contents);
 }
 
 RZ_API void rz_il_var_set_reset(RzILVarSet *vs) {
@@ -89,14 +79,14 @@ RZ_API void rz_il_var_set_reset(RzILVarSet *vs) {
  */
 RZ_API RZ_BORROW RzILVar *rz_il_var_set_create_var(RzILVarSet *vs, const char *name, RzILSortPure sort) {
 	rz_return_val_if_fail(vs && name, NULL);
-	if (ht_pp_find(vs->vars, name, NULL)) {
+	if (ht_sp_find(vs->vars, name, NULL)) {
 		return NULL;
 	}
 	RzILVar *var = rz_il_variable_new(name, sort);
 	if (!var) {
 		return NULL;
 	}
-	ht_pp_insert(vs->vars, name, var);
+	ht_sp_insert(vs->vars, name, var);
 	return var;
 }
 
@@ -106,14 +96,14 @@ RZ_API RZ_BORROW RzILVar *rz_il_var_set_create_var(RzILVarSet *vs, const char *n
  */
 RZ_API RZ_OWN RZ_NULLABLE RzILVal *rz_il_var_set_remove_var(RzILVarSet *vs, const char *name) {
 	rz_return_val_if_fail(vs && name, NULL);
-	ht_pp_delete(vs->vars, name);
-	HtPPKv *kv = ht_pp_find_kv(vs->contents, name, NULL);
+	ht_sp_delete(vs->vars, name);
+	HtSPKv *kv = ht_sp_find_kv(vs->contents, name, NULL);
 	if (!kv) {
 		return NULL;
 	}
 	RzILVal *r = kv->value;
 	kv->value = NULL;
-	ht_pp_delete(vs->contents, name);
+	ht_sp_delete(vs->contents, name);
 	return r;
 }
 
@@ -128,7 +118,7 @@ RZ_API RZ_OWN RZ_NULLABLE RzILVal *rz_il_var_set_remove_var(RzILVarSet *vs, cons
  */
 RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal *val) {
 	rz_return_val_if_fail(vs && name && val, false);
-	RzILVar *var = ht_pp_find(vs->vars, name, NULL);
+	RzILVar *var = ht_sp_find(vs->vars, name, NULL);
 	if (!var || !rz_il_sort_pure_eq(var->sort, rz_il_value_get_sort(val))) {
 		if (!var) {
 			RZ_LOG_ERROR("Attempted to bind value to non-existent variable \"%s\"\n", name);
@@ -138,7 +128,7 @@ RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal 
 		rz_il_value_free(val);
 		return false;
 	}
-	ht_pp_update(vs->contents, name, val);
+	ht_sp_update(vs->contents, name, val);
 	return true;
 }
 
@@ -146,10 +136,10 @@ RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal 
  * Get the definition of the variable called \p name
  */
 RZ_API RZ_BORROW RzILVar *rz_il_var_set_get(RzILVarSet *vs, const char *name) {
-	return ht_pp_find(vs->vars, name, NULL);
+	return ht_sp_find(vs->vars, name, NULL);
 }
 
-static bool vars_collect_cb(void *user, const void *k, const void *v) {
+static bool vars_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	rz_pvector_push(user, (void *)v);
 	return true;
 }
@@ -163,7 +153,7 @@ RZ_API RZ_OWN RzPVector /*<RzILVar *>*/ *rz_il_var_set_get_all(RzILVarSet *vs) {
 	if (!r) {
 		return NULL;
 	}
-	ht_pp_foreach(vs->vars, vars_collect_cb, r);
+	ht_sp_foreach(vs->vars, vars_collect_cb, r);
 	return r;
 }
 
@@ -172,7 +162,7 @@ RZ_API RZ_OWN RzPVector /*<RzILVar *>*/ *rz_il_var_set_get_all(RzILVarSet *vs) {
  */
 RZ_API RZ_BORROW RzILVal *rz_il_var_set_get_value(RzILVarSet *vs, const char *name) {
 	rz_return_val_if_fail(vs && name, NULL);
-	return ht_pp_find(vs->contents, name, NULL);
+	return ht_sp_find(vs->contents, name, NULL);
 }
 
 /**

@@ -396,7 +396,7 @@ struct rz_bin_pe_lib_t *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
 	PE_(image_delay_import_directory)
 	curr_delay_import_dir;
 	PE_DWord name_off = 0;
-	HtPP *lib_map = NULL;
+	HtSS *lib_map = NULL;
 	ut64 off; // cache value
 	int index = 0;
 	int len = 0;

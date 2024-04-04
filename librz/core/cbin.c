@@ -1669,11 +1669,6 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 	return true;
 }
 
-static void digests_ht_free(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
-}
-
 /**
  * \brief Create a hashtable of digests
  *
@@ -1681,9 +1676,9 @@ static void digests_ht_free(HtPPKv *kv) {
  * Returns the hashtable with keys of digest names and values of
  * strings containing requested digests.
  * */
-RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList /*<char *>*/ *digests) {
+RZ_API RZ_OWN HtSS *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList /*<char *>*/ *digests) {
 	rz_return_val_if_fail(size && digests, NULL);
-	HtPP *r = ht_pp_new(NULL, digests_ht_free, NULL);
+	HtSS *r = ht_ss_new(HT_STR_DUP, HT_STR_OWN);
 	if (!r) {
 		return NULL;
 	}
@@ -1692,7 +1687,7 @@ RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 	rz_list_foreach (digests, it, digest) {
 		ut8 *data = malloc(size);
 		if (!data) {
-			ht_pp_free(r);
+			ht_ss_free(r);
 			return NULL;
 		}
 		rz_io_pread_at(core->io, paddr, data, size);
@@ -1700,7 +1695,7 @@ RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 		if (!chkstr) {
 			continue;
 		}
-		ht_pp_insert(r, digest, chkstr);
+		ht_ss_insert(r, digest, chkstr);
 		free(data);
 	}
 
@@ -2349,7 +2344,7 @@ static ut64 get_section_addr(RzCore *core, RzBinObject *o, RzBinSection *section
 	return rva(o, section->paddr, section->vaddr, va);
 }
 
-static bool digests_pj_cb(void *user, const void *k, const void *v) {
+static bool digests_pj_cb(void *user, const char *k, const char *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	PJ *pj = user;
 	pj_ks(pj, k, v);
@@ -2392,13 +2387,13 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 		pj_kn(pj, "align", section->align);
 	}
 	if (hashes && section->size > 0) {
-		HtPP *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
 		if (!digests) {
 			pj_end(pj);
 			return;
 		}
-		ht_pp_foreach(digests, digests_pj_cb, pj);
-		ht_pp_free(digests);
+		ht_ss_foreach(digests, digests_pj_cb, pj);
+		ht_ss_free(digests);
 	}
 	pj_end(pj);
 }
@@ -2432,7 +2427,7 @@ static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBin
 	}
 	bool result = false;
 	if (hashes && section->size > 0) {
-		HtPP *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
 		if (!digests) {
 			goto cleanup;
 		}
@@ -2440,12 +2435,12 @@ static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBin
 		char *hash;
 		bool found = false;
 		rz_list_foreach (hashes, it, hash) {
-			char *digest = ht_pp_find(digests, hash, &found);
+			char *digest = ht_ss_find(digests, hash, &found);
 			if (found && t) {
 				rz_table_add_row_columnsf(t, "s", digest);
 			}
 		}
-		ht_pp_free(digests);
+		ht_ss_free(digests);
 	}
 	result = true;
 cleanup:
@@ -5026,7 +5021,7 @@ static void bin_resources_print_standard(RzCore *core, RzList /*<char *>*/ *hash
 	rz_cons_printf("  type: %s\n", resource->type);
 	rz_cons_printf("  language: %s\n", resource->language);
 	if (hashes && resource->size > 0) {
-		HtPP *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
 		if (!digests) {
 			return;
 		}
@@ -5034,12 +5029,12 @@ static void bin_resources_print_standard(RzCore *core, RzList /*<char *>*/ *hash
 		char *hash = NULL;
 		bool found = false;
 		rz_list_foreach (hashes, it, hash) {
-			char *digest = ht_pp_find(digests, hash, &found);
+			char *digest = ht_ss_find(digests, hash, &found);
 			if (found) {
 				rz_cons_printf("  %s: %s\n", hash, digest);
 			}
 		}
-		ht_pp_free(digests);
+		ht_ss_free(digests);
 	}
 }
 
@@ -5047,7 +5042,7 @@ static void bin_resources_print_table(RzCore *core, RzCmdStateOutput *state, RzL
 	rz_table_add_rowf(state->d.t, "dssXxss", resource->index, resource->name,
 		resource->type, resource->vaddr, resource->size, resource->language, resource->time);
 	if (hashes && resource->size > 0) {
-		HtPP *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
 		if (!digests) {
 			return;
 		}
@@ -5055,12 +5050,12 @@ static void bin_resources_print_table(RzCore *core, RzCmdStateOutput *state, RzL
 		char *hash;
 		bool found = false;
 		rz_list_foreach (hashes, it, hash) {
-			char *digest = ht_pp_find(digests, hash, &found);
+			char *digest = ht_ss_find(digests, hash, &found);
 			if (found && state->d.t) {
 				rz_table_add_row_columnsf(state->d.t, "s", digest);
 			}
 		}
-		ht_pp_free(digests);
+		ht_ss_free(digests);
 	}
 }
 
@@ -5074,7 +5069,7 @@ static void bin_resources_print_json(RzCore *core, RzCmdStateOutput *state, RzLi
 	pj_ks(state->d.pj, "lang", resource->language);
 	pj_ks(state->d.pj, "timestamp", resource->time);
 	if (hashes && resource->size > 0) {
-		HtPP *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
 		if (!digests) {
 			goto end;
 		}
@@ -5082,12 +5077,12 @@ static void bin_resources_print_json(RzCore *core, RzCmdStateOutput *state, RzLi
 		char *hash;
 		bool found = false;
 		rz_list_foreach (hashes, it, hash) {
-			char *digest = ht_pp_find(digests, hash, &found);
+			char *digest = ht_ss_find(digests, hash, &found);
 			if (found && state->d.pj) {
 				pj_ks(state->d.pj, hash, digest);
 			}
 		}
-		ht_pp_free(digests);
+		ht_ss_free(digests);
 	}
 end:
 	pj_end(state->d.pj);

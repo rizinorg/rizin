@@ -302,16 +302,16 @@ typedef struct rz_bin_object_t {
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
 	 */
-	HtPP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
+	HtSP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
 	RzPVector /*<RzBinAddr *>*/ *entries;
 	RzPVector /*<RzBinField *>*/ *fields;
 	RzPVector /*<char *>*/ *libs;
 	RzBinRelocStorage *relocs;
 	RzBinStrDb *strings;
 	RzPVector /*<RzBinClass *>*/ *classes;
-	HtPP /*<char *, RzBinClass*>*/ *name_to_class_object;
-	HtPP /*<char *, RzBinSymbol*>*/ *glue_to_class_method;
-	HtPP /*<char *, RzBinClassField*>*/ *glue_to_class_field;
+	HtSP /*<char *, RzBinClass*>*/ *name_to_class_object;
+	HtSP /*<char *, RzBinSymbol*>*/ *glue_to_class_method;
+	HtSP /*<char *, RzBinClassField*>*/ *glue_to_class_field;
 	HtUP /*<vaddr , RzBinSymbol*>*/ *vaddr_to_class_method;
 	RzBinSourceLineInfo *lines;
 	RzPVector /*<RzBinMem *>*/ *mem;

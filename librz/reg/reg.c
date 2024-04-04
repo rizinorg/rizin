@@ -210,7 +210,7 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 		}
 	}
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		ht_pp_free(reg->regset[i].ht_regs);
+		ht_sp_free(reg->regset[i].ht_regs);
 		reg->regset[i].ht_regs = NULL;
 		if (!reg->regset[i].pool) {
 			continue;
@@ -366,10 +366,10 @@ RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 		e = type + 1;
 	}
 	for (; i < e; i++) {
-		HtPP *pp = reg->regset[i].ht_regs;
-		if (pp) {
+		HtSP *ht = reg->regset[i].ht_regs;
+		if (ht) {
 			bool found = false;
-			RzRegItem *item = ht_pp_find(pp, name, &found);
+			RzRegItem *item = ht_sp_find(ht, name, &found);
 			if (found) {
 				return item;
 			}

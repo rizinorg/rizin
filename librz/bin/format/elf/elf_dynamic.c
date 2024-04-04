@@ -101,7 +101,7 @@ RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_dt_dynamic_new)(RZ_NONNULL ELFOBJ *bin
 		return NULL;
 	}
 
-	result->info = ht_uu_new0();
+	result->info = ht_uu_new();
 	if (!result->info) {
 		Elf_(rz_bin_elf_dt_dynamic_free)(result);
 		return NULL;

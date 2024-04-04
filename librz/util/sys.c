@@ -1572,7 +1572,7 @@ static bool is_child = false;
 RZ_DEFINE_CONSTRUCTOR(sys_pipe_constructor)
 static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new(false);
-	fd2close = ht_uu_new0();
+	fd2close = ht_uu_new();
 }
 
 #ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA

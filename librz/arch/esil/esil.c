@@ -77,11 +77,6 @@ static bool popRN(RzAnalysisEsil *esil, ut64 *n) {
 
 /* RZ_ANALYSIS_ESIL API */
 
-static void esil_ops_free(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
-}
-
 RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	RzAnalysisEsil *esil = RZ_NEW0(RzAnalysisEsil);
 	if (!esil) {
@@ -98,7 +93,7 @@ RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned 
 	esil->verbose = false;
 	esil->stacksize = stacksize;
 	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
-	esil->ops = ht_pp_new(NULL, esil_ops_free, NULL);
+	esil->ops = ht_sp_new(HT_STR_DUP, NULL, free);
 	esil->iotrap = iotrap;
 	esil->in_cmd_step = false;
 	rz_analysis_esil_sources_init(esil);
@@ -110,14 +105,14 @@ RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned 
 
 RZ_API bool rz_analysis_esil_set_op(RzAnalysisEsil *esil, const char *op, RzAnalysisEsilOpCb code, ut32 push, ut32 pop, ut32 type) {
 	rz_return_val_if_fail(code && RZ_STR_ISNOTEMPTY(op) && esil && esil->ops, false);
-	RzAnalysisEsilOp *eop = ht_pp_find(esil->ops, op, NULL);
+	RzAnalysisEsilOp *eop = ht_sp_find(esil->ops, op, NULL);
 	if (!eop) {
 		eop = RZ_NEW(RzAnalysisEsilOp);
 		if (!eop) {
 			RZ_LOG_ERROR("Cannot allocate esil-operation %s\n", op);
 			return false;
 		}
-		if (!ht_pp_insert(esil->ops, op, eop)) {
+		if (!ht_sp_insert(esil->ops, op, eop)) {
 			RZ_LOG_ERROR("Cannot set esil-operation %s\n", op);
 			free(eop);
 			return false;
@@ -168,7 +163,7 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	if (esil->analysis && esil == esil->analysis->esil) {
 		esil->analysis->esil = NULL;
 	}
-	ht_pp_free(esil->ops);
+	ht_sp_free(esil->ops);
 	esil->ops = NULL;
 	rz_analysis_esil_interrupts_fini(esil);
 	rz_analysis_esil_sources_fini(esil);
@@ -2828,7 +2823,7 @@ static bool esil_set_delay_slot(RzAnalysisEsil *esil) {
 }
 
 static bool iscommand(RzAnalysisEsil *esil, const char *word, RzAnalysisEsilOp **op) {
-	RzAnalysisEsilOp *eop = ht_pp_find(esil->ops, word, NULL);
+	RzAnalysisEsilOp *eop = ht_sp_find(esil->ops, word, NULL);
 	if (eop) {
 		*op = eop;
 		return true;

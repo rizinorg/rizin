@@ -184,10 +184,10 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 		return;
 	}
 	free(o->regstate);
-	ht_pp_free(o->glue_to_class_field);
-	ht_pp_free(o->glue_to_class_method);
-	ht_pp_free(o->name_to_class_object);
-	ht_pp_free(o->import_name_symbols);
+	ht_sp_free(o->glue_to_class_field);
+	ht_sp_free(o->glue_to_class_method);
+	ht_sp_free(o->name_to_class_object);
+	ht_sp_free(o->import_name_symbols);
 	ht_up_free(o->vaddr_to_class_method);
 	rz_bin_info_free(o->info);
 	rz_bin_reloc_storage_free(o->relocs);
@@ -220,7 +220,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
  */
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_find_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(o && name, NULL);
-	return ht_pp_find(o->name_to_class_object, name, NULL);
+	return ht_sp_find(o->name_to_class_object, name, NULL);
 }
 
 static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *super, ut64 address) {
@@ -298,7 +298,7 @@ static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void 
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name, RZ_NULLABLE const char *super, ut64 vaddr) {
 	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(name), NULL);
 
-	RzBinClass *oclass = ht_pp_find(o->name_to_class_object, name, NULL);
+	RzBinClass *oclass = ht_sp_find(o->name_to_class_object, name, NULL);
 	if (oclass) {
 		if (super && !oclass->super) {
 			oclass->super = strdup(super);
@@ -316,7 +316,7 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 
 	rz_pvector_push(o->classes, oclass);
 	rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
-	ht_pp_insert(o->name_to_class_object, name, oclass);
+	ht_sp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }
 
@@ -336,7 +336,7 @@ RZ_API RzBinSymbol *rz_bin_object_find_method(RZ_NONNULL RzBinObject *o, RZ_NONN
 	if (!key) {
 		return NULL;
 	}
-	RzBinSymbol *sym = (RzBinSymbol *)ht_pp_find(o->glue_to_class_method, key, NULL);
+	RzBinSymbol *sym = (RzBinSymbol *)ht_sp_find(o->glue_to_class_method, key, NULL);
 	free(key);
 	return sym;
 }
@@ -401,7 +401,7 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method);
 	if (key) {
-		ht_pp_insert(o->glue_to_class_method, key, symbol);
+		ht_sp_insert(o->glue_to_class_method, key, symbol);
 		free(key);
 	}
 
@@ -428,7 +428,7 @@ RZ_API RzBinClassField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_N
 	if (!key) {
 		return NULL;
 	}
-	RzBinClassField *sym = (RzBinClassField *)ht_pp_find(o->glue_to_class_field, key, NULL);
+	RzBinClassField *sym = (RzBinClassField *)ht_sp_find(o->glue_to_class_field, key, NULL);
 	free(key);
 	return sym;
 }
@@ -478,7 +478,7 @@ RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject
 	rz_list_add_sorted(c->fields, field, (RzListComparator)bin_compare_class_field, NULL);
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name);
 	if (key) {
-		ht_pp_insert(o->glue_to_class_field, key, field);
+		ht_sp_insert(o->glue_to_class_field, key, field);
 		free(key);
 	}
 	return field;
@@ -569,7 +569,7 @@ RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImpo
 	if (!o->import_name_symbols) {
 		return NULL;
 	}
-	return ht_pp_find(o->import_name_symbols, imp->name, NULL);
+	return ht_sp_find(o->import_name_symbols, imp->name, NULL);
 }
 
 RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const char *name) {
@@ -977,8 +977,8 @@ RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVecto
 	}
 
 	db->pvec = pvector ? pvector : rz_pvector_new((RzPVectorFree)rz_bin_string_free);
-	db->phys = ht_up_new0();
-	db->virt = ht_up_new0();
+	db->phys = ht_up_new(NULL, NULL);
+	db->virt = ht_up_new(NULL, NULL);
 	if (!db->pvec || !db->phys || !db->virt) {
 		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb internal data structure.\n");
 		goto fail;

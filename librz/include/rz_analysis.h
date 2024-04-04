@@ -153,7 +153,7 @@ typedef struct rz_analysis_function_t {
 	const char *cc; // calling convention, should come from RzAnalysis.constpool
 	ut64 addr;
 	HtUP /*<ut64, char *>*/ *labels;
-	HtPP /*<char *, ut64 *>*/ *label_addrs;
+	HtSP /*<char *, ut64 *>*/ *label_addrs;
 	RzPVector /*<RzAnalysisVar *>*/ vars;
 	RzType *ret_type;
 	HtUP /*<st64, RzPVector<RzAnalysisVar *>>*/ *inst_vars; // offset of instructions => the variables they access
@@ -454,7 +454,7 @@ typedef struct {
 	HtUP /*<ut64, RzCallable *>*/ *callable_by_offset; ///< Store all callables parsed from DWARF by DIE offset
 	HtUP /*<ut64, RzType *>*/ *type_by_offset; ///< Store all RzType parsed from DWARF by DIE offset
 	HtUP /*<ut64, RzBaseType *>*/ *base_type_by_offset; ///< Store all RzBaseType parsed from DWARF by DIE offset
-	HtPP /*<const char*, RzPVector<const RzBaseType *>>*/ *base_types_by_name; ///< Store all RzBaseType parsed from DWARF by DIE offset
+	HtSP /*<const char*, RzPVector<const RzBaseType *>>*/ *base_types_by_name; ///< Store all RzBaseType parsed from DWARF by DIE offset
 	DWARF_RegisterMapping dwarf_register_mapping; ///< Store the mapping function between DWARF registers number and register name in current architecture
 	RzBinDWARF *dw; ///< Holds ownership of RzBinDwarf, avoid releasing it prematurely
 	SetU *visited;
@@ -474,7 +474,7 @@ typedef struct rz_analysis_t {
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RzList /*<RzAnalysisFunction *>*/ *fcns;
 	HtUP *ht_addr_fun; // address => function
-	HtPP *ht_name_fun; // name => function
+	HtSP *ht_name_fun; // name => function
 	RzReg *reg;
 	ut8 *last_disasm_reg;
 	RzSyscall *syscall;
@@ -527,7 +527,7 @@ typedef struct rz_analysis_t {
 	RzList /*<leaddr_pair *>*/ *leaddrs;
 	RzPlatformTarget *arch_target;
 	RzPlatformTargetIndex *platform_target;
-	HtPP *ht_global_var; // global variables
+	HtSP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
 	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..
@@ -1157,7 +1157,7 @@ typedef struct rz_analysis_esil_t {
 	ut64 cur; // used for carry-flagging and borrow-flagging
 	ut8 lastsz; // in bits //used for signature-flag
 	/* native ops and custom ops */
-	HtPP *ops;
+	HtSP *ops;
 	RzStrBuf current_opstr;
 	RzIDStorage *sources;
 	HtUP *interrupts;

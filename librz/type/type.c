@@ -9,25 +9,6 @@
 #include <string.h>
 #include <sdb.h>
 
-static void types_ht_free(HtPPKv *kv) {
-	free(kv->key);
-	rz_type_base_type_free(kv->value);
-}
-
-static void types_ht_free_keep_val(HtPPKv *kv) {
-	free(kv->key);
-}
-
-static void formats_ht_free(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
-}
-
-static void callables_ht_free(HtPPKv *kv) {
-	free(kv->key);
-	rz_type_callable_free(kv->value);
-}
-
 /**
  * \brief Creates a new instance of the RzTypeDB
  *
@@ -46,15 +27,15 @@ RZ_API RzTypeDB *rz_type_db_new() {
 		return NULL;
 	}
 	typedb->target->default_type = strdup("int");
-	typedb->types = ht_pp_new(NULL, types_ht_free, NULL);
+	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_base_type_free);
 	if (!typedb->types) {
 		goto rz_type_db_new_fail;
 	}
-	typedb->formats = ht_pp_new(NULL, formats_ht_free, NULL);
+	typedb->formats = ht_ss_new(HT_STR_DUP, HT_STR_OWN);
 	if (!typedb->formats) {
 		goto rz_type_db_new_fail;
 	}
-	typedb->callables = ht_pp_new(NULL, callables_ht_free, NULL);
+	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
 	if (!typedb->callables) {
 		goto rz_type_db_new_fail;
 	}
@@ -68,9 +49,9 @@ RZ_API RzTypeDB *rz_type_db_new() {
 rz_type_db_new_fail:
 	free((void *)typedb->target->default_type);
 	free(typedb->target);
-	ht_pp_free(typedb->types);
-	ht_pp_free(typedb->formats);
-	ht_pp_free(typedb->callables);
+	ht_sp_free(typedb->types);
+	ht_ss_free(typedb->formats);
+	ht_sp_free(typedb->callables);
 	free(typedb);
 	return NULL;
 }
@@ -82,9 +63,9 @@ rz_type_db_new_fail:
  */
 RZ_API void rz_type_db_free(RzTypeDB *typedb) {
 	rz_type_parser_free(typedb->parser);
-	ht_pp_free(typedb->callables);
-	ht_pp_free(typedb->types);
-	ht_pp_free(typedb->formats);
+	ht_sp_free(typedb->callables);
+	ht_sp_free(typedb->types);
+	ht_ss_free(typedb->formats);
 	free((void *)typedb->target->default_type);
 	free(typedb->target->os);
 	free(typedb->target->cpu);
@@ -98,10 +79,10 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
  * Destroys all loaded base types and callable types.
  */
 RZ_API void rz_type_db_purge(RzTypeDB *typedb) {
-	ht_pp_free(typedb->callables);
-	typedb->callables = ht_pp_new(NULL, callables_ht_free, NULL);
-	ht_pp_free(typedb->types);
-	typedb->types = ht_pp_new(NULL, types_ht_free, NULL);
+	ht_sp_free(typedb->callables);
+	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_type_callable_free);
+	ht_sp_free(typedb->types);
+	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_type_base_type_free);
 	rz_type_parser_free(typedb->parser);
 	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
 }
@@ -110,8 +91,8 @@ RZ_API void rz_type_db_purge(RzTypeDB *typedb) {
  * \brief Purges formats in the instance of the RzTypeDB
  */
 RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
-	ht_pp_free(typedb->formats);
-	typedb->formats = ht_pp_new(NULL, formats_ht_free, NULL);
+	ht_ss_free(typedb->formats);
+	typedb->formats = ht_ss_new(HT_STR_DUP, HT_STR_OWN);
 }
 
 static void set_default_type(RzTypeTarget *target, int bits) {
@@ -841,7 +822,7 @@ struct PrettyHelperBufs {
 	RzStrBuf *arraybuf;
 };
 
-static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon, bool show_typedefs, bool allow_non_exist) {
+static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtSP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon, bool show_typedefs, bool allow_non_exist) {
 	rz_return_val_if_fail(typedb && type && used_types && self_ref, false);
 
 	bool is_anon = false;
@@ -852,7 +833,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		}
 		is_anon = !strncmp(type->identifier.name, "anonymous ", strlen("anonymous "));
 		*self_ref = false;
-		ht_pp_find(used_types, type->identifier.name, self_ref);
+		ht_sp_find(used_types, type->identifier.name, self_ref);
 		*self_ref = *self_ref && !is_anon; // no self_ref for anon types
 		*self_ref_typename = *self_ref ? strdup(type->identifier.name) : NULL;
 
@@ -937,7 +918,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 	return true;
 }
 
-static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, const char *identifier, HtPP *used_types, unsigned int opts, int unfold_level, int indent_level) {
+static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, const char *identifier, HtSP *used_types, unsigned int opts, int unfold_level, int indent_level) {
 	rz_return_val_if_fail(typedb && type, NULL);
 
 	if (unfold_level < 0) { // recursion base case
@@ -990,7 +971,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		unfold_level = 0; // no unfold
 		unfold_anon = unfold_all = false;
 	} else if (self_ref_typename) {
-		ht_pp_insert(used_types, self_ref_typename, NULL); // add the type to the ht
+		ht_sp_insert(used_types, self_ref_typename, NULL); // add the type to the ht
 	}
 	RzBaseType *btype = NULL;
 	bool is_anon = false;
@@ -1100,7 +1081,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		rz_strbuf_append(buf, "\n");
 	}
 	if (self_ref_typename) {
-		ht_pp_delete(used_types, self_ref_typename);
+		ht_sp_delete(used_types, self_ref_typename);
 		free(self_ref_typename);
 	}
 	free(typename_str);
@@ -1127,13 +1108,13 @@ RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL 
 	if (unfold_level < 0) { // any negative number means maximum unfolding
 		unfold_level = INT32_MAX;
 	}
-	HtPP *used_types = ht_pp_new0(); // use a hash table to keep track of unfolded types
+	HtSP *used_types = ht_sp_new(HT_STR_DUP, NULL, NULL); // use a hash table to keep track of unfolded types
 	if (!used_types) {
 		RZ_LOG_ERROR("Failed to create hashtable while pretty printing types")
 		return NULL;
 	}
 	char *pretty_type = type_as_pretty_string(typedb, type, identifier, used_types, opts, unfold_level, 0);
-	ht_pp_free(used_types);
+	ht_sp_free(used_types);
 	return pretty_type;
 }
 
@@ -1304,10 +1285,12 @@ RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *n
 	}
 	// Remove the original type first
 	// but do not free them
-	void *freefn = (void *)typedb->types->opt.freefn;
-	typedb->types->opt.freefn = types_ht_free_keep_val;
-	ht_pp_delete(typedb->types, t->name);
-	typedb->types->opt.freefn = freefn;
+	HtSPKv *kv = ht_sp_find_kv(typedb->types, t->name, NULL);
+	if (!kv || kv->value != t) {
+		return false;
+	}
+	kv->value = NULL;
+	ht_sp_delete(typedb->types, t->name);
 	char *error_msg = NULL;
 	int result = rz_type_parse_string_stateless(typedb->parser, typestr, &error_msg);
 	if (result) {
@@ -1317,7 +1300,7 @@ RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *n
 		free(error_msg);
 		// There is an error during the parsing thus we restore the old type
 		// We insert the type back
-		ht_pp_insert(typedb->types, t->name, t);
+		ht_sp_insert(typedb->types, t->name, t);
 		return false;
 	}
 	// Free now unnecessary old base type

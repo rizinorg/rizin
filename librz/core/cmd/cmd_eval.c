@@ -108,13 +108,13 @@ fail:
 	return !failed;
 }
 
-static void list_themes_in_path(HtPU *themes, const char *path) {
+static void list_themes_in_path(HtSU *themes, const char *path) {
 	RzListIter *iter;
 	const char *fn;
 	RzList *files = rz_sys_dir(path);
 	rz_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
-			ht_pu_insert(themes, fn, 1);
+			ht_su_insert(themes, fn, 1);
 		}
 	}
 	rz_list_free(files);
@@ -124,7 +124,7 @@ RZ_API char *rz_core_theme_get(RzCore *core) {
 	return core->curtheme;
 }
 
-static bool dict2keylist(void *user, const void *key, const ut64 value) {
+static bool dict2keylist(void *user, const char *key, const ut64 value) {
 	RzList *list = (RzList *)user;
 	rz_list_append(list, strdup(key));
 	return true;
@@ -139,7 +139,7 @@ static bool dict2keylist(void *user, const void *key, const ut64 value) {
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, NULL);
 
-	HtPU *themes = ht_pu_new0();
+	HtSU *themes = ht_su_new(HT_STR_DUP);
 	if (!themes) {
 		return NULL;
 	}
@@ -164,10 +164,10 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 
 	RzList *list = rz_list_newf(free);
 	rz_list_append(list, strdup("default"));
-	ht_pu_foreach(themes, dict2keylist, list);
+	ht_su_foreach(themes, dict2keylist, list);
 
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
-	ht_pu_free(themes);
+	ht_su_free(themes);
 	return list;
 }
 
