@@ -126,6 +126,11 @@ typedef enum {
 	X86_FPU_C3 = 14,
 } X86FPUFlags;
 
+typedef struct il_pure_effect_pair_t {
+	RzILOpPure *val;
+	RzILOpEffect *eff;
+} ILPureEffectPair;
+
 RZ_IPI bool x86_il_is_st_reg(X86Reg reg);
 
 /* Need to pass in val_size as a param to avoid unnecessary rounding of val. */
@@ -140,14 +145,9 @@ RZ_IPI RzILOpPure *x86_il_get_fpu_stack_top();
 
 RZ_IPI RzILOpEffect *x86_il_st_push_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat val_format, RZ_BORROW X86ILContext *ctx);
 RZ_IPI RzILOpEffect *x86_il_st_pop();
+RZ_IPI ILPureEffectPair x86_il_st_pop_with_val();
 
 #define x86_il_st_push(val, val_format) x86_il_st_push_ctx(val, val_format, ctx)
-
-#define X86_IL_ST_POP(val, eff) \
-	do { \
-		val = x86_il_get_st_reg(X86_REG_ST0); \
-		eff = x86_il_st_pop(); \
-	} while (0)
 
 RZ_IPI RzILOpPure *x86_il_get_fpu_flag(X86FPUFlags flag);
 RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RZ_OWN RZ_NONNULL RzILOpBool *value);
@@ -156,17 +156,17 @@ RZ_IPI RzILOpPure *x86_il_fpu_get_rmode();
 
 RZ_IPI RzILOpEffect *init_rmode();
 
-RZ_IPI RzILOpFloat *x86_il_resize_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBitVector *int_val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpBitVector *x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_resize_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBitVector *int_val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 
-RZ_IPI RzILOpFloat *x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI RzILOpFloat *x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 
 #define x86_il_resize_floating(val, format)        x86_il_resize_floating_ctx(val, format, ctx)
 #define x86_il_floating_from_int(int_val, format)  x86_il_floating_from_int_ctx(int_val, format, ctx)
