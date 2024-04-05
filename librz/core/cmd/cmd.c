@@ -3513,7 +3513,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	RzCmdParsedArgs *pr_args = NULL;
 	if (!ts_node_is_null(args)) {
 		RzCmdDesc *cd = rz_cmd_get_desc(state->core->rcmd, command_str);
-		bool do_unwrap = cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT;
+		bool do_unwrap = cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT && strcmp(command_str, ".(");
 		pr_args = ts_node_handle_arg_prargs(state, node, args, 1, do_unwrap);
 		if (!pr_args) {
 			goto err;

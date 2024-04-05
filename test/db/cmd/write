@@ -453,7 +453,8 @@ CMDS=<<EOF
 b 16
 $addr=$0
 $new_addr=%v \`$addr\`+16
-(wz16 str; wz ${str} @ `$addr`; px~:1 @ `$addr`; $addr=$`$new_addr`)
+(wz_px str; wz ${str}; px~:1)
+(wz16 str; .(wz_px ${str}) @ `$addr`; $addr=$`$new_addr`)
 .(wz16 \\)
 .(wz16 \\\\)
 .(wz16 \\a)
