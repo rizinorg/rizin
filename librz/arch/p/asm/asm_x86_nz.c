@@ -5209,6 +5209,7 @@ static int oprep(RzAsm *a, ut8 *data, const Opcode *op) {
 					if (instr.has_bnd) {
 						retval++;
 					}
+					free(instr.mnemonic);
 					return l + retval;
 				}
 				break;
