@@ -1154,8 +1154,10 @@ static void xnu_map_free(RzDebugMap *map) {
 }
 
 static RzList *xnu_dbg_modules(RzDebug *dbg) {
-#if __POWERPC__
+#if !defined(MAC_OS_X_VERSION_10_7)
 #warning TODO: xnu_dbg_modules not supported
+	// TASK_DYLD_INFO introduced in 10.6
+	// TASK_DYLD_ALL_IMAGE_INFO_* introduced in 10.7
 	return NULL;
 #else
 	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
