@@ -220,7 +220,9 @@ RZ_IPI bool rz_xnu_thread_get_gpr(RzXnuDebug *ctx, xnu_thread_t *thread) {
 }
 
 static bool xnu_fill_info_thread(RzDebug *dbg, xnu_thread_t *thread) {
-#if __POWERPC__
+#if !defined(MAC_OS_X_VERSION_10_6)
+	// THREAD_IDENTIFIER_INFO introduced in 10.6
+	// TODO: use e.g. only basic info as a fallback here
 	thread->name = strdup("unknown");
 	return false;
 #else
