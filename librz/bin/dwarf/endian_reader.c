@@ -155,6 +155,10 @@ RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const 
 }
 
 RZ_IPI ut64 R_relocate(RzBinEndianReader *R, ut64 offset, ut64 value) {
+	rz_return_val_if_fail(R, value);
+	if (!R->relocations) {
+		return value;
+	}
 	const RzBinReloc *reloc = ht_up_find(R->relocations, offset, NULL);
 	if (reloc) {
 		RZ_LOG_DEBUG("Relocating 0x%" PFMT64x "\n", offset);
