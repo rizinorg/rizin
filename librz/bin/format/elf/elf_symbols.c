@@ -253,18 +253,17 @@ static void elf_symbol_fini(void *e, RZ_UNUSED void *user) {
 }
 
 static bool compute_symbols_from_segment(ELFOBJ *bin, RzVector /*<RzBinElfSymbol>*/ *result, struct symbols_segment *segment, RzBinElfSymbolFilter filter, HtUU *set) {
+	if (has_already_been_processed(bin, segment->offset, set)) {
+		return true;
+	}
+
+	if (!ht_uu_insert(set, segment->offset, 1ULL)) {
+		return false;
+	}
+
 	ut64 offset = segment->offset + segment->entry_size;
 
 	for (size_t i = 1; i < segment->number; i++) {
-		if (has_already_been_processed(bin, offset, set)) {
-			offset += segment->entry_size;
-			continue;
-		}
-
-		if (!ht_uu_insert(set, offset, offset)) {
-			return false;
-		}
-
 		Elf_(Sym) entry;
 		if (!get_symbol_entry(bin, offset, &entry)) {
 			return false;
