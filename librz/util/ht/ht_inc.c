@@ -119,7 +119,7 @@ static RZ_OWN HtName_(Ht) * internal_ht_new(ut32 size, ut32 prime_idx, HT_(Optio
 }
 
 /**
- * \brief Create a new hashtable with options \p opt
+ * \brief Create a new hashtable with options \p opt.
  *
  * Options are copied to an inner field.
  */
@@ -281,7 +281,9 @@ RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, VALUE_T
 	return insert_update(ht, key, value, true);
 }
 
-// Update the key of an element that has old_key as key and replace it with new_key
+/**
+ * Update the key of an element that has \p old_key as key and replace it with \p new_key
+ */
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
 	rz_return_val_if_fail(ht, false);
 	// First look for the value associated with old_key
@@ -363,7 +365,9 @@ RZ_API RZ_BORROW VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYP
 	return res ? res->value : HT_NULL_VALUE;
 }
 
-// Deletes a entry from the hash table from the key, if the pair exists.
+/**
+ * Deletes an entry from the hash table \p ht with key \p key, if the pair exists.
+ */
 RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key) {
 	rz_return_val_if_fail(ht, false);
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
@@ -385,7 +389,8 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key) {
 }
 
 /**
- * \brief Apply \p cb for each KV pair in \p ht
+ * Apply \p cb for each KV pair in \p ht.
+ * If \p cb returns false, the iteration is stopped.
  */
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) * ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
