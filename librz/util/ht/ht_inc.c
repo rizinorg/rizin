@@ -331,7 +331,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE old_key,
  * If \p found is not NULL, it will be set to true if the entry was found,
  * false otherwise.
  */
-RZ_API RZ_BORROW HT_(Kv) * Ht_(find_kv)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, bool *found) {
+RZ_API RZ_BORROW HT_(Kv) * Ht_(find_kv)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	if (found) {
 		*found = false;
 	}
@@ -358,7 +358,7 @@ RZ_API RZ_BORROW HT_(Kv) * Ht_(find_kv)(RZ_NONNULL HtName_(Ht) * ht, const KEY_T
  * If \p found is not NULL, it will be set to true if the entry was found,
  * false otherwise.
  */
-RZ_API RZ_BORROW VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, bool *found) {
+RZ_API RZ_BORROW VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	HT_(Kv) *res = Ht_(find_kv)(ht, key, found);
 	return res ? res->value : HT_NULL_VALUE;
 }
@@ -387,7 +387,7 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key) {
 /**
  * \brief Apply \p cb for each KV pair in \p ht
  */
-RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) * ht, RZ_NONNULL HT_(ForeachCallback) cb, void *user) {
+RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) * ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
 	ut32 i;
 
