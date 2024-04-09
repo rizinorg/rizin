@@ -3,7 +3,7 @@ directory = xz-5.2.9
 source_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/xz-5.2.9.tar.xz
 source_fallback_url = https://github.com/tukaani-project/xz/releases/download/v5.2.9/xz-5.2.9.tar.gz
 # source_fallback_url = https://tukaani.org/xz/xz-5.2.9.tar.gz // possibly has different hash, let's prefer github
-source_filename = xz-5.2.9.tar.gz
+source_filename = xz-5.2.9.tar.xz
 source_hash = 287ef163e7e57561e9de590b2a9037457af24f03a46bbd12bf84f3263679e8d2
 patch_directory = xz-5.2.9
 
