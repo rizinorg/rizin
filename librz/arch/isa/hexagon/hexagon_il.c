@@ -228,7 +228,7 @@ static RZ_OWN RzILOpEffect *hex_pkt_to_il_seq(HexPkt *pkt) {
 		rz_pvector_clear(pkt->il_ops);
 		// We need at least the instruction op and the packet commit.
 		// So if there aren't at least two ops something went wrong.
-		RZ_LOG_WARN("Invalid il ops sequence! There should be at least two il ops per packet.\n");
+		RZ_LOG_DEBUG("Invalid il ops sequence! There should be at least two il ops per packet.\n");
 		return NULL;
 	}
 	RzILOpEffect *complete_seq = EMPTY();
