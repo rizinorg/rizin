@@ -695,17 +695,16 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 #undef PRINTF_LN_NOT
 #undef PRINTF_LN_STR
 
-static char *fcnjoin(RzList /*<RzAnalysisFunction *>*/ *list) {
-	RzAnalysisFunction *n;
-	RzListIter *iter;
+static char *fcnjoin(RzPVector /*<RzAnalysisFunction *>*/ *pvec) {
+	RzAnalysisFunction *fcn;
+	void **iter;
 	RzStrBuf buf;
 	rz_strbuf_init(&buf);
-	rz_list_foreach (list, iter, n) {
-		rz_strbuf_appendf(&buf, " 0x%08" PFMT64x, n->addr);
+	rz_pvector_foreach (pvec, iter) {
+		fcn = *iter;
+		rz_strbuf_appendf(&buf, " 0x%08" PFMT64x, fcn->addr);
 	}
-	char *s = strdup(rz_strbuf_get(&buf));
-	rz_strbuf_fini(&buf);
-	return s;
+	return rz_strbuf_drain_nofree(&buf);
 }
 
 static char *ut64join(RzList /*<ut64 *>*/ *list) {
@@ -2105,7 +2104,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_handler(RzCore *core, int arg
 		RZ_LOG_ERROR("core: Cannot find basic block\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisFunction *fcn = rz_list_first(b->fcns);
+	RzAnalysisFunction *fcn = rz_pvector_head(b->fcns);
 	rz_analysis_function_remove_block(fcn, b);
 	return RZ_CMD_STATUS_OK;
 }
@@ -3818,11 +3817,11 @@ static int fcn_cmp_addr(const void *a, const void *b, void *user) {
 }
 
 static RzList /*<RzAnalysisFunction *>*/ *functions_sorted_by_addr(RzAnalysis *analysis) {
-	RzList *list = rz_analysis_function_list(analysis);
-	if (!list) {
+	RzPVector *pvec = rz_analysis_function_list(analysis);
+	if (!pvec) {
 		return NULL;
 	}
-	RzList *sorted = rz_list_clone(list);
+	RzList *sorted = rz_util_copy_pvector_as_list(pvec);
 	if (!sorted) {
 		return NULL;
 	}
@@ -3877,15 +3876,16 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_in_handler(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_count_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", rz_list_length(core->analysis->fcns));
+	rz_cons_printf("%" PFMTSZu "\n", rz_pvector_len(core->analysis->fcns));
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_size_sum_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalysisFunction *fcn;
-	RzListIter *iter;
+	void **iter;
 	ut64 total = 0;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		total += rz_analysis_function_realsize(fcn);
 	}
 	rz_cons_printf("%" PFMT64u "\n", total);
@@ -4315,9 +4315,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 		goto exit;
 	}
 
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		HtPU *db = ht_pu_new0();
 		if (!db) {
 			break;
@@ -4328,7 +4329,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 	}
 
 	HtPU *db;
-	rz_list_foreach (dbs, iter, db) {
+	RzListIter *iter2;
+	rz_list_foreach (dbs, iter2, db) {
 		ht_pu_foreach(db, (HtPUForeachCallback)add_keys_to_set_cb, keys_set);
 	}
 
@@ -4342,11 +4344,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 	rz_table_add_column(t, typeNumber, "addr", 0);
 
 	char *key;
-	rz_list_foreach (keys, iter, key) {
+	rz_list_foreach (keys, iter2, key) {
 		rz_table_add_column(t, typeNumber, key, 0);
 	}
 
-	RzListIter *iter2;
 	rz_list_foreach (dbs, iter2, db) {
 		RzPVector *items = rz_pvector_new(free);
 		if (!items) {
@@ -4356,7 +4357,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fcnAddr);
 		rz_pvector_push(items, fcn ? strdup(fcn->name) : strdup(""));
 		rz_pvector_push(items, fcn ? rz_str_newf("0x%08" PFMT64x, fcnAddr) : strdup("0"));
-		rz_list_foreach (keys, iter, key) {
+		RzListIter *lit;
+		rz_list_foreach (keys, lit, key) {
 			ut32 n = (ut32)ht_pu_find(db, key, NULL);
 			rz_pvector_push(items, rz_str_newf("%u", n));
 		}
@@ -4424,12 +4426,13 @@ RZ_IPI RzCmdStatus rz_analysis_functions_map_handler(RzCore *core, int argc, con
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzListIter *iter;
+	void **iter;
 	void **vit;
 	RzAnalysisFunction *fcn;
 	RzAnalysisBlock *b;
 	// for each function
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		// for each basic block in the function
 		rz_pvector_foreach (fcn->bbs, vit) {
 			b = (RzAnalysisBlock *)*vit;
@@ -4601,10 +4604,22 @@ RZ_IPI RzCmdStatus rz_analysis_function_del_handler(RzCore *core, int argc, cons
 
 RZ_IPI RzCmdStatus rz_analysis_function_del_all_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalysisFunction *f;
-	RzListIter *iter, *iter_tmp;
-	rz_list_foreach_safe (core->analysis->fcns, iter, iter_tmp, f) {
+	// in this loop we remove functions and since we modify the
+	// pvector size we cannot loop normally.
+	size_t count = rz_pvector_len(core->analysis->fcns);
+	for (size_t i = 0; i < count;) {
+		f = (RzAnalysisFunction *)rz_pvector_at(core->analysis->fcns, i);
 		rz_analysis_del_jmprefs(core->analysis, f);
 		rz_core_analysis_undefine(core, f->addr);
+		size_t n_count = rz_pvector_len(core->analysis->fcns);
+		if (n_count < count) {
+			// the pvector was modified so we just
+			// update the size and keep looping
+			count = n_count;
+		} else {
+			// we increase the index
+			i++;
+		}
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -4615,11 +4630,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_analyze_jmptable_handler(RzCore *core, i
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisBlock *block = rz_list_first(blocks);
-	if (block && !rz_list_empty(block->fcns)) {
+	if (block && !rz_pvector_empty(block->fcns)) {
 		ut64 table = rz_num_math(core->num, argv[1]);
 		ut64 elements = rz_num_math(core->num, argv[2]);
 		RzStackAddr sp = rz_analysis_block_get_sp_at(block, core->offset);
-		rz_analysis_jmptbl(core->analysis, rz_list_first(block->fcns), block, core->offset, table, elements, UT64_MAX, sp);
+		rz_analysis_jmptbl(core->analysis, rz_pvector_head(block->fcns), block, core->offset, table, elements, UT64_MAX, sp);
 	} else {
 		RZ_LOG_ERROR("No function defined here\n");
 	}
@@ -5972,9 +5987,10 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 				pj_end(pj);
 			}
 			pj_ka(pj, "fcns");
-			RzListIter *iter2;
+			void **iter2;
 			RzAnalysisFunction *fcn;
-			rz_list_foreach (block->fcns, iter2, fcn) {
+			rz_pvector_foreach (block->fcns, iter2) {
+				fcn = *iter2;
 				pj_n(pj, fcn->addr);
 			}
 			pj_end(pj);
@@ -6030,9 +6046,10 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 				}
 			}
 			if (block->fcns) {
-				RzListIter *iter2;
+				void **iter2;
 				RzAnalysisFunction *fcn;
-				rz_list_foreach (block->fcns, iter2, fcn) {
+				rz_pvector_foreach (block->fcns, iter2) {
+					fcn = *iter2;
 					rz_cons_printf(" .u 0x%" PFMT64x, fcn->addr);
 				}
 			}
@@ -6172,7 +6189,7 @@ RZ_IPI RzCmdStatus rz_list_signatures_in_sigdb_handler(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus rz_print_analysis_details_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	st64 fcns = rz_list_length(core->analysis->fcns);
+	st64 fcns = rz_pvector_len(core->analysis->fcns);
 	st64 strs = rz_flag_count(core->flags, "str.*");
 	st64 syms = rz_flag_count(core->flags, "sym.*");
 	st64 imps = rz_flag_count(core->flags, "sym.imp.*");
@@ -6305,16 +6322,17 @@ RZ_IPI RzCmdStatus rz_analyze_function_linked_offsets_handler(RzCore *core, int 
 		}
 		rz_core_global_vars_propagate_types(core, fcn);
 		return RZ_CMD_STATUS_OK;
-	} else if (rz_list_empty(core->analysis->fcns)) {
+	} else if (rz_pvector_empty(core->analysis->fcns)) {
 		RZ_LOG_ERROR("Couldn't find any functions\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzListIter *it;
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	void **it;
+	rz_pvector_foreach (core->analysis->fcns, it) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
+		fcn = *it;
 		rz_core_global_vars_propagate_types(core, fcn);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -6334,7 +6352,7 @@ RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, c
 	ut64 code_size = rz_num_get(core->num, "$SS");
 	ut64 base_addr = rz_num_get(core->num, "$S");
 	ut64 chunk_size, chunk_offset, i;
-	RzListIter *iter;
+	void **iter;
 	void **iter2;
 	RzAnalysisFunction *fcn;
 	RzAnalysisBlock *b;
@@ -6353,7 +6371,8 @@ RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, c
 	}
 
 	// for each function
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		// for each basic block in the function
 		rz_pvector_foreach (fcn->bbs, iter2) {
 			b = (RzAnalysisBlock *)*iter2;
@@ -6506,10 +6525,11 @@ RZ_IPI RzCmdStatus rz_analysis_data_function_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analysis_data_function_gaps_handler(RzCore *core, int argc, const char **argv) {
 	ut64 end = UT64_MAX;
 	RzAnalysisFunction *fcn;
-	RzListIter *iter;
+	void **iter;
 	int i, wordsize = core->rasm->bits / 8;
-	rz_list_sort(core->analysis->fcns, cmpaddr, NULL);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_sort(core->analysis->fcns, cmpaddr, NULL);
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		if (end != UT64_MAX) {
 			int range = fcn->addr - end;
 			if (range > 0) {

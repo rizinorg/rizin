@@ -118,7 +118,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->reg = rz_reg_new();
 	analysis->last_disasm_reg = NULL;
 	analysis->lineswidth = 0;
-	analysis->fcns = rz_list_newf(rz_analysis_function_free);
+	analysis->fcns = rz_pvector_new(rz_analysis_function_free);
 	analysis->leaddrs = NULL;
 	analysis->imports = rz_list_newf(free);
 	rz_analysis_set_bits(analysis, 32);
@@ -162,7 +162,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 	rz_hash_free(a->hash);
 	rz_analysis_il_vm_cleanup(a);
-	rz_list_free(a->fcns);
+	rz_pvector_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_pp_free(a->ht_name_fun);
 	set_u_free(a->visited);
@@ -472,8 +472,8 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	sdb_reset(analysis->sdb_classes_attrs);
 	sdb_reset(analysis->sdb_cc);
 	sdb_reset(analysis->sdb_noret);
-	rz_list_free(analysis->fcns);
-	analysis->fcns = rz_list_newf(rz_analysis_function_free);
+	rz_pvector_free(analysis->fcns);
+	analysis->fcns = rz_pvector_new(rz_analysis_function_free);
 	rz_analysis_purge_imports(analysis);
 }
 

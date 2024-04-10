@@ -421,10 +421,11 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			// resize function if needed
 			next_module_function_size = rz_analysis_function_linear_size(next_module_function);
 			if (next_module_function_size < flirt_fcn_size) {
-				RzListIter *iter;
-				RzListIter *iter_tmp;
-				RzAnalysisFunction *fcn;
-				rz_list_foreach_safe (analysis->fcns, iter, iter_tmp, fcn) {
+				// in this loop we remove functions and since we modify the
+				// pvector size we cannot loop normally.
+				size_t count = rz_pvector_len(analysis->fcns);
+				for (size_t i = 0; i < count;) {
+					RzAnalysisFunction *fcn = (RzAnalysisFunction *)rz_pvector_at(analysis->fcns, i);
 					if (fcn != next_module_function &&
 						fcn->addr >= next_module_function->addr + next_module_function_size &&
 						fcn->addr < next_module_function->addr + flirt_fcn_size) {
@@ -436,6 +437,9 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 						}
 						next_module_function->ninstr += fcn->ninstr;
 						rz_analysis_function_delete(fcn);
+						count = rz_pvector_len(analysis->fcns);
+					} else {
+						i++;
 					}
 				}
 				rz_analysis_function_resize(next_module_function, flirt_fcn_size);
@@ -513,15 +517,16 @@ static int node_match_buffer(RzAnalysis *analysis, const RzFlirtNode *node, ut8 
 static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_node) {
 	bool ret = true;
 
-	if (rz_list_length(analysis->fcns) == 0) {
+	if (rz_pvector_len(analysis->fcns) == 0) {
 		RZ_LOG_ERROR("FLIRT: There are no analyzed functions. Have you run 'aa'?\n");
 		return ret;
 	}
 
 	analysis->flb.push_fs(analysis->flb.f, "flirt");
-	RzListIter *it_func;
+	void **it_func;
 	RzAnalysisFunction *func;
-	rz_list_foreach (analysis->fcns, it_func, func) {
+	rz_pvector_foreach (analysis->fcns, it_func) {
+		func = *it_func;
 		if (func->name && !strncmp(func->name, "flirt.", strlen("flirt."))) {
 			continue;
 		}

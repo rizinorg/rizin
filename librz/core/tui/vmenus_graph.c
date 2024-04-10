@@ -121,16 +121,17 @@ static RzList /*<RzCoreVisualViewGraphItem *>*/ *__refs(RzCore *core, ut64 addr)
 
 static RzList /*<RzCoreVisualViewGraphItem *>*/ *__fcns(RzCore *core) {
 	RzList *r = rz_list_newf(free);
-	RzListIter *iter;
+	void **iter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, iter) {
+		fcn = *iter;
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);
 		item->addr = fcn->addr;
 		item->name = fcn->name;
 		item->fcn = fcn;
 		rz_list_append(r, item);
 	}
-	return r; // core->analysis->fcns;
+	return r;
 }
 
 static void __seek_cursor(RzCoreVisualViewGraph *status) {

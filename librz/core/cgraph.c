@@ -63,9 +63,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_datarefs(RZ_NONNULL
 	if (addr == UT64_MAX) {
 		ut64 from = rz_config_get_i(core->config, "graph.from");
 		ut64 to = rz_config_get_i(core->config, "graph.to");
-		RzListIter *it;
+		void **it;
 		RzAnalysisFunction *fcn;
-		rz_list_foreach (core->analysis->fcns, it, fcn) {
+		rz_pvector_foreach (core->analysis->fcns, it) {
+			fcn = *it;
 			if (!is_between(from, fcn->addr, to)) {
 				continue;
 			}
@@ -112,9 +113,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_coderefs(RZ_NONNULL
 	if (addr == UT64_MAX) {
 		ut64 from = rz_config_get_i(core->config, "graph.from");
 		ut64 to = rz_config_get_i(core->config, "graph.to");
-		RzListIter *it;
+		void **it;
 		RzAnalysisFunction *fcn;
-		rz_list_foreach (core->analysis->fcns, it, fcn) {
+		rz_pvector_foreach (core->analysis->fcns, it) {
+			fcn = *it;
 			if (!is_between(from, fcn->addr, to)) {
 				continue;
 			}
@@ -223,9 +225,10 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_callgraph(RZ_NONNUL
 	if (addr == UT64_MAX) {
 		ut64 from = rz_config_get_i(core->config, "graph.from");
 		ut64 to = rz_config_get_i(core->config, "graph.to");
-		RzListIter *it;
+		void **it;
 		RzAnalysisFunction *fcn;
-		rz_list_foreach (core->analysis->fcns, it, fcn) {
+		rz_pvector_foreach (core->analysis->fcns, it) {
+			fcn = *it;
 			if (!is_between(from, fcn->addr, to)) {
 				continue;
 			}
@@ -342,7 +345,7 @@ static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<
 static RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function_bbs(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE GraphBodyFn body_fn) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
-	if (rz_list_empty(core->analysis->fcns)) {
+	if (rz_pvector_empty(core->analysis->fcns)) {
 		return NULL;
 	}
 	HtUP *cache = NULL;
@@ -376,9 +379,10 @@ static RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function_bbs(RZ_NON
 	if (addr == UT64_MAX) {
 		ut64 from = rz_config_get_i(core->config, "graph.from");
 		ut64 to = rz_config_get_i(core->config, "graph.to");
-		RzListIter *it;
+		void **it;
 		RzAnalysisFunction *fcn;
-		rz_list_foreach (core->analysis->fcns, it, fcn) {
+		rz_pvector_foreach (core->analysis->fcns, it) {
+			fcn = *it;
 			if (!(is_between(from, fcn->addr, to) && fcn->type & (RZ_ANALYSIS_FCN_TYPE_SYM | RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_LOC))) {
 				continue;
 			}
@@ -880,20 +884,20 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
-	const RzList *fcns = core->analysis->fcns;
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
 	}
-	if (rz_list_length(fcns) < 1) {
+	if (rz_pvector_len(core->analysis->fcns) < 1) {
 		RZ_LOG_WARN("Cannot build iCFG without discovered functions. Did you run 'aac' and 'aap'?\n");
 		return NULL;
 	}
 
 	HtUU *graph_idx = ht_uu_new0();
-	RzListIter *it;
+	void **it;
 	const RzAnalysisFunction *fcn;
-	rz_list_foreach (fcns, it, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, it) {
+		fcn = *it;
 		extend_icfg(core->analysis, graph, graph_idx, fcn);
 	}
 	ht_uu_free(graph_idx);

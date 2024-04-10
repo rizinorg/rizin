@@ -316,8 +316,8 @@ bool test_rz_analysis_block_split_in_function() {
 
 	mu_assert("function has first block after split", rz_pvector_contains(fcn->bbs, block));
 	mu_assert("function has second block after split", rz_pvector_contains(fcn->bbs, second));
-	mu_assert("second block is in function after split", rz_list_contains(block->fcns, fcn));
-	mu_assert("second block is in function after split", rz_list_contains(second->fcns, fcn));
+	mu_assert("second block is in function after split", rz_pvector_contains(block->fcns, fcn));
+	mu_assert("second block is in function after split", rz_pvector_contains(second->fcns, fcn));
 
 	rz_analysis_block_unref(block);
 	rz_analysis_block_unref(second);
@@ -396,9 +396,9 @@ bool test_rz_analysis_block_merge_in_function() {
 	mu_assert("merge success", success);
 	mu_assert_eq(blocks_count(analysis), 1, "count after merge");
 	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "fcn bbs after merge");
-	mu_assert_eq(rz_list_length(first->fcns), 1, "bb functions after merge");
+	mu_assert_eq(rz_pvector_len(first->fcns), 1, "bb functions after merge");
 	mu_assert("function has merged block", rz_pvector_contains(fcn->bbs, first));
-	mu_assert("merged block is in function", rz_list_contains(first->fcns, fcn));
+	mu_assert("merged block is in function", rz_pvector_contains(first->fcns, fcn));
 
 	rz_analysis_block_unref(first);
 	// second must be already freed by the merge!
@@ -422,13 +422,13 @@ bool test_rz_analysis_block_delete() {
 	assert_block_invariants(analysis);
 	mu_assert_eq(block->ref, 2, "refs after adding");
 	mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "fcn bbs after add");
-	mu_assert_eq(rz_list_length(block->fcns), 1, "bb fcns after add");
+	mu_assert_eq(rz_pvector_len(block->fcns), 1, "bb fcns after add");
 
 	rz_analysis_delete_block(block);
 	assert_block_invariants(analysis);
 	mu_assert_eq(block->ref, 1, "refs after delete");
 	mu_assert_eq(rz_pvector_len(fcn->bbs), 0, "fcn bbs after delete");
-	mu_assert_eq(rz_list_length(block->fcns), 0, "bb fcns after delete");
+	mu_assert_eq(rz_pvector_len(block->fcns), 0, "bb fcns after delete");
 
 	rz_analysis_block_unref(block);
 

@@ -288,9 +288,10 @@ RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *
 }
 
 RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, it) {
+		fcn = *it;
 		ut64 from = rz_analysis_function_min_addr(fcn);
 		ut64 to = rz_analysis_function_max_addr(fcn);
 		rz_core_analysis_esil(core, from, to - from, fcn);
@@ -1161,18 +1162,6 @@ static int find_bb(ut64 *addr, RzAnalysisBlock *bb, void *user) {
 	return *addr != bb->addr;
 }
 
-static RzList /*<void *>*/ *pvector_to_list(RzPVector /*<void *>*/ *pvec) {
-	RzList *list = rz_list_new();
-	if (!list) {
-		return NULL;
-	}
-	void **it;
-	rz_pvector_foreach (pvec, it) {
-		rz_list_append(list, *it);
-	}
-	return list;
-}
-
 static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	(*next_i)++;
 	ut64 cur_addr = *next_i + ctx->start_addr;
@@ -1180,7 +1169,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 		if (!ctx->cur_bb) {
 			ctx->path = rz_list_new();
 			ctx->switch_path = rz_list_new();
-			ctx->bbl = pvector_to_list(ctx->fcn->bbs);
+			ctx->bbl = rz_util_copy_pvector_as_list(ctx->fcn->bbs);
 			ctx->cur_bb = rz_analysis_get_block_at(ctx->fcn->analysis, ctx->fcn->addr);
 			rz_list_push(ctx->path, ctx->cur_bb);
 		}

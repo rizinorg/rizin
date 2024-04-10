@@ -276,9 +276,10 @@ RZ_IPI RzCmdStatus rz_flag_local_list_handler(RzCore *core, int argc, const char
 
 RZ_IPI RzCmdStatus rz_flag_local_list_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn;
-	RzListIter *it;
+	void **it;
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, it) {
+		fcn = *it;
 		if (!fcn->labels->count) {
 			continue;
 		}

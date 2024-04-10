@@ -472,7 +472,7 @@ typedef struct rz_analysis_t {
 	void *core;
 	ut64 gp; // analysis.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
-	RzList /*<RzAnalysisFunction *>*/ *fcns;
+	RzPVector /*<RzAnalysisFunction *>*/ *fcns;
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
 	RzReg *reg;
@@ -973,7 +973,7 @@ typedef struct rz_analysis_bb_t {
 	const char *cmpreg;
 	ut32 bbhash; // calculated with xxhash
 
-	RzList /*<RzAnalysisFunction *>*/ *fcns;
+	RzPVector /*<RzAnalysisFunction *>*/ *fcns;
 	RzAnalysis *analysis;
 	int ref;
 } RzAnalysisBlock;
@@ -1520,10 +1520,10 @@ RZ_API RZ_BORROW RzAnalysisFunction *rz_analysis_first_function_in(RZ_NONNULL RZ
 
 RZ_API RzAnalysisFunction *rz_analysis_get_function_at(const RzAnalysis *analysis, ut64 addr);
 
-RZ_API bool rz_analysis_function_delete(RzAnalysisFunction *fcn);
+RZ_API void rz_analysis_function_delete(RZ_NONNULL RzAnalysisFunction *fcn);
 
 // returns the list of functions in the RzAnalysis instance
-RZ_API RZ_BORROW RzList /*<RzAnalysisFunction *>*/ *rz_analysis_function_list(RzAnalysis *analysis);
+RZ_API RZ_BORROW RzPVector /*<RzAnalysisFunction *>*/ *rz_analysis_function_list(RzAnalysis *analysis);
 
 // rhange the entrypoint of fcn
 // This can fail (and return false) if there is already another function at the new address
@@ -1948,7 +1948,7 @@ RZ_API double rz_analysis_similarity_function(RZ_NONNULL RzAnalysis *analysis, R
 RZ_API double rz_analysis_similarity_basic_block_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisBlock *bb_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisBlock *bb_b);
 RZ_API double rz_analysis_similarity_function_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisFunction *fcn_b);
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b, RZ_NONNULL RzAnalysisMatchOpt *opt);
-RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b, RZ_NONNULL RzAnalysisMatchOpt *opt);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RzPVector /*<RzAnalysisFunction *>*/ *pvec_a, RzPVector /*<RzAnalysisFunction *>*/ *pvec_b, RZ_NONNULL RzAnalysisMatchOpt *opt);
 RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *result);
 
 /* value.c */

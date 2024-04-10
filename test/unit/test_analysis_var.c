@@ -41,10 +41,11 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 
 #define assert_sane(analysis) \
 	do { \
-		RzListIter *ass_it; \
-		RzAnalysisFunction *ass_fcn; \
-		rz_list_foreach ((analysis)->fcns, ass_it, ass_fcn) { \
-			if (!sanitize(ass_fcn)) { \
+		void **assert_it; \
+		RzAnalysisFunction *assert_fcn; \
+		rz_pvector_foreach ((analysis)->fcns, assert_it) { \
+			assert_fcn = *assert_it; \
+			if (!sanitize(assert_fcn)) { \
 				return false; \
 			} \
 		} \

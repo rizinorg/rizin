@@ -291,9 +291,10 @@ RZ_IPI RzCmdStatus rz_comment_function_remove_handler(RzCore *core, int argc, co
 }
 
 RZ_IPI RzCmdStatus rz_comment_function_remove_all_handler(RzCore *core, int argc, const char **argv) {
-	RzListIter *it;
+	void **it;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	rz_pvector_foreach (core->analysis->fcns, it) {
+		fcn = *it;
 		meta_function_comment_remove(core->analysis, fcn);
 	}
 	return RZ_CMD_STATUS_OK;
