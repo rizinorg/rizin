@@ -26,7 +26,7 @@ static void fini_kv_val(HT_(Kv) *kv, void *user) {
  * \param dup_val Function to making copy of a value when inserting
  * \param free_val Function to releasing a stored value
  */
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(HtStrOption key_opt, HT_(DupValue) dup_val, HT_(FreeValue) free_val) {
+RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(HtStrOption key_opt, RZ_NULLABLE HT_(DupValue) dup_val, RZ_NULLABLE HT_(FreeValue) free_val) {
 	HT_(Options) opt = {
 		.cmp = (HT_(ListComparator))strcmp,
 		.hashfn = (HT_(HashFunction))sdb_hash,

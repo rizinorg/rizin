@@ -10,7 +10,7 @@
 /**
  * \brief Create a new hashtable
  */
-RZ_API HtName_(Ht) * Ht_(new)(void) {
+RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(void) {
 	HT_(Options) opt = { 0 };
 	return Ht_(new_opt)(&opt);
 }

@@ -166,7 +166,7 @@ RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, VALUE_T
 // Update the key of an element in the hashtable
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE old_key, const KEY_TYPE new_key);
 // Delete a key from the hashtable.
-RZ_API bool Ht_(delete)(HtName_(Ht) * ht, const KEY_TYPE key);
+RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key);
 // Find the value corresponding to the matching key.
 RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
 // Iterates over all elements in the hashtable, calling the cb function on each Kv.
