@@ -30,7 +30,7 @@ static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue)
  * \param valdup Function to making copy of a value when inserting
  * \param valfree Function to releasing a stored value
  */
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
 	HT_(Options) opt;
 	init_options(&opt, valdup, valfree);
 	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
@@ -41,7 +41,7 @@ RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLAB
  * \param valdup Function to making copy of a value when inserting
  * \param valfree Function to releasing a stored value
  */
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new_size)(ut32 initial_size, RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new_size)(ut32 initial_size, RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
 	HT_(Options) opt;
 	init_options(&opt, valdup, valfree);
 	return Ht_(new_opt_size)(&opt, initial_size);

@@ -25,7 +25,7 @@ static void fini_kv_val(HT_(Kv) *kv, void *user) {
  * \param key_opt Defines how key is stored
  * \param val_opt Defines how value is stored
  */
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(HtStrOption key_opt, HtStrOption val_opt) {
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, HtStrOption val_opt) {
 	HT_(Options) opt = {
 		.cmp = (HT_(ListComparator))strcmp,
 		.hashfn = (HT_(HashFunction))sdb_hash,

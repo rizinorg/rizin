@@ -21,31 +21,31 @@ static const ut32 ht_primes_sizes[] = {
 	4166287, 4999559, 5999471, 7199369
 };
 
-static inline ut32 hashfn(HtName_(Ht) * ht, const KEY_TYPE k) {
+static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
 	return ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k);
 }
 
-static inline ut32 bucketfn(HtName_(Ht) * ht, const KEY_TYPE k) {
+static inline ut32 bucketfn(HtName_(Ht) *ht, const KEY_TYPE k) {
 	return hashfn(ht, k) % ht->size;
 }
 
-static inline KEY_TYPE dupkey(HtName_(Ht) * ht, const KEY_TYPE k) {
+static inline KEY_TYPE dupkey(HtName_(Ht) *ht, const KEY_TYPE k) {
 	return ht->opt.dupkey ? ht->opt.dupkey(k) : (KEY_TYPE)k;
 }
 
-static inline VALUE_TYPE dupval(HtName_(Ht) * ht, const VALUE_TYPE v) {
+static inline VALUE_TYPE dupval(HtName_(Ht) *ht, const VALUE_TYPE v) {
 	return ht->opt.dupvalue ? ht->opt.dupvalue(v) : (VALUE_TYPE)v;
 }
 
-static inline ut32 calcsize_key(HtName_(Ht) * ht, const KEY_TYPE k) {
+static inline ut32 calcsize_key(HtName_(Ht) *ht, const KEY_TYPE k) {
 	return ht->opt.calcsizeK ? ht->opt.calcsizeK(k) : 0;
 }
 
-static inline ut32 calcsize_val(HtName_(Ht) * ht, const VALUE_TYPE v) {
+static inline ut32 calcsize_val(HtName_(Ht) *ht, const VALUE_TYPE v) {
 	return ht->opt.calcsizeV ? ht->opt.calcsizeV(v) : 0;
 }
 
-static inline void fini_kv_pair(HtName_(Ht) * ht, HT_(Kv) * kv) {
+static inline void fini_kv_pair(HtName_(Ht) *ht, HT_(Kv) *kv) {
 	if (ht->opt.finiKV) {
 		ht->opt.finiKV(kv, ht->opt.finiKV_user);
 	}
@@ -64,7 +64,7 @@ static inline ut32 compute_size(ut32 idx, ut32 sz) {
 	return idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) ? ht_primes_sizes[idx] : (sz | 1);
 }
 
-static inline bool is_kv_equal(HtName_(Ht) * ht, const KEY_TYPE key, const ut32 key_len, const HT_(Kv) * kv) {
+static inline bool is_kv_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, const HT_(Kv) *kv) {
 	if (key_len != kv->key_len) {
 		return false;
 	}
@@ -76,11 +76,11 @@ static inline bool is_kv_equal(HtName_(Ht) * ht, const KEY_TYPE key, const ut32 
 	return res;
 }
 
-static inline HT_(Kv) * kv_at(HtName_(Ht) * ht, HT_(Bucket) * bt, ut32 i) {
+static inline HT_(Kv) *kv_at(HtName_(Ht) *ht, HT_(Bucket) *bt, ut32 i) {
 	return (HT_(Kv) *)((char *)bt->arr + i * ht->opt.elem_size);
 }
 
-static inline HT_(Kv) * next_kv(HtName_(Ht) * ht, HT_(Kv) * kv) {
+static inline HT_(Kv) *next_kv(HtName_(Ht) *ht, HT_(Kv) *kv) {
 	return (HT_(Kv) *)((char *)kv + ht->opt.elem_size);
 }
 
@@ -96,7 +96,7 @@ static inline HT_(Kv) * next_kv(HtName_(Ht) * ht, HT_(Kv) * kv) {
 
 // Create a new hashtable and return a pointer to it.
 // size - number of buckets in the hashtable
-static RZ_OWN HtName_(Ht) * internal_ht_new(ut32 size, ut32 prime_idx, HT_(Options) * opt) {
+static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 size, ut32 prime_idx, HT_(Options) *opt) {
 	HtName_(Ht) *ht = RZ_NEW0(HtName_(Ht));
 	if (!ht) {
 		return NULL;
@@ -123,7 +123,7 @@ static RZ_OWN HtName_(Ht) * internal_ht_new(ut32 size, ut32 prime_idx, HT_(Optio
  *
  * Options are copied to an inner field.
  */
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new_opt)(RZ_NONNULL HT_(Options) * opt) {
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt) {
 	rz_return_val_if_fail(opt, NULL);
 	return internal_ht_new(ht_primes_sizes[0], 0, opt);
 }
@@ -134,7 +134,7 @@ RZ_API RZ_OWN HtName_(Ht) * Ht_(new_opt)(RZ_NONNULL HT_(Options) * opt) {
  *
  * Options are copied to an inner field.
  */
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new_opt_size)(RZ_NONNULL HT_(Options) * opt, ut32 initial_size) {
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt_size)(RZ_NONNULL HT_(Options) *opt, ut32 initial_size) {
 	rz_return_val_if_fail(opt, NULL);
 	ut32 idx = 0;
 	while (idx < S_ARRAY_SIZE(ht_primes_sizes) &&
@@ -148,7 +148,7 @@ RZ_API RZ_OWN HtName_(Ht) * Ht_(new_opt_size)(RZ_NONNULL HT_(Options) * opt, ut3
 	return internal_ht_new(sz, idx, opt);
 }
 
-RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) * ht) {
+RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 	if (!ht) {
 		return;
 	}
@@ -156,7 +156,7 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) * ht) {
 	ut32 i;
 	for (i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
-		HT_(Kv) * kv;
+		HT_(Kv) *kv;
 		ut32 j;
 
 		if (ht->opt.finiKV) {
@@ -172,8 +172,8 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) * ht) {
 }
 
 // Increases the size of the hashtable by 2.
-static void internal_ht_grow(HtName_(Ht) * ht) {
-	HtName_(Ht) * ht2;
+static void internal_ht_grow(HtName_(Ht) *ht) {
+	HtName_(Ht) *ht2;
 	HtName_(Ht) swap;
 	ut32 idx = next_idx(ht->prime_idx);
 	ut32 sz = compute_size(idx, ht->size * 2);
@@ -188,7 +188,7 @@ static void internal_ht_grow(HtName_(Ht) * ht) {
 
 	for (i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
-		HT_(Kv) * kv;
+		HT_(Kv) *kv;
 		ut32 j;
 
 		BUCKET_FOREACH(ht, bt, j, kv) {
@@ -204,15 +204,15 @@ static void internal_ht_grow(HtName_(Ht) * ht) {
 	Ht_(free)(ht2);
 }
 
-static void check_growing(HtName_(Ht) * ht) {
+static void check_growing(HtName_(Ht) *ht) {
 	if (ht->count >= LOAD_FACTOR * ht->size) {
 		internal_ht_grow(ht);
 	}
 }
 
-static HT_(Kv) * reserve_kv(HtName_(Ht) * ht, const KEY_TYPE key, const int key_len, bool update) {
+static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_len, bool update) {
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
-	HT_(Kv) * kvtmp;
+	HT_(Kv) *kvtmp;
 	ut32 j;
 
 	BUCKET_FOREACH(ht, bt, j, kvtmp) {
@@ -236,7 +236,7 @@ static HT_(Kv) * reserve_kv(HtName_(Ht) * ht, const KEY_TYPE key, const int key_
 	return kv_at(ht, bt, bt->count - 1);
 }
 
-RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) * ht, RZ_NONNULL HT_(Kv) * kv, bool update) {
+RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update) {
 	rz_return_val_if_fail(ht && kv, false);
 	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update);
 	if (!kv_dst) {
@@ -248,7 +248,7 @@ RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) * ht, RZ_NONNULL HT_(Kv) * kv,
 	return true;
 }
 
-static bool insert_update(HtName_(Ht) * ht, const KEY_TYPE key, VALUE_TYPE value, bool update) {
+static bool insert_update(HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update) {
 	ut32 key_len = calcsize_key(ht, key);
 	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, update);
 	if (!kv_dst) {
@@ -267,7 +267,7 @@ static bool insert_update(HtName_(Ht) * ht, const KEY_TYPE key, VALUE_TYPE value
  * Inserts the key value pair \p key, \p value into the hashtable \p ht.
  * Doesn't allow for "update" of the value.
  */
-RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, VALUE_TYPE value) {
+RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
 	rz_return_val_if_fail(ht, false);
 	return insert_update(ht, key, value, false);
 }
@@ -276,7 +276,7 @@ RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, VALUE_T
  * Inserts the key value pair \p key, \p value into the hashtable \p ht.
  * Does allow for "update" of the value.
  */
-RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, VALUE_TYPE value) {
+RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
 	rz_return_val_if_fail(ht, false);
 	return insert_update(ht, key, value, true);
 }
@@ -284,7 +284,7 @@ RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, VALUE_T
 /**
  * Update the key of an element that has \p old_key as key and replace it with \p new_key
  */
-RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
+RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
 	rz_return_val_if_fail(ht, false);
 	// First look for the value associated with old_key
 	bool found;
@@ -302,7 +302,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE old_key,
 	// Remove the old_key kv, paying attention to not double free the value
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, old_key)];
 	const int old_key_len = calcsize_key(ht, old_key);
-	HT_(Kv) * kv;
+	HT_(Kv) *kv;
 	ut32 j;
 
 	BUCKET_FOREACH(ht, bt, j, kv) {
@@ -333,7 +333,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE old_key,
  * If \p found is not NULL, it will be set to true if the entry was found,
  * false otherwise.
  */
-RZ_API RZ_BORROW HT_(Kv) * Ht_(find_kv)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
+RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	if (found) {
 		*found = false;
 	}
@@ -341,7 +341,7 @@ RZ_API RZ_BORROW HT_(Kv) * Ht_(find_kv)(RZ_NONNULL HtName_(Ht) * ht, const KEY_T
 
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
 	ut32 key_len = calcsize_key(ht, key);
-	HT_(Kv) * kv;
+	HT_(Kv) *kv;
 	ut32 j;
 
 	BUCKET_FOREACH(ht, bt, j, kv) {
@@ -360,7 +360,7 @@ RZ_API RZ_BORROW HT_(Kv) * Ht_(find_kv)(RZ_NONNULL HtName_(Ht) * ht, const KEY_T
  * If \p found is not NULL, it will be set to true if the entry was found,
  * false otherwise.
  */
-RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
+RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	HT_(Kv) *res = Ht_(find_kv)(ht, key, found);
 	return res ? res->value : HT_NULL_VALUE;
 }
@@ -368,11 +368,11 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, RZ_
 /**
  * Deletes an entry from the hash table \p ht with key \p key, if the pair exists.
  */
-RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key) {
+RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 	rz_return_val_if_fail(ht, false);
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
 	ut32 key_len = calcsize_key(ht, key);
-	HT_(Kv) * kv;
+	HT_(Kv) *kv;
 	ut32 j;
 
 	BUCKET_FOREACH(ht, bt, j, kv) {
@@ -392,13 +392,13 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key) {
  * Apply \p cb for each KV pair in \p ht.
  * If \p cb returns false, the iteration is stopped.
  */
-RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) * ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
+RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
 	ut32 i;
 
 	for (i = 0; i < ht->size; ++i) {
 		HT_(Bucket) *bt = &ht->table[i];
-		HT_(Kv) * kv;
+		HT_(Kv) *kv;
 		ut32 j, count;
 
 		BUCKET_FOREACH_SAFE(ht, bt, j, count, kv) {

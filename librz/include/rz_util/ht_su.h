@@ -15,7 +15,7 @@ extern "C" {
 #define HT_TYPE 7
 #include <rz_util/ht_inc.h>
 
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(HtStrOption key_opt);
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt);
 #undef HT_TYPE
 
 #ifdef __cplusplus

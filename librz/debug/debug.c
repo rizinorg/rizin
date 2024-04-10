@@ -1234,7 +1234,7 @@ repeat:
 #if DEBUGGER
 		/// if the plugin is not compiled link fails, so better do runtime linking
 		/// until this code gets fixed
-		static bool (*linux_attach_new_process)(RzDebug *dbg, int pid) = NULL;
+		static bool (*linux_attach_new_process)(RzDebug * dbg, int pid) = NULL;
 		if (!linux_attach_new_process) {
 			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
 		}

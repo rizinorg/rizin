@@ -76,9 +76,9 @@
 #ifndef HT_STR_OPTION_DEFINED
 #define HT_STR_OPTION_DEFINED
 typedef enum {
-	HT_STR_DUP = 0,  ///< String is copied when inserting into HT
-	HT_STR_OWN,      ///< String ownership is transferred when inserting into HT
-	HT_STR_CONST     ///< String is treated as constant and not copied when inserting into HT
+	HT_STR_DUP = 0, ///< String is copied when inserting into HT
+	HT_STR_OWN, ///< String ownership is transferred when inserting into HT
+	HT_STR_CONST ///< String is treated as constant and not copied when inserting into HT
 } HtStrOption;
 #endif
 
@@ -105,7 +105,7 @@ typedef int (*HT_(ListComparator))(const KEY_TYPE, const KEY_TYPE);
 typedef bool (*HT_(ForeachCallback))(void *user, const KEY_TYPE, const VALUE_TYPE);
 
 typedef struct Ht_(bucket_t) {
-	HT_(Kv) * arr;
+	HT_(Kv) *arr;
 	ut32 count;
 }
 HT_(Bucket);
@@ -114,31 +114,25 @@ HT_(Bucket);
  * Options contain all the settings of the hashtable.
  */
 typedef struct Ht_(options_t) {
-	HT_(ListComparator)
-	cmp; ///< RZ_NULLABLE. Function for comparing keys. Returns 0 if keys are equal.
-	     ///< Function is invoked only if == operator applied to keys returns false.
-	HT_(HashFunction)
-	hashfn; ///< RZ_NULLABLE. Function for hashing items in the hash table.
-	        ///< If NULL KEY_TO_HASH macro is used.
-	HT_(DupKey)
-	dupkey; ///< RZ_NULLABLE. Function for making a copy of key.
-	        ///< If NULL simple assignment operator is used.
-	HT_(DupValue)
-	dupvalue; ///< RZ_NULLABLE. Function for making a copy of value.
-	          ///< If NULL simple assignment operator is used.
-	HT_(CalcSizeK)
-	calcsizeK; ///< RZ_NULLABLE. Function to determine the key's size.
-	           ///< If NULL zero value is used as a size.
-	           ///< Key sizes are checked on equality during keys comparsion as a pre-check.
-	HT_(CalcSizeV)
-	calcsizeV; ///< RZ_NULLABLE. Function to determine the value's size.
-	           ///< If NULL zero value is used as a size.
-	           ///< Not required for common scenarios. Could be used in subclasses.
-	HT_(FiniKv)
-	finiKV; ///< RZ_NULLABLE. Function to clean up the key-value store.
+	HT_(ListComparator) cmp; ///< RZ_NULLABLE. Function for comparing keys.
+				 ///< Returns 0 if keys are equal.
+	///< Function is invoked only if == operator applied to keys returns false.
+	HT_(HashFunction) hashfn; ///< RZ_NULLABLE. Function for hashing items in the hash table.
+				  ///< If NULL KEY_TO_HASH macro is used.
+	HT_(DupKey) dupkey; ///< RZ_NULLABLE. Function for making a copy of key.
+			    ///< If NULL simple assignment operator is used.
+	HT_(DupValue) dupvalue; ///< RZ_NULLABLE. Function for making a copy of value.
+				///< If NULL simple assignment operator is used.
+	HT_(CalcSizeK) calcsizeK; ///< RZ_NULLABLE. Function to determine the key's size.
+				  ///< If NULL zero value is used as a size.
+				  ///< Key sizes are checked on equality during keys comparsion as a pre-check.
+	HT_(CalcSizeV) calcsizeV; ///< RZ_NULLABLE. Function to determine the value's size.
+				  ///< If NULL zero value is used as a size.
+				  ///< Not required for common scenarios. Could be used in subclasses.
+	HT_(FiniKv) finiKV; ///< RZ_NULLABLE. Function to clean up the key-value store.
 	void *finiKV_user; ///< RZ_NULLABLE. User data which is passed into finiKV.
 	size_t elem_size; ///< Size of each HtKv element (useful for subclassing like SdbKv).
-	                  ///< Zero value means to use default size of HtKv.
+			  ///< Zero value means to use default size of HtKv.
 }
 HT_(Options);
 
@@ -146,34 +140,33 @@ HT_(Options);
 typedef struct Ht_(t) {
 	ut32 size; ///< Size of the hash table in buckets.
 	ut32 count; ///< Number of stored elements.
-	HT_(Bucket) * table; ///< Actual table.
+	HT_(Bucket) *table; ///< Actual table.
 	ut32 prime_idx;
-	HT_(Options)
-	opt;
+	HT_(Options) opt;
 }
 HtName_(Ht);
 
 // Create a new Ht with the provided Options
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new_opt)(RZ_NONNULL HT_(Options) * opt);
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt);
 // Create a new Ht with the provided Options and initial size
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new_opt_size)(RZ_NONNULL HT_(Options) * opt, ut32 initial_size);
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt_size)(RZ_NONNULL HT_(Options) *opt, ut32 initial_size);
 // Destroy a hashtable and all of its entries.
-RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) * ht);
+RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht);
 // Insert a new Key-Value pair into the hashtable. If the key already exists, returns false.
-RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, VALUE_TYPE value);
+RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
-RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, VALUE_TYPE value);
+RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value);
 // Update the key of an element in the hashtable
-RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE old_key, const KEY_TYPE new_key);
+RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key);
 // Delete a key from the hashtable.
-RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key);
+RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key);
 // Find the value corresponding to the matching key.
-RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
+RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
 // Iterates over all elements in the hashtable, calling the cb function on each Kv.
 // If the cb returns false, the iteration is stopped.
 // cb should not modify the hashtable.
 // NOTE: cb can delete the current element, but it should be avoided
-RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) * ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user);
+RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user);
 
-RZ_API RZ_BORROW HT_(Kv) * Ht_(find_kv)(RZ_NONNULL HtName_(Ht) * ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
-RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) * ht, RZ_NONNULL HT_(Kv) * kv, bool update);
+RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
+RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update);

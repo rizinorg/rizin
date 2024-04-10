@@ -17,8 +17,8 @@ extern "C" {
 #define HT_TYPE 2
 #include <rz_util/ht_inc.h>
 
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree);
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new_size)(ut32 initial_size, RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree);
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree);
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new_size)(ut32 initial_size, RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree);
 #undef HT_TYPE
 
 #ifdef __cplusplus

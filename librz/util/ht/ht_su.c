@@ -13,7 +13,7 @@ static void fini_kv_key(HT_(Kv) *kv, RZ_UNUSED void *user) {
  * \brief Create a new hashtable
  * \param key_opt Defines how key is stored
  */
-RZ_API RZ_OWN HtName_(Ht) * Ht_(new)(HtStrOption key_opt) {
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt) {
 	HT_(Options) opt = {
 		.cmp = (HT_(ListComparator))strcmp,
 		.hashfn = (HT_(HashFunction))sdb_hash,

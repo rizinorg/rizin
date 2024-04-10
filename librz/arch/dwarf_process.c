@@ -468,7 +468,8 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 }
 
 #define KASE(_num, _reg) \
-	case _num: return #_reg;
+	case _num: \
+		return #_reg;
 
 #include <arm/arm_dwarf_regnum_table.h>
 #include <hexagon/hexagon_dwarf_reg_num_table.inc>
