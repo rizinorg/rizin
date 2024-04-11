@@ -677,7 +677,7 @@ static size_t get_arg_number(TSNode arg) {
  * command \p cd . This is based on the type of argument a command may accept.
  */
 static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const RzCmdDesc *cd, size_t i_arg, const char *s, size_t len) {
-	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(core->rcmd, cd, i_arg);
+	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(cd, i_arg);
 	if (!arg) {
 		return;
 	}
@@ -771,7 +771,7 @@ static bool fill_autocmplt_data_cmdarg(struct autocmplt_data_t *ad, ut32 start, 
 
 	ad->i_arg = get_arg_number(node);
 
-	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(core->rcmd, ad->cd, ad->i_arg);
+	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(ad->cd, ad->i_arg);
 	if (!arg) {
 		return false;
 	}

@@ -2204,7 +2204,7 @@ RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd) {
  * \p RZ_CMD_ARG_FLAG_ARRAY, where even if there is just one RzCmdDescArg,
  * everything is considered as part of the same RzCmdDescArg.
  */
-RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(RzCmd *cmd, const RzCmdDesc *cd, size_t i) {
+RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(const RzCmdDesc *cd, size_t i) {
 	const RzCmdDescArg *arg = cd->help->args;
 	size_t j = 0;
 	while (arg && arg->name) {

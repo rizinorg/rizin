@@ -958,18 +958,18 @@ bool test_get_arg(void) {
 	RzCmdDesc *z_cd = rz_cmd_desc_argv_new(cmd, root, "z", z_last_handler, &z_help);
 	RzCmdDesc *x_cd = rz_cmd_desc_argv_new(cmd, root, "x", x_array_handler, &x_help);
 
-	const RzCmdDescArg *a1 = rz_cmd_desc_get_arg(cmd, z_cd, 0);
+	const RzCmdDescArg *a1 = rz_cmd_desc_get_arg(z_cd, 0);
 	mu_assert_streq(a1->name, "a1", "0th arg of z is a1");
-	const RzCmdDescArg *a2 = rz_cmd_desc_get_arg(cmd, z_cd, 1);
+	const RzCmdDescArg *a2 = rz_cmd_desc_get_arg(z_cd, 1);
 	mu_assert_streq(a2->name, "a2", "1th arg of z is a2");
-	const RzCmdDescArg *an = rz_cmd_desc_get_arg(cmd, z_cd, 10);
+	const RzCmdDescArg *an = rz_cmd_desc_get_arg(z_cd, 10);
 	mu_assert_streq(an->name, "a2", "10th arg of z is a2");
 
-	const RzCmdDescArg *b1 = rz_cmd_desc_get_arg(cmd, x_cd, 0);
+	const RzCmdDescArg *b1 = rz_cmd_desc_get_arg(x_cd, 0);
 	mu_assert_streq(b1->name, "b1", "0th arg of x is b1");
-	const RzCmdDescArg *b2 = rz_cmd_desc_get_arg(cmd, x_cd, 1);
+	const RzCmdDescArg *b2 = rz_cmd_desc_get_arg(x_cd, 1);
 	mu_assert_streq(b2->name, "b2", "1th arg of x is b2");
-	const RzCmdDescArg *bn = rz_cmd_desc_get_arg(cmd, x_cd, 10);
+	const RzCmdDescArg *bn = rz_cmd_desc_get_arg(x_cd, 10);
 	mu_assert_null(bn, "10th arg of x does not exist");
 
 	rz_cmd_free(cmd);
