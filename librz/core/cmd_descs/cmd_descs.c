@@ -1291,7 +1291,7 @@ static const RzCmdDescArg interpret_macro_args[] = {
 	},
 	{
 		.name = "macro-arg",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_RAW,
 		.flags = RZ_CMD_ARG_FLAG_ARRAY,
 		.optional = true,
 
