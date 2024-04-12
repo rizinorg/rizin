@@ -138,6 +138,9 @@ RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o) {
 		res->libname = RZ_STR_DUP(o->libname);
 		res->classname = RZ_STR_DUP(o->classname);
 		res->descriptor = RZ_STR_DUP(o->descriptor);
+		res->bind = o->bind;
+		res->type = o->type;
+		res->ordinal = o->ordinal;
 	}
 	return res;
 }
@@ -205,8 +208,8 @@ RZ_API void rz_bin_reloc_free(RZ_NULLABLE RzBinReloc *reloc) {
 	 * Because in the bin_elf implementation RzBinObject->imports and RzBinObject->relocs->imports
 	 * are two pieces of data, but they are linked to each other in bin_pe
 	 */
-	//	rz_bin_import_free(reloc->import);
-	//	rz_bin_symbol_free(reloc->symbol);
+	rz_bin_import_free(reloc->import);
+	rz_bin_symbol_free(reloc->symbol);
 	free(reloc);
 }
 

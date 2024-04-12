@@ -527,6 +527,7 @@ RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState
 		(void)rz_io_read_at(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState_tcache)));
 		GH(update_arena_with_tc)
 		(cmain_arena, main_arena);
+		free(cmain_arena);
 	} else {
 		GH(RzHeap_MallocState) *cmain_arena = RZ_NEW0(GH(RzHeap_MallocState));
 		if (!cmain_arena) {
@@ -535,6 +536,7 @@ RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState
 		(void)rz_io_read_at(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState)));
 		GH(update_arena_without_tc)
 		(cmain_arena, main_arena);
+		free(cmain_arena);
 	}
 	return true;
 }
