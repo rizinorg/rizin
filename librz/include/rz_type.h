@@ -121,6 +121,11 @@ typedef struct rz_base_type_t {
 	};
 } RzBaseType;
 
+typedef struct rz_base_type_with_metadata_t {
+	RzBaseType *base_type;
+	char *cu_name;  // compilation unit name
+} RzBaseTypeWithMetadata;
+
 // AST-level types for C and C++
 // Parses strings like "const char * [0x42] const * [23]" to RzType
 
