@@ -3341,17 +3341,16 @@ static RzCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args, boo
 	if (ts_node_is_null(args)) {
 		return rz_cmd_parsed_args_newargs(0, NULL);
 	} else if (is_ts_args(args)) {
-		bool old_do_unwrap = do_unwrap;
 		uint32_t n_children = ts_node_named_child_count(args);
 		uint32_t i;
 		char **unescaped_args = RZ_NEWS0(char *, n_children);
 		for (i = 0; i < n_children; i++) {
 			TSNode arg = ts_node_named_child(args, i);
-			do_unwrap = old_do_unwrap;
+			bool do_unwrap_arg = do_unwrap;
 			if (!do_unwrap && cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT && !is_arg_raw(cd, i)) {
-				do_unwrap = true;
+				do_unwrap_arg = true;
 			}
-			unescaped_args[i] = do_handle_ts_unescape_arg(state, arg, do_unwrap);
+			unescaped_args[i] = do_handle_ts_unescape_arg(state, arg, do_unwrap_arg);
 		}
 		RzCmdParsedArgs *res = rz_cmd_parsed_args_newargs(n_children, unescaped_args);
 		for (i = 0; i < n_children; i++) {
