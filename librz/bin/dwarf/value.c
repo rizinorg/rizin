@@ -81,7 +81,7 @@ RZ_IPI bool ValueType_from_encoding(DW_ATE encoding, ut64 byte_size, RzBinDwarfV
 	case DW_ATE_lo_user:
 	case DW_ATE_hi_user:
 	default:
-		RZ_LOG_VERBOSE("Unsupported encoding: %d", encoding);
+		RZ_LOG_VERBOSE("Unsupported encoding: %d\n", encoding);
 		return false;
 	}
 	if (value_type == -1) {

@@ -207,7 +207,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 
 			if (next_state->phase == RZ_CF_STATE_IN_DICT && state->phase == RZ_CF_STATE_IN_KEY) {
 				if (!content) {
-					RZ_LOG_ERROR("NULL key is not supported");
+					RZ_LOG_ERROR("NULL key is not supported\n");
 					goto beach;
 				}
 				next_state->key = content;
@@ -219,25 +219,25 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 				if (idlist && state->idstate == RZ_CF_ID_STATE_REF) {
 					value = rz_list_get_n(idlist, (int)state->id);
 					if (!value) {
-						RZ_LOG_ERROR("Missing value for IDREF %" PFMT32u, state->id);
+						RZ_LOG_ERROR("Missing value for IDREF %" PFMT32u "\n", state->id);
 						goto beach;
 					}
 					if (state->phase == RZ_CF_STATE_IN_DICT) {
 						if (rz_list_length(state->dict->pairs) != 0) {
-							RZ_LOG_ERROR("Dict with IDREF already has elements");
+							RZ_LOG_ERROR("Dict with IDREF already has elements\n");
 							goto beach;
 						}
 						rz_cf_value_dict_free(state->dict);
 						state->dict = NULL;
 					} else if (state->phase == RZ_CF_STATE_IN_ARRAY) {
 						if (rz_list_length(state->dict->pairs) != 0) {
-							RZ_LOG_ERROR("Array with IDREF already has elements");
+							RZ_LOG_ERROR("Array with IDREF already has elements\n");
 							goto beach;
 						}
 						rz_cf_value_array_free(state->array);
 						state->array = NULL;
 					} else if (state->phase == RZ_CF_STATE_IN_SCALAR && content) {
-						RZ_LOG_ERROR("Element with IDREF already has content");
+						RZ_LOG_ERROR("Element with IDREF already has content\n");
 						goto beach;
 					}
 					value = rz_cf_value_clone(value);
@@ -287,7 +287,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 						if (value) {
 							rz_list_insert(idlist, state->id, value);
 						} else {
-							RZ_LOG_WARN("Missing value for ID %" PFMT32u, state->id);
+							RZ_LOG_WARN("Missing value for ID %" PFMT32u "\n", state->id);
 						}
 					}
 				}

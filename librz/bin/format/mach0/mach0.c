@@ -2751,7 +2751,7 @@ size_t MACH0_(imports_count)(struct MACH0_(obj_t) * bin) {
 		return MACH0_(chained_imports_count)(bin);
 	} else {
 		if (bin->dysymtab.nundefsym > bin->nsymtab) {
-			RZ_LOG_ERROR("Invalid nundefsym value in LC_DYSYMTAB");
+			RZ_LOG_ERROR("Invalid nundefsym value in LC_DYSYMTAB\n");
 			return 0;
 		}
 		return bin->dysymtab.nundefsym;

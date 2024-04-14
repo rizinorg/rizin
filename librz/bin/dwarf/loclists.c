@@ -103,7 +103,7 @@ static bool RawLocListEntry_parse(
 			RET_FALSE_IF_FAIL(parse_data(R, &raw->start_length.data, encoding));
 			break;
 		case DW_LLE_GNU_view_pair:
-			RZ_LOG_ERROR("GNU_view_pair not implemented");
+			RZ_LOG_ERROR("GNU_view_pair not implemented\n");
 			return false;
 		}
 		break;

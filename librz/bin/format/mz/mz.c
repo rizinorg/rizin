@@ -232,7 +232,6 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 	int relocations_size, dos_file_size;
 	MZ_image_dos_header *mz;
 	if (!(mz = RZ_NEW0(MZ_image_dos_header))) {
-		RZ_LOG_ERROR("Cannot allocate MZ_image_dos_header");
 		return false;
 	}
 	if (!read_mz_header(mz, bin->b)) {

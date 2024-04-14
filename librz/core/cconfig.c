@@ -2185,7 +2185,7 @@ static bool cb_pager(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (!strcmp(node->value, "?")) {
-		RZ_LOG_ERROR("usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
+		RZ_LOG_ERROR("usage: scr.pager must be '..' for internal less, or the path to a program in $PATH\n");
 		return false;
 	}
 	/* Let cons know we have a new pager. */

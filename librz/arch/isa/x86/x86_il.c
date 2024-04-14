@@ -340,7 +340,7 @@ void label_port(RzILVM *vm, RzILOpEffect *op);
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins) {
 	rz_return_val_if_fail(analysis && aop && ins && ins->ins_size > 0, false);
 	if (ins->mnem >= X86_INS_ENDING) {
-		RZ_LOG_ERROR("RzIL: x86: Invalid instruction type %d", ins->mnem);
+		RZ_LOG_ERROR("RzIL: x86: Invalid instruction type %d\n", ins->mnem);
 		return false;
 	}
 

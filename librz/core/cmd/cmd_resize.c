@@ -44,7 +44,7 @@ RZ_IPI RzCmdStatus rz_resize_handler(RzCore *core, int argc, const char **argv, 
 	if (argc > 1) {
 		ut64 newsize = rz_num_math(core->num, argv[1]);
 		if (newsize == 0) {
-			RZ_LOG_ERROR("Invalid new file size");
+			RZ_LOG_ERROR("Invalid new file size\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_core_file_resize(core, newsize);

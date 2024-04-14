@@ -2014,7 +2014,7 @@ reaccept:
 			switch (cmd) {
 			case RAP_PACKET_OPEN:
 				rz_socket_read_block(c, &flg, 1); // flags
-				RZ_LOG_DEBUG("open (%d): ", cmd);
+				RZ_LOG_DEBUG("open (%d): \n", cmd);
 				rz_socket_read_block(c, &cmd, 1); // len
 				pipefd = -1;
 				if (UT8_ADD_OVFCHK(cmd, 1)) {
@@ -2259,7 +2259,7 @@ RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *f
 
 	const char *editor = rz_config_get(core->config, "cfg.editor");
 	if (RZ_STR_ISEMPTY(editor)) {
-		RZ_LOG_ERROR("core: please set \"cfg.editor\" to run the editor");
+		RZ_LOG_ERROR("core: please set \"cfg.editor\" to run the editor\n");
 		return NULL;
 	}
 	char *name = NULL, *ret = NULL;

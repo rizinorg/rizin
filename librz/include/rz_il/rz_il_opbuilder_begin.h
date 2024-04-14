@@ -173,7 +173,7 @@
 
 #define NOT_IMPLEMENTED \
 	do { \
-		RZ_LOG_INFO("IL instruction not implemented."); \
+		RZ_LOG_INFO("IL instruction not implemented.\n"); \
 		return NULL; \
 	} while (0)
 

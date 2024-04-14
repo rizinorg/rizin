@@ -232,7 +232,7 @@ RZ_API double GH(rz_get_glibc_version)(RzCore *core, const char *libc_path, ut8 
 	}
 	version = strtod(version_str, NULL);
 	if (version != 0) {
-		RZ_LOG_INFO("libc version %.2f identified from .rodata banner", version);
+		RZ_LOG_INFO("libc version %.2f identified from .rodata banner\n", version);
 	}
 
 	free(version_str);

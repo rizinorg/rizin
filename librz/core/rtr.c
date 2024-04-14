@@ -999,7 +999,7 @@ RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
 		if (spr != RZ_STOP_PIPE_SOCKET_READY) {
 			rz_cons_sleep_end(bed);
 			if (spr == RZ_STOP_PIPE_ERROR) {
-				RZ_LOG_ERROR("Failed to select on stop pipe and listening socket");
+				RZ_LOG_ERROR("Failed to select on stop pipe and listening socket\n");
 			}
 			break;
 		}
@@ -1018,7 +1018,7 @@ RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
 			if (spr != RZ_STOP_PIPE_SOCKET_READY) {
 				rz_cons_sleep_end(bed);
 				if (spr == RZ_STOP_PIPE_ERROR) {
-					RZ_LOG_ERROR("Failed to select on stop pipe and child socket");
+					RZ_LOG_ERROR("Failed to select on stop pipe and child socket\n");
 				}
 				rz_socket_close(ch);
 				rz_socket_free(ch);
@@ -1028,7 +1028,7 @@ RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
 			if (ret <= 0) {
 				buf_filled = 0; // If the peer has already closed or an error happened, no need to handle any command
 				if (ret < 0) {
-					RZ_LOG_ERROR("Failed to read from socket");
+					RZ_LOG_ERROR("Failed to read from socket\n");
 				}
 				break;
 			}

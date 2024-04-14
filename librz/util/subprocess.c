@@ -714,7 +714,7 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
  * \return RzPty* NULL pointer until it has been implemented
  */
 RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
-	RZ_LOG_ERROR("openpty: Not implemented for Windows!");
+	RZ_LOG_ERROR("openpty: Not implemented for Windows!\n");
 	return NULL;
 }
 
@@ -724,7 +724,7 @@ RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_nam
  * \return bool false
  */
 RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
-	RZ_LOG_ERROR("login_tty: Not implemented for Windows!");
+	RZ_LOG_ERROR("login_tty: Not implemented for Windows!\n");
 	return false;
 }
 

@@ -278,11 +278,11 @@ static void reconstruct_threaded_bind(ut64 paddr, ut64 vaddr, st64 addend, ut8 r
 	ReconstructThreadedCtx *ctx = user;
 	struct mach0_chained_fixups_t *cf = &ctx->bin->chained_fixups;
 	if (cf->imports_format != DYLD_CHAINED_IMPORT_THREADED) {
-		RZ_LOG_ERROR("Missing BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB before bind");
+		RZ_LOG_ERROR("Missing BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB before bind\n");
 		return;
 	}
 	if (sym_ord >= rz_vector_len(&cf->imports)) {
-		RZ_LOG_ERROR("Imports overflow BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB value");
+		RZ_LOG_ERROR("Imports overflow BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB value\n");
 		return;
 	}
 	RzDyldChainedImportThreaded *imp = rz_vector_index_ptr(&cf->imports, sym_ord);

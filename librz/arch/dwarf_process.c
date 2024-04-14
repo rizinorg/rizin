@@ -1795,7 +1795,7 @@ static bool store_base_type(void *u, const char *k, const void *v) {
 	RzPVector *types = (RzPVector *)v;
 	const ut32 len = rz_pvector_len(types);
 	if (len == 0) {
-		RZ_LOG_WARN("BaseType %s has nothing", name);
+		RZ_LOG_WARN("BaseType %s has nothing\n", name);
 	} else if (len == 1) {
 		RzBaseType *t = rz_pvector_head(types);
 		update_base_type(analysis->typedb, t);

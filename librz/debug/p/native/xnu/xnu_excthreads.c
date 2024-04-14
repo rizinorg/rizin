@@ -375,7 +375,7 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code, b
 		// We want to stop and examine when getting signals
 		kr = task_suspend(msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			RZ_LOG_ERROR("Failed to suspend after EXC_SOFTWARE");
+			RZ_LOG_ERROR("Failed to suspend after EXC_SOFTWARE\n");
 		}
 		break;
 	case EXC_BREAKPOINT:

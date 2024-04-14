@@ -98,7 +98,7 @@ static bool CU_attrs_parse(
 			.encoding = &cu->hdr.encoding,
 		};
 		if (!RzBinDwarfAttr_parse(ctx->info->R, &attr, &opt)) {
-			RZ_LOG_ERROR("DWARF: failed attr: 0x%" PFMT64x " %s [%s]\n ",
+			RZ_LOG_ERROR("DWARF: failed attr: 0x%" PFMT64x " %s [%s]\n",
 				die->offset, rz_bin_dwarf_attr(spec->at), rz_bin_dwarf_form(spec->form));
 			continue;
 		}

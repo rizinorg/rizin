@@ -101,7 +101,7 @@ static I8051OpAddressing *addressing_pattern1(const ut8 *buf) {
 	} else if (lo >= 0x8 && lo <= 0xf) {
 		return addressing_register(I8051_R0 + lo - 0x8);
 	}
-	RZ_LOG_DEBUG("invalid addressing pattern 1")
+	RZ_LOG_DEBUG("invalid addressing pattern 1\n")
 	return NULL;
 }
 
@@ -122,7 +122,7 @@ static I8051OpAddressing *addressing_pattern11(const ut8 *buf) {
 	case 0x3:
 		return addressing_indirect(addressing_register(I8051_R0 + lo - 0x2));
 	default:
-		RZ_LOG_DEBUG("invalid addressing pattern 11")
+		RZ_LOG_DEBUG("invalid addressing pattern 11\n")
 		return NULL;
 	}
 }
@@ -144,7 +144,7 @@ static I8051OpAddressing *addressing_pattern1_imm(const ut8 *buf) {
 	} else if (lo >= 0x5) {
 		return addressing_pattern1(buf);
 	}
-	RZ_LOG_DEBUG("invalid addressing pattern 1_imm")
+	RZ_LOG_DEBUG("invalid addressing pattern 1_imm\n")
 	return NULL;
 }
 

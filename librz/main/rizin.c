@@ -736,7 +736,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 	if (noStderr) {
 		if (-1 == close(2)) {
-			RZ_LOG_ERROR("Failed to close stderr");
+			RZ_LOG_ERROR("Failed to close stderr\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
@@ -744,20 +744,20 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		const char nul[] = RZ_SYS_DEVNULL;
 		int new_stderr = open(nul, O_RDWR);
 		if (-1 == new_stderr) {
-			RZ_LOG_ERROR("Failed to open %s", nul);
+			RZ_LOG_ERROR("Failed to open %s\n", nul);
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2(new_stderr, 2)) {
-				RZ_LOG_ERROR("Failed to dup2 stderr");
+				RZ_LOG_ERROR("Failed to dup2 stderr\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
 			}
 			if (-1 == close(new_stderr)) {
-				RZ_LOG_ERROR("Failed to close %s", nul);
+				RZ_LOG_ERROR("Failed to close %s\n", nul);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
@@ -936,7 +936,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #if __WINDOWS__
 		int result = _setmode(_fileno(stdin), _O_BINARY);
 		if (result == -1) {
-			RZ_LOG_ERROR("Cannot set stdin to binary mode");
+			RZ_LOG_ERROR("Cannot set stdin to binary mode\n");
 			return 1;
 		}
 #endif

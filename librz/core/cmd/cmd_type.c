@@ -17,7 +17,7 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 	rz_return_if_fail(cc);
 	if (strchr(cc, '(')) {
 		if (!rz_analysis_cc_set(core->analysis, cc)) {
-			RZ_LOG_ERROR("Invalid syntax in cc signature.");
+			RZ_LOG_ERROR("Invalid syntax in cc signature.\n");
 		}
 	} else {
 		const char *ccname = rz_str_trim_head_ro(cc);
@@ -45,7 +45,7 @@ static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, c
 	ut64 value = rz_num_math(core->num, enum_value);
 	const char *enum_member = rz_type_db_enum_member_by_val(core->analysis->typedb, enum_name, value);
 	if (!enum_member) {
-		RZ_LOG_ERROR("Cannot find matching enum member");
+		RZ_LOG_ERROR("Cannot find matching enum member\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println(enum_member);
@@ -57,7 +57,7 @@ static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_val
 	ut64 value = rz_num_math(core->num, enum_value);
 	RzList *matches = rz_type_db_find_enums_by_val(core->analysis->typedb, value);
 	if (!matches || rz_list_empty(matches)) {
-		RZ_LOG_ERROR("Cannot find matching enum member");
+		RZ_LOG_ERROR("Cannot find matching enum member\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzListIter *iter;
@@ -375,7 +375,7 @@ RZ_IPI RzCmdStatus rz_type_enum_bitfield_handler(RzCore *core, int argc, const c
 	const char *enum_member = argc > 2 ? argv[2] : NULL;
 	int value = rz_type_db_enum_member_by_name(core->analysis->typedb, enum_name, enum_member);
 	if (value == -1) {
-		RZ_LOG_ERROR("Cannot find anything matching the specified bitfield");
+		RZ_LOG_ERROR("Cannot find anything matching the specified bitfield\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("0x%x\n", value);

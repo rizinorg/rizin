@@ -238,7 +238,7 @@ static pyc_object *get_stringref_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	n = get_st32(buffer, &error);
 	if (n >= rz_list_length(pyc->interned_table)) {
-		RZ_LOG_ERROR("bad marshal data (string ref out of range)");
+		RZ_LOG_ERROR("bad marshal data (string ref out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -405,7 +405,7 @@ static pyc_object *get_string_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		RZ_LOG_ERROR("bad marshal data (string size out of range)");
+		RZ_LOG_ERROR("bad marshal data (string size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -452,7 +452,7 @@ static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		RZ_LOG_ERROR("bad marshal data (unicode size out of range)");
+		RZ_LOG_ERROR("bad marshal data (unicode size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -481,7 +481,7 @@ static pyc_object *get_interned_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		RZ_LOG_ERROR("bad marshal data (string size out of range)");
+		RZ_LOG_ERROR("bad marshal data (string size out of range)\n");
 		return NULL;
 	}
 	if (error) {

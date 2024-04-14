@@ -41,7 +41,7 @@ RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_strtab_new)(RZ_NONNULL ELFOBJ *bin, ut64 
 	}
 
 	if (result->data[0] != '\0' || result->data[size - 1] != '\0') {
-		RZ_LOG_WARN("String table at 0x%" PFMT64x " should start and end by a NULL byte", offset);
+		RZ_LOG_WARN("String table at 0x%" PFMT64x " should start and end by a NULL byte\n", offset);
 		Elf_(rz_bin_elf_strtab_free)(result);
 		return NULL;
 	}

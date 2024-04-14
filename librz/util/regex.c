@@ -49,7 +49,7 @@ RZ_API RZ_OWN RzRegex *rz_regex_new(RZ_NONNULL const char *pattern, RzRegexFlags
 	ut32 supported = 0;
 	pcre2_config(PCRE2_CONFIG_UNICODE, &supported);
 	if (supported != 1) {
-		RZ_LOG_ERROR("Unicode not supported by PCRE2 library.");
+		RZ_LOG_ERROR("Unicode not supported by PCRE2 library.\n");
 		return NULL;
 	}
 	char *fixed_pat = NULL;

@@ -100,7 +100,7 @@ static void cmd_write_bits(RzCore *core, int set, ut64 val) {
 static RzCmdStatus common_write_value_handler(RzCore *core, const char *valstr, size_t sz) {
 	ut64 value = rz_num_math(core->num, valstr);
 	if (core->num->nc.errors) {
-		RZ_LOG_ERROR("Could not convert argument to number");
+		RZ_LOG_ERROR("Could not convert argument to number\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -312,7 +312,7 @@ RZ_IPI RzCmdStatus rz_write_zero_handler(RzCore *core, int argc, const char **ar
 	ut64 len = rz_num_math(core->num, argv[1]);
 	ut8 *buf = RZ_NEWS0(ut8, len);
 	if (!buf) {
-		RZ_LOG_ERROR("Cannot allocate %" PFMT64d " bytes", len);
+		RZ_LOG_ERROR("Cannot allocate %" PFMT64d " bytes\n", len);
 		return RZ_CMD_STATUS_ERROR;
 	}
 

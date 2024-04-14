@@ -146,7 +146,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		char *command = rz_str_newf("%s %s", ro->exec_command, ro->curfile);
 		int status = rz_sys_system(command);
 		if (status == -1) {
-			RZ_LOG_ERROR("Failed to execute command: %s", command);
+			RZ_LOG_ERROR("Failed to execute command: %s\n", command);
 		}
 		free(command);
 		return 1;

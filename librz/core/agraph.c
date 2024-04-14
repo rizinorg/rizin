@@ -4361,7 +4361,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				}
 				RzGraph *graph = rz_core_graph(core, RZ_CORE_GRAPH_TYPE_FUNCALL, function->addr);
 				if (!graph) {
-					RZ_LOG_INFO("failed to compute callgraph");
+					RZ_LOG_INFO("failed to compute callgraph\n");
 					break;
 				}
 				rz_core_agraph_reset(core);

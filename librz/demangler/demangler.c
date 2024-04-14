@@ -107,7 +107,7 @@ RZ_API RZ_OWN RzDemangler *rz_demangler_new(void) {
 		rz_warn_if_fail(p->demangle);
 		if (!p->demangle || !rz_list_append(plugins, p)) {
 			const char *lang = p->language ? p->language : "";
-			RZ_LOG_WARN("rz_demangler: failed to add '%s' plugin at index %u", lang, i);
+			RZ_LOG_WARN("rz_demangler: failed to add '%s' plugin at index %u\n", lang, i);
 		}
 	}
 	dem->plugins = plugins;

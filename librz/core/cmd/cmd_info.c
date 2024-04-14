@@ -669,7 +669,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 				fh_new = i < rz_pvector_len(new_hashes) ? (RzBinFileHash *)rz_pvector_at(new_hashes, i) : NULL;
 				fh_old = i < rz_pvector_len(old_hashes) ? (RzBinFileHash *)rz_pvector_at(old_hashes, i) : NULL;
 				if (fh_new && fh_old && strcmp(fh_new->type, fh_old->type)) {
-					RZ_LOG_ERROR("core: Wrong file hashes structure");
+					RZ_LOG_ERROR("core: Wrong file hashes structure\n");
 				}
 				if (fh_new && fh_old && !strcmp(fh_new->hex, fh_old->hex)) {
 					fprintf(stderr, "= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`

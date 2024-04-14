@@ -381,7 +381,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		}
 	}
 	if (!ofilepath) {
-		RZ_LOG_ERROR("Unknown file path");
+		RZ_LOG_ERROR("Unknown file path\n");
 		free(obinfilepath);
 		return false;
 	}
@@ -446,7 +446,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 			ret = rz_core_bin_load(core, obinfilepath, baddr);
 			rz_core_bin_update_arch_bits(core);
 			if (!ret) {
-				RZ_LOG_ERROR("Error: Failed to reload rbin for: '%s'", path);
+				RZ_LOG_ERROR("Error: Failed to reload rbin for: '%s'\n", path);
 			}
 			origoff = rz_num_math(core->num, "entry0");
 		}

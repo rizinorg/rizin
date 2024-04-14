@@ -376,7 +376,7 @@ static bool seek_load_item(SeekLoadCtx *ctx, const char *k, const char *v) {
 	} else {
 		if (seek_item.is_current) {
 			// Warn about this additional "current" seek
-			RZ_LOG_WARN("core: Seek history item \"%s\" marked as current, but current already found at \"%s\"!", k, ctx->current_key);
+			RZ_LOG_WARN("Seek history item \"%s\" marked as current, but current already found at \"%s\"!\n", k, ctx->current_key);
 		}
 		rz_vector_push(ctx->vec, &seek_item);
 	}
@@ -465,7 +465,7 @@ RZ_API bool rz_serialize_core_seek_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *c
 	}
 	ut64 histsize = rz_config_get_i(core->config, "cfg.seek.histsize");
 	if (histsize != 0 && histsize < ulen + rlen) {
-		RZ_LOG_WARN("core: Loaded project seek history exceeds cfg.seek.histsize, increasing that limit.");
+		RZ_LOG_WARN("Loaded project seek history exceeds cfg.seek.histsize, increasing that limit.\n");
 		rz_config_set_i(core->config, "cfg.seek.histsize", ulen + rlen);
 	}
 

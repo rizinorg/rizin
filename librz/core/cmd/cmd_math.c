@@ -241,7 +241,7 @@ RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, con
 	ut64 high = rz_num_math(core->num, uplimit);
 
 	if (low >= high) {
-		RZ_LOG_ERROR("core : Invalid arguments passed to %s : low-limit shouldn't be more then high-limit", argv[0]);
+		RZ_LOG_ERROR("core : Invalid arguments passed to %s : low-limit shouldn't be more then high-limit\n", argv[0]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -262,7 +262,7 @@ RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_base64_encode_handler(RzCore *core, int argc, const char **argv) {
 	char *buf = rz_base64_encode_dyn((ut8 *)argv[1], strlen(argv[1]));
 	if (!buf) {
-		RZ_LOG_ERROR("core: Out of memory!");
+		RZ_LOG_ERROR("Out of memory!\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println(buf);
@@ -273,7 +273,7 @@ RZ_IPI RzCmdStatus rz_base64_encode_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_base64_decode_handler(RzCore *core, int argc, const char **argv) {
 	ut8 *buf = rz_base64_decode_dyn(argv[1], -1);
 	if (!buf) {
-		RZ_LOG_ERROR("core: Out of memory!");
+		RZ_LOG_ERROR("Base64 string is invalid\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println((char *)buf);
@@ -293,7 +293,7 @@ RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, cons
 	const char *mode = rz_str_trim_head_ro(argv[1]);
 	RzList *list = rz_core_get_boundaries_prot(core, -1, mode, "search");
 	if (!list) {
-		RZ_LOG_ERROR("core: Failed to get boundaries protection values in RzList");
+		RZ_LOG_ERROR("Failed to get boundaries protection values in RzList\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzListIter *iter;
