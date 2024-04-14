@@ -437,7 +437,7 @@ commands:
     args: []
   - name: iz
     cname: cmd_info_strings
-    summary: List strings
+    summary: List strings(str.search.*)
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
@@ -448,7 +448,7 @@ commands:
     args: []
   - name: izz
     cname: cmd_info_whole_strings
-    summary: List strings in the whole binary
+    summary: List strings in the whole binary(str.search.*)
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
