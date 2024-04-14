@@ -53,8 +53,6 @@ RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kin
  *
  * \param typedb Type Database instance
  * \param name Name of the RzBaseType
- * 
- * \return RzPVector <RzBaseTypeWithMetadata*>
  */
 RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
@@ -236,16 +234,6 @@ RZ_API void rz_type_base_type_free(RzBaseType *type) {
 }
 
 /**
- * \brief Frees the RzBaseTypeWithMetadata instance and all of its members
- *
- * \param type RzBaseType pointer
- */
-RZ_API void rz_type_base_type_free(RzBaseTypeWithMetadata *type) {
-	rz_type_baes_type_free(type->base_type);
-	RZ_FREE(type->cu_name);
-}
-
-/**
  * \brief Allocates a new instance of RzBaseType given the kind
  *
  * \param kind Kind of RzBaseType to create
@@ -268,22 +256,6 @@ RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
 		break;
 	default:
 		break;
-	}
-
-	return type;
-}
-
-/**
- * \brief Allocates a new instance of RzBaseType given the kind
- *
- * \param kind Kind of RzBaseType to create
- * \param cu_name Name of compilation unit the type is defined in
- */
-RZ_API RZ_OWN RzBaseType *rz_type_base_type_with_metadata_new(RzBaseTypeKind kind, const char *cu_name) {
-	RzBaseTypeWithMetadata *type = RZ_NEW0(RzBaseTypeWithMetadata);
-	type->base_type = rz_type_base_type_new(kind);
-	if (cu_name) {
-		type->cu_name = rz_strdup(cu_name);
 	}
 
 	return type;
