@@ -219,7 +219,7 @@ RZ_API RzCmd *rz_cmd_new(RzCore *core, bool has_cons) {
 	}
 	cmd->core = core;
 	cmd->nullcallback = NULL;
-	cmd->macros = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)macro_free);
+	cmd->macros = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)macro_free);
 	cmd->ht_cmds = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	cmd->root_cmd_desc = create_cmd_desc(cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
 	rz_cmd_alias_init(cmd);

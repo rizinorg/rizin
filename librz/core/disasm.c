@@ -625,7 +625,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->debuginfo.file = rz_config_get_b(core->config, "asm.debuginfo.file");
 	ds->debuginfo.abspath = rz_config_get_b(core->config, "asm.debuginfo.abspath");
 	ds->debuginfo.lines = rz_config_get_b(core->config, "asm.debuginfo.lines");
-	ds->debuginfo.cache.items = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)RzBinSourceLineCacheItem_free);
+	ds->debuginfo.cache.items = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)RzBinSourceLineCacheItem_free);
 
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;

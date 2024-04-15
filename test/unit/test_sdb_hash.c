@@ -187,7 +187,7 @@ bool test_ht_general(void) {
 	person2->name = strdup("pancake");
 	person2->age = 9000;
 
-	HtSP *ht = ht_sp_new(HT_STR_DUP, (HtPPDupValue)duplicate_person, (HtPPFreeValue)free_person);
+	HtSP *ht = ht_sp_new(HT_STR_DUP, (HtSPDupValue)duplicate_person, (HtSPFreeValue)free_person);
 	if (!ht) {
 		mu_cleanup_fail(err_free_persons, "ht alloc");
 	}

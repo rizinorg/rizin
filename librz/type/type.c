@@ -80,9 +80,9 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
  */
 RZ_API void rz_type_db_purge(RzTypeDB *typedb) {
 	ht_sp_free(typedb->callables);
-	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_type_callable_free);
+	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
 	ht_sp_free(typedb->types);
-	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_type_base_type_free);
+	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_base_type_free);
 	rz_type_parser_free(typedb->parser);
 	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
 }

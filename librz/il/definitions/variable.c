@@ -50,11 +50,11 @@ RZ_API void rz_il_variable_free(RZ_NULLABLE RzILVar *var) {
 RZ_API bool rz_il_var_set_init(RzILVarSet *vs) {
 	rz_return_val_if_fail(vs, false);
 	memset(vs, 0, sizeof(*vs));
-	vs->vars = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_il_variable_free);
+	vs->vars = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_il_variable_free);
 	if (!vs->vars) {
 		return false;
 	}
-	vs->contents = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_il_value_free);
+	vs->contents = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_il_value_free);
 	if (!vs->contents) {
 		ht_sp_free(vs->vars);
 		vs->vars = NULL;

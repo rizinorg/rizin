@@ -5124,7 +5124,7 @@ bool __init(RzCore *core, RzPanels *panels, int w, int h) {
 	panels->db = sdb_new0();
 	panels->rotate_db = sdb_new0();
 	panels->almighty_db = sdb_new0();
-	panels->mht = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)__free_menu_item);
+	panels->mht = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)__free_menu_item);
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	panels->name = NULL;
 	panels->first_run = true;

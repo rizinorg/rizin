@@ -202,7 +202,7 @@ RZ_API bool rz_type_func_delete(RzTypeDB *typedb, RZ_NONNULL const char *name) {
  */
 RZ_API void rz_type_func_delete_all(RzTypeDB *typedb) {
 	ht_sp_free(typedb->callables);
-	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_type_callable_free);
+	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
 }
 
 /**

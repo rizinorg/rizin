@@ -224,7 +224,7 @@ RZ_API RzFlag *rz_flag_new(void) {
 	}
 	f->zones = NULL;
 	f->tags = sdb_new0();
-	f->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_flag_item_free);
+	f->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_flag_item_free);
 	f->by_off = rz_skiplist_new(flag_skiplist_free, flag_skiplist_cmp);
 	rz_list_free(f->zones);
 	new_spaces(f);
@@ -786,7 +786,7 @@ RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name) {
 RZ_API void rz_flag_unset_all(RzFlag *f) {
 	rz_return_if_fail(f);
 	ht_sp_free(f->ht_name);
-	f->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_flag_item_free);
+	f->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_flag_item_free);
 	rz_skiplist_purge(f->by_off);
 	rz_spaces_fini(&f->spaces);
 	new_spaces(f);
