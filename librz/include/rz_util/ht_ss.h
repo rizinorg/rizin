@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 /** \file
- * This header provides an hash table HtSS that has char* as key and char* as
- * value. The API functions starts with "ht_ss_" and the types starts with "HtSS".
+ * This header provides an hash table HtSS that has C-string as key and C-string as value.
+ * The API functions starts with "ht_ss_" and the types starts with "HtSS".
  */
 #define HT_TYPE 6
 #include <rz_util/ht_inc.h>

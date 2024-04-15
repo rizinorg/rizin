@@ -21,9 +21,13 @@ static void fini_kv_val(HT_(Kv) *kv, void *user) {
 }
 
 /**
- * \brief Create a new hashtable
+ * \brief Create a new hash table that has C-string as key and C-string as value.
  * \param key_opt Defines how key is stored
  * \param val_opt Defines how value is stored
+ *
+ * Keys are compared using strcmp function.
+ * Size of keys is calculated using strlen function.
+ * Copies of keys/values are made using strdup function if appropriate option is set.
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, HtStrOption val_opt) {
 	HT_(Options) opt = {

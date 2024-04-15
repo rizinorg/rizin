@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 /** \file
- * This header provides an hash table HtSP that has char* as key and void* as
- * value. The API functions starts with "ht_sp_" and the types starts with "HtSP".
+ * This header provides an hash table HtSP that has C-string as key and void* as value.
+ * The API functions starts with "ht_sp_" and the types starts with "HtSP".
  */
 #define HT_TYPE 5
 #include <rz_util/ht_inc.h>

@@ -11,8 +11,8 @@ extern "C" {
 #endif
 
 /** \file
- * This header provides an hash table HtPU that has void* as key and ut64 as
- * value. The API functions starts with "ht_pu_" and the types starts with "HtPU".
+ * This header provides an hash table HtPU that has void* as key and ut64 as value.
+ * The API functions starts with "ht_pu_" and the types starts with "HtPU".
  */
 #define HT_TYPE 4
 #include <rz_util/ht_inc.h>

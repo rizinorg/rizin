@@ -11,8 +11,8 @@ extern "C" {
 #endif
 
 /** \file
- * This header provides an hash table HtUU that has ut64 as key and ut64 as
- * value. The API functions starts with "ht_" and the types starts with "Ht".
+ * This header provides an hash table HtUU that has ut64 as key and ut64 as value.
+ * The API functions starts with "ht_uu" and the types starts with "HtUU".
  */
 #define HT_TYPE 3
 #include <rz_util/ht_inc.h>

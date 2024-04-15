@@ -10,8 +10,12 @@ static void fini_kv_key(HT_(Kv) *kv, RZ_UNUSED void *user) {
 }
 
 /**
- * \brief Create a new hashtable
+ * \brief Create a new hash table that has C-string as key and ut64 as value.
  * \param key_opt Defines how key is stored
+ *
+ * Keys are compared using strcmp function.
+ * Size of keys is calculated using strlen function.
+ * Copies of keys are made using strdup function if appropriate option is set.
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt) {
 	HT_(Options) opt = {

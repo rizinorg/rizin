@@ -17,6 +17,7 @@
 #undef HT_NULL_VALUE
 
 #if HT_TYPE == 1
+// Hash table HtPP that has void* as key and void* as value
 #define HtName_(name)  name##PP
 #define Ht_(name)      ht_pp_##name
 #define HT_(name)      HtPP##name
@@ -25,6 +26,7 @@
 #define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
 #define HT_NULL_VALUE  NULL
 #elif HT_TYPE == 2
+// Hash table HtPU that has void* as key and ut64 as value
 #define HtName_(name)  name##UP
 #define Ht_(name)      ht_up_##name
 #define HT_(name)      HtUP##name
@@ -33,6 +35,7 @@
 #define KEY_TO_HASH(x) ((ut32)(x))
 #define HT_NULL_VALUE  0
 #elif HT_TYPE == 3
+// Hash table HtUU that has ut64 as key and ut64 as value
 #define HtName_(name)  name##UU
 #define Ht_(name)      ht_uu_##name
 #define HT_(name)      HtUU##name
@@ -41,6 +44,7 @@
 #define KEY_TO_HASH(x) ((ut32)(x))
 #define HT_NULL_VALUE  0
 #elif HT_TYPE == 4
+// Hash table HtPU that has void* as key and ut64 as value
 #define HtName_(name)  name##PU
 #define Ht_(name)      ht_pu_##name
 #define HT_(name)      HtPU##name
@@ -49,6 +53,7 @@
 #define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
 #define HT_NULL_VALUE  0
 #elif HT_TYPE == 5
+// Hash table HtSP that has C-string as key and void* as value
 #define HtName_(name)  name##SP
 #define Ht_(name)      ht_sp_##name
 #define HT_(name)      HtSP##name
@@ -57,6 +62,7 @@
 #define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
 #define HT_NULL_VALUE  NULL
 #elif HT_TYPE == 6
+// Hash table HtSS that has C-string as key and C-string as value
 #define HtName_(name)  name##SS
 #define Ht_(name)      ht_ss_##name
 #define HT_(name)      HtSS##name
@@ -65,6 +71,7 @@
 #define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
 #define HT_NULL_VALUE  NULL
 #elif HT_TYPE == 7
+// Hash table HtSU that has C-string as key and ut64 as value
 #define HtName_(name)  name##SU
 #define Ht_(name)      ht_su_##name
 #define HT_(name)      HtSU##name

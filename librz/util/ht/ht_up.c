@@ -27,7 +27,7 @@ static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue)
 }
 
 /**
- * \brief Create a new hashtable
+ * \brief Create a new hash table that has ut64 as key and void* as value.
  * \param valdup Function to making copy of a value when inserting
  * \param valfree Function to releasing a stored value
  */
@@ -38,7 +38,9 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABL
 }
 
 /**
- * \brief Create a new hashtable with preallocated buckets for \p initial_size entries
+ * \brief Create a new hash table that has ut64 as key and void* as value
+ *        with preallocated buckets for \p initial_size entries.
+ * \param initial_size Initial size of the hash table
  * \param valdup Function to making copy of a value when inserting
  * \param valfree Function to releasing a stored value
  */

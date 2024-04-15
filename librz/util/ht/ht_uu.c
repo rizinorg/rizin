@@ -8,7 +8,7 @@
 #include "ht_inc.c"
 
 /**
- * \brief Create a new hashtable
+ * \brief Create a new hash table that has ut64 as key and ut64 as value.
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(void) {
 	HT_(Options) opt = { 0 };

@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 /** \file
- * This header provides an hash table HtSU that has char* as key and ut64 as
- * value. The API functions starts with "ht_su_" and the types starts with "HtSU".
+ * This header provides an hash table HtSU that has C-string as key and ut64 as value.
+ * The API functions starts with "ht_su_" and the types starts with "HtSU".
  */
 #define HT_TYPE 7
 #include <rz_util/ht_inc.h>
