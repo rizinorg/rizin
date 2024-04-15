@@ -90,7 +90,6 @@ typedef enum {
 } HtStrOption;
 #endif
 
-#include "ls.h"
 #include <rz_types.h>
 
 /* Kv represents a single key/value element in the hashtable */
@@ -109,7 +108,7 @@ typedef void (*HT_(FreeValue))(VALUE_TYPE val);
 typedef ut32 (*HT_(CalcSizeK))(const KEY_TYPE);
 typedef ut32 (*HT_(CalcSizeV))(const VALUE_TYPE);
 typedef ut32 (*HT_(HashFunction))(const KEY_TYPE);
-typedef int (*HT_(ListComparator))(const KEY_TYPE, const KEY_TYPE);
+typedef int (*HT_(Comparator))(const KEY_TYPE, const KEY_TYPE);
 typedef bool (*HT_(ForeachCallback))(void *user, const KEY_TYPE, const VALUE_TYPE);
 
 typedef struct Ht_(bucket_t) {
@@ -122,8 +121,8 @@ HT_(Bucket);
  * Options contain all the settings of the hashtable.
  */
 typedef struct Ht_(options_t) {
-	HT_(ListComparator) cmp; ///< RZ_NULLABLE. Function for comparing keys.
-				 ///< Returns 0 if keys are equal.
+	HT_(Comparator) cmp; ///< RZ_NULLABLE. Function for comparing keys.
+			     ///< Returns 0 if keys are equal.
 	///< Function is invoked only if == operator applied to keys returns false.
 	HT_(HashFunction) hashfn; ///< RZ_NULLABLE. Function for hashing items in the hash table.
 				  ///< If NULL KEY_TO_HASH macro is used.

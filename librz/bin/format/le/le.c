@@ -262,7 +262,7 @@ static RZ_BORROW LE_import *le_add_import(rz_bin_le_obj_t *bin,
 	if (!bin->le_import_ht) {
 		HtPPOptions opt = {
 			.finiKV = (HtPPFiniKv)le_fini_import_kv,
-			.cmp = (HtPPListComparator)le_import_cmp,
+			.cmp = (HtPPComparator)le_import_cmp,
 			.hashfn = (HtPPHashFunction)le_import_hash,
 		};
 		CHECK(bin->le_import_ht = ht_pp_new_opt(&opt));

@@ -31,7 +31,7 @@ static void fini_kv_val(HT_(Kv) *kv, void *user) {
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, HtStrOption val_opt) {
 	HT_(Options) opt = {
-		.cmp = (HT_(ListComparator))strcmp,
+		.cmp = (HT_(Comparator))strcmp,
 		.hashfn = (HT_(HashFunction))sdb_hash,
 		.dupkey = key_opt == HT_STR_DUP ? (HT_(DupKey))strdup : NULL,
 		.dupvalue = val_opt == HT_STR_DUP ? (HT_(DupValue))strdup : NULL,
