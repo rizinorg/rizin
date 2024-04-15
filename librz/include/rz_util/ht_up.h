@@ -4,8 +4,8 @@
 // SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef SDB_HT_UP_H
-#define SDB_HT_UP_H
+#ifndef HT_UP_H
+#define HT_UP_H
 
 #ifdef __cplusplus
 extern "C" {
