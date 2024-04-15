@@ -128,7 +128,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 			rz_analysis_plugin_add(analysis, plugin);
 		}
 	}
-	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_analysis_var_global_free);
+	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();

@@ -199,7 +199,7 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 	char *selected_entry = NULL;
 	RzListIter *iter;
 
-	HtSP *ht = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_list_free);
+	HtSP *ht = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_list_free);
 	RzLineHud *hud = (RzLineHud *)RZ_NEW(RzLineHud);
 	hud->activate = 0;
 	hud->vi = 0;

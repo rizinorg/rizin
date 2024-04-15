@@ -2079,7 +2079,7 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	debug_info->type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_free);
 	debug_info->callable_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_callable_free);
 	debug_info->base_type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_base_type_free);
-	debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtPPFreeValue)rz_pvector_free);
+	debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
 	debug_info->visited = set_u_new();
 	return debug_info;
 }
