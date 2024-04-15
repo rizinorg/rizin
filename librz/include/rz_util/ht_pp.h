@@ -10,8 +10,8 @@
 extern "C" {
 #endif
 
-/*
- * This header provides an hashtable HtPP that has void* as key and void* as
+/** \file
+ * This header provides an hash table HtPP that has void* as key and void* as
  * value. The API functions starts with "ht_pp_" and the types starts with "HtPP".
  */
 #define HT_TYPE 1

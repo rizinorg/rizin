@@ -10,8 +10,8 @@
 extern "C" {
 #endif
 
-/*
- * This header provides an hashtable Ht that has ut64 as key and ut64 as
+/** \file
+ * This header provides an hash table HtUU that has ut64 as key and ut64 as
  * value. The API functions starts with "ht_" and the types starts with "Ht".
  */
 #define HT_TYPE 3

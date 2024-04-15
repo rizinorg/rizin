@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-/*
- * This header provides an hashtable HtSS that has char* as key and char* as
+/** \file
+ * This header provides an hash table HtSS that has char* as key and char* as
  * value. The API functions starts with "ht_ss_" and the types starts with "HtSS".
  */
 #define HT_TYPE 6

@@ -11,8 +11,8 @@
 extern "C" {
 #endif
 
-/*
- * This header provides an hashtable HtUP that has ut64 as key and void* as
+/** \file
+ * This header provides an hash table HtUP that has ut64 as key and void* as
  * value. The API functions starts with "ht_up_" and the types starts with "HtUP".
  */
 #define HT_TYPE 2

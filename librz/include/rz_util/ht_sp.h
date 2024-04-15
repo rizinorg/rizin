@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-/*
- * This header provides an hashtable HtSP that has char* as key and void* as
+/** \file
+ * This header provides an hash table HtSP that has char* as key and void* as
  * value. The API functions starts with "ht_sp_" and the types starts with "HtSP".
  */
 #define HT_TYPE 5
