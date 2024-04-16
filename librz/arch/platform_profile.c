@@ -19,10 +19,6 @@ RZ_API void rz_platform_profile_free(RzPlatformProfile *p) {
 	free(p);
 }
 
-static void free_mmio_kv(HtUPKv *kv) {
-	free(kv->value);
-}
-
 /**
  * \brief Creates a new RzPlatformProfile type
  */
@@ -31,12 +27,12 @@ RZ_API RZ_OWN RzPlatformProfile *rz_platform_profile_new() {
 	if (!profile) {
 		return NULL;
 	}
-	profile->registers_mmio = ht_up_new((HtUPDupValue)strdup, free_mmio_kv, (HtUPCalcSizeV)strlen);
+	profile->registers_mmio = ht_up_new((HtUPDupValue)strdup, free);
 	if (!profile->registers_mmio) {
 		free(profile);
 		return NULL;
 	}
-	profile->registers_extended = ht_up_new((HtUPDupValue)strdup, free_mmio_kv, (HtUPCalcSizeV)strlen);
+	profile->registers_extended = ht_up_new((HtUPDupValue)strdup, free);
 	if (!profile->registers_extended) {
 		ht_up_free(profile->registers_mmio);
 		free(profile);

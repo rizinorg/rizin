@@ -135,7 +135,7 @@ RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, 
 	}
 	rz_pvector_init(&res->options, (RzPVectorFree)free);
 	HtPPOptions opt = { 0 };
-	opt.cmp = (HtPPListComparator)strcmp;
+	opt.cmp = (HtPPComparator)strcmp;
 	opt.hashfn = (HtPPHashFunction)sdb_hash;
 	res->options_ht = ht_pp_new_opt(&opt);
 	res->start = start;

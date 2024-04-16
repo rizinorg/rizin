@@ -898,7 +898,7 @@ RZ_API bool rz_core_bin_rebase(RZ_NONNULL RzCore *core, ut64 baddr);
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API bool rz_core_binfiles_print(RzCore *core, RzCmdStateOutput *state);
 RZ_API bool rz_core_binfiles_delete(RzCore *core, RzBinFile *bf);
-RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList /*<char *>*/ *digests);
+RZ_API RZ_OWN HtSS *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList /*<char *>*/ *digests);
 
 RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzCmdStateOutput *state);
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);

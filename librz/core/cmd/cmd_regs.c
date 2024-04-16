@@ -419,7 +419,7 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 
 	RzListIter *iter;
 	RzRegItem *r;
-	HtUP *db = ht_up_new0();
+	HtUP *db = ht_up_new(NULL, NULL);
 	rz_list_foreach (list, iter, r) {
 		if (r->size != core->rasm->bits) {
 			continue;

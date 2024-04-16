@@ -563,8 +563,8 @@ static int string_contains(const void *a, const void *b, void *user) {
 	return !strstr((const char *)a, (const char *)b);
 }
 
-static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, RzDyldCacheHeader *hdr) {
-	HtPU *path_to_idx = ht_pu_new0();
+static HtSU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, RzDyldCacheHeader *hdr) {
+	HtSU *path_to_idx = ht_su_new(HT_STR_DUP);
 	if (!path_to_idx) {
 		return NULL;
 	}
@@ -574,13 +574,13 @@ static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, RzDyldC
 			continue;
 		}
 		file[255] = 0;
-		ht_pu_insert(path_to_idx, file, (ut64)i);
+		ht_su_insert(path_to_idx, file, (ut64)i);
 	}
 
 	return path_to_idx;
 }
 
-static void carve_deps_at_address(RzDyldCache *cache, cache_img_t *img, HtPU *path_to_idx, ut64 address, int *deps, bool printing) {
+static void carve_deps_at_address(RzDyldCache *cache, cache_img_t *img, HtSU *path_to_idx, ut64 address, int *deps, bool printing) {
 	ut64 pa = va2pa(address, cache->n_maps, cache->maps, cache->buf, 0, NULL, NULL);
 	if (pa == UT64_MAX) {
 		return;
@@ -612,7 +612,7 @@ static void carve_deps_at_address(RzDyldCache *cache, cache_img_t *img, HtPU *pa
 				break;
 			}
 			const char *key = (const char *)cursor + 24;
-			size_t dep_index = (size_t)ht_pu_find(path_to_idx, key, &found);
+			size_t dep_index = (size_t)ht_su_find(path_to_idx, key, &found);
 			if (!found || dep_index >= cache->hdr->imagesCount) {
 				RZ_LOG_WARN("alien dep '%s'\n", key);
 				continue;
@@ -667,7 +667,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 		}
 
 		if (target_libs) {
-			HtPU *path_to_idx = NULL;
+			HtSU *path_to_idx = NULL;
 			size_t dep_array_count = 0;
 			if (cache->accel) {
 				dep_array_count = cache->accel->depListCount;
@@ -737,7 +737,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 				}
 			}
 
-			ht_pu_free(path_to_idx);
+			ht_su_free(path_to_idx);
 			RZ_FREE(dep_array);
 			RZ_FREE(extras);
 		}

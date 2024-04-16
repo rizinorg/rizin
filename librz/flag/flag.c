@@ -50,7 +50,7 @@ static ut64 num_callback(RzNum *user, const char *name, int *ok) {
 	if (ok) {
 		*ok = 0;
 	}
-	RzFlagItem *item = ht_pp_find(f->ht_name, name, NULL);
+	RzFlagItem *item = ht_sp_find(f->ht_name, name, NULL);
 	if (item) {
 		// NOTE: to avoid warning infinite loop here we avoid recursivity
 		if (item->alias) {
@@ -171,19 +171,14 @@ static bool update_flag_item_name(RzFlag *f, RzFlagItem *item, const char *newna
 		return false;
 	}
 	bool res = (item->name)
-		? ht_pp_update_key(f->ht_name, item->name, fname)
-		: ht_pp_insert(f->ht_name, fname, item);
+		? ht_sp_update_key(f->ht_name, item->name, fname)
+		: ht_sp_insert(f->ht_name, fname, item);
 	if (res) {
 		set_name(item, fname);
 		return true;
 	}
 	free(fname);
 	return false;
-}
-
-static void ht_free_flag(HtPPKv *kv) {
-	free(kv->key);
-	rz_flag_item_free(kv->value);
 }
 
 static bool count_flags(RzFlagItem *fi, void *user) {
@@ -229,7 +224,7 @@ RZ_API RzFlag *rz_flag_new(void) {
 	}
 	f->zones = NULL;
 	f->tags = sdb_new0();
-	f->ht_name = ht_pp_new(NULL, ht_free_flag, NULL);
+	f->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_flag_item_free);
 	f->by_off = rz_skiplist_new(flag_skiplist_free, flag_skiplist_cmp);
 	rz_list_free(f->zones);
 	new_spaces(f);
@@ -270,7 +265,7 @@ RZ_API void rz_flag_item_free(RzFlagItem *item) {
 RZ_API RzFlag *rz_flag_free(RzFlag *f) {
 	rz_return_val_if_fail(f, NULL);
 	rz_skiplist_free(f->by_off);
-	ht_pp_free(f->ht_name);
+	ht_sp_free(f->ht_name);
 	sdb_free(f->tags);
 	rz_spaces_fini(&f->spaces);
 	rz_num_free(f->num);
@@ -308,7 +303,7 @@ RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, u
  * Otherwise, NULL is returned. */
 RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name) {
 	rz_return_val_if_fail(f, NULL);
-	RzFlagItem *r = ht_pp_find(f->ht_name, name, NULL);
+	RzFlagItem *r = ht_sp_find(f->ht_name, name, NULL);
 	return r ? evalFlag(f, r) : NULL;
 }
 
@@ -711,7 +706,7 @@ RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name) {
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item) {
 	rz_return_val_if_fail(f && item, false);
 	remove_offsetmap(f, item);
-	ht_pp_delete(f->ht_name, item->name);
+	ht_sp_delete(f->ht_name, item->name);
 	return true;
 }
 
@@ -733,7 +728,7 @@ struct unset_off_foreach_t {
 	ut64 offset;
 };
 
-static bool unset_off_foreach(void *user, const void *k, const void *v) {
+static bool unset_off_foreach(void *user, const char *k, const void *v) {
 	struct unset_off_foreach_t *u = (struct unset_off_foreach_t *)user;
 	RzFlagItem *fi = (RzFlagItem *)v;
 	if (u->offset == fi->offset) {
@@ -749,7 +744,7 @@ static bool unset_off_foreach(void *user, const void *k, const void *v) {
 RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, false);
 	struct unset_off_foreach_t u = { f, off };
-	ht_pp_foreach(f->ht_name, unset_off_foreach, &u);
+	ht_sp_foreach(f->ht_name, unset_off_foreach, &u);
 	return true;
 }
 
@@ -783,15 +778,15 @@ RZ_API int rz_flag_unset_glob(RzFlag *f, const char *glob) {
  * returns true if the item is found and unset, false otherwise. */
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name) {
 	rz_return_val_if_fail(f, false);
-	RzFlagItem *item = ht_pp_find(f->ht_name, name, NULL);
+	RzFlagItem *item = ht_sp_find(f->ht_name, name, NULL);
 	return item && rz_flag_unset(f, item);
 }
 
 /* unset all flag items in the RzFlag f */
 RZ_API void rz_flag_unset_all(RzFlag *f) {
 	rz_return_if_fail(f);
-	ht_pp_free(f->ht_name);
-	f->ht_name = ht_pp_new(NULL, ht_free_flag, NULL);
+	ht_sp_free(f->ht_name);
+	f->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_flag_item_free);
 	rz_skiplist_purge(f->by_off);
 	rz_spaces_fini(&f->spaces);
 	new_spaces(f);

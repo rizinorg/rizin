@@ -1732,7 +1732,7 @@ RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in_bounds(RzAnalysis
  */
 RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const char *name) {
 	bool found = false;
-	RzAnalysisFunction *f = ht_pp_find(a->ht_name_fun, name, &found);
+	RzAnalysisFunction *f = ht_sp_find(a->ht_name_fun, name, &found);
 	if (f && found) {
 		return f;
 	}
@@ -2134,7 +2134,7 @@ RZ_API int rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NU
  */
 RZ_API bool rz_analysis_function_purity(RzAnalysisFunction *fcn) {
 	if (fcn->has_changed) {
-		HtUP *ht = ht_up_new(NULL, NULL, NULL);
+		HtUP *ht = ht_up_new(NULL, NULL);
 		if (ht) {
 			check_purity(ht, fcn);
 			ht_up_free(ht);
@@ -2265,10 +2265,6 @@ static bool analize_descendents(RzAnalysisBlock *bb, void *user) {
 	return rz_analysis_block_successor_addrs_foreach(bb, analize_addr_cb, user);
 }
 
-static void free_ht_up(HtUPKv *kv) {
-	ht_up_free((HtUP *)kv->value);
-}
-
 static void update_vars_analysis(RzAnalysisFunction *fcn, RzAnalysisBlock *block, int align, ut64 from, ut64 to) {
 	RzAnalysis *analysis = fcn->analysis;
 	ut64 cur_addr;
@@ -2343,7 +2339,7 @@ static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *
 				continue;
 			}
 		}
-		HtUP *ht = ht_up_new0();
+		HtUP *ht = ht_up_new(NULL, NULL);
 		ht_up_insert(ht, bb->addr, NULL);
 		BlockRecurseCtx ctx = { fcn, ht };
 		rz_analysis_block_recurse(bb, analize_descendents, &ctx);
@@ -2382,7 +2378,7 @@ static void calc_reachable_and_remove_block(RzList /*<RzAnalysisFunction *>*/ *f
 		rz_list_append(fcns, fcn);
 
 		// Calculate reachable blocks from the start of function
-		HtUP *ht = ht_up_new0();
+		HtUP *ht = ht_up_new(NULL, NULL);
 		BlockRecurseCtx ctx = { fcn, ht };
 		rz_analysis_block_recurse(rz_analysis_get_block_at(fcn->analysis, fcn->addr), mark_as_visited, &ctx);
 		ht_up_insert(reachable, fcn->addr, ht);
@@ -2402,7 +2398,7 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 		return;
 	}
 	RzList *fcns = rz_list_new();
-	HtUP *reachable = ht_up_new(NULL, free_ht_up, NULL);
+	HtUP *reachable = ht_up_new(NULL, (HtUPFreeValue)ht_up_free);
 	const int align = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	const ut64 end_write = addr + size;
 
@@ -2436,7 +2432,7 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
 	RzAnalysisFunction *f;
 	RzList *fcns = rz_list_new();
-	HtUP *reachable = ht_up_new(NULL, free_ht_up, NULL);
+	HtUP *reachable = ht_up_new(NULL, (HtUPFreeValue)ht_up_free);
 
 	// in this loop we modify the pvector size we cannot loop normally.
 	size_t count = rz_pvector_len(fcn->bbs);

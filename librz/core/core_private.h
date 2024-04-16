@@ -310,7 +310,7 @@ typedef struct rz_panels_t {
 	Sdb *db;
 	Sdb *rotate_db;
 	Sdb *almighty_db;
-	HtPP *mht;
+	HtSP *mht;
 	RzPanelsMode mode;
 	RzPanelsMode prevMode;
 	RzPanelsLayout layout;

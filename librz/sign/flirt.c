@@ -360,7 +360,7 @@ static bool try_rename_function(RzAnalysis *analysis, RzAnalysisFunction *fcn, c
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
 		// do not rename if is a symbol but check if
 		// another function has the same name
-		return ht_pp_find(analysis->ht_name_fun, name, NULL) == NULL;
+		return ht_sp_find(analysis->ht_name_fun, name, NULL) == NULL;
 	}
 	return rz_analysis_function_rename(fcn, name);
 }

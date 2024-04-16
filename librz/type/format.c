@@ -1901,7 +1901,7 @@ static char *get_format_type(const char fmt, const char arg) {
 RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	bool found = false;
-	const char *result = ht_pp_find(typedb->formats, name, &found);
+	const char *result = ht_ss_find(typedb->formats, name, &found);
 	if (!found || !result) {
 		// eprintf("Cannot find format \"%s\"\n", name);
 		return NULL;
@@ -1912,15 +1912,15 @@ RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *nam
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
 	rz_return_if_fail(typedb && name && fmt);
 	// TODO: We should check if the file format is valid (e.g. syntax) before storing it
-	ht_pp_insert(typedb->formats, name, strdup(fmt));
+	ht_ss_insert(typedb->formats, name, strdup(fmt));
 }
 
-static bool format_collect_cb(void *user, const void *k, const void *v) {
+static bool format_collect_cb(void *user, const char *k, const char *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	RzList *l = user;
 	RzTypeFormat *fmt = RZ_NEW0(RzTypeFormat);
-	fmt->name = (const char *)k;
-	fmt->body = (const char *)v;
+	fmt->name = k;
+	fmt->body = v;
 	rz_list_append(l, fmt);
 	return true;
 }
@@ -1928,13 +1928,13 @@ static bool format_collect_cb(void *user, const void *k, const void *v) {
 RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *formats = rz_list_new();
-	ht_pp_foreach(typedb->formats, format_collect_cb, formats);
+	ht_ss_foreach(typedb->formats, format_collect_cb, formats);
 	return formats;
 }
 
 RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name) {
 	rz_return_if_fail(typedb && name);
-	ht_pp_delete(typedb->formats, name);
+	ht_ss_delete(typedb->formats, name);
 }
 
 static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,

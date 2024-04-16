@@ -996,17 +996,17 @@ static bool test_il_validate_effect_repeat() {
 
 	// types remembered from the loop
 	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)));
-	HtPP *local_var_sorts;
+	HtSP *local_var_sorts;
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
 	mu_assert_eq(local_var_sorts->count, 1, "local var sorts count");
-	RzILSortPure *sort = ht_pp_find(local_var_sorts, "x", NULL);
+	RzILSortPure *sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
-	ht_pp_free(local_var_sorts);
+	ht_sp_free(local_var_sorts);
 	local_var_sorts = NULL;
 	rz_il_op_effect_free(op);
 
@@ -1020,13 +1020,13 @@ static bool test_il_validate_effect_repeat() {
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
 	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
-	sort = ht_pp_find(local_var_sorts, "x", NULL);
+	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
-	sort = ht_pp_find(local_var_sorts, "y", NULL);
+	sort = ht_sp_find(local_var_sorts, "y", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bool()), "local var sort");
-	ht_pp_free(local_var_sorts);
+	ht_sp_free(local_var_sorts);
 	local_var_sorts = NULL;
 	rz_il_op_effect_free(op);
 
@@ -1040,13 +1040,13 @@ static bool test_il_validate_effect_repeat() {
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
 	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
-	sort = ht_pp_find(local_var_sorts, "x", NULL);
+	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
-	sort = ht_pp_find(local_var_sorts, "y", NULL);
+	sort = ht_sp_find(local_var_sorts, "y", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bool()), "local var sort");
-	ht_pp_free(local_var_sorts);
+	ht_sp_free(local_var_sorts);
 	local_var_sorts = NULL;
 	rz_il_op_effect_free(op);
 
@@ -1139,19 +1139,19 @@ static bool test_il_validate_effect_branch() {
 	op = rz_il_op_new_branch(rz_il_op_new_b0(),
 		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)),
 		rz_il_op_new_set("y", true, rz_il_op_new_b0()));
-	HtPP *local_var_sorts;
+	HtSP *local_var_sorts;
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
 	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
-	RzILSortPure *sort = ht_pp_find(local_var_sorts, "x", NULL);
+	RzILSortPure *sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
-	sort = ht_pp_find(local_var_sorts, "y", NULL);
+	sort = ht_sp_find(local_var_sorts, "y", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bool()), "local var sort");
-	ht_pp_free(local_var_sorts);
+	ht_sp_free(local_var_sorts);
 	local_var_sorts = NULL;
 	rz_il_op_effect_free(op);
 
@@ -1166,10 +1166,10 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
 	mu_assert_eq(local_var_sorts->count, 1, "local var sorts count");
-	sort = ht_pp_find(local_var_sorts, "y", NULL);
+	sort = ht_sp_find(local_var_sorts, "y", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bool()), "local var sort");
-	ht_pp_free(local_var_sorts);
+	ht_sp_free(local_var_sorts);
 	local_var_sorts = NULL;
 	rz_il_op_effect_free(op);
 
@@ -1183,13 +1183,13 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
 	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
-	sort = ht_pp_find(local_var_sorts, "x", NULL);
+	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
-	sort = ht_pp_find(local_var_sorts, "y", NULL);
+	sort = ht_sp_find(local_var_sorts, "y", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bool()), "local var sort");
-	ht_pp_free(local_var_sorts);
+	ht_sp_free(local_var_sorts);
 	local_var_sorts = NULL;
 	rz_il_op_effect_free(op);
 
@@ -1202,13 +1202,13 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
 	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
-	sort = ht_pp_find(local_var_sorts, "x", NULL);
+	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
-	sort = ht_pp_find(local_var_sorts, "y", NULL);
+	sort = ht_sp_find(local_var_sorts, "y", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bool()), "local var sort");
-	ht_pp_free(local_var_sorts);
+	ht_sp_free(local_var_sorts);
 	local_var_sorts = NULL;
 	rz_il_op_effect_free(op);
 
@@ -1224,13 +1224,13 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
 	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
-	sort = ht_pp_find(local_var_sorts, "x", NULL);
+	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
-	sort = ht_pp_find(local_var_sorts, "y", NULL);
+	sort = ht_sp_find(local_var_sorts, "y", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bool()), "local var sort");
-	ht_pp_free(local_var_sorts);
+	ht_sp_free(local_var_sorts);
 	local_var_sorts = NULL;
 	rz_il_op_effect_free(op);
 

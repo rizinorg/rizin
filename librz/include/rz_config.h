@@ -54,7 +54,7 @@ typedef struct rz_config_t {
 	void *user;
 	RzNum *num;
 	RzList /*<RzConfigNode *>*/ *nodes;
-	HtPP *ht;
+	HtSP *ht;
 } RzConfig;
 
 typedef struct rz_config_hold_num_t {

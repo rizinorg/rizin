@@ -187,7 +187,7 @@ RZ_API bool rz_sign_sigdb_merge(RZ_NONNULL RzSigDb *db, RZ_NONNULL RzSigDb *db2)
 		.src = db2,
 		.dst = db,
 	};
-	db2->entries->opt.freefn = NULL;
+	db2->entries->opt.finiKV = NULL;
 	ht_pu_foreach(db2->entries, sigdb_move_entry, &opt);
 	return true;
 }
@@ -247,7 +247,7 @@ static ut32 sigdb_entry_hash(const void *k) {
 	return r;
 }
 
-static void ht_pu_sigdb_freekv(HtPUKv *kv) {
+static void ht_pu_sigdb_finikv(HtPUKv *kv, RZ_UNUSED void *user) {
 	if (!kv) {
 		return;
 	}
@@ -265,7 +265,7 @@ RZ_API RZ_OWN RzSigDb *rz_sign_sigdb_new(void) {
 	HtPUOptions opt = { 0 };
 	opt.cmp = sigdb_entry_cmp,
 	opt.hashfn = sigdb_entry_hash,
-	opt.freefn = ht_pu_sigdb_freekv;
+	opt.finiKV = ht_pu_sigdb_finikv;
 	db->entries = ht_pu_new_opt(&opt);
 	if (!db->entries) {
 		free(db);

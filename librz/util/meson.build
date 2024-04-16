@@ -86,6 +86,9 @@ rz_util_common_sources = [
   'ht/ht_pp.c',
   'ht/ht_up.c',
   'ht/ht_pu.c',
+  'ht/ht_sp.c',
+  'ht/ht_ss.c',
+  'ht/ht_su.c',
   'set.c',
 ]
 rz_util_sources = rz_util_common_sources

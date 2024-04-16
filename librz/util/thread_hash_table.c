@@ -23,33 +23,19 @@
 		free(ht); \
 	}
 
-#define th_ht_new0_decl(name) \
-	RZ_API th_ht_type(name) * rz_th_##name##_new0(void) { \
+#define th_ht_new_decl(name, type) \
+	RZ_API th_ht_type(name) * rz_th_##name##_new(type *table) { \
+		rz_return_val_if_fail(table, NULL); \
 		th_ht_type(name) *ht = RZ_NEW0(th_ht_type(name)); \
 		if (!ht) { \
 			return NULL; \
 		} \
-		ht->table = name##_new0(); \
 		ht->lock = rz_th_lock_new(true); \
-		if (!ht->table || !ht->lock) { \
-			th_ht_free(name, ht); \
+		if (!ht->lock) { \
+			free(ht); \
 			return NULL; \
 		} \
-		return ht; \
-	}
-
-#define th_ht_new_opt_decl(name, type) \
-	RZ_API th_ht_type(name) * rz_th_##name##_new_opt(type##Options *opt) { \
-		th_ht_type(name) *ht = RZ_NEW0(th_ht_type(name)); \
-		if (!ht) { \
-			return NULL; \
-		} \
-		ht->table = name##_new_opt(opt); \
-		ht->lock = rz_th_lock_new(true); \
-		if (!ht->table || !ht->lock) { \
-			th_ht_free(name, ht); \
-			return NULL; \
-		} \
+		ht->table = table; \
 		return ht; \
 	}
 
@@ -101,8 +87,7 @@
 #define th_ht_define(name, type, ktype, vtype) \
 	th_ht_struct(name, type); \
 	th_ht_free_decl(name); \
-	th_ht_new0_decl(name); \
-	th_ht_new_opt_decl(name, type); \
+	th_ht_new_decl(name, type); \
 	th_ht_kv_op_decl(name, insert, const ktype, vtype); \
 	th_ht_kv_op_decl(name, update, const ktype, vtype); \
 	th_ht_delete_decl(name, ktype); \
@@ -114,3 +99,6 @@ th_ht_define(ht_pp, HtPP, void *, void *);
 th_ht_define(ht_up, HtUP, ut64, void *);
 th_ht_define(ht_uu, HtUU, ut64, ut64);
 th_ht_define(ht_pu, HtPU, void *, ut64);
+th_ht_define(ht_sp, HtSP, char *, void *);
+th_ht_define(ht_ss, HtSS, char *, char *);
+th_ht_define(ht_su, HtSU, char *, ut64);

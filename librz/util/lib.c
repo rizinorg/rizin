@@ -30,7 +30,7 @@ RZ_API RzLib *rz_lib_new(RZ_NULLABLE const char *symname, RZ_NULLABLE const char
 	lib->plugins = rz_list_new();
 	lib->symname = strdup(symname ? symname : RZ_LIB_SYMNAME);
 	lib->symnamefunc = strdup(symnamefunc ? symnamefunc : RZ_LIB_SYMFUNC);
-	lib->opened_dirs = ht_pu_new0();
+	lib->opened_dirs = ht_su_new(HT_STR_DUP);
 	return lib;
 }
 
@@ -48,7 +48,7 @@ RZ_API void rz_lib_free(RzLib *lib) {
 	rz_list_free(lib->plugins);
 	free(lib->symname);
 	free(lib->symnamefunc);
-	ht_pu_free(lib->opened_dirs);
+	ht_su_free(lib->opened_dirs);
 	free(lib);
 }
 
@@ -245,7 +245,7 @@ RZ_API bool rz_lib_open(RzLib *lib, RZ_NONNULL const char *file) {
 RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force) {
 	rz_return_val_if_fail(lib && path, false);
 
-	if (!force && ht_pu_find(lib->opened_dirs, path, NULL)) {
+	if (!force && ht_su_find(lib->opened_dirs, path, NULL)) {
 		return false;
 	}
 #if WANT_DYLINK
@@ -320,7 +320,7 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force) {
 	closedir(dh);
 #endif
 #endif
-	ht_pu_insert(lib->opened_dirs, path, 1);
+	ht_su_insert(lib->opened_dirs, path, 1);
 	return true;
 }
 

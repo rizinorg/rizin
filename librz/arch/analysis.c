@@ -66,11 +66,6 @@ static void meta_item_free(void *item) {
 	free(it);
 }
 
-static void global_kv_free(HtPPKv *kv) {
-	free(kv->key);
-	rz_analysis_var_global_free(kv->value);
-}
-
 RZ_API RzAnalysis *rz_analysis_new(void) {
 	RzAnalysis *analysis = RZ_NEW0(RzAnalysis);
 	if (!analysis) {
@@ -86,8 +81,8 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 		return NULL;
 	}
 	analysis->bb_tree = NULL;
-	analysis->ht_addr_fun = ht_up_new0();
-	analysis->ht_name_fun = ht_pp_new0();
+	analysis->ht_addr_fun = ht_up_new(NULL, NULL);
+	analysis->ht_name_fun = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	analysis->os = strdup(RZ_SYS_OS);
 	analysis->esil_goto_limit = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	analysis->opt.nopskip = true; // skip nops in code analysis
@@ -133,7 +128,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 			rz_analysis_plugin_add(analysis, plugin);
 		}
 	}
-	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);
+	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
@@ -164,7 +159,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_analysis_il_vm_cleanup(a);
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
-	ht_pp_free(a->ht_name_fun);
+	ht_sp_free(a->ht_name_fun);
 	set_u_free(a->visited);
 	rz_analysis_hint_storage_fini(a);
 	rz_interval_tree_fini(&a->meta);
@@ -189,7 +184,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	free(a->last_disasm_reg);
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
-	ht_pp_free(a->ht_global_var);
+	ht_sp_free(a->ht_global_var);
 	rz_list_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	free(a);

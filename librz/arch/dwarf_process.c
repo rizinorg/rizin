@@ -8,13 +8,6 @@
 #include <rz_bin_dwarf.h>
 #include <string.h>
 
-#define Ht_FREE_IMPL(V, T, f) \
-	static void Ht##V##_##T##_free(Ht##V##Kv *kv) { \
-		if (!kv) \
-			return; \
-		f(kv->value); \
-	}
-
 typedef struct {
 	char *c_str;
 	ut64 length;
@@ -27,8 +20,6 @@ static void String_free(String *str) {
 	free(str->c_str);
 	free(str);
 }
-
-Ht_FREE_IMPL(UP, String, String_free);
 
 typedef struct dwarf_context_t {
 	RzAnalysis *analysis;
@@ -477,7 +468,8 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 }
 
 #define KASE(_num, _reg) \
-	case _num: return #_reg;
+	case _num: \
+		return #_reg;
 
 #include <arm/arm_dwarf_regnum_table.h>
 #include <hexagon/hexagon_dwarf_reg_num_table.inc>
@@ -762,10 +754,10 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 			btype->name, die->offset);
 	}
 
-	RzPVector *btypes = ht_pp_find(ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
+	RzPVector *btypes = ht_sp_find(ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
 	if (!btypes) {
 		btypes = rz_pvector_new(NULL);
-		ht_pp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes);
+		ht_sp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes);
 		rz_pvector_push(btypes, btype);
 	} else {
 		void **it;
@@ -1749,7 +1741,7 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 	DwContext ctx = {
 		.analysis = analysis,
 		.dw = dw,
-		.str_escaped = ht_up_new(NULL, HtUP_String_free, NULL),
+		.str_escaped = ht_up_new(NULL, (HtUPFreeValue)String_free),
 		.unit = NULL,
 	};
 	RzBinDwarfCompUnit *unit;
@@ -1797,7 +1789,7 @@ static void db_save_renamed(RzTypeDB *db, RzBaseType *b, char *name) {
 	rz_type_db_update_base_type(db, b);
 }
 
-static bool store_base_type(void *u, const void *k, const void *v) {
+static bool store_base_type(void *u, const char *k, const void *v) {
 	RzAnalysis *analysis = u;
 	const char *name = k;
 	RzPVector *types = (RzPVector *)v;
@@ -1859,7 +1851,7 @@ static bool store_callable(void *u, ut64 k, const void *v) {
 RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
 	rz_analysis_dwarf_preprocess_info(analysis, dw);
-	ht_pp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
+	ht_sp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
 	ht_up_foreach(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
 }
 
@@ -2072,19 +2064,6 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 	ht_up_foreach(analysis->debug_info->function_by_addr, dwarf_integrate_function, analysis);
 }
 
-Ht_FREE_IMPL(UP, RzType, rz_type_free);
-Ht_FREE_IMPL(UP, RzBaseType, rz_type_base_type_free);
-Ht_FREE_IMPL(UP, RzAnalysisDwarfFunction, function_free);
-Ht_FREE_IMPL(UP, RzCallable, rz_type_callable_free);
-
-static void HtPP_RzPVector_free(HtPPKv *kv) {
-	if (!kv) {
-		return;
-	}
-	free(kv->key);
-	rz_pvector_free(kv->value);
-}
-
 /**
  * \brief Create a new debug info
  * \return RzAnalysisDebugInfo pointer
@@ -2094,13 +2073,13 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	if (!debug_info) {
 		return NULL;
 	}
-	debug_info->function_by_offset = ht_up_new(NULL, HtUP_RzAnalysisDwarfFunction_free, NULL);
-	debug_info->function_by_addr = ht_up_new0();
-	debug_info->variable_by_offset = ht_up_new0();
-	debug_info->type_by_offset = ht_up_new(NULL, HtUP_RzType_free, NULL);
-	debug_info->callable_by_offset = ht_up_new(NULL, HtUP_RzCallable_free, NULL);
-	debug_info->base_type_by_offset = ht_up_new(NULL, HtUP_RzBaseType_free, NULL);
-	debug_info->base_types_by_name = ht_pp_new(NULL, HtPP_RzPVector_free, NULL);
+	debug_info->function_by_offset = ht_up_new(NULL, (HtUPFreeValue)function_free);
+	debug_info->function_by_addr = ht_up_new(NULL, NULL);
+	debug_info->variable_by_offset = ht_up_new(NULL, NULL);
+	debug_info->type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_free);
+	debug_info->callable_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_callable_free);
+	debug_info->base_type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_base_type_free);
+	debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
 	debug_info->visited = set_u_new();
 	return debug_info;
 }
@@ -2119,7 +2098,7 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	ht_up_free(debuginfo->type_by_offset);
 	ht_up_free(debuginfo->callable_by_offset);
 	ht_up_free(debuginfo->base_type_by_offset);
-	ht_pp_free(debuginfo->base_types_by_name);
+	ht_sp_free(debuginfo->base_types_by_name);
 	rz_bin_dwarf_free(debuginfo->dw);
 	set_u_free(debuginfo->visited);
 	free(debuginfo);

@@ -530,10 +530,6 @@ static int bb_cmpaddr(const void *_a, const void *_b, void *user) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
-void free_op_cache_kv(HtUPKv *kv) {
-	rz_analysis_op_free(kv->value);
-}
-
 void handle_stack_canary(RzCore *core, RzAnalysisOp *aop, int cur_idx) {
 	RzILTraceInstruction *prev_trace = rz_analysis_esil_get_instruction_trace(
 		core->analysis->esil->trace,
@@ -838,12 +834,10 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 
 	// Reserve bigger ht to avoid rehashing
-	HtPPOptions opt;
 	RzDebugTrace *dtrace = core->dbg->trace;
-	opt = dtrace->ht->opt;
-	ht_pp_free(dtrace->ht);
-	dtrace->ht = ht_pp_new_size(fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
-	dtrace->ht->opt = opt;
+	HtSPOptions opt = dtrace->ht->opt;
+	ht_sp_free(dtrace->ht);
+	dtrace->ht = ht_sp_new_opt_size(&opt, fcn->ninstr);
 
 	// Create a new context to store the return type propagation state
 	struct ReturnTypeAnalysisCtx retctx = {
@@ -878,7 +872,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		ut64 addr = bb->addr;
 		rz_reg_set_value(reg, r, addr);
 		ht_up_free(op_cache);
-		op_cache = ht_up_new(NULL, free_op_cache_kv, NULL);
+		op_cache = ht_up_new(NULL, (HtUPFreeValue)rz_analysis_op_free);
 		if (!op_cache) {
 			break;
 		}
@@ -934,7 +928,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			// excessive memory usage.
 			if (op_cache->count > OP_CACHE_LIMIT) {
 				ht_up_free(op_cache);
-				op_cache = ht_up_new(NULL, free_op_cache_kv, NULL);
+				op_cache = ht_up_new(NULL, (HtUPFreeValue)rz_analysis_op_free);
 				if (!op_cache) {
 					break;
 				}

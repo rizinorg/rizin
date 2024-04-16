@@ -75,7 +75,7 @@ static bool is_register(const char *name, RZ_BORROW const RzRegSet *regset) {
 	bool found = false;
 	for (ut32 i = 0; i < RZ_REG_TYPE_LAST; ++i) {
 		if (regset[i].ht_regs) {
-			ht_pp_find(regset[i].ht_regs, name, &found);
+			ht_sp_find(regset[i].ht_regs, name, &found);
 			if (found) {
 				return true;
 			}
@@ -345,7 +345,7 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	free(a->cpu);
 	free(a->features);
 	sdb_free(a->pair);
-	ht_pp_free(a->flags);
+	ht_ss_free(a->flags);
 	a->pair = NULL;
 	free(a);
 }
@@ -835,15 +835,6 @@ RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *h
 	return ret;
 }
 
-static void __flag_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
-}
-
-static void *__dup_val(const void *v) {
-	return (void *)strdup((char *)v);
-}
-
 RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 	int num, stage, ret, idx, ctr, i, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
@@ -862,8 +853,8 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 		free(tokens);
 		return NULL;
 	}
-	ht_pp_free(a->flags);
-	if (!(a->flags = ht_pp_new(__dup_val, __flag_free_kv, NULL))) {
+	ht_ss_free(a->flags);
+	if (!(a->flags = ht_ss_new(HT_STR_DUP, HT_STR_DUP))) {
 		free(tokens);
 		return NULL;
 	}
@@ -1037,7 +1028,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
 						char *food = rz_str_newf("0x%" PFMT64x, off);
-						ht_pp_insert(a->flags, ptr_start, food);
+						ht_ss_insert(a->flags, ptr_start, food);
 						rz_asm_code_set_equ(acode, p, food);
 						free(p);
 						free(food);

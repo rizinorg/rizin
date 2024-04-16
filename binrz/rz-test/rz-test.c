@@ -42,7 +42,7 @@ typedef struct rz_test_state_t {
 
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
-	HtPP *path_left; // char * (path to test file) => RzTestFileCounts *
+	HtSP *path_left; // char * (path to test file) => RzTestFileCounts *
 	RzPVector /*<char *>*/ completed_paths;
 	ut64 ok_count;
 	ut64 xx_count;
@@ -104,11 +104,6 @@ static int help(bool verbose) {
 		       "OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
 	}
 	return 1;
-}
-
-static void path_left_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
 }
 
 static bool rz_test_chdir(const char *argv0) {
@@ -517,15 +512,15 @@ int rz_test_main(int argc, const char **argv) {
 	if (log_mode) {
 		// Log mode prints the state after every completed file.
 		// The count of tests left per file is stored in a ht.
-		state.path_left = ht_pp_new(NULL, path_left_free_kv, NULL);
+		state.path_left = ht_sp_new(HT_STR_DUP, NULL, free);
 		if (state.path_left) {
 			void **it;
 			rz_pvector_foreach (&state.queue, it) {
 				RzTest *test = *it;
-				RzTestFileCounts *counts = ht_pp_find(state.path_left, test->path, NULL);
+				RzTestFileCounts *counts = ht_sp_find(state.path_left, test->path, NULL);
 				if (!counts) {
 					counts = calloc(1, sizeof(RzTestFileCounts));
-					ht_pp_insert(state.path_left, test->path, counts);
+					ht_sp_insert(state.path_left, test->path, counts);
 				}
 				counts->tests_left++;
 			}
@@ -615,7 +610,7 @@ coast:
 	rz_test_test_database_free(state.db);
 	rz_th_lock_free(state.lock);
 	rz_th_cond_free(state.cond);
-	ht_pp_free(state.path_left);
+	ht_sp_free(state.path_left);
 beach:
 	free(output_file);
 	free(rizin_cmd);
@@ -709,7 +704,7 @@ static void *worker_th(RzTestState *state) {
 			}
 		}
 		if (state->path_left) {
-			RzTestFileCounts *counts = ht_pp_find(state->path_left, test->path, NULL);
+			RzTestFileCounts *counts = ht_sp_find(state->path_left, test->path, NULL);
 			if (counts) {
 				switch (result->result) {
 				case RZ_TEST_RESULT_OK:
@@ -953,7 +948,7 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 		}
 		printf("[**] %50s ", name);
 		if (state->path_left) {
-			RzTestFileCounts *counts = ht_pp_find(state->path_left, name, NULL);
+			RzTestFileCounts *counts = ht_sp_find(state->path_left, name, NULL);
 			if (counts) {
 				state->ok_count += counts->ok;
 				state->xx_count += counts->xx;

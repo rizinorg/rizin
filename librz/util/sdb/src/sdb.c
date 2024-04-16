@@ -10,7 +10,7 @@
 #include "sdb.h"
 #include "sdb_private.h"
 
-static inline SdbKv *next_kv(HtPP *ht, SdbKv *kv) {
+static inline SdbKv *next_kv(HtSS *ht, SdbKv *kv) {
 	return (SdbKv *)((char *)kv + ht->opt.elem_size);
 }
 
@@ -751,7 +751,7 @@ RZ_API bool sdb_foreach(Sdb *s, SdbForeachCallback cb, void *user) {
 
 	ut32 i;
 	for (i = 0; i < s->ht->size; ++i) {
-		HtPPBucket *bt = &s->ht->table[i];
+		HtSSBucket *bt = &s->ht->table[i];
 		SdbKv *kv;
 		ut32 j, count;
 
@@ -798,7 +798,7 @@ RZ_API bool sdb_sync(Sdb *s) {
 
 	/* append new keyvalues */
 	for (i = 0; i < s->ht->size; ++i) {
-		HtPPBucket *bt = &s->ht->table[i];
+		HtSSBucket *bt = &s->ht->table[i];
 		SdbKv *kv;
 		ut32 j, count;
 

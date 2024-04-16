@@ -1759,10 +1759,6 @@ typedef struct {
 	bool bits_set;
 } HintsAtAddr;
 
-static void hints_at_addr_kv_free(HtUPKv *kv) {
-	free(kv->value);
-}
-
 static HintsAtAddr *hints_at_addr(HtUP *acc, ut64 addr) {
 	HintsAtAddr *h = ht_up_find(acc, addr, NULL);
 	if (h) {
@@ -1890,7 +1886,7 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 }
 
 RZ_API void rz_serialize_analysis_hints_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	HtUP /*<HintsAtAddr *>*/ *acc = ht_up_new(NULL, hints_at_addr_kv_free, NULL);
+	HtUP /*<HintsAtAddr *>*/ *acc = ht_up_new(NULL, free);
 	rz_analysis_addr_hints_foreach(analysis, addr_hint_acc_cb, acc);
 	rz_analysis_arch_hints_foreach(analysis, arch_hint_acc_cb, acc);
 	rz_analysis_bits_hints_foreach(analysis, bits_hint_acc_cb, acc);

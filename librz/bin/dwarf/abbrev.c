@@ -35,13 +35,6 @@ static void RzBinDwarfAbbrevTable_free(RzBinDwarfAbbrevTable *table) {
 	free(table);
 }
 
-static void htup_RzBinDwarfAbbrevTable_free(HtUPKv *kv) {
-	if (!kv) {
-		return;
-	}
-	RzBinDwarfAbbrevTable_free(kv->value);
-}
-
 static void RzBinDwarfAbbrevs_fini(RzBinDwarfAbbrev *abbrevs) {
 	ht_up_free(abbrevs->by_offset);
 	R_free(abbrevs->R);
@@ -51,7 +44,7 @@ static bool RzBinDwarfAbbrevs_init(RzBinDwarfAbbrev *abbrevs) {
 	if (!abbrevs) {
 		return false;
 	}
-	abbrevs->by_offset = ht_up_new(NULL, htup_RzBinDwarfAbbrevTable_free, NULL);
+	abbrevs->by_offset = ht_up_new(NULL, (HtUPFreeValue)RzBinDwarfAbbrevTable_free);
 	if (!abbrevs->by_offset) {
 		goto beach;
 	}

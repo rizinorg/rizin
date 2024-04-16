@@ -5157,7 +5157,7 @@ RZ_API RzCmd *rz_core_cmd_new(RzCore *core, bool has_cons) {
 
 	TSLanguage *lang = tree_sitter_rzcmd();
 	res->language = lang;
-	res->ts_symbols_ht = ht_up_new0();
+	res->ts_symbols_ht = ht_up_new(NULL, NULL);
 	struct ts_data_symbol_map *entry = map_ts_stmt_handlers;
 	while (entry->name) {
 		TSSymbol symbol = ts_language_symbol_for_name(lang, entry->name, strlen(entry->name), true);
