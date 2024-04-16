@@ -438,6 +438,7 @@ commands:
   - name: iz
     cname: cmd_info_strings
     summary: List strings
+    description: Lists the strings; the behavior can be modified via str.search.*
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
@@ -449,6 +450,7 @@ commands:
   - name: izz
     cname: cmd_info_whole_strings
     summary: List strings in the whole binary
+    description: Lists the strings of the whole binary; the behavior can be modified via str.search.*
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     default_mode: RZ_OUTPUT_MODE_TABLE
     modes:

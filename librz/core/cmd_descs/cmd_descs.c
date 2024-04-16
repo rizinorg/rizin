@@ -11573,6 +11573,7 @@ static const RzCmdDescArg cmd_info_strings_args[] = {
 };
 static const RzCmdDescHelp cmd_info_strings_help = {
 	.summary = "List strings",
+	.description = "Lists the strings; the behavior can be modified via str.search.*",
 	.args = cmd_info_strings_args,
 };
 
@@ -11581,6 +11582,7 @@ static const RzCmdDescArg cmd_info_whole_strings_args[] = {
 };
 static const RzCmdDescHelp cmd_info_whole_strings_help = {
 	.summary = "List strings in the whole binary",
+	.description = "Lists the strings of the whole binary; the behavior can be modified via str.search.*",
 	.args = cmd_info_whole_strings_args,
 };
 
