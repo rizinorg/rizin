@@ -5,14 +5,13 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 
-static void interrupt_free(HtUPKv *kv) {
-	RzAnalysisEsilInterrupt *i = (RzAnalysisEsilInterrupt *)kv->value;
+static void interrupt_free(RzAnalysisEsilInterrupt *i) {
 	rz_analysis_esil_interrupt_free(i->esil, i);
 }
 
 RZ_API void rz_analysis_esil_interrupts_init(RzAnalysisEsil *esil) {
 	rz_return_if_fail(esil);
-	esil->interrupts = ht_up_new(NULL, interrupt_free, NULL);
+	esil->interrupts = ht_up_new(NULL, (HtUPFreeValue)interrupt_free);
 }
 
 RZ_API RzAnalysisEsilInterrupt *rz_analysis_esil_interrupt_new(RzAnalysisEsil *esil, ut32 src_id, RzAnalysisEsilInterruptHandler *ih) {

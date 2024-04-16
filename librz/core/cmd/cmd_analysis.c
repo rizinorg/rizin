@@ -3506,7 +3506,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 }
 
 RZ_IPI RzCmdStatus rz_analysis_xrefs_graph_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	HtUU *ht = ht_uu_new0();
+	HtUU *ht = ht_uu_new();
 	if (!ht) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -4178,13 +4178,13 @@ RZ_IPI RzCmdStatus rz_analysis_function_import_list_del_handler(RzCore *core, in
 	return RZ_CMD_STATUS_OK;
 }
 
-static void ht_inc(HtPU *ht, const char *key) {
+static void ht_inc(HtSU *ht, const char *key) {
 	bool found;
-	HtPUKv *kv = ht_pu_find_kv(ht, key, &found);
+	HtSUKv *kv = ht_su_find_kv(ht, key, &found);
 	if (kv) {
 		kv->value++;
 	} else {
-		ht_pu_insert(ht, key, 1);
+		ht_su_insert(ht, key, 1);
 	}
 }
 
@@ -4194,7 +4194,7 @@ enum STATS_MODE {
 	STATS_MODE_TYPE
 };
 
-static void update_stat_for_op(RzCore *core, HtPU *ht, ut64 addr, int mode) {
+static void update_stat_for_op(RzCore *core, HtSU *ht, ut64 addr, int mode) {
 	RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM);
 	if (!op) {
 		return;
@@ -4220,7 +4220,7 @@ static void update_stat_for_op(RzCore *core, HtPU *ht, ut64 addr, int mode) {
 	rz_analysis_op_free(op);
 }
 
-static void gather_opcode_stat_for_fcn(RzCore *core, HtPU *ht, RzAnalysisFunction *fcn, int mode) {
+static void gather_opcode_stat_for_fcn(RzCore *core, HtSU *ht, RzAnalysisFunction *fcn, int mode) {
 	void **iter;
 	RzAnalysisBlock *bb;
 	rz_pvector_foreach (fcn->bbs, iter) {
@@ -4238,11 +4238,11 @@ static bool list_keys_cb(RzList /*<char *>*/ *list, char *k, RZ_UNUSED ut64 v) {
 	return true;
 }
 
-static void print_stats(RzCore *core, HtPU *ht, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
+static void print_stats(RzCore *core, HtSU *ht, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
 	const char *name;
 	RzListIter *iter;
 	RzList *list = rz_list_newf(NULL);
-	ht_pu_foreach(ht, (HtPUForeachCallback)list_keys_cb, list);
+	ht_su_foreach(ht, (HtSUForeachCallback)list_keys_cb, list);
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		RzTable *t = state->d.t;
@@ -4260,13 +4260,13 @@ static void print_stats(RzCore *core, HtPU *ht, RzAnalysisFunction *fcn, RzCmdSt
 		}
 		rz_pvector_push(items, strdup(fcn->name));
 		rz_list_foreach (list, iter, name) {
-			int nv = (int)ht_pu_find(ht, name, NULL);
+			int nv = (int)ht_su_find(ht, name, NULL);
 			rz_pvector_push(items, rz_str_newf("%d", nv));
 		}
 		rz_table_add_row_vec(t, items);
 	} else {
 		rz_list_foreach (list, iter, name) {
-			ut32 nv = (ut32)ht_pu_find(ht, name, NULL);
+			ut32 nv = (ut32)ht_su_find(ht, name, NULL);
 			rz_cons_printf("%4u %s\n", nv, name);
 		}
 	}
@@ -4282,19 +4282,19 @@ RZ_IPI RzCmdStatus rz_analysis_function_opcode_stat_handler(RzCore *core, int ar
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	HtPU *ht = ht_pu_new0();
+	HtSU *ht = ht_su_new(HT_STR_DUP);
 	if (!ht) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	gather_opcode_stat_for_fcn(core, ht, fcn, mode);
 	print_stats(core, ht, fcn, state);
-	ht_pu_free(ht);
+	ht_su_free(ht);
 	return RZ_CMD_STATUS_OK;
 }
 
-static bool add_keys_to_set_cb(HtPU *ht, const char *k, RZ_UNUSED const ut64 v) {
+static bool add_keys_to_set_cb(HtSU *ht, const char *k, RZ_UNUSED const ut64 v) {
 	if (strcmp(k, ".addr")) {
-		ht_pu_insert(ht, k, 1);
+		ht_su_insert(ht, k, 1);
 	}
 	return true;
 }
@@ -4309,7 +4309,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 		mode = !strcmp(argv[1], "family") ? STATS_MODE_FML : STATS_MODE_TYPE;
 	}
 	RzList *keys = rz_list_newf(NULL);
-	HtPU *keys_set = ht_pu_new0();
+	HtSU *keys_set = ht_su_new(HT_STR_DUP);
 	RzList *dbs = rz_list_newf((RzListFree)ht_pu_free);
 	if (!keys || !keys_set || !dbs) {
 		goto exit;
@@ -4318,21 +4318,21 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		HtPU *db = ht_pu_new0();
+		HtSU *db = ht_su_new(HT_STR_DUP);
 		if (!db) {
 			break;
 		}
 		gather_opcode_stat_for_fcn(core, db, fcn, mode);
-		ht_pu_insert(db, ".addr", fcn->addr);
+		ht_su_insert(db, ".addr", fcn->addr);
 		rz_list_append(dbs, db);
 	}
 
-	HtPU *db;
+	HtSU *db;
 	rz_list_foreach (dbs, iter, db) {
-		ht_pu_foreach(db, (HtPUForeachCallback)add_keys_to_set_cb, keys_set);
+		ht_su_foreach(db, (HtSUForeachCallback)add_keys_to_set_cb, keys_set);
 	}
 
-	ht_pu_foreach(keys_set, (HtPUForeachCallback)list_keys_cb, keys);
+	ht_su_foreach(keys_set, (HtSUForeachCallback)list_keys_cb, keys);
 	rz_list_sort(keys, (RzListComparator)strcmp, NULL);
 
 	RzTable *t = state->d.t;
@@ -4352,12 +4352,12 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 		if (!items) {
 			break;
 		}
-		ut64 fcnAddr = ht_pu_find(db, ".addr", NULL);
+		ut64 fcnAddr = ht_su_find(db, ".addr", NULL);
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fcnAddr);
 		rz_pvector_push(items, fcn ? strdup(fcn->name) : strdup(""));
 		rz_pvector_push(items, fcn ? rz_str_newf("0x%08" PFMT64x, fcnAddr) : strdup("0"));
 		rz_list_foreach (keys, iter, key) {
-			ut32 n = (ut32)ht_pu_find(db, key, NULL);
+			ut32 n = (ut32)ht_su_find(db, key, NULL);
 			rz_pvector_push(items, rz_str_newf("%u", n));
 		}
 		rz_table_add_row_vec(t, items);
@@ -4366,7 +4366,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 exit:
 	rz_list_free(keys);
 	rz_list_free(dbs);
-	ht_pu_free(keys_set);
+	ht_su_free(keys_set);
 	return res;
 }
 

@@ -206,7 +206,7 @@ static bool get_relocs_entry_from_sections(ELFOBJ *bin, RzVector /*<RzBinElfRelo
 RZ_OWN RzVector /*<RzBinElfReloc>*/ *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	HtUU *set = ht_uu_new0();
+	HtUU *set = ht_uu_new();
 	if (!set) {
 		return NULL;
 	}

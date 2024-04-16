@@ -104,7 +104,7 @@ static void handle_data_sections(RzBinSection *sect);
 static void symbols_from_mach0(RzPVector /*<RzBinSymbol *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, int ordinal);
 static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr);
 static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *obj);
-static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtPP *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal);
+static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtSS *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) * mach0, ut64 paddr, RzXNUKernelCacheObj *obj);
 static int prot2perm(int x);
 
@@ -1177,7 +1177,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 
 	symbols_from_mach0(ret, obj->mach0, bf, 0, 0);
 
-	HtPP *kernel_syms_by_addr = sdb_ht_new();
+	HtSS *kernel_syms_by_addr = sdb_ht_new();
 	if (!kernel_syms_by_addr) {
 		rz_pvector_free(ret);
 		return NULL;
@@ -1433,8 +1433,8 @@ beach:
 #define K_MIG_ROUTINE_SIZE   (5 * 8)
 #define K_MIG_MAX_ROUTINES   100
 
-static HtPP *mig_hash_new(void) {
-	HtPP *hash = sdb_ht_new();
+static HtSS *mig_hash_new(void) {
+	HtSS *hash = sdb_ht_new();
 	if (!hash) {
 		return NULL;
 	}
@@ -1455,7 +1455,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 		return NULL;
 	}
 
-	HtPP *mig_hash = NULL;
+	HtSS *mig_hash = NULL;
 	RzList *subsystem = NULL;
 	ut8 *data_const = NULL;
 	ut64 data_const_offset = 0, data_const_size = 0, data_const_vaddr = 0;
@@ -1616,7 +1616,7 @@ static ut64 extract_addr_from_code(ut8 *arm64_code, ut64 vaddr) {
 	return addr;
 }
 
-static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtPP *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal) {
+static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtSS *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal) {
 	RStubsInfo *stubs_info = get_stubs_info(kext->mach0, kext->range.offset, obj);
 	if (!stubs_info) {
 		return;

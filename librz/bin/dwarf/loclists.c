@@ -300,8 +300,6 @@ RZ_API RzBinDwarfLocList *rz_bin_dwarf_loclists_get(
 	return NULL;
 }
 
-Ht_FREE_IMPL(UP, LocList, LocList_free);
-
 /**
  * \brief Create a new RzBinDwarfLocListTable instance,
  *        takes ownership of the buffers, and any of them must be non-NULL
@@ -316,7 +314,7 @@ RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(RzBinEndianReader *l
 	RET_NULL_IF_FAIL(self);
 	self->loclists = loclists;
 	self->loc = loc;
-	self->by_offset = ht_up_new(NULL, HtUP_LocList_free, NULL);
+	self->by_offset = ht_up_new(NULL, (HtUPFreeValue)LocList_free);
 	return self;
 }
 

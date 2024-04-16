@@ -38,14 +38,6 @@ RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_xref_list_new() {
 	return rz_list_newf((RzListFree)free);
 }
 
-static void xrefs_ht_free(HtUPKv *kv) {
-	ht_up_free(kv->value);
-}
-
-static void xrefs_ref_free(HtUPKv *kv) {
-	rz_analysis_xref_free(kv->value);
-}
-
 static bool appendRef(void *u, const ut64 k, const void *v) {
 	RzList *list = (RzList *)u;
 	RzAnalysisXRef *xref = (RzAnalysisXRef *)v;
@@ -99,8 +91,8 @@ static bool set_xref(HtUP *m, RzAnalysisXRef *xref, bool from2to) {
 	HtUP *ht = ht_up_find(m, key1, NULL);
 	if (!ht) {
 		// RzAnalysis::ht_xrefs_to is responsible for releasing of pointers.
-		HtUPKvFreeFunc cb = from2to ? NULL : xrefs_ref_free;
-		ht = ht_up_new(NULL, cb, NULL);
+		HtUPFreeValue cb = from2to ? NULL : (HtUPFreeValue)rz_analysis_xref_free;
+		ht = ht_up_new(NULL, cb);
 		if (!ht) {
 			return false;
 		}
@@ -247,13 +239,13 @@ RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis) {
 	ht_up_free(analysis->ht_xrefs_to);
 	analysis->ht_xrefs_to = NULL;
 
-	HtUP *tmp = ht_up_new(NULL, xrefs_ht_free, NULL);
+	HtUP *tmp = ht_up_new(NULL, (HtUPFreeValue)ht_up_free);
 	if (!tmp) {
 		return false;
 	}
 	analysis->ht_xrefs_from = tmp;
 
-	tmp = ht_up_new(NULL, xrefs_ht_free, NULL);
+	tmp = ht_up_new(NULL, (HtUPFreeValue)ht_up_free);
 	if (!tmp) {
 		ht_up_free(analysis->ht_xrefs_from);
 		analysis->ht_xrefs_from = NULL;

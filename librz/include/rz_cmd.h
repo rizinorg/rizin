@@ -475,11 +475,11 @@ typedef struct rz_cmd_t {
 	RzCmdNullCb nullcallback;
 	RzCmdItem *cmds[UT8_MAX];
 	RzCmdAlias aliases;
-	HtPP *macros; ///< Map of macros (char *)name -> RzCmdMacro
+	HtSP *macros; ///< Map of macros (char *)name -> RzCmdMacro
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
 	RzCmdDesc *root_cmd_desc;
-	HtPP *ht_cmds;
+	HtSP *ht_cmds;
 	/**
 	 * True if a rz_cons_instance exists. When used from RzCore this is
 	 * commonly true. However, it can be used in tests to avoid access to

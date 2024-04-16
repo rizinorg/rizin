@@ -6,6 +6,7 @@
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_bitvector.h>
 #include <rz_util/rz_assert.h>
+#include <rz_util/ht_sp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -136,7 +137,7 @@ typedef struct rz_reg_set_t {
 	RzRegArena *arena;
 	RzList /*<RzRegArena *>*/ *pool; ///< RzRegArena
 	RzList /*<RzRegItem *>*/ *regs; ///< RzRegItem
-	HtPP *ht_regs; ///< name:RzRegItem
+	HtSP *ht_regs; ///< name:RzRegItem
 	RzListIter /*<RzRegArena *>*/ *cur;
 	ut32 maskregstype; ///< which type of regs has this register set (logic mask with 1 << RZ_REG_TYPE_XXX)
 } RzRegSet;

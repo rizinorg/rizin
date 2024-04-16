@@ -4,7 +4,7 @@
 #ifndef __SDB_HT_H
 #define __SDB_HT_H
 
-#include <rz_util/ht_pp.h>
+#include <rz_util/ht_ss.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,8 +12,8 @@ extern "C" {
 
 /** keyvalue pair **/
 typedef struct sdb_kv {
-	// sub of HtPPKv so we can cast safely
-	HtPPKv base;
+	// sub of HtSSKv so we can cast safely
+	HtSSKv base;
 	ut32 cas;
 	ut64 expire;
 } SdbKv;
@@ -40,21 +40,21 @@ extern RZ_API void sdbkv_free(SdbKv *kv);
 
 extern RZ_API ut32 sdb_hash(const char *key);
 
-RZ_API HtPP *sdb_ht_new(void);
+RZ_API HtSS *sdb_ht_new(void);
 // Destroy a hashtable and all of its entries.
-RZ_API void sdb_ht_free(HtPP *ht);
+RZ_API void sdb_ht_free(HtSS *ht);
 // Insert a new Key-Value pair into the hashtable. If the key already exists, returns false.
-RZ_API bool sdb_ht_insert(HtPP *ht, const char *key, const char *value);
+RZ_API bool sdb_ht_insert(HtSS *ht, const char *key, const char *value);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
-RZ_API bool sdb_ht_insert_kvp(HtPP *ht, SdbKv *kvp, bool update);
+RZ_API bool sdb_ht_insert_kvp(HtSS *ht, SdbKv *kvp, bool update);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
-RZ_API bool sdb_ht_update(HtPP *ht, const char *key, const char *value);
+RZ_API bool sdb_ht_update(HtSS *ht, const char *key, const char *value);
 // Delete a key from the hashtable.
-RZ_API bool sdb_ht_delete(HtPP *ht, const char *key);
+RZ_API bool sdb_ht_delete(HtSS *ht, const char *key);
 // Find the value corresponding to the matching key.
-RZ_API char *sdb_ht_find(HtPP *ht, const char *key, bool *found);
+RZ_API char *sdb_ht_find(HtSS *ht, const char *key, bool *found);
 // Find the KeyValuePair corresponding to the matching key.
-RZ_API SdbKv *sdb_ht_find_kvp(HtPP *ht, const char *key, bool *found);
+RZ_API SdbKv *sdb_ht_find_kvp(HtSS *ht, const char *key, bool *found);
 
 #ifdef __cplusplus
 }

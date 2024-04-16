@@ -277,7 +277,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 	bool found = false;
 	char *content = NULL;
 	size_t sz = 0;
-	RzBinSourceLineCacheItem *item = ht_pp_find(cache->items, file, &found);
+	RzBinSourceLineCacheItem *item = ht_sp_find(cache->items, file, &found);
 	if (found) {
 		if (!(item && item->file_content)) {
 			return NULL;
@@ -287,7 +287,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 	} else {
 		content = rz_file_slurp(file, &sz);
 		if (!content) {
-			ht_pp_insert(cache->items, file, NULL);
+			ht_sp_insert(cache->items, file, NULL);
 			return NULL;
 		}
 		item = RZ_NEW0(RzBinSourceLineCacheItem);
@@ -300,7 +300,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 		if (!item->line_by_ln) {
 			goto err;
 		}
-		ht_pp_update(cache->items, file, item);
+		ht_sp_update(cache->items, file, item);
 
 		rz_pvector_reserve(item->line_by_ln, line);
 		cache_lines(item);

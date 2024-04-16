@@ -6,6 +6,7 @@
 #include <rz_list.h>
 #include <rz_skiplist.h>
 #include <rz_util/rz_serialize.h>
+#include <rz_util/ht_sp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +50,7 @@ typedef struct rz_flag_t {
 	Sdb *tags;
 	RzNum *num;
 	RzSkipList *by_off; /* flags sorted by offset, value=RzFlagsAtOffset */
-	HtPP *ht_name; /* hashmap key=item name, value=RzFlagItem * */
+	HtSP *ht_name; /* hashmap key=item name, value=RzFlagItem * */
 	RzList /*<RzFlagZoneItem *>*/ *zones;
 } RzFlag;
 

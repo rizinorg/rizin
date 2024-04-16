@@ -47,7 +47,7 @@ RZ_API void rz_config_node_free(RZ_NULLABLE void *n) {
 
 RZ_API RZ_BORROW RzConfigNode *rz_config_node_get(RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
-	return ht_pp_find(cfg->ht, name, NULL);
+	return ht_sp_find(cfg->ht, name, NULL);
 }
 
 RZ_API bool rz_config_set_getter(RzConfig *cfg, const char *key, RzConfigCallback cb) {
@@ -236,7 +236,7 @@ RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name,
 			}
 			node->flags = CN_RW | CN_BOOL;
 			node->i_value = value ? 1 : 0;
-			ht_pp_insert(cfg->ht, node->name, node);
+			ht_sp_insert(cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				rz_list_append(cfg->nodes, node);
 			}
@@ -326,7 +326,7 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 					node->flags |= CN_BOOL;
 					node->i_value = rz_str_is_true(value) ? 1 : 0;
 				}
-				ht_pp_insert(cfg->ht, node->name, node);
+				ht_sp_insert(cfg->ht, node->name, node);
 				rz_list_append(cfg->nodes, node);
 			} else {
 				eprintf("rz_config_set: unable to create a new RzConfigNode\n");
@@ -366,7 +366,7 @@ RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *nod
 		rz_config_node_free(node);
 		return false;
 	}
-	ht_pp_insert(cfg->ht, node->name, node);
+	ht_sp_insert(cfg->ht, node->name, node);
 	rz_list_append(cfg->nodes, node);
 	return true;
 }
@@ -393,7 +393,7 @@ RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && cfg, false);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
-		ht_pp_delete(cfg->ht, node->name);
+		ht_sp_delete(cfg->ht, node->name);
 		rz_list_delete_data(cfg->nodes, node);
 		return true;
 	}
@@ -446,7 +446,7 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name,
 			}
 			node->flags = CN_RW | CN_INT;
 			node->i_value = i;
-			ht_pp_insert(cfg->ht, node->name, node);
+			ht_sp_insert(cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				rz_list_append(cfg->nodes, node);
 			}
@@ -492,7 +492,7 @@ RZ_API RzConfig *rz_config_new(void *user) {
 	if (!cfg) {
 		return NULL;
 	}
-	cfg->ht = ht_pp_new0();
+	cfg->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	cfg->nodes = rz_list_newf((RzListFree)rz_config_node_free);
 	if (!cfg->nodes) {
 		RZ_FREE(cfg);
@@ -513,7 +513,7 @@ RZ_API RzConfig *rz_config_clone(RzConfig *cfg) {
 	}
 	rz_list_foreach (cfg->nodes, iter, node) {
 		RzConfigNode *nn = rz_config_node_clone(node);
-		ht_pp_insert(c->ht, node->name, nn);
+		ht_sp_insert(c->ht, node->name, nn);
 		rz_list_append(c->nodes, nn);
 	}
 	c->lock = cfg->lock;
@@ -524,7 +524,7 @@ RZ_API void rz_config_free(RzConfig *cfg) {
 	if (cfg) {
 		cfg->nodes->free = rz_config_node_free;
 		rz_list_free(cfg->nodes);
-		ht_pp_free(cfg->ht);
+		ht_sp_free(cfg->ht);
 		free(cfg);
 	}
 }

@@ -63,7 +63,7 @@ RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalys
 		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", existing_glob->name, existing_glob->addr);
 		return false;
 	}
-	if (!ht_pp_insert(analysis->ht_global_var, global_var->name, global_var)) {
+	if (!ht_sp_insert(analysis->ht_global_var, global_var->name, global_var)) {
 		return false;
 	}
 	if (!rz_rbtree_aug_insert(&analysis->global_var_tree, &global_var->addr, &global_var->rb, global_var_node_cmp, NULL, NULL)) {
@@ -158,7 +158,7 @@ RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NO
 
 	// We need to delete RBTree first because ht_pp_delete will free its member
 	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+	return deleted ? ht_sp_delete(analysis->ht_global_var, glob->name) : deleted;
 }
 
 /**
@@ -224,7 +224,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 a
  */
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(analysis && name, NULL);
-	return (RzAnalysisVarGlobal *)ht_pp_find(analysis->ht_global_var, name, NULL);
+	return (RzAnalysisVarGlobal *)ht_sp_find(analysis->ht_global_var, name, NULL);
 }
 
 struct list_addr {
@@ -278,7 +278,7 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAna
 	return var;
 }
 
-static bool global_var_collect_cb(void *user, const void *k, const void *v) {
+static bool global_var_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	RzList *l = user;
 	RzAnalysisVarGlobal *glob = (RzAnalysisVarGlobal *)v;
 	rz_list_append(l, glob);
@@ -297,7 +297,7 @@ RZ_API RZ_OWN RzList /*<RzAnalysisVarGlobal *>*/ *rz_analysis_var_global_get_all
 	if (!globals) {
 		return NULL;
 	}
-	ht_pp_foreach(analysis->ht_global_var, global_var_collect_cb, globals);
+	ht_sp_foreach(analysis->ht_global_var, global_var_collect_cb, globals);
 	return globals;
 }
 
@@ -324,7 +324,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 
 	RZ_FREE(glob->name);
 	glob->name = strdup(newname);
-	return ht_pp_update_key(analysis->ht_global_var, old_name, newname);
+	return ht_sp_update_key(analysis->ht_global_var, old_name, newname);
 }
 
 /**

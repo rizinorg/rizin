@@ -70,7 +70,7 @@ typedef struct sdb_t {
 	int lock;
 	struct cdb db;
 	struct cdb_make m;
-	HtPP *ht;
+	HtSS *ht;
 	ut32 eod;
 	ut32 pos;
 	int fdump;

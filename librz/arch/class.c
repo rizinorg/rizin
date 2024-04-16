@@ -1284,7 +1284,7 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 		rz_graph_free(class_graph);
 		return NULL;
 	}
-	HtPP /*<char *name, RzGraphNode *node>*/ *hashmap = ht_pp_new0();
+	HtSP /*<char *name, RzGraphNode *node>*/ *hashmap = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!hashmap) {
 		rz_graph_free(class_graph);
 		ls_free(classes);
@@ -1296,39 +1296,39 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 	ls_foreach (classes, iter, kv) {
 		const char *name = sdbkv_key(kv);
 		// create nodes
-		RzGraphNode *curr_node = ht_pp_find(hashmap, name, NULL);
+		RzGraphNode *curr_node = ht_sp_find(hashmap, name, NULL);
 		if (!curr_node) {
 			curr_node = rz_graph_add_node_info(class_graph, name, NULL, 0);
 			if (!curr_node) {
 				goto failure;
 			}
-			ht_pp_insert(hashmap, name, curr_node);
+			ht_sp_insert(hashmap, name, curr_node);
 		}
 		// create edges between node and it's parents
 		RzVector *bases = rz_analysis_class_base_get_all(analysis, name);
 		RzAnalysisBaseClass *base;
 		rz_vector_foreach(bases, base) {
 			bool base_found = false;
-			RzGraphNode *base_node = ht_pp_find(hashmap, base->class_name, &base_found);
+			RzGraphNode *base_node = ht_sp_find(hashmap, base->class_name, &base_found);
 			// If base isn't processed, do it now
 			if (!base_found) {
 				base_node = rz_graph_add_node_info(class_graph, base->class_name, NULL, 0);
 				if (!base_node) {
 					goto failure;
 				}
-				ht_pp_insert(hashmap, base->class_name, base_node);
+				ht_sp_insert(hashmap, base->class_name, base_node);
 			}
 			rz_graph_add_edge(class_graph, base_node, curr_node);
 		}
 		rz_vector_free(bases);
 	}
 	ls_free(classes);
-	ht_pp_free(hashmap);
+	ht_sp_free(hashmap);
 	return class_graph;
 
 failure:
 	ls_free(classes);
-	ht_pp_free(hashmap);
+	ht_sp_free(hashmap);
 	rz_graph_free(class_graph);
 	return NULL;
 }

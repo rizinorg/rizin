@@ -72,15 +72,11 @@ const ut64 cleanup_masks[] = {
 	0x7fffffffffffffff
 };
 
-static void pcache_kv_free(HtUPKv *kv) {
-	free(kv->value);
-}
-
 RZ_API bool rz_io_desc_cache_init(RzIODesc *desc) {
 	if (!desc || desc->cache) {
 		return false;
 	}
-	return (desc->cache = ht_up_new(NULL, pcache_kv_free, NULL)) ? true : false;
+	return (desc->cache = ht_up_new(NULL, free)) ? true : false;
 }
 
 RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, size_t len) {

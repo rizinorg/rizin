@@ -191,7 +191,7 @@ static int le_import_cmp(LE_import *a, LE_import *b) {
 	return rz_str_cmp(a->proc_name, b->proc_name, -1);
 }
 
-static void le_free_import_kv(HtPPKv *kv) {
+static void le_fini_import_kv(HtPPKv *kv) {
 	le_import_free(kv->key);
 }
 
@@ -261,8 +261,8 @@ static RZ_BORROW LE_import *le_add_import(rz_bin_le_obj_t *bin,
 
 	if (!bin->le_import_ht) {
 		HtPPOptions opt = {
-			.freefn = (HtPPKvFreeFunc)le_free_import_kv,
-			.cmp = (HtPPListComparator)le_import_cmp,
+			.finiKV = (HtPPFiniKv)le_fini_import_kv,
+			.cmp = (HtPPComparator)le_import_cmp,
 			.hashfn = (HtPPHashFunction)le_import_hash,
 		};
 		CHECK(bin->le_import_ht = ht_pp_new_opt(&opt));

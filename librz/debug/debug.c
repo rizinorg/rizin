@@ -366,10 +366,6 @@ static const char *rz_debug_str_callback(RzNum *userptr, ut64 off, int *ok) {
 	return NULL;
 }
 
-void free_tracenodes_kv(HtUPKv *kv) {
-	free(kv->value);
-}
-
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx) {
 	rz_return_val_if_fail(bp_ctx, NULL);
 	RzDebug *dbg = RZ_NEW0(RzDebug);
@@ -394,7 +390,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->pid = -1;
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
-	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
+	dbg->tracenodes = ht_up_new(NULL, free);
 	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
@@ -424,7 +420,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 
 RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg) {
 	ht_up_free(dbg->tracenodes);
-	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
+	dbg->tracenodes = ht_up_new(NULL, free);
 }
 
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {

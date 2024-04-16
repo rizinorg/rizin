@@ -26,10 +26,6 @@ static void rz_debug_checkpoint_fini(void *element, void *user) {
 	rz_list_free(checkpoint->snaps);
 }
 
-static void htup_vector_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
-}
-
 RZ_API RzDebugSession *rz_debug_session_new(void) {
 	RzDebugSession *session = RZ_NEW0(RzDebugSession);
 	if (!session) {
@@ -41,12 +37,12 @@ RZ_API RzDebugSession *rz_debug_session_new(void) {
 		rz_debug_session_free(session);
 		return NULL;
 	}
-	session->registers = ht_up_new(NULL, htup_vector_free, NULL);
+	session->registers = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!session->registers) {
 		rz_debug_session_free(session);
 		return NULL;
 	}
-	session->memory = ht_up_new(NULL, htup_vector_free, NULL);
+	session->memory = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!session->memory) {
 		rz_debug_session_free(session);
 		return NULL;

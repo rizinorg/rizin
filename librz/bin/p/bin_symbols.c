@@ -358,7 +358,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
-	HtUU *hash = ht_uu_new0();
+	HtUU *hash = ht_uu_new();
 	if (!hash) {
 		return res;
 	}

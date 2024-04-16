@@ -400,19 +400,19 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 		goto debug_data_err;
 	}
 
-	HtPP *name_set = ht_pp_new0();
+	HtSP *name_set = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	if (!name_set) {
 		goto debug_symbols_err;
 	}
 
 	RzBinElfSymbol *sym;
 	rz_vector_foreach(result, sym) {
-		ht_pp_insert(name_set, sym->name, sym);
+		ht_sp_insert(name_set, sym->name, sym);
 	}
 
 	rz_vector_foreach(debug_symbols, sym) {
 		bool found;
-		ht_pp_find(name_set, sym->name, &found);
+		ht_sp_find(name_set, sym->name, &found);
 		if (found) {
 			continue;
 		}
@@ -423,7 +423,7 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 	debug_symbols->len = 0;
 	res = true;
 
-	ht_pp_free(name_set);
+	ht_sp_free(name_set);
 debug_symbols_err:
 	rz_vector_free(debug_symbols);
 debug_data_err:
@@ -488,7 +488,7 @@ RZ_OWN RzVector /*<RzBinElfSymbol>*/ *Elf_(rz_bin_elf_compute_symbols)(ELFOBJ *b
 		return NULL;
 	}
 
-	HtUU *set = ht_uu_new0();
+	HtUU *set = ht_uu_new();
 	if (!set) {
 		rz_vector_free(result);
 		return NULL;

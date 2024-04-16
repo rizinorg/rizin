@@ -436,7 +436,7 @@ RZ_API bool rz_analysis_block_recurse(RzAnalysisBlock *block, RzAnalysisBlockCb 
 	RzAnalysisBlockRecurseContext ctx;
 	ctx.analysis = block->analysis;
 	rz_pvector_init(&ctx.to_visit, NULL);
-	ctx.visited = ht_up_new0();
+	ctx.visited = ht_up_new(NULL, NULL);
 	if (!ctx.visited) {
 		goto beach;
 	}
@@ -464,7 +464,7 @@ RZ_API bool rz_analysis_block_recurse_followthrough(RzAnalysisBlock *block, RzAn
 	RzAnalysisBlockRecurseContext ctx;
 	ctx.analysis = block->analysis;
 	rz_pvector_init(&ctx.to_visit, NULL);
-	ctx.visited = ht_up_new0();
+	ctx.visited = ht_up_new(NULL, NULL);
 	if (!ctx.visited) {
 		goto beach;
 	}
@@ -497,7 +497,7 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 	rz_return_val_if_fail(block && cb, true);
 	RzVector path;
 	bool breaked = false;
-	HtUP *visited = ht_up_new0();
+	HtUP *visited = ht_up_new(NULL, NULL);
 	rz_vector_init(&path, sizeof(RecurseDepthFirstCtx), NULL, NULL);
 	if (!visited) {
 		goto beach;
@@ -637,7 +637,7 @@ RZ_API RZ_NULLABLE RzList /*<RzAnalysisBlock *>*/ *rz_analysis_block_shortest_pa
 	ctx.next_visit = &visit_a;
 	RzPVector *cur_visit = &visit_b; // cur visit is the current level in the tree
 
-	ctx.visited = ht_up_new0();
+	ctx.visited = ht_up_new(NULL, NULL);
 	if (!ctx.visited) {
 		goto beach;
 	}
@@ -721,8 +721,7 @@ typedef struct {
 	bool reachable;
 } NoreturnSuccessor;
 
-static void noreturn_successor_free(HtUPKv *kv) {
-	NoreturnSuccessor *succ = kv->value;
+static void noreturn_successor_free(NoreturnSuccessor *succ) {
 	rz_analysis_block_unref(succ->block);
 	free(succ);
 }
@@ -776,7 +775,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 	// Cache all recursive successors of block here.
 	// These are the candidates that we might have to remove from functions later.
-	HtUP *succs = ht_up_new(NULL, noreturn_successor_free, NULL); // maps block addr (ut64) => NoreturnSuccessor *
+	HtUP *succs = ht_up_new(NULL, (HtUPFreeValue)noreturn_successor_free); // maps block addr (ut64) => NoreturnSuccessor *
 	if (!succs) {
 		return block;
 	}
@@ -897,12 +896,12 @@ static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *
 RZ_API void rz_analysis_block_automerge(RzPVector /*<RzAnalysisBlock *>*/ *blocks) {
 	rz_return_if_fail(blocks);
 	AutomergeCtx ctx = {
-		.predecessors = ht_up_new0(),
-		.visited_blocks = ht_up_new0(),
-		.blocks = ht_up_new0()
+		.predecessors = ht_up_new(NULL, NULL),
+		.visited_blocks = ht_up_new(NULL, NULL),
+		.blocks = ht_up_new(NULL, NULL)
 	};
 
-	HtUP *relevant_fcns = ht_up_new0(); // all the functions that contain some of our blocks (ht abused as a set)
+	HtUP *relevant_fcns = ht_up_new(NULL, NULL); // all the functions that contain some of our blocks (ht abused as a set)
 	RzList *fixup_candidates = rz_list_new(); // used further down
 	if (!ctx.predecessors || !ctx.visited_blocks || !ctx.blocks || !relevant_fcns || !fixup_candidates) {
 		goto beach;

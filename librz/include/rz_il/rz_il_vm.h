@@ -9,6 +9,7 @@
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_il/rz_il_events.h>
 #include <rz_il/rz_il_reg.h>
+#include <rz_util/ht_sp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,8 +42,8 @@ struct rz_il_vm_t {
 	RzPVector /*<RzILMem *>*/ vm_memory; ///< Memories available in the VM, by their index. May be sparse (contain NULLs).
 	ut32 val_count, lab_count; ///< count for VM predefined things
 	ut32 addr_size; ///< size of address space
-	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
-	HtPP *vm_local_label_table; ///< Hashtable to maintain the label and address
+	HtSP *vm_global_label_table; ///< Hashtable to maintain the label and address
+	HtSP *vm_local_label_table; ///< Hashtable to maintain the label and address
 	RzBitVector *pc; ///< Program Counter of VM
 	RzILOpPureHandler *op_handler_pure_table; ///< Array of Handler, handler can be indexed by opcode
 	RzILOpEffectHandler *op_handler_effect_table; ///< Array of Handler, handler can be indexed by opcode

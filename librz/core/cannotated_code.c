@@ -270,7 +270,7 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
 
 RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code) {
 	RzCodeAnnotation *annotation;
-	HtUP *ht = ht_up_new0();
+	HtUP *ht = ht_up_new(NULL, NULL);
 	rz_vector_foreach(&code->annotations, annotation) {
 		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_OFFSET) {
 			continue;

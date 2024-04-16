@@ -225,7 +225,7 @@ typedef struct rz_debug_trace_t {
 	int dup;
 	char *addresses;
 	// TODO: add range here
-	HtPP *ht;
+	HtSP *ht;
 } RzDebugTrace;
 
 typedef struct rz_debug_tracepoint_t {

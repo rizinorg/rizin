@@ -166,7 +166,7 @@ error:
 static HtUU *basefind_create_pointer_map(RzCore *core, ut32 pointer_size) {
 	rz_return_val_if_fail(pointer_size == sizeof(ut32) || pointer_size == sizeof(ut64), NULL);
 
-	HtUU *map = ht_uu_new0();
+	HtUU *map = ht_uu_new();
 	if (!map) {
 		RZ_LOG_ERROR("basefind: cannot allocate hashmap for pointer.\n");
 		return NULL;

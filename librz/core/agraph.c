@@ -907,7 +907,7 @@ static int is_valid_pos(const RzAGraph *g, int l, int pos) {
 	return pos >= 0 && pos < g->layers[l].n_nodes;
 }
 
-static void free_vertical_nodes_kv(HtPPKv *kv) {
+static void fini_vertical_nodes_kv(HtPPKv *kv, RZ_UNUSED void *user) {
 	rz_list_free(kv->value);
 }
 
@@ -917,7 +917,7 @@ static void free_vertical_nodes_kv(HtPPKv *kv) {
  *      to the same long edge */
 static HtPP *compute_vertical_nodes(const RzAGraph *g) {
 	HtPPOptions ht_opt = { 0 };
-	ht_opt.freefn = free_vertical_nodes_kv;
+	ht_opt.finiKV = fini_vertical_nodes_kv;
 	HtPP *res = ht_pp_new_opt(&ht_opt);
 	if (!res) {
 		return NULL;
@@ -1135,7 +1135,7 @@ static int place_nodes_sel_p(int newval, int oldval, int is_first, int is_left) 
 }
 
 /* places left/right the nodes of a class */
-static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, HtPP *v_nodes, HtPU *res, SetP *placed) {
+static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, HtPP *v_nodes, HtPU *res, SetU *placed) {
 	const RzList *lv = ht_pp_find(v_nodes, gn, NULL);
 	int p = 0, v, is_first = true;
 	const RzGraphNode *gk;
@@ -1155,7 +1155,7 @@ static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, H
 		}
 		sibl_anode = get_anode(sibling);
 		if (ak->klass == sibl_anode->klass) {
-			if (!set_p_contains(placed, sibling)) {
+			if (!set_u_contains(placed, (ut64)sibling)) {
 				place_nodes(g, sibling, is_left, v_nodes, res, placed);
 			}
 
@@ -1174,7 +1174,7 @@ static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, H
 			break;
 		}
 		ht_pu_update(res, gk, (ut64)(size_t)p);
-		set_p_add(placed, gk);
+		set_u_add(placed, (ut64)gk);
 	}
 }
 
@@ -1188,12 +1188,11 @@ static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP *v_nodes) {
 	}
 
 	HtPUOptions pu_opt = { 0 };
-	HtPPOptions pp_opt = { 0 };
 	HtPU *res = ht_pu_new_opt(&pu_opt);
-	SetP *placed = (SetP *)ht_pp_new_opt(&pp_opt);
+	SetU *placed = set_u_new();
 	if (!res || !placed) {
 		ht_pu_free(res);
-		set_p_free(placed);
+		set_u_free(placed);
 		return NULL;
 	}
 	for (i = 0; i < n_classes; i++) {
@@ -1201,7 +1200,7 @@ static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP *v_nodes) {
 		const RzListIter *it;
 
 		rz_list_foreach (classes[i], it, gn) {
-			if (!set_p_contains(placed, gn)) {
+			if (!set_u_contains(placed, (ut64)gn)) {
 				place_nodes(g, gn, is_left, v_nodes, res, placed);
 			}
 		}
@@ -1209,7 +1208,7 @@ static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP *v_nodes) {
 		adjust_class(g, is_left, classes, res, i);
 	}
 
-	set_p_free(placed);
+	set_u_free(placed);
 	for (i = 0; i < n_classes; i++) {
 		if (classes[i]) {
 			rz_list_free(classes[i]);
@@ -3572,23 +3571,11 @@ static void agraph_toggle_speed(RzAGraph *g, RzCore *core) {
 	g->movspeed = g->movspeed == DEFAULT_SPEED ? alt : DEFAULT_SPEED;
 }
 
-static void free_nodes_kv(HtPPKv *kv) {
-	RzANode *n = (RzANode *)kv->value;
-	if (!n->is_dummy) {
+static void free_node(RzANode *n) {
+	if (n && !n->is_dummy) {
 		agraph_node_free(n);
 	}
 }
-
-static HtPPOptions nodes_opt = {
-	.cmp = (HtPPListComparator)strcmp,
-	.hashfn = (HtPPHashFunction)sdb_hash,
-	.dupkey = NULL,
-	.dupvalue = NULL,
-	.calcsizeK = (HtPPCalcSizeK)strlen,
-	.calcsizeV = NULL,
-	.freefn = free_nodes_kv,
-	.elem_size = sizeof(HtPPKv),
-};
 
 static void agraph_init(RzAGraph *g) {
 	g->is_callgraph = false;
@@ -3599,7 +3586,7 @@ static void agraph_init(RzAGraph *g) {
 	g->show_node_body = true;
 	g->force_update_seek = true;
 	g->graph = rz_graph_new();
-	g->nodes = ht_pp_new_opt(&nodes_opt);
+	g->nodes = ht_sp_new(HT_STR_CONST, NULL, (HtSPFreeValue)free_node);
 	g->dummy_nodes = rz_list_newf((RzListFree)agraph_node_free);
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
@@ -3770,7 +3757,7 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 	res->shortcut_w = 0;
 	res->gnode = rz_graph_add_node(g->graph, res);
 	if (RZ_STR_ISNOTEMPTY(res->title) && !g->is_il) {
-		ht_pp_update(g->nodes, res->title, res);
+		ht_sp_update(g->nodes, res->title, res);
 		char *s, *estr, *b;
 		size_t len;
 		sdb_array_add(g->db, "agraph.nodes", res->title, 0);
@@ -3830,11 +3817,11 @@ RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title) {
 	rz_graph_del_node(g->graph, res->gnode);
 	res->gnode = NULL;
 
-	ht_pp_delete(g->nodes, res->title);
+	ht_sp_delete(g->nodes, res->title);
 	return true;
 }
 
-static bool user_node_cb(struct g_cb *user, RZ_UNUSED const void *k, const void *v) {
+static bool user_node_cb(struct g_cb *user, RZ_UNUSED const char *k, const void *v) {
 	RzANodeCallback cb = user->node_cb;
 	void *user_data = user->data;
 	RzANode *n = (RzANode *)v;
@@ -3844,7 +3831,7 @@ static bool user_node_cb(struct g_cb *user, RZ_UNUSED const void *k, const void 
 	return true;
 }
 
-static bool user_edge_cb(struct g_cb *user, RZ_UNUSED const void *k, const void *v) {
+static bool user_edge_cb(struct g_cb *user, RZ_UNUSED const char *k, const void *v) {
 	RAEdgeCallback cb = user->edge_cb;
 	RzAGraph *g = user->graph;
 	void *user_data = user->data;
@@ -3869,7 +3856,7 @@ RZ_API void rz_agraph_foreach(RzAGraph *g, RzANodeCallback cb, void *user) {
 		.node_cb = cb,
 		.data = user
 	};
-	ht_pp_foreach(g->nodes, (HtPPForeachCallback)user_node_cb, &u);
+	ht_sp_foreach(g->nodes, (HtSPForeachCallback)user_node_cb, &u);
 }
 
 RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user) {
@@ -3878,7 +3865,7 @@ RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user) {
 		.edge_cb = cb,
 		.data = user
 	};
-	ht_pp_foreach(g->nodes, (HtPPForeachCallback)user_edge_cb, &u);
+	ht_sp_foreach(g->nodes, (HtSPForeachCallback)user_edge_cb, &u);
 }
 
 RZ_API RzANode *rz_agraph_get_first_node(const RzAGraph *g) {
@@ -3892,7 +3879,7 @@ RZ_API RzANode *rz_agraph_get_node(const RzAGraph *g, const char *title) {
 	if (!title_trunc) {
 		return NULL;
 	}
-	RzANode *node = ht_pp_find(g->nodes, title_trunc, NULL);
+	RzANode *node = ht_sp_find(g->nodes, title_trunc, NULL);
 	free(title_trunc);
 	return node;
 }
@@ -3931,7 +3918,7 @@ RZ_API void rz_agraph_del_edge(const RzAGraph *g, RzANode *a, RzANode *b) {
 }
 
 RZ_API void rz_agraph_reset(RzAGraph *g) {
-	ht_pp_free(g->nodes);
+	ht_sp_free(g->nodes);
 	rz_list_free(g->dummy_nodes);
 	rz_graph_reset(g->graph);
 	rz_agraph_set_title(g, NULL);
@@ -3939,7 +3926,7 @@ RZ_API void rz_agraph_reset(RzAGraph *g) {
 	if (g->edges) {
 		rz_list_purge(g->edges);
 	}
-	g->nodes = ht_pp_new_opt(&nodes_opt);
+	g->nodes = ht_sp_new(HT_STR_CONST, NULL, (HtSPFreeValue)free_node);
 	g->dummy_nodes = rz_list_newf((RzListFree)agraph_node_free);
 	g->update_seek_on = NULL;
 	g->need_reload_nodes = false;
@@ -3954,7 +3941,7 @@ RZ_API void rz_agraph_free(RzAGraph *g) {
 	if (!g) {
 		return;
 	}
-	ht_pp_free(g->nodes);
+	ht_sp_free(g->nodes);
 	rz_list_free(g->dummy_nodes);
 	rz_graph_free(g->graph);
 	rz_list_free(g->edges);

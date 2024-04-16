@@ -240,9 +240,9 @@ static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool ver
 	obj->b = rz_buf_ref(buf);
 	obj->size = rz_buf_size(buf);
 	obj->verbose = verbose;
-	obj->sym_ht = ht_up_new0();
-	obj->imp_ht = ht_up_new0();
-	obj->imp_index = ht_uu_new0();
+	obj->sym_ht = ht_up_new(NULL, NULL);
+	obj->imp_ht = ht_up_new(NULL, NULL);
+	obj->imp_index = ht_uu_new();
 	if (!rz_bin_coff_init_hdr(obj)) {
 		RZ_LOG_ERROR("failed to init hdr\n");
 		return false;

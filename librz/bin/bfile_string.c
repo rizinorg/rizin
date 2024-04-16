@@ -361,7 +361,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		goto fail;
 	}
 
-	strings_db = ht_up_new0();
+	strings_db = ht_up_new(NULL, NULL);
 	if (!strings_db) {
 		RZ_LOG_ERROR("bin_file_strings: cannot allocate string map.\n");
 		goto fail;

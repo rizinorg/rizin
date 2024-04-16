@@ -44,7 +44,7 @@ bool ht_up_count(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-bool ht_pp_count(void *user, const void *k, const void *v) {
+bool ht_sp_count(void *user, const char *k, const void *v) {
 	size_t *count = user;
 	(*count)++;
 	return true;
@@ -59,7 +59,7 @@ static bool function_check_invariants(RzAnalysis *analysis) {
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (analysis->fcns, it, fcn) {
 		mu_assert_ptreq(ht_up_find(analysis->ht_addr_fun, fcn->addr, NULL), fcn, "function in addr ht");
-		mu_assert_ptreq(ht_pp_find(analysis->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
+		mu_assert_ptreq(ht_sp_find(analysis->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
 	}
 
 	size_t addr_count = 0;
@@ -67,7 +67,7 @@ static bool function_check_invariants(RzAnalysis *analysis) {
 	mu_assert_eq(addr_count, rz_list_length(analysis->fcns), "function addr ht count");
 
 	size_t name_count = 0;
-	ht_pp_foreach(analysis->ht_name_fun, ht_pp_count, &name_count);
+	ht_sp_foreach(analysis->ht_name_fun, ht_sp_count, &name_count);
 	mu_assert_eq(name_count, rz_list_length(analysis->fcns), "function name ht count");
 
 	return true;

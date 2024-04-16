@@ -3,7 +3,7 @@
 
 #include "rz_types.h"
 #include "rz_list.h"
-#include <rz_util/ht_pu.h>
+#include <rz_util/ht_su.h>
 
 #if __UNIX__
 #include <dlfcn.h>
@@ -103,7 +103,7 @@ typedef struct rz_lib_t {
 	char *symnamefunc;
 	RzList /*<RzLibPlugin *>*/ *plugins;
 	RzList /*<RzLibHandler *>*/ *handlers;
-	HtPU *opened_dirs; ///< Hashtable to keep track of already opened directories
+	HtSU *opened_dirs; ///< Hashtable to keep track of already opened directories
 } RzLib;
 
 #define RZ_PLUGIN_CHECK_AND_ADD(plugins, plugin, py_type) \

@@ -54,10 +54,6 @@ static void addr_hint_record_fini(void *element, void *user) {
 	}
 }
 
-static void addr_hint_record_ht_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
-}
-
 static void bits_hint_record_free_rb(RBNode *node, void *user) {
 	free(container_of(node, RzAnalysisRangedHintRecordBase, rb));
 }
@@ -70,7 +66,7 @@ static void arch_hint_record_free_rb(RBNode *node, void *user) {
 
 // used in analysis.c, but no API needed
 void rz_analysis_hint_storage_init(RzAnalysis *a) {
-	a->addr_hints = ht_up_new(NULL, addr_hint_record_ht_free, NULL);
+	a->addr_hints = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	a->arch_hints = NULL;
 	a->bits_hints = NULL;
 }

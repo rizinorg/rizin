@@ -30,10 +30,6 @@ RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
 	return sysregitem;
 }
 
-static void free_port_kv(HtUPKv *kv) {
-	rz_sysreg_item_free(kv->value);
-}
-
 /**
  * \brief Creates a new RzSysregDB type
  */
@@ -42,7 +38,7 @@ RZ_API RzSysregsDB *rz_sysregs_db_new() {
 	if (!sysregdb) {
 		return NULL;
 	}
-	sysregdb->port = ht_up_new(NULL, free_port_kv, NULL);
+	sysregdb->port = ht_up_new(NULL, (HtUPFreeValue)rz_sysreg_item_free);
 	if (!sysregdb->port) {
 		free(sysregdb);
 		return NULL;
