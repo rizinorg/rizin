@@ -38,12 +38,12 @@ tasks:
         # Running the unit tests
         MALLOC_OPTIONS=CFGU ninja -C build test
     - test: |
-        source .venv/bin/activate
-        python3 -m pip install requests
         cd rizin
         export PATH=${HOME}/bin:/usr/local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        source ../.venv/bin/activate
+        python3 -m pip install requests
         # Workaround until the feature request is solved
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/rizin-testbins test/bins
