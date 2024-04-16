@@ -14,8 +14,9 @@ sources:
 hottub_trigger: '^(dev|stable|bsd-.+|dist-.+)$'
 tasks:
     - rzpipe: |
-        /usr/local/bin/python3 -m ensurepip --user
-        /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+        /usr/local/bin/python3 -m venv .venv
+        source .venv/bin/activate
+        python3 -m pip install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
         meson setup --prefix=${HOME} build
@@ -37,11 +38,12 @@ tasks:
         # Running the unit tests
         MALLOC_OPTIONS=CFGU ninja -C build test
     - test: |
-        /usr/local/bin/python3 -m pip install --user requests
         cd rizin
         export PATH=${HOME}/bin:/usr/local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        source ../.venv/bin/activate
+        python3 -m pip install requests
         # Workaround until the feature request is solved
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/rizin-testbins test/bins
