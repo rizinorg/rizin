@@ -54,7 +54,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RZ_NONNULL const char *except
 
 	RzILEvent *evt = RZ_NEW(RzILEvent);
 	if (!evt) {
-		RZ_LOG_ERROR("RzIL: cannot allocate exception RzILEvent");
+		RZ_LOG_ERROR("RzIL: cannot allocate exception RzILEvent\n");
 		return NULL;
 	}
 
@@ -62,7 +62,7 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RZ_NONNULL const char *except
 	evt->data.exception = strdup(exception);
 	if (!evt->data.exception) {
 		rz_il_event_free(evt);
-		RZ_LOG_ERROR("RzIL: cannot allocate exception string");
+		RZ_LOG_ERROR("RzIL: cannot allocate exception string\n");
 		return NULL;
 	}
 	return evt;

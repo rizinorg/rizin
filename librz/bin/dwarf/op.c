@@ -1021,7 +1021,7 @@ static bool Evaluation_evaluate_one_operation(
 	}
 	case OPERATION_KIND_NOP: break;
 	case OPERATION_KIND_PUSH_OBJECT_ADDRESS: {
-		OK_OR_ERR(self->object_address, RZ_LOG_ERROR("object address not set"));
+		OK_OR_ERR(self->object_address, RZ_LOG_ERROR("object address not set\n"));
 		RzBinDwarfValue v = {
 			.type = RzBinDwarfValueType_GENERIC,
 			.generic = *self->object_address,
@@ -1356,7 +1356,7 @@ RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(
 	if (self->state.kind == EVALUATION_STATE_COMPLETE) {
 		return &self->result;
 	}
-	RZ_LOG_ERROR("Called `Evaluation::result` on an `Evaluation` that has not been completed");
+	RZ_LOG_ERROR("Called `Evaluation::result` on an `Evaluation` that has not been completed\n");
 	return NULL;
 }
 

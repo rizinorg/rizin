@@ -783,7 +783,7 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 	if (lib_list == NULL) {
 		lib_list = rz_list_newf((RzListFree)libfree);
 		if (!lib_list) {
-			RZ_LOG_ERROR("Failed to allocate memory");
+			RZ_LOG_ERROR("Failed to allocate memory\n");
 			return;
 		}
 	}
@@ -796,7 +796,7 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 	}
 	lib = RZ_NEW0(LIB_ITEM);
 	if (!lib) {
-		RZ_LOG_ERROR("Failed to allocate memory");
+		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return;
 	}
 	lib->pid = pid;

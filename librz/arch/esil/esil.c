@@ -888,7 +888,7 @@ static int esil_interrupt_linux_i386(RzAnalysisEsil *esil) { 		//move this into 
 	}
 
 	if (sn != 0x80) {
-		RZ_LOG_ERROR("Interrupt 0x%x not handled.", sn);
+		RZ_LOG_ERROR("Interrupt 0x%x not handled.\n", sn);
 		esil->trap = RZ_ANALYSIS_TRAP_UNHANDLED;
 		esil->trap_code = sn;
 		return -1;
@@ -3093,7 +3093,7 @@ RZ_API int rz_analysis_esil_condition(RzAnalysisEsil *esil, const char *str) {
 		}
 		free(popped);
 	} else {
-		RZ_LOG_ERROR("Cannot pop because The ESIL stack is empty");
+		RZ_LOG_ERROR("Cannot pop because The ESIL stack is empty\n");
 		return -1;
 	}
 	return ret;

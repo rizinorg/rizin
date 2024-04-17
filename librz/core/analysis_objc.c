@@ -605,7 +605,7 @@ RZ_API void rz_core_analysis_objc_stubs(RzCore *core) {
 			goto found;
 		}
 	}
-	RZ_LOG_ERROR("__objc_stubs section not found for analysis");
+	RZ_LOG_ERROR("__objc_stubs section not found for analysis\n");
 	return;
 found:
 	analyze_objc_stubs(core, stubs_section->vaddr, stubs_section->vsize);

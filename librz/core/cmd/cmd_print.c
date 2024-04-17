@@ -3062,7 +3062,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_oct_handler(RzCore *core, int argc, const ch
 			return RZ_CMD_STATUS_ERROR; \
 		} \
 		if (size <= 0) { \
-			RZ_LOG_ERROR("Size must be greater 0"); \
+			RZ_LOG_ERROR("Size must be greater than 0\n"); \
 			return RZ_CMD_STATUS_ERROR; \
 		} \
 		char *code = rz_lang_byte_array(core->block, size, type); \
@@ -3866,7 +3866,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_recursively_no_function_handler(RzCore *co
 
 RZ_IPI RzCmdStatus rz_cmd_disassemble_summarize_n_bytes_handler(RzCore *core, int argc, const char **argv) {
 	if (argc <= 1) {
-		RZ_LOG_ERROR("Invalid argument.");
+		RZ_LOG_ERROR("Invalid argument.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -5326,7 +5326,7 @@ static bool if_aop_match_hist_type(RzAnalysisOp *op, CoreAnalysisHistogramType t
 static ut8 *analysis_stats_histogram_data(RzCore *core, CoreBlockRange *brange) {
 	ut8 *data = calloc(1, brange->nblocks);
 	if (!data) {
-		RZ_LOG_ERROR("core: Failed to allocate memory");
+		RZ_LOG_ERROR("core: Failed to allocate memory\n");
 		return NULL;
 	}
 	// FIXME: Should we just use the value from brange instead?
@@ -5360,7 +5360,7 @@ static ut8 *analysis_histogram_data(RzCore *core, CoreBlockRange *brange, CoreAn
 	size_t j, i = 0;
 	ut8 *data = calloc(1, brange->nblocks);
 	if (!data) {
-		RZ_LOG_ERROR("core: Failed to allocate memory");
+		RZ_LOG_ERROR("core: Failed to allocate memory\n");
 		return NULL;
 	}
 	for (i = 0; i < brange->nblocks; i++) {
@@ -5628,7 +5628,7 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	ut8 *data = calloc(1, brange->nblocks);
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		free(data);
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
@@ -5746,7 +5746,7 @@ static bool print_rising_and_falling_entropy_JSON(RzCore *core, RzCmdStateOutput
 static bool print_rising_and_falling_entropy_quiet(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return false;
 	}
 	bool resetFlag = 1;
@@ -5788,7 +5788,7 @@ static bool print_rising_and_falling_entropy_quiet(RzCore *core, CoreBlockRange 
 static bool print_rising_and_falling_entropy_standard(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return false;
 	}
 	bool resetFlag = 1;
@@ -5830,7 +5830,7 @@ static bool print_rising_and_falling_entropy_standard(RzCore *core, CoreBlockRan
 static bool print_rising_and_falling_entropy_long(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return false;
 	}
 	bool resetFlag = 1;
@@ -5879,11 +5879,11 @@ static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, cons
 		fallingthreshold = rz_num_get_float(core->num, argv[2]);
 	}
 	if (fallingthreshold > risingthreshold) {
-		RZ_LOG_ERROR("falling threshold is greater than rising threshold");
+		RZ_LOG_ERROR("falling threshold is greater than rising threshold\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (risingthreshold > 1) {
-		RZ_LOG_ERROR("threshold can't be greater than 1");
+		RZ_LOG_ERROR("threshold can't be greater than 1\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int nblocks = -1;
@@ -5896,7 +5896,7 @@ static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, cons
 	}
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -5973,7 +5973,7 @@ static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **ar
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6027,7 +6027,7 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6084,7 +6084,7 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6141,7 +6141,7 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6198,7 +6198,7 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 	if (!tmp) {
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	size_t len = 0;

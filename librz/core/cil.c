@@ -492,7 +492,7 @@ RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 
 	case RZ_IL_TYPE_PURE_FLOAT:
 		// TODO : ut64 value is enough for user input ?
 		// TODO : type is different with given value ?
-		RZ_LOG_ERROR("RzIL: Set float var from user input not supported yet");
+		RZ_LOG_ERROR("RzIL: Set float var from user input not supported yet\n");
 		return false;
 	}
 	if (val) {
@@ -764,8 +764,8 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 	bool evt_write = rz_config_get_b(core->config, "rzil.step.events.write");
 
 	if (!evt_read && !evt_write) {
-		RZ_LOG_ERROR("RzIL: cannot print events when all the events are disabled.");
-		RZ_LOG_ERROR("RzIL: please set 'rzil.step.events.read' or/and 'rzil.step.events.write' to true and try again.");
+		RZ_LOG_ERROR("RzIL: cannot print events when all the events are disabled.\n");
+		RZ_LOG_ERROR("RzIL: please set 'rzil.step.events.read' or/and 'rzil.step.events.write' to true and try again.\n");
 		return false;
 	}
 

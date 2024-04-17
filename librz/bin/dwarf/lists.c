@@ -16,7 +16,7 @@ RZ_IPI bool ListsHdr_parse(RzBinDwarfListsHdr *hdr, RzBinEndianReader *R) {
 	U8_OR_RET_FALSE(hdr->encoding.address_size);
 	U8_OR_RET_FALSE(hdr->segment_selector_size);
 	if (hdr->segment_selector_size != 0) {
-		RZ_LOG_ERROR("Segment selector size not supported: %d", hdr->segment_selector_size);
+		RZ_LOG_ERROR("Segment selector size not supported: %d\n", hdr->segment_selector_size);
 		return false;
 	}
 	U_OR_RET_FALSE(32, hdr->offset_entry_count);

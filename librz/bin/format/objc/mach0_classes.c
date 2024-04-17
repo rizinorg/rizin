@@ -1178,7 +1178,7 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 
 #if SWIFT_SUPPORT
 	if (q(c.data + n_value) & 7) {
-		RZ_LOG_INFO("This is a Swift class");
+		RZ_LOG_INFO("This is a Swift class\n");
 	}
 #endif
 	if (!is_meta_class && !dupe) {

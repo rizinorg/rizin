@@ -134,7 +134,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 
 	switch (input[0]) {
 	case '\0':
-		RZ_LOG_ERROR("need an arena_t to associate chunks");
+		RZ_LOG_ERROR("need an arena_t to associate chunks\n");
 		break;
 	case ' ': {
 		GHT arena = GHT_MAX;
@@ -429,11 +429,11 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_map_bias", &map_bias)) {
-				RZ_LOG_ERROR ("Cannot resolve je_map_bias");
+				RZ_LOG_ERROR ("Cannot resolve je_map_bias\n");
 				return;
 			}
 			if (!GH(rz_resolve_jemalloc)(core, "je_map_misc_offset", &map_misc_offset)) {
-				RZ_LOG_ERROR ("Cannot resolve je_map_misc_offset");
+				RZ_LOG_ERROR ("Cannot resolve je_map_misc_offset\n");
 				return;
 			}
 

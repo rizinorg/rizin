@@ -375,7 +375,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core
 			string = rz_core_print_hexdump_diff_str(core, addr, addr + to - from, len);
 			break;
 		default:
-			RZ_LOG_ERROR("Hexdiff not supported in JSON");
+			RZ_LOG_ERROR("Hexdiff not supported in JSON\n");
 			return NULL;
 		}
 	}
@@ -601,7 +601,7 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 	}
 
 	if (rz_io_nread_at(core->io, addr, block, byte_len) == -1) {
-		RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".", addr);
+		RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".\n", addr);
 		free(block);
 		return NULL;
 	}

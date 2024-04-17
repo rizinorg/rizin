@@ -751,7 +751,7 @@ static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char 
 	bool ok;
 	ut64 addr = rz_num_math(core->num, addr_arg);
 	if (core->num->nc.errors) {
-		RZ_LOG_ERROR("Could not convert address argument to number");
+		RZ_LOG_ERROR("Could not convert address argument to number\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -762,7 +762,7 @@ static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char 
 		// write a numerical value
 		ut64 value = rz_num_math(core->num, value_arg);
 		if (core->num->nc.errors) {
-			RZ_LOG_ERROR("Could not convert value argument to number");
+			RZ_LOG_ERROR("Could not convert value argument to number\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 
@@ -3679,7 +3679,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 		is_html = true;
 		is_append = true;
 	} else {
-		RZ_LOG_ERROR("This should never happen, redirect_operator is no known type");
+		RZ_LOG_ERROR("This should never happen, redirect_operator is no known type\n");
 		rz_warn_if_reached();
 	}
 

@@ -1110,7 +1110,7 @@ RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL 
 	}
 	HtSP *used_types = ht_sp_new(HT_STR_DUP, NULL, NULL); // use a hash table to keep track of unfolded types
 	if (!used_types) {
-		RZ_LOG_ERROR("Failed to create hashtable while pretty printing types")
+		RZ_LOG_ERROR("Failed to create hashtable while pretty printing types\n")
 		return NULL;
 	}
 	char *pretty_type = type_as_pretty_string(typedb, type, identifier, used_types, opts, unfold_level, 0);

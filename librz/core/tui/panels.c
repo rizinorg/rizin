@@ -3674,7 +3674,7 @@ int __writeValueCb(void *user) {
 	if (res) {
 		ut64 value = rz_num_math(core->num, res);
 		if (core->num->nc.errors) {
-			RZ_LOG_ERROR("Could not convert argument to number");
+			RZ_LOG_ERROR("Could not convert argument to number\n");
 			free(res);
 			return -1; // error
 		}

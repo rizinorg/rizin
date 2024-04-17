@@ -270,7 +270,7 @@ static int read_image_metadata_tilde_header(RzBuffer *b, ut64 addr, Pe_image_clr
 
 #define TRY_SEEK(rowsize, rowcountname) \
 	if (rz_buf_seek(b, (rowsize) * (st64)rowcounts->rowcountname, RZ_BUF_CUR) < 0) { \
-		RZ_LOG_WARN("seeking #rowcountname (size %d)", rowsize); \
+		RZ_LOG_WARN("seeking #rowcountname (size %d)\n", rowsize); \
 		goto error; \
 	}
 

@@ -5659,12 +5659,12 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	if (!buf) {
 		buf = malloc(RZ_ABS(nb_bytes) + 1);
 		if (!buf) {
-			RZ_LOG_ERROR("Fail to alloc memory.");
+			RZ_LOG_ERROR("Failed to alloc memory.\n");
 			ds_free(ds);
 			return 0;
 		}
 		if (rz_io_nread_at(core->io, address, buf, RZ_ABS(nb_bytes) + 1) == -1) {
-			RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".", address);
+			RZ_LOG_ERROR("Failed to read from 0x%" PFMT64x ".\n", address);
 			ds_free(ds);
 			free(buf);
 			return 0;
@@ -6157,12 +6157,12 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 	if (!buf) {
 		buf = malloc(RZ_ABS(nb_bytes) + 1);
 		if (!buf) {
-			RZ_LOG_ERROR("Fail to alloc memory.");
+			RZ_LOG_ERROR("Failed to alloc memory.\n");
 			return 0;
 		}
 		if (rz_io_nread_at(core->io, address, buf, RZ_ABS(nb_bytes) + 1) == -1) {
 			free(buf);
-			RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".", address);
+			RZ_LOG_ERROR("Failed to read from 0x%" PFMT64x ".\n", address);
 			return 0;
 		}
 	}

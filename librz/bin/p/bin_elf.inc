@@ -68,7 +68,7 @@ static ut32 hexagon_get_bitmask_r6(ut32 insn) {
 			return hex_rel6_x_masks[i].relocMask;
 		}
 	}
-	RZ_LOG_ERROR("Unrecognized instruction for 6_X relocation: 0x%x", insn);
+	RZ_LOG_ERROR("Unrecognized instruction for 6_X relocation: 0x%x\n", insn);
 	return 0;
 }
 
@@ -133,7 +133,7 @@ static ut32 hexagon_get_bitmask_r16(ut32 insn) {
 		}
 	}
 
-	RZ_LOG_ERROR("Unrecognized instruction for 16_X relocation: 0x%x", insn);
+	RZ_LOG_ERROR("Unrecognized instruction for 16_X relocation: 0x%x\n", insn);
 	return 0;
 }
 
@@ -830,7 +830,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 
 	switch (rel_type) {
 	default:
-		RZ_LOG_WARN("Patching for reloc type %d not implemented.", rel_type);
+		RZ_LOG_WARN("Patching for reloc type %d not implemented.\n", rel_type);
 		rz_warn_if_reached();
 		// For more implementetations check out the LLVM src:
 		// https://github.com/llvm/llvm-project/blob/abc17a67519747be36f1fd03e227c5103da4c677/lld/ELF/Arch/Hexagon.cpp

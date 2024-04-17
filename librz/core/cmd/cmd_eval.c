@@ -428,7 +428,7 @@ RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **argv) {
 	const char *val = rz_config_get(core->config, argv[1]);
 	if (!val) {
-		RZ_LOG_ERROR("core: Invalid config key '%s'", argv[1]);
+		RZ_LOG_ERROR("core: Invalid config key '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	char *p = rz_core_editor(core, NULL, val);

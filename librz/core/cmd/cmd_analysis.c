@@ -1516,7 +1516,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			switch (input[2]) {
 			case ' ': // "aeli" with arguments
 				if (!rz_analysis_esil_load_interrupts_from_lib(esil, input + 3)) {
-					RZ_LOG_ERROR("core: Failed to load interrupts from '%s'.", input + 3);
+					RZ_LOG_ERROR("core: Failed to load interrupts from '%s'.\n", input + 3);
 				}
 				break;
 			case 0: // "aeli" with no args
@@ -3068,7 +3068,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc
 		const char *vartype = argc > 3 ? argv[3] : "int";
 		RzRegItem *i = rz_reg_get(core->analysis->reg, argv[1], -1);
 		if (!i) {
-			RZ_LOG_ERROR("core: Register not found");
+			RZ_LOG_ERROR("core: Register not found\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		char *error_msg = NULL;

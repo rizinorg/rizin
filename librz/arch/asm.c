@@ -438,7 +438,7 @@ static void unset_plugins_config(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pc
 	RzListIter *it;
 	rz_list_foreach (pcfg->nodes, it, n) {
 		if (!rz_config_rm(conf, n->name)) {
-			RZ_LOG_WARN("Failed to remove \"%s\" from the global config.", n->name)
+			RZ_LOG_WARN("Failed to remove \"%s\" from the global config.\n", n->name)
 		}
 	}
 }

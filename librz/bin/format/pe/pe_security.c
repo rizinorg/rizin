@@ -109,7 +109,7 @@ int PE_(bin_pe_init_security)(RzBinPEObj *bin) {
 		}
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
 		if (offset + cert->dwLength > paddr + size) {
-			RZ_LOG_INFO("Invalid certificate entry");
+			RZ_LOG_INFO("Invalid certificate entry\n");
 			RZ_FREE(cert);
 			return false;
 		}

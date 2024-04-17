@@ -1461,7 +1461,7 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	int t = core->dbg->trace->enabled;
 
 	if (rz_debug_is_dead(core->dbg)) {
-		RZ_LOG_ERROR("core: No process to debug.");
+		RZ_LOG_ERROR("core: No process to debug.\n");
 		return;
 	}
 	core->dbg->trace->enabled = 0;

@@ -170,7 +170,7 @@ static void readlabel(Z80AssemblerState *state, const char **p, int store, int s
 		return;
 	}
 	if (pos == *p) {
-		RZ_LOG_ERROR("assembler: z80: `:' found without a label");
+		RZ_LOG_ERROR("assembler: z80: `:' found without a label\n");
 		return;
 	}
 	if (!store) {

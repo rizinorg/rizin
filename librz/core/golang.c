@@ -705,7 +705,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	char *flag = malloc(str_size + n_prefix + 1);
 	char *raw = malloc(str_size + 1);
 	if (!flag || !raw) {
-		RZ_LOG_ERROR("Cannot allocate buffer to read string.");
+		RZ_LOG_ERROR("Cannot allocate buffer to read string.\n");
 		free(flag);
 		free(raw);
 		return false;
