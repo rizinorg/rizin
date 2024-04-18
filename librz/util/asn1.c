@@ -298,7 +298,7 @@ RZ_API void rz_asn1_to_strbuf(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool
 	}
 	// this shall not be freed. it's a pointer into the buffer.
 	RzASN1String *asn1str = NULL;
-	static char temp_name[4096] = { 0 };
+	char temp_name[4096] = { 0 };
 	const char *name = "";
 	const char *string = "";
 
