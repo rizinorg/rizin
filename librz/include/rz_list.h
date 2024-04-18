@@ -3,7 +3,6 @@
 
 #include <rz_types.h>
 #include <rz_util/ht_pp.h>
-#include <ls.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,7 +100,6 @@ RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list);
 RZ_API void rz_list_reverse(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list);
 RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch);
-RZ_API RZ_OWN RzList *rz_list_of_sdblist(SdbList *sl);
 
 /* hashlike api */
 RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr);
