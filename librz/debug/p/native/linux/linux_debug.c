@@ -890,7 +890,7 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 	}
 
-#if !__ANDROID__ && __x86_64__
+#if __x86_64__
 	RzRegItem *ri = rz_reg_get(dbg->reg, "fs", RZ_REG_TYPE_ANY);
 	RZ_DEBUG_REG_T regs;
 	// Fetch gs_base from a ptrace call
@@ -902,7 +902,19 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 		tls = rz_reg_get_value(dbg->reg, ri);
 	}
 #endif
+#if __aarch64__
+	struct iovec iovec = {0};
+	ut64 reg;
 
+	iovec.iov_base = &reg;
+	iovec.iov_len = sizeof(reg);
+	RzRegItem *ri = rz_reg_get(dbg->reg, "tpidr_el0", RZ_REG_TYPE_ANY);
+	if (ri == NULL && rz_debug_ptrace(dbg, PTRACE_GETREGSET, dbg->tid, (void*)NT_ARM_TLS, &iovec) != -1) {
+		tls = reg;
+	} else {
+		tls = rz_reg_get_value(dbg->reg, ri);
+	}
+#endif
 	// Must execute this block everytime
 	if (dbg->tid != tid) {
 		linux_attach_single_pid(dbg, prev_tid);
@@ -963,20 +975,9 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 
 			rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 			pc = rz_debug_reg_get(dbg, "PC");
-
-#if !__ANDROID__ && __x86_64__
-			RzRegItem *ri = rz_reg_get(dbg->reg, "fs", RZ_REG_TYPE_ANY);
-			RZ_DEBUG_REG_T regs;
-			// Fetch gs_base from a ptrace call
-			if (ri == NULL && !strcmp(dbg->arch, "x86")) {
-				if (rz_debug_ptrace(dbg, PTRACE_GETREGS, dbg->tid, NULL, &regs) != -1) {
-					tls = regs.gs_base;
-				}
-			} else {
-				tls = rz_reg_get_value(dbg->reg, ri);
-			}
+#if !__ANDROID__
+			tls = get_linux_tls_val(dbg, dbg->tid);
 #endif
-
 			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
 				// Get information about pid (status, pc, etc.)
 				pid_info = fill_pid_info(info, NULL, tid);

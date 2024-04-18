@@ -23,6 +23,7 @@ static bool GH(tcache_read)(RzCore *core, GHT tcache_start, GH(RTcache) * tcache
 static int GH(tcache_get_count)(GH(RTcache) * tcache, int index);
 static GHT GH(tcache_get_entry)(GH(RTcache) * tcache, int index);
 void GH(rz_heap_chunk_free)(RzHeapChunkListItem *item);
+static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state);
 RZ_API void GH(tcache_free)(GH(RTcache) * tcache);
 void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk, const char *status, PJ *pj);
 
@@ -331,7 +332,7 @@ error:
 	return NULL;
 }
 
-static void GH(print_tcache)(RzCore *core, RzList /*<RzList *>*/ *bins, PJ *pj, GHT tid) {
+static void GH(print_tcache)(RzCore *core, RzList /*<RzList *>*/ *bins, PJ *pj, const GHT tid) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	RzHeapBin *bin;
@@ -525,6 +526,10 @@ RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState
 			return false;
 		}
 		(void)rz_io_read_at(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState_tcache)));
+		/* arena->next should point to itself even if there is only one thread */
+		if(!cmain_arena->next) {
+			return false;
+		}
 		GH(update_arena_with_tc)
 		(cmain_arena, main_arena);
 		free(cmain_arena);
@@ -833,7 +838,7 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
  * Parse the tcache and tcache bins struct for the provided thread local base and print it.
  */
 
-static bool GH(parse_tcache_from_addr)(RzCore *core, GHT tls_addr, GHT tid) {
+static bool GH(parse_tcache_from_addr)(RzCore *core, const GHT tls_addr, const GHT tid) {
 	RzDebugMap *map;
 	RzListIter *iter;
 	ut8 tcache_addr[8] = { 0 };
@@ -851,11 +856,17 @@ static bool GH(parse_tcache_from_addr)(RzCore *core, GHT tls_addr, GHT tid) {
 		}
 
 		rz_io_nread_at(core->io, tls_addr, tcache_addr, sizeof(GHT));
-		GHT tcache_guess = GH(read_val)(core, tcache_addr, false);
+		const GHT tcache_guess = GH(read_val)(core, tcache_addr, false);
 		if (tcache_guess < map->addr || tcache_guess > map->addr_end) {
 			continue;
 		}
 
+#if __aarch64__
+		/* We will encounter main_arena pointer somewhere in ARM64 */
+		if(GH(is_arena)(core, tcache_guess, NULL)) {
+			break;
+		}
+#endif
 		tcache_heap = GH(tcache_new)(core);
 		if (!GH(tcache_read)(core, tcache_guess, tcache_heap)) {
 			GH(tcache_free)
@@ -890,27 +901,54 @@ static bool GH(parse_tcache_from_addr)(RzCore *core, GHT tls_addr, GHT tid) {
 static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid) {
 	rz_return_val_if_fail(th, false);
 	GHT tls_addr = GHT_MAX;
-	ut8 dtv[sizeof(GHT)] = { 0 };
+	GHT addr = GHT_MAX;
 
 	if (!th->tls) {
 		return false;
 	}
 
-	rz_io_nread_at(core->io, th->tls + (SZ), dtv, sizeof(GHT));
-	GHT addr = GH(read_val)(core, dtv, false);
-	memset(dtv, 0, sizeof(dtv));
-	// size of dtv is SZ*2
-	rz_io_nread_at(core->io, addr + (SZ * 2), dtv, sizeof(GHT));
+#if __x86_64__
+	ut8 dtv[sizeof(GHT)] = { 0 };
+	rz_io_nread_at(core->io, th->tls + SZ, dtv, sizeof(GHT));
 	addr = GH(read_val)(core, dtv, false);
-	rz_debug_map_sync(core->dbg);
-	GHT end = addr + (0x10 * (SZ * 2));
+	memset(dtv, 0, sizeof(dtv));
+	/*
+	* TLS memory layout on x86_64:
+	*                           get_tls_data()
+	*                               │
+	*                              %fs
+	*            Thread_local      │
+	*     ┌───┬──────────┬──────────┼───┐
+	*     │		    .tbss   │tib│
+	*     └───┴──────────┴──────────┼───┘
+	*                               │
+	*			   x86 %gs
+	*/
+	// size of dtv is SZ*2
+	rz_io_nread_at(core->io, addr + SZ * 2, dtv, sizeof(GHT));
+	addr = GH(read_val)(core, dtv, false);
+#elif __aarch64__
+	/*
+	* TLS memory layout on aarch64:
+	*
+	*         %tpidr_el0
+	*             │
+	*             │    Thread_local
+	*         ┌───┼───┬──────────┬──────────┐
+	*         │tib│dtv│	     │	        │
+	*         ├───┴───┴──────────┴──────────┘
+	*         │
+	*     get_tls_data()
+	*/
+	addr = th->tls + SZ * 2;
+#endif
+	const GHT end = addr + SZ * SZ * 2 * 2;
 	// Parse tls data and check if it complies with tcache struct
 	for (tls_addr = addr; tls_addr <= end; tls_addr += SZ) {
 		if (GH(parse_tcache_from_addr)(core, tls_addr, tid)) {
 			return true;
 		}
 	}
-
 	return false;
 }
 
@@ -1119,6 +1157,9 @@ static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 		}
 	}
 	free(ta);
+	if (!m_state) {
+		return true;
+	}
 	return false;
 }
 
@@ -1480,6 +1521,7 @@ static GH(RTcache) * GH(tcache_new)(RzCore *core) {
 	if (!tcache) {
 		return NULL;
 	}
+	RZ_LOG_ERROR("glibc version: %d", core->dbg->glibc_version);
 	if (core->dbg->glibc_version >= TCACHE_NEW_VERSION) {
 		tcache->type = NEW;
 		tcache->RzHeapTcache.heap_tcache = RZ_NEW0(GH(RzHeapTcache));
