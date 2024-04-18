@@ -83,7 +83,7 @@ static bool CU_attrs_parse(
 	RzBinDwarfCompUnit *cu,
 	RzBinDwarfAbbrevDecl *abbrev_decl) {
 
-	RZ_LOG_SILLY("0x%" PFMT64x ":\t%s%s [%" PFMT64d "] %s\n",
+	RZ_LOG_DEBUG("0x%" PFMT64x ":\t%s%s [%" PFMT64d "] %s\n",
 		die->offset, rz_str_indent(die->depth), rz_bin_dwarf_tag(die->tag),
 		die->abbrev_code, rz_bin_dwarf_children(die->has_children));
 	RzBinDwarfAttrSpec *spec = NULL;
@@ -195,7 +195,7 @@ static bool CU_dies_parse(
 		};
 		// there can be "null" entries that have abbr_code == 0
 		if (!abbrev_code) {
-			RZ_LOG_SILLY("0x%" PFMT64x ":\t%sNULL\n", offset, rz_str_indent(die.depth));
+			RZ_LOG_DEBUG("0x%" PFMT64x ":\t%sNULL\n", offset, rz_str_indent(die.depth));
 			rz_vector_push(&unit->dies, &die);
 			depth--;
 			if (depth <= 0) {

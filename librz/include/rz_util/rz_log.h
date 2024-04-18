@@ -14,13 +14,14 @@
 #endif
 
 typedef enum rz_log_level {
-	RZ_LOGLVL_SILLY = 0,
-	RZ_LOGLVL_DEBUG = 1,
-	RZ_LOGLVL_VERBOSE = 2,
-	RZ_LOGLVL_INFO = 3,
-	RZ_LOGLVL_WARN = 4,
-	RZ_LOGLVL_ERROR = 5,
-	RZ_LOGLVL_FATAL = 6, // This will call rz_sys_breakpoint() and trap the process for debugging!
+	RZ_LOGLVL_DEBUG = 0,
+	RZ_LOGLVL_VERBOSE,
+	RZ_LOGLVL_INFO,
+	RZ_LOGLVL_WARN,
+	RZ_LOGLVL_ERROR,
+	RZ_LOGLVL_FATAL, ///< This will call rz_sys_breakpoint() and trap the process for debugging!
+	/* other flags */
+	RZ_LOGLVL_SIZE,
 	RZ_LOGLVL_NONE = 0xFF
 } RzLogLevel;
 
@@ -29,6 +30,8 @@ typedef enum rz_log_level {
 #else
 #define RZ_DEFAULT_LOGLVL RZ_LOGLVL_ERROR
 #endif
+
+#define RZ_DEFAULT_LOGLVL_TRAP RZ_LOGLVL_FATAL
 
 typedef void (*RzLogCallback)(const char *output, const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
@@ -40,12 +43,9 @@ typedef void (*RzLogCallback)(const char *output, const char *funcname, const ch
 	__LINE__, lvl, tag, fmtstr, ##__VA_ARGS__);
 
 #if RZ_BUILD_DEBUG
-#define RZ_LOG_SILLY(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, RZ_LOGLVL_SILLY, NULL, fmtstr, ##__VA_ARGS__);
 #define RZ_LOG_DEBUG(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_DEBUG, NULL, fmtstr, ##__VA_ARGS__);
 #else
-#define RZ_LOG_SILLY(fmtstr, ...)
 #define RZ_LOG_DEBUG(fmtstr, ...)
 #endif
 
@@ -66,14 +66,14 @@ extern "C" {
 
 // Called by rz_core to set the configuration variables
 RZ_API void rz_log_set_level(RzLogLevel level);
-RZ_API void rz_log_set_file(const char *filename);
-RZ_API void rz_log_set_srcinfo(bool show_info);
+RZ_API bool rz_log_set_file(RZ_NULLABLE const char *filename);
+RZ_API void rz_log_set_show_sources(bool show_sources);
 RZ_API void rz_log_set_colors(bool show_colors);
 RZ_API void rz_log_set_traplevel(RzLogLevel level);
 
 // Functions for adding log callbacks
-RZ_API void rz_log_add_callback(RzLogCallback cbfunc);
-RZ_API void rz_log_del_callback(RzLogCallback cbfunc);
+RZ_API void rz_log_add_callback(RZ_NULLABLE RzLogCallback cbfunc);
+RZ_API void rz_log_del_callback(RZ_NULLABLE RzLogCallback cbfunc);
 // TODO: rz_log_get_callbacks()
 
 /* Define rz_log as weak so it can be 'overwritten' externally
