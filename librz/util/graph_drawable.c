@@ -195,6 +195,24 @@ RZ_API void rz_graph_node_info_data_cfg_iword_fini(RZ_NULLABLE RZ_OWN RzGraphNod
 	rz_pvector_free(node_info->insn);
 }
 
+static RzGraphNodeCFGSubType get_subtype(const RzAnalysisOp *op, bool is_entry) {
+	rz_return_val_if_fail(op, RZ_GRAPH_NODE_SUBTYPE_CFG_NONE);
+	RzGraphNodeCFGSubType subtype = RZ_GRAPH_NODE_SUBTYPE_CFG_NONE;
+	if (rz_analysis_op_is_call(op)) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_CALL;
+	}
+	if (rz_analysis_op_is_return(op)) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_RETURN;
+	}
+	if (rz_analysis_op_is_ccall(op) || rz_analysis_op_is_creturn(op)) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_COND;
+	}
+	if (is_entry) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
+	}
+	return subtype;
+}
+
 /**
  * \brief Initializes a instruction word node info struct of a CFG node.
  *
@@ -209,15 +227,18 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsn
 	data->type = RZ_GRAPH_NODE_TYPE_CFG_IWORD;
 	data->cfg_iword.subtype = subtype;
 	data->cfg_iword.address = iword->addr;
+	bool is_entry = subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY;
 	void **it;
 	rz_pvector_foreach (iword->insns, it) {
 		const RzAnalysisOp *op = *it;
 		RzGraphNodeInfoDataCFG *info = RZ_NEW0(RzGraphNodeInfoDataCFG);
 		info->address = op->addr;
 		info->call_address = (rz_analysis_op_is_call(op) || rz_analysis_op_is_ccall(op)) ? op->jump : UT64_MAX;
-		info->jump_address = (rz_analysis_op_is_jump(op) || rz_analysis_op_is_cjump(op)) ? op->jump : RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY;
+		info->jump_address = (rz_analysis_op_is_jump(op) || rz_analysis_op_is_cjump(op)) ? op->jump : UT64_MAX;
 		info->next = rz_analysis_op_is_return(op) ? UT64_MAX : op->addr + op->size;
+		info->subtype = get_subtype(op, is_entry);
 		rz_pvector_push(data->cfg_iword.insn, info);
+		is_entry = false;
 	}
 	return data;
 }

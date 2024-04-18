@@ -962,6 +962,10 @@ static inline bool rz_analysis_op_is_return(const RzAnalysisOp *op) {
 	return (op->type == RZ_ANALYSIS_OP_TYPE_RET);
 }
 
+static inline bool rz_analysis_op_is_creturn(const RzAnalysisOp *op) {
+	return (op->type == RZ_ANALYSIS_OP_TYPE_CRET);
+}
+
 static inline bool rz_analysis_op_is_cjump(const RzAnalysisOp *op) {
 	return rz_analysis_op_is_jump(op) && op->type & RZ_ANALYSIS_OP_TYPE_COND;
 }
