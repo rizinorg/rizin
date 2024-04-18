@@ -37,6 +37,10 @@ typedef enum {
 	RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY_EXIT = RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY | RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT,
 } RzGraphNodeCFGSubType;
 
+/**
+ * \brief Flags which describes instruction word nodes in a CFG.
+ * Note: These flags are *not* a replacement for the flags assigned to each single instruction within the node.
+ */
 typedef enum {
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_NONE = 0, ///< No details given to this node.
 	RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY = 1 << 0, ///< Entry node of the procedure CFG with iwords
@@ -107,7 +111,6 @@ RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_default(const char *title, const char *body, ut64 offset);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNodeiCFGSubType subtype);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg(ut64 address, ut64 call_target_addr, ut64 jump_target_addr, ut64 next, RzGraphNodeCFGSubType subtype);
-RZ_API RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsnWord *iword, RzGraphNodeCFGIWordSubType subtype);
 RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset);
 RZ_API void rz_graph_node_info_data_cfg_iword_init(RZ_BORROW RzGraphNodeInfoDataCFGIWord *info);
 RZ_API void rz_graph_node_info_data_cfg_iword_fini(RZ_NULLABLE RZ_OWN RzGraphNodeInfoDataCFGIWord *node_info);

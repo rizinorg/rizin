@@ -906,12 +906,6 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzC
 	return graph;
 }
 
-static inline bool is_leaf_op(const RzAnalysisOp *op) {
-	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_ILL ||
-		(op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_RET ||
-		(op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_UNK;
-}
-
 static inline bool is_call(const RzAnalysisOp *op) {
 	_RzAnalysisOpType type = (op->type & RZ_ANALYSIS_OP_TYPE_MASK);
 	return type == RZ_ANALYSIS_OP_TYPE_CALL ||
@@ -936,14 +930,26 @@ static inline bool is_cond(const RzAnalysisOp *op) {
 	return (op->type & RZ_ANALYSIS_OP_HINT_MASK) == RZ_ANALYSIS_OP_TYPE_COND;
 }
 
+static inline bool is_exit(const RzAnalysisOp *op) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_ILL;
+}
+
+static inline bool is_leaf_op(const RzAnalysisOp *op) {
+	return is_return(op) || is_exit(op);
+}
+
+
 static inline bool ignore_next_instr(const RzAnalysisOp *op) {
 	// Ignore if:
 	return is_uncond_jump(op) || (op->fail != UT64_MAX && !is_call(op)); // Except calls, everything which has set fail
 }
 
-static RzGraphNodeCFGSubType get_cfg_node_flags(const RzAnalysisOp *op) {
+static RzGraphNodeCFGSubType get_cfg_node_flags(const RzAnalysisOp *op, bool is_entry) {
 	rz_return_val_if_fail(op, RZ_GRAPH_NODE_SUBTYPE_CFG_NONE);
 	RzGraphNodeCFGSubType subtype = RZ_GRAPH_NODE_SUBTYPE_CFG_NONE;
+	if (is_entry) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
+	}
 	if (is_call(op)) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_CALL;
 	}
@@ -952,6 +958,9 @@ static RzGraphNodeCFGSubType get_cfg_node_flags(const RzAnalysisOp *op) {
 	}
 	if (is_cond(op)) {
 		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_COND;
+	}
+	if (is_exit(op)) {
+		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_EXIT;
 	}
 	return subtype;
 }
@@ -968,12 +977,39 @@ static RzGraphNodeCFGIWordSubType get_cfg_iword_node_flags(const RzAnalysisInsnW
 	return subtype;
 }
 
+/**
+ * \brief Initializes a instruction word node info struct of a CFG node.
+ *
+ * \param iword The instructoin word to build the node from.
+ * \param subtype The sub types of the node.
+ *
+ * \return The initialized RzGraphNodeInfo or NULL in case of failure.
+ */
+static RzGraphNodeInfo *rz_graph_create_node_info_cfg_iword(const RzAnalysisInsnWord *iword, RzGraphNodeCFGIWordSubType subtype) {
+	RzGraphNodeInfo *data = RZ_NEW0(RzGraphNodeInfo);
+	rz_graph_node_info_data_cfg_iword_init(&data->cfg_iword);
+	data->type = RZ_GRAPH_NODE_TYPE_CFG_IWORD;
+	data->cfg_iword.subtype = subtype;
+	data->cfg_iword.address = iword->addr;
+	bool is_entry = subtype & RZ_GRAPH_NODE_SUBTYPE_CFG_IWORD_ENTRY;
+	void **it;
+	rz_pvector_foreach (iword->insns, it) {
+		const RzAnalysisOp *op = *it;
+		RzGraphNodeInfoDataCFG *info = RZ_NEW0(RzGraphNodeInfoDataCFG);
+		info->address = op->addr;
+		info->call_address = (rz_analysis_op_is_call(op) || rz_analysis_op_is_ccall(op)) ? op->jump : UT64_MAX;
+		info->jump_address = (rz_analysis_op_is_jump(op) || rz_analysis_op_is_cjump(op)) ? op->jump : UT64_MAX;
+		info->next = rz_analysis_op_is_return(op) ? UT64_MAX : op->addr + op->size;
+		info->subtype = get_cfg_node_flags(op, is_entry);
+		rz_pvector_push(data->cfg_iword.insn, info);
+		is_entry = false;
+	}
+	return data;
+}
+
 static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, const RzAnalysisOp *op, bool is_entry) {
 	rz_return_val_if_fail(cfg, NULL);
-	RzGraphNodeCFGSubType subtype = get_cfg_node_flags(op);
-	if (is_entry) {
-		subtype |= RZ_GRAPH_NODE_SUBTYPE_CFG_ENTRY;
-	}
+	RzGraphNodeCFGSubType subtype = get_cfg_node_flags(op, is_entry);
 	ut64 call_target = is_call(op) ? op->jump : UT64_MAX;
 	ut64 jump_target = rz_analysis_op_is_jump(op) ? op->jump : UT64_MAX;
 	ut64 next = is_return(op) ? UT64_MAX : op->addr + op->size;
@@ -1054,8 +1090,9 @@ static st32 decode_op_at(RZ_BORROW RzCore *core,
 		return -1;
 	}
 	int disas_bytes = rz_analysis_op(core->analysis, target_op, addr, buf, buf_len, RZ_ANALYSIS_OP_MASK_DISASM);
-	if (disas_bytes <= 0) {
-		return -1;
+	if (disas_bytes <= 0 && target_op->type == RZ_ANALYSIS_OP_TYPE_ILL) {
+		// Illegal instruction, return something positive
+		return 1;
 	}
 	return disas_bytes;
 }
