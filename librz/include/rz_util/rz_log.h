@@ -66,10 +66,10 @@ extern "C" {
 
 // Called by rz_core to set the configuration variables
 RZ_API void rz_log_set_level(RzLogLevel level);
+RZ_API void rz_log_set_traplevel(RzLogLevel level);
 RZ_API bool rz_log_set_file(RZ_NULLABLE const char *filename);
 RZ_API void rz_log_set_show_sources(bool show_sources);
 RZ_API void rz_log_set_colors(bool show_colors);
-RZ_API void rz_log_set_traplevel(RzLogLevel level);
 
 // Functions for adding log callbacks
 RZ_API void rz_log_add_callback(RZ_NULLABLE RzLogCallback cbfunc);

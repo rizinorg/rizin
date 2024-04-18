@@ -54,7 +54,11 @@ static void log_init() {
 	logcfg.lock = rz_th_lock_new(false);
 }
 
-// cconfig.c configuration callback functions below
+/**
+ * \brief      Sets the log level
+ *
+ * \param[in]  level  The log level to set.
+ */
 RZ_API void rz_log_set_level(RzLogLevel level) {
 	log_init();
 	rz_th_lock_enter(logcfg.lock);
@@ -62,6 +66,11 @@ RZ_API void rz_log_set_level(RzLogLevel level) {
 	rz_th_lock_leave(logcfg.lock);
 }
 
+/**
+ * \brief      Sets the log level of the trap
+ *
+ * \param[in]  level  The trap log level to set.
+ */
 RZ_API void rz_log_set_traplevel(RzLogLevel level) {
 	log_init();
 	rz_th_lock_enter(logcfg.lock);
@@ -69,6 +78,14 @@ RZ_API void rz_log_set_traplevel(RzLogLevel level) {
 	rz_th_lock_leave(logcfg.lock);
 }
 
+/**
+ * \brief      When not empty, enable logging to a file.
+ * This method allows to enable or disable logging to a file.
+ * To enable logging, just pass a filename to write to and to
+ * disable the logging is enough to pass an empty or NULL filename.
+ *
+ * \param[in]  filename  The file name to log to.
+ */
 RZ_API bool rz_log_set_file(RZ_NULLABLE const char *filename) {
 	log_init();
 	rz_th_lock_enter(logcfg.lock);
@@ -101,6 +118,11 @@ end:
 	return ret;
 }
 
+/**
+ * \brief      When true, shows the function name and the source lines in the logs.
+ *
+ * \param[in]  show_sources  The boolean value to set show_sources to.
+ */
 RZ_API void rz_log_set_show_sources(bool show_sources) {
 	log_init();
 	rz_th_lock_enter(logcfg.lock);
@@ -108,6 +130,11 @@ RZ_API void rz_log_set_show_sources(bool show_sources) {
 	rz_th_lock_leave(logcfg.lock);
 }
 
+/**
+ * \brief      Enables colored logs.
+ *
+ * \param[in]  show_colors  Sets the pointer to colored or not colored tags.
+ */
 RZ_API void rz_log_set_colors(bool show_colors) {
 	log_init();
 	rz_th_lock_enter(logcfg.lock);
@@ -116,8 +143,9 @@ RZ_API void rz_log_set_colors(bool show_colors) {
 }
 
 /**
- * \brief Add a logging callback
- * \param cbfunc RzLogCallback style function to be called
+ * \brief      Adds a logging callback.
+ *
+ * \param[in]  show_colors  RzLogCallback style function to be called.
  */
 RZ_API void rz_log_add_callback(RZ_NULLABLE RzLogCallback cbfunc) {
 	if (!cbfunc) {
@@ -135,16 +163,19 @@ RZ_API void rz_log_add_callback(RZ_NULLABLE RzLogCallback cbfunc) {
 }
 
 /**
- * \brief Remove a logging callback
+ * \brief        Removes a logging callback
+ *
  * \param cbfunc RzLogCallback style function to be called
  */
 RZ_API void rz_log_del_callback(RZ_NULLABLE RzLogCallback cbfunc) {
-	if (!cbfunc || !logcfg.callbacks) {
+	if (!cbfunc) {
 		return;
 	}
 	log_init();
 	rz_th_lock_enter(logcfg.lock);
-	rz_list_delete_data(logcfg.callbacks, cbfunc);
+	if (logcfg.callbacks) {
+		rz_list_delete_data(logcfg.callbacks, cbfunc);
+	}
 	rz_th_lock_leave(logcfg.lock);
 }
 
