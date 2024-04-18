@@ -903,13 +903,13 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	}
 #endif
 #if __aarch64__
-	struct iovec iovec = {0};
+	struct iovec iovec = { 0 };
 	ut64 reg;
 
 	iovec.iov_base = &reg;
 	iovec.iov_len = sizeof(reg);
 	RzRegItem *ri = rz_reg_get(dbg->reg, "tpidr_el0", RZ_REG_TYPE_ANY);
-	if (ri == NULL && rz_debug_ptrace(dbg, PTRACE_GETREGSET, dbg->tid, (void*)NT_ARM_TLS, &iovec) != -1) {
+	if (ri == NULL && rz_debug_ptrace(dbg, PTRACE_GETREGSET, dbg->tid, (void *)NT_ARM_TLS, &iovec) != -1) {
 		tls = reg;
 	} else {
 		tls = rz_reg_get_value(dbg->reg, ri);

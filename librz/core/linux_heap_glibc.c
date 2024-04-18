@@ -527,7 +527,7 @@ RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState
 		}
 		(void)rz_io_read_at(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState_tcache)));
 		/* arena->next should point to itself even if there is only one thread */
-		if(!cmain_arena->next) {
+		if (!cmain_arena->next) {
 			return false;
 		}
 		GH(update_arena_with_tc)
@@ -863,7 +863,7 @@ static bool GH(parse_tcache_from_addr)(RzCore *core, const GHT tls_addr, const G
 
 #if __aarch64__
 		/* We will encounter main_arena pointer somewhere in ARM64 */
-		if(GH(is_arena)(core, tcache_guess, NULL)) {
+		if (GH(is_arena)(core, tcache_guess, GHT_MIN)) {
 			break;
 		}
 #endif
@@ -913,33 +913,33 @@ static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid)
 	addr = GH(read_val)(core, dtv, false);
 	memset(dtv, 0, sizeof(dtv));
 	/*
-	* TLS memory layout on x86_64:
-	*                           get_tls_data()
-	*                               │
-	*                              %fs
-	*            Thread_local      │
-	*     ┌───┬──────────┬──────────┼───┐
-	*     │		    .tbss   │tib│
-	*     └───┴──────────┴──────────┼───┘
-	*                               │
-	*			   x86 %gs
-	*/
+	 * TLS memory layout on x86_64:
+	 *                           get_tls_data()
+	 *                               │
+	 *                              %fs
+	 *            Thread_local      │
+	 *     ┌───┬──────────┬──────────┼───┐
+	 *     │		    .tbss   │tib│
+	 *     └───┴──────────┴──────────┼───┘
+	 *                               │
+	 *			   x86 %gs
+	 */
 	// size of dtv is SZ*2
 	rz_io_nread_at(core->io, addr + SZ * 2, dtv, sizeof(GHT));
 	addr = GH(read_val)(core, dtv, false);
 #elif __aarch64__
 	/*
-	* TLS memory layout on aarch64:
-	*
-	*         %tpidr_el0
-	*             │
-	*             │    Thread_local
-	*         ┌───┼───┬──────────┬──────────┐
-	*         │tib│dtv│	     │	        │
-	*         ├───┴───┴──────────┴──────────┘
-	*         │
-	*     get_tls_data()
-	*/
+	 * TLS memory layout on aarch64:
+	 *
+	 *         %tpidr_el0
+	 *             │
+	 *             │    Thread_local
+	 *         ┌───┼───┬──────────┬──────────┐
+	 *         │tib│dtv│	     │	        │
+	 *         ├───┴───┴──────────┴──────────┘
+	 *         │
+	 *     get_tls_data()
+	 */
 	addr = th->tls + SZ * 2;
 #endif
 	const GHT end = addr + SZ * SZ * 2 * 2;
@@ -1157,7 +1157,7 @@ static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 		}
 	}
 	free(ta);
-	if (!m_state) {
+	if (m_state == GHT_MIN) {
 		return true;
 	}
 	return false;
