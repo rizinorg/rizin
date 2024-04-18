@@ -2,7 +2,6 @@
 #define RZ_LIST_H
 
 #include <rz_types.h>
-#include <rz_util/ht_pp.h>
 #include <ls.h>
 
 #ifdef __cplusplus
