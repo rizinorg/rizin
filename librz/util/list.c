@@ -802,17 +802,3 @@ RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch) {
 	}
 	return rz_strbuf_drain(buf);
 }
-
-/**
- * \brief Converts a SdbList into a RzList
- *
- **/
-RZ_API RZ_OWN RzList *rz_list_of_sdblist(SdbList *sl) {
-	RzList *l = rz_list_newf(free);
-	SdbKv *kv;
-	SdbListIter *iter;
-	ls_foreach (sl, iter, kv) {
-		rz_list_append(l, strdup(sdbkv_key(kv)));
-	}
-	return l;
-}
