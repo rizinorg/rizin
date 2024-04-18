@@ -1732,6 +1732,9 @@ static RzBinDwarfDie *die_end(RzBinDwarfCompUnit *unit) {
 	return (RzBinDwarfDie *)((char *)vec->a + vec->elem_size * vec->len);
 }
 
+static bool store_base_type(void *u, const void *k, const void *v);
+static void HtPP_RzPVector_free(HtPPKv *kv);
+
 /**
  * \brief Parses type and function information out of DWARF entries
  *        and stores them to analysis->debug_info
@@ -1752,8 +1755,14 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		.str_escaped = ht_up_new(NULL, HtUP_String_free, NULL),
 		.unit = NULL,
 	};
+
+	RzAnalysisDebugInfo *debug_info = analysis->debug_info;
 	RzBinDwarfCompUnit *unit;
 	rz_vector_foreach(&dw->info->units, unit) {
+		debug_info->type_by_offset = ht_up_new(NULL, NULL, NULL);
+		debug_info->base_type_by_offset = ht_up_new(NULL, NULL, NULL);
+		debug_info->base_types_by_name = ht_pp_new(NULL, HtPP_RzPVector_free, NULL); // don't free base types, only vector
+
 		if (rz_vector_empty(&unit->dies)) {
 			continue;
 		}
@@ -1764,6 +1773,19 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 
 			die_parse(&ctx, die);
 		}
+
+		struct {
+			void *analysis;
+			const char *unit_name;
+		} ctx;
+		ctx.analysis = analysis;
+		ctx.unit_name = unit->name;
+
+		ht_pp_foreach(debug_info->base_types_by_name, store_base_type, (void *)&ctx);
+
+		ht_up_free(debug_info->type_by_offset);
+		ht_up_free(debug_info->base_type_by_offset);
+		ht_pp_free(debug_info->base_types_by_name);
 	}
 	ht_up_free(ctx.str_escaped);
 }
@@ -1775,15 +1797,14 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		b = temp; \
 	} while (0)
 
-static inline void update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
-	RzBaseType *t = rz_type_db_get_base_type(typedb, type->name);
-	if (t && t == type) {
-		return;
-	}
-	rz_type_db_update_base_type(typedb, rz_base_type_clone(type));
+static inline void update_base_type(const RzTypeDB *typedb, RZ_OWN RzBaseType *btype, const char *cu_name) {
+	RzBaseTypeWithMetadata *btype_with_mdata = RZ_NEW(RzBaseTypeWithMetadata);
+	btype_with_mdata->base_type = btype;
+	btype_with_mdata->cu_name = rz_str_dup(cu_name);
+	rz_type_db_update_base_type_with_metadata(typedb, btype_with_mdata);
 }
 
-static void db_save_renamed(RzTypeDB *db, RzBaseType *b, char *name) {
+static void db_save_renamed(RzTypeDB *db, RZ_OWN RzBaseType *b, char *name, const char *cu_name) {
 	if (!name) {
 		rz_warn_if_reached();
 		return;
@@ -1798,7 +1819,14 @@ static void db_save_renamed(RzTypeDB *db, RzBaseType *b, char *name) {
 }
 
 static bool store_base_type(void *u, const void *k, const void *v) {
-	RzAnalysis *analysis = u;
+	struct ctx {
+		void *analysis;
+		const char *unit_name;
+	};
+	struct ctx *ctx = u;
+	RzAnalysis *analysis = ctx->analysis;
+	const char *cu_name = ctx->unit_name;
+
 	const char *name = k;
 	RzPVector *types = (RzPVector *)v;
 	const ut32 len = rz_pvector_len(types);
@@ -1806,16 +1834,17 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 		RZ_LOG_WARN("BaseType %s has nothing", name);
 	} else if (len == 1) {
 		RzBaseType *t = rz_pvector_head(types);
-		update_base_type(analysis->typedb, t);
+		update_base_type(analysis->typedb, t, cu_name);
 	} else if (len == 2) {
 		RzBaseType *a = rz_pvector_head(types);
 		RzBaseType *b = rz_pvector_tail(types);
 		if (a->kind != RZ_BASE_TYPE_KIND_TYPEDEF) {
 			SWAP(RzBaseType *, a, b);
 		}
-		if (a->kind != RZ_BASE_TYPE_KIND_TYPEDEF) {
-			update_base_type(analysis->typedb, a);
-			db_save_renamed(analysis->typedb, rz_base_type_clone(b), rz_str_newf("%s_0", name));
+		if (a->kind != RZ_BASE_TYPE_KIND_TYPEDEF) { // clearly something weird is going on here.
+			RZ_LOG_WARN("Got 2 definitions of the same type '%s' while neither of them is typedef", name);
+			update_base_type(analysis->typedb, a, cu_name);
+			// db_save_renamed(analysis->typedb, rz_base_type_clone(b), rz_str_newf("%s_0", name), cu_name);
 			goto beach;
 		}
 		if (a->type->kind != RZ_TYPE_KIND_IDENTIFIER) {
@@ -1829,10 +1858,10 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 		}
 		free(a->type->identifier.name);
 		char *newname = rz_str_newf("%s_0", name);
-		a->type->identifier.name = rz_str_dup(newname);
-		update_base_type(analysis->typedb, a);
+		a->type->identifier.name = newname;
+		update_base_type(analysis->typedb, a, cu_name); // typedef
 
-		db_save_renamed(analysis->typedb, rz_base_type_clone(b), newname);
+		update_base_type(analysis->typedb, b, cu_name); // struct def
 	} else {
 		RZ_LOG_WARN("BaseType: same name [%s] type count is more than 3\n", name);
 	}
@@ -1859,7 +1888,6 @@ static bool store_callable(void *u, ut64 k, const void *v) {
 RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
 	rz_analysis_dwarf_preprocess_info(analysis, dw);
-	ht_pp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
 	ht_up_foreach(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
 }
 
@@ -2097,10 +2125,7 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	debug_info->function_by_offset = ht_up_new(NULL, HtUP_RzAnalysisDwarfFunction_free, NULL);
 	debug_info->function_by_addr = ht_up_new0();
 	debug_info->variable_by_offset = ht_up_new0();
-	debug_info->type_by_offset = ht_up_new(NULL, HtUP_RzType_free, NULL);
 	debug_info->callable_by_offset = ht_up_new(NULL, HtUP_RzCallable_free, NULL);
-	debug_info->base_type_by_offset = ht_up_new(NULL, HtUP_RzBaseType_free, NULL);
-	debug_info->base_types_by_name = ht_pp_new(NULL, HtPP_RzPVector_free, NULL);
 	debug_info->visited = set_u_new();
 	return debug_info;
 }

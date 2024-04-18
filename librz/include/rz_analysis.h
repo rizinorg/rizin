@@ -448,13 +448,13 @@ typedef struct rz_analysis_hint_cb_t {
 typedef struct rz_analysis_il_vm_t RzAnalysisILVM;
 
 typedef struct {
-	HtUP /*<ut64, RzAnalysisDwarfFunction *>*/ *function_by_offset; ///< Store all functions parsed from DWARF by DIE offset
+	HtUP /*<ut64, RzAnalysisDwarfFunction *>*/ *function_by_offset; ///< Store all functions parsed from single CU by DIE offset
 	HtUP /*<ut64, const RzAnalysisDwarfFunction *>*/ *function_by_addr; ///< Store all functions parsed from DWARF by address (some functions may have the same address)
-	HtUP /*<ut64, RzAnalysisDwarfVariable *>*/ *variable_by_offset; ///< Store all variables parsed from DWARF by DIE offset
-	HtUP /*<ut64, RzCallable *>*/ *callable_by_offset; ///< Store all callables parsed from DWARF by DIE offset
-	HtUP /*<ut64, RzType *>*/ *type_by_offset; ///< Store all RzType parsed from DWARF by DIE offset
-	HtUP /*<ut64, RzBaseType *>*/ *base_type_by_offset; ///< Store all RzBaseType parsed from DWARF by DIE offset
-	HtPP /*<const char*, RzPVector<const RzBaseType *>>*/ *base_types_by_name; ///< Store all RzBaseType parsed from DWARF by DIE offset
+	HtUP /*<ut64, RzAnalysisDwarfVariable *>*/ *variable_by_offset; ///< Store all variables parsed from single CU by DIE offset
+	HtUP /*<ut64, RzCallable *>*/ *callable_by_offset; ///< Store all callables parsed from single CU by DIE offset
+	HtUP /*<ut64, RzType *>*/ *type_by_offset; ///< Store all RzType parsed from single CU by DIE offset
+	HtUP /*<ut64, RzBaseType *>*/ *base_type_by_offset; ///< Store all RzBaseType parsed from single CU by DIE offset
+	HtPP /*<const char*, RzPVector<RzBaseType *>>*/ *base_types_by_name; ///< Store all RzBaseType parsed from single CU by type name.
 	DWARF_RegisterMapping dwarf_register_mapping; ///< Store the mapping function between DWARF registers number and register name in current architecture
 	RzBinDWARF *dw; ///< Holds ownership of RzBinDwarf, avoid releasing it prematurely
 	SetU *visited;

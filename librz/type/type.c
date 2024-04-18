@@ -11,7 +11,7 @@
 
 static void types_ht_free(HtPPKv *kv) {
 	free(kv->key);
-	rz_type_base_type_free(kv->value);
+	rz_pvector_free(kv->value);
 }
 
 static void types_ht_free_keep_val(HtPPKv *kv) {

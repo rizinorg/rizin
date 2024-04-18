@@ -30,7 +30,7 @@ typedef struct rz_type_parser_t RzTypeParser;
 
 typedef struct rz_type_db_t {
 	void *user;
-	HtPP /*<char *, RzBaseType *>*/ *types; //< name -> base type
+	HtPP /*<char *, RzPVector<RzBaseTypeWithMetadata *> *>*/ *types; //< name -> base type
 	HtPP /*<char *, char *>*/ *formats; //< name -> `pf` format
 	HtPP /*<char *, RzCallable *>*/ *callables; //< name -> RzCallable (function type)
 	RzTypeTarget *target;
@@ -120,6 +120,11 @@ typedef struct rz_base_type_t {
 		RzBaseTypeUnion union_data;
 	};
 } RzBaseType;
+
+typedef struct rz_base_type_with_metadata_t {
+	RzBaseType *base_type;
+	char *cu_name;  // compilation unit name
+} RzBaseTypeWithMetadata;
 
 // AST-level types for C and C++
 // Parses strings like "const char * [0x42] const * [23]" to RzType
@@ -278,6 +283,7 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ
 RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type);
 RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type);
+RZ_API bool rz_type_db_update_base_type_with_metadata(const RzTypeDB *typedb, RzBaseTypeWithMetadata *btype_with_mdata);
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind);

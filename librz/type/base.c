@@ -53,17 +53,30 @@ RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kin
  *
  * \param typedb Type Database instance
  * \param name Name of the RzBaseType
+ * 
+ * \return RzPVector <RzBaseTypeWithMetadata*>
  */
 RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 
 	bool found = false;
-	RzBaseType *btype = ht_pp_find(typedb->types, name, &found);
-	if (!found || !btype) {
+	RzPVector /* <RzBaseTypeWithMetadata*> */ *btypes_by_name = ht_pp_find(typedb->types, name, &found);
+	if (!found || !btypes_by_name || rz_pvector_empty(btypes_by_name)) {
 		return NULL;
 	}
-	return btype;
+	RzBaseTypeWithMetadata *btype_with_mdata = rz_pvector_head(btypes_by_name);
+	return btype_with_mdata->base_type;
 }
+// RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
+// 	rz_return_val_if_fail(typedb && name, NULL);
+
+// 	bool found = false;
+// 	RzBaseType *btype = ht_pp_find(typedb->types, name, &found);
+// 	if (!found || !btype) {
+// 		return NULL;
+// 	}
+// 	return btype;
+// }
 
 /**
  * \brief Removes RzBaseType from the Types DB
@@ -262,6 +275,33 @@ RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
 }
 
 /**
+ * \brief Allocates a new instance of RzBaseType given the kind
+ *
+ * \param kind Kind of RzBaseType to create
+ * \param cu_name Name of compilation unit the type is defined in
+ */
+RZ_API RZ_OWN RzBaseTypeWithMetadata *rz_type_base_type_with_metadata_new(RzBaseTypeKind kind, char *cu_name) {
+	RzBaseTypeWithMetadata *type = RZ_NEW0(RzBaseTypeWithMetadata);
+	type->base_type = rz_type_base_type_new(kind);
+	if (cu_name) {
+		type->cu_name = rz_str_dup(cu_name);
+	}
+
+	return type;
+}
+
+/**
+ * \brief Frees the RzBaseTypeWithMetadata instance and all of its members
+ *
+ * \param type RzBaseType pointer
+ */
+RZ_API void rz_type_base_type_with_metadata_free(RzBaseTypeWithMetadata *type) {
+	rz_type_base_type_free(type->base_type);
+	free(type->cu_name);
+	free(type);
+}
+
+/**
  * \brief Saves RzBaseType into the Types DB
  *
  * \param typedb Type Database instance
@@ -287,6 +327,30 @@ RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type
 	if (!ht_pp_update(typedb->types, type->name, (void *)type)) {
 		rz_type_base_type_free(type);
 		return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Updates the base type in the Types DB, frees the old one, frees the new one if it fails
+ *
+ * \param typedb Type Database instance
+ * \param type RzBaseType to save
+ */
+RZ_API bool rz_type_db_update_base_type_with_metadata(const RzTypeDB *typedb, RzBaseTypeWithMetadata *btype_with_mdata) {
+	rz_return_val_if_fail(typedb && btype_with_mdata && btype_with_mdata->base_type && btype_with_mdata->base_type->name, false);
+	bool found;
+	const char* typename = btype_with_mdata->base_type->name;
+	RzPVector *btypes_by_name = ht_pp_find(typedb->types, typename, &found);
+	if (found) {
+		rz_pvector_push(btypes_by_name, btype_with_mdata);
+	} else {
+		btypes_by_name = rz_pvector_new(NULL); // TODO
+		rz_pvector_push(btypes_by_name, btype_with_mdata);
+		if (!ht_pp_insert(typedb->types, typename, btypes_by_name)) {
+			rz_type_base_type_with_metadata_free(btype_with_mdata);
+			return false;
+		}
 	}
 	return true;
 }
