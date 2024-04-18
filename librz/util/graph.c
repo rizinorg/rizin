@@ -201,12 +201,32 @@ RZ_API void rz_graph_del_node(RzGraph *t, RZ_OWN RzGraphNode *n) {
 	t->n_nodes--;
 }
 
+/**
+ * \brief Adds an edge (\p from -> \p to) to the graph.
+ * If the edge was already added, won't add a duplicate.
+ *
+ * \param t The graph to add the edge to.
+ * \param from The origin node of the edge.
+ * \param to The destination node of the edge.
+ */
 RZ_API void rz_graph_add_edge(RzGraph *t, RzGraphNode *from, RzGraphNode *to) {
 	rz_graph_add_edge_at(t, from, to, -1);
 }
 
+/**
+ * \brief Adds an edge (\p from -> \p to) to the graph at \p from->out_nodes[\p nth].
+ * If the edge was already added, it won't add a duplicate.
+ *
+ * \param t The graph to add the edge to.
+ * \param from The origin node of the edge.
+ * \param to The destination node of the edge.
+ * \param nth The position in the \p from->out_notes list the \p to node should be added.
+ */
 RZ_API void rz_graph_add_edge_at(RzGraph *t, RzGraphNode *from, RzGraphNode *to, int nth) {
 	if (from && to) {
+		if (rz_list_contains(from->out_nodes, to)) {
+			return;
+		}
 		rz_list_insert(from->out_nodes, nth, to);
 		rz_list_append(from->all_neighbours, to);
 		rz_list_append(to->in_nodes, from);

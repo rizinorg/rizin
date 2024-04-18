@@ -90,6 +90,8 @@ static bool test_legacy_graph(void) {
 	rz_graph_add_edge(g, gn7, gn8);
 	rz_graph_add_edge(g, gn8, gn9);
 	mu_assert_eq(g->n_edges, 17, "n_edges");
+	rz_graph_add_edge(g, gn8, gn9);
+	mu_assert_eq(g->n_edges, 17, "n_edges");
 	rz_graph_del_edge(g, gn8, gn9);
 	mu_assert_eq(rz_graph_adjacent(g, gn8, gn9), false, "is_adjacent.0");
 	mu_assert_eq(g->n_edges, 16, "n_edges.1");
