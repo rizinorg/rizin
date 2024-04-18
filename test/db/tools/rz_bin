@@ -52,7 +52,7 @@ RUN
 NAME=rz-bin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -k ${RZ_FILE}
-ARGS=-e log.level=4
+ARGS=-e log.level=3
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
