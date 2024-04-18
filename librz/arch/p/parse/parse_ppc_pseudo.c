@@ -109,175 +109,180 @@ static int can_replace(const char *str, int idx, int max_operands) {
 	return true;
 }
 
-static const char *getspr_pseudo(const char *reg) {
-	static char cspr[16];
+#define SPR_CONST(o, x) \
+	strcpy((o), (x)); \
+	return (strlen((x)) - 1)
+static int getspr_pseudo(const char *reg, char *output) {
+	char cspr[32];
 	ut32 spr = 0;
 	if (!reg) {
-		return NULL;
+		return 0;
 	}
 	spr = strtol(reg, NULL, 16);
 	if (spr > 9999) {
-		return NULL; // just to avoid overflows..
+		return 0; // just to avoid overflows..
 	}
 
 	switch (spr) {
 	case SPR_MQ:
-		return "mq";
+		SPR_CONST(output, "mq");
 	case SPR_XER:
-		return "xer";
+		SPR_CONST(output, "xer");
 	case SPR_RTCU:
-		return "rtcu";
+		SPR_CONST(output, "rtcu");
 	case SPR_RTCL:
-		return "rtcl";
+		SPR_CONST(output, "rtcl");
 	case SPR_LR:
-		return "lr";
+		SPR_CONST(output, "lr");
 	case SPR_CTR:
-		return "ctr";
+		SPR_CONST(output, "ctr");
 	case SPR_DSISR:
-		return "dsisr";
+		SPR_CONST(output, "dsisr");
 	case SPR_DAR:
-		return "dar";
+		SPR_CONST(output, "dar");
 	case SPR_DEC:
-		return "dec";
+		SPR_CONST(output, "dec");
 	case SPR_SDR1:
-		return "sdr1";
+		SPR_CONST(output, "sdr1");
 	case SPR_SRR0:
-		return "srr0";
+		SPR_CONST(output, "srr0");
 	case SPR_SRR1:
-		return "srr1";
+		SPR_CONST(output, "srr1");
 	case SPR_VRSAVE:
-		return "vrsave";
+		SPR_CONST(output, "vrsave");
 	case SPR_TBRL:
-		return "tbrl";
+		SPR_CONST(output, "tbrl");
 	case SPR_TBRU:
-		return "tbru";
+		SPR_CONST(output, "tbru");
 	case SPR_SPRG0:
-		return "sprg0";
+		SPR_CONST(output, "sprg0");
 	case SPR_SPRG1:
-		return "sprg1";
+		SPR_CONST(output, "sprg1");
 	case SPR_SPRG2:
-		return "sprg2";
+		SPR_CONST(output, "sprg2");
 	case SPR_SPRG3:
-		return "sprg3";
+		SPR_CONST(output, "sprg3");
 	case SPR_EAR:
-		return "ear";
+		SPR_CONST(output, "ear");
 	case SPR_TBL:
-		return "tbl";
+		SPR_CONST(output, "tbl");
 	case SPR_TBU:
-		return "tbu";
+		SPR_CONST(output, "tbu");
 	case SPR_PVR:
-		return "pvr";
+		SPR_CONST(output, "pvr");
 	case SPR_SPEFSCR:
-		return "spefscr";
+		SPR_CONST(output, "spefscr");
 	case SPR_IBAT0U:
-		return "ibat0u";
+		SPR_CONST(output, "ibat0u");
 	case SPR_IBAT0L:
-		return "ibat0l";
+		SPR_CONST(output, "ibat0l");
 	case SPR_IBAT1U:
-		return "ibat1u";
+		SPR_CONST(output, "ibat1u");
 	case SPR_IBAT1L:
-		return "ibat1l";
+		SPR_CONST(output, "ibat1l");
 	case SPR_IBAT2U:
-		return "ibat2u";
+		SPR_CONST(output, "ibat2u");
 	case SPR_IBAT2L:
-		return "ibat2l";
+		SPR_CONST(output, "ibat2l");
 	case SPR_IBAT3U:
-		return "ibat3u";
+		SPR_CONST(output, "ibat3u");
 	case SPR_IBAT3L:
-		return "ibat3l";
+		SPR_CONST(output, "ibat3l");
 	case SPR_DBAT0U:
-		return "dbat0u";
+		SPR_CONST(output, "dbat0u");
 	case SPR_DBAT0L:
-		return "dbat0l";
+		SPR_CONST(output, "dbat0l");
 	case SPR_DBAT1U:
-		return "dbat1u";
+		SPR_CONST(output, "dbat1u");
 	case SPR_DBAT1L:
-		return "dbat1l";
+		SPR_CONST(output, "dbat1l");
 	case SPR_DBAT2U:
-		return "dbat2u";
+		SPR_CONST(output, "dbat2u");
 	case SPR_DBAT2L:
-		return "dbat2l";
+		SPR_CONST(output, "dbat2l");
 	case SPR_DBAT3U:
-		return "dbat3u";
+		SPR_CONST(output, "dbat3u");
 	case SPR_DBAT3L:
-		return "dbat3l";
+		SPR_CONST(output, "dbat3l");
 	case SPR_UMMCR0:
-		return "ummcr0";
+		SPR_CONST(output, "ummcr0");
 	case SPR_UMMCR1:
-		return "ummcr1";
+		SPR_CONST(output, "ummcr1");
 	case SPR_UPMC1:
-		return "upmc1";
+		SPR_CONST(output, "upmc1");
 	case SPR_UPMC2:
-		return "upmc2";
+		SPR_CONST(output, "upmc2");
 	case SPR_USIA:
-		return "usia";
+		SPR_CONST(output, "usia");
 	case SPR_UPMC3:
-		return "upmc3";
+		SPR_CONST(output, "upmc3");
 	case SPR_UPMC4:
-		return "upmc4";
+		SPR_CONST(output, "upmc4");
 	case SPR_MMCR0:
-		return "mmcr0";
+		SPR_CONST(output, "mmcr0");
 	case SPR_PMC1:
-		return "pmc1";
+		SPR_CONST(output, "pmc1");
 	case SPR_PMC2:
-		return "pmc2";
+		SPR_CONST(output, "pmc2");
 	case SPR_SIA:
-		return "sia";
+		SPR_CONST(output, "sia");
 	case SPR_MMCR1:
-		return "mmcr1";
+		SPR_CONST(output, "mmcr1");
 	case SPR_PMC3:
-		return "pmc3";
+		SPR_CONST(output, "pmc3");
 	case SPR_PMC4:
-		return "pmc4";
+		SPR_CONST(output, "pmc4");
 	case SPR_SDA:
-		return "sda";
+		SPR_CONST(output, "sda");
 	case SPR_DMISS:
-		return "dmiss";
+		SPR_CONST(output, "dmiss");
 	case SPR_DCMP:
-		return "dcmp";
+		SPR_CONST(output, "dcmp");
 	case SPR_HASH1:
-		return "hash1";
+		SPR_CONST(output, "hash1");
 	case SPR_HASH2:
-		return "hash2";
+		SPR_CONST(output, "hash2");
 	case SPR_IMISS:
-		return "imiss";
+		SPR_CONST(output, "imiss");
 	case SPR_ICMP:
-		return "icmp";
+		SPR_CONST(output, "icmp");
 	case SPR_RPA:
-		return "rpa";
+		SPR_CONST(output, "rpa");
 	case SPR_HID0:
-		return "hid0";
+		SPR_CONST(output, "hid0");
 	case SPR_HID1:
-		return "hid1";
+		SPR_CONST(output, "hid1");
 	case SPR_IABR:
-		return "iabr";
+		SPR_CONST(output, "iabr");
 	case SPR_HID2:
-		return "hid2";
+		SPR_CONST(output, "hid2");
 	case SPR_HID4:
-		return "hid4";
+		SPR_CONST(output, "hid4");
 	case SPR_DABR:
-		return "dabr";
+		SPR_CONST(output, "dabr");
 	case SPR_HID5:
-		return "hid5";
+		SPR_CONST(output, "hid5");
 	case SPR_HID6:
-		return "hid6";
-		//		case SPR_L2CR:
-		//			return "l2cr";
+		SPR_CONST(output, "hid6");
+	//		case SPR_L2CR:
+	//			return SPR_CONST(output, "l2cr");
 	case SPR_ICTC:
-		return "ictc";
+		SPR_CONST(output, "ictc");
 	case SPR_THRM1:
-		return "thrm1";
+		SPR_CONST(output, "thrm1");
 	case SPR_THRM2:
-		return "thrm2";
+		SPR_CONST(output, "thrm2");
 	case SPR_THRM3:
-		return "thrm3";
+		SPR_CONST(output, "thrm3");
 	case SPR_PIR:
-		return "pir";
+		SPR_CONST(output, "pir");
 	default:
 		snprintf(cspr, sizeof(cspr), "spr_%u", spr);
 		break;
 	}
-	return cspr;
+	strcpy(output, cspr);
+	int len = strlen(cspr);
+	return len > 1 ? len - 1 : 0;
 }
 
 static int replace(int argc, const char *argv[], char *newstr) {
@@ -371,40 +376,40 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "bdnzflrl", "if (ctr != 0 && !cond) call A", 1 },
 		{ "bdnzl", "if (ctr != 0) call A", 1 },
 		{ "bdnzla", "if (ctr != 0) call A", 1 },
-		{ "bdnzlr", "if (ctr != 0) call A", 1 },
-		{ "bdnzlrl", "if (ctr != 0) call A", 1 },
+		{ "bdnzlr", "if (ctr != 0) return", 1 },
+		{ "bdnzlrl", "if (ctr != 0) return", 1 },
 		{ "bdnzt", "if (ctr != 0 && cond) goto A", 1 },
 		{ "bdnzta", "if (ctr != 0 && cond) goto A", 1 },
 		{ "bdnztl", "if (ctr != 0 && cond) call A", 1 },
 		{ "bdnztla", "if (ctr != 0 && cond) call A", 1 },
-		{ "bdnztlr", "if (ctr != 0 && cond) call A", 1 },
-		{ "bdnztlrl", "if (ctr != 0 && cond) call A", 1 },
+		{ "bdnztlr", "if (ctr != 0 && cond) return", 1 },
+		{ "bdnztlrl", "if (ctr != 0 && cond) return", 1 },
 		{ "bdz", "if (ctr == 0) goto A", 1 },
 		{ "bdza", "if (ctr == 0) goto A", 1 },
 		{ "bdzf", "if (ctr == 0 && !cond) goto A", 1 },
 		{ "bdzfa", "if (ctr == 0 && !cond) goto A", 1 },
 		{ "bdzfl", "if (ctr == 0 && !cond) call A", 1 },
 		{ "bdzfla", "if (ctr == 0 && !cond) call A", 1 },
-		{ "bdzflr", "if (ctr == 0 && !cond) call A", 1 },
-		{ "bdzflrl", "if (ctr == 0 && !cond) call A", 1 },
+		{ "bdzflr", "if (ctr == 0 && !cond) return", 1 },
+		{ "bdzflrl", "if (ctr == 0 && !cond) returnA", 1 },
 		{ "bdzl", "if (ctr == 0) call A", 1 },
 		{ "bdzla", "if (ctr == 0) call A", 1 },
-		{ "bdzlr", "if (ctr == 0) call A", 1 },
-		{ "bdzlrl", "if (ctr == 0) call A", 1 },
+		{ "bdzlr", "if (ctr == 0) return", 1 },
+		{ "bdzlrl", "if (ctr == 0) return", 1 },
 		{ "bdzt", "if (ctr == 0 && cond) goto A", 1 },
 		{ "bdzta", "if (ctr == 0 && cond) goto A", 1 },
 		{ "bdztl", "if (ctr == 0 && cond) call A", 1 },
 		{ "bdztla", "if (ctr == 0 && cond) call A", 1 },
-		{ "bdztlr", "if (ctr == 0 && cond) call A", 1 },
-		{ "bdztlrl", "if (ctr == 0 && cond) call A", 1 },
-		{ "bf", "if (!cond) goto A", 1 },
+		{ "bdztlr", "if (ctr == 0 && cond) return", 1 },
+		{ "bdztlrl", "if (ctr == 0 && cond) return", 1 },
+		{ "bf", "if (!A) goto B", 1 },
 		{ "bfa", "if (!cond) goto A", 1 },
 		{ "bfctr", "if (!cond) goto ctr", 0 },
 		{ "bfctrl", "if (!cond) call ctr", 0 },
-		{ "bfl", "if (!cond) call A", 1 },
+		{ "bfl", "if (!A) call B", 1 },
 		{ "bfla", "if (!cond) call A", 1 },
-		{ "bflr", "if (!cond) call A", 1 },
-		{ "bflrl", "if (!cond) call A", 1 },
+		{ "bflr", "if (!A) return", 1 },
+		{ "bflrl", "if (!A) return", 1 },
 		{ "bl", "call A", 1 },
 		{ "bla", "call A", 1 },
 		{ "blr", "return", 0 },
@@ -416,14 +421,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "bnelr", "if (A & FLG_NE) return", 1 },
 		{ "beqlr", "if (A & FLG_EQ) return", 1 },
 		{ "brinc", "A = bit_revese(B, C)", 3 },
-		{ "bt", "if (cond) goto A", 1 },
+		{ "bt", "if (A) goto B", 1 },
 		{ "bta", "if (cond) goto A", 1 },
 		{ "btctr", "if (cond) goto ctr", 1 },
 		{ "btctrl", "if (cond) call ctr", 1 },
-		{ "btl", "if (cond) call A", 1 },
+		{ "btl", "if (A) call B", 1 },
 		{ "btla", "if (cond) call A", 1 },
-		{ "btlr", "if (cond) call A", 1 },
-		{ "btlrl", "if (cond) call A", 1 },
+		{ "btlr", "if (A) return", 1 },
+		{ "btlrl", "if (A) return", 1 },
 		{ "clrldi", "A = B & mask(0, C)", 2 },
 		{ "clrlwi", "A = B & mask(0, C)", 2 },
 		{ "cntlzd", "A = cnt_leading_zeros(B)", 2 },
@@ -711,10 +716,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lfdu", "A = double[C + B]", 3 },
 		{ "lfdux", "A = double[C + B]", 3 },
 		{ "lfdx", "A = double[C + B]", 3 },
-		{
-			"lfiwax",
-			"A = float[C + B]",
-		},
+		{ "lfiwax", "A = float[C + B]", 3 },
 		{ "lfiwzx", "A = float[C + B]", 3 },
 		{ "lfs", "A = float[C + B]", 3 },
 		{ "lfsu", "A = float[C + B]", 3 },
@@ -1255,9 +1257,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "vslw", "A = (word vector) B + C", 3 },
 		{ "vspltb", "A = (vector) splat_byte(B, C)", 3 },
 		{ "vsplth", "A = (vector) splat_half(B, C)", 3 },
-		{ "vspltisb", "A = (vector) splat_byte(B, C)", 3 },
-		{ "vspltish", "A = (vector) splat_half(B, C)", 3 },
-		{ "vspltisw", "A = (vector) splat_word(B, C)", 3 },
+		{ "vspltisb", "A = (vector) sign_extend(B, 8)", 3 },
+		{ "vspltish", "A = (vector) sign_extend(B, 16)", 3 },
+		{ "vspltisw", "A = (vector) sign_extend(B, 32)", 3 },
 		{ "vspltw", "A = (vector) splat_word(B, C)", 3 },
 		{ "vsr", "A = (vector) B >> C", 3 },
 		{ "vsrab", "A = (byte vector) B >> C", 3 },
@@ -1575,7 +1577,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 								break;
 							}
 						} else if ((i == 44 && letter == 2) || (i == 45 && letter == 1)) { // spr
-							w = getspr_pseudo(w);
+							k += getspr_pseudo(w, newstr + k);
 						}
 						if (w != NULL) {
 							strcpy(newstr + k, w);
