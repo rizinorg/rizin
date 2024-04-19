@@ -4676,15 +4676,39 @@ RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	if (argc == 3) {
-		ut64 value = rz_num_math(core->num, argv[2]);
-		if (rz_core_analysis_il_vm_set(core, argv[1], value)) {
-			rz_cons_printf("%s = 0x%" PFMT64x "\n", argv[1], value);
+	if (argc > 1) {
+		RzList *l = rz_str_split_duplist_n(argv[1], "=", 1, true);
+		if (!l) {
+			return RZ_CMD_STATUS_ERROR;
 		}
-	} else {
-		// print variable or all variables
-		rz_core_analysis_il_vm_status(core, argc == 2 ? argv[1] : NULL, mode);
+		size_t llen = rz_list_length(l);
+		if (!llen) {
+			rz_list_free(l);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		const char *varname = rz_list_get_n(l, 0);
+		if (RZ_STR_ISEMPTY(varname)) {
+			RZ_LOG_ERROR("core: No string specified before `=`. Make sure to use the format <var_name>=<value>.\n");
+			rz_list_free(l);
+			return RZ_CMD_STATUS_ERROR;
+		}
+
+		if (llen == 2) {
+			// assign variable
+			const char *valstr = rz_list_get_n(l, 1);
+			ut64 value = rz_num_math(core->num, valstr);
+			if (rz_core_analysis_il_vm_set(core, varname, value)) {
+				rz_cons_printf("%s = 0x%" PFMT64x "\n", varname, value);
+			}
+		} else {
+			// print variable
+			rz_core_analysis_il_vm_status(core, varname, mode);
+		}
+		rz_list_free(l);
+		return RZ_CMD_STATUS_OK;
 	}
+	// print all variables
+	rz_core_analysis_il_vm_status(core, NULL, mode);
 	return RZ_CMD_STATUS_OK;
 }
 

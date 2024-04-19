@@ -992,6 +992,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
       - name: aezv
         summary: Print or modify the current status of the RzIL Virtual Machine
+        args_str: " [<var_name> [= <val>]]"
         cname: il_vm_status
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
         modes:
@@ -1000,11 +1001,9 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args:
-          - name: var_name
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
-          - name: number
-            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: var_name=value
+            type: RZ_CMD_ARG_TYPE_EVAL_FULL
+            flags: RZ_CMD_ARG_FLAG_LAST
             optional: true
   - name: ag
     summary: Analysis graph commands

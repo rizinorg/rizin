@@ -213,7 +213,7 @@ static const RzCmdDescArg il_step_until_opt_args[2];
 static const RzCmdDescArg il_vm_step_args[2];
 static const RzCmdDescArg il_vm_step_with_events_args[2];
 static const RzCmdDescArg il_vm_step_until_addr_args[2];
-static const RzCmdDescArg il_vm_status_args[3];
+static const RzCmdDescArg il_vm_status_args[2];
 static const RzCmdDescArg analysis_graph_dataref_args[2];
 static const RzCmdDescArg analysis_graph_dataref_global_args[2];
 static const RzCmdDescArg analysis_graph_callgraph_function_args[2];
@@ -4048,14 +4048,8 @@ static const RzCmdDescHelp il_vm_step_until_addr_help = {
 
 static const RzCmdDescArg il_vm_status_args[] = {
 	{
-		.name = "var_name",
+		.name = "var_name=value",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
-
-	},
-	{
-		.name = "number",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -4064,6 +4058,7 @@ static const RzCmdDescArg il_vm_status_args[] = {
 };
 static const RzCmdDescHelp il_vm_status_help = {
 	.summary = "Print or modify the current status of the RzIL Virtual Machine",
+	.args_str = " [<var_name> [= <val>]]",
 	.args = il_vm_status_args,
 };
 

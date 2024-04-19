@@ -93,10 +93,10 @@ s 0
 aezi
 aezv
 echo --
-aezv PC 0x42
+aezv PC=0x42
 aezv
 echo --
-aezv ptr 0xc0ffee
+aezv ptr=0xc0ffee
 aezv
 EOF
 EXPECT=<<EOF

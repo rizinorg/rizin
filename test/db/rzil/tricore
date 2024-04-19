@@ -6,7 +6,7 @@ e io.cache=1
 aaa
 s main
 aezi
-aezv FCX 0x1
+aezv FCX=0x1
 aezsu 0x8000052e
 ps @ obj.seckrit
 EOF
