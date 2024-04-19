@@ -1314,7 +1314,8 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNU
 		}
 		// Add all neighbors to graph
 		RzAnalysisInsnWord target_iword = { 0 };
-		set_u_iter_init(it);
+		SetUIter it;
+		set_u_iter_reset(it);
 		set_u_foreach(cur_iword.jump_targets, it) {
 			ut64 target = it.v;
 			rz_analysis_insn_word_setup(&target_iword);
