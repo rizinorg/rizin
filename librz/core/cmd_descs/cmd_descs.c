@@ -9946,14 +9946,14 @@ static const RzCmdDescArg eval_getset_args[] = {
 	{
 		.name = "key=value",
 		.type = RZ_CMD_ARG_TYPE_EVAL_FULL,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp eval_getset_help = {
 	.summary = "Get/Set value of config variable <key>",
-	.args_str = " <key>[=<val|?>] [<key>[=<val|?>] ...]]",
+	.args_str = " <key> [= <val|?>]",
 	.details = eval_getset_details,
 	.args = eval_getset_args,
 };
