@@ -459,10 +459,10 @@ static bool __handle_mouse_on_X(RzCore *core, int x, int y);
 static bool __handle_mouse_on_panel(RzCore *core, RzPanel *panel, int x, int y, int *key);
 
 /* modal */
-static void __exec_almighty(RzCore *core, RzPanel *panel, RModal *modal, Sdb *menu_db, RzPanelLayout dir);
-static void __delete_almighty(RzCore *core, RModal *modal, Sdb *menu_db);
-static void __create_almighty(RzCore *core, RzPanel *panel, Sdb *menu_db);
-static void __update_modal(RzCore *core, Sdb *menu_db, RModal *modal);
+static void __exec_almighty(RzCore *core, RzPanel *panel, RModal *modal, HtSP *menu_db, RzPanelLayout dir);
+static void __delete_almighty(RzCore *core, RModal *modal, HtSP *menu_db);
+static void __create_almighty(RzCore *core, RzPanel *panel, HtSP *menu_db);
+static void __update_modal(RzCore *core, HtSP *menu_db, RModal *modal);
 static bool __draw_modal(RzCore *core, RModal *modal, int range_end, int start, const char *name);
 static RModal *__init_modal(void);
 static void __free_modal(RModal **modal);
@@ -608,7 +608,7 @@ static bool __move_to_direction(RzCore *core, Direction direction);
 static void __toggle_help(RzCore *core);
 static void __call_visual_graph(RzCore *core);
 static void __refresh_core_offset(RzCore *core);
-static char *__search_db(RzPanels *panels, const char *title);
+static RZ_BORROW const char *__search_db(RzPanels *panels, const char *title);
 static void __handle_visual_mark(RzCore *core);
 static void __handle_tab_key(RzCore *core, bool shift);
 static void __handle_refs(RzCore *core, RzPanel *panel, ut64 tmp);
@@ -755,15 +755,11 @@ void __cache_white_list(RzCore *core, RzPanel *panel) {
 	panel->model->cache = false;
 }
 
-char *__search_db(RzPanels *panels, const char *title) {
+RZ_BORROW const char *__search_db(RzPanels *panels, const char *title) {
 	if (!panels->db) {
 		return NULL;
 	}
-	char *out = sdb_get(panels->db, title, 0);
-	if (out) {
-		return out;
-	}
-	return NULL;
+	return ht_ss_find(panels->db, title, NULL);
 }
 
 int __show_status(RzCore *core, const char *msg) {
@@ -840,9 +836,8 @@ bool __check_root_state(RzPanelsRoot *panels_root, RzPanelsRootState state) {
 }
 
 bool search_db_check_panel_type(RzPanels *panels, RzPanel *panel, const char *ch) {
-	char *str = __search_db(panels, ch);
+	const char *str = __search_db(panels, ch);
 	bool ret = str && __check_panel_type(panel, str);
-	free(str);
 	return ret;
 }
 
@@ -1265,7 +1260,7 @@ int __add_cmd_panel(void *user) {
 	RzPanelsMenu *menu = panels->panels_menu;
 	RzPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RzPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	char *cmd = __search_db(panels, child->name);
+	const char *cmd = __search_db(panels, child->name);
 	if (!cmd) {
 		return 0;
 	}
@@ -1277,7 +1272,6 @@ int __add_cmd_panel(void *user) {
 	__set_geometry(&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
 	__set_curnode(panels, 0);
 	__set_mode(core, PANEL_MODE_DEFAULT);
-	free(cmd);
 	return 0;
 }
 
@@ -1773,7 +1767,7 @@ bool __handle_cursor_mode(RzCore *core, const int key) {
 	RzCoreVisual *visual = core->visual;
 	RzPanel *cur = __get_cur_panel(visual->panels);
 	RzPrint *print = core->print;
-	char *db_val;
+	const char *db_val;
 	switch (key) {
 	case ':':
 	case ';':
@@ -1838,10 +1832,8 @@ bool __handle_cursor_mode(RzCore *core, const int key) {
 		db_val = __search_db(visual->panels, "Breakpoints");
 		if (__check_panel_type(cur, db_val)) {
 			__cursor_del_breakpoints(core, cur);
-			free(db_val);
 			break;
 		}
-		free(db_val);
 		return false;
 	case 'x':
 		__handle_refs(core, cur, __parse_string_on_cursor(core, cur, cur->view->curpos));
@@ -3087,19 +3079,26 @@ void __set_dcb(RzCore *core, RzPanel *p) {
 	}
 }
 
-void __set_rcb(RzPanels *ps, RzPanel *p) {
-	SdbKv *kv;
-	SdbListIter *sdb_iter;
-	SdbList *sdb_list = sdb_foreach_list(ps->rotate_db, false);
-	ls_foreach (sdb_list, sdb_iter, kv) {
-		char *key = sdbkv_key(kv);
-		if (!__check_panel_type(p, key)) {
-			continue;
-		}
-		p->model->rotateCb = (RzPanelRotateCallback)sdb_ptr_get(ps->rotate_db, key, 0);
-		break;
+struct set_rcb_cb_ctx {
+	RzPanels *ps;
+	RzPanel *p;
+};
+
+static bool __set_rcb_cb(void *user, const char *k, const void *v) {
+	struct set_rcb_cb_ctx *ctx = (struct set_rcb_cb_ctx *)user;
+	if (!__check_panel_type(ctx->p, k)) {
+		return true;
 	}
-	ls_free(sdb_list);
+	ctx->p->model->rotateCb = (RzPanelRotateCallback)v;
+	return false;
+}
+
+void __set_rcb(RzPanels *ps, RzPanel *p) {
+	struct set_rcb_cb_ctx ctx = {
+		.ps = ps,
+		.p = p
+	};
+	ht_sp_foreach(ps->rotate_db, __set_rcb_cb, &ctx);
 }
 
 void __set_pcb(RzPanel *p) {
@@ -4938,79 +4937,79 @@ void __panels_check_stackbase(RzCore *core) {
 
 void __init_rotate_db(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
-	Sdb *db = visual->panels->rotate_db;
-	sdb_ptr_set(db, "pd", &__rotate_disasm_cb, 0);
-	sdb_ptr_set(db, "p==", &__rotate_entropy_h_cb, 0);
-	sdb_ptr_set(db, "p=", &__rotate_entropy_v_cb, 0);
-	sdb_ptr_set(db, "px", &__rotate_hexdump_cb, 0);
-	sdb_ptr_set(db, PANEL_CMD_REGISTERS, &__rotate_register_cb, 0);
-	sdb_ptr_set(db, "af", &__rotate_function_cb, 0);
-	sdb_ptr_set(db, PANEL_CMD_HEXDUMP, &__rotate_hexdump_cb, 0);
+	HtSP *db = visual->panels->rotate_db;
+	ht_sp_insert(db, "pd", &__rotate_disasm_cb);
+	ht_sp_insert(db, "p==", &__rotate_entropy_h_cb);
+	ht_sp_insert(db, "p=", &__rotate_entropy_v_cb);
+	ht_sp_insert(db, "px", &__rotate_hexdump_cb);
+	ht_sp_insert(db, PANEL_CMD_REGISTERS, &__rotate_register_cb);
+	ht_sp_insert(db, "af", &__rotate_function_cb);
+	ht_sp_insert(db, PANEL_CMD_HEXDUMP, &__rotate_hexdump_cb);
 }
 
 void __init_sdb(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
-	Sdb *db = visual->panels->db;
-	sdb_set(db, "Symbols", "isq", 0);
-	sdb_set(db, "Stack", "px 256@r:SP", 0);
-	sdb_set(db, "Locals", "afvd", 0);
-	sdb_set(db, "Registers", PANEL_CMD_REGISTERS, 0);
-	sdb_set(db, "RegisterRefs", "drr", 0);
-	sdb_set(db, "Disassembly", "pd", 0);
-	sdb_set(db, "Disassemble Summary", "pdsf", 0);
-	sdb_set(db, "Graph", "agf", 0);
-	sdb_set(db, "Tiny Graph", "agft", 0);
-	sdb_set(db, "Info", "i", 0);
-	sdb_set(db, "Database", "k ***", 0);
-	sdb_set(db, "Console", "$console", 0);
-	sdb_set(db, "Hexdump", "xc $r*16", 0);
-	sdb_set(db, "Xrefs", "axl", 0);
-	sdb_set(db, "Functions", "afl", 0);
-	sdb_set(db, "Function Calls", "aflm", 0);
-	sdb_set(db, "Comments", "CC", 0);
-	sdb_set(db, "Entropy", "p=e 100", 0);
-	sdb_set(db, "Entropy Fire", "p==e 100", 0);
-	sdb_set(db, "DRX", "drx", 0);
-	sdb_set(db, "Sections", "iSq", 0);
-	sdb_set(db, "Segments", "iSSq", 0);
-	sdb_set(db, PANEL_TITLE_STRINGS_DATA, "izq", 0);
-	sdb_set(db, PANEL_TITLE_STRINGS_BIN, "izzq", 0);
-	sdb_set(db, "Maps", "dm", 0);
-	sdb_set(db, "Modules", "dmm", 0);
-	sdb_set(db, "Backtrace", "dbt", 0);
-	sdb_set(db, "Breakpoints", "db", 0);
-	sdb_set(db, "Imports", "iiq", 0);
-	sdb_set(db, "Clipboard", "yx", 0);
-	sdb_set(db, "New", "o", 0);
-	sdb_set(db, "Var READ address", "afvR", 0);
-	sdb_set(db, "Var WRITE address", "afvW", 0);
-	sdb_set(db, "Summary", "pdsf", 0);
-	sdb_set(db, "Classes", "icq", 0);
-	sdb_set(db, "Methods", "ic", 0);
-	sdb_set(db, "Relocs", "ir", 0);
-	sdb_set(db, "Headers", "iH", 0);
-	sdb_set(db, "File Hashes", "iT", 0);
+	HtSS *db = visual->panels->db;
+	ht_ss_insert(db, "Symbols", "isq");
+	ht_ss_insert(db, "Stack", "px 256@r:SP");
+	ht_ss_insert(db, "Locals", "afvd");
+	ht_ss_insert(db, "Registers", PANEL_CMD_REGISTERS);
+	ht_ss_insert(db, "RegisterRefs", "drr");
+	ht_ss_insert(db, "Disassembly", "pd");
+	ht_ss_insert(db, "Disassemble Summary", "pdsf");
+	ht_ss_insert(db, "Graph", "agf");
+	ht_ss_insert(db, "Tiny Graph", "agft");
+	ht_ss_insert(db, "Info", "i");
+	ht_ss_insert(db, "Database", "k ***");
+	ht_ss_insert(db, "Console", "$console");
+	ht_ss_insert(db, "Hexdump", "xc $r*16");
+	ht_ss_insert(db, "Xrefs", "axl");
+	ht_ss_insert(db, "Functions", "afl");
+	ht_ss_insert(db, "Function Calls", "aflm");
+	ht_ss_insert(db, "Comments", "CC");
+	ht_ss_insert(db, "Entropy", "p=e 100");
+	ht_ss_insert(db, "Entropy Fire", "p==e 100");
+	ht_ss_insert(db, "DRX", "drx");
+	ht_ss_insert(db, "Sections", "iSq");
+	ht_ss_insert(db, "Segments", "iSSq");
+	ht_ss_insert(db, PANEL_TITLE_STRINGS_DATA, "izq");
+	ht_ss_insert(db, PANEL_TITLE_STRINGS_BIN, "izzq");
+	ht_ss_insert(db, "Maps", "dm");
+	ht_ss_insert(db, "Modules", "dmm");
+	ht_ss_insert(db, "Backtrace", "dbt");
+	ht_ss_insert(db, "Breakpoints", "db");
+	ht_ss_insert(db, "Imports", "iiq");
+	ht_ss_insert(db, "Clipboard", "yx");
+	ht_ss_insert(db, "New", "o");
+	ht_ss_insert(db, "Var READ address", "afvR");
+	ht_ss_insert(db, "Var WRITE address", "afvW");
+	ht_ss_insert(db, "Summary", "pdsf");
+	ht_ss_insert(db, "Classes", "icq");
+	ht_ss_insert(db, "Methods", "ic");
+	ht_ss_insert(db, "Relocs", "ir");
+	ht_ss_insert(db, "Headers", "iH");
+	ht_ss_insert(db, "File Hashes", "iT");
+}
+
+static bool __init_almighty_db_cb(void *user, const char *k, const char *v) {
+	HtSP *ht = (HtSP *)user;
+	ht_sp_insert(ht, k, &__create_panel_db);
+	return true;
 }
 
 void __init_almighty_db(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
-	Sdb *db = visual->panels->almighty_db;
-	SdbKv *kv;
-	SdbListIter *sdb_iter;
-	SdbList *sdb_list = sdb_foreach_list(visual->panels->db, true);
-	ls_foreach (sdb_list, sdb_iter, kv) {
-		const char *key = sdbkv_key(kv);
-		sdb_ptr_set(db, rz_str_dup(key), &__create_panel_db, 0);
-	}
-	sdb_ptr_set(db, "Search strings in data sections", &__search_strings_data_create, 0);
-	sdb_ptr_set(db, "Search strings in the whole bin", &__search_strings_bin_create, 0);
-	sdb_ptr_set(db, "Create New", &__create_panel_input, 0);
-	sdb_ptr_set(db, "Change Command of Current Panel", &__replace_current_panel_input, 0);
+	HtSP *db = visual->panels->almighty_db;
+	ht_ss_foreach(visual->panels->db, __init_almighty_db_cb, db);
+	ht_sp_insert(db, "Search strings in data sections", &__search_strings_data_create);
+	ht_sp_insert(db, "Search strings in the whole bin", &__search_strings_bin_create);
+	ht_sp_insert(db, "Create New", &__create_panel_input);
+	ht_sp_insert(db, "Change Command of Current Panel", &__replace_current_panel_input);
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		sdb_ptr_set(db, "Put Breakpoints", &__put_breakpoints_cb, 0);
-		sdb_ptr_set(db, "Continue", &__continue_almighty_cb, 0);
-		sdb_ptr_set(db, "Step", &__step_almighty_cb, 0);
-		sdb_ptr_set(db, "Step Over", &__step_over_almighty_cb, 0);
+		ht_sp_insert(db, "Put Breakpoints", &__put_breakpoints_cb);
+		ht_sp_insert(db, "Continue", &__continue_almighty_cb);
+		ht_sp_insert(db, "Step", &__step_almighty_cb);
+		ht_sp_insert(db, "Step Over", &__step_over_almighty_cb);
 	}
 }
 
@@ -5023,7 +5022,7 @@ void __init_all_dbs(RzCore *core) {
 void __create_panel_db(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title) {
 	RzCore *core = (RzCore *)user;
 	RzCoreVisual *visual = core->visual;
-	char *cmd = sdb_get(visual->panels->db, title, 0);
+	char *cmd = ht_ss_find(visual->panels->db, title, NULL);
 	if (!cmd) {
 		return;
 	}
@@ -5083,9 +5082,8 @@ RZ_OWN char *__search_strings(RzCore *core, bool whole) {
 	const char *title = whole ? PANEL_TITLE_STRINGS_BIN : PANEL_TITLE_STRINGS_DATA;
 	const char *str = __show_status_input(core, "Search Strings: ");
 	RzCoreVisual *visual = core->visual;
-	char *db_val = __search_db(visual->panels, title);
+	const char *db_val = __search_db(visual->panels, title);
 	char *ret = rz_str_newf("%s~%s", db_val, str);
-	free(db_val);
 	return ret;
 }
 
@@ -5121,9 +5119,9 @@ bool __init(RzCore *core, RzPanels *panels, int w, int h) {
 	panels->mouse_orig_x = 0;
 	panels->mouse_orig_y = 0;
 	panels->can = __create_new_canvas(core, w, h);
-	panels->db = sdb_new0();
-	panels->rotate_db = sdb_new0();
-	panels->almighty_db = sdb_new0();
+	panels->db = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
+	panels->rotate_db = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	panels->almighty_db = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	panels->mht = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)__free_menu_item);
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	panels->name = NULL;
@@ -5741,12 +5739,34 @@ bool __move_to_direction(RzCore *core, Direction direction) {
 	return false;
 }
 
-void __update_modal(RzCore *core, Sdb *menu_db, RModal *modal) {
+static bool __list_htsp_key_cb(void *user, const char *k, const void *v) {
+	RzPVector *vec = (RzPVector *)user;
+	rz_pvector_push(vec, (void *)k);
+	return true;
+}
+
+/**
+ * \brief Get sorted list of HtSP keys.
+ *
+ * It is not allowed to modify strings.
+ */
+static RZ_OWN RzPVector /*<const char *>*/ *get_HtSP_key_list(HtSP *ht) {
+	RzPVector *vec = rz_pvector_new(NULL);
+	if (!vec || !rz_pvector_reserve(vec, ht->count)) {
+		rz_pvector_free(vec);
+		return NULL;
+	}
+	ht_sp_foreach(ht, __list_htsp_key_cb, vec);
+	rz_pvector_sort(vec, cmpstr, NULL);
+	return vec;
+}
+
+void __update_modal(RzCore *core, HtSP *menu_db, RModal *modal) {
 	RzCoreVisual *visual = core->visual;
 	RzPanels *panels = visual->panels;
 	RzConsCanvas *can = panels->can;
 	modal->data = rz_strbuf_new(NULL);
-	int count = sdb_count(menu_db);
+	int count = menu_db->count;
 	if (modal->idx >= count) {
 		modal->idx = 0;
 		modal->offset = 0;
@@ -5763,16 +5783,17 @@ void __update_modal(RzCore *core, Sdb *menu_db, RModal *modal) {
 	} else if (modal->idx < modal->offset) {
 		modal->offset -= 1;
 	}
-	SdbList *l = sdb_foreach_list(menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
-	int i = 0;
 	int max_h = RZ_MIN(modal->offset + modal->pos.h, count);
-	ls_foreach (l, iter, kv) {
-		if (__draw_modal(core, modal, max_h, i, sdbkv_key(kv))) {
+	int i = 0;
+	void **iter;
+	RzPVector *keys = get_HtSP_key_list(menu_db);
+	rz_pvector_foreach (keys, iter) {
+		char *key = (char *)*iter;
+		if (__draw_modal(core, modal, max_h, i, key)) {
 			i++;
 		}
 	}
+	rz_pvector_free(keys);
 	rz_cons_gotoxy(0, 0);
 	rz_cons_canvas_fill(can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
 	(void)rz_cons_canvas_gotoxy(can, modal->pos.x + 2, modal->pos.y + 1);
@@ -5802,7 +5823,7 @@ bool __draw_modal(RzCore *core, RModal *modal, int range_end, int start, const c
 }
 
 // TODO: rename to modal
-void __create_almighty(RzCore *core, RzPanel *panel, Sdb *menu_db) {
+void __create_almighty(RzCore *core, RzPanel *panel, HtSP *menu_db) {
 	__set_cursor(core, false);
 	const int w = 40;
 	const int h = 20;
@@ -5826,9 +5847,9 @@ void __create_almighty(RzCore *core, RzPanel *panel, Sdb *menu_db) {
 				} else {
 					word = get_word_from_canvas_for_menu(core, visual->panels, cx, cy);
 					if (word) {
-						void *cb = sdb_ptr_get(menu_db, word, 0);
+						RzPanelAlmightyCallback cb = ht_sp_find(menu_db, word, NULL);
 						if (cb) {
-							((RzPanelAlmightyCallback)cb)(core, panel, NONE, word);
+							cb(core, panel, NONE, word);
 							__free_modal(&modal);
 							free(word);
 							break;
@@ -5879,30 +5900,33 @@ void __create_almighty(RzCore *core, RzPanel *panel, Sdb *menu_db) {
 	}
 }
 
-void __exec_almighty(RzCore *core, RzPanel *panel, RModal *modal, Sdb *menu_db, RzPanelLayout dir) {
-	SdbList *l = sdb_foreach_list(menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
+void __exec_almighty(RzCore *core, RzPanel *panel, RModal *modal, HtSP *menu_db, RzPanelLayout dir) {
+	RzPVector *keys = get_HtSP_key_list(menu_db);
+	void **iter;
 	int i = 0;
-	ls_foreach (l, iter, kv) {
+	rz_pvector_foreach (keys, iter) {
+		char *key = (char *)*iter;
 		if (i++ == modal->idx) {
-			RzPanelAlmightyCallback cb = sdb_ptr_get(menu_db, sdbkv_key(kv), 0);
-			cb(core, panel, dir, sdbkv_key(kv));
+			RzPanelAlmightyCallback cb = ht_sp_find(menu_db, key, 0);
+			cb(core, panel, dir, key);
 			break;
 		}
 	}
+	rz_pvector_free(keys);
 }
 
-void __delete_almighty(RzCore *core, RModal *modal, Sdb *menu_db) {
-	SdbList *l = sdb_foreach_list(menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
+void __delete_almighty(RzCore *core, RModal *modal, HtSP *menu_db) {
+	RzPVector *keys = get_HtSP_key_list(menu_db);
+	void **iter;
 	int i = 0;
-	ls_foreach (l, iter, kv) {
+	rz_pvector_foreach (keys, iter) {
+		char *key = (char *)*iter;
 		if (i++ == modal->idx) {
-			sdb_remove(menu_db, sdbkv_key(kv), 0);
+			ht_sp_delete(menu_db, key);
+			*iter = NULL;
 		}
 	}
+	rz_pvector_free(keys);
 }
 
 void __create_default_panels(RzCore *core) {
@@ -5922,9 +5946,8 @@ void __create_default_panels(RzCore *core) {
 			return;
 		}
 		const char *s = panels_list[i++];
-		char *db_val = __search_db(panels, s);
+		const char *db_val = __search_db(panels, s);
 		__init_panel_param(core, p, s, db_val);
-		free(db_val);
 	}
 }
 

@@ -307,9 +307,9 @@ typedef struct rz_panels_t {
 	bool mouse_on_edge_x;
 	bool mouse_on_edge_y;
 	RzPanelsMenu *panels_menu;
-	Sdb *db;
-	Sdb *rotate_db;
-	Sdb *almighty_db;
+	HtSS *db;
+	HtSP *rotate_db;
+	HtSP *almighty_db;
 	HtSP *mht;
 	RzPanelsMode mode;
 	RzPanelsMode prevMode;
