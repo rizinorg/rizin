@@ -48,8 +48,8 @@ RZ_API void advance_set_u_iter(SetU *s, SetUIter *it);
  * So our condition checks if ti <= set->size.
  */
 #define set_u_foreach(set, iter) \
-	if (set) \
-		for (advance_set_u_iter(set, &iter); iter.ti <= set->size && set_u_size(set) > 0; advance_set_u_iter(set, &iter))
+	if (set && set_u_size(set) > 0) \
+		for (advance_set_u_iter(set, &iter); iter.ti <= set->size; advance_set_u_iter(set, &iter))
 
 #ifdef __cplusplus
 }
