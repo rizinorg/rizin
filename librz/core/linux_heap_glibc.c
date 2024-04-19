@@ -942,7 +942,7 @@ static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid)
 	 */
 	addr = th->tls + SZ * 2;
 #endif
-	const GHT end = addr + SZ * SZ * 2 * 2;
+	const GHT end = addr + 0x10 * SZ * 2;
 	// Parse tls data and check if it complies with tcache struct
 	for (tls_addr = addr; tls_addr <= end; tls_addr += SZ) {
 		if (GH(parse_tcache_from_addr)(core, tls_addr, tid)) {
@@ -1521,7 +1521,6 @@ static GH(RTcache) * GH(tcache_new)(RzCore *core) {
 	if (!tcache) {
 		return NULL;
 	}
-	RZ_LOG_ERROR("glibc version: %d", core->dbg->glibc_version);
 	if (core->dbg->glibc_version >= TCACHE_NEW_VERSION) {
 		tcache->type = NEW;
 		tcache->RzHeapTcache.heap_tcache = RZ_NEW0(GH(RzHeapTcache));
