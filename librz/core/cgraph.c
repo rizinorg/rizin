@@ -1284,7 +1284,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNU
 	}
 
 	// Visited instructions. Indexed by instruction address, value is index in graph.
-	HtUU *nodes_visited = ht_uu_new0();
+	HtUU *nodes_visited = ht_uu_new();
 	// Addresses to visit.
 	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
 
