@@ -267,9 +267,9 @@ typedef struct rz_core_visual_tab_t {
 
 typedef int (*RzPanelsMenuCallback)(void *user);
 typedef struct rz_panels_menu_item {
-	int n_sub, selectedIndex;
+	int selectedIndex;
 	char *name;
-	struct rz_panels_menu_item **sub;
+	RzPVector /*<RzPanelsMenuItem* >*/ sub_vec;
 	RzPanelsMenuCallback cb;
 	RzPanel *p;
 } RzPanelsMenuItem;
@@ -326,11 +326,10 @@ typedef enum {
 } RzPanelsRootState;
 
 typedef struct rz_panels_root_t {
-	int n_panels;
 	int cur_panels;
+	RzPVector /*<RzPanels *>*/ panels_vec;
 	Sdb *pdc_caches;
 	Sdb *cur_pdc_cache;
-	RzPanels **panels;
 	RzPanelsRootState root_state;
 } RzPanelsRoot;
 
@@ -368,6 +367,9 @@ typedef struct rz_core_visual_t {
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
 RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual);
+
+RZ_IPI void rz_panels_free(RZ_NULLABLE RzPanels *panels);
+RZ_IPI void rz_panels_root_free(RZ_NULLABLE RzPanelsRoot *panels_root);
 
 RZ_IPI void rz_core_visual_prompt_input(RzCore *core);
 RZ_IPI void rz_core_visual_toggle_hints(RzCore *core);

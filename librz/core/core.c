@@ -1781,7 +1781,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_seek_free(c);
 	RZ_FREE(c->rtr_host);
 	RZ_FREE(c->curtheme);
-	rz_core_visual_free(c->visual);
+	RZ_FREE_CUSTOM(c->visual, rz_core_visual_free);
 }
 
 RZ_API void rz_core_free(RzCore *c) {
