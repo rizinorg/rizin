@@ -205,7 +205,7 @@ static int cmpaddr(const void *_a, const void *_b, void *user) {
 							     : 0;
 }
 
-static bool listOpDescriptions(void *_core, const char *k, const char *v) {
+static bool listOpDescriptions(void *_core, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	rz_cons_printf("%s=%s\n", k, v);
 	return true;
 }
@@ -5159,7 +5159,7 @@ typedef struct {
 	PJ *pj;
 } ListJsonCtx;
 
-static bool analysis_class_print_to_json_cb(void *user, const char *k, const char *v) {
+static bool analysis_class_print_to_json_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	ListJsonCtx *ctx = user;
 	analysis_class_print_to_json(ctx->analysis, ctx->pj, k);
 	return true;
@@ -5210,23 +5210,23 @@ RZ_IPI RzCmdStatus rz_analysis_class_list_handler(RzCore *core, int argc, const 
 		return RZ_CMD_STATUS_OK;
 	}
 
-	SdbList *classes = rz_analysis_class_get_all(core->analysis, state->mode != RZ_OUTPUT_MODE_RIZIN);
-	SdbListIter *iter;
+	RzList *classes = rz_analysis_class_get_all(core->analysis, state->mode != RZ_OUTPUT_MODE_RIZIN);
+	RzListIter *iter;
 	SdbKv *kv;
 	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		ls_foreach (classes, iter, kv) {
+		rz_list_foreach (classes, iter, kv) {
 			// need to create all classes first, so they can be referenced
 			rz_cons_printf("ac %s\n", sdbkv_key(kv));
 		}
-		ls_foreach (classes, iter, kv) {
+		rz_list_foreach (classes, iter, kv) {
 			analysis_class_print_as_cmd(core->analysis, sdbkv_key(kv));
 		}
 	} else {
-		ls_foreach (classes, iter, kv) {
+		rz_list_foreach (classes, iter, kv) {
 			analysis_class_print(core->analysis, sdbkv_key(kv), state->mode == RZ_OUTPUT_MODE_LONG);
 		}
 	}
-	ls_free(classes);
+	rz_list_free(classes);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -5505,14 +5505,14 @@ RZ_IPI RzCmdStatus rz_analysis_class_vtable_lookup_handler(RzCore *core, int arg
 		list_all_functions_at_vtable_offset(core->analysis, class_name, offset);
 		return RZ_CMD_STATUS_OK;
 	}
-	SdbList *classes = rz_analysis_class_get_all(core->analysis, true);
-	SdbListIter *iter;
+	RzList *classes = rz_analysis_class_get_all(core->analysis, true);
+	RzListIter *iter;
 	SdbKv *kv;
-	ls_foreach (classes, iter, kv) {
+	rz_list_foreach (classes, iter, kv) {
 		const char *name = sdbkv_key(kv);
 		list_all_functions_at_vtable_offset(core->analysis, name, offset);
 	}
-	ls_free(classes);
+	rz_list_free(classes);
 	return RZ_CMD_STATUS_OK;
 }
 

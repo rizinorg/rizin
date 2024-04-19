@@ -7,11 +7,38 @@
 #include <stdio.h>
 #include <rz_util/rz_file.h>
 
-static bool foreach_delete_cb(void *user, const char *key, const char *val) {
+bool test_sdb_kv_list(void) {
+	Sdb *db = sdb_new(NULL, NULL, false);
+	sdb_set(db, "first__XX", "  2", 0);
+	sdb_set(db, "second_XXXX", "    4", 0);
+	sdb_set(db, "third__XXXXX", "     5", 0);
+	sdb_set(db, "fourth_XXX", "   3", 0);
+	sdb_set(db, "fifth__X", " 1", 0);
+
+	RzList *list = sdb_get_kv_list(db, true);
+	mu_assert_eq(rz_list_length(list), 5, "KV count");
+
+	int order = 1;
+	SdbKv *kv;
+	RzListIter *iter;
+	rz_list_foreach (list, iter, kv) {
+		int v = atoi(sdbkv_value(kv));
+		mu_assert_eq(v, order, "KV not sorted");
+		mu_assert_eq(sdbkv_key_len(kv), order + 7, "Key len");
+		mu_assert_eq(sdbkv_value_len(kv), order + 1, "Value len");
+		++order;
+	}
+
+	rz_list_free(list);
+	sdb_free(db);
+	mu_end;
+}
+
+static bool foreach_delete_cb(void *user, const char *key, ut32 klen, const char *val, ut32 vlen) {
 	if (strcmp(key, "bar")) {
 		sdb_unset(user, key, 0);
 	}
-	return 1;
+	return true;
 }
 
 bool test_sdb_foreach_delete(void) {
@@ -33,30 +60,30 @@ bool test_sdb_list_delete(void) {
 	sdb_set(db, "foo", "bar", 0);
 	sdb_set(db, "bar", "cow", 0);
 	sdb_set(db, "low", "bar", 0);
-	SdbList *list = sdb_foreach_list(db, true);
-	SdbListIter *iter;
+	RzList *list = sdb_get_kv_list(db, true);
+	RzListIter *iter;
 	SdbKv *kv;
-	ls_foreach (list, iter, kv) {
+	rz_list_foreach (list, iter, kv) {
 		// printf ("--> %s\n", kv->key);
-		sdb_unset(db, kv->base.key, 0);
+		sdb_unset(db, sdbkv_key(kv), 0);
 	}
-	SdbList *list2 = sdb_foreach_list(db, true);
-	mu_assert("List is empty", !ls_length(list2));
-	ls_free(list);
-	ls_free(list2);
+	RzList *list2 = sdb_get_kv_list(db, true);
+	mu_assert("List is empty", !rz_list_length(list2));
+	rz_list_free(list);
+	rz_list_free(list2);
 	sdb_free(db);
 	mu_end;
 }
 
 bool test_sdb_list_big(void) {
 	Sdb *db = sdb_new0();
-	int i;
-	for (i = 0; i < 5000; i++) {
+	for (int i = 0; i < 5000; i++) {
 		sdb_num_set(db, sdb_fmt("%d", i), i + 1, 0);
 	}
-	SdbList *list = sdb_foreach_list(db, true);
+	RzList *list = sdb_get_kv_list(db, true);
+	mu_assert_eq(rz_list_length(list), 5000, "KV count");
 	// TODO: verify if its sorted
-	ls_free(list);
+	rz_list_free(list);
 	sdb_free(db);
 	mu_end;
 }
@@ -70,9 +97,9 @@ bool test_sdb_delete_none(void) {
 	sdb_unset(db, "barnas", 0);
 	sdb_unset(db, "bar", 0);
 	sdb_unset(db, "pinuts", 0);
-	SdbList *list = sdb_foreach_list(db, false);
-	mu_assert_eq(ls_length(list), 2, "Unmatched rows");
-	ls_free(list);
+	RzList *list = sdb_get_kv_list(db, false);
+	mu_assert_eq(rz_list_length(list), 2, "Unmatched rows");
+	rz_list_free(list);
 	sdb_free(db);
 	mu_end;
 }
@@ -88,9 +115,9 @@ bool test_sdb_delete_alot(void) {
 	for (i = 0; i < count; i++) {
 		sdb_unset(db, sdb_fmt("key.%d", i), 0);
 	}
-	SdbList *list = sdb_foreach_list(db, false);
-	mu_assert_eq(ls_length(list), 0, "Unmatched rows");
-	ls_free(list);
+	RzList *list = sdb_get_kv_list(db, false);
+	mu_assert_eq(rz_list_length(list), 0, "Unmatched rows");
+	rz_list_free(list);
 	sdb_free(db);
 
 	mu_end;
@@ -159,7 +186,7 @@ bool test_sdb_namespace(void) {
 	mu_end;
 }
 
-static bool foreach_filter_user_cb(void *user, const char *key, const char *val) {
+static bool foreach_filter_user_cb(void *user, const char *key, ut32 klen, const char *val, ut32 vlen) {
 	Sdb *db = (Sdb *)user;
 	const char *v = sdb_const_get(db, key, NULL);
 	if (!v) {
@@ -168,7 +195,7 @@ static bool foreach_filter_user_cb(void *user, const char *key, const char *val)
 	return key[0] == 'b' && v[0] == 'c';
 }
 
-bool test_sdb_foreach_filter_user(void) {
+bool test_sdb_kv_list_filtered(void) {
 	Sdb *db = sdb_new(NULL, NULL, false);
 	sdb_set(db, "crow", NULL, 0);
 	sdb_set(db, "foo", "bar", 0);
@@ -179,44 +206,22 @@ bool test_sdb_foreach_filter_user(void) {
 	sdb_set(db, "low", "bar", 0);
 	sdb_set(db, "bip", "cow", 0);
 	sdb_set(db, "big", "horse", 0);
-	SdbList *ls = sdb_foreach_list_filter_user(db, foreach_filter_user_cb, true, db);
-	SdbListIter *it = ls_iterator(ls);
-	SdbKv *kv = ls_iter_get(it);
+	RzList *ls = sdb_get_kv_list_filter(db, foreach_filter_user_cb, db, true);
+	RzListIter *it = rz_list_iterator(ls);
+	SdbKv *kv = rz_list_iter_get_data(it);
 	mu_assert_streq(sdbkv_key(kv), "bar", "list should be sorted");
 	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
-	kv = ls_iter_get(it);
+	it = rz_list_iter_get_next(it);
+	kv = rz_list_iter_get_data(it);
 	mu_assert_streq(sdbkv_key(kv), "bip", "list should be sorted");
 	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
-	kv = ls_iter_get(it);
+	it = rz_list_iter_get_next(it);
+	kv = rz_list_iter_get_data(it);
 	mu_assert_streq(sdbkv_key(kv), "boo", "list should be sorted");
 	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
+	it = rz_list_iter_get_next(it);
 	mu_assert_null(it, "list should be terminated");
-	ls_free(ls);
-	sdb_free(db);
-	mu_end;
-}
-
-static bool foreach_filter_cb(void *user, const char *key, const char *val) {
-	return key[0] == 'b';
-}
-
-bool test_sdb_foreach_filter(void) {
-	Sdb *db = sdb_new(NULL, NULL, false);
-	sdb_set(db, "foo", "bar", 0);
-	sdb_set(db, "bar", "cow", 0);
-	sdb_set(db, "boo", "cow", 0);
-	sdb_set(db, "low", "bar", 0);
-	sdb_set(db, "bip", "cow", 0);
-	SdbList *ls = sdb_foreach_list_filter(db, foreach_filter_cb, true);
-	SdbListIter *it = ls_iterator(ls);
-	SdbKv *kv = ls_iter_get(it);
-	mu_assert_streq(sdbkv_key(kv), "bar", "list should be sorted");
-	kv = ls_iter_get(it);
-	mu_assert_streq(sdbkv_key(kv), "bip", "list should be sorted");
-	kv = ls_iter_get(it);
-	mu_assert_streq(sdbkv_key(kv), "boo", "list should be sorted");
-	mu_assert_null(it, "list should be terminated");
-	ls_free(ls);
+	rz_list_free(ls);
 	sdb_free(db);
 	mu_end;
 }
@@ -549,8 +554,61 @@ bool test_sdb_text_load_file() {
 	mu_end;
 }
 
+bool test_sdb_sync_disk() {
+	Sdb *db = sdb_new(NULL, ".sync_disk_db", 0);
+
+	sdb_set(db, "mykey", "foobar", 0);
+	sdb_set(db, "zoo", "beef", 0);
+	sdb_set(db, "spam", "egg", 0);
+
+	sdb_sync(db);
+	sdb_free(db);
+
+	db = sdb_new(NULL, ".sync_disk_db", 0);
+	mu_assert_false(sdb_isempty(db), "Non empty");
+
+	ut32 mem, disk;
+	sdb_stats(db, &disk, &mem);
+	mu_assert_eq(disk, 3, "Disk records");
+	mu_assert_eq(mem, 0, "Mem records");
+
+	sdb_set(db, "mykey", "newfoobar", 0);
+	sdb_stats(db, &disk, &mem);
+	mu_assert_eq(disk, 3, "Disk records");
+	mu_assert_eq(mem, 1, "Mem records");
+
+	char *val = sdb_get(db, "mykey", NULL);
+	mu_assert_streq(val, "newfoobar", "Overriden value");
+	free(val);
+
+	RzList *list = sdb_get_kv_list(db, true);
+	mu_assert_eq(rz_list_length(list), 3, "KV count");
+
+	SdbKv *kv = rz_list_first(list);
+	mu_assert_streq(sdbkv_key(kv), "mykey", "key");
+	mu_assert_streq(sdbkv_value(kv), "newfoobar", "value");
+	rz_list_free(list);
+
+	sdb_sync(db);
+	sdb_free(db);
+
+	db = sdb_new(NULL, ".sync_disk_db", 0);
+
+	sdb_stats(db, &disk, &mem);
+	mu_assert_eq(disk, 3, "Disk records");
+	mu_assert_eq(mem, 0, "Mem records");
+
+	val = sdb_get(db, "mykey", NULL);
+	mu_assert_streq(val, "newfoobar", "Overriden value");
+	free(val);
+
+	sdb_free(db);
+	mu_end;
+}
+
 int all_tests() {
 	// XXX two bugs found with crash
+	mu_run_test(test_sdb_kv_list);
 	mu_run_test(test_sdb_namespace);
 	mu_run_test(test_sdb_foreach_delete);
 	mu_run_test(test_sdb_list_delete);
@@ -559,8 +617,7 @@ int all_tests() {
 	mu_run_test(test_sdb_milset);
 	mu_run_test(test_sdb_milset_random);
 	mu_run_test(test_sdb_list_big);
-	mu_run_test(test_sdb_foreach_filter_user);
-	mu_run_test(test_sdb_foreach_filter);
+	mu_run_test(test_sdb_kv_list_filtered);
 	mu_run_test(test_sdb_copy);
 	mu_run_test(test_sdb_text_save_simple);
 	mu_run_test(test_sdb_text_save_simple_unsorted);
@@ -571,6 +628,7 @@ int all_tests() {
 	mu_run_test(test_sdb_text_load_broken);
 	mu_run_test(test_sdb_text_load_path_last_line);
 	mu_run_test(test_sdb_text_load_file);
+	mu_run_test(test_sdb_sync_disk);
 	return tests_passed != tests_run;
 }
 

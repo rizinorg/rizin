@@ -460,7 +460,7 @@ RZ_API bool rz_debug_session_save(RzDebugSession *session, const char *path) {
 	if (!v || v->type != t) \
 	continue
 
-static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
+static bool deserialize_memory_cb(void *user, const char *addr, ut32 addr_len, const char *v, ut32 vlen) {
 	RzJson *child;
 	char *json_str = strdup(v);
 	if (!json_str) {
@@ -509,7 +509,7 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 	sdb_foreach(db, deserialize_memory_cb, memory);
 }
 
-static bool deserialize_registers_cb(void *user, const char *addr, const char *v) {
+static bool deserialize_registers_cb(void *user, const char *addr, ut32 addr_len, const char *v, ut32 vlen) {
 	RzJson *child;
 	char *json_str = strdup(v);
 	if (!json_str) {
@@ -558,7 +558,7 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 	sdb_foreach(db, deserialize_registers_cb, registers);
 }
 
-static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
+static bool deserialize_checkpoints_cb(void *user, const char *cnum, ut32 cnum_len, const char *v, ut32 vlen) {
 	const RzJson *child;
 	char *json_str = strdup(v);
 	if (!json_str) {

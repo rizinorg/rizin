@@ -432,7 +432,7 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 	return ret;
 }
 
-static bool callback_foreach_kv(void *user, const char *k, const char *v) {
+static bool callback_foreach_kv(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	rz_cons_printf("%s=%s\n", k, v);
 	return true;
 }

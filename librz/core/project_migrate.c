@@ -41,7 +41,7 @@ typedef struct {
 	Sdb *noreturn_db;
 } V1V2TypesCtx;
 
-bool v1_v2_types_foreach_cb(void *user, const char *k, const char *v) {
+bool v1_v2_types_foreach_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	if (!rz_str_startswith(k, "addr.") || !rz_str_endswith(k, ".noreturn")) {
 		return true;
 	}
@@ -92,7 +92,7 @@ typedef struct {
 	Sdb *typelinks_db;
 } V2V3TypesCtx;
 
-bool v2_v3_types_foreach_cb(void *user, const char *k, const char *v) {
+bool v2_v3_types_foreach_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	V2V3TypesCtx *ctx = user;
 	if (rz_str_startswith(k, "func.") || !strcmp(v, "func")) {
 		sdb_set(ctx->callables_db, k, v, 0);
@@ -371,7 +371,7 @@ invalid:
 	return false;
 }
 
-bool v10_v11_functions_foreach_cb(void *user, const char *k, const char *v) {
+bool v10_v11_functions_foreach_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	V10V11FunctionsCtx *ctx = user;
 	char *json_str = strdup(v);
 	RzJson *j = rz_json_parse(json_str);
@@ -487,7 +487,7 @@ typedef struct {
 	Sdb *global_vars_db;
 } V12V13TypesCtx;
 
-bool v12_v13_types_foreach_cb(void *user, const char *k, const char *v) {
+bool v12_v13_types_foreach_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	V12V13TypesCtx *ctx = user;
 	if (rz_str_startswith(k, "0x")) {
 		char name[32];
@@ -537,7 +537,7 @@ RZ_API bool rz_project_migrate_v12_v13(RzProject *prj, RzSerializeResultInfo *re
 //	Removed {stack,reg} from "/core/analysis/functions/vars"
 //	and converted into storage object { ..., storage: { type: ... }  }
 
-bool v13_v14_foreach_cb(void *user, const char *k, const char *v) {
+bool v13_v14_foreach_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	static const char *types[] = { "stack", "reg" };
 	Sdb *fn_db = user;
 	if (rz_str_startswith(k, "0x")) {

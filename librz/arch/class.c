@@ -184,8 +184,8 @@ RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name) {
 	return r;
 }
 
-RZ_API SdbList *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted) {
-	return sdb_foreach_list(analysis->sdb_classes, sorted);
+RZ_API RZ_OWN RzList /*<SdbKv *>*/ *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted) {
+	return sdb_get_kv_list(analysis->sdb_classes, sorted);
 }
 
 RZ_API void rz_analysis_class_foreach(RzAnalysis *analysis, SdbForeachCallback cb, void *user) {
@@ -1031,7 +1031,7 @@ typedef struct {
 	const char *class_name;
 } DeleteClassCtx;
 
-static bool rz_analysis_class_base_delete_class_cb(void *user, const char *k, const char *v) {
+static bool rz_analysis_class_base_delete_class_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	(void)v;
 	DeleteClassCtx *ctx = user;
 	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, k);
@@ -1056,7 +1056,7 @@ typedef struct {
 	const char *class_name_new;
 } RenameClassCtx;
 
-static bool rz_analysis_class_base_rename_class_cb(void *user, const char *k, const char *v) {
+static bool rz_analysis_class_base_rename_class_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	(void)v;
 	RenameClassCtx *ctx = user;
 	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, k);
@@ -1067,7 +1067,7 @@ static bool rz_analysis_class_base_rename_class_cb(void *user, const char *k, co
 		}
 	}
 	rz_vector_free(bases);
-	return 1;
+	return true;
 }
 
 static void rz_analysis_class_base_rename_class(RzAnalysis *analysis, const char *class_name_old, const char *class_name_new) {
@@ -1279,21 +1279,19 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 	if (!class_graph) {
 		return NULL;
 	}
-	SdbList *classes = rz_analysis_class_get_all(analysis, true);
+	RzList *classes = rz_analysis_class_get_all(analysis, true);
 	if (!classes) {
 		rz_graph_free(class_graph);
 		return NULL;
 	}
 	HtSP /*<char *name, RzGraphNode *node>*/ *hashmap = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!hashmap) {
-		rz_graph_free(class_graph);
-		ls_free(classes);
-		return NULL;
+		goto failure;
 	}
-	SdbListIter *iter;
+	RzListIter *iter;
 	SdbKv *kv;
 	// Traverse each class and create a node and edges
-	ls_foreach (classes, iter, kv) {
+	rz_list_foreach (classes, iter, kv) {
 		const char *name = sdbkv_key(kv);
 		// create nodes
 		RzGraphNode *curr_node = ht_sp_find(hashmap, name, NULL);
@@ -1322,12 +1320,12 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 		}
 		rz_vector_free(bases);
 	}
-	ls_free(classes);
+	rz_list_free(classes);
 	ht_sp_free(hashmap);
 	return class_graph;
 
 failure:
-	ls_free(classes);
+	rz_list_free(classes);
 	ht_sp_free(hashmap);
 	rz_graph_free(class_graph);
 	return NULL;

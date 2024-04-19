@@ -388,7 +388,7 @@ out_free_str:
 	return ret;
 }
 
-static int __cmp_num_asc(const void *a, const void *b) {
+static int __cmp_num_asc(const void *a, const void *b, RZ_UNUSED void *user) {
 	const SdbKv *ka = a, *kb = b;
 	// Parse as signed ints but don't bother witb error detection, it'll sort bad and that's it
 	long ia = strtol(sdbkv_key(ka), NULL, 10);
@@ -414,19 +414,19 @@ RZ_API bool rz_serialize_core_seek_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *c
 	}
 
 	// Sort by (numeric) key
-	SdbList *db_list = sdb_foreach_list(db, false);
+	RzList *db_list = sdb_get_kv_list(db, false);
 	if (!db_list) {
 		ret = false;
 		goto out_free_parser;
 	}
-	ls_sort(db_list, __cmp_num_asc);
+	rz_list_sort(db_list, __cmp_num_asc, NULL);
 
 	// Clear the current history
 	rz_core_seek_reset(core);
 	core->seek_history.saved_set = false;
 
 	SdbKv *kv;
-	SdbListIter *it;
+	RzListIter *it;
 	SeekLoadCtx ctx = {
 		.core = core,
 		.parser = seek_parser,
@@ -434,7 +434,7 @@ RZ_API bool rz_serialize_core_seek_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *c
 		.vec = &core->seek_history.undos,
 	};
 	bool parsed = true;
-	ls_foreach (db_list, it, kv) {
+	rz_list_foreach (db_list, it, kv) {
 		parsed &= seek_load_item(&ctx, sdbkv_key(kv), sdbkv_value(kv));
 	}
 	ret &= parsed;
@@ -471,7 +471,7 @@ RZ_API bool rz_serialize_core_seek_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *c
 
 out_free_list:
 	free(ctx.current_key);
-	ls_free(db_list);
+	rz_list_free(db_list);
 out_free_parser:
 	rz_key_parser_free(seek_parser);
 	return ret;

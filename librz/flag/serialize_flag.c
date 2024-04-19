@@ -36,7 +36,7 @@ RZ_API void rz_serialize_flag_zones_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzList /
 	}
 }
 
-static bool zone_load_cb(void *user, const char *k, const char *v) {
+static bool zone_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	RzList *list = user;
 	char *json_str = strdup(v);
 	if (!json_str) {
@@ -142,7 +142,7 @@ typedef struct {
 	RzKeyParser *parser;
 } FlagLoadCtx;
 
-static bool flag_load_cb(void *user, const char *k, const char *v) {
+static bool flag_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	FlagLoadCtx *ctx = user;
 
 	char *json_str = strdup(v);

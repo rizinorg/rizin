@@ -29,7 +29,7 @@ typedef struct load_config_ctx_t {
 	HtSP *exclude;
 } LoadConfigCtx;
 
-static bool load_config_cb(void *user, const char *k, const char *v) {
+static bool load_config_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	LoadConfigCtx *ctx = user;
 	if (ctx->exclude && ht_sp_find_kv(ctx->exclude, k, NULL)) {
 		return true;

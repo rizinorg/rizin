@@ -136,7 +136,7 @@ static void write_value(int fd, const char *v) {
 #undef ESCAPE_LOOP
 #undef ESCAPE
 
-static bool save_kv_cb(void *user, const char *k, const char *v) {
+static bool save_kv_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	int fd = *(int *)user;
 	write_key(fd, k);
 	write_(fd, "=", 1);
@@ -152,13 +152,13 @@ static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
 
 	// k=v entries
 	if (sort) {
-		SdbList *l = sdb_foreach_list(s, true);
+		RzList *l = sdb_get_kv_list(s, true);
 		SdbKv *kv;
-		SdbListIter *it;
-		ls_foreach (l, it, kv) {
-			save_kv_cb(&fd, sdbkv_key(kv), sdbkv_value(kv));
+		RzListIter *it;
+		rz_list_foreach (l, it, kv) {
+			save_kv_cb(&fd, sdbkv_key(kv), sdbkv_key_len(kv), sdbkv_value(kv), sdbkv_value_len(kv));
 		}
-		ls_free(l);
+		rz_list_free(l);
 	} else {
 		// This is faster when sorting is not needed.
 		sdb_foreach(s, save_kv_cb, &fd);

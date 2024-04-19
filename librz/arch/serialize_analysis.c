@@ -235,7 +235,7 @@ typedef struct {
 	RzKeyParser *parser;
 } BlockLoadCtx;
 
-static bool block_load_cb(void *user, const char *k, const char *v) {
+static bool block_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	BlockLoadCtx *ctx = user;
 
 	char *json_str = strdup(v);
@@ -953,7 +953,7 @@ typedef struct {
 	RzKeyParser *parser;
 } GlobalVarCtx;
 
-static bool global_var_load_cb(void *user, const char *k, const char *v) {
+static bool global_var_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	GlobalVarCtx *ctx = user;
 
 	char *json_str = strdup(v);
@@ -1182,7 +1182,7 @@ enum {
 	FUNCTION_FIELD_LABELS
 };
 
-static bool function_load_cb(void *user, const char *k, const char *v) {
+static bool function_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	RzSerializeAnalysisFunctionLoadCtx *ctx = user;
 
 	char *json_str = strdup(v);
@@ -1443,7 +1443,7 @@ RZ_API void rz_serialize_analysis_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	ht_up_foreach(analysis->ht_xrefs_from, store_xrefs_list_cb, db);
 }
 
-static bool xrefs_load_cb(void *user, const char *k, const char *v) {
+static bool xrefs_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	RzAnalysis *analysis = user;
 
 	errno = 0;
@@ -1606,7 +1606,7 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	pj_free(j);
 }
 
-static bool meta_load_cb(void *user, const char *k, const char *v) {
+static bool meta_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	RzAnalysis *analysis = user;
 
 	errno = 0;
@@ -1920,7 +1920,7 @@ typedef struct {
 	RzKeyParser *parser;
 } HintsLoadCtx;
 
-static bool hints_load_cb(void *user, const char *k, const char *v) {
+static bool hints_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	HintsLoadCtx *ctx = user;
 	RzAnalysis *analysis = ctx->analysis;
 
@@ -2130,7 +2130,7 @@ RZ_API void rz_serialize_analysis_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 	}
 }
 
-static bool import_load_cb(void *user, const char *k, const char *v) {
+static bool import_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	rz_analysis_add_import(user, k);
 	return true;
 }

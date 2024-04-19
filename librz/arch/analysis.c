@@ -712,41 +712,36 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 	return false;
 }
 
+static bool filter_noreturn(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+	return vlen == 4 && !strcmp(v, "true") && klen > 9 && rz_str_endswith(k, ".noreturn");
+}
+
 RZ_API RzList /*<char *>*/ *rz_analysis_noreturn_functions(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
+
 	// At first we read all noreturn functions from the Types DB
 	RzList *noretl = rz_type_noreturn_function_names(analysis->typedb);
 	// Then we propagate all noreturn functions that were inferred by
 	// the analysis process
 	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(analysis->sdb_noret, true);
-	ls_foreach (l, iter, kv) {
+	RzListIter *iter;
+	RzList *l = sdb_get_kv_list_filter(analysis->sdb_noret, filter_noreturn, NULL, false);
+	rz_list_foreach (l, iter, kv) {
 		const char *k = sdbkv_key(kv);
-		if (!strncmp(k, "func.", 5) && strstr(k, ".noreturn")) {
-			char *s = strdup(k + 5);
-			char *d = strchr(s, '.');
-			if (d) {
-				*d = 0;
-			}
-			rz_list_append(noretl, strdup(s));
-			free(s);
+		const ut32 klen = sdbkv_key_len(kv);
+		// strlen("func." ".noreturn") = 14
+		if (klen > 14 && !strncmp(k, "func.", 5)) {
+			rz_list_append(noretl, rz_str_ndup(k + 5, klen - 14));
 		}
-		if (!strncmp(k, "addr.", 5)) {
-			char *off;
-			if (!(off = strdup(k + 5))) {
-				break;
-			}
-			char *ptr = strstr(off, ".noreturn");
-			if (ptr) {
-				*ptr = 0;
-				char *addr = rz_str_newf("0x%s", off);
-				rz_list_append(noretl, addr);
-			}
-			free(off);
+		// strlen("addr." ".noreturn") = 14
+		if (RZ_BETWEEN(15, klen, 30) && !strncmp(k, "addr.", 5)) {
+			char addr[17];
+			memcpy(addr, k + 5, klen - 14);
+			addr[klen - 14] = '\0';
+			rz_list_append(noretl, rz_str_newf("0x%s", addr));
 		}
 	}
-	ls_free(l);
+	rz_list_free(l);
 	return noretl;
 }
 

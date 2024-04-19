@@ -119,7 +119,7 @@ typedef struct {
 	RzSerializeBpParser parser;
 } BpLoadCtx;
 
-static bool bp_load_cb(void *user, const char *k, const char *v) {
+static bool bp_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
 	bool ret = false;
 	BpLoadCtx *ctx = user;
 	char *json_str = strdup(v);

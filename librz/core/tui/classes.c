@@ -435,10 +435,8 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 	}
 }
 
-static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbList *list, const char *class_name) {
+static const char *show_analysis_classes(RzCore *core, char mode, int *idx, RzList *list, const char *class_name) {
 	bool show_color = rz_config_get_i(core->config, "scr.color");
-	SdbListIter *iter;
-	SdbKv *kv;
 	int i = 0;
 	int skip = *idx - 10;
 	const char *cur_class = NULL;
@@ -449,7 +447,9 @@ static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbL
 		return class_name;
 	}
 
-	ls_foreach (list, iter, kv) {
+	SdbKv *kv;
+	RzListIter *iter;
+	rz_list_foreach (list, iter, kv) {
 		if (*idx > 10) {
 			skip--;
 			if (skip > 0) {
@@ -487,7 +487,7 @@ static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbL
 RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 	int ch, index = 0;
 	char command[1024];
-	SdbList *list = rz_analysis_class_get_all(core->analysis, true);
+	RzList *list = rz_analysis_class_get_all(core->analysis, true);
 	int oldcur = 0;
 	char mode = ' ';
 	const char *class_name = "";
@@ -596,6 +596,6 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 		}
 	}
 cleanup:
-	ls_free(list);
+	rz_list_free(list);
 	return true;
 }

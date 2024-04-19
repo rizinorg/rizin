@@ -265,16 +265,18 @@ RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_na
 	return cc ? cc : rz_analysis_cc_default(analysis);
 }
 
+static bool filter_cc(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+	return vlen == 2 && !strcmp(v, "cc");
+}
+
 RZ_API RzList /*<char *>*/ *rz_analysis_calling_conventions(RzAnalysis *analysis) {
 	RzList *ccl = rz_list_new();
 	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(analysis->sdb_cc, true);
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "cc")) {
-			rz_list_append(ccl, strdup(sdbkv_key(kv)));
-		}
+	RzListIter *iter;
+	RzList *l = sdb_get_kv_list_filter(analysis->sdb_cc, filter_cc, NULL, true);
+	rz_list_foreach (l, iter, kv) {
+		rz_list_append(ccl, strdup(sdbkv_key(kv)));
 	}
-	ls_free(l);
+	rz_list_free(l);
 	return ccl;
 }

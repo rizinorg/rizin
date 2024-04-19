@@ -91,16 +91,16 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	if (!db) {
 		return;
 	}
-	SdbListIter *iter;
-	SdbKv *kv;
 	if (IS_MODE_RZCMD(mode)) {
 		rz_cons_printf("fs format\n");
 	} else if (IS_MODE_SET(mode)) {
 		rz_flag_space_push(core->flags, "format");
 	}
 	// iterate over all keys
-	SdbList *ls = sdb_foreach_list(db, false);
-	ls_foreach (ls, iter, kv) {
+	SdbKv *kv;
+	RzListIter *iter;
+	RzList *ls = sdb_get_kv_list(db, false);
+	rz_list_foreach (ls, iter, kv) {
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
@@ -134,7 +134,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		free(dup);
 	}
 	RZ_FREE(offset);
-	ls_foreach (ls, iter, kv) {
+	rz_list_foreach (ls, iter, kv) {
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
@@ -152,7 +152,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		}
 		free(dup);
 	}
-	ls_foreach (ls, iter, kv) {
+	rz_list_foreach (ls, iter, kv) {
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
@@ -204,6 +204,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		free(dup);
 	}
 	free(offset);
+	rz_list_free(ls);
 	if (IS_MODE_SET(mode)) {
 		rz_flag_space_pop(core->flags);
 	}
