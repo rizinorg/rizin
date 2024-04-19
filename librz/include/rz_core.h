@@ -398,6 +398,10 @@ RZ_API void rz_core_notify_begin(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
 RZ_API void rz_core_notify_done(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char *format, ...) RZ_PRINTF_CHECK(2, 3);
 
+RZ_API void rz_core_notify_begin_bind(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text);
+RZ_API void rz_core_notify_done_bind(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text);
+RZ_API void rz_core_notify_error_bind(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text);
+
 /**
  * \brief APIs to handle Visual Gadgets
  */
