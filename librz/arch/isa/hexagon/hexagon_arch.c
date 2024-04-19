@@ -94,7 +94,7 @@ RZ_API HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr) {
 		rz_list_foreach (p->bin, iter, hic) {
 			if (addr == hic->addr) {
 				p->last_access = rz_time_now_mono();
-				RZ_LOG_SILLY("===== RET buffed_pkts[%d] hic @ 0x010%x ====> \n", i, addr);
+				RZ_LOG_DEBUG("===== RET buffed_pkts[%d] hic @ 0x010%x ====> \n", i, addr);
 				return hic;
 			}
 		}
@@ -821,10 +821,10 @@ static void print_state_pkt(const HexState *state, st32 index, HexBufferAction a
 			newest = i;
 		}
 	}
-	RZ_LOG_SILLY("╭─────┬──────────────┬─────┬──────────────────┬───────────────╮\n");
-	RZ_LOG_SILLY("│ pkt │   packet     │     │                  │ [i]n[v]alid   │\n");
-	RZ_LOG_SILLY("│ id  │   address    │ age │    last access   │ [l]ast        │\n");
-	RZ_LOG_SILLY("├─────┼──────────────┼─────┼──────────────────┼───┬───┬───┬───┤\n");
+	RZ_LOG_DEBUG("╭─────┬──────────────┬─────┬──────────────────┬───────────────╮\n");
+	RZ_LOG_DEBUG("│ pkt │   packet     │     │                  │ [i]n[v]alid   │\n");
+	RZ_LOG_DEBUG("│ id  │   address    │ age │    last access   │ [l]ast        │\n");
+	RZ_LOG_DEBUG("├─────┼──────────────┼─────┼──────────────────┼───┬───┬───┬───┤\n");
 	RzStrBuf *pkt_line = rz_strbuf_new("");
 	for (int i = 0; i < HEXAGON_STATE_PKTS; ++i) {
 		const HexPkt *pkt = &state->pkts[i];
@@ -853,12 +853,12 @@ static void print_state_pkt(const HexState *state, st32 index, HexBufferAction a
 			}
 		}
 		rz_strbuf_append(pkt_line, "\n");
-		RZ_LOG_SILLY("%s", rz_strbuf_get(pkt_line));
+		RZ_LOG_DEBUG("%s", rz_strbuf_get(pkt_line));
 		rz_strbuf_fini(pkt_line);
 		if (i < HEXAGON_STATE_PKTS - 1) {
-			RZ_LOG_SILLY("├─────┼──────────────┼─────┼──────────────────┼───┼───┼───┼───┤\n");
+			RZ_LOG_DEBUG("├─────┼──────────────┼─────┼──────────────────┼───┼───┼───┼───┤\n");
 		} else {
-			RZ_LOG_SILLY("╰─────┴──────────────┴─────┴──────────────────┴───┴───┴───┴───╯\n");
+			RZ_LOG_DEBUG("╰─────┴──────────────┴─────┴──────────────────┴───┴───┴───┴───╯\n");
 		}
 	}
 	rz_strbuf_free(pkt_line);
