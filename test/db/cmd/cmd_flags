@@ -304,7 +304,7 @@ RUN
 
 NAME=f.lj
 FILE=bins/elf/analysis/main
-ARGS=-e log.level=4
+ARGS=-e log.level=3
 CMDS=<<EOF
 af
 f. patata
@@ -331,7 +331,7 @@ RUN
 
 NAME=f.-
 FILE=bins/elf/analysis/main
-ARGS=-e log.level=4
+ARGS=-e log.level=3
 CMDS=<<EOF
 af
 f. patata

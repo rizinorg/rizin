@@ -36,7 +36,7 @@ RUN
 NAME=bin with space in filename
 FILE=bins/elf/_Exit (42)
 CMDS=i~^file
-ARGS=-e log.level=4
+ARGS=-e log.level=3
 EXPECT=<<EOF
 file     bins/elf/_Exit (42)
 EOF

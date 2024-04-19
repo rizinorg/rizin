@@ -94,7 +94,7 @@ RUN
 
 NAME=dm flags after ood
 FILE=bins/elf/analysis/x86-helloworld-gcc
-ARGS=-e log.level=5
+ARGS=-e log.level=4
 CMDS=<<EOF
 ood
 fl@F:maps~?
@@ -108,7 +108,7 @@ RUN
 
 NAME=ood check for ptrace errors
 FILE=bins/elf/analysis/x86-helloworld-gcc
-ARGS=-e log.level=4
+ARGS=-e log.level=3
 CMDS=<<EOF
 ood
 EOF

@@ -100,7 +100,7 @@ RUN
 
 NAME=disable sections load
 FILE=bins/elf/analysis/hello-linux-x86_64
-ARGS=-e log.level=4 -e elf.load.sections=false
+ARGS=-e log.level=3 -e elf.load.sections=false
 CMDS=iS
 EXPECT=<<EOF
 paddr      size vaddr      vsize align perm name      type flags 
@@ -113,7 +113,7 @@ RUN
 
 NAME=disable sections checks
 FILE=bins/elf/libmemalloc-dump-mem
-ARGS=-e log.level=4 -e elf.checks.sections=false
+ARGS=-e log.level=3 -e elf.checks.sections=false
 CMDS=iS
 EXPECT=<<EOF
 paddr      size       vaddr      vsize      align perm name      type              flags                                                                    
@@ -150,7 +150,7 @@ RUN
 
 NAME=disable segments checks
 FILE=bins/elf/analysis/tiny.elf
-ARGS=-e log.level=4 -e elf.checks.segments=false
+ARGS=-e log.level=3 -e elf.checks.segments=false
 CMDS=iS
 EXPECT=<<EOF
 paddr size vaddr vsize align perm name type flags 

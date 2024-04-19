@@ -5,7 +5,7 @@ CMDS=<<EOF
 e basefind.max.threads=1
 e basefind.search.start=0x06000000
 e basefind.search.end=0x10000000
-e log.level=3
+e log.level=2
 Bj
 Bq
 B

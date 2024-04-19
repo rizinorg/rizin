@@ -2872,29 +2872,28 @@ static bool cb_log_config_level(void *coreptr, void *nodeptr) {
 	return true;
 }
 
-static bool cb_log_config_traplevel(void *coreptr, void *nodeptr) {
+#if RZ_BUILD_DEBUG
+static bool cb_log_config_abortlevel(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
-	rz_log_set_traplevel(node->i_value);
+	rz_log_set_abortlevel(node->i_value);
 	return true;
 }
+#endif /* RZ_BUILD_DEBUG */
 
 static bool cb_log_config_file(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
-	const char *value = node->value;
-	rz_log_set_file(value);
-	return true;
+	return rz_log_set_file(node->value);
 }
 
-static bool cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
+static bool cb_log_config_show_sources(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	const char *value = node->value;
-	switch (value[0]) {
-	case 't':
-	case 'T':
-		rz_log_set_srcinfo(true);
-		break;
-	default:
-		rz_log_set_srcinfo(false);
+	if (rz_str_is_true(value)) {
+		rz_log_set_show_sources(true);
+	} else if (rz_str_is_false(value)) {
+		rz_log_set_show_sources(false);
+	} else {
+		return false;
 	}
 	return true;
 }
@@ -2902,13 +2901,12 @@ static bool cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
 static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	const char *value = node->value;
-	switch (value[0]) {
-	case 't':
-	case 'T':
+	if (rz_str_is_true(value)) {
 		rz_log_set_colors(true);
-		break;
-	default:
+	} else if (rz_str_is_false(value)) {
 		rz_log_set_colors(false);
+	} else {
+		return false;
 	}
 	return true;
 }
@@ -3338,21 +3336,27 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	// RZ_LOGLEVEL / log.level
 	p = rz_sys_getenv("RZ_LOGLEVEL");
 	SETICB("log.level", p ? atoi(p) : RZ_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"
-										  " (0:SILLY, 1:DEBUG, 2:VERBOSE, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)");
+										  " (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
 	free(p);
-	// RZ_LOGTRAP_LEVEL / log.traplevel
-	p = rz_sys_getenv("RZ_LOGTRAPLEVEL");
-	SETICB("log.traplevel", p ? atoi(p) : RZ_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping rizin when hit"
-											" (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)");
+
+#if RZ_BUILD_DEBUG
+	// RZ_ABORTLEVEL / log.abortlevel
+	p = rz_sys_getenv("RZ_ABORTLEVEL");
+	SETICB("log.abortlevel", p ? atoi(p) : RZ_DEFAULT_LOGLVL_ABORT, cb_log_config_abortlevel, "Target log level/severity when to abort."
+												  " (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
 	free(p);
+#endif /* RZ_BUILD_DEBUG */
+
 	// RZ_LOGFILE / log.file
 	p = rz_sys_getenv("RZ_LOGFILE");
 	SETCB("log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
 	free(p);
-	// RZ_LOGSRCINFO / log.srcinfo
-	p = rz_sys_getenv("RZ_LOGSRCINFO");
-	SETCB("log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
+
+	// RZ_LOGSHOWSOURCES / log.show.sources
+	p = rz_sys_getenv("RZ_LOGSHOWSOURCES");
+	SETCB("log.show.sources", p ? p : "false", cb_log_config_show_sources, "Should the log output contain src info (filename:lineno)");
 	free(p);
+
 	// RZ_LOGCOLORS / log.colors
 	p = rz_sys_getenv("RZ_LOGCOLORS");
 	SETCB("log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
