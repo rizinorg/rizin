@@ -9,7 +9,7 @@
 #include <stdarg.h>
 
 typedef struct log_config_s {
-	RzList *callbacks;
+	RzList /*<RzLogCallback *>*/ *callbacks;
 	RzLogLevel level;
 #if RZ_BUILD_DEBUG
 	RzLogLevel abortlevel;
