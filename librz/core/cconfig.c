@@ -2872,11 +2872,13 @@ static bool cb_log_config_level(void *coreptr, void *nodeptr) {
 	return true;
 }
 
-static bool cb_log_config_traplevel(void *coreptr, void *nodeptr) {
+#if RZ_BUILD_DEBUG
+static bool cb_log_config_abortlevel(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
-	rz_log_set_traplevel(node->i_value);
+	rz_log_set_abortlevel(node->i_value);
 	return true;
 }
+#endif /* RZ_BUILD_DEBUG */
 
 static bool cb_log_config_file(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
@@ -3336,11 +3338,14 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("log.level", p ? atoi(p) : RZ_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"
 										  " (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
 	free(p);
-	// RZ_LOGTRAP_LEVEL / log.traplevel
-	p = rz_sys_getenv("RZ_LOGTRAPLEVEL");
-	SETICB("log.traplevel", p ? atoi(p) : RZ_DEFAULT_LOGLVL_TRAP, cb_log_config_traplevel, "Log level for trapping rizin when hit"
-											       " (0:VERBOSE, 1:DEBUG, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
+
+#if RZ_BUILD_DEBUG
+	// RZ_ABORTLEVEL / log.abortlevel
+	p = rz_sys_getenv("RZ_ABORTLEVEL");
+	SETICB("log.abortlevel", p ? atoi(p) : RZ_DEFAULT_LOGLVL_ABORT, cb_log_config_abortlevel, "Target log level/severity when to abort."
+												  " (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)");
 	free(p);
+#endif /* RZ_BUILD_DEBUG */
 
 	// RZ_LOGFILE / log.file
 	p = rz_sys_getenv("RZ_LOGFILE");

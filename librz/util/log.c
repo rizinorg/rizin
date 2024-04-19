@@ -1,9 +1,7 @@
+// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
 // SPDX-FileCopyrightText: 2007-2018 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2007-2018 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
-
-#define LOG_CONFIGSTR_SIZE 512
-#define LOG_OUTPUTBUF_SIZE 512
 
 #include <rz_cons.h>
 #include <rz_util.h>
@@ -13,7 +11,9 @@
 typedef struct log_config_s {
 	RzList *callbacks;
 	RzLogLevel level;
-	RzLogLevel trap_level;
+#if RZ_BUILD_DEBUG
+	RzLogLevel abortlevel;
+#endif
 	bool show_sources;
 	FILE *file;
 	const char **tags;
@@ -47,7 +47,9 @@ static void log_init() {
 	}
 	logcfg.callbacks = NULL;
 	logcfg.level = RZ_DEFAULT_LOGLVL;
-	logcfg.trap_level = RZ_DEFAULT_LOGLVL_TRAP;
+#if RZ_BUILD_DEBUG
+	logcfg.abortlevel = RZ_DEFAULT_LOGLVL_ABORT;
+#endif
 	logcfg.show_sources = false;
 	logcfg.file = NULL;
 	logcfg.tags = level_tags_no_colors;
@@ -67,15 +69,19 @@ RZ_API void rz_log_set_level(RzLogLevel level) {
 }
 
 /**
- * \brief      Sets the log level of the trap
+ * \brief      Sets the log level when to abort execution
  *
- * \param[in]  level  The trap log level to set.
+ * \param[in]  level  The abort log level to set.
  */
-RZ_API void rz_log_set_traplevel(RzLogLevel level) {
+RZ_API void rz_log_set_abortlevel(RzLogLevel level) {
 	log_init();
+#if RZ_BUILD_DEBUG
 	rz_th_lock_enter(logcfg.lock);
-	logcfg.trap_level = level;
+	logcfg.abortlevel = level;
 	rz_th_lock_leave(logcfg.lock);
+#else
+	(void)level;
+#endif
 }
 
 /**
@@ -105,13 +111,12 @@ RZ_API bool rz_log_set_file(RZ_NULLABLE const char *filename) {
 	if (!file) {
 		file = rz_sys_fopen(filename, "w+");
 	}
-	if (!file) {
+	if (file) {
+		logcfg.file = file;
+	} else {
 		// failed to open the file.
 		ret = false;
-		goto end;
 	}
-	logcfg.file = file;
-	ret = true;
 
 end:
 	rz_th_lock_leave(logcfg.lock);
@@ -179,11 +184,17 @@ RZ_API void rz_log_del_callback(RZ_NULLABLE RzLogCallback cbfunc) {
 	rz_th_lock_leave(logcfg.lock);
 }
 
+#if RZ_BUILD_DEBUG
+#define is_log_quiet(x) ((x) < logcfg.level && (x) < logcfg.abortlevel)
+#else
+#define is_log_quiet(x) ((x) < logcfg.level)
+#endif /* RZ_BUILD_DEBUG */
+
 RZ_API void rz_vlog(const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, va_list args) {
 	log_init();
 
-	if (level < logcfg.level && level < logcfg.trap_level) {
+	if (is_log_quiet(level)) {
 		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
 		return;
@@ -230,12 +241,15 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 		fflush(logcfg.file);
 	}
 
-	if (level >= logcfg.trap_level && level != RZ_LOGLVL_NONE) {
+#if RZ_BUILD_DEBUG
+	if (level >= logcfg.abortlevel && level != RZ_LOGLVL_NONE) {
+		// this will abort the execution
 		// rz_sys_breakpoint is going to be called so we must flush buffers.
 		fflush(stdout);
 		fflush(stderr);
 		rz_sys_breakpoint();
 	}
+#endif
 	rz_th_lock_leave(logcfg.lock);
 	free(output_buf);
 }
