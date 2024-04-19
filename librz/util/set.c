@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: MIT
 
-#include <rz_util/rz_assert.h>
 #include <rz_util/set.h>
 #include <rz_util/rz_assert.h>
 
