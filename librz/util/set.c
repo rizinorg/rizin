@@ -84,7 +84,15 @@ RZ_API void set_u_free(RZ_NULLABLE SetU *set) {
 	ht_up_free((HtUP *)set);
 }
 
+/**
+ * \brief Advances an SetUIter to the next element in
+ * the set \p s and saves it in \p it->v.
+ *
+ * \param s The set to iterate over.
+ * \param it The iterator over the set.
+ */
 RZ_API void advance_set_u_iter(SetU *s, SetUIter *it) {
+	rz_return_if_fail(s && it);
 	if (it->ti >= s->size) {
 		it->ti++;
 		return;
@@ -93,7 +101,7 @@ RZ_API void advance_set_u_iter(SetU *s, SetUIter *it) {
 		if (s->table[it->ti].count == 0) {
 			continue;
 		}
-		for (; it->bi < s->table[it->ti].count;) {
+		if (it->bi < s->table[it->ti].count) {
 			it->v = s->table[it->ti].arr[it->bi].key;
 			it->bi++;
 			return;
