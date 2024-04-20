@@ -913,32 +913,14 @@ static bool GH(parse_tls_data)(RzCore *core, RZ_NONNULL RzDebugPid *th, GHT tid)
 	addr = GH(read_val)(core, dtv, false);
 	memset(dtv, 0, sizeof(dtv));
 	/*
-	 * TLS memory layout on x86_64:
-	 *                           get_tls_data()
-	 *                               │
-	 *                              %fs
-	 *            Thread_local      │
-	 *     ┌───┬──────────┬──────────┼───┐
-	 *     │		    .tbss   │tib│
-	 *     └───┴──────────┴──────────┼───┘
-	 *                               │
-	 *			   x86 %gs
+	 * https://github.com/jart/cosmopolitan/blob/06839ab3017d86e87db3ec740a2b5e00d9fe9e11/libc/runtime/enable_tls.c#L65
 	 */
 	// size of dtv is SZ*2
 	rz_io_nread_at(core->io, addr + SZ * 2, dtv, sizeof(GHT));
 	addr = GH(read_val)(core, dtv, false);
 #elif __aarch64__
 	/*
-	 * TLS memory layout on aarch64:
-	 *
-	 *         %tpidr_el0
-	 *             │
-	 *             │    Thread_local
-	 *         ┌───┼───┬──────────┬──────────┐
-	 *         │tib│dtv│	     │	        │
-	 *         ├───┴───┴──────────┴──────────┘
-	 *         │
-	 *     get_tls_data()
+	 * https://github.com/jart/cosmopolitan/blob/06839ab3017d86e87db3ec740a2b5e00d9fe9e11/libc/runtime/enable_tls.c#L79
 	 */
 	addr = th->tls + SZ * 2;
 #endif
