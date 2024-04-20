@@ -3079,13 +3079,13 @@ void __set_dcb(RzCore *core, RzPanel *p) {
 	}
 }
 
-struct set_rcb_cb_ctx {
+struct set_rcb_ctx {
 	RzPanels *ps;
 	RzPanel *p;
 };
 
-static bool __set_rcb_cb(void *user, const char *k, const void *v) {
-	struct set_rcb_cb_ctx *ctx = (struct set_rcb_cb_ctx *)user;
+static bool set_rotateCb_cb(void *user, const char *k, const void *v) {
+	struct set_rcb_ctx *ctx = (struct set_rcb_ctx *)user;
 	if (!__check_panel_type(ctx->p, k)) {
 		return true;
 	}
@@ -3094,11 +3094,11 @@ static bool __set_rcb_cb(void *user, const char *k, const void *v) {
 }
 
 void __set_rcb(RzPanels *ps, RzPanel *p) {
-	struct set_rcb_cb_ctx ctx = {
+	struct set_rcb_ctx ctx = {
 		.ps = ps,
 		.p = p
 	};
-	ht_sp_foreach(ps->rotate_db, __set_rcb_cb, &ctx);
+	ht_sp_foreach(ps->rotate_db, set_rotateCb_cb, &ctx);
 }
 
 void __set_pcb(RzPanel *p) {
@@ -4991,7 +4991,7 @@ void __init_sdb(RzCore *core) {
 	ht_ss_insert(db, "File Hashes", "iT");
 }
 
-static bool __init_almighty_db_cb(void *user, const char *k, const char *v) {
+static bool insert_to_HtSP_cb(void *user, const char *k, const char *v) {
 	HtSP *ht = (HtSP *)user;
 	ht_sp_insert(ht, k, &__create_panel_db);
 	return true;
@@ -5000,7 +5000,7 @@ static bool __init_almighty_db_cb(void *user, const char *k, const char *v) {
 void __init_almighty_db(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	HtSP *db = visual->panels->almighty_db;
-	ht_ss_foreach(visual->panels->db, __init_almighty_db_cb, db);
+	ht_ss_foreach(visual->panels->db, insert_to_HtSP_cb, db);
 	ht_sp_insert(db, "Search strings in data sections", &__search_strings_data_create);
 	ht_sp_insert(db, "Search strings in the whole bin", &__search_strings_bin_create);
 	ht_sp_insert(db, "Create New", &__create_panel_input);
@@ -5739,7 +5739,7 @@ bool __move_to_direction(RzCore *core, Direction direction) {
 	return false;
 }
 
-static bool __list_htsp_key_cb(void *user, const char *k, const void *v) {
+static bool key_to_vec_cb(void *user, const char *k, const void *v) {
 	RzPVector *vec = (RzPVector *)user;
 	rz_pvector_push(vec, (void *)k);
 	return true;
@@ -5756,7 +5756,7 @@ static RZ_OWN RzPVector /*<const char *>*/ *get_HtSP_key_list(HtSP *ht) {
 		rz_pvector_free(vec);
 		return NULL;
 	}
-	ht_sp_foreach(ht, __list_htsp_key_cb, vec);
+	ht_sp_foreach(ht, key_to_vec_cb, vec);
 	rz_pvector_sort(vec, cmpstr, NULL);
 	return vec;
 }
