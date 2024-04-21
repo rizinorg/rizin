@@ -40,7 +40,7 @@ bool test_log_binding(void) {
 	rz_log_del_callback((RzLogCallback)large_check);
 	rz_log_del_callback((RzLogCallback)small_check);
 	rz_log_add_callback((RzLogCallback)bind_check);
-	rz_log_bind("func", "file", 1, RZ_LOGLVL_ERROR, NULL, "3");
+	rz_log_str("func", "file", 1, RZ_LOGLVL_ERROR, NULL, "3");
 	mu_end;
 }
 

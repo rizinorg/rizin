@@ -284,7 +284,7 @@ RZ_API void rz_log(const char *funcname, const char *filename,
  * \param tag A string placed at the beginning of the log message. If NULL, the log level is used.
  * \param msg The log message.
  */
-RZ_API void rz_log_bind(const char *funcname, const char *filename,
+RZ_API void rz_log_str(const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *msg) {
 	rz_log(funcname, filename, lineno, level, tag, "%s", msg);
 }

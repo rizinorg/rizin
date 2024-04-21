@@ -106,15 +106,15 @@ RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
 	va_end(args);
 }
 
-RZ_API void rz_core_notify_begin_bind(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+RZ_API void rz_core_notify_begin_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
 	rz_core_notify_begin(core, "%s", text);
 }
 
-RZ_API void rz_core_notify_done_bind(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+RZ_API void rz_core_notify_done_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
 	rz_core_notify_done(core, "%s", text);
 }
 
-RZ_API void rz_core_notify_error_bind(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+RZ_API void rz_core_notify_error_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
 	rz_core_notify_error(core, "%s", text);
 }
 
