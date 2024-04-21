@@ -754,7 +754,8 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 			btype->name, die->offset);
 	}
 
-	RzPVector *btypes = ht_sp_find(ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
+	RzPVector *btypes = ht_sp_find(
+		ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
 	if (!btypes) {
 		btypes = rz_pvector_new(NULL);
 		ht_sp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes);
@@ -1336,13 +1337,9 @@ static RzBinDwarfLocation *location_list_parse(
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
 			continue;
 		}
-		if (!rz_bin_dwarf_block_valid(entry->expression)) {
-			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
-			continue;
-		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
-			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, entry->range);
+			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, &entry->range);
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 			continue;
 		}
@@ -1814,16 +1811,15 @@ static bool store_base_type(void *u, const char *k, const void *v) {
 			RZ_LOG_WARN("BaseType: type of typedef [%s] is not RZ_TYPE_KIND_IDENTIFIER\n", name);
 			goto beach;
 		}
-		if (RZ_STR_NE(a->type->identifier.name, name)) {
-			RZ_LOG_WARN("BaseType: type name [%s] of typedef [%s] is not valid\n",
-				a->type->identifier.name, name);
-			goto beach;
-		}
-		free(a->type->identifier.name);
 		char *newname = rz_str_newf("%s_0", name);
-		a->type->identifier.name = rz_str_dup(newname);
-		update_base_type(analysis->typedb, a);
-
+		// typedef a and type b have the same name
+		// 1. b is not the target of a, so rename b.
+		// 2. b is the target of a, so rename b and a->type->identifier.name
+		if (RZ_STR_EQ(a->type->identifier.name, name)) {
+			free(a->type->identifier.name);
+			a->type->identifier.name = rz_str_dup(newname);
+			update_base_type(analysis->typedb, a);
+		}
 		db_save_renamed(analysis->typedb, rz_base_type_clone(b), newname);
 	} else {
 		RZ_LOG_WARN("BaseType: same name [%s] type count is more than 3\n", name);
@@ -1915,7 +1911,7 @@ static RzBinDwarfLocation *location_by_biggest_range(const RzBinDwarfLocList *lo
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocListEntry *entry = *it;
-		ut64 range = entry->range->begin - entry->range->end;
+		ut64 range = entry->range.begin - entry->range.end;
 		if (range > biggest_range && entry->location &&
 			(entry->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET ||
 				entry->location->kind == RzBinDwarfLocationKind_REGISTER ||
