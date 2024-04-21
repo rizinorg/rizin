@@ -1337,10 +1337,6 @@ static RzBinDwarfLocation *location_list_parse(
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
 			continue;
 		}
-		if (!rz_bin_dwarf_block_valid(entry->expression)) {
-			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
-			continue;
-		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
 			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, &entry->range);

@@ -8,17 +8,8 @@ RZ_API RZ_BORROW const ut8 *rz_bin_dwarf_block_data(RZ_NONNULL const RzBinDwarfB
 	return self->data;
 }
 
-RZ_API bool rz_bin_dwarf_block_valid(RZ_NONNULL const RzBinDwarfBlock *self) {
-	rz_return_val_if_fail(self, false);
-	if (self->length == 0) {
-		return true;
-	}
-	return self->data != NULL;
-}
-
-RZ_API bool rz_bin_dwarf_block_empty(RZ_NONNULL const RzBinDwarfBlock *self) {
-	rz_return_val_if_fail(self, false);
-	return self->length == 0;
+RZ_API bool rz_bin_dwarf_block_empty(RZ_NULLABLE const RzBinDwarfBlock *self) {
+	return !self || self->length == 0;
 }
 
 RZ_API void rz_bin_dwarf_block_dump(RZ_NONNULL const RzBinDwarfBlock *self, RZ_NONNULL RzStrBuf *sb) {

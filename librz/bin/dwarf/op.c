@@ -504,6 +504,8 @@ RZ_IPI bool Operation_parse(Operation *self, RzBinEndianReader *R, const RzBinDw
 		}
 		break;
 	}
+	case DW_OP_GNU_uninit:
+	case DW_OP_GNU_encoded_addr:
 	case DW_OP_hi_user:
 	default:
 		RZ_LOG_WARN("Unsupported opcode %s 0x%" PFMT32x "\n",
@@ -1421,8 +1423,6 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 
 	if (rz_bin_dwarf_block_empty(block)) {
 		loc->kind = RzBinDwarfLocationKind_EMPTY;
-	} else if (!rz_bin_dwarf_block_valid(block)) {
-		loc->kind = RzBinDwarfLocationKind_DECODE_ERROR;
 	} else {
 		RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
 		RET_NULL_IF_FAIL(result);

@@ -123,7 +123,7 @@ static bool convert_raw(
 	ut64 tombstone = encoding->version <= 4 ? mask - 1
 						: mask;
 	RzBinDwarfRange range = { 0 };
-	const RzBinDwarfBlock *data = NULL;
+	const RzBinDwarfBlock *blk = NULL;
 	if (raw->is_address_or_offset_pair) {
 		if (self->base_address == tombstone) {
 			*entry = NULL;
@@ -132,7 +132,7 @@ static bool convert_raw(
 		range.begin = raw->address_or_offset_pair.begin;
 		range.end = raw->address_or_offset_pair.end;
 		Range_add_base_address(&range, self->base_address, encoding->address_size);
-		data = &raw->address_or_offset_pair.data;
+		blk = &raw->address_or_offset_pair.data;
 	} else {
 		switch (raw->encoding) {
 		case DW_LLE_end_of_list: break;
@@ -152,12 +152,14 @@ static bool convert_raw(
 			ERR_IF_FAIL(rz_bin_dwarf_addr_get(
 				addr, &range.end,
 				encoding->address_size, cu->addr_base, raw->startx_endx.end));
+			blk = &raw->startx_endx.data;
 			break;
 		case DW_LLE_startx_length:
 			ERR_IF_FAIL(rz_bin_dwarf_addr_get(
 				addr, &range.begin,
 				encoding->address_size, cu->addr_base, raw->startx_length.begin));
 			range.end = (raw->startx_length.length + raw->startx_length.begin) & mask;
+			blk = &raw->startx_length.data;
 			break;
 		case DW_LLE_offset_pair:
 			if (self->base_address == tombstone) {
@@ -167,17 +169,20 @@ static bool convert_raw(
 			range.begin = raw->address_or_offset_pair.begin;
 			range.end = raw->address_or_offset_pair.end;
 			Range_add_base_address(&range, self->base_address, encoding->address_size);
-			data = &raw->address_or_offset_pair.data;
-			ERR_IF_FAIL(data);
+			blk = &raw->address_or_offset_pair.data;
 			break;
-		case DW_LLE_default_location: break;
+		case DW_LLE_default_location:
+			blk = &raw->default_location.data;
+			break;
 		case DW_LLE_start_end:
 			range.begin = raw->startx_endx.begin;
 			range.end = raw->startx_endx.end;
+			blk = &raw->start_length.data;
 			break;
 		case DW_LLE_start_length:
 			range.begin = raw->startx_length.begin;
 			range.end = (raw->startx_length.length + raw->startx_length.begin) & mask;
+			blk = &raw->start_length.data;
 			break;
 		case DW_LLE_GNU_view_pair:
 			rz_warn_if_reached();
@@ -198,7 +203,7 @@ static bool convert_raw(
 	*entry = RZ_NEW0(RzBinDwarfLocListEntry);
 	ERR_IF_FAIL(*entry);
 	(*entry)->range = range;
-	(*entry)->expression = data;
+	(*entry)->expression = blk;
 	return true;
 err:
 	return false;

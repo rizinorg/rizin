@@ -720,6 +720,8 @@ typedef enum {
 
 	// GNU extensions
 	DW_OP_GNU_push_tls_address = 0xe0,
+	DW_OP_GNU_uninit = 0xf0,
+	DW_OP_GNU_encoded_addr = 0xf1,
 	DW_OP_GNU_implicit_pointer = 0xf2,
 	DW_OP_GNU_entry_value = 0xf3,
 	DW_OP_GNU_const_type = 0xf4,
@@ -1820,8 +1822,7 @@ RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo);
 
 /// Block
-RZ_API bool rz_bin_dwarf_block_valid(RZ_NONNULL const RzBinDwarfBlock *self);
-RZ_API bool rz_bin_dwarf_block_empty(RZ_NONNULL const RzBinDwarfBlock *self);
+RZ_API bool rz_bin_dwarf_block_empty(RZ_NULLABLE const RzBinDwarfBlock *self);
 RZ_API void rz_bin_dwarf_block_dump(RZ_NONNULL const RzBinDwarfBlock *self, RZ_NONNULL RzStrBuf *sb);
 RZ_API RZ_BORROW const ut8 *rz_bin_dwarf_block_data(RZ_NONNULL const RzBinDwarfBlock *self);
 
