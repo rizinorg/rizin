@@ -32,7 +32,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_NUM, ///< Argument is a number
 	RZ_CMD_ARG_TYPE_RZNUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
-	RZ_CMD_ARG_TYPE_RAW, ///< Like RZ_CMD_ARG_TYPE_STRING, but quote unwrapping and unescaping is not done. TODO: currently only quote unwrapping is prevented.
+	RZ_CMD_ARG_TYPE_RAW, ///< Like RZ_CMD_ARG_TYPE_STRING, but unescaping and quote unwrapping is not done
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
 	RZ_CMD_ARG_TYPE_CHOICES, ///< Argument can be one of the provided choices
 	RZ_CMD_ARG_TYPE_FCN, ///< Argument can be the name of an existing function

@@ -3293,16 +3293,22 @@ static bool handle_substitution_args(struct tsr2cmd_state *state, TSNode args, R
 	return true;
 }
 
-static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, bool do_unwrap) {
+static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, bool raw, bool do_unwrap) {
 	if (is_ts_arg(arg)) {
-		return do_handle_ts_unescape_arg(state, ts_node_named_child(arg, 0), do_unwrap);
+		return do_handle_ts_unescape_arg(state, ts_node_named_child(arg, 0), raw, do_unwrap);
 	} else if (is_ts_arg_identifier(arg)) {
 		char *arg_str = ts_node_sub_string(arg, state->input);
+		if (raw) {
+			return arg_str;
+		}
 		char *unescaped_arg = rz_cmd_unescape_arg(arg_str, RZ_CMD_ESCAPE_ONE_ARG);
 		free(arg_str);
 		return unescaped_arg;
 	} else if (is_ts_single_quoted_arg(arg) || is_ts_double_quoted_arg(arg)) {
 		char *o_arg_str = ts_node_sub_string(arg, state->input);
+		if (raw) {
+			return o_arg_str;
+		}
 		char *arg_str = o_arg_str;
 		if (do_unwrap) {
 			// remove quotes
@@ -3322,7 +3328,7 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, 
 		RzStrBuf *sb = rz_strbuf_new(NULL);
 		for (i = 0; i < n_children; i++) {
 			TSNode sub_arg = ts_node_named_child(arg, i);
-			char *s = do_handle_ts_unescape_arg(state, sub_arg, do_unwrap);
+			char *s = do_handle_ts_unescape_arg(state, sub_arg, raw, do_unwrap);
 			rz_strbuf_append(sb, s);
 			free(s);
 		}
@@ -3333,6 +3339,9 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, 
 }
 
 static bool is_arg_raw(const RzCmdDesc *cd, size_t i) {
+	if (!cd) {
+		return false;
+	}
 	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(cd, i);
 	return arg && arg->type == RZ_CMD_ARG_TYPE_RAW;
 }
@@ -3346,11 +3355,12 @@ static RzCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args, boo
 		char **unescaped_args = RZ_NEWS0(char *, n_children);
 		for (i = 0; i < n_children; i++) {
 			TSNode arg = ts_node_named_child(args, i);
+			bool arg_raw = is_arg_raw(cd, i);
 			bool do_unwrap_arg = do_unwrap;
-			if (!do_unwrap && cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT && !is_arg_raw(cd, i)) {
+			if (!do_unwrap && cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT && !arg_raw) {
 				do_unwrap_arg = true;
 			}
-			unescaped_args[i] = do_handle_ts_unescape_arg(state, arg, do_unwrap_arg);
+			unescaped_args[i] = do_handle_ts_unescape_arg(state, arg, arg_raw, do_unwrap_arg);
 		}
 		RzCmdParsedArgs *res = rz_cmd_parsed_args_newargs(n_children, unescaped_args);
 		for (i = 0; i < n_children; i++) {
@@ -3359,10 +3369,11 @@ static RzCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args, boo
 		free(unescaped_args);
 		return res;
 	} else {
-		if (!do_unwrap && cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT && !is_arg_raw(cd, 0)) {
+		bool arg_raw = is_arg_raw(cd, 0);
+		if (!do_unwrap && cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT && !arg_raw) {
 			do_unwrap = true;
 		}
-		char *unescaped_args[] = { do_handle_ts_unescape_arg(state, args, do_unwrap) };
+		char *unescaped_args[] = { do_handle_ts_unescape_arg(state, args, arg_raw, do_unwrap) };
 		RzCmdParsedArgs *res = rz_cmd_parsed_args_newargs(1, unescaped_args);
 		free(unescaped_args[0]);
 		return res;
@@ -3437,7 +3448,9 @@ err:
 	return res;
 }
 
-// If do_unwrap is true, then quote unwrapping is always done, else cd is checked
+// If do_unwrap is true, then quote unwrapping is always done, else cd is
+// checked. An arg of raw type (this can be determined if cd is available)
+// prevents unescaping and quote unwrapping regardless.
 static RzCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx, bool do_unwrap, const RzCmdDesc *cd) {
 	RzCmdParsedArgs *res = NULL;
 	TSNode new_command;
