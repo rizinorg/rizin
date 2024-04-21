@@ -408,9 +408,11 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 				free(ptr);
 				break;
 			}
-			ptr->import = imp;
+			ptr->import = rz_bin_import_clone(imp);
 		} else if (reloc->ord >= 0 && reloc->ord < rz_pvector_len(&bin->imports_by_ord)) {
-			ptr->import = rz_pvector_at(&bin->imports_by_ord, reloc->ord);
+			RzBinImport *imp = NULL;
+			imp = rz_pvector_at(&bin->imports_by_ord, reloc->ord);
+			ptr->import = rz_bin_import_clone(imp);
 		}
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;
