@@ -290,7 +290,7 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 	char *bgcolor;
 	char *attr = NULL;
 	char out[128];
-	if (!str || RZ_STR_ISEMPTY(str)) {
+	if (RZ_STR_ISEMPTY(str)) {
 		return NULL;
 	}
 	fgcolor = strdup(str);
