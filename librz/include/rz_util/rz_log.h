@@ -84,6 +84,9 @@ RZ_API void rz_log(const char *funcname, const char *filename,
 RZ_API void rz_vlog(const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, va_list args);
 
+RZ_API void rz_log_str(const char *funcname, const char *filename,
+	ut32 lineno, RzLogLevel level, const char *tag, const char *msg);
+
 #ifdef __cplusplus
 }
 #endif

@@ -106,6 +106,36 @@ RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
 	va_end(args);
 }
 
+/**
+ * \brief  Prints a message definining the beginning of a task
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_begin_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_begin(core, "%s", text);
+}
+
+/**
+ * \brief  Prints a message definining the end of a task which succeeded
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_done_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_done(core, "%s", text);
+}
+
+/**
+ * \brief  Prints a message definining the end of a task which errored
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_error_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_error(core, "%s", text);
+}
+
 static int on_fcn_new(RzAnalysis *_analysis, void *_user, RzAnalysisFunction *fcn) {
 	RzCore *core = (RzCore *)_user;
 	const char *cmd = rz_config_get(core->config, "cmd.fcn.new");
