@@ -1815,16 +1815,15 @@ static bool store_base_type(void *u, const char *k, const void *v) {
 			RZ_LOG_WARN("BaseType: type of typedef [%s] is not RZ_TYPE_KIND_IDENTIFIER\n", name);
 			goto beach;
 		}
-		if (RZ_STR_NE(a->type->identifier.name, name)) {
-			RZ_LOG_WARN("BaseType: type name [%s] of typedef [%s] is not valid\n",
-				a->type->identifier.name, name);
-			goto beach;
-		}
-		free(a->type->identifier.name);
 		char *newname = rz_str_newf("%s_0", name);
-		a->type->identifier.name = rz_str_dup(newname);
-		update_base_type(analysis->typedb, a);
-
+		// typedef a and type b have the same name
+		// 1. b is not the target of a, so rename b.
+		// 2. b is the target of a, so rename b and a->type->identifier.name
+		if (RZ_STR_EQ(a->type->identifier.name, name)) {
+			free(a->type->identifier.name);
+			a->type->identifier.name = rz_str_dup(newname);
+			update_base_type(analysis->typedb, a);
+		}
 		db_save_renamed(analysis->typedb, rz_base_type_clone(b), newname);
 	} else {
 		RZ_LOG_WARN("BaseType: same name [%s] type count is more than 3\n", name);
