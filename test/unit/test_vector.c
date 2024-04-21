@@ -753,7 +753,7 @@ static bool test_vector_foreach(void) {
 
 	int acc_prev[5] = { 0 };
 	i = 5;
-	rz_vector_foreach_prev(&v, it) {
+	rz_vector_foreach_prev (&v, it) {
 		mu_assert_eq(acc_prev[*it], 0, "unset acc_prev element");
 		acc_prev[*it] = i++;
 	}

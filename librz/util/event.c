@@ -79,7 +79,7 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 	RzEventCallbackHook *hook;
 	size_t i;
 	rz_return_val_if_fail(cbs, false);
-	rz_vector_enumerate(cbs, hook, i) {
+	rz_vector_enumerate (cbs, hook, i) {
 		if (hook->handle == handle) {
 			rz_vector_remove_at(cbs, i, NULL);
 			break;

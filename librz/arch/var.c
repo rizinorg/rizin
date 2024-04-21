@@ -34,7 +34,7 @@ RZ_API int rz_analysis_var_storage_cmp(
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSITE: {
 		RzAnalysisVarStoragePiece *ap = NULL;
 		ut32 i = 0;
-		rz_vector_enumerate(a->composite, ap, i) {
+		rz_vector_enumerate (a->composite, ap, i) {
 			RzAnalysisVarStoragePiece *bp = rz_vector_index_ptr(b->composite, i);
 			int xcmp = ap->offset_in_bits - bp->offset_in_bits;
 			if (xcmp != 0) {

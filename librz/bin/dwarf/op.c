@@ -1592,7 +1592,7 @@ RZ_API void rz_bin_dwarf_expression_dump(
 	Operation *op = NULL;
 	ut32 i;
 	const ut32 end = rz_vector_len(exprs) - 1;
-	rz_vector_enumerate(exprs, op, i) {
+	rz_vector_enumerate (exprs, op, i) {
 		rz_strbuf_append(sb, rz_str_get(opt->expr_indent));
 		Operation_dump(op, sb);
 		if (i < end) {
@@ -1671,7 +1671,7 @@ RZ_API void rz_bin_dwarf_location_composite_dump(
 	ut32 i = 0;
 	const ut32 end = rz_vector_len(composite) - 1;
 	RzBinDwarfPiece *piece = NULL;
-	rz_vector_enumerate(composite, piece, i) {
+	rz_vector_enumerate (composite, piece, i) {
 		rz_strbuf_append(sb, rz_str_get(opt->composite_indent));
 		rz_strbuf_appendf(sb, "(.%" PFMT64u ", %" PFMT64u "): ", piece->bit_offset, piece->size_in_bits);
 

@@ -239,7 +239,7 @@ static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
 	}
 	const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
 	ut64 *kprcb;
-	rz_vector_foreach_prev(&ctx->KiProcessorBlock, kprcb) {
+	rz_vector_foreach_prev (&ctx->KiProcessorBlock, kprcb) {
 		const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
 		WindThread *thread = winkd_get_thread_at(&ctx->windctx, current_thread);
 		if (!thread) {
@@ -275,7 +275,7 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
 	const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
 	ut64 *kprcb;
 	// Get currently running processes
-	rz_vector_foreach_prev(&ctx->KiProcessorBlock, kprcb) {
+	rz_vector_foreach_prev (&ctx->KiProcessorBlock, kprcb) {
 		const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
 		ut64 current_process = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, current_thread + ctx->kthread_process_offset);
 		rz_vector_push(&procs, &current_process);

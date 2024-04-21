@@ -836,7 +836,7 @@ static void line_unit_dump(
 	rz_strbuf_append(sb, "Line table statements:\n");
 	void *opsit;
 	size_t i;
-	rz_vector_enumerate(&unit->ops, opsit, i) {
+	rz_vector_enumerate (&unit->ops, opsit, i) {
 		RzBinDwarfLineOp *op = opsit;
 		rz_strbuf_append(sb, "\t");
 		line_op_dump(op, &unit->hdr, sb);

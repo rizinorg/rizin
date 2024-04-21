@@ -33,7 +33,7 @@
 
 #define rz_bin_elf_enumerate_sections(bin, section, i) \
 	if (Elf_(rz_bin_elf_has_sections)(bin)) \
-	rz_vector_enumerate((bin)->sections, section, i)
+		rz_vector_enumerate ((bin)->sections, section, i)
 
 #define rz_bin_elf_foreach_relocs(bin, reloc) \
 	if (Elf_(rz_bin_elf_has_relocs)(bin)) \
