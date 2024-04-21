@@ -260,7 +260,7 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
  * \param filename Contains the filename that funcname is defined in
  * \param lineno The line number that this log call is being made from in filename
  * \param lvl Logging level for output
- * \param tag A string placed at the beginning of the log message. If NULL, the log level is used.
+ * \param tag A string placed at the beginning of the log message. If NULL, the log level is printed.
  * \param fmtstr A printf like string
 
   This function is used by the RZ_LOG_* preprocessor macros for logging
@@ -275,13 +275,13 @@ RZ_API void rz_log(const char *funcname, const char *filename,
 }
 
 /**
- * \brief Logging function for plugins with no vargs support.
+ * \brief Logging function for simple strings.
  *
  * \param funcname Contains the function name of the calling function
  * \param filename Contains the filename that \p funcname is defined in
  * \param lineno The line number that this log call is being made from in filename
  * \param lvl Logging level for output
- * \param tag A string placed at the beginning of the log message. If NULL, the log level is used.
+ * \param tag A string placed at the beginning of the log message. If NULL, the log level is printed.
  * \param msg The log message.
  */
 RZ_API void rz_log_str(const char *funcname, const char *filename,
