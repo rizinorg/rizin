@@ -463,7 +463,6 @@ static void __create_almighty(RzCore *core, RzPanel *panel, HtSP *menu_db);
 static void __update_modal(RzCore *core, HtSP *menu_db, RModal *modal);
 static bool __draw_modal(RzCore *core, RModal *modal, int range_end, int start, const char *name);
 static RModal *__init_modal(void);
-static void __free_modal(RModal **modal);
 
 /* menu callback */
 static int __open_menu_cb(void *user);
@@ -4790,11 +4789,6 @@ RModal *__init_modal(void) {
 	return modal;
 }
 
-void __free_modal(RModal **modal) {
-	free(*modal);
-	*modal = NULL;
-}
-
 void __refresh_core_offset(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	RzPanels *panels = visual->panels;
@@ -5891,7 +5885,7 @@ void __create_almighty(RzCore *core, RzPanel *panel, HtSP *menu_db) {
 						RzPanelAlmightyCallback cb = ht_sp_find(menu_db, word, NULL);
 						if (cb) {
 							cb(core, panel, NONE, word);
-							__free_modal(&modal);
+							RZ_FREE(modal);
 							free(word);
 							break;
 						}
@@ -5902,7 +5896,7 @@ void __create_almighty(RzCore *core, RzPanel *panel, HtSP *menu_db) {
 		}
 		switch (key) {
 		case 'e': {
-			__free_modal(&modal);
+			RZ_FREE(modal);
 			char *cmd = __show_status_input(core, "New command: ");
 			if (RZ_STR_ISNOTEMPTY(cmd)) {
 				__replace_cmd(core, cmd, cmd);
@@ -5919,15 +5913,15 @@ void __create_almighty(RzCore *core, RzPanel *panel, HtSP *menu_db) {
 			break;
 		case 'v':
 			__exec_almighty(core, panel, modal, menu_db, VERTICAL);
-			__free_modal(&modal);
+			RZ_FREE(modal);
 			break;
 		case 'h':
 			__exec_almighty(core, panel, modal, menu_db, HORIZONTAL);
-			__free_modal(&modal);
+			RZ_FREE(modal);
 			break;
 		case 0x0d:
 			__exec_almighty(core, panel, modal, menu_db, NONE);
-			__free_modal(&modal);
+			RZ_FREE(modal);
 			break;
 		case '-':
 			__delete_almighty(core, modal, menu_db);
@@ -5935,7 +5929,7 @@ void __create_almighty(RzCore *core, RzPanel *panel, HtSP *menu_db) {
 			break;
 		case 'q':
 		case '"':
-			__free_modal(&modal);
+			RZ_FREE(modal);
 			break;
 		}
 	}
