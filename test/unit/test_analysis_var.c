@@ -13,7 +13,7 @@ static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
 		RzAnalysisVar *var = *it;
 		RzAnalysisVarAccess *acc;
 		bool found = false;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			if (acc->offset == (st64)k) {
 				found = true;
 				break;
@@ -31,7 +31,7 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
 		RzAnalysisVarAccess *acc;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			RzPVector *iaccs = ht_up_find(fcn->inst_vars, acc->offset, NULL);
 			mu_assert("var refs instr but instr does not ref var", rz_pvector_contains(iaccs, var));
 		}

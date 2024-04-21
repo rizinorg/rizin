@@ -742,7 +742,7 @@ static bool test_vector_foreach(void) {
 	int i = 1;
 	ut32 *it;
 	int acc[5] = { 0 };
-	rz_vector_foreach(&v, it) {
+	rz_vector_foreach (&v, it) {
 		mu_assert_eq(acc[*it], 0, "unset acc element");
 		acc[*it] = i++;
 	}

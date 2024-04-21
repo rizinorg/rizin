@@ -608,7 +608,7 @@ static RzBinDwarfValueType ValueType_from_die(
 	ut8 byte_size = 0;
 	const char *name = NULL;
 	DW_ATE ate = 0;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			name = rz_bin_dwarf_attr_string(attr, (RzBinDWARF *)dw, 0);

@@ -418,7 +418,7 @@ RZ_API RzList /*<RzCoreSeekItem *>*/ *rz_core_seek_list(RzCore *core) {
 
 	RzCoreSeekItem *it;
 	int i = -rz_vector_len(&core->seek_history.undos);
-	rz_vector_foreach(&core->seek_history.undos, it) {
+	rz_vector_foreach (&core->seek_history.undos, it) {
 		RzCoreSeekItem *dup = dup_seek_history_item(it, i++);
 		if (!dup) {
 			goto err;

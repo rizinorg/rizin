@@ -25,11 +25,11 @@
 
 #define rz_bin_elf_foreach_segments(bin, segment) \
 	if (Elf_(rz_bin_elf_has_segments)(bin)) \
-	rz_vector_foreach((bin)->segments, segment)
+		rz_vector_foreach ((bin)->segments, segment)
 
 #define rz_bin_elf_foreach_sections(bin, section) \
 	if (Elf_(rz_bin_elf_has_sections)(bin)) \
-	rz_vector_foreach((bin)->sections, section)
+		rz_vector_foreach ((bin)->sections, section)
 
 #define rz_bin_elf_enumerate_sections(bin, section, i) \
 	if (Elf_(rz_bin_elf_has_sections)(bin)) \
@@ -37,19 +37,19 @@
 
 #define rz_bin_elf_foreach_relocs(bin, reloc) \
 	if (Elf_(rz_bin_elf_has_relocs)(bin)) \
-	rz_vector_foreach((bin)->relocs, reloc)
+		rz_vector_foreach ((bin)->relocs, reloc)
 
 #define rz_bin_elf_foreach_notes_segment(bin, notes) \
 	if (Elf_(rz_bin_elf_has_notes)(bin)) \
-	rz_vector_foreach((bin)->notes, notes)
+		rz_vector_foreach ((bin)->notes, notes)
 
 #define rz_bin_elf_foreach_symbols(bin, symbol) \
 	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
-	rz_vector_foreach(bin->symbols, symbol)
+		rz_vector_foreach (bin->symbols, symbol)
 
 #define rz_bin_elf_foreach_imports(bin, import) \
 	if (Elf_(rz_bin_elf_has_imports)(bin)) \
-	rz_vector_foreach(bin->imports, import)
+		rz_vector_foreach (bin->imports, import)
 
 struct gnu_hash_table { // DT_GNU_HASH
 	Elf_(Word) nbuckets;

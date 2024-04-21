@@ -499,7 +499,7 @@ RZ_API RZ_BORROW const char *rz_type_db_enum_member_by_val(const RzTypeDB *typed
 		return NULL;
 	}
 	RzTypeEnumCase *cas;
-	rz_vector_foreach(&btype->enum_data.cases, cas) {
+	rz_vector_foreach (&btype->enum_data.cases, cas) {
 		if (cas->val == val) {
 			return cas->name;
 		}
@@ -525,7 +525,7 @@ RZ_API int rz_type_db_enum_member_by_name(const RzTypeDB *typedb, RZ_NONNULL con
 	}
 	RzTypeEnumCase *cas;
 	int result = -1;
-	rz_vector_foreach(&btype->enum_data.cases, cas) {
+	rz_vector_foreach (&btype->enum_data.cases, cas) {
 		if (!strcmp(cas->name, member)) {
 			result = cas->val;
 			break;
@@ -548,7 +548,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_find_enums_by_val(const RzTypeDB *
 	RzBaseType *e;
 	rz_list_foreach (enums, iter, e) {
 		RzTypeEnumCase *cas;
-		rz_vector_foreach(&e->enum_data.cases, cas) {
+		rz_vector_foreach (&e->enum_data.cases, cas) {
 			if (cas->val == val) {
 				rz_list_append(result, rz_str_newf("%s.%s", e->name, cas->name));
 			}
@@ -585,7 +585,7 @@ RZ_API RZ_OWN char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONN
 			continue;
 		}
 		RzTypeEnumCase *cas;
-		rz_vector_foreach(&btype->enum_data.cases, cas) {
+		rz_vector_foreach (&btype->enum_data.cases, cas) {
 			if (cas->val == n) {
 				res = cas->name;
 				break;
@@ -689,13 +689,13 @@ static ut64 struct_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *
 	ut64 size = 0;
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
 		RzTypeStructMember *memb;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
+		rz_vector_foreach (&btype->struct_data.members, memb) {
 			size += type_get_bitsize_recurse(typedb, memb->type, visited_btypes);
 		}
 	} else {
 		RzTypeUnionMember *memb;
 		// Union has the size of the maximum size of its elements
-		rz_vector_foreach(&btype->union_data.members, memb) {
+		rz_vector_foreach (&btype->union_data.members, memb) {
 			size = RZ_MAX(type_get_bitsize_recurse(typedb, memb->type, visited_btypes), size);
 		}
 	}
@@ -997,7 +997,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				if (not_empty) {
 					rz_strbuf_appendf(buf, "%s", multiline ? "\n" : " ");
 				}
-				rz_vector_foreach(&btype->struct_data.members, memb) {
+				rz_vector_foreach (&btype->struct_data.members, memb) {
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
 					rz_strbuf_appendf(buf, "%s%s", unfold, separator);
 					free(unfold);
@@ -1016,7 +1016,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				if (not_empty) {
 					rz_strbuf_appendf(buf, "%s", multiline ? "\n" : " ");
 				}
-				rz_vector_foreach(&btype->union_data.members, memb) {
+				rz_vector_foreach (&btype->union_data.members, memb) {
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
 					rz_strbuf_appendf(buf, "%s%s", unfold, separator);
 					free(unfold);
@@ -1038,7 +1038,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				if (not_empty) {
 					rz_strbuf_appendf(buf, "%s", multiline ? "\n" : " ");
 				}
-				rz_vector_foreach(&btype->enum_data.cases, cas) {
+				rz_vector_foreach (&btype->enum_data.cases, cas) {
 					for (int i = 0; i < indent; i++) {
 						rz_strbuf_append(buf, "\t");
 					}

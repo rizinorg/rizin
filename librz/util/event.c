@@ -114,7 +114,7 @@ RZ_API void rz_event_send(RzEvent *ev, int type, void *data) {
 
 	// send to both the per-type callbacks and to the all_callbacks
 	ev->incall = true;
-	rz_vector_foreach(&ev->all_callbacks, hook) {
+	rz_vector_foreach (&ev->all_callbacks, hook) {
 		hook->cb(ev, type, hook->user, data);
 	}
 	ev->incall = false;
@@ -122,14 +122,14 @@ RZ_API void rz_event_send(RzEvent *ev, int type, void *data) {
 	RzVector *cbs = ht_up_find(ev->callbacks, (ut64)type, NULL);
 	if (cbs) {
 		ev->incall = true;
-		rz_vector_foreach(cbs, hook) {
+		rz_vector_foreach (cbs, hook) {
 			hook->cb(ev, type, hook->user, data);
 		}
 		ev->incall = false;
 	}
 
 	RzEventCallbackHandle *unhook_handle;
-	rz_vector_foreach(&ev->pending_unhook, unhook_handle) {
+	rz_vector_foreach (&ev->pending_unhook, unhook_handle) {
 		rz_event_unhook(ev, *unhook_handle);
 	}
 	rz_vector_clear(&ev->pending_unhook);

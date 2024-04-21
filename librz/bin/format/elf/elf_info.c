@@ -918,7 +918,7 @@ RZ_OWN RzPVector /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin)
 	}
 
 	ut64 *iter = NULL;
-	rz_vector_foreach(dt_needed, iter) {
+	rz_vector_foreach (dt_needed, iter) {
 		char *tmp = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, *iter);
 		if (!tmp) {
 			rz_pvector_free(result);

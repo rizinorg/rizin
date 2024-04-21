@@ -184,7 +184,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 
 static void convert_relocs(RzBfltObj *bin, RzPVector /*<RzBinReloc *>*/ *out, RzVector /*<RzBfltReloc>*/ *relocs) {
 	RzBfltReloc *br;
-	rz_vector_foreach(relocs, br) {
+	rz_vector_foreach (relocs, br) {
 		RzBinReloc *r = RZ_NEW0(RzBinReloc);
 		if (!r) {
 			return;

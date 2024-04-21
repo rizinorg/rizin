@@ -21,7 +21,7 @@ RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
 
 	char *type_str;
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(&code->annotations, annotation) {
+	rz_vector_foreach (&code->annotations, annotation) {
 		pj_o(pj);
 		pj_kn(pj, "start", (ut64)annotation->start);
 		pj_kn(pj, "end", (ut64)annotation->end);
@@ -156,7 +156,7 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64
 	if (line_offsets) {
 		ut64 *offset;
 		ut64 offset_max = 0;
-		rz_vector_foreach(line_offsets, offset) {
+		rz_vector_foreach (line_offsets, offset) {
 			if (*offset != UT64_MAX && *offset > offset_max) {
 				offset_max = *offset;
 			}
@@ -172,7 +172,7 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64
 
 	RzCons *cons = rz_cons_singleton();
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(&code->annotations, annotation) {
+	rz_vector_foreach (&code->annotations, annotation) {
 		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
 			continue;
 		}
@@ -271,7 +271,7 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
 RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code) {
 	RzCodeAnnotation *annotation;
 	HtUP *ht = ht_up_new(NULL, NULL);
-	rz_vector_foreach(&code->annotations, annotation) {
+	rz_vector_foreach (&code->annotations, annotation) {
 		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_OFFSET) {
 			continue;
 		}

@@ -381,7 +381,7 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 
 	int i = 0;
 	RzTypeStructMember *member;
-	rz_vector_foreach(&type->struct_data.members, member) {
+	rz_vector_foreach (&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
 		char *member_type = rz_type_as_string(typedb, member->type);
@@ -429,7 +429,7 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 
 	int i = 0;
 	RzTypeUnionMember *member;
-	rz_vector_foreach(&type->union_data.members, member) {
+	rz_vector_foreach (&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
 		char *member_type = rz_type_as_string(typedb, member->type);
@@ -478,7 +478,7 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 
 	int i = 0;
 	RzTypeEnumCase *cas;
-	rz_vector_foreach(&type->enum_data.cases, cas) {
+	rz_vector_foreach (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = rz_str_sanitize_sdb_key(cas->name);
 		sdb_set(sdb,

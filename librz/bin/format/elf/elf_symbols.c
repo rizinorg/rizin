@@ -406,11 +406,11 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 	}
 
 	RzBinElfSymbol *sym;
-	rz_vector_foreach(result, sym) {
+	rz_vector_foreach (result, sym) {
 		ht_sp_insert(name_set, sym->name, sym);
 	}
 
-	rz_vector_foreach(debug_symbols, sym) {
+	rz_vector_foreach (debug_symbols, sym) {
 		bool found;
 		ht_sp_find(name_set, sym->name, &found);
 		if (found) {

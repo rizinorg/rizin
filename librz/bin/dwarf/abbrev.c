@@ -222,7 +222,7 @@ static void abbrev_decl_dump(
 	rz_strbuf_appendf(sb, "(0x%" PFMT64x ")\n", decl->offset);
 
 	RzBinDwarfAttrSpec *def = NULL;
-	rz_vector_foreach(&decl->defs, def) {
+	rz_vector_foreach (&decl->defs, def) {
 		rz_strbuf_appendf(sb, "\t%s\t%s\n",
 			rz_bin_dwarf_attr(def->at), rz_bin_dwarf_form(def->form));
 	}
@@ -240,7 +240,7 @@ static bool cb_abbrev_table_dump(void *user, ut64 k, const void *v) {
 	}
 
 	void *itdecl;
-	rz_vector_foreach(&table->abbrevs, itdecl) {
+	rz_vector_foreach (&table->abbrevs, itdecl) {
 		if (!itdecl) {
 			continue;
 		}

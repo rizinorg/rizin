@@ -557,7 +557,7 @@ static char *regstate(RzBinFile *bf) {
 	RzVector *notes;
 	rz_bin_elf_foreach_notes_segment(obj, notes) {
 		RzBinElfNote *tmp;
-		rz_vector_foreach(notes, tmp) {
+		rz_vector_foreach (notes, tmp) {
 			if (tmp->type != NT_PRSTATUS) {
 				continue;
 			}
@@ -620,7 +620,7 @@ static RzBinElfNoteFile *note_file_for_load_segment(ELFOBJ *obj, Elf_(Phdr) * ph
 	RzVector *notes;
 	rz_bin_elf_foreach_notes_segment(obj, notes) {
 		RzBinElfNote *tmp;
-		rz_vector_foreach(notes, tmp) {
+		rz_vector_foreach (notes, tmp) {
 			if (tmp->type != NT_FILE) {
 				continue;
 			}

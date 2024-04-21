@@ -2878,7 +2878,7 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 	switch (type->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
-		rz_vector_foreach(&type->struct_data.members, memb) {
+		rz_vector_foreach (&type->struct_data.members, memb) {
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential structures
 			if (!membtype || !strcmp(membtype, type->name)) {
@@ -2908,7 +2908,7 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		// which is why it uses `0` character as a marker
 		rz_strbuf_append(format, "0");
 		RzTypeUnionMember *memb;
-		rz_vector_foreach(&type->union_data.members, memb) {
+		rz_vector_foreach (&type->union_data.members, memb) {
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential unions
 			if (!membtype || !strcmp(membtype, type->name)) {

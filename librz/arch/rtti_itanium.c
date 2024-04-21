@@ -766,7 +766,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 	rz_analysis_class_vtable_fini(&vtable);
 
 	RVTableMethodInfo *vmeth;
-	rz_vector_foreach(&vtable_info->methods, vmeth) {
+	rz_vector_foreach (&vtable_info->methods, vmeth) {
 		RzAnalysisMethod meth;
 		if (!rz_analysis_class_method_exists_by_addr(context->analysis, class_name, vmeth->addr)) {
 			meth.addr = vmeth->addr;
@@ -835,7 +835,7 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 static void detect_constructor_destructor(RzAnalysis *analysis, class_type_info *cti) {
 	RzVector *vec = rz_analysis_class_method_get_all(analysis, cti->name);
 	RzAnalysisMethod *meth;
-	rz_vector_foreach(vec, meth) {
+	rz_vector_foreach (vec, meth) {
 		if (!rz_str_cmp(meth->real_name, cti->name, -1)) {
 			meth->method_type = RZ_ANALYSIS_CLASS_METHOD_CONSTRUCTOR;
 			rz_analysis_class_method_set(analysis, cti->name, meth);

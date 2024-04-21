@@ -254,7 +254,7 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	}
 	pj_a(j);
 
-	rz_vector_foreach(vreg, reg) {
+	rz_vector_foreach (vreg, reg) {
 		pj_o(j);
 		pj_kN(j, "cnum", reg->cnum);
 		pj_kn(j, "data", reg->data);
@@ -282,7 +282,7 @@ static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	}
 	pj_a(j);
 
-	rz_vector_foreach(vmem, mem) {
+	rz_vector_foreach (vmem, mem) {
 		pj_o(j);
 		pj_kN(j, "cnum", mem->cnum);
 		pj_kn(j, "data", mem->data);
@@ -306,7 +306,7 @@ static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *che
 	RzListIter *iter;
 	char tmpbuf[32];
 
-	rz_vector_foreach(checkpoints, chkpt) {
+	rz_vector_foreach (checkpoints, chkpt) {
 		// 0x<cnum>={
 		//   registers:{"<RzRegisterType>":<RzRegArena>, ...},
 		//   snaps:{"size":<size_t>, "a":[<RzDebugSnap>]}

@@ -160,7 +160,7 @@ static RzAnalysisAddrHintRecord *ensure_addr_hint_record(RzAnalysis *analysis, R
 		ht_up_insert(analysis->addr_hints, addr, records);
 	}
 	void *pos;
-	rz_vector_foreach(records, pos) {
+	rz_vector_foreach (records, pos) {
 		RzAnalysisAddrHintRecord *record = pos;
 		if (record->type == type) {
 			return record;
@@ -513,7 +513,7 @@ RZ_API RzAnalysisHint *rz_analysis_hint_get(RzAnalysis *a, ut64 addr) {
 	const RzVector *records = rz_analysis_addr_hints_at(a, addr);
 	if (records) {
 		RzAnalysisAddrHintRecord *record;
-		rz_vector_foreach(records, record) {
+		rz_vector_foreach (records, record) {
 			hint_merge(hint, record);
 		}
 	}

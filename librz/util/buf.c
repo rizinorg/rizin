@@ -155,7 +155,7 @@ static st64 buf_format(RzBuffer *dst, RzBuffer *src, const char *fmt, int n) {
 	st64 res = 0;
 	for (int i = 0; i < n; i++) {
 		const BufFormatToken *tok;
-		rz_vector_foreach(&tokens, tok) {
+		rz_vector_foreach (&tokens, tok) {
 			if (tok->type_size == 1) {
 				ut8 tmp[8];
 				size_t nbytes = tok->repeat;

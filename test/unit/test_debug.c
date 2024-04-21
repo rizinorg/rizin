@@ -113,7 +113,7 @@ static int dbg_mock_attach(RzDebug *dbg, int pid) {
 
 static bool mock_isa_hwbp_at(DebugMockCtx *ctx, ut64 addr, int perm) {
 	DebugMockHWBP *bp;
-	rz_vector_foreach(&ctx->hwbps, bp) {
+	rz_vector_foreach (&ctx->hwbps, bp) {
 		if (bp->addr <= addr && bp->addr + bp->size > addr && (bp->perm & perm)) {
 			return true;
 		}

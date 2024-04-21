@@ -5174,7 +5174,7 @@ RZ_API bool rz_core_bin_sections_mapping_print(RZ_NONNULL RzCore *core, RZ_NONNU
 	rz_cmd_state_output_array_start(state);
 
 	RzBinSectionMap *map;
-	rz_vector_foreach(maps, map) {
+	rz_vector_foreach (maps, map) {
 		RzStrBuf *sb = rz_strbuf_new(NULL);
 		const char *space = "";
 		void **it;

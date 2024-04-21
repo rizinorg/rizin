@@ -558,7 +558,7 @@ bool test_analysis_var_load() {
 	mu_assert_eq(v->accesses.len, 3, "accesses count");
 	bool found[3] = { false, false, false };
 	RzAnalysisVarAccess *acc;
-	rz_vector_foreach(&v->accesses, acc) {
+	rz_vector_foreach (&v->accesses, acc) {
 		if (acc->offset == 3 && acc->type == RZ_ANALYSIS_VAR_ACCESS_TYPE_READ && acc->reg_addend == 0 && !strcmp(acc->reg, "rax")) {
 			found[0] = true;
 		} else if (acc->offset == 13 && acc->type == (RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE) && acc->reg_addend == -13 && !strcmp(acc->reg, "rbx")) {
@@ -1093,7 +1093,7 @@ bool test_analysis_hints_load() {
 		const RzVector /*<const RzAnalysisAddrHintRecord>*/ *hints = rz_analysis_addr_hints_at(analysis, addr); \
 		const RzAnalysisAddrHintRecord *record; \
 		bool found = false; \
-		rz_vector_foreach(hints, record) { \
+		rz_vector_foreach (hints, record) { \
 			if (record->type == RZ_ANALYSIS_ADDR_HINT_TYPE_##tp) { \
 				check; \
 				found = true; \

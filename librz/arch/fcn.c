@@ -1493,7 +1493,7 @@ RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNUL
 	rz_return_val_if_fail(analysis && tasks && fcn, false);
 	RzAnalysisTaskItem item = { fcn, block, sp, address };
 	RzAnalysisTaskItem *it;
-	rz_vector_foreach(tasks, it) {
+	rz_vector_foreach (tasks, it) {
 		if (item.start_address == it->start_address) {
 			return true;
 		}
