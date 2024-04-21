@@ -903,7 +903,8 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	} else {
 		tls = rz_reg_get_value(dbg->reg, ri);
 	}
-#elif __aarch64__
+#endif
+#if __aarch64__
 	struct iovec iovec = { 0 };
 	ut64 reg;
 
