@@ -122,7 +122,7 @@ static void bflt_load_relocs(RzBfltObj *bin) {
 
 static void patch_relocs_in(RzBfltObj *bin, RzVector /*<RzBfltReloc>*/ *relocs) {
 	RzBfltReloc *reloc;
-	rz_vector_foreach(relocs, reloc) {
+	rz_vector_foreach (relocs, reloc) {
 		if (!reloc->value_orig) {
 			// 0 relocs are not patched (this is some workaround for null pointers in the uClinux kernel)
 			continue;

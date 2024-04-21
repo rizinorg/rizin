@@ -87,7 +87,7 @@ static bool CU_attrs_parse(
 		die->offset, rz_str_indent(die->depth), rz_bin_dwarf_tag(die->tag),
 		die->abbrev_code, rz_bin_dwarf_children(die->has_children));
 	RzBinDwarfAttrSpec *spec = NULL;
-	rz_vector_foreach(&abbrev_decl->defs, spec) {
+	rz_vector_foreach (&abbrev_decl->defs, spec) {
 		RzBinDwarfAttr attr = { 0 };
 		AttrOption opt = {
 			.dw = ctx->dw,
@@ -133,7 +133,7 @@ static bool CU_attrs_parse(
 		apply_attr_opt(ctx, cu, die, DW_AT_loclists_base);
 		apply_attr_opt(ctx, cu, die, DW_AT_rnglists_base);
 		RzBinDwarfAttr *attr;
-		rz_vector_foreach(&die->attrs, attr) {
+		rz_vector_foreach (&die->attrs, attr) {
 			CU_attr_apply(ctx, cu, attr);
 		}
 	}
@@ -304,7 +304,7 @@ RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, DW_AT name) {
 	rz_return_val_if_fail(die, NULL);
 	RzBinDwarfAttr *attr = NULL;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		if (attr->at == name) {
 			return attr;
 		}
@@ -368,7 +368,7 @@ RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 
 	// build hashtable after whole parsing because of possible relocations
 	RzBinDwarfCompUnit *unit = NULL;
-	rz_vector_foreach(&info->units, unit) {
+	rz_vector_foreach (&info->units, unit) {
 		ht_up_insert(info->unit_by_offset, unit->offset, unit);
 		switch (unit->hdr.ut) {
 		case DW_UT_skeleton: {
@@ -390,7 +390,7 @@ RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 		}
 
 		RzBinDwarfDie *die = NULL;
-		rz_vector_foreach(&unit->dies, die) {
+		rz_vector_foreach (&unit->dies, die) {
 			ht_up_insert(info->die_by_offset, die->offset, die); // optimization for further processing
 		}
 	}
@@ -426,7 +426,7 @@ RZ_API void rz_bin_dwarf_debug_info_dump(
 		rz_strbuf_append(sb, "\n.debug_info content:\n");
 	}
 	RzBinDwarfCompUnit *unit = NULL;
-	rz_vector_foreach(&info->units, unit) {
+	rz_vector_foreach (&info->units, unit) {
 		const char *ut = rz_bin_dwarf_unit_type(unit->hdr.ut ? unit->hdr.ut : DW_UT_compile);
 		rz_strbuf_appendf(sb, "0x%08" PFMT64x ":\t%s\n", unit->offset, ut);
 		rz_strbuf_appendf(sb, "\tLength\t0x%" PFMT64x "\n", unit->hdr.length);
@@ -436,12 +436,12 @@ RZ_API void rz_bin_dwarf_debug_info_dump(
 		rz_strbuf_append(sb, "\n");
 
 		RzBinDwarfDie *die = NULL;
-		rz_vector_foreach(&unit->dies, die) {
+		rz_vector_foreach (&unit->dies, die) {
 			rz_strbuf_appendf(sb, "%#08" PFMT64x ": %s [%" PFMT64u "]\n",
 				die->offset, rz_bin_dwarf_tag(die->tag), die->abbrev_code);
 			if (die->abbrev_code) {
 				RzBinDwarfAttr *attr = NULL;
-				rz_vector_foreach(&die->attrs, attr) {
+				rz_vector_foreach (&die->attrs, attr) {
 					if (!attr->at) {
 						continue;
 					}

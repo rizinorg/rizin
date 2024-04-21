@@ -1431,7 +1431,7 @@ static bool overlaps_with_token(RZ_BORROW RzVector /*<RzAsmTokenString>*/ *toks,
 	rz_return_val_if_fail(toks, false);
 	size_t x, y; // Other tokens start/end
 	RzAsmToken *it;
-	rz_vector_foreach(toks, it) {
+	rz_vector_foreach (toks, it) {
 		x = it->start;
 		y = it->start + it->len - 1;
 		if (!(s > y || e < x)) { // s:e not outside of x:y
@@ -1496,7 +1496,7 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 	RzAsmToken *cur, *prev = NULL;
 	int i = 0;
 	ut32 ci, cj, pi, pj; // Current and previous token indices.
-	rz_vector_foreach(toks->tokens, cur) {
+	rz_vector_foreach (toks->tokens, cur) {
 		if (i == cur->start) {
 			prev = cur;
 			i = cur->start + cur->len;

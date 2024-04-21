@@ -36,7 +36,7 @@ static void array_add(RzCoreObjc *o, ut64 va, ut64 xrefs_to) {
 		ht_up_insert(o->up, va, vec);
 	}
 	ut64 *addr;
-	rz_vector_foreach(vec, addr) {
+	rz_vector_foreach (vec, addr) {
 		if (xrefs_to == *addr) {
 			return;
 		}
@@ -106,7 +106,7 @@ static ut64 getRefPtr(RzCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 		return false;
 	}
 	ut64 *addr;
-	rz_vector_foreach(vec, addr) {
+	rz_vector_foreach (vec, addr) {
 		const ut64 at = *addr;
 		if (inBetween(o->_selrefs, at)) {
 			isMsgRef = false;

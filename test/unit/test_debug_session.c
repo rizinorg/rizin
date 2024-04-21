@@ -115,7 +115,7 @@ static bool compare_registers_cb(void *user, const ut64 key, const void *value) 
 	mu_assert_eq(actual_vreg->len, expected_vreg->len, "vreg length");
 
 	size_t i;
-	rz_vector_enumerate(actual_vreg, actual_reg, i) {
+	rz_vector_enumerate (actual_vreg, actual_reg, i) {
 		expected_reg = rz_vector_index_ptr(expected_vreg, i);
 		mu_assert_eq(actual_reg->cnum, expected_reg->cnum, "cnum");
 		mu_assert_eq(actual_reg->data, expected_reg->data, "data");
@@ -133,7 +133,7 @@ static bool compare_memory_cb(void *user, const ut64 key, const void *value) {
 	mu_assert_eq(actual_vmem->len, expected_vmem->len, "vmem length");
 
 	size_t i;
-	rz_vector_enumerate(actual_vmem, actual_mem, i) {
+	rz_vector_enumerate (actual_vmem, actual_mem, i) {
 		expected_mem = rz_vector_index_ptr(expected_vmem, i);
 		mu_assert_eq(actual_mem->cnum, expected_mem->cnum, "cnum");
 		mu_assert_eq(actual_mem->data, expected_mem->data, "data");
@@ -176,7 +176,7 @@ static bool test_session_load(void) {
 	size_t i, chkpt_idx;
 	RzDebugCheckpoint *chkpt, *ref_chkpt;
 	mu_assert_eq(s->checkpoints->len, ref->checkpoints->len, "checkpoints length");
-	rz_vector_enumerate(s->checkpoints, chkpt, chkpt_idx) {
+	rz_vector_enumerate (s->checkpoints, chkpt, chkpt_idx) {
 		ref_chkpt = rz_vector_index_ptr(ref->checkpoints, chkpt_idx);
 		// Registers
 		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {

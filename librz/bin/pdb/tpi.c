@@ -686,7 +686,7 @@ RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 		Tpi_LF_Array *a = type->data;
 		ut64 y = 0;
 		ut32 *x;
-		rz_vector_foreach(&a->dimensions, x) {
+		rz_vector_foreach (&a->dimensions, x) {
 			y = y == 0 ? *x : (*x * y);
 		}
 		return y;

@@ -709,7 +709,7 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 	}
 
 	RzBinDwarfAttr *attr = NULL;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_specification: {
 			RzBinDwarfDie *decl = ht_up_find(ctx->dw->info->die_by_offset, rz_bin_dwarf_attr_udata(attr), NULL);
@@ -796,7 +796,7 @@ static ut64 array_count_parse(DwContext *ctx, RzBinDwarfDie *die) {
 			continue;
 		}
 		RzBinDwarfAttr *attr;
-		rz_vector_foreach(&child_die->attrs, attr) {
+		rz_vector_foreach (&child_die->attrs, attr) {
 			switch (attr->at) {
 			case DW_AT_upper_bound:
 			case DW_AT_count:
@@ -1054,7 +1054,7 @@ static RzType *type_parse_from_abstract_origin(DwContext *ctx, ut64 offset, char
 	char *linkname = NULL;
 	RzType *type = NULL;
 	const RzBinDwarfAttr *attr;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			name = at_string_escaped(attr, ctx);
@@ -1096,7 +1096,7 @@ static RzTypeStructMember *struct_member_parse(
 	ut64 offset = 0;
 	ut64 size = 0;
 	RzBinDwarfAttr *attr = NULL;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			name = at_string_escaped(attr, ctx);
@@ -1260,7 +1260,7 @@ err:
 
 static void function_apply_specification(DwContext *ctx, const RzBinDwarfDie *die, RzAnalysisDwarfFunction *fn) {
 	RzBinDwarfAttr *attr = NULL;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			if (fn->name) {
@@ -1420,7 +1420,7 @@ static bool function_var_parse(
 
 	bool has_location = false;
 	const RzBinDwarfAttr *attr;
-	rz_vector_foreach(&var_die->attrs, attr) {
+	rz_vector_foreach (&var_die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			v->name = at_string_escaped(attr, ctx);
@@ -1544,7 +1544,7 @@ static bool function_from_die(
 	fcn->offset = die->offset;
 	RZ_LOG_DEBUG("DWARF function parsing [0x%" PFMT64x "]\n", die->offset);
 	RzBinDwarfAttr *attr;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			fcn->name = at_string_escaped(attr, ctx);
@@ -1742,7 +1742,7 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		.unit = NULL,
 	};
 	RzBinDwarfCompUnit *unit;
-	rz_vector_foreach(&dw->info->units, unit) {
+	rz_vector_foreach (&dw->info->units, unit) {
 		if (rz_vector_empty(&unit->dies)) {
 			continue;
 		}
@@ -1964,7 +1964,7 @@ static bool RzBinDwarfLocation_as_RzAnalysisVarStorage(
 			return false;
 		}
 		RzBinDwarfPiece *piece = NULL;
-		rz_vector_foreach(loc->composite, piece) {
+		rz_vector_foreach (loc->composite, piece) {
 			RzAnalysisVarStorage *sto = RZ_NEW0(RzAnalysisVarStorage);
 			if (!sto) {
 				goto clean_composite;
@@ -2031,7 +2031,7 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 	}
 
 	RzAnalysisDwarfVariable *dw_var;
-	rz_vector_foreach(&dw_fn->variables, dw_var) {
+	rz_vector_foreach (&dw_fn->variables, dw_var) {
 		RzAnalysisVar *var = RZ_NEW0(RzAnalysisVar);
 		rz_analysis_var_init(var);
 		if (!RzAnalysisDwarfVariable_as_RzAnalysisVar(analysis, fn, dw_var, var)) {

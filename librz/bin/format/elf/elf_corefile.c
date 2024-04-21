@@ -24,7 +24,7 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin) {
 	RzVector *notes;
 	rz_bin_elf_foreach_notes_segment(bin, notes) {
 		RzBinElfNote *tmp;
-		rz_vector_foreach(notes, tmp) {
+		rz_vector_foreach (notes, tmp) {
 			if (tmp->type != NT_PRSTATUS) {
 				continue;
 			}

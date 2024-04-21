@@ -206,7 +206,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		ctx->windctx.target_thread.ethread = address;
 		const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
 		ut64 *kprcb;
-		rz_vector_foreach(&ctx->KiProcessorBlock, kprcb) {
+		rz_vector_foreach (&ctx->KiProcessorBlock, kprcb) {
 			const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
 			WindThread *thread = winkd_get_thread_at(&ctx->windctx, current_thread);
 			if (thread && thread->uniqueid == target_thread->uniqueid) {
@@ -239,7 +239,7 @@ static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
 	}
 	const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
 	ut64 *kprcb;
-	rz_vector_foreach_prev(&ctx->KiProcessorBlock, kprcb) {
+	rz_vector_foreach_prev (&ctx->KiProcessorBlock, kprcb) {
 		const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
 		WindThread *thread = winkd_get_thread_at(&ctx->windctx, current_thread);
 		if (!thread) {
@@ -275,7 +275,7 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
 	const ut64 current_thread_offset = ctx->windctx.is_64bit ? 8 : 4;
 	ut64 *kprcb;
 	// Get currently running processes
-	rz_vector_foreach_prev(&ctx->KiProcessorBlock, kprcb) {
+	rz_vector_foreach_prev (&ctx->KiProcessorBlock, kprcb) {
 		const ut64 current_thread = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, *kprcb + current_thread_offset);
 		ut64 current_process = winkd_read_ptr_at(&ctx->windctx, ctx->windctx.read_at_kernel_virtual, current_thread + ctx->kthread_process_offset);
 		rz_vector_push(&procs, &current_process);
@@ -297,7 +297,7 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
 		newpid->status = 's';
 		newpid->runnable = true;
 		ut64 *process;
-		rz_vector_foreach(&procs, process) {
+		rz_vector_foreach (&procs, process) {
 			if (*process == p->eprocess) {
 				newpid->status = 'r';
 			}
@@ -651,7 +651,7 @@ static bool debug_dmp_sync_registers(RzDebug *dbg, RzReg *reg, bool to_debugger)
 
 	const ut64 current_thread_offset = ctx->is_64bit ? 8 : 4;
 	ut64 *kprcb;
-	rz_vector_foreach(&dmp->KiProcessorBlock, kprcb) {
+	rz_vector_foreach (&dmp->KiProcessorBlock, kprcb) {
 		const ut64 current_thread = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, *kprcb + current_thread_offset);
 		if (current_thread != ctx->target_thread.ethread) {
 			continue;

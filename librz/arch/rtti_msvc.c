@@ -825,7 +825,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 	rz_analysis_class_vtable_fini(&vtable);
 
 	RVTableMethodInfo *vmeth;
-	rz_vector_foreach(&vtable_info->methods, vmeth) {
+	rz_vector_foreach (&vtable_info->methods, vmeth) {
 		RzAnalysisMethod meth;
 		if (!rz_analysis_class_method_exists_by_addr(context->analysis, class_name, vmeth->addr)) {
 			meth.addr = vmeth->addr;
@@ -856,7 +856,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 
 static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *class_name, RzVector /*<RecoveryBaseDescriptor>*/ *base_descs) {
 	RecoveryBaseDescriptor *base_desc;
-	rz_vector_foreach(base_descs, base_desc) {
+	rz_vector_foreach (base_descs, base_desc) {
 		RecoveryTypeDescriptor *base_td = base_desc->td;
 		if (!base_td->valid) {
 			RZ_LOG_WARN("Base td is invalid!\n");

@@ -1168,7 +1168,7 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 		RzRegItem *ripc = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], RZ_REG_TYPE_GPR);
 		RzVector *vreg = ht_up_find(dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 		RzDebugChangeReg *reg;
-		rz_vector_foreach_prev(vreg, reg) {
+		rz_vector_foreach_prev (vreg, reg) {
 			if (reg->cnum <= dbg->session->cnum) {
 				continue;
 			}
@@ -1471,7 +1471,7 @@ RZ_API bool rz_debug_continue_back(RzDebug *dbg) {
 		return false;
 	}
 	RzDebugChangeReg *reg;
-	rz_vector_foreach_prev(vreg, reg) {
+	rz_vector_foreach_prev (vreg, reg) {
 		if (reg->cnum >= dbg->session->cnum) {
 			continue;
 		}

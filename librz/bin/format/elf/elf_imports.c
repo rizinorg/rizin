@@ -346,7 +346,7 @@ static void convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol
 
 static void convert_elf_symbols_to_elf_imports(ELFOBJ *bin, RzVector /*<RzBinElfSymbol>*/ *symbols) {
 	RzBinElfSymbol *symbol;
-	rz_vector_foreach(symbols, symbol) {
+	rz_vector_foreach (symbols, symbol) {
 		convert_elf_symbol_to_elf_import(bin, symbol);
 	}
 }

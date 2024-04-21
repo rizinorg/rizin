@@ -450,7 +450,7 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	if (!rz_vector_empty(&var->accesses)) {
 		pj_ka(j, "accs");
 		RzAnalysisVarAccess *acc;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			pj_o(j);
 			pj_kn(j, "off", acc->offset);
 			switch (acc->type) {
@@ -479,7 +479,7 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	if (!rz_vector_empty(&var->constraints)) {
 		pj_ka(j, "constrs");
 		RzTypeConstraint *constr;
-		rz_vector_foreach(&var->constraints, constr) {
+		rz_vector_foreach (&var->constraints, constr) {
 			pj_i(j, (int)constr->cond);
 			pj_n(j, constr->val);
 		}
@@ -730,11 +730,11 @@ RZ_API RZ_OWN RzAnalysisVar *rz_serialize_analysis_var_load(
 		ret->comment = strdup(comment);
 	}
 	RzAnalysisVarAccess *acc;
-	rz_vector_foreach(&accesses, acc) {
+	rz_vector_foreach (&accesses, acc) {
 		rz_analysis_var_set_access(ret, acc->reg, fcn->addr + acc->offset, acc->type, acc->reg_addend);
 	}
 	RzTypeConstraint *constr;
-	rz_vector_foreach(&constraints, constr) {
+	rz_vector_foreach (&constraints, constr) {
 		rz_analysis_var_add_constraint(ret, constr);
 	}
 
@@ -911,7 +911,7 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 		if (!rz_vector_empty(&var->constraints)) {
 			pj_ka(j, "constrs");
 			RzTypeConstraint *constr;
-			rz_vector_foreach(&var->constraints, constr) {
+			rz_vector_foreach (&var->constraints, constr) {
 				pj_i(j, (int)constr->cond);
 				pj_n(j, constr->val);
 			}
@@ -1047,7 +1047,7 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	rz_analysis_var_global_set_type(glob, vartype);
 
 	RzTypeConstraint *constr;
-	rz_vector_foreach(&constraints, constr) {
+	rz_vector_foreach (&constraints, constr) {
 		rz_analysis_var_global_add_constraint(glob, constr);
 	}
 	return rz_analysis_var_global_add(ctx->analysis, glob);
@@ -1826,7 +1826,7 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 	}
 	if (h->addr_hints) {
 		RzAnalysisAddrHintRecord *record;
-		rz_vector_foreach(h->addr_hints, record) {
+		rz_vector_foreach (h->addr_hints, record) {
 			switch (record->type) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE:
 				pj_ki(j, "immbase", record->immbase);

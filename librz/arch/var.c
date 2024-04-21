@@ -34,7 +34,7 @@ RZ_API int rz_analysis_var_storage_cmp(
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSITE: {
 		RzAnalysisVarStoragePiece *ap = NULL;
 		ut32 i = 0;
-		rz_vector_enumerate(a->composite, ap, i) {
+		rz_vector_enumerate (a->composite, ap, i) {
 			RzAnalysisVarStoragePiece *bp = rz_vector_index_ptr(b->composite, i);
 			int xcmp = ap->offset_in_bits - bp->offset_in_bits;
 			if (xcmp != 0) {
@@ -157,7 +157,7 @@ static void composite_dump_pj(
 	RZ_NONNULL RZ_BORROW const RzVector /*<RzAnalysisVarStoragePiece>*/ *composite) {
 	pj_a(pj);
 	RzAnalysisVarStoragePiece *piece = NULL;
-	rz_vector_foreach(composite, piece) {
+	rz_vector_foreach (composite, piece) {
 		pj_o(pj);
 		pj_kn(pj, "offset_in_bits", piece->offset_in_bits);
 		pj_kn(pj, "size_in_bits", piece->size_in_bits);
@@ -217,7 +217,7 @@ RZ_API void rz_analysis_var_storage_poolify(
 			return;
 		}
 		RzAnalysisVarStoragePiece *piece = NULL;
-		rz_vector_foreach(stor->composite, piece) {
+		rz_vector_foreach (stor->composite, piece) {
 			rz_analysis_var_storage_poolify(analysis, piece->storage);
 		}
 	}
@@ -827,7 +827,7 @@ RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis 
 RZ_API RzAnalysisVar *rz_analysis_var_get_dst_var(RzAnalysisVar *var) {
 	rz_return_val_if_fail(var, NULL);
 	RzAnalysisVarAccess *acc;
-	rz_vector_foreach(&var->accesses, acc) {
+	rz_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & RZ_ANALYSIS_VAR_ACCESS_TYPE_READ)) {
 			continue;
 		}
@@ -905,7 +905,7 @@ RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var) {
 	if (fcn->inst_vars) {
 		// remove all inverse references to the var's accesses
 		RzAnalysisVarAccess *acc;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			RzPVector *inst_accesses = ht_up_find(fcn->inst_vars, (ut64)acc->offset, NULL);
 			if (!inst_accesses) {
 				continue;

@@ -1097,7 +1097,7 @@ static void print_hint_h_format(HintNode *node) {
 	switch (node->type) {
 	case HINT_NODE_ADDR: {
 		const RzAnalysisAddrHintRecord *record;
-		rz_vector_foreach(node->addr_hints, record) {
+		rz_vector_foreach (node->addr_hints, record) {
 			switch (record->type) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE:
 				rz_cons_printf(" immbase=%d", record->immbase);
@@ -1179,7 +1179,7 @@ static void hint_node_print(HintNode *node, RzOutputMode mode, PJ *pj) {
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RzAnalysisAddrHintRecord *record;
-			rz_vector_foreach(node->addr_hints, record) {
+			rz_vector_foreach (node->addr_hints, record) {
 				switch (record->type) {
 				case RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE:
 					HINTCMD_ADDR(node, "ahi %d", record->immbase);
@@ -1250,7 +1250,7 @@ static void hint_node_print(HintNode *node, RzOutputMode mode, PJ *pj) {
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RzAnalysisAddrHintRecord *record;
-			rz_vector_foreach(node->addr_hints, record) {
+			rz_vector_foreach (node->addr_hints, record) {
 				switch (record->type) {
 				case RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE:
 					pj_ki(pj, "immbase", record->immbase);

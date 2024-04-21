@@ -1719,7 +1719,7 @@ bool test_offset_by_path_struct(void) {
 	RzBaseType *btype = rz_type_get_base_type(typedb, ttype);
 	mu_assert_notnull(btype, "btype get successful");
 	RzTypeStructMember *memb_it;
-	rz_vector_foreach(&btype->struct_data.members, memb_it) {
+	rz_vector_foreach (&btype->struct_data.members, memb_it) {
 		if (!strcmp(memb_it->name, "a")) {
 			memb_it->offset = 0;
 		} else if (!strcmp(memb_it->name, "b")) {
@@ -1775,7 +1775,7 @@ bool test_offset_by_path_array(void) {
 	btype = rz_type_get_base_type(typedb, ttype);
 	mu_assert_notnull(btype, "btype get successful");
 	RzTypeStructMember *memb_it;
-	rz_vector_foreach(&btype->struct_data.members, memb_it) {
+	rz_vector_foreach (&btype->struct_data.members, memb_it) {
 		if (!strcmp(memb_it->name, "b")) {
 			memb_it->offset = 4;
 		}
@@ -1790,7 +1790,7 @@ bool test_offset_by_path_array(void) {
 
 	btype = rz_type_get_base_type(typedb, ttype);
 	mu_assert_notnull(btype, "btype get successful");
-	rz_vector_foreach(&btype->struct_data.members, memb_it) {
+	rz_vector_foreach (&btype->struct_data.members, memb_it) {
 		if (!strcmp(memb_it->name, "harr")) {
 			memb_it->offset = 4;
 		}

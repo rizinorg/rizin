@@ -108,7 +108,7 @@ static bool test_rz_tokenize_generic_0_no_reg_profile(void) {
 
 	int i = 0;
 	RzAsmToken *it;
-	rz_vector_foreach(toks->tokens, it) {
+	rz_vector_foreach (toks->tokens, it) {
 		mu_assert_eq(it->start, tokens[i].start, "Token start");
 		mu_assert_eq(it->len, tokens[i].len, "Token length");
 		mu_assert_eq(it->type, tokens[i].type, "Token type");
@@ -138,7 +138,7 @@ static bool test_rz_tokenize_generic_0(void) {
 
 	int i = 0;
 	RzAsmToken *it;
-	rz_vector_foreach(toks->tokens, it) {
+	rz_vector_foreach (toks->tokens, it) {
 		mu_assert_eq(it->start, tokens[i].start, "Token start");
 		mu_assert_eq(it->len, tokens[i].len, "Token length");
 		mu_assert_eq(it->type, tokens[i].type, "Token type");
@@ -185,7 +185,7 @@ static bool test_rz_tokenize_generic_1(void) {
 
 	int i = 0;
 	RzAsmToken *it;
-	rz_vector_foreach(toks->tokens, it) {
+	rz_vector_foreach (toks->tokens, it) {
 		mu_assert_eq(it->start, tokens[i].start, "Token start");
 		mu_assert_eq(it->len, tokens[i].len, "Token length");
 		mu_assert_eq(it->type, tokens[i].type, "Token type");
@@ -216,7 +216,7 @@ static bool test_rz_tokenize_generic_2(void) {
 
 	int i = 0;
 	RzAsmToken *it;
-	rz_vector_foreach(toks->tokens, it) {
+	rz_vector_foreach (toks->tokens, it) {
 		mu_assert_eq(it->start, tokens[i].start, "Token start");
 		mu_assert_eq(it->len, tokens[i].len, "Token length");
 		mu_assert_eq(it->type, tokens[i].type, "Token type");
@@ -247,7 +247,7 @@ static bool test_rz_tokenize_generic_3(void) {
 
 	int i = 0;
 	RzAsmToken *it;
-	rz_vector_foreach(toks->tokens, it) {
+	rz_vector_foreach (toks->tokens, it) {
 		mu_assert_eq(it->start, tokens[i].start, "Token start");
 		mu_assert_eq(it->len, tokens[i].len, "Token length");
 		mu_assert_eq(it->type, tokens[i].type, "Token type");
@@ -284,7 +284,7 @@ static bool test_rz_tokenize_generic_4(void) {
 
 	int i = 0;
 	RzAsmToken *it;
-	rz_vector_foreach(toks->tokens, it) {
+	rz_vector_foreach (toks->tokens, it) {
 		mu_assert_eq(it->start, tokens[i].start, "Token start");
 		mu_assert_eq(it->len, tokens[i].len, "Token length");
 		mu_assert_eq(it->type, tokens[i].type, "Token type");
@@ -321,7 +321,7 @@ static bool test_rz_tokenize_custom_hexagon_0(void) {
 
 	int i = 0;
 	RzAsmToken *it;
-	rz_vector_foreach(op->asm_toks->tokens, it) {
+	rz_vector_foreach (op->asm_toks->tokens, it) {
 		mu_assert_eq(it->start, tokens[i].start, "Token start");
 		mu_assert_eq(it->len, tokens[i].len, "Token length");
 		mu_assert_eq(it->type, tokens[i].type, "Token type");
@@ -362,7 +362,7 @@ static bool test_rz_tokenize_custom_hexagon_1(void) {
 	mu_assert_eq(rz_vector_len(op->asm_toks->tokens), 13, "Number of generated tokens.");
 	int i = 0;
 	RzAsmToken *it;
-	rz_vector_foreach(op->asm_toks->tokens, it) {
+	rz_vector_foreach (op->asm_toks->tokens, it) {
 		mu_assert_eq(it->start, tokens[i].start, "Token start");
 		mu_assert_eq(it->len, tokens[i].len, "Token length");
 		mu_assert_eq(it->type, tokens[i].type, "Token type");

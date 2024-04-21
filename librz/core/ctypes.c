@@ -75,7 +75,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 			pj_k(pj, "values");
 			pj_o(pj);
 			RzTypeEnumCase *cas;
-			rz_vector_foreach(&btype->enum_data.cases, cas) {
+			rz_vector_foreach (&btype->enum_data.cases, cas) {
 				pj_kn(pj, cas->name, cas->val);
 			}
 			pj_end(pj);
@@ -86,7 +86,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 	case RZ_OUTPUT_MODE_STANDARD: {
 		if (btype && !rz_vector_empty(&btype->enum_data.cases)) {
 			RzTypeEnumCase *cas;
-			rz_vector_foreach(&btype->enum_data.cases, cas) {
+			rz_vector_foreach (&btype->enum_data.cases, cas) {
 				rz_cons_printf("%s = 0x%" PFMT64x "\n", cas->name, cas->val);
 			}
 		}
@@ -162,7 +162,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 			pj_k(pj, "members");
 			pj_o(pj);
 			RzTypeUnionMember *memb;
-			rz_vector_foreach(&btype->union_data.members, memb) {
+			rz_vector_foreach (&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				pj_ks(pj, memb->name, mtype);
 				free(mtype);
@@ -176,7 +176,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 		rz_cons_printf("union %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeUnionMember *memb;
-			rz_vector_foreach(&btype->union_data.members, memb) {
+			rz_vector_foreach (&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
 				rz_cons_printf("\t%s: %s (size = %" PFMT64d ")\n", memb->name, mtype, size);
@@ -255,7 +255,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		pj_k(pj, "members");
 		pj_o(pj);
 		RzTypeStructMember *memb;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
+		rz_vector_foreach (&btype->struct_data.members, memb) {
 			char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 			pj_ks(pj, memb->name, mtype);
 			free(mtype);
@@ -269,7 +269,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeStructMember *memb;
 			ut64 offset = 0;
-			rz_vector_foreach(&btype->struct_data.members, memb) {
+			rz_vector_foreach (&btype->struct_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
 				rz_cons_printf("\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",

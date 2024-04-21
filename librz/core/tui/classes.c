@@ -397,7 +397,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 	if (bases) {
 		RzAnalysisBaseClass *base;
 		bool first = true;
-		rz_vector_foreach(bases, base) {
+		rz_vector_foreach (bases, base) {
 			if (first) {
 				rz_cons_print(": ");
 				first = false;
@@ -413,7 +413,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 
 	if (vtables) {
 		RzAnalysisVTable *vtable;
-		rz_vector_foreach(vtables, vtable) {
+		rz_vector_foreach (vtables, vtable) {
 			rz_cons_printf("  %2s vtable 0x%" PFMT64x " @ +0x%" PFMT64x " size:+0x%" PFMT64x "\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
 		}
 		rz_vector_free(vtables);
@@ -423,7 +423,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 
 	if (methods) {
 		RzAnalysisMethod *meth;
-		rz_vector_foreach(methods, meth) {
+		rz_vector_foreach (methods, meth) {
 			rz_cons_printf("  %s @ 0x%" PFMT64x, meth->name, meth->addr);
 			if (meth->vtable_offset >= 0) {
 				rz_cons_printf(" (vtable + 0x%" PFMT64x ")\n", (ut64)meth->vtable_offset);

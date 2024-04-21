@@ -117,7 +117,7 @@ static RzAnnotatedCode *get_hello_world(void) {
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_annotations_for_hello_world();
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(test_annotations, annotation) {
+	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 
@@ -191,7 +191,7 @@ static bool test_rz_annotated_code_add_annotation(void) {
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_some_code_annotation_for_add();
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(test_annotations, annotation) {
+	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 
@@ -215,7 +215,7 @@ static bool test_rz_annotated_code_annotations_in(void) {
 	test_annotations = get_some_annotations_for_in();
 
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(test_annotations, annotation) {
+	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 
@@ -244,7 +244,7 @@ static bool test_rz_annotated_code_annotations_range(void) {
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in();
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(test_annotations, annotation) {
+	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 

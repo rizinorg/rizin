@@ -294,7 +294,7 @@ RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 	bool bp_found = false;
 	int idx = 0;
 	RzAnalysisEsilRegChange *reg;
-	rz_vector_foreach_prev(vreg, reg) {
+	rz_vector_foreach_prev (vreg, reg) {
 		if (reg->idx >= esil->trace->idx) {
 			continue;
 		}

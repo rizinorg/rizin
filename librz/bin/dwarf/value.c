@@ -102,7 +102,7 @@ RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out)
 
 	RzBinDwarfAttr *attr; // Assuming Attribute is defined elsewhere
 
-	rz_vector_foreach(&entry->attrs, attr) {
+	rz_vector_foreach (&entry->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_byte_size:
 			byte_size = rz_bin_dwarf_attr_udata(attr);

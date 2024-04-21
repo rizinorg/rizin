@@ -362,7 +362,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 	if (isValid) {
 		params->case_shift = 0;
 		void **it;
-		rz_vector_foreach_prev(&v, it) {
+		rz_vector_foreach_prev (&v, it) {
 			const ut64 op_off = *(ut64 *)it;
 			ut64 op_addr = lea_address + op_off;
 			rz_analysis_op_init(&tmp_aop);

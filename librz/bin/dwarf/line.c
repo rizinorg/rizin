@@ -92,7 +92,7 @@ static const char *directory_parse_v5(DWLineContext *ctx, RzBinDwarfLineUnitHdr 
 	RzBinEndianReader *R = ctx->line->R;
 	const char *path_name = NULL;
 	RzBinDwarfFileEntryFormat *format = NULL;
-	rz_vector_foreach(&hdr->directory_entry_formats, format) {
+	rz_vector_foreach (&hdr->directory_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
 		AttrOption opt = {
 			.form = format->form,
@@ -110,7 +110,7 @@ static bool FileEntry_parse_v5(DWLineContext *ctx, RzBinDwarfFileEntry *entry) {
 	RzBinEndianReader *R = ctx->line->R;
 	RzBinDwarfLineUnitHdr *hdr = ctx->hdr;
 	RzBinDwarfFileEntryFormat *format = NULL;
-	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
+	rz_vector_foreach (&hdr->file_name_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
 		AttrOption opt = {
 			.form = format->form,
@@ -671,7 +671,7 @@ static RzBinDwarfLine *Line_parse(
 		SMRegisters_reset(&unit->hdr, &regs);
 
 		RzBinDwarfLineOp *op;
-		rz_vector_foreach(&unit->ops, op) {
+		rz_vector_foreach (&unit->ops, op) {
 			if (!LineOp_run(op, &ctx)) {
 				break;
 			}
@@ -836,7 +836,7 @@ static void line_unit_dump(
 	rz_strbuf_append(sb, "Line table statements:\n");
 	void *opsit;
 	size_t i;
-	rz_vector_enumerate(&unit->ops, opsit, i) {
+	rz_vector_enumerate (&unit->ops, opsit, i) {
 		RzBinDwarfLineOp *op = opsit;
 		rz_strbuf_append(sb, "\t");
 		line_op_dump(op, &unit->hdr, sb);

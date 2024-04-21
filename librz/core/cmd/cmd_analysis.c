@@ -220,7 +220,7 @@ static void var_accesses_list(RzAnalysisFunction *fcn, RzAnalysisVar *var, PJ *p
 	} else {
 		rz_cons_printf("%10s", name);
 	}
-	rz_vector_foreach(&var->accesses, acc) {
+	rz_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & access_type)) {
 			continue;
 		}
@@ -254,7 +254,7 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 			RzAnalysisVar *var = *it;
 			rz_cons_printf("* %s\n", var->name);
 			RzAnalysisVarAccess *acc;
-			rz_vector_foreach(&var->accesses, acc) {
+			rz_vector_foreach (&var->accesses, acc) {
 				if (!(acc->type & RZ_ANALYSIS_VAR_ACCESS_TYPE_READ)) {
 					continue;
 				}
@@ -262,7 +262,7 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 				rz_core_seek(core, fcn->addr + acc->offset, 1);
 				rz_core_print_disasm_instructions(core, 0, 1);
 			}
-			rz_vector_foreach(&var->accesses, acc) {
+			rz_vector_foreach (&var->accesses, acc) {
 				if (!(acc->type & RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE)) {
 					continue;
 				}
@@ -2726,7 +2726,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_dis_refs_handler(RzCore *core, int 
 		RzAnalysisVar *var = *it;
 		rz_cons_printf("* %s\n", var->name);
 		RzAnalysisVarAccess *acc;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			if (!(acc->type & RZ_ANALYSIS_VAR_ACCESS_TYPE_READ)) {
 				continue;
 			}
@@ -2734,7 +2734,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_dis_refs_handler(RzCore *core, int 
 			rz_core_seek(core, fcn->addr + acc->offset, 1);
 			rz_core_print_disasm_instructions(core, 0, 1);
 		}
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			if (!(acc->type & RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE)) {
 				continue;
 			}
@@ -5039,7 +5039,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name, b
 	if (bases) {
 		RzAnalysisBaseClass *base;
 		bool first = true;
-		rz_vector_foreach(bases, base) {
+		rz_vector_foreach (bases, base) {
 			if (first) {
 				rz_cons_print(": ");
 				first = false;
@@ -5057,7 +5057,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name, b
 		RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
 		if (vtables) {
 			RzAnalysisVTable *vtable;
-			rz_vector_foreach(vtables, vtable) {
+			rz_vector_foreach (vtables, vtable) {
 				rz_cons_printf("  (vtable at 0x%" PFMT64x, vtable->addr);
 				if (vtable->offset > 0) {
 					rz_cons_printf(" in class at +0x%" PFMT64x ")\n", vtable->offset);
@@ -5076,7 +5076,7 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name, b
 			char *method_type[] = { "DEFAULT", "VIRTUAL", "V_DESTRUCTOR", "DESTRUCTOR", "CONSTRUCTOR" };
 			RzAnalysisMethod *meth;
 			int i = 1;
-			rz_vector_foreach(methods, meth) {
+			rz_vector_foreach (methods, meth) {
 				ut64 vtable = meth->vtable_offset >= 0 ? meth->vtable_offset : UT64_MAX;
 				rz_table_add_rowf(table, "dXXss", i, meth->addr, vtable, method_type[meth->method_type], meth->real_name);
 				i++;
@@ -5099,7 +5099,7 @@ static void analysis_class_print_to_json(RzAnalysis *analysis, PJ *pj, const cha
 	RzVector *bases = rz_analysis_class_base_get_all(analysis, class_name);
 	if (bases) {
 		RzAnalysisBaseClass *base;
-		rz_vector_foreach(bases, base) {
+		rz_vector_foreach (bases, base) {
 			pj_o(pj);
 			pj_ks(pj, "id", base->id);
 			pj_ks(pj, "name", base->class_name);
@@ -5115,7 +5115,7 @@ static void analysis_class_print_to_json(RzAnalysis *analysis, PJ *pj, const cha
 	RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
 	if (vtables) {
 		RzAnalysisVTable *vtable;
-		rz_vector_foreach(vtables, vtable) {
+		rz_vector_foreach (vtables, vtable) {
 			pj_o(pj);
 			pj_ks(pj, "id", vtable->id);
 			pj_kn(pj, "addr", vtable->addr);
@@ -5131,7 +5131,7 @@ static void analysis_class_print_to_json(RzAnalysis *analysis, PJ *pj, const cha
 	if (methods) {
 		char *method_type[] = { "DEFAULT", "VIRTUAL", "V_DESTRUCTOR", "DESTRUCTOR", "CONSTRUCTOR" };
 		RzAnalysisMethod *meth;
-		rz_vector_foreach(methods, meth) {
+		rz_vector_foreach (methods, meth) {
 			pj_o(pj);
 			pj_ks(pj, "name", meth->real_name);
 			pj_kn(pj, "addr", meth->addr);
@@ -5173,7 +5173,7 @@ static void analysis_class_print_as_cmd(RzAnalysis *analysis, const char *class_
 	RzVector *bases = rz_analysis_class_base_get_all(analysis, class_name);
 	if (bases) {
 		RzAnalysisBaseClass *base;
-		rz_vector_foreach(bases, base) {
+		rz_vector_foreach (bases, base) {
 			rz_cons_printf("acb %s %s %" PFMT64u "\n", class_name, base->class_name, base->offset);
 		}
 		rz_vector_free(bases);
@@ -5182,7 +5182,7 @@ static void analysis_class_print_as_cmd(RzAnalysis *analysis, const char *class_
 	RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
 	if (vtables) {
 		RzAnalysisVTable *vtable;
-		rz_vector_foreach(vtables, vtable) {
+		rz_vector_foreach (vtables, vtable) {
 			rz_cons_printf("acv %s 0x%" PFMT64x " %" PFMT64u "\n", class_name, vtable->addr, vtable->offset);
 		}
 		rz_vector_free(vtables);
@@ -5191,7 +5191,7 @@ static void analysis_class_print_as_cmd(RzAnalysis *analysis, const char *class_
 	RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
 	if (methods) {
 		RzAnalysisMethod *meth;
-		rz_vector_foreach(methods, meth) {
+		rz_vector_foreach (methods, meth) {
 			rz_cons_printf("acm %s %s 0x%" PFMT64x " %" PFMT64d "\n", class_name, meth->name, meth->addr, meth->vtable_offset);
 		}
 		rz_vector_free(methods);
@@ -5395,7 +5395,7 @@ RZ_IPI RzCmdStatus rz_analysis_class_base_list_handler(RzCore *core, int argc, c
 
 	RzVector *bases = rz_analysis_class_base_get_all(core->analysis, class_name);
 	RzAnalysisBaseClass *base;
-	rz_vector_foreach(bases, base) {
+	rz_vector_foreach (bases, base) {
 		rz_cons_printf("  %4s %s @ +0x%" PFMT64x "\n", base->id, base->class_name, base->offset);
 	}
 	rz_vector_free(bases);
@@ -5456,7 +5456,7 @@ RZ_IPI RzCmdStatus rz_analysis_class_vtable_list_handler(RzCore *core, int argc,
 	RzVector *vtables = rz_analysis_class_vtable_get_all(core->analysis, class_name);
 	if (vtables) {
 		RzAnalysisVTable *vtable;
-		rz_vector_foreach(vtables, vtable) {
+		rz_vector_foreach (vtables, vtable) {
 			rz_cons_printf("  %4s vtable 0x%" PFMT64x " @ +0x%" PFMT64x " size:+0x%" PFMT64x "\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
 		}
 		rz_vector_free(vtables);
@@ -5475,7 +5475,7 @@ static void list_all_functions_at_vtable_offset(RzAnalysis *analysis, const char
 	}
 
 	RzAnalysisVTable *vtable;
-	rz_vector_foreach(vtables, vtable) {
+	rz_vector_foreach (vtables, vtable) {
 		if (vtable->size < offset + function_ptr_size || offset % function_ptr_size) {
 			continue;
 		}

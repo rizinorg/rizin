@@ -310,7 +310,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode) {
 			pj_o(pj);
 			pj_kN(pj, "offset", table->saddr);
 			pj_ka(pj, "methods");
-			rz_vector_foreach(&table->methods, curMethod) {
+			rz_vector_foreach (&table->methods, curMethod) {
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				pj_o(pj);
@@ -330,7 +330,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode) {
 				table->saddr,
 				rz_analysis_vtable_info_get_size(&context, table),
 				table->saddr);
-			rz_vector_foreach(&table->methods, curMethod) {
+			rz_vector_foreach (&table->methods, curMethod) {
 				rz_cons_printf("Cd %d @ 0x%08" PFMT64x "\n", context.word_size, table->saddr + curMethod->vtable_offset);
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
@@ -345,7 +345,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode) {
 		rz_list_foreach (vtables, vtableIter, table) {
 			ut64 vtableStartAddress = table->saddr;
 			rz_cons_printf("\nVtable Found at 0x%08" PFMT64x "\n", vtableStartAddress);
-			rz_vector_foreach(&table->methods, curMethod) {
+			rz_vector_foreach (&table->methods, curMethod) {
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				rz_cons_printf("0x%08" PFMT64x " : %s\n", vtableStartAddress, name ? name : noMethodName);

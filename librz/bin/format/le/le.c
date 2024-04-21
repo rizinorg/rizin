@@ -156,7 +156,7 @@ static ut32 le_obj_perm(LE_object *obj) {
 
 static ut64 le_vaddr_to_paddr(rz_bin_le_obj_t *bin, ut32 vaddr) {
 	LE_map *m;
-	rz_vector_foreach(bin->le_maps, m) {
+	rz_vector_foreach (bin->le_maps, m) {
 		if (m->vaddr <= vaddr && vaddr <= m->vaddr + m->vsize) {
 			if (vaddr > m->vaddr + m->size) {
 				return 0;
@@ -728,7 +728,7 @@ static RZ_OWN RzVector /*<LE_entry>*/ *le_load_entries(rz_bin_le_obj_t *bin) {
 	// try naming entries accessible only by ordinal
 	LE_entry *e;
 	int ei = 0;
-	rz_vector_foreach(entries, e) {
+	rz_vector_foreach (entries, e) {
 		ei++;
 		if (!e->is_empty && !e->is_forwarder && e->symbol && !e->symbol->name) {
 			e->symbol->name = rz_str_newf("%u", ei);
@@ -1091,13 +1091,13 @@ static RzVector /*<LE_map>*/ *le_create_maps(rz_bin_le_obj_t *bin) {
 	// name maps
 	LE_map *m;
 	ut32 num = 1;
-	rz_vector_foreach(le_maps, m) {
+	rz_vector_foreach (le_maps, m) {
 		const char *map_kind = m->is_physical ? "physical" : "virtual";
 		CHECK(m->vfile_name = rz_str_newf("obj%d-%s%u", m->obj_num, map_kind, num++));
 	}
 
 	// allocate buffers, fill zero pages, unpack compressed pages
-	rz_vector_foreach(le_maps, m) {
+	rz_vector_foreach (le_maps, m) {
 		if (m->is_physical) {
 			continue;
 		}
@@ -1138,7 +1138,7 @@ static RzVector /*<LE_map>*/ *le_create_maps(rz_bin_le_obj_t *bin) {
 
 	// calculate reloc_target_map_base
 	ut32 max_vaddr = 0;
-	rz_vector_foreach(le_maps, m) {
+	rz_vector_foreach (le_maps, m) {
 		max_vaddr = RZ_MAX(max_vaddr, m->vaddr + m->vsize);
 	}
 	CHECK(h->pagesize);
@@ -1181,7 +1181,7 @@ static bool le_patch_relocs(rz_bin_le_obj_t *bin) {
 	// mark last map for each object
 	CHECK(last_map = RZ_NEWS0(LE_map *, bin->header->objcnt));
 	LE_map *m;
-	rz_vector_foreach(bin->le_maps, m) {
+	rz_vector_foreach (bin->le_maps, m) {
 		last_map[m->obj_num - 1] = m;
 	}
 
@@ -1621,7 +1621,7 @@ RZ_OWN RzPVector /*<RzBinSection *>*/ *rz_bin_le_get_sections(RzBinFile *bf) {
 
 	ut32 obj_num = 0, sec_num = 0;
 	LE_map *le_map;
-	rz_vector_foreach(bin->le_maps, le_map) {
+	rz_vector_foreach (bin->le_maps, le_map) {
 		CHECK(sec = RZ_NEW0(RzBinSection));
 
 		if (obj_num == le_map->obj_num) {
@@ -1673,7 +1673,7 @@ RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 
 	// Exported functions, only DLLs have these.
 	LE_entry *e;
-	rz_vector_foreach(bin->le_entries, e) {
+	rz_vector_foreach (bin->le_entries, e) {
 		if (!e->is_empty && !e->is_forwarder && e->is_exported && e->symbol) {
 			CHECK(addr = RZ_NEW0(RzBinAddr));
 			addr->vaddr = e->symbol->vaddr;
@@ -1732,7 +1732,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 
 	// virtual file per memory range not backed by physical pages (unpacked & zero-filled pages)
 	LE_map *le_map;
-	rz_vector_foreach(bin->le_maps, le_map) {
+	rz_vector_foreach (bin->le_maps, le_map) {
 		if (le_map->is_physical) {
 			continue;
 		}
@@ -1834,7 +1834,7 @@ RZ_OWN RzPVector /*<RzBinMap *>*/ *rz_bin_le_get_maps(RzBinFile *bf) {
 	LE_map *le_map;
 	ut32 map_num = 0;
 	ut32 obj_num = 0;
-	rz_vector_foreach(bin->le_maps, le_map) {
+	rz_vector_foreach (bin->le_maps, le_map) {
 		LE_object *obj = &bin->objects[le_map->obj_num - 1];
 		if (le_map->obj_num != obj_num) {
 			obj_num = le_map->obj_num;

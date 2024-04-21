@@ -657,7 +657,7 @@ RZ_API bool rz_analysis_class_method_exists_by_addr(RzAnalysis *analysis, const 
 		return false;
 	}
 	RzAnalysisMethod *meth;
-	rz_vector_foreach(vec, meth) {
+	rz_vector_foreach (vec, meth) {
 		if (meth->addr == addr) {
 			rz_vector_free(vec);
 			return true;
@@ -673,7 +673,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_get_by_addr(RzAnalysis *analy
 		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	RzAnalysisMethod *meth;
-	rz_vector_foreach(vec, meth) {
+	rz_vector_foreach (vec, meth) {
 		if (meth->addr == addr) {
 			method->name = rz_str_dup(meth->name);
 			method->addr = meth->addr;
@@ -1008,7 +1008,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_base_set(RzAnalysis *analysis, const
 	RzVector /*<RzAnalysisBaseClass>*/ *bases = rz_analysis_class_base_get_all(analysis, class_name);
 	if (bases) {
 		RzAnalysisBaseClass *existing_base;
-		rz_vector_foreach(bases, existing_base) {
+		rz_vector_foreach (bases, existing_base) {
 			if (!strcmp(existing_base->class_name, base->class_name)) {
 				free(base_class_name_sanitized);
 				rz_vector_free(bases);
@@ -1036,7 +1036,7 @@ static bool rz_analysis_class_base_delete_class_cb(void *user, const char *k, co
 	DeleteClassCtx *ctx = user;
 	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, k);
 	RzAnalysisBaseClass *base;
-	rz_vector_foreach(bases, base) {
+	rz_vector_foreach (bases, base) {
 		if (base->class_name && strcmp(base->class_name, ctx->class_name) == 0) {
 			rz_analysis_class_base_delete(ctx->analysis, k, base->id);
 		}
@@ -1061,7 +1061,7 @@ static bool rz_analysis_class_base_rename_class_cb(void *user, const char *k, co
 	RenameClassCtx *ctx = user;
 	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, k);
 	RzAnalysisBaseClass *base;
-	rz_vector_foreach(bases, base) {
+	rz_vector_foreach (bases, base) {
 		if (base->class_name && strcmp(base->class_name, ctx->class_name_old) == 0) {
 			rz_analysis_class_base_set_raw(ctx->analysis, k, base, ctx->class_name_new);
 		}
@@ -1170,7 +1170,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, con
 	RzVector /*<RzAnalysisVTable>*/ *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
 	if (vtables) {
 		RzAnalysisVTable *existing_vtable;
-		rz_vector_foreach(vtables, existing_vtable) {
+		rz_vector_foreach (vtables, existing_vtable) {
 			if (vtable->addr == existing_vtable->addr) {
 				rz_vector_free(vtables);
 				return RZ_ANALYSIS_CLASS_ERR_OTHER;
@@ -1307,7 +1307,7 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 		// create edges between node and it's parents
 		RzVector *bases = rz_analysis_class_base_get_all(analysis, name);
 		RzAnalysisBaseClass *base;
-		rz_vector_foreach(bases, base) {
+		rz_vector_foreach (bases, base) {
 			bool base_found = false;
 			RzGraphNode *base_node = ht_sp_find(hashmap, base->class_name, &base_found);
 			// If base isn't processed, do it now

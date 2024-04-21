@@ -133,7 +133,7 @@ static RZ_BORROW RzType *path_walker_parse_dot(RZ_NONNULL const RzTypeDB *typedb
 	RzTypeStructMember *memb_it = NULL;
 	RzType *cur_type = NULL;
 	size_t cur_offset = -1;
-	rz_vector_foreach(&parent_btype->struct_data.members, memb_it) {
+	rz_vector_foreach (&parent_btype->struct_data.members, memb_it) {
 		if (!strcmp(memb_it->name, tok)) {
 			cur_type = memb_it->type;
 			cur_offset = memb_it->offset; // in bytes
@@ -248,7 +248,7 @@ static void collect_base_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
 		ut64 memb_offset = 0;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
+		rz_vector_foreach (&btype->struct_data.members, memb) {
 			if (memb_offset == offset) {
 				RzTypePath *tpath = rz_type_path_new(memb->type, rz_str_newf("%s.%s", prefix, memb->name));
 				if (tpath) {
@@ -268,7 +268,7 @@ static void collect_base_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath
 	}
 	case RZ_BASE_TYPE_KIND_UNION: {
 		RzTypeUnionMember *memb;
-		rz_vector_foreach(&btype->union_data.members, memb) {
+		rz_vector_foreach (&btype->union_data.members, memb) {
 			char *newpath = rz_str_newf("%s.%s", prefix, memb->name);
 			if (offset == 0) {
 				RzTypePath *tpath = rz_type_path_new(memb->type, newpath);
@@ -410,7 +410,7 @@ RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *ty
 	}
 	RzTypeStructMember *memb;
 	ut64 result = 0;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
+	rz_vector_foreach (&btype->struct_data.members, memb) {
 		if (!strcmp(memb->name, member)) {
 			return result;
 			break;
@@ -434,7 +434,7 @@ RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, R
 		return 0;
 	}
 	RzTypeStructMember *memb;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
+	rz_vector_foreach (&btype->struct_data.members, memb) {
 		if (!strcmp(memb->name, member)) {
 			return memb->offset;
 		}
