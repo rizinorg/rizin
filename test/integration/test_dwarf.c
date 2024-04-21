@@ -1373,8 +1373,8 @@ bool test_dwarf5_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4c0, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4de, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4c0, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4de, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
@@ -1386,8 +1386,8 @@ bool test_dwarf5_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 1);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4de, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4e1, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4de, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4e1, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
@@ -1400,8 +1400,8 @@ bool test_dwarf5_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 2);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4e1, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4f8, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4e1, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4f8, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
@@ -1438,8 +1438,8 @@ bool test_dwarf4_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4013b0, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4013b4, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4013b0, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4013b4, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
@@ -1452,8 +1452,8 @@ bool test_dwarf4_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 1);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4013b4, "entry begin");
-		mu_assert_eq(entry->range->end, 0x4013c0, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4013b4, "entry begin");
+		mu_assert_eq(entry->range.end, 0x4013c0, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");
@@ -1465,8 +1465,8 @@ bool test_dwarf4_loclists(void) {
 	{
 		RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 2);
 		mu_assert_notnull(entry, "entry");
-		mu_assert_eq(entry->range->begin, 0x4013c0, "entry begin");
-		mu_assert_eq(entry->range->end, 0x401728, "entry end");
+		mu_assert_eq(entry->range.begin, 0x4013c0, "entry begin");
+		mu_assert_eq(entry->range.end, 0x401728, "entry end");
 
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 		mu_assert_notnull(loc, "location");

@@ -754,7 +754,8 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 			btype->name, die->offset);
 	}
 
-	RzPVector *btypes = ht_sp_find(ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
+	RzPVector *btypes = ht_sp_find(
+		ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
 	if (!btypes) {
 		btypes = rz_pvector_new(NULL);
 		ht_sp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes);
@@ -1342,7 +1343,7 @@ static RzBinDwarfLocation *location_list_parse(
 		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
-			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, entry->range);
+			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, &entry->range);
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 			continue;
 		}
@@ -1915,7 +1916,7 @@ static RzBinDwarfLocation *location_by_biggest_range(const RzBinDwarfLocList *lo
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocListEntry *entry = *it;
-		ut64 range = entry->range->begin - entry->range->end;
+		ut64 range = entry->range.begin - entry->range.end;
 		if (range > biggest_range && entry->location &&
 			(entry->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET ||
 				entry->location->kind == RzBinDwarfLocationKind_REGISTER ||

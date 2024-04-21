@@ -1403,7 +1403,7 @@ typedef struct {
 struct rz_bin_dwarf_location_t;
 
 typedef struct {
-	RzBinDwarfRange *range;
+	RzBinDwarfRange range;
 	const RzBinDwarfBlock *expression;
 	struct rz_bin_dwarf_location_t *location;
 } RzBinDwarfLocListEntry;

@@ -244,10 +244,9 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull(loclist, "Couldn't get loclist");
 	RzBinDwarfLocListEntry *entry = rz_pvector_at(&loclist->entries, 0);
 	mu_assert_notnull(entry, "Couldn't get entry");
-	mu_assert_notnull(entry->range, "Couldn't get entry range");
 	mu_assert_notnull(entry->expression, "Couldn't get entry expression");
-	mu_assert_eq(entry->range->begin, 0x84e1, "Err entry begin");
-	mu_assert_eq(entry->range->end, 0x84fc, "Err entry end");
+	mu_assert_eq(entry->range.begin, 0x84e1, "Err entry begin");
+	mu_assert_eq(entry->range.end, 0x84fc, "Err entry end");
 	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, cu, NULL);
 	mu_assert_notnull(loc, "Couldn't get location");
 	RzBinDWARFDumpOption dump_option = {
