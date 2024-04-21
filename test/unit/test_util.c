@@ -85,8 +85,7 @@ bool test_set_u(void) {
 
 	size_t x = 0;
 	SetUIter it;
-	set_u_iter_reset(it);
-	set_u_foreach(set_u, it) {
+	set_u_foreach (set_u, it) {
 		x++;
 		bool matches = it.v == 0x5050505 || it.v == 0x6060606;
 		mu_assert_true(matches, "Set contained ill-formed value.");
@@ -98,15 +97,13 @@ bool test_set_u(void) {
 	set_u_delete(set_u, 0x5050505);
 	mu_assert_eq(set_u_size(set_u), 0, "Length wrong.");
 
-	set_u_iter_reset(it);
-	set_u_foreach(set_u, it) {
+	set_u_foreach (set_u, it) {
 		mu_assert("Should not be reached.", false);
 	}
 	set_u_add(set_u, 0x53e0);
 	set_u_add(set_u, 0x53bc);
 	x = 0;
-	set_u_iter_reset(it);
-	set_u_foreach(set_u, it) {
+	set_u_foreach (set_u, it) {
 		x++;
 	}
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
@@ -125,8 +122,7 @@ bool test_set_u(void) {
 	mu_assert_false(set_u_contains(set_u, 6), "should not be here.");
 
 	x = 0;
-	set_u_iter_reset(it);
-	set_u_foreach(set_u, it) {
+	set_u_foreach (set_u, it) {
 		x++;
 	}
 	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");

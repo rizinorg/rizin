@@ -37,19 +37,13 @@ typedef struct {
 
 RZ_API void advance_set_u_iter(SetU *s, SetUIter *it);
 
-#define set_u_iter_reset(iter) \
-	do { \
-		iter.ti = 0; \
-		iter.bi = 0; \
-		iter.v = 0; \
-	} while (0)
 /**
  * The adcvance_set_u_iter() sets iter.ti always to the entry of the next table to check.
  * So our condition checks if ti <= set->size.
  */
 #define set_u_foreach(set, iter) \
 	if (set && set_u_size(set) > 0) \
-		for (advance_set_u_iter(set, &iter); iter.ti <= set->size; advance_set_u_iter(set, &iter))
+		for (iter.ti = 0, iter.bi = 0, iter.v = 0, advance_set_u_iter(set, &iter); iter.ti <= set->size; advance_set_u_iter(set, &iter))
 
 #ifdef __cplusplus
 }
