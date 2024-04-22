@@ -12,7 +12,7 @@
 
 #include <h8300/h8300_disas.h>
 
-#include "isa/h8300/h8300_il.h"
+#include <h8300/h8300_il.h>
 
 #define emit(frag) rz_strbuf_appendf(&op->esil, frag)
 #define emitf(...) rz_strbuf_appendf(&op->esil, __VA_ARGS__)
