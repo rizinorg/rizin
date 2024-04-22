@@ -502,11 +502,11 @@ static bool test_il_flt() {
 	rz_il_bool_free(vm_result);
 	rz_il_op_pure_free(result);
 
-	// result = rz_il_op_new_flt(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f64(0.13371L));
-	// vm_result = rz_il_evaluate_bool(vm, result);
-	// mu_assert_true(vm_result->b, "0.1337 < 0.13371L");
-	// rz_il_bool_free(vm_result);
-	// rz_il_op_pure_free(result);
+	result = rz_il_op_new_flt(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f64(0.13371L));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_true(vm_result->b, "0.1337 < 0.13371L");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
 
 	// result = rz_il_op_new_flt(rz_il_op_new_float_from_f64(0.13371L), rz_il_op_new_float_from_f32(0.1337));
 	// vm_result = rz_il_evaluate_bool(vm, result);
@@ -566,11 +566,11 @@ static bool test_il_fle() {
 	rz_il_bool_free(vm_result);
 	rz_il_op_pure_free(result);
 
-	// result = rz_il_op_new_fle(rz_il_op_new_float_from_f64(0.1337), rz_il_op_new_float_from_f32(0.1337));
-	// vm_result = rz_il_evaluate_bool(vm, result);
-	// mu_assert_false(vm_result->b, "0.1337L <= 0.1337");
-	// rz_il_bool_free(vm_result);
-	// rz_il_op_pure_free(result);
+	result = rz_il_op_new_fle(rz_il_op_new_float_from_f64(0.1337), rz_il_op_new_float_from_f32(0.1337));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "0.1337L <= 0.1337");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
 
 	result = rz_il_op_new_fle(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(0.1337));
 	vm_result = rz_il_evaluate_bool(vm, result);
@@ -658,11 +658,11 @@ static bool test_il_fge() {
 	rz_il_bool_free(vm_result);
 	rz_il_op_pure_free(result);
 
-	// result = rz_il_op_new_fge(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f64(0.13371L));
-	// vm_result = rz_il_evaluate_bool(vm, result);
-	// mu_assert_false(vm_result->b, "0.1337 >= 0.13371L");
-	// rz_il_bool_free(vm_result);
-	// rz_il_op_pure_free(result);
+	result = rz_il_op_new_fge(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f64(0.13371L));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "0.1337 >= 0.13371L");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
 
 	// result = rz_il_op_new_fge(rz_il_op_new_float_from_f64(0.13371L), rz_il_op_new_float_from_f32(0.1337));
 	// vm_result = rz_il_evaluate_bool(vm, result);
