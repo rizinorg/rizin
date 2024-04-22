@@ -856,7 +856,8 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 	RzGraphNode *from_node = get_graph_node_of_fcn(icfg, graph_idx, fcn);
 	RzListIter *it;
 	const RzAnalysisXRef *xref;
-	rz_list_foreach (rz_analysis_function_get_xrefs_from(fcn), it, xref) {
+	RzList *fcn_xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (fcn_xrefs, it, xref) {
 		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
 			continue;
 		}
@@ -874,6 +875,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 		// Recurse into called function.
 		extend_icfg(analysis, icfg, graph_idx, called_fcn);
 	}
+	rz_list_free(fcn_xrefs);
 }
 
 /**
@@ -1343,6 +1345,7 @@ fini:
 	return graph;
 
 error:
+	rz_analysis_insn_word_fini(&cur_iword);
 	rz_warn_if_reached();
 	rz_graph_free(graph);
 	graph = NULL;

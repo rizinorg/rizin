@@ -713,10 +713,7 @@ RZ_API void rz_analysis_insn_word_free(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iw
 	if (!iword) {
 		return;
 	}
-	rz_strbuf_free(iword->asm_str);
-	rz_pvector_free(iword->insns);
-	set_u_free(iword->jump_targets);
-	set_u_free(iword->call_targets);
+	rz_analysis_insn_word_fini(iword);
 	free(iword);
 }
 
@@ -740,5 +737,6 @@ RZ_API void rz_analysis_insn_word_fini(RZ_OWN RZ_NULLABLE RzAnalysisInsnWord *iw
 	rz_pvector_free(iword->insns);
 	set_u_free(iword->jump_targets);
 	set_u_free(iword->call_targets);
+	rz_il_op_effect_free(iword->il_op);
 	rz_mem_memzero(iword, sizeof(RzAnalysisInsnWord));
 }
