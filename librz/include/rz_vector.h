@@ -113,6 +113,9 @@ static inline void *rz_vector_head(const RzVector *vec) {
 // returns a pointer to the last element of the vector
 static inline void *rz_vector_tail(RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->len < 1) {
+		return NULL;
+	}
 	return (char *)vec->a + vec->elem_size * (vec->len - 1);
 }
 
@@ -292,12 +295,18 @@ static inline void **rz_pvector_data(RzPVector *vec) {
 // returns the first element of the vector
 static inline void *rz_pvector_head(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->v.len < 1) {
+		return NULL;
+	}
 	return ((void **)vec->v.a)[0];
 }
 
 // returns the last element of the vector
 static inline void *rz_pvector_tail(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->v.len < 1) {
+		return NULL;
+	}
 	return ((void **)vec->v.a)[vec->v.len - 1];
 }
 
