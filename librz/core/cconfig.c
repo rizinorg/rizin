@@ -2880,9 +2880,13 @@ static bool cb_log_config_abortlevel(void *coreptr, void *nodeptr) {
 }
 #endif /* RZ_BUILD_DEBUG */
 
-static bool cb_log_config_file(void *coreptr, void *nodeptr) {
+static bool cb_log_file(void *coreptr, void *nodeptr) {
 	RzConfigNode *node = (RzConfigNode *)nodeptr;
-	return rz_log_set_file(node->value);
+	if (!rz_log_set_file(node->value)) {
+		RZ_LOG_ERROR("log.file: cannot open '%s'\n", node->value);
+		return false;
+	}
+	return true;
 }
 
 static bool cb_log_config_show_sources(void *coreptr, void *nodeptr) {
@@ -3349,7 +3353,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	// RZ_LOGFILE / log.file
 	p = rz_sys_getenv("RZ_LOGFILE");
-	SETCB("log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
+	SETCB("log.file", p ? p : "", cb_log_file, "Logging output filename / path");
 	free(p);
 
 	// RZ_LOGSHOWSOURCES / log.show.sources
