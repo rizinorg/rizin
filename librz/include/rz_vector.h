@@ -113,6 +113,9 @@ static inline void *rz_vector_head(const RzVector *vec) {
 // returns a pointer to the last element of the vector
 static inline void *rz_vector_tail(RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->len < 1) {
+		return NULL;
+	}
 	return (char *)vec->a + vec->elem_size * (vec->len - 1);
 }
 
