@@ -45,7 +45,7 @@ RzFlag *ref_0_flag() {
 	rz_flag_space_set(flag, "reveries");
 
 	RzFlagItem *foobars = rz_flag_set(flag, "foobars", 0x1337, 0x10);
-	foobars->demangled = true;
+	rz_flag_item_set_demangled(foobars, true);
 	rz_flag_item_set_realname(foobars, "Foobars");
 	rz_flag_item_set_color(foobars, "white");
 	rz_flag_item_set_comment(foobars, "windowpane");
@@ -143,23 +143,24 @@ typedef struct {
 
 static bool flag_cmp(RzFlagItem *actual, RzFlagItem *expected) {
 	mu_assert_notnull(expected, "flag");
-	assert_streq_null(actual->realname, expected->realname, "flag realname");
-	mu_assert_eq(actual->demangled, expected->demangled, "flag demangled");
-	mu_assert_eq_fmt(actual->offset, expected->offset, "flag offset", "0x%" PFMT64x);
-	mu_assert_eq_fmt(actual->size, expected->size, "flag size", "0x%" PFMT64x);
-	mu_assert_eq(!actual->space, !expected->space, "flag space null");
-	if (expected->space) {
-		mu_assert_streq(actual->space->name, expected->space->name, "flag space");
+	assert_streq_null(rz_flag_item_get_realname(actual), rz_flag_item_get_realname(expected), "flag realname");
+	mu_assert_eq(rz_flag_item_get_demangled(actual), rz_flag_item_get_demangled(expected), "flag demangled");
+	mu_assert_eq_fmt(rz_flag_item_get_offset(actual), rz_flag_item_get_offset(expected), "flag offset", "0x%" PFMT64x);
+	mu_assert_eq_fmt(rz_flag_item_get_size(actual), rz_flag_item_get_size(expected), "flag size", "0x%" PFMT64x);
+	RzSpace *expected_space = rz_flag_item_get_space(expected);
+	mu_assert_eq(!rz_flag_item_get_space(actual), !expected_space, "flag space null");
+	if (expected_space) {
+		mu_assert_streq(rz_flag_item_get_space(actual)->name, expected_space->name, "flag space");
 	}
-	assert_streq_null(actual->color, expected->color, "flag color");
-	assert_streq_null(actual->comment, expected->comment, "flag comment");
-	assert_streq_null(actual->alias, expected->alias, "flag alias");
+	assert_streq_null(rz_flag_item_get_color(actual), rz_flag_item_get_color(expected), "flag color");
+	assert_streq_null(rz_flag_item_get_comment(actual), rz_flag_item_get_comment(expected), "flag comment");
+	assert_streq_null(rz_flag_item_get_alias(actual), rz_flag_item_get_alias(expected), "flag alias");
 	return true;
 }
 
 static bool flag_cmp_cb(RzFlagItem *fi, void *user) {
 	FlagCmpCtx *ctx = user;
-	RzFlagItem *fo = rz_flag_get(ctx->other, fi->name);
+	RzFlagItem *fo = rz_flag_get(ctx->other, rz_flag_item_get_name(fi));
 	if (!flag_cmp(fi, fo)) {
 		ctx->equal = false;
 		return false;

@@ -22,16 +22,16 @@ enum {
 static int flag_name_sort(const void *a, const void *b, void *user) {
 	const RzFlagItem *fa = (const RzFlagItem *)a;
 	const RzFlagItem *fb = (const RzFlagItem *)b;
-	return strcmp(fa->name, fb->name);
+	return strcmp(rz_flag_item_get_name(fa), rz_flag_item_get_name(fb));
 }
 
 static int flag_offset_sort(const void *a, const void *b, void *user) {
 	const RzFlagItem *fa = (const RzFlagItem *)a;
 	const RzFlagItem *fb = (const RzFlagItem *)b;
-	if (fa->offset < fb->offset) {
+	if (rz_flag_item_get_offset(fa) < rz_flag_item_get_offset(fb)) {
 		return -1;
 	}
-	if (fa->offset > fb->offset) {
+	if (rz_flag_item_get_offset(fa) > rz_flag_item_get_offset(fb)) {
 		return 1;
 	}
 	return 0;
@@ -82,7 +82,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 			sort_flags(l, sort);
 			rz_list_foreach (l, iter, fi) {
 				if (option == i) {
-					fs2 = fi->name;
+					fs2 = rz_flag_item_get_name(fi);
 					hit = 1;
 				}
 				if ((i >= option - delta) && ((i < option + delta) || ((option < delta) && (i < (delta << 1))))) {
@@ -91,7 +91,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 						rz_cons_printf(Color_INVERT);
 					}
 					rz_cons_printf(" %c  %03d 0x%08" PFMT64x " %4" PFMT64d " %s\n",
-						cur ? '>' : ' ', i, fi->offset, fi->size, fi->name);
+						cur ? '>' : ' ', i, rz_flag_item_get_offset(fi), rz_flag_item_get_size(fi), rz_flag_item_get_name(fi));
 					if (cur && hasColor) {
 						rz_cons_printf(Color_RESET);
 					}

@@ -566,7 +566,7 @@ static void rz_analysis_class_rename_flag(RzAnalysis *analysis, const char *old_
 	if (!flag) {
 		return;
 	}
-	ut64 addr = flag->offset;
+	ut64 addr = rz_flag_item_get_offset(flag);
 	analysis->flb.unset(analysis->flb.f, flag);
 	analysis->flg_class_set(analysis->flb.f, new_name, addr, 0);
 }

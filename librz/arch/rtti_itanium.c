@@ -458,11 +458,12 @@ static RTypeInfoType rtti_itanium_type_info_type_from_flag(RVTableContext *conte
 	RzListIter *iter;
 	RzFlagItem *flag;
 	rz_list_foreach (flags, iter, flag) {
-		if (strstr(flag->name, VMI_CLASS_TYPE_INFO_NAME)) {
+		const char *name = rz_flag_item_get_name(flag);
+		if (strstr(name, VMI_CLASS_TYPE_INFO_NAME)) {
 			return RZ_TYPEINFO_TYPE_VMI_CLASS;
-		} else if (strstr(flag->name, SI_CLASS_TYPE_INFO_NAME)) {
+		} else if (strstr(name, SI_CLASS_TYPE_INFO_NAME)) {
 			return RZ_TYPEINFO_TYPE_SI_CLASS;
-		} else if (strstr(flag->name, CLASS_TYPE_INFO_NAME)) {
+		} else if (strstr(name, CLASS_TYPE_INFO_NAME)) {
 			return RZ_TYPEINFO_TYPE_CLASS;
 		}
 	}

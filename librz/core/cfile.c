@@ -100,8 +100,11 @@ static bool __rebase_flags(RzFlagItem *flag, void *user) {
 	// Only rebase flags that were in the rebased sections, otherwise it will take too long
 	rz_pvector_foreach (reb->old_sections, it) {
 		sec = *it;
-		if (__is_inside_section(flag->offset, sec)) {
-			rz_flag_set(reb->core->flags, flag->name, flag->offset + reb->diff, flag->size);
+		if (__is_inside_section(rz_flag_item_get_offset(flag), sec)) {
+			rz_flag_set(reb->core->flags,
+				rz_flag_item_get_name(flag),
+				rz_flag_item_get_offset(flag) + reb->diff,
+				rz_flag_item_get_size(flag));
 			break;
 		}
 	}
@@ -622,7 +625,7 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 	if (!fi) {
 		return false;
 	}
-	bp = rz_bp_add_sw(r->dbg->bp, fi->offset, 1, RZ_PERM_X);
+	bp = rz_bp_add_sw(r->dbg->bp, rz_flag_item_get_offset(fi), 1, RZ_PERM_X);
 	if (bp) {
 		bp->internal = true;
 #if __linux__
@@ -1088,7 +1091,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 				free(name);
 				continue;
 			}
-			ut64 imp_addr = flag->offset;
+			ut64 imp_addr = rz_flag_item_get_offset(flag);
 			RzCoreLinkData linkdata = { imp->name, UT64_MAX, r->bin };
 			rz_id_storage_foreach(r->io->files, (RzIDStorageForeachCb)resolve_import_cb, &linkdata);
 			if (linkdata.addr != UT64_MAX) {

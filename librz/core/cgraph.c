@@ -22,7 +22,7 @@ static inline bool is_between(ut64 a, ut64 x, ut64 b) {
 
 static inline char *core_flag_name(const RzCore *core, ut64 addr) {
 	RzFlagItem *item = rz_flag_get_i(core->flags, addr);
-	return item ? strdup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
+	return item ? strdup(rz_flag_item_get_name(item)) : rz_str_newf("0x%08" PFMT64x, addr);
 }
 
 static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {

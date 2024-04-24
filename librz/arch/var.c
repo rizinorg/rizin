@@ -1402,7 +1402,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			RzCore *core = (RzCore *)analysis->coreb.core;
 			RzFlagItem *flag = rz_flag_get_by_spaces(core->flags, offset, RZ_FLAGS_FS_IMPORTS, NULL);
 			if (flag) {
-				callee = rz_analysis_function_name_guess(analysis->typedb, flag->name);
+				callee = rz_analysis_function_name_guess(analysis->typedb, rz_flag_item_get_name(flag));
 				if (callee) {
 					const char *cc = rz_analysis_cc_func(analysis, callee);
 					if (cc && !strcmp(fcn->cc, cc)) {
@@ -1668,7 +1668,7 @@ RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache) {
 	rz_list_free(cache->arg_vars);
 }
 
-static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, char *fcn_name, const char *fcn_name_pre, const char *fcn_name_post) {
+static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, const char *fcn_name, const char *fcn_name_pre, const char *fcn_name_post) {
 	if (!fcn->has_debuginfo || !rz_str_startswith(fcn_name, "dbg."))
 		return NULL;
 
@@ -1690,7 +1690,7 @@ static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunct
  * \param fcn_name_post The suffix to use to highlight the function name
  * \return {return}
  */
-RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE char *fcn_name,
+RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE const char *fcn_name,
 	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post) {
 	fcn_name = !fcn_name ? fcn->name : fcn_name;
 	if (!fcn_name) {

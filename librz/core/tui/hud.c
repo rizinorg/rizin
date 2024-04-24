@@ -100,7 +100,7 @@ RZ_IPI bool rz_core_visual_hudclasses(RzCore *core) {
 
 static bool hudstuff_append(RzFlagItem *fi, void *user) {
 	RzList *list = (RzList *)user;
-	char *s = rz_str_newf("0x%08" PFMT64x "  %s", fi->offset, fi->name);
+	char *s = rz_str_newf("0x%08" PFMT64x "  %s", rz_flag_item_get_offset(fi), rz_flag_item_get_name(fi));
 	if (s) {
 		rz_list_append(list, s);
 	}

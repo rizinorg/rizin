@@ -3286,11 +3286,11 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (list, iter, xref) {
 			ut8 buf[16];
-			char *desc;
+			const char *desc;
 			RzAsmOp asmop;
 			RzFlagItem *flag = rz_flag_get_at(core->flags, xref->to, false);
 			if (flag) {
-				desc = flag->name;
+				desc = rz_flag_item_get_name(flag);
 			} else {
 				rz_io_read_at(core->io, xref->to, buf, sizeof(buf));
 				rz_asm_set_pc(core->rasm, xref->to);
@@ -3929,7 +3929,7 @@ static void function_print_calls(RzCore *core, RzList /*<RzAnalysisFunction *>*/
 			RzAnalysisXRef *xrefi;
 			rz_list_foreach (uniq_xrefs, refiter, xrefi) {
 				RzFlagItem *f = rz_flag_get_i(core->flags, xrefi->to);
-				char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), xrefi->to);
+				char *dst = rz_str_newf((f ? rz_flag_item_get_name(f) : "0x%08" PFMT64x), xrefi->to);
 				if (state->mode == RZ_OUTPUT_MODE_JSON) { // Append calee json item
 					pj_o(pj);
 					pj_ks(pj, "name", dst);
@@ -6262,7 +6262,7 @@ RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc
 
 static bool analyze_function_at_flag(RzFlagItem *fi, RzCore *core) {
 	bool analyze_recursively = rz_config_get_b(core->config, "analysis.calls");
-	rz_core_analysis_function_add(core, NULL, fi->offset, analyze_recursively);
+	rz_core_analysis_function_add(core, NULL, rz_flag_item_get_offset(fi), analyze_recursively);
 	return true;
 }
 

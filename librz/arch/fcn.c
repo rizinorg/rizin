@@ -156,7 +156,8 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 	rz_return_val_if_fail(analysis && op && analysis->flb.get_at, false);
 
 	RzFlagItem *fi = analysis->flb.get_at(analysis->flb.f, op->addr + op->size, false);
-	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
+	const char *name = fi ? rz_flag_item_get_name(fi) : NULL;
+	return (fi && name && (strstr(name, "imp.") || strstr(name, "sym.") || strstr(name, "entry") || strstr(name, "main")));
 }
 
 static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
@@ -474,7 +475,7 @@ static const char *retpoline_reg(RzAnalysis *analysis, ut64 addr) {
 	RzFlagItem *flag = analysis->flag_get(analysis->flb.f, addr);
 	if (flag) {
 		const char *token = "x86_indirect_thunk_";
-		const char *thunk = strstr(flag->name, token);
+		const char *thunk = strstr(rz_flag_item_get_name(flag), token);
 		if (thunk) {
 			return thunk + strlen(token);
 		}
@@ -737,7 +738,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 
 		if (analysis->opt.nopskip && fcn->addr == at) {
 			RzFlagItem *fi = analysis->flb.get_at(analysis->flb.f, addr, false);
-			if (!fi || strncmp(fi->name, "sym.", 4)) {
+			if (!fi || strncmp(rz_flag_item_get_name(fi), "sym.", 4)) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					if (rz_analysis_block_relocate(bb, bb->addr + oplen, bb->size - oplen)) {
 						fcn->addr += oplen;
@@ -1046,7 +1047,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			}
 			{
 				RzFlagItem *fi = analysis->flb.get_at(analysis->flb.f, op.jump, false);
-				if (fi && strstr(fi->name, "imp.")) {
+				if (fi && strstr(rz_flag_item_get_name(fi), "imp.")) {
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
 			}

@@ -195,7 +195,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			} else if (IS_MODE_SET(mode)) {
 				RzFlagItem *fi = rz_flag_get(core->flags, flagname);
 				if (fi) {
-					fi->size = rz_num_math(core->num, v);
+					rz_flag_item_set_size(fi, rz_num_math(core->num, v));
 				} else {
 					RZ_LOG_ERROR("core: cannot find flag named '%s'\n", flagname);
 				}
@@ -1162,7 +1162,7 @@ static void reloc_set_flag(RzCore *core, RzBinReloc *reloc, const char *prefix, 
 	}
 	rz_name_filter(flag_name, 0, true);
 	RzFlagItem *existing = rz_flag_get(core->flags, flag_name);
-	if (existing && existing->offset == flag_addr) {
+	if (existing && rz_flag_item_get_offset(existing) == flag_addr) {
 		// Mostly important for target flags.
 		// We don't want hundreds of reloc.target.<fcnname>.<xyz> flags at the same location
 		free(reloc_name);
@@ -1527,12 +1527,13 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 				}
 				if (fi) {
 					rz_flag_item_set_realname(fi, sn.methname);
-					if (fi->offset == addr) {
+					if ((rz_flag_item_get_offset(fi)) == addr) {
 						rz_flag_unset(core->flags, fi);
 					}
 				} else {
 					fi = rz_flag_set(core->flags, sn.methflag, addr, symbol->size);
-					char *comment = (fi && fi->comment) ? strdup(fi->comment) : NULL;
+					const char *fcomment = fi ? rz_flag_item_get_comment(fi) : NULL;
+					char *comment = fcomment ? strdup(fcomment) : NULL;
 					if (comment) {
 						rz_flag_item_set_comment(fi, comment);
 						RZ_FREE(comment);
@@ -1546,7 +1547,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 				RzFlagItem *fi = rz_flag_get(core->flags, fnp);
 				if (fi) {
 					RZ_FREE(fnp);
-					if (fi->offset == addr) {
+					if (rz_flag_item_get_offset(fi) == addr) {
 						// we have a duplicate flag which points
 						// at the same address and same name.
 						rz_core_sym_name_fini(&sn);
@@ -1562,7 +1563,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 				fi = rz_flag_set(core->flags, fnp, addr, symbol->size);
 				if (fi) {
 					rz_flag_item_set_realname(fi, n);
-					fi->demangled = (bool)(size_t)sn.demname;
+					rz_flag_item_set_demangled(fi, sn.demname != NULL);
 				} else if (fn) {
 					RZ_LOG_WARN("core: cannot set flag with name '%s'\n", fnp);
 				}

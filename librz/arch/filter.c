@@ -17,10 +17,11 @@
 
 static bool isvalidflag(RzFlagItem *flag) {
 	if (flag) {
-		if (strstr(flag->name, "main") || strstr(flag->name, "entry")) {
+		const char *name = rz_flag_item_get_name(flag);
+		if (strstr(name, "main") || strstr(name, "entry")) {
 			return true;
 		}
-		if (strchr(flag->name, '.')) {
+		if (strchr(name, '.')) {
 			return true;
 		}
 	}
@@ -234,8 +235,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				// TODO: implement realname with flags, because functions dont hold this yet
 				if (f->realnames) {
 					flag = p->flag_get(f, off);
-					if (flag && flag->realname) {
-						name = flag->realname;
+					const char *rn = flag ? rz_flag_item_get_realname(flag) : NULL;
+					if (rn) {
+						name = rn;
 					}
 				}
 				snprintf(str, len, "%s%s%s", data, name,
@@ -254,16 +256,16 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 						flag = flag2;
 					}
 				}
-				if (flag && !strncmp(flag->name, "section.", 8)) {
+				if (flag && !strncmp(rz_flag_item_get_name(flag), "section.", 8)) {
 					flag = rz_flag_get_i(f, off);
 				}
 				const char *label = fcn ? p->label_get(fcn, off) : NULL;
 				if (label || isvalidflag(flag)) {
 					if (p->notin_flagspace) {
-						if (p->flagspace == flag->space) {
+						if (p->flagspace == rz_flag_item_get_space(flag)) {
 							continue;
 						}
-					} else if (p->flagspace && (p->flagspace != flag->space)) {
+					} else if (p->flagspace && (p->flagspace != rz_flag_item_get_space(flag))) {
 						ptr = ptr2;
 						continue;
 					}
@@ -289,7 +291,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 					if (label) {
 						flagname = rz_str_newf(".%s", label);
 					} else {
-						flagname = rz_str_dup(f->realnames ? flag->realname : flag->name);
+						flagname = rz_str_dup(f->realnames ? rz_flag_item_get_realname(flag) : rz_flag_item_get_name(flag));
 					}
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && flagname && strlen(flagname) > maxflagname) {
@@ -330,7 +332,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 						}
 					}
 					if (p->subrel_addr && !banned && lea) { // TODO: use remove_brackets
-						int flag_len = strlen(flag->name);
+						int flag_len = strlen(rz_flag_item_get_name(flag));
 						char *ptr_end = str + strlen(data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;

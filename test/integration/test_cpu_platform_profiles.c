@@ -26,9 +26,9 @@ bool test_cpu_profiles() {
 	rz_platform_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
 
 	RzFlagItem *item = rz_flag_get(core->flags, "DDRB");
-	mu_assert_eq(item->offset, 0x00000004, "Flag DDRB not found");
+	mu_assert_eq(rz_flag_item_get_offset(item), 0x00000004, "Flag DDRB not found");
 	item = rz_flag_get(core->flags, "PORTB");
-	mu_assert_eq(item->offset, 0x00000005, "Flag PORTB not found");
+	mu_assert_eq(rz_flag_item_get_offset(item), 0x00000005, "Flag PORTB not found");
 
 	// 3. Save into the project
 	char *tmpdir = rz_file_tmpdir();
@@ -56,9 +56,9 @@ bool test_cpu_profiles() {
 
 	// 7. Check the values again
 	item = rz_flag_get(core->flags, "DDRB");
-	mu_assert_eq(item->offset, 0x00000004, "Flag DDRB not found");
+	mu_assert_eq(rz_flag_item_get_offset(item), 0x00000004, "Flag DDRB not found");
 	item = rz_flag_get(core->flags, "PORTB");
-	mu_assert_eq(item->offset, 0x00000005, "Flag PORTB not found");
+	mu_assert_eq(rz_flag_item_get_offset(item), 0x00000005, "Flag PORTB not found");
 
 	free(tmpdir);
 	rz_core_free(core);
@@ -83,7 +83,7 @@ bool test_platform_profiles() {
 	rz_platform_index_add_flags_comments(core);
 
 	RzFlagItem *item = rz_flag_get(core->flags, "AUX_MU_IER_REG");
-	mu_assert_eq(item->offset, 0x7e215044, "Flag AUX_MU_IER_REG not found");
+	mu_assert_eq(rz_flag_item_get_offset(item), 0x7e215044, "Flag AUX_MU_IER_REG not found");
 	const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, 0x7e804000);
 	mu_assert_streq(comment, "Broadcom Serial Controller 1 (BSC)", "Comment unequal!");
 
@@ -115,7 +115,7 @@ bool test_platform_profiles() {
 	comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, 0x7e804000);
 	mu_assert_streq(comment, "Broadcom Serial Controller 1 (BSC)", "Comment not found");
 	item = rz_flag_get(core->flags, "AUX_MU_IER_REG");
-	mu_assert_eq(item->offset, 0x7e215044, "Flag AUX_MU_IER_REG not found");
+	mu_assert_eq(rz_flag_item_get_offset(item), 0x7e215044, "Flag AUX_MU_IER_REG not found");
 
 	free(tmpdir);
 	rz_core_free(core);

@@ -1294,7 +1294,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (!debug && o && !o->regstate) {
 			RzFlagItem *fi = rz_flag_get(r->flags, "entry0");
 			if (fi) {
-				rz_core_seek(r, fi->offset, true);
+				rz_core_seek(r, rz_flag_item_get_offset(fi), true);
 			} else {
 				if (o) {
 					RzBinObject *obj = rz_bin_cur_object(r->bin);

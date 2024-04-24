@@ -2212,7 +2212,7 @@ static bool convert_offset_from_input(RzCore *core, const char *input, ut64 *off
 
 	RzFlagItem *fi = rz_flag_get(core->flags, input);
 	if (fi) {
-		*offset = fi->offset;
+		*offset = rz_flag_item_get_offset(fi);
 		return true;
 	}
 

@@ -240,10 +240,10 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 		const char *comment;
 		char *name = NULL;
 		if (f) {
-			if (f->offset != undo->offset) {
-				name = rz_str_newf("%s+%" PFMT64d, f->name, undo->offset - f->offset);
+			if (rz_flag_item_get_offset(f) != undo->offset) {
+				name = rz_str_newf("%s+%" PFMT64d, rz_flag_item_get_name(f), undo->offset - rz_flag_item_get_offset(f));
 			} else {
-				name = strdup(f->name);
+				name = strdup(rz_flag_item_get_name(f));
 			}
 		}
 		current_met |= undo->is_current;

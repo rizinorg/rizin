@@ -81,7 +81,7 @@ static RzList /*<RzCoreVisualViewGraphItem *>*/ *__xrefs(RzCore *core, ut64 addr
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);
 		RzFlagItem *f = rz_flag_get_at(core->flags, xref->from, 0);
 		item->addr = xref->from;
-		item->name = f ? f->name : NULL;
+		item->name = f ? rz_flag_item_get_name(f) : NULL;
 		RzAnalysisFunction *rf = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
 		item->fcn = rf;
 		if (rf) {
@@ -108,7 +108,7 @@ static RzList /*<RzCoreVisualViewGraphItem *>*/ *__refs(RzCore *core, ut64 addr)
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);
 		RzFlagItem *f = rz_flag_get_at(core->flags, xref->to, 0);
 		item->addr = xref->to;
-		item->name = f ? f->name : NULL;
+		item->name = f ? rz_flag_item_get_name(f) : NULL;
 		RzAnalysisFunction *rf = rz_analysis_get_fcn_in(core->analysis, xref->to, 0);
 		if (rf) {
 			item->name = rf->name;

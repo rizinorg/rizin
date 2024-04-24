@@ -119,7 +119,7 @@ RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv) {
 		} else {
 			RzFlagItem *flag = rz_flag_get(core->flags, buf + 1);
 			if (flag) {
-				rz_core_seek(core, flag->offset, true);
+				rz_core_seek(core, rz_flag_item_get_offset(flag), true);
 			} else {
 				RZ_LOG_ERROR("core: unknown alias '%s'\n", buf + 1);
 				free(buf);

@@ -349,7 +349,7 @@ static void autocmplt_cmd_arg_flag(RzCore *core, RzLineNSCompletionResult *res, 
 	RzListIter *iter;
 	RzList *list = rz_flag_all_list(core->flags, false);
 	rz_list_foreach (list, iter, item) {
-		char *flag = item->name;
+		const char *flag = rz_flag_item_get_name(item);
 		if (!strncmp(flag, s, len)) {
 			rz_line_ns_completion_result_add(res, flag);
 		}
@@ -359,7 +359,7 @@ static void autocmplt_cmd_arg_flag(RzCore *core, RzLineNSCompletionResult *res, 
 
 static bool offset_prompt_add_flag(RzFlagItem *fi, void *user) {
 	RzLineNSCompletionResult *res = (RzLineNSCompletionResult *)user;
-	rz_line_ns_completion_result_add(res, fi->name);
+	rz_line_ns_completion_result_add(res, rz_flag_item_get_name(fi));
 	return true;
 }
 

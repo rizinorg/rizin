@@ -449,7 +449,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 						RzFlagItem *f = rz_flag_get_by_spaces(core->flags, op->ptr, RZ_FLAGS_FS_STRINGS, NULL);
 						if (f) {
 							char formatstr[0x200];
-							int read = rz_io_nread_at(core->io, f->offset, (ut8 *)formatstr, RZ_MIN(sizeof(formatstr) - 1, f->size));
+							int read = rz_io_nread_at(core->io, rz_flag_item_get_offset(f), (ut8 *)formatstr, RZ_MIN(sizeof(formatstr) - 1, rz_flag_item_get_size(f)));
 							if (read > 0) {
 								formatstr[read] = '\0';
 								if ((types = parse_format(core, formatstr))) {
@@ -645,7 +645,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	RzILTraceInstruction *cur_instr_trace = rz_analysis_esil_get_instruction_trace(etrace, ctx->cur_idx);
 
 	if (aop->type == RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
-		char *full_name = NULL;
+		const char *full_name = NULL;
 		ut64 callee_addr;
 		if (aop->type == RZ_ANALYSIS_OP_TYPE_CALL) {
 			RzAnalysisFunction *fcn_call = rz_analysis_get_fcn_in(core->analysis, aop->jump, -1);
@@ -655,8 +655,9 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 			}
 		} else if (aop->ptr != UT64_MAX) {
 			RzFlagItem *flag = rz_flag_get_by_spaces(core->flags, aop->ptr, RZ_FLAGS_FS_IMPORTS, NULL);
-			if (flag && flag->realname) {
-				full_name = flag->realname;
+			const char *rn = flag ? rz_flag_item_get_realname(flag) : NULL;
+			if (rn) {
+				full_name = rn;
 				callee_addr = aop->ptr;
 			}
 		}

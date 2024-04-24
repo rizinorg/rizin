@@ -27,14 +27,14 @@ static const char *__isOnlySon(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, c
 	RzFlagItem *f;
 
 	size_t count = 0;
-	char *fname = NULL;
+	const char *fname = NULL;
 	rz_list_foreach (flags, iter, f) {
-		if (!strncmp(f->name, kw, strlen(kw))) {
+		if (!strncmp(rz_flag_item_get_name(f), kw, strlen(kw))) {
 			count++;
 			if (count > 1) {
 				return NULL;
 			}
-			fname = f->name;
+			fname = rz_flag_item_get_name(f);
 		}
 	}
 	return fname;
@@ -48,25 +48,25 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 
 	const size_t prefix_len = strlen(prefix);
 	rz_list_foreach (flags, iter, f) {
-		if (prefix_len > 0 && strncmp(f->name, prefix, prefix_len)) {
+		if (prefix_len > 0 && strncmp(rz_flag_item_get_name(f), prefix, prefix_len)) {
 			continue;
 		}
-		if (prefix_len > strlen(f->name)) {
+		if (prefix_len > strlen(rz_flag_item_get_name(f))) {
 			continue;
 		}
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		const char *name = f->name;
+		const char *name = rz_flag_item_get_name(f);
 		int name_len = strlen(name);
 		rz_list_foreach (flags, iter2, f2) {
-			if (prefix_len > strlen(f2->name)) {
+			if (prefix_len > strlen(rz_flag_item_get_name(f2))) {
 				continue;
 			}
-			if (prefix_len > 0 && strncmp(f2->name, prefix, prefix_len)) {
+			if (prefix_len > 0 && strncmp(rz_flag_item_get_name(f2), prefix, prefix_len)) {
 				continue;
 			}
-			int matching = countMatching(name, f2->name);
+			int matching = countMatching(name, rz_flag_item_get_name(f2));
 			if (matching < prefix_len || matching == name_len) {
 				continue;
 			}
@@ -87,11 +87,11 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 			const char *fname = NULL;
 			size_t fname_len = 0;
 			rz_list_foreach (flags, iter2, f2) {
-				if (strncmp(f2->name, kw, kw_len)) {
+				if (strncmp(rz_flag_item_get_name(f2), kw, kw_len)) {
 					continue;
 				}
 				if (fname) {
-					int matching = countMatching(fname, f2->name);
+					int matching = countMatching(fname, rz_flag_item_get_name(f2));
 					if (fname_len) {
 						if (matching < fname_len) {
 							fname_len = matching;
@@ -100,7 +100,7 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 						fname_len = matching;
 					}
 				} else {
-					fname = f2->name;
+					fname = rz_flag_item_get_name(f2);
 				}
 			}
 			if (fname_len > 0) {
@@ -212,7 +212,7 @@ RZ_IPI RzCmdStatus rz_flag_add_handler(RzCore *core, int argc, const char **argv
 		RZ_LOG_ERROR("Cannot create flag \"%s\" at 0x%" PFMT64x
 			     " because there is already \"%s\" flag\n",
 			argv[1],
-			core->offset, item->name);
+			core->offset, rz_flag_item_get_name(item));
 		addFlag = false;
 	}
 	if (addFlag) {
@@ -321,7 +321,7 @@ RZ_IPI RzCmdStatus rz_flag_relocate_handler(RzCore *core, int argc, const char *
 
 static int cmpflag(const void *_a, const void *_b, void *user) {
 	const RzFlagItem *flag1 = _a, *flag2 = _b;
-	return (flag1->offset - flag2->offset);
+	return (rz_flag_item_get_offset(flag1) - rz_flag_item_get_offset(flag2));
 }
 
 RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzCmdStateOutput *state) {
@@ -333,19 +333,19 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
-		pj_kn(pj, "offset", f->offset);
-		pj_ks(pj, "name", f->name);
+		pj_kn(pj, "offset", rz_flag_item_get_offset(f));
+		pj_ks(pj, "name", rz_flag_item_get_name(f));
 		// Print flag's real name if defined
-		if (f->realname) {
-			pj_ks(pj, "realname", f->realname);
+		if (rz_flag_item_get_realname(f)) {
+			pj_ks(pj, "realname", rz_flag_item_get_realname(f));
 		}
 		pj_end(pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD: {
 		// Print realname if exists and asm.flags.real is enabled
-		const char *name = core->flags->realnames && f->realname ? f->realname : f->name;
-		if (f->offset != addr) {
-			rz_cons_printf("%s + %d\n", name, (int)(addr - f->offset));
+		const char *name = core->flags->realnames && rz_flag_item_get_realname(f) ? rz_flag_item_get_realname(f) : rz_flag_item_get_name(f);
+		if (rz_flag_item_get_offset(f) != addr) {
+			rz_cons_printf("%s + %d\n", name, (int)(addr - rz_flag_item_get_offset(f)));
 		} else {
 			rz_cons_println(name);
 		}
@@ -379,18 +379,18 @@ RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const cha
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
-			pj_ks(pj, "name", flag->name);
-			if (flag->realname) {
-				pj_ks(pj, "realname", flag->realname);
+			pj_ks(pj, "name", rz_flag_item_get_name(flag));
+			if (rz_flag_item_get_realname(flag)) {
+				pj_ks(pj, "realname", rz_flag_item_get_realname(flag));
 			}
 			pj_end(pj);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			// Print realname if exists and asm.flags.real is enabled
-			if (core->flags->realnames && flag->realname) {
-				rz_cons_println(flag->realname);
+			if (core->flags->realnames && rz_flag_item_get_realname(flag)) {
+				rz_cons_println(rz_flag_item_get_realname(flag));
 			} else {
-				rz_cons_println(flag->name);
+				rz_cons_println(rz_flag_item_get_name(flag));
 			}
 			break;
 		default:
@@ -410,23 +410,23 @@ RZ_IPI RzCmdStatus rz_flag_describe_closest_handler(RzCore *core, int argc, cons
 	ut64 loff = 0;
 	ut64 uoff = 0;
 	ut64 curseek = core->offset;
-	char *lmatch = NULL, *umatch = NULL;
+	const char *lmatch = NULL, *umatch = NULL;
 	RzFlagItem *flag;
 	RzListIter *iter;
 	rz_list_sort(temp, &cmpflag, NULL);
 	rz_list_foreach (temp, iter, flag) {
-		if (strstr(flag->name, argv[1]) != NULL) {
-			if (flag->offset < core->offset) {
-				loff = flag->offset;
-				lmatch = flag->name;
+		if (strstr(rz_flag_item_get_name(flag), argv[1]) != NULL) {
+			if (rz_flag_item_get_offset(flag) < core->offset) {
+				loff = rz_flag_item_get_offset(flag);
+				lmatch = rz_flag_item_get_name(flag);
 				continue;
 			}
-			uoff = flag->offset;
-			umatch = flag->name;
+			uoff = rz_flag_item_get_offset(flag);
+			umatch = rz_flag_item_get_name(flag);
 			break;
 		}
 	}
-	char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch;
+	const char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch;
 	if (match) {
 		if (*match) {
 			rz_cons_println(match);
@@ -500,12 +500,12 @@ struct flagbar_t {
 static bool flagbar_foreach(RzFlagItem *fi, void *user) {
 	struct flagbar_t *u = (struct flagbar_t *)user;
 	ut64 min = 0, max = rz_io_size(u->core->io);
-	RzIOMap *m = rz_io_map_get(u->core->io, fi->offset);
+	RzIOMap *m = rz_io_map_get(u->core->io, rz_flag_item_get_offset(fi));
 	if (m) {
 		min = m->itv.addr;
 		max = m->itv.addr + m->itv.size;
 	}
-	rz_cons_printf("0x%08" PFMT64x " ", fi->offset);
+	rz_cons_printf("0x%08" PFMT64x " ", rz_flag_item_get_offset(fi));
 	RzBarOptions opts = {
 		.unicode = false,
 		.thinline = false,
@@ -516,13 +516,13 @@ static bool flagbar_foreach(RzFlagItem *fi, void *user) {
 		.curpos = 0,
 		.color = false
 	};
-	RzStrBuf *strbuf = rz_rangebar(&opts, fi->offset, fi->offset + fi->size, min, max, u->cols);
+	RzStrBuf *strbuf = rz_rangebar(&opts, rz_flag_item_get_offset(fi), rz_flag_item_get_offset(fi) + rz_flag_item_get_size(fi), min, max, u->cols);
 	if (!strbuf) {
 		RZ_LOG_ERROR("Cannot generate rangebar\n");
 	} else {
 		rz_cons_print(rz_strbuf_drain(strbuf));
 	}
-	rz_cons_printf("  %s\n", fi->name);
+	rz_cons_printf("  %s\n", rz_flag_item_get_name(fi));
 	return true;
 }
 
@@ -544,8 +544,8 @@ struct flag_to_flag_t {
 
 static bool flag_to_flag_foreach(RzFlagItem *fi, void *user) {
 	struct flag_to_flag_t *u = (struct flag_to_flag_t *)user;
-	if (fi->offset < u->next && fi->offset > u->offset) {
-		u->next = fi->offset;
+	if (rz_flag_item_get_offset(fi) < u->next && rz_flag_item_get_offset(fi) > u->offset) {
+		u->next = rz_flag_item_get_offset(fi);
 	}
 	return true;
 }
@@ -580,7 +580,7 @@ static void flag_tag_print(RzCore *core, const char *tag, RzCmdStateOutput *stat
 		RzListIter *iter;
 		RzFlagItem *flag;
 		rz_list_foreach (flags, iter, flag) {
-			pj_s(pj, flag->name);
+			pj_s(pj, rz_flag_item_get_name(flag));
 		}
 		pj_end(pj);
 		rz_list_free(flags);
@@ -595,7 +595,7 @@ static void flag_tag_print(RzCore *core, const char *tag, RzCmdStateOutput *stat
 		RzListIter *iter;
 		RzFlagItem *flag;
 		rz_list_foreach (flags, iter, flag) {
-			rz_cons_printf("0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
+			rz_cons_printf("0x%08" PFMT64x "  %s\n", rz_flag_item_get_offset(flag), rz_flag_item_get_name(flag));
 		}
 		rz_list_free(flags);
 		break;
@@ -633,7 +633,7 @@ RZ_IPI RzCmdStatus rz_flag_tag_search_handler(RzCore *core, int argc, const char
 	RzListIter *iter;
 	RzFlagItem *flag;
 	rz_list_foreach (flags, iter, flag) {
-		rz_cons_printf("0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
+		rz_cons_printf("0x%08" PFMT64x "  %s\n", rz_flag_item_get_offset(flag), rz_flag_item_get_name(flag));
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -702,7 +702,7 @@ RZ_IPI RzCmdStatus rz_flag_space_move_handler(RzCore *core, int argc, const char
 		RZ_LOG_ERROR("Cannot find any flag at 0x%" PFMT64x ".\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	f->space = rz_flag_space_cur(core->flags);
+	rz_flag_item_set_space(f, rz_flag_space_cur(core->flags));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -777,7 +777,7 @@ RZ_IPI RzCmdStatus rz_flag_exists_handler(RzCore *core, int argc, const char **a
 		RZ_LOG_ERROR("Cannot find flag '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RZ_LOG_DEBUG("Find flag '%s' at 0x%" PFMT64x "\n", argv[1], item->offset);
+	RZ_LOG_DEBUG("Find flag '%s' at 0x%" PFMT64x "\n", argv[1], rz_flag_item_get_offset(item));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -798,9 +798,9 @@ RZ_IPI RzCmdStatus rz_flag_length_handler(RzCore *core, int argc, const char **a
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc < 2) {
-		rz_cons_printf("0x%08" PFMT64x "\n", item->size);
+		rz_cons_printf("0x%08" PFMT64x "\n", rz_flag_item_get_size(item));
 	} else {
-		item->size = rz_num_math(core->num, argv[1]);
+		rz_flag_item_set_size(item, rz_num_math(core->num, argv[1]));
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -813,7 +813,7 @@ RZ_IPI RzCmdStatus rz_flag_realname_handler(RzCore *core, int argc, const char *
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc < 3) {
-		rz_cons_printf("%s\n", item->realname);
+		rz_cons_printf("%s\n", rz_flag_item_get_realname(item));
 	} else {
 		rz_flag_item_set_realname(item, argv[2]);
 	}
@@ -853,8 +853,8 @@ RZ_IPI RzCmdStatus rz_flag_comment_handler(RzCore *core, int argc, const char **
 		return bool2status(flag_set_comment(item, argv[2]));
 	} else {
 		item = rz_flag_get_i(core->flags, rz_num_math(core->num, argv[1]));
-		if (item && item->comment) {
-			rz_cons_println(item->comment);
+		if (item && rz_flag_item_get_comment(item)) {
+			rz_cons_println(rz_flag_item_get_comment(item));
 		} else {
 			RZ_LOG_ERROR("Cannot find the flag\n");
 			return RZ_CMD_STATUS_ERROR;
@@ -892,9 +892,9 @@ RZ_IPI RzCmdStatus rz_flag_hexdump_handler(RzCore *core, int argc, const char **
 		RZ_LOG_ERROR("Cannot find flag '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("0x%08" PFMT64x "\n", item->offset);
+	rz_cons_printf("0x%08" PFMT64x "\n", rz_flag_item_get_offset(item));
 	// FIXME: Use the API directly instead of calling the command
-	snprintf(cmd, sizeof(cmd), "px@%" PFMT64d ":%" PFMT64d, item->offset, item->size);
+	snprintf(cmd, sizeof(cmd), "px@%" PFMT64d ":%" PFMT64d, rz_flag_item_get_offset(item), rz_flag_item_get_size(item));
 	rz_core_cmd0(core, cmd);
 	return RZ_CMD_STATUS_OK;
 }

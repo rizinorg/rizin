@@ -140,7 +140,7 @@ struct duplicate_flag_t {
 static bool duplicate_flag(RzFlagItem *flag, void *u) {
 	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
 	/* filter per flag spaces */
-	if (!user->word || rz_str_glob(flag->name, user->word)) {
+	if (!user->word || rz_str_glob(rz_flag_item_get_name(flag), user->word)) {
 		RzFlagItem *cloned_item = rz_flag_item_clone(flag);
 		if (!cloned_item) {
 			return false;
@@ -2266,13 +2266,18 @@ fail:
 	goto beach;
 }
 
-struct exec_command_t {
-	RzCore *core;
-	const char *cmd;
-};
+typedef struct {
+	ut64 offset;
+	ut64 size;
+} FlagInfo;
 
-static bool copy_into_flagitem_list(RzFlagItem *flg, void *u) {
-	RzFlagItem *fi = rz_mem_dup(flg, sizeof(RzFlagItem));
+static bool copy_into_flaginfo_list(RzFlagItem *flg, void *u) {
+	FlagInfo *fi = RZ_NEW(FlagInfo);
+	if (!fi) {
+		return false;
+	}
+	fi->offset = rz_flag_item_get_offset(flg);
+	fi->size = rz_flag_item_get_size(flg);
 	rz_list_append(u, fi);
 	return true;
 }
@@ -2550,9 +2555,9 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		ut64 off = core->offset;
 		ut64 obs = core->blocksize;
 		RzList *flags = rz_list_newf(free);
-		rz_flag_foreach_glob(core->flags, glob, copy_into_flagitem_list, flags);
+		rz_flag_foreach_glob(core->flags, glob, copy_into_flaginfo_list, flags);
 		RzListIter *iter;
-		RzFlagItem *f;
+		FlagInfo *f;
 		rz_list_foreach (flags, iter, f) {
 			rz_core_block_size(core, f->size);
 			rz_core_seek(core, f->offset, true);
@@ -2936,7 +2941,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 					}
 
 					char *buf = NULL;
-					rz_core_seek(core, flag->offset, true);
+					rz_core_seek(core, rz_flag_item_get_offset(flag), true);
 					rz_cons_push();
 					rz_core_cmd(core, cmd, 0);
 					buf = rz_cons_get_buffer_dup();
@@ -4282,8 +4287,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_stmt) {
 			break;
 		}
 
-		RZ_LOG_DEBUG("iter_flags_stmt: seek to %" PFMT64x "\n", flag->offset);
-		rz_core_seek(core, flag->offset, true);
+		RZ_LOG_DEBUG("iter_flags_stmt: seek to %" PFMT64x "\n", rz_flag_item_get_offset(flag));
+		rz_core_seek(core, rz_flag_item_get_offset(flag), true);
 		RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
 		rz_core_task_yield(&core->tasks);
 		UPDATE_CMD_STATUS_RES(ret, cmd_res, err);

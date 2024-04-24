@@ -181,13 +181,14 @@ struct seek_flag_offset_t {
 
 static bool seek_flag_offset(RzFlagItem *fi, void *user) {
 	struct seek_flag_offset_t *u = (struct seek_flag_offset_t *)user;
+	ut64 fi_off = rz_flag_item_get_offset(fi);
 	if (u->is_next) {
-		if (fi->offset < *u->next && fi->offset > u->offset) {
-			*u->next = fi->offset;
+		if (fi_off < *u->next && fi_off > u->offset) {
+			*u->next = fi_off;
 		}
 	} else {
-		if (fi->offset > *u->next && fi->offset < u->offset) {
-			*u->next = fi->offset;
+		if (fi_off > *u->next && fi_off < u->offset) {
+			*u->next = fi_off;
 		}
 	}
 	return true;

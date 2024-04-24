@@ -197,7 +197,7 @@ onemoretime:
 			if (op->jump != UT64_MAX) {
 				RzFlagItem *item = rz_flag_get_i(core->flags, op->jump);
 				if (item) {
-					const char *ptr = rz_str_lchr(item->name, '.');
+					const char *ptr = rz_str_lchr(rz_flag_item_get_name(item), '.');
 					if (ptr) {
 						man = strdup(ptr + 1);
 					}
@@ -248,7 +248,7 @@ onemoretime:
 				rz_core_analysis_function_rename(core, tgt_addr, newname);
 				free(newname);
 			} else if (f) {
-				char *msg = rz_str_newf("Rename flag %s to: ", f->name);
+				char *msg = rz_str_newf("Rename flag %s to: ", rz_flag_item_get_name(f));
 				char *newname = rz_cons_input(msg);
 				free(msg);
 				rz_flag_rename(core->flags, f, newname);
@@ -286,12 +286,12 @@ onemoretime:
 		RzFlagItem *item = rz_flag_get_i(core->flags, off);
 		if (item) {
 			char cmd[128];
-			rz_cons_printf("Current flag size is: %" PFMT64d "\n", item->size);
+			rz_cons_printf("Current flag size is: %" PFMT64d "\n", rz_flag_item_get_size(item));
 			rz_cons_show_cursor(true);
 			rz_cons_flush();
 			rz_line_set_prompt(line, "new size: ");
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) > 0) {
-				item->size = rz_num_math(core->num, cmd);
+				rz_flag_item_set_size(item, rz_num_math(core->num, cmd));
 				rz_cons_set_raw(1);
 				rz_cons_show_cursor(false);
 			}

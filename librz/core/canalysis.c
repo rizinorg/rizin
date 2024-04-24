@@ -51,7 +51,7 @@ static char *getFunctionName(RzCore *core, ut64 addr) {
 	}
 
 	RzFlagItem *flag = rz_core_flag_get_by_spaces(core->flags, addr);
-	return (flag && flag->name) ? strdup(flag->name) : NULL;
+	return (flag && rz_flag_item_get_name(flag)) ? strdup(rz_flag_item_get_name(flag)) : NULL;
 }
 
 static char *getFunctionNamePrefix(RzCore *core, ut64 off, const char *name) {
@@ -560,31 +560,32 @@ RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, 
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	rz_list_foreach (xrefs, iter, xref) {
 		RzFlagItem *f = rz_flag_get_i(core->flags, xref->to);
-		if (f && !blacklisted_word(f->name)) {
-			if (strstr(f->name, ".isatty")) {
+		const char *name = f ? rz_flag_item_get_name(f) : NULL;
+		if (name && !blacklisted_word(name)) {
+			if (strstr(name, ".isatty")) {
 				use_isatty = 1;
 			}
-			if (strstr(f->name, ".getopt")) {
+			if (strstr(name, ".getopt")) {
 				use_getopt = 1;
 			}
-			if (!strncmp(f->name, "method.", 7)) {
+			if (!strncmp(name, "method.", 7)) {
 				free(do_call);
-				do_call = strdup(f->name + 7);
+				do_call = strdup(name + 7);
 				break;
 			}
-			if (!strncmp(f->name, "str.", 4)) {
+			if (!strncmp(name, "str.", 4)) {
 				free(do_call);
-				do_call = strdup(f->name + 4);
+				do_call = strdup(name + 4);
 				break;
 			}
-			if (!strncmp(f->name, "sym.imp.", 8)) {
+			if (!strncmp(name, "sym.imp.", 8)) {
 				free(do_call);
-				do_call = strdup(f->name + 8);
+				do_call = strdup(name + 8);
 				break;
 			}
-			if (!strncmp(f->name, "reloc.", 6)) {
+			if (!strncmp(name, "reloc.", 6)) {
 				free(do_call);
-				do_call = strdup(f->name + 6);
+				do_call = strdup(name + 6);
 				break;
 			}
 		}
@@ -595,7 +596,7 @@ RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, 
 		RzFlagItem *item = rz_flag_get(core->flags, "main");
 		free(do_call);
 		// if referenced from entrypoint. this should be main
-		if (item && item->offset == fcn->addr) {
+		if (item && rz_flag_item_get_offset(item) == fcn->addr) {
 			return strdup("main"); // main?
 		}
 		return strdup("parse_args"); // main?
@@ -624,17 +625,17 @@ RZ_API void rz_core_analysis_function_strings_print(RZ_NONNULL RzCore *core, RZ_
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	rz_list_foreach (xrefs, iter, xref) {
 		RzFlagItem *f = rz_flag_get_by_spaces(core->flags, xref->to, RZ_FLAGS_FS_STRINGS, NULL);
-		if (!f || !f->space || strcmp(f->space->name, RZ_FLAGS_FS_STRINGS)) {
+		if (!f || !rz_flag_item_get_space(f) || strcmp(rz_flag_item_get_space(f)->name, RZ_FLAGS_FS_STRINGS)) {
 			continue;
 		}
 		if (pj) {
 			pj_o(pj);
 			pj_kn(pj, "addr", xref->from);
 			pj_kn(pj, "ref", xref->to);
-			pj_ks(pj, "flag", f->name);
+			pj_ks(pj, "flag", rz_flag_item_get_name(f));
 			pj_end(pj);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %s\n", xref->from, xref->to, f->name);
+			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %s\n", xref->from, xref->to, rz_flag_item_get_name(f));
 		}
 	}
 	rz_list_free(xrefs);
@@ -787,9 +788,9 @@ static void autoname_imp_trampoline(RzCore *core, RzAnalysisFunction *fcn) {
 			RzAnalysisXRef *xref = rz_list_first(xrefs);
 			if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) { /* Some fcns don't return */
 				RzFlagItem *flg = rz_flag_get_i(core->flags, xref->to);
-				if (flg && rz_str_startswith(flg->name, "sym.imp.")) {
+				if (flg && rz_str_startswith(rz_flag_item_get_name(flg), "sym.imp.")) {
 					RZ_FREE(fcn->name);
-					fcn->name = rz_str_newf("sub.%s", flg->name + 8);
+					fcn->name = rz_str_newf("sub.%s", rz_flag_item_get_name(flg) + 8);
 				}
 			}
 		}
@@ -800,12 +801,13 @@ static void autoname_imp_trampoline(RzCore *core, RzAnalysisFunction *fcn) {
 static void set_fcn_name_from_flag(RzAnalysisFunction *fcn, RzFlagItem *f, const char *fcnpfx) {
 	char tmpbuf[128];
 	bool nameChanged = false;
-	if (f && f->name) {
+	const char *name = f ? rz_flag_item_get_name(f) : NULL;
+	if (name) {
 		if (!strncmp(fcn->name, "loc.", 4) || !strncmp(fcn->name, "fcn.", 4)) {
-			rz_analysis_function_rename(fcn, f->name);
+			rz_analysis_function_rename(fcn, name);
 			nameChanged = true;
-		} else if (strncmp(f->name, "sect", 4)) {
-			rz_analysis_function_rename(fcn, f->name);
+		} else if (strncmp(name, "sect", 4)) {
+			rz_analysis_function_rename(fcn, name);
 			nameChanged = true;
 		}
 	}
@@ -815,7 +817,8 @@ static void set_fcn_name_from_flag(RzAnalysisFunction *fcn, RzFlagItem *f, const
 }
 
 static bool is_entry_flag(RzFlagItem *f) {
-	return f->space && !strcmp(f->space->name, RZ_FLAGS_FS_SYMBOLS) && rz_str_startswith(f->name, "entry.");
+	RzSpace *space = rz_flag_item_get_space(f);
+	return space && !strcmp(space->name, RZ_FLAGS_FS_SYMBOLS) && rz_str_startswith(rz_flag_item_get_name(f), "entry.");
 }
 
 static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth) {
@@ -894,8 +897,8 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 			goto error;
 		} else if (fcnlen == RZ_ANALYSIS_RET_END) { /* Function analysis complete */
 			f = rz_core_flag_get_by_spaces(core->flags, fcn->addr);
-			if (f && f->name && strncmp(f->name, "sect", 4)) { /* Check if it's already flagged */
-				char *new_name = strdup(f->name);
+			if (f && strncmp(rz_flag_item_get_name(f), "sect", 4)) { /* Check if it's already flagged */
+				char *new_name = strdup(rz_flag_item_get_name(f));
 				if (is_entry_flag(f)) {
 					RzBinSymbol *sym;
 					RzBinObject *o = rz_bin_cur_object(core->bin);
@@ -1481,8 +1484,8 @@ RZ_API int rz_core_analysis_esil_fcn(RzCore *core, ut64 at, ut64 from, int refty
 }
 
 static int find_sym_flag(const void *a1, const void *a2, void *user) {
-	const RzFlagItem *f = (const RzFlagItem *)a2;
-	return f->space && !strcmp(f->space->name, RZ_FLAGS_FS_SYMBOLS) ? 0 : 1;
+	const RzSpace *space = rz_flag_item_get_space((const RzFlagItem *)a2);
+	return space && !strcmp(space->name, RZ_FLAGS_FS_SYMBOLS) ? 0 : 1;
 }
 
 static bool is_skippable_addr(RzCore *core, ut64 addr) {
@@ -2381,8 +2384,8 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	/* Entries */
 	item = rz_flag_get(core->flags, "entry0");
 	if (item) {
-		rz_core_analysis_fcn(core, item->offset, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth - 1);
-		rz_core_analysis_function_rename(core, item->offset, "entry0");
+		rz_core_analysis_fcn(core, rz_flag_item_get_offset(item), -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth - 1);
+		rz_core_analysis_function_rename(core, rz_flag_item_get_offset(item), "entry0");
 	} else {
 		rz_core_analysis_function_add(core, NULL, core->offset, false);
 	}
@@ -2525,7 +2528,7 @@ struct block_flags_stat_t {
 
 static bool block_flags_stat(RzFlagItem *fi, void *user) {
 	struct block_flags_stat_t *u = (struct block_flags_stat_t *)user;
-	size_t piece = (fi->offset - u->from) / u->step;
+	size_t piece = (rz_flag_item_get_offset(fi) - u->from) / u->step;
 	u->blocks[piece].flags++;
 	return true;
 }
@@ -3361,7 +3364,7 @@ RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
 	if (fcn) {
 		RzFlagItem *flag = rz_flag_get(core->flags, fcn->name);
-		if (flag && flag->space && strcmp(flag->space->name, RZ_FLAGS_FS_FUNCTIONS) == 0) {
+		if (flag && rz_flag_item_get_space(flag) && strcmp(rz_flag_item_get_space(flag)->name, RZ_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
 			if (!rz_flag_rename(core->flags, flag, name)) {
 				// If the rename failed, it may be because there is already a flag with the target name
@@ -5692,8 +5695,8 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 			p->offset = tgt_addr;
 		} else if (f) {
 			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_FLAG;
-			p->name = strdup(f->name);
-			p->realname = strdup(f->realname);
+			p->name = strdup(rz_flag_item_get_name(f));
+			p->realname = rz_str_dup(rz_flag_item_get_realname(f));
 			p->offset = tgt_addr;
 		} else {
 			p->type = RZ_CORE_ANALYSIS_NAME_TYPE_ADDRESS;
@@ -5764,7 +5767,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 				bool isValidCall = true;
 				if (imports_only) {
 					RzFlagItem *f = rz_flag_get_i(core->flags, op.jump);
-					if (!f || !strstr(f->name, "imp.")) {
+					if (!f || !strstr(rz_flag_item_get_name(f), "imp.")) {
 						isValidCall = false;
 					}
 				}
