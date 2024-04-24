@@ -4809,7 +4809,7 @@ void __panels_refresh(RzCore *core) {
 		return;
 	}
 	rz_cons_gotoxy(0, 0);
-	int i, h, w = rz_cons_get_size(&h);
+	int h, w = rz_cons_get_size(&h);
 	if (!rz_cons_canvas_resize(can, w, h)) {
 		return;
 	}
@@ -4823,7 +4823,7 @@ void __panels_refresh(RzCore *core) {
 	__set_refresh_all(core, false, false);
 
 	// TODO use getPanel
-	for (i = 0; i < panels->n_panels; i++) {
+	for (int i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
 			__panel_print(core, can, __get_panel(panels, i), 0);
 		}
@@ -4833,7 +4833,7 @@ void __panels_refresh(RzCore *core) {
 	} else {
 		__panel_print(core, can, __get_cur_panel(panels), 1);
 	}
-	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
+	for (int i = 0; i < panels->panels_menu->n_refresh; i++) {
 		__panel_print(core, can, panels->panels_menu->refreshPanels[i], 1);
 	}
 	(void)rz_cons_canvas_gotoxy(can, -can->sx, -can->sy);
@@ -4849,7 +4849,7 @@ void __panels_refresh(RzCore *core) {
 		size_t idx = 0;
 		rz_pvector_foreach (&parent->sub_vec, iter) {
 			RzPanelsMenuItem *item = *iter;
-			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
+			if (panels->mode == PANEL_MODE_MENU && idx == parent->selectedIndex) {
 				rz_strbuf_appendf(title, "%s[%s]" Color_RESET, color, item->name);
 			} else {
 				rz_strbuf_appendf(title, " %s ", item->name);
@@ -4866,7 +4866,7 @@ void __panels_refresh(RzCore *core) {
 		rz_cons_canvas_write(can, rz_strbuf_get(title));
 	}
 	rz_strbuf_setf(title, "[0x%08" PFMT64x "]", core->offset);
-	i = -can->sx + w - rz_strbuf_length(title);
+	int i = -can->sx + w - rz_strbuf_length(title);
 	(void)rz_cons_canvas_gotoxy(can, i, -can->sy);
 	rz_cons_canvas_write(can, rz_strbuf_get(title));
 
