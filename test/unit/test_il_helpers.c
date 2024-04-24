@@ -386,6 +386,24 @@ static bool test_il_fneq() {
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 
+	result = rz_il_op_new_fneq(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_true(vm_result->b, "0.1337 != NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_fneq(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(0.1337));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_true(vm_result->b, "NaN != 0.1337");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_fneq(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_true(vm_result->b, "NaN != NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
 	result = rz_il_op_new_fneq(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(0.1337001));
 	vm_result = rz_il_evaluate_bool(vm, result);
 	mu_assert_true(vm_result->b, "0.1337 != 0.1337001");
@@ -437,6 +455,24 @@ static bool test_il_feq() {
 	RzILVM *vm = rz_il_vm_new(0, 64, false);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
+
+	result = rz_il_op_new_feq(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "0.1337 == NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_feq(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(0.1337));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN == 0.1337");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_feq(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN == NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
 
 	result = rz_il_op_new_feq(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(0.1337001));
 	vm_result = rz_il_evaluate_bool(vm, result);
@@ -490,6 +526,24 @@ static bool test_il_flt() {
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 
+	result = rz_il_op_new_flt(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "0.1337 < NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_flt(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(0.1337));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN < 0.1337");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_flt(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN < NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
 	result = rz_il_op_new_flt(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(0.1337001));
 	vm_result = rz_il_evaluate_bool(vm, result);
 	mu_assert_true(vm_result->b, "0.1337 < 0.1337001");
@@ -541,6 +595,24 @@ static bool test_il_fle() {
 	RzILVM *vm = rz_il_vm_new(0, 64, false);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
+
+	result = rz_il_op_new_fle(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "0.1337 <= NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_fle(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(0.1337));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN <= 0.1337");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_fle(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN <= NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
 
 	result = rz_il_op_new_fle(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(0.1337001));
 	vm_result = rz_il_evaluate_bool(vm, result);
@@ -594,6 +666,24 @@ static bool test_il_fgt() {
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
 
+	result = rz_il_op_new_fgt(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "0.1337 > NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_fgt(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(0.1337));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN > 0.1337");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_fgt(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN > NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
 	result = rz_il_op_new_fgt(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(0.1337001));
 	vm_result = rz_il_evaluate_bool(vm, result);
 	mu_assert_false(vm_result->b, "0.1337 > 0.1337001");
@@ -645,6 +735,24 @@ static bool test_il_fge() {
 	RzILVM *vm = rz_il_vm_new(0, 64, false);
 	RzILBool *vm_result = NULL;
 	RzILOpBool *result = NULL;
+
+	result = rz_il_op_new_fge(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "0.1337 >= NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_fge(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(0.1337));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN >= 0.1337");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
+
+	result = rz_il_op_new_fge(rz_il_op_new_float_from_f32(F32_NAN), rz_il_op_new_float_from_f32(F32_NAN));
+	vm_result = rz_il_evaluate_bool(vm, result);
+	mu_assert_false(vm_result->b, "NaN >= NaN");
+	rz_il_bool_free(vm_result);
+	rz_il_op_pure_free(result);
 
 	result = rz_il_op_new_fge(rz_il_op_new_float_from_f32(0.1337), rz_il_op_new_float_from_f32(0.1337001));
 	vm_result = rz_il_evaluate_bool(vm, result);
