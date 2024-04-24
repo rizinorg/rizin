@@ -6134,8 +6134,6 @@ void __rotate_asmemu(RzCore *core, RzPanel *p) {
 	p->view->refresh = true;
 }
 
-static bool fromVisual = false;
-
 static void rz_panel_model_free(RZ_NULLABLE RzPanelModel *model) {
 	if (!model) {
 		return;
@@ -6191,7 +6189,6 @@ RZ_IPI void rz_panels_root_free(RZ_NULLABLE RzPanelsRoot *panels_root) {
 }
 
 RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) {
-	fromVisual = core->vmode;
 	if (!panels_root) {
 		panels_root = RZ_NEW0(RzPanelsRoot);
 		if (!panels_root) {
@@ -6212,6 +6209,7 @@ RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 			__init_new_panels_root(core);
 		}
 	}
+	panels_root->from_visual = core->vmode;
 	{
 		const char *l = rz_config_get(core->config, "scr.layout");
 		if (l && *l) {
@@ -6239,7 +6237,7 @@ RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 		}
 	}
 	rz_cons_enable_mouse(false);
-	if (fromVisual) {
+	if (panels_root->from_visual) {
 		rz_core_visual(core, "");
 	}
 	return true;
@@ -7070,7 +7068,7 @@ repeat:
 		__set_root_state(core, QUIT);
 		goto exit;
 	case '!':
-		fromVisual = true;
+		panels_root->from_visual = true;
 		// fallthrough
 	case 'q':
 		// fallthrough

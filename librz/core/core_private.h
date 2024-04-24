@@ -332,6 +332,7 @@ typedef struct rz_panels_root_t {
 	Sdb *cur_pdc_cache;
 	RzPanelsRootState root_state;
 	RzList /*<char *>*/ *theme_list; ///< List of themes
+	bool from_visual;
 } RzPanelsRoot;
 
 typedef struct rz_core_visual_t {
