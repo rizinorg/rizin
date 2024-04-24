@@ -142,8 +142,6 @@ static const char *menus_Analyze[] = {
 	NULL
 };
 
-static const char *menus_Colors[128];
-
 static const char *menus_settings_disassembly[] = {
 	"asm", "hex.section", "io.cache", "hex.pairs", "emu.str",
 	NULL
@@ -569,7 +567,6 @@ static RZ_BORROW RzPanelsMenuItem *panels_menu_item_get_selected_sub(RZ_NONNULL 
 /* config */
 static char *__get_panels_config_dir_path(void);
 static char *__create_panels_config_path(const char *file);
-static void __load_config_menu(RzCore *core);
 
 /* history */
 static int __file_history_up(RzLine *line);
@@ -4409,11 +4406,11 @@ void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	char *now = strdup(curtheme);
 	rz_str_split(now, '\n');
 	parent = "Settings.Colors";
-	RzPVector *list = __sorted_list(menus_Colors, COUNT(menus_Colors));
-	void **iter;
+	RzListIter *iter;
+	char *pos;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
-	rz_pvector_foreach (list, iter) {
-		char *pos = *iter;
+	RzCoreVisual *visual = core->visual;
+	rz_list_foreach (visual->panels_root->theme_list, iter, pos) {
 		if (pos && !strcmp(now, pos)) {
 			rz_strbuf_setf(buf, "%s%s", color, pos);
 			__add_menu(core, parent, rz_strbuf_get(buf), __settings_colors_cb);
@@ -4422,7 +4419,6 @@ void __init_menu_color_settings_layout(void *_core, const char *parent) {
 		__add_menu(core, parent, pos, __settings_colors_cb);
 	}
 	free(now);
-	rz_pvector_free(list);
 	rz_strbuf_free(buf);
 }
 
@@ -4503,8 +4499,6 @@ bool __init_panels_menu(RzCore *core) {
 	}
 	panels->panels_menu = panels_menu;
 	panels_menu->root = root;
-
-	__load_config_menu(core);
 
 	int i = 0;
 	while (menus[i]) {
@@ -5485,16 +5479,6 @@ RZ_IPI void rz_save_panels_layout(RzCore *core, const char *oname) {
 	free(config_path);
 }
 
-void __load_config_menu(RzCore *core) {
-	RzList *themes_list = rz_core_theme_list(core);
-	RzListIter *th_iter;
-	char *th;
-	int i = 0;
-	rz_list_foreach (themes_list, th_iter, th) {
-		menus_Colors[i++] = th;
-	}
-}
-
 RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual || !visual->panels) {
@@ -6202,6 +6186,7 @@ RZ_IPI void rz_panels_root_free(RZ_NULLABLE RzPanelsRoot *panels_root) {
 		return;
 	}
 	rz_pvector_fini(&panels_root->panels_vec);
+	rz_list_free(panels_root->theme_list);
 	free(panels_root);
 }
 
@@ -6218,6 +6203,8 @@ RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 		rz_pvector_reserve(&panels_root->panels_vec, PANEL_NUM_LIMIT);
 		panels_root->cur_panels = 0;
 		__set_root_state(core, DEFAULT);
+		panels_root->theme_list = rz_core_theme_list(core);
+		rz_list_sort(panels_root->theme_list, cmpstr, NULL);
 		__init_new_panels_root(core);
 	} else {
 		if (rz_pvector_len(&panels_root->panels_vec) == 0) {
