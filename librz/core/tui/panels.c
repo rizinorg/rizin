@@ -619,16 +619,15 @@ static void __cache_white_list(RzCore *core, RzPanel *panel);
 static bool search_db_check_panel_type(RzPanelsTab *tab, RzPanel *panel, const char *ch);
 
 void __update_edge_x(RzPanelsTab *tab, int x) {
-	int i, j;
 	int tmp_x = 0;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p0 = __get_panel(tab, i);
 		if (p0->view->pos.x - 2 <= tab->mouse_orig_x &&
 			tab->mouse_orig_x <= p0->view->pos.x + 2) {
 			tmp_x = p0->view->pos.x;
 			p0->view->pos.x += x;
 			p0->view->pos.w -= x;
-			for (j = 0; j < tab->n_panels; j++) {
+			for (int j = 0; j < tab->n_panels; j++) {
 				RzPanel *p1 = __get_panel(tab, j);
 				if (p1->view->pos.x + p1->view->pos.w - 1 == tmp_x) {
 					p1->view->pos.w += x;
@@ -639,16 +638,15 @@ void __update_edge_x(RzPanelsTab *tab, int x) {
 }
 
 void __update_edge_y(RzPanelsTab *tab, int y) {
-	int i, j;
 	int tmp_y = 0;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p0 = __get_panel(tab, i);
 		if (p0->view->pos.y - 2 <= tab->mouse_orig_y &&
 			tab->mouse_orig_y <= p0->view->pos.y + 2) {
 			tmp_y = p0->view->pos.y;
 			p0->view->pos.y += y;
 			p0->view->pos.h -= y;
-			for (j = 0; j < tab->n_panels; j++) {
+			for (int j = 0; j < tab->n_panels; j++) {
 				RzPanel *p1 = __get_panel(tab, j);
 				if (p1->view->pos.y + p1->view->pos.h - 1 == tmp_y) {
 					p1->view->pos.h += y;
@@ -680,8 +678,7 @@ bool __check_if_mouse_x_on_edge(RzCore *core, int x, int y) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	const int edge_x = rz_config_get_i(core->config, "scr.panelborder") ? 3 : 1;
-	int i = 0;
-	for (; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		if (x > panel->view->pos.x - (edge_x - 1) && x <= panel->view->pos.x + edge_x) {
 			tab->mouse_on_edge_x = true;
@@ -696,8 +693,7 @@ bool __check_if_mouse_y_on_edge(RzCore *core, int x, int y) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	const int edge_y = rz_config_get_i(core->config, "scr.panelborder") ? 3 : 1;
-	int i = 0;
-	for (; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		if (x > panel->view->pos.x && x <= panel->view->pos.x + panel->view->pos.w + edge_y) {
 			if (y > 2 && y >= panel->view->pos.y && y <= panel->view->pos.y + edge_y) {
@@ -715,8 +711,7 @@ bool __check_if_cur_panel(RzPanelsTab *tab, RzPanel *panel) {
 }
 
 void __check_edge(RzPanelsTab *tab) {
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		if (panel->view->pos.x + panel->view->pos.w == tab->can->w) {
 			panel->view->edge |= (1 << PANEL_EDGE_RIGHT);
@@ -732,22 +727,19 @@ void __check_edge(RzPanelsTab *tab) {
 }
 
 void __shrink_panels_forward(RzPanelsTab *tab, int target) {
-	int i = target;
-	for (; i < tab->n_panels - 1; i++) {
+	for (int i = target; i < tab->n_panels - 1; i++) {
 		tab->panel[i] = tab->panel[i + 1];
 	}
 }
 
 void __shrink_panels_backward(RzPanelsTab *tab, int target) {
-	int i = target;
-	for (; i > 0; i--) {
+	for (int i = target; i > 0; i--) {
 		tab->panel[i] = tab->panel[i - 1];
 	}
 }
 
 void __cache_white_list(RzCore *core, RzPanel *panel) {
-	int i = 0;
-	for (; i < COUNT(cache_white_list_cmds); i++) {
+	for (int i = 0; i < COUNT(cache_white_list_cmds); i++) {
 		if (!strcmp(panel->model->cmd, cache_white_list_cmds[i])) {
 			panel->model->cache = true;
 			return;
@@ -818,8 +810,7 @@ bool __check_panel_type(RzPanel *panel, const char *type) {
 		return false;
 	}
 	if (!strcmp(type, PANEL_CMD_HEXDUMP)) {
-		int i = 0;
-		for (; i < COUNT(hexdump_rotate); i++) {
+		for (int i = 0; i < COUNT(hexdump_rotate); i++) {
 			if (!strcmp(tmp, hexdump_rotate[i])) {
 				free(tmp);
 				return true;
@@ -923,22 +914,22 @@ RzPanel *__get_cur_panel(RzPanelsTab *tab) {
 }
 
 int __get_panel_idx_in_pos(RzPanelsTab *tab, int x, int y) {
-	int i = -1;
-	for (i = 0; i < tab->n_panels; i++) {
+	int idx = -1;
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		if (x >= p->view->pos.x && x < p->view->pos.x + p->view->pos.w) {
 			if (y >= p->view->pos.y && y < p->view->pos.y + p->view->pos.h) {
+				idx = i;
 				break;
 			}
 		}
 	}
-	return i;
+	return idx;
 }
 
 void __handlePrompt(RzCore *core, RzPanelsTab *tab) {
 	rz_core_visual_prompt_input(core);
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		if (__check_panel_type(p, PANEL_CMD_DISASSEMBLY)) {
 			__set_panel_addr(core, p, core->offset);
@@ -1193,9 +1184,8 @@ void __panel_all_clear(RzPanelsTab *tab) {
 	if (!tab) {
 		return;
 	}
-	int i;
 	RzPanel *panel = NULL;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		panel = __get_panel(tab, i);
 		rz_cons_canvas_fill(tab->can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
 	}
@@ -1222,8 +1212,8 @@ void __layout_default(RzPanelsTab *tab) {
 	__set_geometry(&p0->view->pos, 0, 1, colpos + 1, h - 1);
 
 	int pos_x = p0->view->pos.x + p0->view->pos.w - 1;
-	int i, total_h = 0;
-	for (i = 1; i < tab->n_panels; i++) {
+	int total_h = 0;
+	for (int i = 1; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		int tmp_w = RZ_MAX(w - colpos, 0);
 		int tmp_h = 0;
@@ -1238,9 +1228,9 @@ void __layout_default(RzPanelsTab *tab) {
 }
 
 void __adjust_side_panels(RzPanelsTab *tab) {
-	int i, h;
+	int h;
 	(void)rz_cons_get_size(&h);
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		if (p->view->pos.x == 0) {
 			if (p->view->pos.w >= PANEL_CONFIG_SIDEPANEL_W) {
@@ -1370,9 +1360,8 @@ void __insert_panel(RzCore *core, int n, const char *name, const char *cmd) {
 		return;
 	}
 	RzPanel **panel = tab->panel;
-	int i;
 	RzPanel *last = panel[tab->n_panels];
-	for (i = tab->n_panels - 1; i >= n; i--) {
+	for (int i = tab->n_panels - 1; i >= n; i--) {
 		panel[i + 1] = panel[i];
 	}
 	panel[n] = last;
@@ -1532,9 +1521,8 @@ void __fix_cursor_down(RzCore *core) {
 	RzPrint *print = core->print;
 	bool cur_is_visible = core->offset + print->cur + 32 < print->screen_bounds;
 	if (!cur_is_visible) {
-		int i = 0;
 		// XXX: ugly hack
-		for (i = 0; i < 2; i++) {
+		for (int i = 0; i < 2; i++) {
 			RzAsmOp op;
 			int sz = rz_asm_disassemble(core->rasm,
 				&op, core->block, 32);
@@ -1910,8 +1898,7 @@ bool __handle_mouse_on_top(RzCore *core, int x, int y) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	char *word = get_word_from_canvas(core, tab, x, y);
-	int i;
-	for (i = 0; i < COUNT(menus); i++) {
+	for (int i = 0; i < COUNT(menus); i++) {
 		if (!strcmp(word, menus[i])) {
 			__set_mode(core, PANEL_MODE_MENU);
 			__clear_panels_menu(core);
@@ -2150,7 +2137,7 @@ void __add_visual_mark(RzCore *core) {
 
 void __resize_panel_left(RzPanelsTab *tab) {
 	RzPanel *cur = __get_cur_panel(tab);
-	int i, cx0, cx1, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
+	int cx0, cx1, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
 	cx0 = cur->view->pos.x;
 	cx1 = cur->view->pos.x + cur->view->pos.w - 1;
 	cy0 = cur->view->pos.y;
@@ -2162,7 +2149,7 @@ void __resize_panel_left(RzPanelsTab *tab) {
 	if (!targets1 || !targets2 || !targets3 || !targets4) {
 		goto beach;
 	}
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		if (i == tab->curnode) {
 			continue;
 		}
@@ -2202,11 +2189,11 @@ void __resize_panel_left(RzPanelsTab *tab) {
 		}
 	}
 	if (cur1 > 0) {
-		for (i = 0; i < cur1; i++) {
+		for (int i = 0; i < cur1; i++) {
 			targets1[i]->view->pos.w -= PANEL_CONFIG_RESIZE_W;
 			targets1[i]->view->refresh = true;
 		}
-		for (i = 0; i < cur2; i++) {
+		for (int i = 0; i < cur2; i++) {
 			targets2[i]->view->pos.x -= PANEL_CONFIG_RESIZE_W;
 			targets2[i]->view->pos.w += PANEL_CONFIG_RESIZE_W;
 			targets2[i]->view->refresh = true;
@@ -2215,12 +2202,12 @@ void __resize_panel_left(RzPanelsTab *tab) {
 		cur->view->pos.w += PANEL_CONFIG_RESIZE_W;
 		cur->view->refresh = true;
 	} else if (cur3 > 0) {
-		for (i = 0; i < cur3; i++) {
+		for (int i = 0; i < cur3; i++) {
 			targets3[i]->view->pos.w += PANEL_CONFIG_RESIZE_W;
 			targets3[i]->view->pos.x -= PANEL_CONFIG_RESIZE_W;
 			targets3[i]->view->refresh = true;
 		}
-		for (i = 0; i < cur4; i++) {
+		for (int i = 0; i < cur4; i++) {
 			targets4[i]->view->pos.w -= PANEL_CONFIG_RESIZE_W;
 			targets4[i]->view->refresh = true;
 		}
@@ -2236,7 +2223,7 @@ beach:
 
 void __resize_panel_right(RzPanelsTab *tab) {
 	RzPanel *cur = __get_cur_panel(tab);
-	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
+	int tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
 	int cx0 = cur->view->pos.x;
 	int cx1 = cur->view->pos.x + cur->view->pos.w - 1;
 	int cy0 = cur->view->pos.y;
@@ -2248,7 +2235,7 @@ void __resize_panel_right(RzPanelsTab *tab) {
 	if (!targets1 || !targets2 || !targets3 || !targets4) {
 		goto beach;
 	}
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		if (i == tab->curnode) {
 			continue;
 		}
@@ -2288,23 +2275,23 @@ void __resize_panel_right(RzPanelsTab *tab) {
 		}
 	}
 	if (cur3 > 0) {
-		for (i = 0; i < cur3; i++) {
+		for (int i = 0; i < cur3; i++) {
 			targets3[i]->view->pos.x += PANEL_CONFIG_RESIZE_W;
 			targets3[i]->view->pos.w -= PANEL_CONFIG_RESIZE_W;
 			targets3[i]->view->refresh = true;
 		}
-		for (i = 0; i < cur4; i++) {
+		for (int i = 0; i < cur4; i++) {
 			targets4[i]->view->pos.w += PANEL_CONFIG_RESIZE_W;
 			targets4[i]->view->refresh = true;
 		}
 		cur->view->pos.w += PANEL_CONFIG_RESIZE_W;
 		cur->view->refresh = true;
 	} else if (cur1 > 0) {
-		for (i = 0; i < cur1; i++) {
+		for (int i = 0; i < cur1; i++) {
 			targets1[i]->view->pos.w += PANEL_CONFIG_RESIZE_W;
 			targets1[i]->view->refresh = true;
 		}
-		for (i = 0; i < cur2; i++) {
+		for (int i = 0; i < cur2; i++) {
 			targets2[i]->view->pos.x += PANEL_CONFIG_RESIZE_W;
 			targets2[i]->view->pos.w -= PANEL_CONFIG_RESIZE_W;
 			targets2[i]->view->refresh = true;
@@ -2322,7 +2309,7 @@ beach:
 
 void __resize_panel_up(RzPanelsTab *tab) {
 	RzPanel *cur = __get_cur_panel(tab);
-	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
+	int tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
 	int cx0 = cur->view->pos.x;
 	int cx1 = cur->view->pos.x + cur->view->pos.w - 1;
 	int cy0 = cur->view->pos.y;
@@ -2334,7 +2321,7 @@ void __resize_panel_up(RzPanelsTab *tab) {
 	if (!targets1 || !targets2 || !targets3 || !targets4) {
 		goto beach;
 	}
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		if (i == tab->curnode) {
 			continue;
 		}
@@ -2374,11 +2361,11 @@ void __resize_panel_up(RzPanelsTab *tab) {
 		}
 	}
 	if (cur1 > 0) {
-		for (i = 0; i < cur1; i++) {
+		for (int i = 0; i < cur1; i++) {
 			targets1[i]->view->pos.h -= PANEL_CONFIG_RESIZE_H;
 			targets1[i]->view->refresh = true;
 		}
-		for (i = 0; i < cur2; i++) {
+		for (int i = 0; i < cur2; i++) {
 			targets2[i]->view->pos.y -= PANEL_CONFIG_RESIZE_H;
 			targets2[i]->view->pos.h += PANEL_CONFIG_RESIZE_H;
 			targets2[i]->view->refresh = true;
@@ -2387,12 +2374,12 @@ void __resize_panel_up(RzPanelsTab *tab) {
 		cur->view->pos.h += PANEL_CONFIG_RESIZE_H;
 		cur->view->refresh = true;
 	} else if (cur3 > 0) {
-		for (i = 0; i < cur3; i++) {
+		for (int i = 0; i < cur3; i++) {
 			targets3[i]->view->pos.h += PANEL_CONFIG_RESIZE_H;
 			targets3[i]->view->pos.y -= PANEL_CONFIG_RESIZE_H;
 			targets3[i]->view->refresh = true;
 		}
-		for (i = 0; i < cur4; i++) {
+		for (int i = 0; i < cur4; i++) {
 			targets4[i]->view->pos.h -= PANEL_CONFIG_RESIZE_H;
 			targets4[i]->view->refresh = true;
 		}
@@ -2441,8 +2428,7 @@ void __move_panel_to_left(RzCore *core, RzPanel *panel, int src) {
 	p_w /= 2;
 	int new_w = w - p_w;
 	__set_geometry(&panel->view->pos, 0, 1, p_w + 1, h - 1);
-	int i = 1;
-	for (; i < tab->n_panels; i++) {
+	for (int i = 1; i < tab->n_panels; i++) {
 		RzPanel *tmp = __get_panel(tab, i);
 		int t_x = (int)(((double)tmp->view->pos.x / (double)w) * (double)new_w + p_w);
 		int t_w = (int)(((double)tmp->view->pos.w / (double)w) * (double)new_w + 1);
@@ -2463,8 +2449,7 @@ void __move_panel_to_right(RzCore *core, RzPanel *panel, int src) {
 	int p_x = w - p_w;
 	__set_geometry(&panel->view->pos, p_x - 1, 1, p_w + 1, h - 1);
 	int new_w = w - p_w;
-	int i = 0;
-	for (; i < tab->n_panels - 1; i++) {
+	for (int i = 0; i < tab->n_panels - 1; i++) {
 		RzPanel *tmp = __get_panel(tab, i);
 		int t_x = ((double)tmp->view->pos.x / (double)w) * (double)new_w;
 		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
@@ -2483,8 +2468,7 @@ void __move_panel_to_up(RzCore *core, RzPanel *panel, int src) {
 	int p_h = h / 2;
 	int new_h = h - p_h;
 	__set_geometry(&panel->view->pos, 0, 1, w, p_h - 1);
-	int i = 1;
-	for (; i < tab->n_panels; i++) {
+	for (int i = 1; i < tab->n_panels; i++) {
 		RzPanel *tmp = __get_panel(tab, i);
 		int t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + p_h;
 		int t_h = ((double)tmp->view->pos.h / (double)h) * (double)new_h + 1;
@@ -2503,8 +2487,7 @@ void __move_panel_to_down(RzCore *core, RzPanel *panel, int src) {
 	int p_h = h / 2;
 	int new_h = h - p_h;
 	__set_geometry(&panel->view->pos, 0, new_h, w, p_h);
-	size_t i = 0;
-	for (; i < tab->n_panels - 1; i++) {
+	for (size_t i = 0; i < tab->n_panels - 1; i++) {
 		RzPanel *tmp = __get_panel(tab, i);
 		const size_t t_y = (tmp->view->pos.y * new_h / h) + 1;
 		const size_t t_h = (tmp->view->edge & (1 << PANEL_EDGE_BOTTOM)) ? new_h - t_y : (tmp->view->pos.h * new_h / h);
@@ -2608,7 +2591,7 @@ void __fix_layout_h(RzCore *core) {
 
 void __resize_panel_down(RzPanelsTab *tab) {
 	RzPanel *cur = __get_cur_panel(tab);
-	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
+	int tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
 	int cx0 = cur->view->pos.x;
 	int cx1 = cur->view->pos.x + cur->view->pos.w - 1;
 	int cy0 = cur->view->pos.y;
@@ -2620,7 +2603,7 @@ void __resize_panel_down(RzPanelsTab *tab) {
 	if (!targets1 || !targets2 || !targets3 || !targets4) {
 		goto beach;
 	}
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		if (i == tab->curnode) {
 			continue;
 		}
@@ -2660,23 +2643,23 @@ void __resize_panel_down(RzPanelsTab *tab) {
 		}
 	}
 	if (cur3 > 0) {
-		for (i = 0; i < cur3; i++) {
+		for (int i = 0; i < cur3; i++) {
 			targets3[i]->view->pos.h -= PANEL_CONFIG_RESIZE_H;
 			targets3[i]->view->pos.y += PANEL_CONFIG_RESIZE_H;
 			targets3[i]->view->refresh = true;
 		}
-		for (i = 0; i < cur4; i++) {
+		for (int i = 0; i < cur4; i++) {
 			targets4[i]->view->pos.h += PANEL_CONFIG_RESIZE_H;
 			targets4[i]->view->refresh = true;
 		}
 		cur->view->pos.h += PANEL_CONFIG_RESIZE_H;
 		cur->view->refresh = true;
 	} else if (cur1 > 0) {
-		for (i = 0; i < cur1; i++) {
+		for (int i = 0; i < cur1; i++) {
 			targets1[i]->view->pos.h += PANEL_CONFIG_RESIZE_H;
 			targets1[i]->view->refresh = true;
 		}
-		for (i = 0; i < cur2; i++) {
+		for (int i = 0; i < cur2; i++) {
 			targets2[i]->view->pos.y += PANEL_CONFIG_RESIZE_H;
 			targets2[i]->view->pos.h -= PANEL_CONFIG_RESIZE_H;
 			targets2[i]->view->refresh = true;
@@ -2693,12 +2676,11 @@ beach:
 }
 
 void __del_panel(RzPanelsTab *tab, int pi) {
-	int i;
 	RzPanel *tmp = __get_panel(tab, pi);
 	if (!tmp) {
 		return;
 	}
-	for (i = pi; i < (tab->n_panels - 1); i++) {
+	for (int i = pi; i < (tab->n_panels - 1); i++) {
 		tab->panel[i] = tab->panel[i + 1];
 	}
 	tab->panel[tab->n_panels - 1] = tmp;
@@ -2715,8 +2697,7 @@ void __dismantle_del_panel(RzPanelsTab *tab, RzPanel *p, int pi) {
 }
 
 void __del_invalid_panels(RzPanelsTab *tab) {
-	int i;
-	for (i = 1; i < tab->n_panels; i++) {
+	for (int i = 1; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		if (panel->view->pos.w < 2) {
 			__del_panel(tab, i);
@@ -2741,12 +2722,12 @@ void __dismantle_panel(RzPanelsTab *tab, RzPanel *p) {
 	memset(right, -1, sizeof(right));
 	memset(up, -1, sizeof(up));
 	memset(down, -1, sizeof(down));
-	int i, ox, oy, ow, oh;
+	int ox, oy, ow, oh;
 	ox = p->view->pos.x;
 	oy = p->view->pos.y;
 	ow = p->view->pos.w;
 	oh = p->view->pos.h;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		tmpPanel = __get_panel(tab, i);
 		if (tmpPanel->view->pos.x + tmpPanel->view->pos.w - 1 == ox) {
 			left[i] = 1;
@@ -2812,14 +2793,14 @@ void __dismantle_panel(RzPanelsTab *tab, RzPanel *p) {
 		justDownPanel->view->pos.h = oh + justDownPanel->view->pos.y + justDownPanel->view->pos.h - (oy + oh);
 		justDownPanel->view->pos.y = oy;
 	} else if (leftUpValid && leftDownValid) {
-		for (i = 0; i < tab->n_panels; i++) {
+		for (int i = 0; i < tab->n_panels; i++) {
 			if (left[i] != -1) {
 				tmpPanel = __get_panel(tab, i);
 				tmpPanel->view->pos.w += ox + ow - (tmpPanel->view->pos.x + tmpPanel->view->pos.w);
 			}
 		}
 	} else if (rightUpValid && rightDownValid) {
-		for (i = 0; i < tab->n_panels; i++) {
+		for (int i = 0; i < tab->n_panels; i++) {
 			if (right[i] != -1) {
 				tmpPanel = __get_panel(tab, i);
 				tmpPanel->view->pos.w = tmpPanel->view->pos.x + tmpPanel->view->pos.w - ox;
@@ -2827,14 +2808,14 @@ void __dismantle_panel(RzPanelsTab *tab, RzPanel *p) {
 			}
 		}
 	} else if (upLeftValid && upRightValid) {
-		for (i = 0; i < tab->n_panels; i++) {
+		for (int i = 0; i < tab->n_panels; i++) {
 			if (up[i] != -1) {
 				tmpPanel = __get_panel(tab, i);
 				tmpPanel->view->pos.h += oy + oh - (tmpPanel->view->pos.y + tmpPanel->view->pos.h);
 			}
 		}
 	} else if (downLeftValid && downRightValid) {
-		for (i = 0; i < tab->n_panels; i++) {
+		for (int i = 0; i < tab->n_panels; i++) {
 			if (down[i] != -1) {
 				tmpPanel = __get_panel(tab, i);
 				tmpPanel->view->pos.h = oh + tmpPanel->view->pos.y + tmpPanel->view->pos.h - (oy + oh);
@@ -2928,8 +2909,7 @@ bool __check_func_diff(RzCore *core, RzPanel *p) {
 void __seek_all(RzCore *core, ut64 addr) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		panel->model->addr = addr;
 	}
@@ -2938,8 +2918,7 @@ void __seek_all(RzCore *core, ut64 addr) {
 void __set_refresh_all(RzCore *core, bool clearCache, bool force_refresh) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		if (!force_refresh && __check_panel_type(panel, PANEL_CMD_CONSOLE)) {
 			continue;
@@ -2954,8 +2933,7 @@ void __set_refresh_all(RzCore *core, bool clearCache, bool force_refresh) {
 void __set_refresh_by_type(RzCore *core, const char *cmd, bool clearCache) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		if (!__check_panel_type(p, cmd)) {
 			continue;
@@ -2970,8 +2948,7 @@ void __set_refresh_by_type(RzCore *core, const char *cmd, bool clearCache) {
 void __set_addr_by_type(RzCore *core, const char *cmd, ut64 addr) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		if (!__check_panel_type(p, cmd)) {
 			continue;
@@ -3293,8 +3270,7 @@ int __settings_colors_cb(void *user) {
 	RzPanelsMenuItem *child = panels_menu_item_get_selected_sub(parent);
 	rz_str_ansi_filter(child->name, NULL, NULL, -1);
 	rz_core_theme_load(core, child->name);
-	int i;
-	for (i = 1; i < menu->depth; i++) {
+	for (int i = 1; i < menu->depth; i++) {
 		RzPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
 		menu->refreshPanels[i - 1] = p;
@@ -3315,8 +3291,7 @@ int __config_toggle_cb(void *user) {
 	rz_strbuf_free(tmp);
 	free(parent->p->model->title);
 	parent->p->model->title = rz_strbuf_drain(__draw_menu(core, parent));
-	int i;
-	for (i = 1; i < menu->depth; i++) {
+	for (int i = 1; i < menu->depth; i++) {
 		RzPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
 		menu->refreshPanels[i - 1] = p;
@@ -3343,8 +3318,7 @@ int __config_value_cb(void *user) {
 	rz_strbuf_free(tmp);
 	free(parent->p->model->title);
 	parent->p->model->title = rz_strbuf_drain(__draw_menu(core, parent));
-	int i;
-	for (i = 1; i < menu->depth; i++) {
+	for (int i = 1; i < menu->depth; i++) {
 		RzPanel *p = menu->history[i]->p;
 		p->view->refresh = true;
 		menu->refreshPanels[i - 1] = p;
@@ -3493,9 +3467,8 @@ int __io_cache_off_cb(void *user) {
 void __update_disassembly_or_open(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
-	int i;
 	bool create_new = true;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		if (__check_panel_type(p, PANEL_CMD_DISASSEMBLY)) {
 			__set_panel_addr(core, p, core->offset);
@@ -3546,8 +3519,7 @@ void __set_mode(RzCore *core, RzPanelsMode mode) {
 }
 
 void __update_help(RzCore *core, RzPanelsTab *tab) {
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		if (rz_str_endswith(p->model->cmd, "Help")) {
 			RzStrBuf *rsb = rz_strbuf_new(NULL);
@@ -4114,8 +4086,7 @@ void __print_stack_cb(void *user, void *p) {
 	const int absdelta = RZ_ABS(delta);
 	char *cmd = rz_str_newf("%s%s ", PANEL_CMD_STACK, bits == 32 ? "w" : "q");
 	int n = rz_str_split(panel->model->cmd, ' ');
-	int i;
-	for (i = 0; i < n; i++) {
+	for (int i = 0; i < n; i++) {
 		const char *s = rz_str_word_get0(panel->model->cmd, i);
 		if (!i) {
 			continue;
@@ -4141,8 +4112,7 @@ void __print_hexdump_cb(void *user, void *p) {
 		const char *base = hexdump_rotate[RZ_ABS(panel->model->rotate) % COUNT(hexdump_rotate)];
 		char *cmd = rz_str_newf("%s ", base);
 		int n = rz_str_split(panel->model->cmd, ' ');
-		int i;
-		for (i = 0; i < n; i++) {
+		for (int i = 0; i < n; i++) {
 			const char *s = rz_str_word_get0(panel->model->cmd, i);
 			if (!i) {
 				continue;
@@ -4165,8 +4135,7 @@ void __hudstuff(RzCore *core) {
 	if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
 		__set_panel_addr(core, cur, core->offset);
 	} else {
-		int i;
-		for (i = 0; i < tab->n_panels; i++) {
+		for (int i = 0; i < tab->n_panels; i++) {
 			RzPanel *panel = __get_panel(tab, i);
 			if (__check_panel_type(panel, PANEL_CMD_DISASSEMBLY)) {
 				__set_panel_addr(core, panel, core->offset);
@@ -4277,9 +4246,8 @@ void __del_menu(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	RzPanelsMenu *menu = tab->panels_menu;
-	int i;
 	menu->depth--;
-	for (i = 1; i < menu->depth; i++) {
+	for (int i = 1; i < menu->depth; i++) {
 		menu->history[i]->p->view->refresh = true;
 		menu->refreshPanels[i - 1] = menu->history[i]->p;
 	}
@@ -4761,8 +4729,7 @@ bool __init_panels(RzCore *core, RzPanelsTab *tab) {
 	if (!tab->panel) {
 		return false;
 	}
-	int i;
-	for (i = 0; i < PANEL_NUM_LIMIT; i++) {
+	for (int i = 0; i < PANEL_NUM_LIMIT; i++) {
 		tab->panel[i] = RZ_NEW0(RzPanel);
 		tab->panel[i]->model = RZ_NEW0(RzPanelModel);
 		rz_pvector_init(&tab->panel[i]->model->filter, free);
@@ -4915,9 +4882,8 @@ void __panels_refresh(RzCore *core) {
 void __do_panels_resize(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
-	int i;
 	int h, w = rz_cons_get_size(&h);
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		if ((panel->view->edge & (1 << PANEL_EDGE_BOTTOM)) && (panel->view->pos.y + panel->view->pos.h < h)) {
 			panel->view->pos.h = h - panel->view->pos.y;
@@ -4964,14 +4930,13 @@ void __panels_check_stackbase(RzCore *core) {
 	if (!visual->panels_root->active_tab) {
 		return;
 	}
-	int i;
 	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	if (!sp) {
 		return;
 	}
 	const ut64 stackbase = rz_reg_getv(core->analysis->reg, sp);
 	RzPanelsTab *tab = visual->panels_root->active_tab;
-	for (i = 1; i < tab->n_panels; i++) {
+	for (int i = 1; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		if (panel->model->cmd && __check_panel_type(panel, PANEL_CMD_STACK) && panel->model->baseAddr != stackbase) {
 			panel->model->baseAddr = stackbase;
@@ -5440,7 +5405,6 @@ char *__get_panels_config_file_from_dir(const char *file) {
 }
 
 RZ_IPI void rz_save_panels_layout(RzCore *core, const char *oname) {
-	int i;
 	RzCoreVisual *visual = core->visual;
 	if (!visual || !visual->panels_root || !visual->panels_root->active_tab) {
 		return;
@@ -5457,7 +5421,7 @@ RZ_IPI void rz_save_panels_layout(RzCore *core, const char *oname) {
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	PJ *pj = pj_new();
 	pj_a(pj);
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
 		pj_o(pj);
 		pj_ks(pj, "title", panel->model->title);
@@ -5629,8 +5593,7 @@ void __toggle_cache(RzCore *core, RzPanel *p) {
 void __toggle_help(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		if (rz_str_endswith(p->model->cmd, "Help")) {
 			__dismantle_del_panel(tab, p, i);
@@ -5709,8 +5672,7 @@ bool __move_to_direction(RzCore *core, Direction direction) {
 	RzPanel *cur = __get_cur_panel(tab);
 	int cur_x0 = cur->view->pos.x, cur_x1 = cur->view->pos.x + cur->view->pos.w - 1, cur_y0 = cur->view->pos.y, cur_y1 = cur->view->pos.y + cur->view->pos.h - 1;
 	int temp_x0, temp_x1, temp_y0, temp_y1;
-	int i;
-	for (i = 0; i < tab->n_panels; i++) {
+	for (int i = 0; i < tab->n_panels; i++) {
 		RzPanel *p = __get_panel(tab, i);
 		temp_x0 = p->view->pos.x;
 		temp_x1 = p->view->pos.x + p->view->pos.w - 1;
@@ -5977,11 +5939,10 @@ void __rotate_panels(RzCore *core, bool rev) {
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	RzPanel *first = __get_panel(tab, 0);
 	RzPanel *last = __get_panel(tab, tab->n_panels - 1);
-	int i;
 	RzPanelModel *tmp_model;
 	if (!rev) {
 		tmp_model = first->model;
-		for (i = 0; i < tab->n_panels - 1; i++) {
+		for (int i = 0; i < tab->n_panels - 1; i++) {
 			RzPanel *p0 = __get_panel(tab, i);
 			RzPanel *p1 = __get_panel(tab, i + 1);
 			p0->model = p1->model;
@@ -5989,7 +5950,7 @@ void __rotate_panels(RzCore *core, bool rev) {
 		last->model = tmp_model;
 	} else {
 		tmp_model = last->model;
-		for (i = tab->n_panels - 1; i > 0; i--) {
+		for (int i = tab->n_panels - 1; i > 0; i--) {
 			RzPanel *p0 = __get_panel(tab, i);
 			RzPanel *p1 = __get_panel(tab, i - 1);
 			p0->model = p1->model;
@@ -6220,8 +6181,7 @@ RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 	}
 	RzPanelsTab *tab = rz_pvector_at(&panels_root->tabs, panels_root->cur_tab);
 	if (tab) {
-		int i = 0;
-		for (; i < tab->n_panels; i++) {
+		for (int i = 0; i < tab->n_panels; i++) {
 			RzPanel *cur = __get_panel(tab, i);
 			if (cur) {
 				cur->model->addr = core->offset;
@@ -6529,7 +6489,7 @@ void __panels_process(RzCore *core, RzPanelsTab *tab) {
 	if (!tab) {
 		return;
 	}
-	int i, okey, key;
+	int okey, key;
 	RzCoreVisual *visual = core->visual;
 	RzPanelsRoot *panels_root = visual->panels_root;
 	RzPanelsTab *prev = visual->panels_root->active_tab;
@@ -6741,14 +6701,13 @@ repeat:
 		break;
 	case 'K':
 		if (core->print->cur_enabled) {
-			size_t i;
-			for (i = 0; i < 4; i++) {
+			for (size_t i = 0; i < 4; i++) {
 				prevOpcode(core);
 			}
 		} else {
 			rz_cons_switchbuf(false);
 			if (cur->model->directionCb) {
-				for (i = 0; i < __get_cur_panel(tab)->view->pos.h / 2 - 6; i++) {
+				for (int i = 0; i < __get_cur_panel(tab)->view->pos.h / 2 - 6; i++) {
 					cur->model->directionCb(core, (int)UP);
 				}
 			}
@@ -6756,14 +6715,13 @@ repeat:
 		break;
 	case 'J':
 		if (core->print->cur_enabled) {
-			size_t i;
-			for (i = 0; i < 4; i++) {
+			for (size_t i = 0; i < 4; i++) {
 				nextOpcode(core);
 			}
 		} else {
 			rz_cons_switchbuf(false);
 			if (cur->model->directionCb) {
-				for (i = 0; i < __get_cur_panel(tab)->view->pos.h / 2 - 6; i++) {
+				for (int i = 0; i < __get_cur_panel(tab)->view->pos.h / 2 - 6; i++) {
 					cur->model->directionCb(core, (int)DOWN);
 				}
 			}
@@ -6775,7 +6733,7 @@ repeat:
 		} else {
 			rz_cons_switchbuf(false);
 			if (cur->model->directionCb) {
-				for (i = 0; i < __get_cur_panel(tab)->view->pos.w / 3; i++) {
+				for (int i = 0; i < __get_cur_panel(tab)->view->pos.w / 3; i++) {
 					cur->model->directionCb(core, (int)LEFT);
 				}
 			}
@@ -6787,7 +6745,7 @@ repeat:
 		} else {
 			rz_cons_switchbuf(false);
 			if (cur->model->directionCb) {
-				for (i = 0; i < __get_cur_panel(tab)->view->pos.w / 3; i++) {
+				for (int i = 0; i < __get_cur_panel(tab)->view->pos.w / 3; i++) {
 					cur->model->directionCb(core, (int)RIGHT);
 				}
 			}
