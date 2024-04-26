@@ -29,7 +29,6 @@ RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual) {
 		return;
 	}
 	rz_panels_root_free(visual->panels_root);
-	rz_panels_free(visual->panels);
 	rz_list_free(visual->tabs);
 	free(visual->inputing);
 	free(visual);

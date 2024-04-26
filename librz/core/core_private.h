@@ -295,7 +295,7 @@ typedef enum {
 	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
 } RzPanelsLayout;
 
-typedef struct rz_panels_t {
+typedef struct rz_panels_tab_t {
 	RzConsCanvas *can;
 	RzPanel **panel;
 	int n_panels;
@@ -316,7 +316,7 @@ typedef struct rz_panels_t {
 	RzPanelsLayout layout;
 	char *name;
 	bool first_run;
-} RzPanels;
+} RzPanelsTab;
 
 typedef enum {
 	DEFAULT,
@@ -326,8 +326,9 @@ typedef enum {
 } RzPanelsRootState;
 
 typedef struct rz_panels_root_t {
-	int cur_panels;
-	RzPVector /*<RzPanels *>*/ panels_vec;
+	int cur_tab;
+	RzPVector /*<RzPanelsTab *>*/ tabs;
+	RzPanelsTab *active_tab; // Seems redudant since we have cur_tab index
 	RzPanelsRootState root_state;
 	RzList /*<char *>*/ *theme_list; ///< List of themes
 	bool from_visual;
@@ -362,13 +363,11 @@ typedef struct rz_core_visual_t {
 	int current5format;
 	/* Panels */
 	RzPanelsRoot *panels_root;
-	RzPanels *panels;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
 RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual);
 
-RZ_IPI void rz_panels_free(RZ_NULLABLE RzPanels *panels);
 RZ_IPI void rz_panels_root_free(RZ_NULLABLE RzPanelsRoot *panels_root);
 
 RZ_IPI void rz_core_visual_prompt_input(RzCore *core);
