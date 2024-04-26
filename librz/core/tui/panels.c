@@ -6214,7 +6214,7 @@ RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 	panels_root->from_visual = core->vmode;
 	{
 		const char *l = rz_config_get(core->config, "scr.layout");
-		if (l && *l) {
+		if (RZ_STR_ISNOTEMPTY(l)) {
 			rz_load_panels_layout(core, l);
 		}
 	}
@@ -6978,13 +6978,13 @@ repeat:
 		break;
 	case RZ_CONS_KEY_F1:
 		cmd = rz_config_get(core->config, "key.f1");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		}
 		break;
 	case RZ_CONS_KEY_F2:
 		cmd = rz_config_get(core->config, "key.f2");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		} else {
 			__panel_breakpoint(core);
@@ -6992,31 +6992,31 @@ repeat:
 		break;
 	case RZ_CONS_KEY_F3:
 		cmd = rz_config_get(core->config, "key.f3");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		}
 		break;
 	case RZ_CONS_KEY_F4:
 		cmd = rz_config_get(core->config, "key.f4");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		}
 		break;
 	case RZ_CONS_KEY_F5:
 		cmd = rz_config_get(core->config, "key.f5");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		}
 		break;
 	case RZ_CONS_KEY_F6:
 		cmd = rz_config_get(core->config, "key.f6");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		}
 		break;
 	case RZ_CONS_KEY_F7:
 		cmd = rz_config_get(core->config, "key.f7");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		} else {
 			__panel_single_step_in(core);
@@ -7027,7 +7027,7 @@ repeat:
 		break;
 	case RZ_CONS_KEY_F8:
 		cmd = rz_config_get(core->config, "key.f8");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		} else {
 			__panel_single_step_over(core);
@@ -7038,7 +7038,7 @@ repeat:
 		break;
 	case RZ_CONS_KEY_F9:
 		cmd = rz_config_get(core->config, "key.f9");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		} else {
 			if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
@@ -7049,19 +7049,19 @@ repeat:
 		break;
 	case RZ_CONS_KEY_F10:
 		cmd = rz_config_get(core->config, "key.f10");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		}
 		break;
 	case RZ_CONS_KEY_F11:
 		cmd = rz_config_get(core->config, "key.f11");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		}
 		break;
 	case RZ_CONS_KEY_F12:
 		cmd = rz_config_get(core->config, "key.f12");
-		if (cmd && *cmd) {
+		if (RZ_STR_ISNOTEMPTY(cmd)) {
 			(void)rz_core_cmd0(core, cmd);
 		}
 		break;
