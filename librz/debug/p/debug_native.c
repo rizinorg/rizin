@@ -767,7 +767,7 @@ static int io_perms_to_prot(int io_perms) {
 	return prot_perms;
 }
 
-#if __linux__
+#if __linux__ && !__ANDROID__
 static int sys_thp_mode(void) {
 	size_t i;
 	const char *thp[] = {

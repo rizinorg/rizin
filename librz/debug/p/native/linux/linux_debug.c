@@ -882,6 +882,8 @@ RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *li
 RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	rz_return_val_if_fail(dbg, 0);
 	ut64 tls = 0;
+
+#if !__ANDROID__
 	int prev_tid = dbg->tid;
 
 	if (dbg->tid != tid) {
@@ -901,8 +903,7 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	} else {
 		tls = rz_reg_get_value(dbg->reg, ri);
 	}
-#endif
-#if __aarch64__
+#elif __aarch64__
 	struct iovec iovec = { 0 };
 	ut64 reg;
 
@@ -921,6 +922,8 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 		dbg->tid = prev_tid;
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 	}
+#endif
+
 	return tls;
 }
 
@@ -1051,11 +1054,10 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 
 static void print_fpu(void *f) {
 #if __x86_64__
-	int i, j;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 #if __ANDROID__
 	PRINT_FPU(fpregs);
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		ut64 *b = (ut64 *)&fpregs.st_space[i * 4];
 		ut32 *c = (ut32 *)&fpregs.st_space;
 		float *f = (float *)&fpregs.st_space;
@@ -1071,7 +1073,7 @@ static void print_fpu(void *f) {
 	rz_cons_printf("---- x86-64 ----\n");
 	PRINT_FPU(fpregs);
 	rz_cons_printf("size = 0x%08x\n", (ut32)sizeof(fpregs));
-	for (i = 0; i < 16; i++) {
+	for (int i = 0; i < 16; i++) {
 		ut32 *a = (ut32 *)&fpregs.xmm_space;
 		a = a + (i * 4);
 		rz_cons_printf("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
@@ -1082,7 +1084,7 @@ static void print_fpu(void *f) {
 			long double *st_ld = (long double *)&fpregs.st_space[i * 4];
 			rz_cons_printf("mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
 			// print as hex TBYTE - always little endian
-			for (j = 9; j >= 0; j--) {
+			for (int j = 9; j >= 0; j--) {
 				rz_cons_printf("%02x", st_u8[j]);
 			}
 			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
@@ -1094,7 +1096,6 @@ static void print_fpu(void *f) {
 	}
 #endif // __ANDROID__
 #elif __i386__
-	int i;
 #if __ANDROID__
 	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct *)f;
 	rz_cons_printf("---- x86-32 ----\n");
@@ -1107,7 +1108,7 @@ static void print_fpu(void *f) {
 	rz_cons_printf("foo = 0x%08x\n", (ut32)fpxregs.foo);
 	rz_cons_printf("fos = 0x%08x\n", (ut32)fpxregs.fos);
 	rz_cons_printf("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		ut32 *a = (ut32 *)(&fpxregs.xmm_space);
 		ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
 		ut32 *c = (ut32 *)&fpxregs.st_space;
@@ -1127,7 +1128,7 @@ static void print_fpu(void *f) {
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 	rz_cons_printf("---- x86-32-noxmm ----\n");
 	PRINT_FPU_NOXMM(fpregs);
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		ut64 *b = (ut64 *)(&fpregs.st_space[i * 4]);
 		double *d = (double *)b;
 		ut32 *c = (ut32 *)&fpregs.st_space;
