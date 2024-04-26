@@ -269,7 +269,7 @@ typedef int (*RzPanelsMenuCallback)(void *user);
 typedef struct rz_panels_menu_item {
 	int selectedIndex;
 	char *name;
-	RzPVector /*<RzPanelsMenuItem *>*/ sub_vec;
+	RzPVector /*<RzPanelsMenuItem *>*/ submenus;
 	RzPanelsMenuCallback cb;
 	RzPanel *p;
 } RzPanelsMenuItem;

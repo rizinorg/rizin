@@ -2015,7 +2015,7 @@ void __handle_mouse_on_menu(RzCore *core, int x, int y) {
 		RzPanelsMenuItem *parent = menu->history[d--];
 		size_t idx = 0;
 		void **iter;
-		rz_pvector_foreach (&parent->sub_vec, iter) {
+		rz_pvector_foreach (&parent->submenus, iter) {
 			RzPanelsMenuItem *ptr = *iter;
 			if (!strcmp(word, ptr->name)) {
 				parent->selectedIndex = idx;
@@ -4215,7 +4215,7 @@ void __add_menu(RzCore *core, const char *parent_name, const char *name, RzPanel
 		rz_panels_menu_item_free(item);
 		return;
 	}
-	if (!ht_sp_insert(tab->mht, mht_key, item) || !rz_pvector_push(&parent->sub_vec, item)) {
+	if (!ht_sp_insert(tab->mht, mht_key, item) || !rz_pvector_push(&parent->submenus, item)) {
 		rz_panels_menu_item_free(item);
 		ht_sp_delete(tab->mht, mht_key);
 	}
@@ -4230,11 +4230,11 @@ void __update_menu(RzCore *core, const char *parent, RZ_NULLABLE RzPanelMenuUpda
 	}
 	char tmpbuf[512];
 	void **iter;
-	rz_pvector_foreach (&p_item->sub_vec, iter) {
+	rz_pvector_foreach (&p_item->submenus, iter) {
 		RzPanelsMenuItem *sub = *iter;
 		ht_sp_delete(visual->panels_root->active_tab->mht, rz_strf(tmpbuf, "%s.%s", parent, sub->name));
 	}
-	rz_pvector_fini(&p_item->sub_vec);
+	rz_pvector_fini(&p_item->submenus);
 	if (cb) {
 		cb(core, parent);
 	}
@@ -4263,7 +4263,7 @@ RZ_OWN RzPanelsMenuItem *rz_panels_menu_item_new(RZ_NULLABLE const char *name, R
 		return NULL;
 	}
 	item->selectedIndex = 0;
-	rz_pvector_init(&item->sub_vec, (RzPVectorFree)rz_panels_menu_item_free);
+	rz_pvector_init(&item->submenus, (RzPVectorFree)rz_panels_menu_item_free);
 	item->name = name ? strdup(name) : NULL;
 	item->cb = cb;
 	return item;
@@ -4275,7 +4275,7 @@ void rz_panels_menu_item_free(RZ_NULLABLE RzPanelsMenuItem *item) {
 	}
 	free(item->name);
 	rz_panel_free(item->p);
-	rz_pvector_fini(&item->sub_vec);
+	rz_pvector_fini(&item->submenus);
 	free(item);
 }
 
@@ -4286,7 +4286,7 @@ void panels_menu_item_next_sub(RZ_NONNULL RzPanelsMenuItem *item) {
 	rz_return_if_fail(item);
 
 	item->selectedIndex++;
-	if (item->selectedIndex >= rz_pvector_len(&item->sub_vec)) {
+	if (item->selectedIndex >= rz_pvector_len(&item->submenus)) {
 		item->selectedIndex = 0;
 	}
 }
@@ -4298,7 +4298,7 @@ void panels_menu_item_prev_sub(RZ_NONNULL RzPanelsMenuItem *item) {
 	rz_return_if_fail(item);
 
 	if (item->selectedIndex <= 0) {
-		item->selectedIndex = rz_pvector_len(&item->sub_vec) - 1;
+		item->selectedIndex = rz_pvector_len(&item->submenus) - 1;
 	} else {
 		item->selectedIndex--;
 	}
@@ -4310,7 +4310,7 @@ void panels_menu_item_prev_sub(RZ_NONNULL RzPanelsMenuItem *item) {
 RZ_BORROW RzPanelsMenuItem *panels_menu_item_get_selected_sub(RZ_NONNULL RzPanelsMenuItem *item) {
 	rz_return_val_if_fail(item, NULL);
 
-	return rz_pvector_at(&item->sub_vec, item->selectedIndex);
+	return rz_pvector_at(&item->submenus, item->selectedIndex);
 }
 
 RzStrBuf *__draw_menu(RzCore *core, RzPanelsMenuItem *item) {
@@ -4320,7 +4320,7 @@ RzStrBuf *__draw_menu(RzCore *core, RzPanelsMenuItem *item) {
 	}
 	size_t idx = 0;
 	void **iter;
-	rz_pvector_foreach (&item->sub_vec, iter) {
+	rz_pvector_foreach (&item->submenus, iter) {
 		RzPanelsMenuItem *sub = *iter;
 		if (idx == item->selectedIndex) {
 			rz_strbuf_appendf(buf, "%s> %s" Color_RESET,
@@ -4704,7 +4704,7 @@ RZ_OWN RzPVector /*<const char *>*/ *__sorted_list(const char *menu[], size_t co
 
 void __clear_panels_menuRec(RzPanelsMenuItem *pmi) {
 	void **iter;
-	rz_pvector_foreach (&pmi->sub_vec, iter) {
+	rz_pvector_foreach (&pmi->submenus, iter) {
 		RzPanelsMenuItem *sub = *iter;
 		if (sub) {
 			sub->selectedIndex = 0;
@@ -4810,7 +4810,7 @@ void __panels_refresh(RzCore *core) {
 		RzPanelsMenuItem *parent = tab->panels_menu->root;
 		void **iter;
 		size_t idx = 0;
-		rz_pvector_foreach (&parent->sub_vec, iter) {
+		rz_pvector_foreach (&parent->submenus, iter) {
 			RzPanelsMenuItem *item = *iter;
 			if (tab->mode == PANEL_MODE_MENU && idx == parent->selectedIndex) {
 				rz_strbuf_appendf(title, "%s[%s]" Color_RESET, color, item->name);
@@ -5206,7 +5206,7 @@ void __handle_menu(RzCore *core, const int key) {
 		if (menu->depth == 1) {
 			(void)(child->cb(core));
 		} else {
-			if (parent->selectedIndex != rz_pvector_len(&parent->sub_vec) - 1) {
+			if (parent->selectedIndex != rz_pvector_len(&parent->submenus) - 1) {
 				panels_menu_item_next_sub(parent);
 			}
 			__update_menu_contents(core, menu, parent);
