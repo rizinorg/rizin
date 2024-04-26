@@ -1285,6 +1285,34 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		}
 		break;
 	}
+	case EM_RX:
+		// no dynamic for rx-elf program, handle rx elf object reloc type (emulate linkage map)
+		// and no GOT/PLT for existed for rx-elf, leave no imports info for extern symbol
+		switch (rel->type) {
+		// simply use rizin default symbol resolution to map OBJECT variable symbol to vaddr
+		case R_RX_NONE: break;
+		case R_RX_DIR32:
+			val = S + A;
+			rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+			break;
+		case R_RX_DIR24S_PCREL:
+			val = S + A - P + 1;
+			if (obj->big_endian) {
+				buf[2] = val;
+				buf[1] = val >> 8;
+				buf[0] = val >> 16;
+			} else {
+				buf[0] = val;
+				buf[1] = val >> 8;
+				buf[2] = val >> 16;
+			}
+			// write 3 Bytes
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 3);
+			break;
+		default:
+			RZ_LOG_WARN("Reloc type %d for Renesas RX family not implemented yet.\n", rel->type);
+			break;
+		}
 	}
 }
 
@@ -1482,6 +1510,15 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 			break;
 		}
 		break;
+	case EM_RX:
+		switch (rel->type) {
+		case R_RX_NONE: break;
+		case R_RX_DIR24S_PCREL: ADD(24, -P);
+		case R_RX_DIR32: SET(32);
+		default:
+			RZ_LOG_WARN("unimplemented ELF/RX reloc type %d\n", rel->type);
+			break;
+		}
 	default: break;
 	}
 
