@@ -1295,6 +1295,13 @@ static bool test_pvector_foreach(void) {
 		mu_assert_eq(acc_prev[i], 10 - i - 1, "acc_prev");
 	}
 
+	int idx;
+	rz_pvector_enumerate (&v, it, idx) {
+		void *e = *it;
+		int ev = (int)((size_t)e);
+		mu_assert_eq(ev, idx, "rz_pvector_enumerate index");
+	}
+
 	rz_pvector_clear(&v);
 
 	mu_end;

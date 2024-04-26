@@ -77,12 +77,14 @@ RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_from_vm(RZ_N
 		}
 		rz_pvector_free(vars);
 	}
-	for (size_t i = 0; i < rz_pvector_len(&vm->vm_memory); i++) {
-		RzILMem *mem = rz_pvector_at(&vm->vm_memory, i);
+	size_t idx;
+	void **it;
+	rz_pvector_enumerate (&vm->vm_memory, it, idx) {
+		RzILMem *mem = *it;
 		if (!mem) {
 			continue;
 		}
-		rz_il_validate_global_context_add_mem(ctx, (RzILMemIndex)i, rz_il_mem_key_len(mem), rz_il_mem_value_len(mem));
+		rz_il_validate_global_context_add_mem(ctx, (RzILMemIndex)idx, rz_il_mem_key_len(mem), rz_il_mem_value_len(mem));
 	}
 	return ctx;
 }

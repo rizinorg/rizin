@@ -142,14 +142,13 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core, RzBinStri
 		goto error;
 	}
 
-	ut32 i = 0;
+	ut32 idx;
 	void **iter;
 	RzBinString *string;
-	rz_pvector_foreach (strings, iter) {
+	rz_pvector_enumerate (strings, iter, idx) {
 		string = *iter;
 		RZ_LOG_VERBOSE("basefind: 0x%016" PFMT64x " '%s'\n", string->paddr, string->string);
-		array->ptr[i] = string->paddr;
-		i++;
+		array->ptr[idx] = string->paddr;
 	}
 	RZ_LOG_INFO("basefind: located %u strings\n", array->size);
 

@@ -387,6 +387,13 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 	if (!rz_pvector_empty(vec)) \
 		for (it = ((vec)->v.len == 0 ? NULL : (void **)(vec)->v.a + (vec)->v.len - 1); it && it != (void **)(vec)->v.a - 1; it--)
 
+/**
+ * \brief Like rz_pvector_foreach() but with index
+ */
+#define rz_pvector_enumerate(vec, it, idx) \
+	if (!rz_pvector_empty(vec)) \
+		for (it = (void **)(vec)->v.a, idx = 0; idx < (vec)->v.len; it++, idx++)
+
 /*
  * \brief Find the index of the least element greater than or equal to the lower bound x using binary search
  * example:
