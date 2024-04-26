@@ -4316,7 +4316,7 @@ void panels_menu_item_next_sub(RZ_NONNULL RzPanelsMenuItem *item) {
 	rz_return_if_fail(item);
 
 	item->selectedIndex++;
-	if (item->selectedIndex == rz_pvector_len(&item->sub_vec)) {
+	if (item->selectedIndex >= rz_pvector_len(&item->sub_vec)) {
 		item->selectedIndex = 0;
 	}
 }
@@ -4327,7 +4327,7 @@ void panels_menu_item_next_sub(RZ_NONNULL RzPanelsMenuItem *item) {
 void panels_menu_item_prev_sub(RZ_NONNULL RzPanelsMenuItem *item) {
 	rz_return_if_fail(item);
 
-	if (item->selectedIndex == 0) {
+	if (item->selectedIndex <= 0) {
 		item->selectedIndex = rz_pvector_len(&item->sub_vec) - 1;
 	} else {
 		item->selectedIndex--;
