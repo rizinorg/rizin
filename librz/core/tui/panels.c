@@ -5994,10 +5994,10 @@ void __rotate_panel_cmds(RzCore *core, const char **cmds, const int cmdslen, con
 	} else {
 		p->model->rotate++;
 	}
-	char tmp[64], *between;
+	char tmp[64];
 	int i = p->model->rotate % cmdslen;
 	snprintf(tmp, sizeof(tmp), "%s%s", prefix, cmds[i]);
-	between = rz_str_between(p->model->cmd, prefix, " ");
+	char *between = rz_str_between(p->model->cmd, prefix, " ");
 	if (between) {
 		char replace[64];
 		snprintf(replace, sizeof(replace), "%s%s", prefix, between);
@@ -6009,6 +6009,7 @@ void __rotate_panel_cmds(RzCore *core, const char **cmds, const int cmdslen, con
 	}
 	__set_cmd_str_cache(core, p, NULL);
 	p->view->refresh = true;
+	free(between);
 }
 
 void __rotate_entropy_v_cb(void *user, bool rev) {
