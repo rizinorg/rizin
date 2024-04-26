@@ -134,7 +134,7 @@ RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin
 			offset -= pe_bin->vaddr;
 		}
 		rel->additive = 0;
-		rel->import = rz_bin_import_clone(ptr);
+		rel->import = ptr;
 		rel->addend = 0;
 		rel->vaddr = offset + pe_bin->vaddr;
 		rel->paddr = imports[i].paddr + pe_bin->paddr;
