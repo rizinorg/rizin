@@ -3336,7 +3336,7 @@ int __calculator_cb(void *user) {
 	RzCore *core = (RzCore *)user;
 	for (;;) {
 		char *s = __show_status_input(core, "> ");
-		if (!s || !*s) {
+		if (RZ_STR_ISEMPTY(s)) {
 			free(s);
 			break;
 		}
