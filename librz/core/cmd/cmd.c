@@ -685,7 +685,7 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 	char *sp = strchr(input, ' ');
 	switch (input[0]) {
 	case ' ': // "v [name]"
-		if (visual->panels) {
+		if (visual->panels_root->active_tab) {
 			rz_load_panels_layout(core, input + 1);
 		}
 		rz_config_set(core->config, "scr.layout", input + 1);
