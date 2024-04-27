@@ -2013,9 +2013,9 @@ void __handle_mouse_on_menu(RzCore *core, int x, int y) {
 	int d = menu->depth - 1;
 	while (d) {
 		RzPanelsMenuItem *parent = menu->history[d--];
-		size_t idx = 0;
+		size_t idx;
 		void **iter;
-		rz_pvector_foreach (&parent->submenus, iter) {
+		rz_pvector_enumerate (&parent->submenus, iter, idx) {
 			RzPanelsMenuItem *ptr = *iter;
 			if (!strcmp(word, ptr->name)) {
 				parent->selectedIndex = idx;
@@ -2024,7 +2024,6 @@ void __handle_mouse_on_menu(RzCore *core, int x, int y) {
 				free(word);
 				return;
 			}
-			++idx;
 		}
 		__del_menu(core);
 	}
@@ -4318,9 +4317,9 @@ RzStrBuf *__draw_menu(RzCore *core, RzPanelsMenuItem *item) {
 	if (!buf) {
 		return NULL;
 	}
-	size_t idx = 0;
+	size_t idx;
 	void **iter;
-	rz_pvector_foreach (&item->submenus, iter) {
+	rz_pvector_enumerate (&item->submenus, iter, idx) {
 		RzPanelsMenuItem *sub = *iter;
 		if (idx == item->selectedIndex) {
 			rz_strbuf_appendf(buf, "%s> %s" Color_RESET,
@@ -4329,7 +4328,6 @@ RzStrBuf *__draw_menu(RzCore *core, RzPanelsMenuItem *item) {
 			rz_strbuf_appendf(buf, "  %s", sub->name);
 		}
 		rz_strbuf_append(buf, "          \n");
-		++idx;
 	}
 	return buf;
 }
@@ -4809,15 +4807,14 @@ void __panels_refresh(RzCore *core) {
 	} else {
 		RzPanelsMenuItem *parent = tab->panels_menu->root;
 		void **iter;
-		size_t idx = 0;
-		rz_pvector_foreach (&parent->submenus, iter) {
+		size_t idx;
+		rz_pvector_enumerate (&parent->submenus, iter, idx) {
 			RzPanelsMenuItem *item = *iter;
 			if (tab->mode == PANEL_MODE_MENU && idx == parent->selectedIndex) {
 				rz_strbuf_appendf(title, "%s[%s]" Color_RESET, color, item->name);
 			} else {
 				rz_strbuf_appendf(title, " %s ", item->name);
 			}
-			++idx;
 		}
 	}
 	if (tab->mode == PANEL_MODE_MENU) {
@@ -5886,10 +5883,10 @@ void __create_almighty(RzCore *core, RzPanel *panel, HtSP *menu_db) {
 void __exec_almighty(RzCore *core, RzPanel *panel, RModal *modal, HtSP *menu_db, RzPanelLayout dir) {
 	RzPVector *keys = get_HtSP_key_list(menu_db);
 	void **iter;
-	int i = 0;
-	rz_pvector_foreach (keys, iter) {
+	int idx;
+	rz_pvector_enumerate (keys, iter, idx) {
 		char *key = (char *)*iter;
-		if (i++ == modal->idx) {
+		if (idx == modal->idx) {
 			RzPanelAlmightyCallback cb = ht_sp_find(menu_db, key, 0);
 			cb(core, panel, dir, key);
 			break;
@@ -5901,10 +5898,10 @@ void __exec_almighty(RzCore *core, RzPanel *panel, RModal *modal, HtSP *menu_db,
 void __delete_almighty(RzCore *core, RModal *modal, HtSP *menu_db) {
 	RzPVector *keys = get_HtSP_key_list(menu_db);
 	void **iter;
-	int i = 0;
-	rz_pvector_foreach (keys, iter) {
+	int idx;
+	rz_pvector_enumerate (keys, iter, idx) {
 		char *key = (char *)*iter;
-		if (i++ == modal->idx) {
+		if (idx == modal->idx) {
 			ht_sp_delete(menu_db, key);
 			*iter = NULL;
 		}
