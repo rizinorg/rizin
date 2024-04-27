@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=RX reloc info
-FILE=bins/rx/reloc_tmp.o
+FILE=bins/rx/reloc_tmp
 ARGS=
 CMDS=<<EOF
 ir
@@ -388,7 +388,7 @@ RUN
 
 
 NAME=RX reloc obj
-FILE=bins/rx/reloc_tmp.o
+FILE=bins/rx/reloc_tmp
 ARGS=
 CMDS=<<EOF
 aa
