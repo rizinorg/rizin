@@ -662,6 +662,10 @@ static bool RzBaseType_eq(const RzBaseType *a, const RzBaseType *b) {
 	if (a == NULL || b == NULL) {
 		return a == NULL && b == NULL;
 	}
+	if (a->scope.cu_name && b->scope.cu_name && RZ_STR_NE(a->scope.cu_name, b->scope.cu_name)) {
+		printf("types '%s' and '%s' are not equal\n", a->name, b->name);
+		return false;
+	}
 	return a->kind == b->kind && a->attrs == b->attrs && RZ_STR_EQ(a->name, b->name);
 }
 
@@ -706,6 +710,11 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 		break;
 	default:
 		return NULL;
+	}
+
+	if (ctx->unit->name) {
+		printf("storing cu_name: '%s'\n", ctx->unit->name);
+		btype->scope.cu_name = rz_str_dup(ctx->unit->name);
 	}
 
 	RzBinDwarfAttr *attr = NULL;

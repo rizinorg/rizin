@@ -39,6 +39,11 @@ typedef struct rz_type_db_t {
 	RzIOBind iob; // for RzIO in formats
 } RzTypeDB;
 
+
+typedef struct rz_type_scope_t {
+	char *cu_name;
+} RzTypeScope;
+
 // All types in RzTypeDB module are either concrete,
 // "base" types that are types already having the
 // concrete size and memory layout
@@ -114,6 +119,7 @@ typedef struct rz_base_type_t {
 	ut64 size; // size of the whole type in bits
 	RzBaseTypeKind kind;
 	RzTypeAttribute attrs;
+	RzTypeScope scope;
 	union {
 		RzBaseTypeStruct struct_data;
 		RzBaseTypeEnum enum_data;
