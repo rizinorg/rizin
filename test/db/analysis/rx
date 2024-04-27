@@ -54,6 +54,26 @@ NX       false
 EOF
 RUN
 
+NAME=RX reloc info
+FILE=bins/rx/reloc_tmp.o
+ARGS=
+CMDS=<<EOF
+ir
+EOF
+EXPECT=<<EOF
+vaddr      paddr      target     type   name                     
+-----------------------------------------------------------------
+0x08000042 0x00000042 0x080000a8 SET_32 _static_bar.1425
+0x08000059 0x00000059 0x00000004 SET_32 _local_gint
+0x08000063 0x00000063 0x00000004 SET_32 _local_gint
+0x08000070 0x00000070 0x08000300 SET_32 _extern_int
+0x08000079 0x00000079 0x080000a8 SET_32 _local_static_gint
+0x08000086 0x00000086 0x08000304 ADD_24 _extern_foo - 0x08000086
+0x0800008a 0x0000008a 0x0800003c ADD_24 _top_foo - 0x0800008a
+0x0800008e 0x0000008e 0x08000098 ADD_24 _bottom_foo - 0x0800008e
+EOF
+RUN
+
 NAME=RX morse function
 FILE=bins/rx/morse
 ARGS=
