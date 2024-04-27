@@ -474,7 +474,7 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		rel->type = RZ_BIN_RELOC_32;
 #endif
 		rel->additive = 0;
-		rel->import = rz_bin_import_clone(ptr);
+		rel->import = ptr;
 		rel->addend = 0;
 		{
 			ut8 addr[4];
