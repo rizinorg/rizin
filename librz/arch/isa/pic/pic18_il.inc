@@ -257,11 +257,19 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_CALL: return op_call(ctx);
 	case PIC18_OPCODE_CLRF: return SEQ2(SETG(RF, U8(0)), SETG("z", IL_TRUE));
 	case PIC18_OPCODE_CLRWDT:
-		return SEQ4(
-			SETG("wdt", U8(0)),
-			SETG("wdt_prescaler_count", IL_FALSE),
-			SETG("to", IL_TRUE),
-			SETG("pd", IL_TRUE));
+		return NOP();
+		//		return SEQ4(
+		//			SETG("wdt", U8(0)),
+		//			SETG("wdtps", IL_FALSE),
+		//			SETG("to", IL_TRUE),
+		//			SETG("pd", IL_TRUE));
+	case PIC18_OPCODE_SLEEP:
+		return NOP();
+		//		return SEQ4(
+		//			SETG("wdt", U8(0)),
+		//			SETG("wdtps", IL_FALSE),
+		//			SETG("to", IL_TRUE),
+		//			SETG("pd", IL_FALSE));
 	case PIC18_OPCODE_COMF: return set_dest_status(ctx, complement_1(VRF));
 	case PIC18_OPCODE_CPFSEQ: return op_skip_if(ctx, EQ(VRW, VRF));
 	case PIC18_OPCODE_CPFSGT: return op_skip_if(ctx, SGT(VRW, VRF));
@@ -373,12 +381,6 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 			set_dest_status(ctx, LOGOR(SHIFTR0(VARLP("_x"), U8(7)), BOOL_TO_BV(VRC, 8))));
 	case PIC18_OPCODE_SETF:
 		return SETG(RF, U8(0xff));
-	case PIC18_OPCODE_SLEEP:
-		return SEQ4(
-			SETG("wdt", U8(0)),
-			SETG("wdt_prescaler_count", IL_FALSE),
-			SETG("to", IL_TRUE),
-			SETG("pd", IL_FALSE));
 	case PIC18_OPCODE_SUBFWB: return op_sub(ctx, NULL, VRW, VRF, VRC);
 	case PIC18_OPCODE_SUBLW: return op_sub(ctx, RW, U8(K), VRW, NULL);
 	case PIC18_OPCODE_SUBWF: return op_sub(ctx, NULL, VRF, VRW, NULL);

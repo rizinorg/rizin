@@ -239,12 +239,8 @@ static RzILOpPure *bit_get(RzILOpPure *v, ut32 b) {
 	return NON_ZERO(LOGAND(v, U8(1 << b)));
 }
 
-static RzILOpEffect *regbit_set(const char *reg, ut32 b, bool x) {
-	return SETG(reg, bit_set(VARG(reg), b, x));
-}
-static RzILOpEffect *regbit_set1(const char *reg, ut32 b, RzILOpBool *x) {
-	return SETG(reg, bit_set1(VARG(reg), b, x));
-}
+#define regbit_set(reg, b, x) SETG(reg, bit_set(VARG(reg), b, x))
+#define regbit_set1(reg, b, x) SETG(reg, bit_set1(VARG(reg), b, x))
 
 IL_LIFTER_IMPL(BCF) {
 	return regbit_set(pic_midrange_regname(F), B, 0);
