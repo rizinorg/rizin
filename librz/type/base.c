@@ -163,6 +163,7 @@ RZ_API bool rz_base_type_clone_into(
 	rz_mem_copy(dst, sizeof(RzBaseType), src, sizeof(RzBaseType));
 	dst->name = rz_str_dup(src->name);
 	dst->type = src->type ? rz_type_clone(src->type) : NULL;
+	dst->scope.cu_name = rz_str_dup(src->scope.cu_name);
 
 	switch (src->kind) {
 	case RZ_BASE_TYPE_KIND_ENUM:

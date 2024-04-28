@@ -662,6 +662,8 @@ static bool RzBaseType_eq(const RzBaseType *a, const RzBaseType *b) {
 	if (a == NULL || b == NULL) {
 		return a == NULL && b == NULL;
 	}
+	printf("CU(a): %s", a->scope.cu_name);
+	printf("CU(b): %s", b->scope.cu_name);
 	if (a->scope.cu_name && b->scope.cu_name && RZ_STR_NE(a->scope.cu_name, b->scope.cu_name)) {
 		printf("types '%s' and '%s' are not equal\n", a->name, b->name);
 		return false;
@@ -1730,6 +1732,8 @@ static RzBinDwarfDie *die_end(RzBinDwarfCompUnit *unit) {
 	return (RzBinDwarfDie *)((char *)vec->a + vec->elem_size * vec->len);
 }
 
+static bool store_base_type(void *u, const char *k, const void *v);
+
 /**
  * \brief Parses type and function information out of DWARF entries
  *        and stores them to analysis->debug_info
@@ -1751,7 +1755,12 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		.unit = NULL,
 	};
 	RzBinDwarfCompUnit *unit;
+	RzAnalysisDebugInfo *debug_info = analysis->debug_info;
 	rz_vector_foreach (&dw->info->units, unit) {
+		debug_info->type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_free);
+		debug_info->base_type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_base_type_free);
+		debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
+
 		if (rz_vector_empty(&unit->dies)) {
 			continue;
 		}
@@ -1762,6 +1771,12 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 
 			die_parse(&ctx, die);
 		}
+
+		ht_sp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
+
+		ht_up_free(debug_info->type_by_offset);
+		ht_up_free(debug_info->base_type_by_offset);
+		ht_sp_free(debug_info->base_types_by_name);
 	}
 	ht_up_free(ctx.str_escaped);
 }
@@ -1773,7 +1788,10 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 		b = temp; \
 	} while (0)
 
-static inline void update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
+/**
+ * \brief
+ */
+static inline void update_base_type(const RzTypeDB *typedb, RZ_BORROW RzBaseType *type) {
 	RzBaseType *t = rz_type_db_get_base_type(typedb, type->name);
 	if (t && t == type) {
 		return;
@@ -1781,18 +1799,21 @@ static inline void update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
 	rz_type_db_update_base_type(typedb, rz_base_type_clone(type));
 }
 
-static void db_save_renamed(RzTypeDB *db, RzBaseType *b, char *name) {
+static void db_save_renamed(RzTypeDB *db, RZ_BORROW RzBaseType *b, RZ_OWN char *name) {
 	if (!name) {
 		rz_warn_if_reached();
 		return;
 	}
 	RzBaseType *t = rz_type_db_get_base_type(db, b->name);
 	if (t == b) {
+		free(t->name);
+		t->name = name;
 		return;
 	}
-	free(b->name);
-	b->name = name;
-	rz_type_db_update_base_type(db, b);
+	RzBaseType *newb = rz_base_type_clone(b);
+	free(newb->name);
+	newb->name = name;
+	rz_type_db_update_base_type(db, newb);
 }
 
 static bool store_base_type(void *u, const char *k, const void *v) {
@@ -1813,7 +1834,7 @@ static bool store_base_type(void *u, const char *k, const void *v) {
 		}
 		if (a->kind != RZ_BASE_TYPE_KIND_TYPEDEF) {
 			update_base_type(analysis->typedb, a);
-			db_save_renamed(analysis->typedb, rz_base_type_clone(b), rz_str_newf("%s_0", name));
+			db_save_renamed(analysis->typedb, b, rz_str_newf("%s_0", name));
 			goto beach;
 		}
 		if (a->type->kind != RZ_TYPE_KIND_IDENTIFIER) {
@@ -1829,7 +1850,7 @@ static bool store_base_type(void *u, const char *k, const void *v) {
 			a->type->identifier.name = rz_str_dup(newname);
 			update_base_type(analysis->typedb, a);
 		}
-		db_save_renamed(analysis->typedb, rz_base_type_clone(b), newname);
+		db_save_renamed(analysis->typedb, b, newname);
 	} else {
 		RZ_LOG_WARN("BaseType: same name [%s] type count is more than 3\n", name);
 	}
@@ -1856,7 +1877,6 @@ static bool store_callable(void *u, ut64 k, const void *v) {
 RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
 	rz_analysis_dwarf_preprocess_info(analysis, dw);
-	ht_sp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
 	ht_up_foreach(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
 }
 
@@ -2081,10 +2101,7 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	debug_info->function_by_offset = ht_up_new(NULL, (HtUPFreeValue)function_free);
 	debug_info->function_by_addr = ht_up_new(NULL, NULL);
 	debug_info->variable_by_offset = ht_up_new(NULL, NULL);
-	debug_info->type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_free);
 	debug_info->callable_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_callable_free);
-	debug_info->base_type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_base_type_free);
-	debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
 	debug_info->visited = set_u_new();
 	return debug_info;
 }
@@ -2100,10 +2117,7 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	ht_up_free(debuginfo->function_by_offset);
 	ht_up_free(debuginfo->function_by_addr);
 	ht_up_free(debuginfo->variable_by_offset);
-	ht_up_free(debuginfo->type_by_offset);
 	ht_up_free(debuginfo->callable_by_offset);
-	ht_up_free(debuginfo->base_type_by_offset);
-	ht_sp_free(debuginfo->base_types_by_name);
 	rz_bin_dwarf_free(debuginfo->dw);
 	set_u_free(debuginfo->visited);
 	free(debuginfo);
