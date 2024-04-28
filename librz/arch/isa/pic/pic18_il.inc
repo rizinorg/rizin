@@ -102,16 +102,58 @@ static RzILOpEffect *set_dest(const Pic18ILContext *ctx, RzILOpPure *x) {
 	return SETG(regname, x);
 }
 
-static RzILOpEffect *status_add(RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
-	return NOP();
+/**
+ * bit 4: N: Negative bit
+ * This bit is used for signed arithmetic (2’s complement). It indicates whether the result was negative, (ALU MSb = 1).
+ * 1 = Result was negative
+ * 0 = Result was positive
+ *
+ * bit 3: OV: Overflow bit
+ * This bit is used for signed arithmetic (2’s complement). It indicates an overflow of the 7-bit magnitude, which causes the sign bit (bit7) to change state.
+ * 1 = Overflow occurred for signed arithmetic (in this arithmetic operation)
+ * 0 = No overflow occurred
+ *
+ * bit 2: Z: Zero bit
+ * 1 = The result of an arithmetic or logic operation is zero
+ * 0 = The result of an arithmetic or logic operation is not zero
+ *
+ * bit 1: DC: Digit carry/borrow bit
+ * For ADDWF, ADDLW, SUBLW, and SUBWF instructions
+ * 1 = A carry-out from the 4th low order bit of the result occurred
+ * 0 = No carry-out from the 4th low order bit of the result
+ * Note: For borrow, the polarity is reversed. A subtraction is executed by adding the 2’s complement of the second operand. For rotate (RRF, RLF) instructions, this bit is loaded
+ * with either the bit4 or bit3 of the source register.
+ *
+ * bit 0: C: Carry/borrow bit
+ * For ADDWF, ADDLW, SUBLW, and SUBWF instructions
+ * 1 = A carry-out from the most significant bit of the result occurred
+ * 0 = No carry-out from the most significant bit of the result occurred
+ * Note: For borrow, the polarity is reversed. A subtraction is executed by adding the 2’s complement of the second operand. For rotate (RRF, RLF) instructions, this bit is loaded
+ * with either the high or low order bit of the source register.
+ */
+
+static RzILOpEffect *status_add(const Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+	return SEQ5(
+		SETG("c", CHECK_CARRY(a, b, res)),
+		SETG("dc", CHECK_DIGIT_CARRY(a, b, res)),
+		SETG("z", IS_ZERO(res)),
+		SETG("ov", CHECK_OVERFLOW(a, b, res)),
+		SETG("n", MSB(DUP(res))));
 }
 
-static RzILOpEffect *status_sub(RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
-	return NOP();
+static RzILOpEffect *status_sub(const Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+	return SEQ5(
+		SETG("c", CHECK_BORROW(a, b, res)),
+		SETG("dc", CHECK_DIGIT_BORROW(a, b, res)),
+		SETG("z", IS_ZERO(res)),
+		SETG("ov", CHECK_OVERFLOW(a, b, res)),
+		SETG("n", MSB(DUP(res))));
 }
 
 static RzILOpEffect *status_res(const Pic18ILContext *ctx, RzILOpPure *res) {
-	return NOP();
+	return SEQ2(
+		SETG("z", IS_ZERO(res)),
+		SETG("n", MSB(DUP(res))));
 }
 
 static RzILOpEffect *set_dest_status(const Pic18ILContext *ctx, RzILOpPure *x) {
@@ -147,28 +189,28 @@ static RzILOpEffect *op_add(const Pic18ILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	if (dst) {
 		return SEQ3(
-			SETL("_res", ADD(a, curry ? ADD(b, curry) : b)),
-			status_add(DUP(a), DUP(b), VARL("_res"), curry ? DUP(curry) : NULL),
-			SETG(dst, VARL("_res")));
+			SETL("__res", ADD(a, curry ? ADD(b, curry) : b)),
+			status_add(ctx, DUP(a), DUP(b), VARL("__res"), curry ? DUP(curry) : NULL),
+			SETG(dst, VARL("__res")));
 	}
 	return SEQ3(
-		SETL("_res", ADD(a, curry ? ADD(b, curry) : b)),
-		status_add(DUP(a), DUP(b), VARL("_res"), curry ? DUP(curry) : NULL),
-		set_dest(ctx, VARL("_res")));
+		SETL("__res", ADD(a, curry ? ADD(b, curry) : b)),
+		status_add(ctx, DUP(a), DUP(b), VARL("__res"), curry ? DUP(curry) : NULL),
+		set_dest(ctx, VARL("__res")));
 }
 
 static RzILOpEffect *op_sub(const Pic18ILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	if (dst) {
 		return SEQ3(
-			SETL("_res", SUB(a, curry ? ADD(b, curry) : b)),
-			status_sub(DUP(a), DUP(b), VARL("_res"), curry ? DUP(curry) : NULL),
-			SETG(dst, VARL("_res")));
+			SETL("__res", SUB(a, curry ? ADD(b, curry) : b)),
+			status_sub(ctx, DUP(a), DUP(b), VARL("__res"), curry ? DUP(curry) : NULL),
+			SETG(dst, VARL("__res")));
 	}
 	return SEQ3(
-		SETL("_res", SUB(a, curry ? ADD(b, curry) : b)),
-		status_sub(DUP(a), DUP(b), VARL("_res"), curry ? DUP(curry) : NULL),
-		set_dest(ctx, VARL("_res")));
+		SETL("__res", SUB(a, curry ? ADD(b, curry) : b)),
+		status_sub(ctx, DUP(a), DUP(b), VARL("__res"), curry ? DUP(curry) : NULL),
+		set_dest(ctx, VARL("__res")));
 }
 
 static RzILOpEffect *op_branch(const Pic18ILContext *ctx, RzILOpPure *condition) {
@@ -195,9 +237,9 @@ static RzILOpEffect *op_call(const Pic18ILContext *ctx) {
 static RzILOpEffect *op_and(const Pic18ILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b) {
 	return SEQ3(
-		SETL("_res", LOGAND(a, b)),
-		status_res(ctx, VARL("_res")),
-		SETG(dst, VARL("_res")));
+		SETL("__res", LOGAND(a, b)),
+		status_res(ctx, VARL("__res")),
+		SETG(dst, VARL("__res")));
 }
 
 static RzILOpEffect *op_skip_if(const Pic18ILContext *ctx, RzILOpPure *condition) {
@@ -206,9 +248,9 @@ static RzILOpEffect *op_skip_if(const Pic18ILContext *ctx, RzILOpPure *condition
 
 static RzILOpEffect *set_prod16(const Pic18ILContext *ctx, RzILOpPure *res) {
 	return SEQ3(
-		SETL("_res", res),
-		SETG("prodh", UNSIGNED(8, SHIFTR0(VARL("_res"), U8(8)))),
-		SETG("prodl", UNSIGNED(8, VARL("_res"))));
+		SETL("__res", res),
+		SETG("prodh", UNSIGNED(8, SHIFTR0(VARL("__res"), U8(8)))),
+		SETG("prodl", UNSIGNED(8, VARL("__res"))));
 }
 
 static RzILOpEffect *op_pop(const Pic18ILContext *ctx) {
@@ -276,40 +318,40 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_CPFSLT: return op_skip_if(ctx, SLT(VRW, VRF));
 	case PIC18_OPCODE_DAW:
 		return SEQ3(
-			SETL("_res", decimal_adjust(ctx, VRW)),
+			SETL("__res", decimal_adjust(ctx, VRW)),
 			SETG("c", IL_FALSE), // TODO: status C
-			SETG(RW, VARL("_res")));
+			SETG(RW, VARL("__res")));
 	case PIC18_OPCODE_DECF:
 		return SEQ3(
-			SETL("_res", SUB(VRF, U8(1))),
-			status_sub(VRF, U8(1), VARL("_res"), NULL),
-			set_dest(ctx, VARL("_res")));
+			SETL("__res", SUB(VRF, U8(1))),
+			status_sub(ctx, VRF, U8(1), VARL("__res"), NULL),
+			set_dest(ctx, VARL("__res")));
 	case PIC18_OPCODE_DECFSZ:
 		return SEQ3(
-			SETL("_res", SUB(VRF, U8(1))),
-			set_dest(ctx, VARL("_res")),
-			op_skip_if(ctx, IS_ZERO(VARL("_res"))));
+			SETL("__res", SUB(VRF, U8(1))),
+			set_dest(ctx, VARL("__res")),
+			op_skip_if(ctx, IS_ZERO(VARL("__res"))));
 	case PIC18_OPCODE_DCFSNZ:
 		return SEQ3(
-			SETL("_res", SUB(VRF, U8(1))),
-			set_dest(ctx, VARL("_res")),
-			op_skip_if(ctx, NON_ZERO(VARL("_res"))));
+			SETL("__res", SUB(VRF, U8(1))),
+			set_dest(ctx, VARL("__res")),
+			op_skip_if(ctx, NON_ZERO(VARL("__res"))));
 	case PIC18_OPCODE_GOTO: return JMP(U32((ut32)K << 1));
 	case PIC18_OPCODE_INCF:
 		return SEQ3(
-			SETL("_res", ADD(VRF, U8(1))),
-			status_add(VRF, U8(1), VARL("_res"), NULL),
-			set_dest(ctx, VARL("_res")));
+			SETL("__res", ADD(VRF, U8(1))),
+			status_add(ctx, VRF, U8(1), VARL("__res"), NULL),
+			set_dest(ctx, VARL("__res")));
 	case PIC18_OPCODE_INCFSZ:
 		return SEQ3(
-			SETL("_res", ADD(VRF, U8(1))),
-			set_dest(ctx, VARL("_res")),
-			op_skip_if(ctx, IS_ZERO(VARL("_res"))));
+			SETL("__res", ADD(VRF, U8(1))),
+			set_dest(ctx, VARL("__res")),
+			op_skip_if(ctx, IS_ZERO(VARL("__res"))));
 	case PIC18_OPCODE_INFSNZ:
 		return SEQ3(
-			SETL("_res", ADD(VRF, U8(1))),
-			set_dest(ctx, VARL("_res")),
-			op_skip_if(ctx, NON_ZERO(VARL("_res"))));
+			SETL("__res", ADD(VRF, U8(1))),
+			set_dest(ctx, VARL("__res")),
+			op_skip_if(ctx, NON_ZERO(VARL("__res"))));
 	case PIC18_OPCODE_IORWF:
 		return set_dest_status(ctx, LOGOR(VRW, VRF));
 	case PIC18_OPCODE_IORLW:

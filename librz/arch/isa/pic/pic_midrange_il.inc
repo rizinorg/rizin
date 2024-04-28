@@ -123,13 +123,13 @@ static const char *RFSR(ut8 n) {
 
 #define BITN(x, n) IS_ZERO(LOGAND(SHIFTR0(x, U32(n)), U32(1)))
 // overflow is not used in status register but just keeping this for future "maybe" use
-#define CHECK_OVERFLOW(x, y, res)     AND(XOR(MSB(x), MSB(res)), XOR(MSB(y), MSB(res)))
-#define CHECK_CARRY(x, y, res)        OR(AND(MSB(x), MSB(y)), AND(OR(MSB(x), MSB(y)), INV(MSB(res))))
-#define CHECK_BORROW(x, y, res)       OR(OR(AND(INV(MSB(x)), MSB(y)), AND(INV(MSB(x)), MSB(res))), AND(MSB(x), AND(MSB(y), MSB(res))))
-#define CHECK_DIGIT_CARRY(x, y, res)  OR(AND(BITN(x, 3), BITN(y, 3)), AND(OR(BITN(x, 3), BITN(y, 3)), INV(BITN(res, 3))))
+#define CHECK_OVERFLOW(x, y, res)     AND(XOR(MSB(x), MSB(res)), XOR(MSB(y), MSB(DUP(res))))
+#define CHECK_CARRY(x, y, res)        OR(AND(MSB(x), MSB(y)), AND(OR(MSB(DUP(x)), MSB(DUP(y))), INV(MSB(res))))
+#define CHECK_BORROW(x, y, res)       OR(OR(AND(INV(MSB(x)), MSB(y)), AND(INV(MSB(DUP(x))), MSB(res))), AND(MSB(DUP(x)), AND(MSB(DUP(y)), MSB(DUP(res)))))
+#define CHECK_DIGIT_CARRY(x, y, res)  OR(AND(BITN(x, 3), BITN(y, 3)), AND(OR(BITN(DUP(x), 3), BITN(DUP(y), 3)), INV(BITN(res, 3))))
 #define CHECK_DIGIT_BORROW(x, y, res) OR( \
-	OR(AND(INV(BITN(x, 3)), BITN(y, 3)), AND(INV(BITN(x, 3)), BITN(res, 3))), \
-	AND(BITN(x, 3), AND(BITN(y, 3), BITN(res, 3))))
+	OR(AND(INV(BITN(x, 3)), BITN(y, 3)), AND(INV(BITN(DUP(x), 3)), BITN(res, 3))), \
+	AND(BITN(DUP(x), 3), AND(BITN(DUP(y), 3), BITN(DUP(res), 3))))
 
 /**
  * Handle C, DC & Z flags for the previous operation.
