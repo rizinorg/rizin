@@ -26,8 +26,7 @@ static RzILOpPure *varg_mm(const HtSU *mm, const char *v) {
 	if (RZ_STR_EQ(v, "tblptr")) {
 		return APPEND(varg_mm(mm, "tblptru"), APPEND(varg_mm(mm, "tblptrh"), varg_mm(mm, "tblptrl")));
 	}
-	rz_warn_if_reached();
-	return NULL;
+	return VARG(v);
 }
 
 static RzILOpEffect *setg_mm(const HtSU *mm, const char *v, RzILOpPure *x) {
@@ -47,8 +46,7 @@ static RzILOpEffect *setg_mm(const HtSU *mm, const char *v, RzILOpPure *x) {
 			setg_mm(mm, "tblptrh", UNSIGNED(8, SHIFTR0(VARL("__tblptr"), U8(8)))),
 			setg_mm(mm, "tblptru", UNSIGNED(8, SHIFTR0(VARL("__tblptr"), U8(16)))));
 	}
-	rz_warn_if_reached();
-	return NULL;
+	return SETG(v, x);
 }
 
 #undef VARG
@@ -454,8 +452,14 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 #undef RS
 #undef VRS
 
+static const char *pic18_reg_bindings[] = {
+	"_sram",
+	"_stack"
+};
+
 static RzAnalysisILConfig *pic18_il_config(
 	RZ_NONNULL RzAnalysis *analysis) {
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, false, 16);
+	cfg->reg_bindings = pic18_reg_bindings;
 	return cfg;
 }

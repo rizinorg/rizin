@@ -229,8 +229,6 @@ static const char *pic18_SFRs[] = {
 	[0xF82 - 0xF80] = "portc",
 	[0xF81 - 0xF80] = "portb",
 	[0xF80 - 0xF80] = "porta",
-	"_sram",
-	"_stack"
 };
 
 static const char *pic18_GPRs[] = {
