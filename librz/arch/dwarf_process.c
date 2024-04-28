@@ -1759,7 +1759,7 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 	rz_vector_foreach (&dw->info->units, unit) {
 		debug_info->type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_free);
 		debug_info->base_type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_base_type_free);
-		debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
+		debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free); // borrows RzBaseType pointers from base_type_by_offset
 
 		if (rz_vector_empty(&unit->dies)) {
 			continue;
