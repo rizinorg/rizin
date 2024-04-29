@@ -242,7 +242,7 @@ err:
 
 static char *analysis_pic_pic18_get_reg_profile(RzAnalysis *esil) {
 	const char *p =
-		"#pc lives in nowhere actually"
+		"#pc lives in nowhere actually\n"
 		"=PC	pc\n"
 		"=SP	tos\n"
 		"=A0	porta\n"

@@ -21,7 +21,7 @@ typedef struct {
 	// and some magical hocus pocus ;)
 } Pic18OpDesc;
 
-static const Pic18OpDesc ops[] = {
+static const Pic18OpDesc pic18_ops[] = {
 	{ PIC18_OPCODE_NOP, 0xf000, 0xffff, "nop", NO_ARG },
 	{ PIC18_OPCODE_GOTO, 0xef00, 0xefff, "goto", K20_T },
 	{ PIC18_OPCODE_LFSR, 0xee00, 0xee3f, "lfsr", FK_T },
@@ -404,9 +404,10 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 	op->addr = addr;
 	check_len(2);
 	ut16 word = rz_read_le16(buff);
-	Pic18OpDesc *desc = (Pic18OpDesc *)ops;
-	for (; desc->opmin != (desc->opmin & word) ||
-		desc->opmax != (desc->opmax | word);
+	Pic18OpDesc *desc = (Pic18OpDesc *)pic18_ops;
+	for (; desc - pic18_ops < RZ_ARRAY_SIZE(pic18_ops) &&
+		(desc->opmin != (desc->opmin & word) ||
+			desc->opmax != (desc->opmax | word));
 		desc++) {
 	}
 	op->code = desc->code;

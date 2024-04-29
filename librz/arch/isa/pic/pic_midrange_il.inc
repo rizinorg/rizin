@@ -239,7 +239,7 @@ static RzILOpPure *bit_get(RzILOpPure *v, ut32 b) {
 	return NON_ZERO(LOGAND(v, U8(1 << b)));
 }
 
-#define regbit_set(reg, b, x) SETG(reg, bit_set(VARG(reg), b, x))
+#define regbit_set(reg, b, x)  SETG(reg, bit_set(VARG(reg), b, x))
 #define regbit_set1(reg, b, x) SETG(reg, bit_set1(VARG(reg), b, x))
 
 IL_LIFTER_IMPL(BCF) {

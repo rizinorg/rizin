@@ -3,6 +3,8 @@
 
 #include <rz_il.h>
 
+#define BITN8(x, n) IS_ZERO(LOGAND(SHIFTR0(x, U8(n)), U8(1)))
+
 static ut64 pic18_regadr(const HtSU *mm, const char *v) {
 	bool f = false;
 	ut64 adr = ht_su_find((HtSU *)mm, v, &f);
@@ -13,18 +15,35 @@ static ut64 pic18_regadr(const HtSU *mm, const char *v) {
 	return UT64_MAX;
 }
 
+static RzILOpPure *varg_mm(const HtSU *mm, const char *v);
+static RzILOpEffect *setg_mm(const HtSU *mm, const char *v, RzILOpPure *x);
+
+static RzILOpPure *varg_mm_uhl(const HtSU *mm, const char *u, const char *h, const char *l) {
+	return APPEND(varg_mm(mm, u), APPEND(varg_mm(mm, h), varg_mm(mm, l)));
+}
+static RzILOpEffect *setg_mm_uhl(const HtSU *mm, const char *u, const char *h, const char *l, RzILOpPure *x) {
+	return SEQ4(
+		SETL("__x", x),
+		setg_mm(mm, l, UNSIGNED(8, VARL("__x"))),
+		setg_mm(mm, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8)))),
+		setg_mm(mm, u, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(16)))));
+}
+
 static RzILOpPure *varg_mm(const HtSU *mm, const char *v) {
 	bool f = false;
 	ut64 adr = ht_su_find((HtSU *)mm, v, &f);
 	if (f) {
-		return LOAD(U16(adr));
+		return LOAD(UN(24, adr));
 	}
 	ut8 b = pic18_status(v);
 	if (b != 0xff) {
-		return BITN(varg_mm(mm, "status"), b);
+		return BITN8(varg_mm(mm, "status"), b);
 	}
 	if (RZ_STR_EQ(v, "tblptr")) {
-		return APPEND(varg_mm(mm, "tblptru"), APPEND(varg_mm(mm, "tblptrh"), varg_mm(mm, "tblptrl")));
+		return varg_mm_uhl(mm, "tblptru", "tblptrh", "tblptrl");
+	}
+	if (RZ_STR_EQ(v, "tos")) {
+		return varg_mm_uhl(mm, "tosu", "tosh", "tosl");
 	}
 	return VARG(v);
 }
@@ -33,18 +52,17 @@ static RzILOpEffect *setg_mm(const HtSU *mm, const char *v, RzILOpPure *x) {
 	bool f = false;
 	ut64 adr = ht_su_find((HtSU *)mm, v, &f);
 	if (f) {
-		return STORE(U16(adr), x);
+		return STORE(UN(24, adr), x);
 	}
 	ut8 b = pic18_status(v);
 	if (b != 0xff) {
 		return setg_mm(mm, "status", bit_set(varg_mm(mm, "status"), b, x));
 	}
 	if (RZ_STR_EQ(v, "tblptr")) {
-		return SEQ4(
-			SETL("__tblptr", x),
-			setg_mm(mm, "tblptrl", UNSIGNED(8, VARL("__tblptr"))),
-			setg_mm(mm, "tblptrh", UNSIGNED(8, SHIFTR0(VARL("__tblptr"), U8(8)))),
-			setg_mm(mm, "tblptru", UNSIGNED(8, SHIFTR0(VARL("__tblptr"), U8(16)))));
+		return setg_mm_uhl(mm, "tblptru", "tblptrh", "tblptrl", x);
+	}
+	if (RZ_STR_EQ(v, "tos")) {
+		return setg_mm_uhl(mm, "tosu", "tosh", "tosl", x);
 	}
 	return SETG(v, x);
 }
@@ -68,7 +86,7 @@ static RzILOpEffect *setg_mm(const HtSU *mm, const char *v, RzILOpPure *x) {
 #define RWF  (D ? pic18_regname(F) : RW)
 #define VRWF (VARG(RWF))
 
-#define VPC  (U16(PC))
+#define VPC  (UN(24, PC))
 #define RC   "c"
 #define VRC  VARG(RC)
 #define RN   "n"
@@ -94,7 +112,8 @@ static RzILOpEffect *set_dest(const Pic18ILContext *ctx, RzILOpPure *x) {
 	if (ctx->op->a) {
 		ut64 adr = pic18_regadr(ctx->mm, regname);
 		if (adr != UT64_MAX) {
-			return STORE(ADD(MUL(UNSIGNED(16, LOGAND(VARG("bsr"), U8(0x0f))), U16(0x100)), U16(adr)),
+			return STORE(
+				ADD(MUL(UNSIGNED(24, LOGAND(VARG("bsr"), U8(0x0f))), UN(24, 0x100)), UN(24, adr)),
 				x);
 		}
 		return NULL;
@@ -214,23 +233,22 @@ static RzILOpEffect *op_sub(const Pic18ILContext *ctx, const char *dst,
 }
 
 static RzILOpEffect *op_branch(const Pic18ILContext *ctx, RzILOpPure *condition) {
-	return condition ? BRANCH(condition, JMP(U16(PC + 2 + 2 * ctx->op->n)), NOP())
-			 : JMP(U16(PC + 2 + 2 * ctx->op->n));
+	return condition ? BRANCH(condition, JMP(UN(24, PC + 2 + 2 * ctx->op->n)), NOP())
+			 : JMP(UN(24, PC + 2 + 2 * ctx->op->n));
 }
 
 static RzILOpEffect *load_shadows_opt(const Pic18ILContext *ctx) {
-	return BRANCH(NON_ZERO(VARG("s")),
-		SEQ3(
-			SETG("ws", VRW),
-			SETG("ss", VRS),
-			SETG("bsrs", VARG("bsr"))),
-		NOP());
+	return ctx->op->s ? SEQ3(
+				    SETG("ws", VRW),
+				    SETG("ss", VRS),
+				    SETG("bsrs", VARG("bsr")))
+			  : NOP();
 }
 
 static RzILOpEffect *op_call(const Pic18ILContext *ctx) {
 	return SEQ3(
-		SETG("tos", U16(PC + 4)),
-		JMP(U32(K << 1)),
+		SETG("tos", UN(24, PC + 4)),
+		JMP(UN(24, K << 1)),
 		load_shadows_opt(ctx));
 }
 
@@ -243,7 +261,7 @@ static RzILOpEffect *op_and(const Pic18ILContext *ctx, const char *dst,
 }
 
 static RzILOpEffect *op_skip_if(const Pic18ILContext *ctx, RzILOpPure *condition) {
-	return BRANCH(condition, JMP(U16(PC + INS_LEN * 2)), NOP());
+	return BRANCH(condition, JMP(UN(24, PC + INS_LEN * 2)), NOP());
 }
 
 static RzILOpEffect *set_prod16(const Pic18ILContext *ctx, RzILOpPure *res) {
@@ -255,8 +273,8 @@ static RzILOpEffect *set_prod16(const Pic18ILContext *ctx, RzILOpPure *res) {
 
 static RzILOpEffect *op_pop(const Pic18ILContext *ctx) {
 	return SEQ2(
-		SETG("stkptr", SUB(VARG("stkptr"), U16(4))),
-		SETG("tos", LOADW(32, ADD(VARG("_stack"), VARG("stkptr")))));
+		SETG("stkptr", SUB(VARG("stkptr"), U8(4))),
+		SETG("tos", LOADW(24, UNSIGNED(24, ADD(VARG("_stack"), VARG("stkptr"))))));
 }
 
 static RzILOpEffect *op_pop_jmp(const Pic18ILContext *ctx) {
@@ -268,17 +286,17 @@ static RzILOpEffect *op_pop_jmp(const Pic18ILContext *ctx) {
 
 static RzILOpEffect *op_push(const Pic18ILContext *ctx, RzILOpPure *x) {
 	return SEQ3(
-		SETG("stkptr", ADD(VARG("stkptr"), U16(4))),
+		SETG("stkptr", ADD(VARG("stkptr"), U8(4))),
 		STOREW(ADD(VARG("_stack"), VARG("stkptr")), x),
 		SETG("tos", DUP(x)));
 }
 
 static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 	switch (ctx->op->code) {
-	case PIC18_OPCODE_ADDLW: return op_add(ctx, RW, VRW, U16(K), NULL);
+	case PIC18_OPCODE_ADDLW: return op_add(ctx, RW, VRW, U8(K), NULL);
 	case PIC18_OPCODE_ADDWF: return op_add(ctx, NULL, VRW, VRF, NULL);
 	case PIC18_OPCODE_ADDWFC: return op_add(ctx, NULL, VRW, VRF, VRC);
-	case PIC18_OPCODE_ANDLW: return op_and(ctx, RW, VRW, U16(K));
+	case PIC18_OPCODE_ANDLW: return op_and(ctx, RW, VRW, U8(K));
 	case PIC18_OPCODE_ANDWF: return op_and(ctx, NULL, VRW, VRF);
 	case PIC18_OPCODE_BC: return op_branch(ctx, VRC);
 	case PIC18_OPCODE_BN: return op_branch(ctx, VRN);
@@ -336,7 +354,7 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 			SETL("__res", SUB(VRF, U8(1))),
 			set_dest(ctx, VARL("__res")),
 			op_skip_if(ctx, NON_ZERO(VARL("__res"))));
-	case PIC18_OPCODE_GOTO: return JMP(U32((ut32)K << 1));
+	case PIC18_OPCODE_GOTO: return JMP(UN(24, (ut32)K << 1));
 	case PIC18_OPCODE_INCF:
 		return SEQ3(
 			SETL("__res", ADD(VRF, U8(1))),
@@ -356,9 +374,9 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 		return set_dest_status(ctx, LOGOR(VRW, VRF));
 	case PIC18_OPCODE_IORLW:
 		return SEQ2(
-			SETG(RW, LOGOR(VRW, U16(K))),
+			SETG(RW, LOGOR(VRW, U8(K))),
 			status_res(ctx, VRW));
-	case PIC18_OPCODE_LFSR: return SETG(RFSR(F), U16(K));
+	case PIC18_OPCODE_LFSR: return SETG(RFSR(F), U8(K));
 	case PIC18_OPCODE_MOVF:
 		return set_dest_status(ctx, VRF);
 	case PIC18_OPCODE_MOVFF:
@@ -376,11 +394,11 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_NOP: return NOP();
 	case PIC18_OPCODE_NEGF: return SETG(RF, complement_2(VRF));
 	case PIC18_OPCODE_POP: return op_pop(ctx);
-	case PIC18_OPCODE_PUSH: return op_push(ctx, U32(PC));
+	case PIC18_OPCODE_PUSH: return op_push(ctx, UN(24, PC));
 	case PIC18_OPCODE_RCALL:
 		return SEQ2(
-			op_push(ctx, U32(PC + 2)),
-			JMP(U32(PC + 2 + 2 * N)));
+			op_push(ctx, UN(24, PC + 2)),
+			JMP(UN(24, PC + 2 + 2 * N)));
 	case PIC18_OPCODE_RESET: return NOP();
 	case PIC18_OPCODE_RETFIE:
 		return SEQ3(
@@ -434,37 +452,37 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 		return SETG("tablat", LOAD(VARG("tblptr")));
 	case PIC18_OPCODE_TBLRDis:
 		return SEQ2(
-			SETG("tblptr", ADD(VARG("tblptr"), U32(1))),
+			SETG("tblptr", ADD(VARG("tblptr"), UN(24, 1))),
 			SETG("tablat", LOAD(VARG("tblptr"))));
 	case PIC18_OPCODE_TBLRDsd:
 		return SEQ2(
 			SETG("tablat", LOAD(VARG("tblptr"))),
-			SETG("tblptr", SUB(VARG("tblptr"), U32(1))));
+			SETG("tblptr", SUB(VARG("tblptr"), UN(24, 1))));
 	case PIC18_OPCODE_TBLRDsi:
 		return SEQ2(
 			SETG("tablat", LOAD(VARG("tblptr"))),
-			SETG("tblptr", ADD(VARG("tblptr"), U32(1))));
+			SETG("tblptr", ADD(VARG("tblptr"), UN(24, 1))));
 	case PIC18_OPCODE_TBLWTMs:
 		return STORE(VARG("tblptr"), VARG("tablat"));
 	case PIC18_OPCODE_TBLWTis:
 		return SEQ2(
-			SETG("tblptr", ADD(VARG("tblptr"), U32(1))),
+			SETG("tblptr", ADD(VARG("tblptr"), UN(24, 1))),
 			STORE(VARG("tblptr"), VARG("tablat")));
 	case PIC18_OPCODE_TBLWTMsd:
 		return SEQ2(
 			STORE(VARG("tblptr"), VARG("tablat")),
-			SETG("tblptr", SUB(VARG("tblptr"), U32(1))));
+			SETG("tblptr", SUB(VARG("tblptr"), UN(24, 1))));
 	case PIC18_OPCODE_TBLWTMsi:
 		return SEQ2(
 			STORE(VARG("tblptr"), VARG("tablat")),
-			SETG("tblptr", ADD(VARG("tblptr"), U32(1))));
+			SETG("tblptr", ADD(VARG("tblptr"), UN(24, 1))));
 	case PIC18_OPCODE_TSTFSZ:
 		return op_skip_if(ctx, IS_ZERO(VRF));
 	case PIC18_OPCODE_XORWF:
-		return set_dest_status(ctx, XOR(VRW, VRF));
+		return set_dest_status(ctx, LOGXOR(VRW, VRF));
 	case PIC18_OPCODE_XORLW:
 		return SEQ2(
-			SETG(RW, XOR(VRW, VRF)),
+			SETG(RW, LOGXOR(VRW, VRF)),
 			status_res(ctx, VRW));
 	case PIC18_OPCODE_INVALID: break;
 	}
@@ -497,13 +515,14 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 #undef VRS
 
 static const char *pic18_reg_bindings[] = {
+	"pc",
 	"_sram",
 	"_stack"
 };
 
 static RzAnalysisILConfig *pic18_il_config(
 	RZ_NONNULL RzAnalysis *analysis) {
-	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, false, 16);
+	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(24, false, 24);
 	cfg->reg_bindings = pic18_reg_bindings;
 	return cfg;
 }
