@@ -443,7 +443,7 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 RZ_API void rz_core_analysis_il_reinit(RZ_NONNULL RzCore *core) {
 	rz_return_if_fail(core);
 	if (!rz_analysis_il_vm_setup(core->analysis)) {
-		RZ_LOG_WARN("IL VM setup failed");
+		RZ_LOG_WARN("IL VM setup failed\n");
 	}
 	if (core->analysis->il_vm) {
 		// initialize the program counter with the current offset
