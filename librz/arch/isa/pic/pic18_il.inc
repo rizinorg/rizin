@@ -383,7 +383,7 @@ static RzILOpEffect *op_and(Pic18ILContext *ctx, const char *dst,
 }
 
 static RzILOpEffect *op_skip_if(Pic18ILContext *ctx, RzILOpPure *condition) {
-	return BRANCH(condition, JMP(UN(24, PC + INS_LEN * 2)), NOP());
+	return BRANCH(condition, SETG("_skip", U8(1)), NOP());
 }
 
 static RzILOpEffect *set_prod16(Pic18ILContext *ctx, RzILOpPure *res) {
@@ -445,7 +445,7 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_BCF: return regbit_set(RF, B, 0);
 	case PIC18_OPCODE_BSF: return regbit_set(RF, B, 1);
 	case PIC18_OPCODE_BTG: return regbit_set1(RF, B, INV(bit_get(VRF, B)));
-	case PIC18_OPCODE_BTFSC: return op_skip_if(ctx, INV(bit_get(VRF, B)));
+	case PIC18_OPCODE_BTFSC: return op_skip_if(ctx, BITN(VRF, B));
 	case PIC18_OPCODE_BTFSS: return op_skip_if(ctx, bit_get(VRF, B));
 
 	case PIC18_OPCODE_CALL: return op_call(ctx);
@@ -466,8 +466,8 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 		//			SETG("pd", IL_FALSE));
 	case PIC18_OPCODE_COMF: return set_dest_status(ctx, complement_1(VRF));
 	case PIC18_OPCODE_CPFSEQ: return op_skip_if(ctx, EQ(VRW, VRF));
-	case PIC18_OPCODE_CPFSGT: return op_skip_if(ctx, SGT(VRW, VRF));
-	case PIC18_OPCODE_CPFSLT: return op_skip_if(ctx, SLT(VRW, VRF));
+	case PIC18_OPCODE_CPFSGT: return op_skip_if(ctx, UGT(VRF, VRW));
+	case PIC18_OPCODE_CPFSLT: return op_skip_if(ctx, ULT(VRF, VRW));
 	case PIC18_OPCODE_DAW:
 		return SEQ3(
 			SETL("__res", decimal_adjust(ctx, VRW)),
@@ -626,21 +626,26 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 static RzILOpEffect *pic18_il_op_finally(Pic18ILContext *ctx) {
 	RzILOpEffect *op = pic18_il_op(ctx);
 	switch (ctx->eff.tag) {
-	case ILOpEff_None: return op;
+	case ILOpEff_None: break;
 	case ILOpEff_PostDec:
-		return SEQ2(
+		op = SEQ2(
 			op,
 			SETG(ctx->eff.fsr, SUB(VARG(ctx->eff.fsr), U16(1))));
+		break;
 	case ILOpEff_PostInc:
-		return SEQ2(
+		op = SEQ2(
 			op,
 			SETG(ctx->eff.fsr, ADD(VARG(ctx->eff.fsr), U16(1))));
+		break;
 	case ILOpEff_PreInc:
-		return SEQ2(
+		op = SEQ2(
 			SETG(ctx->eff.fsr, ADD(VARG(ctx->eff.fsr), U16(1))),
 			op);
+		break;
 	}
-	return op;
+	return BRANCH(NON_ZERO(VARG("_skip")),
+		SETG("_skip", U8(0)),
+		op);
 }
 
 #undef K
@@ -672,6 +677,7 @@ static const char *pic18_reg_bindings[] = {
 	"pc",
 	"_sram",
 	"_stack",
+	"_skip",
 	NULL
 };
 

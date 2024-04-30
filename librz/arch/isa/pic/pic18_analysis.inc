@@ -371,6 +371,7 @@ static char *analysis_pic_pic18_get_reg_profile(RzAnalysis *esil) {
 		"gpr	stkptr	.8	96	0\n"
 		"gpr	tblat	.8	14	0\n"
 		"gpr	_sram	.8	98	0\n"
-		"gpr	_stack	.8	99	0\n";
+		"gpr	_stack	.8	99	0\n"
+		"gpr	_skip	.8	100	0\n";
 	return strdup(p);
 }
