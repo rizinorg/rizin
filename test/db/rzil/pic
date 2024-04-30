@@ -1,0 +1,14 @@
+NAME=Testing the decryption in emulateme
+FILE=bins/pic/emulateme.pic18f2520.elf
+TIMEOUT=30
+CMDS=<<EOF
+e io.cache=1
+s loc.__pcinit
+aezi
+aezsu 0x68e
+ps @ seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+RUN
