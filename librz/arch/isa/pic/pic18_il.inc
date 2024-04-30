@@ -3,11 +3,9 @@
 
 #include <rz_il.h>
 
-#define BITN8(x, n) IS_ZERO(LOGAND(SHIFTR0(x, U8(n)), U8(1)))
-
-static ut64 pic18_regadr(const HtSU *mm, const char *v) {
+static ut64 pic18_regadr(Pic18ILContext *ctx, const char *v) {
 	bool f = false;
-	ut64 adr = ht_su_find((HtSU *)mm, v, &f);
+	ut64 adr = ht_su_find((HtSU *)ctx->mm, v, &f);
 	if (f) {
 		return adr;
 	}
@@ -15,62 +13,184 @@ static ut64 pic18_regadr(const HtSU *mm, const char *v) {
 	return UT64_MAX;
 }
 
-static RzILOpPure *varg_mm(const HtSU *mm, const char *v);
-static RzILOpEffect *setg_mm(const HtSU *mm, const char *v, RzILOpPure *x);
+static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v);
+static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x);
 
-static RzILOpPure *varg_mm_uhl(const HtSU *mm, const char *u, const char *h, const char *l) {
-	return APPEND(varg_mm(mm, u), APPEND(varg_mm(mm, h), varg_mm(mm, l)));
+static RzILOpPure *varg_mm_uhl(Pic18ILContext *ctx, const char *u, const char *h, const char *l) {
+	return APPEND(varg_mm(ctx, u), APPEND(varg_mm(ctx, h), varg_mm(ctx, l)));
 }
-static RzILOpEffect *setg_mm_uhl(const HtSU *mm, const char *u, const char *h, const char *l, RzILOpPure *x) {
+static RzILOpEffect *setg_mm_uhl(Pic18ILContext *ctx, const char *u, const char *h, const char *l, RzILOpPure *x) {
 	return SEQ4(
 		SETL("__x", x),
-		setg_mm(mm, l, UNSIGNED(8, VARL("__x"))),
-		setg_mm(mm, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8)))),
-		setg_mm(mm, u, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(16)))));
+		setg_mm(ctx, u, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(16)))),
+		setg_mm(ctx, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8)))),
+		setg_mm(ctx, l, UNSIGNED(8, VARL("__x"))));
+}
+static RzILOpPure *varg_mm_hl(Pic18ILContext *ctx, const char *v) {
+	char h[8];
+	char l[8];
+	rz_strf(h, "%sh", v);
+	rz_strf(l, "%sl", v);
+	return APPEND(varg_mm(ctx, h), varg_mm(ctx, l));
+}
+static RzILOpEffect *setg_mm_hl(Pic18ILContext *ctx, const char *v, RzILOpPure *x) {
+	char h[8];
+	char l[8];
+	rz_strf(h, "%sh", v);
+	rz_strf(l, "%sl", v);
+	return SEQ3(
+		SETL("__x", x),
+		setg_mm(ctx, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8)))),
+		setg_mm(ctx, l, UNSIGNED(8, VARL("__x"))));
 }
 
-static RzILOpPure *varg_mm(const HtSU *mm, const char *v) {
+/**
+ * \see https://ww1.microchip.com/downloads/en/DeviceDoc/39500a.pdf
+ * 7.7.6 Indirect Addressing, INDF, and FSR Registers
+ * Each FSR register has an INDF register plus four addresses associated with it. The same INDFn,
+ * and FSRnH:FSRnL registers are used, but depending on the INDFn address selected, the
+ * FSRnH:FSRnL registers may be modified.
+ * When a data access is done to the one of the five INDFn locations, the address selected will configure the FSRn register to:
+ *   • Do nothing to FSRn after an indirect access (no change) - INDFn
+ *   • Auto-decrement FSRn after an indirect access (post-decrement) - POSTDECn
+ *   • Auto-increment FSRn after an indirect access (post-increment) - POSTINCn
+ *   • Auto-increment FSRn before an indirect access (pre-increment) - PREINCn
+ *   • Use the value in the WREG register as an offset to FSRn. Do not modify the value of the
+ *     WREG or the FSRn register after an indirect access (no change) - PLUSWn
+ */
+static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v) {
+	if (RZ_STR_ISEMPTY(v)) {
+		return NULL;
+	}
+	if (rz_str_startswith(v, "indf")) {
+		char fsr[8];
+		long n = strtol(v + 4, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		return LOAD(UNSIGNED(24, varg_mm(ctx, fsr)));
+	}
+	if (rz_str_startswith(v, "postdec")) {
+		char fsr[8];
+		long n = strtol(v + 7, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PostDec;
+		strcat(ctx->eff.fsr, fsr);
+		return LOAD(UNSIGNED(24, varg_mm(ctx, fsr)));
+	}
+	if (rz_str_startswith(v, "postinc")) {
+		char fsr[8];
+		long n = strtol(v + 7, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PostInc;
+		strcat(ctx->eff.fsr, fsr);
+		return LOAD(UNSIGNED(24, varg_mm(ctx, fsr)));
+	}
+	if (rz_str_startswith(v, "predec")) {
+		char fsr[8];
+		long n = strtol(v + 6, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PreInc;
+		strcat(ctx->eff.fsr, fsr);
+		return LOAD(UNSIGNED(24, varg_mm(ctx, fsr)));
+	}
+	if (rz_str_startswith(v, "plusw")) {
+		char fsr[8];
+		long n = strtol(v + 5, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		return LOAD(UNSIGNED(24, ADD(varg_mm(ctx, fsr), UNSIGNED(16, varg_mm(ctx, "wreg")))));
+	}
+
 	bool f = false;
-	ut64 adr = ht_su_find((HtSU *)mm, v, &f);
+	ut64 adr = ht_su_find((HtSU *)ctx->mm, v, &f);
 	if (f) {
 		return LOAD(UN(24, adr));
 	}
 	ut8 b = pic18_status(v);
 	if (b != 0xff) {
-		return BITN8(varg_mm(mm, "status"), b);
+		return bit_get(varg_mm(ctx, "status"), b);
 	}
 	if (RZ_STR_EQ(v, "tblptr")) {
-		return varg_mm_uhl(mm, "tblptru", "tblptrh", "tblptrl");
+		return varg_mm_uhl(ctx, "tblptru", "tblptrh", "tblptrl");
 	}
 	if (RZ_STR_EQ(v, "tos")) {
-		return varg_mm_uhl(mm, "tosu", "tosh", "tosl");
+		return varg_mm_uhl(ctx, "tosu", "tosh", "tosl");
+	}
+	if (rz_str_startswith(v, "fsr")) {
+		return varg_mm_hl(ctx, v);
 	}
 	return VARG(v);
 }
 
-static RzILOpEffect *setg_mm(const HtSU *mm, const char *v, RzILOpPure *x) {
+static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x) {
+	if (RZ_STR_ISEMPTY(v)) {
+		return NULL;
+	}
+	if (rz_str_startswith(v, "indf")) {
+		char fsr[8];
+		long n = strtol(v + 4, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		return STORE(UNSIGNED(24, varg_mm(ctx, fsr)), x);
+	}
+	if (rz_str_startswith(v, "postdec")) {
+		char fsr[8];
+		long n = strtol(v + 7, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PostDec;
+		strcat(ctx->eff.fsr, fsr);
+		return STORE(UNSIGNED(24, varg_mm(ctx, fsr)), x);
+	}
+	if (rz_str_startswith(v, "postinc")) {
+		char fsr[8];
+		long n = strtol(v + 7, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PostInc;
+		strcat(ctx->eff.fsr, fsr);
+		return STORE(UNSIGNED(24, varg_mm(ctx, fsr)), x);
+	}
+	if (rz_str_startswith(v, "predec")) {
+		char fsr[8];
+		long n = strtol(v + 6, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PreInc;
+		strcat(ctx->eff.fsr, fsr);
+		return STORE(UNSIGNED(24, varg_mm(ctx, fsr)), x);
+	}
+	if (rz_str_startswith(v, "plusw")) {
+		char fsr[8];
+		long n = strtol(v + 5, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		return STORE(UNSIGNED(24, ADD(varg_mm(ctx, fsr), UNSIGNED(16, varg_mm(ctx, "wreg")))), x);
+	}
 	bool f = false;
-	ut64 adr = ht_su_find((HtSU *)mm, v, &f);
+	ut64 adr = ht_su_find((HtSU *)ctx->mm, v, &f);
 	if (f) {
 		return STORE(UN(24, adr), x);
 	}
 	ut8 b = pic18_status(v);
 	if (b != 0xff) {
-		return setg_mm(mm, "status", bit_set(varg_mm(mm, "status"), b, x));
+		return setg_mm(ctx, "status", bit_set1(varg_mm(ctx, "status"), b, x));
 	}
 	if (RZ_STR_EQ(v, "tblptr")) {
-		return setg_mm_uhl(mm, "tblptru", "tblptrh", "tblptrl", x);
+		return setg_mm_uhl(ctx, "tblptru", "tblptrh", "tblptrl", x);
 	}
 	if (RZ_STR_EQ(v, "tos")) {
-		return setg_mm_uhl(mm, "tosu", "tosh", "tosl", x);
+		return setg_mm_uhl(ctx, "tosu", "tosh", "tosl", x);
+	}
+	if (rz_str_startswith(v, "fsr")) {
+		return setg_mm_hl(ctx, v, x);
 	}
 	return SETG(v, x);
 }
 
 #undef VARG
 #undef SETG
-#define VARG(x)    varg_mm(ctx->mm, x)
-#define SETG(v, x) setg_mm(ctx->mm, v, x)
+#define VARG(x)    varg_mm(ctx, x)
+#define SETG(v, x) setg_mm(ctx, v, x)
 
 #define K  (ctx->op->k)
 #define D  (ctx->op->d)
@@ -107,10 +227,10 @@ static RzILOpEffect *setg_mm(const HtSU *mm, const char *v, RzILOpPure *x) {
  * If `a` is 1; the bank specified by the BSR Register is used.
  * If `a` is 0; the access bank is used.
  */
-static RzILOpEffect *set_dest(const Pic18ILContext *ctx, RzILOpPure *x) {
-	const char *regname = ctx->op->d ? pic18_regname(F) : RW;
+static RzILOpEffect *set_dest(Pic18ILContext *ctx, RzILOpPure *x) {
+	const char *fsr = ctx->op->d ? pic18_regname(F) : RW;
 	if (ctx->op->a) {
-		ut64 adr = pic18_regadr(ctx->mm, regname);
+		ut64 adr = pic18_regadr(ctx, fsr);
 		if (adr != UT64_MAX) {
 			return STORE(
 				ADD(MUL(UNSIGNED(24, LOGAND(VARG("bsr"), U8(0x0f))), UN(24, 0x100)), UN(24, adr)),
@@ -118,7 +238,7 @@ static RzILOpEffect *set_dest(const Pic18ILContext *ctx, RzILOpPure *x) {
 		}
 		return NULL;
 	}
-	return SETG(regname, x);
+	return SETG(fsr, x);
 }
 
 /**
@@ -151,31 +271,31 @@ static RzILOpEffect *set_dest(const Pic18ILContext *ctx, RzILOpPure *x) {
  * with either the high or low order bit of the source register.
  */
 
-static RzILOpEffect *status_add(const Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+static RzILOpEffect *status_add(Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
 	return SEQ5(
 		SETG("c", CHECK_CARRY(a, b, res)),
-		SETG("dc", CHECK_DIGIT_CARRY(a, b, res)),
-		SETG("z", IS_ZERO(res)),
-		SETG("ov", CHECK_OVERFLOW(a, b, res)),
+		SETG("dc", CHECK_DIGIT_CARRY(DUP(a), DUP(b), DUP(res))),
+		SETG("z", IS_ZERO(DUP(res))),
+		SETG("ov", CHECK_OVERFLOW(DUP(a), DUP(b), DUP(res))),
 		SETG("n", MSB(DUP(res))));
 }
 
-static RzILOpEffect *status_sub(const Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+static RzILOpEffect *status_sub(Pic18ILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
 	return SEQ5(
 		SETG("c", CHECK_BORROW(a, b, res)),
-		SETG("dc", CHECK_DIGIT_BORROW(a, b, res)),
-		SETG("z", IS_ZERO(res)),
-		SETG("ov", CHECK_OVERFLOW(a, b, res)),
+		SETG("dc", CHECK_DIGIT_BORROW(DUP(a), DUP(b), DUP(res))),
+		SETG("z", IS_ZERO(DUP(res))),
+		SETG("ov", CHECK_OVERFLOW(DUP(a), DUP(b), DUP(res))),
 		SETG("n", MSB(DUP(res))));
 }
 
-static RzILOpEffect *status_res(const Pic18ILContext *ctx, RzILOpPure *res) {
+static RzILOpEffect *status_res(Pic18ILContext *ctx, RzILOpPure *res) {
 	return SEQ2(
 		SETG("z", IS_ZERO(res)),
 		SETG("n", MSB(DUP(res))));
 }
 
-static RzILOpEffect *set_dest_status(const Pic18ILContext *ctx, RzILOpPure *x) {
+static RzILOpEffect *set_dest_status(Pic18ILContext *ctx, RzILOpPure *x) {
 	return SEQ3(
 		SETL("__res", x),
 		status_res(ctx, VARL("__res")),
@@ -190,7 +310,7 @@ static RzILOpPure *complement_2(RzILOpPure *x) {
 	return ADD(U8(1), NEG(x));
 }
 
-static RzILOpPure *decimal_adjust(const Pic18ILContext *ctx, RzILOpPure *x) {
+static RzILOpPure *decimal_adjust(Pic18ILContext *ctx, RzILOpPure *x) {
 	return LET(
 		"_x03", UNSIGNED(4, x),
 		LET(
@@ -204,7 +324,7 @@ static RzILOpPure *decimal_adjust(const Pic18ILContext *ctx, RzILOpPure *x) {
 					VARL("_x03")))));
 }
 
-static RzILOpEffect *op_add(const Pic18ILContext *ctx, const char *dst,
+static RzILOpEffect *op_add(Pic18ILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	if (dst) {
 		return SEQ3(
@@ -218,7 +338,7 @@ static RzILOpEffect *op_add(const Pic18ILContext *ctx, const char *dst,
 		set_dest(ctx, VARL("__res")));
 }
 
-static RzILOpEffect *op_sub(const Pic18ILContext *ctx, const char *dst,
+static RzILOpEffect *op_sub(Pic18ILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	if (dst) {
 		return SEQ3(
@@ -232,14 +352,14 @@ static RzILOpEffect *op_sub(const Pic18ILContext *ctx, const char *dst,
 		set_dest(ctx, VARL("__res")));
 }
 
-static RzILOpEffect *op_branch(const Pic18ILContext *ctx, RzILOpPure *condition) {
+static RzILOpEffect *op_branch(Pic18ILContext *ctx, RzILOpPure *condition) {
 	st8 n = (st8)((ut8)ctx->op->n);
 	RzILOpEffect *jmp = JMP(UN(24, PC + 2 + 2 * n));
 	return condition ? BRANCH(condition, jmp, NOP())
 			 : jmp;
 }
 
-static RzILOpEffect *load_shadows_opt(const Pic18ILContext *ctx) {
+static RzILOpEffect *load_shadows_opt(Pic18ILContext *ctx) {
 	return ctx->op->s ? SEQ3(
 				    SETG("ws", VRW),
 				    SETG("ss", VRS),
@@ -247,14 +367,14 @@ static RzILOpEffect *load_shadows_opt(const Pic18ILContext *ctx) {
 			  : NOP();
 }
 
-static RzILOpEffect *op_call(const Pic18ILContext *ctx) {
+static RzILOpEffect *op_call(Pic18ILContext *ctx) {
 	return SEQ3(
 		SETG("tos", UN(24, PC + 4)),
 		JMP(UN(24, K << 1)),
 		load_shadows_opt(ctx));
 }
 
-static RzILOpEffect *op_and(const Pic18ILContext *ctx, const char *dst,
+static RzILOpEffect *op_and(Pic18ILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b) {
 	return SEQ3(
 		SETL("__res", LOGAND(a, b)),
@@ -262,38 +382,38 @@ static RzILOpEffect *op_and(const Pic18ILContext *ctx, const char *dst,
 		SETG(dst, VARL("__res")));
 }
 
-static RzILOpEffect *op_skip_if(const Pic18ILContext *ctx, RzILOpPure *condition) {
+static RzILOpEffect *op_skip_if(Pic18ILContext *ctx, RzILOpPure *condition) {
 	return BRANCH(condition, JMP(UN(24, PC + INS_LEN * 2)), NOP());
 }
 
-static RzILOpEffect *set_prod16(const Pic18ILContext *ctx, RzILOpPure *res) {
+static RzILOpEffect *set_prod16(Pic18ILContext *ctx, RzILOpPure *res) {
 	return SEQ3(
 		SETL("__res", res),
 		SETG("prodh", UNSIGNED(8, SHIFTR0(VARL("__res"), U8(8)))),
 		SETG("prodl", UNSIGNED(8, VARL("__res"))));
 }
 
-static RzILOpEffect *op_pop(const Pic18ILContext *ctx) {
+static RzILOpEffect *op_pop(Pic18ILContext *ctx) {
 	return SEQ2(
 		SETG("stkptr", SUB(VARG("stkptr"), U8(4))),
 		SETG("tos", LOADW(24, UNSIGNED(24, ADD(VARG("_stack"), VARG("stkptr"))))));
 }
 
-static RzILOpEffect *op_pop_jmp(const Pic18ILContext *ctx) {
+static RzILOpEffect *op_pop_jmp(Pic18ILContext *ctx) {
 	return SEQ3(
 		SETL("_pc", VARG("tos")),
 		op_pop(ctx),
 		JMP(VARL("_pc")));
 }
 
-static RzILOpEffect *op_push(const Pic18ILContext *ctx, RzILOpPure *x) {
+static RzILOpEffect *op_push(Pic18ILContext *ctx, RzILOpPure *x) {
 	return SEQ3(
 		SETG("stkptr", ADD(VARG("stkptr"), U8(4))),
 		STOREW(ADD(VARG("_stack"), VARG("stkptr")), x),
 		SETG("tos", DUP(x)));
 }
 
-static RzILOpEffect *op_lfsr(const Pic18ILContext *ctx) {
+static RzILOpEffect *op_lfsr(Pic18ILContext *ctx) {
 	ut8 lo = (ut8)ctx->op->k;
 	ut8 hi = (ut8)ctx->op->k >> 8;
 	char regl[8];
@@ -305,7 +425,7 @@ static RzILOpEffect *op_lfsr(const Pic18ILContext *ctx) {
 		SETG(regh, U8(hi)));
 }
 
-static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
+static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 	switch (ctx->op->code) {
 	case PIC18_OPCODE_ADDLW: return op_add(ctx, RW, VRW, U8(K), NULL);
 	case PIC18_OPCODE_ADDWF: return op_add(ctx, NULL, VRW, VRF, NULL);
@@ -501,6 +621,26 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_INVALID: break;
 	}
 	return NULL;
+}
+
+static RzILOpEffect *pic18_il_op_finally(Pic18ILContext *ctx) {
+	RzILOpEffect *op = pic18_il_op(ctx);
+	switch (ctx->eff.tag) {
+	case ILOpEff_None: return op;
+	case ILOpEff_PostDec:
+		return SEQ2(
+			op,
+			SETG(ctx->eff.fsr, SUB(VARG(ctx->eff.fsr), U16(1))));
+	case ILOpEff_PostInc:
+		return SEQ2(
+			op,
+			SETG(ctx->eff.fsr, ADD(VARG(ctx->eff.fsr), U16(1))));
+	case ILOpEff_PreInc:
+		return SEQ2(
+			SETG(ctx->eff.fsr, ADD(VARG(ctx->eff.fsr), U16(1))),
+			op);
+	}
+	return op;
 }
 
 #undef K

@@ -7,8 +7,19 @@
 #include "pic18_esil.inc"
 
 typedef struct {
+	enum {
+		ILOpEff_None,
+		ILOpEff_PostDec,
+		ILOpEff_PostInc,
+		ILOpEff_PreInc,
+	} tag;
+	char fsr[8];
+} ILOpEff;
+
+typedef struct {
 	const Pic18Op *op;
 	const HtSU *mm;
+	ILOpEff eff;
 } Pic18ILContext;
 
 #include "pic18_il.inc"
@@ -231,7 +242,7 @@ static int analysis_pic18_op(
 			.op = &op,
 			.mm = ((PicContext *)analysis->plugin_data)->pic18_mm,
 		};
-		aop->il_op = pic18_il(&ctx);
+		aop->il_op = pic18_il_op_finally(&ctx);
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
