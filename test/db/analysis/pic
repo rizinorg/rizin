@@ -108,5 +108,6 @@ adcon0 = 0x00
 stkptr = 0x00
 _sram = 0x00
 _stack = 0x00
+_skip = 0x00
 EOF
 RUN

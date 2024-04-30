@@ -3,45 +3,86 @@
 
 #include <rz_il.h>
 
-static ut64 pic18_regadr(Pic18ILContext *ctx, const char *v) {
+#define U24(x) UN(24, x)
+static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v, ut8 bank);
+static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x, ut8 bank);
+
+static RzILOpPure *pic18_regadr(Pic18ILContext *ctx, const char *v, ut8 bank) {
+	if (RZ_STR_ISEMPTY(v)) {
+		return NULL;
+	}
+	char fsr[8] = { 0 };
+	if (rz_str_startswith(v, "indf")) {
+		long n = strtol(v + 4, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+	}
+	if (rz_str_startswith(v, "postdec")) {
+		long n = strtol(v + 7, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PostDec;
+		strcat(ctx->eff.fsr, fsr);
+	}
+	if (rz_str_startswith(v, "postinc")) {
+		long n = strtol(v + 7, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PostInc;
+		strcat(ctx->eff.fsr, fsr);
+	}
+	if (rz_str_startswith(v, "predec")) {
+		long n = strtol(v + 6, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
+		ctx->eff.tag = ILOpEff_PreInc;
+		strcat(ctx->eff.fsr, fsr);
+	}
+	if (rz_str_startswith(v, "plusw")) {
+		long n = strtol(v + 5, NULL, 0);
+		rz_strf(fsr, "fsr%ld", n);
+		return UNSIGNED(24, ADD(varg_mm(ctx, fsr, bank), UNSIGNED(16, varg_mm(ctx, "wreg", bank))));
+	}
+	if (fsr[0]) {
+		return UNSIGNED(24, varg_mm(ctx, fsr, bank));
+	}
+
 	bool f = false;
 	ut64 adr = ht_su_find((HtSU *)ctx->mm, v, &f);
 	if (f) {
-		return adr;
+		return U24(adr + bank * 0x100);
 	}
-	rz_warn_if_reached();
-	return UT64_MAX;
+	return NULL;
 }
 
-static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v);
-static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x);
-
-static RzILOpPure *varg_mm_uhl(Pic18ILContext *ctx, const char *u, const char *h, const char *l) {
-	return APPEND(varg_mm(ctx, u), APPEND(varg_mm(ctx, h), varg_mm(ctx, l)));
-}
-static RzILOpEffect *setg_mm_uhl(Pic18ILContext *ctx, const char *u, const char *h, const char *l, RzILOpPure *x) {
-	return SEQ4(
-		SETL("__x", x),
-		setg_mm(ctx, u, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(16)))),
-		setg_mm(ctx, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8)))),
-		setg_mm(ctx, l, UNSIGNED(8, VARL("__x"))));
-}
-static RzILOpPure *varg_mm_hl(Pic18ILContext *ctx, const char *v) {
+static RzILOpPure *varg_hl(Pic18ILContext *ctx, const char *v, ut8 bank) {
 	char h[8];
 	char l[8];
 	rz_strf(h, "%sh", v);
 	rz_strf(l, "%sl", v);
-	return APPEND(varg_mm(ctx, h), varg_mm(ctx, l));
+	return APPEND(varg_mm(ctx, h, bank), varg_mm(ctx, l, bank));
 }
-static RzILOpEffect *setg_mm_hl(Pic18ILContext *ctx, const char *v, RzILOpPure *x) {
+static RzILOpEffect *setg_hl(Pic18ILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
 	char h[8];
 	char l[8];
 	rz_strf(h, "%sh", v);
 	rz_strf(l, "%sl", v);
 	return SEQ3(
 		SETL("__x", x),
-		setg_mm(ctx, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8)))),
-		setg_mm(ctx, l, UNSIGNED(8, VARL("__x"))));
+		setg_mm(ctx, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8))), bank),
+		setg_mm(ctx, l, UNSIGNED(8, VARL("__x")), bank));
+}
+static RzILOpPure *varg_uhl(Pic18ILContext *ctx, const char *v, ut8 bank) {
+	char u[8];
+	rz_strf(u, "%su", v);
+	return APPEND(varg_mm(ctx, u, bank), varg_hl(ctx, v, bank));
+}
+static RzILOpEffect *setg_uhl(Pic18ILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
+	char u[8];
+	rz_strf(u, "%su", v);
+	return SEQ3(
+		SETL("__x", x),
+		setg_mm(ctx, u, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(16))), bank),
+		setg_hl(ctx, v, VARL("__x"), bank));
 }
 
 /**
@@ -58,139 +99,53 @@ static RzILOpEffect *setg_mm_hl(Pic18ILContext *ctx, const char *v, RzILOpPure *
  *   • Use the value in the WREG register as an offset to FSRn. Do not modify the value of the
  *     WREG or the FSRn register after an indirect access (no change) - PLUSWn
  */
-static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v) {
+static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v, ut8 bank) {
 	if (RZ_STR_ISEMPTY(v)) {
 		return NULL;
 	}
-	if (rz_str_startswith(v, "indf")) {
-		char fsr[8];
-		long n = strtol(v + 4, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		return LOAD(UNSIGNED(24, varg_mm(ctx, fsr)));
-	}
-	if (rz_str_startswith(v, "postdec")) {
-		char fsr[8];
-		long n = strtol(v + 7, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
-		ctx->eff.tag = ILOpEff_PostDec;
-		strcat(ctx->eff.fsr, fsr);
-		return LOAD(UNSIGNED(24, varg_mm(ctx, fsr)));
-	}
-	if (rz_str_startswith(v, "postinc")) {
-		char fsr[8];
-		long n = strtol(v + 7, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
-		ctx->eff.tag = ILOpEff_PostInc;
-		strcat(ctx->eff.fsr, fsr);
-		return LOAD(UNSIGNED(24, varg_mm(ctx, fsr)));
-	}
-	if (rz_str_startswith(v, "predec")) {
-		char fsr[8];
-		long n = strtol(v + 6, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
-		ctx->eff.tag = ILOpEff_PreInc;
-		strcat(ctx->eff.fsr, fsr);
-		return LOAD(UNSIGNED(24, varg_mm(ctx, fsr)));
-	}
-	if (rz_str_startswith(v, "plusw")) {
-		char fsr[8];
-		long n = strtol(v + 5, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		return LOAD(UNSIGNED(24, ADD(varg_mm(ctx, fsr), UNSIGNED(16, varg_mm(ctx, "wreg")))));
+	RzILOpPure *adr = pic18_regadr(ctx, v, bank);
+	if (adr) {
+		return LOAD(adr);
 	}
 
-	bool f = false;
-	ut64 adr = ht_su_find((HtSU *)ctx->mm, v, &f);
-	if (f) {
-		return LOAD(UN(24, adr));
-	}
 	ut8 b = pic18_status(v);
 	if (b != 0xff) {
-		return bit_get(varg_mm(ctx, "status"), b);
+		return bit_get(varg_mm(ctx, "status", bank), b);
 	}
-	if (RZ_STR_EQ(v, "tblptr")) {
-		return varg_mm_uhl(ctx, "tblptru", "tblptrh", "tblptrl");
-	}
-	if (RZ_STR_EQ(v, "tos")) {
-		return varg_mm_uhl(ctx, "tosu", "tosh", "tosl");
+	if (RZ_STR_EQ(v, "tblptr") || RZ_STR_EQ(v, "tos")) {
+		return varg_uhl(ctx, v, bank);
 	}
 	if (rz_str_startswith(v, "fsr")) {
-		return varg_mm_hl(ctx, v);
+		return varg_hl(ctx, v, bank);
 	}
 	return VARG(v);
 }
-
-static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x) {
+static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
 	if (RZ_STR_ISEMPTY(v)) {
 		return NULL;
 	}
-	if (rz_str_startswith(v, "indf")) {
-		char fsr[8];
-		long n = strtol(v + 4, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		return STORE(UNSIGNED(24, varg_mm(ctx, fsr)), x);
+	RzILOpPure *adr = pic18_regadr(ctx, v, bank);
+	if (adr) {
+		return STORE(adr, x);
 	}
-	if (rz_str_startswith(v, "postdec")) {
-		char fsr[8];
-		long n = strtol(v + 7, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
-		ctx->eff.tag = ILOpEff_PostDec;
-		strcat(ctx->eff.fsr, fsr);
-		return STORE(UNSIGNED(24, varg_mm(ctx, fsr)), x);
-	}
-	if (rz_str_startswith(v, "postinc")) {
-		char fsr[8];
-		long n = strtol(v + 7, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
-		ctx->eff.tag = ILOpEff_PostInc;
-		strcat(ctx->eff.fsr, fsr);
-		return STORE(UNSIGNED(24, varg_mm(ctx, fsr)), x);
-	}
-	if (rz_str_startswith(v, "predec")) {
-		char fsr[8];
-		long n = strtol(v + 6, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		rz_warn_if_fail(ctx->eff.tag == ILOpEff_None);
-		ctx->eff.tag = ILOpEff_PreInc;
-		strcat(ctx->eff.fsr, fsr);
-		return STORE(UNSIGNED(24, varg_mm(ctx, fsr)), x);
-	}
-	if (rz_str_startswith(v, "plusw")) {
-		char fsr[8];
-		long n = strtol(v + 5, NULL, 0);
-		rz_strf(fsr, "fsr%ld", n);
-		return STORE(UNSIGNED(24, ADD(varg_mm(ctx, fsr), UNSIGNED(16, varg_mm(ctx, "wreg")))), x);
-	}
-	bool f = false;
-	ut64 adr = ht_su_find((HtSU *)ctx->mm, v, &f);
-	if (f) {
-		return STORE(UN(24, adr), x);
-	}
+
 	ut8 b = pic18_status(v);
 	if (b != 0xff) {
-		return setg_mm(ctx, "status", bit_set1(varg_mm(ctx, "status"), b, x));
+		return setg_mm(ctx, "status", bit_set1(varg_mm(ctx, "status", bank), b, x), bank);
 	}
-	if (RZ_STR_EQ(v, "tblptr")) {
-		return setg_mm_uhl(ctx, "tblptru", "tblptrh", "tblptrl", x);
-	}
-	if (RZ_STR_EQ(v, "tos")) {
-		return setg_mm_uhl(ctx, "tosu", "tosh", "tosl", x);
+	if (RZ_STR_EQ(v, "tblptr") || RZ_STR_EQ(v, "tos")) {
+		return setg_uhl(ctx, v, x, bank);
 	}
 	if (rz_str_startswith(v, "fsr")) {
-		return setg_mm_hl(ctx, v, x);
+		return setg_hl(ctx, v, x, bank);
 	}
 	return SETG(v, x);
 }
 
 #undef VARG
 #undef SETG
-#define VARG(x)    varg_mm(ctx, x)
-#define SETG(v, x) setg_mm(ctx, v, x)
+#define VARG(x)    varg_mm(ctx, x, 0)
+#define SETG(v, x) setg_mm(ctx, v, x, 0)
 
 #define K  (ctx->op->k)
 #define D  (ctx->op->d)
@@ -230,10 +185,10 @@ static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x) 
 static RzILOpEffect *set_dest(Pic18ILContext *ctx, RzILOpPure *x) {
 	const char *fsr = ctx->op->d ? pic18_regname(F) : RW;
 	if (ctx->op->a) {
-		ut64 adr = pic18_regadr(ctx, fsr);
-		if (adr != UT64_MAX) {
+		RzILOpPure *adr = pic18_regadr(ctx, fsr, 0);
+		if (adr != NULL) {
 			return STORE(
-				ADD(MUL(UNSIGNED(24, LOGAND(VARG("bsr"), U8(0x0f))), UN(24, 0x100)), UN(24, adr)),
+				ADD(MUL(UNSIGNED(24, LOGAND(VARG("bsr"), U8(0x0f))), UN(24, 0x100)), adr),
 				x);
 		}
 		return NULL;
@@ -513,8 +468,14 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_LFSR: return op_lfsr(ctx);
 	case PIC18_OPCODE_MOVF:
 		return set_dest_status(ctx, VRF);
-	case PIC18_OPCODE_MOVFF:
-		return SETG(pic18_regname(ctx->op->d), VARG(pic18_regname(ctx->op->s)));
+	case PIC18_OPCODE_MOVFF: {
+		char s[16], d[16];
+		const char *rs = pic18_regname_extra(ctx->op->s, s);
+		const char *rd = pic18_regname_extra(ctx->op->d, d);
+		return setg_mm(ctx, rd,
+			varg_mm(ctx, rs, 0),
+			0);
+	}
 	case PIC18_OPCODE_MOVLB:
 		return SETG("bsr", LOGOR(U8(K), LOGAND(VARG("bsr"), U8(0xf0))));
 	case PIC18_OPCODE_MOVLW:

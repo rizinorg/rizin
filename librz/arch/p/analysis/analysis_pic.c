@@ -21,14 +21,13 @@ static bool pic_init(void **user) {
 	}
 	ctx->init_done = false;
 	ctx->pic18_mm = ht_su_new(HT_STR_CONST);
-	char k[32];
-	for (int i = 0; i < 0x100; ++i) {
+	for (int i = 0; i < 0x80; ++i) {
 		const char *regname = pic18_regname(i);
 		ht_su_insert(ctx->pic18_mm, regname, i);
-		for (int bank = 1; bank < 0x10; ++bank) {
-			rz_strf(k, "%s_%02x", regname, bank);
-			ht_su_insert(ctx->pic18_mm, k, bank * 0x100 + i);
-		}
+	}
+	for (int i = 0x80; i < 0x100; ++i) {
+		const char *regname = pic18_regname(i);
+		ht_su_insert(ctx->pic18_mm, regname, i + 0xf00);
 	}
 	*user = ctx;
 	return true;
