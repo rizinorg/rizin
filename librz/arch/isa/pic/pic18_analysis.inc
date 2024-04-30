@@ -234,6 +234,10 @@ static int analysis_pic18_op(
 		aop->il_op = pic18_il(&ctx);
 	}
 
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+		aop->mnemonic = rz_str_newf("%s%s%s", op.mnemonic, RZ_STR_ISEMPTY(op.operands) ? "" : " ", op.operands);
+	}
+
 	return aop->size;
 err:
 	aop->type = RZ_ANALYSIS_OP_TYPE_ILL;
