@@ -10,7 +10,7 @@
 
 // instruction classification according to the argument types
 
-static char *fsr[] = { "fsr0", "fsr1", "fsr2", "reserved" };
+static char *fsr[] = { "fsr0", "fsr1", "fsr2" };
 
 typedef struct {
 	Pic18Opcode code;

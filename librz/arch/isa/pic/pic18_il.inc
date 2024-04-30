@@ -233,8 +233,10 @@ static RzILOpEffect *op_sub(const Pic18ILContext *ctx, const char *dst,
 }
 
 static RzILOpEffect *op_branch(const Pic18ILContext *ctx, RzILOpPure *condition) {
-	return condition ? BRANCH(condition, JMP(UN(24, PC + 2 + 2 * ctx->op->n)), NOP())
-			 : JMP(UN(24, PC + 2 + 2 * ctx->op->n));
+	st8 n = (st8)((ut8)ctx->op->n);
+	RzILOpEffect *jmp = JMP(UN(24, PC + 2 + 2 * n));
+	return condition ? BRANCH(condition, jmp, NOP())
+			 : jmp;
 }
 
 static RzILOpEffect *load_shadows_opt(const Pic18ILContext *ctx) {
@@ -289,6 +291,18 @@ static RzILOpEffect *op_push(const Pic18ILContext *ctx, RzILOpPure *x) {
 		SETG("stkptr", ADD(VARG("stkptr"), U8(4))),
 		STOREW(ADD(VARG("_stack"), VARG("stkptr")), x),
 		SETG("tos", DUP(x)));
+}
+
+static RzILOpEffect *op_lfsr(const Pic18ILContext *ctx) {
+	ut8 lo = (ut8)ctx->op->k;
+	ut8 hi = (ut8)ctx->op->k >> 8;
+	char regl[8];
+	char regh[8];
+	rz_strf(regl, "fsr%dl", ctx->op->f);
+	rz_strf(regh, "fsr%dh", ctx->op->f);
+	return SEQ2(
+		SETG(regl, U8(lo)),
+		SETG(regh, U8(hi)));
 }
 
 static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
@@ -376,7 +390,7 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 		return SEQ2(
 			SETG(RW, LOGOR(VRW, U8(K))),
 			status_res(ctx, VRW));
-	case PIC18_OPCODE_LFSR: return SETG(RFSR(F), U8(K));
+	case PIC18_OPCODE_LFSR: return op_lfsr(ctx);
 	case PIC18_OPCODE_MOVF:
 		return set_dest_status(ctx, VRF);
 	case PIC18_OPCODE_MOVFF:
@@ -517,7 +531,8 @@ static RzILOpEffect *pic18_il(Pic18ILContext *ctx) {
 static const char *pic18_reg_bindings[] = {
 	"pc",
 	"_sram",
-	"_stack"
+	"_stack",
+	NULL
 };
 
 static RzAnalysisILConfig *pic18_il_config(

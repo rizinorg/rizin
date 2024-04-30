@@ -111,7 +111,7 @@ static RzILOpPure *SLICE(RzILOpPure *x, ut8 l, ut8 r) {
 
 static const char *RFSR(ut8 n) {
 	static const char *FSR_names[] = {
-		"FSR0", "FSR1"
+		"fsr0", "fsr1", "fsr2"
 	};
 	if (n >= RZ_ARRAY_SIZE(FSR_names)) {
 		return NULL;
