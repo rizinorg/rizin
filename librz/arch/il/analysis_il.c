@@ -230,17 +230,18 @@ RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *
 
 static void il_events(RzILVM *vm, RzStrBuf *sb) {
 	void **it;
-	RzILEvent *evt;
 	rz_pvector_foreach (vm->events, it) {
-		evt = *it;
+		RzILEvent *evt = *it;
 		rz_il_event_stringify(evt, sb);
 		rz_strbuf_append(sb, "\n");
 	}
 }
 
+typedef bool (*cond_callback)(RzAnalysisILVM *vm, void *user);
+
 static RzAnalysisILStepResult analysis_il_vm_step_while(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	bool with_events, bool (*cond)(RzAnalysisILVM *vm, void *user), void *user) {
+	bool with_events, RZ_NONNULL cond_callback cond, RZ_NULLABLE void *user) {
 
 	rz_return_val_if_fail(analysis && vm, false);
 	RzAnalysisPlugin *cur = analysis->cur;
@@ -253,9 +254,8 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 	}
 
 	RzAnalysisILStepResult res = RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS;
-	ut64 addr = 0;
 	while (cond(vm, user)) {
-		addr = rz_bv_to_ut64(vm->vm->pc);
+		ut64 addr = rz_bv_to_ut64(vm->vm->pc);
 		ut8 code[32] = { 0 };
 		analysis->read_at(analysis, addr, code, sizeof(code));
 		RzAnalysisOp op = { 0 };
@@ -318,7 +318,7 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
  */
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	bool (*cond)(RzAnalysisILVM *vm, void *user), void *user) {
+	RZ_NONNULL cond_callback cond, RZ_NULLABLE void *user) {
 	return analysis_il_vm_step_while(analysis, vm, reg, false, cond, user);
 }
 
@@ -342,7 +342,7 @@ RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
  */
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while_with_events(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	bool (*cond)(RzAnalysisILVM *vm, void *user), void *user) {
+	RZ_NONNULL cond_callback cond, RZ_NULLABLE void *user) {
 	return analysis_il_vm_step_while(analysis, vm, reg, true, cond, user);
 }
 
