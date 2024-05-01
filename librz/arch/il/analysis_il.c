@@ -237,11 +237,9 @@ static void il_events(RzILVM *vm, RzStrBuf *sb) {
 	}
 }
 
-typedef bool (*cond_callback)(RzAnalysisILVM *vm, void *user);
-
 static RzAnalysisILStepResult analysis_il_vm_step_while(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	bool with_events, RZ_NONNULL cond_callback cond, RZ_NULLABLE void *user) {
+	bool with_events, RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
 
 	rz_return_val_if_fail(analysis && vm, false);
 	RzAnalysisPlugin *cur = analysis->cur;
@@ -253,46 +251,43 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 		rz_analysis_il_vm_sync_from_reg(vm, reg);
 	}
 
+	RzAnalysisOp op = { 0 };
 	RzAnalysisILStepResult res = RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS;
 	while (cond(vm, user)) {
 		ut64 addr = rz_bv_to_ut64(vm->vm->pc);
 		ut8 code[32] = { 0 };
 		analysis->read_at(analysis, addr, code, sizeof(code));
-		RzAnalysisOp op = { 0 };
 		rz_analysis_op_init(&op);
 		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM);
-		RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
 
-		if (ilop) {
-			bool succ = rz_il_vm_step(vm->vm, ilop, addr + (op.size > 0 ? op.size : 1));
-			if (!succ) {
-				res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
-			}
-
-			if (with_events) {
-				RzStrBuf sb;
-				rz_strbuf_init(&sb);
-				rz_il_op_effect_stringify(op.il_op, &sb, true);
-				rz_strbuf_append(&sb, "\n");
-				il_events(vm->vm, &sb);
-
-				char *il_stmt = rz_strbuf_get(&sb);
-				rz_cons_printf("0x%llx [%x%x%x%x] %s\n"
-					       "0x%llx %s\n",
-					addr, code[0], code[1], code[2], code[3],
-					op.mnemonic, addr, il_stmt);
-				rz_strbuf_fini(&sb);
-			}
-
-		} else {
+		if (r < 0 || !op.il_op) {
 			res = RZ_ANALYSIS_IL_STEP_INVALID_OP;
-		}
-
-		rz_analysis_op_fini(&op);
-		if (res != RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS) {
 			break;
 		}
+		if (!rz_il_vm_step(vm->vm, op.il_op, addr + (op.size > 0 ? op.size : 1))) {
+			res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
+			break;
+		}
+		if (!with_events) {
+			rz_analysis_op_fini(&op);
+			continue;
+		}
+
+		RzStrBuf sb = { 0 };
+		rz_strbuf_init(&sb);
+		rz_il_op_effect_stringify(op.il_op, &sb, true);
+		rz_strbuf_append(&sb, "\n");
+		il_events(vm->vm, &sb);
+
+		rz_cons_printf("0x%llx [", addr);
+		for (int i = 0; i < op.size; ++i) {
+			rz_cons_printf("%x", code[i]);
+		}
+		rz_cons_printf("] %s\n%s\n", op.mnemonic, rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+		rz_analysis_op_fini(&op);
 	}
+	rz_analysis_op_fini(&op);
 	if (reg) {
 		rz_analysis_il_vm_sync_to_reg(vm, reg);
 	}
@@ -318,7 +313,7 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
  */
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	RZ_NONNULL cond_callback cond, RZ_NULLABLE void *user) {
+	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
 	return analysis_il_vm_step_while(analysis, vm, reg, false, cond, user);
 }
 
@@ -342,7 +337,7 @@ RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
  */
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while_with_events(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	RZ_NONNULL cond_callback cond, RZ_NULLABLE void *user) {
+	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
 	return analysis_il_vm_step_while(analysis, vm, reg, true, cond, user);
 }
 
