@@ -4248,6 +4248,101 @@ enum {
 #define DT_HEXAGON_VER   0x70000001
 #define DT_HEXAGON_PLT   0x70000002
 
+/* Renesas RX specific elf format */
+/* From Renesas RX toolchain source: binutils/bfd/elf32-rx.c & binutils/include/elf/rx.h */
+/* Processor specific flags for the ELF header e_flags field.  */
+#define EF_RX_CPU_MASK      0x000003FF /* specific cpu bits.  */
+#define EF_RX_ALL_FLAGS     (EF_RX_CPU_MASK)
+#define EF_RX_64BIT_DOUBLES (1 << 0)
+#define EF_RX_DSP           (1 << 1) /* Defined in the RX CPU Object file specification, but not explained. */
+#define EF_RX_PID           (1 << 2) /* Unofficial - DJ */
+#define EF_RX_ABI           (1 << 3) /* Binary passes stacked arguments using natural alignment.  Unofficial - NC.  */
+#define EF_RX_SINSNS_SET    (1 << 6) /* Set if bit-5 is significant.  */
+#define EF_RX_SINSNS_YES    (1 << 7) /* Set if string instructions are used in the binary.  */
+#define EF_RX_SINSNS_NO     0 /* Bit-5 if this binary must not be linked with a string instruction using binary.  */
+#define EF_RX_SINSNS_MASK   (3 << 6) /* Mask of bits used to determine string instruction use.  */
+#define EF_RX_V1            (1 << 4) /* RX v1 instructions  */
+#define EF_RX_V2            (1 << 5) /* RX v2 instructions  */
+#define EF_RX_V3            (1 << 8) /* RX v3 instructions  */
+#define EF_RX_V3_DFPU       (1 << 9) /* instructions with DFPU (only for RX v3)*/
+#define EF_RX_V_MASK        (19 << 4) /* Mask of bits used to determine ISA */
+
+/* Renesas RX relocation type */
+#define R_RX_NONE 0x00
+/* These are for data, and are bi-endian.  */
+#define R_RX_DIR32  0x01 /* Was: R_RX_32.  */
+#define R_RX_DIR24S 0x02 /* Was: R_RX_24.  */
+#define R_RX_DIR16  0x03
+#define R_RX_DIR16U 0x04 /* Was: R_RX_16_UNS.  */
+#define R_RX_DIR16S 0x05 /* Was: R_RX_16.  */
+#define R_RX_DIR8   0x06
+#define R_RX_DIR8U  0x07 /* Was: R_RX_8_UNS.  */
+#define R_RX_DIR8S  0x08 /* Was: R_RX_8.  */
+/* Signed pc-relative values.  */
+#define R_RX_DIR24S_PCREL 0x09 /* Was: R_RX_24_PCREL.  */
+#define R_RX_DIR16S_PCREL 0x0a /* Was: R_RX_16_PCREL.  */
+#define R_RX_DIR8S_PCREL  0x0b /* Was: R_RX_8_PCREL.  */
+/* These are for fields in the instructions.  */
+#define R_RX_DIR16UL     0x0c
+#define R_RX_DIR16UW     0x0d
+#define R_RX_DIR8UL      0x0e
+#define R_RX_DIR8UW      0x0f
+#define R_RX_DIR32_REV   0x10
+#define R_RX_DIR16_REV   0x11
+#define R_RX_DIR3U_PCREL 0x12
+/* These are extensions added by Red Hat.  */
+#define R_RX_RH_3_PCREL 0x20 /* Like R_RX_DIR8S_PCREL but only 3-bits.  */
+#define R_RX_RH_16_OP   0x21 /* Like R_RX_DIR16 but for opcodes - always big endian.  */
+#define R_RX_RH_24_OP   0x22 /* Like R_RX_DIR24S but for opcodes - always big endian.  */
+#define R_RX_RH_32_OP   0x23 /* Like R_RX_DIR32 but for opcodes - always big endian.  */
+#define R_RX_RH_24_UNS  0x24 /* Like R_RX_DIR24S but for unsigned values.  */
+#define R_RX_RH_8_NEG   0x25 /* Like R_RX_DIR8 but -x is stored.  */
+#define R_RX_RH_16_NEG  0x26 /* Like R_RX_DIR16 but -x is stored.  */
+#define R_RX_RH_24_NEG  0x27 /* Like R_RX_DIR24S but -x is stored.  */
+#define R_RX_RH_32_NEG  0x28 /* Like R_RX_DIR32 but -x is stored.  */
+#define R_RX_RH_DIFF    0x29 /* Subtract from a previous relocation.  */
+#define R_RX_RH_GPRELB  0x2a /* Byte value, relative to __gp.  */
+#define R_RX_RH_GPRELW  0x2b /* Word value, relative to __gp.  */
+#define R_RX_RH_GPRELL  0x2c /* Long value, relative to __gp.  */
+#define R_RX_RH_RELAX   0x2d /* Marks opcodes suitable for linker relaxation.  */
+/* These are for complex relocs.  */
+// TODO: maybe implement reloc_convert for those
+#define R_RX_ABS32        0x41
+#define R_RX_ABS24S       0x42
+#define R_RX_ABS16        0x43
+#define R_RX_ABS16U       0x44
+#define R_RX_ABS16S       0x45
+#define R_RX_ABS8         0x46
+#define R_RX_ABS8U        0x47
+#define R_RX_ABS8S        0x48
+#define R_RX_ABS24S_PCREL 0x49
+#define R_RX_ABS16S_PCREL 0x4a
+#define R_RX_ABS8S_PCREL  0x4b
+#define R_RX_ABS16UL      0x4c
+#define R_RX_ABS16UW      0x4d
+#define R_RX_ABS8UL       0x4e
+#define R_RX_ABS8UW       0x4f
+#define R_RX_ABS32_REV    0x50
+#define R_RX_ABS16_REV    0x51
+/* For RX operation */
+#define R_RX_SYM       0x80
+#define R_RX_OPneg     0x81
+#define R_RX_OPadd     0x82
+#define R_RX_OPsub     0x83
+#define R_RX_OPmul     0x84
+#define R_RX_OPdiv     0x85
+#define R_RX_OPshla    0x86
+#define R_RX_OPshra    0x87
+#define R_RX_OPsctsize 0x88
+#define R_RX_OPscttop  0x8d
+#define R_RX_OPand     0x90
+#define R_RX_OPor      0x91
+#define R_RX_OPxor     0x92
+#define R_RX_OPnot     0x93
+#define R_RX_OPmod     0x94
+#define R_RX_OPromtop  0x95
+#define R_RX_OPramtop  0x96
+
 __END_DECLS
 
 #endif /* elf.h */

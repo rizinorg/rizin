@@ -18,6 +18,8 @@ sdb_opcodes_files = [
   'ppc',
   'propeller',
   'riscv',
+  'rx',
+  'rl78',
   'sh',
   'sparc',
   'sysz',

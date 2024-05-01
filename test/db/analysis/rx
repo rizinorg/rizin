@@ -54,6 +54,26 @@ NX       false
 EOF
 RUN
 
+NAME=RX reloc info
+FILE=bins/rx/reloc_tmp
+ARGS=
+CMDS=<<EOF
+ir
+EOF
+EXPECT=<<EOF
+vaddr      paddr      target     type   name                     
+-----------------------------------------------------------------
+0x08000042 0x00000042 0x080000a8 SET_32 _static_bar.1425
+0x08000059 0x00000059 0x00000004 SET_32 _local_gint
+0x08000063 0x00000063 0x00000004 SET_32 _local_gint
+0x08000070 0x00000070 0x08000300 SET_32 _extern_int
+0x08000079 0x00000079 0x080000a8 SET_32 _local_static_gint
+0x08000086 0x00000086 0x08000304 ADD_24 _extern_foo - 0x08000086
+0x0800008a 0x0000008a 0x0800003c ADD_24 _top_foo - 0x0800008a
+0x0800008e 0x0000008e 0x08000098 ADD_24 _bottom_foo - 0x0800008e
+EOF
+RUN
+
 NAME=RX morse function
 FILE=bins/rx/morse
 ARGS=
@@ -234,7 +254,7 @@ EXPECT=<<EOF
 0xfff4034c    1 16           sym._putc
 0xfff4035c    1 15           sym._strcmp
 0xfff4036b    1 17           sym._strtok
-0xfff4037c   13 103  -> 81   sym.___strtok_r
+0xfff4037c   12 103  -> 73   sym.___strtok_r
 0xfff403e3    1 6            sym._strtok_r
 0xfff403e9   35 4023 -> 411  sym.__vfprintf_r
 0xfff413ee    1 18           sym._vfprintf
@@ -243,8 +263,8 @@ EXPECT=<<EOF
 0xfff41511    1 16           sym.___swbuf
 0xfff41521    1 16           sym.___swsetup_r
 0xfff415d2   11 112  -> 79   sym.___call_exitprocs
-0xfff41657   11 263  -> 215  sym._quorem
-0xfff4175e   33 2479 -> 400  sym.__dtoa_r
+0xfff41657   11 263  -> 211  sym._quorem
+0xfff4175e  232 2479 -> 2275 sym.__dtoa_r
 0xfff4210d    6 223  -> 53   sym.___sflush_r
 0xfff42229    5 43   -> 34   sym.__fflush_r
 0xfff42254    3 35           sym._fflush
@@ -290,7 +310,7 @@ EXPECT=<<EOF
 0xfff42e44   18 100  -> 85   sym.___lo0bits
 0xfff42ea8    3 44           sym.___i2b
 0xfff42ed4   22 291  -> 287  sym.___multiply
-0xfff42ffc   13 122  -> 98   sym.___pow5mult
+0xfff42ffc   13 122          sym.___pow5mult
 0xfff43076   12 179  -> 153  sym.___lshift
 0xfff4312b    7 45           sym.___mcmp
 0xfff4315a   12 190          sym.___mdiff
@@ -342,7 +362,7 @@ EXPECT=<<EOF
 0xfff447e2    1 12           sym._abort
 0xfff447ee    7 52   -> 50   sym.__init_signal_r
 0xfff44822    6 50           sym.__signal_r
-0xfff44856    9 81   -> 75   sym.__raise_r
+0xfff44856    9 81   -> 68   sym.__raise_r
 0xfff448a7   12 81   -> 78   sym.___sigtramp_r
 0xfff448f8    1 14           sym._raise
 0xfff44906    1 16           sym._signal
@@ -365,3 +385,64 @@ EXPECT=<<EOF
 0xfff45548    1 4            loc..LANCHOR0_0xfff45548
 EOF
 RUN
+
+
+NAME=RX reloc obj
+FILE=bins/rx/reloc_tmp
+ARGS=
+CMDS=<<EOF
+aa
+pd 37
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from sym._main @ 0x8000082
+            ;-- section.P:
+            ;-- P:
+/ sym._static_foo();
+|           0x08000034      push.L r10,                                ; [01] -r-x section size 114 named P
+|           0x08000036      mov.L r0, r10, 
+|           0x08000038      nop   
+\           0x08000039      rtsd  #0x1, r10, 
+            ; CALL XREF from sym._main @ 0x8000089
+            ;-- _top_foo:
+/ sym._top_foo();
+|           0x0800003c      push.L r10,                                ; RELOC TARGET 24 _top_foo @ 0x0800003c - 0x800008a
+|           0x0800003e      mov.L r0, r10, 
+|           0x08000040      mov   #obj._local_static_gint, r5,         ; RELOC 32 _static_bar.1425 @ 0x080000a8
+|           0x08000046      mov.L #0x2, [r5], 
+|           0x08000049      nop   
+\           0x0800004a      rtsd  #0x1, r10, 
+/ int sym._main(int argc, char **argv, char **envp);
+|           0x0800004d      push.L r10, 
+|           0x0800004f      add   #0xf8, r0, r10
+|           0x08000052      mov.L r10, r0, 
+|           0x08000054      mov.L #0x1, [r10], 
+|           0x08000057      mov   #0x4, r5,                            ; RELOC 32 _local_gint @ 0x00000004
+|           0x0800005d      mov.L #0x1234, [r5], 
+|           0x08000061      mov   #0x4, r5,                            ; RELOC 32 _local_gint @ 0x00000004
+|           0x08000067      mov.L [r5], r5, 
+|           0x08000069      neg   r5, 
+|           0x0800006b      mov.L r5, 0x1[r10], 
+|           0x0800006e      mov   #reloc.target._extern_int, r5,       ; RELOC 32 _extern_int
+|           0x08000074      mov.W #0x67, [r5], 
+|           0x08000077      mov   #obj._local_static_gint, r5,         ; RELOC 32 _local_static_gint @ 0x080000a8
+|           0x0800007d      mov.L #0xabcd, [r5], 
+|           0x08000082      bsr.W  #0xffb2,                            ; sym._static_foo
+|           0x08000085      bsr.A  #0x27f,                             ; RELOC 24 _extern_foo
+|           0x08000089      bsr.A  #0xffffb3,                          ; sym._top_foo; RELOC 24 _top_foo @ 0x0800003c - 0x800008a
+|           0x0800008d      bsr.A  #0xb,                               ; sym._bottom_foo; RELOC 24 _bottom_foo @ 0x08000098 - 0x800008e
+|           0x08000091      mov   #0x0, r5, 
+|           0x08000093      mov.L r5, r1, 
+\           0x08000095      rtsd  #0x3, r10, 
+            ; CALL XREF from sym._main @ 0x800008d
+            ;-- _bottom_foo:
+/ sym._bottom_foo();
+|           0x08000098      push.L r10,                                ; RELOC TARGET 24 _bottom_foo @ 0x08000098 - 0x800008e
+|           0x0800009a      add   #0xfc, r0, r10
+|           0x0800009d      mov.L r10, r0, 
+|           0x0800009f      mov.L #0xa, [r10], 
+|           0x080000a2      nop   
+\           0x080000a3      rtsd  #0x2, r10, 
+EOF
+RUN
+

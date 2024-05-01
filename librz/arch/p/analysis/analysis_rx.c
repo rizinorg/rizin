@@ -29,6 +29,38 @@ static void calculate_jmp_addr(RxInst *inst, RzAnalysisOp *op) {
 	op->fail = op->addr + op->size;
 }
 
+static int rx_operand_cnt(RxInst *inst) {
+	int cnt = 0;
+	if (inst->v0.kind != RX_OPERAND_NULL) {
+		cnt++;
+	}
+	if (inst->v1.kind != RX_OPERAND_NULL) {
+		cnt++;
+	}
+	if (inst->v2.kind != RX_OPERAND_NULL) {
+		cnt++;
+	}
+	return cnt;
+}
+
+static inline RxOperand *rx_operand_get(RxInst *inst, int idx) {
+	if (idx >= rx_operand_cnt(inst)) {
+		RZ_LOG_WARN("Failed to get operand%d of ISA Renesas Rx\n", idx);
+		rz_warn_if_reached();
+		return NULL;
+	}
+	switch (idx) {
+	case 0:
+		return &inst->v0;
+	case 1:
+		return &inst->v1;
+	case 2:
+		return &inst->v2;
+	default:
+		return NULL;
+	}
+}
+
 static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	op->addr = addr;
@@ -47,11 +79,15 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	// jump related instructions
 	case RX_OP_RTS:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 4;
+		break;
+	case RX_OP_RTSD:
+		// use register to deallocate stack frames
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
 	case RX_OP_BSR_A:
-	case RX_OP_BSR_L:
 	case RX_OP_BSR_W:
-	case RX_OP_JSR:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		calculate_jmp_addr(&inst, op);
 		break;
@@ -61,7 +97,6 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		calculate_jmp_addr(&inst, op);
 		break;
-	case RX_OP_BRA_L:
 	case RX_OP_BRA_A:
 	case RX_OP_BRA_B:
 	case RX_OP_BRA_S:
@@ -69,17 +104,77 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		calculate_jmp_addr(&inst, op);
 		break;
+	case RX_OP_BRA_L:
 	case RX_OP_JMP:
-		// use register
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+		// use register to jump unconditionally
+		op->type = RZ_ANALYSIS_OP_TYPE_IRJMP;
 		break;
+	case RX_OP_BSR_L:
+	case RX_OP_JSR:
+		// use register to call unconditionally
+		op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
+		break;
+
+	// stack related operations
+	case RX_OP_PUSH:
+	case RX_OP_PUSHC:
+		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		op->stackop = RZ_ANALYSIS_STACK_DEC;
+		op->stackptr = 4;
+		break;
+	case RX_OP_PUSHM:
+		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		op->stackop = RZ_ANALYSIS_STACK_DEC;
+		op->stackptr = 4 * (inst.v1.v.reg.reg - inst.v0.v.reg.reg + 1);
+		break;
+	case RX_OP_POP:
+	case RX_OP_POPM:
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 4;
+		break;
+	case RX_OP_POPC:
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 4 * (inst.v1.v.reg.reg - inst.v0.v.reg.reg + 1);
+		break;
+
 	// normal instruction
-	case RX_OP_ADD:
 	case RX_OP_ADD_UB:
 	case RX_OP_ADC:
+		// add imm, rn, rm
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
+	case RX_OP_ADD:
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		if (rx_operand_cnt(&inst) == 2) {
+			// add imm, sp
+			const RxOperand *op0 = rx_operand_get(&inst, 0);
+			if (op0->kind == RX_OPERAND_IMM) {
+				const RxOperand *op1 = rx_operand_get(&inst, 1);
+				if (op1->kind == RX_OPERAND_REG && op1->v.reg.reg == RX_REG_R0) {
+					// modify SP
+					op->stackop = RZ_ANALYSIS_STACK_INC;
+					op->stackptr = op0->v.imm.imm;
+				}
+			}
+		}
+		break;
 	case RX_OP_SUB:
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		if (rx_operand_cnt(&inst) == 2) {
+			// sub imm, sp
+			const RxOperand *op0 = rx_operand_get(&inst, 0);
+			if (op0->kind == RX_OPERAND_IMM) {
+				const RxOperand *op1 = rx_operand_get(&inst, 1);
+				if (op1->kind == RX_OPERAND_REG && op1->v.reg.reg == RX_REG_R0) {
+					// modify SP
+					op->stackop = RZ_ANALYSIS_STACK_DEC;
+					op->stackptr = op0->v.imm.imm;
+				}
+			}
+		}
+		break;
 	case RX_OP_SUB_UB:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
@@ -115,19 +210,12 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case RX_OP_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
+	case RX_OP_NEG:
+		op->type = RZ_ANALYSIS_OP_TYPE_CPL;
+		break;
 	case RX_OP_CMP:
 	case RX_OP_CMP_UB:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		break;
-	case RX_OP_PUSH:
-	case RX_OP_PUSHM:
-	case RX_OP_PUSHC:
-		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
-		break;
-	case RX_OP_POP:
-	case RX_OP_POPM:
-	case RX_OP_POPC:
-		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		break;
 	case RX_OP_ROTL:
 	case RX_OP_ROLC:
@@ -154,15 +242,26 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case RX_OP_XOR_UB:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case RX_OP_ITOF:
-	case RX_OP_FTOI:
-	case RX_OP_ITOF_UB:
-		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
-		break;
 	case RX_OP_INT:
+	case RX_OP_RTE:
+	case RX_OP_RTFI:
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
 	case RX_OP_MOV:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		if (rx_operand_cnt(&inst) == 2) {
+			// mov sp, rn
+			const RxOperand *op0 = rx_operand_get(&inst, 0);
+			const RxOperand *op1 = rx_operand_get(&inst, 1);
+			if (op0->kind == RX_OPERAND_IMM) {
+				if (op1->kind == RX_OPERAND_REG && op1->v.reg.reg == RX_REG_R0) {
+					// modify SP
+					op->stackop = RZ_ANALYSIS_STACK_SET;
+					op->stackptr = op0->v.imm.imm;
+				}
+			}
+		}
+		break;
 	case RX_OP_MOVU:
 	case RX_OP_MVTIPL:
 	case RX_OP_MVTC:
@@ -173,7 +272,39 @@ static int analysis_rx_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	case RX_OP_MVFC:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
+	case RX_OP_ABS:
+		op->type = RZ_ANALYSIS_OP_TYPE_ABS;
+		break;
+
+	// FPU
+	case RX_OP_FADD:
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case RX_OP_FSUB:
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case RX_OP_FMUL:
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case RX_OP_FDIV:
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case RX_OP_FCMP:
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case RX_OP_ITOF:
+	case RX_OP_FTOI:
+	case RX_OP_ITOF_UB:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
 	default:
+		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
 	}
 
