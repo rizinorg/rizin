@@ -264,7 +264,15 @@ NAME=read core->block on short move
 FILE=bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
-e scr.color=0 asm.offset=false asm.flags=false asm.functions=false asm.lines=false asm.fcn.size=false asm.comments=false asm.debuginfo=false asm.indent=false
+e scr.color=0
+e asm.offset=false
+e asm.flags=false
+e asm.functions=false
+e asm.lines=false
+e asm.fcn.size=false
+e asm.comments=false
+e asm.debuginfo=false
+e asm.indent=false
 dcu main
 pd 5
 dbH @i:2

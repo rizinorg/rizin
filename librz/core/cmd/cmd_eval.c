@@ -365,45 +365,43 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_current_handler(RzCore *co
 }
 
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
-	int i;
-	for (i = 1; i < argc; i++) {
-		RzList *l = rz_str_split_duplist_n(argv[i], "=", 1, false);
-		if (!l) {
-			return RZ_CMD_STATUS_ERROR;
-		}
-		size_t llen = rz_list_length(l);
-		if (!llen) {
-			return RZ_CMD_STATUS_ERROR;
-		}
-		char *key = rz_list_get_n(l, 0);
-		if (RZ_STR_ISEMPTY(key)) {
-			RZ_LOG_ERROR("core: No string specified before `=`. Make sure to use the format <key>=<value> without spaces.\n");
-			rz_list_free(l);
-			continue;
-		}
-
-		if (llen == 1 && rz_str_endswith(key, ".")) {
-			// no value was set, only key with ".". List possible sub-keys.
-			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
-			rz_core_config_print_all(core->config, key, &state);
-			rz_cmd_state_output_print(&state);
-			rz_cmd_state_output_fini(&state);
-		} else if (llen == 1) {
-			// no value was set, show the value of the key
-			const char *v = rz_config_get(core->config, key);
-			if (!v) {
-				RZ_LOG_ERROR("core: Invalid config key '%s'\n", key);
-				rz_list_free(l);
-				return RZ_CMD_STATUS_ERROR;
-			}
-			rz_cons_printf("%s\n", v);
-		} else if (llen == 2) {
-			char *value = rz_list_get_n(l, 1);
-			rz_config_set(core->config, key, value);
-		}
-		rz_list_free(l);
+	RzList *l = rz_str_split_duplist_n(argv[1], "=", 1, true);
+	if (!l) {
+		return RZ_CMD_STATUS_ERROR;
 	}
+	size_t llen = rz_list_length(l);
+	if (!llen) {
+		rz_list_free(l);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *key = rz_list_get_n(l, 0);
+	if (RZ_STR_ISEMPTY(key)) {
+		RZ_LOG_ERROR("core: No string specified before `=`. Make sure to use the format <key>=<value>.\n");
+		rz_list_free(l);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (llen == 1 && rz_str_endswith(key, ".")) {
+		// no value was set, only key with ".". List possible sub-keys.
+		RzCmdStateOutput state = { 0 };
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+		rz_core_config_print_all(core->config, key, &state);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
+	} else if (llen == 1) {
+		// no value was set, show the value of the key
+		const char *v = rz_config_get(core->config, key);
+		if (!v) {
+			RZ_LOG_ERROR("core: Invalid config key '%s'\n", key);
+			rz_list_free(l);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_printf("%s\n", v);
+	} else if (llen == 2) {
+		char *value = rz_list_get_n(l, 1);
+		rz_config_set(core->config, key, value);
+	}
+	rz_list_free(l);
 	return RZ_CMD_STATUS_OK;
 }
 

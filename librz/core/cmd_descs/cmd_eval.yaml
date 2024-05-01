@@ -6,11 +6,11 @@ commands:
   - name: e
     cname: eval_getset
     summary: Get/Set value of config variable <key>
-    args_str: " <key>[=<val|?>] [<key>[=<val|?>] ...]]"
+    args_str: " <key> [= <val|?>]"
     args:
       - name: key=value
         type: RZ_CMD_ARG_TYPE_EVAL_FULL
-        flags: RZ_CMD_ARG_FLAG_ARRAY
+        flags: RZ_CMD_ARG_FLAG_LAST
     details:
       - name: Examples
         entries:
