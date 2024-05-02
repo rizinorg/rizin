@@ -203,8 +203,13 @@ RZ_API void rz_bin_reloc_free(RZ_NULLABLE RzBinReloc *reloc) {
 	if (!reloc) {
 		return;
 	}
-	rz_bin_import_free(reloc->import);
-	rz_bin_symbol_free(reloc->symbol);
+	/**
+	 * TODO: leak in bin_elf, but it will cause double free in bin_pe if free here,
+	 * Because in the bin_elf implementation RzBinObject->imports and RzBinObject->relocs->imports
+	 * are two pieces of data, but they are linked to each other in bin_pe
+	 */
+	//	rz_bin_import_free(reloc->import);
+	//	rz_bin_symbol_free(reloc->symbol);
 	free(reloc);
 }
 
