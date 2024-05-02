@@ -49,9 +49,9 @@ paddr      size   vaddr      vsize  align perm name          type flags
 EOF
 RUN
 
-NAME=tiny coff
-FILE=bins/coff/coff.obj
-CMDS=oml;is;ir
+NAME=tiny coff; normal quit
+FILE=--
+CMDS=!rizin -qc "oml;is;ir" bins/coff/coff.obj
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x00000058 - 0x00000067 r-- vmap.reloc-targets
  2 fd: 5 +0x00000064 0x00000000 * 0x00000026 r-x vmap..text
@@ -70,6 +70,7 @@ vaddr      paddr      target     type   name
 0x0000001c 0x00000080 0x00000058 ADD_32 MessageBoxA
 0x00000023 0x00000087 0x00000060 ADD_32 ExitProcess
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=tiny coff2
