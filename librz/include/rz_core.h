@@ -672,6 +672,7 @@ RZ_API void rz_core_analysis_esil_init_regs(RZ_NONNULL RzCore *core);
 RZ_API void rz_core_analysis_il_reinit(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_il_step(RZ_NONNULL RzCore *core, ut64 n);
 RZ_API bool rz_core_il_step_until(RZ_NONNULL RzCore *core, ut64 until);
+RZ_API bool rz_core_il_step_until_with_events(RZ_NONNULL RzCore *core, ut64 until);
 
 /* canalysis.c */
 typedef enum rz_core_analysis_name_type {

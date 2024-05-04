@@ -228,17 +228,18 @@ RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *
 	return rz_il_vm_sync_to_reg(vm->vm, vm->reg_binding, reg);
 }
 
-/**
- * Repeatedly perform steps in the VM until the condition callback returns false
- *
- * If given, this syncs the contents of \p reg into the vm.
- * Then it repeatedly disassembles an instruction at the program counter of the vm and executes it as long as cond() returns true.
- * Finally the contents are optionally synced back to \p reg.
- *
- * \return and indicator for which error occured, if any, or RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS if cond() returned false
- */
-RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	bool (*cond)(RzAnalysisILVM *vm, void *user), void *user) {
+static void il_events(RzILVM *vm, RzStrBuf *sb) {
+	void **it;
+	rz_pvector_foreach (vm->events, it) {
+		RzILEvent *evt = *it;
+		rz_il_event_stringify(evt, sb);
+		rz_strbuf_append(sb, "\n");
+	}
+}
+
+static RzAnalysisILStepResult analysis_il_vm_step_while(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	bool with_events, RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
 
 	rz_return_val_if_fail(analysis && vm, false);
 	RzAnalysisPlugin *cur = analysis->cur;
@@ -250,34 +251,94 @@ RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(RZ_NONNULL RzAnalysis
 		rz_analysis_il_vm_sync_from_reg(vm, reg);
 	}
 
+	RzAnalysisOp op = { 0 };
 	RzAnalysisILStepResult res = RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS;
 	while (cond(vm, user)) {
 		ut64 addr = rz_bv_to_ut64(vm->vm->pc);
 		ut8 code[32] = { 0 };
 		analysis->read_at(analysis, addr, code, sizeof(code));
-		RzAnalysisOp op = { 0 };
 		rz_analysis_op_init(&op);
-		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT);
-		RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
+		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM);
 
-		if (ilop) {
-			bool succ = rz_il_vm_step(vm->vm, ilop, addr + (op.size > 0 ? op.size : 1));
-			if (!succ) {
-				res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
-			}
-		} else {
+		if (r < 0 || !op.il_op) {
 			res = RZ_ANALYSIS_IL_STEP_INVALID_OP;
-		}
-
-		rz_analysis_op_fini(&op);
-		if (res != RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS) {
 			break;
 		}
+		if (!rz_il_vm_step(vm->vm, op.il_op, addr + (op.size > 0 ? op.size : 1))) {
+			res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
+			break;
+		}
+		if (!with_events) {
+			rz_analysis_op_fini(&op);
+			continue;
+		}
+
+		RzStrBuf sb = { 0 };
+		rz_strbuf_init(&sb);
+		rz_il_op_effect_stringify(op.il_op, &sb, true);
+		rz_strbuf_append(&sb, "\n");
+		il_events(vm->vm, &sb);
+
+		rz_cons_printf("0x%llx [", addr);
+		for (int i = 0; i < op.size; ++i) {
+			rz_cons_printf("%x", code[i]);
+		}
+		rz_cons_printf("] %s\n%s\n", op.mnemonic, rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+		rz_analysis_op_fini(&op);
 	}
+	rz_analysis_op_fini(&op);
 	if (reg) {
 		rz_analysis_il_vm_sync_to_reg(vm, reg);
 	}
 	return res;
+}
+
+/**
+ * \brief Repeatedly perform steps in the VM until the \p cond callback returns false
+ *
+ * \param analysis Pointer to an RzAnalysis struct, likely representing the analysis context.
+ * \param vm Pointer to an RzAnalysisILVM struct, representing the IL virtual machine to be stepped.
+ * \param reg Optional pointer to an RzReg struct, potentially holding register values to be used during the step.
+ * \param cond Pointer to a function that determines the loop's continuation condition. This function takes two arguments:
+ *          * vm: Pointer to the same RzAnalysisILVM struct passed to rz_analysis_il_vm_step_while.
+ *          * user: Pointer to user-provided data that can be used by the condition function.
+ * \param user Pointer to user-defined data that can be passed to the condition function.
+ *
+ * \return RZ_ANALYSIS_IL_STEP_RESULT: Enumeration value indicating the outcome of the stepping operation.
+ *         Possible values (implementation specific):
+ *             - RZ_ANALYSIS_IL_STEP_OK: Successful execution of the while loop step.
+ *             - RZ_ANALYSIS_IL_STEP_ERROR: Encountered an error during execution.
+ *             - RZ_ANALYSIS_IL_STEP_INVALID: Invalid arguments or state resulted in undefined behavior.
+ */
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
+	return analysis_il_vm_step_while(analysis, vm, reg, false, cond, user);
+}
+
+/**
+ * \brief Repeatedly perform steps in the VM until the \p cond callback returns false
+ *        and output VM changes (read & write)
+ *
+ * \param analysis Pointer to an RzAnalysis struct, likely representing the analysis context.
+ * \param vm Pointer to an RzAnalysisILVM struct, representing the IL virtual machine to be stepped.
+ * \param reg Optional pointer to an RzReg struct, potentially holding register values to be used during the step.
+ * \param cond Pointer to a function that determines the loop's continuation condition. This function takes two arguments:
+ *          * vm: Pointer to the same RzAnalysisILVM struct passed to rz_analysis_il_vm_step_while.
+ *          * user: Pointer to user-provided data that can be used by the condition function.
+ * \param user Pointer to user-defined data that can be passed to the condition function.
+ *
+ * \return RZ_ANALYSIS_IL_STEP_RESULT: Enumeration value indicating the outcome of the stepping operation.
+ *         Possible values (implementation specific):
+ *             - RZ_ANALYSIS_IL_STEP_OK: Successful execution of the while loop step.
+ *             - RZ_ANALYSIS_IL_STEP_ERROR: Encountered an error during execution.
+ *             - RZ_ANALYSIS_IL_STEP_INVALID: Invalid arguments or state resulted in undefined behavior.
+ */
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while_with_events(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
+	return analysis_il_vm_step_while(analysis, vm, reg, true, cond, user);
 }
 
 static bool step_cond_once(RzAnalysisILVM *vm, void *user) {

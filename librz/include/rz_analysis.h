@@ -1700,13 +1700,20 @@ RZ_API RZ_OWN RzAnalysisILConfig *rz_analysis_il_config_new(ut32 pc_size, bool b
 RZ_API void rz_analysis_il_config_free(RzAnalysisILConfig *cfg);
 RZ_API void rz_analysis_il_config_add_label(RZ_NONNULL RzAnalysisILConfig *cfg, RZ_NONNULL RZ_OWN RzILEffectLabel *label);
 
+typedef bool (*RzAnalysisILVMCondCallback)(RzAnalysisILVM *vm, void *user);
+
 RZ_API RZ_OWN RzAnalysisILVM *rz_analysis_il_vm_new(RzAnalysis *a, RZ_NULLABLE RzReg *init_state_reg);
 RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm);
 RZ_API void rz_analysis_il_vm_sync_from_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg);
 RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg);
-RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg);
-RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	bool (*cond)(RzAnalysisILVM *vm, void *user), void *user);
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg);
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user);
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while_with_events(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user);
 RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis);
 RZ_API void rz_analysis_il_vm_cleanup(RzAnalysis *analysis);
 

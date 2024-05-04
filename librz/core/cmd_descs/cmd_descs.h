@@ -454,6 +454,8 @@ RZ_IPI RzCmdStatus rz_il_vm_step_handler(RzCore *core, int argc, const char **ar
 RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "aezsu"
 RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv);
+// "aezsue"
+RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_with_events_handler(RzCore *core, int argc, const char **argv);
 // "aezv"
 RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "aga"
