@@ -362,7 +362,6 @@ if get_option('use_gpl')
   arch_plugins_list += [
     'arc_gnu',
     'cris_gnu',
-    'hppa_gnu',
     'lanai_gnu',
     'riscv_gnu',
     'vax_gnu',
@@ -373,7 +372,6 @@ if get_option('use_gpl')
   arch_plugin_sources += [
     'p_gnu/arch_arc.c',
     'p_gnu/arch_cris.c',
-    'p_gnu/arch_hppa.c',
     'p_gnu/arch_lanai.c',
     'p_gnu/arch_riscv.c',
     'p_gnu/arch_vax.c',
@@ -388,7 +386,6 @@ if get_option('use_gpl')
     'isa_gnu/arc/arcompact-dis.c',
     'isa_gnu/cris/cris-dis.c',
     'isa_gnu/cris/cris-opc.c',
-    'isa_gnu/hppa/hppa-dis.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
     # 'isa_gnu/riscv/riscv-opc.c',
