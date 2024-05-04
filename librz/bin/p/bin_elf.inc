@@ -1340,6 +1340,9 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			RZ_LOG_WARN("Reloc type %d for Renesas RX family not implemented yet.\n", rel->type);
 			break;
 		}
+	default:
+		RZ_LOG_DEBUG("Unimplemented relocation type %d for the machine %d\n", rel->type, e_machine);
+		break;
 	}
 }
 
@@ -1545,6 +1548,18 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case R_RX_DIR32: SET(32);
 		default:
 			RZ_LOG_WARN("unimplemented ELF/RX reloc type %d\n", rel->type);
+			break;
+		}
+	case EM_PARISC:
+		switch (rel->type) {
+		case RZ_PARISC_NONE: break;
+		case RZ_PARISC_DIR32: ADD(32, 0);
+		case RZ_PARISC_DIR64: ADD(64, 0);
+		case RZ_PARISC_COPY: ADD(64, 0); // copy symbol at runtime
+		case RZ_PARISC_IPLT: ADD(64, -P);
+		case RZ_PARISC_EPLT: ADD(64, -P);
+		default:
+			RZ_LOG_WARN("unimplemented ELF/HPPA (PARISC) reloc type %d\n", rel->type);
 			break;
 		}
 	default: break;
