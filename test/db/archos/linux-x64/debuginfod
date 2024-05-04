@@ -1,7 +1,7 @@
 NAME="Debugging Information in debuginfod"
 FILE=
 CMDS=<<EOF
-& !debuginfod -vvv -F bins/elf/float_ex1/float_ex1_buildid bins/elf/float_ex1/float_ex1_split-dwarf.debug
+!sh -c "debuginfod -vvv -F bins/elf/float_ex1/float_ex1_buildid bins/elf/float_ex1/float_ex1_split-dwarf.debug &"
 sleep 10
 e bin.dbginfo.debuginfod=true
 e bin.dbginfo.debuginfod_urls=http://127.0.0.1:8002
@@ -10,6 +10,7 @@ aaa
 iS
 afl
 pdf @ dbg.fn1
+!kill `!netstat -lp~\:8002 | grep -Po \d+/debuginfod~:0 | grep -Po \d+`
 qyn
 EOF
 EXPECT=<<EOF
