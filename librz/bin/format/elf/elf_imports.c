@@ -15,6 +15,7 @@
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR   -0x6
 #define X86_PLT_ENTRY_SIZE                   0x10
+#define PARISC_PLT_ENTRY_SIZE                0x10
 
 #define UNHANDL_IMPORT(NAME, NUM) \
 	RZ_LOG_WARN(NAME ": Unhandled ELF relocation for import %d\n", NUM); \
@@ -62,6 +63,35 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
 	plt_addr += pos * 16;
 
 	return plt_addr;
+}
+
+static ut64 get_import_addr_parisc(ELFOBJ *bin, RzBinElfReloc *rel) {
+	// Get PLT section
+	RzBinElfSection *plt_sec = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt");
+	if (!plt_sec) {
+		return UT64_MAX;
+	}
+	ut64 plt_addr = plt_sec->rva;
+	ut64 got_addr = 0;
+
+	// Get GOT section
+	RzBinElfSection *got_sec = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
+	if (got_sec) {
+		got_addr = got_sec->rva;
+	}
+
+	switch (rel->type) {
+	case R_PARISC_IPLT:
+		// IPLT uses direct PLT entries
+		return plt_addr + (rel->sym + 1) * PARISC_PLT_ENTRY_SIZE;
+	default:
+		// For other relocation types, try GOT first, then PLT
+		if (got_sec) {
+			const ut64 got_entry_size = 8; // 64-bit pointers
+			return got_addr + rel->sym * got_entry_size;
+		}
+		return plt_addr + (rel->sym + 1) * PARISC_PLT_ENTRY_SIZE;
+	}
 }
 
 /**
@@ -350,6 +380,8 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	case EM_MIPS_X:
 	case EM_IMG1:
 		return get_import_addr_mips(bin, reloc);
+	case EM_PARISC:
+		return get_import_addr_parisc(bin, reloc);
 	case EM_RISCV:
 		return get_import_addr_riscv(bin, reloc);
 	case EM_SPARC:

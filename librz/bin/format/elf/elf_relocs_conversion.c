@@ -1082,6 +1082,22 @@ static RzBinReloc *reloc_convert_alpha(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	}
 }
 
+static RzBinReloc *reloc_convert_parisc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	case R_PARISC_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_PARISC_NONE");
+	case R_PARISC_DIR32: ADD(32, 0, "R_PARISC_DIR32", RZ_RELOC_BASE_UNKNOWN);
+	case R_PARISC_DIR64: ADD(64, 0, "R_PARISC_DIR64", RZ_RELOC_BASE_UNKNOWN);
+	case R_PARISC_COPY: ADD(64, 0, "R_PARISC_COPY", RZ_RELOC_BASE_UNKNOWN); // copy symbol at runtime
+	case R_PARISC_IPLT: ADD(64, -P, "R_PARISC_IPLT", RZ_RELOC_BASE_PLT_SYMBOL);
+	case R_PARISC_EPLT: ADD(64, -P, "R_PARISC_EPLT", RZ_RELOC_BASE_PLT_SYMBOL);
+
+	// FIXME: Quite a few relocatons missing here.
+	default: UNSUPP("PARISC");
+	}
+}
 static RzBinReloc *reloc_convert_hexagon(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 P = rel->vaddr;
 
@@ -1430,7 +1446,8 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 	case EM_IAMCU: ARCH_MISSING("EM_IAMCU");
 	case EM_860: ARCH_MISSING("EM_860");
 	case EM_S370: ARCH_MISSING("EM_S370");
-	case EM_PARISC: ARCH_MISSING("EM_PARISC");
+	case EM_PARISC:
+		return reloc_convert_parisc(bin, rel, GOT);
 	case EM_VPP500: ARCH_MISSING("EM_VPP500");
 	case EM_960: ARCH_MISSING("EM_960");
 	case EM_S390: ARCH_MISSING("EM_S390");

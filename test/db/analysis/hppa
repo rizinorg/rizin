@@ -1,0 +1,158 @@
+NAME=hppa analysis graph
+FILE=bins/hppa/elf-Linux-hppa-bash
+CMDS=<<EOF
+aaa
+s sym.array_keys_to_word_list
+pdf
+agf
+EOF
+EXPECT=<<EOF
+/ sym.array_keys_to_word_list();
+|           0x000607ec      stw   rp, -0x14(sp)
+|           0x000607f0      stw,ma r5, 0x80(sp)
+|           0x000607f4      ldo   -0x70(sp), r1
+|           0x000607f8      stw   r4, -0x7c(sp)
+|           0x000607fc      stw   r3, -0x78(sp)
+|       ,=< 0x00060800      movb,<> r26, r5, 0x6082c
+|       |   0x00060804      fstd,ma fr12, 8(r1)
+|       |   0x00060808      ldo   0(flags), r4
+|       |   0x0006080c      or    r4, flags, ret0
+|       |   0x00060810      ldo   -0x70(sp), r1
+|       |   0x00060814      ldw   -0x94(sp), rp
+|       |   0x00060818      ldw   -0x7c(sp), r4
+|       |   0x0006081c      ldw   -0x78(sp), r3
+|       |   0x00060820      fldd,ma 8(r1), fr12
+|       |   0x00060824      bve   (rp)
+|       |   0x00060828      ldw,mb -0x80(sp), r5
+|       `-> 0x0006082c      ldw   0x10(r5), ret0
+|           0x00060830      ldw   0x14(r5), r19
+|           0x00060834      or,*  ret0, r19, ret0
+|           0x00060838      cmpib,= 0, ret0, 0x6080c
+|           0x0006083c      ldo   0(flags), r4
+|           0x00060840      ldw   0x18(r5), ret0
+|           0x00060844      ldw   0xc(ret0), r3
+|           0x00060848      cmpb,= r3, ret0, 0x60810
+|           0x0006084c      or    r4, flags, ret0
+|           0x00060850      ldw   0(r3), r25
+|           0x00060854      ldw   4(r3), r26
+|           0x00060858      b,l   sym.itos, flags
+|           0x0006085c      or    flags, flags, flags
+|           0x00060860      stw   ret0, -0x10(sp)
+|           0x00060864      fldw  -0x10(sp), fr12
+|           0x00060868      b,l   sym.make_bare_word, r31
+|           0x0006086c      or    ret0, flags, r26
+|           0x00060870      or    r4, flags, r25
+|           0x00060874      b,l   sym.make_word_list, r31
+|           0x00060878      or    ret0, flags, r26
+|           0x0006087c      fstw  fr12, -0x10(sp)
+|           0x00060880      ldw   -0x10(sp), r26
+|           0x00060884      b,l   0x76aec, flags
+|           0x00060888      or    ret0, flags, r4
+|           0x0006088c      ldw   0xc(r3), r3
+|           0x00060890      ldw   0x18(r5), ret0
+|           0x00060894      cmpb,<> r3, ret0, 0x60850
+|           0x00060898      or    flags, flags, flags
+|           0x0006089c      cmpib,= 0, r4, 0x60810
+|           0x000608a0      or    r4, flags, ret0
+|           0x000608a4      ldw   0(r4), ret0
+|           0x000608a8      cmpib,= 0, ret0, 0x6080c
+|           0x000608ac      or    r4, flags, r26
+|           0x000608b0      ldo   -0x70(sp), r1
+|           0x000608b4      ldw   -0x94(sp), rp
+|           0x000608b8      ldw   -0x7c(sp), r4
+|           0x000608bc      ldw   -0x78(sp), r3
+|           0x000608c0      fldd,ma 8(r1), fr12
+|           0x000608c4      b,l   sym.list_reverse, flags
+|           0x000608c8      ldw,mb -0x80(sp), r5
+\           0x000608cc      or    flags, flags, flags
+   .--------------------------------.
+   |  0x607ec                       |
+   | sym.array_keys_to_word_list(); |
+   | stw rp, -0x14(sp)              |
+   | stw,ma r5, 0x80(sp)            |
+   | ldo -0x70(sp), r1              |
+   | stw r4, -0x7c(sp)              |
+   | stw r3, -0x78(sp)              |
+   | movb,<> r26, r5, 0x6082c       |
+   `--------------------------------'
+           f t
+           | |
+           | '--------------.
+    .------'                |
+    |                       |
+.----------------------.    |
+|  0x60804             |    |
+| fstd,ma fr12, 8(r1)  |    |
+| ldo 0(flags), r4     |    |
+| or r4, flags, ret0   |    |
+| ldo -0x70(sp), r1    |    |
+| ldw -0x94(sp), rp    |    |
+| ldw -0x7c(sp), r4    |    |
+| ldw -0x78(sp), r3    |    |
+| fldd,ma 8(r1), fr12  |    |
+| bve (rp)             |    |
+| ldw,mb -0x80(sp), r5 |    |
+`----------------------'    |
+    v                       |
+    |                       |
+    '------.                |
+           | .--------------'
+           | |
+     .-----------------------------.
+     |  0x6082c                    |
+     | ldw 0x10(r5), ret0          |
+     | ldw 0x14(r5), r19           |
+     | or,* ret0, r19, ret0        |
+     | cmpib,= 0, ret0, 0x6080c    |
+     | ldo 0(flags), r4            |
+     | ldw 0x18(r5), ret0          |
+     | ldw 0xc(ret0), r3           |
+     | cmpb,= r3, ret0, 0x60810    |
+     | or r4, flags, ret0          |
+     | ldw 0(r3), r25              |
+     | ldw 4(r3), r26              |
+     | b,l sym.itos, flags         |
+     | or flags, flags, flags      |
+     | stw ret0, -0x10(sp)         |
+     | fldw -0x10(sp), fr12        |
+     | b,l sym.make_bare_word, r31 |
+     | or ret0, flags, r26         |
+     | or r4, flags, r25           |
+     | b,l sym.make_word_list, r31 |
+     | or ret0, flags, r26         |
+     | fstw fr12, -0x10(sp)        |
+     | ldw -0x10(sp), r26          |
+     | b,l 0x76aec, flags          |
+     | or ret0, flags, r4          |
+     | ldw 0xc(r3), r3             |
+     | ldw 0x18(r5), ret0          |
+     | cmpb,<> r3, ret0, 0x60850   |
+     | or flags, flags, flags      |
+     | cmpib,= 0, r4, 0x60810      |
+     | or r4, flags, ret0          |
+     | ldw 0(r4), ret0             |
+     | cmpib,= 0, ret0, 0x6080c    |
+     | or r4, flags, r26           |
+     | ldo -0x70(sp), r1           |
+     | ldw -0x94(sp), rp           |
+     | ldw -0x7c(sp), r4           |
+     | ldw -0x78(sp), r3           |
+     | fldd,ma 8(r1), fr12         |
+     | b,l sym.list_reverse, flags |
+     | ldw,mb -0x80(sp), r5        |
+     | or flags, flags, flags      |
+     `-----------------------------'
+         v
+         |
+         '.
+          |
+      .---------------------------.
+      |  0x608d0                  |
+      | sym.array_to_word_list(); |
+      | stw rp, -0x14(sp)         |
+      | stw,ma r5, 0x40(sp)       |
+      | stw r4, -0x3c(sp)         |
+      | movb,<> r26, r5, 0x60900  |
+      `---------------------------'
+EOF
+RUN

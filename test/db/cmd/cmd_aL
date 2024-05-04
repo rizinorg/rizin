@@ -22,7 +22,7 @@ adAeI 16         gb          LGPL3   GameBoy(TM) (z80-like) (by condret)
 _dAeI 16         h8300       LGPL3   Hitachi/Renesas H8/300 disassembly plugin
 _dA__ 16         h8500       LGPL3   Hitachi/Renesas H8/500 disassembler (by billow)
 _dA_I 32         hexagon     LGPL3   Qualcomm Hexagon (QDSP6) V6 (by Rot127)
-_d___ 32         hppa        GPL3    HP PA-RISC
+_dA__ 32 64      hppa        LGPL3   HP PA-RISC Capstone-based disassembler (by xvilka)
 _dA__ 4          i4004       LGPL3   Intel 4004 disassembler
 _dA__ 8          i8080       BSD     Intel 8080 disassembler
 adA__ 32         java        LGPL-3  Java bytecode disassembler (by deroad)
