@@ -790,16 +790,16 @@ hppa7100
 32
 true
             ;-- section.0.__TEXT.__text:
-            0x000039e8      ldw   0(sp),r26                            ; [00] -r-x section size 10588 named 0.__TEXT.__text
-            0x000039ec      ldo   7f(sp),sp
-            0x000039f0      ldil  L%3800,r1
-            0x000039f4      be    1fc(sr4,r1)
-            0x000039f8      depwi 0,31,6,sp
-            0x000039fc      stw   rp,-14(sp)
-            0x00003a00      stw,ma r5,80(sp)
-            0x00003a04      stw   r4,-7c(sp)
-            0x00003a08      stw   r3,-78(sp)
-            0x00003a0c      copy  r26,r4
+            0x000039e8      ldw   0(sp), r26                           ; [00] -r-x section size 10588 named 0.__TEXT.__text
+            0x000039ec      ldo   0x7f(sp), sp
+            0x000039f0      ldil  0x3800, r1
+            0x000039f4      be    0x1fc(sr4,r1)
+            0x000039f8      depi  0, 0x1f, 6, sp
+            0x000039fc      stw   rp, -0x14(sp)
+            0x00003a00      stwm  r5, 0x80(sp)
+            0x00003a04      stw   r4, -0x7c(sp)
+            0x00003a08      stw   r3, -0x78(sp)
+            0x00003a0c      or    r26, flags, r4
 Backed up flag space into 'flags.sparc_32_all.sdb'. You can restore the flags with the 'ko' command.
 sparc
 all

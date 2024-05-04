@@ -29,7 +29,7 @@ struct class_translation {
 	const char *name;
 };
 
-struct cpu_mips_translation {
+struct cpu_arch_translation {
 	Elf_(Word) arch;
 	const char *name;
 };
@@ -233,7 +233,7 @@ static const struct class_translation class_translation_table[] = {
 	{ ELFCLASS64, "ELF64" }
 };
 
-static const struct cpu_mips_translation gnu_mips_mach_translation_table[] = {
+static const struct cpu_arch_translation gnu_mips_mach_translation_table[] = {
 	{ EF_MIPS_MACH_3900, "3900 " },
 	{ EF_MIPS_MACH_4010, "4010 " },
 	{ EF_MIPS_MACH_4100, "4100 " },
@@ -272,7 +272,7 @@ static const struct mips_bits_translation mips_bits_translation_table[] = {
 	{ EF_MIPS_ARCH_64R6, 64 },
 };
 
-static const struct cpu_mips_translation gnu_mips_arch_translation_table32[] = {
+static const struct cpu_arch_translation gnu_mips_arch_translation_table32[] = {
 	{ EF_MIPS_ARCH_1, "mips32" },
 	{ EF_MIPS_ARCH_2, "mips2" },
 	{ EF_MIPS_ARCH_3, "mips3" },
@@ -286,7 +286,7 @@ static const struct cpu_mips_translation gnu_mips_arch_translation_table32[] = {
 	{ EF_MIPS_ARCH_64R6, "mips64r6" },
 };
 
-static const struct cpu_mips_translation gnu_mips_arch_translation_table64[] = {
+static const struct cpu_arch_translation gnu_mips_arch_translation_table64[] = {
 	{ EF_MIPS_ARCH_1, "mips64" }, // also used for generic mips, so we default to mips64
 	{ EF_MIPS_ARCH_2, "mips64r2" },
 	{ EF_MIPS_ARCH_3, "mips64r3" },
@@ -298,6 +298,13 @@ static const struct cpu_mips_translation gnu_mips_arch_translation_table64[] = {
 	{ EF_MIPS_ARCH_64R2, "mips64r2" },
 	{ EF_MIPS_ARCH_32R6, "mips64r6" }, // should never happen but default to 64bit
 	{ EF_MIPS_ARCH_64R6, "mips64r6" },
+};
+
+static const struct cpu_arch_translation cpu_hppa_translation_table[] = {
+	{ EFA_PARISC_1_0, "hppa1.0" },
+	{ EFA_PARISC_1_1, "hppa2.0" }, // In practice many ELF file set as 1.1 version
+				       // contain 2.0 opcodes
+	{ EFA_PARISC_2_0, "hppa2.0" },
 };
 
 static const struct arch_translation arch_translation_table[] = {
@@ -754,6 +761,10 @@ static bool arch_is_arcompact(ELFOBJ *bin) {
 		bin->ehdr.e_machine == EM_ARC_COMPACT3;
 }
 
+static bool arch_is_parisc(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_PARISC;
+}
+
 static char *read_elf_intrp(ELFOBJ *bin, ut64 addr, size_t size) {
 	char *str = malloc(size + 1);
 	if (!str) {
@@ -1058,6 +1069,18 @@ static char *get_abi_mips(ELFOBJ *bin) {
 	}
 
 	return rz_strbuf_drain_nofree(&sb);
+}
+
+static char *get_cpu_hppa(ELFOBJ *bin) {
+	Elf_(Word) hppa_arch = bin->ehdr.e_flags & EF_PARISC_ARCH;
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_hppa_translation_table); i++) {
+		if (hppa_arch == cpu_hppa_translation_table[i].arch) {
+			return strdup(cpu_hppa_translation_table[i].name);
+		}
+	}
+
+	return strdup(" Unknown HP PARISC ISA");
 }
 
 /**
@@ -1647,6 +1670,8 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 		// Capstone has only v8 and v9 for now.
 		// So no finer distinction necessary.
 		return bin->ehdr.e_machine == EM_SPARC ? strdup("v8") : strdup("v9");
+	} else if (arch_is_parisc(bin)) {
+		return get_cpu_hppa(bin);
 	}
 
 	return NULL;
