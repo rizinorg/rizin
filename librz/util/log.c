@@ -284,27 +284,16 @@ RZ_API void rz_log(const char *funcname, const char *filename,
 }
 
 /**
-<<<<<<< HEAD
  * \brief Logging function for simple strings.
-=======
- * \brief Logging function for plugins with no vargs support.
->>>>>>> 38c99dcf9d (Add binding log function for plugins without varg support.)
  *
  * \param funcname Contains the function name of the calling function
  * \param filename Contains the filename that \p funcname is defined in
  * \param lineno The line number that this log call is being made from in filename
  * \param lvl Logging level for output
-<<<<<<< HEAD
  * \param tag A string placed at the beginning of the log message. If NULL, the log level is printed.
  * \param msg The log message.
  */
 RZ_API void rz_log_str(const char *funcname, const char *filename,
-=======
- * \param tag An additional string placed after the log level.
- * \param msg The log message.
- */
-RZ_API void rz_log_bind(const char *funcname, const char *filename,
->>>>>>> 38c99dcf9d (Add binding log function for plugins without varg support.)
 	ut32 lineno, RzLogLevel level, const char *tag, const char *msg) {
 	rz_log(funcname, filename, lineno, level, tag, "%s", msg);
 }
