@@ -393,7 +393,7 @@ static int __cmp_num_asc(const void *a, const void *b, RZ_UNUSED void *user) {
 	// Parse as signed ints but don't bother witb error detection, it'll sort bad and that's it
 	long ia = strtol(sdbkv_key(ka), NULL, 10);
 	long ib = strtol(sdbkv_key(kb), NULL, 10);
-	return ia > ib;
+	return RZ_NUM_CMP(ia, ib);
 }
 
 /**
