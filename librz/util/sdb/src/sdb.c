@@ -889,13 +889,13 @@ RZ_API bool sdb_dump_next(RZ_NONNULL Sdb *s, RZ_OUT RZ_NONNULL SdbKv *kv) {
 
 	char *key = s->db.map + s->pos;
 	s->pos += klen;
-	if (s->pos >= s->db.size || key[klen - 1] != '\0') {
+	if (s->pos > s->dump_end_pos || key[klen - 1] != '\0') {
 		rz_return_val_if_reached(false);
 	}
 
 	char *value = s->db.map + s->pos;
 	s->pos += vlen;
-	if (s->pos >= s->db.size || value[vlen - 1] != '\0') {
+	if (s->pos > s->dump_end_pos || value[vlen - 1] != '\0') {
 		rz_return_val_if_reached(false);
 	}
 
