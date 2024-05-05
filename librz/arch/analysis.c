@@ -713,7 +713,7 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 }
 
 static bool filter_noreturn(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	return vlen == 4 && !strcmp(v, "true") && klen > 9 && rz_str_endswith(k, ".noreturn");
+	return vlen == 4 && !strcmp(v, "true") && klen > 9 && !strcmp(k + (klen - 9), ".noreturn");
 }
 
 RZ_API RzList /*<char *>*/ *rz_analysis_noreturn_functions(RzAnalysis *analysis) {
