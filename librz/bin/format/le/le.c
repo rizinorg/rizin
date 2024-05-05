@@ -1686,22 +1686,23 @@ RZ_OWN RzPVector /*<RzBinAddr *>*/ *rz_bin_le_get_entry_points(RzBinFile *bf) {
 	return entries;
 }
 
+static void str_copy(void *dst, void *src) {
+	char **_dst = (char **)dst;
+	char **_src = (char **)src;
+	*_dst = strdup(*_src);
+}
+
 RZ_OWN RzPVector /*<char *>*/ *rz_bin_le_get_libs(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	if (rz_pvector_empty(bin->imp_mod_names)) {
 		return NULL;
 	}
-	RzPVector *libs = rz_pvector_new(free);
-	if (!libs) {
-	fail_cleanup:
-		rz_pvector_free(libs);
-		return NULL;
+	RzPVector *ret = rz_pvector_clonef(bin->imp_mod_names, str_copy);
+	if (ret) {
+		ret->v.free = bin->imp_mod_names->v.free;
+		ret->v.free_user = bin->imp_mod_names->v.free_user;
 	}
-	void **it;
-	rz_pvector_foreach (bin->imp_mod_names, it) {
-		CHECK(rz_pvector_push(libs, *it));
-	}
-	return libs;
+	return ret;
 }
 
 #define VFILE_NAME_PATCHED       "patched"
