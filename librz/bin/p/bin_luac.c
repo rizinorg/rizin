@@ -133,12 +133,22 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 		return NULL;
 	}
 
+	RzPVector *pvec = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	if (!pvec || !rz_pvector_reserve(pvec, rz_list_length(bin_info_obj->string_list))) {
+		rz_pvector_free(pvec);
+		return NULL;
+	}
 	RzListIter *iter;
 	RzBinString *bstr;
-	RzPVector *pvec = rz_pvector_new((RzPVectorFree)bin_info_obj->string_list->free);
 	rz_list_foreach (bin_info_obj->string_list, iter, bstr) {
-		rz_pvector_push(pvec, bstr);
+		if (bstr) {
+			rz_pvector_push(pvec, bstr);
+		}
 	}
+	RzListFree free_cb = bin_info_obj->string_list->free;
+	bin_info_obj->string_list->free = NULL;
+	rz_list_purge(bin_info_obj->string_list);
+	bin_info_obj->string_list->free = free_cb;
 	return pvec;
 }
 
