@@ -144,10 +144,10 @@ static inline bool sysregs_reload_needed(RzSyscall *s, const char *arch, int bit
 static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 	rz_return_val_if_fail(sysregdb && sdb, false);
 
-	SdbKv *kv;
-	RzListIter *iter;
-	RzList *l = sdb_get_kv_list(sdb, false);
-	rz_list_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *l = sdb_get_kv_list(sdb, false);
+	rz_pvector_foreach (l, iter) {
+		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg")) {
 			char *name = sdbkv_key(kv);
 			RzSysregItem *sysregitem = rz_sysreg_item_new(name);
@@ -172,7 +172,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			ht_up_insert(sysregdb->port, address, sysregitem);
 		}
 	}
-	rz_list_free(l);
+	rz_pvector_free(l);
 	return true;
 }
 

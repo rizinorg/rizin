@@ -104,10 +104,10 @@ static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 	if (!c) {
 		return false;
 	}
-	SdbKv *kv;
-	RzListIter *iter;
-	RzList *l = sdb_get_kv_list(sdb, false);
-	rz_list_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *l = sdb_get_kv_list(sdb, false);
+	rz_pvector_foreach (l, iter) {
+		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_key(kv), "PC")) {
 			c->pc = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "EEPROM_SIZE")) {
@@ -142,7 +142,7 @@ static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 			ht_up_insert(c->registers_extended, ext_io_address, ext_io_name);
 		}
 	}
-	rz_list_free(l);
+	rz_pvector_free(l);
 	rz_platform_profile_free(t->profile);
 	t->profile = c;
 	return true;

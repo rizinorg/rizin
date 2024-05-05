@@ -137,10 +137,10 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	if (!type_str_cache) {
 		return false;
 	}
-	SdbKv *kv;
-	RzListIter *iter;
-	RzList *l = sdb_get_kv_list_filter(sdb, filter_func, NULL, false);
-	rz_list_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *l = sdb_get_kv_list_filter(sdb, filter_func, NULL, false);
+	rz_pvector_foreach (l, iter) {
+		SdbKv *kv = *iter;
 		// eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
 		RzCallable *callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
 		if (callable) {
@@ -149,7 +149,7 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 		}
 	}
 	ht_sp_free(type_str_cache);
-	rz_list_free(l);
+	rz_pvector_free(l);
 	return true;
 }
 

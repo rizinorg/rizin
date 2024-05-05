@@ -12,17 +12,17 @@ RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words) {
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_tags_list(RzFlag *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzList *res = rz_list_newf(free);
-	RzList *o = sdb_get_kv_list(f->tags, false);
-	RzListIter *iter;
-	SdbKv *kv;
-	rz_list_foreach (o, iter, kv) {
+	RzPVector *o = sdb_get_kv_list(f->tags, false);
+	void **iter;
+	rz_pvector_foreach (o, iter) {
+		SdbKv *kv = *iter;
 		const char *tag = sdbkv_key(kv);
 		if (strlen(tag) < 5) {
 			continue;
 		}
 		rz_list_append(res, (void *)strdup(tag + 4));
 	}
-	rz_list_free(o);
+	rz_pvector_free(o);
 	return res;
 }
 

@@ -1206,15 +1206,13 @@ bool test_analysis_classes_load() {
 	sdb_free(db);
 	mu_assert("load success", succ);
 
-	RzList *classes = rz_analysis_class_get_all(analysis, true);
-	mu_assert_eq(rz_list_length(classes), 2, "classes count");
-	RzListIter *iter = rz_list_iterator(classes);
-	SdbKv *kv = rz_list_iter_get_data(iter);
+	RzPVector *classes = rz_analysis_class_get_all(analysis, true);
+	mu_assert_eq(rz_pvector_len(classes), 2, "classes count");
+	SdbKv *kv = rz_pvector_at(classes, 0);
 	mu_assert_streq(sdbkv_key(kv), "Aeropause", "class");
-	iter = rz_list_iter_get_next(iter);
-	kv = rz_list_iter_get_data(iter);
+	kv = rz_pvector_at(classes, 1);
 	mu_assert_streq(sdbkv_key(kv), "Bright", "class");
-	rz_list_free(classes);
+	rz_pvector_free(classes);
 
 	RzVector *vals = rz_analysis_class_method_get_all(analysis, "Aeropause");
 	mu_assert_eq(vals->len, 2, "method count");
@@ -1455,12 +1453,11 @@ bool test_analysis_load() {
 	const char *hint = rz_analysis_hint_arch_at(analysis, 4321, NULL);
 	mu_assert_streq(hint, "arm", "hint");
 
-	RzList *classes = rz_analysis_class_get_all(analysis, true);
-	mu_assert_eq(rz_list_length(classes), 1, "classes count");
-	RzListIter *siter = rz_list_iterator(classes);
-	SdbKv *kv = rz_list_iter_get_data(siter);
+	RzPVector *classes = rz_analysis_class_get_all(analysis, true);
+	mu_assert_eq(rz_pvector_len(classes), 1, "classes count");
+	SdbKv *kv = rz_pvector_at(classes, 0);
 	mu_assert_streq(sdbkv_key(kv), "Aeropause", "class");
-	rz_list_free(classes);
+	rz_pvector_free(classes);
 	RzVector *vals = rz_analysis_class_method_get_all(analysis, "Aeropause");
 	mu_assert_eq(vals->len, 1, "method count");
 	RzAnalysisMethod *meth = rz_vector_index_ptr(vals, 0);

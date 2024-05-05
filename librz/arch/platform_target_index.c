@@ -60,10 +60,10 @@ RZ_API void rz_platform_item_free(RzPlatformItem *item) {
 static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL Sdb *sdb) {
 	rz_return_val_if_fail(t && sdb, false);
 
-	SdbKv *kv;
-	RzListIter *iter;
-	RzList *l = sdb_get_kv_list(sdb, false);
-	rz_list_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *l = sdb_get_kv_list(sdb, false);
+	rz_pvector_foreach (l, iter) {
+		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "name")) {
 			char *name = sdbkv_key(kv);
 

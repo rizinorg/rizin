@@ -414,19 +414,17 @@ RZ_API bool rz_serialize_core_seek_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *c
 	}
 
 	// Sort by (numeric) key
-	RzList *db_list = sdb_get_kv_list(db, false);
+	RzPVector *db_list = sdb_get_kv_list(db, false);
 	if (!db_list) {
 		ret = false;
 		goto out_free_parser;
 	}
-	rz_list_sort(db_list, __cmp_num_asc, NULL);
+	rz_pvector_sort(db_list, __cmp_num_asc, NULL);
 
 	// Clear the current history
 	rz_core_seek_reset(core);
 	core->seek_history.saved_set = false;
 
-	SdbKv *kv;
-	RzListIter *it;
 	SeekLoadCtx ctx = {
 		.core = core,
 		.parser = seek_parser,
@@ -434,7 +432,9 @@ RZ_API bool rz_serialize_core_seek_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *c
 		.vec = &core->seek_history.undos,
 	};
 	bool parsed = true;
-	rz_list_foreach (db_list, it, kv) {
+	void **it;
+	rz_pvector_foreach (db_list, it) {
+		SdbKv *kv = *it;
 		parsed &= seek_load_item(&ctx, sdbkv_key(kv), sdbkv_value(kv));
 	}
 	ret &= parsed;
@@ -471,7 +471,7 @@ RZ_API bool rz_serialize_core_seek_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *c
 
 out_free_list:
 	free(ctx.current_key);
-	rz_list_free(db_list);
+	rz_pvector_free(db_list);
 out_free_parser:
 	rz_key_parser_free(seek_parser);
 	return ret;

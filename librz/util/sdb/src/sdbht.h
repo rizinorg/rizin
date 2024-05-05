@@ -36,7 +36,7 @@ static inline ut32 sdbkv_value_len(const SdbKv *kv) {
 
 RZ_API SdbKv *sdbkv_new2(const char *k, int kl, const char *v, int vl);
 RZ_API SdbKv *sdbkv_new(const char *k, const char *v);
-extern RZ_API void sdbkv_free(SdbKv *kv);
+extern RZ_API void sdbkv_free(RZ_NULLABLE SdbKv *kv);
 
 extern RZ_API ut32 sdb_hash(const char *key);
 

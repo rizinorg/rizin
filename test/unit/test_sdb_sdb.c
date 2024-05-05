@@ -15,21 +15,20 @@ bool test_sdb_kv_list(void) {
 	sdb_set(db, "fourth_XXX", "   3", 0);
 	sdb_set(db, "fifth__X", " 1", 0);
 
-	RzList *list = sdb_get_kv_list(db, true);
-	mu_assert_eq(rz_list_length(list), 5, "KV count");
+	RzPVector *list = sdb_get_kv_list(db, true);
+	mu_assert_eq(rz_pvector_len(list), 5, "KV count");
 
-	int order = 1;
-	SdbKv *kv;
-	RzListIter *iter;
-	rz_list_foreach (list, iter, kv) {
-		int v = atoi(sdbkv_value(kv));
-		mu_assert_eq(v, order, "KV not sorted");
-		mu_assert_eq(sdbkv_key_len(kv), order + 7, "Key len");
-		mu_assert_eq(sdbkv_value_len(kv), order + 1, "Value len");
-		++order;
+	size_t idx;
+	void **iter;
+	rz_pvector_enumerate (list, iter, idx) {
+		SdbKv *kv = *iter;
+		int pos = atoi(sdbkv_value(kv));
+		mu_assert_eq(pos, idx + 1, "KV not sorted");
+		mu_assert_eq(sdbkv_key_len(kv), idx + 8, "Key len");
+		mu_assert_eq(sdbkv_value_len(kv), idx + 2, "Value len");
 	}
 
-	rz_list_free(list);
+	rz_pvector_free(list);
 	sdb_free(db);
 	mu_end;
 }
@@ -60,17 +59,17 @@ bool test_sdb_list_delete(void) {
 	sdb_set(db, "foo", "bar", 0);
 	sdb_set(db, "bar", "cow", 0);
 	sdb_set(db, "low", "bar", 0);
-	RzList *list = sdb_get_kv_list(db, true);
-	RzListIter *iter;
-	SdbKv *kv;
-	rz_list_foreach (list, iter, kv) {
+	RzPVector *list = sdb_get_kv_list(db, true);
+	void **iter;
+	rz_pvector_foreach (list, iter) {
+		SdbKv *kv = *iter;
 		// printf ("--> %s\n", kv->key);
 		sdb_unset(db, sdbkv_key(kv), 0);
 	}
-	RzList *list2 = sdb_get_kv_list(db, true);
-	mu_assert("List is empty", !rz_list_length(list2));
-	rz_list_free(list);
-	rz_list_free(list2);
+	RzPVector *list2 = sdb_get_kv_list(db, true);
+	mu_assert("List is empty", !rz_pvector_len(list2));
+	rz_pvector_free(list);
+	rz_pvector_free(list2);
 	sdb_free(db);
 	mu_end;
 }
@@ -80,10 +79,10 @@ bool test_sdb_list_big(void) {
 	for (int i = 0; i < 5000; i++) {
 		sdb_num_set(db, sdb_fmt("%d", i), i + 1, 0);
 	}
-	RzList *list = sdb_get_kv_list(db, true);
-	mu_assert_eq(rz_list_length(list), 5000, "KV count");
+	RzPVector *list = sdb_get_kv_list(db, true);
+	mu_assert_eq(rz_pvector_len(list), 5000, "KV count");
 	// TODO: verify if its sorted
-	rz_list_free(list);
+	rz_pvector_free(list);
 	sdb_free(db);
 	mu_end;
 }
@@ -97,9 +96,9 @@ bool test_sdb_delete_none(void) {
 	sdb_unset(db, "barnas", 0);
 	sdb_unset(db, "bar", 0);
 	sdb_unset(db, "pinuts", 0);
-	RzList *list = sdb_get_kv_list(db, false);
-	mu_assert_eq(rz_list_length(list), 2, "Unmatched rows");
-	rz_list_free(list);
+	RzPVector *list = sdb_get_kv_list(db, false);
+	mu_assert_eq(rz_pvector_len(list), 2, "Unmatched rows");
+	rz_pvector_free(list);
 	sdb_free(db);
 	mu_end;
 }
@@ -115,9 +114,9 @@ bool test_sdb_delete_alot(void) {
 	for (i = 0; i < count; i++) {
 		sdb_unset(db, sdb_fmt("key.%d", i), 0);
 	}
-	RzList *list = sdb_get_kv_list(db, false);
-	mu_assert_eq(rz_list_length(list), 0, "Unmatched rows");
-	rz_list_free(list);
+	RzPVector *list = sdb_get_kv_list(db, false);
+	mu_assert_eq(rz_pvector_len(list), 0, "Unmatched rows");
+	rz_pvector_free(list);
 	sdb_free(db);
 
 	mu_end;
@@ -206,22 +205,18 @@ bool test_sdb_kv_list_filtered(void) {
 	sdb_set(db, "low", "bar", 0);
 	sdb_set(db, "bip", "cow", 0);
 	sdb_set(db, "big", "horse", 0);
-	RzList *ls = sdb_get_kv_list_filter(db, foreach_filter_user_cb, db, true);
-	RzListIter *it = rz_list_iterator(ls);
-	SdbKv *kv = rz_list_iter_get_data(it);
+	RzPVector *ls = sdb_get_kv_list_filter(db, foreach_filter_user_cb, db, true);
+	mu_assert_eq(rz_pvector_len(ls), 3, "list length");
+	SdbKv *kv = rz_pvector_at(ls, 0);
 	mu_assert_streq(sdbkv_key(kv), "bar", "list should be sorted");
 	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
-	it = rz_list_iter_get_next(it);
-	kv = rz_list_iter_get_data(it);
+	kv = rz_pvector_at(ls, 1);
 	mu_assert_streq(sdbkv_key(kv), "bip", "list should be sorted");
 	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
-	it = rz_list_iter_get_next(it);
-	kv = rz_list_iter_get_data(it);
+	kv = rz_pvector_at(ls, 2);
 	mu_assert_streq(sdbkv_key(kv), "boo", "list should be sorted");
 	mu_assert_streq(sdbkv_value(kv), "cow", "list should be filtered");
-	it = rz_list_iter_get_next(it);
-	mu_assert_null(it, "list should be terminated");
-	rz_list_free(ls);
+	rz_pvector_free(ls);
 	sdb_free(db);
 	mu_end;
 }
@@ -581,13 +576,13 @@ bool test_sdb_sync_disk() {
 	mu_assert_streq(val, "newfoobar", "Overriden value");
 	free(val);
 
-	RzList *list = sdb_get_kv_list(db, true);
-	mu_assert_eq(rz_list_length(list), 3, "KV count");
+	RzPVector *list = sdb_get_kv_list(db, true);
+	mu_assert_eq(rz_pvector_len(list), 3, "KV count");
 
-	SdbKv *kv = rz_list_first(list);
+	SdbKv *kv = rz_pvector_at(list, 0);
 	mu_assert_streq(sdbkv_key(kv), "mykey", "key");
 	mu_assert_streq(sdbkv_value(kv), "newfoobar", "value");
-	rz_list_free(list);
+	rz_pvector_free(list);
 
 	sdb_sync(db);
 	sdb_free(db);

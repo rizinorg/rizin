@@ -2294,7 +2294,7 @@ RZ_API void rz_analysis_class_recover_all(RzAnalysis *analysis);
 RZ_API RzAnalysisClassErr rz_analysis_class_create(RzAnalysis *analysis, const char *name);
 RZ_API void rz_analysis_class_delete(RzAnalysis *analysis, const char *name);
 RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name);
-RZ_API RZ_OWN RzList /*<SdbKv *>*/ *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted);
 RZ_API void rz_analysis_class_foreach(RzAnalysis *analysis, SdbForeachCallback cb, void *user);
 RZ_API RzAnalysisClassErr rz_analysis_class_rename(RzAnalysis *analysis, const char *old_name, const char *new_name);
 

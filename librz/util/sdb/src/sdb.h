@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include <rz_types.h>
-#include <rz_list.h>
+#include <rz_vector.h>
 #include "sdbht.h"
 #include "ls.h"
 #include "cdb.h"
@@ -115,9 +115,9 @@ RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem);
 
 typedef bool (*SdbForeachCallback)(void *user, const char *k, ut32 klen, const char *v, ut32 vlen);
 RZ_API bool sdb_foreach(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback cb, RZ_NULLABLE void *user);
-RZ_API RZ_OWN RzList /*<SdbKv *>*/ *sdb_get_kv_list(RZ_NONNULL Sdb *s, bool sorted);
-RZ_API RZ_OWN RzList /*<SdbKv *>*/ *sdb_get_kv_list_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted);
-RZ_API RZ_OWN RzList /*<SdbKv *>*/ *sdb_get_kv_list_match(RZ_NONNULL Sdb *s, RZ_NONNULL const char *expr, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list(RZ_NONNULL Sdb *s, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list_match(RZ_NONNULL Sdb *s, RZ_NONNULL const char *expr, bool sorted);
 
 RZ_API int sdb_query(Sdb *s, const char *cmd);
 RZ_API int sdb_queryf(Sdb *s, const char *fmt, ...);
@@ -169,7 +169,7 @@ RZ_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
 RZ_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas);
 RZ_API int sdb_add(Sdb *s, const char *key, const char *val, ut32 cas);
 RZ_API bool sdb_sync(Sdb *);
-RZ_API void sdbkv_free(SdbKv *kv);
+RZ_API void sdbkv_free(RZ_NULLABLE SdbKv *kv);
 
 /* num.c */
 RZ_API bool sdb_num_exists(Sdb *, const char *key);

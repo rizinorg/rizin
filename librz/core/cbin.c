@@ -97,10 +97,10 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		rz_flag_space_push(core->flags, "format");
 	}
 	// iterate over all keys
-	SdbKv *kv;
-	RzListIter *iter;
-	RzList *ls = sdb_get_kv_list(db, false);
-	rz_list_foreach (ls, iter, kv) {
+	void **iter;
+	RzPVector *ls = sdb_get_kv_list(db, false);
+	rz_pvector_foreach (ls, iter) {
+		SdbKv *kv = *iter;
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
@@ -134,7 +134,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		free(dup);
 	}
 	RZ_FREE(offset);
-	rz_list_foreach (ls, iter, kv) {
+	rz_pvector_foreach (ls, iter) {
+		SdbKv *kv = *iter;
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
@@ -152,7 +153,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		}
 		free(dup);
 	}
-	rz_list_foreach (ls, iter, kv) {
+	rz_pvector_foreach (ls, iter) {
+		SdbKv *kv = *iter;
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
@@ -204,7 +206,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		free(dup);
 	}
 	free(offset);
-	rz_list_free(ls);
+	rz_pvector_free(ls);
 	if (IS_MODE_SET(mode)) {
 		rz_flag_space_pop(core->flags);
 	}

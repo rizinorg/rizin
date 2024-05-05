@@ -5210,23 +5210,25 @@ RZ_IPI RzCmdStatus rz_analysis_class_list_handler(RzCore *core, int argc, const 
 		return RZ_CMD_STATUS_OK;
 	}
 
-	RzList *classes = rz_analysis_class_get_all(core->analysis, state->mode != RZ_OUTPUT_MODE_RIZIN);
-	RzListIter *iter;
-	SdbKv *kv;
+	RzPVector *classes = rz_analysis_class_get_all(core->analysis, state->mode != RZ_OUTPUT_MODE_RIZIN);
+	void **iter;
 	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_list_foreach (classes, iter, kv) {
+		rz_pvector_foreach (classes, iter) {
+			SdbKv *kv = *iter;
 			// need to create all classes first, so they can be referenced
 			rz_cons_printf("ac %s\n", sdbkv_key(kv));
 		}
-		rz_list_foreach (classes, iter, kv) {
+		rz_pvector_foreach (classes, iter) {
+			SdbKv *kv = *iter;
 			analysis_class_print_as_cmd(core->analysis, sdbkv_key(kv));
 		}
 	} else {
-		rz_list_foreach (classes, iter, kv) {
+		rz_pvector_foreach (classes, iter) {
+			SdbKv *kv = *iter;
 			analysis_class_print(core->analysis, sdbkv_key(kv), state->mode == RZ_OUTPUT_MODE_LONG);
 		}
 	}
-	rz_list_free(classes);
+	rz_pvector_free(classes);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -5505,14 +5507,14 @@ RZ_IPI RzCmdStatus rz_analysis_class_vtable_lookup_handler(RzCore *core, int arg
 		list_all_functions_at_vtable_offset(core->analysis, class_name, offset);
 		return RZ_CMD_STATUS_OK;
 	}
-	RzList *classes = rz_analysis_class_get_all(core->analysis, true);
-	RzListIter *iter;
-	SdbKv *kv;
-	rz_list_foreach (classes, iter, kv) {
+	RzPVector *classes = rz_analysis_class_get_all(core->analysis, true);
+	void **iter;
+	rz_pvector_foreach (classes, iter) {
+		SdbKv *kv = *iter;
 		const char *name = sdbkv_key(kv);
 		list_all_functions_at_vtable_offset(core->analysis, name, offset);
 	}
-	rz_list_free(classes);
+	rz_pvector_free(classes);
 	return RZ_CMD_STATUS_OK;
 }
 

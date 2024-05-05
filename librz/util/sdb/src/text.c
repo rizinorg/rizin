@@ -152,13 +152,13 @@ static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
 
 	// k=v entries
 	if (sort) {
-		RzList *l = sdb_get_kv_list(s, true);
-		SdbKv *kv;
-		RzListIter *it;
-		rz_list_foreach (l, it, kv) {
+		RzPVector *l = sdb_get_kv_list(s, true);
+		void **it;
+		rz_pvector_foreach (l, it) {
+			SdbKv *kv = *it;
 			save_kv_cb(&fd, sdbkv_key(kv), sdbkv_key_len(kv), sdbkv_value(kv), sdbkv_value_len(kv));
 		}
-		rz_list_free(l);
+		rz_pvector_free(l);
 	} else {
 		// This is faster when sorting is not needed.
 		sdb_foreach(s, save_kv_cb, &fd);

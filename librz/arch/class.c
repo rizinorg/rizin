@@ -184,7 +184,7 @@ RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name) {
 	return r;
 }
 
-RZ_API RZ_OWN RzList /*<SdbKv *>*/ *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted) {
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted) {
 	return sdb_get_kv_list(analysis->sdb_classes, sorted);
 }
 
@@ -1279,7 +1279,7 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 	if (!class_graph) {
 		return NULL;
 	}
-	RzList *classes = rz_analysis_class_get_all(analysis, true);
+	RzPVector *classes = rz_analysis_class_get_all(analysis, true);
 	if (!classes) {
 		rz_graph_free(class_graph);
 		return NULL;
@@ -1288,10 +1288,10 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 	if (!hashmap) {
 		goto failure;
 	}
-	RzListIter *iter;
-	SdbKv *kv;
+	void **iter;
 	// Traverse each class and create a node and edges
-	rz_list_foreach (classes, iter, kv) {
+	rz_pvector_foreach (classes, iter) {
+		SdbKv *kv = *iter;
 		const char *name = sdbkv_key(kv);
 		// create nodes
 		RzGraphNode *curr_node = ht_sp_find(hashmap, name, NULL);
@@ -1320,12 +1320,12 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 		}
 		rz_vector_free(bases);
 	}
-	rz_list_free(classes);
+	rz_pvector_free(classes);
 	ht_sp_free(hashmap);
 	return class_graph;
 
 failure:
-	rz_list_free(classes);
+	rz_pvector_free(classes);
 	ht_sp_free(hashmap);
 	rz_graph_free(class_graph);
 	return NULL;
