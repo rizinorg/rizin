@@ -149,7 +149,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg")) {
-			char *name = sdbkv_key(kv);
+			const char *name = sdbkv_key(kv);
 			RzSysregItem *sysregitem = rz_sysreg_item_new(name);
 			char *argument_key = rz_str_newf("%s.address", name);
 			if (!argument_key) {
@@ -392,10 +392,10 @@ RZ_API const char *rz_syscall_get_i(RzSyscall *s, int num, int swi) {
 	return sdb_const_get(s->db, foo, 0);
 }
 
-static bool callback_list(void *u, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool callback_list(void *u, const SdbKv *kv) {
 	RzList *list = (RzList *)u;
-	if (!strchr(k, '.')) {
-		RzSyscallItem *si = rz_syscall_item_new_from_string(k, v);
+	if (!strchr(sdbkv_key(kv), '.')) {
+		RzSyscallItem *si = rz_syscall_item_new_from_string(sdbkv_key(kv), sdbkv_value(kv));
 		if (!si) {
 			return true;
 		}

@@ -712,8 +712,10 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 	return false;
 }
 
-static bool filter_noreturn(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	return vlen == 4 && !strcmp(v, "true") && klen > 9 && !strcmp(k + (klen - 9), ".noreturn");
+static bool filter_noreturn(void *user, const SdbKv *kv) {
+	ut32 klen = sdbkv_key_len(kv);
+	ut32 vlen = sdbkv_value_len(kv);
+	return vlen == 4 && !strcmp(sdbkv_value(kv), "true") && klen > 9 && !strcmp(sdbkv_key(kv) + (klen - 9), ".noreturn");
 }
 
 RZ_API RzList /*<char *>*/ *rz_analysis_noreturn_functions(RzAnalysis *analysis) {

@@ -265,8 +265,8 @@ RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_na
 	return cc ? cc : rz_analysis_cc_default(analysis);
 }
 
-static bool filter_cc(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	return vlen == 2 && !strcmp(v, "cc");
+static bool filter_cc(void *user, const SdbKv *kv) {
+	return sdbkv_value_len(kv) == 2 && !strcmp(sdbkv_value(kv), "cc");
 }
 
 RZ_API RzList /*<char *>*/ *rz_analysis_calling_conventions(RzAnalysis *analysis) {

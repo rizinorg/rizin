@@ -552,11 +552,11 @@ RZ_API void rz_config_serialize(RZ_NONNULL RzConfig *config, RZ_NONNULL Sdb *db)
 	}
 }
 
-static bool load_config_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool load_config_cb(void *user, const SdbKv *kv) {
 	RzConfig *config = user;
-	RzConfigNode *node = rz_config_node_get(config, k);
+	RzConfigNode *node = rz_config_node_get(config, sdbkv_key(kv));
 	if (node) {
-		rz_config_set(config, k, v);
+		rz_config_set(config, sdbkv_key(kv), sdbkv_value(kv));
 	}
 	return true;
 }

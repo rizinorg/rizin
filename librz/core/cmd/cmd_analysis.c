@@ -205,8 +205,8 @@ static int cmpaddr(const void *_a, const void *_b, void *user) {
 							     : 0;
 }
 
-static bool listOpDescriptions(void *_core, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	rz_cons_printf("%s=%s\n", k, v);
+static bool listOpDescriptions(void *_core, const SdbKv *kv) {
+	rz_cons_printf("%s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
 	return true;
 }
 
@@ -5159,9 +5159,9 @@ typedef struct {
 	PJ *pj;
 } ListJsonCtx;
 
-static bool analysis_class_print_to_json_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool analysis_class_print_to_json_cb(void *user, const SdbKv *kv) {
 	ListJsonCtx *ctx = user;
-	analysis_class_print_to_json(ctx->analysis, ctx->pj, k);
+	analysis_class_print_to_json(ctx->analysis, ctx->pj, sdbkv_key(kv));
 	return true;
 }
 

@@ -113,7 +113,7 @@ RZ_API void sdb_copy(Sdb *src, Sdb *dst);
 
 RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem);
 
-typedef bool (*SdbForeachCallback)(void *user, const char *k, ut32 klen, const char *v, ut32 vlen);
+typedef bool (*SdbForeachCallback)(void *user, const SdbKv *kv);
 RZ_API bool sdb_foreach(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback cb, RZ_NULLABLE void *user);
 RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items(RZ_NONNULL Sdb *s, bool sorted);
 RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted);

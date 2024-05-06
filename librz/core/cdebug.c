@@ -1200,37 +1200,37 @@ static const char *signal_option(int opt) {
 	return NULL;
 }
 
-static bool siglistcb(void *p, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool siglistcb(void *p, const SdbKv *kv) {
 	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
-	if (atoi(k) > 0) {
-		strncpy(key + 4, k, 20);
+	if (atoi(sdbkv_key(kv)) > 0) {
+		strncpy(key + 4, sdbkv_key(kv), 20);
 		opt = sdb_num_get(ds->dbg->sgnls, key, 0);
 		if (opt && ds->state->mode == RZ_OUTPUT_MODE_STANDARD) {
-			rz_cons_printf("%s %s", k, v);
+			rz_cons_printf("%s %s", sdbkv_key(kv), sdbkv_value(kv));
 			const char *optstr = signal_option(opt);
 			if (optstr) {
 				rz_cons_printf(" %s", optstr);
 			}
 			rz_cons_newline();
 		} else {
-			rz_cons_printf("%s %s\n", k, v);
+			rz_cons_printf("%s %s\n", sdbkv_key(kv), sdbkv_value(kv));
 		}
 	}
 	return true;
 }
 
-static bool siglistjsoncb(void *p, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool siglistjsoncb(void *p, const SdbKv *kv) {
 	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
-	if (atoi(k) > 0) {
-		strncpy(key + 4, k, 20);
+	if (atoi(sdbkv_key(kv)) > 0) {
+		strncpy(key + 4, sdbkv_key(kv), 20);
 		opt = (int)sdb_num_get(ds->dbg->sgnls, key, 0);
 		pj_o(ds->state->d.pj);
-		pj_ks(ds->state->d.pj, "signum", k);
-		pj_ks(ds->state->d.pj, "name", v);
+		pj_ks(ds->state->d.pj, "signum", sdbkv_key(kv));
+		pj_ks(ds->state->d.pj, "name", sdbkv_value(kv));
 		const char *optstr = signal_option(opt);
 		if (optstr) {
 			pj_ks(ds->state->d.pj, "option", optstr);
@@ -1242,15 +1242,15 @@ static bool siglistjsoncb(void *p, const char *k, ut32 klen, const char *v, ut32
 	return true;
 }
 
-static bool siglisttblcb(void *p, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool siglisttblcb(void *p, const SdbKv *kv) {
 	char key[32] = "cfg.";
 	struct RzCoreDebugState *ds = p;
 	int opt;
-	if (atoi(k) > 0) {
-		strncpy(key + 4, k, 20);
+	if (atoi(sdbkv_key(kv)) > 0) {
+		strncpy(key + 4, sdbkv_key(kv), 20);
 		opt = (int)sdb_num_get(ds->dbg->sgnls, key, 0);
 		const char *optstr = signal_option(opt);
-		rz_table_add_rowf(ds->state->d.t, "sss", k, v, rz_str_get(optstr));
+		rz_table_add_rowf(ds->state->d.t, "sss", sdbkv_key(kv), sdbkv_value(kv), rz_str_get(optstr));
 	}
 	return true;
 }

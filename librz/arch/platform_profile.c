@@ -128,18 +128,18 @@ static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 			c->ram_size = rz_num_math(NULL, sdbkv_value(kv));
 		}
 		if (!strcmp(sdbkv_value(kv), "io")) {
-			char *io_name = sdbkv_key(kv);
+			const char *io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", io_name);
 			ut64 io_address = sdb_num_get(sdb, argument_key, NULL);
 			free(argument_key);
-			ht_up_insert(c->registers_mmio, io_address, io_name);
+			ht_up_insert(c->registers_mmio, io_address, (char *)io_name);
 		}
 		if (!strcmp(sdbkv_value(kv), "ext_io")) {
-			char *ext_io_name = sdbkv_key(kv);
+			const char *ext_io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", ext_io_name);
 			ut64 ext_io_address = sdb_num_get(sdb, argument_key, NULL);
 			free(argument_key);
-			ht_up_insert(c->registers_extended, ext_io_address, ext_io_name);
+			ht_up_insert(c->registers_extended, ext_io_address, (char *)ext_io_name);
 		}
 	}
 	rz_pvector_free(items);

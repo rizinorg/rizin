@@ -88,15 +88,19 @@ typedef struct {
 	char *root;
 } ForeachListUser;
 
-static bool foreach_list_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool foreach_list_cb(void *user, const SdbKv *kv) {
 	ForeachListUser *rlu = user;
-	char *line, *root;
-	int rlen;
-	ut8 *v2 = NULL;
 	if (!rlu) {
 		return false;
 	}
-	root = rlu->root;
+	char *line;
+	int rlen;
+	ut8 *v2 = NULL;
+	char *root = rlu->root;
+	const char *k = sdbkv_key(kv);
+	ut32 klen = sdbkv_key_len(kv);
+	const char *v = sdbkv_value(kv);
+	ut32 vlen = sdbkv_value_len(kv);
 	if (rlu->encode) {
 		v2 = sdb_decode(v, NULL);
 		if (v2) {
@@ -320,7 +324,7 @@ repeat:
 			void **iter;
 			rz_pvector_foreach (items, iter) {
 				SdbKv *kv = *iter;
-				foreach_list_cb(&user, sdbkv_key(kv), sdbkv_key_len(kv), sdbkv_value(kv), sdbkv_value_len(kv));
+				foreach_list_cb(&user, kv);
 			}
 			rz_pvector_free(items);
 			goto fail;

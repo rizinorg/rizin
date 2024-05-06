@@ -136,11 +136,11 @@ static void write_value(int fd, const char *v) {
 #undef ESCAPE_LOOP
 #undef ESCAPE
 
-static bool save_kv_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool save_kv_cb(void *user, const SdbKv *kv) {
 	int fd = *(int *)user;
-	write_key(fd, k);
+	write_key(fd, sdbkv_key(kv));
 	write_(fd, "=", 1);
-	write_value(fd, v);
+	write_value(fd, sdbkv_value(kv));
 	write_(fd, "\n", 1);
 	return true;
 }
@@ -156,7 +156,7 @@ static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
 		void **it;
 		rz_pvector_foreach (items, it) {
 			SdbKv *kv = *it;
-			save_kv_cb(&fd, sdbkv_key(kv), sdbkv_key_len(kv), sdbkv_value(kv), sdbkv_value_len(kv));
+			save_kv_cb(&fd, kv);
 		}
 		rz_pvector_free(items);
 	} else {

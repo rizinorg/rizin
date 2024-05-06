@@ -33,9 +33,9 @@ bool test_sdb_kv_list(void) {
 	mu_end;
 }
 
-static bool foreach_delete_cb(void *user, const char *key, ut32 klen, const char *val, ut32 vlen) {
-	if (strcmp(key, "bar")) {
-		sdb_unset(user, key, 0);
+static bool foreach_delete_cb(void *user, const SdbKv *kv) {
+	if (strcmp(sdbkv_key(kv), "bar")) {
+		sdb_unset(user, sdbkv_key(kv), 0);
 	}
 	return true;
 }
@@ -185,8 +185,9 @@ bool test_sdb_namespace(void) {
 	mu_end;
 }
 
-static bool foreach_filter_user_cb(void *user, const char *key, ut32 klen, const char *val, ut32 vlen) {
+static bool foreach_filter_user_cb(void *user, const SdbKv *kv) {
 	Sdb *db = (Sdb *)user;
+	const char *key = sdbkv_key(kv);
 	const char *v = sdb_const_get(db, key, NULL);
 	if (!v) {
 		return false;

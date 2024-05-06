@@ -101,8 +101,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	RzPVector *items = sdb_get_items(db, false);
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
-		char *k = sdbkv_key(kv);
-		char *v = sdbkv_value(kv);
+		const char *k = sdbkv_key(kv);
+		const char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
 		if ((flagname = strstr(dup, ".offset"))) {
 			*flagname = 0;
@@ -136,8 +136,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	RZ_FREE(offset);
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
-		char *k = sdbkv_key(kv);
-		char *v = sdbkv_value(kv);
+		const char *k = sdbkv_key(kv);
+		const char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
 		if ((flagname = strstr(dup, ".format"))) {
 			*flagname = 0;
@@ -155,8 +155,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	}
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
-		char *k = sdbkv_key(kv);
-		char *v = sdbkv_value(kv);
+		const char *k = sdbkv_key(kv);
+		const char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
 		if ((flagname = strstr(dup, ".format"))) {
 			*flagname = 0;

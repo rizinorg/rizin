@@ -127,8 +127,8 @@ error:
 	return NULL;
 }
 
-static bool filter_func(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	return vlen == 4 && !strcmp(v, "func");
+static bool filter_func(void *user, const SdbKv *kv) {
+	return sdbkv_value_len(kv) == 4 && !strcmp(sdbkv_value(kv), "func");
 }
 
 static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {

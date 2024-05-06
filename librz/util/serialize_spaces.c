@@ -45,9 +45,9 @@ RZ_API void rz_serialize_spaces_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *sp
 	}
 }
 
-static bool foreach_space_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool foreach_space_cb(void *user, const SdbKv *kv) {
 	RzSpaces *spaces = user;
-	rz_spaces_add(spaces, k);
+	rz_spaces_add(spaces, sdbkv_key(kv));
 	return true;
 }
 

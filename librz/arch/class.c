@@ -1031,14 +1031,13 @@ typedef struct {
 	const char *class_name;
 } DeleteClassCtx;
 
-static bool rz_analysis_class_base_delete_class_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	(void)v;
+static bool rz_analysis_class_base_delete_class_cb(void *user, const SdbKv *kv) {
 	DeleteClassCtx *ctx = user;
-	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, k);
+	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, sdbkv_key(kv));
 	RzAnalysisBaseClass *base;
 	rz_vector_foreach (bases, base) {
 		if (base->class_name && strcmp(base->class_name, ctx->class_name) == 0) {
-			rz_analysis_class_base_delete(ctx->analysis, k, base->id);
+			rz_analysis_class_base_delete(ctx->analysis, sdbkv_key(kv), base->id);
 		}
 	}
 	rz_vector_free(bases);
@@ -1056,14 +1055,13 @@ typedef struct {
 	const char *class_name_new;
 } RenameClassCtx;
 
-static bool rz_analysis_class_base_rename_class_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	(void)v;
+static bool rz_analysis_class_base_rename_class_cb(void *user, const SdbKv *kv) {
 	RenameClassCtx *ctx = user;
-	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, k);
+	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, sdbkv_key(kv));
 	RzAnalysisBaseClass *base;
 	rz_vector_foreach (bases, base) {
 		if (base->class_name && strcmp(base->class_name, ctx->class_name_old) == 0) {
-			rz_analysis_class_base_set_raw(ctx->analysis, k, base, ctx->class_name_new);
+			rz_analysis_class_base_set_raw(ctx->analysis, sdbkv_key(kv), base, ctx->class_name_new);
 		}
 	}
 	rz_vector_free(bases);

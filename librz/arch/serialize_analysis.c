@@ -235,10 +235,10 @@ typedef struct {
 	RzKeyParser *parser;
 } BlockLoadCtx;
 
-static bool block_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool block_load_cb(void *user, const SdbKv *kv) {
 	BlockLoadCtx *ctx = user;
 
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -359,7 +359,7 @@ static bool block_load_cb(void *user, const char *k, ut32 klen, const char *v, u
 	free(json_str);
 
 	errno = 0;
-	ut64 addr = strtoull(k, NULL, 0);
+	ut64 addr = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno || proto.size == UT64_MAX || (proto.op_pos && proto.op_pos_size != proto.ninstr - 1)) { // op_pos_size > ninstr - 1 is legal but we require the format to be like this.
 		goto error;
 	}
@@ -953,10 +953,10 @@ typedef struct {
 	RzKeyParser *parser;
 } GlobalVarCtx;
 
-static bool global_var_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	GlobalVarCtx *ctx = user;
 
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -1182,10 +1182,10 @@ enum {
 	FUNCTION_FIELD_LABELS
 };
 
-static bool function_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool function_load_cb(void *user, const SdbKv *kv) {
 	RzSerializeAnalysisFunctionLoadCtx *ctx = user;
 
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -1338,7 +1338,7 @@ static bool function_load_cb(void *user, const char *k, ut32 klen, const char *v
 
 	bool ret = true;
 	errno = 0;
-	function->addr = strtoull(k, NULL, 0);
+	function->addr = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno || !function->name || !rz_analysis_add_function(ctx->analysis, function)) {
 		rz_analysis_function_free(function);
 		ret = false;
@@ -1443,16 +1443,16 @@ RZ_API void rz_serialize_analysis_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	ht_up_foreach(analysis->ht_xrefs_from, store_xrefs_list_cb, db);
 }
 
-static bool xrefs_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool xrefs_load_cb(void *user, const SdbKv *kv) {
 	RzAnalysis *analysis = user;
 
 	errno = 0;
-	ut64 from = strtoull(k, NULL, 0);
+	ut64 from = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno) {
 		return false;
 	}
 
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -1606,16 +1606,16 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	pj_free(j);
 }
 
-static bool meta_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool meta_load_cb(void *user, const SdbKv *kv) {
 	RzAnalysis *analysis = user;
 
 	errno = 0;
-	ut64 addr = strtoull(k, NULL, 0);
+	ut64 addr = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno) {
 		return false;
 	}
 
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -1920,17 +1920,17 @@ typedef struct {
 	RzKeyParser *parser;
 } HintsLoadCtx;
 
-static bool hints_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool hints_load_cb(void *user, const SdbKv *kv) {
 	HintsLoadCtx *ctx = user;
 	RzAnalysis *analysis = ctx->analysis;
 
 	errno = 0;
-	ut64 addr = strtoull(k, NULL, 0);
+	ut64 addr = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno) {
 		return false;
 	}
 
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -2130,8 +2130,8 @@ RZ_API void rz_serialize_analysis_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 	}
 }
 
-static bool import_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	rz_analysis_add_import(user, k);
+static bool import_load_cb(void *user, const SdbKv *kv) {
+	rz_analysis_add_import(user, sdbkv_key(kv));
 	return true;
 }
 

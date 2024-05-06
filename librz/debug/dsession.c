@@ -460,9 +460,9 @@ RZ_API bool rz_debug_session_save(RzDebugSession *session, const char *path) {
 	if (!v || v->type != t) \
 	continue
 
-static bool deserialize_memory_cb(void *user, const char *addr, ut32 addr_len, const char *v, ut32 vlen) {
+static bool deserialize_memory_cb(void *user, const SdbKv *kv) {
 	RzJson *child;
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -474,6 +474,7 @@ static bool deserialize_memory_cb(void *user, const char *addr, ut32 addr_len, c
 
 	HtUP *memory = user;
 	// Insert a new vector into `memory` HtUP at `addr`
+	ut64 addr = sdb_atoi(sdbkv_key(kv));
 	RzVector *vmem = rz_vector_new(sizeof(RzDebugChangeMem), NULL, NULL);
 	if (!vmem) {
 		eprintf("Error: failed to allocate RzVector vmem.\n");
@@ -481,7 +482,7 @@ static bool deserialize_memory_cb(void *user, const char *addr, ut32 addr_len, c
 		rz_json_free(reg_json);
 		return false;
 	}
-	ht_up_insert(memory, sdb_atoi(addr), vmem);
+	ht_up_insert(memory, addr, vmem);
 
 	// Extract <RzDebugChangeMem>'s into the new vector
 	for (child = reg_json->children.first; child; child = child->next) {
@@ -509,9 +510,9 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 	sdb_foreach(db, deserialize_memory_cb, memory);
 }
 
-static bool deserialize_registers_cb(void *user, const char *addr, ut32 addr_len, const char *v, ut32 vlen) {
+static bool deserialize_registers_cb(void *user, const SdbKv *kv) {
 	RzJson *child;
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -530,7 +531,7 @@ static bool deserialize_registers_cb(void *user, const char *addr, ut32 addr_len
 		free(json_str);
 		return true;
 	}
-	ht_up_insert(registers, sdb_atoi(addr), vreg);
+	ht_up_insert(registers, sdb_atoi(sdbkv_key(kv)), vreg);
 
 	// Extract <RzDebugChangeReg>'s into the new vector
 	for (child = reg_json->children.first; child; child = child->next) {
@@ -558,9 +559,9 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 	sdb_foreach(db, deserialize_registers_cb, registers);
 }
 
-static bool deserialize_checkpoints_cb(void *user, const char *cnum, ut32 cnum_len, const char *v, ut32 vlen) {
+static bool deserialize_checkpoints_cb(void *user, const SdbKv *kv) {
 	const RzJson *child;
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -572,7 +573,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, ut32 cnum_l
 
 	RzVector *checkpoints = user;
 	RzDebugCheckpoint checkpoint = { 0 };
-	checkpoint.cnum = (int)sdb_atoi(cnum);
+	checkpoint.cnum = (int)sdb_atoi(sdbkv_key(kv));
 
 	// Extract RzRegArena's from "registers"
 	const RzJson *regs_json = rz_json_get(chkpt_json, "registers");

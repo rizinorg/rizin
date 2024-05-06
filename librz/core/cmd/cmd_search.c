@@ -3100,7 +3100,7 @@ reread:
 						goto beach;
 					}
 
-					char *s = sdbkv_value(kv);
+					const char *s = sdbkv_value(kv);
 					ut64 addr;
 					int opsz;
 					int mode = 0;

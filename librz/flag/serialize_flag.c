@@ -36,9 +36,9 @@ RZ_API void rz_serialize_flag_zones_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzList /
 	}
 }
 
-static bool zone_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool zone_load_cb(void *user, const SdbKv *kv) {
 	RzList *list = user;
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -55,7 +55,7 @@ static bool zone_load_cb(void *user, const char *k, ut32 klen, const char *v, ut
 	if (!item) {
 		goto beach;
 	}
-	item->name = strdup(k);
+	item->name = strdup(sdbkv_key(kv));
 	if (!item->name) {
 		free(item);
 		goto beach;
@@ -142,10 +142,10 @@ typedef struct {
 	RzKeyParser *parser;
 } FlagLoadCtx;
 
-static bool flag_load_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool flag_load_cb(void *user, const SdbKv *kv) {
 	FlagLoadCtx *ctx = user;
 
-	char *json_str = strdup(v);
+	char *json_str = strdup(sdbkv_value(kv));
 	if (!json_str) {
 		return true;
 	}
@@ -220,7 +220,7 @@ static bool flag_load_cb(void *user, const char *k, ut32 klen, const char *v, ut
 		goto beach;
 	}
 
-	RzFlagItem *item = rz_flag_set(ctx->flag, k, proto.offset, proto.size);
+	RzFlagItem *item = rz_flag_set(ctx->flag, sdbkv_key(kv), proto.offset, proto.size);
 	if (proto.realname) {
 		rz_flag_item_set_realname(item, proto.realname);
 	}

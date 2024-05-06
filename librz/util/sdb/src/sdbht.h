@@ -18,12 +18,12 @@ typedef struct sdb_kv {
 	ut64 expire;
 } SdbKv;
 
-static inline char *sdbkv_key(const SdbKv *kv) {
-	return (char *)kv->base.key;
+static inline const char *sdbkv_key(const SdbKv *kv) {
+	return kv->base.key;
 }
 
-static inline char *sdbkv_value(const SdbKv *kv) {
-	return (char *)kv->base.value;
+static inline const char *sdbkv_value(const SdbKv *kv) {
+	return kv->base.value;
 }
 
 static inline ut32 sdbkv_key_len(const SdbKv *kv) {

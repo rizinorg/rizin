@@ -29,16 +29,16 @@ typedef struct load_config_ctx_t {
 	HtSP *exclude;
 } LoadConfigCtx;
 
-static bool load_config_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+static bool load_config_cb(void *user, const SdbKv *kv) {
 	LoadConfigCtx *ctx = user;
-	if (ctx->exclude && ht_sp_find_kv(ctx->exclude, k, NULL)) {
+	if (ctx->exclude && ht_sp_find_kv(ctx->exclude, sdbkv_key(kv), NULL)) {
 		return true;
 	}
-	RzConfigNode *node = rz_config_node_get(ctx->config, k);
+	RzConfigNode *node = rz_config_node_get(ctx->config, sdbkv_key(kv));
 	if (!node) {
 		return 1;
 	}
-	rz_config_set(ctx->config, k, v);
+	rz_config_set(ctx->config, sdbkv_key(kv), sdbkv_value(kv));
 	return 1;
 }
 
