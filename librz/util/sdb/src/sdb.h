@@ -129,7 +129,6 @@ RZ_API bool sdb_exists(Sdb *, const char *key);
 RZ_API bool sdb_remove(Sdb *, const char *key, ut32 cas);
 RZ_API int sdb_unset(Sdb *, const char *key, ut32 cas);
 RZ_API int sdb_unset_like(Sdb *s, const char *k);
-RZ_API char **sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb);
 
 // diffing
 typedef struct sdb_diff_t {
