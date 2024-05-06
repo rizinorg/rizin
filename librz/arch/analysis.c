@@ -724,8 +724,8 @@ RZ_API RzList /*<char *>*/ *rz_analysis_noreturn_functions(RzAnalysis *analysis)
 	// Then we propagate all noreturn functions that were inferred by
 	// the analysis process
 	void **iter;
-	RzPVector *l = sdb_get_kv_list_filter(analysis->sdb_noret, filter_noreturn, NULL, false);
-	rz_pvector_foreach (l, iter) {
+	RzPVector *items = sdb_get_items_filter(analysis->sdb_noret, filter_noreturn, NULL, false);
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		const char *k = sdbkv_key(kv);
 		const ut32 klen = sdbkv_key_len(kv);
@@ -741,7 +741,7 @@ RZ_API RzList /*<char *>*/ *rz_analysis_noreturn_functions(RzAnalysis *analysis)
 			rz_list_append(noretl, rz_str_newf("0x%s", addr));
 		}
 	}
-	rz_pvector_free(l);
+	rz_pvector_free(items);
 	return noretl;
 }
 

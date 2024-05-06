@@ -61,8 +61,8 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NO
 	rz_return_val_if_fail(t && sdb, false);
 
 	void **iter;
-	RzPVector *l = sdb_get_kv_list(sdb, false);
-	rz_pvector_foreach (l, iter) {
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "name")) {
 			char *name = sdbkv_key(kv);

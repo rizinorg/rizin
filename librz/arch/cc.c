@@ -272,11 +272,11 @@ static bool filter_cc(void *user, const char *k, ut32 klen, const char *v, ut32 
 RZ_API RzList /*<char *>*/ *rz_analysis_calling_conventions(RzAnalysis *analysis) {
 	RzList *ccl = rz_list_new();
 	void **iter;
-	RzPVector *l = sdb_get_kv_list_filter(analysis->sdb_cc, filter_cc, NULL, true);
-	rz_pvector_foreach (l, iter) {
+	RzPVector *items = sdb_get_items_filter(analysis->sdb_cc, filter_cc, NULL, true);
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		rz_list_append(ccl, strdup(sdbkv_key(kv)));
 	}
-	rz_pvector_free(l);
+	rz_pvector_free(items);
 	return ccl;
 }

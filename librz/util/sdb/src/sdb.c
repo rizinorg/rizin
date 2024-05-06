@@ -600,13 +600,13 @@ RZ_API int sdb_set(Sdb *s, const char *key, const char *val, ut32 cas) {
 	return sdb_set_internal(s, key, (char *)val, 0, cas);
 }
 
-static bool sdb_get_kv_list_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	RzPVector *list = (RzPVector *)user;
+static bool get_items_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+	RzPVector *vec = (RzPVector *)user;
 	SdbKv *kv = sdbkv_new2(k, klen, v, vlen);
 	if (!kv) {
 		return false;
 	}
-	if (!rz_pvector_push(list, kv)) {
+	if (!rz_pvector_push(vec, kv)) {
 		sdbkv_free(kv);
 		return false;
 	}
@@ -619,32 +619,32 @@ static int __cmp_asc(const void *a, const void *b, RZ_UNUSED void *user) {
 }
 
 /**
- * \brief Get list of all key-value pairs in DB
+ * \brief Get all key-value pairs in DB
  * \param s DB
- * \param sorted If set to true sort the resulting list by key in lexicographic order
+ * \param sorted If set to true sort the resulting vector by key in lexicographic order
  */
-RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list(RZ_NONNULL Sdb *s, bool sorted) {
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items(RZ_NONNULL Sdb *s, bool sorted) {
 	rz_return_val_if_fail(s, NULL);
 
-	RzPVector *list = rz_pvector_new((RzPVectorFree)sdbkv_free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)sdbkv_free);
+	if (!vec) {
 		return NULL;
 	}
-	sdb_foreach(s, sdb_get_kv_list_cb, list);
+	sdb_foreach(s, get_items_cb, vec);
 	if (sorted) {
-		rz_pvector_sort(list, __cmp_asc, NULL);
+		rz_pvector_sort(vec, __cmp_asc, NULL);
 	}
-	return list;
+	return vec;
 }
 
-struct kv_list_filter_ctx {
+struct get_items_filter_ctx {
 	SdbForeachCallback filter;
-	RzPVector /*<SdbKv *>*/ *list;
+	RzPVector /*<SdbKv *>*/ *vec;
 	void *user;
 };
 
-static bool sdb_get_kv_list_filter_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	struct kv_list_filter_ctx *ctx = (struct kv_list_filter_ctx *)user;
+static bool get_items_filter_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+	struct get_items_filter_ctx *ctx = (struct get_items_filter_ctx *)user;
 
 	if (!ctx->filter(ctx->user, k, klen, v, vlen)) {
 		return true;
@@ -653,7 +653,7 @@ static bool sdb_get_kv_list_filter_cb(void *user, const char *k, ut32 klen, cons
 	if (!kv) {
 		return false;
 	}
-	if (!rz_pvector_push(ctx->list, kv)) {
+	if (!rz_pvector_push(ctx->vec, kv)) {
 		sdbkv_free(kv);
 		return false;
 	}
@@ -661,38 +661,38 @@ static bool sdb_get_kv_list_filter_cb(void *user, const char *k, ut32 klen, cons
 }
 
 /**
- * \brief Get list of key-value pairs in DB matching filter \p filter
+ * \brief Get key-value pairs in DB matching filter \p filter
  * \param s DB
  * \param filter Filter callback, a key-value pair is skipped if callback return false
  * \param user User data which is passed to filter callback \p cb
- * \param sorted If set to true sort the resulting list by key in lexicographic order
+ * \param sorted If set to true sort the resulting vector by key in lexicographic order
  */
-RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted) {
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted) {
 	rz_return_val_if_fail(s && filter, NULL);
 
-	RzPVector *list = rz_pvector_new((RzPVectorFree)sdbkv_free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)sdbkv_free);
+	if (!vec) {
 		return NULL;
 	}
-	struct kv_list_filter_ctx ctx = {
+	struct get_items_filter_ctx ctx = {
 		.filter = filter,
-		.list = list,
+		.vec = vec,
 		.user = user,
 	};
-	sdb_foreach(s, sdb_get_kv_list_filter_cb, &ctx);
+	sdb_foreach(s, get_items_filter_cb, &ctx);
 	if (sorted) {
-		rz_pvector_sort(list, __cmp_asc, NULL);
+		rz_pvector_sort(vec, __cmp_asc, NULL);
 	}
-	return list;
+	return vec;
 }
 
-struct kv_list_match_ctx {
+struct get_items_match_ctx {
 	const char *expr;
-	RzPVector /*<SdbKv *>*/ *list;
+	RzPVector /*<SdbKv *>*/ *vec;
 };
 
-static bool kv_list_match_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
-	struct kv_list_match_ctx *ctx = (struct kv_list_match_ctx *)user;
+static bool get_items_match_cb(void *user, const char *k, ut32 klen, const char *v, ut32 vlen) {
+	struct get_items_match_ctx *ctx = (struct get_items_match_ctx *)user;
 	SdbKv tkv = {
 		.base.key = (char *)k,
 		.base.value = (char *)v,
@@ -706,7 +706,7 @@ static bool kv_list_match_cb(void *user, const char *k, ut32 klen, const char *v
 	if (!kv) {
 		return false;
 	}
-	if (!rz_pvector_push(ctx->list, kv)) {
+	if (!rz_pvector_push(ctx->vec, kv)) {
 		sdbkv_free(kv);
 		return false;
 	}
@@ -714,24 +714,24 @@ static bool kv_list_match_cb(void *user, const char *k, ut32 klen, const char *v
 }
 
 /**
- * \brief Get list of key-value pairs in DB with keys matching expression \p expr
+ * \brief Get key-value pairs in DB with keys matching expression \p expr
  * \param s DB
  * \param expr Expression string
- * \param sorted If set to true sort the resulting list by key in lexicographic order
+ * \param sorted If set to true sort the resulting vector by key in lexicographic order
  */
-RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list_match(RZ_NONNULL Sdb *s, RZ_NONNULL const char *expr, bool sorted) {
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_match(RZ_NONNULL Sdb *s, RZ_NONNULL const char *expr, bool sorted) {
 	rz_return_val_if_fail(s && expr, NULL);
 
-	RzPVector *list = rz_pvector_new((RzPVectorFree)sdbkv_free);
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)sdbkv_free);
+	if (!vec) {
 		return NULL;
 	}
-	struct kv_list_match_ctx ctx = { expr, list };
-	sdb_foreach(s, kv_list_match_cb, &ctx);
+	struct get_items_match_ctx ctx = { expr, vec };
+	sdb_foreach(s, get_items_match_cb, &ctx);
 	if (sorted) {
-		rz_pvector_sort(list, __cmp_asc, NULL);
+		rz_pvector_sort(vec, __cmp_asc, NULL);
 	}
-	return list;
+	return vec;
 }
 
 static bool sdb_foreach_end(Sdb *s, bool result) {

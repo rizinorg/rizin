@@ -115,9 +115,9 @@ RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem);
 
 typedef bool (*SdbForeachCallback)(void *user, const char *k, ut32 klen, const char *v, ut32 vlen);
 RZ_API bool sdb_foreach(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback cb, RZ_NULLABLE void *user);
-RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list(RZ_NONNULL Sdb *s, bool sorted);
-RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted);
-RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_kv_list_match(RZ_NONNULL Sdb *s, RZ_NONNULL const char *expr, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items(RZ_NONNULL Sdb *s, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_match(RZ_NONNULL Sdb *s, RZ_NONNULL const char *expr, bool sorted);
 
 RZ_API int sdb_query(Sdb *s, const char *cmd);
 RZ_API int sdb_queryf(Sdb *s, const char *fmt, ...);

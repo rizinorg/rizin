@@ -145,8 +145,8 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 	rz_return_val_if_fail(sysregdb && sdb, false);
 
 	void **iter;
-	RzPVector *l = sdb_get_kv_list(sdb, false);
-	rz_pvector_foreach (l, iter) {
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg")) {
 			char *name = sdbkv_key(kv);
@@ -172,7 +172,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			ht_up_insert(sysregdb->port, address, sysregitem);
 		}
 	}
-	rz_pvector_free(l);
+	rz_pvector_free(items);
 	return true;
 }
 

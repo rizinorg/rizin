@@ -105,8 +105,8 @@ static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 		return false;
 	}
 	void **iter;
-	RzPVector *l = sdb_get_kv_list(sdb, false);
-	rz_pvector_foreach (l, iter) {
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_key(kv), "PC")) {
 			c->pc = rz_num_math(NULL, sdbkv_value(kv));
@@ -142,7 +142,7 @@ static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 			ht_up_insert(c->registers_extended, ext_io_address, ext_io_name);
 		}
 	}
-	rz_pvector_free(l);
+	rz_pvector_free(items);
 	rz_platform_profile_free(t->profile);
 	t->profile = c;
 	return true;

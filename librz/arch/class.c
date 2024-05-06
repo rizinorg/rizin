@@ -185,7 +185,7 @@ RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name) {
 }
 
 RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted) {
-	return sdb_get_kv_list(analysis->sdb_classes, sorted);
+	return sdb_get_items(analysis->sdb_classes, sorted);
 }
 
 RZ_API void rz_analysis_class_foreach(RzAnalysis *analysis, SdbForeachCallback cb, void *user) {

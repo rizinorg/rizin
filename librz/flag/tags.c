@@ -12,9 +12,9 @@ RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words) {
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_tags_list(RzFlag *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzList *res = rz_list_newf(free);
-	RzPVector *o = sdb_get_kv_list(f->tags, false);
+	RzPVector *items = sdb_get_items(f->tags, false);
 	void **iter;
-	rz_pvector_foreach (o, iter) {
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		const char *tag = sdbkv_key(kv);
 		if (strlen(tag) < 5) {
@@ -22,7 +22,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_tags_list(RzFlag *f) {
 		}
 		rz_list_append(res, (void *)strdup(tag + 4));
 	}
-	rz_pvector_free(o);
+	rz_pvector_free(items);
 	return res;
 }
 

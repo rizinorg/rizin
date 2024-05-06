@@ -98,8 +98,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	}
 	// iterate over all keys
 	void **iter;
-	RzPVector *ls = sdb_get_kv_list(db, false);
-	rz_pvector_foreach (ls, iter) {
+	RzPVector *items = sdb_get_items(db, false);
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
@@ -134,7 +134,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		free(dup);
 	}
 	RZ_FREE(offset);
-	rz_pvector_foreach (ls, iter) {
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
@@ -153,7 +153,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		}
 		free(dup);
 	}
-	rz_pvector_foreach (ls, iter) {
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
@@ -206,7 +206,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		free(dup);
 	}
 	free(offset);
-	rz_pvector_free(ls);
+	rz_pvector_free(items);
 	if (IS_MODE_SET(mode)) {
 		rz_flag_space_pop(core->flags);
 	}

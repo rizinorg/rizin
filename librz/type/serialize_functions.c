@@ -138,8 +138,8 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 		return false;
 	}
 	void **iter;
-	RzPVector *l = sdb_get_kv_list_filter(sdb, filter_func, NULL, false);
-	rz_pvector_foreach (l, iter) {
+	RzPVector *items = sdb_get_items_filter(sdb, filter_func, NULL, false);
+	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		// eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
 		RzCallable *callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
@@ -149,7 +149,7 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 		}
 	}
 	ht_sp_free(type_str_cache);
-	rz_pvector_free(l);
+	rz_pvector_free(items);
 	return true;
 }
 

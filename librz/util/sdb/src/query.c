@@ -316,13 +316,13 @@ repeat:
 			goto fail;
 		} else if (!strcmp(cmd, "*")) {
 			ForeachListUser user = { out, encode, NULL };
-			RzPVector *list = sdb_get_kv_list(s, true);
+			RzPVector *items = sdb_get_items(s, true);
 			void **iter;
-			rz_pvector_foreach (list, iter) {
+			rz_pvector_foreach (items, iter) {
 				SdbKv *kv = *iter;
 				foreach_list_cb(&user, sdbkv_key(kv), sdbkv_key_len(kv), sdbkv_value(kv), sdbkv_value_len(kv));
 			}
-			rz_pvector_free(list);
+			rz_pvector_free(items);
 			goto fail;
 		}
 	}
@@ -356,15 +356,15 @@ repeat:
 	} else if (*cmd == '~') { // delete
 		if (cmd[1] == '~') { // grep
 			void **it;
-			RzPVector *l = sdb_get_kv_list_match(s, cmd + 2, false);
-			rz_pvector_foreach (l, it) {
+			RzPVector *items = sdb_get_items_match(s, cmd + 2, false);
+			rz_pvector_foreach (items, it) {
 				SdbKv *kv = *it;
 				strbuf_append(out, sdbkv_key(kv), 0);
 				strbuf_append(out, "=", 0);
 				strbuf_append(out, sdbkv_value(kv), 1);
 			}
 			fflush(stdout);
-			rz_pvector_free(l);
+			rz_pvector_free(items);
 		} else {
 			d = 1;
 			sdb_unset_like(s, cmd + 1);
