@@ -143,16 +143,15 @@ static inline bool sysregs_reload_needed(RzSyscall *s, const char *arch, int bit
 
 static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 	rz_return_val_if_fail(sysregdb && sdb, false);
-	RzSysregItem *sysregitem;
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, false);
-	char *argument_key, *comment, *name;
-	ls_foreach (l, iter, kv) {
+
+	void **iter;
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg")) {
-			name = sdbkv_key(kv);
-			sysregitem = rz_sysreg_item_new(name);
-			argument_key = rz_str_newf("%s.address", name);
+			const char *name = sdbkv_key(kv);
+			RzSysregItem *sysregitem = rz_sysreg_item_new(name);
+			char *argument_key = rz_str_newf("%s.address", name);
 			if (!argument_key) {
 				rz_sysreg_item_free(sysregitem);
 				return false;
@@ -165,15 +164,15 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			}
 
 			argument_key = rz_str_newf("%s.comment", name);
-			comment = sdb_get(sdb, argument_key, NULL);
+			char *comment = sdb_get(sdb, argument_key, NULL);
 			free(argument_key);
-			sysregitem->type = strdup(sdbkv_value(kv));
+			sysregitem->type = sdbkv_dup_value(kv);
 			sysregitem->comment = comment;
 
 			ht_up_insert(sysregdb->port, address, sysregitem);
 		}
 	}
-	ls_free(l);
+	rz_pvector_free(items);
 	return true;
 }
 
@@ -393,10 +392,10 @@ RZ_API const char *rz_syscall_get_i(RzSyscall *s, int num, int swi) {
 	return sdb_const_get(s->db, foo, 0);
 }
 
-static bool callback_list(void *u, const char *k, const char *v) {
+static bool callback_list(void *u, const SdbKv *kv) {
 	RzList *list = (RzList *)u;
-	if (!strchr(k, '.')) {
-		RzSyscallItem *si = rz_syscall_item_new_from_string(k, v);
+	if (!strchr(sdbkv_key(kv), '.')) {
+		RzSyscallItem *si = rz_syscall_item_new_from_string(sdbkv_key(kv), sdbkv_value(kv));
 		if (!si) {
 			return true;
 		}

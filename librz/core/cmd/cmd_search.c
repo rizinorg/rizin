@@ -2455,10 +2455,9 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 static void rop_kuery(void *data, const char *input, PJ *pj) {
 	RzCore *core = (RzCore *)data;
 	Sdb *db_rop = sdb_ns(core->sdb, "rop", false);
-	SdbListIter *sdb_iter, *it;
-	SdbList *sdb_list;
+	SdbListIter *it;
+	void **items_iter;
 	SdbNs *ns;
-	SdbKv *kv;
 	char *out;
 
 	if (!db_rop) {
@@ -2469,19 +2468,22 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 	switch (*input) {
 	case 'q':
 		ls_foreach (db_rop->ns, it, ns) {
-			sdb_list = sdb_foreach_list(ns->sdb, false);
-			ls_foreach (sdb_list, sdb_iter, kv) {
+			RzPVector *items = sdb_get_items(ns->sdb, false);
+			rz_pvector_foreach (items, items_iter) {
+				SdbKv *kv = *items_iter;
 				rz_cons_printf("%s ", sdbkv_key(kv));
 			}
+			rz_pvector_free(items);
 		}
 		break;
 	case 'j':
 		pj_o(pj);
 		pj_ka(pj, "gadgets");
 		ls_foreach (db_rop->ns, it, ns) {
-			sdb_list = sdb_foreach_list(ns->sdb, false);
-			ls_foreach (sdb_list, sdb_iter, kv) {
-				char *dup = strdup(sdbkv_value(kv));
+			RzPVector *items = sdb_get_items(ns->sdb, false);
+			rz_pvector_foreach (items, items_iter) {
+				SdbKv *kv = *items_iter;
+				char *dup = sdbkv_dup_value(kv);
 				bool flag = false; // to free tok when doing strdup
 				char *size = strtok(dup, " ");
 				char *tok = strtok(NULL, "{}");
@@ -2500,6 +2502,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 					free(tok);
 				}
 			}
+			rz_pvector_free(items);
 		}
 		pj_end(pj);
 		pj_end(pj);
@@ -3087,17 +3090,17 @@ reread:
 			if (!gadgetSdb) {
 				rz_core_search_rop(core, search_itv, 0, input + 1, 0, &param);
 			} else {
-				SdbKv *kv;
-				SdbListIter *sdb_iter;
-				SdbList *sdb_list = sdb_foreach_list(gadgetSdb, true);
+				void **iter;
+				RzPVector *items = sdb_get_items(gadgetSdb, true);
 
-				ls_foreach (sdb_list, sdb_iter, kv) {
+				rz_pvector_foreach (items, iter) {
+					SdbKv *kv = *iter;
 					RzList *hitlist = rz_core_asm_hit_list_new();
 					if (!hitlist) {
 						goto beach;
 					}
 
-					char *s = sdbkv_value(kv);
+					const char *s = sdbkv_value(kv);
 					ut64 addr;
 					int opsz;
 					int mode = 0;
@@ -3122,6 +3125,7 @@ reread:
 					print_rop(core, hitlist, param.pj, mode);
 					rz_list_free(hitlist);
 				}
+				rz_pvector_free(items);
 			}
 		}
 		goto beach;

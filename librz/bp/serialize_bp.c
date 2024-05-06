@@ -119,10 +119,10 @@ typedef struct {
 	RzSerializeBpParser parser;
 } BpLoadCtx;
 
-static bool bp_load_cb(void *user, const char *k, const char *v) {
+static bool bp_load_cb(void *user, const SdbKv *kv) {
 	bool ret = false;
 	BpLoadCtx *ctx = user;
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -131,7 +131,7 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 		goto heaven;
 	}
 	RzBreakpointItem bp_item_temp = { 0 };
-	bp_item_temp.addr = strtoull(k, NULL, 0);
+	bp_item_temp.addr = strtoull(sdbkv_key(kv), NULL, 0);
 
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case BP_FIELD_NAME:

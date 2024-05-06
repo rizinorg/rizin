@@ -432,6 +432,42 @@ bool test_rz_analysis_function_set_type() {
 	mu_end;
 }
 
+bool test_noreturn_functions_list() {
+	RzAnalysis *analysis = rz_analysis_new();
+
+	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
+
+	RzList *noret = rz_analysis_noreturn_functions(analysis);
+	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
+	mu_assert_streq(rz_list_first(noret), "0x800800", "Addr");
+	rz_list_free(noret);
+
+	rz_analysis_noreturn_drop(analysis, "0x800800");
+	rz_analysis_noreturn_add(analysis, NULL, 0xdeadbeeff000bad1);
+
+	noret = rz_analysis_noreturn_functions(analysis);
+	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
+	mu_assert_streq(rz_list_first(noret), "0xdeadbeeff000bad1", "Long addr");
+	rz_list_free(noret);
+
+	rz_analysis_noreturn_drop(analysis, "0xdeadbeeff000bad1");
+	rz_analysis_noreturn_add(analysis, "foobar", UT64_MAX);
+
+	noret = rz_analysis_noreturn_functions(analysis);
+	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
+	mu_assert_streq(rz_list_first(noret), "foobar", "Name");
+	rz_list_free(noret);
+
+	rz_analysis_noreturn_drop(analysis, "foobar");
+
+	noret = rz_analysis_noreturn_functions(analysis);
+	mu_assert_eq(rz_list_length(noret), 0, "Num functions");
+	rz_list_free(noret);
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -441,6 +477,7 @@ int all_tests() {
 	mu_run_test(test_autonames);
 	mu_run_test(test_initial_underscore);
 	mu_run_test(test_rz_analysis_function_set_type);
+	mu_run_test(test_noreturn_functions_list);
 	return tests_passed != tests_run;
 }
 

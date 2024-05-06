@@ -265,16 +265,18 @@ RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_na
 	return cc ? cc : rz_analysis_cc_default(analysis);
 }
 
+static bool filter_cc(void *user, const SdbKv *kv) {
+	return sdbkv_value_len(kv) == 2 && !strcmp(sdbkv_value(kv), "cc");
+}
+
 RZ_API RzList /*<char *>*/ *rz_analysis_calling_conventions(RzAnalysis *analysis) {
 	RzList *ccl = rz_list_new();
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(analysis->sdb_cc, true);
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "cc")) {
-			rz_list_append(ccl, strdup(sdbkv_key(kv)));
-		}
+	void **iter;
+	RzPVector *items = sdb_get_items_filter(analysis->sdb_cc, filter_cc, NULL, true);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
+		rz_list_append(ccl, strdup(sdbkv_key(kv)));
 	}
-	ls_free(l);
+	rz_pvector_free(items);
 	return ccl;
 }

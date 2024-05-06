@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <rz_util/rz_mem.h>
+#include <rz_util/rz_assert.h>
 #include "sdb.h"
 #include "sdb_private.h"
 
@@ -124,8 +126,8 @@ RZ_API void sdb_file(Sdb *s, const char *dir) {
 	}
 }
 
-static bool sdb_merge_cb(void *user, const char *k, const char *v) {
-	sdb_set(user, k, v, 0);
+static bool sdb_merge_cb(void *user, const SdbKv *kv) {
+	sdb_set(user, sdbkv_key(kv), sdbkv_value(kv), 0);
 	return true;
 }
 
@@ -136,8 +138,9 @@ RZ_API bool sdb_merge(Sdb *d, Sdb *s) {
 RZ_API bool sdb_isempty(Sdb *s) {
 	if (s) {
 		if (s->db.fd != -1) {
+			SdbKv it = { 0 };
 			sdb_dump_begin(s);
-			while (sdb_dump_hasnext(s)) {
+			while (sdb_dump_next(s, &it)) {
 				return false;
 			}
 		}
@@ -152,8 +155,9 @@ RZ_API int sdb_count(Sdb *s) {
 	int count = 0;
 	if (s) {
 		if (s->db.fd != -1) {
+			SdbKv it = { 0 };
 			sdb_dump_begin(s);
-			while (sdb_dump_hasnext(s)) {
+			while (sdb_dump_next(s, &it)) {
 				count++;
 			}
 		}
@@ -352,7 +356,7 @@ RZ_API bool sdb_exists(Sdb *s, const char *key) {
 	}
 	SdbKv *kv = (SdbKv *)sdb_ht_find_kvp(s->ht, key, &found);
 	if (found && kv) {
-		char *v = sdbkv_value(kv);
+		const char *v = sdbkv_value(kv);
 		return v && *v;
 	}
 	if (s->fd == -1) {
@@ -456,7 +460,7 @@ static bool match(const char *str, const char *expr) {
 	return strstr(str, expr);
 }
 
-RZ_API bool sdbkv_match(SdbKv *kv, const char *expr) {
+RZ_API bool sdbkv_match(const SdbKv *kv, const char *expr) {
 	// TODO: add syntax to negate condition
 	// TODO: add syntax to OR k/v instead of AND
 	// [^]str[$]=[^]str[$]
@@ -508,12 +512,28 @@ RZ_API SdbKv *sdbkv_new2(const char *k, int kl, const char *v, int vl) {
 	return kv;
 }
 
-RZ_API void sdbkv_free(SdbKv *kv) {
-	if (kv) {
-		free(sdbkv_key(kv));
-		free(sdbkv_value(kv));
-		RZ_FREE(kv);
+RZ_API void sdbkv_free(RZ_NULLABLE SdbKv *kv) {
+	if (!kv) {
+		return;
 	}
+	free(kv->base.key);
+	free(kv->base.value);
+	free(kv);
+}
+
+/**
+ * Create a duplicate of SdbKv
+ */
+static inline RZ_OWN SdbKv *sdbkv_dup(RZ_NONNULL const SdbKv *kv) {
+	return sdbkv_new2(sdbkv_key(kv), sdbkv_key_len(kv), sdbkv_value(kv), sdbkv_value_len(kv));
+}
+
+/**
+ * \brief Create a duplicate of SdbKv value string
+ */
+RZ_API RZ_OWN char *sdbkv_dup_value(RZ_NONNULL const SdbKv *kv) {
+	rz_return_val_if_fail(kv, NULL);
+	return rz_mem_dup(sdbkv_value(kv), sdbkv_value_len(kv) + 1);
 }
 
 static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32 cas) {
@@ -596,114 +616,132 @@ RZ_API int sdb_set(Sdb *s, const char *key, const char *val, ut32 cas) {
 	return sdb_set_internal(s, key, (char *)val, 0, cas);
 }
 
-static bool sdb_foreach_list_cb(void *user, const char *k, const char *v) {
-	SdbList *list = (SdbList *)user;
-	SdbKv *kv = RZ_NEW0(SdbKv);
-	/* seems like some k/v are constructed in the stack and cant be used after returning */
-	kv->base.key = strdup(k);
-	kv->base.value = strdup(v);
-	ls_append(list, kv);
-	return 1;
+static bool get_items_cb(void *user, const SdbKv *kv) {
+	RzPVector *vec = (RzPVector *)user;
+	SdbKv *dup = sdbkv_dup(kv);
+	if (!dup) {
+		return false;
+	}
+	if (!rz_pvector_push(vec, dup)) {
+		sdbkv_free(dup);
+		return false;
+	}
+	return true;
 }
 
-static int __cmp_asc(const void *a, const void *b) {
+static int __cmp_asc(const void *a, const void *b, RZ_UNUSED void *user) {
 	const SdbKv *ka = a, *kb = b;
 	return strcmp(sdbkv_key(ka), sdbkv_key(kb));
 }
 
-RZ_API SdbList *sdb_foreach_list(Sdb *s, bool sorted) {
-	SdbList *list = ls_newf((SdbListFree)sdbkv_free);
-	sdb_foreach(s, sdb_foreach_list_cb, list);
-	if (sorted) {
-		ls_sort(list, __cmp_asc);
+/**
+ * \brief Get all key-value pairs in DB
+ * \param s DB
+ * \param sorted If set to true sort the resulting vector by key in lexicographic order
+ */
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items(RZ_NONNULL Sdb *s, bool sorted) {
+	rz_return_val_if_fail(s, NULL);
+
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)sdbkv_free);
+	if (!vec) {
+		return NULL;
 	}
-	return list;
+	sdb_foreach(s, get_items_cb, vec);
+	if (sorted) {
+		rz_pvector_sort(vec, __cmp_asc, NULL);
+	}
+	return vec;
 }
 
-struct foreach_list_filter_t {
+struct get_items_filter_ctx {
 	SdbForeachCallback filter;
-	SdbList *list;
+	RzPVector /*<SdbKv *>*/ *vec;
 	void *user;
 };
 
-static bool sdb_foreach_list_filter_cb(void *user, const char *k, const char *v) {
-	struct foreach_list_filter_t *u = (struct foreach_list_filter_t *)user;
-	SdbList *list = u->list;
-	SdbKv *kv = NULL;
+static bool get_items_filter_cb(void *user, const SdbKv *kv) {
+	struct get_items_filter_ctx *ctx = (struct get_items_filter_ctx *)user;
 
-	if (!u->filter || u->filter(u->user, k, v)) {
-		kv = RZ_NEW0(SdbKv);
-		if (!kv) {
-			goto err;
-		}
-		kv->base.key = strdup(k);
-		kv->base.value = strdup(v);
-		if (!kv->base.key || !kv->base.value) {
-			goto err;
-		}
-		ls_append(list, kv);
+	if (!ctx->filter(ctx->user, kv)) {
+		return true;
+	}
+	SdbKv *dup = sdbkv_dup(kv);
+	if (!dup) {
+		return false;
+	}
+	if (!rz_pvector_push(ctx->vec, dup)) {
+		sdbkv_free(dup);
+		return false;
 	}
 	return true;
-err:
-	sdbkv_free(kv);
-	return false;
 }
 
-RZ_API SdbList *sdb_foreach_list_filter_user(Sdb *s, SdbForeachCallback filter, bool sorted, void *user) {
-	struct foreach_list_filter_t u;
-	SdbList *list = ls_newf((SdbListFree)sdbkv_free);
+/**
+ * \brief Get key-value pairs in DB matching filter \p filter
+ * \param s DB
+ * \param filter Filter callback, a key-value pair is skipped if callback return false
+ * \param user User data which is passed to filter callback \p cb
+ * \param sorted If set to true sort the resulting vector by key in lexicographic order
+ */
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted) {
+	rz_return_val_if_fail(s && filter, NULL);
 
-	if (!list) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)sdbkv_free);
+	if (!vec) {
 		return NULL;
 	}
-	u.filter = filter;
-	u.list = list;
-	u.user = user;
-	sdb_foreach(s, sdb_foreach_list_filter_cb, &u);
+	struct get_items_filter_ctx ctx = {
+		.filter = filter,
+		.vec = vec,
+		.user = user,
+	};
+	sdb_foreach(s, get_items_filter_cb, &ctx);
 	if (sorted) {
-		ls_sort(list, __cmp_asc);
+		rz_pvector_sort(vec, __cmp_asc, NULL);
 	}
-	return list;
+	return vec;
 }
 
-RZ_API SdbList *sdb_foreach_list_filter(Sdb *s, SdbForeachCallback filter, bool sorted) {
-	return sdb_foreach_list_filter_user(s, filter, sorted, NULL);
-}
-
-typedef struct {
+struct get_items_match_ctx {
 	const char *expr;
-	SdbList *list;
-	bool single;
-} _match_sdb_user;
+	RzPVector /*<SdbKv *>*/ *vec;
+};
 
-static bool sdb_foreach_match_cb(void *user, const char *k, const char *v) {
-	_match_sdb_user *o = (_match_sdb_user *)user;
-	SdbKv tkv = { .base.key = (char *)k, .base.value = (char *)v };
-	if (sdbkv_match(&tkv, o->expr)) {
-		SdbKv *kv = RZ_NEW0(SdbKv);
-		kv->base.key = strdup(k);
-		kv->base.value = strdup(v);
-		ls_append(o->list, kv);
-		if (o->single) {
-			return false;
-		}
+static bool get_items_match_cb(void *user, const SdbKv *kv) {
+	struct get_items_match_ctx *ctx = (struct get_items_match_ctx *)user;
+	if (sdbkv_match(kv, ctx->expr)) {
+		return true;
+	}
+	SdbKv *dup = sdbkv_dup(kv);
+	if (!dup) {
+		return false;
+	}
+	if (!rz_pvector_push(ctx->vec, dup)) {
+		sdbkv_free(dup);
+		return false;
 	}
 	return true;
 }
 
-RZ_API SdbList *sdb_foreach_match(Sdb *s, const char *expr, bool single) {
-	SdbList *list = ls_newf((SdbListFree)sdbkv_free);
-	_match_sdb_user o = { expr, list, single };
-	sdb_foreach(s, sdb_foreach_match_cb, &o);
-	return list;
-}
+/**
+ * \brief Get key-value pairs in DB with keys matching expression \p expr
+ * \param s DB
+ * \param expr Expression string
+ * \param sorted If set to true sort the resulting vector by key in lexicographic order
+ */
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_match(RZ_NONNULL Sdb *s, RZ_NONNULL const char *expr, bool sorted) {
+	rz_return_val_if_fail(s && expr, NULL);
 
-static int getbytes(Sdb *s, char *b, int len) {
-	if (!cdb_read(&s->db, b, len, s->pos)) {
-		return -1;
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)sdbkv_free);
+	if (!vec) {
+		return NULL;
 	}
-	s->pos += len;
-	return len;
+	struct get_items_match_ctx ctx = { expr, vec };
+	sdb_foreach(s, get_items_match_cb, &ctx);
+	if (sorted) {
+		rz_pvector_sort(vec, __cmp_asc, NULL);
+	}
+	return vec;
 }
 
 static bool sdb_foreach_end(Sdb *s, bool result) {
@@ -711,53 +749,47 @@ static bool sdb_foreach_end(Sdb *s, bool result) {
 	return result;
 }
 
-static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb, SdbForeachCallback cb2, void *user) {
-	char *v = NULL;
-	char k[SDB_CDB_MAX_KEY] = { 0 };
-	bool found;
+/**
+ * Apply callback \p cb to every key-value pair in cdb file.
+ * Keys which are presented in HT are skipped.
+ */
+static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb, void *user) {
+	SdbKv it = { 0 };
 	sdb_dump_begin(s);
-	while (sdb_dump_dupnext(s, k, &v, NULL)) {
-		SdbKv *kv = sdb_ht_find_kvp(s->ht, k, &found);
-		if (found) {
-			free(v);
-			if (kv && sdbkv_key(kv) && sdbkv_value(kv)) {
-				if (!cb(user, sdbkv_key(kv), sdbkv_value(kv))) {
-					return false;
-				}
-				if (cb2 && !cb2(user, k, sdbkv_value(kv))) {
-					return false;
-				}
-			}
-		} else {
-			if (!cb(user, k, v)) {
-				free(v);
-				return false;
-			}
-			free(v);
+	while (sdb_dump_next(s, &it)) {
+		if (sdb_ht_find_kvp(s->ht, sdbkv_key(&it), NULL)) {
+			continue;
+		}
+		if (!cb(user, &it)) {
+			return false;
 		}
 	}
 	return true;
 }
 
-RZ_API bool sdb_foreach(Sdb *s, SdbForeachCallback cb, void *user) {
-	if (!s) {
-		return false;
-	}
+/**
+ * \brief Apply callback \p cb to every key-value pair in DB \p s
+ * \param s DB
+ * \param cb Callback, iteration is stopped if callback return false
+ * \param user User data which is passed to callback \p cb
+ */
+RZ_API bool sdb_foreach(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback cb, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(s && cb, false);
+
 	s->depth++;
-	bool result = sdb_foreach_cdb(s, cb, NULL, user);
+	bool result = sdb_foreach_cdb(s, cb, user);
 	if (!result) {
 		return sdb_foreach_end(s, false);
 	}
 
-	ut32 i;
-	for (i = 0; i < s->ht->size; ++i) {
+	for (ut32 i = 0; i < s->ht->size; ++i) {
 		HtSSBucket *bt = &s->ht->table[i];
 		SdbKv *kv;
 		ut32 j, count;
 
 		BUCKET_FOREACH_SAFE(s->ht, bt, j, count, kv) {
 			if (kv && sdbkv_value(kv) && *sdbkv_value(kv)) {
-				if (!cb(user, sdbkv_key(kv), sdbkv_value(kv))) {
+				if (!cb(user, kv)) {
 					return sdb_foreach_end(s, false);
 				}
 			}
@@ -766,19 +798,10 @@ RZ_API bool sdb_foreach(Sdb *s, SdbForeachCallback cb, void *user) {
 	return sdb_foreach_end(s, true);
 }
 
-static bool _insert_into_disk(void *user, const char *key, const char *value) {
+static bool _insert_into_disk(void *user, const SdbKv *kv) {
 	Sdb *s = (Sdb *)user;
 	if (s) {
-		sdb_disk_insert(s, key, value);
-		return true;
-	}
-	return false;
-}
-
-static bool _remove_afer_insert(void *user, const char *k, const char *v) {
-	Sdb *s = (Sdb *)user;
-	if (s) {
-		sdb_ht_delete(s->ht, k);
+		sdb_disk_insert(s, sdbkv_key(kv), sdbkv_value(kv));
 		return true;
 	}
 	return false;
@@ -791,7 +814,7 @@ RZ_API bool sdb_sync(Sdb *s) {
 	if (!s || !sdb_disk_create(s)) {
 		return false;
 	}
-	result = sdb_foreach_cdb(s, _insert_into_disk, _remove_afer_insert, s);
+	result = sdb_foreach_cdb(s, _insert_into_disk, s);
 	if (!result) {
 		return false;
 	}
@@ -815,25 +838,21 @@ RZ_API bool sdb_sync(Sdb *s) {
 	return true;
 }
 
-RZ_API void sdb_dump_begin(Sdb *s) {
-	if (s->fd != -1) {
-		s->pos = sizeof(((struct cdb_make *)0)->final);
-		seek_set(s->fd, s->pos);
-	} else {
-		s->pos = 0;
-	}
-}
+RZ_API void sdb_dump_begin(RZ_NONNULL Sdb *s) {
+	rz_return_if_fail(s);
 
-RZ_API bool sdb_dump_hasnext(Sdb *s) {
-	ut32 k, v;
-	if (!cdb_getkvlen(&s->db, &k, &v, s->pos)) {
-		return false;
+	s->pos = 0;
+	s->dump_end_pos = 0;
+	if (s->fd == -1) {
+		return;
 	}
-	if (k < 1 || v < 1) {
-		return false;
+	ut8 buf[4];
+	if (!cdb_read(&s->db, (char *)buf, 4, 0)) {
+		return;
 	}
-	s->pos += k + v + 4;
-	return true;
+	s->dump_end_pos = rz_read_le32(buf);
+	s->pos = sizeof(((struct cdb_make *)0)->final);
+	seek_set(s->fd, s->pos);
 }
 
 RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem) {
@@ -843,8 +862,9 @@ RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem) {
 	if (disk) {
 		ut32 count = 0;
 		if (s->fd != -1) {
+			SdbKv it = { 0 };
 			sdb_dump_begin(s);
-			while (sdb_dump_hasnext(s)) {
+			while (sdb_dump_next(s, &it)) {
 				count++;
 			}
 		}
@@ -856,49 +876,43 @@ RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem) {
 	return disk || mem;
 }
 
-// TODO: make it static? internal api?
-RZ_API bool sdb_dump_dupnext(Sdb *s, char *key, char **value, int *_vlen) {
-	ut32 vlen = 0, klen = 0;
-	if (value) {
-		*value = NULL;
+/**
+ * \brief Get the next key-value pair
+ *
+ * Modifying of key/value strings is forbidden.
+ */
+RZ_API bool sdb_dump_next(RZ_NONNULL Sdb *s, RZ_OUT RZ_NONNULL SdbKv *kv) {
+	rz_return_val_if_fail(s && kv, false);
+
+	if (!s->db.map || s->pos >= s->dump_end_pos) {
+		return false;
 	}
-	if (_vlen) {
-		*_vlen = 0;
-	}
+	// klen/vlen include trailing NUL
+	ut32 klen, vlen;
 	if (!cdb_getkvlen(&s->db, &klen, &vlen, s->pos)) {
 		return false;
 	}
-	s->pos += 4;
-	if (klen < 1 || vlen < 1) {
+	if (klen < SDB_CDB_MIN_KEY || vlen < SDB_CDB_MIN_VALUE) {
 		return false;
 	}
-	if (_vlen) {
-		*_vlen = vlen;
+	s->pos += 4;
+
+	char *key = s->db.map + s->pos;
+	s->pos += klen;
+	if (s->pos > s->dump_end_pos || key[klen - 1] != '\0') {
+		rz_return_val_if_reached(false);
 	}
-	if (key) {
-		key[0] = 0;
-		if (klen > SDB_CDB_MIN_KEY && klen < SDB_CDB_MAX_KEY) {
-			if (getbytes(s, key, klen) == -1) {
-				return 0;
-			}
-			key[klen] = 0;
-		}
+
+	char *value = s->db.map + s->pos;
+	s->pos += vlen;
+	if (s->pos > s->dump_end_pos || value[vlen - 1] != '\0') {
+		rz_return_val_if_reached(false);
 	}
-	if (value) {
-		*value = 0;
-		if (vlen < SDB_CDB_MAX_VALUE) {
-			*value = malloc(vlen + 10);
-			if (!*value) {
-				return false;
-			}
-			if (getbytes(s, *value, vlen) == -1) {
-				free(*value);
-				*value = NULL;
-				return false;
-			}
-			(*value)[vlen] = 0;
-		}
-	}
+
+	kv->base.key = key;
+	kv->base.key_len = klen - 1;
+	kv->base.value = value;
+	kv->base.value_len = vlen - 1;
 	return true;
 }
 
@@ -1049,9 +1063,9 @@ RZ_API void sdb_drain(Sdb *s, Sdb *f) {
 	}
 }
 
-static bool copy_foreach_cb(void *user, const char *k, const char *v) {
+static bool copy_foreach_cb(void *user, const SdbKv *kv) {
 	Sdb *dst = user;
-	sdb_set(dst, k, v, 0);
+	sdb_set(dst, sdbkv_key(kv), sdbkv_value(kv), 0);
 	return true;
 }
 
@@ -1069,10 +1083,10 @@ typedef struct {
 	const char *key;
 } UnsetCallbackData;
 
-static bool unset_cb(void *user, const char *k, const char *v) {
+static bool unset_cb(void *user, const SdbKv *kv) {
 	UnsetCallbackData *ucd = user;
-	if (sdb_match(k, ucd->key)) {
-		sdb_unset(ucd->sdb, k, 0);
+	if (sdb_match(sdbkv_key(kv), ucd->key)) {
+		sdb_unset(ucd->sdb, sdbkv_key(kv), 0);
 	}
 	return true;
 }
@@ -1080,74 +1094,4 @@ static bool unset_cb(void *user, const char *k, const char *v) {
 RZ_API int sdb_unset_like(Sdb *s, const char *k) {
 	UnsetCallbackData ucd = { s, k };
 	return sdb_foreach(s, unset_cb, &ucd);
-}
-
-typedef struct {
-	Sdb *sdb;
-	const char *key;
-	const char *val;
-	SdbForeachCallback cb;
-	const char **array;
-	int array_index;
-	int array_size;
-} LikeCallbackData;
-
-static bool like_cb(void *user, const char *k, const char *v) {
-	LikeCallbackData *lcd = user;
-	if (!user) {
-		return false;
-	}
-	if (k && lcd->key && !sdb_match(k, lcd->key)) {
-		return true;
-	}
-	if (v && lcd->val && !sdb_match(v, lcd->val)) {
-		return true;
-	}
-	if (lcd->array) {
-		int idx = lcd->array_index;
-		int newsize = lcd->array_size + sizeof(char *) * 2;
-		const char **newarray = (const char **)realloc((void *)lcd->array, newsize);
-		if (!newarray) {
-			return false;
-		}
-		lcd->array = newarray;
-		lcd->array_size = newsize;
-		// concatenate in array
-		lcd->array[idx] = k;
-		lcd->array[idx + 1] = v;
-		lcd->array[idx + 2] = NULL;
-		lcd->array[idx + 3] = NULL;
-		lcd->array_index = idx + 2;
-	} else {
-		if (lcd->cb) {
-			lcd->cb(lcd->sdb, k, v);
-		}
-	}
-	return true;
-}
-
-RZ_API char **sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb) {
-	LikeCallbackData lcd = { s, k, v, cb, NULL, 0, 0 };
-	if (cb) {
-		sdb_foreach(s, like_cb, &lcd);
-		return NULL;
-	}
-	if (k && !*k) {
-		lcd.key = NULL;
-	}
-	if (v && !*v) {
-		lcd.val = NULL;
-	}
-	lcd.array_size = sizeof(char *) * 2;
-	lcd.array = calloc(lcd.array_size, 1);
-	if (!lcd.array) {
-		return NULL;
-	}
-	lcd.array_index = 0;
-	sdb_foreach(s, like_cb, &lcd);
-	if (lcd.array_index == 0) {
-		free((void *)lcd.array);
-		return NULL;
-	}
-	return (char **)lcd.array;
 }

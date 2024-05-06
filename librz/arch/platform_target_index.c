@@ -59,17 +59,17 @@ RZ_API void rz_platform_item_free(RzPlatformItem *item) {
 
 static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL Sdb *sdb) {
 	rz_return_val_if_fail(t && sdb, false);
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, false);
-	char *argument_key, *comment, *name;
-	ls_foreach (l, iter, kv) {
+
+	void **iter;
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "name")) {
-			name = sdbkv_key(kv);
+			const char *name = sdbkv_key(kv);
 
 			RzPlatformItem *item = rz_platform_item_new(name);
 
-			argument_key = rz_str_newf("%s.address", item->name);
+			char *argument_key = rz_str_newf("%s.address", item->name);
 			if (!argument_key) {
 				rz_platform_item_free(item);
 				return false;
@@ -81,7 +81,7 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NO
 			}
 
 			argument_key = rz_str_newf("%s.comment", item->name);
-			comment = sdb_get(sdb, argument_key, NULL);
+			char *comment = sdb_get(sdb, argument_key, NULL);
 			if (comment) {
 				item->comment = comment;
 			}

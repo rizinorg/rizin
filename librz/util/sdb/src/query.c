@@ -88,23 +88,25 @@ typedef struct {
 	char *root;
 } ForeachListUser;
 
-static bool foreach_list_cb(void *user, const char *k, const char *v) {
+static bool foreach_list_cb(void *user, const SdbKv *kv) {
 	ForeachListUser *rlu = user;
-	char *line, *root;
-	int rlen, klen, vlen;
-	ut8 *v2 = NULL;
 	if (!rlu) {
 		return false;
 	}
-	root = rlu->root;
-	klen = strlen(k);
+	char *line;
+	int rlen;
+	ut8 *v2 = NULL;
+	char *root = rlu->root;
+	const char *k = sdbkv_key(kv);
+	ut32 klen = sdbkv_key_len(kv);
+	const char *v = sdbkv_value(kv);
+	ut32 vlen = sdbkv_value_len(kv);
 	if (rlu->encode) {
 		v2 = sdb_decode(v, NULL);
 		if (v2) {
 			v = (const char *)v2;
 		}
 	}
-	vlen = strlen(v);
 	if (root) {
 		rlen = strlen(root);
 		line = malloc(klen + vlen + rlen + 3);
@@ -318,13 +320,13 @@ repeat:
 			goto fail;
 		} else if (!strcmp(cmd, "*")) {
 			ForeachListUser user = { out, encode, NULL };
-			SdbList *list = sdb_foreach_list(s, true);
-			SdbListIter *iter;
-			SdbKv *kv;
-			ls_foreach (list, iter, kv) {
-				foreach_list_cb(&user, sdbkv_key(kv), sdbkv_value(kv));
+			RzPVector *items = sdb_get_items(s, true);
+			void **iter;
+			rz_pvector_foreach (items, iter) {
+				SdbKv *kv = *iter;
+				foreach_list_cb(&user, kv);
 			}
-			ls_free(list);
+			rz_pvector_free(items);
 			goto fail;
 		}
 	}
@@ -357,16 +359,16 @@ repeat:
 		}
 	} else if (*cmd == '~') { // delete
 		if (cmd[1] == '~') { // grep
-			SdbKv *kv;
-			SdbListIter *li;
-			SdbList *l = sdb_foreach_match(s, cmd + 2, false);
-			ls_foreach (l, li, kv) {
+			void **it;
+			RzPVector *items = sdb_get_items_match(s, cmd + 2, false);
+			rz_pvector_foreach (items, it) {
+				SdbKv *kv = *it;
 				strbuf_append(out, sdbkv_key(kv), 0);
 				strbuf_append(out, "=", 0);
 				strbuf_append(out, sdbkv_value(kv), 1);
 			}
 			fflush(stdout);
-			ls_free(l);
+			rz_pvector_free(items);
 		} else {
 			d = 1;
 			sdb_unset_like(s, cmd + 1);

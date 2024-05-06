@@ -127,8 +127,8 @@ error:
 	return NULL;
 }
 
-static bool filter_func(void *user, const char *k, const char *v) {
-	return !strcmp(v, "func");
+static bool filter_func(void *user, const SdbKv *kv) {
+	return sdbkv_value_len(kv) == 4 && !strcmp(sdbkv_value(kv), "func");
 }
 
 static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
@@ -137,20 +137,19 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	if (!type_str_cache) {
 		return false;
 	}
-	RzCallable *callable;
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list_filter(sdb, filter_func, false);
-	ls_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *items = sdb_get_items_filter(sdb, filter_func, NULL, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		// eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
-		callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
+		RzCallable *callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
 		if (callable) {
 			ht_sp_update(typedb->callables, callable->name, callable);
 			RZ_LOG_DEBUG("inserting the \"%s\" callable type\n", callable->name);
 		}
 	}
 	ht_sp_free(type_str_cache);
-	ls_free(l);
+	rz_pvector_free(items);
 	return true;
 }
 
