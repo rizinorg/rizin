@@ -69,7 +69,8 @@ static bool test_core_task_finished_cb(void) {
 	RzCoreTask *a = rz_core_cmd_task_new(core, "echo amor; echo vincit; echo omnia", finished_cb, &res_indir);
 	rz_core_task_enqueue(&core->tasks, a);
 
-	rz_core_task_join(&core->tasks, rz_core_task_self(&core->tasks), a->id);
+	bool task_joined = rz_core_task_join(&core->tasks, rz_core_task_self(&core->tasks), a->id);
+	mu_assert_true(task_joined, "task joined");
 
 	const char *cmd_result = rz_core_cmd_task_get_result(a);
 	mu_assert_streq(cmd_result, "amor\nvincit\nomnia\n", "cmd result");
