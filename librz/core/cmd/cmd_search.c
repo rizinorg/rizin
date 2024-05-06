@@ -2483,7 +2483,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 			RzPVector *items = sdb_get_items(ns->sdb, false);
 			rz_pvector_foreach (items, items_iter) {
 				SdbKv *kv = *items_iter;
-				char *dup = strdup(sdbkv_value(kv));
+				char *dup = sdbkv_dup_value(kv);
 				bool flag = false; // to free tok when doing strdup
 				char *size = strtok(dup, " ");
 				char *tok = strtok(NULL, "{}");

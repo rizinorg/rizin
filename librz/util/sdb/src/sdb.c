@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <rz_util/rz_mem.h>
 #include <rz_util/rz_assert.h>
 #include "sdb.h"
 #include "sdb_private.h"
@@ -525,6 +526,14 @@ RZ_API void sdbkv_free(RZ_NULLABLE SdbKv *kv) {
  */
 static inline RZ_OWN SdbKv *sdbkv_dup(RZ_NONNULL const SdbKv *kv) {
 	return sdbkv_new2(sdbkv_key(kv), sdbkv_key_len(kv), sdbkv_value(kv), sdbkv_value_len(kv));
+}
+
+/**
+ * \brief Create a duplicate of SdbKv value string
+ */
+RZ_API RZ_OWN char *sdbkv_dup_value(RZ_NONNULL const SdbKv *kv) {
+	rz_return_val_if_fail(kv, NULL);
+	return rz_mem_dup(sdbkv_value(kv), sdbkv_value_len(kv) + 1);
 }
 
 static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32 cas) {

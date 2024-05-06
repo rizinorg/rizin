@@ -462,7 +462,7 @@ RZ_API bool rz_debug_session_save(RzDebugSession *session, const char *path) {
 
 static bool deserialize_memory_cb(void *user, const SdbKv *kv) {
 	RzJson *child;
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -512,7 +512,7 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 
 static bool deserialize_registers_cb(void *user, const SdbKv *kv) {
 	RzJson *child;
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -561,7 +561,7 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 
 static bool deserialize_checkpoints_cb(void *user, const SdbKv *kv) {
 	const RzJson *child;
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}

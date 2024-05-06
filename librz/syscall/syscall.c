@@ -166,7 +166,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			argument_key = rz_str_newf("%s.comment", name);
 			char *comment = sdb_get(sdb, argument_key, NULL);
 			free(argument_key);
-			sysregitem->type = strdup(sdbkv_value(kv));
+			sysregitem->type = sdbkv_dup_value(kv);
 			sysregitem->comment = comment;
 
 			ht_up_insert(sysregdb->port, address, sysregitem);

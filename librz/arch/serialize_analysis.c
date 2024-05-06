@@ -238,7 +238,7 @@ typedef struct {
 static bool block_load_cb(void *user, const SdbKv *kv) {
 	BlockLoadCtx *ctx = user;
 
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -956,7 +956,7 @@ typedef struct {
 static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	GlobalVarCtx *ctx = user;
 
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -1185,7 +1185,7 @@ enum {
 static bool function_load_cb(void *user, const SdbKv *kv) {
 	RzSerializeAnalysisFunctionLoadCtx *ctx = user;
 
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -1452,7 +1452,7 @@ static bool xrefs_load_cb(void *user, const SdbKv *kv) {
 		return false;
 	}
 
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -1615,7 +1615,7 @@ static bool meta_load_cb(void *user, const SdbKv *kv) {
 		return false;
 	}
 
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -1930,7 +1930,7 @@ static bool hints_load_cb(void *user, const SdbKv *kv) {
 		return false;
 	}
 
-	char *json_str = strdup(sdbkv_value(kv));
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
