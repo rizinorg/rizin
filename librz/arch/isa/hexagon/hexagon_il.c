@@ -208,11 +208,11 @@ RZ_IPI bool hex_shuffle_insns(RZ_INOUT HexPkt *p) {
 }
 
 static RzILOpEffect *hex_il_op_to_effect(const HexILOp *il_op, HexPkt *pkt) {
-	rz_return_val_if_fail(il_op && il_op->get_il_op, NULL);
+	rz_return_val_if_fail(il_op, NULL);
 	HexInsnPktBundle bundle = { 0 };
 	bundle.insn = (HexInsn *)il_op->hi;
 	bundle.pkt = pkt;
-	return il_op->get_il_op(&bundle);
+	return il_op->get_il_op ? il_op->get_il_op(&bundle) : EMPTY();
 }
 
 /**
