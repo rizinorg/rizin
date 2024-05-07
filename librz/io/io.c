@@ -426,14 +426,13 @@ RZ_API bool rz_io_resize(RZ_NONNULL RzIO *io, ut64 newsize) {
 	rz_return_val_if_fail(io && io->desc, false);
 
 	RzList *maps = rz_io_map_get_for_fd(io, io->desc->fd);
-	RzIOMap *current_map;
-	RzListIter *iter;
 	ut64 fd_size = rz_io_fd_size(io, io->desc->fd);
-	bool ret = rz_io_desc_resize(io->desc, newsize);
-	if (!ret) {
+	if (!rz_io_desc_resize(io->desc, newsize)) {
 		rz_list_free(maps);
 		return false;
 	}
+	RzListIter *iter;
+	RzIOMap *current_map;
 	rz_list_foreach (maps, iter, current_map) {
 		// we just resize map of the same size of its fd
 		if (current_map->itv.size == fd_size) {
