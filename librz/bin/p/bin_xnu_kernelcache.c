@@ -104,7 +104,7 @@ static void handle_data_sections(RzBinSection *sect);
 static void symbols_from_mach0(RzPVector /*<RzBinSymbol *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, int ordinal);
 static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr);
 static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *obj);
-static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtSS *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal);
+static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtUP /*<ut64, char *>*/ *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) * mach0, ut64 paddr, RzXNUKernelCacheObj *obj);
 static int prot2perm(int x);
 
@@ -1177,21 +1177,19 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 
 	symbols_from_mach0(ret, obj->mach0, bf, 0, 0);
 
-	HtSS *kernel_syms_by_addr = sdb_ht_new();
+	HtUP *kernel_syms_by_addr = ht_up_new((HtUPDupValue)strdup, free);
 	if (!kernel_syms_by_addr) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
 
-	char tmpbuf[32];
 	RzListIter *iter;
 	void **it;
 	RzBinSymbol *sym;
 	ut64 enosys_addr = 0;
 	rz_pvector_foreach (ret, it) {
 		sym = *it;
-		const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
-		sdb_ht_insert(kernel_syms_by_addr, key, sym->dname ? sym->dname : sym->name);
+		ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->dname ? sym->dname : sym->name);
 		if (!enosys_addr && strstr(sym->name, "enosys")) {
 			enosys_addr = sym->vaddr;
 		}
@@ -1200,8 +1198,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *syscalls = resolve_syscalls(obj, enosys_addr);
 	if (syscalls) {
 		rz_list_foreach (syscalls, iter, sym) {
-			const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
-			sdb_ht_insert(kernel_syms_by_addr, key, sym->name);
+			ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->name);
 			rz_pvector_push(ret, sym);
 		}
 		syscalls->free = NULL;
@@ -1211,8 +1208,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *subsystem = resolve_mig_subsystem(obj);
 	if (subsystem) {
 		rz_list_foreach (subsystem, iter, sym) {
-			const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
-			sdb_ht_insert(kernel_syms_by_addr, key, sym->name);
+			ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->name);
 			rz_pvector_push(ret, sym);
 		}
 		subsystem->free = NULL;
@@ -1243,10 +1239,9 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 	}
 
-	RZ_FREE(inits);
-	RZ_FREE(terms);
-
-	sdb_ht_free(kernel_syms_by_addr);
+	free(inits);
+	free(terms);
+	ht_up_free(kernel_syms_by_addr);
 
 	return ret;
 }
@@ -1433,17 +1428,16 @@ beach:
 #define K_MIG_ROUTINE_SIZE   (5 * 8)
 #define K_MIG_MAX_ROUTINES   100
 
-static HtSS *mig_hash_new(void) {
-	HtSS *hash = sdb_ht_new();
+static HtUP /*<ut64, const char *>*/ *mig_hash_new(void) {
+	HtUP *hash = ht_up_new(NULL, NULL);
 	if (!hash) {
 		return NULL;
 	}
 
-	int i;
-	for (i = 0; i < RZ_MIG_INDEX_LEN; i += 2) {
-		const char *num = mig_index[i];
+	for (size_t i = 0; i < RZ_MIG_INDEX_LEN; i += 2) {
+		ut64 num = strtoull(mig_index[i], NULL, 10);
 		const char *name = mig_index[i + 1];
-		sdb_ht_insert(hash, num, name);
+		ht_up_insert(hash, num, (void *)name);
 	}
 
 	return hash;
@@ -1455,7 +1449,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 		return NULL;
 	}
 
-	HtSS *mig_hash = NULL;
+	HtUP *mig_hash = NULL;
 	RzList *subsystem = NULL;
 	ut8 *data_const = NULL;
 	ut64 data_const_offset = 0, data_const_size = 0, data_const_vaddr = 0;
@@ -1500,7 +1494,6 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 		goto beach;
 	}
 
-	char tmpbuf[32];
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
 	while (cursor + sizeof(ut64) * 2 <= end) {
@@ -1560,10 +1553,8 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 				}
 
 				int num = idx + subs_min_idx;
-				bool found = false;
-				const char *key = rz_strf(tmpbuf, "%d", num);
-				const char *name = sdb_ht_find(mig_hash, key, &found);
-				if (found && name && *name) {
+				const char *name = ht_up_find(mig_hash, (ut64)num, NULL);
+				if (RZ_STR_ISNOTEMPTY(name)) {
 					sym->name = rz_str_newf("mig.%d.%s", num, name);
 				} else {
 					sym->name = rz_str_newf("mig.%d", num);
@@ -1586,20 +1577,16 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 		RZ_FREE(routines);
 	}
 
-	sdb_ht_free(mig_hash);
-	RZ_FREE(data_const);
-	RZ_FREE(sections);
+	ht_up_free(mig_hash);
+	free(data_const);
+	free(sections);
 	return subsystem;
 
 beach:
-	if (subsystem) {
-		rz_list_free(subsystem);
-	}
-	if (mig_hash) {
-		sdb_ht_free(mig_hash);
-	}
-	RZ_FREE(data_const);
-	RZ_FREE(sections);
+	rz_list_free(subsystem);
+	ht_up_free(mig_hash);
+	free(data_const);
+	free(sections);
 	return NULL;
 }
 
@@ -1616,12 +1603,11 @@ static ut64 extract_addr_from_code(ut8 *arm64_code, ut64 vaddr) {
 	return addr;
 }
 
-static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtSS *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal) {
+static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtUP /*<ut64, char *>*/ *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal) {
 	RStubsInfo *stubs_info = get_stubs_info(kext->mach0, kext->range.offset, obj);
 	if (!stubs_info) {
 		return;
 	}
-	char tmpbuf[32];
 	ut64 stubs_cursor = stubs_info->stubs.offset;
 	ut64 stubs_end = stubs_cursor + stubs_info->stubs.size;
 
@@ -1654,8 +1640,7 @@ static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtSS *kernel_
 				target_addr = addr;
 			}
 
-			const char *key = rz_strf(tmpbuf, "%" PFMT64x, addr);
-			const char *name = sdb_ht_find(kernel_syms_by_addr, key, &found);
+			const char *name = ht_up_find(kernel_syms_by_addr, addr, &found);
 
 			if (found) {
 				RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
