@@ -19,7 +19,7 @@ typedef struct {
 typedef struct {
 	const Pic18Op *op;
 	const HtSU *mm;
-	ILOpEff eff;
+	RzVector /*<ILOpEff>*/ effs;
 } Pic18ILContext;
 
 #include "pic18_il.inc"
@@ -242,7 +242,9 @@ static int analysis_pic18_op(
 			.op = &op,
 			.mm = ((PicContext *)analysis->plugin_data)->pic18_mm,
 		};
+		rz_vector_init(&ctx.effs, sizeof(ILOpEff), NULL, NULL);
 		aop->il_op = pic18_il_op_finally(&ctx);
+		rz_vector_fini(&ctx.effs);
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
