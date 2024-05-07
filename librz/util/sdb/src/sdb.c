@@ -172,7 +172,6 @@ static void sdb_fini(Sdb *s, int donull) {
 	if (!s) {
 		return;
 	}
-	sdb_hook_free(s);
 	cdb_free(&s->db);
 	if (s->lock) {
 		sdb_unlock(sdb_lock_file(s->dir));
@@ -564,7 +563,6 @@ static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32
 				return 0;
 			}
 			if (vlen == sdbkv_value_len(kv) && !strcmp(sdbkv_value(kv), val)) {
-				sdb_hook_call(s, key, val);
 				return kv->cas;
 			}
 			kv->cas = cas = nextcas();
@@ -583,7 +581,6 @@ static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32
 		} else {
 			sdb_ht_delete(s->ht, key);
 		}
-		sdb_hook_call(s, key, val);
 		return cas;
 	}
 	// empty values are also stored
@@ -601,10 +598,8 @@ static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32
 		ut32 cas = kv->cas = nextcas();
 		sdb_ht_insert_kvp(s->ht, kv, true /*update*/);
 		free(kv);
-		sdb_hook_call(s, key, val);
 		return cas;
 	}
-	// kv set failed, no need to callback	sdb_hook_call (s, key, val);
 	return 0;
 }
 
@@ -975,64 +970,6 @@ RZ_API ut64 sdb_expire_get(Sdb *s, const char *key, ut32 *cas) {
 		return kv->expire;
 	}
 	return 0LL;
-}
-
-RZ_API bool sdb_hook(Sdb *s, SdbHook cb, void *user) {
-	int i = 0;
-	SdbHook hook;
-	SdbListIter *iter;
-	if (s->hooks) {
-		ls_foreach (s->hooks, iter, hook) {
-			if (!(i % 2) && (hook == cb)) {
-				return false;
-			}
-			i++;
-		}
-	} else {
-		s->hooks = ls_new();
-		s->hooks->free = NULL;
-	}
-	ls_append(s->hooks, (void *)cb);
-	ls_append(s->hooks, user);
-	return true;
-}
-
-RZ_API bool sdb_unhook(Sdb *s, SdbHook h) {
-	int i = 0;
-	SdbHook hook;
-	SdbListIter *iter, *iter2;
-	ls_foreach (s->hooks, iter, hook) {
-		if (!(i % 2) && (hook == h)) {
-			iter2 = iter->n;
-			ls_delete(s->hooks, iter);
-			ls_delete(s->hooks, iter2);
-			return true;
-		}
-		i++;
-	}
-	return false;
-}
-
-RZ_API int sdb_hook_call(Sdb *s, const char *k, const char *v) {
-	SdbListIter *iter;
-	SdbHook hook;
-	int i = 0;
-	if (s->timestamped && s->last) {
-		s->last = sdb_now();
-	}
-	ls_foreach (s->hooks, iter, hook) {
-		if (!(i % 2) && k && iter->n) {
-			void *u = iter->n->data;
-			hook(s, u, k, v);
-		}
-		i++;
-	}
-	return i >> 1;
-}
-
-RZ_API void sdb_hook_free(Sdb *s) {
-	ls_free(s->hooks);
-	s->hooks = NULL;
 }
 
 RZ_API void sdb_config(Sdb *s, int options) {
