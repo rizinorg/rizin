@@ -422,27 +422,26 @@ RZ_API char *rz_io_system(RzIO *io, const char *cmd) {
 	return NULL;
 }
 
-RZ_API bool rz_io_resize(RzIO *io, ut64 newsize) {
-	if (io) {
-		RzList *maps = rz_io_map_get_for_fd(io, io->desc->fd);
-		RzIOMap *current_map;
-		RzListIter *iter;
-		ut64 fd_size = rz_io_fd_size(io, io->desc->fd);
-		bool ret = rz_io_desc_resize(io->desc, newsize);
-		if (!ret) {
-			rz_list_free(maps);
-			return false;
-		}
-		rz_list_foreach (maps, iter, current_map) {
-			// we just resize map of the same size of its fd
-			if (current_map->itv.size == fd_size) {
-				rz_io_map_resize(io, current_map->id, newsize);
-			}
-		}
+RZ_API bool rz_io_resize(RZ_NONNULL RzIO *io, ut64 newsize) {
+	rz_return_val_if_fail(io && io->desc, false);
+
+	RzList *maps = rz_io_map_get_for_fd(io, io->desc->fd);
+	RzIOMap *current_map;
+	RzListIter *iter;
+	ut64 fd_size = rz_io_fd_size(io, io->desc->fd);
+	bool ret = rz_io_desc_resize(io->desc, newsize);
+	if (!ret) {
 		rz_list_free(maps);
-		return true;
+		return false;
 	}
-	return false;
+	rz_list_foreach (maps, iter, current_map) {
+		// we just resize map of the same size of its fd
+		if (current_map->itv.size == fd_size) {
+			rz_io_map_resize(io, current_map->id, newsize);
+		}
+	}
+	rz_list_free(maps);
+	return true;
 }
 
 RZ_API bool rz_io_close(RzIO *io) {
