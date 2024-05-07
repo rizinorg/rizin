@@ -82,7 +82,6 @@ typedef struct sdb_t {
 	int options;
 	int ns_lock; // TODO: merge into options?
 	SdbList *ns;
-	SdbList *hooks;
 	ut32 depth;
 	bool timestamped;
 } Sdb;
@@ -297,12 +296,6 @@ RZ_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas);
 RZ_API char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas);
 RZ_API char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas);
 
-typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
-
-RZ_API bool sdb_hook(Sdb *s, SdbHook cb, void *user);
-RZ_API bool sdb_unhook(Sdb *s, SdbHook h);
-RZ_API int sdb_hook_call(Sdb *s, const char *k, const char *v);
-RZ_API void sdb_hook_free(Sdb *s);
 /* Util.c */
 RZ_API int sdb_isnum(const char *s);
 RZ_API bool sdb_isempty(Sdb *s);
