@@ -384,6 +384,16 @@ const char *pic18_regname_extra(size_t index, char *regname) {
 	return regname;
 }
 
+#define STATUS_BIT_IMPL(DECL, X) \
+	ut8 pic18_##X(const char *name) { \
+		for (int i = 0; i < RZ_ARRAY_SIZE(DECL); ++i) { \
+			if (RZ_STR_EQ(name, DECL[i])) { \
+				return i; \
+			} \
+		} \
+		return 0xff; \
+	}
+
 static const char *status_bits[] = {
 	"c",
 	"dc",
@@ -392,11 +402,40 @@ static const char *status_bits[] = {
 	"n"
 };
 
-ut8 pic18_status(const char *name) {
-	for (int i = 0; i < RZ_ARRAY_SIZE(status_bits); ++i) {
-		if (RZ_STR_EQ(name, status_bits[i])) {
+static const char *rcon_bits[] = {
+	"bor",
+	"por",
+	"pd",
+	"to",
+	"ri",
+	[6] = "lwrt",
+	[7] = "ipen",
+};
+
+static const char *intcon_bits[] = {
+	"brif",
+	"int0if",
+	"tmr0if",
+	"brie",
+	"int0ie",
+	"tmr0ie",
+	"peie",
+	"gie",
+};
+
+STATUS_BIT_IMPL(status_bits, status);
+STATUS_BIT_IMPL(rcon_bits, rcon);
+ut8 pic18_intcon(const char *name) {
+	for (int i = 0; i < RZ_ARRAY_SIZE(intcon_bits); ++i) {
+		if (RZ_STR_EQ(name, intcon_bits[i])) {
 			return i;
 		}
+	}
+	if (RZ_STR_EQ(name, "gieh")) {
+		return 7;
+	}
+	if (RZ_STR_EQ(name, "giel")) {
+		return 6;
 	}
 	return 0xff;
 }

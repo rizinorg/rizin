@@ -137,6 +137,8 @@ typedef struct {
 const char *pic18_regname(size_t index);
 const char *pic18_regname_extra(size_t index, char *regname);
 ut8 pic18_status(const char *name);
+ut8 pic18_rcon(const char *name);
+ut8 pic18_intcon(const char *name);
 bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len);
 int pic_pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int l);
 

@@ -93,6 +93,21 @@ static RzILOpEffect *setg_uhl(Pic18ILContext *ctx, const char *v, RzILOpPure *x,
 		setg_hl(ctx, v, VARL("__x"), bank));
 }
 
+#define PIC18_STATUS_BIT_GET(X) \
+	{ \
+		ut8 b = pic18_##X(v); \
+		if (b != 0xff) { \
+			return bit_get(varg_mm(ctx, #X, bank), b); \
+		} \
+	}
+#define PIC18_STATUS_BIT_SET(X) \
+	{ \
+		ut8 b = pic18_##X(v); \
+		if (b != 0xff) { \
+			return setg_mm(ctx, #X, bit_set1(varg_mm(ctx, #X, bank), b, x), bank); \
+		} \
+	}
+
 /**
  * \see https://ww1.microchip.com/downloads/en/DeviceDoc/39500a.pdf
  * 7.7.6 Indirect Addressing, INDF, and FSR Registers
@@ -119,10 +134,10 @@ static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v, ut8 bank) {
 		return LOAD(adr);
 	}
 
-	ut8 b = pic18_status(v);
-	if (b != 0xff) {
-		return bit_get(varg_mm(ctx, "status", bank), b);
-	}
+	PIC18_STATUS_BIT_GET(status);
+	PIC18_STATUS_BIT_GET(rcon);
+	PIC18_STATUS_BIT_GET(intcon);
+
 	if (RZ_STR_EQ(v, "tblptr") || RZ_STR_EQ(v, "tos")) {
 		return varg_uhl(ctx, v, bank);
 	}
@@ -141,10 +156,10 @@ static RzILOpEffect *setg_mm(Pic18ILContext *ctx, const char *v, RzILOpPure *x, 
 		return STORE(adr, x);
 	}
 
-	ut8 b = pic18_status(v);
-	if (b != 0xff) {
-		return setg_mm(ctx, "status", bit_set1(varg_mm(ctx, "status", bank), b, x), bank);
-	}
+	PIC18_STATUS_BIT_SET(status);
+	PIC18_STATUS_BIT_SET(rcon);
+	PIC18_STATUS_BIT_SET(intcon);
+
 	if (RZ_STR_EQ(v, "tblptr") || RZ_STR_EQ(v, "tos")) {
 		return setg_uhl(ctx, v, x, bank);
 	}
@@ -283,12 +298,12 @@ static RzILOpPure *decimal_adjust(Pic18ILContext *ctx, RzILOpPure *x) {
 		LET(
 			"_x47", UNSIGNED(4, SHIFTR0(DUP(x), U8(4))),
 			APPEND(
-				ITE(OR(UGT(VARL("_x47"), UN(4, 9)), VARG("c")),
-					ADD(VARL("_x47"), UN(4, 6)),
-					VARL("_x47")),
-				ITE(OR(UGT(VARL("_x03"), UN(4, 9)), VARG("dc")),
-					ADD(VARL("_x03"), UN(4, 6)),
-					VARL("_x03")))));
+				ITE(OR(UGT(VARLP("_x47"), UN(4, 9)), VARG("c")),
+					ADD(VARLP("_x47"), UN(4, 6)),
+					VARLP("_x47")),
+				ITE(OR(UGT(VARLP("_x03"), UN(4, 9)), VARG("dc")),
+					ADD(VARLP("_x03"), UN(4, 6)),
+					VARLP("_x03")))));
 }
 
 #define SET_DST_RES (dst ? SETG(dst, VARL("__res")) : set_dest(ctx, VARL("__res")))
@@ -318,8 +333,8 @@ static RzILOpEffect *op_branch(Pic18ILContext *ctx, RzILOpPure *condition) {
 
 static RzILOpEffect *load_shadows_opt(Pic18ILContext *ctx) {
 	return ctx->op->s ? SEQ3(
-				    SETG("ws", VRW),
-				    SETG("ss", VRS),
+				    SETG("wregs", VRW),
+				    SETG("statuss", VARG("status")),
 				    SETG("bsrs", VARG("bsr")))
 			  : NOP();
 }
@@ -366,7 +381,7 @@ static RzILOpEffect *op_pop_jmp(Pic18ILContext *ctx) {
 static RzILOpEffect *op_push(Pic18ILContext *ctx, RzILOpPure *x) {
 	return SEQ3(
 		SETG("stkptr", ADD(VARG("stkptr"), U8(4))),
-		STOREW(ADD(VARG("_stack"), VARG("stkptr")), x),
+		STOREW(UNSIGNED(24, ADD(VARG("_stack"), VARG("stkptr"))), x),
 		SETG("tos", DUP(x)));
 }
 
@@ -386,7 +401,7 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 	switch (ctx->op->code) {
 	case PIC18_OPCODE_ADDLW: return op_add(ctx, RW, VRW, U8(K), NULL);
 	case PIC18_OPCODE_ADDWF: return op_add(ctx, NULL, VRW, VRF, NULL);
-	case PIC18_OPCODE_ADDWFC: return op_add(ctx, NULL, VRW, VRF, VRC);
+	case PIC18_OPCODE_ADDWFC: return op_add(ctx, NULL, VRW, VRF, BOOL_TO_BV(VRC, 8));
 	case PIC18_OPCODE_ANDLW: return op_and(ctx, RW, VRW, U8(K));
 	case PIC18_OPCODE_ANDWF: return op_and(ctx, NULL, VRW, VRF);
 	case PIC18_OPCODE_BC: return op_branch(ctx, VRC);
@@ -500,18 +515,12 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_RETFIE:
 		return SEQ3(
 			BRANCH(
-				IS_ZERO(VARG("ipen")),
+				INV(VARG("ipen")),
 				SETG("gie", IL_TRUE),
-				SEQ2(
-					SETL("_g", APPEND(VARG("gieh"), VARG("geil"))),
-					BRANCH(
-						EQ(VARG("_g"), UN(2, 0b11)),
-						SETG("invalid", IL_TRUE),
-						BRANCH(
-							EQ(VARG("_g"), UN(2, 0b10)),
-							SEQ2(SETG("giel", IL_TRUE),
-								SETG("gieh", IL_TRUE)),
-							NOP())))),
+				BRANCH(
+					VARG("gieh"),
+					SETG("giel", IL_TRUE),
+					SETG("gieh", IL_TRUE))),
 			load_shadows_opt(ctx),
 			op_pop_jmp(ctx));
 	case PIC18_OPCODE_RETLW:
@@ -529,19 +538,19 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_RLCF:
 		return SEQ3(
 			SETL("_x", VRF),
-			SETG("c", MSB(VARG("_x"))),
-			set_dest_status(ctx, LOGOR(SHIFTL0(VARLP("_x"), U8(7)), BOOL_TO_BV(VRC, 8))));
+			SETG("c", MSB(VARL("_x"))),
+			set_dest_status(ctx, LOGOR(SHIFTL0(VARL("_x"), U8(7)), BOOL_TO_BV(VRC, 8))));
 	case PIC18_OPCODE_RRCF:
 		return SEQ3(
 			SETL("_x", VRF),
-			SETG("c", LSB(VARG("_x"))),
-			set_dest_status(ctx, LOGOR(SHIFTR0(VARLP("_x"), U8(7)), BOOL_TO_BV(VRC, 8))));
+			SETG("c", LSB(VARL("_x"))),
+			set_dest_status(ctx, LOGOR(SHIFTR0(VARL("_x"), U8(7)), BOOL_TO_BV(VRC, 8))));
 	case PIC18_OPCODE_SETF:
 		return SETG(RF, U8(0xff));
-	case PIC18_OPCODE_SUBFWB: return op_sub(ctx, NULL, VRW, VRF, VRC);
+	case PIC18_OPCODE_SUBFWB: return op_sub(ctx, NULL, VRW, VRF, BOOL_TO_BV(VRC, 8));
 	case PIC18_OPCODE_SUBLW: return op_sub(ctx, RW, U8(K), VRW, NULL);
 	case PIC18_OPCODE_SUBWF: return op_sub(ctx, NULL, VRF, VRW, NULL);
-	case PIC18_OPCODE_SUBWFB: return op_sub(ctx, NULL, VRF, VRW, VRC);
+	case PIC18_OPCODE_SUBWFB: return op_sub(ctx, NULL, VRF, VRW, BOOL_TO_BV(VRC, 8));
 	case PIC18_OPCODE_SWAPF:
 		return set_dest(ctx, APPEND(UNSIGNED(4, VRF), UNSIGNED(4, SHIFTR0(VRF, U8(4)))));
 
@@ -641,6 +650,9 @@ static RzILOpEffect *pic18_il_op_finally(Pic18ILContext *ctx) {
 
 static const char *pic18_reg_bindings[] = {
 	"pc",
+	"wregs",
+	"statuss",
+	"bsrs",
 	"_sram",
 	"_stack",
 	"_skip",
