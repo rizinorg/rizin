@@ -4647,9 +4647,9 @@ err:
 }
 
 RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, addr, -1);
 	if (!f) {
-		RZ_LOG_ERROR("core: cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		RZ_LOG_ERROR("core: cannot find function in 0x%08" PFMT64x "\n", addr);
 		return;
 	}
 
