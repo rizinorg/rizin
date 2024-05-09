@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: 2008-2019 inisider <inisider@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/set.h>
 #include "pe.h"
 
 static inline int is_thumb(RzBinPEObj *bin) {
@@ -385,125 +386,79 @@ int PE_(rz_bin_pe_is_stripped_debug)(RzBinPEObj *bin) {
 	return HASCHR(PE_IMAGE_FILE_DEBUG_STRIPPED);
 }
 
-struct rz_bin_pe_lib_t *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
+static inline bool bin_buf_contains(const RzBinPEObj *bin, ut64 offset, ut64 nbytes) {
+	if (UT64_ADD_OVFCHK(offset, nbytes)) {
+		return false;
+	}
+	return offset + nbytes <= bin->size;
+}
+
+/**
+ * Check whether an directory entry is empty (filled with zeroes)
+ */
+static inline bool image_import_directory_is_empty(const PE_(image_import_directory) * dir) {
+	return !(dir->FirstThunk || dir->Name || dir->TimeDateStamp || dir->Characteristics || dir->ForwarderChain);
+}
+
+RzPVector /*<char *>*/ *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
 	if (!bin) {
 		return NULL;
 	}
-	struct rz_bin_pe_lib_t *libs = NULL;
-	struct rz_bin_pe_lib_t *new_libs = NULL;
+	if (!bin_buf_contains(bin, bin->import_directory_offset, bin->import_directory_size)) {
+		return NULL;
+	}
 	PE_(image_import_directory)
 	curr_import_dir;
 	PE_(image_delay_import_directory)
 	curr_delay_import_dir;
-	PE_DWord name_off = 0;
-	HtSS *lib_map = NULL;
-	ut64 off; // cache value
-	int index = 0;
-	int len = 0;
-	int max_libs = 20;
-	libs = calloc(max_libs + 1, sizeof(struct rz_bin_pe_lib_t));
+
+	SetS *libs = set_s_new(HT_STR_DUP);
 	if (!libs) {
-		rz_sys_perror("malloc (libs)");
 		return NULL;
 	}
-
-	if (bin->import_directory_offset + bin->import_directory_size > bin->size) {
-		RZ_LOG_INFO("import directory offset bigger than file\n");
-		goto out_error;
-	}
-	lib_map = sdb_ht_new();
-	off = bin->import_directory_offset;
-	if (off < bin->size && off > 0) {
-		ut64 last;
-		int iidi = 0;
-		// normal imports
-		if (off + sizeof(PE_(image_import_directory)) > bin->size) {
-			goto out_error;
-		}
-		int r = PE_(read_image_import_directory)(bin->b, off + iidi * sizeof(curr_import_dir),
-			&curr_import_dir);
-		last = off + bin->import_directory_size;
-		while (r == sizeof(curr_import_dir) && off + (iidi + 1) * sizeof(curr_import_dir) <= last && (curr_import_dir.FirstThunk || curr_import_dir.Name || curr_import_dir.TimeDateStamp || curr_import_dir.Characteristics || curr_import_dir.ForwarderChain)) {
-			name_off = PE_(bin_pe_rva_to_paddr)(bin, curr_import_dir.Name);
-			len = rz_buf_read_at(bin->b, name_off, (ut8 *)libs[index].name, PE_STRING_LENGTH);
-			if (!libs[index].name[0]) { // minimum string length
-				goto next;
-			}
-			if (len < 2 || libs[index].name[0] == 0) { // minimum string length
-				RZ_LOG_INFO("read (libs - import dirs) %d\n", len);
+	char lib_name[PE_STRING_LENGTH];
+	ut64 dir_off = bin->import_directory_offset;
+	if (dir_off != 0 && dir_off < bin->size) {
+		const ut64 end_off = dir_off + bin->import_directory_size;
+		for (; dir_off < end_off; dir_off += sizeof(curr_import_dir)) {
+			if (PE_(read_image_import_directory)(bin->b, dir_off, &curr_import_dir) < 0) {
 				break;
 			}
-			libs[index].name[len - 1] = '\0';
-			rz_str_case(libs[index].name, 0);
-			if (!sdb_ht_find(lib_map, libs[index].name, NULL)) {
-				sdb_ht_insert(lib_map, libs[index].name, "a");
-				libs[index++].last = 0;
-				if (index >= max_libs) {
-					new_libs = realloc(libs, (max_libs * 2) * sizeof(struct rz_bin_pe_lib_t));
-					if (!new_libs) {
-						rz_sys_perror("realloc (libs)");
-						goto out_error;
-					}
-					libs = new_libs;
-					new_libs = NULL;
-					max_libs *= 2;
-				}
-			}
-		next:
-			iidi++;
-			r = PE_(read_image_import_directory)(bin->b, off + iidi * sizeof(curr_import_dir),
-				&curr_import_dir);
-		}
-	}
-	off = bin->delay_import_directory_offset;
-	if (off < bin->size && off > 0) {
-		ut64 did = 0;
-		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size) {
-			goto out_error;
-		}
-		int r = PE_(read_image_delay_import_directory)(bin->b, off, &curr_delay_import_dir);
-		if (r != sizeof(curr_delay_import_dir)) {
-			goto out_error;
-		}
-		while (r == sizeof(curr_delay_import_dir) &&
-			curr_delay_import_dir.Name != 0 && curr_delay_import_dir.DelayImportNameTable != 0) {
-			name_off = PE_(bin_pe_rva_to_paddr)(bin, curr_delay_import_dir.Name);
-			if (name_off > bin->size || name_off + PE_STRING_LENGTH > bin->size) {
-				goto out_error;
-			}
-			len = rz_buf_read_at(bin->b, name_off, (ut8 *)libs[index].name, PE_STRING_LENGTH);
-			if (len != PE_STRING_LENGTH) {
-				RZ_LOG_INFO("read (libs - delay import dirs)\n");
+			if (image_import_directory_is_empty(&curr_import_dir)) {
 				break;
 			}
-			libs[index].name[len - 1] = '\0';
-			rz_str_case(libs[index].name, 0);
-			if (!sdb_ht_find(lib_map, libs[index].name, NULL)) {
-				sdb_ht_insert(lib_map, libs[index].name, "a");
-				libs[index++].last = 0;
-				if (index >= max_libs) {
-					new_libs = realloc(libs, (max_libs * 2) * sizeof(struct rz_bin_pe_lib_t));
-					if (!new_libs) {
-						rz_sys_perror("realloc (libs)");
-						goto out_error;
-					}
-					libs = new_libs;
-					new_libs = NULL;
-					max_libs *= 2;
-				}
+			PE_DWord name_off = PE_(bin_pe_rva_to_paddr)(bin, curr_import_dir.Name);
+			st64 len = rz_buf_read_at(bin->b, name_off, (ut8 *)lib_name, PE_STRING_LENGTH);
+			if (len < 2 || !lib_name[0]) {
+				break;
 			}
-			did++;
-			r = PE_(read_image_delay_import_directory)(bin->b, off + did * sizeof(curr_delay_import_dir),
-				&curr_delay_import_dir);
+			lib_name[len - 1] = '\0';
+			rz_str_case(lib_name, 0);
+			set_s_add(libs, lib_name);
 		}
 	}
-	sdb_ht_free(lib_map);
-	libs[index].last = 1;
-	return libs;
-out_error:
-	sdb_ht_free(lib_map);
-	free(libs);
-	return NULL;
+	dir_off = bin->delay_import_directory_offset;
+	if (dir_off != 0 && dir_off < bin->size) {
+		for (;; dir_off += sizeof(curr_delay_import_dir)) {
+			if (PE_(read_image_delay_import_directory)(bin->b, dir_off, &curr_delay_import_dir) < 0) {
+				break;
+			}
+			if (curr_delay_import_dir.Name == 0 || curr_delay_import_dir.DelayImportNameTable == 0) {
+				break;
+			}
+			PE_DWord name_off = PE_(bin_pe_rva_to_paddr)(bin, curr_delay_import_dir.Name);
+			st64 len = rz_buf_read_at(bin->b, name_off, (ut8 *)lib_name, PE_STRING_LENGTH);
+			if (len < 2 || !lib_name[0]) {
+				break;
+			}
+			lib_name[len - 1] = '\0';
+			rz_str_case(lib_name, 0);
+			set_s_add(libs, lib_name);
+		}
+	}
+	RzPVector *vec = set_s_to_vector(libs);
+	set_s_free(libs);
+	return vec;
 }
 
 int PE_(rz_bin_pe_get_image_size)(RzBinPEObj *bin) {
