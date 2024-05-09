@@ -129,7 +129,7 @@ static bool hex_cfg_set(void *user, void *data) {
 	}
 	if (cnode) {
 		pnode->i_value = cnode->i_value;
-		pnode->value = cnode->value;
+		pnode->value = strdup(cnode->value);
 		return true;
 	}
 	return false;
