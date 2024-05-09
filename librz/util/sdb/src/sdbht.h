@@ -18,12 +18,12 @@ typedef struct sdb_kv {
 	ut64 expire;
 } SdbKv;
 
-static inline char *sdbkv_key(const SdbKv *kv) {
-	return (char *)kv->base.key;
+static inline const char *sdbkv_key(const SdbKv *kv) {
+	return kv->base.key;
 }
 
-static inline char *sdbkv_value(const SdbKv *kv) {
-	return (char *)kv->base.value;
+static inline const char *sdbkv_value(const SdbKv *kv) {
+	return kv->base.value;
 }
 
 static inline ut32 sdbkv_key_len(const SdbKv *kv) {
@@ -36,7 +36,8 @@ static inline ut32 sdbkv_value_len(const SdbKv *kv) {
 
 RZ_API SdbKv *sdbkv_new2(const char *k, int kl, const char *v, int vl);
 RZ_API SdbKv *sdbkv_new(const char *k, const char *v);
-extern RZ_API void sdbkv_free(SdbKv *kv);
+extern RZ_API void sdbkv_free(RZ_NULLABLE SdbKv *kv);
+RZ_API RZ_OWN char *sdbkv_dup_value(RZ_NONNULL const SdbKv *kv);
 
 extern RZ_API ut32 sdb_hash(const char *key);
 

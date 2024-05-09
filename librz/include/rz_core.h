@@ -1191,7 +1191,7 @@ RZ_API void rz_core_task_break(RzCoreTaskScheduler *scheduler, int id);
 RZ_API void rz_core_task_break_all(RzCoreTaskScheduler *scheduler);
 RZ_API int rz_core_task_del(RzCoreTaskScheduler *scheduler, int id);
 RZ_API RzCoreTask *rz_core_task_self(RzCoreTaskScheduler *scheduler);
-RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id);
+RZ_API bool rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id);
 typedef void (*inRangeCb)(RzCore *core, ut64 from, ut64 to, int vsize, void *cb_user);
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv,
 	ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);

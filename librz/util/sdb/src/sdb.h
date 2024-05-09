@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include <rz_types.h>
+#include <rz_vector.h>
 #include "sdbht.h"
 #include "ls.h"
 #include "cdb.h"
@@ -17,7 +18,7 @@ extern "C" {
 /* Key value sizes */
 #define SDB_CDB_MIN_VALUE 1
 #define SDB_CDB_MAX_VALUE CDB_MAX_VALUE
-#define SDB_CDB_MIN_KEY   1
+#define SDB_CDB_MIN_KEY   2
 #define SDB_CDB_MAX_KEY   CDB_MAX_KEY
 
 #if __WINDOWS__ && !__CYGWIN__
@@ -73,6 +74,7 @@ typedef struct sdb_t {
 	HtSS *ht;
 	ut32 eod;
 	ut32 pos;
+	ut32 dump_end_pos; ///< Used in sdb_dump_next()
 	int fdump;
 	char *ndump;
 	ut64 expire;
@@ -80,7 +82,6 @@ typedef struct sdb_t {
 	int options;
 	int ns_lock; // TODO: merge into options?
 	SdbList *ns;
-	SdbList *hooks;
 	ut32 depth;
 	bool timestamped;
 } Sdb;
@@ -110,14 +111,12 @@ RZ_API void sdb_drain(Sdb *, Sdb *);
 RZ_API void sdb_copy(Sdb *src, Sdb *dst);
 
 RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem);
-RZ_API bool sdb_dump_hasnext(Sdb *s);
 
-typedef bool (*SdbForeachCallback)(void *user, const char *k, const char *v);
-RZ_API bool sdb_foreach(Sdb *s, SdbForeachCallback cb, void *user);
-RZ_API SdbList *sdb_foreach_list(Sdb *s, bool sorted);
-RZ_API SdbList *sdb_foreach_list_filter_user(Sdb *s, SdbForeachCallback filter, bool sorted, void *user);
-RZ_API SdbList *sdb_foreach_list_filter(Sdb *s, SdbForeachCallback filter, bool sorted);
-RZ_API SdbList *sdb_foreach_match(Sdb *s, const char *expr, bool sorted);
+typedef bool (*SdbForeachCallback)(void *user, const SdbKv *kv);
+RZ_API bool sdb_foreach(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback cb, RZ_NULLABLE void *user);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items(RZ_NONNULL Sdb *s, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_filter(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback filter, RZ_NULLABLE void *user, bool sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *sdb_get_items_match(RZ_NONNULL Sdb *s, RZ_NONNULL const char *expr, bool sorted);
 
 RZ_API int sdb_query(Sdb *s, const char *cmd);
 RZ_API int sdb_queryf(Sdb *s, const char *fmt, ...);
@@ -129,7 +128,6 @@ RZ_API bool sdb_exists(Sdb *, const char *key);
 RZ_API bool sdb_remove(Sdb *, const char *key, ut32 cas);
 RZ_API int sdb_unset(Sdb *, const char *key, ut32 cas);
 RZ_API int sdb_unset_like(Sdb *s, const char *k);
-RZ_API char **sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb);
 
 // diffing
 typedef struct sdb_diff_t {
@@ -169,7 +167,7 @@ RZ_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
 RZ_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas);
 RZ_API int sdb_add(Sdb *s, const char *key, const char *val, ut32 cas);
 RZ_API bool sdb_sync(Sdb *);
-RZ_API void sdbkv_free(SdbKv *kv);
+RZ_API void sdbkv_free(RZ_NULLABLE SdbKv *kv);
 
 /* num.c */
 RZ_API bool sdb_num_exists(Sdb *, const char *key);
@@ -199,9 +197,8 @@ RZ_API bool sdb_text_load_buf(Sdb *s, char *buf, size_t sz);
 RZ_API bool sdb_text_load(Sdb *s, const char *file);
 
 /* iterate */
-RZ_API void sdb_dump_begin(Sdb *s);
-RZ_API SdbKv *sdb_dump_next(Sdb *s);
-RZ_API bool sdb_dump_dupnext(Sdb *s, char *key, char **value, int *_vlen);
+RZ_API void sdb_dump_begin(RZ_NONNULL Sdb *s);
+RZ_API bool sdb_dump_next(RZ_NONNULL Sdb *s, RZ_OUT RZ_NONNULL SdbKv *kv);
 
 /* numeric */
 RZ_API char *sdb_itoa(ut64 n, char *s, int base);
@@ -299,12 +296,6 @@ RZ_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas);
 RZ_API char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas);
 RZ_API char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas);
 
-typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
-
-RZ_API bool sdb_hook(Sdb *s, SdbHook cb, void *user);
-RZ_API bool sdb_unhook(Sdb *s, SdbHook h);
-RZ_API int sdb_hook_call(Sdb *s, const char *k, const char *v);
-RZ_API void sdb_hook_free(Sdb *s);
 /* Util.c */
 RZ_API int sdb_isnum(const char *s);
 RZ_API bool sdb_isempty(Sdb *s);

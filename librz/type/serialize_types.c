@@ -319,10 +319,10 @@ error:
 
 bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 	rz_return_val_if_fail(typedb && sdb, false);
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, false);
-	ls_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		TypeFormatPair *tpair = NULL;
 		if (!strcmp(sdbkv_value(kv), "struct")) {
 			tpair = get_struct_type(typedb, sdb, sdbkv_key(kv));
@@ -351,7 +351,7 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 		}
 		free(tpair);
 	}
-	ls_free(l);
+	rz_pvector_free(items);
 	return true;
 }
 

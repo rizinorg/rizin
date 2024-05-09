@@ -140,7 +140,6 @@ static void synchronize(RZ_UNUSED int sig) {
 
 static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 	const char *expgrep) {
-	char *v, k[SDB_CDB_MAX_KEY] = { 0 };
 	// local db beacuse is readonly and we dont need to finalize in case of ^C
 	Sdb *db = sdb_new(NULL, dbname, 0);
 	if (!db) {
@@ -148,9 +147,11 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 	}
 	sdb_config(db, options);
 	sdb_dump_begin(db);
-	while (sdb_dump_dupnext(db, k, &v, NULL)) {
+	SdbKv it = { 0 };
+	while (sdb_dump_next(db, &it)) {
+		const char *k = sdbkv_key(&it);
+		const char *v = sdbkv_value(&it);
 		if (grep && !strstr(k, expgrep) && !strstr(v, expgrep)) {
-			free(v);
 			continue;
 		}
 		switch (fmt) {
@@ -161,7 +162,6 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 			printf("%s=%s\n", k, v);
 			break;
 		}
-		free(v);
 	}
 	switch (fmt) {
 	case MODE_ZERO:

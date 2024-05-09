@@ -83,29 +83,33 @@ RZ_API int rz_core_task_running_tasks_count(RzCoreTaskScheduler *scheduler) {
 	return count;
 }
 
-static void task_join(RzCoreTask *task) {
+static bool task_join(RzCoreTask *task) {
 	RzThreadSemaphore *sem = task->running_sem;
 	if (!sem) {
-		return;
+		return false;
 	}
 
 	rz_th_sem_wait(sem);
 	rz_th_sem_post(sem);
+	return true;
 }
 
-RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id) {
+RZ_API bool rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id) {
+	bool ret = true;
 	if (current && id == current->id) {
-		return;
+		return false;
 	}
 	if (id >= 0) {
 		RzCoreTask *task = rz_core_task_get_incref(scheduler, id);
 		if (!task) {
-			return;
+			return false;
 		}
 		if (current) {
 			rz_core_task_sleep_begin(current);
 		}
-		task_join(task);
+		if (!task_join(task)) {
+			ret = false;
+		}
 		if (current) {
 			rz_core_task_sleep_end(current);
 		}
@@ -131,7 +135,9 @@ RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *curren
 			if (current) {
 				rz_core_task_sleep_begin(current);
 			}
-			task_join(task);
+			if (!task_join(task)) {
+				ret = false;
+			}
 			if (current) {
 				rz_core_task_sleep_end(current);
 			}
@@ -139,6 +145,7 @@ RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *curren
 		}
 		rz_list_free(tasks);
 	}
+	return ret;
 }
 
 static void task_free(RzCoreTask *task) {

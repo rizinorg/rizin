@@ -184,8 +184,8 @@ RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name) {
 	return r;
 }
 
-RZ_API SdbList *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted) {
-	return sdb_foreach_list(analysis->sdb_classes, sorted);
+RZ_API RZ_OWN RzPVector /*<SdbKv *>*/ *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted) {
+	return sdb_get_items(analysis->sdb_classes, sorted);
 }
 
 RZ_API void rz_analysis_class_foreach(RzAnalysis *analysis, SdbForeachCallback cb, void *user) {
@@ -1031,14 +1031,13 @@ typedef struct {
 	const char *class_name;
 } DeleteClassCtx;
 
-static bool rz_analysis_class_base_delete_class_cb(void *user, const char *k, const char *v) {
-	(void)v;
+static bool rz_analysis_class_base_delete_class_cb(void *user, const SdbKv *kv) {
 	DeleteClassCtx *ctx = user;
-	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, k);
+	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, sdbkv_key(kv));
 	RzAnalysisBaseClass *base;
 	rz_vector_foreach (bases, base) {
 		if (base->class_name && strcmp(base->class_name, ctx->class_name) == 0) {
-			rz_analysis_class_base_delete(ctx->analysis, k, base->id);
+			rz_analysis_class_base_delete(ctx->analysis, sdbkv_key(kv), base->id);
 		}
 	}
 	rz_vector_free(bases);
@@ -1056,18 +1055,17 @@ typedef struct {
 	const char *class_name_new;
 } RenameClassCtx;
 
-static bool rz_analysis_class_base_rename_class_cb(void *user, const char *k, const char *v) {
-	(void)v;
+static bool rz_analysis_class_base_rename_class_cb(void *user, const SdbKv *kv) {
 	RenameClassCtx *ctx = user;
-	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, k);
+	RzVector *bases = rz_analysis_class_base_get_all(ctx->analysis, sdbkv_key(kv));
 	RzAnalysisBaseClass *base;
 	rz_vector_foreach (bases, base) {
 		if (base->class_name && strcmp(base->class_name, ctx->class_name_old) == 0) {
-			rz_analysis_class_base_set_raw(ctx->analysis, k, base, ctx->class_name_new);
+			rz_analysis_class_base_set_raw(ctx->analysis, sdbkv_key(kv), base, ctx->class_name_new);
 		}
 	}
 	rz_vector_free(bases);
-	return 1;
+	return true;
 }
 
 static void rz_analysis_class_base_rename_class(RzAnalysis *analysis, const char *class_name_old, const char *class_name_new) {
@@ -1279,21 +1277,19 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 	if (!class_graph) {
 		return NULL;
 	}
-	SdbList *classes = rz_analysis_class_get_all(analysis, true);
+	RzPVector *classes = rz_analysis_class_get_all(analysis, true);
 	if (!classes) {
 		rz_graph_free(class_graph);
 		return NULL;
 	}
 	HtSP /*<char *name, RzGraphNode *node>*/ *hashmap = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!hashmap) {
-		rz_graph_free(class_graph);
-		ls_free(classes);
-		return NULL;
+		goto failure;
 	}
-	SdbListIter *iter;
-	SdbKv *kv;
+	void **iter;
 	// Traverse each class and create a node and edges
-	ls_foreach (classes, iter, kv) {
+	rz_pvector_foreach (classes, iter) {
+		SdbKv *kv = *iter;
 		const char *name = sdbkv_key(kv);
 		// create nodes
 		RzGraphNode *curr_node = ht_sp_find(hashmap, name, NULL);
@@ -1322,12 +1318,12 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 		}
 		rz_vector_free(bases);
 	}
-	ls_free(classes);
+	rz_pvector_free(classes);
 	ht_sp_free(hashmap);
 	return class_graph;
 
 failure:
-	ls_free(classes);
+	rz_pvector_free(classes);
 	ht_sp_free(hashmap);
 	rz_graph_free(class_graph);
 	return NULL;
