@@ -4,9 +4,11 @@
 
 #include <rz_types.h>
 
-#include "pic_pic18.h"
+#include "pic18.h"
 
-// PIC18CXXX instruction set
+/**
+ * \file PIC18CXXX instruction set
+ */
 
 // instruction classification according to the argument types
 
@@ -373,15 +375,14 @@ const char *pic18_regname(size_t index) {
 	return NULL;
 }
 
-const char *pic18_regname_extra(size_t index, char *regname) {
+const char *pic18_regname_extra(size_t index) {
 	if (index <= 0xff) {
 		return pic18_regname(index);
 	}
 	if (index >= 0xf80 && index <= 0xfff) {
 		return pic18_regname(index % 0x100);
 	}
-	sprintf(regname, "0x%zx", index);
-	return regname;
+	return NULL;
 }
 
 #define STATUS_BIT_IMPL(DECL, X) \
@@ -408,8 +409,9 @@ static const char *rcon_bits[] = {
 	"pd",
 	"to",
 	"ri",
-	[6] = "lwrt",
-	[7] = "ipen",
+	NULL,
+	"lwrt",
+	"ipen",
 };
 
 static const char *intcon_bits[] = {
@@ -553,11 +555,17 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 		rz_strf(op->operands, "0x%x, %d", op->k << 1, op->s);
 		break;
 	case SD_T: {
-		char s[16];
-		char d[16];
-		rz_strf(op->operands, "%s, %s",
-			pic18_regname_extra(op->s, s),
-			pic18_regname_extra(op->d, d));
+		const char *rs = pic18_regname_extra(op->s);
+		const char *rd = pic18_regname_extra(op->d);
+		if (rs && rd) {
+			rz_strf(op->operands, "%s, %s", rs, rd);
+		} else if (rs) {
+			rz_strf(op->operands, "%s, 0x%x", rs, op->d);
+		} else if (rd) {
+			rz_strf(op->operands, "0x%x, %s", op->s, rd);
+		} else {
+			rz_strf(op->operands, "0x%x, 0x%x", op->s, op->d);
+		}
 		break;
 	}
 	case S_T:
@@ -572,7 +580,7 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 	return true;
 }
 
-int pic_pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
+int pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
 	asm_op->size = 2;
 	Pic18Op op = { 0 };
 	if (!pic18_disasm_op(&op, a->pc, b, blen) ||

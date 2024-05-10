@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2015-2018 courk <courk@courk.cc>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "pic_pic18.h"
+#include "pic18.h"
 #include "pic18_esil.inc"
 
 typedef struct {
@@ -24,14 +24,14 @@ typedef struct {
 
 #include "pic18_il.inc"
 
-static void pic18_cond_branch(RzAnalysisOp *aop, ut64 addr, const ut8 *buf) {
+static void pic18_cond_branch(RzAnalysisOp *aop, Pic18Op *op) {
 	aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-	aop->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
-	aop->fail = addr + aop->size;
+	aop->jump = op->addr + 2 + 2 * op->n;
+	aop->fail = op->addr + aop->size;
 	aop->cycles = 2;
 }
 
-static int analysis_pic18_op(
+int pic18_op(
 	RzAnalysis *analysis, RzAnalysisOp *aop, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 
@@ -64,28 +64,28 @@ static int analysis_pic18_op(
 		aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
 	case PIC18_OPCODE_BZ: // bz
-		pic18_cond_branch(aop, addr, buf);
+		pic18_cond_branch(aop, &op);
 		break;
 	case PIC18_OPCODE_BNZ: // bnz
-		pic18_cond_branch(aop, addr, buf);
+		pic18_cond_branch(aop, &op);
 		break;
 	case PIC18_OPCODE_BNC: // bnc
-		pic18_cond_branch(aop, addr, buf);
+		pic18_cond_branch(aop, &op);
 		break;
 	case PIC18_OPCODE_BOV: // bov
-		pic18_cond_branch(aop, addr, buf);
+		pic18_cond_branch(aop, &op);
 		break;
 	case PIC18_OPCODE_BNOV: // bnov
-		pic18_cond_branch(aop, addr, buf);
+		pic18_cond_branch(aop, &op);
 		break;
 	case PIC18_OPCODE_BN: // bn
-		pic18_cond_branch(aop, addr, buf);
+		pic18_cond_branch(aop, &op);
 		break;
 	case PIC18_OPCODE_BNN: // bnn
-		pic18_cond_branch(aop, addr, buf);
+		pic18_cond_branch(aop, &op);
 		break;
 	case PIC18_OPCODE_BC: // bc
-		pic18_cond_branch(aop, addr, buf);
+		pic18_cond_branch(aop, &op);
 		break;
 	case PIC18_OPCODE_GOTO: // goto
 		aop->cycles = 2;
@@ -257,7 +257,7 @@ err:
 	return aop->size;
 }
 
-static char *analysis_pic_pic18_get_reg_profile(RzAnalysis *esil) {
+char *pic18_get_reg_profile(RzAnalysis *esil) {
 	const char *p =
 		"#pc lives in nowhere actually\n"
 		"=PC	pc\n"

@@ -5,14 +5,8 @@
 
 #include <rz_types.h>
 #include <rz_analysis.h>
-#include "../isa/pic/pic_pic18.h"
-
-typedef struct {
-	RzIODesc *mem_sram;
-	RzIODesc *mem_stack;
-	bool init_done;
-	HtSU *pic18_mm;
-} PicContext;
+#include "../isa/pic/pic18.h"
+#include "../isa/pic/pic16.h"
 
 static bool pic_init(void **user) {
 	PicContext *ctx = RZ_NEW0(PicContext);
@@ -42,57 +36,42 @@ static bool pic_fini(void *user) {
 	return true;
 }
 
-#include "pic/pic_midrange_analysis.inc"
-#include "pic/pic18_analysis.inc"
-
 static int analysis_pic_op(
 	RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) ||
-		RZ_STR_EQ(analysis->cpu, "pic") ||
-		RZ_STR_EQ(analysis->cpu, "pic18")) {
-		return analysis_pic18_op(analysis, op, addr, buf, len, mask);
+	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic18(analysis->cpu)) {
+		return pic18_op(analysis, op, addr, buf, len, mask);
 	}
 
-	if (RZ_STR_EQ(analysis->cpu, "baseline") ||
-		RZ_STR_EQ(analysis->cpu, "midrange")) {
-		return analysis_pic_midrange_op(analysis, op, addr, buf, len, mask);
+	if (is_pic14_or_pic16(analysis->cpu)) {
+		return pic16_op(analysis, op, addr, buf, len, mask);
 	}
 	return -1;
 }
 
 static char *analysis_pic_get_reg_profile(RzAnalysis *analysis) {
-	if (RZ_STR_ISEMPTY(analysis->cpu) ||
-		RZ_STR_EQ(analysis->cpu, "pic") ||
-		RZ_STR_EQ(analysis->cpu, "pic18")) {
-		return analysis_pic_pic18_get_reg_profile(analysis);
+	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic18(analysis->cpu)) {
+		return pic18_get_reg_profile(analysis);
 	}
 
-	if (RZ_STR_EQ(analysis->cpu, "baseline") ||
-		RZ_STR_EQ(analysis->cpu, "midrange")) {
-		return analysis_pic_midrange_get_reg_profile(analysis);
+	if (is_pic14_or_pic16(analysis->cpu)) {
+		return pic16_get_reg_profile(analysis);
 	}
 	return NULL;
 }
 
-static RzAnalysisILConfig *pic_il_config(RzAnalysis *a) {
-	if (a->cpu && strcasecmp(a->cpu, "baseline") == 0) {
-		// TODO: We are using the midrange il config as the baseline
-		return pic_midrange_il_config(a);
+static RzAnalysisILConfig *pic_il_config(RzAnalysis *analysis) {
+	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic18(analysis->cpu)) {
+		return pic18_il_config(analysis);
 	}
-	if (a->cpu && strcasecmp(a->cpu, "midrange") == 0) {
-		return pic_midrange_il_config(a);
-	}
-	if (a->cpu && (strcasecmp(a->cpu, "pic18") == 0 || RZ_STR_EQ(a->cpu, "pic"))) {
-		return pic18_il_config(a);
+	if (is_pic14_or_pic16(analysis->cpu)) {
+		return pic16_il_config(analysis);
 	}
 	return NULL;
 }
 
-static int pic_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
-	if (RZ_STR_ISEMPTY(a->cpu) ||
-		RZ_STR_EQ(a->cpu, "pic") ||
-		RZ_STR_EQ(a->cpu, "pic18")) {
+static int pic_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+	if (RZ_STR_ISEMPTY(analysis->cpu) || is_pic18(analysis->cpu)) {
 		switch (query) {
 		case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE: return 2;
 		case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE: return 4;
@@ -103,13 +82,12 @@ static int pic_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 		}
 	}
 
-	if (RZ_STR_EQ(a->cpu, "baseline") ||
-		RZ_STR_EQ(a->cpu, "midrange")) {
+	if (is_pic14_or_pic16(analysis->cpu)) {
 		switch (query) {
 		case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE: return 2;
 		case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE: return 2;
-		case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN: return 2;
-		case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN: return 2;
+		case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN: return 1;
+		case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN: return 1;
 		case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS: return 1;
 		default: return -1;
 		}

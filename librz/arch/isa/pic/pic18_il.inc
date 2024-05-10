@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il.h>
+#include <rz_il/rz_il_opbuilder_begin.h>
+#include "pic_il.inc"
 
 #define U24(x) UN(24, x)
 static RzILOpPure *varg_mm(Pic18ILContext *ctx, const char *v, ut8 bank);
@@ -342,8 +344,8 @@ static RzILOpEffect *load_shadows_opt(Pic18ILContext *ctx) {
 static RzILOpEffect *op_call(Pic18ILContext *ctx) {
 	return SEQ3(
 		SETG("tos", UN(24, PC + 4)),
-		JMP(UN(24, K << 1)),
-		load_shadows_opt(ctx));
+		load_shadows_opt(ctx),
+		JMP(UN(24, K << 1)));
 }
 
 static RzILOpEffect *op_and(Pic18ILContext *ctx, const char *dst,
@@ -486,12 +488,23 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 	case PIC18_OPCODE_MOVF:
 		return set_dest_status(ctx, VRF);
 	case PIC18_OPCODE_MOVFF: {
-		char s[16], d[16];
-		const char *rs = pic18_regname_extra(ctx->op->s, s);
-		const char *rd = pic18_regname_extra(ctx->op->d, d);
-		return setg_mm(ctx, rd,
-			varg_mm(ctx, rs, 0),
-			0);
+		const char *rs = pic18_regname_extra(ctx->op->s);
+		const char *rd = pic18_regname_extra(ctx->op->d);
+		if (rs && rd) {
+			return setg_mm(ctx, rd,
+				varg_mm(ctx, rs, 0),
+				0);
+		} else if (rs) {
+			return STORE(U24(ctx->op->d),
+				varg_mm(ctx, rs, 0));
+		} else if (rd) {
+			return setg_mm(ctx, rd,
+				LOAD(U24(ctx->op->s)),
+				0);
+		} else {
+			return STORE(U24(ctx->op->d),
+				LOAD(U24(ctx->op->s)));
+		}
 	}
 	case PIC18_OPCODE_MOVLB:
 		return SETG("bsr", LOGOR(U8(K), LOGAND(VARG("bsr"), U8(0xf0))));
@@ -659,9 +672,11 @@ static const char *pic18_reg_bindings[] = {
 	NULL
 };
 
-static RzAnalysisILConfig *pic18_il_config(
+RzAnalysisILConfig *pic18_il_config(
 	RZ_NONNULL RzAnalysis *analysis) {
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(24, false, 24);
 	cfg->reg_bindings = pic18_reg_bindings;
 	return cfg;
 }
+
+#include <rz_il/rz_il_opbuilder_end.h>
