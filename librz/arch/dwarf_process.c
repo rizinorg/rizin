@@ -1501,8 +1501,8 @@ static bool function_children_parse(
 				ctx->analysis->typedb, v.prefer_name, rz_type_clone(v.type));
 			rz_type_callable_arg_add(callable, arg);
 		}
-		rz_vector_push(&fn->variables, &v);
-		ht_up_insert(ctx->analysis->debug_info->variable_by_offset, v.offset, &v);
+		RzAnalysisDwarfVariable *ptr = rz_vector_push(&fn->variables, &v);
+		ht_up_insert(ctx->analysis->debug_info->variable_by_offset, v.offset, ptr);
 		continue;
 	loop_end:
 		variable_fini(&v);
