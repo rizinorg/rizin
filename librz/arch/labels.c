@@ -23,11 +23,11 @@ RZ_API bool rz_analysis_function_set_label(RzAnalysisFunction *fcn, const char *
 		return false;
 	}
 	char *n = strdup(name);
-	if (!ht_up_insert(fcn->labels, addr, n)) {
+	if (!ht_up_insert(fcn->labels, addr, n, NULL)) {
 		free(n);
 		return false;
 	}
-	ht_sp_insert(fcn->label_addrs, name, ut64_new(addr));
+	ht_sp_insert(fcn->label_addrs, name, ut64_new(addr), NULL);
 	return true;
 }
 

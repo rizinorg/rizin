@@ -37,7 +37,7 @@ static bool add_dt_dynamic_entry(RzBinElfDtDynamic *ptr, ut64 key, ut64 info) {
 	if (key == DT_NEEDED) {
 		return !!rz_vector_push(&ptr->dt_needed, &info);
 	} else {
-		return ht_uu_insert(ptr->info, key, info);
+		return ht_uu_insert(ptr->info, key, info, NULL);
 	}
 }
 

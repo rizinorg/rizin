@@ -51,7 +51,7 @@ RZ_API void rz_il_validate_global_context_add_var(RzILValidateGlobalContext *ctx
 		return;
 	}
 	*hts = sort;
-	ht_sp_update(ctx->global_vars, name, hts);
+	ht_sp_update(ctx->global_vars, name, hts, NULL);
 }
 
 /**
@@ -59,7 +59,7 @@ RZ_API void rz_il_validate_global_context_add_var(RzILValidateGlobalContext *ctx
  */
 RZ_API void rz_il_validate_global_context_add_mem(RzILValidateGlobalContext *ctx, RzILMemIndex idx, ut32 key_len, ut32 val_len) {
 	rz_return_if_fail(ctx && key_len && val_len);
-	ht_uu_update(ctx->mems, idx, ((ut64)key_len << 32) | (ut64)val_len);
+	ht_uu_update(ctx->mems, idx, ((ut64)key_len << 32) | (ut64)val_len, NULL);
 }
 
 /**
@@ -141,7 +141,7 @@ static bool local_var_copy_known_cb(RZ_NONNULL void *user, const char *k, const 
 		return false;
 	}
 	*sort = *(RzILSortPure *)v;
-	ht_sp_update(dst->local_vars_known, k, sort);
+	ht_sp_update(dst->local_vars_known, k, sort, NULL);
 	return true;
 }
 
@@ -150,7 +150,7 @@ static bool local_var_copy_avail_cb(RZ_NONNULL void *user, const char *k, const 
 	RzILSortPure *sort = ht_sp_find(dst->local_vars_known, k, NULL);
 	// known is superset of avail, so we can assert this:
 	rz_return_val_if_fail(sort && rz_il_sort_pure_eq(*sort, *(RzILSortPure *)v), false);
-	ht_sp_update(dst->local_vars_available, k, sort);
+	ht_sp_update(dst->local_vars_available, k, sort, NULL);
 	return true;
 }
 
@@ -193,7 +193,7 @@ static bool local_var_meet_known_cb(RZ_NONNULL void *user, const char *k, const 
 			return false;
 		}
 		*dst_sort = src_sort;
-		ht_sp_update(meet->dst->local_vars_known, k, dst_sort);
+		ht_sp_update(meet->dst->local_vars_known, k, dst_sort, NULL);
 	}
 	return true;
 }
@@ -939,9 +939,9 @@ VALIDATOR_EFFECT(set) {
 				return false;
 			}
 			*sort = sx;
-			ht_sp_update(ctx->local_vars_known, args->v, sort);
+			ht_sp_update(ctx->local_vars_known, args->v, sort, NULL);
 		}
-		ht_sp_update(ctx->local_vars_available, args->v, sort);
+		ht_sp_update(ctx->local_vars_available, args->v, sort, NULL);
 	}
 	*type_out = RZ_IL_TYPE_EFFECT_DATA;
 	return true;

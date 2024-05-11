@@ -372,7 +372,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		RzBinSymbol *s = bin_symbol_from_symbol(element, sym);
 		if (s) {
 			rz_pvector_push(res, s);
-			ht_uu_insert(hash, sym->paddr, 1);
+			ht_uu_insert(hash, sym->paddr, 1, NULL);
 		}
 	}
 	for (i = 0; i < element->hdr->n_symbols; i++) {

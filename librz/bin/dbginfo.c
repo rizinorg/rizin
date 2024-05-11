@@ -291,7 +291,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 	} else {
 		content = rz_file_slurp(file, &sz);
 		if (!content) {
-			ht_sp_insert(cache->items, file, NULL);
+			ht_sp_insert(cache->items, file, NULL, NULL);
 			return NULL;
 		}
 		item = RZ_NEW0(RzBinSourceLineCacheItem);
@@ -304,7 +304,7 @@ static const char *read_line(const char *file, int line, RzBinSourceLineCache *c
 		if (!item->line_by_ln) {
 			goto err;
 		}
-		ht_sp_update(cache->items, file, item);
+		ht_sp_update(cache->items, file, item, NULL);
 
 		rz_pvector_reserve(item->line_by_ln, line);
 		cache_lines(item);

@@ -16,14 +16,10 @@ RZ_API const char *rz_str_constpool_get(RzStrConstPool *pool, const char *str) {
 	if (!str) {
 		return NULL;
 	}
-	HtSPKv *kv = ht_sp_find_kv(pool->ht, str, NULL);
-	if (kv) {
-		return kv->key;
+	HtSPStatus status;
+	ht_sp_insert(pool->ht, str, NULL, &status);
+	if (status.code == HT_RC_ERROR) {
+		return NULL;
 	}
-	ht_sp_insert(pool->ht, str, NULL);
-	kv = ht_sp_find_kv(pool->ht, str, NULL);
-	if (kv) {
-		return kv->key;
-	}
-	return NULL;
+	return status.kv->key;
 }

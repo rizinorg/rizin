@@ -96,7 +96,7 @@ static void add_reg_change(RzAnalysisEsilTrace *trace, int idx, RzRegItem *ri, u
 			RZ_LOG_ERROR("Creating a register vector.\n");
 			return;
 		}
-		ht_up_insert(trace->registers, addr, vreg);
+		ht_up_insert(trace->registers, addr, vreg, NULL);
 	}
 	RzAnalysisEsilRegChange reg = { idx, data };
 	rz_vector_push(vreg, &reg);
@@ -110,7 +110,7 @@ static void add_mem_change(RzAnalysisEsilTrace *trace, int idx, ut64 addr, ut8 d
 			RZ_LOG_ERROR("Creating a memory vector.\n");
 			return;
 		}
-		ht_up_insert(trace->memory, addr, vmem);
+		ht_up_insert(trace->memory, addr, vmem, NULL);
 	}
 	RzAnalysisEsilMemChange mem = { idx, data };
 	rz_vector_push(vmem, &mem);

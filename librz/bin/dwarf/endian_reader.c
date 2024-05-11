@@ -135,7 +135,7 @@ static inline void add_relocations(
 			continue;
 		}
 		ut64 offset = reloc->vaddr - section->vaddr;
-		ht_up_insert(relocations, offset, reloc);
+		ht_up_insert(relocations, offset, reloc, NULL);
 	}
 }
 

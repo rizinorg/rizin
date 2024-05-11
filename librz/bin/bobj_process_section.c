@@ -15,7 +15,7 @@ static void process_handle_section(RzBinSection *section, RzBinObject *o, HtSP *
 
 	// check if section name was already found, then rename it.
 	if (!ht_sp_find(filter_db, section->name, NULL)) {
-		ht_sp_insert(filter_db, section->name, section);
+		ht_sp_insert(filter_db, section->name, section, NULL);
 		return;
 	}
 

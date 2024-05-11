@@ -219,7 +219,7 @@ RZ_API bool rz_debug_session_add_reg_change(RzDebugSession *session, int arena, 
 			eprintf("Error: creating a register vector.\n");
 			return false;
 		}
-		ht_up_insert(session->registers, offset | (arena << 16), vreg);
+		ht_up_insert(session->registers, offset | (arena << 16), vreg, NULL);
 	}
 	RzDebugChangeReg reg = { session->cnum, data };
 	rz_vector_push(vreg, &reg);
@@ -234,7 +234,7 @@ RZ_API bool rz_debug_session_add_mem_change(RzDebugSession *session, ut64 addr, 
 			eprintf("Error: creating a memory vector.\n");
 			return false;
 		}
-		ht_up_insert(session->memory, addr, vmem);
+		ht_up_insert(session->memory, addr, vmem, NULL);
 	}
 	RzDebugChangeMem mem = { session->cnum, data };
 	rz_vector_push(vmem, &mem);
@@ -482,7 +482,7 @@ static bool deserialize_memory_cb(void *user, const SdbKv *kv) {
 		rz_json_free(reg_json);
 		return false;
 	}
-	ht_up_insert(memory, addr, vmem);
+	ht_up_insert(memory, addr, vmem, NULL);
 
 	// Extract <RzDebugChangeMem>'s into the new vector
 	for (child = reg_json->children.first; child; child = child->next) {
@@ -531,7 +531,7 @@ static bool deserialize_registers_cb(void *user, const SdbKv *kv) {
 		free(json_str);
 		return true;
 	}
-	ht_up_insert(registers, sdb_atoi(sdbkv_key(kv)), vreg);
+	ht_up_insert(registers, sdb_atoi(sdbkv_key(kv)), vreg, NULL);
 
 	// Extract <RzDebugChangeReg>'s into the new vector
 	for (child = reg_json->children.first; child; child = child->next) {

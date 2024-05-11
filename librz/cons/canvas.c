@@ -41,7 +41,7 @@ static void __stampAttribute(RzConsCanvas *c, int loc, int length) {
 		return;
 	}
 	int i;
-	ht_up_update(c->attrs, loc, (void *)c->attr);
+	ht_up_update(c->attrs, loc, (void *)c->attr, NULL);
 	for (i = 1; i < length; i++) {
 		ht_up_delete(c->attrs, loc + i);
 	}

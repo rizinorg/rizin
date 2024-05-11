@@ -93,7 +93,7 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 			if (!s->line || !s->file) {
 				continue;
 			}
-			ht_sp_insert(files, s->file, NULL);
+			ht_sp_insert(files, s->file, NULL, NULL);
 		}
 		// sort them alphabetically
 		RzPVector sorter;

@@ -45,7 +45,7 @@ static RzVector /*<RzEventCallbackHook>*/ *get_cbs(RzEvent *ev, int type) {
 	if (!cbs) {
 		cbs = rz_vector_new(sizeof(RzEventCallbackHook), NULL, NULL);
 		if (cbs) {
-			ht_up_insert(ev->callbacks, (ut64)type, cbs);
+			ht_up_insert(ev->callbacks, (ut64)type, cbs, NULL);
 		}
 	}
 	return cbs;

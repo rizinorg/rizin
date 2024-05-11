@@ -257,7 +257,7 @@ static bool compute_symbols_from_segment(ELFOBJ *bin, RzVector /*<RzBinElfSymbol
 		return true;
 	}
 
-	if (!ht_uu_insert(set, segment->offset, 1ULL)) {
+	if (!ht_uu_insert(set, segment->offset, 1ULL, NULL)) {
 		return false;
 	}
 
@@ -407,7 +407,7 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 
 	RzBinElfSymbol *sym;
 	rz_vector_foreach (result, sym) {
-		ht_sp_insert(name_set, sym->name, sym);
+		ht_sp_insert(name_set, sym->name, sym, NULL);
 	}
 
 	rz_vector_foreach (debug_symbols, sym) {

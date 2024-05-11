@@ -54,7 +54,7 @@ RZ_API bool rz_serialize_config_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *co
 			return false;
 		}
 		for (; *exclude; exclude++) {
-			ht_sp_insert(ctx.exclude, *exclude, NULL);
+			ht_sp_insert(ctx.exclude, *exclude, NULL, NULL);
 		}
 	}
 	sdb_foreach(db, load_config_cb, &ctx);

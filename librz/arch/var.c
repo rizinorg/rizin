@@ -876,7 +876,7 @@ RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64
 		if (!inst_accesses) {
 			return;
 		}
-		ht_up_insert(var->fcn->inst_vars, (ut64)offset, inst_accesses);
+		ht_up_insert(var->fcn->inst_vars, (ut64)offset, inst_accesses, NULL);
 	}
 	if (!rz_pvector_contains(inst_accesses, var)) {
 		rz_pvector_push(inst_accesses, var);

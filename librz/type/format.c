@@ -1912,7 +1912,7 @@ RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *nam
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
 	rz_return_if_fail(typedb && name && fmt);
 	// TODO: We should check if the file format is valid (e.g. syntax) before storing it
-	ht_ss_insert(typedb->formats, name, strdup(fmt));
+	ht_ss_insert(typedb->formats, name, strdup(fmt), NULL);
 }
 
 static bool format_collect_cb(void *user, const char *k, const char *v) {

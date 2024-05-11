@@ -930,7 +930,7 @@ static HtPP *compute_vertical_nodes(const RzAGraph *g) {
 
 			if (!Ln) {
 				RzList *vert = rz_list_new();
-				ht_pp_insert(res, gn, vert);
+				ht_pp_insert(res, gn, vert, NULL);
 				if (an->is_dummy) {
 					RzGraphNode *next = gn;
 					const RzANode *anext = get_anode(next);
@@ -1113,7 +1113,7 @@ static void adjust_class(const RzAGraph *g, int is_left, RzList /*<RzGraphNode *
 		}
 		const int old_val = hash_get_int(res, gn);
 		const int new_val = is_left ? old_val + dist : old_val - dist;
-		ht_pu_update(res, gn, (ut64)(size_t)new_val);
+		ht_pu_update(res, gn, (ut64)(size_t)new_val, NULL);
 	}
 }
 
@@ -1173,7 +1173,7 @@ static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, H
 		if (!(ak = gk->data)) {
 			break;
 		}
-		ht_pu_update(res, gk, (ut64)(size_t)p);
+		ht_pu_update(res, gk, (ut64)(size_t)p, NULL);
 		set_u_add(placed, (ut64)gk);
 	}
 }
@@ -1312,12 +1312,12 @@ static void adjust_directions(const RzAGraph *g, int i, int from_up, HtPU *D, Ht
 				}
 			}
 			if (p) {
-				ht_pu_update(D, vm, (ut64)(size_t)from_up);
+				ht_pu_update(D, vm, (ut64)(size_t)from_up, NULL);
 				for (k = vma->pos_in_layer + 1; k < vpa->pos_in_layer; k++) {
 					const RzGraphNode *v = g->layers[vma->layer].nodes[k];
 					const RzANode *av = get_anode(v);
 					if (av && av->is_dummy) {
-						ht_pu_update(D, v, (ut64)(size_t)from_up);
+						ht_pu_update(D, v, (ut64)(size_t)from_up, NULL);
 					}
 				}
 			}
@@ -1594,7 +1594,7 @@ static void original_traverse_l(const RzAGraph *g, HtPU *D, HtPU *P, int from_up
 				va = bma->pos_in_layer + 1;
 				vr = bpa->pos_in_layer;
 				place_sequence(g, i, bm, bp, from_up, va, vr);
-				ht_pu_update(P, bm, 1);
+				ht_pu_update(P, bm, 1, NULL);
 			}
 			bm = bp;
 		}
@@ -1638,9 +1638,9 @@ static void place_original(RzAGraph *g) {
 		const RzGraphNode *right_v = get_right_dummy(g, gn);
 		const RzANode *right = get_anode(right_v);
 		if (right_v && right) {
-			ht_pu_update(D, gn, 0);
+			ht_pu_update(D, gn, 0, NULL);
 			int dt_eq = right->x - an->x == dist_nodes(g, gn, right_v);
-			ht_pu_update(P, gn, (ut64)(size_t)dt_eq);
+			ht_pu_update(P, gn, (ut64)(size_t)dt_eq, NULL);
 		}
 	}
 
@@ -3757,7 +3757,7 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 	res->shortcut_w = 0;
 	res->gnode = rz_graph_add_node(g->graph, res);
 	if (RZ_STR_ISNOTEMPTY(res->title) && !g->is_il) {
-		ht_sp_update(g->nodes, res->title, res);
+		ht_sp_update(g->nodes, res->title, res, NULL);
 		char *s, *estr, *b;
 		size_t len;
 		sdb_array_add(g->db, "agraph.nodes", res->title);
@@ -4982,7 +4982,7 @@ RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL cons
 		if (!a_node) {
 			goto failure;
 		}
-		ht_pp_insert(hashmap, node, a_node);
+		ht_pp_insert(hashmap, node, a_node, NULL);
 	}
 
 	// Traverse the nodes again, now build up the edges

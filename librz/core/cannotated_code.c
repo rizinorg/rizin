@@ -282,7 +282,7 @@ RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code) {
 				continue;
 			}
 		}
-		ht_up_update(ht, annotation->offset.offset, annotation);
+		ht_up_update(ht, annotation->offset.offset, annotation, NULL);
 	}
 	ht_up_foreach(ht, foreach_offset_annotation, code);
 	ht_up_free(ht);

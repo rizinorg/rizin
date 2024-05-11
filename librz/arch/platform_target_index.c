@@ -85,7 +85,7 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NO
 			if (comment) {
 				item->comment = comment;
 			}
-			ht_up_insert(t->platforms, address, item);
+			ht_up_insert(t->platforms, address, item, NULL);
 		}
 	}
 	return true;

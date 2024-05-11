@@ -1768,7 +1768,7 @@ static HintsAtAddr *hints_at_addr(HtUP *acc, ut64 addr) {
 	if (!h) {
 		return NULL;
 	}
-	ht_up_insert(acc, addr, h);
+	ht_up_insert(acc, addr, h, NULL);
 	return h;
 }
 

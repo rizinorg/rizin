@@ -275,7 +275,7 @@ static inline RzGraphNode *graph_add_cached(RzCore *core, HtUP *cache, RzAnalysi
 	char *title = rz_str_newf("0x%" PFMT64x, offset);
 	char *body = body_fn ? body_fn(core, offset, bb) : NULL;
 	node = rz_graph_add_node_info(graph, title, body, offset);
-	ht_up_insert(cache, offset, node);
+	ht_up_insert(cache, offset, node, NULL);
 	free(title);
 	free(body);
 	return node;
@@ -832,7 +832,7 @@ static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNod
 		// Node already added, get it.
 		return rz_graph_get_node(icfg, i);
 	}
-	ht_uu_insert(graph_idx, fcn->addr, rz_list_length(rz_graph_get_nodes(icfg)));
+	ht_uu_insert(graph_idx, fcn->addr, rz_list_length(rz_graph_get_nodes(icfg)), NULL);
 	return rz_graph_add_node_info_icfg(icfg, fcn);
 }
 
@@ -1018,7 +1018,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 		rz_vector_push(to_visit, &to);
 	}
 
-	ht_uu_insert(nodes_visited, to, to_node->idx);
+	ht_uu_insert(nodes_visited, to, to_node->idx, NULL);
 	rz_graph_add_edge(graph, rz_graph_get_node(graph, from_idx), to_node);
 	return true;
 }
@@ -1054,7 +1054,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 	RzAnalysisOp target_op = { 0 };
 	int disas_bytes = rz_analysis_op(core->analysis, &curr_op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
 	RzGraphNode *entry = add_node_info_cfg(graph, &curr_op, true);
-	ht_uu_insert(nodes_visited, addr, entry->idx);
+	ht_uu_insert(nodes_visited, addr, entry->idx, NULL);
 	rz_vector_push(to_visit, &addr);
 
 	while (rz_vector_len(to_visit) > 0) {

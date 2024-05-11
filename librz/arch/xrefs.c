@@ -96,12 +96,12 @@ static bool set_xref(HtUP *m, RzAnalysisXRef *xref, bool from2to) {
 		if (!ht) {
 			return false;
 		}
-		if (!ht_up_insert(m, key1, ht)) {
+		if (!ht_up_insert(m, key1, ht, NULL)) {
 			return false;
 		}
 	}
 	ut64 key2 = from2to ? xref->to : xref->from;
-	return ht_up_update(ht, key2, xref);
+	return ht_up_update(ht, key2, xref, NULL);
 }
 
 // Set a cross reference from FROM to TO.

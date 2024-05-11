@@ -4214,7 +4214,7 @@ void __add_menu(RzCore *core, const char *parent_name, const char *name, RzPanel
 		rz_panels_menu_item_free(item);
 		return;
 	}
-	if (!ht_sp_insert(tab->mht, mht_key, item) || !rz_pvector_push(&parent->submenus, item)) {
+	if (!ht_sp_insert(tab->mht, mht_key, item, NULL) || !rz_pvector_push(&parent->submenus, item)) {
 		rz_panels_menu_item_free(item);
 		ht_sp_delete(tab->mht, mht_key);
 	}
@@ -4945,62 +4945,62 @@ void __panels_check_stackbase(RzCore *core) {
 void __init_rotate_db(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	HtSP *db = visual->panels_root->active_tab->rotate_db;
-	ht_sp_insert(db, "pd", &__rotate_disasm_cb);
-	ht_sp_insert(db, "p==", &__rotate_entropy_h_cb);
-	ht_sp_insert(db, "p=", &__rotate_entropy_v_cb);
-	ht_sp_insert(db, "px", &__rotate_hexdump_cb);
-	ht_sp_insert(db, PANEL_CMD_REGISTERS, &__rotate_register_cb);
-	ht_sp_insert(db, "af", &__rotate_function_cb);
-	ht_sp_insert(db, PANEL_CMD_HEXDUMP, &__rotate_hexdump_cb);
+	ht_sp_insert(db, "pd", &__rotate_disasm_cb, NULL);
+	ht_sp_insert(db, "p==", &__rotate_entropy_h_cb, NULL);
+	ht_sp_insert(db, "p=", &__rotate_entropy_v_cb, NULL);
+	ht_sp_insert(db, "px", &__rotate_hexdump_cb, NULL);
+	ht_sp_insert(db, PANEL_CMD_REGISTERS, &__rotate_register_cb, NULL);
+	ht_sp_insert(db, "af", &__rotate_function_cb, NULL);
+	ht_sp_insert(db, PANEL_CMD_HEXDUMP, &__rotate_hexdump_cb, NULL);
 }
 
 void __init_sdb(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	HtSS *db = visual->panels_root->active_tab->db;
-	ht_ss_insert(db, "Symbols", "isq");
-	ht_ss_insert(db, "Stack", "px 256@r:SP");
-	ht_ss_insert(db, "Locals", "afvd");
-	ht_ss_insert(db, "Registers", PANEL_CMD_REGISTERS);
-	ht_ss_insert(db, "RegisterRefs", "drr");
-	ht_ss_insert(db, "Disassembly", "pd");
-	ht_ss_insert(db, "Disassemble Summary", "pdsf");
-	ht_ss_insert(db, "Graph", "agf");
-	ht_ss_insert(db, "Tiny Graph", "agft");
-	ht_ss_insert(db, "Info", "i");
-	ht_ss_insert(db, "Database", "k ***");
-	ht_ss_insert(db, "Console", "$console");
-	ht_ss_insert(db, "Hexdump", "xc $r*16");
-	ht_ss_insert(db, "Xrefs", "axl");
-	ht_ss_insert(db, "Functions", "afl");
-	ht_ss_insert(db, "Function Calls", "aflm");
-	ht_ss_insert(db, "Comments", "CC");
-	ht_ss_insert(db, "Entropy", "p=e 100");
-	ht_ss_insert(db, "Entropy Fire", "p==e 100");
-	ht_ss_insert(db, "DRX", "drx");
-	ht_ss_insert(db, "Sections", "iSq");
-	ht_ss_insert(db, "Segments", "iSSq");
-	ht_ss_insert(db, PANEL_TITLE_STRINGS_DATA, "izq");
-	ht_ss_insert(db, PANEL_TITLE_STRINGS_BIN, "izzq");
-	ht_ss_insert(db, "Maps", "dm");
-	ht_ss_insert(db, "Modules", "dmm");
-	ht_ss_insert(db, "Backtrace", "dbt");
-	ht_ss_insert(db, "Breakpoints", "db");
-	ht_ss_insert(db, "Imports", "iiq");
-	ht_ss_insert(db, "Clipboard", "yx");
-	ht_ss_insert(db, "New", "o");
-	ht_ss_insert(db, "Var READ address", "afvR");
-	ht_ss_insert(db, "Var WRITE address", "afvW");
-	ht_ss_insert(db, "Summary", "pdsf");
-	ht_ss_insert(db, "Classes", "icq");
-	ht_ss_insert(db, "Methods", "ic");
-	ht_ss_insert(db, "Relocs", "ir");
-	ht_ss_insert(db, "Headers", "iH");
-	ht_ss_insert(db, "File Hashes", "iT");
+	ht_ss_insert(db, "Symbols", "isq", NULL);
+	ht_ss_insert(db, "Stack", "px 256@r:SP", NULL);
+	ht_ss_insert(db, "Locals", "afvd", NULL);
+	ht_ss_insert(db, "Registers", PANEL_CMD_REGISTERS, NULL);
+	ht_ss_insert(db, "RegisterRefs", "drr", NULL);
+	ht_ss_insert(db, "Disassembly", "pd", NULL);
+	ht_ss_insert(db, "Disassemble Summary", "pdsf", NULL);
+	ht_ss_insert(db, "Graph", "agf", NULL);
+	ht_ss_insert(db, "Tiny Graph", "agft", NULL);
+	ht_ss_insert(db, "Info", "i", NULL);
+	ht_ss_insert(db, "Database", "k ***", NULL);
+	ht_ss_insert(db, "Console", "$console", NULL);
+	ht_ss_insert(db, "Hexdump", "xc $r*16", NULL);
+	ht_ss_insert(db, "Xrefs", "axl", NULL);
+	ht_ss_insert(db, "Functions", "afl", NULL);
+	ht_ss_insert(db, "Function Calls", "aflm", NULL);
+	ht_ss_insert(db, "Comments", "CC", NULL);
+	ht_ss_insert(db, "Entropy", "p=e 100", NULL);
+	ht_ss_insert(db, "Entropy Fire", "p==e 100", NULL);
+	ht_ss_insert(db, "DRX", "drx", NULL);
+	ht_ss_insert(db, "Sections", "iSq", NULL);
+	ht_ss_insert(db, "Segments", "iSSq", NULL);
+	ht_ss_insert(db, PANEL_TITLE_STRINGS_DATA, "izq", NULL);
+	ht_ss_insert(db, PANEL_TITLE_STRINGS_BIN, "izzq", NULL);
+	ht_ss_insert(db, "Maps", "dm", NULL);
+	ht_ss_insert(db, "Modules", "dmm", NULL);
+	ht_ss_insert(db, "Backtrace", "dbt", NULL);
+	ht_ss_insert(db, "Breakpoints", "db", NULL);
+	ht_ss_insert(db, "Imports", "iiq", NULL);
+	ht_ss_insert(db, "Clipboard", "yx", NULL);
+	ht_ss_insert(db, "New", "o", NULL);
+	ht_ss_insert(db, "Var READ address", "afvR", NULL);
+	ht_ss_insert(db, "Var WRITE address", "afvW", NULL);
+	ht_ss_insert(db, "Summary", "pdsf", NULL);
+	ht_ss_insert(db, "Classes", "icq", NULL);
+	ht_ss_insert(db, "Methods", "ic", NULL);
+	ht_ss_insert(db, "Relocs", "ir", NULL);
+	ht_ss_insert(db, "Headers", "iH", NULL);
+	ht_ss_insert(db, "File Hashes", "iT", NULL);
 }
 
 static bool insert_to_HtSP_cb(void *user, const char *k, const char *v) {
 	HtSP *ht = (HtSP *)user;
-	ht_sp_insert(ht, k, &__create_panel_db);
+	ht_sp_insert(ht, k, &__create_panel_db, NULL);
 	return true;
 }
 
@@ -5008,15 +5008,15 @@ void __init_almighty_db(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	HtSP *db = visual->panels_root->active_tab->almighty_db;
 	ht_ss_foreach(visual->panels_root->active_tab->db, insert_to_HtSP_cb, db);
-	ht_sp_insert(db, "Search strings in data sections", &__search_strings_data_create);
-	ht_sp_insert(db, "Search strings in the whole bin", &__search_strings_bin_create);
-	ht_sp_insert(db, "Create New", &__create_panel_input);
-	ht_sp_insert(db, "Change Command of Current Panel", &__replace_current_panel_input);
+	ht_sp_insert(db, "Search strings in data sections", &__search_strings_data_create, NULL);
+	ht_sp_insert(db, "Search strings in the whole bin", &__search_strings_bin_create, NULL);
+	ht_sp_insert(db, "Create New", &__create_panel_input, NULL);
+	ht_sp_insert(db, "Change Command of Current Panel", &__replace_current_panel_input, NULL);
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		ht_sp_insert(db, "Put Breakpoints", &__put_breakpoints_cb);
-		ht_sp_insert(db, "Continue", &__continue_almighty_cb);
-		ht_sp_insert(db, "Step", &__step_almighty_cb);
-		ht_sp_insert(db, "Step Over", &__step_over_almighty_cb);
+		ht_sp_insert(db, "Put Breakpoints", &__put_breakpoints_cb, NULL);
+		ht_sp_insert(db, "Continue", &__continue_almighty_cb, NULL);
+		ht_sp_insert(db, "Step", &__step_almighty_cb, NULL);
+		ht_sp_insert(db, "Step Over", &__step_over_almighty_cb, NULL);
 	}
 }
 

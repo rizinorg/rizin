@@ -167,7 +167,7 @@ static RzCmdDesc *create_cmd_desc(RzCmd *cmd, RzCmdDesc *parent, RzCmdDescType t
 	res->n_children = 0;
 	res->help = help ? help : &not_defined_help;
 	rz_pvector_init(&res->children, (RzPVectorFree)cmd_desc_free);
-	if (ht_insert && !ht_sp_insert(cmd->ht_cmds, name, res)) {
+	if (ht_insert && !ht_sp_insert(cmd->ht_cmds, name, res, NULL)) {
 		goto err;
 	}
 	cmd_desc_set_parent(cmd, res, parent);
@@ -1604,7 +1604,7 @@ RZ_API bool rz_cmd_macro_add(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name,
 			goto err;
 		}
 	}
-	return ht_sp_insert(cmd->macros, macro->name, macro);
+	return ht_sp_insert(cmd->macros, macro->name, macro, NULL);
 
 err:
 	macro_free(macro);

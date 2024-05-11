@@ -38,7 +38,7 @@ static st64 shared_data_read_at(SharedData *sd, ut64 addr, ut8 *buf, ut64 size) 
 
 static bool shared_ht_up_insert(SharedData *sd, const ut64 key, void *value) {
 	rz_th_lock_enter(sd->lock);
-	bool ret = ht_up_insert(sd->strings_db, key, value);
+	bool ret = ht_up_insert(sd->strings_db, key, value, NULL);
 	rz_th_lock_leave(sd->lock);
 	return ret;
 }
@@ -274,7 +274,7 @@ static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzPVecto
 		bs->paddr = rz_bin_object_v2p(o, bs->vaddr);
 		bs->string = rz_str_newf("cstr.%s", s->string);
 		rz_pvector_push(results, bs);
-		ht_up_insert(strings_db, bs->vaddr, bs);
+		ht_up_insert(strings_db, bs->vaddr, bs, NULL);
 	}
 	free(sbuf);
 }

@@ -172,57 +172,68 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 	free(ht);
 }
 
-// Increases the size of the hashtable by 2.
-static void internal_ht_grow(HtName_(Ht) *ht) {
-	HtName_(Ht) *ht2;
-	HtName_(Ht) swap;
+/**
+ * Increases the size of the hashtable by 2.
+ * Tracks change of KV \p tracked position.
+ */
+static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 	ut32 idx = next_idx(ht->prime_idx);
 	ut32 sz = compute_size(idx, ht->size * 2);
-	ut32 i;
 
-	ht2 = internal_ht_new(sz, idx, &ht->opt);
+	HtName_(Ht) *ht2 = internal_ht_new(sz, idx, &ht->opt);
 	if (!ht2) {
 		// we can't grow the ht anymore. Never mind, we'll be slower,
 		// but everything can continue to work
-		return;
+		return tracked;
 	}
 
-	for (i = 0; i < ht->size; i++) {
+	HT_(Kv) *new = NULL;
+	for (ut32 i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
 		HT_(Kv) *kv;
 		ut32 j;
 
 		BUCKET_FOREACH(ht, bt, j, kv) {
-			Ht_(insert_kv)(ht2, kv, false);
+			HT_(Status) status;
+			if (!Ht_(insert_kv)(ht2, kv, false, &status)) {
+				ht2->opt.finiKV = NULL;
+				Ht_(free)(ht2);
+				return tracked;
+			}
+			if (!new && kv == tracked) {
+				new = status.kv;
+			}
 		}
 	}
 	// And now swap the internals.
-	swap = *ht;
+	HtName_(Ht) swap = *ht;
 	*ht = *ht2;
 	*ht2 = swap;
 
 	ht2->opt.finiKV = NULL;
 	Ht_(free)(ht2);
+	return new;
 }
 
-static void check_growing(HtName_(Ht) *ht) {
+static HT_(Kv) *check_growing(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 	if (ht->count >= LOAD_FACTOR * ht->size) {
-		internal_ht_grow(ht);
+		return internal_ht_grow(ht, tracked);
 	}
+	return tracked;
 }
 
-static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_len, bool update) {
+/**
+ * \brief Get an existing KV with key \p key or allocate a new KV otherwise
+ */
+static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, RZ_NONNULL bool *exists) {
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
 	HT_(Kv) *kvtmp;
 	ut32 j;
 
 	BUCKET_FOREACH(ht, bt, j, kvtmp) {
 		if (is_kv_equal(ht, key, key_len, kvtmp)) {
-			if (update) {
-				fini_kv_pair(ht, kvtmp);
-				return kvtmp;
-			}
-			return NULL;
+			*exists = true;
+			return kvtmp;
 		}
 	}
 
@@ -234,52 +245,94 @@ static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_le
 	bt->arr = newkvarr;
 	bt->count++;
 	ht->count++;
+	*exists = false;
 	return kv_at(ht, bt, bt->count - 1);
 }
 
-RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update) {
+RZ_API int Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Status) *status) {
 	rz_return_val_if_fail(ht && kv, false);
-	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update);
+
+	bool exists;
+	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, &exists);
 	if (!kv_dst) {
+		if (status) {
+			status->kv = NULL;
+			status->code = HT_RC_ERROR;
+		}
 		return false;
 	}
-
+	if (exists && !update) {
+		if (status) {
+			status->kv = kv_dst;
+			status->code = HT_RC_EXISTING;
+		}
+		return false;
+	}
+	HtRetCode rc = HT_RC_INSERTED;
+	if (exists && update) {
+		fini_kv_pair(ht, kv_dst);
+		rc = HT_RC_UPDATED;
+	}
 	memcpy(kv_dst, kv, ht->opt.elem_size);
-	check_growing(ht);
+	kv_dst = check_growing(ht, kv_dst);
+	if (status) {
+		status->kv = kv_dst;
+		status->code = rc;
+	}
 	return true;
 }
 
-static bool insert_update(HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update) {
+static bool insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Status) *status) {
 	ut32 key_len = calcsize_key(ht, key);
-	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, update);
+	bool exists;
+	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, &exists);
 	if (!kv_dst) {
+		if (status) {
+			status->kv = NULL;
+			status->code = HT_RC_ERROR;
+		}
 		return false;
 	}
-
+	if (exists && !update) {
+		if (status) {
+			status->kv = kv_dst;
+			status->code = HT_RC_EXISTING;
+		}
+		return false;
+	}
+	HtRetCode rc = HT_RC_INSERTED;
+	if (exists && update) {
+		fini_kv_pair(ht, kv_dst);
+		rc = HT_RC_UPDATED;
+	}
 	kv_dst->key = dupkey(ht, key);
 	kv_dst->key_len = key_len;
 	kv_dst->value = dupval(ht, value);
 	kv_dst->value_len = calcsize_val(ht, value);
-	check_growing(ht);
+	kv_dst = check_growing(ht, kv_dst);
+	if (status) {
+		status->kv = kv_dst;
+		status->code = rc;
+	}
 	return true;
 }
 
 /**
- * Inserts the key value pair \p key, \p value into the hashtable \p ht.
+ * Inserts the key value pair \p key, \p value into the hash table \p ht.
  * Doesn't allow for "update" of the value.
  */
-RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
+RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Status) *status) {
 	rz_return_val_if_fail(ht, false);
-	return insert_update(ht, key, value, false);
+	return insert_update(ht, key, value, false, status);
 }
 
 /**
- * Inserts the key value pair \p key, \p value into the hashtable \p ht.
+ * Inserts the key value pair \p key, \p value into the hash table \p ht.
  * Does allow for "update" of the value.
  */
-RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
+RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Status) *status) {
 	rz_return_val_if_fail(ht, false);
-	return insert_update(ht, key, value, true);
+	return insert_update(ht, key, value, true, status);
 }
 
 /**
@@ -295,7 +348,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 	}
 
 	// Associate the existing value with new_key
-	bool inserted = insert_update(ht, new_key, value, false);
+	bool inserted = insert_update(ht, new_key, value, false, NULL);
 	if (!inserted) {
 		return false;
 	}

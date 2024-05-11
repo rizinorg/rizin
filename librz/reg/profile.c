@@ -359,7 +359,7 @@ static void add_item_to_regset(RZ_BORROW RzReg *reg, RZ_BORROW RzRegItem *item) 
 	// Dynamically update the list of supported bit sizes
 	reg->bits |= item->size;
 	rz_list_append(reg->regset[t].regs, item);
-	ht_sp_insert(reg->regset[t].ht_regs, item->name, item);
+	ht_sp_insert(reg->regset[t].ht_regs, item->name, item, NULL);
 
 	// Update the overall type of registers into a regset
 	if (item->type == RZ_REG_TYPE_ANY) {

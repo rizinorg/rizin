@@ -169,7 +169,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			sysregitem->type = sdbkv_dup_value(kv);
 			sysregitem->comment = comment;
 
-			ht_up_insert(sysregdb->port, address, sysregitem);
+			ht_up_insert(sysregdb->port, address, sysregitem, NULL);
 		}
 	}
 	rz_pvector_free(items);

@@ -43,7 +43,7 @@
 	RZ_API bool rz_th_##name##_##op(th_ht_type(name) * ht, ktype key, vtype value) { \
 		rz_return_val_if_fail(ht && ht->table, false); \
 		rz_th_lock_enter(ht->lock); \
-		bool ret = name##_##op(ht->table, key, value); \
+		bool ret = name##_##op(ht->table, key, value, NULL); \
 		rz_th_lock_leave(ht->lock); \
 		return ret; \
 	}

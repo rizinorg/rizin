@@ -43,7 +43,7 @@ RZ_API void rz_analysis_esil_interrupt_free(RzAnalysisEsil *esil, RzAnalysisEsil
 
 RZ_API bool rz_analysis_esil_set_interrupt(RzAnalysisEsil *esil, RzAnalysisEsilInterrupt *intr) {
 	rz_return_val_if_fail(esil && esil->interrupts && intr && intr->handler && intr->handler->cb, false);
-	return ht_up_update(esil->interrupts, intr->handler->num, intr);
+	return ht_up_update(esil->interrupts, intr->handler->num, intr, NULL);
 }
 
 RZ_API int rz_analysis_esil_fire_interrupt(RzAnalysisEsil *esil, ut32 intr_num) {

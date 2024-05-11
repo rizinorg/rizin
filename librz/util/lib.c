@@ -320,7 +320,7 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force) {
 	closedir(dh);
 #endif
 #endif
-	ht_su_insert(lib->opened_dirs, path, 1);
+	ht_su_insert(lib->opened_dirs, path, 1, NULL);
 	return true;
 }
 

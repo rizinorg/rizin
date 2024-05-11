@@ -708,7 +708,7 @@ RecoveryCompleteObjectLocator *recovery_analysis_complete_object_locator(RRTTIMS
 		return NULL;
 	}
 	rz_pvector_push(&context->complete_object_locators, col);
-	ht_up_insert(context->addr_col, addr, col);
+	ht_up_insert(context->addr_col, addr, col, NULL);
 	col->addr = addr;
 	col->valid = rtti_msvc_read_complete_object_locator(context->vt_context, addr, &col->col);
 	if (!col->valid) {
@@ -778,7 +778,7 @@ RecoveryTypeDescriptor *recovery_analysis_type_descriptor(RRTTIMSVCAnalContext *
 		return NULL;
 	}
 	rz_pvector_push(&context->type_descriptors, td);
-	ht_up_insert(context->addr_td, addr, td);
+	ht_up_insert(context->addr_td, addr, td, NULL);
 	td->addr = addr;
 	td->valid = rtti_msvc_read_type_descriptor(context->vt_context, addr, &td->td);
 	if (!td->valid) {
@@ -919,7 +919,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	rz_analysis_class_create(analysis, name);
-	ht_up_insert(context->col_td_classes, col->addr, name);
+	ht_up_insert(context->col_td_classes, col->addr, name, NULL);
 
 	recovery_apply_vtable(context->vt_context, name, col->vtable);
 	recovery_apply_bases(context, name, &col->base_td);
@@ -949,7 +949,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	}
 
 	rz_analysis_class_create(analysis, name);
-	ht_up_insert(context->col_td_classes, td->addr, name);
+	ht_up_insert(context->col_td_classes, td->addr, name, NULL);
 
 	if (!td->col || !td->col->valid) {
 		return name;

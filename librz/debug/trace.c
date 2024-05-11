@@ -293,7 +293,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) 
 	tp->times = 1;
 	rz_list_append(dbg->trace->traces, tp);
 	ht_sp_update(dbg->trace->ht,
-		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), tp);
+		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), tp, NULL);
 	return tp;
 }
 

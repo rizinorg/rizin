@@ -86,12 +86,12 @@ ut32 create_collision(RZ_UNUSED const char *key) {
 bool test_ht_insert_collision(void) {
 	HtSS *ht = sdb_ht_new();
 	ht->opt.hashfn = create_collision;
-	ht_ss_insert(ht, "AAAA", "vAAAA");
+	ht_ss_insert(ht, "AAAA", "vAAAA", NULL);
 	mu_assert_streq(sdb_ht_find(ht, "AAAA", NULL), "vAAAA", "AAAA should be there");
-	ht_ss_insert(ht, "BBBB", "vBBBB");
+	ht_ss_insert(ht, "BBBB", "vBBBB", NULL);
 	mu_assert_streq(sdb_ht_find(ht, "AAAA", NULL), "vAAAA", "AAAA should still be there");
 	mu_assert_streq(sdb_ht_find(ht, "BBBB", NULL), "vBBBB", "BBBB should be there");
-	ht_ss_insert(ht, "CCCC", "vBBBB");
+	ht_ss_insert(ht, "CCCC", "vBBBB", NULL);
 	mu_assert_streq(sdb_ht_find(ht, "CCCC", NULL), "vBBBB", "CCCC should be there");
 
 	sdb_ht_free(ht);
@@ -191,8 +191,8 @@ bool test_ht_general(void) {
 	if (!ht) {
 		mu_cleanup_fail(err_free_persons, "ht alloc");
 	}
-	ht_sp_insert(ht, "radare", (void *)person1);
-	ht_sp_insert(ht, "pancake", (void *)person2);
+	ht_sp_insert(ht, "radare", (void *)person1, NULL);
+	ht_sp_insert(ht, "pancake", (void *)person2, NULL);
 	p = ht_sp_find(ht, "radare", &found);
 	mu_assert("radare not found", found);
 	mu_assert_streq(p->name, "radare", "wrong person");
@@ -210,9 +210,9 @@ bool test_ht_general(void) {
 	p = ht_sp_find(ht, "pancake", &found);
 	mu_assert("pancake was deleted", !found);
 
-	ht_sp_insert(ht, "pancake", (void *)person2);
+	ht_sp_insert(ht, "pancake", (void *)person2, NULL);
 	ht_sp_delete(ht, "radare");
-	ht_sp_update(ht, "pancake", (void *)person1);
+	ht_sp_update(ht, "pancake", (void *)person1, NULL);
 	p = ht_sp_find(ht, "pancake", &found);
 
 	mu_assert("pancake was updated", found);
@@ -248,13 +248,13 @@ bool test_insert(void) {
 	bool res;
 	bool found;
 
-	res = ht_ss_insert(ht, "key1", "value1");
+	res = ht_ss_insert(ht, "key1", "value1", NULL);
 	mu_assert("key1 should be a new element", res);
 	r = ht_ss_find(ht, "key1", &found);
 	mu_assert("found should be true", found);
 	mu_assert_streq(r, "value1", "value1 should be retrieved");
 
-	res = ht_ss_insert(ht, "key1", "value2");
+	res = ht_ss_insert(ht, "key1", "value2", NULL);
 	mu_assert("key1 should be an already existing element", !res);
 	r = ht_ss_find(ht, "key1", &found);
 	mu_assert_streq(r, "value1", "value1 should be retrieved");
@@ -272,8 +272,8 @@ bool test_update(void) {
 	HtSS *ht = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
 	bool found;
 
-	ht_ss_insert(ht, "key1", "value1");
-	ht_ss_update(ht, "key1", "value2");
+	ht_ss_insert(ht, "key1", "value1", NULL);
+	ht_ss_update(ht, "key1", "value2", NULL);
 	void *r = ht_ss_find(ht, "key1", &found);
 	mu_assert_streq(r, "value2", "value2 should be retrieved");
 	mu_assert("found should be true", found);
@@ -285,7 +285,7 @@ bool test_delete(void) {
 	HtSS *ht = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
 	bool found;
 
-	ht_ss_insert(ht, "key1", "value1");
+	ht_ss_insert(ht, "key1", "value1", NULL);
 	ht_ss_delete(ht, "key1");
 	void *r = ht_ss_find(ht, "key1", &found);
 	mu_assert_null(r, "key1 should not be found");
@@ -308,9 +308,9 @@ bool test_grow_1(void) {
 		grow_1_found[i] = false;
 	}
 
-	ht_sp_insert(ht, "key0", (void *)0);
-	ht_sp_insert(ht, "key1", (void *)1);
-	ht_sp_insert(ht, "key2", (void *)2);
+	ht_sp_insert(ht, "key0", (void *)0, NULL);
+	ht_sp_insert(ht, "key1", (void *)1, NULL);
+	ht_sp_insert(ht, "key2", (void *)2, NULL);
 
 	ht_sp_foreach(ht, (HtSPForeachCallback)grow_1_foreach, NULL);
 	for (i = 0; i < 3; ++i) {
@@ -334,7 +334,7 @@ bool test_grow_2(void) {
 		char buf[20], buf2[20];
 		snprintf(buf, 20, "key%d", i);
 		snprintf(buf2, 20, "value%d", i);
-		ht_ss_insert(ht, buf, buf2);
+		ht_ss_insert(ht, buf, buf2, NULL);
 	}
 
 	r = ht_ss_find(ht, "key1", &found);
@@ -363,7 +363,7 @@ bool test_grow_3(void) {
 		char buf[20], buf2[20];
 		snprintf(buf, 20, "key%d", i);
 		snprintf(buf2, 20, "value%d", i);
-		ht_ss_insert(ht, buf, buf2);
+		ht_ss_insert(ht, buf, buf2, NULL);
 	}
 
 	for (i = 0; i < 3000; i += 3) {
@@ -413,7 +413,7 @@ bool test_grow_4(void) {
 		snprintf(buf, 20, "key%d", i);
 		buf2 = malloc(20);
 		snprintf(buf2, 20, "value%d", i);
-		ht_ss_insert(ht, buf, buf2);
+		ht_ss_insert(ht, buf, buf2, NULL);
 	}
 
 	r = ht_ss_find(ht, "key1", &found);
@@ -463,10 +463,10 @@ bool test_foreach_delete(void) {
 	HtUP *ht = ht_up_new((HtUPDupValue)strdup, free);
 
 	// create a collision
-	ht_up_insert(ht, 0, "value1");
-	ht_up_insert(ht, ht->size, "value2");
-	ht_up_insert(ht, ht->size * 2, "value3");
-	ht_up_insert(ht, ht->size * 3, "value4");
+	ht_up_insert(ht, 0, "value1", NULL);
+	ht_up_insert(ht, ht->size, "value2", NULL);
+	ht_up_insert(ht, ht->size * 2, "value3", NULL);
+	ht_up_insert(ht, ht->size * 3, "value4", NULL);
 
 	ht_up_foreach(ht, foreach_delete_cb, ht);
 	ht_up_foreach(ht, (HtUPForeachCallback)should_not_be_caled, NULL);
@@ -480,9 +480,9 @@ bool test_update_key(void) {
 	HtUP *ht = ht_up_new((HtUPDupValue)strdup, free);
 
 	// create a collision
-	ht_up_insert(ht, 0, "value1");
-	ht_up_insert(ht, 0xdeadbeef, "value2");
-	ht_up_insert(ht, 0xcafebabe, "value3");
+	ht_up_insert(ht, 0, "value1", NULL);
+	ht_up_insert(ht, 0xdeadbeef, "value2", NULL);
+	ht_up_insert(ht, 0xcafebabe, "value3", NULL);
 
 	res = ht_up_update_key(ht, 0xcafebabe, 0x10000);
 	mu_assert("cafebabe should be updated", res);
@@ -503,17 +503,17 @@ bool test_ht_pu_ops(void) {
 	ut64 val;
 	HtSU *ht = ht_su_new(HT_STR_DUP);
 
-	ht_su_insert(ht, "key1", 0xcafebabe);
+	ht_su_insert(ht, "key1", 0xcafebabe, NULL);
 	val = ht_su_find(ht, "key1", &res);
 	mu_assert_eq(val, 0xcafebabe, "0xcafebabe should be retrieved");
 	mu_assert("found should be true", res);
 
-	res = ht_su_insert(ht, "key1", 0xdeadbeefdeadbeef);
+	res = ht_su_insert(ht, "key1", 0xdeadbeefdeadbeef, NULL);
 	mu_assert("key1 should be an already existing element", !res);
 	val = ht_su_find(ht, "key1", &res);
 	mu_assert_eq(val, 0xcafebabe, "0xcafebabe should still be retrieved");
 
-	res = ht_su_update(ht, "key1", 0xdeadbeefdeadbeef);
+	res = ht_su_update(ht, "key1", 0xdeadbeefdeadbeef, NULL);
 	mu_assert("key1 should be updated", res);
 	val = ht_su_find(ht, "key1", &res);
 	mu_assert_eq(val, 0xdeadbeefdeadbeef, "0xdeadbeefdeadbeef should be retrieved");
@@ -526,6 +526,55 @@ bool test_ht_pu_ops(void) {
 	mu_assert("found should be false", !res);
 
 	ht_su_free(ht);
+	mu_end;
+}
+
+bool test_status(void) {
+	HtSUStatus status;
+	HtSU *ht = ht_su_new(HT_STR_CONST);
+
+	mu_assert_true(ht_su_insert(ht, "foobar", 1337, &status), "returns true");
+	mu_assert_eq(status.code, HT_RC_INSERTED, "HT_RC_INSERTED");
+	mu_assert_notnull(status.kv, "KV is set");
+	mu_assert_streq(status.kv->key, "foobar", "key");
+	mu_assert_eq(status.kv->value, 1337, "value");
+
+	status.code = HT_RC_ERROR;
+	status.kv = NULL;
+	mu_assert_false(ht_su_insert(ht, "foobar", 101, &status), "returns false");
+	mu_assert_eq(status.code, HT_RC_EXISTING, "HT_RC_EXISTING");
+	mu_assert_notnull(status.kv, "KV is set");
+	mu_assert_streq(status.kv->key, "foobar", "key");
+	mu_assert_eq(status.kv->value, 1337, "value");
+
+	status.code = HT_RC_ERROR;
+	status.kv = NULL;
+	mu_assert_true(ht_su_update(ht, "deadbeef", 404, &status), "returns true");
+	mu_assert_eq(status.code, HT_RC_INSERTED, "HT_RC_INSERTED");
+	mu_assert_notnull(status.kv, "KV is set");
+	mu_assert_streq(status.kv->key, "deadbeef", "key");
+	mu_assert_eq(status.kv->value, 404, "value");
+
+	status.code = HT_RC_ERROR;
+	status.kv = NULL;
+	mu_assert_true(ht_su_update(ht, "deadbeef", 123456, &status), "returns true");
+	mu_assert_eq(status.code, HT_RC_UPDATED, "HT_RC_UPDATED");
+	mu_assert_notnull(status.kv, "KV is set");
+	mu_assert_streq(status.kv->key, "deadbeef", "key");
+	mu_assert_eq(status.kv->value, 123456, "value");
+
+	HtUUStatus status2;
+	HtUU *ht2 = ht_uu_new();
+
+	for (size_t i = 0; i < 100; ++i) {
+		status2.kv = NULL;
+		ht_uu_insert(ht2, i, i + 200, &status2);
+		mu_assert_notnull(status2.kv, "KV is set after rehashing");
+		mu_assert_eq(status2.kv->value, i + 200, "KV is valid after rehashing");
+	}
+
+	ht_su_free(ht);
+	ht_uu_free(ht2);
 	mu_end;
 }
 
@@ -549,6 +598,7 @@ int all_tests() {
 	mu_run_test(test_foreach_delete);
 	mu_run_test(test_update_key);
 	mu_run_test(test_ht_pu_ops);
+	mu_run_test(test_status);
 	return tests_passed != tests_run;
 }
 

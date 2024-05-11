@@ -422,7 +422,7 @@ static bool block_recurse_successor_cb(ut64 addr, void *user) {
 		// already visited
 		return true;
 	}
-	ht_up_insert(ctx->visited, addr, NULL);
+	ht_up_insert(ctx->visited, addr, NULL, NULL);
 	RzAnalysisBlock *block = rz_analysis_get_block_at(ctx->analysis, addr);
 	if (!block) {
 		return true;
@@ -441,7 +441,7 @@ RZ_API bool rz_analysis_block_recurse(RzAnalysisBlock *block, RzAnalysisBlockCb 
 		goto beach;
 	}
 
-	ht_up_insert(ctx.visited, block->addr, NULL);
+	ht_up_insert(ctx.visited, block->addr, NULL, NULL);
 	rz_pvector_push(&ctx.to_visit, block);
 
 	while (!rz_pvector_empty(&ctx.to_visit)) {
@@ -469,7 +469,7 @@ RZ_API bool rz_analysis_block_recurse_followthrough(RzAnalysisBlock *block, RzAn
 		goto beach;
 	}
 
-	ht_up_insert(ctx.visited, block->addr, NULL);
+	ht_up_insert(ctx.visited, block->addr, NULL, NULL);
 	rz_pvector_push(&ctx.to_visit, block);
 
 	while (!rz_pvector_empty(&ctx.to_visit)) {
@@ -506,7 +506,7 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 	RzAnalysisBlock *cur_bb = block;
 	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 	rz_vector_push(&path, &ctx);
-	ht_up_insert(visited, cur_bb->addr, NULL);
+	ht_up_insert(visited, cur_bb->addr, NULL, NULL);
 	breaked = !cb(cur_bb, user);
 	if (breaked) {
 		goto beach;
@@ -542,7 +542,7 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 		if (cur_bb) {
 			RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 			rz_vector_push(&path, &ctx);
-			ht_up_insert(visited, cur_bb->addr, NULL);
+			ht_up_insert(visited, cur_bb->addr, NULL, NULL);
 			bool breaked = !cb(cur_bb, user);
 			if (breaked) {
 				break;
@@ -615,7 +615,7 @@ static bool shortest_path_successor_cb(ut64 addr, void *user) {
 		// already visited
 		return true;
 	}
-	ht_up_insert(ctx->visited, addr, ctx->cur_parent);
+	ht_up_insert(ctx->visited, addr, ctx->cur_parent, NULL);
 	RzAnalysisBlock *block = rz_analysis_get_block_at(ctx->analysis, addr);
 	if (block) {
 		rz_pvector_push(ctx->next_visit, block);
@@ -642,7 +642,7 @@ RZ_API RZ_NULLABLE RzList /*<RzAnalysisBlock *>*/ *rz_analysis_block_shortest_pa
 		goto beach;
 	}
 
-	ht_up_insert(ctx.visited, block->addr, NULL);
+	ht_up_insert(ctx.visited, block->addr, NULL, NULL);
 	rz_pvector_push(cur_visit, block);
 
 	// BFS
@@ -735,7 +735,7 @@ static bool noreturn_successors_cb(RzAnalysisBlock *block, void *user) {
 	rz_analysis_block_ref(block);
 	succ->block = block;
 	succ->reachable = false; // reset for first iteration
-	ht_up_insert(succs, block->addr, succ);
+	ht_up_insert(succs, block->addr, succ, NULL);
 	return true;
 }
 
@@ -862,11 +862,11 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	if (found) {
 		if (pred) {
 			// only one predecessor found so far, but we are the second so there are multiple now
-			ht_up_update(ctx->predecessors, (ut64)(size_t)block, NULL);
+			ht_up_update(ctx->predecessors, (ut64)(size_t)block, NULL, NULL);
 		} // else: already found multiple predecessors, nothing to do
 	} else {
 		// no predecessor found yet, this is the only one until now
-		ht_up_insert(ctx->predecessors, (ut64)(size_t)block, ctx->cur_pred);
+		ht_up_insert(ctx->predecessors, (ut64)(size_t)block, ctx->cur_pred, NULL);
 	}
 	return true;
 }
@@ -886,7 +886,7 @@ static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *
 		ctx->cur_pred = block;
 		ctx->cur_succ_count = 0;
 		rz_analysis_block_successor_addrs_foreach(block, automerge_predecessor_successor_cb, ctx);
-		ht_up_insert(ctx->visited_blocks, (ut64)(size_t)block, (void *)ctx->cur_succ_count);
+		ht_up_insert(ctx->visited_blocks, (ut64)(size_t)block, (void *)ctx->cur_succ_count, NULL);
 	}
 	return true;
 }
@@ -915,9 +915,9 @@ RZ_API void rz_analysis_block_automerge(RzPVector /*<RzAnalysisBlock *>*/ *block
 		RzListIter *fit;
 		RzAnalysisFunction *fcn;
 		rz_list_foreach (block->fcns, fit, fcn) {
-			ht_up_insert(relevant_fcns, (ut64)(size_t)fcn, NULL);
+			ht_up_insert(relevant_fcns, (ut64)(size_t)fcn, NULL, NULL);
 		}
-		ht_up_insert(ctx.blocks, block->addr, block);
+		ht_up_insert(ctx.blocks, block->addr, block, NULL);
 	}
 
 	// Get the single predecessors we might want to merge with
@@ -964,11 +964,11 @@ RZ_API void rz_analysis_block_automerge(RzPVector /*<RzAnalysisBlock *>*/ *block
 		// Update number of successors of the predecessor
 		ctx.cur_succ_count = 0;
 		rz_analysis_block_successor_addrs_foreach(predecessor, count_successors_cb, &ctx);
-		ht_up_update(ctx.visited_blocks, (ut64)(size_t)predecessor, (void *)(size_t)ctx.cur_succ_count);
+		ht_up_update(ctx.visited_blocks, (ut64)(size_t)predecessor, (void *)(size_t)ctx.cur_succ_count, NULL);
 		RzListIter *bit;
 		rz_list_foreach (fixup_candidates, bit, clock) {
 			// Make sure all previous pointers to block now go to predecessor
-			ht_up_update(ctx.predecessors, (ut64)(size_t)clock, predecessor);
+			ht_up_update(ctx.predecessors, (ut64)(size_t)clock, predecessor, NULL);
 		}
 		// Remove it from the list
 		rz_pvector_remove_at(blocks, i);

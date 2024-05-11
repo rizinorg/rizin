@@ -73,7 +73,7 @@ static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzD
 	// add symbol to the 'import' map[name]symbol
 	if (symbol->is_imported && RZ_STR_ISNOTEMPTY(symbol->name)) {
 		if (!ht_sp_find(o->import_name_symbols, symbol->name, NULL)) {
-			ht_sp_insert(o->import_name_symbols, symbol->name, symbol);
+			ht_sp_insert(o->import_name_symbols, symbol->name, symbol, NULL);
 		}
 	}
 

@@ -14,10 +14,10 @@ static void process_class_method(RzBinObject *o, RzBinSymbol *method) {
 		return;
 	}
 
-	ht_sp_insert(o->glue_to_class_method, key, method);
+	ht_sp_insert(o->glue_to_class_method, key, method, NULL);
 	free(key);
 
-	ht_up_insert(o->vaddr_to_class_method, method->vaddr, method);
+	ht_up_insert(o->vaddr_to_class_method, method->vaddr, method, NULL);
 }
 
 static void process_class_field(RzBinObject *o, RzBinClassField *field) {
@@ -30,7 +30,7 @@ static void process_class_field(RzBinObject *o, RzBinClassField *field) {
 		return;
 	}
 
-	ht_sp_insert(o->glue_to_class_field, key, field);
+	ht_sp_insert(o->glue_to_class_field, key, field, NULL);
 	free(key);
 }
 
@@ -48,7 +48,7 @@ static void process_handle_class(RzBinObject *o, RzBinClass *klass) {
 	}
 	RzBinClass *found = ht_sp_find(o->name_to_class_object, klass->name, NULL);
 	if (!found) {
-		ht_sp_insert(o->name_to_class_object, klass->name, klass);
+		ht_sp_insert(o->name_to_class_object, klass->name, klass, NULL);
 		found = klass;
 	} else {
 		RZ_LOG_WARN("Found duplicated class: %s\n", klass->name);

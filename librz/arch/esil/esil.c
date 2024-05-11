@@ -112,7 +112,7 @@ RZ_API bool rz_analysis_esil_set_op(RzAnalysisEsil *esil, const char *op, RzAnal
 			RZ_LOG_ERROR("Cannot allocate esil-operation %s\n", op);
 			return false;
 		}
-		if (!ht_sp_insert(esil->ops, op, eop)) {
+		if (!ht_sp_insert(esil->ops, op, eop, NULL)) {
 			RZ_LOG_ERROR("Cannot set esil-operation %s\n", op);
 			free(eop);
 			return false;

@@ -1189,7 +1189,7 @@ int tms320_dasm_init(tms320_dasm_t *dasm) {
 		return 0;
 	}
 	for (i = 0; i < RZ_ARRAY_SIZE(c55x_list); i++) {
-		ht_up_insert(dasm->map, c55x_list[i].byte, &c55x_list[i]);
+		ht_up_insert(dasm->map, c55x_list[i].byte, &c55x_list[i], NULL);
 	}
 
 	tms320_f_set_cpu(dasm, TMS320_F_CPU_C55X);

@@ -173,7 +173,7 @@ static bool set_b(RzDiff *diff, const void *b, ut32 b_size) {
 				RZ_LOG_ERROR("rz_diff_set_b: cannot allocate list\n");
 				return false;
 			}
-			ht_pp_insert(diff->b_hits, elem, list);
+			ht_pp_insert(diff->b_hits, elem, list, NULL);
 		}
 
 		if (!rz_list_append(list, NUM2PTR(i))) {
@@ -408,7 +408,7 @@ static RzDiffMatch *find_longest_match(RzDiff *diff, Block *block) {
 				break;
 			}
 			ut32 len = ht_uu_find(len_map, b_pos - 1, NULL) + 1;
-			ht_uu_insert(tmp, b_pos, len);
+			ht_uu_insert(tmp, b_pos, len, NULL);
 			if (len > hit_size) {
 				hit_a = a_pos - len + 1;
 				hit_b = b_pos - len + 1;

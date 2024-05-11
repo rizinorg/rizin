@@ -311,8 +311,8 @@ static void populate_imports(struct rz_bin_coff_obj *obj) {
 		RzBinImport *ptr = _fill_bin_import(obj, i);
 		if (ptr) {
 			ptr->ordinal = ord++;
-			ht_up_insert(obj->imp_ht, (ut64)i, ptr);
-			ht_uu_insert(obj->imp_index, (ut64)i, imp_idx++);
+			ht_up_insert(obj->imp_ht, (ut64)i, ptr, NULL);
+			ht_uu_insert(obj->imp_index, (ut64)i, imp_idx++, NULL);
 		}
 		i += obj->symbols[i].n_numaux;
 	}
@@ -330,7 +330,7 @@ static void populate_symbols(RzBinFile *bf) {
 			break;
 		}
 		if (_fill_bin_symbol(bf->rbin, obj, i, &ptr)) {
-			ht_up_insert(obj->sym_ht, (ut64)i, ptr);
+			ht_up_insert(obj->sym_ht, (ut64)i, ptr, NULL);
 		} else {
 			free(ptr);
 		}

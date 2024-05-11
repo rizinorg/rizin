@@ -311,7 +311,7 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *i
 	ptr->type = rz_str_constpool_get(&rbin->constpool, type);
 
 	if (imports_by_name) {
-		ht_pp_insert(imports_by_name, orig_name, ptr);
+		ht_pp_insert(imports_by_name, orig_name, ptr, NULL);
 	}
 
 	return ptr;

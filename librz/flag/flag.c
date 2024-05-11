@@ -172,7 +172,7 @@ static bool update_flag_item_name(RzFlag *f, RzFlagItem *item, const char *newna
 	}
 	bool res = (item->name)
 		? ht_sp_update_key(f->ht_name, item->name, fname)
-		: ht_sp_insert(f->ht_name, fname, item);
+		: ht_sp_insert(f->ht_name, fname, item, NULL);
 	if (res) {
 		set_name(item, fname);
 		return true;

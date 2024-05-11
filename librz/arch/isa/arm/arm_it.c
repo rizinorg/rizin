@@ -127,10 +127,10 @@ RZ_API void rz_arm_it_update_block(RzArmITContext *ctx, cs_insn *insn) {
 		cond.vpt = 0;
 #endif
 		RZ_STATIC_ASSERT(sizeof(cond) == sizeof(cond.packed));
-		ht_uu_update(ctx->ht_itcond, insn->address + cond.off, cond.packed);
+		ht_uu_update(ctx->ht_itcond, insn->address + cond.off, cond.packed, NULL);
 	}
 	RZ_STATIC_ASSERT(sizeof(block) == sizeof(block.packed));
-	ht_uu_update(ctx->ht_itblock, insn->address, block.packed);
+	ht_uu_update(ctx->ht_itblock, insn->address, block.packed, NULL);
 }
 
 /**
@@ -201,8 +201,8 @@ RZ_API bool rz_arm_it_apply_cond(RzArmITContext *ctx, cs_insn *insn) {
 		}
 		ht_uu_delete(ctx->ht_itcond, blockaddr + itblock.off[idx]);
 		adjcond.off = itblock.off[idx] += 2;
-		ht_uu_update(ctx->ht_itcond, blockaddr + itblock.off[idx], adjcond.packed);
+		ht_uu_update(ctx->ht_itcond, blockaddr + itblock.off[idx], adjcond.packed, NULL);
 	}
-	ht_uu_update(ctx->ht_itblock, blockaddr, itblock.packed);
+	ht_uu_update(ctx->ht_itblock, blockaddr, itblock.packed, NULL);
 	return true;
 }

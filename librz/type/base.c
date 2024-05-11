@@ -269,7 +269,7 @@ RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
  */
 RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, false);
-	if (!ht_sp_insert(typedb->types, type->name, (void *)type)) {
+	if (!ht_sp_insert(typedb->types, type->name, (void *)type, NULL)) {
 		rz_type_base_type_free(type);
 		return false;
 	}
@@ -284,7 +284,7 @@ RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) 
  */
 RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, false);
-	if (!ht_sp_update(typedb->types, type->name, (void *)type)) {
+	if (!ht_sp_update(typedb->types, type->name, (void *)type, NULL)) {
 		rz_type_base_type_free(type);
 		return false;
 	}

@@ -86,7 +86,7 @@ static bool RzBinDwarfAbbrevs_parse(RzBinDwarfAbbrev *abbrevs) {
 
 		ULE128_OR_GOTO(decl.code, ok);
 		if (decl.code == 0) {
-			ht_up_update(abbrevs->by_offset, tbl->offset, tbl);
+			ht_up_update(abbrevs->by_offset, tbl->offset, tbl, NULL);
 			tbl = NULL;
 			continue;
 		}
@@ -138,7 +138,7 @@ static bool RzBinDwarfAbbrevs_parse(RzBinDwarfAbbrev *abbrevs) {
 		abbrevs->count++;
 	}
 ok:
-	ht_up_update(abbrevs->by_offset, tbl->offset, tbl);
+	ht_up_update(abbrevs->by_offset, tbl->offset, tbl, NULL);
 	return abbrevs;
 err:
 	RzBinDwarfAbbrevTable_free(tbl);
