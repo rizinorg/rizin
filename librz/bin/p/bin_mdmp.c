@@ -124,11 +124,8 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 
 static RzPVector /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 	char *ptr = NULL;
-	int i;
 	MiniDmpObj *obj;
-	struct rz_bin_pe_lib_t *libs = NULL;
-	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
-	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
+	RzPVector *libs = NULL;
 	RzPVector *ret = NULL;
 	RzListIter *it;
 
@@ -143,25 +140,29 @@ static RzPVector /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 
 	/* TODO: Resolve module name for lib, or filter to remove duplicates,
 	** rather than the vaddr :) */
+	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		if (!(libs = Pe32_rz_bin_pe_get_libs(pe32_bin->bin))) {
-			return ret;
+			continue;
 		}
-		for (i = 0; !libs[i].last; i++) {
-			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, libs[i].name);
+		void **libs_iter;
+		rz_pvector_foreach (libs, libs_iter) {
+			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, (char *)*libs_iter);
 			rz_pvector_push(ret, ptr);
 		}
-		free(libs);
+		rz_pvector_free(libs);
 	}
+	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	rz_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		if (!(libs = Pe64_rz_bin_pe_get_libs(pe64_bin->bin))) {
-			return ret;
+			continue;
 		}
-		for (i = 0; !libs[i].last; i++) {
-			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe64_bin->vaddr, libs[i].name);
+		void **libs_iter;
+		rz_pvector_foreach (libs, libs_iter) {
+			ptr = rz_str_newf("[0x%.08" PFMT64x "] - %s", pe64_bin->vaddr, (char *)*libs_iter);
 			rz_pvector_push(ret, ptr);
 		}
-		free(libs);
+		rz_pvector_free(libs);
 	}
 	return ret;
 }

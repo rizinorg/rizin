@@ -111,15 +111,15 @@ CMDS=il
 EXPECT=<<EOF
 library      
 -------------
-kernel32.dll
 user32.dll
-advapi32.dll
-oleaut32.dll
-ole32.dll
+kernel32.dll
 pstorec.dll
-rasapi32.dll
 shell32.dll
 crypt32.dll
+oleaut32.dll
+advapi32.dll
+ole32.dll
+rasapi32.dll
 EOF
 RUN
 

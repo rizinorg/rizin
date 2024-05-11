@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
+#include <rz_vector.h>
 
 #include "pe_specs.h"
 #include "dotnet.h"
@@ -111,11 +112,6 @@ struct rz_bin_pe_string_t {
 	ut64 paddr;
 	ut64 size;
 	char type;
-	int last;
-};
-
-struct rz_bin_pe_lib_t {
-	char name[PE_STRING_LENGTH];
 	int last;
 };
 
@@ -233,7 +229,7 @@ struct rz_bin_pe_addr_t *PE_(check_mingw)(RzBinPEObj *bin);
 struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(RzBinPEObj *bin);
 struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_main_vaddr)(RzBinPEObj *bin);
 int PE_(rz_bin_pe_get_image_size)(RzBinPEObj *bin);
-struct rz_bin_pe_lib_t *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin);
+RzPVector /*<char *>*/ *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin);
 ut64 PE_(rz_bin_pe_get_image_base)(RzBinPEObj *bin);
 
 // pe_overlay.c

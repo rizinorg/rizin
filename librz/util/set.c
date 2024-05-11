@@ -37,6 +37,30 @@ RZ_API void set_s_delete(RZ_NONNULL SetS *set, const char *str) {
 	ht_sp_delete(set, str);
 }
 
+static bool push_to_pvector(void *user, const char *k, RZ_UNUSED const void *v) {
+	RzPVector *vec = (RzPVector *)user;
+	return !!rz_pvector_push(vec, (void *)k);
+}
+
+/**
+ * \brief Create a vector from elements of hash set \p set
+ *
+ * If a hash set owns stored strings the ownership will be transferred.
+ */
+RZ_API RZ_OWN RzPVector /*<char *>*/ *set_s_to_vector(RZ_NONNULL SetS *set) {
+	rz_return_val_if_fail(set, NULL);
+
+	RzPVector *vec = rz_pvector_new(set->opt.finiKV ? free : NULL);
+	if (!vec || !rz_pvector_reserve(vec, set->count)) {
+		rz_pvector_free(vec);
+		return NULL;
+	}
+	ht_sp_foreach(set, push_to_pvector, vec);
+	set->opt.finiKV = NULL;
+	set->opt.finiKV_user = NULL;
+	return vec;
+}
+
 RZ_API void set_s_free(RZ_NULLABLE SetS *set) {
 	ht_sp_free((HtSP *)set);
 }

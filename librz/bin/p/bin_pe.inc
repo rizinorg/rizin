@@ -498,23 +498,7 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 }
 
 static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
-	struct rz_bin_pe_lib_t *libs = NULL;
-	RzPVector *ret = NULL;
-	char *ptr = NULL;
-	int i;
-
-	if (!(ret = rz_pvector_new(free))) {
-		return NULL;
-	}
-	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
-		return ret;
-	}
-	for (i = 0; !libs[i].last; i++) {
-		ptr = strdup(libs[i].name);
-		rz_pvector_push(ret, ptr);
-	}
-	free(libs);
-	return ret;
+	return PE_(rz_bin_pe_get_libs)(bf->o->bin_obj);
 }
 
 static RzPVector /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
@@ -569,38 +553,6 @@ err:
 	return NULL;
 }
 
-static bool is_dot_net(RzBinFile *bf) {
-	struct rz_bin_pe_lib_t *libs = NULL;
-	int i;
-	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
-		return false;
-	}
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp(libs[i].name, "mscoree.dll")) {
-			free(libs);
-			return true;
-		}
-	}
-	free(libs);
-	return false;
-}
-
-static bool is_vb6(RzBinFile *bf) {
-	struct rz_bin_pe_lib_t *libs = NULL;
-	int i;
-	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
-		return false;
-	}
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp(libs[i].name, "msvbvm60.dll")) {
-			free(libs);
-			return true;
-		}
-	}
-	free(libs);
-	return false;
-}
-
 static int has_canary(RzBinFile *bf) {
 	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
@@ -636,6 +588,10 @@ static inline bool haschr(const struct PE_(rz_bin_pe_obj_t) * bin, ut16 dllChara
 	return bin->nt_headers->optional_header.DllCharacteristics & dllCharacteristic;
 }
 
+static int compare_strings(const void *a, const void *b, RZ_UNUSED void *user) {
+	return strcmp((const char *)a, (const char *)b);
+}
+
 static RzBinInfo *info(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) * bin;
 	SDebugInfo di = { { 0 } };
@@ -654,12 +610,15 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->machine = PE_(rz_bin_pe_get_machine)(bf->o->bin_obj);
 	ret->subsystem = PE_(rz_bin_pe_get_subsystem)(bf->o->bin_obj);
 	ret->default_cc = PE_(rz_bin_pe_get_cc)(bf->o->bin_obj);
-	if (is_dot_net(bf)) {
+
+	RzPVector *libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj);
+	if (libs && rz_pvector_find(libs, "mscoree.dll", compare_strings, NULL)) {
 		ret->lang = "cil";
 	}
-	if (is_vb6(bf)) {
+	if (libs && rz_pvector_find(libs, "msvbvm60.dll", compare_strings, NULL)) {
 		ret->lang = "vb";
 	}
+	rz_pvector_free(libs);
 
 	if (PE_(rz_bin_pe_is_dll)(bf->o->bin_obj)) {
 		ret->type = strdup("DLL (Dynamic Link Library)");
