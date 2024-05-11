@@ -70,12 +70,10 @@ RZ_API Sdb *sdb_new(const char *path, const char *name, int lock) {
 			break;
 		}
 		if (sdb_open(s, s->dir) == -1) {
-			s->last = s->timestamped ? sdb_now() : 0LL;
 			// TODO: must fail if we cant open for write in sync
 		}
 		s->name = strdup(name);
 	} else {
-		s->last = s->timestamped ? sdb_now() : 0LL;
 		s->fd = -1;
 	}
 	s->fdump = -1;
@@ -362,7 +360,6 @@ RZ_API int sdb_open(Sdb *s, const char *file) {
 			s->path = NULL; // TODO: path is important
 		}
 	}
-	s->last = 0LL;
 	if (s->fd != -1 && fstat(s->fd, &st) != -1) {
 		if ((S_IFREG & st.st_mode) != S_IFREG) {
 			eprintf("Database must be a file\n");
@@ -370,7 +367,6 @@ RZ_API int sdb_open(Sdb *s, const char *file) {
 			s->fd = -1;
 			return -1;
 		}
-		s->last = st.st_mtime;
 	}
 	if (s->fd != -1) {
 		cdb_init(&s->db, s->fd);
@@ -876,14 +872,6 @@ RZ_API bool sdb_dump_next(RZ_NONNULL Sdb *s, RZ_OUT RZ_NONNULL SdbKv *kv) {
 	return true;
 }
 
-static inline ut64 parse_expire(ut64 e) {
-	const ut64 month = 30 * 24 * 60 * 60;
-	if (e > 0 && e < month) {
-		e += sdb_now();
-	}
-	return e;
-}
-
 RZ_API void sdb_config(Sdb *s, int options) {
 	s->options = options;
 	if (options & SDB_OPTION_SYNC) {
@@ -891,7 +879,6 @@ RZ_API void sdb_config(Sdb *s, int options) {
 	}
 	if (options & SDB_OPTION_NOSTAMP) {
 		// sync on every query
-		s->last = 0LL;
 	}
 	if (options & SDB_OPTION_FS) {
 		// have access to fs (handle '.' or not in query)

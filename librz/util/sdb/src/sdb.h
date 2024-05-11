@@ -77,13 +77,10 @@ typedef struct sdb_t {
 	ut32 dump_end_pos; ///< Used in sdb_dump_next()
 	int fdump;
 	char *ndump;
-	ut64 expire;
-	ut64 last; // timestamp of last change
 	int options;
 	int ns_lock; // TODO: merge into options?
 	SdbList *ns;
 	ut32 depth;
-	bool timestamped;
 } Sdb;
 
 typedef struct sdb_ns_t {
