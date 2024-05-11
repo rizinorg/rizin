@@ -128,7 +128,6 @@ static int main_help(int line) {
 			"-NN",         "",          "Do not load any script or plugin",
 			"-q",          "",          "Quiet mode (no prompt) and quit after -i and -c",
 			"-qq",         "",          "Quiet mode (no prompt) and force quit",
-			"-Q",          "",          "Quiet mode (no prompt) and quit faster (quickLeak=true)",
 			"-p",          "[p.rzdb]",  "Load project file",
 			"-r",          "[rz-run]",  "Specify rz-run profile to load (same as -e dbg.profile=X)",
 			"-R",          "[rule]",    "Specify custom rz-run directive",
@@ -438,7 +437,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *customRarunProfile = NULL;
 	ut64 mapaddr = 0LL;
 	bool quiet = false;
-	bool quietLeak = false;
 	int is_gdb = false;
 	const char *s_seek = NULL;
 	bool compute_hashes = true;
@@ -667,10 +665,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'p':
 			prj = *opt.arg ? opt.arg : NULL;
 			break;
-		case 'Q':
-			quiet = true;
-			quietLeak = true;
-			break;
 		case 'q':
 			rz_config_set(r->config, "scr.interactive", "false");
 			rz_config_set(r->config, "scr.prompt", "false");
@@ -804,9 +798,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		run_commands(r, NULL, prefiles, false, do_analysis);
 		run_commands(r, cmds, files, quiet, do_analysis);
-		if (quietLeak) {
-			exit(0);
-		}
 		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_io_plugins_print(r->io, &state);
 		rz_cmd_state_output_print(&state);
@@ -1534,10 +1525,6 @@ beach:
 		// Always detach properly if still attached, even if we already killed the process,
 		// otherwise there will be a zombie on macOS!
 		rz_debug_detach(r->dbg, r->dbg->pid);
-	}
-	if (quietLeak) {
-		exit(ret);
-		return ret;
 	}
 
 	rz_core_task_sync_end(&r->tasks);

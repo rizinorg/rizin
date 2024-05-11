@@ -126,7 +126,7 @@ static RzSubprocessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms,
 	rz_list_foreach (extra_args, it, extra_arg) {
 		rz_pvector_push(&args, extra_arg);
 	}
-	rz_pvector_push(&args, "-Qc");
+	rz_pvector_push(&args, "-qc");
 #if __WINDOWS__
 	char *wcmds = convert_win_cmds(cmds);
 	rz_pvector_push(&args, wcmds);
