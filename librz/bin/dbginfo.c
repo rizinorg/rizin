@@ -152,7 +152,11 @@ RZ_API void rz_bin_source_line_info_free(RzBinSourceLineInfo *sli) {
  */
 RZ_API bool rz_bin_source_line_info_merge(RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *dst, RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *src) {
 	rz_return_val_if_fail(dst && src, false);
-	RzBinSourceLineSample *tmp = realloc(dst->samples, sizeof(RzBinSourceLineSample) * (dst->samples_count + src->samples_count));
+	size_t new_samples_count = dst->samples_count + src->samples_count;
+	if (!new_samples_count) {
+		return true;
+	}
+	RzBinSourceLineSample *tmp = realloc(dst->samples, sizeof(RzBinSourceLineSample) * new_samples_count);
 	if (!tmp) {
 		return false;
 	}
