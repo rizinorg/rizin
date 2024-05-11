@@ -6162,7 +6162,6 @@ RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 		panels_root->cur_tab = 0;
 		__set_root_state(core, DEFAULT);
 		panels_root->theme_list = rz_core_theme_list(core);
-		rz_pvector_sort(panels_root->theme_list, cmpstr, NULL);
 		__init_new_panels_root(core);
 	} else {
 		if (rz_pvector_len(&panels_root->tabs) == 0) {

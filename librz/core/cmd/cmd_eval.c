@@ -91,6 +91,10 @@ RZ_API char *rz_core_theme_get(RzCore *core) {
 	return core->curtheme;
 }
 
+static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user) {
+	return strcmp(s1, s2);
+}
+
 /**
  * \brief      Returns the list of the rizin themes.
  *
@@ -128,7 +132,8 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core
 		set_s_free(themes);
 		return NULL;
 	}
-	rz_pvector_push_front(vec, strdup("default"));
+	rz_pvector_push(vec, strdup("default"));
+	rz_pvector_sort(vec, (RzPVectorComparator)compare_strings, NULL);
 	set_s_free(themes);
 	return vec;
 }
