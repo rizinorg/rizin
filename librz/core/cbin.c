@@ -166,7 +166,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			flagname = dup;
 			int fmtsize = rz_type_format_struct_size(core->analysis->typedb, v, 0, 0);
 			char *offset_key = rz_str_newf("%s.offset", flagname);
-			const char *off = sdb_const_get(db, offset_key, 0);
+			const char *off = sdb_const_get(db, offset_key);
 			free(offset_key);
 			if (off) {
 				if (IS_MODE_RZCMD(mode)) {
@@ -298,7 +298,7 @@ RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	ut16 bits = info->bits;
 	ut64 baseaddr = rz_bin_get_baddr(r->bin);
 	rz_config_set_i(r->config, "bin.baddr", baseaddr);
-	sdb_num_add(r->sdb, "orig_baddr", baseaddr, 0);
+	sdb_num_add(r->sdb, "orig_baddr", baseaddr);
 	r->dbg->bp->baddr = baseaddr;
 	rz_config_set(r->config, "asm.arch", arch);
 	rz_config_set_i(r->config, "asm.bits", bits);
@@ -1114,7 +1114,7 @@ static ut8 bin_reloc_size(RzBinReloc *reloc) {
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
 	char tmpbuf[16];
-	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal), 0);
+	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal));
 	return (foo && *foo) ? foo : NULL;
 }
 
@@ -1659,12 +1659,12 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_RESOURCES);
 	while (true) {
 		char key[64];
-		char *timestr = sdb_get(sdb, rz_strf(key, "resource.%d.timestr", index), 0);
+		char *timestr = sdb_get(sdb, rz_strf(key, "resource.%d.timestr", index));
 		if (!timestr) {
 			break;
 		}
-		ut64 vaddr = sdb_num_get(sdb, rz_strf(key, "resource.%d.vaddr", index), 0);
-		int size = (int)sdb_num_get(sdb, rz_strf(key, "resource.%d.size", index), 0);
+		ut64 vaddr = sdb_num_get(sdb, rz_strf(key, "resource.%d.vaddr", index));
+		int size = (int)sdb_num_get(sdb, rz_strf(key, "resource.%d.size", index));
 		rz_flag_set(core->flags, rz_strf(key, "resource.%d", index), vaddr, size);
 		index++;
 	}
@@ -1755,7 +1755,7 @@ RZ_API RZ_BORROW const char *rz_core_bin_get_compile_time(RZ_NONNULL RzBinFile *
 	Sdb *binFileSdb = bf->sdb;
 	Sdb *info_ns = sdb_ns(binFileSdb, "info", false);
 	const char *timeDateStamp_string = sdb_const_get(info_ns,
-		"image_file_header.TimeDateStamp_string", 0);
+		"image_file_header.TimeDateStamp_string");
 	return timeDateStamp_string;
 }
 
@@ -3139,7 +3139,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		}
 		pj_ks(pj, "endian", endian);
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
-			tmp_buf = sdb_get(bf->sdb, "mdmp.flags", 0);
+			tmp_buf = sdb_get(bf->sdb, "mdmp.flags");
 			if (tmp_buf) {
 				pj_ks(pj, "flags", tmp_buf);
 				free(tmp_buf);
@@ -3184,7 +3184,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			pj_ki(pj, "pcalign", uv);
 		}
 
-		tmp_buf = sdb_get(obj->kv, "elf.relro", 0);
+		tmp_buf = sdb_get(obj->kv, "elf.relro");
 		if (tmp_buf) {
 			pj_ks(pj, "relro", tmp_buf);
 			free(tmp_buf);
@@ -3198,7 +3198,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		}
 
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
-			v = sdb_num_get(bf->sdb, "mdmp.streams", 0);
+			v = sdb_num_get(bf->sdb, "mdmp.streams");
 			if (v != -1) {
 				pj_ki(pj, "streams", v);
 			}
@@ -3264,7 +3264,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		rz_table_add_rowf(t, "ss", "dbg_file", str2na(info->debug_file_name));
 		rz_table_add_rowf(t, "ss", "endian", str2na(endian));
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
-			tmp_buf = sdb_get(bf->sdb, "mdmp.flags", 0);
+			tmp_buf = sdb_get(bf->sdb, "mdmp.flags");
 			if (tmp_buf) {
 				rz_table_add_rowf(t, "ss", "flags", tmp_buf);
 				free(tmp_buf);
@@ -3295,7 +3295,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			rz_table_add_rowf(t, "sd", "pcalign", uv);
 		}
 
-		tmp_buf = sdb_get(obj->kv, "elf.relro", 0);
+		tmp_buf = sdb_get(obj->kv, "elf.relro");
 		if (tmp_buf) {
 			rz_table_add_rowf(t, "ss", "relro", tmp_buf);
 			free(tmp_buf);
@@ -3307,7 +3307,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		}
 
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
-			v = sdb_num_get(bf->sdb, "mdmp.streams", 0);
+			v = sdb_num_get(bf->sdb, "mdmp.streams");
 			if (v != -1) {
 				rz_table_add_rowf(t, "sd", "streams", v);
 			}
@@ -4216,35 +4216,35 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 			break;
 		}
 		free(path_fixedfileinfo);
-		ut32 file_version_ms = sdb_num_get(sdb, "FileVersionMS", 0);
-		ut32 file_version_ls = sdb_num_get(sdb, "FileVersionLS", 0);
+		ut32 file_version_ms = sdb_num_get(sdb, "FileVersionMS");
+		ut32 file_version_ls = sdb_num_get(sdb, "FileVersionLS");
 		char *file_version = rz_str_newf("%u.%u.%u.%u", file_version_ms >> 16, file_version_ms & 0xFFFF,
 			file_version_ls >> 16, file_version_ls & 0xFFFF);
-		ut32 product_version_ms = sdb_num_get(sdb, "ProductVersionMS", 0);
-		ut32 product_version_ls = sdb_num_get(sdb, "ProductVersionLS", 0);
+		ut32 product_version_ms = sdb_num_get(sdb, "ProductVersionMS");
+		ut32 product_version_ls = sdb_num_get(sdb, "ProductVersionLS");
 		char *product_version = rz_str_newf("%u.%u.%u.%u", product_version_ms >> 16, product_version_ms & 0xFFFF,
 			product_version_ls >> 16, product_version_ls & 0xFFFF);
 		if (IS_MODE_JSON(mode)) {
-			pj_kn(pj, "Signature", sdb_num_get(sdb, "Signature", 0));
-			pj_kn(pj, "StrucVersion", sdb_num_get(sdb, "StrucVersion", 0));
+			pj_kn(pj, "Signature", sdb_num_get(sdb, "Signature"));
+			pj_kn(pj, "StrucVersion", sdb_num_get(sdb, "StrucVersion"));
 			pj_ks(pj, "FileVersion", file_version);
 			pj_ks(pj, "ProductVersion", product_version);
-			pj_kn(pj, "FileFlagsMask", sdb_num_get(sdb, "FileFlagsMask", 0));
-			pj_kn(pj, "FileFlags", sdb_num_get(sdb, "FileFlags", 0));
-			pj_kn(pj, "FileOS", sdb_num_get(sdb, "FileOS", 0));
-			pj_kn(pj, "FileType", sdb_num_get(sdb, "FileType", 0));
-			pj_kn(pj, "FileSubType", sdb_num_get(sdb, "FileSubType", 0));
+			pj_kn(pj, "FileFlagsMask", sdb_num_get(sdb, "FileFlagsMask"));
+			pj_kn(pj, "FileFlags", sdb_num_get(sdb, "FileFlags"));
+			pj_kn(pj, "FileOS", sdb_num_get(sdb, "FileOS"));
+			pj_kn(pj, "FileType", sdb_num_get(sdb, "FileType"));
+			pj_kn(pj, "FileSubType", sdb_num_get(sdb, "FileSubType"));
 			pj_end(pj);
 		} else {
-			rz_cons_printf("  Signature: 0x%" PFMT64x "\n", sdb_num_get(sdb, "Signature", 0));
-			rz_cons_printf("  StrucVersion: 0x%" PFMT64x "\n", sdb_num_get(sdb, "StrucVersion", 0));
+			rz_cons_printf("  Signature: 0x%" PFMT64x "\n", sdb_num_get(sdb, "Signature"));
+			rz_cons_printf("  StrucVersion: 0x%" PFMT64x "\n", sdb_num_get(sdb, "StrucVersion"));
 			rz_cons_printf("  FileVersion: %s\n", file_version);
 			rz_cons_printf("  ProductVersion: %s\n", product_version);
-			rz_cons_printf("  FileFlagsMask: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileFlagsMask", 0));
-			rz_cons_printf("  FileFlags: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileFlags", 0));
-			rz_cons_printf("  FileOS: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileOS", 0));
-			rz_cons_printf("  FileType: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileType", 0));
-			rz_cons_printf("  FileSubType: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileSubType", 0));
+			rz_cons_printf("  FileFlagsMask: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileFlagsMask"));
+			rz_cons_printf("  FileFlags: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileFlags"));
+			rz_cons_printf("  FileOS: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileOS"));
+			rz_cons_printf("  FileType: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileType"));
+			rz_cons_printf("  FileSubType: 0x%" PFMT64x "\n", sdb_num_get(sdb, "FileSubType"));
 			rz_cons_newline();
 		}
 		free(file_version);
@@ -4270,8 +4270,8 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 				if (sdb) {
 					int lenkey = 0;
 					int lenval = 0;
-					ut8 *key_utf16 = sdb_decode(sdb_const_get(sdb, "key", 0), &lenkey);
-					ut8 *val_utf16 = sdb_decode(sdb_const_get(sdb, "value", 0), &lenval);
+					ut8 *key_utf16 = sdb_decode(sdb_const_get(sdb, "key"), &lenkey);
+					ut8 *val_utf16 = sdb_decode(sdb_const_get(sdb, "value"), &lenval);
 					ut8 *key_utf8 = calloc(lenkey * 2, 1);
 					ut8 *val_utf8 = calloc(lenval * 2, 1);
 					if (!key_utf8 || !val_utf8 ||
@@ -4312,9 +4312,9 @@ static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 		pj_ka(pj, "versym"); // "versym": [
 	}
 
-	const ut64 addr = sdb_num_get(sdb, "addr", 0);
-	const ut64 offset = sdb_num_get(sdb, "offset", 0);
-	const ut64 num_entries = sdb_num_get(sdb, "num_entries", 0);
+	const ut64 addr = sdb_num_get(sdb, "addr");
+	const ut64 offset = sdb_num_get(sdb, "offset");
+	const ut64 num_entries = sdb_num_get(sdb, "num_entries");
 
 	if (IS_MODE_JSON(mode)) {
 		pj_o(pj); // {
@@ -4330,7 +4330,7 @@ static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 	char tmpbuf[32];
 	for (size_t i = 0; i < num_entries; i++) {
 		const char *const key = rz_strf(tmpbuf, "entry%zu", i);
-		const char *const value = sdb_const_get(sdb, key, 0);
+		const char *const value = sdb_const_get(sdb, key);
 
 		if (!value) {
 			continue;
@@ -4368,8 +4368,8 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 		pj_ka(pj, "verneed"); // "verneed": 1[
 	}
 
-	const ut64 address = sdb_num_get(sdb, "addr", 0);
-	const ut64 offset = sdb_num_get(sdb, "offset", 0);
+	const ut64 address = sdb_num_get(sdb, "addr");
+	const ut64 offset = sdb_num_get(sdb, "offset");
 
 	if (IS_MODE_JSON(mode)) {
 		pj_o(pj); // 1{
@@ -4378,7 +4378,7 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 		pj_ka(pj, "entries"); // "entries": 2[
 	} else {
 		rz_cons_printf("Version need has %d entries:\n",
-			(int)sdb_num_get(sdb, "num_entries", 0));
+			(int)sdb_num_get(sdb, "num_entries"));
 
 		rz_cons_printf(" Addr: 0x%08" PFMT64x, address);
 
@@ -4398,14 +4398,14 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 
 		if (IS_MODE_JSON(mode)) {
 			pj_o(pj); // 2{
-			pj_kn(pj, "idx", sdb_num_get(sdb, "idx", 0));
-			pj_ki(pj, "vn_version", (int)sdb_num_get(sdb, "vn_version", 0));
+			pj_kn(pj, "idx", sdb_num_get(sdb, "idx"));
+			pj_ki(pj, "vn_version", (int)sdb_num_get(sdb, "vn_version"));
 		} else {
 			rz_cons_printf("  0x%08" PFMT64x ": Version: %d",
-				sdb_num_get(sdb, "idx", 0), (int)sdb_num_get(sdb, "vn_version", 0));
+				sdb_num_get(sdb, "idx"), (int)sdb_num_get(sdb, "vn_version"));
 		}
 
-		if ((filename = sdb_const_get(sdb, "file_name", 0))) {
+		if ((filename = sdb_const_get(sdb, "file_name"))) {
 			if (IS_MODE_JSON(mode)) {
 				pj_ks(pj, "file_name", filename);
 			} else {
@@ -4413,7 +4413,7 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 			}
 		}
 
-		const int cnt = (int)sdb_num_get(sdb, "cnt", 0);
+		const int cnt = (int)sdb_num_get(sdb, "cnt");
 
 		if (IS_MODE_JSON(mode)) {
 			pj_ki(pj, "cnt", cnt);
@@ -4435,10 +4435,10 @@ static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 			}
 			free(path_vernaux);
 
-			const ut64 idx = sdb_num_get(sdb, "idx", 0);
-			const char *const name = sdb_const_get(sdb, "name", 0);
-			const char *const flags = sdb_const_get(sdb, "flags", 0);
-			const int version = (int)sdb_num_get(sdb, "version", 0);
+			const ut64 idx = sdb_num_get(sdb, "idx");
+			const char *const name = sdb_const_get(sdb, "name");
+			const char *const flags = sdb_const_get(sdb, "flags");
+			const int version = (int)sdb_num_get(sdb, "version");
 
 			if (IS_MODE_JSON(mode)) {
 				pj_o(pj);

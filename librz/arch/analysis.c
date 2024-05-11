@@ -507,50 +507,50 @@ RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) 
 	return value;
 }
 
-static bool sdb_noret_addr_set(Sdb *db, ut64 addr, bool v, ut32 cas) {
+static bool sdb_noret_addr_set(Sdb *db, ut64 addr, bool v) {
 	char key[128];
 	rz_strf(key, "addr.%" PFMT64x ".noreturn", addr);
-	return sdb_bool_set(db, key, v, cas);
+	return sdb_bool_set(db, key, v);
 }
 
-static bool sdb_noret_addr_get(Sdb *db, ut64 addr, ut32 *cas) {
+static bool sdb_noret_addr_get(Sdb *db, ut64 addr) {
 	char key[128];
 	rz_strf(key, "addr.%" PFMT64x ".noreturn", addr);
-	return sdb_bool_get(db, key, cas);
+	return sdb_bool_get(db, key);
 }
 
-static int sdb_noret_addr_unset(Sdb *db, ut64 addr, ut32 cas) {
+static int sdb_noret_addr_unset(Sdb *db, ut64 addr) {
 	char key[128];
 	rz_strf(key, "addr.%" PFMT64x ".noreturn", addr);
-	return sdb_unset(db, key, cas);
+	return sdb_unset(db, key);
 }
 
-static bool sdb_noret_func_set(Sdb *db, const char *name, bool v, ut32 cas) {
+static bool sdb_noret_func_set(Sdb *db, const char *name, bool v) {
 	char *key = rz_str_newf("func.%s.noreturn", name);
 	if (!key) {
 		return false;
 	}
-	bool res = sdb_bool_set(db, key, v, cas);
+	bool res = sdb_bool_set(db, key, v);
 	free(key);
 	return res;
 }
 
-static bool sdb_noret_func_get(Sdb *db, const char *name, ut32 *cas) {
+static bool sdb_noret_func_get(Sdb *db, const char *name) {
 	char *key = rz_str_newf("func.%s.noreturn", name);
 	if (!key) {
 		return false;
 	}
-	bool res = sdb_bool_get(db, key, cas);
+	bool res = sdb_bool_get(db, key);
 	free(key);
 	return res;
 }
 
-static int sdb_noret_func_unset(Sdb *db, const char *name, ut32 cas) {
+static int sdb_noret_func_unset(Sdb *db, const char *name) {
 	char *key = rz_str_newf("func.%s.noreturn", name);
 	if (!key) {
 		return false;
 	}
-	int res = sdb_unset(db, key, cas);
+	int res = sdb_unset(db, key);
 	free(key);
 	return res;
 }
@@ -560,7 +560,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 	Sdb *NDB = analysis->sdb_noret;
 	char *fnl_name = NULL;
 	if (addr != UT64_MAX) {
-		if (sdb_noret_addr_set(NDB, addr, true, 0)) {
+		if (sdb_noret_addr_set(NDB, addr, true)) {
 			RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, addr);
 			if (fcn) {
 				fcn->is_noreturn = true;
@@ -587,7 +587,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 	} else if (!(fnl_name = rz_analysis_function_name_guess(analysis->typedb, (char *)tmp_name))) {
 		if (addr == UT64_MAX) {
 			if (name) {
-				sdb_noret_func_set(NDB, name, true, 0);
+				sdb_noret_func_set(NDB, name, true);
 			} else {
 				RZ_LOG_ERROR("Cannot find prototype for: %s\n", tmp_name);
 			}
@@ -597,7 +597,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 		// return false;
 	}
 	if (fnl_name) {
-		sdb_noret_func_set(NDB, fnl_name, true, 0);
+		sdb_noret_func_set(NDB, fnl_name, true);
 		free(fnl_name);
 	}
 	return true;
@@ -609,7 +609,7 @@ RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
 	const char *fcnname = NULL;
 	if (!strncmp(expr, "0x", 2)) {
 		ut64 n = rz_num_math(NULL, expr);
-		sdb_noret_addr_unset(NDB, n, 0);
+		sdb_noret_addr_unset(NDB, n);
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, n, -1);
 		if (!fcn) {
 			// eprintf ("can't find function at 0x%"PFMT64x"\n", n);
@@ -619,13 +619,13 @@ RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
 	} else {
 		fcnname = expr;
 	}
-	sdb_noret_func_unset(NDB, fcnname, 0);
+	sdb_noret_func_unset(NDB, fcnname);
 	return false;
 }
 
 static bool rz_analysis_is_noreturn(RzAnalysis *analysis, const char *name) {
 	return rz_type_func_is_noreturn(analysis->typedb, name) ||
-		sdb_noret_func_get(analysis->sdb_noret, name, NULL);
+		sdb_noret_func_get(analysis->sdb_noret, name);
 }
 
 static bool rz_analysis_noreturn_at_name(RzAnalysis *analysis, const char *name) {
@@ -647,7 +647,7 @@ static bool rz_analysis_noreturn_at_name(RzAnalysis *analysis, const char *name)
 }
 
 RZ_API bool rz_analysis_noreturn_at_addr(RzAnalysis *analysis, ut64 addr) {
-	return sdb_noret_addr_get(analysis->sdb_noret, addr, NULL);
+	return sdb_noret_addr_get(analysis->sdb_noret, addr);
 }
 
 static bool noreturn_recurse(RzAnalysis *analysis, ut64 addr) {

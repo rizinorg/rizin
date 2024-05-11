@@ -31,7 +31,7 @@ RZ_API void rz_serialize_flag_zones_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzList /
 		pj_kn(j, "from", item->from);
 		pj_kn(j, "to", item->to);
 		pj_end(j);
-		sdb_set(db, item->name, pj_string(j), 0);
+		sdb_set(db, item->name, pj_string(j));
 		pj_free(j);
 	}
 }
@@ -113,14 +113,14 @@ static bool flag_save_cb(RzFlagItem *flag, void *user) {
 		pj_ks(j, "alias", flag->alias);
 	}
 	pj_end(j);
-	sdb_set(db, flag->name, pj_string(j), 0);
+	sdb_set(db, flag->name, pj_string(j));
 	pj_free(j);
 	return true;
 }
 
 RZ_API void rz_serialize_flag_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag) {
 	rz_serialize_spaces_save(sdb_ns(db, "spaces", true), &flag->spaces);
-	sdb_set(db, "realnames", flag->realnames ? "1" : "0", 0);
+	sdb_set(db, "realnames", flag->realnames ? "1" : "0");
 	sdb_copy(flag->tags, sdb_ns(db, "tags", true));
 	rz_serialize_flag_zones_save(sdb_ns(db, "zones", true), flag->zones);
 	rz_flag_foreach(flag, flag_save_cb, sdb_ns(db, "flags", true));
@@ -263,7 +263,7 @@ static bool load_flags(RZ_NONNULL Sdb *flags_db, RZ_NONNULL RzFlag *flag) {
 RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, RZ_NULLABLE RzSerializeResultInfo *res) {
 	rz_flag_unset_all(flag);
 
-	const char *str = sdb_const_get(db, "realnames", 0);
+	const char *str = sdb_const_get(db, "realnames");
 	if (!str) {
 		RZ_SERIALIZE_ERR(res, "flag realnames key is missing");
 		return false;

@@ -137,13 +137,11 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 	/* FIXME: Why are we getting struct missing errors when it finds them */
 	sdb_set(obj->kv, "mdmp_mem_state.cparse",
 		"enum mdmp_mem_state { MEM_COMMIT=0x1000, "
-		"MEM_FREE=0x10000, MEM_RESERVE=0x02000 };",
-		0);
+		"MEM_FREE=0x10000, MEM_RESERVE=0x02000 };");
 
 	sdb_set(obj->kv, "mdmp_mem_type.cparse",
 		"enum mdmp_mem_type { MEM_IMAGE=0x1000000, "
-		"MEM_MAPPED=0x40000, MEM_PRIVATE=0x20000 };",
-		0);
+		"MEM_MAPPED=0x40000, MEM_PRIVATE=0x20000 };");
 
 	sdb_set(obj->kv, "mdmp_page_protect.cparse",
 		"enum mdmp_page_protect { PAGE_NOACCESS=1, "
@@ -151,14 +149,12 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 		"PAGE_EXECUTE=0x10, PAGE_EXECUTE_READ=0x20, "
 		"PAGE_EXECUTE_READWRITE=0x40, PAGE_EXECUTE_WRITECOPY=0x80, "
 		"PAGE_GUARD=0x100, PAGE_NOCACHE=0x200, "
-		"PAGE_WRITECOMBINE=0x400, PAGE_TARGETS_INVALID=0x40000000 };",
-		0);
+		"PAGE_WRITECOMBINE=0x400, PAGE_TARGETS_INVALID=0x40000000 };");
 
 	sdb_set(obj->kv, "mdmp_misc1_flags.cparse",
 		"enum mdmp_misc1_flags { MINIDUMP_MISC1_PROCESS_ID=1, "
 		"MINIDUMP_MISC1_PROCESS_TIMES=2, "
-		"MINIDUMP_MISC1_PROCESSOR_POWER_INFO=4 };",
-		0);
+		"MINIDUMP_MISC1_PROCESSOR_POWER_INFO=4 };");
 
 	sdb_set(obj->kv, "mdmp_processor_architecture.cparse",
 		"enum mdmp_processor_architecture { "
@@ -166,21 +162,18 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 		"PROCESSOR_ARCHITECTURE_ARM=5, "
 		"PROCESSOR_ARCHITECTURE_IA64=6, "
 		"PROCESSOR_ARCHITECTURE_AMD64=9, "
-		"PROCESSOR_ARCHITECTURE_UNKNOWN=0xffff };",
-		0);
+		"PROCESSOR_ARCHITECTURE_UNKNOWN=0xffff };");
 
 	sdb_set(obj->kv, "mdmp_product_type.cparse",
 		"enum mdmp_product_type { "
 		"VER_NT_WORKSTATION=1, VER_NT_DOMAIN_CONTROLLER=2, "
-		"VER_NT_SERVER=3 };",
-		0);
+		"VER_NT_SERVER=3 };");
 
 	sdb_set(obj->kv, "mdmp_platform_id.cparse",
 		"enum mdmp_platform_id { "
 		"VER_PLATFORM_WIN32s=0, "
 		"VER_PLATFORM_WIN32_WINDOWS=1, "
-		"VER_PLATFORM_WIN32_NT=2 };",
-		0);
+		"VER_PLATFORM_WIN32_NT=2 };");
 
 	sdb_set(obj->kv, "mdmp_suite_mask.cparse",
 		"enum mdmp_suite_mask { "
@@ -190,8 +183,7 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 		"VER_SUITE_EMBEDDEDNT=0x40, VER_SUITE_DATACENTER=0x80, "
 		"VER_SUITE_SINGLEUSERTS=0x100, VER_SUITE_PERSONAL=0x200, "
 		"VER_SUITE_BLADE=0x400, VER_SUITE_STORAGE_SERVER=0x2000, "
-		"VER_SUITE_COMPUTE_SERVER=0x4000 };",
-		0);
+		"VER_SUITE_COMPUTE_SERVER=0x4000 };");
 
 	sdb_set(obj->kv, "mdmp_callback_type.cparse",
 		"enum mdmp_callback_type { ModuleCallback=0,"
@@ -204,8 +196,7 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 		"IncludeVmRegionCallback=10, "
 		"IoStartCallback=11, IoWriteAllCallback=12, "
 		"IoFinishCallback=13, ReadMemoryFailureCallback=14, "
-		"SecondaryFlagsCallback=15 };",
-		0);
+		"SecondaryFlagsCallback=15 };");
 
 	sdb_set(obj->kv, "mdmp_exception_code.cparse",
 		"enum mdmp_exception_code { "
@@ -232,27 +223,23 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 		"EXCEPTION_INTEGER_OVERFLOW=0xc0000095, "
 		"EXCEPTION_PRIVILEGED_INSTRUCTION=0xc0000096, "
 		"EXCEPTION_STACK_OVERFLOW=0xc00000fd, "
-		"EXCEPTION_POSSIBLE_DEADLOCK=0xc0000194 };",
-		0);
+		"EXCEPTION_POSSIBLE_DEADLOCK=0xc0000194 };");
 
 	sdb_set(obj->kv, "mdmp_exception_flags.cparse",
 		"enum mdmp_exception_flags { "
 		"EXCEPTION_CONTINUABLE=0, "
-		"EXCEPTION_NONCONTINUABLE=1 };",
-		0);
+		"EXCEPTION_NONCONTINUABLE=1 };");
 
 	sdb_set(obj->kv, "mdmp_handle_object_information_type.cparse",
 		"enum mdmp_handle_object_information_type { "
 		"MiniHandleObjectInformationNone=0, "
 		"MiniThreadInformation1=1, MiniMutantInformation1=2, "
 		"MiniMutantInformation2=3, MiniMutantProcessInformation1=4, "
-		"MiniProcessInformation2=5 };",
-		0);
+		"MiniProcessInformation2=5 };");
 
 	sdb_set(obj->kv, "mdmp_secondary_flags.cparse",
 		"enum mdmp_secondary_flags { "
-		"MiniSecondaryWithoutPowerInfo=0 };",
-		0);
+		"MiniSecondaryWithoutPowerInfo=0 };");
 
 	sdb_set(obj->kv, "mdmp_stream_type.cparse",
 		"enum mdmp_stream_type { UnusedStream=0, "
@@ -266,8 +253,7 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 		"MiscInfoStream=15, MemoryInfoListStream=16, "
 		"ThreadInfoListStream=17, "
 		"HandleOperationListStream=18, "
-		"LastReservedStream=0xffff };",
-		0);
+		"LastReservedStream=0xffff };");
 
 	sdb_set(obj->kv, "mdmp_type.cparse", "enum mdmp_type { "
 					     "MiniDumpNormal=0x0, "
@@ -292,16 +278,14 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 					     "MiniDumpWithTokenInformation=0x40000, "
 					     "MiniDumpWithModuleHeaders=0x80000, "
 					     "MiniDumpFilterTriage=0x100000, "
-					     "MiniDumpValidTypeFlags=0x1fffff };",
-		0);
+					     "MiniDumpValidTypeFlags=0x1fffff };");
 
 	sdb_set(obj->kv, "mdmp_module_write_flags.cparse",
 		"enum mdmp_module_write_flags { "
 		"ModuleWriteModule=0, ModuleWriteDataSeg=2, "
 		"ModuleWriteMiscRecord=4, ModuleWriteCvRecord=8, "
 		"ModuleReferencedByMemory=0x10, ModuleWriteTlsData=0x20, "
-		"ModuleWriteCodeSegs=0x40 };",
-		0);
+		"ModuleWriteCodeSegs=0x40 };");
 
 	sdb_set(obj->kv, "mdmp_thread_write_flags.cparse",
 		"enum mdmp_thread_write_flags { "
@@ -309,33 +293,29 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 		"ThreadWriteContext=4, ThreadWriteBackingStore=8, "
 		"ThreadWriteInstructionWindow=0x10, "
 		"ThreadWriteThreadData=0x20, "
-		"ThreadWriteThreadInfo=0x40 };",
-		0);
+		"ThreadWriteThreadInfo=0x40 };");
 
 	sdb_set(obj->kv, "mdmp_context_flags.cparse",
 		"enum mdmp_context_flags { CONTEXT_i386=0x10000, "
 		"CONTEXT_CONTROL=0x10001, CONTEXT_INTEGER=0x10002, "
 		"CONTEXT_SEGMENTS=0x10004, CONTEXT_FLOATING_POINT=0x10008, "
 		"CONTEXT_DEBUG_REGISTERS=0x10010, "
-		"CONTEXT_EXTENDED_REGISTERS=0x10020 };",
-		0);
+		"CONTEXT_EXTENDED_REGISTERS=0x10020 };");
 
 	sdb_set(obj->kv, "mdmp_location_descriptor.format",
-		"dd DataSize RVA", 0);
+		"dd DataSize RVA");
 	sdb_set(obj->kv, "mdmp_location_descriptor64.format",
-		"qq DataSize RVA", 0);
+		"qq DataSize RVA");
 	sdb_set(obj->kv, "mdmp_memory_descriptor.format", "q? "
 							  "StartOfMemoryRange "
-							  "(mdmp_location_descriptor)Memory",
-		0);
+							  "(mdmp_location_descriptor)Memory");
 	sdb_set(obj->kv, "mdmp_memory_descriptor64.format", "qq "
-							    "StartOfMemoryRange DataSize",
-		0);
+							    "StartOfMemoryRange DataSize");
 
 #if 0
 	/* TODO: Flag dependent thus not fully implemented */
 	sdb_set (obj->kv, "mdmp_context.format", "[4]B "
-		"(mdmp_context_flags)ContextFlags", 0);
+		"(mdmp_context_flags)ContextFlags");
 #endif
 
 	sdb_set(obj->kv, "mdmp_vs_fixedfileinfo.format", "ddddddddddddd "
@@ -343,10 +323,9 @@ static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 							 "dwFileVersionLs dwProductVersionMs "
 							 "dwProductVersionLs dwFileFlagsMask dwFileFlags "
 							 "dwFileOs dwFileType dwFileSubtype dwFileDateMs "
-							 "dwFileDateLs",
-		0);
+							 "dwFileDateLs");
 
-	sdb_set(obj->kv, "mdmp_string.format", "dZ Length Buffer", 0);
+	sdb_set(obj->kv, "mdmp_string.format", "dZ Length Buffer");
 }
 
 static bool mdmp_read_header(RzBuffer *b, MiniDmpHeader *hdr) {
@@ -381,13 +360,12 @@ static bool rz_bin_mdmp_init_hdr(MiniDmpObj *obj) {
 		return false;
 	}
 
-	sdb_num_set(obj->kv, "mdmp.hdr.time_date_stamp", obj->hdr->time_date_stamp, 0);
-	sdb_num_set(obj->kv, "mdmp.hdr.flags", obj->hdr->flags, 0);
-	sdb_num_set(obj->kv, "mdmp_header.offset", 0, 0);
+	sdb_num_set(obj->kv, "mdmp.hdr.time_date_stamp", obj->hdr->time_date_stamp);
+	sdb_num_set(obj->kv, "mdmp.hdr.flags", obj->hdr->flags);
+	sdb_num_set(obj->kv, "mdmp_header.offset", 0);
 	sdb_set(obj->kv, "mdmp_header.format", "[4]zddddt[8]B Signature "
 					       "Version NumberOfStreams StreamDirectoryRVA CheckSum "
-					       "TimeDateStamp (mdmp_type)Flags",
-		0);
+					       "TimeDateStamp (mdmp_type)Flags");
 
 	return true;
 }
@@ -658,15 +636,13 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		sdb_set(obj->kv, "mdmp_thread.format", "ddddq?? "
 						       "ThreadId SuspendCount PriorityClass Priority "
 						       "Teb (mdmp_memory_descriptor)Stack "
-						       "(mdmp_location_descriptor)ThreadContext",
-			0);
+						       "(mdmp_location_descriptor)ThreadContext");
 		sdb_num_set(obj->kv, "mdmp_thread_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_thread_list.format",
 			rz_strf(tmpbuf, "d[%d]? "
 					"NumberOfThreads (mdmp_thread)Threads",
-				thread_list.number_of_threads),
-			0);
+				thread_list.number_of_threads));
 
 		/* TODO: Not yet fully parsed or utilised */
 		break;
@@ -681,15 +657,13 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 						       "(mdmp_vs_fixedfileinfo)VersionInfo "
 						       "(mdmp_location_descriptor)CvRecord "
 						       "(mdmp_location_descriptor)MiscRecord "
-						       "Reserved0 Reserved1",
-			0);
+						       "Reserved0 Reserved1");
 		sdb_num_set(obj->kv, "mdmp_module_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_module_list.format",
 			rz_strf(tmpbuf, "d[%d]? "
 					"NumberOfModule (mdmp_module)Modules",
-				module_list.number_of_modules),
-			0);
+				module_list.number_of_modules));
 
 		offset = entry->location.rva + sizeof(module_list);
 		for (i = 0; i < module_list.number_of_modules; i++) {
@@ -710,13 +684,12 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_num_set(obj->kv, "mdmp_memory_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_memory_list.format",
 			rz_strf(tmpbuf, "d[%d]? "
 					"NumberOfMemoryRanges "
 					"(mdmp_memory_descriptor)MemoryRanges ",
-				memory_list.number_of_memory_ranges),
-			0);
+				memory_list.number_of_memory_ranges));
 
 		offset = entry->location.rva + sizeof(MiniDmpModuleList);
 		for (i = 0; i < memory_list.number_of_memory_ranges; i++) {
@@ -744,15 +717,13 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 							  "(mdmp_exception_flags)ExceptionFlags "
 							  "ExceptionRecord ExceptionAddress "
 							  "NumberParameters __UnusedAlignment "
-							  "ExceptionInformation",
-			0);
+							  "ExceptionInformation");
 		sdb_num_set(obj->kv, "mdmp_exception_stream.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_exception_stream.format", "dd?? "
 								 "ThreadId __Alignment "
 								 "(mdmp_exception)ExceptionRecord "
-								 "(mdmp_location_descriptor)ThreadContext",
-			0);
+								 "(mdmp_location_descriptor)ThreadContext");
 
 		break;
 	case SYSTEM_INFO_STREAM:
@@ -763,15 +734,14 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			break;
 		}
 		sdb_num_set(obj->kv, "mdmp_system_info.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		/* TODO: We need E as a byte! */
 		sdb_set(obj->kv, "mdmp_system_info.format", "[2]EwwbBddd[4]Ed[2]Ew[2]q "
 							    "(mdmp_processor_architecture)ProcessorArchitecture "
 							    "ProcessorLevel ProcessorRevision NumberOfProcessors "
 							    "(mdmp_product_type)ProductType "
 							    "MajorVersion MinorVersion BuildNumber (mdmp_platform_id)PlatformId "
-							    "CsdVersionRva (mdmp_suite_mask)SuiteMask Reserved2 ProcessorFeatures",
-			0);
+							    "CsdVersionRva (mdmp_suite_mask)SuiteMask Reserved2 ProcessorFeatures");
 
 		break;
 	case THREAD_EX_LIST_STREAM:
@@ -784,15 +754,13 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 							  "ThreadId SuspendCount PriorityClass Priority "
 							  "Teb (mdmp_memory_descriptor)Stack "
 							  "(mdmp_location_descriptor)ThreadContext "
-							  "(mdmp_memory_descriptor)BackingStore",
-			0);
+							  "(mdmp_memory_descriptor)BackingStore");
 		sdb_num_set(obj->kv, "mdmp_thread_ex_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_thread_ex_list.format",
 			rz_strf(tmpbuf, "d[%d]? NumberOfThreads "
 					"(mdmp_thread_ex)Threads",
-				thread_ex_list.number_of_threads),
-			0);
+				thread_ex_list.number_of_threads));
 
 		offset = entry->location.rva + sizeof(MiniDmpThreadExList);
 		for (i = 0; i < thread_ex_list.number_of_threads; i++) {
@@ -811,13 +779,12 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_num_set(obj->kv, "mdmp_memory64_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_memory64_list.format",
 			rz_strf(tmpbuf, "qq[%" PFMT64d "]? NumberOfMemoryRanges "
 					"BaseRva "
 					"(mdmp_memory_descriptor64)MemoryRanges",
-				memory64_list.number_of_memory_ranges),
-			0);
+				memory64_list.number_of_memory_ranges));
 
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
 		offset = entry->location.rva + sizeof(MiniDmpMemList64);
@@ -843,9 +810,9 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_num_set(obj->kv, "mdmp_comment_stream_a.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_comment_stream_a.format",
-			"s CommentA", 0);
+			"s CommentA");
 
 		break;
 	case COMMENT_STREAM_W:
@@ -860,9 +827,9 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_num_set(obj->kv, "mdmp_comment_stream_w.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_comment_stream_w.format",
-			"s CommentW", 0);
+			"s CommentW");
 
 		break;
 	case HANDLE_DATA_STREAM:
@@ -875,11 +842,10 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_num_set(obj->kv, "mdmp_handle_data_stream.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_handle_data_stream.format", "dddd "
 								   "SizeOfHeader SizeOfDescriptor "
-								   "NumberOfDescriptors Reserved",
-			0);
+								   "NumberOfDescriptors Reserved");
 		break;
 	case FUNCTION_TABLE_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
@@ -891,11 +857,10 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_num_set(obj->kv, "mdmp_function_table_stream.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_function_table_stream.format", "dddddd "
 								      "SizeOfHeader SizeOfDescriptor SizeOfNativeDescriptor "
-								      "SizeOfFunctionEntry NumberOfDescriptors SizeOfAlignPad",
-			0);
+								      "SizeOfFunctionEntry NumberOfDescriptors SizeOfAlignPad");
 		break;
 	case UNLOADED_MODULE_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
@@ -906,13 +871,11 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 
 		sdb_set(obj->kv, "mdmp_unloaded_module.format", "qddtd "
 								"BaseOfImage SizeOfImage CheckSum TimeDateStamp "
-								"ModuleNameRva",
-			0);
+								"ModuleNameRva");
 		sdb_num_set(obj->kv, "mdmp_unloaded_module_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_unloaded_module_list.format", "ddd "
-								     "SizeOfHeader SizeOfEntry NumberOfEntries",
-			0);
+								     "SizeOfHeader SizeOfEntry NumberOfEntries");
 
 		for (i = 0; i < unloaded_module_list.number_of_entries; i++) {
 			MiniDmpUnloadedModule *module = RZ_NEW(MiniDmpUnloadedModule);
@@ -935,14 +898,13 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 
 		/* TODO: Handle different sizes */
 		sdb_num_set(obj->kv, "mdmp_misc_info.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_misc_info.format", "d[4]Bdtttddddd "
 							  "SizeOfInfo (mdmp_misc1_flags)Flags1 ProcessId "
 							  "ProcessCreateTime ProcessUserTime ProcessKernelTime "
 							  "ProcessorMaxMhz ProcessorCurrentMhz "
 							  "ProcessorMhzLimit ProcessorMaxIdleState "
-							  "ProcessorCurrentIdleState",
-			0);
+							  "ProcessorCurrentIdleState");
 
 		break;
 	case MEMORY_INFO_LIST_STREAM:
@@ -955,15 +917,13 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 			"qq[4]Edq[4]E[4]E[4]Ed BaseAddress AllocationBase "
 			"(mdmp_page_protect)AllocationProtect __Alignment1 RegionSize "
 			"(mdmp_mem_state)State (mdmp_page_protect)Protect "
-			"(mdmp_mem_type)Type __Alignment2",
-			0);
+			"(mdmp_mem_type)Type __Alignment2");
 		sdb_num_set(obj->kv, "mdmp_memory_info_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_memory_info_list.format",
 			rz_strf(tmpbuf, "ddq[%" PFMT64d "]? SizeOfHeader SizeOfEntry "
 					"NumberOfEntries (mdmp_memory_info)MemoryInfo",
-				memory_info_list.number_of_entries),
-			0);
+				memory_info_list.number_of_entries));
 
 		for (i = 0; i < memory_info_list.number_of_entries; i++) {
 			MiniDmpMemInfo *info = RZ_NEW(MiniDmpMemInfo);
@@ -984,13 +944,11 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 
 		sdb_set(obj->kv, "mdmp_thread_info.format", "ddddttttqq "
 							    "ThreadId DumpFlags DumpError ExitStatus CreateTime "
-							    "ExitTime KernelTime UserTime StartAddress Affinity",
-			0);
+							    "ExitTime KernelTime UserTime StartAddress Affinity");
 		sdb_num_set(obj->kv, "mdmp_thread_info_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_thread_info_list.format", "ddd "
-								 "SizeOfHeader SizeOfEntry NumberOfEntries",
-			0);
+								 "SizeOfHeader SizeOfEntry NumberOfEntries");
 
 		for (i = 0; i < thread_info_list.number_of_entries; i++) {
 			MiniDmpThreadInfo *info = RZ_NEW(MiniDmpThreadInfo);
@@ -1010,10 +968,9 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_num_set(obj->kv, "mdmp_handle_operation_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_handle_operation_list.format", "dddd "
-								      "SizeOfHeader SizeOfEntry NumberOfEntries Reserved",
-			0);
+								      "SizeOfHeader SizeOfEntry NumberOfEntries Reserved");
 
 		for (i = 0; i < handle_operation_list.number_of_entries; i++) {
 			AVRFHandleOp *op = RZ_NEW(AVRFHandleOp);
@@ -1034,14 +991,12 @@ static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 		}
 
 		sdb_set(obj->kv, "mdmp_token_info.format", "ddq "
-							   "TokenSize TokenId TokenHandle",
-			0);
+							   "TokenSize TokenId TokenHandle");
 
 		sdb_num_set(obj->kv, "mdmp_token_info_list.offset",
-			entry->location.rva, 0);
+			entry->location.rva);
 		sdb_set(obj->kv, "mdmp_token_info_list.format", "dddd "
-								"TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize",
-			0);
+								"TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize");
 
 		for (i = 0; i < token_info_list.number_of_entries; i++) {
 			MiniDmpTokenInfo *info = RZ_NEW(MiniDmpTokenInfo);
@@ -1078,11 +1033,10 @@ static bool mdmp_read_directory(MiniDmpObj *obj, ut64 addr, MiniDmpDir *entry) {
 
 static bool rz_bin_mdmp_init_directory(MiniDmpObj *obj) {
 	sdb_num_set(obj->kv, "mdmp_directory.offset",
-		obj->hdr->stream_directory_rva, 0);
+		obj->hdr->stream_directory_rva);
 	sdb_set(obj->kv, "mdmp_directory.format", "[4]E? "
 						  "(mdmp_stream_type)StreamType "
-						  "(mdmp_location_descriptor)Location",
-		0);
+						  "(mdmp_location_descriptor)Location");
 
 	ut64 rvadir = obj->hdr->stream_directory_rva;
 	ut64 bytes_left = rvadir < obj->size ? obj->size - rvadir : 0;

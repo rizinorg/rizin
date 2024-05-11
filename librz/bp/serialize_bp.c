@@ -57,7 +57,7 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 		pj_end(j);
 
 		char key[19];
-		sdb_set(db, rz_strf(key, "0x%" PFMT64x, bp_item->addr), pj_string(j), 0);
+		sdb_set(db, rz_strf(key, "0x%" PFMT64x, bp_item->addr), pj_string(j));
 		pj_free(j);
 	}
 }

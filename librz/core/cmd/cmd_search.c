@@ -1533,7 +1533,7 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 								result = false;
 								goto bad;
 							}
-							sdb_concat(gadgetSdb, headAddr, addr, 0);
+							sdb_concat(gadgetSdb, headAddr, addr);
 							free(addr);
 						}
 						free(headAddr);

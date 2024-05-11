@@ -18,24 +18,24 @@ static void setup_types_db(RzTypeDB *typedb) {
 }
 
 static void setup_sdb_for_function(Sdb *res) {
-	sdb_set(res, "ExitProcess", "func", 0);
-	sdb_num_set(res, "func.ExitProcess.args", 0, 0);
-	sdb_set(res, "func.ExitProcess.ret", "void", 0);
-	sdb_set(res, "ReadFile", "func", 0);
-	sdb_num_set(res, "func.ReadFile.args", 0, 0);
-	sdb_set(res, "func.ReadFile.ret", "void", 0);
-	sdb_set(res, "memcpy", "func", 0);
-	sdb_num_set(res, "func.memcpy.args", 0, 0);
-	sdb_set(res, "func.memcpy.ret", "void", 0);
-	sdb_set(res, "strchr", "func", 0);
-	sdb_num_set(res, "func.strchr.args", 0, 0);
-	sdb_set(res, "func.strchr.ret", "void", 0);
-	sdb_set(res, "__stack_chk_fail", "func", 0);
-	sdb_num_set(res, "func.__stack_chk_fail.args", 0, 0);
-	sdb_set(res, "func.__stack_chk_fail.ret", "void", 0);
-	sdb_set(res, "WSAStartup", "func", 0);
-	sdb_num_set(res, "func.WSAStartup.args", 0, 0);
-	sdb_set(res, "func.WSAStartup.ret", "void", 0);
+	sdb_set(res, "ExitProcess", "func");
+	sdb_num_set(res, "func.ExitProcess.args", 0);
+	sdb_set(res, "func.ExitProcess.ret", "void");
+	sdb_set(res, "ReadFile", "func");
+	sdb_num_set(res, "func.ReadFile.args", 0);
+	sdb_set(res, "func.ReadFile.ret", "void");
+	sdb_set(res, "memcpy", "func");
+	sdb_num_set(res, "func.memcpy.args", 0);
+	sdb_set(res, "func.memcpy.ret", "void");
+	sdb_set(res, "strchr", "func");
+	sdb_num_set(res, "func.strchr.args", 0);
+	sdb_set(res, "func.strchr.ret", "void");
+	sdb_set(res, "__stack_chk_fail", "func");
+	sdb_num_set(res, "func.__stack_chk_fail.args", 0);
+	sdb_set(res, "func.__stack_chk_fail.ret", "void");
+	sdb_set(res, "WSAStartup", "func");
+	sdb_num_set(res, "func.WSAStartup.args", 0);
+	sdb_set(res, "func.WSAStartup.ret", "void");
 }
 
 bool ht_up_count(void *user, const ut64 k, const void *v) {

@@ -234,7 +234,7 @@ repeat:
 			next = strchr(eq + 1, ';');
 			if (next)
 				*next = 0;
-			val = sdb_const_get(s, eq + 1, 0);
+			val = sdb_const_get(s, eq + 1);
 			if (!val) {
 				eprintf("No value for '%s'\n", eq + 1);
 				goto fail;
@@ -291,7 +291,7 @@ repeat:
 		slash = strchr(cmd, '/');
 	}
 	if (*cmd == '?') {
-		const char *val = sdb_const_get(s, cmd + 1, 0);
+		const char *val = sdb_const_get(s, cmd + 1);
 		const char *type = sdb_type(val);
 		out_concat(type);
 	} else if (*cmd == '*') {
@@ -343,7 +343,7 @@ repeat:
 	}
 	if (*cmd == '$') {
 		free(newcmd);
-		char *nc = sdb_get(s, cmd + 1, 0);
+		char *nc = sdb_get(s, cmd + 1);
 		cmd = newcmd = (nc) ? nc : strdup("");
 	}
 	// cmd = val
@@ -392,8 +392,7 @@ repeat:
 			int idx = sdb_atoi(cmd + 2);
 			/* +[idx]key=n */
 			/* -[idx]key=n */
-			ut64 curnum = sdb_array_get_num(s,
-				eb + 1, idx, 0);
+			ut64 curnum = sdb_array_get_num(s, eb + 1, idx);
 			if (eq) {
 				/* +[idx]key=n  -->  key[idx] += n */
 				/* -[idx]key=n  -->  key[idx] -= n */
@@ -405,7 +404,7 @@ repeat:
 				} else {
 					// never happens
 				}
-				sdb_array_set_num(s, eb + 1, idx, curnum, 0);
+				sdb_array_set_num(s, eb + 1, idx, curnum);
 			} else {
 				/* +[idx]key    -->  key[idx] + 1 */
 				/* -[idx]key    -->  key[idx] - 1 */
@@ -434,23 +433,23 @@ repeat:
 					d = sdb_atoi(val);
 				}
 				if (op == '+') {
-					sdb_num_inc(s, cmd + 1, d, 0);
+					sdb_num_inc(s, cmd + 1, d);
 				} else {
-					sdb_num_dec(s, cmd + 1, d, 0);
+					sdb_num_dec(s, cmd + 1, d);
 				}
 			} else {
 				if (*cmd == '+') {
-					sdb_concat(s, cmd + 1, val, 0);
+					sdb_concat(s, cmd + 1, val);
 				} else {
-					sdb_uncat(s, cmd + 1, val, 0);
+					sdb_uncat(s, cmd + 1, val);
 				}
 			}
 		} else {
-			int base = sdb_num_base(sdb_const_get(s, cmd + 1, 0));
+			int base = sdb_num_base(sdb_const_get(s, cmd + 1));
 			if (*cmd == '+') {
-				n = sdb_num_inc(s, cmd + 1, d, 0);
+				n = sdb_num_inc(s, cmd + 1, d);
 			} else {
-				n = sdb_num_dec(s, cmd + 1, d, 0);
+				n = sdb_num_dec(s, cmd + 1, d);
 			}
 			// keep base
 			if (base == 16) {
@@ -507,18 +506,18 @@ repeat:
 		} else if (cmd[1] == '!') {
 			if (cmd[2] == '+') {
 				// [!+]key=aa	# add_sorted
-				sdb_array_add_sorted(s, p, val, 0);
+				sdb_array_add_sorted(s, p, val);
 			} else {
 				// [!]key		# sort
-				sdb_array_sort(s, p, 0);
+				sdb_array_sort(s, p);
 			}
 		} else if (cmd[1] == '#') {
 			// [#+]key=num	# add_sorted_num
 			if (cmd[2] == '+') {
 				// [#]key		# sort_num
-				sdb_array_add_sorted_num(s, p, sdb_atoi(val), 0);
+				sdb_array_add_sorted_num(s, p, sdb_atoi(val));
 			} else {
-				sdb_array_sort_num(s, p, 0);
+				sdb_array_sort_num(s, p);
 			}
 		} else if (cmd[1] == '+' || cmd[1] == '-') {
 			if (cmd[1] == cmd[2]) {
@@ -529,9 +528,9 @@ repeat:
 					/* invalid syntax */
 				} else {
 					if (eq) {
-						sdb_array_push(s, p, val, 0);
+						sdb_array_push(s, p, val);
 					} else {
-						char *ret = sdb_array_pop(s, p, 0);
+						char *ret = sdb_array_pop(s, p);
 						out_concat(ret);
 						free(ret);
 					}
@@ -546,10 +545,10 @@ repeat:
 					if (eq) {
 						if (cmd[1] == '+') {
 							// [+]K=1
-							sdb_array_add(s, p, val, 0);
+							sdb_array_add(s, p, val);
 						} else {
 							// [-]K= = remove first element
-							sdb_array_remove(s, p, val, 0);
+							sdb_array_remove(s, p, val);
 						}
 						// return NULL;
 					} else {
@@ -557,20 +556,20 @@ repeat:
 						if (cmd[1] == '+') {
 							// [+]K = remove first element
 							// XXX: this is a little strange syntax to remove an item
-							ret = sdb_array_get(s, p, 0, 0);
+							ret = sdb_array_get(s, p, 0);
 							if (ret && *ret) {
 								out_concat(ret);
 							}
 							// (+)foo :: remove first element
-							sdb_array_delete(s, p, 0, 0);
+							sdb_array_delete(s, p, 0);
 						} else {
 							// [-]K = remove last element
-							ret = sdb_array_get(s, p, -1, 0);
+							ret = sdb_array_get(s, p, -1);
 							if (ret && *ret) {
 								out_concat(ret);
 							}
 							// (-)foo :: remove last element
-							sdb_array_delete(s, p, -1, 0);
+							sdb_array_delete(s, p, -1);
 						}
 						free(ret);
 					}
@@ -580,7 +579,7 @@ repeat:
 					if (eq) {
 						/* [+3]foo=bla */
 						if (i < 0) {
-							char *tmp = sdb_array_get(s, p, -i, NULL);
+							char *tmp = sdb_array_get(s, p, -i);
 							if (tmp) {
 								if (encode) {
 									char *newtmp = (void *)sdb_decode(tmp, NULL);
@@ -592,7 +591,7 @@ repeat:
 								}
 								ok = 0;
 								out_concat(tmp);
-								sdb_array_delete(s, p, -i, 0);
+								sdb_array_delete(s, p, -i);
 								free(tmp);
 							} else
 								goto fail;
@@ -600,7 +599,7 @@ repeat:
 							if (encode) {
 								val = sdb_encode((const ut8 *)val, -1);
 							}
-							ok = cmd[1] ? ((cmd[1] == '+') ? sdb_array_insert(s, p, i, val, 0) : sdb_array_set(s, p, i, val, 0)) : sdb_array_delete(s, p, i, 0);
+							ok = cmd[1] ? ((cmd[1] == '+') ? sdb_array_insert(s, p, i, val) : sdb_array_set(s, p, i, val)) : sdb_array_delete(s, p, i);
 							if (encode) {
 								free((void *)val);
 								val = NULL;
@@ -614,22 +613,22 @@ repeat:
 						if (i == 0) {
 							/* [-b]foo */
 							if (cmd[1] == '-') {
-								sdb_array_remove(s, p, cmd + 2, 0);
+								sdb_array_remove(s, p, cmd + 2);
 							} else {
 								eprintf("TODO: [b]foo -> get index of b key inside foo array\n");
 								//	sdb_array_dels (s, p, cmd+1, 0);
 							}
 						} else if (i < 0) {
 							/* [-3]foo */
-							char *tmp = sdb_array_get(s, p, -i, NULL);
+							char *tmp = sdb_array_get(s, p, -i);
 							if (tmp && *tmp) {
 								out_concat(tmp);
-								sdb_array_delete(s, p, -i, 0);
+								sdb_array_delete(s, p, -i);
 							}
 							free(tmp);
 						} else {
 							/* [+3]foo */
-							char *tmp = sdb_array_get(s, p, i, NULL);
+							char *tmp = sdb_array_get(s, p, i);
 							if (tmp && *tmp) {
 								out_concat(tmp);
 							}
@@ -646,15 +645,15 @@ repeat:
 				}
 				if (cmd[1]) {
 					int idx = atoi(cmd + 1);
-					ok = sdb_array_set(s, p, idx, sval, 0);
+					ok = sdb_array_set(s, p, idx, sval);
 					// TODO: handle when idx > sdb_alen
 					if (encode)
 						free(sval);
 				} else {
 					if (encode) {
-						ok = sdb_set_owned(s, p, sval, 0);
+						ok = sdb_set_owned(s, p, sval);
 					} else {
-						ok = sdb_set(s, p, sval, 0);
+						ok = sdb_set(s, p, sval);
 					}
 				}
 				if (ok && buf) {
@@ -662,11 +661,11 @@ repeat:
 				}
 			} else {
 				/* [3]foo */
-				const char *sval = sdb_const_get(s, p, 0);
+				const char *sval = sdb_const_get(s, p);
 				size_t wl;
 				if (cmd[1]) {
 					i = atoi(cmd + 1);
-					buf = sdb_array_get(s, p, i, NULL);
+					buf = sdb_array_get(s, p, i);
 					if (buf) {
 						bufset = 1;
 						len = strlen(buf) + 1;
@@ -733,7 +732,7 @@ repeat:
 				cmd[i] = '\0';
 				i--;
 			}
-			ok = sdb_set(s, cmd, val, 0);
+			ok = sdb_set(s, cmd, val);
 			if (encode) {
 				free((void *)val);
 				val = NULL;
@@ -744,7 +743,7 @@ repeat:
 		} else {
 			// 0 0 kvpath
 			// sdbget
-			if ((q = sdb_const_get(s, cmd, 0))) {
+			if ((q = sdb_const_get(s, cmd))) {
 				if (encode) {
 					q = (void *)sdb_decode(q, NULL);
 				}

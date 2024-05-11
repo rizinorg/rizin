@@ -170,7 +170,7 @@ static const char *mach0_uuid(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 		RZ_LOG_WARN("mach0 file contains multiple uuids\n");
 	}
 	snprintf(key, sizeof(key) - 1, "uuid.%d", mo->uuidn - 1);
-	return sdb_const_get(mo->kv, key, 0);
+	return sdb_const_get(mo->kv, key);
 }
 
 typedef struct {

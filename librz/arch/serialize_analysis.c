@@ -200,7 +200,7 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	}
 
 	pj_end(j);
-	sdb_set(db, key, pj_string(j), 0);
+	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 }
 
@@ -919,7 +919,7 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 		}
 		pj_end(j);
 
-		sdb_set(db, addr, pj_string(j), 0);
+		sdb_set(db, addr, pj_string(j));
 		pj_reset(j);
 	}
 	pj_free(j);
@@ -1148,7 +1148,7 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 	}
 
 	pj_end(j);
-	sdb_set(db, key, pj_string(j), 0);
+	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 }
 
@@ -1434,7 +1434,7 @@ static bool store_xrefs_list_cb(void *db, const ut64 k, const void *v) {
 	HtUP *ht = (HtUP *)v;
 	ht_up_foreach(ht, store_xref_cb, j);
 	pj_end(j);
-	sdb_set(db, key, pj_string(j), 0);
+	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 	return true;
 }
@@ -1533,7 +1533,7 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 #define FLUSH \
 	pj_end(j); \
 	if (snprintf(key, sizeof(key), "0x%" PFMT64x, addr) >= 0) { \
-		sdb_set(db, key, pj_string(j), 0); \
+		sdb_set(db, key, pj_string(j)); \
 	}
 
 	rz_interval_tree_foreach (&analysis->meta, it, meta) {
@@ -1880,7 +1880,7 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 		}
 	}
 	pj_end(j);
-	sdb_set(db, key, pj_string(j), 0);
+	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 	return true;
 }
@@ -2126,7 +2126,7 @@ RZ_API void rz_serialize_analysis_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 	RzListIter *it;
 	const char *imp;
 	rz_list_foreach (analysis->imports, it, imp) {
-		sdb_set(db, imp, "i", 0);
+		sdb_set(db, imp, "i");
 	}
 }
 

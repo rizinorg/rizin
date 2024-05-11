@@ -11,65 +11,65 @@
 
 static void setup_sdb_for_struct(Sdb *res) {
 	// td "struct kappa {int bar;int cow;};"
-	sdb_set(res, "kappa", "struct", 0);
-	sdb_set(res, "struct.kappa", "bar,cow", 0);
-	sdb_set(res, "struct.kappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "struct.kappa.cow", "int32_t,4,0", 0);
+	sdb_set(res, "kappa", "struct");
+	sdb_set(res, "struct.kappa", "bar,cow");
+	sdb_set(res, "struct.kappa.bar", "int32_t,0,0");
+	sdb_set(res, "struct.kappa.cow", "int32_t,4,0");
 
-	sdb_set(res, "lappa", "struct", 0);
-	sdb_set(res, "struct.lappa", "bar,cow", 0);
-	sdb_set(res, "struct.lappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "struct.lappa.cow", "struct kappa,4,0", 0);
+	sdb_set(res, "lappa", "struct");
+	sdb_set(res, "struct.lappa", "bar,cow");
+	sdb_set(res, "struct.lappa.bar", "int32_t,0,0");
+	sdb_set(res, "struct.lappa.cow", "struct kappa,4,0");
 }
 
 static void setup_sdb_for_union(Sdb *res) {
 	// td "union kappa {int bar;int cow;};"
-	sdb_set(res, "kappa", "union", 0);
-	sdb_set(res, "union.kappa", "bar,cow", 0);
-	sdb_set(res, "union.kappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "union.kappa.cow", "int32_t,0,0", 0);
+	sdb_set(res, "kappa", "union");
+	sdb_set(res, "union.kappa", "bar,cow");
+	sdb_set(res, "union.kappa.bar", "int32_t,0,0");
+	sdb_set(res, "union.kappa.cow", "int32_t,0,0");
 
-	sdb_set(res, "lappa", "union", 0);
-	sdb_set(res, "union.lappa", "bar,cow", 0);
-	sdb_set(res, "union.lappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "union.lappa.cow", "union kappa,0,0", 0);
+	sdb_set(res, "lappa", "union");
+	sdb_set(res, "union.lappa", "bar,cow");
+	sdb_set(res, "union.lappa.bar", "int32_t,0,0");
+	sdb_set(res, "union.lappa.cow", "union kappa,0,0");
 }
 
 static void setup_sdb_for_enum(Sdb *res) {
 	// td "enum foo { firstCase=1, secondCase=2,};"
-	sdb_set(res, "foo", "enum", 0);
-	sdb_set(res, "enum.foo", "firstCase,secondCase", 0);
-	sdb_set(res, "enum.foo.firstCase", "0x1", 0);
-	sdb_set(res, "enum.foo.secondCase", "0x2", 0);
-	sdb_set(res, "enum.foo.0x1", "firstCase", 0);
-	sdb_set(res, "enum.foo.0x2", "secondCase", 0);
+	sdb_set(res, "foo", "enum");
+	sdb_set(res, "enum.foo", "firstCase,secondCase");
+	sdb_set(res, "enum.foo.firstCase", "0x1");
+	sdb_set(res, "enum.foo.secondCase", "0x2");
+	sdb_set(res, "enum.foo.0x1", "firstCase");
+	sdb_set(res, "enum.foo.0x2", "secondCase");
 }
 
 static void setup_sdb_for_typedef(Sdb *res) {
 	// td "typedef char *string;"
-	sdb_set(res, "string", "typedef", 0);
-	sdb_set(res, "typedef.string", "char *", 0);
+	sdb_set(res, "string", "typedef");
+	sdb_set(res, "typedef.string", "char *");
 }
 
 static void setup_sdb_for_atomic(Sdb *res) {
-	sdb_set(res, "char", "type", 0);
-	sdb_set(res, "type.char.size", "8", 0);
-	sdb_set(res, "type.char", "c", 0);
+	sdb_set(res, "char", "type");
+	sdb_set(res, "type.char.size", "8");
+	sdb_set(res, "type.char", "c");
 }
 
 static void setup_sdb_for_not_found(Sdb *res) {
 	// malformed type states
-	sdb_set(res, "foo", "enum", 0);
-	sdb_set(res, "bar", "struct", 0);
-	sdb_set(res, "quax", "union", 0);
-	sdb_set(res, "enum.foo", "aa,bb", 0);
-	sdb_set(res, "struct.bar", "cc,dd", 0);
-	sdb_set(res, "union.quax", "ee,ff", 0);
+	sdb_set(res, "foo", "enum");
+	sdb_set(res, "bar", "struct");
+	sdb_set(res, "quax", "union");
+	sdb_set(res, "enum.foo", "aa,bb");
+	sdb_set(res, "struct.bar", "cc,dd");
+	sdb_set(res, "union.quax", "ee,ff");
 
-	sdb_set(res, "omega", "struct", 0);
-	sdb_set(res, "struct.omega", "ee,ff,gg", 0);
-	sdb_set(res, "struct.omega.ee", "0,1", 0);
-	sdb_set(res, "struct.omega.ff", "", 0);
+	sdb_set(res, "omega", "struct");
+	sdb_set(res, "struct.omega", "ee,ff,gg");
+	sdb_set(res, "struct.omega.ee", "0,1");
+	sdb_set(res, "struct.omega.ff", "");
 }
 
 static bool test_types_get_base_type_struct(void) {
@@ -251,45 +251,45 @@ static bool test_types_get_base_type_not_found(void) {
 
 static void setup_sdb_for_base_types_all(Sdb *res) {
 	// td "struct kappa {int bar;int cow;};"
-	sdb_set(res, "kappa", "struct", 0);
-	sdb_set(res, "struct.kappa", "bar,cow", 0);
-	sdb_set(res, "struct.kappa.bar", "int32_t,0,0", 0);
-	sdb_set(res, "struct.kappa.cow", "int32_t,4,0", 0);
+	sdb_set(res, "kappa", "struct");
+	sdb_set(res, "struct.kappa", "bar,cow");
+	sdb_set(res, "struct.kappa.bar", "int32_t,0,0");
+	sdb_set(res, "struct.kappa.cow", "int32_t,4,0");
 	// td "struct theta {long foo;double *bar[5];};"
-	sdb_set(res, "theta", "struct", 0);
-	sdb_set(res, "struct.theta", "foo,bar", 0);
-	sdb_set(res, "struct.theta.foo", "int64_t,0,0", 0);
-	sdb_set(res, "struct.theta.bar", "double *,8,5", 0);
+	sdb_set(res, "theta", "struct");
+	sdb_set(res, "struct.theta", "foo,bar");
+	sdb_set(res, "struct.theta.foo", "int64_t,0,0");
+	sdb_set(res, "struct.theta.bar", "double *,8,5");
 	// td "union omega {int bar;int cow;};"
-	sdb_set(res, "omega", "union", 0);
-	sdb_set(res, "union.omega", "bar,cow", 0);
-	sdb_set(res, "union.omega.bar", "int32_t,0,0", 0);
-	sdb_set(res, "union.omega.cow", "int32_t,0,0", 0);
+	sdb_set(res, "omega", "union");
+	sdb_set(res, "union.omega", "bar,cow");
+	sdb_set(res, "union.omega.bar", "int32_t,0,0");
+	sdb_set(res, "union.omega.cow", "int32_t,0,0");
 	// td "union omicron {char foo;float bar;};"
-	sdb_set(res, "omicron", "union", 0);
-	sdb_set(res, "union.omicron", "foo,bar", 0);
-	sdb_set(res, "union.omicron.bar", "float,0,0", 0);
-	sdb_set(res, "union.omicron.foo", "char,0,0", 0);
+	sdb_set(res, "omicron", "union");
+	sdb_set(res, "union.omicron", "foo,bar");
+	sdb_set(res, "union.omicron.bar", "float,0,0");
+	sdb_set(res, "union.omicron.foo", "char,0,0");
 	// td "enum foo { firstCase=1, secondCase=2,};"
-	sdb_set(res, "foo", "enum", 0);
-	sdb_set(res, "enum.foo", "firstCase,secondCase", 0);
-	sdb_set(res, "enum.foo.firstCase", "0x1", 0);
-	sdb_set(res, "enum.foo.secondCase", "0x2", 0);
-	sdb_set(res, "enum.foo.0x1", "firstCase", 0);
-	sdb_set(res, "enum.foo.0x2", "secondCase", 0);
+	sdb_set(res, "foo", "enum");
+	sdb_set(res, "enum.foo", "firstCase,secondCase");
+	sdb_set(res, "enum.foo.firstCase", "0x1");
+	sdb_set(res, "enum.foo.secondCase", "0x2");
+	sdb_set(res, "enum.foo.0x1", "firstCase");
+	sdb_set(res, "enum.foo.0x2", "secondCase");
 	// td "enum bla { minusFirstCase=0x100, minusSecondCase=0xf000,};"
-	sdb_set(res, "bla", "enum", 0);
-	sdb_set(res, "enum.bla", "minusFirstCase,minusSecondCase", 0);
-	sdb_set(res, "enum.bla.minusFirstCase", "0x100", 0);
-	sdb_set(res, "enum.bla.minusSecondCase", "0xf000", 0);
-	sdb_set(res, "enum.bla.0x100", "minusFirstCase", 0);
-	sdb_set(res, "enum.bla.0xf000", "minusSecondCase", 0);
+	sdb_set(res, "bla", "enum");
+	sdb_set(res, "enum.bla", "minusFirstCase,minusSecondCase");
+	sdb_set(res, "enum.bla.minusFirstCase", "0x100");
+	sdb_set(res, "enum.bla.minusSecondCase", "0xf000");
+	sdb_set(res, "enum.bla.0x100", "minusFirstCase");
+	sdb_set(res, "enum.bla.0xf000", "minusSecondCase");
 	// td typedef char *string;
-	sdb_set(res, "char", "type", 0);
-	sdb_set(res, "type.char.size", "8", 0);
-	sdb_set(res, "type.char", "c", 0);
-	sdb_set(res, "string", "typedef", 0);
-	sdb_set(res, "typedef.string", "char *", 0);
+	sdb_set(res, "char", "type");
+	sdb_set(res, "type.char.size", "8");
+	sdb_set(res, "type.char", "c");
+	sdb_set(res, "string", "typedef");
+	sdb_set(res, "typedef.string", "char *");
 }
 
 // RzBaseType name comparator

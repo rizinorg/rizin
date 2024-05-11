@@ -262,17 +262,16 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 		return false;
 	}
 
-	sdb_num_set(bin->kv, "mz.initial.cs", mz->cs, 0);
-	sdb_num_set(bin->kv, "mz.initial.ip", mz->ip, 0);
-	sdb_num_set(bin->kv, "mz.initial.ss", mz->ss, 0);
-	sdb_num_set(bin->kv, "mz.initial.sp", mz->sp, 0);
-	sdb_num_set(bin->kv, "mz.overlay_number", mz->overlay_number, 0);
-	sdb_num_set(bin->kv, "mz.dos_header.offset", 0, 0);
+	sdb_num_set(bin->kv, "mz.initial.cs", mz->cs);
+	sdb_num_set(bin->kv, "mz.initial.ip", mz->ip);
+	sdb_num_set(bin->kv, "mz.initial.ss", mz->ss);
+	sdb_num_set(bin->kv, "mz.initial.sp", mz->sp);
+	sdb_num_set(bin->kv, "mz.overlay_number", mz->overlay_number);
+	sdb_num_set(bin->kv, "mz.dos_header.offset", 0);
 	sdb_set(bin->kv, "mz.dos_header.format", "[2]zwwwwwwwwwwwww"
 						 " signature bytes_in_last_block blocks_in_file num_relocs "
 						 " header_paragraphs min_extra_paragraphs max_extra_paragraphs "
-						 " ss sp checksum ip cs reloc_table_offset overlay_number ",
-		0);
+						 " ss sp checksum ip cs reloc_table_offset overlay_number ");
 
 	bin->dos_extended_header_size = mz->reloc_table_offset -
 		sizeof(MZ_image_dos_header);

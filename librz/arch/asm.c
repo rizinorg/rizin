@@ -1209,7 +1209,7 @@ RZ_API int rz_asm_get_offset(RzAsm *a, int type, int idx) { // link to rbin
 }
 
 RZ_API char *rz_asm_describe(RzAsm *a, const char *str) {
-	return (a && a->pair) ? sdb_get(a->pair, str, 0) : NULL;
+	return (a && a->pair) ? sdb_get(a->pair, str) : NULL;
 }
 
 RZ_API RzList /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RzAsm *a) {

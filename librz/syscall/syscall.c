@@ -156,7 +156,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 				rz_sysreg_item_free(sysregitem);
 				return false;
 			}
-			ut64 address = sdb_num_get(sdb, argument_key, NULL);
+			ut64 address = sdb_num_get(sdb, argument_key);
 			free(argument_key);
 			if (!address) {
 				rz_sysreg_item_free(sysregitem);
@@ -164,7 +164,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			}
 
 			argument_key = rz_str_newf("%s.comment", name);
-			char *comment = sdb_get(sdb, argument_key, NULL);
+			char *comment = sdb_get(sdb, argument_key);
 			free(argument_key);
 			sysregitem->type = sdbkv_dup_value(kv);
 			sysregitem->comment = comment;
@@ -334,7 +334,7 @@ static int getswi(RzSyscall *s, int swi) {
 }
 
 RZ_API int rz_syscall_get_swi(RzSyscall *s) {
-	return (int)sdb_num_get(s->db, "_", NULL);
+	return (int)sdb_num_get(s->db, "_");
 }
 
 RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
@@ -350,19 +350,19 @@ RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
 	} else {
 		key = rz_strf(tmpbuf, "0x%02x.%d", swi, num);
 	}
-	ret = sdb_const_get(s->db, key, 0);
+	ret = sdb_const_get(s->db, key);
 	if (!ret) {
 		key = rz_strf(tmpbuf, "0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed
-		ret = sdb_const_get(s->db, key, 0);
+		ret = sdb_const_get(s->db, key);
 		if (!ret) {
 			key = rz_strf(tmpbuf, "0x%02x.%d", num, swi); // Workaround until Syscall SDB is fixed
-			ret = sdb_const_get(s->db, key, 0);
+			ret = sdb_const_get(s->db, key);
 			if (!ret) {
 				return NULL;
 			}
 		}
 	}
-	ret2 = sdb_const_get(s->db, ret, 0);
+	ret2 = sdb_const_get(s->db, ret);
 	if (!ret2) {
 		return NULL;
 	}
@@ -374,9 +374,9 @@ RZ_API int rz_syscall_get_num(RzSyscall *s, const char *str) {
 	if (!s->db) {
 		return -1;
 	}
-	int sn = (int)sdb_array_get_num(s->db, str, 1, NULL);
+	int sn = (int)sdb_array_get_num(s->db, str, 1);
 	if (sn == 0) {
-		return (int)sdb_array_get_num(s->db, str, 0, NULL);
+		return (int)sdb_array_get_num(s->db, str, 0);
 	}
 	return sn;
 }
@@ -389,7 +389,7 @@ RZ_API const char *rz_syscall_get_i(RzSyscall *s, int num, int swi) {
 	char foo[32];
 	swi = getswi(s, swi);
 	snprintf(foo, sizeof(foo), "0x%x.%d", swi, num);
-	return sdb_const_get(s->db, foo, 0);
+	return sdb_const_get(s->db, foo);
 }
 
 static bool callback_list(void *u, const SdbKv *kv) {

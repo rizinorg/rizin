@@ -317,13 +317,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return ret;
 	}
 
-	sdb_num_set(vsf_obj->kv, "vsf.reg_a", vsf_obj->maincpu->ac, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_x", vsf_obj->maincpu->xr, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_y", vsf_obj->maincpu->yr, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_sp", vsf_obj->maincpu->sp, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_pc", vsf_obj->maincpu->pc, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.reg_st", vsf_obj->maincpu->st, 0);
-	sdb_num_set(vsf_obj->kv, "vsf.clock", vsf_obj->maincpu->clk, 0);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_a", vsf_obj->maincpu->ac);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_x", vsf_obj->maincpu->xr);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_y", vsf_obj->maincpu->yr);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_sp", vsf_obj->maincpu->sp);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_pc", vsf_obj->maincpu->pc);
+	sdb_num_set(vsf_obj->kv, "vsf.reg_st", vsf_obj->maincpu->st);
+	sdb_num_set(vsf_obj->kv, "vsf.clock", vsf_obj->maincpu->clk);
 
 	return ret;
 }

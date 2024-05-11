@@ -4219,13 +4219,13 @@ static char *ssa_get(RzAnalysisEsil *esil, const char *reg) {
 	if (!ds->ssa) {
 		ds->ssa = sdb_new0();
 	}
-	int n = sdb_num_get(ds->ssa, reg, NULL);
+	int n = sdb_num_get(ds->ssa, reg);
 	return rz_str_newf("%s_%d", reg, n);
 }
 
 static void ssa_set(RzAnalysisEsil *esil, const char *reg) {
 	RzDisasmState *ds = esil->user;
-	(void)sdb_num_inc(ds->ssa, reg, 1, 0);
+	(void)sdb_num_inc(ds->ssa, reg, 1);
 }
 
 #define RZ_DISASM_MAX_STR 512

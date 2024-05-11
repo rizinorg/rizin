@@ -48,7 +48,7 @@ bool v1_v2_types_foreach_cb(void *user, const SdbKv *kv) {
 		return true;
 	}
 	V1V2TypesCtx *ctx = user;
-	sdb_set(ctx->noreturn_db, k, v, 0);
+	sdb_set(ctx->noreturn_db, k, v);
 	rz_list_push(ctx->moved_keys, strdup(k));
 	return true;
 }
@@ -71,7 +71,7 @@ RZ_API bool rz_project_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (ctx.moved_keys, it, s) {
-		sdb_unset(types_db, s, 0);
+		sdb_unset(types_db, s);
 	}
 	rz_list_free(ctx.moved_keys);
 	return true;
@@ -99,13 +99,13 @@ bool v2_v3_types_foreach_cb(void *user, const SdbKv *kv) {
 	const char *k = sdbkv_key(kv);
 	const char *v = sdbkv_value(kv);
 	if (rz_str_startswith(k, "func.") || !strcmp(v, "func")) {
-		sdb_set(ctx->callables_db, k, v, 0);
+		sdb_set(ctx->callables_db, k, v);
 		rz_list_push(ctx->moved_keys, strdup(k));
 	} else if (rz_str_startswith(k, "link.")) {
 		// Old addresses were stored as hexadecimal numbers without `0x` part
 		// New addresses have them
 		char *tl_key = rz_str_newf("0x%s", k + strlen("link."));
-		sdb_set(ctx->typelinks_db, tl_key, v, 0);
+		sdb_set(ctx->typelinks_db, tl_key, v);
 		free(tl_key);
 		rz_list_push(ctx->moved_keys, strdup(k));
 	}
@@ -131,7 +131,7 @@ RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res)
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (ctx.moved_keys, it, s) {
-		sdb_unset(types_db, s, 0);
+		sdb_unset(types_db, s);
 	}
 	rz_list_free(ctx.moved_keys);
 	return true;
@@ -165,7 +165,7 @@ RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res)
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (ctx.moved_keys, it, s) {
-		sdb_unset(typelinks_db, s, 0);
+		sdb_unset(typelinks_db, s);
 	}
 	rz_list_free(ctx.moved_keys);
 #endif
@@ -191,29 +191,29 @@ RZ_API bool rz_project_migrate_v4_v5(RzProject *prj, RzSerializeResultInfo *res)
 	// Common keys:
 	// unknown_t=type
 	// type.unknown_t.typeclass=Integral
-	sdb_set(types_db, "unknown_t", "type", 0);
-	sdb_set(types_db, "type.unknown_t.typeclass", "Integral", 0);
+	sdb_set(types_db, "unknown_t", "type");
+	sdb_set(types_db, "type.unknown_t.typeclass", "Integral");
 	// Now we read the bits value from "asm.bits=XX" in "/core/config"
-	int bits = sdb_num_get(config_db, "asm.bits", 0);
+	int bits = sdb_num_get(config_db, "asm.bits");
 	switch (bits) {
 	case 16:
 		// type.unknown_t=w
 		// type.unknown_t.size=16
-		sdb_set(types_db, "type.unknown_t", "w", 0);
-		sdb_set(types_db, "type.unknown_t.size", "16", 0);
+		sdb_set(types_db, "type.unknown_t", "w");
+		sdb_set(types_db, "type.unknown_t.size", "16");
 		break;
 	case 64:
 		// type.unknown_t=q
 		// type.unknown_t.size=64
-		sdb_set(types_db, "type.unknown_t", "q", 0);
-		sdb_set(types_db, "type.unknown_t.size", "64", 0);
+		sdb_set(types_db, "type.unknown_t", "q");
+		sdb_set(types_db, "type.unknown_t.size", "64");
 		break;
 	case 32:
 	default:
 		// type.unknown_t=d
 		// type.unknown_t.size=32
-		sdb_set(types_db, "type.unknown_t", "d", 0);
-		sdb_set(types_db, "type.unknown_t.size", "32", 0);
+		sdb_set(types_db, "type.unknown_t", "d");
+		sdb_set(types_db, "type.unknown_t.size", "32");
 		break;
 	}
 	return true;
@@ -266,20 +266,20 @@ RZ_API bool rz_project_migrate_v7_v8(RzProject *prj, RzSerializeResultInfo *res)
 	sdb_ns_unset(analysis_db, "zigns", NULL);
 	Sdb *config_db;
 	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
-	sdb_unset(config_db, "zign.autoload", 0);
-	sdb_unset(config_db, "zign.diff.bthresh", 0);
-	sdb_unset(config_db, "zign.diff.gthresh", 0);
-	sdb_unset(config_db, "zign.match.bytes", 0);
-	sdb_unset(config_db, "zign.match.graph", 0);
-	sdb_unset(config_db, "zign.match.hash", 0);
-	sdb_unset(config_db, "zign.match.offset", 0);
-	sdb_unset(config_db, "zign.match.refs", 0);
-	sdb_unset(config_db, "zign.match.types", 0);
-	sdb_unset(config_db, "zign.maxsz", 0);
-	sdb_unset(config_db, "zign.mincc", 0);
-	sdb_unset(config_db, "zign.minsz", 0);
-	sdb_unset(config_db, "zign.prefix", 0);
-	sdb_unset(config_db, "zign.threshold", 0);
+	sdb_unset(config_db, "zign.autoload");
+	sdb_unset(config_db, "zign.diff.bthresh");
+	sdb_unset(config_db, "zign.diff.gthresh");
+	sdb_unset(config_db, "zign.match.bytes");
+	sdb_unset(config_db, "zign.match.graph");
+	sdb_unset(config_db, "zign.match.hash");
+	sdb_unset(config_db, "zign.match.offset");
+	sdb_unset(config_db, "zign.match.refs");
+	sdb_unset(config_db, "zign.match.types");
+	sdb_unset(config_db, "zign.maxsz");
+	sdb_unset(config_db, "zign.mincc");
+	sdb_unset(config_db, "zign.minsz");
+	sdb_unset(config_db, "zign.prefix");
+	sdb_unset(config_db, "zign.threshold");
 	return true;
 }
 
@@ -418,7 +418,7 @@ bool v10_v11_functions_foreach_cb(void *user, const SdbKv *kv) {
 	if (!res) {
 		goto end;
 	}
-	sdb_set_owned(ctx->db_new, k, res, 0);
+	sdb_set_owned(ctx->db_new, k, res);
 	ret = true;
 end:
 	rz_json_free(j);
@@ -431,7 +431,7 @@ RZ_API bool rz_project_migrate_v10_v11(RzProject *prj, RzSerializeResultInfo *re
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *config_db;
 	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
-	sdb_unset(config_db, "analysis.vars.stackname", 0);
+	sdb_unset(config_db, "analysis.vars.stackname");
 
 	Sdb *analysis_db;
 	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
@@ -460,12 +460,12 @@ RZ_API bool rz_project_migrate_v10_v11(RzProject *prj, RzSerializeResultInfo *re
 //
 
 static inline bool sdb_rename(Sdb *db, const char *old_key, const char *new_key) {
-	char *val = sdb_get(db, old_key, 0);
+	char *val = sdb_get(db, old_key);
 	if (!val) {
 		return false;
 	}
-	sdb_unset(db, old_key, 0);
-	sdb_set_owned(db, new_key, val, 0);
+	sdb_unset(db, old_key);
+	sdb_set_owned(db, new_key, val);
 	return true;
 }
 
@@ -506,7 +506,7 @@ bool v12_v13_types_foreach_cb(void *user, const SdbKv *kv) {
 		pj_ks(j, "addr", k);
 		// We don't have constraints for typelink here.
 		pj_end(j);
-		sdb_set(ctx->global_vars_db, k, pj_string(j), 0);
+		sdb_set(ctx->global_vars_db, k, pj_string(j));
 		pj_free(j);
 		rz_list_push(ctx->moved_keys, strdup(k));
 	}
@@ -532,7 +532,7 @@ RZ_API bool rz_project_migrate_v12_v13(RzProject *prj, RzSerializeResultInfo *re
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (ctx.moved_keys, it, s) {
-		sdb_unset(typelinks_db, s, 0);
+		sdb_unset(typelinks_db, s);
 	}
 	rz_list_free(ctx.moved_keys);
 	return true;
@@ -585,7 +585,7 @@ bool v13_v14_foreach_cb(void *user, const SdbKv *kv) {
 		}
 
 		pj_end(j);
-		sdb_set(fn_db, k, pj_string(j), 0);
+		sdb_set(fn_db, k, pj_string(j));
 		pj_free(j);
 		rz_json_free(fn_j);
 	}
@@ -636,7 +636,7 @@ RZ_API bool rz_project_migrate_v15_v16(RzProject *prj, RzSerializeResultInfo *re
 	sdb_rename(config_db, "bin.minstr", "str.search.min_length");
 	sdb_rename(config_db, "bin.str.enc", "str.search.encoding");
 	sdb_rename(config_db, "bin.maxstrbuf", "str.search.buffer_size");
-	sdb_unset(config_db, "bin.maxstr", 0);
+	sdb_unset(config_db, "bin.maxstr");
 
 	return true;
 }
@@ -652,7 +652,7 @@ RZ_API bool rz_project_migrate_v16_v17(RzProject *prj, RzSerializeResultInfo *re
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *flags_db;
 	RZ_SERIALIZE_SUB(core_db, flags_db, res, "flags", return false;);
-	sdb_unset(flags_db, "base", 0);
+	sdb_unset(flags_db, "base");
 	return true;
 }
 

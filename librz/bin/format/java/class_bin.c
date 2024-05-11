@@ -257,19 +257,19 @@ static void java_set_sdb(Sdb *kv, RzBinJavaClass *bin, ut64 offset, ut64 size) {
 	char *tmp_val;
 	char tmp_key[256];
 
-	sdb_num_set(kv, "java_class.offset", offset, 0);
-	sdb_num_set(kv, "java_class.size", size, 0);
-	sdb_num_set(kv, "java_class.magic", size, 0);
-	sdb_num_set(kv, "java_class.minor_version", size, 0);
-	sdb_num_set(kv, "java_class.major_version", size, 0);
+	sdb_num_set(kv, "java_class.offset", offset);
+	sdb_num_set(kv, "java_class.size", size);
+	sdb_num_set(kv, "java_class.magic", size);
+	sdb_num_set(kv, "java_class.minor_version", size);
+	sdb_num_set(kv, "java_class.major_version", size);
 
 	tmp_val = rz_bin_java_class_version(bin);
 	if (tmp_val) {
-		sdb_set(kv, "java_class.version", tmp_val, 0);
+		sdb_set(kv, "java_class.version", tmp_val);
 		free(tmp_val);
 	}
 
-	sdb_num_set(kv, "java_class.constant_pool_count", bin->constant_pool_count, 0);
+	sdb_num_set(kv, "java_class.constant_pool_count", bin->constant_pool_count);
 	for (ut32 i = 0; i < bin->constant_pool_count; ++i) {
 		ConstPool *cpool = bin->constant_pool[i];
 		if (!cpool) {
@@ -278,14 +278,14 @@ static void java_set_sdb(Sdb *kv, RzBinJavaClass *bin, ut64 offset, ut64 size) {
 		tmp_val = java_constant_pool_stringify(cpool);
 		if (tmp_val) {
 			snprintf(tmp_key, sizeof(tmp_key), "java_class.constant_pool_%d", i);
-			sdb_set(kv, tmp_key, tmp_val, 0);
+			sdb_set(kv, tmp_key, tmp_val);
 			free(tmp_val);
 		}
 	}
 
-	sdb_num_set(kv, "java_class.fields_count", bin->fields_count, 0);
-	sdb_num_set(kv, "java_class.methods_count", bin->methods_count, 0);
-	sdb_num_set(kv, "java_class.attributes_count", bin->attributes_count, 0);
+	sdb_num_set(kv, "java_class.fields_count", bin->fields_count);
+	sdb_num_set(kv, "java_class.methods_count", bin->methods_count);
+	sdb_num_set(kv, "java_class.attributes_count", bin->attributes_count);
 }
 
 /**

@@ -20,7 +20,7 @@ RZ_API void rz_serialize_config_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *co
 	RzListIter *iter;
 	RzConfigNode *node;
 	rz_list_foreach (config->nodes, iter, node) {
-		sdb_set(db, node->name, node->value, 0);
+		sdb_set(db, node->name, node->value);
 	}
 }
 

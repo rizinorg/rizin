@@ -673,8 +673,8 @@ static char *get_elf_intrp(ELFOBJ *bin, RzBinElfSegment *segment) {
 	ut64 addr = segment->data.p_offset;
 	size_t size = segment->data.p_filesz;
 
-	if (!sdb_num_set(bin->kv, "elf_header.intrp_addr", addr, 0) ||
-		!sdb_num_set(bin->kv, "elf_header.intrp_size", size, 0)) {
+	if (!sdb_num_set(bin->kv, "elf_header.intrp_addr", addr) ||
+		!sdb_num_set(bin->kv, "elf_header.intrp_size", size)) {
 		return NULL;
 	}
 
@@ -687,7 +687,7 @@ static char *get_elf_intrp(ELFOBJ *bin, RzBinElfSegment *segment) {
 		return NULL;
 	}
 
-	if (!sdb_set(bin->kv, "elf_header.intrp", str, 0)) {
+	if (!sdb_set(bin->kv, "elf_header.intrp", str)) {
 		free(str);
 		return NULL;
 	}
@@ -1050,7 +1050,7 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 				return false;
 			}
 
-			if (!sdb_set_owned(sdb, key, value, 0)) {
+			if (!sdb_set_owned(sdb, key, value)) {
 				return false;
 			}
 
@@ -1111,7 +1111,7 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 			return false;
 		}
 
-		if (!sdb_set_owned(sdb, key, value, 0)) {
+		if (!sdb_set_owned(sdb, key, value)) {
 			return false;
 		}
 
@@ -1144,9 +1144,9 @@ static Sdb *get_gnu_versym(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (!sdb_num_set(sdb, "num_entries", number_of_symbols, 0) ||
-		!sdb_num_set(sdb, "addr", versym_addr, 0) ||
-		!sdb_num_set(sdb, "offset", versym_offset, 0)) {
+	if (!sdb_num_set(sdb, "num_entries", number_of_symbols) ||
+		!sdb_num_set(sdb, "addr", versym_addr) ||
+		!sdb_num_set(sdb, "offset", versym_offset)) {
 		sdb_free(sdb);
 		return NULL;
 	}
@@ -1168,13 +1168,13 @@ static Sdb *get_gnu_versym(ELFOBJ *bin) {
 
 		switch (versym_entry) {
 		case VER_NDX_LOCAL:
-			if (!sdb_set(sdb, key, "0 (*local*)", 0)) {
+			if (!sdb_set(sdb, key, "0 (*local*)")) {
 				sdb_free(sdb);
 				return NULL;
 			}
 			break;
 		case VER_NDX_GLOBAL:
-			if (!sdb_set(sdb, key, "1 (*global*)", 0)) {
+			if (!sdb_set(sdb, key, "1 (*global*)")) {
 				sdb_free(sdb);
 				return NULL;
 			}
@@ -1206,14 +1206,14 @@ static Sdb *get_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) vernaux_entry, size
 	}
 
 	char *flags = get_ver_flags(vernaux_entry.vna_flags);
-	if (!sdb_set_owned(sdb_vernaux, "flags", flags, 0)) {
+	if (!sdb_set_owned(sdb_vernaux, "flags", flags)) {
 		sdb_free(sdb_vernaux);
 		return NULL;
 	}
 
-	if (!sdb_num_set(sdb_vernaux, "idx", index, 0) ||
-		!sdb_num_set(sdb_vernaux, "version", vernaux_entry.vna_other, 0) ||
-		!sdb_set(sdb_vernaux, "name", tmp, 0)) {
+	if (!sdb_num_set(sdb_vernaux, "idx", index) ||
+		!sdb_num_set(sdb_vernaux, "version", vernaux_entry.vna_other) ||
+		!sdb_set(sdb_vernaux, "name", tmp)) {
 		sdb_free(sdb_vernaux);
 		return NULL;
 	}
@@ -1232,10 +1232,10 @@ static Sdb *get_verneed_entry_sdb_aux(ELFOBJ *bin, Elf_(Verneed) verneed_entry, 
 		return NULL;
 	}
 
-	if (!sdb_num_set(sdb_version, "cnt", verneed_entry.vn_cnt, 0) ||
-		!sdb_num_set(sdb_version, "idx", index, 0) ||
-		!sdb_num_set(sdb_version, "vn_version", verneed_entry.vn_version, 0) ||
-		!sdb_set(sdb_version, "file_name", tmp, 0)) {
+	if (!sdb_num_set(sdb_version, "cnt", verneed_entry.vn_cnt) ||
+		!sdb_num_set(sdb_version, "idx", index) ||
+		!sdb_num_set(sdb_version, "vn_version", verneed_entry.vn_version) ||
+		!sdb_set(sdb_version, "file_name", tmp)) {
 		sdb_free(sdb_version);
 		return NULL;
 	}
@@ -1302,9 +1302,9 @@ static Sdb *get_gnu_verneed(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (!sdb_num_set(sdb, "num_entries", verneed_num, 0) ||
-		!sdb_num_set(sdb, "addr", verneed_addr, 0) ||
-		!sdb_num_set(sdb, "offset", verneed_offset, 0)) {
+	if (!sdb_num_set(sdb, "num_entries", verneed_num) ||
+		!sdb_num_set(sdb, "addr", verneed_addr) ||
+		!sdb_num_set(sdb, "offset", verneed_offset)) {
 		sdb_free(sdb);
 		return NULL;
 	}

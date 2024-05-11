@@ -70,19 +70,19 @@ static void add_tls_callbacks(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *vec) {
 
 	do {
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
-		paddr = sdb_num_get(bin->kv, key, 0);
+		paddr = sdb_num_get(bin->kv, key);
 		if (!paddr) {
 			break;
 		}
 
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
-		vaddr = sdb_num_get(bin->kv, key, 0);
+		vaddr = sdb_num_get(bin->kv, key);
 		if (!vaddr) {
 			break;
 		}
 
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
-		haddr = sdb_num_get(bin->kv, key, 0);
+		haddr = sdb_num_get(bin->kv, key);
 		if (!haddr) {
 			break;
 		}
@@ -242,8 +242,8 @@ static void find_pe_overlay(RzBinFile *bf) {
 	ut64 pe_overlay_size;
 	ut64 pe_overlay_offset = PE_(bin_pe_get_overlay)(bf->o->bin_obj, &pe_overlay_size);
 	if (pe_overlay_offset) {
-		sdb_num_set(bf->sdb, "pe_overlay.offset", pe_overlay_offset, 0);
-		sdb_num_set(bf->sdb, "pe_overlay.size", pe_overlay_size, 0);
+		sdb_num_set(bf->sdb, "pe_overlay.offset", pe_overlay_offset);
+		sdb_num_set(bf->sdb, "pe_overlay.size", pe_overlay_size);
 	}
 }
 
@@ -627,7 +627,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	claimed_checksum = PE_(bin_pe_get_claimed_checksum)(bf->o->bin_obj);
 	actual_checksum = PE_(bin_pe_get_actual_checksum)(bf->o->bin_obj);
-	pe_overlay = sdb_num_get(bf->sdb, "pe_overlay.size", 0);
+	pe_overlay = sdb_num_get(bf->sdb, "pe_overlay.size");
 	ret->bits = PE_(rz_bin_pe_get_bits)(bf->o->bin_obj);
 	ret->big_endian = PE_(rz_bin_pe_is_big_endian)(bf->o->bin_obj);
 	ret->dbg_info = 0;
@@ -639,22 +639,22 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
-	sdb_bool_set(db, "canary", has_canary(bf), 0);
-	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
-	sdb_bool_set(db, "aslr", haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
-	sdb_bool_set(db, "forceintegrity", haschr(bin, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set(db, "nx", haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
-	sdb_bool_set(db, "isolation", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION), 0);
-	sdb_bool_set(db, "seh", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
-	sdb_bool_set(db, "bind", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
-	sdb_bool_set(db, "appcontainer", haschr(bin, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
-	sdb_bool_set(db, "wdmdriver", haschr(bin, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
-	sdb_bool_set(db, "guardcf", haschr(bin, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
-	sdb_bool_set(db, "terminalserveraware", haschr(bin, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
-	sdb_num_set(db, "bits", ret->bits, 0);
-	sdb_set(db, "claimed_checksum", ret->claimed_checksum, 0);
-	sdb_set(db, "actual_checksum", ret->actual_checksum, 0);
-	sdb_bool_set(db, "is_authhash_valid", PE_(bin_pe_is_authhash_valid)(bf->o->bin_obj), 0);
+	sdb_bool_set(db, "canary", has_canary(bf));
+	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA));
+	sdb_bool_set(db, "aslr", haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE));
+	sdb_bool_set(db, "forceintegrity", haschr(bin, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY));
+	sdb_bool_set(db, "nx", haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT));
+	sdb_bool_set(db, "isolation", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION));
+	sdb_bool_set(db, "seh", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_SEH));
+	sdb_bool_set(db, "bind", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_BIND));
+	sdb_bool_set(db, "appcontainer", haschr(bin, IMAGE_DLLCHARACTERISTICS_APPCONTAINER));
+	sdb_bool_set(db, "wdmdriver", haschr(bin, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER));
+	sdb_bool_set(db, "guardcf", haschr(bin, IMAGE_DLLCHARACTERISTICS_GUARD_CF));
+	sdb_bool_set(db, "terminalserveraware", haschr(bin, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE));
+	sdb_num_set(db, "bits", ret->bits);
+	sdb_set(db, "claimed_checksum", ret->claimed_checksum);
+	sdb_set(db, "actual_checksum", ret->actual_checksum);
+	sdb_bool_set(db, "is_authhash_valid", PE_(bin_pe_is_authhash_valid)(bf->o->bin_obj));
 
 	ret->has_va = true;
 

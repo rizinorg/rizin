@@ -9,14 +9,14 @@
 Sdb *ref_db() {
 	Sdb *db = sdb_new0();
 
-	sdb_num_set(db, "maxcnum", 1, 0);
+	sdb_num_set(db, "maxcnum", 1);
 
 	Sdb *registers_db = sdb_ns(db, "registers", true);
-	sdb_set(registers_db, "0x100", "[{\"cnum\":0,\"data\":1094861636},{\"cnum\":1,\"data\":3735928559}]", 0);
+	sdb_set(registers_db, "0x100", "[{\"cnum\":0,\"data\":1094861636},{\"cnum\":1,\"data\":3735928559}]");
 
 	Sdb *memory_sdb = sdb_ns(db, "memory", true);
-	sdb_set(memory_sdb, "0x7ffffffff000", "[{\"cnum\":0,\"data\":170},{\"cnum\":1,\"data\":187}]", 0);
-	sdb_set(memory_sdb, "0x7ffffffff001", "[{\"cnum\":0,\"data\":0},{\"cnum\":1,\"data\":1}]", 0);
+	sdb_set(memory_sdb, "0x7ffffffff000", "[{\"cnum\":0,\"data\":170},{\"cnum\":1,\"data\":187}]");
+	sdb_set(memory_sdb, "0x7ffffffff001", "[{\"cnum\":0,\"data\":0},{\"cnum\":1,\"data\":1}]");
 
 	Sdb *checkpoints_sdb = sdb_ns(db, "checkpoints", true);
 	sdb_set(checkpoints_sdb, "0x0", "{"
@@ -38,8 +38,7 @@ Sdb *ref_db() {
 					"\"snaps\":["
 					"{\"name\":\"[stack]\",\"addr\":8796092882944,\"addr_end\":8796092883200,\"size\":256,\"data\":\"8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8A==\",\"perm\":7,\"user\":0,\"shared\":true}"
 					"]"
-					"}",
-		0);
+					"}");
 
 	return db;
 }

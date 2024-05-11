@@ -33,12 +33,12 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	if (snprintf(buf, sizeof(buf), "0x%" PFMT64x, core->offset) < 0) {
 		return;
 	}
-	sdb_set(db, "offset", buf, 0);
+	sdb_set(db, "offset", buf);
 
 	if (snprintf(buf, sizeof(buf), "0x%" PFMT32x, core->blocksize) < 0) {
 		return;
 	}
-	sdb_set(db, "blocksize", buf, 0);
+	sdb_set(db, "blocksize", buf);
 }
 
 static const char *const config_exclude[] = {
@@ -83,14 +83,14 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	SUB("debug", rz_serialize_debug_load(subdb, core->dbg, res));
 	SUB("seek", rz_serialize_core_seek_load(subdb, core, res));
 
-	const char *str = sdb_const_get(db, "offset", 0);
+	const char *str = sdb_const_get(db, "offset");
 	if (!str || !*str) {
 		RZ_SERIALIZE_ERR(res, "missing offset in core");
 		return false;
 	}
 	core->offset = strtoull(str, NULL, 0);
 
-	str = sdb_const_get(db, "blocksize", 0);
+	str = sdb_const_get(db, "blocksize");
 	if (!str || !*str) {
 		RZ_SERIALIZE_ERR(res, "missing blocksize in core");
 		return false;
@@ -173,12 +173,12 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 	if (!filename) {
 		return;
 	}
-	sdb_set(db, "raw", filename, 0);
+	sdb_set(db, "raw", filename);
 	char *abs = rz_file_abspath(filename);
 	if (!abs) {
 		return;
 	}
-	sdb_set(db, "absolute", abs, 0);
+	sdb_set(db, "absolute", abs);
 	if (prj_file) {
 		char *prj_dir = prj_dir_abs(prj_file);
 		if (!prj_dir) {
@@ -186,7 +186,7 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		}
 		char *rel = prj_relative_make(prj_dir, abs);
 		if (rel) {
-			sdb_set(db, "relative", rel, 0);
+			sdb_set(db, "relative", rel);
 			free(rel);
 		}
 		free(prj_dir);
@@ -224,7 +224,7 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 	rz_bin_file_delete_all(core->bin);
 
 	FileRet r = FILE_DOES_NOT_EXIST;
-	const char *rel = sdb_const_get(db, "relative", 0);
+	const char *rel = sdb_const_get(db, "relative");
 	if (rel && prj_file) {
 		char *prj_dir = prj_dir_abs(prj_file);
 		if (prj_dir) {
@@ -240,7 +240,7 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		return r == FILE_SUCCESS;
 	}
 
-	const char *file = sdb_const_get(db, "absolute", 0);
+	const char *file = sdb_const_get(db, "absolute");
 	if (file) {
 		r = try_load_file(core, file, res);
 	}
@@ -248,7 +248,7 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		return r == FILE_SUCCESS;
 	}
 
-	file = sdb_const_get(db, "raw", 0);
+	file = sdb_const_get(db, "raw");
 	if (file) {
 		r = try_load_file(core, file, res);
 	}
@@ -288,7 +288,7 @@ RZ_API void rz_serialize_core_seek_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *c
 		pj_end(j);
 
 		char key[12];
-		sdb_set(db, rz_strf(key, "%" PFMT32d, undo->idx), pj_string(j), 0);
+		sdb_set(db, rz_strf(key, "%" PFMT32d, undo->idx), pj_string(j));
 		pj_free(j);
 	}
 

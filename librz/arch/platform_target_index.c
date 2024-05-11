@@ -74,14 +74,14 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NO
 				rz_platform_item_free(item);
 				return false;
 			}
-			ut64 address = sdb_num_get(sdb, argument_key, NULL);
+			ut64 address = sdb_num_get(sdb, argument_key);
 			if (!address) {
 				rz_platform_item_free(item);
 				return false;
 			}
 
 			argument_key = rz_str_newf("%s.comment", item->name);
-			char *comment = sdb_get(sdb, argument_key, NULL);
+			char *comment = sdb_get(sdb, argument_key);
 			if (comment) {
 				item->comment = comment;
 			}

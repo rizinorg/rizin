@@ -111,11 +111,11 @@ static bool in_physical_phdr(RzBinElfSegment *segment, ut64 addr) {
 }
 
 static bool init_phdr_sdb(ELFOBJ *bin) {
-	return sdb_num_set(bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0) &&
-		sdb_num_set(bin->kv, "elf_phdr.size", sizeof(Elf_(Phdr)), 0) &&
-		sdb_set(bin->kv, "elf_p_flags.cparse", sdb_elf_p_flags_cparse, 0) &&
-		sdb_set(bin->kv, "elf_p_type.cparse", sdb_elf_p_type_cparse, 0) &&
-		sdb_set(bin->kv, "elf_phdr.format", sdb_elf_phdr_format, 0);
+	return sdb_num_set(bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff) &&
+		sdb_num_set(bin->kv, "elf_phdr.size", sizeof(Elf_(Phdr))) &&
+		sdb_set(bin->kv, "elf_p_flags.cparse", sdb_elf_p_flags_cparse) &&
+		sdb_set(bin->kv, "elf_p_type.cparse", sdb_elf_p_type_cparse) &&
+		sdb_set(bin->kv, "elf_phdr.format", sdb_elf_phdr_format);
 }
 
 static bool init_phdr_aux(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections, RzBinObjectLoadOptions *options) {
@@ -139,16 +139,16 @@ static void init_phdr(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections, RzBinObj
 }
 
 static bool init_ehdr_sdb(ELFOBJ *bin) {
-	return sdb_num_set(bin->kv, "elf_header.offset", 0, 0) &&
-		sdb_num_set(bin->kv, "elf_header.size", sizeof(Elf_(Ehdr)), 0) &&
-		sdb_set(bin->kv, "elf_class.cparse", sdb_elf_class_cparse, 0) &&
-		sdb_set(bin->kv, "elf_data.cparse", sdb_elf_data_cparse, 0) &&
-		sdb_set(bin->kv, "elf_hdr_version.cparse", sdb_elf_hdr_version_cparse, 0) &&
-		sdb_set(bin->kv, "elf_header.format", sdb_elf_header_format, 0) &&
-		sdb_set(bin->kv, "elf_ident.format", sdb_elf_ident_format, 0) &&
-		sdb_set(bin->kv, "elf_machine.cparse", sdb_elf_machine_cparse, 0) &&
-		sdb_set(bin->kv, "elf_obj_version.cparse", sdb_elf_obj_version_cparse, 0) &&
-		sdb_set(bin->kv, "elf_type.cparse", sdb_elf_type_cparse, 0);
+	return sdb_num_set(bin->kv, "elf_header.offset", 0) &&
+		sdb_num_set(bin->kv, "elf_header.size", sizeof(Elf_(Ehdr))) &&
+		sdb_set(bin->kv, "elf_class.cparse", sdb_elf_class_cparse) &&
+		sdb_set(bin->kv, "elf_data.cparse", sdb_elf_data_cparse) &&
+		sdb_set(bin->kv, "elf_hdr_version.cparse", sdb_elf_hdr_version_cparse) &&
+		sdb_set(bin->kv, "elf_header.format", sdb_elf_header_format) &&
+		sdb_set(bin->kv, "elf_ident.format", sdb_elf_ident_format) &&
+		sdb_set(bin->kv, "elf_machine.cparse", sdb_elf_machine_cparse) &&
+		sdb_set(bin->kv, "elf_obj_version.cparse", sdb_elf_obj_version_cparse) &&
+		sdb_set(bin->kv, "elf_type.cparse", sdb_elf_type_cparse);
 }
 
 static bool init_ehdr(ELFOBJ *bin) {
@@ -160,15 +160,15 @@ static bool init_ehdr(ELFOBJ *bin) {
 }
 
 static bool init_shdr_sdb(ELFOBJ *bin) {
-	return sdb_num_set(bin->kv, "elf_shdr.offset", bin->ehdr.e_shoff, 0) &&
-		sdb_num_set(bin->kv, "elf_shdr.size", sizeof(Elf_(Shdr)), 0) &&
+	return sdb_num_set(bin->kv, "elf_shdr.offset", bin->ehdr.e_shoff) &&
+		sdb_num_set(bin->kv, "elf_shdr.size", sizeof(Elf_(Shdr))) &&
 #if RZ_BIN_ELF64
-		sdb_set(bin->kv, "elf_s_flags_64.cparse", sdb_elf_s_flags_64_cparse, 0) &&
+		sdb_set(bin->kv, "elf_s_flags_64.cparse", sdb_elf_s_flags_64_cparse) &&
 #else
-		sdb_set(bin->kv, "elf_s_flags_32.cparse", sdb_elf_s_flags_32_cparse, 0) &&
+		sdb_set(bin->kv, "elf_s_flags_32.cparse", sdb_elf_s_flags_32_cparse) &&
 #endif
-		sdb_set(bin->kv, "elf_s_type.cparse", sdb_elf_s_type_cparse, 0) &&
-		sdb_set(bin->kv, "elf_shdr.format", sdb_elf_shdr_format, 0);
+		sdb_set(bin->kv, "elf_s_type.cparse", sdb_elf_s_type_cparse) &&
+		sdb_set(bin->kv, "elf_shdr.format", sdb_elf_shdr_format);
 }
 
 static bool init_shdr_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections) {
@@ -187,8 +187,8 @@ static void init_shdr(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector /*<
 }
 
 static bool init_shstrtab_sdb(ELFOBJ *bin, ut64 offset, ut64 size) {
-	return sdb_num_set(bin->kv, "elf_shstrtab.offset", offset, 0) &&
-		sdb_num_set(bin->kv, "elf_shstrtab.size", size, 0);
+	return sdb_num_set(bin->kv, "elf_shstrtab.offset", offset) &&
+		sdb_num_set(bin->kv, "elf_shstrtab.size", size);
 }
 
 static bool init_shstrtab_aux(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections) {
@@ -219,11 +219,11 @@ static void init_shstrtab(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections) {
 static bool init_dt_dynamic_sdb(ELFOBJ *bin) {
 	switch (Elf_(rz_bin_elf_has_relro)(bin)) {
 	case RZ_BIN_ELF_FULL_RELRO:
-		return sdb_set(bin->kv, "elf.relro", "full", 0);
+		return sdb_set(bin->kv, "elf.relro", "full");
 	case RZ_BIN_ELF_PART_RELRO:
-		return sdb_set(bin->kv, "elf.relro", "partial", 0);
+		return sdb_set(bin->kv, "elf.relro", "partial");
 	default:
-		return sdb_set(bin->kv, "elf.relro", "no", 0);
+		return sdb_set(bin->kv, "elf.relro", "no");
 	}
 
 	return false;
@@ -245,8 +245,8 @@ static void init_dt_dynamic(ELFOBJ *bin) {
 }
 
 static bool init_dynstr_sdb(ELFOBJ *bin, ut64 strtab_addr, Elf_(Xword) strtab_size) {
-	return sdb_num_set(bin->kv, "elf_dynstr.offset", strtab_addr, 0) &&
-		sdb_num_set(bin->kv, "elf_dynstr.size", strtab_size, 0);
+	return sdb_num_set(bin->kv, "elf_dynstr.offset", strtab_addr) &&
+		sdb_num_set(bin->kv, "elf_dynstr.size", strtab_size);
 }
 
 static bool init_dynstr_aux(ELFOBJ *bin) {

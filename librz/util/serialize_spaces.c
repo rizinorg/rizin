@@ -20,7 +20,7 @@
 #define KEY_SPACES     "spaces"
 
 RZ_API void rz_serialize_spaces_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *spaces) {
-	sdb_set(db, KEY_NAME, spaces->name, 0);
+	sdb_set(db, KEY_NAME, spaces->name);
 
 	PJ *j = pj_new();
 	if (!j) {
@@ -34,14 +34,14 @@ RZ_API void rz_serialize_spaces_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *sp
 	}
 	pj_s(j, spaces->current ? spaces->current->name : "*"); // push current manually, will be popped on load
 	pj_end(j);
-	sdb_set(db, KEY_SPACESTACK, pj_string(j), 0);
+	sdb_set(db, KEY_SPACESTACK, pj_string(j));
 	pj_free(j);
 
 	Sdb *db_spaces = sdb_ns(db, KEY_SPACES, true);
 	RBIter rbiter;
 	RzSpace *space;
 	rz_rbtree_foreach (spaces->spaces, rbiter, space, RzSpace, rb) {
-		sdb_set(db_spaces, space->name, "s", 0);
+		sdb_set(db_spaces, space->name, "s");
 	}
 }
 
@@ -54,7 +54,7 @@ static bool foreach_space_cb(void *user, const SdbKv *kv) {
 RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *spaces, bool load_name, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (load_name) {
 		char *old_name = (char *)spaces->name;
-		spaces->name = sdb_get(db, KEY_NAME, NULL);
+		spaces->name = sdb_get(db, KEY_NAME);
 		if (!spaces->name) {
 			spaces->name = old_name;
 			RZ_SERIALIZE_ERR(res, "failed to get spaces name from db");
@@ -72,7 +72,7 @@ RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *sp
 	}
 	sdb_foreach(db_spaces, foreach_space_cb, spaces);
 
-	char *stack_json_str = sdb_get(db, KEY_SPACESTACK, NULL);
+	char *stack_json_str = sdb_get(db, KEY_SPACESTACK);
 	if (!stack_json_str) {
 		RZ_SERIALIZE_ERR(res, "spacestack is missing");
 		return false;

@@ -244,7 +244,7 @@ RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, 
 		return false;
 	}
 	char *key = rz_str_newf("agraph.nodes.%s.shortcut", title);
-	sdb_set(g->db, key, shortcut, 0);
+	sdb_set(g->db, key, shortcut);
 	free(key);
 	// title + "[o{shortcut}]", so w + 3 ?
 	an->shortcut_w = strlen(shortcut) + 3;

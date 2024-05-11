@@ -524,11 +524,11 @@ RZ_API void rz_egg_fill(RzEgg *egg, int pos, int type, int argc, int length) {
 }
 
 RZ_API void rz_egg_option_set(RzEgg *egg, const char *key, const char *val) {
-	sdb_set(egg->db, key, val, 0);
+	sdb_set(egg->db, key, val);
 }
 
 RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
-	return sdb_get(egg->db, key, NULL);
+	return sdb_get(egg->db, key);
 }
 
 RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
