@@ -11,19 +11,19 @@
 	do { \
 		char key[512]; \
 		rz_strf(key, __VA_ARGS__); \
-		sdb_unset(x, key, 0); \
+		sdb_unset(x, key); \
 	} while (0)
 
 #define cc_sdb_setf(x, y, ...) \
 	do { \
 		char key[512]; \
 		rz_strf(key, __VA_ARGS__); \
-		sdb_set(x, key, y, 0); \
+		sdb_set(x, key, y); \
 	} while (0)
 
 RZ_API void rz_analysis_cc_del(RzAnalysis *analysis, const char *name) {
 	rz_return_if_fail(analysis && name);
-	sdb_unset(DB, name, 0);
+	sdb_unset(DB, name);
 	cc_sdb_unsetf(DB, "cc.%s.ret", name);
 	cc_sdb_unsetf(DB, "cc.%s.maxargs", name);
 	cc_sdb_unsetf(DB, "cc.%s.argn", name);
@@ -63,7 +63,7 @@ RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
 		free(e);
 		return false;
 	}
-	sdb_set(DB, ccname, "cc", 0);
+	sdb_set(DB, ccname, "cc");
 	cc_sdb_setf(DB, e, "cc.%s.ret", ccname);
 
 	RzList *ccArgs = rz_str_split_list(args, ",", 0);
@@ -93,12 +93,12 @@ RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
 	rz_return_val_if_fail(analysis && name, NULL);
 	char *tmp_cc = NULL;
 	// get cc by name and print the expr
-	if (rz_str_cmp(sdb_const_get(DB, name, 0), "cc", -1)) {
+	if (rz_str_cmp(sdb_const_get(DB, name), "cc", -1)) {
 		RZ_LOG_ERROR("analysis: '%s' is not a valid calling convention name\n", name);
 		return NULL;
 	}
 	tmp_cc = rz_str_newf("cc.%s.ret", name);
-	const char *ret = tmp_cc ? sdb_const_get(DB, tmp_cc, 0) : NULL;
+	const char *ret = tmp_cc ? sdb_const_get(DB, tmp_cc) : NULL;
 	free(tmp_cc);
 	if (!ret) {
 		RZ_LOG_ERROR("analysis: Cannot find return key in calling convention named '%s'\n", name);
@@ -110,7 +110,7 @@ RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
 	bool isFirst = true;
 	for (int i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
 		char *k = rz_str_newf("cc.%s.arg%d", name, i);
-		const char *arg = k ? sdb_const_get(DB, k, 0) : NULL;
+		const char *arg = k ? sdb_const_get(DB, k) : NULL;
 		free(k);
 		if (!arg) {
 			break;
@@ -119,7 +119,7 @@ RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
 		isFirst = false;
 	}
 	tmp_cc = rz_str_newf("cc.%s.argn", name);
-	const char *argn = tmp_cc ? sdb_const_get(DB, tmp_cc, 0) : NULL;
+	const char *argn = tmp_cc ? sdb_const_get(DB, tmp_cc) : NULL;
 	free(tmp_cc);
 	if (argn) {
 		rz_strbuf_appendf(sb, "%s%s", isFirst ? "" : ", ", argn);
@@ -137,7 +137,7 @@ RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
 
 RZ_API bool rz_analysis_cc_exist(RzAnalysis *analysis, const char *convention) {
 	rz_return_val_if_fail(analysis && convention, false);
-	const char *x = sdb_const_get(DB, convention, 0);
+	const char *x = sdb_const_get(DB, convention);
 	return x && *x && !strcmp(x, "cc");
 }
 
@@ -149,11 +149,11 @@ RZ_API const char *rz_analysis_cc_arg(RzAnalysis *analysis, const char *conventi
 	}
 
 	char *query = rz_str_newf("cc.%s.arg%d", convention, n);
-	const char *ret = query ? sdb_const_get(DB, query, 0) : NULL;
+	const char *ret = query ? sdb_const_get(DB, query) : NULL;
 	free(query);
 	if (!ret) {
 		query = rz_str_newf("cc.%s.argn", convention);
-		ret = query ? sdb_const_get(DB, query, 0) : NULL;
+		ret = query ? sdb_const_get(DB, query) : NULL;
 		free(query);
 	}
 	return ret ? rz_str_constpool_get(&analysis->constpool, ret) : NULL;
@@ -162,7 +162,7 @@ RZ_API const char *rz_analysis_cc_arg(RzAnalysis *analysis, const char *conventi
 RZ_API const char *rz_analysis_cc_self(RzAnalysis *analysis, const char *convention) {
 	rz_return_val_if_fail(analysis && convention, NULL);
 	char *query = rz_str_newf("cc.%s.self", convention);
-	const char *self = query ? sdb_const_get(DB, query, 0) : NULL;
+	const char *self = query ? sdb_const_get(DB, query) : NULL;
 	free(query);
 	return self ? rz_str_constpool_get(&analysis->constpool, self) : NULL;
 }
@@ -177,14 +177,14 @@ RZ_API void rz_analysis_cc_set_self(RzAnalysis *analysis, const char *convention
 		RZ_LOG_ERROR("analysis: Cannot allocate key for sdb_set\n");
 		return;
 	}
-	sdb_set(analysis->sdb_cc, query, self, 0);
+	sdb_set(analysis->sdb_cc, query, self);
 	free(query);
 }
 
 RZ_API const char *rz_analysis_cc_error(RzAnalysis *analysis, const char *convention) {
 	rz_return_val_if_fail(analysis && convention, NULL);
 	char *query = rz_str_newf("cc.%s.error", convention);
-	const char *error = query ? sdb_const_get(DB, query, 0) : NULL;
+	const char *error = query ? sdb_const_get(DB, query) : NULL;
 	free(query);
 	return error ? rz_str_constpool_get(&analysis->constpool, error) : NULL;
 }
@@ -198,7 +198,7 @@ RZ_API void rz_analysis_cc_set_error(RzAnalysis *analysis, const char *conventio
 		RZ_LOG_ERROR("analysis: Cannot allocate key for sdb_set\n");
 		return;
 	}
-	sdb_set(analysis->sdb_cc, key, error, 0);
+	sdb_set(analysis->sdb_cc, key, error);
 	free(key);
 }
 
@@ -208,7 +208,7 @@ RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc) {
 	if (!query) {
 		return 0;
 	}
-	const char *res = sdb_const_get(DB, query, 0);
+	const char *res = sdb_const_get(DB, query);
 	free(query);
 	int maxargs = res ? atoi(res) : 0;
 	if (maxargs < 0 || maxargs > RZ_ANALYSIS_CC_MAXARG) {
@@ -220,7 +220,7 @@ RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc) {
 RZ_API const char *rz_analysis_cc_ret(RzAnalysis *analysis, const char *convention) {
 	rz_return_val_if_fail(analysis && convention, NULL);
 	char *query = rz_str_newf("cc.%s.ret", convention);
-	const char *res = query ? sdb_const_get(DB, query, 0) : NULL;
+	const char *res = query ? sdb_const_get(DB, query) : NULL;
 	free(query);
 	return res;
 }
@@ -241,22 +241,22 @@ RZ_API RzStackAddr rz_analysis_cc_shadow_store(RzAnalysis *analysis, const char 
 
 RZ_API const char *rz_analysis_cc_default(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
-	return sdb_const_get(DB, "default.cc", 0);
+	return sdb_const_get(DB, "default.cc");
 }
 
 RZ_API void rz_analysis_set_cc_default(RzAnalysis *analysis, const char *cc) {
 	rz_return_if_fail(analysis && cc);
-	sdb_set(DB, "default.cc", cc, 0);
+	sdb_set(DB, "default.cc", cc);
 }
 
 RZ_API const char *rz_analysis_syscc_default(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
-	return sdb_const_get(DB, "default.syscc", 0);
+	return sdb_const_get(DB, "default.syscc");
 }
 
 RZ_API void rz_analysis_set_syscc_default(RzAnalysis *analysis, const char *cc) {
 	rz_return_if_fail(analysis && cc);
-	sdb_set(DB, "default.syscc", cc, 0);
+	sdb_set(DB, "default.syscc", cc);
 }
 
 RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_name) {

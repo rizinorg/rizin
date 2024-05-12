@@ -14,8 +14,6 @@ extern "C" {
 typedef struct sdb_kv {
 	// sub of HtSSKv so we can cast safely
 	HtSSKv base;
-	ut32 cas;
-	ut64 expire;
 } SdbKv;
 
 static inline const char *sdbkv_key(const SdbKv *kv) {

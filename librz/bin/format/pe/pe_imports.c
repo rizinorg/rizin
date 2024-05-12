@@ -43,7 +43,7 @@ int PE_(read_image_delay_import_directory)(RzBuffer *b, ut64 addr, PE_(image_del
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
 	char tmpbuf[32];
-	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal), 0);
+	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal));
 	if (foo && *foo) {
 		return foo;
 	} else {

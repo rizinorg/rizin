@@ -240,7 +240,7 @@ static RzList /*<char *>*/ *parse_format(RzCore *core, char *fmt) {
 		}
 		*tmp = '\0';
 		const char *query = rz_strf(tmpbuf, "spec.%s.%s", spec, arr);
-		char *type = (char *)sdb_const_get(s, query, 0);
+		char *type = (char *)sdb_const_get(s, query);
 		if (type) {
 			rz_list_append(ret, type);
 		}

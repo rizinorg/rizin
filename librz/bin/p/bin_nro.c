@@ -89,12 +89,12 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 
 static Sdb *get_sdb(RzBinFile *bf) {
 	Sdb *kv = sdb_new0();
-	sdb_num_set(kv, "nro_start.offset", 0, 0);
-	sdb_num_set(kv, "nro_start.size", 16, 0);
-	sdb_set(kv, "nro_start.format", "xxq unused mod_memoffset padding", 0);
-	sdb_num_set(kv, "nro_header.offset", 16, 0);
-	sdb_num_set(kv, "nro_header.size", 0x70, 0);
-	sdb_set(kv, "nro_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3", 0);
+	sdb_num_set(kv, "nro_start.offset", 0);
+	sdb_num_set(kv, "nro_start.size", 16);
+	sdb_set(kv, "nro_start.format", "xxq unused mod_memoffset padding");
+	sdb_num_set(kv, "nro_header.offset", 16);
+	sdb_num_set(kv, "nro_header.size", 0x70);
+	sdb_set(kv, "nro_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3");
 	sdb_ns_set(bf->sdb, "info", kv);
 	return kv;
 }

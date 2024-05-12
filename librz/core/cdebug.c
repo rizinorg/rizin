@@ -1206,7 +1206,7 @@ static bool siglistcb(void *p, const SdbKv *kv) {
 	int opt;
 	if (atoi(sdbkv_key(kv)) > 0) {
 		strncpy(key + 4, sdbkv_key(kv), 20);
-		opt = sdb_num_get(ds->dbg->sgnls, key, 0);
+		opt = sdb_num_get(ds->dbg->sgnls, key);
 		if (opt && ds->state->mode == RZ_OUTPUT_MODE_STANDARD) {
 			rz_cons_printf("%s %s", sdbkv_key(kv), sdbkv_value(kv));
 			const char *optstr = signal_option(opt);
@@ -1227,7 +1227,7 @@ static bool siglistjsoncb(void *p, const SdbKv *kv) {
 	int opt;
 	if (atoi(sdbkv_key(kv)) > 0) {
 		strncpy(key + 4, sdbkv_key(kv), 20);
-		opt = (int)sdb_num_get(ds->dbg->sgnls, key, 0);
+		opt = (int)sdb_num_get(ds->dbg->sgnls, key);
 		pj_o(ds->state->d.pj);
 		pj_ks(ds->state->d.pj, "signum", sdbkv_key(kv));
 		pj_ks(ds->state->d.pj, "name", sdbkv_value(kv));
@@ -1248,7 +1248,7 @@ static bool siglisttblcb(void *p, const SdbKv *kv) {
 	int opt;
 	if (atoi(sdbkv_key(kv)) > 0) {
 		strncpy(key + 4, sdbkv_key(kv), 20);
-		opt = (int)sdb_num_get(ds->dbg->sgnls, key, 0);
+		opt = (int)sdb_num_get(ds->dbg->sgnls, key);
 		const char *optstr = signal_option(opt);
 		rz_table_add_rowf(ds->state->d.t, "sss", sdbkv_key(kv), sdbkv_value(kv), rz_str_get(optstr));
 	}

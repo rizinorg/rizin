@@ -110,10 +110,10 @@ static RzGraphNode *get_graphtrace_node(RzGraph /*<struct trace_node *>*/ *g, Sd
 	char tn_key[TN_KEY_LEN];
 
 	snprintf(tn_key, TN_KEY_LEN, TN_KEY_FMT, tn->addr);
-	gn = (RzGraphNode *)(size_t)sdb_num_get(nodes, tn_key, NULL);
+	gn = (RzGraphNode *)(size_t)sdb_num_get(nodes, tn_key);
 	if (!gn) {
 		gn = rz_graph_add_node(g, tn);
-		sdb_num_set(nodes, tn_key, (ut64)(size_t)gn, 0);
+		sdb_num_set(nodes, tn_key, (ut64)(size_t)gn);
 	}
 	return gn;
 }

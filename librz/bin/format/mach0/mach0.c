@@ -96,140 +96,106 @@ static void init_sdb_formats(struct MACH0_(obj_t) * bin) {
 	 */
 	sdb_set(bin->kv, "mach0_build_platform.cparse",
 		"enum mach0_build_platform"
-		"{MACOS=1, IOS=2, TVOS=3, WATCHOS=4, BRIDGEOS=5, IOSMAC=6, IOSSIMULATOR=7, TVOSSIMULATOR=8, WATCHOSSIMULATOR=9};",
-		0);
+		"{MACOS=1, IOS=2, TVOS=3, WATCHOS=4, BRIDGEOS=5, IOSMAC=6, IOSSIMULATOR=7, TVOSSIMULATOR=8, WATCHOSSIMULATOR=9};");
 	sdb_set(bin->kv, "mach0_build_tool.cparse",
 		"enum mach0_build_tool"
-		"{CLANG=1, SWIFT=2, LD=3};",
-		0);
+		"{CLANG=1, SWIFT=2, LD=3};");
 	sdb_set(bin->kv, "mach0_load_command_type.cparse",
 		"enum mach0_load_command_type"
-		"{ LC_SEGMENT=0x00000001ULL, LC_SYMTAB=0x00000002ULL, LC_SYMSEG=0x00000003ULL, LC_THREAD=0x00000004ULL, LC_UNIXTHREAD=0x00000005ULL, LC_LOADFVMLIB=0x00000006ULL, LC_IDFVMLIB=0x00000007ULL, LC_IDENT=0x00000008ULL, LC_FVMFILE=0x00000009ULL, LC_PREPAGE=0x0000000aULL, LC_DYSYMTAB=0x0000000bULL, LC_LOAD_DYLIB=0x0000000cULL, LC_ID_DYLIB=0x0000000dULL, LC_LOAD_DYLINKER=0x0000000eULL, LC_ID_DYLINKER=0x0000000fULL, LC_PREBOUND_DYLIB=0x00000010ULL, LC_ROUTINES=0x00000011ULL, LC_SUB_FRAMEWORK=0x00000012ULL, LC_SUB_UMBRELLA=0x00000013ULL, LC_SUB_CLIENT=0x00000014ULL, LC_SUB_LIBRARY=0x00000015ULL, LC_TWOLEVEL_HINTS=0x00000016ULL, LC_PREBIND_CKSUM=0x00000017ULL, LC_LOAD_WEAK_DYLIB=0x80000018ULL, LC_SEGMENT_64=0x00000019ULL, LC_ROUTINES_64=0x0000001aULL, LC_UUID=0x0000001bULL, LC_RPATH=0x8000001cULL, LC_CODE_SIGNATURE=0x0000001dULL, LC_SEGMENT_SPLIT_INFO=0x0000001eULL, LC_REEXPORT_DYLIB=0x8000001fULL, LC_LAZY_LOAD_DYLIB=0x00000020ULL, LC_ENCRYPTION_INFO=0x00000021ULL, LC_DYLD_INFO=0x00000022ULL, LC_DYLD_INFO_ONLY=0x80000022ULL, LC_LOAD_UPWARD_DYLIB=0x80000023ULL, LC_VERSION_MIN_MACOSX=0x00000024ULL, LC_VERSION_MIN_IPHONEOS=0x00000025ULL, LC_FUNCTION_STARTS=0x00000026ULL, LC_DYLD_ENVIRONMENT=0x00000027ULL, LC_MAIN=0x80000028ULL, LC_DATA_IN_CODE=0x00000029ULL, LC_SOURCE_VERSION=0x0000002aULL, LC_DYLIB_CODE_SIGN_DRS=0x0000002bULL, LC_ENCRYPTION_INFO_64=0x0000002cULL, LC_LINKER_OPTION=0x0000002dULL, LC_LINKER_OPTIMIZATION_HINT=0x0000002eULL, LC_VERSION_MIN_TVOS=0x0000002fULL, LC_VERSION_MIN_WATCHOS=0x00000030ULL, LC_NOTE=0x00000031ULL, LC_BUILD_VERSION=0x00000032ULL };",
-		0);
+		"{ LC_SEGMENT=0x00000001ULL, LC_SYMTAB=0x00000002ULL, LC_SYMSEG=0x00000003ULL, LC_THREAD=0x00000004ULL, LC_UNIXTHREAD=0x00000005ULL, LC_LOADFVMLIB=0x00000006ULL, LC_IDFVMLIB=0x00000007ULL, LC_IDENT=0x00000008ULL, LC_FVMFILE=0x00000009ULL, LC_PREPAGE=0x0000000aULL, LC_DYSYMTAB=0x0000000bULL, LC_LOAD_DYLIB=0x0000000cULL, LC_ID_DYLIB=0x0000000dULL, LC_LOAD_DYLINKER=0x0000000eULL, LC_ID_DYLINKER=0x0000000fULL, LC_PREBOUND_DYLIB=0x00000010ULL, LC_ROUTINES=0x00000011ULL, LC_SUB_FRAMEWORK=0x00000012ULL, LC_SUB_UMBRELLA=0x00000013ULL, LC_SUB_CLIENT=0x00000014ULL, LC_SUB_LIBRARY=0x00000015ULL, LC_TWOLEVEL_HINTS=0x00000016ULL, LC_PREBIND_CKSUM=0x00000017ULL, LC_LOAD_WEAK_DYLIB=0x80000018ULL, LC_SEGMENT_64=0x00000019ULL, LC_ROUTINES_64=0x0000001aULL, LC_UUID=0x0000001bULL, LC_RPATH=0x8000001cULL, LC_CODE_SIGNATURE=0x0000001dULL, LC_SEGMENT_SPLIT_INFO=0x0000001eULL, LC_REEXPORT_DYLIB=0x8000001fULL, LC_LAZY_LOAD_DYLIB=0x00000020ULL, LC_ENCRYPTION_INFO=0x00000021ULL, LC_DYLD_INFO=0x00000022ULL, LC_DYLD_INFO_ONLY=0x80000022ULL, LC_LOAD_UPWARD_DYLIB=0x80000023ULL, LC_VERSION_MIN_MACOSX=0x00000024ULL, LC_VERSION_MIN_IPHONEOS=0x00000025ULL, LC_FUNCTION_STARTS=0x00000026ULL, LC_DYLD_ENVIRONMENT=0x00000027ULL, LC_MAIN=0x80000028ULL, LC_DATA_IN_CODE=0x00000029ULL, LC_SOURCE_VERSION=0x0000002aULL, LC_DYLIB_CODE_SIGN_DRS=0x0000002bULL, LC_ENCRYPTION_INFO_64=0x0000002cULL, LC_LINKER_OPTION=0x0000002dULL, LC_LINKER_OPTIMIZATION_HINT=0x0000002eULL, LC_VERSION_MIN_TVOS=0x0000002fULL, LC_VERSION_MIN_WATCHOS=0x00000030ULL, LC_NOTE=0x00000031ULL, LC_BUILD_VERSION=0x00000032ULL };");
 	sdb_set(bin->kv, "mach0_header_filetype.cparse",
 		"enum mach0_header_filetype"
-		"{MH_OBJECT=1, MH_EXECUTE=2, MH_FVMLIB=3, MH_CORE=4, MH_PRELOAD=5, MH_DYLIB=6, MH_DYLINKER=7, MH_BUNDLE=8, MH_DYLIB_STUB=9, MH_DSYM=10, MH_KEXT_BUNDLE=11};",
-		0);
+		"{MH_OBJECT=1, MH_EXECUTE=2, MH_FVMLIB=3, MH_CORE=4, MH_PRELOAD=5, MH_DYLIB=6, MH_DYLINKER=7, MH_BUNDLE=8, MH_DYLIB_STUB=9, MH_DSYM=10, MH_KEXT_BUNDLE=11};");
 	sdb_set(bin->kv, "mach0_header_flags.cparse",
 		"enum mach0_header_flags"
-		"{MH_NOUNDEFS=1, MH_INCRLINK=2,MH_DYLDLINK=4,MH_BINDATLOAD=8,MH_PREBOUND=0x10, MH_SPLIT_SEGS=0x20,MH_LAZY_INIT=0x40,MH_TWOLEVEL=0x80, MH_FORCE_FLAT=0x100,MH_NOMULTIDEFS=0x200,MH_NOFIXPREBINDING=0x400, MH_PREBINDABLE=0x800, MH_ALLMODSBOUND=0x1000, MH_SUBSECTIONS_VIA_SYMBOLS=0x2000, MH_CANONICAL=0x4000,MH_WEAK_DEFINES=0x8000, MH_BINDS_TO_WEAK=0x10000,MH_ALLOW_STACK_EXECUTION=0x20000, MH_ROOT_SAFE=0x40000,MH_SETUID_SAFE=0x80000, MH_NO_REEXPORTED_DYLIBS=0x100000,MH_PIE=0x200000, MH_DEAD_STRIPPABLE_DYLIB=0x400000, MH_HAS_TLV_DESCRIPTORS=0x800000, MH_NO_HEAP_EXECUTION=0x1000000};",
-		0);
+		"{MH_NOUNDEFS=1, MH_INCRLINK=2,MH_DYLDLINK=4,MH_BINDATLOAD=8,MH_PREBOUND=0x10, MH_SPLIT_SEGS=0x20,MH_LAZY_INIT=0x40,MH_TWOLEVEL=0x80, MH_FORCE_FLAT=0x100,MH_NOMULTIDEFS=0x200,MH_NOFIXPREBINDING=0x400, MH_PREBINDABLE=0x800, MH_ALLMODSBOUND=0x1000, MH_SUBSECTIONS_VIA_SYMBOLS=0x2000, MH_CANONICAL=0x4000,MH_WEAK_DEFINES=0x8000, MH_BINDS_TO_WEAK=0x10000,MH_ALLOW_STACK_EXECUTION=0x20000, MH_ROOT_SAFE=0x40000,MH_SETUID_SAFE=0x80000, MH_NO_REEXPORTED_DYLIBS=0x100000,MH_PIE=0x200000, MH_DEAD_STRIPPABLE_DYLIB=0x400000, MH_HAS_TLV_DESCRIPTORS=0x800000, MH_NO_HEAP_EXECUTION=0x1000000};");
 	sdb_set(bin->kv, "mach0_section_types.cparse",
 		"enum mach0_section_types"
-		"{S_REGULAR=0, S_ZEROFILL=1, S_CSTRING_LITERALS=2, S_4BYTE_LITERALS=3, S_8BYTE_LITERALS=4, S_LITERAL_POINTERS=5, S_NON_LAZY_SYMBOL_POINTERS=6, S_LAZY_SYMBOL_POINTERS=7, S_SYMBOL_STUBS=8, S_MOD_INIT_FUNC_POINTERS=9, S_MOD_TERM_FUNC_POINTERS=0xa, S_COALESCED=0xb, S_GB_ZEROFILL=0xc, S_INTERPOSING=0xd, S_16BYTE_LITERALS=0xe, S_DTRACE_DOF=0xf, S_LAZY_DYLIB_SYMBOL_POINTERS=0x10, S_THREAD_LOCAL_REGULAR=0x11, S_THREAD_LOCAL_ZEROFILL=0x12, S_THREAD_LOCAL_VARIABLES=0x13, S_THREAD_LOCAL_VARIABLE_POINTERS=0x14, S_THREAD_LOCAL_INIT_FUNCTION_POINTERS=0x15, S_INIT_FUNC_OFFSETS=0x16};",
-		0);
+		"{S_REGULAR=0, S_ZEROFILL=1, S_CSTRING_LITERALS=2, S_4BYTE_LITERALS=3, S_8BYTE_LITERALS=4, S_LITERAL_POINTERS=5, S_NON_LAZY_SYMBOL_POINTERS=6, S_LAZY_SYMBOL_POINTERS=7, S_SYMBOL_STUBS=8, S_MOD_INIT_FUNC_POINTERS=9, S_MOD_TERM_FUNC_POINTERS=0xa, S_COALESCED=0xb, S_GB_ZEROFILL=0xc, S_INTERPOSING=0xd, S_16BYTE_LITERALS=0xe, S_DTRACE_DOF=0xf, S_LAZY_DYLIB_SYMBOL_POINTERS=0x10, S_THREAD_LOCAL_REGULAR=0x11, S_THREAD_LOCAL_ZEROFILL=0x12, S_THREAD_LOCAL_VARIABLES=0x13, S_THREAD_LOCAL_VARIABLE_POINTERS=0x14, S_THREAD_LOCAL_INIT_FUNCTION_POINTERS=0x15, S_INIT_FUNC_OFFSETS=0x16};");
 	sdb_set(bin->kv, "mach0_section_attrs.cparse",
 		"enum mach0_section_attrs"
-		"{S_ATTR_PURE_INSTRUCTIONS=0x800000ULL, S_ATTR_NO_TOC=0x400000ULL, S_ATTR_STRIP_STATIC_SYMS=0x200000ULL, S_ATTR_NO_DEAD_STRIP=0x100000ULL, S_ATTR_LIVE_SUPPORT=0x080000ULL, S_ATTR_SELF_MODIFYING_CODE=0x040000ULL, S_ATTR_DEBUG=0x020000ULL, S_ATTR_SOME_INSTRUCTIONS=0x000004ULL, S_ATTR_EXT_RELOC=0x000002ULL, S_ATTR_LOC_RELOC=0x000001ULL};",
-		0);
+		"{S_ATTR_PURE_INSTRUCTIONS=0x800000ULL, S_ATTR_NO_TOC=0x400000ULL, S_ATTR_STRIP_STATIC_SYMS=0x200000ULL, S_ATTR_NO_DEAD_STRIP=0x100000ULL, S_ATTR_LIVE_SUPPORT=0x080000ULL, S_ATTR_SELF_MODIFYING_CODE=0x040000ULL, S_ATTR_DEBUG=0x020000ULL, S_ATTR_SOME_INSTRUCTIONS=0x000004ULL, S_ATTR_EXT_RELOC=0x000002ULL, S_ATTR_LOC_RELOC=0x000001ULL};");
 	sdb_set(bin->kv, "mach0_header.format",
 		"xxx[4]Edd[4]B "
-		"magic cputype cpusubtype (mach0_header_filetype)filetype ncmds sizeofcmds (mach0_header_flags)flags",
-		0);
+		"magic cputype cpusubtype (mach0_header_filetype)filetype ncmds sizeofcmds (mach0_header_flags)flags");
 	sdb_set(bin->kv, "mach0_segment.format",
 		"[4]Ed[16]zxxxxoodx "
-		"(mach0_load_command_type)cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags",
-		0);
+		"(mach0_load_command_type)cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags");
 	sdb_set(bin->kv, "mach0_segment64.format",
 		"[4]Ed[16]zqqqqoodx "
-		"(mach0_load_command_type)cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags",
-		0);
+		"(mach0_load_command_type)cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags");
 	sdb_set(bin->kv, "mach0_symtab_command.format",
 		"[4]Edxdxd "
-		"(mach0_load_command_type)cmd cmdsize symoff nsyms stroff strsize",
-		0);
+		"(mach0_load_command_type)cmd cmdsize symoff nsyms stroff strsize");
 	sdb_set(bin->kv, "mach0_dysymtab_command.format",
 		"[4]Edddddddddddxdxdxxxd "
-		"(mach0_load_command_type)cmd cmdsize ilocalsym nlocalsym iextdefsym nextdefsym iundefsym nundefsym tocoff ntoc moddtaboff nmodtab extrefsymoff nextrefsyms inddirectsymoff nindirectsyms extreloff nextrel locreloff nlocrel",
-		0);
+		"(mach0_load_command_type)cmd cmdsize ilocalsym nlocalsym iextdefsym nextdefsym iundefsym nundefsym tocoff ntoc moddtaboff nmodtab extrefsymoff nextrefsyms inddirectsymoff nindirectsyms extreloff nextrel locreloff nlocrel");
 	sdb_set(bin->kv, "mach0_section.format",
 		"[16]z[16]zxxxxxx[1]E[3]Bxx "
-		"sectname segname addr size offset align reloff nreloc (mach0_section_types)flags_type (mach0_section_attrs)flags_attr reserved1 reserved2",
-		0);
+		"sectname segname addr size offset align reloff nreloc (mach0_section_types)flags_type (mach0_section_attrs)flags_attr reserved1 reserved2");
 	sdb_set(bin->kv, "mach0_section64.format",
 		"[16]z[16]zqqxxxx[1]E[3]Bxxx "
-		"sectname segname addr size offset align reloff nreloc (mach0_section_types)flags_type (mach0_section_attrs)flags_attr reserved1 reserved2 reserved3",
-		0);
+		"sectname segname addr size offset align reloff nreloc (mach0_section_types)flags_type (mach0_section_attrs)flags_attr reserved1 reserved2 reserved3");
 	sdb_set(bin->kv, "mach0_dylib.format",
 		"xxxxz "
-		"name_offset timestamp current_version compatibility_version name",
-		0);
+		"name_offset timestamp current_version compatibility_version name");
 	sdb_set(bin->kv, "mach0_dylib_command.format",
 		"[4]Ed? "
-		"(mach0_load_command_type)cmd cmdsize (mach0_dylib)dylib",
-		0);
+		"(mach0_load_command_type)cmd cmdsize (mach0_dylib)dylib");
 	sdb_set(bin->kv, "mach0_id_dylib_command.format",
 		"[4]Ed? "
-		"(mach0_load_command_type)cmd cmdsize (mach0_dylib)dylib",
-		0);
+		"(mach0_load_command_type)cmd cmdsize (mach0_dylib)dylib");
 	sdb_set(bin->kv, "mach0_uuid_command.format",
 		"[4]Ed[16]b "
-		"(mach0_load_command_type)cmd cmdsize uuid",
-		0);
+		"(mach0_load_command_type)cmd cmdsize uuid");
 	sdb_set(bin->kv, "mach0_rpath_command.format",
 		"[4]Edxz "
-		"(mach0_load_command_type)cmd cmdsize path_offset path",
-		0);
+		"(mach0_load_command_type)cmd cmdsize path_offset path");
 	sdb_set(bin->kv, "mach0_entry_point_command.format",
 		"[4]Edqq "
-		"(mach0_load_command_type)cmd cmdsize entryoff stacksize",
-		0);
+		"(mach0_load_command_type)cmd cmdsize entryoff stacksize");
 	sdb_set(bin->kv, "mach0_encryption_info64_command.format",
 		"[4]Edxddx "
-		"(mach0_load_command_type)cmd cmdsize offset size id padding",
-		0);
+		"(mach0_load_command_type)cmd cmdsize offset size id padding");
 	sdb_set(bin->kv, "mach0_encryption_info_command.format",
 		"[4]Edxdd "
-		"(mach0_load_command_type)cmd cmdsize offset size id",
-		0);
+		"(mach0_load_command_type)cmd cmdsize offset size id");
 	sdb_set(bin->kv, "mach0_code_signature_command.format",
 		"[4]Edxd "
-		"(mach0_load_command_type)cmd cmdsize offset size",
-		0);
+		"(mach0_load_command_type)cmd cmdsize offset size");
 	sdb_set(bin->kv, "mach0_dyld_info_only_command.format",
 		"[4]Edxdxdxdxdxd "
-		"(mach0_load_command_type)cmd cmdsize rebase_off rebase_size bind_off bind_size weak_bind_off weak_bind_size lazy_bind_off lazy_bind_size export_off export_size",
-		0);
+		"(mach0_load_command_type)cmd cmdsize rebase_off rebase_size bind_off bind_size weak_bind_off weak_bind_size lazy_bind_off lazy_bind_size export_off export_size");
 	sdb_set(bin->kv, "mach0_load_dylinker_command.format",
 		"[4]Edxz "
-		"(mach0_load_command_type)cmd cmdsize name_offset name",
-		0);
+		"(mach0_load_command_type)cmd cmdsize name_offset name");
 	sdb_set(bin->kv, "mach0_id_dylinker_command.format",
 		"[4]Edxzi "
-		"(mach0_load_command_type)cmd cmdsize name_offset name",
-		0);
+		"(mach0_load_command_type)cmd cmdsize name_offset name");
 	sdb_set(bin->kv, "mach0_build_version_command.format",
 		"[4]Ed[4]Exxd "
-		"(mach0_load_command_type)cmd cmdsize (mach0_build_platform)platform minos sdk ntools",
-		0);
+		"(mach0_load_command_type)cmd cmdsize (mach0_build_platform)platform minos sdk ntools");
 	sdb_set(bin->kv, "mach0_build_version_tool.format",
 		"[4]Ex "
-		"(mach0_build_tool)tool version",
-		0);
+		"(mach0_build_tool)tool version");
 	sdb_set(bin->kv, "mach0_source_version_command.format",
 		"[4]Edq "
-		"(mach0_load_command_type)cmd cmdsize version",
-		0);
+		"(mach0_load_command_type)cmd cmdsize version");
 	sdb_set(bin->kv, "mach0_function_starts_command.format",
 		"[4]Edxd "
-		"(mach0_load_command_type)cmd cmdsize offset size",
-		0);
+		"(mach0_load_command_type)cmd cmdsize offset size");
 	sdb_set(bin->kv, "mach0_data_in_code_command.format",
 		"[4]Edxd "
-		"(mach0_load_command_type)cmd cmdsize offset size",
-		0);
+		"(mach0_load_command_type)cmd cmdsize offset size");
 	sdb_set(bin->kv, "mach0_version_min_command.format",
 		"[4]Edxx "
-		"(mach0_load_command_type)cmd cmdsize version reserved",
-		0);
+		"(mach0_load_command_type)cmd cmdsize version reserved");
 	sdb_set(bin->kv, "mach0_segment_split_info_command.format",
 		"[4]Edxd "
-		"(mach0_load_command_type)cmd cmdsize offset size",
-		0);
+		"(mach0_load_command_type)cmd cmdsize offset size");
 	sdb_set(bin->kv, "mach0_unixthread_command.format",
 		"[4]Eddd "
-		"(mach0_load_command_type)cmd cmdsize flavor count",
-		0);
+		"(mach0_load_command_type)cmd cmdsize flavor count");
 }
 
 static bool init_hdr(struct MACH0_(obj_t) * bin) {
@@ -271,7 +237,7 @@ static bool init_hdr(struct MACH0_(obj_t) * bin) {
 	bin->hdr.reserved = rz_read_ble(&machohdrbytes[28], bin->big_endian, 32);
 #endif
 	init_sdb_formats(bin);
-	sdb_num_set(bin->kv, "mach0_header.offset", 0, 0); // wat about fatmach0?
+	sdb_num_set(bin->kv, "mach0_header.offset", 0); // wat about fatmach0?
 	return true;
 }
 
@@ -336,12 +302,12 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 	bin->segs[j].flags = rz_read_ble32(&segcom[i], bin->big_endian);
 
 #if RZ_BIN_MACH064
-	sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_segment64_%zu.offset", j), off, 0);
+	sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_segment64_%zu.offset", j), off);
 #else
-	sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_segment_%zu.offset", j), off, 0);
+	sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_segment_%zu.offset", j), off);
 #endif
 
-	sdb_num_set(bin->kv, "mach0_segments.count", 0, 0);
+	sdb_num_set(bin->kv, "mach0_segments.count", 0);
 
 	if (bin->segs[j].nsects > 0) {
 		sect = bin->nsects;
@@ -398,11 +364,11 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 			memcpy(&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
 
-			sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.offset", bin->sects[k].segname, bin->sects[k].sectname), offset, 0);
+			sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.offset", bin->sects[k].segname, bin->sects[k].sectname), offset);
 #if RZ_BIN_MACH064
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.format", bin->sects[k].segname, bin->sects[k].sectname), "mach0_section64", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.format", bin->sects[k].segname, bin->sects[k].sectname), "mach0_section64");
 #else
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.format", bin->sects[k].segname, bin->sects[k].sectname), "mach0_section", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.format", bin->sects[k].segname, bin->sects[k].sectname), "mach0_section");
 #endif
 
 #if RZ_BIN_MACH064
@@ -944,7 +910,7 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 				ut32 ident_size = rz_read_ble32(p + 8, 1);
 				char *ident = rz_str_ndup((const char *)p + 28, ident_size);
 				if (ident) {
-					sdb_set(bin->kv, "mach0.ident", ident, 0);
+					sdb_set(bin->kv, "mach0.ident", ident);
 					free(ident);
 				}
 			} else {
@@ -1125,7 +1091,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			bin->entry = pc;
 		}
 		if (pc_offset != UT64_MAX) {
-			sdb_num_set(bin->kv, "mach0.entry.offset", pc_offset, 0);
+			sdb_num_set(bin->kv, "mach0.entry.offset", pc_offset);
 		}
 	}
 
@@ -1470,24 +1436,24 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		}
 
-		sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".offset", i), off, 0);
+		sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".offset", i), off);
 		const char *format_name = cmd_to_pf_definition(lc.cmd);
 		if (format_name) {
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), format_name, 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), format_name);
 		} else {
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size");
 		}
 
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code");
 			break;
 		case LC_RPATH:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "rpath", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "rpath");
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "segment", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "segment");
 			bin->nsegs++;
 			if (!parse_segments(bin, off)) {
 				RZ_LOG_ERROR("mach0: error parsing segment\n");
@@ -1496,42 +1462,42 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			}
 			break;
 		case LC_SYMTAB:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "symtab", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "symtab");
 			if (!parse_symtab(bin, off)) {
 				RZ_LOG_ERROR("mach0: error parsing symtab\n");
 				return false;
 			}
 			break;
 		case LC_DYSYMTAB:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dysymtab", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dysymtab");
 			if (!parse_dysymtab(bin, off)) {
 				RZ_LOG_ERROR("mach0: error parsing dysymtab\n");
 				return false;
 			}
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylib_code_sign_drs", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylib_code_sign_drs");
 			break;
 		case LC_VERSION_MIN_MACOSX:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_macosx", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_macosx");
 			if (bin->platform == UT32_MAX) {
 				bin->platform = MACH0_PLATFORM_MACOS;
 			}
 			break;
 		case LC_VERSION_MIN_IPHONEOS:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_iphoneos", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_iphoneos");
 			if (bin->platform == UT32_MAX) {
 				bin->platform = MACH0_PLATFORM_IOS;
 			}
 			break;
 		case LC_VERSION_MIN_TVOS:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_tvos", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_tvos");
 			if (bin->platform == UT32_MAX) {
 				bin->platform = MACH0_PLATFORM_TVOS;
 			}
 			break;
 		case LC_VERSION_MIN_WATCHOS:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_watchos", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version_min_watchos");
 			if (bin->platform == UT32_MAX) {
 				bin->platform = MACH0_PLATFORM_WATCHOS;
 			}
@@ -1545,7 +1511,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		}
 		case LC_UUID:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "uuid", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "uuid");
 			{
 				struct uuid_command uc = { 0 };
 				if (off + sizeof(struct uuid_command) > bin->size) {
@@ -1557,7 +1523,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 					char val[128];
 					snprintf(key, sizeof(key) - 1, "uuid.%d", bin->uuidn++);
 					rz_hex_bin2str((ut8 *)&uc.uuid, 16, val);
-					sdb_set(bin->kv, key, val, 0);
+					sdb_set(bin->kv, key, val);
 					// for (i=0;i<16; i++) bprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');
 				}
 			}
@@ -1565,7 +1531,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		case LC_ENCRYPTION_INFO_64:
 			/* TODO: the struct is probably different here */
 		case LC_ENCRYPTION_INFO:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "encryption_info", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "encryption_info");
 			{
 				struct MACH0_(encryption_info_command) eic = { 0 };
 				ut8 seic[sizeof(struct MACH0_(encryption_info_command))] = { 0 };
@@ -1581,16 +1547,16 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 					eic.cryptid = rz_read_ble32(&seic[16], bin->big_endian);
 
 					bin->has_crypto = eic.cryptid;
-					sdb_set(bin->kv, "crypto", "true", 0);
-					sdb_num_set(bin->kv, "cryptid", eic.cryptid, 0);
-					sdb_num_set(bin->kv, "cryptoff", eic.cryptoff, 0);
-					sdb_num_set(bin->kv, "cryptsize", eic.cryptsize, 0);
-					sdb_num_set(bin->kv, "cryptheader", off, 0);
+					sdb_set(bin->kv, "crypto", "true");
+					sdb_num_set(bin->kv, "cryptid", eic.cryptid);
+					sdb_num_set(bin->kv, "cryptoff", eic.cryptoff);
+					sdb_num_set(bin->kv, "cryptsize", eic.cryptsize);
+					sdb_num_set(bin->kv, "cryptheader", off);
 				}
 			}
 			break;
 		case LC_LOAD_DYLINKER: {
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylinker", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylinker");
 			RZ_FREE(bin->intrp);
 			// bprintf ("[mach0] load dynamic linker\n");
 			struct dylinker_command dy = { 0 };
@@ -1623,7 +1589,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 				ut64 ss;
 			} ep = { 0 };
 			ut8 sep[2 * sizeof(ut64)] = { 0 };
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "main", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "main");
 
 			if (!is_first_thread) {
 				RZ_LOG_ERROR("mach0: LC_MAIN with other threads\n");
@@ -1640,20 +1606,20 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			bin->entry = ep.eo;
 			bin->main_cmd = lc;
 
-			sdb_num_set(bin->kv, "mach0.entry.offset", off + 8, 0);
-			sdb_num_set(bin->kv, "stacksize", ep.ss, 0);
+			sdb_num_set(bin->kv, "mach0.entry.offset", off + 8);
+			sdb_num_set(bin->kv, "stacksize", ep.ss);
 
 			is_first_thread = false;
 		} break;
 		case LC_UNIXTHREAD:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "unixthread", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "unixthread");
 			if (!is_first_thread) {
 				RZ_LOG_ERROR("mach0: LC_UNIXTHREAD with other threads\n");
 				return false;
 			}
 			// fallthrough
 		case LC_THREAD:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "thread", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "thread");
 			if (!parse_thread(bin, &lc, off, is_first_thread)) {
 				RZ_LOG_ERROR("mach0: Cannot parse thread\n");
 				return false;
@@ -1662,7 +1628,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "load_dylib", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "load_dylib");
 			bin->nlibs++;
 			if (!parse_dylib(bin, off)) {
 				RZ_LOG_ERROR("mach0: Cannot parse dylib\n");
@@ -1673,7 +1639,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY: {
 			ut8 dyldi[sizeof(struct dyld_info_command)] = { 0 };
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dyld_info", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dyld_info");
 			bin->dyld_info = calloc(1, sizeof(struct dyld_info_command));
 			if (bin->dyld_info) {
 				if (off + sizeof(struct dyld_info_command) > bin->size) {
@@ -1702,27 +1668,27 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		} break;
 		case LC_CODE_SIGNATURE:
 			parse_signature(bin, off);
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "signature", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "signature");
 			/* ut32 dataoff
 			// ut32 datasize */
 			break;
 		case LC_SOURCE_VERSION:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "version");
 			/* uint64_t  version;  */
 			/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
 			break;
 		case LC_SEGMENT_SPLIT_INFO:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "split_info", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "split_info");
 			/* TODO */
 			break;
 		case LC_FUNCTION_STARTS:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "function_starts", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "function_starts");
 			if (!parse_function_starts(bin, off)) {
 				RZ_LOG_ERROR("mach0: Cannot parse LC_FUNCTION_STARTS\n");
 			}
 			break;
 		case LC_REEXPORT_DYLIB:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylib", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "dylib");
 			/* TODO */
 			break;
 		default:
@@ -1745,17 +1711,17 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		}
 
-		sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".offset", i), off, 0);
+		sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".offset", i), off);
 		const char *format_name = cmd_to_pf_definition(lc.cmd);
 		if (format_name) {
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), format_name, 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), format_name);
 		} else {
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size");
 		}
 
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
-			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code", 0);
+			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code");
 			if (bin->options.verbose) {
 				ut8 buf[8];
 				rz_buf_read_at(bin->b, off + 8, buf, sizeof(buf));
@@ -2771,9 +2737,9 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin) {
 	}
 	entry->addr = ea;
 	entry->offset = MACH0_(vaddr_to_paddr)(bin, entry->addr);
-	entry->haddr = sdb_num_get(bin->kv, "mach0.entry.offset", 0);
-	sdb_num_set(bin->kv, "mach0.entry.vaddr", entry->addr, 0);
-	sdb_num_set(bin->kv, "mach0.entry.paddr", bin->entry, 0);
+	entry->haddr = sdb_num_get(bin->kv, "mach0.entry.offset");
+	sdb_num_set(bin->kv, "mach0.entry.vaddr", entry->addr);
+	sdb_num_set(bin->kv, "mach0.entry.paddr", bin->entry);
 
 	if (entry->offset == 0 && !bin->sects) {
 		int i;
@@ -2781,7 +2747,7 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin) {
 			// XXX: section name shoudnt matter .. just check for exec flags
 			if (!strncmp(bin->sects[i].sectname, "__text", 6)) {
 				entry->offset = (ut64)bin->sects[i].offset;
-				sdb_num_set(bin->kv, "mach0.entry", entry->offset, 0);
+				sdb_num_set(bin->kv, "mach0.entry", entry->offset);
 				entry->addr = (ut64)bin->sects[i].addr;
 				if (!entry->addr) { // workaround for object files
 					eprintf("entrypoint is 0...\n");
@@ -2801,7 +2767,7 @@ void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) * bin) {
 	int i;
 	char tmpbuf[32];
 	for (i = 0; i < bin->nlibs; i++) {
-		sdb_set(bin->kv, rz_strf(tmpbuf, "libs.%d.name", i), bin->libs[i], 0);
+		sdb_set(bin->kv, rz_strf(tmpbuf, "libs.%d.name", i), bin->libs[i]);
 	}
 }
 
@@ -2817,7 +2783,7 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin) {
 	}
 	char tmpbuf[32];
 	for (i = 0; i < bin->nlibs; i++) {
-		sdb_set(bin->kv, rz_strf(tmpbuf, "libs.%d.name", i), bin->libs[i], 0);
+		sdb_set(bin->kv, rz_strf(tmpbuf, "libs.%d.name", i), bin->libs[i]);
 		strncpy(libs[i].name, bin->libs[i], RZ_BIN_MACH0_STRING_LENGTH - 1);
 		libs[i].name[RZ_BIN_MACH0_STRING_LENGTH - 1] = '\0';
 		libs[i].last = 0;

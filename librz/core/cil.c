@@ -157,7 +157,7 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 	}
 	RzIOMap *stack_map;
 	if (!name && addr == UT64_MAX && size == UT32_MAX) {
-		const char *fi = sdb_const_get(core->sdb, "aeim.fd", 0);
+		const char *fi = sdb_const_get(core->sdb, "aeim.fd");
 		if (fi) {
 			// Close the fd associated with the aeim stack
 			ut64 fd = sdb_atoi(fi);
@@ -181,7 +181,7 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 	free(stack_name);
 	char val[128], *v;
 	v = sdb_itoa(esil->stack_fd, val, 10);
-	sdb_set(core->sdb, "aeim.fd", v, 0);
+	sdb_set(core->sdb, "aeim.fd", v);
 
 	rz_config_set_b(core->config, "io.va", true);
 	if (pattern && *pattern) {
@@ -252,7 +252,7 @@ RZ_API void rz_core_analysis_esil_init_mem_del(RZ_NONNULL RzCore *core, RZ_NULLA
 	}
 	rz_flag_unset_name(core->flags, stack_name);
 	rz_flag_unset_name(core->flags, "aeim.stack");
-	sdb_unset(core->sdb, "aeim.fd", 0);
+	sdb_unset(core->sdb, "aeim.fd");
 	free(stack_name);
 }
 

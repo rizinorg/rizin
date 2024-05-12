@@ -34,18 +34,18 @@ static bool lmf_header_load(lmf_header *lmfh, RzBuffer *buf, Sdb *db) {
 		return false;
 	}
 	char tmpbuf[32];
-	sdb_set(db, "qnx.version", rz_strf(tmpbuf, "0x%xH", lmfh->version), 0);
-	sdb_set(db, "qnx.cflags", rz_strf(tmpbuf, "0x%xH", lmfh->cflags), 0);
-	sdb_set(db, "qnx.cpu", rz_strf(tmpbuf, "0x%xH", lmfh->cpu), 0);
-	sdb_set(db, "qnx.fpu", rz_strf(tmpbuf, "0x%xH", lmfh->fpu), 0);
-	sdb_set(db, "qnx.code_index", rz_strf(tmpbuf, "0x%x", lmfh->code_index), 0);
-	sdb_set(db, "qnx.stack_index", rz_strf(tmpbuf, "0x%x", lmfh->stack_index), 0);
-	sdb_set(db, "qnx.heap_index", rz_strf(tmpbuf, "0x%x", lmfh->heap_index), 0);
-	sdb_set(db, "qnx.argv_index", rz_strf(tmpbuf, "0x%x", lmfh->argv_index), 0);
-	sdb_set(db, "qnx.code_offset", rz_strf(tmpbuf, "0x%x", lmfh->code_offset), 0);
-	sdb_set(db, "qnx.stack_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->stack_nbytes), 0);
-	sdb_set(db, "qnx.heap_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->heap_nbytes), 0);
-	sdb_set(db, "qnx.image_base", rz_strf(tmpbuf, "0x%x", lmfh->image_base), 0);
+	sdb_set(db, "qnx.version", rz_strf(tmpbuf, "0x%xH", lmfh->version));
+	sdb_set(db, "qnx.cflags", rz_strf(tmpbuf, "0x%xH", lmfh->cflags));
+	sdb_set(db, "qnx.cpu", rz_strf(tmpbuf, "0x%xH", lmfh->cpu));
+	sdb_set(db, "qnx.fpu", rz_strf(tmpbuf, "0x%xH", lmfh->fpu));
+	sdb_set(db, "qnx.code_index", rz_strf(tmpbuf, "0x%x", lmfh->code_index));
+	sdb_set(db, "qnx.stack_index", rz_strf(tmpbuf, "0x%x", lmfh->stack_index));
+	sdb_set(db, "qnx.heap_index", rz_strf(tmpbuf, "0x%x", lmfh->heap_index));
+	sdb_set(db, "qnx.argv_index", rz_strf(tmpbuf, "0x%x", lmfh->argv_index));
+	sdb_set(db, "qnx.code_offset", rz_strf(tmpbuf, "0x%x", lmfh->code_offset));
+	sdb_set(db, "qnx.stack_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->stack_nbytes));
+	sdb_set(db, "qnx.heap_nbytes", rz_strf(tmpbuf, "0x%x", lmfh->heap_nbytes));
+	sdb_set(db, "qnx.image_base", rz_strf(tmpbuf, "0x%x", lmfh->image_base));
 	return true;
 }
 

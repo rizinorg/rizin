@@ -261,7 +261,7 @@ static void load_process_line(LoadCtx *ctx) {
 		if (!*k || !*v) {
 			break;
 		}
-		sdb_set(ctx->cur_db, k, v, 0);
+		sdb_set(ctx->cur_db, k, v);
 		break;
 	}
 	default:

@@ -103,7 +103,7 @@ static bool sdb_diff_kv_cb(void *user, const SdbKv *kv) {
 	const char *k = sdbkv_key(kv);
 	const char *v = sdbkv_value(kv);
 	Sdb *other = ctx->add ? ctx->ctx->a : ctx->ctx->b;
-	const char *other_val = sdb_const_get(other, k, NULL);
+	const char *other_val = sdb_const_get(other, k);
 	if (!other_val || !*other_val) {
 		DIFF(ctx->ctx,
 			sdb_diff_report_kv(ctx->ctx, k, v, ctx->add);

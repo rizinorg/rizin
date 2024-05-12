@@ -8,27 +8,27 @@
 Sdb *ref_0_db() {
 	Sdb *db = sdb_new0();
 
-	sdb_set(db, "realnames", "1", 0);
+	sdb_set(db, "realnames", "1");
 
 	Sdb *spaces_db = sdb_ns(db, "spaces", true);
-	sdb_set(spaces_db, "name", "fs", 0);
-	sdb_set(spaces_db, "spacestack", "[\"reveries\"]", 0);
+	sdb_set(spaces_db, "name", "fs");
+	sdb_set(spaces_db, "spacestack", "[\"reveries\"]");
 	Sdb *spaces_spaces_db = sdb_ns(spaces_db, "spaces", true);
-	sdb_set(spaces_spaces_db, "ghost", "s", 0);
-	sdb_set(spaces_spaces_db, "reveries", "s", 0);
+	sdb_set(spaces_spaces_db, "ghost", "s");
+	sdb_set(spaces_spaces_db, "reveries", "s");
 
 	Sdb *tags_db = sdb_ns(db, "tags", true);
-	sdb_set(tags_db, "tag." PERTURBATOR, PERTURBATOR, 0);
-	sdb_set(tags_db, "tag.lotus", "eater", 0);
+	sdb_set(tags_db, "tag." PERTURBATOR, PERTURBATOR);
+	sdb_set(tags_db, "tag.lotus", "eater");
 
 	Sdb *zones_db = sdb_ns(db, "zones", true);
-	sdb_set(zones_db, "blackwater park", "{\"from\":12345,\"to\":12648243}", 0);
-	sdb_set(zones_db, PERTURBATOR, "{\"from\":3735928559,\"to\":18446744073709551614}", 0);
+	sdb_set(zones_db, "blackwater park", "{\"from\":12345,\"to\":12648243}");
+	sdb_set(zones_db, PERTURBATOR, "{\"from\":3735928559,\"to\":18446744073709551614}");
 
 	Sdb *flags_db = sdb_ns(db, "flags", true);
-	sdb_set(flags_db, "foobars", "{\"realname\":\"Foobars\",\"demangled\":true,\"offset\":4919,\"size\":16,\"space\":\"reveries\",\"color\":\"white\",\"comment\":\"windowpane\",\"alias\":\"f00b4r5\"}", 0);
-	sdb_set(flags_db, "f00b4r5", "{\"realname\":\"f00b4r5\",\"demangled\":false,\"offset\":4919,\"size\":1}", 0);
-	sdb_set(flags_db, "deliverance", "{\"realname\":\"deliverance\",\"demangled\":false,\"offset\":1403,\"size\":19}", 0);
+	sdb_set(flags_db, "foobars", "{\"realname\":\"Foobars\",\"demangled\":true,\"offset\":4919,\"size\":16,\"space\":\"reveries\",\"color\":\"white\",\"comment\":\"windowpane\",\"alias\":\"f00b4r5\"}");
+	sdb_set(flags_db, "f00b4r5", "{\"realname\":\"f00b4r5\",\"demangled\":false,\"offset\":4919,\"size\":1}");
+	sdb_set(flags_db, "deliverance", "{\"realname\":\"deliverance\",\"demangled\":false,\"offset\":1403,\"size\":19}");
 
 	return db;
 }
@@ -65,11 +65,11 @@ RzFlag *ref_0_flag() {
 Sdb *ref_1_db() {
 	Sdb *db = sdb_new0();
 
-	sdb_set(db, "realnames", "0", 0);
+	sdb_set(db, "realnames", "0");
 
 	Sdb *spaces_db = sdb_ns(db, "spaces", true);
-	sdb_set(spaces_db, "name", "fs", 0);
-	sdb_set(spaces_db, "spacestack", "[\"*\"]", 0);
+	sdb_set(spaces_db, "name", "fs");
+	sdb_set(spaces_db, "spacestack", "[\"*\"]");
 	sdb_ns(spaces_db, "spaces", true);
 	sdb_ns(db, "tags", true);
 	sdb_ns(db, "zones", true);

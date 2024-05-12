@@ -55,14 +55,14 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	}
 
 	RzStrBuf key;
-	size_t arguments = sdb_num_get(sdb, rz_strbuf_initf(&key, "func.%s.args", name), 0);
+	size_t arguments = sdb_num_get(sdb, rz_strbuf_initf(&key, "func.%s.args", name));
 	if (arguments > 0 && !rz_pvector_reserve(callable->args, arguments)) {
 		goto error;
 	}
 
 	int i;
 	for (i = 0; i < arguments; i++) {
-		char *values = sdb_get(sdb, rz_strbuf_setf(&key, "func.%s.arg.%d", name, i), NULL);
+		char *values = sdb_get(sdb, rz_strbuf_setf(&key, "func.%s.arg.%d", name, i));
 
 		if (!values) {
 			goto error;
@@ -96,7 +96,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		}
 	}
 
-	const char *rettype = sdb_const_get(sdb, rz_strbuf_setf(&key, "func.%s.ret", name), 0);
+	const char *rettype = sdb_const_get(sdb, rz_strbuf_setf(&key, "func.%s.ret", name));
 	if (!rettype) {
 		// best we can do for a broken database
 		rettype = "void";
@@ -112,7 +112,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	callable->ret = ttype;
 
 	// Optional "noreturn" attribute
-	callable->noret = sdb_bool_get(sdb, rz_strbuf_setf(&key, "func.%s.noreturn", name), 0);
+	callable->noret = sdb_bool_get(sdb, rz_strbuf_setf(&key, "func.%s.noreturn", name));
 
 	rz_strbuf_fini(&key);
 	rz_list_free(cache_newly_added);
@@ -193,11 +193,11 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 	*/
 	const char *cname = callable->name;
 	// name=func
-	sdb_set(sdb, cname, "func", 0);
+	sdb_set(sdb, cname, "func");
 
 	// func.name.args=N
 	char *key = rz_str_newf("func.%s.args", cname);
-	sdb_num_set(sdb, key, rz_pvector_len(callable->args), 0);
+	sdb_num_set(sdb, key, rz_pvector_len(callable->args));
 	free(key);
 
 	RzStrBuf param_key;
@@ -214,7 +214,7 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 		char *arg_type = rz_type_as_string(typedb, arg->type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "func.%s.arg.%zu", cname, i),
-			rz_strbuf_setf(&param_val, "%s,%s", arg_type, arg_name), 0ULL);
+			rz_strbuf_setf(&param_val, "%s,%s", arg_type, arg_name));
 		free(arg_name);
 		free(arg_type);
 	}
@@ -225,14 +225,14 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 	if (callable->ret) {
 		key = rz_str_newf("func.%s.ret", cname);
 		char *ret_type = rz_type_as_string(typedb, callable->ret);
-		sdb_set_owned(sdb, key, ret_type, 0);
+		sdb_set_owned(sdb, key, ret_type);
 		free(key);
 	}
 
 	// Optional "noreturn" attribute
 	if (callable->noret) {
 		char *noreturn_key = rz_str_newf("func.%s.noreturn", cname);
-		sdb_bool_set(sdb, noreturn_key, true, 0);
+		sdb_bool_set(sdb, noreturn_key, true);
 		free(noreturn_key);
 	}
 }

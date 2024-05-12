@@ -6,7 +6,7 @@
 RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words) {
 	rz_return_if_fail(f && name && words);
 	char tmpbuf[256];
-	sdb_set(f->tags, rz_strf(tmpbuf, "tag.%s", name), words, -1);
+	sdb_set(f->tags, rz_strf(tmpbuf, "tag.%s", name), words);
 }
 
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_tags_list(RzFlag *f) {
@@ -54,7 +54,7 @@ RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_tags_get(RzFlag *f, const char *name) 
 	rz_return_val_if_fail(f && name, NULL);
 	char tmpbuf[256];
 	RzList *res = rz_list_newf(NULL);
-	char *words = sdb_get(f->tags, rz_strf(tmpbuf, "tag.%s", name), NULL);
+	char *words = sdb_get(f->tags, rz_strf(tmpbuf, "tag.%s", name));
 	if (words) {
 		RzList *list = rz_str_split_list(words, " ", 0);
 		struct iter_glob_flag_t u = { .res = res, .words = list };

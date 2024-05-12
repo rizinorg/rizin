@@ -58,18 +58,18 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	BootImage *bi = &obj->bi;
 	(void)rz_buf_read_at(obj->buf, 0, (ut8 *)bi, sizeof(BootImage));
 	if ((n = rz_str_ndup((char *)bi->name, BOOT_NAME_SIZE))) {
-		sdb_set(db, "name", n, 0);
+		sdb_set(db, "name", n);
 		free(n);
 	}
 	if ((n = rz_str_ndup((char *)bi->cmdline, BOOT_ARGS_SIZE))) {
-		sdb_set(db, "cmdline", n, 0);
+		sdb_set(db, "cmdline", n);
 		free(n);
 	}
 	for (i = 0; i < 8; i++) {
-		sdb_num_set(db, "id", (ut64)bi->id[i], 0);
+		sdb_num_set(db, "id", (ut64)bi->id[i]);
 	}
 	if ((n = rz_str_ndup((char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
-		sdb_set(db, "extra_cmdline", n, 0);
+		sdb_set(db, "extra_cmdline", n);
 		free(n);
 	}
 	return true;

@@ -26,7 +26,6 @@ static bool sdb_ht_internal_insert(HtSS *ht, const char *key, const char *value,
 	}
 	kvp.base.key_len = strlen(kvp.base.key);
 	kvp.base.value_len = strlen(kvp.base.value);
-	kvp.expire = 0;
 	return ht_ss_insert_kv(ht, (HtSSKv *)&kvp, update);
 
 err:

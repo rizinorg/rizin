@@ -56,8 +56,8 @@ RZ_API void rz_debug_signal_init(RzDebug *dbg) {
 	// XXX
 	DB = sdb_new(NULL, "signals", 0);
 	for (i = 0; signals[i].k; i++) {
-		sdb_set(DB, signals[i].k, signals[i].v, 0);
-		sdb_set(DB, signals[i].v, signals[i].k, 0);
+		sdb_set(DB, signals[i].k, signals[i].v);
+		sdb_set(DB, signals[i].v, signals[i].k);
 	}
 }
 
@@ -72,7 +72,7 @@ RZ_API void rz_debug_signal_setup(RzDebug *dbg, int num, int opt) {
 RZ_API int rz_debug_signal_what(RzDebug *dbg, int num) {
 	char k[32];
 	snprintf(k, sizeof(k), "cfg.%d", num);
-	return sdb_num_get(DB, k, 0);
+	return sdb_num_get(DB, k);
 }
 
 RZ_API int rz_debug_signal_set(RzDebug *dbg, int num, ut64 addr) {

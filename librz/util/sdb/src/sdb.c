@@ -25,14 +25,6 @@ static inline SdbKv *next_kv(HtSS *ht, SdbKv *kv) {
 			(j) < (bt)->count; \
 			(j) = (count) == (ht)->count ? j + 1 : j, (kv) = (count) == (ht)->count ? next_kv(ht, kv) : kv, (count) = (ht)->count)
 
-static inline int nextcas(void) {
-	static ut32 cas = 1;
-	if (!cas) {
-		cas++;
-	}
-	return cas++;
-}
-
 // TODO: use mmap instead of read.. much faster!
 RZ_API Sdb *sdb_new0(void) {
 	return sdb_new(NULL, NULL, 0);
@@ -78,12 +70,10 @@ RZ_API Sdb *sdb_new(const char *path, const char *name, int lock) {
 			break;
 		}
 		if (sdb_open(s, s->dir) == -1) {
-			s->last = s->timestamped ? sdb_now() : 0LL;
 			// TODO: must fail if we cant open for write in sync
 		}
 		s->name = strdup(name);
 	} else {
-		s->last = s->timestamped ? sdb_now() : 0LL;
 		s->fd = -1;
 	}
 	s->fdump = -1;
@@ -127,7 +117,7 @@ RZ_API void sdb_file(Sdb *s, const char *dir) {
 }
 
 static bool sdb_merge_cb(void *user, const SdbKv *kv) {
-	sdb_set(user, sdbkv_key(kv), sdbkv_value(kv), 0);
+	sdb_set(user, sdbkv_key(kv), sdbkv_value(kv));
 	return true;
 }
 
@@ -207,14 +197,10 @@ RZ_API bool sdb_free(Sdb *s) {
 	return false;
 }
 
-RZ_API const char *sdb_const_get_len(Sdb *s, const char *key, int *vlen, ut32 *cas) {
+RZ_API const char *sdb_const_get_len(Sdb *s, const char *key, int *vlen) {
 	ut32 pos, len;
-	ut64 now = 0LL;
 	bool found;
 
-	if (cas) {
-		*cas = 0;
-	}
 	if (vlen) {
 		*vlen = 0;
 	}
@@ -229,18 +215,6 @@ RZ_API const char *sdb_const_get_len(Sdb *s, const char *key, int *vlen, ut32 *c
 	if (found) {
 		if (!sdbkv_value(kv) || !*sdbkv_value(kv)) {
 			return NULL;
-		}
-		if (s->timestamped && kv->expire) {
-			if (!now) {
-				now = sdb_now();
-			}
-			if (now > kv->expire) {
-				sdb_unset(s, key, 0);
-				return NULL;
-			}
-		}
-		if (cas) {
-			*cas = kv->cas;
 		}
 		if (vlen) {
 			*vlen = sdbkv_value_len(kv);
@@ -266,36 +240,35 @@ RZ_API const char *sdb_const_get_len(Sdb *s, const char *key, int *vlen, ut32 *c
 	return s->db.map + pos;
 }
 
-RZ_API const char *sdb_const_get(Sdb *s, const char *key, ut32 *cas) {
-	return sdb_const_get_len(s, key, NULL, cas);
+RZ_API const char *sdb_const_get(Sdb *s, const char *key) {
+	return sdb_const_get_len(s, key, NULL);
 }
 
 // TODO: add sdb_getf?
 
-RZ_API char *sdb_get_len(Sdb *s, const char *key, int *vlen, ut32 *cas) {
-	const char *value = sdb_const_get_len(s, key, vlen, cas);
+RZ_API char *sdb_get_len(Sdb *s, const char *key, int *vlen) {
+	const char *value = sdb_const_get_len(s, key, vlen);
 	return value ? strdup(value) : NULL;
 }
 
-RZ_API char *sdb_get(Sdb *s, const char *key, ut32 *cas) {
-	return sdb_get_len(s, key, NULL, cas);
+RZ_API char *sdb_get(Sdb *s, const char *key) {
+	return sdb_get_len(s, key, NULL);
 }
 
-RZ_API int sdb_unset(Sdb *s, const char *key, ut32 cas) {
-	return key ? sdb_set(s, key, "", cas) : 0;
+RZ_API int sdb_unset(Sdb *s, const char *key) {
+	return key ? sdb_set(s, key, "") : 0;
 }
 
 /* remove from memory */
-RZ_API bool sdb_remove(Sdb *s, const char *key, ut32 cas) {
+RZ_API bool sdb_remove(Sdb *s, const char *key) {
 	return sdb_ht_delete(s->ht, key);
 }
 
 // alias for '-key=str'.. '+key=str' concats
-RZ_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas) {
+RZ_API bool sdb_uncat(Sdb *s, const char *key, const char *value) {
 	// remove 'value' from current key value.
-	// TODO: cas is ignored here
 	int vlen = 0, valen;
-	char *p, *v = sdb_get_len(s, key, &vlen, NULL);
+	char *p, *v = sdb_get_len(s, key, &vlen);
 	int mod = 0;
 	if (!v || !key || !value) {
 		free(v);
@@ -309,40 +282,40 @@ RZ_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas) {
 		}
 	}
 	if (mod) {
-		sdb_set_owned(s, key, v, 0);
+		sdb_set_owned(s, key, v);
 	} else {
 		free(v);
 	}
 	return 0;
 }
 
-RZ_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas) {
+RZ_API bool sdb_concat(Sdb *s, const char *key, const char *value) {
 	int kl, vl;
 	const char *p;
 	char *o;
 	if (!s || !key || !*key || !value || !*value) {
 		return 0;
 	}
-	p = sdb_const_get_len(s, key, &kl, 0);
+	p = sdb_const_get_len(s, key, &kl);
 	if (!p) {
-		return sdb_set(s, key, value, cas);
+		return sdb_set(s, key, value);
 	}
 	vl = strlen(value);
 	o = malloc(kl + vl + 1);
 	if (o) {
 		memcpy(o, p, kl);
 		memcpy(o + kl, value, vl + 1);
-		return sdb_set_owned(s, key, o, cas);
+		return sdb_set_owned(s, key, o);
 	}
-	return 0;
+	return false;
 }
 
 // set if not defined
-RZ_API int sdb_add(Sdb *s, const char *key, const char *val, ut32 cas) {
+RZ_API bool sdb_add(Sdb *s, const char *key, const char *val) {
 	if (sdb_exists(s, key)) {
-		return 0;
+		return false;
 	}
-	return sdb_set(s, key, val, cas);
+	return sdb_set(s, key, val);
 }
 
 RZ_API bool sdb_exists(Sdb *s, const char *key) {
@@ -387,7 +360,6 @@ RZ_API int sdb_open(Sdb *s, const char *file) {
 			s->path = NULL; // TODO: path is important
 		}
 	}
-	s->last = 0LL;
 	if (s->fd != -1 && fstat(s->fd, &st) != -1) {
 		if ((S_IFREG & st.st_mode) != S_IFREG) {
 			eprintf("Database must be a file\n");
@@ -395,7 +367,6 @@ RZ_API int sdb_open(Sdb *s, const char *file) {
 			s->fd = -1;
 			return -1;
 		}
-		s->last = st.st_mtime;
 	}
 	if (s->fd != -1) {
 		cdb_init(&s->db, s->fd);
@@ -506,8 +477,6 @@ RZ_API SdbKv *sdbkv_new2(const char *k, int kl, const char *v, int vl) {
 		kv->base.value = NULL;
 		kv->base.value_len = 0;
 	}
-	kv->cas = nextcas();
-	kv->expire = 0LL;
 	return kv;
 }
 
@@ -535,12 +504,12 @@ RZ_API RZ_OWN char *sdbkv_dup_value(RZ_NONNULL const SdbKv *kv) {
 	return rz_mem_dup(sdbkv_value(kv), sdbkv_value_len(kv) + 1);
 }
 
-static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32 cas) {
+static bool sdb_set_internal(Sdb *s, const char *key, char *val, int owned) {
 	ut32 vlen, klen;
 	SdbKv *kv;
 	bool found;
 	if (!s || !key) {
-		return 0;
+		return false;
 	}
 	if (!val) {
 		if (owned) {
@@ -556,16 +525,9 @@ static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32
 	kv = sdb_ht_find_kvp(s->ht, key, &found);
 	if (found && sdbkv_value(kv)) {
 		if (cdb_findnext(&s->db, sdb_hash(key), key, klen)) {
-			if (cas && kv->cas != cas) {
-				if (owned) {
-					free(val);
-				}
-				return 0;
-			}
 			if (vlen == sdbkv_value_len(kv) && !strcmp(sdbkv_value(kv), val)) {
-				return kv->cas;
+				return true;
 			}
-			kv->cas = cas = nextcas();
 			if (owned) {
 				kv->base.value_len = vlen;
 				free(kv->base.value);
@@ -581,7 +543,7 @@ static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32
 		} else {
 			sdb_ht_delete(s->ht, key);
 		}
-		return cas;
+		return true;
 	}
 	// empty values are also stored
 	// TODO store only the ones that are in the CDB
@@ -595,20 +557,19 @@ static ut32 sdb_set_internal(Sdb *s, const char *key, char *val, int owned, ut32
 		kv = sdbkv_new2(key, klen, val, vlen);
 	}
 	if (kv) {
-		ut32 cas = kv->cas = nextcas();
 		sdb_ht_insert_kvp(s->ht, kv, true /*update*/);
 		free(kv);
-		return cas;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-RZ_API int sdb_set_owned(Sdb *s, const char *key, char *val, ut32 cas) {
-	return sdb_set_internal(s, key, val, 1, cas);
+RZ_API bool sdb_set_owned(Sdb *s, const char *key, char *val) {
+	return sdb_set_internal(s, key, val, 1);
 }
 
-RZ_API int sdb_set(Sdb *s, const char *key, const char *val, ut32 cas) {
-	return sdb_set_internal(s, key, (char *)val, 0, cas);
+RZ_API bool sdb_set(Sdb *s, const char *key, const char *val) {
+	return sdb_set_internal(s, key, (char *)val, 0);
 }
 
 static bool get_items_cb(void *user, const SdbKv *kv) {
@@ -821,9 +782,9 @@ RZ_API bool sdb_sync(Sdb *s) {
 		ut32 j, count;
 
 		BUCKET_FOREACH_SAFE(s->ht, bt, j, count, kv) {
-			if (sdbkv_key(kv) && sdbkv_value(kv) && *sdbkv_value(kv) && !kv->expire) {
+			if (sdbkv_key(kv) && sdbkv_value(kv) && *sdbkv_value(kv)) {
 				if (sdb_disk_insert(s, sdbkv_key(kv), sdbkv_value(kv))) {
-					sdb_remove(s, sdbkv_key(kv), 0);
+					sdb_remove(s, sdbkv_key(kv));
 				}
 			}
 		}
@@ -911,67 +872,6 @@ RZ_API bool sdb_dump_next(RZ_NONNULL Sdb *s, RZ_OUT RZ_NONNULL SdbKv *kv) {
 	return true;
 }
 
-static inline ut64 parse_expire(ut64 e) {
-	const ut64 month = 30 * 24 * 60 * 60;
-	if (e > 0 && e < month) {
-		e += sdb_now();
-	}
-	return e;
-}
-
-RZ_API bool sdb_expire_set(Sdb *s, const char *key, ut64 expire, ut32 cas) {
-	char *buf;
-	ut32 pos, len;
-	SdbKv *kv;
-	bool found;
-	s->timestamped = true;
-	if (!key) {
-		s->expire = parse_expire(expire);
-		return true;
-	}
-	kv = (SdbKv *)sdb_ht_find_kvp(s->ht, key, &found);
-	if (found && kv) {
-		if (*sdbkv_value(kv)) {
-			if (!cas || cas == kv->cas) {
-				kv->expire = parse_expire(expire);
-				return true;
-			}
-		}
-		return false;
-	}
-	if (s->fd == -1) {
-		return false;
-	}
-	(void)cdb_findstart(&s->db);
-	if (!cdb_findnext(&s->db, sdb_hash(key), key, strlen(key) + 1)) {
-		return false;
-	}
-	pos = cdb_datapos(&s->db);
-	len = cdb_datalen(&s->db);
-	if (len < 1 || len >= INT32_MAX) {
-		return false;
-	}
-	if (!(buf = calloc(1, len + 1))) {
-		return false;
-	}
-	cdb_read(&s->db, buf, len, pos);
-	buf[len] = 0;
-	sdb_set_owned(s, key, buf, cas);
-	return sdb_expire_set(s, key, expire, cas); // recursive
-}
-
-RZ_API ut64 sdb_expire_get(Sdb *s, const char *key, ut32 *cas) {
-	bool found = false;
-	SdbKv *kv = (SdbKv *)sdb_ht_find_kvp(s->ht, key, &found);
-	if (found && kv && *sdbkv_value(kv)) {
-		if (cas) {
-			*cas = kv->cas;
-		}
-		return kv->expire;
-	}
-	return 0LL;
-}
-
 RZ_API void sdb_config(Sdb *s, int options) {
 	s->options = options;
 	if (options & SDB_OPTION_SYNC) {
@@ -979,7 +879,6 @@ RZ_API void sdb_config(Sdb *s, int options) {
 	}
 	if (options & SDB_OPTION_NOSTAMP) {
 		// sync on every query
-		s->last = 0LL;
 	}
 	if (options & SDB_OPTION_FS) {
 		// have access to fs (handle '.' or not in query)
@@ -1002,7 +901,7 @@ RZ_API void sdb_drain(Sdb *s, Sdb *f) {
 
 static bool copy_foreach_cb(void *user, const SdbKv *kv) {
 	Sdb *dst = user;
-	sdb_set(dst, sdbkv_key(kv), sdbkv_value(kv), 0);
+	sdb_set(dst, sdbkv_key(kv), sdbkv_value(kv));
 	return true;
 }
 
@@ -1023,7 +922,7 @@ typedef struct {
 static bool unset_cb(void *user, const SdbKv *kv) {
 	UnsetCallbackData *ucd = user;
 	if (sdb_match(sdbkv_key(kv), ucd->key)) {
-		sdb_unset(ucd->sdb, sdbkv_key(kv), 0);
+		sdb_unset(ucd->sdb, sdbkv_key(kv));
 	}
 	return true;
 }

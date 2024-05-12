@@ -262,7 +262,7 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 	}
 
 	pj_end(j);
-	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j), 0);
+	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j));
 	pj_free(j);
 	return true;
 }
@@ -290,7 +290,7 @@ static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	}
 
 	pj_end(j);
-	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j), 0);
+	sdb_set(db, rz_strf(tmpbuf, "0x%" PFMT64x, k), pj_string(j));
 	pj_free(j);
 	return true;
 }
@@ -359,7 +359,7 @@ static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *che
 		pj_end(j);
 
 		pj_end(j);
-		sdb_set(db, rz_strf(tmpbuf, "0x%x", chkpt->cnum), pj_string(j), 0);
+		sdb_set(db, rz_strf(tmpbuf, "0x%x", chkpt->cnum), pj_string(j));
 		pj_free(j);
 	}
 }
@@ -399,7 +399,7 @@ static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *che
  * - This mostly follows rz-db-style serialization
  */
 RZ_API void rz_debug_session_serialize(RzDebugSession *session, Sdb *db) {
-	sdb_num_set(db, "maxcnum", session->maxcnum, 0);
+	sdb_num_set(db, "maxcnum", session->maxcnum);
 	serialize_registers(sdb_ns(db, "registers", true), session->registers);
 	serialize_memory(sdb_ns(db, "memory", true), session->memory);
 	serialize_checkpoints(sdb_ns(db, "checkpoints", true), session->checkpoints);
@@ -704,7 +704,7 @@ error:
 RZ_API void rz_debug_session_deserialize(RzDebugSession *session, Sdb *db) {
 	Sdb *subdb;
 
-	session->maxcnum = sdb_num_get(db, "maxcnum", 0);
+	session->maxcnum = sdb_num_get(db, "maxcnum");
 
 #define DESERIALIZE(ns, func) \
 	do { \

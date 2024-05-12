@@ -44,17 +44,17 @@ static int art_header_load(ArtObj *ao, Sdb *db) {
 	char tmpbuf[32];
 	ARTHeader *art = &ao->art;
 	(void)rz_buf_fread_at(ao->buf, 0, (ut8 *)art, "IIiiiiiiiiiiii", 1);
-	sdb_set(db, "img.base", rz_strf(tmpbuf, "0x%x", art->image_base), 0);
-	sdb_set(db, "img.size", rz_strf(tmpbuf, "0x%x", art->image_size), 0);
-	sdb_set(db, "art.checksum", rz_strf(tmpbuf, "0x%x", art->checksum), 0);
-	sdb_set(db, "art.version", rz_strf(tmpbuf, "%c%c%c", art->version[0], art->version[1], art->version[2]), 0);
-	sdb_set(db, "oat.begin", rz_strf(tmpbuf, "0x%x", art->oat_file_begin), 0);
-	sdb_set(db, "oat.end", rz_strf(tmpbuf, "0x%x", art->oat_file_end), 0);
-	sdb_set(db, "oat_data.begin", rz_strf(tmpbuf, "0x%x", art->oat_data_begin), 0);
-	sdb_set(db, "oat_data.end", rz_strf(tmpbuf, "0x%x", art->oat_data_end), 0);
-	sdb_set(db, "patch_delta", rz_strf(tmpbuf, "0x%x", art->patch_delta), 0);
-	sdb_set(db, "image_roots", rz_strf(tmpbuf, "0x%x", art->image_roots), 0);
-	sdb_set(db, "compile_pic", rz_strf(tmpbuf, "0x%x", art->compile_pic), 0);
+	sdb_set(db, "img.base", rz_strf(tmpbuf, "0x%x", art->image_base));
+	sdb_set(db, "img.size", rz_strf(tmpbuf, "0x%x", art->image_size));
+	sdb_set(db, "art.checksum", rz_strf(tmpbuf, "0x%x", art->checksum));
+	sdb_set(db, "art.version", rz_strf(tmpbuf, "%c%c%c", art->version[0], art->version[1], art->version[2]));
+	sdb_set(db, "oat.begin", rz_strf(tmpbuf, "0x%x", art->oat_file_begin));
+	sdb_set(db, "oat.end", rz_strf(tmpbuf, "0x%x", art->oat_file_end));
+	sdb_set(db, "oat_data.begin", rz_strf(tmpbuf, "0x%x", art->oat_data_begin));
+	sdb_set(db, "oat_data.end", rz_strf(tmpbuf, "0x%x", art->oat_data_end));
+	sdb_set(db, "patch_delta", rz_strf(tmpbuf, "0x%x", art->patch_delta));
+	sdb_set(db, "image_roots", rz_strf(tmpbuf, "0x%x", art->image_roots));
+	sdb_set(db, "compile_pic", rz_strf(tmpbuf, "0x%x", art->compile_pic));
 	return true;
 }
 

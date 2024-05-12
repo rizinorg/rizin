@@ -696,30 +696,30 @@ static void rop_classify(RzCore *core, Sdb *db, RzList /*<char *>*/ *ropList, co
 
 	if (nop == 1) {
 		char *str_nop = rz_str_newf("%s NOP", str);
-		sdb_set(db_nop, key, str_nop, 0);
+		sdb_set(db_nop, key, str_nop);
 		free(str_nop);
 	} else {
 		if (mov) {
 			char *str_mov = rz_str_newf("%s MOV { %s }", str, mov);
-			sdb_set(db_mov, key, str_mov, 0);
+			sdb_set(db_mov, key, str_mov);
 			free(str_mov);
 			free(mov);
 		}
 		if (ct) {
 			char *str_ct = rz_str_newf("%s LOAD_CONST { %s }", str, ct);
-			sdb_set(db_ct, key, str_ct, 0);
+			sdb_set(db_ct, key, str_ct);
 			free(str_ct);
 			free(ct);
 		}
 		if (arithm) {
 			char *str_arithm = rz_str_newf("%s ARITHMETIC { %s }", str, arithm);
-			sdb_set(db_aritm, key, str_arithm, 0);
+			sdb_set(db_aritm, key, str_arithm);
 			free(str_arithm);
 			free(arithm);
 		}
 		if (arithm_ct) {
 			char *str_arithm_ct = rz_str_newf("%s ARITHMETIC_CONST { %s }", str, arithm_ct);
-			sdb_set(db_aritm_ct, key, str_arithm_ct, 0);
+			sdb_set(db_aritm_ct, key, str_arithm_ct);
 			free(str_arithm_ct);
 			free(arithm_ct);
 		}

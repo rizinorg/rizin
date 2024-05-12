@@ -68,8 +68,8 @@ bool test_analysis_switch_op_load() {
 
 Sdb *blocks_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "0x539", "{\"size\":42}", 0);
-	sdb_set(db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"sp_delta\":[8,-8,16],\"sp\":256,\"cmpval\":262254561,\"cmpreg\":\"rax\"}", 0);
+	sdb_set(db, "0x539", "{\"size\":42}");
+	sdb_set(db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"sp_delta\":[8,-8,16],\"sp\":256,\"cmpval\":262254561,\"cmpreg\":\"rax\"}");
 	return db;
 }
 
@@ -163,7 +163,7 @@ bool test_analysis_block_load() {
 	rz_analysis_free(analysis);
 	analysis = rz_analysis_new();
 	// This could lead to a buffer overflow if unchecked:
-	sdb_set(db, "0x539", "{\"size\":42,\"ninstr\":4,\"op_pos\":[4,7]}", 0);
+	sdb_set(db, "0x539", "{\"size\":42,\"ninstr\":4,\"op_pos\":[4,7]}");
 	succ = rz_serialize_analysis_blocks_load(db, analysis, NULL);
 	mu_assert("reject invalid op_pos array length", !succ);
 
@@ -179,14 +179,14 @@ bool test_analysis_block_load() {
 
 Sdb *functions_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "0x4d2", "{\"name\":\"effekt\",\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"pure\":true,\"bbs\":[1337]}", 0);
-	sdb_set(db, "0xbeef", "{\"name\":\"eskapist\",\"bits\":32,\"type\":16,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}", 0);
-	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}", 0);
-	sdb_set(db, "0xdead", "{\"name\":\"agnosie\",\"bits\":32,\"type\":8,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}", 0);
-	sdb_set(db, "0xc0ffee", "{\"name\":\"lifnej\",\"bits\":32,\"type\":32,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}", 0);
-	sdb_set(db, "0x1092", "{\"name\":\"hiberno\",\"bits\":32,\"type\":2,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bbs\":[]}", 0);
-	sdb_set(db, "0x67932", "{\"name\":\"anamnesis\",\"bits\":32,\"type\":4,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"noreturn\":true,\"bbs\":[]}", 0);
-	sdb_set(db, "0x31337", "{\"name\":\"aldebaran\",\"bits\":32,\"type\":-1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}", 0);
+	sdb_set(db, "0x4d2", "{\"name\":\"effekt\",\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"pure\":true,\"bbs\":[1337]}");
+	sdb_set(db, "0xbeef", "{\"name\":\"eskapist\",\"bits\":32,\"type\":16,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
+	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}");
+	sdb_set(db, "0xdead", "{\"name\":\"agnosie\",\"bits\":32,\"type\":8,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
+	sdb_set(db, "0xc0ffee", "{\"name\":\"lifnej\",\"bits\":32,\"type\":32,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
+	sdb_set(db, "0x1092", "{\"name\":\"hiberno\",\"bits\":32,\"type\":2,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bbs\":[]}");
+	sdb_set(db, "0x67932", "{\"name\":\"anamnesis\",\"bits\":32,\"type\":4,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"noreturn\":true,\"bbs\":[]}");
+	sdb_set(db, "0x31337", "{\"name\":\"aldebaran\",\"bits\":32,\"type\":-1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
 	return db;
 }
 
@@ -369,10 +369,10 @@ bool test_analysis_function_load() {
 
 static Sdb *noreturn_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_bool_set(db, "addr.8000500.noreturn", true, 0);
-	sdb_bool_set(db, "addr.8000555.noreturn", true, 0);
-	sdb_bool_set(db, "addr.8000610.noreturn", true, 0);
-	sdb_bool_set(db, "addr.8000632.noreturn", true, 0);
+	sdb_bool_set(db, "addr.8000500.noreturn", true);
+	sdb_bool_set(db, "addr.8000555.noreturn", true);
+	sdb_bool_set(db, "addr.8000610.noreturn", true);
+	sdb_bool_set(db, "addr.8000632.noreturn", true);
 	return db;
 }
 
@@ -380,10 +380,10 @@ bool test_analysis_function_noreturn_save() {
 	RzAnalysis *analysis = rz_analysis_new();
 
 	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
-	bool has = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	bool has = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn");
 	mu_assert_true(has, "noreturn add error");
 	rz_analysis_noreturn_drop(analysis, "0x800800");
-	bool hasnt = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	bool hasnt = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn");
 	mu_assert_false(hasnt, "noreturn drop error");
 
 	rz_analysis_noreturn_add(analysis, NULL, 0x8000500);
@@ -408,13 +408,13 @@ bool test_analysis_function_noreturn_load() {
 	sdb_free(db);
 	mu_assert("load success", succ);
 
-	bool has = sdb_bool_get(analysis->sdb_noret, "addr.8000500.noreturn", 0);
-	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000555.noreturn", 0);
-	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000610.noreturn", 0);
-	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000632.noreturn", 0);
+	bool has = sdb_bool_get(analysis->sdb_noret, "addr.8000500.noreturn");
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000555.noreturn");
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000610.noreturn");
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000632.noreturn");
 	mu_assert_true(has, "noreturn load error");
 
-	bool hasnt = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	bool hasnt = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn");
 	mu_assert_false(hasnt, "noreturn should not exist");
 
 	rz_analysis_free(analysis);
@@ -431,8 +431,7 @@ Sdb *vars_ref_db() {
 		"{\"name\":\"var_10h\",\"type\":\"struct something\",\"storage\":{\"type\":\"stack\",\"stack\":-16}},"
 		"{\"name\":\"arg_8h\",\"type\":\"uint64_t\",\"storage\":{\"type\":\"stack\",\"stack\":8},\"cmt\":\"I have no idea what this var does\"},"
 		"{\"name\":\"arg_18h\",\"type\":\"struct something\",\"storage\":{\"type\":\"composite\",\"composite\":[{\"offset_in_bits\":0,\"size_in_bits\":32,\"storage\":{\"type\":\"reg\",\"reg\":\"rax\"}},{\"offset_in_bits\":32,\"size_in_bits\":32,\"storage\":{\"type\":\"reg\",\"reg\":\"rbx\"}}]}}"
-		"]}",
-		0);
+		"]}");
 	return db;
 }
 
@@ -633,10 +632,10 @@ bool test_analysis_var_load() {
 
 Sdb *xrefs_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "0x29a", "[{\"to\":333,\"type\":\"s\"}]", 0);
-	sdb_set(db, "0x1337", "[{\"to\":4242},{\"to\":4243,\"type\":\"c\"}]", 0);
-	sdb_set(db, "0x2a", "[{\"to\":4321,\"type\":\"d\"}]", 0);
-	sdb_set(db, "0x4d2", "[{\"to\":4243,\"type\":\"C\"}]", 0);
+	sdb_set(db, "0x29a", "[{\"to\":333,\"type\":\"s\"}]");
+	sdb_set(db, "0x1337", "[{\"to\":4242},{\"to\":4243,\"type\":\"c\"}]");
+	sdb_set(db, "0x2a", "[{\"to\":4321,\"type\":\"d\"}]");
+	sdb_set(db, "0x4d2", "[{\"to\":4243,\"type\":\"C\"}]");
 	return db;
 }
 
@@ -718,11 +717,11 @@ bool test_analysis_xrefs_load() {
 Sdb *meta_ref_db() {
 	Sdb *db = sdb_new0();
 	Sdb *spaces_db = sdb_ns(db, "spaces", true);
-	sdb_set(spaces_db, "name", "CS", 0);
-	sdb_set(spaces_db, "spacestack", "[\"*\"]", 0);
-	sdb_set(sdb_ns(spaces_db, "spaces", true), "myspace", "s", 0);
-	sdb_set(db, "0x20a0", "[{\"size\":32,\"type\":\"s\",\"subtype\":78,\"str\":\"utf32be\"}]", 0);
-	sdb_set(db, "0x20c0", "[{\"size\":32,\"type\":\"s\",\"subtype\":103,\"str\":\"guess\"}]", 0);
+	sdb_set(spaces_db, "name", "CS");
+	sdb_set(spaces_db, "spacestack", "[\"*\"]");
+	sdb_set(sdb_ns(spaces_db, "spaces", true), "myspace", "s");
+	sdb_set(db, "0x20a0", "[{\"size\":32,\"type\":\"s\",\"subtype\":78,\"str\":\"utf32be\"}]");
+	sdb_set(db, "0x20c0", "[{\"size\":32,\"type\":\"s\",\"subtype\":103,\"str\":\"guess\"}]");
 	sdb_set(db, "0x1337",
 		"[{\"size\":16,\"type\":\"d\"},"
 		"{\"size\":17,\"type\":\"c\"},"
@@ -733,13 +732,12 @@ Sdb *meta_ref_db() {
 		"{\"type\":\"C\",\"str\":\"some comment here\"},"
 		"{\"size\":23,\"type\":\"H\"},"
 		"{\"size\":24,\"type\":\"t\"},"
-		"{\"type\":\"C\",\"str\":\"comment in space\",\"space\":\"myspace\"}]",
-		0);
-	sdb_set(db, "0x2000", "[{\"size\":32,\"type\":\"s\",\"subtype\":98,\"str\":\"8bit\"}]", 0);
-	sdb_set(db, "0x2040", "[{\"size\":32,\"type\":\"s\",\"subtype\":117,\"str\":\"utf16le\"}]", 0);
-	sdb_set(db, "0x2080", "[{\"size\":32,\"type\":\"s\",\"subtype\":110,\"str\":\"utf16be\"}]", 0);
-	sdb_set(db, "0x2020", "[{\"size\":32,\"type\":\"s\",\"subtype\":56,\"str\":\"utf8\"}]", 0);
-	sdb_set(db, "0x2060", "[{\"size\":32,\"type\":\"s\",\"subtype\":85,\"str\":\"utf32le\"}]", 0);
+		"{\"type\":\"C\",\"str\":\"comment in space\",\"space\":\"myspace\"}]");
+	sdb_set(db, "0x2000", "[{\"size\":32,\"type\":\"s\",\"subtype\":98,\"str\":\"8bit\"}]");
+	sdb_set(db, "0x2040", "[{\"size\":32,\"type\":\"s\",\"subtype\":117,\"str\":\"utf16le\"}]");
+	sdb_set(db, "0x2080", "[{\"size\":32,\"type\":\"s\",\"subtype\":110,\"str\":\"utf16be\"}]");
+	sdb_set(db, "0x2020", "[{\"size\":32,\"type\":\"s\",\"subtype\":56,\"str\":\"utf8\"}]");
+	sdb_set(db, "0x2060", "[{\"size\":32,\"type\":\"s\",\"subtype\":85,\"str\":\"utf32le\"}]");
 	return db;
 }
 
@@ -894,93 +892,93 @@ bool test_analysis_meta_load() {
 
 Sdb *hints_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "0x1000", "{\"optype\":-2147483648}", 0);
-	sdb_set(db, "0x1001", "{\"optype\":1073741824}", 0);
-	sdb_set(db, "0x1002", "{\"optype\":536870912}", 0);
-	sdb_set(db, "0x1003", "{\"optype\":268435456}", 0);
-	sdb_set(db, "0x1004", "{\"optype\":134217728}", 0);
-	sdb_set(db, "0x1005", "{\"optype\":0}", 0);
-	sdb_set(db, "0x1006", "{\"optype\":1}", 0);
-	sdb_set(db, "0x1007", "{\"optype\":2}", 0);
-	sdb_set(db, "0x1008", "{\"optype\":268435458}", 0);
-	sdb_set(db, "0x1009", "{\"optype\":134217730}", 0);
-	sdb_set(db, "0x100a", "{\"optype\":402653186}", 0);
-	sdb_set(db, "0x100b", "{\"optype\":-2147483647}", 0);
-	sdb_set(db, "0x100c", "{\"optype\":-1879048191}", 0);
-	sdb_set(db, "0x100d", "{\"optype\":536870913}", 0);
-	sdb_set(db, "0x100e", "{\"optype\":-1610612735}", 0);
-	sdb_set(db, "0x100f", "{\"optype\":-2147483646}", 0);
-	sdb_set(db, "0x1010", "{\"optype\":3}", 0);
-	sdb_set(db, "0x1011", "{\"optype\":4}", 0);
-	sdb_set(db, "0x1012", "{\"optype\":268435460}", 0);
-	sdb_set(db, "0x1013", "{\"optype\":134217732}", 0);
-	sdb_set(db, "0x1014", "{\"optype\":402653188}", 0);
-	sdb_set(db, "0x1015", "{\"optype\":-2147483645}", 0);
-	sdb_set(db, "0x1016", "{\"optype\":-2147483644}", 0);
-	sdb_set(db, "0x1017", "{\"optype\":5}", 0);
-	sdb_set(db, "0x1018", "{\"optype\":-2147483643}", 0);
-	sdb_set(db, "0x1019", "{\"optype\":6}", 0);
-	sdb_set(db, "0x101a", "{\"optype\":7}", 0);
-	sdb_set(db, "0x101b", "{\"optype\":8}", 0);
-	sdb_set(db, "0x101c", "{\"optype\":9}", 0);
-	sdb_set(db, "0x101d", "{\"optype\":-2147483639}", 0);
-	sdb_set(db, "0x101e", "{\"optype\":10}", 0);
-	sdb_set(db, "0x101f", "{\"optype\":11}", 0);
-	sdb_set(db, "0x1020", "{\"optype\":-2147483637}", 0);
-	sdb_set(db, "0x1021", "{\"optype\":12}", 0);
-	sdb_set(db, "0x1022", "{\"optype\":268435468}", 0);
-	sdb_set(db, "0x1023", "{\"optype\":13}", 0);
-	sdb_set(db, "0x1024", "{\"optype\":14}", 0);
-	sdb_set(db, "0x1025", "{\"optype\":15}", 0);
-	sdb_set(db, "0x1026", "{\"optype\":16}", 0);
-	sdb_set(db, "0x1027", "{\"optype\":17}", 0);
-	sdb_set(db, "0x1028", "{\"optype\":18}", 0);
-	sdb_set(db, "0x1029", "{\"optype\":19}", 0);
-	sdb_set(db, "0x102a", "{\"optype\":20}", 0);
-	sdb_set(db, "0x102b", "{\"optype\":21}", 0);
-	sdb_set(db, "0x102c", "{\"optype\":22}", 0);
-	sdb_set(db, "0x102d", "{\"optype\":23}", 0);
-	sdb_set(db, "0x102e", "{\"optype\":24}", 0);
-	sdb_set(db, "0x102f", "{\"optype\":25}", 0);
-	sdb_set(db, "0x1030", "{\"optype\":26}", 0);
-	sdb_set(db, "0x1031", "{\"optype\":27}", 0);
-	sdb_set(db, "0x1032", "{\"optype\":28}", 0);
-	sdb_set(db, "0x1033", "{\"optype\":29}", 0);
-	sdb_set(db, "0x1034", "{\"optype\":30}", 0);
-	sdb_set(db, "0x1035", "{\"optype\":31}", 0);
-	sdb_set(db, "0x1036", "{\"optype\":32}", 0);
-	sdb_set(db, "0x1037", "{\"optype\":33}", 0);
-	sdb_set(db, "0x1038", "{\"optype\":34}", 0);
-	sdb_set(db, "0x1039", "{\"optype\":35}", 0);
-	sdb_set(db, "0x103a", "{\"optype\":36}", 0);
-	sdb_set(db, "0x103b", "{\"optype\":37}", 0);
-	sdb_set(db, "0x103c", "{\"optype\":38}", 0);
-	sdb_set(db, "0x103d", "{\"optype\":39}", 0);
-	sdb_set(db, "0x103e", "{\"optype\":40}", 0);
-	sdb_set(db, "0x103f", "{\"optype\":41}", 0);
-	sdb_set(db, "0x1040", "{\"optype\":42}", 0);
-	sdb_set(db, "0x1041", "{\"optype\":43}", 0);
-	sdb_set(db, "0x1042", "{\"optype\":44}", 0);
-	sdb_set(db, "0x1043", "{\"optype\":45}", 0);
-	sdb_set(db, "0x1044", "{\"optype\":46}", 0);
-	sdb_set(db, "0x1045", "{\"optype\":47}", 0);
-	sdb_set(db, "0x100", "{\"arch\":\"arm\",\"bits\":16}", 0);
-	sdb_set(db, "0x120", "{\"arch\":null}", 0);
-	sdb_set(db, "0x130", "{\"bits\":0}", 0);
-	sdb_set(db, "0x200", "{\"immbase\":10}", 0);
-	sdb_set(db, "0x210", "{\"jump\":1337,\"fail\":1234}", 0);
-	sdb_set(db, "0x220", "{\"syntax\":\"intel\"}", 0);
-	sdb_set(db, "0x230", "{\"frame\":48}", 0);
-	sdb_set(db, "0x240", "{\"ptr\":4321}", 0);
-	sdb_set(db, "0x250", "{\"nword\":3}", 0);
-	sdb_set(db, "0x260", "{\"ret\":666}", 0);
-	sdb_set(db, "0x270", "{\"newbits\":32}", 0);
-	sdb_set(db, "0x280", "{\"size\":7}", 0);
-	sdb_set(db, "0x290", "{\"opcode\":\"mov\"}", 0);
-	sdb_set(db, "0x2a0", "{\"toff\":\"sometype\"}", 0);
-	sdb_set(db, "0x2b0", "{\"esil\":\"13,29,+\"}", 0);
-	sdb_set(db, "0x2c0", "{\"high\":true}", 0);
-	sdb_set(db, "0x2d0", "{\"val\":54323}", 0);
+	sdb_set(db, "0x1000", "{\"optype\":-2147483648}");
+	sdb_set(db, "0x1001", "{\"optype\":1073741824}");
+	sdb_set(db, "0x1002", "{\"optype\":536870912}");
+	sdb_set(db, "0x1003", "{\"optype\":268435456}");
+	sdb_set(db, "0x1004", "{\"optype\":134217728}");
+	sdb_set(db, "0x1005", "{\"optype\":0}");
+	sdb_set(db, "0x1006", "{\"optype\":1}");
+	sdb_set(db, "0x1007", "{\"optype\":2}");
+	sdb_set(db, "0x1008", "{\"optype\":268435458}");
+	sdb_set(db, "0x1009", "{\"optype\":134217730}");
+	sdb_set(db, "0x100a", "{\"optype\":402653186}");
+	sdb_set(db, "0x100b", "{\"optype\":-2147483647}");
+	sdb_set(db, "0x100c", "{\"optype\":-1879048191}");
+	sdb_set(db, "0x100d", "{\"optype\":536870913}");
+	sdb_set(db, "0x100e", "{\"optype\":-1610612735}");
+	sdb_set(db, "0x100f", "{\"optype\":-2147483646}");
+	sdb_set(db, "0x1010", "{\"optype\":3}");
+	sdb_set(db, "0x1011", "{\"optype\":4}");
+	sdb_set(db, "0x1012", "{\"optype\":268435460}");
+	sdb_set(db, "0x1013", "{\"optype\":134217732}");
+	sdb_set(db, "0x1014", "{\"optype\":402653188}");
+	sdb_set(db, "0x1015", "{\"optype\":-2147483645}");
+	sdb_set(db, "0x1016", "{\"optype\":-2147483644}");
+	sdb_set(db, "0x1017", "{\"optype\":5}");
+	sdb_set(db, "0x1018", "{\"optype\":-2147483643}");
+	sdb_set(db, "0x1019", "{\"optype\":6}");
+	sdb_set(db, "0x101a", "{\"optype\":7}");
+	sdb_set(db, "0x101b", "{\"optype\":8}");
+	sdb_set(db, "0x101c", "{\"optype\":9}");
+	sdb_set(db, "0x101d", "{\"optype\":-2147483639}");
+	sdb_set(db, "0x101e", "{\"optype\":10}");
+	sdb_set(db, "0x101f", "{\"optype\":11}");
+	sdb_set(db, "0x1020", "{\"optype\":-2147483637}");
+	sdb_set(db, "0x1021", "{\"optype\":12}");
+	sdb_set(db, "0x1022", "{\"optype\":268435468}");
+	sdb_set(db, "0x1023", "{\"optype\":13}");
+	sdb_set(db, "0x1024", "{\"optype\":14}");
+	sdb_set(db, "0x1025", "{\"optype\":15}");
+	sdb_set(db, "0x1026", "{\"optype\":16}");
+	sdb_set(db, "0x1027", "{\"optype\":17}");
+	sdb_set(db, "0x1028", "{\"optype\":18}");
+	sdb_set(db, "0x1029", "{\"optype\":19}");
+	sdb_set(db, "0x102a", "{\"optype\":20}");
+	sdb_set(db, "0x102b", "{\"optype\":21}");
+	sdb_set(db, "0x102c", "{\"optype\":22}");
+	sdb_set(db, "0x102d", "{\"optype\":23}");
+	sdb_set(db, "0x102e", "{\"optype\":24}");
+	sdb_set(db, "0x102f", "{\"optype\":25}");
+	sdb_set(db, "0x1030", "{\"optype\":26}");
+	sdb_set(db, "0x1031", "{\"optype\":27}");
+	sdb_set(db, "0x1032", "{\"optype\":28}");
+	sdb_set(db, "0x1033", "{\"optype\":29}");
+	sdb_set(db, "0x1034", "{\"optype\":30}");
+	sdb_set(db, "0x1035", "{\"optype\":31}");
+	sdb_set(db, "0x1036", "{\"optype\":32}");
+	sdb_set(db, "0x1037", "{\"optype\":33}");
+	sdb_set(db, "0x1038", "{\"optype\":34}");
+	sdb_set(db, "0x1039", "{\"optype\":35}");
+	sdb_set(db, "0x103a", "{\"optype\":36}");
+	sdb_set(db, "0x103b", "{\"optype\":37}");
+	sdb_set(db, "0x103c", "{\"optype\":38}");
+	sdb_set(db, "0x103d", "{\"optype\":39}");
+	sdb_set(db, "0x103e", "{\"optype\":40}");
+	sdb_set(db, "0x103f", "{\"optype\":41}");
+	sdb_set(db, "0x1040", "{\"optype\":42}");
+	sdb_set(db, "0x1041", "{\"optype\":43}");
+	sdb_set(db, "0x1042", "{\"optype\":44}");
+	sdb_set(db, "0x1043", "{\"optype\":45}");
+	sdb_set(db, "0x1044", "{\"optype\":46}");
+	sdb_set(db, "0x1045", "{\"optype\":47}");
+	sdb_set(db, "0x100", "{\"arch\":\"arm\",\"bits\":16}");
+	sdb_set(db, "0x120", "{\"arch\":null}");
+	sdb_set(db, "0x130", "{\"bits\":0}");
+	sdb_set(db, "0x200", "{\"immbase\":10}");
+	sdb_set(db, "0x210", "{\"jump\":1337,\"fail\":1234}");
+	sdb_set(db, "0x220", "{\"syntax\":\"intel\"}");
+	sdb_set(db, "0x230", "{\"frame\":48}");
+	sdb_set(db, "0x240", "{\"ptr\":4321}");
+	sdb_set(db, "0x250", "{\"nword\":3}");
+	sdb_set(db, "0x260", "{\"ret\":666}");
+	sdb_set(db, "0x270", "{\"newbits\":32}");
+	sdb_set(db, "0x280", "{\"size\":7}");
+	sdb_set(db, "0x290", "{\"opcode\":\"mov\"}");
+	sdb_set(db, "0x2a0", "{\"toff\":\"sometype\"}");
+	sdb_set(db, "0x2b0", "{\"esil\":\"13,29,+\"}");
+	sdb_set(db, "0x2c0", "{\"high\":true}");
+	sdb_set(db, "0x2d0", "{\"val\":54323}");
 	return db;
 }
 
@@ -1131,18 +1129,18 @@ bool test_analysis_hints_load() {
 
 Sdb *classes_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "Aeropause", "c", 0);
-	sdb_set(db, "Bright", "c", 0);
+	sdb_set(db, "Aeropause", "c");
+	sdb_set(db, "Bright", "c");
 	Sdb *attrs_db = sdb_ns(db, "attrs", true);
-	sdb_set(attrs_db, "attrtypes.Bright", "base", 0);
-	sdb_set(attrs_db, "attr.Aeropause.vtable.0", "0x1000,4,80", 0);
-	sdb_set(attrs_db, "attrtypes.Aeropause", "method,vtable", 0);
-	sdb_set(attrs_db, "attr.Aeropause.method", "some_meth,some_other_meth", 0);
-	sdb_set(attrs_db, "attr.Bright.base", "0", 0);
-	sdb_set(attrs_db, "attr.Aeropause.vtable", "0", 0);
-	sdb_set(attrs_db, "attr.Bright.base.0", "Aeropause,8", 0);
-	sdb_set(attrs_db, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
-	sdb_set(attrs_db, "attr.Aeropause.method.some_other_meth", "4660,32,0,some_other_meth", 0);
+	sdb_set(attrs_db, "attrtypes.Bright", "base");
+	sdb_set(attrs_db, "attr.Aeropause.vtable.0", "0x1000,4,80");
+	sdb_set(attrs_db, "attrtypes.Aeropause", "method,vtable");
+	sdb_set(attrs_db, "attr.Aeropause.method", "some_meth,some_other_meth");
+	sdb_set(attrs_db, "attr.Bright.base", "0");
+	sdb_set(attrs_db, "attr.Aeropause.vtable", "0");
+	sdb_set(attrs_db, "attr.Bright.base.0", "Aeropause,8");
+	sdb_set(attrs_db, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth");
+	sdb_set(attrs_db, "attr.Aeropause.method.some_other_meth", "4660,32,0,some_other_meth");
 	return db;
 }
 
@@ -1259,14 +1257,14 @@ bool test_analysis_classes_load() {
 
 static Sdb *cc_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "cc.sectarian.ret", "rax", 0);
-	sdb_set(db, "cc.sectarian.self", "rsi", 0);
-	sdb_set(db, "cc.sectarian.error", "rdi", 0);
-	sdb_set(db, "cc.sectarian.arg1", "rcx", 0);
-	sdb_set(db, "cc.sectarian.arg0", "rdx", 0);
-	sdb_set(db, "cc.sectarian.argn", "stack", 0);
-	sdb_set(db, "cc.sectarian.maxargs", "2", 0);
-	sdb_set(db, "sectarian", "cc", 0);
+	sdb_set(db, "cc.sectarian.ret", "rax");
+	sdb_set(db, "cc.sectarian.self", "rsi");
+	sdb_set(db, "cc.sectarian.error", "rdi");
+	sdb_set(db, "cc.sectarian.arg1", "rcx");
+	sdb_set(db, "cc.sectarian.arg0", "rdx");
+	sdb_set(db, "cc.sectarian.argn", "stack");
+	sdb_set(db, "cc.sectarian.maxargs", "2");
+	sdb_set(db, "sectarian", "cc");
 	return db;
 }
 
@@ -1311,49 +1309,49 @@ Sdb *analysis_ref_db() {
 	Sdb *db = sdb_new0();
 
 	Sdb *blocks = sdb_ns(db, "blocks", true);
-	sdb_set(blocks, "0x4d2", "{\"size\":32}", 0);
-	sdb_set(blocks, "0x539", "{\"size\":42}", 0);
+	sdb_set(blocks, "0x4d2", "{\"size\":32}");
+	sdb_set(blocks, "0x539", "{\"size\":42}");
 
 	Sdb *functions = sdb_ns(db, "functions", true);
-	sdb_set(functions, "0x4d2", "{\"name\":\"effekt\",\"bits\":32,\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[1337]}", 0);
-	sdb_set(functions, "0x539", "{\"name\":\"hirsch\",\"bits\":32,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[1337,1234]}", 0);
+	sdb_set(functions, "0x4d2", "{\"name\":\"effekt\",\"bits\":32,\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[1337]}");
+	sdb_set(functions, "0x539", "{\"name\":\"hirsch\",\"bits\":32,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[1337,1234]}");
 
 	Sdb *noret = sdb_ns(db, "noreturn", true);
-	sdb_bool_set(noret, "addr.800800.noreturn", true, 0);
+	sdb_bool_set(noret, "addr.800800.noreturn", true);
 
 	Sdb *xrefs = sdb_ns(db, "xrefs", true);
-	sdb_set(xrefs, "0x42", "[{\"to\":1337,\"type\":\"C\"}]", 0);
-	sdb_set(xrefs, "0x539", "[{\"to\":12648430,\"type\":\"d\"}]", 0);
+	sdb_set(xrefs, "0x42", "[{\"to\":1337,\"type\":\"C\"}]");
+	sdb_set(xrefs, "0x539", "[{\"to\":12648430,\"type\":\"d\"}]");
 
 	Sdb *meta = sdb_ns(db, "meta", true);
 	Sdb *meta_spaces = sdb_ns(meta, "spaces", true);
 	sdb_ns(meta_spaces, "spaces", true);
-	sdb_set(meta_spaces, "spacestack", "[\"*\"]", 0);
-	sdb_set(meta_spaces, "name", "CS", 0);
-	sdb_set(meta, "0x1337", "[{\"type\":\"C\",\"subtype\":56,\"str\":\"some comment\"}]", 0);
+	sdb_set(meta_spaces, "spacestack", "[\"*\"]");
+	sdb_set(meta_spaces, "name", "CS");
+	sdb_set(meta, "0x1337", "[{\"type\":\"C\",\"subtype\":56,\"str\":\"some comment\"}]");
 
 	Sdb *hints = sdb_ns(db, "hints", true);
-	sdb_set(hints, "0x10e1", "{\"arch\":\"arm\"}", 0);
+	sdb_set(hints, "0x10e1", "{\"arch\":\"arm\"}");
 
 	Sdb *classes = sdb_ns(db, "classes", true);
-	sdb_set(classes, "Aeropause", "c", 0);
+	sdb_set(classes, "Aeropause", "c");
 	Sdb *class_attrs = sdb_ns(classes, "attrs", true);
-	sdb_set(class_attrs, "attrtypes.Aeropause", "method", 0);
-	sdb_set(class_attrs, "attr.Aeropause.method", "some_meth", 0);
-	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
+	sdb_set(class_attrs, "attrtypes.Aeropause", "method");
+	sdb_set(class_attrs, "attr.Aeropause.method", "some_meth");
+	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth");
 
 	Sdb *imports = sdb_ns(db, "imports", true);
-	sdb_set(imports, "pigs", "i", 0);
-	sdb_set(imports, "dogs", "i", 0);
-	sdb_set(imports, "sheep", "i", 0);
+	sdb_set(imports, "pigs", "i");
+	sdb_set(imports, "dogs", "i");
+	sdb_set(imports, "sheep", "i");
 
 	Sdb *cc = sdb_ns(db, "cc", true);
-	sdb_set(cc, "cc.sectarian.ret", "rax", 0);
-	sdb_set(cc, "cc.sectarian.arg1", "rcx", 0);
-	sdb_set(cc, "cc.sectarian.arg0", "rdx", 0);
-	sdb_set(cc, "cc.sectarian.argn", "stack", 0);
-	sdb_set(cc, "cc.sectarian.maxargs", "2", 0);
-	sdb_set(cc, "sectarian", "cc", 0);
+	sdb_set(cc, "cc.sectarian.ret", "rax");
+	sdb_set(cc, "cc.sectarian.arg1", "rcx");
+	sdb_set(cc, "cc.sectarian.arg0", "rdx");
+	sdb_set(cc, "cc.sectarian.argn", "stack");
+	sdb_set(cc, "cc.sectarian.maxargs", "2");
+	sdb_set(cc, "sectarian", "cc");
 
 	sdb_ns(db, "types", true);
 	sdb_ns(db, "callables", true);

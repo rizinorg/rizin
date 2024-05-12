@@ -704,7 +704,7 @@ static Sdb *Pe_r_bin_store_var(Var *var) {
 		if (sdb) {
 			for (; i < var->numOfValues; i++) {
 				snprintf(key, 20, "%d", i);
-				sdb_num_set(sdb, key, var->Value[i], 0);
+				sdb_num_set(sdb, key, var->Value[i]);
 			}
 		}
 	}
@@ -749,8 +749,8 @@ static Sdb *Pe_r_bin_store_string(String *string) {
 		sdb_free(sdb);
 		return NULL;
 	}
-	sdb_set(sdb, "key", encodedKey, 0);
-	sdb_set(sdb, "value", encodedVal, 0);
+	sdb_set(sdb, "key", encodedKey);
+	sdb_set(sdb, "value", encodedVal);
 	free(encodedKey);
 	free(encodedVal);
 	return sdb;
@@ -773,7 +773,7 @@ static Sdb *Pe_r_bin_store_string_table(StringTable *stringTable) {
 		sdb_free(sdb);
 		return NULL;
 	}
-	sdb_set(sdb, "key", encodedKey, 0);
+	sdb_set(sdb, "key", encodedKey);
 	free(encodedKey);
 	for (; i < stringTable->numOfChildren; i++) {
 		snprintf(key, 20, "string%d", i);
@@ -809,19 +809,19 @@ static Sdb *Pe_r_bin_store_fixed_file_info(PE_VS_FIXEDFILEINFO *vs_fixedFileInfo
 	if (!sdb) {
 		return NULL;
 	}
-	sdb_num_set(sdb, "Signature", vs_fixedFileInfo->dwSignature, 0);
-	sdb_num_set(sdb, "StrucVersion", vs_fixedFileInfo->dwStrucVersion, 0);
-	sdb_num_set(sdb, "FileVersionMS", vs_fixedFileInfo->dwFileVersionMS, 0);
-	sdb_num_set(sdb, "FileVersionLS", vs_fixedFileInfo->dwFileVersionLS, 0);
-	sdb_num_set(sdb, "ProductVersionMS", vs_fixedFileInfo->dwProductVersionMS, 0);
-	sdb_num_set(sdb, "ProductVersionLS", vs_fixedFileInfo->dwProductVersionLS, 0);
-	sdb_num_set(sdb, "FileFlagsMask", vs_fixedFileInfo->dwFileFlagsMask, 0);
-	sdb_num_set(sdb, "FileFlags", vs_fixedFileInfo->dwFileFlags, 0);
-	sdb_num_set(sdb, "FileOS", vs_fixedFileInfo->dwFileOS, 0);
-	sdb_num_set(sdb, "FileType", vs_fixedFileInfo->dwFileType, 0);
-	sdb_num_set(sdb, "FileSubtype", vs_fixedFileInfo->dwFileSubtype, 0);
-	sdb_num_set(sdb, "FileDateMS", vs_fixedFileInfo->dwFileDateMS, 0);
-	sdb_num_set(sdb, "FileDateLS", vs_fixedFileInfo->dwFileDateLS, 0);
+	sdb_num_set(sdb, "Signature", vs_fixedFileInfo->dwSignature);
+	sdb_num_set(sdb, "StrucVersion", vs_fixedFileInfo->dwStrucVersion);
+	sdb_num_set(sdb, "FileVersionMS", vs_fixedFileInfo->dwFileVersionMS);
+	sdb_num_set(sdb, "FileVersionLS", vs_fixedFileInfo->dwFileVersionLS);
+	sdb_num_set(sdb, "ProductVersionMS", vs_fixedFileInfo->dwProductVersionMS);
+	sdb_num_set(sdb, "ProductVersionLS", vs_fixedFileInfo->dwProductVersionLS);
+	sdb_num_set(sdb, "FileFlagsMask", vs_fixedFileInfo->dwFileFlagsMask);
+	sdb_num_set(sdb, "FileFlags", vs_fixedFileInfo->dwFileFlags);
+	sdb_num_set(sdb, "FileOS", vs_fixedFileInfo->dwFileOS);
+	sdb_num_set(sdb, "FileType", vs_fixedFileInfo->dwFileType);
+	sdb_num_set(sdb, "FileSubtype", vs_fixedFileInfo->dwFileSubtype);
+	sdb_num_set(sdb, "FileDateMS", vs_fixedFileInfo->dwFileDateMS);
+	sdb_num_set(sdb, "FileDateLS", vs_fixedFileInfo->dwFileDateLS);
 	return sdb;
 }
 
@@ -1474,7 +1474,7 @@ static void _parse_resource_directory(RzBinPEObj *bin, Pe_image_resource_directo
 			break;
 		}
 		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
-		if (rz_time_stamp_is_dos_format((ut32)sdb_num_get(bin->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
+		if (rz_time_stamp_is_dos_format((ut32)sdb_num_get(bin->kv, "image_file_header.TimeDateStamp"), dir->TimeDateStamp)) {
 			rs->timestr = rz_time_stamp_to_str(rz_time_dos_time_stamp_to_posix(dir->TimeDateStamp));
 		} else {
 			rs->timestr = rz_time_stamp_to_str(dir->TimeDateStamp);
@@ -1504,18 +1504,18 @@ static void _store_resource_sdb(RzBinPEObj *bin) {
 	char tmpbuf[64];
 	rz_list_foreach (bin->resources, iter, rs) {
 		key = rz_strf(tmpbuf, "resource.%d.timestr", index);
-		sdb_set(sdb, key, rs->timestr, 0);
+		sdb_set(sdb, key, rs->timestr);
 		key = rz_strf(tmpbuf, "resource.%d.vaddr", index);
 		vaddr = PE_(bin_pe_rva_to_va)(bin, rs->data->OffsetToData);
-		sdb_num_set(sdb, key, vaddr, 0);
+		sdb_num_set(sdb, key, vaddr);
 		key = rz_strf(tmpbuf, "resource.%d.name", index);
-		sdb_set(sdb, key, rs->name, 0);
+		sdb_set(sdb, key, rs->name);
 		key = rz_strf(tmpbuf, "resource.%d.size", index);
-		sdb_num_set(sdb, key, rs->data->Size, 0);
+		sdb_num_set(sdb, key, rs->data->Size);
 		key = rz_strf(tmpbuf, "resource.%d.type", index);
-		sdb_set(sdb, key, rs->type, 0);
+		sdb_set(sdb, key, rs->type);
 		key = rz_strf(tmpbuf, "resource.%d.language", index);
-		sdb_set(sdb, key, rs->language, 0);
+		sdb_set(sdb, key, rs->language);
 		index++;
 	}
 	sdb_ns_set(bin->kv, "pe_resource", sdb);

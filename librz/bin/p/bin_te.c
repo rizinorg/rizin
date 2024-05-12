@@ -135,7 +135,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->dbg_info = 0;
 	ret->has_va = true;
 
-	sdb_num_set(bf->sdb, "te.bits", ret->bits, 0);
+	sdb_num_set(bf->sdb, "te.bits", ret->bits);
 
 	return ret;
 }

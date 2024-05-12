@@ -60,7 +60,7 @@ static char *__func_name_from_ord(char *module, ut16 ordinal) {
 	char *name;
 	if (rz_file_exists(path)) {
 		Sdb *sdb = sdb_new(NULL, path, 0);
-		name = sdb_get(sdb, ord, NULL);
+		name = sdb_get(sdb, ord);
 		if (!name) {
 			name = ord;
 		} else {

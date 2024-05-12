@@ -66,8 +66,8 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 	ret->rpath = strdup("NONE");
 	ret->type = strdup("MDMP (MiniDump crash report data)");
 
-	sdb_set(bf->sdb, "mdmp.flags", rz_strf(tmpbuf, "0x%08" PFMT64x, obj->hdr->flags), 0);
-	sdb_num_set(bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
+	sdb_set(bf->sdb, "mdmp.flags", rz_strf(tmpbuf, "0x%08" PFMT64x, obj->hdr->flags));
+	sdb_num_set(bf->sdb, "mdmp.streams", obj->hdr->number_of_streams);
 
 	if (obj->streams.system_info) {
 		switch (obj->streams.system_info->processor_architecture) {

@@ -8,10 +8,10 @@
 Sdb *get_ref_sdb() {
 	Sdb *ref_sdb = sdb_new0();
 
-	sdb_set(ref_sdb, "-1", "{\"offset\":16,\"cursor\":1,\"current\":false}", 0);
-	sdb_set(ref_sdb, "0", "{\"offset\":32,\"cursor\":2,\"current\":true}", 0);
-	sdb_set(ref_sdb, "1", "{\"offset\":48,\"cursor\":3,\"current\":false}", 0);
-	sdb_set(ref_sdb, "2", "{\"offset\":64,\"cursor\":4,\"current\":false}", 0);
+	sdb_set(ref_sdb, "-1", "{\"offset\":16,\"cursor\":1,\"current\":false}");
+	sdb_set(ref_sdb, "0", "{\"offset\":32,\"cursor\":2,\"current\":true}");
+	sdb_set(ref_sdb, "1", "{\"offset\":48,\"cursor\":3,\"current\":false}");
+	sdb_set(ref_sdb, "2", "{\"offset\":64,\"cursor\":4,\"current\":false}");
 
 	return ref_sdb;
 }
