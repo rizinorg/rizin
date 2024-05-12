@@ -144,27 +144,31 @@ RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 	void **iter;
 	size_t idx;
 	RzPVector *files = rz_core_get_themes(core);
+	const char *new_theme = NULL;
 	rz_pvector_enumerate (files, iter, idx) {
 		const char *fn = *iter;
 		if (strcmp(fn, core->curtheme)) {
 			continue;
 		}
-		if (mode == RZ_CONS_PAL_SEEK_PREVIOUS) {
-			if (idx == 0) {
-				break;
+		switch (mode) {
+		case RZ_CONS_PAL_SEEK_PREVIOUS:
+			if (idx > 0) {
+				new_theme = rz_pvector_at(files, idx - 1);
 			}
-			fn = rz_pvector_at(files, idx - 1);
-		} else if (mode == RZ_CONS_PAL_SEEK_NEXT) {
-			if (idx == rz_pvector_len(files) - 1) {
-				break;
+			break;
+		case RZ_CONS_PAL_SEEK_NEXT:
+			if (idx < rz_pvector_len(files) - 1) {
+				new_theme = rz_pvector_at(files, idx + 1);
 			}
-			fn = rz_pvector_at(files, idx + 1);
-		} else {
+			break;
+		default:
 			rz_warn_if_reached();
 			break;
 		}
-		rz_core_theme_load(core, fn);
 		break;
+	}
+	if (new_theme) {
+		rz_core_theme_load(core, new_theme);
 	}
 	rz_pvector_free(files);
 }
