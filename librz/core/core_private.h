@@ -330,7 +330,7 @@ typedef struct rz_panels_root_t {
 	RzPVector /*<RzPanelsTab *>*/ tabs;
 	RzPanelsTab *active_tab; // Seems redudant since we have cur_tab index
 	RzPanelsRootState root_state;
-	RzPVector /*<char *>*/ *theme_list; ///< List of themes
+	RzPVector /*<char *>*/ *themes; ///< Available rizin themes
 	bool from_visual;
 } RzPanelsRoot;
 

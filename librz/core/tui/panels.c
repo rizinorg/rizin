@@ -4377,7 +4377,7 @@ void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	RzCoreVisual *visual = core->visual;
 	void **iter;
-	rz_pvector_foreach (visual->panels_root->theme_list, iter) {
+	rz_pvector_foreach (visual->panels_root->themes, iter) {
 		const char *pos = *iter;
 		if (pos && !strcmp(now, pos)) {
 			rz_strbuf_setf(buf, "%s%s", color, pos);
@@ -6145,7 +6145,7 @@ RZ_IPI void rz_panels_root_free(RZ_NULLABLE RzPanelsRoot *panels_root) {
 		return;
 	}
 	rz_pvector_fini(&panels_root->tabs);
-	rz_pvector_free(panels_root->theme_list);
+	rz_pvector_free(panels_root->themes);
 	free(panels_root);
 }
 
@@ -6161,7 +6161,7 @@ RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 		rz_pvector_reserve(&panels_root->tabs, PANEL_NUM_LIMIT);
 		panels_root->cur_tab = 0;
 		__set_root_state(core, DEFAULT);
-		panels_root->theme_list = rz_core_theme_list(core);
+		panels_root->themes = rz_core_get_themes(core);
 		__init_new_panels_root(core);
 	} else {
 		if (rz_pvector_len(&panels_root->tabs) == 0) {

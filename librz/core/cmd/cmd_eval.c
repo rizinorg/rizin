@@ -96,12 +96,12 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
 }
 
 /**
- * \brief      Returns the list of the rizin themes.
+ * \brief Get names of available rizin themes.
  *
- * \param      core  The RzCore struct to use
- * \return     On success, an RzPVector pointer, otherwise NULL.
+ * \param core The RzCore struct to use
+ * \return On success, an RzPVector pointer, otherwise NULL.
  */
-RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
+RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, NULL);
 
 	SetS *themes = set_s_new(HT_STR_DUP);
@@ -143,7 +143,7 @@ RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 
 	void **iter;
 	size_t idx;
-	RzPVector *files = rz_core_theme_list(core);
+	RzPVector *files = rz_core_get_themes(core);
 	rz_pvector_enumerate (files, iter, idx) {
 		const char *fn = *iter;
 		if (strcmp(fn, core->curtheme)) {
@@ -243,15 +243,15 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	if (argc == 2) {
 		return bool2status(rz_core_theme_load(core, argv[1]));
 	}
-	RzPVector *themes_list = rz_core_theme_list(core);
-	if (!themes_list) {
+	RzPVector *themes = rz_core_get_themes(core);
+	if (!themes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
 	void **iter;
-	rz_pvector_foreach (themes_list, iter) {
+	rz_pvector_foreach (themes, iter) {
 		const char *th = *iter;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON: {
@@ -272,7 +272,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
-	rz_pvector_free(themes_list);
+	rz_pvector_free(themes);
 	return RZ_CMD_STATUS_OK;
 }
 
