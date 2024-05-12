@@ -187,24 +187,30 @@ static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 		return tracked;
 	}
 
-	HT_(Kv) *new = NULL;
 	for (ut32 i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
 		HT_(Kv) *kv;
 		ut32 j;
 
 		BUCKET_FOREACH(ht, bt, j, kv) {
-			HT_(Status) status;
-			if (!Ht_(insert_kv)(ht2, kv, false, &status)) {
+			if (kv == tracked) {
+				continue;
+			}
+			if (!Ht_(insert_kv)(ht2, kv, false, NULL)) {
 				ht2->opt.finiKV = NULL;
 				Ht_(free)(ht2);
 				return tracked;
 			}
-			if (!new && kv == tracked) {
-				new = status.kv;
-			}
 		}
 	}
+	HT_(Status) status;
+	if (!Ht_(insert_kv)(ht2, tracked, false, &status)) {
+		ht2->opt.finiKV = NULL;
+		Ht_(free)(ht2);
+		return tracked;
+	}
+	tracked = status.kv;
+
 	// And now swap the internals.
 	HtName_(Ht) swap = *ht;
 	*ht = *ht2;
@@ -212,7 +218,7 @@ static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 
 	ht2->opt.finiKV = NULL;
 	Ht_(free)(ht2);
-	return new;
+	return tracked;
 }
 
 static HT_(Kv) *check_growing(HtName_(Ht) *ht, HT_(Kv) *tracked) {
