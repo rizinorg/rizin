@@ -414,7 +414,7 @@ RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
 
 // #define rz_core_ncast(x) (RzCore*)(size_t)(x)
-RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core);
+RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core);
 RZ_API char *rz_core_theme_get(RzCore *core);
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name);
 RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode);

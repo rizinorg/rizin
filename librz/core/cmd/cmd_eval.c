@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <rz_core.h>
+#include <rz_util/set.h>
 #include "../core_private.h"
 
 static bool load_theme(RzCore *core, const char *path) {
@@ -17,40 +18,6 @@ static bool load_theme(RzCore *core, const char *path) {
 	}
 	core->cmdfilter = NULL;
 	return res;
-}
-
-static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzListIter /*<char *>*/ *iter) {
-	const char *fn = rz_str_lchr(file, '/');
-	if (!fn) {
-		fn = file;
-	}
-	switch (mode) {
-	case RZ_CONS_PAL_SEEK_PREVIOUS: {
-		const char *next_fn = rz_list_iter_get_next_data(iter);
-		if (!core->curtheme) {
-			return true;
-		}
-		if (next_fn && !strcmp(next_fn, core->curtheme)) {
-			free(core->curtheme);
-			core->curtheme = strdup(fn);
-			return false;
-		}
-		break;
-	}
-	case RZ_CONS_PAL_SEEK_NEXT: {
-		const char *prev_fn = rz_list_iter_get_prev_data(iter);
-		if (!core->curtheme) {
-			return true;
-		}
-		if (prev_fn && !strcmp(prev_fn, core->curtheme)) {
-			free(core->curtheme);
-			core->curtheme = strdup(fn);
-			return false;
-		}
-		break;
-	}
-	}
-	return true;
 }
 
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
@@ -108,13 +75,13 @@ fail:
 	return !failed;
 }
 
-static void list_themes_in_path(HtSU *themes, const char *path) {
+static void list_themes_in_path(SetS *themes, const char *path) {
 	RzListIter *iter;
 	const char *fn;
 	RzList *files = rz_sys_dir(path);
 	rz_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
-			ht_su_insert(themes, fn, 1);
+			set_s_add(themes, fn);
 		}
 	}
 	rz_list_free(files);
@@ -124,22 +91,20 @@ RZ_API char *rz_core_theme_get(RzCore *core) {
 	return core->curtheme;
 }
 
-static bool dict2keylist(void *user, const char *key, const ut64 value) {
-	RzList *list = (RzList *)user;
-	rz_list_append(list, strdup(key));
-	return true;
+static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user) {
+	return strcmp(s1, s2);
 }
 
 /**
- * \brief      Returns the list of the rizin themes.
+ * \brief Get names of available rizin themes.
  *
- * \param      core  The RzCore struct to use
- * \return     On success, an RzList pointer, otherwise NULL.
+ * \param core The RzCore struct to use
+ * \return On success, an RzPVector pointer, otherwise NULL.
  */
-RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
+RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, NULL);
 
-	HtSU *themes = ht_su_new(HT_STR_DUP);
+	SetS *themes = set_s_new(HT_STR_DUP);
 	if (!themes) {
 		return NULL;
 	}
@@ -162,32 +127,50 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 		RZ_FREE(path);
 	}
 
-	RzList *list = rz_list_newf(free);
-	rz_list_append(list, strdup("default"));
-	ht_su_foreach(themes, dict2keylist, list);
-
-	rz_list_sort(list, (RzListComparator)strcmp, NULL);
-	ht_su_free(themes);
-	return list;
+	RzPVector *vec = set_s_to_vector(themes);
+	if (!vec) {
+		set_s_free(themes);
+		return NULL;
+	}
+	rz_pvector_push(vec, strdup("default"));
+	rz_pvector_sort(vec, (RzPVectorComparator)compare_strings, NULL);
+	set_s_free(themes);
+	return vec;
 }
 
 RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
-	RzListIter *iter;
-	const char *fn;
-	RzList *files = rz_core_theme_list(core);
+	rz_return_if_fail(core && core->curtheme);
 
-	rz_list_foreach (files, iter, fn) {
-		if (*fn && *fn != '.') {
-			if (!pal_seek(core, mode, fn, iter)) {
-				goto done;
-			}
+	void **iter;
+	size_t idx;
+	RzPVector *files = rz_core_get_themes(core);
+	const char *new_theme = NULL;
+	rz_pvector_enumerate (files, iter, idx) {
+		const char *fn = *iter;
+		if (strcmp(fn, core->curtheme)) {
+			continue;
 		}
+		switch (mode) {
+		case RZ_CONS_PAL_SEEK_PREVIOUS:
+			if (idx > 0) {
+				new_theme = rz_pvector_at(files, idx - 1);
+			}
+			break;
+		case RZ_CONS_PAL_SEEK_NEXT:
+			if (idx < rz_pvector_len(files) - 1) {
+				new_theme = rz_pvector_at(files, idx + 1);
+			}
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		break;
 	}
-	rz_list_free(files);
-	files = NULL;
-done:
-	rz_core_theme_load(core, core->curtheme);
-	rz_list_free(files);
+	if (new_theme) {
+		rz_core_theme_load(core, new_theme);
+	}
+	rz_pvector_free(files);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -260,21 +243,20 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzList *themes_list = NULL;
-	RzListIter *th_iter;
 	PJ *pj = state->d.pj;
-	const char *th;
 	if (argc == 2) {
 		return bool2status(rz_core_theme_load(core, argv[1]));
 	}
-	themes_list = rz_core_theme_list(core);
-	if (!themes_list) {
+	RzPVector *themes = rz_core_get_themes(core);
+	if (!themes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
-	rz_list_foreach (themes_list, th_iter, th) {
+	void **iter;
+	rz_pvector_foreach (themes, iter) {
+		const char *th = *iter;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON: {
 			pj_s(pj, th);
@@ -294,7 +276,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
-	rz_list_free(themes_list);
+	rz_pvector_free(themes);
 	return RZ_CMD_STATUS_OK;
 }
 
