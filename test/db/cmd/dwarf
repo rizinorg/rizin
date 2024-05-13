@@ -666,8 +666,8 @@ global unicode.RangeTable * unicode.Braille @ 0x55e160
 global struct struct { runtime.signalLock uint32; runtime.hz int32 } runtime.prof @ 0x58ecb8
 global unicode.RangeTable * unicode.Noncharacter_Code_Point @ 0x55e4e0
 global error runtime.overflowError @ 0x55e930
-global struct []string syscall.envs @ 0x565780
 global unicode.RangeTable * unicode.foldInherited @ 0x55e7e0
+global struct []string syscall.envs @ 0x565780
 global unicode.RangeTable * unicode.Other_Lowercase @ 0x55e588
 global unicode.RangeTable * unicode.Variation_Selector @ 0x55e780
 global uintptr runtime.skipPC @ 0x58ecd0

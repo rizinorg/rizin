@@ -145,8 +145,8 @@ global void * __guard_xfg_table_dispatch_icall_fptr @ 0x140015040
 global void (*type_0x1001)() [8] __rtc_iaa @ 0x14000ed88
 global struct _onexit_table_t module_local_atexit_table @ 0x140011b40
 global wchar_t [46] mspdbName @ 0x14000e078
-global bool init @ 0x140011470
 global void (*type_0x1001)() [8] __xt_z @ 0x14000caa0
+global bool init @ 0x140011470
 global void (*type_0x1001)() pre_cpp_initializer @ 0x14000c110
 global struct _RS5_IMAGE_LOAD_CONFIG_DIRECTORY64 _load_config_used @ 0x14000e2d0
 global struct __type_info_node __type_info_root_node @ 0x140011b80
