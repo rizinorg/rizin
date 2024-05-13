@@ -95,7 +95,7 @@ static int reloc_target_cmp(const void *a, const void *b, void *user) {
 
 #undef CMP_CHECK
 
-RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs) {
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs, RzBinPlugin *plugin) {
 	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
 	if (!ret) {
 		return NULL;
@@ -125,6 +125,9 @@ RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinRelo
 	ret->target_relocs_count = rz_pvector_len(&target_sorter);
 	ret->target_relocs = (RzBinReloc **)rz_pvector_flush(&target_sorter);
 	rz_pvector_fini(&target_sorter);
+	if (plugin && !strcmp(plugin->name, "coff")) {
+		ret->sym_imp_shared = true;
+	}
 	return ret;
 }
 
@@ -133,7 +136,11 @@ RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage) {
 		return;
 	}
 	for (size_t i = 0; i < storage->relocs_count; i++) {
-		rz_bin_reloc_free(storage->relocs[i]);
+		if (storage->sym_imp_shared) {
+			free(storage->relocs[i]); // Not freeing symbol and import
+		} else {
+			rz_bin_reloc_free(storage->relocs[i]);
+		}
 	}
 	free(storage->relocs);
 	free(storage->target_relocs);
@@ -554,7 +561,7 @@ RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject 
 		}
 		rz_bin_reloc_storage_free(o->relocs);
 		REBASE_PADDR(o, tmp, RzBinReloc);
-		o->relocs = rz_bin_reloc_storage_new(tmp);
+		o->relocs = rz_bin_reloc_storage_new(tmp, o->plugin);
 		bf->rbin->is_reloc_patched = true;
 	}
 	return o->relocs;

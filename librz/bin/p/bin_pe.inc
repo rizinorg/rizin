@@ -431,7 +431,8 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
+	// rz_bin core will free imports
+	RzPVector *ret = rz_pvector_new(NULL);
 	if (!ret) {
 		return NULL;
 	}

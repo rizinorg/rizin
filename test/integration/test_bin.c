@@ -117,7 +117,7 @@ bool test_rz_bin_reloc_storage(void) {
 	mu_assert_notnull(rz, "reloc");
 	RzBinReloc *r3 = add_reloc(l, 0x1003, 0x1006, 0x200c);
 	mu_assert_notnull(r3, "reloc");
-	RzBinRelocStorage *relocs = rz_bin_reloc_storage_new(l);
+	RzBinRelocStorage *relocs = rz_bin_reloc_storage_new(l, NULL);
 
 	RzBinReloc *r = rz_bin_reloc_storage_get_reloc_in(relocs, 0xfff, 1);
 	mu_assert_null(r, "reloc in");
