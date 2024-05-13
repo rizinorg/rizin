@@ -83,6 +83,9 @@
 
 #ifndef HT_ENUM_DEFINED
 #define HT_ENUM_DEFINED
+/**
+ * Return codes for insert/update methods
+ */
 typedef enum {
 	HT_RC_ERROR = 0, ///< Error (out of memory)
 	HT_RC_EXISTING, ///< Existing KV prevented an insertion
@@ -160,11 +163,14 @@ typedef struct Ht_(t) {
 }
 HtName_(Ht);
 
+/**
+ * Extended status info for insert/update methods
+ */
 typedef struct Ht_(status_t) {
 	HtRetCode code; ///< Return code of operation
-	HT_(Kv) *kv; ///< Pointer to an inserted/updated KV
-		     ///< or existing KV that prevented insertion
-		     ///< or NULL in case of memory error
+	HT_(Kv) *kv; ///< Pointer to an inserted/updated KV (code = [HT_RC_INSERTED | HT_RC_UPDATED])
+		     ///< or existing KV that prevented insertion (code = HT_RC_EXISTING)
+		     ///< or NULL in case of memory error (code = HT_RC_ERROR)
 }
 HT_(Status);
 
