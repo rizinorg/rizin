@@ -125,8 +125,13 @@ RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinRelo
 	ret->target_relocs_count = rz_pvector_len(&target_sorter);
 	ret->target_relocs = (RzBinReloc **)rz_pvector_flush(&target_sorter);
 	rz_pvector_fini(&target_sorter);
-	if (plugin && !strcmp(plugin->name, "coff")) {
-		ret->sym_imp_shared = true;
+	if (plugin) {
+		if (!strcmp(plugin->name, "coff")) {
+			ret->imp_shared = true;
+			ret->sym_shared = true;
+		} else if (!strcmp(plugin->name, "mach064")) {
+			ret->imp_shared = true;
+		}
 	}
 	return ret;
 }
@@ -136,10 +141,14 @@ RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage) {
 		return;
 	}
 	for (size_t i = 0; i < storage->relocs_count; i++) {
-		if (storage->sym_imp_shared) {
-			free(storage->relocs[i]); // Not freeing symbol and import
-		} else {
-			rz_bin_reloc_free(storage->relocs[i]);
+		if (storage->relocs[i]) {
+			if (!storage->imp_shared) {
+				rz_bin_import_free(storage->relocs[i]->import);
+			}
+			if (!storage->sym_shared) {
+				rz_bin_symbol_free(storage->relocs[i]->symbol);
+			}
+			free(storage->relocs[i]);
 		}
 	}
 	free(storage->relocs);

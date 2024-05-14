@@ -682,7 +682,8 @@ struct rz_bin_reloc_storage_t {
 	size_t relocs_count;
 	RzBinReloc **target_relocs; ///< all relocs that have a valid target_vaddr, ordered by their target_vaddr. size is target_relocs_count!
 	size_t target_relocs_count;
-	bool sym_imp_shared; // plugin frees reloc symbols and imports
+	bool imp_shared; // plugin frees reloc imports
+	bool sym_shared; // plugin frees reloc symbols
 }; // RzBinRelocStorage
 
 RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs, RzBinPlugin *plugin);
