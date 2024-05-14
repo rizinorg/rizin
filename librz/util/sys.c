@@ -1597,7 +1597,7 @@ static void parent_lock_leave(void) {
 }
 
 static bool set_close_on_exec(int fd, bool close_on_exec) {
-	bool res = ht_uu_insert(fd2close, fd, close_on_exec, NULL);
+	bool res = ht_uu_insert(fd2close, fd, close_on_exec);
 	rz_warn_if_fail(res);
 	return res;
 }

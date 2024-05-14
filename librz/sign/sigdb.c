@@ -157,7 +157,7 @@ fail:
  */
 RZ_API bool rz_sign_sigdb_add_entry(RZ_NONNULL RzSigDb *db, RZ_NONNULL const RzSigDBEntry *entry) {
 	rz_return_val_if_fail(db && entry, false);
-	return ht_pu_insert(db->entries, entry, 1, NULL);
+	return ht_pu_insert(db->entries, entry, 1);
 }
 
 struct sigdb_move_data_t {

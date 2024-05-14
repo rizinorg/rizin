@@ -971,7 +971,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		unfold_level = 0; // no unfold
 		unfold_anon = unfold_all = false;
 	} else if (self_ref_typename) {
-		ht_sp_insert(used_types, self_ref_typename, NULL, NULL); // add the type to the ht
+		ht_sp_insert(used_types, self_ref_typename, NULL); // add the type to the ht
 	}
 	RzBaseType *btype = NULL;
 	bool is_anon = false;
@@ -1300,7 +1300,7 @@ RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *n
 		free(error_msg);
 		// There is an error during the parsing thus we restore the old type
 		// We insert the type back
-		ht_sp_insert(typedb->types, t->name, t, NULL);
+		ht_sp_insert(typedb->types, t->name, t);
 		return false;
 	}
 	// Free now unnecessary old base type

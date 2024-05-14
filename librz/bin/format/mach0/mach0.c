@@ -2268,7 +2268,7 @@ static int inSymtab(HtSP *hash, const char *name, ut64 addr) {
 		free(key);
 		return true;
 	}
-	ht_sp_insert(hash, key, "1", NULL);
+	ht_sp_insert(hash, key, "1");
 	free(key);
 	return false;
 }

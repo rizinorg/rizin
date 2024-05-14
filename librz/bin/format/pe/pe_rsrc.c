@@ -1369,7 +1369,7 @@ static void _parse_resource_directory(RzBinPEObj *bin, Pe_image_resource_directo
 		if (ht_uu_find(dirs, off, NULL)) {
 			break;
 		}
-		ht_uu_insert(dirs, off, 1, NULL);
+		ht_uu_insert(dirs, off, 1);
 		if (off > bin->size || off + sizeof(entry) > bin->size) {
 			break;
 		}
@@ -1546,7 +1546,7 @@ RZ_API void PE_(bin_pe_parse_resource)(RzBinPEObj *bin) {
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry typeEntry;
 		off = rsrc_base + sizeof(*rs_directory) + index * sizeof(typeEntry);
-		ht_uu_insert(dirs, off, 1, NULL);
+		ht_uu_insert(dirs, off, 1);
 		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
 			break;
 		}

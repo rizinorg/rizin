@@ -66,7 +66,7 @@ static void CU_attr_apply(DebugInfoContext *ctx, RzBinDwarfCompUnit *cu, RzBinDw
 	return;
 offset_comp_dir:
 	if (cu->stmt_list < UT64_MAX && cu->comp_dir) {
-		ht_up_insert(ctx->info->offset_comp_dir, cu->stmt_list, (void *)cu->comp_dir, NULL);
+		ht_up_insert(ctx->info->offset_comp_dir, cu->stmt_list, (void *)cu->comp_dir);
 	}
 }
 
@@ -114,7 +114,7 @@ static bool CU_attrs_parse(
 				attr.value.kind == RzBinDwarfAttr_SecOffset) {
 				ut64 offset = rz_bin_dwarf_attr_udata(&attr);
 				ht_up_insert(ctx->info->location_encoding,
-					offset, &cu->hdr.encoding, NULL);
+					offset, &cu->hdr.encoding);
 			}
 		}
 		default:
@@ -369,7 +369,7 @@ RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 	// build hashtable after whole parsing because of possible relocations
 	RzBinDwarfCompUnit *unit = NULL;
 	rz_vector_foreach (&info->units, unit) {
-		ht_up_insert(info->unit_by_offset, unit->offset, unit, NULL);
+		ht_up_insert(info->unit_by_offset, unit->offset, unit);
 		switch (unit->hdr.ut) {
 		case DW_UT_skeleton: {
 			RzBinDwarfDie *die = rz_vector_head(&unit->dies);
@@ -391,7 +391,7 @@ RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 
 		RzBinDwarfDie *die = NULL;
 		rz_vector_foreach (&unit->dies, die) {
-			ht_up_insert(info->die_by_offset, die->offset, die, NULL); // optimization for further processing
+			ht_up_insert(info->die_by_offset, die->offset, die); // optimization for further processing
 		}
 	}
 	return info;

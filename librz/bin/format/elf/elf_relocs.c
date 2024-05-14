@@ -109,7 +109,7 @@ static bool get_relocs_entry(ELFOBJ *bin, RzBinElfSection *section, RzVector /*<
 			continue;
 		}
 
-		if (!ht_uu_insert(set, segment->offset + entry_offset, segment->offset + entry_offset, NULL)) {
+		if (!ht_uu_insert(set, segment->offset + entry_offset, segment->offset + entry_offset)) {
 			return false;
 		}
 

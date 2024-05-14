@@ -428,7 +428,7 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 		RzList *list = ht_up_find(db, value, NULL);
 		if (!list) {
 			list = rz_list_newf(NULL);
-			ht_up_update(db, value, list, NULL);
+			ht_up_update(db, value, list);
 		}
 		rz_list_append(list, r->name);
 	}

@@ -87,10 +87,10 @@
  * Return codes for insert/update methods
  */
 typedef enum {
-	HT_RC_ERROR = 0, ///< Error (out of memory)
-	HT_RC_EXISTING, ///< Existing KV prevented an insertion
-	HT_RC_INSERTED, ///< New KV was inserted during insert/update operation
-	HT_RC_UPDATED, ///< Existing KV was updated during update operation
+	HT_RC_ERROR = -1, ///< Error (out of memory)
+	HT_RC_EXISTING = 0, ///< Existing KV prevented an insertion
+	HT_RC_INSERTED = 1, ///< New KV was inserted during insert/update operation
+	HT_RC_UPDATED = 2, ///< Existing KV was updated during update operation
 } HtRetCode;
 
 typedef enum {
@@ -163,17 +163,6 @@ typedef struct Ht_(t) {
 }
 HtName_(Ht);
 
-/**
- * Extended status info for insert/update methods
- */
-typedef struct Ht_(status_t) {
-	HtRetCode code; ///< Return code of operation
-	HT_(Kv) *kv; ///< Pointer to an inserted/updated KV (code = [HT_RC_INSERTED | HT_RC_UPDATED])
-		     ///< or existing KV that prevented insertion (code = HT_RC_EXISTING)
-		     ///< or NULL in case of memory error (code = HT_RC_ERROR)
-}
-HT_(Status);
-
 // Create a new Ht with the provided Options
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt);
 // Create a new Ht with the provided Options and initial size
@@ -181,9 +170,11 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt_size)(RZ_NONNULL HT_(Options) *opt, ut32 
 // Destroy a hashtable and all of its entries.
 RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht);
 // Insert a new Key-Value pair into the hashtable. If the key already exists, returns false.
-RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Status) *status);
+RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value);
+RZ_API int Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
-RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Status) *status);
+RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value);
+RZ_API int Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);
 // Update the key of an element in the hashtable
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key);
 // Delete a key from the hashtable.
@@ -197,4 +188,5 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user);
 
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
-RZ_API int Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Status) *status);
+RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update);
+RZ_API int Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);

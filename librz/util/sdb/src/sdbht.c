@@ -26,7 +26,7 @@ static bool sdb_ht_internal_insert(HtSS *ht, const char *key, const char *value,
 	}
 	kvp.base.key_len = strlen(kvp.base.key);
 	kvp.base.value_len = strlen(kvp.base.value);
-	return ht_ss_insert_kv(ht, (HtSSKv *)&kvp, update, NULL);
+	return ht_ss_insert_kv(ht, (HtSSKv *)&kvp, update);
 
 err:
 	free(kvp.base.key);
@@ -39,7 +39,7 @@ RZ_API bool sdb_ht_insert(HtSS *ht, const char *key, const char *value) {
 }
 
 RZ_API bool sdb_ht_insert_kvp(HtSS *ht, SdbKv *kvp, bool update) {
-	return ht_ss_insert_kv(ht, (HtSSKv *)kvp, update, NULL);
+	return ht_ss_insert_kv(ht, (HtSSKv *)kvp, update);
 }
 
 RZ_API bool sdb_ht_update(HtSS *ht, const char *key, const char *value) {

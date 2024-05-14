@@ -161,7 +161,7 @@ RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 	fcn->is_noreturn = rz_analysis_noreturn_at_addr(analysis, fcn->addr);
 	rz_list_append(analysis->fcns, fcn);
-	return ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn, NULL) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn, NULL);
+	return ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, RzAnalysisFcnType type) {
@@ -218,7 +218,7 @@ typedef struct {
 
 static bool inst_vars_relocate_cb(void *user, const ut64 k, const void *v) {
 	InstVarsRelocateCtx *ctx = user;
-	ht_up_insert(ctx->inst_vars_new, k - ctx->delta, (void *)v, NULL);
+	ht_up_insert(ctx->inst_vars_new, k - ctx->delta, (void *)v);
 	return true;
 }
 
@@ -254,7 +254,7 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 	}
 
 	fcn->addr = addr;
-	ht_up_insert(fcn->analysis->ht_addr_fun, addr, fcn, NULL);
+	ht_up_insert(fcn->analysis->ht_addr_fun, addr, fcn);
 	return true;
 }
 
@@ -277,7 +277,7 @@ RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *nam
 	fcn->name = newname;
 	if (in_tree) {
 		// only re-insert if it really was in the tree before
-		ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn, NULL);
+		ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn);
 	}
 	return true;
 }

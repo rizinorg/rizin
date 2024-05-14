@@ -1315,7 +1315,7 @@ static RTreeNode *add_trace_tree_child(HtUP *ht, RTree *t, RTreeNode *cur, ut64 
 		if (t_node) {
 			t_node->addr = addr;
 			t_node->refs = 1;
-			ht_up_insert(ht, addr, t_node, NULL);
+			ht_up_insert(ht, addr, t_node);
 		}
 	} else {
 		t_node->refs++;

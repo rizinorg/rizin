@@ -55,7 +55,7 @@ static inline void rz_key_parser_free(RzKeyParser *parser) {
 }
 
 static inline void rz_key_parser_add(RzKeyParser *parser, const char *key, int val) {
-	ht_sp_insert(parser, key, (void *)(size_t)val, NULL);
+	ht_sp_insert(parser, key, (void *)(size_t)val);
 }
 
 #define RZ_KEY_PARSER_UNKNOWN -1

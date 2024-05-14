@@ -168,7 +168,7 @@ RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, cons
 	}
 	char *dup = strdup(option);
 	rz_pvector_push(&res->options, dup);
-	ht_pp_insert(res->options_ht, dup, dup, NULL);
+	ht_pp_insert(res->options_ht, dup, dup);
 }
 
 /**

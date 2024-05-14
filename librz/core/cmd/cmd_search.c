@@ -999,7 +999,7 @@ static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 crop) {
 
 static bool insert_into(void *user, const ut64 k, const ut64 v) {
 	HtUU *ht = (HtUU *)user;
-	ht_uu_insert(ht, k, v, NULL);
+	ht_uu_insert(ht, k, v);
 	return true;
 }
 
@@ -1045,7 +1045,7 @@ static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr
 		goto ret;
 	}
 	while (nb_instr < max_instr) {
-		ht_uu_insert(localbadstart, idx, 1, NULL);
+		ht_uu_insert(localbadstart, idx, 1);
 		rz_analysis_op_init(&aop);
 		int error = rz_analysis_op(core->analysis, &aop, addr, buf + idx, buflen - idx, RZ_ANALYSIS_OP_MASK_DISASM);
 		if (error < 0 || (nb_instr == 0 && (is_end_gadget(&aop, 0) || aop.type == RZ_ANALYSIS_OP_TYPE_NOP))) {

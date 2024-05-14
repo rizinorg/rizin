@@ -43,7 +43,7 @@ bool c_parser_base_type_store(CParserState *state, RZ_NONNULL const char *name, 
 	}
 
 	// We store only RzBaseType part of the type pair
-	ht_sp_insert(state->types, name, tpair->btype, NULL);
+	ht_sp_insert(state->types, name, tpair->btype);
 	return true;
 }
 
@@ -63,7 +63,7 @@ bool c_parser_forward_definition_store(CParserState *state, RZ_NONNULL const cha
 	}
 
 	// We store only the type name
-	ht_sp_insert(state->forward, name, NULL, NULL);
+	ht_sp_insert(state->forward, name, NULL);
 	return true;
 }
 
@@ -106,7 +106,7 @@ bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *na
 		return false;
 	}
 
-	ht_sp_insert(state->callables, name, type->callable, NULL);
+	ht_sp_insert(state->callables, name, type->callable);
 	parser_debug(state, "Stored \"%s\" callable type\n", name);
 	return true;
 }

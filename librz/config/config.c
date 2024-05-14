@@ -236,7 +236,7 @@ RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, RZ_NONNULL const char *name,
 			}
 			node->flags = CN_RW | CN_BOOL;
 			node->i_value = value ? 1 : 0;
-			ht_sp_insert(cfg->ht, node->name, node, NULL);
+			ht_sp_insert(cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				rz_list_append(cfg->nodes, node);
 			}
@@ -326,7 +326,7 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, RZ_NONNULL const char *name, c
 					node->flags |= CN_BOOL;
 					node->i_value = rz_str_is_true(value) ? 1 : 0;
 				}
-				ht_sp_insert(cfg->ht, node->name, node, NULL);
+				ht_sp_insert(cfg->ht, node->name, node);
 				rz_list_append(cfg->nodes, node);
 			} else {
 				eprintf("rz_config_set: unable to create a new RzConfigNode\n");
@@ -366,7 +366,7 @@ RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *nod
 		rz_config_node_free(node);
 		return false;
 	}
-	ht_sp_insert(cfg->ht, node->name, node, NULL);
+	ht_sp_insert(cfg->ht, node->name, node);
 	rz_list_append(cfg->nodes, node);
 	return true;
 }
@@ -446,7 +446,7 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name,
 			}
 			node->flags = CN_RW | CN_INT;
 			node->i_value = i;
-			ht_sp_insert(cfg->ht, node->name, node, NULL);
+			ht_sp_insert(cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				rz_list_append(cfg->nodes, node);
 			}
@@ -513,7 +513,7 @@ RZ_API RzConfig *rz_config_clone(RzConfig *cfg) {
 	}
 	rz_list_foreach (cfg->nodes, iter, node) {
 		RzConfigNode *nn = rz_config_node_clone(node);
-		ht_sp_insert(c->ht, node->name, nn, NULL);
+		ht_sp_insert(c->ht, node->name, nn);
 		rz_list_append(c->nodes, nn);
 	}
 	c->lock = cfg->lock;

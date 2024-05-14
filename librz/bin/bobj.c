@@ -316,7 +316,7 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 
 	rz_pvector_push(o->classes, oclass);
 	rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
-	ht_sp_insert(o->name_to_class_object, name, oclass, NULL);
+	ht_sp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }
 
@@ -401,12 +401,12 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method);
 	if (key) {
-		ht_sp_insert(o->glue_to_class_method, key, symbol, NULL);
+		ht_sp_insert(o->glue_to_class_method, key, symbol);
 		free(key);
 	}
 
 	if (symbol->vaddr != UT64_MAX) {
-		ht_up_insert(o->vaddr_to_class_method, symbol->vaddr, symbol, NULL);
+		ht_up_insert(o->vaddr_to_class_method, symbol->vaddr, symbol);
 	}
 
 	return symbol;
@@ -478,7 +478,7 @@ RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject
 	rz_list_add_sorted(c->fields, field, (RzListComparator)bin_compare_class_field, NULL);
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name);
 	if (key) {
-		ht_sp_insert(o->glue_to_class_field, key, field, NULL);
+		ht_sp_insert(o->glue_to_class_field, key, field);
 		free(key);
 	}
 	return field;
@@ -988,11 +988,11 @@ RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVecto
 	RzBinString *bstr;
 	rz_pvector_foreach (pvector, it) {
 		bstr = *it;
-		if (!ht_up_update(db->phys, bstr->paddr, bstr, NULL)) {
+		if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
 			RZ_LOG_ERROR("rz_bin: Cannot insert/update RzBinString in RzBinStrDb (phys)\n");
 			goto fail;
 		}
-		if (!ht_up_update(db->virt, bstr->vaddr, bstr, NULL)) {
+		if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
 			RZ_LOG_ERROR("rz_bin: Cannot insert/update RzBinString in RzBinStrDb (virt)\n");
 			goto fail;
 		}
@@ -1035,12 +1035,12 @@ RZ_API bool rz_bin_string_database_add(RZ_NONNULL RzBinStrDb *db, RZ_NONNULL RzB
 		return false;
 	}
 
-	if (!ht_up_update(db->phys, bstr->paddr, bstr, NULL)) {
+	if (!ht_up_update(db->phys, bstr->paddr, bstr)) {
 		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (phys)\n");
 		return false;
 	}
 
-	if (!ht_up_update(db->virt, bstr->vaddr, bstr, NULL)) {
+	if (!ht_up_update(db->virt, bstr->vaddr, bstr)) {
 		RZ_LOG_ERROR("rz_bin: Cannot add RzBinString in RzBinStrDb (virt)\n");
 		return false;
 	}

@@ -279,7 +279,7 @@ RzAnalysisOp *op_cache_get(HtUP *cache, RzCore *core, ut64 addr) {
 		return op;
 	}
 	op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL);
-	if (!ht_up_insert(cache, addr, op, NULL)) {
+	if (!ht_up_insert(cache, addr, op)) {
 		rz_analysis_op_free(op);
 		return NULL;
 	}
@@ -902,7 +902,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 					break;
 				}
 				loop_count += 1;
-				ht_uu_update(loop_table, addr, loop_count, NULL);
+				ht_uu_update(loop_table, addr, loop_count);
 			}
 
 			if (rz_analysis_op_nonlinear(aop->type)) { // skip the instr

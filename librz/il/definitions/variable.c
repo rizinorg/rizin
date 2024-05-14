@@ -86,7 +86,7 @@ RZ_API RZ_BORROW RzILVar *rz_il_var_set_create_var(RzILVarSet *vs, const char *n
 	if (!var) {
 		return NULL;
 	}
-	ht_sp_insert(vs->vars, name, var, NULL);
+	ht_sp_insert(vs->vars, name, var);
 	return var;
 }
 
@@ -128,7 +128,7 @@ RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal 
 		rz_il_value_free(val);
 		return false;
 	}
-	ht_sp_update(vs->contents, name, val, NULL);
+	ht_sp_update(vs->contents, name, val);
 	return true;
 }
 

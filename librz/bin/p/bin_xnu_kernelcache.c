@@ -1189,7 +1189,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	ut64 enosys_addr = 0;
 	rz_pvector_foreach (ret, it) {
 		sym = *it;
-		ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->dname ? sym->dname : sym->name, NULL);
+		ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->dname ? sym->dname : sym->name);
 		if (!enosys_addr && strstr(sym->name, "enosys")) {
 			enosys_addr = sym->vaddr;
 		}
@@ -1198,7 +1198,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *syscalls = resolve_syscalls(obj, enosys_addr);
 	if (syscalls) {
 		rz_list_foreach (syscalls, iter, sym) {
-			ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->name, NULL);
+			ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->name);
 			rz_pvector_push(ret, sym);
 		}
 		syscalls->free = NULL;
@@ -1208,7 +1208,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *subsystem = resolve_mig_subsystem(obj);
 	if (subsystem) {
 		rz_list_foreach (subsystem, iter, sym) {
-			ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->name, NULL);
+			ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->name);
 			rz_pvector_push(ret, sym);
 		}
 		subsystem->free = NULL;
@@ -1437,7 +1437,7 @@ static HtUP /*<ut64, const char *>*/ *mig_hash_new(void) {
 	for (size_t i = 0; i < RZ_MIG_INDEX_LEN; i += 2) {
 		ut64 num = strtoull(mig_index[i], NULL, 10);
 		const char *name = mig_index[i + 1];
-		ht_up_insert(hash, num, (void *)name, NULL);
+		ht_up_insert(hash, num, (void *)name);
 	}
 
 	return hash;

@@ -321,7 +321,7 @@ static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	RzAnalysisXRef *xref;
-	ht_up_insert(ht, fcn->addr, NULL, NULL);
+	ht_up_insert(ht, fcn->addr, NULL);
 	fcn->is_pure = true;
 	rz_list_foreach (xrefs, iter, xref) {
 		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL || xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
@@ -2242,7 +2242,7 @@ typedef struct {
 
 static bool mark_as_visited(RzAnalysisBlock *bb, void *user) {
 	BlockRecurseCtx *ctx = user;
-	ht_up_insert(ctx->visited, bb->addr, NULL, NULL);
+	ht_up_insert(ctx->visited, bb->addr, NULL);
 	return true;
 }
 
@@ -2257,7 +2257,7 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 			rz_analysis_block_recurse(rz_analysis_get_block_at(analysis, addr), mark_as_visited, user);
 		}
 	}
-	ht_up_insert(ctx->visited, addr, NULL, NULL);
+	ht_up_insert(ctx->visited, addr, NULL);
 	return true;
 }
 
@@ -2340,7 +2340,7 @@ static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *
 			}
 		}
 		HtUP *ht = ht_up_new(NULL, NULL);
-		ht_up_insert(ht, bb->addr, NULL, NULL);
+		ht_up_insert(ht, bb->addr, NULL);
 		BlockRecurseCtx ctx = { fcn, ht };
 		rz_analysis_block_recurse(bb, analize_descendents, &ctx);
 
@@ -2381,7 +2381,7 @@ static void calc_reachable_and_remove_block(RzList /*<RzAnalysisFunction *>*/ *f
 		HtUP *ht = ht_up_new(NULL, NULL);
 		BlockRecurseCtx ctx = { fcn, ht };
 		rz_analysis_block_recurse(rz_analysis_get_block_at(fcn->analysis, fcn->addr), mark_as_visited, &ctx);
-		ht_up_insert(reachable, fcn->addr, ht, NULL);
+		ht_up_insert(reachable, fcn->addr, ht);
 	}
 	fcn->ninstr -= bb->ninstr;
 	rz_analysis_function_remove_block(fcn, bb);

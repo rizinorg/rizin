@@ -104,7 +104,7 @@ RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, si
 				return 0;
 			}
 			// feed ht with the new desc-cache
-			ht_up_insert(desc->cache, caddr, cache, NULL);
+			ht_up_insert(desc->cache, caddr, cache);
 		}
 		// check if the remaining data fits into the cache
 		if ((len - written) > (RZ_IO_DESC_CACHE_SIZE - cbaddr)) {

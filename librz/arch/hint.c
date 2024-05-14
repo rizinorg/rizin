@@ -157,7 +157,7 @@ static RzAnalysisAddrHintRecord *ensure_addr_hint_record(RzAnalysis *analysis, R
 		if (!records) {
 			return NULL;
 		}
-		ht_up_insert(analysis->addr_hints, addr, records, NULL);
+		ht_up_insert(analysis->addr_hints, addr, records);
 	}
 	void *pos;
 	rz_vector_foreach (records, pos) {

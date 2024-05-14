@@ -1698,7 +1698,7 @@ RZ_API RZ_OWN HtSS *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 si
 		if (!chkstr) {
 			continue;
 		}
-		ht_ss_insert(r, digest, chkstr, NULL);
+		ht_ss_insert(r, digest, chkstr);
 		free(data);
 	}
 

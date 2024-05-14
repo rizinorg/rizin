@@ -297,7 +297,7 @@ static RZ_BORROW LE_import *le_add_import(rz_bin_le_obj_t *bin,
 	sym->is_imported = true;
 	CHECK(sym->name = strdup(le_imp->import->name));
 
-	CHECK(ht_pp_insert(bin->le_import_ht, le_imp, NULL, NULL));
+	CHECK(ht_pp_insert(bin->le_import_ht, le_imp, NULL));
 	return le_imp;
 }
 

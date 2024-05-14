@@ -18,7 +18,7 @@ RZ_API RZ_OWN SetS *set_s_new(HtStrOption opt) {
  */
 RZ_API void set_s_add(RZ_NONNULL SetS *set, const char *str) {
 	rz_return_if_fail(set);
-	ht_sp_insert(set, str, (void *)1, NULL);
+	ht_sp_insert(set, str, (void *)1);
 }
 
 /**
@@ -77,7 +77,7 @@ RZ_API RZ_OWN SetU *set_u_new(void) {
  */
 RZ_API void set_u_add(RZ_NONNULL SetU *set, ut64 u) {
 	rz_return_if_fail(set);
-	ht_up_insert(set, u, (void *)1, NULL);
+	ht_up_insert(set, u, (void *)1);
 }
 
 /**

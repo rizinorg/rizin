@@ -1725,7 +1725,7 @@ static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList /*<RzA
 		return false;
 	}
 
-	ht_up_update(state, from, bb, NULL);
+	ht_up_update(state, from, bb);
 
 	// try to find the target in the current function
 	if (rz_analysis_block_contains(bb, to) ||
@@ -1818,7 +1818,7 @@ RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_core_analysis_graph_to(RzCore *core, u
 			rz_list_append(paths, path);
 			if (rz_list_length(path) >= 2) {
 				RzAnalysisBlock *last = rz_list_get_n(path, rz_list_length(path) - 2);
-				ht_up_update(avoid, last->addr, last, NULL);
+				ht_up_update(avoid, last->addr, last);
 				n--;
 				continue;
 			}
@@ -3167,7 +3167,7 @@ static void analPaths(RzCoreAnalPaths *p, PJ *pj) {
 	if (rz_cons_is_breaked()) {
 		return;
 	}
-	ht_uu_insert(p->visited, cur->addr, 1, NULL);
+	ht_uu_insert(p->visited, cur->addr, 1);
 	rz_list_append(p->path, cur);
 	if (p->followDepth && --p->followDepth == 0) {
 		return;
@@ -3778,7 +3778,7 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 					ut64 *n = malloc(sizeof(ut64));
 					*n = f->addr;
 					rz_list_append(todo, n);
-					ht_uu_insert(done, *n, 1, NULL);
+					ht_uu_insert(done, *n, 1);
 				}
 			}
 		kontinue:

@@ -579,7 +579,7 @@ static char *at_string_escaped(const RzBinDwarfAttr *attr, DwContext *ctx) {
 	}
 	str->c_str = c_str;
 	str->length = strlen(c_str);
-	ht_up_insert(ctx->str_escaped, (ut64)attr, str, NULL);
+	ht_up_insert(ctx->str_escaped, (ut64)attr, str);
 	return rz_mem_dup(str->c_str, str->length + 1);
 }
 
@@ -749,7 +749,7 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 		btype->type = rz_type_identifier_of_base_type_str(ctx->analysis->typedb, "void");
 	}
 
-	if (!ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, btype, NULL)) {
+	if (!ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, btype)) {
 		RZ_LOG_WARN("Failed to save base type %s [0x%" PFMT64x "]\n",
 			btype->name, die->offset);
 	}
@@ -758,7 +758,7 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 		ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
 	if (!btypes) {
 		btypes = rz_pvector_new(NULL);
-		ht_sp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes, NULL);
+		ht_sp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes);
 		rz_pvector_push(btypes, btype);
 	} else {
 		void **it;
@@ -1008,7 +1008,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	}
 
 	RzType *copy = type ? rz_type_clone(type) : NULL;
-	if (copy && ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy, NULL)) {
+	if (copy && ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
 #if RZ_BUILD_DEBUG
 		char *tstring = rz_type_as_string(ctx->analysis->typedb, type);
 		RZ_LOG_DEBUG("Insert RzType [%s] into type_by_offset\n", tstring);
@@ -1502,7 +1502,7 @@ static bool function_children_parse(
 			rz_type_callable_arg_add(callable, arg);
 		}
 		RzAnalysisDwarfVariable *ptr = rz_vector_push(&fn->variables, &v);
-		ht_up_insert(ctx->analysis->debug_info->variable_by_offset, v.offset, ptr, NULL);
+		ht_up_insert(ctx->analysis->debug_info->variable_by_offset, v.offset, ptr);
 		continue;
 	loop_end:
 		variable_fini(&v);
@@ -1623,16 +1623,16 @@ static bool function_from_die(
 
 	RZ_LOG_DEBUG("DWARF function saving %s 0x%" PFMT64x " [0x%" PFMT64x "]\n",
 		fcn->prefer_name, fcn->low_pc, die->offset);
-	if (!ht_up_update(ctx->analysis->debug_info->callable_by_offset, die->offset, callable, NULL)) {
+	if (!ht_up_update(ctx->analysis->debug_info->callable_by_offset, die->offset, callable)) {
 		RZ_LOG_ERROR("DWARF callable saving failed [0x%" PFMT64x "]\n", die->offset);
 		goto cleanup;
 	}
-	if (!ht_up_update(ctx->analysis->debug_info->function_by_offset, die->offset, fcn, NULL)) {
+	if (!ht_up_update(ctx->analysis->debug_info->function_by_offset, die->offset, fcn)) {
 		RZ_LOG_ERROR("DWARF function saving failed [0x%" PFMT64x "]\n", fcn->low_pc);
 		goto cleanup;
 	}
 	if (fcn->low_pc > 0) {
-		if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->low_pc, fcn, NULL)) {
+		if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->low_pc, fcn)) {
 			RZ_LOG_ERROR("DWARF function saving failed with addr: [0x%" PFMT64x "]\n",
 				fcn->low_pc);
 			goto cleanup;

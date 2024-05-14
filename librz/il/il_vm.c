@@ -279,7 +279,7 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_find_label_by_name(RZ_NONNULL RzILVM 
 
 RZ_API void rz_il_vm_add_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILEffectLabel *label) {
 	rz_return_if_fail(vm && label);
-	ht_sp_update(vm->vm_global_label_table, label->label_id, label, NULL);
+	ht_sp_update(vm->vm_global_label_table, label->label_id, label);
 }
 
 /**

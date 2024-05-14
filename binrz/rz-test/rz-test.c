@@ -520,7 +520,7 @@ int rz_test_main(int argc, const char **argv) {
 				RzTestFileCounts *counts = ht_sp_find(state.path_left, test->path, NULL);
 				if (!counts) {
 					counts = calloc(1, sizeof(RzTestFileCounts));
-					ht_sp_insert(state.path_left, test->path, counts, NULL);
+					ht_sp_insert(state.path_left, test->path, counts);
 				}
 				counts->tests_left++;
 			}

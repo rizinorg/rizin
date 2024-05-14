@@ -63,7 +63,7 @@ RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalys
 		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", existing_glob->name, existing_glob->addr);
 		return false;
 	}
-	if (!ht_sp_insert(analysis->ht_global_var, global_var->name, global_var, NULL)) {
+	if (!ht_sp_insert(analysis->ht_global_var, global_var->name, global_var)) {
 		return false;
 	}
 	if (!rz_rbtree_aug_insert(&analysis->global_var_tree, &global_var->addr, &global_var->rb, global_var_node_cmp, NULL, NULL)) {

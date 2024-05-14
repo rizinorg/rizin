@@ -25,7 +25,7 @@ static RzType *parse_type_string_cached(RzTypeParser *parser, HtSP *cache, const
 	if (r) {
 		char *reminder = strdup(str);
 		if (reminder) {
-			ht_sp_insert(cache, str, r, NULL);
+			ht_sp_insert(cache, str, r);
 			rz_list_push(newly_added, reminder);
 		}
 	}
@@ -144,7 +144,7 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 		// eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
 		RzCallable *callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
 		if (callable) {
-			ht_sp_update(typedb->callables, callable->name, callable, NULL);
+			ht_sp_update(typedb->callables, callable->name, callable);
 			RZ_LOG_DEBUG("inserting the \"%s\" callable type\n", callable->name);
 		}
 	}

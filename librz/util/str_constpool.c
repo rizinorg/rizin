@@ -16,10 +16,9 @@ RZ_API const char *rz_str_constpool_get(RzStrConstPool *pool, const char *str) {
 	if (!str) {
 		return NULL;
 	}
-	HtSPStatus status;
-	ht_sp_insert(pool->ht, str, NULL, &status);
-	if (status.code == HT_RC_ERROR) {
+	HtSPKv *kv;
+	if (ht_sp_insert_ex(pool->ht, str, NULL, &kv) < 0) {
 		return NULL;
 	}
-	return status.kv->key;
+	return kv->key;
 }

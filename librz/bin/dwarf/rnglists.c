@@ -256,7 +256,7 @@ static bool RngList_at(
 	err2:
 		Range_free(range);
 	}
-	ht_up_update(self->by_offset, rnglist->offset, rnglist, NULL);
+	ht_up_update(self->by_offset, rnglist->offset, rnglist);
 	*out = rnglist;
 	return true;
 }

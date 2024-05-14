@@ -1028,7 +1028,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
 						char *food = rz_str_newf("0x%" PFMT64x, off);
-						ht_ss_insert(a->flags, ptr_start, food, NULL);
+						ht_ss_insert(a->flags, ptr_start, food);
 						rz_asm_code_set_equ(acode, p, food);
 						free(p);
 						free(food);

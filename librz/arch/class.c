@@ -1298,7 +1298,7 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 			if (!curr_node) {
 				goto failure;
 			}
-			ht_sp_insert(hashmap, name, curr_node, NULL);
+			ht_sp_insert(hashmap, name, curr_node);
 		}
 		// create edges between node and it's parents
 		RzVector *bases = rz_analysis_class_base_get_all(analysis, name);
@@ -1312,7 +1312,7 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(
 				if (!base_node) {
 					goto failure;
 				}
-				ht_sp_insert(hashmap, base->class_name, base_node, NULL);
+				ht_sp_insert(hashmap, base->class_name, base_node);
 			}
 			rz_graph_add_edge(class_graph, base_node, curr_node);
 		}

@@ -336,12 +336,12 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 			tpair = get_atomic_type(typedb, sdb, sdbkv_key(kv));
 		}
 		if (tpair && tpair->type) {
-			ht_sp_update(typedb->types, tpair->type->name, tpair->type, NULL);
+			ht_sp_update(typedb->types, tpair->type->name, tpair->type);
 			// If the SDB provided the preferred type format then we store it
 			char *format = tpair->format ? tpair->format : NULL;
 			// Format is not always defined, e.g. for types like "void" or anonymous types
 			if (format) {
-				ht_ss_update(typedb->formats, tpair->type->name, format, NULL);
+				ht_ss_update(typedb->formats, tpair->type->name, format);
 				RZ_LOG_DEBUG("inserting the \"%s\" type & format: \"%s\"\n", tpair->type->name, format);
 			} else {
 				ht_ss_delete(typedb->formats, tpair->type->name);

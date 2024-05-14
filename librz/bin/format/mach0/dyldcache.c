@@ -574,7 +574,7 @@ static HtSU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, RzDyldC
 			continue;
 		}
 		file[255] = 0;
-		ht_su_insert(path_to_idx, file, (ut64)i, NULL);
+		ht_su_insert(path_to_idx, file, (ut64)i);
 	}
 
 	return path_to_idx;

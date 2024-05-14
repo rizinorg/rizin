@@ -33,7 +33,7 @@ static void array_add(RzCoreObjc *o, ut64 va, ut64 xrefs_to) {
 	RzVector *vec = ht_up_find(o->up, va, &found);
 	if (!found || !vec) {
 		vec = rz_vector_new(sizeof(ut64), NULL, NULL);
-		ht_up_insert(o->up, va, vec, NULL);
+		ht_up_insert(o->up, va, vec);
 	}
 	ut64 *addr;
 	rz_vector_foreach (vec, addr) {

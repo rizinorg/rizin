@@ -3462,7 +3462,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 			} else {
 				rz_cons_printf("%s0x%08" PFMT64x " fcn 0x%08" PFMT64x " %s\n", pre, xref->from, fcn->addr, fcn->name);
 			}
-			if (ht_uu_insert(ht, fcn->addr, 1, NULL)) {
+			if (ht_uu_insert(ht, fcn->addr, 1)) {
 				xrefs_graph(core, fcn->addr, level + 1, ht, mode, pj);
 			}
 			if (is_json) {
@@ -3485,7 +3485,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 			} else {
 				rz_cons_printf("%s0x%08" PFMT64x " ???\n", pre, xref->from);
 			}
-			if (ht_uu_insert(ht, xref->from, 1, NULL)) {
+			if (ht_uu_insert(ht, xref->from, 1)) {
 				xrefs_graph(core, xref->from, level + 1, ht, mode, pj);
 			}
 			if (is_json) {
@@ -4184,7 +4184,7 @@ static void ht_inc(HtSU *ht, const char *key) {
 	if (kv) {
 		kv->value++;
 	} else {
-		ht_su_insert(ht, key, 1, NULL);
+		ht_su_insert(ht, key, 1);
 	}
 }
 
@@ -4294,7 +4294,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_opcode_stat_handler(RzCore *core, int ar
 
 static bool add_keys_to_set_cb(HtSU *ht, const char *k, RZ_UNUSED const ut64 v) {
 	if (strcmp(k, ".addr")) {
-		ht_su_insert(ht, k, 1, NULL);
+		ht_su_insert(ht, k, 1);
 	}
 	return true;
 }
@@ -4323,7 +4323,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 			break;
 		}
 		gather_opcode_stat_for_fcn(core, db, fcn, mode);
-		ht_su_insert(db, ".addr", fcn->addr, NULL);
+		ht_su_insert(db, ".addr", fcn->addr);
 		rz_list_append(dbs, db);
 	}
 

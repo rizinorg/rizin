@@ -74,7 +74,7 @@ RZ_API ut64 rz_bin_reloc_target_builder_get_target(RzBinRelocTargetBuilder *buil
 		return r;
 	}
 	r = builder->next_target;
-	ht_uu_insert(builder->targets_by_sym, sym, r, NULL);
+	ht_uu_insert(builder->targets_by_sym, sym, r);
 	builder->next_target += builder->target_size;
 	return r;
 }

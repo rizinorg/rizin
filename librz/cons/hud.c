@@ -234,7 +234,7 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 			filtered_list = hud_filter(list, user_input,
 				hud->top_entry_n, &(hud->current_entry_n), &selected_entry);
 #if HUD_CACHE
-			ht_sp_insert(ht, user_input, filtered_list, NULL);
+			ht_sp_insert(ht, user_input, filtered_list);
 #endif
 		}
 		rz_list_foreach (filtered_list, iter, row) {

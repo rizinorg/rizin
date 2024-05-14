@@ -267,7 +267,7 @@ static bool LocList_at(
 		LocList_free(loclist);
 		return false;
 	}
-	ht_up_update(self->by_offset, loclist->offset, loclist, NULL);
+	ht_up_update(self->by_offset, loclist->offset, loclist);
 	*out = loclist;
 	return true;
 }

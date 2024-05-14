@@ -196,20 +196,18 @@ static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 			if (kv == tracked) {
 				continue;
 			}
-			if (!Ht_(insert_kv)(ht2, kv, false, NULL)) {
+			if (Ht_(insert_kv_ex)(ht2, kv, false, NULL) < 0) {
 				ht2->opt.finiKV = NULL;
 				Ht_(free)(ht2);
 				return tracked;
 			}
 		}
 	}
-	HT_(Status) status;
-	if (!Ht_(insert_kv)(ht2, tracked, false, &status)) {
+	if (Ht_(insert_kv_ex)(ht2, tracked, false, &tracked) < 0) {
 		ht2->opt.finiKV = NULL;
 		Ht_(free)(ht2);
 		return tracked;
 	}
-	tracked = status.kv;
 
 	// And now swap the internals.
 	HtName_(Ht) swap = *ht;
@@ -255,24 +253,26 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
 	return kv_at(ht, bt, bt->count - 1);
 }
 
-RZ_API int Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Status) *status) {
-	rz_return_val_if_fail(ht && kv, false);
+RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update) {
+	return Ht_(insert_kv_ex)(ht, kv, update, NULL) > 0;
+}
+
+RZ_API int Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+	rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
 
 	bool exists;
 	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, &exists);
 	if (!kv_dst) {
-		if (status) {
-			status->kv = NULL;
-			status->code = HT_RC_ERROR;
+		if (out_kv) {
+			*out_kv = NULL;
 		}
-		return false;
+		return HT_RC_ERROR;
 	}
 	if (exists && !update) {
-		if (status) {
-			status->kv = kv_dst;
-			status->code = HT_RC_EXISTING;
+		if (out_kv) {
+			*out_kv = kv_dst;
 		}
-		return false;
+		return HT_RC_EXISTING;
 	}
 	HtRetCode rc = HT_RC_INSERTED;
 	if (exists && update) {
@@ -281,30 +281,27 @@ RZ_API int Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bo
 	}
 	memcpy(kv_dst, kv, ht->opt.elem_size);
 	kv_dst = check_growing(ht, kv_dst);
-	if (status) {
-		status->kv = kv_dst;
-		status->code = rc;
+	if (out_kv) {
+		*out_kv = kv_dst;
 	}
-	return true;
+	return rc;
 }
 
-static bool insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Status) *status) {
+static int insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	ut32 key_len = calcsize_key(ht, key);
 	bool exists;
 	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, &exists);
 	if (!kv_dst) {
-		if (status) {
-			status->kv = NULL;
-			status->code = HT_RC_ERROR;
+		if (out_kv) {
+			*out_kv = NULL;
 		}
-		return false;
+		return HT_RC_ERROR;
 	}
 	if (exists && !update) {
-		if (status) {
-			status->kv = kv_dst;
-			status->code = HT_RC_EXISTING;
+		if (out_kv) {
+			*out_kv = kv_dst;
 		}
-		return false;
+		return HT_RC_EXISTING;
 	}
 	HtRetCode rc = HT_RC_INSERTED;
 	if (exists && update) {
@@ -316,29 +313,38 @@ static bool insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_
 	kv_dst->value = dupval(ht, value);
 	kv_dst->value_len = calcsize_val(ht, value);
 	kv_dst = check_growing(ht, kv_dst);
-	if (status) {
-		status->kv = kv_dst;
-		status->code = rc;
+	if (out_kv) {
+		*out_kv = kv_dst;
 	}
-	return true;
+	return rc;
 }
 
 /**
  * Inserts the key value pair \p key, \p value into the hash table \p ht.
  * Doesn't allow for "update" of the value.
  */
-RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Status) *status) {
+RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
 	rz_return_val_if_fail(ht, false);
-	return insert_update(ht, key, value, false, status);
+	return insert_update(ht, key, value, false, NULL) > 0;
+}
+
+RZ_API int Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+	rz_return_val_if_fail(ht, HT_RC_ERROR);
+	return insert_update(ht, key, value, false, out_kv);
 }
 
 /**
  * Inserts the key value pair \p key, \p value into the hash table \p ht.
  * Does allow for "update" of the value.
  */
-RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Status) *status) {
+RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
 	rz_return_val_if_fail(ht, false);
-	return insert_update(ht, key, value, true, status);
+	return insert_update(ht, key, value, true, NULL) > 0;
+}
+
+RZ_API int Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+	rz_return_val_if_fail(ht, HT_RC_ERROR);
+	return insert_update(ht, key, value, true, out_kv);
 }
 
 /**
