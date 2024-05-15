@@ -129,7 +129,7 @@ RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinRelo
 		if (!strcmp(plugin->name, "coff")) {
 			ret->imp_shared = true;
 			ret->sym_shared = true;
-		} else if (!strcmp(plugin->name, "mach064")) {
+		} else if (rz_str_cmp_list("mach0 mach064", plugin->name, ' ')) {
 			ret->imp_shared = true;
 		}
 	}
