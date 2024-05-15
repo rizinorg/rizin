@@ -85,6 +85,9 @@
 #define HT_ENUM_DEFINED
 /**
  * Return codes for insert/update methods
+ * code < 0 <--> code == HT_RC_ERROR
+ * code >= 0 <--> code != HT_RC_ERROR
+ * code > 0 <--> code == HT_RC_INSERTED || code == HT_RC_UPDATED
  */
 typedef enum {
 	HT_RC_ERROR = -1, ///< Error (out of memory)
