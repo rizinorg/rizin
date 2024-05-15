@@ -177,10 +177,6 @@ RZ_API ut64 sdb_num_dec(Sdb *s, const char *key, ut64 n);
 RZ_API int sdb_num_min(Sdb *s, const char *key, ut64 v);
 RZ_API int sdb_num_max(Sdb *s, const char *key, ut64 v);
 
-/* ptr */
-RZ_API int sdb_ptr_set(Sdb *db, const char *key, void *p);
-RZ_API void *sdb_ptr_get(Sdb *db, const char *key);
-
 /* create db */
 RZ_API bool sdb_disk_create(Sdb *s);
 RZ_API bool sdb_disk_insert(Sdb *s, const char *key, const char *val);

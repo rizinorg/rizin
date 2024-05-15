@@ -72,13 +72,3 @@ RZ_API bool sdb_bool_get(Sdb *db, const char *str) {
 	const char *b = sdb_const_get(db, str);
 	return b && (!strcmp(b, "1") || !strcmp(b, "true"));
 }
-
-/* pointers */
-
-RZ_API int sdb_ptr_set(Sdb *db, const char *key, void *p) {
-	return sdb_num_set(db, key, (ut64)(size_t)p);
-}
-
-RZ_API void *sdb_ptr_get(Sdb *db, const char *key) {
-	return (void *)(size_t)sdb_num_get(db, key);
-}
