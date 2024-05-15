@@ -392,7 +392,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 	}
 
 	// Associate the existing value with new_key
-	bool inserted = insert_update(ht, new_key, value, false, NULL);
+	bool inserted = insert_update(ht, new_key, value, false, NULL) > 0;
 	if (!inserted) {
 		return false;
 	}
