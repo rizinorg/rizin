@@ -229,27 +229,33 @@ static HT_(Kv) *check_growing(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 /**
  * \brief Get an existing KV with key \p key or allocate a new KV otherwise
  */
-static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, RZ_NONNULL bool *exists) {
+static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool update, RZ_NONNULL HtRetCode *code) {
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
 	HT_(Kv) *kvtmp;
 	ut32 j;
 
 	BUCKET_FOREACH(ht, bt, j, kvtmp) {
 		if (is_kv_equal(ht, key, key_len, kvtmp)) {
-			*exists = true;
+			if (update) {
+				fini_kv_pair(ht, kvtmp);
+				*code = HT_RC_UPDATED;
+			} else {
+				*code = HT_RC_EXISTING;
+			}
 			return kvtmp;
 		}
 	}
 
 	HT_(Kv) *newkvarr = realloc(bt->arr, (bt->count + 1) * ht->opt.elem_size);
 	if (!newkvarr) {
+		*code = HT_RC_ERROR;
 		return NULL;
 	}
 
 	bt->arr = newkvarr;
 	bt->count++;
 	ht->count++;
-	*exists = false;
+	*code = HT_RC_INSERTED;
 	return kv_at(ht, bt, bt->count - 1);
 }
 
@@ -260,24 +266,13 @@ RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, b
 RZ_API int Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
 
-	bool exists;
-	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, &exists);
-	if (!kv_dst) {
-		if (out_kv) {
-			*out_kv = NULL;
-		}
-		return HT_RC_ERROR;
-	}
-	if (exists && !update) {
+	HtRetCode rc;
+	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update, &rc);
+	if (rc <= 0) {
 		if (out_kv) {
 			*out_kv = kv_dst;
 		}
-		return HT_RC_EXISTING;
-	}
-	HtRetCode rc = HT_RC_INSERTED;
-	if (exists && update) {
-		fini_kv_pair(ht, kv_dst);
-		rc = HT_RC_UPDATED;
+		return rc;
 	}
 	memcpy(kv_dst, kv, ht->opt.elem_size);
 	kv_dst = check_growing(ht, kv_dst);
@@ -289,24 +284,13 @@ RZ_API int Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv,
 
 static int insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	ut32 key_len = calcsize_key(ht, key);
-	bool exists;
-	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, &exists);
-	if (!kv_dst) {
-		if (out_kv) {
-			*out_kv = NULL;
-		}
-		return HT_RC_ERROR;
-	}
-	if (exists && !update) {
+	HtRetCode rc;
+	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, update, &rc);
+	if (rc <= 0) {
 		if (out_kv) {
 			*out_kv = kv_dst;
 		}
-		return HT_RC_EXISTING;
-	}
-	HtRetCode rc = HT_RC_INSERTED;
-	if (exists && update) {
-		fini_kv_pair(ht, kv_dst);
-		rc = HT_RC_UPDATED;
+		return rc;
 	}
 	kv_dst->key = dupkey(ht, key);
 	kv_dst->key_len = key_len;
