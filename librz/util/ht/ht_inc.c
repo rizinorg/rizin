@@ -279,7 +279,7 @@ RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, b
  * \param update Update flag; if set to true, replacement of existing KV is allowed
  * \param[out] out_kv Pointer to the inserted/updated KV
  *                    or pointer to the KV that prevented insertion (if \p update set to false)
- *                    or NULL in case of error. Pointers are valid until the next rehashing of the hash table.
+ *                    or NULL in case of error. Pointers are valid until the next modification of the hash table.
  * \return Returns HtRetCode
  */
 RZ_API int Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
@@ -342,7 +342,7 @@ RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TY
  * \param value KV value; copy is made according to the options of \p ht
  * \param[out] out_kv Pointer to the inserted KV
  *                    or pointer to the KV that prevented insertion
- *                    or NULL in case of error. Pointers are valid until the next rehashing of the hash table.
+ *                    or NULL in case of error. Pointers are valid until the next modification of the hash table.
  * \return Returns HtRetCode
  */
 RZ_API int Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
@@ -371,7 +371,7 @@ RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TY
  * \param key KV key; copy is made according to the options of \p ht
  * \param value KV value; copy is made according to the options of \p ht
  * \param[out] out_kv Pointer to the inserted/updated KV or NULL in case of error.
- *                    Pointers are valid until the next rehashing of the hash table.
+ *                    Pointers are valid until the next modification of the hash table.
  * \return Returns HtRetCode
  */
 RZ_API int Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
