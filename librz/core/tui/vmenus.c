@@ -251,6 +251,7 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 
 static int level = 0;
 static st64 delta = 0;
+static ut64 column_nlines = 0;
 // output is used to store the result of printCmds
 // and avoid duplicated analysis while j and k is pressed
 static char *output = NULL;
@@ -289,7 +290,16 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 		free(cmdf);
 	}
 	if (output) {
-		// 'h - 2' because we have two new lines in rz_cons_printf
+		// count the lines of output for calculating percentage
+		column_nlines = 0;
+		char *s = output;
+		while (*s) {
+			if (*s == '\n') {
+				column_nlines++;
+			}
+			s++;
+		}
+		// crop and print output, 'h - 2' because we have two new lines in rz_cons_printf
 		char *out;
 		if (printMode == 1) {
 			out = rz_str_ansi_crop(output, 0, 0, w - colpos, h - 2);
@@ -453,6 +463,19 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		rz_warn_if_reached();
 		break;
 	}
+
+	// print percentage at right corner
+	cols = rz_cons_get_size(&h);
+	float p = (float)(delta + h - 2) / (float)column_nlines;
+	if (p > 1) {
+		p = 1;
+	}
+	char *percentage = rz_str_newf("%.1f%%", p * 100);
+	// move to the right corner
+	rz_cons_gotoxy(cols - strlen(percentage) - 1, h);
+	rz_cons_printf("%s", percentage);
+	free(percentage);
+	rz_cons_show_cursor(false);
 	rz_cons_flush();
 	return addr;
 }
@@ -708,11 +731,13 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			}
 			break;
 		case ':': {
+			rz_cons_show_cursor(true);
 			ut64 orig = core->offset;
 			rz_core_seek(core, addr, false);
 			while (rz_core_visual_prompt(core))
 				;
 			rz_core_seek(core, orig, false);
+			rz_cons_show_cursor(false);
 		}
 			continue;
 		case '/':
