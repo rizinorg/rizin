@@ -18,7 +18,7 @@ typedef struct {
 	Pic18Opcode code;
 	ut16 opmin;
 	ut16 opmax;
-	char *name;
+	const char *name;
 	Pic18ArgsKind optype;
 	// and some magical hocus pocus ;)
 } Pic18OpDesc;
@@ -442,6 +442,17 @@ ut8 pic18_intcon(const char *name) {
 	return 0xff;
 }
 
+static const Pic18OpDesc *pic18_get_op_desc(ut16 word) {
+	for (Pic18OpDesc *desc = (Pic18OpDesc *)pic18_ops;
+		desc - pic18_ops < RZ_ARRAY_SIZE(pic18_ops);
+		desc++) {
+		if (desc->opmin == (desc->opmin & word) && desc->opmax == (desc->opmax | word)) {
+			return desc;
+		}
+	}
+	return NULL;
+}
+
 bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 #define check_len(x) \
 	if (len < x) { \
@@ -453,12 +464,11 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 	op->addr = addr;
 	check_len(2);
 	ut16 word = rz_read_le16(buff);
-	Pic18OpDesc *desc = (Pic18OpDesc *)pic18_ops;
-	for (; desc - pic18_ops < RZ_ARRAY_SIZE(pic18_ops) &&
-		(desc->opmin != (desc->opmin & word) ||
-			desc->opmax != (desc->opmax | word));
-		desc++) {
+	const Pic18OpDesc *desc = pic18_get_op_desc(word);
+	if (!desc) {
+		return false;
 	}
+
 	op->code = desc->code;
 	op->mnemonic = desc->name;
 	op->args_kind = desc->optype;
