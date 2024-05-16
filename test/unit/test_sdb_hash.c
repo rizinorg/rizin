@@ -560,7 +560,7 @@ bool test_insert_update_ex(void) {
 
 	for (size_t i = 0; i < 100; ++i) {
 		HtUUKv *tmp = NULL;
-		ht_uu_insert_ex(ht2, i, i + 200, &tmp);
+		ht_uu_insert_ex(ht2, 4 * i, i + 200, &tmp);
 		mu_assert_notnull(tmp, "KV is set after rehashing");
 		mu_assert_eq(tmp->value, i + 200, "KV is valid after rehashing");
 	}
