@@ -4,49 +4,33 @@
 #include "sdb.h"
 
 RZ_API void sdb_ns_lock(Sdb *s, int lock, int depth) {
-	SdbListIter *it;
 	SdbNs *ns;
+	RzListIter *it;
 	s->ns_lock = lock;
 	if (depth) { // handles -1 as infinite
-		ls_foreach (s->ns, it, ns) {
+		rz_list_foreach (s->ns, it, ns) {
 			sdb_ns_lock(ns->sdb, lock, depth - 1);
 		}
 	}
 }
 
-static int in_list(SdbList *list, void *item) {
-	SdbNs *ns;
-	SdbListIter *it;
-	if (list && item)
-		ls_foreach (list, it, ns) {
-			if (item == ns) {
-				return 1;
-			}
-		}
-	return 0;
-}
-
-static void ns_free_exc_list(Sdb *s, SdbList *list) {
-	SdbListIter next;
-	SdbListIter *it;
-	int deleted;
-	SdbNs *ns;
+static void ns_free_exc_list(Sdb *s, RzList /*<void *>*/*list) {
 	if (!list || !s) {
 		return;
 	}
-	// TODO: Implement and use ls_foreach_safe
-	if (in_list(list, s)) {
+	if (rz_list_contains(list, s)) {
 		return;
 	}
-	ls_append(list, s);
-	ls_foreach (s->ns, it, ns) {
-		deleted = 0;
-		next.n = it->n;
-		if (!in_list(list, ns)) {
-			ls_delete(s->ns, it); // free (it)
+	rz_list_append(list, s);
+	SdbNs *ns;
+	RzListIter *it, *it2;
+	rz_list_foreach_safe (s->ns, it, it2, ns) {
+		bool deleted = false;
+		if (!rz_list_contains(list, ns)) {
+			rz_list_delete(s->ns, it); // free (it)
 			free(ns->name);
 			ns->name = NULL;
-			deleted = 1;
+			deleted = true;
 			if (ns->sdb) {
 				if (sdb_free(ns->sdb)) {
 					ns->sdb = NULL;
@@ -54,33 +38,30 @@ static void ns_free_exc_list(Sdb *s, SdbList *list) {
 					ns->name = NULL;
 				}
 			}
-			ls_append(list, ns);
-			ls_append(list, ns->sdb);
+			rz_list_append(list, ns);
+			rz_list_append(list, ns->sdb);
 			ns_free_exc_list(ns->sdb, list);
 			sdb_free(ns->sdb);
 		}
 		if (!deleted) {
 			sdb_free(ns->sdb);
 			s->ns->free = NULL;
-			ls_delete(s->ns, it); // free (it)
+			rz_list_delete(s->ns, it); // free (it)
 		}
 		free(ns);
-		it = &next;
 	}
-	ls_free(s->ns);
+	rz_list_free(s->ns);
 	s->ns = NULL;
 }
 
 RZ_API void sdb_ns_free_all(Sdb *s) {
-	SdbList *list;
 	if (!s) {
 		return;
 	}
-	list = ls_new();
-	list->free = NULL;
+	RzList *list = rz_list_new();
 	ns_free_exc_list(s, list);
-	ls_free(list);
-	ls_free(s->ns);
+	rz_list_free(list);
+	rz_list_free(s->ns);
 	s->ns = NULL;
 }
 
@@ -135,17 +116,17 @@ static void sdb_ns_free(SdbNs *ns) {
 
 RZ_API bool sdb_ns_unset(Sdb *s, const char *name, Sdb *r) {
 	SdbNs *ns;
-	SdbListIter *it;
+	RzListIter *it;
 	if (s && (name || r)) {
-		ls_foreach (s->ns, it, ns) {
+		rz_list_foreach (s->ns, it, ns) {
 			if (name && (!strcmp(name, ns->name))) {
 				sdb_ns_free(ns);
-				ls_delete(s->ns, it);
+				rz_list_delete(s->ns, it);
 				return true;
 			}
 			if (r && ns->sdb == r) {
 				sdb_ns_free(ns);
-				ls_delete(s->ns, it);
+				rz_list_delete(s->ns, it);
 				return true;
 			}
 		}
@@ -155,12 +136,12 @@ RZ_API bool sdb_ns_unset(Sdb *s, const char *name, Sdb *r) {
 
 RZ_API int sdb_ns_set(Sdb *s, const char *name, Sdb *r) {
 	SdbNs *ns;
-	SdbListIter *it;
+	RzListIter *it;
 	ut32 hash = sdb_hash(name);
 	if (!s || !r || !name) {
 		return 0;
 	}
-	ls_foreach (s->ns, it, ns) {
+	rz_list_foreach (s->ns, it, ns) {
 		if (ns->hash == hash) {
 			if (ns->sdb == r) {
 				return 0;
@@ -179,19 +160,19 @@ RZ_API int sdb_ns_set(Sdb *s, const char *name, Sdb *r) {
 	ns->hash = hash;
 	ns->sdb = r;
 	r->refs++;
-	ls_append(s->ns, ns);
+	rz_list_append(s->ns, ns);
 	return 1;
 }
 
 RZ_API Sdb *sdb_ns(Sdb *s, const char *name, int create) {
-	SdbListIter *it;
+	RzListIter *it;
 	SdbNs *ns;
 	ut32 hash;
 	if (!s || !name || !*name) {
 		return NULL;
 	}
 	hash = sdb_hash(name);
-	ls_foreach (s->ns, it, ns) {
+	rz_list_foreach (s->ns, it, ns) {
 		if (ns->hash == hash) {
 			return ns->sdb;
 		}
@@ -206,7 +187,7 @@ RZ_API Sdb *sdb_ns(Sdb *s, const char *name, int create) {
 	if (!ns) {
 		return NULL;
 	}
-	ls_append(s->ns, ns);
+	rz_list_append(s->ns, ns);
 	return ns->sdb;
 }
 
@@ -231,14 +212,14 @@ RZ_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
 	return s;
 }
 
-static void ns_sync(Sdb *s, SdbList *list) {
+static void ns_sync(Sdb *s, RzList /*<SdbNs *>*/ *list) {
 	SdbNs *ns;
-	SdbListIter *it;
-	ls_foreach (s->ns, it, ns) {
-		if (in_list(list, ns)) {
+	RzListIter *it;
+	rz_list_foreach (s->ns, it, ns) {
+		if (rz_list_contains(list, ns)) {
 			continue;
 		}
-		ls_append(list, ns);
+		rz_list_append(list, ns);
 		ns_sync(ns->sdb, list);
 		sdb_sync(ns->sdb);
 	}
@@ -246,8 +227,7 @@ static void ns_sync(Sdb *s, SdbList *list) {
 }
 
 RZ_API void sdb_ns_sync(Sdb *s) {
-	SdbList *list = ls_new();
+	RzList *list = rz_list_new();
 	ns_sync(s, list);
-	list->free = NULL;
-	ls_free(list);
+	rz_list_free(list);
 }

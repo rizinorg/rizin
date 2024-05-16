@@ -137,7 +137,7 @@ static bool foreach_list_cb(void *user, const SdbKv *kv) {
 
 static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns, int encode) {
 	int len;
-	SdbListIter *it;
+	RzListIter *it;
 	char *_out, *out = sb->buf;
 	SdbNs *n;
 	ForeachListUser user = { sb, encode, root };
@@ -149,7 +149,7 @@ static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns,
 	sdb_foreach(ns->sdb, foreach_list_cb, &user);
 
 	/*Pick "sub"-ns*/
-	ls_foreach (ns->sdb->ns, it, n) {
+	rz_list_foreach (ns->sdb->ns, it, n) {
 		len = strlen(n->name);
 		p[0] = '/';
 		if (len + 2 < left) {
@@ -297,9 +297,9 @@ repeat:
 	} else if (*cmd == '*') {
 		if (!strcmp(cmd, "***")) {
 			char root[1024]; // limit namespace length?
-			SdbListIter *it;
+			RzListIter *it;
 			SdbNs *ns;
-			ls_foreach (s->ns, it, ns) {
+			rz_list_foreach (s->ns, it, ns) {
 				int name_len = strlen(ns->name);
 				if (name_len < (long)sizeof(root)) {
 					memcpy(root, ns->name, name_len + 1);
@@ -312,9 +312,9 @@ repeat:
 			}
 			goto fail;
 		} else if (!strcmp(cmd, "**")) {
-			SdbListIter *it;
+			RzListIter *it;
 			SdbNs *ns;
-			ls_foreach (s->ns, it, ns) {
+			rz_list_foreach (s->ns, it, ns) {
 				out_concat(ns->name);
 			}
 			goto fail;

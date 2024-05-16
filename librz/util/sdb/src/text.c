@@ -61,7 +61,7 @@
  *
  */
 
-static int cmp_ns(const void *a, const void *b) {
+static int cmp_ns(const void *a, const void *b, void *user) {
 	const SdbNs *nsa = a;
 	const SdbNs *cia = b;
 	return strcmp(nsa->name, cia->name);
@@ -95,12 +95,12 @@ static int cmp_ns(const void *a, const void *b) {
 		write_(fd, "\\" repl, replsz + 1); \
 		break;
 
-static void write_path(int fd, SdbList *path) {
+static void write_path(int fd, RzList /*<char *>*/ *path) {
 	write_(fd, "/", 1); // always print a /, even if path is empty
-	SdbListIter *it;
+	RzListIter *it;
 	const char *path_token;
 	bool first = true;
-	ls_foreach (path, it, path_token) {
+	rz_list_foreach (path, it, path_token) {
 		if (first) {
 			first = false;
 		} else {
@@ -145,7 +145,7 @@ static bool save_kv_cb(void *user, const SdbKv *kv) {
 	return true;
 }
 
-static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
+static bool text_save(Sdb *s, int fd, bool sort, RzList /*<char *>*/ *path) {
 	// path
 	write_path(fd, path);
 	write_(fd, "\n", 1);
@@ -165,21 +165,21 @@ static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
 	}
 
 	// sub-namespaces
-	SdbList *l = s->ns;
+	RzList *l = s->ns;
 	if (sort) {
-		l = ls_clone(l);
-		ls_sort(l, cmp_ns);
+		l = rz_list_clone(l);
+		rz_list_sort(l, cmp_ns, NULL);
 	}
 	SdbNs *ns;
-	SdbListIter *it;
-	ls_foreach (l, it, ns) {
+	RzListIter *it;
+	rz_list_foreach (l, it, ns) {
 		write_(fd, "\n", 1);
-		ls_push(path, ns->name);
+		rz_list_append(path, ns->name);
 		text_save(ns->sdb, fd, sort, path);
-		ls_pop(path);
+		rz_list_pop(path);
 	}
 	if (l != s->ns) {
-		ls_free(l);
+		rz_list_free(l);
 	}
 
 	return true;
@@ -187,12 +187,12 @@ static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
 #undef write_
 
 RZ_API bool sdb_text_save_fd(Sdb *s, int fd, bool sort) {
-	SdbList *path = ls_new();
+	RzList *path = rz_list_new();
 	if (!path) {
 		return false;
 	}
 	bool r = text_save(s, fd, sort, path);
-	ls_free(path);
+	rz_list_free(path);
 	return r;
 }
 
@@ -223,7 +223,7 @@ typedef struct {
 	size_t line_begin;
 	size_t token_begin; // beginning of the currently processed token in the buffer
 	size_t shift; // amount to shift chars to the left (from unescaping)
-	SdbList /*<size_t>*/ *path;
+	RzList /*<size_t>*/ *path;
 	LoadState state;
 	bool unescape; // whether the prev char was a backslash, i.e. the current one is escaped
 } LoadCtx;
@@ -237,11 +237,11 @@ static void load_process_line(LoadCtx *ctx) {
 	ctx->buf[ctx->pos - ctx->shift] = '\0';
 	switch (ctx->state) {
 	case STATE_PATH: {
-		ls_push(ctx->path, (void *)ctx->token_begin);
-		SdbListIter *it;
+		rz_list_append(ctx->path, (void *)ctx->token_begin);
+		RzListIter *it;
 		void *token_off_tmp;
 		ctx->cur_db = ctx->root_db;
-		ls_foreach (ctx->path, it, token_off_tmp) {
+		rz_list_foreach (ctx->path, it, token_off_tmp) {
 			size_t token_off = (size_t)token_off_tmp;
 			if (!ctx->buf[token_off]) {
 				continue;
@@ -252,7 +252,7 @@ static void load_process_line(LoadCtx *ctx) {
 				break;
 			}
 		}
-		ls_destroy(ctx->path);
+		rz_list_purge(ctx->path);
 		break;
 	}
 	case STATE_VALUE: {
@@ -317,7 +317,7 @@ static void load_process_single_char(LoadCtx *ctx) {
 	} else if (ctx->state == STATE_PATH && c == '/') {
 		// new path token
 		ctx->buf[ctx->pos - ctx->shift] = '\0';
-		ls_push(ctx->path, (void *)ctx->token_begin);
+		rz_list_append(ctx->path, (void *)ctx->token_begin);
 		ctx->token_begin = ctx->pos + 1;
 		ctx->shift = 0;
 	} else if (ctx->state == STATE_KEY && c == '=') {
@@ -347,10 +347,10 @@ static bool load_process_final_line(LoadCtx *ctx) {
 	ctx->bufsz -= ctx->line_begin;
 	ctx->pos = linesz;
 	ctx->token_begin -= ctx->line_begin;
-	SdbListIter *it;
+	RzListIter *it;
 	void *token_off_tmp;
-	ls_foreach (ctx->path, it, token_off_tmp) {
-		it->data = (void *)((size_t)token_off_tmp - ctx->line_begin);
+	rz_list_foreach (ctx->path, it, token_off_tmp) {
+		it->elem = (void *)((size_t)token_off_tmp - ctx->line_begin);
 	}
 	ctx->line_begin = 0;
 	load_process_line(ctx);
@@ -360,7 +360,7 @@ static bool load_process_final_line(LoadCtx *ctx) {
 }
 
 static void load_ctx_fini(LoadCtx *ctx) {
-	ls_free(ctx->path);
+	rz_list_free(ctx->path);
 }
 
 static bool load_ctx_init(LoadCtx *ctx, Sdb *s, char *buf, size_t sz) {
@@ -373,7 +373,7 @@ static bool load_ctx_init(LoadCtx *ctx, Sdb *s, char *buf, size_t sz) {
 	ctx->line_begin = 0;
 	ctx->token_begin = 0;
 	ctx->shift = 0;
-	ctx->path = ls_new();
+	ctx->path = rz_list_new();
 	ctx->state = STATE_NEWLINE;
 	ctx->unescape = false;
 	if (!ctx->buf || !ctx->path) {
