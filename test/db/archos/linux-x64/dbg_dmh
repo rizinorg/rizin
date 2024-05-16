@@ -27,15 +27,15 @@ EOF
 REGEXP_FILTER_OUT=(status=[a-z]+)|(size=0x[a-f0-9]+)
 EXPECT=<<EOF
 status=allocated
-size=0x12010
+size=0x11c10
 status=free
-size=0xed60
+size=0xf160
 status=allocated
-size=0x12010
+size=0x11c10
 status=allocated
 size=0x20
 status=free
-size=0xed40
+size=0xf140
 EOF
 RUN
 
