@@ -363,6 +363,8 @@ typedef struct rz_core_visual_t {
 	int current5format;
 	/* Panels */
 	RzPanelsRoot *panels_root;
+	/* file percentage */
+	float percentage;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
