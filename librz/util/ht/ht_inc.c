@@ -263,7 +263,7 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
  * \brief Insert KV \p kv into hash table \p ht or replace an existing KV with \p kv,
  *        if hash table \p ht already contains a KV with the same key as \p kv
  * \param ht Hash table
- * \param kv KV; shallow copy is made when writing to a hash table
+ * \param kv KV; shallow copy is made when writing to the hash table
  * \param update Update flag; if set to true, replacement of existing KV is allowed
  * \return Returns true if insertion/replacement took place
  */
@@ -278,11 +278,13 @@ RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, b
  * \param kv KV; shallow copy is made when writing to the hash table
  * \param update Update flag; if set to true, replacement of existing KV is allowed
  * \param[out] out_kv Pointer to the inserted/updated KV
- *                    or pointer to the KV that prevented insertion (if \p update set to false)
+ *                    or pointer to the KV that prevented insertion (only if \p update set to false)
  *                    or NULL in case of error. Pointers are valid until the next modification of the hash table.
- * \return Returns HtRetCode
+ * \return Returns HT_RC_INSERTED/HT_RC_UPDATED if KV was inserted/updated;
+ *         returns HT_RC_EXISTING if key \p key already exists (only if \p update set to false);
+ *         returns HT_RC_ERROR if out of memory.
  */
-RZ_API int Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
 
 	HtRetCode rc;
@@ -342,10 +344,12 @@ RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TY
  * \param value KV value; copy is made according to the options of \p ht
  * \param[out] out_kv Pointer to the inserted KV
  *                    or pointer to the KV that prevented insertion
- *                    or NULL in case of error. Pointers are valid until the next modification of the hash table.
- * \return Returns HtRetCode
+ *                    or NULL if out of memory. Pointers are valid until the next modification of the hash table.
+ * \return Returns HT_RC_INSERTED if KV was inserted;
+ *         returns HT_RC_EXISTING if key \p key already exists;
+ *         returns HT_RC_ERROR if out of memory.
  */
-RZ_API int Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+RZ_API HtRetCode Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	rz_return_val_if_fail(ht, HT_RC_ERROR);
 	return insert_update(ht, key, value, false, out_kv);
 }
@@ -372,9 +376,10 @@ RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TY
  * \param value KV value; copy is made according to the options of \p ht
  * \param[out] out_kv Pointer to the inserted/updated KV or NULL in case of error.
  *                    Pointers are valid until the next modification of the hash table.
- * \return Returns HtRetCode
+ * \return Returns HT_RC_INSERTED/HT_RC_UPDATED if KV was inserted/updated;
+ *         returns HT_RC_ERROR if out of memory.
  */
-RZ_API int Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	rz_return_val_if_fail(ht, HT_RC_ERROR);
 	return insert_update(ht, key, value, true, out_kv);
 }
