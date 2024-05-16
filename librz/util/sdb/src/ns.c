@@ -14,7 +14,7 @@ RZ_API void sdb_ns_lock(Sdb *s, int lock, int depth) {
 	}
 }
 
-static void ns_free_exc_list(Sdb *s, RzList /*<void *>*/*list) {
+static void ns_free_exc_list(Sdb *s, RzList /*<void *>*/ *list) {
 	if (!list || !s) {
 		return;
 	}
