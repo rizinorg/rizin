@@ -1491,7 +1491,7 @@ static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<RzBinReloc *>*/
 }
 
 static RZ_OWN RzList /*<LE_reloc *>*/ *le_load_relocs(rz_bin_le_obj_t *bin) {
-	RzList *relocs = rz_list_newf((RzListFree)rz_bin_reloc_free);
+	RzList *relocs = rz_list_newf(NULL);
 	if (!relocs) {
 		return NULL;
 	}
