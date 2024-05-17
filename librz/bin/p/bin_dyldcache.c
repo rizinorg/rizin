@@ -134,7 +134,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
+void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, RzSetU *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0(bf, bin);
 	if (!mach0) {
 		return;
@@ -165,7 +165,7 @@ void symbols_from_bin(RzDyldCache *cache, RzPVector /*<RzBinSymbol *>*/ *ret, Rz
 		sym->size = symbols[i].size;
 		sym->ordinal = i;
 
-		set_u_add(hash, sym->vaddr);
+		rz_set_u_add(hash, sym->vaddr);
 		rz_pvector_push(ret, sym);
 	}
 	MACH0_(mach0_free)
@@ -341,14 +341,14 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzListIter *iter;
 	RzDyldBinImage *bin;
 	rz_list_foreach (cache->bins, iter, bin) {
-		SetU *hash = set_u_new();
+		RzSetU *hash = rz_set_u_new();
 		if (!hash) {
 			rz_pvector_free(ret);
 			return NULL;
 		}
 		symbols_from_bin(cache, ret, bf, bin, hash);
 		rz_dyldcache_symbols_from_locsym(cache, bin, ret, hash);
-		set_u_free(hash);
+		rz_set_u_free(hash);
 	}
 
 	ut64 slide = rz_dyldcache_get_slide(cache);

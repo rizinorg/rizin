@@ -32,7 +32,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	ut64 offset,
 	RZ_BORROW RZ_OUT RZ_NULLABLE ut64 *size,
-	RZ_BORROW RZ_IN RZ_NONNULL SetU *visited);
+	RZ_BORROW RZ_IN RZ_NONNULL RzSetU *visited);
 
 static RZ_OWN RzType *type_parse_from_offset(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
@@ -824,7 +824,7 @@ static RzType *type_parse_from_die_internal(
 	RzBinDwarfDie *die,
 	bool allow_void,
 	RZ_NULLABLE ut64 *size,
-	RZ_NONNULL SetU *visited) {
+	RZ_NONNULL RzSetU *visited) {
 	RzBinDwarfAttr *attr = rz_bin_dwarf_die_get_attr(die, DW_AT_type);
 	if (!attr) {
 		if (!allow_void) {
@@ -869,16 +869,16 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	ut64 offset,
 	RZ_BORROW RZ_OUT RZ_NULLABLE ut64 *size,
-	RZ_BORROW RZ_IN RZ_NONNULL SetU *visited) {
+	RZ_BORROW RZ_IN RZ_NONNULL RzSetU *visited) {
 	RzType *type = ht_up_find(ctx->analysis->debug_info->type_by_offset, offset, NULL);
 	if (type) {
 		return rz_type_clone(type);
 	}
 
-	if (set_u_contains(visited, offset)) {
+	if (rz_set_u_contains(visited, offset)) {
 		return NULL;
 	}
-	set_u_add(visited, offset);
+	rz_set_u_add(visited, offset);
 
 	RzBinDwarfDie *die = ht_up_find(ctx->dw->info->die_by_offset, offset, NULL);
 	if (!die) {
@@ -1020,7 +1020,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	}
 
 end:
-	set_u_delete(visited, offset);
+	rz_set_u_delete(visited, offset);
 	return type;
 }
 
@@ -1028,12 +1028,12 @@ static RZ_OWN RzType *type_parse_from_offset(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	ut64 offset,
 	RZ_BORROW RZ_OUT RZ_NULLABLE ut64 *size) {
-	SetU *visited = set_u_new();
+	RzSetU *visited = rz_set_u_new();
 	if (!visited) {
 		return NULL;
 	}
 	RzType *type = type_parse_from_offset_internal(ctx, offset, size, visited);
-	set_u_free(visited);
+	rz_set_u_free(visited);
 	if (!type) {
 		RZ_LOG_VERBOSE("DWARF Type failed at 0x%" PFMT64x "\n", offset);
 	}
@@ -1683,10 +1683,10 @@ static bool variable_from_die(
 }
 
 static void die_parse(DwContext *ctx, RzBinDwarfDie *die) {
-	if (set_u_contains(ctx->analysis->debug_info->visited, die->offset)) {
+	if (rz_set_u_contains(ctx->analysis->debug_info->visited, die->offset)) {
 		return;
 	}
-	set_u_add(ctx->analysis->debug_info->visited, die->offset);
+	rz_set_u_add(ctx->analysis->debug_info->visited, die->offset);
 	switch (die->tag) {
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:
@@ -2076,7 +2076,7 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	debug_info->callable_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_callable_free);
 	debug_info->base_type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_base_type_free);
 	debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
-	debug_info->visited = set_u_new();
+	debug_info->visited = rz_set_u_new();
 	return debug_info;
 }
 
@@ -2096,6 +2096,6 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	ht_up_free(debuginfo->base_type_by_offset);
 	ht_sp_free(debuginfo->base_types_by_name);
 	rz_bin_dwarf_free(debuginfo->dw);
-	set_u_free(debuginfo->visited);
+	rz_set_u_free(debuginfo->visited);
 	free(debuginfo);
 }

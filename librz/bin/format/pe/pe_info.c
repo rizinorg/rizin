@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2008-2019 inisider <inisider@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util/set.h>
+#include <rz_util/rz_set.h>
 #include "pe.h"
 
 static inline int is_thumb(RzBinPEObj *bin) {
@@ -412,7 +412,7 @@ RzPVector /*<char *>*/ *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
 	PE_(image_delay_import_directory)
 	curr_delay_import_dir;
 
-	SetS *libs = set_s_new(HT_STR_DUP);
+	RzSetS *libs = rz_set_s_new(HT_STR_DUP);
 	if (!libs) {
 		return NULL;
 	}
@@ -434,7 +434,7 @@ RzPVector /*<char *>*/ *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
 			}
 			lib_name[len - 1] = '\0';
 			rz_str_case(lib_name, 0);
-			set_s_add(libs, lib_name);
+			rz_set_s_add(libs, lib_name);
 		}
 	}
 	dir_off = bin->delay_import_directory_offset;
@@ -453,10 +453,10 @@ RzPVector /*<char *>*/ *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
 			}
 			lib_name[len - 1] = '\0';
 			rz_str_case(lib_name, 0);
-			set_s_add(libs, lib_name);
+			rz_set_s_add(libs, lib_name);
 		}
 	}
-	RzPVector *vec = set_s_to_vector(libs);
+	RzPVector *vec = rz_set_s_to_vector(libs);
 	set_s_free(libs);
 	return vec;
 }

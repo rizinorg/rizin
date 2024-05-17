@@ -1279,7 +1279,7 @@ RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache) {
 	return 0;
 }
 
-RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzPVector /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzPVector /*<RzBinSymbol *>*/ *symbols, RzSetU *hash) {
 	RzDyldLocSym *locsym = cache->locsym;
 	if (!locsym) {
 		return;
@@ -1306,10 +1306,10 @@ RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage 
 	ut32 j;
 	for (j = 0; j != bin->nlist_count; j++) {
 		struct MACH0_(nlist) *nlist = &nlists[j];
-		if (set_u_contains(hash, (ut64)nlist->n_value)) {
+		if (rz_set_u_contains(hash, (ut64)nlist->n_value)) {
 			continue;
 		}
-		set_u_add(hash, (ut64)nlist->n_value);
+		rz_set_u_add(hash, (ut64)nlist->n_value);
 		if (nlist->n_strx >= locsym->strings_size) {
 			continue;
 		}
