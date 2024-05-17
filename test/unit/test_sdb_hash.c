@@ -529,6 +529,47 @@ bool test_ht_pu_ops(void) {
 	mu_end;
 }
 
+bool test_insert_update_ex(void) {
+	HtSU *ht = ht_su_new(HT_STR_CONST);
+
+	HtSUKv *inserted_kv = NULL;
+	mu_assert_eq(ht_su_insert_ex(ht, "foobar", 1337, &inserted_kv), HT_RC_INSERTED, "HT_RC_INSERTED");
+	mu_assert_notnull(inserted_kv, "inserted_kv");
+	mu_assert_streq(inserted_kv->key, "foobar", "key");
+	mu_assert_eq(inserted_kv->value, 1337, "value");
+
+	HtSUKv *existing_kv = NULL;
+	mu_assert_eq(ht_su_insert_ex(ht, "foobar", 101, &existing_kv), HT_RC_EXISTING, "HT_RC_EXISTING");
+	mu_assert_notnull(existing_kv, "existing_kv");
+	mu_assert_streq(existing_kv->key, "foobar", "key");
+	mu_assert_eq(existing_kv->value, 1337, "value");
+
+	HtSUKv *inserted_kv2 = NULL;
+	mu_assert_eq(ht_su_update_ex(ht, "deadbeef", 404, &inserted_kv2), HT_RC_INSERTED, "HT_RC_INSERTED");
+	mu_assert_notnull(inserted_kv2, "inserted_kv2");
+	mu_assert_streq(inserted_kv2->key, "deadbeef", "key");
+	mu_assert_eq(inserted_kv2->value, 404, "value");
+
+	HtSUKv *updated_kv = NULL;
+	mu_assert_eq(ht_su_update_ex(ht, "deadbeef", 123456, &updated_kv), HT_RC_UPDATED, "HT_RC_UPDATED");
+	mu_assert_notnull(updated_kv, "updated_kv");
+	mu_assert_streq(updated_kv->key, "deadbeef", "key");
+	mu_assert_eq(updated_kv->value, 123456, "value");
+
+	HtUU *ht2 = ht_uu_new();
+
+	for (size_t i = 0; i < 100; ++i) {
+		HtUUKv *tmp = NULL;
+		ht_uu_insert_ex(ht2, 4 * i, i + 200, &tmp);
+		mu_assert_notnull(tmp, "KV is set after rehashing");
+		mu_assert_eq(tmp->value, i + 200, "KV is valid after rehashing");
+	}
+
+	ht_su_free(ht);
+	ht_uu_free(ht2);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_ht_insert_lookup);
 	mu_run_test(test_ht_update_lookup);
@@ -549,6 +590,7 @@ int all_tests() {
 	mu_run_test(test_foreach_delete);
 	mu_run_test(test_update_key);
 	mu_run_test(test_ht_pu_ops);
+	mu_run_test(test_insert_update_ex);
 	return tests_passed != tests_run;
 }
 
