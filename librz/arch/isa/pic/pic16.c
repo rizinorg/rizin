@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2018 courk <courk@courk.cc>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "pic.h"
 #include "pic16.h"
 
 static const char *pic16_regname(ut32 reg) {
@@ -118,6 +119,7 @@ Pic16Opcode pic16_get_opcode(ut16 instr) {
 	case 0x5: return PIC16_OPCODE_BSF;
 	case 0x6: return PIC16_OPCODE_BTFSC;
 	case 0x7: return PIC16_OPCODE_BTFSS;
+	case 0xd: return PIC16_OPCODE_RETLW;
 	}
 
 	switch (instr >> 9) { // 5 first MSB bits
@@ -143,7 +145,6 @@ Pic16Opcode pic16_get_opcode(ut16 instr) {
 	case 0x39: return PIC16_OPCODE_ANDLW;
 	case 0x3a: return PIC16_OPCODE_XORLW;
 	case 0x30: return PIC16_OPCODE_MOVLW;
-	case 0x34: return PIC16_OPCODE_RETLW;
 	case 0x3c: return PIC16_OPCODE_SUBLW;
 	case 0x3e: return PIC16_OPCODE_ADDLW;
 	case 0x35: return PIC16_OPCODE_LSLF;
@@ -211,10 +212,12 @@ static void analysis_pic16_extract_args(
 		args_val->d =
 			(instr & PIC16_OP_ARGS_1D_7F_MASK_D) >> 7;
 		return;
-	case PIC16_OP_ARGS_1N_6K:
+	case PIC16_OP_ARGS_1N_6K: {
 		args_val->n = (instr & PIC16_OP_ARGS_1N_6K_MASK_N) >> 6;
-		args_val->k = instr & PIC16_OP_ARGS_1N_6K_MASK_K;
+		ut16 k = instr & PIC16_OP_ARGS_1N_6K_MASK_K;
+		args_val->k = SEXT(16, k, 6);
 		return;
+	}
 	case PIC16_OP_ARGS_3B_7F:
 		args_val->b = (instr & PIC16_OP_ARGS_3B_7F_MASK_B) >> 7;
 		args_val->f = instr & PIC16_OP_ARGS_3B_7F_MASK_F;
@@ -225,9 +228,11 @@ static void analysis_pic16_extract_args(
 	case PIC16_OP_ARGS_8K:
 		args_val->k = instr & PIC16_OP_ARGS_8K_MASK_K;
 		return;
-	case PIC16_OP_ARGS_9K:
-		args_val->k = instr & PIC16_OP_ARGS_9K_MASK_K;
+	case PIC16_OP_ARGS_9K: {
+		ut16 k = instr & PIC16_OP_ARGS_9K_MASK_K;
+		args_val->k = SEXT(16, k, 9);
 		return;
+	}
 	case PIC16_OP_ARGS_11K:
 		args_val->k = instr & PIC16_OP_ARGS_11K_MASK_K;
 		return;
@@ -253,6 +258,7 @@ const Pic16OpAsmInfo *pic16_get_op_info(Pic16Opcode opcode) {
 }
 
 #define F pic16_regname(op->args.f)
+#define K (op->args.k)
 
 bool pic16_disasm_op(Pic16Op *op, ut64 addr, const ut8 *b, ut64 l) {
 	if (!b || l < 2) {
@@ -276,7 +282,6 @@ bool pic16_disasm_op(Pic16Op *op, ut64 addr, const ut8 *b, ut64 l) {
 	op->args_tag = op_info->args;
 	analysis_pic16_extract_args(op->instr, op_info->args, &op->args);
 
-	st16 branch;
 	switch (op_info->args) {
 	case PIC16_OP_ARGS_NONE:
 		break;
@@ -297,9 +302,9 @@ bool pic16_disasm_op(Pic16Op *op, ut64 addr, const ut8 *b, ut64 l) {
 		break;
 	case PIC16_OP_ARGS_1N_6K:
 		if (opcode == PIC16_OPCODE_ADDFSR) {
-			rz_strf(op->operands, "FSR%d, 0x%x", op->args.n, op->args.k);
+			rz_strf(op->operands, "FSR%d, %s%#x", op->args.n, K < 0 ? "-" : "", (unsigned)abs(K));
 		} else {
-			rz_strf(op->operands, "0x%x[FSR%d]", op->args.k, op->args.n);
+			rz_strf(op->operands, "%s%#x[FSR%d]", K < 0 ? "-" : "", (unsigned)abs(K), op->args.n);
 		}
 		break;
 	case PIC16_OP_ARGS_3B_7F:
@@ -315,11 +320,7 @@ bool pic16_disasm_op(Pic16Op *op, ut64 addr, const ut8 *b, ut64 l) {
 		rz_strf(op->operands, "0x%x", op->args.k);
 		break;
 	case PIC16_OP_ARGS_9K:
-		branch = op->args.k;
-		branch |= ((branch & 0x100) ? 0xfe00 : 0);
-		rz_strf(op->operands, "%s0x%x",
-			branch < 0 ? "-" : "",
-			(branch < 0 ? -branch : branch));
+		rz_strf(op->operands, "%s%#x", K < 0 ? "-" : "", (unsigned)abs(K));
 		break;
 	case PIC16_OP_ARGS_1N_2M:
 		rz_strf(op->operands, Pic16FsrOps[op->args.m], op->args.n);

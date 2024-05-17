@@ -13,4 +13,6 @@ typedef struct {
 	HtSU *pic18_mm;
 } PicContext;
 
+#define SEXT(B, x, b) ((st##B)(x << (B - b)) >> (B - b))
+
 #endif // RIZIN_PIC_H

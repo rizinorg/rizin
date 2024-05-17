@@ -7,8 +7,6 @@ static inline RzILOpPure *pure_slice(RzILOpPure *x, ut8 l, ut8 r) {
 	return UNSIGNED(r - l, SHIFTR0(x, U16(l)));
 }
 
-#define SEXT(B, x, b) ((st##B)(x << (B - b)) >> (B - b))
-
 #define BITN(x, n) IS_ZERO(UNSIGNED(1, SHIFTR0(x, U32(n))))
 // overflow is not used in status register but just keeping this for future "maybe" use
 #define CHECK_OVERFLOW(x, y, res)     AND(XOR(MSB(x), MSB(res)), XOR(MSB(y), MSB(DUP(res))))

@@ -12,3 +12,35 @@ EXPECT=<<EOF
 Hello from RzIL!
 EOF
 RUN
+
+NAME=Testing the decryption in emulateme 16F13113
+FILE=bins/pic/emulateme.16F13113.elf
+TIMEOUT=30
+CMDS=<<EOF
+e analysis.cpu=pic16
+e asm.cpu=pic16
+e io.cache=1
+om- 1 # cinit
+om- 3 # maintext
+om- 6 # stringtext1
+om- 8 # idataBANK0
+aaa
+wx 00 @ 0xa
+wx 51534d775814515f456c177f6e787f1c0000 @ seckrit # 0x20
+wz "AnyColourYouLike" @ obj.main_key # key 0x7c
+wx 7c @ obj.decrypt_key
+wx 00 @ obj.decrypt_key+1
+wx bd @ 0x801
+# goto 0x80d
+wx 0830 @ 0x82d
+wx 8a00 @ 0x82f
+wx 0d28 @ 0x831
+wx 00 @ 0x9
+wx 00 @ 0x3
+s sym._decrypt
+aezi
+aezsu 0x0000082b
+psb @ seckrit
+EOF
+EXPECT=0x00000020 Hello from RzIL!
+RUN

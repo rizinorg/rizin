@@ -24,7 +24,7 @@ static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 RzAsmPlugin rz_asm_plugin_pic = {
 	.name = "pic",
 	.arch = "pic",
-	.cpus = "pic18,pic16,pic14,pic12,pic10,highend,midrange,baseline",
+	.cpus = "pic18,pic16,pic14,highend,midrange,baseline",
 	.bits = 8,
 	.license = "LGPL3",
 	.desc = "PIC disassembler",

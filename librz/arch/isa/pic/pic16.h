@@ -110,7 +110,7 @@ typedef enum {
 
 typedef struct _pic16_op_args_val {
 	ut16 f;
-	ut16 k;
+	st16 k;
 	ut8 d;
 	ut8 m;
 	ut8 n;

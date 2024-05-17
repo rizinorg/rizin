@@ -134,6 +134,16 @@ static RzILOpEffect *set_register_WF(Pic16ILContext *ctx, RzILOpPure *x) {
 
 typedef RzILOpEffect *(*pic16_il_handler)(Pic16ILContext *, ut16);
 
+RzILOpEffect *reset() {
+	return NOP();
+}
+
+RzILOpEffect *set_z(Pic16ILContext *ctx, RzILOpPure *x) {
+	return SETGb(STATUS, Z, IS_ZERO(x));
+}
+
+#define SETZ(x) set_z(ctx, x)
+
 // HELPER DEFINES & TYPEDEFS
 
 #define IL_LIFTER(op)      pic16_##op##_il_lifter
@@ -164,20 +174,28 @@ RzILOpEffect *pic16_il_set_arithmetic_flags(Pic16ILContext *ctx,
 		cf = CHECK_CARRY(VARL("status_x"), VARL("status_y"), VARL("status_res"));
 		dcf = CHECK_DIGIT_CARRY(VARL("status_x"), VARL("status_y"), VARL("status_res"));
 	} else { // sub
-		cf = CHECK_BORROW(VARL("status_x"), VARL("status_y"), VARL("status_res"));
-		dcf = CHECK_DIGIT_BORROW(VARL("status_x"), VARL("status_y"), VARL("status_res"));
+		cf = CHECK_CARRY(VARL("status_x"), NEG(VARL("status_y")), VARL("status_res"));
+		dcf = CHECK_DIGIT_CARRY(VARL("status_x"), NEG(VARL("status_y")), VARL("status_res"));
 	}
 
 	// get zero flag
 	RzILOpBool *zf = IS_ZERO(VARL("status_res"));
 
-	return SEQ6(
+	return SEQ8(
 		SETL("status_x", x),
 		SETL("status_y", y),
 		SETL("status_res", res),
-		SETGb(STATUS, C, cf),
-		SETGb(STATUS, DC, dcf),
-		SETGb(STATUS, Z, zf));
+		SETL("_c", cf),
+		SETL("_dc", dcf),
+		SETL("_z", zf),
+		SETL("_status", register_i(STATUS)),
+		SETGi(STATUS,
+			bit_set1(
+				bit_set1(
+					bit_set1(VARL("_status"), C, VARL("_c")),
+					DC,
+					VARL("_dc")),
+				Z, VARL("_z"))));
 }
 
 #define SET_STATUS_ADD(ctx, x, y, r) pic16_il_set_arithmetic_flags(ctx, x, y, r, true)
@@ -200,12 +218,11 @@ IL_LIFTER_IMPL(NOP) {
  * Status affected : C, DC, Z
  * */
 IL_LIFTER_IMPL(ADDLW) {
-	RzILOpEffect *add_op = SET_W(ADD(VRW, U8(K)));
-	RzILOpEffect *set_status_op =
-		SET_STATUS_ADD(ctx, VARL("_1"), U8(K), VRW);
-	return SEQ3(SETL("_1", VRW),
-		add_op,
-		set_status_op);
+	return SEQ4(
+		SETL("_w", VRW),
+		SETL("_res", ADD(VARL("_w"), U8(K))),
+		SET_W(VARL("_res")),
+		SET_STATUS_ADD(ctx, VARL("_w"), U8(K), VARL("_res")));
 }
 
 /**
@@ -215,17 +232,18 @@ IL_LIFTER_IMPL(ADDLW) {
  * Status affected : C, DC, Z
  * */
 IL_LIFTER_IMPL(ADDWF) {
-	RzILOpEffect *add_op = SET_WF(ADD(VRW, VRF));
-	RzILOpEffect *set_status_op =
-		SET_STATUS_ADD(ctx, VARL("_1"), VRWF, VRF);
-	return SEQ3(SETL("_1", VRW),
-		add_op,
-		set_status_op);
+	return SEQ5(
+		SETL("_w", VRW),
+		SETL("_f", VRF),
+		SETL("_res", ADD(VARL("_w"), VARL("_f"))),
+		SET_WF(VARL("_res")),
+		SET_STATUS_ADD(ctx, VARL("_w"), VARL("_f"), VARL("_res")));
 }
 
 IL_LIFTER_IMPL(ANDLW) {
-	// TODO: set status Z
-	return SET_W(LOGAND(VRW, U8(K)));
+	return SEQ2(
+		SET_W(LOGAND(VRW, U8(K))),
+		SETZ(VRW));
 }
 
 /**
@@ -235,8 +253,9 @@ IL_LIFTER_IMPL(ANDLW) {
  * Status affected : Z
  * */
 IL_LIFTER_IMPL(ANDWF) {
-	// TODO: set status Z
-	return SET_WF(LOGAND(VRW, U8(K)));
+	return SEQ2(
+		SET_WF(LOGAND(VRW, VRF)),
+		SETZ(VRWF));
 }
 
 IL_LIFTER_IMPL(BCF) {
@@ -298,7 +317,7 @@ IL_LIFTER_IMPL(DECFSZ) {
 }
 
 IL_LIFTER_IMPL(GOTO) {
-	return JMP(LOGOR(U16(K), SHIFTL0(UNSIGNED(16, pure_slice(register_i(PCLATH), 3, 4)), U16(11))));
+	return JMP(LOGOR(U16(K), SHIFTL0(UNSIGNED(16, pure_slice(register_i(PCLATH), 3, 5)), U16(11))));
 }
 
 IL_LIFTER_IMPL(INCF) {
@@ -379,17 +398,20 @@ IL_LIFTER_IMPL(SLEEP) {
 }
 
 IL_LIFTER_IMPL(SUBLW) {
-	return SEQ3(
+	return SEQ4(
 		SETL("_w", VRW),
-		SET_W(SUB(U8(K), VARL("_w"))),
-		SET_STATUS_SUB(ctx, VARL("_w"), U8(K), VRW));
+		SETL("_res", SUB(U8(K), VARL("_w"))),
+		SET_W(VARL("_res")),
+		SET_STATUS_SUB(ctx, U8(K), VARL("_w"), VARL("_res")));
 }
 
 IL_LIFTER_IMPL(SUBWF) {
-	return SEQ3(
-		SETL("_res", SUB(VRF, VRW)),
-		SET_STATUS_SUB(ctx, VRF, VRW, VARL("_res")),
-		SET_WF(VARL("_res")));
+	return SEQ5(
+		SETL("_f", VRF),
+		SETL("_w", VRW),
+		SETL("_res", SUB(VARL("_f"), VARL("_w"))),
+		SET_WF(VARL("_res")),
+		SET_STATUS_SUB(ctx, VARL("_f"), VARL("_w"), VARL("_res")));
 }
 
 IL_LIFTER_IMPL(SWAPF) {
@@ -420,22 +442,11 @@ IL_LIFTER_IMPL(XORLW) {
  * Status affected : Z
  * */
 IL_LIFTER_IMPL(XORWF) {
-	return SEQ2(
-		SET_WF(LOGXOR(VRW, VRF)),
-		SETGb(STATUS, Z, IS_ZERO(VRWF)));
+	return SEQ3(
+		SETL("_res", LOGXOR(VRW, VRF)),
+		SET_WF(VARL("_res")),
+		SETZ(VARL("_res")));
 }
-
-// 14-bit enhanced PIC additional instructions
-
-RzILOpEffect *reset() {
-	return NOP();
-}
-
-RzILOpEffect *set_z(Pic16ILContext *ctx, RzILOpPure *x) {
-	return SETGb(STATUS, Z, IS_ZERO(x));
-}
-
-#define SETZ(x) set_z(ctx, x)
 
 IL_LIFTER_IMPL(RESET) {
 	return SEQ2(
@@ -474,7 +485,7 @@ IL_LIFTER_IMPL(MOVIW_1) {
 }
 IL_LIFTER_IMPL(MOVIW_2) {
 	return SEQ2(
-		SET_W(LOAD(ADD(val_fsrn(N), S16(SEXT(16, K, 6))))),
+		SET_W(LOAD(ADD(val_fsrn(N), S16(K)))),
 		SETZ(VRW));
 }
 
@@ -482,7 +493,7 @@ IL_LIFTER_IMPL(MOVWI_1) {
 	return STORE(val_fsrn(N), VRW);
 }
 IL_LIFTER_IMPL(MOVWI_2) {
-	return STORE(ADD(val_fsrn(N), S16(SEXT(16, K, 6))), VRW);
+	return STORE(ADD(val_fsrn(N), S16(K)), VRW);
 }
 
 IL_LIFTER_IMPL(MOVLB) {
@@ -525,10 +536,10 @@ IL_LIFTER_IMPL(ADDWFC) {
 		SET_WF(VARL("_res")));
 }
 IL_LIFTER_IMPL(ADDFSR) {
-	return set_fsrn(N, ADD(val_fsrn(N), S16(SEXT(8, K, 6))));
+	return set_fsrn(N, ADD(val_fsrn(N), S16(K)));
 }
 IL_LIFTER_IMPL(BRA) {
-	return JMP(U16(PC + SEXT(16, K, 9)));
+	return JMP(U16(PC + K));
 }
 
 #undef K
