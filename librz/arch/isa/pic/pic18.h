@@ -149,11 +149,9 @@ ut8 pic18_intcon(const char *name);
 bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len);
 int pic18_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int l);
 
-int pic18_op(
-	RzAnalysis *analysis, RzAnalysisOp *aop, ut64 addr,
+int pic18_op(RzAnalysis *analysis, RzAnalysisOp *aop, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask);
 char *pic18_get_reg_profile(RzAnalysis *esil);
-RzAnalysisILConfig *pic18_il_config(
-	RZ_NONNULL RzAnalysis *analysis);
+RzAnalysisILConfig *pic18_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 #endif // PIC_PIC18_H

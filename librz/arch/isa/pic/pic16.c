@@ -3,7 +3,7 @@
 
 #include "pic16.h"
 
-const char *pic16_regname(ut32 reg) {
+static const char *pic16_regname(ut32 reg) {
 	const char *Pic16Bank0[] = {
 		"indf0",
 		"indf1",

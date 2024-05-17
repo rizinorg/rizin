@@ -22,7 +22,7 @@ typedef enum {
 	PIC14_OP_ARGS_3B_5F,
 	PIC14_OP_ARGS_8K,
 	PIC14_OP_ARGS_9K
-} PicBaselineOpArgs;
+} Pic14OpArgs;
 
 #define PIC14_OP_ARGS_2F_MASK_F    0x3
 #define PIC14_OP_ARGS_3F_MASK_F    0x7
@@ -37,8 +37,8 @@ typedef enum {
 
 typedef struct _pic14_op {
 	const char *mnemonic;
-	PicBaselineOpArgs args;
-} PicBaselineOpInfo;
+	Pic14OpArgs args;
+} Pic14OpInfo;
 
 typedef enum {
 	PIC14_OPCODE_NOP = 0,
@@ -78,11 +78,11 @@ typedef enum {
 	PIC14_OPCODE_ANDLW,
 	PIC14_OPCODE_XORLW,
 	PIC14_OPCODE_INVALID
-} PicBaselineOpcode;
+} Pic14Opcode;
 
-PicBaselineOpcode pic14_get_opcode(ut16 instr);
-PicBaselineOpArgs pic14_get_opargs(PicBaselineOpcode opcode);
-const PicBaselineOpInfo *pic14_get_op_info(PicBaselineOpcode opcode);
+Pic14Opcode pic14_get_opcode(ut16 instr);
+Pic14OpArgs pic14_get_opargs(Pic14Opcode opcode);
+const Pic14OpInfo *pic14_get_op_info(Pic14Opcode opcode);
 int pic14_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l);
 
 #endif // PIC14_H

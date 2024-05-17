@@ -3,7 +3,7 @@
 
 #include "pic14.h"
 
-static const PicBaselineOpInfo pic14_op_info[PIC14_OPCODE_INVALID] = {
+static const Pic14OpInfo pic14_op_info[PIC14_OPCODE_INVALID] = {
 	{ "nop", PIC14_OP_ARGS_NONE },
 	{ "option", PIC14_OP_ARGS_NONE },
 	{ "sleep", PIC14_OP_ARGS_NONE },
@@ -42,7 +42,7 @@ static const PicBaselineOpInfo pic14_op_info[PIC14_OPCODE_INVALID] = {
 	{ "xorlw", PIC14_OP_ARGS_8K }
 };
 
-PicBaselineOpcode pic14_get_opcode(ut16 instr) {
+Pic14Opcode pic14_get_opcode(ut16 instr) {
 	if (instr & 0xf000) {
 		return PIC14_OPCODE_INVALID;
 	}
@@ -183,14 +183,14 @@ PicBaselineOpcode pic14_get_opcode(ut16 instr) {
 	}
 }
 
-PicBaselineOpArgs pic14_get_opargs(PicBaselineOpcode opcode) {
+Pic14OpArgs pic14_get_opargs(Pic14Opcode opcode) {
 	if (opcode >= PIC14_OPCODE_INVALID) {
 		return -1;
 	}
 	return pic14_op_info[opcode].args;
 }
 
-const PicBaselineOpInfo *pic14_get_op_info(PicBaselineOpcode opcode) {
+const Pic14OpInfo *pic14_get_op_info(Pic14Opcode opcode) {
 	if (opcode >= PIC14_OPCODE_INVALID) {
 		return NULL;
 	}
@@ -209,12 +209,12 @@ int pic14_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	}
 
 	ut16 instr = rz_read_le16(b);
-	PicBaselineOpcode opcode = pic14_get_opcode(instr);
+	Pic14Opcode opcode = pic14_get_opcode(instr);
 	if (opcode == PIC14_OPCODE_INVALID) {
 		EMIT_INVALID
 	}
 
-	const PicBaselineOpInfo *op_info = pic14_get_op_info(opcode);
+	const Pic14OpInfo *op_info = pic14_get_op_info(opcode);
 	if (!op_info) {
 		EMIT_INVALID
 	}

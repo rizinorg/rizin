@@ -128,7 +128,6 @@ typedef struct {
 	ut16 instr;
 } Pic16Op;
 
-const char *pic16_regname_with_bank(ut32 reg, ut8 bank);
 Pic16Opcode pic16_get_opcode(ut16 instr);
 const Pic16OpAsmInfo *pic16_get_op_info(Pic16Opcode opcode);
 bool pic16_disasm_op(Pic16Op *op, ut64 addr, const ut8 *b, ut64 len);
@@ -138,7 +137,6 @@ int pic16_op(
 	RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask);
 char *pic16_get_reg_profile(RzAnalysis *a);
-RzAnalysisILConfig *pic16_il_config(
-	RZ_NONNULL RzAnalysis *analysis);
+RzAnalysisILConfig *pic16_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 #endif // PIC16_H
