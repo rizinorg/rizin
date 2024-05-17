@@ -21,6 +21,12 @@ RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new() {
 	visual->debug = 1;
 	visual->splitPtr = UT64_MAX;
 	visual->insertNibble = -1;
+	// init visual view (Vv) mode
+	visual->view = RZ_NEW0(RzCoreVisualView);
+	visual->view->output = NULL;
+	visual->view->output_mode = -1;
+	visual->view->output_addr = -1;
+	visual->view->selectPanel = false;
 	return visual;
 }
 
@@ -30,7 +36,8 @@ RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual) {
 	}
 	rz_panels_root_free(visual->panels_root);
 	rz_list_free(visual->tabs);
-	free(visual->inputing);
+	free(visual->view->inputing);
+	free(visual->view);
 	free(visual);
 }
 
