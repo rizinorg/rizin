@@ -30,7 +30,7 @@ typedef struct rz_type_parser_t RzTypeParser;
 
 typedef struct rz_type_db_t {
 	void *user;
-	HtSP /*<char *, RzBaseType *>*/ *types; //< name -> base type
+	HtSP /*<char *, RzPVector<RzBaseType *>*>*/ *types; //< name -> vector<base type>
 	HtSS /*<char *, char *>*/ *formats; //< name -> `pf` format
 	HtSP /*<char *, RzCallable *>*/ *callables; //< name -> RzCallable (function type)
 	RzTypeTarget *target;
@@ -38,6 +38,11 @@ typedef struct rz_type_db_t {
 	RzNum *num;
 	RzIOBind iob; // for RzIO in formats
 } RzTypeDB;
+
+
+typedef struct rz_type_scope_t {
+	char *cu_name;
+} RzTypeScope;
 
 // All types in RzTypeDB module are either concrete,
 // "base" types that are types already having the
@@ -114,6 +119,7 @@ typedef struct rz_base_type_t {
 	ut64 size; // size of the whole type in bits
 	RzBaseTypeKind kind;
 	RzTypeAttribute attrs;
+	RzTypeScope scope;
 	union {
 		RzBaseTypeStruct struct_data;
 		RzBaseTypeEnum enum_data;
@@ -267,6 +273,7 @@ RZ_API bool rz_base_type_clone_into(
 	RZ_NONNULL RZ_BORROW RZ_IN RzBaseType *src);
 RZ_API RZ_OWN RzBaseType *rz_base_type_clone(RZ_NULLABLE RZ_BORROW RzBaseType *b);
 RZ_API void rz_type_base_type_free(RzBaseType *type);
+RZ_API bool rz_type_base_type_same_scope(const RzBaseType *a, const RzBaseType *b);
 RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind);
 RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kind);
 
@@ -274,7 +281,7 @@ RZ_API void rz_type_base_enum_case_free(void *e, void *user);
 RZ_API void rz_type_base_struct_member_free(void *e, void *user);
 RZ_API void rz_type_base_union_member_free(void *e, void *user);
 
-RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzPVector /*<RzBaseType*>*/ *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type);
 RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type);

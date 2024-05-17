@@ -27,7 +27,7 @@ RZ_API RzTypeDB *rz_type_db_new() {
 		return NULL;
 	}
 	typedb->target->default_type = strdup("int");
-	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_base_type_free);
+	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
 	if (!typedb->types) {
 		goto rz_type_db_new_fail;
 	}
@@ -82,7 +82,7 @@ RZ_API void rz_type_db_purge(RzTypeDB *typedb) {
 	ht_sp_free(typedb->callables);
 	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
 	ht_sp_free(typedb->types);
-	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_base_type_free);
+	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
 	rz_type_parser_free(typedb->parser);
 	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
 }

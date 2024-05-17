@@ -54,15 +54,15 @@ RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kin
  * \param typedb Type Database instance
  * \param name Name of the RzBaseType
  */
-RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW RzPVector /*<RzBaseType>*/ *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 
 	bool found = false;
-	RzBaseType *btype = ht_sp_find(typedb->types, name, &found);
-	if (!found || !btype) {
+	RzPVector /*<RzBaseType*>*/ *btypes = ht_sp_find(typedb->types, name, &found);
+	if (!found || !btypes) {
 		return NULL;
 	}
-	return btype;
+	return btypes;
 }
 
 /**
@@ -71,9 +71,23 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ
  * \param typedb Type Database instance
  * \param type RzBaseType to remove
  */
-RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
-	rz_return_val_if_fail(typedb && type && type->name, false);
-	ht_sp_delete(typedb->types, type->name);
+RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype && btype->name, false);
+	bool found;
+	RzPVector /*<RzBaseType*>*/ *btypes = ht_sp_find(typedb->types, btype->name, &found);
+	if (!found) {
+		return false;
+	}
+	void **it;
+	size_t idx = 0;
+	rz_pvector_foreach(btypes, it) {
+		RzBaseType *btype_it = *it;
+		if (rz_type_base_type_same_scope(btype_it, btype)) {
+			rz_pvector_remove_at(btypes, idx); // TODO: consider using RzList<RzBaseType*> instead of RzPVector<RzBaseType*> for typedb->types
+			break;
+		}
+		++idx;
+	}
 	return true;
 }
 
@@ -84,9 +98,13 @@ struct list_kind {
 
 static bool base_type_kind_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	struct list_kind *l = user;
-	RzBaseType *btype = (RzBaseType *)v;
-	if (l->kind == btype->kind) {
-		rz_list_append(l->types, btype);
+	RzPVector /*<RzBaseType*>*/ *btypes = (RzPVector*)v;
+	void **it;
+	rz_pvector_foreach(btypes, it) {
+		RzBaseType *btype = *it;
+		if (l->kind == btype->kind) {
+			rz_list_append(l->types, btype);
+		}
 	}
 	return true;
 }
@@ -108,7 +126,13 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types_of_kind(const
 static bool base_type_collect_cb(void *user, RZ_UNUSED const char *k, const void *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	RzList *l = user;
-	rz_list_append(l, (void *)v);
+	RzPVector /*<RzBaseType*>*/ *btypes = (RzPVector*)v;
+	
+	void **it;
+	rz_pvector_foreach(btypes, it) {
+		rz_list_append(l, *it);
+	}
+
 	return true;
 }
 
@@ -163,6 +187,7 @@ RZ_API bool rz_base_type_clone_into(
 	rz_mem_copy(dst, sizeof(RzBaseType), src, sizeof(RzBaseType));
 	dst->name = rz_str_dup(src->name);
 	dst->type = src->type ? rz_type_clone(src->type) : NULL;
+	dst->scope.cu_name = rz_str_dup(src->scope.cu_name);
 
 	switch (src->kind) {
 	case RZ_BASE_TYPE_KIND_ENUM:
@@ -261,17 +286,34 @@ RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
 	return type;
 }
 
+RZ_API bool rz_type_base_type_same_scope(const RzBaseType *a, const RzBaseType *b) {
+	return RZ_STR_EQ(a->scope.cu_name, b->scope.cu_name);
+}
+
 /**
- * \brief Saves RzBaseType into the Types DB
+ * \brief Saves RzBaseType into the Types DB. Frees the type if fails.
  *
  * \param typedb Type Database instance
  * \param type RzBaseType to save
  */
-RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) {
-	rz_return_val_if_fail(typedb && type && type->name, false);
-	if (!ht_sp_insert(typedb->types, type->name, (void *)type)) {
-		rz_type_base_type_free(type);
-		return false;
+RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype && btype->name, false);
+	bool found;
+	RzPVector /*<RzBaseType*>*/ *btypes = ht_sp_find(typedb->types, btype->name, &found);
+	if (!found) {
+		btypes = rz_pvector_new((void (*)(void*))rz_type_base_type_free);
+		ht_sp_insert(typedb->types, btype->name, btypes);
+		rz_pvector_push(btypes, btype);
+	} else {
+		void** it;
+		rz_pvector_foreach(btypes, it) {
+			RzBaseType *btype_it = *it;
+			if (rz_type_base_type_same_scope(btype, btype_it)) { // same name & same scope => btypes are same
+				rz_type_base_type_free(btype);
+				return false;
+			}
+		}
+		rz_pvector_push(btypes, btype);
 	}
 	return true;
 }
@@ -282,12 +324,31 @@ RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) 
  * \param typedb Type Database instance
  * \param type RzBaseType to save
  */
-RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
-	rz_return_val_if_fail(typedb && type && type->name, false);
-	if (!ht_sp_update(typedb->types, type->name, (void *)type)) {
-		rz_type_base_type_free(type);
-		return false;
+RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RZ_OWN RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype && btype->name, false);
+	bool found;
+	RzPVector /*<RzBaseType*>*/ *btypes = ht_sp_find(typedb->types, btype->name, &found);
+	if (!found) {
+		btypes = rz_pvector_new((void (*)(void*))rz_type_base_type_free);
+		ht_sp_insert(typedb->types, btype->name, btypes);
+		rz_pvector_push(btypes, btype);
+	} else {
+		void** it;
+		found = false;
+		rz_pvector_foreach(btypes, it) {
+			RzBaseType *btype_it = *it;
+			if (rz_type_base_type_same_scope(btype, btype_it)) {
+				*(RzBaseType**)it = btype; // replace vector element at this position
+				rz_type_base_type_free(btype_it);
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			rz_pvector_push(btypes, btype);
+		}
 	}
+	// TODO: change doxygen OR free on failure indeed.
 	return true;
 }
 
