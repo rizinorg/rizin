@@ -10,8 +10,8 @@ extern "C" {
 
 #include <rz_types.h>
 #include <rz_vector.h>
+#include <rz_list.h>
 #include "sdbht.h"
-#include "ls.h"
 #include "cdb.h"
 #include "cdb_make.h"
 
@@ -79,7 +79,7 @@ typedef struct sdb_t {
 	char *ndump;
 	int options;
 	int ns_lock; // TODO: merge into options?
-	SdbList *ns;
+	RzList /*<SdbNs *>*/ *ns;
 	ut32 depth;
 } Sdb;
 
@@ -128,7 +128,7 @@ RZ_API int sdb_unset_like(Sdb *s, const char *k);
 
 // diffing
 typedef struct sdb_diff_t {
-	const SdbList *path;
+	const RzList /*<char *>*/ *path;
 	const char *k;
 	const char *v; // if null, k is a namespace
 	bool add;

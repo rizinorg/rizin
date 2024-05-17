@@ -423,9 +423,9 @@ static bool session_sdb_save(Sdb *db, const char *path) {
 	free(filename);
 	sdb_close(db);
 
-	SdbListIter *it;
+	RzListIter *it;
 	SdbNs *ns;
-	ls_foreach (db->ns, it, ns) {
+	rz_list_foreach (db->ns, it, ns) {
 		char *filename = rz_str_newf("%s%s%s.sdb", path, RZ_SYS_DIR, ns->name);
 		sdb_file(ns->sdb, filename);
 		if (!sdb_sync(ns->sdb)) {

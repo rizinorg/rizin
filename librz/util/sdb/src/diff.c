@@ -24,9 +24,9 @@ RZ_API int sdb_diff_format(char *str, int size, const SdbDiff *diff) {
 
 	APPENDF("%c%s ", diff->add ? '+' : '-', diff->v ? "  " : "NS");
 
-	SdbListIter *it;
+	RzListIter *it;
 	const char *component;
-	ls_foreach (diff->path, it, component) {
+	rz_list_foreach (diff->path, it, component) {
 		APPENDF("%s/", component);
 	}
 
@@ -45,7 +45,7 @@ typedef struct sdb_diff_ctx_t {
 	Sdb *b;
 	bool equal;
 	VALUE_EQ_F eq;
-	SdbList *path;
+	RzList /*<char *>*/ *path;
 	SdbDiffCallback cb;
 	void *cb_user;
 } SdbDiffCtx;
@@ -86,13 +86,13 @@ static bool sdb_diff_report_kv_cb(void *user, const SdbKv *kv) {
  * just report everything from sdb to buf with prefix
  */
 static void sdb_diff_report(SdbDiffCtx *ctx, Sdb *sdb, bool add) {
-	SdbListIter *it;
+	RzListIter *it;
 	SdbNs *ns;
-	ls_foreach (sdb->ns, it, ns) {
+	rz_list_foreach (sdb->ns, it, ns) {
 		sdb_diff_report_ns(ctx, ns, add);
-		ls_push(ctx->path, ns->name);
+		rz_list_append(ctx->path, ns->name);
 		sdb_diff_report(ctx, ns->sdb, add);
-		ls_pop(ctx->path);
+		rz_list_pop(ctx->path);
 	}
 	SdbDiffKVCbCtx cb_ctx = { ctx, add };
 	sdb_foreach(sdb, sdb_diff_report_kv_cb, &cb_ctx);
@@ -119,16 +119,16 @@ static bool sdb_diff_kv_cb(void *user, const SdbKv *kv) {
 }
 
 static void sdb_diff_ctx(SdbDiffCtx *ctx) {
-	SdbListIter *it;
+	RzListIter *it;
 	SdbNs *ns;
-	ls_foreach (ctx->a->ns, it, ns) {
+	rz_list_foreach (ctx->a->ns, it, ns) {
 		Sdb *b_ns = sdb_ns(ctx->b, ns->name, false);
 		if (!b_ns) {
 			DIFF(ctx,
 				sdb_diff_report_ns(ctx, ns, false);
-				ls_push(ctx->path, ns->name);
+				rz_list_append(ctx->path, ns->name);
 				sdb_diff_report(ctx, ns->sdb, false);
-				ls_pop(ctx->path);
+				rz_list_pop(ctx->path);
 				, );
 			continue;
 		}
@@ -136,19 +136,19 @@ static void sdb_diff_ctx(SdbDiffCtx *ctx) {
 		Sdb *b = ctx->b;
 		ctx->a = ns->sdb;
 		ctx->b = b_ns;
-		ls_push(ctx->path, ns->name);
+		rz_list_append(ctx->path, ns->name);
 		sdb_diff_ctx(ctx);
-		ls_pop(ctx->path);
+		rz_list_pop(ctx->path);
 		ctx->a = a;
 		ctx->b = b;
 	}
-	ls_foreach (ctx->b->ns, it, ns) {
+	rz_list_foreach (ctx->b->ns, it, ns) {
 		if (!sdb_ns(ctx->a, ns->name, false)) {
 			DIFF(ctx,
 				sdb_diff_report_ns(ctx, ns, true);
-				ls_push(ctx->path, ns->name);
+				rz_list_append(ctx->path, ns->name);
 				sdb_diff_report(ctx, ns->sdb, true);
-				ls_pop(ctx->path);
+				rz_list_pop(ctx->path);
 				, );
 		}
 	}
@@ -172,11 +172,11 @@ RZ_API bool sdb_diff_eq(Sdb *a, Sdb *b, VALUE_EQ_F eq, SdbDiffCallback cb, void 
 	ctx.eq = eq;
 	ctx.cb = cb;
 	ctx.cb_user = cb_user;
-	ctx.path = ls_new();
+	ctx.path = rz_list_new();
 	if (!ctx.path) {
 		return false;
 	}
 	sdb_diff_ctx(&ctx);
-	ls_free(ctx.path);
+	rz_list_free(ctx.path);
 	return ctx.equal;
 }

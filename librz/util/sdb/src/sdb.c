@@ -79,11 +79,7 @@ RZ_API Sdb *sdb_new(const char *path, const char *name, int lock) {
 	s->fdump = -1;
 	s->depth = 0;
 	s->ndump = NULL;
-	s->ns = ls_new(); // TODO: should be NULL
-	if (!s->ns) {
-		goto fail;
-	}
-	s->ns->free = NULL;
+	s->ns = rz_list_new(); // TODO: should be NULL
 	if (!s->ns) {
 		goto fail;
 	}
@@ -170,7 +166,7 @@ static void sdb_fini(Sdb *s, int donull) {
 	s->refs = 0;
 	free(s->name);
 	free(s->path);
-	ls_free(s->ns);
+	rz_list_free(s->ns);
 	sdb_ht_free(s->ht);
 	if (s->fd != -1) {
 		close(s->fd);
@@ -907,9 +903,9 @@ static bool copy_foreach_cb(void *user, const SdbKv *kv) {
 
 RZ_API void sdb_copy(Sdb *src, Sdb *dst) {
 	sdb_foreach(src, copy_foreach_cb, dst);
-	SdbListIter *it;
+	RzListIter *it;
 	SdbNs *ns;
-	ls_foreach (src->ns, it, ns) {
+	rz_list_foreach (src->ns, it, ns) {
 		sdb_copy(ns->sdb, sdb_ns(dst, ns->name, true));
 	}
 }

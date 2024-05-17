@@ -237,7 +237,7 @@ bool test_sdb_copy() {
 	mu_assert_eq(sdb_count(dst), 2, "root count");
 	mu_assert_streq(sdb_const_get(dst, "i am"), "thou", "root entries");
 	mu_assert_streq(sdb_const_get(dst, "thou art"), "i", "root entries");
-	mu_assert_eq(ls_length(dst->ns), 1, "sub ns count");
+	mu_assert_eq(rz_list_length(dst->ns), 1, "sub ns count");
 	Sdb *dst_sub = sdb_ns(dst, "subns", false);
 	mu_assert_notnull(dst_sub, "subns");
 	mu_assert_eq(sdb_count(dst_sub), 2, "sub ns entries count");
