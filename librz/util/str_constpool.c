@@ -16,14 +16,9 @@ RZ_API const char *rz_str_constpool_get(RzStrConstPool *pool, const char *str) {
 	if (!str) {
 		return NULL;
 	}
-	HtSPKv *kv = ht_sp_find_kv(pool->ht, str, NULL);
-	if (kv) {
-		return kv->key;
+	HtSPKv *kv;
+	if (ht_sp_insert_ex(pool->ht, str, NULL, &kv) < 0) {
+		return NULL;
 	}
-	ht_sp_insert(pool->ht, str, NULL);
-	kv = ht_sp_find_kv(pool->ht, str, NULL);
-	if (kv) {
-		return kv->key;
-	}
-	return NULL;
+	return kv->key;
 }

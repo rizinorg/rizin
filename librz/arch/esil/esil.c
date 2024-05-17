@@ -140,11 +140,6 @@ static bool rz_analysis_esil_fire_trap(RzAnalysisEsil *esil, int trap_type, int 
 			}
 		}
 	}
-#if 0
-	RzAnalysisEsilTrapCB icb;
-	icb = (RzAnalysisEsilTrapCB)sdb_ptr_get (esil->traps, i, 0);
-	return icb (esil, trap_type, trap_code);
-#endif
 	return false;
 }
 

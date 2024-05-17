@@ -81,8 +81,21 @@
 #define HT_NULL_VALUE  0
 #endif
 
-#ifndef HT_STR_OPTION_DEFINED
-#define HT_STR_OPTION_DEFINED
+#ifndef HT_ENUM_DEFINED
+#define HT_ENUM_DEFINED
+/**
+ * Return codes for insert/update methods
+ * code < 0 <--> code == HT_RC_ERROR
+ * code >= 0 <--> code != HT_RC_ERROR
+ * code > 0 <--> code == HT_RC_INSERTED || code == HT_RC_UPDATED
+ */
+typedef enum {
+	HT_RC_ERROR = -1, ///< Error (out of memory)
+	HT_RC_EXISTING = 0, ///< Existing KV prevented an insertion
+	HT_RC_INSERTED = 1, ///< New KV was inserted during insert/update operation
+	HT_RC_UPDATED = 2, ///< Existing KV was updated during update operation
+} HtRetCode;
+
 typedef enum {
 	HT_STR_DUP = 0, ///< String is copied when inserting into HT
 	HT_STR_OWN, ///< String ownership is transferred when inserting into HT
@@ -161,8 +174,10 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt_size)(RZ_NONNULL HT_(Options) *opt, ut32 
 RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht);
 // Insert a new Key-Value pair into the hashtable. If the key already exists, returns false.
 RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value);
+RZ_API HtRetCode Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
 RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value);
+RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);
 // Update the key of an element in the hashtable
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key);
 // Delete a key from the hashtable.
@@ -177,3 +192,4 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
 
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
 RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update);
+RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);

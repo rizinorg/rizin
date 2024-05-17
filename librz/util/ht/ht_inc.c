@@ -172,46 +172,64 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 	free(ht);
 }
 
-// Increases the size of the hashtable by 2.
-static void internal_ht_grow(HtName_(Ht) *ht) {
-	HtName_(Ht) *ht2;
-	HtName_(Ht) swap;
+/**
+ * Increases the size of the hashtable by 2.
+ * Tracks change of KV \p tracked position.
+ */
+static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 	ut32 idx = next_idx(ht->prime_idx);
 	ut32 sz = compute_size(idx, ht->size * 2);
-	ut32 i;
 
-	ht2 = internal_ht_new(sz, idx, &ht->opt);
+	HtName_(Ht) *ht2 = internal_ht_new(sz, idx, &ht->opt);
 	if (!ht2) {
 		// we can't grow the ht anymore. Never mind, we'll be slower,
 		// but everything can continue to work
-		return;
+		return tracked;
 	}
 
-	for (i = 0; i < ht->size; i++) {
+	for (ut32 i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
 		HT_(Kv) *kv;
 		ut32 j;
 
 		BUCKET_FOREACH(ht, bt, j, kv) {
-			Ht_(insert_kv)(ht2, kv, false);
+			if (kv == tracked) {
+				continue;
+			}
+			if (Ht_(insert_kv_ex)(ht2, kv, false, NULL) < 0) {
+				ht2->opt.finiKV = NULL;
+				Ht_(free)(ht2);
+				return tracked;
+			}
 		}
 	}
+	if (Ht_(insert_kv_ex)(ht2, tracked, false, &tracked) < 0) {
+		ht2->opt.finiKV = NULL;
+		Ht_(free)(ht2);
+		return tracked;
+	}
+
 	// And now swap the internals.
-	swap = *ht;
+	HtName_(Ht) swap = *ht;
 	*ht = *ht2;
 	*ht2 = swap;
 
 	ht2->opt.finiKV = NULL;
 	Ht_(free)(ht2);
+	return tracked;
 }
 
-static void check_growing(HtName_(Ht) *ht) {
+static HT_(Kv) *check_growing(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 	if (ht->count >= LOAD_FACTOR * ht->size) {
-		internal_ht_grow(ht);
+		return internal_ht_grow(ht, tracked);
 	}
+	return tracked;
 }
 
-static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_len, bool update) {
+/**
+ * \brief Get an existing KV with key \p key or allocate a new KV otherwise
+ */
+static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool update, RZ_NONNULL HtRetCode *code) {
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
 	HT_(Kv) *kvtmp;
 	ut32 j;
@@ -220,66 +238,150 @@ static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_le
 		if (is_kv_equal(ht, key, key_len, kvtmp)) {
 			if (update) {
 				fini_kv_pair(ht, kvtmp);
-				return kvtmp;
+				*code = HT_RC_UPDATED;
+			} else {
+				*code = HT_RC_EXISTING;
 			}
-			return NULL;
+			return kvtmp;
 		}
 	}
 
 	HT_(Kv) *newkvarr = realloc(bt->arr, (bt->count + 1) * ht->opt.elem_size);
 	if (!newkvarr) {
+		*code = HT_RC_ERROR;
 		return NULL;
 	}
 
 	bt->arr = newkvarr;
 	bt->count++;
 	ht->count++;
+	*code = HT_RC_INSERTED;
 	return kv_at(ht, bt, bt->count - 1);
 }
 
+/**
+ * \brief Insert KV \p kv into hash table \p ht or replace an existing KV with \p kv,
+ *        if hash table \p ht already contains a KV with the same key as \p kv
+ * \param ht Hash table
+ * \param kv KV; shallow copy is made when writing to the hash table
+ * \param update Update flag; if set to true, replacement of existing KV is allowed
+ * \return Returns true if insertion/replacement took place
+ */
 RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update) {
-	rz_return_val_if_fail(ht && kv, false);
-	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update);
-	if (!kv_dst) {
-		return false;
-	}
-
-	memcpy(kv_dst, kv, ht->opt.elem_size);
-	check_growing(ht);
-	return true;
+	return Ht_(insert_kv_ex)(ht, kv, update, NULL) > 0;
 }
 
-static bool insert_update(HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update) {
-	ut32 key_len = calcsize_key(ht, key);
-	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, update);
-	if (!kv_dst) {
-		return false;
-	}
+/**
+ * \brief Insert KV \p kv into hash table \p ht or replace an existing KV with \p kv,
+ *        if hash table \p ht already contains a KV with the same key as \p kv
+ * \param ht Hash table
+ * \param kv KV; shallow copy is made when writing to the hash table
+ * \param update Update flag; if set to true, replacement of existing KV is allowed
+ * \param[out] out_kv Pointer to the inserted/updated KV
+ *                    or pointer to the KV that prevented insertion (only if \p update set to false)
+ *                    or NULL in case of error. Pointers are valid until the next modification of the hash table.
+ * \return Returns HT_RC_INSERTED/HT_RC_UPDATED if KV was inserted/updated;
+ *         returns HT_RC_EXISTING if key \p key already exists (only if \p update set to false);
+ *         returns HT_RC_ERROR if out of memory.
+ */
+RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+	rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
 
+	HtRetCode rc;
+	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update, &rc);
+	if (rc <= 0) {
+		if (out_kv) {
+			*out_kv = kv_dst;
+		}
+		return rc;
+	}
+	memcpy(kv_dst, kv, ht->opt.elem_size);
+	kv_dst = check_growing(ht, kv_dst);
+	if (out_kv) {
+		*out_kv = kv_dst;
+	}
+	return rc;
+}
+
+static int insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+	ut32 key_len = calcsize_key(ht, key);
+	HtRetCode rc;
+	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, update, &rc);
+	if (rc <= 0) {
+		if (out_kv) {
+			*out_kv = kv_dst;
+		}
+		return rc;
+	}
 	kv_dst->key = dupkey(ht, key);
 	kv_dst->key_len = key_len;
 	kv_dst->value = dupval(ht, value);
 	kv_dst->value_len = calcsize_val(ht, value);
-	check_growing(ht);
-	return true;
+	kv_dst = check_growing(ht, kv_dst);
+	if (out_kv) {
+		*out_kv = kv_dst;
+	}
+	return rc;
 }
 
 /**
- * Inserts the key value pair \p key, \p value into the hashtable \p ht.
- * Doesn't allow for "update" of the value.
+ * \brief Insert the key value pair \p key, \p value into the hash table \p ht
+ * \param ht Hash table
+ * \param key KV key; copy is made according to the options of \p ht
+ * \param value KV value; copy is made according to the options of \p ht
+ * \return Returns true if insertion took place;
+ *         returns false if out of memory or if key \p key already exists.
  */
 RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
 	rz_return_val_if_fail(ht, false);
-	return insert_update(ht, key, value, false);
+	return insert_update(ht, key, value, false, NULL) > 0;
 }
 
 /**
- * Inserts the key value pair \p key, \p value into the hashtable \p ht.
- * Does allow for "update" of the value.
+ * \brief Insert the key value pair \p key, \p value into the hash table \p ht
+ * \param ht Hash table
+ * \param key KV key; copy is made according to the options of \p ht
+ * \param value KV value; copy is made according to the options of \p ht
+ * \param[out] out_kv Pointer to the inserted KV
+ *                    or pointer to the KV that prevented insertion
+ *                    or NULL if out of memory. Pointers are valid until the next modification of the hash table.
+ * \return Returns HT_RC_INSERTED if KV was inserted;
+ *         returns HT_RC_EXISTING if key \p key already exists;
+ *         returns HT_RC_ERROR if out of memory.
+ */
+RZ_API HtRetCode Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+	rz_return_val_if_fail(ht, HT_RC_ERROR);
+	return insert_update(ht, key, value, false, out_kv);
+}
+
+/**
+ * \brief Insert the key value pair \p key, \p value into the hash table \p ht
+ *        or update value of current KV if key \p key already exists
+ * \param ht Hash table
+ * \param key KV key; copy is made according to the options of \p ht
+ * \param value KV value; copy is made according to the options of \p ht
+ * \return Returns true if insertion/update took place;
+ *         returns false if out of memory.
  */
 RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
 	rz_return_val_if_fail(ht, false);
-	return insert_update(ht, key, value, true);
+	return insert_update(ht, key, value, true, NULL) > 0;
+}
+
+/**
+ * \brief Insert the key value pair \p key, \p value into the hash table \p ht
+ *        or update value of current KV if key \p key already exists
+ * \param ht Hash table
+ * \param key KV key; copy is made according to the options of \p ht
+ * \param value KV value; copy is made according to the options of \p ht
+ * \param[out] out_kv Pointer to the inserted/updated KV or NULL in case of error.
+ *                    Pointers are valid until the next modification of the hash table.
+ * \return Returns HT_RC_INSERTED/HT_RC_UPDATED if KV was inserted/updated;
+ *         returns HT_RC_ERROR if out of memory.
+ */
+RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+	rz_return_val_if_fail(ht, HT_RC_ERROR);
+	return insert_update(ht, key, value, true, out_kv);
 }
 
 /**
@@ -295,7 +397,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 	}
 
 	// Associate the existing value with new_key
-	bool inserted = insert_update(ht, new_key, value, false);
+	bool inserted = insert_update(ht, new_key, value, false, NULL) > 0;
 	if (!inserted) {
 		return false;
 	}

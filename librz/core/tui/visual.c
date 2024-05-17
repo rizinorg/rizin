@@ -21,6 +21,12 @@ RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new() {
 	visual->debug = 1;
 	visual->splitPtr = UT64_MAX;
 	visual->insertNibble = -1;
+	// init visual view (Vv) mode
+	visual->view = RZ_NEW0(RzCoreVisualView);
+	visual->view->output = NULL;
+	visual->view->output_mode = -1;
+	visual->view->output_addr = -1;
+	visual->view->selectPanel = false;
 	return visual;
 }
 
@@ -30,7 +36,8 @@ RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual) {
 	}
 	rz_panels_root_free(visual->panels_root);
 	rz_list_free(visual->tabs);
-	free(visual->inputing);
+	free(visual->view->inputing);
+	free(visual->view);
 	free(visual);
 }
 
@@ -3503,6 +3510,113 @@ RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core) {
 	rz_cons_flush();
 }
 
+static bool is_in_symbol_range(ut64 sym_addr, ut64 sym_size, ut64 addr) {
+	if (addr == sym_addr && sym_size == 0) {
+		return true;
+	}
+	if (sym_size == 0) {
+		return false;
+	}
+	return RZ_BETWEEN(sym_addr, addr, sym_addr + sym_size - 1);
+}
+
+/**
+ * \brief The percentage of the mapped memory region returned for the given address.
+ *
+ * \param core RzCore
+ * \param addr The given address
+ * \return percentage of mapped memory region, or -1 if not in mapped memory or error happens
+ */
+static float get_percentage_of_mapped_region(RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core, -1);
+
+	float percentage = -1;
+	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
+	RzPVector *sections = rz_bin_object_get_sections(bin_obj);
+	if (!sections) {
+		return -1;
+	}
+
+	RzBinSection *section;
+	void **iter;
+	rz_pvector_foreach (sections, iter) {
+		section = *iter;
+		if (is_in_symbol_range(section->vaddr, section->vsize, addr)) {
+			// calculate the percentage
+			percentage = (addr - section->vaddr) / (float)section->vsize;
+			break;
+		}
+	}
+
+	rz_pvector_free(sections);
+	return percentage;
+}
+
+/**
+ * \brief Get the address of the data of the row at the bottom of the screen
+ * for calculating file percentage
+ *
+ * \param core RzCore
+ * \return captured address
+ */
+static RZ_OWN char *screen_bottom_address(RzCore *core) {
+	rz_return_val_if_fail(core, NULL);
+
+	char *rtn = NULL;
+	// get the line at the bottom of the screen
+	if (!core->cons->lastline) {
+		return NULL;
+	}
+	char *output = strdup(core->cons->lastline);
+	size_t line_count = 0, *line_index = rz_str_split_lines(output, &line_count);
+	int rows;
+	rz_cons_get_size(&rows);
+	if (!line_index || rows > line_count) {
+		goto exit1;
+	}
+	char *lastline = output + line_index[rows - 1];
+
+	// capture the address from the line at the bottom
+	char *regex_str = ((RzCoreVisual *)core->visual)->printidx == RZ_CORE_VISUAL_MODE_CD ? "[0-9abcdefABCDEF]+" : "0x[0-9ABCDEFabcdef]+";
+	RzRegex *re = rz_regex_new(regex_str, RZ_REGEX_EXTENDED, 0);
+	RzPVector *matches = rz_regex_match_all_not_grouped(re, lastline, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	if (!matches || rz_pvector_empty(matches)) {
+		goto exit;
+	}
+
+	RzRegexMatch *match = rz_pvector_at(matches, 0);
+	rtn = rz_str_ndup(lastline + match->start, match->len);
+
+	// filter address in command, xref like ; CALL XREF from entry.fini0 @ 0x6b67
+	char *comment_signs[] = { "@", ";" };
+	char *addr_pos = strstr(lastline, rtn);
+	for (ut32 i = 0; i < sizeof(comment_signs) / sizeof(comment_signs[0]); i++) {
+		const char *sign_pos = rz_str_strchr(lastline, comment_signs[i]);
+		if (sign_pos) {
+			if (addr_pos && addr_pos > sign_pos) {
+				rtn = NULL;
+			}
+		}
+	}
+
+	// in case the address doesn't have 0x prefix (RZ_CORE_VISUAL_MODE_CD)
+	if (rtn && !rz_str_startswith_icase(rtn, "0x")) {
+		ut32 addr_len = strlen(rtn), prefix_len = strlen("0x");
+		rtn = realloc(rtn, prefix_len + addr_len + 1);
+		memmove(rtn + 2, rtn, addr_len);
+		rtn[0] = '0';
+		rtn[1] = 'x';
+	}
+
+exit:
+	rz_pvector_free(matches);
+	rz_regex_free(re);
+exit1:
+	free(line_index);
+	free(output);
+	return rtn;
+}
+
 static void visual_refresh(RzCore *core) {
 	static ut64 oseek = UT64_MAX;
 	const char *vi, *vcmd, *cmd_str;
@@ -3606,6 +3720,14 @@ static void visual_refresh(RzCore *core) {
 	}
 #endif
 
+	// get the address in the line at the bottom of the screen to calculate the percentage
+	char *bottom_addr = screen_bottom_address(core);
+	if (bottom_addr) {
+		ut64 addr = rz_num_math(NULL, bottom_addr);
+		visual->percentage = get_percentage_of_mapped_region(core, addr);
+		free(bottom_addr);
+	}
+
 	/* this is why there's flickering */
 	if (core->print->vflush) {
 		rz_cons_visual_flush();
@@ -3623,6 +3745,15 @@ static void visual_refresh(RzCore *core) {
 
 	if (rz_config_get_i(core->config, "scr.scrollbar")) {
 		rz_core_visual_scrollbar(core);
+	}
+
+	int h, cols = rz_cons_get_size(&h);
+	if (visual->percentage >= 0) {
+		char *percentage_str = rz_str_newf("%.1f%%", visual->percentage * 100);
+		rz_cons_gotoxy(cols - strlen(percentage_str) - 1, h);
+		rz_cons_printf("%s", percentage_str);
+		rz_cons_flush();
+		free(percentage_str);
 	}
 }
 
@@ -3831,6 +3962,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 
 	rz_cons_enable_mouse(false);
 	if (visual->color) {
+
 		rz_cons_strcat(Color_RESET);
 	}
 	rz_config_set_i(core->config, "scr.color", visual->color);

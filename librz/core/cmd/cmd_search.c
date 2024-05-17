@@ -2455,7 +2455,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 static void rop_kuery(void *data, const char *input, PJ *pj) {
 	RzCore *core = (RzCore *)data;
 	Sdb *db_rop = sdb_ns(core->sdb, "rop", false);
-	SdbListIter *it;
+	RzListIter *it;
 	void **items_iter;
 	SdbNs *ns;
 	char *out;
@@ -2467,7 +2467,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 
 	switch (*input) {
 	case 'q':
-		ls_foreach (db_rop->ns, it, ns) {
+		rz_list_foreach (db_rop->ns, it, ns) {
 			RzPVector *items = sdb_get_items(ns->sdb, false);
 			rz_pvector_foreach (items, items_iter) {
 				SdbKv *kv = *items_iter;
@@ -2479,7 +2479,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 	case 'j':
 		pj_o(pj);
 		pj_ka(pj, "gadgets");
-		ls_foreach (db_rop->ns, it, ns) {
+		rz_list_foreach (db_rop->ns, it, ns) {
 			RzPVector *items = sdb_get_items(ns->sdb, false);
 			rz_pvector_foreach (items, items_iter) {
 				SdbKv *kv = *items_iter;

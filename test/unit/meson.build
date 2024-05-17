@@ -81,7 +81,6 @@ if get_option('enable_tests')
     'sdb_array',
     'sdb_diff',
     'sdb_hash',
-    'sdb_ls',
     'sdb_sdb',
     'sdb_util',
     'serialize_analysis',
