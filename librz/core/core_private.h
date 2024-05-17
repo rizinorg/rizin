@@ -334,12 +334,28 @@ typedef struct rz_panels_root_t {
 	bool from_visual;
 } RzPanelsRoot;
 
-typedef struct rz_core_visual_t {
-	RzList /*<RzCoreVisualTab *>*/ *tabs;
-	int tab;
+typedef struct rz_core_visual_view_t {
+	int level;
+	st64 delta;
+	ut64 column_nlines;
+	// output is used to store the result of printCmds
+	// and avoid duplicated analysis while j and k is pressed
+	char *output;
+	// output_mode labels which printCmds' result is stored in output
+	int output_mode;
+	int output_addr;
+	int option;
+	int variable_option;
+	int printMode;
+	bool selectPanel;
 	bool hide_legend;
 	bool is_inputing; // whether the user is inputing
 	char *inputing; // for filter on the go in Vv mode
+} RzCoreVisualView;
+
+typedef struct rz_core_visual_t {
+	RzList /*<RzCoreVisualTab *>*/ *tabs;
+	int tab;
 	RzCoreVisualMode printidx;
 	/* TODO: Reorganize */
 	int obs;
@@ -365,6 +381,8 @@ typedef struct rz_core_visual_t {
 	RzPanelsRoot *panels_root;
 	/* file percentage */
 	float percentage;
+	/* visual view */
+	RzCoreVisualView *view;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
