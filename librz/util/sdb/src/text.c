@@ -223,7 +223,7 @@ typedef struct {
 	size_t line_begin;
 	size_t token_begin; // beginning of the currently processed token in the buffer
 	size_t shift; // amount to shift chars to the left (from unescaping)
-	RzList /*<size_t>*/ *path;
+	RzList /*<void*>*/ *path;
 	LoadState state;
 	bool unescape; // whether the prev char was a backslash, i.e. the current one is escaped
 } LoadCtx;
