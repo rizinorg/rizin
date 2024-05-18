@@ -10,6 +10,7 @@
 #include <rz_util/ht_sp.h>
 #include <rz_util/ht_su.h>
 #include <rz_util/ht_ss.h>
+#include <rz_util/set.h>
 #include <rz_util/rz_str.h>
 
 typedef struct _test_struct {
@@ -688,6 +689,126 @@ bool test_ht_ss_foreach(void) {
 	mu_end;
 }
 
+bool test_set_u(void) {
+	SetU *set_u = set_u_new();
+	set_u_add(set_u, 0x5050505);
+	set_u_add(set_u, 0x5050505);
+	set_u_add(set_u, 0x6060606);
+	set_u_add(set_u, 0x7070707);
+	set_u_add(set_u, 0x7070707);
+	mu_assert_eq(set_u_size(set_u), 3, "Length wrong.");
+	mu_assert_true(set_u_contains(set_u, 0x5050505), "Value was not added.");
+	mu_assert_true(set_u_contains(set_u, 0x6060606), "Value was not added.");
+	mu_assert_true(set_u_contains(set_u, 0x7070707), "Value was not added.");
+
+	set_u_delete(set_u, 0x7070707);
+	mu_assert_false(set_u_contains(set_u, 0x7070707), "Value was not deleted.");
+	mu_assert_eq(set_u_size(set_u), 2, "Length wrong.");
+
+	// Double delete
+	set_u_delete(set_u, 0x7070707);
+	mu_assert_eq(set_u_size(set_u), 2, "Length wrong.");
+
+	size_t x = 0;
+	SetUIter it;
+	set_u_foreach (set_u, it) {
+		x++;
+		bool matches = it.kv->key == 0x5050505 || it.kv->key == 0x6060606;
+		mu_assert_true(matches, "Set contained ill-formed value.");
+	}
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+
+	set_u_delete(set_u, 0x6060606);
+	mu_assert_eq(set_u_size(set_u), 1, "Length wrong.");
+	set_u_delete(set_u, 0x5050505);
+	mu_assert_eq(set_u_size(set_u), 0, "Length wrong.");
+
+	set_u_foreach (set_u, it) {
+		mu_assert("Should not be reached.", false);
+	}
+	set_u_add(set_u, 0x53e0);
+	set_u_add(set_u, 0x53bc);
+	x = 0;
+	set_u_foreach (set_u, it) {
+		x++;
+	}
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+	set_u_delete(set_u, 0x53e0);
+	set_u_delete(set_u, 0x53bc);
+
+	set_u_add(set_u, 0);
+	set_u_add(set_u, 1);
+	set_u_add(set_u, 2);
+	set_u_add(set_u, 3);
+
+	// Add an address as key which is far away from the heap addresses.
+	set_u_add(set_u, 100000000);
+	mu_assert_true(set_u_contains(set_u, 100000000), "Not contained.");
+	mu_assert_eq(set_u->count, 5, "count");
+	mu_assert_false(set_u_contains(set_u, 6), "should not be here.");
+
+	x = 0;
+	set_u_foreach (set_u, it) {
+		x++;
+	}
+	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
+
+	set_u_free(set_u);
+	mu_end;
+}
+
+
+bool test_set_s(void) {
+	SetS *set_s = set_s_new(HT_STR_CONST);
+	set_s_add(set_s, "0x5050505");
+	set_s_add(set_s, "0x5050505");
+	set_s_add(set_s, "0x6060606");
+	set_s_add(set_s, "0x7070707");
+	set_s_add(set_s, "0x7070707");
+	mu_assert_eq(set_s_size(set_s), 3, "Length wrong.");
+	mu_assert_true(set_s_contains(set_s, "0x5050505"), "Value was not added.");
+	mu_assert_true(set_s_contains(set_s, "0x6060606"), "Value was not added.");
+	mu_assert_true(set_s_contains(set_s, "0x7070707"), "Value was not added.");
+
+	set_s_delete(set_s, "0x7070707");
+	mu_assert_false(set_s_contains(set_s, "0x7070707"), "Value was not deleted.");
+	mu_assert_eq(set_s_size(set_s), 2, "Length wrong.");
+
+	// Double delete
+	set_s_delete(set_s, "0x7070707");
+	mu_assert_eq(set_s_size(set_s), 2, "Length wrong.");
+
+	size_t x = 0;
+	SetSIter it;
+	set_s_foreach (set_s, it) {
+		x++;
+		bool matches = RZ_STR_EQ(it.kv->key, "0x5050505") || RZ_STR_EQ(it.kv->key, "0x6060606");
+		mu_assert_true(matches, "Set contained ill-formed value.");
+	}
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+
+	set_s_delete(set_s, "0x6060606");
+	mu_assert_eq(set_s_size(set_s), 1, "Length wrong.");
+	set_s_delete(set_s, "0x5050505");
+	mu_assert_eq(set_s_size(set_s), 0, "Length wrong.");
+
+	set_s_foreach (set_s, it) {
+		mu_assert("Should not be reached.", false);
+	}
+	set_s_add(set_s, "0x53e0");
+	set_s_add(set_s, "0x53bc");
+	x = 0;
+	set_s_foreach (set_s, it) {
+		x++;
+	}
+	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
+	set_s_delete(set_s, "0x53e0");
+	set_s_delete(set_s, "0x53bc");
+
+	set_s_free(set_s);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_ht_insert_lookup);
 	mu_run_test(test_ht_update_lookup);
@@ -712,6 +833,8 @@ int all_tests() {
 	mu_run_test(test_ht_size);
 	mu_run_test(test_ht_uu_foreach);
 	mu_run_test(test_ht_ss_foreach);
+	mu_run_test(test_set_u);
+	mu_run_test(test_set_s);
 	return tests_passed != tests_run;
 }
 

@@ -22,7 +22,7 @@ AlignConsecutiveMacros: true
 AlignTrailingComments: false
 AlignOperands: false
 Cpp11BracedListStyle: false
-ForEachMacros: ['rz_list_foreach', 'rz_list_foreach_safe', 'rz_vector_foreach', 'rz_vector_foreach_prev', 'rz_vector_enumerate', 'rz_pvector_foreach', 'rz_pvector_enumerate', 'rz_rbtree_foreach', 'rz_interval_tree_foreach', 'rz_skiplist_foreach', 'graph_foreach_anode']
+ForEachMacros: ['rz_list_foreach', 'rz_list_foreach_safe', 'rz_vector_foreach', 'rz_vector_foreach_prev', 'rz_vector_enumerate', 'rz_pvector_foreach', 'rz_pvector_enumerate', 'rz_rbtree_foreach', 'rz_interval_tree_foreach', 'rz_skiplist_foreach', 'graph_foreach_anode', 'set_s_foreach', 'set_u_foreach', 'ht_foreach']
 SortIncludes: false
 RequiresClausePosition: SingleLine
 TypenameMacros: ['HT_', 'Ht_', 'HtName_']
