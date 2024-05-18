@@ -1858,7 +1858,7 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 
 	patch_relocs(bf, bin);
 
-	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free))) {
 		return NULL;
 	}
 

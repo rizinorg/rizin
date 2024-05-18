@@ -47,7 +47,7 @@ RZ_IPI void rz_bin_set_and_process_relocs(RzBinFile *bf, RzBinObject *o, const R
 		process_handle_reloc(element, o, demangler, flags, imp_cb, sym_cb);
 	}
 
-	o->relocs = rz_bin_reloc_storage_new(relocs, plugin);
+	o->relocs = rz_bin_reloc_storage_new(relocs);
 }
 
 RZ_IPI void rz_bin_demangle_relocs_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {

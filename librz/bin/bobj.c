@@ -95,7 +95,7 @@ static int reloc_target_cmp(const void *a, const void *b, void *user) {
 
 #undef CMP_CHECK
 
-RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs, RzBinPlugin *plugin) {
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs) {
 	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
 	if (!ret) {
 		return NULL;
@@ -115,6 +115,7 @@ RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinRelo
 			rz_pvector_push(&target_sorter, reloc);
 		}
 	}
+	ret->relocs_free = relocs->v.free_user;
 	relocs->v.free = NULL; // ownership of relocs transferred
 	rz_pvector_free(relocs);
 	rz_pvector_sort(&sorter, reloc_cmp, NULL);
@@ -125,14 +126,6 @@ RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinRelo
 	ret->target_relocs_count = rz_pvector_len(&target_sorter);
 	ret->target_relocs = (RzBinReloc **)rz_pvector_flush(&target_sorter);
 	rz_pvector_fini(&target_sorter);
-	if (plugin) {
-		if (!strcmp(plugin->name, "coff")) {
-			ret->imp_shared = true;
-			ret->sym_shared = true;
-		} else if (rz_str_cmp_list("le mach0 mach064 mdmp pe", plugin->name, ' ')) {
-			ret->imp_shared = true;
-		}
-	}
 	return ret;
 }
 
@@ -140,15 +133,9 @@ RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage) {
 	if (!storage) {
 		return;
 	}
-	for (size_t i = 0; i < storage->relocs_count; i++) {
-		if (storage->relocs[i]) {
-			if (!storage->imp_shared) {
-				rz_bin_import_free(storage->relocs[i]->import);
-			}
-			if (!storage->sym_shared) {
-				rz_bin_symbol_free(storage->relocs[i]->symbol);
-			}
-			free(storage->relocs[i]);
+	if (storage->relocs_free) {
+		for (size_t i = 0; i < storage->relocs_count; i++) {
+			storage->relocs_free(storage->relocs[i]);
 		}
 	}
 	free(storage->relocs);
@@ -570,7 +557,7 @@ RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject 
 		}
 		rz_bin_reloc_storage_free(o->relocs);
 		REBASE_PADDR(o, tmp, RzBinReloc);
-		o->relocs = rz_bin_reloc_storage_new(tmp, o->plugin);
+		o->relocs = rz_bin_reloc_storage_new(tmp);
 		bf->rbin->is_reloc_patched = true;
 	}
 	return o->relocs;

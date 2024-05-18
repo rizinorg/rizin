@@ -1765,7 +1765,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	RzList /*<LE_reloc *>*/ *le_relocs = bin->le_relocs;
-	RzPVector /*<RzBinReloc *>*/ *relocs = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
+	RzPVector /*<RzBinReloc *>*/ *relocs = rz_pvector_new(free);
 	RzBinReloc *reloc = NULL;
 	if (!relocs) {
 	fail_cleanup:
