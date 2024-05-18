@@ -857,7 +857,7 @@ RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList
 	RzList /*<class_type_info>*/ *rtti_list = rz_list_new();
 	rtti_list->free = rtti_itanium_type_info_free;
 	// to escape multiple same infos from multiple inheritance
-	SetU *unique_rttis = set_u_new();
+	RzSetU *unique_rttis = rz_set_u_new();
 
 	RzListIter *iter;
 	RVTableInfo *vtable;
@@ -874,10 +874,10 @@ RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList
 		detect_constructor_destructor(context->analysis, cti);
 
 		// we only need one of a kind
-		if (set_u_contains(unique_rttis, cti->typeinfo_addr)) {
+		if (rz_set_u_contains(unique_rttis, cti->typeinfo_addr)) {
 			rtti_itanium_type_info_free(cti);
 		} else {
-			set_u_add(unique_rttis, cti->typeinfo_addr);
+			rz_set_u_add(unique_rttis, cti->typeinfo_addr);
 			rz_list_append(rtti_list, cti);
 		}
 	}
@@ -887,6 +887,6 @@ RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList
 		add_class_bases(context, cti);
 	}
 
-	set_u_free(unique_rttis);
+	rz_set_u_free(unique_rttis);
 	rz_list_free(rtti_list);
 }

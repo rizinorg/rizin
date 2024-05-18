@@ -208,7 +208,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	if (!(syms = MACH0_(get_symbols)(obj->bin_obj))) {
 		return ret;
 	}
-	SetU *symcache = set_u_new();
+	RzSetU *symcache = rz_set_u_new();
 	bin = (struct MACH0_(obj_t) *)obj->bin_obj;
 	for (i = 0; !syms[i].last; i++) {
 		if (syms[i].name == NULL || syms[i].name[0] == '\0' || syms[i].addr < 100) {
@@ -231,7 +231,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp(ptr->name, "radr://", 7) ? 0 : 1;
-		set_u_add(symcache, ptr->vaddr);
+		rz_set_u_add(symcache, ptr->vaddr);
 		rz_pvector_push(ret, ptr);
 	}
 	// functions from LC_FUNCTION_STARTS
@@ -260,7 +260,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			rz_pvector_push(ret, ptr);
 			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
-				if (!set_u_contains(symcache, ptr->vaddr)) {
+				if (!rz_set_u_contains(symcache, ptr->vaddr)) {
 					isStripped = true;
 				}
 			}
@@ -269,7 +269,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	if (isStripped) {
 		bin->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
-	set_u_free(symcache);
+	rz_set_u_free(symcache);
 	return ret;
 }
 
