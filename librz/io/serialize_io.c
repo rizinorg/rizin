@@ -79,7 +79,7 @@ static bool file_save_cb(void *user, void *data, ut32 id) {
 			.fd = desc->fd,
 			.db = sdb_ns(db, "pcache", true)
 		};
-		ht_up_foreach(desc->cache, pcache_save_cb, &ctx);
+		ht_up_foreach_cb(desc->cache, pcache_save_cb, &ctx);
 	}
 	return true;
 }

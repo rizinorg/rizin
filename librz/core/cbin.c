@@ -2395,7 +2395,7 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 			pj_end(pj);
 			return;
 		}
-		ht_ss_foreach(digests, digests_pj_cb, pj);
+		ht_ss_foreach_cb(digests, digests_pj_cb, pj);
 		ht_ss_free(digests);
 	}
 	pj_end(pj);

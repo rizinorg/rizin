@@ -173,7 +173,7 @@ RZ_API void rz_cons_canvas_clear(RzConsCanvas *c) {
 		memset(c->b[y], '\n', c->bsize[y]);
 	}
 
-	ht_up_foreach(c->attrs, attribute_delete_cb, c->attrs);
+	ht_up_foreach_cb(c->attrs, attribute_delete_cb, c->attrs);
 }
 
 RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y) {

@@ -153,7 +153,7 @@ RZ_API RZ_OWN RzPVector /*<RzILVar *>*/ *rz_il_var_set_get_all(RzILVarSet *vs) {
 	if (!r) {
 		return NULL;
 	}
-	ht_sp_foreach(vs->vars, vars_collect_cb, r);
+	ht_sp_foreach_cb(vs->vars, vars_collect_cb, r);
 	return r;
 }
 

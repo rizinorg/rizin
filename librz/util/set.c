@@ -55,7 +55,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set)
 		rz_pvector_free(vec);
 		return NULL;
 	}
-	ht_sp_foreach(set, push_to_pvector, vec);
+	ht_sp_foreach_cb(set, push_to_pvector, vec);
 	set->opt.finiKV = NULL;
 	set->opt.finiKV_user = NULL;
 	return vec;

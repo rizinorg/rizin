@@ -188,7 +188,7 @@ RZ_API bool rz_sign_sigdb_merge(RZ_NONNULL RzSigDb *db, RZ_NONNULL RzSigDb *db2)
 		.dst = db,
 	};
 	db2->entries->opt.finiKV = NULL;
-	ht_pu_foreach(db2->entries, sigdb_move_entry, &opt);
+	ht_pu_foreach_cb(db2->entries, sigdb_move_entry, &opt);
 	return true;
 }
 
@@ -298,7 +298,7 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_sign_sigdb_list(RZ_NONNULL const R
 	if (!res) {
 		return NULL;
 	}
-	ht_pu_foreach(db->entries, sigdb_to_list, res);
+	ht_pu_foreach_cb(db->entries, sigdb_to_list, res);
 	rz_list_sort(res, (RzListComparator)sigdb_signature_cmp, NULL);
 	return res;
 }

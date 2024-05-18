@@ -585,7 +585,7 @@ static bool function_names_collect_cb(void *user, RZ_UNUSED const char *k, const
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *result = rz_list_newf(free);
-	ht_sp_foreach(typedb->callables, function_names_collect_cb, result);
+	ht_sp_foreach_cb(typedb->callables, function_names_collect_cb, result);
 	return result;
 }
 
@@ -606,6 +606,6 @@ static bool noreturn_function_names_collect_cb(void *user, RZ_UNUSED const char 
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_noreturn_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *noretl = rz_list_newf(free);
-	ht_sp_foreach(typedb->callables, noreturn_function_names_collect_cb, noretl);
+	ht_sp_foreach_cb(typedb->callables, noreturn_function_names_collect_cb, noretl);
 	return noretl;
 }

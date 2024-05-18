@@ -269,7 +269,7 @@ RZ_IPI RzCmdStatus rz_flag_local_list_handler(RzCore *core, int argc, const char
 	}
 	rz_cmd_state_output_array_start(state);
 	PrintFcnLabelsCtx ctx = { fcn, state };
-	ht_up_foreach(fcn->labels, print_function_labels_cb, &ctx);
+	ht_up_foreach_cb(fcn->labels, print_function_labels_cb, &ctx);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
@@ -286,7 +286,7 @@ RZ_IPI RzCmdStatus rz_flag_local_list_all_handler(RzCore *core, int argc, const 
 			pj_k(state->d.pj, fcn->name);
 		}
 		PrintFcnLabelsCtx ctx = { fcn, state };
-		ht_up_foreach(fcn->labels, print_function_labels_cb, &ctx);
+		ht_up_foreach_cb(fcn->labels, print_function_labels_cb, &ctx);
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {
 			pj_end(state->d.pj);
 		}

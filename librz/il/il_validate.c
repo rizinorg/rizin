@@ -158,8 +158,8 @@ static bool local_context_copy(LocalContext *dst, LocalContext *src) {
 	if (!local_context_init(dst, src->global_ctx)) {
 		return false;
 	}
-	ht_sp_foreach(src->local_vars_known, local_var_copy_known_cb, dst);
-	ht_sp_foreach(src->local_vars_available, local_var_copy_avail_cb, dst);
+	ht_sp_foreach_cb(src->local_vars_known, local_var_copy_known_cb, dst);
+	ht_sp_foreach_cb(src->local_vars_available, local_var_copy_avail_cb, dst);
 	return true;
 }
 
@@ -229,11 +229,11 @@ static bool local_context_meet(RZ_INOUT LocalContext *a, RZ_IN LocalContext *b, 
 		.dst = a,
 		.src = b
 	};
-	ht_sp_foreach(b->local_vars_known, local_var_meet_known_cb, &meet);
+	ht_sp_foreach_cb(b->local_vars_known, local_var_meet_known_cb, &meet);
 	if (meet.failed) {
 		return false;
 	}
-	ht_sp_foreach(a->local_vars_available, local_var_meet_avail_cb, &meet);
+	ht_sp_foreach_cb(a->local_vars_available, local_var_meet_avail_cb, &meet);
 	return true;
 }
 

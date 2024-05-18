@@ -364,7 +364,7 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	rz_list_foreach (esil->analysis->reg->allregs, iter, ri) {
 		restore_register(esil, ri, idx);
 	}
-	ht_up_foreach(trace->memory, restore_memory_cb, esil);
+	ht_up_foreach_cb(trace->memory, restore_memory_cb, esil);
 }
 
 static void print_instruction_ops(RzILTraceInstruction *instruction, int idx, RzILTraceInsOp focus) {

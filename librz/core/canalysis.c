@@ -3322,8 +3322,8 @@ static bool add_mmio_extended_flag_cb(void *user, const ut64 addr, const void *v
 RZ_API void rz_platform_profile_add_flag_every_io(RzPlatformProfile *profile, RzFlag *flags) {
 	rz_flag_unset_all_in_space(flags, RZ_FLAGS_FS_MMIO_REGISTERS);
 	rz_flag_unset_all_in_space(flags, RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED);
-	ht_up_foreach(profile->registers_mmio, add_mmio_flag_cb, flags);
-	ht_up_foreach(profile->registers_extended, add_mmio_extended_flag_cb, flags);
+	ht_up_foreach_cb(profile->registers_mmio, add_mmio_flag_cb, flags);
+	ht_up_foreach_cb(profile->registers_extended, add_mmio_extended_flag_cb, flags);
 }
 
 static bool add_arch_platform_flag_comment_cb(void *user, const ut64 addr, const void *v) {
@@ -3348,7 +3348,7 @@ static bool add_arch_platform_flag_comment_cb(void *user, const ut64 addr, const
  */
 RZ_API bool rz_platform_index_add_flags_comments(RzCore *core) {
 	rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_PLATFORM_PORTS);
-	ht_up_foreach(core->analysis->platform_target->platforms, add_arch_platform_flag_comment_cb, core);
+	ht_up_foreach_cb(core->analysis->platform_target->platforms, add_arch_platform_flag_comment_cb, core);
 	return true;
 }
 
@@ -3661,7 +3661,7 @@ static bool process_reference_noreturn_cb(void *u, const ut64 k, const void *v) 
 
 static bool process_refs_cb(void *u, const ut64 k, const void *v) {
 	HtUP *ht = (HtUP *)v;
-	ht_up_foreach(ht, process_reference_noreturn_cb, u);
+	ht_up_foreach_cb(ht, process_reference_noreturn_cb, u);
 	return true;
 }
 
@@ -3686,12 +3686,12 @@ RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) 
 	// List of the potentially noreturn functions
 	RzSetU *todo = rz_set_u_new();
 	struct core_noretl u = { core, noretl, todo };
-	ht_up_foreach(core->analysis->ht_xrefs_to, process_refs_cb, &u);
+	ht_up_foreach_cb(core->analysis->ht_xrefs_to, process_refs_cb, &u);
 	rz_list_free(noretl);
 	core->analysis->bits = bits1;
 	core->rasm->bits = bits2;
 	// For every function in todo list analyze if it's potentially become noreturn
-	ht_up_foreach(todo, reanalyze_fcns_cb, core);
+	ht_up_foreach_cb(todo, reanalyze_fcns_cb, core);
 	rz_set_u_free(todo);
 }
 

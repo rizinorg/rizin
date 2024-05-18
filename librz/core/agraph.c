@@ -3856,7 +3856,7 @@ RZ_API void rz_agraph_foreach(RzAGraph *g, RzANodeCallback cb, void *user) {
 		.node_cb = cb,
 		.data = user
 	};
-	ht_sp_foreach(g->nodes, (HtSPForeachCallback)user_node_cb, &u);
+	ht_sp_foreach_cb(g->nodes, (HtSPForeachCallback)user_node_cb, &u);
 }
 
 RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user) {
@@ -3865,7 +3865,7 @@ RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user) {
 		.edge_cb = cb,
 		.data = user
 	};
-	ht_sp_foreach(g->nodes, (HtSPForeachCallback)user_edge_cb, &u);
+	ht_sp_foreach_cb(g->nodes, (HtSPForeachCallback)user_edge_cb, &u);
 }
 
 RZ_API RzANode *rz_agraph_get_first_node(const RzAGraph *g) {

@@ -495,7 +495,7 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
  * Apply \p cb for each KV pair in \p ht.
  * If \p cb returns false, the iteration is stopped.
  */
-RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
+RZ_API void Ht_(foreach_cb)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
 	ut32 i;
 

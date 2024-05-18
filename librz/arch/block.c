@@ -799,14 +799,14 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 		if (entry && rz_list_contains(entry->fcns, fcn)) {
 			rz_analysis_block_recurse(entry, noreturn_successors_reachable_cb, succs);
 		}
-		ht_up_foreach(succs, noreturn_remove_unreachable_cb, fcn);
+		ht_up_foreach_cb(succs, noreturn_remove_unreachable_cb, fcn);
 	}
 	rz_list_free(fcns_cpy);
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
 	RzPVector *merge_blocks = rz_pvector_new((RzListFree)rz_analysis_block_unref);
-	ht_up_foreach(succs, noreturn_get_blocks_cb, merge_blocks);
+	ht_up_foreach_cb(succs, noreturn_get_blocks_cb, merge_blocks);
 
 	// Free/unref BEFORE doing the merge!
 	// Some of the blocks might not be valid anymore later!
@@ -921,7 +921,7 @@ RZ_API void rz_analysis_block_automerge(RzPVector /*<RzAnalysisBlock *>*/ *block
 	}
 
 	// Get the single predecessors we might want to merge with
-	ht_up_foreach(relevant_fcns, automerge_get_predecessors_cb, &ctx);
+	ht_up_foreach_cb(relevant_fcns, automerge_get_predecessors_cb, &ctx);
 
 	// Now finally do the merging
 	// in this loop we remove non-reachable basic blocks and since

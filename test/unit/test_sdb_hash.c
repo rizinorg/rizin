@@ -235,7 +235,7 @@ bool should_not_be_caled(void *user, const char *k, const void *v) {
 
 bool test_empty_ht(void) {
 	HtSP *ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
-	ht_sp_foreach(ht, should_not_be_caled, NULL);
+	ht_sp_foreach_cb(ht, should_not_be_caled, NULL);
 	void *r = ht_sp_find(ht, "key1", NULL);
 	mu_assert_null(r, "key1 should not be present");
 	ht_sp_free(ht);
@@ -312,7 +312,7 @@ bool test_grow_1(void) {
 	ht_sp_insert(ht, "key1", (void *)1);
 	ht_sp_insert(ht, "key2", (void *)2);
 
-	ht_sp_foreach(ht, (HtSPForeachCallback)grow_1_foreach, NULL);
+	ht_sp_foreach_cb(ht, (HtSPForeachCallback)grow_1_foreach, NULL);
 	for (i = 0; i < 3; ++i) {
 		if (!grow_1_found[i]) {
 			fprintf(stderr, "i = %d\n", i);
@@ -468,8 +468,8 @@ bool test_foreach_delete(void) {
 	ht_up_insert(ht, ht->size * 2, "value3");
 	ht_up_insert(ht, ht->size * 3, "value4");
 
-	ht_up_foreach(ht, foreach_delete_cb, ht);
-	ht_up_foreach(ht, (HtUPForeachCallback)should_not_be_caled, NULL);
+	ht_up_foreach_cb(ht, foreach_delete_cb, ht);
+	ht_up_foreach_cb(ht, (HtUPForeachCallback)should_not_be_caled, NULL);
 
 	ht_up_free(ht);
 	mu_end;

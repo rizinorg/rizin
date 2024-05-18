@@ -340,7 +340,7 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all(const RzTypeD
 	rz_return_val_if_fail(typeclass < RZ_TYPE_TYPECLASS_INVALID, NULL);
 	RzList *types = rz_list_new();
 	struct list_typeclass lt = { typedb, types, typeclass };
-	ht_sp_foreach(typedb->types, base_type_typeclass_collect_cb, &lt);
+	ht_sp_foreach_cb(typedb->types, base_type_typeclass_collect_cb, &lt);
 	return types;
 }
 
@@ -356,7 +356,7 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all_sized(const R
 	rz_return_val_if_fail(size && typeclass < RZ_TYPE_TYPECLASS_INVALID, NULL);
 	RzList *types = rz_list_new();
 	struct list_typeclass_size lt = { typedb, types, typeclass, size };
-	ht_sp_foreach(typedb->types, base_type_typeclass_sized_collect_cb, &lt);
+	ht_sp_foreach_cb(typedb->types, base_type_typeclass_sized_collect_cb, &lt);
 	return types;
 }
 

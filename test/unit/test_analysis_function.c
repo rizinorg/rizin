@@ -63,11 +63,11 @@ static bool function_check_invariants(RzAnalysis *analysis) {
 	}
 
 	size_t addr_count = 0;
-	ht_up_foreach(analysis->ht_addr_fun, ht_up_count, &addr_count);
+	ht_up_foreach_cb(analysis->ht_addr_fun, ht_up_count, &addr_count);
 	mu_assert_eq(addr_count, rz_list_length(analysis->fcns), "function addr ht count");
 
 	size_t name_count = 0;
-	ht_sp_foreach(analysis->ht_name_fun, ht_sp_count, &name_count);
+	ht_sp_foreach_cb(analysis->ht_name_fun, ht_sp_count, &name_count);
 	mu_assert_eq(name_count, rz_list_length(analysis->fcns), "function name ht count");
 
 	return true;

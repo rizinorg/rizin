@@ -297,7 +297,7 @@ RZ_API RZ_OWN RzList /*<RzAnalysisVarGlobal *>*/ *rz_analysis_var_global_get_all
 	if (!globals) {
 		return NULL;
 	}
-	ht_sp_foreach(analysis->ht_global_var, global_var_collect_cb, globals);
+	ht_sp_foreach_cb(analysis->ht_global_var, global_var_collect_cb, globals);
 	return globals;
 }
 

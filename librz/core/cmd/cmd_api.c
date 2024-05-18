@@ -1715,7 +1715,7 @@ RZ_API RZ_OWN RzList /*<RzCmdMacro *>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd
 	if (!res) {
 		return NULL;
 	}
-	ht_sp_foreach(cmd->macros, macros_to_list, res);
+	ht_sp_foreach_cb(cmd->macros, macros_to_list, res);
 	return res;
 }
 
@@ -1833,7 +1833,7 @@ RZ_API void rz_cmd_macro_foreach(RZ_NONNULL RzCmd *cmd, RzCmdForeachMacroCb cb, 
 		.user = user,
 		.cb = cb,
 	};
-	ht_sp_foreach(cmd->macros, macro_foreach_cb, &u);
+	ht_sp_foreach_cb(cmd->macros, macro_foreach_cb, &u);
 }
 
 /* RzCmdParsedArgs */

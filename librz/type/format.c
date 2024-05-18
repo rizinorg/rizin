@@ -1928,7 +1928,7 @@ static bool format_collect_cb(void *user, const char *k, const char *v) {
 RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *formats = rz_list_new();
-	ht_ss_foreach(typedb->formats, format_collect_cb, formats);
+	ht_ss_foreach_cb(typedb->formats, format_collect_cb, formats);
 	return formats;
 }
 

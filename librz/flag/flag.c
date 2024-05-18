@@ -744,7 +744,7 @@ static bool unset_off_foreach(void *user, const char *k, const void *v) {
 RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, false);
 	struct unset_off_foreach_t u = { f, off };
-	ht_sp_foreach(f->ht_name, unset_off_foreach, &u);
+	ht_sp_foreach_cb(f->ht_name, unset_off_foreach, &u);
 	return true;
 }
 

@@ -3087,7 +3087,7 @@ void __set_rcb(RzPanelsTab *tab, RzPanel *p) {
 		.tab = tab,
 		.p = p
 	};
-	ht_sp_foreach(tab->rotate_db, set_rotateCb_cb, &ctx);
+	ht_sp_foreach_cb(tab->rotate_db, set_rotateCb_cb, &ctx);
 }
 
 void __set_pcb(RzPanel *p) {
@@ -5007,7 +5007,7 @@ static bool insert_to_HtSP_cb(void *user, const char *k, const char *v) {
 void __init_almighty_db(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	HtSP *db = visual->panels_root->active_tab->almighty_db;
-	ht_ss_foreach(visual->panels_root->active_tab->db, insert_to_HtSP_cb, db);
+	ht_ss_foreach_cb(visual->panels_root->active_tab->db, insert_to_HtSP_cb, db);
 	ht_sp_insert(db, "Search strings in data sections", &__search_strings_data_create);
 	ht_sp_insert(db, "Search strings in the whole bin", &__search_strings_bin_create);
 	ht_sp_insert(db, "Create New", &__create_panel_input);
@@ -5736,7 +5736,7 @@ static RZ_OWN RzPVector /*<const char *>*/ *get_HtSP_key_list(HtSP *ht) {
 		rz_pvector_free(vec);
 		return NULL;
 	}
-	ht_sp_foreach(ht, key_to_vec_cb, vec);
+	ht_sp_foreach_cb(ht, key_to_vec_cb, vec);
 	rz_pvector_sort(vec, cmpstr, NULL);
 	return vec;
 }

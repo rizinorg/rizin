@@ -98,7 +98,7 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 		// sort them alphabetically
 		RzPVector sorter;
 		rz_pvector_init(&sorter, free);
-		ht_sp_foreach(files, source_file_collect_cb, &sorter);
+		ht_sp_foreach_cb(files, source_file_collect_cb, &sorter);
 		rz_pvector_sort(&sorter, (RzPVectorComparator)compare_string, NULL);
 		ht_sp_free(files);
 		// print them!

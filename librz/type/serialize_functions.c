@@ -251,7 +251,7 @@ static bool export_callable_cb(void *user, RZ_UNUSED const char *k, const void *
 
 static bool callable_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
 	struct typedb_sdb tdb = { typedb, db };
-	ht_sp_foreach(typedb->callables, export_callable_cb, &tdb);
+	ht_sp_foreach_cb(typedb->callables, export_callable_cb, &tdb);
 	return true;
 }
 

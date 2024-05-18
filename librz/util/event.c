@@ -99,7 +99,7 @@ RZ_API void rz_event_unhook(RzEvent *ev, RzEventCallbackHandle handle) {
 	if (handle.type == RZ_EVENT_ALL) {
 		// try to delete it both from each list of callbacks and from
 		// the "all_callbacks" vector
-		ht_up_foreach(ev->callbacks, del_hook, &handle.handle);
+		ht_up_foreach_cb(ev->callbacks, del_hook, &handle.handle);
 		del_hook(&handle.handle, 0, &ev->all_callbacks);
 	} else {
 		RzVector *cbs = ht_up_find(ev->callbacks, (ut64)handle.type, NULL);

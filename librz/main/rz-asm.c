@@ -513,7 +513,7 @@ static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, u
 	if (rad) {
 		printf("f entry @ $$\n");
 		printf("f label.main @ $$ + 1\n");
-		ht_ss_foreach(as->a->flags, print_label, NULL);
+		ht_ss_foreach_cb(as->a->flags, print_label, NULL);
 	}
 	return ret;
 }

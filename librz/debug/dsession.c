@@ -153,7 +153,7 @@ static bool _restore_memory_cb(void *user, const ut64 key, const void *value) {
 
 static void _restore_memory(RzDebug *dbg, ut32 cnum) {
 	_set_initial_memory(dbg);
-	ht_up_foreach(dbg->session->memory, _restore_memory_cb, dbg);
+	ht_up_foreach_cb(dbg->session->memory, _restore_memory_cb, dbg);
 }
 
 static RzDebugCheckpoint *_get_checkpoint_before(RzDebugSession *session, ut32 cnum) {
@@ -268,7 +268,7 @@ static bool serialize_register_cb(void *db, const ut64 k, const void *v) {
 }
 
 static void serialize_registers(Sdb *db, HtUP *registers) {
-	ht_up_foreach(registers, serialize_register_cb, db);
+	ht_up_foreach_cb(registers, serialize_register_cb, db);
 }
 
 // 0x<addr>={"size":<size_t>, "a":[<RzDebugChangeMem>]}},
@@ -296,7 +296,7 @@ static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 }
 
 static void serialize_memory(Sdb *db, HtUP *memory) {
-	ht_up_foreach(memory, serialize_memory_cb, db);
+	ht_up_foreach_cb(memory, serialize_memory_cb, db);
 }
 
 static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *checkpoints) {

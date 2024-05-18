@@ -1611,7 +1611,7 @@ static bool close_on_exec_fd_cb(void *user, const ut64 key, const ut64 val) {
 }
 
 static void close_fds(void) {
-	ht_uu_foreach(fd2close, close_on_exec_fd_cb, NULL);
+	ht_uu_foreach_cb(fd2close, close_on_exec_fd_cb, NULL);
 }
 
 /**

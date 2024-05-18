@@ -25,7 +25,7 @@ static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
 }
 
 static bool sanitize(RzAnalysisFunction *fcn) {
-	ht_up_foreach(fcn->inst_vars, sanitize_instr_acc, NULL);
+	ht_up_foreach_cb(fcn->inst_vars, sanitize_instr_acc, NULL);
 
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {

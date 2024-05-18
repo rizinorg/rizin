@@ -459,6 +459,6 @@ RZ_API void rz_bin_dwarf_loclists_dump(
 		.dw = dw,
 		.sb = sb,
 	};
-	ht_up_foreach(loclists->by_offset, cb_loclist_dump, &ctx);
+	ht_up_foreach_cb(loclists->by_offset, cb_loclist_dump, &ctx);
 	rz_strbuf_append(sb, "\n");
 }

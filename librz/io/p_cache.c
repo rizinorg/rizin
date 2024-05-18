@@ -250,7 +250,7 @@ RZ_API RzList /*<RzIOCache *>*/ *rz_io_desc_cache_list(RzIODesc *desc) {
 	if (!writes) {
 		return NULL;
 	}
-	ht_up_foreach(desc->cache, __desc_cache_list_cb, writes);
+	ht_up_foreach_cb(desc->cache, __desc_cache_list_cb, writes);
 	RzIODesc *current = desc->io->desc;
 	desc->io->desc = desc;
 	desc->io->p_cache = false;
@@ -306,7 +306,7 @@ RZ_API bool rz_io_desc_cache_commit(RzIODesc *desc) {
 	current = desc->io->desc;
 	desc->io->desc = desc;
 	desc->io->p_cache = false;
-	ht_up_foreach(desc->cache, __desc_cache_commit_cb, desc);
+	ht_up_foreach_cb(desc->cache, __desc_cache_commit_cb, desc);
 	ht_up_free(desc->cache);
 	desc->cache = NULL;
 	desc->io->p_cache = true;
@@ -338,7 +338,7 @@ static bool __desc_cache_cleanup_cb(void *user, const ut64 k, const void *v) {
 
 RZ_API void rz_io_desc_cache_cleanup(RzIODesc *desc) {
 	if (desc && desc->cache) {
-		ht_up_foreach(desc->cache, __desc_cache_cleanup_cb, desc);
+		ht_up_foreach_cb(desc->cache, __desc_cache_cleanup_cb, desc);
 	}
 }
 

@@ -434,7 +434,7 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 	}
 
 	RzList *sorted = rz_list_newf(free);
-	ht_up_foreach(db, valgroup_regcb, sorted);
+	ht_up_foreach_cb(db, valgroup_regcb, sorted);
 	ut64 *addr;
 	rz_list_foreach (sorted, iter, addr) {
 		rz_cons_printf("0x%08" PFMT64x " ", *addr);

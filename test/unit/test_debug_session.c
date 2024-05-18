@@ -168,9 +168,9 @@ static bool test_session_load(void) {
 
 	mu_assert_eq(s->maxcnum, ref->maxcnum, "maxcnum");
 	// Registers
-	ht_up_foreach(s->registers, compare_registers_cb, ref->registers);
+	ht_up_foreach_cb(s->registers, compare_registers_cb, ref->registers);
 	// Memory
-	ht_up_foreach(s->memory, compare_memory_cb, ref->memory);
+	ht_up_foreach_cb(s->memory, compare_memory_cb, ref->memory);
 	// Checkpoints
 	size_t i, chkpt_idx;
 	RzDebugCheckpoint *chkpt, *ref_chkpt;

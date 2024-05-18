@@ -1143,7 +1143,7 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 
 	if (function->labels->count) {
 		pj_ko(j, "labels");
-		ht_up_foreach(function->labels, store_label_cb, j);
+		ht_up_foreach_cb(function->labels, store_label_cb, j);
 		pj_end(j);
 	}
 
@@ -1432,7 +1432,7 @@ static bool store_xrefs_list_cb(void *db, const ut64 k, const void *v) {
 	}
 	pj_a(j);
 	HtUP *ht = (HtUP *)v;
-	ht_up_foreach(ht, store_xref_cb, j);
+	ht_up_foreach_cb(ht, store_xref_cb, j);
 	pj_end(j);
 	sdb_set(db, key, pj_string(j));
 	pj_free(j);
@@ -1440,7 +1440,7 @@ static bool store_xrefs_list_cb(void *db, const ut64 k, const void *v) {
 }
 
 RZ_API void rz_serialize_analysis_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	ht_up_foreach(analysis->ht_xrefs_from, store_xrefs_list_cb, db);
+	ht_up_foreach_cb(analysis->ht_xrefs_from, store_xrefs_list_cb, db);
 }
 
 static bool xrefs_load_cb(void *user, const SdbKv *kv) {
@@ -1890,7 +1890,7 @@ RZ_API void rz_serialize_analysis_hints_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	rz_analysis_addr_hints_foreach(analysis, addr_hint_acc_cb, acc);
 	rz_analysis_arch_hints_foreach(analysis, arch_hint_acc_cb, acc);
 	rz_analysis_bits_hints_foreach(analysis, bits_hint_acc_cb, acc);
-	ht_up_foreach(acc, hints_acc_store_cb, db);
+	ht_up_foreach_cb(acc, hints_acc_store_cb, db);
 	ht_up_free(acc);
 }
 

@@ -1521,7 +1521,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				break;
 			case 0: // "aeli" with no args
 				if (esil && esil->interrupts) {
-					ht_up_foreach(esil->interrupts, _aeli_iter, NULL);
+					ht_up_foreach_cb(esil->interrupts, _aeli_iter, NULL);
 				}
 				break;
 			case 'r': // "aelir"
@@ -4242,7 +4242,7 @@ static void print_stats(RzCore *core, HtSU *ht, RzAnalysisFunction *fcn, RzCmdSt
 	const char *name;
 	RzListIter *iter;
 	RzList *list = rz_list_newf(NULL);
-	ht_su_foreach(ht, (HtSUForeachCallback)list_keys_cb, list);
+	ht_su_foreach_cb(ht, (HtSUForeachCallback)list_keys_cb, list);
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		RzTable *t = state->d.t;
@@ -4329,10 +4329,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 
 	HtSU *db;
 	rz_list_foreach (dbs, iter, db) {
-		ht_su_foreach(db, (HtSUForeachCallback)add_keys_to_set_cb, keys_set);
+		ht_su_foreach_cb(db, (HtSUForeachCallback)add_keys_to_set_cb, keys_set);
 	}
 
-	ht_su_foreach(keys_set, (HtSUForeachCallback)list_keys_cb, keys);
+	ht_su_foreach_cb(keys_set, (HtSUForeachCallback)list_keys_cb, keys);
 	rz_list_sort(keys, (RzListComparator)strcmp, NULL);
 
 	RzTable *t = state->d.t;

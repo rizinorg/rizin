@@ -1128,7 +1128,7 @@ ret:
 		ht_uu_free(localbadstart);
 		return NULL;
 	}
-	ht_uu_foreach(localbadstart, insert_into, badstart);
+	ht_uu_foreach_cb(localbadstart, insert_into, badstart);
 	ht_uu_free(localbadstart);
 	// If our arch has bds then we better be including them
 	if (branch_delay && rz_list_length(hitlist) < (1 + branch_delay)) {

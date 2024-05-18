@@ -1847,8 +1847,8 @@ static bool store_callable(void *u, ut64 k, const void *v) {
 RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
 	rz_analysis_dwarf_preprocess_info(analysis, dw);
-	ht_sp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
-	ht_up_foreach(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
+	ht_sp_foreach_cb(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
+	ht_up_foreach_cb(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
 }
 
 static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f,
@@ -2057,7 +2057,7 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
  */
 RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags) {
 	rz_return_if_fail(analysis && analysis->debug_info);
-	ht_up_foreach(analysis->debug_info->function_by_addr, dwarf_integrate_function, analysis);
+	ht_up_foreach_cb(analysis->debug_info->function_by_addr, dwarf_integrate_function, analysis);
 }
 
 /**

@@ -77,10 +77,10 @@
 	}
 
 #define th_ht_foreach_decl(name, type) \
-	RZ_API void rz_th_##name##_foreach(th_ht_type(name) * ht, type##ForeachCallback cb, void *user) { \
+	RZ_API void rz_th_##name##_foreach_cb(th_ht_type(name) * ht, type##ForeachCallback cb, void *user) { \
 		rz_return_if_fail(ht && ht->table && cb); \
 		rz_th_lock_enter(ht->lock); \
-		name##_foreach(ht->table, cb, user); \
+		name##_foreach_cb(ht->table, cb, user); \
 		rz_th_lock_leave(ht->lock); \
 	}
 

@@ -51,7 +51,7 @@ static bool appendRef(void *u, const ut64 k, const void *v) {
 
 static bool mylistrefs_cb(void *list, const ut64 k, const void *v) {
 	HtUP *ht = (HtUP *)v;
-	ht_up_foreach(ht, appendRef, list);
+	ht_up_foreach_cb(ht, appendRef, list);
 	return true;
 }
 
@@ -77,11 +77,11 @@ static void sortxrefs(RzList /*<RzAnalysisXRef *>*/ *list) {
 
 static void listxrefs(HtUP *m, ut64 addr, RzList /*<RzAnalysisXRef *>*/ *list) {
 	if (addr == UT64_MAX) {
-		ht_up_foreach(m, mylistrefs_cb, list);
+		ht_up_foreach_cb(m, mylistrefs_cb, list);
 	} else {
 		HtUP *d = ht_up_find(m, addr, NULL);
 		if (d) {
-			ht_up_foreach(d, appendRef, list);
+			ht_up_foreach_cb(d, appendRef, list);
 		}
 	}
 }
@@ -262,7 +262,7 @@ static bool count_cb(void *user, const ut64 k, const void *v) {
 
 RZ_API ut64 rz_analysis_xrefs_count(RzAnalysis *analysis) {
 	ut64 ret = 0;
-	ht_up_foreach(analysis->ht_xrefs_to, count_cb, &ret);
+	ht_up_foreach_cb(analysis->ht_xrefs_to, count_cb, &ret);
 	return ret;
 }
 

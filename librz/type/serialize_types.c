@@ -611,7 +611,7 @@ static bool export_base_type_cb(void *user, RZ_UNUSED const char *k, const void 
 
 static bool types_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
 	struct typedb_sdb tdb = { typedb, db };
-	ht_sp_foreach(typedb->types, export_base_type_cb, &tdb);
+	ht_sp_foreach_cb(typedb->types, export_base_type_cb, &tdb);
 	return true;
 }
 

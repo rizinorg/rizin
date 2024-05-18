@@ -108,7 +108,7 @@ RZ_API void rz_analysis_hint_del(RzAnalysis *a, ut64 addr, ut64 size) {
 	}
 	// ranged delete
 	DeleteRangeCtx ctx = { a->addr_hints, addr, size };
-	ht_up_foreach(a->addr_hints, addr_hint_range_delete_cb, &ctx);
+	ht_up_foreach_cb(a->addr_hints, addr_hint_range_delete_cb, &ctx);
 	while (true) { // arch
 		RBNode *node = rz_rbtree_lower_bound(a->arch_hints, &addr, ranged_hint_record_cmp, NULL);
 		if (!node) {
@@ -421,7 +421,7 @@ static bool addr_hint_foreach_cb(void *user, const ut64 key, const void *value) 
 
 RZ_API void rz_analysis_addr_hints_foreach(RzAnalysis *analysis, RzAnalysisAddrHintRecordsCb cb, void *user) {
 	AddrHintForeachCtx ctx = { cb, user };
-	ht_up_foreach(analysis->addr_hints, addr_hint_foreach_cb, &ctx);
+	ht_up_foreach_cb(analysis->addr_hints, addr_hint_foreach_cb, &ctx);
 }
 
 RZ_API void rz_analysis_arch_hints_foreach(RzAnalysis *analysis, RzAnalysisArchHintCb cb, void *user) {

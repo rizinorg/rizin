@@ -101,7 +101,7 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types_of_kind(const
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_list_new();
 	struct list_kind lk = { types, kind };
-	ht_sp_foreach(typedb->types, base_type_kind_collect_cb, &lk);
+	ht_sp_foreach_cb(typedb->types, base_type_kind_collect_cb, &lk);
 	return types;
 }
 
@@ -120,7 +120,7 @@ static bool base_type_collect_cb(void *user, RZ_UNUSED const char *k, const void
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_list_new();
-	ht_sp_foreach(typedb->types, base_type_collect_cb, types);
+	ht_sp_foreach_cb(typedb->types, base_type_collect_cb, types);
 	return types;
 }
 

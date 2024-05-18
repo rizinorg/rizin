@@ -119,7 +119,7 @@ static bool __rebase_xrefs_i(void *user, const ut64 k, const void *v) {
 
 static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	HtUP *ht = (HtUP *)v;
-	ht_up_foreach(ht, __rebase_xrefs_i, user);
+	ht_up_foreach_cb(ht, __rebase_xrefs_i, user);
 	return true;
 }
 
@@ -181,7 +181,7 @@ static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *ol
 	core->analysis->ht_xrefs_from = NULL;
 	core->analysis->ht_xrefs_to = NULL;
 	rz_analysis_xrefs_init(core->analysis);
-	ht_up_foreach(xrefs_from, __rebase_xrefs, &reb);
+	ht_up_foreach_cb(xrefs_from, __rebase_xrefs, &reb);
 	ht_up_free(xrefs_from);
 	ht_up_free(xrefs_to);
 

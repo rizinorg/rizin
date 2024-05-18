@@ -246,7 +246,7 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 		.delta = delta
 	};
 	if (ctx.inst_vars_new) {
-		ht_up_foreach(fcn->inst_vars, inst_vars_relocate_cb, &ctx);
+		ht_up_foreach_cb(fcn->inst_vars, inst_vars_relocate_cb, &ctx);
 		// Do not free the elements of the Ht, because they were moved to ctx.inst_vars_new
 		fcn->inst_vars->opt.finiKV = NULL;
 		ht_up_free(fcn->inst_vars);

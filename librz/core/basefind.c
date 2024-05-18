@@ -231,7 +231,7 @@ static void *basefind_thread_runner(BaseFindThreadData *bftd) {
 		bfd.score = 0;
 		bfd.start = base;
 		bfd.end = base + bftd->io_size;
-		ht_uu_foreach(bftd->pointers, (HtUUForeachCallback)basefind_pointer_map_iter, &bfd);
+		ht_uu_foreach_cb(bftd->pointers, (HtUUForeachCallback)basefind_pointer_map_iter, &bfd);
 
 		if (bfd.score < bftd->score_min) {
 			// ignore any score below than score_min

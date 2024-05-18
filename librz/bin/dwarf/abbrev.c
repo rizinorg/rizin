@@ -256,5 +256,5 @@ RZ_API void rz_core_bin_dwarf_abbrevs_dump(
 	if (abbrevs->by_offset->count > 0) {
 		rz_strbuf_append(sb, ".debug_abbrevs content:\n");
 	}
-	ht_up_foreach(abbrevs->by_offset, cb_abbrev_table_dump, sb);
+	ht_up_foreach_cb(abbrevs->by_offset, cb_abbrev_table_dump, sb);
 }
