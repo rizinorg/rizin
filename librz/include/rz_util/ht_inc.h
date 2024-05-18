@@ -166,6 +166,12 @@ typedef struct Ht_(t) {
 }
 HtName_(Ht);
 
+typedef struct Ht_(iter_t) {
+	st64 ti; ///< Table index
+	ut64 bi; ///< Bucket index
+	HT_(Kv) *kv; ///< Current Key-Value-pair. Stop iteration if kv is NULL.
+} HT_(Iter);
+
 // Create a new Ht with the provided Options
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt);
 // Create a new Ht with the provided Options and initial size
@@ -189,6 +195,13 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 // cb should not modify the hashtable.
 // NOTE: cb can delete the current element, but it should be avoided
 RZ_API void Ht_(foreach_cb)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user);
+RZ_API void Ht_(advance_iter)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Iter) *it);
+
+#define ht_foreach(type, ht, iter) \
+	if (ht && ht_##type##_size(ht) > 0) \
+		for (iter.ti = 0, iter.bi = 0, iter.kv = NULL, ht_##type##_advance_iter(ht, &iter); iter.kv != NULL; ht_##type##_advance_iter(ht, &iter))
+
+RZ_API ut32 Ht_(size)(RZ_NONNULL HtName_(Ht) *ht);
 
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
 RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update);

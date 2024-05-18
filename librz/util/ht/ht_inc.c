@@ -511,3 +511,50 @@ RZ_API void Ht_(foreach_cb)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCa
 		}
 	}
 }
+
+/**
+ * \brief Returns the number of elements stored in the hash map \p ht.
+ *
+ * \param ht The hash map.
+ *
+ * \return The number of elements saved in the hash map.
+ */
+RZ_API ut32 Ht_(size)(RZ_NONNULL HtName_(Ht) *ht) {
+	return ht->count;
+}
+
+/**
+ * \brief Advances an HT(Iter) to the next element in
+ * the hash table \p ht and saves it in \p it->kv.
+ * \p it->kv is set to NULL if the last element was selected.
+ *
+ * \param ht The hash table to iterate over.
+ * \param it The iterator over the hash table.
+ */
+RZ_API void Ht_(advance_iter)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Iter) *it) {
+	rz_return_if_fail(ht && it);
+	if (it->ti >= ht->size) {
+		// Iteration is done. No elements left to select.
+		it->kv = NULL;
+		return;
+	}
+	// Iterate over tables until a table with an element is found.
+	for (; it->ti < ht->size; it->ti++) {
+		if (ht->table[it->ti].count == 0) {
+			// Table has no elements. Check next table.
+			continue;
+		}
+		if (it->bi < ht->table[it->ti].count) {
+			// Table has elements, select the element.
+			it->kv = &ht->table[it->ti].arr[it->bi];
+			// For the next iteration, increment bucket index to the following element.
+			it->bi++;
+			return;
+		}
+		// Reset bucket index to first bucket.
+		it->bi = 0;
+		// Go to next table
+	}
+	// Iteration is done. No elements left to select.
+	it->kv = NULL;
+}
