@@ -20,7 +20,7 @@
 #include <rz_util.h>
 #include <rz_bind.h>
 #include <rz_syscall.h>
-#include <rz_util/set.h>
+#include <rz_util/rz_set.h>
 #include <rz_flag.h>
 #include <rz_bin.h>
 #include <rz_type.h>
@@ -457,7 +457,7 @@ typedef struct {
 	HtSP /*<const char*, RzPVector<const RzBaseType *>>*/ *base_types_by_name; ///< Store all RzBaseType parsed from DWARF by DIE offset
 	DWARF_RegisterMapping dwarf_register_mapping; ///< Store the mapping function between DWARF registers number and register name in current architecture
 	RzBinDWARF *dw; ///< Holds ownership of RzBinDwarf, avoid releasing it prematurely
-	SetU *visited;
+	RzSetU *visited;
 } RzAnalysisDebugInfo;
 
 typedef struct rz_analysis_t {
@@ -522,7 +522,7 @@ typedef struct rz_analysis_t {
 	RzFlagGetAtAddr flag_get;
 	RzEvent *ev;
 	RzList /*<char *>*/ *imports; // global imports
-	SetU *visited;
+	RzSetU *visited;
 	RzStrConstPool constpool;
 	RzList /*<leaddr_pair *>*/ *leaddrs;
 	RzPlatformTarget *arch_target;

@@ -1627,16 +1627,16 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 	rz_pvector_free(metas);
 	if (analysis->opt.norevisit) {
 		if (!analysis->visited) {
-			analysis->visited = set_u_new();
+			analysis->visited = rz_set_u_new();
 		}
-		if (set_u_contains(analysis->visited, addr)) {
+		if (rz_set_u_contains(analysis->visited, addr)) {
 			RZ_LOG_DEBUG("rz_analysis_fcn: analysis.norevisit at 0x%08" PFMT64x " %c\n", addr, reftype);
 			return RZ_ANALYSIS_RET_END;
 		}
-		set_u_add(analysis->visited, addr);
+		rz_set_u_add(analysis->visited, addr);
 	} else {
 		if (analysis->visited) {
-			set_u_free(analysis->visited);
+			rz_set_u_free(analysis->visited);
 			analysis->visited = NULL;
 		}
 	}

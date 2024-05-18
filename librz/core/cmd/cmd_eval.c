@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <rz_core.h>
-#include <rz_util/set.h>
+#include <rz_util/rz_set.h>
 #include "../core_private.h"
 
 static bool load_theme(RzCore *core, const char *path) {
@@ -75,13 +75,13 @@ fail:
 	return !failed;
 }
 
-static void list_themes_in_path(SetS *themes, const char *path) {
+static void list_themes_in_path(RzSetS *themes, const char *path) {
 	RzListIter *iter;
 	const char *fn;
 	RzList *files = rz_sys_dir(path);
 	rz_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
-			set_s_add(themes, fn);
+			rz_set_s_add(themes, fn);
 		}
 	}
 	rz_list_free(files);
@@ -104,7 +104,7 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
 RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, NULL);
 
-	SetS *themes = set_s_new(HT_STR_DUP);
+	RzSetS *themes = rz_set_s_new(HT_STR_DUP);
 	if (!themes) {
 		return NULL;
 	}
@@ -127,7 +127,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core
 		RZ_FREE(path);
 	}
 
-	RzPVector *vec = set_s_to_vector(themes);
+	RzPVector *vec = rz_set_s_to_vector(themes);
 	if (!vec) {
 		set_s_free(themes);
 		return NULL;

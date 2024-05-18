@@ -160,7 +160,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_sp_free(a->ht_name_fun);
-	set_u_free(a->visited);
+	rz_set_u_free(a->visited);
 	rz_analysis_hint_storage_fini(a);
 	rz_interval_tree_fini(&a->meta);
 	free(a->cpu);
