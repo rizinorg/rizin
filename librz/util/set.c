@@ -66,6 +66,13 @@ RZ_API void set_s_free(RZ_NULLABLE RzSetS *set) {
 }
 
 /**
+ * \brief Return number of elements saved in the set.
+ */
+RZ_API ut32 rz_set_s_size(RZ_NULLABLE RzSetS *set) {
+	return ht_sp_size((HtSP *)set);
+}
+
+/**
  * \brief Create a new hash set with ut64 as elements.
  */
 RZ_API RZ_OWN RzSetU *rz_set_u_new(void) {
@@ -98,4 +105,11 @@ RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u) {
 
 RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set) {
 	ht_up_free((HtUP *)set);
+}
+
+/**
+ * \brief Return number of elements saved in the set.
+ */
+RZ_API ut32 rz_set_u_size(RZ_NULLABLE RzSetU *set) {
+	return ht_up_size((HtUP *)set);
 }
