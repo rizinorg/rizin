@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: MIT
 
-#ifndef SDB_SET_H
-#define SDB_SET_H
+#ifndef RZ_SET_H
+#define RZ_SET_H
 
 #include <rz_util/ht_sp.h>
 #include <rz_util/ht_up.h>
