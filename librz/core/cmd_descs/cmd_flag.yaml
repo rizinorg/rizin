@@ -206,6 +206,7 @@ commands:
         default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: fd.
@@ -215,6 +216,7 @@ commands:
         default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: fdw
