@@ -42,6 +42,10 @@ static bool push_to_pvector(void *user, const char *k, RZ_UNUSED const void *v) 
 	return !!rz_pvector_push(vec, (void *)k);
 }
 
+RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set) {
+	ht_sp_free((HtSP *)set);
+}
+
 /**
  * \brief Create a vector from elements of hash set \p set
  *

@@ -26,7 +26,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set)
 /**
  * \brief Foreach iterator over a RzSetS. The set elements can be accessed via \p it->kv.key.
  */
-#define rz_set_s_foreach(s, it) ht_foreach(sp, s, it)
+#define rz_set_s_foreach(s, it) ht_foreach (sp, s, it)
 #define RzSetSIter              HtSPIter
 
 typedef HtUP RzSetU;
@@ -41,7 +41,7 @@ RZ_API ut32 rz_set_u_size(RZ_NULLABLE RzSetU *set);
 /**
  * \brief Foreach iterator over a RzSetU. The set elements can be accessed via \p it->kv.key.
  */
-#define rz_set_u_foreach(s, it) ht_foreach(up, s, it)
+#define rz_set_u_foreach(s, it) ht_foreach (up, s, it)
 #define RzSetUIter              HtUPIter
 
 #ifdef __cplusplus

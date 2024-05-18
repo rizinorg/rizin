@@ -170,7 +170,8 @@ typedef struct Ht_(iter_t) {
 	st64 ti; ///< Table index
 	ut64 bi; ///< Bucket index
 	HT_(Kv) *kv; ///< Current Key-Value-pair. Stop iteration if kv is NULL.
-} HT_(Iter);
+}
+HT_(Iter);
 
 // Create a new Ht with the provided Options
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt);

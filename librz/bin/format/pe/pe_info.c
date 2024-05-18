@@ -457,7 +457,7 @@ RzPVector /*<char *>*/ *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
 		}
 	}
 	RzPVector *vec = rz_set_s_to_vector(libs);
-	set_s_free(libs);
+	rz_set_s_free(libs);
 	return vec;
 }
 
