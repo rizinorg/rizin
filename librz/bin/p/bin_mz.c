@@ -233,7 +233,7 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_pvector_new(free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free))) {
 		return NULL;
 	}
 	if (!(relocs = rz_bin_mz_get_relocs(bf->o->bin_obj))) {

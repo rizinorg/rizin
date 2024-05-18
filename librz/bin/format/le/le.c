@@ -1307,6 +1307,7 @@ static bool le_append_fixup(rz_bin_le_obj_t *bin, LE_reloc *reloc, RzList /*<RzB
 		free(tmp);
 		return false;
 	}
+	rz_list_append(bin->le_fixups, tmp);
 	return true;
 }
 
@@ -1491,7 +1492,7 @@ static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<RzBinReloc *>*/
 }
 
 static RZ_OWN RzList /*<LE_reloc *>*/ *le_load_relocs(rz_bin_le_obj_t *bin) {
-	RzList *relocs = rz_list_newf((RzListFree)rz_bin_reloc_free);
+	RzList *relocs = rz_list_newf(NULL);
 	if (!relocs) {
 		return NULL;
 	}
@@ -1525,6 +1526,7 @@ static void rz_bin_le_free(rz_bin_le_obj_t *bin) {
 	rz_pvector_free(bin->imports);
 	ht_pp_free(bin->le_import_ht);
 	rz_list_free(bin->le_relocs);
+	rz_list_free(bin->le_fixups);
 	free(bin);
 }
 
@@ -1571,6 +1573,7 @@ bool rz_bin_le_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *
 	CHECK(bin->imp_mod_names = le_load_import_mod_names(bin));
 	CHECK(bin->le_entries = le_load_entries(bin));
 	err_ctx = ", unable to load and apply relocations.";
+	CHECK(bin->le_fixups = rz_list_newf(free));
 	CHECK(bin->le_relocs = le_load_relocs(bin));
 	CHECK(le_patch_relocs(bin));
 
@@ -1762,7 +1765,7 @@ RZ_OWN RzPVector /*<RzBinVirtualFile *>*/ *rz_bin_le_get_virtual_files(RzBinFile
 RZ_OWN RzPVector /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(RzBinFile *bf) {
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	RzList /*<LE_reloc *>*/ *le_relocs = bin->le_relocs;
-	RzPVector /*<RzBinReloc *>*/ *relocs = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
+	RzPVector /*<RzBinReloc *>*/ *relocs = rz_pvector_new(free);
 	RzBinReloc *reloc = NULL;
 	if (!relocs) {
 	fail_cleanup:

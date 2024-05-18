@@ -96,6 +96,7 @@ typedef struct rz_bin_le_obj_s {
 	RzPVector /*<RzBinImport *>*/ *imports;
 	HtPP /*<LE_import *, NULL>*/ *le_import_ht;
 	RzList /*<LE_reloc *>*/ *le_relocs;
+	RzList /*<LE_reloc *>*/ *le_fixups;
 	ut32 reloc_target_map_base;
 	ut32 reloc_targets_count;
 } rz_bin_le_obj_t;

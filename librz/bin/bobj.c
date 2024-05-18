@@ -115,6 +115,7 @@ RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinRelo
 			rz_pvector_push(&target_sorter, reloc);
 		}
 	}
+	ret->relocs_free = relocs->v.free_user;
 	relocs->v.free = NULL; // ownership of relocs transferred
 	rz_pvector_free(relocs);
 	rz_pvector_sort(&sorter, reloc_cmp, NULL);
@@ -132,8 +133,10 @@ RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage) {
 	if (!storage) {
 		return;
 	}
-	for (size_t i = 0; i < storage->relocs_count; i++) {
-		rz_bin_reloc_free(storage->relocs[i]);
+	if (storage->relocs_free) {
+		for (size_t i = 0; i < storage->relocs_count; i++) {
+			storage->relocs_free(storage->relocs[i]);
+		}
 	}
 	free(storage->relocs);
 	free(storage->target_relocs);

@@ -680,6 +680,7 @@ RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc);
 struct rz_bin_reloc_storage_t {
 	RzBinReloc **relocs; ///< all relocs, ordered by their vaddr
 	size_t relocs_count;
+	RzPVectorFree relocs_free;
 	RzBinReloc **target_relocs; ///< all relocs that have a valid target_vaddr, ordered by their target_vaddr. size is target_relocs_count!
 	size_t target_relocs_count;
 }; // RzBinRelocStorage

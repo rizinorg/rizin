@@ -249,7 +249,7 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	RzBinReloc *reloc = NULL;
 	RzListIter *it = NULL;
-	RzPVector *relocs = rz_pvector_new(free);
+	RzPVector *relocs = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
 	if (!relocs) {
 		return NULL;
 	}

@@ -202,7 +202,7 @@ static void convert_relocs(RzBfltObj *bin, RzPVector /*<RzBinReloc *>*/ *out, Rz
 
 static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	RzBfltObj *obj = (RzBfltObj *)bf->o->bin_obj;
-	RzPVector *vec = rz_pvector_new((RzPVectorFree)free);
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
 	if (!vec || !obj) {
 		rz_pvector_free(vec);
 		return NULL;
