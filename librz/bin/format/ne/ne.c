@@ -495,7 +495,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	}
 	rz_buf_read_at(bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, bin->ne_header->ModRefs * sizeof(ut16));
 
-	RzPVector *relocs = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
+	RzPVector *relocs = rz_pvector_new(free);
 	if (!relocs) {
 		free(modref);
 		return NULL;
