@@ -1023,7 +1023,7 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 // AARCH64-specific defines
 // Take the PAGE component of an address or offset.
 #define PG(x)         ((x) & ~0xFFFULL)
-#define PG_OFFSET(x)  ((x)&0xFFFULL)
+#define PG_OFFSET(x)  ((x) & 0xFFFULL)
 #define ADR_IMM_MASK1 (((1U << 2) - 1) << 29)
 #define ADR_IMM_MASK2 (((1U << 19) - 1) << 5)
 #define ADR_IMM_MASK3 (((1U << 19) - 1) << 2)
@@ -1040,14 +1040,41 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	case EM_QDSP6:
 		patch_reloc_hexagon(obj->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
-	case EM_ARM:
-		val = S + A;
-		if (!rel->sym && rel->mode == DT_REL) {
-			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
-			val += obj->big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
+	case EM_ARM: {
+		ut16 keephw1, keephw2;
+		ut32 nbytes = 4;
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+		switch (rel->type) {
+		case RZ_ARM_THM_JUMP24:
+		case RZ_ARM_THM_PC22:
+			// Encoding B  T4, BL T1, BLX T2: Val = S:I1:I2:imm10:imm11:0
+			// I1 = NOT(J1 EOR S)
+			// I2 = NOT(J2 EOR S)
+			val = S + A;
+			keephw1 = rz_read_ble16(&buf[0], big_endian);
+			keephw2 = rz_read_ble16(&buf[2], big_endian);
+			rz_write_ble16(&buf[0],
+				(keephw1 & 0xF800U) | // opcode
+					((val >> 14) & 0x0400U) | // sign
+					((val >> 12) & 0x03FFU), // imm 10
+				big_endian);
+			rz_write_ble16(&buf[2],
+				(keephw2 & 0xD000U) | // opcode
+					(((~(val >> 10)) ^ (val >> 11)) & 0x2000) | // J1
+					(((~(val >> 11)) ^ (val >> 13)) & 0x0800) | // J2
+					((val >> 1) & 0x07ff), // imm11
+				big_endian);
+			break;
+		default:
+			val = S + A;
+			if (!rel->sym && rel->mode == DT_REL) {
+				val += rz_read_ble32(buf, big_endian);
+			}
+			rz_write_ble32(buf, val, big_endian);
 		}
-		rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
+		rz_buf_write_at(obj->buf_patched, patch_addr, buf, nbytes);
 		break;
+	}
 	case EM_AARCH64: {
 		ut32 keep;
 		ut32 nbytes = 4;
@@ -1435,6 +1462,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_ARM_CALL: ADD(24, -P);
 		case RZ_ARM_JUMP24: ADD(24, -P);
 		case RZ_ARM_THM_JUMP24: ADD(24, -P);
+		case RZ_ARM_THM_PC22: ADD(24, -P);
 		case RZ_ARM_PREL31: ADD(32, -P);
 		case RZ_ARM_MOVW_PREL_NC: ADD(16, -P);
 		case RZ_ARM_MOVT_PREL: ADD(32, -P);
