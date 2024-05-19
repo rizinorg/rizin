@@ -257,7 +257,6 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 		ut64 addr = rz_bv_to_ut64(vm->vm->pc);
 		ut8 code[32] = { 0 };
 		analysis->read_at(analysis, addr, code, sizeof(code));
-		rz_analysis_op_init(&op);
 		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM);
 
 		if (r < 0 || !op.il_op) {
@@ -275,7 +274,7 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 
 		RzStrBuf sb = { 0 };
 		rz_strbuf_init(&sb);
-		rz_il_op_effect_stringify(op.il_op, &sb, true);
+		rz_il_op_effect_stringify(op.il_op, &sb, false);
 		rz_strbuf_append(&sb, "\n");
 		il_events(vm->vm, &sb);
 
@@ -284,6 +283,7 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 			rz_cons_printf("%x", code[i]);
 		}
 		rz_cons_printf("] %s\n%s\n", op.mnemonic, rz_strbuf_get(&sb));
+		rz_cons_flush();
 		rz_strbuf_fini(&sb);
 		rz_analysis_op_fini(&op);
 	}

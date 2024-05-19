@@ -264,6 +264,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_SPARCV9, "sparc" },
 	{ EM_PPC, "ppc" },
 	{ EM_PPC64, "ppc" },
+	{ EM_MCHP_PIC, "pic" },
 	{ EM_PARISC, "hppa" },
 	{ EM_PROPELLER, "propeller" },
 	{ EM_MICROBLAZE, "microblaze.gnu" },

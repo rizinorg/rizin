@@ -5,18 +5,18 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 
-#include "pic/pic_baseline.h"
-#include "pic/pic_pic18.h"
-#include "pic/pic_midrange.h"
+#include "pic/pic14.h"
+#include "pic/pic18.h"
+#include "pic/pic16.h"
 
 static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	int res = -1;
-	if (a->cpu && strcasecmp(a->cpu, "baseline") == 0) {
-		res = pic_baseline_disassemble(op, b, l);
-	} else if (a->cpu && strcasecmp(a->cpu, "midrange") == 0) {
-		res = pic_midrange_disassemble(op, b, l);
-	} else if (a->cpu && strcasecmp(a->cpu, "pic18") == 0) {
-		res = pic_pic18_disassemble(op, b, l);
+	if (a->cpu && is_pic14(a->cpu)) {
+		res = pic14_disassemble(a, op, b, l);
+	} else if (a->cpu && is_pic16(a->cpu)) {
+		res = pic16_disassemble(a, op, b, l);
+	} else if (a->cpu && is_pic18(a->cpu)) {
+		res = pic18_disassemble(a, op, b, l);
 	}
 	return op->size = res;
 }
@@ -24,7 +24,7 @@ static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 RzAsmPlugin rz_asm_plugin_pic = {
 	.name = "pic",
 	.arch = "pic",
-	.cpus = "baseline,midrange,pic18",
+	.cpus = "pic18,pic16,pic14,highend,midrange,baseline",
 	.bits = 8,
 	.license = "LGPL3",
 	.desc = "PIC disassembler",

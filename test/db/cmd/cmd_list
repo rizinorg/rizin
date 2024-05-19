@@ -412,7 +412,7 @@ adAe_ 16 32 64   mips        BSD     Capstone MIPS disassembler
 _dA__ 16         msp430      LGPL3   msp430 disassembly plugin
 adA__ 16 32 64   null        MIT     no disassemble (by pancake) v1.0.0
 _dA__ 32         or1k        LGPL3   OpenRISC 1000
-_dAe_ 8          pic         LGPL3   PIC disassembler
+_dAeI 8          pic         LGPL3   PIC disassembler
 a____ 32 64      ppc.as      LGPL3   as PPC Assembler (use RZ_PPC_AS environment) (by eagleoflqj)
 _dAeI 32 64      ppc         BSD     Capstone PowerPC disassembler (by pancake)
 _dA__ 32         propeller   LGPL3   propeller disassembly plugin
