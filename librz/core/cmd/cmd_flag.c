@@ -330,6 +330,8 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 		return;
 	}
 	PJ *pj = state->d.pj;
+	rz_cmd_state_output_set_columnsf(state, "ssXXds", "name", "realname",
+		"vaddr", "paddr", "size", "comment");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
@@ -341,6 +343,21 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 		}
 		pj_end(pj);
 		break;
+	case RZ_OUTPUT_MODE_TABLE: {
+		// Print realname if exists and asm.flags.real is enabled
+		const char *name = core->flags->realnames && f->realname ? f->realname : f->name;
+		ut64 paddr = rz_io_v2p(core->io, addr);
+		if (f->offset != addr) {
+			char *descr_name = rz_str_newf("%s + %d", name, (int)(addr - f->offset));
+			rz_table_add_rowf(state->d.t, "ssXXds", f->name, descr_name,
+				addr, paddr, f->size, f->comment);
+			free(descr_name);
+		} else {
+			rz_table_add_rowf(state->d.t, "ssXXds", f->name, name, addr,
+				paddr, f->size, f->comment);
+		}
+		break;
+	}
 	case RZ_OUTPUT_MODE_STANDARD: {
 		// Print realname if exists and asm.flags.real is enabled
 		const char *name = core->flags->realnames && f->realname ? f->realname : f->name;
@@ -369,6 +386,8 @@ RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const cha
 	}
 	PJ *pj = state->d.pj;
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "ssXXds", "name", "realname",
+		"vaddr", "paddr", "size", "comment");
 	RzFlagItem *flag;
 	RzListIter *iter;
 	// Sometimes an address has multiple flags assigned to, show them all
@@ -385,7 +404,15 @@ RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const cha
 			}
 			pj_end(pj);
 			break;
-		case RZ_OUTPUT_MODE_STANDARD:
+		case RZ_OUTPUT_MODE_TABLE: {
+			// Print realname if exists and asm.flags.real is enabled
+			const char *name = core->flags->realnames && flag->realname ? flag->realname : flag->name;
+			ut64 paddr = rz_io_v2p(core->io, flag->offset);
+			rz_table_add_rowf(state->d.t, "ssXXds", flag->name, name,
+				flag->offset, paddr, flag->size, flag->comment);
+			break;
+		}
+		case RZ_OUTPUT_MODE_STANDARD: {
 			// Print realname if exists and asm.flags.real is enabled
 			if (core->flags->realnames && flag->realname) {
 				rz_cons_println(flag->realname);
@@ -393,6 +420,8 @@ RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const cha
 				rz_cons_println(flag->name);
 			}
 			break;
+		}
+
 		default:
 			rz_warn_if_reached();
 			break;

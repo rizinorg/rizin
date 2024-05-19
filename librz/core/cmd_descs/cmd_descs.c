@@ -21123,10 +21123,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *flag_comment_cd = rz_cmd_desc_argv_new(core->rcmd, f_cd, "fC", rz_flag_comment_handler, &flag_comment_help);
 	rz_warn_if_fail(flag_comment_cd);
 
-	RzCmdDesc *fd_cd = rz_cmd_desc_group_state_new(core->rcmd, f_cd, "fd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_describe_handler, &flag_describe_help, &fd_help);
+	RzCmdDesc *fd_cd = rz_cmd_desc_group_state_new(core->rcmd, f_cd, "fd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_flag_describe_handler, &flag_describe_help, &fd_help);
 	rz_warn_if_fail(fd_cd);
 	rz_cmd_desc_set_default_mode(fd_cd, RZ_OUTPUT_MODE_STANDARD);
-	RzCmdDesc *flag_describe_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, fd_cd, "fd.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_flag_describe_at_handler, &flag_describe_at_help);
+	RzCmdDesc *flag_describe_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, fd_cd, "fd.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_flag_describe_at_handler, &flag_describe_at_help);
 	rz_warn_if_fail(flag_describe_at_cd);
 	rz_cmd_desc_set_default_mode(flag_describe_at_cd, RZ_OUTPUT_MODE_STANDARD);
 
