@@ -209,6 +209,32 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
+  - name: ig
+    summary: List ROP Gadgets
+    subcommands:
+      - name: ig
+        cname: cmd_info_gadget
+        summary: List ROP Gadgets(Sequence of instructions which ends in ret)
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: igs
+        cname: cmd_info_gadget_query
+        summary: Query Stored ROP Gadgets
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: mnemonic
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
   - name: ih
     cname: cmd_info_fields
     summary: Show binary fields

@@ -1530,6 +1530,10 @@ RZ_IPI RzCmdStatus rz_cmd_info_entryexits_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_cmd_info_exports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "iE."
 RZ_IPI RzCmdStatus rz_cmd_info_cur_export_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "ig"
+RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "igs"
+RZ_IPI RzCmdStatus rz_cmd_info_gadget_query_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ih"
 RZ_IPI RzCmdStatus rz_cmd_info_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "iH"
