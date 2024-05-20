@@ -230,7 +230,7 @@ commands:
         args:
           - name: mnemonic
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            optional: false
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
