@@ -116,6 +116,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: arm thumb relocs 1
+FILE=bins/elf/mbedtls-bignum-thumb-interwork.so
+CMDS=<<EOF
+ir~?
+# ARM_THM_PC22
+s 0x08000b82
+pf bbbb
+pd 1
+EOF
+EXPECT=<<EOF
+4810
+0x08000b82 = 0x19
+0x08000b83 = 0xf0
+0x08000b84 = 0xaa
+0x08000b85 = 0xfa
+            ;-- memset:
+            0x08000b82      bl    memset                               ; RELOC 24 memset
+EOF
+RUN
+
 NAME=ELF: arm64 relocs 1
 FILE=bins/elf/r2pay-arm64.so
 CMDS=<<EOF
