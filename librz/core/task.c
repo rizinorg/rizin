@@ -108,7 +108,7 @@ RZ_API RzCoreTaskJoinErr rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCor
 			rz_core_task_sleep_begin(current);
 		}
 		if (!task_join(task)) {
-			ret = RZ_CORE_TASK_JOIN_ERR_NO_SEM_SINGLE;
+			ret = RZ_CORE_TASK_JOIN_ERR_ONE_NO_SEM;
 		}
 		if (current) {
 			rz_core_task_sleep_end(current);
@@ -136,7 +136,7 @@ RZ_API RzCoreTaskJoinErr rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCor
 				rz_core_task_sleep_begin(current);
 			}
 			if (!task_join(task)) {
-				ret = RZ_CORE_TASK_JOIN_ERR_NO_SEM_GROUP;
+				ret = RZ_CORE_TASK_JOIN_ERR_ALL_NO_SEM;
 			}
 			if (current) {
 				rz_core_task_sleep_end(current);
