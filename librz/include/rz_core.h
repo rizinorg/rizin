@@ -1139,11 +1139,11 @@ typedef enum {
 } RzTaskState;
 
 typedef enum {
-	RZ_CORE_TASK_JOIN_ERR_SUCCESS = 0,
-	RZ_CORE_TASK_JOIN_ERR_CURRENT,
-	RZ_CORE_TASK_JOIN_ERR_NO_TASK,
-	RZ_CORE_TASK_JOIN_ERR_ONE_NO_SEM,
-	RZ_CORE_TASK_JOIN_ERR_ALL_NO_SEM
+	RZ_CORE_TASK_JOIN_ERR_SUCCESS = 0, ///< Join success!
+	RZ_CORE_TASK_JOIN_ERR_CURRENT, ///< Join on current task
+	RZ_CORE_TASK_JOIN_ERR_NO_TASK, ///< No task has given id
+	RZ_CORE_TASK_JOIN_ERR_ONE_NO_SEM, ///< No join semaphore when joining on one task
+	RZ_CORE_TASK_JOIN_ERR_ALL_NO_SEM ///< No join semaphore when joining on all tasks
 } RzCoreTaskJoinErr;
 
 /**
