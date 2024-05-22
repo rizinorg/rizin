@@ -57,6 +57,7 @@ typedef struct subprocess_windows_t {
 	DWORD mode_stderr;
 } SubprocessWindows;
 
+// This structure is used by init/fini
 static SubprocessWindows subwin = { 0 };
 
 static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURITY_ATTRIBUTES attrs, DWORD sz, DWORD read_mode, DWORD write_mode) {
@@ -751,12 +752,13 @@ struct rz_subprocess_t {
 };
 
 typedef struct subprocess_unix_t {
-	RzPVector subprocs;
+	RzPVector /*<RzSubprocess *>*/ subprocs;
 	RzThreadLock *subprocs_mutex;
 	int sigchld_pipe[2];
 	RzThread *sigchld_thread;
 } SubprocessUnix;
 
+// This structure is used by init/fini
 static SubprocessUnix subnix = { 0 };
 
 static void subprocess_lock(void) {
