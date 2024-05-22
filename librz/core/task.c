@@ -94,21 +94,21 @@ static bool task_join(RzCoreTask *task) {
 	return true;
 }
 
-RZ_API bool rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id) {
-	bool ret = true;
+RZ_API RzCoreTaskJoinErr rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id) {
+	RzCoreTaskJoinErr ret = RZ_CORE_TASK_JOIN_ERR_SUCCESS;
 	if (current && id == current->id) {
-		return false;
+		return RZ_CORE_TASK_JOIN_ERR_CURRENT;
 	}
 	if (id >= 0) {
 		RzCoreTask *task = rz_core_task_get_incref(scheduler, id);
 		if (!task) {
-			return false;
+			return RZ_CORE_TASK_JOIN_ERR_NO_TASK;
 		}
 		if (current) {
 			rz_core_task_sleep_begin(current);
 		}
 		if (!task_join(task)) {
-			ret = false;
+			ret = RZ_CORE_TASK_JOIN_ERR_ONE_NO_SEM;
 		}
 		if (current) {
 			rz_core_task_sleep_end(current);
@@ -136,7 +136,7 @@ RZ_API bool rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *curren
 				rz_core_task_sleep_begin(current);
 			}
 			if (!task_join(task)) {
-				ret = false;
+				ret = RZ_CORE_TASK_JOIN_ERR_ALL_NO_SEM;
 			}
 			if (current) {
 				rz_core_task_sleep_end(current);

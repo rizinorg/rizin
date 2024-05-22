@@ -1138,6 +1138,14 @@ typedef enum {
 	RZ_CORE_TASK_STATE_DONE
 } RzTaskState;
 
+typedef enum {
+	RZ_CORE_TASK_JOIN_ERR_SUCCESS = 0, ///< Join success!
+	RZ_CORE_TASK_JOIN_ERR_CURRENT, ///< Join on current task
+	RZ_CORE_TASK_JOIN_ERR_NO_TASK, ///< No task has given id
+	RZ_CORE_TASK_JOIN_ERR_ONE_NO_SEM, ///< No join semaphore when joining on one task
+	RZ_CORE_TASK_JOIN_ERR_ALL_NO_SEM ///< No join semaphore when joining on all tasks
+} RzCoreTaskJoinErr;
+
 /**
  * Main payload of a task, the function that should be executed asynchronously.
  */
@@ -1191,7 +1199,7 @@ RZ_API void rz_core_task_break(RzCoreTaskScheduler *scheduler, int id);
 RZ_API void rz_core_task_break_all(RzCoreTaskScheduler *scheduler);
 RZ_API int rz_core_task_del(RzCoreTaskScheduler *scheduler, int id);
 RZ_API RzCoreTask *rz_core_task_self(RzCoreTaskScheduler *scheduler);
-RZ_API bool rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id);
+RZ_API RzCoreTaskJoinErr rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id);
 typedef void (*inRangeCb)(RzCore *core, ut64 from, ut64 to, int vsize, void *cb_user);
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv,
 	ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
