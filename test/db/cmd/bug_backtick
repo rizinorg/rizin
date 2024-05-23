@@ -5,3 +5,11 @@ CMDS=p8 3`~`
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=Invalid offset due invalid command
+FILE==
+BROKEN=1
+CMDS=fd @ `entry1`
+EXPECT=<<EOF
+EOF
+RUN

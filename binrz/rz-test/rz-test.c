@@ -15,7 +15,6 @@
 #define Color_HLINSERT Color_BGINSERT Color_INSERT
 #define Color_HLDELETE Color_BGDELETE Color_DELETE
 
-#define WORKERS_DEFAULT        8
 #define RIZIN_CMD_DEFAULT      "rizin"
 #define RZ_ASM_CMD_DEFAULT     "rz-asm"
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
@@ -26,36 +25,40 @@
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
 #define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
 
-typedef struct rz_testfile_counts_t {
-	ut64 tests_left; // count of remaining tests
-	ut64 ok;
-	ut64 xx;
-	ut64 br;
-	ut64 fx;
-} RzTestFileCounts;
+typedef struct test_counter_t {
+	size_t n_tests; ///< Total number of tests
+	size_t n_handled; ///< Tests that has been handled
+	size_t ok; ///< Tests that succeeded
+	size_t xx; ///< Tests that failed
+	size_t fx; ///< Tests that succeeded but also marked as broken
+	size_t br; ///< Tests that failed but also marked as broken
+} TestCounter;
+
+typedef struct test_return_t {
+	size_t max_path;
+	ut64 time_start; ///< Start time of the tests
+	bool interactive; ///< When true allows to review the tests interactively
+	st64 expected_succ; ///< Changes the return code if this value mismatches the actual total OK number
+	st64 expected_fail; ///< Changes the return code if this value mismatches the actual total XX number
+	int return_val; ///< Main return value
+	HtSP *path_counter; ///< Hashmap<const char*, TestCounter*> which is initialized when log_mode is true
+	RzAtomicBool *running; ///< Atomic boolean to stop result_thread
+} ResultThreadData;
 
 typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
 	RzTestDatabase *db;
-	PJ *test_results;
-
-	RzThreadCond *cond; // signaled from workers to main thread to update status
-	RzThreadLock *lock; // protects everything below
-	HtSP *path_left; // char * (path to test file) => RzTestFileCounts *
-	RzPVector /*<char *>*/ completed_paths;
-	ut64 ok_count;
-	ut64 xx_count;
-	ut64 br_count;
-	ut64 fx_count;
-	RzPVector /*<RzTest *>*/ queue;
-	RzPVector /*<RzTestResultInfo *>*/ results;
+	PJ *pj;
+	ResultThreadData data; ///< Thread context for result_thread
+	RzThreadQueue *results; ///< Results of the executed tests.
 } RzTestState;
 
-static void *worker_th(RzTestState *state);
-static void print_state(RzTestState *state, ut64 prev_completed);
-static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
-static void interact(RzTestState *state);
+static void worker_thread(void *element, void *user);
+static void *result_thread(void *user);
+static void handle_result(RzTestState *state, RzTestResultInfo *result, TestCounter *counter);
+static void print_counter(RzTestState *state, TestCounter *cnt);
+static void interact(RzTestState *state, RzPVector /*<RzTestResultInfo *>*/ *failed_results);
 static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
@@ -195,31 +198,28 @@ static bool rz_test_chdir_fromtest(const char *test_path) {
 	return found;
 }
 
-static bool log_mode = false;
-
 int rz_test_main(int argc, const char **argv) {
-	int workers_count = WORKERS_DEFAULT;
+	size_t n_threads = RZ_THREAD_POOL_ALL_CORES;
 	bool verbose = false;
 	bool nothing = false;
 	bool quiet = false;
-	bool interactive = false;
 	char *rizin_cmd = NULL;
 	char *rz_asm_cmd = NULL;
 	char *json_test_file = NULL;
 	char *output_file = NULL;
 	char *fuzz_dir = NULL;
-	RzPVector *except_dir = rz_pvector_new(free);
-	const char *rz_test_dir = NULL;
+	bool log_mode = false;
+	RzTestState state = { 0 };
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
-	st64 expect_succ = -1;
-	st64 expect_fail = -1;
-	int ret = 0;
-
+	const char *rz_test_dir = NULL;
+	RzPVector *except_dir = rz_pvector_new(free);
 	if (!except_dir) {
 		RZ_LOG_ERROR("Fail to create RzPVector\n");
-		ret = -1;
-		goto beach;
+		return -1;
 	}
+
+	state.data.expected_succ = -1;
+	state.data.expected_fail = -1;
 
 #if __WINDOWS__
 	UINT old_cp = GetConsoleOutputCP();
@@ -242,7 +242,7 @@ int rz_test_main(int argc, const char **argv) {
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'h':
-			ret = help(true);
+			state.data.return_val = help(true);
 			goto beach;
 		case 'q':
 			quiet = true;
@@ -255,13 +255,13 @@ int rz_test_main(int argc, const char **argv) {
 				printf("%s\n", s);
 				free(s);
 			}
-			ret = 0;
+			state.data.return_val = 0;
 			goto beach;
 		case 'V':
 			verbose = true;
 			break;
 		case 'i':
-			interactive = true;
+			state.data.interactive = true;
 			break;
 		case 'L':
 			log_mode = true;
@@ -271,10 +271,10 @@ int rz_test_main(int argc, const char **argv) {
 			fuzz_dir = strdup(opt.arg);
 			break;
 		case 'j':
-			workers_count = atoi(opt.arg);
-			if (workers_count <= 0) {
-				eprintf("Invalid thread count\n");
-				ret = help(false);
+			n_threads = atoi(opt.arg);
+			if (n_threads <= 0) {
+				eprintf("Invalid thread count (must be positive)\n");
+				state.data.return_val = help(false);
 				goto beach;
 			}
 			break;
@@ -311,21 +311,21 @@ int rz_test_main(int argc, const char **argv) {
 			break;
 		case 's':
 			// rz_num_math returns 0 for both '0' and invalid str
-			expect_succ = rz_num_math(NULL, opt.arg);
-			if (!rz_num_is_valid_input(NULL, opt.arg) || expect_succ < 0) {
+			state.data.expected_succ = rz_num_math(NULL, opt.arg);
+			if (!rz_num_is_valid_input(NULL, opt.arg) || state.data.expected_succ < 0) {
 				RZ_LOG_ERROR("Number of expected successful tests is invalid\n");
 				goto beach;
 			}
 			break;
 		case 'x':
-			expect_fail = rz_num_math(NULL, opt.arg);
-			if (!rz_num_is_valid_input(NULL, opt.arg) || expect_fail < 0) {
+			state.data.expected_fail = rz_num_math(NULL, opt.arg);
+			if (!rz_num_is_valid_input(NULL, opt.arg) || state.data.expected_fail < 0) {
 				RZ_LOG_ERROR("Number of expected failed tests is invalid\n");
 				goto beach;
 			}
 			break;
 		default:
-			ret = help(false);
+			state.data.return_val = help(false);
 			goto beach;
 		}
 	}
@@ -334,7 +334,7 @@ int rz_test_main(int argc, const char **argv) {
 	if (rz_test_dir) {
 		if (chdir(rz_test_dir) == -1) {
 			eprintf("Cannot find %s directory.\n", rz_test_dir);
-			ret = -1;
+			state.data.return_val = -1;
 			goto beach;
 		}
 	} else {
@@ -343,7 +343,7 @@ int rz_test_main(int argc, const char **argv) {
 			: rz_test_chdir(argv[0]);
 		if (!dir_found) {
 			eprintf("Cannot find db/ directory related to the given test.\n");
-			ret = -1;
+			state.data.return_val = -1;
 			goto beach;
 		}
 	}
@@ -356,14 +356,12 @@ int rz_test_main(int argc, const char **argv) {
 
 	if (!rz_subprocess_init()) {
 		eprintf("Subprocess init failed\n");
-		ret = -1;
+		state.data.return_val = -1;
 		goto beach;
 	}
 	atexit(rz_subprocess_fini);
 
 	rz_sys_setenv("TZ", "UTC");
-	ut64 time_start = rz_time_now_mono();
-	RzTestState state = { 0 };
 	// Avoid PATH search for each process launched
 	if (!rizin_cmd) {
 		rizin_cmd = rz_file_path(RIZIN_CMD_DEFAULT);
@@ -378,25 +376,13 @@ int rz_test_main(int argc, const char **argv) {
 	state.verbose = verbose;
 	state.db = rz_test_test_database_new();
 	if (!state.db) {
-		ret = -1;
+		state.data.return_val = -1;
 		goto beach;
 	}
-	rz_pvector_init(&state.queue, NULL);
-	rz_pvector_init(&state.results, (RzPVectorFree)rz_test_test_result_info_free);
-	rz_pvector_init(&state.completed_paths, NULL);
+
 	if (output_file) {
-		state.test_results = pj_new();
-		pj_a(state.test_results);
-	}
-	state.lock = rz_th_lock_new(false);
-	if (!state.lock) {
-		ret = -1;
-		goto beach;
-	}
-	state.cond = rz_th_cond_new();
-	if (!state.cond) {
-		ret = -1;
-		goto beach;
+		state.pj = pj_new();
+		pj_a(state.pj);
 	}
 
 	if (opt.ind < argc) {
@@ -410,14 +396,14 @@ int rz_test_main(int argc, const char **argv) {
 				eprintf("Category: %s\n", arg);
 				if (!strcmp(arg, "unit")) {
 					if (!rz_test_test_run_unit()) {
-						ret = -1;
+						state.data.return_val = -1;
 						goto beach;
 					}
 					continue;
 				} else if (!strcmp(arg, "fuzz")) {
 					if (!fuzz_dir) {
 						eprintf("No fuzz dir given. Use -F [dir]\n");
-						ret = -1;
+						state.data.return_val = -1;
 						goto beach;
 					}
 					if (!rz_test_test_database_load_fuzz(state.db, fuzz_dir)) {
@@ -440,7 +426,7 @@ int rz_test_main(int argc, const char **argv) {
 				rz_test_test_database_free(state.db);
 				free(tf);
 				free(alloc_arg);
-				ret = -1;
+				state.data.return_val = -1;
 				goto beach;
 			}
 			RZ_FREE(alloc_arg);
@@ -451,7 +437,7 @@ int rz_test_main(int argc, const char **argv) {
 		if (!rz_test_test_database_load(state.db, "db")) {
 			eprintf("Failed to load tests from ./db\n");
 			rz_test_test_database_free(state.db);
-			ret = -1;
+			state.data.return_val = -1;
 			goto beach;
 		}
 		if (fuzz_dir && !rz_test_test_database_load_fuzz(state.db, fuzz_dir)) {
@@ -481,6 +467,30 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
+	if (log_mode) {
+		// Log mode prints the state after every completed file.
+		// The count of tests left per file is stored in a ht.
+		HtSP *path_counter = ht_sp_new(HT_STR_DUP, NULL, free);
+		state.data.max_path = 0;
+		if (path_counter) {
+			void **it;
+			rz_pvector_foreach (&state.db->tests, it) {
+				RzTest *test = *it;
+				TestCounter *cnt = ht_sp_find(path_counter, test->path, NULL);
+				if (!cnt) {
+					size_t path_len = strlen(test->path);
+					if (path_len > state.data.max_path) {
+						state.data.max_path = path_len;
+					}
+					cnt = RZ_NEW0(TestCounter);
+					ht_sp_insert(path_counter, test->path, cnt);
+				}
+				cnt->n_tests++;
+			}
+		}
+		state.data.path_counter = path_counter;
+	}
+
 	RZ_FREE(cwd);
 	uint32_t loaded_tests = rz_pvector_len(&state.db->tests);
 	printf("Loaded %u tests.\n", loaded_tests);
@@ -503,114 +513,52 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
-	if (rz_pvector_len(&state.db->tests) != 0) {
-		rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
-	} else {
+	if (rz_pvector_len(&state.db->tests) < 1) {
 		eprintf("No tests discovered\n");
+		goto coast;
 	}
 
-	if (log_mode) {
-		// Log mode prints the state after every completed file.
-		// The count of tests left per file is stored in a ht.
-		state.path_left = ht_sp_new(HT_STR_DUP, NULL, free);
-		if (state.path_left) {
-			void **it;
-			rz_pvector_foreach (&state.queue, it) {
-				RzTest *test = *it;
-				RzTestFileCounts *counts = ht_sp_find(state.path_left, test->path, NULL);
-				if (!counts) {
-					counts = calloc(1, sizeof(RzTestFileCounts));
-					ht_sp_insert(state.path_left, test->path, counts);
-				}
-				counts->tests_left++;
-			}
-		}
+	state.results = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, (RzListFree)rz_test_result_info_free);
+	if (!state.results) {
+		eprintf("Failed to create result queue.\n");
+		goto coast;
 	}
 
-	rz_th_lock_enter(state.lock);
-
-	RzPVector workers;
-	rz_pvector_init(&workers, NULL);
-	int i;
-	for (i = 0; i < workers_count; i++) {
-		RzThread *th = rz_th_new((RzThreadFunction)worker_th, &state);
-		if (!th) {
-			eprintf("Failed to start thread.\n");
-			rz_th_lock_leave(state.lock);
-			exit(-1);
-		}
-		rz_pvector_push(&workers, th);
+	state.data.running = rz_atomic_bool_new(true);
+	if (!state.data.running) {
+		eprintf("Failed to create atomic boolean.\n");
+		goto coast;
 	}
 
-	ut64 prev_completed = UT64_MAX;
-	ut64 prev_paths_completed = 0;
-	while (true) {
-		ut64 completed = (ut64)rz_pvector_len(&state.results);
-		if (log_mode) {
-			print_log(&state, prev_completed, prev_paths_completed);
-		} else if (completed != prev_completed) {
-			print_state(&state, prev_completed);
-		}
-		prev_completed = completed;
-		prev_paths_completed = (ut64)rz_pvector_len(&state.completed_paths);
-		if (completed == rz_pvector_len(&state.db->tests)) {
-			break;
-		}
-		rz_th_cond_wait(state.cond, state.lock);
+	RzThread *rth = rz_th_new(result_thread, &state);
+	if (!rth) {
+		eprintf("Failed to start the result thread.\n");
+		return -1;
 	}
 
-	rz_th_lock_leave(state.lock);
+	eprintf("Using %" PFMTSZu " threads\n", rz_th_request_physical_cores(n_threads));
 
-	printf("\n");
+	state.data.time_start = rz_time_now_mono();
+	rz_th_iterate_pvector(&state.db->tests, worker_thread, n_threads, &state);
 
-	void **it;
-	rz_pvector_foreach (&workers, it) {
-		RzThread *th = *it;
-		rz_th_wait(th);
-		rz_th_free(th);
-	}
-	rz_pvector_clear(&workers);
+	// notify the result thread that we finished running all tests.
+	rz_atomic_bool_set(state.data.running, false);
 
-	ut64 seconds = (rz_time_now_mono() - time_start) / 1000000;
-	printf("Finished in");
-	if (seconds > 60) {
-		ut64 minutes = seconds / 60;
-		printf(" %" PFMT64u " minutes and", minutes);
-		seconds -= (minutes * 60);
-	}
-	printf(" %" PFMT64u " seconds.\n", seconds % 60);
+	// wait for the result thread to empty the queue.
+	rz_th_wait(rth);
+	rz_th_free(rth);
 
 	if (output_file) {
-		pj_end(state.test_results);
-		char *results = pj_drain(state.test_results);
+		pj_end(state.pj);
+		char *results = pj_drain(state.pj);
 		rz_file_dump(output_file, (ut8 *)results, strlen(results), false);
 		free(results);
 	}
 
-	if (interactive) {
-		interact(&state);
-	}
-
-	if (expect_succ > 0 && expect_succ != state.ok_count) {
-		ret = 1;
-	}
-
-	if (expect_fail > 0 && expect_fail != state.xx_count) {
-		ret = 1;
-	}
-
-	if (expect_fail < 0 && expect_succ < 0 && state.xx_count) {
-		ret = 1;
-	}
-
 coast:
-	rz_pvector_clear(&state.queue);
-	rz_pvector_clear(&state.results);
-	rz_pvector_clear(&state.completed_paths);
-	rz_test_test_database_free(state.db);
-	rz_th_lock_free(state.lock);
-	rz_th_cond_free(state.cond);
-	ht_sp_free(state.path_left);
+	ht_sp_free(state.data.path_counter);
+	rz_atomic_bool_free(state.data.running);
+	rz_th_queue_free(state.results);
 beach:
 	free(output_file);
 	free(rizin_cmd);
@@ -625,11 +573,13 @@ beach:
 		(void)rz_sys_cmdf("chcp %u > NUL", old_cp);
 	}
 #endif
-	return ret;
+	return state.data.return_val;
 }
 
-static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
-	rz_return_if_fail(pj && result);
+static void result_to_json(RzTestState *state, RzTestResultInfo *result) {
+	rz_return_if_fail(result);
+
+	PJ *pj = state->pj;
 	pj_o(pj);
 	pj_k(pj, "type");
 	RzTest *test = result->test;
@@ -674,61 +624,68 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	pj_end(pj);
 }
 
-static void *worker_th(RzTestState *state) {
-	rz_th_lock_enter(state->lock);
+static void worker_thread(void *element, void *user) {
+	RzTest *test = (RzTest *)element;
+	RzTestState *state = (RzTestState *)user;
+	RzTestResultInfo *result = rz_test_run_test(&state->run_config, test);
+	rz_th_queue_push(state->results, result, true);
+}
+
+static void *result_thread(void *user) {
+	TestCounter counter = { 0 };
+	RzTestState *state = (RzTestState *)user;
+	RzTestResultInfo *result = NULL;
+	RzPVector failed_results = { 0 };
+
+	counter.n_tests = rz_pvector_len(&state->db->tests);
+	rz_pvector_init(&failed_results, (RzPVectorFree)rz_test_result_info_free);
+
 	while (true) {
-		if (rz_pvector_empty(&state->queue)) {
+		if (!(result = rz_th_queue_pop(state->results, false))) {
+			if (rz_atomic_bool_get(state->data.running)) {
+				rz_sys_usleep(250);
+				continue;
+			}
+			// queue is empty and there is nothing
+			// else to do. we terminate the loop
 			break;
 		}
-		RzTest *test = rz_pvector_pop(&state->queue);
-		rz_th_lock_leave(state->lock);
 
-		RzTestResultInfo *result = rz_test_run_test(&state->run_config, test);
-
-		rz_th_lock_enter(state->lock);
-		rz_pvector_push(&state->results, result);
-		if (!log_mode) {
-			switch (result->result) {
-			case RZ_TEST_RESULT_OK:
-				state->ok_count++;
-				break;
-			case RZ_TEST_RESULT_FAILED:
-				state->xx_count++;
-				break;
-			case RZ_TEST_RESULT_BROKEN:
-				state->br_count++;
-				break;
-			case RZ_TEST_RESULT_FIXED:
-				state->fx_count++;
-				break;
-			}
+		handle_result(state, result, &counter);
+		if (state->data.interactive && result->result == RZ_TEST_RESULT_FAILED) {
+			rz_pvector_push(&failed_results, result);
+		} else {
+			rz_test_result_info_free(result);
 		}
-		if (state->path_left) {
-			RzTestFileCounts *counts = ht_sp_find(state->path_left, test->path, NULL);
-			if (counts) {
-				switch (result->result) {
-				case RZ_TEST_RESULT_OK:
-					counts->ok++;
-					break;
-				case RZ_TEST_RESULT_FAILED:
-					counts->xx++;
-					break;
-				case RZ_TEST_RESULT_BROKEN:
-					counts->br++;
-					break;
-				case RZ_TEST_RESULT_FIXED:
-					counts->fx++;
-					break;
-				}
-				counts->tests_left--;
-				if (!counts->tests_left) {
-					rz_pvector_push(&state->completed_paths, (void *)test->path);
-				}
-			}
-		}
-		rz_th_cond_signal(state->cond);
 	}
-	rz_th_lock_leave(state->lock);
+	ut64 seconds = (rz_time_now_mono() - state->data.time_start) / 1000000;
+
+	print_counter(state, &counter);
+	printf("\nFinished in");
+	if (seconds > 60) {
+		ut64 minutes = seconds / 60;
+		printf(" %" PFMT64u " minutes and", minutes);
+		seconds -= (minutes * 60);
+	}
+	printf(" %" PFMT64u " seconds.\n", seconds % 60);
+
+	if (state->data.interactive) {
+		interact(state, &failed_results);
+		rz_pvector_clear(&failed_results);
+	}
+
+	if (state->data.expected_succ > 0 && state->data.expected_succ != counter.ok) {
+		state->data.return_val = 1;
+	}
+
+	if (state->data.expected_fail > 0 && state->data.expected_fail != counter.xx) {
+		state->data.return_val = 1;
+	}
+
+	if (state->data.expected_fail < 0 && state->data.expected_succ < 0 && counter.xx) {
+		state->data.return_val = 1;
+	}
+
 	return NULL;
 }
 
@@ -870,110 +827,143 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 	}
 }
 
-static void print_new_results(RzTestState *state, ut64 prev_completed) {
-	// Detailed test result (with diff if necessary)
-	ut64 completed = (ut64)rz_pvector_len(&state->results);
-	ut64 i;
-	for (i = prev_completed; i < completed; i++) {
-		RzTestResultInfo *result = rz_pvector_at(&state->results, (size_t)i);
-		if (state->test_results) {
-			test_result_to_json(state->test_results, result);
-		}
-		if (!state->verbose && (result->result == RZ_TEST_RESULT_OK || result->result == RZ_TEST_RESULT_FIXED || result->result == RZ_TEST_RESULT_BROKEN)) {
-			continue;
-		}
-		char *name = rz_test_test_name(result->test);
-		if (!name) {
-			continue;
-		}
-		printf("\n" RZ_CONS_CURSOR_UP RZ_CONS_CLEAR_LINE);
-		switch (result->result) {
-		case RZ_TEST_RESULT_OK:
-			printf(Color_GREEN "[OK]" Color_RESET);
-			break;
-		case RZ_TEST_RESULT_FAILED:
-			printf(Color_RED "[XX]" Color_RESET);
-			break;
-		case RZ_TEST_RESULT_BROKEN:
-			printf(Color_BLUE "[BR]" Color_RESET);
-			break;
-		case RZ_TEST_RESULT_FIXED:
-			printf(Color_CYAN "[FX]" Color_RESET);
-			break;
-		}
-		if (result->timeout) {
-			printf(Color_CYAN " TIMEOUT" Color_RESET);
-		}
-		printf(" %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
-		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
-			print_result_diff(&state->run_config, result);
-		}
-		free(name);
+static void print_path_completion(RzTestState *state, RzTestResultInfo *result) {
+	if (!state->data.path_counter) {
+		return;
 	}
+
+	const char *path = result->test->path;
+	if (!path) {
+		rz_warn_if_reached();
+		return;
+	}
+
+	TestCounter *cnt = ht_sp_find(state->data.path_counter, path, NULL);
+	if (!cnt) {
+		rz_warn_if_reached();
+		return;
+	}
+
+	cnt->n_handled++;
+	switch (result->result) {
+	case RZ_TEST_RESULT_OK:
+		cnt->ok++;
+		break;
+	case RZ_TEST_RESULT_FAILED:
+		cnt->xx++;
+		break;
+	case RZ_TEST_RESULT_BROKEN:
+		cnt->br++;
+		break;
+	case RZ_TEST_RESULT_FIXED:
+		cnt->fx++;
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
+	if (cnt->n_handled < cnt->n_tests) {
+		return;
+	}
+
+	const int max_path = state->data.max_path;
+
+	if (cnt->xx > 0) {
+		printf(Color_RED "[XX]" Color_RESET " %-*s %8" PFMTSZu " OK  %8" PFMTSZu " BR %8" PFMTSZu " XX %8" PFMTSZu " FX\n",
+			max_path, path, cnt->ok, cnt->br, cnt->xx, cnt->fx);
+	} else {
+		printf(Color_GREEN "[OK]" Color_RESET " %-*s %8" PFMTSZu " OK  %8" PFMTSZu " BR %8" PFMTSZu " XX %8" PFMTSZu " FX\n",
+			max_path, path, cnt->ok, cnt->br, cnt->xx, cnt->fx);
+	}
+
+	// free the counter.
+	ht_sp_delete(state->data.path_counter, path);
 }
 
-static void print_state_counts(RzTestState *state) {
-	printf("%8" PFMT64u " OK  %8" PFMT64u " BR %8" PFMT64u " XX %8" PFMT64u " FX",
-		state->ok_count, state->br_count, state->xx_count, state->fx_count);
+static void print_counter(RzTestState *state, TestCounter *cnt) {
+	printf(RZ_CONS_CLEAR_LINE "[%" PFMTSZu "/%" PFMTSZu "]", cnt->n_tests, cnt->n_handled);
+	printf(" %8" PFMTSZu " OK  %8" PFMTSZu " BR %8" PFMTSZu " XX %8" PFMTSZu " FX", cnt->ok, cnt->br, cnt->xx, cnt->fx);
 }
 
-static void print_state(RzTestState *state, ut64 prev_completed) {
+static void print_result(RzTestState *state, RzTestResultInfo *result) {
+	if (!state->verbose && result->result != RZ_TEST_RESULT_FAILED) {
+		return;
+	}
+	char *name = rz_test_test_name(result->test);
+	if (!name) {
+		return;
+	}
+	printf("\n" RZ_CONS_CURSOR_UP RZ_CONS_CLEAR_LINE);
+	switch (result->result) {
+	case RZ_TEST_RESULT_OK:
+		printf(Color_GREEN "[OK]" Color_RESET);
+		break;
+	case RZ_TEST_RESULT_FAILED:
+		printf(Color_RED "[XX]" Color_RESET);
+		break;
+	case RZ_TEST_RESULT_BROKEN:
+		printf(Color_BLUE "[BR]" Color_RESET);
+		break;
+	case RZ_TEST_RESULT_FIXED:
+		printf(Color_CYAN "[FX]" Color_RESET);
+		break;
+	}
+	if (result->timeout) {
+		printf(Color_CYAN " TIMEOUT" Color_RESET);
+	}
+	printf(" %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
+	if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
+		print_result_diff(&state->run_config, result);
+	}
+	free(name);
+}
+
+static void handle_result(RzTestState *state, RzTestResultInfo *result, TestCounter *counter) {
 #if __WINDOWS__
 	setvbuf(stdout, NULL, _IOFBF, 8192);
 #endif
-	print_new_results(state, prev_completed);
 
-	// [x/x] OK  42 BR  0 ...
-	printf(RZ_CONS_CLEAR_LINE);
-	int w = printf("[%" PFMT64u "/%" PFMT64u "]", (ut64)rz_pvector_len(&state->results), (ut64)rz_pvector_len(&state->db->tests));
-	while (w >= 0 && w < 20) {
-		printf(" ");
-		w++;
+	counter->n_handled++;
+	switch (result->result) {
+	case RZ_TEST_RESULT_OK:
+		counter->ok++;
+		break;
+	case RZ_TEST_RESULT_FAILED:
+		counter->xx++;
+		break;
+	case RZ_TEST_RESULT_BROKEN:
+		counter->br++;
+		break;
+	case RZ_TEST_RESULT_FIXED:
+		counter->fx++;
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
 	}
-	printf(" ");
-	print_state_counts(state);
+
+	if (state->pj) {
+		result_to_json(state, result);
+	}
+
+	print_result(state, result);
+	print_path_completion(state, result);
+	if (!state->data.path_counter) {
+		print_counter(state, counter);
+	}
+
+	// ensure to flush stdout
 	fflush(stdout);
+
 #if __WINDOWS__
 	setvbuf(stdout, NULL, _IONBF, 0);
 #endif
 }
 
-static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed) {
-	print_new_results(state, prev_completed);
-	ut64 paths_completed = rz_pvector_len(&state->completed_paths);
-	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
-		const char *name = (const char *)rz_pvector_at(&state->completed_paths, prev_paths_completed);
-		if (!name) {
-			name = "unknown path. something is very wrong.";
-		}
-		printf("[**] %50s ", name);
-		if (state->path_left) {
-			RzTestFileCounts *counts = ht_sp_find(state->path_left, name, NULL);
-			if (counts) {
-				state->ok_count += counts->ok;
-				state->xx_count += counts->xx;
-				state->br_count += counts->br;
-				state->fx_count += counts->fx;
-			}
-		}
-		print_state_counts(state);
-		printf("\n");
-		fflush(stdout);
-	}
-}
-
-static void interact(RzTestState *state) {
-	void **it;
-	RzPVector failed_results;
-	rz_pvector_init(&failed_results, NULL);
-	rz_pvector_foreach (&state->results, it) {
-		RzTestResultInfo *result = *it;
-		if (result->result == RZ_TEST_RESULT_FAILED) {
-			rz_pvector_push(&failed_results, result);
-		}
-	}
-	if (rz_pvector_empty(&failed_results)) {
-		goto beach;
+static void interact(RzTestState *state, RzPVector /*<RzTestResultInfo *>*/ *failed_results) {
+	if (rz_pvector_empty(failed_results)) {
+		return;
 	}
 
 #if __WINDOWS__
@@ -982,10 +972,11 @@ static void interact(RzTestState *state) {
 	printf("\n");
 	printf("#####################\n");
 	printf(" %" PFMT64u " failed test(s) " UTF8_POLICE_CARS_REVOLVING_LIGHT "\n",
-		(ut64)rz_pvector_len(&failed_results));
+		(ut64)rz_pvector_len(failed_results));
 
+	void **it;
 	ut32 cnt = 0;
-	rz_pvector_foreach (&failed_results, it) {
+	rz_pvector_foreach (failed_results, it) {
 		cnt++;
 		RzTestResultInfo *result = *it;
 		if (result->test->type != RZ_TEST_TYPE_CMD && result->test->type != RZ_TEST_TYPE_ASM) {
@@ -995,7 +986,7 @@ static void interact(RzTestState *state) {
 		printf("#####################\n\n");
 		char *name = rz_test_test_name(result->test);
 		if (name) {
-			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET " (%d/%zu)\n", result->test->path, name, cnt, rz_pvector_len(&failed_results));
+			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET " (%d/%zu)\n", result->test->path, name, cnt, rz_pvector_len(failed_results));
 			free(name);
 		}
 		print_result_diff(&state->run_config, result);
@@ -1018,7 +1009,7 @@ static void interact(RzTestState *state) {
 		}
 		switch (buf[0]) {
 		case 'f':
-			if (!interact_fix(result, &failed_results)) {
+			if (!interact_fix(result, failed_results)) {
 				printf("This test has failed too hard to be fixed.\n");
 				goto menu;
 			}
@@ -1026,23 +1017,20 @@ static void interact(RzTestState *state) {
 		case 'i':
 			break;
 		case 'b':
-			interact_break(result, &failed_results);
+			interact_break(result, failed_results);
 			break;
 		case 'c':
 			if (have_commands) {
-				interact_commands(result, &failed_results);
+				interact_commands(result, failed_results);
 				break;
 			}
 			goto menu;
 		case 'q':
-			goto beach;
+			return;
 		default:
 			goto menu;
 		}
 	}
-
-beach:
-	rz_pvector_clear(&failed_results);
 }
 
 static char *format_cmd_kv(const char *key, const char *val) {

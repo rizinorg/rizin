@@ -129,12 +129,12 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_core_get_themes(RZ_NONNULL RzCore *core
 
 	RzPVector *vec = rz_set_s_to_vector(themes);
 	if (!vec) {
-		set_s_free(themes);
+		rz_set_s_free(themes);
 		return NULL;
 	}
 	rz_pvector_push(vec, strdup("default"));
 	rz_pvector_sort(vec, (RzPVectorComparator)compare_strings, NULL);
-	set_s_free(themes);
+	rz_set_s_free(themes);
 	return vec;
 }
 
