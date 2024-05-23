@@ -1,59 +1,59 @@
-d "nop" 00000000 0x4
-d "lui t0, 0x1234" 3c081234 0x4
-d "sw t0, 0(t1)" ad280000 0x4
-d "sh t0, 0(t1)" a5280000 0x4
-d "sb t0, 0(t1)" a0280000 0x4
-d "lw t0, 0(t1)" 8d280000 0x4
-d "lwl t0, 0(t1)" 88280000 0x4
-d "lh t0, 0(t1)" 85280000 0x4
-d "lb t0, 0(t1)" 80280000 0x4
-d "ori t0, t1, 0x1234" 35281234 0x4
-d "andi t0, t1, 0x1234" 31281234 0x4
-d "xori t0, t1, 0x1234" 38281234 0x4
-d "addi t0, t1, 0x1234" 21281234 0x4
-d "addiu t0, t1, 0x1234" 25281234 0x4
-d "b 8" 10000002 0x4
-d "bnez t0, 8" 15000002 0x4
-d "bal 0x10000" 04100004 0x4
-d "bne t0, t1, 8" 15090002 0x4
-d "beq t0, t1, 8" 11090002 0x4
-d "beqz t0, 8" 11000002 0x4
-d "bgez t0, 8" 05010002 0x4
-d "bgezal t0, 8" 04110002 0x4
-d "bltzal t0, 8" 04100002 0x4
-d "bgtz t0, 8" 1d000002 0x4
-d "blez t0, 8" 19000002 0x4
-d "bltz t0, 8" 04000002 0x4
-d "syscall" 0000000c 0x4
-d "break" 0000000d 0x4
-d "nor t0, t1, t2" 014b4827 0x4
-d "or t0, t1, t2" 012b4825 0x4
-d "xor t0, t1, t2" 012b4826 0x4
-d "and t0, t1, t2" 012b4824 0x4
-d "sll t0, t1, 2" 00094980 0x4
-d "sllv t0, t1, t2" 01495004 0x4
-d "slt t0, t1, t2" 012b482a 0x4
-d "slti t0, t1, 0x1234" 29281234 0x4
-d "sltiu t0, t1, 0x1234" 2d281234 0x4
-d "sltu t0, t1, t2" 012b482b 0x4
-d "sra t0, t1, 2" 00094983 0x4
-d "srl t0, t1, 2" 00094982 0x4
-d "srlv t0, t1, t2" 01495006 0x4
-d "srav t0, t1, t2" 01495007 0x4
-d "add t0, t1, t2" 012b4820 0x4
-d "move t0, t1" 01204020 0x4
-d "addu t0, t1, t2" 012b4821 0x4
-d "sub t0, t1, t2" 012b4822 0x4
-d "subu t0, t1, t2" 012b4823 0x4
-d "mult t0, t1" 01290018 0x4
-d "multu t0, t1" 01290019 0x4
-d "div t0, t1" 0129001a 0x4
-d "divu t0, t1" 0129001b 0x4
-d "mfhi t0" 00004010 0x4
-d "mflo t0" 00004012 0x4
-d "mthi t0" 01000011 0x4
-d "mtlo t0" 01000013 0x4
-d "jalr t0, t1" 0120f809 0x4
-d "jr t0" 01000008 0x4
-d "jal 0x123456" 0c123456 0x4
-d "j 0x123456" 08123456 0x4
+da "nop" 00000000 0x4
+da "lui t0, 0x1234" 3c081234 0x4
+da "sw t0, 0(t1)" ad280000 0x4
+da "sh t0, 0(t1)" a5280000 0x4
+da "sb t0, 0(t1)" a0280000 0x4
+da "lw t0, 0(t1)" 8d280000 0x4
+da "lwl t0, 0(t1)" 88280000 0x4
+da "lh t0, 0(t1)" 85280000 0x4
+da "lb t0, 0(t1)" 80280000 0x4
+da "ori t0, t1, 0x1234" 35281234 0x4
+da "andi t0, t1, 0x1234" 31281234 0x4
+da "xori t0, t1, 0x1234" 38281234 0x4
+da "addi t0, t1, 0x1234" 21281234 0x4
+da "addiu t0, t1, 0x1234" 25281234 0x4
+da "b 8" 10000002 0x4
+da "bnez t0, 8" 15000002 0x4
+da "bal 0x10000" 04100004 0x4
+da "bne t0, t1, 8" 15090002 0x4
+da "beq t0, t1, 8" 11090002 0x4
+da "beqz t0, 8" 11000002 0x4
+da "bgez t0, 8" 05010002 0x4
+da "bgezal t0, 8" 04110002 0x4
+da "bltzal t0, 8" 04100002 0x4
+da "bgtz t0, 8" 1d000002 0x4
+da "blez t0, 8" 19000002 0x4
+da "bltz t0, 8" 04000002 0x4
+da "syscall" 0000000c 0x4
+da "break" 0000000d 0x4
+da "nor t0, t1, t2" 014b4827 0x4
+da "or t0, t1, t2" 012b4825 0x4
+da "xor t0, t1, t2" 012b4826 0x4
+da "and t0, t1, t2" 012b4824 0x4
+da "sll t0, t1, 2" 00094980 0x4
+da "sllv t0, t1, t2" 01495004 0x4
+da "slt t0, t1, t2" 012b482a 0x4
+da "slti t0, t1, 0x1234" 29281234 0x4
+da "sltiu t0, t1, 0x1234" 2d281234 0x4
+da "sltu t0, t1, t2" 012b482b 0x4
+da "sra t0, t1, 2" 00094983 0x4
+da "srl t0, t1, 2" 00094982 0x4
+da "srlv t0, t1, t2" 01495006 0x4
+da "srav t0, t1, t2" 01495007 0x4
+da "add t0, t1, t2" 012b4820 0x4
+da "move t0, t1" 01204020 0x4
+da "addu t0, t1, t2" 012b4821 0x4
+da "sub t0, t1, t2" 012b4822 0x4
+da "subu t0, t1, t2" 012b4823 0x4
+da "mult t0, t1" 01290018 0x4
+da "multu t0, t1" 01290019 0x4
+da "div t0, t1" 0129001a 0x4
+da "divu t0, t1" 0129001b 0x4
+da "mfhi t0" 00004010 0x4
+da "mflo t0" 00004012 0x4
+da "mthi t0" 01000011 0x4
+da "mtlo t0" 01000013 0x4
+da "jalr t0, t1" 0120f809 0x4
+da "jr t0" 01000008 0x4
+da "jal 0x123456" 0c123456 0x4
+da "j 0x123456" 08123456 0x4
