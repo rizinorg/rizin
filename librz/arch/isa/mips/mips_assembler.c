@@ -267,9 +267,9 @@ RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out) {
 					switch (ops[i].args) {
 					case 2:
 						if (strcmp(w0, "beqz") == 0) {
-							op = 4;  // op code for beq
+							op = 4; // op code for beq
 							rs = getreg(w1);
-							rt = 0;  // zero register
+							rt = 0; // zero register
 							imm = (int)strtol(w2, NULL, 0);
 						} else {
 							op = ops[i].n;
