@@ -266,7 +266,7 @@ RZ_IPI int mips_assemble_opcode(const char *str, ut64 pc, ut8 *out) {
 					int op = 0, rs = 0, rt = 0, imm = 0, is_branch = ops[i].type == 'B';
 					switch (ops[i].args) {
 					case 2:
-						if (strcmp(w0, "beqz") == 0) {
+						if (!strcmp(w0, "beqz")) {
 							op = 4; // op code for beq
 							rs = getreg(w1);
 							rt = 0; // zero register
