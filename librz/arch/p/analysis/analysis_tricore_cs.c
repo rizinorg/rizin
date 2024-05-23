@@ -8,9 +8,7 @@
 #include <capstone/capstone.h>
 
 #include <tricore/tricore.inc>
-
-RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *a);
-RZ_IPI RzAnalysisILConfig *tricore_il_config(RZ_NONNULL RzAnalysis *analysis);
+#include "tricore/tricore_il.h"
 
 #define TRICORE_REG_SP TRICORE_REG_A10
 

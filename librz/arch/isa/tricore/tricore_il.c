@@ -403,7 +403,7 @@ static const char *CR_Table(unsigned addr_offset) {
 	case 0xA010: return "FPU_TRAP_SRC1";
 	case 0xA014: return "FPU_TRAP_SRC2";
 	case 0xA018: return "FPU_TRAP_SRC3";
-	default: return NULL;
+	default: break;
 	}
 	return NULL;
 }
@@ -4066,8 +4066,20 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		}
 		break;
 	}
-	case TRICORE_INS_MFCR: return SETG(R(0), VARG(CR_Table(I(1))));
-	case TRICORE_INS_MTCR: return SETG(CR_Table(I(0)), VARG(R(1)));
+	case TRICORE_INS_MFCR: {
+		const char *cr = CR_Table(I(1));
+		if (!cr) {
+			return NULL;
+		}
+		return SETG(R(0), VARG(cr));
+	}
+	case TRICORE_INS_MTCR: {
+		const char *cr = CR_Table(I(0));
+		if (!cr) {
+			return NULL;
+		}
+		return SETG(cr, VARG(R(1)));
+	}
 	case TRICORE_INS_BMERGE:
 		return SETG(R(0),
 			APPEND(
