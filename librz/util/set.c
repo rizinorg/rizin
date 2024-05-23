@@ -61,7 +61,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set)
 	return vec;
 }
 
-RZ_API void set_s_free(RZ_NULLABLE RzSetS *set) {
+RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set) {
 	ht_sp_free((HtSP *)set);
 }
 
