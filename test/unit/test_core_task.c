@@ -15,7 +15,8 @@ static void *my_function(RzCore *core, void *user) {
 }
 
 static bool test_core_task(void) {
-	mu_assert_notnull(rz_th_sem_new(1), "create semaphore");
+	RzThreadSemaphore *sem = rz_th_sem_new(1);
+	mu_assert_streq(rz_th_sem_get_errno_str(sem), "", "semaphore err");
 
 	RzCore *core = rz_core_new();
 	rz_config_set_i(core->config, "scr.interactive", 0);

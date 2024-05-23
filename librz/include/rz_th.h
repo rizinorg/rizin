@@ -48,6 +48,7 @@ RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial);
 RZ_API void rz_th_sem_free(RZ_NULLABLE RzThreadSemaphore *sem);
 RZ_API void rz_th_sem_post(RZ_NONNULL RzThreadSemaphore *sem);
 RZ_API void rz_th_sem_wait(RZ_NONNULL RzThreadSemaphore *sem);
+RZ_API const char *rz_th_sem_get_errno_str(RzThreadSemaphore *sem);
 
 RZ_API RZ_OWN RzThreadLock *rz_th_lock_new(bool recursive);
 RZ_API bool rz_th_lock_tryenter(RZ_NONNULL RzThreadLock *thl);

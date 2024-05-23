@@ -71,6 +71,7 @@
 
 struct rz_th_sem_t {
 	RZ_TH_SEM_T sem;
+	const char *errno_str;
 };
 
 struct rz_th_lock_t {

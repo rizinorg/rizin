@@ -16,6 +16,10 @@
 #include <limits.h>
 #endif
 
+RZ_API const char *rz_th_sem_get_errno_str(RzThreadSemaphore *sem) {
+	return sem->errno_str;
+}
+
 /**
  * \brief  Allocates and initialize a RzThreadSemaphore structure
  *
@@ -25,6 +29,7 @@
  */
 RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
 	RzThreadSemaphore *sem = RZ_NEW(RzThreadSemaphore);
+	sem->errno_str = "";
 	if (!sem) {
 		return NULL;
 	}
@@ -40,8 +45,11 @@ RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
 	}
 	sem->sem = sem_open(name, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, initial);
 	if (sem->sem == SEM_FAILED) {
-		free(sem);
-		return NULL;
+		sem->errno_str = strdup(strerror(errno));
+		// free(sem);
+		// return NULL;
+		sem->sem = NULL;
+		return sem;
 	}
 #else
 	sem->sem = malloc(sizeof(sem_t));
