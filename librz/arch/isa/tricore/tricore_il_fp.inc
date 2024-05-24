@@ -15,6 +15,9 @@ static const ut32 HP_POS_INFINITY = 0x7c00;
 // static const ut32 NEG_INFINITY __attribute__((unused)) = 0xff800000;
 // static const ut32 POS_INFINITY __attribute__((unused)) = 0x7f800000;
 
+#define FU32(x)        FLOATV32(U32(x))
+#define F2SINT32(x, m) F2SINT(32, m, x)
+
 static inline RzILOpPure *denorm_to_zero(RzILOpFloat *x) {
 	return LET("tmp", x,
 		ITE(AND(FLT(VARLP("tmp"), F32(0.0)), FGT(VARLP("tmp"), F32(powf(-2, -126)))), FNEG(F32(0)),
@@ -52,8 +55,6 @@ static inline RzILOpPure *round_to_integer(RzILOpPure *x, RzILOpPure *mode) {
 								F2SINT(32, RZ_FLOAT_RMODE_RTZ, VARLP("_x")),
 								U32(UT32_MAX))))))));
 }
-
-#define FU32(x) FLOATV32(U32(x))
 
 /**
  * \brief Convert single precision to a half precision
@@ -103,39 +104,47 @@ static RzAnalysisLiftedILOp ftohp(RzAsmTriCoreContext *ctx) {
 		BRANCH(IS_FNAN(FLOATV32(VARG(a))), nan_eff, else_eff));
 }
 
-static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
-	RzILOpPure *a = VARG(R(1));
-	const char *cname = R(0);
-	return SETG(cname,
-		ITE(IS_FINF(FLOATV32(a)),
-			U32(0),
-			ITE(FGT(f_real(DUP(a)), FU32(0x7FFFFFFF)),
-				FU32(0x7FFFFFFF),
-				ITE(FLT(f_real(DUP(a)), FU32(0x80000000)),
-					FU32(0x80000000),
-					round_to_integer(DUP(a), PSW_RM())))));
-}
-
 /**
  * D[c], D[a] (RR)
  * if(is_nan(D[a])) then result = 0;
- * else if(f_real(D[a]) > 231-1) then result = 7FFFFFFFH;
- * else if(f_real(D[a]) < -231) then result = 80000000H;
+ * else if(f_real(D[a]) > 2^31-1) then result = 7FFFFFFFH;
+ * else if(f_real(D[a]) < -2^31) then result = 80000000H;
  * else result = round_to_integer(D[a], PSW.RM);
  * D[c] = result[31:0];
  */
 static RzAnalysisLiftedILOp ftoi(RzAsmTriCoreContext *ctx) {
-	return SEQ4(
+	return SEQ3(
 		SETL("_a", FLOATV32(VARG(R(1)))),
-		SETL("_f_real_a", f_real(VARL("_a"))),
 		SETL("_res",
 			ITE(IS_FNAN(VARL("_a")),
-				FU32(0),
-				ITE(FGT(VARL("_f_real_a"), F32(231.0 - 1)),
-					FU32(0x7FFFFFFF),
-					ITE(FLT(VARL("_f_real_a"), F32(-231.0)),
-						FU32(0x80000000),
+				U32(0),
+				ITE(FGT(VARL("_a"), F32(0x2.0p31 - 1)),
+					U32(0x7FFFFFFF),
+					ITE(FLT(VARL("_a"), F32(-0x2.0p31)),
+						U32(0x80000000),
 						round_to_integer(VARL("_a"), PSW_RM()))))),
+		SETG(R(0), VARL("_res")));
+}
+
+/**
+ * FTOIZ D[c], D[a] (RR)
+ * if(is_nan(D[a])) then result = 0;
+ * else if(f_real(D[a]) > 2^31-1) then result = 7FFFFFFFH;
+ * else if(f_real(D[a]) < -2^31) then result = 80000000H;
+ * else result = round_to_integer(D[a], 11B);
+ * D[c] = result[31:0];
+ */
+static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
+	return SEQ3(
+		SETL("_a", FLOATV32(VARG(R(1)))),
+		SETL("_res",
+			ITE(IS_FNAN(VARL("_a")),
+				U32(0),
+				ITE(FGT(VARL("_a"), F32(0x2p31-1)),
+					U32(0x7FFFFFFF),
+					ITE(FLT(VARL("_a"), F32(-0x2p31)),
+						U32(0x80000000),
+						F2SINT32(VARL("_a"), RZ_FLOAT_RMODE_RTZ))))),
 		SETG(R(0), VARL("_res")));
 }
 
