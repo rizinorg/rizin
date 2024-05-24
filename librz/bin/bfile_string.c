@@ -310,7 +310,7 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<Rz
  */
 RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt) {
 	rz_return_if_fail(opt);
-	opt->max_threads = RZ_THREAD_POOL_ALL_CORES;
+	opt->max_threads = RZ_THREAD_N_CORES_ALL_AVAILABLE;
 	opt->min_length = RZ_BIN_STRING_SEARCH_MIN_STRING;
 	opt->buffer_size = RZ_BIN_STRING_SEARCH_BUFFER_SIZE;
 	opt->max_uni_blocks = RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS;
