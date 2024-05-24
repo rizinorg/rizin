@@ -33,3 +33,7 @@ steps:
       - export PATH="`pwd`/prefix/bin:$PATH"
       - cd test
       - rz-test -L
+  post-test:
+    image: /bin/bash
+    commands:
+      - ipcs -s
