@@ -19,7 +19,7 @@ steps:
       - cd test
       - git clone --depth=1 https://github.com/rizinorg/rz-pipe
       - pip3 install --user "file://`pwd`/rz-pipe#egg=rzpipe&subdirectory=python"
-  clean:
+  pre-test:
     image: /bin/bash
     commands:
       - ipcs -s
