@@ -880,6 +880,21 @@ static RzILOpPure *f_real(RzILOpFloat *x) {
 	return x;
 }
 
+static RzILOpPure *round_to_integer(RzILOpPure *x, RzILOpPure *mode) {
+	return LET("_mode", mode,
+		ITE(EQ(VARLP("_mode"), U32(0)),
+			F2SINT(32, RZ_FLOAT_RMODE_RNE, x),
+			ITE(EQ(VARLP("_mode"), U32(1)),
+				F2SINT(32, RZ_FLOAT_RMODE_RNA, x),
+				ITE(EQ(VARLP("_mode"), U32(2)),
+					F2SINT(32, RZ_FLOAT_RMODE_RTN, x),
+					ITE(EQ(VARLP("_mode"), U32(3)),
+						F2SINT(32, RZ_FLOAT_RMODE_RTP, x),
+						ITE(EQ(VARLP("_mode"), U32(4)),
+							F2SINT(32, RZ_FLOAT_RMODE_RTZ, x),
+							U32(UT32_MAX)))))));
+}
+
 static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
 	RzILOpPure *a = VARG(R(1));
 	const char *cname = R(0);
@@ -889,8 +904,57 @@ static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
 			ITE(SGT(f_real(DUP(a)), U32(0x7FFFFFFF)), U32(0x7FFFFFFF),
 				ITE(SLT(f_real(DUP(a)), U32(0x80000000)),
 					U32(0x80000000),
-					F2SINT(32, RZ_FLOAT_RMODE_RTZ, DUP(a))))));
+					round_to_integer(DUP(a), PSW_RM())))));
 }
+
+/**
+ * D[c], D[a] (RR)
+ * if(is_nan(D[a])) then result = 0;
+ * else if(f_real(D[a]) > 231-1) then result = 7FFFFFFFH;
+ * else if(f_real(D[a]) < -231) then result = 80000000H;
+ * else result = round_to_integer(D[a], PSW.RM);
+ * D[c] = result[31:0];
+ */
+static RzAnalysisLiftedILOp ftoi(RzAsmTriCoreContext *ctx) {
+	return SEQ4(
+		SETL("_a", FLOATV32(VARG(R(1)))),
+		SETL("_f_real_a", f_real(VARL("_a"))),
+		SETL("_res",
+			ITE(IS_FNAN(VARL("_a")),
+				U32(0),
+				ITE(FGT(VARL("_f_real_a"), F32(231.0 - 1)),
+					U32(0x7FFFFFFF),
+					ITE(FLT(VARL("_f_real_a"), F32(-231.0)),
+						U32(0x80000000),
+						round_to_integer(VARL("_a"), PSW_RM()))))),
+		SETG(R(0), VARL("_res")));
+}
+
+/**
+ * FTOQ31 D[c], D[a], D[b] (RR)
+ * arg_a = denorm_to_zero(f_real(D[a]);
+ * if(is_nan(D[a])) then result = 0;
+ * else precise_result = mul(arg_a, 2^-D[b][8:0]);
+ * if(precise_result > q_real(7FFFFFFFH)) then result = 7FFFFFFFH;
+ * else if(precise_result < -1.0) then result = 80000000H;
+ * else result = round_to_q31(precise_result);
+ * D[c] = result[31:0];
+ */
+//static RzAnalysisLiftedILOp ftoq31(RzAsmTriCoreContext *ctx) {
+//	return SEQ5(
+//		SETL("_a", FLOATV32(VARG(R(1)))),
+//		SETL("_arg_a", denorm_to_zero(VARL("_a"))),
+//		SETL("_precise_result", FMUL()),
+//		SETL("_res",
+//			ITE(IS_FNAN(VARL("_a")),
+//				U32(0),
+//				ITE(FGT(VARL("_precise_result"), F32(0x7FFFFFFF)),
+//					U32(0x7FFFFFFF),
+//					ITE(FLT(VARL("_precise_result"), F32(-1.0)),
+//						U32(0x80000000),
+//						round_to_integer(VARL("_a"), PSW_RM()))))),
+//		SETG(R(0), VARL("_res")));
+//}
 
 #define Byte_b       8
 #define HalfWord_b   16
@@ -3025,7 +3089,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_FRET: return fret();
 	case TRICORE_INS_FTOHP: return ftohp(ctx);
 	case TRICORE_INS_FTOIZ: return ftoiz(ctx);
-	case TRICORE_INS_FTOI:
+	case TRICORE_INS_FTOI: return ftoi(ctx);
 	case TRICORE_INS_FTOQ31Z:
 	case TRICORE_INS_FTOQ31:
 	case TRICORE_INS_FTOUZ:
