@@ -153,8 +153,9 @@ commands:
     subcommands: cmd_interpret
   - name: /
     cname: cmd_search
-    summary: Search for bytes, regexps, patterns, ..
     type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Search for bytes, regexps, patterns, ..
+    subcommands: cmd_search
   - name: "R"
     summary: Connect with other instances of rizin
     subcommands: cmd_remote

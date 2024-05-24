@@ -232,25 +232,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_cur_export_handler(RzCore *core, int argc, const 
 	return bool2status(rz_core_bin_cur_export_print(core, bf, state));
 }
 
-RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	GET_CHECK_CUR_BINFILE(core);
-	RZ_LOG_WARN("Invoked");
-	return RZ_CMD_STATUS_OK;
-	//return bool2status(rz_core_bin_cur(core, bf, state));
-}
-
-RZ_IPI RzCmdStatus rz_cmd_info_gadget_query_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	GET_CHECK_CUR_BINFILE(core);
-	if (argc <= 1) {
-		RZ_LOG_ERROR("Invalid number of arguments\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RZ_LOG_WARN("Invoked");
-	return RZ_CMD_STATUS_OK;
-	//return bool2status(rz_core_bin_cur(core, bf, state));
-}
-
 RZ_IPI RzCmdStatus rz_cmd_info_symbols_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	GET_CHECK_CUR_BINFILE(core);
 	return bool2status(rz_core_bin_symbols_print(core, bf, state, NULL));

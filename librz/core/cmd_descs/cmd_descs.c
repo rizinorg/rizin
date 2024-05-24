@@ -101,6 +101,9 @@ static const RzCmdDescArg interpret_output_args[2];
 static const RzCmdDescArg interpret_pipe_args[2];
 static const RzCmdDescArg interpret_macro_args[4];
 static const RzCmdDescArg interpret_macro_multiple_args[4];
+static const RzCmdDescArg cmd_info_gadget_args[2];
+static const RzCmdDescArg cmd_search_gadget_args[2];
+static const RzCmdDescArg cmd_query_gadget_args[2];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -517,7 +520,6 @@ static const RzCmdDescArg cmd_info_pdb_load_args[2];
 static const RzCmdDescArg cmd_info_pdb_show_args[2];
 static const RzCmdDescArg cmd_pdb_extract_args[3];
 static const RzCmdDescArg cmd_info_demangle_args[3];
-static const RzCmdDescArg cmd_info_gadget_query_args[2];
 static const RzCmdDescArg cmd_info_kuery_args[2];
 static const RzCmdDescArg cmd_info_plugins_args[2];
 static const RzCmdDescArg cmd_info_resources_args[2];
@@ -1350,6 +1352,53 @@ static const RzCmdDescHelp interpret_macro_multiple_help = {
 
 static const RzCmdDescHelp cmd_search_help = {
 	.summary = "Search for bytes, regexps, patterns, ..",
+};
+static const RzCmdDescHelp slash_R_help = {
+	.summary = "List ROP Gadgets",
+};
+static const RzCmdDescArg cmd_info_gadget_args[] = {
+	{
+		.name = "filter-by-string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_gadget_help = {
+	.summary = "List ROP Gadgets",
+	.args = cmd_info_gadget_args,
+};
+
+static const RzCmdDescArg cmd_search_gadget_args[] = {
+	{
+		.name = "filter-by-regex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_search_gadget_help = {
+	.summary = "List ROP Gadgets [regular expression]",
+	.args = cmd_search_gadget_args,
+};
+
+static const RzCmdDescArg cmd_query_gadget_args[] = {
+	{
+		.name = "nop|mov|arithm",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_query_gadget_help = {
+	.summary = "Query ROP Gadgets",
+	.args = cmd_query_gadget_args,
 };
 
 static const RzCmdDescHelp R_help = {
@@ -11357,32 +11406,6 @@ static const RzCmdDescHelp cmd_info_cur_export_help = {
 	.args = cmd_info_cur_export_args,
 };
 
-static const RzCmdDescHelp ig_help = {
-	.summary = "List ROP Gadgets",
-};
-static const RzCmdDescArg cmd_info_gadget_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_info_gadget_help = {
-	.summary = "List ROP Gadgets(Sequence of instructions which ends in ret)",
-	.args = cmd_info_gadget_args,
-};
-
-static const RzCmdDescArg cmd_info_gadget_query_args[] = {
-	{
-		.name = "mnemonic",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_info_gadget_query_help = {
-	.summary = "Query Stored ROP Gadgets",
-	.args = cmd_info_gadget_query_args,
-};
-
 static const RzCmdDescArg cmd_info_fields_args[] = {
 	{ 0 },
 };
@@ -19196,6 +19219,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
 	rz_warn_if_fail(cmd_search_cd);
+	RzCmdDesc *slash_R_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_search_cd, "/R", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_info_gadget_handler, &cmd_info_gadget_help, &slash_R_help);
+	rz_warn_if_fail(slash_R_cd);
+	rz_cmd_desc_set_default_mode(slash_R_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *cmd_search_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/R/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_gadget_handler, &cmd_search_gadget_help);
+	rz_warn_if_fail(cmd_search_gadget_cd);
+	rz_cmd_desc_set_default_mode(cmd_search_gadget_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_query_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_gadget_handler, &cmd_query_gadget_help);
+	rz_warn_if_fail(cmd_query_gadget_cd);
+	rz_cmd_desc_set_default_mode(cmd_query_gadget_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *R_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "R", rz_remote_handler, &remote_help, &R_help);
 	rz_warn_if_fail(R_cd);
@@ -21347,13 +21380,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_cur_export_cd = rz_cmd_desc_argv_state_new(core->rcmd, iE_cd, "iE.", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_cur_export_handler, &cmd_info_cur_export_help);
 	rz_warn_if_fail(cmd_info_cur_export_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_cur_export_cd, RZ_OUTPUT_MODE_TABLE);
-
-	RzCmdDesc *ig_cd = rz_cmd_desc_group_state_new(core->rcmd, i_cd, "ig", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_gadget_handler, &cmd_info_gadget_help, &ig_help);
-	rz_warn_if_fail(ig_cd);
-	rz_cmd_desc_set_default_mode(ig_cd, RZ_OUTPUT_MODE_STANDARD);
-	RzCmdDesc *cmd_info_gadget_query_cd = rz_cmd_desc_argv_state_new(core->rcmd, ig_cd, "igs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_gadget_query_handler, &cmd_info_gadget_query_help);
-	rz_warn_if_fail(cmd_info_gadget_query_cd);
-	rz_cmd_desc_set_default_mode(cmd_info_gadget_query_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *cmd_info_fields_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ih", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_fields_handler, &cmd_info_fields_help);
 	rz_warn_if_fail(cmd_info_fields_cd);
