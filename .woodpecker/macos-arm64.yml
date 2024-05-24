@@ -22,7 +22,7 @@ steps:
   pre-test:
     image: /bin/bash
     commands:
-      - ipcs -s
+      - ipcs -S
   unit-test:
     image: /bin/bash
     commands:
@@ -36,4 +36,4 @@ steps:
   post-test:
     image: /bin/bash
     commands:
-      - ipcs -s
+      - ipcs -S
