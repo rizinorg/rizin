@@ -1327,6 +1327,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 						hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
 				}
 				rz_strbuf_free(colored_asm);
+				rz_strbuf_free(bw_str);
 			} else {
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",
@@ -1577,6 +1578,8 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 						char *headAddr = rz_str_newf("%" PFMT64x, hit->addr);
 						if (!headAddr) {
 							result = false;
+							free(buf);
+							ht_uu_free(badstart);
 							goto bad;
 						}
 
@@ -1585,6 +1588,8 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 							if (!addr) {
 								free(headAddr);
 								result = false;
+								free(buf);
+								ht_uu_free(badstart);
 								goto bad;
 							}
 							sdb_concat(gadgetSdb, headAddr, addr);
@@ -1618,6 +1623,7 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 			}
 		}
 		free(buf);
+		ht_uu_free(badstart);
 	}
 	if (rz_cons_is_breaked()) {
 		eprintf("\n");
@@ -1628,6 +1634,7 @@ bad:
 	rz_cons_break_pop();
 	rz_list_free(rx_list);
 	rz_list_free(end_list);
+	rz_list_free(boundaries);
 	free(grep_arg);
 	free(gregexp);
 	return result;

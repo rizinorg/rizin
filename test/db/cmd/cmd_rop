@@ -152,7 +152,7 @@ ARGS=-n
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"/R/ (ecx|eax)"
+/R/ "(ecx|eax)"
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
@@ -188,7 +188,7 @@ e asm.bits=32
 e rop.len=15
 e search.from=0x08048340
 e search.to=0x08048400
-"/R push esp"
+/R push esp
 EOF
 EXPECT=<<EOF
   0x08048350               fff4  push esp
@@ -207,7 +207,7 @@ RUN
 
 NAME=search rop with sequence.
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS="/R push esi;push ebx"
+CMDS=/R "push esi;push ebx"
 EXPECT=<<EOF
   0x08048421                 57  push edi
   0x08048422               31ff  xor edi, edi
@@ -222,7 +222,7 @@ NAME=search rop with regex sequence.
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 e asm.bits=32
-"/R/ push esi;push ebx"
+/R/ "push esi;push ebx"
 EOF
 EXPECT=<<EOF
   0x08048421                 57  push edi
