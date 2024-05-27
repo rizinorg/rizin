@@ -47,17 +47,13 @@ struct rz_subprocess_t {
 
 #define INVALID_POINTER_VALUE ((void *)PTRDIFF_MAX)
 
-typedef struct subprocess_windows_t {
-	RzThreadLock *subproc_mutex;
-	long refcount;
-	bool has_procthreadattr;
-	volatile long pipe_id;
-	DWORD mode_stdin;
-	DWORD mode_stdout;
-	DWORD mode_stderr;
-} SubprocessWindows;
-
-static SubprocessWindows subwin = { 0 };
+static RzThreadLock *subproc_mutex = NULL;
+static long refcount = 0;
+static bool has_procthreadattr = false;
+static volatile long pipe_id = 0;
+static DWORD mode_stdin;
+static DWORD mode_stdout;
+static DWORD mode_stderr;
 
 static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURITY_ATTRIBUTES attrs, DWORD sz, DWORD read_mode, DWORD write_mode) {
 	// see https://stackoverflow.com/a/419736
@@ -65,7 +61,7 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 		sz = 4096;
 	}
 	WCHAR name[MAX_PATH];
-	_snwprintf_s(name, _countof(name), sizeof(name), L"\\\\.\\pipe\\rz-pipe-subproc.%d.%ld", (int)GetCurrentProcessId(), (long)InterlockedIncrement(&subwin.pipe_id));
+	_snwprintf_s(name, _countof(name), sizeof(name), L"\\\\.\\pipe\\rz-pipe-subproc.%d.%ld", (int)GetCurrentProcessId(), (long)InterlockedIncrement(&pipe_id));
 	*pipe_read = CreateNamedPipeW(name, PIPE_ACCESS_INBOUND | read_mode, PIPE_TYPE_BYTE | PIPE_WAIT, 1, sz, sz, 120 * 1000, attrs);
 	if (!*pipe_read) {
 		return FALSE;
@@ -83,29 +79,29 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 static RzThreadLock *get_subprocess_lock(void) {
 	RzThreadLock *lock;
 	do {
-		lock = InterlockedCompareExchangePointer(&subwin.subproc_mutex, INVALID_POINTER_VALUE, INVALID_POINTER_VALUE);
+		lock = InterlockedCompareExchangePointer(&subproc_mutex, INVALID_POINTER_VALUE, INVALID_POINTER_VALUE);
 	} while (!lock);
 	return lock;
 }
 
 RZ_API bool rz_subprocess_init(void) {
-	long ref = InterlockedIncrement(&subwin.refcount);
+	long ref = InterlockedIncrement(&refcount);
 	RzThreadLock *lock = NULL;
 	if (ref == 1) {
 		lock = rz_th_lock_new(false);
 		if (!lock) {
-			InterlockedExchangePointer(&subwin.subproc_mutex, INVALID_POINTER_VALUE);
-			InterlockedDecrement(&subwin.refcount);
+			InterlockedExchangePointer(&subproc_mutex, INVALID_POINTER_VALUE);
+			InterlockedDecrement(&refcount);
 			return false;
 		}
 		// Enter lock before making it available, so we are the first to run
 		rz_th_lock_enter(lock);
-		InterlockedExchangePointer(&subwin.subproc_mutex, lock);
+		InterlockedExchangePointer(&subproc_mutex, lock);
 	} else {
 		// Spin until theres a lock available or lock initialization failed
 		lock = get_subprocess_lock();
 		if (lock == INVALID_POINTER_VALUE) {
-			InterlockedDecrement(&subwin.refcount);
+			InterlockedDecrement(&refcount);
 			return false;
 		}
 		rz_th_lock_enter(lock);
@@ -117,12 +113,12 @@ RZ_API bool rz_subprocess_init(void) {
 	}
 
 	// Save current console mode
-	GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &subwin.mode_stdin);
-	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &subwin.mode_stdout);
-	GetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), &subwin.mode_stderr);
+	GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &mode_stdin);
+	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode_stdout);
+	GetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), &mode_stderr);
 
 #if NTDDI_VERSION >= NTDDI_VISTA
-	if (!subwin.has_procthreadattr && IsWindowsVistaOrGreater()) {
+	if (!has_procthreadattr && IsWindowsVistaOrGreater()) {
 		HMODULE kernel32 = LoadLibraryW(L"kernel32");
 		if (!kernel32) {
 			rz_sys_perror("LoadLibraryW(L\"kernel32\")");
@@ -132,7 +128,7 @@ RZ_API bool rz_subprocess_init(void) {
 		lpUpdateProcThreadAttribute = (UpdateProcThreadAttribute_t)GetProcAddress(kernel32, "UpdateProcThreadAttribute");
 		lpDeleteProcThreadAttributeList = (DeleteProcThreadAttributeList_t)GetProcAddress(kernel32, "DeleteProcThreadAttributeList");
 		if (lpInitializeProcThreadAttributeList && lpUpdateProcThreadAttribute && lpDeleteProcThreadAttributeList) {
-			subwin.has_procthreadattr = true;
+			has_procthreadattr = true;
 		}
 		FreeLibrary(kernel32);
 	}
@@ -144,22 +140,22 @@ leave:
 RZ_API void rz_subprocess_fini(void) {
 	RzThreadLock *lock = NULL;
 	do {
-		if (InterlockedCompareExchange(&subwin.refcount, -1, -1) == 0) {
+		if (InterlockedCompareExchange(&refcount, -1, -1) == 0) {
 			// Shouldn't happen, someone called this function excessively
 			rz_warn_if_reached();
 			return;
 		}
-		lock = InterlockedExchangePointer(&subwin.subproc_mutex, NULL);
+		lock = InterlockedExchangePointer(&subproc_mutex, NULL);
 	} while (!lock);
-	if (InterlockedDecrement(&subwin.refcount) > 0) {
-		InterlockedExchangePointer(&subwin.subproc_mutex, lock);
+	if (InterlockedDecrement(&refcount) > 0) {
+		InterlockedExchangePointer(&subproc_mutex, lock);
 		return;
 	}
 	SetEnvironmentVariableW(L"RZ_PIPE_PATH", NULL);
 	// Restore console mode
-	SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), subwin.mode_stdin);
-	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), subwin.mode_stdout);
-	SetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), subwin.mode_stderr);
+	SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), mode_stdin);
+	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode_stdout);
+	SetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), mode_stderr);
 	rz_th_lock_free(lock);
 }
 
@@ -377,7 +373,7 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 	STARTUPINFOW *start_info = &start_info_short;
 #if NTDDI_VERSION >= NTDDI_VISTA
 	STARTUPINFOEXW start_infoex = { .StartupInfo.cb = sizeof(STARTUPINFOEXW) };
-	if (subwin.has_procthreadattr) {
+	if (has_procthreadattr) {
 		SIZE_T attr_list_size = 0;
 		if (!lpInitializeProcThreadAttributeList(NULL, 1, 0, &attr_list_size) &&
 			GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
