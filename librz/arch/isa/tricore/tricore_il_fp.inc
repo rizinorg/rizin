@@ -15,7 +15,6 @@ static const ut32 HP_POS_INFINITY = 0x7c00;
 // static const ut32 NEG_INFINITY __attribute__((unused)) = 0xff800000;
 // static const ut32 POS_INFINITY __attribute__((unused)) = 0x7f800000;
 
-#define FU32(x)        FLOATV32(U32(x))
 #define F2SINT32(x, m) F2SINT(32, m, x)
 
 static inline RzILOpPure *denorm_to_zero(RzILOpFloat *x) {
@@ -29,15 +28,40 @@ static inline RzILOpPure *is_denorm(RzILOpPure *x) {
 	return AND(IS_ZERO(BITS32(x, 23, 8)), NON_ZERO(BITS32(DUP(x), 0, 23)));
 }
 
-static inline RzILOpPure *f_real(RzILOpFloat *x) {
-	return x;
-}
-
 /**
  * \brief Returns the Q31 format value ‘x’ as an infinitely accurate real value.
  */
-static inline RzILOpPure *q_real(RzILOpFloat *x) {
-	return x;
+static inline RzILOpFloat *q_real(ut32 x) {
+	float y = x & 0x80000000 ? -1.f : 0.f;
+	for (int i = 0; i < 31; ++i) {
+		ut32 m = 1 << (30 - i);
+		float b = 1.f / (float)(2 << i);
+		if (x & m) {
+			y += b;
+		}
+	}
+	RzFloat *value = rz_float_new_from_f32(y);
+	if (!value) {
+		return NULL;
+	}
+	return rz_il_op_new_float_from_rz_float(value);
+}
+
+static inline RzILOpEffect *q_real_set_v(const char *k, RzILOpPure *x) {
+	return SEQ4(
+		SETL("_x", x),
+		SETL("_i", U32(0)),
+		SETL(k, ITE(MSB(VARL("_x")), F32(-1.), F32(0.f))),
+		REPEAT(
+			ULT(VARL("_i"), U32(31)),
+			SEQ4(
+				SETL("_i", ADD(VARL("_i"), U32(1))),
+				SETL("_m", SHIFTL0(U32(1), SUB(U32(30), VARL("_i")))),
+				SETL("_b", FDIV(RZ_FLOAT_RMODE_RNE, F32(1.f), FLOATV32(SHIFTL0(U32(2), VARL("_i"))))),
+				BRANCH(
+					NON_ZERO(LOGAND(VARL(k), VARL("_m"))),
+					SETL(k, ADD(VARL(k), VARL("_b"))),
+					NOP()))));
 }
 
 static inline RzILOpPure *round_to_integer(RzILOpPure *x, RzILOpPure *mode) {
@@ -140,7 +164,7 @@ static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
 		SETL("_res",
 			ITE(IS_FNAN(VARL("_a")),
 				U32(0),
-				ITE(FGT(VARL("_a"), F32(0x2p31-1)),
+				ITE(FGT(VARL("_a"), F32(0x2p31 - 1)),
 					U32(0x7FFFFFFF),
 					ITE(FLT(VARL("_a"), F32(-0x2p31)),
 						U32(0x80000000),
@@ -159,18 +183,40 @@ static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
  * D[c] = result[31:0];
  */
 static RzAnalysisLiftedILOp ftoq31(RzAsmTriCoreContext *ctx) {
-	return SEQ5(
-		SETL("_a", FLOATV32(VARG(R(1)))),
-		SETL("_arg_a", denorm_to_zero(VARL("_a"))),
-		SETL("_precise_result", FDIV(0, VARL("_arg_a"), FPOW(0, FLOATV32(U32(2)), FLOATV32(LOGAND(VARG(R(3)), U32(0x1ff)))))),
+	return SEQ7(
+		SETL("_a_", VARG(R(1))),
+		SETL("_a", FLOATV32(VARL("_a_"))),
+		SETL("_arg_a", U32(0)),
+		q_real_set_v("_arg_a", VARL("_a_")),
+		SETL("_arg_a", denorm_to_zero(VARL("_arg_a"))),
 		SETL("_res",
 			ITE(IS_FNAN(VARL("_a")),
-				FU32(0),
-				ITE(FGT(VARL("_precise_result"), FLOATV32(U32(0x7FFFFFFF))),
-					FU32(0x7FFFFFFF),
-					ITE(FLT(VARL("_precise_result"), F32(-1.0)),
-						FU32(0x80000000),
-						round_to_integer(VARL("_a"), PSW_RM()))))),
+				U32(0),
+				LET("_precise_result", FDIV(0, VARL("_arg_a"), FPOW(0, F32(2), FLOATV32(LOGAND(VARG(R(3)), U32(0x1ff))))),
+					ITE(FGT(VARL("_precise_result"), q_real(0x7FFFFFFF)),
+						U32(0x7FFFFFFF),
+						ITE(FLT(VARL("_precise_result"), F32(-1.0)),
+							U32(0x80000000),
+							round_to_integer(VARL("_a"), PSW_RM())))))),
+		SETG(R(0), VARL("_res")));
+}
+
+static RzAnalysisLiftedILOp ftoq31z(RzAsmTriCoreContext *ctx) {
+	return SEQ7(
+		SETL("_a_", VARG(R(1))),
+		SETL("_a", FLOATV32(VARL("_a_"))),
+		SETL("_arg_a", U32(0)),
+		q_real_set_v("_arg_a", VARL("_a_")),
+		SETL("_arg_a", denorm_to_zero(VARL("_arg_a"))),
+		SETL("_res",
+			ITE(IS_FNAN(VARL("_a")),
+				U32(0),
+				LET("_precise_result", FDIV(0, VARL("_arg_a"), FPOW(0, F32(2), FLOATV32(LOGAND(VARG(R(3)), U32(0x1ff))))),
+					ITE(FGT(VARL("_precise_result"), q_real(0x7FFFFFFF)),
+						U32(0x7FFFFFFF),
+						ITE(FLT(VARL("_precise_result"), F32(-1.0)),
+							U32(0x80000000),
+							F2SINT32(VARL("_a"), RZ_FLOAT_RMODE_RTZ)))))),
 		SETG(R(0), VARL("_res")));
 }
 
