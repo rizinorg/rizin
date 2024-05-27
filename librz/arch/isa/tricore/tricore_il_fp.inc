@@ -64,21 +64,22 @@ static inline RzILOpEffect *q_real_set_v(const char *k, RzILOpPure *x) {
 					NOP()))));
 }
 
-static inline RzILOpPure *round_to_integer(RzILOpPure *x, RzILOpPure *mode) {
-	return LET("_mode", UNSIGNED(8, mode),
-		LET("_x", x,
-			ITE(EQ(VARLP("_mode"), U32(0)),
-				F2SINT(32, RZ_FLOAT_RMODE_RNE, VARLP("_x")),
-				ITE(EQ(VARLP("_mode"), U8(1)),
-					F2SINT(32, RZ_FLOAT_RMODE_RNA, VARLP("_x")),
-					ITE(EQ(VARLP("_mode"), U8(2)),
-						F2SINT(32, RZ_FLOAT_RMODE_RTN, VARLP("_x")),
-						ITE(EQ(VARLP("_mode"), U8(3)),
-							F2SINT(32, RZ_FLOAT_RMODE_RTP, VARLP("_x")),
-							ITE(EQ(VARLP("_mode"), U8(4)),
-								F2SINT(32, RZ_FLOAT_RMODE_RTZ, VARLP("_x")),
-								U32(UT32_MAX))))))));
-}
+#define FCAST(f, _1, x, mode) \
+	LET("_mode", UNSIGNED(8, mode), \
+		LET("_x", x, \
+			ITE(EQ(VARLP("_mode"), U32(0)), \
+				f(_1, RZ_FLOAT_RMODE_RNE, VARLP("_x")), \
+				ITE(EQ(VARLP("_mode"), U8(1)), \
+					f(_1, RZ_FLOAT_RMODE_RNA, VARLP("_x")), \
+					ITE(EQ(VARLP("_mode"), U8(2)), \
+						f(_1, RZ_FLOAT_RMODE_RTN, VARLP("_x")), \
+						ITE(EQ(VARLP("_mode"), U8(3)), \
+							f(_1, RZ_FLOAT_RMODE_RTP, VARLP("_x")), \
+							ITE(EQ(VARLP("_mode"), U8(4)), \
+								f(_1, RZ_FLOAT_RMODE_RTZ, VARLP("_x")), \
+								U32(UT32_MAX))))))))
+
+#define round_to_integer(x, m) FCAST(F2SINT, 32, x, m)
 
 static RzILOpPure *minmax(const char *k, st64 min, st64 max, RzILOpPure *x) {
 	return ITE(IS_FNAN(VARL(k)), U32(0),
@@ -136,13 +137,42 @@ static RzAnalysisLiftedILOp ftohp(RzAsmTriCoreContext *ctx) {
 	// f_rounded = ieee754_round_16bit(f, PSW.RM);
 	// Handle overflow & underflow and convert to 16-bit format
 	// D[a][15:0] = ieee754_16bit_format(f_rounded);
-	RzILOpPure *f = denorm_to_zero(FLOATV32(VARG(a)));
-	//	RzILOpPure *f_rounded = FROUND(/*TODO: PSW_RM()*/ 0, f);
-	RzILOpEffect *else_eff = SETG(c,
-		BITS32_U(VARG(a), 0, 16, UNSIGNED(32, F2BV(FCONVERT(RZ_FLOAT_IEEE754_BIN_16, 0, f)))));
+	RzILOpEffect *else_eff =
+		SEQ3(SETL("_fa", denorm_to_zero(FLOATV32(VARG(a)))),
+			SETL("_f_rounded", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_16, VARL("_fa"), PSW_RM())),
+			SETG(c, BITS32_U(VARG(c), 0, 16, UNSIGNED(32, VARL("_f_rounded")))));
 
 	return BRANCH(IS_FINF(FLOATV32(VARG(a))), inf_eff,
 		BRANCH(IS_FNAN(FLOATV32(VARG(a))), nan_eff, else_eff));
+}
+
+/**
+ * HPTOF D[c], D[a] (RR)
+ * hp = D[a][15:0];
+ * if (is_inf_16bit(hp)) then {
+ *   // Signed Infinity
+ *   if(sign_16bit(hp)) then {
+ *     D[c][31:0] = NEG_INFINITY;
+ *   } else {
+ *     D[c][31:0] = POS_INFINITY;
+ *   }
+ * } else if (is_nan_16bit(hp)) then {
+ *     // Signed NaN
+ *     D[c][31] = sign_16bit(hp);
+ *     D[c][30:23] = FFH;
+ *     D[c][22:21] = D[a][9:8];
+ *     D[c][20:8] = 0;
+ *     D[c][7:0] = D[a][7:0];
+ * } else {
+ *   f = f_real_16bit(hp);
+ *   D[c] = ieee754_32bit_format(f);
+ * }
+ */
+static RzAnalysisLiftedILOp hptof(RzAsmTriCoreContext *ctx) {
+	return SEQ3(
+		SETL("_hp", UNSIGNED(16, VARG(R(1)))),
+		SETL("_res", FCONVERT(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNA, FLOATV16(VARL("_hp")))),
+		SETG(R(0), VARL("_res")));
 }
 
 /**

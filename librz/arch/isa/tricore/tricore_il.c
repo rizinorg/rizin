@@ -2943,7 +2943,7 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_FTOQ31: return ftoq31(ctx);
 	case TRICORE_INS_FTOUZ: return ftouz(ctx);
 	case TRICORE_INS_FTOU:return ftou(ctx);
-	case TRICORE_INS_HPTOF:
+	case TRICORE_INS_HPTOF: return hptof(ctx);
 	case TRICORE_INS_ITOF:
 	case TRICORE_INS_Q31TOF:
 	case TRICORE_INS_UTOF:
