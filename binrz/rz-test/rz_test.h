@@ -213,6 +213,6 @@ RZ_API void rz_test_test_free(RzTest *test);
 RZ_API char *rz_test_test_name(RzTest *test);
 RZ_API bool rz_test_test_broken(RzTest *test);
 RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test);
-RZ_API void rz_test_result_info_free(RZ_NULLABLE RzTestResultInfo *result);
+RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result);
 
 #endif // RIZIN_RZTEST_H
