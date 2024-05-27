@@ -80,6 +80,23 @@ static inline RzILOpPure *round_to_integer(RzILOpPure *x, RzILOpPure *mode) {
 								U32(UT32_MAX))))))));
 }
 
+static RzILOpPure *minmax(const char *k, st64 min, st64 max, RzILOpPure *x) {
+	return ITE(IS_FNAN(VARL(k)), U32(0),
+		ITE(FGT(VARL(k), F32(max)),
+			U32(max),
+			ITE(FLT(VARL(k), F32(min)),
+				U32(min),
+				x)));
+}
+
+static RzILOpPure *minmax_q31(const char *k, RzILOpPure *x) {
+	return ITE(FGT(VARL(k), q_real(0x7FFFFFFF)),
+		U32(0x7FFFFFFF),
+		ITE(FLT(VARL(k), F32(-1.0)),
+			U32(0x80000000),
+			x));
+}
+
 /**
  * \brief Convert single precision to a half precision
  *
@@ -138,15 +155,8 @@ static RzAnalysisLiftedILOp ftohp(RzAsmTriCoreContext *ctx) {
  */
 static RzAnalysisLiftedILOp ftoi(RzAsmTriCoreContext *ctx) {
 	return SEQ3(
-		SETL("_a", FLOATV32(VARG(R(1)))),
-		SETL("_res",
-			ITE(IS_FNAN(VARL("_a")),
-				U32(0),
-				ITE(FGT(VARL("_a"), F32(0x2.0p31 - 1)),
-					U32(0x7FFFFFFF),
-					ITE(FLT(VARL("_a"), F32(-0x2.0p31)),
-						U32(0x80000000),
-						round_to_integer(VARL("_a"), PSW_RM()))))),
+		SETL("_fa", FLOATV32(VARG(R(1)))),
+		SETL("_res", minmax("_fa", ST32_MAX, ST32_MIN, round_to_integer(VARL("_a"), PSW_RM()))),
 		SETG(R(0), VARL("_res")));
 }
 
@@ -160,15 +170,22 @@ static RzAnalysisLiftedILOp ftoi(RzAsmTriCoreContext *ctx) {
  */
 static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
 	return SEQ3(
-		SETL("_a", FLOATV32(VARG(R(1)))),
-		SETL("_res",
-			ITE(IS_FNAN(VARL("_a")),
-				U32(0),
-				ITE(FGT(VARL("_a"), F32(0x2p31 - 1)),
-					U32(0x7FFFFFFF),
-					ITE(FLT(VARL("_a"), F32(-0x2p31)),
-						U32(0x80000000),
-						F2SINT32(VARL("_a"), RZ_FLOAT_RMODE_RTZ))))),
+		SETL("_fa", FLOATV32(VARG(R(1)))),
+		SETL("_res", minmax("_fa", ST32_MAX, ST32_MIN, F2SINT32(VARL("_a"), RZ_FLOAT_RMODE_RTZ))),
+		SETG(R(0), VARL("_res")));
+}
+
+static RzAnalysisLiftedILOp ftou(RzAsmTriCoreContext *ctx) {
+	return SEQ3(
+		SETL("_fa", FLOATV32(VARG(R(1)))),
+		SETL("_res", minmax("_fa", UT32_MAX, UT32_MIN, round_to_integer(VARL("_a"), PSW_RM()))),
+		SETG(R(0), VARL("_res")));
+}
+
+static RzAnalysisLiftedILOp ftouz(RzAsmTriCoreContext *ctx) {
+	return SEQ3(
+		SETL("_fa", FLOATV32(VARG(R(1)))),
+		SETL("_res", minmax("_fa", UT32_MAX, UT32_MIN, F2SINT32(VARL("_a"), RZ_FLOAT_RMODE_RTZ))),
 		SETG(R(0), VARL("_res")));
 }
 
@@ -183,40 +200,30 @@ static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
  * D[c] = result[31:0];
  */
 static RzAnalysisLiftedILOp ftoq31(RzAsmTriCoreContext *ctx) {
-	return SEQ7(
-		SETL("_a_", VARG(R(1))),
-		SETL("_a", FLOATV32(VARL("_a_"))),
+	return SEQ6(
+		SETL("_a", VARG(R(1))),
 		SETL("_arg_a", U32(0)),
-		q_real_set_v("_arg_a", VARL("_a_")),
+		q_real_set_v("_arg_a", VARL("_a")),
 		SETL("_arg_a", denorm_to_zero(VARL("_arg_a"))),
 		SETL("_res",
-			ITE(IS_FNAN(VARL("_a")),
+			ITE(IS_FNAN(FLOATV32(VARL("_a"))),
 				U32(0),
 				LET("_precise_result", FDIV(0, VARL("_arg_a"), FPOW(0, F32(2), FLOATV32(LOGAND(VARG(R(3)), U32(0x1ff))))),
-					ITE(FGT(VARL("_precise_result"), q_real(0x7FFFFFFF)),
-						U32(0x7FFFFFFF),
-						ITE(FLT(VARL("_precise_result"), F32(-1.0)),
-							U32(0x80000000),
-							round_to_integer(VARL("_a"), PSW_RM())))))),
+					minmax_q31("_precise_result", round_to_integer(VARL("_precise_result"), PSW_RM()))))),
 		SETG(R(0), VARL("_res")));
 }
 
 static RzAnalysisLiftedILOp ftoq31z(RzAsmTriCoreContext *ctx) {
-	return SEQ7(
-		SETL("_a_", VARG(R(1))),
-		SETL("_a", FLOATV32(VARL("_a_"))),
+	return SEQ6(
+		SETL("_a", VARG(R(1))),
 		SETL("_arg_a", U32(0)),
-		q_real_set_v("_arg_a", VARL("_a_")),
+		q_real_set_v("_arg_a", VARL("_a")),
 		SETL("_arg_a", denorm_to_zero(VARL("_arg_a"))),
 		SETL("_res",
-			ITE(IS_FNAN(VARL("_a")),
+			ITE(IS_FNAN(FLOATV32(VARL("_a"))),
 				U32(0),
 				LET("_precise_result", FDIV(0, VARL("_arg_a"), FPOW(0, F32(2), FLOATV32(LOGAND(VARG(R(3)), U32(0x1ff))))),
-					ITE(FGT(VARL("_precise_result"), q_real(0x7FFFFFFF)),
-						U32(0x7FFFFFFF),
-						ITE(FLT(VARL("_precise_result"), F32(-1.0)),
-							U32(0x80000000),
-							F2SINT32(VARL("_a"), RZ_FLOAT_RMODE_RTZ)))))),
+					minmax_q31("_precise_result", F2SINT32(VARL("_precise_result"), RZ_FLOAT_RMODE_RTZ))))),
 		SETG(R(0), VARL("_res")));
 }
 
