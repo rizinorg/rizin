@@ -199,7 +199,7 @@ static bool rz_test_chdir_fromtest(const char *test_path) {
 }
 
 int rz_test_main(int argc, const char **argv) {
-	size_t n_threads = RZ_THREAD_N_CORES_ALL_AVAILABLE;
+	size_t n_threads = RZ_THREAD_POOL_ALL_CORES;
 	bool verbose = false;
 	bool nothing = false;
 	bool quiet = false;
@@ -536,7 +536,7 @@ int rz_test_main(int argc, const char **argv) {
 		return -1;
 	}
 
-	eprintf("Using %d threads\n", rz_th_max_threads(n_threads));
+	eprintf("Using %" PFMTSZu " threads\n", rz_th_request_physical_cores(n_threads));
 
 	state.data.time_start = rz_time_now_mono();
 	rz_th_iterate_pvector(&state.db->tests, worker_thread, n_threads, &state);

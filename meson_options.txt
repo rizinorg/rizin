@@ -7,7 +7,6 @@ option('blob', type: 'boolean', value: false, description: 'Compile just one bin
 option('subprojects_check', type: 'boolean', value: true, description: 'Check if git subprojects are up-to-date. Might be useful to disable this when developing on a different subproject version')
 option('portable', type: 'boolean', value: false, description: 'Make rizin installation moveable, by using relative paths instead of absolute ones')
 option('extra_prefix', type: 'string', value: '', description: 'Extra load path prefix (absolute path) for plugins, sdb, sigdb, etc.')
-option('n_thread_limit', type: 'integer', min: 1, value: 32767)
 
 option('rizin_wwwroot', type: 'string', value: '', description: 'Install path for www files')
 option('rizin_sdb', type: 'string', value: '', description: 'Install path for all SDB files')

@@ -239,7 +239,6 @@ jobs:
         if: matrix.os == 'macos-12' && matrix.enabled
         run: |
           sudo security authorizationdb write system.privilege.taskport allow
-          sudo /usr/sbin/DevToolsSecurity --enable
       - name: Run unit tests (meson)
         continue-on-error: ${{ matrix.allow_failure }}
         if: matrix.build_system == 'meson' && matrix.enabled
