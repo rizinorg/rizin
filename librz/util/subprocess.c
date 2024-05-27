@@ -750,32 +750,28 @@ struct rz_subprocess_t {
 	int slave_fd;
 };
 
-typedef struct subprocess_unix_t {
-	RzPVector subprocs;
-	RzThreadLock *subprocs_mutex;
-	int sigchld_pipe[2];
-	RzThread *sigchld_thread;
-} SubprocessUnix;
-
-static SubprocessUnix subnix = { 0 };
+static RzPVector subprocs;
+static RzThreadLock *subprocs_mutex;
+static int sigchld_pipe[2];
+static RzThread *sigchld_thread;
 
 static void subprocess_lock(void) {
-	rz_th_lock_enter(subnix.subprocs_mutex);
+	rz_th_lock_enter(subprocs_mutex);
 }
 
 static void subprocess_unlock(void) {
-	rz_th_lock_leave(subnix.subprocs_mutex);
+	rz_th_lock_leave(subprocs_mutex);
 }
 
 static void handle_sigchld(int sig) {
 	ut8 b = 1;
-	rz_xwrite(subnix.sigchld_pipe[1], &b, 1);
+	rz_xwrite(sigchld_pipe[1], &b, 1);
 }
 
 static void *sigchld_th(void *th) {
 	while (true) {
 		ut8 b;
-		ssize_t rd = read(subnix.sigchld_pipe[0], &b, 1);
+		ssize_t rd = read(sigchld_pipe[0], &b, 1);
 		if (rd <= 0) {
 			if (rd < 0) {
 				if (errno == EINTR) {
@@ -797,7 +793,7 @@ static void *sigchld_th(void *th) {
 			subprocess_lock();
 			void **it;
 			RzSubprocess *proc = NULL;
-			rz_pvector_foreach (&subnix.subprocs, it) {
+			rz_pvector_foreach (&subprocs, it) {
 				RzSubprocess *p = *it;
 				if (p->pid == pid) {
 					proc = p;
@@ -823,27 +819,27 @@ static void *sigchld_th(void *th) {
 }
 
 RZ_API bool rz_subprocess_init(void) {
-	rz_pvector_init(&subnix.subprocs, NULL);
-	subnix.subprocs_mutex = rz_th_lock_new(true);
-	if (!subnix.subprocs_mutex) {
+	rz_pvector_init(&subprocs, NULL);
+	subprocs_mutex = rz_th_lock_new(true);
+	if (!subprocs_mutex) {
 		return false;
 	}
-	if (rz_sys_pipe(subnix.sigchld_pipe, true) == -1) {
+	if (rz_sys_pipe(sigchld_pipe, true) == -1) {
 		perror("pipe");
-		rz_th_lock_free(subnix.subprocs_mutex);
+		rz_th_lock_free(subprocs_mutex);
 		return false;
 	}
-	subnix.sigchld_thread = rz_th_new(sigchld_th, NULL);
-	if (!subnix.sigchld_thread) {
-		rz_sys_pipe_close(subnix.sigchld_pipe[0]);
-		rz_sys_pipe_close(subnix.sigchld_pipe[1]);
-		rz_th_lock_free(subnix.subprocs_mutex);
+	sigchld_thread = rz_th_new(sigchld_th, NULL);
+	if (!sigchld_thread) {
+		rz_sys_pipe_close(sigchld_pipe[0]);
+		rz_sys_pipe_close(sigchld_pipe[1]);
+		rz_th_lock_free(subprocs_mutex);
 		return false;
 	}
 	if (rz_sys_signal(SIGCHLD, handle_sigchld) < 0) {
-		rz_sys_pipe_close(subnix.sigchld_pipe[0]);
-		rz_sys_pipe_close(subnix.sigchld_pipe[1]);
-		rz_th_lock_free(subnix.subprocs_mutex);
+		rz_sys_pipe_close(sigchld_pipe[0]);
+		rz_sys_pipe_close(sigchld_pipe[1]);
+		rz_th_lock_free(subprocs_mutex);
 		return false;
 	}
 	return true;
@@ -852,13 +848,13 @@ RZ_API bool rz_subprocess_init(void) {
 RZ_API void rz_subprocess_fini(void) {
 	rz_sys_signal(SIGCHLD, SIG_IGN);
 	ut8 b = 0;
-	rz_xwrite(subnix.sigchld_pipe[1], &b, 1);
-	rz_sys_pipe_close(subnix.sigchld_pipe[1]);
-	rz_th_wait(subnix.sigchld_thread);
-	rz_sys_pipe_close(subnix.sigchld_pipe[0]);
-	rz_th_free(subnix.sigchld_thread);
-	rz_pvector_clear(&subnix.subprocs);
-	rz_th_lock_free(subnix.subprocs_mutex);
+	rz_xwrite(sigchld_pipe[1], &b, 1);
+	rz_sys_pipe_close(sigchld_pipe[1]);
+	rz_th_wait(sigchld_thread);
+	rz_sys_pipe_close(sigchld_pipe[0]);
+	rz_th_free(sigchld_thread);
+	rz_pvector_clear(&subprocs);
+	rz_th_lock_free(subprocs_mutex);
 }
 
 static char **create_child_env(const char *envvars[], const char *envvals[], size_t env_size) {
@@ -1176,7 +1172,7 @@ no_term_change:
 		rz_sys_pipe_close(stderr_pipe[1]);
 	}
 
-	rz_pvector_push(&subnix.subprocs, proc);
+	rz_pvector_push(&subprocs, proc);
 	subprocess_unlock();
 
 	return proc;
@@ -1455,7 +1451,7 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 		return;
 	}
 	subprocess_lock();
-	rz_pvector_remove_data(&subnix.subprocs, proc);
+	rz_pvector_remove_data(&subprocs, proc);
 	subprocess_unlock();
 	rz_strbuf_fini(&proc->out);
 	rz_strbuf_fini(&proc->err);
