@@ -765,11 +765,13 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_rz_float(RZ_NONNULL RZ_OWN Rz
 	RzILOpFloat *ret = NULL;
 	RzFloatFormat r = fl->r;
 	RzILOpBitVector *bv = rz_il_op_new_bitv(fl->s);
-	rz_float_free(fl);
 	if (!bv) {
-		return NULL;
+		goto err;
 	}
+	fl->s = NULL;
 	rz_il_op_new_2(Float, RZ_IL_OP_FLOAT, RzILOpArgsFloat, float_, r, bv);
+err:
+	rz_float_free(fl);
 	return ret;
 }
 

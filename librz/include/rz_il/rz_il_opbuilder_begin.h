@@ -99,7 +99,7 @@
 #define AND(x, y) rz_il_op_new_bool_and(x, y)
 #define OR(x, y)  rz_il_op_new_bool_or(x, y)
 
-#define FNEQ(flx, fly) rz_il_op_new_fneq(flx, fly)
+#define FNE(flx, fly) rz_il_op_new_fneq(flx, fly)
 #define FEQ(flx, fly)  rz_il_op_new_feq(flx, fly)
 #define FLT(flx, fly)  rz_il_op_new_flt(flx, fly)
 #define FLE(flx, fly)  rz_il_op_new_fle(flx, fly)

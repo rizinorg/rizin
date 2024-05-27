@@ -184,6 +184,11 @@ static const char *TriCoreREGs[] = {
 	"FPU_TRAP_SRC1",
 	"FPU_TRAP_SRC2",
 	"FPU_TRAP_SRC3",
+	"set_FI",
+	"set_FV",
+	"set_FZ",
+	"set_FU",
+	"set_FX",
 	NULL
 };
 
@@ -2942,11 +2947,11 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_FTOQ31Z: return ftoq31z(ctx);
 	case TRICORE_INS_FTOQ31: return ftoq31(ctx);
 	case TRICORE_INS_FTOUZ: return ftouz(ctx);
-	case TRICORE_INS_FTOU:return ftou(ctx);
+	case TRICORE_INS_FTOU: return ftou(ctx);
 	case TRICORE_INS_HPTOF: return hptof(ctx);
-	case TRICORE_INS_ITOF:
-	case TRICORE_INS_Q31TOF:
-	case TRICORE_INS_UTOF:
+	case TRICORE_INS_ITOF: return itof(ctx);
+	case TRICORE_INS_Q31TOF: return q31tof(ctx);
+	case TRICORE_INS_UTOF: return utof(ctx);
 	case TRICORE_INS_DIV_F:
 	case TRICORE_INS_ADD_F:
 	case TRICORE_INS_MADD_F:
