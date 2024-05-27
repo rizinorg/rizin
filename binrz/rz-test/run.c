@@ -558,7 +558,7 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 	return ret;
 }
 
-RZ_API void rz_test_result_info_free(RZ_NULLABLE RzTestResultInfo *result) {
+RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result) {
 	if (!result) {
 		return;
 	}

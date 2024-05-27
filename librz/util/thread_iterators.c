@@ -10,7 +10,7 @@
 #include <rz_th.h>
 #include <rz_util.h>
 
-static bool th_run_iterator(RzThreadFunction th_cb, void *context, RzThreadNCores max_threads) {
+static bool th_run_iterator(RzThreadFunction th_cb, void *context, size_t max_threads) {
 	RzThreadPool *pool = rz_th_pool_new(max_threads);
 	if (!pool) {
 		RZ_LOG_ERROR("th: failed to allocate thread pool\n");
@@ -70,7 +70,7 @@ static void *thread_iterate_list_cb(th_list_ctx_t *context) {
  *
  * \return     On error returns false, otherwise true.
  */
-RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, RzThreadNCores max_threads, RZ_NULLABLE void *user) {
+RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(list && iterator, false);
 	if (rz_list_length(list) < 1) {
 		// nothing to do, but return true
@@ -138,7 +138,7 @@ static void *thread_iterate_pvec_cb(th_vec_ctx_t *context) {
  *
  * \return     On error returns false, otherwise true.
  */
-RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector /*<void *>*/ *pvec, RZ_NONNULL RzThreadIterator iterator, RzThreadNCores max_threads, RZ_NULLABLE void *user) {
+RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector /*<void *>*/ *pvec, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(pvec && iterator, false);
 	if (rz_pvector_len(pvec) < 1) {
 		// nothing to do, but return true

@@ -1114,12 +1114,12 @@ static bool cb_str_escbslash(void *user, void *data) {
 static bool cb_str_search_max_threads(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	RzThreadNCores max_threads = rz_th_max_threads(node->i_value);
+	size_t max_threads = rz_th_physical_core_number();
 	if (node->value[0] == '?') {
-		rz_cons_printf("%d\n", max_threads);
+		rz_cons_printf("%" PFMTSZu "\n", max_threads);
 		return false;
 	}
-	core->bin->str_search_cfg.max_threads = max_threads;
+	core->bin->str_search_cfg.max_threads = RZ_MIN(max_threads, node->i_value);
 	return true;
 }
 
@@ -3692,7 +3692,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* string search options */
 	SETB("str.search.reload", true, "When enabled, any change to any option `str.search.*` will reload the bin strings.");
-	SETICB("str.search.max_threads", RZ_THREAD_N_CORES_ALL_AVAILABLE, &cb_str_search_max_threads, "Maximum core number (0 for all cores).");
+	SETICB("str.search.max_threads", RZ_THREAD_POOL_ALL_CORES, &cb_str_search_max_threads, "Maximum core number (0 for all cores).");
 	SETICB("str.search.min_length", RZ_BIN_STRING_SEARCH_MIN_STRING, &cb_str_search_min_length, "Smallest string length that is possible to find.");
 	SETICB("str.search.buffer_size", RZ_BIN_STRING_SEARCH_BUFFER_SIZE, &cb_str_search_buffer_size, "Maximum buffer size, which will also determine the maximum string length.");
 	SETICB("str.search.max_uni_blocks", RZ_BIN_STRING_SEARCH_MAX_UNI_BLOCKS, &cb_str_search_max_uni_blocks, "Maximum number of unicode blocks.");
@@ -3780,7 +3780,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("basefind.alignment", RZ_BASEFIND_BASE_ALIGNMENT, "Basefind alignment in bytes");
 	SETI("basefind.min.score", RZ_BASEFIND_SCORE_MIN_VALUE, "Basefind min score value to consider it valid");
 	SETI("basefind.min.string", RZ_BASEFIND_STRING_MIN_LENGTH, "Basefind min string size to find to consider it valid");
-	SETI("basefind.max.threads", RZ_THREAD_N_CORES_ALL_AVAILABLE, "Basefind max threads number (when 0 uses all available cores)");
+	SETI("basefind.max.threads", RZ_THREAD_POOL_ALL_CORES, "Basefind max threads number (when 0 uses all available cores)");
 
 	/* nkeys */
 	SETPREF("key.s", "", "override step into action");

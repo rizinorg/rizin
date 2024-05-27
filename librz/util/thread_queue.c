@@ -17,7 +17,7 @@
 struct rz_th_queue_t {
 	RzThreadLock *lock;
 	RzThreadCond *cond;
-	RzThreadQueueSize max_size;
+	size_t max_size;
 	RzList /*<void *>*/ *list;
 };
 
@@ -29,7 +29,7 @@ struct rz_th_queue_t {
  *
  * \return On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(RzThreadQueueSize max_size, RZ_NULLABLE RzListFree qfree) {
+RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzListFree qfree) {
 	RzThreadQueue *queue = RZ_NEW0(RzThreadQueue);
 	if (!queue) {
 		return NULL;

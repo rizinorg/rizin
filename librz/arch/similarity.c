@@ -276,7 +276,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	RzAnalysisMatchResult *result = NULL;
 	RzList *unmatch_a = rz_list_newf((RzListFree)free);
 	RzList *unmatch_b = rz_list_clone(list_b);
-	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_N_CORES_ALL_AVAILABLE);
+	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES);
 	RzThread *user_thread = NULL;
 	SharedContext shared = { 0 };
 	MatchUIInfo ui_info = { 0 };
