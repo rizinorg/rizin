@@ -504,3 +504,22 @@ static RzAnalysisLiftedILOp div_f(RzAsmTriCoreContext *ctx) {
 		SETG(R(0), VARL("_result")),
 		set_status);
 }
+
+static RzAnalysisLiftedILOp qseed_f(RzAsmTriCoreContext *ctx) {
+	RzAnalysisLiftedILOp set_status = SEQ2(
+		set_FPU(FI, OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_result")))),
+		set_PSW_FS(VARG("set_FI")));
+
+	return SEQ6(
+		SETL("_fa", FLOATV64(VARG(R(1)))),
+		SETL("_arg_a", denorm_to_zero(VARL("_fa"))),
+		SETL("_normal_result", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, FRSQRT(0, VARL("_arg_a")), PSW_RM())),
+		SETL("_result",
+			ITE(IS_FZERO(VARL("_arg_a")),
+				F32(0),
+				ITE(FLT(VARL("_fa"), F64(0)),
+					IL_FSNAN(RZ_FLOAT_IEEE754_BIN_32),
+					VARL("_normal_result")))),
+		SETG(R(0), VARL("_result")),
+		set_status);
+}
