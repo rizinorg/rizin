@@ -104,7 +104,7 @@ typedef struct rz_analysis_graph_node_info_t {
 	};
 } RzGraphNodeInfo;
 
-RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation_cfg(ut32 subtype, bool letter_abbr, bool utf8);
+RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation_cfg(RzGraphNodeCFGSubType subtype, bool letter_abbr, bool utf8);
 RZ_API RZ_OWN char *rz_graph_get_node_subtype_annotation_cfg_iword(RzGraphNodeCFGIWordSubType subtype, bool letter_abbr, bool utf8);
 RZ_API RZ_OWN RzGraphNodeInfo *rz_graph_get_node_info_data(RZ_BORROW void *data);
 RZ_API void rz_graph_free_node_info(RZ_NULLABLE void *ptr);
