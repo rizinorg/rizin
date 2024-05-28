@@ -2952,14 +2952,14 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_ITOF: return itof(ctx);
 	case TRICORE_INS_Q31TOF: return q31tof(ctx);
 	case TRICORE_INS_UTOF: return utof(ctx);
-	case TRICORE_INS_DIV_F:
-	case TRICORE_INS_ADD_F:
+	case TRICORE_INS_ADD_F: return add_f(ctx);
+	case TRICORE_INS_SUB_F: return sub_f(ctx);
+	case TRICORE_INS_MUL_F: return mul_f(ctx);
+	case TRICORE_INS_DIV_F: return div_f(ctx);
 	case TRICORE_INS_MADD_F:
 	case TRICORE_INS_MSUB_F:
-	case TRICORE_INS_SUB_F:
-	case TRICORE_INS_MUL_F:
 	case TRICORE_INS_QSEED_F: NOT_IMPLEMENTED;
-	case TRICORE_INS_CMP_F: return f_cmp(ctx);
+	case TRICORE_INS_CMP_F: return cmp_f(ctx);
 	case TRICORE_INS_UPDFL: {
 		RzILOpPure *m = BITS32(VARG(R(0)), 8, 8);
 		RzILOpPure *v = BITS32(VARG(R(0)), 0, 8);

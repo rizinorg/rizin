@@ -89,6 +89,9 @@
 #define FPOW(rmode, flx, fly)      rz_il_op_new_fpow(rmode, flx, fly)
 #define FMAD(rmode, flx, fly, flz) rz_il_op_new_fmad(rmode, flx, fly, flz)
 
+#define IL_FQNAN(f) rz_il_op_new_float_from_rz_float(rz_float_new_qnan(f))
+#define IL_FSNAN(f) rz_il_op_new_float_from_rz_float(rz_float_new_snan(f))
+
 // TODO: add `feq` as prime operator in fbasic
 // https://smtlib.cs.uiowa.edu/theories-FloatingPoint.shtml
 
@@ -100,11 +103,11 @@
 #define OR(x, y)  rz_il_op_new_bool_or(x, y)
 
 #define FNE(flx, fly) rz_il_op_new_fneq(flx, fly)
-#define FEQ(flx, fly)  rz_il_op_new_feq(flx, fly)
-#define FLT(flx, fly)  rz_il_op_new_flt(flx, fly)
-#define FLE(flx, fly)  rz_il_op_new_fle(flx, fly)
-#define FGT(flx, fly)  rz_il_op_new_fgt(flx, fly)
-#define FGE(flx, fly)  rz_il_op_new_fge(flx, fly)
+#define FEQ(flx, fly) rz_il_op_new_feq(flx, fly)
+#define FLT(flx, fly) rz_il_op_new_flt(flx, fly)
+#define FLE(flx, fly) rz_il_op_new_fle(flx, fly)
+#define FGT(flx, fly) rz_il_op_new_fgt(flx, fly)
+#define FGE(flx, fly) rz_il_op_new_fge(flx, fly)
 
 #define UNSIGNED(n, x)    rz_il_op_new_unsigned(n, x)
 #define SIGNED(n, x)      rz_il_op_new_signed(n, x)
