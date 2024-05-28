@@ -7,6 +7,7 @@
 #include <rz_io.h>
 #include <rz_cons.h>
 #include <rz_list.h>
+#include <rz_th.h>
 #include <rz_util/ht_pu.h>
 #include <rz_demangler.h>
 #include <rz_hash.h>
@@ -200,7 +201,7 @@ typedef enum {
 } RzBinStringSearchMode;
 
 typedef struct rz_bin_string_search_opt_t {
-	size_t max_threads; ///< Maximum thread number (normally set to RZ_THREAD_POOL_ALL_CORES).
+	RzThreadNCores max_threads; ///< Maximum thread number (normally set to RZ_THREAD_N_CORES_ALL_AVAILABLE).
 	size_t min_length; ///< Smallest string length that is possible to find.
 	size_t buffer_size; ///< Maximum buffer size, which will also determine the maximum string length.
 	size_t max_uni_blocks; ///< Maximum number of unicode blocks

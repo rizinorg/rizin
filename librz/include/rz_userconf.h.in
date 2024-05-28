@@ -47,6 +47,7 @@
 #define IS_IOS                      @IS_IOS@
 #define RZ_BUILD_DEBUG              @RZ_BUILD_DEBUG@
 #define WITH_SWIFT_DEMANGLER        @WITH_SWIFT_DEMANGLER@
+#define N_THREAD_LIMIT              @N_THREAD_LIMIT@
 #define HAVE_COPYFILE               @HAVE_COPYFILE@
 #define HAVE_COPY_FILE_RANGE        @HAVE_COPY_FILE_RANGE@
 #define HAVE_BACKTRACE              @HAVE_BACKTRACE@

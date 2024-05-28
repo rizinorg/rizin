@@ -405,6 +405,7 @@ foreach it : ccs
   it_userconf.set10('HAVE_LZMA', get_option('use_lzma'))
   it_userconf.set10('HAVE_ZLIB', get_option('use_zlib'))
   it_userconf.set10('SUPPORTS_PCRE2_JIT', pcre2_jit_supported)
+  it_userconf.set('N_THREAD_LIMIT', get_option('n_thread_limit'))
 
   if it_machine.system() == 'freebsd' or it_machine.system() == 'dragonfly'
     add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c', native: it_native)
