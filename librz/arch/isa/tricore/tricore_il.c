@@ -2956,8 +2956,8 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_SUB_F: return sub_f(ctx);
 	case TRICORE_INS_MUL_F: return mul_f(ctx);
 	case TRICORE_INS_DIV_F: return div_f(ctx);
-	case TRICORE_INS_MADD_F:
-	case TRICORE_INS_MSUB_F:
+	case TRICORE_INS_MADD_F: return madd_f(ctx);
+	case TRICORE_INS_MSUB_F: return msub_f(ctx);
 	case TRICORE_INS_QSEED_F: return qseed_f(ctx);
 	case TRICORE_INS_CMP_F: return cmp_f(ctx);
 	case TRICORE_INS_UPDFL: {
