@@ -21,13 +21,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		rz_asm_op_set_asm(op, cmd.instr);
 	}
-	char *buf_asm = rz_strbuf_get(&op->buf_asm);
-	if (a->syntax != RZ_ASM_SYNTAX_ATT) {
-		rz_str_replace_ch(buf_asm, '#', 0, 1);
-		// rz_str_replace_ch (buf_asm, "$", "$$", 1);
-		rz_str_replace_ch(buf_asm, '&', 0, 1);
-		rz_str_replace_ch(buf_asm, '%', 0, 1);
-	}
+
 fail:
 	return op->size = ret;
 }
