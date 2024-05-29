@@ -1212,6 +1212,8 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 		pj_ka(state->d.pj, "opcodes");
+	} else if (state->mode == RZ_OUTPUT_MODE_QUIET) {
+		rz_cons_printf("0x%08" PFMT64x ":", ((RzCoreAsmHit *)rz_list_first(hitlist))->addr);
 	}
 	rz_list_foreach (hitlist, iter, hit) {
 		switch (state->mode) {
@@ -1242,7 +1244,6 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
 			// Print gadgets in a 'linear manner', each sequence on one line.
-			rz_cons_printf("0x%08" PFMT64x ":", ((RzCoreAsmHit *)rz_list_first(hitlist))->addr);
 			buf = malloc(hit->len);
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
