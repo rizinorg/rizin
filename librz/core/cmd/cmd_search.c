@@ -1195,6 +1195,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	const bool esil = rz_config_get_i(core->config, "asm.esil");
 	const bool rop_db = rz_config_get_i(core->config, "rop.db");
 	char tmpbuf[16];
+	ut8 *buf = NULL;
 	RzStrBuf *colored_asm = NULL, *bw_str = NULL;
 	if (rop_db) {
 		db = sdb_ns(core->sdb, "rop", true);
@@ -1214,7 +1215,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	rz_list_foreach (hitlist, iter, hit) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
-			ut8 *buf = malloc(hit->len);
+			buf = malloc(hit->len);
 			if (!buf) {
 				return;
 			}
