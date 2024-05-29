@@ -1189,6 +1189,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	unsigned int size = 0;
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp asmop;
+	const char *comment = NULL;
 	Sdb *db = NULL;
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
@@ -1272,7 +1273,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			// Print gadgets with new instruction on a new line.
-			const char *comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
+			comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
 			if (hit->len < 0) {
 				RZ_LOG_ERROR("core: Invalid hit length here\n");
 				continue;
@@ -1319,6 +1320,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			free(asm_op_hex);
 			free(buf);
 			rz_analysis_op_fini(&aop);
+			comment = NULL;
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
 			// rz_table_add_rowf(state->d.t, "XXs", hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "");
