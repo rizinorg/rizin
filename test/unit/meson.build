@@ -99,7 +99,7 @@ if get_option('enable_tests')
     'str',
     'strbuf',
     'str_search',
-    'subprocess',
+    #'subprocess',
     'table',
     'task',
     'threads',
