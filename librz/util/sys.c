@@ -1628,14 +1628,17 @@ RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 		perror("pipe");
 		goto err;
 	}
-	if (!set_close_on_exec(pipefd[0], close_on_exec) || !set_close_on_exec(pipefd[1], close_on_exec)) {
+	if (!set_close_on_exec(pipefd[0], close_on_exec) ||
+		!set_close_on_exec(pipefd[1], close_on_exec)) {
 		perror("close-on-exec");
 		close(pipefd[0]);
 		close(pipefd[1]);
+		pipefd[0] = pipefd[1] = -1;
 		goto err;
 	}
 err:
 	parent_lock_leave();
+	eprintf("rz_sys_pipe(pipefd[]={ %d, %d }) == %d\n", pipefd[0], pipefd[1], res);
 	return res;
 }
 
