@@ -23,21 +23,17 @@ static ut8 *crlf2lf(ut8 *str) {
 	return str;
 }
 #else
-#include <pthread.h>
 #define crlf2lf(x) (x)
 #endif
 
 static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
-	eprintf("[%p] rz_subprocess_start\n", pthread_self());
 	RzSubprocess *proc = rz_subprocess_start(file, args, args_size, envvars, envvals, env_size);
 	if (!proc) {
 		return NULL;
 	}
-	eprintf("[%p] rz_subprocess_wait\n", pthread_self());
 	RzSubprocessWaitReason r = rz_subprocess_wait(proc, timeout_ms);
 	if (r == RZ_SUBPROCESS_TIMEDOUT) {
-		eprintf("[%p] rz_subprocess_kill\n", pthread_self());
 		rz_subprocess_kill(proc);
 	}
 	RzSubprocessOutput *out = rz_subprocess_drain(proc);
@@ -158,9 +154,7 @@ static RzSubprocessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms,
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
-	eprintf("[%p] run: %s\n", pthread_self(), cmds);
 	RzSubprocessOutput *out = runner(config->rz_cmd, args.v.a, rz_pvector_len(&args), envvars, envvals, env_size, timeout_ms, user);
-	eprintf("[%p] end: %s\n", pthread_self(), cmds);
 	rz_pvector_clear(&args);
 #if __WINDOWS__
 	free(wcmds);

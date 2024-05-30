@@ -1032,6 +1032,7 @@ abort:
 	return false;
 }
 
+#include <pthread.h>
 /**
  * \brief Start a subprocess, using the options provided in \p opt
  *
@@ -1096,8 +1097,9 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
-
+		eprintf("[%p] child process!!\n", pthread_self());
 		if (stderr_pipe[1] != -1) {
+			eprintf("[%p] child dup2(stderr_pipe[1], STDERR_FILENO)!!\n", pthread_self());
 			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
 			}
 			if (proc->stderr_fd != proc->stdout_fd && proc->stderr_fd != proc->master_fd) {
@@ -1107,6 +1109,7 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 		}
 
 		if (stdout_pipe[1] != -1) {
+			eprintf("[%p] child dup2(stdout_pipe[1], STDOUT_FILENO)!!\n", pthread_self());
 			while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
 			}
 			if (proc->stdout_fd != proc->master_fd) {
@@ -1115,6 +1118,7 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 			}
 		}
 		if (stdin_pipe[0] != -1) {
+			eprintf("[%p] child dup2(stdin_pipe[0], STDIN_FILENO)!!\n", pthread_self());
 			while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
 			}
 			if (proc->stdin_fd != proc->master_fd) {
@@ -1123,20 +1127,27 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 			}
 		}
 
+		eprintf("[%p] child closing master!!\n", pthread_self());
 		if (proc->master_fd != -1 && close(proc->master_fd)) {
 			perror("close");
 		}
+		eprintf("[%p] child closing slave!!\n", pthread_self());
 		if (proc->slave_fd != -1 && close(proc->slave_fd)) {
 			perror("close");
 		}
 
 		// Use the previously created environment
+		eprintf("[%p] child set env!!\n", pthread_self());
 		rz_sys_set_environ(child_env);
 
+		eprintf("[%p] child execvp(%s)!!\n", pthread_self(), opt->file);
 		rz_sys_execvp(opt->file, argv);
+
+		eprintf("[%p] exit!!\n", pthread_self());
 		perror("exec");
 		rz_sys_exit(-1, true);
 	}
+	eprintf("[%p] parent process!!\n", pthread_self());
 	destroy_child_env(child_env);
 	free(argv);
 
@@ -1311,8 +1322,11 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 			timeout_s.tv_sec = usec_diff / RZ_USEC_PER_SEC;
 			timeout_s.tv_usec = usec_diff % RZ_USEC_PER_SEC;
 			timeout = &timeout_s;
+			eprintf("[%p] timeout_ms: %llu\n", pthread_self(), timeout_ms);
 		}
+		eprintf("[%p] select wait\n", pthread_self());
 		r = select(nfds, &rfds, NULL, NULL, timeout);
+		eprintf("[%p] select done\n", pthread_self());
 		if (r < 0) {
 			if (errno == EINTR) {
 				continue;
