@@ -1548,6 +1548,7 @@ RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 	}
 err:
 	parent_lock_leave();
+	eprintf("rz_sys_pipe(pipefd[]={ %d, %d }) == %d\n", pipefd[0], pipefd[1], res);
 	return res;
 }
 
@@ -1638,7 +1639,6 @@ RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 	}
 err:
 	parent_lock_leave();
-	eprintf("rz_sys_pipe(pipefd[]={ %d, %d }) == %d\n", pipefd[0], pipefd[1], res);
 	return res;
 }
 
