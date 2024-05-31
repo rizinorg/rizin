@@ -859,6 +859,10 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 	const char delim = pretty ? '\n' : ' ';
 	RzStrBuf sb;
 
+	RzAnalysisILVM *vm = rz_analysis_il_vm_new(core->analysis, NULL);
+	RzILValidateGlobalContext *ctx = vm ? rz_il_validate_global_context_new_from_vm(vm->vm)
+					    : NULL;
+
 	RzAnalysisOp *op = NULL;
 	rz_iterator_foreach(iter, op) {
 		if (!op->il_op) {
@@ -868,14 +872,27 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 
 		rz_strbuf_init(&sb);
 		rz_il_op_effect_stringify(op->il_op, &sb, pretty);
+
 		il_stmt = rz_strbuf_get(&sb);
 		if (colorize) {
 			core_colorify_il_statement(core->cons->context, il_stmt, delim, op->addr);
 		} else {
 			rz_cons_printf("0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
 		}
+
+		if (ctx) {
+			RzILTypeEffect t;
+			char *report;
+			rz_il_validate_effect(op->il_op, ctx, NULL, &t, &report);
+			if (report) {
+				rz_cons_println(report);
+				free(report);
+			}
+		}
 		rz_strbuf_fini(&sb);
 	}
+	rz_analysis_il_vm_free(vm);
+	rz_il_validate_global_context_free(ctx);
 }
 
 // used to speedup strcmp with rz_config_get in loops
