@@ -35,8 +35,8 @@ static inline RzILOpPure *is_denorm(RzILOpPure *x) {
 static inline RzILOpFloat *q_real(ut32 x) {
 	float y = x & 0x80000000 ? -1.f : 0.f;
 	for (int i = 0; i < 31; ++i) {
-		ut32 m = 1 << (30 - i);
-		float b = 1.f / (float)(2 << i);
+		ut32 m = 1u << (30 - i);
+		float b = 1.f / (float)(2u << i);
 		if (x & m) {
 			y += b;
 		}
