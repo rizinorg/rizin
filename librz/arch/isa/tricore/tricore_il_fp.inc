@@ -1,19 +1,11 @@
 // SPDX-FileCopyrightText: 2024 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// static const ut32 ADD_NAN __attribute__((unused)) = 0x7fc00001;
-// static const ut32 DIV_NAN __attribute__((unused)) = 0x7fc00008;
-// static const ut32 MUL_NAN __attribute__((unused)) = 0x7fc00002;
-// static const ut32 SQRT_NAN __attribute__((unused)) = 0x7fc00004;
-//
-static const ut32 HP_MAX_VALUE __attribute__((unused)) = 65504;
-static const ut32 HP_MIN_NORMAL __attribute__((unused)) = 1024 * 16;
+static const ut32 HP_MAX_VALUE = 65504;
+static const ut32 HP_MIN_NORMAL = 1024 * 16;
 
 static const ut32 HP_NEG_INFINITY = 0xfc00;
 static const ut32 HP_POS_INFINITY = 0x7c00;
-
-// static const ut32 NEG_INFINITY __attribute__((unused)) = 0xff800000;
-// static const ut32 POS_INFINITY __attribute__((unused)) = 0x7f800000;
 
 #define F2SINT32(x, m) F2SINT(32, m, x)
 
