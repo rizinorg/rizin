@@ -17,12 +17,13 @@ static const ut32 HP_POS_INFINITY = 0x7c00;
 
 #define F2SINT32(x, m) F2SINT(32, m, x)
 
-static inline RzILOpPure *denorm_to_zero(RzILOpFloat *x) {
-	return LET("tmp", x,
-		ITE(AND(FLT(VARLP("tmp"), F32(0.0)), FGT(VARLP("tmp"), F32(powf(-2, -126)))), FNEG(F32(0)),
-			ITE(AND(FGT(VARLP("tmp"), F32(0)), FLT(VARLP("tmp"), F32(powf(2, -126)))), F32(0),
-				VARLP("tmp"))));
-}
+#define denorm_to_zere_(T, x) \
+	LET("tmp", x, \
+		ITE(AND(FLT(VARLP("tmp"), T(0.0)), FGT(VARLP("tmp"), T(powf(-2, -126)))), FNEG(T(0)), \
+			ITE(AND(FGT(VARLP("tmp"), T(0)), FLT(VARLP("tmp"), T(powf(2, -126)))), T(0), \
+				VARLP("tmp"))))
+
+#define denorm_to_zere64(x) denorm_to_zere_(F64, x)
 
 static inline RzILOpPure *is_denorm(RzILOpPure *x) {
 	return AND(IS_ZERO(BITS32(x, 23, 8)), NON_ZERO(BITS32(DUP(x), 0, 23)));
@@ -59,12 +60,12 @@ static inline RzILOpEffect *q_real_set_v(const char *k, RzILOpPure *x) {
 				SETL("_m", SHIFTL0(U32(1), SUB(U32(30), VARL("_i")))),
 				SETL("_b", FDIV(RZ_FLOAT_RMODE_RNE, F32(1.f), FLOATV32(SHIFTL0(U32(2), VARL("_i"))))),
 				BRANCH(
-					NON_ZERO(LOGAND(VARL(k), VARL("_m"))),
-					SETL(k, ADD(VARL(k), VARL("_b"))),
+					NON_ZERO(LOGAND(VARL("_x"), VARL("_m"))),
+					SETL(k, FADD(0, VARL(k), VARL("_b"))),
 					NOP()))));
 }
 
-#define FCAST(f, _1, x, mode) \
+#define FCAST_(f, _1, x, mode, _default) \
 	LET("_mode", UNSIGNED(8, mode), \
 		LET("_x", x, \
 			ITE(EQ(VARLP("_mode"), U8(0)), \
@@ -77,12 +78,15 @@ static inline RzILOpEffect *q_real_set_v(const char *k, RzILOpPure *x) {
 							f(_1, RZ_FLOAT_RMODE_RTP, VARLP("_x")), \
 							ITE(EQ(VARLP("_mode"), U8(4)), \
 								f(_1, RZ_FLOAT_RMODE_RTZ, VARLP("_x")), \
-								U32(UT32_MAX))))))))
+								_default)))))))
 
-#define round_to_integer(x, m) FCAST(F2SINT, 32, x, m)
+#define FCAST32(f, _1, x, mode) FCAST_(f, _1, x, mode, F32(0))
+#define FCAST64(f, _1, x, mode) FCAST_(f, _1, x, mode, F64(0))
+#define round_to_integer(x, m)  FCAST_(F2SINT, 32, x, m, U32(UT32_MAX))
 
 static RzILOpPure *minmax(const char *k, st64 min, st64 max, RzILOpPure *x) {
-	return ITE(IS_FNAN(VARL(k)), U32(0),
+	return ITE(IS_FNAN(VARL(k)),
+		U32(0),
 		ITE(FGT(VARL(k), F64(max)),
 			U32(max),
 			ITE(FLT(VARL(k), F64(min)),
@@ -111,7 +115,7 @@ static RzILOpPure *minmax_q31(const char *k, RzILOpPure *x) {
 
 #define set_FPU(k, x) SEQ2( \
 	SETG("set_" #k, x), \
-	BRANCH(VARG("set_" #k), set_PSW_##k(x), NOP()))
+	BRANCH(VARG("set_" #k), set_PSW_##k(U32(1)), NOP()))
 
 static RzILOpPure *ieee754_16bit_underflow(RzILOpPure *x) {
 	return AND(FLT(x, FLOATV32(U32(HP_MIN_NORMAL))), FGT(DUP(x), F32(0)));
@@ -121,7 +125,8 @@ static RzILOpPure *ieee754_16bit_overflow(RzILOpFloat *x) {
 	return FGT(x, FLOATV32(U32(HP_MAX_VALUE)));
 }
 
-#define set_FS_or_FI_FV_FU_FX set_PSW_FS(f_op2_chain4(rz_il_op_new_bool_or, VARG("set_FI"), VARG("set_FV"), VARG("set_FU"), VARG("set_FX")))
+#define set_PSW_FSb(x)        set_PSW_FS(BOOL_TO_BV32(x))
+#define set_FS_or_FI_FV_FU_FX set_PSW_FSb(f_op2_chain4(rz_il_op_new_bool_or, VARG("set_FI"), VARG("set_FV"), VARG("set_FU"), VARG("set_FX")))
 
 /**
  * \brief Convert single precision to a half precision
@@ -163,8 +168,8 @@ static RzAnalysisLiftedILOp ftohp(RzAsmTriCoreContext *ctx) {
 	// Handle overflow & underflow and convert to 16-bit format
 	// D[a][15:0] = ieee754_16bit_format(f_rounded);
 	RzILOpEffect *else_eff =
-		SEQ3(SETL("_fa", denorm_to_zero(FLOATV32(VARG(a)))),
-			SETL("_f_rounded", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_16, VARL("_fa"), PSW_RM())),
+		SEQ3(SETL("_fa", denorm_to_zere64(FLOATV32(VARG(a)))),
+			SETL("_f_rounded", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_16, VARL("_fa"), PSW_RM())),
 			SETG(c, BITS32_U(VARG(c), 0, 16, UNSIGNED(32, VARL("_f_rounded")))));
 
 	RzILOpEffect *set_status = SEQ5(
@@ -207,10 +212,10 @@ static RzAnalysisLiftedILOp ftohp(RzAsmTriCoreContext *ctx) {
 static RzAnalysisLiftedILOp hptof(RzAsmTriCoreContext *ctx) {
 	return SEQ4(
 		SETL("_hp", UNSIGNED(16, VARG(R(1)))),
-		SETL("_res", FCONVERT(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNA, FLOATV16(VARL("_hp")))),
-		SETG(R(0), VARL("_res")),
+		SETL("_result", FCONVERT(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNA, FLOATV16(VARL("_hp")))),
+		SETG(R(0), F2BV(VARL("_result"))),
 		SEQ2(set_FPU(FI, IS_FNAN(VARL("_hp"))),
-			set_PSW_FS(VARG("set_FI"))));
+			set_PSW_FSb((VARG("set_FI")))));
 }
 
 /**
@@ -224,11 +229,11 @@ static RzAnalysisLiftedILOp hptof(RzAsmTriCoreContext *ctx) {
 static RzAnalysisLiftedILOp ftoi(RzAsmTriCoreContext *ctx) {
 	return SEQ4(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
-		SETL("_res", minmax("_fa", ST32_MAX, ST32_MIN, round_to_integer(VARL("_fa"), PSW_RM()))),
-		SETG(R(0), VARL("_res")),
+		SETL("_result_i", minmax("_fa", ST32_MAX, ST32_MIN, round_to_integer(VARL("_fa"), PSW_RM()))),
+		SETG(R(0), VARL("_result_i")),
 		SEQ3(set_FPU(FI, OR(not_in_i32(VARL("_fa")), IS_FNAN(VARL("_fa")))),
-			set_FPU(FX, FNE(VARL("_fa"), VARL("_res"))),
-			set_PSW_FS(OR(VARG("set_FX"), VARG("set_FI")))));
+			set_FPU(FX, FNE(VARL("_fa"), FLOATV64(VARL("_result_i")))),
+			set_PSW_FSb(OR(VARG("set_FX"), VARG("set_FI")))));
 }
 
 /**
@@ -242,11 +247,11 @@ static RzAnalysisLiftedILOp ftoi(RzAsmTriCoreContext *ctx) {
 static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
 	return SEQ4(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
-		SETL("_res", minmax("_fa", ST32_MAX, ST32_MIN, F2SINT32(VARL("_fa"), RZ_FLOAT_RMODE_RTZ))),
-		SETG(R(0), VARL("_res")),
+		SETL("_result_i", minmax("_fa", ST32_MAX, ST32_MIN, F2SINT32(VARL("_fa"), RZ_FLOAT_RMODE_RTZ))),
+		SETG(R(0), VARL("_result_i")),
 		SEQ3(set_FPU(FI, OR(not_in_u32(VARL("_fa")), IS_FNAN(VARL("_fa")))),
-			set_FPU(FX, FNE(VARL("_fa"), VARL("_res"))),
-			set_PSW_FS(OR(VARG("set_FX"), VARG("set_FI")))));
+			set_FPU(FX, FNE(VARL("_fa"), FLOATV64(VARL("_result_i")))),
+			set_PSW_FSb((OR(VARG("set_FX"), VARG("set_FI"))))));
 }
 
 /**
@@ -257,46 +262,48 @@ static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
  * D[c] = result[31:0];
  */
 static RzAnalysisLiftedILOp itof(RzAsmTriCoreContext *ctx) {
-	return SEQ4(
+	return SEQ6(
 		SETL("_a", VARG(R(1))),
-		SETL("_res", FCAST(SINT2F, 32, VARL("_a"), PSW_RM())),
-		SETG(R(0), VARL("_res")),
-		SEQ2(set_FPU(FX, FNE(VARL("_fa"), VARL("_res"))),
-			set_PSW_FS(VARG("set_FX"))));
+		SETL("_result64", FCAST64(SINT2F, RZ_FLOAT_IEEE754_BIN_64, VARL("_a"), PSW_RM())),
+		SETL("_result32", FCAST32(SINT2F, RZ_FLOAT_IEEE754_BIN_32, VARL("_a"), PSW_RM())),
+		SETL("_result32_64", FCAST64(FCONVERT, RZ_FLOAT_IEEE754_BIN_64, VARL("_result32"), PSW_RM())),
+		SETG(R(0), F2BV(VARL("_result32"))),
+		SEQ2(set_FPU(FX, FNE(VARL("_result32_64"), VARL("_result64"))),
+			set_PSW_FSb((VARG("set_FX")))));
 }
 
 static RzAnalysisLiftedILOp ftou(RzAsmTriCoreContext *ctx) {
 	return SEQ4(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
-		SETL("_res", minmax("_fa", UT32_MAX, UT32_MIN, round_to_integer(VARL("_fa"), PSW_RM()))),
-		SETG(R(0), VARL("_res")),
+		SETL("_result_i", minmax("_fa", UT32_MAX, UT32_MIN, round_to_integer(VARL("_fa"), PSW_RM()))),
+		SETG(R(0), VARL("_result_i")),
 		SEQ3(set_FPU(FI, OR(not_in_u32(VARL("_fa")), IS_FNAN(VARL("_fa")))),
-			set_FPU(FX, FNE(VARL("_fa"), VARL("_res"))),
-			set_PSW_FS(OR(VARG("set_FX"), VARG("set_FI")))));
+			set_FPU(FX, FNE(VARL("_fa"), FLOATV64(VARL("_result_i")))),
+			set_PSW_FSb(OR(VARG("set_FX"), VARG("set_FI")))));
 }
 
 static RzAnalysisLiftedILOp ftouz(RzAsmTriCoreContext *ctx) {
 	return SEQ4(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
-		SETL("_res", minmax("_fa", UT32_MAX, UT32_MIN, F2SINT32(VARL("_fa"), RZ_FLOAT_RMODE_RTZ))),
-		SETG(R(0), VARL("_res")),
+		SETL("_result_i", minmax("_fa", UT32_MAX, UT32_MIN, F2SINT32(VARL("_fa"), RZ_FLOAT_RMODE_RTZ))),
+		SETG(R(0), VARL("_result_i")),
 		SEQ3(set_FPU(FI, OR(not_in_u32(VARL("_fa")), IS_FNAN(VARL("_fa")))),
-			set_FPU(FX, FNE(VARL("_fa"), VARL("_res"))),
-			set_PSW_FS(OR(VARG("set_FX"), VARG("set_FI")))));
+			set_FPU(FX, FNE(VARL("_fa"), FLOATV64(VARL("_result_i")))),
+			set_PSW_FSb(OR(VARG("set_FX"), VARG("set_FI")))));
 }
 
 static RzAnalysisLiftedILOp utof(RzAsmTriCoreContext *ctx) {
 	return SEQ4(
 		SETL("_a", VARG(R(1))),
-		SETL("_res", FCAST(INT2F, 32, VARL("_a"), PSW_RM())),
-		SETG(R(0), VARL("_res")),
-		SEQ2(set_FPU(FX, FNE(VARL("_fa"), VARL("_res"))),
-			set_PSW_FS(VARG("set_FX"))));
+		SETL("_result", FCAST32(INT2F, RZ_FLOAT_IEEE754_BIN_32, VARL("_a"), PSW_RM())),
+		SETG(R(0), F2BV(VARL("_result"))),
+		SEQ2(set_FPU(FX, FNE(FLOATV32(VARL("_a")), VARL("_result"))),
+			set_PSW_FSb(VARG("set_FX"))));
 }
 
 /**
  * FTOQ31 D[c], D[a], D[b] (RR)
- * arg_a = denorm_to_zero(f_real(D[a]);
+ * arg_a = denorm_to_zere64(f_real(D[a]);
  * if(is_nan(D[a])) then result = 0;
  * else precise_result = mul(arg_a, 2^-D[b][8:0]);
  * if(precise_result > q_real(7FFFFFFFH)) then result = 7FFFFFFFH;
@@ -307,39 +314,40 @@ static RzAnalysisLiftedILOp utof(RzAsmTriCoreContext *ctx) {
 static RzAnalysisLiftedILOp ftoq31(RzAsmTriCoreContext *ctx) {
 	return SEQ8(
 		SETL("_a", VARG(R(1))),
-		SETL("_arg_a", U32(0)),
+		SETL("_arg_a", F32(0)),
 		q_real_set_v("_arg_a", VARL("_a")),
-		SETL("_arg_a", denorm_to_zero(VARL("_arg_a"))),
+		SETL("_arg_a", denorm_to_zere_(F32, VARL("_arg_a"))),
 		SETL("_precise_result", FDIV(0, VARL("_arg_a"), FPOW(0, F32(2), FLOATV32(LOGAND(VARG(R(2)), U32(0x1ff)))))),
-		SETL("_res",
+		SETL("_result_i",
 			ITE(IS_FNAN(FLOATV32(VARL("_a"))),
 				U32(0),
 				minmax_q31("_precise_result", round_to_integer(VARL("_precise_result"), PSW_RM())))),
-		SETG(R(0), VARL("_res")),
-		SEQ5(SETL("_res_q_real", U32(0)),
-			q_real_set_v("_res_q_real", VARL("_res")),
+		SETG(R(0), VARL("_result_i")),
+		SEQ5(SETL("_res_q_real", F32(0)),
+			q_real_set_v("_res_q_real", VARL("_result_i")),
 			set_FPU(FI, OR(not_in_q31(VARL("_precise_result")), IS_FNAN(FLOATV32(VARL("_a"))))),
 			set_FPU(FX, FNE(FLOATV32(VARL("_a")), VARL("_res_q_real"))),
-			set_PSW_FS(OR(VARG("set_FX"), VARG("set_FI")))));
+			set_PSW_FSb(OR(VARG("set_FX"), VARG("set_FI")))));
 }
 
 static RzAnalysisLiftedILOp ftoq31z(RzAsmTriCoreContext *ctx) {
-	return SEQ8(
+	return SEQ9(
 		SETL("_a", VARG(R(1))),
-		SETL("_arg_a", U32(0)),
+		SETL("_fa", FLOATV32(VARL("_a"))),
+		SETL("_arg_a", F32(0)),
 		q_real_set_v("_arg_a", VARL("_a")),
-		SETL("_arg_a", denorm_to_zero(VARL("_arg_a"))),
+		SETL("_arg_a", denorm_to_zere_(F32, VARL("_arg_a"))),
 		SETL("_precise_result", FDIV(0, VARL("_arg_a"), FPOW(0, F32(2), FLOATV32(LOGAND(VARG(R(2)), U32(0x1ff)))))),
-		SETL("_res",
-			ITE(IS_FNAN(FLOATV32(VARL("_a"))),
+		SETL("_result_i",
+			ITE(IS_FNAN(VARL("_fa")),
 				U32(0),
 				minmax_q31("_precise_result", F2SINT32(VARL("_precise_result"), RZ_FLOAT_RMODE_RTZ)))),
-		SETG(R(0), VARL("_res")),
-		SEQ5(SETL("_res_q_real", U32(0)),
-			q_real_set_v("_res_q_real", VARL("_res")),
+		SETG(R(0), VARL("_result_i")),
+		SEQ5(SETL("_res_q_real", F32(0)),
+			q_real_set_v("_res_q_real", VARL("_result_i")),
 			set_FPU(FI, OR(not_in_q31(VARL("_precise_result")), IS_FNAN(FLOATV32(VARL("_a"))))),
-			set_FPU(FX, FNE(FLOATV32(VARL("_a")), VARL("_res_q_real"))),
-			set_PSW_FS(OR(VARG("set_FX"), VARG("set_FI")))));
+			set_FPU(FX, FNE(VARL("_fa"), VARL("_res_q_real"))),
+			set_PSW_FSb(OR(VARG("set_FX"), VARG("set_FI")))));
 }
 
 /**
@@ -353,14 +361,14 @@ static RzAnalysisLiftedILOp ftoq31z(RzAsmTriCoreContext *ctx) {
 static RzAnalysisLiftedILOp q31tof(RzAsmTriCoreContext *ctx) {
 	return SEQ7(
 		SETL("_a", VARG(R(1))),
-		SETL("_qa", U32(0)),
+		SETL("_qa", F32(0)),
 		q_real_set_v("_qa", VARL("_a")),
-		SETL("_precise_result", FMUL(RZ_FLOAT_RMODE_RNE, VARL("_qa"), FPOW(0, F64(2.), FLOATV32(LOGAND(VARG(R(2)), U32(0x1ff)))))),
-		SETL("_res", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_precise_result"), PSW_RM())),
-		SETG(R(0), VARL("_res")),
-		SEQ3(set_FPU(FX, FNE(VARL("_precise_result"), VARL("_res"))),
+		SETL("_precise_result", FMUL(RZ_FLOAT_RMODE_RNE, VARL("_qa"), FPOW(0, F32(2.), FLOATV32(LOGAND(VARG(R(2)), U32(0x1ff)))))),
+		SETL("_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_precise_result"), PSW_RM())),
+		SETG(R(0), F2BV(VARL("_result"))),
+		SEQ3(set_FPU(FX, FNE(VARL("_precise_result"), VARL("_result"))),
 			set_FPU(FU, FLT(FABS(VARL("_precise_result")), F32(1. / 0x2p126))),
-			set_PSW_FS(VARG("set_FX"))));
+			set_PSW_FSb(VARG("set_FX"))));
 }
 
 static RzAnalysisLiftedILOp cmp_f(RzAsmTriCoreContext *ctx) {
@@ -381,14 +389,14 @@ static RzAnalysisLiftedILOp cmp_f(RzAsmTriCoreContext *ctx) {
 
 /**
  * ADD.F D[c], D[d], D[a] (RRR)
- * arg_a = denorm_to_zero(f_real(D[a]);
- * arg_b = denorm_to_zero(f_real(D[d]);
+ * arg_a = denorm_to_zere64(f_real(D[a]);
+ * arg_b = denorm_to_zere64(f_real(D[d]);
  * if(is_nan(D[a]) OR is_nan(D[d])) then result = QUIET_NAN;
  * else if(is_pos_inf(D[a]) AND is_neg_inf(D[d])) then result = ADD_NAN;
  * else if(is_neg_inf(D[a]) AND is_pos_inf(D[d])) then result = ADD_NAN;
  * else {
  *   precise_result = add(arg_a,arg_b);
- *   normal_result = denorm_to_zero(precise_result);
+ *   normal_result = denorm_to_zere64(precise_result);
  *   rounded_result = ieee754_round(normal_result, PSW.RM);
  *   result = ieee754_32bit_format(rounded_result);
  * }
@@ -400,24 +408,24 @@ static RzAnalysisLiftedILOp add_f(RzAsmTriCoreContext *ctx) {
 		set_FPU(FV, FGE(VARL("_rounded_result"), F32(0x2p128))),
 		set_FPU(FU, FLT(FABS(VARL("_precise_result")), F64(0x2p-126))),
 		set_FPU_s(FX, FNE(VARL("_precise_result"), FCONVERT(RZ_FLOAT_IEEE754_BIN_64, 0, VARL("_result")))),
-		set_PSW_FX(AND(VARG("set_FX"), INV(VARG("set_FI")))),
+		set_PSW_FX(BOOL_TO_BV32(AND(VARG("set_FX"), INV(VARG("set_FI"))))),
 		set_FS_or_FI_FV_FU_FX);
 
 	return SEQ10(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
 		SETL("_fb", FLOATV64(VARG(R(2)))),
-		SETL("_arg_a", denorm_to_zero(VARL("_fa"))),
-		SETL("_arg_b", denorm_to_zero(VARL("_fb"))),
+		SETL("_arg_a", denorm_to_zere64(VARL("_fa"))),
+		SETL("_arg_b", denorm_to_zere64(VARL("_fb"))),
 		SETL("_precise_result", FADD(0, VARL("_arg_a"), VARL("_arg_b"))),
-		SETL("_normal_result", denorm_to_zero(VARL("_precise_result"))),
-		SETL("_rounded_result", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
+		SETL("_normal_result", denorm_to_zere64(VARL("_precise_result"))),
+		SETL("_rounded_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
 		SETL("_result",
 			ITE(OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_fb"))),
 				IL_FQNAN(RZ_FLOAT_IEEE754_BIN_32),
 				ITE(AND(IS_FINF(VARL("_fa")), IS_FINF(VARL("_fb"))),
 					IL_FSNAN(RZ_FLOAT_IEEE754_BIN_32),
 					VARL("_rounded_result")))),
-		SETG(R(0), VARL("_result")),
+		SETG(R(0), F2BV(VARL("_result"))),
 		set_status);
 }
 
@@ -427,24 +435,24 @@ static RzAnalysisLiftedILOp sub_f(RzAsmTriCoreContext *ctx) {
 		set_FPU(FV, FGE(VARL("_rounded_result"), F32(0x2p128))),
 		set_FPU(FU, FLT(FABS(VARL("_precise_result")), F64(0x2p-126))),
 		set_FPU_s(FX, FNE(VARL("_precise_result"), FCONVERT(RZ_FLOAT_IEEE754_BIN_64, 0, VARL("_result")))),
-		set_PSW_FX(AND(VARG("set_FX"), INV(VARG("set_FI")))),
+		set_PSW_FX(BOOL_TO_BV32(AND(VARG("set_FX"), INV(VARG("set_FI"))))),
 		set_FS_or_FI_FV_FU_FX);
 
 	return SEQ10(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
 		SETL("_fb", FLOATV64(VARG(R(2)))),
-		SETL("_arg_a", denorm_to_zero(VARL("_fa"))),
-		SETL("_arg_b", denorm_to_zero(VARL("_fb"))),
+		SETL("_arg_a", denorm_to_zere64(VARL("_fa"))),
+		SETL("_arg_b", denorm_to_zere64(VARL("_fb"))),
 		SETL("_precise_result", FADD(0, FNEG(VARL("_arg_a")), VARL("_arg_b"))),
-		SETL("_normal_result", denorm_to_zero(VARL("_precise_result"))),
-		SETL("_rounded_result", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
+		SETL("_normal_result", denorm_to_zere64(VARL("_precise_result"))),
+		SETL("_rounded_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
 		SETL("_result",
 			ITE(OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_fb"))),
 				IL_FQNAN(RZ_FLOAT_IEEE754_BIN_32),
 				ITE(AND(IS_FINF(VARL("_fa")), IS_FINF(VARL("_fb"))),
 					IL_FSNAN(RZ_FLOAT_IEEE754_BIN_32),
 					VARL("_rounded_result")))),
-		SETG(R(0), VARL("_result")),
+		SETG(R(0), F2BV(VARL("_result"))),
 		set_status);
 }
 
@@ -454,17 +462,17 @@ static RzAnalysisLiftedILOp mul_f(RzAsmTriCoreContext *ctx) {
 		set_FPU(FV, FGE(VARL("_rounded_result"), F32(0x2p128))),
 		set_FPU(FU, FLT(FABS(VARL("_precise_result")), F64(0x2p-126))),
 		set_FPU_s(FX, FNE(VARL("_precise_result"), FCONVERT(RZ_FLOAT_IEEE754_BIN_64, 0, VARL("_result")))),
-		set_PSW_FX(AND(VARG("set_FX"), INV(VARG("set_FI")))),
+		set_PSW_FX(BOOL_TO_BV32(AND(VARG("set_FX"), INV(VARG("set_FI"))))),
 		set_FS_or_FI_FV_FU_FX);
 
 	return SEQ10(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
 		SETL("_fb", FLOATV64(VARG(R(2)))),
-		SETL("_arg_a", denorm_to_zero(VARL("_fa"))),
-		SETL("_arg_b", denorm_to_zero(VARL("_fb"))),
+		SETL("_arg_a", denorm_to_zere64(VARL("_fa"))),
+		SETL("_arg_b", denorm_to_zere64(VARL("_fb"))),
 		SETL("_precise_result", FMUL(0, VARL("_arg_a"), VARL("_arg_b"))),
-		SETL("_normal_result", denorm_to_zero(VARL("_precise_result"))),
-		SETL("_rounded_result", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
+		SETL("_normal_result", denorm_to_zere64(VARL("_precise_result"))),
+		SETL("_rounded_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
 		SETL("_result",
 			ITE(OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_fb"))),
 				IL_FQNAN(RZ_FLOAT_IEEE754_BIN_32),
@@ -472,7 +480,7 @@ static RzAnalysisLiftedILOp mul_f(RzAsmTriCoreContext *ctx) {
 					    AND(IS_FZERO(VARL("_fa")), IS_FINF(VARL("_fb")))),
 					IL_FSNAN(RZ_FLOAT_IEEE754_BIN_32),
 					VARL("_rounded_result")))),
-		SETG(R(0), VARL("_result")),
+		SETG(R(0), F2BV(VARL("_result"))),
 		set_status);
 }
 
@@ -480,20 +488,20 @@ static RzAnalysisLiftedILOp div_f(RzAsmTriCoreContext *ctx) {
 	RzAnalysisLiftedILOp set_status = SEQ7(
 		set_FPU(FI, OR(OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_fb"))), IS_FNAN(VARL("_result")))),
 		set_FPU(FV, FGE(VARL("_rounded_result"), F32(0x2p128))),
-		set_FPU(FZ, AND(IS_FZERO(VARL("_fb")), INV(IS_FINF(VARL("_a"))))),
+		set_FPU(FZ, AND(IS_FZERO(VARL("_fb")), INV(IS_FINF(VARL("_fa"))))),
 		set_FPU(FU, FLT(FABS(VARL("_precise_result")), F64(0x2p-126))),
 		set_FPU_s(FX, FNE(VARL("_precise_result"), FCONVERT(RZ_FLOAT_IEEE754_BIN_64, 0, VARL("_result")))),
-		set_PSW_FX(AND(VARG("set_FX"), INV(VARG("set_FI")))),
+		set_PSW_FX(BOOL_TO_BV32(AND(VARG("set_FX"), INV(VARG("set_FI"))))),
 		set_FS_or_FI_FV_FU_FX);
 
 	return SEQ10(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
 		SETL("_fb", FLOATV64(VARG(R(2)))),
-		SETL("_arg_a", denorm_to_zero(VARL("_fa"))),
-		SETL("_arg_b", denorm_to_zero(VARL("_fb"))),
+		SETL("_arg_a", denorm_to_zere64(VARL("_fa"))),
+		SETL("_arg_b", denorm_to_zere64(VARL("_fb"))),
 		SETL("_precise_result", FDIV(0, VARL("_arg_a"), VARL("_arg_b"))),
-		SETL("_normal_result", denorm_to_zero(VARL("_precise_result"))),
-		SETL("_rounded_result", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
+		SETL("_normal_result", denorm_to_zere64(VARL("_precise_result"))),
+		SETL("_rounded_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
 		SETL("_result",
 			ITE(OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_fb"))),
 				IL_FQNAN(RZ_FLOAT_IEEE754_BIN_32),
@@ -501,26 +509,26 @@ static RzAnalysisLiftedILOp div_f(RzAsmTriCoreContext *ctx) {
 					    AND(IS_FZERO(VARL("_fa")), IS_FZERO(VARL("_fb")))),
 					IL_FSNAN(RZ_FLOAT_IEEE754_BIN_32),
 					VARL("_rounded_result")))),
-		SETG(R(0), VARL("_result")),
+		SETG(R(0), F2BV(VARL("_result"))),
 		set_status);
 }
 
 static RzAnalysisLiftedILOp qseed_f(RzAsmTriCoreContext *ctx) {
 	RzAnalysisLiftedILOp set_status = SEQ2(
 		set_FPU(FI, OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_result")))),
-		set_PSW_FS(VARG("set_FI")));
+		set_PSW_FSb(VARG("set_FI")));
 
 	return SEQ6(
 		SETL("_fa", FLOATV64(VARG(R(1)))),
-		SETL("_arg_a", denorm_to_zero(VARL("_fa"))),
-		SETL("_normal_result", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, FRSQRT(0, VARL("_arg_a")), PSW_RM())),
+		SETL("_arg_a", denorm_to_zere64(VARL("_fa"))),
+		SETL("_normal_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, FRSQRT(0, VARL("_arg_a")), PSW_RM())),
 		SETL("_result",
 			ITE(IS_FZERO(VARL("_arg_a")),
 				F32(0),
 				ITE(FLT(VARL("_fa"), F64(0)),
 					IL_FSNAN(RZ_FLOAT_IEEE754_BIN_32),
 					VARL("_normal_result")))),
-		SETG(R(0), VARL("_result")),
+		SETG(R(0), F2BV(VARL("_result"))),
 		set_status);
 }
 
@@ -530,20 +538,20 @@ static RzAnalysisLiftedILOp madd_f(RzAsmTriCoreContext *ctx) {
 		set_FPU(FV, FGE(VARL("_rounded_result"), F32(0x2p128))),
 		set_FPU(FU, FLT(FABS(VARL("_precise_result")), F64(0x2p-126))),
 		set_FPU_s(FX, FNE(VARL("_precise_result"), FCONVERT(RZ_FLOAT_IEEE754_BIN_64, 0, VARL("_result")))),
-		set_PSW_FX(AND(VARG("set_FX"), INV(VARG("set_FI")))),
+		set_PSW_FX(BOOL_TO_BV32(AND(VARG("set_FX"), INV(VARG("set_FI"))))),
 		set_FS_or_FI_FV_FU_FX);
 
 	return SEQN(12,
 		SETL("_fa", FLOATV64(VARG(R(1)))),
 		SETL("_fb", FLOATV64(VARG(R(2)))),
 		SETL("_fc", FLOATV64(VARG(R(3)))),
-		SETL("_arg_a", denorm_to_zero(VARL("_fa"))),
-		SETL("_arg_b", denorm_to_zero(VARL("_fb"))),
-		SETL("_arg_c", denorm_to_zero(VARL("_fc"))),
+		SETL("_arg_a", denorm_to_zere64(VARL("_fa"))),
+		SETL("_arg_b", denorm_to_zere64(VARL("_fb"))),
+		SETL("_arg_c", denorm_to_zere64(VARL("_fc"))),
 		SETL("_precise_mul_result", FMUL(0, VARL("_arg_a"), VARL("_arg_b"))),
 		SETL("_precise_result", FADD(0, VARL("_precise_mul_result"), VARL("_arg_c"))),
-		SETL("_normal_result", denorm_to_zero(VARL("_precise_result"))),
-		SETL("_rounded_result", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
+		SETL("_normal_result", denorm_to_zere64(VARL("_precise_result"))),
+		SETL("_rounded_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
 		SETL("_result",
 			ITE(OR(OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_fb"))), IS_FNAN(VARL("_fc"))),
 				IL_FQNAN(RZ_FLOAT_IEEE754_BIN_32),
@@ -553,7 +561,7 @@ static RzAnalysisLiftedILOp madd_f(RzAsmTriCoreContext *ctx) {
 						    IS_FINF(VARL("_fc")))),
 					IL_FSNAN(RZ_FLOAT_IEEE754_BIN_32),
 					VARL("_rounded_result")))),
-		SETG(R(0), VARL("_result")),
+		SETG(R(0), F2BV(VARL("_result"))),
 		set_status);
 }
 
@@ -563,20 +571,20 @@ static RzAnalysisLiftedILOp msub_f(RzAsmTriCoreContext *ctx) {
 		set_FPU(FV, FGE(VARL("_rounded_result"), F32(0x2p128))),
 		set_FPU(FU, FLT(FABS(VARL("_precise_result")), F64(0x2p-126))),
 		set_FPU_s(FX, FNE(VARL("_precise_result"), FCONVERT(RZ_FLOAT_IEEE754_BIN_64, 0, VARL("_result")))),
-		set_PSW_FX(AND(VARG("set_FX"), INV(VARG("set_FI")))),
+		set_PSW_FX(BOOL_TO_BV32(AND(VARG("set_FX"), INV(VARG("set_FI"))))),
 		set_FS_or_FI_FV_FU_FX);
 
 	return SEQN(12,
 		SETL("_fa", FLOATV64(VARG(R(1)))),
 		SETL("_fb", FLOATV64(VARG(R(2)))),
 		SETL("_fc", FLOATV64(VARG(R(3)))),
-		SETL("_arg_a", denorm_to_zero(VARL("_fa"))),
-		SETL("_arg_b", denorm_to_zero(VARL("_fb"))),
-		SETL("_arg_c", denorm_to_zero(VARL("_fc"))),
+		SETL("_arg_a", denorm_to_zere64(VARL("_fa"))),
+		SETL("_arg_b", denorm_to_zere64(VARL("_fb"))),
+		SETL("_arg_c", denorm_to_zere64(VARL("_fc"))),
 		SETL("_precise_mul_result", FMUL(0, VARL("_arg_a"), VARL("_arg_b"))),
 		SETL("_precise_result", FADD(0, FNEG(VARL("_precise_mul_result")), VARL("_arg_c"))),
-		SETL("_normal_result", denorm_to_zero(VARL("_precise_result"))),
-		SETL("_rounded_result", FCAST(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
+		SETL("_normal_result", denorm_to_zere64(VARL("_precise_result"))),
+		SETL("_rounded_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
 		SETL("_result",
 			ITE(OR(OR(IS_FNAN(VARL("_fa")), IS_FNAN(VARL("_fb"))), IS_FNAN(VARL("_fc"))),
 				IL_FQNAN(RZ_FLOAT_IEEE754_BIN_32),
@@ -586,6 +594,6 @@ static RzAnalysisLiftedILOp msub_f(RzAsmTriCoreContext *ctx) {
 						    IS_FINF(VARL("_fc")))),
 					IL_FSNAN(RZ_FLOAT_IEEE754_BIN_32),
 					VARL("_rounded_result")))),
-		SETG(R(0), VARL("_result")),
+		SETG(R(0), F2BV(VARL("_result"))),
 		set_status);
 }

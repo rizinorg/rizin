@@ -2633,7 +2633,6 @@ static RzAnalysisLiftedILOp f_madd(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	Mab(madd_a, madd_b);
 
 	f_cons(xs,
@@ -2661,7 +2660,6 @@ static RzAnalysisLiftedILOp f_mul(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	Mab(mul_a, mul_b);
 
 	f_cons(xs,
@@ -2677,7 +2675,6 @@ static RzAnalysisLiftedILOp f_mulr(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	Mab(mulr_a, mulr_b);
 
 	f_cons(xs,
@@ -2694,7 +2691,6 @@ static RzAnalysisLiftedILOp f_maddr(
 	RzAnalysisLiftedILOp xs, RzAsmTriCoreContext *ctx,
 	const char *name1, const char *name2, const char *name3,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	xs = f_mul(xs, name1, name2, a, b, arg_n, i1, i2, n);
 	return f_cons_(xs,
 		SETL(name3,
