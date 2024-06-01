@@ -1373,7 +1373,6 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	case RZ_OUTPUT_MODE_JSON:
 		pj_end(state->d.pj);
 		if (db && hit) {
-			rz_cons_printf("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
@@ -1425,7 +1424,7 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 	int delta = 0;
 	ut8 *buf;
 	RzIOMap *map;
-	RzAsmOp asmop;
+	RzAsmOp *asmop = rz_asm_op_new();
 
 	const ut64 search_from = rz_config_get_i(core->config, "search.from"),
 		   search_to = rz_config_get_i(core->config, "search.to");
@@ -1611,7 +1610,7 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 						RZ_MIN((delta - i), 4096));
 					end = i + 2048;
 				}
-				ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, delta - i);
+				ret = rz_asm_disassemble(core->rasm, asmop, buf + i, delta - i);
 				if (ret) {
 					rz_asm_set_pc(core->rasm, from + i);
 					RzList *hitlist = construct_rop_gadget(core,
@@ -1682,6 +1681,7 @@ bad:
 	rz_cmd_state_output_array_end(state);
 	rz_cons_break_pop();
 	rz_list_free(rx_list);
+	rz_asm_op_free(asmop);
 	rz_list_free(end_list);
 	rz_list_free(boundaries);
 	free(grep_arg);
