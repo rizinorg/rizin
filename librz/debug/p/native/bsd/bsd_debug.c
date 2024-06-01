@@ -110,7 +110,7 @@ int bsd_handle_signals(RzDebug *dbg) {
 		break;
 #if __NetBSD__
 	case SIGTRAP:
-		if (siginfo.si_code == TRAP_BKPT) {
+		if (siginfo.si_code == TRAP_BRKPT) {
 			dbg->reason.type = RZ_DEBUG_REASON_BREAKPOINT;
 		}
 		break;
