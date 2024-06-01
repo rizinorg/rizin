@@ -5,29 +5,30 @@
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 
-#define RZ_AX_FLAG_HEX_TO_RAW       (1ull << 0) //  -s (hexstr -> raw)
-#define RZ_AX_FLAG_SWAP_ENDIANNESS  (1ull << 1) //  -e (swap endianness)
-#define RZ_AX_FLAG_RAW_TO_HEX       (1ull << 2) //  -S (raw -> hexstr)
-#define RZ_AX_FLAG_BIN_TO_STR       (1ull << 3) //  -b (bin -> str)
-#define RZ_AX_FLAG_STR_TO_DJB2      (1ull << 4) //  -x (str -> djb2 hash)
-#define RZ_AX_FLAG_KEEP_BASE        (1ull << 5) //  -k (keep base)
-#define RZ_AX_FLAG_FLOATING_POINT   (1ull << 6) //  -f (floating point)
-#define RZ_AX_FLAG_FORCE_INTEGER    (1ull << 7) //  -d (force integer)
-#define RZ_AX_FLAG_NUMBER_TO_HEX    (1ull << 9) //  -n (num -> hex)
-#define RZ_AX_FLAG_UNITS            (1ull << 10) // -u (units)
-#define RZ_AX_FLAG_TIMESTAMP_TO_STR (1ull << 11) // -t (timestamp -> str)
-#define RZ_AX_FLAG_BASE64_ENCODE    (1ull << 12) // -E (base64 encode)
-#define RZ_AX_FLAG_BASE64_DECODE    (1ull << 13) // -D (base64 decode)
-#define RZ_AX_FLAG_RAW_TO_LANGBYTES (1ull << 14) // -F (raw -> C or JS or Python bytes)
-#define RZ_AX_FLAG_NUMBER_TO_HEXSTR (1ull << 15) // -N (num -> escaped hex string)
-#define RZ_AX_FLAG_SIGNED_WORD      (1ull << 16) // -w (signed word)
-#define RZ_AX_FLAG_STR_TO_BIN       (1ull << 17) // -B (str -> bin)
-#define RZ_AX_FLAG_RIZIN_CMD        (1ull << 18) // -r (rizin commands)
-#define RZ_AX_FLAG_BIN_TO_BIGNUM    (1ull << 19) // -L (bin -> hex(bignum))
-#define RZ_AX_FLAG_DUMP_C_BYTES     (1ull << 21) // -i (dump as C byte array)
-#define RZ_AX_FLAG_OCTAL_TO_RAW     (1ull << 22) // -o (octalstr -> raw)
-#define RZ_AX_FLAG_IPADDR_TO_LONG   (1ull << 23) // -I (IP address <-> LONG)
-#define RZ_AX_FLAG_SET_BITS         (1ull << 24) // -p (find position of set bits)
+#define RZ_AX_FLAG_HEX_TO_RAW           (1ull << 0) //  -s (hexstr -> raw)
+#define RZ_AX_FLAG_SWAP_ENDIANNESS      (1ull << 1) //  -e (swap endianness)
+#define RZ_AX_FLAG_RAW_TO_HEX           (1ull << 2) //  -S (raw -> hexstr)
+#define RZ_AX_FLAG_BIN_TO_STR           (1ull << 3) //  -b (bin -> str)
+#define RZ_AX_FLAG_STR_TO_DJB2          (1ull << 4) //  -x (str -> djb2 hash)
+#define RZ_AX_FLAG_KEEP_BASE            (1ull << 5) //  -k (keep base)
+#define RZ_AX_FLAG_FLOATING_POINT       (1ull << 6) //  -f (floating point)
+#define RZ_AX_FLAG_FORCE_INTEGER        (1ull << 7) //  -d (force integer)
+#define RZ_AX_FLAG_NUMBER_TO_HEX        (1ull << 9) //  -n (num -> hex)
+#define RZ_AX_FLAG_UNITS                (1ull << 10) // -u (units)
+#define RZ_AX_FLAG_TIMESTAMP_TO_STR     (1ull << 11) // -t (unix timestamp -> str)
+#define RZ_AX_FLAG_BASE64_ENCODE        (1ull << 12) // -E (base64 encode)
+#define RZ_AX_FLAG_BASE64_DECODE        (1ull << 13) // -D (base64 decode)
+#define RZ_AX_FLAG_RAW_TO_LANGBYTES     (1ull << 14) // -F (raw -> C or JS or Python bytes)
+#define RZ_AX_FLAG_NUMBER_TO_HEXSTR     (1ull << 15) // -N (num -> escaped hex string)
+#define RZ_AX_FLAG_SIGNED_WORD          (1ull << 16) // -w (signed word)
+#define RZ_AX_FLAG_STR_TO_BIN           (1ull << 17) // -B (str -> bin)
+#define RZ_AX_FLAG_RIZIN_CMD            (1ull << 18) // -r (rizin commands)
+#define RZ_AX_FLAG_BIN_TO_BIGNUM        (1ull << 19) // -L (bin -> hex(bignum))
+#define RZ_AX_FLAG_DUMP_C_BYTES         (1ull << 21) // -i (dump as C byte array)
+#define RZ_AX_FLAG_OCTAL_TO_RAW         (1ull << 22) // -o (octalstr -> raw)
+#define RZ_AX_FLAG_IPADDR_TO_LONG       (1ull << 23) // -I (IP address <-> LONG)
+#define RZ_AX_FLAG_SET_BITS             (1ull << 24) // -p (find position of set bits)
+#define RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR (1ull << 25) // -m (MS-DOS timestamp -> str)
 
 #define has_flag(f, x) (f & x)
 
@@ -226,7 +227,8 @@ static int help(void) {
 		"  -r      rz style output      ;  rz-ax -r 0x1234\n"
 		"  -s      hexstr -> raw        ;  rz-ax -s 43 4a 50\n"
 		"  -S      raw -> hexstr        ;  rz-ax -S < /bin/ls > ls.hex\n"
-		"  -t      tstamp -> str        ;  rz-ax -t 1234567890\n"
+		"  -t      Unix tstamp -> str   ;  rz-ax -t 1234567890\n"
+		"  -m      MS-DOS tstamp -> str ;  rz-ax -m 1234567890\n"
 		"  -x      hash string          ;  rz-ax -x linux osx\n"
 		"  -u      units                ;  rz-ax -u 389289238 # 317.0M\n"
 		"  -w      signed word          ;  rz-ax -w 16 0xffff\n"
@@ -289,6 +291,7 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'i': flags ^= RZ_AX_FLAG_DUMP_C_BYTES; break;
 			case 'o': flags ^= RZ_AX_FLAG_OCTAL_TO_RAW; break;
 			case 'I': flags ^= RZ_AX_FLAG_IPADDR_TO_LONG; break;
+			case 'm': flags ^= RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR; break;
 			case 'v': return rz_main_version_print("rz-ax");
 			case '\0':
 				*_flags = flags;
@@ -495,7 +498,8 @@ dotherax:
 		rz_num_units(buf, sizeof(buf), rz_num_math(NULL, str));
 		printf("%s\n", buf);
 		return true;
-	} else if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR)) { // -t
+	} else if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR) || 
+			has_flag(flags, RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR)) { // -t, -m
 		RzList *split = rz_str_split_list(str, "GMT", 0);
 		RzListIter *head = rz_list_head(split);
 		char *ts = rz_list_iter_get_data(head);
@@ -506,12 +510,22 @@ dotherax:
 		ut32 n = rz_num_math(num, ts);
 		int timezone = (int)rz_num_math(num, gmt);
 		n += timezone * (60 * 60);
-		char *date = rz_time_date_unix_to_string(n);
-		printf("%s\n", date);
-		fflush(stdout);
-		free(date);
-		rz_list_free(split);
-		return true;
+		char * date = NULL;
+		if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR)) {
+			date = rz_time_date_unix_to_string(n);
+		}
+		else { 
+			date = rz_time_date_dos_to_string(n);
+		}
+		if (date != NULL)
+		{
+			printf("%s\n", date);
+			fflush(stdout);
+			free(date);
+			rz_list_free(split);
+			return true;
+		}
+		return false;
 	} else if (has_flag(flags, RZ_AX_FLAG_BASE64_ENCODE)) { // -E
 		const int n = strlen(str);
 		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
