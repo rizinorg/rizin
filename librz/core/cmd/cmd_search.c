@@ -1360,7 +1360,6 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 				asmop_hex_str = rz_str_newf("%s", asmop_hex_str_dup);
 			}
 			free(asmop_hex_str_dup);
-			// rz_table_add_rowf(state->d.t, "Xss", hit->addr, rz_asm_op_get_hex(&asmop), rz_asm_op_get_asm(&asmop));
 			free(buf);
 			buf = NULL;
 			rz_analysis_op_fini(&aop);
@@ -1374,7 +1373,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	case RZ_OUTPUT_MODE_JSON:
 		pj_end(state->d.pj);
 		if (db && hit) {
-			// rz_cons_printf ("Gadget size: %d\n", (int)size);
+			rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
@@ -1385,10 +1384,12 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_newline();
+		break;
 		// fallthrough
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (db && hit) {
-			// rz_cons_printf ("Gadget size: %d\n", (int)size);
+			rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
