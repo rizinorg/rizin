@@ -17,6 +17,10 @@
 #define AES_SEARCH_LENGTH         40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
+static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzCmdStateOutput *state);
+static void rop_kuery(void *data, const char *input, RzCmdStateOutput *state);
+static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdStateOutput *state);
+
 static const char *help_msg_search_esil[] = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
@@ -125,26 +129,6 @@ static const char *help_msg_slash_r[] = {
 	NULL
 };
 
-static const char *help_msg_slash_R[] = {
-	"Usage: /R", "", "Search for ROP gadgets",
-	"/R", " [filter-by-string]", "Show gadgets",
-	"/R/", " [filter-by-regexp]", "Show gadgets [regular expression]",
-	"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
-	"/R/q", " [filter-by-regexp]", "Show gadgets in a quiet manner [regular expression]",
-	"/Rj", " [filter-by-string]", "JSON output",
-	"/Rk", " [select-by-class]", "Query stored ROP gadgets",
-	"/Rq", " [filter-by-string]", "Show gadgets in a quiet manner",
-	NULL
-};
-
-static const char *help_msg_slash_Rk[] = {
-	"Usage: /Rk", "", "Query stored ROP gadgets",
-	"/Rk", " [nop|mov|const|arithm|arithm_ct]", "Show gadgets",
-	"/Rkj", "", "JSON output",
-	"/Rkq", "", "List Gadgets offsets",
-	NULL
-};
-
 static const char *help_msg_slash_x[] = {
 	"Usage:", "/x [hexpairs]:[binmask]", "Search in memory",
 	"/x ", "9090cd80", "search for those bytes",
@@ -244,6 +228,68 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 fail:
 	rz_cons_break_pop();
 	return -1;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	const char *input = argc > 1 ? argv[1] : "";
+	if (!input) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	Sdb *gadgetSdb = sdb_ns(core->sdb, "gadget_sdb", false);
+
+	if (!gadgetSdb) {
+		rz_core_search_rop(core, argv[1], 0, state);
+		return RZ_CMD_STATUS_OK;
+	}
+	void **iter;
+	RzPVector *items = sdb_get_items(gadgetSdb, true);
+
+	rz_cmd_state_output_array_start(state);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
+		RzList *hitlist = rz_core_asm_hit_list_new();
+		if (!hitlist) {
+			break;
+		}
+
+		const char *s = sdbkv_value(kv);
+		ut64 addr;
+		int opsz;
+
+		do {
+			RzCoreAsmHit *hit = rz_core_asm_hit_new();
+			if (!hit) {
+				rz_list_free(hitlist);
+				break;
+			}
+			sscanf(s, "%" PFMT64x "(%" PFMT32d ")", &addr, &opsz);
+			hit->addr = addr;
+			hit->len = opsz;
+			rz_list_append(hitlist, hit);
+		} while (*(s = strchr(s, ')') + 1) != '\0');
+
+		print_rop(core, hitlist, state);
+		rz_list_free(hitlist);
+	}
+	rz_pvector_free(items);
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	const char *input = argc > 1 ? argv[1] : "";
+	rop_kuery(core, input, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	const char *input = argc > 1 ? argv[1] : "";
+	if (!input) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_search_rop(core, argv[1], 1, state);
+	return RZ_CMD_STATUS_OK;
 }
 
 static void cmd_search_bin(RzCore *core, RzInterval itv) {
@@ -1138,20 +1184,22 @@ ret:
 	return hitlist;
 }
 
-static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj, int mode) {
+static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdStateOutput *state) {
 	RzCoreAsmHit *hit = NULL;
 	RzListIter *iter;
 	RzList *ropList = NULL;
 	unsigned int size = 0;
+	char *asmop_str = NULL, *asmop_hex_str = NULL;
 	RzAnalysisOp aop = RZ_EMPTY;
-	RzAsmOp asmop;
+	const char *comment = NULL;
 	Sdb *db = NULL;
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
 	const bool esil = rz_config_get_i(core->config, "asm.esil");
 	const bool rop_db = rz_config_get_i(core->config, "rop.db");
 	char tmpbuf[16];
-
+	ut8 *buf = NULL;
+	RzStrBuf *colored_asm = NULL, *bw_str = NULL;
 	if (rop_db) {
 		db = sdb_ns(core->sdb, "rop", true);
 		ropList = rz_list_newf(free);
@@ -1162,57 +1210,51 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 		}
 	}
 
-	switch (mode) {
-	case 'j':
-		pj_o(pj);
-		pj_ka(pj, "opcodes");
-		rz_list_foreach (hitlist, iter, hit) {
-			ut8 *buf = malloc(hit->len);
+	rz_cmd_state_output_set_columnsf(state, "XXs", "addr", "bytes", "disasm");
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(state->d.pj);
+		pj_ka(state->d.pj, "opcodes");
+	} else if (state->mode == RZ_OUTPUT_MODE_QUIET) {
+		rz_cons_printf("0x%08" PFMT64x ":", ((RzCoreAsmHit *)rz_list_first(hitlist))->addr);
+	}
+	const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
+
+	rz_list_foreach (hitlist, iter, hit) {
+		RzAsmOp *asmop = rz_asm_op_new();
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			buf = malloc(hit->len);
 			if (!buf) {
-				return;
+				goto cleanup;
 			}
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
+			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
 			size += hit->len;
 			if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
 				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
-				rz_list_append(ropList, (void *)opstr_n);
+				rz_list_append(ropList, opstr_n);
 			}
-			pj_o(pj);
-			pj_kn(pj, "offset", hit->addr);
-			pj_ki(pj, "size", hit->len);
-			pj_ks(pj, "opcode", rz_asm_op_get_asm(&asmop));
-			pj_ks(pj, "type", rz_analysis_optype_to_string(aop.type));
-			pj_end(pj);
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "offset", hit->addr);
+			pj_ki(state->d.pj, "size", hit->len);
+			pj_ks(state->d.pj, "opcode", rz_asm_op_get_asm(asmop));
+			pj_ks(state->d.pj, "type", rz_analysis_optype_to_string(aop.type));
+			pj_end(state->d.pj);
 			free(buf);
 			rz_analysis_op_fini(&aop);
-		}
-		pj_end(pj);
-		if (db && hit) {
-			const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
-			// rz_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
-			rop_classify(core, db, ropList, key, size);
-		}
-		if (hit) {
-			pj_kn(pj, "retaddr", hit->addr);
-			pj_ki(pj, "size", size);
-		}
-		pj_end(pj);
-		break;
-	case 'q':
-		// Print gadgets in a 'linear manner', each sequence
-		// on one line.
-		rz_cons_printf("0x%08" PFMT64x ":",
-			((RzCoreAsmHit *)rz_list_first(hitlist))->addr);
-		rz_list_foreach (hitlist, iter, hit) {
-			ut8 *buf = malloc(hit->len);
+			break;
+		case RZ_OUTPUT_MODE_QUIET:
+			// Print gadgets in a 'linear manner', each sequence on one line.
+			buf = malloc(hit->len);
+			if (!buf) {
+				goto cleanup;
+			}
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
+			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
 			size += hit->len;
@@ -1223,53 +1265,46 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 			if (esil) {
 				rz_cons_printf("%s\n", opstr);
 			} else if (colorize) {
-				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
+				bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
 				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
 				rz_asm_parse_param_free(param);
 				rz_cons_printf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
 				rz_strbuf_free(colored_asm);
+				rz_strbuf_free(bw_str);
 			} else {
-				rz_cons_printf(" %s;", rz_asm_op_get_asm(&asmop));
+				rz_cons_printf(" %s;", rz_asm_op_get_asm(asmop));
 			}
 			free(buf);
 			rz_analysis_op_fini(&aop);
-		}
-		if (db && hit) {
-			const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
-			// rz_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
-			rop_classify(core, db, ropList, key, size);
-		}
-		break;
-	default:
-		// Print gadgets with new instruction on a new line.
-		rz_list_foreach (hitlist, iter, hit) {
-			const char *comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			// Print gadgets with new instruction on a new line.
+			comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
 			if (hit->len < 0) {
 				RZ_LOG_ERROR("core: Invalid hit length here\n");
 				continue;
 			}
-			ut8 *buf = malloc(1 + hit->len);
+			buf = malloc(1 + hit->len);
 			if (!buf) {
 				break;
 			}
 			buf[hit->len] = 0;
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
+			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
 			size += hit->len;
 			if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
 				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
-				rz_list_append(ropList, (void *)opstr_n);
+				rz_list_append(ropList, opstr_n);
 			}
-			char *asm_op_hex = rz_asm_op_get_hex(&asmop);
+			char *asm_op_hex = rz_asm_op_get_hex(asmop);
 			if (colorize) {
-				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
+				bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
 				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
 				rz_asm_parse_param_free(param);
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
@@ -1279,50 +1314,136 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj
 						hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
 				}
 				rz_strbuf_free(colored_asm);
+				rz_strbuf_free(bw_str);
 			} else {
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",
-						hit->addr, asm_op_hex, rz_asm_op_get_asm(&asmop), comment);
+						hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop), comment);
 				} else {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s\n",
-						hit->addr, asm_op_hex, rz_asm_op_get_asm(&asmop));
+						hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop));
 				}
 			}
 			free(asm_op_hex);
 			free(buf);
 			rz_analysis_op_fini(&aop);
+			comment = NULL;
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			buf = malloc(hit->len);
+			if (!buf) {
+				goto cleanup;
+			}
+			rz_io_read_at(core->io, hit->addr, buf, hit->len);
+			rz_asm_set_pc(core->rasm, hit->addr);
+			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
+			rz_analysis_op_init(&aop);
+			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
+			size += hit->len;
+			if (asmop_str) {
+				asmop_str = rz_str_append(asmop_str, rz_asm_op_get_asm(asmop));
+				const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last(hitlist))->addr;
+				if (addr_last != hit->addr) {
+					asmop_str = rz_str_append(asmop_str, "; ");
+				}
+			} else {
+				asmop_str = rz_str_newf("%s; ", rz_asm_op_get_asm(asmop));
+			}
+			char *asmop_hex_str_dup = NULL;
+			if (asmop_hex_str) {
+				asmop_hex_str_dup = rz_asm_op_get_hex(asmop);
+				asmop_hex_str = rz_str_append(asmop_hex_str, asmop_hex_str_dup);
+			} else {
+				asmop_hex_str_dup = rz_asm_op_get_hex(asmop);
+				asmop_hex_str = rz_str_newf("%s", asmop_hex_str_dup);
+			}
+			free(asmop_hex_str_dup);
+			free(buf);
+			rz_analysis_op_fini(&aop);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
 		}
+		rz_asm_op_free(asmop);
+	}
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		pj_end(state->d.pj);
 		if (db && hit) {
-			const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
-			// rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
-	}
-	if (mode != 'j') {
+		if (hit) {
+			pj_kn(state->d.pj, "retaddr", hit->addr);
+			pj_ki(state->d.pj, "size", size);
+		}
+		pj_end(state->d.pj);
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_newline();
+		break;
+		// fallthrough
+	case RZ_OUTPUT_MODE_STANDARD:
+		if (db && hit) {
+			rz_cons_printf("Gadget size: %d\n", (int)size);
+			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
+			rop_classify(core, db, ropList, key, size);
+		}
+		rz_cons_newline();
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "Xss", addr, asmop_hex_str, asmop_str);
+		free(asmop_str);
+		free(asmop_hex_str);
+		break;
+	default:
+		rz_warn_if_reached();
 	}
+cleanup:
 	rz_list_free(ropList);
 }
 
-static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, const char *grep, int regexp, struct search_parameters *param) {
+static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzCmdStateOutput *state) {
 	const ut8 crop = rz_config_get_i(core->config, "rop.conditional"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = rz_config_get_i(core->config, "rop.subchains");
 	const ut8 max_instr = rz_config_get_i(core->config, "rop.len");
 	const char *arch = rz_config_get(core->config, "asm.arch");
 	int max_count = rz_config_get_i(core->config, "search.maxhits");
-	int i = 0, end = 0, mode = 0, increment = 1, ret, result = true;
+	int i = 0, end = 0, increment = 1, ret, result = true;
 	RzList /*<endlist_pair>*/ *end_list = rz_list_newf(free);
 	RzList /*<char *>*/ *rx_list = NULL;
 	int align = core->search->align;
 	RzListIter *itermap = NULL;
-	char *tok, *gregexp = NULL;
 	char *grep_arg = NULL;
+	char *tok, *gregexp = NULL;
 	char *rx = NULL;
+	RzAsmOp *asmop = NULL;
+	RzList *boundaries = NULL;
 	int delta = 0;
 	ut8 *buf;
 	RzIOMap *map;
-	RzAsmOp asmop;
+
+	const ut64 search_from = rz_config_get_i(core->config, "search.from"),
+		   search_to = rz_config_get_i(core->config, "search.to");
+	if (search_from > search_to && search_to) {
+		RZ_LOG_ERROR("core: search.from > search.to is not supported\n");
+		ret = false;
+		goto bad;
+	}
+	// {.addr = UT64_MAX, .size = 0} means search range is unspecified
+	RzInterval search_itv = { search_from, search_to - search_from };
+	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
+	if (empty_search_itv) {
+		RZ_LOG_ERROR("core: `from` address is equal `to`\n");
+		ret = false;
+		goto bad;
+	}
+	// TODO full address cannot be represented, shrink 1 byte to [0, UT64_MAX)
+	if (search_from == UT64_MAX && search_to == UT64_MAX) {
+		search_itv.addr = 0;
+		search_itv.size = UT64_MAX;
+	}
 
 	Sdb *gadgetSdb = NULL;
 	if (rz_config_get_i(core->config, "rop.sdb")) {
@@ -1351,36 +1472,17 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 		increment = 2;
 	}
 
-	// Options, like JSON, linear, ...
-	grep_arg = strchr(grep, ' ');
-	if (*grep) {
-		if (grep_arg) {
-			mode = *(grep_arg - 1);
-		} else {
-			mode = *grep;
-			++grep;
-		}
-	}
-	if (grep_arg) {
-		grep_arg = strdup(grep_arg);
+	if (greparg) {
+		grep_arg = strdup(greparg);
 		grep_arg = rz_str_replace(grep_arg, ",,", ";", true);
-		grep = grep_arg;
-	}
-
-	if (*grep == ' ') { // grep mode
-		for (++grep; *grep == ' '; grep++) {
-			;
-		}
-	} else {
-		grep = NULL;
 	}
 
 	// Deal with the grep guy.
-	if (grep && regexp) {
+	if (grep_arg && regexp) {
 		if (!rx_list) {
 			rx_list = rz_list_newf(free);
 		}
-		gregexp = strdup(grep);
+		gregexp = strdup(grep_arg);
 		tok = strtok(gregexp, ";");
 		while (tok) {
 			rx = strdup(tok);
@@ -1388,12 +1490,14 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 			tok = strtok(NULL, ";");
 		}
 	}
-	if (param->outmode == RZ_MODE_JSON) {
-		pj_a(param->pj);
-	}
+	rz_cmd_state_output_array_start(state);
 	rz_cons_break_push(NULL, NULL);
-
-	rz_list_foreach (param->boundaries, itermap, map) {
+	const char *mode_str = rz_config_get(core->config, "search.in");
+	boundaries = rz_core_get_boundaries_prot(core, -1, mode_str, "search");
+	if (!boundaries) {
+		rz_cmd_state_output_array_end(state);
+	}
+	rz_list_foreach (boundaries, itermap, map) {
 		HtUUOptions opt = { 0 };
 		HtUU *badstart = ht_uu_new_opt(&opt);
 		if (!rz_itv_overlap(search_itv, map->itv)) {
@@ -1504,25 +1608,32 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 						RZ_MIN((delta - i), 4096));
 					end = i + 2048;
 				}
-				ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, delta - i);
+				asmop = rz_asm_op_new();
+				ret = rz_asm_disassemble(core->rasm, asmop, buf + i, delta - i);
 				if (ret) {
 					rz_asm_set_pc(core->rasm, from + i);
 					RzList *hitlist = construct_rop_gadget(core,
-						from + i, buf, delta, i, grep, regexp,
+						from + i, buf, delta, i, greparg, regexp,
 						rx_list, end_gadget, badstart);
 					if (!hitlist) {
+						rz_asm_op_free(asmop);
+						asmop = NULL;
 						continue;
 					}
-					if (align && (0 != ((from + i) % align))) {
+					if (align && 0 != (from + i) % align) {
+						rz_asm_op_free(asmop);
+						asmop = NULL;
 						continue;
 					}
 					if (gadgetSdb) {
 						RzListIter *iter;
 
-						RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_first(hitlist);
+						RzCoreAsmHit *hit = rz_list_first(hitlist);
 						char *headAddr = rz_str_newf("%" PFMT64x, hit->addr);
 						if (!headAddr) {
 							result = false;
+							free(buf);
+							ht_uu_free(badstart);
 							goto bad;
 						}
 
@@ -1531,6 +1642,8 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 							if (!addr) {
 								free(headAddr);
 								result = false;
+								free(buf);
+								ht_uu_free(badstart);
 								goto bad;
 							}
 							sdb_concat(gadgetSdb, headAddr, addr);
@@ -1539,16 +1652,13 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 						free(headAddr);
 					}
 
-					if (param->outmode == RZ_MODE_JSON) {
-						mode = 'j';
-					}
-					if ((mode == 'q') && subchain) {
+					if (subchain) {
 						do {
-							print_rop(core, hitlist, NULL, mode);
+							print_rop(core, hitlist, state);
 							hitlist->head = hitlist->head->next;
 						} while (hitlist->head->next);
 					} else {
-						print_rop(core, hitlist, param->pj, mode);
+						print_rop(core, hitlist, state);
 					}
 					rz_list_free(hitlist);
 					if (max_count > 0) {
@@ -1561,21 +1671,24 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 				if (increment != 1) {
 					i = next;
 				}
+				rz_asm_op_free(asmop);
+				asmop = NULL;
 			}
 		}
 		free(buf);
+		ht_uu_free(badstart);
 	}
 	if (rz_cons_is_breaked()) {
 		eprintf("\n");
 	}
 
-	if (param->outmode == RZ_MODE_JSON) {
-		pj_end(param->pj);
-	}
 bad:
+	rz_cmd_state_output_array_end(state);
 	rz_cons_break_pop();
+	rz_asm_op_free(asmop);
 	rz_list_free(rx_list);
 	rz_list_free(end_list);
+	rz_list_free(boundaries);
 	free(grep_arg);
 	free(gregexp);
 	return result;
@@ -2452,8 +2565,8 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 	}
 }
 
-static void rop_kuery(void *data, const char *input, PJ *pj) {
-	RzCore *core = (RzCore *)data;
+static void rop_kuery(void *data, const char *input, RzCmdStateOutput *state) {
+	RzCore *core = data;
 	Sdb *db_rop = sdb_ns(core->sdb, "rop", false);
 	RzListIter *it;
 	void **items_iter;
@@ -2465,8 +2578,8 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 		return;
 	}
 
-	switch (*input) {
-	case 'q':
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET:
 		rz_list_foreach (db_rop->ns, it, ns) {
 			RzPVector *items = sdb_get_items(ns->sdb, false);
 			rz_pvector_foreach (items, items_iter) {
@@ -2476,9 +2589,9 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 			rz_pvector_free(items);
 		}
 		break;
-	case 'j':
-		pj_o(pj);
-		pj_ka(pj, "gadgets");
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(state->d.pj);
+		pj_ka(state->d.pj, "gadgets");
 		rz_list_foreach (db_rop->ns, it, ns) {
 			RzPVector *items = sdb_get_items(ns->sdb, false);
 			rz_pvector_foreach (items, items_iter) {
@@ -2491,12 +2604,12 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 					tok = strdup("NOP");
 					flag = true;
 				}
-				pj_o(pj);
-				pj_ks(pj, "address", sdbkv_key(kv));
-				pj_ks(pj, "size", size);
-				pj_ks(pj, "type", ns->name);
-				pj_ks(pj, "effect", tok);
-				pj_end(pj);
+				pj_o(state->d.pj);
+				pj_ks(state->d.pj, "address", sdbkv_key(kv));
+				pj_ks(state->d.pj, "size", size);
+				pj_ks(state->d.pj, "type", ns->name);
+				pj_ks(state->d.pj, "effect", tok);
+				pj_end(state->d.pj);
 				free(dup);
 				if (flag) {
 					free(tok);
@@ -2504,8 +2617,8 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 			}
 			rz_pvector_free(items);
 		}
-		pj_end(pj);
-		pj_end(pj);
+		pj_end(state->d.pj);
+		pj_end(state->d.pj);
 		break;
 	case ' ':
 		if (!strcmp(input + 1, "nop")) {
@@ -3073,62 +3186,6 @@ reread:
 		}
 		break;
 	}
-	case 'R': // "/R"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_slash_R);
-		} else if (input[1] == '/') {
-			rz_core_search_rop(core, search_itv, 0, input + 1, 1, &param);
-		} else if (input[1] == 'k') {
-			if (input[2] == '?') {
-				rz_core_cmd_help(core, help_msg_slash_Rk);
-			} else {
-				rop_kuery(core, input + 2, param.pj);
-			}
-		} else {
-			Sdb *gadgetSdb = sdb_ns(core->sdb, "gadget_sdb", false);
-
-			if (!gadgetSdb) {
-				rz_core_search_rop(core, search_itv, 0, input + 1, 0, &param);
-			} else {
-				void **iter;
-				RzPVector *items = sdb_get_items(gadgetSdb, true);
-
-				rz_pvector_foreach (items, iter) {
-					SdbKv *kv = *iter;
-					RzList *hitlist = rz_core_asm_hit_list_new();
-					if (!hitlist) {
-						goto beach;
-					}
-
-					const char *s = sdbkv_value(kv);
-					ut64 addr;
-					int opsz;
-					int mode = 0;
-
-					// Options, like JSON, linear, ...
-					if (*(input + 1)) {
-						mode = *(input + 1);
-					}
-
-					do {
-						RzCoreAsmHit *hit = rz_core_asm_hit_new();
-						if (!hit) {
-							rz_list_free(hitlist);
-							goto beach;
-						}
-						sscanf(s, "%" PFMT64x "(%" PFMT32d ")", &addr, &opsz);
-						hit->addr = addr;
-						hit->len = opsz;
-						rz_list_append(hitlist, hit);
-					} while (*(s = strchr(s, ')') + 1) != '\0');
-
-					print_rop(core, hitlist, param.pj, mode);
-					rz_list_free(hitlist);
-				}
-				rz_pvector_free(items);
-			}
-		}
-		goto beach;
 	case 'r': // "/r"
 	{
 		ut64 n = (input[1] == ' ' || (input[1] && input[2] == ' '))
@@ -3758,6 +3815,10 @@ reread:
 		}
 		break;
 	case 'x': // "/x" search hex
+		if (!input[1]) {
+			RZ_LOG_ERROR("core: missing hexpairs:binmask\n");
+			break;
+		}
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_slash_x);
 		} else {

@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_search
+commands:
+  - name: "/R"
+    summary: List ROP Gadgets
+    subcommands:
+      - name: "/R"
+        cname: cmd_info_gadget
+        summary: List ROP Gadgets
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: filter-by-string
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: "/R/"
+        cname: cmd_search_gadget
+        summary: List ROP Gadgets [regular expression]
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: filter-by-regex
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: "/Rk"
+        cname: cmd_query_gadget
+        summary: Query ROP Gadgets
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: nop|mov|arithm
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
