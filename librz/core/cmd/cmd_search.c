@@ -1191,7 +1191,6 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	unsigned int size = 0;
 	char *asmop_str = NULL, *asmop_hex_str = NULL;
 	RzAnalysisOp aop = RZ_EMPTY;
-	RzAsmOp asmop;
 	const char *comment = NULL;
 	Sdb *db = NULL;
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
@@ -1221,6 +1220,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
 
 	rz_list_foreach (hitlist, iter, hit) {
+		RzAsmOp *asmop = rz_asm_op_new();
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			buf = malloc(hit->len);
@@ -1229,7 +1229,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			}
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
+			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
 			size += hit->len;
@@ -1240,11 +1240,10 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			pj_o(state->d.pj);
 			pj_kn(state->d.pj, "offset", hit->addr);
 			pj_ki(state->d.pj, "size", hit->len);
-			pj_ks(state->d.pj, "opcode", rz_asm_op_get_asm(&asmop));
+			pj_ks(state->d.pj, "opcode", rz_asm_op_get_asm(asmop));
 			pj_ks(state->d.pj, "type", rz_analysis_optype_to_string(aop.type));
 			pj_end(state->d.pj);
 			free(buf);
-			buf = NULL;
 			rz_analysis_op_fini(&aop);
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
@@ -1255,7 +1254,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			}
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
+			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
 			size += hit->len;
@@ -1266,18 +1265,17 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			if (esil) {
 				rz_cons_printf("%s\n", opstr);
 			} else if (colorize) {
-				bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
+				bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
 				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
 				rz_asm_parse_param_free(param);
 				rz_cons_printf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
 				rz_strbuf_free(colored_asm);
 				rz_strbuf_free(bw_str);
 			} else {
-				rz_cons_printf(" %s;", rz_asm_op_get_asm(&asmop));
+				rz_cons_printf(" %s;", rz_asm_op_get_asm(asmop));
 			}
 			free(buf);
-			buf = NULL;
 			rz_analysis_op_fini(&aop);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
@@ -1294,7 +1292,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			buf[hit->len] = 0;
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
+			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
 			size += hit->len;
@@ -1302,11 +1300,11 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
 				rz_list_append(ropList, opstr_n);
 			}
-			char *asm_op_hex = rz_asm_op_get_hex(&asmop);
+			char *asm_op_hex = rz_asm_op_get_hex(asmop);
 			if (colorize) {
-				bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
+				bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
 				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
 				rz_asm_parse_param_free(param);
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
@@ -1320,10 +1318,10 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			} else {
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",
-						hit->addr, asm_op_hex, rz_asm_op_get_asm(&asmop), comment);
+						hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop), comment);
 				} else {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s\n",
-						hit->addr, asm_op_hex, rz_asm_op_get_asm(&asmop));
+						hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop));
 				}
 			}
 			free(asm_op_hex);
@@ -1338,36 +1336,36 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			}
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
+			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
 			size += hit->len;
 			if (asmop_str) {
-				asmop_str = rz_str_append(asmop_str, rz_asm_op_get_asm(&asmop));
+				asmop_str = rz_str_append(asmop_str, rz_asm_op_get_asm(asmop));
 				const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last(hitlist))->addr;
 				if (addr_last != hit->addr) {
 					asmop_str = rz_str_append(asmop_str, "; ");
 				}
 			} else {
-				asmop_str = rz_str_newf("%s; ", rz_asm_op_get_asm(&asmop));
+				asmop_str = rz_str_newf("%s; ", rz_asm_op_get_asm(asmop));
 			}
 			char *asmop_hex_str_dup = NULL;
 			if (asmop_hex_str) {
-				asmop_hex_str_dup = rz_asm_op_get_hex(&asmop);
+				asmop_hex_str_dup = rz_asm_op_get_hex(asmop);
 				asmop_hex_str = rz_str_append(asmop_hex_str, asmop_hex_str_dup);
 			} else {
-				asmop_hex_str_dup = rz_asm_op_get_hex(&asmop);
+				asmop_hex_str_dup = rz_asm_op_get_hex(asmop);
 				asmop_hex_str = rz_str_newf("%s", asmop_hex_str_dup);
 			}
 			free(asmop_hex_str_dup);
 			free(buf);
-			buf = NULL;
 			rz_analysis_op_fini(&aop);
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
+		rz_asm_op_free(asmop);
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
@@ -1420,11 +1418,11 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 	char *grep_arg = NULL;
 	char *tok, *gregexp = NULL;
 	char *rx = NULL;
+	RzAsmOp *asmop = NULL;
 	RzList *boundaries = NULL;
 	int delta = 0;
 	ut8 *buf;
 	RzIOMap *map;
-	RzAsmOp *asmop = rz_asm_op_new();
 
 	const ut64 search_from = rz_config_get_i(core->config, "search.from"),
 		   search_to = rz_config_get_i(core->config, "search.to");
@@ -1610,6 +1608,7 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 						RZ_MIN((delta - i), 4096));
 					end = i + 2048;
 				}
+				asmop = rz_asm_op_new();
 				ret = rz_asm_disassemble(core->rasm, asmop, buf + i, delta - i);
 				if (ret) {
 					rz_asm_set_pc(core->rasm, from + i);
@@ -1617,9 +1616,13 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 						from + i, buf, delta, i, greparg, regexp,
 						rx_list, end_gadget, badstart);
 					if (!hitlist) {
+						rz_asm_op_free(asmop);
+						asmop = NULL;
 						continue;
 					}
 					if (align && 0 != (from + i) % align) {
+						rz_asm_op_free(asmop);
+						asmop = NULL;
 						continue;
 					}
 					if (gadgetSdb) {
@@ -1668,6 +1671,8 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 				if (increment != 1) {
 					i = next;
 				}
+				rz_asm_op_free(asmop);
+				asmop = NULL;
 			}
 		}
 		free(buf);
@@ -1680,8 +1685,8 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 bad:
 	rz_cmd_state_output_array_end(state);
 	rz_cons_break_pop();
-	rz_list_free(rx_list);
 	rz_asm_op_free(asmop);
+	rz_list_free(rx_list);
 	rz_list_free(end_list);
 	rz_list_free(boundaries);
 	free(grep_arg);
