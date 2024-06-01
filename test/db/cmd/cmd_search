@@ -428,14 +428,17 @@ EXPECT=<<EOF
   0x00000003                 5b  pop ebx
   0x00000004                 5d  pop ebp
   0x00000005                 c3  ret
+Gadget size: 6
 
   0x00000001               c408  les ecx, [eax]
   0x00000003                 5b  pop ebx
   0x00000004                 5d  pop ebp
   0x00000005                 c3  ret
+Gadget size: 5
 
   0x00000002             085b5d  or byte [ebx + 0x5d], bl
   0x00000005                 c3  ret
+Gadget size: 4
 
 EOF
 RUN
@@ -454,6 +457,7 @@ EOF
 EXPECT=<<EOF
   0x00000002             085b5d  or byte [ebx + 0x5d], bl
   0x00000005                 c3  ret
+Gadget size: 4
 
 EOF
 RUN
@@ -479,6 +483,8 @@ EXPECT=<<EOF
   0x00000014           04000000  sllv zero, zero, zero
   0x00000018           08000000  jr zero
   0x0000001c           00000070  madd zero, zero
+Gadget size: 20
+
 EOF
 RUN
 
