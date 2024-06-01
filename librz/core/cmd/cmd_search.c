@@ -245,6 +245,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 	void **iter;
 	RzPVector *items = sdb_get_items(gadgetSdb, true);
 
+	rz_cmd_state_output_array_start(state);
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		RzList *hitlist = rz_core_asm_hit_list_new();
@@ -272,6 +273,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 		rz_list_free(hitlist);
 	}
 	rz_pvector_free(items);
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1187,6 +1189,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	RzListIter *iter;
 	RzList *ropList = NULL;
 	unsigned int size = 0;
+	char *asmop_str = NULL, *asmop_hex_str = NULL;
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp asmop;
 	const char *comment = NULL;
@@ -1215,12 +1218,14 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	} else if (state->mode == RZ_OUTPUT_MODE_QUIET) {
 		rz_cons_printf("0x%08" PFMT64x ":", ((RzCoreAsmHit *)rz_list_first(hitlist))->addr);
 	}
+	const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
+
 	rz_list_foreach (hitlist, iter, hit) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			buf = malloc(hit->len);
 			if (!buf) {
-				return;
+				goto cleanup;
 			}
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
@@ -1245,6 +1250,9 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 		case RZ_OUTPUT_MODE_QUIET:
 			// Print gadgets in a 'linear manner', each sequence on one line.
 			buf = malloc(hit->len);
+			if (!buf) {
+				goto cleanup;
+			}
 			rz_io_read_at(core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc(core->rasm, hit->addr);
 			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
@@ -1324,7 +1332,38 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			comment = NULL;
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			// rz_table_add_rowf(state->d.t, "XXs", hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "");
+			buf = malloc(hit->len);
+			if (!buf) {
+				goto cleanup;
+			}
+			rz_io_read_at(core->io, hit->addr, buf, hit->len);
+			rz_asm_set_pc(core->rasm, hit->addr);
+			rz_asm_disassemble(core->rasm, &asmop, buf, hit->len);
+			rz_analysis_op_init(&aop);
+			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
+			size += hit->len;
+			if (asmop_str) {
+				asmop_str = rz_str_append(asmop_str, rz_asm_op_get_asm(&asmop));
+				const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last(hitlist))->addr;
+				if (addr_last != hit->addr) {
+					asmop_str = rz_str_append(asmop_str, "; ");
+				}
+			} else {
+				asmop_str = rz_str_newf("%s; ", rz_asm_op_get_asm(&asmop));
+			}
+			char *asmop_hex_str_dup = NULL;
+			if (asmop_hex_str) {
+				asmop_hex_str_dup = rz_asm_op_get_hex(&asmop);
+				asmop_hex_str = rz_str_append(asmop_hex_str, asmop_hex_str_dup);
+			} else {
+				asmop_hex_str_dup = rz_asm_op_get_hex(&asmop);
+				asmop_hex_str = rz_str_newf("%s", asmop_hex_str_dup);
+			}
+			free(asmop_hex_str_dup);
+			// rz_table_add_rowf(state->d.t, "Xss", hit->addr, rz_asm_op_get_hex(&asmop), rz_asm_op_get_asm(&asmop));
+			free(buf);
+			buf = NULL;
+			rz_analysis_op_fini(&aop);
 			break;
 		default:
 			rz_warn_if_reached();
@@ -1335,7 +1374,6 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	case RZ_OUTPUT_MODE_JSON:
 		pj_end(state->d.pj);
 		if (db && hit) {
-			const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
@@ -1350,7 +1388,6 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 		// fallthrough
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (db && hit) {
-			const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
@@ -1358,10 +1395,14 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 		rz_cons_newline();
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "Xss", addr, asmop_hex_str, asmop_str);
+		free(asmop_str);
+		free(asmop_hex_str);
 		break;
 	default:
 		rz_warn_if_reached();
 	}
+cleanup:
 	rz_list_free(ropList);
 }
 
@@ -1578,13 +1619,13 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 					if (!hitlist) {
 						continue;
 					}
-					if (align && (0 != ((from + i) % align))) {
+					if (align && 0 != (from + i) % align) {
 						continue;
 					}
 					if (gadgetSdb) {
 						RzListIter *iter;
 
-						RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_first(hitlist);
+						RzCoreAsmHit *hit = rz_list_first(hitlist);
 						char *headAddr = rz_str_newf("%" PFMT64x, hit->addr);
 						if (!headAddr) {
 							result = false;
