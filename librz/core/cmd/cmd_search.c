@@ -1373,7 +1373,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 	case RZ_OUTPUT_MODE_JSON:
 		pj_end(state->d.pj);
 		if (db && hit) {
-			rz_cons_printf ("Gadget size: %d\n", (int)size);
+			rz_cons_printf("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
@@ -1389,7 +1389,7 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 		// fallthrough
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (db && hit) {
-			rz_cons_printf ("Gadget size: %d\n", (int)size);
+			rz_cons_printf("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
 		}
