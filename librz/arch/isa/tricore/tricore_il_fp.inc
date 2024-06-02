@@ -497,7 +497,7 @@ static RzAnalysisLiftedILOp div_f(RzAsmTriCoreContext *ctx) {
 		SETL("_fb", _32F64(VARG(R(2)))),
 		SETL("_arg_a", denorm_to_zere64(VARL("_fa"))),
 		SETL("_arg_b", denorm_to_zere64(VARL("_fb"))),
-		SETL("_precise_result", FDIV(0, _32F64(VARL("_arg_a")), _32F64(VARL("_arg_b")))),
+		SETL("_precise_result", FDIV(0, VARL("_arg_a"), VARL("_arg_b"))),
 		SETL("_normal_result", denorm_to_zere64(VARL("_precise_result"))),
 		SETL("_rounded_result", FCAST32(FCONVERT, RZ_FLOAT_IEEE754_BIN_32, VARL("_normal_result"), PSW_RM())),
 		SETL("_result",
