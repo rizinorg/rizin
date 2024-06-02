@@ -29,9 +29,11 @@
 #define RZ_AX_FLAG_IPADDR_TO_LONG       (1ull << 23) // -I (IP address <-> LONG)
 #define RZ_AX_FLAG_SET_BITS             (1ull << 24) // -p (find position of set bits)
 #define RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR (1ull << 25) // -m (MS-DOS timestamp -> str)
+#define RZ_AX_FLAG_WIN_TIMESTAMP_TO_STR (1ull << 26) // -W (Win32 timestamp -> str)
 
-#define has_flag(f, x) (f & x)
-
+#define has_flag(f, x)  (f & x)
+#define is_timestamp(f) ((f & RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR) || \
+	(f & RZ_AX_FLAG_TIMESTAMP_TO_STR) || (f & RZ_AX_FLAG_WIN_TIMESTAMP_TO_STR))
 // don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
 static int rax(RzNum *num, char *str, int len, int last, ut64 *flags, int *fm);
@@ -229,6 +231,7 @@ static int help(void) {
 		"  -S      raw -> hexstr        ;  rz-ax -S < /bin/ls > ls.hex\n"
 		"  -t      Unix tstamp -> str   ;  rz-ax -t 1234567890\n"
 		"  -m      MS-DOS tstamp -> str ;  rz-ax -m 1234567890\n"
+		"  -W      Win32 tstamp -> str  ;  rz-ax -W 1234567890\n"
 		"  -x      hash string          ;  rz-ax -x linux osx\n"
 		"  -u      units                ;  rz-ax -u 389289238 # 317.0M\n"
 		"  -w      signed word          ;  rz-ax -w 16 0xffff\n"
@@ -292,6 +295,7 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 			case 'o': flags ^= RZ_AX_FLAG_OCTAL_TO_RAW; break;
 			case 'I': flags ^= RZ_AX_FLAG_IPADDR_TO_LONG; break;
 			case 'm': flags ^= RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR; break;
+			case 'W': flags ^= RZ_AX_FLAG_WIN_TIMESTAMP_TO_STR; break;
 			case 'v': return rz_main_version_print("rz-ax");
 			case '\0':
 				*_flags = flags;
@@ -498,8 +502,7 @@ dotherax:
 		rz_num_units(buf, sizeof(buf), rz_num_math(NULL, str));
 		printf("%s\n", buf);
 		return true;
-	} else if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR) ||
-		has_flag(flags, RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR)) { // -t, -m
+	} else if (is_timestamp(flags)) { // -t, -m, -W
 		RzList *split = rz_str_split_list(str, "GMT", 0);
 		RzListIter *head = rz_list_head(split);
 		char *ts = rz_list_iter_get_data(head);
@@ -507,14 +510,16 @@ dotherax:
 		if (gmt && strlen(gmt) < 2) {
 			gmt = NULL;
 		}
-		ut32 n = rz_num_math(num, ts);
+		ut64 n = rz_num_math(num, ts);
 		int timezone = (int)rz_num_math(num, gmt);
 		n += timezone * (60 * 60);
 		char *date = NULL;
 		if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR)) {
-			date = rz_time_date_unix_to_string(n);
+			date = rz_time_date_unix_to_string((ut32)n);
+		} else if (has_flag(flags, RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR)) {
+			date = rz_time_date_dos_to_string((ut32)n);
 		} else {
-			date = rz_time_date_dos_to_string(n);
+			date = rz_time_date_w32_to_string(n);
 		}
 		rz_list_free(split);
 		if (date != NULL) {
