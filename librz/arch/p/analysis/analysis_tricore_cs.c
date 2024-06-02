@@ -240,11 +240,11 @@ static char *tricore_reg_profile(RzAnalysis *_) {
 		"drx	FPU_TRAP_SRC1	.32	816	0\n"
 		"drx	FPU_TRAP_SRC2	.32	820	0\n"
 		"drx	FPU_TRAP_SRC3	.32	824	0\n"
-		"drx set_FI .1 900 0\n"
-		"drx set_FV .1 901 0\n"
-		"drx set_FZ .1 902 0\n"
-		"drx set_FU .1 903 0\n"
-		"drx set_FX .1 904 0\n";
+		"drx	set_FI	.1	900	0\n"
+		"drx	set_FV	.1	901	0\n"
+		"drx	set_FZ	.1	902	0\n"
+		"drx	set_FU	.1	903	0\n"
+		"drx	set_FX	.1	904	0\n";
 	return strdup(p);
 }
 

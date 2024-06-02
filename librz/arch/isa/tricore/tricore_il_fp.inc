@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: 2024 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/// The maximum of IEEE-754-2008 16-bit half precision floating point
 static const ut32 HP_MAX_VALUE = 65504;
+/// The minimum positive normalized number of IEEE-754-2008 16-bit half precision floating point
 static const ut32 HP_MIN_NORMAL = 1024 * 16;
-
+/// This represents all positive numbers that are too big to be represented accurately as a normalized number.
 static const ut32 HP_NEG_INFINITY = 0xfc00;
+/// This represents all negative numbers with an absolute value that is too big to be represented accurately as a normalized number.
 static const ut32 HP_POS_INFINITY = 0x7c00;
 
 #define F2SINT32(x, m) F2SINT(32, m, x)
@@ -92,7 +95,9 @@ static RzILOpPure *minmax(const char *k, st64 min, st64 max, RzILOpPure *x) {
 				x)));
 }
 
+// The maximum of the Q31 format value
 #define Q31_MAX q_real(0x7FFFFFFF)
+// The minimum of the Q31 format value
 #define Q31_MIN F32(-1.f)
 
 static RzILOpPure *minmax_q31(const char *k, RzILOpPure *x) {
