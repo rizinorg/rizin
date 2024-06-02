@@ -345,7 +345,7 @@ static RzILOpEffect *op_call(Pic18ILContext *ctx) {
 	return SEQ3(
 		SETG("tos", UN(24, PC + 4)),
 		load_shadows_opt(ctx),
-		JMP(UN(24, K << 1)));
+		JMP(UN(24, K)));
 }
 
 static RzILOpEffect *op_and(Pic18ILContext *ctx, const char *dst,
@@ -462,7 +462,7 @@ static RzILOpEffect *pic18_il_op(Pic18ILContext *ctx) {
 			SETL("__res", SUB(VRF, U8(1))),
 			set_dest(ctx, VARL("__res")),
 			op_skip_if(ctx, NON_ZERO(VARL("__res"))));
-	case PIC18_OPCODE_GOTO: return JMP(UN(24, (ut32)K << 1));
+	case PIC18_OPCODE_GOTO: return JMP(UN(24, (ut32)K));
 	case PIC18_OPCODE_INCF:
 		return SEQ3(
 			SETL("__res", ADD(VRF, U8(1))),
