@@ -1025,6 +1025,9 @@ RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL Rz
  */
 RZ_API char *rz_il_value_stringify(RZ_NONNULL const RzILVal *val) {
 	rz_return_val_if_fail(val, NULL);
+	if (val->type == RZ_IL_TYPE_PURE_FLOAT) {
+		return rz_float_as_string(val->data.f);
+	}
 	RzBitVector *bv = rz_il_value_to_bv(val);
 	if (!bv) {
 		return NULL;
