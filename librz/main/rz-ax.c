@@ -516,11 +516,11 @@ dotherax:
 		} else {
 			date = rz_time_date_dos_to_string(n);
 		}
+		rz_list_free(split);
 		if (date != NULL) {
 			printf("%s\n", date);
 			fflush(stdout);
 			free(date);
-			rz_list_free(split);
 			return true;
 		}
 		return false;
