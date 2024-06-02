@@ -11,7 +11,7 @@ jobs:
     - os: linux
       name: PPC64
       arch: ppc64le
-      dist: focal
+      dist: jammy
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_ARM64_AS=aarch64-linux-gnu-as RZ_ARM32_AS=arm-linux-gnueabi-as RZ_X86_AS=x86_64-linux-gnu-as
       addons:
         apt:
@@ -23,7 +23,7 @@ jobs:
     - os: linux
       name: S390X
       arch: s390x
-      dist: focal
+      dist: jammy
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_X86_AS=x86_64-w64-mingw32-as
       addons:
         apt:
@@ -33,7 +33,7 @@ jobs:
     - os: linux
       name: ARM64
       arch: arm64
-      dist: focal
+      dist: jammy
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_ARM32_AS=arm-linux-gnueabi-as RZ_X86_AS=x86_64-linux-gnu-as RZ_PPC_AS=powerpc64le-linux-gnu-as
       addons:
         apt:
