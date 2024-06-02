@@ -498,8 +498,8 @@ dotherax:
 		rz_num_units(buf, sizeof(buf), rz_num_math(NULL, str));
 		printf("%s\n", buf);
 		return true;
-	} else if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR) || 
-			has_flag(flags, RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR)) { // -t, -m
+	} else if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR) ||
+		has_flag(flags, RZ_AX_FLAG_DOS_TIMESTAMP_TO_STR)) { // -t, -m
 		RzList *split = rz_str_split_list(str, "GMT", 0);
 		RzListIter *head = rz_list_head(split);
 		char *ts = rz_list_iter_get_data(head);
@@ -510,15 +510,13 @@ dotherax:
 		ut32 n = rz_num_math(num, ts);
 		int timezone = (int)rz_num_math(num, gmt);
 		n += timezone * (60 * 60);
-		char * date = NULL;
+		char *date = NULL;
 		if (has_flag(flags, RZ_AX_FLAG_TIMESTAMP_TO_STR)) {
 			date = rz_time_date_unix_to_string(n);
-		}
-		else { 
+		} else {
 			date = rz_time_date_dos_to_string(n);
 		}
-		if (date != NULL)
-		{
+		if (date != NULL) {
 			printf("%s\n", date);
 			fflush(stdout);
 			free(date);
