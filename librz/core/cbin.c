@@ -2595,7 +2595,7 @@ RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdSta
 		// ensure the last printed line is actually the last expected line
 		// this depends on the number of the threads requested and available
 		// this requires to be called before checking the results
-		int n_cores = (int)rz_th_request_physical_cores(options.max_threads);
+		int n_cores = (int)rz_th_max_threads(options.max_threads);
 		rz_cons_gotoxy(1, begin_line + n_cores);
 	}
 
