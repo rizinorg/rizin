@@ -43,6 +43,7 @@ RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
 		free(sem);
 		return NULL;
 	}
+	sem_unlink(name);
 #else
 	sem->sem = malloc(sizeof(sem_t));
 	if (!sem->sem) {
