@@ -184,6 +184,11 @@ static const char *TriCoreREGs[] = {
 	"FPU_TRAP_SRC1",
 	"FPU_TRAP_SRC2",
 	"FPU_TRAP_SRC3",
+	"set_FI",
+	"set_FV",
+	"set_FZ",
+	"set_FU",
+	"set_FX",
 	NULL
 };
 
@@ -403,7 +408,7 @@ static const char *CR_Table(unsigned addr_offset) {
 	case 0xA010: return "FPU_TRAP_SRC1";
 	case 0xA014: return "FPU_TRAP_SRC2";
 	case 0xA018: return "FPU_TRAP_SRC3";
-	default: return NULL;
+	default: break;
 	}
 	return NULL;
 }
@@ -807,91 +812,6 @@ static RzILOpPure *sign_32bit(RzILOpPure *val) {
 	return MSB(val);
 }
 
-// static const ut32 ADD_NAN __attribute__((unused)) = 0x7fc00001;
-// static const ut32 DIV_NAN __attribute__((unused)) = 0x7fc00008;
-// static const ut32 MUL_NAN __attribute__((unused)) = 0x7fc00002;
-// static const ut32 SQRT_NAN __attribute__((unused)) = 0x7fc00004;
-//
-// static const ut32 HP_MAX_VALUE __attribute__((unused)) = 65504;
-// static const ut32 HP_MIN_NORMAL __attribute__((unused)) = 1024 * 16;
-
-static const ut32 HP_NEG_INFINITY = 0xfc00;
-static const ut32 HP_POS_INFINITY = 0x7c00;
-
-// static const ut32 NEG_INFINITY __attribute__((unused)) = 0xff800000;
-// static const ut32 POS_INFINITY __attribute__((unused)) = 0x7f800000;
-
-static inline RzILOpPure *denorm_to_zero(RzILOpFloat *x) {
-	return LET("tmp", x,
-		ITE(AND(FLT(VARLP("tmp"), F32(0.0)), FGT(VARLP("tmp"), F32(powf(-2, -126)))), FNEG(F32(0)),
-			ITE(AND(FGT(VARLP("tmp"), F32(0)), FLT(VARLP("tmp"), F32(powf(2, -126)))), F32(0),
-				VARLP("tmp"))));
-}
-
-/**
- * \brief Convert single precision to a half precision
- *
- * Convert the contents of data register D[a] from IEEE-754-2008 32-bit single precision floating point to IEEE-754-2008
- * 16-bit half precision (data interchange) floating point format. The rounded result is put in data register D[c][15:0].
- * D[c][31:16] is set to zero.
- */
-static RzAnalysisLiftedILOp ftohp(RzAsmTriCoreContext *ctx) {
-	const char *a = R(1);
-	const char *c = R(0);
-
-	// if(sign_32bit(D[a])) then {
-	//	D[c][15:0] = HP_NEG_INFINITY;
-	// } else {
-	//	D[c][15:0] = HP_POS_INFINITY;
-	// }
-	RzILOpEffect *inf_eff = BRANCH(sign_32bit(VARG(a)),
-		SETG(c, U32(HP_NEG_INFINITY)),
-		SETG(c, U32(HP_POS_INFINITY)));
-
-	// D[c][15] = sign_32bit(D[a]);
-	// D[c][14:10] = 1FH;
-	// D[c][9:8] = D[a][22:21];
-	// D[c][7:0] = D[a][7:0];
-	// Ensure NaN value is preserved
-	// if ((D[c][9:0] == 0)) then {
-	//	D[c][8] = 1B;
-	// }
-	RzILOpPure *dc = LOGAND(VARG(a), U32(1U << 31));
-	dc = LOGOR(dc, SHL0(U32(0x1f), 10));
-	dc = LOGOR(dc, SHL0(BITS32(VARG(a), 21, 2), 8));
-	dc = LOGOR(dc, BITS32(VARG(a), 0, 8));
-	RzILOpEffect *nan_eff = SEQ2(SETL("D_c", dc),
-		SETG(c, ITE(EQ(BITS32(VARL("D_c"), 0, 10), U32(0)), BITS32_U(VARL("D_c"), 8, 1, U32(1)), VARL("D_c"))));
-
-	// f = denorm_to_zero(D[a]);
-	// f_rounded = ieee754_round_16bit(f, PSW.RM);
-	// Handle overflow & underflow and convert to 16-bit format
-	// D[a][15:0] = ieee754_16bit_format(f_rounded);
-	RzILOpPure *f = denorm_to_zero(FLOATV32(VARG(a)));
-	//	RzILOpPure *f_rounded = FROUND(/*TODO: PSW_RM()*/ 0, f);
-	RzILOpEffect *else_eff = SETG(c,
-		BITS32_U(VARG(a), 0, 16, UNSIGNED(32, F2BV(FCONVERT(RZ_FLOAT_IEEE754_BIN_16, 0, f)))));
-
-	return BRANCH(IS_FINF(FLOATV32(VARG(a))), inf_eff,
-		BRANCH(IS_FNAN(FLOATV32(VARG(a))), nan_eff, else_eff));
-}
-
-static RzILOpPure *f_real(RzILOpFloat *x) {
-	return x;
-}
-
-static RzAnalysisLiftedILOp ftoiz(RzAsmTriCoreContext *ctx) {
-	RzILOpPure *a = VARG(R(1));
-	const char *cname = R(0);
-	return SETG(cname,
-		ITE(IS_FINF(FLOATV32(a)),
-			U32(0),
-			ITE(SGT(f_real(DUP(a)), U32(0x7FFFFFFF)), U32(0x7FFFFFFF),
-				ITE(SLT(f_real(DUP(a)), U32(0x80000000)),
-					U32(0x80000000),
-					F2SINT(32, RZ_FLOAT_RMODE_RTZ, DUP(a))))));
-}
-
 #define Byte_b       8
 #define HalfWord_b   16
 #define Word_b       32
@@ -938,10 +858,6 @@ static RzILOpPure *reflect(RzILOpPure *x, ut8 n) {
 /// reverse the 16-bit binary value
 static RzILOpPure *reverse16(RzILOpPure *x) {
 	return reflect(x, 16);
-}
-
-static RzILOpPure *is_denorm(RzILOpPure *x) {
-	return AND(IS_ZERO(BITS32(x, 23, 8)), NON_ZERO(BITS32(DUP(x), 0, 23)));
 }
 
 static RzAnalysisLiftedILOp f_cons_(RzILOpEffect *x, RzILOpEffect *y) {
@@ -2717,7 +2633,6 @@ static RzAnalysisLiftedILOp f_madd(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	Mab(madd_a, madd_b);
 
 	f_cons(xs,
@@ -2745,7 +2660,6 @@ static RzAnalysisLiftedILOp f_mul(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	Mab(mul_a, mul_b);
 
 	f_cons(xs,
@@ -2761,7 +2675,6 @@ static RzAnalysisLiftedILOp f_mulr(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	Mab(mulr_a, mulr_b);
 
 	f_cons(xs,
@@ -2778,7 +2691,6 @@ static RzAnalysisLiftedILOp f_maddr(
 	RzAnalysisLiftedILOp xs, RzAsmTriCoreContext *ctx,
 	const char *name1, const char *name2, const char *name3,
 	RzILOpPure *a, RzILOpPure *b, unsigned arg_n, unsigned i1, unsigned i2, unsigned n) {
-	rz_warn_if_fail(arg_n == 1 || arg_n == 0);
 	xs = f_mul(xs, name1, name2, a, b, arg_n, i1, i2, n);
 	return f_cons_(xs,
 		SETL(name3,
@@ -3013,6 +2925,8 @@ static RzAnalysisLiftedILOp population_count(
 	return xs;
 }
 
+#include "tricore_il_fp.inc"
+
 RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *a) {
 	ctx->word = rz_read_le32(ctx->insn->bytes);
 	switch (ctx->insn->id) {
@@ -3025,35 +2939,23 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 	case TRICORE_INS_FRET: return fret();
 	case TRICORE_INS_FTOHP: return ftohp(ctx);
 	case TRICORE_INS_FTOIZ: return ftoiz(ctx);
-	case TRICORE_INS_FTOI:
-	case TRICORE_INS_FTOQ31Z:
-	case TRICORE_INS_FTOQ31:
-	case TRICORE_INS_FTOUZ:
-	case TRICORE_INS_FTOU:
-	case TRICORE_INS_HPTOF:
-	case TRICORE_INS_ITOF:
-	case TRICORE_INS_Q31TOF:
-	case TRICORE_INS_DIV_F:
-	case TRICORE_INS_ADD_F:
-	case TRICORE_INS_MADD_F:
-	case TRICORE_INS_MSUB_F:
-	case TRICORE_INS_SUB_F:
-	case TRICORE_INS_MUL_F:
-	case TRICORE_INS_QSEED_F:
-	case TRICORE_INS_UTOF: NOT_IMPLEMENTED;
-	case TRICORE_INS_CMP_F: {
-		const char *rc = R(0);
-		const char *ra = R(1);
-		const char *rb = R(2);
-		return SETG(rc,
-			f_op2_chain6(rz_il_op_new_log_or,
-				BOOL_TO_BV32(FLT(FLOATV32(VARG(ra)), FLOATV32(VARG(rb)))),
-				SHL0(BOOL_TO_BV32(FEQ(FLOATV32(VARG(ra)), FLOATV32(VARG(rb)))), 1),
-				SHL0(BOOL_TO_BV32(FGT(FLOATV32(VARG(ra)), FLOATV32(VARG(rb)))), 2),
-				SHL0(BOOL_TO_BV32(OR(IS_FNAN(FLOATV32(VARG(ra))), IS_FNAN(FLOATV32(VARG(rb))))), 3),
-				SHL0(BOOL_TO_BV32(is_denorm(VARG(ra))), 4),
-				SHL0(BOOL_TO_BV32(is_denorm(VARG(rb))), 5)));
-	}
+	case TRICORE_INS_FTOI: return ftoi(ctx);
+	case TRICORE_INS_FTOQ31Z: return ftoq31z(ctx);
+	case TRICORE_INS_FTOQ31: return ftoq31(ctx);
+	case TRICORE_INS_FTOUZ: return ftouz(ctx);
+	case TRICORE_INS_FTOU: return ftou(ctx);
+	case TRICORE_INS_HPTOF: return hptof(ctx);
+	case TRICORE_INS_ITOF: return itof(ctx);
+	case TRICORE_INS_Q31TOF: return q31tof(ctx);
+	case TRICORE_INS_UTOF: return utof(ctx);
+	case TRICORE_INS_ADD_F: return add_f(ctx);
+	case TRICORE_INS_SUB_F: return sub_f(ctx);
+	case TRICORE_INS_MUL_F: return mul_f(ctx);
+	case TRICORE_INS_DIV_F: return div_f(ctx);
+	case TRICORE_INS_MADD_F: return madd_f(ctx);
+	case TRICORE_INS_MSUB_F: return msub_f(ctx);
+	case TRICORE_INS_QSEED_F: return qseed_f(ctx);
+	case TRICORE_INS_CMP_F: return cmp_f(ctx);
 	case TRICORE_INS_UPDFL: {
 		RzILOpPure *m = BITS32(VARG(R(0)), 8, 8);
 		RzILOpPure *v = BITS32(VARG(R(0)), 0, 8);
@@ -4066,8 +3968,20 @@ RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *
 		}
 		break;
 	}
-	case TRICORE_INS_MFCR: return SETG(R(0), VARG(CR_Table(I(1))));
-	case TRICORE_INS_MTCR: return SETG(CR_Table(I(0)), VARG(R(1)));
+	case TRICORE_INS_MFCR: {
+		const char *cr = CR_Table(I(1));
+		if (!cr) {
+			return NULL;
+		}
+		return SETG(R(0), VARG(cr));
+	}
+	case TRICORE_INS_MTCR: {
+		const char *cr = CR_Table(I(0));
+		if (!cr) {
+			return NULL;
+		}
+		return SETG(cr, VARG(R(1)));
+	}
 	case TRICORE_INS_BMERGE:
 		return SETG(R(0),
 			APPEND(

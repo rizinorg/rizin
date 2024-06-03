@@ -68,17 +68,17 @@ static inline RzILOpPure *BITS32_U(RzILOpPure *val, ut32 i, ut32 n, RzILOpPure *
 }
 
 // ((value >> start) & (~0ULL >> (0x20 - length)))
-static ut32 extract32(ut32 x, ut32 start, ut32 len) {
+static inline ut32 extract32(ut32 x, ut32 start, ut32 len) {
 	return (x >> start) & (~0U >> (0x20 - len));
 }
 
-static RzILOpPure *SEXT32(RzILOpPure *value, ut32 length) {
+static inline RzILOpPure *SEXT32(RzILOpPure *value, ut32 length) {
 	return LET("_sext_val", SIGNED(32, value), rz_il_sextract32(VARLP("_sext_val"), U32(0), U32(length)));
 }
-static RzILOpPure *SEXT64(RzILOpPure *value, ut32 length) {
+static inline RzILOpPure *SEXT64(RzILOpPure *value, ut32 length) {
 	return LET("_sext_val", SIGNED(32, value), rz_il_sextract64(VARLP("_sext_val"), U32(0), U32(length)));
 }
-static RzILOpPure *ZEXT32(RzILOpPure *value, ut32 length) {
+static inline RzILOpPure *ZEXT32(RzILOpPure *value, ut32 length) {
 	return value;
 }
 static inline RzILOpPure *SHL0(RzILOpPure *value, ut32 length) {
@@ -234,5 +234,8 @@ REG_FIELD(TASK_ASI, ASI, 0, 5);
 #undef REG_FIELD
 #undef REG_FIELD_VERS
 #undef REG_FIELD_VER
+
+RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *a);
+RZ_IPI RzAnalysisILConfig *tricore_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 #endif // RIZIN_TRICORE_IL_H

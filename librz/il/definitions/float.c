@@ -20,6 +20,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_new(RZ_NONNULL RzFloatFormat format, RZ_NONNU
 
 	ut32 len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	if (len != bv->len) {
+		RZ_LOG_ERROR("The size of the float :%d does not match the size of the bitvector :%d.\n", len, bv->len);
 		return NULL;
 	}
 

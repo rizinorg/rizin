@@ -276,6 +276,11 @@ drx	FPU_TRAP_OPC	.32	812	0
 drx	FPU_TRAP_SRC1	.32	816	0
 drx	FPU_TRAP_SRC2	.32	820	0
 drx	FPU_TRAP_SRC3	.32	824	0
+drx	set_FI	.1	900	0
+drx	set_FV	.1	901	0
+drx	set_FZ	.1	902	0
+drx	set_FU	.1	903	0
+drx	set_FX	.1	904	0
 
 EOF
 RUN

@@ -55,7 +55,7 @@
 #undef FMOD
 #undef FPOW
 #undef FMAD
-#undef FNEQ
+#undef FNE
 #undef FEQ
 #undef FLT
 #undef FLE

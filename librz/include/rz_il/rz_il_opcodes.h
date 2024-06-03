@@ -733,6 +733,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *h
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, ut32 n_bits);
 
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_rz_float(RZ_NONNULL RZ_OWN RzFloat *fl);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f32(float f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f64(double f);

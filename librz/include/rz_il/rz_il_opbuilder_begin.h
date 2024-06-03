@@ -81,6 +81,7 @@
 #define FORDER(flx, fly)           rz_il_op_new_forder(flx, fly)
 #define FROUND(rmode, fl)          rz_il_op_new_fround(rmode, fl)
 #define FSQRT(rmode, fl)           rz_il_op_new_fsqrt(rmode, fl)
+#define FRSQRT(rmode, fl)          rz_il_op_new_frsqrt(rmode, fl)
 #define FADD(rmode, flx, fly)      rz_il_op_new_fadd(rmode, flx, fly)
 #define FSUB(rmode, flx, fly)      rz_il_op_new_fsub(rmode, flx, fly)
 #define FMUL(rmode, flx, fly)      rz_il_op_new_fmul(rmode, flx, fly)
@@ -88,6 +89,9 @@
 #define FMOD(rmode, flx, fly)      rz_il_op_new_fdiv(rmode, flx, fly)
 #define FPOW(rmode, flx, fly)      rz_il_op_new_fpow(rmode, flx, fly)
 #define FMAD(rmode, flx, fly, flz) rz_il_op_new_fmad(rmode, flx, fly, flz)
+
+#define IL_FQNAN(f) rz_il_op_new_float_from_rz_float(rz_float_new_qnan(f))
+#define IL_FSNAN(f) rz_il_op_new_float_from_rz_float(rz_float_new_snan(f))
 
 // TODO: add `feq` as prime operator in fbasic
 // https://smtlib.cs.uiowa.edu/theories-FloatingPoint.shtml
@@ -99,12 +103,12 @@
 #define AND(x, y) rz_il_op_new_bool_and(x, y)
 #define OR(x, y)  rz_il_op_new_bool_or(x, y)
 
-#define FNEQ(flx, fly) rz_il_op_new_fneq(flx, fly)
-#define FEQ(flx, fly)  rz_il_op_new_feq(flx, fly)
-#define FLT(flx, fly)  rz_il_op_new_flt(flx, fly)
-#define FLE(flx, fly)  rz_il_op_new_fle(flx, fly)
-#define FGT(flx, fly)  rz_il_op_new_fgt(flx, fly)
-#define FGE(flx, fly)  rz_il_op_new_fge(flx, fly)
+#define FNE(flx, fly) rz_il_op_new_fneq(flx, fly)
+#define FEQ(flx, fly) rz_il_op_new_feq(flx, fly)
+#define FLT(flx, fly) rz_il_op_new_flt(flx, fly)
+#define FLE(flx, fly) rz_il_op_new_fle(flx, fly)
+#define FGT(flx, fly) rz_il_op_new_fgt(flx, fly)
+#define FGE(flx, fly) rz_il_op_new_fge(flx, fly)
 
 #define UNSIGNED(n, x)    rz_il_op_new_unsigned(n, x)
 #define SIGNED(n, x)      rz_il_op_new_signed(n, x)
