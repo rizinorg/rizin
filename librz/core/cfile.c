@@ -1268,6 +1268,49 @@ beach:
 	return fh;
 }
 
+/**
+ * Allocates the memory chunk of \p len size, copies the contents at the current offset, and opens it as a file.
+ * \param core RzCore instanced
+ * \param len Size of the chunk to be created and copied
+ * \param offset Offset from where to copy bytes
+ * \return true on success, false otherwise
+ */
+RZ_API bool rz_core_file_malloc_copy_chunk(RzCore *core, size_t len, ut64 offset) {
+	rz_return_val_if_fail(core && len, false);
+
+	bool res = false;
+	ut8 *data = RZ_NEWS(ut8, len);
+	if (!data) {
+		return false;
+	}
+	if (!rz_io_read_at(core->io, offset, data, len)) {
+		RZ_LOG_ERROR("Cannot read %zu bytes from offset 0x%" PFMT64x ".\n", len, offset);
+		goto err;
+	}
+
+	char uri[100];
+	rz_strf(uri, "malloc://%zu", len);
+	RzCoreFile *cfile = rz_core_file_open(core, uri, RZ_PERM_RWX, 0);
+	if (!cfile) {
+		RZ_LOG_ERROR("Cannot open '%s'.\n", uri);
+		goto err;
+	}
+
+	if (!rz_core_bin_load(core, uri, 0)) {
+		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", uri);
+		goto err;
+	}
+
+	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
+	rz_warn_if_fail(desc);
+	rz_io_desc_write_at(desc, 0, data, len);
+	res = true;
+
+err:
+	free(data);
+	return res;
+}
+
 RZ_IPI void rz_core_file_io_desc_closed(RzCore *core, RzIODesc *desc) {
 	// remove all references to the closed desc
 	RzListIter *it;

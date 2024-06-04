@@ -877,38 +877,7 @@ RZ_IPI RzCmdStatus rz_open_malloc_handler(RzCore *core, int argc, const char **a
 		RZ_LOG_ERROR("Invalid length %d.\n", len);
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
-	ut8 *data = RZ_NEWS(ut8, len);
-	if (!data) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (!rz_io_read_at(core->io, core->offset, data, len)) {
-		RZ_LOG_ERROR("Cannot read %d bytes from current offset.\n", len);
-		goto err;
-	}
-
-	char uri[100];
-	rz_strf(uri, "malloc://%d", len);
-	RzCoreFile *cfile = rz_core_file_open(core, uri, RZ_PERM_RWX, 0);
-	if (!cfile) {
-		RZ_LOG_ERROR("Cannot open '%s'.\n", uri);
-		goto err;
-	}
-
-	if (!rz_core_bin_load(core, uri, 0)) {
-		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", uri);
-		goto err;
-	}
-
-	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
-	rz_warn_if_fail(desc);
-	rz_io_desc_write_at(desc, 0, data, len);
-	res = RZ_CMD_STATUS_OK;
-
-err:
-	free(data);
-	return res;
+	return bool2status(rz_core_file_malloc_copy_chunk(core, len, core->offset));
 }
 
 static RzCmdStatus open_nobin_file(RzCore *core, const char *uri, ut64 addr, int perms) {

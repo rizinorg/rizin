@@ -86,9 +86,10 @@ static bool test_analysis_il() {
 	rz_core_file_open_load(core, "malloc://0x1000", 0x40000, RZ_PERM_R, false);
 	rz_core_file_open_load(core, "malloc://0x10", 0x50000, RZ_PERM_R, false);
 
-	rz_core_cmd_lines(core, "oC 0x10 @ obj.seckrit   # New file mapping from 0x0-0xf\n");
-
 	ut64 obj_seckrit = rz_num_get(core->num, "obj.seckrit");
+	// New file mapping from 0x0-0xf
+	rz_core_file_malloc_copy_chunk(core, 0x10, obj_seckrit); 
+
 	RzIOMap *map = rz_io_map_get(core->io, 0);
 	rz_io_map_remap(core->io, map->id, obj_seckrit);
 
