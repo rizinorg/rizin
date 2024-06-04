@@ -1,5 +1,6 @@
 [wrap-file]
 source_url = https://github.com/tree-sitter/tree-sitter/archive/v0.21.0.tar.gz
+source_fallback_url = https://github.com/rizinorg/fallback-repo/raw/main/tree-sitter-v0.21.0.tar.gz
 source_filename = v0.21.0.tar.gz
 source_hash = 6bb60e5b63c1dc18aba57a9e7b3ea775b4f9ceec44cc35dac4634d26db4eb69c
 patch_directory = tree-sitter-0.21.0
