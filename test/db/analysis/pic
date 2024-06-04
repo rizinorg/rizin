@@ -120,7 +120,7 @@ EOF
 RUN
 
 NAME=pic18 functions
-FILE=ihex://bins/pic18c/FReeRTOS-pic18c.hex
+FILE=ihex://bins/pic18c/FreeRTOS-pic18c.hex
 CMDS=<<EOF
 e asm.arch=pic
 e asm.cpu=pic18
