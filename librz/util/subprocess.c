@@ -685,9 +685,9 @@ RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
 	if (!out) {
 		return NULL;
 	}
+	out->ret = rz_subprocess_ret(proc);
 	out->out = rz_subprocess_out(proc, &out->out_len);
 	out->err = rz_subprocess_err(proc, &out->err_len);
-	out->ret = proc->ret;
 	return out;
 }
 
@@ -1433,9 +1433,9 @@ RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
 	subprocess_lock();
 	RzSubprocessOutput *out = RZ_NEW(RzSubprocessOutput);
 	if (out) {
+		out->ret = rz_subprocess_ret(proc);
 		out->out = rz_subprocess_out(proc, &out->out_len);
 		out->err = rz_subprocess_err(proc, &out->err_len);
-		out->ret = proc->ret;
 		out->timeout = false;
 	}
 	subprocess_unlock();
