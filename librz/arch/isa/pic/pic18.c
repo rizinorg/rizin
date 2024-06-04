@@ -513,12 +513,14 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 	case K20S_T: {
 		check_dword_inst;
 		op->k = (dword & 0xff) | ((dword >> 16 & 0xfff) << 8);
+		op->k = op->k << 1;
 		op->s = (dword >> 8) & 0x1;
 		break;
 	}
 	case K20_T: {
 		check_dword_inst;
 		op->k = (dword & 0xff) | ((dword >> 16 & 0xfff) << 8);
+		op->k = op->k << 1;
 		break;
 	}
 	case SD_T: {
@@ -547,10 +549,8 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 		break;
 	case K4_T:
 	case K8_T:
-		rz_strf(op->operands, "0x%x", op->k);
-		break;
 	case K20_T:
-		rz_strf(op->operands, "0x%x", op->k << 1);
+		rz_strf(op->operands, "0x%x", op->k);
 		break;
 	case FDA_T:
 		rz_strf(op->operands, "%s, %d, %d", pic18_regname(op->f), op->d, op->a);
@@ -562,7 +562,7 @@ bool pic18_disasm_op(Pic18Op *op, ut64 addr, const ut8 *buff, ut64 len) {
 		rz_strf(op->operands, "%s, %d, %d", pic18_regname(op->f), op->b, op->a);
 		break;
 	case K20S_T:
-		rz_strf(op->operands, "0x%x, %d", op->k << 1, op->s);
+		rz_strf(op->operands, "0x%x, %d", op->k, op->s);
 		break;
 	case SD_T: {
 		const char *rs = pic18_regname_extra(op->s);

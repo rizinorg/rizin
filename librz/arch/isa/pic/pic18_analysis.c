@@ -43,25 +43,34 @@ int pic18_op(
 	aop->size = op.size;
 	switch (op.code) {
 	case PIC18_OPCODE_CALL:
+		aop->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		aop->jump = op.k;
+		aop->cycles = 2;
+		break;
 	case PIC18_OPCODE_RCALL:
 		aop->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		aop->jump = addr + 2 * (1 + op.n);
+		aop->cycles = 2;
 		break;
 	case PIC18_OPCODE_BRA: // bra
 		aop->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		aop->cycles = 2;
-		aop->jump = addr + 2 + 2 * (*(ut16 *)buf & 0x7ff);
+		aop->jump = addr + 2 + 2 * op.n;
 		break;
 	case PIC18_OPCODE_MOVFF: // movff
 		aop->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		aop->cycles = 2;
 		break;
 	case PIC18_OPCODE_BTFSC: // btfsc
 	case PIC18_OPCODE_BTFSS: // btfss
 		aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_BCF: // bcf
 	case PIC18_OPCODE_BSF: // bsf
 	case PIC18_OPCODE_BTG: // btg
 		aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_BZ: // bz
 		pic18_cond_branch(aop, &op);
@@ -104,10 +113,6 @@ int pic18_op(
 		aop->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		aop->cycles = 1;
 		break;
-	case PIC18_OPCODE_RETLW: // retlw
-		aop->type = RZ_ANALYSIS_OP_TYPE_RET;
-		aop->cycles = 2;
-		break;
 	case PIC18_OPCODE_ANDLW: // andlw
 		aop->type = RZ_ANALYSIS_OP_TYPE_AND;
 		aop->cycles = 1;
@@ -126,6 +131,7 @@ int pic18_op(
 		break;
 	case PIC18_OPCODE_LFSR: // lfsr
 		aop->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		aop->cycles = 2;
 		break;
 	case PIC18_OPCODE_SUBWF: // subwf
 	case PIC18_OPCODE_SUBFWB: // subwfb
@@ -134,15 +140,18 @@ int pic18_op(
 	case PIC18_OPCODE_DECFSZ: // decfsz
 	case PIC18_OPCODE_DECF: // decf
 		aop->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_MOVF: // movf
 		aop->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_INFSNZ: // infsnz
 	case PIC18_OPCODE_INCFSZ: // incfsz
 	case PIC18_OPCODE_INCF: // incf
 	case PIC18_OPCODE_ADDWFC: // addwfc
 		aop->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_ADDWF: // addwf
 		aop->cycles = 1;
@@ -151,44 +160,56 @@ int pic18_op(
 	case PIC18_OPCODE_RLNCF: // rlncf
 	case PIC18_OPCODE_RLCF: // rlcf
 		aop->type = RZ_ANALYSIS_OP_TYPE_ROL;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_RRNCF: // rrncf
 	case PIC18_OPCODE_RRCF: // rrcf
 		aop->type = RZ_ANALYSIS_OP_TYPE_ROR;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_SWAPF: // swapf
 		aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_COMF: // comf
 		aop->type = RZ_ANALYSIS_OP_TYPE_CPL;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_XORWF: // xorwf
 		aop->type = RZ_ANALYSIS_OP_TYPE_XOR;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_ANDWF: // andwf
 		aop->type = RZ_ANALYSIS_OP_TYPE_AND;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_IORWF: // iorwf
 		aop->type = RZ_ANALYSIS_OP_TYPE_OR;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_MOVWF: // movwf
 		aop->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_NEGF: // negf
 	case PIC18_OPCODE_CLRF: // clrf
 	case PIC18_OPCODE_SETF: // setf
 		aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_TSTFSZ: // tstfsz
 		aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_CPFSGT: // cpfsgt
 	case PIC18_OPCODE_CPFSEQ: // cpfseq
 	case PIC18_OPCODE_CPFSLT: // cpfslt
 		aop->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_MULWF: // mulwf
 		aop->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_MOVLB: // movlb
 		aop->type = RZ_ANALYSIS_OP_TYPE_LOAD;
@@ -199,31 +220,35 @@ int pic18_op(
 			       //	case CLWDT // clwdt
 	case PIC18_OPCODE_SLEEP: // sleep
 		aop->type = RZ_ANALYSIS_OP_TYPE_UNK;
-		break;
-	case PIC18_OPCODE_RETURN: // return
-		aop->type = RZ_ANALYSIS_OP_TYPE_RET;
-		aop->cycles = 2;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_RETFIE: // retfie
+	case PIC18_OPCODE_RETLW:
+	case PIC18_OPCODE_RETURN:
 		aop->type = RZ_ANALYSIS_OP_TYPE_RET;
+		aop->cycles = 2;
 		break;
 	case PIC18_OPCODE_TBLWTMs: // tblwt
 	case PIC18_OPCODE_TBLWTMsi: // tblwt
 	case PIC18_OPCODE_TBLWTis: // tblwt
 	case PIC18_OPCODE_TBLWTMsd: // tblwt
 		aop->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		aop->cycles = 2;
 		break;
 	case PIC18_OPCODE_TBLRDis: // tblrd
 	case PIC18_OPCODE_TBLRDs: // tblrd
 	case PIC18_OPCODE_TBLRDsi: // tblrd
 	case PIC18_OPCODE_TBLRDsd: // tblrd
 		aop->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		aop->cycles = 2;
 		break;
 	case PIC18_OPCODE_POP: // pop
 		aop->type = RZ_ANALYSIS_OP_TYPE_POP;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_PUSH: // push
 		aop->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		aop->cycles = 1;
 		break;
 	case PIC18_OPCODE_NOP: // nop
 		aop->type = RZ_ANALYSIS_OP_TYPE_NOP;

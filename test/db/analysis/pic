@@ -118,3 +118,357 @@ statuss = 0x00
 bsrs = 0x00
 EOF
 RUN
+
+NAME=pic18 functions
+FILE=ihex://bins/pic18c/FreeRTOS-pic18c.hex
+CMDS=<<EOF
+e asm.arch=pic
+e asm.cpu=pic18
+e asm.lines.call=true
+aaa
+afl
+pdf @ 0x0000002c
+EOF
+EXPECT=<<EOF
+0x00000000    2 9352 -> 30   fcn.00000000
+0x00000006    1 2            fcn.00000006
+0x0000002c   26 784  -> 780  fcn.0000002c
+0x0000033c    8 312          fcn.0000033c
+0x000004fa    1 6            fcn.000004fa
+0x00000500   22 446          fcn.00000500
+0x00000734   21 506          fcn.00000734
+0x0000092e   15 4492 -> 660  fcn.0000092e
+0x00000ebe    5 366          fcn.00000ebe
+0x0000102c    1 32           fcn.0000102c
+0x0000104c    8 4280 -> 310  fcn.0000104c
+0x000010de    1 2            fcn.000010de
+0x000010e0   11 278          fcn.000010e0
+0x000011f6   74 1802 -> 1526 fcn.000011f6
+0x00001682    3 196          fcn.00001682
+0x00001766    2 48           fcn.00001766
+0x00001ad4    6 218          fcn.00001ad4
+0x00001bae    1 244          fcn.00001bae
+0x00001ca2    1 48           fcn.00001ca2
+0x00001cd2    2 134          fcn.00001cd2
+0x00001d58    1 170          fcn.00001d58
+0x00001e02    9 452          fcn.00001e02
+0x00001fc6    1 154          fcn.00001fc6
+0x00002104   11 7462 -> 274  fcn.00002104
+0x0000220c    5 176          fcn.0000220c
+0x000022bc    1 28           fcn.000022bc
+0x000022d8    1 8            fcn.000022d8
+0x000022fe    7 156  -> 152  fcn.000022fe
+0x0000239c    6 52           fcn.0000239c
+0x000023d0    6 92   -> 86   fcn.000023d0
+0x0000242c    1 28           fcn.0000242c
+            ; CALL XREFS from fcn.00002104 @ 0x213c, 0x2182
+/ fcn.0000002c();
+|           0x0000002c      movff fsr2l, postinc1
+|           0x00000030      movff fsr2h, postinc1
+|           0x00000034      movff fsr1l, fsr2l
+|           0x00000038      movff fsr1h, fsr2h
+|           0x0000003c      movf  postinc1, 1, 0
+|           0x0000003e      movf  postinc1, 1, 0
+|           0x00000040      movf  postinc1, 1, 0
+|           0x00000042      movf  postinc1, 1, 0
+|           0x00000044      movf  postinc1, 1, 0
+|           0x00000046      movlw 0xf0
+|           0x00000048      movff plusw2, postinc1
+|           0x0000004c      movlw 0xf1
+|           0x0000004e      movff plusw2, postinc1
+|           0x00000052      movlw 0xf7
+|           0x00000054      movff plusw2, postinc1
+|           0x00000058      movlw 0xf8
+|           0x0000005a      movff plusw2, postinc1
+|      ,==< 0x0000005e      call  fcn.000010e0, 0
+|      |    0x00000062      movf  postdec1, 1, 0
+|      |    0x00000064      movf  postdec1, 1, 0
+|      |    0x00000066      movf  postdec1, 1, 0
+|      |    0x00000068      movf  postdec1, 1, 0
+|      |    0x0000006a      movf  postinc2, 1, 0
+|      |    0x0000006c      movff prodl, postinc2
+|      |    0x00000070      movff prodh, postdec2
+|      |    0x00000074      movf  postdec2, 1, 0
+|      |    0x00000076      movf  fsr2l, 0, 0
+|      |    0x00000078      addlw 0x1
+|      |    0x0000007a      movwf fsr0l, 0
+|      |    0x0000007c      movlw 0x0
+|      |    0x0000007e      addwfc fsr2h, 0, 0
+|      |    0x00000080      movwf fsr0h, 0
+|      |    0x00000082      movf  postinc0, 0, 0
+|      |    0x00000084      iorwf postdec0, 0, 0
+|     ,===< 0x00000086      bnz   0x1
+|    ,====< 0x00000088      bra   0x121
+|    |`---> 0x0000008a      movlw 0x1
+|    | |    0x0000008c      movff plusw2, fsr0l
+|    | |    0x00000090      movlw 0x2
+|    | |    0x00000092      movff plusw2, fsr0h
+|    | |    0x00000096      movlw 0x17
+|    | |    0x00000098      addwf fsr0l, 1, 0
+|    | |    0x0000009a      movlw 0x0
+|    | |    0x0000009c      addwfc fsr0h, 1, 0
+|    | |    0x0000009e      movlw 0x3
+|    | |    0x000000a0      movff postinc0, plusw2
+|    | |    0x000000a4      movlw 0x4
+|    | |    0x000000a6      movff postdec0, plusw2
+|    | |    0x000000aa      movlw 0xf7
+|    | |    0x000000ac      movff plusw2, 0x0d
+|    | |    0x000000b0      movlw 0xf8
+|    | |    0x000000b2      movff plusw2, 0x0e
+|    | |    0x000000b6      decf  0x0d, 1, 0
+|    | |    0x000000b8      movlw 0x0
+|    | |    0x000000ba      subwfb 0x0e, 1, 0
+|    | |    0x000000bc      movlw 0x1
+|    | |    0x000000be      movff plusw2, fsr0l
+|    | |    0x000000c2      movlw 0x2
+|    | |    0x000000c4      movff plusw2, fsr0h
+|    | |    0x000000c8      movlw 0x17
+|    | |    0x000000ca      addwf fsr0l, 1, 0
+|    | |    0x000000cc      movlw 0x0
+|    | |    0x000000ce      addwfc fsr0h, 1, 0
+|    | |    0x000000d0      movf  0x0d, 0, 0
+|    | |    0x000000d2      addwf postinc0, 0, 0
+|    | |    0x000000d4      movwf 0x0b, 0
+|    | |    0x000000d6      movf  0x0e, 0, 0
+|    | |    0x000000d8      addwfc postinc0, 0, 0
+|    | |    0x000000da      movwf 0x0c, 0
+|    | |    0x000000dc      movlw 0x1
+|    | |    0x000000de      movff plusw2, fsr0l
+|    | |    0x000000e2      movlw 0x2
+|    | |    0x000000e4      movff plusw2, fsr0h
+|    | |    0x000000e8      movlw 0x1d
+|    | |    0x000000ea      addwf fsr0l, 1, 0
+|    | |    0x000000ec      movlw 0x0
+|    | |    0x000000ee      addwfc fsr0h, 1, 0
+|    | |    0x000000f0      movff 0x0b, postinc0
+|    | |    0x000000f4      movff 0x0c, postdec0
+|    | |    0x000000f8      movlw 0xf7
+|    | |    0x000000fa      movff plusw2, postinc1
+|    | |    0x000000fe      movlw 0xf8
+|    | |    0x00000100      movff plusw2, postinc1
+|    | |    0x00000104      movlw 0xee
+|    | |    0x00000106      movff plusw2, postinc1
+|    | |    0x0000010a      movlw 0xef
+|    | |    0x0000010c      movff plusw2, postinc1
+|    | |    0x00000110      movlw 0xf4
+|    | |    0x00000112      movff plusw2, postinc1
+|    | |    0x00000116      movlw 0xf9
+|    | |    0x00000118      movff plusw2, postinc1
+|    | |    0x0000011c      movlw 0xfa
+|    | |    0x0000011e      movff plusw2, postinc1
+|    | |    0x00000122      movlw 0x1
+|    | |    0x00000124      movff plusw2, postinc1
+|    | |    0x00000128      movlw 0x2
+|    | |    0x0000012a      movff plusw2, postinc1
+|    |,===< 0x0000012e      call  fcn.00000ebe, 0
+|    |||    0x00000132      movwf 0x0b, 0
+|    |||    0x00000134      movlw 0x9
+|    |||    0x00000136      subwf fsr1l, 0, 0
+|   ,=====< 0x00000138      bc    0x2
+|   ||||    0x0000013a      clrf  fsr1l, 0
+|   ||||    0x0000013c      movf  postdec1, 1, 0
+|   `-----> 0x0000013e      movwf fsr1l, 0
+|    |||    0x00000140      movf  0x0b, 0, 0
+|    |||    0x00000142      movlw 0xf5
+|    |||    0x00000144      movff plusw2, postinc1
+|    |||    0x00000148      movlw 0xf6
+|    |||    0x0000014a      movff plusw2, postinc1
+|    |||    0x0000014e      movlw 0xfb
+|    |||    0x00000150      movff plusw2, postinc1
+|    |||    0x00000154      movlw 0xfc
+|    |||    0x00000156      movff plusw2, postinc1
+|    |||    0x0000015a      movlw 0xfd
+|    |||    0x0000015c      movff plusw2, postinc1
+|    |||    0x00000160      movlw 0x3
+|    |||    0x00000162      movff plusw2, postinc1
+|    |||    0x00000166      movlw 0x4
+|    |||    0x00000168      movff plusw2, postinc1
+|   ,=====< 0x0000016c      call  fcn.000011f6, 0
+|   ||||    0x00000170      movwf 0x0d, 0
+|   ||||    0x00000172      movlw 0x7
+|   ||||    0x00000174      subwf fsr1l, 0, 0
+|  ,======< 0x00000176      bc    0x2
+|  |||||    0x00000178      clrf  fsr1l, 0
+|  |||||    0x0000017a      movf  postdec1, 1, 0
+|  `------> 0x0000017c      movwf fsr1l, 0
+|   ||||    0x0000017e      movf  0x0d, 0, 0
+|   ||||    0x00000180      movff prodl, 0x0b
+|   ||||    0x00000184      movff prodh, 0x0c
+|   ||||    0x00000188      movlw 0x1
+|   ||||    0x0000018a      movff plusw2, fsr0l
+|   ||||    0x0000018e      movlw 0x2
+|   ||||    0x00000190      movff plusw2, fsr0h
+|   ||||    0x00000194      movff 0x0b, postinc0
+|   ||||    0x00000198      movff 0x0c, postdec0
+|   ||||    0x0000019c      movf  intcon, 0, 0
+|   ||||    0x0000019e      movwf postinc1, 0
+|   ||||    0x000001a0      bcf   intcon, 7, 0
+|   ||||    0x000001a2      movlb 0x5
+|   ||||    0x000001a4      incf  sspcon2, 1, 1
+|   ||||    0x000001a6      movlb 0x5
+|   ||||    0x000001a8      decf  sspcon2, 0, 1
+|  ,======< 0x000001aa      bnz   0x9
+|  |||||    0x000001ac      movlw 0x1
+|  |||||    0x000001ae      movff plusw2, 0x5c3
+|  |||||    0x000001b2      movlw 0x2
+|  |||||    0x000001b4      movff plusw2, 0x5c4
+| ,=======< 0x000001b8      call  fcn.0000104c, 0
+| ========< 0x000001bc      bra   0x15
+| |`------> 0x000001be      movlb 0x5
+| | ||||    0x000001c0      movf  t2con, 0, 1
+| |,======< 0x000001c2      bnz   0x12
+| ||||||    0x000001c4      movff 0x5c3, fsr0l
+| ||||||    0x000001c8      movff 0x5c4, fsr0h
+| ||||||    0x000001cc      movlw 0x16
+| ||||||    0x000001ce      movf  plusw0, 0, 0
+| ||||||    0x000001d0      movwf 0x0b, 0
+| ||||||    0x000001d2      movlw 0xf4
+| ||||||    0x000001d4      movf  plusw2, 0, 0
+| ||||||    0x000001d6      bsf   status, 0, 0
+| ||||||    0x000001d8      subfwb 0x0b, 0, 0
+| ========< 0x000001da      bnc   0x6
+| ||||||    0x000001dc      movlw 0x1
+| ||||||    0x000001de      movff plusw2, 0x5c3
+| ||||||    0x000001e2      movlw 0x2
+| ||||||    0x000001e4      movff plusw2, 0x5c4
+| ||||||    ; CODE XREF from fcn.0000002c @ 0x1bc
+| -`------> 0x000001e8      movlw 0x1
+| | ||||    0x000001ea      movff plusw2, fsr0l
+| | ||||    0x000001ee      movlw 0x2
+| | ||||    0x000001f0      movff plusw2, fsr0h
+| | ||||    0x000001f4      movlw 0x16
+| | ||||    0x000001f6      addwf fsr0l, 1, 0
+| | ||||    0x000001f8      movlw 0x0
+| | ||||    0x000001fa      addwfc fsr0h, 1, 0
+| | ||||    0x000001fc      movff indf0, 0x0b
+| | ||||    0x00000200      movlb 0x5
+| | ||||    0x00000202      movf  sspadd, 0, 1
+| | ||||    0x00000204      bsf   status, 0, 0
+| | ||||    0x00000206      subfwb 0x0b, 0, 0
+| |,======< 0x00000208      bc    0xc
+| ||||||    0x0000020a      movlw 0x1
+| ||||||    0x0000020c      movff plusw2, fsr0l
+| ||||||    0x00000210      movlw 0x2
+| ||||||    0x00000212      movff plusw2, fsr0h
+| ||||||    0x00000216      movlw 0x16
+| ||||||    0x00000218      addwf fsr0l, 1, 0
+| ||||||    0x0000021a      movlw 0x0
+| ||||||    0x0000021c      addwfc fsr0h, 1, 0
+| ||||||    0x0000021e      movff indf0, 0x5c8
+| |`------> 0x00000222      movlb 0x5
+| | ||||    0x00000224      incf  tmr1h, 1, 1
+| | ||||    0x00000226      movlw 0x1
+| | ||||    0x00000228      movff plusw2, fsr0l
+| | ||||    0x0000022c      movlw 0x2
+| | ||||    0x0000022e      movff plusw2, fsr0h
+| | ||||    0x00000232      movlw 0x16
+| | ||||    0x00000234      addwf fsr0l, 1, 0
+| | ||||    0x00000236      movlw 0x0
+| | ||||    0x00000238      addwfc fsr0h, 1, 0
+| | ||||    0x0000023a      movff indf0, 0x0b
+| | ||||    0x0000023e      movlb 0x5
+| | ||||    0x00000240      movf  sspbuf, 0, 1
+| | ||||    0x00000242      bsf   status, 0, 0
+| | ||||    0x00000244      subfwb 0x0b, 0, 0
+| |,======< 0x00000246      bc    0xc
+| ||||||    0x00000248      movlw 0x1
+| ||||||    0x0000024a      movff plusw2, fsr0l
+| ||||||    0x0000024e      movlw 0x2
+| ||||||    0x00000250      movff plusw2, fsr0h
+| ||||||    0x00000254      movlw 0x16
+| ||||||    0x00000256      addwf fsr0l, 1, 0
+| ||||||    0x00000258      movlw 0x0
+| ||||||    0x0000025a      addwfc fsr0h, 1, 0
+| ||||||    0x0000025c      movff indf0, 0x5c9
+| |`------> 0x00000260      movlw 0x1
+| | ||||    0x00000262      movff plusw2, fsr0l
+| | ||||    0x00000266      movlw 0x2
+| | ||||    0x00000268      movff plusw2, fsr0h
+| | ||||    0x0000026c      movlw 0x2
+| | ||||    0x0000026e      addwf fsr0l, 1, 0
+| | ||||    0x00000270      movlw 0x0
+| | ||||    0x00000272      addwfc fsr0h, 1, 0
+| | ||||    0x00000274      movff fsr0l, 0x0b
+| | ||||    0x00000278      movff fsr0h, 0x0c
+| | ||||    0x0000027c      movff 0x0b, postinc1
+| | ||||    0x00000280      movff 0x0c, postinc1
+| | ||||    0x00000284      movlw 0x1
+| | ||||    0x00000286      movff plusw2, fsr0l
+| | ||||    0x0000028a      movlw 0x2
+| | ||||    0x0000028c      movff plusw2, fsr0h
+| | ||||    0x00000290      movlw 0x16
+| | ||||    0x00000292      addwf fsr0l, 1, 0
+| | ||||    0x00000294      movlw 0x0
+| | ||||    0x00000296      addwfc fsr0h, 1, 0
+| | ||||    0x00000298      movf  indf0, 0, 0
+| | ||||    0x0000029a      mullw 0x9
+| | ||||    0x0000029c      movff prodl, 0x0d
+| | ||||    0x000002a0      movff prodh, 0x0e
+| | ||||    0x000002a4      movlw 0x80
+| | ||||    0x000002a6      addwf 0x0d, 1, 0
+| | ||||    0x000002a8      movlw 0x5
+| | ||||    0x000002aa      addwfc 0x0e, 1, 0
+| | ||||    0x000002ac      movff 0x0d, postinc1
+| | ||||    0x000002b0      movff 0x0e, postinc1
+| |,======< 0x000002b4      call  fcn.00001cd2, 0
+| ||||||    0x000002b8      movf  postdec1, 1, 0
+| ||||||    0x000002ba      movf  postdec1, 1, 0
+| ||||||    0x000002bc      movf  postdec1, 1, 0
+| ||||||    0x000002be      movf  postdec1, 1, 0
+| ||||||    0x000002c0      movlw 0x1
+| ||||||    0x000002c2      movwf indf2, 0
+| ||||||    0x000002c4      movf  postdec1, 1, 0
+| ||||||,=< 0x000002c6      btfsc indf1, 7, 0
+..
+| |||||||   ; CODE XREF from fcn.0000002c @ 0x88
+| |||`----> 0x000002cc      setf  indf2, 0
+| || ||||   ; CODE XREF from fcn.0000002c @ +0x29e
+| ||| ||`-> 0x000002ce      decf  indf2, 0, 0
+| ||| ||,=< 0x000002d0      bnz   0x25
+| || ||||   0x000002d2      movf  fsr2l, 0, 0
+| || ||||   0x000002d4      addlw 0xf2
+| || ||||   0x000002d6      movwf fsr0l, 0
+| || ||||   0x000002d8      movlw 0xff
+| || ||||   0x000002da      addwfc fsr2h, 0, 0
+| || ||||   0x000002dc      movwf fsr0h, 0
+| || ||||   0x000002de      movf  postinc0, 0, 0
+| || ||||   0x000002e0      iorwf postdec0, 0, 0
+| |||,====< 0x000002e2      bz    0xc
+| |||||||   0x000002e4      movlw 0xf2
+| |||||||   0x000002e6      movff plusw2, fsr0l
+| |||||||   0x000002ea      movlw 0xf3
+| |||||||   0x000002ec      movff plusw2, fsr0h
+| |||||||   0x000002f0      movlw 0x1
+| |||||||   0x000002f2      movff plusw2, postinc0
+| |||||||   0x000002f6      movlw 0x2
+| |||||||   0x000002f8      movff plusw2, postdec0
+| |||`----> 0x000002fc      movlb 0x5
+| || ||||   0x000002fe      movf  t2con, 0, 1
+| |||,====< 0x00000300      bz    0xd
+| |||||||   0x00000302      movff 0x5c3, fsr0l
+| |||||||   0x00000306      movff 0x5c4, fsr0h
+| |||||||   0x0000030a      movlw 0x16
+| |||||||   0x0000030c      movf  plusw0, 0, 0
+| |||||||   0x0000030e      movwf 0x0b, 0
+| |||||||   0x00000310      movlw 0xf4
+| |||||||   0x00000312      movf  plusw2, 0, 0
+| |||||||   0x00000314      subwf 0x0b, 0, 0
+| ========< 0x00000316      bc    0x2
+| ========< 0x00000318      call  fcn.00001766, 0
+| ---`--`-> 0x0000031c      movf  indf2, 0, 0
+| ||| ||,=< 0x0000031e      bra   0x0
+| || ||||   ; CODE XREF from fcn.0000002c @ 0x31e
+| ||| ||`-> 0x00000320      movwf 0x0b, 0
+| ||| |||   0x00000322      movlw 0x5
+| ||| |||   0x00000324      subwf fsr1l, 0, 0
+| ||| ||,=< 0x00000326      bc    0x2
+| || ||||   0x00000328      clrf  fsr1l, 0
+| || ||||   0x0000032a      movf  postdec1, 1, 0
+| ||| ||`-> 0x0000032c      movwf fsr1l, 0
+| ||| |||   0x0000032e      movf  0x0b, 0, 0
+| ||| |||   0x00000330      movf  postdec1, 1, 0
+| ||| |||   0x00000332      movff postdec1, fsr2h
+| ||| |||   0x00000336      movff indf1, fsr2l
+\ ||| |||   0x0000033a      return 0
+EOF
+RUN
