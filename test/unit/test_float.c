@@ -266,6 +266,20 @@ bool f32_ieee_div_test(void) {
 	mu_end;
 }
 
+bool f80_ieee_div_test(void) {
+	RzFloat *x_f80 = rz_float_new_from_f80(1.l);
+	RzFloat *y_f80 = rz_float_new_from_f80(-0.384677154767621320985l);
+	RzFloat *quot_f80 = rz_float_div(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
+	RzFloat *expected_f80 = rz_float_new_from_f80(-2.59958250082224806804l);
+	mu_assert_false(rz_float_cmp(quot_f80, expected_f80), "Divide 80-bit floats");
+
+	rz_float_free(x_f80);
+	rz_float_free(y_f80);
+	rz_float_free(quot_f80);
+	rz_float_free(expected_f80);
+	mu_end;
+}
+
 bool rz_float_trunc_test(void) {
 	RzFloat *f1 = rz_float_new_from_f32(1.111f);
 	RzFloat *f2 = rz_float_new_from_f32(234.12345f);
@@ -1432,7 +1446,6 @@ bool f80_round_test(void) {
 	rz_float_free(old_f);
 	rz_float_free(expect_f);
 	rz_float_free(new_cast);
-	mu_end;
 
 	/* From 80-bit to 80-bit (should lead to the same value) */
 	old_f = rz_float_new_from_f80(66668466788774.6870804l);
@@ -1454,6 +1467,7 @@ bool all_tests() {
 	mu_run_test(f32_ieee_mul_test);
 	mu_run_test(f32_ieee_div_test);
 	mu_run_test(f32_ieee_fma_test);
+	mu_run_test(f80_ieee_div_test);
 	mu_run_test(rz_float_trunc_test);
 	mu_run_test(rz_float_abs_test);
 	mu_run_test(f32_ieee_round_test);
