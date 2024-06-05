@@ -20,6 +20,7 @@
 #include <rz_userconf.h>
 #include <math.h>
 #include <fenv.h>
+#include <softfloat.h>
 
 /**
  * \defgroup Generate Nan and infinite for float/double/long double
@@ -1555,6 +1556,90 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	return result;
 }
 
+static inline float32 to_float32(RzFloat *f32) {
+	rz_warn_if_fail(f32->r == RZ_FLOAT_IEEE754_BIN_32);
+	return rz_bv_to_ut32(f32->s);
+}
+
+static inline float64 to_float64(RzFloat *f64) {
+	rz_warn_if_fail(f64->r == RZ_FLOAT_IEEE754_BIN_64);
+	return rz_bv_to_ut64(f64->s);
+}
+
+static inline floatx80 to_floatx80(RzFloat *f80) {
+	rz_warn_if_fail(f80->r == RZ_FLOAT_IEEE754_BIN_80);
+
+	floatx80 ret;
+	ret.low = rz_bv_to_ut64(f80->s);
+
+	ut16 upper = 0;
+	for (ut8 i = 0; i < 16; i++) {
+		upper <<= 1;
+		upper |= rz_bv_get(f80->s, 80 - i - 1);
+	}
+	ret.high = upper;
+
+	return ret;
+}
+
+static inline float128 to_float128(RzFloat *f128) {
+	rz_warn_if_fail(f128->r != RZ_FLOAT_IEEE754_BIN_128);
+
+	float128 ret;
+	ret.low = rz_bv_to_ut64(f128->s);
+
+	ut64 upper = 0;
+	for (ut8 i = 0; i < 64; i++) {
+		upper <<= 1;
+		upper |= rz_bv_get(f128->s, 128 - i - 1);
+	}
+	ret.high = upper;
+
+	return ret;
+}
+
+static inline RzFloat *of_float32(float32 f32) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
+
+	rz_bv_set_from_ut64(ret->s, f32);
+	return ret;
+}
+
+static inline RzFloat *of_float64(float64 f64) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
+
+	rz_bv_set_from_ut64(ret->s, f64);
+	return ret;
+}
+
+static inline RzFloat *of_floatx80(floatx80 f80) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_80);
+
+	rz_bv_set_from_ut64(ret->s, f80.low);
+
+	ut16 upper = f80.high;
+	for (ut8 i = 0; i < 16; i++) {
+		rz_bv_set(ret->s, 64 + i, upper & 1);
+		upper >>= 1;
+	}
+
+	return ret;
+}
+
+static inline RzFloat *of_float128(float128 f128) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_128);
+
+	rz_bv_set_from_ut64(ret->s, f128.low);
+
+	ut64 upper = f128.high;
+	for (ut8 i = 0; i < 64; i++) {
+		rz_bv_set(ret->s, 64 + i, upper & 1);
+		upper >>= 1;
+	}
+
+	return ret;
+}
+
 /**
  * \brief calculate \p left / \p right and round the result after, return the result
  * \details
@@ -1610,6 +1695,20 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 	// Extract attribute from format
 	RzFloatFormat format = left->r;
+
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return of_float32(float32_div(to_float32(left), to_float32(right)));
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return of_float64(float64_div(to_float64(left), to_float64(right)));
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return of_floatx80(floatx80_div(to_floatx80(left), to_floatx80(right)));
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return of_float128(float128_div(to_float128(left), to_float128(right)));
+	default:
+		break;
+	}
+
 	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
