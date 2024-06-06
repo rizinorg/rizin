@@ -93,8 +93,8 @@ static bool test_analysis_il() {
 	RzIOMap *map = rz_io_map_get(core->io, 0);
 	rz_io_map_remap(core->io, map->id, obj_seckrit);
 
-	rz_core_cmd_lines(core, "ar sp=0x41000\n"
-				"ar x0=0x50000\n");
+	rz_core_reg_assign_sync(core, core->analysis->reg, NULL, "sp", 0x41000);
+	rz_core_reg_assign_sync(core, core->analysis->reg, NULL, "x0", 0x50000);
 	rz_core_write_string_at(core, 0x50000, "AnyColourYouLike");
 
 	rz_core_analysis_il_reinit(core);
