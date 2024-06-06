@@ -2442,6 +2442,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_arg_idx(RZ_NONNULL RzAn
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f);
 RZ_API bool rz_analysis_function_is_malloc(const RzAnalysisFunction *fcn);
+RZ_API bool rz_analysis_function_is_input(const RzAnalysisFunction *fcn);
 
 /* PDB */
 RZ_API RzType *rz_type_db_pdb_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
