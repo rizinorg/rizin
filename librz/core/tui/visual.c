@@ -3588,7 +3588,7 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 	rtn = rz_str_ndup(lastline + match->start, match->len);
 
 	// filter address in command, xref like ; CALL XREF from entry.fini0 @ 0x6b67
-	char *comment_signs[] = { "@", ";" };
+	char *comment_signs[] = { "@", "XREF" };
 	char *addr_pos = strstr(lastline, rtn);
 	for (ut32 i = 0; i < sizeof(comment_signs) / sizeof(comment_signs[0]); i++) {
 		const char *sign_pos = rz_str_strchr(lastline, comment_signs[i]);
