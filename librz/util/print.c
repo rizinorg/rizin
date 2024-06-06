@@ -154,12 +154,6 @@ RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len) {
 	return false;
 }
 
-RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set) {
-	if (rz_print_have_cursor(p, cur, len)) {
-		p->cb_printf("%s", RZ_CONS_INVERT(set, 1));
-	}
-}
-
 RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *)calloc((strlen(str) + 2), 32);
