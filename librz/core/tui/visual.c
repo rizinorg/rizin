@@ -3564,10 +3564,10 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 
 	char *rtn = NULL;
 	// get the line at the bottom of the screen
-	if (!core->cons->lastline) {
+	if (!core->cons->context->buffer) {
 		return NULL;
 	}
-	char *output = strdup(core->cons->lastline);
+	char *output = strdup(core->cons->context->buffer);
 	size_t line_count = 0, *line_index = rz_str_split_lines(output, &line_count);
 	int rows;
 	rz_cons_get_size(&rows);
@@ -3606,6 +3606,7 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 		memmove(rtn + 2, rtn, addr_len);
 		rtn[0] = '0';
 		rtn[1] = 'x';
+		rtn[prefix_len + addr_len] = '\0';
 	}
 
 exit:
