@@ -216,7 +216,7 @@ RZ_API bool rz_file_is_abspath(const char *file) {
 	return ((*file && file[1] == ':') || *file == '/');
 }
 
-RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
+RZ_API RZ_OWN char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	char *ret = NULL;
 	if (RZ_STR_ISEMPTY(file) || !strcmp(file, ".") || !strcmp(file, "./")) {
 		return strdup(cwd);
@@ -264,7 +264,7 @@ RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	return ret;
 }
 
-RZ_API char *rz_file_abspath(const char *file) {
+RZ_API RZ_OWN char *rz_file_abspath(const char *file) {
 	rz_return_val_if_fail(file, NULL);
 	char *cwd = rz_sys_getdir();
 	if (cwd) {

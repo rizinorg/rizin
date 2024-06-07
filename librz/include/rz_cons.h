@@ -518,7 +518,6 @@ typedef enum {
 typedef struct rz_cons_t {
 	RzConsContext *context;
 	RzConsInputContext *input;
-	char *lastline;
 	bool is_html;
 	bool was_html;
 	int lines;
