@@ -3594,6 +3594,7 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 		const char *sign_pos = rz_str_strchr(lastline, comment_signs[i]);
 		if (sign_pos) {
 			if (addr_pos && addr_pos > sign_pos) {
+				free(rtn);
 				rtn = NULL;
 			}
 		}

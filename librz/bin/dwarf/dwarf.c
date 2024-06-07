@@ -126,6 +126,7 @@ static inline RzBinDWARF *dwarf_from_debuglink(
 		free(path);
 	}
 
+	free(file_dir);
 	return NULL;
 ok:
 	dw = rz_bin_dwarf_from_path(path, false);
@@ -260,6 +261,7 @@ RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 		if (file_dir) {
 			dw = dwarf_from_debuglink(file_dir, debug_file_directorys, debuglink);
 		}
+		free(file_abspath);
 		free(debuglink);
 		free(file_dir);
 		if (dw) {

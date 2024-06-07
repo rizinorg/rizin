@@ -816,7 +816,6 @@ RZ_API void rz_cons_reset(void) {
 	}
 	CTX(buffer_len) = 0;
 	I.lines = 0;
-	I.lastline = CTX(buffer);
 	cons_grep_reset(&CTX(grep));
 	CTX(pageable) = true;
 	ctx_rowcol_calc_reset();

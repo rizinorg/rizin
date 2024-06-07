@@ -39,8 +39,8 @@ RZ_API RZ_OWN char *rz_file_path_join(RZ_NONNULL const char *s1, RZ_NULLABLE con
 RZ_API const char *rz_file_basename(const char *path);
 RZ_API const char *rz_file_dos_basename(RZ_BORROW RZ_NONNULL const char *path);
 RZ_API char *rz_file_dirname(const char *path);
-RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file);
-RZ_API char *rz_file_abspath(const char *file);
+RZ_API RZ_OWN char *rz_file_abspath_rel(const char *cwd, const char *file);
+RZ_API RZ_OWN char *rz_file_abspath(const char *file);
 // make path relative to base
 RZ_API char *rz_file_relpath(const char *base, const char *path);
 RZ_API char *rz_file_path_local_to_unix(const char *path);
