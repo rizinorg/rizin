@@ -385,10 +385,7 @@ RZ_API void rz_core_task_enqueue(RzCoreTaskScheduler *scheduler, RzCoreTask *tas
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter(scheduler, &old_sigset);
 	if (!task->running_sem) {
-		task->running_sem = rz_th_sem_new(1);
-	}
-	if (task->running_sem) {
-		rz_th_sem_wait(task->running_sem);
+		task->running_sem = rz_th_sem_new(0);
 	}
 	rz_list_append(scheduler->tasks, task);
 	task->thread = rz_th_new((RzThreadFunction)task_run_thread, task);
