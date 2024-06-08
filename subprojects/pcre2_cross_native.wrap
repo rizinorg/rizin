@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/PCRE2Project/pcre2.git
-revision = 3864abdb713f78831dd12d898ab31bbb0fa630b6
+revision = 6ae58beca071f13ccfed31d03b3f479ab520639b
 directory = pcre2_cross_native
 patch_directory = pcre2_cross_native
 
