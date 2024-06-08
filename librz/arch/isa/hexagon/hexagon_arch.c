@@ -1221,9 +1221,10 @@ static void set_iword_properties(ut32 anaop_type, RzAnalysisInsnWord *iword) {
 RZ_API bool hexagon_decode_iword(RZ_OUT RzAnalysisInsnWord *iword, ut64 addr, const ut8 *buf, size_t len, size_t buf_off_iword) {
 	rz_return_val_if_fail(iword && buf, false);
 
-	if (len < 5 * HEX_INSN_SIZE || (buf_off_iword < HEX_INSN_SIZE && addr >= HEX_INSN_SIZE)) {
+	uint32_t min = 1;
+	if (len < min * HEX_INSN_SIZE || (buf_off_iword < HEX_INSN_SIZE && addr >= HEX_INSN_SIZE)) {
 		// At a minimum we require on previous instruction as context and four instructions.
-		RZ_LOG_WARN("Hexagon needs at least 5 * %" PFMT32d " bytes to decode an instr. word.\n", HEX_INSN_SIZE);
+		RZ_LOG_WARN("Hexagon needs at least %" PFMT32d " * %" PFMT32d " bytes to decode an instr. word.\n", min, HEX_INSN_SIZE);
 		return false;
 	}
 	RzAnalysisOp prev_op = { 0 };
