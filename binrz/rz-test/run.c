@@ -26,27 +26,9 @@ static ut8 *crlf2lf(ut8 *str) {
 #define crlf2lf(x) (x)
 #endif
 
-static RzSubprocess *subprocess_start(
-	const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size) {
-	RzSubprocessOpt opt = {
-		.file = file,
-		.args = args,
-		.args_size = args_size,
-		.envvars = envvars,
-		.envvals = envvals,
-		.env_size = env_size,
-		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.ret_sem = true
-	};
-	return rz_subprocess_start_opt(&opt);
-}
-
 static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
-	RzSubprocess *proc = subprocess_start(file, args, args_size, envvars, envvals, env_size);
+	RzSubprocess *proc = rz_subprocess_start(file, args, args_size, envvars, envvals, env_size);
 	if (!proc) {
 		return NULL;
 	}
@@ -250,7 +232,7 @@ RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 RZ_API bool rz_test_check_jq_available(void) {
 	const char *args[] = { "." };
 	const char *invalid_json = "this is not json lol";
-	RzSubprocess *proc = subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
+	RzSubprocess *proc = rz_subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
 	if (proc) {
 		rz_subprocess_stdin_write(proc, (const ut8 *)invalid_json, strlen(invalid_json));
 		rz_subprocess_wait(proc, UT64_MAX);
@@ -259,7 +241,7 @@ RZ_API bool rz_test_check_jq_available(void) {
 	rz_subprocess_free(proc);
 
 	const char *valid_json = "{\"this is\":\"valid json\",\"lol\":true}";
-	proc = subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
+	proc = rz_subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
 	if (proc) {
 		rz_subprocess_stdin_write(proc, (const ut8 *)valid_json, strlen(valid_json));
 		rz_subprocess_wait(proc, UT64_MAX);
@@ -283,7 +265,7 @@ RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 		return false;
 	}
 	const char *args[] = { "." };
-	RzSubprocess *proc = subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
+	RzSubprocess *proc = rz_subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
 	rz_subprocess_stdin_write(proc, (const ut8 *)out->out, strlen((char *)out->out));
 	rz_subprocess_wait(proc, UT64_MAX);
 	bool ret = rz_subprocess_ret(proc) == 0;
@@ -330,7 +312,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 
 	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		rz_pvector_push(&args, test->disasm);
-		RzSubprocess *proc = subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->as_timeout = true;
@@ -364,7 +346,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		}
 		rz_pvector_push(&args, "-d");
 		rz_pvector_push(&args, hex);
-		RzSubprocess *proc = subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->disas_timeout = true;
@@ -389,7 +371,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		}
 		rz_pvector_push(&args, "-I");
 		rz_pvector_push(&args, hex);
-		RzSubprocess *proc = subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->il_timeout = true;
