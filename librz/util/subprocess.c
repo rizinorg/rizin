@@ -1350,6 +1350,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 			child_dead = true;
 		}
 		if (timedout) {
+			rz_th_sem_post(proc->ret_sem);
 			break;
 		}
 	}
