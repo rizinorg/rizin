@@ -327,13 +327,10 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 		goto error;
 	}
 	proc->ret = -1;
-	proc->ret_sem = NULL;
-	if (opt->ret_sem) {
-		proc->ret_sem = rz_th_sem_new(0);
-		if (!proc->ret_sem) {
-			rz_sys_perror("rz_th_sem_new");
-			goto error;
-		}
+	proc->ret_sem = rz_th_sem_new(0);
+	if (!proc->ret_sem) {
+		rz_sys_perror("rz_th_sem_new");
+		goto error;
 	}
 	proc->stdout_read = NULL;
 	proc->stderr_read = NULL;
@@ -629,9 +626,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 			if (GetExitCodeProcess(proc->proc, &exit_code)) {
 				proc->ret = exit_code;
 			}
-			if (proc->ret_sem) {
-				rz_th_sem_post(proc->ret_sem);
-			}
+			rz_th_sem_post(proc->ret_sem);
 			continue;
 		}
 		break;
@@ -821,9 +816,7 @@ static void *sigchld_th(void *th) {
 			} else {
 				proc->ret = -1;
 			}
-			if (proc->ret_sem) {
-				rz_th_sem_post(proc->ret_sem);
-			}
+			rz_th_sem_post(proc->ret_sem);
 			ut8 r = 0;
 			rz_xwrite(proc->killpipe[1], &r, 1);
 			subprocess_unlock();
@@ -1069,12 +1062,10 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 	proc->killpipe[0] = proc->killpipe[1] = -1;
 	proc->ret = -1;
 	proc->ret_sem = NULL;
-	if (opt->ret_sem) {
-		proc->ret_sem = rz_th_sem_new(0);
-		if (!proc->ret_sem) {
-			perror("rz_th_sem_new");
-			goto error;
-		}
+	proc->ret_sem = rz_th_sem_new(0);
+	if (!proc->ret_sem) {
+		perror("rz_th_sem_new");
+		goto error;
 	}
 	proc->stdin_fd = -1;
 	proc->stdout_fd = -1;
@@ -1200,7 +1191,7 @@ no_term_change:
 	return proc;
 error:
 	free(argv);
-	if (proc && proc->ret_sem) {
+	if (proc) {
 		rz_th_sem_free(proc->ret_sem);
 	}
 	if (proc && proc->killpipe[0] == -1) {
@@ -1578,13 +1569,9 @@ RZ_API void rz_subprocess_pty_free(RZ_OWN RzPty *pty) {
 #endif
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
-	if (proc->ret_sem) {
-		rz_th_sem_wait(proc->ret_sem);
-	}
+	rz_th_sem_wait(proc->ret_sem);
 	int ret = proc->ret;
-	if (proc->ret_sem) {
-		rz_th_sem_post(proc->ret_sem);
-	}
+	rz_th_sem_post(proc->ret_sem);
 	return ret;
 }
 
