@@ -364,21 +364,6 @@ static inline ut8 rz_buf_peek(RZ_NONNULL RzBuffer *b) {
 	return x;
 }
 
-/**
- * \brief Peeks at the next two bytes in the buffer as a little-endian
- *        unsigned 16-bit integer without modify the buffer position.
- *
- * It assumes that the buffer contains at least two bytes beyond the current position,
- * otherwise the behavior of the function is undefined.
- * \param b The buffer
- * \return The ut16 value
- */
-static inline ut8 rz_buf_peek_u16(RZ_NONNULL RzBuffer *b) {
-	ut16 x = 0;
-	rz_buf_read_le16_at(b, rz_buf_tell(b), &x);
-	return x;
-}
-
 // sparse-specific
 
 RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNULL size_t *count);
