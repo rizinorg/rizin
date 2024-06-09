@@ -38,7 +38,8 @@ static RzSubprocess *subprocess_start(
 		.env_size = env_size,
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.ret_sem = true
 	};
 	return rz_subprocess_start_opt(&opt);
 }

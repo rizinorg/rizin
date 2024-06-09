@@ -86,6 +86,8 @@ typedef struct rz_subprocess_opt_t {
 	RzSubprocessPipeCreate stdout_pipe;
 	///< Specify how to deal with subprocess stderr
 	RzSubprocessPipeCreate stderr_pipe;
+	///< Add semaphore to protect subprocess return value, so that threads only read valid values
+	bool ret_sem;
 
 	/* Both the following fields only matter when using PTY in the pipe options */
 	///< Provide the PTY to use (if NULL, then a new one will be created, if required)
