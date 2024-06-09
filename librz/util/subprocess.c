@@ -1061,7 +1061,6 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 	}
 	proc->killpipe[0] = proc->killpipe[1] = -1;
 	proc->ret = -1;
-	proc->ret_sem = NULL;
 	proc->ret_sem = rz_th_sem_new(0);
 	if (!proc->ret_sem) {
 		perror("rz_th_sem_new");
