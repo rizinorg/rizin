@@ -1258,7 +1258,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool stderr_enabled = (pipe_fd & RZ_SUBPROCESS_STDERR) && proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd;
 	bool stdout_eof = false;
 	bool stderr_eof = false;
-	bool child_dead = false;
+	int countdown = 10;
 	bool timedout = true;
 	bool bytes_enabled = n_bytes != 0;
 
@@ -1266,7 +1266,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool stdout_pty = proc->stdout_fd != -1 && proc->stdout_fd == proc->master_fd;
 	bool stderr_pty = proc->stderr_fd != -1 && proc->stderr_fd == proc->master_fd;
 
-	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead)) {
+	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || countdown)) {
 		fd_set rfds;
 		FD_ZERO(&rfds);
 		int nfds = 0;
@@ -1282,7 +1282,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 				nfds = proc->stderr_fd;
 			}
 		}
-		if (!child_dead) {
+		if (countdown) {
 			FD_SET(proc->killpipe[0], &rfds);
 			if (proc->killpipe[0] > nfds) {
 				nfds = proc->killpipe[0];
@@ -1327,7 +1327,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		}
 		if (FD_ISSET(proc->killpipe[0], &rfds)) {
 			timedout = false;
-			child_dead = true;
+			countdown--;
 		}
 		if (timedout) {
 			break;
@@ -1336,7 +1336,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	if (r < 0) {
 		perror("select");
 	}
-	if (child_dead) {
+	if (!countdown) {
 		return RZ_SUBPROCESS_DEAD;
 	} else if (timedout) {
 		return RZ_SUBPROCESS_TIMEDOUT;
