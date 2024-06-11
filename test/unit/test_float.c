@@ -1467,7 +1467,6 @@ bool all_tests() {
 	mu_run_test(f32_ieee_mul_test);
 	mu_run_test(f32_ieee_div_test);
 	mu_run_test(f32_ieee_fma_test);
-	mu_run_test(f80_ieee_div_test);
 	mu_run_test(rz_float_trunc_test);
 	mu_run_test(rz_float_abs_test);
 	mu_run_test(f32_ieee_round_test);
@@ -1483,6 +1482,9 @@ bool all_tests() {
 	mu_run_test(f32_ieee_fround_test);
 	mu_run_test(f32_ieee_cast_test);
 	mu_run_test(f80_round_test);
+#if (__i386__ || __x86_64__) && !__WINDOWS__
+	mu_run_test(f80_ieee_div_test);
+#endif
 	return tests_passed != tests_run;
 }
 
