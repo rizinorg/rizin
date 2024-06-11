@@ -1598,18 +1598,39 @@ static inline float128 to_float128(RzFloat *f128) {
 	return ret;
 }
 
+static inline RzFloat *set_exception_flags(RzFloat *f) {
+	if (float_exception_flags & float_flag_inexact) {
+		f->exception |= RZ_FLOAT_E_INEXACT;
+	}
+	if (float_exception_flags & float_flag_underflow) {
+		f->exception |= RZ_FLOAT_E_UNDERFLOW;
+	}
+	if (float_exception_flags & float_flag_overflow) {
+		f->exception |= RZ_FLOAT_E_OVERFLOW;
+	}
+	if (float_exception_flags & float_flag_divbyzero) {
+		f->exception |= RZ_FLOAT_E_DIV_ZERO;
+	}
+	if (float_exception_flags & float_flag_invalid) {
+		f->exception |= RZ_FLOAT_E_INVALID_OP;
+	}
+
+	float_exception_flags = 0;
+	return f;
+}
+
 static inline RzFloat *of_float32(float32 f32) {
 	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
 
 	rz_bv_set_from_ut64(ret->s, f32);
-	return ret;
+	return set_exception_flags(ret);
 }
 
 static inline RzFloat *of_float64(float64 f64) {
 	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
 
 	rz_bv_set_from_ut64(ret->s, f64);
-	return ret;
+	return set_exception_flags(ret);
 }
 
 static inline RzFloat *of_floatx80(floatx80 f80) {
@@ -1623,7 +1644,7 @@ static inline RzFloat *of_floatx80(floatx80 f80) {
 		upper >>= 1;
 	}
 
-	return ret;
+	return set_exception_flags(ret);
 }
 
 static inline RzFloat *of_float128(float128 f128) {
@@ -1637,7 +1658,20 @@ static inline RzFloat *of_float128(float128 f128) {
 		upper >>= 1;
 	}
 
-	return ret;
+	return set_exception_flags(ret);
+}
+
+static int8_t rounding_mode_mapping[] = {
+	[RZ_FLOAT_RMODE_RNE] = float_round_nearest_even,
+	[RZ_FLOAT_RMODE_RNA] = 0,
+	[RZ_FLOAT_RMODE_RTP] = float_round_up,
+	[RZ_FLOAT_RMODE_RTN] = float_round_down,
+	[RZ_FLOAT_RMODE_RTZ] = float_round_to_zero,
+	[RZ_FLOAT_RMODE_UNK] = 0,
+};
+
+static inline void set_float_rounding_mode(RzFloatRMode mode) {
+	float_rounding_mode = rounding_mode_mapping[mode];
 }
 
 /**
@@ -1652,49 +1686,11 @@ static inline RzFloat *of_float128(float128 f128) {
  * \return result of arithmetic operation
  */
 RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
-	RzFloat *result = NULL;
-
-	PROC_SPECIAL_FLOAT_START(left, right)
-	bool l_sign = rz_float_is_negative(left);
-	bool r_sign = rz_float_is_negative(right);
-	bool sign = l_sign ^ r_sign;
-	RzFloat *spec_ret = NULL;
-
-	if (l_is_nan || r_is_nan) {
-		return rz_float_new_qnan(left->r);
-	}
-
-	if (l_is_inf) {
-		if (!r_is_inf) {
-			return rz_float_new_inf(left->r, sign);
-		} else {
-			spec_ret = rz_float_new_qnan(left->r);
-			spec_ret->exception |= RZ_FLOAT_E_INVALID_OP;
-			return spec_ret;
-		}
-	} else {
-		if (r_is_inf) {
-			return rz_float_new_zero(left->r);
-		}
-	}
-
-	if (l_is_zero) {
-		if (r_is_zero) {
-			spec_ret = rz_float_new_qnan(left->r);
-			spec_ret->exception |= RZ_FLOAT_E_INVALID_OP;
-			return spec_ret;
-		} else {
-			return rz_float_new(left->r);
-		}
-	} else {
-		if (r_is_zero) {
-			return rz_float_new_inf(left->r, sign);
-		}
-	}
-	PROC_SPECIAL_FLOAT_END
+	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
 	// Extract attribute from format
 	RzFloatFormat format = left->r;
+	set_float_rounding_mode(mode);
 
 	switch (format) {
 	case RZ_FLOAT_IEEE754_BIN_32:
@@ -1706,105 +1702,9 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	case RZ_FLOAT_IEEE754_BIN_128:
 		return of_float128(float128_div(to_float128(left), to_float128(right)));
 	default:
-		break;
+		RZ_LOG_ERROR("float: DIV operation unimplemented for format %d\n", format);
+		return NULL;
 	}
-
-	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
-	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
-	ut32 extra_len = total_len;
-
-	// Extract fields from num
-	RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
-	RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
-	RzBitVector *l_mantissa = get_man_stretched(left->s, left->r);
-	RzBitVector *r_mantissa = get_man_stretched(right->s, right->r);
-	RzBitVector *result_sig = NULL, *result_exp_squashed = NULL;
-	bool l_sign = get_sign(left->s, left->r);
-	bool r_sign = get_sign(right->s, right->r);
-	bool result_sign = l_sign ^ r_sign;
-
-	// Handle normal float multiply
-	ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
-	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
-	ut32 shift_dist;
-
-	// normalize sub-normal num
-	// similar to multiplication
-	if (l_exp_val == 0) {
-		// is sub-normal
-		shift_dist = rz_bv_clz(l_mantissa) - (1 + exp_len) + 1 - extra_len;
-		l_exp_val = 1 - shift_dist;
-		rz_bv_lshift(l_mantissa, shift_dist);
-	}
-
-	if (r_exp_val == 0) {
-		// is sub-normal
-		shift_dist = rz_bv_clz(r_mantissa) - (1 + exp_len) + 1 - extra_len;
-		r_exp_val = 1 - shift_dist;
-		rz_bv_lshift(r_mantissa, shift_dist);
-	}
-
-	ut32 result_exp_val = l_exp_val - r_exp_val + bias;
-
-	// remember we would like to make the pattern 01.MM MMMM ...
-	shift_dist = (exp_len + 1) - 2;
-	ut32 hiddent_bit_pos = total_len - (1 + exp_len);
-
-	// set leading bit
-	rz_bv_set(l_mantissa, hiddent_bit_pos, true);
-	rz_bv_set(r_mantissa, hiddent_bit_pos, true);
-
-	// shift to make sure left is large enough to div
-	// Fx = Mx * 2^x, Fy = My * 2^y
-	// we have Mx as 01MM MMMM MMMM ...
-	// now expand left operand to have more bits
-	// dividend 01MM ..MM 0000 0000 0000 ...
-	// divisor  00...0000 01MM MMMM MMMM ...
-	rz_bv_lshift(l_mantissa, shift_dist + extra_len);
-	rz_bv_lshift(r_mantissa, shift_dist);
-
-	// both dividend and divisor have the form 1.MM...
-	// and thus the first bit-1 must be set in
-	// a. LSB of extra bits (dividend sig >= divisor sig)
-	// b. MSB of original bits (dividend sig < divisor sig)
-	// the clz should be 31 or 32 respectively
-	result_sig = rz_bv_div(l_mantissa, r_mantissa);
-	ut32 clz = rz_bv_clz(result_sig);
-
-	// check if normalization needed
-	shift_dist = clz == extra_len ? 1 : 0;
-
-	// Convert to original length bitvector
-	// normalize it
-	// and make 01MM MMMM MMMM ... format
-	rz_bv_shift_right_jammed(result_sig, 2 - shift_dist);
-
-	// dec exp according to normalization
-	// exp -= shift
-	result_exp_val -= shift_dist;
-
-	if ((st32)result_exp_val < 0) {
-		// underflow ?
-		result_exp_val = 0;
-	}
-
-	result = round_float_bv_new(
-		result_sign,
-		result_exp_val,
-		result_sig,
-		format,
-		format,
-		mode);
-
-	rz_bv_free(l_exp_squashed);
-	rz_bv_free(r_exp_squashed);
-	rz_bv_free(l_mantissa);
-	rz_bv_free(r_mantissa);
-	rz_bv_free(result_exp_squashed);
-	rz_bv_free(result_sig);
-
-	return result;
 }
 
 /**
@@ -2352,47 +2252,25 @@ clean:
  * \return result of arithmetic operation
  */
 RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
-	// Use Newton method now, May Optimize
-	RzFloat *eps = rz_float_new_zero(n->r);
-	ut32 bias = rz_float_get_format_info(n->r, RZ_FLOAT_INFO_BIAS);
-	ut32 man_len = rz_float_get_format_info(n->r, RZ_FLOAT_INFO_MAN_LEN);
-	ut32 eps_magic = bias - man_len;
+	rz_return_val_if_fail(n, NULL);
 
-	RzBitVector *eps_bv = rz_bv_new_from_ut64(n->s->len, eps_magic);
-	rz_bv_lshift(eps_bv, man_len);
-	RzFloat *x = rz_float_new_from_bv(eps_bv);
-	rz_bv_free(eps_bv);
+	// Extract attribute from format
+	RzFloatFormat format = n->r;
+	set_float_rounding_mode(mode);
 
-	while (true) {
-		RzFloat *q = rz_float_div_ieee_bin(n, x, mode);
-		RzFloat *sum = rz_float_add_ieee_bin(x, q, mode);
-		RzFloat *sum_half = rz_half_float(sum);
-		RzFloat *abs = rz_float_sub_ieee_bin(x, sum_half, mode);
-		rz_make_fabs(abs);
-
-		// abs <= eps, both are positive
-		if (rz_bv_ule(abs->s, eps->s)) {
-			rz_float_free(q);
-			rz_float_free(abs);
-			rz_float_free(sum);
-			rz_float_free(sum_half);
-			break;
-		}
-
-		rz_float_free(x);
-		x = sum_half;
-		sum_half = NULL;
-
-		rz_float_free(q);
-		rz_float_free(abs);
-		rz_float_free(sum);
-		sum = NULL;
-		q = NULL;
-		abs = NULL;
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return of_float32(float32_sqrt(to_float32(n)));
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return of_float64(float64_sqrt(to_float64(n)));
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return of_floatx80(floatx80_sqrt(to_floatx80(n)));
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return of_float128(float128_sqrt(to_float128(n)));
+	default:
+		RZ_LOG_ERROR("float: SQRT operation unimplemented for format %d\n", format);
+		return NULL;
 	}
-
-	rz_float_free(eps);
-	return x;
 }
 
 /** \} */ // end rz_float_arithmetic_group
