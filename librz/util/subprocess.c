@@ -728,7 +728,7 @@ RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
 	return false;
 }
 
-#else // __WINDOWS__
+#else // !__WINDOWS__
 
 #include <errno.h>
 #include <sys/wait.h>
