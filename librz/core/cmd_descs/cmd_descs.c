@@ -104,6 +104,7 @@ static const RzCmdDescArg interpret_macro_multiple_args[4];
 static const RzCmdDescArg cmd_info_gadget_args[2];
 static const RzCmdDescArg cmd_search_gadget_args[2];
 static const RzCmdDescArg cmd_query_gadget_args[2];
+static const RzCmdDescArg cmd_detail_gadget_args[2];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
@@ -1388,7 +1389,7 @@ static const RzCmdDescHelp cmd_search_gadget_help = {
 
 static const RzCmdDescArg cmd_query_gadget_args[] = {
 	{
-		.name = "nop|mov|arithm",
+		.name = "key=value",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = false,
@@ -1397,8 +1398,24 @@ static const RzCmdDescArg cmd_query_gadget_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_query_gadget_help = {
-	.summary = "Query ROP Gadgets",
+	.summary = "Query ROP Gadgets by providing constraints",
+	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
 	.args = cmd_query_gadget_args,
+};
+
+static const RzCmdDescArg cmd_detail_gadget_args[] = {
+	{
+		.name = "Gadget address",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_detail_gadget_help = {
+	.summary = "Gadget detail info",
+	.args = cmd_detail_gadget_args,
 };
 
 static const RzCmdDescHelp R_help = {
@@ -19229,6 +19246,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_query_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rk", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_query_gadget_handler, &cmd_query_gadget_help);
 	rz_warn_if_fail(cmd_query_gadget_cd);
 	rz_cmd_desc_set_default_mode(cmd_query_gadget_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_detail_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_detail_gadget_handler, &cmd_detail_gadget_help);
+	rz_warn_if_fail(cmd_detail_gadget_cd);
+	rz_cmd_desc_set_default_mode(cmd_detail_gadget_cd, RZ_OUTPUT_MODE_STANDARD);
 
 	RzCmdDesc *R_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "R", rz_remote_handler, &remote_help, &R_help);
 	rz_warn_if_fail(R_cd);

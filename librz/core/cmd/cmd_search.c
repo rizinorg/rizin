@@ -256,7 +256,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 		const char *s = sdbkv_value(kv);
 		ut64 addr;
 		int opsz;
-
 		do {
 			RzCoreAsmHit *hit = rz_core_asm_hit_new();
 			if (!hit) {
@@ -278,8 +277,13 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *input = argc > 1 ? argv[1] : "";
-	rop_kuery(core, input, state);
+	RzList *constraints = rop_constraint_list_parse(core, argc, argv);
+	if (!constraints) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rop_constraint_analysis(core, constraints);
+	rz_list_free(constraints);
+	// rop_kuery(core, input, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -289,6 +293,15 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_search_rop(core, argv[1], 1, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	const char *input = argc > 1 ? argv[1] : "";
+	if (!input) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// Add logic
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1050,7 +1063,9 @@ static bool insert_into(void *user, const ut64 k, const ut64 v) {
 }
 
 // TODO: follow unconditional jumps
-static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RzList /*<char *>*/ *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
+static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int buflen,
+	int idx, const char *grep, int regex, RzList /*<char *>*/ *rx_list,
+	struct endlist_pair *end_gadget, HtUU *badstart, int delta) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RzAnalysisOp aop = { 0 };
@@ -1093,6 +1108,10 @@ static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr
 	while (nb_instr < max_instr) {
 		ht_uu_insert(localbadstart, idx, 1);
 		rz_analysis_op_init(&aop);
+		if (idx >= delta) {
+			valid = false;
+			goto ret;
+		}
 		int error = rz_analysis_op(core->analysis, &aop, addr, buf + idx, buflen - idx, RZ_ANALYSIS_OP_MASK_DISASM);
 		if (error < 0 || (nb_instr == 0 && (is_end_gadget(&aop, 0) || aop.type == RZ_ANALYSIS_OP_TYPE_NOP))) {
 			valid = false;
@@ -1389,6 +1408,22 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			rz_cons_printf("Gadget size: %d\n", (int)size);
 			const char *key = rz_strf(tmpbuf, "0x%08" PFMT64x, addr);
 			rop_classify(core, db, ropList, key, size);
+			buf = malloc(size + 1);
+			hit = rz_list_first(hitlist);
+			if (!buf) {
+				goto cleanup;
+			}
+			RzAsmOp *asmop = rz_asm_op_new();
+			buf[size] = 0;
+			rz_io_read_at(core->io, hit->addr, buf, size);
+			rz_asm_set_pc(core->rasm, hit->addr);
+			rz_asm_disassemble(core->rasm, asmop, buf, size);
+			rz_analysis_op_init(&aop);
+			RzStrBuf sb = { 0 };
+			rz_analysis_op(core->analysis, &aop, hit->addr, buf, size, RZ_ANALYSIS_OP_MASK_IL);
+			rz_il_op_effect_stringify(aop.il_op, &sb, true);
+			rz_analysis_op_fini(&aop);
+			rz_asm_op_free(asmop);
 		}
 		rz_cons_newline();
 		break;
@@ -1517,7 +1552,7 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 		(void)rz_io_read_at(core->io, from, buf, delta);
 
 		// Find the end gadgets.
-		for (i = 0; i + 32 < delta; i += increment) {
+		for (i = 0; i < delta; i += increment) {
 			RzAnalysisOp end_gadget = RZ_EMPTY;
 			// Disassemble one.
 			rz_analysis_op_init(&end_gadget);
@@ -1570,7 +1605,7 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 			next = end_gadget->instr_offset;
 			prev = 0;
 			// Start at just before the first end gadget.
-			for (i = next - ropdepth; i < (delta - max_inst_size_x86) && max_count; i += increment) {
+			for (i = 0; i < delta && max_count; i += increment) {
 				if (increment == 1) {
 					// give in-boundary instructions a shot
 					if (i < prev - max_inst_size_x86) {
@@ -1614,7 +1649,7 @@ static int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 					rz_asm_set_pc(core->rasm, from + i);
 					RzList *hitlist = construct_rop_gadget(core,
 						from + i, buf, delta, i, greparg, regexp,
-						rx_list, end_gadget, badstart);
+						rx_list, end_gadget, badstart, delta);
 					if (!hitlist) {
 						rz_asm_op_free(asmop);
 						asmop = NULL;

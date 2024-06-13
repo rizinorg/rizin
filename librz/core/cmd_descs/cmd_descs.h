@@ -67,6 +67,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rk"
 RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Rg"
+RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/"
 RZ_IPI int rz_cmd_search(void *data, const char *input);
 // "R"
