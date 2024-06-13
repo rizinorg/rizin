@@ -300,6 +300,19 @@ if not tree_sitter_dep.found()
   meson.override_dependency('tree-sitter', tree_sitter_dep)
 endif
 
+# handle tree-sitter-c
+r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter-c', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+tree_sitter_c_dep = dependency('tree-sitter-c', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
+if not tree_sitter_c_dep.found()
+  tree_sitter_c_proj = subproject('tree-sitter-c', default_options: ['default_library=static'])
+  tree_sitter_c_dep = tree_sitter_c_proj.get_variable('tree_sitter_c_dep')
+  # override done in tree sitter c subproject
+endif
+
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
 use_ptrace_wrap = ['linux'].contains(host_machine.system())

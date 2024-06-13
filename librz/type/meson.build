@@ -18,7 +18,9 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
-tree_sitter_c_dep = dependency('tree-sitter-c')
+
+# use subproject/tree-sitter-c
+# tree_sitter_c_dep = dependency('tree-sitter-c')
 
 rz_type_inc = [
   platform_inc,
