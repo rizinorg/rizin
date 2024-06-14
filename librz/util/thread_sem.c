@@ -112,10 +112,8 @@ RZ_API void rz_th_sem_post(RZ_NONNULL RzThreadSemaphore *sem) {
 RZ_API void rz_th_sem_wait(RZ_NONNULL RzThreadSemaphore *sem) {
 	rz_return_if_fail(sem);
 #if HAVE_PTHREAD
-	int ret;
-	do {
-		ret = sem_wait(sem->sem);
-	} while (ret == -1 && errno == EINTR);
+	while (sem_wait(sem->sem) < 0 && errno == EINTR)
+		;
 #elif __WINDOWS__
 	WaitForSingleObject(sem->sem, INFINITE);
 #endif
