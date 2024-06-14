@@ -731,26 +731,6 @@ static void rop_classify(RzCore *core, Sdb *db, RzList /*<char *>*/ *ropList, co
 	free(str);
 }
 
-RZ_API void rz_rop_constraint_free(void *data) {
-	RzRopConstraint *constraint = data;
-	if (constraint) {
-		for (int i = 0; i < NUM_ARGS; i++) {
-			if (constraint->args[i]) {
-				free(constraint->args[i]);
-			}
-		}
-		free(constraint);
-	}
-}
-
-static RzList /*<RzRopConstraint *>*/ *rz_rop_constraint_list_new(void) {
-	RzList *list = rz_list_new();
-	if (list) {
-		list->free = &rz_rop_constraint_free;
-	}
-	return list;
-}
-
 static void skip_whitespace(const char *str, int *idx) {
 	while (str[*idx] == ' ' || str[*idx] == '\t' || str[*idx] == '\n' || str[*idx] == '\r') {
 		(*idx)++;
@@ -764,8 +744,9 @@ static bool parse_eof(const char *str, int idx) {
 
 static bool parse_il_equal(char *str, int *idx) {
 	skip_whitespace(str, idx);
-	if (*idx >= strlen(str))
+	if (*idx >= strlen(str)) {
 		return false;
+	}
 	if (str[*idx] == '=') {
 		(*idx)++;
 		return true;
@@ -773,7 +754,14 @@ static bool parse_il_equal(char *str, int *idx) {
 	return false;
 }
 
-static char *parse_register(char *str, int *idx) {
+static bool is_reg_in_profile(const char *reg_profile, const char *str) {
+	if (strstr(reg_profile, str) != NULL) {
+		return true;
+	}
+	return false;
+}
+
+static char *parse_register(RzCore *core, char *str, int *idx) {
 	char reg[256] = { 0 };
 	int reg_idx = 0;
 
@@ -784,12 +772,23 @@ static char *parse_register(char *str, int *idx) {
 		(*idx)++;
 	}
 
-	// Check if the register is correct for the given architecture.
 	if (reg_idx == 0) {
 		return NULL;
 	}
 
-	return strdup(reg);
+	char *reg_prof = rz_analysis_get_reg_profile(core->analysis);
+	if (!reg_prof) {
+		return NULL;
+	}
+
+	// Check if the register is correct for the given architecture.
+	if (is_reg_in_profile(reg_prof, reg)) {
+		free(reg_prof);
+		return strdup(reg);
+	}
+
+	free(reg_prof);
+	return NULL;
 }
 
 static bool parse_constant(const char *str, int *idx, unsigned long long *value) {
@@ -831,7 +830,7 @@ static bool parse_constant(const char *str, int *idx, unsigned long long *value)
 
 static bool parse_reg_to_const(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
 	int idx = 0;
-	char *dst_reg = parse_register(str, &idx);
+	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
 		return false;
 	}
@@ -856,14 +855,14 @@ static bool parse_reg_to_const(RzCore *core, char *str, RzRopConstraint *rop_con
 	rop_constraint->args[DST_REG] = dst_reg;
 	rop_constraint->args[SRC_REG] = NULL;
 	char value_str[256];
-	sprintf(value_str, "%llu", const_value);
-	rop_constraint->args[DST_CONST] = strdup(value_str);
+	snprintf(value_str, sizeof(value_str), "%llu", const_value);
+	rop_constraint->args[SRC_CONST] = strdup(value_str);
 	return true;
 }
 
 static bool parse_reg_to_reg(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
 	int idx = 0;
-	char *dst_reg = parse_register(str, &idx);
+	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
 		return false;
 	}
@@ -873,7 +872,7 @@ static bool parse_reg_to_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 		return false;
 	}
 
-	char *src_reg = parse_register(str, &idx);
+	char *src_reg = parse_register(core, str, &idx);
 	if (!src_reg) {
 		free(dst_reg);
 		return false;
@@ -927,6 +926,9 @@ static bool parse_il_op(RzList *args, const char *str, int *idx) {
 		(*idx)++;
 		res = RZ_IL_OP_MOD;
 		break;
+	case '-':
+		(*idx)++;
+		res = RZ_IL_OP_SUB;
 	default: break;
 	}
 	if (res == RZ_IL_OP_VAR) {
@@ -941,7 +943,7 @@ static bool parse_il_op(RzList *args, const char *str, int *idx) {
 		}
 	}
 
-	RzILOpPureCode *op_ptr = (RzILOpPureCode *)malloc(sizeof(RzILOpPureCode));
+	RzILOpPureCode *op_ptr = malloc(sizeof(RzILOpPureCode));
 	if (!op_ptr) {
 		return false;
 	}
@@ -953,7 +955,7 @@ static bool parse_il_op(RzList *args, const char *str, int *idx) {
 
 static bool parse_reg_op_const(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
 	int idx = 0;
-	char *dst_reg = parse_register(str, &idx);
+	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
 		return false;
 	}
@@ -963,7 +965,7 @@ static bool parse_reg_op_const(RzCore *core, char *str, RzRopConstraint *rop_con
 		return false;
 	}
 
-	char *src_reg = parse_register(str, &idx);
+	char *src_reg = parse_register(core, str, &idx);
 	if (!src_reg) {
 		free(dst_reg);
 		return false;
@@ -994,18 +996,25 @@ static bool parse_reg_op_const(RzCore *core, char *str, RzRopConstraint *rop_con
 	rop_constraint->args[DST_REG] = dst_reg;
 	rop_constraint->args[SRC_REG] = src_reg;
 	RzILOpPureCode *op = rz_list_get_n(args, 0);
-	char op_str[3];
+	if (!op) {
+		free(dst_reg);
+		free(src_reg);
+		rz_list_free(args);
+		return false;
+	}
+
+	char op_str[16];
 	snprintf(op_str, sizeof(op_str), "%s", rz_il_op_pure_code_stringify(*op));
 	rop_constraint->args[OP] = strdup(op_str);
 	char value_str[256];
-	sprintf(value_str, "%llu", const_value);
-	rop_constraint->args[DST_CONST] = strdup(value_str);
+	snprintf(value_str, sizeof(value_str), "%llu", const_value);
+	rop_constraint->args[SRC_CONST] = strdup(value_str);
 	return true;
 }
 
 static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
 	int idx = 0;
-	char *dst_reg = parse_register(str, &idx);
+	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
 		return false;
 	}
@@ -1015,7 +1024,7 @@ static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 		return false;
 	}
 
-	char *src_reg1 = parse_register(str, &idx);
+	char *src_reg1 = parse_register(core, str, &idx);
 	if (!src_reg1) {
 		free(dst_reg);
 		return false;
@@ -1029,8 +1038,8 @@ static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 		return false;
 	}
 
-	char *src_reg2 = parse_register(str, &idx);
-	if (!src_reg2) {
+	char *dst_reg2 = parse_register(core, str, &idx);
+	if (!dst_reg2) {
 		free(dst_reg);
 		free(src_reg1);
 		return false;
@@ -1039,7 +1048,7 @@ static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 	if (!parse_eof(str, idx)) {
 		free(dst_reg);
 		free(src_reg1);
-		free(src_reg2);
+		free(dst_reg2);
 		rz_list_free(args);
 		return false;
 	}
@@ -1048,28 +1057,30 @@ static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 	rop_constraint->args[DST_REG] = dst_reg;
 	rop_constraint->args[SRC_REG] = src_reg1;
 	RzILOpPureCode *op = rz_list_get_n(args, 0);
+	if (!op) {
+		free(dst_reg);
+		free(src_reg1);
+		free(dst_reg2);
+		rz_list_free(args);
+		return false;
+	}
+
 	char op_str[16];
 	snprintf(op_str, sizeof(op_str), "%s", rz_il_op_pure_code_stringify(*op));
 	rop_constraint->args[OP] = strdup(op_str);
-	rop_constraint->args[DST_CONST] = src_reg2;
+	rop_constraint->args[SRC_CONST] = dst_reg2;
 	return true;
 }
 
-static bool parse_instruction(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
+RZ_API bool analyze_constraint(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
+	rz_return_val_if_fail(core, NULL);
 	return parse_reg_to_const(core, str, rop_constraint) ||
 		parse_reg_to_reg(core, str, rop_constraint) ||
 		parse_reg_op_const(core, str, rop_constraint) ||
 		parse_reg_op_reg(core, str, rop_constraint);
 }
 
-static void rop_constraint_analysis(RzCore *core, const RzList *constraint_list) {
-	RzListIter *it;
-	RzRopConstraint *token;
-	rz_list_foreach (constraint_list, it, token) {
-	}
-}
-
-static RzRopConstraint *rop_constraint_kv(RzCore *core, char *token) {
+static RzRopConstraint *rop_constraint_parse_args(RzCore *core, char *token) {
 	RzRopConstraint *rop_constraint = RZ_NEW0(RzRopConstraint);
 	RzList *l = rz_str_split_duplist_n(token, "=", 1, false);
 	char *key = rz_list_get_n(l, 0);
@@ -1083,8 +1094,9 @@ static RzRopConstraint *rop_constraint_kv(RzCore *core, char *token) {
 		rz_list_free(l);
 		return NULL;
 	}
-	if (!parse_instruction(core, token, rop_constraint)) {
+	if (!analyze_constraint(core, token, rop_constraint)) {
 		free(rop_constraint);
+		rz_list_free(l);
 		return NULL;
 	}
 
@@ -1106,7 +1118,7 @@ static RzList *rop_constraint_list_parse(RzCore *core, int argc, const char **ar
 		RzListIter *it;
 		char *token;
 		rz_list_foreach (l, it, token) {
-			RzRopConstraint *rop_constraint = rop_constraint_kv(core, token);
+			RzRopConstraint *rop_constraint = rop_constraint_parse_args(core, token);
 			if (!rop_constraint) {
 				continue;
 			}

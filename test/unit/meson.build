@@ -76,6 +76,7 @@ if get_option('enable_tests')
     'rbtree',
     'reg',
     'regex',
+    'rop_constraint',
     'run',
     'rz_test',
     'sdb_array',
