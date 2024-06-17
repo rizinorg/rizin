@@ -1331,6 +1331,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	if (r < 0) {
 		perror("select");
 	}
+	rz_th_sem_wait(proc->ret_sem);
 	if (child_dead) {
 		return RZ_SUBPROCESS_DEAD;
 	} else if (timedout) {
@@ -1540,9 +1541,7 @@ RZ_API void rz_subprocess_pty_free(RZ_OWN RzPty *pty) {
 #endif
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
-	rz_th_sem_wait(proc->ret_sem);
 	int ret = proc->ret;
-	rz_th_sem_post(proc->ret_sem);
 	return ret;
 }
 
