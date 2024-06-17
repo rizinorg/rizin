@@ -6,6 +6,19 @@
 
 #endif // RZ_ROP_H
 
+typedef struct {
+	RzList *dependencies;
+	RzList *stored_in_regs;
+} RzRopMemoryOp;
+
+typedef struct {
+	ut64 address;
+	ut64 stack_change;
+	RzList *modified_registers;
+	RzRopMemoryOp memory_write;
+	RzRopMemoryOp memory_read;
+} RzRopGadgetInfo;
+
 typedef enum rzil_instr_type {
 	// Register to register
 	MOV_CONST, // reg <- const

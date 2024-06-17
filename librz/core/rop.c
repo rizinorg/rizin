@@ -7,6 +7,120 @@
 #include <rz_util/rz_regex.h>
 #include <rz_rop.h>
 
+RzRopGadgetInfo *create_gadget_info(ut64 address);
+
+static void add_string_to_list(RzList *list, const char *str) {
+	if (!str) {
+		return;
+	}
+	char *copy = strdup(str);
+	if (rz_list_contains(list, str)) {
+		free(copy);
+		return;
+	}
+	rz_list_append(list, copy);
+}
+
+RZ_API void populate_gadget_info(RzRopGadgetInfo *info, RzILOpEffect *effect) {
+	if (!effect) {
+		return;
+	}
+	switch (effect->code) {
+	case RZ_IL_OP_SET:
+		add_string_to_list(info->modified_registers, effect->op.set.v);
+		break;
+	case RZ_IL_OP_STORE:
+		add_string_to_list(info->memory_write.dependencies, (const char *)effect->op.store.key);
+		add_string_to_list(info->memory_write.stored_in_regs, (const char *)effect->op.store.value);
+		break;
+	case RZ_IL_OP_SEQ:
+		populate_gadget_info(info, effect->op.seq.x);
+		populate_gadget_info(info, effect->op.seq.y);
+		break;
+	case RZ_IL_OP_BRANCH:
+		populate_gadget_info(info, effect->op.branch.true_eff);
+		populate_gadget_info(info, effect->op.branch.false_eff);
+		break;
+	case RZ_IL_OP_JMP:
+		add_string_to_list(info->modified_registers, "rip");
+		break;
+	case RZ_IL_OP_NOP:
+		// NOP does not change any state or register
+		break;
+	default:
+		break;
+	}
+}
+
+RzRopGadgetInfo *create_gadget_info(ut64 address) {
+	RzRopGadgetInfo *info = RZ_NEW0(RzRopGadgetInfo);
+	if (!info) {
+		return NULL;
+	}
+	info->address = address;
+	info->stack_change = 0x8;
+	info->modified_registers = rz_list_new();
+	info->memory_write.dependencies = rz_list_new();
+	info->memory_write.stored_in_regs = rz_list_new();
+	info->memory_read.dependencies = rz_list_new();
+	info->memory_read.stored_in_regs = rz_list_new();
+	return info;
+}
+
+void free_gadget_info(RzRopGadgetInfo *info) {
+	if (!info) {
+		return;
+	}
+	rz_list_free(info->modified_registers);
+	rz_list_free(info->memory_write.dependencies);
+	rz_list_free(info->memory_write.stored_in_regs);
+	rz_list_free(info->memory_read.dependencies);
+	rz_list_free(info->memory_read.stored_in_regs);
+
+	free(info);
+}
+
+static void update_gadget_info_stack_change(RzRopGadgetInfo *info, ut64 change) {
+	info->stack_change += change;
+}
+
+static void add_memory_dependency(RzRopGadgetInfo *info, const char *register_name) {
+	add_string_to_list(info->memory_write.dependencies, register_name);
+	add_string_to_list(info->memory_read.dependencies, register_name);
+}
+
+static void set_memory_read_register(RzRopGadgetInfo *info, const char *register_name) {
+	add_string_to_list(info->memory_read.stored_in_regs, register_name);
+}
+
+void merge_gadget_info(RzRopGadgetInfo *dest, RzRopGadgetInfo *src) {
+	RzListIter *iter;
+	char *data;
+	rz_list_foreach (src->modified_registers, iter, data) {
+		add_string_to_list(dest->modified_registers, data);
+	}
+	rz_list_foreach (src->memory_write.dependencies, iter, data) {
+		add_string_to_list(dest->memory_write.dependencies, data);
+	}
+	rz_list_foreach (src->memory_write.stored_in_regs, iter, data) {
+		add_string_to_list(dest->memory_write.stored_in_regs, data);
+	}
+	rz_list_foreach (src->memory_read.dependencies, iter, data) {
+		add_string_to_list(dest->memory_read.dependencies, data);
+	}
+	rz_list_foreach (src->memory_read.stored_in_regs, iter, data) {
+		add_string_to_list(dest->memory_read.stored_in_regs, data);
+	}
+	dest->stack_change += src->stack_change;
+}
+
+RZ_API void process_gadget(RzCore *core, RzRopGadgetInfo *gadget_info, RzILOpEffect *effects, ut64 addr) {
+	RzRopGadgetInfo *temp_info = create_gadget_info(addr);
+	populate_gadget_info(temp_info, effects);
+	merge_gadget_info(gadget_info, temp_info);
+	free_gadget_info(temp_info);
+}
+
 static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 crop) {
 	if (aop->family == RZ_ANALYSIS_OP_FAMILY_SECURITY) {
 		return false;
@@ -254,6 +368,11 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			rz_asm_disassemble(core->rasm, asmop, buf, size);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, hit->addr, buf, size, RZ_ANALYSIS_OP_MASK_IL);
+			RzRopGadgetInfo *rop_gadget_info = create_gadget_info(hit->addr);
+			// TODO: Remove this
+			RzStrBuf sb = { 0 };
+			rz_il_op_effect_stringify(aop.il_op, &sb, false);
+			process_gadget(core, rop_gadget_info, aop.il_op, hit->addr);
 			rz_analysis_op_fini(&aop);
 			rz_asm_op_free(asmop);
 			free(buf);
