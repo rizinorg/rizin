@@ -3079,6 +3079,7 @@ static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *i
 
 	rz_subprocess_stdin_write(proc, input, input_len);
 	rz_subprocess_wait(proc, UT64_MAX);
+	rz_subprocess_ret(proc);
 
 	output = (char *)rz_subprocess_out(proc, length);
 	rz_subprocess_free(proc);
