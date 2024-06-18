@@ -617,13 +617,6 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 				continue;
 			}
 			if (is_end_gadget(&end_gadget, crop)) {
-#if 0
-				if (search->maxhits && rz_list_length (end_list) >= search->maxhits) {
-					// limit number of high level rop gadget results
-					rz_analysis_op_fini (&end_gadget);
-					break;
-				}
-#endif
 				RzRopEndListPair *epair = RZ_NEW0(RzRopEndListPair);
 				if (epair) {
 					// If this arch has branch delay slots, add the next instr as well
