@@ -4,7 +4,6 @@
 #include <stddef.h>
 
 #include "rz_core.h"
-#include "rz_io.h"
 #include "rz_list.h"
 #include "rz_types_base.h"
 #include "rz_rop.h"
@@ -754,13 +753,6 @@ static bool parse_il_equal(char *str, int *idx) {
 	return false;
 }
 
-static bool is_reg_in_profile(const char *reg_profile, const char *str) {
-	if (strstr(reg_profile, str) != NULL) {
-		return true;
-	}
-	return false;
-}
-
 static char *parse_register(RzCore *core, char *str, int *idx) {
 	char reg[256] = { 0 };
 	int reg_idx = 0;
@@ -776,18 +768,11 @@ static char *parse_register(RzCore *core, char *str, int *idx) {
 		return NULL;
 	}
 
-	char *reg_prof = rz_analysis_get_reg_profile(core->analysis);
-	if (!reg_prof) {
-		return NULL;
-	}
-
 	// Check if the register is correct for the given architecture.
-	if (is_reg_in_profile(reg_prof, reg)) {
-		free(reg_prof);
+	if (rz_analysis_is_reg_in_profile(core->analysis, reg)) {
 		return strdup(reg);
 	}
 
-	free(reg_prof);
 	return NULL;
 }
 

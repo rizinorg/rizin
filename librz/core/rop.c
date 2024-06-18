@@ -9,49 +9,6 @@
 
 RzRopGadgetInfo *create_gadget_info(ut64 address);
 
-static void add_string_to_list(RzList *list, const char *str) {
-	if (!str) {
-		return;
-	}
-	char *copy = strdup(str);
-	if (rz_list_contains(list, str)) {
-		free(copy);
-		return;
-	}
-	rz_list_append(list, copy);
-}
-
-RZ_API void populate_gadget_info(RzRopGadgetInfo *info, RzILOpEffect *effect) {
-	if (!effect) {
-		return;
-	}
-	switch (effect->code) {
-	case RZ_IL_OP_SET:
-		add_string_to_list(info->modified_registers, effect->op.set.v);
-		break;
-	case RZ_IL_OP_STORE:
-		add_string_to_list(info->memory_write.dependencies, (const char *)effect->op.store.key);
-		add_string_to_list(info->memory_write.stored_in_regs, (const char *)effect->op.store.value);
-		break;
-	case RZ_IL_OP_SEQ:
-		populate_gadget_info(info, effect->op.seq.x);
-		populate_gadget_info(info, effect->op.seq.y);
-		break;
-	case RZ_IL_OP_BRANCH:
-		populate_gadget_info(info, effect->op.branch.true_eff);
-		populate_gadget_info(info, effect->op.branch.false_eff);
-		break;
-	case RZ_IL_OP_JMP:
-		add_string_to_list(info->modified_registers, "rip");
-		break;
-	case RZ_IL_OP_NOP:
-		// NOP does not change any state or register
-		break;
-	default:
-		break;
-	}
-}
-
 RzRopGadgetInfo *create_gadget_info(ut64 address) {
 	RzRopGadgetInfo *info = RZ_NEW0(RzRopGadgetInfo);
 	if (!info) {
@@ -59,11 +16,11 @@ RzRopGadgetInfo *create_gadget_info(ut64 address) {
 	}
 	info->address = address;
 	info->stack_change = 0x8;
-	info->modified_registers = rz_list_new();
-	info->memory_write.dependencies = rz_list_new();
-	info->memory_write.stored_in_regs = rz_list_new();
-	info->memory_read.dependencies = rz_list_new();
-	info->memory_read.stored_in_regs = rz_list_new();
+	info->modified_registers = rz_list_newf(free);
+	info->memory_write.dependencies = rz_list_newf(free);
+	info->memory_write.stored_in_regs = rz_list_newf(free);
+	info->memory_read.dependencies = rz_list_newf(free);
+	info->memory_read.stored_in_regs = rz_list_newf(free);
 	return info;
 }
 
@@ -80,44 +37,31 @@ void free_gadget_info(RzRopGadgetInfo *info) {
 	free(info);
 }
 
-static void update_gadget_info_stack_change(RzRopGadgetInfo *info, ut64 change) {
-	info->stack_change += change;
-}
-
-static void add_memory_dependency(RzRopGadgetInfo *info, const char *register_name) {
-	add_string_to_list(info->memory_write.dependencies, register_name);
-	add_string_to_list(info->memory_read.dependencies, register_name);
-}
-
-static void set_memory_read_register(RzRopGadgetInfo *info, const char *register_name) {
-	add_string_to_list(info->memory_read.stored_in_regs, register_name);
-}
-
-void merge_gadget_info(RzRopGadgetInfo *dest, RzRopGadgetInfo *src) {
+void merge_gadget_info(RzCore *core, RzRopGadgetInfo *dest, RzRopGadgetInfo *src) {
 	RzListIter *iter;
 	char *data;
 	rz_list_foreach (src->modified_registers, iter, data) {
-		add_string_to_list(dest->modified_registers, data);
+		add_reg_to_list(core, dest->modified_registers, data);
 	}
 	rz_list_foreach (src->memory_write.dependencies, iter, data) {
-		add_string_to_list(dest->memory_write.dependencies, data);
+		add_reg_to_list(core, dest->memory_write.dependencies, data);
 	}
 	rz_list_foreach (src->memory_write.stored_in_regs, iter, data) {
-		add_string_to_list(dest->memory_write.stored_in_regs, data);
+		add_reg_to_list(core, dest->memory_write.stored_in_regs, data);
 	}
 	rz_list_foreach (src->memory_read.dependencies, iter, data) {
-		add_string_to_list(dest->memory_read.dependencies, data);
+		add_reg_to_list(core, dest->memory_read.dependencies, data);
 	}
 	rz_list_foreach (src->memory_read.stored_in_regs, iter, data) {
-		add_string_to_list(dest->memory_read.stored_in_regs, data);
+		add_reg_to_list(core, dest->memory_read.stored_in_regs, data);
 	}
 	dest->stack_change += src->stack_change;
 }
 
 RZ_API void process_gadget(RzCore *core, RzRopGadgetInfo *gadget_info, RzILOpEffect *effects, ut64 addr) {
 	RzRopGadgetInfo *temp_info = create_gadget_info(addr);
-	populate_gadget_info(temp_info, effects);
-	merge_gadget_info(gadget_info, temp_info);
+	populate_gadget_info(core, temp_info, effects);
+	merge_gadget_info(core, gadget_info, temp_info);
 	free_gadget_info(temp_info);
 }
 
@@ -153,21 +97,147 @@ static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 crop) {
 	return false;
 }
 
+static int rz_rop_process_asm_op(RzCore *core, RzCoreAsmHit *hit, RzAsmOp *asmop, RzAnalysisOp *aop, unsigned int *size, char **asmop_str, char **asmop_hex_str) {
+	ut8 *buf = malloc(hit->len);
+	if (!buf) {
+		return -1;
+	}
+	rz_io_read_at(core->io, hit->addr, buf, hit->len);
+	rz_asm_set_pc(core->rasm, hit->addr);
+	rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
+	rz_analysis_op_init(aop);
+	rz_analysis_op(core->analysis, aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
+	*size += hit->len;
+
+	// Append assembly operation string
+	if (asmop_str) {
+		*asmop_str = rz_str_append(*asmop_str, rz_asm_op_get_asm(asmop));
+		*asmop_str = rz_str_append(*asmop_str, "; ");
+	}
+
+	// Append hex string of assembly operation
+	if (asmop_hex_str) {
+		char *asmop_hex = rz_asm_op_get_hex(asmop);
+		*asmop_hex_str = rz_str_append(*asmop_hex_str, asmop_hex);
+		free(asmop_hex);
+	}
+
+	free(buf);
+	return 0;
+}
+
+static int rz_rop_print_table_mode(RzCore *core, RzCoreAsmHit *hit, RzList *hitlist, RzAsmOp *asmop, unsigned int *size, char **asmop_str, char **asmop_hex_str) {
+	RzAnalysisOp aop = RZ_EMPTY;
+	if (rz_rop_process_asm_op(core, hit, asmop, &aop, size, asmop_str, asmop_hex_str) != 0) {
+		return -1;
+	}
+	const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last(hitlist))->addr;
+	if (addr_last != hit->addr) {
+		*asmop_str = rz_str_append(*asmop_str, "; ");
+	}
+	rz_analysis_op_fini(&aop);
+	return 0;
+}
+
+static int rz_rop_print_quiet_mode(RzCore *core, RzCoreAsmHit *hit, RzList *ropList, RzAsmOp *asmop, unsigned int *size, bool esil, bool colorize) {
+	RzAnalysisOp aop = RZ_EMPTY;
+	if (rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL) != 0) {
+		return -1;
+	}
+	const char *opstr = RZ_STRBUF_SAFEGET(&aop.esil);
+	if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
+		rz_list_append(ropList, rz_str_newf(" %s", opstr));
+	}
+	if (esil) {
+		rz_cons_printf("%s\n", opstr);
+	} else if (colorize) {
+		RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
+		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
+		rz_asm_parse_param_free(param);
+		rz_cons_printf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
+		rz_strbuf_free(colored_asm);
+		rz_strbuf_free(bw_str);
+	} else {
+		rz_cons_printf(" %s;", rz_asm_op_get_asm(asmop));
+	}
+	rz_analysis_op_fini(&aop);
+	return 0;
+}
+
+static int rz_rop_print_standard_mode(RzCore *core, RzCoreAsmHit *hit, RzList *ropList, RzAsmOp *asmop, unsigned int *size, bool rop_comments, bool colorize) {
+	RzAnalysisOp aop = RZ_EMPTY;
+	if (rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL) != 0) {
+		return -1;
+	}
+	const char *comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
+	if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
+		char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
+		rz_list_append(ropList, opstr_n);
+	}
+	char *asm_op_hex = rz_asm_op_get_hex(asmop);
+	if (colorize) {
+		RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
+		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
+		rz_asm_parse_param_free(param);
+		if (comment) {
+			rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
+				hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET, comment);
+		} else {
+			rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s\n",
+				hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
+		}
+		rz_strbuf_free(colored_asm);
+		rz_strbuf_free(bw_str);
+	} else {
+		if (comment) {
+			rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",
+				hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop), comment);
+		} else {
+			rz_cons_printf("  0x%08" PFMT64x " %18s  %s\n",
+				hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop));
+		}
+	}
+	free(asm_op_hex);
+	rz_analysis_op_fini(&aop);
+	return 0;
+}
+
+static int rz_rop_print_json_mode(RzCore *core, RzCoreAsmHit *hit, RzList *ropList, RzCmdStateOutput *state, RzAsmOp *asmop, unsigned int *size) {
+	RzAnalysisOp aop = RZ_EMPTY;
+
+	if (rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL) != 0) {
+		return -1;
+	}
+
+	if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
+		char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
+		rz_list_append(ropList, opstr_n);
+	}
+
+	pj_o(state->d.pj);
+	pj_kn(state->d.pj, "offset", hit->addr);
+	pj_ki(state->d.pj, "size", hit->len);
+	pj_ks(state->d.pj, "opcode", rz_asm_op_get_asm(asmop));
+	pj_ks(state->d.pj, "type", rz_analysis_optype_to_string(aop.type));
+	pj_end(state->d.pj);
+
+	rz_analysis_op_fini(&aop);
+	return 0;
+}
+
 static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdStateOutput *state) {
 	RzCoreAsmHit *hit = NULL;
 	RzListIter *iter;
-	RzList *ropList = NULL;
 	unsigned int size = 0;
+	RzList *ropList = NULL;
 	char *asmop_str = NULL, *asmop_hex_str = NULL;
-	RzAnalysisOp aop = RZ_EMPTY;
-	const char *comment = NULL;
 	Sdb *db = NULL;
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
 	const bool esil = rz_config_get_i(core->config, "asm.esil");
 	const bool rop_db = rz_config_get_i(core->config, "rop.db");
-	ut8 *buf = NULL;
-	RzStrBuf *colored_asm = NULL, *bw_str = NULL;
 	if (rop_db) {
 		db = sdb_ns(core->sdb, "rop", true);
 		ropList = rz_list_newf(free);
@@ -191,143 +261,24 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 		RzAsmOp *asmop = rz_asm_op_new();
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
-			buf = malloc(hit->len);
-			if (!buf) {
+			if (rz_rop_print_json_mode(core, hit, ropList, state, asmop, &size) != 0) {
 				goto cleanup;
 			}
-			rz_io_read_at(core->io, hit->addr, buf, hit->len);
-			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
-			rz_analysis_op_init(&aop);
-			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
-			size += hit->len;
-			if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
-				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
-				rz_list_append(ropList, opstr_n);
-			}
-			pj_o(state->d.pj);
-			pj_kn(state->d.pj, "offset", hit->addr);
-			pj_ki(state->d.pj, "size", hit->len);
-			pj_ks(state->d.pj, "opcode", rz_asm_op_get_asm(asmop));
-			pj_ks(state->d.pj, "type", rz_analysis_optype_to_string(aop.type));
-			pj_end(state->d.pj);
-			free(buf);
-			rz_analysis_op_fini(&aop);
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
-			// Print gadgets in a 'linear manner', each sequence on one line.
-			buf = malloc(hit->len);
-			if (!buf) {
+			if (rz_rop_print_quiet_mode(core, hit, ropList, asmop, &size, esil, colorize) != 0) {
 				goto cleanup;
 			}
-			rz_io_read_at(core->io, hit->addr, buf, hit->len);
-			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
-			rz_analysis_op_init(&aop);
-			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
-			size += hit->len;
-			const char *opstr = RZ_STRBUF_SAFEGET(&aop.esil);
-			if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
-				rz_list_append(ropList, rz_str_newf(" %s", opstr));
-			}
-			if (esil) {
-				rz_cons_printf("%s\n", opstr);
-			} else if (colorize) {
-				bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
-				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
-				rz_asm_parse_param_free(param);
-				rz_cons_printf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
-				rz_strbuf_free(colored_asm);
-				rz_strbuf_free(bw_str);
-			} else {
-				rz_cons_printf(" %s;", rz_asm_op_get_asm(asmop));
-			}
-			free(buf);
-			rz_analysis_op_fini(&aop);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			// Print gadgets with new instruction on a new line.
-			comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
-			if (hit->len < 0) {
-				RZ_LOG_ERROR("core: Invalid hit length here\n");
-				continue;
-			}
-			buf = malloc(1 + hit->len);
-			if (!buf) {
-				break;
-			}
-			buf[hit->len] = 0;
-			rz_io_read_at(core->io, hit->addr, buf, hit->len);
-			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
-			rz_analysis_op_init(&aop);
-			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
-			size += hit->len;
-			if (aop.type != RZ_ANALYSIS_OP_TYPE_RET) {
-				char *opstr_n = rz_str_newf(" %s", RZ_STRBUF_SAFEGET(&aop.esil));
-				rz_list_append(ropList, opstr_n);
-			}
-			char *asm_op_hex = rz_asm_op_get_hex(asmop);
-			if (colorize) {
-				bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
-				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
-				rz_asm_parse_param_free(param);
-				if (comment) {
-					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
-						hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET, comment);
-				} else {
-					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s\n",
-						hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
-				}
-				rz_strbuf_free(colored_asm);
-				rz_strbuf_free(bw_str);
-			} else {
-				if (comment) {
-					rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",
-						hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop), comment);
-				} else {
-					rz_cons_printf("  0x%08" PFMT64x " %18s  %s\n",
-						hit->addr, asm_op_hex, rz_asm_op_get_asm(asmop));
-				}
-			}
-			free(asm_op_hex);
-			free(buf);
-			rz_analysis_op_fini(&aop);
-			comment = NULL;
-			break;
-		case RZ_OUTPUT_MODE_TABLE:
-			buf = malloc(hit->len);
-			if (!buf) {
+			if (rz_rop_print_standard_mode(core, hit, ropList, asmop, &size, rop_comments, colorize) != 0) {
 				goto cleanup;
 			}
-			rz_io_read_at(core->io, hit->addr, buf, hit->len);
-			rz_asm_set_pc(core->rasm, hit->addr);
-			rz_asm_disassemble(core->rasm, asmop, buf, hit->len);
-			rz_analysis_op_init(&aop);
-			rz_analysis_op(core->analysis, &aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
-			size += hit->len;
-			if (asmop_str) {
-				asmop_str = rz_str_append(asmop_str, rz_asm_op_get_asm(asmop));
-				const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last(hitlist))->addr;
-				if (addr_last != hit->addr) {
-					asmop_str = rz_str_append(asmop_str, "; ");
-				}
-			} else {
-				asmop_str = rz_str_newf("%s; ", rz_asm_op_get_asm(asmop));
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			if (rz_rop_print_table_mode(core, hit, hitlist, asmop, &size, &asmop_str, &asmop_hex_str) != 0) {
+				goto cleanup;
 			}
-			char *asmop_hex_str_dup = NULL;
-			if (asmop_hex_str) {
-				asmop_hex_str_dup = rz_asm_op_get_hex(asmop);
-				asmop_hex_str = rz_str_append(asmop_hex_str, asmop_hex_str_dup);
-			} else {
-				asmop_hex_str_dup = rz_asm_op_get_hex(asmop);
-				asmop_hex_str = rz_str_newf("%s", asmop_hex_str_dup);
-			}
-			free(asmop_hex_str_dup);
-			free(buf);
-			rz_analysis_op_fini(&aop);
 			break;
 		default:
 			rz_warn_if_reached();
@@ -356,6 +307,8 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 		if (db && hit) {
 			rz_cons_printf("Gadget size: %d\n", (int)size);
 			// rop_classify(core, db, ropList, key, size);
+			ut8 *buf;
+			RzAnalysisOp aop;
 			buf = malloc(size + 1);
 			hit = rz_list_first(hitlist);
 			if (!buf) {
@@ -371,10 +324,13 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 			RzRopGadgetInfo *rop_gadget_info = create_gadget_info(hit->addr);
 			// TODO: Remove this
 			RzStrBuf sb = { 0 };
+			rz_strbuf_init(&sb);
 			rz_il_op_effect_stringify(aop.il_op, &sb, false);
 			process_gadget(core, rop_gadget_info, aop.il_op, hit->addr);
+			free_gadget_info(rop_gadget_info);
 			rz_analysis_op_fini(&aop);
 			rz_asm_op_free(asmop);
+			rz_strbuf_fini(&sb);
 			free(buf);
 		}
 		rz_cons_newline();

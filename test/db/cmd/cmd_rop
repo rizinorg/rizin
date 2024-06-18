@@ -357,6 +357,13 @@ Gadget size: 12
   0x000001be           0e949816  call 0x2d30
 Gadget size: 12
 
+  0x000001e4               0f01  movw r0, r30
+  0x000001e6               63e9  ldi r22, 0x93
+  0x000001e8               71e0  ldi r23, 0x01
+  0x000001ea               c801  movw r24, r16
+  0x000001ec           0e949816  call 0x2d30
+Gadget size: 12
+
 EOF
 EXPECT_ERR=<<EOF
 EOF

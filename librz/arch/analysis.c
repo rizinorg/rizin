@@ -240,6 +240,22 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 		: NULL;
 }
 
+RZ_API bool rz_analysis_is_reg_in_profile(RzAnalysis *analysis, const char *str) {
+	rz_return_val_if_fail(analysis, false);
+
+	char *reg_prof = rz_analysis_get_reg_profile(analysis);
+	if (!reg_prof) {
+		return false;
+	}
+
+	if (strstr(reg_prof, str) != NULL) {
+		free(reg_prof);
+		return true;
+	}
+	free(reg_prof);
+	return false;
+}
+
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 	bool ret = false;
 	char *p = rz_analysis_get_reg_profile(analysis);

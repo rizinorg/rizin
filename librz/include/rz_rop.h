@@ -6,12 +6,18 @@
 
 #endif // RZ_ROP_H
 
-typedef struct {
+#include <rz_cmd.h>
+
+typedef struct rz_rop_op_t {
+	RzILOpPure *op;
+} RzRopOp;
+
+typedef struct rz_rop_memory_t {
 	RzList *dependencies;
 	RzList *stored_in_regs;
 } RzRopMemoryOp;
 
-typedef struct {
+typedef struct rz_rop_gadget_info_t {
 	ut64 address;
 	ut64 stack_change;
 	RzList *modified_registers;
@@ -56,6 +62,8 @@ typedef struct rz_rop_gadget_analysis_t {
 RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzCmdStateOutput *state);
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, const char *input, RzCmdStateOutput *state);
 RZ_API bool analyze_constraint(RzCore *core, char *str, RzRopConstraint *rop_constraint);
+RZ_API void populate_gadget_info(RzCore *core, RzRopGadgetInfo *info, RzILOpEffect *effect);
+RZ_API void add_reg_to_list(RzCore *core, RzList *list, const char *str);
 
 // ROP Constraint APIs
 RZ_API void rz_rop_constraint_free(RZ_NULLABLE void *data);
