@@ -1,5 +1,5 @@
 [wrap-git]
-url = https://github.com/DMaroo/softfloat-2c
-revision = 6fb915eaead08a88d373191bf908fbc3f2085f36
+url = https://github.com/DMaroo/softfloat-3e
+revision = de4b95eb80e8a5c0fa620c0d454ef861bc22f903
 directory = softfloat
 depth = 1

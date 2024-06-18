@@ -1556,89 +1556,95 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	return result;
 }
 
-static inline float32 to_float32(RzFloat *f32) {
+static inline float32_t to_float32(RzFloat *f32) {
 	rz_warn_if_fail(f32->r == RZ_FLOAT_IEEE754_BIN_32);
-	return rz_bv_to_ut32(f32->s);
+	float32_t ret = {
+		.v = rz_bv_to_ut32(f32->s)
+	};
+	return ret;
 }
 
-static inline float64 to_float64(RzFloat *f64) {
+static inline float64_t to_float64(RzFloat *f64) {
 	rz_warn_if_fail(f64->r == RZ_FLOAT_IEEE754_BIN_64);
-	return rz_bv_to_ut64(f64->s);
+	float64_t ret = {
+		.v = rz_bv_to_ut64(f64->s)
+	};
+	return ret;
 }
 
-static inline floatx80 to_floatx80(RzFloat *f80) {
+static inline extFloat80_t to_float80(RzFloat *f80) {
 	rz_warn_if_fail(f80->r == RZ_FLOAT_IEEE754_BIN_80);
 
-	floatx80 ret;
-	ret.low = rz_bv_to_ut64(f80->s);
+	extFloat80_t ret;
+	ret.signif = rz_bv_to_ut64(f80->s);
 
 	ut16 upper = 0;
 	for (ut8 i = 0; i < 16; i++) {
 		upper <<= 1;
 		upper |= rz_bv_get(f80->s, 80 - i - 1);
 	}
-	ret.high = upper;
+	ret.signExp = upper;
 
 	return ret;
 }
 
-static inline float128 to_float128(RzFloat *f128) {
+static inline float128_t to_float128(RzFloat *f128) {
 	rz_warn_if_fail(f128->r != RZ_FLOAT_IEEE754_BIN_128);
 
-	float128 ret;
-	ret.low = rz_bv_to_ut64(f128->s);
+	float128_t ret;
+	ret.v[0] = rz_bv_to_ut64(f128->s);
 
 	ut64 upper = 0;
 	for (ut8 i = 0; i < 64; i++) {
 		upper <<= 1;
 		upper |= rz_bv_get(f128->s, 128 - i - 1);
 	}
-	ret.high = upper;
+	ret.v[1] = upper;
 
 	return ret;
 }
 
 static inline RzFloat *set_exception_flags(RzFloat *f) {
-	if (float_exception_flags & float_flag_inexact) {
+	if (softfloat_exceptionFlags & softfloat_flag_inexact) {
 		f->exception |= RZ_FLOAT_E_INEXACT;
 	}
-	if (float_exception_flags & float_flag_underflow) {
+	if (softfloat_exceptionFlags & softfloat_flag_underflow) {
 		f->exception |= RZ_FLOAT_E_UNDERFLOW;
 	}
-	if (float_exception_flags & float_flag_overflow) {
+	if (softfloat_exceptionFlags & softfloat_flag_overflow) {
 		f->exception |= RZ_FLOAT_E_OVERFLOW;
 	}
-	if (float_exception_flags & float_flag_divbyzero) {
+	if (softfloat_exceptionFlags & softfloat_flag_infinite) {
 		f->exception |= RZ_FLOAT_E_DIV_ZERO;
 	}
-	if (float_exception_flags & float_flag_invalid) {
+	if (softfloat_exceptionFlags & softfloat_flag_invalid) {
 		f->exception |= RZ_FLOAT_E_INVALID_OP;
 	}
 
-	float_exception_flags = 0;
+	softfloat_exceptionFlags = 0;
 	return f;
 }
 
-static inline RzFloat *of_float32(float32 f32) {
+static inline RzFloat *of_float32(float32_t f32) {
 	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
 
-	rz_bv_set_from_ut64(ret->s, f32);
+	rz_bv_set_from_ut64(ret->s, f32.v);
 	return set_exception_flags(ret);
 }
 
-static inline RzFloat *of_float64(float64 f64) {
+static inline RzFloat *of_float64(float64_t f64) {
 	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
 
-	rz_bv_set_from_ut64(ret->s, f64);
+	rz_bv_set_from_ut64(ret->s, f64.v);
 	return set_exception_flags(ret);
 }
 
-static inline RzFloat *of_floatx80(floatx80 f80) {
+static inline RzFloat *of_float80(extFloat80_t f80) {
 	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_80);
 
-	rz_bv_set_from_ut64(ret->s, f80.low);
+	rz_bv_set_from_ut64(ret->s, f80.signif);
 
-	ut16 upper = f80.high;
+	ut16 upper = f80.signExp;
 	for (ut8 i = 0; i < 16; i++) {
 		rz_bv_set(ret->s, 64 + i, upper & 1);
 		upper >>= 1;
@@ -1647,12 +1653,12 @@ static inline RzFloat *of_floatx80(floatx80 f80) {
 	return set_exception_flags(ret);
 }
 
-static inline RzFloat *of_float128(float128 f128) {
+static inline RzFloat *of_float128(float128_t f128) {
 	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_128);
 
-	rz_bv_set_from_ut64(ret->s, f128.low);
+	rz_bv_set_from_ut64(ret->s, f128.v[0]);
 
-	ut64 upper = f128.high;
+	ut64 upper = f128.v[1];
 	for (ut8 i = 0; i < 64; i++) {
 		rz_bv_set(ret->s, 64 + i, upper & 1);
 		upper >>= 1;
@@ -1662,16 +1668,16 @@ static inline RzFloat *of_float128(float128 f128) {
 }
 
 static int8_t rounding_mode_mapping[] = {
-	[RZ_FLOAT_RMODE_RNE] = float_round_nearest_even,
-	[RZ_FLOAT_RMODE_RNA] = 0,
-	[RZ_FLOAT_RMODE_RTP] = float_round_up,
-	[RZ_FLOAT_RMODE_RTN] = float_round_down,
-	[RZ_FLOAT_RMODE_RTZ] = float_round_to_zero,
-	[RZ_FLOAT_RMODE_UNK] = 0,
+	[RZ_FLOAT_RMODE_RNE] = softfloat_round_near_even,
+	[RZ_FLOAT_RMODE_RNA] = softfloat_round_near_maxMag,
+	[RZ_FLOAT_RMODE_RTP] = softfloat_round_max,
+	[RZ_FLOAT_RMODE_RTN] = softfloat_round_min,
+	[RZ_FLOAT_RMODE_RTZ] = softfloat_round_minMag,
+	[RZ_FLOAT_RMODE_UNK] = 6,
 };
 
 static inline void set_float_rounding_mode(RzFloatRMode mode) {
-	float_rounding_mode = rounding_mode_mapping[mode];
+	softfloat_roundingMode = rounding_mode_mapping[mode];
 }
 
 /**
@@ -1694,13 +1700,13 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 	switch (format) {
 	case RZ_FLOAT_IEEE754_BIN_32:
-		return of_float32(float32_div(to_float32(left), to_float32(right)));
+		return of_float32(f32_div(to_float32(left), to_float32(right)));
 	case RZ_FLOAT_IEEE754_BIN_64:
-		return of_float64(float64_div(to_float64(left), to_float64(right)));
+		return of_float64(f64_div(to_float64(left), to_float64(right)));
 	case RZ_FLOAT_IEEE754_BIN_80:
-		return of_floatx80(floatx80_div(to_floatx80(left), to_floatx80(right)));
+		return of_float80(extF80_div(to_float80(left), to_float80(right)));
 	case RZ_FLOAT_IEEE754_BIN_128:
-		return of_float128(float128_div(to_float128(left), to_float128(right)));
+		return of_float128(f128_div(to_float128(left), to_float128(right)));
 	default:
 		RZ_LOG_ERROR("float: DIV operation unimplemented for format %d\n", format);
 		return NULL;
@@ -2260,13 +2266,13 @@ RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMod
 
 	switch (format) {
 	case RZ_FLOAT_IEEE754_BIN_32:
-		return of_float32(float32_sqrt(to_float32(n)));
+		return of_float32(f32_sqrt(to_float32(n)));
 	case RZ_FLOAT_IEEE754_BIN_64:
-		return of_float64(float64_sqrt(to_float64(n)));
+		return of_float64(f64_sqrt(to_float64(n)));
 	case RZ_FLOAT_IEEE754_BIN_80:
-		return of_floatx80(floatx80_sqrt(to_floatx80(n)));
+		return of_float80(extF80_sqrt(to_float80(n)));
 	case RZ_FLOAT_IEEE754_BIN_128:
-		return of_float128(float128_sqrt(to_float128(n)));
+		return of_float128(f128_sqrt(to_float128(n)));
 	default:
 		RZ_LOG_ERROR("float: SQRT operation unimplemented for format %d\n", format);
 		return NULL;
