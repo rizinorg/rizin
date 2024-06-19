@@ -360,23 +360,6 @@ RZ_API RZ_OWN char *rz_float_as_dec_string(RZ_NULLABLE RzFloat *f) {
 	return rz_str_newf("%" LDBLFMTg, result);
 }
 
-/*
- * Common NaN and Inf detection
- * */
-#define PROC_SPECIAL_FLOAT_START(left, right) \
-	{ \
-		RzFloatSpec l_type, r_type; \
-		l_type = rz_float_detect_spec((left)); \
-		r_type = rz_float_detect_spec((right)); \
-		bool l_is_inf = (l_type == RZ_FLOAT_SPEC_PINF || l_type == RZ_FLOAT_SPEC_NINF); \
-		bool r_is_inf = (r_type == RZ_FLOAT_SPEC_PINF || r_type == RZ_FLOAT_SPEC_NINF); \
-		bool l_is_nan = (l_type == RZ_FLOAT_SPEC_SNAN || l_type == RZ_FLOAT_SPEC_QNAN); \
-		bool r_is_nan = (r_type == RZ_FLOAT_SPEC_SNAN || r_type == RZ_FLOAT_SPEC_QNAN); \
-		bool l_is_zero = l_type == RZ_FLOAT_SPEC_ZERO; \
-		bool r_is_zero = r_type == RZ_FLOAT_SPEC_ZERO;
-
-#define PROC_SPECIAL_FLOAT_END }
-
 /**
  * \brief Get const attributes from float
  * \param format RzFloatFormat, format of a float
