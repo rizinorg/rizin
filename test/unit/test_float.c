@@ -574,6 +574,7 @@ bool f32_ieee_special_num_test(void) {
 }
 
 bool f32_ieee_rem_test(void) {
+	/* This test should return a different result in mod. */
 	RzFloat *a1 = rz_float_new_from_f32(4.0f);
 	RzFloat *b1 = rz_float_new_from_f32(1.5f);
 	RzFloat *expect1 = rz_float_new_from_f32(-0.5f);
@@ -594,6 +595,7 @@ bool f32_ieee_rem_test(void) {
 	rz_float_free(expect2);
 	rz_float_free(rem2);
 
+	/* This test should return a different result in mod. */
 	RzFloat *a3 = rz_float_new_from_ut32_as_f32(0xCBF83FFF);
 	RzFloat *b3 = rz_float_new_from_ut32_as_f32(0x44800FF0);
 	RzFloat *expect3 = rz_float_new_from_ut32_as_f32(0x43E63BC0);
@@ -618,6 +620,7 @@ bool f32_ieee_rem_test(void) {
 }
 
 bool f32_ieee_mod_test(void) {
+	/* This test should return a different result in mod. */
 	RzFloat *a1 = rz_float_new_from_f32(4.0f);
 	RzFloat *b1 = rz_float_new_from_f32(1.5f);
 	RzFloat *expect1 = rz_float_new_from_f32(1.0f);
@@ -638,6 +641,7 @@ bool f32_ieee_mod_test(void) {
 	rz_float_free(expect2);
 	rz_float_free(rem2);
 
+	/* This test should return a different result in mod. */
 	RzFloat *a3 = rz_float_new_from_ut32_as_f32(0xCBF83FFF);
 	RzFloat *b3 = rz_float_new_from_ut32_as_f32(0x44801002);
 	RzFloat *expect3 = rz_float_new_from_ut32_as_f32(0xC3F71F80);
