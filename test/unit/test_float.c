@@ -267,6 +267,7 @@ bool f32_ieee_div_test(void) {
 }
 
 bool f80_ieee_div_test(void) {
+#if (__i386__ || __x86_64__) && !__WINDOWS__
 	RzFloat *x_f80 = rz_float_new_from_f80(1.l);
 	RzFloat *y_f80 = rz_float_new_from_f80(-0.384677154767621320985l);
 	RzFloat *quot_f80 = rz_float_div(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
@@ -277,6 +278,7 @@ bool f80_ieee_div_test(void) {
 	rz_float_free(y_f80);
 	rz_float_free(quot_f80);
 	rz_float_free(expected_f80);
+#endif
 	mu_end;
 }
 
