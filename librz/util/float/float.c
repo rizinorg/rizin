@@ -1349,244 +1349,34 @@ RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \return result of arithmetic operation
  */
 RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode) {
-	// process NaN / Inf
-	{
-		RzFloatSpec a_type, b_type, c_type;
-		a_type = rz_float_detect_spec(a);
-		b_type = rz_float_detect_spec(b);
-		c_type = rz_float_detect_spec(c);
-		bool a_is_inf = (a_type == RZ_FLOAT_SPEC_PINF || a_type == RZ_FLOAT_SPEC_NINF);
-		bool b_is_inf = (b_type == RZ_FLOAT_SPEC_PINF || b_type == RZ_FLOAT_SPEC_NINF);
-		bool c_is_inf = (c_type == RZ_FLOAT_SPEC_PINF || c_type == RZ_FLOAT_SPEC_NINF);
-		bool a_is_nan = (a_type == RZ_FLOAT_SPEC_SNAN || a_type == RZ_FLOAT_SPEC_QNAN);
-		bool b_is_nan = (b_type == RZ_FLOAT_SPEC_SNAN || b_type == RZ_FLOAT_SPEC_QNAN);
-		bool c_is_nan = (c_type == RZ_FLOAT_SPEC_SNAN || c_type == RZ_FLOAT_SPEC_QNAN);
+	rz_return_val_if_fail(a && b && c && a->r == b->r && b->r == c->r, NULL);
 
-		bool a_sign = get_sign(a->s, a->r);
-		bool b_sign = get_sign(b->s, b->r);
-		bool c_sign = get_sign(c->s, c->r);
-
-		// simplified, may not be exactly correct
-		if (a_is_nan || b_is_nan || c_is_nan) {
-			return rz_float_new_qnan(a->r);
-		}
-
-		if (a_is_inf || b_is_inf || c_is_inf) {
-			return rz_float_new_inf(a->r, a_is_inf ? a_sign : b_is_inf ? b_sign
-										   : c_sign);
-		}
-	}
-
-	// Extract attribute from format
 	RzFloatFormat format = a->r;
-	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
-	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
-	ut32 extra_len = total_len;
+	set_float_rounding_mode(mode);
 
-	// extra fields from a and b for multiply
-	RzBitVector *a_exp_squashed = get_exp_squashed(a->s, a->r);
-	RzBitVector *b_exp_squashed = get_exp_squashed(b->s, b->r);
-	RzBitVector *a_mantissa = get_man_stretched(a->s, a->r);
-	RzBitVector *b_mantissa = get_man_stretched(b->s, b->r);
-	RzBitVector *mul_sig = NULL;
-	bool a_sign = get_sign(a->s, a->r);
-	bool b_sign = get_sign(b->s, b->r);
-	bool mul_sign = a_sign ^ b_sign;
-	bool res_sign;
-	ut32 res_exp_val;
-	RzBitVector *res_sig;
-	RzFloat *ret_f;
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return of_float32(f32_mulAdd(to_float32(a), to_float32(b), to_float32(c)));
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return of_float64(f64_mulAdd(to_float64(a), to_float64(b), to_float64(c)));
+	case RZ_FLOAT_IEEE754_BIN_80: {
+		/* We don't have a 80-bit FMA available in SoftFloat, so we cast the
+		 * float to 128-bit, perform FMA and cast it back. This should be fine
+		 * since th 80-bit and the 128-bit format differ only in the size of
+		 * their mantissa. */
+		float128_t a_resized = extF80_to_f128(to_float80(a));
+		float128_t b_resized = extF80_to_f128(to_float80(b));
+		float128_t c_resized = extF80_to_f128(to_float80(c));
 
-	// Handle normal float multiply
-	ut32 a_exp_val = rz_bv_to_ut32(a_exp_squashed);
-	ut32 b_exp_val = rz_bv_to_ut32(b_exp_squashed);
-	ut32 shift_dist;
-
-	// remember we would like to make 01.MM MMMM ... (but leave higher extra bits empty)
-	shift_dist = (exp_len + 1) - 2;
-	ut32 hidden_bit_pos = total_len - 2;
-
-	rz_bv_lshift(a_mantissa, shift_dist);
-	rz_bv_lshift(b_mantissa, shift_dist);
-
-	st32 aexp_nobias = rz_float_get_exponent_val_no_bias(a);
-	st32 bexp_nobias = rz_float_get_exponent_val_no_bias(b);
-	st32 mul_exp_val = aexp_nobias + bexp_nobias;
-
-	// set leading bit
-	if (a_exp_val != 0) {
-		rz_bv_set(a_mantissa, hidden_bit_pos, true);
+		float128_t fma_resized = f128_mulAdd(a_resized, b_resized, c_resized);
+		return of_float80(f128_to_extF80(fma_resized));
 	}
-
-	if (b_exp_val != 0) {
-		rz_bv_set(b_mantissa, hidden_bit_pos, true);
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return of_float128(f128_mulAdd(to_float128(a), to_float128(b), to_float128(c)));
+	default:
+		RZ_LOG_ERROR("float: FMA operation unimplemented for format %d\n", format);
+		return NULL;
 	}
-
-	// multiplication
-	mul_sig = rz_bv_mul(a_mantissa, b_mantissa);
-
-	// check if a carry happen, if not, l-shift to force a leading 1
-	// check MSB and the bit after MSB
-	if (rz_bv_get(mul_sig, total_len + extra_len - 3)) {
-		// carry case, think about 01.10 * 01.10 => 0001.0010
-		// 001X.MMMM... -> 001.0MMMMM..
-		mul_exp_val += 1;
-		rz_bv_shift_right_jammed(mul_sig, 1);
-	}
-
-	// check result and normalize it if needed
-	ut32 clz = rz_bv_clz(mul_sig);
-	if (clz > 3) {
-		// means there are sub normal as factor
-		// try shift
-		shift_dist = clz - 3;
-		if (mul_exp_val - (st32)shift_dist < 1 - bias) {
-			// too small, represent as sub-normal
-			shift_dist = mul_exp_val - (1 - bias);
-		}
-		rz_bv_lshift(mul_sig, shift_dist);
-
-		// biased one
-		mul_exp_val = 0;
-
-		// for those who may be sub-normal, use fake hidden bit for rounding
-		// note that result sig has 000H.MMMM... form
-		rz_bv_set(mul_sig, rz_bv_len(mul_sig) - 4, true);
-	}
-	// others has 0001.MMMM...
-	else {
-		mul_exp_val += bias;
-	}
-
-	// note that mul sig has 000H.MMMM form
-	// addition we have 00H.MMMM form
-	rz_bv_lshift(mul_sig, 1);
-
-	// calculating addition
-	RzBitVector *c_exp_squashed = get_exp_squashed(c->s, c->r);
-	ut32 c_exp_val = rz_bv_to_ut32(c_exp_squashed);
-	bool c_sign = get_sign(c->s, c->r);
-	RzBitVector *c_mantissa = get_man_stretched(c->s, c->r);
-
-	res_sign = mul_sign;
-	if (!c_exp_val) {
-		if (rz_bv_is_zero_vector(c_mantissa)) {
-			res_exp_val = mul_exp_val - 1;
-			res_sig = mul_sig;
-			mul_sig = NULL;
-			goto round;
-		}
-
-		// normalize sub-normal c
-		// TODO : create a function - normalize_subnorm
-		shift_dist = rz_bv_clz(c_mantissa) - (1 + exp_len) + 1;
-		res_exp_val = 1 - shift_dist;
-		rz_bv_lshift(c_mantissa, shift_dist);
-	}
-
-	// prepare c_sig for addition
-	// set hidden bit 1 and shift to construct (00H.M MMMM ...)
-	hidden_bit_pos = total_len - 3;
-	rz_bv_lshift(c_mantissa, exp_len - 2);
-	rz_bv_set(c_mantissa, hidden_bit_pos, true);
-	rz_bv_lshift(c_mantissa, extra_len);
-
-	st32 exp_diff_val = (st32)(mul_exp_val - c_exp_val);
-	st32 abs_exp_diff_val = exp_diff_val > 0 ? exp_diff_val : -exp_diff_val;
-	if (mul_sign == c_sign) {
-		// addition
-		if (exp_diff_val <= 0) {
-			res_exp_val = c_exp_val;
-			rz_bv_shift_right_jammed(mul_sig, abs_exp_diff_val);
-		} else {
-			res_exp_val = mul_exp_val;
-			rz_bv_shift_right_jammed(c_mantissa, abs_exp_diff_val);
-		}
-
-		// calc
-		res_sig = rz_bv_add(mul_sig, c_mantissa, NULL);
-
-		// check if we should normalize when carry
-		ut32 new_total_len = rz_bv_len(res_sig);
-		if (rz_bv_get(res_sig, new_total_len - 2)) {
-			res_exp_val += 1;
-			rz_bv_shift_right_jammed(res_sig, 1);
-		}
-	} else {
-		// sub
-		if (exp_diff_val < 0) {
-			res_sign = c_sign;
-			res_exp_val = c_exp_val;
-			rz_bv_shift_right_jammed(mul_sig, abs_exp_diff_val);
-			res_sig = rz_bv_sub(c_mantissa, mul_sig, NULL);
-		} else if (exp_diff_val == 0) {
-			res_exp_val = mul_exp_val;
-			res_sig = rz_bv_sub(mul_sig, c_mantissa, NULL);
-			if (rz_bv_is_zero_vector(res_sig)) {
-				goto zero;
-			}
-			if (rz_bv_msb(res_sig)) {
-				// if negative, turn to (+/- absolute val) from 2's complement
-				res_sign = !res_sign;
-				RzBitVector *tmp = rz_bv_complement_2(res_sig);
-				rz_bv_free(res_sig);
-				res_sig = tmp;
-				tmp = NULL;
-			}
-
-		} else {
-			// exp_diff > 0
-			res_exp_val = mul_exp_val;
-			rz_bv_shift_right_jammed(c_mantissa, abs_exp_diff_val);
-			res_sig = rz_bv_sub(mul_sig, c_mantissa, NULL);
-		}
-
-		// note that we have 00H.MMMMM... form
-		shift_dist = rz_bv_clz(res_sig) - 2;
-		res_exp_val -= shift_dist;
-		if (shift_dist < 0) {
-			rz_bv_shift_right_jammed(res_sig, -shift_dist);
-		} else {
-			rz_bv_lshift(res_sig, shift_dist);
-		}
-	}
-
-	// drop extra length
-	// recovered to original length
-	rz_bv_shift_right_jammed(res_sig, extra_len);
-	RzBitVector *tmp = rz_bv_cut_head(res_sig, extra_len);
-	rz_bv_free(res_sig);
-	res_sig = tmp;
-	tmp = NULL;
-
-	goto round;
-
-zero:
-	// complete zero
-	ret_f = rz_float_new(format);
-	ret_f->s = rz_bv_new(total_len);
-	rz_bv_set(ret_f->s, total_len - 1, mode == RZ_FLOAT_RMODE_RTN);
-	goto clean;
-round:
-	ret_f = round_float_bv_new(
-		res_sign,
-		res_exp_val,
-		res_sig,
-		format,
-		format,
-		mode);
-clean:
-	rz_bv_free(a_mantissa);
-	rz_bv_free(a_exp_squashed);
-	rz_bv_free(b_mantissa);
-	rz_bv_free(b_exp_squashed);
-	rz_bv_free(mul_sig);
-	rz_bv_free(c_exp_squashed);
-	rz_bv_free(c_mantissa);
-	rz_bv_free(res_sig);
-
-	return ret_f;
 }
 
 /**
@@ -1672,105 +1462,23 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
  */
 RZ_API RZ_OWN RzFloat *rz_float_round_to_integral(RZ_NONNULL RzFloat *f, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
-	RzFloat *ret;
-	RzBitVector *tmp, *rounded;
-	ut32 exp = float_exponent(f);
+
 	RzFloatFormat format = f->r;
-	bool sign = get_sign(f->s, format);
-	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
-	bool is_subnormal = exp == 0;
-	st32 exp_no_bias = is_subnormal ? (1 - bias) : (exp - bias);
-	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
-	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
+	set_float_rounding_mode(mode);
 
-	// rounding float to get an integer means
-	// we should try to reserve `exponent` bits of mantissa
-	// drop extra bits or append zeros
-	// 1.MM..M * 2^exp = 1MM..M * 2^0 (integer)
-	bool should_inc = false;
-	RzBitVector *sig = rz_float_get_mantissa(f);
-
-	// sub normal one has no hidden bit, others should set to 1
-	if (!is_subnormal) {
-		rz_bv_set(sig, man_len, true);
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return of_float32(f32_roundToInt(to_float32(f), softfloat_roundingMode, false));
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return of_float64(f64_roundToInt(to_float64(f), softfloat_roundingMode, false));
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return of_float80(extF80_roundToInt(to_float80(f), softfloat_roundingMode, false));
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return of_float128(f128_roundToInt(to_float128(f), softfloat_roundingMode, false));
+	default:
+		RZ_LOG_ERROR("float: ROUND operation unimplemented for format %d\n", format);
+		return NULL;
 	}
-
-	if (exp_no_bias >= 0) {
-		// has `exp_no_bias` + 3 + 1 length
-		tmp = round_significant(sign, sig, exp_no_bias, mode, &should_inc);
-	} else {
-		// float 1.M..M * 2^exp, when exp < 0
-		// flatten it and we have 0.0..1M..M (|exp|+1 zeros before 1MMM...)
-		// set a fake 1 before radix point, and we can use round_significant to round
-		ut32 remained_zeros = total_len - man_len - 1;
-		RzBitVector *fake_f;
-		if (-exp_no_bias > remained_zeros) {
-			// prepend
-			fake_f = rz_bv_prepend_zero(sig, -exp_no_bias - remained_zeros);
-		} else {
-			fake_f = rz_bv_dup(sig);
-		}
-		rz_bv_set(fake_f, rz_bv_len(fake_f) - 1, true);
-		tmp = round_significant(sign, fake_f, 0, mode, &should_inc);
-
-		// unset the fake 1 in tmp
-		// tmp has 3 + 1 + precision = 4
-		rz_bv_set(tmp, 0, false);
-		rz_bv_free(fake_f);
-	}
-	rz_bv_free(sig);
-	sig = NULL;
-
-	// rounded result, rounded has (3 + 1 + precision) length
-	if (should_inc) {
-		// WARN: possible overflow => no enough length
-		RzBitVector *bv_one;
-		bv_one = rz_bv_new_one(rz_bv_len(tmp));
-		rounded = rz_bv_add(tmp, bv_one, NULL);
-		rz_bv_free(bv_one);
-	} else {
-		rounded = rz_bv_dup(tmp);
-	}
-	rz_bv_free(tmp);
-	tmp = NULL;
-
-	// now we have an integer bitv, convert it to significant
-	// 0001 MMMM = 1.MMMM * 2^4
-	st32 integral_exp_val = rz_bv_len(rounded) - rz_bv_clz(rounded) - 1;
-	if (integral_exp_val < 0) {
-		// -1, means rounded is all zero
-		ret = rz_float_new_zero(format);
-		rz_float_set_sign(ret, sign);
-
-		rz_bv_free(rounded);
-		return ret;
-	}
-	RzBitVector *integeral_exp = rz_bv_new_from_ut64(32, integral_exp_val + bias);
-
-	if (man_len > integral_exp_val) {
-		sig = rz_bv_append_zero(rounded, man_len - integral_exp_val);
-		rz_bv_free(rounded);
-		rounded = NULL;
-	} else {
-		// right shift zero bits
-		rz_bv_rshift(rounded, integral_exp_val - man_len);
-		sig = rounded;
-		rounded = NULL;
-	}
-
-	ret = RZ_NEW0(RzFloat);
-	if (!ret) {
-		rz_bv_free(integeral_exp);
-		rz_bv_free(sig);
-		return ret;
-	}
-
-	ret->r = format;
-	ret->s = pack_float_bv(sign, integeral_exp, sig, format);
-
-	rz_bv_free(integeral_exp);
-	rz_bv_free(sig);
-	return ret;
 }
 
 /**
@@ -1844,7 +1552,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length,
  * cast_sint s rm x returns an integer closest to x.
  * The resulting bitvector should be interpreted as a signed two-complement integer.
  * \param f float
- * \param length length of returnded bitvector
+ * \param length length of returned bitvector
  * \param mode rounding mode
  * \return signed bitvector in 2's complement
  */
