@@ -1295,6 +1295,8 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * 0 % Any -> 0
  * \param mode rounding mode
  * \return result of arithmetic operation
+ *
+ * Can be positive or negative. Range: [ -abs(right)/2, abs(right)/2 ]
  */
 RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
@@ -1326,6 +1328,11 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * 0 % Any -> 0
  * \param mode rounding mode
  * \return result of arithmetic operation
+ *
+ * Mod is guaranteed to be of the same sign as \p left.
+ * Range:
+ * 		- [ 0, abs(right) )		if left >= 0
+ * 		- ( -abs(right), 0 ]	if left <= 0
  */
 RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
