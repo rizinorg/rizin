@@ -55,6 +55,134 @@ define_types_gen_inf(f64, double);
 define_types_gen_inf(f128, long double);
 /**@}*/
 
+/** \defgroup Helper utilities to inter-operate with SoftFloat.
+ * @ {
+ */
+static inline float32_t to_float32(RzFloat *f32) {
+	rz_warn_if_fail(f32->r == RZ_FLOAT_IEEE754_BIN_32);
+	float32_t ret = {
+		.v = rz_bv_to_ut32(f32->s)
+	};
+	return ret;
+}
+
+static inline float64_t to_float64(RzFloat *f64) {
+	rz_warn_if_fail(f64->r == RZ_FLOAT_IEEE754_BIN_64);
+	float64_t ret = {
+		.v = rz_bv_to_ut64(f64->s)
+	};
+	return ret;
+}
+
+static inline extFloat80_t to_float80(RzFloat *f80) {
+	rz_warn_if_fail(f80->r == RZ_FLOAT_IEEE754_BIN_80);
+
+	extFloat80_t ret;
+	ret.signif = rz_bv_to_ut64(f80->s);
+
+	ut16 upper = 0;
+	for (ut8 i = 0; i < 16; i++) {
+		upper <<= 1;
+		upper |= rz_bv_get(f80->s, 80 - i - 1);
+	}
+	ret.signExp = upper;
+
+	return ret;
+}
+
+static inline float128_t to_float128(RzFloat *f128) {
+	rz_warn_if_fail(f128->r != RZ_FLOAT_IEEE754_BIN_128);
+
+	float128_t ret;
+	ret.v[0] = rz_bv_to_ut64(f128->s);
+
+	ut64 upper = 0;
+	for (ut8 i = 0; i < 64; i++) {
+		upper <<= 1;
+		upper |= rz_bv_get(f128->s, 128 - i - 1);
+	}
+	ret.v[1] = upper;
+
+	return ret;
+}
+
+static inline RzFloat *set_exception_flags(RzFloat *f) {
+	if (softfloat_exceptionFlags & softfloat_flag_inexact) {
+		f->exception |= RZ_FLOAT_E_INEXACT;
+	}
+	if (softfloat_exceptionFlags & softfloat_flag_underflow) {
+		f->exception |= RZ_FLOAT_E_UNDERFLOW;
+	}
+	if (softfloat_exceptionFlags & softfloat_flag_overflow) {
+		f->exception |= RZ_FLOAT_E_OVERFLOW;
+	}
+	if (softfloat_exceptionFlags & softfloat_flag_infinite) {
+		f->exception |= RZ_FLOAT_E_DIV_ZERO;
+	}
+	if (softfloat_exceptionFlags & softfloat_flag_invalid) {
+		f->exception |= RZ_FLOAT_E_INVALID_OP;
+	}
+
+	softfloat_exceptionFlags = 0;
+	return f;
+}
+
+static inline RzFloat *of_float32(float32_t f32) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
+
+	rz_bv_set_from_ut64(ret->s, f32.v);
+	return set_exception_flags(ret);
+}
+
+static inline RzFloat *of_float64(float64_t f64) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
+
+	rz_bv_set_from_ut64(ret->s, f64.v);
+	return set_exception_flags(ret);
+}
+
+static inline RzFloat *of_float80(extFloat80_t f80) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_80);
+
+	rz_bv_set_from_ut64(ret->s, f80.signif);
+
+	ut16 upper = f80.signExp;
+	for (ut8 i = 0; i < 16; i++) {
+		rz_bv_set(ret->s, 64 + i, upper & 1);
+		upper >>= 1;
+	}
+
+	return set_exception_flags(ret);
+}
+
+static inline RzFloat *of_float128(float128_t f128) {
+	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_128);
+
+	rz_bv_set_from_ut64(ret->s, f128.v[0]);
+
+	ut64 upper = f128.v[1];
+	for (ut8 i = 0; i < 64; i++) {
+		rz_bv_set(ret->s, 64 + i, upper & 1);
+		upper >>= 1;
+	}
+
+	return set_exception_flags(ret);
+}
+
+static int8_t rounding_mode_mapping[] = {
+	[RZ_FLOAT_RMODE_RNE] = softfloat_round_near_even,
+	[RZ_FLOAT_RMODE_RNA] = softfloat_round_near_maxMag,
+	[RZ_FLOAT_RMODE_RTP] = softfloat_round_max,
+	[RZ_FLOAT_RMODE_RTN] = softfloat_round_min,
+	[RZ_FLOAT_RMODE_RTZ] = softfloat_round_minMag,
+	[RZ_FLOAT_RMODE_UNK] = 6,
+};
+
+static inline void set_float_rounding_mode(RzFloatRMode mode) {
+	softfloat_roundingMode = rounding_mode_mapping[mode];
+}
+/**@}*/
+
 /**
  * \brief return the bitvector string of a float
  * \param f float
@@ -1043,355 +1171,6 @@ RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format) {
 }
 
 /**
- * \brief propagate NaN and trigger signal (set exception for a NaN),
- * used in float arithmetic to deal with NaN operand
- */
-static RZ_OWN RzFloat *propagate_float_nan(RZ_NONNULL RzFloat *left, RzFloatSpec ltype, RZ_NONNULL RzFloat *right, RzFloatSpec rtype) {
-	bool l_is_sig_nan = ltype == RZ_FLOAT_SPEC_SNAN;
-	bool r_is_sig_nan = rtype == RZ_FLOAT_SPEC_SNAN;
-
-	// gen a quiet NaN for return
-	RzFloatFormat format = left->r;
-	RzFloat *ret = rz_float_new(left->r);
-	RzBitVector *bv = ret->s;
-	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
-	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-
-	// set exponent part to all 1
-	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
-
-	// set is_quiet to 1
-	rz_bv_set(bv, exp_start - 1, true);
-
-	// signal an exception
-	if (l_is_sig_nan || r_is_sig_nan) {
-		ret->exception |= RZ_FLOAT_E_INVALID_OP;
-	}
-
-	return ret;
-}
-
-/**
- * \brief add magnitude (absolute value)
- */
-static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, bool sign, RzFloatRMode mode) {
-	RzFloat *result = NULL;
-
-	/* Process NaN and Inf cases */
-	PROC_SPECIAL_FLOAT_START(left, right)
-	// propagate NaN
-	if (l_is_nan || r_is_nan) {
-		return propagate_float_nan(left, l_type, right, r_type);
-	}
-
-	if (l_is_inf || r_is_inf) {
-		// inf + inf = inf
-		return rz_float_new_inf(left->r, sign);
-	}
-
-	if (l_is_zero || r_is_zero) {
-		return rz_float_dup(l_is_zero ? right : left);
-	}
-	PROC_SPECIAL_FLOAT_END
-
-	/* Process normal cases */
-	// Extract attribute from format
-	RzFloatFormat format = left->r;
-	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
-
-	// Extract fields from num
-	RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
-	RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
-	RzBitVector *l_mantissa = get_man(left->s, left->r);
-	RzBitVector *r_mantissa = get_man(right->s, right->r);
-
-	if (!l_exp_squashed || !r_exp_squashed || !l_mantissa || !r_mantissa) {
-		RZ_LOG_ERROR("float: fadd: Error when parsing RzFloat\n");
-		return NULL;
-	}
-
-	RzBitVector *l_borrowed_sig = l_mantissa;
-	RzBitVector *r_borrowed_sig = r_mantissa;
-	RzBitVector *result_sig = NULL;
-	RzBitVector *exp_one = rz_bv_new_one(exp_len);
-	bool unused;
-
-	// Handle normal float add
-	ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
-	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
-	st32 exp_diff = (st32)(l_exp_val - r_exp_val);
-	ut32 abs_exp_diff = exp_diff;
-	ut32 l_borrow_exp_val = l_exp_val;
-	ut32 r_borrow_exp_val = r_exp_val;
-
-	// left shift to prevent some tail bits being discard during calculating
-	// should reserve 3 bits before mantissa : ABCM MMMM MMMM MMMM ...
-	// C : for the hidden significant bit
-	// B : carry bit
-	// A : a space for possible overflow during rounding
-	// M : represent for mantissa bits
-	ut32 shift_dist = (exp_len + 1) - 3; // mantissa have (exp_len + sign_len) free bits, and then reserve 3 bits
-	ut32 hidden_bit_pos = total_len - 3; // the 3rd bit counted from MSB
-	ut32 carry_bit_pos = total_len - 2; // the 2nd bit counted from MSB
-
-	if (exp_diff == 0) {
-		// normalized float, hidden bit is 1, recover it in significant
-		// 1.MMMM MMMM ...
-		if (l_borrow_exp_val != 0) {
-			rz_bv_lshift(l_mantissa, shift_dist);
-			rz_bv_lshift(r_mantissa, shift_dist);
-			rz_bv_set(l_borrowed_sig, hidden_bit_pos, true);
-			rz_bv_set(r_borrowed_sig, hidden_bit_pos, true);
-		} else {
-			// sub-normal + sub-normal
-			// sub-normal float, hidden bit is 0, so we do nothing to sigs
-			// 0.MMMM MMMM ...
-			// calculate and then pack to return
-			result = RZ_NEW0(RzFloat);
-			result->r = format;
-			result->s = rz_bv_add(left->s, r_mantissa, &unused);
-			goto clean;
-		}
-	} else { // exp_diff != 0
-		rz_bv_lshift(l_mantissa, shift_dist);
-		rz_bv_lshift(r_mantissa, shift_dist);
-		// should align exponent, chose the max(l_exp, r_exp) as final exp
-		if (exp_diff < 0) {
-			// swap to keep l_exp > r_exp
-			l_borrowed_sig = r_mantissa;
-			r_borrowed_sig = l_mantissa;
-			l_borrow_exp_val = r_exp_val;
-			r_borrow_exp_val = l_exp_val;
-			abs_exp_diff = -exp_diff;
-		}
-
-		// check if the small one (right) is normalized ?
-		if (r_borrow_exp_val != 0) {
-			// normalized, and then we recover the leading bit 1
-			// 1.MMMM MMMM ...
-			rz_bv_set(r_borrowed_sig, hidden_bit_pos, true);
-		} else {
-			// sub-normal (or denormalized float) case
-			// in IEEE, the value of exp is (1 - bias) for sub-normal, instead of (0 - bias)
-			// but we considered it as (0 - bias) when calculate the exp_diff = l_exp_field - r_exp_field
-			// we should r-shift (l_exp_field - bias) - (1 - bias) = l_exp_field - 1,
-			// but we r-shift (l_exp_field - bias) - (0 - bias) = l_exp_filed
-			// thus we need to l-shift 1 bit to fix this incompatible
-			rz_bv_lshift(r_borrowed_sig, 1);
-		}
-
-		// revealed the hidden bit of the bigger one : 1.MMMM
-		rz_bv_set(l_borrowed_sig, hidden_bit_pos, true);
-		// aligned exponent, and generate sticky bit
-		rz_bv_shift_right_jammed(r_borrowed_sig, abs_exp_diff);
-	}
-
-	// set result exponent
-	ut32 result_exp_val = l_borrow_exp_val;
-
-	// now l_exp == r_exp
-	// calculate significant
-	result_sig = rz_bv_add(l_borrowed_sig, r_borrowed_sig, &unused);
-
-	if (rz_bv_get(result_sig, carry_bit_pos)) {
-		result_exp_val += 1;
-	}
-
-	// round
-	result = round_float_bv_new(
-		sign,
-		result_exp_val,
-		result_sig,
-		format,
-		format,
-		mode);
-
-// clean
-clean:
-	rz_bv_free(l_exp_squashed);
-	rz_bv_free(l_mantissa);
-	rz_bv_free(r_exp_squashed);
-	rz_bv_free(r_mantissa);
-	rz_bv_free(result_sig);
-	rz_bv_free(exp_one);
-	return result;
-}
-
-/**
- * \brief sub magnitude (absolute value)
- */
-static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, bool sign, RzFloatRMode mode) {
-	RzFloat *result = NULL;
-
-	/* Process NaN and Inf cases */
-	PROC_SPECIAL_FLOAT_START(left, right)
-	// propagate NaN
-	if (l_is_nan || r_is_nan) {
-		return propagate_float_nan(left, l_type, right, r_type);
-	}
-
-	bool l_sign = rz_float_is_negative(left);
-	bool r_sign = rz_float_is_negative(right);
-	if (l_is_inf || r_is_inf) {
-		if (l_is_inf && r_is_inf) {
-			// +inf - inf = NaN
-			return rz_float_new_qnan(left->r);
-		}
-		return l_is_inf ? rz_float_new_inf(left->r, l_sign) : rz_float_new_inf(left->r, r_sign);
-	}
-
-	if (l_is_zero || r_is_zero) {
-		RzFloat *ret_spec = rz_float_dup(l_is_zero ? right : left);
-		if (l_is_zero) {
-			rz_bv_set(ret_spec->s, ret_spec->s->len - 1, !r_sign);
-		}
-		return ret_spec;
-	}
-	PROC_SPECIAL_FLOAT_END
-
-	// Extract attribute from format
-	RzFloatFormat format = left->r;
-	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
-
-	// Extract fields from num
-	RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
-	RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
-	RzBitVector *l_mantissa = get_man(left->s, left->r);
-	RzBitVector *r_mantissa = get_man(right->s, right->r);
-
-	if (!l_exp_squashed || !r_exp_squashed || !l_mantissa || !r_mantissa) {
-		RZ_LOG_ERROR("float: fsub: Error when parsing RzFloat\n");
-		rz_bv_free(l_exp_squashed);
-		rz_bv_free(r_exp_squashed);
-		rz_bv_free(l_mantissa);
-		rz_bv_free(r_mantissa);
-		return NULL;
-	}
-
-	RzBitVector *l_borrowed_sig = l_mantissa;
-	RzBitVector *r_borrowed_sig = r_mantissa;
-	RzBitVector *result_sig = NULL, *result_exp_squashed = NULL;
-	bool unused;
-
-	// Handle normal float add
-	ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
-	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
-	st32 exp_diff = (st32)(l_exp_val - r_exp_val);
-	ut32 abs_exp_diff = exp_diff;
-	ut32 l_borrow_exp_val = l_exp_val;
-	ut32 r_borrow_exp_val = r_exp_val;
-	st32 res_exp_val;
-
-	// similar to `add`, but remember that sub would never produce a carry bit
-	// we create ABMM MMMM MMMM MMMM ...
-	// B : for the leading significant bit
-	// A : space
-	ut32 shift_dist = (exp_len + 1) - 2; // mantissa have (exp_len + sign_len) free bits, and then reserve 2 bits
-	ut32 hidden_bit_pos = total_len - 2; // the 2nd bit counted from MSB
-
-	// if l_exp = r_exp
-	if (exp_diff == 0) {
-		// compare result
-		ut8 sdiff_neg = rz_bv_ule(l_mantissa, r_mantissa);
-		ut8 sdiff_pos = rz_bv_ule(r_mantissa, l_mantissa);
-		ut8 sig_diff_is_zero = sdiff_neg && sdiff_pos;
-		RzBitVector *sig_diff = NULL;
-		if (sig_diff_is_zero) {
-			// pack to return, exp = 0, sig = 0
-			result = RZ_NEW0(RzFloat);
-			result->r = format;
-			result->s = rz_bv_new_zero(total_len);
-			rz_bv_set(result->s, total_len - 1, mode == RZ_FLOAT_RMODE_RTN);
-			goto clean;
-		}
-
-		// calculate the correct sig diff
-		if (sdiff_neg) {
-			sign = !sign;
-			sig_diff = rz_bv_sub(r_mantissa, l_mantissa, &unused);
-		} else {
-			sig_diff = rz_bv_sub(l_mantissa, r_mantissa, &unused);
-		}
-
-		// normalize sig
-		// clz - exp_len - sign_len + 1 (reserve the leading bit) = clz - exp_len
-		shift_dist = rz_bv_clz(sig_diff) - exp_len;
-		res_exp_val = (st32)(l_exp_val - shift_dist);
-		if (res_exp_val < 0) {
-			// too tiny after shifting, limit to exp_A
-			shift_dist = l_exp_val;
-			res_exp_val = 0;
-		}
-		// normalize sig diff, reveal the hidden bit pos
-		rz_bv_lshift(sig_diff, shift_dist);
-
-		result_exp_squashed = rz_bv_new_from_ut64(l_exp_squashed->len, res_exp_val);
-		result = RZ_NEW0(RzFloat);
-		result->r = format;
-		result->s = pack_float_bv(sign, result_exp_squashed, sig_diff, format);
-
-		rz_bv_free(sig_diff);
-		goto clean;
-	} else {
-		rz_bv_lshift(l_mantissa, shift_dist);
-		rz_bv_lshift(r_mantissa, shift_dist);
-		// l_exp != r_exp
-		if (exp_diff < 0) {
-			// swap to keep l_exp > r_exp
-			l_borrow_exp_val = r_exp_val;
-			r_borrow_exp_val = l_exp_val;
-			l_borrowed_sig = r_mantissa;
-			r_borrowed_sig = l_mantissa;
-			abs_exp_diff = -exp_diff;
-			sign = !sign;
-		}
-
-		// check if the small one (right) is sub-normal ?
-		if (r_borrow_exp_val != 0) {
-			// normalized, and then we recover the leading bit 1
-			// 1.MMMM MMMM ...
-			rz_bv_set(r_borrowed_sig, hidden_bit_pos, true);
-		}
-
-		// revealed the hidden bit of the bigger one : 1.MMMM
-		rz_bv_set(l_borrowed_sig, hidden_bit_pos, true);
-		// aligned exponent, and generate sticky bit
-		rz_bv_shift_right_jammed(r_borrowed_sig, abs_exp_diff);
-	}
-
-	// result_exp = bigger_exp
-	res_exp_val = l_borrow_exp_val;
-	// result_sig = bigger_sig - small_sig
-	result_sig = rz_bv_sub(l_borrowed_sig, r_borrowed_sig, &unused);
-
-	ut32 borrow_pos = hidden_bit_pos;
-	if (!rz_bv_get(result_sig, borrow_pos)) {
-		// borrow happens
-		res_exp_val -= 1;
-	}
-
-	result = round_float_bv_new(
-		sign,
-		res_exp_val,
-		result_sig,
-		format,
-		format,
-		mode);
-
-clean:
-	rz_bv_free(l_exp_squashed);
-	rz_bv_free(l_mantissa);
-	rz_bv_free(r_exp_squashed);
-	rz_bv_free(r_mantissa);
-	rz_bv_free(result_exp_squashed);
-	rz_bv_free(result_sig);
-
-	return result;
-}
-
-/**
  * \defgroup rz_float_arithmetic_group Arithmetic Operations
  * implements add, sub, mul, div, fma, rem, sqrt for binary32/binary64/binary128
  * \{
@@ -1403,12 +1182,24 @@ clean:
  * \return result of arithmetic operation
  */
 RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
-	bool l_sign = rz_float_is_negative(left);
-	bool r_sign = rz_float_is_negative(right);
-	if (l_sign == r_sign) {
-		return fadd_mag(left, right, l_sign, mode);
+	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
+
+	RzFloatFormat format = left->r;
+	set_float_rounding_mode(mode);
+
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return of_float32(f32_add(to_float32(left), to_float32(right)));
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return of_float64(f64_add(to_float64(left), to_float64(right)));
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return of_float80(extF80_add(to_float80(left), to_float80(right)));
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return of_float128(f128_add(to_float128(left), to_float128(right)));
+	default:
+		RZ_LOG_ERROR("float: ADD operation unimplemented for format %d\n", format);
+		return NULL;
 	}
-	return fsub_mag(left, right, l_sign, mode);
 }
 
 /**
@@ -1417,12 +1208,24 @@ RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \return result of arithmetic operation
  */
 RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
-	bool l_sign = rz_float_is_negative(left);
-	bool r_sign = rz_float_is_negative(right);
-	if (l_sign == r_sign) {
-		return fsub_mag(left, right, l_sign, mode);
+	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
+
+	RzFloatFormat format = left->r;
+	set_float_rounding_mode(mode);
+
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return of_float32(f32_sub(to_float32(left), to_float32(right)));
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return of_float64(f64_sub(to_float64(left), to_float64(right)));
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return of_float80(extF80_sub(to_float80(left), to_float80(right)));
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return of_float128(f128_sub(to_float128(left), to_float128(right)));
+	default:
+		RZ_LOG_ERROR("float: SUB operation unimplemented for format %d\n", format);
+		return NULL;
 	}
-	return fadd_mag(left, right, l_sign, mode);
 }
 
 /**
@@ -1431,253 +1234,24 @@ RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \return result of arithmetic operation
  */
 RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
-	RzFloat *result = NULL;
+	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
-	/* Process NaN and Inf cases */
-	PROC_SPECIAL_FLOAT_START(left, right)
-	// propagate NaN
-	if (l_is_nan || r_is_nan) {
-		return propagate_float_nan(left, l_type, right, r_type);
-	}
-
-	bool l_sign = rz_float_is_negative(left);
-	bool r_sign = rz_float_is_negative(right);
-	bool spec_sign = l_sign ^ r_sign;
-
-	if (l_is_inf) {
-		return r_is_zero ? rz_float_new_qnan(left->r) : rz_float_new_inf(left->r, spec_sign);
-	}
-
-	if (r_is_inf) {
-		return l_is_zero ? rz_float_new_qnan(left->r) : rz_float_new_inf(left->r, spec_sign);
-	}
-
-	if (l_is_zero || r_is_zero) {
-		// 0 * x = 0
-		return rz_float_new(left->r);
-	}
-	PROC_SPECIAL_FLOAT_END
-
-	// Extract attribute from format
 	RzFloatFormat format = left->r;
-	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
-	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
-	ut32 extra_len = total_len;
+	set_float_rounding_mode(mode);
 
-	// Extract fields from num
-	RzBitVector *l_exp_squashed = get_exp_squashed(left->s, left->r);
-	RzBitVector *r_exp_squashed = get_exp_squashed(right->s, right->r);
-	RzBitVector *l_mantissa = get_man_stretched(left->s, left->r);
-	RzBitVector *r_mantissa = get_man_stretched(right->s, right->r);
-	RzBitVector *result_sig = NULL, *result_exp_squashed = NULL;
-	bool l_sign = get_sign(left->s, left->r);
-	bool r_sign = get_sign(right->s, right->r);
-	bool result_sign = l_sign ^ r_sign;
-
-	// Handle normal float multiply
-	ut32 l_exp_val = rz_bv_to_ut32(l_exp_squashed);
-	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
-	ut32 shift_dist;
-
-	// no biased one
-	rz_bv_lshift(l_mantissa, exp_len - 1);
-	rz_bv_lshift(r_mantissa, exp_len - 1);
-
-	st32 lexp_nobias = rz_float_get_exponent_val_no_bias(left);
-	st32 rexp_nobias = rz_float_get_exponent_val_no_bias(right);
-	st32 result_exp_val = lexp_nobias + rexp_nobias;
-
-	// remember we would like to make 01.MM MMMM ... (but leave higher extra bits empty)
-	ut32 hidden_bit_pos = total_len - 2;
-
-	// set leading bit
-	if (l_exp_val != 0) {
-		rz_bv_set(l_mantissa, hidden_bit_pos, true);
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return of_float32(f32_mul(to_float32(left), to_float32(right)));
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return of_float64(f64_mul(to_float64(left), to_float64(right)));
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return of_float80(extF80_mul(to_float80(left), to_float80(right)));
+	case RZ_FLOAT_IEEE754_BIN_128:
+		return of_float128(f128_mul(to_float128(left), to_float128(right)));
+	default:
+		RZ_LOG_ERROR("float: MUL operation unimplemented for format %d\n", format);
+		return NULL;
 	}
-
-	if (r_exp_val != 0) {
-		rz_bv_set(r_mantissa, hidden_bit_pos, true);
-	}
-
-	// multiplication
-	// since operands have 0H.MMMM... form, and 0H.MMMMM...
-	// result would be 00XX.MMMM...
-	result_sig = rz_bv_mul(l_mantissa, r_mantissa);
-
-	// check if a carry happen, if not, l-shift to force a leading 1
-	// check MSB and the bit after MSB
-	if (rz_bv_get(result_sig, total_len + extra_len - 3)) {
-		// carry case, think about 01.10 * 01.10 => 0001.0010
-		// 001X.MMMM... -> 001.0MMMMM..
-		result_exp_val += 1;
-		rz_bv_shift_right_jammed(result_sig, 1);
-	}
-
-	// check result and normalize it if needed
-	ut32 clz = rz_bv_clz(result_sig);
-	if (clz > 3) {
-		// means there are sub normal as factor
-		// try shift
-		shift_dist = clz - 3;
-		if (result_exp_val - (st32)shift_dist < 1 - bias) {
-			// too small, represent as sub-normal
-			shift_dist = result_exp_val - (1 - bias);
-		}
-		rz_bv_lshift(result_sig, shift_dist);
-
-		// biased one
-		result_exp_val = 0;
-
-		// for those who may be sub-normal, use fake hidden bit for rounding
-		// note that result sig has 000H.MMMM... form
-		rz_bv_set(result_sig, rz_bv_len(result_sig) - 4, true);
-	}
-	// others has 0001.MMMM...
-	else {
-		result_exp_val += bias;
-	}
-
-	result = round_float_bv_new(
-		result_sign,
-		result_exp_val,
-		result_sig,
-		format,
-		format,
-		mode);
-
-	rz_bv_free(l_exp_squashed);
-	rz_bv_free(r_exp_squashed);
-	rz_bv_free(l_mantissa);
-	rz_bv_free(r_mantissa);
-	rz_bv_free(result_exp_squashed);
-	rz_bv_free(result_sig);
-
-	return result;
-}
-
-static inline float32_t to_float32(RzFloat *f32) {
-	rz_warn_if_fail(f32->r == RZ_FLOAT_IEEE754_BIN_32);
-	float32_t ret = {
-		.v = rz_bv_to_ut32(f32->s)
-	};
-	return ret;
-}
-
-static inline float64_t to_float64(RzFloat *f64) {
-	rz_warn_if_fail(f64->r == RZ_FLOAT_IEEE754_BIN_64);
-	float64_t ret = {
-		.v = rz_bv_to_ut64(f64->s)
-	};
-	return ret;
-}
-
-static inline extFloat80_t to_float80(RzFloat *f80) {
-	rz_warn_if_fail(f80->r == RZ_FLOAT_IEEE754_BIN_80);
-
-	extFloat80_t ret;
-	ret.signif = rz_bv_to_ut64(f80->s);
-
-	ut16 upper = 0;
-	for (ut8 i = 0; i < 16; i++) {
-		upper <<= 1;
-		upper |= rz_bv_get(f80->s, 80 - i - 1);
-	}
-	ret.signExp = upper;
-
-	return ret;
-}
-
-static inline float128_t to_float128(RzFloat *f128) {
-	rz_warn_if_fail(f128->r != RZ_FLOAT_IEEE754_BIN_128);
-
-	float128_t ret;
-	ret.v[0] = rz_bv_to_ut64(f128->s);
-
-	ut64 upper = 0;
-	for (ut8 i = 0; i < 64; i++) {
-		upper <<= 1;
-		upper |= rz_bv_get(f128->s, 128 - i - 1);
-	}
-	ret.v[1] = upper;
-
-	return ret;
-}
-
-static inline RzFloat *set_exception_flags(RzFloat *f) {
-	if (softfloat_exceptionFlags & softfloat_flag_inexact) {
-		f->exception |= RZ_FLOAT_E_INEXACT;
-	}
-	if (softfloat_exceptionFlags & softfloat_flag_underflow) {
-		f->exception |= RZ_FLOAT_E_UNDERFLOW;
-	}
-	if (softfloat_exceptionFlags & softfloat_flag_overflow) {
-		f->exception |= RZ_FLOAT_E_OVERFLOW;
-	}
-	if (softfloat_exceptionFlags & softfloat_flag_infinite) {
-		f->exception |= RZ_FLOAT_E_DIV_ZERO;
-	}
-	if (softfloat_exceptionFlags & softfloat_flag_invalid) {
-		f->exception |= RZ_FLOAT_E_INVALID_OP;
-	}
-
-	softfloat_exceptionFlags = 0;
-	return f;
-}
-
-static inline RzFloat *of_float32(float32_t f32) {
-	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
-
-	rz_bv_set_from_ut64(ret->s, f32.v);
-	return set_exception_flags(ret);
-}
-
-static inline RzFloat *of_float64(float64_t f64) {
-	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
-
-	rz_bv_set_from_ut64(ret->s, f64.v);
-	return set_exception_flags(ret);
-}
-
-static inline RzFloat *of_float80(extFloat80_t f80) {
-	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_80);
-
-	rz_bv_set_from_ut64(ret->s, f80.signif);
-
-	ut16 upper = f80.signExp;
-	for (ut8 i = 0; i < 16; i++) {
-		rz_bv_set(ret->s, 64 + i, upper & 1);
-		upper >>= 1;
-	}
-
-	return set_exception_flags(ret);
-}
-
-static inline RzFloat *of_float128(float128_t f128) {
-	RzFloat *ret = rz_float_new(RZ_FLOAT_IEEE754_BIN_128);
-
-	rz_bv_set_from_ut64(ret->s, f128.v[0]);
-
-	ut64 upper = f128.v[1];
-	for (ut8 i = 0; i < 64; i++) {
-		rz_bv_set(ret->s, 64 + i, upper & 1);
-		upper >>= 1;
-	}
-
-	return set_exception_flags(ret);
-}
-
-static int8_t rounding_mode_mapping[] = {
-	[RZ_FLOAT_RMODE_RNE] = softfloat_round_near_even,
-	[RZ_FLOAT_RMODE_RNA] = softfloat_round_near_maxMag,
-	[RZ_FLOAT_RMODE_RTP] = softfloat_round_max,
-	[RZ_FLOAT_RMODE_RTN] = softfloat_round_min,
-	[RZ_FLOAT_RMODE_RTZ] = softfloat_round_minMag,
-	[RZ_FLOAT_RMODE_UNK] = 6,
-};
-
-static inline void set_float_rounding_mode(RzFloatRMode mode) {
-	softfloat_roundingMode = rounding_mode_mapping[mode];
 }
 
 /**
@@ -1694,7 +1268,6 @@ static inline void set_float_rounding_mode(RzFloatRMode mode) {
 RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	rz_return_val_if_fail(left && right && left->r == right->r, NULL);
 
-	// Extract attribute from format
 	RzFloatFormat format = left->r;
 	set_float_rounding_mode(mode);
 
@@ -2260,7 +1833,6 @@ clean:
 RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
 	rz_return_val_if_fail(n, NULL);
 
-	// Extract attribute from format
 	RzFloatFormat format = n->r;
 	set_float_rounding_mode(mode);
 
