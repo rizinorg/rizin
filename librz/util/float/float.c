@@ -81,9 +81,9 @@ static inline extFloat80_t to_float80(RzFloat *f80) {
 	ret.signif = rz_bv_to_ut64(f80->s);
 
 	ut16 upper = 0;
-	for (ut8 i = 0; i < 16; i++) {
+	for (ut8 i = 79; i >= 64; i--) {
 		upper <<= 1;
-		upper |= rz_bv_get(f80->s, 80 - i - 1);
+		upper |= rz_bv_get(f80->s, i);
 	}
 	ret.signExp = upper;
 
@@ -97,9 +97,9 @@ static inline float128_t to_float128(RzFloat *f128) {
 	ret.v[0] = rz_bv_to_ut64(f128->s);
 
 	ut64 upper = 0;
-	for (ut8 i = 0; i < 64; i++) {
+	for (ut8 i = 127; i >= 64; i--) {
 		upper <<= 1;
-		upper |= rz_bv_get(f128->s, 128 - i - 1);
+		upper |= rz_bv_get(f128->s, i);
 	}
 	ret.v[1] = upper;
 
