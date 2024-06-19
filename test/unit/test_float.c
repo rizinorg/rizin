@@ -576,7 +576,7 @@ bool f32_ieee_special_num_test(void) {
 bool f32_ieee_rem_test(void) {
 	RzFloat *a1 = rz_float_new_from_f32(4.0f);
 	RzFloat *b1 = rz_float_new_from_f32(1.5f);
-	RzFloat *expect1 = rz_float_new_from_f32(1.0f);
+	RzFloat *expect1 = rz_float_new_from_f32(-0.5f);
 	RzFloat *rem1 = rz_float_rem(a1, b1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem1, expect1), "rem test 1");
 	rz_float_free(a1);
@@ -594,15 +594,69 @@ bool f32_ieee_rem_test(void) {
 	rz_float_free(expect2);
 	rz_float_free(rem2);
 
-	RzFloat *a3 = rz_float_new_from_ut32_as_f32(0x3F7FFF3F);
-	RzFloat *b3 = rz_float_new_from_ut32_as_f32(0x957CE0B6);
-	RzFloat *expect3 = rz_float_new_from_ut32_as_f32(0x145F53B0);
+	RzFloat *a3 = rz_float_new_from_ut32_as_f32(0xCBF83FFF);
+	RzFloat *b3 = rz_float_new_from_ut32_as_f32(0x44800FF0);
+	RzFloat *expect3 = rz_float_new_from_ut32_as_f32(0x43E63BC0);
 	RzFloat *rem3 = rz_float_rem(a3, b3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem3, expect3), "rem test 3");
 	rz_float_free(a3);
 	rz_float_free(b3);
 	rz_float_free(expect3);
 	rz_float_free(rem3);
+
+	RzFloat *a4 = rz_float_new_from_ut32_as_f32(0x3F7FFF3F);
+	RzFloat *b4 = rz_float_new_from_ut32_as_f32(0x957CE0B6);
+	RzFloat *expect4 = rz_float_new_from_ut32_as_f32(0x145F53B0);
+	RzFloat *rem4 = rz_float_rem(a4, b4, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(is_equal_float(rem4, expect4), "rem test 4");
+	rz_float_free(a4);
+	rz_float_free(b4);
+	rz_float_free(expect4);
+	rz_float_free(rem4);
+
+	mu_end;
+}
+
+bool f32_ieee_mod_test(void) {
+	RzFloat *a1 = rz_float_new_from_f32(4.0f);
+	RzFloat *b1 = rz_float_new_from_f32(1.5f);
+	RzFloat *expect1 = rz_float_new_from_f32(1.0f);
+	RzFloat *rem1 = rz_float_mod(a1, b1, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(is_equal_float(rem1, expect1), "rem test 1");
+	rz_float_free(a1);
+	rz_float_free(b1);
+	rz_float_free(expect1);
+	rz_float_free(rem1);
+
+	RzFloat *a2 = rz_float_new_from_ut32_as_f32(0xCBF83FFF);
+	RzFloat *b2 = rz_float_new_from_ut32_as_f32(0x44801003);
+	RzFloat *expect2 = rz_float_new_from_ut32_as_f32(0xC3F52F40);
+	RzFloat *rem2 = rz_float_mod(a2, b2, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(is_equal_float(rem2, expect2), "rem test 2");
+	rz_float_free(a2);
+	rz_float_free(b2);
+	rz_float_free(expect2);
+	rz_float_free(rem2);
+
+	RzFloat *a3 = rz_float_new_from_ut32_as_f32(0xCBF83FFF);
+	RzFloat *b3 = rz_float_new_from_ut32_as_f32(0x44801002);
+	RzFloat *expect3 = rz_float_new_from_ut32_as_f32(0xC3F71F80);
+	RzFloat *rem3 = rz_float_mod(a3, b3, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(is_equal_float(rem3, expect3), "rem test 3");
+	rz_float_free(a3);
+	rz_float_free(b3);
+	rz_float_free(expect3);
+	rz_float_free(rem3);
+
+	RzFloat *a4 = rz_float_new_from_ut32_as_f32(0x3F7FFF3F);
+	RzFloat *b4 = rz_float_new_from_ut32_as_f32(0x957CE0B6);
+	RzFloat *expect4 = rz_float_new_from_ut32_as_f32(0x145F53B0);
+	RzFloat *rem4 = rz_float_mod(a4, b4, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(is_equal_float(rem4, expect4), "rem test 4");
+	rz_float_free(a4);
+	rz_float_free(b4);
+	rz_float_free(expect4);
+	rz_float_free(rem4);
 
 	mu_end;
 }
@@ -1474,6 +1528,7 @@ bool all_tests() {
 	mu_run_test(f32_ieee_round_test);
 	mu_run_test(f32_ieee_sqrt_test);
 	mu_run_test(f32_ieee_rem_test);
+	mu_run_test(f32_ieee_mod_test);
 	mu_run_test(f32_ieee_special_num_test);
 	mu_run_test(float_load_from_bitvector);
 	mu_run_test(float_print_num);
