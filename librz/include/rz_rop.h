@@ -29,10 +29,10 @@ typedef struct rz_rop_gadget_info_t {
 
 typedef enum rzil_instr_type {
 	// Register to register
-	MOV_CONST, // reg <- const
-	MOV_REG, // reg <- reg
-	MOV_OP_CONST, // reg <- reg OP const
-	MOV_OP_REG, // reg <- reg OP reg
+	MOV_CONST, ///< reg <- const
+	MOV_REG, ///< reg <- reg
+	MOV_OP_CONST, ///< reg <- reg OP const
+	MOV_OP_REG, ///< reg <- reg OP reg
 	// Call functions
 	SYSCALL,
 } RzILInstructionType;
