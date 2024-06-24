@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020-2021 z3phyr <giridh1337@gmail.com>
+// SPDX-FileCopyrightText: 2024 z3phyr <giridh1337@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_ROP_H
@@ -8,21 +8,23 @@
 
 #include <rz_cmd.h>
 
-typedef struct rz_rop_op_t {
-	RzILOpPure *op;
-} RzRopOp;
-
-typedef struct rz_rop_memory_t {
-	RzList *dependencies;
-	RzList *stored_in_regs;
-} RzRopMemoryOp;
+typedef struct rz_reg_info_t {
+	char *name;
+	bool is_mem_read;
+	bool is_pc_write;
+	bool is_mem_write;
+	ut64 init_val;
+	ut64 new_val;
+} RzRegInfo;
 
 typedef struct rz_rop_gadget_info_t {
 	ut64 address;
 	ut64 stack_change;
-	RzList *modified_registers;
-	RzRopMemoryOp memory_write;
-	RzRopMemoryOp memory_read;
+	ut64 curr_pc_val;
+	bool is_pc_write;
+	bool is_syscall;
+	RzPVector /*<RzRegInfo*>*/ *modified_registers;
+	RzList /*<RzRegInfo*>*/ *dependencies;
 } RzRopGadgetInfo;
 
 typedef enum rzil_instr_type {
@@ -54,16 +56,10 @@ typedef struct rz_rop_constraint_t {
 	char *args[NUM_ARGS];
 } RzRopConstraint;
 
-typedef struct rz_rop_gadget_analysis_t {
-	ut64 addr;
-} RzRopGadgetAnalysis;
-
 // Command APIs
 RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzCmdStateOutput *state);
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, const char *input, RzCmdStateOutput *state);
 RZ_API bool analyze_constraint(RzCore *core, char *str, RzRopConstraint *rop_constraint);
-RZ_API void populate_gadget_info(RzCore *core, RzRopGadgetInfo *info, RzILOpEffect *effect);
-RZ_API void add_reg_to_list(RzCore *core, RzList *list, const char *str);
 
 // ROP Constraint APIs
 RZ_API void rz_rop_constraint_free(RZ_NULLABLE void *data);
