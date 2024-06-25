@@ -558,10 +558,15 @@ bool f32_ieee_special_num_test(void) {
 }
 
 bool f32_ieee_rem_test(void) {
+	/* mod(x, y) = x - round(x/y, RNE) * y */
+
 	/* This test should return a different result in mod. */
 	RzFloat *a1 = rz_float_new_from_f32(4.0f);
 	RzFloat *b1 = rz_float_new_from_f32(1.5f);
 	RzFloat *expect1 = rz_float_new_from_f32(-0.5f);
+	/* quot = x/y = 4.0/1.5 = 2.666...
+	 * rounded_quot (RNE) = 3
+	 */
 	RzFloat *rem1 = rz_float_rem(a1, b1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem1, expect1), "rem test 1");
 	rz_float_free(a1);
@@ -583,6 +588,9 @@ bool f32_ieee_rem_test(void) {
 	RzFloat *a3 = rz_float_new_from_ut32_as_f32(0xCBF83FFF);
 	RzFloat *b3 = rz_float_new_from_ut32_as_f32(0x44800FF0);
 	RzFloat *expect3 = rz_float_new_from_ut32_as_f32(0x43E63BC0);
+	/* quot = x/y = -32538622.0/1024.498046875 = -31760.550543997346
+	 * rounded_quot (RNE) = -31761
+	 */
 	RzFloat *rem3 = rz_float_rem(a3, b3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem3, expect3), "rem test 3");
 	rz_float_free(a3);
@@ -604,10 +612,15 @@ bool f32_ieee_rem_test(void) {
 }
 
 bool f32_ieee_mod_test(void) {
-	/* This test should return a different result in mod. */
+	/* mod(x, y) = x - round(x/y, RTZ) * y */
+
+	/* This test should return a different result in rem. */
 	RzFloat *a1 = rz_float_new_from_f32(4.0f);
 	RzFloat *b1 = rz_float_new_from_f32(1.5f);
 	RzFloat *expect1 = rz_float_new_from_f32(1.0f);
+	/* quot = x/y = 4.0/1.5 = 2.666...
+	 * rounded_quot (RTZ) = 2
+	 */
 	RzFloat *rem1 = rz_float_mod(a1, b1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem1, expect1), "rem test 1");
 	rz_float_free(a1);
@@ -625,10 +638,13 @@ bool f32_ieee_mod_test(void) {
 	rz_float_free(expect2);
 	rz_float_free(rem2);
 
-	/* This test should return a different result in mod. */
+	/* This test should return a different result in rem. */
 	RzFloat *a3 = rz_float_new_from_ut32_as_f32(0xCBF83FFF);
 	RzFloat *b3 = rz_float_new_from_ut32_as_f32(0x44801002);
 	RzFloat *expect3 = rz_float_new_from_ut32_as_f32(0xC3F71F80);
+	/* quot = x/y = -32538622.0/1024.498046875 = -31760.550543997346
+	 * rounded_quot (RTZ) = -31760
+	 */
 	RzFloat *rem3 = rz_float_mod(a3, b3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem3, expect3), "rem test 3");
 	rz_float_free(a3);
