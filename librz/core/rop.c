@@ -177,8 +177,16 @@ void rz_reg_info_free(RzRegInfo *reg_info) {
 	free(reg_info);
 }
 
-RzRegInfo *rz_reg_info_new(RzCore *core, const char *name, ut64 init_val, ut64 new_val) {
+RzRegInfo *rz_reg_info_new(RzCore *core, RzILEvent *evt, ut64 init_val, ut64 new_val) {
 	RzRegInfo *reg_info = RZ_NEW0(RzRegInfo);
+	const char *name = NULL;
+	if (evt->type == RZ_IL_EVENT_VAR_READ) {
+		reg_info->is_var_read = true;
+		name = evt->data.var_read.variable;
+	} else if (evt->type == RZ_IL_EVENT_VAR_WRITE) {
+		reg_info->is_var_write = true;
+		name = evt->data.var_write.variable;
+	}
 	if (!reg_info) {
 		return NULL;
 	}
@@ -205,13 +213,13 @@ RzRegInfo *rz_reg_info_new(RzCore *core, const char *name, ut64 init_val, ut64 n
 	return reg_info;
 }
 
-RzRopGadgetInfo *rz_rop_gadget_info_new(ut64 address, ut64 stack_change) {
+RzRopGadgetInfo *rz_rop_gadget_info_new(ut64 address) {
 	RzRopGadgetInfo *gadget_info = RZ_NEW0(RzRopGadgetInfo);
 	if (!gadget_info) {
 		return NULL;
 	}
 	gadget_info->address = address;
-	gadget_info->stack_change = stack_change;
+	gadget_info->stack_change = 0LL;
 	gadget_info->curr_pc_val = address;
 	gadget_info->is_pc_write = false;
 	gadget_info->is_syscall = false;
@@ -260,11 +268,13 @@ void rz_rop_gadget_info_update_register(RzRopGadgetInfo *gadget_info, RzRegInfo 
 
 	RzRegInfo *existing_reg_info = rz_rop_gadget_info_get_modified_register(gadget_info, new_reg_info->name);
 	if (existing_reg_info) {
-		// Update the existing RzRegInfo object
 		existing_reg_info->init_val = new_reg_info->init_val;
 		existing_reg_info->new_val = new_reg_info->new_val;
+		existing_reg_info->is_mem_read = new_reg_info->is_mem_read;
+		existing_reg_info->is_pc_write = new_reg_info->is_pc_write;
+		existing_reg_info->is_mem_write = new_reg_info->is_mem_write;
+		existing_reg_info->is_var_read = new_reg_info->is_var_read;
 	} else {
-		// Add the new RzRegInfo object to the modified_registers vector
 		rz_pvector_push(gadget_info->modified_registers, new_reg_info);
 	}
 }
@@ -283,23 +293,95 @@ RzRegInfo *rz_reg_info_dup(RzRegInfo *src) {
 	dup->is_mem_read = src->is_mem_read;
 	dup->is_pc_write = src->is_pc_write;
 	dup->is_mem_write = src->is_mem_write;
+	dup->is_var_read = src->is_var_read;
+	dup->is_var_write = src->is_var_write;
 	dup->init_val = src->init_val;
 	dup->new_val = src->new_val;
 
 	return dup;
 }
-void rz_rop_gadget_info_add_dependency(RzRopGadgetInfo *gadget_info, RzILEventId type, RzRegInfo *reg_info) {
+
+bool is_stack_pointer(RzCore *core, const char *name) {
+	RzRegItem *reg_item = rz_reg_get(core->analysis->reg, name, RZ_REG_TYPE_GPR);
+	if (!reg_item) {
+		return false;
+	}
+	if (core->analysis->bits == 32 && !strcmp(core->analysis->cpu, "x86")) {
+		return !strcmp(reg_item->name, "esp");
+	}
+	if (core->analysis->bits == 64) {
+		return !strcmp(reg_item->name, "rsp") || !strcmp(reg_item->name, "esp");
+	}
+	if (core->analysis->bits == 64 && !strcmp(core->analysis->cpu, "arm")) {
+		return !strcmp(reg_item->name, "r13");
+	}
+	return reg_item->name;
+}
+
+bool is_base_pointer(RzCore *core, const char *name) {
+	RzRegItem *reg_item = rz_reg_get(core->analysis->reg, name, RZ_REG_TYPE_GPR);
+	if (!reg_item) {
+		return false;
+	}
+	if (core->analysis->bits == 32 && !strcmp(core->analysis->cpu, "x86")) {
+		return !strcmp(reg_item->name, "ebp");
+	}
+	if (core->analysis->bits == 64) {
+		return !strcmp(reg_item->name, "rbp") || !strcmp(reg_item->name, "ebp");
+	}
+	if (core->analysis->bits == 64 && !strcmp(core->analysis->cpu, "arm")) {
+		return !strcmp(reg_item->name, "r11");
+	}
+	return reg_item->name;
+}
+
+void rz_rop_gadget_info_add_dependency(RzCore *core, RzRopGadgetInfo *gadget_info, RzILEvent *evt, RzRegInfo *reg_info) {
 	if (!gadget_info || !reg_info) {
 		return;
 	}
+
 	RzRegInfo *reg_info_dup = rz_reg_info_dup(reg_info);
 	if (!reg_info_dup) {
 		return;
 	}
+	switch (evt->type) {
+	case RZ_IL_EVENT_MEM_READ:
+		// Used for reading this address
+		RzILEventMemRead *mem_read = &evt->data.mem_read;
+		reg_info->is_mem_read = true;
+		reg_info_dup->new_val = rz_bv_to_ut64(mem_read->address);
+		break;
+	case RZ_IL_EVENT_MEM_WRITE:
+		reg_info->is_mem_write = true;
+		RzILEventMemWrite *mem_write = &evt->data.mem_write;
+		reg_info_dup->init_val = rz_bv_to_ut64(mem_write->old_value);
+		reg_info_dup->new_val = rz_bv_to_ut64(mem_write->new_value);
+		break;
+	case RZ_IL_EVENT_VAR_WRITE:
+		reg_info->is_var_write = true;
+		RzILEventVarWrite *var_write = &evt->data.var_write;
+		RzBitVector *init_val = rz_il_value_to_bv(var_write->old_value);
+		RzBitVector *new_val = rz_il_value_to_bv(var_write->new_value);
+		if (!init_val || !new_val) {
+			rz_bv_free(init_val);
+			rz_bv_free(new_val);
+			break;
+		}
+		// reg_info_dup->init_val = rz_bv_to_ut64(init_val);
+		reg_info_dup->new_val = rz_bv_to_ut64(new_val);
+		if (is_stack_pointer(core, reg_info->name)) {
+			gadget_info->stack_change += rz_bv_to_ut64(new_val) - reg_info->new_val;
+		}
+		rz_bv_free(init_val);
+		rz_bv_free(new_val);
+		break;
+	default:
+		break;
+	}
 	rz_list_append(gadget_info->dependencies, reg_info_dup);
 }
 
-static void fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadget_info, const RzILEvent *curr_event, RzILEvent *event, RzPVector *vec, bool is_dependency) {
+static void fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadget_info, RzILEvent *curr_event, RzILEvent *event, RzPVector *vec, bool is_dependency) {
 	if (!gadget_info) {
 		return;
 	}
@@ -320,6 +402,7 @@ static void fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 			rz_rop_gadget_info_update_register(gadget_info, new_reg_info);
 			rz_reg_info_free(new_reg_info);
 			rz_pvector_push(vec, event);
+			rz_bv_free(val);
 			break;
 		}
 		if (is_dependency && curr_event) {
@@ -327,34 +410,68 @@ static void fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 			if (curr_event->type == RZ_IL_EVENT_VAR_READ) {
 				break;
 			}
-			rz_rop_gadget_info_add_dependency(gadget_info, curr_event->type, reg_info);
+			rz_rop_gadget_info_add_dependency(core, gadget_info, curr_event, reg_info);
+			break;
+		}
+		if (reg_info) {
 			break;
 		}
 		RzBitVector *val = rz_il_value_to_bv(var_read->value);
 		if (!val) {
 			break;
 		}
-		reg_info = rz_reg_info_new(core, var_read->variable, rz_bv_to_ut64(val), rz_bv_to_ut64(val));
+		reg_info = rz_reg_info_new(core, event, rz_bv_to_ut64(val), rz_bv_to_ut64(val));
 		rz_rop_gadget_info_add_register(gadget_info, reg_info, is_dependency);
-		if (reg_info && !is_dependency) {
+		if (!is_dependency) {
 			rz_pvector_push(vec, event);
 		}
+		rz_bv_free(val);
 	} break;
 	case RZ_IL_EVENT_VAR_WRITE: {
 		if (is_dependency) {
 			break;
 		}
+		while (!rz_pvector_empty(vec)) {
+			RzILEvent *evt = rz_pvector_pop(vec);
+			fill_rop_gadget_info_from_events(core, gadget_info, event, evt, vec, true);
+		}
 		RzILEventVarWrite *var_write = &event->data.var_write;
 		RzRegInfo *reg_info = rz_rop_gadget_info_get_modified_register(gadget_info, var_write->variable);
+		if (reg_info && !is_dependency) {
+			RzRegInfo *new_reg_info = rz_reg_info_dup(reg_info);
+			if (!new_reg_info) {
+				break;
+			}
+			RzBitVector *old_val = rz_il_value_to_bv(var_write->old_value);
+			RzBitVector *new_val = rz_il_value_to_bv(var_write->old_value);
+			if (!old_val || !new_val) {
+				rz_bv_free(old_val);
+				rz_bv_free(new_val);
+				break;
+			}
+			// new_reg_info->init_val = rz_bv_to_ut64(old_val);
+			new_reg_info->new_val = rz_bv_to_ut64(new_val);
+			new_reg_info->is_mem_write = true;
+			rz_rop_gadget_info_update_register(gadget_info, new_reg_info);
+			rz_reg_info_free(new_reg_info);
+			rz_bv_free(old_val);
+			rz_bv_free(new_val);
+			break;
+		}
+
 		if (!reg_info) {
 			RzBitVector *old_val = rz_il_value_to_bv(var_write->old_value);
 			RzBitVector *new_val = rz_il_value_to_bv(var_write->new_value);
 			if (!old_val || !new_val) {
+				rz_bv_free(old_val);
+				rz_bv_free(new_val);
 				break;
 			}
-			reg_info = rz_reg_info_new(core, var_write->variable, rz_bv_to_ut64(old_val),
+			reg_info = rz_reg_info_new(core, event, rz_bv_to_ut64(old_val),
 				rz_bv_to_ut64(new_val));
 			rz_rop_gadget_info_add_register(gadget_info, reg_info, is_dependency);
+			rz_bv_free(old_val);
+			rz_bv_free(new_val);
 		}
 	} break;
 	case RZ_IL_EVENT_MEM_READ: {
@@ -408,10 +525,11 @@ static void analyze_gadget(RzCore *core, RzCoreAsmHit /*<RzCoreAsmHit *>*/ *hit,
 	}
 
 cleanup:
+	rz_pvector_flush(&vec);
 	rz_core_seek(core, old_addr, true);
 }
 
-void print_rop_gadget_info(RzRopGadgetInfo *gadget_info) {
+void print_rop_gadget_info(RzCore *core, RzRopGadgetInfo *gadget_info) {
 	rz_cons_printf("Gadget 0x%" PFMT64x "\n", gadget_info->address);
 	rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
 
@@ -420,14 +538,23 @@ void print_rop_gadget_info(RzRopGadgetInfo *gadget_info) {
 	void **it;
 	rz_pvector_foreach (gadget_info->modified_registers, it) {
 		reg_info = *it;
-		rz_cons_printf("%s ", reg_info->name);
+		if (reg_info->is_var_write) {
+			rz_cons_printf("%s ", reg_info->name);
+		}
 	}
 	rz_cons_printf("\n");
 
 	rz_cons_printf("Register dependencies:\n");
 	RzListIter *iter;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
-		rz_cons_printf("%s ", reg_info->name);
+		if (is_stack_pointer(core, reg_info->name) || is_base_pointer(core, reg_info->name)) {
+			continue;
+		}
+		if (reg_info->is_mem_read) {
+			rz_cons_printf("Memory Read: %s %llu\n", reg_info->name, reg_info->new_val);
+		} else if (reg_info->is_mem_write) {
+			rz_cons_printf("Memory Write: %s %llu %llu\n", reg_info->name, reg_info->init_val, reg_info->new_val);
+		}
 	}
 }
 static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdStateOutput *state) {
@@ -514,11 +641,11 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 				return;
 			}
 			const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
-			RzRopGadgetInfo *rop_gadget_info = rz_rop_gadget_info_new(addr_start, core->analysis->bits / 8);
+			RzRopGadgetInfo *rop_gadget_info = rz_rop_gadget_info_new(addr_start);
 			rz_list_foreach (hitlist, iter, hit) {
 				analyze_gadget(core, hit, rop_gadget_info);
 			}
-			print_rop_gadget_info(rop_gadget_info);
+			print_rop_gadget_info(core, rop_gadget_info);
 			rz_rop_gadget_info_free(rop_gadget_info);
 		}
 		rz_cons_newline();

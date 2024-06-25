@@ -12,6 +12,8 @@ typedef struct rz_reg_info_t {
 	char *name;
 	bool is_mem_read;
 	bool is_pc_write;
+	bool is_var_read;
+	bool is_var_write;
 	bool is_mem_write;
 	ut64 init_val;
 	ut64 new_val;
