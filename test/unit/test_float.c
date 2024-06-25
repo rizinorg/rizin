@@ -1488,12 +1488,21 @@ bool f32_ieee_cast_test(void) {
 	mu_end;
 }
 
+static RzFloat *new_f80_from_bytes(const char *bytes) {
+	RzBitVector *bv = rz_bv_new_from_bytes_be((const unsigned char *)bytes, 0, 80);
+	RzFloat *ret = rz_float_new_from_bv(bv);
+	rz_bv_free(bv);
+
+	return ret;
+}
+
 bool f80_ieee_add_test(void) {
 #if (__i386__ || __x86_64__) && !__WINDOWS__
-	RzFloat *x_f80 = rz_float_new_from_f80(2.59958250082224806804l);
-	RzFloat *y_f80 = rz_float_new_from_f80(0.384677154767621320985l);
+	;
+	RzFloat *x_f80 = new_f80_from_bytes("\x40\x00\xa6\x5f\x8f\x48\x12\x44\xca\x0b");
+	RzFloat *y_f80 = new_f80_from_bytes("\x3f\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
 	RzFloat *sum_f80 = rz_float_add(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
-	RzFloat *expected_f80 = rz_float_new_from_f80(2.98425965558986938902l);
+	RzFloat *expected_f80 = new_f80_from_bytes("\x40\x00\xbe\xfe\x1c\x35\xe1\xf7\x32\x0b");
 	mu_assert_false(rz_float_cmp(sum_f80, expected_f80), "Add 80-bit floats");
 
 	rz_float_free(x_f80);
@@ -1506,10 +1515,10 @@ bool f80_ieee_add_test(void) {
 
 bool f80_ieee_sub_test(void) {
 #if (__i386__ || __x86_64__) && !__WINDOWS__
-	RzFloat *x_f80 = rz_float_new_from_f80(2.59958250082224806804l);
-	RzFloat *y_f80 = rz_float_new_from_f80(0.384677154767621320985l);
+	RzFloat *x_f80 = new_f80_from_bytes("\x40\x00\xa6\x5f\x8f\x48\x12\x44\xca\x0b");
+	RzFloat *y_f80 = new_f80_from_bytes("\x3f\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
 	RzFloat *diff_f80 = rz_float_sub(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
-	RzFloat *expected_f80 = rz_float_new_from_f80(2.21490534605462674705l);
+	RzFloat *expected_f80 = new_f80_from_bytes("\x40\x00\x8d\xc1\x02\x5a\x42\x92\x62\x0b");
 	mu_assert_false(rz_float_cmp(diff_f80, expected_f80), "Subtract 80-bit floats");
 
 	rz_float_free(x_f80);
@@ -1522,10 +1531,10 @@ bool f80_ieee_sub_test(void) {
 
 bool f80_ieee_mul_test(void) {
 #if (__i386__ || __x86_64__) && !__WINDOWS__
-	RzFloat *x_f80 = rz_float_new_from_f80(2.59958250082224806804l);
-	RzFloat *y_f80 = rz_float_new_from_f80(0.384677154767621320985l);
+	RzFloat *x_f80 = new_f80_from_bytes("\x40\x00\xa6\x5f\x8f\x48\x12\x44\xca\x0b");
+	RzFloat *y_f80 = new_f80_from_bytes("\x3f\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
 	RzFloat *prod_f80 = rz_float_mul(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
-	RzFloat *expected_f80 = rz_float_new_from_f80(1.l);
+	RzFloat *expected_f80 = new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x00");
 	mu_assert_false(rz_float_cmp(prod_f80, expected_f80), "Multiply 80-bit floats");
 
 	rz_float_free(x_f80);
@@ -1538,10 +1547,10 @@ bool f80_ieee_mul_test(void) {
 
 bool f80_ieee_div_test(void) {
 #if (__i386__ || __x86_64__) && !__WINDOWS__
-	RzFloat *x_f80 = rz_float_new_from_f80(1.l);
-	RzFloat *y_f80 = rz_float_new_from_f80(-0.384677154767621320985l);
+	RzFloat *x_f80 = new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x00");
+	RzFloat *y_f80 = new_f80_from_bytes("\xbf\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
 	RzFloat *quot_f80 = rz_float_div(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
-	RzFloat *expected_f80 = rz_float_new_from_f80(-2.59958250082224806804l);
+	RzFloat *expected_f80 = new_f80_from_bytes("\xc0\x00\xa6\x5f\x8f\x48\x12\x44\xca\x0b");
 	mu_assert_false(rz_float_cmp(quot_f80, expected_f80), "Divide 80-bit floats");
 
 	rz_float_free(x_f80);
@@ -1554,9 +1563,9 @@ bool f80_ieee_div_test(void) {
 
 bool f80_ieee_sqrt_test(void) {
 #if (__i386__ || __x86_64__) && !__WINDOWS__
-	RzFloat *x_f80 = rz_float_new_from_f80(1.33713371337133713368l);
+	RzFloat *x_f80 = new_f80_from_bytes("\x3f\xff\xab\x27\x32\x90\xa7\x8b\x0c\x29");
 	RzFloat *sqrt_f80 = rz_float_sqrt(x_f80, RZ_FLOAT_RMODE_RNE);
-	RzFloat *expected_f80 = rz_float_new_from_f80(1.15634498025949727115l);
+	RzFloat *expected_f80 = new_f80_from_bytes("\x3f\xff\x94\x03\x1c\xc0\x8d\xdc\xfb\xb5");
 	mu_assert_false(rz_float_cmp(sqrt_f80, expected_f80), "Square root 80-bit floats");
 
 	rz_float_free(x_f80);
@@ -1570,7 +1579,7 @@ bool f80_ieee_cast_test(void) {
 #if (__i386__ || __x86_64__) && !__WINDOWS__
 	/* To 80-bit */
 	RzFloat *old_f = rz_float_new_from_f64(14.285714285714286);
-	RzFloat *expect_f = rz_float_new_from_f80(14.2857142857142864756l);
+	RzFloat *expect_f = new_f80_from_bytes("\x40\x02\xe4\x92\x49\x24\x92\x49\x28\x00");
 	RzFloat *new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE);
 	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 14.285714285714286d to 14.2857142857142864756l");
 	rz_float_free(old_f);
@@ -1578,7 +1587,7 @@ bool f80_ieee_cast_test(void) {
 	rz_float_free(new_cast);
 
 	/* From 80-bit */
-	old_f = rz_float_new_from_f80(13.37l);
+	old_f = new_f80_from_bytes("\x40\x02\xd5\xeb\x85\x1e\xb8\x51\xeb\x85");
 	expect_f = rz_float_new_from_f32(13.37f);
 	new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
 	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 13.37l to 13.37f");
@@ -1587,12 +1596,10 @@ bool f80_ieee_cast_test(void) {
 	rz_float_free(new_cast);
 
 	/* From 80-bit to 80-bit (should lead to the same value) */
-	old_f = rz_float_new_from_f80(66668466788774.6870804l);
-	expect_f = rz_float_new_from_f80(66668466788774.6870804l);
+	old_f = new_f80_from_bytes("\x40\x2c\xf2\x89\xd9\x1f\x66\x9a\xbf\x92");
 	new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE);
-	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 66668466788774.6870804l to itself");
+	mu_assert_false(rz_float_cmp(old_f, new_cast), "test convert 66668466788774.6870804l to itself");
 	rz_float_free(old_f);
-	rz_float_free(expect_f);
 	rz_float_free(new_cast);
 #endif
 	mu_end;
