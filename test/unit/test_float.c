@@ -1497,8 +1497,6 @@ static RzFloat *new_f80_from_bytes(const char *bytes) {
 }
 
 bool f80_ieee_add_test(void) {
-#if (__i386__ || __x86_64__) && !__WINDOWS__
-	;
 	RzFloat *x_f80 = new_f80_from_bytes("\x40\x00\xa6\x5f\x8f\x48\x12\x44\xca\x0b");
 	RzFloat *y_f80 = new_f80_from_bytes("\x3f\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
 	RzFloat *sum_f80 = rz_float_add(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
@@ -1509,12 +1507,11 @@ bool f80_ieee_add_test(void) {
 	rz_float_free(y_f80);
 	rz_float_free(sum_f80);
 	rz_float_free(expected_f80);
-#endif
+
 	mu_end;
 }
 
 bool f80_ieee_sub_test(void) {
-#if (__i386__ || __x86_64__) && !__WINDOWS__
 	RzFloat *x_f80 = new_f80_from_bytes("\x40\x00\xa6\x5f\x8f\x48\x12\x44\xca\x0b");
 	RzFloat *y_f80 = new_f80_from_bytes("\x3f\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
 	RzFloat *diff_f80 = rz_float_sub(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
@@ -1525,12 +1522,11 @@ bool f80_ieee_sub_test(void) {
 	rz_float_free(y_f80);
 	rz_float_free(diff_f80);
 	rz_float_free(expected_f80);
-#endif
+
 	mu_end;
 }
 
 bool f80_ieee_mul_test(void) {
-#if (__i386__ || __x86_64__) && !__WINDOWS__
 	RzFloat *x_f80 = new_f80_from_bytes("\x40\x00\xa6\x5f\x8f\x48\x12\x44\xca\x0b");
 	RzFloat *y_f80 = new_f80_from_bytes("\x3f\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
 	RzFloat *prod_f80 = rz_float_mul(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
@@ -1541,12 +1537,11 @@ bool f80_ieee_mul_test(void) {
 	rz_float_free(y_f80);
 	rz_float_free(prod_f80);
 	rz_float_free(expected_f80);
-#endif
+
 	mu_end;
 }
 
 bool f80_ieee_div_test(void) {
-#if (__i386__ || __x86_64__) && !__WINDOWS__
 	RzFloat *x_f80 = new_f80_from_bytes("\x3f\xff\x80\x00\x00\x00\x00\x00\x00\x00");
 	RzFloat *y_f80 = new_f80_from_bytes("\xbf\xfd\xc4\xf4\x67\x6e\x7d\x93\x40\x00");
 	RzFloat *quot_f80 = rz_float_div(x_f80, y_f80, RZ_FLOAT_RMODE_RNE);
@@ -1557,12 +1552,11 @@ bool f80_ieee_div_test(void) {
 	rz_float_free(y_f80);
 	rz_float_free(quot_f80);
 	rz_float_free(expected_f80);
-#endif
+
 	mu_end;
 }
 
 bool f80_ieee_sqrt_test(void) {
-#if (__i386__ || __x86_64__) && !__WINDOWS__
 	RzFloat *x_f80 = new_f80_from_bytes("\x3f\xff\xab\x27\x32\x90\xa7\x8b\x0c\x29");
 	RzFloat *sqrt_f80 = rz_float_sqrt(x_f80, RZ_FLOAT_RMODE_RNE);
 	RzFloat *expected_f80 = new_f80_from_bytes("\x3f\xff\x94\x03\x1c\xc0\x8d\xdc\xfb\xb5");
@@ -1571,12 +1565,11 @@ bool f80_ieee_sqrt_test(void) {
 	rz_float_free(x_f80);
 	rz_float_free(sqrt_f80);
 	rz_float_free(expected_f80);
-#endif
+
 	mu_end;
 }
 
 bool f80_ieee_cast_test(void) {
-#if (__i386__ || __x86_64__) && !__WINDOWS__
 	/* To 80-bit */
 	RzFloat *old_f = rz_float_new_from_f64(14.285714285714286);
 	RzFloat *expect_f = new_f80_from_bytes("\x40\x02\xe4\x92\x49\x24\x92\x49\x28\x00");
@@ -1601,7 +1594,7 @@ bool f80_ieee_cast_test(void) {
 	mu_assert_false(rz_float_cmp(old_f, new_cast), "test convert 66668466788774.6870804l to itself");
 	rz_float_free(old_f);
 	rz_float_free(new_cast);
-#endif
+
 	mu_end;
 }
 
@@ -1629,14 +1622,12 @@ bool all_tests() {
 	mu_run_test(f32_new_round_test);
 	mu_run_test(f32_ieee_fround_test);
 	mu_run_test(f32_ieee_cast_test);
-#if (__i386__ || __x86_64__) && !__WINDOWS__
 	mu_run_test(f80_ieee_add_test);
 	mu_run_test(f80_ieee_sub_test);
 	mu_run_test(f80_ieee_mul_test);
 	mu_run_test(f80_ieee_div_test);
 	mu_run_test(f80_ieee_sqrt_test);
 	mu_run_test(f80_ieee_cast_test);
-#endif
 	return tests_passed != tests_run;
 }
 
