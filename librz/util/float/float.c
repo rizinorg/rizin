@@ -1270,13 +1270,13 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 }
 
 /**
- * \brief calculate \p left % \p right and round the result after, return the result
+ * \brief Returns the value of \p left % \p right, with quotient rounded to an integer with rounding mode RNE
  * \details
  * Any % 0 => NaN
  * Inf % Any => NaN, invalid
  * Any % Inf -> Any
  * 0 % Any -> 0
- * \param mode rounding mode
+ * \param mode rounding mode used for calculating the quotient
  * \return result of arithmetic operation
  *
  * Can be positive or negative. Range: [ -abs(right)/2, abs(right)/2 ]
@@ -1303,13 +1303,13 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 }
 
 /**
- * \brief calculate \p left % \p right and round the result after, return the result
+ * \brief Returns the value of \p left % \p right, with quotient rounded to an integer with rounding mode RTZ
  * \details
  * Any % 0 => NaN
  * Inf % Any => NaN, invalid
  * Any % Inf -> Any
  * 0 % Any -> 0
- * \param mode rounding mode
+ * \param mode rounding mode used for calculating the quotient
  * \return result of arithmetic operation
  *
  * Mod is guaranteed to be of the same sign as \p left.
