@@ -347,18 +347,24 @@ void rz_rop_gadget_info_add_dependency(RzCore *core, RzRopGadgetInfo *gadget_inf
 	switch (evt->type) {
 	case RZ_IL_EVENT_MEM_READ:
 		// Used for reading this address
-		RzILEventMemRead *mem_read = &evt->data.mem_read;
+		const RzILEventMemRead *mem_read = &evt->data.mem_read;
 		reg_info->is_mem_read = true;
+		reg_info->is_mem_write = false;
+		reg_info->is_var_write = false;
 		reg_info_dup->new_val = rz_bv_to_ut64(mem_read->address);
 		break;
 	case RZ_IL_EVENT_MEM_WRITE:
 		reg_info->is_mem_write = true;
+		reg_info->is_mem_read = false;
+		reg_info->is_var_write = false;
 		RzILEventMemWrite *mem_write = &evt->data.mem_write;
 		reg_info_dup->init_val = rz_bv_to_ut64(mem_write->old_value);
 		reg_info_dup->new_val = rz_bv_to_ut64(mem_write->new_value);
 		break;
 	case RZ_IL_EVENT_VAR_WRITE:
 		reg_info->is_var_write = true;
+		reg_info->is_mem_read = false;
+		reg_info->is_mem_write = false;
 		RzILEventVarWrite *var_write = &evt->data.var_write;
 		RzBitVector *init_val = rz_il_value_to_bv(var_write->old_value);
 		RzBitVector *new_val = rz_il_value_to_bv(var_write->new_value);
@@ -550,7 +556,9 @@ void print_rop_gadget_info(RzCore *core, RzRopGadgetInfo *gadget_info) {
 		if (is_stack_pointer(core, reg_info->name) || is_base_pointer(core, reg_info->name)) {
 			continue;
 		}
-		if (reg_info->is_mem_read) {
+		if (reg_info->is_var_write) {
+			rz_cons_printf("Var write: %s %llu %llu\n", reg_info->name, reg_info->init_val, reg_info->new_val);
+		} else if (reg_info->is_mem_read) {
 			rz_cons_printf("Memory Read: %s %llu\n", reg_info->name, reg_info->new_val);
 		} else if (reg_info->is_mem_write) {
 			rz_cons_printf("Memory Write: %s %llu %llu\n", reg_info->name, reg_info->init_val, reg_info->new_val);

@@ -8,7 +8,7 @@
 #include "rz_types_base.h"
 #include "rz_rop.h"
 
-#include <subprojects/capstone-next/include/capstone/x86.h>
+#include <capstone/x86.h>
 
 static RzList /*<char *>*/ *parse_list(const char *str) {
 	char *line, *data, *str_n;
