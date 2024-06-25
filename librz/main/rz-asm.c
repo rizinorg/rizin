@@ -140,6 +140,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
 		rz_analysis_op_init(&aop);
+		fprintf(stderr, "about to call rz_analysis_op\n");
 		if (rz_analysis_op(as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL) < 1) {
 			eprintf("Error analyzing instruction at 0x%08" PFMT64x "\n", offset);
 			break;

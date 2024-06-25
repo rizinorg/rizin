@@ -1264,11 +1264,11 @@ inline static void set_ret(const cs_insn *insn, RZ_BORROW RzAnalysisOp *op) {
 }
 
 static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
+	//fprintf(stderr, "anop32 entered\n");
 	AnalysisArmCSContext *ctx = (AnalysisArmCSContext *)a->plugin_data;
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb ? 4 : 8;
 	int i;
-
 	op->cond = cond_cs2rz_32(insn->detail->arm.cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
@@ -1709,7 +1709,18 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->reg = cs_reg_name(handle, REGID(0));
 		} else {
 			/* blx label */
-			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			// check immediate jump address: 
+			// if immediate operand bit 0 is 1, then its jumping to THUMB mode
+			if (IMM(0) && 1 && insn->bytes[12]){
+				op->type = RZ_ANALYSIS_OP_TYPE_CTX_SWITCH;
+			}
+			// Check for T2 encoding - if bit 12 is 0, must check IMM(1) instead
+			else if (!insn->bytes[12]) {
+				(IMM(1) && 1) ? op->type = RZ_ANALYSIS_OP_TYPE_CTX_SWITCH : RZ_ANALYSIS_OP_TYPE_CALL;
+			}
+			else {
+				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			}
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
 			op->hint.new_bits = (a->bits == 32) ? 16 : 32;
@@ -1720,7 +1731,14 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BL:
 		/* bl label */
 		op->cycles = 4;
-		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		// check address: if immediate operand bit 0 is 1, then its jumping to THUMB mode
+		// no difference in T1/T2 encoding here
+		if (IMM(0) && 1) {
+			op->type = RZ_ANALYSIS_OP_TYPE_CTX_SWITCH;
+		}
+		else {
+			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		}
 		op->jump = IMM(0) & UT32_MAX;
 		op->fail = addr + op->size;
 		op->hint.new_bits = a->bits;
@@ -1760,6 +1778,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 		/* bx reg */
+		if (op->val)
 		op->cycles = 4;
 		op->reg = cs_reg_name(handle, REGID(0));
 		switch (REGID(0)) {
@@ -2061,8 +2080,8 @@ static void patch_capstone_bugs(cs_insn *insn, int bits, bool big_endian) {
 
 static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	AnalysisArmCSContext *ctx = (AnalysisArmCSContext *)a->plugin_data;
-
 	cs_insn *insn = NULL;
+	//op->should_be_thumb = 1;
 	int mode = (a->bits == 16) ? CS_MODE_THUMB : CS_MODE_ARM;
 	int n, ret;
 	mode |= (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
@@ -2136,9 +2155,11 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		} else {
 			anop32(a, ctx->handle, op, insn, thumb, (ut8 *)buf, len);
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+				fprintf(stderr, "doing opex\n");
 				opex(&op->opex, ctx->handle, insn);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+				fprintf(stderr, "doing esil\n");
 				rz_arm_cs_analysis_op_32_esil(a, op, addr, buf, len, &ctx->handle, insn, thumb);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_IL) {
@@ -2572,7 +2593,6 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 	if (!data) {
 		return NULL;
 	}
-
 	op = rz_analysis_op_new();
 	ret = malloc(size);
 	memset(ret, 0xff, size);
@@ -2587,6 +2607,7 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 		}
 		rz_analysis_op_fini(op);
 		rz_analysis_op_init(op);
+		fprintf(stderr, "about to call analysisop\n");
 		if ((oplen = analysis_op(analysis, op, at + idx, data + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
 			break;
 		}
