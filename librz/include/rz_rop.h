@@ -48,6 +48,12 @@ typedef enum {
 	NUM_ARGS
 } RzRopArgType;
 
+typedef enum {
+	RZ_ROP_GADGET_PRINT = 1 << 0,
+	RZ_ROP_GADGET_DETAIL = 1 << 1,
+	RZ_ROP_GADGET_ALL = RZ_ROP_GADGET_PRINT | RZ_ROP_GADGET_DETAIL
+} RzRopRequestMask;
+
 typedef struct rz_rop_endlist_pair_t {
 	int instr_offset;
 	int delay_size;
@@ -59,7 +65,7 @@ typedef struct rz_rop_constraint_t {
 } RzRopConstraint;
 
 // Command APIs
-RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzCmdStateOutput *state);
+RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzRopRequestMask type, RzCmdStateOutput *state);
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, const char *input, RzCmdStateOutput *state);
 RZ_API bool analyze_constraint(RzCore *core, char *str, RzRopConstraint *rop_constraint);
 

@@ -1408,7 +1408,7 @@ static const RzCmdDescArg cmd_detail_gadget_args[] = {
 		.name = "Gadget address",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = false,
+		.optional = true,
 
 	},
 	{ 0 },

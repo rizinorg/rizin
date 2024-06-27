@@ -6,6 +6,12 @@ e search.maxhits=1
 EOF
 EXPECT=<<EOF
 0x0040052c: pop r12; pop r13; pop r14; pop r15; ret;
+0x0040052d: pop rsp; pop r13; pop r14; pop r15; ret;
+0x0040052e: pop r13; pop r14; pop r15; ret;
+0x0040052f: pop rbp; pop r14; pop r15; ret;
+0x00400530: pop r14; pop r15; ret;
+0x00400531: pop rsi; pop r15; ret;
+0x00400532: pop r15; ret;
 EOF
 RUN
 
@@ -13,7 +19,7 @@ NAME=rop search without maxhits
 FILE=bins/elf/varsub
 CMDS=/Rq pop r15~?
 EXPECT=<<EOF
-4
+7
 EOF
 RUN
 
@@ -38,32 +44,72 @@ e asm.bits=32
 /R
 EOF
 EXPECT=<<EOF
-  0x000000b4               cd80  int 0x80
-  0x000000b6         b801000000  mov eax, 1
-  0x000000bb         b900000000  mov ecx, 0
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b4               cd80  int 0x80
+  0x080480b6         b801000000  mov eax, 1
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 15
 
-  0x000000b5     80b801000000b9  cmp byte [eax + 1], 0xb9
-  0x000000bc               0000  add byte [eax], al
-  0x000000be               0000  add byte [eax], al
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b5     80b801000000b9  cmp byte [eax + 1], 0xb9
+  0x080480bc               0000  add byte [eax], al
+  0x080480be               0000  add byte [eax], al
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 14
 
-  0x000000b7               0100  add dword [eax], eax
-  0x000000b9               0000  add byte [eax], al
-  0x000000bb         b900000000  mov ecx, 0
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b6         b801000000  mov eax, 1
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 13
+
+  0x080480b7               0100  add dword [eax], eax
+  0x080480b9               0000  add byte [eax], al
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 12
 
-  0x000000b8               0000  add byte [eax], al
-  0x000000ba       00b900000000  add byte [ecx], bh
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b8               0000  add byte [eax], al
+  0x080480ba       00b900000000  add byte [ecx], bh
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 11
+
+  0x080480b9               0000  add byte [eax], al
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 10
+
+  0x080480ba       00b900000000  add byte [ecx], bh
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 9
+
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 8
+
+  0x080480bc               0000  add byte [eax], al
+  0x080480be               0000  add byte [eax], al
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 7
+
+  0x080480be               0000  add byte [eax], al
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 5
+
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 3
+
+  0x080480c2                 c3  ret
+Gadget size: 1
 
 EOF
 RUN
@@ -77,19 +123,36 @@ e asm.bits=32
 /R/ mov e[abcd]x
 EOF
 EXPECT=<<EOF
-  0x000000b4               cd80  int 0x80
-  0x000000b6         b801000000  mov eax, 1
-  0x000000bb         b900000000  mov ecx, 0
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b4               cd80  int 0x80
+  0x080480b6         b801000000  mov eax, 1
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 15
 
-  0x000000b7               0100  add dword [eax], eax
-  0x000000b9               0000  add byte [eax], al
-  0x000000bb         b900000000  mov ecx, 0
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b6         b801000000  mov eax, 1
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 13
+
+  0x080480b7               0100  add dword [eax], eax
+  0x080480b9               0000  add byte [eax], al
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 12
+
+  0x080480b9               0000  add byte [eax], al
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 10
+
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 8
 
 EOF
 RUN
@@ -103,10 +166,18 @@ e asm.bits=32
 /Rq
 EOF
 EXPECT=<<EOF
-0x000000b4: int 0x80; mov eax, 1; mov ecx, 0; int 0x80; ret;
-0x000000b5: cmp byte [eax + 1], 0xb9; add byte [eax], al; add byte [eax], al; int 0x80; ret;
-0x000000b7: add dword [eax], eax; add byte [eax], al; mov ecx, 0; int 0x80; ret;
-0x000000b8: add byte [eax], al; add byte [ecx], bh; int 0x80; ret;
+0x080480b4: int 0x80; mov eax, 1; mov ecx, 0; int 0x80; ret;
+0x080480b5: cmp byte [eax + 1], 0xb9; add byte [eax], al; add byte [eax], al; int 0x80; ret;
+0x080480b6: mov eax, 1; mov ecx, 0; int 0x80; ret;
+0x080480b7: add dword [eax], eax; add byte [eax], al; mov ecx, 0; int 0x80; ret;
+0x080480b8: add byte [eax], al; add byte [ecx], bh; int 0x80; ret;
+0x080480b9: add byte [eax], al; mov ecx, 0; int 0x80; ret;
+0x080480ba: add byte [ecx], bh; int 0x80; ret;
+0x080480bb: mov ecx, 0; int 0x80; ret;
+0x080480bc: add byte [eax], al; add byte [eax], al; int 0x80; ret;
+0x080480be: add byte [eax], al; int 0x80; ret;
+0x080480c0: int 0x80; ret;
+0x080480c2: ret;
 EOF
 RUN
 
@@ -119,25 +190,47 @@ e asm.bits=32
 /R ecx
 EOF
 EXPECT=<<EOF
-  0x000000b4               cd80  int 0x80
-  0x000000b6         b801000000  mov eax, 1
-  0x000000bb         b900000000  mov ecx, 0
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b4               cd80  int 0x80
+  0x080480b6         b801000000  mov eax, 1
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 15
 
-  0x000000b7               0100  add dword [eax], eax
-  0x000000b9               0000  add byte [eax], al
-  0x000000bb         b900000000  mov ecx, 0
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b6         b801000000  mov eax, 1
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 13
+
+  0x080480b7               0100  add dword [eax], eax
+  0x080480b9               0000  add byte [eax], al
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 12
 
-  0x000000b8               0000  add byte [eax], al
-  0x000000ba       00b900000000  add byte [ecx], bh
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b8               0000  add byte [eax], al
+  0x080480ba       00b900000000  add byte [ecx], bh
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 11
+
+  0x080480b9               0000  add byte [eax], al
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 10
+
+  0x080480ba       00b900000000  add byte [ecx], bh
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 9
+
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 8
 
 EOF
 RUN
@@ -151,7 +244,7 @@ e asm.bits=32
 /Rj ecx
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"offset":180,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":182,"size":5,"opcode":"mov eax, 1","type":"mov"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":15},{"opcodes":[{"offset":183,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"offset":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":12},{"opcodes":[{"offset":184,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":11}]
+[{"opcodes":[{"offset":134512820,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":134512822,"size":5,"opcode":"mov eax, 1","type":"mov"},{"offset":134512827,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":134512832,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":134512834,"size":1,"opcode":"ret","type":"ret"}],"retaddr":134512834,"size":15},{"opcodes":[{"offset":134512822,"size":5,"opcode":"mov eax, 1","type":"mov"},{"offset":134512827,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":134512832,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":134512834,"size":1,"opcode":"ret","type":"ret"}],"retaddr":134512834,"size":13},{"opcodes":[{"offset":134512823,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"offset":134512825,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":134512827,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":134512832,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":134512834,"size":1,"opcode":"ret","type":"ret"}],"retaddr":134512834,"size":12},{"opcodes":[{"offset":134512824,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":134512826,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":134512832,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":134512834,"size":1,"opcode":"ret","type":"ret"}],"retaddr":134512834,"size":11},{"opcodes":[{"offset":134512825,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":134512827,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":134512832,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":134512834,"size":1,"opcode":"ret","type":"ret"}],"retaddr":134512834,"size":10},{"opcodes":[{"offset":134512826,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":134512832,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":134512834,"size":1,"opcode":"ret","type":"ret"}],"retaddr":134512834,"size":9},{"opcodes":[{"offset":134512827,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":134512832,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":134512834,"size":1,"opcode":"ret","type":"ret"}],"retaddr":134512834,"size":8}]
 EOF
 RUN
 
@@ -164,32 +257,65 @@ e asm.bits=32
 /R/ "(ecx|eax)"
 EOF
 EXPECT=<<EOF
-  0x000000b4               cd80  int 0x80
-  0x000000b6         b801000000  mov eax, 1
-  0x000000bb         b900000000  mov ecx, 0
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b4               cd80  int 0x80
+  0x080480b6         b801000000  mov eax, 1
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 15
 
-  0x000000b5     80b801000000b9  cmp byte [eax + 1], 0xb9
-  0x000000bc               0000  add byte [eax], al
-  0x000000be               0000  add byte [eax], al
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b5     80b801000000b9  cmp byte [eax + 1], 0xb9
+  0x080480bc               0000  add byte [eax], al
+  0x080480be               0000  add byte [eax], al
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 14
 
-  0x000000b7               0100  add dword [eax], eax
-  0x000000b9               0000  add byte [eax], al
-  0x000000bb         b900000000  mov ecx, 0
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b6         b801000000  mov eax, 1
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 13
+
+  0x080480b7               0100  add dword [eax], eax
+  0x080480b9               0000  add byte [eax], al
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 12
 
-  0x000000b8               0000  add byte [eax], al
-  0x000000ba       00b900000000  add byte [ecx], bh
-  0x000000c0               cd80  int 0x80
-  0x000000c2                 c3  ret
+  0x080480b8               0000  add byte [eax], al
+  0x080480ba       00b900000000  add byte [ecx], bh
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
 Gadget size: 11
+
+  0x080480b9               0000  add byte [eax], al
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 10
+
+  0x080480ba       00b900000000  add byte [ecx], bh
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 9
+
+  0x080480bb         b900000000  mov ecx, 0
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 8
+
+  0x080480bc               0000  add byte [eax], al
+  0x080480be               0000  add byte [eax], al
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 7
+
+  0x080480be               0000  add byte [eax], al
+  0x080480c0               cd80  int 0x80
+  0x080480c2                 c3  ret
+Gadget size: 5
 
 EOF
 RUN
@@ -230,6 +356,17 @@ EXPECT=<<EOF
   0x08048426         e805ffffff  call 0x8048330
 Gadget size: 10
 
+  0x08048422               31ff  xor edi, edi
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 9
+
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 7
+
 EOF
 RUN
 
@@ -246,6 +383,17 @@ EXPECT=<<EOF
   0x08048425                 53  push ebx
   0x08048426         e805ffffff  call 0x8048330
 Gadget size: 10
+
+  0x08048422               31ff  xor edi, edi
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 9
+
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 7
 
 EOF
 RUN

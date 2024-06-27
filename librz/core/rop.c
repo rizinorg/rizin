@@ -346,7 +346,6 @@ void rz_rop_gadget_info_add_dependency(RzCore *core, RzRopGadgetInfo *gadget_inf
 	}
 	switch (evt->type) {
 	case RZ_IL_EVENT_MEM_READ:
-		// Used for reading this address
 		const RzILEventMemRead *mem_read = &evt->data.mem_read;
 		reg_info->is_mem_read = true;
 		reg_info->is_mem_write = false;
@@ -494,7 +493,7 @@ static void fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 		}
 	} break;
 	case RZ_IL_EVENT_PC_WRITE: {
-		RzILEventPCWrite *pc_write = &event->data.pc_write;
+		// RzILEventPCWrite *pc_write = &event->data.pc_write;
 		if (!gadget_info->is_pc_write) {
 			gadget_info->is_pc_write = true;
 		}
@@ -645,16 +644,6 @@ static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzCmdS
 		if (db && hit) {
 			rz_cons_printf("Gadget size: %d\n", (int)size);
 			// rop_classify(core, db, ropList, key, size);
-			if (rz_list_empty(hitlist)) {
-				return;
-			}
-			const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
-			RzRopGadgetInfo *rop_gadget_info = rz_rop_gadget_info_new(addr_start);
-			rz_list_foreach (hitlist, iter, hit) {
-				analyze_gadget(core, hit, rop_gadget_info);
-			}
-			print_rop_gadget_info(core, rop_gadget_info);
-			rz_rop_gadget_info_free(rop_gadget_info);
 		}
 		rz_cons_newline();
 		break;
@@ -827,7 +816,32 @@ ret:
 	return hitlist;
 }
 
-RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzCmdStateOutput *state) {
+static void handle_rop_request_type(RzCore *core, const ut8 subchain, RzRopRequestMask type, RzList *hitlist, RzCmdStateOutput *state) {
+	if (type & RZ_ROP_GADGET_PRINT) {
+		if (subchain) {
+			do {
+				print_rop(core, hitlist, state);
+				hitlist->head = hitlist->head->next;
+			} while (hitlist->head->next);
+		} else {
+			print_rop(core, hitlist, state);
+		}
+	}
+	if (type & RZ_ROP_GADGET_DETAIL) {
+		RzListIter *iter;
+		RzCoreAsmHit *hit;
+
+		const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
+		RzRopGadgetInfo *rop_gadget_info = rz_rop_gadget_info_new(addr_start);
+		rz_list_foreach (hitlist, iter, hit) {
+			analyze_gadget(core, hit, rop_gadget_info);
+		}
+		print_rop_gadget_info(core, rop_gadget_info);
+		rz_rop_gadget_info_free(rop_gadget_info);
+	}
+}
+
+RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzRopRequestMask type, RzCmdStateOutput *state) {
 	const ut8 crop = rz_config_get_i(core->config, "rop.conditional"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = rz_config_get_i(core->config, "rop.subchains");
 	const ut8 max_instr = rz_config_get_i(core->config, "rop.len");
@@ -1073,14 +1087,7 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 						free(headAddr);
 					}
 
-					if (subchain) {
-						do {
-							print_rop(core, hitlist, state);
-							hitlist->head = hitlist->head->next;
-						} while (hitlist->head->next);
-					} else {
-						print_rop(core, hitlist, state);
-					}
+					handle_rop_request_type(core, subchain, type, hitlist, state);
 					rz_list_free(hitlist);
 					if (max_count > 0) {
 						max_count--;
@@ -1138,7 +1145,7 @@ RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, const char *input, RzCm
 	Sdb *gadgetSdb = sdb_ns(core->sdb, "gadget_sdb", false);
 
 	if (!gadgetSdb) {
-		rz_core_search_rop(core, input, 0, state);
+		rz_core_search_rop(core, input, 0, RZ_ROP_GADGET_PRINT, state);
 		return RZ_CMD_STATUS_OK;
 	}
 	void **iter;

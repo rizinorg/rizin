@@ -62,4 +62,4 @@ commands:
         args:
           - name: Gadget address
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: false
+            optional: true

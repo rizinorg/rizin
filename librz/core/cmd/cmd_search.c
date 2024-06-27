@@ -237,6 +237,8 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 		rz_list_free(constraints);
 		return RZ_CMD_STATUS_INVALID;
 	}
+
+	rz_core_search_rop(core, argv[1], 0, RZ_ROP_GADGET_DETAIL, state);
 	rz_list_free(constraints);
 	return RZ_CMD_STATUS_OK;
 }
@@ -246,16 +248,14 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 	if (!input) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_search_rop(core, argv[1], 1, state);
+	rz_core_search_rop(core, argv[1], 1, RZ_ROP_GADGET_PRINT, state);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *input = argc > 1 ? argv[1] : "";
-	if (!input) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	// Add logic
+	rz_core_search_rop(core, input, 1, RZ_ROP_GADGET_DETAIL, state);
+
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1846,106 +1846,6 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 
 	if (param->outmode == RZ_MODE_JSON) {
 		pj_end(param->pj);
-	}
-}
-
-static void rop_kuery(void *data, const char *input, RzCmdStateOutput *state) {
-	RzCore *core = data;
-	Sdb *db_rop = sdb_ns(core->sdb, "rop", false);
-	RzListIter *it;
-	void **items_iter;
-	SdbNs *ns;
-	char *out;
-
-	if (!db_rop) {
-		RZ_LOG_ERROR("core: could not find SDB 'rop' namespace\n");
-		return;
-	}
-
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_list_foreach (db_rop->ns, it, ns) {
-			RzPVector *items = sdb_get_items(ns->sdb, false);
-			rz_pvector_foreach (items, items_iter) {
-				SdbKv *kv = *items_iter;
-				rz_cons_printf("%s ", sdbkv_key(kv));
-			}
-			rz_pvector_free(items);
-		}
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		pj_o(state->d.pj);
-		pj_ka(state->d.pj, "gadgets");
-		rz_list_foreach (db_rop->ns, it, ns) {
-			RzPVector *items = sdb_get_items(ns->sdb, false);
-			rz_pvector_foreach (items, items_iter) {
-				SdbKv *kv = *items_iter;
-				char *dup = sdbkv_dup_value(kv);
-				bool flag = false; // to free tok when doing strdup
-				char *size = strtok(dup, " ");
-				char *tok = strtok(NULL, "{}");
-				if (!tok) {
-					tok = strdup("NOP");
-					flag = true;
-				}
-				pj_o(state->d.pj);
-				pj_ks(state->d.pj, "address", sdbkv_key(kv));
-				pj_ks(state->d.pj, "size", size);
-				pj_ks(state->d.pj, "type", ns->name);
-				pj_ks(state->d.pj, "effect", tok);
-				pj_end(state->d.pj);
-				free(dup);
-				if (flag) {
-					free(tok);
-				}
-			}
-			rz_pvector_free(items);
-		}
-		pj_end(state->d.pj);
-		pj_end(state->d.pj);
-		break;
-	case ' ':
-		if (!strcmp(input + 1, "nop")) {
-			out = sdb_querys(core->sdb, NULL, 0, "rop/nop/*");
-			if (out) {
-				rz_cons_println(out);
-				free(out);
-			}
-		} else if (!strcmp(input + 1, "mov")) {
-			out = sdb_querys(core->sdb, NULL, 0, "rop/mov/*");
-			if (out) {
-				rz_cons_println(out);
-				free(out);
-			}
-		} else if (!strcmp(input + 1, "const")) {
-			out = sdb_querys(core->sdb, NULL, 0, "rop/const/*");
-			if (out) {
-				rz_cons_println(out);
-				free(out);
-			}
-		} else if (!strcmp(input + 1, "arithm")) {
-			out = sdb_querys(core->sdb, NULL, 0, "rop/arithm/*");
-			if (out) {
-				rz_cons_println(out);
-				free(out);
-			}
-		} else if (!strcmp(input + 1, "arithm_ct")) {
-			out = sdb_querys(core->sdb, NULL, 0, "rop/arithm_ct/*");
-			if (out) {
-				rz_cons_println(out);
-				free(out);
-			}
-		} else {
-			RZ_LOG_ERROR("core: Invalid ROP class\n");
-		}
-		break;
-	default:
-		out = sdb_querys(core->sdb, NULL, 0, "rop/***");
-		if (out) {
-			rz_cons_println(out);
-			free(out);
-		}
-		break;
 	}
 }
 
