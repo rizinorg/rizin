@@ -1240,6 +1240,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			break;
+		case RZ_ANALYSIS_OP_TYPE_CTX_SWITCH:
+			analysis->bits = 16;
 		case RZ_ANALYSIS_OP_TYPE_CCALL:
 		case RZ_ANALYSIS_OP_TYPE_CALL:
 			/* call dst */
