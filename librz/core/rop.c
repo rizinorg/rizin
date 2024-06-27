@@ -679,7 +679,7 @@ static bool insert_into(void *user, const ut64 k, const ut64 v) {
 // TODO: follow unconditional jumps
 static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int buflen,
 	int idx, const char *grep, int regex, RzList /*<char *>*/ *rx_list,
-	RzRopEndListPair *end_gadget, HtUU *badstart, int delta) {
+	RzRopEndListPair *end_gadget, HtUU *badstart, int delta, RzStrBuf *sb) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RzAnalysisOp aop = { 0 };
@@ -719,35 +719,39 @@ static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr
 		valid = false;
 		goto ret;
 	}
+	ut32 end_gadget_cnt = 0;
 	while (nb_instr < max_instr) {
-		ht_uu_insert(localbadstart, idx, 1);
+		// ht_uu_insert(localbadstart, idx, 1);
 		rz_analysis_op_init(&aop);
 		if (idx >= delta) {
 			valid = false;
 			goto ret;
 		}
 		int error = rz_analysis_op(core->analysis, &aop, addr, buf + idx, buflen - idx, RZ_ANALYSIS_OP_MASK_DISASM);
-		if (error < 0 || (nb_instr == 0 && (is_end_gadget(&aop, 0) || aop.type == RZ_ANALYSIS_OP_TYPE_NOP))) {
+		if (error < 0 || (nb_instr == 0 && aop.type == RZ_ANALYSIS_OP_TYPE_NOP)) {
 			valid = false;
 			goto ret;
 		}
 
+		if (is_end_gadget(&aop, 0)) {
+			end_gadget_cnt++;
+		}
 		const int opsz = aop.size;
 		// opsz = rz_strbuf_length (asmop.buf);
 		char *opst = aop.mnemonic;
+		RzAsmOp asmop;
+		int asm_ret = rz_asm_disassemble(core->rasm, &asmop, buf + idx, buflen - idx);
 		if (!opst) {
 			RZ_LOG_WARN("Analysis plugin %s did not return disassembly\n", core->analysis->cur->name);
-			RzAsmOp asmop;
 			rz_asm_set_pc(core->rasm, addr);
-			if (rz_asm_disassemble(core->rasm, &asmop, buf + idx, buflen - idx) < 0) {
+			if (asm_ret < 0) {
 				valid = false;
 				goto ret;
 			}
 			opst = strdup(rz_asm_op_get_asm(&asmop));
-			rz_asm_op_fini(&asmop);
 		}
 		if (!rz_str_ncasecmp(opst, "invalid", strlen("invalid")) ||
-			!rz_str_ncasecmp(opst, ".byte", strlen(".byte"))) {
+			!rz_str_ncasecmp(opst, ".byte", strlen(".byte")) || end_gadget_cnt > 1) {
 			valid = false;
 			goto ret;
 		}
@@ -756,7 +760,13 @@ static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr
 		if (hit) {
 			hit->addr = addr;
 			hit->len = opsz;
+			char *asm_op_hex = rz_asm_op_get_hex(&asmop);
+			rz_strbuf_append(sb, asm_op_hex);
+			free(asm_op_hex);
 			rz_list_append(hitlist, hit);
+		}
+		if (asm_ret >= 0) {
+			rz_asm_op_fini(&asmop);
 		}
 
 		// Move on to the next instruction
@@ -836,6 +846,7 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 	int delta = 0;
 	ut8 *buf;
 	RzIOMap *map;
+	HtSU *unique_hitlists = ht_su_new(HT_STR_DUP);
 
 	const ut64 search_from = rz_config_get_i(core->config, "search.from"),
 		   search_to = rz_config_get_i(core->config, "search.to");
@@ -993,23 +1004,6 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 				if (rz_cons_is_breaked()) {
 					break;
 				}
-				if (i >= next) {
-					// We've exhausted the first end-gadget section,
-					// move to the next one.
-					free(end_gadget);
-					if (rz_list_get_n(end_list, 0)) {
-						prev = i;
-						end_gadget = (RzRopEndListPair *)rz_list_pop(end_list);
-						next = end_gadget->instr_offset;
-						i = next - ropdepth;
-						if (i < 0) {
-							i = 0;
-						}
-					} else {
-						end_gadget = NULL;
-						break;
-					}
-				}
 				if (i >= end) { // read by chunk of 4k
 					rz_io_read_at(core->io, from + i, buf + i,
 						RZ_MIN((delta - i), 4096));
@@ -1019,19 +1013,39 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 				ret = rz_asm_disassemble(core->rasm, asmop, buf + i, delta - i);
 				if (ret) {
 					rz_asm_set_pc(core->rasm, from + i);
+					RzStrBuf *sb = rz_strbuf_new("");
 					RzList *hitlist = construct_rop_gadget(core,
 						from + i, buf, delta, i, greparg, regexp,
-						rx_list, end_gadget, badstart, delta);
+						rx_list, end_gadget, badstart, delta, sb);
+
 					if (!hitlist) {
 						rz_asm_op_free(asmop);
 						asmop = NULL;
+						rz_strbuf_free(sb);
 						continue;
 					}
 					if (align && 0 != (from + i) % align) {
 						rz_asm_op_free(asmop);
 						asmop = NULL;
+						rz_strbuf_free(sb);
 						continue;
 					}
+					bool is_found = true;
+					char *asm_op_hex = NULL;
+					if (sb->len) {
+						asm_op_hex = rz_strbuf_get(sb);
+						ht_su_find(unique_hitlists, asm_op_hex, &is_found);
+					}
+					if (!is_found && asm_op_hex) {
+						ht_su_insert(unique_hitlists, asm_op_hex, 1);
+					} else {
+						rz_list_free(hitlist);
+						rz_asm_op_free(asmop);
+						asmop = NULL;
+						rz_strbuf_free(sb);
+						continue;
+					}
+					rz_strbuf_free(sb);
 					if (gadgetSdb) {
 						RzListIter *iter;
 
@@ -1080,6 +1094,23 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzC
 				}
 				rz_asm_op_free(asmop);
 				asmop = NULL;
+				if (i >= next) {
+					// We've exhausted the first end-gadget section,
+					// move to the next one.
+					free(end_gadget);
+					if (rz_list_get_n(end_list, 0)) {
+						prev = i;
+						end_gadget = (RzRopEndListPair *)rz_list_pop(end_list);
+						next = end_gadget->instr_offset;
+						i = next - ropdepth;
+						if (i < 0) {
+							i = 0;
+						}
+					} else {
+						end_gadget = NULL;
+						break;
+					}
+				}
 			}
 			free(end_gadget);
 		}
@@ -1094,6 +1125,7 @@ bad:
 	rz_cmd_state_output_array_end(state);
 	rz_cons_break_pop();
 	rz_asm_op_free(asmop);
+	ht_su_free(unique_hitlists);
 	rz_list_free(rx_list);
 	rz_list_free(end_list);
 	rz_list_free(boundaries);
