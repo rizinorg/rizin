@@ -533,7 +533,6 @@ typedef struct rz_analysis_t {
 	RzAnalysisDebugInfo *debug_info; ///< store all debug info parsed from DWARF, etc..
 	ut64 cmpval; ///< last compare value for jump table.
 	ut64 lea_jmptbl_ip; ///< jump table x86 lea ip
-	bool should_disas_as_thumb; ///< ARM: is processor mode THUMB?
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
@@ -900,7 +899,6 @@ typedef struct rz_analysis_op_t {
 	bool sign; /* operates on signed values, false by default */
 	/* Run N instructions before executing the current one */
 	int delay; /* delay N slots (mips, ..)*/
-	bool should_be_thumb; /* if ARM processor mode is THUMB */
 	ut64 jump; /* true jmp */
 	ut64 fail; /* false jmp */
 	RzAnalysisOpDirection direction;
