@@ -12,7 +12,7 @@ editor able to open disk files, and much more!
 To learn more on Rizin you may want to read the
 [official Rizin book](https://book.rizin.re).
 
-# How to install
+# How to install 
 
 Look at [install instructions](https://rizin.re/install/) on our web page.
 
@@ -24,25 +24,34 @@ one that is at least version `0.55.0`).
 
 Clone this repository:
 ```
-$ git clone https://github.com/rizinorg/rizin
+git clone https://github.com/rizinorg/rizin
 ```
 
 Then compile and install with:
 ```
-$ meson setup build
-$ meson compile -C build
-$ sudo meson install -C build
+sudo apt install meson -y 
+```
+```
+meson setup build
+```
+```
+meson compile -C build
+```
+```
+sudo meson install -C build
 ```
 
 Now you can use `rizin`:
 ```
-$ rizin
+sudo rizin
+```
+```
  -- Thank you for using rizin. Have a nice night!
 [0x00000000]>
-
 ```
 
-To uninstall rizin, execute `sudo ninja -C build uninstall`.
+To uninstall rizin, execute 
+`sudo ninja -C build uninstall`.
 
 
 Please have a look at [BUILDING.md][] for more information about building Rizin.
