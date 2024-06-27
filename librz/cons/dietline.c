@@ -1627,7 +1627,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			line->buffer.index = 0;
 			break;
 		case 2: // ^b // emacs left
-			__move_cursor_left(NULL);
+			__move_cursor_left(line);
 			break;
 		case 5: // ^E
 			if (line->gcomp) {

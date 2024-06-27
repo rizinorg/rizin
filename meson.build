@@ -300,6 +300,19 @@ if not tree_sitter_dep.found()
   meson.override_dependency('tree-sitter', tree_sitter_dep)
 endif
 
+# handle tree-sitter-c
+r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter-c', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+tree_sitter_c_dep = dependency('tree-sitter-c', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
+if not tree_sitter_c_dep.found()
+  tree_sitter_c_proj = subproject('tree-sitter-c', default_options: ['default_library=static'])
+  tree_sitter_c_dep = tree_sitter_c_proj.get_variable('tree_sitter_c_dep')
+  # override done in tree sitter c subproject
+endif
+
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
 use_ptrace_wrap = ['linux'].contains(host_machine.system())
@@ -595,6 +608,18 @@ if get_option('use_lzma')
   endif
 endif
 
+# handle softfloat dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'softfloat', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+softfloat_dep = dependency('softfloat', required: get_option('use_sys_softfloat'), static: is_static_build)
+if not softfloat_dep.found()
+  softfloat_proj = subproject('softfloat', default_options: ['default_library=static', 'warning_level=0'])
+  softfloat_dep = softfloat_proj.get_variable('softfloat_dep')
+endif
+
 # handle zip dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -785,6 +810,7 @@ summary({
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
   'System lzma library': liblzma_dep.found() and liblzma_dep.type_name() != 'internal',
+  'System softfloat library': softfloat_dep.found() and softfloat_dep.type_name() != 'internal',
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
   'System zstd library': libzstd_dep.found() and libzstd_dep.type_name() != 'internal',
   'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',

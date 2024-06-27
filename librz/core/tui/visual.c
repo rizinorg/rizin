@@ -3564,10 +3564,10 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 
 	char *rtn = NULL;
 	// get the line at the bottom of the screen
-	if (!core->cons->lastline) {
+	if (!core->cons->context->buffer) {
 		return NULL;
 	}
-	char *output = strdup(core->cons->lastline);
+	char *output = strdup(core->cons->context->buffer);
 	size_t line_count = 0, *line_index = rz_str_split_lines(output, &line_count);
 	int rows;
 	rz_cons_get_size(&rows);
@@ -3588,12 +3588,13 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 	rtn = rz_str_ndup(lastline + match->start, match->len);
 
 	// filter address in command, xref like ; CALL XREF from entry.fini0 @ 0x6b67
-	char *comment_signs[] = { "@", ";" };
+	char *comment_signs[] = { "@", "XREF" };
 	char *addr_pos = strstr(lastline, rtn);
 	for (ut32 i = 0; i < sizeof(comment_signs) / sizeof(comment_signs[0]); i++) {
 		const char *sign_pos = rz_str_strchr(lastline, comment_signs[i]);
 		if (sign_pos) {
 			if (addr_pos && addr_pos > sign_pos) {
+				free(rtn);
 				rtn = NULL;
 			}
 		}
@@ -3606,6 +3607,7 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 		memmove(rtn + 2, rtn, addr_len);
 		rtn[0] = '0';
 		rtn[1] = 'x';
+		rtn[prefix_len + addr_len] = '\0';
 	}
 
 exit:

@@ -2730,6 +2730,12 @@ RZ_IPI RzCmdStatus rz_print_op_analysis_color_map_handler(RzCore *core, int argc
 	return bool2status(cmd_print_pxA(core, len, state->mode));
 }
 
+void print_cursor(RzPrint *p, int cur, int len, int set) {
+	if (rz_print_have_cursor(p, cur, len)) {
+		rz_cons_printf("%s", RZ_CONS_INVERT(set, 1));
+	}
+}
+
 RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const char **argv) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
 	if (!len) {
@@ -2757,9 +2763,9 @@ RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const c
 		memmove(buf + 5, buf + 4, 5);
 		buf[4] = 0;
 
-		rz_print_cursor(core->print, i, 1, 1);
+		print_cursor(core->print, i, 1, 1);
 		rz_cons_printf("%s.%s  ", buf, buf + 5);
-		rz_print_cursor(core->print, i, 1, 0);
+		print_cursor(core->print, i, 1, 0);
 		if (c == 3) {
 			const ut8 *b = core->block + i - 3;
 			int (*k)(const ut8 *, int) = cmd_pxb_k;

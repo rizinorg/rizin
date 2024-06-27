@@ -41,6 +41,7 @@ struct rz_subprocess_t {
 	HANDLE stderr_read;
 	HANDLE proc;
 	int ret;
+	RzThreadSemaphore *ret_sem;
 	RzStrBuf out;
 	RzStrBuf err;
 };
@@ -326,6 +327,11 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 		goto error;
 	}
 	proc->ret = -1;
+	proc->ret_sem = rz_th_sem_new(0);
+	if (!proc->ret_sem) {
+		rz_sys_perror("rz_th_sem_new");
+		goto error;
+	}
 	proc->stdout_read = NULL;
 	proc->stderr_read = NULL;
 	proc->stdin_write = NULL;
@@ -456,6 +462,7 @@ beach:
 	return proc;
 error:
 	if (proc) {
+		rz_th_sem_free(proc->ret_sem);
 		if (proc->stderr_read && proc->stderr_read != proc->stdout_read) {
 			CloseHandle(proc->stderr_read);
 		}
@@ -619,6 +626,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 			if (GetExitCodeProcess(proc->proc, &exit_code)) {
 				proc->ret = exit_code;
 			}
+			rz_th_sem_post(proc->ret_sem);
 			continue;
 		}
 		break;
@@ -685,9 +693,9 @@ RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
 	if (!out) {
 		return NULL;
 	}
+	out->ret = rz_subprocess_ret(proc);
 	out->out = rz_subprocess_out(proc, &out->out_len);
 	out->err = rz_subprocess_err(proc, &out->err_len);
-	out->ret = proc->ret;
 	return out;
 }
 
@@ -695,6 +703,7 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
+	rz_th_sem_free(proc->ret_sem);
 	if (proc->stdin_write) {
 		CloseHandle(proc->stdin_write);
 	}
@@ -728,7 +737,7 @@ RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
 	return false;
 }
 
-#else // __WINDOWS__
+#else // !__WINDOWS__
 
 #include <errno.h>
 #include <sys/wait.h>
@@ -738,8 +747,8 @@ struct rz_subprocess_t {
 	int stdin_fd;
 	int stdout_fd;
 	int stderr_fd;
-	int killpipe[2];
 	int ret;
+	RzThreadSemaphore *ret_sem;
 	RzStrBuf out;
 	RzStrBuf err;
 	int master_fd; ///< Needed to check whether PTY
@@ -806,8 +815,7 @@ static void *sigchld_th(void *th) {
 			} else {
 				proc->ret = -1;
 			}
-			ut8 r = 0;
-			rz_xwrite(proc->killpipe[1], &r, 1);
+			rz_th_sem_post(proc->ret_sem);
 			subprocess_unlock();
 		}
 	}
@@ -1048,8 +1056,12 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 	if (!proc) {
 		goto error;
 	}
-	proc->killpipe[0] = proc->killpipe[1] = -1;
 	proc->ret = -1;
+	proc->ret_sem = rz_th_sem_new(0);
+	if (!proc->ret_sem) {
+		perror("rz_th_sem_new");
+		goto error;
+	}
 	proc->stdin_fd = -1;
 	proc->stdout_fd = -1;
 	proc->stderr_fd = -1;
@@ -1057,15 +1069,6 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 	proc->slave_fd = -1;
 	rz_strbuf_init(&proc->out);
 	rz_strbuf_init(&proc->err);
-
-	if (rz_sys_pipe(proc->killpipe, true) == -1) {
-		perror("pipe");
-		goto error;
-	}
-	if (fcntl(proc->killpipe[1], F_SETFL, O_NONBLOCK) < 0) {
-		perror("fcntl");
-		goto error;
-	}
 
 	int stdin_pipe[2] = { -1, -1 };
 	int stdout_pipe[2] = { -1, -1 };
@@ -1174,11 +1177,8 @@ no_term_change:
 	return proc;
 error:
 	free(argv);
-	if (proc && proc->killpipe[0] == -1) {
-		rz_sys_pipe_close(proc->killpipe[0]);
-	}
-	if (proc && proc->killpipe[1] == -1) {
-		rz_sys_pipe_close(proc->killpipe[1]);
+	if (proc) {
+		rz_th_sem_free(proc->ret_sem);
 	}
 	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0] && !(proc && stderr_pipe[0] == proc->master_fd)) {
 		rz_sys_pipe_close(stderr_pipe[0]);
@@ -1266,7 +1266,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool stdout_pty = proc->stdout_fd != -1 && proc->stdout_fd == proc->master_fd;
 	bool stderr_pty = proc->stderr_fd != -1 && proc->stderr_fd == proc->master_fd;
 
-	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead)) {
+	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof))) {
 		fd_set rfds;
 		FD_ZERO(&rfds);
 		int nfds = 0;
@@ -1280,12 +1280,6 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 			FD_SET(proc->stderr_fd, &rfds);
 			if (proc->stderr_fd > nfds) {
 				nfds = proc->stderr_fd;
-			}
-		}
-		if (!child_dead) {
-			FD_SET(proc->killpipe[0], &rfds);
-			if (proc->killpipe[0] > nfds) {
-				nfds = proc->killpipe[0];
 			}
 		}
 		nfds++;
@@ -1325,11 +1319,12 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 				n_bytes -= r;
 			}
 		}
-		if (FD_ISSET(proc->killpipe[0], &rfds)) {
+		if (stdout_eof && stderr_eof) {
 			timedout = false;
 			child_dead = true;
 		}
 		if (timedout) {
+			rz_th_sem_post(proc->ret_sem);
 			break;
 		}
 	}
@@ -1430,15 +1425,13 @@ RZ_API void rz_subprocess_kill(RzSubprocess *proc) {
 }
 
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
-	subprocess_lock();
 	RzSubprocessOutput *out = RZ_NEW(RzSubprocessOutput);
 	if (out) {
+		out->ret = rz_subprocess_ret(proc);
 		out->out = rz_subprocess_out(proc, &out->out_len);
 		out->err = rz_subprocess_err(proc, &out->err_len);
-		out->ret = proc->ret;
 		out->timeout = false;
 	}
-	subprocess_unlock();
 	return out;
 }
 
@@ -1449,10 +1442,9 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	subprocess_lock();
 	rz_pvector_remove_data(&subprocs, proc);
 	subprocess_unlock();
+	rz_th_sem_free(proc->ret_sem);
 	rz_strbuf_fini(&proc->out);
 	rz_strbuf_fini(&proc->err);
-	rz_sys_pipe_close(proc->killpipe[0]);
-	rz_sys_pipe_close(proc->killpipe[1]);
 
 	if (proc->master_fd != -1) {
 		rz_sys_pipe_close(proc->master_fd);
@@ -1548,7 +1540,10 @@ RZ_API void rz_subprocess_pty_free(RZ_OWN RzPty *pty) {
 #endif
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
-	return proc->ret;
+	rz_th_sem_wait(proc->ret_sem);
+	int ret = proc->ret;
+	rz_th_sem_post(proc->ret_sem);
+	return ret;
 }
 
 RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length) {

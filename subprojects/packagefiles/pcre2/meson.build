@@ -1,4 +1,4 @@
-project('pcre2', 'c', version: '10.43')
+project('pcre2', 'c', version: '10.44')
 
 cc = meson.get_compiler('c')
 

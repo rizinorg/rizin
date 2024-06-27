@@ -93,7 +93,7 @@ rz_util_common_sources = [
 ]
 rz_util_sources = rz_util_common_sources
 
-rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep] + platform_deps
+rz_util_deps = [ldl, lrt, mth, th, utl, pcre2_dep, softfloat_dep] + platform_deps
 if zlib_dep.found()
   rz_util_deps += [zlib_dep]
 endif
