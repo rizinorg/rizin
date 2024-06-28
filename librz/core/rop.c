@@ -346,7 +346,7 @@ void rz_rop_gadget_info_add_dependency(RzCore *core, RzRopGadgetInfo *gadget_inf
 	}
 	switch (evt->type) {
 	case RZ_IL_EVENT_MEM_READ:
-		const RzILEventMemRead *mem_read = &evt->data.mem_read;
+		RzILEventMemRead *mem_read = &evt->data.mem_read;
 		reg_info->is_mem_read = true;
 		reg_info->is_mem_write = false;
 		reg_info->is_var_write = false;
