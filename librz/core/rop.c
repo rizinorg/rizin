@@ -538,7 +538,7 @@ cleanup:
 }
 
 void print_rop_gadget_info(RzCore *core, RzRopGadgetInfo *gadget_info) {
-	rz_cons_printf("Gadget 0x%" PFMT64x "\n", gadget_info->address);
+	rz_cons_printf("\nGadget 0x%" PFMT64x "\n", gadget_info->address);
 	rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
 
 	rz_cons_printf("Changed registers: ");
@@ -550,9 +550,8 @@ void print_rop_gadget_info(RzCore *core, RzRopGadgetInfo *gadget_info) {
 			rz_cons_printf("%s ", reg_info->name);
 		}
 	}
-	rz_cons_printf("\n");
 
-	rz_cons_printf("Register dependencies:\n");
+	rz_cons_printf("\nRegister dependencies:\n");
 	RzListIter *iter;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
 		if (is_stack_pointer(core, reg_info->name) || is_base_pointer(core, reg_info->name)) {
