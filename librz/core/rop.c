@@ -345,26 +345,28 @@ void rz_rop_gadget_info_add_dependency(RzCore *core, RzRopGadgetInfo *gadget_inf
 		return;
 	}
 	switch (evt->type) {
-	case RZ_IL_EVENT_MEM_READ:
-		RzILEventMemRead *mem_read = &evt->data.mem_read;
+	case RZ_IL_EVENT_MEM_READ: {
+		const RzILEventMemRead *mem_read = &evt->data.mem_read;
 		reg_info->is_mem_read = true;
 		reg_info->is_mem_write = false;
 		reg_info->is_var_write = false;
 		reg_info_dup->new_val = rz_bv_to_ut64(mem_read->address);
 		break;
-	case RZ_IL_EVENT_MEM_WRITE:
+	}
+	case RZ_IL_EVENT_MEM_WRITE: {
 		reg_info->is_mem_write = true;
 		reg_info->is_mem_read = false;
 		reg_info->is_var_write = false;
-		RzILEventMemWrite *mem_write = &evt->data.mem_write;
+		const RzILEventMemWrite *mem_write = &evt->data.mem_write;
 		reg_info_dup->init_val = rz_bv_to_ut64(mem_write->old_value);
 		reg_info_dup->new_val = rz_bv_to_ut64(mem_write->new_value);
 		break;
-	case RZ_IL_EVENT_VAR_WRITE:
+	}
+	case RZ_IL_EVENT_VAR_WRITE: {
 		reg_info->is_var_write = true;
 		reg_info->is_mem_read = false;
 		reg_info->is_mem_write = false;
-		RzILEventVarWrite *var_write = &evt->data.var_write;
+		const RzILEventVarWrite *var_write = &evt->data.var_write;
 		RzBitVector *init_val = rz_il_value_to_bv(var_write->old_value);
 		RzBitVector *new_val = rz_il_value_to_bv(var_write->new_value);
 		if (!init_val || !new_val) {
@@ -380,6 +382,7 @@ void rz_rop_gadget_info_add_dependency(RzCore *core, RzRopGadgetInfo *gadget_inf
 		rz_bv_free(init_val);
 		rz_bv_free(new_val);
 		break;
+	}
 	default:
 		break;
 	}
