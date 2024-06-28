@@ -841,7 +841,21 @@ static void handle_rop_request_type(RzCore *core, const ut8 subchain, RzRopReque
 	}
 }
 
-RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzRopRequestMask type, RzCmdStateOutput *state) {
+/**
+ * \brief Search for ROP gadgets.
+ * \param core Pointer to the RzCore object.
+ * \param greparg Grep argument string for filtering gadgets.
+ * \param regexp Boolean indicating if the grep argument is a regex.
+ * \param mask ROP request type (RzRopRequestMask).
+ * \param state Pointer to the command state output (RzCmdStateOutput).
+ * \return true if the search is successful, false otherwise.
+ *
+ * Searches for ROP gadgets within the address range specified by configuration.
+ * Disassembles instructions, identifies end gadgets, constructs ROP gadgets, and
+ * filters results based on the grep argument and request mask. Outputs results to
+ * the provided state object.
+ */
+RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzRopRequestMask mask, RzCmdStateOutput *state) {
 	const ut8 crop = rz_config_get_i(core->config, "rop.conditional"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = rz_config_get_i(core->config, "rop.subchains");
 	const ut8 max_instr = rz_config_get_i(core->config, "rop.len");
@@ -1018,6 +1032,23 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzR
 				if (rz_cons_is_breaked()) {
 					break;
 				}
+				if (i > next) {
+					// We've exhausted the first end-gadget section,
+					// move to the next one.
+					free(end_gadget);
+					if (rz_list_get_n(end_list, 0)) {
+						prev = i;
+						end_gadget = (RzRopEndListPair *)rz_list_pop(end_list);
+						next = end_gadget->instr_offset;
+						i = next - ropdepth;
+						if (i < 0) {
+							i = 0;
+						}
+					} else {
+						end_gadget = NULL;
+						break;
+					}
+				}
 				if (i >= end) { // read by chunk of 4k
 					rz_io_read_at(core->io, from + i, buf + i,
 						RZ_MIN((delta - i), 4096));
@@ -1087,7 +1118,7 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzR
 						free(headAddr);
 					}
 
-					handle_rop_request_type(core, subchain, type, hitlist, state);
+					handle_rop_request_type(core, subchain, mask, hitlist, state);
 					rz_list_free(hitlist);
 					if (max_count > 0) {
 						max_count--;
@@ -1101,23 +1132,6 @@ RZ_API int rz_core_search_rop(RzCore *core, const char *greparg, int regexp, RzR
 				}
 				rz_asm_op_free(asmop);
 				asmop = NULL;
-				if (i >= next) {
-					// We've exhausted the first end-gadget section,
-					// move to the next one.
-					free(end_gadget);
-					if (rz_list_get_n(end_list, 0)) {
-						prev = i;
-						end_gadget = (RzRopEndListPair *)rz_list_pop(end_list);
-						next = end_gadget->instr_offset;
-						i = next - ropdepth;
-						if (i < 0) {
-							i = 0;
-						}
-					} else {
-						end_gadget = NULL;
-						break;
-					}
-				}
 			}
 			free(end_gadget);
 		}
@@ -1141,6 +1155,16 @@ bad:
 	return result;
 }
 
+/**
+ * \brief Display ROP gadget information.
+ * \param core Pointer to the RzCore object.
+ * \param input Input string for ROP search.
+ * \param state Pointer to the command state output.
+ * \return RZ_CMD_STATUS_OK on success.
+ *
+ * Displays ROP gadgets from the gadgetSdb.
+ * If unavailable, performs a ROP search with the input.
+ */
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, const char *input, RzCmdStateOutput *state) {
 	Sdb *gadgetSdb = sdb_ns(core->sdb, "gadget_sdb", false);
 
@@ -1182,6 +1206,12 @@ RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, const char *input, RzCm
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Free an RzRopConstraint object.
+ * \param data Pointer to the RzRopConstraint object to free.
+ *
+ * Frees the memory allocated for an RzRopConstraint object.
+ */
 RZ_API void rz_rop_constraint_free(RZ_NULLABLE void *data) {
 	RzRopConstraint *constraint = data;
 	if (!constraint) {
@@ -1195,6 +1225,12 @@ RZ_API void rz_rop_constraint_free(RZ_NULLABLE void *data) {
 	free(constraint);
 }
 
+/**
+ * \brief Create a new list of RzRopConstraint objects.
+ * \return Pointer to the newly created list.
+ *
+ * Creates a new RzList for RzRopConstraint object.
+ */
 RZ_API RzList /*<RzRopConstraint *>*/ *rz_rop_constraint_list_new(void) {
 	RzList *list = rz_list_new();
 	if (list) {

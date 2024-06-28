@@ -335,6 +335,18 @@ static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 	return true;
 }
 
+/**
+ * \brief Analyze and parse a constraint string.
+ * \param core Pointer to the RzCore object.
+ * \param str The constraint string to analyze.
+ * \param rop_constraint Pointer to the RzRopConstraint object to store the parsed result.
+ * \return true if the constraint string is successfully parsed, false otherwise.
+ *
+ * This function analyzes a given constraint string and attempts to parse it into
+ * the provided RzRopConstraint. It tries four different parsing methods:
+ *
+ * The function returns true if any of these parsing methods succeed.
+ */
 RZ_API bool analyze_constraint(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
 	rz_return_val_if_fail(core, NULL);
 	return parse_reg_to_const(core, str, rop_constraint) ||

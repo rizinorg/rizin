@@ -240,6 +240,15 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 		: NULL;
 }
 
+/**
+ * \brief Check if a register is in the analysis profile.
+ * \param analysis Pointer to the RzAnalysis object.
+ * \param str The register name to check.
+ * \return true if the register name is found, false otherwise.
+ *
+ * This function checks if the given register name is present
+ * in the register profile of the given RzAnalysis.
+ */
 RZ_API bool rz_analysis_is_reg_in_profile(RzAnalysis *analysis, const char *str) {
 	rz_return_val_if_fail(analysis, false);
 
