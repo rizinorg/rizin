@@ -152,7 +152,7 @@ static bool parse_reg_to_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 	return true;
 }
 
-static bool parse_il_op(RzList *args, const char *str, int *idx) {
+static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, int *idx) {
 	RzILOpPureCode res = RZ_IL_OP_VAR;
 
 	skip_whitespace(str, idx);
@@ -379,7 +379,7 @@ static RzRopConstraint *rop_constraint_parse_args(RzCore *core, char *token) {
 	return rop_constraint;
 }
 
-static RzList *rop_constraint_list_parse(RzCore *core, int argc, const char **argv) {
+static RzList /*<RzILOpPureCode *>*/ *rop_constraint_list_parse(RzCore *core, int argc, const char **argv) {
 	RzList *constr_list = rz_rop_constraint_list_new();
 	for (int i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], ",", 1, false);
