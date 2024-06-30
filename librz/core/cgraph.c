@@ -1081,17 +1081,34 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	return true;
 }
 
+static bool read_aligned_to_mapped(RzIO *io, ut64 addr, ut8 *buf, size_t *buf_len, size_t leading_bytes) {
+	if (!rz_io_addr_is_mapped(io, addr)) {
+		return false;
+	}
+	// Align the address for decoding start to a mapped region.
+	while (!rz_io_addr_is_mapped(io, addr - leading_bytes) && addr - leading_bytes < addr) {
+		leading_bytes -= 1;
+	}
+	// Align the end of the buffer read to a mapped region.
+	while (!rz_io_addr_is_mapped(io, addr + *buf_len) && addr + *buf_len > addr) {
+		*buf_len -= 1;
+	}
+	rz_io_read_at_mapped(io, addr - leading_bytes, buf, *buf_len);
+	return true;
+}
+
 static st32 decode_op_at(RZ_BORROW RzCore *core,
 	ut64 addr,
 	RZ_BORROW ut8 *buf,
 	size_t buf_len,
 	RZ_OUT RzAnalysisOp *target_op) {
 	rz_return_val_if_fail(core && core->analysis && core->io && buf, -1);
-	if (rz_io_nread_at(core->io, addr, buf, buf_len) < 0) {
+	size_t bl = buf_len;
+	if (!read_aligned_to_mapped(core->io, addr, buf, &bl, 0)) {
 		RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_nread_at() failed at 0x%" PFMT64x ".\n", addr, addr);
 		return -1;
 	}
-	int disas_bytes = rz_analysis_op(core->analysis, target_op, addr, buf, buf_len, RZ_ANALYSIS_OP_MASK_DISASM);
+	int disas_bytes = rz_analysis_op(core->analysis, target_op, addr, buf, bl, RZ_ANALYSIS_OP_MASK_DISASM);
 	if (disas_bytes <= 0 && target_op->type == RZ_ANALYSIS_OP_TYPE_ILL) {
 		// Illegal instruction, return something positive
 		return 1;
@@ -1261,11 +1278,12 @@ static st32 decode_iword_at(RZ_BORROW RzCore *core,
 	RZ_OUT RzAnalysisInsnWord *target_iword) {
 	rz_return_val_if_fail(core && core->analysis && core->io && buf && core->analysis->cur && core->analysis->cur->decode_iword, -1);
 	size_t leading_bytes = addr < 8 ? addr : 8;
-	if (!rz_io_read_at_mapped(core->io, addr - leading_bytes, buf, buf_len)) {
-		RZ_LOG_ERROR("Could not generate CFG at 0x%" PFMT64x ". rz_io_read_at_mapped() failed at 0x%" PFMT64x ".\n", addr, addr);
+	size_t bl = buf_len;
+	if (!read_aligned_to_mapped(core->io, addr, buf, &bl, leading_bytes)) {
+		RZ_LOG_ERROR("Could not decode iword. rz_io_read_at_mapped() failed at 0x%" PFMT64x ".\n", addr);
 		return -1;
 	}
-	bool success = core->analysis->cur->decode_iword(core->analysis, target_iword, addr, buf, buf_len, leading_bytes);
+	bool success = core->analysis->cur->decode_iword(core->analysis, target_iword, addr, buf, bl, leading_bytes);
 	return success ? target_iword->size_bytes : -1;
 }
 
