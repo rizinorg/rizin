@@ -409,7 +409,7 @@ _dA__ 32         malbolge    LGPL3   Malbolge Ternary VM (by condret)
 _dA__ 32         mcore       LGPL3   Motorola MCORE disassembler
 _d___ 16         mcs96       LGPL3   condrets car
 adAe_ 16 32 64   mips        BSD     Capstone MIPS disassembler
-_dA__ 16         msp430      LGPL3   msp430 disassembly plugin
+_dA_I 16         msp430      LGPL3   msp430 disassembly plugin
 adA__ 16 32 64   null        MIT     no disassemble (by pancake) v1.0.0
 _dA__ 32         or1k        LGPL3   OpenRISC 1000
 _dAeI 16 32      pic         LGPL3   PIC disassembler
