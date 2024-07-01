@@ -359,7 +359,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, Msp430Cmd *cmd
 			cmd->dst = (op << 8) | dst;
 		}
 		break;
-	default: RZ_LOG_WARN("UNREACHABLE");
+	default: rz_warn_if_reached();
 	}
 
 	strncat(cmd->operands, dstbuf, sizeof(cmd->operands) - 1 - strlen(cmd->operands));
