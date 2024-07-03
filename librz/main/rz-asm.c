@@ -580,10 +580,10 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		arch = rz_arch;
 	}
 
-	char *r2bits = rz_sys_getenv("RZ_BITS");
-	if (r2bits) {
-		bits = rz_num_math(NULL, r2bits);
-		free(r2bits);
+	char *rz_bits = rz_sys_getenv("RZ_BITS");
+	if (rz_bits) {
+		bits = rz_num_math(NULL, rz_bits);
+		free(rz_bits);
 	}
 
 	RzGetopt opt;
