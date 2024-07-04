@@ -83,6 +83,8 @@ char *linux_reg_profile(RzDebug *dbg) {
 	}
 #elif __s390x__
 #include "reg/linux-s390x.h"
+#elif __loongarch64
+#include "reg/linux-loongarch64.h"
 #else
 #error "Unsupported Linux CPU"
 	return NULL;

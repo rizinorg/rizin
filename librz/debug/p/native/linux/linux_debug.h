@@ -138,6 +138,12 @@ struct powerpc_regs_t {
 // typedef ut64 riscv64_regs_t [65];
 // #define RZ_DEBUG_REG_T riscv64_regs_t
 #define RZ_DEBUG_REG_T struct user_regs_struct
+
+#elif __loongarch64
+#include <sys/ucontext.h>
+#include <asm/ptrace.h>
+#define RZ_DEBUG_REG_T struct user_regs_struct
+
 // #define RZ_DEBUG_REG_T mcontext_t 77 784 in size (coz the fpu regs)
 
 #elif __mips__
