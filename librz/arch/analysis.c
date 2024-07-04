@@ -8,6 +8,7 @@
 #include <rz_util/rz_path.h>
 #include <rz_arch.h>
 #include <rz_lib.h>
+#include <rz_rop.h>
 
 /**
  * \brief Returns the default size byte width of memory access operations.
@@ -129,6 +130,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 		}
 	}
 	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
+	analysis->ht_rop = NULL;
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
@@ -185,6 +187,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
 	ht_sp_free(a->ht_global_var);
+	ht_up_free(a->ht_rop);
 	rz_list_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	free(a);
@@ -257,7 +260,7 @@ RZ_API bool rz_analysis_is_reg_in_profile(RzAnalysis *analysis, const char *str)
 		return false;
 	}
 
-	if (strstr(reg_prof, str) != NULL) {
+	if (strstr(reg_prof, str)) {
 		free(reg_prof);
 		return true;
 	}

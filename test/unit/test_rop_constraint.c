@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 z3phyr <giridh1337@gmail.com>
+// SPDX-FileCopyrightText: 2024 z3phyr <giridh1337@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -42,7 +42,7 @@ bool test_parse_reg_to_const(void) {
 
 	// Test case 1: Valid register to constant
 	char str1[] = " eax =    123 ";
-	mu_assert("parse_reg_to_const failed on valid input", analyze_constraint(core, str1, &rop_constraint));
+	mu_assert("parse_reg_to_const failed on valid input", rz_core_rop_analyze_constraint(core, str1, &rop_constraint));
 	mu_assert_eq(strcmp(rop_constraint.args[DST_REG], "eax"), 0, "Invalid destination register");
 	mu_assert("Source register should be NULL", rop_constraint.args[SRC_REG] == NULL);
 	mu_assert_eq(strcmp(rop_constraint.args[SRC_CONST], "123"), 0, "Invalid constant value");
@@ -52,7 +52,7 @@ bool test_parse_reg_to_const(void) {
 
 	// Test case 2: Invalid format
 	char str2[] = "eax =";
-	mu_assert("parse_reg_to_const should fail on invalid input", !analyze_constraint(core, str2, &rop_constraint));
+	mu_assert("parse_reg_to_const should fail on invalid input", !rz_core_rop_analyze_constraint(core, str2, &rop_constraint));
 
 	mu_end;
 }
@@ -65,7 +65,7 @@ bool test_parse_reg_to_reg(void) {
 
 	// Test case 1: Valid register to register
 	char str1[] = "eax = ebx  ";
-	mu_assert("parse_reg_to_reg failed on valid input", analyze_constraint(core, str1, &rop_constraint));
+	mu_assert("parse_reg_to_reg failed on valid input", rz_core_rop_analyze_constraint(core, str1, &rop_constraint));
 	mu_assert_eq(strcmp(rop_constraint.args[DST_REG], "eax"), 0, "Invalid destination register");
 	mu_assert_eq(strcmp(rop_constraint.args[SRC_REG], "ebx"), 0, "Invalid source register");
 
@@ -74,7 +74,7 @@ bool test_parse_reg_to_reg(void) {
 
 	// Test case 2: Invalid format
 	char str2[] = "eax =";
-	mu_assert("parse_reg_to_reg should fail on invalid input", !analyze_constraint(core, str2, &rop_constraint));
+	mu_assert("parse_reg_to_reg should fail on invalid input", !rz_core_rop_analyze_constraint(core, str2, &rop_constraint));
 
 	mu_end;
 }
@@ -87,7 +87,7 @@ bool test_parse_reg_op_const(void) {
 
 	// Test case 1: Valid register operation with constant
 	char str1[] = "eax=eax+3";
-	mu_assert("parse_reg_op_const failed on valid input", analyze_constraint(core, str1, &rop_constraint));
+	mu_assert("parse_reg_op_const failed on valid input", rz_core_rop_analyze_constraint(core, str1, &rop_constraint));
 	mu_assert_eq(strcmp(rop_constraint.args[DST_REG], "eax"), 0, "Invalid destination register");
 	mu_assert_eq(strcmp(rop_constraint.args[SRC_REG], "eax"), 0, "Invalid source register");
 	mu_assert_eq(strcmp(rop_constraint.args[OP], "add"), 0, "Invalid operator");
@@ -100,7 +100,7 @@ bool test_parse_reg_op_const(void) {
 
 	// Test case 2: Invalid format
 	char str2[] = "eax=eax+";
-	mu_assert("parse_reg_op_const should fail on invalid input", !analyze_constraint(core, str2, &rop_constraint));
+	mu_assert("parse_reg_op_const should fail on invalid input", !rz_core_rop_analyze_constraint(core, str2, &rop_constraint));
 
 	mu_end;
 }
@@ -113,7 +113,7 @@ bool test_parse_reg_op_reg(void) {
 
 	// Test case 1: Valid register operation with register
 	char str1[] = "eax=eax-ebx";
-	mu_assert("parse_reg_op_reg failed on valid input", analyze_constraint(core, str1, &rop_constraint));
+	mu_assert("parse_reg_op_reg failed on valid input", rz_core_rop_analyze_constraint(core, str1, &rop_constraint));
 	mu_assert_eq(strcmp(rop_constraint.args[DST_REG], "eax"), 0, "Invalid destination register");
 	mu_assert_eq(strcmp(rop_constraint.args[SRC_REG], "eax"), 0, "Invalid source register");
 	mu_assert_eq(strcmp(rop_constraint.args[OP], "sub"), 0, "Invalid operator");
@@ -126,7 +126,7 @@ bool test_parse_reg_op_reg(void) {
 
 	// Test case 2: Invalid format
 	char str2[] = "eax =  eax+ ";
-	mu_assert("parse_reg_op_reg should fail on invalid input", !analyze_constraint(core, str2, &rop_constraint));
+	mu_assert("parse_reg_op_reg should fail on invalid input", !rz_core_rop_analyze_constraint(core, str2, &rop_constraint));
 
 	mu_end;
 }

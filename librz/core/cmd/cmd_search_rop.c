@@ -8,18 +8,18 @@
 #include "rz_types_base.h"
 #include "rz_rop.h"
 
-static void skip_whitespace(const char *str, int *idx) {
-	while (str[*idx] == ' ' || str[*idx] == '\t' || str[*idx] == '\n' || str[*idx] == '\r') {
-		(*idx)++;
+static void skip_whitespace(const char *str, ut64 *idx) {
+	while (IS_WHITECHAR(str[*idx])) {
+				(*idx)++;
 	}
 }
 
-static bool parse_eof(const char *str, int idx) {
+static bool parse_eof(const char *str, ut64 idx) {
 	skip_whitespace(str, &idx);
 	return str[idx] == '\0';
 }
 
-static bool parse_il_equal(char *str, int *idx) {
+static bool parse_il_equal(const char *str, ut64 *idx) {
 	skip_whitespace(str, idx);
 	if (*idx >= strlen(str)) {
 		return false;
@@ -31,9 +31,9 @@ static bool parse_il_equal(char *str, int *idx) {
 	return false;
 }
 
-static char *parse_register(RzCore *core, char *str, int *idx) {
+static char *parse_register(const RzCore *core, const char *str, ut64 *idx) {
 	char reg[256] = { 0 };
-	int reg_idx = 0;
+	ut64 reg_idx = 0;
 
 	skip_whitespace(str, idx);
 
@@ -54,7 +54,8 @@ static char *parse_register(RzCore *core, char *str, int *idx) {
 	return NULL;
 }
 
-static bool parse_constant(const char *str, int *idx, unsigned long long *value) {
+static bool parse_constant(const char *str, RZ_NONNULL ut64 *idx, unsigned long long *value) {
+	rz_return_val_if_fail(idx, false);
 	int base = 10;
 	int neg = 0;
 	char num_str[256] = { 0 };
@@ -91,8 +92,8 @@ static bool parse_constant(const char *str, int *idx, unsigned long long *value)
 	return true;
 }
 
-static bool parse_reg_to_const(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
-	int idx = 0;
+static bool parse_reg_to_const(const RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
+	ut64 idx = 0;
 	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
 		return false;
@@ -118,13 +119,13 @@ static bool parse_reg_to_const(RzCore *core, char *str, RzRopConstraint *rop_con
 	rop_constraint->args[DST_REG] = dst_reg;
 	rop_constraint->args[SRC_REG] = NULL;
 	char value_str[256];
-	snprintf(value_str, sizeof(value_str), "%llu", const_value);
+	rz_strf(value_str, "%" PFMT64u, const_value);
 	rop_constraint->args[SRC_CONST] = strdup(value_str);
 	return true;
 }
 
-static bool parse_reg_to_reg(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
-	int idx = 0;
+static bool parse_reg_to_reg(const RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
+	ut64 idx = 0;
 	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
 		return false;
@@ -152,7 +153,7 @@ static bool parse_reg_to_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 	return true;
 }
 
-static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, int *idx) {
+static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, ut64 *idx) {
 	RzILOpPureCode res = RZ_IL_OP_VAR;
 
 	skip_whitespace(str, idx);
@@ -206,7 +207,7 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, in
 		}
 	}
 
-	RzILOpPureCode *op_ptr = malloc(sizeof(RzILOpPureCode));
+	RzILOpPureCode *op_ptr = RZ_NEW0(RzILOpPureCode);
 	if (!op_ptr) {
 		return false;
 	}
@@ -216,8 +217,8 @@ static bool parse_il_op(RzList /*<RzILOpPureCode *>*/ *args, const char *str, in
 	return true;
 }
 
-static bool parse_reg_op_const(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
-	int idx = 0;
+static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
+	ut64 idx = 0;
 	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
 		return false;
@@ -267,16 +268,49 @@ static bool parse_reg_op_const(RzCore *core, char *str, RzRopConstraint *rop_con
 	}
 
 	char op_str[16];
-	snprintf(op_str, sizeof(op_str), "%s", rz_il_op_pure_code_stringify(*op));
+	rz_strf(op_str, "%" PFMT64u, const_value);
 	rop_constraint->args[OP] = strdup(op_str);
-	char value_str[256];
-	snprintf(value_str, sizeof(value_str), "%llu", const_value);
-	rop_constraint->args[SRC_CONST] = strdup(value_str);
+	const char *value_str = rz_il_op_pure_code_stringify(*op);
+	rop_constraint->args[OP] = rz_str_dup(value_str);
 	return true;
 }
 
-static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
-	int idx = 0;
+RZ_API RzRopSearchContext *rz_core_rop_search_context_new(const RzCore *core, const char *greparg, const int regexp,
+	const RzRopRequestMask mask, RzCmdStateOutput *state) {
+	RzRopSearchContext *context = RZ_NEW0(RzRopSearchContext);
+	if (!context) {
+		return NULL;
+	}
+
+	context->greparg = greparg ? strdup(greparg) : NULL;
+	context->regexp = regexp;
+	context->mask = mask;
+	context->state = state;
+	context->max_instr = rz_config_get_i(core->config, "rop.len");
+	context->max_count = rz_config_get_i(core->config, "search.maxhits");
+	context->increment = 1;
+	context->from = 0;
+	context->to = 0;
+	context->end_list = NULL;
+	context->unique_hitlists = NULL;
+	context->crop = rz_config_get_i(core->config, "rop.conditional");
+	context->subchain = rz_config_get_i(core->config, "rop.subchain");
+
+	return context;
+}
+
+RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *context) {
+	if (!context) {
+		return;
+	}
+
+	// Other elements have to be freed by the caller/callee.
+	free(context->greparg);
+	free(context);
+}
+
+static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
+	ut64 idx = 0;
 	char *dst_reg = parse_register(core, str, &idx);
 	if (!dst_reg) {
 		return false;
@@ -294,7 +328,7 @@ static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 	}
 
 	RzList *args = rz_list_new();
-	if (!parse_il_op(args, str, &idx)) {
+	if (!args || !parse_il_op(args, str, &idx)) {
 		free(dst_reg);
 		free(src_reg1);
 		rz_list_free(args);
@@ -328,9 +362,8 @@ static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_const
 		return false;
 	}
 
-	char op_str[16];
-	snprintf(op_str, sizeof(op_str), "%s", rz_il_op_pure_code_stringify(*op));
-	rop_constraint->args[OP] = strdup(op_str);
+	const char *op_str = rz_il_op_pure_code_stringify(*op);
+	rop_constraint->args[OP] = rz_str_dup(op_str);
 	rop_constraint->args[SRC_CONST] = dst_reg2;
 	return true;
 }
@@ -347,8 +380,8 @@ static bool parse_reg_op_reg(RzCore *core, char *str, RzRopConstraint *rop_const
  *
  * The function returns true if any of these parsing methods succeed.
  */
-RZ_API bool analyze_constraint(RzCore *core, char *str, RzRopConstraint *rop_constraint) {
-	rz_return_val_if_fail(core, NULL);
+RZ_API bool rz_core_rop_analyze_constraint(RzCore *core, const char *str, RzRopConstraint *rop_constraint) {
+	rz_return_val_if_fail(core, false);
 	return parse_reg_to_const(core, str, rop_constraint) ||
 		parse_reg_to_reg(core, str, rop_constraint) ||
 		parse_reg_op_const(core, str, rop_constraint) ||
@@ -369,7 +402,7 @@ static RzRopConstraint *rop_constraint_parse_args(RzCore *core, char *token) {
 		rz_list_free(l);
 		return NULL;
 	}
-	if (!analyze_constraint(core, token, rop_constraint)) {
+	if (!rz_core_rop_analyze_constraint(core, token, rop_constraint)) {
 		free(rop_constraint);
 		rz_list_free(l);
 		return NULL;
@@ -379,7 +412,7 @@ static RzRopConstraint *rop_constraint_parse_args(RzCore *core, char *token) {
 	return rop_constraint;
 }
 
-static RzList /*<RzILOpPureCode *>*/ *rop_constraint_list_parse(RzCore *core, int argc, const char **argv) {
+static RzList /*<RzILOpPureCode *>*/ *rop_constraint_list_parse(RzCore *core, const int argc, const char **argv) {
 	RzList *constr_list = rz_rop_constraint_list_new();
 	for (int i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], ",", 1, false);
