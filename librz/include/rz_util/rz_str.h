@@ -101,6 +101,7 @@ RZ_API const char *rz_str_lastbut(const char *s, char ch, const char *but);
 RZ_API size_t rz_str_split(char *str, char ch);
 RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n);
+RZ_API RZ_OWN bool rz_str_split_by_first_dupstr(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, bool trim, char **first_half, char **second_half);
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *str, const char *c, bool trim);
 RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim);

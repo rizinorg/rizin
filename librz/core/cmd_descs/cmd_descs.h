@@ -1207,6 +1207,14 @@ RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "dmht"
 RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, const char **argv);
+// "dmsf"
+RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_lockless_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "dmsr"
+RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_regular_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "dmsp"
+RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_partial_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "dmsn"
+RZ_IPI RzCmdStatus rz_cmd_debug_slub_dump_node_freelist_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "dmi"
 RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input);
 // "dml"

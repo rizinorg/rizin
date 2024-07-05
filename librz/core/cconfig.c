@@ -9,6 +9,7 @@
 #include <rz_config.h>
 
 #include "core_private.h"
+#include <vmlinux.h>
 
 static bool boolify_var_cb(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -75,6 +76,34 @@ static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b,
 	sa = rz_analysis_function_realsize(a);
 	sb = rz_analysis_function_realsize(b);
 	return (sa > sb) - (sa < sb);
+}
+
+static bool cb_vmlinux(void *_core, void *_node) {
+	RzCore *core = _core;
+	RzConfigNode *node = _node;
+
+	if (!strcmp(node->value, "false")) {
+		return true;
+	}
+
+	core->analysis->vmlinux_config = rz_vmlinux_config_new();
+
+	const char *vmlinux_config = rz_config_get(core->config, "bin.elf.vmlinux.config");
+	const char *vmlinux_version = rz_config_get(core->config, "bin.elf.vmlinux.version");
+
+	RZ_LOG_INFO("Parsing config file '%s'...\n", vmlinux_config);
+	rz_vmlinux_parse_apply_config_file(vmlinux_config, core->analysis->vmlinux_config->config_tbl);
+
+	rz_vmlinux_parse_version(core->analysis->vmlinux_config->version, vmlinux_version);
+
+	const char *apply_config_file = rz_config_get(core->config, "bin.elf.vmlinux.apply_config");
+
+	if (RZ_STR_ISNOTEMPTY(apply_config_file)) {
+		RZ_LOG_INFO("Parsing config file '%s'...\n", apply_config_file);
+		rz_vmlinux_parse_apply_config_file(apply_config_file, core->analysis->vmlinux_config->config_tbl);
+	}
+
+	return true;
 }
 
 static bool cb_search_case_sensitive(void *_core, void *_node) {
@@ -3834,6 +3863,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETB("flirt.sigdb.load.system", true, "Load signatures from the system path");
 	SETB("flirt.sigdb.load.extra", true, "Load signatures from the extra path");
 	SETB("flirt.sigdb.load.home", true, "Load signatures from the home path");
+
+	/* linux kernel (vmlinux) */
+	SETPREF("bin.elf.vmlinux.config", rz_file_path_join(rz_path_home_config(), "defconfig"), "Linux build configuration file");
+	SETPREF("bin.elf.vmlinux.apply_config", "", "Apply configuration from this config file to bin.elf.vmlinux.config");
+	SETPREF("bin.elf.vmlinux.version", "6.7.0", "Linux kernel version");
+	SETCB("bin.elf.vmlinux", "false", &cb_vmlinux, "Working with linux kernel"); // should be defined after all vmlinux configs
 
 	rz_config_lock(cfg, true);
 	return true;

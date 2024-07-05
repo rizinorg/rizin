@@ -54,6 +54,8 @@ rz_core_sources = [
   'libs.c',
   'linux_heap_glibc.c',
   'linux_heap_glibc64.c',
+  'linux_heap_slub.c',
+  'linux_heap_slub64.c',
   'project.c',
   'project_migrate.c',
   'rtr.c',
@@ -103,6 +105,7 @@ rz_core_sources = [
   'cmd/cmd_yank.c',
   'cmd/cmd_regs.c',
   'cmd/cmd_linux_heap_glibc.c',
+  'cmd/cmd_linux_heap_slub.c',
   'cmd/cmd_windows_heap.c',
   'tui/biteditor.c',
   'tui/classes.c',
@@ -122,6 +125,7 @@ rz_core_sources = [
   'tui/panels.c',
   'tui/tabs.c',
   'tui/rop.c',
+  'vmlinux.c',
 ]
 
 rz_core_inc = ['.']

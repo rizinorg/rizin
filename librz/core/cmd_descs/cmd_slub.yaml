@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2024 rockrid3r <rockrid3r@outlook.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+---
+name: cmd_slub
+commands:
+  - name: dmsf
+    cname: cmd_debug_slub_dump_lockless_freelist
+    summary: Dump lockless cpu freelist
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: cache_size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n_cpu
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: dmsr
+    cname: cmd_debug_slub_dump_regular_freelist
+    summary: Dump regular (locking) cpu freelist
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: cache_size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n_cpu
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: dmsp
+    cname: cmd_debug_slub_dump_partial_freelist
+    summary: Dump partial cpu freelists
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: cache_size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n_cpu
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: dmsn
+    cname: cmd_debug_slub_dump_node_freelist
+    summary: Dump node freelists
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: cache_size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n_node
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+        
