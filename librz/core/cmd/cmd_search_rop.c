@@ -10,7 +10,7 @@
 
 static void skip_whitespace(const char *str, ut64 *idx) {
 	while (IS_WHITECHAR(str[*idx])) {
-				(*idx)++;
+		(*idx)++;
 	}
 }
 
@@ -56,25 +56,26 @@ static char *parse_register(const RzCore *core, const char *str, ut64 *idx) {
 
 static bool parse_constant(const char *str, RZ_NONNULL ut64 *idx, unsigned long long *value) {
 	rz_return_val_if_fail(idx, false);
-	int base = 10;
 	int neg = 0;
-	char num_str[256] = { 0 };
-	int num_idx = 0;
+	int len = strlen(str);
 
 	skip_whitespace(str, idx);
 
-	if (str[*idx] == '-') {
+	if (*idx < len && str[*idx] == '-') {
 		neg = 1;
 		(*idx)++;
 	}
 
 	skip_whitespace(str, idx);
 
-	if (str[*idx] == '0' && (str[*idx + 1] == 'x' || str[*idx + 1] == 'X')) {
+	int base = 10;
+	if (*idx + 1 < len && str[*idx] == '0' && (str[*idx + 1] == 'x' || str[*idx + 1] == 'X')) {
 		base = 16;
 		*idx += 2;
 	}
 
+	int num_idx = 0;
+	char num_str[256] = { 0 };
 	while (isdigit(str[*idx]) || (base == 16 && isxdigit(str[*idx]))) {
 		num_str[num_idx++] = str[*idx];
 		(*idx)++;
@@ -104,7 +105,7 @@ static bool parse_reg_to_const(const RzCore *core, const char *str, RzRopConstra
 		return false;
 	}
 
-	unsigned long long const_value;
+	ut64 const_value;
 	if (!parse_constant(str, &idx, &const_value)) {
 		free(dst_reg);
 		return false;

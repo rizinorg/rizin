@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#define RZ_PROJECT_VERSION 17
+#define RZ_PROJECT_VERSION 18
 
 typedef Sdb RzProject;
 
