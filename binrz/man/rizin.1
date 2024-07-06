@@ -129,13 +129,17 @@ COLORTERM:                   extra color capabilities for a terminal
 .Pp
 COLUMNS:                     terminal columns to use
 .Pp
-LD_LIBRARY_PATH:             path to search for shared libraries at run time
+LD_LIBRARY_PATH:             path(s) to search for shared libraries at run time
 .Pp
-LIBRARY_PATH:                path to search for static and shared libraries at compile time
+LIBRARY_PATH:                path(s) to search for static and shared libraries at compile time
 .Pp
 PATH:                        path(s) with executables
 .Pp
-RZ_CURL:                     whether to use curl
+RZ_CURL:                     whether to use curl (for SSL support)
+.Pp
+RZ_DEBUG_ASSERT	             set a breakpoint when hitting an assert
+.Pp
+RZ_DEBUG_TOOL                debug tool to use when showing error messages and crash signal
 .Pp
 TERM:                        terminal's type and color
 
