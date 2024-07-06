@@ -137,9 +137,39 @@ PATH:                        path(s) with executables
 .Pp
 RZ_CURL:                     whether to use curl (for SSL support)
 .Pp
-RZ_DEBUG_ASSERT	             set a breakpoint when hitting an assert
+RZ_DEBUG_ASSERT:	         set a breakpoint when hitting an assert
 .Pp
 RZ_DEBUG_TOOL                debug tool to use when showing error messages and crash signal
+.Pp
+RZ_DYLDCACHE_FILTER:         dyld cache filter (MacOS dynamic libraries location(s) at runtime)
+.Pp
+RZ_HTTP_AUTHFILE:            HTTP Authentification user file
+.Pp
+RZ_LOGCOLORS:                should the log output use colors (TODO)
+.Pp
+RZ_LOGFILE:                  logging output filename/path
+.Pp
+RZ_LOGLEVEL:                 target log level/severity (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
+.Pp
+RZ_LOGSHOWSOURCES:           should the log output contain src info (filename:lineno)
+.Pp
+RZ_PIPE_IN:                  rzpipe cmd input (file descriptor)
+.Pp
+RZ_PIPE_OUT:                 rzpipe cmd output (file descriptor)
+.Pp
+RZ_PREFIX:                   default prefix rizin was compiled for
+.Pp
+RZ_RCFILE:                   user config file
+.Pp
+SFLIBPATH:                   SFLib syscall library path
+.Pp
+SHELL:                       shell to use (eg: "sh")
+.Pp
+TEMP:                        Temp directory path (Windows)
+.Pp
+TMPDIR:                      tmp directory path (eg: /tmp)
+.Pp
+WT_SESSION:                  check if in Windows terminal
 .Pp
 TERM:                        terminal's type and color
 
