@@ -110,12 +110,12 @@ typedef struct rz_rop_search_context_t {
 
 // Command APIs
 RZ_API RzCmdStatus rz_core_rop_search(RzCore *core, RZ_OWN RzRopSearchContext *context);
-RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, RzRopSearchContext *context);
+RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, RZ_OWN RzRopSearchContext *context);
 RZ_API bool rz_core_rop_analyze_constraint(RzCore *core, const char *str, RzRopConstraint *rop_constraint);
 
 // ROP Search Context APIs
 RZ_OWN RZ_API RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg,
-								 bool regexp, RzRopRequestMask mask, RZ_BORROW RzCmdStateOutput *state);
+	bool regexp, RzRopRequestMask mask, RZ_BORROW RzCmdStateOutput *state);
 RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *context);
 
 // ROP Constraint APIs
@@ -125,7 +125,7 @@ RZ_OWN RZ_API RzList /*<RzRopConstraint *>*/ *rz_rop_constraint_list_new(void);
 // ROP Gadget Info APIs
 RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_info);
 RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGadgetInfo *gadget_info,
-						 RZ_NONNULL RzRopRegInfo *reg_info, bool is_dependency);
+	RZ_NONNULL RzRopRegInfo *reg_info, bool is_dependency);
 RZ_API int rz_core_rop_gadget_info_update_register(RZ_INOUT RzRopGadgetInfo *gadget_info, RZ_NONNULL RzRopRegInfo *new_reg_info);
 RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(ut64 address);
 RZ_IPI RzRopRegInfo *rz_core_rop_reg_info_dup(RzRopRegInfo *src);

@@ -772,7 +772,7 @@ static void update_search_context(const RzRopSearchContext *context, const char 
 	}
 }
 
-static RzList *construct_rop_gadget(RzCore *core, ut8 *buf, int idx, RzRopSearchContext *context,
+static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut8 *buf, int idx, RzRopSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzRopEndListPair *end_gadget) {
 	int endaddr = end_gadget->instr_offset;
 	const char *start = NULL, *end = NULL;
@@ -931,7 +931,7 @@ static int fetch_search_itv(const RzCore *core, RzInterval *search_itv) {
 	return 0;
 }
 
-static RzList * /*<RzRopEndListPair *>*/ compute_end_gadget_list(const RzCore *core, const ut8 *buf, const RzRopSearchContext *context) {
+static RzList /*<RzRopEndListPair *>*/ *compute_end_gadget_list(const RzCore *core, const ut8 *buf, const RzRopSearchContext *context) {
 	RzList /*<RzRopEndListPair *>*/ *end_list = rz_list_newf(free);
 	const int delta = context->to - context->from;
 
