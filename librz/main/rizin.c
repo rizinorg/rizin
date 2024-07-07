@@ -205,7 +205,7 @@ static int main_help(int line) {
 			" RZ_DEBUG_TOOL=gdb            debug tool to use when showing error messages and crash signal\n"
 			" RZ_DYLDCACHE_FILTER          dyld cache filter (MacOS dynamic libraries location(s) at runtime)\n"
 			" RZ_HTTP_AUTHFILE             HTTP Authentification user file\n"
-			" RZ_LOGCOLORS                 should the log output use colors (TODO)\n"
+			" RZ_LOGCOLORS                 should the log output use colors\n"
 			" RZ_LOGFILE                   logging output filename/path\n"
 			" RZ_LOGLEVEL                  target log level/severity (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)\n"
 			" RZ_LOGSHOWSOURCES            should the log output contain src info (filename:lineno)\n"

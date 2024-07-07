@@ -246,8 +246,8 @@ static int rzbin_show_help(int v) {
 		       " RZ_BIN_STRFILTER:        e bin.str.filter              # rizin -qc 'e bin.str.filter=?"
 		       "?' -\n"
 		       " RZ_BIN_STRPURGE:         e bin.str.purge               # try to purge false positives\n"
-		       " RZ_BIN_SYMSTORE:         e pdb.symstore                # path to downstream symbol store\n"
-		       " RZ_CONFIG:                                             # sdb config file\n"
+		       " RZ_BIN_SYMSTORE:         e pdb.symstore                # path to downstream PDB symbol store\n"
+		       " RZ_CONFIG:                                             # config file\n"
 		       " RZ_NOPLUGINS:                                          # do not load shared plugins (speedup loading)\n");
 	}
 	return 1;
