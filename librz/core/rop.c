@@ -695,7 +695,7 @@ static int print_rop(const RzCore *core, const RzList /*<RzCoreAsmHit *>*/ *hitl
 }
 
 static int handle_rop_list(RzStrBuf *sb, const RzRopSearchContext *context,
-	const RzRopEndListPair *end_gadget, RZ_OWN RzList *hitlist) {
+	const RzRopEndListPair *end_gadget, RZ_OWN RzList /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(sb && context && context->unique_hitlists, -1);
 	if (end_gadget->delay_size && rz_list_length(hitlist) < 1 + end_gadget->delay_size) {
 		rz_list_free(hitlist);
@@ -931,8 +931,8 @@ static int fetch_search_itv(const RzCore *core, RzInterval *search_itv) {
 	return 0;
 }
 
-static RzList * /*<RzRopEndListPair> */ compute_end_gadget_list(const RzCore *core, const ut8 *buf, const RzRopSearchContext *context) {
-	RzList /*<RzRopEndListPair> */ *end_list = rz_list_newf(free);
+static RzList * /*<RzRopEndListPair *>*/ compute_end_gadget_list(const RzCore *core, const ut8 *buf, const RzRopSearchContext *context) {
+	RzList /*<RzRopEndListPair *>*/ *end_list = rz_list_newf(free);
 	const int delta = context->to - context->from;
 
 	for (int i = 0; i < delta; i += context->increment) {
@@ -971,8 +971,8 @@ static void set_increment_based_on_arch(const RzCore *core, const char *arch, in
 	}
 }
 
-static RzList * /*<char *>*/ handle_grep_args(const char *greparg, const bool regexp) {
-	if (!greparg || !regexp) {
+static RzList /*<char *>*/ *handle_grep_args(const char *greparg, const bool regexp) {
+	if (!greparg && !regexp) {
 		return NULL;
 	}
 
@@ -1006,7 +1006,7 @@ static RzList * /*<char *>*/ handle_grep_args(const char *greparg, const bool re
 }
 
 static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSearchContext *context,
-	RzList *rx_list, RzRopEndListPair *end_gadget) {
+	RzList /*<char *>*/ *rx_list, RzRopEndListPair *end_gadget) {
 	RzAsmOp *asmop = rz_asm_op_new();
 	bool status = false;
 	const int ret = rz_asm_disassemble(core->rasm, asmop, buf + idx, context->to - context->from - idx);

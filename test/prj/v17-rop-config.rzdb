@@ -42,7 +42,8 @@ bin=s
 /core/analysis/xrefs
 
 /core/config
-rop.cache=false
+rop.sdb=false
+rop.db=false
 rop.comments=false
 rop.conditional=false
 rop.len=5

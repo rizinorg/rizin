@@ -104,12 +104,12 @@ typedef struct rz_rop_search_context_t {
 	RzCmdStateOutput *state;
 	ut64 from;
 	ut64 to;
-	RzList /*<RzRopEndListPair> */ *end_list;
+	RzList /*<RzRopEndListPair *>*/ *end_list;
 	HtSU *unique_hitlists;
 } RzRopSearchContext;
 
 // Command APIs
-RZ_API RzCmdStatus rz_core_rop_search(RzCore *core, RzRopSearchContext *context);
+RZ_API RzCmdStatus rz_core_rop_search(RzCore *core, RZ_OWN RzRopSearchContext *context);
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RzCore *core, RzRopSearchContext *context);
 RZ_API bool rz_core_rop_analyze_constraint(RzCore *core, const char *str, RzRopConstraint *rop_constraint);
 

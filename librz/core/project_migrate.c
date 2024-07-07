@@ -694,7 +694,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v14_v15,
 	rz_project_migrate_v15_v16,
 	rz_project_migrate_v16_v17,
-	rz_project_migrate_v17_v18
+	rz_project_migrate_v17_v18,
 };
 
 /// Migrate the given project to the current version in-place
