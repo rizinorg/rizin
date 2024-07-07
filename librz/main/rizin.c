@@ -218,7 +218,7 @@ static int main_help(int line) {
 			" RZ_VERSION                   contains the current version of rizin\n"
 			" SFLIBPATH                    SFLib syscall library path\n"
 			" SHELL=sh                     shell to use (eg: \"sh\")\n"
-			" TEMP=C:\\WINDOWS\\Temp\\        Temp directory path (Windows)\n"
+			" TEMP                         Temp directory path (Windows)\n"
 			" TMPDIR=/tmp                  tmp directory path (eg: /tmp)\n"
 			" WT_SESSION                   check if in Windows terminal\n"
 			" TERM                         terminal's type and color\n"

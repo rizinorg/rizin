@@ -224,10 +224,10 @@ static int rasm_show_help(int v) {
 	printf(" If '-l' value is greater than output length, output is padded with nops\n"
 	       " If the last argument is '-' reads from stdin\n"
 	       "Environment:\n"
-		   " RZ_ARCH      e asm.arch # architecture to assemble/disassemble (same as rz-asm -a)\n"
+	       " RZ_ARCH      e asm.arch # architecture to assemble/disassemble (same as rz-asm -a)\n"
 	       " RZ_ASM_ARCH             # architecture to assemble/disassemble (same as rz-asm -a)\n"
 	       " RZ_ASM_BITS             # cpu register size (8, 16, 32, 64) (same as rz-asm -b)\n"
-		   " RZ_BITS      e asm.bits # cpu register size (8, 16, 32, 64) (same as rz-asm -b)\n"
+	       " RZ_BITS      e asm.bits # cpu register size (8, 16, 32, 64) (same as rz-asm -b)\n"
 	       " RZ_DEBUG                # if defined, show error messages and crash signal\n"
 	       " RZ_NOPLUGINS            # do not load shared plugins (speedup loading)\n"
 	       "");

@@ -235,7 +235,7 @@ static int rzbin_show_help(int v) {
 	}
 	if (v) {
 		printf("Environment:\n"
-			   " RZ_BIN_CODESIGN_VERBOSE:                               # make code signatures verbose\n"
+		       " RZ_BIN_CODESIGN_VERBOSE:                               # make code signatures verbose\n"
 		       " RZ_BIN_DEBASE64:         e bin.debase64                # try to debase64 all strings\n"
 		       " RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server\n"
 		       " RZ_BIN_DEMANGLE=0:       e bin.demangle                # do not demangle symbols\n"
