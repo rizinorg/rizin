@@ -62,6 +62,7 @@ RZ_API bool rz_project_migrate_v13_v14(RzProject *prj, RzSerializeResultInfo *re
 RZ_API bool rz_project_migrate_v14_v15(RzProject *prj, RzSerializeResultInfo *res);
 RZ_API bool rz_project_migrate_v15_v16(RzProject *prj, RzSerializeResultInfo *res);
 RZ_API bool rz_project_migrate_v16_v17(RzProject *prj, RzSerializeResultInfo *res);
+	RZ_API bool rz_project_migrate_v17_v18(RzProject *prj, RzSerializeResultInfo *res);
 RZ_API bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res);
 
 #ifdef __cplusplus

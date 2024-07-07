@@ -1,6 +1,6 @@
 /
 type=rizin rz-db project
-version=15
+version=17
 
 /core
 blocksize=0x100

@@ -270,14 +270,29 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
 
 	char op_str[16];
 	rz_strf(op_str, "%" PFMT64u, const_value);
-	rop_constraint->args[OP] = strdup(op_str);
+	rop_constraint->args[SRC_CONST] = strdup(op_str);
 	const char *value_str = rz_il_op_pure_code_stringify(*op);
 	rop_constraint->args[OP] = rz_str_dup(value_str);
 	return true;
 }
 
-RZ_API RzRopSearchContext *rz_core_rop_search_context_new(const RzCore *core, const char *greparg, const int regexp,
-	const RzRopRequestMask mask, RzCmdStateOutput *state) {
+/**
+ * \brief Create a new RzRopSearchContext object.
+ * \param core RZ_NONNULL Pointer to the RzCore structure containing configuration settings.
+ * \param greparg RZ_NULLABLE Pointer to a string containing the grep argument.
+ * \param regexp Flag specifying whether regular expressions should be used.
+ * \param mask ROP request mask specifying the ROP request parameters.
+ * \param state RZ_BORROW Pointer to the command state output structure.
+ * \return RZ_OUT A pointer to the newly created RzRopSearchContext object, or NULL if memory allocation fails.
+ *
+ * This function allocates and initializes a new RzRopSearchContext object.
+ */
+RZ_OWN RZ_API RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
+	const RzRopRequestMask mask, RZ_BORROW RzCmdStateOutput *state) {
+
+	rz_return_val_if_fail(core, NULL);
+	rz_return_val_if_fail(state, NULL);
+
 	RzRopSearchContext *context = RZ_NEW0(RzRopSearchContext);
 	if (!context) {
 		return NULL;
@@ -300,12 +315,18 @@ RZ_API RzRopSearchContext *rz_core_rop_search_context_new(const RzCore *core, co
 	return context;
 }
 
+/**
+ * \brief Free an RzRopSearchContext object.
+ * \param context RZ_NULLABLE Pointer to the RzRopSearchContext object to free.
+ *
+ * Frees the memory allocated for an RzRopSearchContext object.
+ * Note: Other elements must be freed by the caller/callee.
+ */
 RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *context) {
 	if (!context) {
 		return;
 	}
 
-	// Other elements have to be freed by the caller/callee.
 	free(context->greparg);
 	free(context);
 }
