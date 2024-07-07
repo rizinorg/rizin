@@ -998,7 +998,7 @@ static bool test_load_v16() {
 static bool test_load_v17() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 17, "prj/v17-rop-config.rzdb");
-	mu_assert_eq(rz_config_get_i(core->config, "rop.cache"), false, "rop.cache");
+	mu_assert_eq(rz_config_get_b(core->config, "rop.cache"), false, "rop.cache");
 	rz_core_free(core);
 	mu_end;
 }

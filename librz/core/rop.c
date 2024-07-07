@@ -283,7 +283,7 @@ RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_inf
  * Adds the given register info to the modified registers of the RzRopGadgetInfo object if it is not a dependency.
  */
 RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGadgetInfo *gadget_info,
-						 RZ_NONNULL RzRopRegInfo *reg_info, const bool is_dependency) {
+	RZ_NONNULL RzRopRegInfo *reg_info, const bool is_dependency) {
 	rz_return_if_fail(gadget_info && reg_info);
 
 	if (!is_dependency) {
@@ -302,7 +302,7 @@ RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGa
 RZ_BORROW RZ_API RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
 	void **it;
-	rz_pvector_foreach(gadget_info->modified_registers, it) {
+	rz_pvector_foreach (gadget_info->modified_registers, it) {
 		RzRopRegInfo *reg_info = *it;
 		if (RZ_STR_EQ(reg_info->name, name)) {
 			return reg_info;

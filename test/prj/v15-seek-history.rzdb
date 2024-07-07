@@ -55,7 +55,7 @@ prj.file=./test/prj/v15-seek-history.rzdb
 /core/debug/breakpoints
 
 /core/file
-relative=../bins/elf/ls
+relative=../bins/elf/crackme0x05
 
 /core/flags
 base=0

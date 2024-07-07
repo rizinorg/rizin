@@ -673,7 +673,7 @@ RZ_API bool rz_project_migrate_v17_v18(RzProject *prj, RzSerializeResultInfo *re
 	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
 	sdb_unset(config_db, "rop.sdb");
 	sdb_unset(config_db, "rop.db");
-	sdb_set(config_db, "rop.cache", false);
+	sdb_set(config_db, "rop.cache", "false");
 	return true;
 }
 
