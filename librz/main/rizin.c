@@ -199,6 +199,7 @@ static int main_help(int line) {
 			" LD_LIBRARY_PATH              path(s) to search for shared libraries at run time\n"
 			" LIBRARY_PATH                 path(s) to search for static and shared libraries at compile time\n"
 			" PATH                         path(s) with executables\n"
+			" RZ_ABORTLEVEL:               target log level/severity when to abort (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)\n"
 			" RZ_CURL                      whether to use curl (for SSL support)\n"
 			" RZ_DEBUG                     if defined, show error messages and crash signal\n"
 			" RZ_DEBUG_ASSERT=1            set a breakpoint when hitting an assert\n"
