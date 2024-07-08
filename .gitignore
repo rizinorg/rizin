@@ -116,6 +116,7 @@ peda-session-*
 /.vs
 .cache/
 test/.tmp/*
+test/.sync_disk_db
 subprojects/capstone-*/
 subprojects/pcre2*/
 subprojects/libzip-*/
