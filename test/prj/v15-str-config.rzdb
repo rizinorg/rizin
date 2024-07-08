@@ -74,7 +74,7 @@ bin.verbose=false
 /core/debug/breakpoints
 
 /core/file
-relative=../bins/elf/crackme0x05
+relative=../bins/elf/ls
 
 /core/flags
 base=0
