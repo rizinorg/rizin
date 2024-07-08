@@ -115,65 +115,43 @@ do not load strings or load them even in raw
 .El
 .Sh ENVIRONMENT
 .Pp
-_NT_DEBUGGER_EXTENSION_PATH: path(s) to debugger extension DLLs
+ANSICON:             ansicon's W & H of the buffer and w & h of the window in the form of: "WxH (wxh)"
 .Pp
-ALACRITTY_LOG:               alacritty log file's path
+CC:                  compiler's name or path
 .Pp
-ANSICON:                     ansicon's W & H of the buffer and w & h of the window in the form of: "WxH (wxh)"
+DEBUGINFOD_URLS:     e bin.dbginfo.debuginfod_urls - use alternative debuginfod server
 .Pp
-CC:                          compiler's name or path
+COLUMNS:             terminal columns to use
 .Pp
-DEBUGINFOD_URLS:             e bin.dbginfo.debuginfod_urls - use alternative debuginfod server
+RZ_ABORTLEVEL:       target log level/severity when to abort (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
 .Pp
-COLORTERM:                   extra color capabilities for a terminal
+RZ_CURL:             whether to use curl (for SSL support)
 .Pp
-COLUMNS:                     terminal columns to use
+RZ_DEBUG_ASSERT:	 set a breakpoint when hitting an assert
 .Pp
-LD_LIBRARY_PATH:             path(s) to search for shared libraries at run time
+RZ_DEBUG_TOOL        debug tool to use when showing error messages and crash signal
 .Pp
-LIBRARY_PATH:                path(s) to search for static and shared libraries at compile time
+RZ_DYLDCACHE_FILTER: dyld cache filter (MacOS dynamic libraries location(s) at runtime)
 .Pp
-PATH:                        path(s) with executables
+RZ_HTTP_AUTHFILE:    HTTP Authentification user file
 .Pp
-RZ_ABORTLEVEL:               target log level/severity when to abort (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
+RZ_LOGCOLORS:        should the log output use colors (TODO)
 .Pp
-RZ_CURL:                     whether to use curl (for SSL support)
+RZ_LOGFILE:          logging output filename/path
 .Pp
-RZ_DEBUG_ASSERT:	         set a breakpoint when hitting an assert
+RZ_LOGLEVEL:         target log level/severity (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
 .Pp
-RZ_DEBUG_TOOL                debug tool to use when showing error messages and crash signal
+RZ_LOGSHOWSOURCES:   should the log output contain src info (filename:lineno)
 .Pp
-RZ_DYLDCACHE_FILTER:         dyld cache filter (MacOS dynamic libraries location(s) at runtime)
+RZ_PIPE_IN:          rzpipe cmd input (file descriptor)
 .Pp
-RZ_HTTP_AUTHFILE:            HTTP Authentification user file
+RZ_PIPE_OUT:         rzpipe cmd output (file descriptor)
 .Pp
-RZ_LOGCOLORS:                should the log output use colors (TODO)
+RZ_PREFIX:           default prefix rizin was compiled for
 .Pp
-RZ_LOGFILE:                  logging output filename/path
+RZ_RCFILE:           user config file
 .Pp
-RZ_LOGLEVEL:                 target log level/severity (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
-.Pp
-RZ_LOGSHOWSOURCES:           should the log output contain src info (filename:lineno)
-.Pp
-RZ_PIPE_IN:                  rzpipe cmd input (file descriptor)
-.Pp
-RZ_PIPE_OUT:                 rzpipe cmd output (file descriptor)
-.Pp
-RZ_PREFIX:                   default prefix rizin was compiled for
-.Pp
-RZ_RCFILE:                   user config file
-.Pp
-SFLIBPATH:                   SFLib syscall library path
-.Pp
-SHELL:                       shell to use (eg: "sh")
-.Pp
-TEMP:                        Temp directory path (Windows)
-.Pp
-TMPDIR:                      tmp directory path (eg: /tmp)
-.Pp
-WT_SESSION:                  check if in Windows terminal
-.Pp
-TERM:                        terminal's type and color
+SFLIBPATH:           SFLib syscall library path
 
 .Sh EXAMPLE
 .Pp
