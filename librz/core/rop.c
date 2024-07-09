@@ -44,19 +44,19 @@ static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 crop) {
 	}
 }
 
-static int rz_rop_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit, RzAsmOp *asmop, RzAnalysisOp *aop, unsigned int *size, char **asmop_str, char **asmop_hex_str) {
+static bool rz_rop_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit, RzAsmOp *asmop, RzAnalysisOp *aop, unsigned int *size, char **asmop_str, char **asmop_hex_str) {
 	ut8 *buf = malloc(hit->len);
 	if (!buf) {
-		return -1;
+		return false;
 	}
 	if (rz_io_nread_at(core->io, hit->addr, buf, hit->len) < 0) {
 		free(buf);
-		return -1;
+		return false;
 	}
 	rz_asm_set_pc(core->rasm, hit->addr);
 	if (rz_asm_disassemble(core->rasm, asmop, buf, hit->len) < 0) {
 		free(buf);
-		return -1;
+		return false;
 	}
 	rz_analysis_op_init(aop);
 	rz_analysis_op(core->analysis, aop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_DISASM);
@@ -76,20 +76,20 @@ static int rz_rop_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit, Rz
 	}
 
 	free(buf);
-	return 0;
+	return true;
 }
 
-static int rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit, const RzList /*<RzCoreAsmHit *>*/ *hitlist,
+static bool rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit, const RzList /*<RzCoreAsmHit *>*/ *hitlist,
 	unsigned int *size, char **asmop_str, char **asmop_hex_str) {
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
-		return -1;
+		return false;
 	}
 
-	if (rz_rop_process_asm_op(core, hit, asmop, &aop, size, asmop_str, asmop_hex_str) != 0) {
+	if (!rz_rop_process_asm_op(core, hit, asmop, &aop, size, asmop_str, asmop_hex_str)) {
 		rz_asm_op_free(asmop);
-		return -1;
+		return false;
 	}
 	const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last(hitlist))->addr;
 	if (addr_last != hit->addr) {
@@ -97,19 +97,19 @@ static int rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit, 
 	}
 	rz_asm_op_free(asmop);
 	rz_analysis_op_fini(&aop);
-	return 0;
+	return true;
 }
 
-static int rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, const bool colorize) {
+static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, const bool colorize) {
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
-		return -1;
+		return false;
 	}
 
-	if (rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL) != 0) {
+	if (!rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
 		rz_asm_op_free(asmop);
-		return -1;
+		return false;
 	}
 	if (colorize) {
 		RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
@@ -124,19 +124,19 @@ static int rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, 
 	}
 	rz_asm_op_free(asmop);
 	rz_analysis_op_fini(&aop);
-	return 0;
+	return true;
 }
 
-static int rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit,
+static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit,
 	unsigned int *size, const bool rop_comments, const bool colorize) {
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
-		return -1;
+		return false;
 	}
-	if (rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL) != 0) {
+	if (!rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
 		rz_asm_op_free(asmop);
-		return -1;
+		return false;
 	}
 	const char *comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
 	char *asm_op_hex = rz_asm_op_get_hex(asmop);
@@ -166,18 +166,18 @@ static int rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hi
 	free(asm_op_hex);
 	rz_analysis_op_fini(&aop);
 	rz_asm_op_free(asmop);
-	return 0;
+	return true;
 }
 
-static int rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, PJ *pj) {
+static bool rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, PJ *pj) {
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
-		return -1;
+		return false;
 	}
-	if (rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL) != 0) {
+	if (!rz_rop_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
 		rz_asm_op_free(asmop);
-		return -1;
+		return false;
 	}
 
 	pj_o(pj);
@@ -189,7 +189,7 @@ static int rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, u
 
 	rz_analysis_op_fini(&aop);
 	rz_asm_op_free(asmop);
-	return 0;
+	return true;
 }
 
 RZ_IPI void rz_core_rop_reg_info_free(RzRopRegInfo *reg_info) {
@@ -641,7 +641,7 @@ static int print_rop(const RzCore *core, const RzList /*<RzCoreAsmHit *>*/ *hitl
 	}
 	const ut64 addr = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
 
-	int result = 0;
+	bool result = 0;
 	rz_list_foreach (hitlist, iter, hit) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
@@ -660,7 +660,7 @@ static int print_rop(const RzCore *core, const RzList /*<RzCoreAsmHit *>*/ *hitl
 			rz_warn_if_reached();
 			break;
 		}
-		if (result != 0) {
+		if (!result) {
 			return result;
 		}
 	}
