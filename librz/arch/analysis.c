@@ -253,7 +253,7 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
  * in the register profile of the given RzAnalysis.
  */
 RZ_API bool rz_analysis_is_reg_in_profile(RzAnalysis *analysis, const char *str) {
-	rz_return_val_if_fail(analysis, false);
+	rz_return_val_if_fail(analysis && str, false);
 
 	char *reg_prof = rz_analysis_get_reg_profile(analysis);
 	if (!reg_prof) {

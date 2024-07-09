@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2009-2016 Alexandru Caciulescu <alex.darredevil@gmail.com>
+// SPDX-FileCopyrightText: 2024 z3phyr <giridh1337@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stddef.h>
@@ -119,9 +119,7 @@ static bool parse_reg_to_const(const RzCore *core, const char *str, RzRopConstra
 	rop_constraint->type = MOV_CONST;
 	rop_constraint->args[DST_REG] = dst_reg;
 	rop_constraint->args[SRC_REG] = NULL;
-	char value_str[256];
-	rz_strf(value_str, "%" PFMT64u, const_value);
-	rop_constraint->args[SRC_CONST] = strdup(value_str);
+	rop_constraint->args[SRC_CONST] = rz_str_newf("%" PFMT64u, const_value);
 	return true;
 }
 
