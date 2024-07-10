@@ -656,6 +656,27 @@ RZ_API bool rz_project_migrate_v16_v17(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 17 -> 18
+//
+// Changes from <commit hash not yet known>:
+//	Removed:
+//	- "rop.sdb"
+//	- "rop.db"
+//	Set:
+//	- "rop.cache"
+
+RZ_API bool rz_project_migrate_v17_v18(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_unset(config_db, "rop.sdb");
+	sdb_unset(config_db, "rop.db");
+	sdb_set(config_db, "rop.cache", "false");
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -672,7 +693,8 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v13_v14,
 	rz_project_migrate_v14_v15,
 	rz_project_migrate_v15_v16,
-	rz_project_migrate_v16_v17
+	rz_project_migrate_v16_v17,
+	rz_project_migrate_v17_v18,
 };
 
 /// Migrate the given project to the current version in-place

@@ -8,6 +8,7 @@
 #include <rz_util/rz_path.h>
 #include <rz_arch.h>
 #include <rz_lib.h>
+#include <rz_rop.h>
 
 /**
  * \brief Returns the default size byte width of memory access operations.
@@ -129,6 +130,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 		}
 	}
 	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
+	analysis->ht_rop = NULL;
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
@@ -185,6 +187,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
 	ht_sp_free(a->ht_global_var);
+	ht_up_free(a->ht_rop);
 	rz_list_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	free(a);
@@ -238,6 +241,31 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 	return (analysis && analysis->cur && analysis->cur->get_reg_profile)
 		? analysis->cur->get_reg_profile(analysis)
 		: NULL;
+}
+
+/**
+ * \brief Check if a register is in the analysis profile.
+ * \param analysis Pointer to the RzAnalysis object.
+ * \param name The register name to check.
+ * \return true if the register name is found, false otherwise.
+ *
+ * This function checks if the given register name is present
+ * in the register profile of the given RzAnalysis.
+ */
+RZ_API bool rz_analysis_is_reg_in_profile(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(analysis && name, false);
+
+	char *reg_prof = rz_analysis_get_reg_profile(analysis);
+	if (!reg_prof) {
+		return false;
+	}
+
+	if (strstr(reg_prof, name)) {
+		free(reg_prof);
+		return true;
+	}
+	free(reg_prof);
+	return false;
 }
 
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {

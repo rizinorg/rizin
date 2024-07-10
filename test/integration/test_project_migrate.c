@@ -590,6 +590,23 @@ static bool test_migrate_v16_v17_flags_base() {
 	mu_end;
 }
 
+static bool test_migrate_v17_v18_rop_config() {
+	RzProject *prj = rz_project_load_file_raw("prj/v17-rop-config.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v17_v18(prj, res);
+	mu_assert_true(s, "migrate success");
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *config_db = sdb_ns(core_db, "config", false);
+	mu_assert_null(sdb_get(config_db, "rop.sdb"), "config");
+	mu_assert_null(sdb_get(config_db, "rop.db"), "config");
+	mu_assert_streq_free(sdb_get(config_db, "rop.cache"), "false", "config");
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
@@ -978,6 +995,14 @@ static bool test_load_v16() {
 	mu_end;
 }
 
+static bool test_load_v17() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 17, "prj/v17-rop-config.rzdb");
+	mu_assert_eq(rz_config_get_b(core->config, "rop.cache"), false, "rop.cache");
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -998,6 +1023,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v14_v15);
 	mu_run_test(test_migrate_v15_v16_str_config);
 	mu_run_test(test_migrate_v16_v17_flags_base);
+	mu_run_test(test_migrate_v17_v18_rop_config);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -1020,6 +1046,7 @@ int all_tests() {
 	mu_run_test(test_load_v15_seek_history);
 	mu_run_test(test_load_v15_str_config);
 	mu_run_test(test_load_v16);
+	mu_run_test(test_load_v17);
 	return tests_passed != tests_run;
 }
 

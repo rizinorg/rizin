@@ -13,7 +13,7 @@ NAME=rop search without maxhits
 FILE=bins/elf/varsub
 CMDS=/Rq pop r15~?
 EXPECT=<<EOF
-4
+7
 EOF
 RUN
 
@@ -52,6 +52,12 @@ Gadget size: 15
   0x000000c2                 c3  ret
 Gadget size: 14
 
+  0x000000b6         b801000000  mov eax, 1
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
   0x000000b7               0100  add dword [eax], eax
   0x000000b9               0000  add byte [eax], al
   0x000000bb         b900000000  mov ecx, 0
@@ -64,6 +70,40 @@ Gadget size: 12
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
 Gadget size: 11
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000ba       00b900000000  add byte [ecx], bh
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 9
+
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
+
+  0x000000bc               0000  add byte [eax], al
+  0x000000be               0000  add byte [eax], al
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 7
+
+  0x000000be               0000  add byte [eax], al
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 5
+
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 3
+
+  0x000000c2                 c3  ret
+Gadget size: 1
 
 EOF
 RUN
@@ -84,12 +124,29 @@ EXPECT=<<EOF
   0x000000c2                 c3  ret
 Gadget size: 15
 
+  0x000000b6         b801000000  mov eax, 1
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
   0x000000b7               0100  add dword [eax], eax
   0x000000b9               0000  add byte [eax], al
   0x000000bb         b900000000  mov ecx, 0
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
 Gadget size: 12
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
 
 EOF
 RUN
@@ -105,8 +162,16 @@ EOF
 EXPECT=<<EOF
 0x000000b4: int 0x80; mov eax, 1; mov ecx, 0; int 0x80; ret;
 0x000000b5: cmp byte [eax + 1], 0xb9; add byte [eax], al; add byte [eax], al; int 0x80; ret;
+0x000000b6: mov eax, 1; mov ecx, 0; int 0x80; ret;
 0x000000b7: add dword [eax], eax; add byte [eax], al; mov ecx, 0; int 0x80; ret;
 0x000000b8: add byte [eax], al; add byte [ecx], bh; int 0x80; ret;
+0x000000b9: add byte [eax], al; mov ecx, 0; int 0x80; ret;
+0x000000ba: add byte [ecx], bh; int 0x80; ret;
+0x000000bb: mov ecx, 0; int 0x80; ret;
+0x000000bc: add byte [eax], al; add byte [eax], al; int 0x80; ret;
+0x000000be: add byte [eax], al; int 0x80; ret;
+0x000000c0: int 0x80; ret;
+0x000000c2: ret;
 EOF
 RUN
 
@@ -126,6 +191,12 @@ EXPECT=<<EOF
   0x000000c2                 c3  ret
 Gadget size: 15
 
+  0x000000b6         b801000000  mov eax, 1
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
   0x000000b7               0100  add dword [eax], eax
   0x000000b9               0000  add byte [eax], al
   0x000000bb         b900000000  mov ecx, 0
@@ -139,6 +210,22 @@ Gadget size: 12
   0x000000c2                 c3  ret
 Gadget size: 11
 
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000ba       00b900000000  add byte [ecx], bh
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 9
+
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
+
 EOF
 RUN
 
@@ -151,7 +238,7 @@ e asm.bits=32
 /Rj ecx
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"offset":180,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":182,"size":5,"opcode":"mov eax, 1","type":"mov"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":15},{"opcodes":[{"offset":183,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"offset":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":12},{"opcodes":[{"offset":184,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":11}]
+[{"opcodes":[{"offset":180,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":182,"size":5,"opcode":"mov eax, 1","type":"mov"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":15},{"opcodes":[{"offset":182,"size":5,"opcode":"mov eax, 1","type":"mov"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":13},{"opcodes":[{"offset":183,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"offset":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":12},{"opcodes":[{"offset":184,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":11},{"opcodes":[{"offset":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":10},{"opcodes":[{"offset":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":9},{"opcodes":[{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":8}]
 EOF
 RUN
 
@@ -178,6 +265,12 @@ Gadget size: 15
   0x000000c2                 c3  ret
 Gadget size: 14
 
+  0x000000b6         b801000000  mov eax, 1
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
   0x000000b7               0100  add dword [eax], eax
   0x000000b9               0000  add byte [eax], al
   0x000000bb         b900000000  mov ecx, 0
@@ -190,6 +283,33 @@ Gadget size: 12
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
 Gadget size: 11
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000ba       00b900000000  add byte [ecx], bh
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 9
+
+  0x000000bb         b900000000  mov ecx, 0
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
+
+  0x000000bc               0000  add byte [eax], al
+  0x000000be               0000  add byte [eax], al
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 7
+
+  0x000000be               0000  add byte [eax], al
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 5
 
 EOF
 RUN
@@ -230,6 +350,17 @@ EXPECT=<<EOF
   0x08048426         e805ffffff  call 0x8048330
 Gadget size: 10
 
+  0x08048422               31ff  xor edi, edi
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 9
+
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 7
+
 EOF
 RUN
 
@@ -246,6 +377,17 @@ EXPECT=<<EOF
   0x08048425                 53  push ebx
   0x08048426         e805ffffff  call 0x8048330
 Gadget size: 10
+
+  0x08048422               31ff  xor edi, edi
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 9
+
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 7
 
 EOF
 RUN
@@ -267,12 +409,42 @@ EXPECT=<<EOF
   0x00000016               02c0  rjmp 0x1c
 Gadget size: 10
 
+  0x00000010               b1e0  ldi r27, 0x01
+  0x00000012               e6e3  ldi r30, 0x36
+  0x00000014               f4e3  ldi r31, 0x34
+  0x00000016               02c0  rjmp 0x1c
+Gadget size: 8
+
+  0x00000012               e6e3  ldi r30, 0x36
+  0x00000014               f4e3  ldi r31, 0x34
+  0x00000016               02c0  rjmp 0x1c
+Gadget size: 6
+
+  0x00000014               f4e3  ldi r31, 0x34
+  0x00000016               02c0  rjmp 0x1c
+Gadget size: 4
+
   0x00000020               d9f7  brne 0x18
   0x00000022               22e0  ldi r18, 0x02
   0x00000024               a4e1  ldi r26, 0x14
   0x00000026               b2e0  ldi r27, 0x02
   0x00000028               01c0  rjmp 0x2c
 Gadget size: 10
+
+  0x00000022               22e0  ldi r18, 0x02
+  0x00000024               a4e1  ldi r26, 0x14
+  0x00000026               b2e0  ldi r27, 0x02
+  0x00000028               01c0  rjmp 0x2c
+Gadget size: 8
+
+  0x00000024               a4e1  ldi r26, 0x14
+  0x00000026               b2e0  ldi r27, 0x02
+  0x00000028               01c0  rjmp 0x2c
+Gadget size: 6
+
+  0x00000026               b2e0  ldi r27, 0x02
+  0x00000028               01c0  rjmp 0x2c
+Gadget size: 4
 
   0x00000030               e1f7  brne 0x2a
   0x00000032               10e0  ldi r17, 0x00
@@ -281,12 +453,42 @@ Gadget size: 10
   0x00000038               04c0  rjmp 0x42
 Gadget size: 10
 
+  0x00000032               10e0  ldi r17, 0x00
+  0x00000034               c2e6  ldi r28, 0x62
+  0x00000036               d0e0  ldi r29, 0x00
+  0x00000038               04c0  rjmp 0x42
+Gadget size: 8
+
+  0x00000034               c2e6  ldi r28, 0x62
+  0x00000036               d0e0  ldi r29, 0x00
+  0x00000038               04c0  rjmp 0x42
+Gadget size: 6
+
+  0x00000036               d0e0  ldi r29, 0x00
+  0x00000038               04c0  rjmp 0x42
+Gadget size: 4
+
   0x00000072               6ce0  ldi r22, 0x0c
   0x00000074               71e0  ldi r23, 0x01
   0x00000076               8fe1  ldi r24, 0x1f
   0x00000078               92e0  ldi r25, 0x02
   0x0000007a           0e946b04  call 0x8d6
 Gadget size: 12
+
+  0x00000074               71e0  ldi r23, 0x01
+  0x00000076               8fe1  ldi r24, 0x1f
+  0x00000078               92e0  ldi r25, 0x02
+  0x0000007a           0e946b04  call 0x8d6
+Gadget size: 10
+
+  0x00000076               8fe1  ldi r24, 0x1f
+  0x00000078               92e0  ldi r25, 0x02
+  0x0000007a           0e946b04  call 0x8d6
+Gadget size: 8
+
+  0x00000078               92e0  ldi r25, 0x02
+  0x0000007a           0e946b04  call 0x8d6
+Gadget size: 6
 
   0x00000098               a701  movw r20, r14
   0x0000009a               6ae0  ldi r22, 0x0a
@@ -295,12 +497,38 @@ Gadget size: 12
   0x000000a0           0e94d808  call 0x11b0
 Gadget size: 12
 
+  0x0000009a               6ae0  ldi r22, 0x0a
+  0x0000009c               8fe1  ldi r24, 0x1f
+  0x0000009e               92e0  ldi r25, 0x02
+  0x000000a0           0e94d808  call 0x11b0
+Gadget size: 10
+
+  0x0000009c               8fe1  ldi r24, 0x1f
+  0x0000009e               92e0  ldi r25, 0x02
+  0x000000a0           0e94d808  call 0x11b0
+Gadget size: 8
+
+  0x0000009e               92e0  ldi r25, 0x02
+  0x000000a0           0e94d808  call 0x11b0
+Gadget size: 6
+
   0x000000c4               1082  st Z, r1
   0x000000c6               60e0  ldi r22, 0x00
   0x000000c8               71e0  ldi r23, 0x01
   0x000000ca               c801  movw r24, r16
   0x000000cc           0e949816  call 0x2d30
 Gadget size: 12
+
+  0x000000c6               60e0  ldi r22, 0x00
+  0x000000c8               71e0  ldi r23, 0x01
+  0x000000ca               c801  movw r24, r16
+  0x000000cc           0e949816  call 0x2d30
+Gadget size: 10
+
+  0x000000c8               71e0  ldi r23, 0x01
+  0x000000ca               c801  movw r24, r16
+  0x000000cc           0e949816  call 0x2d30
+Gadget size: 8
 
   0x000000d4               6de1  ldi r22, 0x1d
   0x000000d6               71e0  ldi r23, 0x01
@@ -314,6 +542,15 @@ Gadget size: 12
   0x000000e2               90e0  ldi r25, 0x00
   0x000000e4               08c0  rjmp 0xf6
 Gadget size: 8
+
+  0x000000e0               81e0  ldi r24, 0x01
+  0x000000e2               90e0  ldi r25, 0x00
+  0x000000e4               08c0  rjmp 0xf6
+Gadget size: 6
+
+  0x000000e2               90e0  ldi r25, 0x00
+  0x000000e4               08c0  rjmp 0xf6
+Gadget size: 4
 
   0x000000e6               66e4  ldi r22, 0x46
   0x000000e8               71e0  ldi r23, 0x01
@@ -336,26 +573,31 @@ Gadget size: 12
   0x0000012e           0e946b04  call 0x8d6
 Gadget size: 12
 
-  0x0000013a               6de6  ldi r22, 0x6d
-  0x0000013c               71e0  ldi r23, 0x01
-  0x0000013e               8fe1  ldi r24, 0x1f
-  0x00000140               92e0  ldi r25, 0x02
-  0x00000142           0e946b04  call 0x8d6
-Gadget size: 12
-
-  0x0000015a               6fe7  ldi r22, 0x7f
-  0x0000015c               71e0  ldi r23, 0x01
-  0x0000015e               8fe1  ldi r24, 0x1f
-  0x00000160               92e0  ldi r25, 0x02
-  0x00000162           0e946b04  call 0x8d6
-Gadget size: 12
-
   0x000001b6               1082  st Z, r1
   0x000001b8               6fe8  ldi r22, 0x8f
   0x000001ba               71e0  ldi r23, 0x01
   0x000001bc               c801  movw r24, r16
   0x000001be           0e949816  call 0x2d30
 Gadget size: 12
+
+  0x000001b8               6fe8  ldi r22, 0x8f
+  0x000001ba               71e0  ldi r23, 0x01
+  0x000001bc               c801  movw r24, r16
+  0x000001be           0e949816  call 0x2d30
+Gadget size: 10
+
+  0x000001e4               0f01  movw r0, r30
+  0x000001e6               63e9  ldi r22, 0x93
+  0x000001e8               71e0  ldi r23, 0x01
+  0x000001ea               c801  movw r24, r16
+  0x000001ec           0e949816  call 0x2d30
+Gadget size: 12
+
+  0x000001e6               63e9  ldi r22, 0x93
+  0x000001e8               71e0  ldi r23, 0x01
+  0x000001ea               c801  movw r24, r16
+  0x000001ec           0e949816  call 0x2d30
+Gadget size: 10
 
 EOF
 EXPECT_ERR=<<EOF

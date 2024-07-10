@@ -542,7 +542,6 @@ NAME=Search rop gadgets for in command
 FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
 CMDS=<<EOF
-e search.align=2
 /R in r24
 EOF
 EXPECT=<<EOF
@@ -553,12 +552,24 @@ EXPECT=<<EOF
   0x00000288               0895  ret
 Gadget size: 10
 
+  0x00000282               82b3  in r24, 0x12
+  0x00000284               8058  subi r24, 0x80
+  0x00000286               82bb  out 0x12, r24
+  0x00000288               0895  ret
+Gadget size: 8
+
   0x00000294               7304  cpc r7, r3
   0x00000296               88b3  in r24, 0x18
   0x00000298               8058  subi r24, 0x80
   0x0000029a               88bb  out 0x18, r24
   0x0000029c               0895  ret
 Gadget size: 10
+
+  0x00000296               88b3  in r24, 0x18
+  0x00000298               8058  subi r24, 0x80
+  0x0000029a               88bb  out 0x18, r24
+  0x0000029c               0895  ret
+Gadget size: 8
 
   0x000005c6               8fb5  in r24, 0x2f
   0x000005c8               8f77  andi r24, 0x7f
@@ -595,12 +606,24 @@ EXPECT=<<EOF
   0x00000288               0895  ret
 Gadget size: 10
 
+  0x00000282               82b3  in r24, 0x12
+  0x00000284               8058  subi r24, 0x80
+  0x00000286               82bb  out 0x12, r24
+  0x00000288               0895  ret
+Gadget size: 8
+
   0x00000294               7304  cpc r7, r3
   0x00000296               88b3  in r24, 0x18
   0x00000298               8058  subi r24, 0x80
   0x0000029a               88bb  out 0x18, r24
   0x0000029c               0895  ret
 Gadget size: 10
+
+  0x00000296               88b3  in r24, 0x18
+  0x00000298               8058  subi r24, 0x80
+  0x0000029a               88bb  out 0x18, r24
+  0x0000029c               0895  ret
+Gadget size: 8
 
   0x000005c6               8fb5  in r24, 0x2f
   0x000005c8               8f77  andi r24, 0x7f

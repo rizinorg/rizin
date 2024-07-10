@@ -3735,8 +3735,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* rop */
 	SETI("rop.len", 5, "Maximum ROP gadget length");
-	SETBPREF("rop.sdb", "false", "Cache results in sdb (experimental)");
-	SETBPREF("rop.db", "true", "Categorize rop gadgets in sdb");
+	SETBPREF("rop.cache", "false", "Cache rop gadget results(experimental)");
 	SETBPREF("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
 	SETBPREF("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
 	SETBPREF("rop.comments", "false", "Display comments in rop search output");

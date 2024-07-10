@@ -440,6 +440,18 @@ Gadget size: 5
   0x00000005                 c3  ret
 Gadget size: 4
 
+  0x00000003                 5b  pop ebx
+  0x00000004                 5d  pop ebp
+  0x00000005                 c3  ret
+Gadget size: 3
+
+  0x00000004                 5d  pop ebp
+  0x00000005                 c3  ret
+Gadget size: 2
+
+  0x00000005                 c3  ret
+Gadget size: 1
+
 EOF
 RUN
 
@@ -469,6 +481,7 @@ CMDS=<<EOF
 e asm.bits=32
 e asm.arch=mips
 e scr.color=false
+e rop.len=8
 wx 1b000000040000001a0000004c08410018000000040000000800000000000070
 /R
 q
@@ -478,12 +491,50 @@ EXPECT=<<EOF
   0x00000004           04000000  sllv zero, zero, zero
   0x00000008           1a000000  div zero, zero, zero
   0x0000000c           4c084100  syscall 0x10421
+  0x00000010           18000000  mult zero, zero
+  0x00000014           04000000  sllv zero, zero, zero
+  0x00000018           08000000  jr zero
+  0x0000001c           00000070  madd zero, zero
+Gadget size: 32
 
+  0x00000004           04000000  sllv zero, zero, zero
+  0x00000008           1a000000  div zero, zero, zero
+  0x0000000c           4c084100  syscall 0x10421
+  0x00000010           18000000  mult zero, zero
+  0x00000014           04000000  sllv zero, zero, zero
+  0x00000018           08000000  jr zero
+  0x0000001c           00000070  madd zero, zero
+Gadget size: 28
+
+  0x00000008           1a000000  div zero, zero, zero
+  0x0000000c           4c084100  syscall 0x10421
+  0x00000010           18000000  mult zero, zero
+  0x00000014           04000000  sllv zero, zero, zero
+  0x00000018           08000000  jr zero
+  0x0000001c           00000070  madd zero, zero
+Gadget size: 24
+
+  0x0000000c           4c084100  syscall 0x10421
   0x00000010           18000000  mult zero, zero
   0x00000014           04000000  sllv zero, zero, zero
   0x00000018           08000000  jr zero
   0x0000001c           00000070  madd zero, zero
 Gadget size: 20
+
+  0x00000010           18000000  mult zero, zero
+  0x00000014           04000000  sllv zero, zero, zero
+  0x00000018           08000000  jr zero
+  0x0000001c           00000070  madd zero, zero
+Gadget size: 16
+
+  0x00000014           04000000  sllv zero, zero, zero
+  0x00000018           08000000  jr zero
+  0x0000001c           00000070  madd zero, zero
+Gadget size: 12
+
+  0x00000018           08000000  jr zero
+  0x0000001c           00000070  madd zero, zero
+Gadget size: 8
 
 EOF
 RUN
