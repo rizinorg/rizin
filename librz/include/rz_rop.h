@@ -4,16 +4,18 @@
 #ifndef RZ_ROP_H
 #define RZ_ROP_H
 
-#include <rz_cmd.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
 /**
  * \file rz_rop.h
  * \brief Return-Oriented Programming (ROP) related APIs and structures..
  *
  * This file contains definitions, structures, and function prototypes for handling ROP gadgets and constraints.
  */
+
+#include <rz_cmd.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief Information about a register.
