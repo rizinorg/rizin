@@ -224,10 +224,12 @@ static int rasm_show_help(int v) {
 	printf(" If '-l' value is greater than output length, output is padded with nops\n"
 	       " If the last argument is '-' reads from stdin\n"
 	       "Environment:\n"
-	       " RZ_NOPLUGINS      do not load shared plugins (speedup loading)\n"
-	       " RZ_ASM_ARCH       same as rz-asm -a\n"
-	       " RZ_ASM_BITS       same as rz-asm -b\n"
-	       " RZ_DEBUG          if defined, show error messages and crash signal\n"
+	       " RZ_ARCH      e asm.arch # architecture to assemble/disassemble (same as rz-asm -a)\n"
+	       " RZ_ASM_ARCH             # architecture to assemble/disassemble (same as rz-asm -a)\n"
+	       " RZ_ASM_BITS             # cpu register size (8, 16, 32, 64) (same as rz-asm -b)\n"
+	       " RZ_BITS      e asm.bits # cpu register size (8, 16, 32, 64) (same as rz-asm -b)\n"
+	       " RZ_DEBUG                # if defined, show error messages and crash signal\n"
+	       " RZ_NOPLUGINS            # do not load shared plugins (speedup loading)\n"
 	       "");
 	if (v == 2) {
 		printf("Supported Assembler directives:\n");
@@ -580,10 +582,10 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		arch = rz_arch;
 	}
 
-	char *r2bits = rz_sys_getenv("RZ_BITS");
-	if (r2bits) {
-		bits = rz_num_math(NULL, r2bits);
-		free(r2bits);
+	char *rz_bits = rz_sys_getenv("RZ_BITS");
+	if (rz_bits) {
+		bits = rz_num_math(NULL, rz_bits);
+		free(rz_bits);
 	}
 
 	RzGetopt opt;

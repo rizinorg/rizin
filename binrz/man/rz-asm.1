@@ -137,6 +137,21 @@ Mark the start of the text section
 .It Ic .thumb
 Set the Thumb mode (as opposed to ARM) for ARM architecture
 .El
+.Sh ENVIRONMENT
+.Pp
+RZ_ARCH:      e asm.arch - architecture to assemble/disassemble (same as rz-asm -a)
+.Pp
+RZ_ASM_ARCH:  architecture to assemble/disassemble (same as rz-asm -a)
+.Pp
+RZ_ASM_BITS:  cpu register size (8, 16, 32, 64) (same as rz-asm -b)
+.Pp
+RZ_BITS:      e asm.bits - cpu register size (8, 16, 32, 64) (same as rz-asm -b)
+.Pp
+RZ_DEBUG:     if defined, show error messages and crash signal\n"
+.Pp
+RZ_NOPLUGINS: do not load shared plugins (speedup loading)\n"
+
+
 .Sh EXAMPLES
 .Pp
 Assemble opcode:
