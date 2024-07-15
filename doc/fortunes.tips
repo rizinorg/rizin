@@ -63,7 +63,7 @@ Use 'rz-bin -ris' to get the import/export symbols of any binary.
 Remember to maintain your `$(rizin -H RZ_CACHEHOME)/history` file!
 Enable the PAGER with 'e scr.pager=less -R'
 Use 'e asm.offset=true' to show offsets in 16bit segment addressing mode.
-The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22)*4'
+The '%' command can be used to evaluate math expressions. Like this: '% (0x34+22)*4'
 Set 'e bin.dbginfo=true' to load debug information at startup.
 Rename a function using the 'afr <newname> @ <offset>' command.
 You can redefine descriptive commands in the hud file and using the 'V_' command.
