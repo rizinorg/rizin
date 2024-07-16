@@ -12,9 +12,9 @@
 
 typedef struct nds_rom_t {
 	NDSHeader header;
-	RzPVector *fat_table;
-	RzPVector *arm9_overlays;
-	RzPVector *arm7_overlays;
+	RzPVector /*<NDSFatEntry *>*/ *fat_table;
+	RzPVector /*<NDSOverlayTblEntry *>*/ *arm9_overlays;
+	RzPVector /*<NDSOverlayTblEntry *>*/ *arm7_overlays;
 } NDSRom;
 
 #define nds_get_rom(bf) ((NDSRom *)bf->o->bin_obj)
@@ -31,7 +31,7 @@ static bool nds_read_overlay_entry(RzBuffer *buf, NDSOverlayTblEntry *entry, ut6
 		rz_buf_read_le32_offset(buf, offset, &entry->reserved);
 }
 
-static bool nds_read_overlay_table(RzBuffer *buf, RzPVector *table, ut32 offset_begin, ut32 size) {
+static bool nds_read_overlay_table(RzBuffer *buf, RzPVector /*<NDSOverlayTblEntry *>*/ *table, ut32 offset_begin, ut32 size) {
 	if (!buf || !table) {
 		rz_warn_if_reached();
 		return false;
@@ -59,7 +59,7 @@ static bool nds_read_file_alloc_entry(RzBuffer *buf, NDSFatEntry *entry, ut64 *o
 		rz_buf_read_le32_offset(buf, offset, &entry->file_end_offset);
 }
 
-static bool nds_read_file_alloc_table(RzBuffer *buf, RzPVector *table, NDSHeader *header) {
+static bool nds_read_file_alloc_table(RzBuffer *buf, RzPVector /*<NDSFatEntry *>*/ *table, NDSHeader *header) {
 	if (!buf || !table) {
 		rz_warn_if_reached();
 		return false;
