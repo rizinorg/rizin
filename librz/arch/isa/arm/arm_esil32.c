@@ -852,6 +852,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		// TODO: esil for MRS
 		break;
 	case ARM_INS_MSR:
+		if (insn->detail->arm.operands[0].type != ARM_OP_REG) {
+			// New sysop operands added in Capstone v6 are not supported in ESIL.
+			break;
+		}
 #if CS_NEXT_VERSION >= 6
 		msr_flags = insn->detail->arm.operands[0].sysop.msr_mask;
 #else
