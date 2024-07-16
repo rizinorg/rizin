@@ -101,11 +101,14 @@ typedef struct rz_rop_search_context_t {
 	ut8 subchain;
 	ut8 crop;
 	char *greparg;
+	const char *mode_str;
+	const char *arch;
 	bool regexp;
-	int max_count;
-	int increment;
+	bool cache;
 	RzRopRequestMask mask;
 	RzCmdStateOutput *state;
+	int increment;
+	int max_count;
 	ut64 from;
 	ut64 to;
 	RzList /*<RzRopEndListPair *>*/ *end_list;

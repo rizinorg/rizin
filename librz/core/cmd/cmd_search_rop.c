@@ -298,6 +298,8 @@ RZ_OWN RZ_API RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 	}
 
 	context->greparg = greparg ? strdup(greparg) : NULL;
+	context->mode_str = rz_config_get(core->config, "search.in");
+	context->arch = rz_config_get(core->config, "asm.arch");
 	context->regexp = regexp;
 	context->mask = mask;
 	context->state = state;
@@ -310,6 +312,7 @@ RZ_OWN RZ_API RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 	context->unique_hitlists = NULL;
 	context->crop = rz_config_get_i(core->config, "rop.conditional");
 	context->subchain = rz_config_get_i(core->config, "rop.subchain");
+	context->cache = rz_config_get_i(core->config, "rop.cache");
 
 	return context;
 }

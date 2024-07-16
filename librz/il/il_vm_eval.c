@@ -317,6 +317,7 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr) {
 static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpPureHandler handler = vm->op_handler_pure_table[op->code];
+	rz_il_vm_event_add(vm, rz_il_event_pure_new(op));
 	rz_return_val_if_fail(handler, NULL);
 	return handler(vm, op, type);
 }
@@ -324,6 +325,7 @@ static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONN
 static bool eval_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 	RzILOpEffectHandler handler = vm->op_handler_effect_table[op->code];
+	rz_il_vm_event_add(vm, rz_il_event_effect_new(op));
 	rz_return_val_if_fail(handler, false);
 	return handler(vm, op);
 }

@@ -5,6 +5,8 @@
 #ifndef RZ_IL_VM_EVENTS_H
 #define RZ_IL_VM_EVENTS_H
 
+#include "rz_il_opcodes.h"
+
 #include <rz_il/definitions/definitions.h>
 
 #ifdef __cplusplus
@@ -23,7 +25,18 @@ typedef enum rz_il_event_id_t {
 	RZ_IL_EVENT_VAR_READ,
 	RZ_IL_EVENT_MEM_WRITE,
 	RZ_IL_EVENT_VAR_WRITE,
+	RZ_IL_EVENT_IL_LOG_EFFECT,
+	RZ_IL_EVENT_IL_LOG_PURE,
 } RzILEventId;
+
+typedef union {
+	RzILOpEffectCode op_effect;
+	RzILOpPureCode op_pure;
+} RzILOpUnion;
+
+typedef struct {
+	RzILOpUnion op;
+} RzILEventILLog;
 
 typedef struct rz_il_vm_event_mem_read_t {
 	RZ_NONNULL RzBitVector *address;
@@ -61,6 +74,7 @@ typedef struct rz_il_vm_event_t {
 		RzILEventMemWrite mem_write;
 		RzILEventVarRead var_read;
 		RzILEventVarWrite var_write;
+		RzILEventILLog il_log;
 	} data;
 } RzILEvent;
 
@@ -70,6 +84,8 @@ RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzBitVector *
 RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzILVal *value);
 RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzBitVector *addr, RZ_NONNULL const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v);
 RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzILVal *old_v, RZ_NONNULL const RzILVal *new_v);
+RZ_API RZ_OWN RzILEvent *rz_il_event_effect_new(RZ_NONNULL RzILOpEffect *op);
+RZ_API RZ_OWN RzILEvent *rz_il_event_pure_new(RZ_NONNULL RzILOpPure *op);
 RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt);
 
 // Printing/Export

@@ -130,6 +130,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 		}
 	}
 	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
+	analysis->ht_rop_semantics = NULL;
 	analysis->ht_rop = NULL;
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
@@ -187,7 +188,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
 	ht_sp_free(a->ht_global_var);
-	ht_up_free(a->ht_rop);
+	ht_up_free(a->ht_rop_semantics);
 	rz_list_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	free(a);
