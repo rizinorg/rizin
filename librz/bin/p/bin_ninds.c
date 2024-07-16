@@ -67,7 +67,6 @@ static bool nds_read_file_alloc_table(RzBuffer *buf, RzPVector *table, NDSHeader
 		return true;
 	}
 	ut64 offset_end = header->fat_offset + header->fat_size;
-	eprintf("img: 0x%llx\n", offset_end);
 	for (ut64 offset = header->fat_offset; offset < offset_end;) {
 		NDSFatEntry *entry = RZ_NEW0(NDSFatEntry);
 		if (!entry || !nds_read_file_alloc_entry(buf, entry, &offset)) {
