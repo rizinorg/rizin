@@ -259,7 +259,7 @@ bool test_analysis_graph_cfg() {
 	rz_core_analysis_everything(core, false, "esil");
 	rz_core_analysis_flag_every_function(core);
 
-	RzGraph *g = rz_core_graph_cfg(core, 0x117a); // main()
+	RzGraph *g = rz_core_graph_cfg(core, 0x117a, true); // main()
 	mu_assert_notnull(g, "Graph was NULL");
 	mu_assert_eq(g->n_nodes, 24, "data graph node count");
 	mu_assert_eq(g->n_edges, 25, "data graph edge count");

@@ -505,9 +505,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCor
 	case RZ_CORE_GRAPH_TYPE_CFG:
 		if (core->analysis->cur && core->analysis->cur->decode_iword) {
 			// Build the instruction word graph.
-			graph = rz_core_graph_cfg_iwords(core, addr);
+			graph = rz_core_graph_cfg_iwords(core, addr, false);
 		} else {
-			graph = rz_core_graph_cfg(core, addr);
+			graph = rz_core_graph_cfg(core, addr, false);
 		}
 		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF:
@@ -1034,6 +1034,8 @@ static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, cons
  * \param nodes_visited The hash table holding already visited addresses and their node indices in the graph.
  * \param op_from The RzAnalysisOp the edge originates from.
  * \param op_to The RzAnalysisOp the edge goes to.
+ * \param fcn Check the function if it contains \p op_to. \p op_to will not be added to \p to_visit, if it is not within the function.
+ * If \p fcn is NULL it assumes \p op_to is always added, if it wasn't before.
  *
  * \return true On success.
  * \return false On failure.
@@ -1042,7 +1044,8 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	RZ_NONNULL RzVector /*<ut64>*/ *to_visit,
 	RZ_NONNULL HtUU *nodes_visited,
 	const RzAnalysisOp *op_from,
-	const RzAnalysisOp *op_to) {
+	const RzAnalysisOp *op_to,
+	RZ_NULLABLE RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(graph && to_visit && nodes_visited && op_from && op_to, -1);
 	ut64 from = op_from->addr;
 	ut64 to = op_to->addr;
@@ -1071,7 +1074,8 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	}
 	to_idx = ht_uu_find(nodes_visited, to, &visited);
 
-	if (from != to && !visited) {
+	bool target_within_fcn = fcn ? rz_analysis_function_contains(fcn, to) : true;
+	if (from != to && !visited && target_within_fcn) {
 		// The target node wasn't visited before. Otherwise this is a back-edge.
 		rz_vector_push(to_visit, &to);
 	}
@@ -1123,14 +1127,22 @@ static st32 decode_op_at(RZ_BORROW RzCore *core,
  *
  * \param core The current core.
  * \param addr The CFG entry point.
+ * \param within_fcn If true, only nodes within the function at \p addr are added to the CFG.
  *
  * \return The CFG at address \p addr or NULL in case of failure.
  */
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr, bool within_fcn) {
 	rz_return_val_if_fail(core && core->analysis && core->io, NULL);
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
+	}
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	if (within_fcn && !fcn) {
+		RZ_LOG_WARN("Cannot generate CFG for 0x%" PFMT64x ". addr doesn't point to a function entrypoint.", addr);
+		return NULL;
+	} else if (!within_fcn) {
+		fcn = NULL;
 	}
 
 	// Visited instructions. Indexed by instruction address, value is index in graph.
@@ -1166,7 +1178,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
-			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, fcn)) {
 				goto error;
 			}
 			rz_analysis_op_fini(&target_op);
@@ -1176,7 +1188,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 				rz_analysis_op_fini(&target_op);
 				goto error;
 			}
-			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+			if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, fcn)) {
 				goto error;
 			}
 			rz_analysis_op_fini(&target_op);
@@ -1193,7 +1205,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 			rz_analysis_op_fini(&target_op);
 			goto error;
 		}
-		if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op)) {
+		if (!add_edge_to_cfg(graph, to_visit, nodes_visited, &curr_op, &target_op, fcn)) {
 			goto error;
 		}
 		rz_analysis_op_fini(&target_op);
@@ -1233,7 +1245,8 @@ static bool add_iword_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *gr
 	RZ_NONNULL RzVector /*<ut64>*/ *to_visit,
 	RZ_NONNULL HtUU *nodes_visited,
 	const RzAnalysisInsnWord *irowrd_from,
-	const RzAnalysisInsnWord *iword_to) {
+	const RzAnalysisInsnWord *iword_to,
+	bool to_node_in_fcn) {
 	rz_return_val_if_fail(graph && to_visit && nodes_visited && irowrd_from && iword_to, -1);
 	ut64 from = irowrd_from->addr;
 	ut64 to = iword_to->addr;
@@ -1260,7 +1273,7 @@ static bool add_iword_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *gr
 		from_idx = to_idx;
 	}
 
-	if (from != to && !visited) {
+	if (from != to && !visited && to_node_in_fcn) {
 		// The target node wasn't visited before. Otherwise this is a back-edge.
 		rz_vector_push(to_visit, &to);
 	}
@@ -1293,14 +1306,23 @@ static st32 decode_iword_at(RZ_BORROW RzCore *core,
  *
  * \param core The current core.
  * \param addr The CFG entry point.
+ * \param within_fcn If true, only nodes within the function at \p addr are added to the CFG.
  *
  * \return The CFG at address \p addr or NULL in case of failure.
  */
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNULL RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNULL RzCore *core, ut64 addr, bool within_fcn) {
 	rz_return_val_if_fail(core && core->analysis && core->io, NULL);
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
+	}
+
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	if (within_fcn && !fcn) {
+		RZ_LOG_WARN("Cannot generate CFG for 0x%" PFMT64x ". addr doesn't point to a function entrypoint.", addr);
+		return NULL;
+	} else if (!within_fcn) {
+		fcn = NULL;
 	}
 
 	// Visited instructions. Indexed by instruction address, value is index in graph.
@@ -1343,12 +1365,13 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg_iwords(RZ_NONNU
 				rz_analysis_insn_word_fini(&target_iword);
 				continue;
 			}
+			bool target_within_fcn = fcn ? rz_analysis_function_contains(fcn, target) : true;
 			bool found = false;
 			ht_uu_find(nodes_visited, target, &found);
-			if (!found) {
+			if (!found && target_within_fcn) {
 				rz_vector_push(to_visit, &target);
 			}
-			if (!add_iword_edge_to_cfg(graph, to_visit, nodes_visited, &cur_iword, &target_iword)) {
+			if (!add_iword_edge_to_cfg(graph, to_visit, nodes_visited, &cur_iword, &target_iword, target_within_fcn)) {
 				rz_analysis_insn_word_fini(&target_iword);
 				goto error;
 			}
